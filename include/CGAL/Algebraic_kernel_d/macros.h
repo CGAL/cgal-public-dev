@@ -27,7 +27,7 @@
 
 CGAL_BEGIN_NAMESPACE
 
-#define CGAL_ACK_SNAP_ALGEBRAIC_CURVE_KERNEL_2_TYPEDEFS \
+#define CGAL_ACK_SNAP_ALGEBRAIC_CURVE_KERNEL_2_TYPEDEFS(Curve_analysis_2) \
     typedef typename Algebraic_kernel_2::Algebraic_kernel_1 \
         Algebraic_kernel_1;\
     typedef typename Algebraic_kernel_1::Coefficient Coefficient;\
@@ -48,7 +48,8 @@ CGAL_BEGIN_NAMESPACE
         Bitstream_traits; \
     typedef CGAL::CGALi::Bitstream_descartes<Bitstream_traits>     \
         Bitstream_descartes;                                           \
-    typedef CGAL::CGALi::Status_line_CA_1< Curve_analysis_2 > Status_line_1; \
+    typedef CGAL::CGALi::Status_line_CA_1< Curve_analysis_2 >  \
+      Status_line_1;                                  \
 
 
 

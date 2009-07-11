@@ -159,7 +159,7 @@ public:
 #if CGAL_ACK_USE_EXACUS
     typedef CGALi::Curve_analysis_2<Self> Curve_analysis_2; 
 #else
-    typedef Curve_analysis_2<Self> Curve_analysis_2; 
+    typedef CGAL::Curve_analysis_2<Self> Curve_analysis_2; 
 #endif
 
     /*! 
@@ -169,7 +169,7 @@ public:
 #if CGAL_ACK_USE_EXACUS
     typedef CGALi::Curve_pair_analysis_2<Self> Curve_pair_analysis_2;
 #else
-    typedef Curve_pair_analysis_2<Self> Curve_pair_analysis_2;
+    typedef CGAL::Curve_pair_analysis_2<Self> Curve_pair_analysis_2;
 #endif
 
     //! traits class used for approximations of x-coordinate

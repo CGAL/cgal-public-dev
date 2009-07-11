@@ -66,16 +66,14 @@ public:
     typedef Curve_analysis_2_rep Self;
     
     //! The handle class
-    typedef Curve_analysis_2<Algebraic_kernel_2,Self> Handle;
+    typedef CGAL::Curve_analysis_2<Algebraic_kernel_2,Self> Handle;
     
     //protected:
 public:
 
     typedef int size_type;
     
-    typedef Handle Curve_analysis_2;
-
-    CGAL_ACK_SNAP_ALGEBRAIC_CURVE_KERNEL_2_TYPEDEFS;
+    CGAL_ACK_SNAP_ALGEBRAIC_CURVE_KERNEL_2_TYPEDEFS(Handle);
 
     typedef std::map< Boundary, Status_line_1 > 
     Vert_line_at_rational_map;
@@ -264,14 +262,14 @@ private:
     typedef ::CGAL::Handle_with_policy<Rep> Base;
     
     // This type
-    typedef Curve_analysis_2<Algebraic_kernel_2,Rep> Self;
+    typedef CGAL::Curve_analysis_2<Algebraic_kernel_2,Rep> Self;
     
 public:
 
     //! Indexing type
     typedef typename Rep::size_type size_type;
     
-    CGAL_ACK_SNAP_ALGEBRAIC_CURVE_KERNEL_2_TYPEDEFS;
+    CGAL_ACK_SNAP_ALGEBRAIC_CURVE_KERNEL_2_TYPEDEFS(Self);
 
     //! Required by the CurveKernel_2 concept
     typedef Algebraic_real_1 X_coordinate_1;

@@ -40,7 +40,7 @@ public:
 
     typedef typename Curve_analysis_2::Polynomial_traits_2 Polynomial_traits_2;
 
-    CGAL_ACK_SNAP_ALGEBRAIC_CURVE_KERNEL_2_TYPEDEFS;
+    CGAL_ACK_SNAP_ALGEBRAIC_CURVE_KERNEL_2_TYPEDEFS(Curve_analysis_2);
 
     typedef std::pair<Boundary,Boundary> Point;
 
