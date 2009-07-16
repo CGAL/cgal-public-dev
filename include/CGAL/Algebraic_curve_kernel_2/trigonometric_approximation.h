@@ -87,7 +87,7 @@ typename Arithmetic_traits::Bigfloat_interval pi(long precision)  {
             ::Boundary Bigfloat_boundary;
         Bigfloat_boundary bb(Integer(1));
         bb = typename CGAL::CGALi::Float_traits<Bigfloat_boundary>
-            ::Mul_by_pow_of_2() (bb,Integer(-precision-error_offset));
+            ::Mul_by_pow_of_2() (bb,-precision-error_offset);
         Bigfloat_interval err = CGAL::hull(Bigfloat_interval(-bb), 
                                            Bigfloat_interval(bb));
         CGAL_assertion(CGAL::CGALi::ceil_log2_abs
@@ -164,7 +164,7 @@ typename Arithmetic_traits::Bigfloat_interval arcsin
             ::Boundary Bigfloat_boundary;
         Bigfloat_boundary bb(Integer(1));
         bb = typename CGAL::CGALi::Float_traits<Bigfloat_boundary>
-            ::Mul_by_pow_of_2() (bb,Integer(-precision-error_offset));
+            ::Mul_by_pow_of_2() (bb,-precision-error_offset);
         Bigfloat_interval err = CGAL::hull(Bigfloat_interval(-bb), 
                                            Bigfloat_interval(bb));
         CGAL_assertion(CGAL::CGALi::ceil_log2_abs
@@ -238,7 +238,7 @@ typename Arithmetic_traits::Bigfloat_interval sin
             ::Boundary Bigfloat_boundary;
         Bigfloat_boundary bb(Integer(1));
         bb = typename CGAL::CGALi::Float_traits<Bigfloat_boundary>
-            ::Mul_by_pow_of_2() (bb,Integer(-precision-error_offset));
+            ::Mul_by_pow_of_2() (bb,-precision-error_offset);
         Bigfloat_interval err = CGAL::hull(Bigfloat_interval(-bb), 
                                            Bigfloat_interval(bb));
         CGAL_assertion(CGAL::CGALi::ceil_log2_abs
