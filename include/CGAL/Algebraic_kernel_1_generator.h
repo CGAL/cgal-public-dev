@@ -62,6 +62,14 @@ struct Algebraic_kernel_1_generator {
             < CGAL::CGALi::Bitstream_coefficient_kernel<Coefficient> > 
         >
     > Algebraic_kernel_with_qir_and_bitstream_1;
+
+    typedef CGAL::Algebraic_kernel_1
+    < Coefficient, 
+      Boundary,
+      CGAL::CGALi::Algebraic_real_quadratic_refinement_rep_bfi
+           < Coefficient, Boundary >,
+      CGAL::CGALi::Descartes< CGAL::Polynomial< Coefficient >, Boundary >
+    > Algebraic_kernel_with_qir_and_descartes_1;
 };
 
 CGAL_END_NAMESPACE
