@@ -26,8 +26,8 @@ CGAL_BEGIN_NAMESPACE
 namespace CGALi {
 
 template < class AlgebraicCurveKernel_2, class Rep_, 
-      class HandlePolicy_ = CGAL::Handle_policy_union,
-      class Allocator_ = CGAL_ALLOCATOR(Rep_) >
+      class HandlePolicy_ ,
+      class Allocator_>
         //::boost::fast_pool_allocator<Rep_> >
 class Xy_coordinate_2;
 
@@ -92,7 +92,8 @@ public:
 //! i.e., it cannot represent points at infinity 
 template <class AlgebraicCurveKernel_2, 
           class Rep_ = CGALi::Xy_coordinate_2_rep<AlgebraicCurveKernel_2>,
-          class HandlePolicy_, class Allocator_>
+          class HandlePolicy_= CGAL::Handle_policy_union, 
+          class Allocator_ = CGAL_ALLOCATOR(Rep_) >
 class Xy_coordinate_2 : 
     public ::CGAL::Handle_with_policy<Rep_, HandlePolicy_, Allocator_> 
 {
