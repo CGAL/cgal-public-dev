@@ -113,7 +113,7 @@ public:
 
       std::pair<Gmpz,long> pair(x.to_integer_exp());
       CGAL_assertion_code(
-          Gmpfr tmp (pair.first, x.get_prec());
+          Gmpfr tmp (pair.first, x.get_precision());
           if (pair.second > 0)
             mpfr_mul_2ui(tmp.fr(),tmp.fr(),pair.second,GMP_RNDN);
           else 
@@ -132,7 +132,7 @@ public:
 
       std::pair<Gmpz,long> pair(x.to_integer_exp());
       CGAL_assertion_code(
-          Gmpfr tmp (pair.first, x.get_prec());
+          Gmpfr tmp (pair.first, x.get_precision());
           if (pair.second > 0)
             mpfr_mul_2ui(tmp.fr(),tmp.fr(),pair.second,GMP_RNDN);
           else 
