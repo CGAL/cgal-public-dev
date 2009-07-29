@@ -274,7 +274,7 @@ public:
 
         if (!this->ptr()->_m_y) {
             
-            Polynomial_2 f = curve().polynomial_2();
+            Polynomial_2 f = curve().primitive_polynomial_2();
             // This will be the defining polynomial of y
             Polynomial_1 y_pol;
 
