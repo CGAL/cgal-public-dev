@@ -2,12 +2,13 @@
 
 \ccDefinition
 
-A model of \ccRefName\ represents a real root of a univariate polynomial 
-\ccc{AlgebraicKernel_d_1::Polynomial_1}. 
+A model of \ccRefName\ is used to represent real roots of a univariate 
+polynomial \ccc{AlgebraicKernel_d_1::Polynomial_1}. 
 
-The type is \ccc{ImplicitInteroperable} with \ccc{int}, \ccc{AlgebraicKernel_d_1::Coefficient}, and \ccc{AlgebraicKernel_d_1::Bound}, where \ccRefName\ is the 
-coercion type. 
-
+A model of \ccRefName\ is required to be \ccc{ImplicitInteroperable} 
+with \ccc{int}, \ccc{AlgebraicKernel_d_1::Coefficient}, 
+and \ccc{AlgebraicKernel_d_1::Bound}, that is, it is possible to 
+construct from these types and to compare against these types. 
 
 \ccRefines
 \ccc{DefaultConstructible}\\
