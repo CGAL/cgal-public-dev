@@ -10,9 +10,8 @@ and a constant factor $a$, such that
 $p = a  \cdot  g_1^{m_1}  \cdot  ...  \cdot  g_n^{m_n}$.
 
 The provided operator returns the number of factors $n$.
-The factors $g_i$ and multiplicities $m_i$ are written through the 
-respective output iterators. 
-The constant factor $a$ is not computed. 
+The factor multiplicity pairs $<g_i,m_i>$ are written to the 
+given output iterator. The constant factor $a$ is not computed. 
 
 \ccRefines 
 \ccc{AdaptableBinaryFunction} 

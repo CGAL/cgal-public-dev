@@ -9,10 +9,10 @@ coprime non-constant factors $g_i$ with multiplicities $m_i$
 and a constant factor $a$, such that 
 $p = a  \cdot  g_1m_1  \cdot  ...  \cdot  g_nm_n$.
 
+
 The provided operator returns the number of factors $n$.
-The factors $g_i$ and multiplicities $m_i$ are written through the 
-output iterator. 
-The constant factor $a$ is not computed. 
+The factor multiplicity pairs $<g_i,m_i>$ are written to the 
+given output iterator. The constant factor $a$ is not computed. 
 
 \ccRefines 
 \ccc{AdaptableBinaryFunction} 
