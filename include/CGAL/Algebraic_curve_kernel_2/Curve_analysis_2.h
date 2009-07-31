@@ -108,6 +108,12 @@ public:
     
 private:
 
+    typedef CGALi::LRU_hashed_map<Boundary,
+        std::vector<Algebraic_real_1>,
+        CGALi::To_double_hasher > Intermediate_cache;
+
+    Intermediate_cache intermediate_cache;
+
     typedef CGALi::Event_line_builder<Handle> Event_line_builder;
     
 
@@ -1529,7 +1535,6 @@ private:
                     = principal_sturm_habicht_of_primitive(0);
         
             } else {
-                
                 this->ptr()->resultant_of_primitive_and_derivative_y
                     = CGAL::CGALi::resultant
                         (primitive_polynomial_2(),
@@ -1659,10 +1664,10 @@ private:
 
         std::vector<Algebraic_real_1> res_roots;
         std::vector<size_type> res_mults;
-        solve_1(resultant_of_primitive_and_derivative_y(),
+        Polynomial_1 R = resultant_of_primitive_and_derivative_y();
+        solve_1(R,
                 std::back_inserter(res_roots),
                 std::back_inserter(res_mults));
-        
         std::vector<Algebraic_real_1> lcoeff_roots;
         std::vector<size_type> lcoeff_mults;
         solve_1(primitive_polynomial_2().lcoeff(),
@@ -1909,6 +1914,7 @@ public:
 #endif
         */
             Status_line_1& el = status_line_at_event(i);
+
             for(size_type j=0;j<el.number_of_events();j++) {
 /*
 #if CGAL_ACK_DEBUG_FLAG
@@ -2147,6 +2153,51 @@ private:
     }
 
     //! @}
+
+public:
+
+    template<typename OutputIterator> void get_roots_at_rational
+    (Boundary r, OutputIterator it) const {
+        
+        typedef typename CGAL::Fraction_traits<Poly_coer_1> FT;
+        
+        CGAL_assertion(static_cast<bool>((boost::is_same
+                                          < typename FT::Numerator_type,
+                                          Polynomial_1 >::value)));
+
+        typename Rep::Intermediate_cache::Find_result find_result
+            = this->ptr()->intermediate_cache.find(r);
+
+        std::vector<Algebraic_real_1> p_roots;
+
+        if(find_result.second) {
+
+            p_roots = find_result.first->second;
+
+        } else {
+            
+            typename FT::Numerator_type p;
+            typename FT::Denominator_type denom;
+            
+            Poly_coer_1 f_at_r_with_denom 
+                = typename Polynomial_traits_2::Swap() 
+                (this->polynomial_2(), 0, 1).evaluate(r);
+            
+            typename FT::Decompose() (f_at_r_with_denom, 
+                                      p, denom); 
+                        
+            Solve_1 solve_1;
+            
+            solve_1(p,std::back_inserter(p_roots));
+
+            this->ptr()->intermediate_cache.insert(std::make_pair(r,p_roots));
+            
+        }
+
+        std::copy(p_roots.begin(),p_roots.end(),it);
+
+    }
+
 
     // \name Internal functions for Conic optimization
     //! @{

@@ -1851,34 +1851,12 @@ Curve_pair_analysis_2<AlgebraicKernel_2>::
 create_intermediate_slice_at(int i) const {
     
     Boundary r = boundary_value_in_interval(i);
-    
-    typedef typename CGAL::Fraction_traits<Poly_coer_1> FT;
-    
-    CGAL_assertion(static_cast<bool>((boost::is_same
-                                      < typename FT::Numerator_type,
-                                      Polynomial_1 >::value)));
-    
-    typename FT::Numerator_type p1,p2;
-    typename FT::Denominator_type denom;
-    
-    Poly_coer_1 f1_at_r_with_denom 
-        = typename Polynomial_traits_2::Swap() 
-        (this->ptr()->c1_.polynomial_2(), 0, 1).evaluate(r);
-    
-    Poly_coer_1 f2_at_r_with_denom 
-        = typename Polynomial_traits_2::Swap() 
-        (this->ptr()->c2_.polynomial_2(), 0, 1).evaluate(r);
-    
-    typename FT::Decompose() (f1_at_r_with_denom, 
-                              p1, denom); 
-    typename FT::Decompose() (f2_at_r_with_denom, 
-                              p2, denom); 
-    
-    Solve_1 solve_1;
+
     std::vector<Algebraic_real_1> p1_roots,p2_roots;
-    solve_1(p1,std::back_inserter(p1_roots));
-    solve_1(p2,std::back_inserter(p2_roots));
-    
+
+    this->ptr()->c1_.get_roots_at_rational(r,std::back_inserter(p1_roots));
+    this->ptr()->c2_.get_roots_at_rational(r,std::back_inserter(p2_roots));
+
     size_type number_of_roots 
         = static_cast<size_type>(p1_roots.size() + p2_roots.size());
     std::vector<Algebraic_real_1> p12_roots;
