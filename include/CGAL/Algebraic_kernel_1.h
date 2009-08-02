@@ -116,8 +116,10 @@ public:
     OutputIterator operator()( const Polynomial_1& p,
         OutputIterator res,
         bool known_to_be_square_free = false ) const {
-      CGALi::Real_roots< Algebraic_real_1, Isolator > real_roots;
 
+      CGAL_precondition(!CGAL::is_zero(p));
+
+      CGALi::Real_roots< Algebraic_real_1, Isolator > real_roots;
       if( known_to_be_square_free ) {
         real_roots( p, res );
       } else {
