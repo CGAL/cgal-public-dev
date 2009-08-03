@@ -238,6 +238,8 @@ doc_tex/Algebraic_kernel_d_ref/AlgebraicKernel_d_1_ApproximateAbsolute_1.tex -te
 doc_tex/Algebraic_kernel_d_ref/AlgebraicKernel_d_1_ApproximateRelative_1.tex -text
 doc_tex/Algebraic_kernel_d_ref/AlgebraicKernel_d_1_Bound.tex -text
 doc_tex/Algebraic_kernel_d_ref/AlgebraicKernel_d_1_BoundBetween_1.tex -text
+doc_tex/Algebraic_kernel_d_ref/AlgebraicKernel_d_2_ApproximateAbsolute_2.tex -text
+doc_tex/Algebraic_kernel_d_ref/AlgebraicKernel_d_2_ApproximateRelative_2.tex -text
 doc_tex/Algebraic_kernel_d_ref/Deprecated/AlgebraicKernel_d_1_LowerBoundary_1.tex -text
 doc_tex/Algebraic_kernel_d_ref/Deprecated/AlgebraicKernel_d_1_Refine_1.tex -text
 doc_tex/Algebraic_kernel_d_ref/Deprecated/AlgebraicKernel_d_1_UpperBoundary_1.tex -text
