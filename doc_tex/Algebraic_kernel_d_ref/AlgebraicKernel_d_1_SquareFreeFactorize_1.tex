@@ -9,18 +9,12 @@ coprime non-constant factors $g_i$ with multiplicities $m_i$
 and a constant factor $a$, such that 
 $p = a  \cdot  g_1^{m_1}  \cdot  ...  \cdot  g_n^{m_n}$.
 
-The provided operator returns the number of factors $n$.
 The factor multiplicity pairs $<g_i,m_i>$ are written to the 
 given output iterator. The constant factor $a$ is not computed. 
 
 \ccRefines 
-\ccc{AdaptableBinaryFunction} 
-
-\ccTypes
-\ccThree{typedef AlgebraicKernel_d_1::Polynomial_1}{argument_type+}{}
-\ccTypedef{typedef std::size_type result_type;}{}
-\ccGlue
-\ccTypedef{typedef AlgebraicKernel_d_1::Polynomial_1 first_argument_type;}{}
+\ccc{Assignable}\\
+\ccc{CopyConstructible}
 
 \ccOperations
 \ccSetThreeColumns{xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx}{xxx}{}
@@ -28,8 +22,8 @@ given output iterator. The constant factor $a$ is not computed.
 
 \ccThree{result_type}{fo(first_argument_type,++}{}
 \ccMethod{template < class OutputIterator >
-	result_type
-	operator()(first_argument_type p,
+	OutputIterator
+	operator()(AlgebraicKernel_d_1::Polynomial_1 p,
                OutputIterator res);}
 {Copies in the output iterator the factors of a square-free 
 factorization of \ccc{p}, with their multiplicity, as objects of type 
