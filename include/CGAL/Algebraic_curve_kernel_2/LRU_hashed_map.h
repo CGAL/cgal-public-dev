@@ -219,6 +219,16 @@ struct Id_hasher
     }
 };
 
+struct To_double_hasher
+{
+    template <class T>
+    size_t operator()(const T& x) const {
+        return static_cast<size_t>(CGAL::to_double(x));
+    }
+};
+
+
+
 struct Id_equal_to
 {
    template <class T>
