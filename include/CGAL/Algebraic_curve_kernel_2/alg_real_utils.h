@@ -184,7 +184,7 @@ simple_rational_between(const Algebraic_real& a,
         y_m=mantissa(y);
     long x_e = exponent(x),  y_e = exponent(y);
     //std::cout << "Floats1: " << x_m << " " << x_e << " and " << y_m << " " << y_e << std::endl;
-    if((x_m > 0 &&  y_m < 0) || x_m < 0 && y_m > 0) {
+    if (((x_m > 0) && (y_m < 0)) || ((x_m < 0) && (y_m > 0))) {
         //srb.stop();
         return Rational(0);
     }
