@@ -63,8 +63,6 @@ CGAL::Timer overall_timer;
 #include <sstream>
 #include <fstream>
 
-#include <CGAL/Timer.h>
-
 #include <CGAL/Arithmetic_kernel.h>
 #include <CGAL/Algebraic_curve_kernel_2_generator.h>
 
@@ -239,7 +237,7 @@ int main(int argc, char** argv) {
             Integer_polynomial_2 f;
             if(input.peek()=='P') {
                 input >> f; 
-                curves.push_back(CGAL::CGALi::canonicalize_polynomial(f));
+                curves.push_back(CGAL::canonicalize(f));
                 while(input.peek()=='\n' || input.peek()==' ') {
                     input.get();
                 }
@@ -253,7 +251,7 @@ int main(int argc, char** argv) {
                         print_parse_error(str);
                         std::exit(-1);
                     }
-                    curves.push_back(CGAL::CGALi::canonicalize_polynomial(f));
+                    curves.push_back(CGAL::canonicalize(f));
                 }
             }
             std::string str;
