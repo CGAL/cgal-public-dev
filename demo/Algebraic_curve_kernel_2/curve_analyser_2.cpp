@@ -26,7 +26,7 @@
 // Does the demo create a file "gen_plot" 
 // that displays the input curves topology?
 #ifndef CGAL_ACK_WRITE_GRAPH_TO_FILE
-#define CGAL_ACK_WRITE_GRAPH_TO_FILE 1
+#define CGAL_ACK_WRITE_GRAPH_TO_FILE 0
 #endif
 
 // Is the input curve made square free beforehand, 
@@ -275,7 +275,7 @@ int main(int argc,char** argv) {
     typedef CGAL_ACK_COEFFICIENT Coefficient;
 
     typedef CGAL::Algebraic_curve_kernel_2_generator<Coefficient>
-        ::Algebraic_curve_kernel_with_qir_and_bitstream_2
+        ::Algebraic_curve_kernel_with_qir_and_descartes_2
         Algebraic_curve_kernel_2;
 
     typedef Algebraic_curve_kernel_2::Curve_analysis_2 Curve_analysis_2;
@@ -380,7 +380,7 @@ int main(int argc,char** argv) {
 
         std::cout << "Now refine..." << std::flush;
      
-        algebraic_curve.refine_all(Rational(1,1000));
+        algebraic_curve.refine_all(Rational(1,100));
 
         overall_timer.stop();        
 
@@ -390,8 +390,8 @@ int main(int argc,char** argv) {
      
         std::cout << algebraic_curve;
 
-        std::cout << "Overall time: " << overall_timer.time() << std::endl;
-     
+        std::cout << "Overall  time: " << overall_timer.time() << std::endl;
+
 #if CGAL_ACK_WRITE_GRAPH_TO_FILE
         // Now, create the plot:
         typedef Curve_analysis_2::Status_line_1 Event_line;
