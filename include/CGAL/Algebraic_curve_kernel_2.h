@@ -639,7 +639,7 @@ public:
         public std::binary_function< Xy_coordinate_2, Xy_coordinate_2, 
                 Comparison_result > {
         
-        Compare_y_2(Self *kernel) :
+        Compare_y_2(const Self *kernel) :
              _m_kernel(kernel) {
          }
 
@@ -655,12 +655,12 @@ public:
         }
 
     protected:
-        Self *_m_kernel;   
+        const Self *_m_kernel;   
 
     };
     //CGAL_Algebraic_Kernel_pred(Compare_y_2, compare_y_2_object);
     Compare_y_2 compare_y_2_object() const {
-        return Compare_y_2((Self *)this);
+        return Compare_y_2((const Self *)this);
     }
     
     /*! 
@@ -673,7 +673,7 @@ public:
           public std::binary_function<Xy_coordinate_2, Xy_coordinate_2, 
                 Comparison_result > {
 
-         Compare_xy_2(Self *kernel) :
+         Compare_xy_2(const Self *kernel) :
              _m_kernel(kernel) {
          }
     
@@ -707,7 +707,7 @@ public:
         }
 
     protected:
-        Self *_m_kernel;        
+        const Self *_m_kernel;        
     };
     //CGAL_Algebraic_Kernel_pred(Compare_xy_2, compare_xy_2_object);
     Compare_xy_2 compare_xy_2_object() const {
@@ -757,6 +757,19 @@ public:
     CGAL_Algebraic_Kernel_pred(Has_finite_number_of_intersections_2, 
             has_finite_number_of_intersections_2_object);
     
+  // Square_free_factorize_2
+  struct Square_free_factorize_2 {
+    typedef Polynomial_2 first_argument_type;
+    template< class OutputIterator>
+    OutputIterator operator()( const Polynomial_2& p, OutputIterator it) const {
+      return CGAL::square_free_factorize_up_to_constant_factor(p,it);
+    } 
+  };
+  
+  CGAL_Algebraic_Kernel_cons(
+      Square_free_factorize_2, square_free_factorize_2_object);
+  
+  //this is deprecated ! 
     //! Various curve and curve pair decomposition functions
     struct Decompose_2 {
     
