@@ -37,6 +37,12 @@ void test_algebraic_kernel_1(const AlgebraicKernel_d_1& ak_1){
   typedef AlgebraicKernel_d_1 Algebraic_kernel_d_1;
 
   typedef typename AlgebraicKernel_d_1::Coefficient Coefficient;
+  typedef typename AlgebraicKernel_d_1::Polynomial_1 Polynomial_1; 
+  typedef typename AlgebraicKernel_d_1::Algebraic_real_1 Algebraic_real_1;
+  typedef typename AlgebraicKernel_d_1::Bound Bound;
+  typedef std::pair<Bound,Bound> BInterval;
+  typedef CGAL::Polynomial_traits_d<Polynomial_1> PT;
+  
   { 
     // check Coefficient 
     typedef Algebraic_structure_traits<Coefficient> AST;
@@ -44,7 +50,6 @@ void test_algebraic_kernel_1(const AlgebraicKernel_d_1& ak_1){
     test_algebraic_structure< Coefficient,Algebraic_category,Tag_true>();
     test_real_embeddable<Coefficient>();
   }
-  typedef typename AlgebraicKernel_d_1::Polynomial_1 Polynomial_1; 
   {
     // check Polynomial_1
     typedef Polynomial_traits_d<Polynomial_1> PT;
@@ -56,12 +61,10 @@ void test_algebraic_kernel_1(const AlgebraicKernel_d_1& ak_1){
     //  typedef typename AST::Algebraic_category Algebraic_category; 
     //  test_algebraic_structure< Polynomial_1,Algebraic_category,Tag_true>();
   }
-  typedef typename AlgebraicKernel_d_1::Algebraic_real_1 Algebraic_real_1;
   {
     // check Algebraic_real_1
     test_real_embeddable<Algebraic_real_1>();
   }
-  typedef typename AlgebraicKernel_d_1::Bound Bound;
   { 
     typedef Algebraic_structure_traits<Bound> AST;
     typedef typename AST::Algebraic_category Algebraic_category; 
@@ -88,13 +91,103 @@ void test_algebraic_kernel_1(const AlgebraicKernel_d_1& ak_1){
   CGAL_GET_FTOR(Solve_1, solve_1, solve_1_object);
   CGAL_GET_FTOR(Sign_at_1, sign_at_1, sign_at_1_object);
   CGAL_GET_FTOR(Compare_1, compare_1, compare_1_object);
-  CGAL_GET_FTOR(Refine_1, refine_1, refine_1_object);
   CGAL_GET_FTOR(Bound_between_1, bound_between_1, bound_between_1_object);
   CGAL_GET_FTOR(Approximate_absolute_1, approximate_absolute_1, approximate_absolute_1_object);
   CGAL_GET_FTOR(Approximate_relative_1, approximate_relative_1, approximate_relative_1_object);
-
 #undef CGAL_GET_FTOR
+
+#define CGAL_CHECK_UFUNCTION(Name,AT,RT)                        \
+  {                                                             \
+    typedef typename Name::argument_type AT_;                   \
+    typedef typename Name::result_type   RT_;                   \
+    {BOOST_STATIC_ASSERT(( ::boost::is_same<AT,AT_>::value));}  \
+    {BOOST_STATIC_ASSERT(( ::boost::is_same<RT,RT_>::value));}  \
+  }                
+#define CGAL_CHECK_BFUNCTION(Name,AT1,AT2,RT)                           \
+  {                                                                     \
+    typedef typename Name::first_argument_type AT1_;                    \
+    typedef typename Name::second_argument_type AT2_;                   \
+    typedef typename Name::result_type   RT_;                           \
+    {BOOST_STATIC_ASSERT(( ::boost::is_same<AT1,AT1_>::value));}        \
+    {BOOST_STATIC_ASSERT(( ::boost::is_same<AT2,AT2_>::value));}        \
+    {BOOST_STATIC_ASSERT(( ::boost::is_same<RT,RT_>::value));}          \
+  }                                                             
+
+  CGAL_CHECK_UFUNCTION(Is_square_free_1,Polynomial_1,bool);
+  CGAL_CHECK_UFUNCTION(Make_square_free_1,Polynomial_1,Polynomial_1);
+  // Square_free_factorize_1 
+  CGAL_CHECK_BFUNCTION(Is_coprime_1,Polynomial_1,Polynomial_1,bool);
+  // Make_coprime_1
+  // Solve_1
+  CGAL_CHECK_BFUNCTION(Sign_at_1,Polynomial_1,Algebraic_real_1,Sign);
+  CGAL_CHECK_BFUNCTION(Compare_1,Algebraic_real_1,Algebraic_real_1,Sign);
+  CGAL_CHECK_BFUNCTION(Bound_between_1,Algebraic_real_1,Algebraic_real_1,Bound);
+  CGAL_CHECK_BFUNCTION(Approximate_absolute_1,Algebraic_real_1,int,BInterval);
+  CGAL_CHECK_BFUNCTION(Approximate_relative_1,Algebraic_real_1,int,BInterval);
+#undef CGAL_CHECK_BFUNCTION
+#undef CGAL_CHECK_UFUNCTION
   
+  Polynomial_1 x = typename PT::Shift()(Polynomial_1(1),1);
+  
+  assert( is_square_free_1(ipower((x-1),1)));
+  assert(!is_square_free_1(ipower((x-1),2)));
+
+  assert( make_square_free_1(ipower((x-1),2))==ipower((x-1),1));
+
+  {
+    std::list< std::pair<Polynomial_1,int> > factors; 
+    square_free_factorize_1((x-1)*(x-2)*(x-2),std::back_inserter(factors));
+    assert(factors.size()==2);
+    assert(factors.front() != factors.back());
+    assert(
+        factors.front() == std::make_pair((x-1),1) || 
+        factors.front() == std::make_pair((x-2),2) );
+    assert(
+        factors.back()  == std::make_pair((x-1),1) || 
+        factors.back()  == std::make_pair((x-2),2) );
+  }
+  
+  assert( is_coprime_1((x-1),(x-2)));
+  assert(!is_coprime_1((x-1)*(x-2),(x-1)*(x-3)));
+  
+  {
+    Polynomial_1 a,b,c,d,e;
+    a = (x-1)*(x-2);
+    b = (x-1)*(x-3);
+    assert( make_coprime_1(a,b,c,d,e));
+    assert( c == (x-1) ); // gcd 
+    assert( d == (x-2) );
+    assert( e == (x-3) ); 
+
+    a = (x-1);
+    b = (x-2);
+    assert(!make_coprime_1(a,b,c,d,e) );
+    assert( c == (1) ); // gcd 
+    assert( d == (x-1) );
+    assert( e == (x-2) );     
+  }
+  assert(false); // TODO 
+//   {
+//     std::list<std::pair<Algebraic_real_1,int> > roots; 
+//     solve_1((x-1)*(x-2)*(x-2),std::back_inserter(roots));
+//     assert(roots.size()==2);
+//     assert(roots.front() != roots.back());
+//     assert(
+//         roots.front() == std::make_pair(Algebraic_real_1(1),1) || 
+//         roots.front() == std::make_pair(Algebraic_real_1(2),2) );
+//     assert(
+//         roots.back()  == std::make_pair(Algebraic_real_1(1),1) || 
+//         roots.back()  == std::make_pair(Algebraic_real_1(2),2) );
+//   }
+
+
+//   // Solve_1
+//   CGAL_CHECK_BFUNCTION(Sign_at_1,Polynomial_1,Algebraic_real_1,Sign);
+//   CGAL_CHECK_BFUNCTION(Compare_1,Algebraic_real_1,Algebraic_real_1,Sign);
+//   CGAL_CHECK_BFUNCTION(Bound_between_1,Algebraic_real_1,Algebraic_real_1,Bound);
+//   CGAL_CHECK_BFUNCTION(Approximate_absolute_1,Algebraic_real_1,int,BInterval);
+//   CGAL_CHECK_BFUNCTION(Approximate_relative_1,Algebraic_real_1,int,BInterval);
+
 }
 
 
