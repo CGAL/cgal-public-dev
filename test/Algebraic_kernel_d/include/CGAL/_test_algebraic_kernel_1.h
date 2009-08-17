@@ -73,11 +73,29 @@ void test_algebraic_kernel_1(const AlgebraicKernel_d_1& ak_1){
   test_explicit_interoperable_from_to<int, Bound>();
 
   test_explicit_interoperable_from_to<int        , Algebraic_real_1>();
-  test_explicit_interoperable_from_to<Bound   , Algebraic_real_1>();
+  test_explicit_interoperable_from_to<Bound      , Algebraic_real_1>();
   test_explicit_interoperable_from_to<Coefficient, Algebraic_real_1>();
+  
+#define CGAL_GET_FTOR(Name,name,get_object)             \
+  typedef typename AlgebraicKernel_d_1::Name Name;      \
+  const Name name = ak_1.get_object();                    
+  
+  CGAL_GET_FTOR(Is_square_free_1, is_square_free_1, is_square_free_1_object);
+  CGAL_GET_FTOR(Make_square_free_1, make_square_free_1, make_square_free_1_object);
+  CGAL_GET_FTOR(Square_free_factorize_1, square_free_factorize_1,square_free_factorize_1_object);
+  CGAL_GET_FTOR(Is_coprime_1, is_coprime_1,is_coprime_1_object);
+  CGAL_GET_FTOR(Make_coprime_1, make_coprime_1, make_coprime_1_object);
+  CGAL_GET_FTOR(Solve_1, solve_1, solve_1_object);
+  CGAL_GET_FTOR(Sign_at_1, sign_at_1, sign_at_1_object);
+  CGAL_GET_FTOR(Compare_1, compare_1, compare_1_object);
+  CGAL_GET_FTOR(Refine_1, refine_1, refine_1_object);
+  CGAL_GET_FTOR(Bound_between_1, bound_between_1, boundary_between_1_object);
+  CGAL_GET_FTOR(Approximate_absolute_1, approximate_absolute_1, approximate_absolute_1_object);
+  CGAL_GET_FTOR(Approximate_relative_1, approximate_relative_1, approximate_relative_1_object);
+
+#undef CGAL_GET_FTOR
+  
 }
-
-
 
 
 namespace CGALi {

@@ -107,7 +107,45 @@ public:
           } 
         }                        
       }
-    };                
+    };              
+    
+    struct Approximate_absolute_1:
+      public std::binary_function<std::pair<Bound,Bound>,Algebraic_real_1,int>{
+      std::pair<Bound,Bound> operator()(const Algebraic_real_1& x, int prec){
+          Lower_boundary lower; 
+          Upper_boundary upper; 
+          Refine refine; 
+          Bound l = lower(x);  
+          Bound u = upper(x);
+          Bound error = CGAL::ipower(Bound(2),CGAL::abs(prec));
+          while((prec>0)?((l-u)*error>Bound(1)):((l-u)>error)){
+            refine(x);
+            u = upper(x);
+            l = lower(x);
+          }
+          return std::make_pair(l,u);
+      }
+    };  
+    struct Approximate_relative_1:
+      public std::binary_function<std::pair<Bound,Bound>,Algebraic_real_1,int>{
+      std::pair<Bound,Bound> operator()(const Algebraic_real_1& x, int prec){
+          Lower_boundary lower; 
+          Upper_boundary upper; 
+          Refine refine; 
+          Bound l = lower(x);  
+          Bound u = upper(x);
+          Bound error = CGAL::ipower(Bound(2),CGAL::abs(prec));
+          Bound max_b = (CGAL::max)(CGAL::abs(u),CGAL::abs(l));
+          while((prec>0)?((l-u)*error>max_b):((l-u)>error*max_b)){
+            refine(x);
+            u = upper(x);
+            l = lower(x);
+            max_b = (CGAL::max)(CGAL::abs(u),CGAL::abs(l));
+          }
+          return std::make_pair(l,u);
+      }
+    };
+    
   }; // class Algebraic_real_traits
             
   // Functors of Algebraic_kernel_1
@@ -223,6 +261,9 @@ public:
   typedef typename Algebraic_real_traits::Lower_boundary Lower_boundary_1;
   typedef typename Algebraic_real_traits::Upper_boundary Upper_boundary_1;
   typedef typename Algebraic_real_traits::Bound_between Bound_between_1;
+  typedef typename Algebraic_real_traits::Approximate_absolute_1 Approximate_absolute_1;
+  typedef typename Algebraic_real_traits::Approximate_relative_1 Approximate_relative_1;
+  
       
 #define CGAL_ALGEBRAIC_KERNEL_1_PRED(Y,Z) Y Z() const { return Y(); }
 
@@ -244,12 +285,18 @@ public:
       compare_1_object);
   CGAL_ALGEBRAIC_KERNEL_1_PRED(Refine_1,
       refine_1_object);
+  CGAL_ALGEBRAIC_KERNEL_1_PRED(Bound_between_1,
+      boundary_between_1_object);
+  CGAL_ALGEBRAIC_KERNEL_1_PRED(Approximate_absolute_1,
+      approximate_absolute_1_object);
+  CGAL_ALGEBRAIC_KERNEL_1_PRED(Approximate_relative_1,
+      approximate_relative_1_object);
+
+  // Deprecated 
   CGAL_ALGEBRAIC_KERNEL_1_PRED(Lower_boundary_1,
       lower_boundary_1_object);
   CGAL_ALGEBRAIC_KERNEL_1_PRED(Upper_boundary_1,
       upper_boundary_1_object);
-  CGAL_ALGEBRAIC_KERNEL_1_PRED(Bound_between_1,
-      boundary_between_1_object);
       
 #undef CGAL_ALGEBRAIC_KERNEL_1_PRED  
           

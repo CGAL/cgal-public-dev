@@ -54,7 +54,7 @@ void test_algebraic_kernel_coeff_boundary_rep() {
   CGAL::CGALi::old_test_algebraic_kernel_1< Kernel_BDescartes, Algebraic_real_1, BDescartes, Coefficient, Polynomial_1, Bound >();   
   
   CGAL::test_algebraic_kernel_1(Kernel_Descartes());
-  //CGAL::test_algebraic_kernel_1(Kernel_BDescartes());
+  CGAL::test_algebraic_kernel_1(Kernel_BDescartes());
 
 }
 
