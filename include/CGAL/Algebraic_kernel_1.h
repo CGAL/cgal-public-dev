@@ -110,7 +110,7 @@ public:
     };              
     
     struct Approximate_absolute_1:
-      public std::binary_function<std::pair<Bound,Bound>,Algebraic_real_1,int>{
+      public std::binary_function<Algebraic_real_1,int,std::pair<Bound,Bound> >{
       std::pair<Bound,Bound> operator()(const Algebraic_real_1& x, int prec){
           Lower_bound lower; 
           Upper_bound upper; 
@@ -127,7 +127,7 @@ public:
       }
     };  
     struct Approximate_relative_1:
-      public std::binary_function<std::pair<Bound,Bound>,Algebraic_real_1,int>{
+      public std::binary_function<Algebraic_real_1,int,std::pair<Bound,Bound> >{
       std::pair<Bound,Bound> operator()(const Algebraic_real_1& x, int prec){
           Lower_bound lower; 
           Upper_bound upper; 
