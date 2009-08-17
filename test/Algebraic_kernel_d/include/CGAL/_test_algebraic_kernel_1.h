@@ -18,12 +18,67 @@
 #include <CGAL/basic.h>
 #include <cassert>
 #include <CGAL/Algebraic_kernel_1.h>
+#include <CGAL/Test/_test_real_embeddable.h>
+#include <CGAL/Test/_test_algebraic_structure.h>
+#include <CGAL/Test/_test_coercion_traits.h>
+#include <CGAL/Test/_test_polynomial_traits_d.h>
+
 
 // Test for the Algebraic_kernel syntax
 #ifndef CGAL_TEST_ALGEBRAIC_KERNEL_1_H
 #define CGAL_TEST_ALGEBRAIC_KERNEL_1_H
 
 CGAL_BEGIN_NAMESPACE
+
+
+// Test for an exact AlgebraicKernel1
+template <class AlgebraicKernel_d_1>
+void test_algebraic_kernel_1(const AlgebraicKernel_d_1& ak_1){
+  typedef AlgebraicKernel_d_1 Algebraic_kernel_d_1;
+
+  typedef typename AlgebraicKernel_d_1::Coefficient Coefficient;
+  { 
+    // check Coefficient 
+    typedef Algebraic_structure_traits<Coefficient> AST;
+    typedef typename AST::Algebraic_category Algebraic_category; 
+    test_algebraic_structure< Coefficient,Algebraic_category,Tag_true>();
+    test_real_embeddable<Coefficient>();
+  }
+  typedef typename AlgebraicKernel_d_1::Polynomial_1 Polynomial_1; 
+  {
+    // check Polynomial_1
+    typedef Polynomial_traits_d<Polynomial_1> PT;
+    test_polynomial_traits_d(PT());
+
+    // test not possible due to bug in test_algebraic_structure
+    // div(3,2)=3/2 != 0 in case of Polynomial<Rational> 
+    //  typedef Algebraic_structure_traits<Polynomial_1> AST;
+    //  typedef typename AST::Algebraic_category Algebraic_category; 
+    //  test_algebraic_structure< Polynomial_1,Algebraic_category,Tag_true>();
+  }
+  typedef typename AlgebraicKernel_d_1::Algebraic_real_1 Algebraic_real_1;
+  {
+    // check Algebraic_real_1
+    test_real_embeddable<Algebraic_real_1>();
+  }
+  typedef typename AlgebraicKernel_d_1::Boundary Boundary;
+  { 
+    typedef Algebraic_structure_traits<Boundary> AST;
+    typedef typename AST::Algebraic_category Algebraic_category; 
+    test_algebraic_structure< Boundary,Algebraic_category,Tag_true>();
+    test_real_embeddable<Boundary>();
+  }
+  
+  test_explicit_interoperable_from_to<int, Coefficient>();
+  test_explicit_interoperable_from_to<int, Boundary>();
+
+  test_explicit_interoperable_from_to<int        , Algebraic_real_1>();
+  test_explicit_interoperable_from_to<Boundary   , Algebraic_real_1>();
+  test_explicit_interoperable_from_to<Coefficient, Algebraic_real_1>();
+}
+
+
+
 
 namespace CGALi {
 
@@ -34,7 +89,7 @@ class Isolator_,
 class Coefficient_, 
 class Polynomial1, 
 class Boundary_  >
-void test_algebraic_kernel_1() {
+void old_test_algebraic_kernel_1() {
     typedef AK_            AK;
     typedef AlgebraicReal1 Algebraic_real_1;
     typedef Isolator_      Isolator;
@@ -194,6 +249,9 @@ void test_algebraic_kernel_1() {
 }
 
 } //namespace CGALi
+
+
+
 
 CGAL_END_NAMESPACE
 
