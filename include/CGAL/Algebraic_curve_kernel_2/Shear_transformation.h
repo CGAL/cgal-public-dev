@@ -281,8 +281,8 @@ private:
         Algebraic_real_1 xv = ev.x();
         Bound lx = xv.low(), rx=xv.high(),
             x_iv_size = rx-lx;
-        Bound ly = ev.lower_boundary(index),
-            ry = ev.upper_boundary(index);;
+        Bound ly = ev.lower_bound(index),
+            ry = ev.upper_bound(index);;
         while(left_index < right_index) {
             if(x_iv_size > ry-ly) {
                 xv.refine();
@@ -292,8 +292,8 @@ private:
                 continue;
             }
             ev.refine(index);
-            ly = ev.lower_boundary(index);
-            ry = ev.upper_boundary(index);
+            ly = ev.lower_bound(index);
+            ry = ev.upper_bound(index);
             Bound left=(s>0) ? x_sheared(lx,ry,s): x_sheared(lx,ly,s);
             Bound right = (s>0) ? x_sheared(rx,ly,s) : x_sheared(rx,ry,s);
             CGAL_assertion(left<right);
@@ -325,12 +325,12 @@ private:
             Bitstream_descartes descartes(tag,sh_pol,traits);
             int m = descartes.number_of_real_roots();
             if(m>0) {
-                if(descartes.left_boundary(0)<lower_bound) {
-                    lower_bound = descartes.left_boundary(0);
+                if(descartes.left_bound(0)<lower_bound) {
+                    lower_bound = descartes.left_bound(0);
                 }
-                if(descartes.right_boundary(m-1) 
+                if(descartes.right_bound(m-1) 
                    > upper_bound) {
-                    upper_bound = descartes.right_boundary(m-1);
+                    upper_bound = descartes.right_bound(m-1);
                 }
             }
             // Create intermediate line for later use
@@ -482,16 +482,16 @@ private:
                 if(arcs_left==1 && arcs_right==1) {
 
                     Algebraic_real_1 left_y(left_pol,
-                                          left.lower_boundary(left_id),
-                                          left.upper_boundary(left_id));
+                                          left.lower_bound(left_id),
+                                          left.upper_bound(left_id));
 
                     CGAL::Sign left_sign 
                         = CGAL::CGALi::estimate_sign_at
                             (left_y,left_sh_der_sh_pol,0);
 
                     Algebraic_real_1 right_y(right_pol,
-                                           right.lower_boundary(right_id),
-                                           right.upper_boundary(right_id));
+                                           right.lower_bound(right_id),
+                                           right.upper_bound(right_id));
 
                     CGAL::Sign right_sign 
                         = CGAL::CGALi::estimate_sign_at
@@ -514,8 +514,8 @@ private:
                 }
                 else if(arcs_left==2 && arcs_right==0) {
                     Algebraic_real_1 left_y_1(left_pol,
-                                          left.lower_boundary(left_id),
-                                          left.upper_boundary(left_id));
+                                          left.lower_bound(left_id),
+                                          left.upper_bound(left_id));
 
                     CGAL::Sign left_sign_1 
                         = CGAL::CGALi::estimate_sign_at
@@ -523,8 +523,8 @@ private:
 
                     left_id++;
                     Algebraic_real_1 left_y_2(left_pol,
-                                          left.lower_boundary(left_id),
-                                          left.upper_boundary(left_id));
+                                          left.lower_bound(left_id),
+                                          left.upper_bound(left_id));
                     CGAL::Sign left_sign_2 
                         =CGAL::CGALi::estimate_sign_at
                             (left_y_2,left_sh_der_sh_pol,0);
@@ -544,16 +544,16 @@ private:
                 }
                 else if(arcs_left==0 && arcs_right==2) {
                     Algebraic_real_1 right_y_1(right_pol,
-                                               right.lower_boundary(right_id),
-                                               right.upper_boundary(right_id));
+                                               right.lower_bound(right_id),
+                                               right.upper_bound(right_id));
 
                     CGAL::Sign right_sign_1 
                         = CGAL::CGALi::estimate_sign_at
                             (right_y_1,right_sh_der_sh_pol,0);
                     right_id++;
                     Algebraic_real_1 right_y_2(right_pol,
-                                               right.lower_boundary(right_id),
-                                               right.upper_boundary(right_id));
+                                               right.lower_bound(right_id),
+                                               right.upper_bound(right_id));
                     CGAL::Sign right_sign_2 
                         = CGAL::CGALi::estimate_sign_at
                             (right_y_2,right_sh_der_sh_pol,0);
@@ -670,13 +670,13 @@ private:
         int number_of_non_event_roots;
         std::vector<Sh_ev_point_info> event_points;
       
-        Bound lower_boundary(int i) {
+        Bound lower_bound(int i) {
             Sh_ev_point_info p= event_points[i];
-            return p.ev.lower_boundary(p.index);
+            return p.ev.lower_bound(p.index);
         }
-        Bound upper_boundary(int i) {
+        Bound upper_bound(int i) {
             Sh_ev_point_info p= event_points[i];
-            return p.ev.upper_boundary(p.index);
+            return p.ev.upper_bound(p.index);
         }
         void refine(int i) {
             Sh_ev_point_info p= event_points[i];
@@ -725,11 +725,11 @@ private:
         } else {
             y_el.x_type=FINITE;
             y_el.x_index=stripe;
-            while((ev.upper_boundary(i)>y_in_box)  &&
-                  (ev.lower_boundary(i)<y_in_box)) {
+            while((ev.upper_bound(i)>y_in_box)  &&
+                  (ev.lower_bound(i)<y_in_box)) {
                 ev.refine(i);
             }
-            if(ev.upper_boundary(i)<y_in_box) {
+            if(ev.upper_bound(i)<y_in_box) {
                 y_el.y_type=MINUS_INFTY;
             }
             else {
@@ -1125,10 +1125,10 @@ private:
                 int n = static_cast<int>(pre_vert_lines[i].event_points.size());
                 int k=0;
                 while(k<n) {
-                    if((pre_vert_lines[i].lower_boundary(k)
-                        <=descartes.right_boundary(j)) &&
-                       (pre_vert_lines[i].upper_boundary(k)
-                        >=descartes.left_boundary(j))) {
+                    if((pre_vert_lines[i].lower_bound(k)
+                        <=descartes.right_bound(j)) &&
+                       (pre_vert_lines[i].upper_bound(k)
+                        >=descartes.left_bound(j))) {
                         break;
                     }
                     else {

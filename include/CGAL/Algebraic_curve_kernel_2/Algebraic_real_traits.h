@@ -57,8 +57,8 @@ struct Algebraic_real_traits_for_y {
     CGAL_SNAP_ALGEBRAIC_REAL_TRAITS_2_TYPEDEFS
     
     typedef Null_functor Bound_between;
-    typedef Null_functor Lower_boundary;
-    typedef Null_functor Upper_boundary;
+    typedef Null_functor Lower_bound;
+    typedef Null_functor Upper_bound;
     typedef Null_functor Refine;
 };
 
@@ -70,8 +70,8 @@ struct Algebraic_real_traits {
     typedef AlgebraicReal Algebraic_real;
     
     typedef Null_functor Bound_between;
-    typedef Null_functor Lower_boundary;
-    typedef Null_functor Upper_boundary;
+    typedef Null_functor Lower_bound;
+    typedef Null_functor Upper_bound;
     typedef Null_functor Refine;
 };
 
@@ -96,7 +96,7 @@ struct Algebraic_real_traits_for_y<Xy_coordinate_2<
     typedef typename Curve_2::Status_line Event_line;
 #endif
 
-    //! computes boundary between y-coordinates of two algebraic reals
+    //! computes bound between y-coordinates of two algebraic reals
     //! defined over the same vertical line
     struct Bound_between 
             : public std::binary_function< Type, Type, Bound > {
@@ -125,11 +125,11 @@ struct Algebraic_real_traits_for_y<Xy_coordinate_2<
                 low2 = r2.y().low();
                 high2 = r2.y().high();
 #else
-                low1 = vline1.lower_boundary(r1.arcno());
-                high1 = vline1.upper_boundary(r1.arcno());
+                low1 = vline1.lower_bound(r1.arcno());
+                high1 = vline1.upper_bound(r1.arcno());
                 
-                low2 = vline2.lower_boundary(r2.arcno());
-                high2 = vline2.upper_boundary(r2.arcno());
+                low2 = vline2.lower_bound(r2.arcno());
+                high2 = vline2.upper_bound(r2.arcno());
 #endif
                 
                 if (low1 > high2) {
@@ -168,9 +168,9 @@ struct Algebraic_real_traits_for_y<Xy_coordinate_2<
         }
     };
     
-    //! returns current lower boundary of an isolating interval defining 
+    //! returns current lower bound of an isolating interval defining 
     //! y-coordinate of an algebraic real
-    struct Lower_boundary
+    struct Lower_bound
             : public std::unary_function<Type, Bound> {
         
         Bound operator()(const Type& r) const {
@@ -179,14 +179,14 @@ struct Algebraic_real_traits_for_y<Xy_coordinate_2<
 #else
             Event_line vline = r.curve()._internal_curve().
                 event_info_at_x(r.x());
-            return vline.lower_boundary(r.arcno());
+            return vline.lower_bound(r.arcno());
 #endif
         }
     };
 
-    //! returns current upper boundary of an isolating interval defining 
+    //! returns current upper bound of an isolating interval defining 
     //! y-coordinate of an algebraic real
-    struct Upper_boundary
+    struct Upper_bound
             : public std::unary_function<Type, Bound> {
          
         Bound operator()(const Type& r) const {
@@ -195,7 +195,7 @@ struct Algebraic_real_traits_for_y<Xy_coordinate_2<
 #else
             Event_line vline = r.curve()._internal_curve().
                 event_info_at_x(r.x());
-            return vline.upper_boundary(r.arcno());
+            return vline.upper_bound(r.arcno());
 #endif
         }
     };
@@ -222,8 +222,8 @@ struct Algebraic_real_traits_for_y<Xy_coordinate_2<
         //! resulting interval is:
         //! <tt>|lower - upper|/|r.y()| <= 2^(-rel_prec)</tt> 
         void operator()(const Type& r, int rel_prec) const {
-            Bound low = Lower_boundary()(r);
-            Bound high = Upper_boundary()(r);
+            Bound low = Lower_bound()(r);
+            Bound high = Upper_bound()(r);
             
             Bound prec = (high - low) /
                 CGAL::ipower(Bound(2), rel_prec);
@@ -233,8 +233,8 @@ struct Algebraic_real_traits_for_y<Xy_coordinate_2<
             // Refine until both boundaries have the same sign
             while (CGAL::sign(low) != CGAL::sign(high)) {
                 Refine()(r);
-                low = Lower_boundary()(r);
-                high = Upper_boundary()(r);
+                low = Lower_bound()(r);
+                high = Upper_bound()(r);
             }
             
             CGAL_assertion(
@@ -245,8 +245,8 @@ struct Algebraic_real_traits_for_y<Xy_coordinate_2<
             while (((high - low) / CGAL::max(CGAL::abs(high), CGAL::abs(low)))
                    > prec ) {
                 Refine()(r);
-                low = Lower_boundary()(r);
-                high = Upper_boundary()(r);
+                low = Lower_bound()(r);
+                high = Upper_bound()(r);
             }
         }
     };
@@ -270,10 +270,10 @@ struct Algebraic_real_traits<CGAL::CGALi::Algebraic_real_pure
     //! just a Type ?
     typedef Algebraic_real_1 Type;
 
-    //! boundary type
+    //! bound type
     typedef typename Algebraic_real_1::Rational Bound;
 
-    //! computes rational boundary between two algebraic reals
+    //! computes rational bound between two algebraic reals
     struct Bound_between 
         : public std::binary_function< Type, Type, Bound > {
         
@@ -282,8 +282,8 @@ struct Algebraic_real_traits<CGAL::CGALi::Algebraic_real_pure
         }
     };
 
-    //! returns current lower boundary of an algebraic real
-    struct Lower_boundary
+    //! returns current lower bound of an algebraic real
+    struct Lower_bound
         : public std::unary_function< Type, Bound > {
                     
         Bound operator()(const Type& t) const {
@@ -291,8 +291,8 @@ struct Algebraic_real_traits<CGAL::CGALi::Algebraic_real_pure
         }
     };
 
-    //! returns current upper boundary of an algebraic real
-    struct Upper_boundary
+    //! returns current upper bound of an algebraic real
+    struct Upper_bound
         : public std::unary_function< Type, Bound > {
         
         Bound operator()(const Type& t) const {
@@ -359,7 +359,7 @@ struct Algebraic_real_traits_for_y<Xy_coordinate_2<
 
     typedef typename Status_line_1::Bitstream_descartes Isolator;
 
-    //! computes boundary between y-coordinates of two algebraic reals
+    //! computes bound between y-coordinates of two algebraic reals
     //! defined over the same vertical line
     struct Bound_between 
             : public std::binary_function< Type, Type, Bound > {
@@ -379,11 +379,11 @@ struct Algebraic_real_traits_for_y<Xy_coordinate_2<
             Bound low1, low2, high1, high2;
             
             while (true) {
-                low1 = isol1.left_boundary(r1.arcno());
-                high1 = isol1.right_boundary(r1.arcno());
+                low1 = isol1.left_bound(r1.arcno());
+                high1 = isol1.right_bound(r1.arcno());
                 
-                low2 = isol2.left_boundary(r2.arcno());
-                high2 = isol2.right_boundary(r2.arcno());
+                low2 = isol2.left_bound(r2.arcno());
+                high2 = isol2.right_bound(r2.arcno());
                 
                 if (low1 > high2) {
                     res = ((low1 + high2)/Bound(2));
@@ -416,25 +416,25 @@ struct Algebraic_real_traits_for_y<Xy_coordinate_2<
         }
     };
     
-    //! returns current lower boundary of an isolating interval defining 
+    //! returns current lower bound of an isolating interval defining 
     //! y-coordinate of an algebraic real
-    struct Lower_boundary
+    struct Lower_bound
             : public std::unary_function<Type, Bound> {
         
         Bound operator()(const Type& r) const {
             return r.curve().status_line_at_exact_x(r.x()).
-                lower_boundary(r.arcno());
+                lower_bound(r.arcno());
         }
     };
 
-    //! returns current upper boundary of an isolating interval defining 
+    //! returns current upper bound of an isolating interval defining 
     //! y-coordinate of an algebraic real
-    struct Upper_boundary
+    struct Upper_bound
             : public std::unary_function<Type, Bound> {
          
         Bound operator()(const Type& r) const {
             return r.curve().status_line_at_exact_x(r.x()).
-                upper_boundary(r.arcno());
+                upper_bound(r.arcno());
         }
     };
                 
@@ -455,8 +455,8 @@ struct Algebraic_real_traits_for_y<Xy_coordinate_2<
         //! resulting interval is:
         //! <tt>|lower - upper|/|r.y()| <= 2^(-rel_prec)</tt> 
         void operator()(const Type& r, int rel_prec) const {
-            Bound low = Lower_boundary()(r);
-            Bound high = Upper_boundary()(r);
+            Bound low = Lower_bound()(r);
+            Bound high = Upper_bound()(r);
             
             Bound prec = (high - low) /
                 CGAL::ipower(Bound(2), rel_prec);
@@ -466,8 +466,8 @@ struct Algebraic_real_traits_for_y<Xy_coordinate_2<
             // Refine until both boundaries have the same sign
             while (CGAL::sign(low) != CGAL::sign(high)) {
                 Refine()(r);
-                low = Lower_boundary()(r);
-                high = Upper_boundary()(r);
+                low = Lower_bound()(r);
+                high = Upper_bound()(r);
             }
             
             CGAL_assertion(
@@ -478,8 +478,8 @@ struct Algebraic_real_traits_for_y<Xy_coordinate_2<
             while (((high - low) / CGAL::max(CGAL::abs(high), CGAL::abs(low)))
                    > prec ) {
                 Refine()(r);
-                low = Lower_boundary()(r);
-                high = Upper_boundary()(r);
+                low = Lower_bound()(r);
+                high = Upper_bound()(r);
             }
         }
     };

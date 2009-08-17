@@ -226,11 +226,11 @@ public:
 #if CGAL_ACK_USE_EXACUS
                 this->ptr()->_m_cpa._internal_curve_pair().event_x(index()) :
                 Algebraic_real_1(this->ptr()->_m_cpa._internal_curve_pair().
-                               boundary_value_in_interval(index())));
+                               bound_value_in_interval(index())));
 #else   
                 this->ptr()->_m_cpa.event_x(index()) :
                 Algebraic_real_1(this->ptr()->_m_cpa.
-                    boundary_value_in_interval(index())));
+                    bound_value_in_interval(index())));
 #endif
         }
         return *(this->ptr()->_m_x);

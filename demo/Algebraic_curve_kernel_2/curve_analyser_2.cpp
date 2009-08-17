@@ -130,22 +130,22 @@ void find_asymptote_places(double& minus,double& plus,
     for(InputIterator1 curr=event_begin;curr!=event_end;curr++) {
         int n = curr->number_of_events();
         if(n>0) {
-            if(minus > CGAL::to_double(curr->lower_boundary(0))) {
-                minus= CGAL::to_double(curr->lower_boundary(0));
+            if(minus > CGAL::to_double(curr->lower_bound(0))) {
+                minus= CGAL::to_double(curr->lower_bound(0));
             }
-            if(plus < CGAL::to_double(curr->upper_boundary(n-1))) {
-                plus=CGAL::to_double(curr->upper_boundary(n-1));
+            if(plus < CGAL::to_double(curr->upper_bound(n-1))) {
+                plus=CGAL::to_double(curr->upper_bound(n-1));
             }
         }
     }
     for(InputIterator2 curr=intermediate_begin;curr!=intermediate_end;curr++) {
         int n = curr->number_of_events();
         if(n>0) {
-            if(minus > CGAL::to_double(curr->lower_boundary(0))) {
-                minus=CGAL::to_double(curr->lower_boundary(0));
+            if(minus > CGAL::to_double(curr->lower_bound(0))) {
+                minus=CGAL::to_double(curr->lower_bound(0));
             }
-            if(plus < CGAL::to_double(curr->upper_boundary(n-1))) {
-                plus=CGAL::to_double(curr->upper_boundary(n-1));
+            if(plus < CGAL::to_double(curr->upper_bound(n-1))) {
+                plus=CGAL::to_double(curr->upper_bound(n-1));
             }
         }
     }
@@ -238,8 +238,8 @@ void connect (std::ofstream& out,
                 yl=asym_y_value_plus;
             }
             else {
-                yl = (CGAL::to_double(line1.upper_boundary(indices1[i]))
-                      + CGAL::to_double(line1.upper_boundary(indices1[i])))/2.0;
+                yl = (CGAL::to_double(line1.upper_bound(indices1[i]))
+                      + CGAL::to_double(line1.upper_bound(indices1[i])))/2.0;
             }
         }
     
@@ -253,8 +253,8 @@ void connect (std::ofstream& out,
                 yr=asym_y_value_plus;
             }
             else {
-                yr = (CGAL::to_double(line2.upper_boundary(indices2[i]))
-                      + CGAL::to_double(line2.upper_boundary(indices2[i])))/2.0;
+                yr = (CGAL::to_double(line2.upper_bound(indices2[i]))
+                      + CGAL::to_double(line2.upper_bound(indices2[i])))/2.0;
             }
         }
         out << "#m=1,S=0\n" << xl << " " << yl << "\n" << xr << " " << yr << "\n";
@@ -410,8 +410,8 @@ int main(int argc,char** argv) {
             for(int i = 0; i<ev_it->number_of_events();i++) {
                 if(ev_it->is_event(i)) {
                     double x=CGAL::to_double(ev_it->x());
-                    double y=(CGAL::to_double(ev_it->upper_boundary(i))
-                              +CGAL::to_double(ev_it->lower_boundary(i)))/2.0;
+                    double y=(CGAL::to_double(ev_it->upper_bound(i))
+                              +CGAL::to_double(ev_it->lower_bound(i)))/2.0;
                     out <<  x << " " << y << "\n"; 
                 }
             }

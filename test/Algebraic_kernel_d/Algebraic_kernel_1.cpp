@@ -29,7 +29,7 @@
 
 
 template< class Coefficient_, class Bound_, class RepClass >
-void test_algebraic_kernel_coeff_boundary_rep() {
+void test_algebraic_kernel_coeff_bound_rep() {
   typedef Coefficient_ Coefficient;
   typedef Bound_    Bound;
   typedef RepClass     Rep_class;
@@ -60,12 +60,12 @@ void test_algebraic_kernel_coeff_boundary_rep() {
 
 
 template< class Coeff, class Bound >
-void test_algebraic_kernel_coeff_boundary() {
-  test_algebraic_kernel_coeff_boundary_rep<Coeff,Bound,
+void test_algebraic_kernel_coeff_bound() {
+  test_algebraic_kernel_coeff_bound_rep<Coeff,Bound,
     CGAL::CGALi::Algebraic_real_rep< Coeff, Bound > > ();
-  test_algebraic_kernel_coeff_boundary_rep<Coeff,Bound,
+  test_algebraic_kernel_coeff_bound_rep<Coeff,Bound,
     CGAL::CGALi::Algebraic_real_rep_bfi< Coeff, Bound > > ();
-  test_algebraic_kernel_coeff_boundary_rep<Coeff,Bound,
+  test_algebraic_kernel_coeff_bound_rep<Coeff,Bound,
     CGAL::CGALi::Algebraic_real_quadratic_refinement_rep_bfi< Coeff, Bound > > ();
 }
 
@@ -76,13 +76,13 @@ void test_algebraic_kernel() {
   typedef typename AK::Integer Integer;
   typedef typename AK::Rational Rational; 
 
-  test_algebraic_kernel_coeff_boundary<Integer, Rational>();
-  test_algebraic_kernel_coeff_boundary<Rational, Rational>();
-  test_algebraic_kernel_coeff_boundary
+  test_algebraic_kernel_coeff_bound<Integer, Rational>();
+  test_algebraic_kernel_coeff_bound<Rational, Rational>();
+  test_algebraic_kernel_coeff_bound
     <CGAL::Sqrt_extension< Integer, Integer>, Rational>();
-  test_algebraic_kernel_coeff_boundary
+  test_algebraic_kernel_coeff_bound
     <CGAL::Sqrt_extension< Rational, Integer>, Rational>();
-  test_algebraic_kernel_coeff_boundary
+  test_algebraic_kernel_coeff_bound
     <CGAL::Sqrt_extension< Rational, Rational>, Rational>();
 }
 

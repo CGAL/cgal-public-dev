@@ -147,7 +147,7 @@ public:
     //! type for approximation boundaries
     typedef typename X_real_traits_1::Bound Bound;
 
-    //! type for boundary intervals
+    //! type for bound intervals
     typedef boost::numeric::interval<Bound> Bound_interval;
 
     typedef CGAL::Coercion_traits<Coefficient,Bound> Coercion;
@@ -590,8 +590,8 @@ public:
         double double_x = this->ptr()->_m_x.to_double();
         double double_y;
 
-        typename Y_real_traits_1::Lower_boundary lower;
-        typename Y_real_traits_1::Upper_boundary upper;
+        typename Y_real_traits_1::Lower_bound lower;
+        typename Y_real_traits_1::Upper_bound upper;
         typename Y_real_traits_1::Refine refine;
 
         if (lower(*this)==upper(*this)) {
@@ -631,8 +631,8 @@ public:
      */
     Bound_interval get_approximation_x() const {
         
-        typename X_real_traits_1::Lower_boundary lower;
-        typename X_real_traits_1::Upper_boundary upper;
+        typename X_real_traits_1::Lower_bound lower;
+        typename X_real_traits_1::Upper_bound upper;
 
         return Bound_interval(lower(this->ptr()->_m_x), 
                                  upper(this->ptr()->_m_x));
@@ -646,8 +646,8 @@ public:
         
         CGAL_assertion(bound > 0);
 
-        typename X_real_traits_1::Lower_boundary lower;
-        typename X_real_traits_1::Upper_boundary upper;
+        typename X_real_traits_1::Lower_bound lower;
+        typename X_real_traits_1::Upper_bound upper;
         typename X_real_traits_1::Refine refine;
 
         while(upper(this->ptr()->_m_x) - lower(this->ptr()->_m_x) >= bound) {
@@ -663,8 +663,8 @@ public:
      *
      */
     Bound_interval get_approximation_y() const {
-        typename Y_real_traits_1::Lower_boundary lower;
-        typename Y_real_traits_1::Upper_boundary upper;
+        typename Y_real_traits_1::Lower_bound lower;
+        typename Y_real_traits_1::Upper_bound upper;
         return Bound_interval(lower(*this), upper(*this));
     }
 
@@ -675,8 +675,8 @@ public:
         
         CGAL_assertion(bound > 0);
 
-        typename Y_real_traits_1::Lower_boundary lower;
-        typename Y_real_traits_1::Upper_boundary upper;
+        typename Y_real_traits_1::Lower_bound lower;
+        typename Y_real_traits_1::Upper_bound upper;
         typename Y_real_traits_1::Refine refine;
 
         while(upper(*this) - lower(*this) >= bound) {
@@ -716,11 +716,11 @@ public:
            
         double x_min, x_max, y_min, y_max;
         
-        typename X_real_traits_1::Lower_boundary x_lower;
-        typename X_real_traits_1::Upper_boundary x_upper;
+        typename X_real_traits_1::Lower_bound x_lower;
+        typename X_real_traits_1::Upper_bound x_upper;
         
-        typename Y_real_traits_1::Lower_boundary y_lower;
-        typename Y_real_traits_1::Upper_boundary y_upper;
+        typename Y_real_traits_1::Lower_bound y_lower;
+        typename Y_real_traits_1::Upper_bound y_upper;
         
         x_min = CGAL::to_interval(x_lower(this->x())).first;
         x_max = CGAL::to_interval(x_upper(this->x())).second;

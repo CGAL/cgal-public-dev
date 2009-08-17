@@ -182,7 +182,7 @@ int operator()(const Real_root_isolator&    isolator,
     // take out exact known roots out of Poly
     for(int j = 0 ; j < isolator.number_of_real_roots(); j++){
         if(isolator.is_exact_root(j)){
-            Rational root(isolator.left_boundary(j));
+            Rational root(isolator.left_bound(j));
             CGAL::simplify(root);
             typedef CGAL::Fraction_traits<Rational> FT;
             typename FT::Numerator_type num;
@@ -202,13 +202,13 @@ int operator()(const Real_root_isolator&    isolator,
     for(int j = 0 ; j < isolator.number_of_real_roots(); j++){
         if(isolator.is_exact_root(j)){
             // exact roots (Rational
-            Rational root=isolator.left_boundary(j);
+            Rational root=isolator.left_bound(j);
             CGAL::simplify(root);
             *it++=AlgebraicReal(root);
         }else{
             // other roots 
-            Rational left = isolator.left_boundary(j);
-            Rational right= isolator.right_boundary(j);
+            Rational left = isolator.left_bound(j);
+            Rational right= isolator.right_bound(j);
             CGAL::simplify(left);
             CGAL::simplify(right);
             AlgebraicReal tmp(poly,left,right);

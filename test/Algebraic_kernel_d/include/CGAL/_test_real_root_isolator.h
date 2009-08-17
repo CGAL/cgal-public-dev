@@ -39,8 +39,8 @@ int check_intervals_real_root_isolator(
     Isolator Isol(P);
     int n = Isol.number_of_real_roots();
     for(int i=0; i<n; i++) {
-       Bound left  = Isol.left_boundary(i);
-       Bound right = Isol.right_boundary(i);
+       Bound left  = Isol.left_bound(i);
+       Bound right = Isol.right_bound(i);
 
        if(!Isol.is_exact_root(i)) {
            assert(left < right);
@@ -68,8 +68,8 @@ int check_intervals_real_root_isolator(
   Isolator Isol(P,a,b);
   int n = Isol.number_of_real_roots();
   for(int i=0; i<n; i++) {
-  Bound left = Isol.left_boundary(i);
-  Bound right = Isol.right_boundary(i);
+  Bound left = Isol.left_bound(i);
+  Bound right = Isol.right_bound(i);
   
   assert( left < right || Isol.is_exact_root(i));
   if(!Isol.is_exact_root(i)) {

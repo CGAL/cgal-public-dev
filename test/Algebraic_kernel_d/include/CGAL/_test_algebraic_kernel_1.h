@@ -89,7 +89,7 @@ void test_algebraic_kernel_1(const AlgebraicKernel_d_1& ak_1){
   CGAL_GET_FTOR(Sign_at_1, sign_at_1, sign_at_1_object);
   CGAL_GET_FTOR(Compare_1, compare_1, compare_1_object);
   CGAL_GET_FTOR(Refine_1, refine_1, refine_1_object);
-  CGAL_GET_FTOR(Bound_between_1, bound_between_1, boundary_between_1_object);
+  CGAL_GET_FTOR(Bound_between_1, bound_between_1, bound_between_1_object);
   CGAL_GET_FTOR(Approximate_absolute_1, approximate_absolute_1, approximate_absolute_1_object);
   CGAL_GET_FTOR(Approximate_relative_1, approximate_relative_1, approximate_relative_1_object);
 
@@ -224,44 +224,44 @@ void old_test_algebraic_kernel_1() {
     solve_1( p2, std::back_inserter( roots_vec2 ) );
     
     // Test AK::Bound_between...
-    typename AK::Bound_between_1 boundary_between 
-      = AK().boundary_between_1_object();
+    typename AK::Bound_between_1 bound_between 
+      = AK().bound_between_1_object();
     assert( typename AK::Bound( -2 ) < 
-        boundary_between( roots_vec2[0], roots_vec2[1] ) );
+        bound_between( roots_vec2[0], roots_vec2[1] ) );
     assert( typename AK::Bound(  2 ) > 
-        boundary_between( roots_vec2[0], roots_vec2[1] ) );
+        bound_between( roots_vec2[0], roots_vec2[1] ) );
     
-    // Test AK::Lower_boundary
-    typename AK::Lower_boundary_1 lower_boundary 
-      = AK().lower_boundary_1_object();
-    assert( lower_boundary( roots_vec2[0] ) < typename AK::Bound(-1) );
-    assert( lower_boundary( roots_vec2[1] ) < typename AK::Bound( 2) );
+    // Test AK::Lower_bound
+    typename AK::Lower_bound_1 lower_bound 
+      = AK().lower_bound_1_object();
+    assert( lower_bound( roots_vec2[0] ) < typename AK::Bound(-1) );
+    assert( lower_bound( roots_vec2[1] ) < typename AK::Bound( 2) );
 
-    // Test AK::Upper_boundary
-    typename AK::Upper_boundary_1 upper_boundary
-      = AK().upper_boundary_1_object();
-    assert( upper_boundary( roots_vec2[0] ) > typename AK::Bound(-1) );
-    assert( upper_boundary( roots_vec2[1] ) > typename AK::Bound( 1) );
+    // Test AK::Upper_bound
+    typename AK::Upper_bound_1 upper_bound
+      = AK().upper_bound_1_object();
+    assert( upper_bound( roots_vec2[0] ) > typename AK::Bound(-1) );
+    assert( upper_bound( roots_vec2[1] ) > typename AK::Bound( 1) );
     
     // Test AK::Refine
     typename AK::Refine_1 refine
       = AK().refine_1_object();
     Algebraic_real_1 ar = roots_vec2[1];
-    typename AK::Bound old_lower_boundary = ar.low();
-    typename AK::Bound old_upper_boundary = ar.high(); 
+    typename AK::Bound old_lower_bound = ar.low();
+    typename AK::Bound old_upper_bound = ar.high(); 
 
     refine( ar );
     
-    assert( old_lower_boundary <= lower_boundary( ar ) );
-    assert( old_upper_boundary >= upper_boundary( ar ) );
+    assert( old_lower_bound <= lower_bound( ar ) );
+    assert( old_upper_bound >= upper_bound( ar ) );
     typename AK::Bound interval_size_old 
-      = CGAL::abs( old_upper_boundary - old_lower_boundary );
+      = CGAL::abs( old_upper_bound - old_lower_bound );
     typename AK::Bound interval_size_new 
-      = CGAL::abs( upper_boundary( ar ) - lower_boundary( ar ) );
+      = CGAL::abs( upper_bound( ar ) - lower_bound( ar ) );
     assert( interval_size_new * typename AK::Bound(2) <= interval_size_old );
     
     refine( ar, 100 );
-    assert( CGAL::abs( upper_boundary( ar ) - lower_boundary( ar ) ) < 
+    assert( CGAL::abs( upper_bound( ar ) - lower_bound( ar ) ) < 
         (typename AK::Bound(1) / CGAL::ipower(typename AK::Bound(2), 99 )) );
 
 }

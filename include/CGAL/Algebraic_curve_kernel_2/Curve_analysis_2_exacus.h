@@ -241,14 +241,14 @@ public:
         typedef typename Internal_curve_2::Event1_info Event1_info;
         size_type n_arcs = _internal_curve().arcs_over_interval(i);
         Status_line_1 sline
-            (X_coordinate_1(_internal_curve().boundary_value_in_interval(i)),
+            (X_coordinate_1(_internal_curve().bound_value_in_interval(i)),
              i,
              *this,
              n_arcs);
 #ifndef CGAL_ACK_2_USE_STATUS_LINES
         Event1_info info 
             = _internal_curve().event_info_at_x
-            (_internal_curve().boundary_value_in_interval(i));
+            (_internal_curve().bound_value_in_interval(i));
         sline.set_isolator(info.refinement());
 #endif
         return sline;
@@ -310,7 +310,7 @@ public:
 
     /*!\brief
      * returns a \c CGAL::Object that encodes the asymptotic value of a
-     * curve-arc approaching the left or the right boundary \c loc of the
+     * curve-arc approaching the left or the right bound \c loc of the
      * underlying parameter space.
      *
      * Allowed instantiations of the \c CGAL::Object are \c Algebraic_real_1 ,

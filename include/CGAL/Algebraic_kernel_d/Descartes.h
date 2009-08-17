@@ -59,7 +59,7 @@ public:
     typedef Rational_ Rational;
     //! Bound type of the isolating intervals
     typedef Rational_ Bound;
-    // Integer or Numerator/Denominator type of boundary.
+    // Integer or Numerator/Denominator type of bound.
     typedef typename CGAL::Fraction_traits<Rational>::Numerator_type Integer;
 private:
     typedef typename Polynomial::NT Coeff;
@@ -182,9 +182,9 @@ public: // functions
       single point.
       
       If is_exact_root(i) is true, 
-      then left_boundary(int i) equals  \f$root_i\f$. \n
+      then left_bound(int i) equals  \f$root_i\f$. \n
       If is_exact_root(i) is true, 
-      then right_boundary(int i) equals  \f$root_i\f$. \n 
+      then right_bound(int i) equals  \f$root_i\f$. \n 
     */
     bool is_exact_root(int i) const { return is_exact[i]; }
       
@@ -193,7 +193,7 @@ public: // functions
 public:   
   
   
-    void left_boundary(int i, IT& numerator_, IT& denominator_) const {
+    void left_bound(int i, IT& numerator_, IT& denominator_) const {
         CGAL_assertion(i >= 0 && i < number_of_real_roots_);
         construct_binary(denominator_exponent[i], denominator_);
         numerator_= SCALE * numerator[i] + LEFT * denominator_;
@@ -201,10 +201,10 @@ public:
     }
     
   
-    void right_boundary(int i,IT& numerator_, IT& denominator_) const {
+    void right_bound(int i,IT& numerator_, IT& denominator_) const {
         CGAL_assertion(i >= 0 && i < number_of_real_roots_);
         if(is_exact[i]){
-            return left_boundary(i,numerator_,denominator_);
+            return left_bound(i,numerator_,denominator_);
         }
         else{
             construct_binary(denominator_exponent[i],denominator_);
@@ -214,7 +214,7 @@ public:
     }
 public:
     
-    /*! \brief returns  \f${l_i}\f$ the left boundary of the isolating interval 
+    /*! \brief returns  \f${l_i}\f$ the left bound of the isolating interval 
       for root  \f$root_{i}\f$.
       
       In case is_exact_root(i) is true,  \f$l_i = root_{i}\f$,\n
@@ -222,17 +222,17 @@ public:
          
       If  \f$i-1>=0\f$, then  \f$l_i > root_{i-1}\f$. \n
       If  \f$i-1>=0\f$, then  \f$l_i >= r_{i-1}\f$, 
-      the right boundary of  \f$root_{i-1}\f$\n
+      the right bound of  \f$root_{i-1}\f$\n
 
       \pre 0 <= i < number_of_real_roots()
     */
-    Rational left_boundary(int i) const { 
+    Rational left_bound(int i) const { 
         IT numerator_, denominator_;
-        left_boundary(i,numerator_,denominator_);
+        left_bound(i,numerator_,denominator_);
         return Rational(numerator_) / Rational(denominator_);
     }
     
-    /*! \brief returns  \f${r_i}\f$ the right boundary of the isolating interval 
+    /*! \brief returns  \f${r_i}\f$ the right bound of the isolating interval 
       for root  \f$root_{i}\f$.
       
       In case is_exact_root(i) is true,  \f$r_i = root_{i}\f$,\n
@@ -241,14 +241,14 @@ public:
       If  \f$i+1< n \f$, then  \f$r_i < root_{i+1}\f$,
       where \f$n\f$ is number of real roots.\n
       If  \f$i+1< n \f$, then  \f$r_i <= l_{i+1}\f$, 
-      the left boundary of  \f$root_{i+1}\f$\n
+      the left bound of  \f$root_{i+1}\f$\n
 
         
       \pre 0 <= i < number_of_real_roots()
     */
-    Rational right_boundary(int i) const { 
+    Rational right_bound(int i) const { 
         IT numerator_, denominator_;
-        right_boundary(i,numerator_,denominator_);
+        right_bound(i,numerator_,denominator_);
         return Rational(numerator_) / Rational(denominator_);
     }  
     

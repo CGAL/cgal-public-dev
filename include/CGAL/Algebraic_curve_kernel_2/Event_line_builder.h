@@ -761,8 +761,8 @@ protected:
             CGAL::set_precision(BFI(),prec);
             std::cout << "Increased to " << prec << std::endl;
             BFI isol_iv 
-                = CGAL::hull(CGAL::convert_to_bfi(bit_des.left_boundary(c)),
-                             CGAL::convert_to_bfi(bit_des.right_boundary(c)));
+                = CGAL::hull(CGAL::convert_to_bfi(bit_des.left_bound(c)),
+                             CGAL::convert_to_bfi(bit_des.right_bound(c)));
             BFI q_iv = alpha_kernel.convert_to_bfi_object()(q);
             if(! CGAL::in_zero(q_iv)) {
                 BFI p_iv = alpha_kernel.convert_to_bfi_object()(p);

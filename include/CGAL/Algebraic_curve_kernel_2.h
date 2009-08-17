@@ -452,7 +452,7 @@ public:
      * consuming taks, since it is against the "y-per-x"-view that we take
      * in our kernel. Therefore, it is recommended, if possible,
      *  to use the functors
-     * \c Lower_boundary_y_2 and \c Upper_boundary_y_2 instead that 
+     * \c Lower_bound_y_2 and \c Upper_bound_y_2 instead that 
      * return approximation of the y-coordinate. The approximation can be
      * made arbitrarily good by iteratively calling \c Refine_y_2.}
      */
@@ -521,53 +521,53 @@ public:
     };
     CGAL_Algebraic_Kernel_pred(Refine_y_2, refine_y_2_object);
     
-    //! a lower boundary of the x-coordinate of \c r
-    struct Lower_boundary_x_2 {
+    //! a lower bound of the x-coordinate of \c r
+    struct Lower_bound_x_2 {
        
         typedef Xy_coordinate_2 argument_type;
         typedef Bound result_type;
             
         result_type operator()(const Xy_coordinate_2& r) {
-            return typename X_real_traits_1::Lower_boundary()(r.x());
+            return typename X_real_traits_1::Lower_bound()(r.x());
         }
     };
-    CGAL_Algebraic_Kernel_cons(Lower_boundary_x_2, lower_boundary_x_2_object);
+    CGAL_Algebraic_Kernel_cons(Lower_bound_x_2, lower_bound_x_2_object);
     
-    //! an upper boundary of the x-coordinate of \c r
-    struct Upper_boundary_x_2 {
+    //! an upper bound of the x-coordinate of \c r
+    struct Upper_bound_x_2 {
        
         typedef Xy_coordinate_2 agrument_type;
         typedef Bound result_type;
             
         result_type operator()(const Xy_coordinate_2& r) {
-            return typename X_real_traits_1::Upper_boundary()(r.x());
+            return typename X_real_traits_1::Upper_bound()(r.x());
         }
     };
-    CGAL_Algebraic_Kernel_cons(Upper_boundary_x_2, upper_boundary_x_2_object);
+    CGAL_Algebraic_Kernel_cons(Upper_bound_x_2, upper_bound_x_2_object);
     
-    //! a lower boundary of the x-coordinate of \c r
-    struct Lower_boundary_y_2 {
+    //! a lower bound of the x-coordinate of \c r
+    struct Lower_bound_y_2 {
        
         typedef Xy_coordinate_2 agrument_type;
         typedef Bound result_type;
             
         result_type operator()(const Xy_coordinate_2& r) {
-            return typename Y_real_traits_1::Lower_boundary()(r);
+            return typename Y_real_traits_1::Lower_bound()(r);
         }
     };
-    CGAL_Algebraic_Kernel_cons(Lower_boundary_y_2, lower_boundary_y_2_object);
+    CGAL_Algebraic_Kernel_cons(Lower_bound_y_2, lower_bound_y_2_object);
     
-    //! an upper boundary of the y-coordinate of \c r
-    struct Upper_boundary_y_2 {
+    //! an upper bound of the y-coordinate of \c r
+    struct Upper_bound_y_2 {
        
         typedef Xy_coordinate_2 agrument_type;
         typedef Bound result_type;
             
         result_type operator()(const Xy_coordinate_2& r) {
-            return typename Y_real_traits_1::Upper_boundary()(r);
+            return typename Y_real_traits_1::Upper_bound()(r);
         }
     };
-    CGAL_Algebraic_Kernel_cons(Upper_boundary_y_2, upper_boundary_y_2_object);
+    CGAL_Algebraic_Kernel_cons(Upper_bound_y_2, upper_bound_y_2_object);
     
     /*! 
      * \brief returns a value of type \c Bound that lies between
@@ -588,7 +588,7 @@ public:
         }
     };
     CGAL_Algebraic_Kernel_cons(Bound_between_x_2, 
-            boundary_between_x_2_object);
+            bound_between_x_2_object);
             
     /*! 
      * \brief returns a value of type \c Bound that lies between
@@ -608,7 +608,7 @@ public:
         }
     };
     CGAL_Algebraic_Kernel_cons(Bound_between_y_2, 
-            boundary_between_y_2_object);
+            bound_between_y_2_object);
     
     //! \brief comparison of x-coordinates 
     struct Compare_x_2 :

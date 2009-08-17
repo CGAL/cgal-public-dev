@@ -456,11 +456,11 @@ namespace CGALi {
 /* The template argument supplied as BitstreamDescartesRndlTreeTraits
  * shall be a class containing the following types in its scope:
  *   Coefficient:           caller-supplied coefficient type
- *   Bound:              type for interval boundary output (exact)
+ *   Bound:              type for interval bound output (exact)
  *   Integer:               integer type for actual calculations, needs >>, <<
  *   Approximator:          functor to get Integer approx to x*2^p from coeff x
  *   Lower_bound_log2_abs:  functor for lower bound to log|x| for coeff x
- *   Bound_creator:      functor to create boundary x*2^p from x and p
+ *   Bound_creator:      functor to create bound x*2^p from x and p
  *   Sign:                  functor to get sign of Integer x
  *   Ceil_log2_abs_Integer: functor to get smallest long >= log|x| for Integer
  *   Ceil_log2_abs_long:    functor to get smallest long >= log|x| for long
@@ -686,7 +686,7 @@ public:
     however, you can pass it to various member functions
     that tell you the relevant data about the interval
     represented by the node, e.g., \c lower() and \c upper()
-    boundary and \c min_var() and \c max_var().
+    bound and \c min_var() and \c max_var().
 
     Most importantly, you can \c subdivide() a node.
     Conceptually, this replaces the interval by two subintervals.
@@ -1000,19 +1000,19 @@ public:
         return this->ptr()->node_list_.end();
     }
 
-    //! get lower boundary of interval at node \c n.
+    //! get lower bound of interval at node \c n.
     Bound lower(Node_iterator n) const {
         return Bound_creator()(n->lower_num_, -n->log_bdry_den_);
     }
-    //! get lower boundary of interval at node \c n.
+    //! get lower bound of interval at node \c n.
     Bound lower(Node_const_iterator n) const {
         return Bound_creator()(n->lower_num_, -n->log_bdry_den_);
     }
-    //! get upper boundary of interval at node \c n.
+    //! get upper bound of interval at node \c n.
     Bound upper(Node_iterator n) const {
         return Bound_creator()(n->upper_num_, -n->log_bdry_den_);
     }
-    //! get upper boundary of interval at node \c n.
+    //! get upper bound of interval at node \c n.
     Bound upper(Node_const_iterator n) const {
         return Bound_creator()(n->upper_num_, -n->log_bdry_den_);
     }

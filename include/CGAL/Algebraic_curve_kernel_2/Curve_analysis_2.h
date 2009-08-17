@@ -287,14 +287,14 @@ private:
 
     /*!
      * \brief Coercion between the coefficient type of the polynomial
-     * and the boundary type of the curve analysis
+     * and the bound type of the curve analysis
      *
      * Interoperability of both types is required
      */
     typedef CGAL::Coercion_traits<Bound, Coefficient> Coercion;
 
     /*!
-     * \brief The common supertype that both the coefficient and the boundary
+     * \brief The common supertype that both the coefficient and the bound
      * type are convertible to
      */
     typedef typename Coercion::Type Coercion_type;
@@ -934,27 +934,27 @@ private:
         } else {
             bucket_borders.push_back(
                     CGAL::CGALi::simple_rational_left_of
-                        (Algebraic_real_1(isolator.left_boundary(0))));
+                        (Algebraic_real_1(isolator.left_bound(0))));
             for(int i = 1; i < n; i++) {
-                while(Algebraic_real_1(isolator.right_boundary(i-1))==
-                      Algebraic_real_1(isolator.left_boundary(i))) {
+                while(Algebraic_real_1(isolator.right_bound(i-1))==
+                      Algebraic_real_1(isolator.left_bound(i))) {
                     isolator.refine_interval(i-1);
                     isolator.refine_interval(i);
                 }
                 bucket_borders.push_back(
                         CGAL::CGALi::simple_rational_between
-                        (Algebraic_real_1(isolator.right_boundary(i-1)),
-                         Algebraic_real_1(isolator.left_boundary(i)))
+                        (Algebraic_real_1(isolator.right_bound(i-1)),
+                         Algebraic_real_1(isolator.left_bound(i)))
                 );
             }
             
             bucket_borders.push_back(
                     CGAL::CGALi::simple_rational_right_of
-                        (Algebraic_real_1(isolator.right_boundary(n-1))));
+                        (Algebraic_real_1(isolator.right_bound(n-1))));
         }
 
-        Bound left = boundary_value_in_interval(index);
-        Bound right = boundary_value_in_interval(index+1);
+        Bound left = bound_value_in_interval(index);
+        Bound right = bound_value_in_interval(index+1);
         
         typedef boost::numeric::interval<Coercion_type> Coercion_interval;
 
@@ -1012,10 +1012,10 @@ private:
                 if(curr_index==static_cast<int>(bucket_borders.size())) {
                     left_arcs[curr_index]++;
                     break;
-                } else if(left_line.lower_boundary(i)>
+                } else if(left_line.lower_bound(i)>
                           bucket_borders[curr_index]) {
                     curr_index++;
-                } else if(left_line.upper_boundary(i)<
+                } else if(left_line.upper_bound(i)<
                           bucket_borders[curr_index]) {
                     left_arcs[curr_index]++;
                     break;
@@ -1031,10 +1031,10 @@ private:
                 if(curr_index==static_cast<int>(bucket_borders.size())) {
                     right_arcs[curr_index]++;
                     break;
-                } else if(right_line.lower_boundary(i)>
+                } else if(right_line.lower_bound(i)>
                           bucket_borders[curr_index]) {
                     curr_index++;
-                } else if(right_line.upper_boundary(i)<
+                } else if(right_line.upper_bound(i)<
                           bucket_borders[curr_index]) {
                     right_arcs[curr_index]++;
                     break;
@@ -1093,7 +1093,7 @@ public:
         }
 #endif
   
-        Bound b = boundary_value_in_interval(i);
+        Bound b = bound_value_in_interval(i);
         
         Status_line_1 intermediate_line 
             = status_line_at_exact_non_event_x(Algebraic_real_1(b));
@@ -1226,10 +1226,10 @@ public:
      * The result of this method is taken as the reference x-coordinate
      * for the status lines of intervals.
      */
-    Bound boundary_value_in_interval(size_type i) const {
+    Bound bound_value_in_interval(size_type i) const {
 #if CGAL_ACK_USE_SPECIAL_TREATMENT_FOR_CONIX
         if(polynomial_2().degree()==2) {
-            return this->conic_boundary_value_in_interval(i);
+            return this->conic_bound_value_in_interval(i);
         }
 #endif
         CGAL_assertion(i>=0 && 
@@ -2044,8 +2044,8 @@ private:
         find_intermediate_values(roots_of_lcoeff.begin(),
                                  roots_of_lcoeff.end(),
                                  std::back_inserter(stripe_bounds));
-        Bound leftmost_bound = boundary_value_in_interval(0),
-            rightmost_bound = boundary_value_in_interval
+        Bound leftmost_bound = bound_value_in_interval(0),
+            rightmost_bound = bound_value_in_interval
                 (this->number_of_status_lines_with_event());
         for(size_type i=0;i<static_cast<size_type>(stripe_bounds.size());i++) {
             Bound& beta = stripe_bounds[i];
@@ -2259,7 +2259,7 @@ private:
         return -1;
     }
 
-    Bound conic_boundary_value_in_interval(size_type i) const {
+    Bound conic_bound_value_in_interval(size_type i) const {
         CGAL_error_msg("Implement me");
         return Bound(0);
     }
@@ -2354,13 +2354,13 @@ std::ostream& operator<< (
     out << std::endl;
 
     out << "Intermediate line at " 
-	<< CGAL::to_double(curve.boundary_value_in_interval(0))
+	<< CGAL::to_double(curve.bound_value_in_interval(0))
 	<< ": " << curve.arcs_over_interval(0) << " passing arcs" << std::endl 
 	<< std::endl;
     for(size_type i = 0; i<curve.number_of_status_lines_with_event();i++) {
         out << curve.status_line_at_event(i) << std::endl;
         out << "Intermediate line at " 
-            << CGAL::to_double(curve.boundary_value_in_interval(i+1))
+            << CGAL::to_double(curve.bound_value_in_interval(i+1))
             << ": " << curve.arcs_over_interval(i+1) 
             << " passing arcs" << std::endl
             << std::endl;

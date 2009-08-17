@@ -130,7 +130,7 @@ struct Curve_pair_analysis_2_rep {
 
     typedef boost::optional<Slice_info> Lazy_slice_info;
 
-    typedef boost::optional<Bound> Lazy_boundary;
+    typedef boost::optional<Bound> Lazy_bound;
 
     typedef CGAL::CGALi::Event_indices<size_type> Event_indices;
 
@@ -197,7 +197,7 @@ private:
         
     mutable std::vector< Lazy_status_line_CPA_1 > event_slices;
 
-    mutable boost::optional<std::vector< Lazy_boundary > > intermediate_values;
+    mutable boost::optional<std::vector< Lazy_bound > > intermediate_values;
 
     mutable boost::optional< std::vector< Lazy_status_line_CPA_1 > >
         intermediate_slices;
@@ -296,7 +296,7 @@ public:
 
 private:
     // Optional for boundaries
-    typedef typename Rep::Lazy_boundary Lazy_boundary;
+    typedef typename Rep::Lazy_bound Lazy_bound;
 
     // Object to store information about intersection points 
     typedef typename Rep::Intersection_info_container 
@@ -603,7 +603,7 @@ public:
 
 private:
 
-    std::vector<Lazy_boundary>& intermediate_values() const {
+    std::vector<Lazy_bound>& intermediate_values() const {
         if(! this->ptr()->intermediate_values) {
             compute_intermediate_values_and_slices();
         }
@@ -688,7 +688,7 @@ private:
                 e1.refine(i1);
             } 
         }
-        return (e1.lower_boundary(i1) < e2.lower_boundary(i2)) 
+        return (e1.lower_bound(i1) < e2.lower_bound(i2)) 
             ? CGAL::SMALLER
             : CGAL::LARGER;
     }
@@ -883,10 +883,10 @@ private:
      * overlap
      */
     bool overlap(Status_line_CA_1& e1, size_type index1,Status_line_CA_1& e2, size_type index2) const {
-        if(e1.lower_boundary(index1) > e2.upper_boundary(index2)) {
+        if(e1.lower_bound(index1) > e2.upper_bound(index2)) {
             return false;
         }
-        else if(e1.upper_boundary(index1) < e2.lower_boundary(index2)) {
+        else if(e1.upper_bound(index1) < e2.lower_bound(index2)) {
             return false;
         }
         else {
@@ -1024,8 +1024,8 @@ public:
         return intermediate_slices()[i].get();
     }
         
-    //!  Returns boundary representative value at the <tt>i</tt>th interval
-    const Bound boundary_value_in_interval(size_type i) const {
+    //!  Returns bound representative value at the <tt>i</tt>th interval
+    const Bound bound_value_in_interval(size_type i) const {
 
         const std::vector<Algebraic_real_1>& events = event_x_coordinates(); 
 
@@ -1502,13 +1502,13 @@ compute_intermediate_values_and_slices() const {
 #if CGAL_ACK_DEBUG_FLAG
     CGAL_ACK_DEBUG_PRINT << "Prepare intermediate slices.." << std::flush;
 #endif
-    this->ptr()->intermediate_values=std::vector<Lazy_boundary>();
+    this->ptr()->intermediate_values=std::vector<Lazy_bound>();
     this->ptr()->intermediate_slices=std::vector<Lazy_status_line_CPA_1>();
     
     for(size_type i=0;
         i<=static_cast<size_type>(event_x_coordinates().size());
         i++) {
-        this->ptr()->intermediate_values.get().push_back(Lazy_boundary());
+        this->ptr()->intermediate_values.get().push_back(Lazy_bound());
         this->ptr()->intermediate_slices.get().push_back
             (Lazy_status_line_CPA_1());
     }
@@ -1850,7 +1850,7 @@ typename Curve_pair_analysis_2<AlgebraicKernel_2>::Status_line_CPA_1
 Curve_pair_analysis_2<AlgebraicKernel_2>::
 create_intermediate_slice_at(int i) const {
     
-    Bound r = boundary_value_in_interval(i);
+    Bound r = bound_value_in_interval(i);
 
     std::vector<Algebraic_real_1> p1_roots,p2_roots;
 
@@ -2020,7 +2020,7 @@ construct_slice_info(Algebraic_real_1 alpha) const
             continue;
         }
         CGAL_assertion(!overlap(e1,i1,e2,i2));
-        if(e1.lower_boundary(i1) < e2.lower_boundary(i2)) {
+        if(e1.lower_bound(i1) < e2.lower_bound(i2)) {
             slice_info.push_back
                 (std::make_pair(CGAL::CGALi::FIRST_CURVE,-1));
             i1++;
@@ -2266,7 +2266,7 @@ find_possible_matching(Status_line_CA_1& e1,
     }
     while(possible_overlaps.size()>1) {
         if(possible_overlaps.size()==2) {
-            // Prevent that both intervals touch in a boundary
+            // Prevent that both intervals touch in a bound
             while(overlap(e2,possible_overlaps[0],
                           e2,possible_overlaps[1])) {
                 e2.refine(possible_overlaps[0]);
@@ -2605,8 +2605,8 @@ update_intersection_info(Intersection_info_container&
     Algebraic_real_1 xv = ev.x();
     Bound lx = xv.low(), rx=xv.high(),
         x_iv_size = rx-lx;
-    Bound ly = ev.lower_boundary(index),
-        ry = ev.upper_boundary(index);;
+    Bound ly = ev.lower_bound(index),
+        ry = ev.upper_bound(index);;
     while(left_index < right_index) {
         if(x_iv_size > ry-ly) {
             xv.refine();
@@ -2616,8 +2616,8 @@ update_intersection_info(Intersection_info_container&
             continue;
         }
         ev.refine(index);
-        ly = ev.lower_boundary(index);
-        ry = ev.upper_boundary(index);
+        ly = ev.lower_bound(index);
+        ry = ev.upper_bound(index);
         Bound left=(s<0) ? x_sheared(lx,ry,-s): x_sheared(lx,ly,-s);
         Bound right = (s<0) ? x_sheared(rx,ly,-s) : x_sheared(rx,ry,-s);
         CGAL_assertion(left<right);
@@ -2714,7 +2714,7 @@ reduce_number_of_candidates_and_intersections_to(size_type n,
             if(! overlap(e1,i1,e2,i2)) {
                 number_of_candidates--;
                 slice_it=slice.erase(slice_it);
-                if(e1.lower_boundary(i1)<e2.lower_boundary(i2)) {
+                if(e1.lower_bound(i1)<e2.lower_bound(i2)) {
                     slice_it=slice.insert
                         (slice_it,std::make_pair(CGAL::CGALi::FIRST_CURVE,-1));
                     slice_it++;

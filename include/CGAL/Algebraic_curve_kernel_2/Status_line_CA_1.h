@@ -561,17 +561,17 @@ public:
         return this->ptr()->isolator;
     }
 
-    typename Bitstream_descartes::Bound lower_boundary(int index) const {
-        return isolator().left_boundary(index);
+    typename Bitstream_descartes::Bound lower_bound(int index) const {
+        return isolator().left_bound(index);
     }
 
-    typename Bitstream_descartes::Bound upper_boundary(int index) const {
-        return isolator().right_boundary(index);
+    typename Bitstream_descartes::Bound upper_bound(int index) const {
+        return isolator().right_bound(index);
     }
 
     typename Bitstream_descartes::Bound interval_length(int index) const {
-        return isolator().right_boundary(index)-
-               isolator().left_boundary(index);
+        return isolator().right_bound(index)-
+               isolator().left_bound(index);
     }
 
     int get_upper_bound_for_multiplicity(int index) const {
@@ -583,7 +583,7 @@ public:
     }
 
     void refine_to(int index, typename Bitstream_descartes::Bound b) {
-            while(upper_boundary(index) - lower_boundary(index) > b) {
+            while(upper_bound(index) - lower_bound(index) > b) {
                 refine(index);
             }
     }

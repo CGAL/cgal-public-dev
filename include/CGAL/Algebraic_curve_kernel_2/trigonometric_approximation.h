@@ -84,9 +84,9 @@ typename Arithmetic_traits::Bigfloat_interval pi(long precision)  {
             m++;
         }
         typedef typename CGAL::Bigfloat_interval_traits<Bigfloat_interval>
-            ::Bound Bigfloat_boundary;
-        Bigfloat_boundary bb(Integer(1));
-        bb = typename CGAL::CGALi::Float_traits<Bigfloat_boundary>
+            ::Bound Bigfloat_bound;
+        Bigfloat_bound bb(Integer(1));
+        bb = typename CGAL::CGALi::Float_traits<Bigfloat_bound>
             ::Mul_by_pow_of_2() (bb,-precision-error_offset);
         Bigfloat_interval err = CGAL::hull(Bigfloat_interval(-bb), 
                                            Bigfloat_interval(bb));
@@ -161,9 +161,9 @@ typename Arithmetic_traits::Bigfloat_interval arcsin
             (x,precision+error_offset);
 
         typedef typename CGAL::Bigfloat_interval_traits<Bigfloat_interval>
-            ::Bound Bigfloat_boundary;
-        Bigfloat_boundary bb(Integer(1));
-        bb = typename CGAL::CGALi::Float_traits<Bigfloat_boundary>
+            ::Bound Bigfloat_bound;
+        Bigfloat_bound bb(Integer(1));
+        bb = typename CGAL::CGALi::Float_traits<Bigfloat_bound>
             ::Mul_by_pow_of_2() (bb,-precision-error_offset);
         Bigfloat_interval err = CGAL::hull(Bigfloat_interval(-bb), 
                                            Bigfloat_interval(bb));
@@ -235,9 +235,9 @@ typename Arithmetic_traits::Bigfloat_interval sin
             (precision+error_offset);
 
         typedef typename CGAL::Bigfloat_interval_traits<Bigfloat_interval>
-            ::Bound Bigfloat_boundary;
-        Bigfloat_boundary bb(Integer(1));
-        bb = typename CGAL::CGALi::Float_traits<Bigfloat_boundary>
+            ::Bound Bigfloat_bound;
+        Bigfloat_bound bb(Integer(1));
+        bb = typename CGAL::CGALi::Float_traits<Bigfloat_bound>
             ::Mul_by_pow_of_2() (bb,-precision-error_offset);
         Bigfloat_interval err = CGAL::hull(Bigfloat_interval(-bb), 
                                            Bigfloat_interval(bb));
@@ -313,7 +313,7 @@ approximate_sin_and_cos_of_angle(Bound angle,long final_prec) {
     
     Bound sine, cosine;
     
-    // Filter boundary case of 0 degree
+    // Filter bound case of 0 degree
     if(angle==Bound(0) || 
        Bound(1)/angle>CGAL::ipower(Integer(2),final_prec)) {
         sine = 0;
@@ -322,7 +322,7 @@ approximate_sin_and_cos_of_angle(Bound angle,long final_prec) {
         
         typedef typename AT::Bigfloat_interval Bigfloat_interval;
         typedef typename Bigfloat_interval_traits<Bigfloat_interval>
-            ::Bound Bigfloat_boundary;
+            ::Bound Bigfloat_bound;
         
         
         long old_prec = CGAL::get_precision(Bigfloat_interval());
@@ -340,7 +340,7 @@ approximate_sin_and_cos_of_angle(Bound angle,long final_prec) {
                          pi*CGAL::convert_to_bfi(angle)/
                          CGAL::convert_to_bfi(Integer(180))),
                  prec);
-            Bigfloat_boundary x 
+            Bigfloat_bound x 
                 = CGAL::median(CGAL::convert_to_bfi(Integer(1))/s + 
                                CGAL::sqrt
                                (CGAL::convert_to_bfi(Integer(1))/(s*s)-CGAL::convert_to_bfi(Integer(1))));
@@ -350,12 +350,12 @@ approximate_sin_and_cos_of_angle(Bound angle,long final_prec) {
             
             bool success=false;
             
-            Bigfloat_boundary e0=x, e1=-1, olde0;
+            Bigfloat_bound e0=x, e1=-1, olde0;
             Integer p0=0, q0=1, p1=1, q1=0,oldp0,oldq0;
             while(true) {
                 Integer r = CGAL::CGALi::floor(e0/e1);
                 Integer oldp0=p0, oldq0=q0;
-                Bigfloat_boundary olde0=e0;
+                Bigfloat_bound olde0=e0;
                 e0=e1;p0=p1;q0=q1;
                 e1=olde0-r*e1;
                 p1=oldp0-r*p1;
@@ -374,7 +374,7 @@ approximate_sin_and_cos_of_angle(Bound angle,long final_prec) {
                     success = (bound <= -final_prec);
                     typename 
                         CGAL::Coercion_traits<Bound, 
-                        Bigfloat_boundary>::Cast
+                        Bigfloat_bound>::Cast
                         cast;
                     if((cast(t)==cast(x)) || success) {
                         break;

@@ -49,8 +49,8 @@ private:
 public:
   Event_refinement() {}
   void add(Alg_real a) {events.push_back(a);}
-  Rational lower_boundary(int i){return events[i].low();}
-  Rational upper_boundary(int i){return events[i].high();}
+  Rational lower_bound(int i){return events[i].low();}
+  Rational upper_bound(int i){return events[i].high();}
   void refine(int i) {events[i].refine();}
 };
 
@@ -101,18 +101,18 @@ void test_bitstream_descartes() {
     }
 
     for(int i =0; i<n; i++) {
-      while((descartes.right_boundary(i)-descartes.left_boundary(i))
+      while((descartes.right_bound(i)-descartes.left_bound(i))
 	    > Rational(1,10000)) 
 	{
 	  descartes.refine_interval(i);
 	}
     }
-    assert(Rational(-118,100)<descartes.left_boundary(0));
-    assert(Rational(-117,100)>descartes.right_boundary(0));
-    assert(Rational(-155,1000)<descartes.left_boundary(1));
-    assert(Rational(-154,1000)>descartes.right_boundary(1));
-    assert(Rational(116,100)<descartes.left_boundary(2));
-    assert(Rational(117,100)>descartes.right_boundary(2));
+    assert(Rational(-118,100)<descartes.left_bound(0));
+    assert(Rational(-117,100)>descartes.right_bound(0));
+    assert(Rational(-155,1000)<descartes.left_bound(1));
+    assert(Rational(-154,1000)>descartes.right_bound(1));
+    assert(Rational(116,100)<descartes.left_bound(2));
+    assert(Rational(117,100)>descartes.right_bound(2));
   }
 
   { // Test for the square free case, created with tree from outside
@@ -151,18 +151,18 @@ void test_bitstream_descartes() {
     }
 
     for(int i =0; i<n; i++) {
-      while((descartes.right_boundary(i)-descartes.left_boundary(i))
+      while((descartes.right_bound(i)-descartes.left_bound(i))
 	    > Rational(1,10000)) 
 	{
 	  descartes.refine_interval(i);
 	}
     }
-    assert(Rational(-160,100)<descartes.left_boundary(0));
-    assert(Rational(-159,100)>descartes.right_boundary(0));
-    assert(Rational(-389,1000)<descartes.left_boundary(1));
-    assert(Rational(-387,1000)>descartes.right_boundary(1));
-    assert(Rational(-1,100)<descartes.left_boundary(2));
-    assert(Rational(1,100)>descartes.right_boundary(2));
+    assert(Rational(-160,100)<descartes.left_bound(0));
+    assert(Rational(-159,100)>descartes.right_bound(0));
+    assert(Rational(-389,1000)<descartes.left_bound(1));
+    assert(Rational(-387,1000)>descartes.right_bound(1));
+    assert(Rational(-1,100)<descartes.left_bound(2));
+    assert(Rational(1,100)>descartes.right_bound(2));
   }
     
 
@@ -207,20 +207,20 @@ void test_bitstream_descartes() {
       }
     }
     for(int i =0; i<n; i++) {
-      while(descartes.right_boundary(i)-descartes.left_boundary(i)
+      while(descartes.right_bound(i)-descartes.left_bound(i)
 	    >Rational(1,10000)) 
 	{
 	  descartes.refine_interval(i);
 	}
     }
-    assert(Rational(-104,100)<descartes.left_boundary(0));
-    assert(Rational(-103,100)>descartes.right_boundary(0));
-    assert(Rational(-106,1000)<descartes.left_boundary(1));
-    assert(Rational(-104,1000)>descartes.right_boundary(1));
-    assert(Rational(33,100)<descartes.left_boundary(2));
-    assert(Rational(34,100)>descartes.right_boundary(2));
-    assert(Rational(1776,100)<descartes.left_boundary(3));
-    assert(Rational(1777,100)>descartes.right_boundary(3));
+    assert(Rational(-104,100)<descartes.left_bound(0));
+    assert(Rational(-103,100)>descartes.right_bound(0));
+    assert(Rational(-106,1000)<descartes.left_bound(1));
+    assert(Rational(-104,1000)>descartes.right_bound(1));
+    assert(Rational(33,100)<descartes.left_bound(2));
+    assert(Rational(34,100)>descartes.right_bound(2));
+    assert(Rational(1776,100)<descartes.left_bound(3));
+    assert(Rational(1777,100)>descartes.right_bound(3));
     
   }
 
@@ -254,18 +254,18 @@ void test_bitstream_descartes() {
       assert(! descartes.is_certainly_multiple_root(i));
     }
     for(int i =0; i<n; i++) {
-      while(descartes.right_boundary(i)-descartes.left_boundary(i)
+      while(descartes.right_bound(i)-descartes.left_bound(i)
 	    >Rational(1,10000)) 
 	{
 	  descartes.refine_interval(i);
 	}
     }
-    assert(Rational(-101,100)<descartes.left_boundary(0));
-    assert(Rational(-99,100)>descartes.right_boundary(0));
-    assert(Rational(-1,1000)<descartes.left_boundary(1));
-    assert(Rational(1,1000)>descartes.right_boundary(1));
-    assert(Rational(199,100)<descartes.left_boundary(2));
-    assert(Rational(201,100)>descartes.right_boundary(2));
+    assert(Rational(-101,100)<descartes.left_bound(0));
+    assert(Rational(-99,100)>descartes.right_bound(0));
+    assert(Rational(-1,1000)<descartes.left_bound(1));
+    assert(Rational(1,1000)>descartes.right_bound(1));
+    assert(Rational(199,100)<descartes.left_bound(2));
+    assert(Rational(201,100)>descartes.right_bound(2));
     
   }
   
@@ -308,7 +308,7 @@ void test_bitstream_descartes() {
     assert(n==6);
 
     for(int i =0; i<n; i++) {
-      while(descartes.right_boundary(i)-descartes.left_boundary(i)
+      while(descartes.right_bound(i)-descartes.left_bound(i)
 	    >Rational(1,10000)) 
 	{
 	  descartes.refine_interval(i);
@@ -320,30 +320,30 @@ void test_bitstream_descartes() {
 
     assert(! descartes.is_certainly_simple_root(0));
     assert(descartes.is_certainly_multiple_root(0));
-    assert(Rational(-1528,1000)<descartes.left_boundary(0));
-    assert(Rational(-1527,1000)>descartes.right_boundary(0));
+    assert(Rational(-1528,1000)<descartes.left_bound(0));
+    assert(Rational(-1527,1000)>descartes.right_bound(0));
 
     assert(! descartes.is_certainly_multiple_root(1));
-    assert(Rational(-954,1000)<descartes.left_boundary(1));
-    assert(Rational(-953,1000)>descartes.right_boundary(1));
+    assert(Rational(-954,1000)<descartes.left_bound(1));
+    assert(Rational(-953,1000)>descartes.right_bound(1));
 
     assert(! descartes.is_certainly_multiple_root(2));
-    assert(Rational(-686,1000)<descartes.left_boundary(2));
-    assert(Rational(-685,1000)>descartes.right_boundary(2));
+    assert(Rational(-686,1000)<descartes.left_bound(2));
+    assert(Rational(-685,1000)>descartes.right_bound(2));
     
     assert(! descartes.is_certainly_simple_root(3));
     assert(descartes.is_certainly_multiple_root(3));
-    assert(Rational(-636,1000)<descartes.left_boundary(3));
-    assert(Rational(-635,1000)>descartes.right_boundary(3));
+    assert(Rational(-636,1000)<descartes.left_bound(3));
+    assert(Rational(-635,1000)>descartes.right_bound(3));
 
     assert(! descartes.is_certainly_simple_root(4));
     assert(descartes.is_certainly_multiple_root(4));
-    assert(Rational(889,1000)<descartes.left_boundary(4));
-    assert(Rational(891,1000)>descartes.right_boundary(4));
+    assert(Rational(889,1000)<descartes.left_bound(4));
+    assert(Rational(891,1000)>descartes.right_bound(4));
 
     assert(! descartes.is_certainly_multiple_root(5));
-    assert(Rational(1009,1000)<descartes.left_boundary(5));
-    assert(Rational(1010,1000)>descartes.right_boundary(5));
+    assert(Rational(1009,1000)<descartes.left_bound(5));
+    assert(Rational(1010,1000)>descartes.right_bound(5));
 
   }
   { // Another test for the square free method with tree from outside
@@ -380,7 +380,7 @@ void test_bitstream_descartes() {
     // The root is an "opening" x-extreme point
 
     // Refine the y-coordinate (just to make it harder...)
-    while(m_k_descartes.right_boundary(0) - m_k_descartes.left_boundary(0) 
+    while(m_k_descartes.right_bound(0) - m_k_descartes.left_bound(0) 
            > Rational(1,100000)) {
       m_k_descartes.refine_interval(0);
     }    
@@ -412,8 +412,8 @@ void test_bitstream_descartes() {
 
     for( int i = 0 ; i<sq_free_descartes.number_of_real_roots(); i++ ) {
         // Both roots must be inside the isolating interval of the critical point
-        assert(sq_free_descartes.left_boundary(i) > m_k_descartes.left_boundary(0));
-        assert(sq_free_descartes.right_boundary(i) < m_k_descartes.right_boundary(0));
+        assert(sq_free_descartes.left_bound(i) > m_k_descartes.left_bound(0));
+        assert(sq_free_descartes.right_bound(i) < m_k_descartes.right_bound(0));
 
     }
     

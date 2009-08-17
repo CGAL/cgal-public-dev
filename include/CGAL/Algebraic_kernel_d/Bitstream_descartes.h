@@ -249,7 +249,7 @@ CGAL_BEGIN_NAMESPACE
                                 
                             }
                             while(intervals!=1);
-                            //std::cout << "Refined " << left_boundary(i) << " " << right_boundary(i) << std::endl; 
+                            //std::cout << "Refined " << left_bound(i) << " " << right_bound(i) << std::endl; 
       
                         }
 
@@ -375,16 +375,16 @@ CGAL_BEGIN_NAMESPACE
                             return number_of_intervals;
                         }
 
-                        //! The lower boundary of the \c i th root
-                        virtual Bound left_boundary(int i) const  {
+                        //! The lower bound of the \c i th root
+                        virtual Bound left_bound(int i) const  {
                             CGAL_assertion(i>=0 && i < number_of_intervals);
                             Node_const_iterator curr = bitstream_tree.begin();
                             std::advance(curr,i);
                             return bitstream_tree.lower(curr);
                         } 
     
-                        //! The upper boundary of the \c i th root
-                        virtual Bound right_boundary(int i) const {
+                        //! The upper bound of the \c i th root
+                        virtual Bound right_bound(int i) const {
                             CGAL_assertion(i>=0 && i < number_of_intervals);
                             Node_const_iterator curr = bitstream_tree.begin();
                             std::advance(curr,i);
@@ -921,18 +921,18 @@ CGAL_BEGIN_NAMESPACE
                 upper=Base::bitstream_tree.upper(node);
             for(int i=0;i<number_of_events;i++) {
                 while(true) {
-                    if(CGAL::compare(event_refinement.lower_boundary(i),lower)
+                    if(CGAL::compare(event_refinement.lower_bound(i),lower)
                        !=CGAL::NEGATIVE
                        && 
-                       CGAL::compare(event_refinement.upper_boundary(i),upper)
+                       CGAL::compare(event_refinement.upper_bound(i),upper)
                        !=CGAL::POSITIVE) {
                         //Event inside the interval
                         return i;
                     }
-                    if(CGAL::compare(event_refinement.lower_boundary(i),upper)
+                    if(CGAL::compare(event_refinement.lower_bound(i),upper)
                        ==CGAL::POSITIVE
                        ||
-                       CGAL::compare(event_refinement.upper_boundary(i),lower)
+                       CGAL::compare(event_refinement.upper_bound(i),lower)
                        ==CGAL::NEGATIVE) {
                         //This event is outside
                         break;
@@ -1014,9 +1014,9 @@ CGAL_BEGIN_NAMESPACE
                 = static_cast<int>(root_vec.size());
             // Isolate all real roots until intervals are disjoint:
             for(int i = 1; i < this->number_of_real_roots(); i++ ){
-                while( left_boundary(i) < right_boundary(i-1) ) {
-                    if( right_boundary(i)-left_boundary(i) < 
-                        right_boundary(i-1)-left_boundary(i-1) ) {
+                while( left_bound(i) < right_bound(i-1) ) {
+                    if( right_bound(i)-left_bound(i) < 
+                        right_bound(i-1)-left_bound(i-1) ) {
                         refine_interval(i-1);
                     } else {
                         refine_interval(i);
@@ -1047,20 +1047,20 @@ CGAL_BEGIN_NAMESPACE
         }
 
  
-        //! The lower boundary of the \c i th root
-        virtual Bound left_boundary(int i) const  {
-            typename Curve_kernel_2::Lower_boundary_y_2
-                lower_boundary_y;  // TODO call _object
-            return lower_boundary_y(
+        //! The lower bound of the \c i th root
+        virtual Bound left_bound(int i) const  {
+            typename Curve_kernel_2::Lower_bound_y_2
+                lower_bound_y;  // TODO call _object
+            return lower_bound_y(
                     root_vec[i].first.algebraic_real_2(root_vec[i].second)
             );
         }
     
-        //! The upper boundary of the \c i th root
-        virtual Bound right_boundary(int i) const {
-            typename Curve_kernel_2::Upper_boundary_y_2
-                upper_boundary_y;  // TODO call _object 
-            return upper_boundary_y(
+        //! The upper bound of the \c i th root
+        virtual Bound right_bound(int i) const {
+            typename Curve_kernel_2::Upper_bound_y_2
+                upper_bound_y;  // TODO call _object 
+            return upper_bound_y(
                     root_vec[i].first.algebraic_real_2(root_vec[i].second)
             );
         } 
@@ -1282,7 +1282,7 @@ CGAL_BEGIN_NAMESPACE
          * \c number_of_events root can be refined to arbitrary precision with the
          * \c event_refinement object. This must support three operations
          * for each <tt>0<=i<number_of_events</tt>:
-         * <ul><li>lower_boundary(i), upper_boundary(i) gives an interval (not
+         * <ul><li>lower_bound(i), upper_bound(i) gives an interval (not
          * necessarily isolating) of some root of \c f</li>
          * <li>refine(i) refines the corresponding interval</li></ul>
          * Note that the roots in \c event_refinement need not be sorted. All roots
@@ -1354,41 +1354,41 @@ CGAL_BEGIN_NAMESPACE
             this->ptr()->refine_interval(i);
         }
 
-        //! The left boundary of the <tt>i</tt>th isolating interval
-        Bound left_boundary(int i) const  {
+        //! The left bound of the <tt>i</tt>th isolating interval
+        Bound left_bound(int i) const  {
             CGAL_assertion(is_isolated());
-            return this->ptr()->left_boundary(i);
+            return this->ptr()->left_bound(i);
         }
 
-        //! The left boundary of the <tt>i</tt>th isolating interval
-        void left_boundary(int i, 
+        //! The left bound of the <tt>i</tt>th isolating interval
+        void left_bound(int i, 
                            Integer& numerator, 
                            Integer& denominator) const {
             typedef CGAL::Fraction_traits<Bound> Fraction_traits; 
             typename Fraction_traits::Decompose decompose;
-            decompose(left_boundary(i),numerator,denominator);
+            decompose(left_bound(i),numerator,denominator);
         }
 
-        //! The right boundary of the <tt>i</tt>th isolating interval
-        Bound right_boundary(int i) const  {
+        //! The right bound of the <tt>i</tt>th isolating interval
+        Bound right_bound(int i) const  {
             CGAL_assertion(is_isolated());
-            return this->ptr()->right_boundary(i);
+            return this->ptr()->right_bound(i);
         }
 
-        //! The right boundary of the <tt>i</tt>th isolating interval
-        void right_boundary(int i, 
+        //! The right bound of the <tt>i</tt>th isolating interval
+        void right_bound(int i, 
                             Integer& numerator, 
                             Integer& denominator) const {
             typedef CGAL::Fraction_traits<Bound> Fraction_traits; 
             typename Fraction_traits::Decompose decompose;
-            decompose(right_boundary(i),numerator,denominator);
+            decompose(right_bound(i),numerator,denominator);
         }
 
         //! The length of the <tt>i</tt>th isolating interval
         Bound length(int i) const {
             CGAL_assertion(is_isolated());
-            return (this->ptr()->right_boundary(i) - 
-                    this->ptr()->left_boundary(i));
+            return (this->ptr()->right_bound(i) - 
+                    this->ptr()->left_bound(i));
         }
 
         bool is_exact_root(int i) const { return false; }

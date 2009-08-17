@@ -57,14 +57,14 @@ public:
       }
     };
                                 
-    struct Lower_boundary
+    struct Lower_bound
       : public std::unary_function< Type, Bound > {
       Bound operator()( const Type& t ) const {
         return t.low();
       }
     };
                 
-    struct Upper_boundary
+    struct Upper_bound
       : public std::unary_function< Type, Bound > {
       Bound operator()( const Type& t ) const {
         return t.high();
@@ -112,8 +112,8 @@ public:
     struct Approximate_absolute_1:
       public std::binary_function<std::pair<Bound,Bound>,Algebraic_real_1,int>{
       std::pair<Bound,Bound> operator()(const Algebraic_real_1& x, int prec){
-          Lower_boundary lower; 
-          Upper_boundary upper; 
+          Lower_bound lower; 
+          Upper_bound upper; 
           Refine refine; 
           Bound l = lower(x);  
           Bound u = upper(x);
@@ -129,8 +129,8 @@ public:
     struct Approximate_relative_1:
       public std::binary_function<std::pair<Bound,Bound>,Algebraic_real_1,int>{
       std::pair<Bound,Bound> operator()(const Algebraic_real_1& x, int prec){
-          Lower_boundary lower; 
-          Upper_boundary upper; 
+          Lower_bound lower; 
+          Upper_bound upper; 
           Refine refine; 
           Bound l = lower(x);  
           Bound u = upper(x);
@@ -258,8 +258,8 @@ public:
                 
   typedef typename Real_embeddable_traits<Algebraic_real_1>::Compare Compare_1;
   typedef typename Algebraic_real_traits::Refine Refine_1;
-  typedef typename Algebraic_real_traits::Lower_boundary Lower_boundary_1;
-  typedef typename Algebraic_real_traits::Upper_boundary Upper_boundary_1;
+  typedef typename Algebraic_real_traits::Lower_bound Lower_bound_1;
+  typedef typename Algebraic_real_traits::Upper_bound Upper_bound_1;
   typedef typename Algebraic_real_traits::Bound_between Bound_between_1;
   typedef typename Algebraic_real_traits::Approximate_absolute_1 Approximate_absolute_1;
   typedef typename Algebraic_real_traits::Approximate_relative_1 Approximate_relative_1;
@@ -286,17 +286,17 @@ public:
   CGAL_ALGEBRAIC_KERNEL_1_PRED(Refine_1,
       refine_1_object);
   CGAL_ALGEBRAIC_KERNEL_1_PRED(Bound_between_1,
-      boundary_between_1_object);
+      bound_between_1_object);
   CGAL_ALGEBRAIC_KERNEL_1_PRED(Approximate_absolute_1,
       approximate_absolute_1_object);
   CGAL_ALGEBRAIC_KERNEL_1_PRED(Approximate_relative_1,
       approximate_relative_1_object);
 
   // Deprecated 
-  CGAL_ALGEBRAIC_KERNEL_1_PRED(Lower_boundary_1,
-      lower_boundary_1_object);
-  CGAL_ALGEBRAIC_KERNEL_1_PRED(Upper_boundary_1,
-      upper_boundary_1_object);
+  CGAL_ALGEBRAIC_KERNEL_1_PRED(Lower_bound_1,
+      lower_bound_1_object);
+  CGAL_ALGEBRAIC_KERNEL_1_PRED(Upper_bound_1,
+      upper_bound_1_object);
       
 #undef CGAL_ALGEBRAIC_KERNEL_1_PRED  
           

@@ -76,13 +76,13 @@ void test_descartes(){
         assert(isolator.number_of_real_roots() == 2 );
         
         typedef CGAL::CGALi::Algebraic_real_pure<EXT,Rational> Alg_real;
-        Alg_real r0(P,isolator.left_boundary(0),isolator.right_boundary(0));
-        Alg_real r1(P,isolator.left_boundary(1),isolator.right_boundary(1));
+        Alg_real r0(P,isolator.left_bound(0),isolator.right_bound(0));
+        Alg_real r1(P,isolator.left_bound(1),isolator.right_bound(1));
         assert(r0 < r1);
-        assert(r0 > isolator.left_boundary(0));
-        assert(r0 < isolator.right_boundary(0));
-        assert(r1 > isolator.left_boundary(1));
-        assert(r1 < isolator.right_boundary(1));
+        assert(r0 > isolator.left_bound(0));
+        assert(r0 < isolator.right_bound(0));
+        assert(r1 > isolator.left_bound(1));
+        assert(r1 < isolator.right_bound(1));
     
     }
     CGAL::CGALi::test_bitstream_descartes<AT>();
