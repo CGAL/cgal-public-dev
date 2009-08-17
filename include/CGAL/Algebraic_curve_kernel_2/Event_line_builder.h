@@ -58,7 +58,7 @@ public:
     typedef typename Algebraic_kernel_2::Coefficient Coefficient;
 
     // \brief The type for rational x-coordinates and for interval boundaries
-    typedef typename Algebraic_kernel_2::Boundary Boundary;
+    typedef typename Algebraic_kernel_2::Bound Bound;
 
     // \brief Univariate polynomials
     typedef typename Algebraic_kernel_2::Polynomial_1 Polynomial_1;
@@ -69,7 +69,7 @@ public:
     // \brief Rational polynomials
     typedef typename
     CGAL::Polynomial_traits_d<Polynomial_2>
-        ::template Rebind<Boundary,1>::Other::Type Poly_rat_1;
+        ::template Rebind<Bound,1>::Other::Type Poly_rat_1;
 
     // \brief Type for x-values
     typedef typename Curve_analysis_2::Algebraic_real_1 Algebraic_real_1;
@@ -256,7 +256,7 @@ protected:
     /*!
      * Typedef for the Interval type
      */
-    typedef boost::numeric::interval<Boundary> Interval;
+    typedef boost::numeric::interval<Bound> Interval;
 
     // \brief Refinement type from the curve class.
     typedef typename Curve_analysis_2::Bitstream_descartes 
@@ -505,8 +505,8 @@ protected:
 #endif
 */
             std::vector<Poly_rat_1> p_powers(n+1),q_powers(n+1);
-            p_powers[0]=Poly_rat_1(Boundary(1));
-            q_powers[0]=Poly_rat_1(Boundary(1));
+            p_powers[0]=Poly_rat_1(Bound(1));
+            q_powers[0]=Poly_rat_1(Bound(1));
             Poly_rat_1 intermediate;
             for(int i=1;i<=n;i++) {
 /*
@@ -553,7 +553,7 @@ protected:
 */
 	
             Poly_rat_1 curr_coeff,curr_fac;
-            Poly_rat_1 h_0_rat(Boundary(0));
+            Poly_rat_1 h_0_rat(Bound(0));
             for(int i=0;i<=n;i++) {
                 curr_fac=this->mod
                     (Poly_rat_1(h[i].begin(),h[i].end())
@@ -587,10 +587,10 @@ protected:
             result = CGAL::CGALi::is_root_of(alpha,h_0);
         }
         else {
-            Boundary b = alpha.rational(),
+            Bound b = alpha.rational(),
                 p_b=p.evaluate(b),q_b=q.evaluate(b);
             int n = h.degree();
-            Boundary eval(0);
+            Bound eval(0);
             for(int i=0;i<=n;i++) {
                 eval+=h[i].evaluate(b)*CGAL::ipower(p_b,i)*CGAL::ipower(q_b,n-i);
             }
@@ -730,7 +730,7 @@ protected:
                              << std::endl);
         CGAL_ACK_DEBUG_PRINT << p << " " << q << std::endl 
                              << polynomial << std::endl;
-        Boundary a_d = alpha.low();
+        Bound a_d = alpha.low();
         CGAL_ACK_DEBUG_PRINT << CGAL::to_double(p.evaluate(a_d)/
                                                 q.evaluate(a_d)) 
                              << std::endl;

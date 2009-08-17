@@ -101,7 +101,7 @@ public:
     //! type of x-coordinate
     typedef typename Base::X_coordinate_1 X_coordinate_1;
 
-    typedef typename Algebraic_kernel_1::Boundary Boundary;
+    typedef typename Algebraic_kernel_1::Bound Bound;
         
     //!@}
                 
@@ -217,13 +217,13 @@ public:
 
         typedef typename Base::Sign_at_2 Base;
 
-        typedef typename Xy_coordinate_2::Boundary_interval Interval;
+        typedef typename Xy_coordinate_2::Bound_interval Interval;
         
         typedef typename CGAL::Polynomial_traits_d<Polynomial_2>
-            ::template Rebind<Boundary,1>::Other::Type
+            ::template Rebind<Bound,1>::Other::Type
             Poly_rat_1;
         typedef typename CGAL::Polynomial_traits_d<Polynomial_2>
-            ::template Rebind<Boundary,2>::Other::Type
+            ::template Rebind<Bound,2>::Other::Type
             Poly_rat_2;
         
         Sign operator()(const Curve_analysis_2& ca,

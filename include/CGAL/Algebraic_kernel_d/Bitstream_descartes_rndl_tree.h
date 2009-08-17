@@ -456,11 +456,11 @@ namespace CGALi {
 /* The template argument supplied as BitstreamDescartesRndlTreeTraits
  * shall be a class containing the following types in its scope:
  *   Coefficient:           caller-supplied coefficient type
- *   Boundary:              type for interval boundary output (exact)
+ *   Bound:              type for interval boundary output (exact)
  *   Integer:               integer type for actual calculations, needs >>, <<
  *   Approximator:          functor to get Integer approx to x*2^p from coeff x
  *   Lower_bound_log2_abs:  functor for lower bound to log|x| for coeff x
- *   Boundary_creator:      functor to create boundary x*2^p from x and p
+ *   Bound_creator:      functor to create boundary x*2^p from x and p
  *   Sign:                  functor to get sign of Integer x
  *   Ceil_log2_abs_Integer: functor to get smallest long >= log|x| for Integer
  *   Ceil_log2_abs_long:    functor to get smallest long >= log|x| for long
@@ -473,11 +473,11 @@ namespace CGALi {
 // bring types from traits into local scope
 #define CGAL_SNAP_BITSTREAM_DESCARTES_RNDL_TREE_TRAITS_TYPEDEFS(TRAITS)    \
     typedef typename TRAITS::Coefficient           Coefficient;           \
-    typedef typename TRAITS::Boundary              Boundary;              \
+    typedef typename TRAITS::Bound              Bound;              \
     typedef typename TRAITS::Integer               Integer;               \
     typedef typename TRAITS::Approximator          Approximator;          \
     typedef typename TRAITS::Lower_bound_log2_abs  Lower_bound_log2_abs;  \
-    typedef typename TRAITS::Boundary_creator      Boundary_creator;      \
+    typedef typename TRAITS::Bound_creator      Bound_creator;      \
     typedef typename TRAITS::Sign                  Sign;                  \
     typedef typename TRAITS::Ceil_log2_abs_Integer Ceil_log2_abs_Integer; \
     typedef typename TRAITS::Ceil_log2_abs_long    Ceil_log2_abs_long;    \
@@ -742,7 +742,7 @@ public:
        All internal computations are done using this type.
        Must be a model of \c Ring and additionally provide
        operators \c >> and \c << with the usual semantics.
-     - \c Boundary:  \c lower() and \c upper() return
+     - \c Bound:  \c lower() and \c upper() return
        interval boundaries in this type.  Must be \c Assignable.
        The canonical choice is \c NiX::Exact_float_number<Integer>.
        If you never instanciate \c lower() and \c upper()
@@ -775,14 +775,14 @@ public:
        of class \c Lower_bound_log2_abs.  This function is called once
        at construction of \c T to get a \c Lower_bound_log2_abs
        on the polynomial's leading coefficient.
-     - \c Boundary_creator: A functor with signature
-       <tt>Boundary b = Boundary_creator()(Integer x, long p)</tt>
+     - \c Bound_creator: A functor with signature
+       <tt>Bound b = Bound_creator()(Integer x, long p)</tt>
        to construct \c b with value
        <i>x</i>&nbsp;<tt>*</tt>&nbsp;2<sup><i>p</i></sup>.
-       If \c Boundary has a matching constructor
+       If \c Bound has a matching constructor
        (as \c NiX::Exact_float_number<Integer> does), you can simply
-       <tt>typedef CGAL::Creator_2 <Integer, long, Boundary>
-       Boundary_creator;</tt>.
+       <tt>typedef CGAL::Creator_2 <Integer, long, Bound>
+       Bound_creator;</tt>.
      - \c Sign: A functor working identically to
        \c NiX::NT_traits::Sign for \c NT equal to \c Integer.
        (You can just typedef to that.)
@@ -821,7 +821,7 @@ public:
     public:
         typedef Integer_ Coefficient;
         typedef Integer_ Integer;
-        typedef NiX::Exact_float_number<Integer> Boundary;
+        typedef NiX::Exact_float_number<Integer> Bound;
 
         class Approximator {
         public:
@@ -834,7 +834,7 @@ public:
         typedef typename NiX::NT_traits<Coefficient>::Floor_log2_abs Lower_bound_log2_abs;
         Lower_bound_log2_abs lower_bound_log2_abs_object() const { return Lower_bound_log2_abs(); }
 
-        typedef CGAL::Creator_2<Integer, long, Boundary> Boundary_creator;
+        typedef CGAL::Creator_2<Integer, long, Bound> Bound_creator;
         typedef typename NiX::NT_traits<Integer>::Sign Sign;
         typedef typename NiX::NT_traits<Integer>::Ceil_log2_abs Ceil_log2_abs_Integer;
         typedef typename NiX::NT_traits<long>::Ceil_log2_abs Ceil_log2_abs_long;
@@ -1001,20 +1001,20 @@ public:
     }
 
     //! get lower boundary of interval at node \c n.
-    Boundary lower(Node_iterator n) const {
-        return Boundary_creator()(n->lower_num_, -n->log_bdry_den_);
+    Bound lower(Node_iterator n) const {
+        return Bound_creator()(n->lower_num_, -n->log_bdry_den_);
     }
     //! get lower boundary of interval at node \c n.
-    Boundary lower(Node_const_iterator n) const {
-        return Boundary_creator()(n->lower_num_, -n->log_bdry_den_);
+    Bound lower(Node_const_iterator n) const {
+        return Bound_creator()(n->lower_num_, -n->log_bdry_den_);
     }
     //! get upper boundary of interval at node \c n.
-    Boundary upper(Node_iterator n) const {
-        return Boundary_creator()(n->upper_num_, -n->log_bdry_den_);
+    Bound upper(Node_iterator n) const {
+        return Bound_creator()(n->upper_num_, -n->log_bdry_den_);
     }
     //! get upper boundary of interval at node \c n.
-    Boundary upper(Node_const_iterator n) const {
-        return Boundary_creator()(n->upper_num_, -n->log_bdry_den_);
+    Bound upper(Node_const_iterator n) const {
+        return Bound_creator()(n->upper_num_, -n->log_bdry_den_);
     }
 
     //! get boundaries: interval at node \c n is

@@ -145,14 +145,14 @@ public:
     typedef typename Algebraic_curve_kernel_2::Y_real_traits_1 Y_real_traits_1;
 
     //! type for approximation boundaries
-    typedef typename X_real_traits_1::Boundary Boundary;
+    typedef typename X_real_traits_1::Bound Bound;
 
     //! type for boundary intervals
-    typedef boost::numeric::interval<Boundary> Boundary_interval;
+    typedef boost::numeric::interval<Bound> Bound_interval;
 
-    typedef CGAL::Coercion_traits<Coefficient,Boundary> Coercion;
+    typedef CGAL::Coercion_traits<Coefficient,Bound> Coercion;
 
-    typedef typename CGAL::Coercion_traits<Coefficient,Boundary>::Type
+    typedef typename CGAL::Coercion_traits<Coefficient,Bound>::Type
         Coercion_type;
 
     typedef boost::numeric::interval<Coercion_type> Coercion_interval;
@@ -333,7 +333,7 @@ public:
             Roots y_roots;
             real_roots(y_pol, std::back_inserter(y_roots)); 
             
-            Boundary_interval y_iv = get_approximation_y();
+            Bound_interval y_iv = get_approximation_y();
             
             typedef typename std::vector<Algebraic_real_1>::const_iterator
                 Iterator;
@@ -341,7 +341,7 @@ public:
             std::list< Iterator > candidates;
             
             for (Iterator it = y_roots.begin(); it != y_roots.end(); it++) {
-                Boundary_interval it_interval(it->low(), it->high());
+                Bound_interval it_interval(it->low(), it->high());
                 if (boost::numeric::overlap(it_interval, y_iv)) {
                     candidates.push_back(it);
                 }
@@ -355,7 +355,7 @@ public:
                 for (typename std::list< Iterator >::iterator dit, cit =
                          candidates.begin(); cit != candidates.end(); ) {
                     bool remove = false;
-                    Boundary_interval 
+                    Bound_interval 
                         cit_interval((*cit)->low(), (*cit)->high());
                     if (!boost::numeric::overlap(cit_interval, y_iv)) {
                         dit = cit;
@@ -560,7 +560,7 @@ public:
 
     //! Returns whether the y-coordinate equals zero
     bool is_y_zero() const {
-        Boundary_interval y_iv = get_approximation_y();
+        Bound_interval y_iv = get_approximation_y();
         if( y_iv.lower() > 0 || y_iv.upper() < 0 ) {
             return false;
         }
@@ -579,9 +579,9 @@ public:
     // returns a double approximation of the point
     std::pair<double, double> to_double() const {
 
-        typedef typename Get_arithmetic_kernel<Boundary>::Arithmetic_kernel AT;
+        typedef typename Get_arithmetic_kernel<Bound>::Arithmetic_kernel AT;
         typedef typename AT::Bigfloat_interval BFI; 
-        typedef typename CGAL::Bigfloat_interval_traits<BFI>::Boundary BF;
+        typedef typename CGAL::Bigfloat_interval_traits<BFI>::Bound BF;
 
         long old_prec = get_precision(BFI());
         
@@ -629,12 +629,12 @@ public:
     /*!
      * \brief gets approximation of x
      */
-    Boundary_interval get_approximation_x() const {
+    Bound_interval get_approximation_x() const {
         
         typename X_real_traits_1::Lower_boundary lower;
         typename X_real_traits_1::Upper_boundary upper;
 
-        return Boundary_interval(lower(this->ptr()->_m_x), 
+        return Bound_interval(lower(this->ptr()->_m_x), 
                                  upper(this->ptr()->_m_x));
         
     }
@@ -642,7 +642,7 @@ public:
     /*!
      * \brief gets approximation of x that is smaller than bound
      */
-    Boundary_interval get_approximation_x(Boundary bound) const {
+    Bound_interval get_approximation_x(Bound bound) const {
         
         CGAL_assertion(bound > 0);
 
@@ -653,7 +653,7 @@ public:
         while(upper(this->ptr()->_m_x) - lower(this->ptr()->_m_x) >= bound) {
             refine(this->ptr()->_m_x);
         }
-        return Boundary_interval(lower(this->ptr()->_m_x), 
+        return Bound_interval(lower(this->ptr()->_m_x), 
                                  upper(this->ptr()->_m_x));
     
     }
@@ -662,16 +662,16 @@ public:
      * \brief gets approximation of y
      *
      */
-    Boundary_interval get_approximation_y() const {
+    Bound_interval get_approximation_y() const {
         typename Y_real_traits_1::Lower_boundary lower;
         typename Y_real_traits_1::Upper_boundary upper;
-        return Boundary_interval(lower(*this), upper(*this));
+        return Bound_interval(lower(*this), upper(*this));
     }
 
     /*!
      * \brief gets approximation of y that is smaller than bound
      */
-    Boundary_interval get_approximation_y(Boundary bound) const {
+    Bound_interval get_approximation_y(Bound bound) const {
         
         CGAL_assertion(bound > 0);
 
@@ -682,7 +682,7 @@ public:
         while(upper(*this) - lower(*this) >= bound) {
             refine(*this);
         }
-        return Boundary_interval(lower(*this),upper(*this));    
+        return Bound_interval(lower(*this),upper(*this));    
     }
     
     /*!\brief 

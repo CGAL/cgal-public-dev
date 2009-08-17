@@ -518,8 +518,8 @@ public:
                     os << ", " << std::flush;
                 }
                 Algebraic_real_2 xy = algebraic_real_2(i);
-                typedef typename Bitstream_descartes::Boundary Boundary;
-                Boundary th = CGAL::ipower(Boundary(1,2),53);
+                typedef typename Bitstream_descartes::Bound Bound;
+                Bound th = CGAL::ipower(Bound(1,2),53);
                 double d 
                     = CGAL::to_double(xy.get_approximation_y(th).lower());
                 os << "y=" << d << ", " << std::flush;
@@ -561,15 +561,15 @@ public:
         return this->ptr()->isolator;
     }
 
-    typename Bitstream_descartes::Boundary lower_boundary(int index) const {
+    typename Bitstream_descartes::Bound lower_boundary(int index) const {
         return isolator().left_boundary(index);
     }
 
-    typename Bitstream_descartes::Boundary upper_boundary(int index) const {
+    typename Bitstream_descartes::Bound upper_boundary(int index) const {
         return isolator().right_boundary(index);
     }
 
-    typename Bitstream_descartes::Boundary interval_length(int index) const {
+    typename Bitstream_descartes::Bound interval_length(int index) const {
         return isolator().right_boundary(index)-
                isolator().left_boundary(index);
     }
@@ -582,7 +582,7 @@ public:
         return isolator().refine_interval(index);
     }
 
-    void refine_to(int index, typename Bitstream_descartes::Boundary b) {
+    void refine_to(int index, typename Bitstream_descartes::Bound b) {
             while(upper_boundary(index) - lower_boundary(index) > b) {
                 refine(index);
             }

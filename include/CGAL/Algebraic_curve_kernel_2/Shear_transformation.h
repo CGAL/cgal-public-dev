@@ -42,7 +42,7 @@ public:
 
     CGAL_ACK_SNAP_ALGEBRAIC_CURVE_KERNEL_2_TYPEDEFS(Curve_analysis_2);
 
-    typedef std::pair<Boundary,Boundary> Point;
+    typedef std::pair<Bound,Bound> Point;
 
     typedef std::vector< Algebraic_real_1 > Root_container;
 
@@ -268,10 +268,10 @@ public:
 private:
     
     // X-coordinate of the shear of p
-    Boundary x_sheared(Point p,Integer sh) {
+    Bound x_sheared(Point p,Integer sh) {
         return p.first-s*p.second;
     }
-    Boundary x_sheared(Boundary x,Boundary y,Integer sh) {
+    Bound x_sheared(Bound x,Bound y,Integer sh) {
         return x-sh*y;
     }
 
@@ -279,9 +279,9 @@ private:
         int left_index = -1, 
             right_index = static_cast<int>(stripe_values.size()-1);
         Algebraic_real_1 xv = ev.x();
-        Boundary lx = xv.low(), rx=xv.high(),
+        Bound lx = xv.low(), rx=xv.high(),
             x_iv_size = rx-lx;
-        Boundary ly = ev.lower_boundary(index),
+        Bound ly = ev.lower_boundary(index),
             ry = ev.upper_boundary(index);;
         while(left_index < right_index) {
             if(x_iv_size > ry-ly) {
@@ -294,8 +294,8 @@ private:
             ev.refine(index);
             ly = ev.lower_boundary(index);
             ry = ev.upper_boundary(index);
-            Boundary left=(s>0) ? x_sheared(lx,ry,s): x_sheared(lx,ly,s);
-            Boundary right = (s>0) ? x_sheared(rx,ly,s) : x_sheared(rx,ry,s);
+            Bound left=(s>0) ? x_sheared(lx,ry,s): x_sheared(lx,ly,s);
+            Bound right = (s>0) ? x_sheared(rx,ly,s) : x_sheared(rx,ry,s);
             CGAL_assertion(left<right);
             while(left_index<right_index && stripe_values[left_index+1]<left) {
                 ++left_index;
@@ -311,13 +311,13 @@ private:
 
     void find_far_points(Curve_analysis_2& D) {
         int n = static_cast<int>(stripe_values.size());
-        Boundary upper_bound,lower_bound;
-        Boundary left_bound = stripe_values[0],
+        Bound upper_bound,lower_bound;
+        Bound left_bound = stripe_values[0],
             right_bound=stripe_values[n-1];
         Integer num,denom;
         decompose(left_bound,num,denom);
       
-        lower_bound = upper_bound = Boundary(0);
+        lower_bound = upper_bound = Bound(0);
         for(int i=0;i<n;i++) {
             Algebraic_real_1 curr_bound(stripe_values[i]);
             Bitstream_traits traits(curr_bound);
@@ -401,7 +401,7 @@ private:
         // left side
         
         CGAL_assertion(left.x().is_rational());
-        Boundary left_x = left.x().rational();
+        Bound left_x = left.x().rational();
         
         Poly_coer_1 left_pol_with_denom 
             = typename Polynomial_traits_2::Swap() (pol, 0, 1)
@@ -423,7 +423,7 @@ private:
         // right side
         
         CGAL_assertion(right.x().is_rational());
-        Boundary right_x = right.x().rational();
+        Bound right_x = right.x().rational();
         
         Poly_coer_1 right_pol_with_denom 
             = typename Polynomial_traits_2::Swap()(pol, 0, 1)
@@ -583,7 +583,7 @@ private:
     void find_sheared_event_points() {
 
         sh_ev_indices.resize(x_structure.size());
-        std::vector<Boundary> intermediate_values;
+        std::vector<Bound> intermediate_values;
         find_intermediate_values(x_structure.begin(),
                                  x_structure.end(),
                                  std::back_inserter(intermediate_values));
@@ -595,7 +595,7 @@ private:
         std::vector<Status_line_1> intermediate_lines(intermediate_values.size());
 
         int i=0;
-        for(typename std::vector<Boundary>::iterator it 
+        for(typename std::vector<Bound>::iterator it 
                 = intermediate_values.begin();
             it!=intermediate_values.end();it++) {
             intermediate_lines[i]=C.status_line_at_exact_x(*it);
@@ -670,11 +670,11 @@ private:
         int number_of_non_event_roots;
         std::vector<Sh_ev_point_info> event_points;
       
-        Boundary lower_boundary(int i) {
+        Bound lower_boundary(int i) {
             Sh_ev_point_info p= event_points[i];
             return p.ev.lower_boundary(p.index);
         }
-        Boundary upper_boundary(int i) {
+        Bound upper_boundary(int i) {
             Sh_ev_point_info p= event_points[i];
             return p.ev.upper_boundary(p.index);
         }
@@ -1169,15 +1169,15 @@ private:
 
     std::vector<std::vector<int> > sh_ev_indices;
 
-    std::vector<Boundary> stripe_values;                   
+    std::vector<Bound> stripe_values;                   
 
-    Boundary far_left, far_right, y_in_box;
+    Bound far_left, far_right, y_in_box;
 
     Y_structure y_structure;
 
     std::vector<Sh_ev_line_info> pre_vert_lines;
 
-    typename CGAL::Fraction_traits<Boundary>::Decompose decompose;
+    typename CGAL::Fraction_traits<Bound>::Decompose decompose;
 
     int x_extreme_index_counter;
 

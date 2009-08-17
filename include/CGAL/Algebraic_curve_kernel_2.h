@@ -132,8 +132,8 @@ public:
     typedef Algebraic_curve_kernel_2<AlgebraicKernel_d_1> Self;
 #endif
     
-    // Boundary type
-    typedef typename Algebraic_kernel_1::Boundary Boundary;
+    // Bound type
+    typedef typename Algebraic_kernel_1::Bound Bound;
         
     //! Univariate polynomial type 
     typedef typename Algebraic_kernel_1::Polynomial_1 Polynomial_1;
@@ -359,30 +359,30 @@ public:
         public std::unary_function< Polynomial_2, Curve_analysis_2 > {
             
         Curve_analysis_2 operator()(const Polynomial_2& f, 
-                                    Boundary angle,
+                                    Bound angle,
                                     long final_prec) {
             
 #if CGAL_ACK_DEBUG_FLAG
             CGAL_ACK_DEBUG_PRINT << "angle=" << angle << std::endl;
             CGAL_ACK_DEBUG_PRINT << "final_prec=" << final_prec << std::endl;
 #endif          
-            std::pair<Boundary,Boundary> sin_cos
+            std::pair<Bound,Bound> sin_cos
                 = approximate_sin_and_cos_of_angle(angle,final_prec);
 
-            Boundary sine = sin_cos.first, cosine = sin_cos.second;            
+            Bound sine = sin_cos.first, cosine = sin_cos.second;            
 
             
             typedef typename CGAL::Polynomial_traits_d<Polynomial_2>
-                ::template Rebind<Boundary,1>::Other::Type
+                ::template Rebind<Bound,1>::Other::Type
                 Poly_rat_1;
 
             typedef typename CGAL::Polynomial_traits_d<Polynomial_2>
-                ::template Rebind<Boundary,2>::Other::Type
+                ::template Rebind<Bound,2>::Other::Type
                 Poly_rat_2;
 
             Poly_rat_2 
-                sub_x(Poly_rat_1(Boundary(0), cosine), Poly_rat_1(sine)), 
-                    sub_y(Poly_rat_1(Boundary(0), -sine), Poly_rat_1(cosine)), 
+                sub_x(Poly_rat_1(Bound(0), cosine), Poly_rat_1(sine)), 
+                    sub_y(Poly_rat_1(Bound(0), -sine), Poly_rat_1(cosine)), 
                 res;
             
             std::vector<Poly_rat_2> subs;
@@ -525,7 +525,7 @@ public:
     struct Lower_boundary_x_2 {
        
         typedef Xy_coordinate_2 argument_type;
-        typedef Boundary result_type;
+        typedef Bound result_type;
             
         result_type operator()(const Xy_coordinate_2& r) {
             return typename X_real_traits_1::Lower_boundary()(r.x());
@@ -537,7 +537,7 @@ public:
     struct Upper_boundary_x_2 {
        
         typedef Xy_coordinate_2 agrument_type;
-        typedef Boundary result_type;
+        typedef Bound result_type;
             
         result_type operator()(const Xy_coordinate_2& r) {
             return typename X_real_traits_1::Upper_boundary()(r.x());
@@ -549,7 +549,7 @@ public:
     struct Lower_boundary_y_2 {
        
         typedef Xy_coordinate_2 agrument_type;
-        typedef Boundary result_type;
+        typedef Bound result_type;
             
         result_type operator()(const Xy_coordinate_2& r) {
             return typename Y_real_traits_1::Lower_boundary()(r);
@@ -561,7 +561,7 @@ public:
     struct Upper_boundary_y_2 {
        
         typedef Xy_coordinate_2 agrument_type;
-        typedef Boundary result_type;
+        typedef Bound result_type;
             
         result_type operator()(const Xy_coordinate_2& r) {
             return typename Y_real_traits_1::Upper_boundary()(r);
@@ -570,44 +570,44 @@ public:
     CGAL_Algebraic_Kernel_cons(Upper_boundary_y_2, upper_boundary_y_2_object);
     
     /*! 
-     * \brief returns a value of type \c Boundary that lies between
+     * \brief returns a value of type \c Bound that lies between
      * the x-coordinates of the \c Xy_coordinate_2s.
      *
      * \pre{The x-coordinates must not be equal}
      */
-    struct Boundary_between_x_2 {
+    struct Bound_between_x_2 {
        
         typedef Xy_coordinate_2 first_agrument_type;
         typedef Xy_coordinate_2 second_agrument_type;
-        typedef Boundary result_type;
+        typedef Bound result_type;
             
         result_type operator()(const Xy_coordinate_2& r1, 
                 const Xy_coordinate_2& r2) const {
-            return typename X_real_traits_1::Boundary_between()
+            return typename X_real_traits_1::Bound_between()
                 (r1.x(), r2.x());
         }
     };
-    CGAL_Algebraic_Kernel_cons(Boundary_between_x_2, 
+    CGAL_Algebraic_Kernel_cons(Bound_between_x_2, 
             boundary_between_x_2_object);
             
     /*! 
-     * \brief returns a value of type \c Boundary that lies between
+     * \brief returns a value of type \c Bound that lies between
      * the y-coordinates of the \c Xy_coordinate_2s.
      *
      * \pre{The y-coordinates must not be equal}
      */
-    struct Boundary_between_y_2 {
+    struct Bound_between_y_2 {
        
         typedef Xy_coordinate_2 first_agrument_type;
         typedef Xy_coordinate_2 second_agrument_type;
-        typedef Boundary result_type;
+        typedef Bound result_type;
             
         result_type operator()(const Xy_coordinate_2& r1, 
                 const Xy_coordinate_2& r2) const {
-            return typename Y_real_traits_1::Boundary_between()(r1, r2);
+            return typename Y_real_traits_1::Bound_between()(r1, r2);
         }
     };
-    CGAL_Algebraic_Kernel_cons(Boundary_between_y_2, 
+    CGAL_Algebraic_Kernel_cons(Bound_between_y_2, 
             boundary_between_y_2_object);
     
     //! \brief comparison of x-coordinates 
@@ -1124,16 +1124,16 @@ public:
     struct Sign_at_2 :
         public std::binary_function< Curve_analysis_2, Xy_coordinate_2, Sign > {
         
-        typedef typename Xy_coordinate_2::Boundary Boundary;
-        typedef typename Xy_coordinate_2::Boundary_interval Boundary_interval;
+        typedef typename Xy_coordinate_2::Bound Bound;
+        typedef typename Xy_coordinate_2::Bound_interval Bound_interval;
 
         typedef typename Xy_coordinate_2::Coercion_interval Coercion_interval;
         
         typedef typename CGAL::Polynomial_traits_d<Polynomial_2>
-            ::template Rebind<Boundary,1>::Other::Type
+            ::template Rebind<Bound,1>::Other::Type
             Poly_rat_1;
         typedef typename CGAL::Polynomial_traits_d<Polynomial_2>
-            ::template Rebind<Boundary,2>::Other::Type
+            ::template Rebind<Bound,2>::Other::Type
             Poly_rat_2;
         
         Sign operator()(const Polynomial_2& f,
@@ -1148,10 +1148,10 @@ public:
             if(ca_2.is_identical(r.curve()) || _test_exact_zero(ca_2, r))
                 return CGAL::ZERO;
             
-            Boundary_interval ix = r.get_approximation_x();
-            Boundary_interval iy = r.get_approximation_y();
+            Bound_interval ix = r.get_approximation_x();
+            Bound_interval iy = r.get_approximation_y();
 
-            Boundary x_len = ix.upper() - ix.lower(),
+            Bound x_len = ix.upper() - ix.lower(),
                 y_len = iy.upper() - iy.lower();
 
             while(1) {

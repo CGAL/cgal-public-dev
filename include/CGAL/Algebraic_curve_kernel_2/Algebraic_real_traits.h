@@ -38,7 +38,7 @@
 #define CGAL_SNAP_ALGEBRAIC_REAL_TRAITS_2_TYPEDEFS \
     typedef typename Curve_pair_2::Algebraic_curve_2 Curve_2; \
     typedef Algebraic_real_2 Type; \
-    typedef typename Curve_2::Boundary Boundary; \
+    typedef typename Curve_2::Bound Bound; \
     typedef typename Curve_2::Coefficient Coefficient;
 
 CGAL_BEGIN_NAMESPACE
@@ -56,7 +56,7 @@ struct Algebraic_real_traits_for_y {
     
     CGAL_SNAP_ALGEBRAIC_REAL_TRAITS_2_TYPEDEFS
     
-    typedef Null_functor Boundary_between;
+    typedef Null_functor Bound_between;
     typedef Null_functor Lower_boundary;
     typedef Null_functor Upper_boundary;
     typedef Null_functor Refine;
@@ -69,7 +69,7 @@ struct Algebraic_real_traits {
     //! this instance's first template argument
     typedef AlgebraicReal Algebraic_real;
     
-    typedef Null_functor Boundary_between;
+    typedef Null_functor Bound_between;
     typedef Null_functor Lower_boundary;
     typedef Null_functor Upper_boundary;
     typedef Null_functor Refine;
@@ -98,14 +98,14 @@ struct Algebraic_real_traits_for_y<Xy_coordinate_2<
 
     //! computes boundary between y-coordinates of two algebraic reals
     //! defined over the same vertical line
-    struct Boundary_between 
-            : public std::binary_function< Type, Type, Boundary > {
+    struct Bound_between 
+            : public std::binary_function< Type, Type, Bound > {
         
-        Boundary operator()(const Type& r1, const Type& r2) const {
+        Bound operator()(const Type& r1, const Type& r2) const {
 
             CGAL_precondition(r1.y() != r2.y());
 
-            Boundary res(0);
+            Bound res(0);
 #if !CGAL_ACK_2_USE_EXPENSIVE_Y_MEMBER_FOR_APPROXIMATION
             Event_line vline1 =
                 r1.curve()._internal_curve().event_info_at_x(r1.x());
@@ -115,7 +115,7 @@ struct Algebraic_real_traits_for_y<Xy_coordinate_2<
 #endif            
 
             
-            Boundary low1, low2, high1, high2;
+            Bound low1, low2, high1, high2;
             
             while (true) {
 #if CGAL_ACK_2_USE_EXPENSIVE_Y_MEMBER_FOR_APPROXIMATION
@@ -133,11 +133,11 @@ struct Algebraic_real_traits_for_y<Xy_coordinate_2<
 #endif
                 
                 if (low1 > high2) {
-                    res = ((low1 + high2)/Boundary(2));
+                    res = ((low1 + high2)/Bound(2));
                     break;
                 }
                 if (low2 > high1) {
-                    res = ((low2 + high1)/Boundary(2));
+                    res = ((low2 + high1)/Bound(2));
                     break;
                 }
                 
@@ -171,9 +171,9 @@ struct Algebraic_real_traits_for_y<Xy_coordinate_2<
     //! returns current lower boundary of an isolating interval defining 
     //! y-coordinate of an algebraic real
     struct Lower_boundary
-            : public std::unary_function<Type, Boundary> {
+            : public std::unary_function<Type, Bound> {
         
-        Boundary operator()(const Type& r) const {
+        Bound operator()(const Type& r) const {
 #if CGAL_ACK_2_USE_EXPENSIVE_Y_MEMBER_FOR_APPROXIMATION
             return r.y().low();
 #else
@@ -187,9 +187,9 @@ struct Algebraic_real_traits_for_y<Xy_coordinate_2<
     //! returns current upper boundary of an isolating interval defining 
     //! y-coordinate of an algebraic real
     struct Upper_boundary
-            : public std::unary_function<Type, Boundary> {
+            : public std::unary_function<Type, Bound> {
          
-        Boundary operator()(const Type& r) const {
+        Bound operator()(const Type& r) const {
 #if CGAL_ACK_2_USE_EXPENSIVE_Y_MEMBER_FOR_APPROXIMATION
             return r.y().high();
 #else
@@ -222,11 +222,11 @@ struct Algebraic_real_traits_for_y<Xy_coordinate_2<
         //! resulting interval is:
         //! <tt>|lower - upper|/|r.y()| <= 2^(-rel_prec)</tt> 
         void operator()(const Type& r, int rel_prec) const {
-            Boundary low = Lower_boundary()(r);
-            Boundary high = Upper_boundary()(r);
+            Bound low = Lower_boundary()(r);
+            Bound high = Upper_boundary()(r);
             
-            Boundary prec = (high - low) /
-                CGAL::ipower(Boundary(2), rel_prec);
+            Bound prec = (high - low) /
+                CGAL::ipower(Bound(2), rel_prec);
             
             /////////// attention!! need to test for exact zero !!
                
@@ -271,31 +271,31 @@ struct Algebraic_real_traits<CGAL::CGALi::Algebraic_real_pure
     typedef Algebraic_real_1 Type;
 
     //! boundary type
-    typedef typename Algebraic_real_1::Rational Boundary;
+    typedef typename Algebraic_real_1::Rational Bound;
 
     //! computes rational boundary between two algebraic reals
-    struct Boundary_between 
-        : public std::binary_function< Type, Type, Boundary > {
+    struct Bound_between 
+        : public std::binary_function< Type, Type, Bound > {
         
-        Boundary operator()(const Type& t1, const Type& t2 ) const {
+        Bound operator()(const Type& t1, const Type& t2 ) const {
             return t1.rational_between(t2);
         }
     };
 
     //! returns current lower boundary of an algebraic real
     struct Lower_boundary
-        : public std::unary_function< Type, Boundary > {
+        : public std::unary_function< Type, Bound > {
                     
-        Boundary operator()(const Type& t) const {
+        Bound operator()(const Type& t) const {
             return t.low();
         }
     };
 
     //! returns current upper boundary of an algebraic real
     struct Upper_boundary
-        : public std::unary_function< Type, Boundary > {
+        : public std::unary_function< Type, Bound > {
         
-        Boundary operator()(const Type& t) const {
+        Bound operator()(const Type& t) const {
             return t.high();
         }
     };
@@ -322,8 +322,8 @@ struct Algebraic_real_traits<CGAL::CGALi::Algebraic_real_pure
                 t = Type(0);
                 return;
             } 
-            Boundary len = t.high() - t.low(), prec = len /
-                CGAL::ipower(Boundary(2), rel_prec);
+            Bound len = t.high() - t.low(), prec = len /
+                CGAL::ipower(Bound(2), rel_prec);
             while(len > prec) {
                 t.refine();
                 len = t.high() - t.low();
@@ -351,7 +351,7 @@ struct Algebraic_real_traits_for_y<Xy_coordinate_2<
     //! For convenience
     typedef Algebraic_real_2 Type;
 
-    typedef typename Algebraic_real_2::Boundary Boundary;
+    typedef typename Algebraic_real_2::Bound Bound;
 
     typedef typename Algebraic_kernel_2::Curve_analysis_2 Curve_analysis_2;
     
@@ -361,14 +361,14 @@ struct Algebraic_real_traits_for_y<Xy_coordinate_2<
 
     //! computes boundary between y-coordinates of two algebraic reals
     //! defined over the same vertical line
-    struct Boundary_between 
-            : public std::binary_function< Type, Type, Boundary > {
+    struct Bound_between 
+            : public std::binary_function< Type, Type, Bound > {
         
-        Boundary operator()(const Type& r1, const Type& r2) const {
+        Bound operator()(const Type& r1, const Type& r2) const {
 
             CGAL_precondition(r1.y() != r2.y());
 
-            Boundary res(0);
+            Bound res(0);
 
             Isolator isol1 =
                 r1.curve().status_line_at_exact_x(r1.x()).isolator();
@@ -376,7 +376,7 @@ struct Algebraic_real_traits_for_y<Xy_coordinate_2<
             Isolator isol2 =
                 r2.curve().status_line_at_exact_x(r2.x()).isolator();
             
-            Boundary low1, low2, high1, high2;
+            Bound low1, low2, high1, high2;
             
             while (true) {
                 low1 = isol1.left_boundary(r1.arcno());
@@ -386,11 +386,11 @@ struct Algebraic_real_traits_for_y<Xy_coordinate_2<
                 high2 = isol2.right_boundary(r2.arcno());
                 
                 if (low1 > high2) {
-                    res = ((low1 + high2)/Boundary(2));
+                    res = ((low1 + high2)/Bound(2));
                     break;
                 }
                 if (low2 > high1) {
-                    res = ((low2 + high1)/Boundary(2));
+                    res = ((low2 + high1)/Bound(2));
                     break;
                 }
                 
@@ -419,9 +419,9 @@ struct Algebraic_real_traits_for_y<Xy_coordinate_2<
     //! returns current lower boundary of an isolating interval defining 
     //! y-coordinate of an algebraic real
     struct Lower_boundary
-            : public std::unary_function<Type, Boundary> {
+            : public std::unary_function<Type, Bound> {
         
-        Boundary operator()(const Type& r) const {
+        Bound operator()(const Type& r) const {
             return r.curve().status_line_at_exact_x(r.x()).
                 lower_boundary(r.arcno());
         }
@@ -430,9 +430,9 @@ struct Algebraic_real_traits_for_y<Xy_coordinate_2<
     //! returns current upper boundary of an isolating interval defining 
     //! y-coordinate of an algebraic real
     struct Upper_boundary
-            : public std::unary_function<Type, Boundary> {
+            : public std::unary_function<Type, Bound> {
          
-        Boundary operator()(const Type& r) const {
+        Bound operator()(const Type& r) const {
             return r.curve().status_line_at_exact_x(r.x()).
                 upper_boundary(r.arcno());
         }
@@ -455,11 +455,11 @@ struct Algebraic_real_traits_for_y<Xy_coordinate_2<
         //! resulting interval is:
         //! <tt>|lower - upper|/|r.y()| <= 2^(-rel_prec)</tt> 
         void operator()(const Type& r, int rel_prec) const {
-            Boundary low = Lower_boundary()(r);
-            Boundary high = Upper_boundary()(r);
+            Bound low = Lower_boundary()(r);
+            Bound high = Upper_boundary()(r);
             
-            Boundary prec = (high - low) /
-                CGAL::ipower(Boundary(2), rel_prec);
+            Bound prec = (high - low) /
+                CGAL::ipower(Bound(2), rel_prec);
             
             /////////// attention!! need to test for exact zero !!
                

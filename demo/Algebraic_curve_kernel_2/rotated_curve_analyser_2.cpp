@@ -151,7 +151,7 @@ int main(int argc,char** argv) {
         Basic_algebraic_curve_kernel_2;
     typedef Basic_algebraic_curve_kernel_2::Polynomial_2 Input_polynomial_2;
     typedef Basic_algebraic_curve_kernel_2::Polynomial_1 Input_polynomial_1;
-    typedef Basic_algebraic_curve_kernel_2::Boundary Rational;
+    typedef Basic_algebraic_curve_kernel_2::Bound Rational;
     
 
 #if CGAL_ACK_USE_APPROXIMATE_ROTATION

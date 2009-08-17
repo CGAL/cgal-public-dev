@@ -22,7 +22,7 @@
 template <class Algebraic_kernel_1>
 void test_algebraic_kernel_1_tools(){
   typedef typename Algebraic_kernel_1::Coefficient Coefficient;
-  typedef typename Algebraic_kernel_1::Boundary Boundary;
+  typedef typename Algebraic_kernel_1::Bound Bound;
   
   typedef typename Algebraic_kernel_1::Algebraic_real_1 Root;
   typedef typename Algebraic_kernel_1::Polynomial_1 Polynomial_1;
@@ -59,9 +59,9 @@ void test_algebraic_kernel_1_tools(){
 int main(){
   typedef CGAL::Arithmetic_kernel Arithmetic_kernel;
   typedef Arithmetic_kernel::Integer Coefficient;
-  typedef Arithmetic_kernel::Rational Boundary;
+  typedef Arithmetic_kernel::Rational Bound;
   
-  typedef CGAL::Algebraic_kernel_1<Coefficient, Boundary> Algebraic_kernel_1;
+  typedef CGAL::Algebraic_kernel_1<Coefficient, Bound> Algebraic_kernel_1;
  
   test_algebraic_kernel_1_tools<Algebraic_kernel_1>();
   return 0;

@@ -122,8 +122,8 @@ CGAL_BEGIN_NAMESPACE
                 Node_const_iterator;
 
             //! How the boundaries of the isolating intervals are represented
-            typedef typename Bitstream_descartes_rndl_tree_traits::Boundary
-                Boundary;
+            typedef typename Bitstream_descartes_rndl_tree_traits::Bound
+                Bound;
 
             //! Default constructor (does nothing)
             Generic_descartes_rep(Bitstream_descartes_type type
@@ -376,7 +376,7 @@ CGAL_BEGIN_NAMESPACE
                         }
 
                         //! The lower boundary of the \c i th root
-                        virtual Boundary left_boundary(int i) const  {
+                        virtual Bound left_boundary(int i) const  {
                             CGAL_assertion(i>=0 && i < number_of_intervals);
                             Node_const_iterator curr = bitstream_tree.begin();
                             std::advance(curr,i);
@@ -384,7 +384,7 @@ CGAL_BEGIN_NAMESPACE
                         } 
     
                         //! The upper boundary of the \c i th root
-                        virtual Boundary right_boundary(int i) const {
+                        virtual Bound right_boundary(int i) const {
                             CGAL_assertion(i>=0 && i < number_of_intervals);
                             Node_const_iterator curr = bitstream_tree.begin();
                             std::advance(curr,i);
@@ -628,8 +628,8 @@ CGAL_BEGIN_NAMESPACE
         typedef typename Base::Node_const_iterator Node_const_iterator;
 
         //! The interval boundaries are represented in this type
-        typedef typename  Bitstream_descartes_rndl_tree_traits::Boundary
-        Boundary;
+        typedef typename  Bitstream_descartes_rndl_tree_traits::Bound
+        Bound;
 
         //! The type of the tree that controls the Bitstream instance
         typedef typename Base::Bitstream_tree Bitstream_tree;
@@ -776,7 +776,7 @@ CGAL_BEGIN_NAMESPACE
 
         typedef typename Base::Node_const_iterator Node_const_iterator;
 
-        typedef typename Base::Boundary Boundary;
+        typedef typename Base::Bound Bound;
 
         Backshear_descartes_rep(
                 Polynomial f,
@@ -917,7 +917,7 @@ CGAL_BEGIN_NAMESPACE
     protected:
 
         int check_marking(Node_iterator node) {
-            Boundary lower = Base::bitstream_tree.lower(node),
+            Bound lower = Base::bitstream_tree.lower(node),
                 upper=Base::bitstream_tree.upper(node);
             for(int i=0;i<number_of_events;i++) {
                 while(true) {
@@ -988,8 +988,8 @@ CGAL_BEGIN_NAMESPACE
         typedef typename Bitstream_descartes_rndl_tree_traits::Integer Integer;
         
         //! How the boundaries of the isolating intervals are represented
-        typedef typename Bitstream_descartes_rndl_tree_traits::Boundary
-        Boundary;
+        typedef typename Bitstream_descartes_rndl_tree_traits::Bound
+        Bound;
         
         typedef Generic_descartes_rep<Bitstream_descartes_rndl_tree_traits>
         Base;
@@ -1048,7 +1048,7 @@ CGAL_BEGIN_NAMESPACE
 
  
         //! The lower boundary of the \c i th root
-        virtual Boundary left_boundary(int i) const  {
+        virtual Bound left_boundary(int i) const  {
             typename Curve_kernel_2::Lower_boundary_y_2
                 lower_boundary_y;  // TODO call _object
             return lower_boundary_y(
@@ -1057,7 +1057,7 @@ CGAL_BEGIN_NAMESPACE
         }
     
         //! The upper boundary of the \c i th root
-        virtual Boundary right_boundary(int i) const {
+        virtual Bound right_boundary(int i) const {
             typename Curve_kernel_2::Upper_boundary_y_2
                 upper_boundary_y;  // TODO call _object 
             return upper_boundary_y(
@@ -1165,8 +1165,8 @@ CGAL_BEGIN_NAMESPACE
         Node_const_iterator;
 
         //! Type for the interval boundaries of the isolating intervals
-        typedef typename Bitstream_descartes_rndl_tree_traits::Boundary
-        Boundary;
+        typedef typename Bitstream_descartes_rndl_tree_traits::Bound
+        Bound;
 
         //! Default constructor
         Bitstream_descartes() : Base(new Rep()) {} 
@@ -1355,7 +1355,7 @@ CGAL_BEGIN_NAMESPACE
         }
 
         //! The left boundary of the <tt>i</tt>th isolating interval
-        Boundary left_boundary(int i) const  {
+        Bound left_boundary(int i) const  {
             CGAL_assertion(is_isolated());
             return this->ptr()->left_boundary(i);
         }
@@ -1364,13 +1364,13 @@ CGAL_BEGIN_NAMESPACE
         void left_boundary(int i, 
                            Integer& numerator, 
                            Integer& denominator) const {
-            typedef CGAL::Fraction_traits<Boundary> Fraction_traits; 
+            typedef CGAL::Fraction_traits<Bound> Fraction_traits; 
             typename Fraction_traits::Decompose decompose;
             decompose(left_boundary(i),numerator,denominator);
         }
 
         //! The right boundary of the <tt>i</tt>th isolating interval
-        Boundary right_boundary(int i) const  {
+        Bound right_boundary(int i) const  {
             CGAL_assertion(is_isolated());
             return this->ptr()->right_boundary(i);
         }
@@ -1379,13 +1379,13 @@ CGAL_BEGIN_NAMESPACE
         void right_boundary(int i, 
                             Integer& numerator, 
                             Integer& denominator) const {
-            typedef CGAL::Fraction_traits<Boundary> Fraction_traits; 
+            typedef CGAL::Fraction_traits<Bound> Fraction_traits; 
             typename Fraction_traits::Decompose decompose;
             decompose(right_boundary(i),numerator,denominator);
         }
 
         //! The length of the <tt>i</tt>th isolating interval
-        Boundary length(int i) const {
+        Bound length(int i) const {
             CGAL_assertion(is_isolated());
             return (this->ptr()->right_boundary(i) - 
                     this->ptr()->left_boundary(i));

@@ -117,7 +117,7 @@ simple_rational_between(const Algebraic_real& a,
         CGAL::Get_arithmetic_kernel<Rational>::Arithmetic_kernel AK;
     typedef typename AK::Bigfloat_interval Bigfloat_interval;
     typedef typename CGAL::Bigfloat_interval_traits<Bigfloat_interval>
-        ::Boundary Bigfloat;
+        ::Bound Bigfloat;
     typedef typename AK::Integer Integer;
 
     long old_prec = CGAL::get_precision(Bigfloat_interval());
@@ -466,18 +466,18 @@ CGAL::Sign estimate_sign_at(NT alpha,
 /*!
  * \brief Evaluates poynomial at intervals with the Horner scheme
  */
-template<typename Poly1_,typename Boundary_>
+template<typename Poly1_,typename Bound_>
 boost::numeric::interval
-<typename CGAL::Coercion_traits<typename Poly1_::NT, Boundary_>::Type >
-evaluate_iv(Poly1_ f,boost::numeric::interval<Boundary_> iv) {
+<typename CGAL::Coercion_traits<typename Poly1_::NT, Bound_>::Type >
+evaluate_iv(Poly1_ f,boost::numeric::interval<Bound_> iv) {
 
-    typedef Boundary_ Boundary;
+    typedef Bound_ Bound;
     typedef Poly1_ Poly1;
     typedef typename 
-        CGAL::Coercion_traits<typename Poly1::NT, Boundary_>::Type Coercion;
-	//typename CGAL::Coercion_traits<typename Poly1::NT, Boundary_>::Cast cast;
+        CGAL::Coercion_traits<typename Poly1::NT, Bound_>::Type Coercion;
+	//typename CGAL::Coercion_traits<typename Poly1::NT, Bound_>::Cast cast;
     CGAL_assertion(f.degree()>=0);
-    typename CGAL::Coercion_traits<typename Poly1::NT, Boundary_>::Cast cast;
+    typename CGAL::Coercion_traits<typename Poly1::NT, Bound_>::Cast cast;
     typedef boost::numeric::interval<Coercion> Coercion_interval;
     Coercion_interval iv_cast(cast(iv.lower()),cast(iv.upper()));
     int n=f.degree();

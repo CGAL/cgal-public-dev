@@ -59,7 +59,7 @@ class Algebraic_real_quadratic_refinement_rep_bfi
     CGAL::Get_arithmetic_kernel<Field>::Arithmetic_kernel:: 
         Bigfloat_interval BFI;
 
-    typedef typename CGAL::Bigfloat_interval_traits<BFI>::Boundary BF;
+    typedef typename CGAL::Bigfloat_interval_traits<BFI>::Bound BF;
 
     typename CGAL::CGALi::Float_traits<BF>::Get_exponent get_exp;
     typename CGAL::CGALi::Float_traits<BF>::Get_mantissa get_m;

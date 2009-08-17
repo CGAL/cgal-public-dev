@@ -57,8 +57,8 @@ public:
     typedef Polynomial_ Polynomial;
     //! Second template parameter
     typedef Rational_ Rational;
-    //! Boundary type of the isolating intervals
-    typedef Rational_ Boundary;
+    //! Bound type of the isolating intervals
+    typedef Rational_ Bound;
     // Integer or Numerator/Denominator type of boundary.
     typedef typename CGAL::Fraction_traits<Rational>::Numerator_type Integer;
 private:

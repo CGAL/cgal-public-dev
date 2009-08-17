@@ -248,9 +248,9 @@ public:
  
     void op() 
     {
-        typedef typename Xy_coordinate_2::Boundary Boundary;
-        typedef typename Xy_coordinate_2::Boundary_interval
-                Boundary_interval;
+        typedef typename Xy_coordinate_2::Bound Bound;
+        typedef typename Xy_coordinate_2::Bound_interval
+                Bound_interval;
 
         ::CGAL::set_mode(std::cerr, ::CGAL::IO::PRETTY);
         BENCH_OUT("Roots in ascending order: \n");

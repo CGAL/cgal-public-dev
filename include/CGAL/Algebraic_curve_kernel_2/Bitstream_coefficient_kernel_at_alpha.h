@@ -77,7 +77,7 @@ public:
 
     typedef typename 
     CGAL::Get_arithmetic_kernel<typename Coefficient::NT>::Arithmetic_kernel
-        ::Rational Boundary;
+        ::Rational Bound;
 
     typedef CGAL::Handle_with_policy
         < CGAL::CGALi::Bitstream_coefficient_kernel_at_alpha_rep

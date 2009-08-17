@@ -31,8 +31,8 @@ CGAL_BEGIN_NAMESPACE
     typedef typename Algebraic_kernel_2::Algebraic_kernel_1 \
         Algebraic_kernel_1;\
     typedef typename Algebraic_kernel_1::Coefficient Coefficient;\
-    typedef typename Algebraic_kernel_1::Boundary Boundary; \
-    typedef typename CGAL::Get_arithmetic_kernel<Boundary> \
+    typedef typename Algebraic_kernel_1::Bound Bound; \
+    typedef typename CGAL::Get_arithmetic_kernel<Bound> \
         ::Arithmetic_kernel Arithmetic_kernel; \
     typedef typename Arithmetic_kernel::Integer Integer; \
     typedef typename Algebraic_kernel_1::Algebraic_real_1 Algebraic_real_1;   \

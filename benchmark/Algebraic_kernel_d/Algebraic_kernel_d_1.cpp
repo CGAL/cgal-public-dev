@@ -311,13 +311,13 @@ Benchmark_result do_benchmark( std::string filename, int samples = 5 ) {
 }
 
 
-template< class Coeff_, class Boundary_, class RepClass, class Isolator_ >
+template< class Coeff_, class Bound_, class RepClass, class Isolator_ >
 void single_benchmark( std::string filename, int samples = 5 ) {
     typedef Coeff_      Coeff;
-    typedef Boundary_   Boundary;
+    typedef Bound_   Bound;
     typedef RepClass    Rep_class;
     typedef Isolator_   Isolator;
-    typedef CGAL::Algebraic_kernel_1< Coeff, Boundary, Rep_class, Isolator > AK;
+    typedef CGAL::Algebraic_kernel_1< Coeff, Bound, Rep_class, Isolator > AK;
 
     // Output result to cerr
     // I'm using cerr because the benchmark results are written to cout.
@@ -325,19 +325,19 @@ void single_benchmark( std::string filename, int samples = 5 ) {
     std::cerr << do_benchmark< AK >( filename, samples ) << std::endl;
 }
 
-template< class Coeff_, class Boundary_, class RepClass >
+template< class Coeff_, class Bound_, class RepClass >
 void single_benchmark( std::string filename, std::string isolator, int samples = 5 ) {
     typedef Coeff_      Coeff;
-    typedef Boundary_   Boundary;
+    typedef Bound_   Bound;
     typedef RepClass    Rep_class;
 
     // Select isolator
     if( isolator == "Descartes" )
-        single_benchmark< Coeff, Boundary, Rep_class,
-            CGAL::CGALi::Descartes< typename CGAL::Polynomial< Coeff >, Boundary > >( filename, samples );
+        single_benchmark< Coeff, Bound, Rep_class,
+            CGAL::CGALi::Descartes< typename CGAL::Polynomial< Coeff >, Bound > >( filename, samples );
     else if( isolator == "Bitstream_descartes" )
-        single_benchmark< Coeff, Boundary, Rep_class,
-            CGAL::CGALi::Bitstream_descartes< typename CGAL::Polynomial< Coeff >, Boundary > >( filename, samples );
+        single_benchmark< Coeff, Bound, Rep_class,
+            CGAL::CGALi::Bitstream_descartes< typename CGAL::Polynomial< Coeff >, Bound > >( filename, samples );
     else
         CGAL_error_msg( "Unknown isolator class" );
 }
@@ -345,18 +345,18 @@ void single_benchmark( std::string filename, std::string isolator, int samples =
 template< class Coeff_ >
 void single_benchmark( std::string filename, std::string rep_class, std::string isolator, int samples = 5 ) {
     typedef Coeff_ Coeff;
-    typedef typename CGAL::Get_arithmetic_kernel< Coeff >::Arithmetic_kernel::Rational Boundary;
+    typedef typename CGAL::Get_arithmetic_kernel< Coeff >::Arithmetic_kernel::Rational Bound;
 
     // Select rep class    
     if( rep_class == "Algebraic_real_rep" )
-        single_benchmark< Coeff, Boundary,
-             CGAL::CGALi::Algebraic_real_rep< Coeff, Boundary > >( filename, isolator, samples );
+        single_benchmark< Coeff, Bound,
+             CGAL::CGALi::Algebraic_real_rep< Coeff, Bound > >( filename, isolator, samples );
     else if( rep_class == "Algebraic_real_rep_bfi" )
-        single_benchmark< Coeff, Boundary,
-             CGAL::CGALi::Algebraic_real_rep_bfi< Coeff, Boundary > >( filename, isolator, samples );
+        single_benchmark< Coeff, Bound,
+             CGAL::CGALi::Algebraic_real_rep_bfi< Coeff, Bound > >( filename, isolator, samples );
     else if( rep_class == "Algebraic_real_quadratic_refinement_rep_bfi" )
-        single_benchmark< Coeff, Boundary,
-             CGAL::CGALi::Algebraic_real_quadratic_refinement_rep_bfi< Coeff, Boundary > >( filename, isolator, samples );
+        single_benchmark< Coeff, Bound,
+             CGAL::CGALi::Algebraic_real_quadratic_refinement_rep_bfi< Coeff, Bound > >( filename, isolator, samples );
     else
          CGAL_error_msg( "Unknown rep class" );
 }

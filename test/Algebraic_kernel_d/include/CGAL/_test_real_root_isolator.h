@@ -34,13 +34,13 @@ int check_intervals_real_root_isolator(
         const typename RealRootIsolator::Polynomial& P) {
 
     typedef RealRootIsolator Isolator;
-    typedef typename Isolator::Boundary Boundary;
+    typedef typename Isolator::Bound Bound;
     
     Isolator Isol(P);
     int n = Isol.number_of_real_roots();
     for(int i=0; i<n; i++) {
-       Boundary left  = Isol.left_boundary(i);
-       Boundary right = Isol.right_boundary(i);
+       Bound left  = Isol.left_boundary(i);
+       Bound right = Isol.right_boundary(i);
 
        if(!Isol.is_exact_root(i)) {
            assert(left < right);
@@ -59,17 +59,17 @@ int check_intervals_real_root_isolator(
 
 // Not part of the concept 
 /*
-  template <class RealRootIsolator, class Polynomial, class Boundary>
+  template <class RealRootIsolator, class Polynomial, class Bound>
   int check_intervals_real_root_isolator( const Polynomial& P, 
-  const Boundary& a,
-  const Boundary& b) {
+  const Bound& a,
+  const Bound& b) {
   
   typedef RealRootIsolator Isolator;
   Isolator Isol(P,a,b);
   int n = Isol.number_of_real_roots();
   for(int i=0; i<n; i++) {
-  Boundary left = Isol.left_boundary(i);
-  Boundary right = Isol.right_boundary(i);
+  Bound left = Isol.left_boundary(i);
+  Bound right = Isol.right_boundary(i);
   
   assert( left < right || Isol.is_exact_root(i));
   if(!Isol.is_exact_root(i)) {
@@ -88,7 +88,7 @@ template <class RealRootIsolator>
 void test_real_root_isolator() {
     typedef RealRootIsolator Isolator;
     typedef typename Isolator::Polynomial    Polynomial;
-    typedef typename Isolator::Boundary Boundary;
+    typedef typename Isolator::Bound Bound;
     typedef typename Polynomial::NT          NT;
  
     // just some Polynomials (not all are used)

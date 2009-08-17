@@ -100,7 +100,7 @@ public:
     typedef typename Bitstream_coefficient_kernel::Coefficient Coefficient;
 
     typedef typename Bitstream_coefficient_kernel::Bigfloat_interval BFI;
-    typedef typename CGAL::Bigfloat_interval_traits<BFI>::Boundary BF; 
+    typedef typename CGAL::Bigfloat_interval_traits<BFI>::Bound BF; 
     
     typedef typename 
         CGAL::Polynomial_type_generator<Coefficient,1>::Type POLY; 
@@ -113,7 +113,7 @@ public:
     Handle;
 
     typedef typename Bitstream_coefficient_kernel::Integer  Integer; 
-    typedef typename Bitstream_coefficient_kernel::Boundary Boundary;
+    typedef typename Bitstream_coefficient_kernel::Bound Bound;
 
     //! @}
 
@@ -373,13 +373,13 @@ public:
 
 
     // TODO: Look whether this is best possible
-    class Boundary_creator {
+    class Bound_creator {
 	
     public:
 	
-	Boundary_creator() {}
+	Bound_creator() {}
 	
-	Boundary operator() (Integer x,long p) {
+	Bound operator() (Integer x,long p) {
             Integer num=x, denom,two(2),q,r;
             if(p < 0) {
                 CGAL::div_mod(num,two,q,r);
@@ -394,7 +394,7 @@ public:
                 num*=CGAL::ipower(Integer(2),p);
                 denom=1;
             }
-            Boundary b(num,denom);
+            Bound b(num,denom);
             CGAL::simplify(b);
             return b;
 	} 

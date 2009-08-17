@@ -39,24 +39,24 @@ CGAL_BEGIN_NAMESPACE
  * depending on the coefficient type.
  */
 template<typename Coefficient, 
-         typename Boundary = typename CGAL::Get_arithmetic_kernel< Coefficient >::Arithmetic_kernel::Rational>
+         typename Bound = typename CGAL::Get_arithmetic_kernel< Coefficient >::Arithmetic_kernel::Rational>
 struct Algebraic_kernel_1_generator {
 
-    typedef CGAL::Algebraic_kernel_1 <Coefficient, Boundary>
+    typedef CGAL::Algebraic_kernel_1 <Coefficient, Bound>
         Default_algebraic_kernel_1;
 
     typedef CGAL::Algebraic_kernel_1
     < Coefficient, 
-      Boundary,
-      CGAL::CGALi::Algebraic_real_rep< Coefficient, Boundary >,
-      CGAL::CGALi::Descartes< CGAL::Polynomial< Coefficient >, Boundary >
+      Bound,
+      CGAL::CGALi::Algebraic_real_rep< Coefficient, Bound >,
+      CGAL::CGALi::Descartes< CGAL::Polynomial< Coefficient >, Bound >
     > Algebraic_kernel_with_bisection_and_descartes_1;
 
     typedef CGAL::Algebraic_kernel_1
     < Coefficient, 
-      Boundary,
+      Bound,
       CGAL::CGALi::Algebraic_real_quadratic_refinement_rep_bfi
-           < Coefficient, Boundary >,
+           < Coefficient, Bound >,
       CGAL::CGALi::Bitstream_descartes
         < CGAL::CGALi::Bitstream_descartes_rndl_tree_traits
             < CGAL::CGALi::Bitstream_coefficient_kernel<Coefficient> > 
@@ -65,10 +65,10 @@ struct Algebraic_kernel_1_generator {
 
     typedef CGAL::Algebraic_kernel_1
     < Coefficient, 
-      Boundary,
+      Bound,
       CGAL::CGALi::Algebraic_real_quadratic_refinement_rep_bfi
-           < Coefficient, Boundary >,
-      CGAL::CGALi::Descartes< CGAL::Polynomial< Coefficient >, Boundary >
+           < Coefficient, Bound >,
+      CGAL::CGALi::Descartes< CGAL::Polynomial< Coefficient >, Bound >
     > Algebraic_kernel_with_qir_and_descartes_1;
 };
 

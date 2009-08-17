@@ -84,7 +84,7 @@ typename Arithmetic_traits::Bigfloat_interval pi(long precision)  {
             m++;
         }
         typedef typename CGAL::Bigfloat_interval_traits<Bigfloat_interval>
-            ::Boundary Bigfloat_boundary;
+            ::Bound Bigfloat_boundary;
         Bigfloat_boundary bb(Integer(1));
         bb = typename CGAL::CGALi::Float_traits<Bigfloat_boundary>
             ::Mul_by_pow_of_2() (bb,-precision-error_offset);
@@ -161,7 +161,7 @@ typename Arithmetic_traits::Bigfloat_interval arcsin
             (x,precision+error_offset);
 
         typedef typename CGAL::Bigfloat_interval_traits<Bigfloat_interval>
-            ::Boundary Bigfloat_boundary;
+            ::Bound Bigfloat_boundary;
         Bigfloat_boundary bb(Integer(1));
         bb = typename CGAL::CGALi::Float_traits<Bigfloat_boundary>
             ::Mul_by_pow_of_2() (bb,-precision-error_offset);
@@ -235,7 +235,7 @@ typename Arithmetic_traits::Bigfloat_interval sin
             (precision+error_offset);
 
         typedef typename CGAL::Bigfloat_interval_traits<Bigfloat_interval>
-            ::Boundary Bigfloat_boundary;
+            ::Bound Bigfloat_boundary;
         Bigfloat_boundary bb(Integer(1));
         bb = typename CGAL::CGALi::Float_traits<Bigfloat_boundary>
             ::Mul_by_pow_of_2() (bb,-precision-error_offset);
@@ -285,12 +285,12 @@ typename Arithmetic_traits::Bigfloat_interval sin
     
 }
 
-template<typename Boundary>
-std::pair<Boundary,Boundary>
-approximate_sin_and_cos_of_angle(Boundary angle,long final_prec) {
+template<typename Bound>
+std::pair<Bound,Bound>
+approximate_sin_and_cos_of_angle(Bound angle,long final_prec) {
     
     typedef typename 
-            CGAL::Get_arithmetic_kernel<Boundary>::Arithmetic_kernel AT;
+            CGAL::Get_arithmetic_kernel<Bound>::Arithmetic_kernel AT;
     typedef typename AT::Integer Integer;
     
     while(abs(angle)>180) {
@@ -311,24 +311,24 @@ approximate_sin_and_cos_of_angle(Boundary angle,long final_prec) {
         angle=90-angle;
     }
     
-    Boundary sine, cosine;
+    Bound sine, cosine;
     
     // Filter boundary case of 0 degree
-    if(angle==Boundary(0) || 
-       Boundary(1)/angle>CGAL::ipower(Integer(2),final_prec)) {
+    if(angle==Bound(0) || 
+       Bound(1)/angle>CGAL::ipower(Integer(2),final_prec)) {
         sine = 0;
         cosine = 1;
     } else {
         
         typedef typename AT::Bigfloat_interval Bigfloat_interval;
         typedef typename Bigfloat_interval_traits<Bigfloat_interval>
-            ::Boundary Bigfloat_boundary;
+            ::Bound Bigfloat_boundary;
         
         
         long old_prec = CGAL::get_precision(Bigfloat_interval());
         
         long prec = 16;
-        Boundary t;
+        Bound t;
         while(true) {
             CGAL::set_precision(Bigfloat_interval(),prec);
             std::cout << "increased prec to " << (prec) 
@@ -346,7 +346,7 @@ approximate_sin_and_cos_of_angle(Boundary angle,long final_prec) {
                                (CGAL::convert_to_bfi(Integer(1))/(s*s)-CGAL::convert_to_bfi(Integer(1))));
             
             int n = 0;
-            typename CGAL::Fraction_traits<Boundary>::Compose compose;
+            typename CGAL::Fraction_traits<Bound>::Compose compose;
             
             bool success=false;
             
@@ -373,7 +373,7 @@ approximate_sin_and_cos_of_angle(Boundary angle,long final_prec) {
                         (CGAL::abs(asin-CGAL::convert_to_bfi(angle)));
                     success = (bound <= -final_prec);
                     typename 
-                        CGAL::Coercion_traits<Boundary, 
+                        CGAL::Coercion_traits<Bound, 
                         Bigfloat_boundary>::Cast
                         cast;
                     if((cast(t)==cast(x)) || success) {

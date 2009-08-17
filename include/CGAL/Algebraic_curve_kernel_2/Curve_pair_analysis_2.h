@@ -120,7 +120,7 @@ struct Curve_pair_analysis_2_rep {
         
     typedef typename Polynomial_2::NT Polynomial_1;
 
-    typedef typename Curve_analysis_2::Boundary Boundary;
+    typedef typename Curve_analysis_2::Bound Bound;
 
     typedef CGAL::CGALi::Status_line_CPA_1<Handle> Status_line_CPA_1;
 
@@ -130,7 +130,7 @@ struct Curve_pair_analysis_2_rep {
 
     typedef boost::optional<Slice_info> Lazy_slice_info;
 
-    typedef boost::optional<Boundary> Lazy_boundary;
+    typedef boost::optional<Bound> Lazy_boundary;
 
     typedef CGAL::CGALi::Event_indices<size_type> Event_indices;
 
@@ -193,7 +193,7 @@ private:
     mutable boost::optional<std::vector<size_type> > 
         multiplicities_of_resultant_roots;
 
-    mutable boost::optional<std::vector<Boundary> > stripe_values;
+    mutable boost::optional<std::vector<Bound> > stripe_values;
         
     mutable std::vector< Lazy_status_line_CPA_1 > event_slices;
 
@@ -291,8 +291,8 @@ public:
     //! Type for points with algebraic coordinates
     typedef typename Algebraic_kernel_2::Algebraic_real_2 Algebraic_real_2;
 
-    //! Boundary type (for rational numbers)
-    typedef typename Rep::Boundary Boundary;
+    //! Bound type (for rational numbers)
+    typedef typename Rep::Bound Bound;
 
 private:
     // Optional for boundaries
@@ -337,8 +337,8 @@ private:
     // Lazy version of status lines
     typedef typename Rep::Lazy_status_line_CPA_1 Lazy_status_line_CPA_1;
 
-    // Coercion between Boundary and Coefficient type
-    typedef CGAL::Coercion_traits<Boundary, Coefficient> Coercion;
+    // Coercion between Bound and Coefficient type
+    typedef CGAL::Coercion_traits<Bound, Coefficient> Coercion;
     
     // The common supertype
     typedef typename Coercion::Type Coercion_type;
@@ -555,9 +555,9 @@ public:
         return multiplicities_of_resultant_roots()[i];
     }
 
-    std::vector<Boundary>& stripe_values() const {
+    std::vector<Bound>& stripe_values() const {
         if(! this->ptr()->stripe_values) {
-            this->ptr()->stripe_values = std::vector<Boundary>();
+            this->ptr()->stripe_values = std::vector<Bound>();
             find_intermediate_values
                 (resultant_roots().begin(),
                  resultant_roots().end(),
@@ -759,7 +759,7 @@ private:
         Algebraic_real_1& x = event_x(i);
 
         CGAL_precondition(x.is_rational());
-        Boundary r = x.rational();
+        Bound r = x.rational();
 
         typedef typename CGAL::Fraction_traits<Poly_coer_1> FT;
         
@@ -1025,7 +1025,7 @@ public:
     }
         
     //!  Returns boundary representative value at the <tt>i</tt>th interval
-    const Boundary boundary_value_in_interval(size_type i) const {
+    const Bound boundary_value_in_interval(size_type i) const {
 
         const std::vector<Algebraic_real_1>& events = event_x_coordinates(); 
 
@@ -1033,7 +1033,7 @@ public:
             // Create the intermediate x-coordinate first
             if(events.size()==0) {
                 CGAL_assertion(i==0);
-                intermediate_values()[0]=Boundary(0);
+                intermediate_values()[0]=Bound(0);
             } else {
                 if(i==0) {
                     intermediate_values()[i] 
@@ -1055,13 +1055,13 @@ public:
         
 private:
       
-    struct Boundary_to_coercion_functor {
+    struct Bound_to_coercion_functor {
         
-        typedef Boundary argument_type;
+        typedef Bound argument_type;
         typedef Coercion_type result_type;
 
         result_type operator() (argument_type x) const {
-            typename CGAL::Coercion_traits<Boundary,Coefficient>::Cast cast;
+            typename CGAL::Coercion_traits<Bound,Coefficient>::Cast cast;
             return cast(x);
         }
     };
@@ -1072,7 +1072,7 @@ private:
         typedef Coercion_type result_type;
 
         result_type operator() (argument_type x) const {
-            typename CGAL::Coercion_traits<Boundary,Coefficient>::Cast cast;
+            typename CGAL::Coercion_traits<Bound,Coefficient>::Cast cast;
             return cast(x);
         }
     };
@@ -1151,7 +1151,7 @@ private:
         create_event_slice_from_current_intersection_info (size_type i) 
         const throw(CGAL::CGALi::Non_generic_position_exception);
 
-    Boundary x_sheared(Boundary x, Boundary y,Integer sh) const {
+    Bound x_sheared(Bound x, Bound y,Integer sh) const {
         return x-sh*y;
     }
 
@@ -1850,7 +1850,7 @@ typename Curve_pair_analysis_2<AlgebraicKernel_2>::Status_line_CPA_1
 Curve_pair_analysis_2<AlgebraicKernel_2>::
 create_intermediate_slice_at(int i) const {
     
-    Boundary r = boundary_value_in_interval(i);
+    Bound r = boundary_value_in_interval(i);
 
     std::vector<Algebraic_real_1> p1_roots,p2_roots;
 
@@ -2343,8 +2343,8 @@ zero_test_bivariate(const Algebraic_real_1& alpha,
 #endif
 */
         std::vector<Poly_coer_1> p_powers(n+1),q_powers(n+1);
-        p_powers[0]=Poly_coer_1(Boundary(1));
-        q_powers[0]=Poly_coer_1(Boundary(1));
+        p_powers[0]=Poly_coer_1(Bound(1));
+        q_powers[0]=Poly_coer_1(Bound(1));
         Poly_coer_1 intermediate;
         for(size_type i=1;i<=n;i++) {
 /*
@@ -2603,9 +2603,9 @@ update_intersection_info(Intersection_info_container&
     size_type left_index = -1, 
         right_index = static_cast<size_type>(stripe_values().size()-1);
     Algebraic_real_1 xv = ev.x();
-    Boundary lx = xv.low(), rx=xv.high(),
+    Bound lx = xv.low(), rx=xv.high(),
         x_iv_size = rx-lx;
-    Boundary ly = ev.lower_boundary(index),
+    Bound ly = ev.lower_boundary(index),
         ry = ev.upper_boundary(index);;
     while(left_index < right_index) {
         if(x_iv_size > ry-ly) {
@@ -2618,8 +2618,8 @@ update_intersection_info(Intersection_info_container&
         ev.refine(index);
         ly = ev.lower_boundary(index);
         ry = ev.upper_boundary(index);
-        Boundary left=(s<0) ? x_sheared(lx,ry,-s): x_sheared(lx,ly,-s);
-        Boundary right = (s<0) ? x_sheared(rx,ly,-s) : x_sheared(rx,ry,-s);
+        Bound left=(s<0) ? x_sheared(lx,ry,-s): x_sheared(lx,ly,-s);
+        Bound right = (s<0) ? x_sheared(rx,ly,-s) : x_sheared(rx,ry,-s);
         CGAL_assertion(left<right);
         while(left_index<right_index && 
               stripe_values()[left_index+1]<left) {

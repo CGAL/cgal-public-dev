@@ -281,7 +281,7 @@ int main(int argc,char** argv) {
     typedef Algebraic_curve_kernel_2::Curve_analysis_2 Curve_analysis_2;
     typedef Algebraic_curve_kernel_2::Polynomial_2 Polynomial_2;
     typedef Algebraic_curve_kernel_2::Polynomial_1 Polynomial_1;
-    typedef Algebraic_curve_kernel_2::Boundary Rational;
+    typedef Algebraic_curve_kernel_2::Bound Rational;
   
 
     std::vector<Polynomial_2> curves;

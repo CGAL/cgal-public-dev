@@ -75,7 +75,7 @@ public:
     
     CGAL_ACK_SNAP_ALGEBRAIC_CURVE_KERNEL_2_TYPEDEFS(Handle);
 
-    typedef std::map< Boundary, Status_line_1 > 
+    typedef std::map< Bound, Status_line_1 > 
     Vert_line_at_rational_map;
     
 #if 1 // TODO using x() results in much slower running times (pre-precision)
@@ -108,7 +108,7 @@ public:
     
 private:
 
-    typedef CGALi::LRU_hashed_map<Boundary,
+    typedef CGALi::LRU_hashed_map<Bound,
         std::vector<Algebraic_real_1>,
         CGALi::To_double_hasher > Intermediate_cache;
 
@@ -186,7 +186,7 @@ private:
     mutable boost::optional<bool> has_vertical_component;
 
     //! The intermediate values
-    mutable boost::optional<std::vector<boost::optional<Boundary> > > 
+    mutable boost::optional<std::vector<boost::optional<Bound> > > 
     intermediate_values;
 
     //! stores Y_values at rational coordinate
@@ -291,7 +291,7 @@ private:
      *
      * Interoperability of both types is required
      */
-    typedef CGAL::Coercion_traits<Boundary, Coefficient> Coercion;
+    typedef CGAL::Coercion_traits<Bound, Coefficient> Coercion;
 
     /*!
      * \brief The common supertype that both the coefficient and the boundary
@@ -470,7 +470,7 @@ private:
 
         if(! this->ptr()->intermediate_values) {
             this->ptr()->intermediate_values 
-                = std::vector<boost::optional<Boundary> >
+                = std::vector<boost::optional<Bound> >
                     (number_of_status_lines_with_event()+1);
         }
 
@@ -480,7 +480,7 @@ private:
             i++,it2++) {
             
             CGAL_assertion(it2->x().is_rational());
-            Boundary q = it2->x().rational();
+            Bound q = it2->x().rational();
             
             intermediate_values()[i] = q;
             this->ptr()->vert_line_map[it2->x()] = *it2;
@@ -644,7 +644,7 @@ public:
 public:    
 
     //! Returns a status line at the rational <tt>x</tt>-coordinate \c b
-    Status_line_1& status_line_at_exact_x(Boundary b) const {
+    Status_line_1& status_line_at_exact_x(Bound b) const {
 #if CGAL_ACK_USE_SPECIAL_TREATMENT_FOR_CONIX
         if(polynomial_2().degree()==2) {
             return this->conic_status_line_at_exact_x(b);
@@ -892,7 +892,7 @@ private:
 #endif
         
         CGAL_precondition(x.is_rational());
-        Boundary r = x.rational();
+        Bound r = x.rational();
 
         typedef typename CGAL::Fraction_traits<Poly_coer_1> FT;
         Poly_coer_1 f_at_x_with_denom 
@@ -925,7 +925,7 @@ private:
                                      traits);
         
         // Now adjacencies
-        std::vector<Boundary> bucket_borders;
+        std::vector<Bound> bucket_borders;
 
         int n = isolator.number_of_real_roots();
 
@@ -953,8 +953,8 @@ private:
                         (Algebraic_real_1(isolator.right_boundary(n-1))));
         }
 
-        Boundary left = boundary_value_in_interval(index);
-        Boundary right = boundary_value_in_interval(index+1);
+        Bound left = boundary_value_in_interval(index);
+        Bound right = boundary_value_in_interval(index+1);
         
         typedef boost::numeric::interval<Coercion_type> Coercion_interval;
 
@@ -972,7 +972,7 @@ private:
 
                 if(boost::numeric::in_zero(curr_interval)) {
                     // "refine"
-                    Boundary middle = (left+right)/2;
+                    Bound middle = (left+right)/2;
                     if(middle==r) {
                         left=(left+middle)/2;
                         right = (right+middle)/2;
@@ -1093,7 +1093,7 @@ public:
         }
 #endif
   
-        Boundary b = boundary_value_in_interval(i);
+        Bound b = boundary_value_in_interval(i);
         
         Status_line_1 intermediate_line 
             = status_line_at_exact_non_event_x(Algebraic_real_1(b));
@@ -1226,7 +1226,7 @@ public:
      * The result of this method is taken as the reference x-coordinate
      * for the status lines of intervals.
      */
-    Boundary boundary_value_in_interval(size_type i) const {
+    Bound boundary_value_in_interval(size_type i) const {
 #if CGAL_ACK_USE_SPECIAL_TREATMENT_FOR_CONIX
         if(polynomial_2().degree()==2) {
             return this->conic_boundary_value_in_interval(i);
@@ -1239,7 +1239,7 @@ public:
           // Create it
             if(event_coordinates().size()==0) {
                 CGAL_assertion(i==0);
-                intermediate_values()[0]=Boundary(0);
+                intermediate_values()[0]=Bound(0);
             } else {
                 if(i==0) {
                     intermediate_values()[i] 
@@ -1623,7 +1623,7 @@ private:
 private:
 
     // Returns the intermediate values for intervals between events
-    std::vector<boost::optional<Boundary> >& intermediate_values() const 
+    std::vector<boost::optional<Bound> >& intermediate_values() const 
         throw(CGALi::Zero_resultant_exception<Polynomial_2>) {
         
         if(! this->ptr()->intermediate_values) {
@@ -1805,7 +1805,7 @@ private:
                        static_cast<size_type>(content_roots.size()));
 
         this->ptr()->intermediate_values 
-            = std::vector<boost::optional<Boundary> >
+            = std::vector<boost::optional<Bound> >
             (event_coordinate_vector.size()+1);
         this->ptr()->event_coordinates = event_coordinate_vector;
       
@@ -1897,7 +1897,7 @@ public:
      * an interval, all y-coordinates are approximated such that their
      * isolating interval has absolute size smaller then \c precision.
      */
-    void refine_all(Boundary precision) {
+    void refine_all(Bound precision) {
 
 #if CGAL_ACK_USE_SPECIAL_TREATMENT_FOR_CONIX
         if(polynomial_2().degree()==2) {
@@ -2025,7 +2025,7 @@ private:
       
         // TODO: Filter out curves with no arc to +/- infty
 
-        typename CGAL::Fraction_traits<Boundary>::Decompose decompose;
+        typename CGAL::Fraction_traits<Bound>::Decompose decompose;
 
         Integer num,denom;
         
@@ -2040,15 +2040,15 @@ private:
         solve_1(leading_coefficient_in_x,
                 std::back_inserter(roots_of_lcoeff),
                 std::back_inserter(dummy_multiplicities));
-        std::vector<Boundary> stripe_bounds;
+        std::vector<Bound> stripe_bounds;
         find_intermediate_values(roots_of_lcoeff.begin(),
                                  roots_of_lcoeff.end(),
                                  std::back_inserter(stripe_bounds));
-        Boundary leftmost_bound = boundary_value_in_interval(0),
+        Bound leftmost_bound = boundary_value_in_interval(0),
             rightmost_bound = boundary_value_in_interval
                 (this->number_of_status_lines_with_event());
         for(size_type i=0;i<static_cast<size_type>(stripe_bounds.size());i++) {
-            Boundary& beta = stripe_bounds[i];
+            Bound& beta = stripe_bounds[i];
             decompose(beta,num,denom);
             Polynomial_1 poly_at_beta 
                 = this->polynomial_2().evaluate_homogeneous(num,denom);
@@ -2157,7 +2157,7 @@ private:
 public:
 
     template<typename OutputIterator> void get_roots_at_rational
-    (Boundary r, OutputIterator it) const {
+    (Bound r, OutputIterator it) const {
         
         typedef typename CGAL::Fraction_traits<Poly_coer_1> FT;
         
@@ -2229,29 +2229,29 @@ private:
     Status_line_1& conic_status_line_at_event(size_type i) const {
         CGAL_error_msg("Implement me");
         // Just a random status line to make compiler happy
-        return this->ptr()->vert_line_at_rational_map[Boundary(0)];
+        return this->ptr()->vert_line_at_rational_map[Bound(0)];
     }
 
-    Status_line_1& conic_status_line_at_exact_x(Boundary b) const {
+    Status_line_1& conic_status_line_at_exact_x(Bound b) const {
         CGAL_error_msg("Implement me");
-        return this->ptr()->vert_line_at_rational_map[Boundary(0)];
+        return this->ptr()->vert_line_at_rational_map[Bound(0)];
     }
 
     Status_line_1& conic_status_line_at_exact_x(Algebraic_real_1 alpha) const {
         CGAL_error_msg("Implement me");
-        return this->ptr()->vert_line_at_rational_map[Boundary(0)];
+        return this->ptr()->vert_line_at_rational_map[Bound(0)];
     }
 
     Status_line_1 conic_status_line_of_interval(size_type i) const {
         CGAL_error_msg("Implement me");
-        return this->ptr()->vert_line_at_rational_map[Boundary(0)];
+        return this->ptr()->vert_line_at_rational_map[Bound(0)];
     }
 
     Status_line_1 conic_status_line_for_x
         (Algebraic_real_1 x,
          CGAL::Sign perturb = CGAL::ZERO) const {
         CGAL_error_msg("Implement me");
-        return this->ptr()->vert_line_at_rational_map[Boundary(0)];
+        return this->ptr()->vert_line_at_rational_map[Bound(0)];
     }
 
     size_type conic_arcs_over_interval(size_type i) const {
@@ -2259,9 +2259,9 @@ private:
         return -1;
     }
 
-    Boundary conic_boundary_value_in_interval(size_type i) const {
+    Bound conic_boundary_value_in_interval(size_type i) const {
         CGAL_error_msg("Implement me");
-        return Boundary(0);
+        return Bound(0);
     }
 
     Polynomial_1 conic_content() const {
@@ -2279,7 +2279,7 @@ private:
         return Self();
     }
 
-    void conic_refine_all(Boundary precision) {
+    void conic_refine_all(Bound precision) {
         CGAL_error_msg("Implement me");
     }
 

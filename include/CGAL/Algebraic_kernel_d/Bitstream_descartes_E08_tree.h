@@ -367,11 +367,11 @@ CGAL_END_NAMESPACE
 /* The template argument supplied as BitstreamDescartesE08TreeTraits
  * shall be a class containing the following types in its scope:
  *   Coefficient:           caller-supplied coefficient type
- *   Boundary:              type for interval boundary output (exact)
+ *   Bound:              type for interval boundary output (exact)
  *   Integer:               integer type for actual calculations, needs >>, <<
  *   Approximator:          functor to get Integer approx to x*2^p from coeff x
  *   Lower_bound_log2_abs:  functor for lower bound to log|x| for coeff x
- *   Boundary_creator:      functor to create boundary x*2^p from x and p
+ *   Bound_creator:      functor to create boundary x*2^p from x and p
  *   Sign:                  functor to get sign of Integer x
  *   Ceil_log2_abs_Integer: functor to get smallest long >= log|x| for Integer
  *   Ceil_log2_abs_long:    functor to get smallest long >= log|x| for long
@@ -384,11 +384,11 @@ CGAL_END_NAMESPACE
 // bring types from traits into local scope
 #define CGAL_SNAP_BITSTREAM_DESCARTES_E08_TREE_TRAITS_TYPEDEFS(TRAITS)    \
     typedef typename TRAITS::Coefficient           Coefficient;           \
-    typedef typename TRAITS::Boundary              Boundary;              \
+    typedef typename TRAITS::Bound              Bound;              \
     typedef typename TRAITS::Integer               Integer;               \
     typedef typename TRAITS::Approximator          Approximator;          \
     typedef typename TRAITS::Lower_bound_log2_abs  Lower_bound_log2_abs;  \
-    typedef typename TRAITS::Boundary_creator      Boundary_creator;      \
+    typedef typename TRAITS::Bound_creator      Bound_creator;      \
     typedef typename TRAITS::Sign                  Sign;                  \
     typedef typename TRAITS::Ceil_log2_abs_Integer Ceil_log2_abs_Integer; \
     typedef typename TRAITS::Ceil_log2_abs_long    Ceil_log2_abs_long;    \
@@ -621,24 +621,24 @@ public:
     }
 
     //! get lower boundary of interval at node \c n.
-    Boundary lower(Node_iterator n) const {
+    Bound lower(Node_iterator n) const {
         CGAL_assertion(is_iterator_valid(n));
-        return Boundary_creator()(n->lower_num_, -n->log_bdry_den_);
+        return Bound_creator()(n->lower_num_, -n->log_bdry_den_);
     }
     //! get lower boundary of interval at node \c n.
-    Boundary lower(Node_const_iterator n) const {
+    Bound lower(Node_const_iterator n) const {
         CGAL_assertion(is_iterator_valid(n));
-        return Boundary_creator()(n->lower_num_, -n->log_bdry_den_);
+        return Bound_creator()(n->lower_num_, -n->log_bdry_den_);
     }
     //! get upper boundary of interval at node \c n.
-    Boundary upper(Node_iterator n) const {
+    Bound upper(Node_iterator n) const {
         CGAL_assertion(is_iterator_valid(n));
-        return Boundary_creator()(n->upper_num_, -n->log_bdry_den_);
+        return Bound_creator()(n->upper_num_, -n->log_bdry_den_);
     }
     //! get upper boundary of interval at node \c n.
-    Boundary upper(Node_const_iterator n) const {
+    Bound upper(Node_const_iterator n) const {
         CGAL_assertion(is_iterator_valid(n));
-        return Boundary_creator()(n->upper_num_, -n->log_bdry_den_);
+        return Bound_creator()(n->upper_num_, -n->log_bdry_den_);
     }
 
     //! get boundaries: interval at node \c n is

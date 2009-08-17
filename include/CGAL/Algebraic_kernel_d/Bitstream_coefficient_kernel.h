@@ -30,7 +30,7 @@ template <typename Coefficient_> struct Bitstream_coefficient_kernel {
     
     typedef typename Arithmetic_kernel::Bigfloat_interval Bigfloat_interval;
     typedef typename Arithmetic_kernel::Integer Integer;
-    typedef typename Arithmetic_kernel::Rational Boundary;
+    typedef typename Arithmetic_kernel::Rational Bound;
 
 
     typedef typename CGAL::Algebraic_structure_traits<Coefficient>

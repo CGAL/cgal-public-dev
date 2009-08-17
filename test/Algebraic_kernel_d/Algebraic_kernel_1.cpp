@@ -28,30 +28,30 @@
 #include <CGAL/Arithmetic_kernel.h>
 
 
-template< class Coefficient_, class Boundary_, class RepClass >
+template< class Coefficient_, class Bound_, class RepClass >
 void test_algebraic_kernel_coeff_boundary_rep() {
   typedef Coefficient_ Coefficient;
-  typedef Boundary_    Boundary;
+  typedef Bound_    Bound;
   typedef RepClass     Rep_class;
   
   typedef typename CGAL::Polynomial_type_generator<Coefficient,1>::Type 
     Polynomial_1;
   typedef CGAL::CGALi::Algebraic_real_pure
-    < Coefficient, Boundary, CGAL::Handle_policy_no_union, Rep_class >   Algebraic_real_1;
+    < Coefficient, Bound, CGAL::Handle_policy_no_union, Rep_class >   Algebraic_real_1;
   
-  typedef CGAL::CGALi::Descartes< Polynomial_1, Boundary >               Descartes;
+  typedef CGAL::CGALi::Descartes< Polynomial_1, Bound >               Descartes;
   typedef CGAL::CGALi::Bitstream_descartes<
   CGAL::CGALi::Bitstream_descartes_rndl_tree_traits
     <CGAL::CGALi::Bitstream_coefficient_kernel<Coefficient> > >  BDescartes;
-//   typedef CGAL::CGALi::Bitstream_descartes< Polynomial_1, Boundary > BDescartes;
+//   typedef CGAL::CGALi::Bitstream_descartes< Polynomial_1, Bound > BDescartes;
   
-  typedef CGAL::Algebraic_kernel_1< Coefficient, Boundary, Rep_class , Descartes>
+  typedef CGAL::Algebraic_kernel_1< Coefficient, Bound, Rep_class , Descartes>
     Kernel_Descartes;
-  typedef CGAL::Algebraic_kernel_1< Coefficient, Boundary, Rep_class , BDescartes>
+  typedef CGAL::Algebraic_kernel_1< Coefficient, Bound, Rep_class , BDescartes>
     Kernel_BDescartes;
   
-  CGAL::CGALi::old_test_algebraic_kernel_1< Kernel_Descartes, Algebraic_real_1, Descartes, Coefficient, Polynomial_1, Boundary >();   
-  CGAL::CGALi::old_test_algebraic_kernel_1< Kernel_BDescartes, Algebraic_real_1, BDescartes, Coefficient, Polynomial_1, Boundary >();   
+  CGAL::CGALi::old_test_algebraic_kernel_1< Kernel_Descartes, Algebraic_real_1, Descartes, Coefficient, Polynomial_1, Bound >();   
+  CGAL::CGALi::old_test_algebraic_kernel_1< Kernel_BDescartes, Algebraic_real_1, BDescartes, Coefficient, Polynomial_1, Bound >();   
   
   CGAL::test_algebraic_kernel_1(Kernel_Descartes());
   //CGAL::test_algebraic_kernel_1(Kernel_BDescartes());
@@ -59,14 +59,14 @@ void test_algebraic_kernel_coeff_boundary_rep() {
 }
 
 
-template< class Coeff, class Boundary >
+template< class Coeff, class Bound >
 void test_algebraic_kernel_coeff_boundary() {
-  test_algebraic_kernel_coeff_boundary_rep<Coeff,Boundary,
-    CGAL::CGALi::Algebraic_real_rep< Coeff, Boundary > > ();
-  test_algebraic_kernel_coeff_boundary_rep<Coeff,Boundary,
-    CGAL::CGALi::Algebraic_real_rep_bfi< Coeff, Boundary > > ();
-  test_algebraic_kernel_coeff_boundary_rep<Coeff,Boundary,
-    CGAL::CGALi::Algebraic_real_quadratic_refinement_rep_bfi< Coeff, Boundary > > ();
+  test_algebraic_kernel_coeff_boundary_rep<Coeff,Bound,
+    CGAL::CGALi::Algebraic_real_rep< Coeff, Bound > > ();
+  test_algebraic_kernel_coeff_boundary_rep<Coeff,Bound,
+    CGAL::CGALi::Algebraic_real_rep_bfi< Coeff, Bound > > ();
+  test_algebraic_kernel_coeff_boundary_rep<Coeff,Bound,
+    CGAL::CGALi::Algebraic_real_quadratic_refinement_rep_bfi< Coeff, Bound > > ();
 }
 
 

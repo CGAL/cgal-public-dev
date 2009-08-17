@@ -36,7 +36,7 @@ public:
   typedef Isolator_                                   Isolator;
             
   typedef typename Algebraic_real_1::Coefficient      Coefficient;
-  typedef typename Algebraic_real_1::Rational         Boundary;
+  typedef typename Algebraic_real_1::Rational         Bound;
   typedef typename 
       CGAL::Polynomial_type_generator< Coefficient,1 >::Type Polynomial_1;
 
@@ -47,26 +47,26 @@ public:
   class Algebraic_real_traits {
   public:
     typedef Algebraic_real_1                      Type;
-    typedef typename Algebraic_real_1::Rational   Boundary;
+    typedef typename Algebraic_real_1::Rational   Bound;
                 
-    struct Boundary_between 
-      : public std::binary_function< Type, Type, Boundary > {
-      Boundary operator()( const Type& t1, 
+    struct Bound_between 
+      : public std::binary_function< Type, Type, Bound > {
+      Bound operator()( const Type& t1, 
           const Type& t2 ) const {
         return t1.rational_between( t2 );
       }
     };
                                 
     struct Lower_boundary
-      : public std::unary_function< Type, Boundary > {
-      Boundary operator()( const Type& t ) const {
+      : public std::unary_function< Type, Bound > {
+      Bound operator()( const Type& t ) const {
         return t.low();
       }
     };
                 
     struct Upper_boundary
-      : public std::unary_function< Type, Boundary > {
-      Boundary operator()( const Type& t ) const {
+      : public std::unary_function< Type, Bound > {
+      Bound operator()( const Type& t ) const {
         return t.high();
       }
     };
@@ -92,8 +92,8 @@ public:
               CGAL::sign( t.low() ) != CGAL::ZERO );
                             
           // Calculate the needed precision
-          Boundary prec = Boundary(1) / 
-            CGAL::ipower( Boundary(2), rel_prec );
+          Bound prec = Bound(1) / 
+            CGAL::ipower( Bound(2), rel_prec );
                             
           // Refine until precision is reached
           while( CGAL::abs( t.high() - t.low() ) /
@@ -147,9 +147,9 @@ public:
   struct Sign_at_1 
     : public std::binary_function< Polynomial_1, Algebraic_real_1, CGAL::Sign > {
     CGAL::Sign operator()( const Polynomial_1& p, const Algebraic_real_1& ar ) const {
-      typedef typename Algebraic_real_traits::Boundary Boundary;
-      Boundary low = ar.low();
-      Boundary high = ar.high();
+      typedef typename Algebraic_real_traits::Bound Bound;
+      Bound low = ar.low();
+      Bound high = ar.high();
       if( low == high ) {
         return p.sign_at( low );
       }
@@ -222,7 +222,7 @@ public:
   typedef typename Algebraic_real_traits::Refine Refine_1;
   typedef typename Algebraic_real_traits::Lower_boundary Lower_boundary_1;
   typedef typename Algebraic_real_traits::Upper_boundary Upper_boundary_1;
-  typedef typename Algebraic_real_traits::Boundary_between Boundary_between_1;
+  typedef typename Algebraic_real_traits::Bound_between Bound_between_1;
       
 #define CGAL_ALGEBRAIC_KERNEL_1_PRED(Y,Z) Y Z() const { return Y(); }
 
@@ -248,7 +248,7 @@ public:
       lower_boundary_1_object);
   CGAL_ALGEBRAIC_KERNEL_1_PRED(Upper_boundary_1,
       upper_boundary_1_object);
-  CGAL_ALGEBRAIC_KERNEL_1_PRED(Boundary_between_1,
+  CGAL_ALGEBRAIC_KERNEL_1_PRED(Bound_between_1,
       boundary_between_1_object);
       
 #undef CGAL_ALGEBRAIC_KERNEL_1_PRED  
@@ -258,16 +258,16 @@ public:
 
 
 template< class Coefficient,
-          class Boundary = typename CGAL::Get_arithmetic_kernel< Coefficient >::Arithmetic_kernel::Rational,
-          class RepClass = CGALi::Algebraic_real_rep< Coefficient, Boundary >,
-          class Isolator = CGALi::Descartes< typename CGAL::Polynomial_type_generator<Coefficient,1>::Type, Boundary > >
+          class Bound = typename CGAL::Get_arithmetic_kernel< Coefficient >::Arithmetic_kernel::Rational,
+          class RepClass = CGALi::Algebraic_real_rep< Coefficient, Bound >,
+          class Isolator = CGALi::Descartes< typename CGAL::Polynomial_type_generator<Coefficient,1>::Type, Bound > >
 class Algebraic_kernel_1    
   : public CGALi::Algebraic_kernel_1_base< 
 
     // Template argument #1 (AlgebraicReal1)        
         CGALi::Algebraic_real_pure< 
             Coefficient, 
-            Boundary,
+            Bound,
             ::CGAL::Handle_policy_no_union,     
             RepClass >,
         
