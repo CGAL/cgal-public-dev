@@ -2078,7 +2078,7 @@ private:
             = typename Polynomial_traits_2::Swap() (this->polynomial_2(),0,1)
             .evaluate_homogeneous(num,denom);
         std::vector<Algebraic_real_1> roots_at_left_end;
-        solve_1(curve_at_left_end,std::back_inserter(roots_at_left_end));
+        solve_1(curve_at_left_end,std::back_inserter(roots_at_left_end),false);
         size_type number_of_roots_at_left_end 
             = static_cast<size_type>(roots_at_left_end.size());
         std::vector<Asymptote_y> asym_left_info;
@@ -2116,7 +2116,7 @@ private:
             = typename Polynomial_traits_2::Swap() (this->polynomial_2(),0,1)
             .evaluate_homogeneous(num,denom);
         std::vector<Algebraic_real_1> roots_at_right_end;
-        solve_1(curve_at_right_end,std::back_inserter(roots_at_right_end));
+        solve_1(curve_at_right_end,std::back_inserter(roots_at_right_end),false);
         size_type number_of_roots_at_right_end 
             = static_cast<size_type>(roots_at_right_end.size());
         std::vector<Asymptote_y> asym_right_info;
@@ -2188,14 +2188,12 @@ public:
                         
             Solve_1 solve_1;
             
-            solve_1(p,std::back_inserter(p_roots));
+            solve_1(p,std::back_inserter(p_roots),false);
 
             this->ptr()->intermediate_cache.insert(std::make_pair(r,p_roots));
             
         }
-
         std::copy(p_roots.begin(),p_roots.end(),it);
-
     }
 
 

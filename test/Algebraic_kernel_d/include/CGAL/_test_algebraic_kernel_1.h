@@ -128,12 +128,13 @@ void test_algebraic_kernel_1(const AlgebraicKernel_d_1& ak_1){
 #undef CGAL_CHECK_UFUNCTION
   
   Polynomial_1 x = typename PT::Shift()(Polynomial_1(1),1);
-  
+  {
   assert( is_square_free_1(ipower((x-1),1)));
   assert(!is_square_free_1(ipower((x-1),2)));
-
-  assert( make_square_free_1(ipower((x-1),2))==ipower((x-1),1));
-
+  }
+  {
+  assert( make_square_free_1(ipower(5*(x-1),2))==ipower((x-1),1));
+  }
   {
     std::list< std::pair<Polynomial_1,int> > factors; 
     square_free_factorize_1((x-1)*(x-2)*(x-2),std::back_inserter(factors));
@@ -154,215 +155,130 @@ void test_algebraic_kernel_1(const AlgebraicKernel_d_1& ak_1){
     Polynomial_1 a,b,c,d,e;
     a = (x-1)*(x-2);
     b = (x-1)*(x-3);
-    assert( make_coprime_1(a,b,c,d,e));
+    assert(!make_coprime_1(a,b,c,d,e));
     assert( c == (x-1) ); // gcd 
     assert( d == (x-2) );
     assert( e == (x-3) ); 
 
     a = (x-1);
     b = (x-2);
-    assert(!make_coprime_1(a,b,c,d,e) );
+    assert( make_coprime_1(a,b,c,d,e) );
     assert( c == (1) ); // gcd 
     assert( d == (x-1) );
     assert( e == (x-2) );     
   }
-  assert(false); // TODO 
-//   {
-//     std::list<std::pair<Algebraic_real_1,int> > roots; 
-//     solve_1((x-1)*(x-2)*(x-2),std::back_inserter(roots));
-//     assert(roots.size()==2);
-//     assert(roots.front() != roots.back());
-//     assert(
-//         roots.front() == std::make_pair(Algebraic_real_1(1),1) || 
-//         roots.front() == std::make_pair(Algebraic_real_1(2),2) );
-//     assert(
-//         roots.back()  == std::make_pair(Algebraic_real_1(1),1) || 
-//         roots.back()  == std::make_pair(Algebraic_real_1(2),2) );
-//   }
+  { 
+    // solve_1 for OI::value_type == std::pair<Algebraic_real_1,int>
+    typedef  std::list<std::pair<Algebraic_real_1,unsigned int> > ROOTS;
+    ROOTS roots; 
+    std::back_insert_iterator<ROOTS> biit = 
+      solve_1((x-1)*(x-2)*(x-2),std::back_inserter(roots));
+    
+    assert(roots.size()==2);
+    assert(roots.front() != roots.back());
+    assert(
+        roots.front() == std::make_pair(Algebraic_real_1(1),(unsigned int)1) || 
+        roots.front() == std::make_pair(Algebraic_real_1(2),(unsigned int)2) );
+    assert(
+        roots.back()  == std::make_pair(Algebraic_real_1(1),(unsigned int)1) || 
+        roots.back()  == std::make_pair(Algebraic_real_1(2),(unsigned int)2) );
 
+    solve_1((x-1)*(x-2)*(x-2),biit); // use iterator again 
+    assert(roots.size()==4);
+  }{ 
+    // solve_1 for OI::value_type == std::pair<Algebraic_real_1>
+    typedef  std::list<Algebraic_real_1 > ROOTS;
+    ROOTS roots; 
+    std::back_insert_iterator<ROOTS> biit = 
+      solve_1((x-1)*(x-2)*(x-2),std::back_inserter(roots),false);
+    
+    assert(roots.size()==2);
+    assert(roots.front() != roots.back());
+    assert(
+        roots.front() == Algebraic_real_1(1) || 
+        roots.front() == Algebraic_real_1(2) );
+    assert(
+        roots.back()  == Algebraic_real_1(1) || 
+        roots.back()  == Algebraic_real_1(2) );
 
-//   // Solve_1
-//   CGAL_CHECK_BFUNCTION(Sign_at_1,Polynomial_1,Algebraic_real_1,Sign);
-//   CGAL_CHECK_BFUNCTION(Compare_1,Algebraic_real_1,Algebraic_real_1,Sign);
-//   CGAL_CHECK_BFUNCTION(Bound_between_1,Algebraic_real_1,Algebraic_real_1,Bound);
-//   CGAL_CHECK_BFUNCTION(Approximate_absolute_1,Algebraic_real_1,int,BInterval);
-//   CGAL_CHECK_BFUNCTION(Approximate_relative_1,Algebraic_real_1,int,BInterval);
+    solve_1((x-1)*(x-2),biit,true); // use iterator again 
+    assert(roots.size()==4);
+  }
+  {
+    assert(sign_at_1(x-1,Algebraic_real_1(0)) == NEGATIVE);
+    assert(sign_at_1(x-1,Algebraic_real_1(1)) == ZERO);
+    assert(sign_at_1(x-1,Algebraic_real_1(2)) == POSITIVE);
+  }
+  {
+    assert(compare_1(Algebraic_real_1( 1),Algebraic_real_1( 2)) == SMALLER);
+    assert(compare_1(Algebraic_real_1( 2),Algebraic_real_1( 2)) == EQUAL);
+    assert(compare_1(Algebraic_real_1( 3),Algebraic_real_1( 2)) == LARGER);
+    assert(compare_1(Algebraic_real_1(-1),Algebraic_real_1(-2)) == LARGER);
+    assert(compare_1(Algebraic_real_1(-2),Algebraic_real_1(-2)) == EQUAL);
+    assert(compare_1(Algebraic_real_1(-3),Algebraic_real_1(-2)) == SMALLER);
+  }
+  {
+    Bound bound = bound_between_1(Algebraic_real_1(1),Algebraic_real_1(2));
+    assert(CGAL::compare(bound,Algebraic_real_1(1)) == LARGER  );
+    assert(CGAL::compare(bound,Algebraic_real_1(2)) == SMALLER );
+  }
+  { // Approximate_absolute_1
+    {
+      std::list<Algebraic_real_1> roots; 
+      solve_1((x*x-2),std::back_inserter(roots),true);
+      Algebraic_real_1 root = (CGAL::max)(roots.front(),roots.back());
+      BInterval bi = approximate_absolute_1(root,5);
+      assert(CGAL::compare(bi.first ,root) != LARGER );
+      assert(CGAL::compare(bi.second,root) != SMALLER);
+      assert(CGAL::sign(bi.second - bi.first) != NEGATIVE);    
+      assert((bi.second - bi.first) * ipower(Bound(2),5) <= Bound(1) );
+    }{
+      std::list<Algebraic_real_1> roots; 
+      solve_1((x*x-3),std::back_inserter(roots),true);
+      Algebraic_real_1 root = (CGAL::min)(roots.front(),roots.back());
+      BInterval bi = approximate_absolute_1(root,-5);
+      assert(CGAL::compare(bi.first ,root) != LARGER );
+      assert(CGAL::compare(bi.second,root) != SMALLER);
+      assert(CGAL::sign(bi.second - bi.first) != NEGATIVE);    
+      assert((bi.second - bi.first) <= ipower(Bound(2),5) );
+    }
+  }
 
+  { // Approximate_relative_1
+    {
+      std::list<Algebraic_real_1> roots; 
+      solve_1((x*x-2),std::back_inserter(roots),true);
+      Algebraic_real_1 root = (CGAL::max)(roots.front(),roots.back());
+      BInterval bi = approximate_relative_1(root,5);
+      assert(CGAL::compare(bi.first ,root) != LARGER );
+      assert(CGAL::compare(bi.second,root) != SMALLER);
+      assert(CGAL::sign(bi.second - bi.first) != NEGATIVE);    
+      assert((bi.second - bi.first * ipower(Bound(2),5))  
+          <= (CGAL::max)(abs(bi.first),abs(bi.second)));
+    }{
+      std::list<Algebraic_real_1> roots; 
+      solve_1((x*x-30),std::back_inserter(roots),true);
+      Algebraic_real_1 root = (CGAL::min)(roots.front(),roots.back());
+      BInterval bi = approximate_relative_1(root,-5);
+      assert(CGAL::compare(bi.first ,root) != LARGER );
+      assert(CGAL::compare(bi.second,root) != SMALLER);
+      assert(CGAL::sign(bi.second - bi.first) != NEGATIVE);    
+      assert((bi.second - bi.first)
+          <= (CGAL::max)(abs(bi.first),abs(bi.second)) * ipower(Bound(2),5));
+    }
+    {
+      std::list<Algebraic_real_1> roots; 
+      solve_1((300*x*x-2),std::back_inserter(roots),true);
+      Algebraic_real_1 root = (CGAL::min)(roots.front(),roots.back());
+      BInterval bi = approximate_relative_1(root,5);
+      assert(CGAL::compare(bi.first ,root) != LARGER );
+      assert(CGAL::compare(bi.second,root) != SMALLER);
+      assert(CGAL::sign(bi.second - bi.first) != NEGATIVE);    
+      assert((bi.second - bi.first) * ipower(Bound(2),5) 
+          <= (CGAL::max)(abs(bi.first),abs(bi.second)) );
+    }
+  }
 }
-
-
-namespace CGALi {
-
-template< 
-class AK_, 
-class AlgebraicReal1, 
-class Isolator_, 
-class Coefficient_, 
-class Polynomial1, 
-class Bound_  >
-void old_test_algebraic_kernel_1() {
-    typedef AK_            AK;
-    typedef AlgebraicReal1 Algebraic_real_1;
-    typedef Isolator_      Isolator;
-    typedef Coefficient_   Coefficient;
-    typedef Polynomial1    Polynomial_1;
-    typedef Bound_      Bound;
-        
-    BOOST_STATIC_ASSERT( (::boost::is_same< 
-            Algebraic_real_1, typename AK::Algebraic_real_1 >::value) );
-
-    BOOST_STATIC_ASSERT((::boost::is_same<
-            Isolator,
-            typename AK::Isolator >::value) );
-            
-    BOOST_STATIC_ASSERT((::boost::is_same< 
-            Coefficient, 
-            typename AK::Coefficient >::value));
-            
-    BOOST_STATIC_ASSERT((::boost::is_same<
-            Polynomial_1,
-            typename AK::Polynomial_1 >::value));
-    
-    // Test of functors
-    // Test AK::Solve_1...
-    
-    typename AK::Solve_1 solve_1 = AK().solve_1_object();
-    Polynomial_1 poly1( -4,0,1 );
-    Polynomial_1 poly2( 0, 0, 1 );
-    std::vector< Algebraic_real_1 > roots_vec;
-    std::vector< int > mults_vec;
-    
-    solve_1( poly1, std::back_inserter( roots_vec ) );        
-    assert( roots_vec.size() == 2 );
-    assert( CGAL::abs( roots_vec[0] ) == CGAL::abs( Algebraic_real_1(2) ) );
-    roots_vec.clear();
-    
-    solve_1( poly1, std::back_inserter( roots_vec ), std::back_inserter( mults_vec ) );
-    assert( roots_vec.size() == 2 );
-    assert( mults_vec.size() == 2 );
-    assert( CGAL::abs( roots_vec[0] ) == CGAL::abs( Algebraic_real_1(2) ) );
-    assert( CGAL::abs( roots_vec[1] ) == CGAL::abs( Algebraic_real_1(2) ) );
-    assert( mults_vec[0] == 1 );
-    assert( mults_vec[1] == 1 );
-    roots_vec.clear();
-    mults_vec.clear();
-
-    solve_1( poly2, std::back_inserter( roots_vec ), std::back_inserter( mults_vec ) );
-    assert( roots_vec.size() == 1 );
-    assert( mults_vec.size() == 1 );
-    assert( CGAL::abs( roots_vec[0] ) == CGAL::abs( Algebraic_real_1(0) ) );
-    assert( mults_vec[0] == 2 );        
-    roots_vec.clear();
-    mults_vec.clear();
-    
-    // Test AK::Sign_at_1
-    typename AK::Sign_at_1 sign_at_1;
-    typename AK::Polynomial_1 poly4( -2,0,1 );
-    solve_1( poly4, std::back_inserter( roots_vec ) );
-    typename AK::Polynomial_1 poly3( 0,0,0,1 ); 
-    assert( sign_at_1( poly3, roots_vec[0] ) == CGAL::sign( roots_vec[0] ) );
-    assert( sign_at_1( poly3, roots_vec[1] ) == CGAL::sign( roots_vec[1] ) );
-    assert( sign_at_1( poly3, Algebraic_real_1(0) ) == CGAL::ZERO );  
-    roots_vec.clear();
-    
-    solve_1( poly1, std::back_inserter( roots_vec ) );
-    assert( sign_at_1( poly3, roots_vec[0] ) == CGAL::sign( roots_vec[0] ) );
-    assert( sign_at_1( poly3, roots_vec[1] ) == CGAL::sign( roots_vec[1] ) );
-    assert( sign_at_1( poly3, Algebraic_real_1(0) ) == CGAL::ZERO );  
-    roots_vec.clear();
-    
-    typename AK::Polynomial_1 poly5( 0,0,-1,0,1 );
-    typename AK::Algebraic_real_1 algreal1( poly1, Bound(-3), Bound(1) );
-    typename AK::Algebraic_real_1 algreal2( poly1, Bound(-1), Bound(3) );
-    assert( sign_at_1( poly5, algreal2 ) == CGAL::POSITIVE );
-    
-    
-    // Just syntax tests... (TODO)
-    // Test AK::Is_square_free_1...
-    typename AK::Is_square_free_1 is_square_free_1 
-      = AK().is_square_free_1_object();
-    is_square_free_1( poly1 );
-    
-    // Test AK::Is_coprime_1...
-    typename AK::Is_coprime_1 is_coprime_1
-      = AK().is_coprime_1_object();
-    is_coprime_1( poly1, poly2 );
-        
-    // Test AK::Make_square_free_1...
-    typename AK::Make_square_free_1 make_square_free_1
-      = AK().make_square_free_1_object();
-    make_square_free_1( poly1 );
-    
-    // Test AK::Make_coprime_1...
-    typename AK::Make_coprime_1 make_coprime_1 
-      = AK().make_coprime_1_object();
-    Polynomial_1 g, q1, q2;
-    make_coprime_1( poly1, poly2, g, q1, q2 );
-    
-    // Test AK::Square_free_factorize_1...
-    typename AK::Square_free_factorize_1 square_free_factorize_1 
-      = AK().square_free_factorize_1_object();
-    
-    std::vector<std::pair<Polynomial_1,int> > fac_mult_pairs;
-    square_free_factorize_1( poly1, std::back_inserter(fac_mult_pairs) );
-        
-    ////////////////////////////////////////////////////////////////////////////
-    
-    // (Not only) syntax tests for Algebraic_real_traits
-            
-    // Create test polynomial
-    Polynomial_1 p2( -2,0,1 );
-    std::vector< Algebraic_real_1 > roots_vec2;
-    
-    solve_1( p2, std::back_inserter( roots_vec2 ) );
-    
-    // Test AK::Bound_between...
-    typename AK::Bound_between_1 bound_between 
-      = AK().bound_between_1_object();
-    assert( typename AK::Bound( -2 ) < 
-        bound_between( roots_vec2[0], roots_vec2[1] ) );
-    assert( typename AK::Bound(  2 ) > 
-        bound_between( roots_vec2[0], roots_vec2[1] ) );
-    
-    // Test AK::Lower_bound
-    typename AK::Lower_bound_1 lower_bound 
-      = AK().lower_bound_1_object();
-    assert( lower_bound( roots_vec2[0] ) < typename AK::Bound(-1) );
-    assert( lower_bound( roots_vec2[1] ) < typename AK::Bound( 2) );
-
-    // Test AK::Upper_bound
-    typename AK::Upper_bound_1 upper_bound
-      = AK().upper_bound_1_object();
-    assert( upper_bound( roots_vec2[0] ) > typename AK::Bound(-1) );
-    assert( upper_bound( roots_vec2[1] ) > typename AK::Bound( 1) );
-    
-    // Test AK::Refine
-    typename AK::Refine_1 refine
-      = AK().refine_1_object();
-    Algebraic_real_1 ar = roots_vec2[1];
-    typename AK::Bound old_lower_bound = ar.low();
-    typename AK::Bound old_upper_bound = ar.high(); 
-
-    refine( ar );
-    
-    assert( old_lower_bound <= lower_bound( ar ) );
-    assert( old_upper_bound >= upper_bound( ar ) );
-    typename AK::Bound interval_size_old 
-      = CGAL::abs( old_upper_bound - old_lower_bound );
-    typename AK::Bound interval_size_new 
-      = CGAL::abs( upper_bound( ar ) - lower_bound( ar ) );
-    assert( interval_size_new * typename AK::Bound(2) <= interval_size_old );
-    
-    refine( ar, 100 );
-    assert( CGAL::abs( upper_bound( ar ) - lower_bound( ar ) ) < 
-        (typename AK::Bound(1) / CGAL::ipower(typename AK::Bound(2), 99 )) );
-
-}
-
-} //namespace CGALi
-
-
-
 
 CGAL_END_NAMESPACE
 

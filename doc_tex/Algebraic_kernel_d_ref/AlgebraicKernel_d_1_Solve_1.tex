@@ -19,7 +19,7 @@ A model of this type must provide:
 \ccMethod{template < class OutputIterator >
     OutputIterator
     operator()(const argument_type &p,
-	     OutputIterator res, bool known_to_be_square_free=false);}
+	     OutputIterator res, bool known_to_be_square_free);}
 {Copies in the output iterator the real roots of \ccc{p} as objects of type 
 \ccc{AlgebraicKernel_d_1::Algebraic_real_1}. The boolean indicates 
 whether \ccc{p} is known to be square free or if this information is 

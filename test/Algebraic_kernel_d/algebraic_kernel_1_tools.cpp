@@ -38,8 +38,8 @@ void test_algebraic_kernel_1_tools(){
   typename Algebraic_kernel_1::Solve_1 solve_1 = ak.solve_1_object();
   
   std::vector<Root> roots1, roots2;
-  solve_1(p1,std::back_inserter(roots1));
-  solve_1(p2,std::back_inserter(roots2));
+  solve_1(p1,std::back_inserter(roots1),false);
+  solve_1(p2,std::back_inserter(roots2),false);
   
   assert(roots1.size() == 2);
   assert(roots2.size() == 2);

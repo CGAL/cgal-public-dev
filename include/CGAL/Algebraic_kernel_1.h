@@ -15,6 +15,10 @@
 #ifndef CGAL_ALGEBRAIC_KERNEL_1_H
 #define CGAL_ALGEBRAIC_KERNEL_1_H
 
+#ifndef CGAL_AK1_ENABLE_DEPRECATED_INTERFACE 
+#define CGAL_AK1_ENABLE_DEPRECATED_INTERFACE 0
+#endif 
+
 #include <CGAL/basic.h>
 #include <CGAL/Polynomial.h>
 
@@ -37,6 +41,9 @@ public:
             
   typedef typename Algebraic_real_1::Coefficient      Coefficient;
   typedef typename Algebraic_real_1::Rational         Bound;
+#if CGAL_AK1_ENABLE_DEPRECATED_INTERFACE
+  typedef Bound Boundary;  
+#endif 
   typedef typename 
       CGAL::Polynomial_type_generator< Coefficient,1 >::Type Polynomial_1;
 
@@ -111,14 +118,14 @@ public:
     
     struct Approximate_absolute_1:
       public std::binary_function<Algebraic_real_1,int,std::pair<Bound,Bound> >{
-      std::pair<Bound,Bound> operator()(const Algebraic_real_1& x, int prec){
+      std::pair<Bound,Bound> operator()(const Algebraic_real_1& x, int prec) const {
           Lower_bound lower; 
           Upper_bound upper; 
           Refine refine; 
           Bound l = lower(x);  
           Bound u = upper(x);
           Bound error = CGAL::ipower(Bound(2),CGAL::abs(prec));
-          while((prec>0)?((l-u)*error>Bound(1)):((l-u)>error)){
+          while((prec>0)?((u-l)*error>Bound(1)):((u-l)>error)){
             refine(x);
             u = upper(x);
             l = lower(x);
@@ -128,7 +135,7 @@ public:
     };  
     struct Approximate_relative_1:
       public std::binary_function<Algebraic_real_1,int,std::pair<Bound,Bound> >{
-      std::pair<Bound,Bound> operator()(const Algebraic_real_1& x, int prec){
+      std::pair<Bound,Bound> operator()(const Algebraic_real_1& x, int prec) const {
           Lower_bound lower; 
           Upper_bound upper; 
           Refine refine; 
@@ -136,7 +143,7 @@ public:
           Bound u = upper(x);
           Bound error = CGAL::ipower(Bound(2),CGAL::abs(prec));
           Bound max_b = (CGAL::max)(CGAL::abs(u),CGAL::abs(l));
-          while((prec>0)?((l-u)*error>max_b):((l-u)>error*max_b)){
+          while((prec>0)?((u-l)*error>max_b):((u-l)>error*max_b)){
             refine(x);
             u = upper(x);
             l = lower(x);
@@ -150,36 +157,64 @@ public:
             
   // Functors of Algebraic_kernel_1
   struct Solve_1 {
-    template< class OutputIterator >
-    OutputIterator operator()( const Polynomial_1& p,
-        OutputIterator res,
-        bool known_to_be_square_free = false ) const {
-
+  public:
+    template <class OutputIterator>
+    OutputIterator 
+    operator()(const Polynomial_1& p, OutputIterator oi) const {  
+#if CGAL_AK1_ENABLE_DEPRECATED_INTERFACE
+#else
       CGAL_precondition(!CGAL::is_zero(p));
-
-      CGALi::Real_roots< Algebraic_real_1, Isolator > real_roots;
-      if( known_to_be_square_free ) {
-        real_roots( p, res );
-      } else {
-        std::vector< int > dummy;
-        real_roots( p, res, std::back_inserter( dummy ) );
+#endif
+      CGALi::Real_roots< Algebraic_real_1, Isolator > real_roots; 
+      std::list< int > mults;
+      std::list< Algebraic_real_1 > roots; 
+      real_roots( p, std::back_inserter(roots), std::back_inserter( mults ) );
+      CGAL_assertion(roots.size()==mults.size());
+      std::list<int>::iterator mit =mults.begin();
+      typename std::list< Algebraic_real_1 >::iterator rit = roots.begin();
+      while(rit != roots.end()){
+        //*oi++ = std::make_pair(*rit, (unsigned int)(*mit));
+        *oi++ = std::make_pair(*rit, *mit);
+        rit++;
+        mit++;
       }
-                    
-      return res;
+      return oi;
     }
-            
-    // TODO: change to one iterator using pair (see specs)
-    template< class OutputIteratorRoots, class OutputIteratorMults >
-    std::pair< OutputIteratorRoots, OutputIteratorMults >
-    operator()( const Polynomial_1& p, OutputIteratorRoots roots,
-        OutputIteratorMults mults ) const {
-      CGALi::Real_roots< Algebraic_real_1, Isolator > real_roots;
-                    
-      real_roots( p, roots, mults );
-                    
-      return std::pair< OutputIteratorRoots, OutputIteratorMults >(
-          roots, mults );                
-    }                
+    
+    template< class OutputIterator >
+    OutputIterator operator()( 
+        const Polynomial_1& p, 
+        OutputIterator oi , 
+        bool known_to_be_square_free) const {
+
+      CGALi::Real_roots< Algebraic_real_1, Isolator > real_roots; 
+#if CGAL_AK1_ENABLE_DEPRECATED_INTERFACE
+#else
+      CGAL_precondition(!CGAL::is_zero(p));
+#endif
+      std::list<Algebraic_real_1> roots; 
+      if( known_to_be_square_free ){
+        real_roots(p,std::back_inserter(roots));
+      }else{
+        std::list<int> dummy;
+        real_roots(p,std::back_inserter(roots),std::back_inserter(dummy));
+      }
+      return std::copy(roots.begin(),roots.end(),oi);
+    }
+
+#if CGAL_AK1_ENABLE_DEPRECATED_INTERFACE
+    template< class OutputIteratorRoots , class OutputIteratorMults >
+    std::pair<OutputIteratorRoots,OutputIteratorMults> 
+    operator()( 
+        const Polynomial_1& p, 
+        OutputIteratorRoots roi,
+        OutputIteratorMults moi) const {
+
+      CGALi::Real_roots< Algebraic_real_1, Isolator > real_roots; 
+      real_roots(p,roi,moi);
+      return std::make_pair(roi,moi);
+    }
+#endif
   };
             
   struct Sign_at_1 
@@ -243,7 +278,7 @@ public:
       g = typename CGAL::Polynomial_traits_d< Polynomial_1 >::Gcd_up_to_constant_factor()( p1, p2 );
       q1 = p1 / g;
       q2 = p2 / g;
-      return Is_coprime_1()( q1, q2 );
+      return CGAL::is_one(g);
     }                 
   };
             
@@ -257,12 +292,15 @@ public:
   };
                 
   typedef typename Real_embeddable_traits<Algebraic_real_1>::Compare Compare_1;
-  typedef typename Algebraic_real_traits::Refine Refine_1;
-  typedef typename Algebraic_real_traits::Lower_bound Lower_bound_1;
-  typedef typename Algebraic_real_traits::Upper_bound Upper_bound_1;
   typedef typename Algebraic_real_traits::Bound_between Bound_between_1;
   typedef typename Algebraic_real_traits::Approximate_absolute_1 Approximate_absolute_1;
   typedef typename Algebraic_real_traits::Approximate_relative_1 Approximate_relative_1;
+
+#if CGAL_AK1_ENABLE_DEPRECATED_INTERFACE
+  typedef typename Algebraic_real_traits::Refine Refine_1;
+  typedef typename Algebraic_real_traits::Lower_bound Lower_bound_1;
+  typedef typename Algebraic_real_traits::Upper_bound Upper_bound_1;
+#endif
   
       
 #define CGAL_ALGEBRAIC_KERNEL_1_PRED(Y,Z) Y Z() const { return Y(); }
@@ -283,8 +321,6 @@ public:
       sign_at_1_object);
   CGAL_ALGEBRAIC_KERNEL_1_PRED(Compare_1,
       compare_1_object);
-  CGAL_ALGEBRAIC_KERNEL_1_PRED(Refine_1,
-      refine_1_object);
   CGAL_ALGEBRAIC_KERNEL_1_PRED(Bound_between_1,
       bound_between_1_object);
   CGAL_ALGEBRAIC_KERNEL_1_PRED(Approximate_absolute_1,
@@ -293,10 +329,11 @@ public:
       approximate_relative_1_object);
 
   // Deprecated 
-  CGAL_ALGEBRAIC_KERNEL_1_PRED(Lower_bound_1,
-      lower_bound_1_object);
-  CGAL_ALGEBRAIC_KERNEL_1_PRED(Upper_bound_1,
-      upper_bound_1_object);
+#if CGAL_AK1_ENABLE_DEPRECATED_INTERFACE
+  CGAL_ALGEBRAIC_KERNEL_1_PRED(Lower_bound_1, lower_bound_1_object);
+  CGAL_ALGEBRAIC_KERNEL_1_PRED(Upper_bound_1, upper_bound_1_object);
+  CGAL_ALGEBRAIC_KERNEL_1_PRED(Refine_1,      refine_1_object);
+#endif
       
 #undef CGAL_ALGEBRAIC_KERNEL_1_PRED  
           

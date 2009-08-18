@@ -331,7 +331,7 @@ public:
             typename Algebraic_kernel_1::Solve_1 real_roots;
             
             Roots y_roots;
-            real_roots(y_pol, std::back_inserter(y_roots)); 
+            real_roots(y_pol, std::back_inserter(y_roots), false ); 
             
             Bound_interval y_iv = get_approximation_y();
             

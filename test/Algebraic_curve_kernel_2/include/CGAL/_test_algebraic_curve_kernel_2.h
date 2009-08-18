@@ -88,7 +88,7 @@ void test_algebraic_curve_kernel_2() {
     
     //std::cerr << "constructing curves..\n";
     for(int i = 0; i < ACK_2_n_polys; i++) {
-        istringstream in(ACK_2_ascii_polys[i]);
+      std::istringstream in(ACK_2_ascii_polys[i]);
         in >> polys[i];    
     }
 

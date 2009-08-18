@@ -14,6 +14,8 @@
 
 // Test of Algebraic_kernel
 
+#define CGAL_TEST_ALL_AK_VARIANTS 1
+
 #include <CGAL/basic.h>
 #include <CGAL/Algebraic_kernel_1.h>
 #include <CGAL/Algebraic_kernel_d/Algebraic_real_rep_bfi.h>
@@ -50,12 +52,10 @@ void test_algebraic_kernel_coeff_bound_rep() {
   typedef CGAL::Algebraic_kernel_1< Coefficient, Bound, Rep_class , BDescartes>
     Kernel_BDescartes;
   
-  CGAL::CGALi::old_test_algebraic_kernel_1< Kernel_Descartes, Algebraic_real_1, Descartes, Coefficient, Polynomial_1, Bound >();   
-  CGAL::CGALi::old_test_algebraic_kernel_1< Kernel_BDescartes, Algebraic_real_1, BDescartes, Coefficient, Polynomial_1, Bound >();   
-  
   CGAL::test_algebraic_kernel_1(Kernel_Descartes());
+#if CGAL_TEST_ALL_AK_VARIANTS
   CGAL::test_algebraic_kernel_1(Kernel_BDescartes());
-
+#endif
 }
 
 
@@ -63,10 +63,12 @@ template< class Coeff, class Bound >
 void test_algebraic_kernel_coeff_bound() {
   test_algebraic_kernel_coeff_bound_rep<Coeff,Bound,
     CGAL::CGALi::Algebraic_real_rep< Coeff, Bound > > ();
+#if CGAL_TEST_ALL_AK_VARIANTS
   test_algebraic_kernel_coeff_bound_rep<Coeff,Bound,
     CGAL::CGALi::Algebraic_real_rep_bfi< Coeff, Bound > > ();
   test_algebraic_kernel_coeff_bound_rep<Coeff,Bound,
     CGAL::CGALi::Algebraic_real_quadratic_refinement_rep_bfi< Coeff, Bound > > ();
+#endif
 }
 
 
@@ -77,6 +79,7 @@ void test_algebraic_kernel() {
   typedef typename AK::Rational Rational; 
 
   test_algebraic_kernel_coeff_bound<Integer, Rational>();
+#if CGAL_TEST_ALL_AK_VARIANTS
   test_algebraic_kernel_coeff_bound<Rational, Rational>();
   test_algebraic_kernel_coeff_bound
     <CGAL::Sqrt_extension< Integer, Integer>, Rational>();
@@ -84,6 +87,7 @@ void test_algebraic_kernel() {
     <CGAL::Sqrt_extension< Rational, Integer>, Rational>();
   test_algebraic_kernel_coeff_bound
     <CGAL::Sqrt_extension< Rational, Rational>, Rational>();
+#endif 
 }
 
 int main() {

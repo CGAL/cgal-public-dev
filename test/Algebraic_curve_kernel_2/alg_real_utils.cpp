@@ -79,7 +79,7 @@ void test_routine() {
     Real_roots rr2;
     std::vector<Algebraic_real> v2;
     
-    rr2(p,std::back_inserter(v2));
+    rr2(p,std::back_inserter(v2),false);
     
     int n = std::distance(v2.begin(), v2.end());
 
@@ -104,7 +104,7 @@ void test_routine() {
     Real_roots rr1;
     std::vector<Algebraic_real> v1;
     
-    rr1(p,std::back_inserter(v1));
+    rr1(p,std::back_inserter(v1),false);
     
     int n = std::distance(v1.begin(), v1.end());
 
@@ -129,7 +129,7 @@ void test_routine() {
     Real_roots rr2;
     std::vector<Algebraic_real> v2;
     
-    rr2(p,std::back_inserter(v2));
+    rr2(p,std::back_inserter(v2),false);
     
     int n = std::distance(v2.begin(), v2.end());
 
@@ -182,7 +182,7 @@ void test_routine() {
 int main(int argc,char** argv) {
   
 #ifndef CGAL_USE_LEDA
-#ifndef LiS_HAVE_CORE
+#ifndef CGAL_USE_CORE
   std::cerr << "This tests requires LEDA and/or CORE" << std::endl;
   return 1;
 #endif
@@ -200,5 +200,4 @@ int main(int argc,char** argv) {
   std::cerr << "CORE tests skipped" << std::endl;
 #endif
   return 0;
-  
 }

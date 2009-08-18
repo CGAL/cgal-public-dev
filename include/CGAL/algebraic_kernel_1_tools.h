@@ -44,7 +44,7 @@ compute_smallest_nonnegative_root(
   typename AK::Solve_1 solve_1 = ak.solve_1_object();
   std::vector<Root> roots;
   
-  solve_1(p, std::back_inserter(roots));
+  solve_1(p, std::back_inserter(roots),false);
   typename std::vector<Root>::const_iterator it = roots.begin();
   for (; it != roots.end(); ++it)
   {
