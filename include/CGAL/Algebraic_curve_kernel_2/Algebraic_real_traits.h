@@ -330,6 +330,12 @@ struct Algebraic_real_traits<CGAL::CGALi::Algebraic_real_pure
             }
         }
     };
+#if CGAL_AK_ENABLE_DEPRECATED_INTERFACE
+  typedef Bound Boundary;
+  typedef Lower_bound Lower_boundary;
+  typedef Upper_bound Upper_boundary; 
+  typedef Bound_between Boundary_between;
+#endif 
 };
 
 #if !CGAL_ACK_USE_EXACUS

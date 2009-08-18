@@ -1350,6 +1350,27 @@ public:
     CGAL_Algebraic_Kernel_cons(Swap_x_and_y_2, swap_x_and_y_2_object);
 
 
+  
+
+#if CGAL_AK_ENABLE_DEPRECATED_INTERFACE
+  typedef Bound Boundary; 
+  typedef Lower_bound_x_2 Lower_boundary_x_2;
+  typedef Lower_bound_y_2 Lower_boundary_y_2;
+  typedef Upper_bound_x_2 Upper_boundary_x_2;
+  typedef Upper_bound_y_2 Upper_boundary_y_2;
+  typedef Bound_between_x_2 Boundary_between_x_2;
+  typedef Bound_between_y_2 Boundary_between_y_2;
+
+  CGAL_Algebraic_Kernel_cons(Lower_boundary_x_2,lower_boundary_x_2_object);
+  CGAL_Algebraic_Kernel_cons(Lower_boundary_y_2,lower_boundary_y_2_object);
+  CGAL_Algebraic_Kernel_cons(Upper_boundary_x_2,upper_boundary_x_2_object);
+  CGAL_Algebraic_Kernel_cons(Upper_boundary_y_2,upper_boundary_y_2_object);
+  CGAL_Algebraic_Kernel_cons(Boundary_between_x_2,boundary_between_x_2_object);
+  CGAL_Algebraic_Kernel_cons(Boundary_between_y_2,boundary_between_y_2_object);
+#endif
+
+
+
 
 #undef CGAL_Algebraic_Kernel_pred    
 #undef CGAL_Algebraic_Kernel_cons 

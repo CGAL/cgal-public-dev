@@ -15,8 +15,8 @@
 #ifndef CGAL_ALGEBRAIC_KERNEL_1_H
 #define CGAL_ALGEBRAIC_KERNEL_1_H
 
-#ifndef CGAL_AK1_ENABLE_DEPRECATED_INTERFACE 
-#define CGAL_AK1_ENABLE_DEPRECATED_INTERFACE 0
+#ifndef CGAL_AK_ENABLE_DEPRECATED_INTERFACE 
+#define CGAL_AK_ENABLE_DEPRECATED_INTERFACE 0
 #endif 
 
 #include <CGAL/basic.h>
@@ -41,9 +41,6 @@ public:
             
   typedef typename Algebraic_real_1::Coefficient      Coefficient;
   typedef typename Algebraic_real_1::Rational         Bound;
-#if CGAL_AK1_ENABLE_DEPRECATED_INTERFACE
-  typedef Bound Boundary;  
-#endif 
   typedef typename 
       CGAL::Polynomial_type_generator< Coefficient,1 >::Type Polynomial_1;
 
@@ -152,7 +149,14 @@ public:
           return std::make_pair(l,u);
       }
     };
-    
+
+#if CGAL_AK_ENABLE_DEPRECATED_INTERFACE
+    typedef Lower_bound Lower_boundary;
+    typedef Upper_bound Upper_boundary;
+    typedef Bound_between Boundary_between; 
+#endif    
+
+
   }; // class Algebraic_real_traits
             
   // Functors of Algebraic_kernel_1
@@ -161,7 +165,7 @@ public:
     template <class OutputIterator>
     OutputIterator 
     operator()(const Polynomial_1& p, OutputIterator oi) const {  
-#if CGAL_AK1_ENABLE_DEPRECATED_INTERFACE
+#if CGAL_AK_ENABLE_DEPRECATED_INTERFACE
 #else
       CGAL_precondition(!CGAL::is_zero(p));
 #endif
@@ -188,7 +192,7 @@ public:
         bool known_to_be_square_free) const {
 
       CGALi::Real_roots< Algebraic_real_1, Isolator > real_roots; 
-#if CGAL_AK1_ENABLE_DEPRECATED_INTERFACE
+#if CGAL_AK_ENABLE_DEPRECATED_INTERFACE
 #else
       CGAL_precondition(!CGAL::is_zero(p));
 #endif
@@ -202,7 +206,7 @@ public:
       return std::copy(roots.begin(),roots.end(),oi);
     }
 
-#if CGAL_AK1_ENABLE_DEPRECATED_INTERFACE
+#if CGAL_AK_ENABLE_DEPRECATED_INTERFACE
     template< class OutputIteratorRoots , class OutputIteratorMults >
     std::pair<OutputIteratorRoots,OutputIteratorMults> 
     operator()( 
@@ -296,11 +300,7 @@ public:
   typedef typename Algebraic_real_traits::Approximate_absolute_1 Approximate_absolute_1;
   typedef typename Algebraic_real_traits::Approximate_relative_1 Approximate_relative_1;
 
-#if CGAL_AK1_ENABLE_DEPRECATED_INTERFACE
-  typedef typename Algebraic_real_traits::Refine Refine_1;
-  typedef typename Algebraic_real_traits::Lower_bound Lower_bound_1;
-  typedef typename Algebraic_real_traits::Upper_bound Upper_bound_1;
-#endif
+
   
       
 #define CGAL_ALGEBRAIC_KERNEL_1_PRED(Y,Z) Y Z() const { return Y(); }
@@ -329,10 +329,21 @@ public:
       approximate_relative_1_object);
 
   // Deprecated 
-#if CGAL_AK1_ENABLE_DEPRECATED_INTERFACE
+#if CGAL_AK_ENABLE_DEPRECATED_INTERFACE
+  typedef Bound Boundary;  
+  typedef typename Algebraic_real_traits::Refine Refine_1;
+  typedef typename Algebraic_real_traits::Lower_bound Lower_bound_1;
+  typedef typename Algebraic_real_traits::Upper_bound Upper_bound_1;
+  typedef typename Algebraic_real_traits::Lower_bound Lower_boundary_1;
+  typedef typename Algebraic_real_traits::Upper_bound Upper_boundary_1;
+  typedef Bound_between_1 Boundary_between_1;
+
+  CGAL_ALGEBRAIC_KERNEL_1_PRED(Refine_1,      refine_1_object);
   CGAL_ALGEBRAIC_KERNEL_1_PRED(Lower_bound_1, lower_bound_1_object);
   CGAL_ALGEBRAIC_KERNEL_1_PRED(Upper_bound_1, upper_bound_1_object);
-  CGAL_ALGEBRAIC_KERNEL_1_PRED(Refine_1,      refine_1_object);
+  CGAL_ALGEBRAIC_KERNEL_1_PRED(Lower_boundary_1, lower_boundary_1_object);
+  CGAL_ALGEBRAIC_KERNEL_1_PRED(Upper_boundary_1, upper_boundary_1_object);
+  CGAL_ALGEBRAIC_KERNEL_1_PRED(Boundary_between_1, boundary_between_1_object);
 #endif
       
 #undef CGAL_ALGEBRAIC_KERNEL_1_PRED  
