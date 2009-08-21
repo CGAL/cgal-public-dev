@@ -319,10 +319,13 @@ int main(int argc, char** argv) {
 
         overall_timer.stop();
         std::cout << "****************** RESULTS ***************** " << std::endl;
-        std::cout << cgal_arrangement.number_of_vertices() << " nodes" << std::endl;
-        std::cout << cgal_arrangement.number_of_edges() << " edges" << std::endl;
-        std::cout << cgal_arrangement.number_of_faces() << " faces" << std::endl;
-        std::cout << overall_timer.time() << " time elpased in total" << std::endl;
+        std::cout << "Nodes: " << cgal_arrangement.number_of_vertices() 
+                  << std::endl;
+        std::cout << "Edges: " << cgal_arrangement.number_of_edges() 
+                  << std::endl;
+        std::cout << "Faces: " << cgal_arrangement.number_of_faces() 
+                  << std::endl;
+        std::cout << "Overall time: " << overall_timer.time() << std::endl;
     }
     
     return 0;
