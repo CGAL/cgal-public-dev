@@ -273,12 +273,6 @@ void test_algebraic_curve_kernel_2() {
     /*std::cerr << "coprime: " << fgs.size() << "; " <<
         fs.size() << "; " << gs.size() << "\n";*/
     
-    ///////// testing derivation //////////
-
-    kernel_2.derivative_x_2_object()(polys[0]);
-        
-    kernel_2.derivative_y_2_object()(polys[0]);
-
     //////// testing x/y-critical points ////////
         
     typedef std::vector<Xy_coordinate_2> Xy_coords;

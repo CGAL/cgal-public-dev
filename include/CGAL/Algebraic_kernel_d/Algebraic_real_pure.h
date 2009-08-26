@@ -106,7 +106,9 @@ public:
    *  This is not necessarily the algebraic degree of \a x, since 
    *  the polynomial may be reducible.
    */
-  const int degree() const { return this->ptr()->polynomial().degree(); }
+    const int degree() const { 
+        return CGAL::degree(this->ptr()->polynomial()); 
+    }
     
   //! returns the lower endpoint of the isolating interval
   Rational low() const { return this->ptr()->low(); }

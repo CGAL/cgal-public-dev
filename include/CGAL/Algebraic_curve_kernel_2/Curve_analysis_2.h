@@ -524,11 +524,11 @@ public:
      */
     bool is_y_regular() const {
 #if CGAL_ACK_USE_SPECIAL_TREATMENT_FOR_CONIX
-        if(polynomial_2().degree()==2) {
+        if(CGAL::degree(polynomial_2(),1)==2) {
             return this->conic_is_y_regular();
         }
 #endif
-        return polynomial_2().lcoeff().degree() == 0;
+        return CGAL::degree(CGAL::leading_coefficient(polynomial_2())) == 0;
     }
     
 public:
@@ -541,7 +541,7 @@ public:
      */
     bool has_vertical_component() const {
 #if CGAL_ACK_USE_SPECIAL_TREATMENT_FOR_CONIX
-        if(polynomial_2().degree()==2) {
+        if(CGAL::degree(polynomial_2(),1)==2) {
             return this->conic_has_vertical_components();
         }
 #endif
@@ -576,7 +576,7 @@ public:
     size_type number_of_status_lines_with_event() const {
         CGAL_precondition(this->ptr()->f);
 #if CGAL_ACK_USE_SPECIAL_TREATMENT_FOR_CONIX
-        if(polynomial_2().degree()==2) {
+        if(CGAL::degree(polynomial_2(),1)==2) {
             return this->conic_number_of_status_lines_with_event();
         }
 #endif
@@ -597,7 +597,7 @@ public:
      */
     void x_to_index(Algebraic_real_1 x,size_type& i,bool& is_event) const {
 #if CGAL_ACK_USE_SPECIAL_TREATMENT_FOR_CONIX
-        if(polynomial_2().degree()==2) {
+        if(CGAL::degree(polynomial_2(),1)==2) {
             return this->conic_x_to_index(x,i,is_event);
         }
 #endif
@@ -622,7 +622,7 @@ public:
 
         CGAL_precondition(has_defining_polynomial());
 #if CGAL_ACK_USE_SPECIAL_TREATMENT_FOR_CONIX
-        if(polynomial_2().degree()==2) {
+        if(CGAL::degree(polynomial_2(),1)==2) {
             return this->conic_status_line_at_event(i);
         }
 #endif
@@ -646,7 +646,7 @@ public:
     //! Returns a status line at the rational <tt>x</tt>-coordinate \c b
     Status_line_1& status_line_at_exact_x(Bound b) const {
 #if CGAL_ACK_USE_SPECIAL_TREATMENT_FOR_CONIX
-        if(polynomial_2().degree()==2) {
+        if(CGAL::degree(polynomial_2(),1)==2) {
             return this->conic_status_line_at_exact_x(b);
         }
 #endif
@@ -703,7 +703,7 @@ public:
     //! Returns a vert line for the <tt>x</tt>-coordinate alpha
     Status_line_1& status_line_at_exact_x(Algebraic_real_1 alpha) const {
 #if CGAL_ACK_USE_SPECIAL_TREATMENT_FOR_CONIX
-        if(polynomial_2().degree()==2) {
+        if(CGAL::degree(polynomial_2(),1)==2) {
             return this->conic_status_line_at_exact_x(alpha);
         }
 #endif
@@ -915,7 +915,7 @@ private:
             Poly_coer_num_2;
 
         std::vector<typename FT::Numerator_type> coeffs;
-        for(int i = 0; i <= f_at_x_sq_free.degree(); i++) {
+        for(int i = 0; i <= CGAL::degree(f_at_x_sq_free); i++) {
             coeffs.push_back(typename FT::Numerator_type(f_at_x_sq_free[i]));
         }
         Poly_coer_num_2 f_at_x_ext(coeffs.begin(), coeffs.end());
@@ -1088,7 +1088,7 @@ public:
         CGAL_precondition(i >= 0 && i <= number_of_status_lines_with_event());
       
 #if CGAL_ACK_USE_SPECIAL_TREATMENT_FOR_CONIX
-        if(polynomial_2().degree()==2) {
+        if(CGAL::degree(polynomial_2(),1)==2) {
             return this->conic_status_line_of_interval(i);
         }
 #endif
@@ -1123,7 +1123,7 @@ public:
                                     CGAL::Sign perturb = CGAL::ZERO) const
     {
 #if CGAL_ACK_USE_SPECIAL_TREATMENT_FOR_CONIX
-        if(polynomial_2().degree()==2) {
+        if(CGAL::degree(polynomial_2(),1)==2) {
             return this->conic_status_line_for_x(x,perturb);
         }
 #endif
@@ -1206,7 +1206,7 @@ public:
     size_type arcs_over_interval(size_type i) const {
         CGAL_precondition(has_defining_polynomial());
 #if CGAL_ACK_USE_SPECIAL_TREATMENT_FOR_CONIX
-        if(polynomial_2().degree()==2) {
+        if(CGAL::degree(polynomial_2(),1)==2) {
             return this->conic_arcs_over_interval(i);
         }
 #endif
@@ -1228,7 +1228,7 @@ public:
      */
     Bound bound_value_in_interval(size_type i) const {
 #if CGAL_ACK_USE_SPECIAL_TREATMENT_FOR_CONIX
-        if(polynomial_2().degree()==2) {
+        if(CGAL::degree(polynomial_2(),1)==2) {
             return this->conic_bound_value_in_interval(i);
         }
 #endif
@@ -1273,7 +1273,7 @@ public:
      */
     Polynomial_1 content() const {
 #if CGAL_ACK_USE_SPECIAL_TREATMENT_FOR_CONIX
-        if(polynomial_2().degree()==2) {
+        if(CGAL::degree(polynomial_2(),1)==2) {
             return this->conic_content();
         }
 #endif
@@ -1292,7 +1292,7 @@ public:
      */
     Polynomial_2 primitive_polynomial_2() const {
 #if CGAL_ACK_USE_SPECIAL_TREATMENT_FOR_CONIX
-        if(polynomial_2().degree()==2) {
+        if(CGAL::degree(polynomial_2(),1)==2) {
             return this->conic_primitive_polynomial_2();
         }
 #endif
@@ -1314,7 +1314,7 @@ private:
         this->ptr()->content 
             = typename CGAL::Polynomial_traits_d< Polynomial_2 >::
                 Univariate_content_up_to_constant_factor()( polynomial_2() );
-        if(content().degree()==0) {
+        if(CGAL::degree(content())==0) {
 #if CGAL_ACK_DEBUG_FLAG
             CGAL_ACK_DEBUG_PRINT << "no vertical lines as components" 
                                  << std::endl;
@@ -1371,8 +1371,8 @@ public:
                     i < static_cast<size_type>
                        (sturm_habicht_of_primitive().size()));
 
-        CGAL_assertion(sturm_habicht_of_primitive()[i].degree()<=i);
-        if(sturm_habicht_of_primitive()[i].degree() < i) {
+        CGAL_assertion(CGAL::degree(sturm_habicht_of_primitive()[i])<=i);
+        if(CGAL::degree(sturm_habicht_of_primitive()[i]) < i) {
             return Polynomial_1(0);
         } // else:
         return sturm_habicht_of_primitive()[i][i];
@@ -1392,8 +1392,8 @@ public:
         CGAL_assertion(i>=1 && 
                     i < static_cast<size_type>
                        (sturm_habicht_of_primitive().size()));
-        CGAL_assertion(sturm_habicht_of_primitive()[i].degree()<=i);
-        if(sturm_habicht_of_primitive()[i].degree() < i-1) {
+        CGAL_assertion(CGAL::degree(sturm_habicht_of_primitive()[i])<=i);
+        if(CGAL::degree(sturm_habicht_of_primitive()[i]) < i-1) {
             return Polynomial_1(0);
         } // else:
         return sturm_habicht_of_primitive()[i][i-1];
@@ -1432,7 +1432,7 @@ private:
         
         // Fix a problem for constant primitive part.
         // In this case, the St.-Ha. sequence is never needed
-        if(primitive_polynomial_2().degree() == 0) {
+        if(CGAL::degree(primitive_polynomial_2()) == 0) {
             // Set the resultant
             stha.push_back(primitive_polynomial_2());
         } else {
@@ -1444,7 +1444,7 @@ private:
                  CGAL::diff(primitive_polynomial_2()),
                  std::back_inserter(stha));
             stha.push_back(primitive_polynomial_2());
-            size_type p = primitive_polynomial_2().degree();
+            size_type p = CGAL::degree(primitive_polynomial_2());
             CGAL_assertion(static_cast<size_type>(stha.size()) == p+1);
             for(size_type i=0;i<p; i++) {
                 if((p-i)%4==0 || (p-i)%4==1) {
@@ -1516,14 +1516,14 @@ private:
 #ifndef CGAL_ACK_RESULTANT_FIRST_STRATEGY_DEGREE_THRESHOLD
         bool speed_up = true;
 #else
-        bool speed_up=polynomial_2().degree() >= 
+        bool speed_up=CGAL::degree(polynomial_2()) >= 
             CGAL_ACK_RESULTANT_FIRST_STRATEGY_DEGREE_THRESHOLD;
 #endif
 #else
         bool speed_up=false;
 #endif
         
-        if(polynomial_2().degree() == 0) {
+        if(CGAL::degree(polynomial_2()) == 0) {
 	    this->ptr()->resultant_of_primitive_and_derivative_y 
                 = Polynomial_1(1);
         } else {
@@ -1535,10 +1535,11 @@ private:
                     = principal_sturm_habicht_of_primitive(0);
         
             } else {
+                typename Polynomial_traits_2::Differentiate diff;
                 this->ptr()->resultant_of_primitive_and_derivative_y
                     = CGAL::CGALi::resultant
                         (primitive_polynomial_2(),
-                         CGAL::diff(primitive_polynomial_2()));
+                         diff(primitive_polynomial_2(),1));
             }
 
         }
@@ -1567,7 +1568,7 @@ private:
         Polynomial_2 f_yx = typename Polynomial_traits_2::Swap() 
             (polynomial_2(),0,1);
 
-        if( f_yx.degree() == 0 ) {
+        if( CGAL::degree(f_yx) == 0 ) {
             // Polynomial only consists of horizontal lines
             // primitive resultant is set to 1
             this->ptr()->resultant_of_primitive_and_derivative_x = Polynomial_1(1);
@@ -1578,7 +1579,7 @@ private:
             Polynomial_1 content_yx 
                 = typename CGAL::Polynomial_traits_d< Polynomial_2 >::
                     Univariate_content_up_to_constant_factor()( f_yx );
-            if(content_yx.degree()==0) {
+            if(CGAL::degree(content_yx)==0) {
                 f_yx_primitive=f_yx;
             }
             else {
@@ -1653,26 +1654,41 @@ private:
          
         Solve_1 solve_1;
          
+        std::vector<std::pair<Algebraic_real_1,size_type> > content_pairs;
         std::vector<Algebraic_real_1> content_roots;
         std::vector<size_type> content_mults;
         solve_1(content(),
-                std::back_inserter(content_roots),
-                std::back_inserter(content_mults));
+                std::back_inserter(content_pairs));
+
+        for(int i=0; i < static_cast<int>(content_pairs.size()); i++ ) {
+            content_roots.push_back(content_pairs[i].first);
+            content_mults.push_back(content_pairs[i].second);
+        }
         
         // Set the vertical_line_components flag as side effect
         this->ptr()->has_vertical_component = (content_roots.size() > 0);
 
+        std::vector<std::pair<Algebraic_real_1,size_type> > res_pairs;
         std::vector<Algebraic_real_1> res_roots;
         std::vector<size_type> res_mults;
         Polynomial_1 R = resultant_of_primitive_and_derivative_y();
-        solve_1(R,
-                std::back_inserter(res_roots),
-                std::back_inserter(res_mults));
+        solve_1(R,std::back_inserter(res_pairs));
+        
+        for(int i=0; i < static_cast<int>(res_pairs.size()); i++ ) {
+            res_roots.push_back(res_pairs[i].first);
+            res_mults.push_back(res_pairs[i].second);
+        }
+
+        std::vector<std::pair<Algebraic_real_1,size_type> > lcoeff_pairs;
         std::vector<Algebraic_real_1> lcoeff_roots;
         std::vector<size_type> lcoeff_mults;
-        solve_1(primitive_polynomial_2().lcoeff(),
-                std::back_inserter(lcoeff_roots),
-                std::back_inserter(lcoeff_mults));
+        solve_1(CGAL::leading_coefficient(primitive_polynomial_2()),
+                std::back_inserter(lcoeff_pairs));
+
+        for(int i=0; i < static_cast<int>(lcoeff_pairs.size()); i++ ) {
+            lcoeff_roots.push_back(lcoeff_pairs[i].first);
+            lcoeff_mults.push_back(lcoeff_pairs[i].second);
+        }
         
 
         //Now, merge the vertical line positions with the resultant roots
@@ -1832,7 +1848,7 @@ public:
     {
         CGAL_assertion(s!=0);
 #if CGAL_ACK_USE_SPECIAL_TREATMENT_FOR_CONIX
-        if(polynomial_2().degree()==2) {
+        if(CGAL::degree(polynomial_2(),1)==2) {
             return this->conic_shear_primitive_part();
         }
 #endif
@@ -1900,7 +1916,7 @@ public:
     void refine_all(Bound precision) {
 
 #if CGAL_ACK_USE_SPECIAL_TREATMENT_FOR_CONIX
-        if(polynomial_2().degree()==2) {
+        if(CGAL::degree(polynomial_2(),1)==2) {
             return this->conic_refine_all(precision);
         }
 #endif
@@ -1989,7 +2005,7 @@ public:
                           loc == CGAL::ARR_RIGHT_BOUNDARY);
 
 #if CGAL_ACK_USE_SPECIAL_TREATMENT_FOR_CONIX
-        if(polynomial_2().degree()==2) {
+        if(CGAL::degree(polynomial_2(),1)==2) {
             return this->conic_asymptotic_value_of_arc(loc,arcno);
         }
 #endif
@@ -2030,16 +2046,17 @@ private:
         Integer num,denom;
         
         Solve_1 solve_1;
-        std::vector<size_type> dummy_multiplicities;
 
         Polynomial_1 leading_coefficient_in_x 
-            = typename Polynomial_traits_2::Swap() 
-                (this->polynomial_2(),0,1).lcoeff();
+            = CGAL::leading_coefficient(typename Polynomial_traits_2::Swap() 
+                                        (polynomial_2(),0,1));
         std::vector<Algebraic_real_1> roots_of_lcoeff;
         
         solve_1(leading_coefficient_in_x,
                 std::back_inserter(roots_of_lcoeff),
-                std::back_inserter(dummy_multiplicities));
+                false);
+        
+
         std::vector<Bound> stripe_bounds;
         find_intermediate_values(roots_of_lcoeff.begin(),
                                  roots_of_lcoeff.end(),
@@ -2054,7 +2071,7 @@ private:
                 = this->polynomial_2().evaluate_homogeneous(num,denom);
             std::vector<Algebraic_real_1> x_coordinates_at_beta;
             solve_1(poly_at_beta,std::back_inserter(x_coordinates_at_beta),
-                    std::back_inserter(dummy_multiplicities));
+                    false);
             size_type number_of_roots 
                 = static_cast<size_type>(x_coordinates_at_beta.size());
             if(number_of_roots>0) {

@@ -196,7 +196,7 @@ void algebraic_number_test()
     assert(tmp.compare(m)==0);
     assert(tmp.is_rational());
     assert(tmp.rational()==rat_NT(3));
-    assert(tmp.polynomial().degree() == 1);
+    assert(CGAL::degree(tmp.polynomial()) == 1);
     assert(tmp.polynomial().evaluate(Coeff_NT(3)) == Coeff_NT(0));
     
     // compare (real)

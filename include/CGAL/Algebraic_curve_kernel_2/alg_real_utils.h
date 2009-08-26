@@ -476,11 +476,11 @@ evaluate_iv(Poly1_ f,boost::numeric::interval<Bound_> iv) {
     typedef typename 
         CGAL::Coercion_traits<typename Poly1::NT, Bound_>::Type Coercion;
 	//typename CGAL::Coercion_traits<typename Poly1::NT, Bound_>::Cast cast;
-    CGAL_assertion(f.degree()>=0);
+    CGAL_assertion(CGAL::degree(f)>=0);
     typename CGAL::Coercion_traits<typename Poly1::NT, Bound_>::Cast cast;
     typedef boost::numeric::interval<Coercion> Coercion_interval;
     Coercion_interval iv_cast(cast(iv.lower()),cast(iv.upper()));
-    int n=f.degree();
+    int n=CGAL::degree(f);
     Coercion_interval ret(cast(f[n]),cast(f[n]));
     for(int i=n-1;i>=0;i--) {
         ret *= iv_cast;
@@ -501,9 +501,9 @@ bool is_root_of(const AlgebraicReal & x,Polynomial_2 p) {
         return CGAL::sign(p.evaluate(exact_value))==CGAL::ZERO; 
     }
     else {
-        CGAL_precondition(p.degree()>=0);
+        CGAL_precondition(CGAL::degree(p)>=0);
       
-        if(p.degree()==0) return p.is_zero();
+        if(CGAL::degree(p)==0) return p.is_zero();
         Polynomial_2 g=typename CGAL::Polynomial_traits_d<Polynomial_2>
             ::Gcd_up_to_constant_factor()(p,x.polynomial());
         return g.sign_at(x.low())!=g.sign_at(x.high());
@@ -521,7 +521,7 @@ template<typename Poly_2, typename Algebraic_real>
 Poly_2 poly_non_vanish_leading_term(const Poly_2& pol,Algebraic_real alpha) {
     Poly_2 f(pol);
     while(true) {
-	if(CGAL::CGALi::is_root_of(alpha,f.lcoeff())) {
+	if(CGAL::CGALi::is_root_of(alpha,CGAL::leading_coefficient(pol))) {
             typename Poly_2::const_iterator poly_end = f.end();
             if(f.begin()==poly_end) {
                 break;

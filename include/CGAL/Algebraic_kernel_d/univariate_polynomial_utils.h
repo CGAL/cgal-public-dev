@@ -33,7 +33,7 @@ namespace CGALi {
         // see [Mignotte, 1992], p.144 for a proof
         CGAL_precondition(Polynomial_traits_d<NT>::d == 0);
         typename Real_embeddable_traits<NT>::Abs abs;
-        const int n = P.degree();
+        const int n = CGAL::degree(P);
         NT x(1); 
         NT val;
         for (;;) {
@@ -55,7 +55,7 @@ namespace CGALi {
      */
     template <class NT>
     int sign_variations(const Polynomial<NT>& P) { 
-        const int n = P.degree();
+        const int n = CGAL::degree(P);
         int variations = 0;
         int old_sign = CGAL::sign(P[n]); // never zero unless P is zero
         for (int i = n-1; i >= 0; i--) {
@@ -77,7 +77,7 @@ namespace CGALi {
     bool is_square_free(const Polynomial<NT>& p) {
         if( may_have_multiple_factor(p) ) {
             Polynomial<NT> d = p; d.diff();
-            return gcd_utcf(p, d).degree() == 0;
+            return CGAL::degree(gcd_utcf(p, d)) == 0;
         } else {
             return true;
         }

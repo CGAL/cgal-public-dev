@@ -464,11 +464,11 @@ public:
         CGAL_ACK_DEBUG_PRINT << "Check content for squarefreeness.." 
                              << std::flush;
 #endif
-        if(this->ptr()->c1_.content().degree()>0 &&
-           this->ptr()->c2_.content().degree()>0) {
-            if(CGAL::CGALi::gcd_utcf
-               (this->ptr()->c1_.content(), 
-                this->ptr()->c2_.content()).degree() >= 1) {
+        if(CGAL::degree(this->ptr()->c1_.content())>0 &&
+           CGAL::degree(this->ptr()->c2_.content())>0) {
+            if(CGAL::degree(CGAL::CGALi::gcd_utcf
+                            (this->ptr()->c1_.content(), 
+                             this->ptr()->c2_.content())) >= 1) {
                 
 #if CGAL_ACK_DEBUG_FLAG
                 CGAL_ACK_DEBUG_PRINT << "Common vertical line discovered" 
@@ -774,8 +774,7 @@ private:
         typename FT::Decompose() (gcd_with_denom, gcd, denom);
         
         std::vector<Algebraic_real_1> gcd_roots;
-        std::vector<int> mults;
-        Solve_1()(gcd,std::back_inserter(gcd_roots),std::back_inserter(mults));
+        Solve_1()(gcd,std::back_inserter(gcd_roots),false);
         int m = gcd_roots.size();
 
         Slice_info slice_info = construct_slice_info(x);
@@ -1280,9 +1279,10 @@ void Curve_pair_analysis_2<AlgebraicKernel_2>::compute_resultant() const {
 #ifndef CGAL_ACK_RESULTANT_FIRST_STRATEGY_DEGREE_THRESHOLD
     bool speed_up = true;
 #else
-    bool speed_up = std::min(curve_analysis(false).polynomial_2().degree(),
-                             curve_analysis(true).polynomial_2().degree()) >= 
-        CGAL_ACK_RESULTANT_FIRST_STRATEGY_DEGREE_THRESHOLD;
+    bool speed_up = std::min
+        (CGAL::degree(curve_analysis(false).polynomial_2(),1),
+         CGAL::degree(curve_analysis(true).polynomial_2(),1)) >= 
+         CGAL_ACK_RESULTANT_FIRST_STRATEGY_DEGREE_THRESHOLD;
 #endif
 #else
     bool speed_up=false;
@@ -1331,10 +1331,14 @@ compute_resultant_roots_with_multiplicities() const {
     this->ptr()->resultant_roots = std::vector<Algebraic_real_1>();
     this->ptr()->multiplicities_of_resultant_roots
         = std::vector<size_type>();
-    solve_1(resultant(), 
-            std::back_inserter(this->ptr()->resultant_roots.get()),
-            std::back_inserter
-            (this->ptr()->multiplicities_of_resultant_roots.get()));
+    std::vector<std::pair<Algebraic_real_1, size_type> > res_pairs;
+    solve_1(resultant(), std::back_inserter(res_pairs));
+
+    for(int i=0; i < static_cast<int>(res_pairs.size()); i++ ) {
+        this->ptr()->resultant_roots.get().push_back(res_pairs[i].first);
+        this->ptr()->multiplicities_of_resultant_roots.get()
+            .push_back(res_pairs[i].second);
+    }
     
 #if CGAL_ACK_DEBUG_FLAG
     CGAL_ACK_DEBUG_PRINT << "done" << std::endl;
@@ -1528,7 +1532,7 @@ compute_subresultants() const {
     this->ptr()->coprincipal_subresultants = Polynomial_container();
     const Polynomial_2& f = this->ptr()->f, g=this->ptr()->g;
     this->ptr()->subresultants = std::vector<Polynomial_2>();
-    if(f.degree()<g.degree()) {
+    if(CGAL::degree(f,1)<CGAL::degree(g,1)) {
 #if CGAL_ACK_USE_BEZOUT_MATRIX_FOR_SUBRESULTANTS 
         CGAL::CGALi::bezout_polynomial_subresultants
             (g,f,std::back_inserter(this->ptr()->subresultants.get()));
@@ -1554,7 +1558,7 @@ compute_subresultants() const {
     size_type n = static_cast<size_type>(subresultants.size());
     
     for(size_type i=0;i<n;i++) {
-        if(subresultants[i].degree() < i) {
+        if(CGAL::degree(subresultants[i]) < i) {
             this->ptr()->principal_subresultants->
                 push_back(Polynomial_1(0));
         }
@@ -1564,7 +1568,7 @@ compute_subresultants() const {
         }
     }
     for(size_type i=1;i<n;i++) {
-        if(subresultants[i].degree() < i-1) {
+        if(CGAL::degree(subresultants[i]) < i-1) {
             this->ptr()->coprincipal_subresultants->
                 push_back(Polynomial_1(0));
         }
@@ -1574,14 +1578,14 @@ compute_subresultants() const {
         }
     }
     // This must be corrected, if f and g have same degree:
-    if(f.degree() == g.degree()) {
+    if(CGAL::degree(f,1) == CGAL::degree(g,1)) {
         if(n>=1) {
             this->ptr()->principal_subresultants.get()[n-1] 
-                = Polynomial_1(g.lcoeff());
+                = Polynomial_1(CGAL::leading_coefficient(g));
         }
         if(n>=2) {
             this->ptr()->coprincipal_subresultants.get()[n-2] 
-                = Polynomial_1(g[g.degree()-1]);
+                = Polynomial_1(g[CGAL::degree(g,1)-1]);
         }
     }
     
@@ -2052,8 +2056,10 @@ construct_generic_case(size_type i) const
     size_type index_of_ffy =event_indices(i).ffy;
     size_type index_of_ggy =event_indices(i).ggy;
     if(index_of_fg>=0) {
-        if(alpha.is_root_of(this->ptr()->c1_.polynomial_2().lcoeff()) ||
-           alpha.is_root_of(this->ptr()->c2_.polynomial_2().lcoeff())) {
+        if(alpha.is_root_of(CGAL::leading_coefficient
+                            (this->ptr()->c1_.polynomial_2())) ||
+           alpha.is_root_of(CGAL::leading_coefficient
+                            (this->ptr()->c2_.polynomial_2()))) {
             throw CGAL::CGALi::Non_generic_position_exception();
         }
         size_type k = -1; // not yet computed
@@ -2335,7 +2341,7 @@ zero_test_bivariate(const Algebraic_real_1& alpha,
         p_rat=this->mod(p_rat,modulus);
         q_rat=this->mod(q_rat,modulus);
         
-        size_type n = h.degree();
+        size_type n = CGAL::degree(h,1);
         // Create the powers of p and q mod modulus
 /*
 #if CGAL_ACK_DEBUG_FLAG
@@ -2420,7 +2426,7 @@ zero_test_bivariate(const Algebraic_real_1& alpha,
         typename Coercion::Cast cast;
         Coercion_type b = cast(alpha.rational()),
             p_b=p.evaluate(b),q_b=q.evaluate(b);
-        size_type n = h.degree();
+        size_type n = CGAL::degree(h,1);
         Coercion_type eval(0);
         for(size_type i=0;i<=n;i++) {
             eval+=h[i].evaluate(b)*CGAL::ipower(p_b,i)*CGAL::ipower(q_b,n-i);

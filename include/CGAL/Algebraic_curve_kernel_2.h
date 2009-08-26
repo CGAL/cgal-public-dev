@@ -209,7 +209,9 @@ public:
 protected:
     //! \name private functors
     //!@{
-    
+ 
+#if 0
+   
     //! polynomial canonicalizer, needed for the cache
     template <class Poly> 
     struct Poly_canonicalizer : public std::unary_function< Poly, Poly >
@@ -229,12 +231,13 @@ protected:
             CGAL_assertion(g != Scalar(0));
             if(g != Scalar(1)) 
                 scalar_div(p,g);
-            if(p.lcoeff().lcoeff() < 0) 
+            if(CGAL::leading_coefficient(CGAL::leading_coefficient(p))) < 0) 
                 scalar_div(p,Scalar(-1));
             return p;        
         }
            
     };
+#endif
 
     // NOT a curve pair in our notation, simply a std::pair of Curve_analysis_2
     typedef std::pair<Curve_analysis_2, Curve_analysis_2> Pair_of_curves_2;
@@ -274,7 +277,7 @@ protected:
     typedef CGALi::LRU_hashed_map<Polynomial_2,
         Curve_analysis_2, CGALi::Poly_hasher,
         std::equal_to<Polynomial_2>,
-        Poly_canonicalizer<Polynomial_2> > Curve_cache_2;
+        typename Polynomial_traits_2::Canonicalize > Curve_cache_2;
 
     //! type of curve pair analysis cache 
     typedef CGALi::LRU_hashed_map<Pair_of_curves_2,
@@ -465,109 +468,93 @@ public:
     };
     CGAL_Algebraic_Kernel_cons(Get_y_2, get_y_2_object);
     
-    //! Refines the x-coordinate of an Xy_coordinate_2 object
-    struct Refine_x_2 :
-        public std::unary_function<Xy_coordinate_2, void> {
-      
-        /*! 
-         * \brief Refines the approximation of the x-coordinate by at least
-         * a factor 2 (i.e., the isolating intervals has at most half its 
-         * original size).
-         *
-         * note that an interval may also collaps to a single point
-         */
-        void operator()(const Xy_coordinate_2& r) const {
-            r.refine_x();            
+
+
+    struct Approximate_absolute_x_2 
+    : public std::binary_function<Xy_coordinate_2,int,std::pair<Bound,Bound> >{
+    
+        std::pair<Bound,Bound> operator() (Xy_coordinate_2 xy,
+                                    int prec) {
+            Get_x_2 get_x = this->get_x_2_object();
+            return this->approximate_absolute_x_1_object() (get_x(xy),prec);
         }
+    };
+    CGAL_Algebraic_Kernel_cons(Approximate_absolute_x_2, 
+                               approximate_absolute_x_2_object);
+
+    struct Approximate_relative_x_2 
+    : public std::binary_function<Xy_coordinate_2,int,std::pair<Bound,Bound> >{
+    
+        std::pair<Bound,Bound> operator() (Xy_coordinate_2 xy,
+                                           int prec) {
+            Get_x_2 get_x = this->get_x_2_object();
+            return this->approximate_absolute_x_1_object() (get_x(xy),prec);
+        }
+    };
+    CGAL_Algebraic_Kernel_cons(Approximate_relative_x_2, 
+                               approximate_relative_x_2_object);
+
+    struct Approximate_absolute_y_2 
+    : public std::binary_function<Xy_coordinate_2,int,std::pair<Bound,Bound> >{
         
-        /*! 
-         * \brief refines the x-coordinate's interval of \c r
-         * w.r.t. given relative precision
-         *
-         * that is:
-         * <tt>|lower - upper|/|r.x()| <= 2^(-rel_prec)</tt>
-         */
-        void operator()(Xy_coordinate_2& r, int rel_prec) const {  
-            r.refine_x(rel_prec);
+        std::pair<Bound,Bound> operator() (Xy_coordinate_2 xy,
+                                    int prec) {
+            typename Y_real_traits_1::Lower_bound lower_bound;
+            typename Y_real_traits_1::Upper_bound upper_bound;
+            typename Y_real_traits_1::Refine refine;
+            
+            Bound l = lower_bound(xy);  
+            Bound u = upper_bound(xy);
+            Bound error = CGAL::ipower(Bound(2),CGAL::abs(prec));
+            while((u-l)*error>Bound(1)) {
+                refine(xy);
+                u = upper_bound(xy);
+                l = lower_bound(xy);
+          }
+          return std::make_pair(l,u);
         }
     };
-    CGAL_Algebraic_Kernel_pred(Refine_x_2, refine_x_2_object);
-    
-    //! Refines the y-coordinate of an Xy_coordinate_2 object
-    struct Refine_y_2 :
-        public std::unary_function<Xy_coordinate_2, void> {
-      
-        /*! 
-         * \brief Refines the approximation of the y-coordinate by at least
-         * a factor 2 (i.e., the isolating intervals has at most half its 
-         * original size).
-         *
-         * note that an interval may also collaps to a single point
-         */
-        void operator()(const Xy_coordinate_2& r) const {
-            typename Y_real_traits_1::Refine()(r);
-        }
+    CGAL_Algebraic_Kernel_cons(Approximate_absolute_y_2, 
+                               approximate_absolute_y_2_object);
+
+    struct Approximate_relative_y_2 
+    : public std::binary_function<Xy_coordinate_2,int,std::pair<Bound,Bound> >{
         
-        /*! 
-         * \brief refines the x-coordinate's interval of \c r
-         * w.r.t. given relative precision
-         *
-         * that is:
-         * <tt>|lower - upper|/|r.x()| <= 2^(-rel_prec)</tt>
-         */
-        void operator()(Xy_coordinate_2& r, int rel_prec) const {  
-            typename Y_real_traits_1::Refine()(r, rel_prec);
+        std::pair<Bound,Bound> operator() (Xy_coordinate_2 xy,
+                                           int prec) {
+            typename Y_real_traits_1::Lower_bound lower_bound;
+            typename Y_real_traits_1::Upper_bound upper_bound;
+            typename Y_real_traits_1::Refine refine;
+
+            Sign_at_2 sign_at = this->sign_at_2.object();
+            // Construct the polynomial y
+            Polynomial_2 f = typename Polynomial_traits_2::Shift()
+                (Polynomial_2(1),1,1);
+            Curve_analysis_2 y_curve 
+                = this->construct_curve_2_object() (f);
+            if(sign_at(y_curve,xy)==CGAL::ZERO) {
+                return std::make_pair(Bound(0),Bound(0));
+            }
+            while(CGAL::sign(lower_bound(xy))*CGAL::sign(upper_bound(xy))
+                  !=CGAL::POSITIVE) {
+                refine(xy);
+            }
+            Bound l = lower_bound(xy);  
+            Bound u = upper_bound(xy);
+            Bound error = CGAL::ipower(Bound(2),CGAL::abs(prec));
+            Bound max_b = (CGAL::max)(CGAL::abs(u),CGAL::abs(l));
+            while((prec>0)?((u-l)*error>max_b):((u-l)>error*max_b)){
+                refine(xy);
+                u = upper_bound(xy);
+                l = lower_bound(xy);
+                max_b = (CGAL::max)(CGAL::abs(u),CGAL::abs(l));
+          }
+          return std::make_pair(l,u);
         }
     };
-    CGAL_Algebraic_Kernel_pred(Refine_y_2, refine_y_2_object);
-    
-    //! a lower bound of the x-coordinate of \c r
-    struct Lower_bound_x_2 {
-       
-        typedef Xy_coordinate_2 argument_type;
-        typedef Bound result_type;
-            
-        result_type operator()(const Xy_coordinate_2& r) {
-            return typename X_real_traits_1::Lower_bound()(r.x());
-        }
-    };
-    CGAL_Algebraic_Kernel_cons(Lower_bound_x_2, lower_bound_x_2_object);
-    
-    //! an upper bound of the x-coordinate of \c r
-    struct Upper_bound_x_2 {
-       
-        typedef Xy_coordinate_2 agrument_type;
-        typedef Bound result_type;
-            
-        result_type operator()(const Xy_coordinate_2& r) {
-            return typename X_real_traits_1::Upper_bound()(r.x());
-        }
-    };
-    CGAL_Algebraic_Kernel_cons(Upper_bound_x_2, upper_bound_x_2_object);
-    
-    //! a lower bound of the x-coordinate of \c r
-    struct Lower_bound_y_2 {
-       
-        typedef Xy_coordinate_2 agrument_type;
-        typedef Bound result_type;
-            
-        result_type operator()(const Xy_coordinate_2& r) {
-            return typename Y_real_traits_1::Lower_bound()(r);
-        }
-    };
-    CGAL_Algebraic_Kernel_cons(Lower_bound_y_2, lower_bound_y_2_object);
-    
-    //! an upper bound of the y-coordinate of \c r
-    struct Upper_bound_y_2 {
-       
-        typedef Xy_coordinate_2 agrument_type;
-        typedef Bound result_type;
-            
-        result_type operator()(const Xy_coordinate_2& r) {
-            return typename Y_real_traits_1::Upper_bound()(r);
-        }
-    };
-    CGAL_Algebraic_Kernel_cons(Upper_bound_y_2, upper_bound_y_2_object);
+    CGAL_Algebraic_Kernel_cons(Approximate_relative_y_2, 
+                               approximate_relative_y_2_object);
+
     
     /*! 
      * \brief returns a value of type \c Bound that lies between
@@ -761,11 +748,11 @@ public:
   struct Square_free_factorize_2 {
     typedef Polynomial_2 first_argument_type;
     template< class OutputIterator>
-    OutputIterator operator()( const Polynomial_2& p, OutputIterator it) const {
+    OutputIterator operator()( const Polynomial_2& p, OutputIterator it) 
+        const {
       return CGAL::square_free_factorize_up_to_constant_factor(p,it);
     } 
   };
-  
   CGAL_Algebraic_Kernel_cons(
       Square_free_factorize_2, square_free_factorize_2_object);
   
@@ -874,26 +861,26 @@ public:
             Gcd_cache_2& gcd_cache = Self::gcd_cache_2();
             typedef typename Curve_analysis_2::size_type size_type;
             Polynomial_2 gcd = gcd_cache(std::make_pair(f,g));
-            size_type n = gcd.degree();
-            size_type nc = typename CGAL::Polynomial_traits_d< Polynomial_2 >
-                ::Univariate_content_up_to_constant_factor()( gcd ).degree();
+            size_type n = CGAL::degree(gcd);
+            size_type nc = CGAL::degree(
+                    CGAL::univariate_content_up_to_constant_factor(gcd));
             if( n!=0 || nc!=0 ) {
                 Curve_analysis_2 common_curve = cc_2(gcd);
                 *oib++ = common_curve;
                 Polynomial_2 divided_curve 
                     = CGAL::integral_division(f,gcd);
-                if( divided_curve.degree()>=1 || 
-                    typename CGAL::Polynomial_traits_d< Polynomial_2 >
-                        ::Univariate_content_up_to_constant_factor()
-                            ( divided_curve ).degree() >=1 ) {
+                if( CGAL::degree(divided_curve)>=1 || 
+                    CGAL::degree(
+                            CGAL::univariate_content_up_to_constant_factor
+                            (divided_curve)) >=1 ) {
                     Curve_analysis_2 divided_c = cc_2(divided_curve);
                     *oi1++ = divided_c;
                 }
                 divided_curve = CGAL::integral_division(g,gcd);
-                if(divided_curve.degree() >= 1 ||
-                   typename CGAL::Polynomial_traits_d< Polynomial_2 >
-                       ::Univariate_content_up_to_constant_factor()
-                           ( divided_curve ).degree() >=1) {
+                if(CGAL::degree(divided_curve) >= 1 ||
+                   CGAL::degree(
+                           CGAL::univariate_content_up_to_constant_factor
+                           ( divided_curve )) >=1 ) {
                     Curve_analysis_2 divided_c = cc_2(divided_curve);
                     *oi2++ = divided_c;
                 }
@@ -933,35 +920,7 @@ public:
     typedef Decompose_2 Make_square_free_2;
 
     //! Algebraic name
-    typedef Decompose_2 Square_free_factorize;
-
-    //! Algebraic name
     typedef Decompose_2 Make_coprime_2;
-    
-    //! computes the derivative w.r.t. x
-    struct Differentiate_x_2 : 
-        public std::unary_function< Polynomial_2, Polynomial_2 > {
-        
-        Polynomial_2 operator()(const Polynomial_2& p) const
-        {
-            typename Polynomial_traits_2::Differentiate derivate;
-            return derivate(p, 0);
-        }
-    };
-    CGAL_Algebraic_Kernel_cons(Differentiate_x_2, derivative_x_2_object);
-
-    //! \brief computes the derivative w.r.t. y
-    struct Differentiate_y_2 :
-        public std::unary_function< Polynomial_2, Polynomial_2 > {
-        
-        Polynomial_2 operator()(const Polynomial_2& p) const
-        {
-            typename Polynomial_traits_2::Differentiate derivate;
-            return derivate(p, 1);
-        }
-    };
-    CGAL_Algebraic_Kernel_cons(Differentiate_y_2, derivative_y_2_object);
-
     
     /*!
      * \brief computes the x-critical points of of a curve/a polynomial
@@ -983,11 +942,11 @@ public:
         OutputIterator operator()(const Curve_analysis_2& ca_2,
                 OutputIterator oi) const {
                 
-            typename Self::Differentiate_x_2 der_x;
+            typename Polynomial_traits_2::Differentiate diff;
             Construct_curve_2 cc_2;
             Construct_curve_pair_2 ccp_2;
             // construct curve analysis of a derivative in y
-            Curve_analysis_2 ca_2x = cc_2(der_x(ca_2.polynomial_2()));
+            Curve_analysis_2 ca_2x = cc_2(diff(ca_2.polynomial_2(),0));
             Curve_pair_analysis_2 cpa_2 = ccp_2(ca_2, ca_2x);
             typename Curve_pair_analysis_2::Status_line_1 cpv_line;
             typename Curve_analysis_2::Status_line_1 cv_line;
@@ -1076,10 +1035,10 @@ public:
                         continue;
                     }
                     if(!cpa_constructed) {
-                        typename Self::Differentiate_y_2 der_y;
-                        // construct curve analysis of a derivative in x
+                        typename Polynomial_traits_2::Differentiate diff;
+                        // construct curve analysis of a derivative in y
                         Curve_analysis_2 ca_2y =
-                            cc_2(der_y(ca_2.polynomial_2()));
+                            cc_2(diff(ca_2.polynomial_2(),1));
                         cpa_2 = ccp_2(ca_2, ca_2y);
                         cpa_constructed = true;
                     }
@@ -1353,6 +1312,115 @@ public:
   
 
 #if CGAL_AK_ENABLE_DEPRECATED_INTERFACE
+
+
+    //! Refines the x-coordinate of an Xy_coordinate_2 object
+    struct Refine_x_2 :
+        public std::unary_function<Xy_coordinate_2, void> {
+      
+        /*! 
+         * \brief Refines the approximation of the x-coordinate by at least
+         * a factor 2 (i.e., the isolating intervals has at most half its 
+         * original size).
+         *
+         * note that an interval may also collaps to a single point
+         */
+        void operator()(const Xy_coordinate_2& r) const {
+            r.refine_x();            
+        }
+        
+        /*! 
+         * \brief refines the x-coordinate's interval of \c r
+         * w.r.t. given relative precision
+         *
+         * that is:
+         * <tt>|lower - upper|/|r.x()| <= 2^(-rel_prec)</tt>
+         */
+        void operator()(Xy_coordinate_2& r, int rel_prec) const {  
+            r.refine_x(rel_prec);
+        }
+    };
+    CGAL_Algebraic_Kernel_pred(Refine_x_2, refine_x_2_object);
+    
+    //! Refines the y-coordinate of an Xy_coordinate_2 object
+    struct Refine_y_2 :
+        public std::unary_function<Xy_coordinate_2, void> {
+      
+        /*! 
+         * \brief Refines the approximation of the y-coordinate by at least
+         * a factor 2 (i.e., the isolating intervals has at most half its 
+         * original size).
+         *
+         * note that an interval may also collaps to a single point
+         */
+        void operator()(const Xy_coordinate_2& r) const {
+            typename Y_real_traits_1::Refine()(r);
+        }
+        
+        /*! 
+         * \brief refines the x-coordinate's interval of \c r
+         * w.r.t. given relative precision
+         *
+         * that is:
+         * <tt>|lower - upper|/|r.x()| <= 2^(-rel_prec)</tt>
+         */
+        void operator()(Xy_coordinate_2& r, int rel_prec) const {  
+            typename Y_real_traits_1::Refine()(r, rel_prec);
+        }
+    };
+    CGAL_Algebraic_Kernel_pred(Refine_y_2, refine_y_2_object);
+    
+    //! a lower bound of the x-coordinate of \c r
+    struct Lower_bound_x_2 {
+       
+        typedef Xy_coordinate_2 argument_type;
+        typedef Bound result_type;
+            
+        result_type operator()(const Xy_coordinate_2& r) {
+            return typename X_real_traits_1::Lower_bound()(r.x());
+        }
+    };
+    CGAL_Algebraic_Kernel_cons(Lower_bound_x_2, lower_bound_x_2_object);
+    
+    //! an upper bound of the x-coordinate of \c r
+    struct Upper_bound_x_2 {
+       
+        typedef Xy_coordinate_2 agrument_type;
+        typedef Bound result_type;
+            
+        result_type operator()(const Xy_coordinate_2& r) {
+            return typename X_real_traits_1::Upper_bound()(r.x());
+        }
+    };
+    CGAL_Algebraic_Kernel_cons(Upper_bound_x_2, upper_bound_x_2_object);
+
+
+    //! a lower bound of the x-coordinate of \c r
+    struct Lower_bound_y_2 {
+       
+        typedef Xy_coordinate_2 agrument_type;
+        typedef Bound result_type;
+            
+        result_type operator()(const Xy_coordinate_2& r) {
+            return typename Y_real_traits_1::Lower_bound()(r);
+        }
+    };
+    CGAL_Algebraic_Kernel_cons(Lower_bound_y_2, lower_bound_y_2_object);
+    
+    //! an upper bound of the y-coordinate of \c r
+    struct Upper_bound_y_2 {
+       
+        typedef Xy_coordinate_2 agrument_type;
+        typedef Bound result_type;
+            
+        result_type operator()(const Xy_coordinate_2& r) {
+            return typename Y_real_traits_1::Upper_bound()(r);
+        }
+    };
+    CGAL_Algebraic_Kernel_cons(Upper_bound_y_2, upper_bound_y_2_object);
+    
+
+
   typedef Bound Boundary; 
   typedef Lower_bound_x_2 Lower_boundary_x_2;
   typedef Lower_bound_y_2 Lower_boundary_y_2;

@@ -93,10 +93,10 @@ bool refine_zero_against(Field& low, Field& high, Polynomial p, Polynomial q) {
     typename Algebraic_structure_traits<Field>::Simplify simplify;
 
     CGAL_precondition(low < high);
-    CGAL_precondition(p.degree() > 0);
-    CGAL_precondition((q.degree() >= 0) && !q.is_zero());
+    CGAL_precondition(CGAL::degree(p) > 0);
+    CGAL_precondition((CGAL::degree(q) >= 0) && !q.is_zero());
 
-    if (q.degree() == 0) return false;
+    if (CGAL::degree(q) == 0) return false;
 
     CGAL::Sign sign_p_low  = p.sign_at(low);
     CGAL::Sign sign_p_high = p.sign_at(high);
@@ -114,14 +114,14 @@ bool refine_zero_against(Field& low, Field& high, Polynomial p, Polynomial q) {
             // q has no zero in ]low,high[
             return false;
         } else if (sv == 1) {
-            if (gcd_pq.degree() < 0) {
+            if (CGAL::degree(gcd_pq) < 0) {
                 if (may_have_common_factor(p, q)) {
                     gcd_pq = gcd_utcf(p, q);
                 } else {
                     gcd_pq = Polynomial(1);
                 }
             }
-            if (gcd_pq.degree() > 0 // constant poly cannot change sign
+            if (CGAL::degree(gcd_pq) > 0 // constant poly cannot change sign
             && gcd_pq.sign_at(low) != gcd_pq.sign_at(high)) {
                 // q has exactly one zero in ]low,high[
                 // and it's equal to that of p

@@ -79,7 +79,7 @@ private:
     void convert_coeffs(const Polynomial_1& poly, OI it) const {
         typename CGAL::Polynomial_traits_d<Polynomial_1>::Get_coefficient
             coeff;
-        for(int i = 0; i <= poly.degree(); i++){
+        for(int i = 0; i <= CGAL::degree(poly); i++){
             *it++ = convert_to_bfi(coeff(poly,i));
         }
     }
@@ -92,7 +92,7 @@ private:
             OI it ) const {
         
         BFI root(0);
-        for(int i = 0; i <= poly.degree(); i++){
+        for(int i = 0; i <= CGAL::degree(poly); i++){
             if(poly[i].is_extended()){
 //                typename Coercion_traits<FWS,ROOT >::Cast cast_root;  
 //                root = convert_to_bfi(NiX::sqrt(cast_root(poly[i].root())));
@@ -101,7 +101,7 @@ private:
             }
         }
         
-        for(int i = 0; i <= poly.degree(); i++){
+        for(int i = 0; i <= CGAL::degree(poly); i++){
             if(poly[i].is_extended()){
                 *it++ = 
                     convert_to_bfi(poly[i].a0()) + 
@@ -222,9 +222,11 @@ public:
             Poly F1,F2,G;
             G = gcd_utcf(polynomial(),y.polynomial()); 
             F1 = CGAL::integral_division_up_to_constant_factor(polynomial(),G);
-            CGAL_postcondition(F1.degree()==polynomial().degree()-G.degree());
+            CGAL_postcondition(CGAL::degree(F1)==
+                               CGAL::degree(polynomial())-CGAL::degree(G));
             F2 = CGAL::integral_division_up_to_constant_factor(y.polynomial(),G);
-            CGAL_postcondition(F2.degree()==y.polynomial().degree()-G.degree());
+            CGAL_postcondition(CGAL::degree(F2)==
+                               CGAL::degree(y.polynomial())-CGAL::degree(G));
            
             learn_from(G,F1);
             y.learn_from(G,F2);
@@ -366,7 +368,8 @@ protected:
 
         // if polynomial has changed, the approximated polynomial gets
         // updated  
-        if ( (int) polynomial_approx.size() != this->polynomial_.degree()+1) {
+        if ( (int) polynomial_approx.size() != 
+             CGAL::degree(this->polynomial_)+1) {
             update_poly_approximation();
         }        
         

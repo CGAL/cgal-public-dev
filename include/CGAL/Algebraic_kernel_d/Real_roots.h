@@ -148,9 +148,9 @@ template <class AlgebraicRealOutputIterator,
 int operator()(const Polynomial&           poly,
                AlgebraicRealOutputIterator oi_root,
                IntOutputIterator           oi_mult){  
-    CGAL_precondition(poly.degree() >= 0);
+    CGAL_precondition(CGAL::degree(poly) >= 0);
     // fast exit 
-    if (poly.degree() == 0) 
+    if (CGAL::degree(poly) == 0) 
         return (poly.is_zero())?-1:0;
           
     std::list<Polynomial>       sqffac;
@@ -256,10 +256,10 @@ int operator()( const Polynomial&           poly,
                 IntOutputIterator           oi_mult, 
                 PolynomialOutputIterator    oi_poly) {
     
-    CGAL_precondition(poly.degree() >= 0);
+    CGAL_precondition(CGAL::degree(poly) >= 0);
     
     // fast exit 
-    if (poly.degree() == 0) 
+    if (CGAL::degree(poly) == 0) 
         return (poly.is_zero())?-1:0;
           
     

@@ -90,11 +90,11 @@ public:
           k(kk),
           interval_given(false) {
         
-        numerator = new IT[P.degree()]; 
-        denominator_exponent = new IT[P.degree()];
-        is_exact = new bool[P.degree()]; 
+        numerator = new IT[CGAL::degree(P)]; 
+        denominator_exponent = new IT[CGAL::degree(P)];
+        is_exact = new bool[CGAL::degree(P)]; 
         number_of_real_roots_ = 0;
-        if(P.degree() == 0) 
+        if(CGAL::degree(P) == 0) 
             { 
                 if(P.is_zero()) number_of_real_roots_ = -1;
                 return;
@@ -115,11 +115,11 @@ public:
           k(kk),
           interval_given(true) {
         
-        numerator = new IT[P.degree()]; 
-        denominator_exponent = new IT[P.degree()];
-        is_exact = new bool[P.degree()];
+        numerator = new IT[CGAL::degree(P)]; 
+        denominator_exponent = new IT[CGAL::degree(P)];
+        is_exact = new bool[CGAL::degree(P)];
         number_of_real_roots_ = 0;
-        if(P.degree() == 0) 
+        if(CGAL::degree(P) == 0) 
             { 
                 if(P.is_zero()) number_of_real_roots_ = -1;
                 return;
@@ -152,9 +152,9 @@ public:
           k(D.k),
           interval_given(D.interval_given) {
         
-        numerator = new IT[poly_.degree()]; 
-        denominator_exponent = new IT[poly_.degree()];
-        is_exact = new bool[poly_.degree()]; 
+        numerator = new IT[CGAL::degree(poly_)]; 
+        denominator_exponent = new IT[CGAL::degree(poly_)];
+        is_exact = new bool[CGAL::degree(poly_)]; 
         for(int i=0; i<number_of_real_roots(); i++)
             {
                 numerator[i] = D.numerator[i];
@@ -305,7 +305,7 @@ private:
     IT weak_upper_root_bound(const POLYNOMIAL_REBIND(Coeff__)& P) { 
   
         typename Real_embeddable_traits<Coeff__>::Abs abs;
-        const int n = P.degree();
+        const int n = CGAL::degree(P);
         IT r(1);  // return value
         Coeff__ x(1);  // needed to "evaluate" the polynomial
         Coeff__ val;
@@ -324,7 +324,7 @@ private:
     template <class Coeff__>
     bool not_zero_in_interval(const POLYNOMIAL_REBIND(Coeff__)& P)
     {
-        if(P.degree() == 0) return true;
+        if(CGAL::degree(P) == 0) return true;
         if(CGALi::sign_variations(variation_transformation<Coeff__>(P)) != 0)
             return false;
         return (P[0] != Coeff__(0) && P.evaluate(Coeff__(1)) != Coeff__(0));

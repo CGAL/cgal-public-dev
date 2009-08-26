@@ -203,7 +203,7 @@ public:
      * default constructor
      *
      * A default-constructed point supports no operation other than
-     * having \c curve().degree() return \c -1. 
+     * having \c CGAL::degree(curve()) return \c -1. 
      */
     Xy_coordinate_2() : 
         Base(Rep()) { 
@@ -500,8 +500,6 @@ public:
     void simplify_by(const Curve_pair_analysis_2& cpa_2) const {
     
         typedef typename Algebraic_curve_kernel_2::Polynomial_2 Poly_2;
-        typename CGAL::Polynomial_traits_d<Poly_2>::Total_degree
-            total_degree;
         
         CGAL_precondition_code(
             typename Curve_analysis_2::Polynomial_2 mult =
@@ -513,9 +511,10 @@ public:
                                                  curve().polynomial_2())
                           .is_zero());
         // full parts
-        CGAL_precondition(mult.degree() == curve().polynomial_2().degree());
-        CGAL_precondition(total_degree(mult) ==
-                          total_degree(curve().polynomial_2()));
+        CGAL_precondition(CGAL::degree(mult) == 
+                          CGAL::degree(curve().polynomial_2()));
+        CGAL_precondition(CGAL::total_degree(mult) ==
+                          CGAL::total_degree(curve().polynomial_2()));
 
         typename Curve_pair_analysis_2::Status_line_1 cpv_line =
                 cpa_2.status_line_for_x(x());
@@ -564,7 +563,7 @@ public:
         if( y_iv.lower() > 0 || y_iv.upper() < 0 ) {
             return false;
         }
-        CGAL_assertion(curve().polynomial_2().degree()>=0);
+        CGAL_assertion(CGAL::degree(curve().polynomial_2())>=0);
         
         typename Curve_analysis_2::Polynomial_2::NT constant_pol
             = curve().polynomial_2()[0];

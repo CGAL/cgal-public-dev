@@ -147,7 +147,7 @@ CGAL_BEGIN_NAMESPACE
                     long log_div;
                     this->get_interval(f,lower,upper,log_div,traits);
                     //AcX_DSTREAM("f: " << f << std::endl);
-                    if(f.degree()>0) {
+                    if(CGAL::degree(f,1)>0) {
                         bitstream_tree 
 #if CGAL_ACK_BITSTREAM_USES_E08_TREE
                             = Bitstream_tree(-log_div,
@@ -348,10 +348,12 @@ CGAL_BEGIN_NAMESPACE
                             typename Bitstream_descartes_rndl_tree_traits::Approximator
                             approx = traits.approximator_object();
                             long approx_power = 1;
-                            Integer denom = CGAL::abs(approx(p.lcoeff(),approx_power));
+                            Integer denom = CGAL::abs(approx
+                                (CGAL::leading_coefficient(p),approx_power));
                             while(CGAL::compare(denom,Integer(1))!=CGAL::POSITIVE) {
                             approx_power*=2;
-                            denom = CGAL::abs(approx(p.lcoeff(),approx_power));
+                            denom = CGAL::abs(approx
+                                (CGAL::leading_coefficient(p),approx_power));
                             }
                             denom-=Integer(1);
                             CGAL_assertion(CGAL::compare(denom,Integer(0))==CGAL::POSITIVE);

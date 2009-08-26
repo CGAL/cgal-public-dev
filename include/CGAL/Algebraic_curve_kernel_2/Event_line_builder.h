@@ -184,10 +184,10 @@ public:
 #if CGAL_ACK_DEBUG_FLAG
                     CGAL_ACK_DEBUG_PRINT << "Ev check..." << std::flush;
 #endif
-                    Polynomial_2 fx 
-                        = typename Polynomial_traits_2::Differentiate() (f,0);
-                    Polynomial_2 fy(f);
-                    fy.diff();
+                    
+                    typename Polynomial_traits_2::Differentiate diff;
+                    Polynomial_2 fx diff(f,0);
+                    Polynomial_2 fy diff(f,1);
                     event_flag=event_point_checker(bit_des,f,alpha,k,fx,fy);
 
                 }
@@ -217,8 +217,8 @@ public:
                 (std::make_pair(0,0),std::make_pair(0,0));
 
 #if !CGAL_ACK_SHEAR_ALL_NOT_Y_REGULAR_CURVES
-            if(alpha.is_root_of(polynomial.lcoeff())) {
-                int n = polynomial.degree();
+            if(alpha.is_root_of(CGAL::leading_coefficient(polynomial))) {
+                int n = CGAL::degree(polynomial,1);
                 CGAL_assertion(! alpha.is_root_of(polynomial[n-1]));
                 CGAL::Sign asym_sign 
                     = CGAL::CGALi::estimate_sign_at
@@ -497,7 +497,7 @@ protected:
             p_rat=this->mod(p_rat,modulus);
             q_rat=this->mod(q_rat,modulus);
 
-            int n = h.degree();
+            int n = CGAL::degree(h,1);
             // Create the powers of p and q mod modulus
 /*
 #if CGAL_ACK_DEBUG_FLAG
@@ -578,9 +578,10 @@ protected:
 /*
 #if CGAL_ACK_DEBUG_FLAG
             CGAL_ACK_DEBUG_PRINT << "h_0: " << h_0 << std::endl;
-            CGAL_ACK_DEBUG_PRINT << "degree of h: " << h_0.degree() 
+            CGAL_ACK_DEBUG_PRINT << "degree of h: " << CGAL::degree(h_0,1) 
                                  << ", degree of alpha: " 
-                                 << alpha.polynomial().degree() << std::endl;
+                                 << CGAL::degree(alpha.polynomial(),1) 
+                                 << std::endl;
 #endif
 */
 	
@@ -589,7 +590,7 @@ protected:
         else {
             Bound b = alpha.rational(),
                 p_b=p.evaluate(b),q_b=q.evaluate(b);
-            int n = h.degree();
+            int n = CGAL::degree(h,1);
             Bound eval(0);
             for(int i=0;i<=n;i++) {
                 eval+=h[i].evaluate(b)*CGAL::ipower(p_b,i)*CGAL::ipower(q_b,n-i);
@@ -636,11 +637,12 @@ protected:
 
         if(root_of_resultant) {
 #if !CGAL_ACK_SHEAR_ALL_NOT_Y_REGULAR_CURVES
-            if(alpha.is_root_of(polynomial.lcoeff())) {
+            if(alpha.is_root_of(CGAL::leading_coefficient(polynomial))) {
                 Polynomial_2 trunc_pol = 
                     CGAL::CGALi::poly_non_vanish_leading_term
                         (polynomial,alpha);
-                CGAL_assertion(trunc_pol.degree()+1 == polynomial.degree());
+                CGAL_assertion(CGAL::degree(trunc_pol,1)+1 == 
+                               CGAL::degree(polynomial,1));
                 CGAL::CGALi::Square_free_descartes_tag t;
 
                 Bitstream_descartes bit_des(t,trunc_pol,traits);

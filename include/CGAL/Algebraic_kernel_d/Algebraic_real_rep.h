@@ -140,7 +140,7 @@ private:
     }
     
     void set_rational(Field) const {
-        if (polynomial().degree() == 1) {
+        if (CGAL::degree(polynomial()) == 1) {
             low_ = high_ = -Field(polynomial()[0])/Field(polynomial()[1]);
             is_rational_ = true;
             interval_option = Interval_option(CGAL::to_interval(rational()));
@@ -379,9 +379,11 @@ public:
             Poly F1,F2,G;
             G = gcd_utcf(polynomial(),y.polynomial()); 
             F1 = integral_division_up_to_constant_factor(polynomial(),G);
-            CGAL_postcondition(F1.degree()==polynomial().degree()-G.degree());
+            CGAL_postcondition(CGAL::degree(F1)==
+                               CGAL::degree(polynomial())-CGAL::degree(G));
             F2 = integral_division_up_to_constant_factor(y.polynomial(),G);
-            CGAL_postcondition(F2.degree()==y.polynomial().degree()-G.degree());
+            CGAL_postcondition(CGAL::degree(F2)==
+                               CGAL::degree(y.polynomial())-CGAL::degree(G));
            
             learn_from(G,F1);
             y.learn_from(G,F2);
@@ -423,7 +425,8 @@ protected:
         decomp(m, num, den);
         Poly G = Poly(-Coefficient(num),Coefficient(den)); 
         Poly F1= integral_division_up_to_constant_factor(polynomial(),G);
-        CGAL_postcondition(F1.degree()==polynomial().degree()-G.degree());
+        CGAL_postcondition(CGAL::degree(F1)==
+                           CGAL::degree(polynomial())-CGAL::degree(G));
    
         learn_from(G,F1);
      
@@ -434,13 +437,13 @@ protected:
     // factors of the polynomial
     void learn_from(const Poly& pfactor1,
                     const Poly& pfactor2) const {
-        if(pfactor1.degree()==0) return;
-        if(pfactor2.degree()==0) return;
+        if(CGAL::degree(pfactor1)==0) return;
+        if(CGAL::degree(pfactor2)==0) return;
          
         CGAL_precondition(may_have_common_factor(polynomial(),pfactor1));
         CGAL_precondition(may_have_common_factor(polynomial(),pfactor2));
-        CGAL_precondition(pfactor1.degree()+pfactor2.degree()
-                    == polynomial().degree());
+        CGAL_precondition(CGAL::degree(pfactor1)+CGAL::degree(pfactor2)
+                          == CGAL::degree(polynomial()));
 
 
       
@@ -477,16 +480,17 @@ protected:
     
 public:
     bool is_root_of(const Poly& Q) const {
-        if (Q.degree() == 0) return Q.is_zero();
+        if (CGAL::degree(Q) == 0) return Q.is_zero();
         if (is_rational()  ) return CGAL::ZERO == Q.sign_at(rational());
         
         if ( may_have_common_factor(polynomial(), Q) ) {
             Poly G = gcd_utcf(polynomial(),Q);
-            if(G.degree()!=0){
+            if(CGAL::degree(G)!=0){
                 Poly F1 = integral_division_up_to_constant_factor(
                         polynomial(),G
                 );
-                CGAL_postcondition(F1.degree()==polynomial().degree()-G.degree());
+                CGAL_postcondition(CGAL::degree(F1)==
+                                   CGAL::degree(polynomial())-CGAL::degree(G));
                 learn_from(G,F1);
                 return (G.sign_at(low()) != G.sign_at(high()));
             }

@@ -96,7 +96,7 @@ private:
 
     BFI_polynomial _convert_polynomial_to_bfi(Poly f) const {
         std::vector<BFI> coeffs;
-        for(int i = 0; i <= this->polynomial().degree(); i++) {
+        for(int i = 0; i <= CGAL::degree(this->polynomial()); i++) {
             coeffs.push_back(CGAL::convert_to_bfi(this->polynomial()[i]));
         }
         return BFI_polynomial(coeffs.begin(), coeffs.end());   

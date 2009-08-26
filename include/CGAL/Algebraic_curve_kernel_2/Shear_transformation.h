@@ -118,7 +118,9 @@ public:
             pol=C.polynomial_2();
         }
         sh_pol=CGAL::CGALi::shear(pol,Coefficient(s));
-        if(typename CGAL::Polynomial_traits_d< Polynomial_2 >::Univariate_content_up_to_constant_factor()( sh_pol ).degree()>0) {
+        typename Polynomial_traits_2::Degree degree;
+        if(degree(typename Polynomial_traits_2
+                  ::Univariate_content_up_to_constant_factor()( sh_pol ))>0) {
             throw CGAL::CGALi::Non_generic_position_exception();
         }
         if(! D.has_defining_polynomial()) {
@@ -130,21 +132,21 @@ public:
             CGAL_ACK_DEBUG_PRINT << "done.." << std::flush;
 #endif
         }
-      
-        der_sh_pol=sh_pol;
-        der_sh_pol.diff();
+        
+        der_sh_pol = typename Polynomial_traits_2::Differentiate() (sh_pol,1);
         sh_der_sh_pol = CGAL::CGALi::shear(der_sh_pol,Coefficient(-s));
       
 #if CGAL_ACK_DEBUG_FLAG
         CGAL_ACK_DEBUG_PRINT << "done" << std::endl;
 #endif
-      
+
         Solve_1 solve_1;
-      
+        
 #if CGAL_ACK_DEBUG_FLAG
         CGAL_ACK_DEBUG_PRINT << "Store the discriminant roots.." 
                              << std::flush;
 #endif
+
         Root_container disc_roots;
         for(Status_line_1_iterator it=C.event_begin();
             it!=C.event_end();
@@ -161,13 +163,19 @@ public:
                                  << std::flush;
 #endif
 
-            Polynomial_1 sh_disc = CGAL::CGALi::resultant(sh_pol,der_sh_pol);
+            if(typename Polynomial_traits_2::Degree() (sh_pol) > 0) {
+            
 
+                Polynomial_1 sh_disc 
+                    = CGAL::CGALi::resultant(sh_pol,der_sh_pol);
+                
 #if CGAL_ACK_DEBUG_FLAG
-            CGAL_ACK_DEBUG_PRINT << "root isolation.." << std::flush;
+                CGAL_ACK_DEBUG_PRINT << "root isolation.." << std::flush;
 #endif
-            solve_1(sh_disc,std::back_inserter(sh_disc_roots),
-                    std::back_inserter(sh_disc_roots_mults));
+                solve_1(sh_disc,std::back_inserter(sh_disc_roots),false);
+                
+            }
+             
 #if CGAL_ACK_DEBUG_FLAG
             CGAL_ACK_DEBUG_PRINT << "done" << std::endl;
 #endif
@@ -177,17 +185,17 @@ public:
 #if CGAL_ACK_DEBUG_FLAG
         CGAL_ACK_DEBUG_PRINT << "Compute the event resultant.." << std::flush;
 #endif
-
-        Polynomial_1 ev_res = CGAL::CGALi::resultant(pol,sh_der_sh_pol);
-
-#if CGAL_ACK_DEBUG_FLAG
-        CGAL_ACK_DEBUG_PRINT << "root isolation.." << std::flush;
-#endif
         Root_container ev_res_roots;
-
-        solve_1(ev_res,std::back_inserter(ev_res_roots),
-                std::back_inserter(ev_res_roots_mults));
-
+        if(typename Polynomial_traits_2::Degree() (sh_pol) > 0) {
+            Polynomial_1 ev_res = CGAL::CGALi::resultant(pol,sh_der_sh_pol);
+            
+#if CGAL_ACK_DEBUG_FLAG
+            CGAL_ACK_DEBUG_PRINT << "root isolation.." << std::flush;
+#endif
+            solve_1(ev_res,std::back_inserter(ev_res_roots),false);
+            
+        }
+        
 #if CGAL_ACK_DEBUG_FLAG
         CGAL_ACK_DEBUG_PRINT << "done, " << ev_res_roots.size() 
                              << " roots found" << std::endl;
@@ -1165,8 +1173,6 @@ private:
     Root_container sh_disc_roots,x_structure;
     std::vector<CGAL::CGALi::Three_valued> x_structure_info;
     
-    std::vector<int> sh_disc_roots_mults,ev_res_roots_mults;
-
     std::vector<std::vector<int> > sh_ev_indices;
 
     std::vector<Bound> stripe_values;                   
