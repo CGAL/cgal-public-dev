@@ -32,10 +32,14 @@
 #include <CGAL/CORE_BigFloat.h>
 #endif
 
-#ifdef  CGAL_USE_GMP
+/*
+
+#if  CGAL_USE_GMP
 #include <CGAL/Gmpfr.h>
 #include <CGAL/Gmpfr_interval.h>
 #endif 
+
+*/
 
 CGAL_BEGIN_NAMESPACE
 
@@ -358,8 +362,9 @@ public:
 #endif // CORE
 
 
+/*
 
-#ifdef CGAL_USE_GMP
+#if CGAL_USE_GMP
 
 // Specialization for Gmpz
 template<>
@@ -449,6 +454,7 @@ public:
 
 };
     
+
 template<>
 class Real_embeddable_extension< Gmpfr_interval > {
 public:
@@ -487,9 +493,10 @@ public:
     }
   };
 };
-              
+  
 #endif
 
+*/
         
 } //namespace CGALi
 
