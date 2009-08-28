@@ -115,38 +115,44 @@ public:
     
     struct Approximate_absolute_1:
       public std::binary_function<Algebraic_real_1,int,std::pair<Bound,Bound> >{
-      std::pair<Bound,Bound> operator()(const Algebraic_real_1& x, int prec) const {
-          Lower_bound lower; 
-          Upper_bound upper; 
-          Refine refine; 
-          Bound l = lower(x);  
-          Bound u = upper(x);
-          Bound error = CGAL::ipower(Bound(2),CGAL::abs(prec));
-          while((prec>0)?((u-l)*error>Bound(1)):((u-l)>error)){
-            refine(x);
-            u = upper(x);
-            l = lower(x);
-          }
-          return std::make_pair(l,u);
+      std::pair<Bound,Bound> 
+      operator()(const Algebraic_real_1& x, int prec) const {
+        Lower_bound lower; 
+        Upper_bound upper; 
+        Refine refine; 
+        Bound l = lower(x);  
+        Bound u = upper(x);
+        Bound error = CGAL::ipower(Bound(2),CGAL::abs(prec));
+        while((prec>0)?((u-l)*error>Bound(1)):((u-l)>error)){
+          refine(x);
+          u = upper(x);
+          l = lower(x);
+        }
+        return std::make_pair(l,u);
       }
-    };  
+    }; 
+    
     struct Approximate_relative_1:
       public std::binary_function<Algebraic_real_1,int,std::pair<Bound,Bound> >{
-      std::pair<Bound,Bound> operator()(const Algebraic_real_1& x, int prec) const {
-          Lower_bound lower; 
-          Upper_bound upper; 
-          Refine refine; 
-          Bound l = lower(x);  
-          Bound u = upper(x);
-          Bound error = CGAL::ipower(Bound(2),CGAL::abs(prec));
-          Bound max_b = (CGAL::max)(CGAL::abs(u),CGAL::abs(l));
-          while((prec>0)?((u-l)*error>max_b):((u-l)>error*max_b)){
-            refine(x);
-            u = upper(x);
-            l = lower(x);
-            max_b = (CGAL::max)(CGAL::abs(u),CGAL::abs(l));
-          }
-          return std::make_pair(l,u);
+      std::pair<Bound,Bound> 
+      operator()(const Algebraic_real_1& x, int prec) const {
+        
+        if(CGAL::is_zero(x)) return std::make_pair(Bound(0),Bound(0));
+        
+        Lower_bound lower; 
+        Upper_bound upper; 
+        Refine refine; 
+        Bound l = lower(x);  
+        Bound u = upper(x);
+        Bound error = CGAL::ipower(Bound(2),CGAL::abs(prec));
+        Bound max_b = (CGAL::max)(CGAL::abs(u),CGAL::abs(l));
+        while((prec>0)?((u-l)*error>max_b):((u-l)>error*max_b)){
+          refine(x);
+          u = upper(x);
+          l = lower(x);
+          max_b = (CGAL::max)(CGAL::abs(u),CGAL::abs(l));
+        }
+        return std::make_pair(l,u);
       }
     };
 
