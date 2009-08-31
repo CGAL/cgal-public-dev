@@ -147,7 +147,7 @@ CGAL_BEGIN_NAMESPACE
                     long log_div;
                     this->get_interval(f,lower,upper,log_div,traits);
                     //AcX_DSTREAM("f: " << f << std::endl);
-                    if(CGAL::degree(f,1)>0) {
+                    if(CGAL::degree(f)>0) {
                         bitstream_tree 
 #if CGAL_ACK_BITSTREAM_USES_E08_TREE
                             = Bitstream_tree(-log_div,
