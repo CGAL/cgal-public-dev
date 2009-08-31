@@ -5,35 +5,37 @@
 A model of \ccRefName\ is used to represent real roots of a univariate 
 polynomial \ccc{AlgebraicKernel_d_1::Polynomial_1}. 
 
-A model of \ccRefName\ is required to be \ccc{ExplicitInteroperable} 
-with \ccc{int}, \ccc{AlgebraicKernel_d_1::Coefficient}, 
-and \ccc{AlgebraicKernel_d_1::Bound}, that is, it is possible to 
-construct from these types and to compare against these types. 
+%A model of \ccRefName\ is required to be \ccc{ExplicitInteroperable} 
+%with \ccc{int}, \ccc{AlgebraicKernel_d_1::Coefficient}, 
+%and \ccc{AlgebraicKernel_d_1::Bound}, that is, it is possible to 
+%construct from these types and to compare against these types. 
 
 \ccRefines
 \ccc{DefaultConstructible}\\
 \ccc{CopyConstructible}\\
 \ccc{Assignable}\\
-\ccc{FromIntConstructible}\\
-\ccc{RealEmbeddable}\\
-\ccc{ExplicitInteroperable} with \ccc{int}\\
-\ccc{ExplicitInteroperable} with \ccc{AlgebraicKernel_d_1::Coefficient}\\
-\ccc{ExplicitInteroperable} with \ccc{AlgebraicKernel_d_1::Bound}\\
+%\ccc{FromIntConstructible}\\
+%\ccc{RealEmbeddable}\\
+%\ccc{ExplicitInteroperable} with \ccc{int}\\
+%\ccc{ExplicitInteroperable} with \ccc{AlgebraicKernel_d_1::Coefficient}\\
+%\ccc{ExplicitInteroperable} with \ccc{AlgebraicKernel_d_1::Bound}\\
 
+%In addition to the default and copy constructors, as well as the
+%constructor from int, an \ccRefName\ is also constructible from a
+%\ccc{AlgebraicKernel_d_1::Coefficient}:
 
-In addition to the default and copy constructors, as well as the
-constructor from int, an \ccRefName\ is also constructible from a
-\ccc{AlgebraicKernel_d_1::Coefficient}:
-
-\ccCreationVariable{ar1}
-\ccConstructor{AlgebraicReal_1(AlgebraicKernel_d_1::Coefficient c)}{}
+%\ccCreationVariable{ar1}
+%\ccConstructor{AlgebraicReal_1(AlgebraicKernel_d_1::Coefficient c)}{}
 
 \ccSeeAlso
 \ccRefIdfierPage{AlgebraicKernel_d_1::Solve_1}\\
+\ccRefIdfierPage{AlgebraicKernel_d_1::ConstructAlgebraicReal_1}\\
 \ccRefIdfierPage{AlgebraicKernel_d_1::Compare_1}\\
 \ccRefIdfierPage{AlgebraicKernel_d_1::BoundBetween_1}\\
 \ccRefIdfierPage{AlgebraicKernel_d_1::ApproximateAbsolute_1}\\
 \ccRefIdfierPage{AlgebraicKernel_d_1::ApproximateRelative_1}\\
+\ccRefIdfierPage{AlgebraicKernel_d_1::ComputePolynomial_1}\\
+\ccRefIdfierPage{AlgebraicKernel_d_1::ComputeIsolatingInterval_1}\\
 
 
 %\ccHasModels
