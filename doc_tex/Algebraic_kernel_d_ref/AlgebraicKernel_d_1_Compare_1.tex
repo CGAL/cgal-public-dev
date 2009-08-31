@@ -24,11 +24,14 @@ Compares two \ccc{AlgebraicKernel_d_1::Algebraic_real_1} values.
 A model \ccVar\ of this type must provide:
 
 \ccThree{result_type}{fo(first_argument_type,++}{}
-\ccMethod{result_type
-	operator()(first_argument_type x,
-                   second_argument_type y);}
-{Compares \ccc{x} and \ccc{y}.}
-
+\ccMethod{result_type operator()(AlgebraicKernel_d_1::Algebraic_real_1 a, AlgebraicKernel_d_1::Algebraic_real_1 b);}
+{Compares \ccc{a} and \ccc{b}.}
+\ccMethod{result_type operator()(AlgebraicKernel_d_1::Algebraic_real_1 a, int b);}
+{Compares \ccc{a} and \ccc{b}.}
+\ccMethod{result_type operator()(AlgebraicKernel_d_1::Algebraic_real_1 a, AlgebraicKernel_d_1::Bound b);}
+{Compares \ccc{a} and \ccc{b}.}
+\ccMethod{result_type operator()(AlgebraicKernel_d_1::Algebraic_real_1 a, AlgebraicKernel_d_1::Coefficient b);}
+{Compares \ccc{a} and \ccc{b}.}
 
 %\ccHasModels
 \ccSeeAlso
