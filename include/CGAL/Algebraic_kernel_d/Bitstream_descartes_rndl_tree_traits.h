@@ -100,7 +100,7 @@ public:
     typedef typename Bitstream_coefficient_kernel::Coefficient Coefficient;
 
     typedef typename Bitstream_coefficient_kernel::Bigfloat_interval BFI;
-    typedef typename CGAL::Bigfloat_interval_traits<BFI>::Boundary BF; 
+    typedef typename CGAL::Bigfloat_interval_traits<BFI>::Bound BF; 
     
     typedef typename 
         CGAL::Polynomial_type_generator<Coefficient,1>::Type POLY; 
