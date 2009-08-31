@@ -18,7 +18,7 @@ not allowed.
 \ccNestedType{size_type}{A instance of a size type, e.g., \ccc{int}}
 
 \ccNestedType{Multiplicity}{A instance of a multiplicity type, for instance,
-\ccc{int}, that enables to encode the multiplicy of two intersecting curves.}
+\ccc{int}, that enables to encode the multiplicity of two intersecting curves.}
 
 \ccNestedType{Algebraic_real_1}{Model of the concept
 \ccc{AlgebraicKernel_d_1::AlgebraicReal_1}.}
@@ -116,7 +116,7 @@ not allowed.
 
 \ccDefinition
 
-The \ccc{CurvePairAnalysis_2} concept is meant to provide tools to analyse 
+The \ccc{CurvePairAnalysis_2} concept is meant to provide tools to analyze 
 a pair of curves. An analysis is meant to describe the curve pair's 
 interesting points and how they are connected. 
 The analysis searches for {\it events}. Events only
@@ -164,7 +164,7 @@ during the creation.
 \ccConstructor{CurvePairAnalysis_2(Curve_analysis_2 ca1, Curve_analysis_2 ca2);}
 {constructs an analysis for the curve-pair defined by analysis given by 
 ca1 and ca2. 
-\ccPrecond{The polynomials defining the analysis must be squarefree and 
+\ccPrecond{The polynomials defining the analysis must be square free and 
 coprime.}
 }
 
@@ -178,7 +178,7 @@ coprime.}
   i.e., define $x$-coordinates, 
   which allows to simplify the real root isolation within this layer.
   The \ccc{value_type} of InputIterator is \ccc{Polynomial_1}.
-\ccPrecond{The polynomials defining the analysis must be squarefree and coprime.}
+\ccPrecond{The polynomials defining the analysis must be square free and coprime.}
 } 
   This constructor has been introduced to enable an upper layer 
 (geometric curved kernel) to use additional knowledge on the problem.

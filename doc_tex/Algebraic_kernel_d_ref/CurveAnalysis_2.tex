@@ -64,7 +64,7 @@ $x$-coordinate of a curve's status lines and $x = +\infty$.
 \ccMethod{std::pair< size_type, size_type > 
   number_of_branches_approaching_minus_infinity();}{
   returns the number of the curve's non-vertical branches that have the status
-  line as vertical asympote and that approach $y=-\infty$. We distinguish
+  line as vertical asymptote and that approach $y=-\infty$. We distinguish
   between approachings from left (\ccc{pair.first}) and approaches from right
   (\ccc{pair.second}).
 }
@@ -72,7 +72,7 @@ $x$-coordinate of a curve's status lines and $x = +\infty$.
 \ccMethod{std::pair< size_type, size_type > 
   number_of_branches_approaching_plus_infinity();}{
   returns the number of the curve's non-vertical branches that have the status
-  line as vertical asympote and that approach $y=+\infty$. We distinguish
+  line as vertical asymptote and that approach $y=+\infty$. We distinguish
   between approachings from left (\ccc{pair.first}) and approaches from right
   (\ccc{pair.second}).
 }
@@ -161,7 +161,7 @@ first, and after the last event).
   polynomials are minimal for the roots they define.
 
   The constructor is optional in the sense, that if the signature is not
-  provided by a model, but demanded by external soure code, a compile error is
+  provided by a model, but demanded by external source code, a compile error is
   reported.
 \end{ccAdvanced}
 
@@ -219,7 +219,7 @@ in an interval between events. Namely, the former is allowed to return a
 precomputed representative for the interval, while the later enforces
 a status line exactly at the given \ccc{x0} which implies that the 
 $y$-coordinates are with respect to the given \ccc{x0}. In the first case,
-the accesible $y$-coordinates are with respect to the representative's 
+the accessible $y$-coordinates are with respect to the representative's 
 $x$-coordinate only.
 
 %\begin{ccAdvanced}
@@ -236,7 +236,7 @@ $x$-coordinate only.
   returns a CGAL::Object that encodes the asymptotic value of a curve-arc 
   approaching the left or the right boundary ($loc$) of the underlying
   parameter space. Allowed instantiations of the CGAL::Object are 
-  \ccc{Algebraic_real_1}, in case the x-asympote of the arc is finite,
+  \ccc{Algebraic_real_1}, in case the x-asymptote of the arc is finite,
   or \ccc{CGAL::ARR_BOTTOM_BOUNDARY} and \ccc{CGAL::ARR_TOP_BOUNDARY} in case
   the defined arc approaches the respective corners of the parameter space.
   \ccPrecond{$loc$ is either \ccc{CGAL::ARR_LEFT_BOUNDARY} or 
@@ -244,10 +244,10 @@ $x$-coordinate only.
 }
 
 In our $y$-per-$x$-view we imagine the space to be slightly 
-higher than it is wide and so we distinguish three aymptotic behaviors
+higher than it is wide and so we distinguish three asymptotic behaviors
 of arcs. Horizontal, vertical, and none of them. This member covers 
 all non-vertical asymptotes. We do not introduce a special one
-for vertical asympototes as the respective $x$-coordinates are already defined
+for vertical asymptotes as the respective $x$-coordinates are already defined
 by proper status lines.
 
 In addition, by using the parameter space locations, 
