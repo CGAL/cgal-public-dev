@@ -2,13 +2,18 @@
 
 \ccDefinition
 
-The \ccc{AlgebraicKernel_d_2} concept is meant to provide the curved
-kernel with all the algebraic functionalities on bivariate polynomials
-required for the manipulation of arcs of algebraic curves of general degree
-$d$ in $\R^2$.
+A model of the \ccc{AlgebraicKernel_d_2} concept gathers necessary tools  
+for solving and handling bivariate polynomial systems of general degree $d$.
+
+%The AlgebraicKernel_d_2 concept is meant to provide the curved kernel with all 
+%the algebraic functionalities on bivariate polynomials required for the manipulation 
+%of arcs of algebraic curves of general degree $d$ in $\R^2$. 
 
 \ccRefines
 \ccc{AlgebraicKernel_d_1}
+% \ccc{DefaultConstructible}\\ it may be not !
+\ccc{CopyConstructible}\\
+\ccc{Assignable}\\
 
 \ccTypes
 \ccSetTwoColumns{xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx}{}
@@ -21,93 +26,55 @@ where \ccc{CGAL::Polynomial_traits_d<Polynomial_2>::Innermost_coefficient}
 is \ccc{AlgebraicKernel_d_1::Coefficient} 
 } 
 
-\ccNestedType{Algebraic_real_2}{A model of
-\ccc{AlgebraicKernel_d_2::AlgebraicReal_2}, for solutions of systems
+\ccNestedType{Algebraic_real_2}{A model of \ccc{AlgebraicKernel_d_2::AlgebraicReal_2}, for solutions of systems
 of two bivariate polynomials of type \ccc{Polynomial_2}.}
 
-%\ccNestedType{Construct_polynomial_2}{
-%Must provide:\\
-%\ccc{template <class InputIterator>}\\ 
-%\ccc{Polynomial_2 operator()(InputIterator first, InputIterator last)}\\
-%that constructs a polynomial from a range of coefficients of type
-%\ccc{Coefficient}, given in the lexicographic order of monomial degrees.
-%}
+\ccHeading{Functors}
+\ccNestedType{Construct_algebraic_real_2}{A model of \ccc{AlgebraicKernel_d_2::ConstructAlgebraicReal_2}}\ccGlue
+\ccNestedType{Compute_polynomial_x_2}{\ccc{AlgebraicKernel_d_2::ComputePolynomialX_2}}\ccGlue
+\ccNestedType{Compute_polynomial_y_2}{\ccc{AlgebraicKernel_d_2::ComputePolynomialY_2}}\ccGlue
+\ccNestedType{Compute_isolating_interval_x_2}{\ccc{AlgebraicKernel_d_2::ComputeIsolatingIntervalX_2}}\ccGlue
+\ccNestedType{Compute_isolating_interval_y_2}{\ccc{AlgebraicKernel_d_2::ComputeIsolatingIntervalY_2}}\ccGlue
+\ccNestedType{Is_square_free_2}{A model of \ccc{AlgebraicKernel_d_2::IsSquareFree_2}.}
+\ccNestedType{Make_square_free_2}{A model of \ccc{AlgebraicKernel_d_2::MakeSquareFree_2}.}
+\ccNestedType{Square_free_factorize_2}{A model of \ccc{AlgebraicKernel_d_2::SquareFreeFactorize_2}.}
+\ccNestedType{Is_coprime_2}{A model of \ccc{AlgebraicKernel_d_2::IsCoprime_2}.}
+\ccNestedType{Make_coprime_2}{A model of \ccc{AlgebraicKernel_d_2::MakeCoprime_2}.}
+\ccNestedType{Solve_2}{A model of \ccc{AlgebraicKernel_d_2::Solve_2}.} 
+\ccNestedType{Sign_at_2}{A model of \ccc{AlgebraicKernel_d_2::SignAt_2}.}
+\ccNestedType{Get_x_2}{A model of \ccc{AlgebraicKernel_d_2::GetX_2}.}
+\ccNestedType{Get_y_2}{A model of \ccc{AlgebraicKernel_d_2::GetY_2}.} 
+\ccNestedType{Compare_x_2}{A model of \ccc{AlgebraicKernel_d_2::CompareX_2}.}
+\ccNestedType{Compare_y_2}{A model of \ccc{AlgebraicKernel_d_2::CompareY_2}.}
+\ccNestedType{Compare_xy_2}{A model of \ccc{AlgebraicKernel_d_2::CompareXY_2}.}
+\ccNestedType{Bound_between_x_2}{A model of \ccc{AlgebraicKernel_d_2::BoundBetweenX_2}.}
+\ccNestedType{Bound_between_y_2}{A model of \ccc{AlgebraicKernel_d_2::BoundBetweenY_2}.}
+\ccNestedType{Approximate_absolute_x_2}{A model of \ccc{AlgebraicKernel_d_2::ApproximateAbsoluteX_2}}
+\ccNestedType{Approximate_absolute_y_2}{A model of \ccc{AlgebraicKernel_d_2::ApproximateAbsoluteY_2}}
+\ccNestedType{Approximate_relative_x_2}{A model of \ccc{AlgebraicKernel_d_2::ApproximateRelativeX_2}}
+\ccNestedType{Approximate_relative_y_2}{A model of \ccc{AlgebraicKernel_d_2::ApproximateRelativeY_2}}
 
 
-\ccNestedType{Is_square_free_2}{A model of 
-\ccc{AlgebraicKernel_d_2::IsSquareFree_2}.}
-\ccGlue
-\ccNestedType{Make_square_free_2}{A model of 
-\ccc{AlgebraicKernel_d_2::MakeSquareFree_2}.}
-\ccGlue
-\ccNestedType{Square_free_factorize_2}{A model of 
-\ccc{AlgebraicKernel_d_2::SquareFreeFactorize_2}.}
-
-\ccNestedType{Is_coprime_2}{A model of 
-\ccc{AlgebraicKernel_d_2::IsCoprime_2}.}
-\ccGlue
-\ccNestedType{Make_coprime_2}{A model of 
-\ccc{AlgebraicKernel_d_2::MakeCoprime_2}.}
-
-
-\ccNestedType{Solve_2}{A model of
-\ccc{AlgebraicKernel_d_2::Solve_2}.} 
-%\ccNestedType{Has_critical_points}{\ccc{CGAL::Tag_true} or 
-%\ccc{CGAL::Tag_false}, 
-%indicating whether the following two optional types are provided or not:}
-%\ccGlue
 \ccNestedType{X_critical_points_2}{This is an optional functor. 
 	Hence it is either a model of 
 	\ccc{AlgebraicKernel_d_2::XCriticalPoints_2} 
 	or set to \ccc{CGAL::Null_functor}.}
-\ccGlue
+
 \ccNestedType{Y_critical_points_2}{This is an optional functor. 
 	Hence it is either a model of 
 	\ccc{AlgebraicKernel_d_2::YCriticalPoints_2} 
 	or set to \ccc{CGAL::Null_functor}.}
 
-\ccNestedType{Sign_at_2}{A model of
-\ccc{AlgebraicKernel_d_2::SignAt_2}.}
-
-
-\ccNestedType{Get_x_2}{A model of
-\ccc{AlgebraicKernel_d_2::GetX_2}.} 
-\ccGlue
-\ccNestedType{Get_y_2}{A model of
-\ccc{AlgebraicKernel_d_2::GetY_2}.} 
-
-
-
-\ccNestedType{Compare_x_2}{A model of 
-\ccc{AlgebraicKernel_d_2::CompareX_2}.}
-\ccGlue
-\ccNestedType{Compare_y_2}{A model of 
-\ccc{AlgebraicKernel_d_2::CompareY_2}.}
-\ccGlue
-\ccNestedType{Compare_xy_2}{A model of 
-\ccc{AlgebraicKernel_d_2::CompareXY_2}.}
-\ccGlue
-\ccNestedType{Bound_between_x_2}{A model of 
-\ccc{AlgebraicKernel_d_2::BoundBetweenX_2}.}
-\ccGlue
-\ccNestedType{Bound_between_y_2}{A model of 
-\ccc{AlgebraicKernel_d_2::BoundBetweenY_2}.}
-\ccGlue
-\ccNestedType{Approximate_absolute_x_2}{A model of 
-\ccc{AlgebraicKernel_d_2::ApproximateAbsoluteX_2}}
-\ccGlue
-\ccNestedType{Approximate_absolute_y_2}{A model of 
-\ccc{AlgebraicKernel_d_2::ApproximateAbsoluteY_2}}
-\ccGlue
-\ccNestedType{Approximate_relative_x_2}{A model of 
-\ccc{AlgebraicKernel_d_2::ApproximateRelativeX_2}}
-\ccGlue
-\ccNestedType{Approximate_relative_y_2}{A model of 
-\ccc{AlgebraicKernel_d_2::ApproximateRelativeY_2}}
-
 %\ccHasModels
 
 %Algebraic_curve_kernel_2
+
+\ccOperations
+
+For each of the function objects above, there must exist a member function that requires no arguments and returns an instance of that function object. The name of the member function is the uncapitalized name of the type returned with the suffix \ccc{_object} appended. For example, for the function object  \ccc{AlgebraicKernel_d_2::BoundBetweenX_2} the following member function must exist:
+
+\ccCreationVariable{ak_2}
+\ccMemberFunction{AlgebraicKernel_d_2::BoundBetweenX_2 bound_between_x_2_object() const;}{}
 
 \ccSeeAlso
 
