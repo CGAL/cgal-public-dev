@@ -90,6 +90,7 @@ void test_algebraic_kernel_1(const AlgebraicKernel_d_1& ak_1){
   CGAL_GET_FTOR(Make_coprime_1, make_coprime_1, make_coprime_1_object);
   CGAL_GET_FTOR(Solve_1, solve_1, solve_1_object);
   CGAL_GET_FTOR(Sign_at_1, sign_at_1, sign_at_1_object);
+  CGAL_GET_FTOR(Is_zero_at_1, is_zero_at_1, is_zero_at_1_object);
   CGAL_GET_FTOR(Compare_1, compare_1, compare_1_object);
   CGAL_GET_FTOR(Bound_between_1, bound_between_1, bound_between_1_object);
   CGAL_GET_FTOR(Approximate_absolute_1, approximate_absolute_1, approximate_absolute_1_object);
@@ -120,6 +121,7 @@ void test_algebraic_kernel_1(const AlgebraicKernel_d_1& ak_1){
   // Make_coprime_1
   // Solve_1
   CGAL_CHECK_BFUNCTION(Sign_at_1,Polynomial_1,Algebraic_real_1,Sign);
+  CGAL_CHECK_BFUNCTION(Is_zero_at_1,Polynomial_1,Algebraic_real_1,bool);
   CGAL_CHECK_BFUNCTION(Compare_1,Algebraic_real_1,Algebraic_real_1,Sign);
   CGAL_CHECK_BFUNCTION(Bound_between_1,Algebraic_real_1,Algebraic_real_1,Bound);
   CGAL_CHECK_BFUNCTION(Approximate_absolute_1,Algebraic_real_1,int,BInterval);
@@ -205,9 +207,34 @@ void test_algebraic_kernel_1(const AlgebraicKernel_d_1& ak_1){
     assert(roots.size()==4);
   }
   {
+    assert(sign_at_1(x*0,Algebraic_real_1(0)) == ZERO);
+
     assert(sign_at_1(x-1,Algebraic_real_1(0)) == NEGATIVE);
     assert(sign_at_1(x-1,Algebraic_real_1(1)) == ZERO);
     assert(sign_at_1(x-1,Algebraic_real_1(2)) == POSITIVE);
+
+    std::list<Algebraic_real_1> roots; 
+    solve_1((x*x-3),std::back_inserter(roots),true);
+    Algebraic_real_1 root = (CGAL::min)(roots.front(),roots.back());
+    assert(sign_at_1(x*x-2,root) == POSITIVE);
+    assert(sign_at_1(x*x-3,root) == ZERO);
+    assert(sign_at_1((x*x-3)*(x-4),root) == ZERO);
+    assert(sign_at_1(x*x-4,root) == NEGATIVE);
+  }
+  {
+    assert(is_zero_at_1(x*0,Algebraic_real_1(0)) == true);
+
+    assert(is_zero_at_1(x-1,Algebraic_real_1(0)) == false);
+    assert(is_zero_at_1(x-1,Algebraic_real_1(1)) == true);
+    assert(is_zero_at_1(x-1,Algebraic_real_1(2)) == false);
+
+    std::list<Algebraic_real_1> roots; 
+    solve_1((x*x-3),std::back_inserter(roots),true);
+    Algebraic_real_1 root = (CGAL::min)(roots.front(),roots.back());
+    assert(is_zero_at_1(x*x-2,root) == false);
+    assert(is_zero_at_1(x*x-3,root) == true);
+    assert(is_zero_at_1((x*x-3)*(x-4),root) == true);
+    assert(is_zero_at_1(x*x-4,root) == false);
   }
   {
     assert(compare_1(Algebraic_real_1( 1),Algebraic_real_1( 2)) == SMALLER);

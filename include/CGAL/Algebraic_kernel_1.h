@@ -230,23 +230,32 @@ public:
   struct Sign_at_1 
     : public std::binary_function< Polynomial_1, Algebraic_real_1, CGAL::Sign > {
     CGAL::Sign operator()( const Polynomial_1& p, const Algebraic_real_1& ar ) const {
-      typedef typename Algebraic_real_traits::Bound Bound;
-      Bound low = ar.low();
-      Bound high = ar.high();
-      if( low == high ) {
-        return p.sign_at( low );
-      }
-                        
-      if( strong_refine_zero_against( low, high, ar.polynomial(), p ) ) {
-        return CGAL::ZERO;
-      } else {                                
-        CGAL_postcondition( p.sign_at(low) == p.sign_at(high) );                                                
+      if(CGAL::is_zero(p)) return ZERO; 
+      if(CGAL::degree(p)==0) return p.sign_at(0);
+      if( ar.low() == ar.high() ) return p.sign_at( ar.low() );
 
-        return p.sign_at( low );
-      }                        
+      Polynomial_1 g = gcd_utcf(p,ar.polynomial());
+      if (g.sign_at(ar.low()) != g.sign_at(ar.high())) return ZERO; 
+     
+      while(CGALi::descartes(p,ar.low(),ar.high()) > 0) ar.refine();
+      while( p.sign_at(ar.low())  == ZERO )  ar.refine();
+      while( p.sign_at(ar.high()) == ZERO )  ar.refine();
+
+      CGAL::Sign result = p.sign_at(ar.low());
+      CGAL_assertion(result == p.sign_at(ar.high()));
+      return result; 
     }
   };                
-            
+  struct Is_zero_at_1 
+    : public std::binary_function< Polynomial_1, Algebraic_real_1, bool > {
+    bool operator()( const Polynomial_1& p, const Algebraic_real_1& ar ) const {
+      if(CGAL::is_zero(p)) return true; 
+      if( ar.low() == ar.high() ) return p.sign_at( ar.low() ) == ZERO;
+      Polynomial_1 g = gcd_utcf(p,ar.polynomial());
+      return g.sign_at(ar.low()) != g.sign_at(ar.high());
+    }
+  };                
+                   
   struct Is_square_free_1 
     : public std::unary_function< Polynomial_1, bool > {
     bool operator()( const Polynomial_1& p ) const {
@@ -325,6 +334,8 @@ public:
       solve_1_object);
   CGAL_ALGEBRAIC_KERNEL_1_PRED(Sign_at_1,
       sign_at_1_object);
+  CGAL_ALGEBRAIC_KERNEL_1_PRED(Is_zero_at_1,
+      is_zero_at_1_object);
   CGAL_ALGEBRAIC_KERNEL_1_PRED(Compare_1,
       compare_1_object);
   CGAL_ALGEBRAIC_KERNEL_1_PRED(Bound_between_1,
