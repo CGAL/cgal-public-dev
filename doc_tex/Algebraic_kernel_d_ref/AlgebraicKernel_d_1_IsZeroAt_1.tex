@@ -1,16 +1,15 @@
-\begin{ccRefFunctionObjectConcept}{AlgebraicKernel_d_1::SignAt_1}
+\begin{ccRefFunctionObjectConcept}{AlgebraicKernel_d_1::IsZeroAt_1}
 
 \ccDefinition
-Computes the sign of a univariate polynomial 
-\ccc{AlgebraicKernel_d_1::Polynomial_1} at a real value of type 
-\ccc{AlgebraicKernel_d_1::Algebraic_real_1}. 
+Computes whether an \ccc{AlgebraicKernel_d_1::Polynomial_1} 
+is zero at a given \ccc{AlgebraicKernel_d_1::Algebraic_real_1}. 
 
 \ccRefines 
 \ccc{AdaptableBinaryFunction}
 
 \ccTypes
 \ccThree{typedef AlgebraicKernel_d_1::Algebraic_real_1}{second_argument_type+}{}
-\ccNestedType{result_type}{Type convertible to \ccc{CGAL::Sign}}
+\ccNestedType{result_type}{Type convertible to \ccc{bool}}
 \ccGlue
 \ccTypedef{typedef AlgebraicKernel_d_1::Polynomial_1 first_argument_type;}{}
 \ccGlue
@@ -26,10 +25,10 @@ A model \ccVar\ of this type must provide:
 	result_type
 	operator()(const first_argument_type & p,
           	 const second_argument_type & x);}
-{Computes the sign of \ccc{p} at \ccc{x}.} 
+{Computes whether \ccc{p} is zero at \ccc{x}.} 
 
 \ccSeeAlso
 \ccRefIdfierPage{AlgebraicKernel_d_1::AlgebraicReal_1}\\
-\ccRefIdfierPage{AlgebraicKernel_d_1::IsZeroAt_1}\\
+\ccRefIdfierPage{AlgebraicKernel_d_1::SignAt_1}\\
 
 \end{ccRefFunctionObjectConcept}
