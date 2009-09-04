@@ -48,25 +48,26 @@
 
 CGAL_BEGIN_NAMESPACE
 
-template<typename AlgebraicKernel_2, 
+template<typename AlgebraicKernelWithAnalysis_2, 
          typename Rep_>
 class Curve_analysis_2;
 
 namespace CGALi {
 
 // \brief Representation class for algebraic curves.
-template< typename AlgebraicKernel_2>
+template< typename AlgebraicKernelWithAnalysis_2>
 class Curve_analysis_2_rep {
     
 public:
     //! this instance's template parameter
-    typedef AlgebraicKernel_2 Algebraic_kernel_2;
+    typedef AlgebraicKernelWithAnalysis_2 Algebraic_kernel_with_analysis_2;
 
     //! the class itself
     typedef Curve_analysis_2_rep Self;
     
     //! The handle class
-    typedef CGAL::Curve_analysis_2<Algebraic_kernel_2,Self> Handle;
+    typedef CGAL::Curve_analysis_2
+        <Algebraic_kernel_with_analysis_2,Self> Handle;
     
     //protected:
 public:
@@ -98,9 +99,10 @@ public:
     }
     
     //! Constructor with polynomial
-    Curve_analysis_2_rep(Polynomial_2 poly, 
+    Curve_analysis_2_rep(Algebraic_kernel_with_analysis_2 *kernel,
+                         Polynomial_2 poly, 
                          CGAL::Degeneracy_strategy strategy) :  
-        f(poly), degeneracy_strategy(strategy)
+        _m_kernel(kernel), f(poly), degeneracy_strategy(strategy)
     {
     }
     
@@ -108,13 +110,15 @@ public:
     
 private:
 
-    typedef CGALi::LRU_hashed_map<Bound,
+    typedef CGALi::LRU_hashed_map<
+        Bound,
         std::vector<Algebraic_real_1>,
         CGALi::To_double_hasher > Intermediate_cache;
 
     Intermediate_cache intermediate_cache;
 
-    typedef CGALi::Event_line_builder<Handle> Event_line_builder;
+    typedef CGALi::Event_line_builder<Algebraic_kernel_with_analysis_2> 
+        Event_line_builder;
     
 
     // Internal information struct about x-coordinates
@@ -142,6 +146,9 @@ private:
     //! The object holding the information about events, as an optional
     mutable boost::optional<std::vector<Event_coordinate_1> > 
         event_coordinates;
+
+    //! The algebraic kernel to use
+    Algebraic_kernel_with_analysis_2* _m_kernel;
 
     //! The polynomial defining the curve
     boost::optional<Polynomial_2> f;
@@ -203,7 +210,8 @@ private:
     horizontal_asymptotes_left, horizontal_asymptotes_right;
 
     //! friends
-    friend class ::CGAL::Curve_analysis_2<Algebraic_kernel_2,Self>;
+    friend class ::CGAL::Curve_analysis_2
+        <Algebraic_kernel_with_analysis_2,Self>;
 
 }; // class Curve_analysis_2_rep
 } // namespace CGALi
@@ -240,9 +248,9 @@ private:
  * Real Algebraic Plane Curves. Proceedings of the International Symposium 
  * on Symbolic and Algebraic Computation (ISSAC 2007), pp. 151-158
  */
-template<typename AlgebraicKernel_2, 
+template<typename AlgebraicKernelWithAnalysis_2, 
   typename Rep_ 
-   = CGALi::Curve_analysis_2_rep< AlgebraicKernel_2> 
+   = CGALi::Curve_analysis_2_rep< AlgebraicKernelWithAnalysis_2> 
 >
 class Curve_analysis_2 : public ::CGAL::Handle_with_policy< Rep_ > {
   
@@ -251,7 +259,7 @@ class Curve_analysis_2 : public ::CGAL::Handle_with_policy< Rep_ > {
 
 public:
     //! this instance' first template parameter
-    typedef AlgebraicKernel_2 Algebraic_kernel_2;
+    typedef AlgebraicKernelWithAnalysis_2 Algebraic_kernel_with_analysis_2;
   
     //! this instance' second template parameter
     typedef Rep_ Rep;
@@ -268,7 +276,7 @@ private:
     typedef ::CGAL::Handle_with_policy<Rep> Base;
     
     // This type
-    typedef CGAL::Curve_analysis_2<Algebraic_kernel_2,Rep> Self;
+    typedef CGAL::Curve_analysis_2<Algebraic_kernel_with_analysis_2,Rep> Self;
     
 public:
 
@@ -280,10 +288,10 @@ public:
     //! Required by the CurveKernel_2 concept
     typedef Algebraic_real_1 X_coordinate_1;
 
-private:
-
     //! Traits type for Polynomial_2
     typedef CGAL::Polynomial_traits_d<Polynomial_2> Polynomial_traits_2;
+
+private:
 
     /*!
      * \brief Coercion between the coefficient type of the polynomial
@@ -306,7 +314,8 @@ private:
 public:
 
     //! Type to represent points on curves
-    typedef typename Algebraic_kernel_2::Algebraic_real_2 Algebraic_real_2;
+    typedef typename Algebraic_kernel_with_analysis_2::Algebraic_real_2 
+      Algebraic_real_2;
 
     //! Required by the CurveKernel_2 concept
     typedef Algebraic_real_2 Xy_coordinate_2;
@@ -409,11 +418,12 @@ public:
      * because there exist a problem if vertical asymtotes are present at
      * the rational x-coordinate.
      */
-    explicit Curve_analysis_2(const Polynomial_2& f,
+    explicit Curve_analysis_2(Algebraic_kernel_with_analysis_2 *kernel,
+                              const Polynomial_2& f,
                               CGAL::Degeneracy_strategy strategy
                                   = CGAL_ACK_DEFAULT_DEGENERACY_STRATEGY) 
         throw(CGALi::Zero_resultant_exception<Polynomial_2>)
-        : Base(Rep(f,strategy))
+        : Base(Rep(kernel,f,strategy))
     {
 
     }
@@ -838,11 +848,12 @@ private:
                                      << s << std::endl;
 #endif
                 // TODO: Move shear somewhere else
-                Self D(CGAL::CGALi::shear
+                Self D(kernel(),
+                       CGAL::CGALi::shear
                            (primitive_polynomial_2(),Coefficient(s)),
                        CGAL::EXCEPTION_STRATEGY);
-                Shear_transformation< Self > 
-                    shear_transformation;
+                Shear_transformation< Algebraic_kernel_with_analysis_2 > 
+                    shear_transformation(kernel());
                 shear_transformation.report_sheared_disc_roots
                     (boost::make_transform_iterator(
                              event_coordinates().begin(),
@@ -906,7 +917,8 @@ private:
             = typename CGAL::Polynomial_traits_d<typename FT::Numerator_type>
                 ::Make_square_free() (f_at_x);
 
-        Bitstream_traits traits(x);
+        Bitstream_coefficient_kernel coeff_kernel(kernel(),x);
+        Bitstream_traits traits(coeff_kernel);
 
         // We need to make an artificial bivariate polynomial
         typedef typename 
@@ -1154,7 +1166,8 @@ private:
      * within the method, and the index of the status line is set accordingly.
      */
     Status_line_1
-    create_status_line_at_non_event(Algebraic_real_1 ar, int index = -1) const {
+    create_status_line_at_non_event(Algebraic_real_1 ar, int index = -1) 
+        const {
 
         if(index==-1) {
             bool event;
@@ -1166,7 +1179,8 @@ private:
         // TODO .. delay creation of refinement object 
         // especially when ar is rational
         
-        Bitstream_traits traits(ar);
+        Bitstream_coefficient_kernel coeff_kernel(kernel(),ar);
+        Bitstream_traits traits(coeff_kernel);
 
         Bitstream_descartes 
             bitstream_descartes(CGAL::CGALi::Square_free_descartes_tag(),
@@ -1193,7 +1207,7 @@ private:
     */
     Event_line_builder event_line_builder() const {
         
-        return Event_line_builder(*this, primitive_polynomial_2());
+        return Event_line_builder(kernel(), *this, primitive_polynomial_2());
     }
 
 public:
@@ -1303,6 +1317,10 @@ public:
     }
 
 private:
+
+    Algebraic_kernel_with_analysis_2* kernel() const {
+        return this->ptr()->_m_kernel;
+    }
 
     // computes and sets the content and the primitive part for the curve
     void compute_content_and_primitive_part() const {
@@ -1571,7 +1589,8 @@ private:
         if( CGAL::degree(f_yx) == 0 ) {
             // Polynomial only consists of horizontal lines
             // primitive resultant is set to 1
-            this->ptr()->resultant_of_primitive_and_derivative_x = Polynomial_1(1);
+            this->ptr()->resultant_of_primitive_and_derivative_x 
+                = Polynomial_1(1);
         } else {
             
             Polynomial_2 f_yx_primitive;
@@ -1863,7 +1882,8 @@ public:
             return it->second;
         }
         try {
-            Shear_transformation<Self> shear_transformation;
+            Shear_transformation<Algebraic_kernel_with_analysis_2> 
+                shear_transformation(kernel());
             Self D=shear_transformation((Self&)*this, s);
             std::pair<Map_iterator,bool> insertion =
                 this->ptr()->sheared_curves.insert(std::make_pair(s,D));
@@ -2318,7 +2338,7 @@ private:
     }
 
     // another friend
-    friend class Shear_transformation<Self>;
+    friend class Shear_transformation<Algebraic_kernel_with_analysis_2>;
     
     //! @}
 

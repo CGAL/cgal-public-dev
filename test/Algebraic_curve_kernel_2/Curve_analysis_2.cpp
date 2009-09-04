@@ -15,7 +15,7 @@
 
 // Switches on/off tests for Sqrt-extension types
 #ifndef DO_SQRT_EXTENSION_TESTS
-#define DO_SQRT_EXTENSION_TESTS 0
+#define DO_SQRT_EXTENSION_TESTS 1
 #endif
 
 #if CGAL_ACK_USE_EXACUS
@@ -114,6 +114,11 @@ template<typename Arithmetic_kernel> void test_routine() {
         Algebraic_kernel_2;
 #endif
 
+    Algebraic_kernel_2 kernel;
+
+    typename Algebraic_kernel_2::Construct_curve_2 construct_curve_2 
+        = kernel.construct_curve_2_object();
+
     typedef typename Algebraic_kernel_2::Curve_analysis_2 Curve_analysis_2;
 
     typedef typename Curve_analysis_2::Status_line_1 Status_line_1;
@@ -132,7 +137,7 @@ template<typename Arithmetic_kernel> void test_routine() {
                              << std::endl;
 #endif
         f=from_string<Poly_int2>("P[1(0,P[1(0,2)(1,2)])(1,P[0(0,-3)])]");
-        curve=Curve_analysis_2(f);
+        curve=construct_curve_2(f);
         assert(curve.number_of_status_lines_with_event()==0);
         assert(number_of_objects<Algebraic_kernel_2>(curve)==1);
         //assert(!curve.may_be_singular());
@@ -155,7 +160,7 @@ template<typename Arithmetic_kernel> void test_routine() {
 #endif
         f=from_string<Poly_int2>("P[3(0,P[2(0,-2)(2,2)])(1,P[1(1,-1)])(3,P[1(1,-6)])]");
         ::CGAL::set_pretty_mode(std::cout);
-        curve=Curve_analysis_2(f);
+        curve=construct_curve_2(f);
         assert(curve.number_of_status_lines_with_event()==1);
         assert(number_of_objects<Algebraic_kernel_2>(curve)==2);
         event=curve.status_line_at_event(0);
@@ -183,7 +188,7 @@ template<typename Arithmetic_kernel> void test_routine() {
         CGAL_ACK_DEBUG_PRINT << "P[10(1,P[9(4,18)(9,18)])(2,P[9(4,-9)(9,-9)])(3,P[7(2,-12)(7,-12)])(4,P[7(2,6)(3,-18)(7,6)])(5,P[5(3,9)(5,36)])(6,P[5(1,12)(5,-18)])(7,P[3(1,-6)(3,-42)])(8,P[3(3,21)])(9,P[1(1,12)])(10,P[1(1,-6)])]" << std::endl;
 #endif
         f=from_string<Poly_int2>("P[10(1,P[9(4,18)(9,18)])(2,P[9(4,-9)(9,-9)])(3,P[7(2,-12)(7,-12)])(4,P[7(2,6)(3,-18)(7,6)])(5,P[5(3,9)(5,36)])(6,P[5(1,12)(5,-18)])(7,P[3(1,-6)(3,-42)])(8,P[3(3,21)])(9,P[1(1,12)])(10,P[1(1,-6)])]");
-        curve=Curve_analysis_2(f);
+        curve=construct_curve_2(f);
         assert(curve.number_of_status_lines_with_event()==10);
         //    assert(curve.may_be_singular());    
 
@@ -297,7 +302,8 @@ template<typename Arithmetic_kernel> void test_routine() {
             = from_string<Poly_int2>("P[1(0,P[1(0,2)(1,2)])(1,P[0(0,-3)])]");
         Poly_int2 f2
             = from_string<Poly_int2>("P[1(0,P[1(0,3)(1,2)])(1,P[0(0,-3)])]");
-        Curve_analysis_2 curve1(f1),curve2(f2);
+        Curve_analysis_2 curve1=construct_curve_2(f1),
+            curve2=construct_curve_2(f2);
         assert(!curve1.is_identical(curve2));
         assert(curve1.polynomial_2()!=curve2.polynomial_2());
         std::swap(curve1,curve2);
@@ -306,7 +312,7 @@ template<typename Arithmetic_kernel> void test_routine() {
     {
         Poly_int2 f1 
             = from_string<Poly_int2>("P[1(0,P[1(0,2)(1,2)])(1,P[0(0,-3)])]");
-        Curve_analysis_2 curve1(f1);
+        Curve_analysis_2 curve1  = construct_curve_2(f1);
 #if CGAL_ACK_DEBUG_FLAG
         CGAL_ACK_DEBUG_PRINT << "P[1(0,P[1(0,2)(1,2)])(1,P[0(0,-3)])]" 
                              << std::endl;
@@ -317,7 +323,7 @@ template<typename Arithmetic_kernel> void test_routine() {
     }
     {
         Poly_int2 f =from_string<Poly_int2>("P[2(0,P[2(1,3)(2,6)])(1,P[2(0,-3)(1,-11)(2,1)])(2,P[1(0,5)(1,-1)])]");
-        Curve_analysis_2 curve(f);
+        Curve_analysis_2 curve = construct_curve_2(f);
 #if CGAL_ACK_DEBUG_FLAG
         CGAL_ACK_DEBUG_PRINT << "P[2(0,P[2(1,3)(2,6)])(1,P[2(0,-3)(1,-11)(2,1)])(2,P[1(0,5)(1,-1)])]" << std::endl;
 #endif
@@ -336,31 +342,31 @@ template<typename Arithmetic_kernel> void test_routine() {
 
     { // More tests...just analyse some curves and compute their segments
         Poly_int2 f = from_string<Poly_int2>("P[8(0,P[8(0,24)(1,-8)(2,-162)(3,204)(4,106)(5,-340)(6,240)(7,-72)(8,8)])(1,P[6(0,-60)(1,8)(2,304)(3,-400)(4,148)(5,8)(6,-8)])(2,P[6(0,18)(1,80)(2,-165)(3,-132)(4,367)(5,-212)(6,38)])(3,P[4(0,-30)(1,-136)(2,264)(3,-72)(4,-26)])(4,P[4(0,-15)(1,36)(2,89)(3,-144)(4,49)])(5,P[2(0,30)(1,-24)(2,-6)])(6,P[2(0,-6)(1,-28)(2,22)])(8,P[0(0,3)])]");
-        Curve_analysis_2 curve(f);
+        Curve_analysis_2 curve= construct_curve_2(f);
 #if CGAL_ACK_DEBUG_FLAG
         CGAL_ACK_DEBUG_PRINT << "P[8(0,P[8(0,24)(1,-8)(2,-162)(3,204)(4,106)(5,-340)(6,240)(7,-72)(8,8)])(1,P[6(0,-60)(1,8)(2,304)(3,-400)(4,148)(5,8)(6,-8)])(2,P[6(0,18)(1,80)(2,-165)(3,-132)(4,367)(5,-212)(6,38)])(3,P[4(0,-30)(1,-136)(2,264)(3,-72)(4,-26)])(4,P[4(0,-15)(1,36)(2,89)(3,-144)(4,49)])(5,P[2(0,30)(1,-24)(2,-6)])(6,P[2(0,-6)(1,-28)(2,22)])(8,P[0(0,3)])]" << std::endl;
 #endif
         assert(number_of_objects<Algebraic_kernel_2>(curve)==54);
         f = from_string<Poly_int2>("P[5(0,P[8(0,40)(1,-40)(2,-20)(3,20)(5,-8)(6,8)(7,4)(8,-4)])(1,P[8(0,-100)(1,100)(2,50)(3,-50)(5,20)(6,-20)(7,-10)(8,10)])(2,P[8(0,60)(1,-60)(2,-30)(3,30)(5,-12)(6,12)(7,6)(8,-6)])(3,P[8(0,-20)(1,20)(2,10)(3,-10)(5,4)(6,-4)(7,-2)(8,2)])(4,P[8(0,50)(1,-50)(2,-25)(3,25)(5,-10)(6,10)(7,5)(8,-5)])(5,P[8(0,-30)(1,30)(2,15)(3,-15)(5,6)(6,-6)(7,-3)(8,3)])]");
-        curve=Curve_analysis_2(f);
+        curve=construct_curve_2(f);
 #if CGAL_ACK_DEBUG_FLAG
         CGAL_ACK_DEBUG_PRINT << "P[5(0,P[8(0,40)(1,-40)(2,-20)(3,20)(5,-8)(6,8)(7,4)(8,-4)])(1,P[8(0,-100)(1,100)(2,50)(3,-50)(5,20)(6,-20)(7,-10)(8,10)])(2,P[8(0,60)(1,-60)(2,-30)(3,30)(5,-12)(6,12)(7,6)(8,-6)])(3,P[8(0,-20)(1,20)(2,10)(3,-10)(5,4)(6,-4)(7,-2)(8,2)])(4,P[8(0,50)(1,-50)(2,-25)(3,25)(5,-10)(6,10)(7,5)(8,-5)])(5,P[8(0,-30)(1,30)(2,15)(3,-15)(5,6)(6,-6)(7,-3)(8,3)])]" << std::endl;
 #endif
         assert(number_of_objects<Algebraic_kernel_2>(curve)==31);
         f=from_string<Poly_int2>("P[8(0,P[10(5,80)(6,104)(7,44)(8,10)(9,4)(10,1)])(1,P[8(4,-80)(5,-36)(6,54)(7,32)(8,3)])(2,P[8(2,-80)(3,-104)(4,-72)(5,-66)(6,-8)(7,5)(8,1)])(3,P[7(1,80)(2,36)(3,-94)(4,-60)(5,-19)(6,-5)(7,-1)])(4,P[5(1,28)(2,56)(3,-10)(4,-30)(5,-6)])(5,P[5(0,40)(1,28)(2,16)(3,7)(4,-3)(5,-1)])(6,P[3(0,14)(1,24)(2,5)(3,1)])(7,P[2(0,-2)(1,4)(2,1)])(8,P[0(0,-1)])]");
-        curve=Curve_analysis_2(f);
+        curve=construct_curve_2(f);
 #if CGAL_ACK_DEBUG_FLAG
         CGAL_ACK_DEBUG_PRINT << "P[8(0,P[10(5,80)(6,104)(7,44)(8,10)(9,4)(10,1)])(1,P[8(4,-80)(5,-36)(6,54)(7,32)(8,3)])(2,P[8(2,-80)(3,-104)(4,-72)(5,-66)(6,-8)(7,5)(8,1)])(3,P[7(1,80)(2,36)(3,-94)(4,-60)(5,-19)(6,-5)(7,-1)])(4,P[5(1,28)(2,56)(3,-10)(4,-30)(5,-6)])(5,P[5(0,40)(1,28)(2,16)(3,7)(4,-3)(5,-1)])(6,P[3(0,14)(1,24)(2,5)(3,1)])(7,P[2(0,-2)(1,4)(2,1)])(8,P[0(0,-1)])]" << std::endl;
 #endif
         assert(number_of_objects<Algebraic_kernel_2>(curve)==27);
         f=from_string<Poly_int2>("P[4(0,P[1(0,-10)(1,6)])(1,P[2(0,4)(1,8)(2,-6)])(2,P[2(0,-5)(1,-6)(2,5)])(3,P[3(0,2)(1,6)(2,1)(3,-3)])(4,P[3(1,-2)(2,-1)(3,1)])]");
-        curve=Curve_analysis_2(f);
+        curve=construct_curve_2(f);
 #if CGAL_ACK_DEBUG_FLAG
         CGAL_ACK_DEBUG_PRINT << "P[4(0,P[1(0,-10)(1,6)])(1,P[2(0,4)(1,8)(2,-6)])(2,P[2(0,-5)(1,-6)(2,5)])(3,P[3(0,2)(1,6)(2,1)(3,-3)])(4,P[3(1,-2)(2,-1)(3,1)])]" << std::endl;
 #endif
         assert(number_of_objects<Algebraic_kernel_2>(curve)==18);
         f=from_string<Poly_int2>("P[7(0,P[7(3,-12)(4,-12)(5,7)(6,4)(7,-1)])(1,P[6(1,12)(2,24)(3,-31)(4,-11)(5,9)(6,1)])(2,P[5(0,-12)(1,24)(2,43)(3,-22)(4,-9)(5,5)])(3,P[5(0,-36)(1,14)(2,22)(4,-5)(5,1)])(4,P[4(0,-14)(1,-5)(2,-4)(3,5)(4,-1)])(5,P[3(0,9)(1,-6)(2,-5)(3,1)])(6,P[2(0,6)(1,-1)(2,-1)])(7,P[0(0,1)])]");
-        curve=Curve_analysis_2(f);
+        curve=construct_curve_2(f);
     }
 
 #if DO_SQRT_EXTENSION_TESTS
@@ -390,6 +396,12 @@ template<typename Arithmetic_kernel> void test_routine() {
         typedef CGAL::Algebraic_curve_kernel_2<Algebraic_kernel_1_with_sqrt>
             Algebraic_kernel_2_with_sqrt;
 
+        Algebraic_kernel_2_with_sqrt kernel;
+
+        typename Algebraic_kernel_2_with_sqrt::Construct_curve_2
+            sqrt_construct_curve_2 
+              = kernel.construct_curve_2_object();
+
         typedef typename Algebraic_kernel_2_with_sqrt::Curve_analysis_2
             Sqrt_curve_analysis_2;
         
@@ -409,7 +421,7 @@ template<typename Arithmetic_kernel> void test_routine() {
 #if CGAL_ACK_DEBUG_FLAG
         CGAL_ACK_DEBUG_PRINT << "P[10(1,P[9(4,EXT[0,54,5])(9,EXT[0,54,5])])(2,P[9(4,EXT[0,-27,5])(9,EXT[0,-27,5])])(3,P[7(2,EXT[0,-36,5])(7,EXT[0,-36,5])])(4,P[7(2,EXT[0,18,5])(3,EXT[0,-54,5])(7,EXT[0,18,5])])(5,P[5(3,EXT[0,27,5])(5,EXT[0,108,5])])(6,P[5(1,EXT[0,36,5])(5,EXT[0,-54,5])])(7,P[3(1,EXT[0,-18,5])(3,EXT[0,-126,5])])(8,P[3(3,EXT[0,63,5])])(9,P[1(1,EXT[0,36,5])])(10,P[1(1,EXT[0,-18,5])])]" << std::endl;
 #endif
-        Sqrt_curve_analysis_2 sqrt_curve(sqrt_f);
+        Sqrt_curve_analysis_2 sqrt_curve= sqrt_construct_curve_2(sqrt_f);
         assert(sqrt_curve.number_of_status_lines_with_event()==10);
         //    assert(sqrt_curve.may_be_singular());    
 

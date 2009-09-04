@@ -13,6 +13,8 @@
 
 // code coverage test for Algebraic_curve_kernel_2
 
+#define CGAL_ACK_DEBUG_FLAG 0
+
 #include <CGAL/Algebraic_curve_kernel_2/flags.h>
 #include <CGAL/basic.h>
 
@@ -85,11 +87,19 @@ void test_algebraic_curve_kernel_2() {
 int main() {
 
 #ifdef CGAL_USE_CORE
+#if CGAL_ACK_DEBUG_FLAG
+    CGAL_ACK_DEBUG_PRINT << "TESTING CORE" << std::endl;
+#endif          
+
     test_algebraic_curve_kernel_2<CGAL::CORE_arithmetic_kernel>();
 #else
     std::cerr << "CORE tests skipped" << std::endl;
 #endif
 #ifdef CGAL_USE_LEDA
+
+#if CGAL_ACK_DEBUG_FLAG
+    CGAL_ACK_DEBUG_PRINT << "TESTING LEDA" << std::endl;
+#endif          
     test_algebraic_curve_kernel_2<CGAL::LEDA_arithmetic_kernel>();
 #else
     std::cerr << "LEDA tests skipped" << std::endl;

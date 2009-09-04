@@ -213,6 +213,14 @@ void test_algebraic_kernel_1(const AlgebraicKernel_d_1& ak_1){
     assert(sign_at_1(x-1,Algebraic_real_1(1)) == ZERO);
     assert(sign_at_1(x-1,Algebraic_real_1(2)) == POSITIVE);
 
+    std::vector<Algebraic_real_1> roots;
+    solve_1(x*x-2,std::back_inserter(roots),true);
+    assert(sign_at_1((x+1),roots[0]) == CGAL::NEGATIVE);
+
+    Polynomial_1 f = (x*x-2)*(x*x-2);
+    assert(sign_at_1(f,roots[0]) == CGAL::ZERO);
+  }
+  {
     std::list<Algebraic_real_1> roots; 
     solve_1((x*x-3),std::back_inserter(roots),true);
     Algebraic_real_1 root = (CGAL::min)(roots.front(),roots.back());

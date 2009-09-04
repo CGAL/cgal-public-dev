@@ -60,12 +60,16 @@ public:
     }
     
     // standard constructor
-    Xy_coordinate_2_rep(const Algebraic_real_1& x,
-        const Curve_analysis_2& curve, int arcno) :
-            _m_x(x), _m_curve(curve), _m_arcno(arcno) {
+    Xy_coordinate_2_rep(Algebraic_curve_kernel_2* kernel,
+                        const Algebraic_real_1& x,
+                        const Curve_analysis_2& curve, int arcno) 
+        : _m_kernel(kernel),_m_x(x), _m_curve(curve), _m_arcno(arcno) {
     }
 
     // data
+
+    Algebraic_curve_kernel_2* _m_kernel;
+
     // x-coordinate
     Algebraic_real_1 _m_x;
     
@@ -169,24 +173,23 @@ private:
      * Simplifies the representation of two points whose supporting curves
      * share a common part.
      */
-    static bool _simplify(const Xy_coordinate_2& p, const Xy_coordinate_2& q) 
+    bool _simplify(const Xy_coordinate_2& p, const Xy_coordinate_2& q) const
     {
         std::vector<Curve_analysis_2> parts_of_f, parts_of_g, common;
-        Algebraic_curve_kernel_2 ak_2;
 
-        if(ak_2.decompose_2_object()(p.curve(), q.curve(), 
+        if(kernel()->decompose_2_object()(p.curve(), q.curve(), 
             std::back_inserter(parts_of_f), std::back_inserter(parts_of_g),
                 std::back_inserter(common))) {
 
             CGAL_assertion((parts_of_f.size() == 1 ||
                        parts_of_g.size() == 1) && common.size() == 1);
             if(parts_of_f.size() == 1) {
-                p.simplify_by(ak_2.construct_curve_pair_2_object()(
+                p.simplify_by(kernel()->construct_curve_pair_2_object()(
                     parts_of_f[0], common[0]));
             } 
             
             if(parts_of_g.size() == 1) {
-                q.simplify_by(ak_2.construct_curve_pair_2_object()(
+                q.simplify_by(kernel()->construct_curve_pair_2_object()(
                     parts_of_g[0], common[0]));
             } 
             return true;
@@ -221,9 +224,10 @@ public:
      * are also constructed in this way
      */
      // TODO: construct this from curve analysis object ?
-    Xy_coordinate_2(const Algebraic_real_1& x, const Curve_analysis_2& curve,
+    Xy_coordinate_2(Algebraic_curve_kernel_2* kernel,
+                    const Algebraic_real_1& x, const Curve_analysis_2& curve,
                  int arcno) :
-            Base(Rep(x, curve, arcno)) {
+          Base(Rep(kernel,x, curve, arcno)) {
             
         CGAL_precondition(arcno >= 0);
         CGAL_precondition_code(
@@ -410,8 +414,7 @@ public:
         if(this->is_identical(q)) {
             return CGAL::EQUAL;
         }
-        Algebraic_curve_kernel_2 ak_2;
-        return ak_2.compare_x_2_object()(this->x(), q.x());
+        return kernel()->compare_x_2_object()(this->x(), q.x());
     }
 
     /*!\brief
@@ -453,6 +456,10 @@ private:
     //!@{
     //! \name 
 
+    Algebraic_curve_kernel_2* kernel() const {
+        return this->ptr()->_m_kernel;
+    }
+
     /*!\brief
      * compares y-coordinates for covertical points \c *this and \c q
      *
@@ -469,9 +476,8 @@ private:
             // restart since supporting curves might be equal now
             return _compare_y_at_x(q);
                         
-        Algebraic_curve_kernel_2 ak_2;
         Curve_pair_analysis_2 cpa_2 =
-            ak_2.construct_curve_pair_2_object()(f, g);
+            kernel()->construct_curve_pair_2_object()(f, g);
             
             
         typename Curve_pair_analysis_2::Status_line_1 vline =
@@ -559,12 +565,21 @@ public:
 
     //! Returns whether the y-coordinate equals zero
     bool is_y_zero() const {
+        /* This is the new version!
         Bound_interval y_iv = get_approximation_y();
         if( y_iv.lower() > 0 || y_iv.upper() < 0 ) {
             return false;
         }
         CGAL_assertion(CGAL::degree(curve().polynomial_2())>=0);
-        
+            
+        Sign_at_2 sign_at = this->sign_at_2.object();
+        // Construct the polynomial y
+        Polynomial_2 f = typename Polynomial_traits_2::Shift()
+          (Polynomial_2(1),1,1);
+        Curve_analysis_2 y_curve 
+          = this->construct_curve_2_object() (f);
+        return (sign_at(y_curve,xy)==CGAL::ZERO);
+        */
         typename Curve_analysis_2::Polynomial_2::NT constant_pol
             = curve().polynomial_2()[0];
         bool zero_is_root_of_local_pol 

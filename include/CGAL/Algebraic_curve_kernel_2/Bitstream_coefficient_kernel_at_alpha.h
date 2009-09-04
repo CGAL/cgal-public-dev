@@ -22,37 +22,41 @@ CGAL_BEGIN_NAMESPACE
 
 namespace CGALi {
 
-template < typename Polynomial_1_, typename AlgebraicReal_1 >
+template < typename AlgebraicKernel_1 >
 class Bitstream_coefficient_kernel_at_alpha;
 
-template < typename Polynomial_1_, typename AlgebraicReal_1 >
+template < typename AlgebraicKernel_1 >
 class Bitstream_coefficient_kernel_at_alpha_rep {
 
 public:
 
-    typedef Polynomial_1_ Polynomial_1;
+    typedef AlgebraicKernel_1 Algebraic_kernel_1;
 
-    typedef AlgebraicReal_1 Algebraic_real_1;
+    typedef typename Algebraic_kernel_1::Polynomial_1 Polynomial_1;
+
+    typedef typename Algebraic_kernel_1::Algebraic_real_1 Algebraic_real_1;
 
     Bitstream_coefficient_kernel_at_alpha_rep() {}
 
-    Bitstream_coefficient_kernel_at_alpha_rep(Algebraic_real_1 alpha)
-        : _m_alpha(alpha) {}
+    Bitstream_coefficient_kernel_at_alpha_rep(Algebraic_kernel_1* kernel,
+                                              Algebraic_real_1 alpha)
+        : _m_kernel(kernel), _m_alpha(alpha) {}
 
     friend class Bitstream_coefficient_kernel_at_alpha
-        <Polynomial_1,Algebraic_real_1>;
+        <Algebraic_kernel_1>;
 
 private:
+    Algebraic_kernel_1* _m_kernel;
     Algebraic_real_1 _m_alpha;
 
     
 };
 
-template < typename Polynomial_1_, typename AlgebraicReal_1 >
+template < typename AlgebraicKernel_1 >
 class Bitstream_coefficient_kernel_at_alpha
     : public CGAL::Handle_with_policy
         < CGAL::CGALi::Bitstream_coefficient_kernel_at_alpha_rep
-            <Polynomial_1_, AlgebraicReal_1 > 
+            <AlgebraicKernel_1 > 
         >
 {
 
@@ -61,9 +65,11 @@ public:
     //! \name typedefs
     //! @{
 
-    typedef AlgebraicReal_1 Algebraic_real_1;
+    typedef AlgebraicKernel_1 Algebraic_kernel_1;
+
+    typedef typename Algebraic_kernel_1::Algebraic_real_1 Algebraic_real_1;
     
-    typedef Polynomial_1_ Polynomial_1;
+    typedef typename Algebraic_kernel_1::Polynomial_1 Polynomial_1;
 
     typedef Polynomial_1 Coefficient;
 
@@ -81,11 +87,10 @@ public:
 
     typedef CGAL::Handle_with_policy
         < CGAL::CGALi::Bitstream_coefficient_kernel_at_alpha_rep
-            <Polynomial_1,Algebraic_real_1 > 
+            <Algebraic_kernel_1 > 
         > Handle;
 
-    typedef Bitstream_coefficient_kernel_at_alpha<Coefficient,
-                                                  Algebraic_real_1> Self;
+    typedef Bitstream_coefficient_kernel_at_alpha<Algebraic_kernel_1> Self;
 
     //! @}
 
@@ -94,8 +99,9 @@ public:
 
     Bitstream_coefficient_kernel_at_alpha() {}
 
-    Bitstream_coefficient_kernel_at_alpha(Algebraic_real_1 alpha) 
-        : Handle(alpha) {}
+    Bitstream_coefficient_kernel_at_alpha(Algebraic_kernel_1* kernel,
+                                          Algebraic_real_1 alpha) 
+        : Handle(kernel,alpha) {}
 
     //@}
 
@@ -104,20 +110,21 @@ public:
 
     struct Is_zero : public std::unary_function<Coefficient,bool> {
         
-        Is_zero(Algebraic_real_1 alpha) : _m_alpha(alpha) {}
+        Is_zero(Algebraic_kernel_1* kernel,Algebraic_real_1 alpha) 
+            : _m_kernel(kernel),_m_alpha(alpha) {}
 
         bool operator() (Coefficient f) const {
-            return _m_alpha.is_root_of(f);
+            return _m_kernel->is_zero_at_1_object() (f,_m_alpha);
         }
 
     private:
-
+        Algebraic_kernel_1* _m_kernel;
         Algebraic_real_1 _m_alpha;
 
     };
 
     Is_zero is_zero_object() const {
-        return Is_zero(this->ptr()->_m_alpha);
+        return Is_zero(this->ptr()->_m_kernel,this->ptr()->_m_alpha);
     }
 
     struct Convert_to_bfi 
@@ -179,7 +186,7 @@ public:
                 ::template Rebind<Bigfloat_interval,1>::Other
                 ::Construct_polynomial()(coeffs.begin(),coeffs.end());   
         }
-        
+
         Algebraic_real_1 _m_alpha;
     };
 

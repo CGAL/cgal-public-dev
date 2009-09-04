@@ -30,6 +30,8 @@
 
 #include <CGAL/Algebraic_curve_kernel_2/Bitstream_coefficient_kernel_at_alpha.h>
 
+#include <CGAL/Algebraic_kernel_1.h>
+
 CGAL_BEGIN_NAMESPACE
 
 namespace CGALi {
@@ -349,9 +351,12 @@ void test_bitstream_descartes() {
   { // Another test for the square free method with tree from outside
 
     // More complicated polynomials needed - change the traits class
+
+    typedef CGAL::Algebraic_kernel_1<Integer> AK_1;
+
     typedef CGAL::CGALi::Bitstream_descartes_rndl_tree_traits
         <CGAL::CGALi::Bitstream_coefficient_kernel_at_alpha
-            <Poly_int1,Algebraic_real> > Traits_2;
+            <AK_1> > Traits_2;
   
     typedef CGAL::CGALi::Bitstream_descartes<Traits_2> Bitstream_descartes;
 

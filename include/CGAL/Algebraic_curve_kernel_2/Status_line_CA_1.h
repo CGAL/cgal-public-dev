@@ -50,6 +50,9 @@ class Status_line_CA_1_rep {
     // myself
     typedef Status_line_CA_1_rep<Curve_analysis_2> Self;
 
+    typedef typename Curve_analysis_2::Algebraic_kernel_with_analysis_2 
+      Algebraic_kernel_2;
+
     // type of x-coordinate
     typedef typename Curve_analysis_2::Algebraic_real_1
                 Algebraic_real_1; 
@@ -71,18 +74,8 @@ class Status_line_CA_1_rep {
     // container of arcs
     typedef std::vector<Arc_pair> Arc_container;
 
-    // Traits class for local isolator
-    typedef CGAL::CGALi::Bitstream_descartes_rndl_tree_traits 
-        < CGAL::CGALi::Bitstream_coefficient_kernel_at_alpha
-              < typename Polynomial_traits_d<Polynomial_2>::Coefficient_type,
-                Algebraic_real_1 
-              >
-        > 
-        Bitstream_traits;
- 
     // Isolator type
-    typedef CGAL::CGALi::Bitstream_descartes<Bitstream_traits> 
-        Bitstream_descartes;
+    typedef typename Curve_analysis_2::Bitstream_descartes Bitstream_descartes;
 
     // constructors
 public:

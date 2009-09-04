@@ -88,7 +88,7 @@ class Algebraic_curve_kernel_2 : public AlgebraicKernel_d_1{
 // for each predicate functor defines a member function returning an instance
 // of this predicate
 #define CGAL_Algebraic_Kernel_pred(Y,Z) \
-    Y Z() const { return Y(); }
+    Y Z() const { return Y((const Algebraic_kernel_2*)this); }
 
 // the same for construction functors
 #define CGAL_Algebraic_Kernel_cons(Y,Z) CGAL_Algebraic_Kernel_pred(Y,Z)
@@ -131,6 +131,8 @@ public:
 #else
     typedef Algebraic_curve_kernel_2<AlgebraicKernel_d_1> Self;
 #endif
+
+    typedef Self Algebraic_kernel_2;
     
     // Bound type
     typedef typename Algebraic_kernel_1::Bound Bound;
@@ -254,13 +256,38 @@ protected:
         }
     };
     
+    class Curve_creator {
+
+    public:
+
+        Curve_creator(Algebraic_kernel_2* kernel) : _m_kernel(kernel) {}
+
+        Curve_analysis_2 operator()(const Polynomial_2& f) const {
+            return Curve_analysis_2(_m_kernel,f);
+        }
+
+    protected:
+        
+        Algebraic_kernel_2* _m_kernel;
+        
+    };
+
     template <class Result>
-    struct Pair_creator {
+    class Pair_creator {
+
+    public:
+
+        Pair_creator(Algebraic_kernel_2* kernel) : _m_kernel(kernel) {}
 
         template<class T1, class T2>
         Result operator()(const std::pair<T1, T2>& p) const {
-            return Result(p.first, p.second);
+            return Result(_m_kernel, p.first, p.second);
         }
+
+    protected:
+        
+        Algebraic_kernel_2* _m_kernel;
+        
     };
     
     struct Pair_id_equal_to {
@@ -274,16 +301,17 @@ protected:
     };
 
     //! type of curve analysis cache
-    typedef CGALi::LRU_hashed_map<Polynomial_2,
+    typedef CGALi::LRU_hashed_map_with_kernel<Self,Polynomial_2,
         Curve_analysis_2, CGALi::Poly_hasher,
         std::equal_to<Polynomial_2>,
-        typename Polynomial_traits_2::Canonicalize > Curve_cache_2;
+        typename Polynomial_traits_2::Canonicalize,
+        Curve_creator > Curve_cache_2;
 
     //! type of curve pair analysis cache 
-    typedef CGALi::LRU_hashed_map<Pair_of_curves_2,
+    typedef CGALi::LRU_hashed_map_with_kernel<Self,Pair_of_curves_2,
         Curve_pair_analysis_2, CGALi::Pair_hasher, Pair_id_equal_to,
         Pair_id_order,
-        Pair_creator<Curve_pair_analysis_2> > Curve_pair_cache;
+        Pair_creator<Curve_pair_analysis_2> > Curve_pair_cache_2;
     
     typedef std::pair<Polynomial_2, Polynomial_2>
         Pair_of_polynomial_2;
@@ -325,24 +353,21 @@ public:
     //!\name cache access functions
     //!@{
                         
-    //! access to the static gcd_cache
-    static Gcd_cache_2& gcd_cache_2() {
-        static Gcd_cache_2 cache;
-        return cache;
+    //! access to the gcd_cache
+    Gcd_cache_2& gcd_cache_2() const {
+        return _m_gcd_cache_2;
     }
 
-    //! access to the static curve cache
-    static Curve_cache_2& curve_cache_2() 
+    //! access to the curve cache
+    Curve_cache_2& curve_cache_2() const 
     {
-        static Curve_cache_2 _m_curve_cache_2;
         return _m_curve_cache_2;
     }
     
-    //! access to the static curve pair cache
-    static Curve_pair_cache& curve_pair_cache() 
+    //! access to the curve pair cache
+    Curve_pair_cache_2& curve_pair_cache_2() const 
     {
-        static Curve_pair_cache _m_curve_pair_cache;
-        return _m_curve_pair_cache;
+        return _m_curve_pair_cache_2;
     }
     
     //!@}
@@ -351,15 +376,20 @@ public:
        
                 
     //! \brief default constructor
-    Algebraic_curve_kernel_2() //: _m_curve_cache_2() 
+    Algebraic_curve_kernel_2() 
+        : _m_curve_cache_2(this), _m_curve_pair_cache_2(this)
     {  }
     
     /*! \brief
      * constructs \c Curve_analysis_2 from bivariate polynomial, uses caching
      * when appropriate
      */
-    struct Construct_curve_2 :
+    class Construct_curve_2 :
         public std::unary_function< Polynomial_2, Curve_analysis_2 > {
+
+    public:
+
+        Construct_curve_2(const Algebraic_kernel_2* kernel) : _m_kernel(kernel) {}
             
         Curve_analysis_2 operator()(const Polynomial_2& f, 
                                     Bound angle,
@@ -407,13 +437,18 @@ public:
             CGAL_ACK_DEBUG_PRINT << "integralized poly: " << num << std::endl;
 #endif
             
-            return Self::curve_cache_2()(num);
+            return _m_kernel->curve_cache_2()(num);
         }
 
         Curve_analysis_2 operator()
                 (const Polynomial_2& f) const {
-            return Self::curve_cache_2()(f);
+            return _m_kernel->curve_cache_2()(f);
         }
+
+    protected:
+
+        const Algebraic_kernel_2* _m_kernel;
+        
 
     };
     CGAL_Algebraic_Kernel_cons(Construct_curve_2, construct_curve_2_object);
@@ -422,28 +457,48 @@ public:
      * constructs \c Curve_pair_analysis_2 from pair of one curve analyses,
      * caching is used when appropriate
      */
-    struct Construct_curve_pair_2 :
+    class Construct_curve_pair_2 :
             public std::binary_function<Curve_analysis_2, Curve_analysis_2,
                 Curve_pair_analysis_2> {
+
+    public:
+
+        Construct_curve_pair_2(const Algebraic_kernel_2* kernel) 
+            : _m_kernel(kernel) {}
            
         Curve_pair_analysis_2 operator()
            (const Curve_analysis_2& ca1, const Curve_analysis_2& ca2) const {
-                 
+                
             Curve_pair_analysis_2 cpa_2 =
-                Self::curve_pair_cache()(std::make_pair(ca1, ca2));
+                _m_kernel->curve_pair_cache_2()(std::make_pair(ca1, ca2));
             return cpa_2;
         }
+
+    protected:
+
+        const Algebraic_kernel_2* _m_kernel;
+
     };
     CGAL_Algebraic_Kernel_cons(Construct_curve_pair_2,
         construct_curve_pair_2_object);
             
     //! returns the x-coordinate of an \c Xy_coordinate_2 object
-    struct Get_x_2 :
+    class Get_x_2 :
         public std::unary_function<Xy_coordinate_2, X_coordinate_1> {
+
+    public:
+
+        Get_x_2(const Algebraic_kernel_2* kernel) 
+            : _m_kernel(kernel) {}
         
         X_coordinate_1 operator()(const Xy_coordinate_2& xy) const {
             return xy.x();
         }
+
+    protected:
+        
+        const Algebraic_kernel_2* _m_kernel;
+
     };
     CGAL_Algebraic_Kernel_cons(Get_x_2, get_x_2_object);
     
@@ -459,43 +514,77 @@ public:
      * return approximation of the y-coordinate. The approximation can be
      * made arbitrarily good by iteratively calling \c Refine_y_2.}
      */
-    struct Get_y_2 :
+    class Get_y_2 :
         public std::unary_function<Xy_coordinate_2, X_coordinate_1> {
         
+    public:
+        
+        Get_y_2(const Algebraic_kernel_2* kernel) 
+            : _m_kernel(kernel) {}
+
         X_coordinate_1 operator()(const Xy_coordinate_2& xy) const {
             return xy.y();
         }
+    protected:
+        
+        const Algebraic_kernel_2* _m_kernel;
+
     };
     CGAL_Algebraic_Kernel_cons(Get_y_2, get_y_2_object);
     
 
 
-    struct Approximate_absolute_x_2 
+    class Approximate_absolute_x_2 
     : public std::binary_function<Xy_coordinate_2,int,std::pair<Bound,Bound> >{
     
+    public:
+
+        Approximate_absolute_x_2(const Algebraic_kernel_2* kernel) 
+            : _m_kernel(kernel) {}
+
         std::pair<Bound,Bound> operator() (Xy_coordinate_2 xy,
                                     int prec) {
             Get_x_2 get_x = this->get_x_2_object();
             return this->approximate_absolute_x_1_object() (get_x(xy),prec);
         }
+
+    protected:
+        
+        const Algebraic_kernel_2* _m_kernel;
+        
     };
     CGAL_Algebraic_Kernel_cons(Approximate_absolute_x_2, 
                                approximate_absolute_x_2_object);
 
-    struct Approximate_relative_x_2 
+    class Approximate_relative_x_2 
     : public std::binary_function<Xy_coordinate_2,int,std::pair<Bound,Bound> >{
     
+    public:
+        
+        Approximate_relative_x_2(const Algebraic_kernel_2* kernel) 
+            : _m_kernel(kernel) {}
+
         std::pair<Bound,Bound> operator() (Xy_coordinate_2 xy,
                                            int prec) {
             Get_x_2 get_x = this->get_x_2_object();
             return this->approximate_absolute_x_1_object() (get_x(xy),prec);
         }
+
+    protected:
+        
+        const Algebraic_kernel_2* _m_kernel;
+
     };
     CGAL_Algebraic_Kernel_cons(Approximate_relative_x_2, 
                                approximate_relative_x_2_object);
 
-    struct Approximate_absolute_y_2 
+    class Approximate_absolute_y_2 
     : public std::binary_function<Xy_coordinate_2,int,std::pair<Bound,Bound> >{
+
+    public:
+
+        Approximate_absolute_y_2(const Algebraic_kernel_2* kernel) 
+            : _m_kernel(kernel) {}
         
         std::pair<Bound,Bound> operator() (Xy_coordinate_2 xy,
                                     int prec) {
@@ -513,26 +602,30 @@ public:
           }
           return std::make_pair(l,u);
         }
+    
+    protected:
+
+        const Algebraic_kernel_2* _m_kernel;
+
     };
     CGAL_Algebraic_Kernel_cons(Approximate_absolute_y_2, 
                                approximate_absolute_y_2_object);
 
-    struct Approximate_relative_y_2 
+    class Approximate_relative_y_2 
     : public std::binary_function<Xy_coordinate_2,int,std::pair<Bound,Bound> >{
         
+    public:
+        
+        Approximate_relative_y_2(const Algebraic_kernel_2* kernel) 
+            : _m_kernel(kernel) {}
+
         std::pair<Bound,Bound> operator() (Xy_coordinate_2 xy,
                                            int prec) {
             typename Y_real_traits_1::Lower_bound lower_bound;
             typename Y_real_traits_1::Upper_bound upper_bound;
             typename Y_real_traits_1::Refine refine;
 
-            Sign_at_2 sign_at = this->sign_at_2.object();
-            // Construct the polynomial y
-            Polynomial_2 f = typename Polynomial_traits_2::Shift()
-                (Polynomial_2(1),1,1);
-            Curve_analysis_2 y_curve 
-                = this->construct_curve_2_object() (f);
-            if(sign_at(y_curve,xy)==CGAL::ZERO) {
+            if(xy.is_y_zero()) {
                 return std::make_pair(Bound(0),Bound(0));
             }
             while(CGAL::sign(lower_bound(xy))*CGAL::sign(upper_bound(xy))
@@ -551,6 +644,11 @@ public:
           }
           return std::make_pair(l,u);
         }
+
+    protected:
+
+        const Algebraic_kernel_2* _m_kernel;
+
     };
     CGAL_Algebraic_Kernel_cons(Approximate_relative_y_2, 
                                approximate_relative_y_2_object);
@@ -562,7 +660,12 @@ public:
      *
      * \pre{The x-coordinates must not be equal}
      */
-    struct Bound_between_x_2 {
+    class Bound_between_x_2 {
+
+    public:
+        
+        Bound_between_x_2(const Algebraic_kernel_2* kernel) 
+            : _m_kernel(kernel) {}
        
         typedef Xy_coordinate_2 first_agrument_type;
         typedef Xy_coordinate_2 second_agrument_type;
@@ -573,6 +676,11 @@ public:
             return typename X_real_traits_1::Bound_between()
                 (r1.x(), r2.x());
         }
+
+    protected:
+
+        const Algebraic_kernel_2* _m_kernel;
+
     };
     CGAL_Algebraic_Kernel_cons(Bound_between_x_2, 
             bound_between_x_2_object);
@@ -583,8 +691,13 @@ public:
      *
      * \pre{The y-coordinates must not be equal}
      */
-    struct Bound_between_y_2 {
+    class Bound_between_y_2 {
        
+    public:
+        
+        Bound_between_y_2(const Algebraic_kernel_2* kernel) 
+            : _m_kernel(kernel) {}
+
         typedef Xy_coordinate_2 first_agrument_type;
         typedef Xy_coordinate_2 second_agrument_type;
         typedef Bound result_type;
@@ -593,14 +706,24 @@ public:
                 const Xy_coordinate_2& r2) const {
             return typename Y_real_traits_1::Bound_between()(r1, r2);
         }
+
+    protected:
+
+        const Algebraic_kernel_2* _m_kernel;
+
     };
     CGAL_Algebraic_Kernel_cons(Bound_between_y_2, 
             bound_between_y_2_object);
     
     //! \brief comparison of x-coordinates 
-    struct Compare_x_2 :
+    class Compare_x_2 :
          public std::binary_function<X_coordinate_1, X_coordinate_1, 
                 Comparison_result > {
+
+    public:
+        
+        Compare_x_2(const Algebraic_kernel_2* kernel) 
+            : _m_kernel(kernel) {}
 
         Comparison_result operator()(const X_coordinate_1& x1, 
                                      const X_coordinate_1& x2) const {
@@ -610,6 +733,11 @@ public:
                                      const Xy_coordinate_2& xy2) const {
             return (*this)(xy1.x(), xy2.x());
         }
+
+    protected:
+
+        const Algebraic_kernel_2* _m_kernel;
+
     };
     CGAL_Algebraic_Kernel_pred(Compare_x_2, compare_x_2_object);
 
@@ -622,14 +750,15 @@ public:
      * operation (compare the documentation of the \c Get_y_2 functor)
      * If possible, it is recommended to avoid this functor for efficiency.}
      */
-    struct Compare_y_2 :
+    class Compare_y_2 :
         public std::binary_function< Xy_coordinate_2, Xy_coordinate_2, 
                 Comparison_result > {
-        
-        Compare_y_2(const Self *kernel) :
-             _m_kernel(kernel) {
-         }
+    
+    public:
 
+        Compare_y_2(const Algebraic_kernel_2* kernel) 
+            : _m_kernel(kernel) {}
+    
         Comparison_result operator()(const Xy_coordinate_2& xy1, 
                                      const Xy_coordinate_2& xy2) const {
             
@@ -642,13 +771,11 @@ public:
         }
 
     protected:
-        const Self *_m_kernel;   
-
+        
+        const Algebraic_kernel_2* _m_kernel;
+        
     };
-    //CGAL_Algebraic_Kernel_pred(Compare_y_2, compare_y_2_object);
-    Compare_y_2 compare_y_2_object() const {
-        return Compare_y_2((const Self *)this);
-    }
+    CGAL_Algebraic_Kernel_pred(Compare_y_2, compare_y_2_object);
     
     /*! 
      * \brief lexicographical comparison of two \c Xy_coordinate_2 objects
@@ -656,13 +783,14 @@ public:
      * \param equal_x if set, the points are assumed 
      * to have equal x-coordinates, thus only the y-coordinates are compared.
      */
-    struct Compare_xy_2 :
+    class Compare_xy_2 :
           public std::binary_function<Xy_coordinate_2, Xy_coordinate_2, 
                 Comparison_result > {
 
-         Compare_xy_2(const Self *kernel) :
-             _m_kernel(kernel) {
-         }
+    public:
+
+         Compare_xy_2(const Algebraic_kernel_2* kernel) 
+            : _m_kernel(kernel) {}
     
          Comparison_result operator()(const Xy_coordinate_2& xy1, 
              const Xy_coordinate_2& xy2, bool equal_x = false) const {
@@ -694,13 +822,12 @@ public:
         }
 
     protected:
-        const Self *_m_kernel;        
-    };
-    //CGAL_Algebraic_Kernel_pred(Compare_xy_2, compare_xy_2_object);
-    Compare_xy_2 compare_xy_2_object() const {
-        return Compare_xy_2((Self *)this);
-    }
 
+        const Algebraic_kernel_2* _m_kernel;
+
+    };
+    CGAL_Algebraic_Kernel_pred(Compare_xy_2, compare_xy_2_object);
+    
     /*!
      * \brief checks whether the curve induced by \c p 
      * has only finitely many self-intersection points
@@ -708,15 +835,24 @@ public:
      * In algebraic terms, it is checked whether  
      * the polynomial \c p is square free.
      */
-    struct Has_finite_number_of_self_intersections_2 :
+    class Has_finite_number_of_self_intersections_2 :
             public std::unary_function< Polynomial_2, bool > {
+        
+    public:
 
+        Has_finite_number_of_self_intersections_2(const Algebraic_kernel_2* kernel) 
+            : _m_kernel(kernel) {}
+        
         bool operator()(const Polynomial_2& p) const {
 
             typename Polynomial_traits_2::Is_square_free is_square_free;
             return is_square_free(p);
         }
 
+    protected:
+        
+        const Algebraic_kernel_2* _m_kernel;
+        
     };
     CGAL_Algebraic_Kernel_pred(Has_finite_number_of_self_intersections_2, 
             has_finite_number_of_self_intersections_2_object);
@@ -728,9 +864,14 @@ public:
      * In algebraic terms, it is checked whether 
      * the two polynomials \c f and \c g are coprime.
      */ 
-    struct Has_finite_number_of_intersections_2 :
+    class Has_finite_number_of_intersections_2 :
         public std::binary_function< Polynomial_2, Polynomial_2, bool > {
          
+    public:
+
+        Has_finite_number_of_intersections_2(const Algebraic_kernel_2* kernel) 
+            : _m_kernel(kernel) {}
+
         bool operator()(const Polynomial_2& f,
                         const Polynomial_2& g) const {
             // if curve ids are the same - non-decomposable
@@ -740,29 +881,46 @@ public:
             typename Polynomial_traits_2::Total_degree total_degree;
              return (total_degree(gcd_utcf(f, g)) == 0);
         }
+
+    protected:
+        
+        const Algebraic_kernel_2* _m_kernel;
+        
     };
-    CGAL_Algebraic_Kernel_pred(Has_finite_number_of_intersections_2, 
+  CGAL_Algebraic_Kernel_pred(Has_finite_number_of_intersections_2, 
             has_finite_number_of_intersections_2_object);
     
   // Square_free_factorize_2
-  struct Square_free_factorize_2 {
-    typedef Polynomial_2 first_argument_type;
-    template< class OutputIterator>
-    OutputIterator operator()( const Polynomial_2& p, OutputIterator it) 
-        const {
-      return CGAL::square_free_factorize_up_to_constant_factor(p,it);
-    } 
+  class Square_free_factorize_2 {
+
+  public:
+      
+      Square_free_factorize_2(const Algebraic_kernel_2* kernel) 
+          : _m_kernel(kernel) {}
+      
+      typedef Polynomial_2 first_argument_type;
+      template< class OutputIterator>
+      OutputIterator operator()( const Polynomial_2& p, OutputIterator it) 
+          const {
+          return CGAL::square_free_factorize_up_to_constant_factor(p,it);
+      } 
+  
+  protected:
+
+        const Algebraic_kernel_2* _m_kernel;
+
   };
   CGAL_Algebraic_Kernel_cons(
-      Square_free_factorize_2, square_free_factorize_2_object);
-  
+          Square_free_factorize_2, square_free_factorize_2_object);
+
   //this is deprecated ! 
     //! Various curve and curve pair decomposition functions
-    struct Decompose_2 {
+    class Decompose_2 {
     
-        //! default constructor
-        Decompose_2(/*Self *pkernel_2*/)  
-        {  }
+    public:
+
+        Decompose_2(const Algebraic_kernel_2* kernel) 
+            : _m_kernel(kernel) {}
 
         //! returns the square free part of the curve induced by \c p
         Polynomial_2 operator()(const Polynomial_2& p) {
@@ -788,7 +946,7 @@ public:
             
             int n_factors = factorize(ca.polynomial_2(),
                                       std::back_inserter(factors), mit);
-            Construct_curve_2 cc_2;
+            Construct_curve_2 cc_2 = _m_kernel->construct_curve_2_object();
             for(int i = 0; i < static_cast<int>(factors.size()); i++) 
                 *fit++ = cc_2(factors[i]);
             
@@ -817,7 +975,7 @@ public:
         return false;  
 #else 
 
-            Construct_curve_2 cc_2;
+            Construct_curve_2 cc_2 = _m_kernel->construct_curve_2_object();
 #if CGAL_ACK_USE_EXACUS
             typedef std::vector<Internal_curve_2> Curves;
 
@@ -858,7 +1016,7 @@ public:
                 CGAL_assertion(false);
                 return false;
             }
-            Gcd_cache_2& gcd_cache = Self::gcd_cache_2();
+            Gcd_cache_2& gcd_cache = _m_kernel->gcd_cache_2();
             typedef typename Curve_analysis_2::size_type size_type;
             Polynomial_2 gcd = gcd_cache(std::make_pair(f,g));
             size_type n = CGAL::degree(gcd);
@@ -895,6 +1053,11 @@ public:
             return false;
 #endif
         }
+
+    protected:
+
+        const Algebraic_kernel_2* _m_kernel;
+
     };
     CGAL_Algebraic_Kernel_cons(Decompose_2, decompose_2_object);
     
@@ -930,11 +1093,16 @@ public:
      * where f_y means the derivative w.r.t. y.
      * In pariticular, each singular point is x-critical.
      */
-    struct X_critical_points_2 : 
+    class X_critical_points_2 : 
         public std::binary_function< Curve_analysis_2, 
             std::iterator<std::output_iterator_tag, Xy_coordinate_2>,
             std::iterator<std::output_iterator_tag, Xy_coordinate_2> > {
        
+
+    public:
+        
+        X_critical_points_2(const Algebraic_kernel_2* kernel) 
+            : _m_kernel(kernel) {}
         /*! 
          * \brief writes the x-critical points of \c ca_2 into \c oi 
          */
@@ -943,8 +1111,9 @@ public:
                 OutputIterator oi) const {
                 
             typename Polynomial_traits_2::Differentiate diff;
-            Construct_curve_2 cc_2;
-            Construct_curve_pair_2 ccp_2;
+            Construct_curve_2 cc_2 = _m_kernel->construct_curve_2_object();
+            Construct_curve_pair_2 ccp_2 
+                = _m_kernel->construct_curve_pair_2_object();
             // construct curve analysis of a derivative in y
             Curve_analysis_2 ca_2x = cc_2(diff(ca_2.polynomial_2(),0));
             Curve_pair_analysis_2 cpa_2 = ccp_2(ca_2, ca_2x);
@@ -987,6 +1156,11 @@ public:
             CGAL_precondition(0 >= i&&i < x_points.size());
             return x_points[i];
         }
+    
+    protected:
+
+        const Algebraic_kernel_2* _m_kernel;
+
     };
     CGAL_Algebraic_Kernel_cons(X_critical_points_2,
         x_critical_points_2_object);
@@ -999,11 +1173,17 @@ public:
      * where f_x means the derivative w.r.t. x.
      * In pariticular, each singular point is y-critical.
      */
-    struct Y_critical_points_2 :
+    class Y_critical_points_2 :
         public std::binary_function< Curve_analysis_2, 
             std::iterator<std::output_iterator_tag, Xy_coordinate_2>,
             std::iterator<std::output_iterator_tag, Xy_coordinate_2> > {
         
+
+    public:
+
+        Y_critical_points_2(const Algebraic_kernel_2* kernel) 
+            : _m_kernel(kernel) {}
+
         /*! 
          * \brief writes the y-critical points of \c ca_2 into \c oi 
          */
@@ -1011,8 +1191,9 @@ public:
         OutputIterator operator()(const Curve_analysis_2& ca_2, 
             OutputIterator oi) const
         {
-            Construct_curve_2 cc_2;
-            Construct_curve_pair_2 ccp_2;
+            Construct_curve_2 cc_2 = _m_kernel->construct_curve_2_object();
+            Construct_curve_pair_2 ccp_2 
+                = _m_kernel->construct_curve_pair_2_object();
             
             typename Curve_analysis_2::Status_line_1 cv_line;
             std::pair<int,int> ipair;
@@ -1069,6 +1250,11 @@ public:
             CGAL_precondition(0 >= i&&i < y_points.size());
             return y_points[i];
         }
+
+    protected:
+
+        const Algebraic_kernel_2* _m_kernel;
+
     };
     CGAL_Algebraic_Kernel_cons(Y_critical_points_2,
         y_critical_points_2_object);
@@ -1080,8 +1266,13 @@ public:
      * that defines a curve \c c. If the result is 0, the point lies on the
      * curve. Returns a value convertible to \c CGAL::Sign
      */
-    struct Sign_at_2 :
-        public std::binary_function< Curve_analysis_2, Xy_coordinate_2, Sign > {
+    class Sign_at_2 :
+        public std::binary_function<Curve_analysis_2, Xy_coordinate_2, Sign > {
+
+    public:
+        
+        Sign_at_2(const Algebraic_kernel_2* kernel) 
+            : _m_kernel(kernel) {}
         
         typedef typename Xy_coordinate_2::Bound Bound;
         typedef typename Xy_coordinate_2::Bound_interval Bound_interval;
@@ -1098,7 +1289,7 @@ public:
         Sign operator()(const Polynomial_2& f,
                         const Xy_coordinate_2& r) const {
 
-            return (*this)(Construct_curve_2()(f),r);
+            return (*this)(_m_kernel->construct_curve_2_object()(f),r);
         }
 
         Sign operator()(const Curve_analysis_2& ca_2,
@@ -1142,8 +1333,9 @@ public:
                 return true;
             }
 
-            Construct_curve_2 cc_2;
-            Construct_curve_pair_2 ccp_2;
+            Construct_curve_2 cc_2 = _m_kernel->construct_curve_2_object();
+            Construct_curve_pair_2 ccp_2 
+                = _m_kernel->construct_curve_pair_2_object();
             typename Curve_analysis_2::Status_line_1
                 cv_line = ca_2.status_line_for_x(r.x());
             // fast check for the presence of status line at r.x()
@@ -1151,13 +1343,14 @@ public:
                 return true;
 
             // Handle non-coprime polynomial
-            Polynomial_2 gcd = Self::gcd_cache_2()
+            Polynomial_2 gcd = _m_kernel->gcd_cache_2()
                (std::make_pair(ca_2.polynomial_2(), r.curve().polynomial_2()));
 
             Curve_analysis_2 gcd_curve = cc_2(gcd);
             if(CGAL::total_degree(gcd)>0) {
                 
-                Construct_curve_pair_2 ccp_2;
+                Construct_curve_pair_2 ccp_2
+                    = _m_kernel->construct_curve_pair_2_object();
                 Curve_analysis_2 r_curve_remainder =
                     cc_2(CGAL::integral_division_up_to_constant_factor(
                                  r.curve().polynomial_2(), gcd
@@ -1183,6 +1376,10 @@ public:
             }
             return false;
         }
+    protected:
+        
+        const Algebraic_kernel_2* _m_kernel;
+
     
     };
     CGAL_Algebraic_Kernel_pred(Sign_at_2, sign_at_2_object);
@@ -1192,8 +1389,13 @@ public:
      *
      * \pre the polynomials must be square-free and coprime
      */  
-    struct Solve_2 {
+    class Solve_2 {
     
+    public:
+
+        Solve_2(const Algebraic_kernel_2* kernel) 
+            : _m_kernel(kernel) {}
+
         typedef Curve_analysis_2 first_argument_type;
         typedef Curve_analysis_2 second_argument_type;
         typedef std::iterator<std::output_iterator_tag, Xy_coordinate_2>
@@ -1216,7 +1418,8 @@ public:
                (const Polynomial_2& f, const Polynomial_2& g,
                 OutputIteratorRoots roots, OutputIteratorMult mults) const {
             return 
-                (*this)(Construct_curve_2()(f),Construct_curve_2()(g),
+                (*this)(_m_kernel->construct_curve_2_object()(f),
+                        _m_kernel->construct_curve_2_object()(g),
                         roots,mults);
         }
 
@@ -1238,7 +1441,8 @@ public:
                 CGAL_precondition(do_not_overlap(ca1, ca2));
             );
             */
-            Construct_curve_pair_2 ccp_2;
+            Construct_curve_pair_2 ccp_2
+                = _m_kernel->construct_curve_pair_2_object();
             Curve_pair_analysis_2 cpa_2 = ccp_2(ca1, ca2);
             typename Curve_pair_analysis_2::Status_line_1 cpv_line;
             // do we need to check which supporting curve is simpler ?    
@@ -1285,13 +1489,23 @@ public:
             }
             return std::make_pair(roots, mults);
         }
+
+    protected:
+
+        const Algebraic_kernel_2* _m_kernel;
+
     };
     CGAL_Algebraic_Kernel_cons(Solve_2, solve_2_object);
 
     /*!
      * \brief Construct a curve with the roles of x and y interchanged.
      */
-    struct Swap_x_and_y_2 {
+    class Swap_x_and_y_2 {
+
+    public:
+
+        Swap_x_and_y_2(const Algebraic_kernel_2* kernel) 
+            : _m_kernel(kernel) {}
         
         typedef Polynomial_2 argument_type;
         typedef Curve_analysis_2 result_type;
@@ -1303,8 +1517,13 @@ public:
         Curve_analysis_2 operator() (const Polynomial_2& f) {
             Polynomial_2 f_yx
                 = typename Polynomial_traits_2::Swap() (f,0,1);
-            return Construct_curve_2() (f_yx);
+            return _m_kernel->construct_curve_2_object() (f_yx);
         }
+    
+    protected:
+
+        const Algebraic_kernel_2* _m_kernel;
+
     };
     CGAL_Algebraic_Kernel_cons(Swap_x_and_y_2, swap_x_and_y_2_object);
 
@@ -1315,8 +1534,13 @@ public:
 
 
     //! Refines the x-coordinate of an Xy_coordinate_2 object
-    struct Refine_x_2 :
+    class Refine_x_2 :
         public std::unary_function<Xy_coordinate_2, void> {
+
+    public:
+        
+        Refine_x_2(const Algebraic_kernel_2* kernel) 
+            : _m_kernel(kernel) {}
       
         /*! 
          * \brief Refines the approximation of the x-coordinate by at least
@@ -1339,12 +1563,22 @@ public:
         void operator()(Xy_coordinate_2& r, int rel_prec) const {  
             r.refine_x(rel_prec);
         }
+        
+    protected:
+
+        const Algebraic_kernel_2* _m_kernel;
+
     };
     CGAL_Algebraic_Kernel_pred(Refine_x_2, refine_x_2_object);
     
     //! Refines the y-coordinate of an Xy_coordinate_2 object
-    struct Refine_y_2 :
+    class Refine_y_2 :
         public std::unary_function<Xy_coordinate_2, void> {
+
+    public:
+
+        Refine_y_2(const Algebraic_kernel_2* kernel) 
+            : _m_kernel(kernel) {}
       
         /*! 
          * \brief Refines the approximation of the y-coordinate by at least
@@ -1367,55 +1601,100 @@ public:
         void operator()(Xy_coordinate_2& r, int rel_prec) const {  
             typename Y_real_traits_1::Refine()(r, rel_prec);
         }
+    
+    protected:
+
+        const Algebraic_kernel_2* _m_kernel;
+
     };
     CGAL_Algebraic_Kernel_pred(Refine_y_2, refine_y_2_object);
     
     //! a lower bound of the x-coordinate of \c r
-    struct Lower_bound_x_2 {
+    class Lower_bound_x_2 {
        
+    public:
+
+        Lower_bound_x_2(const Algebraic_kernel_2* kernel) 
+            : _m_kernel(kernel) {}
+
         typedef Xy_coordinate_2 argument_type;
         typedef Bound result_type;
             
         result_type operator()(const Xy_coordinate_2& r) {
             return typename X_real_traits_1::Lower_bound()(r.x());
         }
+        
+    protected:
+
+        const Algebraic_kernel_2* _m_kernel;
+
     };
     CGAL_Algebraic_Kernel_cons(Lower_bound_x_2, lower_bound_x_2_object);
     
     //! an upper bound of the x-coordinate of \c r
-    struct Upper_bound_x_2 {
+    class Upper_bound_x_2 {
        
+    public:
+
+        Upper_bound_x_2(const Algebraic_kernel_2* kernel) 
+            : _m_kernel(kernel) {}
+
         typedef Xy_coordinate_2 agrument_type;
         typedef Bound result_type;
             
         result_type operator()(const Xy_coordinate_2& r) {
             return typename X_real_traits_1::Upper_bound()(r.x());
         }
+    
+    protected:
+
+        const Algebraic_kernel_2* _m_kernel;
+
     };
     CGAL_Algebraic_Kernel_cons(Upper_bound_x_2, upper_bound_x_2_object);
 
 
     //! a lower bound of the x-coordinate of \c r
-    struct Lower_bound_y_2 {
-       
+    class Lower_bound_y_2 {
+    
+    public:
+
+        Lower_bound_y_2(const Algebraic_kernel_2* kernel) 
+            : _m_kernel(kernel) {}
+        
         typedef Xy_coordinate_2 agrument_type;
         typedef Bound result_type;
             
         result_type operator()(const Xy_coordinate_2& r) {
             return typename Y_real_traits_1::Lower_bound()(r);
         }
+
+    protected:
+
+        const Algebraic_kernel_2* _m_kernel;
+
     };
     CGAL_Algebraic_Kernel_cons(Lower_bound_y_2, lower_bound_y_2_object);
     
     //! an upper bound of the y-coordinate of \c r
-    struct Upper_bound_y_2 {
-       
+    class Upper_bound_y_2 {
+    
+    public:
+
+        Upper_bound_y_2(const Algebraic_kernel_2* kernel) 
+            : _m_kernel(kernel) {}
+   
         typedef Xy_coordinate_2 agrument_type;
         typedef Bound result_type;
             
         result_type operator()(const Xy_coordinate_2& r) {
             return typename Y_real_traits_1::Upper_bound()(r);
         }
+
+    protected:
+
+        const Algebraic_kernel_2* _m_kernel;
+
     };
     CGAL_Algebraic_Kernel_cons(Upper_bound_y_2, upper_bound_y_2_object);
     
@@ -1444,6 +1723,13 @@ public:
 #undef CGAL_Algebraic_Kernel_cons 
     
     //!@}
+
+protected:
+
+mutable Curve_cache_2 _m_curve_cache_2;
+mutable Curve_pair_cache_2 _m_curve_pair_cache_2;
+mutable Gcd_cache_2 _m_gcd_cache_2;
+
     
 }; // class Algebraic_curve_kernel_2
 

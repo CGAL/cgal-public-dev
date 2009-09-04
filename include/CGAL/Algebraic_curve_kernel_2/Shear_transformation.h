@@ -30,15 +30,17 @@ CGAL_BEGIN_NAMESPACE
  * The class is a functor, getting an algebraic curve and some
  * shear factor, and returning the sheared curve.
  */
-template<typename CurveAnalysis_2> class Shear_transformation {
+template<typename AlgebraicKernelWithAnalysis_2> class Shear_transformation {
 
 public:
       
-    typedef CurveAnalysis_2 Curve_analysis_2;
+    typedef AlgebraicKernelWithAnalysis_2  Algebraic_kernel_with_analysis_2;
 
-    typedef typename Curve_analysis_2::Algebraic_kernel_2 Algebraic_kernel_2;
+    typedef typename Algebraic_kernel_with_analysis_2::Curve_analysis_2 
+        Curve_analysis_2;
 
-    typedef typename Curve_analysis_2::Polynomial_traits_2 Polynomial_traits_2;
+    typedef typename  AlgebraicKernelWithAnalysis_2::Polynomial_traits_2 
+        Polynomial_traits_2;
 
     CGAL_ACK_SNAP_ALGEBRAIC_CURVE_KERNEL_2_TYPEDEFS(Curve_analysis_2);
 
@@ -62,8 +64,9 @@ private:
 
 public:
 
-    Shear_transformation()
-        : x_extreme_index_counter(0),
+    Shear_transformation(Algebraic_kernel_with_analysis_2* kernel)
+        : _m_kernel(kernel),
+          x_extreme_index_counter(0),
           disc_roots_computed(false),
           sh_disc_roots_computed(false)
     {}
@@ -328,7 +331,8 @@ private:
         lower_bound = upper_bound = Bound(0);
         for(int i=0;i<n;i++) {
             Algebraic_real_1 curr_bound(stripe_values[i]);
-            Bitstream_traits traits(curr_bound);
+            Bitstream_traits traits(Bitstream_coefficient_kernel
+                                    (kernel(),curr_bound));
             CGAL::CGALi::Square_free_descartes_tag tag;
             Bitstream_descartes descartes(tag,sh_pol,traits);
             int m = descartes.number_of_real_roots();
@@ -1114,13 +1118,13 @@ private:
 
     Status_line_1 create_event_line(Curve_analysis_2& D,int i) {
         Algebraic_real_1 xval = sh_disc_roots[i];
-        Bitstream_traits traits(xval);
+        Bitstream_traits traits(Bitstream_coefficient_kernel(kernel(),xval));
         int number_of_events 
             = static_cast<int>(pre_vert_lines[i].event_points.size());
         int number_of_roots 
             = pre_vert_lines[i].number_of_non_event_roots+number_of_events; 
         Polynomial_2 sh_pol_with_correct_degree 
-            = CGAL::CGALi::poly_non_vanish_leading_term(sh_pol,xval);
+            = CGAL::CGALi::poly_non_vanish_leading_term(kernel(),sh_pol,xval);
         Bitstream_descartes descartes(CGAL::CGALi::Backshear_descartes_tag(),
                                       sh_pol_with_correct_degree,
                                       number_of_roots,
@@ -1164,6 +1168,10 @@ private:
         return ev;
     }
 
+    Algebraic_kernel_with_analysis_2* kernel() const {
+        return _m_kernel;
+    }
+
     Curve_analysis_2 C;
 
     Integer s;
@@ -1192,6 +1200,8 @@ private:
     bool use_primitive_curve;
 
     bool disc_roots_computed,sh_disc_roots_computed;
+
+    Algebraic_kernel_with_analysis_2* _m_kernel;
 
 };
  

@@ -11,7 +11,7 @@
 //
 // ============================================================================
 
-#define CGAL_ACK_DEBUG_FLAG 0
+#define CGAL_ACK_DEBUG_FLAG 1
 
 // Allow only coprime curve pairs for that demo!
 #define CGAL_ACK_DONT_CHECK_POLYNOMIALS_FOR_COPRIMALITY 1
@@ -109,7 +109,7 @@ int main(int argc,char** argv) {
   typedef CGAL_ACK_COEFFICIENT Coefficient;
 
   typedef CGAL::Algebraic_curve_kernel_2_generator<Coefficient>
-      ::Algebraic_curve_kernel_with_qir_and_bitstream_2
+      ::Algebraic_curve_kernel_with_qir_and_descartes_2
       Algebraic_curve_kernel_2;
   
   typedef Algebraic_curve_kernel_2::Curve_analysis_2 Curve_analysis_2;
@@ -228,9 +228,16 @@ int main(int argc,char** argv) {
                << std::endl;
      reset_timers();
      overall_timer.start();
-     Curve_analysis_2 F(f);
-     Curve_analysis_2 G(g);
-     Curve_pair_analysis_2 algebraic_curve_pair(F,G);
+     
+     Algebraic_curve_kernel_2 kernel;
+     
+     
+
+     Curve_analysis_2 F = kernel.construct_curve_2_object() (f);
+     Curve_analysis_2 G = kernel.construct_curve_2_object() (g);
+
+     Curve_pair_analysis_2 algebraic_curve_pair
+         = kernel.construct_curve_pair_2_object() (F,G);
 
      std::cout << algebraic_curve_pair << std::endl;
 

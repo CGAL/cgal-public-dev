@@ -76,7 +76,7 @@ int check_intervals_real_root_isolator(
   //std::cout << " left = " << left << std::endl;
   //std::cout << " right = " << right << std::endl;
   //std::cout << " P = " << P << std::endl;
-  assert(P.evaluate(left) * P.evaluate(right) < 0);
+  assert(CGAL::evaluate(P,left) * CGAL::evaluate(P,right) < 0);
   }
   }
   return n;

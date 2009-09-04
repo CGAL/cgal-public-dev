@@ -97,6 +97,7 @@ void test_algebraic_curve_kernel_2() {
         
 
     ///////// testing curve construction //////////
+
     
     AK_2 kernel_2;
     Curve_analysis_2 c0 = kernel_2.construct_curve_2_object()(polys[0]),
@@ -112,6 +113,7 @@ void test_algebraic_curve_kernel_2() {
     Xy_coordinate_2 xy1, xy2, xy3, xy4;
 
     ///////////// testing sign_at_2 for non-coprime case /////////////
+
     {    
         Curve_analysis_2 c7_c6 =
             kernel_2.construct_curve_2_object()(polys[7]*polys[6]);

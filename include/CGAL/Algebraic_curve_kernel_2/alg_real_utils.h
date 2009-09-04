@@ -517,11 +517,14 @@ bool is_root_of(const AlgebraicReal & x,Polynomial_2 p) {
  * vanishes at \c alpha
  *
  */
-template<typename Poly_2, typename Algebraic_real>
-Poly_2 poly_non_vanish_leading_term(const Poly_2& pol,Algebraic_real alpha) {
+template<typename Algebraic_kernel_1,typename Poly_2, typename Algebraic_real>
+Poly_2 poly_non_vanish_leading_term(Algebraic_kernel_1* kernel,
+                                    const Poly_2& pol,
+                                    Algebraic_real alpha) {
     Poly_2 f(pol);
     while(true) {
-	if(CGAL::CGALi::is_root_of(alpha,CGAL::leading_coefficient(pol))) {
+	if(kernel->is_zero_at_1_object()
+           (CGAL::leading_coefficient(f),alpha)) {
             typename Poly_2::const_iterator poly_end = f.end();
             if(f.begin()==poly_end) {
                 break;

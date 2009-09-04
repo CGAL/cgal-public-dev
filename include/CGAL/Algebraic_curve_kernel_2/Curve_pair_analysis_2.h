@@ -61,12 +61,13 @@ public:
 // Curve_pair_2
 
 // Forwards
-template < typename AlgebraicKernel_2 >
+template < typename AlgebraicKernelWithAnalysis_2 >
 struct Curve_pair_analysis_2;
 
-template<typename AlgebraicKernel_2>
+template<typename AlgebraicKernelWithAnalysis_2>
 std::ostream& operator<< 
-    (std::ostream&,const Curve_pair_analysis_2<AlgebraicKernel_2>&);
+    (std::ostream&,const Curve_pair_analysis_2
+                           <AlgebraicKernelWithAnalysis_2>&);
 
 namespace CGALi {
 
@@ -99,18 +100,19 @@ struct Event_indices {
 };
 
 // Representation class for curve pairs
-template < class AlgebraicKernel_2 >
+template < class AlgebraicKernelWithAnalysis_2 >
 struct Curve_pair_analysis_2_rep {
 
     //! \name public typedefs
     //! @{
-    typedef AlgebraicKernel_2 Algebraic_kernel_2;
+    typedef AlgebraicKernelWithAnalysis_2 Algebraic_kernel_with_analysis_2;
 
-    typedef Curve_pair_analysis_2_rep<Algebraic_kernel_2> Self;
+    typedef Curve_pair_analysis_2_rep<Algebraic_kernel_with_analysis_2> Self;
 
-    typedef Curve_pair_analysis_2<Algebraic_kernel_2> Handle;
+    typedef Curve_pair_analysis_2<Algebraic_kernel_with_analysis_2> Handle;
 
-    typedef typename Algebraic_kernel_2::Curve_analysis_2 Curve_analysis_2;
+    typedef typename Algebraic_kernel_with_analysis_2::Curve_analysis_2 
+        Curve_analysis_2;
 
     typedef typename Curve_analysis_2::size_type size_type;
 
@@ -159,8 +161,10 @@ struct Curve_pair_analysis_2_rep {
         c1_(), c2_() {
     }
 
-    Curve_pair_analysis_2_rep(Curve_analysis_2 c1, Curve_analysis_2 c2,
+    Curve_pair_analysis_2_rep(Algebraic_kernel_with_analysis_2 *kernel,
+                              Curve_analysis_2 c1, Curve_analysis_2 c2,
                               CGAL::Degeneracy_strategy strategy) :
+        _m_kernel(kernel),
         c1_(c1), c2_(c2), f(c1.polynomial_2()), g(c2.polynomial_2()),
         degeneracy_strategy(strategy) {
     }
@@ -171,6 +175,8 @@ private:
 
     //! \name members
     //! @{
+
+    Algebraic_kernel_with_analysis_2* _m_kernel;
     
     Curve_analysis_2 c1_;
     Curve_analysis_2 c2_;
@@ -189,7 +195,8 @@ private:
     mutable boost::optional<Polynomial_1> resultant;
 
     mutable boost::optional<std::vector<Algebraic_real_1> > resultant_roots;
-    mutable boost::optional<std::vector<Algebraic_real_1> > event_x_coordinates;
+    mutable boost::optional<std::vector<Algebraic_real_1> > 
+        event_x_coordinates;
     mutable boost::optional<std::vector<size_type> > 
         multiplicities_of_resultant_roots;
 
@@ -217,7 +224,7 @@ private:
     //! \name friends
     //! @{
     
-    friend class Curve_pair_analysis_2<Algebraic_kernel_2>;
+    friend class Curve_pair_analysis_2<Algebraic_kernel_with_analysis_2>;
 
     //!@}
 
@@ -247,10 +254,11 @@ private:
  * of Arbitrary Algebraic Curves. Proceedings of the Nineteenth Annual 
  * ACM-SIAM Symposium on Discrete Algorithms (SODA 2008), pp. 122-131
  */
-template < typename AlgebraicKernel_2 >
+template < typename AlgebraicKernelWithAnalysis_2 >
 class Curve_pair_analysis_2 : 
     public ::CGAL::Handle_with_policy
-        < CGAL::CGALi::Curve_pair_analysis_2_rep< AlgebraicKernel_2 > > {
+        < CGAL::CGALi::Curve_pair_analysis_2_rep
+              < AlgebraicKernelWithAnalysis_2 > > {
     
 
 public:
@@ -259,19 +267,20 @@ public:
     //! @{
 
     //! The algebraic kernel that uses the curve pair analysis
-    typedef AlgebraicKernel_2 Algebraic_kernel_2;
+    typedef AlgebraicKernelWithAnalysis_2 Algebraic_kernel_with_analysis_2;
 
 private:
     
     //! Representation class
-    typedef CGAL::CGALi::Curve_pair_analysis_2_rep< Algebraic_kernel_2 > Rep;
+    typedef CGAL::CGALi::Curve_pair_analysis_2_rep
+      < Algebraic_kernel_with_analysis_2 > Rep;
     
     //! Base class
     typedef ::CGAL::Handle_with_policy< Rep >        Base;
 
 public:
     //! The Curve_pair_analysis_2 itself
-    typedef Curve_pair_analysis_2<Algebraic_kernel_2> Self;
+    typedef Curve_pair_analysis_2<Algebraic_kernel_with_analysis_2> Self;
     
     //! The corresponding Curve_analysis_2 class
     typedef typename Rep::Curve_analysis_2 Curve_analysis_2;
@@ -289,7 +298,8 @@ public:
     typedef typename Rep::Algebraic_real_1 Algebraic_real_1;
 
     //! Type for points with algebraic coordinates
-    typedef typename Algebraic_kernel_2::Algebraic_real_2 Algebraic_real_2;
+    typedef typename Algebraic_kernel_with_analysis_2::Algebraic_real_2 
+        Algebraic_real_2;
 
     //! Bound type (for rational numbers)
     typedef typename Rep::Bound Bound;
@@ -348,7 +358,7 @@ private:
         ::template Rebind<Coercion_type,1>::Other::Type Poly_coer_1;
 
     // Functor to isolate real roots of univariate polynomials
-    typedef typename Algebraic_kernel_2::Algebraic_kernel_1::Solve_1 Solve_1;
+    typedef typename Algebraic_kernel_with_analysis_2::Solve_1 Solve_1;
 
     // Slice info objects
     typedef typename Rep::Slice_info Slice_info;
@@ -447,13 +457,14 @@ public:
      * in other situations. The default argument for \c strategy is
      * \c CGAL::SHEAR_ONLY_AT_IRRATIONAL_STRATEGY.
      */
-    Curve_pair_analysis_2(Curve_analysis_2 c1, 
+    Curve_pair_analysis_2(Algebraic_kernel_with_analysis_2* kernel,
+                          Curve_analysis_2 c1, 
                           Curve_analysis_2 c2,
                           CGAL::Degeneracy_strategy strategy
                               = CGAL_ACK_DEFAULT_DEGENERACY_STRATEGY) 
         throw(CGAL::CGALi::Zero_resultant_exception<Polynomial_2>,
               CGAL::CGALi::Non_generic_position_exception)
-        : Base(Rep(c1, c2, strategy)) 
+        : Base(Rep(kernel,c1, c2, strategy)) 
     {
         
 #if CGAL_ACK_DEBUG_FLAG
@@ -514,8 +525,12 @@ private:
      * according to the lazy philosophy of the whole class.
      */
     void compute_intermediate_values_and_slices() const;
-    
+
 public:
+
+    Algebraic_kernel_with_analysis_2* kernel() const {
+        return this->ptr()->_m_kernel;
+    }
 
     //! Returns the resultant of the defing polynomials wrt \c y
     Polynomial_1 resultant() const {
@@ -881,7 +896,10 @@ private:
      * index \c index1, and for the point on \c e2 with index \c index2
      * overlap
      */
-    bool overlap(Status_line_CA_1& e1, size_type index1,Status_line_CA_1& e2, size_type index2) const {
+    bool overlap(Status_line_CA_1& e1, 
+                 size_type index1,
+                 Status_line_CA_1& e2, 
+                 size_type index2) const {
         if(e1.lower_bound(index1) > e2.upper_bound(index2)) {
             return false;
         }
@@ -910,7 +928,8 @@ private:
             return 1;
         } else {
             size_type k=1;
-            while(alpha.is_root_of(principal_subresultants(k))) {
+            while(kernel()->is_zero_at_1_object()
+                  (principal_subresultants(k),alpha)) {
                 k++;
             }
             return k;
@@ -1106,12 +1125,14 @@ private:
         Intersection_info_container& old_info_container
             = *(this->ptr()->intersection_info_container);
         size_type n = old_info_container.size();
-        CGAL_assertion(n == static_cast<size_type>( new_info_container.size()));
+        CGAL_assertion(n == static_cast<size_type>
+                              ( new_info_container.size()));
         //iterate through the vector and update 
         // (-1 stands for "multiplicity unknown")
         for(size_type i=0;i<n;i++) {
             size_type m = old_info_container[i].size();
-            CGAL_assertion(m == static_cast<size_type>(new_info_container[i].size()));
+            CGAL_assertion(m == static_cast<size_type>\
+                                  (new_info_container[i].size()));
             for(size_type j=0;j<m;j++) {
                 old_info_container[i][j].mult
                     = std::max(new_info_container[i][j].mult,
@@ -1190,11 +1211,12 @@ private:
 }; // end of Curve_pair_analysis_2
 
 //! \brief Prints the objects.
-template<typename AlgebraicKernel_2>
+template<typename AlgebraicKernelWithAnalysis_2>
 std::ostream& operator<< 
     (std::ostream& out, 
-     const Curve_pair_analysis_2<AlgebraicKernel_2>& curve_pair) {
-    typedef Curve_pair_analysis_2<AlgebraicKernel_2> Curve_pair_analysis_2;
+     const Curve_pair_analysis_2<AlgebraicKernelWithAnalysis_2>& curve_pair) {
+    typedef Curve_pair_analysis_2<AlgebraicKernelWithAnalysis_2> 
+        Curve_pair_analysis_2;
     typedef typename Curve_pair_analysis_2::size_type size_type;
     typedef typename Curve_pair_analysis_2::Event_indices Event_indices;
     typedef typename Curve_pair_analysis_2::Status_line_CPA_1 Slice;
@@ -1272,8 +1294,9 @@ std::ostream& operator<<
 
 //////////////////// compute_resultant()
 
-template <typename AlgebraicKernel_2>
-void Curve_pair_analysis_2<AlgebraicKernel_2>::compute_resultant() const {
+template <typename AlgebraicKernelWithAnalysis_2>
+void Curve_pair_analysis_2<AlgebraicKernelWithAnalysis_2>::compute_resultant()
+    const {
     
 #if CGAL_ACK_RESULTANT_FIRST_STRATEGY
 #ifndef CGAL_ACK_RESULTANT_FIRST_STRATEGY_DEGREE_THRESHOLD
@@ -1319,8 +1342,8 @@ void Curve_pair_analysis_2<AlgebraicKernel_2>::compute_resultant() const {
 
 //////////////////// compute_resultant_roots_with_multiplicities()
 
-template<typename AlgebraicKernel_2>
-void Curve_pair_analysis_2<AlgebraicKernel_2>::
+template<typename AlgebraicKernelWithAnalysis_2>
+void Curve_pair_analysis_2<AlgebraicKernelWithAnalysis_2>::
 compute_resultant_roots_with_multiplicities() const {
     
 #if CGAL_ACK_DEBUG_FLAG
@@ -1362,8 +1385,8 @@ compute_resultant_roots_with_multiplicities() const {
 
 //////////////////// compute_event_x_coordinates_with_event_indices
 
-template<typename AlgebraicKernel_2>
-void Curve_pair_analysis_2<AlgebraicKernel_2>::
+template<typename AlgebraicKernelWithAnalysis_2>
+void Curve_pair_analysis_2<AlgebraicKernelWithAnalysis_2>::
 compute_event_x_coordinates_with_event_indices() const {
     
     Xval_of_status_line_CA_1 xval;
@@ -1499,8 +1522,8 @@ compute_event_x_coordinates_with_event_indices() const {
 
 //////////////////// compute_intermediate_values_and_slices()
 
-template<typename AlgebraicKernel_2>
-void Curve_pair_analysis_2<AlgebraicKernel_2>::
+template<typename AlgebraicKernelWithAnalysis_2>
+void Curve_pair_analysis_2<AlgebraicKernelWithAnalysis_2>::
 compute_intermediate_values_and_slices() const {
     
 #if CGAL_ACK_DEBUG_FLAG
@@ -1524,8 +1547,8 @@ compute_intermediate_values_and_slices() const {
 
 //////////////////// compute_subresultants
 
-template<typename AlgebraicKernel_2>
-void Curve_pair_analysis_2<AlgebraicKernel_2>::
+template<typename AlgebraicKernelWithAnalysis_2>
+void Curve_pair_analysis_2<AlgebraicKernelWithAnalysis_2>::
 compute_subresultants() const {
     typedef std::vector<Polynomial_1> Polynomial_container;
     this->ptr()->principal_subresultants = Polynomial_container();
@@ -1593,9 +1616,10 @@ compute_subresultants() const {
 
 //////////////////// create_slice_with_multiplicity_zero_or_one
 
-template<typename AlgebraicKernel_2>
-typename Curve_pair_analysis_2<AlgebraicKernel_2>::Status_line_CPA_1 
-Curve_pair_analysis_2<AlgebraicKernel_2>::
+template<typename AlgebraicKernelWithAnalysis_2>
+typename Curve_pair_analysis_2<AlgebraicKernelWithAnalysis_2>
+    ::Status_line_CPA_1 
+Curve_pair_analysis_2<AlgebraicKernelWithAnalysis_2>::
 create_slice_with_multiplicity_zero_or_one(size_type i) const {
     
     const std::vector<Algebraic_real_1>& events 
@@ -1849,9 +1873,10 @@ create_slice_with_multiplicity_zero_or_one(size_type i) const {
 
 //////////////////// create_intermediate_slice_at
 
-template<typename AlgebraicKernel_2>
-typename Curve_pair_analysis_2<AlgebraicKernel_2>::Status_line_CPA_1 
-Curve_pair_analysis_2<AlgebraicKernel_2>::
+template<typename AlgebraicKernelWithAnalysis_2>
+typename Curve_pair_analysis_2<AlgebraicKernelWithAnalysis_2>
+    ::Status_line_CPA_1 
+Curve_pair_analysis_2<AlgebraicKernelWithAnalysis_2>::
 create_intermediate_slice_at(int i) const {
     
     Bound r = bound_value_in_interval(i);
@@ -1909,9 +1934,10 @@ create_intermediate_slice_at(int i) const {
 
 //////////////////// create_slice_from_slice_info
 
-template<typename AlgebraicKernel_2>
-typename Curve_pair_analysis_2<AlgebraicKernel_2>::Status_line_CPA_1 
-Curve_pair_analysis_2<AlgebraicKernel_2>::
+template<typename AlgebraicKernelWithAnalysis_2>
+typename Curve_pair_analysis_2<AlgebraicKernelWithAnalysis_2>
+    ::Status_line_CPA_1 
+Curve_pair_analysis_2<AlgebraicKernelWithAnalysis_2>::
 create_slice_from_slice_info(size_type id,
                              const Slice_info& slice,
                              bool event_flag) const {
@@ -1961,9 +1987,9 @@ create_slice_from_slice_info(size_type id,
 
 //////////////////// construct_slice_info
 
-template<typename AlgebraicKernel_2>
-typename Curve_pair_analysis_2<AlgebraicKernel_2>::Slice_info 
-Curve_pair_analysis_2<AlgebraicKernel_2>::
+template<typename AlgebraicKernelWithAnalysis_2>
+typename Curve_pair_analysis_2<AlgebraicKernelWithAnalysis_2>::Slice_info 
+Curve_pair_analysis_2<AlgebraicKernelWithAnalysis_2>::
 construct_slice_info(Algebraic_real_1 alpha) const
     throw(CGAL::CGALi::Non_generic_position_exception) {
     
@@ -2042,9 +2068,10 @@ construct_slice_info(Algebraic_real_1 alpha) const
 
 //////////////////// construct_generic_case
 
-template<typename AlgebraicKernel_2>
-typename Curve_pair_analysis_2<AlgebraicKernel_2>::Status_line_CPA_1 
-Curve_pair_analysis_2<AlgebraicKernel_2>::
+template<typename AlgebraicKernelWithAnalysis_2>
+typename Curve_pair_analysis_2<AlgebraicKernelWithAnalysis_2>
+    ::Status_line_CPA_1 
+Curve_pair_analysis_2<AlgebraicKernelWithAnalysis_2>::
 construct_generic_case(size_type i) const 
     throw(CGAL::CGALi::Non_generic_position_exception) {
     
@@ -2056,17 +2083,20 @@ construct_generic_case(size_type i) const
     size_type index_of_ffy =event_indices(i).ffy;
     size_type index_of_ggy =event_indices(i).ggy;
     if(index_of_fg>=0) {
-        if(alpha.is_root_of(CGAL::leading_coefficient
-                            (this->ptr()->c1_.polynomial_2())) ||
-           alpha.is_root_of(CGAL::leading_coefficient
-                            (this->ptr()->c2_.polynomial_2()))) {
+        if(kernel()->is_zero_at_1_object() 
+             (CGAL::leading_coefficient
+              (this->ptr()->c1_.polynomial_2()),alpha)
+           ||
+           kernel()->is_zero_at_1_object() 
+             (CGAL::leading_coefficient
+              (this->ptr()->c2_.polynomial_2()),alpha)) {
             throw CGAL::CGALi::Non_generic_position_exception();
         }
         size_type k = -1; // not yet computed
         if(index_of_ffy==-1 && index_of_ggy==-1) {
             // this means, we need the multiplicity of the intersections
-            if(alpha.is_root_of
-               (principal_subresultants(1))) {
+            if(kernel()->is_zero_at_1_object() 
+               (principal_subresultants(1),alpha)) {
                 // multiplicity cannot be determined, throw exception
                 throw CGAL::CGALi::Non_generic_position_exception();
             } else {
@@ -2119,9 +2149,9 @@ construct_generic_case(size_type i) const
 
 //////////////////// check_candidate_by_arc_pattern
 
-template<typename AlgebraicKernel_2>
+template<typename AlgebraicKernelWithAnalysis_2>
 
-bool Curve_pair_analysis_2<AlgebraicKernel_2>::
+bool Curve_pair_analysis_2<AlgebraicKernelWithAnalysis_2>::
 check_candidate_by_arc_pattern(size_type index,
                                Status_line_CA_1& e1,
                                size_type i1,
@@ -2197,9 +2227,9 @@ check_candidate_by_arc_pattern(size_type index,
 
 //////////////////// check_candidate
 
-template<typename AlgebraicKernel_2>
+template<typename AlgebraicKernelWithAnalysis_2>
 template<typename InputIterator>
-void Curve_pair_analysis_2<AlgebraicKernel_2>::
+void Curve_pair_analysis_2<AlgebraicKernelWithAnalysis_2>::
 check_candidate(Status_line_CA_1& e1,size_type i1,
                 Status_line_CA_1& e2,size_type i2,
                 size_type k,
@@ -2257,9 +2287,9 @@ check_candidate(Status_line_CA_1& e1,size_type i1,
 
 //////////////////// find_possible_matching
 
-template<typename AlgebraicKernel_2>
-typename Curve_pair_analysis_2<AlgebraicKernel_2>::size_type
-Curve_pair_analysis_2<AlgebraicKernel_2>::
+template<typename AlgebraicKernelWithAnalysis_2>
+typename Curve_pair_analysis_2<AlgebraicKernelWithAnalysis_2>::size_type
+Curve_pair_analysis_2<AlgebraicKernelWithAnalysis_2>::
 find_possible_matching(Status_line_CA_1& e1, 
                        size_type index1,
                        Status_line_CA_1& e2) const {
@@ -2302,8 +2332,8 @@ find_possible_matching(Status_line_CA_1& e1,
 
 //////////////////// zero_test_bivariate
 
-template<typename AlgebraicKernel_2>
-bool Curve_pair_analysis_2<AlgebraicKernel_2>::
+template<typename AlgebraicKernelWithAnalysis_2>
+bool Curve_pair_analysis_2<AlgebraicKernelWithAnalysis_2>::
 zero_test_bivariate(const Algebraic_real_1& alpha,
                     const Polynomial_2& h,
                     const Polynomial_1& p,
@@ -2420,7 +2450,7 @@ zero_test_bivariate(const Algebraic_real_1& alpha,
         
         typename FT::Decompose() (h_0_rat, integralized_pol, denom); 
         
-        return CGAL::CGALi::is_root_of(alpha,integralized_pol);
+        return kernel()->is_zero_at_1_object() (integralized_pol,alpha);
     }
     else {
         typename Coercion::Cast cast;
@@ -2436,7 +2466,7 @@ zero_test_bivariate(const Algebraic_real_1& alpha,
 #else
 #warning Uses no reduction modulo resultant!
     Polynomial_1 h_0=h.evaluate_homogeneous(p,q);
-    result=CGAL::CGALi::is_root_of(alpha,h_0);
+    result= kernel()->is_zero_at_1_object() (h_0,alpha)
 #endif      
     
     return result;
@@ -2445,8 +2475,8 @@ zero_test_bivariate(const Algebraic_real_1& alpha,
 
 //////////////////// new_shear_for_intersection_info
 
-template<typename AlgebraicKernel_2>
-void Curve_pair_analysis_2<AlgebraicKernel_2>::
+template<typename AlgebraicKernelWithAnalysis_2>
+void Curve_pair_analysis_2<AlgebraicKernelWithAnalysis_2>::
 new_shear_for_intersection_info(Intersection_info_container& info_container) 
     const {
 #if CGAL_ACK_DEBUG_FLAG
@@ -2480,7 +2510,7 @@ new_shear_for_intersection_info(Intersection_info_container& info_container)
                 << "<<<<<<<<<<< End of transform second curve" 
                 << std::endl;
 #endif
-            Self sh_pair(sh1,sh2,CGAL::EXCEPTION_STRATEGY);
+            Self sh_pair(kernel(),sh1,sh2,CGAL::EXCEPTION_STRATEGY);
             
 #if CGAL_ACK_DEBUG_FLAG 
             CGAL_ACK_DEBUG_PRINT << "Shear back intersection points..." 
@@ -2520,9 +2550,10 @@ new_shear_for_intersection_info(Intersection_info_container& info_container)
 
 //////////////////// create_event_slice_from_current_intersection_info
 
-template<typename AlgebraicKernel_2>
-typename Curve_pair_analysis_2<AlgebraicKernel_2>::Status_line_CPA_1 
-Curve_pair_analysis_2<AlgebraicKernel_2>::
+template<typename AlgebraicKernelWithAnalysis_2>
+typename Curve_pair_analysis_2<AlgebraicKernelWithAnalysis_2>
+    ::Status_line_CPA_1 
+Curve_pair_analysis_2<AlgebraicKernelWithAnalysis_2>::
 create_event_slice_from_current_intersection_info (size_type i) 
     const throw(CGAL::CGALi::Non_generic_position_exception){
 #if CGAL_ACK_DEBUG_FLAG
@@ -2583,8 +2614,8 @@ create_event_slice_from_current_intersection_info (size_type i)
 
 //////////////////// update_intersection_info
 
-template<typename AlgebraicKernel_2>
-void Curve_pair_analysis_2<AlgebraicKernel_2>::
+template<typename AlgebraicKernelWithAnalysis_2>
+void Curve_pair_analysis_2<AlgebraicKernelWithAnalysis_2>::
 update_intersection_info(Intersection_info_container& 
                          info_container,
                          Self& sh_pair,
@@ -2659,9 +2690,9 @@ update_intersection_info(Intersection_info_container&
 
 //////////////////// reduce_number_of_candidates_and_intersections_to
 
-template<typename AlgebraicKernel_2>
-typename Curve_pair_analysis_2<AlgebraicKernel_2>::size_type
-Curve_pair_analysis_2<AlgebraicKernel_2>::
+template<typename AlgebraicKernelWithAnalysis_2>
+typename Curve_pair_analysis_2<AlgebraicKernelWithAnalysis_2>::size_type
+Curve_pair_analysis_2<AlgebraicKernelWithAnalysis_2>::
 reduce_number_of_candidates_and_intersections_to(size_type n,
                                                  Status_line_CA_1& e1,
                                                  Status_line_CA_1& e2,

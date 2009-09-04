@@ -15,7 +15,7 @@
 
 // Switches on/off tests for Sqrt-extension types
 #ifndef DO_SQRT_EXTENSION_TESTS
-#define DO_SQRT_EXTENSION_TESTS 0
+#define DO_SQRT_EXTENSION_TESTS 1
 #endif
 
 #include <CGAL/basic.h>
@@ -82,19 +82,29 @@ void test_routine() {
     typedef CGAL::Algebraic_curve_kernel_2<Algebraic_kernel_1> 
         Algebraic_kernel_2;
 #endif
+
+    Algebraic_kernel_2 kernel;
     
     typedef typename Algebraic_kernel_2::Curve_analysis_2 Curve_analysis_2;
 
     typedef typename Algebraic_kernel_2::Curve_pair_analysis_2 
         Curve_pair_analysis_2;
 
+    typename Algebraic_kernel_2::Construct_curve_2
+        construct_curve_2 
+        = kernel.construct_curve_2_object();
+
+    typename Algebraic_kernel_2::Construct_curve_pair_2
+        construct_curve_pair_2 
+        = kernel.construct_curve_pair_2_object();
+
 
     {
         Poly_2 f=from_string<Poly_2>("P[4(0,P[4(3,-1)(4,2)])(2,P[1(1,1)])(4,P[0(0,1)])]");
         Poly_2 g=from_string<Poly_2>("P[4(0,P[4(4,1)])(1,P[2(2,1)])(3,P[0(0,-1)])(4,P[0(0,2)])]");
-        Curve_analysis_2 c1(f);
-        Curve_analysis_2 c2(g);
-        Curve_pair_analysis_2 curve_pair(c1,c2);
+        Curve_analysis_2 c1=construct_curve_2(f);
+        Curve_analysis_2 c2=construct_curve_2(g);
+        Curve_pair_analysis_2 curve_pair=construct_curve_pair_2(c1,c2);
         assert(curve_pair.number_of_status_lines_with_event()==10);
         typedef typename Curve_pair_analysis_2::Status_line_1 Status_line_1;
 #if CGAL_ACK_USE_EXACUS
@@ -456,9 +466,10 @@ void test_routine() {
     {
         Poly_2 f=from_string<Poly_2>("P[4(0,P[1(0,1)(1,1)])(4,P[0(0,-1)])]");
         Poly_2 g=from_string<Poly_2>("P[2(0,P[2(0,-5)(2,6)])(2,P[0(0,4)])]");
-        Curve_analysis_2 ca1(f), ca2(g);
+        Curve_analysis_2 ca1=construct_curve_2(f), 
+            ca2=construct_curve_2(g);
 
-        Curve_pair_analysis_2 curve_pair(ca1,ca2);
+        Curve_pair_analysis_2 curve_pair=construct_curve_pair_2(ca1,ca2);
         assert(curve_pair.number_of_status_lines_with_event()==7);
         typedef typename Curve_pair_analysis_2::Status_line_1 Status_line_1;
 #if CGAL_ACK_USE_EXACUS
@@ -692,8 +703,9 @@ void test_routine() {
     {
         Poly_2 f=from_string<Poly_2>("P[4(0,P[4(3,-1)(4,2)])(2,P[1(1,1)])(4,P[0(0,1)])]");
         Poly_2 g=from_string<Poly_2>("P[4(0,P[4(0,12)(1,-380)(2,4200)(3,-18000)(4,20000)])(2,P[1(0,-4000)(1,40000)])(4,P[0(0,160000)])]");
-        Curve_analysis_2 ca1(f), ca2(g);
-        Curve_pair_analysis_2 curve_pair(ca1,ca2);
+        Curve_analysis_2 ca1=construct_curve_2(f), 
+            ca2=construct_curve_2(g);
+        Curve_pair_analysis_2 curve_pair=construct_curve_pair_2(ca1,ca2);
         //assert(curve_pair.number_of_status_lines_with_event()==11);
     
     
@@ -712,8 +724,13 @@ void test_routine() {
     
         typedef CGAL::CGALi::Algebraic_real_quadratic_refinement_rep_bfi
             < Coefficient, Rational > Rep_class;
-        typedef CGAL::CGALi::Bitstream_descartes< Poly_sqrt1, 
-                                                  Rational > Isolator;
+        typedef CGAL::CGALi::Bitstream_descartes
+            < CGAL::CGALi::Bitstream_descartes_rndl_tree_traits
+              < CGAL::CGALi::Bitstream_coefficient_kernel<Coefficient> 
+              > 
+            > 
+            Isolator;
+
         typedef CGAL::Algebraic_kernel_1< Coefficient,Rational,
                                           Rep_class, Isolator > 
             Algebraic_kernel_1_with_sqrt;
@@ -729,9 +746,21 @@ void test_routine() {
         typedef typename Algebraic_kernel_2::Curve_pair_analysis_2 
             Curve_pair_analysis_2;
         
-        Curve_analysis_2 c1(f), c2(g);
+        Algebraic_kernel_2 kernel;
 
-        Curve_pair_analysis_2 curve_pair(c1,c2);
+        typename Algebraic_kernel_2::Construct_curve_2
+            construct_curve_2 
+            = kernel.construct_curve_2_object();
+        
+        typename Algebraic_kernel_2::Construct_curve_pair_2
+            construct_curve_pair_2 
+            = kernel.construct_curve_pair_2_object();
+        
+        
+        Curve_analysis_2 c1=construct_curve_2(f), 
+            c2=construct_curve_2(g);
+
+        Curve_pair_analysis_2 curve_pair=construct_curve_pair_2(c1,c2);
         assert(curve_pair.number_of_status_lines_with_event()==10);
         typedef typename Curve_pair_analysis_2::Status_line_1 Status_line_1;
         typedef CGAL::CGALi::Event_indices<int> Triple;

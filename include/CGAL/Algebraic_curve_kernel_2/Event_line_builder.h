@@ -43,28 +43,30 @@ namespace CGALi {
  * documentation of this routines for further information.
  *
  */
-template<typename CurveAnalysis_2>
+template<typename AlgebraicKernelWithAnalysis_2>
 class Event_line_builder {
 
 public:
 
-    // \brief The curve class.
-    typedef CurveAnalysis_2 Curve_analysis_2;
+    typedef AlgebraicKernelWithAnalysis_2 Algebraic_kernel_with_analysis_2;
 
-    typedef typename CurveAnalysis_2::Algebraic_kernel_2
-        Algebraic_kernel_2;
+    // \brief The curve class.
+    typedef typename Algebraic_kernel_with_analysis_2::Curve_analysis_2 Curve_analysis_2;
+
 
     // \brief Type of the coefficients of the input polynomial
-    typedef typename Algebraic_kernel_2::Coefficient Coefficient;
+    typedef typename Algebraic_kernel_with_analysis_2::Coefficient Coefficient;
 
     // \brief The type for rational x-coordinates and for interval boundaries
-    typedef typename Algebraic_kernel_2::Bound Bound;
+    typedef typename Algebraic_kernel_with_analysis_2::Bound Bound;
 
     // \brief Univariate polynomials
-    typedef typename Algebraic_kernel_2::Polynomial_1 Polynomial_1;
+    typedef typename Algebraic_kernel_with_analysis_2::Polynomial_1 
+        Polynomial_1;
 
     // \brief Bivariate polynomials
-    typedef typename Algebraic_kernel_2::Polynomial_2 Polynomial_2;
+    typedef typename Algebraic_kernel_with_analysis_2::Polynomial_2 
+        Polynomial_2;
 
     // \brief Rational polynomials
     typedef typename
@@ -97,10 +99,11 @@ public:
      * See \c NiX_resultant_matrix  for 
      * more details about Sturm-Habicht sequences.
      */
-    Event_line_builder(Curve_analysis_2 curve,
+    Event_line_builder(Algebraic_kernel_with_analysis_2* kernel,
+                       Curve_analysis_2 curve,
                        Polynomial_2 polynomial)
         throw(CGALi::Zero_resultant_exception<Polynomial_2>) 
-        : curve(curve), polynomial(polynomial)
+        : _m_kernel(kernel), curve(curve), polynomial(polynomial)
     {}
 
 
@@ -217,14 +220,19 @@ public:
                 (std::make_pair(0,0),std::make_pair(0,0));
 
 #if !CGAL_ACK_SHEAR_ALL_NOT_Y_REGULAR_CURVES
-            if(alpha.is_root_of(CGAL::leading_coefficient(polynomial))) {
+            if(kernel()->is_zero_at_1_object() 
+               (CGAL::leading_coefficient(polynomial),alpha)) {
                 int n = CGAL::degree(polynomial,1);
-                CGAL_assertion(! alpha.is_root_of(polynomial[n-1]));
+                CGAL_assertion(! kernel()->is_zero_at_1_object()
+                                 (CGAL::get_coefficient(polynomial,n-1),
+                                  alpha));
                 CGAL::Sign asym_sign 
-                    = CGAL::CGALi::estimate_sign_at
-                        (alpha,polynomial[n-1],0)*
-                    CGAL::CGALi::estimate_sign_at
-                        (alpha,CGAL::diff(polynomial[n]),0);
+                    = kernel()->sign_at_1_object()
+                        (CGAL::get_coefficient(polynomial,n-1),alpha)
+                    * kernel()->sign_at_1_object()
+                        (CGAL::differentiate
+                          (CGAL::get_coefficient(polynomial,n)),alpha);
+                CGAL_assertion(asym_sign!=CGAL::ZERO);
                 if(asym_sign==CGAL::SMALLER) {
                     vl._set_number_of_branches_approaching_infinity
                         (std::make_pair(1,0),std::make_pair(0,1));
@@ -253,6 +261,10 @@ public:
 
 protected:
 
+    Algebraic_kernel_with_analysis_2* kernel() const {
+        return this->_m_kernel;
+    }
+
     /*!
      * Typedef for the Interval type
      */
@@ -262,8 +274,13 @@ protected:
     typedef typename Curve_analysis_2::Bitstream_descartes 
     Bitstream_descartes;
 
+    typedef typename Curve_analysis_2::Bitstream_coefficient_kernel 
+    Bitstream_coefficient_kernel;    
+
     typedef typename Curve_analysis_2::Bitstream_traits 
     Bitstream_traits;
+
+    Algebraic_kernel_with_analysis_2* _m_kernel;
 
     //! The curve whose Status_line_1s are built.
     Curve_analysis_2 curve;
@@ -312,12 +329,15 @@ protected:
 
         typedef std::vector<VT> A_vector;
         A_vector spec_stha(0);
+
 /*
 #if CGAL_ACK_DEBUG_FLAG
         CGAL_ACK_DEBUG_PRINT << seq_size << std::endl;
 #endif
 */
+
         CGAL_assertion(spec_stha.size()==0);
+
 /*
 #if CGAL_ACK_DEBUG_FLAG
         CGAL_ACK_DEBUG_PRINT << seq_size << " elements to consider" 
@@ -328,14 +348,15 @@ protected:
         for(int i=0;i<start_i;i++) {
             spec_stha.push_back(VT(0));
         }
-/*
+
 #if CGAL_ACK_DEBUG_FLAG
         CGAL_ACK_DEBUG_PRINT << "mk.." << std::flush;
 #endif
-*/
+
         Input_iterator seq_it = seq_begin;
         std::advance(seq_it,start_i);
         for(int i=start_i;i< seq_size ;i++,seq_it++ ) {
+
 /*
 #if CGAL_ACK_DEBUG_FLAG
             CGAL_ACK_DEBUG_PRINT << spec_stha.size() << " " << i << std::endl;
@@ -343,6 +364,7 @@ protected:
             CGAL_ACK_DEBUG_PRINT << "\nTry interval arithmetic.." << std::endl;
 #endif
 */
+
             CGAL::Sign ia_try
                 =estimate_sign_at(alpha_ref,
                                   *seq_it,
@@ -359,6 +381,7 @@ protected:
 #endif
                 }
                 spec_stha.push_back(ia_try);
+
 /*
 #if CGAL_ACK_DEBUG_FLAG
                 CGAL_ACK_DEBUG_PRINT << "successful" << std::endl;
@@ -366,14 +389,17 @@ protected:
 */
                 continue;
             }
-/*
+
 #if CGAL_ACK_DEBUG_FLAG
             CGAL_ACK_DEBUG_PRINT << "no success" << std::endl;
             CGAL_ACK_DEBUG_PRINT << "Is root of..." << std::flush;
-            CGAL_ACK_DEBUG_PRINT << "s." << std::flush;
+            CGAL_ACK_DEBUG_PRINT << "s." << std::endl;
+            CGAL_ACK_DEBUG_PRINT << "pol=" << *seq_it << std::endl;
+            CGAL_ACK_DEBUG_PRINT << "alpha=" << alpha.polynomial() << std::endl;
+
 #endif
-*/
-            bool root_of = CGAL::CGALi::is_root_of(alpha,*seq_it);
+
+            bool root_of = kernel()->is_zero_at_1_object()(*seq_it,alpha);
 /*
 #if CGAL_ACK_DEBUG_FLAG
             CGAL_ACK_DEBUG_PRINT << "done " 
@@ -412,7 +438,7 @@ protected:
 #endif
 */
                 VT beta
-                    =estimate_sign_at(alpha_ref,*seq_it,0);
+                    =kernel()->sign_at_1_object() (*seq_it,alpha_ref);
                 
 /*          
 #if CGAL_ACK_DEBUG_FLAG
@@ -585,7 +611,7 @@ protected:
 #endif
 */
 	
-            result = CGAL::CGALi::is_root_of(alpha,h_0);
+            result = kernel()->is_zero_at_1_object() (h_0,alpha);
         }
         else {
             Bound b = alpha.rational(),
@@ -599,7 +625,7 @@ protected:
         }
 #else
         Polynomial_1 h_0=h.evaluate_homogeneous(p,q);
-        result=CGAL::CGALi::is_root_of(alpha,h_0);
+        result= kernel()->is_zero_at_1_object() (h_0,alpha);
 #endif      
 	
         return result;
@@ -632,15 +658,18 @@ protected:
 						      int arcs_left,
 						      int arcs_right) 
         throw(CGAL::CGALi::Non_generic_position_exception) {
-
-        Bitstream_traits traits(alpha);
+        
+        
+        Bitstream_traits traits(Bitstream_coefficient_kernel(kernel(),alpha));
 
         if(root_of_resultant) {
 #if !CGAL_ACK_SHEAR_ALL_NOT_Y_REGULAR_CURVES
-            if(alpha.is_root_of(CGAL::leading_coefficient(polynomial))) {
+            if(kernel()->is_zero_at_1_object() 
+               (CGAL::leading_coefficient(polynomial),alpha)) {
                 Polynomial_2 trunc_pol = 
                     CGAL::CGALi::poly_non_vanish_leading_term
-                        (polynomial,alpha);
+                      (kernel(),polynomial,alpha);
+
                 CGAL_assertion(CGAL::degree(trunc_pol,1)+1 == 
                                CGAL::degree(polynomial,1));
                 CGAL::CGALi::Square_free_descartes_tag t;
@@ -747,21 +776,22 @@ protected:
         typedef typename CGAL::Get_arithmetic_kernel<Algebraic_real_1>
             ::Arithmetic_kernel::Bigfloat_interval BFI;
       
-        CGAL::CGALi::Bitstream_coefficient_kernel_at_alpha<Polynomial_1,
-            Algebraic_real_1> alpha_kernel(alpha);
+        CGAL::CGALi::Bitstream_coefficient_kernel_at_alpha
+            <Algebraic_kernel_with_analysis_2> 
+            alpha_kernel(kernel(),alpha);
 
         int c = this->get_index_of_multiple_root(bit_des);
 
         long old_prec = CGAL::get_precision(BFI());
 
-        std::cout << "p=" << p <<  std::endl;
-        std::cout << "q=" << q <<  std::endl;
-        
+        //std::cout << "p=" << p <<  std::endl;
+        //std::cout << "q=" << q <<  std::endl;
+
         long prec=16;
 
         while(true) {
             CGAL::set_precision(BFI(),prec);
-            std::cout << "Increased to " << prec << std::endl;
+            //std::cout << "Increased to " << prec << std::endl;
             BFI isol_iv 
                 = CGAL::hull(CGAL::convert_to_bfi(bit_des.left_bound(c)),
                              CGAL::convert_to_bfi(bit_des.right_bound(c)));
@@ -769,10 +799,10 @@ protected:
             if(! CGAL::in_zero(q_iv)) {
                 BFI p_iv = alpha_kernel.convert_to_bfi_object()(p);
                 BFI approx_iv = p_iv/q_iv;
-                std::cout << "p_iv=[" << CGAL::lower(p_iv) << "," << CGAL::upper(p_iv) << "]" << std::endl;
-                std::cout << "q_iv=[" << CGAL::lower(q_iv) << "," << CGAL::upper(q_iv) << "]"  << std::endl;
-                std::cout << "isol_iv=[" << CGAL::lower(isol_iv) << "," << CGAL::upper(isol_iv) << "]" << std::endl;
-                std::cout << "approx_iv=[" << CGAL::lower(approx_iv) << "," << CGAL::upper(approx_iv) << "]"  << std::endl;
+                //std::cout << "p_iv=[" << CGAL::lower(p_iv) << "," << CGAL::upper(p_iv) << "]" << std::endl;
+                //std::cout << "q_iv=[" << CGAL::lower(q_iv) << "," << CGAL::upper(q_iv) << "]"  << std::endl;
+                //std::cout << "isol_iv=[" << CGAL::lower(isol_iv) << "," << CGAL::upper(isol_iv) << "]" << std::endl;
+                //std::cout << "approx_iv=[" << CGAL::lower(approx_iv) << "," << CGAL::upper(approx_iv) << "]"  << std::endl;
                 if(CGAL::subset(approx_iv,isol_iv)) {
                     break;
                 }

@@ -31,6 +31,7 @@ CGAL_BEGIN_NAMESPACE
 
 namespace CGALi {
 
+
 //! \brief this class defines hashed map container with LRU capabilities,
 //!
 //! stores pair of \c KeyType_ and \c ValueType_. Before adding to 
@@ -39,7 +40,8 @@ namespace CGALi {
 //! values of \c KeyType_, \c Creator_ is a mapping from \c KeyType_ to
 //! \c ValueType_, \c Hash_ is function object which returns hash values
 //! for the keys 
-template <class KeyType_, class ValueType_,
+template <
+    class KeyType_, class ValueType_,
     class Hash_ = boost::hash<KeyType_>,
     class Pred_ = std::equal_to<KeyType_>,
     class Canonicalizer_ = CGAL::Identity<KeyType_>,
@@ -65,15 +67,7 @@ public:
     
     //! hashed map data type
     typedef std::pair<Key_type, Value_type> Data_type;
-    //! myself
-    typedef LRU_hashed_map<Key_type, Value_type, Hash, Pred, Canonicalizer, 
-        Creator> Self;
-        
-    //!@}
-private:
-    //!\name private members
-    //!@{
-    
+
     // try boost::identity ?
     typedef boost::multi_index::multi_index_container<
         Data_type,
@@ -83,6 +77,14 @@ private:
                 BOOST_MULTI_INDEX_MEMBER(Data_type, Key_type, first),
                     Hash, Pred > > > Hashed_map;
     
+
+        
+    //!@}
+protected:
+    //!\name private members
+    //!@{
+
+
     //! hashed map instance
     mutable Hashed_map _m_hashed_map;
     
@@ -120,11 +122,11 @@ public:
     //!@{
     
     //! \brief default constructor
-    LRU_hashed_map(unsigned max_size = -1u) : _m_hashed_map(),
-            _m_max_size(max_size) 
+    LRU_hashed_map(unsigned max_size = -1u) : 
+        _m_hashed_map(),_m_max_size(max_size) 
     {  }
     
-    ~LRU_hashed_map()
+    virtual ~LRU_hashed_map()
     {  }
     
     /*! \brief implements cache-like behaviour of the map
@@ -156,8 +158,10 @@ public:
         typename boost::multi_index::nth_index<Hashed_map,1>::type& 
         idx = _m_hashed_map.get<1>();
         Hashed_iterator it = idx.find(key);
-        if(it == idx.end()) 
+        if(it == idx.end()) {
             return Find_result(it, false);
+        }
+
         // otherwise put the accessed element on the top
         _m_hashed_map.relocate(_m_hashed_map.begin(), 
                 _m_hashed_map.project<0>(it));
@@ -206,7 +210,117 @@ public:
     { return _m_hashed_map.end(); }
    
     //!@}
-}; // class LRU_hashed_map
+}; // class LRU_hashed_map_with_kernel
+
+
+//! \brief this class defines hashed map container with LRU capabilities,
+//!
+//! stores pair of \c KeyType_ and \c ValueType_. Before adding to 
+//! the map the input is normialized using \c Canonicalizer_
+//! \c Pred_ is binary predicate acting as an equivalence relation on 
+//! values of \c KeyType_, \c Creator_ is a mapping from \c KeyType_ to
+//! \c ValueType_, \c Hash_ is function object which returns hash values
+//! for the keys 
+template <
+    class AlgebraicKernelWithAnalysis_2,
+    class KeyType_, class ValueType_,
+    class Hash_ = boost::hash<KeyType_>,
+    class Pred_ = std::equal_to<KeyType_>,
+    class Canonicalizer_ = CGAL::Identity<KeyType_>,
+    class Creator_ = CGAL::Creator_1<KeyType_, ValueType_> >
+class LRU_hashed_map_with_kernel 
+  : public LRU_hashed_map<KeyType_,ValueType_,Hash_,
+                          Pred_,Canonicalizer_,Creator_>
+{
+
+public:
+
+    typedef AlgebraicKernelWithAnalysis_2 Algebraic_kernel_with_analysis_2;
+
+    typedef LRU_hashed_map<KeyType_,ValueType_,
+                           Hash_,Pred_,Canonicalizer_,Creator_> Base;
+    
+    //! this instance's first argument
+    typedef typename Base::Key_type Key_type;
+    //! this instance's second argument
+    typedef typename Base::Value_type Value_type;
+    //! hash function
+    typedef typename Base::Hash Hash;
+    //! equality predicate
+    typedef typename Base::Pred Pred;
+    //! input data canonicalizer
+    typedef typename Base::Canonicalizer Canonicalizer;
+    //! mapping \c KeyType_ -> \c ValueType_
+    typedef typename Base::Creator Creator;
+    
+    //! hashed map data type
+    typedef typename Base::Data_type Data_type;
+
+    typedef typename Base::Hashed_map Hashed_map;
+
+
+protected:
+    //!\name private members
+    //!@{
+
+    
+    Algebraic_kernel_with_analysis_2* _m_kernel;
+
+
+public:
+
+    //!\name iterator types
+    //!@{
+    
+    //! hashed index iterator 
+    typedef typename Base::Hashed_iterator Hashed_iterator;
+    
+    //! sequenced index iterator 
+    typedef typename Base::Sequenced_iterator Sequenced_iterator;
+        
+    //! sequenced index const iterator 
+    typedef typename Base::Sequenced_const_iterator Sequenced_const_iterator;
+
+    //! result type of \c find operation: a pair of iterator pointing to
+    //! \c Data_type and a boolean indicating whether an element with
+    //! specified key was found
+    typedef typename Base::Find_result Find_result;
+    
+
+    //!\name constructors and access functions
+    //!@{
+    
+    //! \brief default constructor
+    LRU_hashed_map_with_kernel(Algebraic_kernel_with_analysis_2* kernel,
+                               unsigned max_size = -1u) : 
+        Base(max_size),
+        _m_kernel(kernel)
+    {  }
+    
+    ~LRU_hashed_map_with_kernel()
+    {  }
+    
+    /*! \brief implements cache-like behaviour of the map
+    *
+    *  If the object is not in the map, it is constructed using \c Creator
+    *  and added to the map
+    */
+    Value_type operator()(const Key_type& key_) const 
+    {
+        Canonicalizer canonicalize;
+        Key_type key = canonicalize(key_);
+        
+        Find_result p = this->find(key);
+        if(!p.second) {
+            Creator create(_m_kernel);
+            Value_type val = create(key);
+            insert(Data_type(key, val));
+            return val;
+        }
+        return (p.first)->second;
+    }
+
+}; // class LRU_hashed_map_with_kernel
 
 /*! \brief
  *  returns representation id as a hash value

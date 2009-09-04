@@ -328,7 +328,7 @@ Benchmark_result do_benchmark(std::string filename, int n_samples = 5)
     file.close();       
     
     result.number_of_polys = n_polys;    
-    result.degree_of_polys = curves.front().polynomial_2().degree();
+    result.degree_of_polys = CGAL::degree(curves.front().polynomial_2());
     
     Max_bit_size<Integer> max_bit_size;
     double total_bits = 0.0;

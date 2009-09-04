@@ -28,7 +28,7 @@ namespace CGALi {
  * Sign Rule
 */
 template <class Polynomial, class Field>
-int descartes(Polynomial& p, Field& low,Field& high){
+int descartes(Polynomial& p, const Field& low,const Field& high){
 // decompose interval length and upper bound
     CGAL_precondition(low<high);
     typedef typename Polynomial::NT Coefficient;
@@ -36,10 +36,10 @@ int descartes(Polynomial& p, Field& low,Field& high){
     typedef typename Fraction_traits<Field>::Denominator_type Denominator;
   
     typename Fraction_traits<Field>::Decompose decomp;
-    typename Algebraic_structure_traits<Field>::Simplify simplify;  
+    //typename Algebraic_structure_traits<Field>::Simplify simplify;  
 
-    simplify(low);
-    simplify(high);
+    //simplify(low);
+    //simplify(high);
 
     Numerator num_high, num_low_sub_high;
     Denominator den_high, den_low_sub_high;
@@ -121,6 +121,11 @@ bool refine_zero_against(Field& low, Field& high, Polynomial p, Polynomial q) {
                     gcd_pq = Polynomial(1);
                 }
             }
+            std::cout << CGAL::to_double(low) << " " 
+                      << CGAL::to_double(high) << " " 
+                      << CGAL::degree(gcd_pq) << " "
+                      << gcd_pq
+                      << std::endl;
             if (CGAL::degree(gcd_pq) > 0 // constant poly cannot change sign
             && gcd_pq.sign_at(low) != gcd_pq.sign_at(high)) {
                 // q has exactly one zero in ]low,high[
@@ -155,8 +160,11 @@ bool refine_zero_against(Field& low, Field& high, Polynomial p, Polynomial q) {
 template < class Polynomial, class Field >
 static bool strong_refine_zero_against(Field& low, Field& high,
                                        Polynomial p, Polynomial q){
-
+    std::cout << "comp has_common_root" << std::endl;
+    
     bool has_common_root = refine_zero_against(low,high,p,q);
+
+    std::cout << "done, " << has_common_root << std::endl;
 
     CGAL::Sign sign_p_low = p.sign_at(low);
     CGAL::Sign sign_p_high = p.sign_at(high);

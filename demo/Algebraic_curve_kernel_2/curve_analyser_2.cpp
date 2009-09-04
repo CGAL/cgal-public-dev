@@ -278,6 +278,7 @@ int main(int argc,char** argv) {
         ::Algebraic_curve_kernel_with_qir_and_descartes_2
         Algebraic_curve_kernel_2;
 
+
     typedef Algebraic_curve_kernel_2::Curve_analysis_2 Curve_analysis_2;
     typedef Algebraic_curve_kernel_2::Polynomial_2 Polynomial_2;
     typedef Algebraic_curve_kernel_2::Polynomial_1 Polynomial_1;
@@ -376,7 +377,11 @@ int main(int argc,char** argv) {
 
         overall_timer.start();
         std::cout << "*************** Analysis starts ***************" << std::endl;
-        Curve_analysis_2 algebraic_curve(f);
+        
+        Algebraic_curve_kernel_2 kernel;
+
+        Curve_analysis_2 algebraic_curve 
+            = kernel.construct_curve_2_object()(f);
 
         std::cout << "Now refine..." << std::flush;
      

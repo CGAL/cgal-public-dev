@@ -55,7 +55,7 @@ class Filtered_algebraic_curve_kernel_2
 // for each predicate functor defines a member function returning an instance
 // of this predicate
 #define CGAL_Algebraic_Kernel_pred(Y,Z) \
-    Y Z() const { return Y(); }
+    Y Z() const { return Y((const Algebraic_kernel_2*)this); }
 
 // the same for construction functors
 #define CGAL_Algebraic_Kernel_cons(Y,Z) CGAL_Algebraic_Kernel_pred(Y,Z)
@@ -94,6 +94,8 @@ public:
 #else
     typedef Filtered_algebraic_curve_kernel_2 < Algebraic_kernel_1 > Self;
 #endif
+
+    typedef Self Algebraic_kernel_2;
     
     //! type of coefficient
     typedef typename Base::Coefficient Coefficient;
@@ -132,10 +134,12 @@ public:
     
 protected:
 
-    struct Approximate_compare_y_2 :
+    class Approximate_compare_y_2 :
         public std::binary_function< Xy_coordinate_2, Xy_coordinate_2, 
                 Comparison_result > {
         
+    public:
+
         Comparison_result operator()(const Xy_coordinate_2& xy1, 
                                      const Xy_coordinate_2& xy2) const {
 
@@ -149,6 +153,7 @@ protected:
             }
             return CGAL::EQUAL;
         }
+        
     };
     CGAL_Algebraic_Kernel_pred(Approximate_compare_y_2, 
                                approximate_compare_y_2_object);
@@ -156,14 +161,15 @@ protected:
 public:
 
     //! Filtered comparison of y-coordinates of two points
-    struct Compare_y_2 :
+    class Compare_y_2 :
         public Base::Compare_y_2 {
+
+    public:
 
         typedef typename Base::Compare_y_2 Base;
         
-        Compare_y_2(Self *kernel) :
-            Base(kernel) {
-        }
+        Compare_y_2(const Algebraic_kernel_2* kernel) : Base(kernel)
+        {}
 
         Comparison_result operator()(const Xy_coordinate_2& xy1, 
                                      const Xy_coordinate_2& xy2) const {
@@ -180,15 +186,17 @@ public:
     }
 
     //! Filtered lexicographic comparison of two points
-    struct Compare_xy_2 :
+    class Compare_xy_2 :
           public Base::Compare_xy_2 {
 
-        typedef typename Base::Compare_xy_2 Base;
 
-        Compare_xy_2(Self *kernel) :
-            Base(kernel) {
-        }
+    public:
+
+        typedef typename Base::Compare_xy_2 Base;
         
+        Compare_xy_2(const Algebraic_kernel_2* kernel) : Base(kernel)
+        {}
+
         Comparison_result operator()(const Xy_coordinate_2& xy1, 
                                      const Xy_coordinate_2& xy2, 
                                      bool equal_x = false) const {
@@ -212,10 +220,15 @@ public:
     }
 
     //! Filtered sign computation of polynomial and point
-    struct Sign_at_2 :
+    class Sign_at_2 :
         public Base::Sign_at_2 {
 
+    public:
+
         typedef typename Base::Sign_at_2 Base;
+
+        Sign_at_2(const Algebraic_kernel_2* kernel) : Base(kernel)
+        {}
 
         typedef typename Xy_coordinate_2::Bound_interval Interval;
         
