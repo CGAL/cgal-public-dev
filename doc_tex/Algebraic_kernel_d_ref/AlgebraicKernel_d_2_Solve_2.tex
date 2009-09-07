@@ -43,49 +43,6 @@ type \ccc{std::pair<AlgebraicKernel_d_2::Algebraic_real_2, AlgebraicKernel_d_2::
 }
 
 \ccSeeAlso
-\ccRefIdfierPage{AlgebraicKernel_d_2::AlgebraicReal_2}\\
 
-\end{ccRefFunctionObjectConcept}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-\begin{ccRefFunctionObjectConcept}{AlgebraicKernel_d_2::Solve_2}
-
-\ccDefinition
-Computes the real solutions of a bivariate polynomial system.
-
-\ccRefines 
-\ccc{Assignable}
-
-\ccCreationVariable{fo}
-
-\ccOperations
-A model \ccVar\ of this type must provide:
-
-\ccThree{OutputIterator}{fo(first_argument_type,++}{}
-\ccMethod{template < class OutputIterator >
-    OutputIterator
-    operator()(const AlgebraicKernel_d_2::Polynomial_2 & f,const AlgebraicKernel_d_2::Polynomial_2 & f,
-	     const second_argument_type & p2,
-	     OutputIterator res);}
-{Copies in the output iterator the common roots of $p_2$ 
-and $p_2$ with their multiplicity, as objects of type
-\ccc{std::pair<AlgebraicKernel_d_2::Algebraic_real_2, unsigned int>}.
-\ccPrecond{$p_2$ and $p_2$ are square-free and the set of solutions of 
-the system is 0-dimensional (i.e., the two polynomials must be
-coprime).}}
 
 \end{ccRefFunctionObjectConcept}
