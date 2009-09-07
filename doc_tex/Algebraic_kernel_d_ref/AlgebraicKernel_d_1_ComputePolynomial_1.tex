@@ -1,7 +1,11 @@
 \begin{ccRefFunctionObjectConcept}{AlgebraicKernel_d_1::ComputePolynomial_1}
 
 \ccDefinition
-A model for \ccRefName\ must provide:
+Computes a square free univariate polynomial $p$, such that the given 
+\ccc{AlgebraicKernel_d_1::Algebraic_real_1} is a root of $p$. 
+
+\ccRefines 
+\ccc{AdaptableUnaryFunction}  
  
 \ccTypes
 \ccThree{typedef AlgebraicKernel_d_1::Polynomial_1}{argument_type+}{}
@@ -11,16 +15,14 @@ A model for \ccRefName\ must provide:
 
 \ccOperations
 \ccCreationVariable{fo}
-\ccThree{xxxxxxxxxxx}{xxxxxxxxxxxxxxxxxxxxxxxxxxxx}{}
+\ccThree{xxxxxxxxxxx}{xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx}{}
 
 \ccMethod{result_type operator()(argument_type x);}
 {Computes a square free polynomial $p$, such that $x$ is a real root of $p$.}
 
-\ccRefines 
-\ccc{AdaptableUnaryFunction}  
 
 %\ccHasModels
 \ccSeeAlso
-\ccRefIdfierPage{AlgebraicKernel_d_1::ComputeIsolatingInterval_1}\\
+\ccRefIdfierPage{AlgebraicKernel_d_1::Isolate_1}\\
 
 \end{ccRefFunctionObjectConcept}

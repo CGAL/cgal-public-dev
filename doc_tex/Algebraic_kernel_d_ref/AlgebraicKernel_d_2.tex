@@ -18,30 +18,40 @@ for solving and handling bivariate polynomial systems of general degree $d$.
 \ccTypes
 \ccSetTwoColumns{xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx}{}
 
-\ccNestedType{Polynomial_2}{
-A model of \ccc{Polynomial_2}, 
-where \ccc{CGAL::Polynomial_traits_d<Polynomial_2>::Innermost_coefficient}
-is \ccc{AlgebraicKernel_d_1::Coefficient} 
-} 
 
-\ccNestedType{Algebraic_real_2}{A model of \ccc{AlgebraicKernel_d_2::AlgebraicReal_2}, for solutions of systems
-of two bivariate polynomials of type \ccc{Polynomial_2}.}
+\ccNestedType{Polynomial_2}{
+A bivariate polynomial that is a model of \ccc{Polynomial_d}, 
+where \ccc{CGAL::Polynomial_traits_d<Polynomial_2>::Innermost_coefficient}
+is \ccc{AlgebraicKernel_d_1::Coefficient}
+}
+
+\ccNestedType{Algebraic_real_2}{ 
+A type that is used to represent real solutions of bivariate polynomial systems.
+A model of \ccc{DefaultConstructible}, \ccc{CopyConstructible} and 
+\ccc{Assignable}.}
+
+
+
+
+
 
 \ccHeading{Functors}
 \ccNestedType{Construct_algebraic_real_2}{A model of \ccc{AlgebraicKernel_d_2::ConstructAlgebraicReal_2}}\ccGlue
 \ccNestedType{Compute_polynomial_x_2}{A model of \ccc{AlgebraicKernel_d_2::ComputePolynomialX_2}}\ccGlue
 \ccNestedType{Compute_polynomial_y_2}{A model of \ccc{AlgebraicKernel_d_2::ComputePolynomialY_2}}\ccGlue
-\ccNestedType{Compute_isolating_interval_x_2}{A model of \ccc{AlgebraicKernel_d_2::ComputeIsolatingIntervalX_2}}\ccGlue
-\ccNestedType{Compute_isolating_interval_y_2}{A model of \ccc{AlgebraicKernel_d_2::ComputeIsolatingIntervalY_2}}\ccGlue
+\ccNestedType{Isolate_2}{A model of \ccc{AlgebraicKernel_d_2::Isolate_2}}\ccGlue
+\ccNestedType{Isolate_x_2}{A model of \ccc{AlgebraicKernel_d_2::IsolateX_2}}\ccGlue
+\ccNestedType{Isolate_y_2}{A model of \ccc{AlgebraicKernel_d_2::IsolateY_2}}\ccGlue
 \ccNestedType{Is_square_free_2}{A model of \ccc{AlgebraicKernel_d_2::IsSquareFree_2}.}
 \ccNestedType{Make_square_free_2}{A model of \ccc{AlgebraicKernel_d_2::MakeSquareFree_2}.}
 \ccNestedType{Square_free_factorize_2}{A model of \ccc{AlgebraicKernel_d_2::SquareFreeFactorize_2}.}
 \ccNestedType{Is_coprime_2}{A model of \ccc{AlgebraicKernel_d_2::IsCoprime_2}.}
 \ccNestedType{Make_coprime_2}{A model of \ccc{AlgebraicKernel_d_2::MakeCoprime_2}.}
 \ccNestedType{Solve_2}{A model of \ccc{AlgebraicKernel_d_2::Solve_2}.} 
+\ccNestedType{Number_of_solutions_2}{A model of \ccc{AlgebraicKernel_d_2::NumberOfSolutions_2}}\ccGlue
 \ccNestedType{Sign_at_2}{A model of \ccc{AlgebraicKernel_d_2::SignAt_2}.}
-\ccNestedType{Get_x_2}{A model of \ccc{AlgebraicKernel_d_2::GetX_2}.}
-\ccNestedType{Get_y_2}{A model of \ccc{AlgebraicKernel_d_2::GetY_2}.} 
+\ccNestedType{Compute_x_2}{A model of \ccc{AlgebraicKernel_d_2::ComputeX_2}.}
+\ccNestedType{Compute_y_2}{A model of \ccc{AlgebraicKernel_d_2::ComputeY_2}.} 
 \ccNestedType{Compare_x_2}{A model of \ccc{AlgebraicKernel_d_2::CompareX_2}.}
 \ccNestedType{Compare_y_2}{A model of \ccc{AlgebraicKernel_d_2::CompareY_2}.}
 \ccNestedType{Compare_xy_2}{A model of \ccc{AlgebraicKernel_d_2::CompareXY_2}.}

@@ -2,21 +2,13 @@
 
 \ccDefinition
 
-\ccRefName\ is a model of \ccc{RealEmbeddable} that is dense in \R. 
+\ccRefName\ is a number type that is dense in \R. 
 It is  used to represent upper or lower bounds of algebraic reals. 
 
-\ccRefName\ is \ccc{ExplicitInteroperable} with 
-\ccc{AlgebraicKernel_d_1::AlgebraicReal_1},
-where \ccc{AlgebraicKernel_d_1::AlgebraicReal_1} is the coercion type. 
-
 \ccRefines
-\ccc{DefaultConstructible}\\
-\ccc{CopyConstructible}\\
-\ccc{Assignable}\\
-\ccc{FromIntConstructible}\\
+\ccc{IntegralDomain}\\
 \ccc{RealEmbeddable}\\
-\ccc{ExplicitInteroperable} with \ccc{int}\\
-\ccc{ExplicitInteroperable} with \ccc{AlgebraicKernel_d_1::AlgebraicReal_1}\\
+\ccc{ExplicitInteroperable} with \ccc{AlgebraicKernel_d_1::Coefficient}\\
 
 %\ccHasModels
 %\ccc{double, NiX::Algebraic_real}

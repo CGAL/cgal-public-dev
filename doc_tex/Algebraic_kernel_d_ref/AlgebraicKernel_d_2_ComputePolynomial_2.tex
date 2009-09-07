@@ -1,8 +1,12 @@
 \begin{ccRefFunctionObjectConcept}{AlgebraicKernel_d_2::ComputePolynomialX_2}
 
 \ccDefinition
-A model for \ccRefName\ must provide:
+Computes a univariate square free polynomial $p$, such that the first coordinate of 
+a given \ccc{AlgebraicKernel_d_2::Algebraic_real_2} is a real root of $p$.
  
+\ccRefines 
+\ccc{AdaptableUnaryFunction}  
+
 \ccTypes
 \ccTypedef{typedef AlgebraicKernel_d_2::Polynomial_1 result_type;}{}
 \ccGlue
@@ -16,8 +20,6 @@ A model for \ccRefName\ must provide:
 {Computes a univariate square free polynomial $p$, such that the first 
 coordinate of $a$ is a real root of $p$.}
 
-\ccRefines 
-\ccc{AdaptableUnaryFunction}  
 
 %\ccHasModels
 \ccSeeAlso
@@ -25,12 +27,17 @@ coordinate of $a$ is a real root of $p$.}
 
 \end{ccRefFunctionObjectConcept}
 
+% ====================
 
 \begin{ccRefFunctionObjectConcept}{AlgebraicKernel_d_2::ComputePolynomialY_2}
 
 \ccDefinition
-A model for \ccRefName\ must provide:
+Computes a univariate square free polynomial $p$, such that the second coordinate of 
+a given \ccc{AlgebraicKernel_d_2::Algebraic_real_2} is a real root of $p$.
  
+\ccRefines 
+\ccc{AdaptableUnaryFunction}  
+
 \ccTypes
 \ccTypedef{typedef AlgebraicKernel_d_2::Polynomial_1 result_type;}{}
 \ccGlue
@@ -43,9 +50,6 @@ A model for \ccRefName\ must provide:
 \ccMethod{result_type operator()(argument_type a);}
 {Computes a univariate square free polynomial $p$, such that the second coordinate of $a$ 
 is a real root of $p$.}
-
-\ccRefines 
-\ccc{AdaptableUnaryFunction}  
 
 %\ccHasModels
 \ccSeeAlso

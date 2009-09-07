@@ -1,0 +1,116 @@
+\begin{ccRefFunctionObjectConcept}{AlgebraicKernel_d_2::Isolate_2}
+
+\ccDefinition
+Computes an isolating box for a given \ccc{AlgebraicKernel_d_2::Algebraic_real_2}.
+ 
+\ccRefines 
+\ccc{AdaptableFunctor}
+
+\ccTypes 
+\ccNestedType{result_type}{Type convertible to \ccc{CGAL::cpp0x::array<AlgebraicKernel_d_1::Bound, 4>}}
+
+\ccOperations
+\ccCreationVariable{fo}
+
+\ccMethod{
+result_type
+operator()( AlgebraicKernel_d_2::Algebraic_real_2 a,  AlgebraicKernel_d_2::Polynomial_2 f);}
+{The returned \ccc{CGAL::cpp0x::array} $[xl,xu,yl,yu]$ represents an open isolating box $B=(xl,xu)\times(yl,yu)$ 
+for $a$ with respect to $f$.
+\ccPostcond{ $a \in B$. } 
+\ccPostcond{ $\{ r | f(r)=0 \} \cap \overline{B} = \emptyset$.}
+}
+
+\ccMethod{
+result_type   
+operator()( 
+        AlgebraicKernel_d_2::Algebraic_real_2 a,  
+        AlgebraicKernel_d_2::Polynomial_2     f,
+        AlgebraicKernel_d_2::Polynomial_2     g);}
+{The returned \ccc{CGAL::cpp0x::array} $[xl,xu,yl,yu]$ represents an open isolating box $B=(xl,xu)\times(yl,yu)$ 
+for $a$ with respect to the common solutions of $f$ and $g$. 
+It is not necessary that $a$ is a common solution of $f$ and $g$. 
+\ccPostcond{ $a \in B$. } 
+\ccPostcond{ $\{ r | f(r)=g(r)=0 \} \cap \overline{B} = \{a\} \vee \emptyset$.}
+}  
+
+%\ccHasModels
+\ccSeeAlso
+\ccRefIdfierPage{AlgebraicKernel_d_2::IsolateX_2}\\
+\ccRefIdfierPage{AlgebraicKernel_d_2::IsolateY_2}\\
+\ccRefIdfierPage{AlgebraicKernel_d_2::ComputePolynomialX_2}\\
+\ccRefIdfierPage{AlgebraicKernel_d_2::ComputePolynomialY_2}\\
+
+\end{ccRefFunctionObjectConcept}
+
+
+
+\begin{ccRefFunctionObjectConcept}{AlgebraicKernel_d_2::IsolateX_2}
+
+\ccDefinition
+Computes an isolating interval for the first coordinate of an \ccc{AlgebraicKernel_d_2::Algebraic_real_2}
+ with respect to the real roots of a univariate polynomial.
+ 
+\ccRefines 
+\ccc{AdaptableBinaryFunction}  
+
+\ccTypes 
+\ccNestedType{result_type}{Type convertible to \ccc{CGAL::cpp0x::array<AlgebraicKernel_d_1::Bound, 4>}}
+
+\ccTypes
+\ccTypedef{typedef std::pair<AlgebraicKernel_d_2::Bound,AlgebraicKernel_d_2::Bound> result_type;}{}
+\ccTypedef{typedef AlgebraicKernel_d_2::Algebraic_real_2 first_argument_type;}{}
+\ccTypedef{typedef AlgebraicKernel_d_2::Polynomial_1 second_argument_type;}{}
+
+\ccOperations
+\ccCreationVariable{fo}
+\ccThree{xxxxxxxxxxx}{xxxxxxxxxxxxxxxxxxxxxxxxxxxx}{}
+
+\ccMethod{result_type operator()(first_argument_type a, second_argument_type p);}
+{Computes an isolating interval $[l,u]$ for the first coordinate $x$ of $a$ with respect to the real 
+roots of $p$.
+\ccPostcond{$x$ is contained in the open interval $(l,u)$.}
+\ccPostcond{$p$ has no real root different from $x$ in the closed interval $[l,u]$.}
+}
+
+%\ccHasModels
+\ccSeeAlso
+\ccRefIdfierPage{AlgebraicKernel_d_2::IsolateY_2}\\
+\ccRefIdfierPage{AlgebraicKernel_d_2::ComputePolynomialX_2}\\
+\ccRefIdfierPage{AlgebraicKernel_d_2::ComputePolynomialY_2}\\
+
+\end{ccRefFunctionObjectConcept}
+
+
+\begin{ccRefFunctionObjectConcept}{AlgebraicKernel_d_2::IsolateY_2}
+
+\ccDefinition
+ Computes an isolating interval for the second coordinate of an \ccc{AlgebraicKernel_d_2::Algebraic_real_2}
+ with respect to the real roots of a univariate polynomial.
+
+\ccRefines 
+\ccc{AdaptableBinaryFunction}  
+
+\ccTypes
+\ccTypedef{typedef std::pair<AlgebraicKernel_d_2::Bound,AlgebraicKernel_d_2::Bound> result_type;}{}
+\ccTypedef{typedef AlgebraicKernel_d_2::Algebraic_real_2 first_argument_type;}{}
+\ccTypedef{typedef AlgebraicKernel_d_2::Polynomial_1 second_argument_type;}{}
+
+\ccOperations
+\ccCreationVariable{fo}
+\ccThree{xxxxxxxxxxx}{xxxxxxxxxxxxxxxxxxxxxxxxxxxx}{}
+
+\ccMethod{result_type operator()(first_argument_type a, second_argument_type p);}
+{Computes an isolating interval $[l,u]$ for the second coordinate $y$ of $a$ with respect to the real 
+roots of $p$.
+\ccPostcond{$y$ is contained in the open interval $(l,u)$.}
+\ccPostcond{$p$ has no real root different from $y$ in the closed interval $[l,u]$.}
+}
+
+%\ccHasModels
+\ccSeeAlso
+\ccRefIdfierPage{AlgebraicKernel_d_2::IsolateX_2}\\
+\ccRefIdfierPage{AlgebraicKernel_d_2::ComputePolynomialX_2}\\
+\ccRefIdfierPage{AlgebraicKernel_d_2::ComputePolynomialY_2}\\
+
+\end{ccRefFunctionObjectConcept}

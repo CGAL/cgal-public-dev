@@ -1,16 +1,74 @@
 \begin{ccRefFunctionObjectConcept}{AlgebraicKernel_d_2::Solve_2}
 
 \ccDefinition
-Computes the pairs of real roots of a system of two bivariate polynomials.
+Computes the real solutions of a bivariate polynomial system. 
+ 
+\ccRefines 
+\ccc{Assignable}
+
+\ccCreationVariable{fo}
+
+\ccOperations
+A model of this type must provide:
+
+\ccThree{OutputIterator}{fo(argument_type,++}{}
+\ccMethod{template < class OutputIterator >
+    OutputIterator
+    operator()( 
+        AlgebraicKernel_d_2::Polynomial_2 f,
+        AlgebraicKernel_d_2::Polynomial_2 g,
+	OutputIterator oit );}
+{Computes all common solutions of $f$ and $g$ with multiplicity, and copies them as objects of type 
+\ccc{std::pair<AlgebraicKernel_d_2::Algebraic_real_2, AlgebraicKernel_d_2::Multiplicity_type>} in \ccc{oit}. 
+\ccPrecond{ $f$ is square free.}
+\ccPrecond{ $g$ is square free.}
+\ccPrecond{ $f$ and $g$ are coprime.}
+} 
+
+\ccThree{OutputIterator}{fo(AlgebraicKernel_d_2::Polynomial_2,++}{}
+\ccMethod{
+template < class OutputIterator > OutputIterator  operator()(
+        AlgebraicKernel_d_2::Polynomial_2 f,
+        AlgebraicKernel_d_2::Polynomial_2 g, 
+        AlgebraicKernel_d_2::Bound xl,  
+        AlgebraicKernel_d_2::Bound xu, 
+        AlgebraicKernel_d_2::Bound yl,  
+        AlgebraicKernel_d_2::Bound yu, 
+        OutputIterator res);}
+{Computes all common solutions of $f$ and $g$ in the closed box $[xl,xu]\times[yl,yu]$, and copies them as objects of 
+type \ccc{std::pair<AlgebraicKernel_d_2::Algebraic_real_2, AlgebraicKernel_d_2::Multiplicity_type>} in \ccc{oit}. 
+\ccPrecond{ $f$ is square free.}
+\ccPrecond{ $g$ is square free.}
+\ccPrecond{ $f$ and $g$ are coprime.}
+}
+
+\ccSeeAlso
+\ccRefIdfierPage{AlgebraicKernel_d_2::AlgebraicReal_2}\\
+
+\end{ccRefFunctionObjectConcept}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+\begin{ccRefFunctionObjectConcept}{AlgebraicKernel_d_2::Solve_2}
+
+\ccDefinition
+Computes the real solutions of a bivariate polynomial system.
 
 \ccRefines 
-\ccc{AdaptableFunctor} with three arguments
-
-\ccTypes
-\ccThree{typedef AlgebraicKernel_d_2::Polynomial_2}{second_argument_type+}{}
-\ccTypedef{typedef AlgebraicKernel_d_2::Polynomial_2 first_argument_type;}{}
-\ccGlue
-\ccTypedef{typedef AlgebraicKernel_d_2::Polynomial_2 second_argument_type;}{}
+\ccc{Assignable}
 
 \ccCreationVariable{fo}
 
@@ -20,13 +78,13 @@ A model \ccVar\ of this type must provide:
 \ccThree{OutputIterator}{fo(first_argument_type,++}{}
 \ccMethod{template < class OutputIterator >
     OutputIterator
-    operator()(const first_argument_type & p1,
+    operator()(const AlgebraicKernel_d_2::Polynomial_2 & f,const AlgebraicKernel_d_2::Polynomial_2 & f,
 	     const second_argument_type & p2,
 	     OutputIterator res);}
-{Copies in the output iterator the common roots of $p_1$ 
+{Copies in the output iterator the common roots of $p_2$ 
 and $p_2$ with their multiplicity, as objects of type
 \ccc{std::pair<AlgebraicKernel_d_2::Algebraic_real_2, unsigned int>}.
-\ccPrecond{$p_1$ and $p_2$ are square-free and the set of solutions of 
+\ccPrecond{$p_2$ and $p_2$ are square-free and the set of solutions of 
 the system is 0-dimensional (i.e., the two polynomials must be
 coprime).}}
 
