@@ -23,8 +23,9 @@ A model \ccVar\ of this type must provide:
 {introduces an \ccc{AlgebraicKernel_d_1::Algebraic_real_1} initialized to $a$.} 
 \ccMethod{result_type operator()(AlgebraicKernel_d_1::Polynomial_1 p, AlgebraicKernel_d_1::size_type i);}
 {introduces an \ccc{AlgebraicKernel_d_1::Algebraic_real_1} initialized to the $i$-th real root of $p$.
+The index starts at $0$, that is, $p$ must have at least $i+1$ real roots. 
 \ccPrecond{ $p$ is square free.}
-\ccPrecond{ $p$ has at least $i$ real roots.}
+\ccPrecond{ $p$ has at least $i+1$ real roots.}
 }
 \ccMethod{result_type operator()(
         AlgebraicKernel_d_1::Polynomial_1 p, 
