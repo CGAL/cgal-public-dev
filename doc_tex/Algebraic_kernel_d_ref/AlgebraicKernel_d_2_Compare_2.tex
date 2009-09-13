@@ -1,8 +1,7 @@
 \begin{ccRefFunctionObjectConcept}{AlgebraicKernel_d_2::CompareX_2}
 
 \ccDefinition
-Compares the first coordinates of two
-\ccc{AlgebraicKernel_d_2::Algebraic_real_2}'s.
+Compares the first coordinates of two \ccc{AlgebraicKernel_d_2::Algebraic_real_2}s. 
  
 \ccRefines 
 \ccc{AdaptableBinaryFunction} 
@@ -43,8 +42,7 @@ A model \ccVar\ of this type must provide:
 \begin{ccRefFunctionObjectConcept}{AlgebraicKernel_d_2::CompareY_2}
 
 \ccDefinition
-Compares the second coordinates of two
-\ccc{AlgebraicKernel_d_2::Algebraic_real_2}'s.
+Compares the second coordinated of two \ccc{AlgebraicKernel_d_2::Algebraic_real_2}s.
  
 \ccRefines 
 \ccc{AdaptableBinaryFunction} 
@@ -67,9 +65,13 @@ A model \ccVar\ of this type must provide:
 {Compares the second coordinates of $r1$ an $r2$.}
 \ccMethod{result_type operator()(AlgebraicKernel_d_2::Algebraic_real_2 r1, int y);}
 {Compares the second coordinate of $r1$ with $y$.}
-\ccMethod{result_type operator()(AlgebraicKernel_d_2::Algebraic_real_2 r1, AlgebraicKernel_d_2::Bound y);}
+\ccMethod{result_type operator()(
+        AlgebraicKernel_d_2::Algebraic_real_2 r1, 
+        AlgebraicKernel_d_2::Bound y);}
 {Compares the second coordinate of $r1$ with $y$.}
-\ccMethod{result_type operator()(AlgebraicKernel_d_2::Algebraic_real_2 r1, AlgebraicKernel_d_2::Coefficient y);}
+\ccMethod{result_type operator()(
+        AlgebraicKernel_d_2::Algebraic_real_2 r1, 
+        AlgebraicKernel_d_2::Coefficient y);}
 {Compares the second coordinate of $r1$ with $y$.}
 
 \ccSeeAlso
@@ -81,7 +83,7 @@ A model \ccVar\ of this type must provide:
 
 \ccDefinition
 Compares the coordinates of two
-\ccc{AlgebraicKernel_d_2::Algebraic_real_2}'s lexicographically.
+\ccc{AlgebraicKernel_d_2::Algebraic_real_2}s lexicographically.
  
 \ccRefines 
 \ccc{AdaptableBinaryFunction} 
@@ -105,9 +107,15 @@ A model \ccVar\ of this type must provide:
 
 \ccMethod{result_type operator()(AlgebraicKernel_d_2::Algebraic_real_2 r1, int x, int y);}
 {Compares $r1$ with $(x,y)$ lexicographically.}
-\ccMethod{result_type operator()(AlgebraicKernel_d_2::Algebraic_real_2 r1, AlgebraicKernel_d_2::Bound x, AlgebraicKernel_d_2::Bound y);}
+\ccMethod{result_type operator()(
+        AlgebraicKernel_d_2::Algebraic_real_2 r1, 
+        AlgebraicKernel_d_2::Bound x, 
+        AlgebraicKernel_d_2::Bound y);}
 {Compares $r1$ with $(x,y)$ lexicographically.}
-\ccMethod{result_type operator()(AlgebraicKernel_d_2::Algebraic_real_2 r1, AlgebraicKernel_d_2::Bound x, AlgebraicKernel_d_2::Coefficient y);}
+\ccMethod{result_type operator()(
+        AlgebraicKernel_d_2::Algebraic_real_2 r1, 
+        AlgebraicKernel_d_2::Coefficient x, 
+        AlgebraicKernel_d_2::Coefficient y);}
 {Compares $r1$ with $(x,y)$ lexicographically.}
 
 
