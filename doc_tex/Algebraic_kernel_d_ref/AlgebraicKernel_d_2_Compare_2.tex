@@ -22,16 +22,16 @@ A model \ccVar\ of this type must provide:
 
 %\ccThree{result_type}{fo(first_argument_type,++}{}
 \ccMethod{result_type
-    operator()(const first_argument_type & r1,
-	     const second_argument_type & r2);}
-{Compares the first coordinates of $r1$ and $r2$.}
+    operator()(const first_argument_type & a,
+	     const second_argument_type & b);}
+{Compares the first coordinates of $a$ and $b$.}
 
-\ccMethod{result_type operator()(AlgebraicKernel_d_2::Algebraic_real_2 r1, int x);}
-{Compares the first coordinate of $r1$ with $x$.}
-\ccMethod{result_type operator()(AlgebraicKernel_d_2::Algebraic_real_2 r1, AlgebraicKernel_d_2::Bound x);}
-{Compares the first coordinate of $r1$ with $x$.}
-\ccMethod{result_type operator()(AlgebraicKernel_d_2::Algebraic_real_2 r1, AlgebraicKernel_d_2::Coefficient x);}
-{Compares the first coordinate of $r1$ with $x$.}
+\ccMethod{result_type operator()(AlgebraicKernel_d_2::Algebraic_real_2 a, int x);}
+{Compares the first coordinate of $a$ with $x$.}
+\ccMethod{result_type operator()(AlgebraicKernel_d_2::Algebraic_real_2 a, AlgebraicKernel_d_2::Bound x);}
+{Compares the first coordinate of $a$ with $x$.}
+\ccMethod{result_type operator()(AlgebraicKernel_d_2::Algebraic_real_2 a, AlgebraicKernel_d_2::Coefficient x);}
+{Compares the first coordinate of $a$ with $x$.}
 
 
 \ccSeeAlso
@@ -61,18 +61,18 @@ Compares the second coordinated of two \ccc{AlgebraicKernel_d_2::Algebraic_real_
 A model \ccVar\ of this type must provide:
 
 %\ccThree{result_type}{fo(first_argument_type,++}{}
-\ccMethod{result_type operator()(const first_argument_type & r1, const second_argument_type & r2);}
-{Compares the second coordinates of $r1$ an $r2$.}
-\ccMethod{result_type operator()(AlgebraicKernel_d_2::Algebraic_real_2 r1, int y);}
-{Compares the second coordinate of $r1$ with $y$.}
+\ccMethod{result_type operator()(const first_argument_type & a, const second_argument_type & b);}
+{Compares the second coordinates of $a$ an $b$.}
+\ccMethod{result_type operator()(AlgebraicKernel_d_2::Algebraic_real_2 a, int y);}
+{Compares the second coordinate of $a$ with $y$.}
 \ccMethod{result_type operator()(
-        AlgebraicKernel_d_2::Algebraic_real_2 r1, 
+        AlgebraicKernel_d_2::Algebraic_real_2 a, 
         AlgebraicKernel_d_2::Bound y);}
-{Compares the second coordinate of $r1$ with $y$.}
+{Compares the second coordinate of $a$ with $y$.}
 \ccMethod{result_type operator()(
-        AlgebraicKernel_d_2::Algebraic_real_2 r1, 
+        AlgebraicKernel_d_2::Algebraic_real_2 a, 
         AlgebraicKernel_d_2::Coefficient y);}
-{Compares the second coordinate of $r1$ with $y$.}
+{Compares the second coordinate of $a$ with $y$.}
 
 \ccSeeAlso
 \ccRefIdfierPage{AlgebraicKernel_d_2::CompareX_2}\\
@@ -102,21 +102,21 @@ Compares the coordinates of two
 A model \ccVar\ of this type must provide:
 
 %\ccThree{result_type}{fo(first_argument_type,++}{}
-\ccMethod{result_type operator()(const first_argument_type & r1, const second_argument_type & r2);}
-{Compares $r1$ and $r2$ lexicographically.}
+\ccMethod{result_type operator()(const first_argument_type & a, const second_argument_type & b);}
+{Compares $a$ and $b$ lexicographically.}
 
-\ccMethod{result_type operator()(AlgebraicKernel_d_2::Algebraic_real_2 r1, int x, int y);}
-{Compares $r1$ with $(x,y)$ lexicographically.}
+\ccMethod{result_type operator()(AlgebraicKernel_d_2::Algebraic_real_2 a, int x, int y);}
+{Compares $a$ with $(x,y)$ lexicographically.}
 \ccMethod{result_type operator()(
-        AlgebraicKernel_d_2::Algebraic_real_2 r1, 
+        AlgebraicKernel_d_2::Algebraic_real_2 a, 
         AlgebraicKernel_d_2::Bound x, 
         AlgebraicKernel_d_2::Bound y);}
-{Compares $r1$ with $(x,y)$ lexicographically.}
+{Compares $a$ with $(x,y)$ lexicographically.}
 \ccMethod{result_type operator()(
-        AlgebraicKernel_d_2::Algebraic_real_2 r1, 
+        AlgebraicKernel_d_2::Algebraic_real_2 a, 
         AlgebraicKernel_d_2::Coefficient x, 
         AlgebraicKernel_d_2::Coefficient y);}
-{Compares $r1$ with $(x,y)$ lexicographically.}
+{Compares $a$ with $(x,y)$ lexicographically.}
 
 
 \ccSeeAlso
