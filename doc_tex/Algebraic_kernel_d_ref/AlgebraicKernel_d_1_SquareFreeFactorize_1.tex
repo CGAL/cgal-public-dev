@@ -1,10 +1,10 @@
 \begin{ccRefFunctionObjectConcept}{AlgebraicKernel_d_1::SquareFreeFactorize_1}
 
 \ccDefinition
-Computes a square-free factorization of an
+Computes a square free factorization of an
 \ccc{AlgebraicKernel_d_1::Polynomial_1}.
 
-A polynomial $p$ is factored into square-free and pairwise 
+A polynomial $p$ is factored into square free and pairwise 
 coprime non-constant factors $q_i$ with multiplicities $m_i$ 
 and a constant factor $c$, such that 
 $p = c  \cdot  q_1^{m_1}  \cdot  ...  \cdot  q_n^{m_n}$.
@@ -25,7 +25,7 @@ given output iterator. The constant factor $c$ is not computed.
 	OutputIterator
 	operator()(AlgebraicKernel_d_1::Polynomial_1 p,
                OutputIterator res);}
-{Copies in the output iterator the factors of a square-free 
+{Copies in the output iterator the factors of a square free 
 factorization of \ccc{p}, with their multiplicity, as objects of type 
 \ccc{std::pair<AlgebraicKernel_d_1::Polynomial_1, AlgebraicKernel_d_1::Multiplicity_type>}.}
 
