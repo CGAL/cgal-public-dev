@@ -18,7 +18,7 @@ A model of this type must provide:
         operator()( AlgebraicKernel_d_1::Polynomial_1 p,
 	     OutputIterator res);}
 {Computes all real solutions of $p$ with multiplicity, and copies them as objects of type 
-\ccc{std::pair<AlgebraicKernel_d_1::Algebraic_real_1, AlgebraicKernel_d_1::Multiplicity_type>} in \ccc{oit}.}
+\ccc{std::pair<AlgebraicKernel_d_1::Algebraic_real_1, AlgebraicKernel_d_1::Multiplicity_type>} in \ccc{res}.}
 
 
 \ccMethod{template < class OutputIterator >
@@ -26,9 +26,9 @@ A model of this type must provide:
     operator()( 
         AlgebraicKernel_d_1::Polynomial_1 p,
         bool known_to_be_square_free, 
-	OutputIterator oit );}
+	OutputIterator res );}
 {Computes all real solutions of $p$, and copies them as objects of type 
-\ccc{AlgebraicKernel_d_1::Algebraic_real_1} in \ccc{oit}. 
+\ccc{AlgebraicKernel_d_1::Algebraic_real_1} in \ccc{res}. 
 The \c{bool} \ccc{known_to_be_square_free} indicates whether $p$ is known to be square free.
 Each root, though it might be a multiple root, is reported only once.} 
 
@@ -38,7 +38,7 @@ Each root, though it might be a multiple root, is reported only once.}
         operator()( AlgebraicKernel_d_1::Polynomial_1 p, AlgebraicKernel_d_1::Bound l, AlgebraicKernel_d_1::Bound u,
 	     OutputIterator res);}
 {Computes all real solutions of $p$ in the closed interval $[u,l]$ with multiplicity, and copies them as objects of type 
-\ccc{std::pair<AlgebraicKernel_d_1::Algebraic_real_1, AlgebraicKernel_d_1::Multiplicity_type>} in \ccc{oit}.}
+\ccc{std::pair<AlgebraicKernel_d_1::Algebraic_real_1, AlgebraicKernel_d_1::Multiplicity_type>} in \ccc{res}.}
 
 
 \ccThree{OutputIterator}{fo(AlgebraicKernel_d_1::Polynomial_1,++}{}
@@ -50,7 +50,7 @@ template < class OutputIterator > OutputIterator  operator()(
         AlgebraicKernel_d_1::Bound u, 
         OutputIterator res);}
 {Computes all real solutions of $p$ in the closed interval $[l,u]$, and copies them as objects of 
-type \ccc{AlgebraicKernel_d_1::Algebraic_real_1} in \ccc{oit}. 
+type \ccc{AlgebraicKernel_d_1::Algebraic_real_1} in \ccc{res}. 
 The \ccc{bool} \ccc{known_to_be_square_free} indicates whether $p$ is known to be square free.
 Each root, though it might be a multiple root, is reported only once. } 
 
