@@ -314,7 +314,7 @@ public:
         if(!p.second) {
             Creator create(_m_kernel);
             Value_type val = create(key);
-            insert(Data_type(key, val));
+            this->insert(Data_type(key, val));
             return val;
         }
         return (p.first)->second;
