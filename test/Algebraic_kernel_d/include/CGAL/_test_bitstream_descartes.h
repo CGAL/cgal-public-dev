@@ -354,9 +354,11 @@ void test_bitstream_descartes() {
 
     typedef CGAL::Algebraic_kernel_1<Integer> AK_1;
 
+    typedef CGAL::CGALi::Bitstream_coefficient_kernel_at_alpha
+        <AK_1> Bitstream_coefficient_kernel;
+
     typedef CGAL::CGALi::Bitstream_descartes_rndl_tree_traits
-        <CGAL::CGALi::Bitstream_coefficient_kernel_at_alpha
-            <AK_1> > Traits_2;
+        <Bitstream_coefficient_kernel > Traits_2;
   
     typedef CGAL::CGALi::Bitstream_descartes<Traits_2> Bitstream_descartes;
 
@@ -366,6 +368,8 @@ void test_bitstream_descartes() {
 
     // In MAPLE: f:=-87+47*x-90*y+43*x^2+92*x*y-91*y^2-88*x^3-48*x^2*y+53*x*y^2-28*y^3+5*x^4+13*x^3*y-10*x^2*y^2-82*x*y^3+71*y^4;
 
+    AK_1 ak_1;
+
     Poly_int2 f;
     
     ss >> f;
@@ -374,7 +378,9 @@ void test_bitstream_descartes() {
 
     Algebraic_real alpha(r,-2,-1);
 
-    Traits_2 traits(alpha);
+    Bitstream_coefficient_kernel bitstream_coefficient_kernel(&ak_1,alpha);
+
+    Traits_2 traits(bitstream_coefficient_kernel);
 
     CGAL::CGALi::M_k_descartes_tag mk;
 
@@ -406,8 +412,9 @@ void test_bitstream_descartes() {
 
     Algebraic_real beta(on_right);
 
-    // New traits class for this point
-    Traits_2 new_traits(beta);
+    Bitstream_coefficient_kernel new_bitstream_coefficient_kernel(&ak_1,beta);
+
+    Traits_2 new_traits(new_bitstream_coefficient_kernel);
 
     CGAL::CGALi::Square_free_descartes_tag sq_free;
 
