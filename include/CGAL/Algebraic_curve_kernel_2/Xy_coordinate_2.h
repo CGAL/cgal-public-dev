@@ -304,7 +304,7 @@ public:
                     point_is_certainly_critical = true;
                     y_pol = 
                         typename CGAL::Polynomial_traits_d< Polynomial_1 >::Make_square_free()(
-                                CGAL::CGALi::resultant
+                                CGAL::resultant
                                 (typename CGAL::Polynomial_traits_d
                                  <Polynomial_2>::Swap() (f,0,1),
                                  typename CGAL::Polynomial_traits_d
@@ -324,7 +324,7 @@ public:
                 
                 Polynomial_2 r(x().polynomial());
                 y_pol = typename CGAL::Polynomial_traits_d< Polynomial_1 >::Make_square_free()(
-                        CGAL::CGALi::resultant
+                        CGAL::resultant
                         (typename CGAL::Polynomial_traits_d
                          <Polynomial_2>::Swap() (f,0,1),
                          typename CGAL::Polynomial_traits_d
@@ -513,9 +513,8 @@ public:
                     cpa_2.curve_analysis(1).polynomial_2();
         );
         // common parts
-        CGAL_precondition(CGAL::CGALi::resultant(mult,
-                                                 curve().polynomial_2())
-                          .is_zero());
+        CGAL_precondition(CGAL::resultant(mult, 
+                                          curve().polynomial_2()).is_zero());
         // full parts
         CGAL_precondition(CGAL::degree(mult) == 
                           CGAL::degree(curve().polynomial_2()));
