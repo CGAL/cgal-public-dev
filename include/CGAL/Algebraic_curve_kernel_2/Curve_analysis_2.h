@@ -42,6 +42,8 @@
 
 #include <CGAL/Polynomial_traits_d.h>
 
+#include<CGAL/Algebraic_curve_kernel_2/alg_real_utils.h>
+
 #if CGAL_ACK_USE_SPECIAL_TREATMENT_FOR_CONIX
 // put includes here
 #endif
@@ -979,7 +981,7 @@ private:
             
             while(true) {
                 Coercion_interval curr_interval 
-                    = evaluate_iv(curr_pol,Coercion_interval(cast(left),
+                  = CGALi::evaluate_iv(curr_pol,Coercion_interval(cast(left),
                                                              cast(right)));
 
                 if(boost::numeric::in_zero(curr_interval)) {
@@ -1555,7 +1557,7 @@ private:
             } else {
                 typename Polynomial_traits_2::Differentiate diff;
                 this->ptr()->resultant_of_primitive_and_derivative_y
-                    = CGAL::CGALi::resultant
+                    = CGAL::resultant
                         (primitive_polynomial_2(),
                          diff(primitive_polynomial_2(),1));
             }
@@ -1610,7 +1612,7 @@ private:
             }
             
             this->ptr()->resultant_of_primitive_and_derivative_x
-                = CGAL::CGALi::resultant
+                = CGAL::resultant
                 (typename Polynomial_traits_2::Swap() (f_yx_primitive,0,1),
                  typename Polynomial_traits_2::Swap() 
                      (CGAL::diff(f_yx_primitive),0,1) );
