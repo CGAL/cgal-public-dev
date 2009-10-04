@@ -170,7 +170,7 @@ public:
             
 
                 Polynomial_1 sh_disc 
-                    = CGAL::CGALi::resultant(sh_pol,der_sh_pol);
+                    = CGAL::resultant(sh_pol,der_sh_pol);
                 
 #if CGAL_ACK_DEBUG_FLAG
                 CGAL_ACK_DEBUG_PRINT << "root isolation.." << std::flush;
@@ -190,7 +190,7 @@ public:
 #endif
         Root_container ev_res_roots;
         if(typename Polynomial_traits_2::Degree() (sh_pol) > 0) {
-            Polynomial_1 ev_res = CGAL::CGALi::resultant(pol,sh_der_sh_pol);
+            Polynomial_1 ev_res = CGAL::resultant(pol,sh_der_sh_pol);
             
 #if CGAL_ACK_DEBUG_FLAG
             CGAL_ACK_DEBUG_PRINT << "root isolation.." << std::flush;
