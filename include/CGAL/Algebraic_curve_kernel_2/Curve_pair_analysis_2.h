@@ -25,6 +25,7 @@
 #include <boost/iterator/transform_iterator.hpp>
 
 #include <CGAL/Polynomial.h>
+#include <CGAL/Polynomial_traits_d.h>
 
 #include <CGAL/Algebraic_curve_kernel_2/Shear_controller.h>
 #include <CGAL/Algebraic_curve_kernel_2/Shear_transformation.h>
@@ -330,6 +331,9 @@ private:
     
     // Polynomial traits class
     typedef CGAL::Polynomial_traits_d<Polynomial_2> Polynomial_traits_2;
+
+    // Polynomial traits class
+    typedef CGAL::Polynomial_traits_d<Polynomial_1> Polynomial_traits_1;
   
 public:
     
@@ -477,7 +481,8 @@ public:
 #endif
         if(CGAL::degree(this->ptr()->c1_.content())>0 &&
            CGAL::degree(this->ptr()->c2_.content())>0) {
-            if(CGAL::degree(CGAL::CGALi::gcd_utcf
+            typename Polynomial_traits_1::Gcd_up_to_constant_factor gcd_utcf;
+            if(CGAL::degree(gcd_utcf
                             (this->ptr()->c1_.content(), 
                              this->ptr()->c2_.content())) >= 1) {
                 
@@ -1316,7 +1321,7 @@ void Curve_pair_analysis_2<AlgebraicKernelWithAnalysis_2>::compute_resultant()
                              << std::flush;
 #endif
         this->ptr()->resultant 
-            = CGAL::CGALi::resultant(this->ptr()->f,this->ptr()->g);
+            = CGAL::resultant(this->ptr()->f,this->ptr()->g);
     } else {
 #if CGAL_ACK_DEBUG_FLAG
         CGAL_ACK_DEBUG_PRINT << "Compute the subres-seq of f and g..." 
