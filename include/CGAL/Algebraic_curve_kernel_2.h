@@ -43,7 +43,7 @@
 #include <CGAL/Algebraic_curve_kernel_2/Curve_pair_analysis_2.h>
 #endif
 
-CGAL_BEGIN_NAMESPACE
+namespace CGAL {
 
 
 /*!
@@ -1733,6 +1733,6 @@ mutable Gcd_cache_2 _m_gcd_cache_2;
     
 }; // class Algebraic_curve_kernel_2
 
-CGAL_END_NAMESPACE
+} // namespace CGAL
 
 #endif // CGAL_ALGEBRAIC_CURVE_KERNEL_2_H
