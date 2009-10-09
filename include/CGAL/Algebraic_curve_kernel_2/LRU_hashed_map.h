@@ -29,7 +29,7 @@ using boost::multi_index::project;
 
 CGAL_BEGIN_NAMESPACE
 
-namespace CGALi {
+namespace internal {
 
 
 //! \brief this class defines hashed map container with LRU capabilities,
@@ -403,7 +403,7 @@ struct Pair_hasher {
     }
 };
 
-} // namespace CGALi
+} // namespace internal
 
 CGAL_END_NAMESPACE
 

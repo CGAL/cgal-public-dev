@@ -49,7 +49,7 @@ void algebraic_number_test()
     typedef RATIONAL rat_NT;
     typedef Z Integer;
 
-    typedef CGAL::CGALi::Algebraic_real_pure<Coeff_NT,rat_NT, CGAL::Handle_policy_no_union, RepClass > ALGNUM; 
+    typedef CGAL::internal::Algebraic_real_pure<Coeff_NT,rat_NT, CGAL::Handle_policy_no_union, RepClass > ALGNUM; 
     typedef typename CGAL::Polynomial_type_generator<Coeff_NT,1>::Type Poly;
     CGAL::test_real_embeddable<ALGNUM>();
     // general test of comparable functionality  
@@ -328,7 +328,7 @@ void algebraic_number_test()
     // test for Handle with union 
     {
         typedef 
-            CGAL::CGALi::Algebraic_real_pure
+            CGAL::internal::Algebraic_real_pure
             <Coeff_NT,rat_NT,::CGAL::Handle_policy_union> Int;
         Int i(5);
         Int j(5);
@@ -347,7 +347,7 @@ void algebraic_number_test()
     // test for Handle without union 
     {
         typedef 
-            CGAL::CGALi::Algebraic_real_pure
+            CGAL::internal::Algebraic_real_pure
             <Coeff_NT,rat_NT,::CGAL::Handle_policy_no_union> Int;
         Int i(5);
         Int j(5);
@@ -407,11 +407,11 @@ void algebraic_number_test_at(){
   algebraic_number_test< class COEFF, class REAL, class RATIONAL, class Z>()
 */ 
 
-  typedef CGAL::CGALi::Algebraic_real_rep< Integer,     Rational>  Rep_int;
-  typedef CGAL::CGALi::Algebraic_real_rep< Rational,    Rational > Rep_rat;
-  typedef CGAL::CGALi::Algebraic_real_rep< Ext_int_int, Rational > Rep_ext_int_int;
-  typedef CGAL::CGALi::Algebraic_real_rep< Ext_rat_int, Rational > Rep_ext_rat_int;
-  typedef CGAL::CGALi::Algebraic_real_rep< Ext_rat_rat, Rational > Rep_ext_rat_rat;
+  typedef CGAL::internal::Algebraic_real_rep< Integer,     Rational>  Rep_int;
+  typedef CGAL::internal::Algebraic_real_rep< Rational,    Rational > Rep_rat;
+  typedef CGAL::internal::Algebraic_real_rep< Ext_int_int, Rational > Rep_ext_int_int;
+  typedef CGAL::internal::Algebraic_real_rep< Ext_rat_int, Rational > Rep_ext_rat_int;
+  typedef CGAL::internal::Algebraic_real_rep< Ext_rat_rat, Rational > Rep_ext_rat_rat;
   
 
   algebraic_number_test<Integer, Real, Rational, Integer,     Rep_int>();
@@ -421,11 +421,11 @@ void algebraic_number_test_at(){
   algebraic_number_test<Ext_rat_rat, Real, Rational, Integer, Rep_ext_rat_rat>();
 
 
-  typedef CGAL::CGALi::Algebraic_real_rep_bfi< Integer,     Rational>  Rep_bfi_int;
-  typedef CGAL::CGALi::Algebraic_real_rep_bfi< Rational,    Rational > Rep_bfi_rat;
-  typedef CGAL::CGALi::Algebraic_real_rep_bfi< Ext_int_int, Rational > Rep_bfi_ext_int_int;
-  typedef CGAL::CGALi::Algebraic_real_rep_bfi< Ext_rat_int, Rational > Rep_bfi_ext_rat_int;
-  typedef CGAL::CGALi::Algebraic_real_rep_bfi< Ext_rat_rat, Rational > Rep_bfi_ext_rat_rat;
+  typedef CGAL::internal::Algebraic_real_rep_bfi< Integer,     Rational>  Rep_bfi_int;
+  typedef CGAL::internal::Algebraic_real_rep_bfi< Rational,    Rational > Rep_bfi_rat;
+  typedef CGAL::internal::Algebraic_real_rep_bfi< Ext_int_int, Rational > Rep_bfi_ext_int_int;
+  typedef CGAL::internal::Algebraic_real_rep_bfi< Ext_rat_int, Rational > Rep_bfi_ext_rat_int;
+  typedef CGAL::internal::Algebraic_real_rep_bfi< Ext_rat_rat, Rational > Rep_bfi_ext_rat_rat;
 
   algebraic_number_test<Integer, Real, Rational, Integer,     Rep_bfi_int>();
   algebraic_number_test<Rational, Real, Rational, Integer,    Rep_bfi_rat>();
@@ -435,11 +435,11 @@ void algebraic_number_test_at(){
 
 
 //  Algebraic_real_quadratic_refinement_rep_bfi
-  typedef CGAL::CGALi::Algebraic_real_quadratic_refinement_rep_bfi< Integer,     Rational>  Rep_qr_bfi_int;
-  typedef CGAL::CGALi::Algebraic_real_quadratic_refinement_rep_bfi< Rational,    Rational > Rep_qr_bfi_rat;
-  typedef CGAL::CGALi::Algebraic_real_quadratic_refinement_rep_bfi< Ext_int_int, Rational > Rep_qr_bfi_ext_int_int;
-  typedef CGAL::CGALi::Algebraic_real_quadratic_refinement_rep_bfi< Ext_rat_int, Rational > Rep_qr_bfi_ext_rat_int;
-  typedef CGAL::CGALi::Algebraic_real_quadratic_refinement_rep_bfi< Ext_rat_rat, Rational > Rep_qr_bfi_ext_rat_rat;
+  typedef CGAL::internal::Algebraic_real_quadratic_refinement_rep_bfi< Integer,     Rational>  Rep_qr_bfi_int;
+  typedef CGAL::internal::Algebraic_real_quadratic_refinement_rep_bfi< Rational,    Rational > Rep_qr_bfi_rat;
+  typedef CGAL::internal::Algebraic_real_quadratic_refinement_rep_bfi< Ext_int_int, Rational > Rep_qr_bfi_ext_int_int;
+  typedef CGAL::internal::Algebraic_real_quadratic_refinement_rep_bfi< Ext_rat_int, Rational > Rep_qr_bfi_ext_rat_int;
+  typedef CGAL::internal::Algebraic_real_quadratic_refinement_rep_bfi< Ext_rat_rat, Rational > Rep_qr_bfi_ext_rat_rat;
 
   algebraic_number_test<Integer, Real, Rational, Integer,     Rep_qr_bfi_int>();
   algebraic_number_test<Rational, Real, Rational, Integer,    Rep_qr_bfi_rat>();

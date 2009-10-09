@@ -29,7 +29,7 @@
 
 CGAL_BEGIN_NAMESPACE
 
-namespace CGALi {
+namespace internal {
     
 // Don't define default, results in more convinient compiler messages 
 template< class Type > class Float_traits;
@@ -162,7 +162,7 @@ struct Mul_by_pow_of_2
   }
 };
 };
-} //namespace CGALi
+} //namespace internal
 
 
 

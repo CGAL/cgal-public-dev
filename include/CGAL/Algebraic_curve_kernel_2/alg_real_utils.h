@@ -34,7 +34,7 @@
 
 CGAL_BEGIN_NAMESPACE
 
-namespace CGALi {
+namespace internal {
 
 /* 
  * \brief Function for merging two sets
@@ -65,12 +65,12 @@ set_union_with_source(InputIterator1 first_begin,
 	if(first_it == first_end) {
             *merged_values=*second_it++;
             ++merged_values;
-            *merged_values_info++ = CGAL::CGALi::ROOT_OF_SECOND_SET;
+            *merged_values_info++ = CGAL::internal::ROOT_OF_SECOND_SET;
             continue;
 	}
 	if(second_it == second_end) {
             *merged_values++=*first_it++;
-            *merged_values_info++ = CGAL::CGALi::ROOT_OF_FIRST_SET;
+            *merged_values_info++ = CGAL::internal::ROOT_OF_FIRST_SET;
             continue;
 	}
 
@@ -79,17 +79,17 @@ set_union_with_source(InputIterator1 first_begin,
 	if(c==CGAL::EQUAL) {
             *merged_values++=*first_it++;
             ++second_it;
-            *merged_values_info++ = CGAL::CGALi::ROOT_OF_BOTH_SETS;
+            *merged_values_info++ = CGAL::internal::ROOT_OF_BOTH_SETS;
             continue;
 	}
 	if(c==CGAL::SMALLER) {
             *merged_values++=*first_it++;
-            *merged_values_info++ = CGAL::CGALi::ROOT_OF_FIRST_SET;
+            *merged_values_info++ = CGAL::internal::ROOT_OF_FIRST_SET;
             continue;
 	}
 	if(c==CGAL::LARGER) {
             *merged_values++=*second_it++;
-            *merged_values_info++ = CGAL::CGALi::ROOT_OF_SECOND_SET;
+            *merged_values_info++ = CGAL::internal::ROOT_OF_SECOND_SET;
             continue;
 	}
     }
@@ -177,8 +177,8 @@ simple_rational_between(const Algebraic_real& a,
     }
     //srb_b.stop();
     //std::cout << "Intermediate2: " << x << " " << y << std::endl;
-    typename CGAL::CGALi::Float_traits<Bigfloat>::Get_mantissa mantissa;
-    typename CGAL::CGALi::Float_traits<Bigfloat>::Get_exponent exponent;
+    typename CGAL::internal::Float_traits<Bigfloat>::Get_mantissa mantissa;
+    typename CGAL::internal::Float_traits<Bigfloat>::Get_exponent exponent;
 
     Integer x_m = mantissa(x),
         y_m=mantissa(y);
@@ -239,8 +239,8 @@ simple_rational_between(const Algebraic_real& a,
     //std::cout << "Floats5: " << x_m << " " << x_e << " and " << y_m << " " << y_e << std::endl;
     Integer final_mantissa(0);
     //srb_e.start();
-    long x_log = x_m==Integer(0) ? -1 : CGAL::CGALi::floor_log2_abs(x_m),
-        y_log = y_m==Integer(0) ? -1 : CGAL::CGALi::floor_log2_abs(y_m),
+    long x_log = x_m==Integer(0) ? -1 : CGAL::internal::floor_log2_abs(x_m),
+        y_log = y_m==Integer(0) ? -1 : CGAL::internal::floor_log2_abs(y_m),
         old_log = y_log;
     while(x_log==y_log) {
         //std::cout << "here" << std::endl;
@@ -254,8 +254,8 @@ simple_rational_between(const Algebraic_real& a,
 
         final_mantissa++;
         old_log=y_log;
-        x_log = x_m==0 ? -1 : CGAL::CGALi::floor_log2_abs(x_m);
-        y_log = y_m==0 ? -1 : CGAL::CGALi::floor_log2_abs(y_m);
+        x_log = x_m==0 ? -1 : CGAL::internal::floor_log2_abs(x_m);
+        y_log = y_m==0 ? -1 : CGAL::internal::floor_log2_abs(y_m);
     }
     //srb_e.stop();
     // Now, x_log != y_log, in fact, y_log is greater
@@ -272,7 +272,7 @@ simple_rational_between(const Algebraic_real& a,
             final_mantissa++;
             y_log--;
             x_m = x_m==0 ? 0 : x_m & ((Integer(1) << x_log) - 1); //x_m - CGAL::ipower(Integer(2),x_log);
-            x_log = x_m==0 ? -1 : CGAL::CGALi::floor_log2_abs(x_m);
+            x_log = x_m==0 ? -1 : CGAL::internal::floor_log2_abs(x_m);
         }
         final_mantissa = final_mantissa << 1;
         final_mantissa++;
@@ -437,7 +437,7 @@ template<typename NT,typename Polynomial_1>
 CGAL::Sign estimate_sign_at(NT alpha,
                             const Polynomial_1& f,
                             long max_precision=0) {
-    typedef CGAL::CGALi::Bitstream_coefficient_kernel<NT> 
+    typedef CGAL::internal::Bitstream_coefficient_kernel<NT> 
         Bitstream_coefficient_kernel;
     typedef typename Bitstream_coefficient_kernel::Bigfloat_interval BFI;
     long old_prec = CGAL::get_precision(BFI());
@@ -539,7 +539,7 @@ Poly_2 poly_non_vanish_leading_term(Algebraic_kernel_1* kernel,
     return f;
 }
 	  
-} // namespace CGALi
+} // namespace internal
 
 
 CGAL_END_NAMESPACE

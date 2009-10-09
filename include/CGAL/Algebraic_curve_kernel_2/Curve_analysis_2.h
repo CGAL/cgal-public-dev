@@ -54,7 +54,7 @@ template<typename AlgebraicKernelWithAnalysis_2,
          typename Rep_>
 class Curve_analysis_2;
 
-namespace CGALi {
+namespace internal {
 
 // \brief Representation class for algebraic curves.
 template< typename AlgebraicKernelWithAnalysis_2>
@@ -112,14 +112,14 @@ public:
     
 private:
 
-    typedef CGALi::LRU_hashed_map<
+    typedef internal::LRU_hashed_map<
         Bound,
         std::vector<Algebraic_real_1>,
-        CGALi::To_double_hasher > Intermediate_cache;
+        internal::To_double_hasher > Intermediate_cache;
 
     Intermediate_cache intermediate_cache;
 
-    typedef CGALi::Event_line_builder<Algebraic_kernel_with_analysis_2> 
+    typedef internal::Event_line_builder<Algebraic_kernel_with_analysis_2> 
         Event_line_builder;
     
 
@@ -216,7 +216,7 @@ private:
         <Algebraic_kernel_with_analysis_2,Self>;
 
 }; // class Curve_analysis_2_rep
-} // namespace CGALi
+} // namespace internal
 
 
 /*!
@@ -252,7 +252,7 @@ private:
  */
 template<typename AlgebraicKernelWithAnalysis_2, 
   typename Rep_ 
-   = CGALi::Curve_analysis_2_rep< AlgebraicKernelWithAnalysis_2> 
+   = internal::Curve_analysis_2_rep< AlgebraicKernelWithAnalysis_2> 
 >
 class Curve_analysis_2 : public ::CGAL::Handle_with_policy< Rep_ > {
   
@@ -413,7 +413,7 @@ public:
      * at rational x-coordinate. With both strategies, it is guaranteed that
      * the analysis works successfully for any square free input curve.
      * On the other hand, the EXCEPTION_STRATEGY throws an exception of type
-     * \c CGALi::Zero_resultant_exception<Polynomial_2>, 
+     * \c internal::Zero_resultant_exception<Polynomial_2>, 
      * instead of performing a shear.
      *
      * \Todo Currently the defualt strategy has been changed to SHEAR_STRATEGY
@@ -424,7 +424,7 @@ public:
                               const Polynomial_2& f,
                               CGAL::Degeneracy_strategy strategy
                                   = CGAL_ACK_DEFAULT_DEGENERACY_STRATEGY) 
-        throw(CGALi::Zero_resultant_exception<Polynomial_2>)
+        throw(internal::Zero_resultant_exception<Polynomial_2>)
         : Base(Rep(kernel,f,strategy))
     {
 
@@ -734,7 +734,7 @@ private:
     
     // Creates a status line for the curve's <tt>index</tt>th critical point
     Status_line_1 create_status_line_at_event(size_type index) const 
-        throw(CGAL::CGALi::Non_generic_position_exception) {
+        throw(CGAL::internal::Non_generic_position_exception) {
 
         Event_coordinate_1& event = event_coordinates()[index];
         
@@ -748,13 +748,13 @@ private:
             
 #if CGAL_ACK_SHEAR_ALL_NOT_Y_REGULAR_CURVES
             if(event.mult_of_prim_lcoeff_root > 0) {
-                throw CGAL::CGALi::Non_generic_position_exception();
+                throw CGAL::internal::Non_generic_position_exception();
             }
 #else
             if(event.mult_of_prim_lcoeff_root > 0) {
                 if(event.mult_of_prim_lcoeff_root > 1 ||
                    event.mult_of_prim_res_root > 1) {
-                    throw CGAL::CGALi::Non_generic_position_exception();
+                    throw CGAL::internal::Non_generic_position_exception();
                 }
             }
         
@@ -805,10 +805,10 @@ private:
 #endif
 
             return ev_line;
-        } catch(CGAL::CGALi::Non_generic_position_exception exc) {
+        } catch(CGAL::internal::Non_generic_position_exception exc) {
             switch(this->ptr()->degeneracy_strategy) {
             case(CGAL::EXCEPTION_STRATEGY): {
-                throw CGAL::CGALi::Non_generic_position_exception();
+                throw CGAL::internal::Non_generic_position_exception();
                 break;
             }
             case(CGAL::SHEAR_ONLY_AT_IRRATIONAL_STRATEGY): {
@@ -840,7 +840,7 @@ private:
 #if CGAL_ACK_DEBUG_FLAG
         CGAL_ACK_DEBUG_PRINT << "Use sheared technique..." << std::endl;
 #endif
-        CGALi::Shear_controller<Integer> shear_controller;
+        internal::Shear_controller<Integer> shear_controller;
         Integer s(0);
         while(true) {
             try {
@@ -851,7 +851,7 @@ private:
 #endif
                 // TODO: Move shear somewhere else
                 Self D(kernel(),
-                       CGAL::CGALi::shear
+                       CGAL::internal::shear
                            (primitive_polynomial_2(),Coefficient(s)),
                        CGAL::EXCEPTION_STRATEGY);
                 Shear_transformation< Algebraic_kernel_with_analysis_2 > 
@@ -872,7 +872,7 @@ private:
                 
                 break;
             }
-            catch(CGAL::CGALi::Non_generic_position_exception err) {
+            catch(CGAL::internal::Non_generic_position_exception err) {
 
                 shear_controller.report_failure(s);
 #if CGAL_ACK_DEBUG_FLAG
@@ -934,7 +934,7 @@ private:
         }
         Poly_coer_num_2 f_at_x_ext(coeffs.begin(), coeffs.end());
 
-        Bitstream_descartes isolator(CGAL::CGALi::Square_free_descartes_tag(),
+        Bitstream_descartes isolator(CGAL::internal::Square_free_descartes_tag(),
                                      f_at_x_ext,
                                      traits);
         
@@ -947,7 +947,7 @@ private:
             bucket_borders.push_back(0);
         } else {
             bucket_borders.push_back(
-                    CGAL::CGALi::simple_rational_left_of
+                    CGAL::internal::simple_rational_left_of
                         (Algebraic_real_1(isolator.left_bound(0))));
             for(int i = 1; i < n; i++) {
                 while(Algebraic_real_1(isolator.right_bound(i-1))==
@@ -956,14 +956,14 @@ private:
                     isolator.refine_interval(i);
                 }
                 bucket_borders.push_back(
-                        CGAL::CGALi::simple_rational_between
+                        CGAL::internal::simple_rational_between
                         (Algebraic_real_1(isolator.right_bound(i-1)),
                          Algebraic_real_1(isolator.left_bound(i)))
                 );
             }
             
             bucket_borders.push_back(
-                    CGAL::CGALi::simple_rational_right_of
+                    CGAL::internal::simple_rational_right_of
                         (Algebraic_real_1(isolator.right_bound(n-1))));
         }
 
@@ -981,7 +981,7 @@ private:
             
             while(true) {
                 Coercion_interval curr_interval 
-                  = CGALi::evaluate_iv(curr_pol,Coercion_interval(cast(left),
+                  = internal::evaluate_iv(curr_pol,Coercion_interval(cast(left),
                                                              cast(right)));
 
                 if(boost::numeric::in_zero(curr_interval)) {
@@ -1185,7 +1185,7 @@ private:
         Bitstream_traits traits(coeff_kernel);
 
         Bitstream_descartes 
-            bitstream_descartes(CGAL::CGALi::Square_free_descartes_tag(),
+            bitstream_descartes(CGAL::internal::Square_free_descartes_tag(),
                                 primitive_polynomial_2(),
                                 traits);
 
@@ -1358,7 +1358,7 @@ private:
 
     //! Returns the Sturm-Habicht sequence of the primitive part of f
     std::vector<Polynomial_2>& sturm_habicht_of_primitive() const 
-    throw(CGALi::Zero_resultant_exception<Polynomial_2>) {
+    throw(internal::Zero_resultant_exception<Polynomial_2>) {
         if(! this->ptr()->sturm_habicht_of_primitive) {
             compute_sturm_habicht_of_primitive();
         }  
@@ -1372,7 +1372,7 @@ public:
      * of the primitive part of the defining polynomial
      */
     Polynomial_2 sturm_habicht_of_primitive(size_type i) const 
-      throw(CGALi::Zero_resultant_exception<Polynomial_2>) {
+      throw(internal::Zero_resultant_exception<Polynomial_2>) {
         CGAL_assertion(i>=0 && 
                     i < static_cast<size_type>
                        (sturm_habicht_of_primitive().size()));
@@ -1386,7 +1386,7 @@ public:
      * of the primitive part of the defining polynomial
      */
     Polynomial_1 principal_sturm_habicht_of_primitive(size_type i) const
-        throw(CGALi::Zero_resultant_exception<Polynomial_2>) {
+        throw(internal::Zero_resultant_exception<Polynomial_2>) {
         CGAL_assertion(i>=0 && 
                     i < static_cast<size_type>
                        (sturm_habicht_of_primitive().size()));
@@ -1408,7 +1408,7 @@ public:
      * of <tt>y^{i-1}</tt> of the <tt>i</tt>th Sturm-Habicht polynomial
      */
     Polynomial_1 coprincipal_sturm_habicht_of_primitive(size_type i) const
-        throw(CGALi::Zero_resultant_exception<Polynomial_2>) {
+        throw(internal::Zero_resultant_exception<Polynomial_2>) {
         CGAL_assertion(i>=1 && 
                     i < static_cast<size_type>
                        (sturm_habicht_of_primitive().size()));
@@ -1443,7 +1443,7 @@ private:
 
     // Internal method to compute the Sturm-Habicht sequence
     void compute_sturm_habicht_of_primitive() const
-        throw(CGALi::Zero_resultant_exception<Polynomial_2>) {
+        throw(internal::Zero_resultant_exception<Polynomial_2>) {
         
 #if CGAL_ACK_DEBUG_FLAG
         CGAL_ACK_DEBUG_PRINT << "Compute Sturm-Habicht.." << std::flush;
@@ -1459,7 +1459,7 @@ private:
             
 #if CGAL_ACK_USE_BEZOUT_MATRIX_FOR_SUBRESULTANTS
 #warning USES BEZOUT MATRIX FOR SUBRESULTANTS
-            CGAL::CGALi::bezout_polynomial_subresultants<Polynomial_traits_2>
+            CGAL::internal::bezout_polynomial_subresultants<Polynomial_traits_2>
                 (primitive_polynomial_2(),
                  CGAL::diff(primitive_polynomial_2()),
                  std::back_inserter(stha));
@@ -1484,7 +1484,7 @@ private:
             this->ptr()->resultant_of_primitive_and_derivative_y = stha[0][0];
             if(this->ptr()->resultant_of_primitive_and_derivative_y.
                    get().is_zero()) {
-                throw CGALi::Zero_resultant_exception<Polynomial_2>
+                throw internal::Zero_resultant_exception<Polynomial_2>
                     (polynomial_2());
             }
         }
@@ -1503,7 +1503,7 @@ private:
 
     //! Returns the resultant of the primitive part of f and its y-derivative
     Polynomial_1 resultant_of_primitive_and_derivative_y() const
-        throw(CGALi::Zero_resultant_exception<Polynomial_2>) {
+        throw(internal::Zero_resultant_exception<Polynomial_2>) {
         if(! this->ptr()->resultant_of_primitive_and_derivative_y) {
             compute_resultant_of_primitive_and_derivative_y();
         }
@@ -1514,7 +1514,7 @@ private:
 
     //! Returns the resultant of the primitive part of f with its x-derivative
     Polynomial_1 resultant_of_primitive_and_derivative_x() const
-        throw(CGALi::Zero_resultant_exception<Polynomial_2>) {
+        throw(internal::Zero_resultant_exception<Polynomial_2>) {
         if(! this->ptr()->resultant_of_primitive_and_derivative_x) {
             compute_resultant_of_primitive_and_derivative_x();
         }
@@ -1524,7 +1524,7 @@ private:
 private:
     // Computes <tt>res_y(f,f_y)</tt>, where \c f is the defining polynomial
     void compute_resultant_of_primitive_and_derivative_y() const
-        throw(CGALi::Zero_resultant_exception<Polynomial_2>) {
+        throw(internal::Zero_resultant_exception<Polynomial_2>) {
         
 #if CGAL_ACK_DEBUG_FLAG
         CGAL_ACK_DEBUG_PRINT << "Compute resultant.." << std::flush;
@@ -1569,14 +1569,14 @@ private:
 #endif
 
         if(resultant_of_primitive_and_derivative_y().is_zero()) {
-            throw CGALi::Zero_resultant_exception<Polynomial_2>
+            throw internal::Zero_resultant_exception<Polynomial_2>
                 (polynomial_2());
         }
     }
     
     // Computes <tt>res_y(f,f_x)</tt>, where \c f is the defining polynomial
     void compute_resultant_of_primitive_and_derivative_x() const
-        throw(CGALi::Zero_resultant_exception<Polynomial_2>) {
+        throw(internal::Zero_resultant_exception<Polynomial_2>) {
         
 #if CGAL_ACK_DEBUG_FLAG
         CGAL_ACK_DEBUG_PRINT << "Compute x-resultant.." << std::flush;
@@ -1623,7 +1623,7 @@ private:
 #endif
 
         if(resultant_of_primitive_and_derivative_x().is_zero()) {
-            throw CGALi::Zero_resultant_exception<Polynomial_2>
+            throw internal::Zero_resultant_exception<Polynomial_2>
                 (polynomial_2());
         }
     }
@@ -1635,7 +1635,7 @@ private:
 
     // Returns the critical event coordinates
     std::vector<Event_coordinate_1>& event_coordinates() const
-        throw(CGALi::Zero_resultant_exception<Polynomial_2>) {
+        throw(internal::Zero_resultant_exception<Polynomial_2>) {
         if(! this->ptr()->event_coordinates) {
             compute_event_coordinates();
         }
@@ -1646,7 +1646,7 @@ private:
 
     // Returns the intermediate values for intervals between events
     std::vector<boost::optional<Bound> >& intermediate_values() const 
-        throw(CGALi::Zero_resultant_exception<Polynomial_2>) {
+        throw(internal::Zero_resultant_exception<Polynomial_2>) {
         
         if(! this->ptr()->intermediate_values) {
             // This is created during event_coordiantes()
@@ -1667,7 +1667,7 @@ private:
      * x-coordinates of the curve.
      */
     void compute_event_coordinates() const
-        throw(CGALi::Zero_resultant_exception<Polynomial_2>) {
+        throw(internal::Zero_resultant_exception<Polynomial_2>) {
          
 #if CGAL_ACK_DEBUG_FLAG
         CGAL_ACK_DEBUG_PRINT << "compute events..." << std::flush;
@@ -1717,9 +1717,9 @@ private:
             CGAL::Real_embeddable_traits<Algebraic_real_1>::Compare compare;
 
         std::vector<Algebraic_real_1> event_values;
-        std::vector<CGAL::CGALi::Three_valued> event_values_info;
+        std::vector<CGAL::internal::Three_valued> event_values_info;
 
-        CGAL::CGALi::set_union_with_source
+        CGAL::internal::set_union_with_source
             (res_roots.begin(),
              res_roots.end(),
              content_roots.begin(),
@@ -1742,7 +1742,7 @@ private:
             curr_event.val = event_values[i];
             switch(event_values_info[i]) {
             
-            case(CGAL::CGALi::ROOT_OF_FIRST_SET): {
+            case(CGAL::internal::ROOT_OF_FIRST_SET): {
                 curr_event.index_of_prim_res_root = curr_res_index;
                 CGAL_expensive_assertion(res_roots[curr_res_index] == 
                                          event_values[i]);
@@ -1767,7 +1767,7 @@ private:
                 curr_event.mult_of_content_root = 0;
                 break;
             }
-            case(CGAL::CGALi::ROOT_OF_SECOND_SET): {
+            case(CGAL::internal::ROOT_OF_SECOND_SET): {
                 curr_event.index_of_content_root = curr_content_index;
                 CGAL_expensive_assertion(content_roots[curr_content_index] == 
                                          event_values[i]);
@@ -1782,7 +1782,7 @@ private:
                 curr_event.mult_of_prim_lcoeff_root = 0;
                 break;
             }
-            case(CGAL::CGALi::ROOT_OF_BOTH_SETS): {
+            case(CGAL::internal::ROOT_OF_BOTH_SETS): {
                 curr_event.index_of_prim_res_root = curr_res_index;
                 CGAL_expensive_assertion(res_roots[curr_res_index] == 
                                          event_values[i]);
@@ -1865,7 +1865,7 @@ public:
      * of the Algebraic_curve_kernel_2 yet.
      */
     Self& shear_primitive_part(Integer s) const
-        throw(CGAL::CGALi::Non_generic_position_exception)
+        throw(CGAL::internal::Non_generic_position_exception)
     {
         CGAL_assertion(s!=0);
 #if CGAL_ACK_USE_SPECIAL_TREATMENT_FOR_CONIX
@@ -1875,7 +1875,7 @@ public:
 #endif
         if(this->ptr()->bad_shears.find(s) !=
            this->ptr()->bad_shears.end()) {
-            throw CGAL::CGALi::Non_generic_position_exception();
+            throw CGAL::internal::Non_generic_position_exception();
         }
         typedef typename std::map<Integer,Self>::iterator 
             Map_iterator;
@@ -1892,9 +1892,9 @@ public:
             CGAL_assertion(insertion.second);
             return insertion.first->second;
         }
-        catch(CGAL::CGALi::Non_generic_position_exception err) {
+        catch(CGAL::internal::Non_generic_position_exception err) {
             this->ptr()->bad_shears.insert(s);
-            throw CGAL::CGALi::Non_generic_position_exception();
+            throw CGAL::internal::Non_generic_position_exception();
         }
     }
     

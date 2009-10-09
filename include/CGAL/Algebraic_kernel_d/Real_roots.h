@@ -32,7 +32,7 @@
 
 CGAL_BEGIN_NAMESPACE 
 
-namespace CGALi {
+namespace internal {
     
 /*! \ingroup NiX_Real_roots
  *  \brief This class provides operators for a comfortable construction of
@@ -283,7 +283,7 @@ int operator()( const Polynomial&           poly,
 	  }
 	   };
 
-} // namespace CGALi
+} // namespace internal
 
 CGAL_END_NAMESPACE
 

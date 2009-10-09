@@ -31,7 +31,7 @@
 
 CGAL_BEGIN_NAMESPACE
 
-namespace CGALi {
+namespace internal {
 template< class AlgebraicReal1, class Isolator_ >
 class Algebraic_kernel_1_base {
   
@@ -175,7 +175,7 @@ public:
 #else
       CGAL_precondition(!CGAL::is_zero(p));
 #endif
-      CGALi::Real_roots< Algebraic_real_1, Isolator > real_roots; 
+      internal::Real_roots< Algebraic_real_1, Isolator > real_roots; 
       std::list< int > mults;
       std::list< Algebraic_real_1 > roots; 
       real_roots( p, std::back_inserter(roots), std::back_inserter( mults ) );
@@ -197,7 +197,7 @@ public:
         OutputIterator oi , 
         bool known_to_be_square_free) const {
 
-      CGALi::Real_roots< Algebraic_real_1, Isolator > real_roots; 
+      internal::Real_roots< Algebraic_real_1, Isolator > real_roots; 
 #if CGAL_AK_ENABLE_DEPRECATED_INTERFACE
 #else
       CGAL_precondition(!CGAL::is_zero(p));
@@ -220,7 +220,7 @@ public:
         OutputIteratorRoots roi,
         OutputIteratorMults moi) const {
 
-      CGALi::Real_roots< Algebraic_real_1, Isolator > real_roots; 
+      internal::Real_roots< Algebraic_real_1, Isolator > real_roots; 
       real_roots(p,roi,moi);
       return std::make_pair(roi,moi);
     }
@@ -237,7 +237,7 @@ public:
       Polynomial_1 g = gcd_utcf(p,ar.polynomial());
       if (g.sign_at(ar.low()) != g.sign_at(ar.high())) return ZERO; 
      
-      while(CGALi::descartes(p,ar.low(),ar.high()) > 0) ar.refine();
+      while(internal::descartes(p,ar.low(),ar.high()) > 0) ar.refine();
       while( p.sign_at(ar.low())  == ZERO )  ar.refine();
       while( p.sign_at(ar.high()) == ZERO )  ar.refine();
 
@@ -366,18 +366,18 @@ public:
 #undef CGAL_ALGEBRAIC_KERNEL_1_PRED  
           
 };
-} // namespace CGALi
+} // namespace internal
 
 
 template< class Coefficient,
           class Bound = typename CGAL::Get_arithmetic_kernel< Coefficient >::Arithmetic_kernel::Rational,
-          class RepClass = CGALi::Algebraic_real_rep< Coefficient, Bound >,
-          class Isolator = CGALi::Descartes< typename CGAL::Polynomial_type_generator<Coefficient,1>::Type, Bound > >
+          class RepClass = internal::Algebraic_real_rep< Coefficient, Bound >,
+          class Isolator = internal::Descartes< typename CGAL::Polynomial_type_generator<Coefficient,1>::Type, Bound > >
 class Algebraic_kernel_1    
-  : public CGALi::Algebraic_kernel_1_base< 
+  : public internal::Algebraic_kernel_1_base< 
 
     // Template argument #1 (AlgebraicReal1)        
-        CGALi::Algebraic_real_pure< 
+        internal::Algebraic_real_pure< 
             Coefficient, 
             Bound,
             ::CGAL::Handle_policy_no_union,     

@@ -14,14 +14,14 @@
 // TODO: The comments are all original EXACUS comments and aren't adapted. So
 //         they may be wrong now.
 
-#ifndef CGAL_POLYNOMIAL_UNIVARIATE_CGALi_UTILS_H
-#define CGAL_POLYNOMIAL_UNIVARIATE_CGALi_UTILS_H
+#ifndef CGAL_POLYNOMIAL_UNIVARIATE_internal_UTILS_H
+#define CGAL_POLYNOMIAL_UNIVARIATE_internal_UTILS_H
 
 #include <CGAL/Polynomial.h>
 
 CGAL_BEGIN_NAMESPACE
 
-namespace CGALi {
+namespace internal {
     //! return an upper bound on the absolute value of all real roots of \c P.
     /*! The upper bound is a power of two. Only works for univariate polynomials.
      *  \pre \c NT must be \c RealComparable.
@@ -90,9 +90,9 @@ namespace CGALi {
         return true;
     } */   
 
-} // namespace CGALi
+} // namespace internal
 
 CGAL_END_NAMESPACE
 
 
-#endif // CGAL_POLYNOMIAL_UNIVARIATE_CGALi_UTILS_H
+#endif // CGAL_POLYNOMIAL_UNIVARIATE_internal_UTILS_H

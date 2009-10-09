@@ -20,7 +20,7 @@
 
 CGAL_BEGIN_NAMESPACE
 
-  namespace CGALi {
+  namespace internal {
 
     /*!
      * \brief A class that controls the used shear factors
@@ -98,7 +98,7 @@ CGAL_BEGIN_NAMESPACE
 	
     };
 
-  } // namespace CGALi
+  } // namespace internal
 CGAL_END_NAMESPACE
 
 #endif // CGAL_ACK_SHEAR_CONTROLLER

@@ -37,7 +37,7 @@
 
 CGAL_BEGIN_NAMESPACE
 
-namespace CGALi {
+namespace internal {
 
 template <class Integer>
 Integer caching_binomial(int n, int k) {
@@ -124,8 +124,8 @@ void Power_to_Bernstein_pm1_nofrac_matrix<Integer_>::init_m() {
             }
             m_[ij_to_idx(i,j)] =
                 sum 
-              * CGAL::CGALi::caching_factorial<Integer>(i)
-              * CGAL::CGALi::caching_factorial<Integer>(degree - i);
+              * CGAL::internal::caching_factorial<Integer>(i)
+              * CGAL::internal::caching_factorial<Integer>(degree - i);
         }
     }
 }
@@ -213,7 +213,7 @@ Bitstream_bernstein_from_power<Traits_>::Bitstream_bernstein_from_power(
     } else {
         ceil_log_degfac_
             = Ceil_log2_abs_Integer()
-                (CGAL::CGALi::
+                (CGAL::internal::
                  caching_factorial<Integer>(degree_));
         floor_log_degfac_
             = ceil_log_degfac_ - 1;
@@ -282,7 +282,7 @@ Bitstream_bernstein_from_power<Traits_>::operator()(
     return oi;
 }
 
-} // namespace CGALi
+} // namespace internal
 
 
 /*
@@ -347,7 +347,7 @@ public:
     }
 }; // class Convex_combinator_approx_fraction
 
-namespace CGALi {
+namespace internal {
 
 /*
  * THE ACTUAL TREE CLASSES
@@ -360,7 +360,7 @@ template <class BitstreamDescartesE08TreeTraits>
 
         template <class BitstreamDescartesE08TreeTraits>
         class Bitstream_descartes_E08_tree_rep;
-} // namespace CGALi
+} // namespace internal
 
 CGAL_END_NAMESPACE
 
@@ -400,11 +400,11 @@ CGAL_END_NAMESPACE
     typedef BitstreamDescartesE08TreeTraits TRAITS;                       \
     typedef TRAITS Bitstream_descartes_E08_tree_traits;                   \
     CGAL_SNAP_BITSTREAM_DESCARTES_E08_TREE_TRAITS_TYPEDEFS(TRAITS);       \
-    typedef CGAL::CGALi::Bitstream_bernstein_from_power<TRAITS> B_from_p; \
+    typedef CGAL::internal::Bitstream_bernstein_from_power<TRAITS> B_from_p; \
     typedef std::vector<Integer> Integer_vector;                          \
-    typedef CGAL::CGALi::Abs_le_pow2<Ceil_log2_abs_Integer>\
+    typedef CGAL::internal::Abs_le_pow2<Ceil_log2_abs_Integer>\
         Abs_le_pow2; \
-    typedef CGAL::CGALi::Sign_eps_log2                  \
+    typedef CGAL::internal::Sign_eps_log2                  \
         <Integer, Abs_le_pow2, Sign>                                      \
                     Sign_eps_log2;                                        \
 
@@ -413,7 +413,7 @@ CGAL_END_NAMESPACE
 // typedefs for Bitstream_descartes_E08_tree{,_rep}
 #define CGAL_BITSTREAM_DESCARTES_E08_TREE_TYPEDEFS                   \
     CGAL_BITSTREAM_DESCARTES_E08_TREE_COMMON_TYPEDEFS;               \
-    typedef CGAL::CGALi::Bitstream_descartes_E08_node<TRAITS> Node; \
+    typedef CGAL::internal::Bitstream_descartes_E08_node<TRAITS> Node; \
     typedef std::list<Node> Node_list;                               \
 
 // end #define
@@ -421,7 +421,7 @@ CGAL_END_NAMESPACE
 
 CGAL_BEGIN_NAMESPACE
 
-namespace CGALi {
+namespace internal {
 
 /*
  * class Bitstream_descartes_E08_node
@@ -433,8 +433,8 @@ public:
     typedef Bitstream_descartes_E08_node Self;
     CGAL_BITSTREAM_DESCARTES_E08_TREE_COMMON_TYPEDEFS;
 
-    friend class CGAL::CGALi::Bitstream_descartes_E08_tree<TRAITS>;
-    friend class CGAL::CGALi::Bitstream_descartes_E08_tree_rep<TRAITS>;
+    friend class CGAL::internal::Bitstream_descartes_E08_tree<TRAITS>;
+    friend class CGAL::internal::Bitstream_descartes_E08_tree_rep<TRAITS>;
 
 private:
     // "node data" (set individually in subdivision)
@@ -483,7 +483,7 @@ public:
 
     class Monomial_basis_tag { };
 
-    friend class CGAL::CGALi::Bitstream_descartes_E08_tree<TRAITS>;
+    friend class CGAL::internal::Bitstream_descartes_E08_tree<TRAITS>;
 
 private:
     B_from_p b_from_p_;
@@ -538,7 +538,7 @@ template <class BitstreamDescartesE08TreeTraits>
 class Bitstream_descartes_E08_tree
     : public
         ::CGAL::Handle_with_policy<
-                 CGALi::Bitstream_descartes_E08_tree_rep<
+                 internal::Bitstream_descartes_E08_tree_rep<
                          BitstreamDescartesE08TreeTraits
                  >
          >
@@ -546,7 +546,7 @@ class Bitstream_descartes_E08_tree
 public:
     typedef Bitstream_descartes_E08_tree Self;
     CGAL_BITSTREAM_DESCARTES_E08_TREE_TYPEDEFS;
-    typedef CGALi::Bitstream_descartes_E08_tree_rep<TRAITS> Rep;
+    typedef internal::Bitstream_descartes_E08_tree_rep<TRAITS> Rep;
     typedef ::CGAL::Handle_with_policy<Rep> Base;
 
     //! node iterator.
@@ -818,7 +818,7 @@ Bitstream_descartes_E08_tree<BitstreamDescartesE08TreeTraits>
     ) {
         return false;
     } else {
-        CGALi::var_eps(n->coeff_.begin(), n->coeff_.end(),
+        internal::var_eps(n->coeff_.begin(), n->coeff_.end(),
                 n->min_var_, n->max_var_, Sign_eps_log2(n->log_eps_)
         );
         return true;
@@ -833,7 +833,7 @@ Bitstream_descartes_E08_tree<BitstreamDescartesE08TreeTraits>
 ) {
     de_casteljau_generic(n->coeff_.begin(), n->coeff_.end(),
             this->ptr()->tmp1_coeff_.begin(), this->ptr()->tmp2_coeff_.begin(),
-            CGAL::CGALi::Convex_combinator_approx_midpoint<Integer>()
+            CGAL::internal::Convex_combinator_approx_midpoint<Integer>()
     );
     this->ptr()->splitpoint_num_     = n->lower_num_ + n->upper_num_;
     this->ptr()->log_splitpoint_den_ = n->log_bdry_den_ + 1;
@@ -854,7 +854,7 @@ Bitstream_descartes_E08_tree<BitstreamDescartesE08TreeTraits>
 ) {
     de_casteljau_generic(n->coeff_.begin(), n->coeff_.end(),
         this->ptr()->tmp1_coeff_.begin(), this->ptr()->tmp2_coeff_.begin(),
-        CGAL::CGALi::Convex_combinator_approx_long_log<Integer>
+        CGAL::internal::Convex_combinator_approx_long_log<Integer>
             (alpha_num, log_alpha_den)
     );
     this->ptr()->splitpoint_num_ =
@@ -884,12 +884,12 @@ Bitstream_descartes_E08_tree<BitstreamDescartesE08TreeTraits>
     CGAL_assertion(delta_log_bdry_den >= 0);
 
     int l_min_var, l_max_var, r_min_var, r_max_var;
-    CGALi::var_eps(this->ptr()->tmp1_coeff_.begin(),
+    internal::var_eps(this->ptr()->tmp1_coeff_.begin(),
                                      this->ptr()->tmp1_coeff_.end(),
                                      l_min_var, l_max_var, 
                                      Sign_eps_log2(n->log_eps_)
     );
-    CGALi::var_eps(this->ptr()->tmp2_coeff_.begin(),
+    internal::var_eps(this->ptr()->tmp2_coeff_.begin(),
             this->ptr()->tmp2_coeff_.end(),
             r_min_var, r_max_var, Sign_eps_log2(n->log_eps_)
     );
@@ -1035,7 +1035,7 @@ Bitstream_descartes_E08_tree<BitstreamDescartesE08TreeTraits>
     }
 } // Bitstream_descartes_E08_tree::global_prec_increase()
 
-} // namespace CGALi
+} // namespace internal
 
 CGAL_END_NAMESPACE
 

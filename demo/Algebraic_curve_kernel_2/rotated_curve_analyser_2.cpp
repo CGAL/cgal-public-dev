@@ -256,7 +256,7 @@ int main(int argc,char** argv) {
        
 #if CGAL_ACK_MAKE_SQUARE_FREE
         std::cout << "Make it square free..." << std::flush;
-        f = CGAL::CGALi::make_square_free(curves[i]);
+        f = CGAL::internal::make_square_free(curves[i]);
         std::cout << "done" << std::endl;
 #else
         f = curves[i];

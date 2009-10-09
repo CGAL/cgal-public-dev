@@ -20,7 +20,7 @@
 
 CGAL_BEGIN_NAMESPACE
 
-namespace CGALi {
+namespace internal {
 
 template < class CurvePairAnalysis_2, class Rep_ > 
 class Status_line_CPA_1;
@@ -111,7 +111,7 @@ public:
 //! also holds for curve ends approaching the vertical asymptote. 
 //! Curve_pair_vertical_line_1 at x = +/-oo are not allowed.
 template <class CurvePairAnalysis_2, 
-      class Rep_ = CGALi::Status_line_CPA_1_rep<CurvePairAnalysis_2> >
+      class Rep_ = internal::Status_line_CPA_1_rep<CurvePairAnalysis_2> >
 class Status_line_CPA_1 : 
     public ::CGAL::Handle_with_policy< Rep_ > 
 {
@@ -471,13 +471,13 @@ public:
 
 template <class CurvePairAnalysis_2, class Rep>
 std::ostream& operator<< (std::ostream& os,
-        const CGALi::Status_line_CPA_1<CurvePairAnalysis_2, Rep>& sline) {
+        const internal::Status_line_CPA_1<CurvePairAnalysis_2, Rep>& sline) {
         
     sline.write(os);
     return os;
 }
 
-} // namespace CGALi
+} // namespace internal
 
 CGAL_END_NAMESPACE
 

@@ -38,14 +38,14 @@ void test_algebraic_kernel_coeff_bound_rep() {
   
   typedef typename CGAL::Polynomial_type_generator<Coefficient,1>::Type 
     Polynomial_1;
-  typedef CGAL::CGALi::Algebraic_real_pure
+  typedef CGAL::internal::Algebraic_real_pure
     < Coefficient, Bound, CGAL::Handle_policy_no_union, Rep_class >   Algebraic_real_1;
   
-  typedef CGAL::CGALi::Descartes< Polynomial_1, Bound >               Descartes;
-  typedef CGAL::CGALi::Bitstream_descartes<
-  CGAL::CGALi::Bitstream_descartes_rndl_tree_traits
-    <CGAL::CGALi::Bitstream_coefficient_kernel<Coefficient> > >  BDescartes;
-//   typedef CGAL::CGALi::Bitstream_descartes< Polynomial_1, Bound > BDescartes;
+  typedef CGAL::internal::Descartes< Polynomial_1, Bound >               Descartes;
+  typedef CGAL::internal::Bitstream_descartes<
+  CGAL::internal::Bitstream_descartes_rndl_tree_traits
+    <CGAL::internal::Bitstream_coefficient_kernel<Coefficient> > >  BDescartes;
+//   typedef CGAL::internal::Bitstream_descartes< Polynomial_1, Bound > BDescartes;
   
   typedef CGAL::Algebraic_kernel_1< Coefficient, Bound, Rep_class , Descartes>
     Kernel_Descartes;
@@ -62,12 +62,12 @@ void test_algebraic_kernel_coeff_bound_rep() {
 template< class Coeff, class Bound >
 void test_algebraic_kernel_coeff_bound() {
   test_algebraic_kernel_coeff_bound_rep<Coeff,Bound,
-    CGAL::CGALi::Algebraic_real_rep< Coeff, Bound > > ();
+    CGAL::internal::Algebraic_real_rep< Coeff, Bound > > ();
 #if CGAL_TEST_ALL_AK_VARIANTS
   test_algebraic_kernel_coeff_bound_rep<Coeff,Bound,
-    CGAL::CGALi::Algebraic_real_rep_bfi< Coeff, Bound > > ();
+    CGAL::internal::Algebraic_real_rep_bfi< Coeff, Bound > > ();
   test_algebraic_kernel_coeff_bound_rep<Coeff,Bound,
-    CGAL::CGALi::Algebraic_real_quadratic_refinement_rep_bfi< Coeff, Bound > > ();
+    CGAL::internal::Algebraic_real_quadratic_refinement_rep_bfi< Coeff, Bound > > ();
 #endif
 }
 

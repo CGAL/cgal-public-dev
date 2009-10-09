@@ -17,7 +17,7 @@
 
 CGAL_BEGIN_NAMESPACE
 
-namespace CGALi {
+namespace internal {
 
   enum Three_valued {
 
@@ -27,7 +27,7 @@ namespace CGALi {
 
   };
 
-} // namespace CGALi
+} // namespace internal
 
 /*!
  * \brief Represents different strategies how to handle 

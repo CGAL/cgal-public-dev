@@ -33,7 +33,7 @@
 CGAL_BEGIN_NAMESPACE
 ;
 
-namespace CGALi {
+namespace internal {
 
 // definition of the Algebraic_real_rep x:
     
@@ -61,8 +61,8 @@ class Algebraic_real_quadratic_refinement_rep_bfi
 
     typedef typename CGAL::Bigfloat_interval_traits<BFI>::Bound BF;
 
-    typename CGAL::CGALi::Float_traits<BF>::Get_exponent get_exp;
-    typename CGAL::CGALi::Float_traits<BF>::Get_mantissa get_m;
+    typename CGAL::internal::Float_traits<BF>::Get_exponent get_exp;
+    typename CGAL::internal::Float_traits<BF>::Get_mantissa get_m;
 
     // This is a implicit restriction - Field must be some type
     // modelling rational numbers to get an integer type
@@ -305,14 +305,14 @@ private:
 
         Integer i_low, i_high;
 
-        //typename CGAL::CGALi::Real_embeddable_extension<BF>::Floor floor;
-        //typename CGAL::CGALi::Real_embeddable_extension<BF>::Ceil ceil;
-        typename CGAL::CGALi::Float_traits<BF>::Mul_by_pow_of_2 mul_2;
+        //typename CGAL::internal::Real_embeddable_extension<BF>::Floor floor;
+        //typename CGAL::internal::Real_embeddable_extension<BF>::Ceil ceil;
+        typename CGAL::internal::Float_traits<BF>::Mul_by_pow_of_2 mul_2;
 
         BF z_low=CGAL::lower(z), z_high = CGAL::upper(z);
 
-        i_low = CGAL::CGALi::floor(mul_2(CGAL::lower(z),N));
-        i_high = CGAL::CGALi::ceil(mul_2(CGAL::upper(z),N));
+        i_low = CGAL::internal::floor(mul_2(CGAL::lower(z),N));
+        i_high = CGAL::internal::ceil(mul_2(CGAL::upper(z),N));
 
         return std::make_pair(i_low,i_high);
 
@@ -493,7 +493,7 @@ public:
         }      
     }
 };
-} // namepace CGALi
+} // namepace internal
 
 CGAL_END_NAMESPACE
 

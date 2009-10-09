@@ -26,7 +26,7 @@ CGAL_BEGIN_NAMESPACE
 template < class AlgebraicCurveKernel_2, class Rep_ > 
 class Curve_pair_analysis_2;
 
-namespace CGALi {
+namespace internal {
 
 template < class AlgebraicCurveKernel_2 >
 class Curve_pair_analysis_2_rep {
@@ -82,7 +82,7 @@ public:
 //! between one such interval differ only in the values of the 
 //! \c Algebraic_real_2 entries. Topological information are equal.
 template <class AlgebraicCurveKernel_2, 
-      class Rep_ = CGALi::Curve_pair_analysis_2_rep<AlgebraicCurveKernel_2> >
+      class Rep_ = internal::Curve_pair_analysis_2_rep<AlgebraicCurveKernel_2> >
 class Curve_pair_analysis_2 : public ::CGAL::Handle_with_policy< Rep_ > 
 {
     // internal curve pair type (temporary)
@@ -122,7 +122,7 @@ public:
     typedef Curve_pair_analysis_2<Algebraic_curve_kernel_2, Rep> Self;
 
     //! type of a vertical line
-    typedef CGALi::Status_line_CPA_1<Self> Status_line_1;
+    typedef internal::Status_line_CPA_1<Self> Status_line_1;
         
     //! the handle superclass
     typedef ::CGAL::Handle_with_policy<Rep> Base;
@@ -354,10 +354,10 @@ protected:
     }
 
     // befriending status line class
-    friend class CGALi::Status_line_CPA_1<Self>;
+    friend class internal::Status_line_CPA_1<Self>;
 }; // class Curve_pair_analysis_2
 
-} // namespace CGALi
+} // namespace internal
 
 CGAL_END_NAMESPACE
 

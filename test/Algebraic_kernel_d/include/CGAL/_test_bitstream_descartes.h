@@ -34,7 +34,7 @@
 
 CGAL_BEGIN_NAMESPACE
 
-namespace CGALi {
+namespace internal {
 
 // A simple model of the EventRefinement concept: 
 // Uses a vector of Algebraic reals
@@ -65,13 +65,13 @@ void test_bitstream_descartes() {
   
   typedef typename CGAL::Polynomial_type_generator<Integer,1>::Type Poly_int1;
   typedef typename CGAL::Polynomial_type_generator<Integer,2>::Type Poly_int2;
-  typedef CGAL::CGALi::Algebraic_real_pure<Integer,Rational>
+  typedef CGAL::internal::Algebraic_real_pure<Integer,Rational>
       Algebraic_real;
 
-  typedef CGAL::CGALi::Bitstream_descartes_rndl_tree_traits
-      <CGAL::CGALi::Bitstream_coefficient_kernel<Integer> > Traits;
+  typedef CGAL::internal::Bitstream_descartes_rndl_tree_traits
+      <CGAL::internal::Bitstream_coefficient_kernel<Integer> > Traits;
   
-  typedef CGAL::CGALi::Bitstream_descartes<Traits> Bitstream_descartes;
+  typedef CGAL::internal::Bitstream_descartes<Traits> Bitstream_descartes;
 
   Traits traits;
 
@@ -86,7 +86,7 @@ void test_bitstream_descartes() {
 
     // We expect 3 roots, at -1.176, -.154 and 1.168
     
-    CGAL::CGALi::Square_free_descartes_tag t;
+    CGAL::internal::Square_free_descartes_tag t;
 
     Bitstream_descartes descartes(t, f);
 
@@ -136,7 +136,7 @@ void test_bitstream_descartes() {
 
     // We expect 3 roots, at -1.597, -.388 and 0
     
-    CGAL::CGALi::Square_free_descartes_tag t;
+    CGAL::internal::Square_free_descartes_tag t;
 
     Bitstream_descartes descartes(t, f, tree);
     
@@ -182,7 +182,7 @@ void test_bitstream_descartes() {
     Poly_int1 f;
     ss >> f;
     
-    CGAL::CGALi::M_k_descartes_tag t;
+    CGAL::internal::M_k_descartes_tag t;
     
     // We expect 4 real roots (m), and the gcd of g and g' is 3 (k)
     Bitstream_descartes descartes(t, f, 4, 3);
@@ -191,7 +191,7 @@ void test_bitstream_descartes() {
     try {
       Poly_int1 sq_f = descartes.square_free_part();
       assert(false);
-    } catch (CGAL::CGALi::Virtual_method_exception ex) {
+    } catch (CGAL::internal::Virtual_method_exception ex) {
       // Expected
     }
 
@@ -235,7 +235,7 @@ void test_bitstream_descartes() {
     // In Maple:f := y^3 - y^2  -2*y 
     Poly_int1 f(0,-2,-1,1);
     
-    CGAL::CGALi::M_k_descartes_tag t;
+    CGAL::internal::M_k_descartes_tag t;
     
     // We expect 3 real roots (m), and the degree of gcd of g and g' is 0 (k)
     Bitstream_descartes descartes(t, f, 3, 0);
@@ -244,7 +244,7 @@ void test_bitstream_descartes() {
     try {
       Poly_int1 sq_f = descartes.square_free_part();
       assert(false);
-    } catch (CGAL::CGALi::Virtual_method_exception ex) {
+    } catch (CGAL::internal::Virtual_method_exception ex) {
       // Expected
     }
 
@@ -286,7 +286,7 @@ void test_bitstream_descartes() {
     // g = f^3*h, where h is a polynomial with 3 simple roots 
     // g := 75449+42392*x^5+359917*x-1003302*x^3+299972*x^2-1857360*x^4-1130116*x^11+840268*x^8-840578*x^9-2327140*x^10+705936*x^12+2091751*x^6+1825115*x^7+746328*x^13+170368*x^14
     
-    CGAL::CGALi::Backshear_descartes_tag t;
+    CGAL::internal::Backshear_descartes_tag t;
 
     // We expect 3 event roots, and 3 non-event roots
     Bitstream_descartes descartes(t, g, 6, 3, event_refinement);
@@ -295,13 +295,13 @@ void test_bitstream_descartes() {
       int k = descartes.degree_of_gcd();
       (void)k;
       assert(false);
-    } catch (CGAL::CGALi::Virtual_method_exception ex) {
+    } catch (CGAL::internal::Virtual_method_exception ex) {
       // Expected
     }
     try {
       Poly_int1 sq_f = descartes.square_free_part();
       assert(false);
-    } catch (CGAL::CGALi::Virtual_method_exception ex) {
+    } catch (CGAL::internal::Virtual_method_exception ex) {
       // Expected
     }
 
@@ -354,13 +354,13 @@ void test_bitstream_descartes() {
 
     typedef CGAL::Algebraic_kernel_1<Integer> AK_1;
 
-    typedef CGAL::CGALi::Bitstream_coefficient_kernel_at_alpha
+    typedef CGAL::internal::Bitstream_coefficient_kernel_at_alpha
         <AK_1> Bitstream_coefficient_kernel;
 
-    typedef CGAL::CGALi::Bitstream_descartes_rndl_tree_traits
+    typedef CGAL::internal::Bitstream_descartes_rndl_tree_traits
         <Bitstream_coefficient_kernel > Traits_2;
   
-    typedef CGAL::CGALi::Bitstream_descartes<Traits_2> Bitstream_descartes;
+    typedef CGAL::internal::Bitstream_descartes<Traits_2> Bitstream_descartes;
 
     typedef typename Bitstream_descartes::Bitstream_tree Bitstream_tree;
 
@@ -374,7 +374,7 @@ void test_bitstream_descartes() {
     
     ss >> f;
 
-    Poly_int1 r = CGAL::CGALi::resultant(f,CGAL::diff(f));
+    Poly_int1 r = CGAL::internal::resultant(f,CGAL::diff(f));
 
     Algebraic_real alpha(r,-2,-1);
 
@@ -382,7 +382,7 @@ void test_bitstream_descartes() {
 
     Traits_2 traits(bitstream_coefficient_kernel);
 
-    CGAL::CGALi::M_k_descartes_tag mk;
+    CGAL::internal::M_k_descartes_tag mk;
 
     Bitstream_descartes m_k_descartes(mk,f,1,1,traits);
 
@@ -416,7 +416,7 @@ void test_bitstream_descartes() {
 
     Traits_2 new_traits(new_bitstream_coefficient_kernel);
 
-    CGAL::CGALi::Square_free_descartes_tag sq_free;
+    CGAL::internal::Square_free_descartes_tag sq_free;
 
     Bitstream_descartes sq_free_descartes(sq_free, f, tree, new_traits);
 
@@ -432,6 +432,6 @@ void test_bitstream_descartes() {
   }
 }
 
-} // namespace CGALi
+} // namespace internal
 
 CGAL_END_NAMESPACE

@@ -36,7 +36,7 @@ CGAL_BEGIN_NAMESPACE;
 
 template <class NT> struct Get_arithmetic_kernel;
 
-namespace CGALi {
+namespace internal {
 
 // definition of the Algebraic_real_rep_bfi x:
     
@@ -405,7 +405,7 @@ protected:
     
 };
 
-}//namespace CGALi
+}//namespace internal
 
 CGAL_END_NAMESPACE
 

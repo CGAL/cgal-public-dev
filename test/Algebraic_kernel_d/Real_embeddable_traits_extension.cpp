@@ -40,7 +40,7 @@ void test_real_embeddable_extension(const NT_&){
   typedef typename CGAL::Get_arithmetic_kernel<NT_>::Arithmetic_kernel AK;
   typedef typename AK::Integer Integer;
 
-  typedef CGAL::CGALi::Real_embeddable_extension<NT_> RETE;
+  typedef CGAL::internal::Real_embeddable_extension<NT_> RETE;
 
   typedef typename RETE::Type NT; 
   

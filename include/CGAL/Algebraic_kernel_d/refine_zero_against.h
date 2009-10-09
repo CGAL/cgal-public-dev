@@ -23,7 +23,7 @@
 
 CGAL_BEGIN_NAMESPACE
 
-namespace CGALi {
+namespace internal {
 /* computes an upper bound on the number of roots ]low,high[ using Descartes'
  * Sign Rule
 */
@@ -107,7 +107,7 @@ bool refine_zero_against(Field& low, Field& high, Polynomial p, Polynomial q) {
     Polynomial gcd_pq; // computed below if necessary
 
     for (;;) {
-        int sv = CGALi::descartes(q,low,high);
+        int sv = internal::descartes(q,low,high);
         CGAL_assertion(sv >= 0);
 
         if (sv == 0) {
@@ -197,7 +197,7 @@ static bool strong_refine_zero_against(Field& low, Field& high,
     return has_common_root;
 }
 
-} //namespace CGALi
+} //namespace internal
 
 CGAL_END_NAMESPACE
 

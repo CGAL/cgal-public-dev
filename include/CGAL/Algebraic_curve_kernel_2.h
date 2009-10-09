@@ -152,14 +152,14 @@ public:
      * \brief  type of a curve point, a model for the 
      * \c AlgebraicKernel_d_2::AlgebraicReal_2 concept
      */
-    typedef CGALi::Xy_coordinate_2<Self> Xy_coordinate_2;
+    typedef internal::Xy_coordinate_2<Self> Xy_coordinate_2;
 
     /*! 
      * type of the curve analysis, a model for the
      * \c AlgebraicKernelWithAnalysis_d_2::CurveAnalysis_2 concept
      */
 #if CGAL_ACK_USE_EXACUS
-    typedef CGALi::Curve_analysis_2<Self> Curve_analysis_2; 
+    typedef internal::Curve_analysis_2<Self> Curve_analysis_2; 
 #else
     typedef CGAL::Curve_analysis_2<Self> Curve_analysis_2; 
 #endif
@@ -169,27 +169,27 @@ public:
      * \c AlgebraicKernelWithAnalysis_d_2::CurvePairAnalysis_2 concept
      */
 #if CGAL_ACK_USE_EXACUS
-    typedef CGALi::Curve_pair_analysis_2<Self> Curve_pair_analysis_2;
+    typedef internal::Curve_pair_analysis_2<Self> Curve_pair_analysis_2;
 #else
     typedef CGAL::Curve_pair_analysis_2<Self> Curve_pair_analysis_2;
 #endif
 
     //! traits class used for approximations of x-coordinate
-    typedef CGALi::Algebraic_real_traits<X_coordinate_1> X_real_traits_1;
+    typedef internal::Algebraic_real_traits<X_coordinate_1> X_real_traits_1;
     //typedef typename Algebraic_kernel_1::Algebraic_real_traits X_real_traits_1;
     
     //! traits class used for approximations of y-coordinates
 #if CGAL_ACK_USE_EXACUS
-    typedef CGALi::Algebraic_real_traits_for_y
+    typedef internal::Algebraic_real_traits_for_y
         <Xy_coordinate_2,Internal_curve_pair_2> Y_real_traits_1;
 #else
-    typedef CGALi::Algebraic_real_traits_for_y
+    typedef internal::Algebraic_real_traits_for_y
         <Xy_coordinate_2,CGAL::Null_functor> Y_real_traits_1;
 #endif
 
     //  berfriending representations to make protected typedefs available
-    friend class CGALi::Curve_analysis_2_rep<Self>;
-    friend class CGALi::Curve_pair_analysis_2_rep<Self>;
+    friend class internal::Curve_analysis_2_rep<Self>;
+    friend class internal::Curve_pair_analysis_2_rep<Self>;
     
     //!@}
     //! \name rebind operator
@@ -301,15 +301,15 @@ protected:
     };
 
     //! type of curve analysis cache
-    typedef CGALi::LRU_hashed_map_with_kernel<Self,Polynomial_2,
-        Curve_analysis_2, CGALi::Poly_hasher,
+    typedef internal::LRU_hashed_map_with_kernel<Self,Polynomial_2,
+        Curve_analysis_2, internal::Poly_hasher,
         std::equal_to<Polynomial_2>,
         typename Polynomial_traits_2::Canonicalize,
         Curve_creator > Curve_cache_2;
 
     //! type of curve pair analysis cache 
-    typedef CGALi::LRU_hashed_map_with_kernel<Self,Pair_of_curves_2,
-        Curve_pair_analysis_2, CGALi::Pair_hasher, Pair_id_equal_to,
+    typedef internal::LRU_hashed_map_with_kernel<Self,Pair_of_curves_2,
+        Curve_pair_analysis_2, internal::Pair_hasher, Pair_id_equal_to,
         Pair_id_order,
         Pair_creator<Curve_pair_analysis_2> > Curve_pair_cache_2;
     

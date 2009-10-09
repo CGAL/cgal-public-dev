@@ -43,11 +43,11 @@ void test_algebraic_curve_kernel_2() {
     typedef typename AT::Integer Coefficient;
     typedef typename AT::Rational Rational;
       
-    typedef CGAL::CGALi::Algebraic_real_quadratic_refinement_rep_bfi
+    typedef CGAL::internal::Algebraic_real_quadratic_refinement_rep_bfi
         < Coefficient, Rational > Rep_class;
-    typedef CGAL::CGALi::Bitstream_descartes< 
-        CGAL::CGALi::Bitstream_descartes_rndl_tree_traits<
-        CGAL::CGALi::Bitstream_coefficient_kernel<Coefficient > > > 
+    typedef CGAL::internal::Bitstream_descartes< 
+        CGAL::internal::Bitstream_descartes_rndl_tree_traits<
+        CGAL::internal::Bitstream_coefficient_kernel<Coefficient > > > 
         Isolator;
     
     typedef CGAL::Algebraic_kernel_1<Coefficient,Rational,Rep_class, Isolator> 
@@ -66,7 +66,7 @@ void test_algebraic_curve_kernel_2() {
 #endif
         
     //std::cout << "Non-filtered kernel..." << std::endl;
-    CGAL::CGALi::test_algebraic_curve_kernel_2<Algebraic_kernel_2>();
+    CGAL::internal::test_algebraic_curve_kernel_2<Algebraic_kernel_2>();
 
 
     //std::cout << "Filtered kernel..." << std::endl;
@@ -80,7 +80,7 @@ void test_algebraic_curve_kernel_2() {
            Filtered_kernel_2;
 #endif
 
-    CGAL::CGALi::test_algebraic_curve_kernel_2<Filtered_kernel_2>();
+    CGAL::internal::test_algebraic_curve_kernel_2<Filtered_kernel_2>();
     
 }
 

@@ -120,11 +120,11 @@ public:
         } else {
             pol=C.polynomial_2();
         }
-        sh_pol=CGAL::CGALi::shear(pol,Coefficient(s));
+        sh_pol=CGAL::internal::shear(pol,Coefficient(s));
         typename Polynomial_traits_2::Degree degree;
         if(degree(typename Polynomial_traits_2
                   ::Univariate_content_up_to_constant_factor()( sh_pol ))>0) {
-            throw CGAL::CGALi::Non_generic_position_exception();
+            throw CGAL::internal::Non_generic_position_exception();
         }
         if(! D.has_defining_polynomial()) {
 #if CGAL_ACK_DEBUG_FLAG
@@ -137,7 +137,7 @@ public:
         }
         
         der_sh_pol = typename Polynomial_traits_2::Differentiate() (sh_pol,1);
-        sh_der_sh_pol = CGAL::CGALi::shear(der_sh_pol,Coefficient(-s));
+        sh_der_sh_pol = CGAL::internal::shear(der_sh_pol,Coefficient(-s));
       
 #if CGAL_ACK_DEBUG_FLAG
         CGAL_ACK_DEBUG_PRINT << "done" << std::endl;
@@ -210,7 +210,7 @@ public:
         typename CGAL::Real_embeddable_traits<Algebraic_real_1>::Compare 
             x_compare;
 
-        CGAL::CGALi::set_union_with_source
+        CGAL::internal::set_union_with_source
             (disc_roots.begin(),
              disc_roots.end(),
              ev_res_roots.begin(),
@@ -224,7 +224,7 @@ public:
         CGAL_ACK_DEBUG_PRINT << "Take the stripe values..." << std::flush;
 #endif
 
-        CGAL::CGALi::find_intermediate_values(sh_disc_roots.begin(),
+        CGAL::internal::find_intermediate_values(sh_disc_roots.begin(),
                                       sh_disc_roots.end(),
                                       std::back_inserter(stripe_values));
 #if CGAL_ACK_DEBUG_FLAG
@@ -333,7 +333,7 @@ private:
             Algebraic_real_1 curr_bound(stripe_values[i]);
             Bitstream_traits traits(Bitstream_coefficient_kernel
                                     (kernel(),curr_bound));
-            CGAL::CGALi::Square_free_descartes_tag tag;
+            CGAL::internal::Square_free_descartes_tag tag;
             Bitstream_descartes descartes(tag,sh_pol,traits);
             int m = descartes.number_of_real_roots();
             if(m>0) {
@@ -498,7 +498,7 @@ private:
                                           left.upper_bound(left_id));
 
                     CGAL::Sign left_sign 
-                        = CGAL::CGALi::estimate_sign_at
+                        = CGAL::internal::estimate_sign_at
                             (left_y,left_sh_der_sh_pol,0);
 
                     Algebraic_real_1 right_y(right_pol,
@@ -506,7 +506,7 @@ private:
                                            right.upper_bound(right_id));
 
                     CGAL::Sign right_sign 
-                        = CGAL::CGALi::estimate_sign_at
+                        = CGAL::internal::estimate_sign_at
                             (right_y,right_sh_der_sh_pol,0);
 
                     if(left_sign!=right_sign) {
@@ -530,7 +530,7 @@ private:
                                           left.upper_bound(left_id));
 
                     CGAL::Sign left_sign_1 
-                        = CGAL::CGALi::estimate_sign_at
+                        = CGAL::internal::estimate_sign_at
                             (left_y_1,left_sh_der_sh_pol,0);
 
                     left_id++;
@@ -538,7 +538,7 @@ private:
                                           left.lower_bound(left_id),
                                           left.upper_bound(left_id));
                     CGAL::Sign left_sign_2 
-                        =CGAL::CGALi::estimate_sign_at
+                        =CGAL::internal::estimate_sign_at
                             (left_y_2,left_sh_der_sh_pol,0);
                     if(left_sign_1!=left_sign_2) {
 /*
@@ -560,14 +560,14 @@ private:
                                                right.upper_bound(right_id));
 
                     CGAL::Sign right_sign_1 
-                        = CGAL::CGALi::estimate_sign_at
+                        = CGAL::internal::estimate_sign_at
                             (right_y_1,right_sh_der_sh_pol,0);
                     right_id++;
                     Algebraic_real_1 right_y_2(right_pol,
                                                right.lower_bound(right_id),
                                                right.upper_bound(right_id));
                     CGAL::Sign right_sign_2 
-                        = CGAL::CGALi::estimate_sign_at
+                        = CGAL::internal::estimate_sign_at
                             (right_y_2,right_sh_der_sh_pol,0);
                     if(right_sign_1!=right_sign_2) {
 /*
@@ -620,7 +620,7 @@ private:
 #endif
 */
         for(int i=0;i<static_cast<int>(x_structure.size());i++) {
-            CGAL::CGALi::Three_valued info = x_structure_info[i];
+            CGAL::internal::Three_valued info = x_structure_info[i];
 /*
 #if CGAL_ACK_DEBUG_FLAG
             CGAL_ACK_DEBUG_PRINT <<  i << "th of " << x_structure.size() 
@@ -632,10 +632,10 @@ private:
             CGAL_ACK_DEBUG_PRINT << "Info: " << info << std::endl;
 #endif
 */
-            if(info==CGAL::CGALi::ROOT_OF_SECOND_SET || 
-               info==CGAL::CGALi::ROOT_OF_BOTH_SETS) {
+            if(info==CGAL::internal::ROOT_OF_SECOND_SET || 
+               info==CGAL::internal::ROOT_OF_BOTH_SETS) {
                 const Status_line_1& event_line_at_x = 
-                    (info==CGAL::CGALi::ROOT_OF_BOTH_SETS)
+                    (info==CGAL::internal::ROOT_OF_BOTH_SETS)
                     ? C.status_line_at_event(event_count) : C.status_line_at_exact_x(x_structure[i]);
 /*
 #if CGAL_ACK_DEBUG_FLAG
@@ -654,8 +654,8 @@ private:
 #endif
 */
             }
-            if(info==CGAL::CGALi::ROOT_OF_FIRST_SET || 
-               info==CGAL::CGALi::ROOT_OF_BOTH_SETS) {
+            if(info==CGAL::internal::ROOT_OF_FIRST_SET || 
+               info==CGAL::internal::ROOT_OF_BOTH_SETS) {
                 event_count++;
             }
         }
@@ -1124,8 +1124,8 @@ private:
         int number_of_roots 
             = pre_vert_lines[i].number_of_non_event_roots+number_of_events; 
         Polynomial_2 sh_pol_with_correct_degree 
-            = CGAL::CGALi::poly_non_vanish_leading_term(kernel(),sh_pol,xval);
-        Bitstream_descartes descartes(CGAL::CGALi::Backshear_descartes_tag(),
+            = CGAL::internal::poly_non_vanish_leading_term(kernel(),sh_pol,xval);
+        Bitstream_descartes descartes(CGAL::internal::Backshear_descartes_tag(),
                                       sh_pol_with_correct_degree,
                                       number_of_roots,
                                       number_of_events,
@@ -1179,7 +1179,7 @@ private:
     Polynomial_2 pol, sh_pol, der_sh_pol,sh_der_sh_pol;
 
     Root_container sh_disc_roots,x_structure;
-    std::vector<CGAL::CGALi::Three_valued> x_structure_info;
+    std::vector<CGAL::internal::Three_valued> x_structure_info;
     
     std::vector<std::vector<int> > sh_ev_indices;
 

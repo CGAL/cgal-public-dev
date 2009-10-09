@@ -86,11 +86,11 @@ template<typename Arithmetic_kernel> void test_routine() {
     typedef typename 
         CGAL::Polynomial_type_generator<Coefficient,2>::Type Poly_int2;
     
-    typedef CGAL::CGALi::Algebraic_real_quadratic_refinement_rep_bfi
+    typedef CGAL::internal::Algebraic_real_quadratic_refinement_rep_bfi
         < Coefficient, Rational > Rep_class;
-    typedef CGAL::CGALi::Bitstream_descartes
-        < CGAL::CGALi::Bitstream_descartes_rndl_tree_traits
-            < CGAL::CGALi::Bitstream_coefficient_kernel<Coefficient> 
+    typedef CGAL::internal::Bitstream_descartes
+        < CGAL::internal::Bitstream_descartes_rndl_tree_traits
+            < CGAL::internal::Bitstream_coefficient_kernel<Coefficient> 
             > 
         > 
         Isolator;
@@ -381,11 +381,11 @@ template<typename Arithmetic_kernel> void test_routine() {
         typedef typename 
             CGAL::Polynomial_type_generator<Coefficient,2>::Type Poly_sqrt2;
     
-        typedef CGAL::CGALi::Algebraic_real_quadratic_refinement_rep_bfi
+        typedef CGAL::internal::Algebraic_real_quadratic_refinement_rep_bfi
             < Coefficient, Rational > Rep_class;
-        typedef CGAL::CGALi::Bitstream_descartes
-            < CGAL::CGALi::Bitstream_descartes_rndl_tree_traits
-                < CGAL::CGALi::Bitstream_coefficient_kernel<Coefficient> 
+        typedef CGAL::internal::Bitstream_descartes
+            < CGAL::internal::Bitstream_descartes_rndl_tree_traits
+                < CGAL::internal::Bitstream_coefficient_kernel<Coefficient> 
                 > 
             > 
         Isolator;

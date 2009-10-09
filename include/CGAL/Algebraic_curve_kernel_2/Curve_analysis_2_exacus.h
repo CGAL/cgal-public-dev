@@ -26,7 +26,7 @@ CGAL_BEGIN_NAMESPACE
 template < class AlgebraicCurveKernel_2, class Rep_ > 
 class Curve_analysis_2;
 
-namespace CGALi {
+namespace internal {
 
 template < class AlgebraicCurveKernel_2 >
 class Curve_analysis_2_rep {
@@ -85,7 +85,7 @@ public:
 //! entries. Topological information are equal for all x-coordinate inside such
 //! an open interval.
 template <class AlgebraicCurveKernel_2, 
-          class Rep_ = CGALi::Curve_analysis_2_rep<AlgebraicCurveKernel_2> >
+          class Rep_ = internal::Curve_analysis_2_rep<AlgebraicCurveKernel_2> >
 class Curve_analysis_2 : public ::CGAL::Handle_with_policy< Rep_ > 
 {
 
@@ -129,7 +129,7 @@ public:
     typedef int size_type;
 
     //! type of a vertical line
-    typedef CGALi::Status_line_CA_1<Self> Status_line_1;
+    typedef internal::Status_line_CA_1<Self> Status_line_1;
         
     //! the handle superclass
     typedef ::CGAL::Handle_with_policy<Rep> Base;
@@ -351,7 +351,7 @@ public:
   
 }; // class Curve_analysis_2
 
-} // namespace CGALi
+} // namespace internal
 
 CGAL_END_NAMESPACE
 

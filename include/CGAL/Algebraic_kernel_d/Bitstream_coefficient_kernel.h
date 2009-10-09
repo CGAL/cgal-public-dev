@@ -18,7 +18,7 @@
 
 CGAL_BEGIN_NAMESPACE
 
-namespace CGALi {
+namespace internal {
 
 template <typename Coefficient_> struct Bitstream_coefficient_kernel {
 
@@ -55,7 +55,7 @@ template <typename Coefficient_> struct Bitstream_coefficient_kernel {
     
 }; // of class Bitstream_coefficient_kernel
 
-} // namespace CGALi
+} // namespace internal
 
 CGAL_END_NAMESPACE
 

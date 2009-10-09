@@ -30,7 +30,7 @@
 
 CGAL_BEGIN_NAMESPACE
 
-namespace CGALi {
+namespace internal {
 
 // Generic construct_binary function, using ipower 
 template< class Integer >
@@ -124,7 +124,7 @@ inline void construct_binary( const Integer& m, const Integer& e, Rational& x ) 
     
 #endif // CGAL_USE_CORE
 
-} // namespace CGALi
+} // namespace internal
 
 CGAL_END_NAMESPACE
 

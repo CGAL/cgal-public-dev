@@ -89,14 +89,14 @@ int main( int argc, char** argv ) {
     std::cout << no + (no*(no-1)/2) << std::endl;
 
     for(int i = 0 ; i < no; i++) {
-        std::cout << CGAL::CGALi::resultant(surfaces[i],
+        std::cout << CGAL::internal::resultant(surfaces[i],
                                             CGAL::diff(surfaces[i])) 
                   << std::endl;
     }
 
     for(int i = 0 ; i < no; i++) {
         for(int j = i+1; j < no; j++) {
-            std::cout << CGAL::CGALi::resultant(surfaces[i],surfaces[j]) 
+            std::cout << CGAL::internal::resultant(surfaces[i],surfaces[j]) 
                       << std::endl;
         }
     }

@@ -32,7 +32,7 @@
 
 CGAL_BEGIN_NAMESPACE
 
-namespace CGALi {
+namespace internal {
 
 /*!
  * \brief Constructs Vert_line-objects for an algebraic curve.
@@ -102,7 +102,7 @@ public:
     Event_line_builder(Algebraic_kernel_with_analysis_2* kernel,
                        Curve_analysis_2 curve,
                        Polynomial_2 polynomial)
-        throw(CGALi::Zero_resultant_exception<Polynomial_2>) 
+        throw(internal::Zero_resultant_exception<Polynomial_2>) 
         : _m_kernel(kernel), curve(curve), polynomial(polynomial)
     {}
 
@@ -130,13 +130,13 @@ public:
      * at \c alpha over the complex numbers. It will never succeed, if there is
      * more than one real root at \c alpha. In other cases, the outcome is not
      * clear. In cases where the functions fails, a 
-     * CGAL::CGALi::Non_generic_position_exception is thrown, otherwise, a 
+     * CGAL::internal::Non_generic_position_exception is thrown, otherwise, a 
      * fixed AcX::Vert_line object is returned.
      */
     Status_line_1
     create_event_line(int id,Algebraic_real_1 alpha,int arcs_left,int arcs_right,
                       bool root_of_resultant, bool root_of_content,int mult) 
-        throw(CGAL::CGALi::Non_generic_position_exception) {
+        throw(CGAL::internal::Non_generic_position_exception) {
 
         try {
 	
@@ -249,12 +249,12 @@ public:
             }
             return vl;
         }
-        catch(CGAL::CGALi::Non_generic_position_exception err) {
+        catch(CGAL::internal::Non_generic_position_exception err) {
 #if CGAL_ACK_DEBUG_FLAG
             CGAL_ACK_DEBUG_PRINT << "Detected non-generic position for alpha=" 
                                  << CGAL::to_double(alpha) << std::endl;
 #endif
-            throw CGAL::CGALi::Non_generic_position_exception();
+            throw CGAL::internal::Non_generic_position_exception();
         }
       
     }
@@ -647,7 +647,7 @@ protected:
      *
      * This method requires the Sturm-Habicht coefficients of \c f to be
      * computed beforehand.
-     * On failure, the error CGAL::CGALi::Non_generic_position_exception 
+     * On failure, the error CGAL::internal::Non_generic_position_exception 
      * is thrown.
      */
     Bitstream_descartes construct_bitstream_descartes(const Algebraic_real_1& 
@@ -657,7 +657,7 @@ protected:
 						      int mult,
 						      int arcs_left,
 						      int arcs_right) 
-        throw(CGAL::CGALi::Non_generic_position_exception) {
+        throw(CGAL::internal::Non_generic_position_exception) {
         
         
         Bitstream_traits traits(Bitstream_coefficient_kernel(kernel(),alpha));
@@ -667,12 +667,12 @@ protected:
             if(kernel()->is_zero_at_1_object() 
                (CGAL::leading_coefficient(polynomial),alpha)) {
                 Polynomial_2 trunc_pol = 
-                    CGAL::CGALi::poly_non_vanish_leading_term
+                    CGAL::internal::poly_non_vanish_leading_term
                       (kernel(),polynomial,alpha);
 
                 CGAL_assertion(CGAL::degree(trunc_pol,1)+1 == 
                                CGAL::degree(polynomial,1));
-                CGAL::CGALi::Square_free_descartes_tag t;
+                CGAL::internal::Square_free_descartes_tag t;
 
                 Bitstream_descartes bit_des(t,trunc_pol,traits);
 
@@ -701,14 +701,14 @@ protected:
             CGAL_ACK_DEBUG_PRINT << "Bit Des..." << std::flush;
 #endif
       
-            CGAL::CGALi::M_k_descartes_tag t;
+            CGAL::internal::M_k_descartes_tag t;
 
             Bitstream_descartes bit_des(t,polynomial,m,k,traits);
 
             return bit_des;
         }
         else {
-            CGAL::CGALi::Square_free_descartes_tag t;
+            CGAL::internal::Square_free_descartes_tag t;
             Bitstream_descartes bit_des(t,polynomial,traits);
 
             return bit_des;
@@ -739,7 +739,7 @@ protected:
 			     int k,
 			     const Polynomial_2& der_1,
 			     const Polynomial_2& der_2) 
-        throw(CGAL::CGALi::Non_generic_position_exception) {
+        throw(CGAL::internal::Non_generic_position_exception) {
      
         //Guess the right expression for y
 /*
@@ -776,7 +776,7 @@ protected:
         typedef typename CGAL::Get_arithmetic_kernel<Algebraic_real_1>
             ::Arithmetic_kernel::Bigfloat_interval BFI;
       
-        CGAL::CGALi::Bitstream_coefficient_kernel_at_alpha
+        CGAL::internal::Bitstream_coefficient_kernel_at_alpha
             <Algebraic_kernel_with_analysis_2> 
             alpha_kernel(kernel(),alpha);
 
@@ -807,7 +807,7 @@ protected:
                     break;
                 }
                 if(! CGAL::overlap(approx_iv,isol_iv)) {
-                    throw CGAL::CGALi::Non_generic_position_exception();
+                    throw CGAL::internal::Non_generic_position_exception();
                 }
             }
             prec*=2;
@@ -823,7 +823,7 @@ protected:
             CGAL_ACK_DEBUG_PRINT << "Detected non-generic position for alpha=" 
                                  << CGAL::to_double(alpha) << std::endl;
 #endif
-            throw CGAL::CGALi::Non_generic_position_exception();
+            throw CGAL::internal::Non_generic_position_exception();
         }
         // Check whether the two partial derivatives vanish
 #if CGAL_ACK_DEBUG_FLAG
@@ -855,7 +855,7 @@ protected:
 
 }; //class Event_line_builder
 
-} // namespace CGALi
+} // namespace internal
 
 CGAL_END_NAMESPACE
 

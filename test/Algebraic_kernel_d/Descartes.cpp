@@ -38,16 +38,16 @@ void test_descartes(){
     {
         typedef typename CGAL::Polynomial_type_generator<Integer,1>::Type 
             Polynomial;
-        typedef ::CGAL::CGALi::Descartes<Polynomial,Rational> Isolator;
+        typedef ::CGAL::internal::Descartes<Polynomial,Rational> Isolator;
         
         // general test of concept RealRootIsolator
-        CGAL::CGALi::test_real_root_isolator<Isolator>();
+        CGAL::internal::test_real_root_isolator<Isolator>();
     }{
         typedef typename CGAL::Polynomial_type_generator<Rational,1>::Type 
             Polynomial;
-        typedef ::CGAL::CGALi::Descartes<Polynomial,Rational> Isolator;
+        typedef ::CGAL::internal::Descartes<Polynomial,Rational> Isolator;
         // general test of concept RealRootIsolator
-        CGAL::CGALi::test_real_root_isolator<Isolator>();
+        CGAL::internal::test_real_root_isolator<Isolator>();
     }    
 }
     

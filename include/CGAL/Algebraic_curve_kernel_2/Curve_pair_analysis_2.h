@@ -36,7 +36,7 @@
 
 CGAL_BEGIN_NAMESPACE
 
-namespace CGALi {
+namespace internal {
     
 template<class AlgebraicReal_1>
 class Distinct_compare {
@@ -56,7 +56,7 @@ public:
 
 };
 
-}// namespace CGALi
+}// namespace internal
 
 //////////////////////////////////////////////////////////////////////////////
 // Curve_pair_2
@@ -70,7 +70,7 @@ std::ostream& operator<<
     (std::ostream&,const Curve_pair_analysis_2
                            <AlgebraicKernelWithAnalysis_2>&);
 
-namespace CGALi {
+namespace internal {
 
 // Internally used enums and structs
 
@@ -125,7 +125,7 @@ struct Curve_pair_analysis_2_rep {
 
     typedef typename Curve_analysis_2::Bound Bound;
 
-    typedef CGAL::CGALi::Status_line_CPA_1<Handle> Status_line_CPA_1;
+    typedef CGAL::internal::Status_line_CPA_1<Handle> Status_line_CPA_1;
 
     typedef std::pair<Slice_type,size_type> Slice_element;
 
@@ -135,7 +135,7 @@ struct Curve_pair_analysis_2_rep {
 
     typedef boost::optional<Bound> Lazy_bound;
 
-    typedef CGAL::CGALi::Event_indices<size_type> Event_indices;
+    typedef CGAL::internal::Event_indices<size_type> Event_indices;
 
     struct Intersection_info {
         typename Curve_analysis_2::Status_line_1 ev;
@@ -218,7 +218,7 @@ private:
 
     CGAL::Degeneracy_strategy degeneracy_strategy;
 
-    mutable CGAL::CGALi::Shear_controller<Integer> shear_controller;
+    mutable CGAL::internal::Shear_controller<Integer> shear_controller;
 
     //! @}
 
@@ -231,7 +231,7 @@ private:
 
 };
 
-} // namespace CGALi
+} // namespace internal
 
 /*!
  * A model for <tt>AlgebraicKernelWithAnalysis_2::CurvePairAnalysis_2</tt>
@@ -258,7 +258,7 @@ private:
 template < typename AlgebraicKernelWithAnalysis_2 >
 class Curve_pair_analysis_2 : 
     public ::CGAL::Handle_with_policy
-        < CGAL::CGALi::Curve_pair_analysis_2_rep
+        < CGAL::internal::Curve_pair_analysis_2_rep
               < AlgebraicKernelWithAnalysis_2 > > {
     
 
@@ -273,7 +273,7 @@ public:
 private:
     
     //! Representation class
-    typedef CGAL::CGALi::Curve_pair_analysis_2_rep
+    typedef CGAL::internal::Curve_pair_analysis_2_rep
       < Algebraic_kernel_with_analysis_2 > Rep;
     
     //! Base class
@@ -380,25 +380,25 @@ private:
     struct Curves_at_event_functor {
         
         typedef size_type argument_type;
-        typedef CGAL::CGALi::Slice_type result_type;
+        typedef CGAL::internal::Slice_type result_type;
 
         Curves_at_event_functor(const Status_line_CPA_1& status_line) 
             : status_line(status_line)
         {}
 
-        CGAL::CGALi::Slice_type operator() (size_type i) const {
+        CGAL::internal::Slice_type operator() (size_type i) const {
             typedef typename Status_line_CPA_1::size_type 
                 Status_line_size_type;
             std::pair<Status_line_size_type,Status_line_size_type> pair =
                 status_line.curves_at_event(i);
             CGAL_assertion(pair.first>=0 || pair.second >=0);
             if(pair.first==-1) {
-                return CGAL::CGALi::SECOND_CURVE;
+                return CGAL::internal::SECOND_CURVE;
             }
             if(pair.second==-1) {
-                return CGAL::CGALi::FIRST_CURVE;
+                return CGAL::internal::FIRST_CURVE;
             }
-            return CGAL::CGALi::INTERSECTION;
+            return CGAL::internal::INTERSECTION;
         }
     private:
         
@@ -445,14 +445,14 @@ public:
      * Create a curve pair object for the two curves \c c1 and \c c2, 
      * given by their curve analysis object. The two curves are checked
      * to have no common vertical line component (if they have, an
-     * exception of type \c CGAL::CGALi::Non_generic_position_exception
+     * exception of type \c CGAL::internal::Non_generic_position_exception
      * is thrown), no further computation is performed.
      *
      * \param strategy If a degenerate situation (e.g., two covertical 
      * intersection at the same x-coordinate) occurs during the analysis, 
      * this value controls the strategy to handle it. If set to
      * CGAL::EXCEPTION_STRATEGY, an exception of type
-     * \c CGAL::CGALi::Non_generic_position_exception is thrown whenever
+     * \c CGAL::internal::Non_generic_position_exception is thrown whenever
      * such a degeneracy occurs. If set to \c CGAL::SHEAR_STRATEGY, a shear
      * transformation is performed, and the sheared curve pair is used
      * to handle degenerate situations. Finally, if set to 
@@ -466,8 +466,8 @@ public:
                           Curve_analysis_2 c2,
                           CGAL::Degeneracy_strategy strategy
                               = CGAL_ACK_DEFAULT_DEGENERACY_STRATEGY) 
-        throw(CGAL::CGALi::Zero_resultant_exception<Polynomial_2>,
-              CGAL::CGALi::Non_generic_position_exception)
+        throw(CGAL::internal::Zero_resultant_exception<Polynomial_2>,
+              CGAL::internal::Non_generic_position_exception)
         : Base(Rep(kernel,c1, c2, strategy)) 
     {
         
@@ -490,7 +490,7 @@ public:
                 CGAL_ACK_DEBUG_PRINT << "Common vertical line discovered" 
                                      << std::endl;
 #endif
-                throw CGAL::CGALi::Non_generic_position_exception();
+                throw CGAL::internal::Non_generic_position_exception();
             } else {
 #if CGAL_ACK_DEBUG_FLAG
                 CGAL_ACK_DEBUG_PRINT << "done" << std::endl;
@@ -749,7 +749,7 @@ private:
             Status_line_CPA_1 slice = construct_generic_case(i);
 
             return slice;
-        } catch(CGAL::CGALi::Non_generic_position_exception ex) {
+        } catch(CGAL::internal::Non_generic_position_exception ex) {
             switch(this->ptr()->degeneracy_strategy) {
             case(CGAL::EXCEPTION_STRATEGY): {
                 throw ex;
@@ -807,8 +807,8 @@ private:
             it!=slice_info.end();
             it++) {
 
-            if(it->first==CGAL::CGALi::CANDIDATE) {
-                it->first=CGAL::CGALi::INTERSECTION;
+            if(it->first==CGAL::internal::CANDIDATE) {
+                it->first=CGAL::internal::INTERSECTION;
             }
         }
         
@@ -839,12 +839,12 @@ private:
 
     // Computes a slice_info object at Algebraic_real_1 \c alpha
     Slice_info construct_slice_info(Algebraic_real_1 alpha) const
-        throw(CGAL::CGALi::Non_generic_position_exception);
+        throw(CGAL::internal::Non_generic_position_exception);
       
 private:
       
     Status_line_CPA_1 construct_generic_case(size_type i) const 
-        throw(CGAL::CGALi::Non_generic_position_exception);        
+        throw(CGAL::internal::Non_generic_position_exception);        
 
 private:
       
@@ -889,7 +889,7 @@ private:
             return true;
         }
         else {
-            throw CGAL::CGALi::Non_generic_position_exception();
+            throw CGAL::internal::Non_generic_position_exception();
         }
         return false; // never happens
     }
@@ -1162,7 +1162,7 @@ private:
                     = create_event_slice_from_current_intersection_info(i);
 
                 return slice;
-            } catch(CGAL::CGALi::Non_generic_position_exception ex) {
+            } catch(CGAL::internal::Non_generic_position_exception ex) {
                 // just try the next one
                 Intersection_info_container info_container;
                 new_shear_for_intersection_info(info_container);
@@ -1174,7 +1174,7 @@ private:
       
     Status_line_CPA_1 
         create_event_slice_from_current_intersection_info (size_type i) 
-        const throw(CGAL::CGALi::Non_generic_position_exception);
+        const throw(CGAL::internal::Non_generic_position_exception);
 
     Bound x_sheared(Bound x, Bound y,Integer sh) const {
         return x-sh*y;
@@ -1335,7 +1335,7 @@ void Curve_pair_analysis_2<AlgebraicKernelWithAnalysis_2>::compute_resultant()
     
     
     if(this->ptr()->resultant.get().is_zero()) {
-        throw CGAL::CGALi::Zero_resultant_exception<Polynomial_2>
+        throw CGAL::internal::Zero_resultant_exception<Polynomial_2>
             (this->ptr()->f,
              this->ptr()->g);
         }
@@ -1399,11 +1399,11 @@ compute_event_x_coordinates_with_event_indices() const {
     
     std::vector<Algebraic_real_1> one_curve_events;
     
-    std::vector<CGAL::CGALi::Three_valued> one_curve_events_type;
+    std::vector<CGAL::internal::Three_valued> one_curve_events_type;
     
     typename CGAL::Real_embeddable_traits<Algebraic_real_1>::Compare compare;
     
-    CGAL::CGALi::set_union_with_source
+    CGAL::internal::set_union_with_source
         (::boost::make_transform_iterator(c1.event_begin(),xval),
          ::boost::make_transform_iterator(c1.event_end(),xval),
          ::boost::make_transform_iterator(c2.event_begin(),xval),
@@ -1413,8 +1413,8 @@ compute_event_x_coordinates_with_event_indices() const {
          compare);
     
     this->ptr()->event_x_coordinates = std::vector<Algebraic_real_1>();
-    std::vector<CGAL::CGALi::Three_valued> events_type;
-    CGAL::CGALi::set_union_with_source
+    std::vector<CGAL::internal::Three_valued> events_type;
+    CGAL::internal::set_union_with_source
         (one_curve_events.begin(),
          one_curve_events.end(),
          resultant_roots().begin(),
@@ -1425,7 +1425,7 @@ compute_event_x_coordinates_with_event_indices() const {
     std::vector<Algebraic_real_1>& events 
         = this->ptr()->event_x_coordinates.get();
     
-    typename std::vector<CGAL::CGALi::Three_valued>::iterator one_curve_it
+    typename std::vector<CGAL::internal::Three_valued>::iterator one_curve_it
         =one_curve_events_type.begin();
     size_type inter_count=0, f_count=0,g_count=0;
     this->ptr()->event_indices = std::vector<Event_indices>();
@@ -1438,7 +1438,7 @@ compute_event_x_coordinates_with_event_indices() const {
         #endif
 */
         switch(events_type[i]) {
-        case(CGAL::CGALi::ROOT_OF_FIRST_SET): {
+        case(CGAL::internal::ROOT_OF_FIRST_SET): {
 /*
 #if CGAL_ACK_DEBUG_FLAG
                 CGAL_ACK_DEBUG_PRINT << " one curve event" << std::endl;
@@ -1446,17 +1446,17 @@ compute_event_x_coordinates_with_event_indices() const {
 */
             this->ptr()->event_slices.push_back(Lazy_status_line_CPA_1());
             switch(*(one_curve_it++)) {
-            case(CGAL::CGALi::ROOT_OF_FIRST_SET): {
+            case(CGAL::internal::ROOT_OF_FIRST_SET): {
                 event_indices.push_back(Event_indices(-1,f_count,-1));
                 f_count++;
                 break;
             }
-            case(CGAL::CGALi::ROOT_OF_SECOND_SET): {
+            case(CGAL::internal::ROOT_OF_SECOND_SET): {
                 event_indices.push_back(Event_indices(-1,-1,g_count));
                 g_count++;
                 break;
             }
-            case(CGAL::CGALi::ROOT_OF_BOTH_SETS): {
+            case(CGAL::internal::ROOT_OF_BOTH_SETS): {
                 event_indices.push_back(Event_indices(-1,f_count,g_count));
                 f_count++;
                 g_count++;
@@ -1465,7 +1465,7 @@ compute_event_x_coordinates_with_event_indices() const {
             }
             break;
         }
-        case(CGAL::CGALi::ROOT_OF_SECOND_SET): {
+        case(CGAL::internal::ROOT_OF_SECOND_SET): {
 /*
 #if CGAL_ACK_DEBUG_FLAG
             CGAL_ACK_DEBUG_PRINT << " two curve event" << std::endl;
@@ -1479,7 +1479,7 @@ compute_event_x_coordinates_with_event_indices() const {
             inter_count++;
             break;
         }
-        case(CGAL::CGALi::ROOT_OF_BOTH_SETS): {
+        case(CGAL::internal::ROOT_OF_BOTH_SETS): {
 /*
 #if CGAL_ACK_DEBUG_FLAG
             CGAL_ACK_DEBUG_PRINT << " one and two curve event" 
@@ -1490,19 +1490,19 @@ compute_event_x_coordinates_with_event_indices() const {
             
             
             switch(*(one_curve_it++)) {
-            case(CGAL::CGALi::ROOT_OF_FIRST_SET): {
+            case(CGAL::internal::ROOT_OF_FIRST_SET): {
                 event_indices.push_back
                     (Event_indices(inter_count,f_count,-1));
                 f_count++;
                 break;
             }
-            case(CGAL::CGALi::ROOT_OF_SECOND_SET): {
+            case(CGAL::internal::ROOT_OF_SECOND_SET): {
                 event_indices.push_back
                     (Event_indices(inter_count,-1,g_count));
                 g_count++;
                 break;
             }
-            case(CGAL::CGALi::ROOT_OF_BOTH_SETS): {
+            case(CGAL::internal::ROOT_OF_BOTH_SETS): {
                 event_indices.push_back
                     (Event_indices(inter_count,f_count,g_count));
                 f_count++;
@@ -1562,7 +1562,7 @@ compute_subresultants() const {
     this->ptr()->subresultants = std::vector<Polynomial_2>();
     if(CGAL::degree(f,1)<CGAL::degree(g,1)) {
 #if CGAL_ACK_USE_BEZOUT_MATRIX_FOR_SUBRESULTANTS 
-        CGAL::CGALi::bezout_polynomial_subresultants
+        CGAL::internal::bezout_polynomial_subresultants
             (g,f,std::back_inserter(this->ptr()->subresultants.get()));
 #else
         typename CGAL::Polynomial_traits_d<Polynomial_2>
@@ -1571,7 +1571,7 @@ compute_subresultants() const {
 #endif
     } else {
 #if CGAL_ACK_USE_BEZOUT_MATRIX_FOR_SUBRESULTANTS 
-        CGAL::CGALi::bezout_polynomial_subresultants
+        CGAL::internal::bezout_polynomial_subresultants
             (f,g,std::back_inserter(this->ptr()->subresultants.get()));
 #else
         typename CGAL::Polynomial_traits_d<Polynomial_2>
@@ -1684,23 +1684,23 @@ create_slice_with_multiplicity_zero_or_one(size_type i) const {
         = e2.number_of_branches_approaching_plus_infinity().second;
             
     while(asym_lm_1 != 0 || asym_lm_2 != 0) {
-        CGAL_assertion(*left_it != CGAL::CGALi::INTERSECTION);
-        if(*left_it == CGAL::CGALi::FIRST_CURVE) {
+        CGAL_assertion(*left_it != CGAL::internal::INTERSECTION);
+        if(*left_it == CGAL::internal::FIRST_CURVE) {
             CGAL_assertion(asym_lm_1!=0);
             asym_lm_1--;
         }
-        if(*left_it == CGAL::CGALi::SECOND_CURVE) {
+        if(*left_it == CGAL::internal::SECOND_CURVE) {
             CGAL_assertion(asym_lm_2!=0);
             asym_lm_2--;
         }
         left_it++;
     }
     while(asym_rm_1 != 0 || asym_rm_2 != 0) {
-        if(*right_it == CGAL::CGALi::FIRST_CURVE) {
+        if(*right_it == CGAL::internal::FIRST_CURVE) {
             CGAL_assertion(asym_rm_1!=0);
             asym_rm_1--;
         }
-        if(*right_it == CGAL::CGALi::SECOND_CURVE) {
+        if(*right_it == CGAL::internal::SECOND_CURVE) {
             CGAL_assertion(asym_rm_2!=0);
             asym_rm_2--;
         }
@@ -1708,22 +1708,22 @@ create_slice_with_multiplicity_zero_or_one(size_type i) const {
     }
     while(asym_lp_1 != 0 || asym_lp_2 != 0) {
         left_end--;
-        if(*left_end == CGAL::CGALi::FIRST_CURVE) {
+        if(*left_end == CGAL::internal::FIRST_CURVE) {
             CGAL_assertion(asym_lp_1!=0);
             asym_lp_1--;
         }
-        if(*left_end == CGAL::CGALi::SECOND_CURVE) {
+        if(*left_end == CGAL::internal::SECOND_CURVE) {
             CGAL_assertion(asym_lp_2!=0);
             asym_lp_2--;
         }
     }
     while(asym_rp_1 != 0 || asym_rp_2 != 0) {
         right_end--;
-        if(*right_end == CGAL::CGALi::FIRST_CURVE) {
+        if(*right_end == CGAL::internal::FIRST_CURVE) {
             CGAL_assertion(asym_rp_1!=0);
             asym_rp_1--;
         }
-        if(*right_end == CGAL::CGALi::SECOND_CURVE) {
+        if(*right_end == CGAL::internal::SECOND_CURVE) {
             CGAL_assertion(asym_rp_2!=0);
             asym_rp_2--;
         }
@@ -1733,7 +1733,7 @@ create_slice_with_multiplicity_zero_or_one(size_type i) const {
     // going into the event line
 
     Slice_info slice_info;
-    CGAL::CGALi::Slice_type curr_lowest_arc;
+    CGAL::internal::Slice_type curr_lowest_arc;
     size_type curr_multiplicity;
 
     size_type event_index_1=0, event_index_2=0;
@@ -1744,10 +1744,10 @@ create_slice_with_multiplicity_zero_or_one(size_type i) const {
         CGAL_assertion(event_index_1 != e1.number_of_events() || 
                        event_index_2 != e2.number_of_events());
         if(event_index_1==e1.number_of_events()) {
-            curr_lowest_arc=CGAL::CGALi::SECOND_CURVE;
+            curr_lowest_arc=CGAL::internal::SECOND_CURVE;
         } 
         else if(event_index_2==e2.number_of_events()) {
-            curr_lowest_arc=CGAL::CGALi::FIRST_CURVE;
+            curr_lowest_arc=CGAL::internal::FIRST_CURVE;
         } 
         else if((e1.number_of_incident_branches(event_index_1).first>0 && 
                  e2.number_of_incident_branches(event_index_2).first>0)) {
@@ -1774,17 +1774,17 @@ create_slice_with_multiplicity_zero_or_one(size_type i) const {
                 = split_compare(e1,event_index_1,e2,event_index_2);
             curr_lowest_arc 
                 = (e1_smaller==CGAL::SMALLER) 
-                ? CGAL::CGALi::FIRST_CURVE : CGAL::CGALi::SECOND_CURVE;
+                ? CGAL::internal::FIRST_CURVE : CGAL::internal::SECOND_CURVE;
         }
 
         curr_multiplicity = -1;
 
         // Move the iterators
         size_type arcs_of_other_curve_left=0, arcs_of_other_curve_right=0;
-        if(curr_lowest_arc==CGAL::CGALi::FIRST_CURVE) {
+        if(curr_lowest_arc==CGAL::internal::FIRST_CURVE) {
             size_type j=0;
             while(j<e1.number_of_incident_branches(event_index_1).first) {
-                if(*left_it==CGAL::CGALi::FIRST_CURVE) {
+                if(*left_it==CGAL::internal::FIRST_CURVE) {
                     j++;
                 } else {
                     CGAL_assertion(event_index_2 < e2.number_of_events());
@@ -1795,7 +1795,7 @@ create_slice_with_multiplicity_zero_or_one(size_type i) const {
 
             j=0;
             while(j<e1.number_of_incident_branches(event_index_1).second) {
-                if(*right_it==CGAL::CGALi::FIRST_CURVE) {
+                if(*right_it==CGAL::internal::FIRST_CURVE) {
                     j++;
                 } else {
                     CGAL_assertion(event_index_2 < e2.number_of_events());
@@ -1810,23 +1810,23 @@ create_slice_with_multiplicity_zero_or_one(size_type i) const {
                 for(size_type j=arcs_of_other_curve_left;
                     j<e2.number_of_incident_branches(event_index_2).first;
                     j++) {
-                    CGAL_assertion(*left_it==CGAL::CGALi::SECOND_CURVE);
+                    CGAL_assertion(*left_it==CGAL::internal::SECOND_CURVE);
                     left_it++;
                 }
                 for(size_type j=arcs_of_other_curve_right;
                     j<e2.number_of_incident_branches(event_index_2).second;
                     j++) {
-                    CGAL_assertion(*right_it==CGAL::CGALi::SECOND_CURVE);
+                    CGAL_assertion(*right_it==CGAL::internal::SECOND_CURVE);
                     right_it++;
                 }
                 event_index_2++;
-                curr_lowest_arc=CGAL::CGALi::INTERSECTION;
+                curr_lowest_arc=CGAL::internal::INTERSECTION;
                 curr_multiplicity=1;
             }
-        } else { // curr_lowest_arc=CGAL::CGALi::SECOND_CURVE
+        } else { // curr_lowest_arc=CGAL::internal::SECOND_CURVE
             size_type j=0;
             while(j<e2.number_of_incident_branches(event_index_2).first) {
-                if(*left_it==CGAL::CGALi::SECOND_CURVE) {
+                if(*left_it==CGAL::internal::SECOND_CURVE) {
                     j++;
                 } else {
                     CGAL_assertion(event_index_1 < e1.number_of_events());
@@ -1837,7 +1837,7 @@ create_slice_with_multiplicity_zero_or_one(size_type i) const {
               
             j=0;
             while(j<e2.number_of_incident_branches(event_index_2).second) {
-                if(*right_it==CGAL::CGALi::SECOND_CURVE) {
+                if(*right_it==CGAL::internal::SECOND_CURVE) {
                     j++;
                 } else {
                     CGAL_assertion(event_index_1 < e1.number_of_events());
@@ -1852,17 +1852,17 @@ create_slice_with_multiplicity_zero_or_one(size_type i) const {
                 for(size_type j=arcs_of_other_curve_left;
                     j<e1.number_of_incident_branches(event_index_1).first;
                     j++) {
-                    CGAL_assertion(*left_it==CGAL::CGALi::FIRST_CURVE);
+                    CGAL_assertion(*left_it==CGAL::internal::FIRST_CURVE);
                     left_it++;
                 }
                 for(size_type j=arcs_of_other_curve_right;
                     j<e1.number_of_incident_branches(event_index_1).second;
                     j++) {
-                    CGAL_assertion(*right_it==CGAL::CGALi::FIRST_CURVE);
+                    CGAL_assertion(*right_it==CGAL::internal::FIRST_CURVE);
                     right_it++;
                 }
                 event_index_1++;
-                curr_lowest_arc=CGAL::CGALi::INTERSECTION;
+                curr_lowest_arc=CGAL::internal::INTERSECTION;
                 curr_multiplicity=1;
             }
             
@@ -1895,10 +1895,10 @@ create_intermediate_slice_at(int i) const {
         = static_cast<size_type>(p1_roots.size() + p2_roots.size());
     std::vector<Algebraic_real_1> p12_roots;
     p12_roots.reserve(number_of_roots);
-    std::vector<CGAL::CGALi::Three_valued> p12_order;
+    std::vector<CGAL::internal::Three_valued> p12_order;
     p12_order.reserve(number_of_roots);
     
-    CGAL::CGALi::Distinct_compare<Algebraic_real_1> distinct_compare;
+    CGAL::internal::Distinct_compare<Algebraic_real_1> distinct_compare;
     set_union_with_source(p1_roots.begin(),
                           p1_roots.end(),
                           p2_roots.begin(),
@@ -1909,22 +1909,22 @@ create_intermediate_slice_at(int i) const {
     
     Slice_info slice_info;
     
-    for(typename std::vector<CGAL::CGALi::Three_valued>::const_iterator 
+    for(typename std::vector<CGAL::internal::Three_valued>::const_iterator 
             it = p12_order.begin();
         it!=p12_order.end();
         it++) {
         switch(*it){
-        case(CGAL::CGALi::ROOT_OF_FIRST_SET): {
+        case(CGAL::internal::ROOT_OF_FIRST_SET): {
             slice_info.push_back
-                (std::make_pair(CGAL::CGALi::FIRST_CURVE,-1));
+                (std::make_pair(CGAL::internal::FIRST_CURVE,-1));
             break;
         }
-        case(CGAL::CGALi::ROOT_OF_SECOND_SET): {
+        case(CGAL::internal::ROOT_OF_SECOND_SET): {
             slice_info.push_back
-                (std::make_pair(CGAL::CGALi::SECOND_CURVE,-1));
+                (std::make_pair(CGAL::internal::SECOND_CURVE,-1));
             break;
         }
-        case(CGAL::CGALi::ROOT_OF_BOTH_SETS): {  
+        case(CGAL::internal::ROOT_OF_BOTH_SETS): {  
             CGAL_assertion(false);
             break;
         }
@@ -1955,9 +1955,9 @@ create_slice_from_slice_info(size_type id,
     for(typename Slice_info::const_iterator it = slice.begin();
         it!=slice.end();
         it++) {
-        CGAL_assertion(it->first != CGAL::CGALi::CANDIDATE);
+        CGAL_assertion(it->first != CGAL::internal::CANDIDATE);
         switch(it->first) {
-        case(CGAL::CGALi::FIRST_CURVE): {
+        case(CGAL::internal::FIRST_CURVE): {
             if(event_flag) {
                 arc_container.push_back(std::make_pair(0,it->second));
             } else {
@@ -1965,7 +1965,7 @@ create_slice_from_slice_info(size_type id,
             }
             break;
         }
-        case(CGAL::CGALi::SECOND_CURVE): {
+        case(CGAL::internal::SECOND_CURVE): {
             if(event_flag) {
                 arc_container.push_back(std::make_pair(1,it->second));
             } else {
@@ -1973,12 +1973,12 @@ create_slice_from_slice_info(size_type id,
             }
             break;
         }
-        case(CGAL::CGALi::INTERSECTION): {
+        case(CGAL::internal::INTERSECTION): {
             CGAL_assertion(event_flag);
             arc_container.push_back(std::make_pair(2,it->second));
             break;
         }
-        case(CGAL::CGALi::CANDIDATE): {
+        case(CGAL::internal::CANDIDATE): {
             CGAL_assertion(false);
             break;
         }
@@ -1996,7 +1996,7 @@ template<typename AlgebraicKernelWithAnalysis_2>
 typename Curve_pair_analysis_2<AlgebraicKernelWithAnalysis_2>::Slice_info 
 Curve_pair_analysis_2<AlgebraicKernelWithAnalysis_2>::
 construct_slice_info(Algebraic_real_1 alpha) const
-    throw(CGAL::CGALi::Non_generic_position_exception) {
+    throw(CGAL::internal::Non_generic_position_exception) {
     
 /*
   #if CGAL_ACK_DEBUG_FLAG
@@ -2035,20 +2035,20 @@ construct_slice_info(Algebraic_real_1 alpha) const
     while(i1<n1 || i2<n2) {
         if(i1==n1) {
             slice_info.push_back
-                (std::make_pair(CGAL::CGALi::SECOND_CURVE,-1));
+                (std::make_pair(CGAL::internal::SECOND_CURVE,-1));
             i2++;
             continue;
         }
         if(i2==n2) {
             slice_info.push_back
-                (std::make_pair(CGAL::CGALi::FIRST_CURVE,-1));
+                (std::make_pair(CGAL::internal::FIRST_CURVE,-1));
             i1++;
             continue;
         }
         if(match!=matchings.end() && 
            i1==match->first && 
            i2==match->second) {
-            slice_info.push_back(std::make_pair(CGAL::CGALi::CANDIDATE,1));
+            slice_info.push_back(std::make_pair(CGAL::internal::CANDIDATE,1));
             i1++;
             i2++;
             match++;
@@ -2057,12 +2057,12 @@ construct_slice_info(Algebraic_real_1 alpha) const
         CGAL_assertion(!overlap(e1,i1,e2,i2));
         if(e1.lower_bound(i1) < e2.lower_bound(i2)) {
             slice_info.push_back
-                (std::make_pair(CGAL::CGALi::FIRST_CURVE,-1));
+                (std::make_pair(CGAL::internal::FIRST_CURVE,-1));
             i1++;
             continue;
         } else {
             slice_info.push_back
-                (std::make_pair(CGAL::CGALi::SECOND_CURVE,-1));
+                (std::make_pair(CGAL::internal::SECOND_CURVE,-1));
             i2++;
             continue;
         }
@@ -2078,7 +2078,7 @@ typename Curve_pair_analysis_2<AlgebraicKernelWithAnalysis_2>
     ::Status_line_CPA_1 
 Curve_pair_analysis_2<AlgebraicKernelWithAnalysis_2>::
 construct_generic_case(size_type i) const 
-    throw(CGAL::CGALi::Non_generic_position_exception) {
+    throw(CGAL::internal::Non_generic_position_exception) {
     
     Algebraic_real_1 alpha = event_x(i);
     
@@ -2095,7 +2095,7 @@ construct_generic_case(size_type i) const
            kernel()->is_zero_at_1_object() 
              (CGAL::leading_coefficient
               (this->ptr()->c2_.polynomial_2()),alpha)) {
-            throw CGAL::CGALi::Non_generic_position_exception();
+            throw CGAL::internal::Non_generic_position_exception();
         }
         size_type k = -1; // not yet computed
         if(index_of_ffy==-1 && index_of_ggy==-1) {
@@ -2103,7 +2103,7 @@ construct_generic_case(size_type i) const
             if(kernel()->is_zero_at_1_object() 
                (principal_subresultants(1),alpha)) {
                 // multiplicity cannot be determined, throw exception
-                throw CGAL::CGALi::Non_generic_position_exception();
+                throw CGAL::internal::Non_generic_position_exception();
             } else {
                 k=1;
             }
@@ -2123,14 +2123,14 @@ construct_generic_case(size_type i) const
             typename Slice_info::iterator slice_it
                 = slice_info.begin();
             size_type i1=0,i2=0;
-            while(slice_it->first!=CGAL::CGALi::CANDIDATE) {
-                if(slice_it->first==CGAL::CGALi::FIRST_CURVE) {
+            while(slice_it->first!=CGAL::internal::CANDIDATE) {
+                if(slice_it->first==CGAL::internal::FIRST_CURVE) {
                     i1++;
                 }
-                if(slice_it->first==CGAL::CGALi::SECOND_CURVE) {
+                if(slice_it->first==CGAL::internal::SECOND_CURVE) {
                     i2++;
                 }
-                if(slice_it->first==CGAL::CGALi::INTERSECTION) {
+                if(slice_it->first==CGAL::internal::INTERSECTION) {
                     i1++;
                     i2++;
                 }
@@ -2187,7 +2187,7 @@ check_candidate_by_arc_pattern(size_type index,
     CGAL_assertion(right_index + num_of_arcs_to_candidate_right <=
                    right_slice.number_of_events());
     
-    CGAL::CGALi::Slice_type curr;
+    CGAL::internal::Slice_type curr;
     Curves_at_event_functor left_functor(left_slice);
     size_type number_of_changes;
     if(left_index < left_slice.number_of_events()) {
@@ -2267,7 +2267,7 @@ check_candidate(Status_line_CA_1& e1,size_type i1,
             mult_of_intersection = -1; 
         }
         slice_info.insert(slice_it,
-                          std::make_pair(CGAL::CGALi::INTERSECTION,
+                          std::make_pair(CGAL::internal::INTERSECTION,
                                          mult_of_intersection));
     }
     else {
@@ -2276,16 +2276,16 @@ check_candidate(Status_line_CA_1& e1,size_type i1,
         slice_it=slice_info.erase(slice_it);
         if(e1_smaller==CGAL::SMALLER) {
             slice_it = slice_info.insert
-                (slice_it,std::make_pair(CGAL::CGALi::FIRST_CURVE,-1));
+                (slice_it,std::make_pair(CGAL::internal::FIRST_CURVE,-1));
             slice_it++;
             slice_it = slice_info.insert
-                (slice_it,std::make_pair(CGAL::CGALi::SECOND_CURVE,-1));
+                (slice_it,std::make_pair(CGAL::internal::SECOND_CURVE,-1));
         } else {
             slice_it = slice_info.insert
-                (slice_it,std::make_pair(CGAL::CGALi::SECOND_CURVE,-1));
+                (slice_it,std::make_pair(CGAL::internal::SECOND_CURVE,-1));
             slice_it++;
             slice_it = slice_info.insert
-                (slice_it,std::make_pair(CGAL::CGALi::FIRST_CURVE,-1));
+                (slice_it,std::make_pair(CGAL::internal::FIRST_CURVE,-1));
         }
     }
 }
@@ -2532,7 +2532,7 @@ new_shear_for_intersection_info(Intersection_info_container& info_container)
                     = sh_pair.status_line_at_event(i);
                 Curves_at_event_functor functor(slice);
                 for(size_type j=0;j<slice.number_of_events();j++) {
-                    if(functor(j) == CGAL::CGALi::INTERSECTION) {
+                    if(functor(j) == CGAL::internal::INTERSECTION) {
                         this->update_intersection_info(info_container,
                                                        sh_pair,
                                                        slice,
@@ -2542,7 +2542,7 @@ new_shear_for_intersection_info(Intersection_info_container& info_container)
             }
             good_direction_found=true;
         }
-        catch(CGAL::CGALi::Non_generic_position_exception ex) {
+        catch(CGAL::internal::Non_generic_position_exception ex) {
             this->ptr()->shear_controller.report_failure(s);
         }
     }
@@ -2560,7 +2560,7 @@ typename Curve_pair_analysis_2<AlgebraicKernelWithAnalysis_2>
     ::Status_line_CPA_1 
 Curve_pair_analysis_2<AlgebraicKernelWithAnalysis_2>::
 create_event_slice_from_current_intersection_info (size_type i) 
-    const throw(CGAL::CGALi::Non_generic_position_exception){
+    const throw(CGAL::internal::Non_generic_position_exception){
 #if CGAL_ACK_DEBUG_FLAG
     CGAL_ACK_DEBUG_PRINT << "Reduce the candidates.." << std::flush;
 #endif
@@ -2596,14 +2596,14 @@ create_event_slice_from_current_intersection_info (size_type i)
         inter_info_it 
         = intersection_info_container[index_of_fg].begin();
     for(size_type j=0;j<static_cast<size_type>(slice.size());j++) {
-        if(slice[j].first==CGAL::CGALi::INTERSECTION) {
+        if(slice[j].first==CGAL::internal::INTERSECTION) {
             inter_info_it++;
         }
-        if(slice[j].first==CGAL::CGALi::CANDIDATE) {
-            slice[j].first=CGAL::CGALi::INTERSECTION;
+        if(slice[j].first==CGAL::internal::CANDIDATE) {
+            slice[j].first=CGAL::internal::INTERSECTION;
             if(ev_ind.ffy==-1 && ev_ind.ggy==-1 && inter_info_it->mult==-1) {
                 // Multiplicity unknown for case where we need it
-                throw CGAL::CGALi::Non_generic_position_exception();
+                throw CGAL::internal::Non_generic_position_exception();
             }
             slice[j].second=inter_info_it->mult;              
             inter_info_it++;
@@ -2631,7 +2631,7 @@ update_intersection_info(Intersection_info_container&
     typedef typename Rep::Intersection_info Intersection_info;
     const Algebraic_real_1& xval = sh_pair.event_x(i);
     CGAL_assertion(Curves_at_event_functor(slice)(j)
-                   ==CGAL::CGALi::INTERSECTION);
+                   ==CGAL::internal::INTERSECTION);
     Status_line_CA_1 ev = sh_pair.ptr()->c1_.status_line_at_exact_x(xval);
     // x_coordinate is given by xval
     // y_coordinate by ev[index]
@@ -2713,10 +2713,10 @@ reduce_number_of_candidates_and_intersections_to(size_type n,
     size_type number_of_intersections=0;
     size_type number_of_candidates=0;
     for(size_type i=0;i<static_cast<size_type>(slice.size());i++) {
-        if(slice[i].first==CGAL::CGALi::CANDIDATE) {
+        if(slice[i].first==CGAL::internal::CANDIDATE) {
             number_of_candidates++;
         }
-        if(slice[i].first==CGAL::CGALi::INTERSECTION) {
+        if(slice[i].first==CGAL::internal::INTERSECTION) {
             number_of_intersections++;
         }
     }
@@ -2730,7 +2730,7 @@ reduce_number_of_candidates_and_intersections_to(size_type n,
             CGAL_assertion(e1.number_of_events()==i1 && 
                            e2.number_of_events()==i2);
             if(max_candidate_mult<k) {
-                throw CGAL::CGALi::Non_generic_position_exception();
+                throw CGAL::internal::Non_generic_position_exception();
             } else {
                 slice_it=slice.begin();
                 max_candidate_mult=0;
@@ -2738,15 +2738,15 @@ reduce_number_of_candidates_and_intersections_to(size_type n,
             }
         }
         switch(slice_it->first) {
-        case(CGAL::CGALi::FIRST_CURVE): {
+        case(CGAL::internal::FIRST_CURVE): {
             i1++;
             break;
         }
-        case(CGAL::CGALi::SECOND_CURVE): {
+        case(CGAL::internal::SECOND_CURVE): {
             i2++;
             break;
         }
-        case(CGAL::CGALi::CANDIDATE): {
+        case(CGAL::internal::CANDIDATE): {
             if(e1.interval_length(i1)<e2.interval_length(i2)) {
                 e2.refine(i2);
             }
@@ -2758,19 +2758,19 @@ reduce_number_of_candidates_and_intersections_to(size_type n,
                 slice_it=slice.erase(slice_it);
                 if(e1.lower_bound(i1)<e2.lower_bound(i2)) {
                     slice_it=slice.insert
-                        (slice_it,std::make_pair(CGAL::CGALi::FIRST_CURVE,-1));
+                        (slice_it,std::make_pair(CGAL::internal::FIRST_CURVE,-1));
                     slice_it++;
                     slice_it=slice.insert
                         (slice_it,std::make_pair
-                             (CGAL::CGALi::SECOND_CURVE,-1));
+                             (CGAL::internal::SECOND_CURVE,-1));
                 } else {
                     slice_it=slice.
                         insert(slice_it,std::make_pair
-                                   (CGAL::CGALi::SECOND_CURVE,-1));
+                                   (CGAL::internal::SECOND_CURVE,-1));
                     slice_it++;
                     slice_it=slice.
                         insert(slice_it,std::make_pair
-                                   (CGAL::CGALi::FIRST_CURVE,-1));
+                                   (CGAL::internal::FIRST_CURVE,-1));
                 }
             } else {
                 size_type m1 = e1.get_upper_bound_for_multiplicity(i1),
@@ -2783,7 +2783,7 @@ reduce_number_of_candidates_and_intersections_to(size_type n,
             i2++;
             break;
         }
-        case(CGAL::CGALi::INTERSECTION): {
+        case(CGAL::internal::INTERSECTION): {
             i1++;
             i2++;
             break;

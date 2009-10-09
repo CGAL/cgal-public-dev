@@ -43,7 +43,7 @@
 
 CGAL_BEGIN_NAMESPACE
     
-namespace CGALi {
+namespace internal {
 
 //! algebraic real traits template
 template <class AlgebraicReal_2, class AlgebraicCurvePair_2>
@@ -260,11 +260,11 @@ struct Algebraic_real_traits<Xy_coordinate_2<Kernel_2> > :
   
 template <class Coefficient_, class Rational_,
           class HandlePolicy, class AlgebraicRealRep >
-struct Algebraic_real_traits<CGAL::CGALi::Algebraic_real_pure
+struct Algebraic_real_traits<CGAL::internal::Algebraic_real_pure
     < Coefficient_, Rational_, HandlePolicy, AlgebraicRealRep > > {
 
     //! this instances first template argument
-    typedef CGAL::CGALi::Algebraic_real_pure<Coefficient_, Rational_,
+    typedef CGAL::internal::Algebraic_real_pure<Coefficient_, Rational_,
         HandlePolicy, AlgebraicRealRep> Algebraic_real_1;
 
     //! just a Type ?
@@ -493,7 +493,7 @@ struct Algebraic_real_traits_for_y<Xy_coordinate_2<
 
 #endif
 
-} // namespace CGALi 
+} // namespace internal 
             
 CGAL_END_NAMESPACE
             

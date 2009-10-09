@@ -23,7 +23,7 @@
 
 CGAL_BEGIN_NAMESPACE
 
-namespace CGALi {
+namespace internal {
 
 template < class CurveAnalysis_2, class Rep_ > 
 class Status_line_CA_1;
@@ -177,7 +177,7 @@ public:
 //! coordinates (x,?oo), resp. (x,+oo), occur only once, if they occur, and 
 //! they imply not to be associated with a instance of \c Algebraic_real_2.
 template <class CurveAnalysis_2, 
-          class Rep_ = CGALi::Status_line_CA_1_rep<CurveAnalysis_2> >
+          class Rep_ = internal::Status_line_CA_1_rep<CurveAnalysis_2> >
 class Status_line_CA_1
       : public ::CGAL::Handle_with_policy< Rep_ > {
 public:
@@ -590,13 +590,13 @@ public:
 template <class CurveAnalysis_2, class Rep>
 std::ostream& operator<< (
         std::ostream& os, 
-        const CGALi::Status_line_CA_1<CurveAnalysis_2, Rep>& line) {
+        const internal::Status_line_CA_1<CurveAnalysis_2, Rep>& line) {
         
     line.write(os);
     return os;
 }
 
-} // namespace CGALi
+} // namespace internal
 
 CGAL_END_NAMESPACE
 

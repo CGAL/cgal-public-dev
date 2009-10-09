@@ -27,7 +27,7 @@ namespace CORE { class BigInt; }
 
 CGAL_BEGIN_NAMESPACE
 
-namespace CGALi {
+namespace internal {
 
 // bugfix for CORE by Michael Kerber 
 inline CORE::BigInt shift_integer_by(CORE::BigInt x, long shift){
@@ -87,7 +87,7 @@ private:
 template <typename BitstreamCoefficientKernel>
 class Bitstream_descartes_rndl_tree_traits
     : CGAL::Handle_with_policy
-    <CGAL::CGALi::Bitstream_descartes_rndl_tree_traits_rep
+    <CGAL::internal::Bitstream_descartes_rndl_tree_traits_rep
         <BitstreamCoefficientKernel> >
 {
 
@@ -108,7 +108,7 @@ public:
         < Bitstream_coefficient_kernel > Self;
 
     typedef CGAL::Handle_with_policy
-    <CGAL::CGALi::Bitstream_descartes_rndl_tree_traits_rep
+    <CGAL::internal::Bitstream_descartes_rndl_tree_traits_rep
         <Bitstream_coefficient_kernel> >
     Handle;
 
@@ -148,8 +148,8 @@ public:
             //std::cout << "Called approximator with f=" << f
             //          << " and p=" << p << std::endl;
             
-            typename CGAL::CGALi::Float_traits<BF>::Get_exponent get_exp;
-            typename CGAL::CGALi::Float_traits<BF>::Get_mantissa get_m;
+            typename CGAL::internal::Float_traits<BF>::Get_exponent get_exp;
+            typename CGAL::internal::Float_traits<BF>::Get_mantissa get_m;
 
             long old_prec = CGAL::get_precision(BFI());
             long prec = 4;
@@ -164,7 +164,7 @@ public:
                 if(CGAL::singleton(f_alpha_bfi)) {
                     break;
                 }
-                if(CGAL::CGALi::ceil_log2_abs(CGAL::upper(f_alpha_bfi)-
+                if(CGAL::internal::ceil_log2_abs(CGAL::upper(f_alpha_bfi)-
                                               CGAL::lower(f_alpha_bfi)) <=-p) {
                     break;
                 } else {
@@ -240,8 +240,8 @@ public:
                         abs_lower=CGAL::abs(CGAL::upper(f_alpha_iv));
                         abs_upper=CGAL::abs(CGAL::upper(f_alpha_iv));
                     }
-                    long lower_bound = CGAL::CGALi::floor_log2_abs(abs_lower),
-                        upper_bound = CGAL::CGALi::ceil_log2_abs(abs_upper);
+                    long lower_bound = CGAL::internal::floor_log2_abs(abs_lower),
+                        upper_bound = CGAL::internal::ceil_log2_abs(abs_upper);
                     CGAL_assertion(upper_bound>=lower_bound);
                     if(upper_bound-lower_bound <=2) {
                         result = lower_bound;
@@ -345,14 +345,14 @@ public:
                 return true;
             }
 
-            ub_log2_abs = CGAL::CGALi::ceil_log2_abs(abs_upper);
+            ub_log2_abs = CGAL::internal::ceil_log2_abs(abs_upper);
 
             if(! CGAL::zero_in(f_alpha_iv) ) {
                 
                 BF abs_lower = std::min(CGAL::abs(CGAL::lower(f_alpha_iv)),
                                         CGAL::abs(CGAL::upper(f_alpha_iv)));
                 long lb_log2_abs 
-                    = CGAL::CGALi::floor_log2_abs
+                    = CGAL::internal::floor_log2_abs
                     (CGAL::convert_to_bfi(abs_lower));
                 CGAL_assertion(ub_log2_abs >= lb_log2_abs);
                 CGAL::set_precision(BFI(),old_prec);
@@ -401,15 +401,15 @@ public:
     };
     
     typedef typename CGAL::Real_embeddable_traits<Integer>::Sgn Sign;
-    typedef typename CGAL::CGALi::Real_embeddable_extension<Integer>
+    typedef typename CGAL::internal::Real_embeddable_extension<Integer>
         ::Ceil_log2_abs Ceil_log2_abs_Integer;
-    typedef typename CGAL::CGALi::Real_embeddable_extension<long>
+    typedef typename CGAL::internal::Real_embeddable_extension<long>
         ::Ceil_log2_abs Ceil_log2_abs_long;
 
 }; // end of class Bitstream_descartes_rndl_tree_traits
     
 
-} // namespace CGALi
+} // namespace internal
 
 CGAL_END_NAMESPACE
 

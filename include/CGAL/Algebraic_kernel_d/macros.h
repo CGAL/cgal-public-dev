@@ -37,13 +37,13 @@ CGAL_BEGIN_NAMESPACE
     typedef typename Algebraic_kernel_with_analysis_2::Polynomial_1 Polynomial_1; \
     typedef typename Algebraic_kernel_with_analysis_2::Polynomial_2 Polynomial_2;      \
     typedef typename Algebraic_kernel_with_analysis_2::Solve_1 Solve_1;       \
-    typedef CGAL::CGALi::Bitstream_coefficient_kernel_at_alpha \
+    typedef CGAL::internal::Bitstream_coefficient_kernel_at_alpha \
       < Algebraic_kernel_with_analysis_2 > Bitstream_coefficient_kernel; \
-    typedef CGAL::CGALi::Bitstream_descartes_rndl_tree_traits \
+    typedef CGAL::internal::Bitstream_descartes_rndl_tree_traits \
         < Bitstream_coefficient_kernel > Bitstream_traits; \
-    typedef CGAL::CGALi::Bitstream_descartes<Bitstream_traits>     \
+    typedef CGAL::internal::Bitstream_descartes<Bitstream_traits>     \
         Bitstream_descartes;                                           \
-    typedef CGAL::CGALi::Status_line_CA_1< Curve_analysis_2 >  \
+    typedef CGAL::internal::Status_line_CA_1< Curve_analysis_2 >  \
       Status_line_1;                                  \
 
 

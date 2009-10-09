@@ -66,7 +66,7 @@ struct Max_bit_size
     }
     
     int operator()(const Integer& x) const
-    { return CGAL::CGALi::ceil_log2_abs(x); }
+    { return CGAL::internal::ceil_log2_abs(x); }
 };
 
 struct Benchmark_result {

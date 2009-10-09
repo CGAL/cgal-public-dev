@@ -39,14 +39,14 @@ void test_routine() {
   {
     Poly_int1 p(5,-4,3,-2,-1,1);
     Algebraic_real ar(p,-3,3);
-    assert(CGAL::CGALi::estimate_sign_at(ar,p,1000)==CGAL::ZERO);
+    assert(CGAL::internal::estimate_sign_at(ar,p,1000)==CGAL::ZERO);
     Poly_int1 q(1,0,0,-1,1,0,0,1);
     Algebraic_real ar2(q,-2,0);
-    assert((CGAL::CGALi::estimate_sign_at(ar2,p))
+    assert((CGAL::internal::estimate_sign_at(ar2,p))
 	       ==CGAL::POSITIVE);
     Poly_int1 r(500001,-400000,300000,-200000,-100000,100000);
     Algebraic_real ar3(r,-5,5);
-    assert((CGAL::CGALi::estimate_sign_at(ar3,p))==CGAL::NEGATIVE);
+    assert((CGAL::internal::estimate_sign_at(ar3,p))==CGAL::NEGATIVE);
   }
   
   {
@@ -61,7 +61,7 @@ void test_routine() {
     assert(n==3);
     
     std::vector<Rational> inter;
-    CGAL::CGALi::find_intermediate_values(v1.begin(),
+    CGAL::internal::find_intermediate_values(v1.begin(),
                                           v1.end(),
                                           std::back_inserter(inter));
     int m = (int)inter.size();
@@ -86,7 +86,7 @@ void test_routine() {
     assert(n==4);
     
     std::vector<Rational> inter;
-    CGAL::CGALi::find_intermediate_values(v2.begin(),
+    CGAL::internal::find_intermediate_values(v2.begin(),
                                           v2.end(),
                                           std::back_inserter(inter));
     int m = (int)inter.size();
@@ -111,7 +111,7 @@ void test_routine() {
     assert(n==0);
     
     std::vector<Rational> inter;
-    CGAL::CGALi::find_intermediate_values(v1.begin(),
+    CGAL::internal::find_intermediate_values(v1.begin(),
                                           v1.end(),
                                           std::back_inserter(inter));
     int m = (int)inter.size();
@@ -136,7 +136,7 @@ void test_routine() {
     assert(n==1);
     
     std::vector<Rational> inter;
-    CGAL::CGALi::find_intermediate_values(v2.begin(),
+    CGAL::internal::find_intermediate_values(v2.begin(),
                                           v2.end(),
                                           std::back_inserter(inter));
     int m = (int)inter.size();
@@ -162,7 +162,7 @@ void test_routine() {
     ::CGAL::set_pretty_mode(std::cout);
     //std::cout << f << " " << a << std::endl;
     
-    assert(CGAL::CGALi::is_root_of(a,f));
+    assert(CGAL::internal::is_root_of(a,f));
     
   }
   {
@@ -170,10 +170,10 @@ void test_routine() {
     Poly_int1 p2(-3,0,1);
     Algebraic_real sqrt_2(p1,Rational(0),Rational(2));
 
-    assert( CGAL::CGALi::is_root_of(sqrt_2,Poly_int1(0)));
-    assert(!CGAL::CGALi::is_root_of(sqrt_2,Poly_int1(1)));
-    assert( CGAL::CGALi::is_root_of(sqrt_2,p1));
-    assert(!CGAL::CGALi::is_root_of(sqrt_2,p2));  
+    assert( CGAL::internal::is_root_of(sqrt_2,Poly_int1(0)));
+    assert(!CGAL::internal::is_root_of(sqrt_2,Poly_int1(1)));
+    assert( CGAL::internal::is_root_of(sqrt_2,p1));
+    assert(!CGAL::internal::is_root_of(sqrt_2,p2));  
   }
   
   return;

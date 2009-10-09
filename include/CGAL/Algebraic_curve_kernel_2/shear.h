@@ -27,7 +27,7 @@
 
 CGAL_BEGIN_NAMESPACE
 
-namespace CGALi {
+namespace internal {
 
 /*! \ingroup NiX_bivariate_polynomial_hacks
  *  \brief Computes the polynomial f(x+sy,y)
@@ -53,7 +53,7 @@ shear(const CGAL::Polynomial<CGAL::Polynomial<NT> >& f,NT s) {
     
 }
 
-} // namespace CGALi
+} // namespace internal
 
 CGAL_END_NAMESPACE
 

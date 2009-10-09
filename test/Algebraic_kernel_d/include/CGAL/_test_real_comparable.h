@@ -35,7 +35,7 @@
 
 CGAL_BEGIN_NAMESPACE
 
-namespace CGALi {
+namespace internal {
 
     template<class NT, class ToDouble>
     class Test_to_double {
@@ -146,13 +146,13 @@ void test_real_comparable() {
     // To_double --------------------------------------------------------------
     typename Traits::To_double  to_double;
     (void)to_double;
-    typename CGALi::Test_to_double<NT, typename Traits::To_double> ttd;
+    typename internal::Test_to_double<NT, typename Traits::To_double> ttd;
     ttd(to_double);
     
     // To_Interval ------------------------------------------------------------
     typename Traits::To_Interval  to_Interval;
     (void)to_Interval;
-    typename CGALi::Test_to_Interval<NT, typename Traits::To_Interval> tti;
+    typename internal::Test_to_Interval<NT, typename Traits::To_Interval> tti;
     tti(to_Interval);
     
     // additional functions     
@@ -214,7 +214,7 @@ void test_rounded_log2_abs() {
     test_rounded_log2_abs(NT(0), F(), C());*/
 }
 
-} // namespace CGALi
+} // namespace internal
 
 
 CGAL_END_NAMESPACE

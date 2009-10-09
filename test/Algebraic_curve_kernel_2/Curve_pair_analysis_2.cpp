@@ -57,11 +57,11 @@ void test_routine() {
     typedef typename 
         CGAL::Polynomial_type_generator<Coefficient,2>::Type Poly_2;
     
-    typedef CGAL::CGALi::Algebraic_real_quadratic_refinement_rep_bfi
+    typedef CGAL::internal::Algebraic_real_quadratic_refinement_rep_bfi
         < Coefficient, Rational > Rep_class;
-    typedef CGAL::CGALi::Bitstream_descartes
-        < CGAL::CGALi::Bitstream_descartes_rndl_tree_traits
-            < CGAL::CGALi::Bitstream_coefficient_kernel<Coefficient> 
+    typedef CGAL::internal::Bitstream_descartes
+        < CGAL::internal::Bitstream_descartes_rndl_tree_traits
+            < CGAL::internal::Bitstream_coefficient_kernel<Coefficient> 
             > 
         > 
         Isolator;
@@ -110,7 +110,7 @@ void test_routine() {
 #if CGAL_ACK_USE_EXACUS
         typedef SoX::Index_triple Triple;
 #else
-        typedef CGAL::CGALi::Event_indices<int> Triple;
+        typedef CGAL::internal::Event_indices<int> Triple;
 #endif
         int i;
         {
@@ -475,7 +475,7 @@ void test_routine() {
 #if CGAL_ACK_USE_EXACUS
         typedef SoX::Index_triple Triple;
 #else
-        typedef CGAL::CGALi::Event_indices<int> Triple;
+        typedef CGAL::internal::Event_indices<int> Triple;
 #endif
         int i;
         {
@@ -722,11 +722,11 @@ void test_routine() {
             CGAL::Polynomial_type_generator<Coefficient,2>::Type Poly_sqrt2;
 
     
-        typedef CGAL::CGALi::Algebraic_real_quadratic_refinement_rep_bfi
+        typedef CGAL::internal::Algebraic_real_quadratic_refinement_rep_bfi
             < Coefficient, Rational > Rep_class;
-        typedef CGAL::CGALi::Bitstream_descartes
-            < CGAL::CGALi::Bitstream_descartes_rndl_tree_traits
-              < CGAL::CGALi::Bitstream_coefficient_kernel<Coefficient> 
+        typedef CGAL::internal::Bitstream_descartes
+            < CGAL::internal::Bitstream_descartes_rndl_tree_traits
+              < CGAL::internal::Bitstream_coefficient_kernel<Coefficient> 
               > 
             > 
             Isolator;
@@ -763,7 +763,7 @@ void test_routine() {
         Curve_pair_analysis_2 curve_pair=construct_curve_pair_2(c1,c2);
         assert(curve_pair.number_of_status_lines_with_event()==10);
         typedef typename Curve_pair_analysis_2::Status_line_1 Status_line_1;
-        typedef CGAL::CGALi::Event_indices<int> Triple;
+        typedef CGAL::internal::Event_indices<int> Triple;
         int i;
     
         {

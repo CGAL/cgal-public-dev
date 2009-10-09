@@ -27,7 +27,7 @@
 
 CGAL_BEGIN_NAMESPACE
   
-namespace CGALi {
+namespace internal {
 	
 template <class RealRootIsolator>
 int check_intervals_real_root_isolator( 
@@ -146,19 +146,19 @@ void test_real_root_isolator() {
         assert(isolator_1.polynomial() == isolator_2.polynomial()); 
     }
     {  
-        int n = CGALi::check_intervals_real_root_isolator<Isolator>(P_123);
+        int n = internal::check_intervals_real_root_isolator<Isolator>(P_123);
         assert( n == 3);
        
     }{  
-        int n = CGALi::check_intervals_real_root_isolator<Isolator>(P_1);
+        int n = internal::check_intervals_real_root_isolator<Isolator>(P_1);
         assert( n == 1);
        
     }{  
-        int n = CGALi::check_intervals_real_root_isolator<Isolator>(P_123);
+        int n = internal::check_intervals_real_root_isolator<Isolator>(P_123);
         assert( n == 3);
        
     }{  
-        int n = CGALi::check_intervals_real_root_isolator<Isolator>(P_s2510);
+        int n = internal::check_intervals_real_root_isolator<Isolator>(P_s2510);
         assert( n == 6);
        
     }{  // (x^2-2)*(x^2-3)
@@ -169,7 +169,7 @@ void test_real_root_isolator() {
         VP[3] = NT(0);
         VP[4] = NT(1);  
         Polynomial P(VP.begin(), VP.end()); 
-        int n = CGALi::check_intervals_real_root_isolator<Isolator>(P);
+        int n = internal::check_intervals_real_root_isolator<Isolator>(P);
         assert( n == 4);
        
     }
@@ -182,7 +182,7 @@ void test_real_root_isolator() {
         VP[4] = NT(-1);  
         VP[5] = NT(1);  
         Polynomial P(VP.begin(), VP.end());
-        int n = CGALi::check_intervals_real_root_isolator<Isolator>(P);
+        int n = internal::check_intervals_real_root_isolator<Isolator>(P);
         assert( n == 3);
     }{       
         // std::cout << "Wilkinson Polynomial\n";
@@ -192,7 +192,7 @@ void test_real_root_isolator() {
             P*=Polynomial(NT(-i),NT(1));
         }
         Isolator isolator(P);
-        int n = CGALi::check_intervals_real_root_isolator<Isolator>(P);
+        int n = internal::check_intervals_real_root_isolator<Isolator>(P);
         assert( n == number_of_roots);             
     }{
         //std::cout << "Kameny 3\n";
@@ -208,7 +208,7 @@ void test_real_root_isolator() {
         Q = Q*Polynomial(NT(0),c);//c^2x^9
         P = P+Q;
         
-        int n = CGALi::check_intervals_real_root_isolator<Isolator>(P);
+        int n = internal::check_intervals_real_root_isolator<Isolator>(P);
         assert(n == 3);
     }{
         //std::cout << "Kameny 4\n";
@@ -225,7 +225,7 @@ void test_real_root_isolator() {
         // x^{14}+2*10^{24}*x^{11}+10^{48}*x^8+4*x^7-4*10^{24}*X^4+4
     
         Isolator isol(P);
-        int n = CGALi::check_intervals_real_root_isolator<Isolator>(P);
+        int n = internal::check_intervals_real_root_isolator<Isolator>(P);
         assert( n == 4);
     }{
         //std::cout << "Polynomial with large and small clustered roots\n";
@@ -242,13 +242,13 @@ void test_real_root_isolator() {
         R = R*R; // (ax-1)^4
         P = P-R; // x^{12} - (ax-1)^4
         
-        int n = CGALi::check_intervals_real_root_isolator<Isolator>(P);
+        int n = internal::check_intervals_real_root_isolator<Isolator>(P);
         assert( n == 4);  
     }
     
 };
 
-} //namespace CGALi
+} //namespace internal
 
 CGAL_END_NAMESPACE
 

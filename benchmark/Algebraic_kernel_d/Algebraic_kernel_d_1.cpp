@@ -32,7 +32,7 @@
 // TODO: Copied from benchmark_helper
 template <class Integer> 
 int get_max_bit_size(Integer x){
-    return CGAL::CGALi::ceil_log2_abs(x);
+    return CGAL::internal::ceil_log2_abs(x);
 }
    
 template <class NT, class ROOT>
@@ -334,10 +334,10 @@ void single_benchmark( std::string filename, std::string isolator, int samples =
     // Select isolator
     if( isolator == "Descartes" )
         single_benchmark< Coeff, Bound, Rep_class,
-            CGAL::CGALi::Descartes< typename CGAL::Polynomial< Coeff >, Bound > >( filename, samples );
+            CGAL::internal::Descartes< typename CGAL::Polynomial< Coeff >, Bound > >( filename, samples );
     else if( isolator == "Bitstream_descartes" )
         single_benchmark< Coeff, Bound, Rep_class,
-            CGAL::CGALi::Bitstream_descartes< typename CGAL::Polynomial< Coeff >, Bound > >( filename, samples );
+            CGAL::internal::Bitstream_descartes< typename CGAL::Polynomial< Coeff >, Bound > >( filename, samples );
     else
         CGAL_error_msg( "Unknown isolator class" );
 }
@@ -350,13 +350,13 @@ void single_benchmark( std::string filename, std::string rep_class, std::string 
     // Select rep class    
     if( rep_class == "Algebraic_real_rep" )
         single_benchmark< Coeff, Bound,
-             CGAL::CGALi::Algebraic_real_rep< Coeff, Bound > >( filename, isolator, samples );
+             CGAL::internal::Algebraic_real_rep< Coeff, Bound > >( filename, isolator, samples );
     else if( rep_class == "Algebraic_real_rep_bfi" )
         single_benchmark< Coeff, Bound,
-             CGAL::CGALi::Algebraic_real_rep_bfi< Coeff, Bound > >( filename, isolator, samples );
+             CGAL::internal::Algebraic_real_rep_bfi< Coeff, Bound > >( filename, isolator, samples );
     else if( rep_class == "Algebraic_real_quadratic_refinement_rep_bfi" )
         single_benchmark< Coeff, Bound,
-             CGAL::CGALi::Algebraic_real_quadratic_refinement_rep_bfi< Coeff, Bound > >( filename, isolator, samples );
+             CGAL::internal::Algebraic_real_quadratic_refinement_rep_bfi< Coeff, Bound > >( filename, isolator, samples );
     else
          CGAL_error_msg( "Unknown rep class" );
 }

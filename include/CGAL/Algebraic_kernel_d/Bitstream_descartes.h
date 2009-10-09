@@ -30,7 +30,7 @@
 
 CGAL_BEGIN_NAMESPACE
 
-    namespace CGALi {
+    namespace internal {
     
     //! enum to distinguish between different descartes instances
     enum Bitstream_descartes_type {
@@ -100,11 +100,11 @@ CGAL_BEGIN_NAMESPACE
       
             //! The type of the used Bitstream Descartes tree
 #if CGAL_ACK_BITSTREAM_USES_E08_TREE
-            typedef CGAL::CGALi::Bitstream_descartes_E08_tree
+            typedef CGAL::internal::Bitstream_descartes_E08_tree
                 <Bitstream_descartes_rndl_tree_traits> 
                 Bitstream_tree;
 #else
-            typedef CGAL::CGALi::Bitstream_descartes_rndl_tree
+            typedef CGAL::internal::Bitstream_descartes_rndl_tree
                 <Bitstream_descartes_rndl_tree_traits> 
                 Bitstream_tree;
 #endif
@@ -319,7 +319,7 @@ CGAL_BEGIN_NAMESPACE
                                 = traits.upper_bound_log2_abs_approximator_object();
                             //AcX_DSTREAM("Fujiwara bound.." << p <<  std::endl);
 #if CGAL_ACK_BITSTREAM_USES_E08_TREE
-                            log_div = -CGAL::CGALi::Fujiwara_root_bound_log
+                            log_div = -CGAL::internal::Fujiwara_root_bound_log
                                 (p.begin(),
                                  p.end(),
                                  lower_bound_log2_abs,
@@ -327,7 +327,7 @@ CGAL_BEGIN_NAMESPACE
                                 );
 #else
 
-                            log_div = -CGAL::CGALi
+                            log_div = -CGAL::internal
                                 ::Fujiwara_root_bound_log
                                 (p.begin(),
                                  p.end(),
@@ -698,7 +698,7 @@ CGAL_BEGIN_NAMESPACE
                 return true;
             }
             if(max_max_var<=gcd_degree) {
-                throw CGAL::CGALi::Non_generic_position_exception();
+                throw CGAL::internal::Non_generic_position_exception();
             }
         
             return false;
@@ -1118,7 +1118,7 @@ CGAL_BEGIN_NAMESPACE
     template<typename BitstreamDescartesRndlTreeTraits>
     class Bitstream_descartes 
         : ::CGAL::Handle_with_policy<
-    CGAL::CGALi::Generic_descartes_rep<BitstreamDescartesRndlTreeTraits> > {
+    CGAL::internal::Generic_descartes_rep<BitstreamDescartesRndlTreeTraits> > {
     
     public:
     
@@ -1128,7 +1128,7 @@ CGAL_BEGIN_NAMESPACE
       
         // The generic representation class
         typedef 
-        CGAL::CGALi::Generic_descartes_rep<BitstreamDescartesRndlTreeTraits> Rep;
+        CGAL::internal::Generic_descartes_rep<BitstreamDescartesRndlTreeTraits> Rep;
 
         // The Handle type
         typedef ::CGAL::Handle_with_policy<Rep> Base;
@@ -1146,11 +1146,11 @@ CGAL_BEGIN_NAMESPACE
     
         // Type for the Bitstream Descartes tree
 #if CGAL_ACK_BITSTREAM_USES_E08_TREE
-        typedef CGAL::CGALi::Bitstream_descartes_E08_tree
+        typedef CGAL::internal::Bitstream_descartes_E08_tree
         <Bitstream_descartes_rndl_tree_traits> 
         Bitstream_tree;
 #else
-        typedef CGAL::CGALi::Bitstream_descartes_rndl_tree
+        typedef CGAL::internal::Bitstream_descartes_rndl_tree
         <Bitstream_descartes_rndl_tree_traits> 
         Bitstream_tree;
 #endif
@@ -1183,7 +1183,7 @@ CGAL_BEGIN_NAMESPACE
                             Bitstream_descartes_rndl_tree_traits traits
                             = Bitstream_descartes_rndl_tree_traits(),
                             bool isolate=true)
-            : Base(new CGAL::CGALi::Square_free_descartes_rep
+            : Base(new CGAL::internal::Square_free_descartes_rep
                    <Bitstream_descartes_rndl_tree_traits>(f,traits))
         {
             if(isolate) {
@@ -1203,7 +1203,7 @@ CGAL_BEGIN_NAMESPACE
                                 Bitstream_descartes_rndl_tree_traits traits
                                 = Bitstream_descartes_rndl_tree_traits(),
                                 bool isolate=true)
-            : Base(new CGAL::CGALi::Square_free_descartes_rep
+            : Base(new CGAL::internal::Square_free_descartes_rep
                    <Bitstream_descartes_rndl_tree_traits>(f,traits))
         {
             if(isolate) {
@@ -1227,7 +1227,7 @@ CGAL_BEGIN_NAMESPACE
                                 Bitstream_descartes_rndl_tree_traits traits
                                 = Bitstream_descartes_rndl_tree_traits(),
                                 bool isolate=true)
-            : Base(new CGAL::CGALi::Square_free_descartes_rep
+            : Base(new CGAL::internal::Square_free_descartes_rep
                    <Bitstream_descartes_rndl_tree_traits>(f, tree, traits))
         {
             if(isolate) {
@@ -1251,7 +1251,7 @@ CGAL_BEGIN_NAMESPACE
                                 Bitstream_descartes_rndl_tree_traits traits
                                 = Bitstream_descartes_rndl_tree_traits(),
                                 bool isolate=true)
-            : Base(new CGAL::CGALi::M_k_descartes_rep
+            : Base(new CGAL::internal::M_k_descartes_rep
                    <Bitstream_descartes_rndl_tree_traits>(f,m,k,traits))
         {
             if(isolate) {
@@ -1266,7 +1266,7 @@ CGAL_BEGIN_NAMESPACE
                                 Bitstream_descartes_rndl_tree_traits traits
                                 = Bitstream_descartes_rndl_tree_traits(),
                                 bool isolate=true)
-            : Base(new CGAL::CGALi::M_k_descartes_rep
+            : Base(new CGAL::internal::M_k_descartes_rep
                    <Bitstream_descartes_rndl_tree_traits>(f,m,k,tree,traits))
         {
             if(isolate) {
@@ -1300,7 +1300,7 @@ CGAL_BEGIN_NAMESPACE
                                 = Bitstream_descartes_rndl_tree_traits(),
                                 bool isolate=true)
             : Base(new 
-                   CGAL::CGALi::Backshear_descartes_rep
+                   CGAL::internal::Backshear_descartes_rep
                    <Bitstream_descartes_rndl_tree_traits,EventRefinement>
                    (f,number_of_real_roots-number_of_events,
                     number_of_events,event_refinement,traits))
@@ -1320,7 +1320,7 @@ CGAL_BEGIN_NAMESPACE
                                 InputIterator begin,
                                 InputIterator end,
                                 Bitstream_descartes_rndl_tree_traits traits)
-            : Base(new CGAL::CGALi::Vert_line_adapter_descartes_rep
+            : Base(new CGAL::internal::Vert_line_adapter_descartes_rep
                    <Bitstream_descartes_rndl_tree_traits,
                    typename InputIterator::value_type::first_type>
                    (begin, end, traits) )
@@ -1471,7 +1471,7 @@ CGAL_BEGIN_NAMESPACE
 
   
 
-    } // namespace CGALi
+    } // namespace internal
 
 CGAL_END_NAMESPACE
 

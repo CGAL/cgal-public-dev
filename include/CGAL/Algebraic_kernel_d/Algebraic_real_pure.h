@@ -31,7 +31,7 @@
 #include <queue>
 
 CGAL_BEGIN_NAMESPACE 
-namespace CGALi {
+namespace internal {
 template <class Coefficient_,  class Rational_, 
           class HandlePolicy , class RepClass  >
 class Algebraic_real_pure;
@@ -41,9 +41,9 @@ template <class COEFF, class RAT, class POLICY, class REPCLASS >
 typename Get_arithmetic_kernel<COEFF>::Arithmetic_kernel::Bigfloat_interval
 inline
 convert_to_bfi(
-    const CGALi::Algebraic_real_pure< COEFF, RAT, POLICY, REPCLASS >& x);
+    const internal::Algebraic_real_pure< COEFF, RAT, POLICY, REPCLASS >& x);
 
-namespace CGALi { 
+namespace internal { 
 /*! \ingroup NiX_Algebraic_real
   \brief  An Algebraic_real_pure \a x is represented by a polynomial and an 
   isolating interval. It is guaranteed that the polynomial is square free. 
@@ -65,7 +65,7 @@ namespace CGALi {
 template <class Coefficient_, 
           class Rational_,            
           class HandlePolicy = ::CGAL::Handle_policy_no_union,
-          class RepClass = CGALi::Algebraic_real_rep< Coefficient_, Rational_ > >
+          class RepClass = internal::Algebraic_real_rep< Coefficient_, Rational_ > >
 class Algebraic_real_pure :
     public
 ::CGAL::Handle_with_policy< RepClass, HandlePolicy > {    
@@ -327,7 +327,7 @@ public:
 
 }; // class Algebraic_real_pure 
 
-} // namespace CGALi 
+} // namespace internal 
 
 
 //----------------------------------------------------------
@@ -341,12 +341,12 @@ public:
  *  are not even a model of the IntegralDomainWithoutDiv concept. \see NiX_NT_Concepts 
  */
 template< class Coefficient, class Rational, class HandlePolicy, class RepClass >
-class Real_embeddable_traits< CGALi::Algebraic_real_pure< Coefficient, Rational, HandlePolicy, RepClass > >
-  : public INTERN_RET::Real_embeddable_traits_base< CGALi::Algebraic_real_pure< Coefficient, Rational, HandlePolicy, RepClass > , CGAL::Tag_true > {
+class Real_embeddable_traits< internal::Algebraic_real_pure< Coefficient, Rational, HandlePolicy, RepClass > >
+  : public INTERN_RET::Real_embeddable_traits_base< internal::Algebraic_real_pure< Coefficient, Rational, HandlePolicy, RepClass > , CGAL::Tag_true > {
 
 public:
     
-  typedef CGALi::Algebraic_real_pure< Coefficient, Rational, HandlePolicy, RepClass > Type;
+  typedef internal::Algebraic_real_pure< Coefficient, Rational, HandlePolicy, RepClass > Type;
         
   class Compare
     : public std::binary_function< Type, Type, CGAL::Comparison_result > {
@@ -457,10 +457,10 @@ public:
 template <class COEFF, class RAT, class POLICY, class REPCLASS >
 typename Get_arithmetic_kernel<COEFF>::Arithmetic_kernel::Bigfloat_interval
 inline
-convert_to_bfi(const CGALi::Algebraic_real_pure< COEFF, RAT, POLICY, REPCLASS >& x){
+convert_to_bfi(const internal::Algebraic_real_pure< COEFF, RAT, POLICY, REPCLASS >& x){
   typedef typename Get_arithmetic_kernel<COEFF>::Arithmetic_kernel AT;
   typedef typename AT::Bigfloat_interval BFI; 
-  typedef CGALi::Algebraic_real_pure< COEFF, RAT, POLICY, REPCLASS > ALG;
+  typedef internal::Algebraic_real_pure< COEFF, RAT, POLICY, REPCLASS > ALG;
 
   if (x.is_rational()) return convert_to_bfi(x.rational());
     
@@ -484,7 +484,7 @@ convert_to_bfi(const CGALi::Algebraic_real_pure< COEFF, RAT, POLICY, REPCLASS >&
 
  
 template <class Coefficient,class Rational,class Handle_policy,class Rep_class>
-struct Get_arithmetic_kernel<CGAL::CGALi::Algebraic_real_pure<Coefficient,Rational,Handle_policy,Rep_class> >{
+struct Get_arithmetic_kernel<CGAL::internal::Algebraic_real_pure<Coefficient,Rational,Handle_policy,Rep_class> >{
 
   typedef typename Get_arithmetic_kernel<Coefficient>::Arithmetic_kernel 
   Arithmetic_kernel;
@@ -492,23 +492,23 @@ struct Get_arithmetic_kernel<CGAL::CGALi::Algebraic_real_pure<Coefficient,Ration
 };
 
 template <class Coefficient,class Rational,class Handle_policy,class Rep_class>
-inline CGAL::CGALi::Algebraic_real_pure<Coefficient,Rational,Handle_policy,Rep_class> 
+inline CGAL::internal::Algebraic_real_pure<Coefficient,Rational,Handle_policy,Rep_class> 
 min BOOST_PREVENT_MACRO_SUBSTITUTION(
-    const CGAL::CGALi::Algebraic_real_pure<Coefficient,Rational,Handle_policy,Rep_class>& x,
-    const CGAL::CGALi::Algebraic_real_pure<Coefficient,Rational,Handle_policy,Rep_class>& y){
+    const CGAL::internal::Algebraic_real_pure<Coefficient,Rational,Handle_policy,Rep_class>& x,
+    const CGAL::internal::Algebraic_real_pure<Coefficient,Rational,Handle_policy,Rep_class>& y){
   return (x<=y)?x:y; 
 }
 template <class Coefficient,class Rational,class Handle_policy,class Rep_class>
-inline CGAL::CGALi::Algebraic_real_pure<Coefficient,Rational,Handle_policy,Rep_class> 
+inline CGAL::internal::Algebraic_real_pure<Coefficient,Rational,Handle_policy,Rep_class> 
 max BOOST_PREVENT_MACRO_SUBSTITUTION(
-    const CGAL::CGALi::Algebraic_real_pure<Coefficient,Rational,Handle_policy,Rep_class>& x,
-    const CGAL::CGALi::Algebraic_real_pure<Coefficient,Rational,Handle_policy,Rep_class>& y){
+    const CGAL::internal::Algebraic_real_pure<Coefficient,Rational,Handle_policy,Rep_class>& x,
+    const CGAL::internal::Algebraic_real_pure<Coefficient,Rational,Handle_policy,Rep_class>& y){
   return (x>=y)?x:y; 
 }
 
 template <class Coefficient, class Rational, class Handle_policy, class Rep_class>
-struct Coercion_traits<int, CGALi::Algebraic_real_pure<Coefficient,Rational,Handle_policy,Rep_class> >{
-  typedef CGALi::Algebraic_real_pure<Coefficient,Rational,Handle_policy,Rep_class> Type;
+struct Coercion_traits<int, internal::Algebraic_real_pure<Coefficient,Rational,Handle_policy,Rep_class> >{
+  typedef internal::Algebraic_real_pure<Coefficient,Rational,Handle_policy,Rep_class> Type;
   typedef Tag_true Are_explicit_interoperable; 
   typedef Tag_false Are_implicit_interoperable; 
   struct Cast{
@@ -519,13 +519,13 @@ struct Coercion_traits<int, CGALi::Algebraic_real_pure<Coefficient,Rational,Hand
 };
 
 template <class A, class B, class C, class D>
-struct Coercion_traits<CGALi::Algebraic_real_pure<A,B,C,D>,int >
-  :public Coercion_traits<int,CGALi::Algebraic_real_pure<A,B,C,D> >{};
+struct Coercion_traits<internal::Algebraic_real_pure<A,B,C,D>,int >
+  :public Coercion_traits<int,internal::Algebraic_real_pure<A,B,C,D> >{};
 
 
 template <class Coefficient, class Rational, class Handle_policy, class Rep_class>
-struct Coercion_traits<Rational, CGALi::Algebraic_real_pure<Coefficient,Rational,Handle_policy,Rep_class> >{
-  typedef CGALi::Algebraic_real_pure<Coefficient,Rational,Handle_policy,Rep_class> Type;
+struct Coercion_traits<Rational, internal::Algebraic_real_pure<Coefficient,Rational,Handle_policy,Rep_class> >{
+  typedef internal::Algebraic_real_pure<Coefficient,Rational,Handle_policy,Rep_class> Type;
   typedef Tag_true Are_explicit_interoperable; 
   typedef Tag_false Are_implicit_interoperable; 
   struct Cast{
@@ -536,16 +536,16 @@ struct Coercion_traits<Rational, CGALi::Algebraic_real_pure<Coefficient,Rational
 };
 
 template <class A, class Rational, class C, class D>
-struct Coercion_traits<CGALi::Algebraic_real_pure<A,Rational,C,D>, Rational >
-  :public Coercion_traits<Rational,CGALi::Algebraic_real_pure<A,Rational,C,D> >{};
+struct Coercion_traits<internal::Algebraic_real_pure<A,Rational,C,D>, Rational >
+  :public Coercion_traits<Rational,internal::Algebraic_real_pure<A,Rational,C,D> >{};
 
 
 template <class Coefficient, class Rational, class Handle_policy, class Rep_class>
 struct Coercion_traits<
   typename First_if_different<Coefficient,Rational>::Type, 
-  CGALi::Algebraic_real_pure<Coefficient,Rational,Handle_policy,Rep_class> >
+  internal::Algebraic_real_pure<Coefficient,Rational,Handle_policy,Rep_class> >
 {
-  typedef CGALi::Algebraic_real_pure<Coefficient,Rational,Handle_policy,Rep_class> Type;
+  typedef internal::Algebraic_real_pure<Coefficient,Rational,Handle_policy,Rep_class> Type;
   typedef Tag_true Are_explicit_interoperable; 
   typedef Tag_false Are_implicit_interoperable; 
   typedef Coercion_traits<Coefficient,Rational> CTCR;
@@ -575,9 +575,9 @@ struct Coercion_traits<
 
 template <class Coefficient, class Rational, class C, class D>
 struct Coercion_traits<
-  CGALi::Algebraic_real_pure<Coefficient,Rational,C,D>, 
+  internal::Algebraic_real_pure<Coefficient,Rational,C,D>, 
   typename First_if_different<Coefficient,Rational>::Type>
-  :public Coercion_traits<Coefficient,CGALi::Algebraic_real_pure<Coefficient,Rational,C,D> >{};
+  :public Coercion_traits<Coefficient,internal::Algebraic_real_pure<Coefficient,Rational,C,D> >{};
 
 CGAL_END_NAMESPACE
 

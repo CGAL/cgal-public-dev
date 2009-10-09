@@ -27,7 +27,7 @@
 
 CGAL_BEGIN_NAMESPACE
 
-namespace CGALi {
+namespace internal {
 
 class Parser_exception {
 
@@ -56,7 +56,7 @@ struct _Default_checker {
     }
 };
 
-} // namespace CGALi
+} // namespace internal
 
 /*! 
  *  \brief this functor implements parsing of bivariate polynomials
@@ -66,7 +66,7 @@ struct _Default_checker {
  * (y + x - 3)^3 = x + y - 123 + y*x^2
  */
 template < typename Poly2, 
-           typename ValidyChecker = CGAL::CGALi::_Default_checker<Poly2> >
+           typename ValidyChecker = CGAL::internal::_Default_checker<Poly2> >
 struct Polynomial_parser_2
 {
     //!\name public typedefs
@@ -120,7 +120,7 @@ public:
                 poly -= tmp;
             }
         } 
-        catch(CGAL::CGALi::Parser_exception ex) {
+        catch(CGAL::internal::Parser_exception ex) {
             std::cerr << "Parser error: " << ex.get_message() << std::endl;
             return false;
         }
@@ -187,7 +187,7 @@ protected:
         if(isdigit(ch)) {
             is >> CGAL::iformat(coeff);
             if(!checker(coeff))
-                throw CGAL::CGALi::Parser_exception(
+                throw CGAL::internal::Parser_exception(
                     "Coefficient validity check failed");
             which_case = 0; // number        
         
@@ -201,7 +201,7 @@ protected:
             // to the opening ')'
             unsigned int pos = match_parenth(is);
             if(pos == -1u)
-                throw CGAL::CGALi::Parser_exception(
+                throw CGAL::internal::Parser_exception(
                     "Parentheses do not match in basic term");
         
             unsigned int beg = (unsigned int)is.tellg() + 1u;
@@ -212,17 +212,17 @@ protected:
             tmp = get_poly(t);
             which_case = 2;
         } else 
-            throw CGAL::CGALi::Parser_exception("Error in parsing basic term");
+            throw CGAL::internal::Parser_exception("Error in parsing basic term");
         
         // adjust i to be pointed to the next char
         if(is.peek() == '^') {
             is.ignore(1); // ignore one character
             if(!isdigit(is.peek()))
-                throw CGAL::CGALi::Parser_exception(
+                throw CGAL::internal::Parser_exception(
                     "Incorrect power for basic term");
             is >> CGAL::iformat(power);
             if(power >= max_exp)
-                throw CGAL::CGALi::Parser_exception(
+                throw CGAL::internal::Parser_exception(
                     "Power is too large for basic term");
         } 
         switch(which_case) {
@@ -236,7 +236,7 @@ protected:
         case 2: // control degree overflow
             int degree = CGAL::total_degree(tmp);
             if(degree * power >= max_exp) 
-                throw CGAL::CGALi::Parser_exception(
+                throw CGAL::internal::Parser_exception(
                     "Power is too large for polynomial in basic  term ");
             tmp = CGAL::ipower(tmp, static_cast< long >(power));    
         }
@@ -304,7 +304,7 @@ protected:
             else if(ch == '-')
                 res -= tmp;
             else
-                throw CGAL::CGALi::Parser_exception(
+                throw CGAL::internal::Parser_exception(
                     "Illegal character while parsing polynomial");
         }
         //std::cout << "getpoly result: " << res << "\n";

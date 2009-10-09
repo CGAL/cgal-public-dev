@@ -43,7 +43,7 @@
 
 CGAL_BEGIN_NAMESPACE
 
-namespace CGALi {
+namespace internal {
 
 /*! \ingroup NiX_Algebraic_real
  *  \brief A model of concept RealRootIsolator. 
@@ -325,7 +325,7 @@ private:
     bool not_zero_in_interval(const POLYNOMIAL_REBIND(Coeff__)& P)
     {
         if(CGAL::degree(P) == 0) return true;
-        if(CGALi::sign_variations(variation_transformation<Coeff__>(P)) != 0)
+        if(internal::sign_variations(variation_transformation<Coeff__>(P)) != 0)
             return false;
         return (P[0] != Coeff__(0) && P.evaluate(Coeff__(1)) != Coeff__(0));
     }
@@ -458,7 +458,7 @@ private:
     } 
 };
 
-} // namespace CGALi
+} // namespace internal
 
 CGAL_END_NAMESPACE
 

@@ -20,7 +20,7 @@ CGAL_BEGIN_NAMESPACE
 #include <CGAL/Arithmetic_kernel.h>
 #include <CGAL/convert_to_bfi.h>
 
-namespace CGALi {
+namespace internal {
 
 template < typename AlgebraicKernel_1 >
 class Bitstream_coefficient_kernel_at_alpha;
@@ -55,7 +55,7 @@ private:
 template < typename AlgebraicKernel_1 >
 class Bitstream_coefficient_kernel_at_alpha
     : public CGAL::Handle_with_policy
-        < CGAL::CGALi::Bitstream_coefficient_kernel_at_alpha_rep
+        < CGAL::internal::Bitstream_coefficient_kernel_at_alpha_rep
             <AlgebraicKernel_1 > 
         >
 {
@@ -86,7 +86,7 @@ public:
         ::Rational Bound;
 
     typedef CGAL::Handle_with_policy
-        < CGAL::CGALi::Bitstream_coefficient_kernel_at_alpha_rep
+        < CGAL::internal::Bitstream_coefficient_kernel_at_alpha_rep
             <Algebraic_kernel_1 > 
         > Handle;
 
@@ -152,7 +152,7 @@ public:
                 f_alpha_bfi = f_bfi.evaluate(alpha_bfi);
                 
                 if(!CGAL::singleton(f_alpha_bfi)) {
-                    long ceil = CGAL::CGALi::ceil_log2_abs(f_alpha_bfi);
+                    long ceil = CGAL::internal::ceil_log2_abs(f_alpha_bfi);
                     long signi = CGAL::get_significant_bits(f_alpha_bfi);
                     wbit   = ceil - signi + p;
                     
@@ -198,7 +198,7 @@ public:
 
 };
 
-} // namespace CGALi
+} // namespace internal
 
 CGAL_END_NAMESPACE
 

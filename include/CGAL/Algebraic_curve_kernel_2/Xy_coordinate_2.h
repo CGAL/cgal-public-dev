@@ -23,7 +23,7 @@
 
 CGAL_BEGIN_NAMESPACE
 
-namespace CGALi {
+namespace internal {
 
 template < class AlgebraicCurveKernel_2, class Rep_, 
       class HandlePolicy_ ,
@@ -95,7 +95,7 @@ public:
 //! a supporting curve and an arcno and is valid only for finite solutions,
 //! i.e., it cannot represent points at infinity 
 template <class AlgebraicCurveKernel_2, 
-          class Rep_ = CGALi::Xy_coordinate_2_rep<AlgebraicCurveKernel_2>,
+          class Rep_ = internal::Xy_coordinate_2_rep<AlgebraicCurveKernel_2>,
           class HandlePolicy_= CGAL::Handle_policy_union, 
           class Allocator_ = CGAL_ALLOCATOR(Rep_) >
 class Xy_coordinate_2 : 
@@ -858,7 +858,7 @@ std::ostream& operator<< (std::ostream& os,
     return os;    
 }
 
-} // namespace CGALi
+} // namespace internal
 
 CGAL_END_NAMESPACE
 

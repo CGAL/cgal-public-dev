@@ -24,7 +24,7 @@
 
 CGAL_BEGIN_NAMESPACE
 
-namespace CGALi{
+namespace internal{
 
 // So far, this is independent of the actual value to approximate
 // Precondition: 0<x<Pi/4
@@ -32,7 +32,7 @@ template<typename Arithmetic_traits>
 long number_of_summands_for_sin(long precision) {
     long n=0;
     typename Arithmetic_traits::Integer n_fac(1);
-    while(CGAL::CGALi::floor_log2_abs(n_fac)<precision+1) {
+    while(CGAL::internal::floor_log2_abs(n_fac)<precision+1) {
         n++;
         n_fac*=n;
     }
@@ -59,7 +59,7 @@ long number_of_summands_for_arcsin(typename Arithmetic_traits::Rational s,
 }
 
 
-} // namespace CGALi
+} // namespace internal
 
 template<typename Arithmetic_traits>
 typename Arithmetic_traits::Bigfloat_interval pi(long precision)  {
@@ -86,11 +86,11 @@ typename Arithmetic_traits::Bigfloat_interval pi(long precision)  {
         typedef typename CGAL::Bigfloat_interval_traits<Bigfloat_interval>
             ::Bound Bigfloat_bound;
         Bigfloat_bound bb(Integer(1));
-        bb = typename CGAL::CGALi::Float_traits<Bigfloat_bound>
+        bb = typename CGAL::internal::Float_traits<Bigfloat_bound>
             ::Mul_by_pow_of_2() (bb,-precision-error_offset);
         Bigfloat_interval err = CGAL::hull(Bigfloat_interval(-bb), 
                                            Bigfloat_interval(bb));
-        CGAL_assertion(CGAL::CGALi::ceil_log2_abs
+        CGAL_assertion(CGAL::internal::ceil_log2_abs
                        (CGAL::upper(err)-CGAL::lower(err))==
                        -precision-error_offset+1);
                 
@@ -117,7 +117,7 @@ typename Arithmetic_traits::Bigfloat_interval pi(long precision)  {
             // We don't expect that PI is rational...
             CGAL_assertion(! CGAL::singleton(result));
             
-            if(CGAL::CGALi::ceil_log2_abs(CGAL::upper(result)-
+            if(CGAL::internal::ceil_log2_abs(CGAL::upper(result)-
                                           CGAL::lower(result))
                <=-precision-error_offset+1) { // precision -1 would suffices
                 break;
@@ -127,7 +127,7 @@ typename Arithmetic_traits::Bigfloat_interval pi(long precision)  {
             }
         }
         result+=err;
-        if(CGAL::CGALi::ceil_log2_abs(CGAL::upper(result)-
+        if(CGAL::internal::ceil_log2_abs(CGAL::upper(result)-
                                           CGAL::lower(result))
            <=-precision) {
             break;
@@ -157,17 +157,17 @@ typename Arithmetic_traits::Bigfloat_interval arcsin
         
         long prec = 16;
         CGAL::set_precision(Bigfloat_interval(),prec);
-        long m = CGAL::CGALi::number_of_summands_for_arcsin<Arithmetic_traits>
+        long m = CGAL::internal::number_of_summands_for_arcsin<Arithmetic_traits>
             (x,precision+error_offset);
 
         typedef typename CGAL::Bigfloat_interval_traits<Bigfloat_interval>
             ::Bound Bigfloat_bound;
         Bigfloat_bound bb(Integer(1));
-        bb = typename CGAL::CGALi::Float_traits<Bigfloat_bound>
+        bb = typename CGAL::internal::Float_traits<Bigfloat_bound>
             ::Mul_by_pow_of_2() (bb,-precision-error_offset);
         Bigfloat_interval err = CGAL::hull(Bigfloat_interval(-bb), 
                                            Bigfloat_interval(bb));
-        CGAL_assertion(CGAL::CGALi::ceil_log2_abs
+        CGAL_assertion(CGAL::internal::ceil_log2_abs
                        (CGAL::upper(err)-CGAL::lower(err))==
                        -precision-error_offset+1);
 
@@ -190,7 +190,7 @@ typename Arithmetic_traits::Bigfloat_interval arcsin
             if(CGAL::singleton(result)) {
                 break;
             }
-            if(CGAL::CGALi::ceil_log2_abs(CGAL::upper(result)-
+            if(CGAL::internal::ceil_log2_abs(CGAL::upper(result)-
                                           CGAL::lower(result)) 
                < -(precision+1)) {
                 break;
@@ -200,7 +200,7 @@ typename Arithmetic_traits::Bigfloat_interval arcsin
         }
         
         result+=err;
-        if(CGAL::CGALi::ceil_log2_abs(CGAL::upper(result)-
+        if(CGAL::internal::ceil_log2_abs(CGAL::upper(result)-
                                       CGAL::lower(result)) 
            <= -precision) {
             break;
@@ -231,17 +231,17 @@ typename Arithmetic_traits::Bigfloat_interval sin
         
         long prec = 16;
         CGAL::set_precision(Bigfloat_interval(),prec);
-        long m = CGAL::CGALi::number_of_summands_for_sin<Arithmetic_traits>
+        long m = CGAL::internal::number_of_summands_for_sin<Arithmetic_traits>
             (precision+error_offset);
 
         typedef typename CGAL::Bigfloat_interval_traits<Bigfloat_interval>
             ::Bound Bigfloat_bound;
         Bigfloat_bound bb(Integer(1));
-        bb = typename CGAL::CGALi::Float_traits<Bigfloat_bound>
+        bb = typename CGAL::internal::Float_traits<Bigfloat_bound>
             ::Mul_by_pow_of_2() (bb,-precision-error_offset);
         Bigfloat_interval err = CGAL::hull(Bigfloat_interval(-bb), 
                                            Bigfloat_interval(bb));
-        CGAL_assertion(CGAL::CGALi::ceil_log2_abs
+        CGAL_assertion(CGAL::internal::ceil_log2_abs
                        (CGAL::upper(err)-CGAL::lower(err))==
                        -precision-error_offset+1);
 
@@ -263,7 +263,7 @@ typename Arithmetic_traits::Bigfloat_interval sin
             if(CGAL::singleton(result)) {
                 break;
             }
-            if(CGAL::CGALi::ceil_log2_abs(CGAL::upper(result)-
+            if(CGAL::internal::ceil_log2_abs(CGAL::upper(result)-
                                           CGAL::lower(result)) 
                < -precision-error_offset+1) {
                 break;
@@ -272,7 +272,7 @@ typename Arithmetic_traits::Bigfloat_interval sin
             }
         }
         result+=err;
-        if(CGAL::CGALi::ceil_log2_abs(CGAL::upper(result)-
+        if(CGAL::internal::ceil_log2_abs(CGAL::upper(result)-
                                           CGAL::lower(result)) 
                <= -precision) {
             break;
@@ -353,7 +353,7 @@ approximate_sin_and_cos_of_angle(Bound angle,long final_prec) {
             Bigfloat_bound e0=x, e1=-1, olde0;
             Integer p0=0, q0=1, p1=1, q1=0,oldp0,oldq0;
             while(true) {
-                Integer r = CGAL::CGALi::floor(e0/e1);
+                Integer r = CGAL::internal::floor(e0/e1);
                 Integer oldp0=p0, oldq0=q0;
                 Bigfloat_bound olde0=e0;
                 e0=e1;p0=p1;q0=q1;
@@ -369,7 +369,7 @@ approximate_sin_and_cos_of_angle(Bound angle,long final_prec) {
                         = CGAL::arcsin<AT>(sine,prec)
                         * CGAL::convert_to_bfi(Integer(180))/pi;
                     
-                    long bound = CGAL::CGALi::ceil_log2_abs
+                    long bound = CGAL::internal::ceil_log2_abs
                         (CGAL::abs(asin-CGAL::convert_to_bfi(angle)));
                     success = (bound <= -final_prec);
                     typename 

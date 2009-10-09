@@ -40,7 +40,7 @@
 
 CGAL_BEGIN_NAMESPACE
 
-namespace CGALi {
+namespace internal {
 
 // TODO: Implement array in source code file
 //    extern const signed char floor_log2_4bit[16]; // see src/floor_log2_4bit.C
@@ -241,7 +241,7 @@ public:
               
     result_type operator() (const argument_type& x) const {
       CGAL_precondition(! ::boost::numeric::in_zero(x));
-      return CGALi::floor_log2_abs(::boost::numeric::abs(x).lower());
+      return internal::floor_log2_abs(::boost::numeric::abs(x).lower());
     }                    
   };
         
@@ -250,7 +250,7 @@ public:
     long operator()( const leda_bigfloat_interval& x ) const {
       CGAL_precondition(!(::boost::numeric::in_zero(x) && 
               ::boost::numeric::singleton(x)));
-      return CGALi::ceil_log2_abs(::boost::numeric::abs(x).upper());                    
+      return internal::ceil_log2_abs(::boost::numeric::abs(x).upper());                    
     }
   };
 
@@ -258,7 +258,7 @@ public:
     : public std::unary_function< leda_bigfloat_interval, leda_integer > {
     leda_integer operator() ( const leda_bigfloat_interval& x ) 
       const { 
-      return CGALi::floor( x.lower() );
+      return internal::floor( x.lower() );
     }
   };
         
@@ -266,7 +266,7 @@ public:
     : public std::unary_function< leda_bigfloat_interval, leda_integer > {
     leda_integer operator() ( const leda_bigfloat_interval& x ) 
       const { 
-      return CGALi::ceil( x.upper() );
+      return internal::ceil( x.upper() );
     }
   };
 };
@@ -458,7 +458,7 @@ public:
     : public std::unary_function< Gmpfr_interval, long > {
     result_type operator() (const argument_type& x) const {
       CGAL_precondition(! ::boost::numeric::in_zero(x));
-      return CGALi::floor_log2_abs(::boost::numeric::abs(x).lower());
+      return internal::floor_log2_abs(::boost::numeric::abs(x).lower());
     }                    
   };
         
@@ -467,7 +467,7 @@ public:
     long operator()( const Gmpfr_interval& x ) const {
       CGAL_precondition(!(::boost::numeric::in_zero(x) && 
               ::boost::numeric::singleton(x)));
-      return CGALi::ceil_log2_abs(::boost::numeric::abs(x).upper());                    
+      return internal::ceil_log2_abs(::boost::numeric::abs(x).upper());                    
     }
   };
 
@@ -475,7 +475,7 @@ public:
     : public std::unary_function< Gmpfr_interval, Gmpz > {
     Gmpz operator() ( const Gmpfr_interval& x ) 
       const { 
-      return CGALi::floor( x.lower() );
+      return internal::floor( x.lower() );
     }
   };
         
@@ -483,14 +483,14 @@ public:
     : public std::unary_function< Gmpfr_interval, Gmpz > {
     Gmpz operator() ( const Gmpfr_interval& x ) 
       const { 
-      return CGALi::ceil( x.upper() );
+      return internal::ceil( x.upper() );
     }
   };
 };
   
 #endif
         
-} //namespace CGALi
+} //namespace internal
 
 CGAL_END_NAMESPACE
 

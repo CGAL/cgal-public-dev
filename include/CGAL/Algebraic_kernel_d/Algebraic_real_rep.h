@@ -24,7 +24,7 @@
 
 CGAL_BEGIN_NAMESPACE
 
-namespace CGALi {
+namespace internal {
 
 // definition of the Algebraic_real_rep x:
     
@@ -218,7 +218,7 @@ public:
             //typedef typename LEDA_arithmetic_kernel::Bigfloat BF;
             long old_precision = get_precision( BF() );
             set_precision( BF(), 53 );
-            interval_option = Interval_option( CGALi::to_interval( convert_to_bfi( (*this) ) ) );
+            interval_option = Interval_option( internal::to_interval( convert_to_bfi( (*this) ) ) );
             set_precision( BF(), old_precision );
             return *interval_option;            
         }
@@ -508,7 +508,7 @@ public:
         }
     }
 };
-} // namespace CGALi
+} // namespace internal
 
 CGAL_END_NAMESPACE
 

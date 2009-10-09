@@ -48,27 +48,27 @@ struct Algebraic_kernel_1_generator {
     typedef CGAL::Algebraic_kernel_1
     < Coefficient, 
       Bound,
-      CGAL::CGALi::Algebraic_real_rep< Coefficient, Bound >,
-      CGAL::CGALi::Descartes< CGAL::Polynomial< Coefficient >, Bound >
+      CGAL::internal::Algebraic_real_rep< Coefficient, Bound >,
+      CGAL::internal::Descartes< CGAL::Polynomial< Coefficient >, Bound >
     > Algebraic_kernel_with_bisection_and_descartes_1;
 
     typedef CGAL::Algebraic_kernel_1
     < Coefficient, 
       Bound,
-      CGAL::CGALi::Algebraic_real_quadratic_refinement_rep_bfi
+      CGAL::internal::Algebraic_real_quadratic_refinement_rep_bfi
            < Coefficient, Bound >,
-      CGAL::CGALi::Bitstream_descartes
-        < CGAL::CGALi::Bitstream_descartes_rndl_tree_traits
-            < CGAL::CGALi::Bitstream_coefficient_kernel<Coefficient> > 
+      CGAL::internal::Bitstream_descartes
+        < CGAL::internal::Bitstream_descartes_rndl_tree_traits
+            < CGAL::internal::Bitstream_coefficient_kernel<Coefficient> > 
         >
     > Algebraic_kernel_with_qir_and_bitstream_1;
 
     typedef CGAL::Algebraic_kernel_1
     < Coefficient, 
       Bound,
-      CGAL::CGALi::Algebraic_real_quadratic_refinement_rep_bfi
+      CGAL::internal::Algebraic_real_quadratic_refinement_rep_bfi
            < Coefficient, Bound >,
-      CGAL::CGALi::Descartes< CGAL::Polynomial< Coefficient >, Bound >
+      CGAL::internal::Descartes< CGAL::Polynomial< Coefficient >, Bound >
     > Algebraic_kernel_with_qir_and_descartes_1;
 };
 

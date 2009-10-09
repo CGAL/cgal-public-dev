@@ -40,7 +40,7 @@
 
 CGAL_BEGIN_NAMESPACE
 ;
-namespace CGALi {
+namespace internal {
 
 // TODO: Copied from CGAL/enums.h:
 enum Three_valued_estimate {
@@ -232,13 +232,13 @@ void var_eps(
     InputIterator it = first;
     CGAL_precondition(it != beyond);
 
-    CGALi::Three_valued_estimate last_sign_min, last_sign_max; // always non-zero
+    internal::Three_valued_estimate last_sign_min, last_sign_max; // always non-zero
     last_sign_min = last_sign_max = sign_eps(*it);
-    CGAL_assertion(last_sign_min != CGALi::UNCLEAR_SIGN);
+    CGAL_assertion(last_sign_min != internal::UNCLEAR_SIGN);
 
     while (++it != beyond) {
-        CGALi::Three_valued_estimate cur_sign = sign_eps(*it);
-        if (cur_sign == CGALi::UNCLEAR_SIGN) {
+        internal::Three_valued_estimate cur_sign = sign_eps(*it);
+        if (cur_sign == internal::UNCLEAR_SIGN) {
             last_sign_max = -last_sign_max;
             ++max_var;
         } else {
@@ -423,7 +423,7 @@ public:
     typedef Integer_ Integer;
     typedef AbsLePow2 Abs_le_pow2;
     typedef Sign_ Sign;
-    typedef CGALi::Three_valued_estimate result_type;
+    typedef internal::Three_valued_estimate result_type;
     typedef Integer argument_type;
 
     Sign_eps_log2(long log_eps = 0) : log_eps_(log_eps) { }
@@ -432,17 +432,17 @@ public:
 
     result_type operator() (argument_type x) const {
         if (Abs_le_pow2()(x, log_eps_)) {
-            return CGALi::UNCLEAR_SIGN;
+            return internal::UNCLEAR_SIGN;
         } else {
-            return CGALi::Three_valued_estimate(Sign()(x));
+            return internal::Three_valued_estimate(Sign()(x));
         }
     }
 }; // class Sign_eps_log2
 
-} // namespace CGALi
+} // namespace internal
 
 
-namespace CGALi {
+namespace internal {
     template <class BitstreamDescartesRndlTreeTraits>
     class Bitstream_descartes_rndl_tree;
 
@@ -451,7 +451,7 @@ namespace CGALi {
 
     template <class BitstreamDescartesRndlTreeTraits>
     class Bitstream_descartes_rndl_tree_rep;
-} // namespace CGALi
+} // namespace internal
 
 /* The template argument supplied as BitstreamDescartesRndlTreeTraits
  * shall be a class containing the following types in its scope:
@@ -491,8 +491,8 @@ namespace CGALi {
     CGAL_SNAP_BITSTREAM_DESCARTES_RNDL_TREE_TRAITS_TYPEDEFS(TRAITS);       \
     typedef std::vector<Coefficient> Coefficient_vector;                  \
     typedef std::vector<Integer> Integer_vector;                          \
-    typedef CGALi::Abs_le_pow2<Ceil_log2_abs_Integer> Abs_le_pow2;  \
-    typedef CGALi::Sign_eps_log2<Integer, Abs_le_pow2, Sign>        \
+    typedef internal::Abs_le_pow2<Ceil_log2_abs_Integer> Abs_le_pow2;  \
+    typedef internal::Sign_eps_log2<Integer, Abs_le_pow2, Sign>        \
                     Sign_eps_log2;                                        \
 
 // end #define
@@ -500,13 +500,13 @@ namespace CGALi {
 // typedefs for Bitstream_descartes_rndl_tree{,_rep}
 #define CGAL_BITSTREAM_DESCARTES_RNDL_TREE_TYPEDEFS                   \
     CGAL_BITSTREAM_DESCARTES_RNDL_TREE_COMMON_TYPEDEFS;               \
-    typedef CGALi::Bitstream_descartes_rndl_node<TRAITS> Node; \
+    typedef internal::Bitstream_descartes_rndl_node<TRAITS> Node; \
     typedef std::list<Node> Node_list;                               \
 
 // end #define
 
 
-namespace CGALi {
+namespace internal {
 
 /*
  * class Bitstream_descartes_rndl_node
@@ -518,8 +518,8 @@ public:
     typedef Bitstream_descartes_rndl_node Self;
     CGAL_BITSTREAM_DESCARTES_RNDL_TREE_COMMON_TYPEDEFS;
 
-    friend class CGALi::Bitstream_descartes_rndl_tree<TRAITS>;
-    friend class CGALi::Bitstream_descartes_rndl_tree_rep<TRAITS>;
+    friend class internal::Bitstream_descartes_rndl_tree<TRAITS>;
+    friend class internal::Bitstream_descartes_rndl_tree_rep<TRAITS>;
 
 private:
     // "node data" (set individually in subdivision)
@@ -570,7 +570,7 @@ public:
 
     class Monomial_basis_tag { };
 
-    friend class CGALi::Bitstream_descartes_rndl_tree<TRAITS>;
+    friend class internal::Bitstream_descartes_rndl_tree<TRAITS>;
 
 private:
     Coefficient_vector input_monomial_coeff_;
@@ -1351,14 +1351,14 @@ Bitstream_descartes_rndl_tree<BitstreamDescartesRndlTreeTraits>
     } // for (;;)
 } // Bitstream_descartes_rndl_tree::subdivide()
 
-} // namespace CGALi
+} // namespace internal
 
 
 /*
  * FUJIWARA ROOT BOUND
  */
 
-namespace CGALi {
+namespace internal {
 
 struct Fujiwara_root_bound_queue_entry {
     typedef Fujiwara_root_bound_queue_entry Self;
@@ -1546,15 +1546,15 @@ long Fujiwara_root_bound_log(
     RandomAccessIterator first, RandomAccessIterator beyond
 ) {
     typedef typename RandomAccessIterator::value_type NT;
-    typedef typename CGALi::Real_embeddable_extension<NT>::Floor_log2_abs Lbd;
+    typedef typename internal::Real_embeddable_extension<NT>::Floor_log2_abs Lbd;
     typedef Upper_bound_log2_abs_approximator_from_ceil_log2_abs<
-                typename CGALi::Real_embeddable_extension<NT>::Ceil_log2_abs
+                typename internal::Real_embeddable_extension<NT>::Ceil_log2_abs
             > Ubd;
     return Fujiwara_root_bound_log(first, beyond, Lbd(), Ubd());
 }
 
 
-} // namespace CGALi
+} // namespace internal
 
 CGAL_END_NAMESPACE
 

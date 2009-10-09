@@ -19,7 +19,7 @@
 
 CGAL_BEGIN_NAMESPACE
 
-  namespace CGALi {
+  namespace internal {
 
     /*! 
      * \brief Exception class for not sufficiently generic positions.
@@ -60,7 +60,7 @@ CGAL_BEGIN_NAMESPACE
       
     };
 
-  } // namespace CGALi
+  } // namespace internal
 
 CGAL_END_NAMESPACE
 

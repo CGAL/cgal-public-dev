@@ -21,7 +21,7 @@
 
 CGAL_BEGIN_NAMESPACE
 
-namespace CGALi {
+namespace internal {
 
 static const char *ACK_2_ascii_polys[] = {
 
@@ -359,7 +359,7 @@ void test_algebraic_curve_kernel_2() {
     
 }
 
-} //namespace CGALi
+} //namespace internal
 
 CGAL_END_NAMESPACE
 
