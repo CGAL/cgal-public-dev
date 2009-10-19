@@ -234,6 +234,7 @@ demo/Algebraic_curve_kernel_2/curve_pair_analyser_2.cpp -text
 demo/Algebraic_curve_kernel_2/include/CGAL/Polynomial_parser_2.h -text
 demo/Algebraic_curve_kernel_2/rotated_arrangements_2.cpp -text
 demo/Algebraic_curve_kernel_2/rotated_curve_analyser_2.cpp -text
+doc_tex/Algebraic_kernel_d/intro.tex -text
 doc_tex/Algebraic_kernel_d_ref/AlgebraicKernel_d_1_ApproximateAbsolute_1.tex -text
 doc_tex/Algebraic_kernel_d_ref/AlgebraicKernel_d_1_ApproximateRelative_1.tex -text
 doc_tex/Algebraic_kernel_d_ref/AlgebraicKernel_d_1_BoundBetween_1.tex -text
