@@ -21,9 +21,18 @@
 
 #include <CGAL/basic.h>
 
+#if CGAL_USE_LEDA
 #include <CGAL/leda_bigfloat.h>
+#endif 
+
+#if CGAL_USE_CORE
 #include <CGAL/CORE_BigFloat.h>
+#endif 
+
+#if CGAL_USE_GMP
 #include <CGAL/Gmpfr.h>
+#endif
+
 #include <CGAL/ipower.h>
 
 
@@ -103,6 +112,8 @@ public:
 };
 #endif    
 
+
+#if CGAL_USE_GMP
 template<> class Float_traits< Gmpfr > {
 public:
   struct Get_mantissa
@@ -164,7 +175,7 @@ struct Mul_by_pow_of_2
 };
 } //namespace internal
 
-
+#endif 
 
 CGAL_END_NAMESPACE
 
