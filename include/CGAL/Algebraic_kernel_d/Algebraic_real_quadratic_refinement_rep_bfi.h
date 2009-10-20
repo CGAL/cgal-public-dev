@@ -61,9 +61,6 @@ class Algebraic_real_quadratic_refinement_rep_bfi
 
     typedef typename CGAL::Bigfloat_interval_traits<BFI>::Bound BF;
 
-    typename CGAL::internal::Float_traits<BF>::Get_exponent get_exp;
-    typename CGAL::internal::Float_traits<BF>::Get_mantissa get_m;
-
     // This is a implicit restriction - Field must be some type
     // modelling rational numbers to get an integer type
     typedef typename CGAL::Fraction_traits<Field>::Numerator_type Integer;
