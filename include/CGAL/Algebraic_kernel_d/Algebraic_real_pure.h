@@ -112,9 +112,11 @@ public:
     
   //! returns the lower endpoint of the isolating interval
   Rational low() const { return this->ptr()->low(); }
+  Rational lower() const { return this->ptr()->low(); }
   
   //! returns the upper endpoint of the isolating interval 
   Rational high() const { return this->ptr()->high(); }
+  Rational upper() const { return this->ptr()->high(); }
 
   /*! \brief returns the sign of the defining polynomial 
    *  at the lower endpoint of the isolating interval  
