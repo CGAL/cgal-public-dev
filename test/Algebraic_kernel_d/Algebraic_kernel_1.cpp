@@ -5,7 +5,7 @@
 //
 // $URL:$
 // $Id: $
-// 
+//
 //
 // Author(s)     : Sebastian Limbach <slimbach@mpi-inf.mpg.de>
 //                 Michael Hemmer    <hemmer@mpi-inf.mpg.de>
@@ -35,23 +35,23 @@ void test_algebraic_kernel_coeff_bound_rep() {
   typedef Coefficient_ Coefficient;
   typedef Bound_    Bound;
   typedef RepClass     Rep_class;
-  
-  typedef typename CGAL::Polynomial_type_generator<Coefficient,1>::Type 
+
+  typedef typename CGAL::Polynomial_type_generator<Coefficient,1>::Type
     Polynomial_1;
   typedef CGAL::internal::Algebraic_real_pure
     < Coefficient, Bound, CGAL::Handle_policy_no_union, Rep_class >   Algebraic_real_1;
-  
+
   typedef CGAL::internal::Descartes< Polynomial_1, Bound >               Descartes;
   typedef CGAL::internal::Bitstream_descartes<
   CGAL::internal::Bitstream_descartes_rndl_tree_traits
     <CGAL::internal::Bitstream_coefficient_kernel<Coefficient> > >  BDescartes;
 //   typedef CGAL::internal::Bitstream_descartes< Polynomial_1, Bound > BDescartes;
-  
+
   typedef CGAL::Algebraic_kernel_1< Coefficient, Bound, Rep_class , Descartes>
     Kernel_Descartes;
   typedef CGAL::Algebraic_kernel_1< Coefficient, Bound, Rep_class , BDescartes>
     Kernel_BDescartes;
-  
+
   CGAL::test_algebraic_kernel_1(Kernel_Descartes());
 #if CGAL_TEST_ALL_AK_VARIANTS
   CGAL::test_algebraic_kernel_1(Kernel_BDescartes());
@@ -76,7 +76,7 @@ template< class ArithmeticKernel >
 void test_algebraic_kernel() {
   typedef ArithmeticKernel AK;
   typedef typename AK::Integer Integer;
-  typedef typename AK::Rational Rational; 
+  typedef typename AK::Rational Rational;
 
   test_algebraic_kernel_coeff_bound<Integer, Rational>();
 #if CGAL_TEST_ALL_AK_VARIANTS
@@ -87,7 +87,7 @@ void test_algebraic_kernel() {
     <CGAL::Sqrt_extension< Rational, Integer>, Rational>();
   test_algebraic_kernel_coeff_bound
     <CGAL::Sqrt_extension< Rational, Rational>, Rational>();
-#endif 
+#endif
 }
 
 int main() {
