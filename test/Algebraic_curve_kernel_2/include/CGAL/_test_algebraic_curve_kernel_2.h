@@ -155,7 +155,7 @@ void test_algebraic_curve_kernel_2() {
         
         X_coordinate_1 x(f,left,right);
 
-        Xy_coordinate_2 xy(x,c9,0);
+        Xy_coordinate_2 xy(&kernel_2,x,c9,0);
 
         xy.y();
     }

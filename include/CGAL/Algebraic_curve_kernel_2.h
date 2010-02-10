@@ -1466,7 +1466,7 @@ public:
                     ipair = cpv_line.curves_at_event(j,ca1,ca2);
                     if(ipair.first != -1 && ipair.second != -1) {
                         *roots++ 
-                            = Xy_coordinate_2(x, 
+			  = Xy_coordinate_2(_m_kernel,x, 
                                               (first_curve ? ca1 : ca2),
                                               (first_curve ? ipair.first
                                                            : ipair.second));
@@ -1475,13 +1475,13 @@ public:
                     }
                     if(ipair.first!=-1 && ca2_covers_line) {
                         *roots++ 
-                            = Xy_coordinate_2(x,ca1,ipair.first);
+			  = Xy_coordinate_2(_m_kernel,x,ca1,ipair.first);
                         *mults++ = -1;
                         continue;
                     }
                     if(ipair.second!=-1 && ca1_covers_line) {
                         *roots++ 
-                            = Xy_coordinate_2(x,ca2,ipair.second);
+			  = Xy_coordinate_2(_m_kernel,x,ca2,ipair.second);
                         *mults++ = -1;
                         continue;
                     }

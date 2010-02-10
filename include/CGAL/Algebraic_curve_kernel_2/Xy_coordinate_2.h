@@ -60,7 +60,7 @@ public:
     }
     
     // standard constructor
-    Xy_coordinate_2_rep(Algebraic_curve_kernel_2* kernel,
+    Xy_coordinate_2_rep(const Algebraic_curve_kernel_2* kernel,
                         const Algebraic_real_1& x,
                         const Curve_analysis_2& curve, int arcno) 
         : _m_kernel(kernel),_m_x(x), _m_curve(curve), _m_arcno(arcno) {
@@ -68,7 +68,7 @@ public:
 
     // data
 
-    Algebraic_curve_kernel_2* _m_kernel;
+    const Algebraic_curve_kernel_2* _m_kernel;
 
     // x-coordinate
     Algebraic_real_1 _m_x;
@@ -224,7 +224,7 @@ public:
      * are also constructed in this way
      */
      // TODO: construct this from curve analysis object ?
-    Xy_coordinate_2(Algebraic_curve_kernel_2* kernel,
+    Xy_coordinate_2(const Algebraic_curve_kernel_2* kernel,
                     const Algebraic_real_1& x, const Curve_analysis_2& curve,
                  int arcno) :
           Base(Rep(kernel,x, curve, arcno)) {
@@ -456,7 +456,7 @@ public:
     //!@{
     //! \name 
 
-    Algebraic_curve_kernel_2* kernel() const {
+    const Algebraic_curve_kernel_2* kernel() const {
         return this->ptr()->_m_kernel;
     }
 
