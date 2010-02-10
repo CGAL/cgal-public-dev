@@ -33,25 +33,27 @@ std::ostream& operator<< (std::ostream&,
     const Status_line_CA_1<CurveAnalysis_2, Rep>&);
 
 #if !CGAL_ACK_USE_EXACUS
-template < typename CurveAnalysis_2 > 
+template < typename AlgebraicCurveKernel_2 > 
 class Event_line_builder;
 
-template < typename CurveAnalysis_2 > 
+template < typename AlgebraicCurveKernel_2 > 
 class Shear_transformation;
 #endif
 
 
-template < class CurveAnalysis_2 >
+template < class AlgebraicCurveKernel_2 >
 class Status_line_CA_1_rep {
 
+public:
+
     // this template argument
-    typedef CurveAnalysis_2 Curve_analysis_2;
+    typedef AlgebraicCurveKernel_2 Algebraic_curve_kernel_2;
+  
+    typedef typename Algebraic_curve_kernel_2::Curve_analysis_2 
+      Curve_analysis_2;
 
     // myself
-    typedef Status_line_CA_1_rep<Curve_analysis_2> Self;
-
-    typedef typename Curve_analysis_2::Algebraic_kernel_with_analysis_2 
-      Algebraic_kernel_2;
+    typedef Status_line_CA_1_rep<Algebraic_curve_kernel_2> Self;
 
     // type of x-coordinate
     typedef typename Curve_analysis_2::Algebraic_real_1
@@ -78,30 +80,37 @@ class Status_line_CA_1_rep {
     typedef typename Curve_analysis_2::Bitstream_descartes Bitstream_descartes;
 
     // constructors
-public:
+
     // default constructor ()
     Status_line_CA_1_rep() 
     {   }
 
     // constructs status line over interval
-    Status_line_CA_1_rep(Algebraic_real_1 x, size_type i,
+    Status_line_CA_1_rep(Algebraic_curve_kernel_2* kernel,
+            Algebraic_real_1 x, size_type i,
             const Curve_analysis_2& ca, size_type n_arcs) :
+            _m_kernel(kernel),
             _m_x(x), _m_index(i), _m_ca(ca),/*_m_num_arcs(n_arcs, n_arcs),*/
             _m_total_arcs(n_arcs), _m_vertical_line(false), _m_event(false),
             _m_num_arcs_minus_inf(0, 0), _m_num_arcs_plus_inf(0, 0),
                 _m_xy_coords(n_arcs)  {
     }
 
-    // constructs status line at event
-    Status_line_CA_1_rep(Algebraic_real_1 x, size_type i,
+    // constructs status line at events
+    Status_line_CA_1_rep(Algebraic_curve_kernel_2* kernel,
+        Algebraic_real_1 x, size_type i,
         const Curve_analysis_2& ca, size_type n_arcs_left,
         size_type n_arcs_right) :
+             _m_kernel(kernel),
              _m_x(x), _m_index(i), _m_ca(ca),
              /*_m_num_arcs(n_arcs_left, n_arcs_right),*/ _m_total_arcs(0),
              _m_vertical_line(false), _m_event(true),
              _m_num_arcs_minus_inf(0, 0), _m_num_arcs_plus_inf(0, 0) {
-    }
+    };
 
+    //! kernel instance
+    Algebraic_curve_kernel_2 *_m_kernel;
+    
     //! x-coordinate of event info
     mutable Algebraic_real_1 _m_x;
 
@@ -176,8 +185,8 @@ public:
 //! (depending on whether approaching +oo or -oo - but the event with 
 //! coordinates (x,?oo), resp. (x,+oo), occur only once, if they occur, and 
 //! they imply not to be associated with a instance of \c Algebraic_real_2.
-template <class CurveAnalysis_2, 
-          class Rep_ = internal::Status_line_CA_1_rep<CurveAnalysis_2> >
+template <class AlgebraicCurveKernel_2, 
+          class Rep_ = internal::Status_line_CA_1_rep<AlgebraicCurveKernel_2> >
 class Status_line_CA_1
       : public ::CGAL::Handle_with_policy< Rep_ > {
 public:
@@ -185,14 +194,16 @@ public:
     //!\name typedefs
 
     //! this instance's first template parameter
-    //! model of AlgebraicKernel_d_2::CurveAnalysis_2
-    typedef CurveAnalysis_2 Curve_analysis_2;
+    //! model of AlgebraicKernel_d_2
+    typedef AlgebraicCurveKernel_2 Algebraic_curve_kernel_2;
+
+    typedef typename Algebraic_curve_kernel_2::Curve_analysis_2 Curve_analysis_2;
     
     //! this instance's second template parameter
     typedef Rep_ Rep;
 
     //! this instance itself
-    typedef Status_line_CA_1<Curve_analysis_2, Rep> Self;
+    typedef Status_line_CA_1<Algebraic_curve_kernel_2, Rep> Self;
 
     //! type of x-coordinate
     typedef typename Curve_analysis_2::Algebraic_real_1 Algebraic_real_1; 
@@ -242,9 +253,10 @@ public:
      *
      * \pre specified x-coordinate belongs to \c i-th interval
      */
-    Status_line_CA_1(Algebraic_real_1 x, size_type i, const Curve_analysis_2& ca,
+    Status_line_CA_1(Algebraic_curve_kernel_2 *kernel,
+        Algebraic_real_1 x, size_type i, const Curve_analysis_2& ca,
             size_type n_arcs) :
-        Base(Rep(x, i, ca, n_arcs)) {
+        Base(Rep(kernel,x, i, ca, n_arcs)) {
     
         CGAL_precondition(n_arcs >= 0);
         CGAL_precondition_code(
@@ -273,10 +285,11 @@ public:
      *
      * \pre there is a curve event at specified x-coordinate
      */
-    Status_line_CA_1(Algebraic_real_1 x, size_type i, const Curve_analysis_2& ca,
-            size_type n_arcs_left, size_type n_arcs_right, 
-            Arc_container arcs, bool has_v_line = false) :
-        Base(Rep(x, i, ca, n_arcs_left, n_arcs_right)) {
+    Status_line_CA_1(Algebraic_curve_kernel_2 *kernel,Algebraic_real_1 x, 
+        size_type i, const Curve_analysis_2& ca,
+        size_type n_arcs_left, size_type n_arcs_right, 
+        Arc_container arcs, bool has_v_line = false) :
+        Base(Rep(kernel,x, i, ca, n_arcs_left, n_arcs_right)) {
 
         CGAL_precondition(n_arcs_left >= 0 && n_arcs_right >= 0);
         CGAL_precondition_code(
@@ -300,9 +313,10 @@ public:
      *
      * arcs and vertical line flag can be set later
      */
-    Status_line_CA_1(Algebraic_real_1 x, size_type i, const Curve_analysis_2& ca,
-            size_type n_arcs_left, size_type n_arcs_right) :
-        Base(Rep(x, i, ca, n_arcs_left, n_arcs_right)) {
+    Status_line_CA_1(Algebraic_curve_kernel_2 *kernel,Algebraic_real_1 x, 
+        size_type i, const Curve_analysis_2& ca,
+        size_type n_arcs_left, size_type n_arcs_right) :
+        Base(Rep(kernel,x, i, ca, n_arcs_left, n_arcs_right)) {
 
         CGAL_precondition(n_arcs_left >= 0 && n_arcs_right >= 0);
         CGAL_precondition_code(
@@ -402,7 +416,7 @@ public:
     {
         CGAL_precondition(0 <= j&&j < number_of_events());
         if(!this->ptr()->_m_xy_coords[j])
-          this->ptr()->_m_xy_coords[j] = Algebraic_real_2(this->ptr()->_m_ca.kernel(), x(), 
+	  this->ptr()->_m_xy_coords[j] = Algebraic_real_2(kernel(),x(), 
                 this->ptr()->_m_ca, j);
         return *(this->ptr()->_m_xy_coords[j]);
     }
@@ -448,6 +462,11 @@ public:
     const Arc_pair& number_of_branches_approaching_plus_infinity() const {
         return this->ptr()->_m_num_arcs_plus_inf;
     }
+protected:
+    Algebraic_curve_kernel_2* kernel() const {
+        return this->ptr()->_m_kernel;
+    }
+
 
     //!@}
 public:

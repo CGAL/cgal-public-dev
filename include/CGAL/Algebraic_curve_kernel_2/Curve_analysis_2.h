@@ -1066,7 +1066,7 @@ private:
                                                    right_arcs[i+1]));
         }
         
-        Status_line_1 status_line(x,index,*this,n_left,n_right,arc_container);
+        Status_line_1 status_line(kernel(),x,index,*this,n_left,n_right,arc_container);
 
         status_line._set_number_of_branches_approaching_infinity
             (std::make_pair(left_arcs[0],right_arcs[0]),
@@ -1191,7 +1191,7 @@ private:
 
         size_type root_number=bitstream_descartes.number_of_real_roots();
 
-        Status_line_1 status_line(ar, index, *this, 
+        Status_line_1 status_line(kernel(),ar, index, *this, 
                                   root_number);
         status_line.set_isolator(bitstream_descartes);
         

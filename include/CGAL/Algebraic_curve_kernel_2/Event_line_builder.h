@@ -212,7 +212,7 @@ public:
                 }
             }
             
-            Status_line_1 vl(alpha, id, curve, arcs_left, arcs_right, 
+            Status_line_1 vl(kernel(),alpha, id, curve, arcs_left, arcs_right, 
                              arc_container);
             vl.set_isolator(bit_des);
                     

@@ -43,7 +43,7 @@ CGAL_BEGIN_NAMESPACE
         < Bitstream_coefficient_kernel > Bitstream_traits; \
     typedef CGAL::internal::Bitstream_descartes<Bitstream_traits>     \
         Bitstream_descartes;                                           \
-    typedef CGAL::internal::Status_line_CA_1< Curve_analysis_2 >  \
+    typedef CGAL::internal::Status_line_CA_1< Algebraic_kernel_with_analysis_2 >  \
       Status_line_1;                                  \
 
 

@@ -347,7 +347,7 @@ private:
             }
             // Create intermediate line for later use
             Algebraic_real_1 xval(curr_bound);
-            Status_line_1 inter_line(xval,i,D,m);
+            Status_line_1 inter_line(kernel(),xval,i,D,m);
             inter_line.set_isolator(descartes);
             sh_intermediate_lines.push_back(inter_line);
         }
@@ -1155,7 +1155,7 @@ private:
                 arc_container.push_back(std::make_pair(1,1));
             }
         }
-        Status_line_1 ev(xval,i,D,
+        Status_line_1 ev(kernel(),xval,i,D,
                          pre_vert_lines[i].num_arcs_left(),
                          pre_vert_lines[i].num_arcs_right(),
                          arc_container);
