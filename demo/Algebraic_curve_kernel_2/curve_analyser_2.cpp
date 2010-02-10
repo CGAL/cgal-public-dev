@@ -37,7 +37,7 @@
 
 // What is the coefficient type of the input?
 #ifndef CGAL_ACK_COEFFICIENT
-#define CGAL_ACK_COEFFICIENT CGAL::LEDA_arithmetic_kernel::Integer
+#define CGAL_ACK_COEFFICIENT CGAL::CORE_arithmetic_kernel::Integer
 #define CGAL_ACK_COEFFICIENT_IS_INTEGER 1
 #endif
 
