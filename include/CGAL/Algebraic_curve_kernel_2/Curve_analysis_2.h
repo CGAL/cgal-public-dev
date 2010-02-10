@@ -1318,11 +1318,12 @@ public:
         return this->ptr()->f_primitive.get();
     }
 
-private:
-
     Algebraic_kernel_with_analysis_2* kernel() const {
         return this->ptr()->_m_kernel;
     }
+
+private:
+
 
     // computes and sets the content and the primitive part for the curve
     void compute_content_and_primitive_part() const {

@@ -402,7 +402,7 @@ public:
     {
         CGAL_precondition(0 <= j&&j < number_of_events());
         if(!this->ptr()->_m_xy_coords[j])
-            this->ptr()->_m_xy_coords[j] = Algebraic_real_2(x(), 
+          this->ptr()->_m_xy_coords[j] = Algebraic_real_2(this->ptr()->_m_ca.kernel(), x(), 
                 this->ptr()->_m_ca, j);
         return *(this->ptr()->_m_xy_coords[j]);
     }

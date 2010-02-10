@@ -972,7 +972,7 @@ CGAL_BEGIN_NAMESPACE
         typedef typename Vert_line::Curve_analysis_2 Curve_analysis_2;
 
         //! type of Curve_kernel_2;
-        typedef typename Curve_analysis_2::Algebraic_kernel_2 
+        typedef typename Curve_analysis_2::Algebraic_kernel_with_analysis_2 
         Curve_kernel_2;
 
         //! The Coeeficient type of the input polynomial
@@ -1040,9 +1040,9 @@ CGAL_BEGIN_NAMESPACE
         }
         
         virtual void refine_interval(int i) const {
-            typename Curve_kernel_2::Refine_y_2
-                refine_y; // TODO call _object
-            refine_y(root_vec[i].first.algebraic_real_2(root_vec[i].second));
+          typename Curve_kernel_2::Refine_y_2
+            refine_y = Base::traits_.point().xy().kernel()->refine_y_2_object();
+          refine_y(root_vec[i].first.algebraic_real_2(root_vec[i].second));
         }
         
         virtual void isolate() const {
@@ -1051,8 +1051,8 @@ CGAL_BEGIN_NAMESPACE
  
         //! The lower bound of the \c i th root
         virtual Bound left_bound(int i) const  {
-            typename Curve_kernel_2::Lower_bound_y_2
-                lower_bound_y;  // TODO call _object
+          typename Curve_kernel_2::Lower_bound_y_2
+            lower_bound_y = Base::traits_.point().xy().kernel()->lower_bound_y_2_object();
             return lower_bound_y(
                     root_vec[i].first.algebraic_real_2(root_vec[i].second)
             );
@@ -1060,8 +1060,8 @@ CGAL_BEGIN_NAMESPACE
     
         //! The upper bound of the \c i th root
         virtual Bound right_bound(int i) const {
-            typename Curve_kernel_2::Upper_bound_y_2
-                upper_bound_y;  // TODO call _object 
+          typename Curve_kernel_2::Upper_bound_y_2
+            upper_bound_y = Base::traits_.point().xy().kernel()->upper_bound_y_2_object();
             return upper_bound_y(
                     root_vec[i].first.algebraic_real_2(root_vec[i].second)
             );

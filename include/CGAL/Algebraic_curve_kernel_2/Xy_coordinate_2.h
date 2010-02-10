@@ -452,13 +452,15 @@ public:
     bool operator >= (const Self& q) const {return q.compare_xy(*this)<= 0;}
     
     //!@}
-private:
+
     //!@{
     //! \name 
 
     Algebraic_curve_kernel_2* kernel() const {
         return this->ptr()->_m_kernel;
     }
+
+private:
 
     /*!\brief
      * compares y-coordinates for covertical points \c *this and \c q
