@@ -43,6 +43,9 @@
 #include <CGAL/Algebraic_curve_kernel_2/Curve_pair_analysis_2.h>
 #endif
 
+#include <boost/shared_ptr.hpp>
+
+
 namespace CGAL {
 
 
@@ -261,9 +264,8 @@ protected:
     public:
 
         Curve_creator(Algebraic_kernel_2* kernel) : _m_kernel(kernel) {}
-
         Curve_analysis_2 operator()(const Polynomial_2& f) const {
-            return Curve_analysis_2(_m_kernel,f);
+          return Curve_analysis_2(_m_kernel,f);
         }
 
     protected:
@@ -355,19 +357,19 @@ public:
                         
     //! access to the gcd_cache
     Gcd_cache_2& gcd_cache_2() const {
-        return _m_gcd_cache_2;
+        return *_m_gcd_cache_2;
     }
 
     //! access to the curve cache
     Curve_cache_2& curve_cache_2() const 
     {
-        return _m_curve_cache_2;
+        return *_m_curve_cache_2;
     }
     
     //! access to the curve pair cache
     Curve_pair_cache_2& curve_pair_cache_2() const 
     {
-        return _m_curve_pair_cache_2;
+        return *_m_curve_pair_cache_2;
     }
     
     //!@}
@@ -375,11 +377,23 @@ public:
     //!@{
        
                 
-    //! \brief default constructor
+public:
+    //! \brief default constructor 
     Algebraic_curve_kernel_2() 
-        : _m_curve_cache_2(this), _m_curve_pair_cache_2(this)
-    {  }
+      : _m_curve_cache_2(new Curve_cache_2(this)), 
+        _m_curve_pair_cache_2(new Curve_pair_cache_2(this)),
+        _m_gcd_cache_2(new Gcd_cache_2())
+    {  
+      // std::cout << "CONSTRUCTION  Algebraic_curve_kernel_2 " << std::endl; 
+    }
     
+public: 
+    static Algebraic_curve_kernel_2& get_static_instance(){
+      // a default constructed ack_2 instance
+      static Algebraic_curve_kernel_2 ack_2_instance;
+      return ack_2_instance;
+    }
+
     /*! \brief
      * constructs \c Curve_analysis_2 from bivariate polynomial, uses caching
      * when appropriate
@@ -434,16 +448,16 @@ public:
             typename FT::Decompose()(res, num, dummy);
 
 #if CGAL_ACK_DEBUG_FLAG
-            CGAL_ACK_DEBUG_PRINT << "integralized poly: " << num << std::endl;
+            CGAL_ACK_DEBUG_PRINT << "integralized poly: " << num << std::endl; 
 #endif
             
             return _m_kernel->curve_cache_2()(num);
         }
 
-        Curve_analysis_2 operator()
-                (const Polynomial_2& f) const {
-            return _m_kernel->curve_cache_2()(f);
-        }
+      Curve_analysis_2 operator()
+        (const Polynomial_2& f) const {
+        return _m_kernel->curve_cache_2()(f);
+      }
 
     protected:
 
@@ -1012,9 +1026,11 @@ public:
             const Polynomial_2& g = ca2.polynomial_2();
             
             if(f == g) {
-                // both curves are equal, but have different representations!
-                CGAL_assertion(false);
-                return false;
+              // both curves are equal, but have different representations!
+              // std::cout <<"f: " << f <<std::endl;
+              // std::cout <<"g: " << g <<std::endl;
+              CGAL_assertion(false);
+              return false;
             }
             Gcd_cache_2& gcd_cache = _m_kernel->gcd_cache_2();
             typedef typename Curve_analysis_2::size_type size_type;
@@ -1726,9 +1742,9 @@ public:
 
 protected:
 
-mutable Curve_cache_2 _m_curve_cache_2;
-mutable Curve_pair_cache_2 _m_curve_pair_cache_2;
-mutable Gcd_cache_2 _m_gcd_cache_2;
+mutable boost::shared_ptr<Curve_cache_2> _m_curve_cache_2;
+mutable boost::shared_ptr<Curve_pair_cache_2> _m_curve_pair_cache_2;
+mutable boost::shared_ptr<Gcd_cache_2> _m_gcd_cache_2;
 
     
 }; // class Algebraic_curve_kernel_2
