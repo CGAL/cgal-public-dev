@@ -86,7 +86,7 @@ void test_algebraic_curve_kernel_2() {
 
 int main() {
 
-#ifdef CGAL_HAVE_CORE_ARITHMETIC_KERNEL
+#ifdef CGAL_HAS_CORE_ARITHMETIC_KERNEL
 #if CGAL_ACK_DEBUG_FLAG
     CGAL_ACK_DEBUG_PRINT << "TESTING CORE" << std::endl;
 #endif          
@@ -97,7 +97,7 @@ int main() {
 #endif
 
 
-#ifdef CGAL_HAVE_LEDA_ARITHMETIC_KERNEL
+#ifdef CGAL_HAS_LEDA_ARITHMETIC_KERNEL
 
 #if CGAL_ACK_DEBUG_FLAG
     CGAL_ACK_DEBUG_PRINT << "TESTING LEDA" << std::endl;
@@ -107,7 +107,7 @@ int main() {
     std::cerr << "LEDA tests skipped" << std::endl;
 #endif
 
-#ifdef CGAL_HAVE_GMP_ARITHMETIC_KERNEL
+#ifdef CGAL_HAS_GMP_ARITHMETIC_KERNEL
 #if CGAL_ACK_DEBUG_FLAG
     CGAL_ACK_DEBUG_PRINT << "TESTING GMP" << std::endl;
 #endif       

@@ -61,7 +61,7 @@ void test_algebraic_kernel_1_tools(){
 
 int main(){
 
-#ifdef CGAL_HAVE_GMP_ARITHMETIC_KERNEL
+#ifdef CGAL_HAS_GMP_ARITHMETIC_KERNEL
   {
     typedef CGAL::GMP_arithmetic_kernel AK;
     typedef AK::Integer Coefficient;
@@ -73,7 +73,7 @@ int main(){
 #else
   std::cerr << " GMP test skipped " << std::endl;
 #endif  
-#ifdef CGAL_HAVE_CORE_ARITHMETIC_KERNEL
+#ifdef CGAL_HAS_CORE_ARITHMETIC_KERNEL
   {
     typedef CGAL::CORE_arithmetic_kernel AK;
     typedef AK::Integer Coefficient;
@@ -85,7 +85,7 @@ int main(){
 #else
   std::cerr << " CORE test skipped " << std::endl;
 #endif 
-#ifdef CGAL_HAVE_LEDA_ARITHMETIC_KERNEL
+#ifdef CGAL_HAS_LEDA_ARITHMETIC_KERNEL
   {
     typedef CGAL::LEDA_arithmetic_kernel AK;
     typedef AK::Integer Coefficient;

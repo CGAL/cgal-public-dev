@@ -90,15 +90,15 @@ void test_descartes(){
 }
     
 int main(){
-#ifdef CGAL_HAVE_LEDA_ARITHMETIC_KERNEL  
+#ifdef CGAL_HAS_LEDA_ARITHMETIC_KERNEL  
     test_descartes<CGAL::LEDA_arithmetic_kernel>();
 #endif
 
-#ifdef CGAL_HAVE_CORE_ARITHMETIC_KERNEL
+#ifdef CGAL_HAS_CORE_ARITHMETIC_KERNEL
     test_descartes<CGAL::CORE_arithmetic_kernel>();
 #endif
 
-#ifdef CGAL_HAVE_GMP_ARITHMETIC_KERNEL
+#ifdef CGAL_HAS_GMP_ARITHMETIC_KERNEL
     test_descartes<CGAL::GMP_arithmetic_kernel>();
 #endif
     return EXIT_SUCCESS;

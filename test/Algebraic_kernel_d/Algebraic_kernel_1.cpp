@@ -91,15 +91,15 @@ void test_algebraic_kernel() {
 }
 
 int main() {
-#ifdef CGAL_HAVE_LEDA_ARITHMETIC_KERNEL
+#ifdef CGAL_HAS_LEDA_ARITHMETIC_KERNEL
   std::cout << " TEST AK1 USING LEDA " << std::endl;
   test_algebraic_kernel< CGAL::LEDA_arithmetic_kernel >();
 #endif
-#ifdef CGAL_HAVE_CORE_ARITHMETIC_KERNEL
+#ifdef CGAL_HAS_CORE_ARITHMETIC_KERNEL
   std::cout << " TEST AK1 USING CORE " << std::endl;
   test_algebraic_kernel< CGAL::CORE_arithmetic_kernel >();
 #endif
-#ifdef CGAL_HAVE_GMP_ARITHMETIC_KERNEL
+#ifdef CGAL_HAS_GMP_ARITHMETIC_KERNEL
   std::cout << " TEST AK1 USING GMP " << std::endl;
   test_algebraic_kernel< CGAL::GMP_arithmetic_kernel >();
 #endif

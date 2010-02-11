@@ -182,7 +182,7 @@ void test_routine() {
 int main(int argc,char** argv) {
   
 
-#ifdef CGAL_HAVE_GMP_ARITHMETIC_KERNEL
+#ifdef CGAL_HAS_GMP_ARITHMETIC_KERNEL
   std::cerr << "test GMP " << std::endl;
   test_routine<CGAL::GMP_arithmetic_kernel> ();
   std::cerr << "done " << std::endl;
@@ -190,7 +190,7 @@ int main(int argc,char** argv) {
   std::cerr << "test GMP skipped" << std::endl;
 #endif
 
-#ifdef CGAL_HAVE_CORE_ARITHMETIC_KERNEL
+#ifdef CGAL_HAS_CORE_ARITHMETIC_KERNEL
   std::cerr << "test CORE " << std::endl;
   test_routine<CGAL::CORE_arithmetic_kernel> ();
   std::cerr << "done " << std::endl;
@@ -198,7 +198,7 @@ int main(int argc,char** argv) {
   std::cerr << "test CORE skipped" << std::endl;
 #endif
 
-#ifdef CGAL_HAVE_LEDA_ARITHMETIC_KERNEL
+#ifdef CGAL_HAS_LEDA_ARITHMETIC_KERNEL
   std::cerr << "test LEDA " << std::endl;
   test_routine<CGAL::LEDA_arithmetic_kernel> ();
   std::cerr << "done " << std::endl;

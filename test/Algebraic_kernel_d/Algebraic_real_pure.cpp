@@ -429,32 +429,32 @@ void algebraic_number_test_at(){
 
 int main()
 { 
-#ifdef CGAL_HAVE_LEDA_ARITHMETIC_KERNEL
+#ifdef CGAL_HAS_LEDA_ARITHMETIC_KERNEL
   typedef CGAL::LEDA_arithmetic_kernel LEDA_AK; 
   algebraic_number_test_at<LEDA_AK>();
   std::cerr << " LEDA test ..  " << std::flush;
   std::cerr << " done " << std::endl;
 #else
   std::cerr << " LEDA test skipped " << std::endl;
-#endif // CGAL_HAVE_LEDA_ARITHMETIC_KERNEL
+#endif // CGAL_HAS_LEDA_ARITHMETIC_KERNEL
 
-#ifdef CGAL_HAVE_CORE_ARITHMETIC_KERNEL
+#ifdef CGAL_HAS_CORE_ARITHMETIC_KERNEL
   std::cerr << " CORE test ..  " << std::flush;
   typedef CGAL::CORE_arithmetic_kernel CORE_AK; 
   algebraic_number_test_at<CORE_AK>();
   std::cerr << " done " << std::endl;
 #else
   std::cerr << " CORE test skipped " << std::endl;
-#endif // CGAL_HAVE_CORE_ARITHMETIC_KERNEL
+#endif // CGAL_HAS_CORE_ARITHMETIC_KERNEL
 
-#ifdef CGAL_HAVE_GMP_ARITHMETIC_KERNEL
+#ifdef CGAL_HAS_GMP_ARITHMETIC_KERNEL
   std::cerr << " GMP test ..  " << std::flush;
   typedef CGAL::GMP_arithmetic_kernel GMP_AK; 
   algebraic_number_test_at<GMP_AK>(); 
   std::cerr << " done " << std::endl;
 #else
   std::cerr << " GMP test skipped " << std::endl;
-#endif // CGAL_HAVE_GMP_ARITHMETIC_KERNEL
+#endif // CGAL_HAS_GMP_ARITHMETIC_KERNEL
 
 }
 //EOF
