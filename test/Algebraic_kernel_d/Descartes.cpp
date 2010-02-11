@@ -52,11 +52,14 @@ void test_descartes(){
 }
     
 int main(){
-#ifdef CGAL_USE_LEDA  
+#ifdef CGAL_HAVE_LEDA_ARITHMETIC_KERNEL  
     test_descartes<CGAL::LEDA_arithmetic_kernel>();
 #endif
-#ifdef CGAL_USE_CORE
+#ifdef CGAL_HAVE_CORE_ARITHMETIC_KERNEL
     test_descartes<CGAL::CORE_arithmetic_kernel>();
+#endif
+#ifdef CGAL_HAVE_GMP_ARITHMETIC_KERNEL
+    test_descartes<CGAL::GMP_arithmetic_kernel>();
 #endif
     return EXIT_SUCCESS;
 }

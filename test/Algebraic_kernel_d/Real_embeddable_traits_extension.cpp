@@ -138,13 +138,13 @@ void test_real_embeddable_extension_ak(){
 
 
 int main() {
-#ifdef CGAL_USE_GMP
+#ifdef CGAL_HAVE_GMP_ARITHMETIC_KERNEL
     test_real_embeddable_extension_ak< CGAL::GMP_arithmetic_kernel >();
 #endif
-#ifdef CGAL_USE_LEDA
+#ifdef CGAL_HAVE_LEDA_ARITHMETIC_KERNEL
     test_real_embeddable_extension_ak< CGAL::LEDA_arithmetic_kernel >();
 #endif
-#ifdef CGAL_USE_CORE
+#ifdef CGAL_HAVE_CORE_ARITHMETIC_KERNEL
     test_real_embeddable_extension_ak< CGAL::CORE_arithmetic_kernel >();
 #endif
     

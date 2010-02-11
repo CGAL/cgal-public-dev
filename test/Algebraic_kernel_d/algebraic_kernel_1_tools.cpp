@@ -56,14 +56,41 @@ void test_algebraic_kernel_1_tools(){
 }
 
 
+
+
+
 int main(){
-  typedef CGAL::Arithmetic_kernel Arithmetic_kernel;
-  typedef Arithmetic_kernel::Integer Coefficient;
-  typedef Arithmetic_kernel::Rational Bound;
-  
-  typedef CGAL::Algebraic_kernel_1<Coefficient, Bound> Algebraic_kernel_1;
- 
-  test_algebraic_kernel_1_tools<Algebraic_kernel_1>();
+
+#ifdef CGAL_HAVE_GMP_ARITHMETIC_KERNEL
+  {
+    typedef CGAL::GMP_arithmetic_kernel AK;
+    typedef AK::Integer Coefficient;
+    typedef AK::Rational Bound;
+    
+    typedef CGAL::Algebraic_kernel_1<Coefficient, Bound> AK_1;
+    test_algebraic_kernel_1_tools<AK_1>();
+  }
+#endif  
+#ifdef CGAL_HAVE_CORE_ARITHMETIC_KERNEL
+  {
+    typedef CGAL::CORE_arithmetic_kernel AK;
+    typedef AK::Integer Coefficient;
+    typedef AK::Rational Bound;
+    
+    typedef CGAL::Algebraic_kernel_1<Coefficient, Bound> AK_1;
+    test_algebraic_kernel_1_tools<AK_1>();
+  }
+#endif 
+#ifdef CGAL_HAVE_LEDA_ARITHMETIC_KERNEL
+  {
+    typedef CGAL::LEDA_arithmetic_kernel AK;
+    typedef AK::Integer Coefficient;
+    typedef AK::Rational Bound;
+    
+    typedef CGAL::Algebraic_kernel_1<Coefficient, Bound> AK_1;
+    test_algebraic_kernel_1_tools<AK_1>();
+  }
+#endif  
   return 0;
 }
 
