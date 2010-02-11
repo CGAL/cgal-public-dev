@@ -32,9 +32,17 @@
 #include <CGAL/CORE_BigFloat.h>
 #endif
 
-#if  CGAL_USE_GMP
+#ifdef CGAL_USE_GMP
+#include <CGAL/Gmpz.h>
+#include <CGAL/Gmpq.h>
+#endif 
+
+#ifdef CGAL_USE_MPFR
 #include <CGAL/Gmpfr.h>
-#include <CGAL/Gmpfr_interval.h>
+#endif 
+
+#ifdef CGAL_USE_MPFI
+#include <CGAL/Gmpfi.h>
 #endif 
 
 
@@ -400,7 +408,9 @@ public:
   };
 };
 
+#endif 
 
+#ifdef CGAL_USE_MPFR 
 template<>
 class Real_embeddable_extension< Gmpfr > {
 public:
@@ -447,43 +457,43 @@ public:
   };
 
 };
-    
+#endif     
 
+#ifdef CGAL_USE_MPFI
 template<>
-class Real_embeddable_extension< Gmpfr_interval > {
+class Real_embeddable_extension< Gmpfi > {
 public:
-  typedef Gmpfr_interval Type;
+  typedef Gmpfi Type;
 
   struct Floor_log2_abs
-    : public std::unary_function< Gmpfr_interval, long > {
+    : public std::unary_function< Gmpfi, long > {
     result_type operator() (const argument_type& x) const {
-      CGAL_precondition(! ::boost::numeric::in_zero(x));
-      return internal::floor_log2_abs(::boost::numeric::abs(x).lower());
+      CGAL_precondition(!x.is_zero());
+      return internal::floor_log2_abs(x.abs().inf());
     }                    
   };
         
   struct Ceil_log2_abs
-    : public std::unary_function< Gmpfr_interval, long > {
-    long operator()( const Gmpfr_interval& x ) const {
-      CGAL_precondition(!(::boost::numeric::in_zero(x) && 
-              ::boost::numeric::singleton(x)));
-      return internal::ceil_log2_abs(::boost::numeric::abs(x).upper());                    
+    : public std::unary_function< Gmpfi, long > {
+    long operator()( const Gmpfi& x ) const {
+      CGAL_precondition(!x.inf().is_zero() || !x.sup().is_zero());
+      return internal::ceil_log2_abs(x.abs().sup());                    
     }
   };
 
   struct Floor
-    : public std::unary_function< Gmpfr_interval, Gmpz > {
-    Gmpz operator() ( const Gmpfr_interval& x ) 
+    : public std::unary_function< Gmpfi, Gmpz > {
+    Gmpz operator() ( const Gmpfi& x ) 
       const { 
-      return internal::floor( x.lower() );
+      return internal::floor( x.inf() );
     }
   };
         
   struct Ceil
-    : public std::unary_function< Gmpfr_interval, Gmpz > {
-    Gmpz operator() ( const Gmpfr_interval& x ) 
+    : public std::unary_function< Gmpfi, Gmpz > {
+    Gmpz operator() ( const Gmpfi& x ) 
       const { 
-      return internal::ceil( x.upper() );
+      return internal::ceil( x.sup() );
     }
   };
 };
