@@ -181,23 +181,30 @@ void test_routine() {
 
 int main(int argc,char** argv) {
   
-#ifndef CGAL_USE_LEDA
-#ifndef CGAL_USE_CORE
-  std::cerr << "This tests requires LEDA and/or CORE" << std::endl;
-  return 1;
-#endif
-#endif
-#ifdef CGAL_USE_LEDA
-  // LEDA TEST
-  test_routine<CGAL::LEDA_arithmetic_kernel> ();
+
+#ifdef CGAL_HAVE_GMP_ARITHMETIC_KERNEL
+  std::cerr << "test GMP " << std::endl;
+  test_routine<CGAL::GMP_arithmetic_kernel> ();
+  std::cerr << "done " << std::endl;
 #else
-  std::cerr << "LEDA tests skipped" << std::endl;
+  std::cerr << "test GMP skipped" << std::endl;
 #endif
-#ifdef CGAL_USE_CORE
-  // CORE TEST
+
+#ifdef CGAL_HAVE_CORE_ARITHMETIC_KERNEL
+  std::cerr << "test CORE " << std::endl;
   test_routine<CGAL::CORE_arithmetic_kernel> ();
+  std::cerr << "done " << std::endl;
 #else
-  std::cerr << "CORE tests skipped" << std::endl;
+  std::cerr << "test CORE skipped" << std::endl;
 #endif
+
+#ifdef CGAL_HAVE_LEDA_ARITHMETIC_KERNEL
+  std::cerr << "test LEDA " << std::endl;
+  test_routine<CGAL::LEDA_arithmetic_kernel> ();
+  std::cerr << "done " << std::endl;
+#else
+  std::cerr << "test LEDA skipped" << std::endl;
+#endif
+
   return 0;
 }

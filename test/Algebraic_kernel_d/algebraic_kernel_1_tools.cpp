@@ -70,6 +70,8 @@ int main(){
     typedef CGAL::Algebraic_kernel_1<Coefficient, Bound> AK_1;
     test_algebraic_kernel_1_tools<AK_1>();
   }
+#else
+  std::cerr << " GMP test skipped " << std::endl;
 #endif  
 #ifdef CGAL_HAVE_CORE_ARITHMETIC_KERNEL
   {
@@ -80,6 +82,8 @@ int main(){
     typedef CGAL::Algebraic_kernel_1<Coefficient, Bound> AK_1;
     test_algebraic_kernel_1_tools<AK_1>();
   }
+#else
+  std::cerr << " CORE test skipped " << std::endl;
 #endif 
 #ifdef CGAL_HAVE_LEDA_ARITHMETIC_KERNEL
   {
@@ -90,6 +94,8 @@ int main(){
     typedef CGAL::Algebraic_kernel_1<Coefficient, Bound> AK_1;
     test_algebraic_kernel_1_tools<AK_1>();
   }
+#else
+  std::cerr << " LEDA test skipped " << std::endl;
 #endif  
   return 0;
 }
