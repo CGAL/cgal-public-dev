@@ -158,14 +158,6 @@ public:
 struct Mul_by_pow_of_2
   : public std::binary_function< Gmpfr, Gmpz, Gmpfr> {
   Gmpfr operator()( const Gmpfr& a, long e ) const {
-
-    //std::cout << "Mul_by_pow_of_2" <<std::endl;
- 
-    // std::pair<Gmpz,long> p = a.to_integer_exp();
-    // p.second += e; 
-    // Gmpfr result(p); 
-    
-
     Gmpfr result; 
     if (e >= 0 ){
       mpfr_mul_2si (result.fr(), a.fr(), e, mpfr_get_default_rounding_mode());
