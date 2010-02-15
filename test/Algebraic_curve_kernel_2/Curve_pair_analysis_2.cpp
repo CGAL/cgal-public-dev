@@ -1126,15 +1126,20 @@ int main() {
     std::cout << "Assertions switched off!" << std::endl;
     return 0;
 #endif
-#ifdef CGAL_USE_CORE
+#ifdef CGAL_HAS_CORE_ARITHMETIC_KERNEL
     test_routine<CGAL::CORE_arithmetic_kernel>();
 #else
     std::cout << "CORE tests skipped!" << std::endl;
 #endif
-#ifdef CGAL_USE_LEDA
+#ifdef CGAL_HAS_LEDA_ARITHMETIC_KERNEL
     test_routine<CGAL::LEDA_arithmetic_kernel>();
 #else
     std::cout << "LEDA tests skipped!" << std::endl;
+#endif
+#ifdef CGAL_HAS_GMP_ARITHMETIC_KERNEL
+    test_routine<CGAL::GMP_arithmetic_kernel>();
+#else
+    std::cout << "GMP tests skipped!" << std::endl;
 #endif
     return 0;
 }

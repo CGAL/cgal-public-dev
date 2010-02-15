@@ -532,15 +532,20 @@ template<typename Arithmetic_kernel> void test_routine() {
 
 int main(int argc,char** argv) {
 
-#ifdef CGAL_USE_CORE
+#ifdef CGAL_HAS_CORE_ARITHMETIC_KERNEL
     test_routine<CGAL::CORE_arithmetic_kernel>();
 #else
     std::cerr << "CORE tests skipped" << std::endl;
 #endif
-#ifdef CGAL_USE_LEDA
+#ifdef CGAL_HAS_LEDA_ARITHMETIC_KERNEL
     test_routine<CGAL::LEDA_arithmetic_kernel>();
 #else
     std::cerr << "LEDA tests skipped" << std::endl;
+#endif
+#ifdef CGAL_HAS_GMP_ARITHMETIC_KERNEL
+    test_routine<CGAL::GMP_arithmetic_kernel>();
+#else
+    std::cerr << "GMP tests skipped" << std::endl;
 #endif
     return 0;
 }
