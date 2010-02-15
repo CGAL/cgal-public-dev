@@ -145,8 +145,9 @@ simple_rational_between(const Algebraic_real& a,
     //srb_a.stop();
 
     //srb_b.start();
-    Bigfloat x=CGAL::upper(CGAL::convert_to_bfi(a.high())),
-        y=CGAL::lower(CGAL::convert_to_bfi(b.low()));
+    Bigfloat x=CGAL::upper(CGAL::convert_to_bfi(a.high()));
+    Bigfloat y=CGAL::lower(CGAL::convert_to_bfi(b.low()));
+    
     if(x>=y) {
         Rational size_a=a.high() - a.low(),
             size_b=b.high() - b.low(),
@@ -175,15 +176,20 @@ simple_rational_between(const Algebraic_real& a,
             }
         }
     }
+    CGAL_assertion(x<y); 
+
     //srb_b.stop();
     //std::cout << "Intermediate2: " << x << " " << y << std::endl;
     typename CGAL::internal::Float_traits<Bigfloat>::Get_mantissa mantissa;
     typename CGAL::internal::Float_traits<Bigfloat>::Get_exponent exponent;
 
-    Integer x_m = mantissa(x),
-        y_m=mantissa(y);
-    long x_e = exponent(x),  y_e = exponent(y);
+    // std::cout << CGAL::to_double(x) << " < " << CGAL::to_double(y) << std::endl;
+
+    Integer x_m = mantissa(x), y_m=mantissa(y);
+    long x_e = exponent(x), y_e = exponent(y);
     //std::cout << "Floats1: " << x_m << " " << x_e << " and " << y_m << " " << y_e << std::endl;
+    
+    
     if (((x_m > 0) && (y_m < 0)) || ((x_m < 0) && (y_m > 0))) {
         //srb.stop();
         return Rational(0);
@@ -225,7 +231,7 @@ simple_rational_between(const Algebraic_real& a,
     }
     //srb_d.stop();
     CGAL_assertion(y_e==x_e && x_e==min_e);
-
+    CGAL_assertion(x_m < y_m); 
     //std::cout << "Floats4: " << x_m << " " << x_e << " and " << y_m << " " << y_e << std::endl;
 
     // Avoid mantissas to have difference one
@@ -242,6 +248,7 @@ simple_rational_between(const Algebraic_real& a,
     long x_log = x_m==Integer(0) ? -1 : CGAL::internal::floor_log2_abs(x_m),
         y_log = y_m==Integer(0) ? -1 : CGAL::internal::floor_log2_abs(y_m),
         old_log = y_log;
+    //std::cout << x_log << " < " << y_log << std::endl;  
     while(x_log==y_log) {
         //std::cout << "here" << std::endl;
         while(old_log > y_log) {
