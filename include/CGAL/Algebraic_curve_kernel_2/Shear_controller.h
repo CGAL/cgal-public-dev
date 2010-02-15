@@ -74,7 +74,7 @@ CGAL_BEGIN_NAMESPACE
 
         //! Gets a new shear factor
 	Int get_new_shear_factor() {
-	  CGAL_assertion(this->bad_shears.size()<max);
+	  CGAL_assertion(int(this->bad_shears.size())<max);
 	  while(true) {
 	    Int s = Int(rand()%max)+1;
 	    if(bad_shears.find(s)==bad_shears.end()) {
