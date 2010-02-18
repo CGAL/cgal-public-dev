@@ -120,24 +120,7 @@ template<> class Float_traits< Gmpfr > {
     : public std::unary_function< Gmpfr, std::pair<Gmpz,long> > {
     
     std::pair<Gmpz,long> operator()( const Gmpfr& x ) const {
-      
-      if(CGAL::is_zero(x)) 
-        return std::make_pair(Gmpz(0),long(0));
-      
-      Gmpz z;
-      long e=mpfr_get_z_exp(z.mpz(),x.fr());
-      
-      long zeros = mpz_scan1(z.mpz(),0);
-      z >>= zeros;
-      e +=  zeros;
-
-      CGAL_postcondition(z % 2 != 0);
-      CGAL_postcondition_code(if (e >= 0))
-        CGAL_postcondition( x == (Gmpfr(z)) * CGAL::ipower(Gmpfr(2), e));
-      CGAL_postcondition_code(else)
-        CGAL_postcondition( x == (Gmpfr(z)) / CGAL::ipower(Gmpfr(2),-e));
-      
-      return std::make_pair(z,e);
+      return x.to_integer_exp(); 
     }
   };
 public:  
