@@ -234,25 +234,8 @@ demo/Algebraic_curve_kernel_2/curve_pair_analyser_2.cpp -text
 demo/Algebraic_curve_kernel_2/include/CGAL/Polynomial_parser_2.h -text
 demo/Algebraic_curve_kernel_2/rotated_arrangements_2.cpp -text
 demo/Algebraic_curve_kernel_2/rotated_curve_analyser_2.cpp -text
-doc_tex/Algebraic_kernel_d/intro.tex -text
-doc_tex/Algebraic_kernel_d_ref/AlgebraicKernel_d_1_ApproximateAbsolute_1.tex -text
-doc_tex/Algebraic_kernel_d_ref/AlgebraicKernel_d_1_ApproximateRelative_1.tex -text
-doc_tex/Algebraic_kernel_d_ref/AlgebraicKernel_d_1_BoundBetween_1.tex -text
-doc_tex/Algebraic_kernel_d_ref/AlgebraicKernel_d_1_ComputePolynomial_1.tex -text
-doc_tex/Algebraic_kernel_d_ref/AlgebraicKernel_d_1_ConstructAlgebraicReal_1.tex -text
-doc_tex/Algebraic_kernel_d_ref/AlgebraicKernel_d_1_IsZeroAt_1.tex -text
-doc_tex/Algebraic_kernel_d_ref/AlgebraicKernel_d_1_Isolate_1.tex -text
-doc_tex/Algebraic_kernel_d_ref/AlgebraicKernel_d_1_NumberOfSolutions_1.tex -text
-doc_tex/Algebraic_kernel_d_ref/AlgebraicKernel_d_2_ApproximateAbsolute_2.tex -text
-doc_tex/Algebraic_kernel_d_ref/AlgebraicKernel_d_2_ApproximateRelative_2.tex -text
-doc_tex/Algebraic_kernel_d_ref/AlgebraicKernel_d_2_ComputePolynomial_2.tex -text
-doc_tex/Algebraic_kernel_d_ref/AlgebraicKernel_d_2_ConstructAlgebraicReal_2.tex -text
-doc_tex/Algebraic_kernel_d_ref/AlgebraicKernel_d_2_IsZeroAt_2.tex -text
-doc_tex/Algebraic_kernel_d_ref/AlgebraicKernel_d_2_Isolate_2.tex -text
-doc_tex/Algebraic_kernel_d_ref/AlgebraicKernel_d_2_NumberOfSolutions_2.tex -text
 doc_tex/Algebraic_kernel_d_ref/figures/cpvl.eps -text svneol=unset#application/postscript
 doc_tex/Algebraic_kernel_d_ref/figures/cpvl.fig -text svneol=unset#application/octet-stream
-doc_tex/Algebraic_kernel_d_ref/intro.tex -text
 /dont_submit -text
 include/CGAL/Algebraic_curve_kernel_2.h -text
 include/CGAL/Algebraic_curve_kernel_2/Algebraic_real_traits.h -text
