@@ -217,7 +217,8 @@ CGAL_BEGIN_NAMESPACE
                          * polynomial
                          */
                         virtual void refine_interval(int i) const {
-                            CGAL_assertion(i>=0 && i < number_of_intervals);
+                            CGAL_assertion(i >= 0);
+                            CGAL_assertion(i < number_of_intervals);
                             Node_iterator curr = bitstream_tree.begin(), begin, end, 
                                 new_begin, helper;
                             std::advance(curr,i);
@@ -379,7 +380,8 @@ CGAL_BEGIN_NAMESPACE
 
                         //! The lower bound of the \c i th root
                         virtual Bound left_bound(int i) const  {
-                            CGAL_assertion(i>=0 && i < number_of_intervals);
+                            CGAL_assertion(i >= 0);
+                            CGAL_assertion(i < number_of_intervals);
                             Node_const_iterator curr = bitstream_tree.begin();
                             std::advance(curr,i);
                             return bitstream_tree.lower(curr);
@@ -387,7 +389,8 @@ CGAL_BEGIN_NAMESPACE
     
                         //! The upper bound of the \c i th root
                         virtual Bound right_bound(int i) const {
-                            CGAL_assertion(i>=0 && i < number_of_intervals);
+                            CGAL_assertion(i >= 0);
+                            CGAL_assertion(i < number_of_intervals);
                             Node_const_iterator curr = bitstream_tree.begin();
                             std::advance(curr,i);
                             return bitstream_tree.upper(curr);
@@ -442,12 +445,14 @@ CGAL_BEGIN_NAMESPACE
      
       
                         virtual int multiplicity_of_root(int i) const {
-                            CGAL_assertion(i>=0 && i < number_of_intervals);
+                            CGAL_assertion(i >= 0);
+                            CGAL_assertion(i < number_of_intervals);
                             return -1;
                         }
 
                         virtual int get_upper_bound_for_multiplicity(int i) const {
-                            CGAL_assertion(i>=0 && i < number_of_intervals);
+                            CGAL_assertion(i >= 0);
+                            CGAL_assertion(i < number_of_intervals);
                             Node_const_iterator curr = bitstream_tree.begin();
                             std::advance(curr,i);
                             return bitstream_tree.min_var(curr);
@@ -892,14 +897,16 @@ CGAL_BEGIN_NAMESPACE
         }
 
         virtual bool is_certainly_simple_root(int i) const {
-            CGAL_assertion(i>=0 && i <  Base::number_of_intervals);
+            CGAL_assertion(i >= 0);
+            CGAL_assertion(i < Base::number_of_intervals);
             Node_const_iterator curr=Base::bitstream_tree.begin();
             std::advance(curr,i);
             return (Base::bitstream_tree.max_var(curr)==1);
         }
 	
         virtual bool is_certainly_multiple_root(int i) const {
-            CGAL_assertion(i>=0 && i < Base::number_of_intervals);
+            CGAL_assertion(i >= 0);
+            CGAL_assertion(i < Base::number_of_intervals);
             Marking_const_iterator curr=markings.begin();
             std::advance(curr,i);
             return (*curr>=0);
