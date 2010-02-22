@@ -37,7 +37,7 @@
 #include <CGAL/Algebraic_curve_kernel_2/Event_line_builder.h>
 #include <CGAL/Algebraic_curve_kernel_2/Shear_controller.h>
 #include <CGAL/Algebraic_curve_kernel_2/Shear_transformation.h>
-#include <CGAL/Algebraic_curve_kernel_2/Bitstream_coefficient_kernel_at_alpha.h>
+#include <CGAL/Algebraic_kernel_d/Bitstream_coefficient_kernel_at_alpha.h>
 #include <CGAL/Algebraic_curve_kernel_2/shear.h>
 
 #include <CGAL/Polynomial_traits_d.h>
