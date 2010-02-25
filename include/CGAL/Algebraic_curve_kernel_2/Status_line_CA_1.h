@@ -532,9 +532,9 @@ public:
                 Algebraic_real_2 xy = algebraic_real_2(i);
                 typedef typename Bitstream_descartes::Bound Bound;
                 Bound th = CGAL::ipower(Bound(1,2),53);
-                double d 
-                    = CGAL::to_double(xy.get_approximation_y(th).lower());
-                os << "y=" << d << ", " << std::flush;
+		std::pair<double,double> d_pair 
+		   = xy.to_double();
+		os << "y=" << d_pair.second << ", " << std::flush;
                 os << "(" << arc_pair.first << ", " << arc_pair.second << ")"
                    << std::flush;
             }

@@ -28,7 +28,7 @@
 
 #include <CGAL/Algebraic_curve_kernel_2/LRU_hashed_map.h>
 #include <CGAL/Algebraic_curve_kernel_2/Xy_coordinate_2.h>
-#include <CGAL/Algebraic_curve_kernel_2/Algebraic_real_traits.h>
+//#include <CGAL/Algebraic_curve_kernel_2/Algebraic_real_traits.h>
 
 #include <CGAL/Algebraic_curve_kernel_2/trigonometric_approximation.h>
 
@@ -140,6 +140,12 @@ public:
     // Bound type
     typedef typename Algebraic_kernel_1::Bound Bound;
         
+    typedef typename CGAL::Get_arithmetic_kernel<Bound>::Arithmetic_kernel
+      Arithmetic_kernel;
+    
+    typedef typename Arithmetic_kernel::Bigfloat Bigfloat;
+    typedef typename Arithmetic_kernel::Bigfloat_interval Bigfloat_interval;
+    
     //! Univariate polynomial type 
     typedef typename Algebraic_kernel_1::Polynomial_1 Polynomial_1;
     
@@ -177,18 +183,8 @@ public:
     typedef CGAL::Curve_pair_analysis_2<Self> Curve_pair_analysis_2;
 #endif
 
-    //! traits class used for approximations of x-coordinate
-    typedef internal::Algebraic_real_traits<X_coordinate_1> X_real_traits_1;
-    //typedef typename Algebraic_kernel_1::Algebraic_real_traits X_real_traits_1;
-    
     //! traits class used for approximations of y-coordinates
-#if CGAL_ACK_USE_EXACUS
-    typedef internal::Algebraic_real_traits_for_y
-        <Xy_coordinate_2,Internal_curve_pair_2> Y_real_traits_1;
-#else
-    typedef internal::Algebraic_real_traits_for_y
-        <Xy_coordinate_2,CGAL::Null_functor> Y_real_traits_1;
-#endif
+
 
     //  berfriending representations to make protected typedefs available
     friend class internal::Curve_analysis_2_rep<Self>;
@@ -558,8 +554,9 @@ public:
 
         std::pair<Bound,Bound> operator() (Xy_coordinate_2 xy,
                                     int prec) {
-            Get_x_2 get_x = this->get_x_2_object();
-            return this->approximate_absolute_x_1_object() (get_x(xy),prec);
+            Get_x_2 get_x = _m_kernel->get_x_2_object();
+            return _m_kernel->approximate_absolute_1_object() 
+	      (get_x(xy),prec);
         }
 
     protected:
@@ -602,17 +599,14 @@ public:
         
         std::pair<Bound,Bound> operator() (Xy_coordinate_2 xy,
                                     int prec) {
-            typename Y_real_traits_1::Lower_bound lower_bound;
-            typename Y_real_traits_1::Upper_bound upper_bound;
-            typename Y_real_traits_1::Refine refine;
             
-            Bound l = lower_bound(xy);  
-            Bound u = upper_bound(xy);
+            Bound l = xy.lower_bound_y();  
+            Bound u = xy.upper_bound_y();
             Bound error = CGAL::ipower(Bound(2),CGAL::abs(prec));
             while((u-l)*error>Bound(1)) {
-                refine(xy);
-                u = upper_bound(xy);
-                l = lower_bound(xy);
+                xy.refine_y();
+                u = xy.upper_bound_y();
+                l = xy.lower_bound_y();
           }
           return std::make_pair(l,u);
         }
@@ -635,25 +629,21 @@ public:
 
         std::pair<Bound,Bound> operator() (Xy_coordinate_2 xy,
                                            int prec) {
-            typename Y_real_traits_1::Lower_bound lower_bound;
-            typename Y_real_traits_1::Upper_bound upper_bound;
-            typename Y_real_traits_1::Refine refine;
-
             if(xy.is_y_zero()) {
                 return std::make_pair(Bound(0),Bound(0));
             }
-            while(CGAL::sign(lower_bound(xy))*CGAL::sign(upper_bound(xy))
+            while(CGAL::sign(xy.lower_bound_y())*CGAL::sign(xy.upper_bound_y())
                   !=CGAL::POSITIVE) {
-                refine(xy);
+                xy.refine_y();
             }
-            Bound l = lower_bound(xy);  
-            Bound u = upper_bound(xy);
+            Bound l = xy.lower_bound_y();  
+            Bound u = xy.upper_bound_y();
             Bound error = CGAL::ipower(Bound(2),CGAL::abs(prec));
             Bound max_b = (CGAL::max)(CGAL::abs(u),CGAL::abs(l));
             while((prec>0)?((u-l)*error>max_b):((u-l)>error*max_b)){
-                refine(xy);
-                u = upper_bound(xy);
-                l = lower_bound(xy);
+                xy.refine_y();
+                u = xy.upper_bound_y();
+                l = xy.lower_bound_y();
                 max_b = (CGAL::max)(CGAL::abs(u),CGAL::abs(l));
           }
           return std::make_pair(l,u);
@@ -687,7 +677,7 @@ public:
             
         result_type operator()(const Xy_coordinate_2& r1, 
                 const Xy_coordinate_2& r2) const {
-            return typename X_real_traits_1::Bound_between()
+ 	  return this->_m_kernel->bound_between_1_object()
                 (r1.x(), r2.x());
         }
 
@@ -715,10 +705,60 @@ public:
         typedef Xy_coordinate_2 first_agrument_type;
         typedef Xy_coordinate_2 second_agrument_type;
         typedef Bound result_type;
-            
+
+	typedef typename Algebraic_kernel_2::Curve_analysis_2
+	  ::Status_line_1::Bitstream_descartes Isolator;
+
         result_type operator()(const Xy_coordinate_2& r1, 
                 const Xy_coordinate_2& r2) const {
-            return typename Y_real_traits_1::Bound_between()(r1, r2);
+
+            CGAL_precondition(r1.y() != r2.y());
+
+            Bound res(0);
+
+            Isolator isol1 =
+                r1.curve().status_line_at_exact_x(r1.x()).isolator();
+
+            Isolator isol2 =
+                r2.curve().status_line_at_exact_x(r2.x()).isolator();
+            
+            Bound low1, low2, high1, high2;
+            
+            while (true) {
+                low1 = isol1.left_bound(r1.arcno());
+                high1 = isol1.right_bound(r1.arcno());
+                
+                low2 = isol2.left_bound(r2.arcno());
+                high2 = isol2.right_bound(r2.arcno());
+                
+                if (low1 > high2) {
+                    res = ((low1 + high2)/Bound(2));
+                    break;
+                }
+                if (low2 > high1) {
+                    res = ((low2 + high1)/Bound(2));
+                    break;
+                }
+                
+                // else
+                isol1.refine_interval(r1.arcno());
+                isol2.refine_interval(r2.arcno());
+            }
+
+            CGAL::simplify(res);
+
+            CGAL_postcondition_code(
+                    CGAL::Comparison_result exp = CGAL::SMALLER
+            );
+            CGAL_postcondition_code(
+                    if (r1.y() > r2.y()) {
+                        exp = CGAL::LARGER;
+                    }
+            );
+            CGAL_postcondition(r1.y().compare(res) == exp);
+            CGAL_postcondition(r2.y().compare(res) == -exp);
+
+            return res;
         }
 
     protected:
@@ -1289,19 +1329,23 @@ public:
         
         Sign_at_2(const Algebraic_kernel_2* kernel) 
             : _m_kernel(kernel) {}
-        
-        typedef typename Xy_coordinate_2::Bound Bound;
-        typedef typename Xy_coordinate_2::Bound_interval Bound_interval;
+       
+        //! type for bound intervals
+        typedef boost::numeric::interval<Bound> Bound_interval;
+        typedef CGAL::Coercion_traits<Coefficient,Bound> Coercion;
+        typedef typename CGAL::Coercion_traits<Coefficient,Bound>::Type
+	  Coercion_type;
+        typedef boost::numeric::interval<Coercion_type> Coercion_interval;
 
-        typedef typename Xy_coordinate_2::Coercion_interval Coercion_interval;
-        
+	/*        
         typedef typename CGAL::Polynomial_traits_d<Polynomial_2>
             ::template Rebind<Bound,1>::Other::Type
             Poly_rat_1;
         typedef typename CGAL::Polynomial_traits_d<Polynomial_2>
             ::template Rebind<Bound,2>::Other::Type
             Poly_rat_2;
-        
+	*/        
+
         Sign operator()(const Polynomial_2& f,
                         const Xy_coordinate_2& r) const {
 
@@ -1314,32 +1358,95 @@ public:
             if(ca_2.is_identical(r.curve()) || _test_exact_zero(ca_2, r))
                 return CGAL::ZERO;
             
-            Bound_interval ix = r.get_approximation_x();
-            Bound_interval iy = r.get_approximation_y();
+	    typename Algebraic_kernel_2::Approximate_absolute_x_2 approx_x
+	      = _m_kernel->approximate_absolute_x_2_object();
+	    typename Algebraic_kernel_2::Approximate_absolute_y_2 approx_y
+	      = _m_kernel->approximate_absolute_y_2_object();
+	    
+	    long prec = 16;
 
-            Bound x_len = ix.upper() - ix.lower(),
-                y_len = iy.upper() - iy.lower();
-
-            while(1) {
-                Coercion_interval iv 
-                    = r.interval_evaluate_2(ca_2.polynomial_2());
+            while(true) {
+  	        std::pair<Bound,Bound> x_pair = approx_x(r,prec);
+  	        std::pair<Bound,Bound> y_pair = approx_y(r,prec);
+		
+                Coercion_interval iv
+                  = interval_evaluate_2(ca_2.polynomial_2(),x_pair,y_pair);
                 CGAL::Sign s_lower = CGAL::sign(iv.lower());
                 if(s_lower == sign(iv.upper()))
                     return s_lower;
-                
-                if(x_len > y_len) {
-                    r.refine_x();
-                    ix = r.get_approximation_x();
-                    x_len = ix.upper() - ix.lower();
-                } else {
-                    r.refine_y();
-                    iy = r.get_approximation_y();
-                    y_len = iy.upper() - iy.lower();
-                }
-            }
+                prec*=2;
+	    }
         }
         
     protected:
+
+        template<typename Polynomial_2>
+          Coercion_interval interval_evaluate_2(const Polynomial_2& p,
+						std::pair<Bound,Bound> x_pair,
+						std::pair<Bound,Bound> y_pair)
+	  const {
+        
+            typename Coercion::Cast cast;
+
+            typedef typename CGAL::Polynomial_traits_d<Polynomial_2>::
+              Coefficient_const_iterator
+              Coefficient_const_iterator;
+        
+            typedef typename CGAL::Polynomial_traits_d<Polynomial_2>
+              ::Coefficient_const_iterator_range 
+              Coefficient_const_iterator_range;
+        
+            Coercion_interval iy(cast(y_pair.first),
+                                 cast(y_pair.second));
+
+            // CGAL::Polynomial does not provide Coercion_traits for number
+            // types => therefore evaluate manually
+            Coefficient_const_iterator_range range =
+              typename CGAL::Polynomial_traits_d<Polynomial_2>
+              :: Construct_coefficient_const_iterator_range()(p);
+        
+            Coefficient_const_iterator it = range.second - 1;
+        
+            Coercion_interval res(interval_evaluate_1(*it,x_pair));
+        
+            Coefficient_const_iterator p_begin = range.first;
+
+            while((it--) != p_begin) 
+	      res = res * iy + (interval_evaluate_1(*it,x_pair));
+            return res;
+	}
+	
+    
+        template<typename Polynomial_1>
+          Coercion_interval interval_evaluate_1(const Polynomial_1& p,
+		  			        std::pair<Bound,Bound> x_pair)
+	  const {
+    
+            typename Coercion::Cast cast;
+     
+            typedef typename CGAL::Polynomial_traits_d<Polynomial_1>
+              ::Coefficient_const_iterator Coefficient_const_iterator;
+
+            Coercion_interval ix(cast(x_pair.first),
+                                 cast(x_pair.second));
+	    
+	    typedef typename CGAL::Polynomial_traits_d<Polynomial_1>
+              ::Coefficient_const_iterator_range 
+              Coefficient_const_iterator_range;
+        
+            Coefficient_const_iterator_range range = 
+              typename CGAL::Polynomial_traits_d<Polynomial_1>
+              :: Construct_coefficient_const_iterator_range()(p);
+        
+            Coefficient_const_iterator it = range.second - 1;
+        
+            Coercion_interval res(cast(*it));
+
+            Coefficient_const_iterator p_begin = range.first;
+            while((it--) != p_begin) 
+              res = res * ix + Coercion_interval(cast(*it));
+            return res;
+	}
 
         bool _test_exact_zero(const Curve_analysis_2& ca_2,
             const Xy_coordinate_2& r) const {
@@ -1542,197 +1649,6 @@ public:
 
     };
     CGAL_Algebraic_Kernel_cons(Swap_x_and_y_2, swap_x_and_y_2_object);
-
-
-  
-
-#if CGAL_AK_ENABLE_DEPRECATED_INTERFACE
-
-
-    //! Refines the x-coordinate of an Xy_coordinate_2 object
-    class Refine_x_2 :
-        public std::unary_function<Xy_coordinate_2, void> {
-
-    public:
-        
-        Refine_x_2(const Algebraic_kernel_2* kernel) 
-            : _m_kernel(kernel) {}
-      
-        /*! 
-         * \brief Refines the approximation of the x-coordinate by at least
-         * a factor 2 (i.e., the isolating intervals has at most half its 
-         * original size).
-         *
-         * note that an interval may also collaps to a single point
-         */
-        void operator()(const Xy_coordinate_2& r) const {
-            r.refine_x();            
-        }
-        
-        /*! 
-         * \brief refines the x-coordinate's interval of \c r
-         * w.r.t. given relative precision
-         *
-         * that is:
-         * <tt>|lower - upper|/|r.x()| <= 2^(-rel_prec)</tt>
-         */
-        void operator()(Xy_coordinate_2& r, int rel_prec) const {  
-            r.refine_x(rel_prec);
-        }
-        
-    protected:
-
-        const Algebraic_kernel_2* _m_kernel;
-
-    };
-    CGAL_Algebraic_Kernel_pred(Refine_x_2, refine_x_2_object);
-    
-    //! Refines the y-coordinate of an Xy_coordinate_2 object
-    class Refine_y_2 :
-        public std::unary_function<Xy_coordinate_2, void> {
-
-    public:
-
-        Refine_y_2(const Algebraic_kernel_2* kernel) 
-            : _m_kernel(kernel) {}
-      
-        /*! 
-         * \brief Refines the approximation of the y-coordinate by at least
-         * a factor 2 (i.e., the isolating intervals has at most half its 
-         * original size).
-         *
-         * note that an interval may also collaps to a single point
-         */
-        void operator()(const Xy_coordinate_2& r) const {
-            typename Y_real_traits_1::Refine()(r);
-        }
-        
-        /*! 
-         * \brief refines the x-coordinate's interval of \c r
-         * w.r.t. given relative precision
-         *
-         * that is:
-         * <tt>|lower - upper|/|r.x()| <= 2^(-rel_prec)</tt>
-         */
-        void operator()(Xy_coordinate_2& r, int rel_prec) const {  
-            typename Y_real_traits_1::Refine()(r, rel_prec);
-        }
-    
-    protected:
-
-        const Algebraic_kernel_2* _m_kernel;
-
-    };
-    CGAL_Algebraic_Kernel_pred(Refine_y_2, refine_y_2_object);
-    
-    //! a lower bound of the x-coordinate of \c r
-    class Lower_bound_x_2 {
-       
-    public:
-
-        Lower_bound_x_2(const Algebraic_kernel_2* kernel) 
-            : _m_kernel(kernel) {}
-
-        typedef Xy_coordinate_2 argument_type;
-        typedef Bound result_type;
-            
-        result_type operator()(const Xy_coordinate_2& r) {
-            return typename X_real_traits_1::Lower_bound()(r.x());
-        }
-        
-    protected:
-
-        const Algebraic_kernel_2* _m_kernel;
-
-    };
-    CGAL_Algebraic_Kernel_cons(Lower_bound_x_2, lower_bound_x_2_object);
-    
-    //! an upper bound of the x-coordinate of \c r
-    class Upper_bound_x_2 {
-       
-    public:
-
-        Upper_bound_x_2(const Algebraic_kernel_2* kernel) 
-            : _m_kernel(kernel) {}
-
-        typedef Xy_coordinate_2 agrument_type;
-        typedef Bound result_type;
-            
-        result_type operator()(const Xy_coordinate_2& r) {
-            return typename X_real_traits_1::Upper_bound()(r.x());
-        }
-    
-    protected:
-
-        const Algebraic_kernel_2* _m_kernel;
-
-    };
-    CGAL_Algebraic_Kernel_cons(Upper_bound_x_2, upper_bound_x_2_object);
-
-
-    //! a lower bound of the x-coordinate of \c r
-    class Lower_bound_y_2 {
-    
-    public:
-
-        Lower_bound_y_2(const Algebraic_kernel_2* kernel) 
-            : _m_kernel(kernel) {}
-        
-        typedef Xy_coordinate_2 agrument_type;
-        typedef Bound result_type;
-            
-        result_type operator()(const Xy_coordinate_2& r) {
-            return typename Y_real_traits_1::Lower_bound()(r);
-        }
-
-    protected:
-
-        const Algebraic_kernel_2* _m_kernel;
-
-    };
-    CGAL_Algebraic_Kernel_cons(Lower_bound_y_2, lower_bound_y_2_object);
-    
-    //! an upper bound of the y-coordinate of \c r
-    class Upper_bound_y_2 {
-    
-    public:
-
-        Upper_bound_y_2(const Algebraic_kernel_2* kernel) 
-            : _m_kernel(kernel) {}
-   
-        typedef Xy_coordinate_2 agrument_type;
-        typedef Bound result_type;
-            
-        result_type operator()(const Xy_coordinate_2& r) {
-            return typename Y_real_traits_1::Upper_bound()(r);
-        }
-
-    protected:
-
-        const Algebraic_kernel_2* _m_kernel;
-
-    };
-    CGAL_Algebraic_Kernel_cons(Upper_bound_y_2, upper_bound_y_2_object);
-    
-
-
-  typedef Bound Boundary; 
-  typedef Lower_bound_x_2 Lower_boundary_x_2;
-  typedef Lower_bound_y_2 Lower_boundary_y_2;
-  typedef Upper_bound_x_2 Upper_boundary_x_2;
-  typedef Upper_bound_y_2 Upper_boundary_y_2;
-  typedef Bound_between_x_2 Boundary_between_x_2;
-  typedef Bound_between_y_2 Boundary_between_y_2;
-
-  CGAL_Algebraic_Kernel_cons(Lower_boundary_x_2,lower_boundary_x_2_object);
-  CGAL_Algebraic_Kernel_cons(Lower_boundary_y_2,lower_boundary_y_2_object);
-  CGAL_Algebraic_Kernel_cons(Upper_boundary_x_2,upper_boundary_x_2_object);
-  CGAL_Algebraic_Kernel_cons(Upper_boundary_y_2,upper_boundary_y_2_object);
-  CGAL_Algebraic_Kernel_cons(Boundary_between_x_2,boundary_between_x_2_object);
-  CGAL_Algebraic_Kernel_cons(Boundary_between_y_2,boundary_between_y_2_object);
-#endif
-
-
 
 
 #undef CGAL_Algebraic_Kernel_pred    

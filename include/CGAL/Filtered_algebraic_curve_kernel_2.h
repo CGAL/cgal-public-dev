@@ -143,6 +143,7 @@ protected:
         Comparison_result operator()(const Xy_coordinate_2& xy1, 
                                      const Xy_coordinate_2& xy2) const {
 
+	  /* TODO FIX
             Bbox_2 bbox1 = xy1.approximation_box_2(threshold()),
                 bbox2 = xy2.approximation_box_2(threshold());
             if(bbox1.ymin() > bbox2.ymax()) {
@@ -151,6 +152,7 @@ protected:
             if(bbox1.ymax() < bbox2.ymin()) {
                 return CGAL::SMALLER;
             }
+	  */
             return CGAL::EQUAL;
         }
         
@@ -244,7 +246,8 @@ public:
         {
             if(ca.is_identical(r.curve())) // point lies on the same curve
                 return CGAL::ZERO;
-            
+
+	    /* TODO FIX            
             r.approximation_box_2(threshold()); 
                 // makes sure refined boundaries 
             Interval iv = r.interval_evaluate_2(ca.polynomial_2());
@@ -252,6 +255,7 @@ public:
             if( s_lower == CGAL::sign(iv.upper()) ) {
                 return s_lower;
             }
+	    */
             return Base::operator()(ca, r);
         }
 

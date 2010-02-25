@@ -238,7 +238,6 @@ doc_tex/Algebraic_kernel_d_ref/figures/cpvl.eps -text svneol=unset#application/p
 doc_tex/Algebraic_kernel_d_ref/figures/cpvl.fig -text svneol=unset#application/octet-stream
 /dont_submit -text
 include/CGAL/Algebraic_curve_kernel_2.h -text
-include/CGAL/Algebraic_curve_kernel_2/Algebraic_real_traits.h -text
 include/CGAL/Algebraic_curve_kernel_2/Curve_analysis_2.h -text
 include/CGAL/Algebraic_curve_kernel_2/Curve_analysis_2_exacus.h -text
 include/CGAL/Algebraic_curve_kernel_2/Curve_pair_analysis_2.h -text

@@ -143,23 +143,11 @@ public:
     //! the handle superclass
     typedef ::CGAL::Handle_with_policy<Rep, Handle_policy, Allocator> Base;
 
-    typedef typename Algebraic_curve_kernel_2::X_real_traits_1 X_real_traits_1;
-
-    //! Algebraic_real_traits for this type
-    typedef typename Algebraic_curve_kernel_2::Y_real_traits_1 Y_real_traits_1;
-
     //! type for approximation boundaries
-    typedef typename X_real_traits_1::Bound Bound;
+    typedef typename Algebraic_curve_kernel_2::Bound Bound;
 
     //! type for bound intervals
     typedef boost::numeric::interval<Bound> Bound_interval;
-
-    typedef CGAL::Coercion_traits<Coefficient,Bound> Coercion;
-
-    typedef typename CGAL::Coercion_traits<Coefficient,Bound>::Type
-        Coercion_type;
-
-    typedef boost::numeric::interval<Coercion_type> Coercion_interval;
 
     //! Type for the bounding box
     typedef typename Rep::Bbox_2 Bbox_2;
@@ -337,7 +325,14 @@ public:
             Roots y_roots;
             real_roots(y_pol, std::back_inserter(y_roots), false ); 
             
-            Bound_interval y_iv = get_approximation_y();
+            long prec = 16;
+	    
+	    typename Algebraic_curve_kernel_2::Approximate_absolute_y_2
+	      approx_y=kernel()->approximate_absolute_y_2_object();
+	    
+	    std::pair<Bound,Bound> y_pair = approx_y(*this,prec);
+	    
+	    Bound_interval y_iv(y_pair.first,y_pair.second);
             
             typedef typename std::vector<Algebraic_real_1>::const_iterator
                 Iterator;
@@ -353,8 +348,10 @@ public:
             CGAL_assertion(!candidates.empty());
 
             while (candidates.size() > 1) {
-                refine_y();
-                y_iv = get_approximation_y();
+	        prec*=2;
+	        y_pair = approx_y(*this,prec);
+	    
+                y_iv = Bound_interval(y_pair.first,y_pair.second);
 
                 for (typename std::list< Iterator >::iterator dit, cit =
                          candidates.begin(); cit != candidates.end(); ) {
@@ -566,21 +563,6 @@ public:
 
     //! Returns whether the y-coordinate equals zero
     bool is_y_zero() const {
-        /* This is the new version!
-        Bound_interval y_iv = get_approximation_y();
-        if( y_iv.lower() > 0 || y_iv.upper() < 0 ) {
-            return false;
-        }
-        CGAL_assertion(CGAL::degree(curve().polynomial_2())>=0);
-            
-        Sign_at_2 sign_at = this->sign_at_2.object();
-        // Construct the polynomial y
-        Polynomial_2 f = typename Polynomial_traits_2::Shift()
-          (Polynomial_2(1),1,1);
-        Curve_analysis_2 y_curve 
-          = this->construct_curve_2_object() (f);
-        return (sign_at(y_curve,xy)==CGAL::ZERO);
-        */
         typename Curve_analysis_2::Polynomial_2::NT constant_pol
             = curve().polynomial_2()[0];
         bool zero_is_root_of_local_pol 
@@ -590,33 +572,30 @@ public:
         return zero_is_root_of_local_pol;
         
     }
-    
+
     // returns a double approximation of the point
     std::pair<double, double> to_double() const {
 
         typedef typename Get_arithmetic_kernel<Bound>::Arithmetic_kernel AT;
         typedef typename AT::Bigfloat_interval BFI; 
-        typedef typename CGAL::Bigfloat_interval_traits<BFI>::Bound BF;
 
         long old_prec = get_precision(BFI());
         
         set_precision (BFI(), 53);
 
-        double double_x = this->ptr()->_m_x.to_double();
+	// rely on double conversion of the x-type
+        double double_x = CGAL::to_double(this->ptr()->_m_x);
         double double_y;
 
-        typename Y_real_traits_1::Lower_bound lower;
-        typename Y_real_traits_1::Upper_bound upper;
-        typename Y_real_traits_1::Refine refine;
 
-        if (lower(*this)==upper(*this)) {
-            double_y = CGAL::to_double(convert_to_bfi(lower(*this)));
+        if (this->lower_bound_y()==this->upper_bound_y) {
+            double_y = CGAL::to_double(convert_to_bfi(this->lower_bound_y()));
         } else if(is_y_zero()) {
             double_y = 0.;
         } else {
-            while(CGAL::sign(lower(*this)) != 
-                  CGAL::sign(upper(*this)) ) {
-                refine(*this);
+            while(CGAL::sign(this->lower_bound_y()) != 
+                  CGAL::sign(this->upper_bound_y()) ) {
+                this->refine_y();
             }
             long final_prec = set_precision(BFI(),get_precision(BFI())+4);
             
@@ -625,10 +604,10 @@ public:
             
             while( !singleton(bfi) &&  
                    get_significant_bits(bfi) < final_prec  ){
-                refine(*this);
+                this->refine_y();
                 bfi = CGAL::hull(
-                        convert_to_bfi(lower(*this)), 
-                        convert_to_bfi(upper(*this)));
+                        convert_to_bfi(this->lower_bound_y()), 
+                        convert_to_bfi(this->upper_bound_y()));
             }
             double_y 
                 = CGAL::to_double((CGAL::lower(bfi)+ CGAL::upper(bfi)) / 2);
@@ -638,202 +617,26 @@ public:
     }
 
     public:
-    //!\name Approximating functions
-    //!@{
 
-    /*!
-     * \brief gets approximation of x
-     */
-    Bound_interval get_approximation_x() const {
-        
-        typename X_real_traits_1::Lower_bound lower;
-        typename X_real_traits_1::Upper_bound upper;
-
-        return Bound_interval(lower(this->ptr()->_m_x), 
-                                 upper(this->ptr()->_m_x));
-        
-    }
-
-    /*!
-     * \brief gets approximation of x that is smaller than bound
-     */
-    Bound_interval get_approximation_x(Bound bound) const {
-        
-        CGAL_assertion(bound > 0);
-
-        typename X_real_traits_1::Lower_bound lower;
-        typename X_real_traits_1::Upper_bound upper;
-        typename X_real_traits_1::Refine refine;
-
-        while(upper(this->ptr()->_m_x) - lower(this->ptr()->_m_x) >= bound) {
-            refine(this->ptr()->_m_x);
-        }
-        return Bound_interval(lower(this->ptr()->_m_x), 
-                                 upper(this->ptr()->_m_x));
     
-    }
-
-    /*!
-     * \brief gets approximation of y
-     *
-     */
-    Bound_interval get_approximation_y() const {
-        typename Y_real_traits_1::Lower_bound lower;
-        typename Y_real_traits_1::Upper_bound upper;
-        return Bound_interval(lower(*this), upper(*this));
-    }
-
-    /*!
-     * \brief gets approximation of y that is smaller than bound
-     */
-    Bound_interval get_approximation_y(Bound bound) const {
-        
-        CGAL_assertion(bound > 0);
-
-        typename Y_real_traits_1::Lower_bound lower;
-        typename Y_real_traits_1::Upper_bound upper;
-        typename Y_real_traits_1::Refine refine;
-
-        while(upper(*this) - lower(*this) >= bound) {
-            refine(*this);
-        }
-        return Bound_interval(lower(*this),upper(*this));    
-    }
-    
-    /*!\brief 
-     *  computes at least half's the current interval of the first coordinate 
-     */
-    void refine_x() const {
-        // typename Algebraic_kernel_1::Refine refine
-        // refine(this->ptr()->_m_x)
-        //this->ptr()->_m_x.refine();
-        typename X_real_traits_1::Refine()(this->ptr()->_m_x);
-    }
-    
-    /*!\brief 
-     *  refines the first coordinate w.r.t relative precision
-     */
-    void refine_x(int rel_prec) {
-        // typename Algebraic_kernel_1::Refine refine
-        // refine(this->ptr()->_m_x)
-        typename X_real_traits_1::Refine()(this->ptr()->_m_x, rel_prec);
-    }
-
     /*!
      * \brief Refines the x-xoordinate
      */
     void refine_y() const {
-        typename Y_real_traits_1::Refine refine;
-        refine(*this);
+        this->curve().status_line_at_exact_x(this->x()).refine(this->arcno());
     }
 
-    Bbox_2 approximation_box_2() const {
-           
-        double x_min, x_max, y_min, y_max;
-        
-        typename X_real_traits_1::Lower_bound x_lower;
-        typename X_real_traits_1::Upper_bound x_upper;
-        
-        typename Y_real_traits_1::Lower_bound y_lower;
-        typename Y_real_traits_1::Upper_bound y_upper;
-        
-        x_min = CGAL::to_interval(x_lower(this->x())).first;
-        x_max = CGAL::to_interval(x_upper(this->x())).second;
-        y_min = CGAL::to_interval(y_lower(*this)).first;
-        y_max = CGAL::to_interval(y_upper(*this)).second;
-        return Bbox_2(x_min,y_min,x_max,y_max);
+    Bound lower_bound_y() const {
+      return this->curve().status_line_at_exact_x(this->x()).
+          lower_bound(this->arcno());
     }
 
-    Bbox_2 approximation_box_2(double b) const {
-
-        typename X_real_traits_1::Refine x_refine;
-        typename Y_real_traits_1::Refine y_refine;
-
-        if(this->ptr()->_m_bbox_2_pair) {
-            double cached_prec = this->ptr()->_m_bbox_2_pair.get().first;
-            if(cached_prec <= b) {
-                return this->ptr()->_m_bbox_2_pair.get().second;
-            }
-        }
-
-        Bbox_2 box = approximation_box_2();
-        double x_diff = box.xmax()-box.xmin();
-        double y_diff = box.ymax()-box.ymin();
-        while(x_diff >= b || y_diff >= b) {
-            if(x_diff >= y_diff) {
-                x_refine(this->x());
-            } else {
-                y_refine(*this);
-            }
-            box = approximation_box_2();
-            x_diff = box.xmax()-box.xmin();
-            y_diff = box.ymax()-box.ymin();
-        }
-        this->ptr()->_m_bbox_2_pair = std::make_pair(b,box);
-        return box;
+    Bound upper_bound_y() const {
+      return this->curve().status_line_at_exact_x(this->x()).
+          upper_bound(this->arcno());
     }
 
-    template<typename Polynomial_2>
-    Coercion_interval interval_evaluate_2(const Polynomial_2& p) const {
-        
-        typename Coercion::Cast cast;
 
-        typedef typename CGAL::Polynomial_traits_d<Polynomial_2>::
-            Coefficient_const_iterator
-            Coefficient_const_iterator;
-        
-        typedef typename CGAL::Polynomial_traits_d<Polynomial_2>
-            ::Coefficient_const_iterator_range 
-            Coefficient_const_iterator_range;
-        
-        Coercion_interval iy(cast(get_approximation_y().lower()),
-                             cast(get_approximation_y().upper()));
-
-        // CGAL::Polynomial does not provide Coercion_traits for number
-        // types => therefore evaluate manually
-        Coefficient_const_iterator_range range = 
-            typename CGAL::Polynomial_traits_d<Polynomial_2>
-            :: Construct_coefficient_const_iterator_range()(p);
-        
-        Coefficient_const_iterator it = range.second - 1;
-        
-        Coercion_interval res(interval_evaluate_1(*it));
-        
-        Coefficient_const_iterator p_begin = range.first;
-
-        while((it--) != p_begin) 
-            res = res * iy + (interval_evaluate_1(*it));
-        return res;
-    }
-    
-    template<typename Polynomial_1>
-    Coercion_interval interval_evaluate_1(const Polynomial_1& p) const {
-        
-        typename Coercion::Cast cast;
-
-        typedef typename CGAL::Polynomial_traits_d<Polynomial_1>
-            ::Coefficient_const_iterator Coefficient_const_iterator;
-
-        Coercion_interval ix(cast(get_approximation_x().lower()),
-                             cast(get_approximation_x().upper()));
-        
-        typedef typename CGAL::Polynomial_traits_d<Polynomial_1>
-            ::Coefficient_const_iterator_range 
-            Coefficient_const_iterator_range;
-        
-        Coefficient_const_iterator_range range = 
-            typename CGAL::Polynomial_traits_d<Polynomial_1>
-            :: Construct_coefficient_const_iterator_range()(p);
-        
-        Coefficient_const_iterator it = range.second - 1;
-        
-        Coercion_interval res(cast(*it));
-
-        Coefficient_const_iterator p_begin = range.first;
-        while((it--) != p_begin) 
-            res = res * ix + Coercion_interval(cast(*it));
-        return res;
-    }
 
      // friend function to provide a fast hashing
     friend std::size_t hash_value(const Self& x) {

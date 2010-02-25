@@ -15,7 +15,7 @@
 
 // TODO: use new interface and remove this flag 
 #ifndef CGAL_AK_ENABLE_DEPRECATED_INTERFACE 
-#define CGAL_AK_ENABLE_DEPRECATED_INTERFACE 1
+#define CGAL_AK_ENABLE_DEPRECATED_INTERFACE 0
 #endif 
 
 #ifndef CGAL_ACK_FLAGS_H
