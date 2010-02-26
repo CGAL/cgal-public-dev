@@ -588,7 +588,7 @@ public:
         double double_y;
 
 
-        if (this->lower_bound_y()==this->upper_bound_y) {
+        if (this->lower_bound_y()==this->upper_bound_y()) {
             double_y = CGAL::to_double(convert_to_bfi(this->lower_bound_y()));
         } else if(is_y_zero()) {
             double_y = 0.;
@@ -599,8 +599,8 @@ public:
             }
             long final_prec = set_precision(BFI(),get_precision(BFI())+4);
             
-            BFI bfi = CGAL::hull(convert_to_bfi(lower(*this)), 
-                                  convert_to_bfi(upper(*this)));
+            BFI bfi = CGAL::hull(convert_to_bfi(this->lower_bound_y()), 
+				 convert_to_bfi(this->upper_bound_y()));
             
             while( !singleton(bfi) &&  
                    get_significant_bits(bfi) < final_prec  ){
