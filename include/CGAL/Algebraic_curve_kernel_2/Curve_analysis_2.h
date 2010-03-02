@@ -18,6 +18,11 @@
 #include <set>
 #include <map>
 
+#include <boost/mpl/has_xxx.hpp>
+#include <boost/type_traits/is_base_of.hpp>
+#include <boost/mpl/and.hpp>
+#include <boost/mpl/logical.hpp>
+
 #include <CGAL/basic.h>
 #include <CGAL/Cache.h>
 #include <CGAL/function_objects.h>
@@ -56,6 +61,70 @@ class Curve_analysis_2;
 
 namespace internal {
 
+template<typename Comparable,typename has_template_typedefs> 
+  struct Is_derived_from_Handle_with_policy {};
+  
+template<typename Comparable> 
+  struct Is_derived_from_Handle_with_policy<Comparable,boost::true_type> {
+
+    typedef typename
+      boost::is_base_of< Handle_with_policy
+                             < typename Comparable::Rep,
+			       typename Comparable::Handle_policy,
+                               typename Comparable::Allocator >,
+                         Comparable 
+                       >::type Tag;
+};
+
+template<typename Comparable> 
+  struct Is_derived_from_Handle_with_policy<Comparable,boost::false_type> {
+
+    typedef boost::false_type Tag;
+};
+
+
+template<typename Comparable,typename Tag> struct Compare_for_vert_line_map_ 
+    {};
+
+template<typename Comparable>
+  struct Compare_for_vert_line_map_<Comparable,boost::true_type> {
+
+    bool operator() (const Comparable& a, const Comparable& b) {
+      return CGAL::Handle_id_less_than< Comparable >()(a,b);
+    }
+};
+
+template<typename Comparable>
+  struct Compare_for_vert_line_map_<Comparable,boost::false_type> {
+
+    bool operator() (const Comparable& a, const Comparable& b) {
+      return a<b;
+    }
+};
+ 
+template<typename Comparable> struct Compare_for_vert_line_map
+  : public std::binary_function<Comparable,Comparable,bool> {
+    
+  BOOST_MPL_HAS_XXX_TRAIT_DEF(Rep);
+  BOOST_MPL_HAS_XXX_TRAIT_DEF(Handle_policy);
+  BOOST_MPL_HAS_XXX_TRAIT_DEF(Allocator);
+
+  typedef CGAL::internal::Is_derived_from_Handle_with_policy
+    < Comparable,
+      boost::mpl::and_<
+        has_Rep<Comparable>,
+        has_Handle_policy<Comparable>,
+        has_Allocator<Comparable> > > Tag;
+  
+  public:
+
+  bool operator() (const Comparable& a, const Comparable& b) {
+    return Compare_for_vert_line_map_<Comparable,Tag>::operator()(a,b);
+  }
+
+};
+
+
 // \brief Representation class for algebraic curves.
 template< typename AlgebraicKernelWithAnalysis_2>
 class Curve_analysis_2_rep {
@@ -81,16 +150,11 @@ public:
     typedef std::map< Bound, Status_line_1 > 
     Vert_line_at_rational_map;
     
-#if 1 // TODO using x() results in much slower running times (pre-precision)
     typedef 
     std::map< Algebraic_real_1, 
               Status_line_1, 
-              CGAL::Handle_id_less_than< Algebraic_real_1 > >
+              internal::Compare_for_vert_line_map<Algebraic_real_1> >
     Vert_line_map;
-#else
-    typedef std::map< Algebraic_real_1, Status_line_1 >
-    Vert_line_map;
-#endif
     
     //!\name Constructors
     //!@{
