@@ -19,7 +19,7 @@
 #define CGAL_ACK_DEBUG_PRINT std::cout
 #endif
 
-#include <CGAL/Algebraic_curve_kernel_2/flags.h>
+#include <CGAL/Algebraic_kernel_d/flags.h>
 
 // demo-speficic flags
 
