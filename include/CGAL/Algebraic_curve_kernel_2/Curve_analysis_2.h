@@ -22,6 +22,8 @@
 #include <boost/type_traits/is_base_of.hpp>
 #include <boost/mpl/and.hpp>
 #include <boost/mpl/logical.hpp>
+#include <boost/type_traits/is_same.hpp>
+
 
 #include <CGAL/basic.h>
 #include <CGAL/Cache.h>
@@ -61,30 +63,32 @@ class Curve_analysis_2;
 
 namespace internal {
 
-template<typename Comparable,typename has_template_typedefs> 
-  struct Is_derived_from_Handle_with_policy {};
+  // TODO: Int_rep is not the final type! Replace by
+
+template<typename Comparable,bool has_template_typedefs> 
+  struct Is_derived_from_Handle_with_policy {
+    typedef boost::false_type Tag;
+};
   
 template<typename Comparable> 
-  struct Is_derived_from_Handle_with_policy<Comparable,boost::true_type> {
+  struct Is_derived_from_Handle_with_policy<Comparable,true> {
 
     typedef typename
-      boost::is_base_of< Handle_with_policy
-                             < typename Comparable::Rep,
+      boost::is_base_of< CGAL::Handle_with_policy
+                             < typename Comparable::Int_rep,
 			       typename Comparable::Handle_policy,
                                typename Comparable::Allocator >,
                          Comparable 
                        >::type Tag;
 };
 
-template<typename Comparable> 
-  struct Is_derived_from_Handle_with_policy<Comparable,boost::false_type> {
-
-    typedef boost::false_type Tag;
-};
-
 
 template<typename Comparable,typename Tag> struct Compare_for_vert_line_map_ 
-    {};
+    {
+      bool operator() (const Comparable& a, const Comparable& b) {
+	return a<b;
+      }	
+};
 
 template<typename Comparable>
   struct Compare_for_vert_line_map_<Comparable,boost::true_type> {
@@ -94,33 +98,30 @@ template<typename Comparable>
     }
 };
 
-template<typename Comparable>
-  struct Compare_for_vert_line_map_<Comparable,boost::false_type> {
-
-    bool operator() (const Comparable& a, const Comparable& b) {
-      return a<b;
-    }
-};
- 
 template<typename Comparable> struct Compare_for_vert_line_map
   : public std::binary_function<Comparable,Comparable,bool> {
     
-  BOOST_MPL_HAS_XXX_TRAIT_DEF(Rep);
+  BOOST_MPL_HAS_XXX_TRAIT_DEF(Int_rep);
   BOOST_MPL_HAS_XXX_TRAIT_DEF(Handle_policy);
   BOOST_MPL_HAS_XXX_TRAIT_DEF(Allocator);
 
-  typedef CGAL::internal::Is_derived_from_Handle_with_policy
+  typedef typename CGAL::internal::Is_derived_from_Handle_with_policy
     < Comparable,
-      boost::mpl::and_<
-        has_Rep<Comparable>,
-        has_Handle_policy<Comparable>,
-        has_Allocator<Comparable> > > Tag;
+      has_Int_rep<Comparable>::value &&
+      has_Handle_policy<Comparable>::value &&
+      has_Allocator<Comparable>::value>::Tag Tag;
   
   public:
 
   bool operator() (const Comparable& a, const Comparable& b) {
-    return Compare_for_vert_line_map_<Comparable,Tag>::operator()(a,b);
+
+    return eval(a,b);
   }
+
+  private:
+    
+  Compare_for_vert_line_map_<Comparable,Tag> eval;
+  
 
 };
 
