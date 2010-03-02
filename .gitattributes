@@ -237,21 +237,8 @@ demo/Algebraic_curve_kernel_2/rotated_curve_analyser_2.cpp -text
 doc_tex/Algebraic_kernel_d_ref/figures/cpvl.eps -text svneol=unset#application/postscript
 doc_tex/Algebraic_kernel_d_ref/figures/cpvl.fig -text svneol=unset#application/octet-stream
 /dont_submit -text
-include/CGAL/Algebraic_curve_kernel_2.h -text
-include/CGAL/Algebraic_curve_kernel_2/Curve_analysis_2.h -text
 include/CGAL/Algebraic_curve_kernel_2/Curve_analysis_2_exacus.h -text
-include/CGAL/Algebraic_curve_kernel_2/Curve_pair_analysis_2.h -text
 include/CGAL/Algebraic_curve_kernel_2/Curve_pair_analysis_2_exacus.h -text
-include/CGAL/Algebraic_curve_kernel_2/Event_line_builder.h -text
-include/CGAL/Algebraic_curve_kernel_2/LRU_hashed_map.h -text
-include/CGAL/Algebraic_curve_kernel_2/Shear_controller.h -text
-include/CGAL/Algebraic_curve_kernel_2/Shear_transformation.h -text
-include/CGAL/Algebraic_curve_kernel_2/Status_line_CA_1.h -text
-include/CGAL/Algebraic_curve_kernel_2/Status_line_CPA_1.h -text
-include/CGAL/Algebraic_curve_kernel_2/Xy_coordinate_2.h -text
-include/CGAL/Algebraic_curve_kernel_2/alg_real_utils.h -text
-include/CGAL/Algebraic_curve_kernel_2/flags.h -text
-include/CGAL/Algebraic_curve_kernel_2/shear.h -text
 include/CGAL/Algebraic_curve_kernel_2/trigonometric_approximation.h -text
 include/CGAL/Algebraic_curve_kernel_2_generator.h -text
 include/CGAL/Algebraic_kernel_1_generator.h -text
@@ -259,8 +246,3 @@ include/CGAL/Filtered_algebraic_curve_kernel_2.h -text
 include/CGAL/Rotated_algebraic_curve_kernel_2.h -text
 include/CGAL/algebraic_kernel_1_tools.h -text
 package_info/Algebraic_kernel_d/maintainer -text
-test/Algebraic_curve_kernel_2/Algebraic_curve_kernel_2.cpp -text
-test/Algebraic_curve_kernel_2/Curve_analysis_2.cpp -text
-test/Algebraic_curve_kernel_2/Curve_pair_analysis_2.cpp -text
-test/Algebraic_curve_kernel_2/alg_real_utils.cpp -text
-test/Algebraic_curve_kernel_2/include/CGAL/_test_algebraic_curve_kernel_2.h -text
