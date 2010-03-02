@@ -1650,6 +1650,161 @@ public:
     };
     CGAL_Algebraic_Kernel_cons(Swap_x_and_y_2, swap_x_and_y_2_object);
 
+#if CGAL_AK_ENABLE_DEPRECATED_INTERFACE
+
+    //! Refines the x-coordinate of an Xy_coordinate_2 object
+    class Refine_x_2 :
+        public std::unary_function<Xy_coordinate_2, void> {
+
+    public:
+        
+        Refine_x_2(const Algebraic_kernel_2* kernel) 
+            : _m_kernel(kernel) {}
+      
+        void operator()(const Xy_coordinate_2& r) const {
+            r.refine_x();            
+        }
+	/* TODO: if needed, include
+        void operator()(Xy_coordinate_2& r, int rel_prec) const {  
+            r.refine_x(rel_prec);
+        }
+	*/
+        
+    protected:
+
+        const Algebraic_kernel_2* _m_kernel;
+
+    };
+    CGAL_Algebraic_Kernel_pred(Refine_x_2, refine_x_2_object);
+    
+    class Refine_y_2 :
+        public std::unary_function<Xy_coordinate_2, void> {
+
+    public:
+
+        Refine_y_2(const Algebraic_kernel_2* kernel) 
+            : _m_kernel(kernel) {}
+      
+        void operator()(const Xy_coordinate_2& r) const {
+  	    return r.refine_y();
+        }
+        
+	/* TODO: if needed, include
+        void operator()(Xy_coordinate_2& r, int rel_prec) const {  
+            return r.refine_y(rel_prec);
+        }
+	*/
+    
+    protected:
+
+        const Algebraic_kernel_2* _m_kernel;
+
+    };
+    CGAL_Algebraic_Kernel_pred(Refine_y_2, refine_y_2_object);
+    
+    class Lower_bound_x_2 {
+       
+    public:
+
+        Lower_bound_x_2(const Algebraic_kernel_2* kernel) 
+            : _m_kernel(kernel) {}
+
+        typedef Xy_coordinate_2 argument_type;
+        typedef Bound result_type;
+            
+        result_type operator()(const Xy_coordinate_2& r) {
+	    return r.lower_bound_x();
+	}
+        
+    protected:
+
+        const Algebraic_kernel_2* _m_kernel;
+
+    };
+    CGAL_Algebraic_Kernel_cons(Lower_bound_x_2, lower_bound_x_2_object);
+    
+    class Upper_bound_x_2 {
+       
+    public:
+
+        Upper_bound_x_2(const Algebraic_kernel_2* kernel) 
+            : _m_kernel(kernel) {}
+
+        typedef Xy_coordinate_2 agrument_type;
+        typedef Bound result_type;
+            
+        result_type operator()(const Xy_coordinate_2& r) {
+            return r.upper_bound_x();
+        }
+    
+    protected:
+
+        const Algebraic_kernel_2* _m_kernel;
+
+    };
+    CGAL_Algebraic_Kernel_cons(Upper_bound_x_2, upper_bound_x_2_object);
+
+    class Lower_bound_y_2 {
+    
+    public:
+
+        Lower_bound_y_2(const Algebraic_kernel_2* kernel) 
+            : _m_kernel(kernel) {}
+        
+        typedef Xy_coordinate_2 agrument_type;
+        typedef Bound result_type;
+            
+        result_type operator()(const Xy_coordinate_2& r) {
+	  return r.lower_bound_y();
+	}
+
+    protected:
+
+        const Algebraic_kernel_2* _m_kernel;
+
+    };
+    CGAL_Algebraic_Kernel_cons(Lower_bound_y_2, lower_bound_y_2_object);
+    
+    //! an upper bound of the y-coordinate of \c r
+    class Upper_bound_y_2 {
+    
+    public:
+
+        Upper_bound_y_2(const Algebraic_kernel_2* kernel) 
+            : _m_kernel(kernel) {}
+   
+        typedef Xy_coordinate_2 agrument_type;
+        typedef Bound result_type;
+            
+        result_type operator()(const Xy_coordinate_2& r) {
+ 	  return r.upper_bound_y();
+	}
+
+    protected:
+
+        const Algebraic_kernel_2* _m_kernel;
+
+    };
+    CGAL_Algebraic_Kernel_cons(Upper_bound_y_2, upper_bound_y_2_object);
+    
+
+
+  typedef Bound Boundary; 
+  typedef Lower_bound_x_2 Lower_boundary_x_2;
+  typedef Lower_bound_y_2 Lower_boundary_y_2;
+  typedef Upper_bound_x_2 Upper_boundary_x_2;
+  typedef Upper_bound_y_2 Upper_boundary_y_2;
+  typedef Bound_between_x_2 Boundary_between_x_2;
+  typedef Bound_between_y_2 Boundary_between_y_2;
+
+  CGAL_Algebraic_Kernel_cons(Lower_boundary_x_2,lower_boundary_x_2_object);
+  CGAL_Algebraic_Kernel_cons(Lower_boundary_y_2,lower_boundary_y_2_object);
+  CGAL_Algebraic_Kernel_cons(Upper_boundary_x_2,upper_boundary_x_2_object);
+  CGAL_Algebraic_Kernel_cons(Upper_boundary_y_2,upper_boundary_y_2_object);
+  CGAL_Algebraic_Kernel_cons(Boundary_between_x_2,boundary_between_x_2_object);
+  CGAL_Algebraic_Kernel_cons(Boundary_between_y_2,boundary_between_y_2_object);
+#endif
+
 
 #undef CGAL_Algebraic_Kernel_pred    
 #undef CGAL_Algebraic_Kernel_cons 

@@ -619,9 +619,6 @@ public:
     public:
 
     
-    /*!
-     * \brief Refines the x-xoordinate
-     */
     void refine_y() const {
         this->curve().status_line_at_exact_x(this->x()).refine(this->arcno());
     }
@@ -636,6 +633,21 @@ public:
           upper_bound(this->arcno());
     }
 
+#if CGAL_AK_ENABLE_DEPRECATED_INTERFACE
+
+    void refine_x() const {
+      this->x().refine();
+    }
+
+    Bound lower_bound_x() const {
+      return this->x().low();
+    }
+
+    Bound upper_bound_x() const {
+      return this->x().high();
+    }
+
+#endif
 
 
      // friend function to provide a fast hashing
