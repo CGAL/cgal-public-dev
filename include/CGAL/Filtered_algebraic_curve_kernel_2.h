@@ -21,7 +21,7 @@
 #define CGAL_FILTERED_ALGEBRAIC_CURVE_KERNEL_2_H
 
 #include <CGAL/basic.h>
-#include <CGAL/Algebraic_curve_kernel_2.h>
+#include <CGAL/Algebraic_kernel_d/Algebraic_curve_kernel_2.h>
 
 CGAL_BEGIN_NAMESPACE
 

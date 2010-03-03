@@ -41,7 +41,7 @@
 
 #include <CGAL/Algebraic_kernel_d/Real_embeddable_extension.h>
 #include <CGAL/Algebraic_kernel_1.h>
-#include <CGAL/Algebraic_curve_kernel_2.h>
+#include <CGAL/Algebraic_kernel_d/Algebraic_curve_kernel_2.h>
 #include <CGAL/Filtered_algebraic_curve_kernel_2.h>
 
 #define BENCH_DEBUG_OUT 0
