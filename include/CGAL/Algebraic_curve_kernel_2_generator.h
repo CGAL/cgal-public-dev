@@ -21,9 +21,10 @@
 #include <CGAL/basic.h>
 
 #include <CGAL/Arithmetic_kernel.h>
+#include <CGAL/Algebraic_kernel_1_generator.h>
 #include <CGAL/Algebraic_kernel_d/Algebraic_curve_kernel_2.h>
 #include <CGAL/Filtered_algebraic_curve_kernel_2.h>
-#include <CGAL/Algebraic_kernel_1_generator.h>
+
 
 CGAL_BEGIN_NAMESPACE
 
