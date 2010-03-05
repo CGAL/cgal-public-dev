@@ -101,13 +101,13 @@ public:
     //! type of 1-curve analysis
     typedef typename AK_2::Curve_analysis_2 Curve_analysis_2;
     //! type of result (bivariate polynomials solution)
-    typedef typename AK_2::Xy_coordinate_2 Xy_coordinate_2;
+    typedef typename AK_2::Coordinate_2 Coordinate_2;
         
     // shall we pass as a parameter internal polynomials instead of curves  ?
     //! container of input curves
     typedef std::vector<Curve_analysis_2> Curve_vector;
     //! container of resulting solutions
-    typedef std::vector<Xy_coordinate_2> Root_vector;
+    typedef std::vector<Coordinate_2> Root_vector;
     //! container of multiplicities
     typedef std::vector<int> Mult_vector;
     
@@ -173,13 +173,13 @@ public:
     //! type of 1-curve analysis
     typedef typename AK_2::Curve_analysis_2 Curve_analysis_2;
     //! type of result (bivariate polynomials solution)
-    typedef typename AK_2::Xy_coordinate_2 Xy_coordinate_2;
+    typedef typename AK_2::Coordinate_2 Coordinate_2;
         
     // shall we pass as a parameter internal polynomials instead of curves  ?
     //! container of input curves
     typedef std::vector<Curve_analysis_2> Curve_vector;
     //! container of resulting solutions
-    typedef std::vector<Xy_coordinate_2> Root_vector;
+    typedef std::vector<Coordinate_2> Root_vector;
     //! container of multiplicities
     typedef std::vector<int> Mult_vector;
     
@@ -219,13 +219,13 @@ public:
 //! type of 1-curve analysis
     typedef typename AK_2::Curve_analysis_2 Curve_analysis_2;
     //! type of result (bivariate polynomials solution)
-    typedef typename AK_2::Xy_coordinate_2 Xy_coordinate_2;
+    typedef typename AK_2::Coordinate_2 Coordinate_2;
         
     // shall we pass as a parameter internal polynomials instead of curves  ?
     //! container of input curves
     typedef std::vector<Curve_analysis_2> Curve_vector;
     //! container of resulting solutions
-    typedef std::vector<Xy_coordinate_2> Root_vector;
+    typedef std::vector<Coordinate_2> Root_vector;
     //! container of multiplicities
     typedef std::vector<int> Mult_vector;
     
@@ -248,8 +248,8 @@ public:
  
     void op() 
     {
-        typedef typename Xy_coordinate_2::Bound Bound;
-        typedef typename Xy_coordinate_2::Bound_interval
+        typedef typename Coordinate_2::Bound Bound;
+        typedef typename Coordinate_2::Bound_interval
                 Bound_interval;
 
         ::CGAL::set_mode(std::cerr, ::CGAL::IO::PRETTY);
@@ -279,7 +279,7 @@ Benchmark_result do_benchmark(std::string filename, int n_samples = 5)
 {
     typedef AlgebraicCurveKernel_2 AK_2;
 
-    typedef typename AK_2::Xy_coordinate_2 Xy_coordinate_2;
+    typedef typename AK_2::Coordinate_2 Coordinate_2;
     typedef typename AK_2::Curve_analysis_2 Curve_analysis_2;
     typedef typename AK_2::Internal_polynomial_2 Internal_polynomial_2;
     
