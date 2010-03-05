@@ -18,7 +18,7 @@
 #include <CGAL/Handle_with_policy.h>
 #include <CGAL/Arr_enums.h>
 
-#include <CGAL/Algebraic_curve_kernel_2/Xy_coordinate_2.h>
+#include <CGAL/Algebraic_curve_kernel_2/Coordinate_2.h>
 #include <CGAL/Algebraic_curve_kernel_2/Status_line_CA_1.h>
 
 CGAL_BEGIN_NAMESPACE
@@ -104,19 +104,19 @@ public:
     typedef Rep_ Rep;
     
     //! x-coordinate type
-    typedef typename Algebraic_curve_kernel_2::X_coordinate_1 X_coordinate_1;
+    typedef typename Algebraic_curve_kernel_2::Coordinate_1 Coordinate_1;
 
     //! y-coordinate type
-    typedef X_coordinate_1 Y_coordinate_1;
+    typedef Coordinate_1 Y_coordinate_1;
 
     //! type of a curve point
-    typedef typename Algebraic_curve_kernel_2::Xy_coordinate_2 Xy_coordinate_2;
+    typedef typename Algebraic_curve_kernel_2::Coordinate_2 Coordinate_2;
 
     //! required by Status_line_CA_1
-    typedef X_coordinate_1 Algebraic_real_1;
+    typedef Coordinate_1 Algebraic_real_1;
 
     //! required by Status_line_CA_1
-    typedef Xy_coordinate_2 Algebraic_real_2;
+    typedef Coordinate_2 Algebraic_real_2;
 
     //! supporting polynomial type
     typedef typename Algebraic_curve_kernel_2::Polynomial_2
@@ -241,7 +241,7 @@ public:
         typedef typename Internal_curve_2::Event1_info Event1_info;
         size_type n_arcs = _internal_curve().arcs_over_interval(i);
         Status_line_1 sline
-            (X_coordinate_1(_internal_curve().bound_value_in_interval(i)),
+            (Coordinate_1(_internal_curve().bound_value_in_interval(i)),
              i,
              *this,
              n_arcs);
@@ -263,7 +263,7 @@ public:
     //! (\c status_line_of_interval(i+1)) is returned.
     //! 
     //! \pre \c x is finite
-    Status_line_1 status_line_for_x(X_coordinate_1 x,
+    Status_line_1 status_line_for_x(Coordinate_1 x,
         CGAL::Sign perturb = CGAL::ZERO) const
     {
         // CGAL_precondition(x is finite ??);
@@ -282,7 +282,7 @@ public:
     //! \brief returns an instance of StatusLine_1 at a given \c x
     //!
     //! \pre \c x is finite
-    Status_line_1 status_line_at_exact_x(X_coordinate_1 x) const
+    Status_line_1 status_line_at_exact_x(Coordinate_1 x) const
     {
         // CGAL_precondition(x is finite ??);
         size_type i;
@@ -304,7 +304,7 @@ public:
      * returns the index of the event at the status line defined by
      * \c s x-coordinate, or -1 if \c s does not lie on the curve.
      */
-    size_type find(const Xy_coordinate_2& s) const {
+    size_type find(const Coordinate_2& s) const {
         return 0;
     }
 

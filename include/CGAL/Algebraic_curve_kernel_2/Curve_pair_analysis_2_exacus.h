@@ -100,16 +100,16 @@ public:
     typedef Rep_ Rep;
 
     //! x-coordinate type
-    typedef typename Algebraic_curve_kernel_2::X_coordinate_1 X_coordinate_1;
+    typedef typename Algebraic_curve_kernel_2::Coordinate_1 Coordinate_1;
 
     //! type of a curve point
-    typedef typename Algebraic_curve_kernel_2::Xy_coordinate_2 Xy_coordinate_2;
+    typedef typename Algebraic_curve_kernel_2::Coordinate_2 Coordinate_2;
 
     //! required by Status_line_CPA_1
-    typedef X_coordinate_1 Algebraic_real_1;
+    typedef Coordinate_1 Algebraic_real_1;
 
     //! required by Status_line_CPA_1
-    typedef Xy_coordinate_2 Algebraic_real_2;
+    typedef Coordinate_2 Algebraic_real_2;
 
     //! type of 1-curve analysis
     typedef typename Algebraic_curve_kernel_2::Curve_analysis_2 
@@ -306,7 +306,7 @@ public:
      * 
      * \pre \c x is finite
      */
-    Status_line_1 status_line_for_x(X_coordinate_1 x,
+    Status_line_1 status_line_for_x(Coordinate_1 x,
         CGAL::Sign perturb = CGAL::ZERO) const {
         
         // CGAL_precondition(x is finite ??);
@@ -330,7 +330,7 @@ public:
      *
      * \pre \c x is finite
      */
-    Status_line_1 status_line_at_exact_x(X_coordinate_1 x) const {
+    Status_line_1 status_line_at_exact_x(Coordinate_1 x) const {
         // CGAL_precondition(x is finite ??);
         size_type i;
         bool is_evt;
