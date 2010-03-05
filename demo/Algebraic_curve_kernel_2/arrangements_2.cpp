@@ -51,7 +51,7 @@ CGAL::Timer overall_timer;
 #include <CGAL/Filtered_algebraic_curve_kernel_2.h>
 #include <CGAL/Filtered_curved_kernel_via_analysis_2.h>
 #else
-#include <CGAL/Curved_kernel_via_analysis_2.h>
+#include <CGAL/Curved_kernel_via_analysis_2/Curved_kernel_via_analysis_2_impl.h>
 #endif
 
 #include <CGAL/Arrangement_2.h>
