@@ -29,7 +29,7 @@
 
 #include <CGAL/config.h>
 
-#include <CGAL/Curved_kernel_via_analysis_2.h>
+#include <CGAL/Curved_kernel_via_analysis_2/Curved_kernel_via_analysis_2_impl.h>
 #include <CGAL/Curved_kernel_via_analysis_2/Curved_kernel_via_analysis_2_functors.h>
 
 #include <CGAL/Curved_kernel_via_analysis_2l/Surface_point_2l.h>

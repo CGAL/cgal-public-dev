@@ -34,7 +34,7 @@
 
 #include <CGAL/Cartesian.h>
 
-#include <CGAL/Curved_kernel_via_analysis_2.h>
+#include <CGAL/Curved_kernel_via_analysis_2/Curved_kernel_via_analysis_2_impl.h>
 #include <CGAL/Curved_kernel_via_analysis_2/Point_2.h>
 
 #include <CGAL/Arrangement_2l/Restricted_cad_3.h>

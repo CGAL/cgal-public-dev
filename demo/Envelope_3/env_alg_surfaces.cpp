@@ -34,7 +34,7 @@
 #include <CGAL/Arithmetic_kernel.h>
 
 #include <CGAL/Algebraic_curve_kernel_2_generator.h>
-#include <CGAL/Curved_kernel_via_analysis_2.h> // traits for Arr_2
+#include <CGAL/Curved_kernel_via_analysis_2/Curved_kernel_via_analysis_2_impl.h> // traits for Arr_2
 
 #include <CGAL/Algebraic_kernel_d/Algebraic_surface_3.h>
 #include <CGAL/Algebraic_kernel_d/IO/Algebraic_surface_3_iostream.h>
