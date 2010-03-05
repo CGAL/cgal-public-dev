@@ -100,9 +100,16 @@ public:
     //! type of coefficient
     typedef typename Base::Coefficient Coefficient;
 
-    //! type of x-coordinate
-    typedef typename Base::X_coordinate_1 X_coordinate_1;
+    //! type of algebraic real
+    typedef typename Base::Algebraic_real_1 Algebraic_real_1;
 
+    //! type of bivariate solution
+    typedef typename Base::Algebraic_real_2 Algebraic_real_2;
+
+    //! type of 1d-coordinate
+    typedef typename Base::Coordinate_1 Coordinate_1;
+
+    //! type of 2d-coordinate
     typedef typename Algebraic_kernel_1::Bound Bound;
         
     //!@}
@@ -112,7 +119,7 @@ public:
     }
     
     //! type of a curve point 
-    typedef typename Base::Xy_coordinate_2 Xy_coordinate_2;
+    typedef typename Base::Coordinate_2 Coordinate_2;
 
     //! type of 1-curve analysis
     typedef typename Base::Curve_analysis_2 Curve_analysis_2;
@@ -122,7 +129,7 @@ public:
 
 public:
     
-    typedef typename Xy_coordinate_2::Bbox_2 Bbox_2;
+    typedef typename Algebraic_real_2::Bbox_2 Bbox_2;
 
     static double& threshold() {
         static boost::optional<double> _b;
@@ -135,13 +142,13 @@ public:
 protected:
 
     class Approximate_compare_y_2 :
-        public std::binary_function< Xy_coordinate_2, Xy_coordinate_2, 
+        public std::binary_function< Algebraic_real_2, Algebraic_real_2, 
                 Comparison_result > {
         
     public:
 
-        Comparison_result operator()(const Xy_coordinate_2& xy1, 
-                                     const Xy_coordinate_2& xy2) const {
+        Comparison_result operator()(const Algebraic_real_2& xy1, 
+                                     const Algebraic_real_2& xy2) const {
 
 	  /* TODO FIX
             Bbox_2 bbox1 = xy1.approximation_box_2(threshold()),
@@ -173,8 +180,8 @@ public:
         Compare_y_2(const Algebraic_kernel_2* kernel) : Base(kernel)
         {}
 
-        Comparison_result operator()(const Xy_coordinate_2& xy1, 
-                                     const Xy_coordinate_2& xy2) const {
+        Comparison_result operator()(const Algebraic_real_2& xy1, 
+                                     const Algebraic_real_2& xy2) const {
 
             CGAL::Comparison_result res = Approximate_compare_y_2()(xy1,xy2);
             if(res != CGAL::EQUAL) 
@@ -199,8 +206,8 @@ public:
         Compare_xy_2(const Algebraic_kernel_2* kernel) : Base(kernel)
         {}
 
-        Comparison_result operator()(const Xy_coordinate_2& xy1, 
-                                     const Xy_coordinate_2& xy2, 
+        Comparison_result operator()(const Algebraic_real_2& xy1, 
+                                     const Algebraic_real_2& xy2, 
                                      bool equal_x = false) const {
 
             CGAL::Comparison_result res = 
@@ -232,7 +239,7 @@ public:
         Sign_at_2(const Algebraic_kernel_2* kernel) : Base(kernel)
         {}
 
-        typedef typename Xy_coordinate_2::Bound_interval Interval;
+        typedef typename Algebraic_real_2::Bound_interval Interval;
         
         typedef typename CGAL::Polynomial_traits_d<Polynomial_2>
             ::template Rebind<Bound,1>::Other::Type
@@ -242,7 +249,7 @@ public:
             Poly_rat_2;
         
         Sign operator()(const Curve_analysis_2& ca,
-                const Xy_coordinate_2& r) const
+                const Algebraic_real_2& r) const
         {
             if(ca.is_identical(r.curve())) // point lies on the same curve
                 return CGAL::ZERO;
@@ -260,7 +267,7 @@ public:
         }
 
         Sign operator()(Polynomial_2& f,
-                        const Xy_coordinate_2& r) const
+                        const Algebraic_real_2& r) const
         {
             return (*this)(typename Base::Construct_curve_2()(f),r);
         }
