@@ -246,3 +246,4 @@ include/CGAL/Filtered_algebraic_curve_kernel_2.h -text
 include/CGAL/Rotated_algebraic_curve_kernel_2.h -text
 include/CGAL/algebraic_kernel_1_tools.h -text
 package_info/Algebraic_kernel_d/maintainer -text
+test/Algebraic_kernel_d/algebraic_kernel_1_tools.cpp -text
