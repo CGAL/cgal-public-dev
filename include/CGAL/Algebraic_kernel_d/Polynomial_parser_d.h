@@ -31,9 +31,10 @@
  *  Parser for .. polynomials
  */
 
-#ifndef POLYNOMIAL_PARSER_D_H
-#define POLYNOMIAL_PARSER_D_H
+#ifndef CGAL_POLYNOMIAL_PARSER_D_H
+#define CGAL_POLYNOMIAL_PARSER_D_H
 
+#include <CGAL/config.h>
 #include <CGAL/Arithmetic_kernel.h>
 #include <CGAL/Polynomial_traits_d.h>
 
@@ -425,6 +426,6 @@ const char Polynomial_parser_d< _Poly_d, ValidyChecker >::var_upper[] =
 
 } // namespace CGAL
 
-#endif // POLYNOMIAL_PARSER_D_H
+#endif // CGAL_POLYNOMIAL_PARSER_D_H
 
 
