@@ -231,6 +231,7 @@ benchmark/Algebraic_kernel_d/data/resultants_from_0090_quadrics_with_0090_bits.n
 demo/Algebraic_curve_kernel_2/arrangements_2.cpp -text
 demo/Algebraic_curve_kernel_2/curve_analyser_2.cpp -text
 demo/Algebraic_curve_kernel_2/curve_pair_analyser_2.cpp -text
+demo/Algebraic_curve_kernel_2/generate_bezier_curves.cpp -text
 demo/Algebraic_curve_kernel_2/include/CGAL/Polynomial_parser_2.h -text
 demo/Algebraic_curve_kernel_2/rotated_arrangements_2.cpp -text
 demo/Algebraic_curve_kernel_2/rotated_curve_analyser_2.cpp -text
