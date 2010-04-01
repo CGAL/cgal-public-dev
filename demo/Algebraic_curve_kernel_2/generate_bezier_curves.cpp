@@ -16,14 +16,14 @@ void print_help(char* execname) {
     << "This program creates a set of semi random bezier curves \n"
     << "It requires the following input parameters: \n" 
     << "[number of curves] \n"
-    << "[degree of the curves]\n "
+    << "[degree of the curves]\n"
     << "[number of interpolation points] \n"
-    // << "[percentage to use a tangent at a point] in [0..100] \n"
+    << "[percentage to use a tangent at a point] in [0..100] \n"
     << "[range for random integer points / tangent] \n" << std::endl;
 }
 
 int main(int argc, char** argv) {
-    if(argc<3) {
+    if(argc<6) {
         print_help(argv[0]);
         std::exit(-1);
     }
@@ -33,7 +33,7 @@ int main(int argc, char** argv) {
     int no_curves = atoi(argv[curr_arg++]);
     int degree = atoi(argv[curr_arg++]);
     int no_points = atoi(argv[curr_arg++]);
-    // int tangent_prob = atoi(argv[curr_arg++]);
+    int tangent_prob = atoi(argv[curr_arg++]);
     int range = atoi(argv[curr_arg++]);
 
     std::cerr
@@ -41,8 +41,8 @@ int main(int argc, char** argv) {
       << "[number of curves]                                   " << no_curves << "\n"
       << "[degree of the curves]                               " << degree << "\n"
       << "[number of interpolation points]                     " << no_points << "\n"
-      // << "[percentage to use a tangent at a point] in [0..100] " << tangent_prob << "  \n"
-      << "[range for random integer points / tangent]          " << range << " \n" 
+      << "[percentage to use a tangent at a point] in [0..100] " << tangent_prob << "\n"
+      << "[range for random integer points / tangent]          " << range << "\n" 
       << std::endl;
 
     
@@ -86,6 +86,9 @@ int main(int argc, char** argv) {
       options.set_verbosity (0) ;
 
       for (int i = 0; i<=degree; i++){ // generate degree+1 equations 
+        bool use_tangent = 
+          random.get_int(0,100)<tangent_prob && i < degree; 
+          
         Rational t0 = Rational(1)/(degree+2);
         Rational tj = 0; 
         std::vector<Rational> equation; 
@@ -93,12 +96,21 @@ int main(int argc, char** argv) {
           tj += t0;
           xlp.set_a(j,i,Bersteins[i].evaluate(tj));
           ylp.set_a(j,i,Bersteins[i].evaluate(tj));
+          if(use_tangent){
+            xlp.set_a(j,i+1,DBersteins[i].evaluate(tj));
+            ylp.set_a(j,i+1,DBersteins[i].evaluate(tj));
+          }
           // equation.push_back(Bersteins[i].evaluate(tj));
         }
         int index = random.get_int(0,no_points-1);
         xlp.set_r(i,CGAL::EQUAL); 
         xlp.set_b(i,xpoints[index]);
         ylp.set_b(i,ypoints[index]);   
+        if(use_tangent){
+          xlp.set_b(i+1,xtangents[index]);
+          ylp.set_b(i+1,ytangents[index]);
+          i++;
+        }
       }
       
       Solution xs = CGAL::solve_linear_program(xlp, Rational(),options);
