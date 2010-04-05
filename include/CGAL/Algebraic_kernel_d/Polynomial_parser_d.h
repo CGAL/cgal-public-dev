@@ -15,8 +15,8 @@
 //
 // ----------------------------------------------------------------------------
 //
-// Library       : NumeriX
-// File          : include/NiX/Polynomial_parser_d.h
+// Library       : ??
+// File          : ../Polynomial_parser_d.h
 // SoX_release   : $Name:  $
 // Revision      : $Revision$
 // Revision_date : $Date$
@@ -33,6 +33,10 @@
 
 #ifndef CGAL_POLYNOMIAL_PARSER_D_H
 #define CGAL_POLYNOMIAL_PARSER_D_H
+
+//!NOTE define \c CGAL_POLYNOMIAL_PARSE_FLOATING_POINT prior to including this
+//! file if you want to parse polynomials with floating-points coefficients
+//! in this case the result is a rational polynomial
 
 #include <CGAL/config.h>
 #include <CGAL/Arithmetic_kernel.h>
@@ -71,15 +75,21 @@ struct _Default_checker {
     }
 };
 
-} // anonymous namespace 
+} // anonymous namespace
 
 namespace CGAL {
 
-/*! \brief this functor implements parsing of bivariate polynomials
+//TODO: policy class for the parser including coefficient conversion,
+// variable names, validity check, etc..
+// template < class _Poly_d >
+// class Polynomial_parser_traits {
+// }
+
+/*! \brief parsing d-variate polynomials in Maple format
  * 
  * input format (y is outermost variable), e.g.:
- * (y-1)^4 + (-1)*y^3 + (x + y)^2 - (2123234523*x^2 - 2*y*y*x + 3*x*132123)^3
- * (y + x - 3)^3 = x + y - 123 + y*x^2
+ * (y-1)^4 + (-1)*y^3 + (x + z)^2 - (2123234523*x^2 - 2*y*y*x + 3*x*132123)^3
+ * (y + x - z + w - 3)^3 = x + y - 123/12312 + 1.00001z*x^2
  */
 template <class _Poly_d, class ValidyChecker = _Default_checker< _Poly_d > >
 struct Polynomial_parser_d
@@ -92,9 +102,6 @@ struct Polynomial_parser_d
     //! this instance's second template argument
     typedef ValidyChecker Validy_checker;
     
-    //! an instance of univariate polynomial
-    //typedef typename Poly_3::NT Poly_d;
-
     //! polynomial traits
     typedef CGAL::Polynomial_traits_d< Poly_d > PT;
 
@@ -147,7 +154,7 @@ public:
             // whitespace characters
             std::string s(in);
             const char *whitespace = " \f\n\r\t\v";
-            unsigned int cnt = s.find_first_of(whitespace,0);
+            std::size_t cnt = s.find_first_of(whitespace,0);
             while(cnt != std::string::npos){
                 s.erase(cnt, 1);
                 cnt = s.find_first_of(whitespace, cnt);
@@ -155,7 +162,7 @@ public:
                         
             //to handle the case when there is one '=' sign
             //we compute sides separetely and then subtract one from another
-            unsigned int loc;
+            std::size_t loc;
             std::string rhs;
             if((loc = s.find('=', 0)) != std::string::npos) {
                 rhs = s.substr(loc + 1); // right-hand side
@@ -187,10 +194,10 @@ protected:
     //! given a string \c cstr of length \c len starting with an open
     //! parentheses returns the place marking the end of the corresponding
     //! closing parentheses
-    unsigned int match_parenth(std::istream& is)
+    std::size_t match_parenth(std::istream& is)
     {   
         int count = 0;
-        unsigned int pos = 0, start = is.tellg(); // save pos of the first '('
+        std::size_t pos = 0, start = is.tellg(); // save pos of the first '('
         do {
             if(is.eof())
             return -1; // illegal number of parentheses
@@ -209,8 +216,7 @@ protected:
 
     //! constructs {x/y}^exp and returns the result as bivariate polynomial 
     //! \c res \c var encodes a variable (x or y) 
-    Poly_d construct_monomial(int idx, unsigned int exp)
-    {
+    Poly_d construct_monomial(int idx, unsigned int exp) {
         static Poly_d one(NT(1));
         if(exp == 0) // just return 1
             return one;
@@ -301,12 +307,12 @@ protected:
         
             // pos is the index of closing parentheses relative 
             // to the opening ')'
-            unsigned int pos = match_parenth(is);
+            std::size_t pos = match_parenth(is);
             if(pos == -1u)
                 throw Parser_exception(
                     "Parentheses do not match in basic term");
         
-            unsigned int beg = (unsigned int)is.tellg() + 1u;
+            std::size_t beg = (std::size_t)is.tellg() + 1u;
             std::string t = is.str().substr(beg, pos-1);
             is.seekg(pos+1, std::ios_base::cur);
             tmp = get_poly(t);
@@ -327,7 +333,7 @@ protected:
 
         switch(which_case) {
         case 0:
-          coeff = CGAL::ipower(coeff, static_cast< long >(power));
+            coeff = CGAL::ipower(coeff, static_cast< long >(power));
             tmp = Poly_d(coeff);
             break;
         case 1:
@@ -373,7 +379,7 @@ protected:
     Poly_d get_poly(std::string &s)
     {
        //std::cout << "getpoly: " << s << "\n";
-        unsigned int len = s.length();
+        std::size_t len = s.length();
         if(len == 0) // zero polynomial
             return Poly_d(NT(0));
                
