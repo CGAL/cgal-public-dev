@@ -228,7 +228,9 @@ benchmark/Algebraic_kernel_d/data/resultants_from_0090_quadrics_with_0060_bits.n
 benchmark/Algebraic_kernel_d/data/resultants_from_0090_quadrics_with_0070_bits.nix -text
 benchmark/Algebraic_kernel_d/data/resultants_from_0090_quadrics_with_0080_bits.nix -text
 benchmark/Algebraic_kernel_d/data/resultants_from_0090_quadrics_with_0090_bits.nix -text
+demo/Algebraic_curve_kernel_2/Bezier_curves_with_ak_2.cpp -text
 demo/Algebraic_curve_kernel_2/arrangements_2.cpp -text
+demo/Algebraic_curve_kernel_2/create_bezier_example -text
 demo/Algebraic_curve_kernel_2/curve_analyser_2.cpp -text
 demo/Algebraic_curve_kernel_2/curve_pair_analyser_2.cpp -text
 demo/Algebraic_curve_kernel_2/generate_bezier_curves.cpp -text

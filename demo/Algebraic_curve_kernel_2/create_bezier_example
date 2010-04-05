@@ -1,0 +1,21 @@
+if [ $# -lt 3 ];
+then
+	echo "Needs #curves, #points and gridsize"
+	exit
+fi
+
+no_curves=$1
+no_points=$2
+gridsize=$3
+
+echo $no_curves
+
+for (( i=0; i<$no_curves; i++))
+do
+	echo -ne "$no_points "
+        for (( j=0;j<$no_points;j++ ))
+	do
+		echo -ne "`expr $RANDOM % $gridsize` `expr $RANDOM % $gridsize ` "
+	done
+	echo
+done
