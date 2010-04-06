@@ -84,21 +84,20 @@ int main(int argc, char** argv) {
       
       CGAL::Quadratic_program_options options;
       options.set_verbosity (0) ;
-
+      
+      // one equation for each interpolation point or tangent
+      Rational ti = 0;      // parameter value for that point
       for (int i = 0; i<=degree; i++){ // generate degree+1 equations 
         bool use_tangent = 
           random.get_int(0,100)<tangent_prob && i < degree; 
-          
-        Rational t0 = Rational(1)/(degree+2);
-        Rational tj = 0; 
+        ti += Rational(1)/(degree+2); // increase parameter value for next point; 
         std::vector<Rational> equation; 
         for (int j = 0; j<=degree; j++){ // generate degree+1 entries 
-          tj += t0;
-          xlp.set_a(j,i,Bersteins[i].evaluate(tj));
-          ylp.set_a(j,i,Bersteins[i].evaluate(tj));
+          xlp.set_a(j,i,Bersteins[j].evaluate(ti));
+          ylp.set_a(j,i,Bersteins[j].evaluate(ti));
           if(use_tangent){
-            xlp.set_a(j,i+1,DBersteins[i].evaluate(tj));
-            ylp.set_a(j,i+1,DBersteins[i].evaluate(tj));
+            xlp.set_a(j,i+1,DBersteins[j].evaluate(ti));
+            ylp.set_a(j,i+1,DBersteins[j].evaluate(ti));
           }
           // equation.push_back(Bersteins[i].evaluate(tj));
         }
