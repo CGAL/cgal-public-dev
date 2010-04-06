@@ -48,16 +48,18 @@ int main(int argc, char** argv) {
     
     typedef CGAL::Arithmetic_kernel::Integer Integer;
     typedef CGAL::Arithmetic_kernel::Rational Rational;
+    CGAL::Fraction_traits<Rational>::Decompose decompose;
+      
     typedef CGAL::Polynomial<Rational> Poly_rat_1;
-    std::vector<Rational> xpoints,ypoints;
-    std::vector<Rational> xtangents,ytangents; 
+    std::vector<Integer> xpoints,ypoints;
+    std::vector<Integer> xtangents,ytangents; 
 
     CGAL::Random random(31); // that is my current age .-) 
     for(int i = 0; i < no_points;i++){
-      xpoints.push_back(Rational(random.get_int(-range,range)));
-      xtangents.push_back(Rational(random.get_int(-range,range)));
-      ypoints.push_back(Rational(random.get_int(-range,range)));
-      ytangents.push_back(Rational(random.get_int(-range,range)));
+      xpoints.push_back(Integer(random.get_int(-range,range)));
+      xtangents.push_back(Integer(random.get_int(-range,range)));
+      ypoints.push_back(Integer(random.get_int(-range,range)));
+      ytangents.push_back(Integer(random.get_int(-range,range)));
     }
     std::vector<Poly_rat_1> Bersteins;   
     std::vector<Poly_rat_1> DBersteins; 
@@ -71,13 +73,29 @@ int main(int argc, char** argv) {
       }
     }
     
+    
+    Integer lcm(1);
+    {
+      Rational ti = 0; 
+      Integer num,den;
+      for(int i = 0; i<=degree;i++){
+        ti+= Rational(1)/(degree+2);
+        for(int j = 0; j<=degree;j++){
+          decompose(Bersteins[j].evaluate(ti),num,den);
+          lcm *= (den/CGAL::gcd(den,lcm));
+          decompose(DBersteins[j].evaluate(ti),num,den);
+          lcm *= (den/CGAL::gcd(den,lcm));
+        }
+      }
+    }
+  
 
     std::cout << no_curves << std::endl; 
     for(int nc = 0; nc <no_curves; nc++){
       // lets try to procude one curve:
       // program and solution types
-      typedef CGAL::Quadratic_program<Rational> Program;
-      typedef CGAL::Quadratic_program_solution<Rational> Solution;
+      typedef CGAL::Quadratic_program<Integer> Program;
+      typedef CGAL::Quadratic_program_solution<Integer> Solution;
 
       Program xlp (CGAL::EQUAL, false, 0, false, 0);  
       Program ylp (CGAL::EQUAL, false, 0, false, 0);  
@@ -92,28 +110,34 @@ int main(int argc, char** argv) {
           random.get_int(0,100)<tangent_prob && i < degree; 
         ti += Rational(1)/(degree+2); // increase parameter value for next point; 
         std::vector<Rational> equation; 
-        for (int j = 0; j<=degree; j++){ // generate degree+1 entries 
-          xlp.set_a(j,i,Bersteins[j].evaluate(ti));
-          ylp.set_a(j,i,Bersteins[j].evaluate(ti));
+        for (int j = 0; j<=degree; j++){ // generate degree+1 entries
+          Integer num,den;
+          decompose(Bersteins[j].evaluate(ti)*lcm,num,den);
+          // std::cout << CGAL::integral_division(num,den) << " " ; 
+          xlp.set_a(j,i,CGAL::integral_division(num,den));
+          ylp.set_a(j,i,CGAL::integral_division(num,den));
           if(use_tangent){
-            xlp.set_a(j,i+1,DBersteins[j].evaluate(ti));
-            ylp.set_a(j,i+1,DBersteins[j].evaluate(ti));
+            decompose(DBersteins[j].evaluate(ti)*lcm,num,den);
+            xlp.set_a(j,i+1,CGAL::integral_division(num,den));
+            ylp.set_a(j,i+1,CGAL::integral_division(num,den));
           }
           // equation.push_back(Bersteins[i].evaluate(tj));
         }
         int index = random.get_int(0,no_points-1);
         xlp.set_r(i,CGAL::EQUAL); 
-        xlp.set_b(i,xpoints[index]);
-        ylp.set_b(i,ypoints[index]);   
+        // std::cout << xpoints[index] << " " ; 
+        xlp.set_b(i,xpoints[index]*lcm);
+        ylp.set_b(i,ypoints[index]*lcm);   
         if(use_tangent){
-          xlp.set_b(i+1,xtangents[index]);
-          ylp.set_b(i+1,ytangents[index]);
+          xlp.set_b(i+1,xtangents[index]*lcm);
+          ylp.set_b(i+1,ytangents[index]*lcm);
           i++;
         }
+        //std::cout << std::endl; 
       }
       
-      Solution xs = CGAL::solve_linear_program(xlp, Rational(),options);
-      Solution ys = CGAL::solve_linear_program(ylp, Rational(),options);
+      Solution xs = CGAL::solve_linear_program(xlp, Integer(),options);
+      Solution ys = CGAL::solve_linear_program(ylp, Integer(),options);
       
       std::vector<Rational> xcoord, ycoord; 
       
@@ -126,33 +150,32 @@ int main(int argc, char** argv) {
         ycoord.push_back(it->numerator() / it->denominator() );
       }
 
-      CGAL::Fraction_traits<Rational>::Decompose decompose;
-      
-
-      Integer lcm = 1;
-      // OUTPUT CURVE: 
-      std::cout << xcoord.size() <<" "; // number of control points  
-      for(int i = 0; i < xcoord.size();i++){
-        CGAL::simplify(xcoord[i]);
-        CGAL::simplify(ycoord[i]);
-        Integer num, den, g; 
-        decompose(xcoord[i],num,den);
-        lcm *= den / CGAL::gcd(lcm,den);
-        decompose(ycoord[i],num,den);
-        lcm *= den / CGAL::gcd(lcm,den);
-      }   
+      {
+        Integer lcm = 1;
+        // OUTPUT CURVE: 
+        std::cout << xcoord.size() <<" "; // number of control points  
+        for(int i = 0; i < xcoord.size();i++){
+          CGAL::simplify(xcoord[i]);
+          CGAL::simplify(ycoord[i]);
+          Integer num, den, g; 
+          decompose(xcoord[i],num,den);
+          lcm *= den / CGAL::gcd(lcm,den);
+          decompose(ycoord[i],num,den);
+          lcm *= den / CGAL::gcd(lcm,den);
+        }   
       
         
-      for(int i = 0; i < xcoord.size();i++){
-        CGAL::simplify(xcoord[i]*=lcm);
-        CGAL::simplify(ycoord[i]*=lcm);
-        Integer num, den;
-        decompose(xcoord[i],num,den);
-        std::cout << num << " "; 
-        decompose(ycoord[i],num,den);
-        std::cout << num << " "; 
-        
+        for(int i = 0; i < xcoord.size();i++){
+          CGAL::simplify(xcoord[i]*=lcm);
+          CGAL::simplify(ycoord[i]*=lcm);
+          Integer num, den;
+          decompose(xcoord[i],num,den);
+          std::cout << num << " "; 
+          decompose(ycoord[i],num,den);
+          std::cout << num << " "; 
+          
+        }
+        std::cout << std::endl; 
       }
-      std::cout << std::endl; 
     }
 }
