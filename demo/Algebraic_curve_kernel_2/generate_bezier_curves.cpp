@@ -127,12 +127,32 @@ int main(int argc, char** argv) {
         ycoord.push_back(it->numerator() / it->denominator() );
       }
 
+      CGAL::Fraction_traits<Rational>::Decompose decompose;
+      
+
+      Integer lcm = 1;
       // OUTPUT CURVE: 
       std::cout << xcoord.size() <<" "; // number of control points  
       for(int i = 0; i < xcoord.size();i++){
         CGAL::simplify(xcoord[i]);
         CGAL::simplify(ycoord[i]);
-        std::cout << xcoord[i] << " " << ycoord[i] << " "; // points  
+        Integer num, den, g; 
+        decompose(xcoord[i],num,den);
+        lcm *= den / CGAL::gcd(lcm,den);
+        decompose(ycoord[i],num,den);
+        lcm *= den / CGAL::gcd(lcm,den);
+      }   
+      
+        
+      for(int i = 0; i < xcoord.size();i++){
+        CGAL::simplify(xcoord[i]*=lcm);
+        CGAL::simplify(ycoord[i]*=lcm);
+        Integer num, den;
+        decompose(xcoord[i],num,den);
+        std::cout << num << " "; 
+        decompose(ycoord[i],num,den);
+        std::cout << num << " "; 
+        
       }
       std::cout << std::endl; 
     }
