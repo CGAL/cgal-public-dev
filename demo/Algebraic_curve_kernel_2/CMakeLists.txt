@@ -33,6 +33,7 @@ if ( CGAL_FOUND )
   include_directories(BEFORE $ENV{CGAL}/trunk/Arrangement_on_surface_2/include/)
   include_directories(BEFORE $ENV{CGAL}/candidate-packages/Algebraic_kernel_d/include/)
   include_directories(BEFORE $ENV{CGAL}/experimental-packages/Curved_kernel_via_analysis_2/include/)
+  include_directories(BEFORE $ENV{CGAL}/candidate-packages/Arrangement_on_surface_2_extension/include/)
 
   include_directories(BEFORE $ENV{CGAL}/trunk/STL_Extension/include/)
   include_directories(BEFORE $ENV{CGAL}/trunk/Testsuite/include/)

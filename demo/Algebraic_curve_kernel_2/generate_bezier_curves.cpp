@@ -106,7 +106,7 @@ int main(int argc, char** argv) {
       // lets try to procude one curve:
       // program and solution types
       typedef CGAL::Quadratic_program<Integer> Program;
-      typedef CGAL::Quadratic_program_solution<Rational> Solution;
+      typedef CGAL::Quadratic_program_solution<Integer> Solution;
 
       Program xlp (CGAL::EQUAL, false, 0, false, 0);  
       Program ylp (CGAL::EQUAL, false, 0, false, 0);  
@@ -148,8 +148,8 @@ int main(int argc, char** argv) {
         //std::cout << std::endl; 
       }
       
-      Solution xs = CGAL::solve_linear_program(xlp, Rational(),options);
-      Solution ys = CGAL::solve_linear_program(ylp, Rational(),options);
+      Solution xs = CGAL::solve_linear_program(xlp, Integer(),options);
+      Solution ys = CGAL::solve_linear_program(ylp, Integer(),options);
       
       std::vector<Rational> xcoord, ycoord; 
       for(Solution::Variable_value_iterator it = xs.variable_values_begin (); 
