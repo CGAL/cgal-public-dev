@@ -22,6 +22,15 @@ void print_help(char* execname) {
     << "[range for random integer points / tangent] \n" << std::endl;
 }
 
+template<class NT> NT fac(const NT& n){
+  if(n<=1) return 1;
+  return fac(n-1)*n;
+}
+template<class NT> NT binom(const NT& n,const NT& i){
+  return fac(n)/(fac(i)*fac(n-i));
+}
+
+
 int main(int argc, char** argv) {
     if(argc<6) {
         print_help(argv[0]);
@@ -63,10 +72,12 @@ int main(int argc, char** argv) {
     }
     std::vector<Poly_rat_1> Bersteins;   
     std::vector<Poly_rat_1> DBersteins; 
+    
+    CGAL::set_pretty_mode(std::cout);
     {
       Poly_rat_1 t = CGAL::shift(Poly_rat_1(1),1,0);
       for(int i = 0; i <= degree; i++){
-        Bersteins.push_back(CGAL::ipower(t-1,degree-i)*CGAL::ipower(t,i));
+        Bersteins.push_back(binom(degree,i)*CGAL::ipower(t-1,degree-i)*CGAL::ipower(t,i));
       }
       for(int i = 0; i <= degree; i++){
         DBersteins.push_back(CGAL::differentiate(Bersteins[i]));
@@ -95,7 +106,7 @@ int main(int argc, char** argv) {
       // lets try to procude one curve:
       // program and solution types
       typedef CGAL::Quadratic_program<Integer> Program;
-      typedef CGAL::Quadratic_program_solution<Integer> Solution;
+      typedef CGAL::Quadratic_program_solution<Rational> Solution;
 
       Program xlp (CGAL::EQUAL, false, 0, false, 0);  
       Program ylp (CGAL::EQUAL, false, 0, false, 0);  
@@ -109,6 +120,7 @@ int main(int argc, char** argv) {
         bool use_tangent = 
           random.get_int(0,100)<tangent_prob && i < degree; 
         ti += Rational(1)/(degree+2); // increase parameter value for next point; 
+
         std::vector<Rational> equation; 
         for (int j = 0; j<=degree; j++){ // generate degree+1 entries
           Integer num,den;
@@ -136,15 +148,15 @@ int main(int argc, char** argv) {
         //std::cout << std::endl; 
       }
       
-      Solution xs = CGAL::solve_linear_program(xlp, Integer(),options);
-      Solution ys = CGAL::solve_linear_program(ylp, Integer(),options);
+      Solution xs = CGAL::solve_linear_program(xlp, Rational(),options);
+      Solution ys = CGAL::solve_linear_program(ylp, Rational(),options);
       
       std::vector<Rational> xcoord, ycoord; 
-      
       for(Solution::Variable_value_iterator it = xs.variable_values_begin (); 
           it != xs.variable_values_end(); it++){ 
-        xcoord.push_back(it->numerator() / it->denominator() );
+        xcoord.push_back(it->numerator() / it->denominator() );  
       }
+
       for(Solution::Variable_value_iterator it = ys.variable_values_begin (); 
           it != ys.variable_values_end(); it++){ 
         ycoord.push_back(it->numerator() / it->denominator() );
@@ -170,9 +182,9 @@ int main(int argc, char** argv) {
           CGAL::simplify(ycoord[i]*=lcm);
           Integer num, den;
           decompose(xcoord[i],num,den);
-          std::cout << num << " "; 
+          std::cout << CGAL::integral_division(num,den) << " "; 
           decompose(ycoord[i],num,den);
-          std::cout << num << " "; 
+          std::cout << CGAL::integral_division(num,den)<< " "; 
           
         }
         std::cout << std::endl; 
