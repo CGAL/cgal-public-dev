@@ -19,7 +19,8 @@ void print_help(char* execname) {
     << "[degree of the curves]\n"
     << "[number of interpolation points] \n"
     << "[percentage to use a tangent at a point] in [0..100] \n"
-    << "[range for random integer points / tangent] \n" << std::endl;
+    << "[range for random integer points / tangent] \n" 
+    << "[number of points equal to each curve ]\n" << std::endl;
 }
 
 template<class NT> NT fac(const NT& n){
@@ -32,7 +33,7 @@ template<class NT> NT binom(const NT& n,const NT& i){
 
 
 int main(int argc, char** argv) {
-    if(argc<6) {
+    if(argc<7) {
         print_help(argv[0]);
         std::exit(-1);
     }
@@ -44,6 +45,7 @@ int main(int argc, char** argv) {
     int no_points = atoi(argv[curr_arg++]);
     int tangent_prob = atoi(argv[curr_arg++]);
     int range = atoi(argv[curr_arg++]);
+    int no_equal_p = atoi(argv[curr_arg++]);
 
     std::cerr
       << "create bezier curves for the following parameters: \n" 
@@ -63,7 +65,7 @@ int main(int argc, char** argv) {
     std::vector<Integer> xpoints,ypoints;
     std::vector<Integer> xtangents,ytangents; 
 
-    CGAL::Random random(31); // that is my current age .-) 
+    CGAL::Random random; // that is my current age .-) 
     for(int i = 0; i < no_points;i++){
       xpoints.push_back(Integer(random.get_int(-range,range)));
       xtangents.push_back(Integer(random.get_int(-range,range)));
@@ -83,6 +85,7 @@ int main(int argc, char** argv) {
         DBersteins.push_back(CGAL::differentiate(Bersteins[i]));
       }
     }
+    Rational step_size = Rational(6)/Rational(21);
     
     
     Integer lcm(1);
@@ -90,7 +93,7 @@ int main(int argc, char** argv) {
       Rational ti = 0; 
       Integer num,den;
       for(int i = 0; i<=degree;i++){
-        ti+= Rational(1)/(degree+2);
+        ti+= step_size;
         for(int j = 0; j<=degree;j++){
           decompose(Bersteins[j].evaluate(ti),num,den);
           lcm *= (den/CGAL::gcd(den,lcm));
@@ -119,7 +122,7 @@ int main(int argc, char** argv) {
       for (int i = 0; i<=degree; i++){ // generate degree+1 equations 
         bool use_tangent = 
           random.get_int(0,100)<tangent_prob && i < degree; 
-        ti += Rational(1)/(degree+2); // increase parameter value for next point; 
+        ti += step_size; // increase parameter value for next point; 
 
         std::vector<Rational> equation; 
         for (int j = 0; j<=degree; j++){ // generate degree+1 entries
@@ -138,8 +141,13 @@ int main(int argc, char** argv) {
         int index = random.get_int(0,no_points-1);
         xlp.set_r(i,CGAL::EQUAL); 
         // std::cout << xpoints[index] << " " ; 
-        xlp.set_b(i,xpoints[index]*lcm);
-        ylp.set_b(i,ypoints[index]*lcm);   
+        if(i<no_equal_p){
+          xlp.set_b(i,xpoints[i]*lcm);
+          ylp.set_b(i,ypoints[i]*lcm);
+        }else{
+          xlp.set_b(i,xpoints[index]*lcm);
+          ylp.set_b(i,ypoints[index]*lcm);
+        }
         if(use_tangent){
           xlp.set_b(i+1,xtangents[index]*lcm);
           ylp.set_b(i+1,ytangents[index]*lcm);
@@ -166,6 +174,7 @@ int main(int argc, char** argv) {
         Integer lcm = 1;
         // OUTPUT CURVE: 
         std::cout << xcoord.size() <<" "; // number of control points  
+        std::cerr << xcoord.size() <<" "; // number of control points  
         for(int i = 0; i < xcoord.size();i++){
           CGAL::simplify(xcoord[i]);
           CGAL::simplify(ycoord[i]);
@@ -183,11 +192,14 @@ int main(int argc, char** argv) {
           Integer num, den;
           decompose(xcoord[i],num,den);
           std::cout << CGAL::integral_division(num,den) << " "; 
+          std::cerr << CGAL::integral_division(num,den) << " ";
           decompose(ycoord[i],num,den);
+          std::cerr << CGAL::integral_division(num,den)<< " "; 
           std::cout << CGAL::integral_division(num,den)<< " "; 
           
         }
         std::cout << std::endl; 
+        std::cerr << std::endl; 
       }
     }
 }
