@@ -23,7 +23,7 @@
 
 #include <CGAL/Arithmetic_kernel.h>
 
-#include <CGAL/Algebraic_kernel_1.h>
+#include <CGAL/Algebraic_kernel_d_1.h>
 #include <CGAL/Algebraic_kernel_d/Algebraic_real_rep_bfi.h>
 #include <CGAL/Algebraic_kernel_d/Algebraic_real_quadratic_refinement_rep_bfi.h>
 #include <CGAL/Algebraic_kernel_d/Bitstream_descartes.h>
@@ -317,7 +317,7 @@ void single_benchmark( std::string filename, int samples = 5 ) {
     typedef Bound_   Bound;
     typedef RepClass    Rep_class;
     typedef Isolator_   Isolator;
-    typedef CGAL::Algebraic_kernel_1< Coeff, Bound, Rep_class, Isolator > AK;
+    typedef CGAL::Algebraic_kernel_d_1< Coeff, Bound, Rep_class, Isolator > AK;
 
     // Output result to cerr
     // I'm using cerr because the benchmark results are written to cout.

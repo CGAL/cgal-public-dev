@@ -40,7 +40,7 @@
 #include <AcX/Algebraic_curve_pair_2.h>
 
 #include <CGAL/Algebraic_kernel_d/Real_embeddable_extension.h>
-#include <CGAL/Algebraic_kernel_1.h>
+#include <CGAL/Algebraic_kernel_d_1.h>
 #include <CGAL/Algebraic_kernel_d/Algebraic_curve_kernel_2.h>
 #include <CGAL/Filtered_algebraic_curve_kernel_2.h>
 
@@ -378,7 +378,7 @@ int main( int argc, char** argv ) {
         typedef AcX::Algebraic_curve_2<AT> Curve_2;
         typedef AcX::Algebraic_curve_pair_2<Curve_2> Curve_pair_2;
             
-        typedef CGAL::Algebraic_kernel_1<Coefficient> Kernel_1;
+        typedef CGAL::Algebraic_kernel_d_1<Coefficient> Kernel_1;
         
         typedef CGAL::Filtered_algebraic_curve_kernel_2<Curve_pair_2, Kernel_1>
             Filtered_kernel_2;

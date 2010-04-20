@@ -245,7 +245,7 @@ include/CGAL/Algebraic_curve_kernel_2/Curve_analysis_2_exacus.h -text
 include/CGAL/Algebraic_curve_kernel_2/Curve_pair_analysis_2_exacus.h -text
 include/CGAL/Algebraic_curve_kernel_2/trigonometric_approximation.h -text
 include/CGAL/Algebraic_curve_kernel_2_generator.h -text
-include/CGAL/Algebraic_kernel_1_generator.h -text
+include/CGAL/Algebraic_kernel_d_1_generator.h -text
 include/CGAL/Filtered_algebraic_curve_kernel_2.h -text
 include/CGAL/Rotated_algebraic_curve_kernel_2.h -text
 include/CGAL/algebraic_kernel_1_tools.h -text

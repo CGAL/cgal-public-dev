@@ -19,23 +19,23 @@
 #include <CGAL/basic.h>
 #include <CGAL/algebraic_kernel_1_tools.h>
 
-template <class Algebraic_kernel_1>
+template <class Algebraic_kernel_d_1>
 void test_algebraic_kernel_1_tools(){
-  typedef typename Algebraic_kernel_1::Coefficient Coefficient;
-  typedef typename Algebraic_kernel_1::Bound Bound;
+  typedef typename Algebraic_kernel_d_1::Coefficient Coefficient;
+  typedef typename Algebraic_kernel_d_1::Bound Bound;
   
-  typedef typename Algebraic_kernel_1::Algebraic_real_1 Root;
-  typedef typename Algebraic_kernel_1::Polynomial_1 Polynomial_1;
+  typedef typename Algebraic_kernel_d_1::Algebraic_real_1 Root;
+  typedef typename Algebraic_kernel_d_1::Polynomial_1 Polynomial_1;
  
   typedef CGAL::Polynomial_traits_d<Polynomial_1> PT_1;
   
-  Algebraic_kernel_1 ak; 
+  Algebraic_kernel_d_1 ak; 
   
   Polynomial_1 x = typename PT_1::Shift()(Polynomial_1(1),1);
   Polynomial_1 p1 = x*x-2;
   Polynomial_1 p2 = x*x-3;
 
-  typename Algebraic_kernel_1::Solve_1 solve_1 = ak.solve_1_object();
+  typename Algebraic_kernel_d_1::Solve_1 solve_1 = ak.solve_1_object();
   
   std::vector<Root> roots1, roots2;
   solve_1(p1,std::back_inserter(roots1),false);
@@ -67,7 +67,7 @@ int main(){
     typedef AK::Integer Coefficient;
     typedef AK::Rational Bound;
     
-    typedef CGAL::Algebraic_kernel_1<Coefficient, Bound> AK_1;
+    typedef CGAL::Algebraic_kernel_d_1<Coefficient, Bound> AK_1;
     test_algebraic_kernel_1_tools<AK_1>();
   }
 #else
@@ -79,7 +79,7 @@ int main(){
     typedef AK::Integer Coefficient;
     typedef AK::Rational Bound;
     
-    typedef CGAL::Algebraic_kernel_1<Coefficient, Bound> AK_1;
+    typedef CGAL::Algebraic_kernel_d_1<Coefficient, Bound> AK_1;
     test_algebraic_kernel_1_tools<AK_1>();
   }
 #else
@@ -91,7 +91,7 @@ int main(){
     typedef AK::Integer Coefficient;
     typedef AK::Rational Bound;
     
-    typedef CGAL::Algebraic_kernel_1<Coefficient, Bound> AK_1;
+    typedef CGAL::Algebraic_kernel_d_1<Coefficient, Bound> AK_1;
     test_algebraic_kernel_1_tools<AK_1>();
   }
 #else

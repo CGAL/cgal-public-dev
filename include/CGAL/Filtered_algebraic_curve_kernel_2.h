@@ -55,23 +55,23 @@ class Filtered_algebraic_curve_kernel_2
 // for each predicate functor defines a member function returning an instance
 // of this predicate
 #define CGAL_Algebraic_Kernel_pred(Y,Z) \
-    Y Z() const { return Y((const Algebraic_kernel_2*)this); }
+    Y Z() const { return Y((const Algebraic_kernel_d_2*)this); }
 
 // the same for construction functors
 #define CGAL_Algebraic_Kernel_cons(Y,Z) CGAL_Algebraic_Kernel_pred(Y,Z)
 
 public:
 
-    typedef AlgebraicKernel_1 Algebraic_kernel_1;
+    typedef AlgebraicKernel_1 Algebraic_kernel_d_1;
     
 #if CGAL_ACK_USE_EXACUS
     typedef AlgebraicCurvePair_2 Algebraic_curve_pair_2;
 
     typedef CGAL::Algebraic_curve_kernel_2
-        < Algebraic_curve_pair_2, Algebraic_kernel_1 > 
+        < Algebraic_curve_pair_2, Algebraic_kernel_d_1 > 
         Algebraic_curve_kernel_2;
 #else
-    typedef CGAL::Algebraic_curve_kernel_2 < Algebraic_kernel_1 > 
+    typedef CGAL::Algebraic_curve_kernel_2 < Algebraic_kernel_d_1 > 
         Algebraic_curve_kernel_2;
 #endif
 
@@ -90,12 +90,12 @@ public:
     //! myself
 #if CGAL_ACK_USE_EXACUS
     typedef Filtered_algebraic_curve_kernel_2
-        < AlgebraicCurvePair_2, Algebraic_kernel_1 > Self;
+        < AlgebraicCurvePair_2, Algebraic_kernel_d_1 > Self;
 #else
-    typedef Filtered_algebraic_curve_kernel_2 < Algebraic_kernel_1 > Self;
+    typedef Filtered_algebraic_curve_kernel_2 < Algebraic_kernel_d_1 > Self;
 #endif
 
-    typedef Self Algebraic_kernel_2;
+    typedef Self Algebraic_kernel_d_2;
     
     //! type of coefficient
     typedef typename Base::Coefficient Coefficient;
@@ -110,7 +110,7 @@ public:
     typedef typename Base::Coordinate_1 Coordinate_1;
 
     //! type of 2d-coordinate
-    typedef typename Algebraic_kernel_1::Bound Bound;
+    typedef typename Algebraic_kernel_d_1::Bound Bound;
         
     //!@}
                 
@@ -177,7 +177,7 @@ public:
 
         typedef typename Base::Compare_y_2 Base;
         
-        Compare_y_2(const Algebraic_kernel_2* kernel) : Base(kernel)
+        Compare_y_2(const Algebraic_kernel_d_2* kernel) : Base(kernel)
         {}
 
         Comparison_result operator()(const Algebraic_real_2& xy1, 
@@ -203,7 +203,7 @@ public:
 
         typedef typename Base::Compare_xy_2 Base;
         
-        Compare_xy_2(const Algebraic_kernel_2* kernel) : Base(kernel)
+        Compare_xy_2(const Algebraic_kernel_d_2* kernel) : Base(kernel)
         {}
 
         Comparison_result operator()(const Algebraic_real_2& xy1, 
@@ -236,7 +236,7 @@ public:
 
         typedef typename Base::Sign_at_2 Base;
 
-        Sign_at_2(const Algebraic_kernel_2* kernel) : Base(kernel)
+        Sign_at_2(const Algebraic_kernel_d_2* kernel) : Base(kernel)
         {}
 
         typedef typename Algebraic_real_2::Bound_interval Interval;

@@ -27,17 +27,17 @@ int main ()
 typedef CGAL::GMP_arithmetic_kernel::Integer Integer;
 typedef CGAL::Arr_algebraic_segment_traits_2<Integer> Arr_traits_2;
 typedef Arr_traits_2::CKvA_2 Curved_kernel_via_analysis_2;
-typedef Arr_traits_2::Algebraic_kernel_2 Algebraic_kernel_2;
-typedef Arr_traits_2::Algebraic_kernel_1 Algebraic_kernel_1;
+typedef Arr_traits_2::Algebraic_kernel_d_2 Algebraic_kernel_d_2;
+typedef Arr_traits_2::Algebraic_kernel_d_1 Algebraic_kernel_d_1;
 typedef CGAL::Arrangement_2<Arr_traits_2> Arrangement_2;
 typedef Arr_traits_2::Curve_2 Curve_2;
 typedef Arr_traits_2::Polynomial_2 Polynomial_2;
 typedef Arr_traits_2::X_monotone_curve_2 Arc_2;
 typedef Arr_traits_2::Point_2 Point_2;
 
-typedef Algebraic_kernel_2::Bound Rational;
-typedef Algebraic_kernel_2::Algebraic_real_1 Algebraic_real_1;
-typedef Algebraic_kernel_2::Algebraic_real_2 Algebraic_real_2;
+typedef Algebraic_kernel_d_2::Bound Rational;
+typedef Algebraic_kernel_d_2::Algebraic_real_1 Algebraic_real_1;
+typedef Algebraic_kernel_d_2::Algebraic_real_2 Algebraic_real_2;
 
 
 // Traits class for Polynomial type
@@ -63,7 +63,7 @@ int is_in_zero_one_param(Polynomial_1 X,
   Integer xnum, xdenom;
   decompose(x,xnum,xdenom);
   std::vector<Algebraic_real_1> t_vec;
-  Algebraic_kernel_1::Solve_1()(X*xdenom-xnum,false,Rational(0),Rational(1),
+  Algebraic_kernel_d_1::Solve_1()(X*xdenom-xnum,false,Rational(0),Rational(1),
 				std::back_inserter(t_vec));
   Curve_2::Status_line_1 status_line=C.status_line_at_exact_x(x);
   int no_arcs=status_line.number_of_events();
@@ -78,7 +78,7 @@ int is_in_zero_one_param(Polynomial_1 X,
     while(true) {
       std::pair<Rational,Rational> curr_approx = interval_eval
 	(Y, 
-	 Algebraic_kernel_1::Approximate_absolute_1()(t,prec));
+	 Algebraic_kernel_d_1::Approximate_absolute_1()(t,prec));
       while(curr_approx.first > status_line.upper_bound(stack_index)) {
 	stack_index++;
       }
@@ -154,7 +154,7 @@ int main(int argc, char** argv) {
 
   CGAL::Timer impl_timer, ca_timer,select_timer, arr_timer;
   
-  Algebraic_kernel_2 ak_2 =Curved_kernel_via_analysis_2::instance().kernel();
+  Algebraic_kernel_d_2 ak_2 =Curved_kernel_via_analysis_2::instance().kernel();
   Arr_traits_2 arr_traits;
 
   Arr_traits_2::Construct_curve_2 construct_curve
@@ -206,7 +206,7 @@ int main(int argc, char** argv) {
     std::vector<Algebraic_real_1>::iterator end_uniq 
       = std::unique(crit_values.begin(),crit_values.end());
     std::vector<Rational> interm_vals;
-    Algebraic_kernel_1 dummy;
+    Algebraic_kernel_d_1 dummy;
     CGAL::internal::find_intermediate_values
       (&dummy,crit_values.begin(),
        end_uniq,std::back_inserter(interm_vals));
@@ -241,7 +241,7 @@ int main(int argc, char** argv) {
     }
 
 
-    Algebraic_kernel_2::Construct_algebraic_real_2 construct_alg_real_2
+    Algebraic_kernel_d_2::Construct_algebraic_real_2 construct_alg_real_2
       = ak_2.construct_algebraic_real_2_object();
     Algebraic_real_2 start_point_ar2=construct_alg_real_2(start_x,start_y);
     Point_2 start_point(start_point_ar2.x(),start_point_ar2.curve(),
