@@ -29,7 +29,7 @@
 #include <CGAL/Algebraic_kernel_d/Bitstream_coefficient_kernel.h>
 
 // Needed for the bisection kernel
-#include <CGAL/Algebraic_kernel_d/Algebraic_real_pure.h>
+#include <CGAL/Algebraic_kernel_d/Algebraic_real_rep.h>
 #include <CGAL/Algebraic_kernel_d/Descartes.h>
 
 CGAL_BEGIN_NAMESPACE
