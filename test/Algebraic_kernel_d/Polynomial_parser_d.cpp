@@ -11,10 +11,6 @@
 //
 // ============================================================================
 
-#ifndef CGAL_POLYNOMIAL_PARSE_FLOATING_POINT
-#define CGAL_POLYNOMIAL_PARSE_FLOATING_POINT 1
-#endif
-
 #include <CGAL/basic.h>
 #include <CGAL/Algebraic_kernel_d/Polynomial_parser_d.h>
 #include <CGAL/Arithmetic_kernel.h>
