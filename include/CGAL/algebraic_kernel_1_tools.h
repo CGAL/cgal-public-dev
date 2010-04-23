@@ -44,15 +44,14 @@ compute_smallest_nonnegative_root(
   typename AK::Solve_1 solve_1 = ak.solve_1_object();
   std::vector<Root> roots;
   
-  solve_1(p, std::back_inserter(roots),false);
+  // if p is the zero polynomial then the smallest non negative root is 0 .-)
+  if(CGAL::is_zero(p)) return Root_option(Root(0));
+  
+  solve_1(p,std::back_inserter(roots),false);  
+
   typename std::vector<Root>::const_iterator it = roots.begin();
-  for (; it != roots.end(); ++it)
-  {
-    if(CGAL::is_negative(*it) == false)
-    {
-      break;
-    }
-  }
+  while(it != roots.end() && CGAL::is_negative(*it))
+    it++;
 
   if (it == roots.end())
     return Root_option();
