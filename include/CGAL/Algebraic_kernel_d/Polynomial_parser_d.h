@@ -285,7 +285,7 @@ protected:
                 Bigfloat bf(ttmp.c_str());
                 //std::cout << "bf = " << NT(bf) << "; str: " << ttmp << "\n";
                 if(max_fp_bits != -1u) { 
-                    bf = CGAL::round(bf, max_fp_bits);
+                    bf = CGAL::internal::round(bf, max_fp_bits);
                     //std::cout << "bf2 = " << NT(bf) << "\n";
                 }
                 coeff = static_cast<NT>(bf);
