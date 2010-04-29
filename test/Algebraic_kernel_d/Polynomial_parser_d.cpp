@@ -18,6 +18,13 @@
 #include <CGAL/Polynomial_type_generator.h>
 #include <CGAL/Fraction_traits.h>
 
+// namespace boost { // dirty hack...
+// namespace detail {
+// tss::~tss() {
+//  
+// }
+// } }
+
 template<typename ArithmeticKernel>
 void test_routine() {
 
@@ -50,7 +57,7 @@ void test_routine() {
     typedef typename CGAL::Polynomial_type_generator<Integer,2>::Type 
       Polynomial_2;
     
-    typedef CGAL::Polynomial_parser_d<Polynomial_2> Parser;
+    typedef CGAL::Polynomial_parser_d<Polynomial_2 > Parser;
     
     Polynomial_2 x = CGAL::shift(Polynomial_2(1),1,0);
     Polynomial_2 y = CGAL::shift(Polynomial_2(1),1,1);
@@ -112,16 +119,17 @@ void test_routine() {
     typedef typename CGAL::Polynomial_type_generator<Rational,2>::Type 
       Polynomial_2;
     
-    typedef CGAL::Polynomial_parser_d<Polynomial_2> Parser;
+    typedef CGAL::Polynomial_parser_d<Polynomial_2,
+            CGAL::Mixed_rational_parser_policy< Polynomial_2 > > Parser;
     
     Polynomial_2 x = CGAL::shift(Polynomial_2(1),1,0);
     Polynomial_2 y = CGAL::shift(Polynomial_2(1),1,1);
   
-    std::string pol_str="x^5*8/3*y^17-5/7*(y-x^2)+1/6";
+    std::string pol_str="x^5*8/3*y^17-5/7*(-111y-x^2)+10";
     Polynomial_2 p1 = 
     CGAL::ipower(x,5)*compose(Integer(8),Integer(3))*CGAL::ipower(y,17)-\
-    compose(Integer(5),Integer(7))*(y-CGAL::ipower(x,2))+\
-    compose(Integer(1),Integer(6));
+    compose(Integer(5),Integer(7))*(compose(Integer(-111),Integer(1))*y-CGAL::ipower(x,2))+\
+    compose(Integer(10),Integer(1));
     
     Polynomial_2 p2;
     Parser() (pol_str,p2);
@@ -160,7 +168,7 @@ int main(int argc, char** argv) {
   CGAL::set_pretty_mode(std::cout);
 
 #ifdef CGAL_HAS_LEDA_ARITHMETIC_KERNEL
-  std::cout << "test for LEDA" << std::endl;  
+  std::cout << "test for LEDA" << std::endl;
   test_routine<CGAL::LEDA_arithmetic_kernel>();
 #else
     std::cerr << "LEDA tests skipped" << std::endl;
@@ -172,7 +180,7 @@ int main(int argc, char** argv) {
     std::cerr << "CORE tests skipped" << std::endl;
 #endif
 #ifdef CGAL_HAS_GMP_ARITHMETIC_KERNEL
-    std::cout << "test for GMP" << std::endl;  
+    std::cout << "test for GMP" << std::endl;
     test_routine<CGAL::GMP_arithmetic_kernel>();
 #else
     std::cerr << "GMP tests skipped" << std::endl;
