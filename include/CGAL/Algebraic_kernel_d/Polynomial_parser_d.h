@@ -26,24 +26,22 @@
 // ============================================================================
 
 /*! \file Polynomial_parser_d.h
- *  \brief Defines ... ?!
+ *  \brief Parser for d-variate polynomials
  *  
- *  Parser for .. polynomials
+ *  Defines a parser for d-variate polynomials in Maple format
  */
 
 #ifndef CGAL_POLYNOMIAL_PARSER_D_H
 #define CGAL_POLYNOMIAL_PARSER_D_H
 
-//!NOTE define \c CGAL_POLYNOMIAL_PARSE_FLOATING_POINT prior to including this
-//! file if you want to parse polynomials with floating-points coefficients
-//! in this case the result is a rational polynomial
-
-#include <CGAL/config.h>
 #include <CGAL/Arithmetic_kernel.h>
 #include <CGAL/Polynomial_traits_d.h>
+// #include <boost/type_traits/is_same.hpp>
 
 #include <vector>
 #include <sstream>
+
+namespace CGAL {
 
 namespace {
 
@@ -62,28 +60,244 @@ private:
  
 };
 
-// coefficient validity check
-template <class _Poly_d >
-struct _Default_checker {
+} // anonymous namespace
 
-    // coefficient type
-    typedef typename CGAL::Polynomial_traits_d< _Poly_d >::
-            Innermost_coefficient_type NT;
+//! default policy: read in a coefficient of type \c InputCoeff from the input
+//! stream and converts it to \c Poly_d_ coefficients type using provided
+//! type coercion
+template < class Poly_d_, class InputCoeff =
+        typename CGAL::Polynomial_traits_d< Poly_d_ >::
+            Innermost_coefficient_type >
+struct Default_parser_policy {
 
-    bool operator()(const NT& x) const {
+    //! first template argument type
+    typedef Poly_d_ Poly_d;
+    //! second template argument type
+    typedef InputCoeff Input_coeff;
+    //! coefficient type
+    typedef typename  CGAL::Polynomial_traits_d< Poly_d >::
+        Innermost_coefficient_type Coeff;
+
+    //! default constructor
+    Default_parser_policy() {
+    }
+    
+    //! reads in the coefficient from the input stream and converts it
+    //! to \c Coeff type using provided type coercion
+    //! \c is points to the first digit character of the coefficient
+    Coeff read_coefficient(std::istream& is) const {
+
+        Input_coeff cf;
+        is >> CGAL::iformat(cf);
+//         postprocess(cf);
+        typename CGAL::Coercion_traits< Input_coeff, Coeff >::Cast cvt;
+        return cvt(cf);
+    }
+
+    //! returns \c false if the coefficient does not pass the validity check
+    virtual bool validity_check(const Coeff&) {
         return true;
+    }
+
+    //! checking for degree overflow: can be used in real-time applications
+    virtual bool exponent_check(unsigned) const {
+        return true;
+    }
+
+    //! postprocess the input coefficient before casting it to \c Coeff type
+    //! and returning to the parser: for instance, rounding to the required
+    //! precision can take place here
+//     virtual void postprocess(Input_coeff&) const {
+//     }
+
+    //! variable names listed in the order from innermost to the outermost
+    //! variable as they appear in the resulting equation
+    static const int n_var_names = 4;    
+    static const char *var_names_lower;
+    static const char *var_names_upper;
+};
+
+template < class Poly_d_, class InputCoeff >
+const char * Default_parser_policy< Poly_d_, InputCoeff >::
+        var_names_lower = "xyzw";
+
+template < class Poly_d_, class InputCoeff >
+const char * Default_parser_policy< Poly_d_, InputCoeff >::
+        var_names_upper = "XYZW";
+
+//! This parser policy allows to mix integer and rational coefficients in a
+//! single equation. Appropriate type coercion with the \c Poly_d_ coefficient
+//! type must be provided
+template < class Poly_d_ >
+struct Mixed_rational_parser_policy :
+        public Default_parser_policy< Poly_d_ > {
+
+    //! template argument type
+    typedef Poly_d_ Poly_d;
+    //! base class
+    typedef Default_parser_policy< Poly_d > Base;
+    //! type of polynomial coefficient
+    typedef typename Base::Coeff Coeff;
+
+    typedef typename CGAL::Get_arithmetic_kernel< Coeff >::
+             Arithmetic_kernel AK;
+    //! integer number type
+    typedef typename AK::Integer Integer;
+    //! rational number type
+    typedef typename AK::Rational Rational;
+
+    //! default constructor
+    Mixed_rational_parser_policy() {
+    }
+
+    //! reads in a rational or integer coefficient from the input stream
+    //! depending on whether '/' has been met during parsing and converts
+    //! it to the \c Coeff type using provided coercion
+    //! \c is points to the first digit character of the coefficient
+    //! throws \c Parser_exception if error occurred
+    Coeff read_coefficient(std::istream& is) const {
+
+        std::stringstream buf;
+
+        bool read_rational; // recognised as rational coeff
+        if(!_eat_characters(is, buf, read_rational))
+            throw Parser_exception("Wrong coefficient type");
+
+        if(!read_rational) 
+            return _read_coeff< Integer >(buf);
+        else
+            return _read_coeff< Rational >(buf);
+    }
+
+protected:
+    //! protected stuff
+
+    bool _eat_characters(std::istream& is, std::ostream& buf,
+            bool& read_rational) const {
+
+        buf.put(is.get()); // the first character must be a digit
+        read_rational = false; // recognised as rational coeff
+        while(!is.eof()) {
+            char ch = is.peek();
+               
+            if(isdigit(ch)) {
+                buf.put(is.get());
+            } else if(ch == '/') { // found separator
+
+                if(read_rational)
+                    return false;
+                read_rational = true;
+                buf.put(is.get());
+                
+                ch = is.peek();
+                // character immediately after '/' must be a digit
+                if(!isdigit(ch))
+                    return false;
+                buf.put(is.get());
+            } else
+                break;
+        }
+        return true;
+    }
+
+    template < class NT >
+    Coeff _read_coeff(std::istream& is) const {
+        NT cf;
+        is >> CGAL::iformat(cf);
+        typename CGAL::Coercion_traits< NT, Coeff >::Cast cvt;
+        return cvt(cf);
     }
 };
 
-} // anonymous namespace
+//! This parser policy allows to mix integer, rational and floating-point
+//! coefficients in a single equation. Appropriate type coercion with the
+//! \c Poly_d_ coefficient type must be provided
+//! \c FP_rounding optional parameter can be used to round the floating-point
+//! number to desired precision before returning it to the parser
+template < class Poly_d_/*, class FP_rounding = CGAL::Identity<KeyType_>*/ >
+struct Mixed_floating_point_parser_policy :
+        public Mixed_rational_parser_policy< Poly_d_ > {
 
-namespace CGAL {
+    //! template argument type
+    typedef Poly_d_ Poly_d;
+    //! base class
+    typedef Mixed_rational_parser_policy< Poly_d > Base;
+    //! type of polynomial coefficient
+    typedef typename Base::Coeff Coeff;
 
-//TODO: policy class for the parser including coefficient conversion,
-// variable names, validity check, etc..
-// template < class _Poly_d >
-// class Polynomial_parser_traits {
-// }
+    typedef typename CGAL::Get_arithmetic_kernel< Coeff >::
+             Arithmetic_kernel AK;
+    //! integer number type
+    typedef typename AK::Integer Integer;
+    //! rational number type
+    typedef typename AK::Rational Rational;
+    //! bigfloat number type
+    typedef typename CGAL::Bigfloat_interval_traits<
+            typename AK::Bigfloat_interval >::Bound BigFloat;
+
+    //! default constructor
+    Mixed_floating_point_parser_policy() {
+    }
+
+    //! allows mixing of integer, rational and floating-point coefficients
+    //! in a single equation
+    //! \c is points to the first digit character of the coefficient
+    //! throws \c Parser_exception if an error occurred
+    Coeff read_coefficient(std::istream& is) const {
+
+        std::stringstream buf;
+
+        bool read_rational; // recognised as rational coeff
+        // first try to find rationa coeffs, so we do not bother ourselves
+        // with them later 
+        if(!Base::_eat_characters(is, buf, read_rational))
+            throw Parser_exception("Wrong coefficient type");
+
+        if(read_rational) { // successfully read rational coeff => done
+            return Base::template _read_coeff< Rational >(buf);
+        }
+
+        // now we either hit a non-digit character, found an exponent
+        // or fraction delimiter '.'; assume the first option
+        int fp_type = -1; // -1 - integer, 0 - float, 1 - float scientific,
+
+        while(!is.eof()) {
+            char ch = is.peek();
+
+            bool parse_exp = (ch == 'e' || ch == 'E'); 
+            if(ch == '.' || parse_exp) {
+
+               if(parse_exp && (fp_type == -1 || fp_type == 0))
+                   fp_type = 1; // found exponent => scientific format
+
+               else if(fp_type != -1) // all other combinations: error
+                   throw Parser_exception("Wrong floating-point coefficient");
+
+               if(parse_exp) {
+                   buf.put(is.get());
+                   ch = is.peek();
+                   if(ch == '-' || ch == '+') {
+                       buf.put(is.get());
+                       ch = is.peek();
+                   }
+                   if(!isdigit(ch))
+                       throw Parser_exception("Wrong fp exponent");
+               } 
+               if(fp_type == -1)
+                   fp_type = 0; // recognised as floating-point
+
+            } else if(isdigit(ch)) {
+                buf.put(is.get()); // eat this
+            } else 
+                break;
+        }
+
+        if(fp_type == -1)
+            return Base::template _read_coeff< Integer >(buf);
+        else
+            return Base::template _read_coeff< BigFloat >(buf);
+    }
+};
 
 /*! \brief parsing d-variate polynomials in Maple format
  * 
@@ -91,62 +305,36 @@ namespace CGAL {
  * (y-1)^4 + (-1)*y^3 + (x + z)^2 - (2123234523*x^2 - 2*y*y*x + 3*x*132123)^3
  * (y + x - z + w - 3)^3 = x + y - 123/12312 + 1.00001z*x^2
  */
-template <class _Poly_d, class ValidyChecker = _Default_checker< _Poly_d > >
+template <class Poly_d_, class ParserPolicy =
+                    Default_parser_policy< Poly_d_ > >
 struct Polynomial_parser_d
 {
     //!\name public typedefs
     //!@{
 
     //! this instance's template argument
-    typedef _Poly_d Poly_d;
+    typedef Poly_d_ Poly_d;
     //! this instance's second template argument
-    typedef ValidyChecker Validy_checker;
+    typedef ParserPolicy Policy;
     
-    //! polynomial traits
+    //! polynomial policy
     typedef CGAL::Polynomial_traits_d< Poly_d > PT;
 
-    //! coefficient type
-    typedef typename PT::Innermost_coefficient_type NT;
-
-protected:
-
-#ifdef CGAL_POLYNOMIAL_PARSE_FLOATING_POINT
-    typedef typename CGAL::Get_arithmetic_kernel< NT >::
-            Arithmetic_kernel Arithmetic_kernel;
-    typedef typename Arithmetic_kernel::Integer Integer;
-
-    //! multi-precision float NT
-    typedef typename Arithmetic_kernel::Bigfloat_interval BFI;
-    typedef typename CGAL::Bigfloat_interval_traits<BFI>::Bound 
-        Bigfloat; 
-#endif // CGAL_POLYNOMIAL_PARSE_FLOATING_POINT
-
+    //! polynomial coefficient type
+    typedef typename Policy::Coeff NT;
     //! multivariate dimension
     static const int d = CGAL::internal::Dimension< Poly_d >::value;
-
-    //! variable names
-    static const int n_vars = 4;
-    static const char var_lower[n_vars];
-    static const char var_upper[n_vars];
 
     //!@}
 public: 
     /// \name Public methods
     //!@{
 
-    //! if \c max_exp_ > 0 it defines the maximal allowed exponent 
-    //! for input polynomial
-    //! \c max_fp_bits_ - amount of bits to approximate floating point number
-    Polynomial_parser_d(unsigned max_fp_bits_ = -1,
-            unsigned max_exp_ = -1) {
-
-        max_exp = max_exp_;
-        max_fp_bits = max_fp_bits_;
+    //! default constructor
+    Polynomial_parser_d() {
     }
 
     //! \brief functor invokation operator
-    //!
-
     bool operator()(const std::string& in, Poly_d& poly) {
         
         try {
@@ -228,11 +416,12 @@ protected:
     bool check_var_names(char ch, int& idx) {
 
         int i;
-        for(i = 0; i < n_vars; i++)
-            if(ch == var_lower[i] || ch == var_upper[i])
+        for(i = 0; i < Policy::n_var_names; i++) {
+            if(Policy::var_names_lower[i] == ch ||
+                    Policy::var_names_upper[i] == ch)
                 break;
-
-        if(i == n_vars || i >= d)
+        }
+        if(i == Policy::n_var_names || i >= d)
             return false;
         idx = i;
         return true;
@@ -242,61 +431,17 @@ protected:
     {
         char var = 'x', ch = is.peek();
         int idx = -1;
-        //std::cout << "getbasicterm: " << is.tellg() << std::endl;
-    
+
         Poly_d tmp;
         NT coeff;
         unsigned int which_case = 0, power = 1;
 
         if(isdigit(ch)) {
-#ifdef CGAL_POLYNOMIAL_PARSE_FLOATING_POINT
-            int which_type = -1; // 0 - float, 1 - float scientific, 
-                                 // 1 - rational
-            std::string ttmp;
-            do {
-                ttmp.push_back(is.get());
-                ch = is.peek();
-            
-                bool parse_exp = (ch == 'e' || ch == 'E'); 
-                if(ch == '.' || ch == '/' || parse_exp) {
+            coeff = policy.read_coefficient(is);
 
-                    if(parse_exp && (which_type == -1 || which_type == 0))
-                        which_type = 1;
-                    else if(which_type != -1)
-                        throw Parser_exception("Wrong coefficient");
-
-                    if(parse_exp) {
-                        ttmp.push_back(is.get());
-                        ch = is.peek();
-                        if(ch == '-' || ch == '+') {
-                            ttmp.push_back(is.get());
-                            ch = is.peek();
-                        }
-                        if(!isdigit(ch))
-                            throw Parser_exception("Wrong coefficient");
-                    } 
-                    if(which_type == -1)
-                        which_type = (ch == '/' ? 2 : 0);
-                } else if(!isdigit(ch))
-                    break;
-            } while(1);
-        
-            if(which_type < 2) { 
-                Bigfloat bf(ttmp.c_str());
-                //std::cout << "bf = " << NT(bf) << "; str: " << ttmp << "\n";
-                if(max_fp_bits != -1u) { 
-                    bf = CGAL::internal::round(bf, max_fp_bits);
-                    //std::cout << "bf2 = " << NT(bf) << "\n";
-                }
-                coeff = static_cast<NT>(bf);
-            } else
-                coeff = static_cast<NT>(ttmp.c_str());
-#else        
-            is >> CGAL::iformat(coeff);
-#endif // CGAL_POLYNOMIAL_PARSE_FLOATING_POINT
-
-            if(!checker(coeff))
+            if(!policy.validity_check(coeff)) {
                 throw Parser_exception("Coefficient validity check failed");
+            }
             which_case = 0; // number        
         
         } else if(check_var_names(ch, idx)) {
@@ -327,7 +472,7 @@ protected:
             if(!isdigit(is.peek()))
                 throw Parser_exception("Incorrect power for basic term");
             is >> CGAL::iformat(power);
-            if(power >= max_exp)
+            if(!policy.exponent_check(power))
                 throw Parser_exception("Power is too large for basic term");
         }
 
@@ -341,7 +486,7 @@ protected:
             break;
         case 2: // control degree overflow
             int degree = CGAL::total_degree(tmp);
-            if(degree * power >= max_exp) 
+            if(!policy.exponent_check(degree * power))
                 throw Parser_exception(
                     "Power is too large for polynomial in basic term ");
             tmp = CGAL::ipower(tmp, static_cast< long >(power));
@@ -412,26 +557,14 @@ protected:
         }
         return res;
     }
-
+    
+    //!@}
 protected:
-
-    Validy_checker checker; 
-         
-    //! a maximal exponent allowed for input polynomial
-    unsigned max_exp;
-    unsigned max_fp_bits;
+    //! parser policy object
+    Policy policy;
+      
 };  // Polynomial_parser_d
-
-template <class _Poly_d, class ValidyChecker >
-const char Polynomial_parser_d< _Poly_d, ValidyChecker >::var_lower[] =
-        {'x', 'y', 'z', 'w'};
-
-template <class _Poly_d, class ValidyChecker >
-const char Polynomial_parser_d< _Poly_d, ValidyChecker >::var_upper[] =
-        {'X', 'Y', 'Z', 'W'};
 
 } // namespace CGAL
 
 #endif // CGAL_POLYNOMIAL_PARSER_D_H
-
-
