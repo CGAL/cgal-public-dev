@@ -110,6 +110,9 @@ struct Default_parser_policy {
 //     virtual void postprocess(Input_coeff&) const {
 //     }
 
+    virtual ~Default_parser_policy() {
+    }
+
     //! variable names listed in the order from innermost to the outermost
     //! variable as they appear in the resulting equation
     static const int n_var_names = 4;    
