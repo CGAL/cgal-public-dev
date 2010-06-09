@@ -40,7 +40,7 @@
 #include <CGAL/Arrangement_2l/Restricted_cad_3.h>
 #include <CGAL/Arrangement_2l/Restricted_cad_3_accessor.h>
 
-CGAL_BEGIN_NAMESPACE
+namespace CGAL {
 
 namespace internal {
 
@@ -515,7 +515,7 @@ std::ostream& operator<< (
 
 } // namespace internal
 
-CGAL_END_NAMESPACE
+} //namespace CGAL
 
 #endif // CGAL_CURVED_KERNEL_VIA_ANALYSIS_2l_SURFACE_POINT_2L_H
 // EOF

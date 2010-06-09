@@ -39,7 +39,7 @@
 #include <CGAL/Arrangement_2l/Z_stack_helpers.h>
 #include <CGAL/Arrangement_2l/Adjacencies_3.h>
 
-CGAL_BEGIN_NAMESPACE
+namespace CGAL {
 
 namespace internal {
 
@@ -1619,7 +1619,7 @@ std::ostream& operator<<(
     return os;
 }
 
-CGAL_END_NAMESPACE
+} //namespace CGAL
 
 #endif // CGAL_ARRANGEMENT_2l_Z_STACK_H
 // EOF

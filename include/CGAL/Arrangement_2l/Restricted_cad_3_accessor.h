@@ -29,7 +29,7 @@
 
 #include <CGAL/Arrangement_2l/Restricted_cad_3_enums.h>
 
-CGAL_BEGIN_NAMESPACE
+namespace CGAL {
 
 /*!\brief
  * Accessor class for private types and members of RestrictedCad_3
@@ -433,7 +433,7 @@ private:
     
 };
 
-CGAL_END_NAMESPACE
+} //namespace CGAL
 
 #endif // CGAL_ARRANGEMENT_2l_RESTRICTED_CAD_3_ACCESSOR_H
 // EOF

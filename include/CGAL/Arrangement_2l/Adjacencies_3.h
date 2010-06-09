@@ -33,7 +33,7 @@
 #include <vector>
 #include <algorithm>
 
-CGAL_BEGIN_NAMESPACE
+namespace CGAL {
 
 namespace internal {
 
@@ -201,7 +201,7 @@ std::ostream& operator<<(
     return os;
 }
 
-CGAL_END_NAMESPACE
+} //namespace CGAL
 
 #endif // CGAL_ARRANGEMENT_2l_ADJACENCIES_3
 // EOF

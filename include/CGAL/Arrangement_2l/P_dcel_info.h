@@ -49,7 +49,7 @@
 #include <CGAL/Arrangement_2l/Restricted_cad_3_enums.h>
 #include <CGAL/Arrangement_2l/Arr_p_dcel_info_overlay_traits.h>
 
-CGAL_BEGIN_NAMESPACE
+namespace CGAL {
 
 namespace internal {
 
@@ -1722,7 +1722,7 @@ std::ostream& operator<<(
     return os;
 }
     
-CGAL_END_NAMESPACE
+} //namespace CGAL
 
 #endif // CGAL_ARRANGEMENT_2l_P_DCEL_INFO_H
 // EOF

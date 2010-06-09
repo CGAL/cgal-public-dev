@@ -27,7 +27,7 @@
 
 #include <CGAL/config.h>
 
-CGAL_BEGIN_NAMESPACE
+namespace CGAL {
 
 namespace internal {
 
@@ -295,7 +295,7 @@ public:
 
 } // namespace internal
 
-CGAL_END_NAMESPACE
+} //namespace CGAL
 
 #endif // CGAL_ARRANGEMENT_2l_Z_STACK_HELPERS_H
 // EOF

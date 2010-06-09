@@ -30,7 +30,7 @@
 
 #include <iostream>
 
-CGAL_BEGIN_NAMESPACE
+namespace CGAL {
 
 //! distinguishes between the three possible dcel-features
 enum Dcel_feature {
@@ -159,7 +159,7 @@ std::ostream& operator<<(std::ostream& out, const CGAL::Nk& nk) {
     return out;
 }
 
-CGAL_END_NAMESPACE
+} //namespace CGAL
 
 #endif // CGAL_ARRANGEMENT_2l_RESTRICTED_CAD_3_ENUMS_H
 // EOF

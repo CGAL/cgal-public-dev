@@ -36,7 +36,7 @@
 #include <CGAL/Arrangement_2l/Restricted_cad_3.h>
 #include <CGAL/Arrangement_2l/Restricted_cad_3_functors.h>
 
-CGAL_BEGIN_NAMESPACE
+namespace CGAL {
 
 namespace internal {
 
@@ -310,7 +310,7 @@ public:
     //!@}
 };
 
-CGAL_END_NAMESPACE
+} //namespace CGAL
 
 #endif // CGAL_ARRANGEMENT_2l_SURFACE_PAIR_3_H
 // EOF

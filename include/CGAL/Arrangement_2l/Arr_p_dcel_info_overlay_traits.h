@@ -34,7 +34,7 @@
 #include <CGAL/Arrangement_2l/z_stack_predeclarations.h>
 #include <CGAL/Arrangement_2l/Restricted_cad_3_accessor.h>
 
-CGAL_BEGIN_NAMESPACE
+namespace CGAL {
 
 /*!\brief
  * Model of CGAL::ArrangementOverlayTraits_2 for Arrangements
@@ -457,7 +457,7 @@ private:
     bool _m_factors_of_same_curve;
 };
 
-CGAL_END_NAMESPACE
+} //namespace CGAL
 
 #endif // CGAL_ARRANGEMENT_2l_ARR_P_DCEL_INFO_OVERLAY_TRAITS_H
 // EOF

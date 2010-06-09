@@ -44,7 +44,7 @@
 #include <CGAL/Arrangement_2l/P_dcel_info.h>
 #include <CGAL/Arrangement_2l/Restricted_cad_3.h>
 
-CGAL_BEGIN_NAMESPACE
+namespace CGAL {
 
 namespace internal {
 
@@ -1533,7 +1533,7 @@ private:
     
 }; // Overlay
 
-CGAL_END_NAMESPACE
+} //namespace CGAL
 
 #endif // CGAL_ARRANGEMENT_2l_RESTRICTED_CAD_3_FUNCTORS_H
 // EOF

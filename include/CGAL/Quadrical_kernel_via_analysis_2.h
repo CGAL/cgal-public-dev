@@ -45,7 +45,7 @@
 #include <QdX/Quadric_pair_3.h>
 #include <QdX/Quadric_3_z_at_xy_isolator_traits.h>
 
-CGAL_BEGIN_NAMESPACE
+namespace CGAL {
 
 namespace internal {
 
@@ -2321,7 +2321,7 @@ protected:
 
 }; // class Quadrical_kernel_via_analysis_2
 
-CGAL_END_NAMESPACE
+} //namespace CGAL
 
 #endif // CGAL_QUADRICAL_KERNEL_VIA_ANALYSIS_2_H
 // EOF

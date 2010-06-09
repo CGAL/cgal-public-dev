@@ -32,7 +32,7 @@
 
 #include <CGAL/Curved_kernel_via_analysis_2/Curved_kernel_via_analysis_2_functors.h>
 
-CGAL_BEGIN_NAMESPACE
+namespace CGAL {
 
 namespace internal {
 
@@ -594,7 +594,7 @@ public:
 
 } // namespace internal
  
-CGAL_END_NAMESPACE
+} //namespace CGAL
 
 #endif // CGAL_CURVED_KERNEL_VIA_ANALYSIS_2L_FUNCTORS_H
 // EOF

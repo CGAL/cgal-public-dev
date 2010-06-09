@@ -35,7 +35,7 @@
 #include <CGAL/Curved_kernel_via_analysis_2l/Surface_arc_2l.h>
 #include <CGAL/Curved_kernel_via_analysis_2l/Curved_kernel_via_analysis_2l_functors.h>
 
-CGAL_BEGIN_NAMESPACE
+namespace CGAL {
 
 namespace internal {
 
@@ -187,7 +187,7 @@ public:
 
 }; // class Curved_kernel_via_analysis_2l
 
-CGAL_END_NAMESPACE
+} //namespace CGAL
 
 #endif // CGAL_CURVED_KERNEL_VIA_ANALYSIS_2L_H
 // EOF

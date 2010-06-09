@@ -27,7 +27,7 @@
 
 #include <CGAL/config.h>
 
-CGAL_BEGIN_NAMESPACE
+namespace CGAL {
 
 // pre-declaration
 template < class SurfaceZAtXyIsolatorTraits >
@@ -69,7 +69,7 @@ class Z_cell;
 
 } // namespace internal
 
-CGAL_END_NAMESPACE
+} //namespace CGAL
 
 #endif // CGAL_ARRANGEMENT_2l_Z_STACK_PREDECLARATIONS_H
 // EOF

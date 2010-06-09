@@ -39,7 +39,7 @@
 
 #include <CGAL/Arrangement_2l/Restricted_cad_3_accessor.h>
 
-CGAL_BEGIN_NAMESPACE
+namespace CGAL {
 
 namespace internal {
 
@@ -838,7 +838,7 @@ public:
 
 }; // Surface_3_envelope_traits
 
-CGAL_END_NAMESPACE
+} //namespace CGAL
 
 #endif // CGAL_ARRANGEMENT_2l_SURFACE_3_ENVELOPE_TRAITS
 // EOF

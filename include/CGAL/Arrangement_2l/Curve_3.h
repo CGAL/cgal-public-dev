@@ -35,7 +35,7 @@
 
 #include <CGAL/Arrangement_2l/Surface_pair_3.h>
 
-CGAL_BEGIN_NAMESPACE
+namespace CGAL {
 
 namespace internal {
 
@@ -711,7 +711,7 @@ public:
 
 }; // Curve_3
 
-CGAL_END_NAMESPACE
+} //namespace CGAL
 
 #endif // CGAL_ARRANGEMENT_2l_CURVE_3_H
 // EOF
