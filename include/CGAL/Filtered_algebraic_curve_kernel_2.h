@@ -23,7 +23,7 @@
 #include <CGAL/basic.h>
 #include <CGAL/Algebraic_kernel_d/Algebraic_curve_kernel_2.h>
 
-CGAL_BEGIN_NAMESPACE
+namespace CGAL {
 
 /*! 
  * \b Filtered_algebraic_curve_kernel_2 is an extension of
@@ -282,6 +282,6 @@ public:
  
 }; // class Filtered_algebraic_curve_kernel_2
 
-CGAL_END_NAMESPACE
+} //namespace CGAL
 
 #endif // CGAL_FILTERED_ALGEBRAIC_CURVE_KERNEL_2_H

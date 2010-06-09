@@ -21,7 +21,7 @@
 
 #include <SoX/GAPS/types.h>
 
-CGAL_BEGIN_NAMESPACE
+namespace CGAL {
 
 template < class AlgebraicCurveKernel_2, class Rep_ > 
 class Curve_pair_analysis_2;
@@ -359,6 +359,6 @@ protected:
 
 } // namespace internal
 
-CGAL_END_NAMESPACE
+} //namespace CGAL
 
 #endif // CGAL_ALGEBRAIC_CURVE_KERNEL_CURVE_PAIR_ANALYSIS_2_H

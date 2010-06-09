@@ -26,7 +26,7 @@
 
 #include <CGAL/Polynomial_type_generator.h>
 
-CGAL_BEGIN_NAMESPACE
+namespace CGAL {
 
 namespace { 
 
@@ -1592,6 +1592,6 @@ public:
 };
 
 
-CGAL_END_NAMESPACE
+} //namespace CGAL
 
 #endif //CGAL_ROTATED_ALGEBRAIC_CURVE_KERNEL_2_H

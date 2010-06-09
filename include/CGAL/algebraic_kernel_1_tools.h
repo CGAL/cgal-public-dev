@@ -27,7 +27,7 @@
 
 #include <boost/optional.hpp>
 
-CGAL_BEGIN_NAMESPACE
+namespace CGAL {
 
 // returns the first nonnegative root of p
 // precondition: p has at least one non negative root
@@ -75,6 +75,6 @@ compare_smallest_nonnegative_roots(
   return                 CGAL::compare(*r1,*r2);
 }
 
-CGAL_END_NAMESPACE
+} //namespace CGAL
 
 #endif // CGAL_ALGEBRAIC_KERNEL_1_TOOLS_H

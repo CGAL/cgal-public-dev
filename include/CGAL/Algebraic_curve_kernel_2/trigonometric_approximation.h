@@ -22,7 +22,7 @@
 #include <CGAL/ipower.h>
 #include <CGAL/Algebraic_kernel_d/Float_traits.h>
 
-CGAL_BEGIN_NAMESPACE
+namespace CGAL {
 
 namespace internal{
 
@@ -415,7 +415,7 @@ approximate_sin_and_cos_of_angle(Bound angle,long final_prec) {
 
 }
 
-CGAL_END_NAMESPACE
+} //namespace CGAL
 
 
 #endif 

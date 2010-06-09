@@ -25,7 +25,7 @@
 #include <sstream>
 #include <CGAL/ipower.h>
 
-CGAL_BEGIN_NAMESPACE
+namespace CGAL {
 
 namespace internal {
 
@@ -320,7 +320,7 @@ protected:
     
 };  // Polynomial_parser_2
 
-CGAL_END_NAMESPACE
+} //namespace CGAL
 
 #endif // CGALPOLYNOMIAL_PARSER_2_H
 

@@ -32,7 +32,7 @@
 #include <CGAL/Algebraic_kernel_d/Algebraic_real_rep.h>
 #include <CGAL/Algebraic_kernel_d/Descartes.h>
 
-CGAL_BEGIN_NAMESPACE
+namespace CGAL {
 
 /**
  * Defines default and a fast Algebraic_kernel_d_1, 
@@ -72,6 +72,6 @@ struct Algebraic_kernel_d_1_generator {
     > Algebraic_kernel_with_qir_and_descartes_1;
 };
 
-CGAL_END_NAMESPACE
+} //namespace CGAL
 
 #endif

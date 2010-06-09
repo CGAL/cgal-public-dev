@@ -21,7 +21,7 @@
 #include <CGAL/Algebraic_curve_kernel_2/Coordinate_2.h>
 #include <CGAL/Algebraic_curve_kernel_2/Status_line_CA_1.h>
 
-CGAL_BEGIN_NAMESPACE
+namespace CGAL {
 
 template < class AlgebraicCurveKernel_2, class Rep_ > 
 class Curve_analysis_2;
@@ -353,6 +353,6 @@ public:
 
 } // namespace internal
 
-CGAL_END_NAMESPACE
+} //namespace CGAL
 
 #endif // CGAL_ALGEBRAIC_CURVE_KERNEL_CURVE_ANALYSIS_1_H

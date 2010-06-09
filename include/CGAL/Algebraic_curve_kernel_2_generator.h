@@ -26,7 +26,7 @@
 #include <CGAL/Filtered_algebraic_curve_kernel_2.h>
 
 
-CGAL_BEGIN_NAMESPACE
+namespace CGAL {
 
 template<typename Coefficient, 
          typename Bound = typename Get_arithmetic_kernel< Coefficient >::Arithmetic_kernel::Rational>
@@ -73,7 +73,7 @@ struct Algebraic_curve_kernel_2_generator {
 
 };
 
-CGAL_END_NAMESPACE
+} //namespace CGAL
 
 
 #endif
