@@ -36,6 +36,7 @@
 
 #include <CGAL/Arithmetic_kernel.h>
 #include <CGAL/Polynomial_traits_d.h>
+#include <CGAL/Bigfloat_interval_traits.h>
 // #include <boost/type_traits/is_same.hpp>
 
 #include <vector>
