@@ -17,7 +17,7 @@
 #ifndef CGAL_ALGEBRAIC_KERNEL_1_GENERATOR_H
 #define CGAL_ALGEBRAIC_KERNEL_1_GENERATOR_H 1
 
-#include <CGAL/basic.h>
+#include <CGAL/config.h>
 
 #include <CGAL/Arithmetic_kernel.h>
 #include <CGAL/Algebraic_kernel_d_1.h>
@@ -32,6 +32,10 @@
 #include <CGAL/Algebraic_kernel_d/Algebraic_real_rep.h>
 #include <CGAL/Algebraic_kernel_d/Descartes.h>
 
+#if (defined(CGAL_USE_GMP) && defined(CGAL_USE_MPFI) && defined(CGAL_USE_RS))
+#include <CGAL/Algebraic_kernel_d/Real_solve.h>
+#endif
+
 namespace CGAL {
 
 /**
@@ -39,7 +43,7 @@ namespace CGAL {
  * depending on the coefficient type.
  */
 template<typename Coefficient, 
-         typename Bound = typename CGAL::Get_arithmetic_kernel< Coefficient >::Arithmetic_kernel::Rational>
+         typename Bound = typename CGAL::Get_arithmetic_kernel< Coefficient >::Arithmetic_kernel::Rational >
 struct Algebraic_kernel_d_1_generator {
 
     typedef CGAL::Algebraic_kernel_d_1 <Coefficient, Bound>
@@ -70,6 +74,18 @@ struct Algebraic_kernel_d_1_generator {
            < Coefficient, Bound >,
       CGAL::internal::Descartes< CGAL::Polynomial< Coefficient >, Bound >
     > Algebraic_kernel_with_qir_and_descartes_1;
+
+
+#if (defined(CGAL_USE_GMP) && defined(CGAL_USE_MPFI) && defined(CGAL_USE_RS))
+    typedef CGAL::Algebraic_kernel_d_1
+    < Coefficient, 
+      Bound,
+      CGAL::internal::Algebraic_real_quadratic_refinement_rep_bfi
+           < Coefficient, Bound >,
+      CGAL::internal::Real_solve< CGAL::Polynomial< Coefficient >, Bound >
+    > Algebraic_kernel_with_qir_and_rs_1;
+#endif
+
 };
 
 } //namespace CGAL
