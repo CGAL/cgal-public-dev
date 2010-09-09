@@ -78,13 +78,15 @@ public:
       _m_polynomial(p)
       //, _m_interval_given(false)
     {
-      
-        typename AK_1::Solve_1()(_m_polynomial, true, std::back_inserter(_m_real_roots));
-        for (std::vector< Algebraic_real_1 >::size_type i=0;
+      typename AK_1::Solve_1()(_m_polynomial, true, std::back_inserter(_m_real_roots));
+      if (_m_real_roots.size() > 1) {
+        for (std::vector< Algebraic_real_1 >::size_type i = 0;
              i < _m_real_roots.size() - 1;
              ++i) {
+          // Isolate them against each other
           typename AK_1::Compare_1()(_m_real_roots[i],_m_real_roots[i+1]);
         }
+      }
     }
     
     // TODO interval constructor?
