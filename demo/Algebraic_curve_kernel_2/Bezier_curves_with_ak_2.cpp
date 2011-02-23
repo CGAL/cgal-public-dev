@@ -70,7 +70,7 @@ int is_in_zero_one_param(Polynomial_1 X,
   
   for(int i=0; i<(int)t_vec.size();i++) {
     Algebraic_real_1 t = t_vec[i];
-    CGAL::internal::Interval_evaluate_1<Polynomial_1,Rational,Integer> 
+    CGAL::internal::Interval_evaluate_1<Polynomial_1,Rational> 
       interval_eval;
     int stack_index=0;
     int prec=4;
