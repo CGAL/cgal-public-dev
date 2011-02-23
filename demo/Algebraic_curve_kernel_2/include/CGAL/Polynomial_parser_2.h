@@ -24,6 +24,7 @@
 #include <vector>
 #include <sstream>
 #include <CGAL/ipower.h>
+#include <CGAL/Polynomial_traits_d.h>
 
 namespace CGAL {
 
