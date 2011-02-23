@@ -175,7 +175,7 @@ public:
 
     public:
 
-        typedef typename Base::Compare_y_2 Base;
+      ///typedef typename Base::Compare_y_2 Base;
         
         Compare_y_2(const Algebraic_kernel_d_2* kernel) : Base(kernel)
         {}
@@ -201,7 +201,7 @@ public:
 
     public:
 
-        typedef typename Base::Compare_xy_2 Base;
+       typedef typename Algebraic_curve_kernel_2::Compare_xy_2 Base;
         
         Compare_xy_2(const Algebraic_kernel_d_2* kernel) : Base(kernel)
         {}
@@ -234,7 +234,7 @@ public:
 
     public:
 
-        typedef typename Base::Sign_at_2 Base;
+      typedef typename Algebraic_curve_kernel_2::Sign_at_2 Base;
 
         Sign_at_2(const Algebraic_kernel_d_2* kernel) : Base(kernel)
         {}
