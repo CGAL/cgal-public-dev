@@ -21,7 +21,7 @@
 
 #include <iostream>
 #include <vector>
-#include <CGAL/RS/basic.h>
+#include <CGAL/RS/basic_1.h>
 #include <CGAL/Gmpz.h>
 #include <CGAL/Gmpfr.h>
 #include <CGAL/RS/dyadic.h>

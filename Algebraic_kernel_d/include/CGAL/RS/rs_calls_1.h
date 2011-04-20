@@ -19,7 +19,7 @@
 #ifndef CGAL_RS_RS_CALLS_1_H
 #define CGAL_RS_RS_CALLS_1_H
 
-#include <CGAL/RS/basic.h>
+#include <CGAL/RS/basic_1.h>
 #include <gmp.h>
 #include <mpfr.h>
 #include <mpfi.h>

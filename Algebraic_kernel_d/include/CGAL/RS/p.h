@@ -19,7 +19,7 @@
 #ifndef CGAL_RS__P_H
 #define CGAL_RS__P_H
 
-#include <CGAL/RS/basic.h>
+#include <CGAL/RS/basic_1.h>
 #include <CGAL/RS/inverse.h>
 
 namespace CGAL{

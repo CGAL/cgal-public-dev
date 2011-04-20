@@ -20,7 +20,7 @@
 #ifndef CGAL_RS_ISOLE_1_H
 #define CGAL_RS_ISOLE_1_H
 
-#include <CGAL/RS/basic.h>
+#include <CGAL/RS/basic_1.h>
 #include <CGAL/RS/rs_calls_1.h>
 #include <CGAL/Gmpfi.h>
 #include <vector>

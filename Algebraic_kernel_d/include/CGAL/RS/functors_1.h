@@ -16,8 +16,8 @@
 //
 // Author: Luis Peñaranda <luis.penaranda@gmx.com>
 
-#ifndef CGAL_RS_FUNCTORS_H
-#define CGAL_RS_FUNCTORS_H
+#ifndef CGAL_RS_FUNCTORS_1_H
+#define CGAL_RS_FUNCTORS_1_H
 
 #include <CGAL/basic.h>
 #include <mpfi.h>
@@ -26,10 +26,10 @@
 #include <CGAL/RS/polynomial_1_utils.h>
 #include <CGAL/RS/solve_1.h>
 #include <CGAL/RS/sign_1.h>
-#include <CGAL/RS/sign_1_rs.h>
-#include <CGAL/RS/refine_1_rs.h>
+#include <CGAL/RS/sign_rs_1.h>
+#include <CGAL/RS/refine_rs_1.h>
 #include <CGAL/RS/compare_1.h>
-#include <CGAL/RS/polynomial_converter.h>
+#include <CGAL/RS/polynomial_1_converter.h>
 #include <CGAL/Gmpfr.h>
 
 #ifdef IEEE_DBL_MANT_DIG
@@ -473,4 +473,4 @@ struct Approximate_relative_1
 
 #undef CGAL_RS_FUNCTORS_DBL_PREC
 
-#endif  // CGAL_RS_FUNCTORS_H
+#endif  // CGAL_RS_FUNCTORS_1_H

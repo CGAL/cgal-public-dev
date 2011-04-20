@@ -16,8 +16,8 @@
 //
 // Author: Luis Peñaranda <luis.penaranda@gmx.com>
 
-#ifndef CGAL_RS_BASIC_H
-#define CGAL_RS_BASIC_H
+#ifndef CGAL_RS_BASIC_1_H
+#define CGAL_RS_BASIC_1_H
 
 #include <CGAL/basic.h>
 #include <CGAL/enum.h>
@@ -76,4 +76,4 @@ inline CGAL::Sign convert_rs_sign(rs_sign s){
 
 } // namespace RS
 
-#endif  // CGAL_RS_BASIC_H
+#endif  // CGAL_RS_BASIC_1_H

@@ -19,7 +19,7 @@
 #ifndef CGAL_RS_ALGEBRAIC_1_MEMBER_H
 #define CGAL_RS_ALGEBRAIC_1_MEMBER_H
 
-#include <CGAL/RS/refine_1_rs.h>
+#include <CGAL/RS/refine_rs_1.h>
 #include <CGAL/assertions.h>
 
 namespace CGAL{

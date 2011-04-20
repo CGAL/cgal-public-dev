@@ -22,7 +22,7 @@
 #include <gmp.h>
 #include <rs3_fncts.h>
 #include <CGAL/RS/polynomial_1.h>
-#include <CGAL/RS/polynomial_converter.h>
+#include <CGAL/RS/polynomial_1_converter.h>
 #include <CGAL/RS/solve_1.h>
 #include <CGAL/RS/ugcd.h>
 #include <rs_exports.h>

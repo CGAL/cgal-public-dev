@@ -24,7 +24,7 @@
 #include <CGAL/RS/algebraic_1.h>
 #include <CGAL/RS/polynomial_1_utils.h>
 #include <CGAL/RS/sign_1.h>
-#include <CGAL/RS/refine_1_rs.h>
+#include <CGAL/RS/refine_rs_1.h>
 
 // default refinement and sign functions
 #define CGALRS_REFINE_N(A,N)        RS3::refine_1(A,N)

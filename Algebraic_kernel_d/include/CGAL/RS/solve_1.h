@@ -20,7 +20,7 @@
 #define CGAL_RS_SOLVE_1_H
 
 #include <CGAL/basic.h>
-#include <CGAL/RS/basic.h>
+#include <CGAL/RS/basic_1.h>
 #include <CGAL/RS/dyadic.h>
 #include <CGAL/RS/polynomial_1.h>
 #include <CGAL/RS/algebraic_1.h>
@@ -46,7 +46,7 @@ inline int solve_1(mpfi_ptr *x,
 }
 
 // calculate the sign of a polynomial evaluated at the root of another
-inline Sign sign_1_rs(const RS_polynomial_1 &p1,
+inline Sign sign_rs_1(const RS_polynomial_1 &p1,
                       const Algebraic_1 &a,
                       unsigned int prec=CGAL_RS_MIN_PREC){
         mpz_t **constr;

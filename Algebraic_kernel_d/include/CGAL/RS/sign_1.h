@@ -22,7 +22,7 @@
 #include <gmp.h>
 #include <mpfr.h>
 #include <mpfi.h>
-#include <CGAL/RS/basic.h>
+#include <CGAL/RS/basic_1.h>
 #include <CGAL/RS/dyadic.h>
 #include <CGAL/RS/polynomial_1.h>
 #include <CGAL/RS/algebraic_1.h>
@@ -35,12 +35,12 @@ struct RSSign{
 
         // This function calculates the sign of the evaluation of a polynomial
         // at a given algebraic number. If it is impossible to know the sign
-        // evaluating the interval, it calls sign_1_rs, which uses RS to do it.
+        // evaluating the interval, it calls sign_rs_1, which uses RS to do it.
         static CGAL::Sign sign_1(const RS_polynomial_1 &p,const Algebraic_1 &x){
                 RS::rs_sign s=p.sign_mpfi(x.mpfi());
                 if(s!=RS::RS_UNKNOWN)
                         return RS::convert_rs_sign(s);
-                return sign_1_rs(p,x);
+                return sign_rs_1(p,x);
         }
 
         // compute the sign of the polynomial at a given dyadic

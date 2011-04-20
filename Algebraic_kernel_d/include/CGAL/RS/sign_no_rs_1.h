@@ -20,19 +20,18 @@
 #define CGAL_RS_SIGN_1_NO_RS_H
 
 #include <mpfi.h>
-#include <CGAL/RS/basic.h>
-#include <CGAL/RS/sign_1_no_rs.h>
+#include <CGAL/RS/basic_1.h>
 #include <CGAL/RS/polynomial_1.h>
 #include <CGAL/RS/polynomial_1_utils.h>
 #include <CGAL/RS/algebraic_1.h>
 #include <CGAL/RS/sign_1.h>
-#include <CGAL/RS/refine_1_rs.h>
+#include <CGAL/RS/refine_rs_1.h>
 
 namespace CGAL{
 
 // compute the sign of the polynomial at a given algebraic number
 template <class _Gcd_policy>
-CGAL::Sign sign_1_no_rs(const RS_polynomial_1 &p,const Algebraic_1 &x){
+CGAL::Sign sign_no_rs_1(const RS_polynomial_1 &p,const Algebraic_1 &x){
         typedef _Gcd_policy     Gcd;
 
         unsigned bisect_steps=/*4*/1000;

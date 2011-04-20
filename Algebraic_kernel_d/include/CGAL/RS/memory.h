@@ -19,7 +19,7 @@
 #ifndef CGAL_RS_MEMORY_H
 #define CGAL_RS_MEMORY_H
 
-#include <CGAL/RS/basic.h>
+#include <CGAL/RS/basic_1.h>
 #include <gmp.h>
 #include <cstdlib>
 #include <rs_exports.h>
