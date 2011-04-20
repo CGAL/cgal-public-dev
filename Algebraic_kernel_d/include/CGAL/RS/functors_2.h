@@ -20,13 +20,22 @@
 #ifndef CGAL_RS_FUNCTORS_2_H
 #define CGAL_RS_FUNCTORS_2_H
 
+#include <CGAL/Gmpz.h>
+#include <CGAL/Gmpfr.h>
+#include <CGAL/Polynomial_traits_d.h>
+#include <CGAL/Polynomial_type_generator.h>
+#include <CGAL/RS/algebraic_2.h>
+
 namespace CGAL{
 namespace RS3{
 
-typedef XXXXXXXXXXXXXXXXXXXXXXX         Polynomial;
-typedef XXXXXXXXXXXXXXXXX               Algebraic;
-typedef CGAL::Gmpfr                     Bound;
-typedef int                             Multiplicity;
+typedef CGAL::Gmpz                                      Innermost_coefficient;
+typedef CGAL::Polynomial<Innermost_coefficient>         Polynomial_1;
+typedef CGAL::Polynomial_type_generator<Innermost_coefficient,2>::Type
+                                                        Polynomial_2;
+typedef CGAL::RS3::Algebraic_2                          Algebraic_real_2;
+typedef CGAL::Gmpfr                                     Bound;
+typedef int                                             Multiplicity;
 
 } // namespace RS3
 } // namespace CGAL

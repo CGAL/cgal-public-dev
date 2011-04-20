@@ -20,9 +20,6 @@
 #ifndef CGAL_RS_ALGEBRAIC_KERNEL_RS_2
 #define CGAL_RS_ALGEBRAIC_KERNEL_RS_2
 
-#include <CGAL/Polynomial.h>
-#include <CGAL/Polynomial_traits_d.h>
-#include <CGAL/Polynomial_type_generator.h>
 #include <CGAL/RS/functors_2.h>
 
 namespace CGAL{
@@ -31,9 +28,9 @@ template <class _C>
 struct Algebraic_kernel_rs_2{
 
         typedef _C                                      Coefficient;
-        // TODO: adapt the polynomial type, see MPII's AK
-        typedef CGAL::Polynomial<Coefficient>           Polynomial_2;
-        typedef RS3::Algebraic                          Algebraic_real_2;
+        typedef typename CGAL::RS3::Polynomial_1        Polynomial_1;
+        typedef typename CGAL::RS3::Polynomial_2        Polynomial_2;
+        typedef CGAL::RS3::Algebraic_real_2             Algebraic_real_2;
         typedef RS3::Bound                              Bound;
         typedef RS3::Multiplicity                       Multiplicity_type;
 
