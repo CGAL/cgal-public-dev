@@ -20,6 +20,7 @@
 #ifndef CGAL_RS_ALGEBRAIC_KERNEL_RS_2
 #define CGAL_RS_ALGEBRAIC_KERNEL_RS_2
 
+#include <CGAL/RS/rs_calls_1.h>
 #include <CGAL/RS/functors_2.h>
 
 namespace CGAL{
@@ -38,6 +39,7 @@ struct Algebraic_kernel_rs_2{
         Algebraic_kernel_rs_2(){CGAL::init_solver();};
         ~Algebraic_kernel_rs_2(){CGAL::reset_solver();};
 
+        /*
         typedef RS3::Construct_alg_2<Polynomial_2,Coefficient>
                                                 Construct_algebraic_real_2;
         typedef RS3::Compute_polynomial_x_2<Polynomial_2>
@@ -56,7 +58,9 @@ struct Algebraic_kernel_rs_2{
         typedef RS3::Is_coprime_2<Polynomial_2> Is_coprime_2;
         typedef RS3::Make_coprime_2<Polynomial_2>
                                                 Make_coprime_2;
+        */
         typedef RS3::Solve_2<Polynomial_2>      Solve_2;
+        /*
         typedef RS3::Number_of_solutions_2<Polynomial_2>
                                                 Number_of_solutions_2;
         typedef RS3::Sign_at_2<Polynomial_2>    Sign_at_2;
@@ -73,10 +77,11 @@ struct Algebraic_kernel_rs_2{
                                                 Approximate_relative_x_2;
         typedef RS3::Approximate_relative_y_2
                                                 Approximate_relative_y_2;
+        */
 
 #define CGALRS_CREATE_FUNCTION_OBJECT(T,N) \
         T N##_object()const{return T();}
-        CGALRS_CREATE_FUNCTION_OBJECT(Construct_algebraic_real_2,
+        /*CGALRS_CREATE_FUNCTION_OBJECT(Construct_algebraic_real_2,
                                       construct_algebraic_real_2)
         CGALRS_CREATE_FUNCTION_OBJECT(Compute_polynomial_x_2,
                                       compute_polynomial_x_2)
@@ -91,7 +96,9 @@ struct Algebraic_kernel_rs_2{
                                       square_free_factorize_2)
         CGALRS_CREATE_FUNCTION_OBJECT(Is_coprime_2,is_coprime_2)
         CGALRS_CREATE_FUNCTION_OBJECT(Make_coprime_2,make_coprime_2)
+        */
         CGALRS_CREATE_FUNCTION_OBJECT(Solve_2,solve_2)
+        /*
         CGALRS_CREATE_FUNCTION_OBJECT(Number_of_solutions_2,
                                       number_of_solutions_2)
         CGALRS_CREATE_FUNCTION_OBJECT(Sign_at_2,sign_at_2)
@@ -108,6 +115,7 @@ struct Algebraic_kernel_rs_2{
                                       approximate_relative_x_2)
         CGALRS_CREATE_FUNCTION_OBJECT(Approximate_relative_y_2,
                                       approximate_relative_y_2)
+        */
 #undef CGALRS_CREATE_FUNCTION_OBJECT
 };  // Algebraic_kernel_rs_2
 

@@ -49,23 +49,28 @@ class Algebraic_2:Handle_for<Algebraic_2_rep>{
 
         // constructor from two numbers from which Gmpfi can be constructed
         template <class T>
-        Algebraic_2(const T &xcoord,const Y &ycoord){
+        Algebraic_2(const T &xcoord,const T &ycoord){
                 Gmpfi x(xcoord),y(ycoord);
                 ptr()->_x=x;
                 ptr()->_y=y;
         };
 
         // get the x-interval
-        Gmpfi& get_x()const{
+        const Gmpfi& get_x()const{
                 return Ptr()->_x;
         }
 
         // get the y-interval
-        Gmpfi& get_y()const{
+        const Gmpfi& get_y()const{
                 return Ptr()->_y;
         }
 
 }; // class Algebraic_2
+
+// write an algebraic to a stream
+inline std::ostream& operator<<(std::ostream &o,const Algebraic_2 &x){
+        return (o<<'['<<x.get_x()<<','<<x.get_y()<<']');
+}
 
 } // namespace RS3
 } // namespace CGAL

@@ -37,6 +37,35 @@ typedef CGAL::RS3::Algebraic_2                          Algebraic_real_2;
 typedef CGAL::Gmpfr                                     Bound;
 typedef int                                             Multiplicity;
 
+template <class Polynomial_>
+struct Solve_2{
+        typedef Polynomial_                                 Polynomial;
+
+        template <class OutputIterator>
+        OutputIterator operator()(const Polynomial &f,const Polynomial &g,
+                                  OutputIterator res)const{
+                // TODO: solve the system {f=0,g=0}
+                // 1. call RS
+                // 2. store solutions in res
+                // (for the moment, we always return two hardcoded roots)
+                for(int i=0;i<2;++i)
+                         *res++=std::make_pair(Algebraic_real_2(i,0),i+1);
+                return res;
+        }
+
+        template <class OutputIterator>
+        OutputIterator operator()(const Polynomial &f,const Polynomial &g,
+                                  const Bound &xl,const Bound &xu,
+                                  const Bound &yl,const Bound &yu,
+                                  OutputIterator res)const{
+                // TODO: solve inside the box [xl,xu]*[yl,yu]
+                for(int i=6;i<8;++i)
+                         *res++=std::make_pair(Algebraic_real_2(i,0),i+1);
+                return res;
+        }
+
+}; // Solve_2
+
 } // namespace RS3
 } // namespace CGAL
 
