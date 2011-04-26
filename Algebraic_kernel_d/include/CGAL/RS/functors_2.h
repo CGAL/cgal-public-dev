@@ -33,13 +33,13 @@ typedef CGAL::Gmpz                                      Innermost_coefficient;
 typedef CGAL::Polynomial<Innermost_coefficient>         Polynomial_1;
 typedef CGAL::Polynomial_type_generator<Innermost_coefficient,2>::Type
                                                         Polynomial_2;
-typedef CGAL::RS3::Algebraic_2                          Algebraic_real_2;
+typedef CGAL::RS3::Algebraic_2<Polynomial_2>            Algebraic_real_2;
 typedef CGAL::Gmpfr                                     Bound;
 typedef int                                             Multiplicity;
 
 template <class Polynomial_>
 struct Solve_2{
-        typedef Polynomial_                                 Polynomial;
+        typedef Polynomial_                             Polynomial;
 
         template <class OutputIterator>
         OutputIterator operator()(const Polynomial &f,const Polynomial &g,

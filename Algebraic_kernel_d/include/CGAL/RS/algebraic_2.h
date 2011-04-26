@@ -20,56 +20,65 @@
 #ifndef CGAL_RS_ALGEBRAIC_2_H
 #define CGAL_RS_ALGEBRAIC_2_H
 
+#include <CGAL/RS/rur_2.h>
 #include <CGAL/Gmpfi.h>
 
 namespace CGAL{
 namespace RS3{
 
-class Algebraic_2_rep{
-        public:
-        // the intervals containing the x and y solutions of the system
+template <class Polynomial_>
+class Algebraic_2{
+        private:
+        typedef Polynomial_                             Polynomial_2;
+        typedef Rur_2<Polynomial_2>                     Rur;
+        Rur _rur;
         Gmpfi _x,_y;
-        Algebraic_2_rep(){};
-        ~Algebraic_2_rep(){};
-        private:
-        Algebraic_2_rep(const Algebraic_2_rep&);
-        Algebraic_2_rep& operator=(const Algebraic_2_rep);
-};
-
-class Algebraic_2:Handle_for<Algebraic_2_rep>{
-        private:
-        typedef Handle_for<Algebraic_2_rep>     Base;
         public:
 
         // constructor from the output of the isolation
-        Algebraic_2(const Gmpfi &x,const Gmpfi &y){
-                ptr()->_x=x;
-                ptr()->_y=y;
-        };
+        // TODO: remove or rewrite in order to obtain a good RUR
+        Algebraic_2(const Gmpfi &x,const Gmpfi &y):_x(x),_y(y){};
+
+        // constructor from RUR and isolating intervals
+        Algebraic_2(const Rur &r,const Gmpfi &x,const Gmpfi &y):
+                _rur(r),_x(x),_y(y){};
 
         // constructor from two numbers from which Gmpfi can be constructed
+        // TODO: remove or rewrite in order to obtain a good RUR
         template <class T>
-        Algebraic_2(const T &xcoord,const T &ycoord){
-                Gmpfi x(xcoord),y(ycoord);
-                ptr()->_x=x;
-                ptr()->_y=y;
-        };
+        Algebraic_2(const T &xcoord,const T &ycoord):_x(xcoord),_y(ycoord){};
+
+        // get the RUR
+        const Rur& get_rur()const{
+                return _rur;
+        }
 
         // get the x-interval
         const Gmpfi& get_x()const{
-                return Ptr()->_x;
+                return _x;
         }
 
         // get the y-interval
         const Gmpfi& get_y()const{
-                return Ptr()->_y;
+                return _y;
         }
 
 }; // class Algebraic_2
 
-// write an algebraic to a stream
-inline std::ostream& operator<<(std::ostream &o,const Algebraic_2 &x){
-        return (o<<'['<<x.get_x()<<','<<x.get_y()<<']');
+// write an algebraic number to a stream
+// TODO: binary mode
+template <class Polynomial_>
+inline std::ostream& operator<<(std::ostream &o,
+                                const Algebraic_2<Polynomial_> &x){
+        if(is_pretty(o)){
+                o<<"Algebraic_real_2("<<
+                        x.get_x()<<','<<
+                        x.get_y()<<','<<
+                        x.get_rur()<<']';
+        }else{
+                o<<'['<<x.get_x()<<','<<x.get_y()<<']';
+        }
+        return o;
 }
 
 } // namespace RS3
