@@ -53,12 +53,13 @@ if(CUDA_CHECK_COMPILED)
     if((NOT CUDA_MAJOR) OR (CUDA_MAJOR EQUAL 1) AND (CUDA_MINOR LESS 3))
         message(STATUS "\nDevice does not support CUDA or version is too small\n")
     else()
-        add_definitions("-DCGAL_GPU_SYMBOLIC_SUPPORTED")
-        message(STATUS  "\n========= CUDA version found: ${CUDA_MAJOR}.${CUDA_MINOR} ============\n")
 
   cache_set(CGAL_Symbolic_3RD_PARTY_LIBRARIES    ${CUDA_LIBRARIES}   )
   cache_set(CGAL_Symbolic_3RD_PARTY_DEFINITIONS  "-DCGAL_USE_GPU")
   cache_set(CGAL_Symbolic_USE_GPU "ON")
+
+        add_definitions("-DCGAL_GPU_SYMBOLIC_SUPPORTED")
+        message(STATUS  "\n========= CUDA version found: ${CUDA_MAJOR}.${CUDA_MINOR} ============\n")
 
     endif()
 
