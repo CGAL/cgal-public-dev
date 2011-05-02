@@ -13,11 +13,60 @@ if("${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION}" VERSION_GREATER 2.6)
 endif()
 
 if ( NOT CGAL_FOUND )   
-  find_package(CGAL REQUIRED)
+    find_package(CGAL REQUIRED)
 endif()
 
 include(${CGAL_USE_FILE})
 
+if ( NOT MPFI_FOUND )
+# optionally look for support for gmp number types
+find_package( MPFI QUIET) 
+if ( MPFI_FOUND )
+ include( ${MPFI_USE_FILE} )
+endif( MPFI_FOUND )
+
+endif()
+
+INCLUDE (CheckCXXSourceRuns)
+# INCLUDE (CheckCSourceCompiles)
+
+set(CUDA_TOOLKIT_ROOT_DIR "$ENV{HOME}/cuda3.0/cuda")
+
+find_package(CUDA QUIET REQUIRED)
+
+set(CUDA_ATTACH_VS_BUILD_RULE_TO_CUDA_FILE OFF)
+set(CUDA_VERBOSE_BUILD ON)
+set(CUDA_64_BIT_DEVICE_CODE OFF)
+
+set(CMAKE_REQUIRED_INCLUDES ${CUDA_INCLUDE_DIRS})
+set(CMAKE_REQUIRED_LIBRARIES ${CUDA_LIBRARIES})
+FILE(READ test_CUDA.C src)
+
+CHECK_CXX_SOURCE_RUNS("${src}" CUDA_CHECK)
+
+if(CUDA_CHECK_COMPILED)
+
+    message(STATUS  "test_CUDA compiled successfully")
+    MATH(EXPR CUDA_MAJOR '${CUDA_CHECK_EXITCODE}/10')
+    MATH(EXPR CUDA_MINOR '${CUDA_CHECK_EXITCODE}%10')
+
+    if((NOT CUDA_MAJOR) OR (CUDA_MAJOR EQUAL 1) AND (CUDA_MINOR LESS 3))
+        message(STATUS "\nDevice does not support CUDA or version is too small\n")
+    else()
+        add_definitions("-DCGAL_GPU_SYMBOLIC_SUPPORTED")
+        message(STATUS  "\n========= CUDA version found: ${CUDA_MAJOR}.${CUDA_MINOR} ============\n")
+
+  cache_set(CGAL_Symbolic_3RD_PARTY_LIBRARIES    ${CUDA_LIBRARIES}   )
+  cache_set(CGAL_Symbolic_3RD_PARTY_DEFINITIONS  "-DCGAL_USE_GPU")
+  cache_set(CGAL_Symbolic_USE_GPU "ON")
+
+    endif()
+
+else()
+    message(STATUS  "test_CUDA failed: ${OUTPUT}")
+endif()
+
+# TODO NTL optional
 # try to find optional NTL
 
 if ( NOT NTL_FOUND ) 
@@ -38,12 +87,13 @@ if ( NTL_FOUND )
 
 endif ( NTL_FOUND )
 
-# TODO GPU optional
-
 include_directories( ${CGAL_3RD_PARTY_INCLUDE_DIRS} ${CGAL_Symbolic_3RD_PARTY_INCLUDE_DIRS} )
   
 build_cgal_library( CGAL_Symbolic CGALSymbolic "")
-  
+
+# add_library(CGAL_Symbolic
+#     base.cpp)
+
 add_dependencies( CGAL_Symbolic CGAL )
   
 add_definitions( ${CGAL_3RD_PARTY_DEFINITIONS} ${CGAL_Symbolic_3RD_PARTY_DEFINITIONS} )

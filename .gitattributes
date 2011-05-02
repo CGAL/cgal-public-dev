@@ -3843,6 +3843,7 @@ Symbolic/include/CGAL/GPU_algorithms/GPU_algorithm_templates.h -text
 Symbolic/include/CGAL/GPU_algorithms/common_defs.h -text
 Symbolic/include/CGAL/GPU_algorithms/gcd_algorithm.h -text
 Symbolic/include/CGAL/GPU_algorithms/resultant_algorithm.h -text
+Symbolic/src/CGALSymbolic/test_CUDA.C -text
 Testsuite/test/Testsuite/cgal_test_with_cmake eol=lf
 Testsuite/test/collect_cgal_testresults_from_cmake -text
 Testsuite/test/makefile2 -text
