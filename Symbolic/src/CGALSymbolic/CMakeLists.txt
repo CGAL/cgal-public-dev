@@ -30,9 +30,10 @@ endif()
 INCLUDE (CheckCXXSourceRuns)
 # INCLUDE (CheckCSourceCompiles)
 
+# TODO this does not work!
 set(CUDA_TOOLKIT_ROOT_DIR "$ENV{HOME}/cuda3.0/cuda")
 
-find_package(CUDA QUIET REQUIRED)
+#find_package(CUDA QUIET REQUIRED)
 
 set(CUDA_ATTACH_VS_BUILD_RULE_TO_CUDA_FILE OFF)
 set(CUDA_VERBOSE_BUILD ON)
@@ -67,7 +68,6 @@ else()
     message(STATUS  "test_CUDA failed: ${OUTPUT}")
 endif()
 
-# TODO NTL optional
 # try to find optional NTL
 
 if ( NOT NTL_FOUND ) 
