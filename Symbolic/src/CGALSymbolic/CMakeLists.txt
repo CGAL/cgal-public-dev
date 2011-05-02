@@ -27,46 +27,58 @@ endif( MPFI_FOUND )
 
 endif()
 
+
+# try to find CUDA
+
 INCLUDE (CheckCXXSourceRuns)
 # INCLUDE (CheckCSourceCompiles)
 
-# TODO this does not work!
+# TODO EBEB environment variables do not work, you should use find_path
 set(CUDA_TOOLKIT_ROOT_DIR "$ENV{HOME}/cuda3.0/cuda")
 
 find_package(CUDA QUIET REQUIRED)
 
-set(CUDA_ATTACH_VS_BUILD_RULE_TO_CUDA_FILE OFF)
-set(CUDA_VERBOSE_BUILD ON)
-set(CUDA_64_BIT_DEVICE_CODE OFF)
+if ( CUDA_FOUND )
 
-set(CMAKE_REQUIRED_INCLUDES ${CUDA_INCLUDE_DIRS})
-set(CMAKE_REQUIRED_LIBRARIES ${CUDA_LIBRARIES})
-FILE(READ test_CUDA.C src)
+  set(CUDA_ATTACH_VS_BUILD_RULE_TO_CUDA_FILE OFF)
+  set(CUDA_VERBOSE_BUILD ON)
+  set(CUDA_64_BIT_DEVICE_CODE OFF)
 
-CHECK_CXX_SOURCE_RUNS("${src}" CUDA_CHECK)
+  set(CMAKE_REQUIRED_INCLUDES ${CUDA_INCLUDE_DIRS})
+  set(CMAKE_REQUIRED_LIBRARIES ${CUDA_LIBRARIES})
+  FILE(READ test_CUDA.C src)
 
-if(CUDA_CHECK_COMPILED)
+  CHECK_CXX_SOURCE_RUNS("${src}" CUDA_CHECK)
+
+  if ( CUDA_CHECK_COMPILED )
 
     message(STATUS  "test_CUDA compiled successfully")
     MATH(EXPR CUDA_MAJOR '${CUDA_CHECK_EXITCODE}/10')
     MATH(EXPR CUDA_MINOR '${CUDA_CHECK_EXITCODE}%10')
 
-    if((NOT CUDA_MAJOR) OR (CUDA_MAJOR EQUAL 1) AND (CUDA_MINOR LESS 3))
-        message(STATUS "\nDevice does not support CUDA or version is too small\n")
+    if ((NOT CUDA_MAJOR) OR (CUDA_MAJOR EQUAL 1) AND (CUDA_MINOR LESS 3))
+
+      message(STATUS "\nDevice does not support CUDA or version is too small\n")
+
     else()
 
-  cache_set(CGAL_Symbolic_3RD_PARTY_LIBRARIES    ${CUDA_LIBRARIES}   )
-  cache_set(CGAL_Symbolic_3RD_PARTY_DEFINITIONS  "-DCGAL_USE_GPU")
-  cache_set(CGAL_Symbolic_USE_GPU "ON")
+      cache_set(CGAL_Symbolic_3RD_PARTY_LIBRARIES    ${CUDA_LIBRARIES}   )
+      cache_set(CGAL_Symbolic_3RD_PARTY_DEFINITIONS  "-DCGAL_USE_GPU")
+      cache_set(CGAL_Symbolic_USE_GPU "ON")
 
-        add_definitions("-DCGAL_GPU_SYMBOLIC_SUPPORTED")
-        message(STATUS  "\n========= CUDA version found: ${CUDA_MAJOR}.${CUDA_MINOR} ============\n")
+      # TODO EBEB: add to cache?
+      add_definitions("-DCGAL_GPU_SYMBOLIC_SUPPORTED")
+      message(STATUS  "\n========= CUDA version found: ${CUDA_MAJOR}.${CUDA_MINOR} ============\n")
 
     endif()
 
-else()
+  else( CUDA_CHECK_COMPILED )
+
     message(STATUS  "test_CUDA failed: ${OUTPUT}")
-endif()
+
+  endif( CUDA_CHECK_COMPILED )
+
+endif( CUDA_FOUND )
 
 # try to find optional NTL
 
