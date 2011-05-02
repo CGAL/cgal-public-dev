@@ -187,6 +187,7 @@ Algebraic_kernel_d/include/CGAL/RS/sign_1.h -text
 Algebraic_kernel_d/include/CGAL/RS/sign_no_rs_1.h -text
 Algebraic_kernel_d/include/CGAL/RS/sign_rs_1.h -text
 Algebraic_kernel_d/include/CGAL/RS/simple_algebraic_1.h -text
+Algebraic_kernel_d/include/CGAL/RS/simple_refiner_1.h -text
 Algebraic_kernel_d/include/CGAL/RS/ugcd.h -text
 Algebraic_kernel_d/package_info/Algebraic_kernel_d/description.txt -text
 Algebraic_kernel_d/package_info/Algebraic_kernel_d/maintainer -text
