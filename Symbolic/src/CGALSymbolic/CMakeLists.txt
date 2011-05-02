@@ -18,7 +18,26 @@ endif()
 
 include(${CGAL_USE_FILE})
 
-# TODO NTL optional
+# try to find optional NTL
+
+if ( NOT NTL_FOUND ) 
+  find_package( NTL )
+endif( NOT NTL_FOUND )
+
+if ( NTL_FOUND ) 
+
+# TODO   get_dependency_version(NTL NTL)
+  
+  message( STATUS "NTL include:     ${NTL_INCLUDE_DIR}" )
+  message( STATUS "NTL libraries:   ${NTL_LIBRARIES}" )
+  
+  cache_set(CGAL_Symbolic_3RD_PARTY_INCLUDE_DIRS ${NTL_INCLUDE_DIR} )
+  cache_set(CGAL_Symbolic_3RD_PARTY_LIBRARIES    ${NTL_LIBRARIES}   )
+  cache_set(CGAL_Symbolic_3RD_PARTY_DEFINITIONS  "-DCGAL_USE_NTL")
+  cache_set(CGAL_Symbolic_USE_NTL "ON")
+
+endif ( NTL_FOUND )
+
 # TODO GPU optional
 
 include_directories( ${CGAL_3RD_PARTY_INCLUDE_DIRS} ${CGAL_Symbolic_3RD_PARTY_INCLUDE_DIRS} )
