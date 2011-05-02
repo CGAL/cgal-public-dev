@@ -3838,11 +3838,11 @@ Surface_reconstruction_points_3/test/Surface_reconstruction_points_3/data/oni.pw
 Surface_reconstruction_points_3/test/Surface_reconstruction_points_3/data/robocat_deci.off -text svneol=unset#application/octet-stream
 Surface_reconstruction_points_3/test/Surface_reconstruction_points_3/data/sphere_20k.xyz -text
 Surface_reconstruction_points_3/test/Surface_reconstruction_points_3/poisson_reconstruction_test.cmd eol=lf
-Symbolic/include/CGAL/GPU_programs/GPU_algorithm_facade.h -text
-Symbolic/include/CGAL/GPU_programs/GPU_algorithm_templates.h -text
-Symbolic/include/CGAL/GPU_programs/common_defs.h -text
-Symbolic/include/CGAL/GPU_programs/gcd_algorithm.h -text
-Symbolic/include/CGAL/GPU_programs/resultant_algorithm.h -text
+Symbolic/include/CGAL/GPU_algorithms/GPU_algorithm_facade.h -text
+Symbolic/include/CGAL/GPU_algorithms/GPU_algorithm_templates.h -text
+Symbolic/include/CGAL/GPU_algorithms/common_defs.h -text
+Symbolic/include/CGAL/GPU_algorithms/gcd_algorithm.h -text
+Symbolic/include/CGAL/GPU_algorithms/resultant_algorithm.h -text
 Testsuite/test/Testsuite/cgal_test_with_cmake eol=lf
 Testsuite/test/collect_cgal_testresults_from_cmake -text
 Testsuite/test/makefile2 -text
