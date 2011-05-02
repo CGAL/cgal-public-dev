@@ -7,6 +7,15 @@ int main() {
 #else
   std::cout << "CGAL does NOT use NTL" << std::endl;
 #endif
+
+#if CGAL_USE_GPU
+  std::cout << "CGAL does use GPU" << std::endl;
+#else
+  std::cout << "CGAL does NOT use GPU" << std::endl;
+#endif
+
+  // TODO EBEB Add CGAL_GPU_SYMBOLIC_SUPPORTED?
+
   return 0;
 
 }
