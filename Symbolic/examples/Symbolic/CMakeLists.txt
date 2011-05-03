@@ -15,12 +15,18 @@ endif()
 
 
 # CGAL and its components
-find_package( CGAL QUIET COMPONENTS Symbolic )
+find_package( CGAL QUIET COMPONENTS Symbolic Core )
 
 if ( NOT CGAL_FOUND )
 
   message(STATUS "This project requires the CGAL library, and will not be compiled.")
   return()  
+
+endif()
+
+if( CGAL_CORE_FOUND)
+
+message( STATUS "bllllllllllllllllllllllllllaaaaaaaaaaaa")
 
 endif()
 
