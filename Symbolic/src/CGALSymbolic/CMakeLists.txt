@@ -29,8 +29,8 @@ endif()
 # try to find CUDA
 
 INCLUDE (CheckCXXSourceRuns)
-# INCLUDE (CheckCSourceCompiles)
 
+# set(CUDA_TOOLKIT_ROOT_DIR "$ENV{HOME}/cuda3.0/cuda")
 
 # REMARK: We require the following variables to be set:
 # export CUDA_BIN_PATH=$HOME/cuda3.0/cuda/bin
@@ -67,11 +67,10 @@ if ( CUDA_FOUND )
 # "/KM/home-0/emeliyan/work/CGAL/branches/features/Symbolic-mpi/Symbolic/src/CGALSymbolic")
 
       if(CUDA_CHECK_EXITCODE LESS 20)
-          cache_set(CGAL_Symbolic_3RD_PARTY_LIBRARIES   ${CUDA_LIBRARIES}
-              "${GPU_LIB_DIR}/libgpu_symbolic_sm_13.so")
+          cache_set(CGAL_Symbolic_3RD_PARTY_LIBRARIES              ${GPU_LIB_DIR}/libgpu_symbolic_sm_13.so ${CUDA_LIBRARIES})
       else()
-          cache_set(CGAL_Symbolic_3RD_PARTY_LIBRARIES   ${CUDA_LIBRARIES}
-              "${GPU_LIB_DIR}/libgpu_symbolic_sm_20.so")
+          cache_set(CGAL_Symbolic_3RD_PARTY_LIBRARIES 
+              ${GPU_LIB_DIR}/libgpu_symbolic_sm_20.so ${CUDA_LIBRARIES})
       endif()
 
       cache_set(CGAL_Symbolic_3RD_PARTY_DEFINITIONS  "-DCGAL_USE_GPU")
