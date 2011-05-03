@@ -19,12 +19,11 @@ endif()
 include(${CGAL_USE_FILE})
 
 if ( NOT MPFI_FOUND )
-# optionally look for support for gmp number types
-find_package( MPFI QUIET) 
-if ( MPFI_FOUND )
- include( ${MPFI_USE_FILE} )
-endif( MPFI_FOUND )
-
+  # optionally look for support for gmp number types
+  find_package( MPFI QUIET)
+  if ( MPFI_FOUND )
+    include( ${MPFI_USE_FILE} )
+   endif( MPFI_FOUND )
 endif()
 
 # try to find CUDA
@@ -32,13 +31,8 @@ endif()
 INCLUDE (CheckCXXSourceRuns)
 # INCLUDE (CheckCSourceCompiles)
 
-# TODO EBEB add WITH_GPU_DIR
-# TODO EBEB environment variables do not work, you should use
-# find_path
-# TODO EBEB add CUDA_LIB_DIR
-# set(CUDA_TOOLKIT_ROOT_DIR "$ENV{HOME}/cuda3.0/cuda")
 
-# set ENV variables:
+# REMARK: We require the following variables to be set:
 # export CUDA_BIN_PATH=$HOME/cuda3.0/cuda/bin
 # export CUDA_LIB_PATH=$HOME/cuda3.0/cuda/lib
 
@@ -68,6 +62,7 @@ if ( CUDA_FOUND )
 
     else()
 
+      # TODO EBEB Find GPU_LIB_DIR by FindGPUSYM (which would imply GPU_LIB_DIR to be set as env-variable)
       set(GPU_LIB_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 # "/KM/home-0/emeliyan/work/CGAL/branches/features/Symbolic-mpi/Symbolic/src/CGALSymbolic")
 
