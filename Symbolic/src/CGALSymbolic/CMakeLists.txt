@@ -13,7 +13,7 @@ if("${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION}" VERSION_GREATER 2.6)
 endif()
 
 if ( NOT CGAL_FOUND )   
-    find_package(CGAL REQUIRED)
+    find_package(CGAL QUIET COMPONENTS Core)
 endif()
 
 include(${CGAL_USE_FILE})
@@ -27,7 +27,6 @@ endif( MPFI_FOUND )
 
 endif()
 
-
 # try to find CUDA
 
 INCLUDE (CheckCXXSourceRuns)
@@ -37,7 +36,11 @@ INCLUDE (CheckCXXSourceRuns)
 # TODO EBEB environment variables do not work, you should use
 # find_path
 # TODO EBEB add CUDA_LIB_DIR
-set(CUDA_TOOLKIT_ROOT_DIR "$ENV{HOME}/cuda3.0/cuda")
+# set(CUDA_TOOLKIT_ROOT_DIR "$ENV{HOME}/cuda3.0/cuda")
+
+# set ENV variables:
+# export CUDA_BIN_PATH=$HOME/cuda3.0/cuda/bin
+# export CUDA_LIB_PATH=$HOME/cuda3.0/cuda/lib
 
 find_package(CUDA QUIET REQUIRED)
 
@@ -59,19 +62,27 @@ if ( CUDA_FOUND )
     MATH(EXPR CUDA_MAJOR '${CUDA_CHECK_EXITCODE}/10')
     MATH(EXPR CUDA_MINOR '${CUDA_CHECK_EXITCODE}%10')
 
-    if ((NOT CUDA_MAJOR) OR (CUDA_MAJOR EQUAL 1) AND (CUDA_MINOR LESS 3))
+    if (CUDA_CHECK_EXITCODE LESS 13)
 
       message(STATUS "\nDevice does not support CUDA or version is too small\n")
 
     else()
 
-      # TODO EBEB add libs from auxiliary
-      cache_set(CGAL_Symbolic_3RD_PARTY_LIBRARIES    ${CUDA_LIBRARIES}   )
-      # TODO EBEB Remove one of the defintions!
-      cache_set(CGAL_Symbolic_3RD_PARTY_DEFINITIONS  "-DCGAL_USE_GPU -DCGAL_GPU_SYMBOLIC_SUPPORTED")
+      set(GPU_LIB_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+# "/KM/home-0/emeliyan/work/CGAL/branches/features/Symbolic-mpi/Symbolic/src/CGALSymbolic")
+
+      if(CUDA_CHECK_EXITCODE LESS 20)
+          cache_set(CGAL_Symbolic_3RD_PARTY_LIBRARIES   ${CUDA_LIBRARIES}
+              "${GPU_LIB_DIR}/libgpu_symbolic_sm_13.so")
+      else()
+          cache_set(CGAL_Symbolic_3RD_PARTY_LIBRARIES   ${CUDA_LIBRARIES}
+              "${GPU_LIB_DIR}/libgpu_symbolic_sm_20.so")
+      endif()
+
+      cache_set(CGAL_Symbolic_3RD_PARTY_DEFINITIONS  "-DCGAL_USE_GPU")
       cache_set(CGAL_Symbolic_USE_GPU "ON")
 
-     message(STATUS  "\n========= CUDA version found: ${CUDA_MAJOR}.${CUDA_MINOR} ============\n")
+      message(STATUS "\nCUDA version found: ${CUDA_CHECK_EXITCODE}\n")
 
     endif()
 
@@ -85,20 +96,23 @@ endif( CUDA_FOUND )
 
 # try to find optional NTL
 
-if ( NOT NTL_FOUND ) 
+if ( NOT NTL_FOUND )
   find_package( NTL )
 endif( NOT NTL_FOUND )
 
-if ( NTL_FOUND ) 
+if ( NTL_FOUND )
 
 # TODO   get_dependency_version(NTL NTL)
-  
+
   message( STATUS "NTL include:     ${NTL_INCLUDE_DIR}" )
   message( STATUS "NTL libraries:   ${NTL_LIBRARIES}" )
-  
-  cache_set(CGAL_Symbolic_3RD_PARTY_INCLUDE_DIRS ${NTL_INCLUDE_DIR} )
-  cache_set(CGAL_Symbolic_3RD_PARTY_LIBRARIES    ${NTL_LIBRARIES}   )
-  cache_set(CGAL_Symbolic_3RD_PARTY_DEFINITIONS  "-DCGAL_USE_NTL")
+
+  cache_set(CGAL_Symbolic_3RD_PARTY_INCLUDE_DIRS
+        ${CGAL_Symbolic_3RD_PARTY_INCLUDE_DIRS} ${NTL_INCLUDE_DIR} )
+  cache_set(CGAL_Symbolic_3RD_PARTY_LIBRARIES
+        ${CGAL_Symbolic_3RD_PARTY_LIBRARIES} ${NTL_LIBRARIES} )
+  cache_set(CGAL_Symbolic_3RD_PARTY_DEFINITIONS
+        ${CGAL_Symbolic_3RD_PARTY_DEFINITIONS} "-DCGAL_USE_NTL")
   cache_set(CGAL_Symbolic_USE_NTL "ON")
 
 endif ( NTL_FOUND )
@@ -107,8 +121,7 @@ include_directories( ${CGAL_3RD_PARTY_INCLUDE_DIRS} ${CGAL_Symbolic_3RD_PARTY_IN
   
 build_cgal_library( CGAL_Symbolic CGALSymbolic "")
 
-# add_library(CGAL_Symbolic
-#     base.cpp)
+# add_library(CGAL_Symbolic base.cpp)
 
 add_dependencies( CGAL_Symbolic CGAL )
   
