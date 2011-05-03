@@ -24,12 +24,6 @@ if ( NOT CGAL_FOUND )
 
 endif()
 
-if( CGAL_CORE_FOUND)
-
-message( STATUS "bllllllllllllllllllllllllllaaaaaaaaaaaa")
-
-endif()
-
 # include helper file
 include( ${CGAL_USE_FILE} )
 
