@@ -33,7 +33,10 @@ endif()
 INCLUDE (CheckCXXSourceRuns)
 # INCLUDE (CheckCSourceCompiles)
 
-# TODO EBEB environment variables do not work, you should use find_path
+# TODO EBEB add WITH_GPU_DIR
+# TODO EBEB environment variables do not work, you should use
+# find_path
+# TODO EBEB add CUDA_LIB_DIR
 set(CUDA_TOOLKIT_ROOT_DIR "$ENV{HOME}/cuda3.0/cuda")
 
 find_package(CUDA QUIET REQUIRED)
@@ -62,13 +65,13 @@ if ( CUDA_FOUND )
 
     else()
 
+      # TODO EBEB add libs from auxiliary
       cache_set(CGAL_Symbolic_3RD_PARTY_LIBRARIES    ${CUDA_LIBRARIES}   )
-      cache_set(CGAL_Symbolic_3RD_PARTY_DEFINITIONS  "-DCGAL_USE_GPU")
+      # TODO EBEB Remove one of the defintions!
+      cache_set(CGAL_Symbolic_3RD_PARTY_DEFINITIONS  "-DCGAL_USE_GPU -DCGAL_GPU_SYMBOLIC_SUPPORTED")
       cache_set(CGAL_Symbolic_USE_GPU "ON")
 
-      # TODO EBEB: add to cache?
-      add_definitions("-DCGAL_GPU_SYMBOLIC_SUPPORTED")
-      message(STATUS  "\n========= CUDA version found: ${CUDA_MAJOR}.${CUDA_MINOR} ============\n")
+     message(STATUS  "\n========= CUDA version found: ${CUDA_MAJOR}.${CUDA_MINOR} ============\n")
 
     endif()
 
