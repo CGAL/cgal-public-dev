@@ -17,7 +17,7 @@ namespace CGAL {
 
 namespace internal {
 
-#if (defined CGAL_GPU_SYMBOLIC_SUPPORTED)
+#if (defined CGAL_USE_GPU)
 
 template < class NT >
 void writeout(const CGAL::Polynomial< NT >& p1,
@@ -170,7 +170,7 @@ CGAL::Polynomial< CORE::BigInt > gcd_utcf_(
 }
 #endif
 
-#endif // CGAL_GPU_SYMBOLIC_SUPPORTED
+#endif // CGAL_USE_GPU
 
 } // namespace internal
 
