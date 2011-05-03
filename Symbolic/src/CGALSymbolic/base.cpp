@@ -9,7 +9,14 @@
 #include <CGAL/Polynomial.h>
 
 #include <CGAL/symbolic_exports.h>
+
+#if (defined CGAL_USE_GPU)
 #include <CGAL/GPU_algorithms/GPU_algorithm_facade.h>
+#endif
+
+#if (defined CGAL_USE_NTL)
+#include <NTL/ZZX.h>
+#endif
 
 static int _VERBOSE_Symbolic_ = 1;
 
