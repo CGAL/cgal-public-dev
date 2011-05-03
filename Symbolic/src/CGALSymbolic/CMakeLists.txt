@@ -40,6 +40,8 @@ find_package(CUDA QUIET REQUIRED)
 
 if ( CUDA_FOUND )
 
+# TODO TODO TODO: compile lib with debug support
+
   set(CUDA_ATTACH_VS_BUILD_RULE_TO_CUDA_FILE OFF)
   set(CUDA_VERBOSE_BUILD ON)
   set(CUDA_64_BIT_DEVICE_CODE OFF)
