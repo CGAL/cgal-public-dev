@@ -16,7 +16,7 @@
 
 #if (defined CGAL_USE_NTL)
 #include <NTL/ZZX.h>
-#endif
+#endif 
 
 static int _VERBOSE_Symbolic_ = 1;
 
