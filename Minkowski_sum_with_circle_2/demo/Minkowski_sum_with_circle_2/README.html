@@ -1,0 +1,148 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+  <meta content="text/html; charset=ISO-8859-1"
+ http-equiv="Content-Type">
+  <title>README</title>
+</head>
+<body>
+<div style="text-align: center;"><font size="+3"><span
+ style="font-weight: bold;">Polygon_offset_2 Demo</span><br
+ style="font-weight: bold;">
+</font></div>
+<font style="font-weight: bold;" size="+1">Usage:
+</font><br>
+<br>
+To run batch statistics on a specific file <br>
+Polygon_offset_2
+FileName Radius [EpsilonRatio] 1&gt;
+test.out 2&gt; test.log
+<br>
+<br>
+To run GUI demo
+<br>
+Polygon_offset_2 1&gt; test.out 2&gt; test.log
+<br>
+<br>
+<font style="font-weight: bold;" size="+1">Batch functionality:</font><br>
+<br>
+Running in a batch mode the application compares various statistics for
+Exact and Approximate Offset creation for the polygon in the input
+FileName versus new Approximate Offset via Minkowski Sum with given
+epsilon ratio, or, if not specified, with ratio ranging from 10^-1 to
+10^-4 (see Polygon_offset_2.cpp). The statistics are printed to
+FileName_time.<br>
+<br>
+For example to test Ron's benchmark one can run test.bat with next
+contents:
+<br>
+Polygon_offset_2 wheel.dat 5000000 1&gt; wheel.out 2&gt; wheel.log
+<br>
+Polygon_offset_2 spiked.dat 5 1&gt; spiked.out 2&gt; spiked.log
+<br>
+Polygon_offset_2 comb.dat 25 1&gt; comb.out 2&gt; comb.log
+<br>
+Polygon_offset_2 chain.dat 2000000 1&gt; chain.out 2&gt; chain.log
+<br>
+Polygon_offset_2 random.dat 15 1&gt; random.out 2&gt; random.log
+<br>
+The output will be in wheel.dat_time, spiked.dat_time, etc...<br>
+<br>
+<span style="text-decoration: underline;">Note</span>: logging has a
+significant impact on the time in this case, #define SHOULD_LOG and
+#define SHOULD_OUT in output_debug.h should be commented out
+to make the results meaningful.<br>
+<br style="font-weight: bold;">
+<font style="font-weight: bold;" size="+1">GUI functionality:</font><br>
+<br>
+In GUI mode all construction (forward) operations are performed on the
+input polygon. Reconstruction (backword) operations in the forward mode
+operate on Minkowski Sum, in the backward mode - on the input polygon.<br>
+<br>
+All operations are carried out in a "lasy" mode, that is when input
+polygon or parameters are updated only necessary (visible) data is
+recalculated. Show/Hide of a specific construction does not cause
+recomputation if no input parameter was changed.<br>
+<br>
+<img style="width: 20px; height: 20px;" alt="Open File"
+ src="../icons/fileOpen.png"> : currently the only method for getting
+the input polygon is opening a *.dat file in
+the demo (currently polygon without holes is expected). <br>
+TODO: The polygon editing functionality is not working yet, hope to
+remedy
+this in the near future.<br>
+<img style="width: 20px; height: 20px;" alt="Polygon"
+ src="../icons/Polygon_2.png"> : show input polygon.<br>
+<br>
+<span style="text-decoration: underline;">Edit Parameters</span>: <br>
+Radius - the size of the offset AKA kgon circle radius. <br>
+Kgon type - Regular (kgon points are more or less evenly spaced on a
+circle), Random (random points picked on a circle according to Kgon
+Size, epsilon is not guaranteed), Dependent (selected points depend on
+the input polygon and epsilon). <br>
+Kgon Size/Epsilon - these parameters are dependent on each other, and
+whenever one of them changes the other is updated accordingly (with
+epsilon having a priority over size).<br>
+TODO: Change Epsilon to a more meaningful Epsilon Ratio. Add current
+parameters visualization to status line.<br>
+<br>
+<img style="width: 20px; height: 20px;" alt="Forward"
+ src="../icons/Forward.png"> / <img style="width: 20px; height: 20px;"
+ alt="Backward" src="../icons/Backward.png"> : switching between
+forward and backward functionality. <br>
+Has impact on the availability of
+other functions (forward constructions are disabled in the backward
+(reconstruction) mode). <br>
+Alternates the input polygon of the backward (reconstruction) functions
+according to current mode (Minkowski Sum in forward mode, Polygon in
+backward mode).<br>
+<br>
+<span style="text-decoration: underline;">Forward functionality</span>:<br>
+<img style="width: 20px; height: 20px;" alt="Kgon"
+ src="../icons/Kgon_2.png">&nbsp;: construct kgon (by selection of
+rational points on circle) according to parameters.<br>
+<img style="width: 20px; height: 20px;" alt="Kgon Sum"
+ src="../icons/Kgon_sum_2.png">&nbsp;: construct input polygon and kgon
+Minkowski Sum.<br>
+<img style="width: 20px; height: 20px;" alt="Kgon induced circles"
+ src="../icons/Kgon_circles_2.png">&nbsp;: reconstruct offset arcs from
+kgon slopes in the Kgon Sum.<br>
+<img style="width: 20px; height: 20px;" alt="Exact offset"
+ src="../icons/Exact_offset_2.png">&nbsp;: construct exact offset.<br>
+<img style="width: 20px; height: 20px;" alt="Approximate offset"
+ src="../icons/App_offset_2.png">&nbsp;: construct approximate offset
+(with Radius - Epsilon) by Ron's method.<br>
+<img style="width: 20px; height: 19px;" alt="Kgon offset"
+ src="../icons/Kgon_offset_2.png"> : construct approximate offset with
+circular arcs from Kgon Sum (by detecting self-intersections of
+reconsructed arcs). IN PROGRESS.<br>
+<img style="width: 20px; height: 19px;" alt="Inner skeleton"
+ src="../icons/Inner_skel_2.png">: construct inner skeleton of the
+polygon.<br>
+<img style="width: 20px; height: 18px;" alt="Outer skeleton"
+ src="../icons/Outer_skel_2.png">: construct outer skeleton of the
+polygon.<br>
+<br>
+<span style="text-decoration: underline;">Backward functionality</span>:<br>
+<img style="width: 20px; height: 19px;" alt="Outer core (P-tilda)"
+ src="../icons/Outer_core_2.png">: construct outer core (P-tilda), for
+the convex input P-tilda = Inset(r-eps).<br>
+If inset has several contours only the first one is currently displayed.<br>
+<img style="width: 20px; height: 19px;" alt="Inner core (Inset r + eps)"
+ src="../icons/Inner_core_2.png">: construct inner core (Inset(r+eps)).<br>
+If inset has several contours only the first one is currently displayed.<br>
+<img style="width: 20px; height: 20px;" alt="Check approximability"
+ src="../icons/Approximability_2.png">: check approximability - is
+input polygon close to an offset of some polygon? Runs approximability
+verification
+algorithm (for convex case) with Radius and Epsilon parameters.<br>
+Computes Inset(r-eps) if it is not computed yet and displays a mapping
+between the input and the inset vertices (all blue if approximable, one
+yellow if not for the vertex with no appropriate mapping). The result
+(approximable
+or no) is also printed to the standard output.<br>
+TODO: add support for non-convex case. Add Optimal Input reconstruction.<br>
+<br>
+<br>
+</body>
+</html>

@@ -1,0 +1,9 @@
+*.moc
+ui*.h
+CMakeLists.txt
+CMakeCache.txt
+CMakeFiles
+cmake_install.cmake
+Makefile
+qrc_Polygon_offset_2.cxx
+Polygon_offset_2

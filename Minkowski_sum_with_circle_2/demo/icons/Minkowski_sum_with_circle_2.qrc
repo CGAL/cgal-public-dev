@@ -1,0 +1,35 @@
+<RCC>
+  <qresource prefix="/cgal/Minkowski_sum_with_circle_2" >
+    <file>Kgon_circles_2.png</file>
+    <file>Kgon_skipped_circles_2.png</file>     
+    <file>Polygon_2.png</file>
+    <file>App_offset_2.png</file>
+    <file>Approximability_2.png</file>
+    <file>Approximability_app_2.png</file>
+    <file>Kgon_2.png</file>
+    <file>Kgon_sum_2.png</file>
+    <file>Kgon_offset_2.png</file>
+    <file>Exact_offset_2.png</file>
+    <file>Inset_2.png</file>
+    <file>Outer_skel_2.png</file>
+    <file>Inner_skel_2.png</file>
+    <file>Outer_core_2.png</file>
+    <file>Inner_core_2.png</file>    
+    <file>Outer_core_app_2.png</file>
+    <file>Inner_core_app_2.png</file>   
+    <file>Outer_core_ms_2.png</file>
+    <file>Inner_core_ms_2.png</file>   
+    <file>Outer_core_diff_2.png</file>
+    <file>Inner_core_diff_2.png</file>   
+    <file>Forward.png</file>
+    <file>Backward.png</file>
+    <file>Approximability_y.png</file>
+    <file>Approximability_n.png</file>
+    <file>Approximability_u.png</file>
+    <file>Approximability_y_u.png</file>
+    <file>Approximability_n_u.png</file>
+    <file>Approximability_u_y.png</file>
+    <file>Approximability_u_n.png</file>
+    <file>Approximability_u_u.png</file>        
+  </qresource>
+</RCC>

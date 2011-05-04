@@ -1,0 +1,6 @@
+Package to collect various algorithms for constructing and deconstruction Minkowksi sums of a polygon and a disc
+
+We provide:
+* A new approximate construction
+* An exact deconsturction with "full" information"
+* A method to decide whether a polygon is eps-approximable with a Minkowski sum of a polygon and a disc

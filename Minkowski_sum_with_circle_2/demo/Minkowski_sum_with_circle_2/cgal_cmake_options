@@ -1,0 +1,4 @@
+CGAL_COMPONENT Qt4
+CGAL_COMPONENT Core
+
+# PACKAGE %SVNROOT%\cgal\trunk\GraphicsView

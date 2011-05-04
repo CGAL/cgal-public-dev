@@ -1,0 +1,39 @@
+<RCC>
+  <qresource prefix="/cgal/Polygon_offset_2" >
+    <file>../icons/Polygon_2.png</file>
+    <file>../icons/Kgon_2.png</file>
+    <file>../icons/Kgon_circles_2.png</file>
+    <file>../icons/Kgon_skipped_circles_2.png</file>    
+    <file>../icons/Kgon_sum_2.png</file>
+    <file>../icons/Kgon_offset_2.png</file>
+    <file>../icons/App_offset_2.png</file>
+    <file>../icons/Approximability_2.png</file>
+    <file>../icons/Approximability_app_2.png</file>
+    <file>../icons/Exact_offset_2.png</file>
+    <file>../icons/Inset_2.png</file>
+    <file>../icons/Outer_skel_2.png</file>
+    <file>../icons/Inner_skel_2.png</file>  
+    <file>../icons/Outer_core_2.png</file>
+    <file>../icons/Inner_core_2.png</file> 
+    <file>../icons/Outer_core_app_2.png</file>
+    <file>../icons/Inner_core_app_2.png</file>   
+    <file>../icons/Outer_core_ms_2.png</file>
+    <file>../icons/Inner_core_ms_2.png</file>   
+    <file>../icons/Outer_core_diff_2.png</file>
+    <file>../icons/Inner_core_diff_2.png</file>     
+    <file>../icons/Forward.png</file>
+    <file>../icons/Backward.png</file>
+    <file>../icons/Approximability_y.png</file>
+    <file>../icons/Approximability_n.png</file>
+    <file>../icons/Approximability_u.png</file>
+    <file>../icons/Approximability_y_u.png</file>
+    <file>../icons/Approximability_n_u.png</file>
+    <file>../icons/Approximability_u_y.png</file>
+    <file>../icons/Approximability_u_n.png</file>
+    <file>../icons/Approximability_u_u.png</file>    
+  </qresource>
+  <qresource prefix="/cgal/Input" >
+    <file>../icons/fit-page-32.png</file>
+    <file>../icons/inputPolyline.png</file>    
+  </qresource>
+</RCC>

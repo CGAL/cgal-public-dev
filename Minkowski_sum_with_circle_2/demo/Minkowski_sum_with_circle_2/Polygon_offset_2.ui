@@ -1,0 +1,883 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <author>GeometryFactory</author>
+ <class>Polygon_offset_2</class>
+ <widget class="QMainWindow" name="Polygon_offset_2">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>913</width>
+    <height>531</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>CGAL Polygon Offset</string>
+  </property>
+  <property name="windowIcon">
+   <iconset resource="../resources/CGAL.qrc">
+    <normaloff>:/cgal/logos/cgal_icon</normaloff>:/cgal/logos/cgal_icon</iconset>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QGridLayout" name="gridLayout">
+    <item row="0" column="0">
+     <widget class="QGraphicsView" name="graphicsView">
+      <property name="focusPolicy">
+       <enum>Qt::StrongFocus</enum>
+      </property>
+      <property name="verticalScrollBarPolicy">
+       <enum>Qt::ScrollBarAlwaysOn</enum>
+      </property>
+      <property name="horizontalScrollBarPolicy">
+       <enum>Qt::ScrollBarAlwaysOn</enum>
+      </property>
+      <property name="transformationAnchor">
+       <enum>QGraphicsView::NoAnchor</enum>
+      </property>
+     </widget>
+    </item>
+    <item row="1" column="0">
+     <widget class="QSplitter" name="splitter">
+      <property name="orientation">
+       <enum>Qt::Horizontal</enum>
+      </property>
+      <widget class="QLabel" name="radius_lab">
+       <property name="layoutDirection">
+        <enum>Qt::LeftToRight</enum>
+       </property>
+       <property name="text">
+        <string> radius = 1 </string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+       </property>
+      </widget>
+      <widget class="QLabel" name="eps_hat_lab">
+       <property name="text">
+        <string> epsilon/radius = 0.1 </string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+       </property>
+      </widget>
+      <widget class="QLabel" name="pgon_size_lab">
+       <property name="text">
+        <string> polygon size = 0 </string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+       </property>
+      </widget>
+      <widget class="QLabel" name="kgon_size_lab">
+       <property name="text">
+        <string> kgon size = 8 </string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+       </property>
+      </widget>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+  <widget class="QToolBar" name="fileToolBar">
+   <property name="windowTitle">
+    <string>File Tools</string>
+   </property>
+   <attribute name="toolBarArea">
+    <enum>TopToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>false</bool>
+   </attribute>
+   <addaction name="actionClear"/>
+   <addaction name="actionLoadPolygon"/>
+   <addaction name="actionSavePolygon"/>
+  </widget>
+  <widget class="QToolBar" name="viewToolBar">
+   <property name="windowTitle">
+    <string>Visualization Tools</string>
+   </property>
+   <attribute name="toolBarArea">
+    <enum>TopToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>false</bool>
+   </attribute>
+   <addaction name="actionConstructionType"/>
+   <addaction name="separator"/>
+   <addaction name="actionRecenter"/>
+   <addaction name="separator"/>
+   <addaction name="actionEditInputPolygon"/>
+   <addaction name="actionViewPolygon"/>
+  </widget>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>913</width>
+     <height>22</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menuFile">
+    <property name="title">
+     <string>&amp;File</string>
+    </property>
+    <addaction name="actionLoadPolygon"/>
+    <addaction name="actionSavePolygon"/>
+    <addaction name="actionClear"/>
+    <addaction name="separator"/>
+    <addaction name="actionQuit"/>
+   </widget>
+   <widget class="QMenu" name="menuEdit">
+    <property name="title">
+     <string>&amp;Edit</string>
+    </property>
+    <addaction name="actionEditInputPolygon"/>
+    <addaction name="actionEditParameters"/>
+    <addaction name="actionConstructionType"/>
+   </widget>
+   <widget class="QMenu" name="menuView">
+    <property name="title">
+     <string>&amp;View</string>
+    </property>
+    <addaction name="actionViewPolygon"/>
+    <addaction name="separator"/>
+    <addaction name="actionRecenter"/>
+   </widget>
+   <widget class="QMenu" name="menuReverse_Engineering">
+    <property name="title">
+     <string>Reverse Engineering</string>
+    </property>
+    <widget class="QMenu" name="menuShow">
+     <property name="title">
+      <string>Show</string>
+     </property>
+     <widget class="QMenu" name="menuLines">
+      <property name="title">
+       <string>Lines</string>
+      </property>
+      <addaction name="actionLines_eps"/>
+      <addaction name="actionLines_r_minus_eps"/>
+      <addaction name="actionLines_r"/>
+      <addaction name="actionLines_r_plus_eps"/>
+      <addaction name="separator"/>
+      <addaction name="actionLines_show_all"/>
+      <addaction name="actionLines_hide_all"/>
+     </widget>
+     <widget class="QMenu" name="menuCircles">
+      <property name="title">
+       <string>Circles</string>
+      </property>
+      <addaction name="actionCircles_eps"/>
+      <addaction name="actionCircles_r_minus_eps"/>
+      <addaction name="actionCircles_r"/>
+      <addaction name="actionCircles_r_plus_eps"/>
+      <addaction name="separator"/>
+      <addaction name="actionCircles_show_all"/>
+      <addaction name="actionCircles_hide_all"/>
+     </widget>
+     <addaction name="menuLines"/>
+     <addaction name="menuCircles"/>
+     <addaction name="separator"/>
+     <addaction name="actionShow_all"/>
+     <addaction name="actionHide_all"/>
+    </widget>
+    <addaction name="menuShow"/>
+   </widget>
+   <widget class="QMenu" name="menuCompare">
+    <property name="title">
+     <string>Compare</string>
+    </property>
+    <addaction name="actionConstructExactOffset"/>
+    <addaction name="actionConstructAppOffset"/>
+    <addaction name="separator"/>
+    <addaction name="actionConstructInnerSkeleton"/>
+    <addaction name="actionConstructOuterSkeleton"/>
+   </widget>
+   <widget class="QMenu" name="menuConstruct">
+    <property name="title">
+     <string>Construct</string>
+    </property>
+    <addaction name="actionViewKgon"/>
+    <addaction name="separator"/>
+    <addaction name="actionConstructKgonSum"/>
+    <addaction name="actionConstructKgonInducedCircles"/>
+    <addaction name="actionShowKgonSkippedCircles"/>
+    <addaction name="separator"/>
+    <addaction name="actionConstructKgonOffset"/>
+   </widget>
+   <widget class="QMenu" name="menuDeconstruct">
+    <property name="title">
+     <string>Deconstruct</string>
+    </property>
+    <addaction name="actionConstructInnerCore"/>
+    <addaction name="actionConstructOuterCore"/>
+    <addaction name="actionCheckApproximability"/>
+    <addaction name="separator"/>
+    <addaction name="actionConstructInnerCoreApp"/>
+    <addaction name="actionConstructInnerCoreSum"/>
+    <addaction name="actionConstructInnerDiffApp"/>
+    <addaction name="actionYesApproximability"/>
+    <addaction name="separator"/>
+    <addaction name="actionConstructOuterCoreApp"/>
+    <addaction name="actionConstructOuterCoreSum"/>
+    <addaction name="actionConstructOuterDiffApp"/>
+    <addaction name="actionNoApproximability"/>
+    <addaction name="separator"/>
+    <addaction name="actionCheckApproximabilityApp"/>
+   </widget>
+   <addaction name="menuFile"/>
+   <addaction name="menuEdit"/>
+   <addaction name="menuView"/>
+   <addaction name="menuCompare"/>
+   <addaction name="menuConstruct"/>
+   <addaction name="menuDeconstruct"/>
+   <addaction name="menuReverse_Engineering"/>
+  </widget>
+  <widget class="QToolBar" name="compareToolBar">
+   <property name="windowTitle">
+    <string>toolBar</string>
+   </property>
+   <attribute name="toolBarArea">
+    <enum>TopToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>false</bool>
+   </attribute>
+   <addaction name="actionConstructExactOffset"/>
+   <addaction name="actionConstructAppOffset"/>
+  </widget>
+  <widget class="QToolBar" name="constructionToolBar">
+   <property name="windowTitle">
+    <string>toolBar</string>
+   </property>
+   <attribute name="toolBarArea">
+    <enum>TopToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>false</bool>
+   </attribute>
+   <addaction name="actionViewKgon"/>
+   <addaction name="separator"/>
+   <addaction name="actionConstructKgonSum"/>
+   <addaction name="actionConstructKgonInducedCircles"/>
+   <addaction name="separator"/>
+   <addaction name="actionConstructKgonOffset"/>
+  </widget>
+  <widget class="QToolBar" name="decisionToolBar">
+   <property name="windowTitle">
+    <string>toolBar</string>
+   </property>
+   <attribute name="toolBarArea">
+    <enum>TopToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>false</bool>
+   </attribute>
+   <addaction name="actionCheckApproximabilityApp"/>
+  </widget>
+  <widget class="QToolBar" name="deconstructionToolBar">
+   <property name="windowTitle">
+    <string>toolBar</string>
+   </property>
+   <attribute name="toolBarArea">
+    <enum>TopToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>false</bool>
+   </attribute>
+   <addaction name="actionConstructInnerCoreApp"/>
+   <addaction name="actionConstructInnerCoreSum"/>
+   <addaction name="actionConstructInnerDiffApp"/>
+   <addaction name="actionYesApproximability"/>
+   <addaction name="separator"/>
+   <addaction name="actionConstructOuterCoreApp"/>
+   <addaction name="actionConstructOuterCoreSum"/>
+   <addaction name="actionConstructOuterDiffApp"/>
+   <addaction name="actionNoApproximability"/>
+  </widget>
+  <widget class="QToolBar" name="convexToolBar">
+   <property name="windowTitle">
+    <string>toolBar</string>
+   </property>
+   <attribute name="toolBarArea">
+    <enum>TopToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>false</bool>
+   </attribute>
+   <addaction name="actionConstructInnerCore"/>
+   <addaction name="actionConstructOuterCore"/>
+   <addaction name="actionCheckApproximability"/>
+  </widget>
+  <action name="actionAbout">
+   <property name="text">
+    <string>&amp;About</string>
+   </property>
+  </action>
+  <action name="actionAboutCGAL">
+   <property name="icon">
+    <iconset resource="../resources/CGAL.qrc">
+     <normaloff>:/cgal/logos/cgal_icon</normaloff>:/cgal/logos/cgal_icon</iconset>
+   </property>
+   <property name="text">
+    <string>About &amp;CGAL</string>
+   </property>
+  </action>
+  <action name="actionQuit">
+   <property name="text">
+    <string>&amp;Quit</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Q</string>
+   </property>
+  </action>
+  <action name="actionEditParameters">
+   <property name="text">
+    <string>&amp;Parameters </string>
+   </property>
+   <property name="toolTip">
+    <string>Circle Approximation</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+P</string>
+   </property>
+  </action>
+  <action name="actionInsertPoint">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>false</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="../icons/Input.qrc">
+     <normaloff>:/cgal/Input/inputPoint.png</normaloff>:/cgal/Input/inputPoint.png</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;Insert weighted point</string>
+   </property>
+   <property name="toolTip">
+    <string>Insert weighted point</string>
+   </property>
+   <property name="statusTip">
+    <string>Left: Insert vtx</string>
+   </property>
+  </action>
+  <action name="actionClear">
+   <property name="icon">
+    <iconset resource="../icons/File.qrc">
+     <normaloff>:/cgal/fileToolbar/fileNew.png</normaloff>:/cgal/fileToolbar/fileNew.png</iconset>
+   </property>
+   <property name="text">
+    <string>Clear</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Del</string>
+   </property>
+  </action>
+  <action name="actionConstructExactOffset">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>false</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="Polygon_offset_2.qrc">
+     <normaloff>:/cgal/Polygon_offset_2/icons/Exact_offset_2.png</normaloff>:/cgal/Polygon_offset_2/icons/Exact_offset_2.png</iconset>
+   </property>
+   <property name="text">
+    <string>Exact Offset</string>
+   </property>
+  </action>
+  <action name="actionConstructKgonSum">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="Polygon_offset_2.qrc">
+     <normaloff>:/cgal/Polygon_offset_2/icons/Kgon_sum_2.png</normaloff>:/cgal/Polygon_offset_2/icons/Kgon_sum_2.png</iconset>
+   </property>
+   <property name="text">
+    <string>Minkowski Sum with Kgon</string>
+   </property>
+  </action>
+  <action name="actionLoadPolygon">
+   <property name="icon">
+    <iconset resource="../icons/File.qrc">
+     <normaloff>:/cgal/fileToolbar/fileOpen.png</normaloff>:/cgal/fileToolbar/fileOpen.png</iconset>
+   </property>
+   <property name="text">
+    <string>L&amp;oad Polygon...</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+O</string>
+   </property>
+  </action>
+  <action name="actionSavePolygon">
+   <property name="icon">
+    <iconset resource="../icons/File.qrc">
+     <normaloff>:/cgal/fileToolbar/fileSave.png</normaloff>:/cgal/fileToolbar/fileSave.png</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;Save Polygon...</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+S</string>
+   </property>
+  </action>
+  <action name="actionRecenter">
+   <property name="icon">
+    <iconset resource="Polygon_offset_2.qrc">
+     <normaloff>:/cgal/Input/icons/fit-page-32.png</normaloff>:/cgal/Input/icons/fit-page-32.png</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;Recenter the viewport</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+R</string>
+   </property>
+  </action>
+  <action name="actionViewPolygon">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>false</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="Polygon_offset_2.qrc">
+     <normaloff>:/cgal/Polygon_offset_2/icons/Polygon_2.png</normaloff>:/cgal/Polygon_offset_2/icons/Polygon_2.png</iconset>
+   </property>
+   <property name="text">
+    <string>Input Polygon</string>
+   </property>
+  </action>
+  <action name="actionEditInputPolygon">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>false</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="Polygon_offset_2.qrc">
+     <normaloff>:/cgal/Input/icons/inputPolyline.png</normaloff>:/cgal/Input/icons/inputPolyline.png</iconset>
+   </property>
+   <property name="text">
+    <string>Input Polygon</string>
+   </property>
+  </action>
+  <action name="actionViewKgon">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="Polygon_offset_2.qrc">
+     <normaloff>:/cgal/Polygon_offset_2/icons/Kgon_2.png</normaloff>:/cgal/Polygon_offset_2/icons/Kgon_2.png</iconset>
+   </property>
+   <property name="text">
+    <string>Kgon</string>
+   </property>
+  </action>
+  <action name="actionLines_eps">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>eps</string>
+   </property>
+   <property name="visible">
+    <bool>true</bool>
+   </property>
+  </action>
+  <action name="actionLines_r_minus_eps">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>r-eps</string>
+   </property>
+  </action>
+  <action name="actionLines_r">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>r</string>
+   </property>
+  </action>
+  <action name="actionLines_r_plus_eps">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>r+eps</string>
+   </property>
+  </action>
+  <action name="actionCircles_eps">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>eps</string>
+   </property>
+  </action>
+  <action name="actionCircles_r_minus_eps">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>r-eps</string>
+   </property>
+  </action>
+  <action name="actionCircles_r">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>r</string>
+   </property>
+  </action>
+  <action name="actionCircles_r_plus_eps">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>r+eps</string>
+   </property>
+  </action>
+  <action name="actionLines_show_all">
+   <property name="text">
+    <string>Show all</string>
+   </property>
+  </action>
+  <action name="actionLines_hide_all">
+   <property name="text">
+    <string>Hide all</string>
+   </property>
+  </action>
+  <action name="actionCircles_show_all">
+   <property name="text">
+    <string>Show all</string>
+   </property>
+  </action>
+  <action name="actionCircles_hide_all">
+   <property name="text">
+    <string>Hide all</string>
+   </property>
+  </action>
+  <action name="actionShow">
+   <property name="text">
+    <string>Show</string>
+   </property>
+  </action>
+  <action name="actionShow_all">
+   <property name="text">
+    <string>Show all</string>
+   </property>
+  </action>
+  <action name="actionHide_all">
+   <property name="text">
+    <string>Hide all</string>
+   </property>
+  </action>
+  <action name="actionConstructKgonInducedCircles">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="Polygon_offset_2.qrc">
+     <normaloff>:/cgal/Polygon_offset_2/icons/Kgon_circles_2.png</normaloff>:/cgal/Polygon_offset_2/icons/Kgon_circles_2.png</iconset>
+   </property>
+   <property name="text">
+    <string>Induced circles</string>
+   </property>
+  </action>
+  <action name="actionConstructAppOffset">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="Polygon_offset_2.qrc">
+     <normaloff>:/cgal/Polygon_offset_2/icons/App_offset_2.png</normaloff>:/cgal/Polygon_offset_2/icons/App_offset_2.png</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;Approximate Offset</string>
+   </property>
+  </action>
+  <action name="actionConstructionType">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="Polygon_offset_2.qrc">
+     <normaloff>:/cgal/Polygon_offset_2/icons/Backward.png</normaloff>
+     <normalon>:/cgal/Polygon_offset_2/icons/Forward.png</normalon>:/cgal/Polygon_offset_2/icons/Backward.png</iconset>
+   </property>
+   <property name="text">
+    <string>Forward/Reverse Construction</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+T</string>
+   </property>
+  </action>
+  <action name="actionConstructOuterCore">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="Polygon_offset_2.qrc">
+     <normaloff>:/cgal/Polygon_offset_2/icons/Outer_core_2.png</normaloff>:/cgal/Polygon_offset_2/icons/Outer_core_2.png</iconset>
+   </property>
+   <property name="text">
+    <string>Outer Core</string>
+   </property>
+   <property name="toolTip">
+    <string>Inset r-eps</string>
+   </property>
+  </action>
+  <action name="actionConstructKgonOffset">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="Polygon_offset_2.qrc">
+     <normaloff>:/cgal/Polygon_offset_2/icons/Kgon_offset_2.png</normaloff>:/cgal/Polygon_offset_2/icons/Kgon_offset_2.png</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;Minkowski Offset</string>
+   </property>
+   <property name="toolTip">
+    <string>Approximate Offset via Minkowski Sum with Kgon</string>
+   </property>
+  </action>
+  <action name="actionShowKgonSkippedCircles">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="Polygon_offset_2.qrc">
+     <normaloff>:/cgal/Polygon_offset_2/icons/Kgon_skipped_circles_2.png</normaloff>:/cgal/Polygon_offset_2/icons/Kgon_skipped_circles_2.png</iconset>
+   </property>
+   <property name="text">
+    <string>Skipped circles</string>
+   </property>
+  </action>
+  <action name="actionConstructInnerSkeleton">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="Polygon_offset_2.qrc">
+     <normaloff>:/cgal/Polygon_offset_2/icons/Inner_skel_2.png</normaloff>:/cgal/Polygon_offset_2/icons/Inner_skel_2.png</iconset>
+   </property>
+   <property name="text">
+    <string>Inner Skeleton</string>
+   </property>
+   <property name="toolTip">
+    <string>Inner Skeleton</string>
+   </property>
+  </action>
+  <action name="actionCheckApproximability">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="Polygon_offset_2.qrc">
+     <normaloff>:/cgal/Polygon_offset_2/icons/Approximability_2.png</normaloff>:/cgal/Polygon_offset_2/icons/Approximability_2.png</iconset>
+   </property>
+   <property name="text">
+    <string>Check Approximability</string>
+   </property>
+   <property name="toolTip">
+    <string>Is (convex) polygon close to offset?</string>
+   </property>
+  </action>
+  <action name="actionConstructOuterSkeleton">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="Polygon_offset_2.qrc">
+     <normaloff>:/cgal/Polygon_offset_2/icons/Outer_skel_2.png</normaloff>:/cgal/Polygon_offset_2/icons/Outer_skel_2.png</iconset>
+   </property>
+   <property name="text">
+    <string>Outer Skeleton</string>
+   </property>
+  </action>
+  <action name="actionConstructInnerCore">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="Polygon_offset_2.qrc">
+     <normaloff>:/cgal/Polygon_offset_2/icons/Inner_core_2.png</normaloff>:/cgal/Polygon_offset_2/icons/Inner_core_2.png</iconset>
+   </property>
+   <property name="text">
+    <string>Inner Core</string>
+   </property>
+   <property name="toolTip">
+    <string>Inset r+eps</string>
+   </property>
+  </action>
+  <action name="actionCheckApproximabilityApp">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="Polygon_offset_2.qrc">
+     <normaloff>:/cgal/Polygon_offset_2/icons/Approximability_u.png</normaloff>:/cgal/Polygon_offset_2/icons/Approximability_u.png</iconset>
+   </property>
+   <property name="text">
+    <string>Decide Approximability</string>
+   </property>
+   <property name="toolTip">
+    <string>Is polygon close to offset?</string>
+   </property>
+  </action>
+  <action name="actionConstructInnerCoreApp">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="Polygon_offset_2.qrc">
+     <normaloff>:/cgal/Polygon_offset_2/icons/Inner_core_app_2.png</normaloff>:/cgal/Polygon_offset_2/icons/Inner_core_app_2.png</iconset>
+   </property>
+   <property name="text">
+    <string>Approximate Inner Core</string>
+   </property>
+   <property name="toolTip">
+    <string>~Inner Core</string>
+   </property>
+  </action>
+  <action name="actionConstructOuterCoreApp">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="Polygon_offset_2.qrc">
+     <normaloff>:/cgal/Polygon_offset_2/icons/Outer_core_app_2.png</normaloff>:/cgal/Polygon_offset_2/icons/Outer_core_app_2.png</iconset>
+   </property>
+   <property name="text">
+    <string>Approximate Outer Core</string>
+   </property>
+   <property name="toolTip">
+    <string>~Outer Core</string>
+   </property>
+  </action>
+  <action name="actionConstructInnerCoreSum">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="Polygon_offset_2.qrc">
+     <normaloff>:/cgal/Polygon_offset_2/icons/Inner_core_ms_2.png</normaloff>:/cgal/Polygon_offset_2/icons/Inner_core_ms_2.png</iconset>
+   </property>
+   <property name="text">
+    <string>Approximate Inner Core Sum</string>
+   </property>
+   <property name="toolTip">
+    <string>~Inner Core Sum</string>
+   </property>
+  </action>
+  <action name="actionConstructOuterCoreSum">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="Polygon_offset_2.qrc">
+     <normaloff>:/cgal/Polygon_offset_2/icons/Outer_core_ms_2.png</normaloff>:/cgal/Polygon_offset_2/icons/Outer_core_ms_2.png</iconset>
+   </property>
+   <property name="text">
+    <string>Approximate Outer Core Sum</string>
+   </property>
+   <property name="toolTip">
+    <string>~Outer Core Sum</string>
+   </property>
+  </action>
+  <action name="actionNoApproximability">
+   <property name="checkable">
+    <bool>false</bool>
+   </property>
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="Polygon_offset_2.qrc">
+     <normaloff>:/cgal/Polygon_offset_2/icons/Approximability_n_u.png</normaloff>
+     <normalon>:/cgal/Polygon_offset_2/icons/Approximability_n.png</normalon>:/cgal/Polygon_offset_2/icons/Approximability_n_u.png</iconset>
+   </property>
+   <property name="text">
+    <string>No Approximability</string>
+   </property>
+   <property name="toolTip">
+    <string>Is not approximabile?</string>
+   </property>
+  </action>
+  <action name="actionYesApproximability">
+   <property name="checkable">
+    <bool>false</bool>
+   </property>
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="Polygon_offset_2.qrc">
+     <normaloff>:/cgal/Polygon_offset_2/icons/Approximability_y.png</normaloff>
+     <normalon>:/cgal/Polygon_offset_2/icons/Approximability_y_u.png</normalon>:/cgal/Polygon_offset_2/icons/Approximability_y.png</iconset>
+   </property>
+   <property name="text">
+    <string>Yes Approximability</string>
+   </property>
+   <property name="toolTip">
+    <string>Is approximabile?</string>
+   </property>
+  </action>
+  <action name="actionConstructInnerDiffApp">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="Polygon_offset_2.qrc">
+     <normaloff>:/cgal/Polygon_offset_2/icons/Inner_core_diff_2.png</normaloff>:/cgal/Polygon_offset_2/icons/Inner_core_diff_2.png</iconset>
+   </property>
+   <property name="text">
+    <string>Approximate Inner Diff</string>
+   </property>
+   <property name="toolTip">
+    <string>~ Inner Diff</string>
+   </property>
+  </action>
+  <action name="actionConstructOuterDiffApp">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="Polygon_offset_2.qrc">
+     <normaloff>:/cgal/Polygon_offset_2/icons/Outer_core_diff_2.png</normaloff>:/cgal/Polygon_offset_2/icons/Outer_core_diff_2.png</iconset>
+   </property>
+   <property name="text">
+    <string>Approximate Outer Diff</string>
+   </property>
+   <property name="toolTip">
+    <string>~ Outer Diff</string>
+   </property>
+  </action>
+ </widget>
+ <resources>
+  <include location="../icons/File.qrc"/>
+  <include location="Polygon_offset_2.qrc"/>
+  <include location="../icons/Minkowski_sum_with_circle_2.qrc"/>
+  <include location="../icons/Input.qrc"/>
+  <include location="../resources/CGAL.qrc"/>
+ </resources>
+ <connections/>
+</ui>

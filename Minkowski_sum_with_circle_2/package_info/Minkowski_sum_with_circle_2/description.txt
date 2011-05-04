@@ -1,0 +1,1 @@
+Package to collect various algorithms for constructing and deconstruction Minkowksi sums of a polygon and a disc
