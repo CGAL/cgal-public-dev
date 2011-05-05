@@ -17,8 +17,8 @@
 //
 // Author: Luis Peñaranda <luis.penaranda@gmx.com>
 
-#ifndef CGAL_RS_SIMPLE_REFINER_1_H
-#define CGAL_RS_SIMPLE_REFINER_1_H
+#ifndef CGAL_RS_SIMPLE_RS3_REFINER_1_H
+#define CGAL_RS_SIMPLE_RS3_REFINER_1_H
 
 #include <CGAL/Polynomial_traits_d.h>
 #include <rs_exports.h> // only for rs_init_rs()
@@ -28,13 +28,13 @@ namespace CGAL{
 namespace RS3{
 
 template <class Polynomial_,class Bound_>
-struct Simple_refiner{
+struct Simple_rs3_refiner_1{
         void operator()(const Polynomial_&,Bound_&,Bound_&,int);
-}; // class Simple_refiner
+}; // class Simple_rs3_refiner_1
 
 template <class Polynomial_,class Bound_>
 void
-Simple_refiner<Polynomial_,Bound_>::
+Simple_rs3_refiner_1<Polynomial_,Bound_>::
 operator()(const Polynomial_&,Bound_&,Bound_&,int){
         CGAL_error_msg("RS3 refiner not implemented for these types");
         return;
@@ -42,7 +42,7 @@ operator()(const Polynomial_&,Bound_&,Bound_&,int){
 
 template<>
 void
-Simple_refiner<Polynomial<Gmpz>,Gmpfr>::
+Simple_rs3_refiner_1<Polynomial<Gmpz>,Gmpfr>::
 operator()(const Polynomial<Gmpz> &pol,Gmpfr &left,Gmpfr &right,int prec){
         typedef Polynomial<Gmpz>                        Polynomial;
         typedef Polynomial_traits_d<Polynomial>         Ptraits;
@@ -69,7 +69,7 @@ operator()(const Polynomial<Gmpz> &pol,Gmpfr &left,Gmpfr &right,int prec){
         interval.right=*(right.fr());
         for(int i=0;i<=deg;++i)
                 coefficients[i][0]=*(pol[i].mpz());
-        // TODO: avoid calling this rs_init_rs() many times
+        // TODO: avoid calling this rs_init_rs() many times in the code
         rs_init_rs();
         rs3_refine_u_root(&interval,coefficients,deg,prec,0,0);
         mpfr_custom_init_set(left.fr(),
@@ -89,4 +89,4 @@ operator()(const Polynomial<Gmpz> &pol,Gmpfr &left,Gmpfr &right,int prec){
 } // namespace RS3
 } // namespace CGAL
 
-#endif // CGAL_RS_SIMPLE_REFINER_1_H
+#endif // CGAL_RS_SIMPLE_RS3_REFINER_1_H
