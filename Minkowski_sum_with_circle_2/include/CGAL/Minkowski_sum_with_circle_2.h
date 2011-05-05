@@ -127,6 +127,8 @@ public:
     Data_approximate_inner_decision,
     Data_approximate_outer_decision,   
     Data_approximate_approximability,
+//    Data_search_epsilon,
+//    Data_search_radius,
     Data_type_size
   };
 
@@ -367,6 +369,10 @@ public:
       const Decomposition_2& decomposer = (is_fwd? m_kgon_sum_decomposer: m_polygon_decomposer);
       return decomposer.exact_outer_boundary();
     }
+
+    // search constructions
+
+    
    
     // update on-demand functions
     void needs_update();
@@ -458,7 +464,7 @@ m_delta(m_epsilon/4), // 1, 40
 m_circle_app(m_polygon, m_offset, m_epsilon, m_is_inner),
 m_ms_constructor(m_polygon, m_offset, m_epsilon, m_circle_app),
 m_polygon_offset_constructor(m_polygon, m_offset, m_epsilon),
-m_kgon_sum_offset_constructor(m_polygon, m_offset, m_epsilon),
+m_kgon_sum_offset_constructor(kgon_sum_outer_boundary(), m_offset, m_epsilon),
 m_polygon_decomposer(m_polygon, m_offset, m_epsilon, m_delta),
 m_kgon_sum_decomposer(kgon_sum_outer_boundary(), m_offset, m_epsilon, m_delta),
 m_search_offset(m_offset), // 1, 1
