@@ -52,9 +52,9 @@ public:
   typedef typename Types::Rat_traits_2 Rat_traits_2;
   typedef typename Rat_traits_2::X_monotone_curve_2 X_monotone_curve_2;
   typedef typename Rat_traits_2::Point_2  Arc_point_2;
-  typedef typename Rat_traits_2::CoordNT One_root_nt;
-  typedef typename CGAL::Cartesian<One_root_nt> One_root_kernel_2;
-  typedef typename One_root_kernel_2::Point_2 One_root_point_2;
+//  typedef typename Rat_traits_2::CoordNT One_root_nt;
+//  typedef typename CGAL::Cartesian<One_root_nt> One_root_kernel_2;
+//  typedef typename One_root_kernel_2::Point_2 One_root_point_2;
   
   typedef typename CGAL::Arrangement_2<Rat_traits_2>  Arrangement_2;
   typedef typename CGAL::Arr_observer<Arrangement_2>  Arr_observer_2;
