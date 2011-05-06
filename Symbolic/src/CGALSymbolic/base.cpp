@@ -322,14 +322,6 @@ Polynomial< NT > div_NTL(
 
 #ifdef CGAL_HAS_GMP_ARITHMETIC_KERNEL
 
-template <>
-void Polynomial< CGAL::Gmpz >::euclidean_division(
-    const Polynomial< CGAL::Gmpz >& f, const Polynomial< CGAL::Gmpz >& g,
-    Polynomial< CGAL::Gmpz >& q, Polynomial< CGAL::Gmpz >& r) {
-
-    div_NTL(f, g, q, r);
-}
-
 #if !(defined CGAL_USE_GPU) // give preference to gpu impl
 template <> 
 Polynomial< CGAL::Gmpz > gcd_(const Polynomial< CGAL::Gmpz >& p1,
@@ -342,14 +334,6 @@ Polynomial< CGAL::Gmpz > gcd_(const Polynomial< CGAL::Gmpz >& p1,
 #endif // CGAL_HAS_GMP_ARITHMETIC_KERNEL
 
 #ifdef CGAL_HAS_CORE_ARITHMETIC_KERNEL
-
-template <>
-void Polynomial< CORE::BigInt >::euclidean_division(
-    const Polynomial< CORE::BigInt >& f, const Polynomial< CORE::BigInt >& g,
-    Polynomial< CORE::BigInt >& q, Polynomial< CORE::BigInt >& r) {
-
-        div_NTL(f, g, q, r);
-}
 
 #if !(defined CGAL_USE_GPU) // give preference to gpu impl
 template <> 
@@ -365,6 +349,34 @@ Polynomial< CORE::BigInt > gcd_(const Polynomial< CORE::BigInt >& p1,
 #endif // CGAL_USE_NTL
 
 } // namespace internal
+
+#if (defined CGAL_USE_NTL)
+
+#ifdef CGAL_HAS_GMP_ARITHMETIC_KERNEL
+
+template <>
+void Polynomial< CGAL::Gmpz >::euclidean_division(
+    const Polynomial< CGAL::Gmpz >& f, const Polynomial< CGAL::Gmpz >& g,
+    Polynomial< CGAL::Gmpz >& q, Polynomial< CGAL::Gmpz >& r) {
+
+  internal::div_NTL(f, g, q, r);
+}
+
+#endif // CGAL_HAS_GMP_ARITHMETIC_KERNEL
+
+#ifdef CGAL_HAS_CORE_ARITHMETIC_KERNEL
+
+template <>
+void Polynomial< CORE::BigInt >::euclidean_division(
+    const Polynomial< CORE::BigInt >& f, const Polynomial< CORE::BigInt >& g,
+    Polynomial< CORE::BigInt >& q, Polynomial< CORE::BigInt >& r) {
+
+  internal::div_NTL(f, g, q, r);
+}
+
+#endif // CGAL_HAS_CORE_ARITHMETIC_KERNEL
+
+#endif // defined CGAL_USE_NTL
 
 } // namespace CGAL
 
