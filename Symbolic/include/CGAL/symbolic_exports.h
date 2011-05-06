@@ -61,6 +61,8 @@ CGAL::Polynomial< CORE::BigInt > gcd_utcf_(
 
 } // namespace internal
 
+#if CGAL_USE_NTL
+
 #ifdef CGAL_HAS_GMP_ARITHMETIC_KERNEL
 
 template <>
@@ -78,6 +80,8 @@ void Polynomial< CORE::BigInt >::euclidean_division(
     Polynomial< CORE::BigInt >& q, Polynomial< CORE::BigInt >& r);
 
 #endif
+
+#endif // CGAL_USE_NTL
 
 // get rid of modular stuff
 // #if (defined CGAL_USE_GPU || defined CGAL_USE_NTL)
