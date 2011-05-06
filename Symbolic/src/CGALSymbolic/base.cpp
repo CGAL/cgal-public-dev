@@ -117,7 +117,7 @@ CGAL::Polynomial< CORE::BigInt > resultant(
 template < class Poly >
 Poly gcd_gpu(const Poly& F_, const Poly& G_) {
 
-    std::cout << "--------- Using our lovely libs!! -------------\n";
+//    std::cout << "--------- Using our lovely libs!! -------------\n";
 
 //     n_ggcd_calls++;
 //     tm_ggcd.start();
@@ -306,7 +306,7 @@ Polynomial< NT > gcd_NTL(const Polynomial< NT >& p1,
 }
 
 template < class NT > inline
-Polynomial< NT > div_NTL(
+void div_NTL(
         const Polynomial< NT >& f, const Polynomial< NT >& g,
         Polynomial< NT >& q, Polynomial< NT >& r) {
 
@@ -323,12 +323,21 @@ Polynomial< NT > div_NTL(
 #ifdef CGAL_HAS_GMP_ARITHMETIC_KERNEL
 
 #if !(defined CGAL_USE_GPU) // give preference to gpu impl
+
 template <> 
 Polynomial< CGAL::Gmpz > gcd_(const Polynomial< CGAL::Gmpz >& p1,
                               const Polynomial< CGAL::Gmpz >& p2) {
 
     return gcd_NTL(p1, p2);
 }
+
+template <> 
+Polynomial< CGAL::Gmpz > gcd_utcf_(const Polynomial< CGAL::Gmpz >& p1,
+                                   const Polynomial< CGAL::Gmpz >& p2) {
+
+    return gcd_NTL(p1, p2);
+}
+
 #endif
 
 #endif // CGAL_HAS_GMP_ARITHMETIC_KERNEL
@@ -336,12 +345,21 @@ Polynomial< CGAL::Gmpz > gcd_(const Polynomial< CGAL::Gmpz >& p1,
 #ifdef CGAL_HAS_CORE_ARITHMETIC_KERNEL
 
 #if !(defined CGAL_USE_GPU) // give preference to gpu impl
+
 template <> 
 Polynomial< CORE::BigInt > gcd_(const Polynomial< CORE::BigInt >& p1,
                                 const Polynomial< CORE::BigInt >& p2) {
 
     return gcd_NTL(p1, p2);
 }
+
+template <> 
+Polynomial< CORE::BigInt > gcd_utcf_(const Polynomial< CORE::BigInt >& p1,
+                                     const Polynomial< CORE::BigInt >& p2) {
+
+    return gcd_NTL(p1, p2);
+}
+
 #endif
 
 #endif // CGAL_HAS_CORE_ARITHMETIC_KERNEL
