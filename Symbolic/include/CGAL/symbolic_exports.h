@@ -7,7 +7,7 @@ namespace CGAL {
 
 namespace internal {
 
-#if (defined CGAL_USE_GPU)
+#if (defined CGAL_USE_GPU) || (defined CGAL_USE_NTL)
 
 #ifdef CGAL_HAS_GMP_ARITHMETIC_KERNEL
 
