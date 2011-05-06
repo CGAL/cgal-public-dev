@@ -14,8 +14,6 @@ int main() {
   std::cout << "CGAL does NOT use GPU" << std::endl;
 #endif
 
-  // TODO EBEB Add CGAL_GPU_SYMBOLIC_SUPPORTED?
-
   return 0;
 
 }
