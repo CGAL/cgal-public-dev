@@ -7,7 +7,7 @@ namespace CGAL {
 
 namespace internal {
 
-#if (defined CGAL_USE_GPU) || (defined CGAL_USE_NTL)
+#if (defined CGAL_USE_GPU)
 
 #ifdef CGAL_HAS_GMP_ARITHMETIC_KERNEL
 
@@ -24,6 +24,10 @@ CGAL::Polynomial< CORE::BigInt > resultant(
         const CGAL::Polynomial< CGAL::Polynomial< CORE::BigInt > >& F_,
         const CGAL::Polynomial< CGAL::Polynomial< CORE::BigInt > >& G_);
 #endif
+
+#endif // CGAL_USE_GPU
+
+#if (defined CGAL_USE_GPU) || (defined CGAL_USE_NTL)
 
 // partial specialization to enable gpu'ed gcds
 #ifdef CGAL_HAS_GMP_ARITHMETIC_KERNEL
@@ -53,7 +57,7 @@ CGAL::Polynomial< CORE::BigInt > gcd_utcf_(
 
 #endif
 
-#endif // CGAL_USE_GPU
+#endif // CGAL_USE_GPU or CGAL_USE_NTL
 
 } // namespace internal
 
