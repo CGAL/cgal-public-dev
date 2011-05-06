@@ -18,8 +18,6 @@
 #include <NTL/ZZX.h>
 #endif 
 
-static int _VERBOSE_Symbolic_ = 1;
-
 namespace CGAL {
 
 namespace internal {
@@ -28,8 +26,8 @@ namespace internal {
 
 template < class NT >
 void writeout(const CGAL::Polynomial< NT >& p1,
-        const CGAL::Polynomial< NT >& p2) {
-    
+              const CGAL::Polynomial< NT >& p2) {
+  
     std::stringstream ss, ss2;
     CGAL::set_pretty_mode(ss);
     CGAL::set_pretty_mode(ss2);
@@ -48,7 +46,7 @@ template < class Coeff >
 inline Coeff resultant_cpu(
         const CGAL::Polynomial<Coeff>& F_, 
         const CGAL::Polynomial<Coeff>& G_){
-    // Is it possible not to copy and paste the code of original "resultant" here?
+  // Is it possible not to copy and paste the code of original "resultant" here?
   // make the variable to be elimnated the innermost one.
     typedef CGAL::Polynomial_traits_d<CGAL::Polynomial<Coeff> > PT;
     CGAL::Polynomial<Coeff> F = typename PT::Move()(F_, PT::d-1, 0);
@@ -290,7 +288,7 @@ Polynomial< NT > ntl2poly(const NTL::ZZX& r) {
 
 template < class NT > inline
 Polynomial< NT > gcd_NTL(const Polynomial< NT >& p1,
-        const Polynomial< NT >& p2) {
+                         const Polynomial< NT >& p2) {
 
     typedef Polynomial< NT > Poly_1;
 
@@ -308,8 +306,8 @@ Polynomial< NT > gcd_NTL(const Polynomial< NT >& p1,
 }
 
 template < class NT > inline
-void Polynomial< NT >::div_NTL(
-    const Polynomial< NT >& f, const Polynomial< NT >& g,
+Polynomial< NT > div_NTL(
+        const Polynomial< NT >& f, const Polynomial< NT >& g,
         Polynomial< NT >& q, Polynomial< NT >& r) {
 
     NTL::ZZX q1, r1, f1, g1;
@@ -324,7 +322,7 @@ void Polynomial< NT >::div_NTL(
 
 #ifdef CGAL_HAS_GMP_ARITHMETIC_KERNEL
 
-template < >
+template <>
 void Polynomial< CGAL::Gmpz >::euclidean_division(
     const Polynomial< CGAL::Gmpz >& f, const Polynomial< CGAL::Gmpz >& g,
     Polynomial< CGAL::Gmpz >& q, Polynomial< CGAL::Gmpz >& r) {
@@ -335,7 +333,7 @@ void Polynomial< CGAL::Gmpz >::euclidean_division(
 #if !(defined CGAL_USE_GPU) // give preference to gpu impl
 template <> 
 Polynomial< CGAL::Gmpz > gcd_(const Polynomial< CGAL::Gmpz >& p1,
-            const Polynomial< CGAL::Gmpz >& p2) {
+                              const Polynomial< CGAL::Gmpz >& p2) {
 
     return gcd_NTL(p1, p2);
 }
@@ -345,7 +343,7 @@ Polynomial< CGAL::Gmpz > gcd_(const Polynomial< CGAL::Gmpz >& p1,
 
 #ifdef CGAL_HAS_CORE_ARITHMETIC_KERNEL
 
-template < >
+template <>
 void Polynomial< CORE::BigInt >::euclidean_division(
     const Polynomial< CORE::BigInt >& f, const Polynomial< CORE::BigInt >& g,
     Polynomial< CORE::BigInt >& q, Polynomial< CORE::BigInt >& r) {
@@ -356,7 +354,7 @@ void Polynomial< CORE::BigInt >::euclidean_division(
 #if !(defined CGAL_USE_GPU) // give preference to gpu impl
 template <> 
 Polynomial< CORE::BigInt > gcd_(const Polynomial< CORE::BigInt >& p1,
-            const Polynomial< CORE::BigInt >& p2) {
+                                const Polynomial< CORE::BigInt >& p2) {
 
     return gcd_NTL(p1, p2);
 }
