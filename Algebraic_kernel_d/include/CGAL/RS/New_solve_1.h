@@ -42,13 +42,16 @@ namespace CGAL{
     inline int solve_1(mpfi_ptr *x,
 		       const Polynomial_1 &p1,
 		       unsigned int prec=CGAL_RS_DEF_PREC){
+      
+      rs_init_rs();
       rs_reset_all();
-      create_rs_upoly(p1.Get_Coeff_For_Rs(),p1.degree(),rs_get_default_up());
-        set_rs_precisol(prec);
-        set_rs_verbose(CGAL_RS_VERB);
-        rs_run_algo(CGALRS_CSTR("UISOLE"));
-        return affiche_sols_eqs(x);
-}
+      create_rs_upoly2(p1.Get_Coeff_For_Rs1(),p1.degree(),rs_get_default_up());
+      set_rs_precisol(prec);
+      set_rs_verbose(3);
+      rs_run_algo(CGALRS_CSTR("UISOLE"));
+      return affiche_sols_eqs(x);
+    
+    }
 
 // calculate the sign of a polynomial evaluated at the root of another
     inline Sign sign_rs_1(const Polynomial_1 &p1,
