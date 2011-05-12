@@ -21,7 +21,7 @@
 #define CGAL_RS_SIMPLE_RS3_REFINER_1_H
 
 #include <CGAL/Polynomial_traits_d.h>
-#include <rs_exports.h> // only for rs_init_rs()
+#include <CGAL/RS/simple_rs2_calls.h>
 #include <rs3_fncts.h>
 
 namespace CGAL{
@@ -69,8 +69,7 @@ operator()(const Polynomial<Gmpz> &pol,Gmpfr &left,Gmpfr &right,int prec){
         interval.right=*(right.fr());
         for(int i=0;i<=deg;++i)
                 coefficients[i][0]=*(pol[i].mpz());
-        // TODO: avoid calling this rs_init_rs() many times in the code
-        rs_init_rs();
+        RS2::Simple_rs2_calls::init_solver();
         rs3_refine_u_root(&interval,coefficients,deg,prec,0,0);
         mpfr_custom_init_set(left.fr(),
                              mpfr_custom_get_kind(&interval.left),
