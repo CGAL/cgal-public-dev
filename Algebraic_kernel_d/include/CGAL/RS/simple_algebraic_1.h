@@ -54,17 +54,20 @@ namespace SimpleAK1{
 template <class Polynomial_,
           class Bound_,
           class Refiner_,
-          class Comparator_>
+          class Comparator_/*,
+          class Ptraits_*/>
 class Simple_algebraic_1{
         private:
         typedef Polynomial_                             Polynomial;
         typedef Bound_                                  Bound;
         typedef Refiner_                                Refiner;
         typedef Comparator_                             Comparator;
+        //typedef Ptraits_                                Ptraits;
         typedef Polynomial_traits_d<Polynomial>         Ptraits;
-        typedef Ptraits::Coefficient_type               Coefficient;
-        typedef Ptraits::Scale                          Scale;
-        typedef Simple_algebraic_1<Polynomial,Bound>    Algebraic;
+        typedef typename Ptraits::Coefficient_type      Coefficient;
+        typedef typename Ptraits::Scale                 Scale;
+        typedef Simple_algebraic_1<Polynomial,Bound,Refiner,Comparator>
+                                                        Algebraic;
         Polynomial pol;
         mutable Bound left,right;
         public:
@@ -74,7 +77,8 @@ class Simple_algebraic_1{
                            const Bound &r):pol(p),left(l),right(r){
                 CGAL_assertion(l<=r);
         }
-        Simple_algebraic_1(const Algebraic &a):pol(p),left(l),right(r){}
+        Simple_algebraic_1(const Algebraic &a):
+        pol(a.pol),left(a.left),right(a.right){}
         ~Simple_algebraic_1(){}
 
         Simple_algebraic_1& operator=(const Algebraic &a){
@@ -83,7 +87,7 @@ class Simple_algebraic_1{
                 right=a.get_right();
         }
 
-        Polynomial& get_pol()const{return pol;}
+        Polynomial get_pol()const{return pol;}
         Bound& get_left()const{return left;}
         Bound& get_right()const{return right;}
 
@@ -116,14 +120,14 @@ class Simple_algebraic_1{
 #define CGAL_RS_DBL_PREC        53
 #endif
         double to_double(){
-                typedef typename Real_embeddable_traits<Bound>          RT;
+                typedef Real_embeddable_traits<Bound>                   RT;
                 typedef typename RT::To_double                          TD;
                 Refiner()(get_pol(),get_left(),get_right(),CGAL_RS_DBL_PREC);
                 CGAL_assertion(TD()(get_left())==TD()(get_right()));
                 return TD()(get_left());
         }
         std::pair<double,double> to_interval(){
-                typedef typename Real_embeddable_traits<Bound>          RT;
+                typedef Real_embeddable_traits<Bound>                   RT;
                 typedef typename RT::To_interval                        TI;
                 return std::make_pair(TI()(get_left().first),
                                       TI()(get_right().second));
@@ -135,23 +139,27 @@ class Simple_algebraic_1{
 } // namespace SimpleAK1
 
 // We define Simple_algebraic_1 as real-embeddable
-template<>
-class Real_embeddable_traits<SimpleAK1::Simple_algebraic_1>:
-public INTERN_RET::Real_ebeddable_traits_base<SimpleAK1::Simple_algebraic_1,
-                                              CGAL::Tag_true>{
+template <class Polynomial_,class Bound_,class Refiner_,class Comparator_>
+class Real_embeddable_traits<SimpleAK1::Simple_algebraic_1<Polynomial_,
+                                                           Bound_,
+                                                           Refiner_,
+                                                           Comparator_> >{
+        typedef Polynomial_                             P;
+        typedef Bound_                                  B;
+        typedef Refiner_                                R;
+        typedef Comparator_                             C;
 
         public:
-        typedef INTERN_RET::Real_embeddable_traits_base
-                <SimpleAK1::Simple_algebraic_1,
-                 CGAL::Tag_true >               Base;
 
-        typedef CGAL::Tag_true                  Is_real_embeddable;
-        typedef bool                            Boolean;
-        typedef CGAL::Sign                      Sign;
-        typedef CGAL::Comparison_result         Comparison_result;
+        typedef SimpleAK1::Simple_algebraic_1<P,B,R,C>  Type;
+        typedef CGAL::Tag_true                          Is_real_embeddable;
+        typedef bool                                    Boolean;
+        typedef CGAL::Sign                              Sign;
+        typedef CGAL::Comparison_result                 Comparison_result;
 
-        typedef SimpleAK1::Simple_algebraic_1   Type;
-        typedef Base::Compare                   Compare;
+        typedef INTERN_RET::Real_embeddable_traits_base<Type,CGAL::Tag_true>
+                                                        Base;
+        typedef typename Base::Compare                  Compare;
 
         class Sgn:public std::unary_function<Type,CGAL::Sign>{
                 public:

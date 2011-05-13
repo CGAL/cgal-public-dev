@@ -29,19 +29,19 @@ template <class Polynomial_,
           class Bound_,
           class Refiner_,
           class Signat_/*,
-          class Gcd_*/>
+          class Ptraits_*/>
 struct Simple_comparator_1{
         typedef Polynomial_                                     Polynomial;
         typedef Bound_                                          Bound;
         typedef Refiner_                                        Refiner;
         typedef Signat_                                         Signat;
-        //typedef Gcd_                                            Gcd;
+        //typedef Ptraits_                                        Ptraits;
         typedef CGAL::Polynomial_traits_d<Polynomial>           Ptraits;
-        typedef Ptraits::Gcd_up_to_constant_factor              Gcd;
-        typedef Ptraits::Degree                                 Degree;
+        typedef typename Ptraits::Gcd_up_to_constant_factor     Gcd;
+        typedef typename Ptraits::Degree                        Degree;
 
         CGAL::Comparison_result
-        operator()(const Polynomial &p1,Bound &l1,Bound &r1;
+        operator()(const Polynomial &p1,Bound &l1,Bound &r1,
                    const Polynomial &p2,Bound &l2,Bound &r2)const{
                 if(l1<=l2){
                         if(r1<l2)
@@ -67,7 +67,7 @@ struct Simple_comparator_1{
         // This function compares two algebraic numbers, assuming that they
         // are not equal.
         CGAL::Comparison_result
-        compare_unequal(const Polynomial &p1,Bound &l1,Bound &r1;
+        compare_unequal(const Polynomial &p1,Bound &l1,Bound &r1,
                         const Polynomial &p2,Bound &l2,Bound &r2)const{
                 do{
                         Refiner()(p1,l1,r1,100);

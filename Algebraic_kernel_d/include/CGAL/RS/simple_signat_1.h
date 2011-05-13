@@ -21,33 +21,36 @@
 #define CGAL_RS_SIMPLE_SIGNAT_1_H
 
 #include <CGAL/Gmpfi.h>
-#include <boost/mpl/assert.hpp>
+//#include <boost/mpl/assert.hpp>
 
 namespace CGAL{
 namespace SimpleAK1{
 
-template <class Polynomial_,class Bound_>
+template <class Polynomial_,class Bound_/*,class Ptraits_*/>
 struct Simple_signat_1{
         typedef Polynomial_                                     Polynomial;
         typedef Bound_                                          Bound;
+        //typedef Ptraits_                                        Ptraits;
+        typedef Polynomial_traits_d<Polynomial>                 Ptraits;
         Polynomial pol;
         Simple_signat_1(const Polynomial &p):pol(p){};
         CGAL::Sign operator()(const Bound&);
 }; //struct Simple_signat_1{
 
-template <class Polynomial_,class Bound_>
+template <class Polynomial_,class Bound_/*,class Ptraits_*/>
 inline CGAL::Sign
-Simple_signat_1<Polynomial_,Bound_>::operator()(const Bound_&){
+Simple_signat_1<Polynomial_,Bound_>::operator()(const Bound_ &x){
         typedef Polynomial_                                     Polynomial;
         typedef Bound_                                          Bound;
+        //typedef Ptraits_                                        Ptraits;
         typedef Polynomial_traits_d<Polynomial>                 Ptraits;
-        typedef Ptraits::Degree                                 Degree;
+        typedef typename Ptraits::Degree                        Degree;
         typedef Real_embeddable_traits<Bound>                   REtraits;
-        typedef REtraits::Sign                                  BSign;
+        typedef typename REtraits::Sign                         BSign;
         typedef Algebraic_structure_traits<Bound>               AStraits;
         // This generic signat works only when Bound_ is an exact type. For
         // non-exact types, an implementation must be provided.
-        BOOST_MPL_ASSERT((boost::is_same<AStraits::Is_exact,Tag_true>));
+        //BOOST_MPL_ASSERT((boost::is_same<AStraits::Is_exact,Tag_true>));
         int d=Degree()(pol);
         Bound h(pol[d]);
         for(int i=1;i<=d;++i)
@@ -58,8 +61,6 @@ Simple_signat_1<Polynomial_,Bound_>::operator()(const Bound_&){
 template <>
 inline CGAL::Sign
 Simple_signat_1<Polynomial<Gmpz>,Gmpfr>::operator()(const Gmpfr &x){
-        typedef Polynomial<Gmpz>                                Polynomial;
-        typedef Polynomial_traits_d<Polynomial>                 Ptraits;
         typedef Ptraits::Degree                                 Degree;
         typedef Ptraits::Substitute                             Substitute;
         typedef Simple_signat_1<Polynomial,Gmpq>                Exact_sign;
@@ -67,17 +68,17 @@ Simple_signat_1<Polynomial<Gmpz>,Gmpfr>::operator()(const Gmpfr &x){
         if(d==0)
                 return pol[0].sign();
         Gmpfi h(pol[d],x.get_precision()+2*d);
-        if(h.sign()!=Uncertain<Sign>::indeterminate)
+        if(h.sign()!=Uncertain<Sign>::indeterminate())
                 return Exact_sign(pol)(x);
         for(int i=1;i<=d;++i){
                 h*=x;
-                if(h.sign()!=Uncertain<Sign>::indeterminate)
+                if(h.sign()!=Uncertain<Sign>::indeterminate())
                         return Exact_sign(pol)(x);
                 h+=pol[d-i];
-                if(h.sign()!=Uncertain<Sign>::indeterminate)
+                if(h.sign()!=Uncertain<Sign>::indeterminate())
                         return Exact_sign(pol)(x);
         }
-        CGAL_assertion(h.sign()!=Uncertain<Sign>::indeterminate);
+        CGAL_assertion(h.sign()!=Uncertain<Sign>::indeterminate());
         return h.sign();
 };
 
