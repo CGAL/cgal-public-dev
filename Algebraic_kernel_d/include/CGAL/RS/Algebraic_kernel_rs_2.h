@@ -1,3 +1,4 @@
+// Copyright (c) 2011 INRIA Nancy-Grand Est (France).
 // Copyright (c) 2011 National and Kapodistrian University of Athens (Greece).
 // All rights reserved.
 //
@@ -15,37 +16,69 @@
 // $URL$
 // $Id$
 //
-// Author: Luis Peñaranda <luis.penaranda@gmx.com>
+// Authors: Yacine Bouzidi <yacine.bouzidi@inria.fr>
+//          Luis Peñaranda <luis.penaranda@gmx.com>
+//          Marc Pouget <marc.pouget@inria.fr>
+//          Fabrice Rouillier <fabrice.rouillier@inria.fr>
 
 #ifndef CGAL_RS_ALGEBRAIC_KERNEL_RS_2
 #define CGAL_RS_ALGEBRAIC_KERNEL_RS_2
 
+// TODO: replace the old AK1 by the new one
+#include <CGAL/Algebraic_kernel_rs_gmpz_d_1.h>
+
+#include <CGAL/Polynomial_traits_d.h>
 #include <CGAL/RS/rs_calls_1.h>
 #include <CGAL/RS/functors_2.h>
 
 namespace CGAL{
 
-template <class _C>
-struct Algebraic_kernel_rs_2{
+// _Polynomial: the type of bivariate polynomials forming the systems that
+// the kernel will be able to solve.
+// _Bound: the type of the numbers representing the bounds of the boxes of
+// the solutions of the system.
+// _AK1: the univariate algebraic kernel that this bivariate kernel
+// refines. It defaults to the RS univariate algebraic kernel.
+// _Ptraits: the polynomial traits containing the operations on
+// polynomials. It defaults to the CGAL polynomial traits.
+template <class _Polynomial,
+          class _Bound,
+          class _AK1=CGAL::Algebraic_kernel_rs_gmpz_d_1,
+          class _Ptraits=CGAL::Polynomial_traits_d<_Polynomial> >
+struct Algebraic_kernel_rs_2:
+public _AK1{
 
-        typedef _C                                      Coefficient;
-        typedef typename CGAL::RS3::Polynomial_1        Polynomial_1;
-        typedef typename CGAL::RS3::Polynomial_2        Polynomial_2;
-        typedef CGAL::RS3::Algebraic_real_2             Algebraic_real_2;
-        typedef RS3::Bound                              Bound;
+        typedef _Polynomial                             Polynomial_2;
+        typedef _Bound                                  Bound;
+        typedef _Ptraits                                Ptraits;
+        typedef _AK1                                    AK1;
+        typedef typename AK1::Polynomial_1              Polynomial_1;
+        typedef int                                     size_type;
+        typedef typename AK1::Algebraic_real_1          Algebraic_real_1;
+        typedef CGAL::RS3::Algebraic_2<Polynomial_2>    Algebraic_real_2;
         typedef RS3::Multiplicity                       Multiplicity_type;
+        typedef typename Ptraits::Innermost_coefficient_type
+                                                        Coefficient;
 
         // TODO: write new functions in RS3 namespace to init/reset
-        Algebraic_kernel_rs_2(){CGAL::init_solver();};
-        ~Algebraic_kernel_rs_2(){CGAL::reset_solver();};
+        Algebraic_kernel_rs_2(){
+                CGAL::init_solver();
+        };
 
-        /*
-        typedef RS3::Construct_alg_2<Polynomial_2,Coefficient>
+        ~Algebraic_kernel_rs_2(){
+                CGAL::reset_solver();
+        };
+
+        typedef RS3::Construct_alg_2<Polynomial_2,
+                                     Bound,
+                                     Coefficient,
+                                     Algebraic_real_1>
                                                 Construct_algebraic_real_2;
-        typedef RS3::Compute_polynomial_x_2<Polynomial_2>
+        typedef RS3::Compute_polynomial_x_2<Algebraic_real_2,Polynomial_1>
                                                 Compute_polynomial_x_2;
-        typedef RS3::Compute_polynomial_y_2<Polynomial_2>
+        typedef RS3::Compute_polynomial_y_2<Algebraic_real_2,Polynomial_1>
                                                 Compute_polynomial_y_2;
+        /*
         typedef RS3::Isolate_2<Polynomial_2>    Isolate_2;
         typedef RS3::Isolate_x_2<Polynomial_2>  Isolate_x_2;
         typedef RS3::Isolate_y_2<Polynomial_2>  Isolate_y_2;
@@ -59,7 +92,8 @@ struct Algebraic_kernel_rs_2{
         typedef RS3::Make_coprime_2<Polynomial_2>
                                                 Make_coprime_2;
         */
-        typedef RS3::Solve_2<Polynomial_2>      Solve_2;
+        typedef RS3::Solve_2<Polynomial_2,Bound>
+                                                Solve_2;
         /*
         typedef RS3::Number_of_solutions_2<Polynomial_2>
                                                 Number_of_solutions_2;

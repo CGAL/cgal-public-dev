@@ -1,3 +1,4 @@
+// Copyright (c) 2011 INRIA Nancy-Grand Est (France).
 // Copyright (c) 2011 National and Kapodistrian University of Athens (Greece).
 // All rights reserved.
 //
@@ -15,7 +16,10 @@
 // $URL$
 // $Id$
 //
-// Author: Luis Peñaranda <luis.penaranda@gmx.com>
+// Authors: Yacine Bouzidi <yacine.bouzidi@inria.fr>
+//          Luis PeÃ±aranda <luis.penaranda@gmx.com>
+//          Marc Pouget <marc.pouget@inria.fr>
+//          Fabrice Rouillier <fabrice.rouillier@inria.fr>
 
 #include <CGAL/basic.h>
 

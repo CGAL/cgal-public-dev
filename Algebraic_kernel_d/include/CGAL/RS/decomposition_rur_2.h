@@ -1,4 +1,6 @@
-// Copyright (c) 2006-2009 Inria Lorraine (France). All rights reserved.
+// Copyright (c) 2011 INRIA Nancy-Grand Est (France).
+// Copyright (c) 2011 National and Kapodistrian University of Athens (Greece).
+// All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org); you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public License as
@@ -11,11 +13,13 @@
 // This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
 // WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
-// $URL: svn+ssh://algerbya@scm.gforge.inria.fr/svn/cgal/branches/features/Algebraic_kernel_d-RS_bivariate-nancy/Algebraic_kernel_d/include/CGAL/RS/solve_1.h $
-// $Id: solve_1.h 63060 2011-04-20 12:13:38Z penarand $
+// $URL$
+// $Id$
 //
-// Author: Luis Peñaranda <luis.penaranda@gmx.com>
-// Author: Yacine Bouzidi <Bouzidi.yacine@gmail.com>
+// Authors: Yacine Bouzidi <yacine.bouzidi@inria.fr>
+//          Luis Peñaranda <luis.penaranda@gmx.com>
+//          Marc Pouget <marc.pouget@inria.fr>
+//          Fabrice Rouillier <fabrice.rouillier@inria.fr>
 
 //#ifndef CGAL_RS_SOLVE_1_H
 //#define CGAL_RS_SOLVE_1_H

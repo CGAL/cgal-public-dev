@@ -79,6 +79,7 @@ class Simple_algebraic_1{
         }
         Simple_algebraic_1(const Algebraic &a):
         pol(a.pol),left(a.left),right(a.right){}
+        // TODO: constructors from types such as int, unsigned and double
         ~Simple_algebraic_1(){}
 
         Simple_algebraic_1& operator=(const Algebraic &a){
