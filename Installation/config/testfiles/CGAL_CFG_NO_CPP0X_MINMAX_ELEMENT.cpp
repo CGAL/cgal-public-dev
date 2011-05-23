@@ -1,4 +1,4 @@
-//| If a compiler does not support C++0x lambdas
+//| If a compiler does not support C++0x minmax_element
 //| CGAL_CFG_NO_CPP0X_MINMAX_ELEMENT is set. 
 
 #undef NDEBUG
