@@ -76,7 +76,7 @@ template <class _AR2,class _Polynomial_1>
 struct Compute_polynomial_x_2{
         typedef _AR2                                    Algebraic_real_2;
         typedef _Polynomial_1                           Polynomial_1;
-        Polynomial_1 operator()(Algebraic_real_2 &a){
+        Polynomial_1 operator()(Algebraic_real_2 &a)const{
                 // TODO
                 return Algebraic_real_2();
         }
@@ -86,11 +86,100 @@ template <class _AR2,class _Polynomial_1>
 struct Compute_polynomial_y_2{
         typedef _AR2                                    Algebraic_real_2;
         typedef _Polynomial_1                           Polynomial_1;
-        Polynomial_1 operator()(Algebraic_real_2 &a){
+        Polynomial_1 operator()(Algebraic_real_2 &a)const{
                 // TODO
                 return Algebraic_real_2();
         }
 };
+
+template <class _AR1,class _AR2,class _Polynomial_2,class _Bound>
+struct Isolate_2{
+        typedef _AR1                                    Algebraic_real_1;
+        typedef _AR2                                    Algebraic_real_2;
+        typedef _Polynomial_2                           Polynomial_2;
+        typedef _Bound                                  Bound;
+
+        CGAL::cpp0x::array<AlgebraicKernel_d_1::Bound,4>
+        operator()(const Algebraic_real_2 &a,const Polynomial_2 &f)const{
+                // TODO
+        };
+
+        CGAL::cpp0x::array<AlgebraicKernel_d_1::Bound,4>
+        operator()(const Algebraic_real_2 &a,
+                   const Polynomial_2 &f
+                   const Polynomial_2 &g)const{
+                // TODO
+        };
+}; // struct Isolate_2
+
+template <class _AR2,class _Polynomial_1,class _Bound>
+struct Isolate_x_2{
+        typedef _AR2                                    Algebraic_real_2;
+        typedef _Polynomial_1                           Polynomial_1;
+        typedef _Bound                                  Bound;
+
+        std::pair<Bound,Bound>
+        operator()(const Algebraic_real_2 &a,const Polynomial_1 &f)const{
+                // TODO
+        };
+}; // struct Isolate_x_2
+
+template <class _AR2,class _Polynomial_1,class _Bound>
+struct Isolate_y_2{
+        typedef _AR2                                    Algebraic_real_2;
+        typedef _Polynomial_1                           Polynomial_1;
+        typedef _Bound                                  Bound;
+
+        std::pair<Bound,Bound>
+        operator()(const Algebraic_real_2 &a,const Polynomial_1 &f)const{
+                // TODO
+        };
+}; // struct Isolate_y_2
+
+template <class _Ptraits>
+struct Is_square_free_2{
+        typedef _Ptraits                                Ptraits;
+        typedef typename Ptraits::Polynomial_d          Polynomial;
+
+        bool operator()(const Polynomial &p)const{
+                // TODO
+        };
+}; // struct Is_square_free_2
+
+template <class _Ptraits>
+struct Is_coprime_2{
+        typedef _Ptraits                                Ptraits;
+        typedef typename Ptraits::Polynomial_d          Polynomial;
+        typedef typename Ptraits::Gcd_up_to_constant_factor
+                                                        Gcd;
+        typedef typename Ptraits::Degree                Degree;
+
+        bool operator()(const Polynomial &p1,const Polynomial &p2)const{
+                Polynomial g=Gcd()(p1,p2);
+                return (Degree()(g,0)==0&&Degree()(g,0)==0);
+        };
+}; // struct Is_coprime_2
+
+// TODO: for RS3, this functor may need to be specialized, in order to use
+// fast functions for exact division
+template <class _Ptraits>
+struct Make_coprime_2{
+        typedef _Ptraits                                Ptraits;
+        typedef typename Ptraits::Polynomial_d          Polynomial;
+        typedef typename Ptraits::Integral_division_up_to_constant_factor
+                                                        IDiv;
+
+        bool operator()(const Polynomial &p1,
+                        const Polynomial &p2,
+                        Polynomial &g,
+                        Polynomial &q1,
+                        Polynomial &q2)const{
+                g=Gcd()(p1,p2);
+                q1=Idiv()(p1/g);
+                q2=Idiv()(p2/g);
+                return (Degree()(g,0)==0&&Degree()(g,0)==0);
+        };
+}; // struct Make_coprime_2
 
 template <class _Polynomial,class _Bound>
 struct Solve_2{

@@ -78,20 +78,15 @@ public _AK1{
                                                 Compute_polynomial_x_2;
         typedef RS3::Compute_polynomial_y_2<Algebraic_real_2,Polynomial_1>
                                                 Compute_polynomial_y_2;
-        /*
         typedef RS3::Isolate_2<Polynomial_2>    Isolate_2;
         typedef RS3::Isolate_x_2<Polynomial_2>  Isolate_x_2;
         typedef RS3::Isolate_y_2<Polynomial_2>  Isolate_y_2;
-        typedef RS3::Is_square_free_2<Polynomial_2>
-                                                Is_square_free_2;
-        typedef RS3::Make_square_free_2<Polynomial_2>
-                                                Make_square_free_2;
-        typedef RS3::Square_free_factorize_2<Polynomial_2>
+        typedef RS3::Is_square_free_2<Ptraits>  Is_square_free_2;
+        typedef Ptraits::Make_square_free       Make_square_free_2;
+        typedef Ptraits::Square_free_factorize_up_to_constant_factor
                                                 Square_free_factorize_2;
-        typedef RS3::Is_coprime_2<Polynomial_2> Is_coprime_2;
-        typedef RS3::Make_coprime_2<Polynomial_2>
-                                                Make_coprime_2;
-        */
+        typedef RS3::Is_coprime_2<Ptraits>      Is_coprime_2;
+        typedef RS3::Make_coprime_2<Ptraits>    Make_coprime_2;
         typedef RS3::Solve_2<Polynomial_2,Bound>
                                                 Solve_2;
         /*
@@ -115,7 +110,7 @@ public _AK1{
 
 #define CGALRS_CREATE_FUNCTION_OBJECT(T,N) \
         T N##_object()const{return T();}
-        /*CGALRS_CREATE_FUNCTION_OBJECT(Construct_algebraic_real_2,
+        CGALRS_CREATE_FUNCTION_OBJECT(Construct_algebraic_real_2,
                                       construct_algebraic_real_2)
         CGALRS_CREATE_FUNCTION_OBJECT(Compute_polynomial_x_2,
                                       compute_polynomial_x_2)
@@ -130,7 +125,6 @@ public _AK1{
                                       square_free_factorize_2)
         CGALRS_CREATE_FUNCTION_OBJECT(Is_coprime_2,is_coprime_2)
         CGALRS_CREATE_FUNCTION_OBJECT(Make_coprime_2,make_coprime_2)
-        */
         CGALRS_CREATE_FUNCTION_OBJECT(Solve_2,solve_2)
         /*
         CGALRS_CREATE_FUNCTION_OBJECT(Number_of_solutions_2,
