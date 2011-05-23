@@ -30,7 +30,28 @@
 #include <algorithm>
 #include <iosfwd>
 
+
+//cpp0x or boost extensions
+#include <CGAL/config.h>
+#ifndef CGAL_CFG_NO_CPP0X_MINMAX_ELEMENT
+//do nothing, algorithm is already included
+#else
+#  include <boost/algorithm/minmax_element.hpp>
+#endif
+
+
+
 namespace CGAL {
+
+namespace cpp0x {
+
+#ifndef CGAL_CFG_NO_CPP0X_MINMAX_ELEMENT
+  using std::minmax_element;
+#else
+  using boost::minmax_element;
+#endif
+
+} //namespace cpp0x
 
 // copy_n is usually in the STL as well, but not in the official
 // standard. We provide our own copy_n.  It is planned for C++0x.
@@ -144,8 +165,11 @@ predecessor( BidirectionalIterator it )
   return --it;
 }
 
+
+
 template < class ForwardIterator >
 std::pair< ForwardIterator, ForwardIterator >
+CGAL_DEPRECATED
 min_max_element(ForwardIterator first, ForwardIterator last)
 {
   typedef std::pair< ForwardIterator, ForwardIterator > FP;
@@ -162,10 +186,11 @@ min_max_element(ForwardIterator first, ForwardIterator last)
 
 template < class ForwardIterator, class CompareMin, class CompareMax >
 std::pair< ForwardIterator, ForwardIterator >
+CGAL_DEPRECATED
 min_max_element(ForwardIterator first,
                 ForwardIterator last,
                 CompareMin comp_min,
-                CompareMax comp_max)
+                CompareMax comp_max) 
 {
   typedef std::pair< ForwardIterator, ForwardIterator > FP;
   FP result(first, first);

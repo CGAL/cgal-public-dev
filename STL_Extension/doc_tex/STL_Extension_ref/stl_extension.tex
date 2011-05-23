@@ -74,44 +74,45 @@
 \end{ccRefFunction}
 
 %% +---------------------------------------------+
+
 \begin{ccRefFunction}{min_max_element}
-  \label{sectionMinmaxelement}
-  
-  \ccDefinition The function \ccRefName\ computes the minimal and the
-  maximal element of a range. It is modeled after the STL functions
-  \ccc{min_element} and \ccc{max_element}. The advantage of
-  \ccc{min_max_element} compared to calling both STL functions is that
-  one only iterates once over the sequence. This is more efficient
-  especially for large and/or complex sequences.
+  \begin{ccDeprecated}
+    \label{sectionMinmaxelement}
+    \ccDefinition The function \ccRefName\ computes the minimal and the
+    maximal element of a range. It is modeled after the STL functions
+    \ccc{min_element} and \ccc{max_element}. The advantage of
+    \ccc{min_max_element} compared to calling both STL functions is that
+    one only iterates once over the sequence. This is more efficient
+    especially for large and/or complex sequences.
 
-  \ccInclude{CGAL/algorithm.h}
-  
-  \ccFunction{template < class ForwardIterator > std::pair<
-    ForwardIterator, ForwardIterator > min_max_element(ForwardIterator
-    first, ForwardIterator last);}{returns a pair of iterators where
-    the first component refers to the minimal and the second component
-    refers to the maximal element in the range [\ccc{first},
-    \ccc{last}). The ordering is defined by \ccc{operator<} on the
-    value type of \ccc{ForwardIterator}.}
-  
-  \ccFunction{template < class ForwardIterator, class CompareMin,
-    class CompareMax > std::pair< ForwardIterator, ForwardIterator >
-    min_max_element(ForwardIterator first, ForwardIterator last,
-    CompareMin comp_min, CompareMax comp_max);}{returns a pair of
-    iterators where the first component refers to the minimal and the
-    second component refers to the maximal element in the range
-    [\ccc{first}, \ccc{last}). \ccRequire
-    \ccc{CompareMin} and \ccc{CompareMax} are adaptable binary
-    function objects:
-    \ccc{VT}~$\times$~\ccc{VT}~$\rightarrow$~\ccc{bool} where \ccc{VT}
-    is the value type of \ccc{ForwardIterator}.}
-  
-  \ccExample The following example program computes the minimal and
-  maximal element of the sequence $(3,\,6,\,5)$. Hence the output is
-  \ccc{min = 3, max = 6}.
-  
-  \ccIncludeExampleCode{STL_Extension/min_max_element_example.cpp}
-
+    \ccInclude{CGAL/algorithm.h}
+    
+    \ccFunction{template < class ForwardIterator > std::pair<
+      ForwardIterator, ForwardIterator > min_max_element(ForwardIterator
+      first, ForwardIterator last);}{returns a pair of iterators where
+      the first component refers to the minimal and the second component
+      refers to the maximal element in the range [\ccc{first},
+      \ccc{last}). The ordering is defined by \ccc{operator<} on the
+      value type of \ccc{ForwardIterator}.}
+    
+    \ccFunction{template < class ForwardIterator, class CompareMin,
+      class CompareMax > std::pair< ForwardIterator, ForwardIterator >
+      min_max_element(ForwardIterator first, ForwardIterator last,
+      CompareMin comp_min, CompareMax comp_max);}{returns a pair of
+      iterators where the first component refers to the minimal and the
+      second component refers to the maximal element in the range
+      [\ccc{first}, \ccc{last}). \ccRequire
+      \ccc{CompareMin} and \ccc{CompareMax} are adaptable binary
+      function objects:
+      \ccc{VT}~$\times$~\ccc{VT}~$\rightarrow$~\ccc{bool} where \ccc{VT}
+      is the value type of \ccc{ForwardIterator}.}
+    
+    \ccExample The following example program computes the minimal and
+    maximal element of the sequence $(3,\,6,\,5)$. Hence the output is
+    \ccc{min = 3, max = 6}.
+    
+    \ccIncludeExampleCode{STL_Extension/min_max_element_example.cpp}
+  \end{ccDeprecated}
 \end{ccRefFunction}
 
 %% Michael: I commented these, as I think they should be replaced by combining 
