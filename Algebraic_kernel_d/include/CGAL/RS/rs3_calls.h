@@ -19,12 +19,8 @@
 #ifndef CGAL_RS_RS3_CALLS_H
 #define CGAL_RS_RS3_CALLS_H
 
-#include <stdlib.h>
+
 #include <CGAL/RS/basic_1.h>
-#include <gmp.h>
-#include <mpfr.h>
-#include <mpfi.h>
-#include <CGAL/Gmpz.h>
 #include <rs_exports.h>
 
 namespace CGAL{
@@ -38,6 +34,10 @@ namespace CGAL{
 #define CGALRS_PTR(a)   void *a
 #endif
   
+    typedef CGAL::Polynomial<CGAL::Gmpz> Polynomial_1;
+    typedef CGAL::Polynomial<Polynomial_1> Polynomial_2;
+    typedef CGAL::RS3::Rur_2<Polynomial_1> rur_2;
+    
   // initialize RS solver
     inline void init_solver(){
       static bool first=true;
@@ -52,8 +52,8 @@ namespace CGAL{
     
     
     // create univariate Rs polynomial from a CGAL one
-    template< class Polynomial_> 
-      void create_rs_upoly(Polynomial_ poly,CGALRS_PTR(ident_pol))
+    
+    void create_rs_upoly(Polynomial_1 poly,CGALRS_PTR(ident_pol))
       {
 	int i;
 	int deg = poly.degree();
@@ -78,8 +78,8 @@ namespace CGAL{
       }
 
     // construct a rur as list of univariate polynomials in order to isolate it
-    template<class Rur_>
-      void create_rs_rur(Rur_ list_constr)
+    
+    void create_rs_rur(rur_2 list_constr)
       {
 	rs_import_uppring((char*)"t");
 	int i;
@@ -107,8 +107,8 @@ namespace CGAL{
  
 
  // create an RS bivariate polynomial from CGAL polynomial
- template<class Polynomial_>
-   int create_rs_bipoly(Polynomial_ poly,CGALRS_PTR(ident_pol))
+
+   int create_rs_bipoly(Polynomial_2 poly,CGALRS_PTR(ident_pol))
    {
      int i,j;
      //CGALRS_PTR(ident_ring);
@@ -150,8 +150,8 @@ namespace CGAL{
 
 
  //create a bivariate system in RS using two CGAL Polynomials
-template<class Polynomial_ >
-  int create_rs_bisys(Polynomial_ p1,Polynomial_ p2)
+   
+  int create_rs_bisys(Polynomial_2 p1,Polynomial_2 p2)
   {
     rs_init_ppring_nb(2,CGALRS_CSTR("LEX"));
     rs_import_ppring_var(0,CGALRS_CSTR("y"));
@@ -165,13 +165,13 @@ template<class Polynomial_ >
   
   ident_poly=rs_export_new_list_mon_pp_bz();
   
-  create_rs_bipoly<Polynomial_>(p1,ident_poly);
+  create_rs_bipoly(p1,ident_poly);
   
   rs_dappend_list_smp_bz(ident_sys,ident_poly);
   
   ident_poly=rs_export_new_list_mon_pp_bz();
     
-  create_rs_bipoly<Polynomial_>(p2,ident_poly);
+  create_rs_bipoly(p2,ident_poly);
   
   rs_dappend_list_smp_bz(ident_sys,ident_poly);
   
@@ -295,9 +295,9 @@ std::vector< std::vector< std::vector<Gmpz> > > Rurs_sys_list()
   return vect ;
 }
 
-//this function compute the 2d boxes corresponding to the solutions of the bivariate system
- 
- void affiche_sols_eqs(std::vector< std::pair<CGAL::Gmpfi,CGAL::Gmpfi> >& sol)
+//this function compute the 2d boxes corresponding to the solutions of a rur
+ template< class OutputIterator>
+ void affiche_sols_eqs(OutputIterator sol)
      /*     cette fonction fonctionne donc pour un polynome en une variable
             autant que pour une système d'équations*/
  {
@@ -325,8 +325,8 @@ std::vector< std::vector< std::vector<Gmpz> > > Rurs_sys_list()
     ident_elt_x=rs_export_elt_vect_ibfr(ident_vect,0);
     ident_elt_y=rs_export_elt_vect_ibfr(ident_vect,1);    
     
-    sol.push_back(std::make_pair(CGAL::Gmpfi((mpfi_ptr)rs_export_ibfr_mpfi(ident_elt_x)),
-				 CGAL::Gmpfi((mpfi_ptr)rs_export_ibfr_mpfi(ident_elt_y))));
+    *sol++ = std::make_pair(CGAL::Gmpfi((mpfi_ptr)rs_export_ibfr_mpfi(ident_elt_x)),
+			    CGAL::Gmpfi((mpfi_ptr)rs_export_ibfr_mpfi(ident_elt_y)));
     // affiche_vect_ibfr(ident_vect);
     /* on passe a l'élément suivant */
     ident_node=rs_export_list_vect_ibfr_nextnode(ident_node);
