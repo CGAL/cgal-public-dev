@@ -518,9 +518,8 @@ ch_quickhull_polyhedron_3(std::list<typename Traits::Point_3>& points,
   // are on the negative side of ths plane, the max element will be on the
   // plane.
   std::pair<P3_iterator, P3_iterator> min_max;
-  min_max = CGAL::min_max_element(points.begin(), points.end(), 
-                                  boost::bind(compare_dist, plane, _1, _2),
-                                  boost::bind(compare_dist, plane, _1, _2));
+  min_max = CGAL::cpp0x::minmax_element(points.begin(), points.end(), 
+					boost::bind(compare_dist, plane, _1, _2));
   P3_iterator max_it;
   if (coplanar(*point1_it, *point2_it, *point3_it, *min_max.second))
   {
@@ -630,9 +629,8 @@ convex_hull_3(InputIterator first, InputIterator beyond,
 
      Less_dist less_dist = traits.less_distance_to_point_3_object();
      P3_iterator_pair endpoints = 
-      min_max_element(points.begin(), points.end(), 
-                      boost::bind(less_dist, *points.begin(), _1, _2), 
-                      boost::bind(less_dist, *points.begin(), _1, _2));
+       CGAL::cpp0x::minmax_element(points.begin(), points.end(), 
+				   boost::bind(less_dist, *points.begin(), _1, _2));
 
      typename Traits::Construct_segment_3 construct_segment =
             traits.construct_segment_3_object();
