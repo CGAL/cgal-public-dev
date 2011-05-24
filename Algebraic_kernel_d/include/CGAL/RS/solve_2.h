@@ -105,7 +105,7 @@ namespace CGAL {
   //isolate_2 : return disjoint boxes namely pair<mpfi,mpfi> representing the solutions of the rurs
   // TODO : construct for each pair of mpfi the corresponding algebraic_2 
     template< class OutputIterator, class Polynomial_ >
-      OutputIterator isolate_rurs_2(CGAL::RS3::Rur_2<Polynomial_>& rur,OutputIterator res, unsigned int prec=CGAL_RS_DEF_PREC){
+      OutputIterator isolate_rurs_2(const CGAL::RS3::Rur_2<Polynomial_>& rur,OutputIterator res, unsigned int prec=CGAL_RS_DEF_PREC){
     
       typedef CGAL::RS3::Rur_2<Polynomial_> rur_2;
     // the solutions are expressed as a vector of pair<Gmpfi, Gmpfi>

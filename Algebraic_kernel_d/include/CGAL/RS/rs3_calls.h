@@ -19,14 +19,20 @@
 #ifndef CGAL_RS_RS3_CALLS_H
 #define CGAL_RS_RS3_CALLS_H
 
-
-#include <CGAL/RS/basic_1.h>
 #include <rs_exports.h>
+#include <CGAL/RS/basic_1.h>
+#include <gmp.h>
+#include <mpfr.h>
+#include <mpfi.h>
+#include <CGAL/Gmpz.h>
+#include <CGAL/Gmpfi.h>
+
 
 namespace CGAL{
 
   namespace RS3{
 
+#define CGALRS_CSTR(S)  ((char*)(S))
   
 #ifdef CGAL_RS_OLD_INCLUDES
 #define CGALRS_PTR(a)   long int a
@@ -34,9 +40,9 @@ namespace CGAL{
 #define CGALRS_PTR(a)   void *a
 #endif
   
-    typedef CGAL::Polynomial<CGAL::Gmpz> Polynomial_1;
-    typedef CGAL::Polynomial<Polynomial_1> Polynomial_2;
-    typedef CGAL::RS3::Rur_2<Polynomial_1> rur_2;
+    typedef Polynomial<Gmpz> Polynomial_1;
+    typedef Polynomial<Polynomial_1> Polynomial_2;
+    typedef Rur_2<Polynomial_1> rur_2;
     
   // initialize RS solver
     inline void init_solver(){

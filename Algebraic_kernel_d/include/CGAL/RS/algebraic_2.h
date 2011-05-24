@@ -33,19 +33,22 @@ namespace RS3{
 template <class Polynomial_>
 class Algebraic_2{
         private:
-        typedef Polynomial_                             Polynomial_2;
-        typedef Rur_2<Polynomial_2>                     Rur;
-        Rur _rur;
-        Gmpfi _x,_y;
-        public:
+  typedef Polynomial_                             Polynomial_1;
+  typedef CGAL::Polynomial<Polynomial_1> Polynomial_2;
+  typedef Rur_2<Polynomial_1>                     Rur;
+  Polynomial_2 _f, _g;
+  Rur _rur;
+  Gmpfi _x,_y;
+  Polynomial_1 _pol_x,_pol_y;
+ public:
 
         // constructor from the output of the isolation
         // TODO: remove or rewrite in order to obtain a good RUR
         Algebraic_2(const Gmpfi &x,const Gmpfi &y):_x(x),_y(y){};
 
         // constructor from RUR and isolating intervals
-        Algebraic_2(const Rur &r,const Gmpfi &x,const Gmpfi &y):
-                _rur(r),_x(x),_y(y){};
+ Algebraic_2(const Polynomial_2& f,const Polynomial_2& g, const Rur &r,const Gmpfi &x,const Gmpfi &y):
+  _f(f),_g(g),_rur(r),_x(x),_y(y),_pol_x(NULL),_pol_y(NULL){};
 
         // constructor from two numbers from which Gmpfi can be constructed
         // TODO: remove or rewrite in order to obtain a good RUR
@@ -66,6 +69,17 @@ class Algebraic_2{
         const Gmpfi& get_y()const{
                 return _y;
         }
+	
+	// check if the polynomial of the x coordinate is computed
+	const bool is_pol_x()const{
+	  return (_pol_x != NULL);
+	}
+	
+	// check if the polynomial of the y coordinate is computed
+	const bool is_pol_y()const{
+	  return (_pol_y != NULL);
+	}
+	
 
 }; // class Algebraic_2
 

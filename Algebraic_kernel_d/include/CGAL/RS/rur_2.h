@@ -17,6 +17,9 @@
 //
 // Author: Luis Peñaranda <luis.penaranda@gmx.com>
 
+#include <stdlib.h>
+
+
 #ifndef CGAL_RS_RUR_2_H
 #define CGAL_RS_RUR_2_H
 
@@ -45,7 +48,7 @@ class Rur_2_rep{
  };
  
 template <class Polynomial_>
-class Rur_2:Handle_for<Rur_2_rep<Polynomial_> >{
+  class Rur_2:Handle_for<Rur_2_rep<Polynomial_> >{
         private:
         typedef Polynomial_                             Polynomial_1;
         typedef Rur_2_rep<Polynomial_1>                 Base;
