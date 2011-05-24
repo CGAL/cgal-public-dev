@@ -28,7 +28,8 @@
 #include <CGAL/Algebraic_kernel_rs_gmpz_d_1.h>
 
 #include <CGAL/Polynomial_traits_d.h>
-#include <CGAL/RS/rs_calls_1.h>
+#include <CGAL/RS/algebraic_2.h>
+//#include <CGAL/RS/rs_calls_1.h>
 #include <CGAL/RS/functors_2.h>
 
 namespace CGAL{
@@ -55,7 +56,7 @@ public _AK1{
         typedef typename AK1::Polynomial_1              Polynomial_1;
         typedef int                                     size_type;
         typedef typename AK1::Algebraic_real_1          Algebraic_real_1;
-        typedef CGAL::RS3::Algebraic_2<Polynomial_2>    Algebraic_real_2;
+        typedef CGAL::RS3::Algebraic_2<Polynomial_1>    Algebraic_real_2;
         typedef RS3::Multiplicity                       Multiplicity_type;
         typedef typename Ptraits::Innermost_coefficient_type
                                                         Coefficient;
@@ -74,16 +75,16 @@ public _AK1{
                                      Coefficient,
                                      Algebraic_real_1>
                                                 Construct_algebraic_real_2;
-        typedef RS3::Compute_polynomial_x_2<Algebraic_real_2,Polynomial_1>
+        typedef RS3::Compute_polynomial_x_2<Algebraic_real_2,Polynomial_1,Ptraits>
                                                 Compute_polynomial_x_2;
-        typedef RS3::Compute_polynomial_y_2<Algebraic_real_2,Polynomial_1>
+        typedef RS3::Compute_polynomial_y_2<Algebraic_real_2,Polynomial_1,Ptraits>
                                                 Compute_polynomial_y_2;
-        typedef RS3::Isolate_2<Polynomial_2>    Isolate_2;
-        typedef RS3::Isolate_x_2<Polynomial_2>  Isolate_x_2;
-        typedef RS3::Isolate_y_2<Polynomial_2>  Isolate_y_2;
-        typedef RS3::Is_square_free_2<Ptraits>  Is_square_free_2;
-        typedef Ptraits::Make_square_free       Make_square_free_2;
-        typedef Ptraits::Square_free_factorize_up_to_constant_factor
+        /* typedef RS3::Isolate_2<Polynomial_2>    Isolate_2; */
+        /* typedef RS3::Isolate_x_2<Polynomial_2>  Isolate_x_2; */
+        /* typedef RS3::Isolate_y_2<Polynomial_2>  Isolate_y_2; */
+        typedef typename Ptraits::Is_square_free  Is_square_free_2;
+        typedef typename Ptraits::Make_square_free       Make_square_free_2;
+        typedef typename Ptraits::Square_free_factorize_up_to_constant_factor
                                                 Square_free_factorize_2;
         typedef RS3::Is_coprime_2<Ptraits>      Is_coprime_2;
         typedef RS3::Make_coprime_2<Ptraits>    Make_coprime_2;
@@ -116,9 +117,9 @@ public _AK1{
                                       compute_polynomial_x_2)
         CGALRS_CREATE_FUNCTION_OBJECT(Compute_polynomial_y_2,
                                       compute_polynomial_y_2)
-        CGALRS_CREATE_FUNCTION_OBJECT(Isolate_2,isolate_2)
-        CGALRS_CREATE_FUNCTION_OBJECT(Isolate_x_2,isolate_x_2)
-        CGALRS_CREATE_FUNCTION_OBJECT(Isolate_y_2,isolate_y_2)
+        /* CGALRS_CREATE_FUNCTION_OBJECT(Isolate_2,isolate_2) */
+        /* CGALRS_CREATE_FUNCTION_OBJECT(Isolate_x_2,isolate_x_2) */
+        /* CGALRS_CREATE_FUNCTION_OBJECT(Isolate_y_2,isolate_y_2) */
         CGALRS_CREATE_FUNCTION_OBJECT(Is_square_free_2,is_square_free_2)
         CGALRS_CREATE_FUNCTION_OBJECT(Make_square_free_2,make_square_free_2)
         CGALRS_CREATE_FUNCTION_OBJECT(Square_free_factorize_2,

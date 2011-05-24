@@ -72,79 +72,101 @@ struct Construct_alg_2{
         };
 }; // struct Construct_alg_2<_P,_B,_C,_AR1>
 
-template <class _AR2,class _Polynomial_1>
-struct Compute_polynomial_x_2{
-        typedef _AR2                                    Algebraic_real_2;
-        typedef _Polynomial_1                           Polynomial_1;
-        Polynomial_1 operator()(Algebraic_real_2 &a)const{
-                // TODO
-                return Algebraic_real_2();
+ template <class _AR2,class _Polynomial_1, class _Ptraits>
+   struct Compute_polynomial_x_2{
+     typedef _Ptraits                                Ptraits;
+     typedef _AR2                                    Algebraic_real_2;
+     typedef _Polynomial_1                           Polynomial_1;
+     typedef typename Ptraits::Resultant Resultant;
+     
+     Polynomial_1 operator()( Algebraic_real_2 &a) const{
+	  if (a.is_pol_x()){
+	    return a.get_pol_x();
+	  }
+	  else{
+	    Polynomial_1 res;
+	    res = Resultant()(a.get_f(),a.get_g());
+	    a.set_pol_x(res);
+	    return res;
+	  }
+	  
         }
 };
 
-template <class _AR2,class _Polynomial_1>
+template <class _AR2,class _Polynomial_1, class _Ptraits>
 struct Compute_polynomial_y_2{
-        typedef _AR2                                    Algebraic_real_2;
-        typedef _Polynomial_1                           Polynomial_1;
-        Polynomial_1 operator()(Algebraic_real_2 &a)const{
-                // TODO
-                return Algebraic_real_2();
+  typedef _Ptraits                                Ptraits;
+  typedef _AR2                                    Algebraic_real_2;
+  typedef _Polynomial_1                           Polynomial_1;
+  typedef typename Ptraits::Resultant Resultant;
+  
+  Polynomial_1 operator()(Algebraic_real_2 &a)const{
+	  if (a.is_pol_y()){
+	    return a.get_pol_y();
+	  }
+	  else{
+	    Polynomial_1 res;
+	    res = Resultant()(a.get_f(),a.get_g());
+	    a.set_pol_y(res);
+	    return res;
+	    
+	  }
         }
 };
 
-template <class _AR1,class _AR2,class _Polynomial_2,class _Bound>
-struct Isolate_2{
-        typedef _AR1                                    Algebraic_real_1;
-        typedef _AR2                                    Algebraic_real_2;
-        typedef _Polynomial_2                           Polynomial_2;
-        typedef _Bound                                  Bound;
+/* template <class _AR1,class _AR2,class _Polynomial_2,class _Bound> */
+/* struct Isolate_2{ */
+/*         typedef _AR1                                    Algebraic_real_1; */
+/*         typedef _AR2                                    Algebraic_real_2; */
+/*         typedef _Polynomial_2                           Polynomial_2; */
+/*         typedef _Bound                                  Bound; */
 
-        CGAL::cpp0x::array<AlgebraicKernel_d_1::Bound,4>
-        operator()(const Algebraic_real_2 &a,const Polynomial_2 &f)const{
-                // TODO
-        };
+/*         CGAL::cpp0x::array<AlgebraicKernel_d_1::Bound,4> */
+/*         operator()(const Algebraic_real_2 &a,const Polynomial_2 &f)const{ */
+/*                 // TODO */
+/*         }; */
 
-        CGAL::cpp0x::array<AlgebraicKernel_d_1::Bound,4>
-        operator()(const Algebraic_real_2 &a,
-                   const Polynomial_2 &f
-                   const Polynomial_2 &g)const{
-                // TODO
-        };
-}; // struct Isolate_2
+/*         CGAL::cpp0x::array<AlgebraicKernel_d_1::Bound,4> */
+/*         operator()(const Algebraic_real_2 &a, */
+/*                    const Polynomial_2 &f */
+/*                    const Polynomial_2 &g)const{ */
+/*                 // TODO */
+/*         }; */
+/* }; // struct Isolate_2 */
 
-template <class _AR2,class _Polynomial_1,class _Bound>
-struct Isolate_x_2{
-        typedef _AR2                                    Algebraic_real_2;
-        typedef _Polynomial_1                           Polynomial_1;
-        typedef _Bound                                  Bound;
+/* template <class _AR2,class _Polynomial_1,class _Bound> */
+/* struct Isolate_x_2{ */
+/*         typedef _AR2                                    Algebraic_real_2; */
+/*         typedef _Polynomial_1                           Polynomial_1; */
+/*         typedef _Bound                                  Bound; */
 
-        std::pair<Bound,Bound>
-        operator()(const Algebraic_real_2 &a,const Polynomial_1 &f)const{
-                // TODO
-        };
-}; // struct Isolate_x_2
+/*         std::pair<Bound,Bound> */
+/*         operator()(const Algebraic_real_2 &a,const Polynomial_1 &f)const{ */
+/*                 // TODO */
+/*         }; */
+/* }; // struct Isolate_x_2 */
 
-template <class _AR2,class _Polynomial_1,class _Bound>
-struct Isolate_y_2{
-        typedef _AR2                                    Algebraic_real_2;
-        typedef _Polynomial_1                           Polynomial_1;
-        typedef _Bound                                  Bound;
+/* template <class _AR2,class _Polynomial_1,class _Bound> */
+/* struct Isolate_y_2{ */
+/*         typedef _AR2                                    Algebraic_real_2; */
+/*         typedef _Polynomial_1                           Polynomial_1; */
+/*         typedef _Bound                                  Bound; */
 
-        std::pair<Bound,Bound>
-        operator()(const Algebraic_real_2 &a,const Polynomial_1 &f)const{
-                // TODO
-        };
-}; // struct Isolate_y_2
+/*         std::pair<Bound,Bound> */
+/*         operator()(const Algebraic_real_2 &a,const Polynomial_1 &f)const{ */
+/*                 // TODO */
+/*         }; */
+/* }; // struct Isolate_y_2 */
 
-template <class _Ptraits>
-struct Is_square_free_2{
-        typedef _Ptraits                                Ptraits;
-        typedef typename Ptraits::Polynomial_d          Polynomial;
+/* template <class _Ptraits> */
+/* struct Is_square_free_2{ */
+/*         typedef _Ptraits                                Ptraits; */
+/*         typedef typename Ptraits::Polynomial_d          Polynomial; */
 
-        bool operator()(const Polynomial &p)const{
-                // TODO
-        };
-}; // struct Is_square_free_2
+/*         bool operator()(const Polynomial &p)const{ */
+/* 	  // TODO */
+/*         }; */
+/* }; // struct Is_square_free_2 */
 
 template <class _Ptraits>
 struct Is_coprime_2{
@@ -160,24 +182,26 @@ struct Is_coprime_2{
         };
 }; // struct Is_coprime_2
 
-// TODO: for RS3, this functor may need to be specialized, in order to use
-// fast functions for exact division
+/* TODO: for RS3, this functor may need to be specialized, in order to use */
+/* fast functions for exact division */
 template <class _Ptraits>
 struct Make_coprime_2{
-        typedef _Ptraits                                Ptraits;
-        typedef typename Ptraits::Polynomial_d          Polynomial;
-        typedef typename Ptraits::Integral_division_up_to_constant_factor
-                                                        IDiv;
-
+  typedef _Ptraits                                Ptraits;
+  typedef typename Ptraits::Polynomial_d          Polynomial;
+  typedef typename Ptraits::Integral_division_up_to_constant_factor
+	IDiv;
+  typedef typename Ptraits::Gcd_up_to_constant_factor          Gcd;
+  typedef typename Ptraits::Degree          Degree;
+  
         bool operator()(const Polynomial &p1,
                         const Polynomial &p2,
                         Polynomial &g,
                         Polynomial &q1,
                         Polynomial &q2)const{
-                g=Gcd()(p1,p2);
-                q1=Idiv()(p1/g);
-                q2=Idiv()(p2/g);
-                return (Degree()(g,0)==0&&Degree()(g,0)==0);
+	  g=Gcd()(p1,p2);
+	  q1=IDiv()(p1,g);
+	  q2=IDiv()(p2,g);
+	  return (Degree()(g,0)==0&&Degree()(g,0)==0);
         };
 }; // struct Make_coprime_2
 
@@ -205,19 +229,32 @@ struct Solve_2{
 
 template <>
 struct Solve_2<RS_polynomial_2,CGAL::Gmpfr>{
-        typedef RS_polynomial_2                         Polynomial;
+  typedef  RS_polynomial_2::NT             Polynomial;
         typedef CGAL::Gmpfr                             Bound;
         typedef CGAL::RS3::Algebraic_2<Polynomial>      Algebraic_real_2;
-
+	typedef CGAL::RS3::Rur_2<Polynomial> rur_2;
+	
         template <class OutputIterator>
-        OutputIterator operator()(const Polynomial &f,const Polynomial &g,
+	  OutputIterator operator()(const RS_polynomial_2 &f,const RS_polynomial_2 &g,
                                   OutputIterator res)const{
-                // TODO: solve the system {f=0,g=0}
-                // 1. call RS
-                // 2. store solutions in res
-                // (for the moment, we always return two hardcoded roots)
-                for(int i=0;i<2;++i)
-                         *res++=std::make_pair(Algebraic_real_2(i,0),i+1);
+	  // TODO: solve the system {f=0,g=0}
+	  // 1. call RS
+	  // 2. store solutions in res
+	  // (for the moment, we always return two hardcoded roots)
+	  std::vector< rur_2 > rurs;
+	  CGAL::RS3::decomposition_in_rurs_2(f,g, back_inserter(rurs));
+	  int mult_sys = -1;
+	  for (int i=0;i<rurs.size();i++)
+	    {
+	      std::vector< std::pair<CGAL::Gmpfi,CGAL::Gmpfi> > boxes;
+	      CGAL::RS3::isolate_rurs_2(rurs[i], back_inserter(boxes));
+	      for (int j=0;j<boxes.size();j++)
+	      	{
+		  Algebraic_real_2 alg = Algebraic_real_2(f, g, rurs[i],boxes[j].first,boxes[j].second);
+	      	  *res++ = std::make_pair(alg,mult_sys);
+	      	}
+		
+	    }
                 return res;
         }
 
@@ -231,9 +268,9 @@ struct Solve_2<RS_polynomial_2,CGAL::Gmpfr>{
                          *res++=std::make_pair(Algebraic_real_2(i,0),i+1);
                 return res;
         }
-
-}; // struct Solve_2<RS_polynomial_2,CGAL::Gmpfr>
-
+	
+ }; // struct Solve_2<RS_polynomial_2,CGAL::Gmpfr>
+ 
 } // namespace RS3
 } // namespace CGAL
 

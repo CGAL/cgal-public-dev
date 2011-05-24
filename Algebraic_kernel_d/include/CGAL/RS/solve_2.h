@@ -49,7 +49,7 @@ namespace CGAL {
       RS3::init_solver();
       RS3::create_rs_bisys(p1,p2);
       set_rs_precisol(prec);
-      set_rs_verbose(3);
+      set_rs_verbose(0);
       rs_run_algo(CGALRS_CSTR("RURBIV"));
       vect = RS3::Rurs_sys_list();
       
@@ -114,7 +114,7 @@ namespace CGAL {
     // loop on the set of the rurs
     // for(InputIterator it = begin; it != end; it++){
       rs_reset_all();
-      set_rs_verbose(3);
+      set_rs_verbose(0);
       set_rs_precisol(prec);
       // create the Rs object which represente the CGAL rur
       create_rs_rur(rur);

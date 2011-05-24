@@ -70,6 +70,25 @@ class Algebraic_2{
                 return _y;
         }
 	
+	// get the first bivariate polynomial
+	const Polynomial_2& get_f()const{
+	  return _f;
+        }
+	
+	// get the second bivariate polynomial
+	const Polynomial_2& get_g()const{
+	  return _g;
+	}
+	
+	//get the univariate polynomial in the first coordinate
+	const Polynomial_1& get_pol_x()const{
+	  return _pol_x;
+	}
+	
+	//get the univariate polynomial in the second coordinate
+	const Polynomial_1& get_pol_y()const{
+	  return _pol_y;
+	}
 	// check if the polynomial of the x coordinate is computed
 	const bool is_pol_x()const{
 	  return (_pol_x != NULL);
@@ -80,7 +99,14 @@ class Algebraic_2{
 	  return (_pol_y != NULL);
 	}
 	
-
+	void set_pol_x(const Polynomial_1& x){
+	  _pol_x=x;
+	}
+	
+	void set_pol_y(const Polynomial_1& y){
+	  _pol_y=y;
+	}
+	
 }; // class Algebraic_2
 
 // write an algebraic number to a stream
