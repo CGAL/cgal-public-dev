@@ -1,0 +1,256 @@
+% +------------------------------------------------------------------------+
+% | Reference manual page: Lines_through_segments_output_obj.tex (Lines_through_segments_3)
+% +------------------------------------------------------------------------+
+% | 
+% | Package: LTS (Lines_through_segments_3)
+% | 
+% +------------------------------------------------------------------------+
+
+\ccRefPageBegin
+
+%%RefPage: end of header, begin of main body
+% +------------------------------------------------------------------------+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Lines_through_segments_output_line_3 class       %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin {ccRefClass} {Lines_through_segments_output_line_3}
+    
+\ccDefinition 
+
+The \ccRefName\ class holds a line tangent to 4 line segments.
+
+\ccInclude{CGAL/Lines_through_segments_output_obj.h}
+
+\ccTypes
+\ccNestedType{Line_3}{The line type.}
+\ccNestedType{Rational_segment_3}{The input segment type.}
+
+\ccAccessFunctions
+\ccCreationVariable{obj}
+
+\ccMethod{Line_3 line() const;}
+         {Returns the algebraic line of \ccVar{}.}
+
+\ccSeeAlso
+\ccc{CGAL::Lines_through_segments_output_arr_curve_2}\\
+\ccc{CGAL::Lines_through_segments_output_arr_arc_2}\\
+\ccc{CGAL::Lines_through_segments_output_arr_polygon_2}\\
+\ccc{CGAL::Lines_through_segments_output_point_3}\\
+\ccc{CGAL::Lines_through_segments_output_overlap_segments_3}\\
+
+
+\end{ccRefClass} 
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Lines_through_segments_output_arr_curve_2 class  %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin {ccRefClass} {Lines_through_segments_output_arr_curve_2}
+    
+\ccDefinition 
+
+The \ccRefName\ class holds a curve on the plane arrangement. Each point on the curve represents a line tangent to 4 line segments. The class holds the 2 line segments $S_1$ and $S_2$ that parametrized the arrangement.\\
+In order to get a crossing line L from a point (x, y) on the curve, the following should be done:
+
+\begin{enumerate}
+\item 
+From $x$ we get a point $p_1$ on $S_1$, $S_1 = ({x^1}_0,{y^1}_0,{z^1}_0) + x \cdot ({x^1}_1,{y^1}_1,{z^1}_1)$.
+\item
+From $y$ we get a point $p_2$ on $S_2$, $S_2 = ({x^2}_0,{y^2}_0,{z^2}_0) + y \cdot ({x^2}_1,{y^2}_1,{z^2}_1)$.
+\item
+The line that passes through $p_1$ and $p_2$, is tangent to the 4 line segments.
+\end{enumerate}
+\ccInclude{CGAL/Lines_through_segments_output_obj.h}
+
+
+\ccTypes
+\ccNestedType{Curve_2} {The curve type.}
+\ccNestedType{Rational_segment_3}{The input segment type.}
+
+\ccAccessFunctions
+\ccCreationVariable{obj}
+
+\ccMethod{Line_3 curve() const;}
+         {Returns the curve of \ccVar{}.}
+
+\ccMethod{Line_3 s1() const;}
+         {Returns the input rational segment that parametrized the x-axis at the arrangement.}
+
+\ccMethod{Line_3 s2() const;}
+         {Returns the input rational segment that parametrized the y-axis at the arrangement.}
+
+\ccSeeAlso
+\ccc{CGAL::Lines_through_segments_output_line_3}\\
+\ccc{CGAL::Lines_through_segments_output_arr_arc_2}\\
+\ccc{CGAL::Lines_through_segments_output_arr_polygon_2}\\
+\ccc{CGAL::Lines_through_segments_output_point_3}\\
+\ccc{CGAL::Lines_through_segments_output_overlap_segments_3}\\
+
+
+
+\end{ccRefClass} 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Lines_through_segments_output_arr_arc_2 class    %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin {ccRefClass} {Lines_through_segments_output_arr_arc_2}
+    
+\ccDefinition 
+
+The \ccRefName\ class holds a arc on the sphere arrangement. Each direction on the arc represents a line tangent to 4 line segments. The class holds the 2 line segments $S_1$ and $S_2$ that parametrized the arrangement.\\
+In order to get a crossing line L from a direction (dx, dy, dz) on the arc, the following should be done:
+
+\begin{enumerate}
+\item 
+Get the intersection point, IS = (x, y, z) of $S_1$ and $S_2$ (with the function get\_intersection\_point()).
+\item
+Each line on the wedge that defined by the intersection point and the direction IS, passes through 4 segments.\\
+$L = (x, y, z) + t \cdot (dx, dy, dz)$
+
+\end{enumerate}
+\ccInclude{CGAL/Lines_through_segments_output_obj.h}
+
+\ccTypes
+\ccNestedType{Arc_2} {The arc type.}
+\ccNestedType{Rational_segment_3}{The input segment type.}
+\ccNestedType{Point_3}{The intersection point type.}
+
+\ccAccessFunctions
+\ccCreationVariable{obj}
+
+\ccMethod{Line_3 arc() const;}
+         {Returns the arc of \ccVar{}.}
+
+\ccMethod{Point_3 intersection_point() const;}
+         {Returns the intersection point of $S_1$ and $S_2$.}
+
+\ccMethod{Line_3 s1() const;}
+         {Returns the input rational segment $S_1$.}
+
+\ccMethod{Line_3 s2() const;}
+         {Returns the input rational segment $S_2$.}
+
+\ccSeeAlso
+\ccc{CGAL::Lines_through_segments_output_line_3}\\
+\ccc{CGAL::Lines_through_segments_output_arr_curve_2}\\
+\ccc{CGAL::Lines_through_segments_output_arr_polygon_2}\\
+\ccc{CGAL::Lines_through_segments_output_point_3}\\
+\ccc{CGAL::Lines_through_segments_output_overlap_segments_3}\\
+
+
+
+\end{ccRefClass} 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Lines_through_segments_output_arr_polygon_2 class  %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin {ccRefClass} {Lines_through_segments_output_arr_polygon_2}
+    
+\ccDefinition 
+
+The \ccRefName\ class holds a polygon on the plane arrangement. Each point on the polygon represents a line tangent to 4 line segments. The class holds the 2 line segments $S_1$ and $S_2$ that parametrized the arrangement.\\
+In order to get a crossing line L from a point (x, y) on the polygon, the following should be done:
+
+\begin{enumerate}
+\item 
+From $x$ we get a point $p_1$ on $S_1$, $S_1 = ({x^1}_0,{y^1}_0,{z^1}_0) + x \cdot ({x^1}_1,{y^1}_1,{z^1}_1)$.
+\item
+From $y$ we get a point $p_2$ on $S_2$, $S_2 = ({x^2}_0,{y^2}_0,{z^2}_0) + y \cdot ({x^2}_1,{y^2}_1,{z^2}_1)$.
+\item
+The line that passes through $p_1$ and $p_2$, passes through 4 line segments.
+\end{enumerate}
+\ccInclude{CGAL/Lines_through_segments_output_obj.h}
+
+\ccTypes
+\ccNestedType{Polygon_2} {The polygon type.}
+\ccNestedType{Rational_segment_3}{The input segment type.}
+
+\ccAccessFunctions
+\ccCreationVariable{obj}
+
+\ccMethod{Line_3 polygon() const;}
+         {Returns the polygon of \ccVar{}.}
+
+\ccMethod{Line_3 s1() const;}
+         {Returns the input rational segment that parametrized the x-axis at the arrangement.}
+
+\ccMethod{Line_3 s2() const;}
+         {Returns the input rational segment that parametrized the y-axis at the arrangement.}
+
+\ccSeeAlso
+\ccc{CGAL::Lines_through_segments_output_line_3}\\
+\ccc{CGAL::Lines_through_segments_output_arr_arc_2}\\
+\ccc{CGAL::Lines_through_segments_output_arr_curve_2}\\
+\ccc{CGAL::Lines_through_segments_output_point_3}\\
+\ccc{CGAL::Lines_through_segments_output_overlap_segments_3}\\
+
+
+\end{ccRefClass} 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Lines_through_segments_output_point_3 class       %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin {ccRefClass} {Lines_through_segments_output_point_3}
+    
+\ccDefinition 
+
+The \ccRefName\ class holds an intersection point of four or more concurrent line segments.
+
+\ccInclude{CGAL/Lines_through_segments_output_obj.h}
+
+
+\ccTypes
+\ccNestedType{Rational_point_3}{The point type.}
+
+\ccAccessFunctions
+\ccCreationVariable{obj}
+
+\ccMethod{Segment_3 point() const;}
+         {Returns the point of \ccVar{}.}
+
+\ccSeeAlso
+\ccc{CGAL::Lines_through_segments_output_line_3}\\
+\ccc{CGAL::Lines_through_segments_output_arr_curve_2}\\
+\ccc{CGAL::Lines_through_segments_output_arr_arc_2}\\
+\ccc{CGAL::Lines_through_segments_output_arr_polygon_2}\\
+\ccc{CGAL::Lines_through_segments_output_overlap_segments_3}\\
+
+
+\end{ccRefClass} 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Lines_through_segments_output_overlap_segment_3 class  %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin {ccRefClass} {Lines_through_segments_output_overlap_segment_3}
+    
+\ccDefinition 
+
+The \ccRefName\ class holds a common line segment to four or more overlapping line segments.
+
+\ccInclude{CGAL/Lines_through_segments_output_obj.h}
+
+\ccTypes
+\ccNestedType{Rational_segment_3}{The line segment type.}
+
+\ccAccessFunctions
+\ccCreationVariable{obj}
+
+\ccMethod{Segment_3 segment() const;}
+         {Returns the line segment of \ccVar{}.}
+
+\ccSeeAlso
+\ccc{CGAL::Lines_through_segments_output_line_3}\\
+\ccc{CGAL::Lines_through_segments_output_arr_curve_2}\\
+\ccc{CGAL::Lines_through_segments_output_arr_arc_2}\\
+\ccc{CGAL::Lines_through_segments_output_arr_polygon_2}\\
+\ccc{CGAL::Lines_through_segments_output_point_3}\\
+
+
+\end{ccRefClass} 
+
+% +------------------------------------------------------------------------+
+%%RefPage: end of main body, begin of footer
+\ccRefPageEnd
+% EOF
+% +------------------------------------------------------------------------+

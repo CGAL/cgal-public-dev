@@ -1,0 +1,77 @@
+#VRML V2.0 utf8
+# Configuration { geometryDrawingMode "vertexArray" }
+ColorBackground { color 0.2 0.2 0 }
+NavigationInfo { type [ "EXAMINE" "ANY" ] }
+
+#Input
+
+Shape {
+  appearance DEF TEXT_APP Appearance {
+    material Material {diffuseColor 0.2 0.5 0.5 }
+  }
+  geometry IndexedLineSet {
+    coord Coordinate {
+      point [ 
+             2    1 -2.5,   2   0 20
+           -10    0    0,  40   0  0
+             1    0  -30,   1   0 30
+           -30  -33  -44,  55  40 40
+             0 -100    1,   0 111  1
+           -10    0   10, -30   0 31
+           -10  -10    2, -10  10 ,2
+             4    0    2,   5   0  3
+    	    ]
+    }
+    coordIndex [
+               0,1,
+               2,3,
+               4,5,
+               6,7,
+               8,9,
+               10,11,
+               12,13,
+               14,15,
+
+	       ]
+  }
+}
+
+#Output
+Shape {
+   appearance DEF TEXT_APP Appearance {
+     material Material { diffuseColor 2 0.8 0.8}
+    
+   }
+   geometry IndexedLineSet {
+      coord Coordinate {
+     
+      point [
+            -7.87368 0 60. 11.8737 0 -20.
+             4.00000 2.86364 -3.00000 0 -0.95455 1.00000
+             6.21053 0 60. -2.21053 0 -20.
+             -14.0000 2.61818 2.40000 18.0000 -0.87273 -0.80000
+             4. 2.61818 0.60000 0 -0.87273 1.00000
+             4. 1.91402 6.62452 0 -0.63801 5.30323
+             -22.2162 -7.14398 3.22162 26.2162 8.88943 -1.62162
+             63. 0 -62. -61. 0 62.
+             -25.2162 -9.76216 3.52162 27.2162 9.76216 -1.72162
+
+#             2.61822e+5 78697.1 -47603.8 -2.61820e+5 -78697.1 47603.8
+#             2.51111e+5 -22546.9 -2.51110e+5 -2.51109e+5 22546.9 2.51110e+5
+      ]
+      }     
+      coordIndex [
+
+               0,1,
+               2,3,
+               4,5,
+               6,7,
+               8,9,
+               10,11,
+               12,13,
+               14,15,
+               16,17
+
+     ]
+   }
+ }
