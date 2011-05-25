@@ -14,6 +14,7 @@
 #include <set>
 #include <iostream>
 #include <iomanip>
+#include <cassert>
 
 #include <boost/timer.hpp>
 #include <boost/algorithm/minmax_element.hpp>
@@ -61,7 +62,7 @@ template <typename Value>
 struct long_cmp
 {
   bool operator()(Value const& a, Value const& b) const {
-    usleep(30);
+    usleep(1);
     return std::less<Value>()(a,b);
   }
 };
@@ -98,7 +99,7 @@ int repeats = 10;
 
 #define CTIMER( n, cmd , cmdname, count, opt )	\
   t.restart(); lc.reset(); \
-  for (int i=0; i<repeats; ++i) { cmd ; } \
+  for (int i=0; i<repeats; ++i) { cmd; } \
   std::cout << "    " << std::setprecision(4) \
             << (double)n*repeats/t.elapsed()/1.0E6 \
             << "M items/sec  " << cmdname \
@@ -108,41 +109,64 @@ template <class CIterator>
 void test_minmax_element(CIterator first, CIterator last, int n, const char* name)
 {
   typedef typename std::iterator_traits<CIterator>::value_type vtype;
-
+ 
   boost::timer t;
-
+  std::pair<CIterator,CIterator> res1,res2,res3;
+ 
   std::cout << "  ON " << name << " WITH OPERATOR<()\n";
-  TIMER( n, boost::minmax_element(first, last),
+
+  TIMER( n, res1=boost::minmax_element(first, last),
   	 "boost::minmax_element" << name << "    ");
-  TIMER( n, std::minmax_element(first, last),
+  TIMER( n, res2=std::minmax_element(first, last),
   	 "std::minmax_element" << name << "    ");
-  TIMER( n, cgal::min_max_element(first, last),
+  TIMER( n, res3=cgal::min_max_element(first, last),
   	 "cgal::min_max_element" << name << "    ");
 
-  // long_cmp<vtype> lcmp;
+  assert(*(res1.first) == *(res2.first) && *(res1.second) == *(res2.second)
+  	                                && 
+  	 *(res1.first) == *(res3.first) && *(res1.second) == *(res3.second)
+  	                                &&
+  	 *(res2.first) == *(res3.first) && *(res2.second) == *(res3.second));
 
-  // std::cout << "  ON " << name << " WITH long_cmp\n";
-  // TIMER( n, boost::minmax_element(first, last, lcmp),
-  // 	 "boost::minmax_element" << name << "    ");
-  // TIMER( n, std::minmax_element(first, last, lcmp),
-  // 	 "std::minmax_element" << name << "    ");
-  // TIMER( n, cgal::min_max_element(first, last, lcmp, lcmp),
-  // 	 "cgal::min_max_element" << name << "    ");
+  long_cmp<vtype> lcmp;
+ 
+  std::cout << "  ON " << name << " WITH long_cmp\n";
+
+  TIMER( n, res1=boost::minmax_element(first, last, lcmp),
+  	 "boost::minmax_element" << name << "    ");
+  TIMER( n, res2=std::minmax_element(first, last, lcmp),
+  	 "std::minmax_element" << name << "    ");
+  TIMER( n, res3=cgal::min_max_element(first, last, lcmp, lcmp),
+  	 "cgal::min_max_element" << name << "    ");
+
+  assert(*(res1.first) == *(res2.first) && *(res1.second) == *(res2.second)
+  	                                && 
+  	 *(res1.first) == *(res3.first) && *(res1.second) == *(res3.second)
+  	                                &&
+  	 *(res2.first) == *(res3.first) && *(res2.second) == *(res3.second));
 
 
   std::cout << "  ON " << name << " WITH COUNTING OPERATOR<()\n";
   int i = 0;
   less_count<vtype> lc(i);
-
-  CTIMER( n, boost::minmax_element(first, last, lc),
+ 
+  CTIMER( n, res1=boost::minmax_element(first, last, lc),
   	  "boost::minmax_element" << name << "    ",
   	  i, opt_minmax_count(n));
-  CTIMER( n, std::minmax_element(first, last, lc),
+
+  CTIMER( n, res2=std::minmax_element(first, last, lc),
   	  "std::minmax_element" << name << "    ",
-    	  i, opt_minmax_count(n));
-  CTIMER( n, cgal::min_max_element(first, last, lc, lc),
+  	  i, opt_minmax_count(n));
+
+  CTIMER( n, res3=cgal::min_max_element(first, last, lc, lc),
   	  "cgal::min_max_element" << name << "    ",
   	  i, opt_minmax_count(n));
+          
+  assert(*(res1.first) == *(res2.first) && *(res1.second) == *(res2.second)
+  	                                && 
+  	 *(res1.first) == *(res3.first) && *(res1.second) == *(res3.second)
+  	                                &&
+  	 *(res2.first) == *(res3.first) && *(res2.second) == *(res3.second));
 }
 
 template <class Container, class Iterator, class Value>
@@ -167,45 +191,44 @@ template <class Value>
 void test(int n)
 {
   // Populate test vector with identical values
-  std::cout << "IDENTICAL VALUES...   \n";
+  std::cout << "IDENTICAL VALUES   \n";
   std::vector<Value> test_vector(n, Value(1));
   typename std::vector<Value>::iterator first( test_vector.begin() );
   typename std::vector<Value>::iterator last( test_vector.end() );
   test_range(first, last, n);
 
   // Populate test vector with two values
-  std::cout << "TWO DISTINCT VALUES...\n";
+  std::cout << "TWO DISTINCT VALUES\n";
   typename std::vector<Value>::iterator middle( first + n/2 );
   std::fill(middle, last, Value(2));
   test_range(first, last, n);
 
   // Populate test vector with increasing values
-  std::cout << "INCREASING VALUES...  \n";
-
+  std::cout << "INCREASING VALUES  \n";
   test_vector.clear();
   test_vector.reserve(n);
-  for(int i = 0; i < n; ++i)
-    test_vector.push_back(i);
+  
+  std::generate_n(std::back_inserter(test_vector), n, 
+		  []() { static int i = 0; return ++i; });
   first = test_vector.begin();
   last = test_vector.end();
   test_range(first, last, n);
   
   // Populate test vector with decreasing values
-  std::cout << "DECREASING VALUES...  \n";
+  std::cout << "DECREASING VALUES  \n";
   std::reverse(first, last);
   test_range(first, last, n);
 
   // Populate test vector with random values
-  std::cout << "RANDOM VALUES...      \n";
-
-  std::uniform_int_distribution<Value> distribution(Value(0), Value(99));
+  std::cout << "RANDOM VALUES      \n";
+  std::uniform_int_distribution<Value> distribution(Value(0), Value(n));
   std::mt19937 engine;
 
   test_vector.clear();
   test_vector.reserve(n);
   std::generate_n(std::back_inserter(test_vector), n, std::bind(distribution, engine));
   
-first = test_vector.begin();
+  first = test_vector.begin();
   last = test_vector.end();
   test_range(first, last, n);
 }
