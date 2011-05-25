@@ -186,7 +186,6 @@ min_max_element(ForwardIterator first, ForwardIterator last)
 
 template < class ForwardIterator, class CompareMin, class CompareMax >
 std::pair< ForwardIterator, ForwardIterator >
-CGAL_DEPRECATED
 min_max_element(ForwardIterator first,
                 ForwardIterator last,
                 CompareMin comp_min,
