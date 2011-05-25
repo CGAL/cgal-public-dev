@@ -19,6 +19,9 @@
 #include <boost/algorithm/minmax_element.hpp>
 
 #include <unistd.h>
+#include <cstdlib>
+#include <time.h>
+
 
 namespace cgal {
   template < class ForwardIterator >
@@ -181,7 +184,6 @@ void test(int n)
 
   // Populate test vector with increasing values
   std::cout << "INCREASING VALUES...  \n";
-
   test_vector.clear();
   test_vector.reserve(n);
   for(int i = 0; i < n; ++i)
@@ -198,14 +200,20 @@ void test(int n)
   // Populate test vector with random values
   std::cout << "RANDOM VALUES...      \n";
 
-  std::uniform_int_distribution<Value> distribution(Value(0), Value(99));
-  std::mt19937 engine;
+  // std::uniform_int_distribution<Value> distribution(Value(0), Value(99));
+  // std::mt19937 engine;
 
   test_vector.clear();
   test_vector.reserve(n);
-  std::generate_n(std::back_inserter(test_vector), n, std::bind(distribution, engine));
+  // std::generate_n(std::back_inserter(test_vector), n, std::bind(distribution, engine));
   
-first = test_vector.begin();
+  srand(time(NULL));
+
+  for(auto i = 0; i < n; ++i) {
+    test_vector.push_back(rand());
+  }
+
+  first = test_vector.begin();
   last = test_vector.end();
   test_range(first, last, n);
 }
