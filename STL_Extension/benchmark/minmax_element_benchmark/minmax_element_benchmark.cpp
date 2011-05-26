@@ -19,6 +19,11 @@
 #include <boost/timer.hpp>
 #include <boost/algorithm/minmax_element.hpp>
 
+#ifdef CGAL_USE_BOOST_PROGRAM_OPTIONS
+#include <boost/program_options.hpp>
+namespace po = boost::program_options;
+#endif
+
 #include <unistd.h>
 
 namespace cgal {
@@ -105,6 +110,8 @@ int repeats = 10;
             << "M items/sec  " << cmdname \
   << " ("<< (count)/repeats << " vs " << opt << ")\n"
 
+std::string tests;
+
 template <class CIterator>
 void test_minmax_element(CIterator first, CIterator last, int n, const char* name)
 {
@@ -113,60 +120,74 @@ void test_minmax_element(CIterator first, CIterator last, int n, const char* nam
   boost::timer t;
   std::pair<CIterator,CIterator> res1,res2,res3;
  
-  std::cout << "  ON " << name << " WITH OPERATOR<()\n";
+  if(tests == "operator<") {
+    std::cout << "  ON " << name << " WITH OPERATOR<()\n";
+  
+    TIMER( n, res1=boost::minmax_element(first, last),
+	   "boost::minmax_element" << name << "    ");
 
-  TIMER( n, res1=boost::minmax_element(first, last),
-  	 "boost::minmax_element" << name << "    ");
-  TIMER( n, res2=std::minmax_element(first, last),
-  	 "std::minmax_element" << name << "    ");
-  TIMER( n, res3=cgal::min_max_element(first, last),
-  	 "cgal::min_max_element" << name << "    ");
+    #ifndef CGAL_CFG_NO_CPP0X_MINMAX_ELEMENT
+    TIMER( n, res2=std::minmax_element(first, last),
+	   "std::minmax_element" << name << "    ");
+    #endif
 
-  assert(*(res1.first) == *(res2.first) && *(res1.second) == *(res2.second)
-  	                                && 
-  	 *(res1.first) == *(res3.first) && *(res1.second) == *(res3.second)
-  	                                &&
-  	 *(res2.first) == *(res3.first) && *(res2.second) == *(res3.second));
+    TIMER( n, res3=cgal::min_max_element(first, last),
+	   "cgal::min_max_element" << name << "    ");
 
-  long_cmp<vtype> lcmp;
+    if(!(*(res1.first) == *(res2.first) && *(res1.second) == *(res2.second)
+	                                && 
+	 *(res1.first) == *(res3.first) && *(res1.second) == *(res3.second)
+                                        &&
+	 *(res2.first) == *(res3.first) && *(res2.second) == *(res3.second)))
+      std::cerr << "Different results";
+  } else if(tests == "long_cmp") {
+    long_cmp<vtype> lcmp;
  
-  std::cout << "  ON " << name << " WITH long_cmp\n";
+    std::cout << "  ON " << name << " WITH long_cmp\n";
 
-  TIMER( n, res1=boost::minmax_element(first, last, lcmp),
-  	 "boost::minmax_element" << name << "    ");
-  TIMER( n, res2=std::minmax_element(first, last, lcmp),
-  	 "std::minmax_element" << name << "    ");
-  TIMER( n, res3=cgal::min_max_element(first, last, lcmp, lcmp),
-  	 "cgal::min_max_element" << name << "    ");
+    TIMER( n, res1=boost::minmax_element(first, last, lcmp),
+	   "boost::minmax_element" << name << "    ");
 
-  assert(*(res1.first) == *(res2.first) && *(res1.second) == *(res2.second)
-  	                                && 
-  	 *(res1.first) == *(res3.first) && *(res1.second) == *(res3.second)
-  	                                &&
-  	 *(res2.first) == *(res3.first) && *(res2.second) == *(res3.second));
+    #ifndef CGAL_CFG_NO_CPP0X_MINMAX_ELEMENT
+    TIMER( n, res2=std::minmax_element(first, last, lcmp),
+	   "std::minmax_element" << name << "    ");
+    #endif
 
+    TIMER( n, res3=cgal::min_max_element(first, last, lcmp, lcmp),
+	   "cgal::min_max_element" << name << "    ");
 
-  std::cout << "  ON " << name << " WITH COUNTING OPERATOR<()\n";
-  int i = 0;
-  less_count<vtype> lc(i);
+    if(!(*(res1.first) == *(res2.first) && *(res1.second) == *(res2.second)
+	                                && 
+	 *(res1.first) == *(res3.first) && *(res1.second) == *(res3.second)
+	                                &&
+	 *(res2.first) == *(res3.first) && *(res2.second) == *(res3.second)))
+      std::cerr << "Different results";
+  } else if(tests == "counting_cmp") {
+    std::cout << "  ON " << name << " WITH COUNTING OPERATOR<()\n";
+    int i = 0;
+    less_count<vtype> lc(i);
  
-  CTIMER( n, res1=boost::minmax_element(first, last, lc),
-  	  "boost::minmax_element" << name << "    ",
-  	  i, opt_minmax_count(n));
+    CTIMER( n, res1=boost::minmax_element(first, last, lc),
+	    "boost::minmax_element" << name << "    ",
+	    i, opt_minmax_count(n));
 
-  CTIMER( n, res2=std::minmax_element(first, last, lc),
-  	  "std::minmax_element" << name << "    ",
-  	  i, opt_minmax_count(n));
+    #ifndef CGAL_CFG_NO_CPP0X_MINMAX_ELEMENT
+    CTIMER( n, res2=std::minmax_element(first, last, lc),
+	    "std::minmax_element" << name << "    ",
+	    i, opt_minmax_count(n));
+    #endif
 
-  CTIMER( n, res3=cgal::min_max_element(first, last, lc, lc),
-  	  "cgal::min_max_element" << name << "    ",
-  	  i, opt_minmax_count(n));
+    CTIMER( n, res3=cgal::min_max_element(first, last, lc, lc),
+	    "cgal::min_max_element" << name << "    ",
+	    i, opt_minmax_count(n));
           
-  assert(*(res1.first) == *(res2.first) && *(res1.second) == *(res2.second)
-  	                                && 
-  	 *(res1.first) == *(res3.first) && *(res1.second) == *(res3.second)
-  	                                &&
-  	 *(res2.first) == *(res3.first) && *(res2.second) == *(res3.second));
+    if(!(*(res1.first) == *(res2.first) && *(res1.second) == *(res2.second)
+	 && 
+	 *(res1.first) == *(res3.first) && *(res1.second) == *(res3.second)
+	 &&
+	 *(res2.first) == *(res3.first) && *(res2.second) == *(res3.second)))
+      std::cerr << "Different results";
+  }
 }
 
 template <class Container, class Iterator, class Value>
@@ -236,10 +257,35 @@ void test(int n)
 int
 main(int argc, char** argv)
 {
-  int n = 100;
-  if (argc > 1) n = atoi(argv[1]);
-  if (argc > 2) repeats = atoi(argv[2]);
+  int n;
+  
+  po::options_description desc("Allowed options for reload");
+  desc.add_options()
+    ("help", "produce help message")
+    ("n", po::value<int>(&n)->default_value(100), "container size, default 100")
+    ("r", po::value<int>(&repeats)->default_value(10), "repetitions, default 10")
+    ("test", po::value<std::string>(&tests)->default_value("operator<"), 
+     "which test: operator<, long_cmp, counting_cmp; default operator<")
+    ;
+  
+  po::variables_map vm;
+  po::store(po::parse_command_line(argc, argv, desc), vm);
+  po::notify(vm);    
 
+  if(vm.count("help")) {
+    std::cout << desc << std::endl;
+    return EXIT_SUCCESS;
+  }
+
+  if(!(tests != "operator<"
+       || tests != "long_cmp"
+       || tests != "counting_cmp")) {
+    std::cout << "unknown tests option" << std::endl;
+    return EXIT_FAILURE;
+  }
+
+  
+  
   test<int>(n);
 
   return 0;
