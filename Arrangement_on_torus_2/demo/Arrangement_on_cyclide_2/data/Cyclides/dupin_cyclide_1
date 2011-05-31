@@ -1,0 +1,10 @@
+#Dupin cyclide:
+BEGIN_CYCLIDE
+a 13
+b 12
+mu 11
+center 1 1 1
+#base_plane 2 -2 1 2 1 -2 1 2 2
+base_plane 0 -1 0 -1 0 0 0 0 -1
+END_CYCLIDE
+

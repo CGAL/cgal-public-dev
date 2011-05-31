@@ -954,6 +954,21 @@ Arrangement_on_surface_2/test/Sweep_line_2/cgal_test_with_cmake eol=lf
 Arrangement_on_surface_2/test/Sweep_line_2/test_sweep.cpp eol=lf
 Arrangement_on_surface_2/test/Sweep_line_2/test_sweep_conic.cpp eol=lf
 Arrangement_on_surface_2/todo -text
+Arrangement_on_torus_2/demo/Arrangement_on_cyclide_2/antialias.frag -text
+Arrangement_on_torus_2/demo/Arrangement_on_cyclide_2/antialias.vert -text
+Arrangement_on_torus_2/demo/Arrangement_on_cyclide_2/data/Cyclides/dupin_cyclide_1 -text
+Arrangement_on_torus_2/demo/Arrangement_on_cyclide_2/data/Cyclides/standard_torus -text
+Arrangement_on_torus_2/demo/Arrangement_on_cyclide_2/data/Surfaces/five_degree_3 -text
+Arrangement_on_torus_2/demo/Arrangement_on_cyclide_2/data/Surfaces/five_degree_4 -text
+Arrangement_on_torus_2/demo/Arrangement_on_cyclide_2/data/Surfaces/five_planes -text
+Arrangement_on_torus_2/demo/Arrangement_on_cyclide_2/data/Surfaces/five_quadrics -text
+Arrangement_on_torus_2/demo/Arrangement_on_cyclide_2/data/Surfaces/ten_degree_3 -text
+Arrangement_on_torus_2/demo/Arrangement_on_cyclide_2/data/Surfaces/ten_degree_4 -text
+Arrangement_on_torus_2/demo/Arrangement_on_cyclide_2/data/Surfaces/ten_planes -text
+Arrangement_on_torus_2/demo/Arrangement_on_cyclide_2/data/Surfaces/ten_quadrics -text
+Arrangement_on_torus_2/demo/Arrangement_on_cyclide_2/sample.frag -text
+Arrangement_on_torus_2/demo/Arrangement_on_cyclide_2/sample.vert -text
+Arrangement_on_torus_2/include/CGAL/Arr_surfaces_intersecting_dupin_cyclide_traits_2.h -text
 BGL/doc_tex/BGL/fig/emst-detail.png -text
 BGL/doc_tex/BGL/fig/emst.jpg -text
 BGL/doc_tex/BGL/fig/ex_bgl.fig -text svneol=unset#application/octet-stream

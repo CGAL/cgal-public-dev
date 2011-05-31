@@ -1,0 +1,11 @@
+0) PNG-Export
+* enable
+
+A) dupin_cyclide_1 + five_quadrics:
+* Crosscut in interior
+* line-strip near outer circle
+* wrong connection near outer circle
+
+B) Visualization
+* draw Sweep-line ;-)
+
