@@ -1872,6 +1872,8 @@ protected:
                              const DVertex *v2,
                              Arr_not_all_sides_oblivious_tag) const;
   
+
+  // TODO remove (or keep for sanity check)
   /*!
    * Locate the leftmost vertex on the a given sequence defined by two
    * halfedges. This sequence is still an open loop, but it will soon be closed
@@ -1908,6 +1910,70 @@ protected:
   _find_leftmost_vertex_on_closed_loop (const DHalfedge *he_anchor,
                                         bool& is_perimetric,
                                         bool& at_infinity) const;
+  
+  /*!
+   * Updates the representative of an outer ccb that has been enhanced with a 
+   * new halfedge, i.e., keep the existing one, or use the given halfedge.
+   * \param oc the outer ccb
+   * \param he new halfedge
+   * \return the updated representative halfedge
+   */
+  DHalfedge* _update_outer_ccb_with(DOuter_ccb *oc, DHalfedge *he) {
+    if (he->direction() == CGAL::ARR_RIGHT_TO_LEFT) {
+    // TODO implement
+      oc->set_halfedge (he);
+    }
+    return oc->halfedge();
+  }
+  
+  /*!
+   * Updates the representative of an outer ccb from which a halfedge has been
+   * removed, i.e., keep the existing one, or use one of the ccb's other halfedges
+   * \param oc the outer ccb
+   * \param he deleted halfedge
+   * \return the updated representative halfedge
+   */
+  DHalfedge* _update_outer_ccb_without(DOuter_ccb *oc, DHalfedge *he) {
+    if (oc->halfedge() == he) {
+    // TODO implement
+      oc->set_halfedge (he->prev());
+    }
+    return oc->halfedge();
+   
+  }
+
+
+  /*!
+   * Updates the representative of an inner ccb that has been enhanced with a 
+   * new halfedge, i.e., keep the existing one, or use the given halfedge.
+   * \param oc the inner ccb
+   * \param he new halfedge
+   * \return the updated representative halfedge
+   */
+  DHalfedge* _update_inner_ccb_with(DInner_ccb *ic, DHalfedge *he) {
+    if (he->direction() == CGAL::ARR_RIGHT_TO_LEFT) {
+    // TODO implement
+      ic->set_halfedge (he);
+    }
+    return ic->halfedge();
+  }
+  
+  /*!
+   * Updates the representative of an inner ccb from which a halfedge has been
+   * removed, i.e., keep the existing one, or use one of the ccb's other halfedges
+   * \param ic the inner ccb
+   * \param he deleted halfedge
+   * \return the updated representative halfedge
+   */
+  DHalfedge* _update_inner_ccb_without(DInner_ccb *ic, DHalfedge *he) {
+    if (ic->halfedge() == he) {
+      // TODO implement
+      ic->set_halfedge (he->prev());
+    }
+    return ic->halfedge();
+   
+  }
+
 
   /*!
    * Given two predecessor halfedges that will be used for inserting a
