@@ -24,8 +24,6 @@
 namespace po = boost::program_options;
 #endif
 
-#include <unistd.h>
-
 namespace cgal {
   template < class ForwardIterator >
   std::pair< ForwardIterator, ForwardIterator >
@@ -87,12 +85,6 @@ private:
   int& _M_counter;
 };
 
-inline int opt_minmax_count(int n) {
-  if (n < 2) return 0;
-  if (n == 2) return 1;
-  return (n%2 == 0) ? 3*(n/2)-1 : 3*(n/2)+1;
-}
-
 int repeats = 10;
 
 #define TIMER( n, cmd , cmdname ) \
@@ -107,8 +99,9 @@ int repeats = 10;
   for (int i=0; i<repeats; ++i) { cmd; } \
   std::cout << "    " << std::setprecision(4) \
             << (double)n*repeats/t.elapsed()/1.0E6 \
-            << "M items/sec  " << cmdname \
-  << " ("<< (count)/repeats << " vs " << opt << ")\n"
+            << "M items/sec"  << " ("<< (count)/repeats << ") "	\
+            << cmdname << "\n"
+
 
 std::string tests;
 
@@ -118,12 +111,14 @@ void test_minmax_element(CIterator first, CIterator last, int n, const char* nam
   typedef typename std::iterator_traits<CIterator>::value_type vtype;
  
   boost::timer t;
-  std::pair<CIterator,CIterator> res1,res2,res3;
+  std::pair<CIterator,CIterator> res1;
+  std::pair<CIterator,CIterator> res2;
+  std::pair<CIterator,CIterator> res3;
  
   if(tests == "operator<") {
     std::cout << "  ON " << name << " WITH OPERATOR<()\n";
   
-    TIMER( n, res1=boost::minmax_element(first, last),
+    TIMER( n,res1=boost::minmax_element(first, last),
 	   "boost::minmax_element" << name << "    ");
 
     #ifndef CGAL_CFG_NO_CPP0X_MINMAX_ELEMENT
@@ -135,10 +130,10 @@ void test_minmax_element(CIterator first, CIterator last, int n, const char* nam
 	   "cgal::min_max_element" << name << "    ");
 
     if(!(*(res1.first) == *(res2.first) && *(res1.second) == *(res2.second)
-	                                && 
-	 *(res1.first) == *(res3.first) && *(res1.second) == *(res3.second)
+    	                                && 
+    	 *(res1.first) == *(res3.first) && *(res1.second) == *(res3.second)
                                         &&
-	 *(res2.first) == *(res3.first) && *(res2.second) == *(res3.second)))
+    	 *(res2.first) == *(res3.first) && *(res2.second) == *(res3.second)))
       std::cerr << "Different results";
   } else if(tests == "long_cmp") {
     long_cmp<vtype> lcmp;
@@ -157,10 +152,10 @@ void test_minmax_element(CIterator first, CIterator last, int n, const char* nam
 	   "cgal::min_max_element" << name << "    ");
 
     if(!(*(res1.first) == *(res2.first) && *(res1.second) == *(res2.second)
-	                                && 
-	 *(res1.first) == *(res3.first) && *(res1.second) == *(res3.second)
-	                                &&
-	 *(res2.first) == *(res3.first) && *(res2.second) == *(res3.second)))
+    	                                && 
+    	 *(res1.first) == *(res3.first) && *(res1.second) == *(res3.second)
+    	                                &&
+    	 *(res2.first) == *(res3.first) && *(res2.second) == *(res3.second)))
       std::cerr << "Different results";
   } else if(tests == "counting_cmp") {
     std::cout << "  ON " << name << " WITH COUNTING OPERATOR<()\n";
@@ -182,10 +177,10 @@ void test_minmax_element(CIterator first, CIterator last, int n, const char* nam
 	    i, opt_minmax_count(n));
           
     if(!(*(res1.first) == *(res2.first) && *(res1.second) == *(res2.second)
-	 && 
-	 *(res1.first) == *(res3.first) && *(res1.second) == *(res3.second)
-	 &&
-	 *(res2.first) == *(res3.first) && *(res2.second) == *(res3.second)))
+    	 && 
+    	 *(res1.first) == *(res3.first) && *(res1.second) == *(res3.second)
+    	 &&
+    	 *(res2.first) == *(res3.first) && *(res2.second) == *(res3.second)))
       std::cerr << "Different results";
   }
 }
@@ -198,14 +193,21 @@ void test_container(Iterator first, Iterator last, int n, const char* name)
   test_minmax_element(fit, lit, n, name);
 }
 
+std::string testContainer = "vector";
+
 template <class Iterator>
+
 void test_range(Iterator first, Iterator last, int n)
 {
   typedef typename std::iterator_traits<Iterator>::value_type Value;
   // Test various containers with these values
-  test_container< std::vector<Value>, Iterator, Value >(first, last, n, "<vector>");
-  // test_container< std::list<Value>,   Iterator, Value >(first, last, n, "<list>  ");
-  // test_container< std::multiset<Value>,    Iterator, Value >(first, last, n, "<set>   ");
+  if(testContainer == "vector") {
+    test_container< std::vector<Value>, Iterator, Value >(first, last, n, "<vector>");
+  } else if(testContainer == "list") {
+    test_container< std::list<Value>,   Iterator, Value >(first, last, n, "<list>  ");
+  } else if(testContainer == "set") {
+    test_container< std::multiset<Value>,    Iterator, Value >(first, last, n, "<set>   ");
+  }
 }
 
 template <class Value>
@@ -230,7 +232,7 @@ void test(int n)
   test_vector.reserve(n);
   
   std::generate_n(std::back_inserter(test_vector), n, 
-		  []() { static int i = 0; return ++i; });
+  		  []() { static int i = 0; return ++i; });
   first = test_vector.begin();
   last = test_vector.end();
   test_range(first, last, n);
@@ -266,6 +268,8 @@ main(int argc, char** argv)
     ("r", po::value<int>(&repeats)->default_value(10), "repetitions, default 10")
     ("test", po::value<std::string>(&tests)->default_value("operator<"), 
      "which test: operator<, long_cmp, counting_cmp; default operator<")
+    ("container", po::value<std::string>(&testContainer)->default_value("vector"),
+     "which container: vector, list, set; default: vector")
     ;
   
   po::variables_map vm;
@@ -277,15 +281,20 @@ main(int argc, char** argv)
     return EXIT_SUCCESS;
   }
 
-  if(!(tests != "operator<"
-       || tests != "long_cmp"
-       || tests != "counting_cmp")) {
+  if(tests != "operator<"
+     && tests != "long_cmp"
+     && tests != "counting_cmp") {
     std::cout << "unknown tests option" << std::endl;
     return EXIT_FAILURE;
   }
 
-  
-  
+  if(testContainer != "vector"
+     && testContainer != "set"
+     && testContainer != "list") {
+    std::cout << "unknown testContainer option" << std::endl;
+    return EXIT_FAILURE;
+  }
+
   test<int>(n);
 
   return 0;
