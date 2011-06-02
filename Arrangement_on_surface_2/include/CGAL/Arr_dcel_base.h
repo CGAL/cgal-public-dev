@@ -833,9 +833,9 @@ public:
   {
     // Set the perimetricy information to *iter's LSB.
     if (perimetric) {
-      *iter = _set_lsb (*iter);
+      *iter = (reinterpret_cast<Halfedge*>(_set_lsb (*iter)));
     } else {
-      *iter = _clean_pointer(*iter);
+      *iter = (reinterpret_cast<Halfedge*>(_clean_pointer(*iter)));
     }
   }
 
