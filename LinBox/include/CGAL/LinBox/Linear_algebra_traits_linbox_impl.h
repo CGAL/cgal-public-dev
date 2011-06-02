@@ -79,26 +79,72 @@ namespace CGAL {
         template <class FT,class AL>
         typename Linear_algebra_traits_linbox<FT,AL>::FT
         Linear_algebra_traits_linbox<FT,AL>::
-        determinant(const Matrix &M){
+        determinant(const Matrix &M,CGAL::Method method){
                 CGAL_assertion_msg(M.column_dimension()==M.row_dimension(),
                                    "matrix is not square");
                 FT d;
-                // TODO: Choose a method, between LinBox::Method::Hybrid
-                // (default), Blackbox, Elimination, Wiedemann,
-                // BlasElimination, SparseElimination.
-                LinBox::det(d,M,
-                            typename LinBox::ClassifyRing<LS>::categoryTag(),
-                            LinBox::Method::Wiedemann());
+                switch(method){
+                        case CGAL_HYBRID:
+                                LinBox::det(d,M,
+                                            typename LinBox::ClassifyRing<LS>::
+                                                categoryTag(),
+                                            LinBox::Method::Hybrid());
+                                break;
+                        case CGAL_BLACKBOX:
+                                LinBox::det(d,M,
+                                            typename LinBox::ClassifyRing<LS>::
+                                                categoryTag(),
+                                            LinBox::Method::Blackbox());
+                                break;
+                        case CGAL_WIEDEMANN:
+                                LinBox::det(d,M,
+                                            typename LinBox::ClassifyRing<LS>::
+                                                categoryTag(),
+                                            LinBox::Method::Wiedemann());
+                                break;
+                        case CGAL_ELIMINATION:
+                                LinBox::det(d,M,
+                                            typename LinBox::ClassifyRing<LS>::
+                                                categoryTag(),
+                                            LinBox::Method::Elimination());
+                                break;
+                        case CGAL_BLAS_ELIMINATION:
+                                LinBox::det(d,M,
+                                            typename LinBox::ClassifyRing<LS>::
+                                                categoryTag(),
+                                            LinBox::Method::BlasElimination());
+                                break;
+                        case CGAL_SPARSE_ELIMINATION:
+                                LinBox::det(d,M,
+                                            typename LinBox::ClassifyRing<LS>::
+                                                categoryTag(),
+                                            LinBox::Method::SparseElimination()
+                                           );
+                                break;
+                        default:
+                                CGAL_assertion(method==CGAL_DEFAULT);
+                                // this comes from experimental results
+                                if(M.row_dimension()<18)
+                                        LinBox::det(d,M,
+                                        typename LinBox::ClassifyRing<LS>::
+                                                categoryTag(),
+                                        LinBox::Method::SparseElimination());
+                                else
+                                        LinBox::det(d,M,
+                                            typename LinBox::ClassifyRing<LS>::
+                                                categoryTag(),
+                                            LinBox::Method::Wiedemann());
+                }
                 return d;
         }
 
         template <class FT,class AL>
         Sign
         Linear_algebra_traits_linbox<FT,AL>::
-        sign_of_determinant(const Matrix &M){
+        sign_of_determinant(const Matrix &M,CGAL::Method method){
                 CGAL_assertion_msg(M.column_dimension()==M.row_dimension(),
                                    "matrix is not square");
-                return determinant(M).sign();
+                return determinant(M,method).sign();
         }
 
         template <class FT,class AL>
@@ -186,11 +232,39 @@ namespace CGAL {
         template <class FT,class AL>
         int
         Linear_algebra_traits_linbox<FT,AL>::
-        rank(const Matrix &M){
+        rank(const Matrix &M,CGAL::Method method){
                 unsigned long result;
                 // TODO: Choose a method, between Method::Wiedemann
                 // (default), BlasElimination or SparseElimination.
-                LinBox::rank(result,M);
+                switch(method){
+                        case CGAL_DEFAULT:
+                                LinBox::rank(result,M);
+                                break;
+                        case CGAL_WIEDEMANN:
+                                LinBox::rank(result,
+                                             M,
+                                             typename LinBox::ClassifyRing<LS>::
+                                                categoryTag(),
+                                             LinBox::Method::Wiedemann());
+                                break;
+                        case CGAL_BLAS_ELIMINATION:
+                                LinBox::rank(result,
+                                             M,
+                                             typename LinBox::ClassifyRing<LS>::
+                                                categoryTag(),
+                                             LinBox::Method::BlasElimination());
+                                break;
+                        case CGAL_SPARSE_ELIMINATION:
+                                LinBox::rank(result,
+                                             M,
+                                             typename LinBox::ClassifyRing<LS>::
+                                                categoryTag(),
+                                             LinBox::Method::
+                                                SparseElimination());
+                                break;
+                        default:
+                                CGAL_error_msg("not implemented");
+                }
                 CGAL_assertion_msg((unsigned long)((int)result)==result,
                                    "the result does not fit in an int");
                 return (int)result;

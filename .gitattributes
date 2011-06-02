@@ -1800,6 +1800,7 @@ LinBox/include/CGAL/LinBox/linbox_generic_structure.h -text
 LinBox/include/CGAL/LinBox/linbox_integer_randiter.h -text
 LinBox/include/CGAL/LinBox/linbox_integer_ring.h -text
 LinBox/include/CGAL/LinBox/linbox_rational_field.h -text
+LinBox/include/CGAL/LinBox/methods.h -text
 LinBox/package_info/description.txt -text
 LinBox/package_info/maintainer -text
 MacOSX/auxiliary/cgal_app.icns -text

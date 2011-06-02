@@ -6,6 +6,7 @@
 #ifndef CGAL_LINBOX_LINEAR_ALGEBRA_TRAITS_LINBOX_H
 #define CGAL_LINBOX_LINEAR_ALGEBRA_TRAITS_LINBOX_H
 
+#include <CGAL/LinBox/methods.h>
 #include <CGAL/LinBox/linbox_dense_matrix.h>
 
 namespace CGAL{
@@ -38,8 +39,10 @@ namespace CGAL{
                                                const Matrix&,const Matrix&,
                                                const std::vector<int>&,
                                                const Vector&);
-                static FT determinant(const Matrix&);
-                static Sign sign_of_determinant(const Matrix&);
+                static FT determinant(const Matrix&,
+                                      CGAL::Method=CGAL_DEFAULT);
+                static Sign sign_of_determinant(const Matrix&,
+                                                CGAL::Method=CGAL_DEFAULT);
                 static bool linear_solver(const Matrix&,const Vector&,
                                           Vector&,FT&,Matrix&,Vector&);
                 static bool linear_solver(const Matrix&,const Vector&,Vector&,
@@ -50,7 +53,7 @@ namespace CGAL{
                 static bool homogeneous_linear_solver(const Matrix&,Vector&);
                 static int homogeneous_linear_solver(const Matrix&,Matrix&);
                 static int independent_columns(const Matrix&,std::vector<int>&);
-                static int rank(const Matrix&);
+                static int rank(const Matrix&,CGAL::Method=CGAL_DEFAULT);
         };
 
 } // namespace CGAL
