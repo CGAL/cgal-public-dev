@@ -29,6 +29,7 @@ if ( CGAL_FOUND )
   #include_directories (BEFORE /opt/givaro-3.3.5/include)
   #include_directories (BEFORE /opt/givaro-3.3.5-gmp4/include)
   include_directories (BEFORE /opt/givaro-trunk/include)
+  include_directories (BEFORE /opt/TOPCOM-0.16.2/include)
 
   add_definitions(${CMAKE_CXX_FLAGS} "-DLinBoxSrcOnly")
   #add_definitions(${CMAKE_CXX_FLAGS} "-DDISABLE_COMMENTATOR")
@@ -40,6 +41,7 @@ if ( CGAL_FOUND )
   link_libraries("givaro")
 
   create_single_source_cgal_program( "linbox_traits.cpp" )
+  create_single_source_cgal_program( "linbox_topcom_traits.cpp" )
 
 else()
   

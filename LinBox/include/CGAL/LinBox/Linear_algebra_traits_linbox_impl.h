@@ -169,11 +169,21 @@ namespace CGAL {
         template <class FT,class AL>
         bool
         Linear_algebra_traits_linbox<FT,AL>::
-        linear_solver(const Matrix &M,const Vector &b,Vector &x,FT &D){
+        linear_solver(const Matrix &M,
+                      const Vector &b,
+                      Vector &x,
+                      FT &D,
+                      CGAL::Method method){
                 CGAL_assertion(M.row_dimension()==b.dimension());
                 // TODO: choose method
                 //D=FT(1);
-                LinBox::solve(x,D,M,b,LinBox::BlasEliminationTraits());
+                //LinBox::solve(x,D,M,b,LinBox::BlasEliminationTraits());
+                std::cout<<"solve\nb="<<b<<"\nM="<<M<<std::endl;
+                LinBox::solve(x,
+                              M,
+                              b,
+                              LinBox::Method::Hybrid());
+                std::cout<<"result is "<<x<<std::endl;
                 return !x.is_zero();
         }
 
@@ -234,8 +244,6 @@ namespace CGAL {
         Linear_algebra_traits_linbox<FT,AL>::
         rank(const Matrix &M,CGAL::Method method){
                 unsigned long result;
-                // TODO: Choose a method, between Method::Wiedemann
-                // (default), BlasElimination or SparseElimination.
                 switch(method){
                         case CGAL_DEFAULT:
                                 LinBox::rank(result,M);

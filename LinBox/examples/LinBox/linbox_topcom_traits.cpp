@@ -1,11 +1,11 @@
 #include <iostream>
 #include <vector>
 #include <CGAL/Gmpq.h>
-#include <CGAL/LinBox/linbox_rational_field.h>
+#include <CGAL/LinBox/linbox_topcom_field.h>
 #include <CGAL/LinBox/Linear_algebra_traits_linbox.h>
 
 int main(){
-        typedef CGAL::Gmpq                                      FT;
+        typedef Rational                                        FT;
         typedef CGAL::Linbox_rational_field<FT>                 Field;
         typedef Field::Element                                  Element;
         typedef CGAL::Linear_algebra_traits_linbox<Field>       LA;

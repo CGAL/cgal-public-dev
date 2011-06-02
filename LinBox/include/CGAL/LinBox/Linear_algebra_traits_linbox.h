@@ -47,8 +47,11 @@ namespace CGAL{
                                           Vector&,FT&,Matrix&,Vector&);
                 static bool linear_solver(const Matrix&,const Vector&,Vector&,
                                           FT&,Vector&);
-                static bool linear_solver(const Matrix&,const Vector&,
-                                          Vector&,FT&);
+                static bool linear_solver(const Matrix&,
+                                          const Vector&,
+                                          Vector&,
+                                          FT&,
+                                          CGAL::Method=CGAL_DEFAULT);
                 static bool is_solvable(const Matrix&,const Vector&);
                 static bool homogeneous_linear_solver(const Matrix&,Vector&);
                 static int homogeneous_linear_solver(const Matrix&,Matrix&);
