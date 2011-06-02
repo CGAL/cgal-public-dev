@@ -50,6 +50,9 @@ if ( CGAL_FOUND )
   create_single_source_cgal_program( "Descartes.cpp" )
   create_single_source_cgal_program( "Real_embeddable_traits_extension.cpp" )
   create_single_source_cgal_program( "rs_isolator.cpp" )
+  create_single_source_cgal_program( "simple_rs2_isolator.cpp" )
+  create_single_source_cgal_program( "simple_rs3_refiner.cpp" )
+  create_single_source_cgal_program( "simple_rs_ak1.cpp" )
 
 else()
 
