@@ -46,7 +46,7 @@ Simple_signat_1<Polynomial_,Bound_>::operator()(const Bound_ &x){
         typedef Polynomial_traits_d<Polynomial>                 Ptraits;
         typedef typename Ptraits::Degree                        Degree;
         typedef Real_embeddable_traits<Bound>                   REtraits;
-        typedef typename REtraits::Sign                         BSign;
+        typedef typename REtraits::Sgn                          BSign;
         typedef Algebraic_structure_traits<Bound>               AStraits;
         // This generic signat works only when Bound_ is an exact type. For
         // non-exact types, an implementation must be provided.

@@ -20,6 +20,7 @@
 #ifndef CGAL_RS_SIMPLE_ALGEBRAIC_1_H
 #define CGAL_RS_SIMPLE_ALGEBRAIC_1_H
 
+#include <boost/operators.hpp>
 #include <CGAL/Real_embeddable_traits.h>
 #include <CGAL/Polynomial_traits_d.h>
 
@@ -56,7 +57,13 @@ template <class Polynomial_,
           class Refiner_,
           class Comparator_/*,
           class Ptraits_*/>
-class Simple_algebraic_1{
+class Simple_algebraic_1:
+boost::totally_ordered<Simple_algebraic_1<Polynomial_,
+                                          Bound_,
+                                          Refiner_,
+                                          Comparator_/*,
+                                          Ptraits*/>,
+                       double>{
         private:
         typedef Polynomial_                             Polynomial;
         typedef Bound_                                  Bound;
@@ -66,10 +73,16 @@ class Simple_algebraic_1{
         typedef Polynomial_traits_d<Polynomial>         Ptraits;
         typedef typename Ptraits::Coefficient_type      Coefficient;
         typedef typename Ptraits::Scale                 Scale;
-        typedef Simple_algebraic_1<Polynomial,Bound,Refiner,Comparator>
+        typedef Simple_algebraic_1<Polynomial,
+                                   Bound,
+                                   Refiner,
+                                   Comparator/*,
+                                   Ptraits*/>
                                                         Algebraic;
+
         Polynomial pol;
         mutable Bound left,right;
+
         public:
         Simple_algebraic_1(){};
         Simple_algebraic_1(const Polynomial &p,
@@ -77,9 +90,24 @@ class Simple_algebraic_1{
                            const Bound &r):pol(p),left(l),right(r){
                 CGAL_assertion(l<=r);
         }
+        // TODO: make this constructor generic, the coefficient type is
+        // assumed to be constructible from mpz_t (rewrite in terms of
+        // Gmpq/Gmpz)
+        Simple_algebraic_1(double d){
+                typedef typename Ptraits::Shift         shift;
+                mpq_t q;
+                mpq_init(q);
+                mpq_set_d(q,d);
+                pol=Coefficient(mpq_denref(q))*
+                        shift()(Polynomial(1),1,0)-
+                        Coefficient(mpq_numref(q));
+                left=Bound(d);
+                right=Bound(d);
+                CGAL_assertion(left<=d&&right>=d);
+        }
         Simple_algebraic_1(const Algebraic &a):
         pol(a.pol),left(a.left),right(a.right){}
-        // TODO: constructors from types such as int, unsigned and double
+        // TODO: constructors from types such as int, unsigned and long
         ~Simple_algebraic_1(){}
 
         Simple_algebraic_1& operator=(const Algebraic &a){
@@ -98,22 +126,35 @@ class Simple_algebraic_1{
                                  -left);
         }
 
-#define CGAL_RS_COMPARE_THIS_WITH(_a) \
+#define CGAL_RS_COMPARE_ALGEBRAIC(_a) \
         (Comparator()(get_pol(),get_left(),get_right(), \
                       (_a).get_pol(),(_a).get_left(),(_a).get_right()))
+
+#define CGAL_RS_COMPARE_ALGEBRAIC_TYPE(_t) \
+        bool operator<(_t t)const \
+        {Algebraic a(t);return CGAL_RS_COMPARE_ALGEBRAIC(a)==CGAL::SMALLER;} \
+        bool operator>(_t t)const \
+        {Algebraic a(t);return CGAL_RS_COMPARE_ALGEBRAIC(a)==CGAL::LARGER;} \
+        bool operator==(_t t)const \
+        {Algebraic a(t);return CGAL_RS_COMPARE_ALGEBRAIC(a)==CGAL::EQUAL;}
+
         bool operator==(const Algebraic &a)const
-                {return CGAL_RS_COMPARE_THIS_WITH(a)==CGAL::EQUAL;}
+                {return CGAL_RS_COMPARE_ALGEBRAIC(a)==CGAL::EQUAL;}
         bool operator!=(const Algebraic &a)const
-                {return CGAL_RS_COMPARE_THIS_WITH(a)!=CGAL::EQUAL;}
+                {return CGAL_RS_COMPARE_ALGEBRAIC(a)!=CGAL::EQUAL;}
         bool operator<(const Algebraic &a)const
-                {return CGAL_RS_COMPARE_THIS_WITH(a)==CGAL::SMALLER;}
+                {return CGAL_RS_COMPARE_ALGEBRAIC(a)==CGAL::SMALLER;}
         bool operator<=(const Algebraic &a)const
-                {return CGAL_RS_COMPARE_THIS_WITH(a)!=CGAL::LARGER;}
+                {return CGAL_RS_COMPARE_ALGEBRAIC(a)!=CGAL::LARGER;}
         bool operator>(const Algebraic &a)const
-                {return CGAL_RS_COMPARE_THIS_WITH(a)==CGAL::LARGER;}
+                {return CGAL_RS_COMPARE_ALGEBRAIC(a)==CGAL::LARGER;}
         bool operator>=(const Algebraic &a)const
-                {return CGAL_RS_COMPARE_THIS_WITH(a)!=CGAL::SMALLER;}
-#undef CGAL_RS_COMPARE_THIS_WITH
+                {return CGAL_RS_COMPARE_ALGEBRAIC(a)!=CGAL::SMALLER;}
+
+        CGAL_RS_COMPARE_ALGEBRAIC_TYPE(double)
+
+#undef CGAL_RS_COMPARE_ALGEBRAIC_TYPE
+#undef CGAL_RS_COMPARE_ALGEBRAIC
 
 #ifdef IEEE_DBL_MANT_DIG
 #define CGAL_RS_DBL_PREC        IEEE_DBL_MANT_DIG

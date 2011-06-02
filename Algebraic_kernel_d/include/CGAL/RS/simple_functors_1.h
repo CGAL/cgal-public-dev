@@ -54,7 +54,7 @@ struct Solve_1{
                 sqvec sfv;
                 Sqfr()(p,std::back_inserter(sfv));
                 Isolator isol(sfp);
-                int *m=(int*)calloc(Degree()(sfp),sizeof(int));
+                int *m=(int*)calloc(isol.number_of_real_roots(),sizeof(int));
                 for(typename sqvec::iterator i=sfv.begin();i!=sfv.end();++i){
                         int k=Degree()(i->first);
                         Signat signof(i->first);

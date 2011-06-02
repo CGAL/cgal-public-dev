@@ -25,8 +25,6 @@
 #include <CGAL/RS/algebraic_1.h>
 #include <CGAL/assertions.h>
 
-namespace CGAL{
-
 namespace RS3{
 
 inline void refine_1(const CGAL::Algebraic_1 &a,unsigned int s=10000){
@@ -42,5 +40,4 @@ inline void refine_1(const CGAL::Algebraic_1 &a,unsigned int s=10000){
 
 } // namespace RS3
 
-}
 #endif  // CGAL_RS_REFINE_1_RS_H
