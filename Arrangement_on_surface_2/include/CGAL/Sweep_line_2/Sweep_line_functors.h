@@ -114,6 +114,8 @@ public:
    */
   Comparison_result operator() (const Point_2& pt, const Event* e2) const
   {
+    // TODO EBEF update for contraction/closed/identification (or certify that if works)
+
     const bool  on_boundary2 = e2->is_on_boundary();
     
     if (! on_boundary2)
@@ -199,6 +201,8 @@ private:
                                  Arr_parameter_space ps_y,
                                  const Event* e2) const
   {
+    // TODO EBEF update for contraction/closed/identification (or certify that if works)
+
     // Check if the curve end has a boundary condition in x.
     if (ps_x == ARR_LEFT_BOUNDARY)
     {

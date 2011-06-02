@@ -256,6 +256,8 @@ _init_point (const Point_2& pt, Attribute type)
                                                          ARR_INTERIOR,
                                                          ARR_INTERIOR);
 
+  // TODO EBEF add code for points on boundary: contracted, closed, identified
+
   bool is_new = pair_res.second;
   m_visitor->update_event(pair_res.first, pt, is_new);
 
@@ -303,7 +305,9 @@ _init_curve_end(const X_monotone_curve_2& cv, Arr_curve_end ind, Subcurve* sc)
     const Point_2&  pt = (ind == ARR_MIN_END) ?
       m_traits->construct_min_vertex_2_object()(cv) :
       m_traits->construct_max_vertex_2_object()(cv);
-    
+
+    // TODO EBEF adapt for closed/identified
+    // TODO EBEF in case of identified at MAX_END, one need to push a "point event"
     if (ps_x == ARR_INTERIOR && ps_y == ARR_INTERIOR) {
       pair_res = _push_event (pt, end_attr, ps_x, ps_y, sc);
     } else {
