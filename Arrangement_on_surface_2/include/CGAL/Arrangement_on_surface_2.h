@@ -1912,18 +1912,58 @@ protected:
                                         bool& at_infinity) const;
   
   /*!
-   * Updates the representative of an outer ccb that has been enhanced with a 
+   * Updates the representative of a ccb that has been enhanced with a 
    * new halfedge, i.e., keep the existing one, or use the given halfedge.
    * \param oc the outer ccb
    * \param he new halfedge
    * \return the updated representative halfedge
    */
-  DHalfedge* _update_outer_ccb_with(DOuter_ccb *oc, DHalfedge *he) {
-    if (he->direction() == CGAL::ARR_RIGHT_TO_LEFT) {
-    // TODO implement
-      oc->set_halfedge (he);
+  void _update_ccb_with(DOuter_ccb *oc, DHalfedge *he) {
+    // if perimetric allow other direction, too
+    CGAL::Arr_halfedge_direction dir;
+    if (oc->is_perimetric()) {
+       dir = oc->halfedge()->direction();
     }
-    return oc->halfedge();
+
+    // TODO default direction for outer/inner ccb?
+
+    if (oc->is_perimetric()|| he->direction() == CGAL::ARR_RIGHT_TO_LEFT) {
+
+      bool reset = false;
+      
+      DVertex *vmin = oc->halfedge()->vertex();
+      DVertex *vnew = he->vertex();
+      // TODO vmin/vnew on boundary!
+      // TODO crossed an identification? (choose vmin to be minimal on identification)
+      CGAL::Comparison_result cmp = _compare_vertices_xy (vnew, vmin);
+      if (cmp == LARGER) {
+        return;
+      } 
+      if (cmp == SMALLER) {
+        vmin = vnew;
+        reset = true;
+      } else { // EQUAL
+        // TODO left for perimetric?
+        reset = (m_geom_traits->compare_y_at_x_right_2_object()(oc->halfedge()->curve(),
+                                                                he->curve(),
+                                                                vmin->point()) == LARGER);
+      }
+      
+      if (reset) {
+        if (!oc->is_perimetric()) {
+          // if not perimetric just replace
+          oc->set_halfedge(he);
+        } else {
+          // if perimetric need to maintain order, thus we search
+          DHalfedge* curr = oc->halfedge()->prev();
+          while (curr->vertex() != vmin) {
+            curr = curr->prev();
+          }
+          oc->set_halfedge(curr);
+        }
+      }
+    }
+    
   }
   
   /*!
@@ -1933,15 +1973,32 @@ protected:
    * \param he deleted halfedge
    * \return the updated representative halfedge
    */
-  DHalfedge* _update_outer_ccb_without(DOuter_ccb *oc, DHalfedge *he) {
+  void _update_ccb_without(DOuter_ccb *oc, DHalfedge *he) {
+    if (oc->is_perimetric()) {
+      // TODO ensure to keep orientation
+    } else {
+      // TODO ensure RIGHT_TO_LEFT halfedge
+    }
+
     if (oc->halfedge() == he) {
     // TODO implement
       oc->set_halfedge (he->prev());
     }
-    return oc->halfedge();
-   
   }
 
+  /*!
+   * Checks whether an outer ccb is perimetric and sets bit accordingly.
+   * \param oc the outer ccb
+   */
+  void _determine_ccb_perimetricy(DOuter_ccb *oc) {
+    // TODO use tag to set false if no boundary is identified
+    oc->set_perimetric(true);
+    oc->set_perimetric(false);
+
+    // TODO reset leftmost pointer halfedge to reflect direction of perimetricy
+  }
+
+  // TODO remove?
 
   /*!
    * Updates the representative of an inner ccb that has been enhanced with a 
@@ -1950,12 +2007,8 @@ protected:
    * \param he new halfedge
    * \return the updated representative halfedge
    */
-  DHalfedge* _update_inner_ccb_with(DInner_ccb *ic, DHalfedge *he) {
-    if (he->direction() == CGAL::ARR_RIGHT_TO_LEFT) {
-    // TODO implement
-      ic->set_halfedge (he);
-    }
-    return ic->halfedge();
+  void _update_ccb_with(DInner_ccb *ic, DHalfedge *he) {
+    return _update_ccb_with(reinterpret_cast<DOuter_ccb*>(ic), he);
   }
   
   /*!
@@ -1965,16 +2018,19 @@ protected:
    * \param he deleted halfedge
    * \return the updated representative halfedge
    */
-  DHalfedge* _update_inner_ccb_without(DInner_ccb *ic, DHalfedge *he) {
-    if (ic->halfedge() == he) {
-      // TODO implement
-      ic->set_halfedge (he->prev());
-    }
-    return ic->halfedge();
-   
+  void _update_ccb_without(DInner_ccb *ic, DHalfedge *he) {
+    return _update_outer_ccb_without(reinterpret_cast<DOuter_ccb*>(ic), he);
   }
 
+  /*!
+   * Checks whether an outer ccb is perimetric and sets bit accordingly.
+   * \param oc the outer ccb
+   */
+  void _determine_ccb_perimetricy(DInner_ccb *ic) {
+    return _determine_perimetricy(reinterpret_cast<DOuter_ccb*>(ic));
+  }
 
+#if 0 // TODO remove
   /*!
    * Given two predecessor halfedges that will be used for inserting a
    * new halfedge pair (prev1 will be the predecessor of the halfedge he1,
@@ -1993,6 +2049,7 @@ protected:
   bool _is_inside_new_face (const DHalfedge *prev1,
                             const DHalfedge *prev2,
                             const X_monotone_curve_2& cv) const;
+#endif
 
   /*!
    * Move a given outer CCB from one face to another.
