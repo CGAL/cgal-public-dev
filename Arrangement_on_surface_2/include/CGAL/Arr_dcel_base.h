@@ -811,43 +811,53 @@ public:
 
 private:
 
-  Face               *p_f;    // The face the contains the CCB in its interior.
+  Face               *p_f;    // The face that contains the CCB in its interior.
   Outer_ccb_iterator  iter;   // The outer CCB identifier.
-  bool iter_is_not_singular;
 
 public:
 
   /*! Default constructor. */
   Arr_outer_ccb () :
-    p_f (NULL), iter_is_not_singular(false)
+    p_f (NULL)
   {}
 
-  /*! Copy constructor. */
-  Arr_outer_ccb (const Arr_outer_ccb& other )
-    : p_f (other.p_f), iter_is_not_singular(other.iter_is_not_singular)
+  /*! Check if the ccb is perimetric. */
+  bool is_perimetric () const
   {
-    if(other.iter_is_not_singular) {
-      iter = other.iter;
+    // Note that we use the LSB of the *iter pointer as a Boolean flag.
+    return (_is_lsb_set (*iter));
+  }
+
+  /*! Set the perimetricy information. */
+  void set_perimetric (bool perimetric)
+  {
+    // Set the perimetricy information to *iter's LSB.
+    if (perimetric) {
+      *iter = _set_lsb (*iter);
+    } else {
+      *iter = _clean_pointer(*iter);
     }
   }
 
   /*! Get a halfedge along the component (const version). */
   const Halfedge* halfedge () const
   {
-    return (*iter);
+    return (reinterpret_cast<const Halfedge*>(_clean_pointer(*iter)));
   }
 
   /*! Get a halfedge along the component (non-const version). */
   Halfedge* halfedge ()
   {
-    return (*iter);
+    return (reinterpret_cast<Halfedge*>(_clean_pointer(*iter)));
   }
 
   /*! Set a representative halfedge for the component. */
   void set_halfedge (Halfedge *he)
   {
-    *iter = he;
-    return;
+    if (_is_lsb_set (*iter))
+      *iter = (reinterpret_cast<Halfedge*>(_set_lsb (he)));
+    else
+      *iter = he;
   }
 
   /*! Get the incident face (const version). */
@@ -872,14 +882,12 @@ public:
   /*! Get the iterator (const version). */
   Outer_ccb_iterator iterator () const
   {
-    CGAL_assertion(iter_is_not_singular);
     return (iter);
   }
 
   /*! Get the iterator (non-const version). */
   Outer_ccb_iterator iterator ()
   {
-    CGAL_assertion(iter_is_not_singular);
     return (iter);
   }
 
@@ -887,7 +895,6 @@ public:
   void set_iterator (Outer_ccb_iterator it)
   {
     iter = it;
-    iter_is_not_singular = true;
     return;
   }
 };
@@ -909,41 +916,51 @@ private:
 
   Face               *p_f;    // The face the contains the CCB in its interior.
   Inner_ccb_iterator  iter;   // The inner CCB identifier.
-  bool iter_is_not_singular;
 
 public:
 
   /*! Default constructor. */
   Arr_inner_ccb () :
-    p_f (NULL), iter_is_not_singular(false)
+    p_f (NULL)
   {}
 
-  /*! Copy constructor. */
-  Arr_inner_ccb (const Arr_inner_ccb& other )
-    : p_f (other.p_f), iter_is_not_singular(other.iter_is_not_singular)
+  /*! Check if the ccb is perimetric. */
+  bool is_perimetric () const
   {
-    if(other.iter_is_not_singular) {
-      iter = other.iter;
+    // Note that we use the LSB of the *iter pointer as a Boolean flag.
+    return (_is_lsb_set (*iter));
+  }
+
+  /*! Set the perimetricy information. */
+  void set_perimetric (bool perimetric)
+  {
+    // Set the perimetricy information to *iter's LSB.
+    if (perimetric) {
+      *iter = _set_lsb (*iter);
+    } else {
+      *iter = _clean_pointer(*iter);
     }
   }
 
   /*! Get a halfedge along the component (const version). */
   const Halfedge* halfedge () const
   {
-    return (*iter);
+    return (reinterpret_cast<const Halfedge*>(_clean_pointer(*iter)));
   }
 
   /*! Get a halfedge along the component (non-const version). */
   Halfedge* halfedge ()
   {
-    return (*iter);
+    return (reinterpret_cast<Halfedge*>(_clean_pointer(*iter)));
   }
 
   /*! Set a representative halfedge for the component. */
   void set_halfedge (Halfedge *he)
   {
-    *iter = he;
-    return;
+    if (_is_lsb_set (*iter))
+      *iter = (reinterpret_cast<Halfedge*>(_set_lsb (he)));
+    else
+      *iter = he;
   }
 
   /*! Get the incident face (const version). */
@@ -968,14 +985,12 @@ public:
   /*! Get the iterator (const version). */
   Inner_ccb_iterator iterator () const
   {
-    CGAL_assertion(iter_is_not_singular);
     return (iter);
   }
 
   /*! Get the iterator (non-const version). */
   Inner_ccb_iterator iterator ()
   {
-    CGAL_assertion(iter_is_not_singular);
     return (iter);
   }
 
@@ -983,7 +998,6 @@ public:
   void set_iterator (Inner_ccb_iterator it)
   {
     iter = it;
-    iter_is_not_singular = true;
     return;
   }
 };
@@ -1005,23 +1019,13 @@ private:
 
   Face                        *p_f;     // The containing face.
   Isolated_vertex_iterator   iv_it;     // The isolated vertex identifier.
-  bool iter_is_not_singular;
 
 public:
 
   /*! Default constructor. */
   Arr_isolated_vertex ():
-    p_f (NULL), iter_is_not_singular(false)
+    p_f (NULL)
   {}
-
-  /*! Copy constructor. */
-  Arr_isolated_vertex (const Arr_isolated_vertex& other )
-    : p_f (other.p_f), iter_is_not_singular(other.iter_is_not_singular)
-  {
-    if(other.iter_is_not_singular) {
-      iv_it = other.iv_it;
-    }
-  }
 
   /*! Get the containing face (const version). */
   const Face* face () const
@@ -1045,14 +1049,12 @@ public:
   /*! Get the isolated vertex iterator (const version). */
   Isolated_vertex_iterator iterator () const
   {
-    CGAL_assertion(iter_is_not_singular);
     return (iv_it);
   }
 
   /*! Get the isolated vertex iterator (non-const version). */
   Isolated_vertex_iterator iterator ()
   {
-    CGAL_assertion(iter_is_not_singular);
     return (iv_it);
   }
 
@@ -1060,7 +1062,6 @@ public:
   void set_iterator (Isolated_vertex_iterator iv)
   {
     iv_it = iv;
-    iter_is_not_singular = true;
     return;
   }
 };
