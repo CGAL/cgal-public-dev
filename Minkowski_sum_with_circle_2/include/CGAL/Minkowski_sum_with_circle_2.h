@@ -558,8 +558,8 @@ void Minkowski_sum_with_circle_2<CPolygon_2>::polygon_changed()
   needs_update(Data_exact_offset_polygon);
   needs_update(Data_approximate_offset_polygon);
 
-  needs_update(Data_outer_skeleton);
   needs_update(Data_inner_skeleton);
+  needs_update(Data_outer_skeleton);
 
   needs_update(Data_inner_core);
   needs_update(Data_outer_core);
@@ -588,6 +588,12 @@ void Minkowski_sum_with_circle_2<CPolygon_2>::offset_changed()
   needs_update(Data_exact_offset_polygon);
   needs_update(Data_approximate_offset_polygon);
 
+  if(m_forward_construction)
+  {
+    needs_update(Data_inner_skeleton);
+  }
+  needs_update(Data_outer_skeleton); // boundary depends on offset
+    
   needs_update(Data_inner_core);
   needs_update(Data_outer_core);
 
@@ -619,6 +625,9 @@ void Minkowski_sum_with_circle_2<CPolygon_2>::epsilon_changed()
   needs_update(Data_kgon_induced_circles);
   needs_update(Data_kgon_offset_polygon);
 
+  needs_update(Data_inner_skeleton);
+  needs_update(Data_outer_skeleton);
+  
   needs_update(Data_inner_core);
   needs_update(Data_outer_core);
 
@@ -660,6 +669,9 @@ void Minkowski_sum_with_circle_2<CPolygon_2>::kgon_type_changed()
 
   if(m_forward_construction)
   {
+    needs_update(Data_inner_skeleton);
+    needs_update(Data_outer_skeleton);
+    
     needs_update(Data_inner_core);
     needs_update(Data_outer_core);
     
@@ -686,6 +698,9 @@ void Minkowski_sum_with_circle_2<CPolygon_2>::kgon_size_changed()
 
   if(m_forward_construction)
   {
+    needs_update(Data_inner_skeleton);
+    needs_update(Data_outer_skeleton);
+    
     needs_update(Data_inner_core);
     needs_update(Data_outer_core);
     
