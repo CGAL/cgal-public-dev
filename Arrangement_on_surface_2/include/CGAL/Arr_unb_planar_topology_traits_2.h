@@ -545,7 +545,7 @@ public:
    */
   Halfedge* erase_redundant_vertex (Vertex *v);
 
-    //! reference_face (const version).
+  //! reference_face (const version).
   /*! The function returns a reference face of the arrangement.
       All reference faces of arrangements of the same type have a common
       point.
