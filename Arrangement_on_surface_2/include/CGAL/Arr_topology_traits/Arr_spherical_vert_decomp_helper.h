@@ -54,13 +54,13 @@ protected:
 
   typedef typename Arrangement_2::Topology_traits      Topology_traits;
 
-  const Topology_traits  *m_top_traits;        // The topology traits.
+  const Topology_traits*  m_top_traits;        // The topology traits.
   Vertex_const_handle     m_north_pole;        // The north pole.
   bool                    m_valid_north_pole;  // Is this a valid vertex.
-  Face_const_handle       m_north_face;        // Current north face.
+  Face_const_handle       m_above_event_face;  // Current face above event.
   Vertex_const_handle     m_south_pole;        // The south pole.
   bool                    m_valid_south_pole;  // Is this a valid vertex.
-  Face_const_handle       m_south_face;        // Current south face.
+  Face_const_handle       m_below_event_face;  // Current face below event.
 
 public:
 
@@ -88,14 +88,14 @@ public:
   CGAL::Object top_object () const
   {
     return (m_valid_north_pole) ?
-      CGAL::make_object (m_north_pole) : CGAL::make_object (m_north_face);
+      CGAL::make_object (m_north_pole) : CGAL::make_object (m_above_event_face);
   }
 
   /*! Get the current bottom object. */
   CGAL::Object bottom_object () const
   {
     return (m_valid_south_pole) ?
-      CGAL::make_object(m_south_pole) : CGAL::make_object(m_south_face);
+      CGAL::make_object(m_south_pole) : CGAL::make_object(m_below_event_face);
   }
 };
 
@@ -114,14 +114,18 @@ void Arr_spherical_vert_decomp_helper<Tr, Arr>::before_sweep()
   if (m_valid_north_pole)
     m_north_pole = Vertex_const_handle (m_top_traits->north_pole());
 
-  m_north_face = Face_const_handle (m_top_traits->spherical_face());
+  // initialize face above with top_face; it is updated at "after_handle_event"
+  // TODO EBEF use "top_face()"
+  m_above_event_face = Face_const_handle (m_top_traits->spherical_face());
 
   // Get the south pole and the face that intially contains it.
   m_valid_south_pole = (m_top_traits->south_pole() != NULL);
   if (m_valid_south_pole)
     m_south_pole = Vertex_const_handle (m_top_traits->south_pole());
 
-  m_south_face = Face_const_handle (m_top_traits->south_face());
+  // initialize face below with bottom_face; it is updated at "after_handle_event"
+  // TODO EBEF use "bottom_face()"
+  m_below_event_face = Face_const_handle (m_top_traits->south_face());
 }
 
 //-----------------------------------------------------------------------------
@@ -150,21 +154,23 @@ Arr_spherical_vert_decomp_helper<Tr, Arr>::after_handle_event (Event *event)
     (*(event->right_curves_begin()))->last_curve() :
     (*(event->left_curves_begin()))->last_curve();
 
+  // update faces below and above event:
+
   if (event->parameter_space_in_y() == ARR_TOP_BOUNDARY)
   {
-    // The event is incident to the north pole: update the north face.
+    // The event is incident to the north pole: update the face above the event
     if (ind == ARR_MIN_END)
-      m_north_face = xc.halfedge_handle()->twin()->face();
+      m_above_event_face = xc.halfedge_handle()->twin()->face();
     else
-      m_north_face = xc.halfedge_handle()->face();
+      m_above_event_face = xc.halfedge_handle()->face();
   }
   else if (event->parameter_space_in_y() == ARR_BOTTOM_BOUNDARY)
   {
-    // The event is incident to the south pole: update the south face.
+    // The event is incident to the south pole: update the face below the event
     if (ind == ARR_MIN_END)
-      m_south_face = xc.halfedge_handle()->face();
+      m_below_event_face = xc.halfedge_handle()->face();
     else
-      m_south_face = xc.halfedge_handle()->twin()->face();
+      m_below_event_face = xc.halfedge_handle()->twin()->face();
   }
 
   return;

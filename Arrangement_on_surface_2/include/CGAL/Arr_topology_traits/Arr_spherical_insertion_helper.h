@@ -83,8 +83,12 @@ public:
   /* A notification issued before the sweep process starts. */
   virtual void before_sweep()
   {
-    // Get the unbounded face.
-    this->m_spherical_face = Face_handle(this->m_top_traits->south_face());
+    // as we're inserting into an existing arrangement, we need to 
+    // get the face that contains the "minimal" event, i.e., the one
+    // containing the lower left corner of the parameter space
+    // TODO EBEF use "bottom_face"
+    this->m_above_event_face = Face_handle(this->m_top_traits->south_face());
+    // it is updated in "before_handle_event"
   }
 
   /*!
@@ -140,16 +144,16 @@ void Arr_spherical_insertion_helper<Tr,Arr,Evnt,Sbcv>::before_handle_event
 
   // In case we encounter an existing curve incident to the curve of
   // discontinuity (and exteding to its right) or to the north pole,
-  // we have to update the current top face (the spherical face).
+  // we have to update the current face above the event.
   if (ps_y == ARR_TOP_BOUNDARY)
   {
-    this->m_spherical_face = (ind == ARR_MIN_END) ?
+    this->m_above_event_face = (ind == ARR_MIN_END) ?
       xc.halfedge_handle()->twin()->face() : xc.halfedge_handle()->face();
   }
   else if (ps_x == ARR_LEFT_BOUNDARY)
   {
     CGAL_assertion (ind == ARR_MIN_END);
-    this->m_spherical_face = xc.halfedge_handle()->twin()->face();
+    this->m_above_event_face = xc.halfedge_handle()->twin()->face();
   }
 
   return;

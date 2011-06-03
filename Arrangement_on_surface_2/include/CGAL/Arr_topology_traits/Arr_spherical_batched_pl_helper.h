@@ -56,6 +56,8 @@ protected:
   // Data members:
   //! The topology-traits class.
   const Topology_traits * m_top_traits;
+ 
+  // TODO EBEB: Efi will implement it - following the ideas of the insertion helper
 
   //! The unbounded arrangement face.
   Face_const_handle m_unb_face;

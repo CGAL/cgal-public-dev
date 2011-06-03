@@ -89,11 +89,9 @@ public:
   /* A notification issued before the sweep process starts. */
   void before_sweep()
   {
-    // Get the spherical faces in both arrangements.
-      /* RWRW:
-    m_red_nf = Face_handle_red(m_red_top_traits->spherical_face());
-    m_blue_nf = Face_handle_blue(m_blue_top_traits->spherical_face());
-      */
+    // Get in each arrangement the face corresponding to the "minimal"
+    // event, i.e., the one containing the lower left corner of the parameter space
+    // TODO EBEF use "bottom_face" and change name "nf" -> "face"
     m_red_nf = Face_handle_red(m_red_top_traits->south_face());
     m_blue_nf = Face_handle_blue(m_blue_top_traits->south_face());
     return;
@@ -116,6 +114,8 @@ public:
     const Subcurve  *sc = (ind == ARR_MIN_END) ?
       (*(event->right_curves_begin())) :
       (*(event->left_curves_begin()));
+
+    // update the faces above the event:
 
     if (event->parameter_space_in_y() == ARR_TOP_BOUNDARY)
     {
@@ -173,6 +173,7 @@ public:
   }
   //@}
 
+  // TODO rename to red/blue_face
   /*! Get the current red top face. */
   Face_handle_red red_top_face() const
   {

@@ -71,8 +71,8 @@ protected:
   //! An arrangement accessor
   Arr_accessor<Arrangement_2> m_arr_access;
 
-  //! The unbounded arrangement face
-  Face_handle m_spherical_face;
+  //! The face "containing" the current event
+  Face_handle m_above_event_face;
 
   //! Indices of the curves that "see" the north face
   Indices_list m_subcurves_at_nf;
@@ -98,8 +98,12 @@ public:
   /* A notification issued before the sweep process starts. */
   virtual void before_sweep()
   {
-    // Get the unbounded face.
-    m_spherical_face = Face_handle(m_top_traits->spherical_face());
+    //! get the face "containing" the first event, which is at the lower left corner of the parameter space.
+    //! As a new arrangement is constructed from scratch, there is only one face at this point (i.e., the 
+    //! reference face).
+    // it is never updated during construction
+    // TODO use "top_face"
+    m_above_event_face = Face_handle(m_top_traits->reference_face());
   }
 
   /*! A notification invoked before the sweep-line starts handling the given
@@ -286,8 +290,9 @@ public:
             event->parameter_space_in_y() == ARR_TOP_BOUNDARY);
   }
 
+  // TODO EBEF rename to "above_event face"
   /*! Get the current top face. */
-  Face_handle top_face() const { return m_spherical_face; }
+  Face_handle top_face() const { return m_above_event_face; }
 };
 
 } //namespace CGAL
