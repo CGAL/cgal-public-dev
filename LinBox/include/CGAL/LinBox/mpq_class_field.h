@@ -32,7 +32,7 @@ namespace CGAL{
                 typedef LG::LI                 LI;
 
                 public:
-                typedef typename LG::Element            Element;
+                typedef LG::Element            Element;
 
                 Linbox_rational_field(int p=0,int exp=1):LG(p,exp){};
 

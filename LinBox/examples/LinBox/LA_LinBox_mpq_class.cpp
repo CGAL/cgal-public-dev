@@ -23,8 +23,8 @@ int main(){
         typedef CGAL::Linbox_rational_field<FT>                 Field;
         typedef Field::Element                                  Element;
         typedef CGAL::LA_LinBox<Field>                          LA;
-        typedef typename LA::Matrix                             Matrix;
-        typedef typename LA::Vector                             Vector;
+        typedef LA::Matrix                             Matrix;
+        typedef LA::Vector                             Vector;
 
         Field F;
         std::vector<Vector> A;
@@ -43,7 +43,7 @@ int main(){
         Matrix M(vectors);
 
         // compute rank
-        int r=traits.rank(M);
+        //int r=traits.rank(M);
 
         // compute determinant
         Element D;
@@ -55,7 +55,7 @@ int main(){
 
         // show results
         std::cout<<"M = "<<M<<std::endl;
-        std::cout<<"rank is "<<r<<std::endl;
+        //std::cout<<"rank is "<<r<<std::endl;
         std::cout<<"determinant is "<<D<<std::endl;
         std::cout<<"kernel is "<<spanning_vectors<<std::endl;
 
