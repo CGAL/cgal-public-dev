@@ -23,8 +23,8 @@ int main(){
         typedef CGAL::Linbox_rational_field<FT>                 Field;
         typedef Field::Element                                  Element;
         typedef CGAL::LA_LinBox<Field>                          LA;
-        typedef LA::Matrix                             Matrix;
-        typedef LA::Vector                             Vector;
+        typedef LA::Matrix                                      Matrix;
+        typedef LA::Vector                                      Vector;
 
         Field F;
         std::vector<Vector> A;

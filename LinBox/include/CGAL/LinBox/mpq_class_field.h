@@ -29,10 +29,10 @@ namespace CGAL{
                 typedef mpq_class                       FT;
                 typedef Linbox_generic_structure<FT>    LG;
                 typedef Linbox_rational_field<FT>       LF;
-                typedef LG::LI                 LI;
+                typedef LG::LI                          LI;
 
                 public:
-                typedef LG::Element            Element;
+                typedef LG::Element                     Element;
 
                 Linbox_rational_field(int p=0,int exp=1):LG(p,exp){};
 
