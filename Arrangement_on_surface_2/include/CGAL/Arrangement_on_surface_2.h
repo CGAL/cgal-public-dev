@@ -1911,6 +1911,10 @@ protected:
                                         bool& is_perimetric,
                                         bool& at_infinity) const;
   
+
+  // TODO observe directions for ccbs (esp. if perimetric) for updates,
+  //      if needed, "adapt" given he, 
+
   /*!
    * Updates the representative of a ccb that has been enhanced with a 
    * new halfedge, i.e., keep the existing one, or use the given halfedge.
