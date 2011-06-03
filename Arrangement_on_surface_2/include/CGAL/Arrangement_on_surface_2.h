@@ -2175,6 +2175,7 @@ protected:
    * \param prev2 The reference halfedge for the second vertex.
    * \param res The comparison result of the points associated with prev1's
    *            target vertex and prev2's target vertex.
+   * \param prev1_to_new_face Output - whether prev1 becomes part of new face's outer ccb (or prev2)
    * \param new_face Output - whether a new face has been created.
    * \return A pointer to one of the halfedges corresponding to the inserted
    *         curve directed from prev1's target to prev2's target.
@@ -2185,6 +2186,7 @@ protected:
                                   DHalfedge *prev1, 
                                   DHalfedge *prev2,
                                   Comparison_result res,
+                                  bool& prev1_to_new_oc, 
                                   bool& new_face);
 
   /*!

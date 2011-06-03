@@ -417,9 +417,10 @@ insert_in_face_interior(const X_monotone_curve_2& cv, Face_handle f)
     // Both vertices are inserted using their predecessor halfedges.
     // Note that in this case we may create a new face.
 
-    bool        new_face_created = false;
+    bool new_face_created = false;
+    bool prev1_to_new_oc = true;
   
-    // This is a bug fix and we could not think of a better one. 
+    // EFMH This is a bug fix and we could not think of a better one. 
     // In case the inserted curve has two vertical asymptotes at the top 
     // it happens that fict_prev1 is split by the max end and becomes the 
     // prev edge, which is fict_prev2. Since both pointers are equal they 
@@ -435,6 +436,7 @@ insert_in_face_interior(const X_monotone_curve_2& cv, Face_handle f)
                                   fict_prev1, 
                                   fict_prev2,
                                   SMALLER,
+                                  prev1_to_new_oc,
                                   new_face_created);
   
     if (new_face_created)
@@ -579,12 +581,13 @@ insert_from_left_vertex(const X_monotone_curve_2& cv,
   {
     // Insert the halfedge given the two predecessor halfedges.
     // Note that in this case we may create a new face.
-    bool        new_face_created = false;
-
+    bool new_face_created = false;
+    bool prev1_to_new_oc = true;
     new_he = _insert_at_vertices (cv,
                                   prev1, 
                                   fict_prev2,
                                   SMALLER,
+                                  prev1_to_new_oc,
                                   new_face_created);
   
     if (new_face_created)
@@ -813,9 +816,10 @@ insert_from_right_vertex(const X_monotone_curve_2& cv,
   {
     // Insert the halfedge given the two predecessor halfedges.
     // Note that in this case we may create a new face.
-    bool        new_face_created = false;
+    bool new_face_created = false;
+    bool prev1_to_new_oc = true;
 
-    new_he = _insert_at_vertices (cv, prev2, fict_prev1, LARGER,
+    new_he = _insert_at_vertices (cv, prev2, fict_prev1, LARGER, prev1_to_new_oc,
                                   new_face_created);
   
     if (new_face_created)
@@ -1480,99 +1484,11 @@ insert_at_vertices(const X_monotone_curve_2& cv,
   // Check if e1 and e2 are on the same connected component.
   DHalfedge   *p_prev1 = _halfedge (prev1);
   DHalfedge   *p_prev2 = _halfedge (prev2);
-  DInner_ccb  *ic1 = (p_prev1->is_on_inner_ccb()) ? p_prev1->inner_ccb() : NULL;
-  DInner_ccb  *ic2 = (p_prev2->is_on_inner_ccb()) ? p_prev2->inner_ccb() : NULL;
-  bool         prev1_to_new_oc = true;
-
-  // If prev1 and prev2 are on different components, the insertion of the
-  // new curve does not generate a new face, so the way we send these
-  // halfedge pointers to the auxiliary function _insert_at_vertices() does
-  // not matter.
-  
-  if (ic1 == ic2 && ic1 != NULL)
-  {
-    // TODO move code into internal function to corresponding case
-
-    // However, in this case, where the two halfedges are reachable from one
-    // another and are located on the same hole, a new face will be created
-    // and form a hole inside their current incident face. In this case we
-    // have to arrange prev1 and prev2 so that the new face (hole) will be
-    // incident to the correct halfedge, directed from prev1's target to
-    // prev2's target.
-
-#if 0
-    if (is_perimetric)
-      {
-        // std::cout << "perimetric" << std::endl;
-        // In this case the route from prev1's target to prev2's target is
-        // perimetric. We use the topology traits to determine which halfedge
-        // lies inside the hole (in case a hole is indeed created).
-    // TODO call for sign of ccb 
-        return (m_topol_traits.is_on_new_perimetric_face_boundary (prev1, prev2, cv));
-
-
-#if CGAL_ARR_TOPOLOGY_TRAITS_VERBOSE 
-    std::cout << "Path1 (containing prev1): " << std::endl;
-#endif
-    CGAL::Sign sgn = sign_of_path(prev2->next(), prev1, cv);
-#if CGAL_ARR_TOPOLOGY_TRAITS_VERBOSE 
-    std::cout << "sign1: " << sgn << std::endl;
-#endif
-    if (sgn == CGAL::ZERO) {
-#if CGAL_ARR_TOPOLOGY_TRAITS_VERBOSE 
-        std::cout << "Path2 (containing prev2): " << std::endl;
-#endif
-        CGAL::Sign sgn = sign_of_path(prev1->next(), prev2, cv);
-#if CGAL_ARR_TOPOLOGY_TRAITS_VERBOSE 
-        std::cout << "sign2: " << sgn << std::endl;
-#endif
-    }
-    
-    CGAL_assertion(sgn != CGAL::ZERO);
-    
-    return (sgn == CGAL::NEGATIVE);
-
-
-      }
-    
-    // TODO do contraction/identification have special cases as previously in is_inside_new_face?
-#endif
-
-
-    // TODO move to a function
-    // To do this otherwise, we test which previous halfedge we see first when walking along
-    // future ic. The other previous halfedge ends up on outer ccb of new face.
-    DHalfedge *curr = ic1->halfedge(); // start from leftmost pointer of ic1!!!
-
-    while (true) {
-      // if we see p_prev2 while walking on inner ccb starting from leftmost ...
-      if (curr == p_prev2) {
-        // ... then prev1 ends up on new face's outer ccb
-        prev1_to_new_oc = true;
-        break;
-      }
-      // if we see p_prev1 while walking on inner ccb starting from leftmost ...
-      if (curr == p_prev1) {
-        // ... then prev2 ends up on new face's outer ccb
-        prev1_to_new_oc = false;
-        break;
-      }
-      curr = curr->next();
-    }
-
-  }
-
-  // We already have the comparsion result of the target vertices of prev1
-  // and prev2. If however we swap the order of the halfedges, we take the
-  // opposite comparison result.
-  if (! prev1_to_new_oc)
-    res = CGAL::opposite (res);
 
   // Perform the insertion.
   bool        new_face_created = false;
-  DHalfedge  *new_he = (prev1_to_new_oc) ?
-    _insert_at_vertices (cv, p_prev1, p_prev2, res, new_face_created) :
-    _insert_at_vertices (cv, p_prev2, p_prev1, res, new_face_created);
+  bool        prev1_to_new_oc = true;
+  DHalfedge  *new_he = _insert_at_vertices (cv, p_prev1, p_prev2, res, prev1_to_new_oc, new_face_created);
 
   if (new_face_created)
   {
@@ -2607,6 +2523,7 @@ Arrangement_on_surface_2<GeomTraits, TopTraits>::
 _insert_at_vertices(const X_monotone_curve_2& cv,
                     DHalfedge *prev1, DHalfedge *prev2,
                     Comparison_result cmp,
+                    bool& prev1_to_new_oc, 
                     bool& new_face)
 {
   // preconditions
@@ -2688,15 +2605,7 @@ _insert_at_vertices(const X_monotone_curve_2& cv,
   DFace       *f1 = (ic1 != NULL) ? ic1->face() : oc1->face();
   DInner_ccb  *ic2 = (prev2->is_on_inner_ccb()) ? prev2->inner_ccb() : NULL;
   DOuter_ccb  *oc2 = (ic2 == NULL) ? prev2->outer_ccb() : NULL;
-  CGAL_precondition_code(
   DFace       *f2 = (ic2 != NULL) ? ic2->face() : oc2->face();
-  );
-
-  DHalfedge *ic1_he = (ic1 != NULL ? ic1->halfedge() : NULL);
-  DHalfedge *ic1_he_rev = (ic1 != NULL ? ic1->halfedge()->next()->opposite() : NULL);
-
-  DHalfedge *oc1_he = (oc1 != NULL ? oc1->halfedge() : NULL);
-  DHalfedge *oc1_he_rev = (oc1 != NULL ? oc1->halfedge()->next()->opposite() : NULL);
 
   // more verbosity
 #if CGAL_ARRANGEMENT_ON_SURFACE_INSERT_VERBOSE
@@ -2706,7 +2615,7 @@ _insert_at_vertices(const X_monotone_curve_2& cv,
   std::cout << "oc2: " << oc2 << std::endl;
 
   std::cout << "f1: " << &(*f1) << std::endl;
-  CGAL_precondition_code(std::cout << "f2: " << &(*f2) << std::endl;);
+  std::cout << "f2: " << &(*f2) << std::endl;
 #endif // CGAL_ARRANGEMENT_ON_SURFACE_INSERT_VERBOSE
 
   CGAL_precondition_msg
@@ -2718,10 +2627,105 @@ _insert_at_vertices(const X_monotone_curve_2& cv,
   // 0.1) Compute whether we have to switch the order of given prev halfedges
   //    and this some other variables, too.
   
-  // TODO check order
+  // check order
+  CGAL_assertion(prev1_to_new_oc == true);
 
-  // TODO swap variables
+  // If prev1 and prev2 are on different components, the insertion of the
+  // new curve does not generate a new face, so the way we send these
+  // halfedge pointers to the auxiliary function _insert_at_vertices() does
+  // not matter.
   
+  if (ic1 == ic2 && ic1 != NULL)
+  {
+    // However, in this case, where the two halfedges are reachable from one
+    // another and are located on the same hole, a new face will be created
+    // and form a hole inside their current incident face. In this case we
+    // have to arrange prev1 and prev2 so that the new face (hole) will be
+    // incident to the correct halfedge, directed from prev1's target to
+    // prev2's target.
+
+#if 0
+    if (is_perimetric)
+      {
+        // std::cout << "perimetric" << std::endl;
+        // In this case the route from prev1's target to prev2's target is
+        // perimetric. We use the topology traits to determine which halfedge
+        // lies inside the hole (in case a hole is indeed created).
+    // TODO call for sign of ccb 
+        return (m_topol_traits.is_on_new_perimetric_face_boundary (prev1, prev2, cv));
+
+
+#if CGAL_ARR_TOPOLOGY_TRAITS_VERBOSE 
+    std::cout << "Path1 (containing prev1): " << std::endl;
+#endif
+    CGAL::Sign sgn = sign_of_path(prev2->next(), prev1, cv);
+#if CGAL_ARR_TOPOLOGY_TRAITS_VERBOSE 
+    std::cout << "sign1: " << sgn << std::endl;
+#endif
+    if (sgn == CGAL::ZERO) {
+#if CGAL_ARR_TOPOLOGY_TRAITS_VERBOSE 
+        std::cout << "Path2 (containing prev2): " << std::endl;
+#endif
+        CGAL::Sign sgn = sign_of_path(prev1->next(), prev2, cv);
+#if CGAL_ARR_TOPOLOGY_TRAITS_VERBOSE 
+        std::cout << "sign2: " << sgn << std::endl;
+#endif
+    }
+    
+    CGAL_assertion(sgn != CGAL::ZERO);
+    
+    return (sgn == CGAL::NEGATIVE);
+
+
+      }
+    
+    // TODO do contraction/identification have special cases as previously in is_inside_new_face?
+#endif
+
+
+#if 1
+    // TODO move to a function
+    // To do this otherwise, we test which previous halfedge we see first when walking along
+    // future ic. The other previous halfedge ends up on outer ccb of new face.
+    DHalfedge *curr = ic1->halfedge(); // start from leftmost pointer of ic1!!!
+
+    while (true) {
+      // if we see p_prev2 while walking on inner ccb starting from leftmost ...
+      if (curr == prev2) {
+        // ... then prev1 ends up on new face's outer ccb
+        prev1_to_new_oc = true;
+        break;
+      }
+      // if we see p_prev1 while walking on inner ccb starting from leftmost ...
+      if (curr == prev1) {
+        // ... then prev2 ends up on new face's outer ccb
+        prev1_to_new_oc = false;
+        break;
+      }
+      curr = curr->next();
+    }
+
+#else 
+    
+    
+
+#endif
+
+  }
+
+  // 0.2) TODO swap variables
+
+  // We already have the comparsion result of the target vertices of prev1
+  // and prev2. If however we have to swap the order of the halfedges, 
+  // we also swap related fields and we take the opposite comparison result.
+  if (! prev1_to_new_oc) {
+    std::swap(prev1, prev2);
+    std::swap(ic1, ic2);
+    std::swap(oc1, oc2);
+    std::swap(f1, f2);
+    cmp = CGAL::opposite (cmp);
+  }
+
   // 1) Create pair of halfedges
   
   // Get the vertices that match cv's endpoints.
@@ -2756,15 +2760,15 @@ _insert_at_vertices(const X_monotone_curve_2& cv,
     (cmp == SMALLER) ? ARR_LEFT_TO_RIGHT : ARR_RIGHT_TO_LEFT;
   he2->set_direction (dir);
 
+  // ### practical end of edge creating - it remains to set ccbs next ###
+
   bool he1_loop_perimetric = false;
   bool he2_loop_perimetric = false;
 
-  // ### practical end of edge creating - it remains to set ccbs next ###
-
   // 2.0) check some special conditions for some insertion cases
 
-  bool         split_new_face = true;
-  bool         is_split_face_contained = false;
+  bool split_new_face = true;
+  bool is_split_face_contained = false;
 
   // In case the two previous halfedges lie on the same inner component inside
   // the face f ...
@@ -2810,12 +2814,17 @@ _insert_at_vertices(const X_monotone_curve_2& cv,
 
   // 2) Check the various cases of insertion (in the design document: the
   // various sub-cases of "insert_at_vertices" - "case 3 in the technical document).
+
+  // first, save some leftmost pointers
+  DHalfedge *ic1_he = (ic1 != NULL ? ic1->halfedge() : NULL);
+  DHalfedge *ic1_he_rev = (ic1 != NULL ? ic1->halfedge()->next()->opposite() : NULL);
+  
   if ((ic1 != NULL || ic2 != NULL) && ic1 != ic2)
   {
 #if CGAL_ARRANGEMENT_ON_SURFACE_INSERT_VERBOSE
     std::cout << "INSERT: From different inner ccbs"<< std::endl;
 #endif
-
+    
     // Check whether both halfedges are inner components (holes) in the same
     // face, or whether one is a hole and the other is on the outer boundary
     // of the face. 
@@ -3232,7 +3241,7 @@ _insert_at_vertices(const X_monotone_curve_2& cv,
       for (DHalfedge *curr = he1->next(); curr != he1; curr = curr->next()) {
         curr->set_outer_ccb (oc1);
         // any of the halfedge can be minimal
-        // TODO can we avoid to test all halfedges? (e.g., using oc1_he)?
+        // TODO can we avoid to test all halfedges? (e.g., using some oc1_he)?
         _update_ccb_with(oc1, curr);
       }
     }
