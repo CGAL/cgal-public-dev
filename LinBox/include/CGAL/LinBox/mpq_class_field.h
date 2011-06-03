@@ -53,21 +53,23 @@ namespace CGAL{
                         mpq_init(q);
                         mpq_set_num(q,LinBox::SpyInteger::get_mpz(num));
                         mpq_set_den(q,LinBox::SpyInteger::get_mpz(den));
-                        mpq_clear(q);
                         // TODO: use mpq_numref and mpq_denref to avoid
                         // copies; then remove mpq_clear
-                        return x=Element(q);
+                        x=Element(q);
+                        mpq_clear(q);
+                        x.canonicalize();
+                        return x;
                 }
 
                 // this function returns floor(num/den)
-                LI& convert(LI &x,const Element &y=0)const{
+                LI& convert(LI &x,const Element &y=Element(0))const{
                         mpz_tdiv_q(x.get_mpz(),
                                    y.get_num_mpz_t(),
                                    y.get_den_mpz_t());
                         return x;
                 }
 
-                double& convert(double &x,const Element &y=0)const{
+                double& convert(double &x,const Element &y=Element(0))const{
                         x=mpq_get_d(y.get_mpq_t());
                         CGAL_exactness_warning_code(mpq_t z;)
                         CGAL_exactness_warning_code(mpq_init(z);)
@@ -78,7 +80,7 @@ namespace CGAL{
                         return x;
                 }
 
-                float& convert(float &x,const Element &y=0)const{
+                float& convert(float &x,const Element &y=Element(0))const{
                         x=(float)mpq_get_d(y.get_mpq_t());
                         CGAL_exactness_warning_code(mpq_t z;)
                         CGAL_exactness_warning_code(mpq_init(z);)
