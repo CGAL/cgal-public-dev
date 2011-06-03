@@ -1,4 +1,4 @@
-// Copyright (c) 2005  Tel-Aviv University (Israel).
+// Copyright (c) 2006,2007,2009,2010,2011 Tel-Aviv University (Israel).
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org); you may redistribute it under
@@ -19,6 +19,13 @@
 
 #ifndef CGAL_ARR_RATIONAL_ARC_TRAITS_2_H
 #define CGAL_ARR_RATIONAL_ARC_TRAITS_2_H
+
+
+#if (defined __GNUC__)
+  #warning Arr_rational_arc_traits_2.h is DEPRECATED, please include Arr_rational_function_traits_2.h instead
+#elif (defined _MSC_VER)
+  #pragma message("Arr_rational_arc_traits_2.h is DEPRECATED, please include Arr_rational_function_traits_2.h instead")
+#endif
 
 /*! \file
  * Definition of the Arr_rational_arc_traits_2 class. 
