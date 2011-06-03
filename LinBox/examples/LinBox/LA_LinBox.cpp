@@ -18,15 +18,16 @@ int main(){
 
         LA traits;
 
-        Vector v[3];
-        std::vector<Vector> vectors;
-        v[0].push_back(13);v[0].push_back(1);v[0].push_back(12);
-        v[1].push_back(10);v[1].push_back(8);v[1].push_back(2);
-        v[2].push_back(1);v[2].push_back(12);v[2].push_back(-11);
-        vectors.push_back(v[0]);
-        vectors.push_back(v[1]);
-        vectors.push_back(v[2]);
-        Matrix M(vectors);
+        Matrix M(3,3);
+        traits.set_matrix_entry(M,0,0,13);
+        traits.set_matrix_entry(M,0,1,10);
+        traits.set_matrix_entry(M,0,2,1);
+        traits.set_matrix_entry(M,1,0,1);
+        traits.set_matrix_entry(M,1,1,8);
+        traits.set_matrix_entry(M,1,2,12);
+        traits.set_matrix_entry(M,2,0,12);
+        traits.set_matrix_entry(M,2,1,2);
+        traits.set_matrix_entry(M,2,2,-11);
 
         // compute rank
         //int r=traits.rank(M);

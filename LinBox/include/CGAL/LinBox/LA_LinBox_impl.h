@@ -21,6 +21,14 @@ namespace CGAL {
         template <class FT,class AL>
         typename LA_LinBox<FT,AL>::Matrix
         LA_LinBox<FT,AL>::
+        set_matrix_entry(Matrix &M,unsigned i,unsigned j,const FT &value){
+                M.setEntry(i,j,value);
+                return M;
+        }
+
+        template <class FT,class AL>
+        typename LA_LinBox<FT,AL>::Matrix
+        LA_LinBox<FT,AL>::
         transpose(const Matrix &M){
                 std::vector<Vector> Mrows;
                 for(int i=0;i<M.row_dimension();++i)

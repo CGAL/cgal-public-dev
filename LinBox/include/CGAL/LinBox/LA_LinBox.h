@@ -30,6 +30,10 @@ namespace CGAL{
                 public:
                 LA_LinBox(){};
 
+                static Matrix set_matrix_entry(Matrix&,
+                                               unsigned,
+                                               unsigned,
+                                               const FT&);
                 static Matrix transpose(const Matrix&);
                 static bool inverse(const Matrix&,Matrix&,FT&,Vector&);
                 static Matrix inverse(const Matrix&,RT&);
