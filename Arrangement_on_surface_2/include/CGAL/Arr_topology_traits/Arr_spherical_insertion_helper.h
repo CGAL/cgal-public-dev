@@ -117,6 +117,7 @@ void Arr_spherical_insertion_helper<Tr,Arr,Evnt,Sbcv>::before_handle_event
 
   // The is exactly one curve incident to an event with boundary conditions.
   // Obtain this curve and check whether it already exists in the arrangement.
+  // TODO EBEF allow more than one curve
   CGAL_assertion(((event->number_of_left_curves() == 0) &&
                   (event->number_of_right_curves() == 1)) ||
                  ((event->number_of_left_curves() == 1) &&

@@ -104,6 +104,7 @@ public:
    */  
   void before_handle_event(Event * event)
   {
+    // TODO EFEF Enhance for case where a face is incident to edge on identification and northpole
     if (event->parameter_space_in_y() != ARR_TOP_BOUNDARY &&
         event->parameter_space_in_x() != ARR_LEFT_BOUNDARY)
       return;
