@@ -3,15 +3,15 @@
 //
 // Author: Luis Peñaranda <luis.penaranda@gmx.com>
 
-#ifndef CGAL_LINBOX_LINBOX_DENSE_MATRIX_H
-#define CGAL_LINBOX_LINBOX_DENSE_MATRIX_H
+#ifndef CGAL_LINBOX_DENSE_MATRIX_H
+#define CGAL_LINBOX_DENSE_MATRIX_H
 
 #include <CGAL/basic.h>
 #include <vector>
 #include <iterator>
 #include <algorithm>
 #include <functional>
-#include <CGAL/LinBox/linbox_dense_vector.h>
+#include <CGAL/LinBox/dense_vector.h>
 #include <linbox/blackbox/dense.h>
 #include <linbox/matrix/matrix-domain.h>
 
@@ -302,4 +302,4 @@ namespace CGAL{
 
 } // namespace CGAL
 
-#endif // CGAL_LINBOX_LINBOX_DENSE_MATRIX_H
+#endif // CGAL_LINBOX_DENSE_MATRIX_H

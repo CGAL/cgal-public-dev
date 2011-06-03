@@ -3,8 +3,10 @@
 //
 // Author: Luis Peñaranda <luis.penaranda@gmx.com>
 
-#ifndef CGAL_LINBOX_LINBOX_MPQ_CLASS_FIELD_H
-#define CGAL_LINBOX_LINBOX_MPQ_CLASS_FIELD_H
+#ifndef CGAL_LINBOX_MPQ_CLASS_FIELD_H
+#define CGAL_LINBOX_MPQ_CLASS_FIELD_H
+
+#include <CGAL/config.h>
 
 #if !defined CGAL_USE_GMPXX && !defined CGAL_USE_TOPCOM
 #error This needs GMPXX or TOPCOM
@@ -16,7 +18,7 @@
 #include <Rational.h> // include the TOPCOM wrapper for mpq_class
 #endif
 
-#include <CGAL/LinBox/linbox_rational_field.h>
+#include <CGAL/LinBox/rational_field.h>
 
 namespace CGAL{
 
@@ -117,4 +119,4 @@ namespace CGAL{
 } // namespace CGAL
 
 #endif // !defined CGAL_USE_GMPXX && !defined CGAL_USE_TOPCOM
-#endif // CGAL_LINBOX_LINBOX_MPQ_CLASS_FIELD_H
+#endif // CGAL_LINBOX_MPQ_CLASS_FIELD_H

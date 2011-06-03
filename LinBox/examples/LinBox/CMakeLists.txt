@@ -40,8 +40,8 @@ if ( CGAL_FOUND )
   link_libraries("lapack")
   link_libraries("givaro")
 
-  create_single_source_cgal_program( "linbox_traits.cpp" )
-  create_single_source_cgal_program( "linbox_mpq_class_traits.cpp" )
+  create_single_source_cgal_program( "LA_LinBox.cpp" )
+  create_single_source_cgal_program( "LA_LinBox_mpq_class.cpp" )
 
 else()
   

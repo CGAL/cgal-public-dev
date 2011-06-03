@@ -3,8 +3,8 @@
 //
 // Author: Luis Peñaranda <luis.penaranda@gmx.com>
 
-#ifndef CGAL_LINBOX_LINBOX_DENSE_VECTOR_H
-#define CGAL_LINBOX_LINBOX_DENSE_VECTOR_H
+#ifndef CGAL_LINBOX_DENSE_VECTOR_H
+#define CGAL_LINBOX_DENSE_VECTOR_H
 
 #include <vector>
 #include <iterator>
@@ -147,4 +147,4 @@ namespace CGAL{
 
 } // namespace CGAL
 
-#endif // CGAL_LINBOX_LINBOX_DENSE_VECTOR_H
+#endif // CGAL_LINBOX_DENSE_VECTOR_H

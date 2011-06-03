@@ -3,8 +3,8 @@
 //
 // Author: Luis Peñaranda <luis.penaranda@gmx.com>
 
-#ifndef CGAL_LINBOX_LINBOX_INTEGER_RANDITER_H
-#define CGAL_LINBOX_LINBOX_INTEGER_RANDITER_H
+#ifndef CGAL_LINBOX_INTEGER_RANDITER_H
+#define CGAL_LINBOX_INTEGER_RANDITER_H
 
 #include <linbox/integer.h>
 #include <linbox/element/abstract.h>
@@ -127,4 +127,4 @@ IntegerRingRandIter<Linbox_integer_ring<Gmpz> >::random
 */
 } // namespace CGAL
 
-#endif // CGAL_LINBOX_LINBOX_INTEGER_RANDITER_H
+#endif // CGAL_LINBOX_INTEGER_RANDITER_H

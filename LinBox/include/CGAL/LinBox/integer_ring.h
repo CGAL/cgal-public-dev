@@ -3,13 +3,13 @@
 //
 // Author: Luis Peñaranda <luis.penaranda@gmx.com>
 
-#ifndef CGAL_LINBOX_LINBOX_INTEGER_RING_H
-#define CGAL_LINBOX_LINBOX_INTEGER_RING_H
+#ifndef CGAL_LINBOX_INTEGER_RING_H
+#define CGAL_LINBOX_INTEGER_RING_H
 
-#include <CGAL/LinBox/linbox_generic_structure.h>
+#include <CGAL/LinBox/generic_structure.h>
 #include <CGAL/Gmpz.h>
 #include <linbox/field/field-traits.h>
-#include <CGAL/LinBox/linbox_integer_randiter.h>
+#include <CGAL/LinBox/integer_randiter.h>
 
 namespace CGAL{
 
@@ -151,4 +151,4 @@ namespace LinBox{
 
 } // namespace LinBox
 
-#endif // CGAL_LINBOX_LINBOX_INTEGER_RING_H
+#endif // CGAL_LINBOX_INTEGER_RING_H

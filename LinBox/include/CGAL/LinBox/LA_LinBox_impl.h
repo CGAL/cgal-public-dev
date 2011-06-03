@@ -3,8 +3,8 @@
 //
 // Author: Luis Peñaranda <luis.penaranda@gmx.com>
 
-#ifndef CGAL_LINBOX_LINEAR_ALGEBRA_TRAITS_LINBOX_IMPL_H
-#define CGAL_LINBOX_LINEAR_ALGEBRA_TRAITS_LINBOX_IMPL_H
+#ifndef CGAL_LINBOX_LA_LINBOX_IMPL_H
+#define CGAL_LINBOX_LA_LINBOX_IMPL_H
 
 #include <linbox/blackbox/blas-blackbox.h>
 #include <linbox/algorithms/matrix-inverse.h>
@@ -19,8 +19,8 @@
 namespace CGAL {
 
         template <class FT,class AL>
-        typename Linear_algebra_traits_linbox<FT,AL>::Matrix
-        Linear_algebra_traits_linbox<FT,AL>::
+        typename LA_LinBox<FT,AL>::Matrix
+        LA_LinBox<FT,AL>::
         transpose(const Matrix &M){
                 std::vector<Vector> Mrows;
                 for(int i=0;i<M.row_dimension();++i)
@@ -30,7 +30,7 @@ namespace CGAL {
 
         template <class FT,class AL>
         bool
-        Linear_algebra_traits_linbox<FT,AL>::
+        LA_LinBox<FT,AL>::
         inverse(const Matrix &M,Matrix &I,FT &D,Vector &c){
                 // TODO
                 CGAL_error_msg("not implemented");
@@ -38,8 +38,8 @@ namespace CGAL {
 
         // XXX for the moment, this works only with rational matrices
         template <class FT,class AL>
-        typename Linear_algebra_traits_linbox<FT,AL>::Matrix
-        Linear_algebra_traits_linbox<FT,AL>::
+        typename LA_LinBox<FT,AL>::Matrix
+        LA_LinBox<FT,AL>::
         inverse(const Matrix &M,FT &D){
                 CGAL_assertion_msg(M.column_dimension()==M.row_dimension(),
                                    "matrix is not square");
@@ -55,8 +55,8 @@ namespace CGAL {
         }
 
         template <class FT,class AL>
-        typename Linear_algebra_traits_linbox<FT,AL>::FT
-        Linear_algebra_traits_linbox<FT,AL>::
+        typename LA_LinBox<FT,AL>::FT
+        LA_LinBox<FT,AL>::
         determinant(const Matrix &M,Matrix &L,Matrix &U,
                     std::vector<int> &q,Vector &c){
                 // TODO
@@ -65,7 +65,7 @@ namespace CGAL {
 
         template <class FT,class AL>
         bool
-        Linear_algebra_traits_linbox<FT,AL>::
+        LA_LinBox<FT,AL>::
         verify_determinant(const Matrix &M,
                            const FT &D,
                            const Matrix &L,
@@ -77,8 +77,8 @@ namespace CGAL {
         }
 
         template <class FT,class AL>
-        typename Linear_algebra_traits_linbox<FT,AL>::FT
-        Linear_algebra_traits_linbox<FT,AL>::
+        typename LA_LinBox<FT,AL>::FT
+        LA_LinBox<FT,AL>::
         determinant(const Matrix &M,CGAL::Method method){
                 CGAL_assertion_msg(M.column_dimension()==M.row_dimension(),
                                    "matrix is not square");
@@ -140,7 +140,7 @@ namespace CGAL {
 
         template <class FT,class AL>
         Sign
-        Linear_algebra_traits_linbox<FT,AL>::
+        LA_LinBox<FT,AL>::
         sign_of_determinant(const Matrix &M,CGAL::Method method){
                 CGAL_assertion_msg(M.column_dimension()==M.row_dimension(),
                                    "matrix is not square");
@@ -149,7 +149,7 @@ namespace CGAL {
 
         template <class FT,class AL>
         bool
-        Linear_algebra_traits_linbox<FT,AL>::
+        LA_LinBox<FT,AL>::
         linear_solver(const Matrix &M,const Vector &b,
                       Vector &x,FT &D,Matrix &spanning_vectors,
                       Vector &c){
@@ -159,7 +159,7 @@ namespace CGAL {
 
         template <class FT,class AL>
         bool
-        Linear_algebra_traits_linbox<FT,AL>::
+        LA_LinBox<FT,AL>::
         linear_solver(const Matrix &M,const Vector &b,
                       Vector &x,FT &D,Vector &c){
                 // TODO
@@ -168,7 +168,7 @@ namespace CGAL {
 
         template <class FT,class AL>
         bool
-        Linear_algebra_traits_linbox<FT,AL>::
+        LA_LinBox<FT,AL>::
         linear_solver(const Matrix &M,
                       const Vector &b,
                       Vector &x,
@@ -189,7 +189,7 @@ namespace CGAL {
 
         template <class FT,class AL>
         bool
-        Linear_algebra_traits_linbox<FT,AL>::
+        LA_LinBox<FT,AL>::
         is_solvable(const Matrix &M,const Vector &b){
                 // TODO
                 CGAL_error_msg("not implemented");
@@ -197,7 +197,7 @@ namespace CGAL {
 
         template <class FT,class AL>
         bool
-        Linear_algebra_traits_linbox<FT,AL>::
+        LA_LinBox<FT,AL>::
         homogeneous_linear_solver(const Matrix &M,Vector &x){
                 // TODO
                 CGAL_error_msg("not implemented");
@@ -207,7 +207,7 @@ namespace CGAL {
         // because of the division)
         template <class FT,class AL>
         int
-        Linear_algebra_traits_linbox<FT,AL>::
+        LA_LinBox<FT,AL>::
         homogeneous_linear_solver(const Matrix &M,Matrix &spanning_vectors){
                 size_t ldk,ker_dim;
                 FT *kernel;
@@ -233,7 +233,7 @@ namespace CGAL {
 
         template <class FT,class AL>
         int
-        Linear_algebra_traits_linbox<FT,AL>::
+        LA_LinBox<FT,AL>::
         independent_columns(const Matrix &M,std::vector<int> &q){
                 // TODO
                 CGAL_error_msg("not implemented");
@@ -241,7 +241,7 @@ namespace CGAL {
 
         template <class FT,class AL>
         int
-        Linear_algebra_traits_linbox<FT,AL>::
+        LA_LinBox<FT,AL>::
         rank(const Matrix &M,CGAL::Method method){
                 unsigned long result;
                 switch(method){
@@ -280,4 +280,4 @@ namespace CGAL {
 
 } // namespace CGAL
 
-#endif // CGAL_LINBOX_LINEAR_ALGEBRA_TRAITS_LINBOX_IMPL_H
+#endif // CGAL_LINBOX_LA_LINBOX_IMPL_H

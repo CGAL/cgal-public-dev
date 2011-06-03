@@ -3,18 +3,18 @@
 //
 // Author: Luis Peñaranda <luis.penaranda@gmx.com>
 
-#ifndef CGAL_LINBOX_LINEAR_ALGEBRA_TRAITS_LINBOX_H
-#define CGAL_LINBOX_LINEAR_ALGEBRA_TRAITS_LINBOX_H
+#ifndef CGAL_LINBOX_LA_LINBOX_H
+#define CGAL_LINBOX_LA_LINBOX_H
 
 #include <CGAL/LinBox/methods.h>
-#include <CGAL/LinBox/linbox_dense_matrix.h>
+#include <CGAL/LinBox/dense_matrix.h>
 
 namespace CGAL{
 
         // _LS is a LinBox algebraic structure and _AL is an allocator,
         // which defaults to the CGAL allocator.
         template<class _LS,class _AL=CGAL_ALLOCATOR(_LS)>
-        class Linear_algebra_traits_linbox{
+        class LA_LinBox{
                 public:
                 typedef _AL                                     AL;
                 typedef _LS                                     LS;
@@ -22,13 +22,13 @@ namespace CGAL{
                 typedef typename Matrix::Vector                 Vector;
                 typedef typename LS::Element                    FT;
                 typedef FT                                      RT;
-                typedef Linear_algebra_traits_linbox<LS,AL>     Self;
+                typedef LA_LinBox<LS,AL>                        Self;
                 typedef const FT*                               const_iterator;
                 typedef FT*                                     iterator;
                 private:
                 typedef typename Matrix::Identity               Identity;
                 public:
-                Linear_algebra_traits_linbox(){};
+                LA_LinBox(){};
 
                 static Matrix transpose(const Matrix&);
                 static bool inverse(const Matrix&,Matrix&,FT&,Vector&);
@@ -61,6 +61,6 @@ namespace CGAL{
 
 } // namespace CGAL
 
-#include <CGAL/LinBox/Linear_algebra_traits_linbox_impl.h>
+#include <CGAL/LinBox/LA_LinBox_impl.h>
 
-#endif // CGAL_LINBOX_LINEAR_ALGEBRA_TRAITS_LINBOX_H
+#endif // CGAL_LINBOX_LA_LINBOX_H

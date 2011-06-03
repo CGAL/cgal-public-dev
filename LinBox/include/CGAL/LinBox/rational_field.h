@@ -3,10 +3,10 @@
 //
 // Author: Luis Peñaranda <luis.penaranda@gmx.com>
 
-#ifndef CGAL_LINBOX_LINBOX_RATIONAL_FIELD_H
-#define CGAL_LINBOX_LINBOX_RATIONAL_FIELD_H
+#ifndef CGAL_LINBOX_RATIONAL_FIELD_H
+#define CGAL_LINBOX_RATIONAL_FIELD_H
 
-#include <CGAL/LinBox/linbox_generic_structure.h>
+#include <CGAL/LinBox/generic_structure.h>
 #include <CGAL/Gmpz.h>
 #include <CGAL/Fraction_traits.h>
 #include <linbox/integer.h>
@@ -144,4 +144,4 @@ namespace LinBox{
 
 } // namespace LinBox
 
-#endif // CGAL_LINBOX_LINBOX_RATIONAL_FIELD_H
+#endif // CGAL_LINBOX_RATIONAL_FIELD_H

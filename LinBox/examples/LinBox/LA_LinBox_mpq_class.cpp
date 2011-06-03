@@ -1,14 +1,28 @@
+#include <CGAL/config.h>
+
+#if !defined CGAL_USE_GMPXX && !defined CGAL_USE_TOPCOM
+#error This needs GMPXX or TOPCOM
+#else
+
 #include <iostream>
 #include <vector>
-#include <CGAL/Gmpq.h>
-#include <CGAL/LinBox/linbox_rational_field.h>
-#include <CGAL/LinBox/Linear_algebra_traits_linbox.h>
+#include <CGAL/LinBox/mpq_class_field.h>
+#include <CGAL/LinBox/LA_LinBox.h>
+#ifdef CGAL_USE_GMPXX
+#include <gmpxx.h>
+#else
+#include <Rational.h>
+#endif
 
 int main(){
-        typedef CGAL::Gmpq                                      FT;
+#ifdef CGAL_USE_GMPXX
+        typedef mpq_class                                       FT;
+#else
+        typedef Rational                                        FT;
+#endif
         typedef CGAL::Linbox_rational_field<FT>                 Field;
         typedef Field::Element                                  Element;
-        typedef CGAL::Linear_algebra_traits_linbox<Field>       LA;
+        typedef CGAL::LA_LinBox<Field>                          LA;
         typedef typename LA::Matrix                             Matrix;
         typedef typename LA::Vector                             Vector;
 
@@ -47,3 +61,4 @@ int main(){
 
         return 0;
 }
+#endif // !defined CGAL_USE_GMPXX && !defined CGAL_USE_TOPCOM
