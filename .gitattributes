@@ -1791,7 +1791,7 @@ Largest_empty_rect_2/doc_tex/Inscribed_areas_ref/ler.png -text
 Largest_empty_rect_2/test/Largest_empty_rect_2/cgal_test eol=lf
 Largest_empty_rect_2/test/Largest_empty_rect_2/cgal_test_with_cmake eol=lf
 LinBox/examples/LinBox/CMakeLists.txt -text
-LinBox/examples/LinBox/linbox_topcom_traits.cpp -text
+LinBox/examples/LinBox/linbox_mpq_class_traits.cpp -text
 LinBox/examples/LinBox/linbox_traits.cpp -text
 LinBox/include/CGAL/LinBox/Linear_algebra_traits_linbox.h -text
 LinBox/include/CGAL/LinBox/Linear_algebra_traits_linbox_impl.h -text
@@ -1800,8 +1800,8 @@ LinBox/include/CGAL/LinBox/linbox_dense_vector.h -text
 LinBox/include/CGAL/LinBox/linbox_generic_structure.h -text
 LinBox/include/CGAL/LinBox/linbox_integer_randiter.h -text
 LinBox/include/CGAL/LinBox/linbox_integer_ring.h -text
+LinBox/include/CGAL/LinBox/linbox_mpq_class_field.h -text
 LinBox/include/CGAL/LinBox/linbox_rational_field.h -text
-LinBox/include/CGAL/LinBox/linbox_topcom_field.h -text
 LinBox/include/CGAL/LinBox/methods.h -text
 LinBox/package_info/description.txt -text
 LinBox/package_info/maintainer -text

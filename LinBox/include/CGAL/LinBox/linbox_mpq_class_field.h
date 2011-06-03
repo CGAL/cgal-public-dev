@@ -3,23 +3,28 @@
 //
 // Author: Luis Peñaranda <luis.penaranda@gmx.com>
 
-#ifndef CGAL_LINBOX_LINBOX_TOPCOM_FIELD_H
-#define CGAL_LINBOX_LINBOX_TOPCOM_FIELD_H
+#ifndef CGAL_LINBOX_LINBOX_MPQ_CLASS_FIELD_H
+#define CGAL_LINBOX_LINBOX_MPQ_CLASS_FIELD_H
 
-#ifndef CGAL_USE_TOPCOM
-#error This needs TOPCOM
+#if !defined CGAL_USE_GMPXX && !defined CGAL_USE_TOPCOM
+#error This needs GMPXX or TOPCOM
 #else
 
-#include <Rational.h>
+#ifdef CGAL_USE_GMPXX
+#include <gmpxx.h>
+#else
+#include <Rational.h> // include the TOPCOM wrapper for mpq_class
+#endif
+
 #include <CGAL/LinBox/linbox_rational_field.h>
 
 namespace CGAL{
 
         template<>
-        class Linbox_rational_field<Rational>:
-        public Linbox_generic_structure<Rational>{
+        class Linbox_rational_field<mpq_class>:
+        public Linbox_generic_structure<mpq_class>{
                 private:
-                typedef Rational                        FT;
+                typedef mpq_class                       FT;
                 typedef Linbox_generic_structure<FT>    LG;
                 typedef Linbox_rational_field<FT>       LF;
                 typedef typename LG::LI                 LI;
@@ -93,7 +98,7 @@ namespace CGAL{
                 }
 
                 std::ostream& write(std::ostream &os)const{
-                        os<<"Linbox field constructed from TOPCOM's Rational";
+                        os<<"Linbox field constructed from mpq_class";
                         return os;
                 }
 
@@ -111,5 +116,5 @@ namespace CGAL{
 
 } // namespace CGAL
 
-#endif // CGAL_USE_TOPCOM
-#endif // CGAL_LINBOX_LINBOX_TOPCOM_FIELD_H
+#endif // !defined CGAL_USE_GMPXX && !defined CGAL_USE_TOPCOM
+#endif // CGAL_LINBOX_LINBOX_MPQ_CLASS_FIELD_H

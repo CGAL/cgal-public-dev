@@ -41,7 +41,7 @@ if ( CGAL_FOUND )
   link_libraries("givaro")
 
   create_single_source_cgal_program( "linbox_traits.cpp" )
-  create_single_source_cgal_program( "linbox_topcom_traits.cpp" )
+  create_single_source_cgal_program( "linbox_mpq_class_traits.cpp" )
 
 else()
   
