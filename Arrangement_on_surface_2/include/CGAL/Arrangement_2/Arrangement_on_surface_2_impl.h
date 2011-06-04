@@ -2752,6 +2752,8 @@ _insert_at_vertices(const X_monotone_curve_2& cv,
       }
     }
 
+    // TODO get rid of prev1/prev2 from here on???
+
     // 2.3) Swap variables if needed (only in this case)
     // if prev1 does not become part of the outer ccb of a new face we have to swap some variables
     if (! prev1_to_new_oc) {
