@@ -418,7 +418,7 @@ insert_in_face_interior(const X_monotone_curve_2& cv, Face_handle f)
     // Note that in this case we may create a new face.
 
     bool new_face_created = false;
-    bool prev1_to_new_oc = true;
+    bool prev1_to_new_oc2 = true;
   
     // EFMH This is a bug fix and we could not think of a better one. 
     // In case the inserted curve has two vertical asymptotes at the top 
@@ -436,7 +436,7 @@ insert_in_face_interior(const X_monotone_curve_2& cv, Face_handle f)
                                   fict_prev1, 
                                   fict_prev2,
                                   SMALLER,
-                                  prev1_to_new_oc,
+                                  prev1_to_new_oc2,
                                   new_face_created);
   
     if (new_face_created)
@@ -582,12 +582,12 @@ insert_from_left_vertex(const X_monotone_curve_2& cv,
     // Insert the halfedge given the two predecessor halfedges.
     // Note that in this case we may create a new face.
     bool new_face_created = false;
-    bool prev1_to_new_oc = true;
+    bool prev1_to_new_oc2 = true;
     new_he = _insert_at_vertices (cv,
                                   prev1, 
                                   fict_prev2,
                                   SMALLER,
-                                  prev1_to_new_oc,
+                                  prev1_to_new_oc2,
                                   new_face_created);
   
     if (new_face_created)
@@ -817,9 +817,9 @@ insert_from_right_vertex(const X_monotone_curve_2& cv,
     // Insert the halfedge given the two predecessor halfedges.
     // Note that in this case we may create a new face.
     bool new_face_created = false;
-    bool prev1_to_new_oc = true;
+    bool prev1_to_new_oc2 = true;
 
-    new_he = _insert_at_vertices (cv, prev2, fict_prev1, LARGER, prev1_to_new_oc,
+    new_he = _insert_at_vertices (cv, prev2, fict_prev1, LARGER, prev1_to_new_oc2,
                                   new_face_created);
   
     if (new_face_created)
@@ -1487,8 +1487,8 @@ insert_at_vertices(const X_monotone_curve_2& cv,
 
   // Perform the insertion.
   bool        new_face_created = false;
-  bool        prev1_to_new_oc = true;
-  DHalfedge  *new_he = _insert_at_vertices (cv, p_prev1, p_prev2, res, prev1_to_new_oc, new_face_created);
+  bool        prev1_to_new_oc2 = true;
+  DHalfedge  *new_he = _insert_at_vertices (cv, p_prev1, p_prev2, res, prev1_to_new_oc2, new_face_created);
 
   if (new_face_created)
   {
@@ -1502,7 +1502,7 @@ insert_at_vertices(const X_monotone_curve_2& cv,
   // Return a handle to the new halfedge directed from prev1's target to
   // prev2's target. Note that this may be the twin halfedge of the one
   // returned by _insert_at_vertices();
-  if (! prev1_to_new_oc)
+  if (! prev1_to_new_oc2)
     new_he = new_he->opposite();
 
   return (Halfedge_handle (new_he));
@@ -1893,6 +1893,8 @@ remove_edge(Halfedge_handle e, bool remove_source, bool remove_target)
 
     std::pair<int, const DVertex*>  v_min2 =
       _find_leftmost_vertex_on_closed_loop (he2, is_perimetric2, at_open_bnd2);
+
+    // TODO check why we need to exchange remove_sourve, remove_target?
 
     if (! is_perimetric1 && ! is_perimetric2)
     {
@@ -2523,7 +2525,7 @@ Arrangement_on_surface_2<GeomTraits, TopTraits>::
 _insert_at_vertices(const X_monotone_curve_2& cv,
                     DHalfedge *prev1, DHalfedge *prev2,
                     Comparison_result cmp,
-                    bool& prev1_to_new_oc, 
+                    bool& prev1_to_new_oc2, 
                     bool& new_face)
 {
   // preconditions
@@ -2659,7 +2661,7 @@ _insert_at_vertices(const X_monotone_curve_2& cv,
   // some default values
   bool split_new_face = true;
   bool is_split_face_contained = true;
-  CGAL_assertion(prev1_to_new_oc == true);
+  CGAL_assertion(prev1_to_new_oc2 == true);
 
   // If prev1 and prev2 are on different components, the insertion of the
   // new curve does not generate a new face, so the way we send these
@@ -2723,11 +2725,11 @@ _insert_at_vertices(const X_monotone_curve_2& cv,
       // perimetric. We use the topology traits to determine which halfedge
       // lies inside the hole (in case a hole is indeed created).
       // TODO check direction
-      prev1_to_new_oc = (ic1->halfedge()->direction() == CGAL::ARR_LEFT_TO_RIGHT);
+      prev1_to_new_oc2 = (ic1->halfedge()->direction() == CGAL::ARR_LEFT_TO_RIGHT);
 
     } else if (ic2->is_perimetric()) {
       // TODO check direction
-      prev1_to_new_oc = (ic1->halfedge()->direction() == CGAL::ARR_RIGHT_TO_LEFT);
+      prev1_to_new_oc2 = (ic1->halfedge()->direction() == CGAL::ARR_RIGHT_TO_LEFT);
 
     } else {
       // TODO move to a function?
@@ -2739,13 +2741,13 @@ _insert_at_vertices(const X_monotone_curve_2& cv,
         // if we see p_prev2 while walking on inner ccb starting from leftmost ...
         if (curr == prev2) {
           // ... then prev1 ends up on new face's outer ccb
-          prev1_to_new_oc = true;
+          prev1_to_new_oc2 = true;
           break;
         }
         // if we see p_prev1 while walking on inner ccb starting from leftmost ...
         if (curr == prev1) {
           // ... then prev2 ends up on new face's outer ccb
-          prev1_to_new_oc = false;
+          prev1_to_new_oc2 = false;
           break;
         }
         curr = curr->next();
@@ -2756,7 +2758,7 @@ _insert_at_vertices(const X_monotone_curve_2& cv,
 
     // 2.3) Swap variables if needed (only in this case)
     // if prev1 does not become part of the outer ccb of a new face we have to swap some variables
-    if (! prev1_to_new_oc) {
+    if (! prev1_to_new_oc2) {
       std::swap(he1, he2);
       std::swap(v1, v2);
       std::swap(prev1, prev2);
@@ -2929,24 +2931,25 @@ _insert_at_vertices(const X_monotone_curve_2& cv,
     // Create a new outer CCB that for the face f, and make 
     // he1 (arbitrary choice) the representative halfedge 
     // of this component.
-    DOuter_ccb  *f_oc1 = _dcel().new_outer_ccb();
+    DOuter_ccb  *new_oc1 = _dcel().new_outer_ccb();
 
-    f1->add_outer_ccb (f_oc1, he1); // sets he1 as initial leftmost pointer (ignoring direction)
-    f_oc1->set_face (f1);
-    he1->set_outer_ccb (f_oc1);
+    f1->add_outer_ccb (new_oc1, he1); // sets he1 as initial leftmost pointer (ignoring direction)
+    new_oc1->set_face (f1);
+    he1->set_outer_ccb (new_oc1);
 
     // check perimetricy of ccb
-    _determine_ccb_perimetricy(f_oc1);
-    // now, f_oc1->direction is correct
+    // TODO isn't that the same as ic1's?, and thus we can remove the check here
+    _determine_ccb_perimetricy(new_oc1);
+    // now, new_oc1->direction is correct
 
     // if he1 is not the leftmost pointer then the old pointer
     // TODO right halfedge picked?
-    _update_ccb_with(oc1, (ic1_he->direction() == f_oc1->halfedge()->direction() ? ic1_he : ic1_he_rev));
-    CGAL_assertion(f_oc1->halfedge()->outer_ccb() == f_oc1);
+    _update_ccb_with(oc1, (ic1_he->direction() == new_oc1->halfedge()->direction() ? ic1_he : ic1_he_rev));
+    CGAL_assertion(new_oc1->halfedge()->outer_ccb() == new_oc1);
 
     // Make the component of all halfedges that used to belong to he1's CCB.
     for (DHalfedge *curr = he1->next(); curr != he1; curr = curr->next()) {
-      curr->set_outer_ccb (f_oc1);
+      curr->set_outer_ccb (new_oc1);
     }
 
     // Notify the observers that we have added an outer CCB to f.
@@ -2958,24 +2961,25 @@ _insert_at_vertices(const X_monotone_curve_2& cv,
 
     // Create a new outer CCB that for the face f, and make 
     // he2 (implied choice) the representative halfedge of this component.
-    DOuter_ccb  *f_oc2 = _dcel().new_outer_ccb();
+    DOuter_ccb  *new_oc2 = _dcel().new_outer_ccb();
 
-    f1->add_outer_ccb (f_oc2, he2); // sets he2 as initial leftmost pointer
-    f_oc2->set_face (f1);
-    he2->set_outer_ccb (f_oc2);
+    f1->add_outer_ccb (new_oc2, he2); // sets he2 as initial leftmost pointer
+    new_oc2->set_face (f1);
+    he2->set_outer_ccb (new_oc2);
 
     // check perimetricy of ccb
-    _determine_ccb_perimetricy(f_oc2);
-    // now, f_oc2->direction is correct
+    // TODO isn't that the same as ic2's?, and thus we can remove the check here
+    _determine_ccb_perimetricy(new_oc2);
+    // now, new_oc2->direction is correct
 
     // if he2 is not the leftmost pointer then the reversed old pointer
     // TODO right halfedge picked?
-    _update_ccb_with(oc2, (ic1_he->direction() == f_oc2->halfedge()->direction() ? ic1_he : ic1_he_rev));
-    CGAL_assertion(f_oc2->halfedge()->outer_ccb() == f_oc2);
+    _update_ccb_with(oc2, (ic1_he->direction() == new_oc2->halfedge()->direction() ? ic1_he : ic1_he_rev));
+    CGAL_assertion(new_oc2->halfedge()->outer_ccb() == new_oc2);
 
     // Set the component of all halfedges that used to belong to he2's CCB.
     for (DHalfedge *curr = he2->next(); curr != he2; curr = curr->next()) {
-      curr->set_outer_ccb (f_oc2);
+      curr->set_outer_ccb (new_oc2);
     }
 
     // Notify the observers that we have added an outer CCB to f.
@@ -3010,26 +3014,26 @@ _insert_at_vertices(const X_monotone_curve_2& cv,
 #endif
     
     // Second, create a single outer component which should point to he2!!!
-    DOuter_ccb  *new_oc = _dcel().new_outer_ccb();
-    new_f->add_outer_ccb (new_oc, he2); // sets he2 as initial leftmost pointer
-    new_oc->set_face (new_f);
+    DOuter_ccb  *new_oc2 = _dcel().new_outer_ccb();
+    new_f->add_outer_ccb (new_oc2, he2); // sets he2 as initial leftmost pointer
+    new_oc2->set_face (new_f);
 
     // Set the components of the new halfedge he2, which should be the new
     // outer comoponent of the new face.
     // Note that there are several cases for setting he1's component, so we
     // do not do it yet.
-    he2->set_outer_ccb (new_oc);
+    he2->set_outer_ccb (new_oc2);
 
-    // check perimetricy of ccb
-    _determine_ccb_perimetricy(new_oc);
-    // now, new_oc->direction is correct
+    // NOTE: We postpone to determine new_oc2's perimetricy here, as for some cases it will
+    //       be false, for the others, we will test it then
+    // TODO or must it be tested here, in order to correctly determine leftmost pointer next:
 
     // Make the component of all halfedges that used to belong to he2's CCB.
     for (DHalfedge* curr = he2->next(); curr != he2; curr = curr->next()) {
-      curr->set_outer_ccb (new_oc);
+      curr->set_outer_ccb (new_oc2);
       // any of the halfedge can be minimal
       // TODO can it be improved? (i.p., in case 3.3.2!)
-      _update_ccb_with(new_oc, curr);
+      _update_ccb_with(new_oc2, curr);
     }
 
 #if CGAL_ARRANGEMENT_ON_SURFACE_INSERT_VERBOSE
@@ -3043,7 +3047,7 @@ _insert_at_vertices(const X_monotone_curve_2& cv,
                                    prev1->outer_ccb()->halfedge())->direction() << std::endl;
 #endif
 
-    // Third, it remains to deal with he1 and its ccb!!! (plus new_oc)
+    // Third, it remains to deal with he1 and its ccb!!! (plus new_oc2)
     
     // Check whether the two previous halfedges lie on the same inner CCB
     // or on the same outer CCB (distinguish case 3.3 and case 3.4).
@@ -3067,6 +3071,9 @@ _insert_at_vertices(const X_monotone_curve_2& cv,
         
         // We only have to check whether the new halfedge can alter the leftmost pointer of ic1
         _update_ccb_with(ic1, he1);
+
+        // new_oc2's perimetricy must be false here
+        new_oc2->set_perimetric(false);
 
 #if CGAL_ARRANGEMENT_ON_SURFACE_INSERT_VERBOSE
         std::cout << "he1 (=> prev2) defines new inner CCB" << std::endl;
@@ -3107,27 +3114,31 @@ _insert_at_vertices(const X_monotone_curve_2& cv,
 
         // Create a new outer CCB that for the face f, and make he1 the
         // representative halfedge of this component.
-        DOuter_ccb  *f_oc = _dcel().new_outer_ccb();
-        f1->add_outer_ccb (f_oc, he1); // sets he1 as initial leftmost pointer
-        f_oc->set_face (f1);
-        he1->set_outer_ccb (f_oc);
+        DOuter_ccb  *new_oc1 = _dcel().new_outer_ccb();
+        f1->add_outer_ccb (new_oc1, he1); // sets he1 as initial leftmost pointer
+        new_oc1->set_face (f1);
+        he1->set_outer_ccb (new_oc1);
 
         // check perimetricy of ccb
-        _determine_ccb_perimetricy(f_oc);
-        // now, f_oc->direction is correct
+        _determine_ccb_perimetricy(new_oc1);
+        // now, new_oc1->direction is correct
         
         // Make the component of all halfedges that used to belong to he1's CCB.
         for (DHalfedge *curr = he1->next(); curr != he1; curr = curr->next()) {
-          curr->set_outer_ccb (f_oc);
+          curr->set_outer_ccb (new_oc1);
           // the leftmost pointer must be one of the old ic1s'
-          // TODO apply above a similar strategy for f_oc2 (IN THIS CASE!)
+          // TODO apply above a similar strategy for new_oc2 (IN THIS CASE!)
           if (curr == ic1_he) {
-            _update_ccb_with(f_oc, ic1_he);
+            _update_ccb_with(new_oc1, ic1_he);
           }
           if (curr == ic1_he_rev) {
-            _update_ccb_with(f_oc, ic1_he_rev);
+            _update_ccb_with(new_oc1, ic1_he_rev);
           }
         }
+
+        // and, as not yet done, do so for new_oc12, too
+        _determine_ccb_perimetricy(new_oc2);
+        // now, new_oc2->direction is correct        
 
 #if CGAL_ARRANGEMENT_ON_SURFACE_INSERT_VERBOSE
         std::cout << "he1 (=> prev2) defines adjacent outer CCB" << std::endl;
@@ -3157,7 +3168,7 @@ _insert_at_vertices(const X_monotone_curve_2& cv,
           if (*oc_it != he1 &&
               // use direction of ccbs' leftmost pointers 
               (*oc_it)->direction() /* *oc_it is an halfedge pointer */ !=
-              new_oc->halfedge()->direction()) {
+              new_oc2->halfedge()->direction()) {
             
             // We increment the itrator before moving the outer CCB, because
             // this operation invalidates the iterator.
@@ -3191,7 +3202,7 @@ _insert_at_vertices(const X_monotone_curve_2& cv,
       // initially to be he1.
       oc1->set_halfedge (he1);
       
-      // perimetricy does not change
+      // perimetricy of oc1 does not change
 
       // Make the component of all halfedges that used to belong to he1's CCB.
       for (DHalfedge *curr = he1->next(); curr != he1; curr = curr->next()) {
@@ -3200,6 +3211,10 @@ _insert_at_vertices(const X_monotone_curve_2& cv,
         // TODO can we avoid to test all halfedges? (e.g., using some oc1_he)?
         _update_ccb_with(oc1, curr);
       }
+
+      // and perimetricy of new_oc2 for new face2 must be false
+      new_oc2->set_perimetric(false);
+
     }
 
     // Check whether we should mark the original face and the new face as
@@ -3669,6 +3684,7 @@ _compare_vertices_xy_impl (const DVertex * v1, const DVertex * v2,
   return (m_geom_traits->compare_xy_2_object() (v1->point(), v2->point()));
 }
 
+#if 0 // TODO delete
 //-----------------------------------------------------------------------------
 // Locate the leftmost vertex on the a given sequence defined by two
 // halfedges. This sequence is still an open loop, but it will soon be closed
@@ -3873,7 +3889,9 @@ _find_leftmost_vertex_on_open_loop (const DHalfedge *he_before,
   // Return the leftmost vertex and its index (with respect to he_before).
   return (std::make_pair (v_min, (he_left_low==he_before ? static_cast<DHalfedge*>(NULL):he_left_low) ));
 }
+#endif
 
+#if 0 // TODO delete
 //-----------------------------------------------------------------------------
 // Locate the leftmost vertex on the a given sequence, defined by an anchor
 // halfedge and its twin, which forms a closed loop (i.e., the anchor's twin
@@ -4030,7 +4048,9 @@ _find_leftmost_vertex_on_closed_loop (const DHalfedge *he_anchor,
   // Return the leftmost vertex and its index (with respect to he_anchor).
   return (std::make_pair (ind_min, v_min));
 }
- 
+#endif 
+
+
 #if 0 // TODO delete
 //-----------------------------------------------------------------------------
 // Determine whether a given query halfedge lies in the interior of a new

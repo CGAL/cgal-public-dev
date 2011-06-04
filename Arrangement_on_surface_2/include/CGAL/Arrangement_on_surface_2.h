@@ -31,6 +31,7 @@
  * The header file for the Arrangement_on_surface_2<Traits,Dcel> class.
  */
 
+#include <boost/optional.hpp>
 #include <boost/mpl/assert.hpp>
 #include <CGAL/Arr_tags.h>
 #include <CGAL/Arr_enums.h>
@@ -1872,8 +1873,7 @@ protected:
                              const DVertex *v2,
                              Arr_not_all_sides_oblivious_tag) const;
   
-
-  // TODO remove (or keep for sanity check)
+#if 0 // TODO remove
   /*!
    * Locate the leftmost vertex on the a given sequence defined by two
    * halfedges. This sequence is still an open loop, but it will soon be closed
@@ -1910,7 +1910,7 @@ protected:
   _find_leftmost_vertex_on_closed_loop (const DHalfedge *he_anchor,
                                         bool& is_perimetric,
                                         bool& at_infinity) const;
-  
+#endif
 
   // TODO observe directions for ccbs (esp. if perimetric) for updates,
   //      if needed, "adapt" given he, 
@@ -1924,51 +1924,51 @@ protected:
    */
   void _update_ccb_with(DOuter_ccb *oc, DHalfedge *he) {
     CGAL_assertion(oc != NULL);
-    // if perimetric allow other direction, too
-    CGAL::Arr_halfedge_direction dir;
-    if (oc->is_perimetric()) {
-       dir = oc->halfedge()->direction();
-    }
 
-    // TODO default direction for outer/inner ccb?
+    bool reset = false;
 
-    if (oc->is_perimetric()|| he->direction() == CGAL::ARR_RIGHT_TO_LEFT) {
-
-      bool reset = false;
-      
-      DVertex *vmin = oc->halfedge()->vertex();
-      DVertex *vnew = he->vertex();
-      // TODO vmin/vnew on boundary!
-      // TODO crossed an identification? (choose vmin to be minimal on identification)
-      CGAL::Comparison_result cmp = _compare_vertices_xy (vnew, vmin);
-      if (cmp == LARGER) {
-        return;
-      } 
-      if (cmp == SMALLER) {
+    DVertex *vmin = oc->halfedge()->vertex();
+    DVertex *vnew = he->vertex();
+    // TODO vmin/vnew on boundary!
+    // TODO crossed an identification? (choose vmin to be minimal on identification)
+    CGAL::Comparison_result cmp = _compare_vertices_xy (vnew, vmin);
+    if (cmp == LARGER) {
+      return;
+    } 
+    if (cmp == SMALLER) {
+      // reset only if he is directed right to left, or 
+      // allow the other direction, too, if vmin is on the left boundary
+      if (he->direction() == ARR_RIGHT_TO_LEFT || 
+          vmin->parameter_space_in_x() == ARR_LEFT_BOUNDARY) {
         vmin = vnew;
         reset = true;
-      } else { // EQUAL
-        // TODO left for perimetric?
-        reset = (m_geom_traits->compare_y_at_x_right_2_object()(oc->halfedge()->curve(),
-                                                                he->curve(),
-                                                                vmin->point()) == LARGER);
+      }
+    } else { // EQUAL
+      CGAL::Arr_halfedge_direction oc_dir = oc->halfedge()->direction();
+      if (oc_dir == CGAL::ARR_RIGHT_TO_LEFT) {
+        if (he->direction() != oc_dir) {
+          reset = true;
+        } else {
+          reset = (m_geom_traits->compare_y_at_x_right_2_object()(oc->halfedge()->curve(),
+                                                                  he->curve(),
+                                                                  vmin->point()) == LARGER);
+        }
+      } else {
+        if (he->direction() != oc_dir) {
+          reset = true;
+        } else {
+          reset = (m_geom_traits->compare_y_at_x_left_2_object()(oc->halfedge()->curve(),
+                                                                 he->curve(),
+                                                                 vmin->point()) == LARGER);
+        }
+       
       }
       
-      if (reset) {
-        if (!oc->is_perimetric()) {
-          // if not perimetric just replace
-          oc->set_halfedge(he);
-        } else {
-          // if perimetric need to maintain order, thus we search
-          DHalfedge* curr = oc->halfedge()->prev();
-          while (curr->vertex() != vmin) {
-            curr = curr->prev();
-          }
-          oc->set_halfedge(curr);
-        }
-      }
     }
     
+    if (reset) {
+      oc->set_halfedge(he);
+    }    
   }
   
   /*!
@@ -1992,6 +1992,11 @@ protected:
     }
   }
 
+  // TODO tag dispatch for topologies without identifications
+  void _determine_ccb_perimetricy(DOuter_ccb *oc, bool b) {
+    oc->set_perimetric(false);
+  }
+  
   /*!
    * Checks whether an outer ccb is perimetric and sets bit accordingly.
    * \param oc the outer ccb
@@ -1999,11 +2004,60 @@ protected:
   void _determine_ccb_perimetricy(DOuter_ccb *oc) {
     CGAL_assertion(oc != NULL);
     // TODO use tag to set false if no boundary is identified
-    oc->set_perimetric(true);
-    oc->set_perimetric(false);
 
-    // TODO reset leftmost pointer halfedge to reflect direction of perimetricy
+    // detect whether ccb is perimetric
+    // TODO 
+    DHalfedge* from = oc->halfedge();
+    DHalfedge* curr = from;
+    DHalfedge* next = curr->next();
+    
+    if (curr == next) {
+      CGAL_assertion(next->next() == curr);
+    }
+
+    boost::optional< Arr_halfedge_direction > dir;
+    
+    do {
+#if 0      
+      if (!curr->has_null_curve() && !next->has_null_curve()) {
+        
+        CGAL::Sign tmp = 
+          _m_topology_traits->_sign_of_subpath(curr, next);
+        
+        if (tmp != CGAL::ZERO) {
+          switch (result) {
+          case ZERO:
+            result = tmp;
+            break;
+          default:
+            CGAL_assertion(result == -tmp || result == tmp);
+            result = CGAL::ZERO;
+          }
+        }
+      }
+#else 
+      // TODO to pick one of
+      dir = CGAL::ARR_LEFT_TO_RIGHT;
+      dir = CGAL::ARR_RIGHT_TO_LEFT;
+      dir = boost::none;
+
+      // TODO "corner" cases
+#endif     
+      curr = next;
+      next = curr->next();
+    } while (curr != from);
+    
+    // set perimetricy
+    oc->set_perimetric(dir);
+
+    // if so, reset leftmost pointer to reflect direction of perimetricy
+    if (dir) {
+      if (oc->halfedge()->direction() != *dir) {
+        // TODO
+      }
+    }
   }
+
 
   // TODO remove?
 
@@ -2189,7 +2243,7 @@ protected:
                                   DHalfedge *prev1, 
                                   DHalfedge *prev2,
                                   Comparison_result res,
-                                  bool& prev1_to_new_oc, 
+                                  bool& prev1_to_new_oc2, 
                                   bool& new_face);
 
   /*!
