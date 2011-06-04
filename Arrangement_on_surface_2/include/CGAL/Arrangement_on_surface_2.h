@@ -1923,6 +1923,7 @@ protected:
    * \return the updated representative halfedge
    */
   void _update_ccb_with(DOuter_ccb *oc, DHalfedge *he) {
+    CGAL_assertion(oc != NULL);
     // if perimetric allow other direction, too
     CGAL::Arr_halfedge_direction dir;
     if (oc->is_perimetric()) {
@@ -1978,6 +1979,7 @@ protected:
    * \return the updated representative halfedge
    */
   void _update_ccb_without(DOuter_ccb *oc, DHalfedge *he) {
+    CGAL_assertion(oc != NULL);
     if (oc->is_perimetric()) {
       // TODO ensure to keep orientation
     } else {
@@ -1995,6 +1997,7 @@ protected:
    * \param oc the outer ccb
    */
   void _determine_ccb_perimetricy(DOuter_ccb *oc) {
+    CGAL_assertion(oc != NULL);
     // TODO use tag to set false if no boundary is identified
     oc->set_perimetric(true);
     oc->set_perimetric(false);
@@ -2031,7 +2034,7 @@ protected:
    * \param oc the outer ccb
    */
   void _determine_ccb_perimetricy(DInner_ccb *ic) {
-    return _determine_perimetricy(reinterpret_cast<DOuter_ccb*>(ic));
+    return _determine_ccb_perimetricy(reinterpret_cast<DOuter_ccb*>(ic));
   }
 
 #if 0 // TODO remove
