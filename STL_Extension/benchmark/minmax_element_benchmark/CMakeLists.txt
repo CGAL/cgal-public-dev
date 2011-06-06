@@ -23,20 +23,6 @@ if ( CGAL_FOUND )
 
   include_directories (BEFORE ../include)
 
-  # Link with Boost.ProgramOptions (optional)
-  find_package(Boost QUIET COMPONENTS program_options)
-  if(Boost_PROGRAM_OPTIONS_FOUND)
-    if( CGAL_AUTO_LINK_ENABLED )
-      message( STATUS "Boost.ProgramOptions library: found" )
-    else()
-      message( STATUS "Boost.ProgramOptions library: ${Boost_PROGRAM_OPTIONS_LIBRARY}" )
-    endif()
-    add_definitions( "-DCGAL_USE_BOOST_PROGRAM_OPTIONS" )
-    if ( NOT CGAL_AUTO_LINK_ENABLED )
-      link_libraries( ${Boost_PROGRAM_OPTIONS_LIBRARY} )
-    endif()
-  endif()
-  
   create_single_source_cgal_program( "minmax_element_benchmark.cpp" )
 
 else()
