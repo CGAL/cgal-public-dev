@@ -856,7 +856,6 @@ public:
   Parameter_space_in_y_2 parameter_space_in_y_2_object() const
   { return Parameter_space_in_y_2(); }
 
-
   /*! A functor that compares the x-coordinate of arc ends and points on the
    * boundary of the parameter space.
    */
@@ -966,17 +965,6 @@ public:
       return m_traits->compare_x(p, q);
     }
 
-    /*! Compare the x-coordinate of two given points that lie on the
-     * horizontal identification arc.
-     * \param p1 the first point.
-     * \param p2 the second point.
-     * There is no horizontal identification arc!
-     */
-    Comparison_result operator()(const Point_2& p1, const Point_2& p2) const
-    {
-      CGAL_error_msg("There is no horizontal identification arc!");
-      return SMALLER;
-    }
   };
 
   /*! Obtain a Compare_x_on_boundary_2 function object */
@@ -1184,42 +1172,6 @@ public:
   /*! Obtain a Compare_y_near_boundary_2 function object */
   Compare_y_near_boundary_2 compare_y_near_boundary_2_object() const
   { return Compare_y_near_boundary_2(this); }
-  
-  /*! A functor that indicates whether a geometric object lies on the
-   * horizontal identification arc. In this setup there is no such entity.
-   */
-  class Is_on_x_identification_2 {
-  protected:
-    typedef Arr_geodesic_arc_on_sphere_traits_2<Kernel> Traits;
-    
-  public:
-    /*! Determine whether a point lies on the horizontal identification arc.
-     * \param p the point.
-     * \return a Boolean indicating whether p lies on the horizontal
-     * identification arc.
-     */
-    bool operator()(const Point_2& p) const
-    {
-      CGAL_error_msg("There is no horizontal identification arc!");
-      return false;
-    }
-
-    /*! Determine whether an arc coincides with the horizontal identification
-     * arc.
-     * \param xcv the arc.
-     * \return a Boolean indicating whether xcv coincides with the horizontal
-     * identification arc.
-     */
-    bool operator()(const X_monotone_curve_2& xcv) const
-    {
-      CGAL_error_msg("There is no horizontal identification arc!");
-      return false;
-    }
-  };
-  
-  /*! Obtain a Is_on_x_identification_2 function object */
-  Is_on_x_identification_2 is_on_x_identification_2_object() const
-  { return Is_on_x_identification_2(); }
   
   /*! A functor that indicates whether a geometric object lies on the
    * vertical identification arc.
