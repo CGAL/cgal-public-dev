@@ -839,6 +839,24 @@ public:
     }
   }
 
+  /*! Check whether left of ccb faces top right corner of parameter space. */
+  bool is_left_facing_top_right () const
+  {
+    // Note that we use the LSB of the *iter pointer as a Boolean flag.
+    return (_is_lsb_set (p_f));
+  }
+
+  /*! Set the left facing top-right  information. */
+  void set_left_facing_top_right (bool left_facing_top_right)
+  {
+    // Set the information to p_f's LSB.
+    if (left_facing_top_right) {
+      p_f = (reinterpret_cast<Face*>(_set_lsb (p_f)));
+    } else {
+      p_f = (reinterpret_cast<Face*>(_clean_pointer(p_f)));
+    }
+  }
+
   /*! Get a halfedge along the component (const version). */
   const Halfedge* halfedge () const
   {
@@ -939,6 +957,24 @@ public:
       *iter = _set_lsb (*iter);
     } else {
       *iter = _clean_pointer(*iter);
+    }
+  }
+
+  /*! Check whether left of ccb faces top right corner of parameter space. */
+  bool is_left_facing_top_right () const
+  {
+    // Note that we use the LSB of the *iter pointer as a Boolean flag.
+    return (_is_lsb_set (p_f));
+  }
+
+  /*! Set the left facing top-right  information. */
+  void set_left_facing_top_right (bool left_facing_top_right)
+  {
+    // Set the information to p_f's LSB.
+    if (left_facing_top_right) {
+      p_f = (reinterpret_cast<Face*>(_set_lsb (p_f)));
+    } else {
+      p_f = (reinterpret_cast<Face*>(_clean_pointer(p_f)));
     }
   }
 
