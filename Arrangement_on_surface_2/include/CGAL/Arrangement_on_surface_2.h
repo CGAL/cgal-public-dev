@@ -2005,56 +2005,118 @@ protected:
     CGAL_assertion(oc != NULL);
     // TODO use tag to set false if no boundary is identified
 
-    // detect whether ccb is perimetric
-    // TODO 
-    DHalfedge* from = oc->halfedge();
-    DHalfedge* curr = from;
-    DHalfedge* next = curr->next();
+    // assume nothing
+    oc->set_perimetric(false);
     
-    if (curr == next) {
-      CGAL_assertion(next->next() == curr);
-    }
+    // combination of direction and parameter space
+    // first = true -> "to", first = false -> "from"
+    std::pair< bool, Arr_parameter_space > last_spirection, curr_spirection;
 
-    boost::optional< Arr_halfedge_direction > dir;
-    
-    do {
+
+    // go over all halfedges along ccb
+    bool first = true;
+    for (DHalfedge* curr = oc->halfedge()->next(); 
+         first || curr != oc->halfedge(); 
+         curr = curr->next()) {
+      
+      if (curr->has_null_curve()) {
+        // skip fictitious edges
+        continue;
+      }
 #if 0      
-      if (!curr->has_null_curve() && !next->has_null_curve()) {
-        
-        CGAL::Sign tmp = 
-          _m_topology_traits->_sign_of_subpath(curr, next);
-        
-        if (tmp != CGAL::ZERO) {
-          switch (result) {
-          case ZERO:
-            result = tmp;
-            break;
-          default:
-            CGAL_assertion(result == -tmp || result == tmp);
-            result = CGAL::ZERO;
+      // TODO only if x-identified
+      if (m_geom_traits->is_on_x_identification_2_object()(curr->curve()) ||
+          // TODO only if y-identified
+          m_geom_traits->is_on_y_identification_2_object()(curr->curve())) {
+        // skip curves running on identification
+        continue;
+      }
+#endif
+      // determine spirection of current edge
+      CGAL::Arr_curve_end curr_src_end = 
+        (curr->direction() == CGAL::ARR_LEFT_TO_RIGHT ?
+         CGAL::ARR_MIN_END : CGAL::ARR_MAX_END);
+
+      CGAL::Arr_curve_end curr_tgt_end = 
+        (curr->direction() == CGAL::ARR_LEFT_TO_RIGHT ?
+         CGAL::ARR_MAX_END : CGAL::ARR_MIN_END);
+            
+      typename Traits_adaptor_2::Parameter_space_in_x_2 parameter_space_in_x =
+        m_geom_traits->parameter_space_in_x_2_object();
+      typename Traits_adaptor_2::Parameter_space_in_y_2 parameter_space_in_y =
+        m_geom_traits->parameter_space_in_y_2_object();
+      
+      CGAL::Arr_parameter_space curr_src_ps = parameter_space_in_x(curr->curve(), curr_src_end);
+      if (curr_src_ps == CGAL::ARR_INTERIOR) {
+        curr_src_ps = parameter_space_in_y(curr->curve(), curr_src_end);
+      }
+      
+      CGAL::Arr_parameter_space curr_tgt_ps = parameter_space_in_x(curr->curve(), curr_tgt_end);
+      if (curr_tgt_ps == CGAL::ARR_INTERIOR) {
+        curr_tgt_ps = parameter_space_in_y(curr->curve(), curr_tgt_end);
+      }
+
+      // completely interior
+      if (curr_src_ps == CGAL::ARR_INTERIOR &&
+          curr_tgt_ps == CGAL::ARR_INTERIOR) {
+        continue;
+      }
+      
+      // else fix spirection of current halfedge
+      // it's "to" if src is interior
+      bool to_bnd = (curr_src_ps == CGAL::ARR_INTERIOR);
+      curr_spirection = std::make_pair(to_bnd, (to_bnd ? curr_tgt_ps : curr_src_ps));
+      CGAL_assertion(curr_spirection.first != (curr_tgt_ps == CGAL::ARR_INTERIOR));
+
+      // TODO skip non-identified
+
+      if (first) {
+        first = false;
+        last_spirection = curr_spirection;
+        continue;
+      } 
+      
+      // determine whether there is an identification crossing from last to curr
+      bool facing_top_right = false;
+     
+      bool reset = false;
+      
+      // TOOD distinguish last in x, last in y?
+
+      std::cout << "lastto: " << last_spirection.first << std::endl;
+      std::cout << "lastps: " << last_spirection.second << std::endl;
+      std::cout << "currto: " << curr_spirection.first << std::endl;
+      std::cout << "currps: " << curr_spirection.second << std::endl;
+
+      if (last_spirection.first) { // last points to a boundary side
+        if (!curr_spirection.first) { // curr points from a boundary side
+          if ((last_spirection.second == CGAL::ARR_RIGHT_BOUNDARY && 
+               curr_spirection.second == CGAL::ARR_LEFT_BOUNDARY) ||
+              (last_spirection.second == CGAL::ARR_TOP_BOUNDARY && 
+               curr_spirection.second == CGAL::ARR_BOTTOM_BOUNDARY)) {
+            // in "positive" direction, i.e., increasing "x" or "y"
+            reset = true;
+            facing_top_right = true;
+          } 
+          if ((last_spirection.second == CGAL::ARR_LEFT_BOUNDARY && 
+               curr_spirection.second == CGAL::ARR_RIGHT_BOUNDARY) ||
+              (last_spirection.second == CGAL::ARR_BOTTOM_BOUNDARY && 
+               curr_spirection.second == CGAL::ARR_TOP_BOUNDARY)) {
+            // in "negative" direction, i.e., decreasing "x" or "y"
+            reset = true;
+            facing_top_right = true;
           }
+          // else nothing
         }
       }
-#else 
-      // TODO to pick one of
-      dir = CGAL::ARR_LEFT_TO_RIGHT;
-      dir = CGAL::ARR_RIGHT_TO_LEFT;
-      dir = boost::none;
-
-      // TODO "corner" cases
-#endif     
-      curr = next;
-      next = curr->next();
-    } while (curr != from);
-    
-    // set perimetricy
-    oc->set_perimetric(dir);
-
-    // if so, reset leftmost pointer to reflect direction of perimetricy
-    if (dir) {
-      if (oc->halfedge()->direction() != *dir) {
-        // TODO
+          
+      if (reset) {
+        oc->set_perimetric(!oc->is_perimetric());
+        oc->set_left_facing_top_right(facing_top_right); // makes only sense if indeep perimetric
       }
+      
+      // for next iteration
+      last_spirection = curr_spirection;
     }
   }
 
