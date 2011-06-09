@@ -1993,7 +1993,7 @@ protected:
   }
 
   // TODO tag dispatch for topologies without identifications
-  void _determine_ccb_perimetricy(DOuter_ccb *oc, bool b) {
+  void _determine_ccb_perimetricy(DOuter_ccb *oc, boost::mpl::bool_< false >) {
     oc->set_perimetric(false);
   }
   
@@ -2001,7 +2001,7 @@ protected:
    * Checks whether an outer ccb is perimetric and sets bit accordingly.
    * \param oc the outer ccb
    */
-  void _determine_ccb_perimetricy(DOuter_ccb *oc) {
+  void _determine_ccb_perimetricy(DOuter_ccb *oc, boost::mpl::bool_< true >) {
     CGAL_assertion(oc != NULL);
     // TODO use tag to set false if no boundary is identified
 
@@ -2119,6 +2119,13 @@ protected:
       last_spirection = curr_spirection;
     }
   }
+
+  void _determine_ccb_perimetricy(DOuter_ccb *oc) {
+    // dispatch
+    _determine_ccb_perimetricy(oc, typename Arr_has_identified_sides< Left_side_category, 
+                                                                      Bottom_side_category>::result());
+  }
+
 
 
   // TODO remove?

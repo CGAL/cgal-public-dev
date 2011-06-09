@@ -359,6 +359,44 @@ public:
       Arr_not_all_sides_non_open_tag >::type result;
 };
 
+/*!\brief Struct to check consistent tagging of identifications
+ */
+template < class ArrLeftSideCategory, class ArrBottomSideCategory >
+struct Arr_has_identified_sides {
+
+public:
+  
+  //! This instance's first template parameter
+  typedef ArrLeftSideCategory   Left_side_category;
+  
+  //! This instance's second template parameter
+  typedef ArrBottomSideCategory Bottom_side_category;
+  
+  typedef boost::mpl::bool_< true > true_;
+  typedef boost::mpl::bool_< false > false_;
+  
+  typedef boost::mpl::if_< 
+       boost::is_same< Left_side_category, Arr_identified_side_tag >,
+       true_, false_ > 
+  Left_identified;
+  
+  typedef boost::mpl::if_<
+       boost::is_same< Bottom_side_category, Arr_identified_side_tag >,
+       true_, false_ > 
+  Bottom_identified;
+
+public:
+  
+  /*!\brief
+   * boolean tag that is bool_<true> if at least one pair of opposite boundaries is identified,
+   * otherwise bool_<false>
+   */
+  // assume sane identification
+  typedef boost::mpl::or_< Left_identified, Bottom_identified > result;
+
+};
+
+
 
 /*!\brief Struct to check consistent tagging of identifications
  */
