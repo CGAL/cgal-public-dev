@@ -2021,9 +2021,10 @@ protected:
         continue;
       }
 
-      if ((boost::is_same< Left_side_category, Arr_identified_side_tag >() && 
+      // TODO EBEB: Replace with is_base_of?x
+      if ((boost::is_same< Arr_identified_side_tag, Left_side_category >() && 
            m_geom_traits->is_on_y_identification_2_object()(curr->curve())) ||
-          (boost::is_same< Bottom_side_category, Arr_identified_side_tag >() && 
+          (boost::is_same< Arr_identified_side_tag, Bottom_side_category >() && 
            m_geom_traits->is_on_x_identification_2_object()(curr->curve()))) {
         // skip curves running on identification
         std::cout << "------- Skip curve on identification" << std::endl;
@@ -2065,8 +2066,6 @@ protected:
       bool to_bnd = (curr_src_ps == CGAL::ARR_INTERIOR);
       curr_spirection = std::make_pair(to_bnd, (to_bnd ? curr_tgt_ps : curr_src_ps));
       CGAL_assertion(curr_spirection.first != (curr_tgt_ps == CGAL::ARR_INTERIOR));
-
-      // TODO skip non-identified
 
       if (first) {
         first = false;
