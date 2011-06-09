@@ -2031,7 +2031,7 @@ _locate_around_vertex(DVertex *v,
     // Move to the next pair of incident halfedges.
     curr = next;
     next = curr->next()->opposite();
-
+    
     // If we completed a full traversal around v without locating the
     // place for cv, it follows that cv overlaps and existing curve.
     if (curr == first)
@@ -2725,11 +2725,11 @@ _insert_at_vertices(const X_monotone_curve_2& cv,
       // perimetric. We use the topology traits to determine which halfedge
       // lies inside the hole (in case a hole is indeed created).
       // TODO check direction
-      prev1_to_new_oc2 = (ic1->halfedge()->direction() == CGAL::ARR_LEFT_TO_RIGHT);
+      prev1_to_new_oc2 = (ic1->is_left_facing_top_right());
 
     } else if (ic2->is_perimetric()) {
       // TODO check direction
-      prev1_to_new_oc2 = (ic1->halfedge()->direction() == CGAL::ARR_RIGHT_TO_LEFT);
+      prev1_to_new_oc2 = (!ic1->is_left_facing_top_right());
 
     } else {
       // TODO move to a function?
@@ -3167,8 +3167,8 @@ _insert_at_vertices(const X_monotone_curve_2& cv,
           // on the outer boundary of the new face).
           if (*oc_it != he1 &&
               // use direction of ccbs' leftmost pointers 
-              (*oc_it)->direction() /* *oc_it is an halfedge pointer */ !=
-              new_oc2->halfedge()->direction()) {
+              (*oc_it)->outer_ccb()->is_left_facing_top_right() != 
+              new_oc2->is_left_facing_top_right()) {
             
             // We increment the itrator before moving the outer CCB, because
             // this operation invalidates the iterator.
