@@ -1912,9 +1912,6 @@ protected:
                                         bool& at_infinity) const;
 #endif
 
-  // TODO observe directions for ccbs (esp. if perimetric) for updates,
-  //      if needed, "adapt" given he, 
-
   /*!
    * Updates the representative of a ccb that has been enhanced with a 
    * new halfedge, i.e., keep the existing one, or use the given halfedge.
@@ -1929,8 +1926,6 @@ protected:
 
     DVertex *vmin = oc->halfedge()->vertex();
     DVertex *vnew = he->vertex();
-    // TODO vmin/vnew on boundary!
-    // TODO crossed an identification? (choose vmin to be minimal on identification)
     CGAL::Comparison_result cmp = _compare_vertices_xy (vnew, vmin);
     if (cmp == LARGER) {
       return;
@@ -1939,7 +1934,11 @@ protected:
       // reset only if he is directed right to left, or 
       // allow the other direction, too, if vmin is on the left boundary
       if (he->direction() == ARR_RIGHT_TO_LEFT || 
-          vmin->parameter_space_in_x() == ARR_LEFT_BOUNDARY) {
+          vnew->parameter_space_in_x() == ARR_LEFT_BOUNDARY /* NOTE 1: Requires that vertices on identication are
+                                                             *         constructed on left boundary side; 
+                                                             * NOTE 2: Similar for bottom cannot exists, as
+                                                             *         other direction implies a smaller 
+                                                             *        x-coordinate */) {
         vmin = vnew;
         reset = true;
       }
@@ -1980,30 +1979,28 @@ protected:
    */
   void _update_ccb_without(DOuter_ccb *oc, DHalfedge *he) {
     CGAL_assertion(oc != NULL);
-    if (oc->is_perimetric()) {
-      // TODO ensure to keep orientation
-    } else {
-      // TODO ensure RIGHT_TO_LEFT halfedge
-    }
-
     if (oc->halfedge() == he) {
     // TODO implement
       oc->set_halfedge (he->prev());
     }
   }
 
-  // TODO tag dispatch for topologies without identifications
+  /*!
+   * Checks whether an outer ccb is perimetric and sets bit accordingly. 
+   * For parameter spaces with non-identified boundaries.
+   * \param oc the outer ccb
+   */
   void _determine_ccb_perimetricy(DOuter_ccb *oc, boost::mpl::bool_< false >) {
     oc->set_perimetric(false);
   }
   
   /*!
    * Checks whether an outer ccb is perimetric and sets bit accordingly.
+   * For parameter spaces with identified boundaries.
    * \param oc the outer ccb
    */
   void _determine_ccb_perimetricy(DOuter_ccb *oc, boost::mpl::bool_< true >) {
     CGAL_assertion(oc != NULL);
-    // TODO use tag to set false if no boundary is identified
 
     // assume nothing
     oc->set_perimetric(false);
@@ -2023,15 +2020,16 @@ protected:
         // skip fictitious edges
         continue;
       }
-#if 0      
-      // TODO only if x-identified
-      if (m_geom_traits->is_on_x_identification_2_object()(curr->curve()) ||
-          // TODO only if y-identified
-          m_geom_traits->is_on_y_identification_2_object()(curr->curve())) {
+
+      if ((boost::is_same< Left_side_category, Arr_identified_side_tag >() && 
+           m_geom_traits->is_on_y_identification_2_object()(curr->curve())) ||
+          (boost::is_same< Bottom_side_category, Arr_identified_side_tag >() && 
+           m_geom_traits->is_on_x_identification_2_object()(curr->curve()))) {
         // skip curves running on identification
+        std::cout << "------- Skip curve on identification" << std::endl;
         continue;
       }
-#endif
+
       // determine spirection of current edge
       CGAL::Arr_curve_end curr_src_end = 
         (curr->direction() == CGAL::ARR_LEFT_TO_RIGHT ?
@@ -2114,6 +2112,10 @@ protected:
         oc->set_perimetric(!oc->is_perimetric());
         oc->set_left_facing_top_right(facing_top_right); // makes only sense if indeep perimetric
       }
+
+      std::cout << "Occb is perimetric    : " << oc->is_perimetric() << std::endl;
+      std::cout << "Occb left if facing TR: " << oc->is_left_facing_top_right() << std::endl;
+
       
       // for next iteration
       last_spirection = curr_spirection;
