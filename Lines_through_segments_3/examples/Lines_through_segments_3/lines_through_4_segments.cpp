@@ -100,23 +100,20 @@ int main (int argc, char* args[])
         Mapped_x_monotone_curve_2;
       typedef Lines_through_segments_3::Mapped_point_2
         Mapped_point_2;
-      typedef Lines_through_segments_3::Mapped_rat_point_2
-        Mapped_rat_point_2;
 
       Mapped_general_polygon_2* polygon_obj;
       Mapped_x_monotone_curve_2* curve_obj;
       Mapped_point_2* point_obj;
-      Mapped_rat_point_2* rat_point_obj;
       Lines_through_segments_3::Mapped_transversal mapped_transversal =
         mapped_obj->mapped_transversal();
-      if (rat_point_obj =
-          boost::get<Mapped_rat_point_2>(&mapped_transversal))
-      {
-         Rat_line_3 line = mapped_obj->rational_line();
-         std::cout << "Mapped_rat_point_2 = " << *rat_point_obj << ", ";
-         std::cout << "Line = " << line << std::endl;
-      }
-      else
+      // if (rat_point_obj =
+      //     boost::get<Mapped_rat_point_2>(&mapped_transversal))
+      // {
+      //    Rat_line_3 line = mapped_obj->rational_line();
+      //    std::cout << "Mapped_rat_point_2 = " << *rat_point_obj << ", ";
+      //    std::cout << "Line = " << line << std::endl;
+      // }
+      // else
       {
          Mapped_2::Mapped_line_3 line = mapped_obj->line();
          if (curve_obj =
