@@ -149,7 +149,7 @@ public:
 
     typename Alg_kernel::Point_2 mid_p(mid_x, mid_y);
     typename Alg_kernel::Point_2 right_p(right_x, right_y);
-    typename Alg_kernel::Point_ left_p(left_x, left_y);
+    typename Alg_kernel::Point_2 left_p(left_x, left_y);
     CGAL::Orientation orient = ker->orientation_2_object()(left_p, mid_p,
                                                            right_p);
     if (orient == LEFT_TURN)
@@ -263,6 +263,19 @@ public:
   {
     return get_y_val_conic_traits(curve,x);
   }
+
+  Rational get_y_val_ratioal(const Conic_x_monotone_curve_2& curve,
+                             const Rational& x)
+  {
+     return (((-curve.u()) * x - curve.w())/(curve.t() * x + curve.v()));
+  }
+
+  Rational get_y_val_ratioal(const Rational_arc_x_monotone_curve_2& curve,
+                             const Rational& x)
+  {
+     CGAL_error_msg("Not implemented.");
+     return 0;
+  }
       
   template <typename Curve_2,typename Number_type>
   Algebraic get_y_val_conic_traits(const Curve_2& curve, const Number_type& x)
@@ -294,12 +307,41 @@ public:
     return get_y_val_rational_arc_traits(curve,x);
   }
 
+  Rational get_x_val(const Conic_curve_2& curve,
+                     const Rational& y)
+  {
+     return (-curve.w() - curve.v() * y) / 
+        (curve.t() * y + curve.u());
+  }
+
+  Rational get_x_val_of_vertical_cruve(
+     const Conic_x_monotone_curve_2& curve)
+  {
+     CGAL_assertion(is_vertical(curve));
+     return (-curve.w()/
+             curve.u());
+  }
+
+  Rational get_x_val_of_vertical_cruve(
+     const Rational_arc_x_monotone_curve_2& curve)
+   {
+     CGAL_error_msg("Not implemented.");
+     return 0;
+  }
+
+  Rational get_x_val(const Conic_x_monotone_curve_2& curve,
+                     const Rational& y)
+  {
+     return (-curve.w() - curve.v() * y) / 
+        (curve.t() * y + curve.u());
+  }
+
   Rational get_x_val(const Rational_arc_x_monotone_curve_2& curve,
                      const Rational& y)
   {
     return get_x_val_rational_arc_traits(curve,y);
   }
-            
+           
   Rational get_x_val(const Rational_arc_curve_2& curve,
                      const Rational& y)
   {
@@ -575,6 +617,18 @@ public:
             arc.target_infinite_in_x() == CGAL::ARR_INTERIOR &&
             arc.source_x() == arc.target_x());
   }
+
+  bool is_vertical(const Rational_arc_x_monotone_curve_2& arc)
+  {
+    return (arc.source_infinite_in_x() == CGAL::ARR_INTERIOR &&
+            arc.target_infinite_in_x() == CGAL::ARR_INTERIOR &&
+            arc.source_x() == arc.target_x());
+  }
+
+  bool is_vertical(const Conic_x_monotone_curve_2& curve)
+  {
+     return (curve.t() == 0 && curve.v() == 0);
+  }
          
   void create_curve_on_plane_arr(Rational_arc_curve_2& new_cv,
                                  const Rational_arc_x_monotone_curve_2& old_cv)
@@ -752,6 +806,75 @@ public:
 
     return false;
   }
+
+  bool is_horizontal(const Rational_arc_x_monotone_curve_2& curve)
+  {
+     CGAL_error_msg("Not implemented.");
+     return false;
+  }
+
+  bool has_y_value_at_x(const Rational_arc_x_monotone_curve_2& curve,
+                        const Rational& x)
+  {
+     CGAL_error_msg("Not implemented.");
+     return 0;
+  }
+
+  bool has_y_value_at_x(const Conic_x_monotone_curve_2& curve,
+                        const Rational& x)
+  {
+     return (curve.t() * x + curve.v() != 0);
+  }
+
+  bool has_x_value_at_y(const Rational_arc_x_monotone_curve_2& curve,
+                        const Rational& y)
+  {
+     CGAL_error_msg("Not implemented.");
+     return 0;
+  }
+
+  bool has_x_value_at_y(const Conic_x_monotone_curve_2& curve,
+                        const Rational& y)
+  {
+     return ((curve.t() * y + curve.u()) != 0);
+  }
+
+  bool has_x_value_at_y(const Conic_curve_2& curve,
+                        const Rational& y)
+  {
+     return ((curve.t() * y + curve.u()) != 0);
+  }
+   
+  bool is_horizontal(const Conic_curve_2& curve)
+  {
+     return (curve.t() == 0 && curve.u() == 0); /* Horizontal line segment*/
+  }
+
+  bool is_horizontal(const Conic_x_monotone_curve_2& curve)
+  {
+     return (curve.t() == 0 && curve.u() == 0); /* Horizontal line segment*/
+  }
+
+  Rational get_y_val_of_horizontal_curve(const Conic_curve_2& curve)
+  {
+     CGAL_assertion(is_horizontal(curve));
+     return (-curve.w()/
+             curve.v());
+  }
+
+  Rational get_y_val_of_horizontal_curve(const Conic_x_monotone_curve_2& curve)
+  {
+     CGAL_assertion(is_horizontal(curve));
+     return (-curve.w()/
+             curve.v());
+  }
+
+
+  Rational get_y_val_of_horizontal_curve(const Rational_arc_x_monotone_curve_2& curve)
+  {
+     CGAL_error_msg("Not implemented.");
+     return 0;
+  }
          
   /**************************************************************
    * The following function adapts creation of rational curve_2
@@ -907,6 +1030,8 @@ public:
 
     y = (y_numer / y_denom);
   } 
+
+
 };
 
 template <typename Traits_3_>

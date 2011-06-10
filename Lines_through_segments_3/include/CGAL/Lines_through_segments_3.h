@@ -67,8 +67,8 @@ public:
     Mapped_x_monotone_curve_2;
   typedef typename Lines_through_segments_mapped_2<Traits_3>::Point_2
                                                         Mapped_point_2;
-  typedef typename Lines_through_segments_mapped_2<Traits_3>::Rational_point_2
-  Mapped_rat_point_2;
+  // typedef typename Lines_through_segments_mapped_2<Traits_3>::Rational_point_2
+  // Mapped_rat_point_2;
    
   typedef typename Lines_through_segments_mapped_2<Traits_3>::General_polygon_2  
                                                         Mapped_general_polygon_2;
@@ -311,7 +311,7 @@ public:
   typedef typename Base::Line_3              Line_3;
   typedef typename LTS_output_obj::Mapped_2_with_arr    Mapped_2;
   typedef typename Mapped_2::Point_2                    Mapped_point_2;
-  typedef typename Mapped_2::Rational_point_2           Mapped_rat_point_2;
+//  typedef typename Mapped_2::Rational_point_2           Mapped_rat_point_2;
   typedef typename Mapped_2::X_monotone_curve_2
     Mapped_x_monotone_curve_2;
   typedef typename Mapped_2::General_polygon_2

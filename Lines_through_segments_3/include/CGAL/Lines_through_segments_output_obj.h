@@ -68,13 +68,14 @@ public:
 
   typedef typename Traits_3::Alg_kernel::Point_3        Alg_point_3;
    
-  typedef typename Rational_kernel::Point_2             Rational_point_2;
+//  typedef typename Rational_kernel::Point_2             Rational_point_2;
   typedef typename Traits_2::X_monotone_curve_2         X_monotone_curve_2;
   typedef typename Traits_3::Traits_arr_on_plane_2::Point_2 Point_2;
   typedef CGAL::General_polygon_2<Traits_2>             General_polygon_2;
 
-   typedef boost::variant<Point_2, X_monotone_curve_2, General_polygon_2,
-                          Rational_point_2>
+   typedef boost::variant<Point_2, X_monotone_curve_2, General_polygon_2// ,
+                          // Rational_point_2
+                          >
     Mapped_transversal;
       
 private:
@@ -92,15 +93,6 @@ public:
   }
 
   Lines_through_segments_mapped_2(const Point_2& p, 
-                                  const Rational_segment_3& s1,
-                                  const Rational_segment_3& s2)
-  {
-    m_mapped_transversal = p;
-    m_s1 = &s1;
-    m_s2 = &s2;
-  }
-
-  Lines_through_segments_mapped_2(const Rational_point_2& p, 
                                   const Rational_segment_3& s1,
                                   const Rational_segment_3& s2)
   {
@@ -202,25 +194,25 @@ public:
     return common_line;
   }
 
-  Rational_line_3 rational_line()
-  {
-     Rational_point_2* rpoint_obj;
-     if ((rpoint_obj = boost::get<Rational_point_2>(&m_mapped_transversal)))
-     {
-        Rational_line_3 common_line;
-        typedef Lines_through_segments_general_functions<Traits_3> LTS_g_func;
-        LTS_g_func m_g_func;
+  // Rational_line_3 rational_line()
+  // {
+  //    Rational_point_2* rpoint_obj;
+  //    if ((rpoint_obj = boost::get<Rational_point_2>(&m_mapped_transversal)))
+  //    {
+  //       Rational_line_3 common_line;
+  //       typedef Lines_through_segments_general_functions<Traits_3> LTS_g_func;
+  //       LTS_g_func m_g_func;
 
-        CGAL_assertion_code(int status =)
-           m_g_func.get_line_from_intersection_point(rpoint_obj->x(), 
-                                                     rpoint_obj->y(), 
-                                                     *m_s1, *m_s2,
-                                                     common_line);
-        CGAL_assertion(status == LTS_g_func::CGAL_QUERY_SUCCEED);
-        return common_line;
-     }
-     CGAL_error_msg("The line is not rational");
-  }
+  //       CGAL_assertion_code(int status =)
+  //          m_g_func.get_line_from_intersection_point(rpoint_obj->x(), 
+  //                                                    rpoint_obj->y(), 
+  //                                                    *m_s1, *m_s2,
+  //                                                    common_line);
+  //       CGAL_assertion(status == LTS_g_func::CGAL_QUERY_SUCCEED);
+  //       return common_line;
+  //    }
+  //    CGAL_error_msg("The line is not rational");
+  // }
    
   /* Obtain a representative line. */
   Mapped_line_3 line()
@@ -243,12 +235,12 @@ private:
   class Mapped_to_string : public boost::static_visitor<std::string>
   {
   public:
-    std::string operator()(const Rational_point_2& to_print) const
-    {
-      std::ostringstream o;
-      o << to_print << std::endl;
-      return o.str();
-    }
+    // std::string operator()(const Rational_point_2& to_print) const
+    // {
+    //   std::ostringstream o;
+    //   o << to_print << std::endl;
+    //   return o.str();
+    // }
 
     std::string operator()(const Point_2& to_print) const
     {
@@ -280,10 +272,10 @@ private:
   {
   public:
          
-    Point_2 operator()(const Rational_point_2& point) const
-    {
-       CGAL_error_msg("For rational line use rational_line()");
-    }
+    // Point_2 operator()(const Rational_point_2& point) const
+    // {
+    //    CGAL_error_msg("For rational line use rational_line()");
+    // }
 
     Point_2 operator()(const Point_2& point) const
     {
@@ -357,14 +349,14 @@ public:
      m_arr = NULL;
   }
 
-  Lines_through_segments_mapped_2_with_arrangement
-  (const typename Base::Rational_point_2& point, 
-   const typename Base::Rational_segment_3& s1,
-   const typename Base::Rational_segment_3& s2) :
-    Base(point,s1,s2)
-  {
-     m_arr = NULL;
-  }
+  // Lines_through_segments_mapped_2_with_arrangement
+  // (// const typename Base::Rational_point_2& point, 
+  //  const typename Base::Rational_segment_3& s1,
+  //  const typename Base::Rational_segment_3& s2) :
+  //   Base(point,s1,s2)
+  // {
+  //    m_arr = NULL;
+  // }
 
    template <typename Input_iterator>
    Lines_through_segments_mapped_2_with_arrangement

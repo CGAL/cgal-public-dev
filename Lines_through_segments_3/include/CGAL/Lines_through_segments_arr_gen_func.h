@@ -179,33 +179,32 @@ public:
    bool is_degenerate_hyp(Halfedge_around_vertex_const_circulator first,
                           Rational_point_2& output_p)
    {
+      Lines_through_segments_traits_on_plane_adapt<
+      Traits_3> traits_2_adapt;
+
       Halfedge_around_vertex_const_circulator curr = first;
       Rational y,x;
       do {
-         if (curr->curve().t() == 0 && curr->curve().u() == 0) /* Horizontal line segment*/
+         if (traits_2_adapt.is_horizontal(curr->curve())) /* Horizontal line segment*/
          {
-            y = (-curr->curve().w()/
-                 curr->curve().v());
+            y = traits_2_adapt.get_y_val_of_horizontal_curve(curr->curve());
             curr++;
             curr++;
-            if ((curr->curve().t() * y + curr->curve().u()) == 0)
+            if (!traits_2_adapt.has_x_value_at_y(curr->curve(), y))
                return false;
-            x = (-curr->curve().w() - curr->curve().v() * y) / 
-               (curr->curve().t() * y + curr->curve().u());
+            x = traits_2_adapt.get_x_val(curr->curve(),y);
             output_p = Rational_point_2(x,y);
             return true;
          }
-         else if (curr->curve().t() == 0 && curr->curve().v() == 0) /* Vertical line segment*/
+         else if (traits_2_adapt.is_vertical( curr->curve())) /* Vertical line segment*/
          {
-            x = (-curr->curve().w()/
-                 curr->curve().u());
+            x = traits_2_adapt.get_x_val_of_vertical_cruve(curr->curve());
             curr++;
             curr++;
-            if (curr->curve().t() * x + curr->curve().v() == 0)
+            if (!traits_2_adapt.has_y_value_at_x(curr->curve(), x))
                return false;
             
-            y = (-curr->curve().w() - curr->curve().u() * x) / 
-               (curr->curve().t() * x + curr->curve().v());
+            y = traits_2_adapt.get_y_val_ratioal(curr->curve(), x);
             output_p = Rational_point_2(x,y);
             return true;
          }
@@ -443,6 +442,7 @@ public:
               << std::endl;
 #endif
             Rational_point_2 rp;
+
             bool is_rational = (rational_output && 
                                 is_degenerate_hyp(vit->incident_halfedges(),
                                                   rp));
@@ -453,12 +453,14 @@ public:
                Traits_3, typename Arr_on_plane::Dcel::Ext_obj> Mapped_2_with_arr;
                if (is_rational)
                {
-                  Mapped_2_with_arr output_point(rp, s1, s2);
-                  output_point.set_arrangement(&arr_on_plane);
+                  Rational_line_3 output_line;
+                  m_g_func.get_line_from_intersection_point(rp.x(), rp.y(), s1, s2,
+                                                            output_line);
+
                   insert_transversal_to_output(insert_itertor,
-                                           output_point,
-                                           With_segments(),
-                                           &s1, &s2, S3, S4);
+                                               output_line,
+                                               With_segments(),
+                                               &s1, &s2, S3, S4);
                }
                else
                {
@@ -474,9 +476,11 @@ public:
             {
                if (is_rational)
                {
-                  Mapped_2 output_point(rp, s1, s2);
+                  Rational_line_3 output_line;
+                  m_g_func.get_line_from_intersection_point(rp.x(), rp.y(), s1, s2,
+                                                            output_line);
                   insert_transversal_to_output(insert_itertor,
-                                               output_point,
+                                               output_line,
                                                With_segments(),
                                                &s1, &s2, S3, S4);
 
