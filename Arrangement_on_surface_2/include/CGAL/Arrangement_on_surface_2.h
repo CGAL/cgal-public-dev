@@ -1977,10 +1977,13 @@ protected:
    * \param he deleted halfedge
    * \return the updated representative halfedge
    */
+  // NOTE: must be called before edge is actually removed
+  // TODO EBEB get rid of this restriction?
   void _update_ccb_without(DOuter_ccb *oc, DHalfedge *he) {
     CGAL_assertion(oc != NULL);
     if (oc->halfedge() == he) {
-    // TODO implement
+      // TODO implement
+      
       oc->set_halfedge (he->prev());
     }
   }

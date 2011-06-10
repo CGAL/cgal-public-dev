@@ -4243,7 +4243,7 @@ _is_inside_new_face (const DHalfedge *prev1,
 template<class GeomTraits, class TopTraits>
 typename Arrangement_on_surface_2<GeomTraits, TopTraits>::DFace*
 Arrangement_on_surface_2<GeomTraits, TopTraits>::
-_remove_edge (DHalfedge *e, bool remove_source, bool remove_target)
+_remove_edge (DHalfedge *e, bool remove_source, bool remove_target) // TODO NEW VERSION
 {
   // Get the pair of twin edges to be removed, the connected components they
   // belong to and their incident faces.
@@ -4255,8 +4255,8 @@ _remove_edge (DHalfedge *e, bool remove_source, bool remove_target)
   DInner_ccb  *ic2 = (he2->is_on_inner_ccb()) ? he2->inner_ccb() : NULL;
   DOuter_ccb  *oc2 = (ic2 == NULL) ? he2->outer_ccb() : NULL;
   DFace       *f2 = (oc2 != NULL) ? oc2->face() : ic2->face();
-  DHalfedge   *prev1 = NULL;
-  DHalfedge   *prev2 = NULL;
+  DHalfedge   *prev1 = he1->prev();
+  DHalfedge   *prev2 = he2->prev();
 
   // TODO IMPLEMENT LEFTMOST and CCB UPDATES FOR _remove_edge 
 
@@ -4373,18 +4373,20 @@ _remove_edge (DHalfedge *e, bool remove_source, bool remove_target)
 
       // Remove the two halfedges from the boundary chain by connecting
       // he1's predecessor with he2's successor.
-      prev1 = he1->prev();
       prev1->set_next (he2->next());
 
       // In case the halfedges to be deleted are represantatives of their
       // CCB (note that both should belong to the same CCB, be it an outer
       // CCB or an inner one), make prev1 the components representative.
-      if (oc1 != NULL) {
-        _update_ccb_without(oc1, he2); // both are removed
-        _update_ccb_without(oc1, he1);
-      } else if (ic1 != NULL) {
-        _update_ccb_without(ic1, he2); // both are removed
-        _update_ccb_without(ic1, he1);
+      if (oc1 != NULL && (oc1->halfedge() == he1 ||
+                          oc1->halfedge() == he2))
+      {
+        oc1->set_halfedge (prev1);
+      }
+      else if (ic1 != NULL && (ic1->halfedge() == he1 ||
+                               ic1->halfedge() == he2))
+      {
+        ic1->set_halfedge (prev1);
       }
 
       // In case he2 is the representative halfedge of its target vertex,
@@ -4441,9 +4443,6 @@ _remove_edge (DHalfedge *e, bool remove_source, bool remove_target)
     // can use the two predecessor halfedges of he1 and he2.
     bool        add_inner_ccb = false;
 
-    prev1 = he1->prev();
-    prev2 = he2->prev();
-
     if (ic1 != NULL && ic1 == ic2)
     {
       // If both halfedges lie on the same inner component (hole) inside the
@@ -4465,7 +4464,7 @@ _remove_edge (DHalfedge *e, bool remove_source, bool remove_target)
 
       // We first make prev1 the new representative halfedge of the first
       // inner CCB.
-      _update_ccb_without(ic1, he1);
+      ic1->set_halfedge (prev1);
 
       // Create a new component that represents the new hole we split.
       DInner_ccb     *new_ic = _dcel().new_inner_ccb();
@@ -4477,11 +4476,8 @@ _remove_edge (DHalfedge *e, bool remove_source, bool remove_target)
       // component.
       DHalfedge       *curr;
 
-      for (curr = he1->next(); curr != he2; curr = curr->next()) {
+      for (curr = he1->next(); curr != he2; curr = curr->next())
         curr->set_inner_ccb (new_ic);
-        // each edge can point to the leftmost vertex 
-        _update_ccb_with(new_ic, curr);
-      }
 
       // Notify the observers that the hole has been split.
       _notify_after_split_inner_ccb (Face_handle (f1),
@@ -4526,7 +4522,6 @@ _remove_edge (DHalfedge *e, bool remove_source, bool remove_target)
 
       // If both halfedges are incident to the same outer CCB of their
       // face (case 3.2), we have to distinguish two sub-cases:
-      // TODO use direction of ccb
       if (m_topol_traits.hole_creation_after_edge_removal (he1))
       {
         // We have to create a new hole in the interior of the incident face
@@ -4557,18 +4552,15 @@ _remove_edge (DHalfedge *e, bool remove_source, bool remove_target)
         // component.
         DHalfedge       *curr;
 
-        for (curr = he1->next(); curr != he2; curr = curr->next()) {
+        for (curr = he1->next(); curr != he2; curr = curr->next())
           curr->set_inner_ccb (new_ic);
-          // each edge can point to the leftmost vertex 
-          _update_ccb_with(new_ic, curr);
-        }
 
         // As the outer CCB of f1 may be represented by any of the
         // halfedges in between he1 -> ... -> he2 (the halfedges in between
         // represent the outer boundary of the new hole that is formed),
         // We represent the outer boundary of f1 by prev1, which definately
         // stays on the outer boundary.
-        oc1->set_halfedge (prev1); // TODO UPDATE
+        oc1->set_halfedge (prev1);
 
         // Notify the observers that a new hole has been formed.
         Ccb_halfedge_circulator   hccb = (Halfedge_handle(he1->next()))->ccb();
@@ -4591,7 +4583,6 @@ _remove_edge (DHalfedge *e, bool remove_source, bool remove_target)
 
         f1->add_outer_ccb (new_oc, he1->next());
         new_oc->set_face (f1);
-        // TODO leftmost
 
         // Associate all halfedges from he1 until he2 with the new CCB.
         DHalfedge       *curr;
@@ -4603,7 +4594,7 @@ _remove_edge (DHalfedge *e, bool remove_source, bool remove_target)
         // halfedges in between he1 -> ... -> he2 (the halfedges in between
         // are on the new outer CCB we have just created), we represent the
         // former outer CCB by prev1, which definately stays on it.
-        oc1->set_halfedge (prev1); // TODO UPDATE
+        oc1->set_halfedge (prev1);
 
         // Notify the observers that a new outer CCB has been formed.
         Ccb_halfedge_circulator   hccb = (Halfedge_handle(he1->next()))->ccb();
@@ -4668,8 +4659,6 @@ _remove_edge (DHalfedge *e, bool remove_source, bool remove_target)
       do
       {
         curr->set_inner_ccb (new_ic);
-        // each edge can point to the leftmost vertex 
-        _update_ccb_with(new_ic, curr);
         curr = curr->next();
       } while (curr != prev1);
 
@@ -4684,6 +4673,8 @@ _remove_edge (DHalfedge *e, bool remove_source, bool remove_target)
     return (f1);
   }
 
+  CGAL_assertion(f1 != f2);
+
   // The two incident faces are not the same - in this case, the edge we are
   // about to delete separates these two faces. We therefore have to delete
   // one of these faces and merge it with the other face.
@@ -4695,9 +4686,6 @@ _remove_edge (DHalfedge *e, bool remove_source, bool remove_target)
   // face.
   DHalfedge   *curr;
 
-  prev1 = he1->prev();
-  prev2 = he2->prev();
-
   CGAL_assertion (ic1 == NULL || ic2 == NULL);
 
   if (ic1 == NULL && ic2 == NULL)
@@ -4706,7 +4694,6 @@ _remove_edge (DHalfedge *e, bool remove_source, bool remove_target)
 
     // Both halfedges lie on the outer boundary of their incident faces
     // (case 3.4). We have to distinguish two possible sub-cases.
-      // TODO use direction of ccb
     if (m_topol_traits.hole_creation_after_edge_removal (he1))
     {
       // We have to remove the outer CCBs of f1 and f2 that he1 and he2 lie
@@ -4760,7 +4747,8 @@ _remove_edge (DHalfedge *e, bool remove_source, bool remove_target)
 
     // In case he1, which is about to be deleted, is a representative
     // halfedge of outer component of f1, we replace it by its predecessor.
-    _update_ccb_without(oc1, he1);
+    if (oc1->halfedge() == he1)
+      oc1->set_halfedge (prev1);
 
     // Move the isolated vertices inside f2 to f1.
     DIso_vertex_iter    iv_it = f2->isolated_vertices_begin();
@@ -4841,9 +4829,6 @@ _remove_edge (DHalfedge *e, bool remove_source, bool remove_target)
       do
       {
         curr->set_inner_ccb (new_ic);
-        // each edge can point to the leftmost vertex 
-        _update_ccb_with(new_ic, curr);
-
         curr = curr->next();
       } while (curr != prev1);
 
@@ -4876,9 +4861,6 @@ _remove_edge (DHalfedge *e, bool remove_source, bool remove_target)
     DFace   *tf = f1;
     f1 = f2;
     f2 = tf;
-    
-    prev1 = he1->prev();
-    prev2 = he2->prev();
   }
 
   // By removing the edge we open a closed face f2 contained in f1. By doing
@@ -4917,10 +4899,11 @@ _remove_edge (DHalfedge *e, bool remove_source, bool remove_target)
   }
         
   // Notice that f2 will be merged with f1, but its boundary will still be
-  // a hole inside this face. So we need to 
-  // update the representative of ic1 without he1.
-  _update_ccb_without(ic1, he1);
-
+  // a hole inside this face. In case he1 is a represantative of this hole,
+  // replace it by its predecessor.
+  if (ic1->halfedge() == he1)
+    ic1->set_halfedge (prev1);
+  
   // If he1 or he2 are the incident halfedges to their target vertices,
   // we replace them by the appropriate predecessors.
   if (he1->vertex()->halfedge() == he1)
