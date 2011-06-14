@@ -70,12 +70,20 @@ public:
       agg_op(*res, *verts, *(res->traits_adaptor()));
     agg_op.sweep_arrangements(i, j, jump, arr_vec);
 
-    for(unsigned int count=i; count<=j; count+=jump)
-    {
-      delete (arr_vec[count].first);
-      delete (arr_vec[count].second);
-    }
-    
+	 //create a parallel region with number of threads set to maxthreads
+	#ifdef _OPENMP
+	#pragma omp parallel num_threads(maxthreads)
+	#endif
+	{		
+		#ifdef _OPENMP
+		#pragma omp for
+		#endif
+		for(int count=i; count<=j; count+=jump)
+		{
+			delete (arr_vec[count].first);
+			delete (arr_vec[count].second);			
+		}
+    } //end omp parallel
     arr_vec[i].first = res;
     arr_vec[i].second = verts;
   }
