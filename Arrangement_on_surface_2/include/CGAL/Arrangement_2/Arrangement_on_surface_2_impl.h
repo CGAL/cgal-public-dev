@@ -4243,7 +4243,7 @@ _is_inside_new_face (const DHalfedge *prev1,
 template<class GeomTraits, class TopTraits>
 typename Arrangement_on_surface_2<GeomTraits, TopTraits>::DFace*
 Arrangement_on_surface_2<GeomTraits, TopTraits>::
-_remove_edge (DHalfedge *e, bool remove_source, bool remove_target) // TODO NEW VERSION
+_remove_edge (DHalfedge *e, bool remove_source, bool remove_target)
 {
   // Get the pair of twin edges to be removed, the connected components they
   // belong to and their incident faces.
@@ -4286,6 +4286,8 @@ _remove_edge (DHalfedge *e, bool remove_source, bool remove_target) // TODO NEW 
       // Erase the inner CCB from the incident face and delete the
       // corresponding component.      
       f1->erase_inner_ccb (ic1);
+
+      // Remark: No leftmost pointer remains and perimetricy information does also not change!
 
       _dcel().delete_inner_ccb (ic1);
 
@@ -4368,6 +4370,7 @@ _remove_edge (DHalfedge *e, bool remove_source, bool remove_target) // TODO NEW 
       {
         he1 = he2;
         he2 = he1->opposite();
+        std::swap(prev1, prev2);
         remove_tip_vertex = remove_source;
       }
 
@@ -4378,6 +4381,7 @@ _remove_edge (DHalfedge *e, bool remove_source, bool remove_target) // TODO NEW 
       // In case the halfedges to be deleted are represantatives of their
       // CCB (note that both should belong to the same CCB, be it an outer
       // CCB or an inner one), make prev1 the components representative.
+      // TODO 
       if (oc1 != NULL && (oc1->halfedge() == he1 ||
                           oc1->halfedge() == he2))
       {
