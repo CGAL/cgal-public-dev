@@ -812,7 +812,13 @@ public:
 private:
 
   Face               *p_f;    // The face that contains the CCB in its interior.
+                              // The LSB of the pointer indicates whether
+                              // the left of the ccb is in facing topright corner
+                              // of the parameter space (or not).
   Outer_ccb_iterator  iter;   // The outer CCB identifier.
+                              // The LSB of the pointer indicates whether
+                              // whether the ccb is perimetric (or not).
+
 
 public:
 
@@ -932,8 +938,13 @@ public:
 
 private:
 
-  Face               *p_f;    // The face the contains the CCB in its interior.
+  Face               *p_f;    // The face that contains the CCB in its interior.
+                              // The LSB of the pointer indicates whether
+                              // the left of the ccb is in facing topright corner
+                              // of the parameter space (or not).
   Inner_ccb_iterator  iter;   // The inner CCB identifier.
+                              // The LSB of the pointer indicates whether
+                              // whether the ccb is perimetric (or not).
 
 public:
 
