@@ -69,8 +69,7 @@ public:
   typedef typename Dcel::Vertex                           Vertex;
   typedef typename Dcel::Halfedge                         Halfedge;
   typedef typename Dcel::Face                             Face;
-  typedef typename Dcel::Outer_ccb                        Outer_ccb;
-  typedef typename Dcel::Inner_ccb                        Inner_ccb;
+  typedef typename Dcel::Ccb                              Ccb;
   typedef typename Dcel::Isolated_vertex                  Isolated_vertex;
   //@}
 
@@ -84,7 +83,7 @@ protected:
   // Data members:
   Dcel                m_dcel;       // The DCEL.
 
-  const Traits_adaptor_2 * traits;       // The geometry-traits adaptor.
+  const Traits_adaptor_2 * traits;  // The geometry-traits adaptor.
   bool                own_traits;   // Inidicate whether we should evetually
                                     // free the traits object.
 

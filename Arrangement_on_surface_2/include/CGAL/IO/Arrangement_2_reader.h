@@ -60,8 +60,7 @@ protected:
   typedef typename Arr_accessor::Dcel_vertex              DVertex;
   typedef typename Arr_accessor::Dcel_halfedge            DHalfedge;
   typedef typename Arr_accessor::Dcel_face                DFace;
-  typedef typename Arr_accessor::Dcel_outer_ccb           DOuter_ccb;
-  typedef typename Arr_accessor::Dcel_inner_ccb           DInner_ccb;
+  typedef typename Arr_accessor::Dcel_ccb                 DCcb;
   typedef typename Arr_accessor::Dcel_isolated_vertex     DIso_vert;
   
   // Data members:
@@ -257,7 +256,7 @@ protected:
     // Read the outer CCBs of the face.
     formatter.read_outer_ccbs_begin();
 
-    DOuter_ccb  *new_occb;
+    DCcb        *new_occb;
     const Size   n_occbs = formatter.read_size ("number_of_outer_ccbs");
     DHalfedge   *he;
     Size         n, k;
@@ -278,7 +277,7 @@ protected:
     // Read the inner CCBs of the face.
     formatter.read_inner_ccbs_begin();
 
-    DInner_ccb  *new_iccb;
+    DCcb        *new_iccb;
     const Size   n_iccbs = formatter.read_size ("number_of_inner_ccbs");
 
     for (k = 0; k < n_iccbs; k++)
@@ -338,8 +337,8 @@ protected:
   template <class Formatter>
   DHalfedge* _read_ccb (Formatter& formatter, 
                         Size boundary_size,
-                        DOuter_ccb *p_outer,
-                        DInner_ccb *p_inner)
+                        DCcb *p_outer,
+                        DCcb *p_inner)
   {
     CGAL_assertion ((p_outer != NULL && p_inner == NULL) ||
                     (p_outer == NULL && p_inner != NULL));

@@ -256,13 +256,9 @@ class Arr_face_base
 {
 public:
 
-  typedef std::list<void*>                      Outer_ccbs_container;
-  typedef Outer_ccbs_container::iterator        Outer_ccb_iterator;
-  typedef Outer_ccbs_container::const_iterator  Outer_ccb_const_iterator;
-
-  typedef std::list<void*>                      Inner_ccbs_container;
-  typedef Inner_ccbs_container::iterator        Inner_ccb_iterator;
-  typedef Inner_ccbs_container::const_iterator  Inner_ccb_const_iterator;
+  typedef std::list<void*>                      Ccbs_container;
+  typedef Ccbs_container::iterator              Ccb_iterator;
+  typedef Ccbs_container::const_iterator        Ccb_const_iterator;
 
   typedef std::list<void*>                      Isolated_vertices_container;
   typedef Isolated_vertices_container::iterator Isolated_vertex_iterator;
@@ -278,8 +274,8 @@ protected:
   };
 
   int                          flags;      // Face flags.
-  Outer_ccbs_container         outer_ccbs; // The outer CCBs of the faces.
-  Inner_ccbs_container         inner_ccbs; // The inner CCBs of the face.
+  Ccbs_container               outer_ccbs; // The outer CCBs of the faces.
+  Ccbs_container               inner_ccbs; // The inner CCBs of the face.
   Isolated_vertices_container  iso_verts;  // The isolated vertices inside
                                            // the face.
 
@@ -329,8 +325,7 @@ public:
 template <class V, class H, class F> class Arr_vertex;
 template <class V, class H, class F> class Arr_halfedge;
 template <class V, class H, class F> class Arr_face;
-template <class V, class H, class F> class Arr_outer_ccb;
-template <class V, class H, class F> class Arr_inner_ccb;
+template <class V, class H, class F> class Arr_ccb;
 template <class V, class H, class F> class Arr_isolated_vertex;
 
 /*! \class
@@ -415,8 +410,7 @@ public:
   typedef Arr_vertex<V,H,F>     Vertex;
   typedef Arr_halfedge<V,H,F>   Halfedge;
   typedef Arr_face<V,H,F>       Face;
-  typedef Arr_outer_ccb<V,H,F>  Outer_ccb;
-  typedef Arr_inner_ccb<V,H,F>  Inner_ccb;
+  typedef Arr_ccb<V,H,F>        Ccb;
 
   /*! Default constructor. */
   Arr_halfedge()
@@ -537,24 +531,24 @@ public:
    * Get an incident outer CCB (const version).
    * \pre The edge does not lie on an inner CCB.
    */
-  const Outer_ccb* outer_ccb () const
+  const Ccb* outer_ccb () const
   {
     CGAL_precondition (! is_on_inner_ccb());
-    return (reinterpret_cast<const Outer_ccb*>(this->p_comp));
+    return (reinterpret_cast<const Ccb*>(this->p_comp));
   }
 
   /*!
    * Get an incident outer CCB (non-const version).
    * \pre The edge does not lie on an inner CCB.
    */
-  Outer_ccb* outer_ccb ()
+  Ccb* outer_ccb ()
   {
     CGAL_precondition (! is_on_inner_ccb());
-    return (reinterpret_cast<Outer_ccb*>(this->p_comp));
+    return (reinterpret_cast<Ccb*>(this->p_comp));
   }
 
   /*! Set the incident outer CCB. */
-  void set_outer_ccb (Outer_ccb *oc)
+  void set_outer_ccb (Ccb *oc)
   { 
     // Set the component pointer and reset its LSB.
     this->p_comp = oc;
@@ -564,24 +558,24 @@ public:
    * Get an incident inner CCB (const version).
    * \pre The edge lies on an inner CCB.
    */
-  const Inner_ccb* inner_ccb () const 
+  const Ccb* inner_ccb () const 
   {     
     CGAL_precondition (is_on_inner_ccb());
-    return (reinterpret_cast<const Inner_ccb*>(_clean_pointer (this->p_comp)));
+    return (reinterpret_cast<const Ccb*>(_clean_pointer (this->p_comp)));
   }
 
   /*!
    * Get an incident inner CCB (non-const version).
    * \pre The edge lies on an inner CCB.
    */
-  Inner_ccb* inner_ccb () 
+  Ccb* inner_ccb () 
   {
     CGAL_precondition (is_on_inner_ccb());
-    return (reinterpret_cast<Inner_ccb*> (_clean_pointer (this->p_comp)));
+    return (reinterpret_cast<Ccb*> (_clean_pointer (this->p_comp)));
   }
 
   /*! Set the incident inner CCB. */
-  void set_inner_ccb (Inner_ccb *ic)
+  void set_inner_ccb (Ccb *ic)
   { 
     // Set the component pointer and set its LSB.
     this->p_comp = _set_lsb (ic);
@@ -601,11 +595,10 @@ public:
   typedef Arr_vertex<V,H,F>            Vertex;
   typedef Arr_halfedge<V,H,F>          Halfedge;
   typedef Arr_face<V,H,F>              Face;
-  typedef Arr_outer_ccb<V,H,F>         Outer_ccb;
-  typedef Arr_inner_ccb<V,H,F>         Inner_ccb;
+  typedef Arr_ccb<V,H,F>               Ccb;
   typedef Arr_isolated_vertex<V,H,F>   Isolated_vertex;
 
-  typedef Inner_ccb                    Hole;
+  typedef Ccb                          Hole;
   
 private:
 
@@ -622,12 +615,12 @@ public:
   {}
 
   // Definition of the outer CCB iterators:
-  typedef Iterator_project<typename F::Outer_ccb_iterator, 
-                           _Ccb_to_halfedge_cast>   Outer_ccb_iterator;
+  typedef Iterator_project<typename F::Ccb_iterator, 
+                           _Ccb_to_halfedge_cast>   Ccb_iterator;
 
-  typedef Iterator_project<typename F::Outer_ccb_const_iterator,
+  typedef Iterator_project<typename F::Ccb_const_iterator,
                            _Const_ccb_to_halfedge_cast> 
-                                                    Outer_ccb_const_iterator;
+                                                    Ccb_const_iterator;
 
   /*! Get the number of outer CCBs the face has. */
   size_t number_of_outer_ccbs () const
@@ -636,52 +629,41 @@ public:
   }
 
   /*! Get an iterator for the first outer CCB of the face. */
-  Outer_ccb_iterator outer_ccbs_begin()
+  Ccb_iterator outer_ccbs_begin()
   {
     return (this->outer_ccbs.begin());
   }
 
   /*! Get a past-the-end iterator for the outer CCBs inside the face. */
-  Outer_ccb_iterator outer_ccbs_end()
+  Ccb_iterator outer_ccbs_end()
   {
     return (this->outer_ccbs.end());
   }
 
   /*! Get an const iterator for the first outer CCB inside the face. */
-  Outer_ccb_const_iterator outer_ccbs_begin() const
+  Ccb_const_iterator outer_ccbs_begin() const
   {
     return (this->outer_ccbs.begin());
   }
 
   /*! Get a const past-the-end iterator for the outer CCBs inside the face. */
-  Outer_ccb_const_iterator outer_ccbs_end() const
+  Ccb_const_iterator outer_ccbs_end() const
   {
     return (this->outer_ccbs.end());
   }
 
   /*! Add an outer CCB to the face. */
-  void add_outer_ccb (Outer_ccb *oc, Halfedge *h)
+  void add_outer_ccb (Ccb *oc, Halfedge *h)
   {
     oc->set_iterator (this->outer_ccbs.insert (this->outer_ccbs.end(), h));
     return;
   }
 
   /*! Erase an outer CCB of the face. */
-  void erase_outer_ccb (Outer_ccb *oc)
+  void erase_outer_ccb (Ccb *oc)
   {
     this->outer_ccbs.erase (oc->iterator().current_iterator());
   }
-
-  // Definition of the inner CCB iterators:
-  typedef Iterator_project<typename F::Inner_ccb_iterator, 
-                           _Ccb_to_halfedge_cast>   Inner_ccb_iterator;
-
-  typedef Iterator_project<typename F::Inner_ccb_const_iterator,
-                           _Const_ccb_to_halfedge_cast> 
-                                                    Inner_ccb_const_iterator;
-
-  typedef Inner_ccb_iterator                        Hole_iterator;
-  typedef Inner_ccb_const_iterator                  Hole_const_iterator;
   
   /*! Get the number of inner CCBs the face has. */
   size_t number_of_inner_ccbs () const
@@ -690,48 +672,53 @@ public:
   }
 
   /*! Get an iterator for the first inner CCB of the face. */
-  Inner_ccb_iterator inner_ccbs_begin()
+  Ccb_iterator inner_ccbs_begin()
   {
     return (this->inner_ccbs.begin());
   }
 
   /*! Get a past-the-end iterator for the inner CCBs inside the face. */
-  Inner_ccb_iterator inner_ccbs_end()
+  Ccb_iterator inner_ccbs_end()
   {
     return (this->inner_ccbs.end());
   }
 
   /*! Get an const iterator for the first inner CCB inside the face. */
-  Inner_ccb_const_iterator inner_ccbs_begin() const
+  Ccb_const_iterator inner_ccbs_begin() const
   {
     return (this->inner_ccbs.begin());
   }
 
   /*! Get a const past-the-end iterator for the inner CCBs inside the face. */
-  Inner_ccb_const_iterator inner_ccbs_end() const
+  Ccb_const_iterator inner_ccbs_end() const
   {
     return (this->inner_ccbs.end());
   }
 
   /*! Add an inner CCB to the face. */
-  void add_inner_ccb (Inner_ccb *ic, Halfedge *h)
+  void add_inner_ccb (Ccb *ic, Halfedge *h)
   {
     ic->set_iterator (this->inner_ccbs.insert (this->inner_ccbs.end(), h));
     return;
   }
 
   /*! Erase an inner CCB of the face. */
-  void erase_inner_ccb (Inner_ccb *ic)
+  void erase_inner_ccb (Ccb *ic)
   {
     this->inner_ccbs.erase (ic->iterator().current_iterator());
   }
 
   // Backward compatibility:
+#if 1 // TODO remove?
+  typedef Ccb_iterator                        Hole_iterator;
+  typedef Ccb_const_iterator                  Hole_const_iterator;
+
   size_t number_of_holes () const { return number_of_inner_ccbs(); }
   Hole_iterator holes_begin() { return inner_ccbs_begin(); }
   Hole_iterator holes_end() { return inner_ccbs_end(); }
   Hole_const_iterator holes_begin() const { return inner_ccbs_begin(); }
   Hole_const_iterator holes_end() const { return inner_ccbs_end(); }
+#endif
 
   // Definition of the isloated vertices iterators:
   typedef I_Dereference_iterator<
@@ -797,17 +784,17 @@ public:
 };
 
 /*! \class
- * Representation of an outer CCB.
+ * Representation of a CCB.
  */
 template <class V, class H, class F>
-class Arr_outer_ccb : public In_place_list_base<Arr_outer_ccb<V,H,F> >
+class Arr_ccb : public In_place_list_base<Arr_ccb<V,H,F> >
 {
 public:
 
-  typedef Arr_outer_ccb<V,H,F>               Self;
+  typedef Arr_ccb<V,H,F>                     Self;
   typedef Arr_halfedge<V,H,F>                Halfedge;
   typedef Arr_face<V,H,F>                    Face;
-  typedef typename Face::Outer_ccb_iterator  Outer_ccb_iterator;
+  typedef typename Face::Ccb_iterator        Ccb_iterator;
 
 private:
 
@@ -815,7 +802,8 @@ private:
                               // The LSB of the pointer indicates whether
                               // the left of the ccb is in facing topright corner
                               // of the parameter space (or not).
-  Outer_ccb_iterator  iter;   // The outer CCB identifier.
+  // TODO EBEF rename?
+  Ccb_iterator  iter;         // The CCB identifier.
                               // The LSB of the pointer indicates whether
                               // whether the ccb is perimetric (or not).
 
@@ -823,7 +811,7 @@ private:
 public:
 
   /*! Default constructor. */
-  Arr_outer_ccb () :
+  Arr_ccb () :
     p_f (NULL)
   {}
 
@@ -904,145 +892,19 @@ public:
   }
 
   /*! Get the iterator (const version). */
-  Outer_ccb_iterator iterator () const
+  Ccb_iterator iterator () const
   {
     return (iter);
   }
 
   /*! Get the iterator (non-const version). */
-  Outer_ccb_iterator iterator ()
+  Ccb_iterator iterator ()
   {
     return (iter);
   }
 
-  /*! Set the outer CCB iterator. */
-  void set_iterator (Outer_ccb_iterator it)
-  {
-    iter = it;
-    return;
-  }
-};
-
-/*! \class
- * Representation of an inner CCB.
- */
-template <class V, class H, class F>
-class Arr_inner_ccb : public In_place_list_base<Arr_inner_ccb<V,H,F> >
-{
-public:
-
-  typedef Arr_inner_ccb<V,H,F>               Self;
-  typedef Arr_halfedge<V,H,F>                Halfedge;
-  typedef Arr_face<V,H,F>                    Face;
-  typedef typename Face::Inner_ccb_iterator  Inner_ccb_iterator;
-
-private:
-
-  Face               *p_f;    // The face that contains the CCB in its interior.
-                              // The LSB of the pointer indicates whether
-                              // the left of the ccb is in facing topright corner
-                              // of the parameter space (or not).
-  Inner_ccb_iterator  iter;   // The inner CCB identifier.
-                              // The LSB of the pointer indicates whether
-                              // whether the ccb is perimetric (or not).
-
-public:
-
-  /*! Default constructor. */
-  Arr_inner_ccb () :
-    p_f (NULL)
-  {}
-
-  /*! Check if the ccb is perimetric. */
-  bool is_perimetric () const
-  {
-    // Note that we use the LSB of the *iter pointer as a Boolean flag.
-    return (_is_lsb_set (*iter));
-  }
-
-  /*! Set the perimetricy information. */
-  void set_perimetric (bool perimetric)
-  {
-    // Set the perimetricy information to *iter's LSB.
-    if (perimetric) {
-      *iter = _set_lsb (*iter);
-    } else {
-      *iter = _clean_pointer(*iter);
-    }
-  }
-
-  /*! Check whether left of ccb faces top right corner of parameter space. */
-  bool is_left_facing_top_right () const
-  {
-    // Note that we use the LSB of the *iter pointer as a Boolean flag.
-    return (_is_lsb_set (p_f));
-  }
-
-  /*! Set the left facing top-right  information. */
-  void set_left_facing_top_right (bool left_facing_top_right)
-  {
-    // Set the information to p_f's LSB.
-    if (left_facing_top_right) {
-      p_f = (reinterpret_cast<Face*>(_set_lsb (p_f)));
-    } else {
-      p_f = (reinterpret_cast<Face*>(_clean_pointer(p_f)));
-    }
-  }
-
-  /*! Get a halfedge along the component (const version). */
-  const Halfedge* halfedge () const
-  {
-    return (reinterpret_cast<const Halfedge*>(_clean_pointer(*iter)));
-  }
-
-  /*! Get a halfedge along the component (non-const version). */
-  Halfedge* halfedge ()
-  {
-    return (reinterpret_cast<Halfedge*>(_clean_pointer(*iter)));
-  }
-
-  /*! Set a representative halfedge for the component. */
-  void set_halfedge (Halfedge *he)
-  {
-    if (_is_lsb_set (*iter))
-      *iter = (reinterpret_cast<Halfedge*>(_set_lsb (he)));
-    else
-      *iter = he;
-  }
-
-  /*! Get the incident face (const version). */
-  const Face* face () const
-  {
-    return (p_f);
-  }
-
-  /*! Get the incident face (non-const version). */
-  Face* face ()
-  {
-    return (p_f);
-  }
-
-  /*! Set the incident face. */
-  void set_face (Face* f)
-  {
-    p_f = f;
-    return;
-  }
-
-  /*! Get the iterator (const version). */
-  Inner_ccb_iterator iterator () const
-  {
-    return (iter);
-  }
-
-  /*! Get the iterator (non-const version). */
-  Inner_ccb_iterator iterator ()
-  {
-    return (iter);
-  }
-
-  /*! Set the inner CCB iterator. */
-  void set_iterator (Inner_ccb_iterator it)
+  /*! Set the CCB iterator. */
+  void set_iterator (Ccb_iterator it)
   {
     iter = it;
     return;
@@ -1127,11 +989,10 @@ public:
   typedef Arr_vertex<V,H,F>           Vertex;
   typedef Arr_halfedge<V,H,F>         Halfedge;
   typedef Arr_face<V,H,F>             Face;
-  typedef Arr_outer_ccb<V,H,F>        Outer_ccb;
-  typedef Arr_inner_ccb<V,H,F>        Inner_ccb;
+  typedef Arr_ccb<V,H,F>              Ccb;
   typedef Arr_isolated_vertex<V,H,F>  Isolated_vertex;
 
-  typedef Inner_ccb                   Hole;
+  typedef Ccb                         Hole;
   
 protected:
 
@@ -1139,8 +1000,7 @@ protected:
   typedef In_place_list<Vertex, false>           Vertex_list;
   typedef In_place_list<Halfedge, false>         Halfedge_list;
   typedef In_place_list<Face, false>             Face_list;
-  typedef In_place_list<Outer_ccb, false>        Outer_ccb_list;
-  typedef In_place_list<Inner_ccb, false>        Inner_ccb_list;
+  typedef In_place_list<Ccb, false>              Ccb_list;
   typedef In_place_list<Isolated_vertex, false>  Iso_vert_list;
 
   // Vertex allocator.
@@ -1155,13 +1015,9 @@ protected:
   typedef typename Allocator::template rebind<Face>      Face_alloc_rebind;
   typedef typename Face_alloc_rebind::other              Face_allocator;
   
-  // Outer CCB allocator.
-  typedef typename Allocator::template rebind<Outer_ccb> Out_ccb_alloc_rebind;
-  typedef typename Out_ccb_alloc_rebind::other           Outer_ccb_allocator;
-
-  // Inner CCB allocator.
-  typedef typename Allocator::template rebind<Inner_ccb> In_ccb_alloc_rebind;
-  typedef typename In_ccb_alloc_rebind::other            Inner_ccb_allocator;
+  // CCB allocator.
+  typedef typename Allocator::template rebind<Ccb>       Ccb_alloc_rebind;
+  typedef typename Ccb_alloc_rebind::other               Ccb_allocator;
 
   // Isolated vertex allocator.
   typedef typename Allocator::template rebind<Isolated_vertex>
@@ -1181,15 +1037,15 @@ protected:
   Vertex_list         vertices;             // The vertices container.
   Halfedge_list       halfedges;            // The halfedges container.
   Face_list           faces;                // The faces container.
-  Outer_ccb_list      out_ccbs;             // The outer CCBs.
-  Inner_ccb_list      in_ccbs;              // The inner CCBs.
+  Ccb_list            outer_ccbs;           // The outer CCBs.
+  Ccb_list            inner_ccbs;           // The inner CCBs.
   Iso_vert_list       iso_verts;            // The isolated vertices.
 
   Vertex_allocator    vertex_alloc;         // An allocator for vertices.
   Halfedge_allocator  halfedge_alloc;       // An allocator for halfedges.
   Face_allocator      face_alloc;           // An allocator for faces.
-  Outer_ccb_allocator out_ccb_alloc;        // An allocator for outer CCBs.
-  Inner_ccb_allocator in_ccb_alloc;         // An allocator for inner CCBs.
+  Ccb_allocator       outer_ccb_alloc;      // An allocator for outer CCBs.
+  Ccb_allocator       inner_ccb_alloc;      // An allocator for outer CCBs.
   Iso_vert_allocator  iso_vert_alloc;       // Allocator for isolated vertices.
 
 public:
@@ -1253,13 +1109,13 @@ public:
   /*! Get the number of outer CCBs. */
   Size size_of_outer_ccbs() const
   {
-    return (out_ccbs.size());
+    return (outer_ccbs.size());
   }
 
   /*! Get the number of inner CCBs. */
   Size size_of_inner_ccbs() const
   {
-    return (in_ccbs.size());
+    return (inner_ccbs.size());
   }
 
   /*! Get the number of isolated vertices. */
@@ -1330,21 +1186,21 @@ public:
   }
 
   /*! Create a new outer CCB. */
-  Outer_ccb* new_outer_ccb ()
+  Ccb* new_outer_ccb ()
   {
-    Outer_ccb  *oc = out_ccb_alloc.allocate (1);
-    out_ccb_alloc.construct (oc, Outer_ccb());
-    out_ccbs.push_back (*oc);
+    Ccb  *oc = outer_ccb_alloc.allocate (1);
+    outer_ccb_alloc.construct (oc, Ccb());
+    outer_ccbs.push_back (*oc);
     return (oc);
   }
 
   /*! Create a new inner CCB. */
-  Inner_ccb* new_inner_ccb ()
+  Ccb* new_inner_ccb ()
   {
-    Inner_ccb  *ic = in_ccb_alloc.allocate (1);
+    Ccb  *ic = inner_ccb_alloc.allocate (1);
     
-    in_ccb_alloc.construct (ic, Inner_ccb());
-    in_ccbs.push_back (*ic);
+    inner_ccb_alloc.construct (ic, Ccb());
+    inner_ccbs.push_back (*ic);
     return (ic);
   }
 
@@ -1387,19 +1243,19 @@ public:
   }
 
   /*! Delete an existing outer CCB. */
-  void delete_outer_ccb (Outer_ccb *oc)
+  void delete_outer_ccb (Ccb *oc)
   {
-    out_ccbs.erase (oc);
-    out_ccb_alloc.destroy (oc);
-    out_ccb_alloc.deallocate (oc, 1);
+    outer_ccbs.erase (oc);
+    outer_ccb_alloc.destroy (oc);
+    outer_ccb_alloc.deallocate (oc, 1);
   }
 
   /*! Delete an existing inner CCB. */
-  void delete_inner_ccb (Inner_ccb *ic)
+  void delete_inner_ccb (Ccb *ic)
   {
-    in_ccbs.erase (ic);
-    in_ccb_alloc.destroy (ic);
-    in_ccb_alloc.deallocate (ic, 1);
+    inner_ccbs.erase (ic);
+    inner_ccb_alloc.destroy (ic);
+    inner_ccb_alloc.deallocate (ic, 1);
   }
 
   /*! Delete an existing isolated vertex. */
@@ -1444,9 +1300,9 @@ public:
     }
 
     // Free all outer CCBs.
-    typename Outer_ccb_list::iterator   ocit = out_ccbs.begin(), oc_curr;
+    typename Ccb_list::iterator   ocit = outer_ccbs.begin(), oc_curr;
 
-    while (ocit != out_ccbs.end())
+    while (ocit != outer_ccbs.end())
     {
       oc_curr = ocit;
       ++ocit;
@@ -1454,9 +1310,9 @@ public:
     }
 
     // Free all inner CCBs.
-    typename Inner_ccb_list::iterator   icit = in_ccbs.begin(), ic_curr;
+    typename Ccb_list::iterator   icit = inner_ccbs.begin(), ic_curr;
 
-    while (icit != in_ccbs.end())
+    while (icit != inner_ccbs.end())
     {
       ic_curr = icit;
       ++icit;
@@ -1488,8 +1344,7 @@ public:
     typedef std::map<const Vertex*, Vertex*>                    Vertex_map;
     typedef std::map<const Halfedge*, Halfedge*>                Halfedge_map;
     typedef std::map<const Face*, Face*>                        Face_map;
-    typedef std::map<const Outer_ccb*, Outer_ccb*>              Outer_ccb_map;
-    typedef std::map<const Inner_ccb*, Inner_ccb*>              Inner_ccb_map;
+    typedef std::map<const Ccb*, Ccb*>                          Ccb_map;
     typedef std::map<const Isolated_vertex*, Isolated_vertex*>  Iso_vert_map;
 
     Vertex_map                v_map;
@@ -1525,24 +1380,24 @@ public:
       f_map.insert (typename Face_map::value_type(&(*fit), dup_f));
     }
 
-    Outer_ccb_map                            oc_map;
-    typename Outer_ccb_list::const_iterator  ocit;
-    Outer_ccb                               *dup_oc;
+    Ccb_map                            oc_map;
+    typename Ccb_list::const_iterator  ocit;
+    Ccb                               *dup_oc;
 
     for (ocit = dcel.out_ccbs.begin(); ocit != dcel.out_ccbs.end(); ++ocit)
     {
       dup_oc = new_outer_ccb();
-      oc_map.insert (typename Outer_ccb_map::value_type(&(*ocit), dup_oc));
+      oc_map.insert (typename Ccb_map::value_type(&(*ocit), dup_oc));
     }
 
-    Inner_ccb_map                            ic_map;
-    typename Inner_ccb_list::const_iterator  icit;
-    Inner_ccb                               *dup_ic;
+    Ccb_map                            ic_map;
+    typename Ccb_list::const_iterator  icit;
+    Ccb                               *dup_ic;
 
     for (icit = dcel.in_ccbs.begin(); icit != dcel.in_ccbs.end(); ++icit)
     {
       dup_ic = new_inner_ccb();
-      ic_map.insert (typename Inner_ccb_map::value_type(&(*icit), dup_ic));
+      ic_map.insert (typename Ccb_map::value_type(&(*icit), dup_ic));
     }
 
     Iso_vert_map                            iv_map;
@@ -1559,8 +1414,8 @@ public:
     const Vertex             *v;
     const Halfedge           *h;
     const Face               *f;
-    const Outer_ccb          *oc;
-    const Inner_ccb          *ic;
+    const Ccb                *oc;
+    const Ccb                *ic;
     const Isolated_vertex    *iv;
     
     for (vit = dcel.vertices_begin(); vit != dcel.vertices_end(); ++vit)
@@ -1628,8 +1483,8 @@ public:
 
     // Update the face records, along with the CCB records and isolated vertex
     // records.
-    typename Face::Outer_ccb_const_iterator        out_ccb_it;
-    typename Face::Inner_ccb_const_iterator        in_ccb_it;
+    typename Face::Ccb_const_iterator        out_ccb_it;
+    typename Face::Ccb_const_iterator        in_ccb_it;
     typename Face::Isolated_vertex_const_iterator  iso_vert_it;
     const Halfedge                      *hccb;
     const Vertex                        *iso_vert;

@@ -73,7 +73,7 @@ public:
   typedef typename Arrangement_2::Vertex_handle       Vertex_handle;
   typedef typename Arrangement_2::Ccb_halfedge_circulator 
                                                       Ccb_halfedge_circulator;
-  typedef typename Arrangement_2::Outer_ccb_iterator    Outer_ccb_iterator;
+  typedef typename Arrangement_2::Ccb_iterator        Ccb_iterator;
   
   // The base construction visitor:
   typedef typename Overlay_helper::Construction_helper   Construction_helper;
@@ -633,7 +633,7 @@ insert_at_vertices (const X_monotone_curve_2& cv,
     Halfedge_handle_blue        blue_he;
 
     // msvc CL requires the breakdown to the following 2 statements:
-    Outer_ccb_iterator occb_it = new_face->outer_ccbs_begin();
+    Ccb_iterator                occb_it = new_face->outer_ccbs_begin();
     Ccb_halfedge_circulator     ccb_first = *occb_it;
     Ccb_halfedge_circulator     ccb_circ = ccb_first;
 

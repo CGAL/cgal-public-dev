@@ -191,8 +191,8 @@ void Arr_unb_planar_topology_traits_2<GeomTraits, Dcel_>::init_dcel ()
   Halfedge           *he3_t = he3->opposite();
   Halfedge           *he4 = this->m_dcel.new_edge();
   Halfedge           *he4_t = he4->opposite();
-  Outer_ccb          *oc = this->m_dcel.new_outer_ccb();
-  Inner_ccb          *ic = this->m_dcel.new_inner_ccb();
+  Ccb                *oc = this->m_dcel.new_outer_ccb();
+  Ccb                *ic = this->m_dcel.new_inner_ccb();
   Face               *in_f = this->m_dcel.new_face();
 
   he1->set_curve (NULL);
@@ -417,12 +417,12 @@ split_fictitious_edge (Halfedge *e, Vertex *v)
   Halfedge       *he2 = he1->opposite();
   
   CGAL_assertion (! he1->is_on_inner_ccb());
-  Outer_ccb      *oc1 = he1->outer_ccb();
+  Ccb           *oc1 = he1->outer_ccb();
   
   CGAL_assertion (oc1->face()->is_unbounded());
 
   CGAL_assertion (he2->is_on_inner_ccb());
-  Inner_ccb      *ic2 = he2->inner_ccb();
+  Ccb           *ic2 = he2->inner_ccb();
 
   CGAL_assertion (ic2->face() == fict_face);
 
@@ -550,10 +550,10 @@ erase_redundant_vertex (Vertex *v)
 
   // Keep pointers to the components that contain two halfedges he3 and he2,
   // pointing at the end vertices of the merged halfedge.
-  Inner_ccb   *ic1 = (he3->is_on_inner_ccb()) ? he3->inner_ccb() : NULL;
-  Outer_ccb   *oc1 = (ic1 == NULL) ? he3->outer_ccb() : NULL;
-  Inner_ccb   *ic2 = (he4->is_on_inner_ccb()) ? he4->inner_ccb() : NULL;
-  Outer_ccb   *oc2 = (ic2 == NULL) ? he4->outer_ccb() : NULL;
+  Ccb   *ic1 = (he3->is_on_inner_ccb()) ? he3->inner_ccb() : NULL;
+  Ccb   *oc1 = (ic1 == NULL) ? he3->outer_ccb() : NULL;
+  Ccb   *ic2 = (he4->is_on_inner_ccb()) ? he4->inner_ccb() : NULL;
+  Ccb   *oc2 = (ic2 == NULL) ? he4->outer_ccb() : NULL;
 
   // As he1 and he2 will evetually represent the merged edge, while he3 and he4
   // will be deleted, check if the deleted halfedges are represantatives of a

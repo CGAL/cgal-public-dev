@@ -1193,7 +1193,7 @@ bool is_valid (const Arrangement_on_surface_2<GeomTraits, TopTraits>& arr)
   // Define the arrangement iterator and circulator types:
   typedef typename Arr::Edge_const_iterator           Edge_const_iterator;
   typedef typename Arr::Halfedge_const_handle         Halfedge_const_handle;
-  typedef typename Arr::Inner_ccb_const_iterator      Inner_ccb_const_iterator;
+  typedef typename Arr::Ccb_const_iterator            Ccb_const_iterator;
   typedef typename Arr::Face_const_iterator           Face_const_iterator;
   typedef typename Arr::Face_const_handle             Face_const_handle;
   typedef typename Arr::Vertex_const_handle           Vertex_const_handle;
@@ -1236,7 +1236,7 @@ bool is_valid (const Arrangement_on_surface_2<GeomTraits, TopTraits>& arr)
     traits->compare_xy_2_object();
   Face_const_iterator               fit;
   Face_const_handle                 fh;
-  Inner_ccb_const_iterator          ic_it;
+  Ccb_const_iterator                ic_it;
   Halfedge_const_handle             ccb;
   Isolated_vertex_const_iterator    iv_it;
   Vertex_const_handle               left_v;

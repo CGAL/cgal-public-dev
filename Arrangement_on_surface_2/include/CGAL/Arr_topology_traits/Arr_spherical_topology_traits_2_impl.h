@@ -200,7 +200,7 @@ is_in_face(const Face * f, const Point_2 & p, const Vertex * v) const
   /* Traverse all outer CCBs of the face. For each boundary component go over
    * all its halfedges, and count those which are above p.
    */
-  typename Face::Outer_ccb_const_iterator oit;
+  typename Face::Ccb_const_iterator oit;
   for (oit = f->outer_ccbs_begin(); oit != f->outer_ccbs_end(); ++oit) {
     const Halfedge * first = *oit;
     const Halfedge * curr = first;

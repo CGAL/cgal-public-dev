@@ -92,11 +92,8 @@ public:
   typedef typename Base::Ccb_halfedge_const_circulator
                                              Ccb_halfedge_const_circulator;
   
-  typedef typename Base::Outer_ccb_iterator        Outer_ccb_iterator;
-  typedef typename Base::Outer_ccb_const_iterator  Outer_ccb_const_iterator;
-
-  typedef typename Base::Inner_ccb_iterator        Inner_ccb_iterator;
-  typedef typename Base::Inner_ccb_const_iterator  Inner_ccb_const_iterator;
+  typedef typename Base::Ccb_iterator              Ccb_iterator;
+  typedef typename Base::Ccb_const_iterator        Ccb_const_iterator;
 
   typedef typename Base::Isolated_vertex_iterator  Isolated_vertex_iterator;
   typedef typename Base::Isolated_vertex_const_iterator
@@ -120,8 +117,8 @@ public:
 
   // These types are defined for backward compatibility:
   typedef Geometry_traits_2                        Traits_2;
-  typedef typename Base::Inner_ccb_iterator        Hole_iterator;
-  typedef typename Base::Inner_ccb_const_iterator  Hole_const_iterator;
+  typedef typename Base::Ccb_iterator              Hole_iterator;
+  typedef typename Base::Ccb_const_iterator        Hole_const_iterator;
 
 private:
 
@@ -216,7 +213,7 @@ public:
 
     typename Base::DHalfedge  *p_he = *(un_face->inner_ccbs_begin());
     typename Base::DHalfedge  *p_opp = p_he->opposite();
-    typename Base::DOuter_ccb *p_oc = p_opp->outer_ccb();
+    typename Base::DCcb       *p_oc = p_opp->outer_ccb();
 
     return (Face_handle (p_oc->face()));
   }
@@ -235,7 +232,7 @@ public:
 
     const typename Base::DHalfedge  *p_he = *(un_face->inner_ccbs_begin());
     const typename Base::DHalfedge  *p_opp = p_he->opposite();
-    const typename Base::DOuter_ccb *p_oc = p_opp->outer_ccb();
+    const typename Base::DCcb       *p_oc = p_opp->outer_ccb();
     
     return (Face_const_handle (p_oc->face()));
   }

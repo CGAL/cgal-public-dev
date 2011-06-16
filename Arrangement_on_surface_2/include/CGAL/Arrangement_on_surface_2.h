@@ -114,8 +114,7 @@ protected:
   typedef typename Dcel::Vertex                     DVertex;
   typedef typename Dcel::Halfedge                   DHalfedge;
   typedef typename Dcel::Face                       DFace;
-  typedef typename Dcel::Outer_ccb                  DOuter_ccb;
-  typedef typename Dcel::Inner_ccb                  DInner_ccb;
+  typedef typename Dcel::Ccb                        DCcb;
   typedef typename Dcel::Isolated_vertex            DIso_vertex;
 
   typedef typename Dcel::difference_type            DDifference;  
@@ -133,11 +132,8 @@ protected:
   typedef typename Dcel::Face_iterator              DFace_iter;
   typedef typename Dcel::Face_const_iterator        DFace_const_iter;
 
-  typedef typename DFace::Outer_ccb_iterator        DOuter_ccb_iter;
-  typedef typename DFace::Outer_ccb_const_iterator  DOuter_ccb_const_iter;
-
-  typedef typename DFace::Inner_ccb_iterator        DInner_ccb_iter;
-  typedef typename DFace::Inner_ccb_const_iterator  DInner_ccb_const_iter;
+  typedef typename DFace::Ccb_iterator              DCcb_iter;
+  typedef typename DFace::Ccb_const_iterator        DCcb_const_iter;
 
   typedef typename DFace::Isolated_vertex_iterator
                                                     DIso_vertex_iter;
@@ -522,21 +518,14 @@ protected:
 
 public:
   
-  typedef Iterator_transform<DOuter_ccb_iter,
+  typedef Iterator_transform<DCcb_iter,
                              _Halfedge_to_ccb_circulator>
-                                      Outer_ccb_iterator;
+                                      Ccb_iterator;
 
-  typedef Iterator_transform<DOuter_ccb_const_iter,
+  typedef Iterator_transform<DCcb_const_iter,
                              _Const_halfedge_to_ccb_circulator> 
-                                      Outer_ccb_const_iterator;
+                                      Ccb_const_iterator;
 
-  typedef Iterator_transform<DInner_ccb_iter,
-                             _Halfedge_to_ccb_circulator>
-                                      Inner_ccb_iterator;
-
-  typedef Iterator_transform<DInner_ccb_const_iter,
-                             _Const_halfedge_to_ccb_circulator> 
-                                      Inner_ccb_const_iterator;
 
   /*! \class
    * Isolated vertices iterator - defined as a class to make it assignable
@@ -868,12 +857,12 @@ public:
     const DVertex* vertex () const ;
     DVertex* vertex ();
     void set_vertex (DVertex* );
-    const DOuter_ccb* outer_ccb () const;
-    DOuter_ccb* outer_ccb ();
-    void set_outer_ccb (DOuter_ccb* );
-    const DInner_ccb* inner_ccb () const;
-    DInner_ccb* inner_ccb ();
-    void set_inner_ccb (DInner_ccb* );
+    const DCcb* outer_ccb () const;
+    DCcb* outer_ccb ();
+    void set_outer_ccb (DCcb* );
+    const DCcb* inner_ccb () const;
+    DCcb* inner_ccb ();
+    void set_inner_ccb (DCcb* );
   };
 
   /*!
@@ -890,52 +879,52 @@ public:
     {}
 
     /*! Get an iterator for the outer CCBs of the face (non-const version). */
-    Outer_ccb_iterator outer_ccbs_begin() 
+    Ccb_iterator outer_ccbs_begin() 
     {
-      return (DOuter_ccb_iter (Base::outer_ccbs_begin()));
+      return (DCcb_iter (Base::outer_ccbs_begin()));
     }
 
     /*! Get an iterator for the outer CCBs the face (const version). */
-    Outer_ccb_const_iterator outer_ccbs_begin() const
+    Ccb_const_iterator outer_ccbs_begin() const
     {
-      return (DOuter_ccb_const_iter (Base::outer_ccbs_begin()));
+      return (DCcb_const_iter (Base::outer_ccbs_begin()));
     }
     
     /*! Get a past-the-end iterator for the outer CCBs (non-const version). */
-    Outer_ccb_iterator outer_ccbs_end() 
+    Ccb_iterator outer_ccbs_end() 
     {
-      return (DOuter_ccb_iter (Base::outer_ccbs_end()));
+      return (DCcb_iter (Base::outer_ccbs_end()));
     }
 
     /*! Get a past-the-end iterator for the outer CCBs (const version). */
-    Outer_ccb_const_iterator outer_ccbs_end() const 
+    Ccb_const_iterator outer_ccbs_end() const 
     {
-      return (DOuter_ccb_const_iter (Base::outer_ccbs_end()));
+      return (DCcb_const_iter (Base::outer_ccbs_end()));
     }
 
 
     /*! Get an iterator for the inner CCBs of the face (non-const version). */
-    Inner_ccb_iterator inner_ccbs_begin() 
+    Ccb_iterator inner_ccbs_begin() 
     {
-      return (DInner_ccb_iter (Base::inner_ccbs_begin()));
+      return (DCcb_iter (Base::inner_ccbs_begin()));
     }
 
     /*! Get an iterator for the inner CCBs the face (const version). */
-    Inner_ccb_const_iterator inner_ccbs_begin() const
+    Ccb_const_iterator inner_ccbs_begin() const
     {
-      return (DInner_ccb_const_iter (Base::inner_ccbs_begin()));
+      return (DCcb_const_iter (Base::inner_ccbs_begin()));
     }
     
     /*! Get a past-the-end iterator for the inner CCBs (non-const version). */
-    Inner_ccb_iterator inner_ccbs_end() 
+    Ccb_iterator inner_ccbs_end() 
     {
-      return (DInner_ccb_iter (Base::inner_ccbs_end()));
+      return (DCcb_iter (Base::inner_ccbs_end()));
     }
 
     /*! Get a past-the-end iterator for the inner CCBs (const version). */
-    Inner_ccb_const_iterator inner_ccbs_end() const 
+    Ccb_const_iterator inner_ccbs_end() const 
     {
-      return (DInner_ccb_const_iter (Base::inner_ccbs_end()));
+      return (DCcb_const_iter (Base::inner_ccbs_end()));
     }
 
 
@@ -986,7 +975,7 @@ public:
     {
       CGAL_precondition (Base::number_of_outer_ccbs() == 1);
       
-      DOuter_ccb_iter     iter = Base::outer_ccbs_begin();
+      DCcb_iter          iter = Base::outer_ccbs_begin();
       DHalfedge          *he = *iter;
 
       return Ccb_halfedge_circulator (DHalfedge_iter (he));
@@ -1000,7 +989,7 @@ public:
     {
       CGAL_precondition (Base::number_of_outer_ccbs() == 1);
 
-      DOuter_ccb_const_iter  iter = Base::outer_ccbs_begin();
+      DCcb_const_iter       iter = Base::outer_ccbs_begin();
       const DHalfedge       *he = *iter;
  
       return Ccb_halfedge_const_circulator (DHalfedge_const_iter (he));
@@ -1013,25 +1002,25 @@ public:
     }
 
     /*! Get an iterator for the holes inside the face (non-const version). */
-    Inner_ccb_iterator holes_begin() 
+    Ccb_iterator holes_begin() 
     {
       return (this->inner_ccbs_begin());
     }
 
     /*! Get an iterator for the holes inside the face (const version). */
-    Inner_ccb_const_iterator holes_begin() const
+    Ccb_const_iterator holes_begin() const
     {
       return (this->inner_ccbs_begin());
     }
     
     /*! Get a past-the-end iterator for the holes (non-const version). */
-    Inner_ccb_iterator holes_end() 
+    Ccb_iterator holes_end() 
     {
       return (this->inner_ccbs_end());
     }
 
     /*! Get a past-the-end iterator for the holes (const version). */
-    Inner_ccb_const_iterator holes_end() const 
+    Ccb_const_iterator holes_end() const 
     {
       return (this->inner_ccbs_end());
     }
@@ -1042,10 +1031,10 @@ public:
     // Blocking access to inherited functions from the Dcel::Face.
     void set_unbounded (bool );
     void set_fictitious (bool );
-    void add_outer_ccb (DOuter_ccb*, Halfedge* );
-    void erase_outer_ccb (DOuter_ccb* );
-    void add_inner_ccb (DInner_ccb*, Halfedge* );
-    void erase_inner_ccb (DInner_ccb* );
+    void add_outer_ccb (DCcb*, Halfedge* );
+    void erase_outer_ccb (DCcb* );
+    void add_inner_ccb (DCcb*, Halfedge* );
+    void erase_inner_ccb (DCcb* );
     void add_isolated_vertex (DIso_vertex*, DVertex* );
     void erase_isolated_vertex (DIso_vertex* );
   };
@@ -1919,7 +1908,7 @@ protected:
    * \param he new halfedge
    * \return the updated representative halfedge
    */
-  void _update_ccb_with(DOuter_ccb *oc, DHalfedge *he) {
+  void _update_ccb_with(DCcb *oc, DHalfedge *he) {
     CGAL_assertion(oc != NULL);
 
     bool reset = false;
@@ -1979,7 +1968,7 @@ protected:
    */
   // NOTE: must be called before edge is actually removed
   // TODO EBEB get rid of this restriction?
-  void _update_ccb_without(DOuter_ccb *oc, DHalfedge *he) {
+  void _update_ccb_without(DCcb *oc, DHalfedge *he) {
     CGAL_assertion(oc != NULL);
     if (oc->halfedge() == he) {
       // TODO implement
@@ -1993,7 +1982,7 @@ protected:
    * For parameter spaces with non-identified boundaries.
    * \param oc the outer ccb
    */
-  void _determine_ccb_perimetricy(DOuter_ccb *oc, boost::mpl::bool_< false >) {
+  void _determine_ccb_perimetricy(DCcb *oc, boost::mpl::bool_< false >) {
     oc->set_perimetric(false);
   }
   
@@ -2002,7 +1991,7 @@ protected:
    * For parameter spaces with identified boundaries.
    * \param oc the outer ccb
    */
-  void _determine_ccb_perimetricy(DOuter_ccb *oc, boost::mpl::bool_< true >) {
+  void _determine_ccb_perimetricy(DCcb *oc, boost::mpl::bool_< true >) {
     CGAL_assertion(oc != NULL);
 
     // assume nothing
@@ -2124,44 +2113,10 @@ protected:
     }
   }
 
-  void _determine_ccb_perimetricy(DOuter_ccb *oc) {
+  void _determine_ccb_perimetricy(DCcb *oc) {
     // dispatch
     _determine_ccb_perimetricy(oc, typename Arr_has_identified_sides< Left_side_category, 
                                                                       Bottom_side_category>::result());
-  }
-
-
-
-  // TODO remove?
-
-  /*!
-   * Updates the representative of an inner ccb that has been enhanced with a 
-   * new halfedge, i.e., keep the existing one, or use the given halfedge.
-   * \param oc the inner ccb
-   * \param he new halfedge
-   * \return the updated representative halfedge
-   */
-  void _update_ccb_with(DInner_ccb *ic, DHalfedge *he) {
-    return _update_ccb_with(reinterpret_cast<DOuter_ccb*>(ic), he);
-  }
-  
-  /*!
-   * Updates the representative of an inner ccb from which a halfedge has been
-   * removed, i.e., keep the existing one, or use one of the ccb's other halfedges
-   * \param ic the inner ccb
-   * \param he deleted halfedge
-   * \return the updated representative halfedge
-   */
-  void _update_ccb_without(DInner_ccb *ic, DHalfedge *he) {
-    return _update_outer_ccb_without(reinterpret_cast<DOuter_ccb*>(ic), he);
-  }
-
-  /*!
-   * Checks whether an outer ccb is perimetric and sets bit accordingly.
-   * \param oc the outer ccb
-   */
-  void _determine_ccb_perimetricy(DInner_ccb *ic) {
-    return _determine_ccb_perimetricy(reinterpret_cast<DOuter_ccb*>(ic));
   }
 
 #if 0 // TODO remove
@@ -2446,11 +2401,11 @@ protected:
   bool _is_valid (Face_const_handle f) const;
 
   /*! Check the validity of an outer CCB. */
-  bool _is_outer_ccb_valid (const DOuter_ccb *oc,
+  bool _is_outer_ccb_valid (const DCcb *oc,
                             const DHalfedge *first) const;
 
   /*! Check the validity of an inner CCB. */
-  bool _is_inner_ccb_valid (const DInner_ccb *ic,
+  bool _is_inner_ccb_valid (const DCcb *ic,
                             const DHalfedge *first) const;
 
   /*!

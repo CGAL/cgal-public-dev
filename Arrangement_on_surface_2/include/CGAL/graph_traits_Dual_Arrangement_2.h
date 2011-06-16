@@ -59,10 +59,8 @@ protected:
   typedef typename Arrangement_on_surface_2::Face_handle       Face_handle;
   typedef typename Arrangement_on_surface_2::Ccb_halfedge_circulator
                                                       Ccb_halfedge_circulator;
-  typedef typename Arrangement_on_surface_2::Outer_ccb_iterator
-                                                      Outer_ccb_iterator;
-  typedef typename Arrangement_on_surface_2::Inner_ccb_iterator
-                                                      Inner_ccb_iterator;
+  typedef typename Arrangement_on_surface_2::Ccb_iterator
+                                                      Ccb_iterator;
 
   /*! \class
    * Iterator over the neighbors of a dual vertex (a face in the primal
@@ -84,8 +82,8 @@ protected:
 
   private:
 
-    Outer_ccb_iterator       _outer_ccb_iter;
-    Inner_ccb_iterator       _inner_ccb_iter;
+    Ccb_iterator             _outer_ccb_iter;
+    Ccb_iterator             _inner_ccb_iter;
     Ccb_halfedge_circulator  _ccb_curr;
     Ccb_halfedge_circulator  _ccb_first;
     Face_handle              _face;

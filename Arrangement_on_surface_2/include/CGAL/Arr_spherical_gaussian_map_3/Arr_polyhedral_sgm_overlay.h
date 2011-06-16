@@ -59,7 +59,7 @@ public:
               << p
               << std::endl;
     std::cout << "  Outer CCB:" << std::endl;
-    typename Sgm::Outer_ccb_iterator oit;
+    typename Sgm::Ccb_iterator oit;
     for (oit = f->outer_ccbs_begin(); oit != f->outer_ccbs_end(); ++oit) {
       typename Sgm::Halfedge_iterator first = *oit;
       typename Sgm::Halfedge_iterator curr = first;
@@ -70,7 +70,7 @@ public:
     }
 
     std::cout << "  Inner CCB:" << std::endl;
-    typename Sgm::Inner_ccb_iterator iit;
+    typename Sgm::Ccb_iterator iit;
     for (iit = f->inner_ccbs_begin(); iit != f->inner_ccbs_end(); ++iit) {
       typename Sgm::Halfedge_iterator first = *iit;
       typename Sgm::Halfedge_iterator curr = first;

@@ -795,7 +795,7 @@ void Arrangement_zone_2<Arrangement,ZoneVisitor>::
 
   // Traverse the outer boundary of the face by going over all outer CCBs of
   // the face.
-  typename Arrangement_2::Outer_ccb_iterator       occb_it;
+  typename Arrangement_2::Ccb_iterator             occb_it;
   typename Arrangement_2::Ccb_halfedge_circulator  he_first;
   typename Arrangement_2::Ccb_halfedge_circulator  he_curr;
 
@@ -953,7 +953,7 @@ void Arrangement_zone_2<Arrangement,ZoneVisitor>::
 
   // Traverse the inner boundary of the face by going over all inner CCBs
   // (the holes) of the face.
-  typename Arrangement_2::Inner_ccb_iterator       iccb_it;
+  typename Arrangement_2::Ccb_iterator       iccb_it;
 
   for (iccb_it = face->inner_ccbs_begin();
        iccb_it != face->inner_ccbs_end(); ++iccb_it)

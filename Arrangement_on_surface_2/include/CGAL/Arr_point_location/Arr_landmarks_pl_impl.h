@@ -543,8 +543,8 @@ Object Arr_landmarks_point_location<Arr, Gen>::_walk_from_face
   const bool                     p_is_left =
     (m_traits->compare_xy_2_object()(np, p) == LARGER);
 
-  Inner_ccb_const_iterator       inner_ccb_iter;
-  Outer_ccb_const_iterator       outer_ccb_iter;
+  Ccb_const_iterator             inner_ccb_iter;
+  Ccb_const_iterator             outer_ccb_iter;
   const Halfedge_const_handle    invalid_he;
   Halfedge_const_handle          he;
   Face_const_handle              new_face;

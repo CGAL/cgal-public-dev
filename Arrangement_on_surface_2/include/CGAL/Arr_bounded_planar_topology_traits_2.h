@@ -70,8 +70,7 @@ public:
   typedef typename Base::Vertex                           Vertex;
   typedef typename Base::Halfedge                         Halfedge;
   typedef typename Base::Face                             Face;
-  typedef typename Base::Outer_ccb                        Outer_ccb;
-  typedef typename Base::Inner_ccb                        Inner_ccb;
+  typedef typename Base::Ccb                              Ccb;
   typedef typename Base::Isolated_vertex                  Isolated_vertex;
   //@}
 

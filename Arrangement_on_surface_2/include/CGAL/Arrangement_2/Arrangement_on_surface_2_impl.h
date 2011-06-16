@@ -1545,7 +1545,7 @@ remove_isolated_vertex(Vertex_handle v)
   DFace        *p_f = iv->face();
   Face_handle   f = Face_handle (p_f);
   
-  // Notify the observers that we are abount to remove a vertex.
+  // Notify the obsesrvers that we are abount to remove a vertex.
   _notify_before_remove_vertex (v);
 
   // Remove the isolated vertex from the face that contains it.
@@ -1768,11 +1768,11 @@ merge_edge(Halfedge_handle e1, Halfedge_handle e2,
 
   // Keep pointers to the components that contain two halfedges he3 and he2,
   // pointing at the end vertices of the merged halfedge.
-  DInner_ccb  *ic1 = (he3->is_on_inner_ccb()) ? he3->inner_ccb() : NULL;
-  DOuter_ccb  *oc1 = (ic1 == NULL) ? he3->outer_ccb() : NULL;
+  DCcb  *ic1 = (he3->is_on_inner_ccb()) ? he3->inner_ccb() : NULL;
+  DCcb  *oc1 = (ic1 == NULL) ? he3->outer_ccb() : NULL;
 
-  DInner_ccb  *ic2 = (he4->is_on_inner_ccb()) ? he4->inner_ccb() : NULL;
-  DOuter_ccb  *oc2 = (ic2 == NULL) ? he4->outer_ccb() : NULL;
+  DCcb  *ic2 = (he4->is_on_inner_ccb()) ? he4->inner_ccb() : NULL;
+  DCcb  *oc2 = (ic2 == NULL) ? he4->outer_ccb() : NULL;
 
   // Notify the observers that we are about to merge an edge.
   _notify_before_merge_edge (e1, e2, cv);
@@ -1858,11 +1858,11 @@ remove_edge(Halfedge_handle e, bool remove_source, bool remove_target)
 
   DHalfedge   *he1 = _halfedge (e);
   DHalfedge   *he2 = he1->opposite();
-  DInner_ccb  *ic1 = (he1->is_on_inner_ccb()) ? he1->inner_ccb() : NULL;
-  DOuter_ccb  *oc1 = (ic1 == NULL) ? he1->outer_ccb() : NULL;
+  DCcb  *ic1 = (he1->is_on_inner_ccb()) ? he1->inner_ccb() : NULL;
+  DCcb  *oc1 = (ic1 == NULL) ? he1->outer_ccb() : NULL;
   DFace       *f1 = (ic1 != NULL) ? ic1->face() : oc1->face();
-  DInner_ccb  *ic2 = (he2->is_on_inner_ccb()) ? he2->inner_ccb() : NULL;
-  DOuter_ccb  *oc2 = (ic2 == NULL) ? he2->outer_ccb() : NULL;
+  DCcb  *ic2 = (he2->is_on_inner_ccb()) ? he2->inner_ccb() : NULL;
+  DCcb  *oc2 = (ic2 == NULL) ? he2->outer_ccb() : NULL;
   DFace       *f2 = (ic2 != NULL) ? ic2->face() : oc2->face();
   DFace       *f;
 
@@ -1888,6 +1888,7 @@ remove_edge(Halfedge_handle e, bool remove_source, bool remove_target)
     bool                            is_perimetric2;
     bool                            at_open_bnd2;
 
+#if 0 // TODO replace with new implementation
     std::pair<int, const DVertex*>  v_min1 =
       _find_leftmost_vertex_on_closed_loop (he1, is_perimetric1, at_open_bnd1);
 
@@ -1964,6 +1965,7 @@ remove_edge(Halfedge_handle e, bool remove_source, bool remove_target)
       // If both paths are perimetric, then case (b) takes place:
       f = _remove_edge (he1, remove_source, remove_target);
     }
+#endif
   }
 
   return (Face_handle (f));
@@ -2084,7 +2086,7 @@ void Arrangement_on_surface_2<GeomTraits, TopTraits>::
 _move_outer_ccb (DFace *from_face, DFace *to_face, DHalfedge *he)
 {
   // Get the DCEL record that represents the outer CCB.
-  DOuter_ccb  *oc = he->outer_ccb();
+  DCcb  *oc = he->outer_ccb();
 
   CGAL_assertion (oc->face() == from_face);
 
@@ -2116,7 +2118,7 @@ void Arrangement_on_surface_2<GeomTraits, TopTraits>::
 _move_inner_ccb (DFace *from_face, DFace *to_face, DHalfedge *he)
 {
   // Get the DCEL record that represents the inner CCB.
-  DInner_ccb  *ic = he->inner_ccb();
+  DCcb  *ic = he->inner_ccb();
 
   CGAL_assertion (ic->face() == from_face);
 
@@ -2373,7 +2375,7 @@ _insert_in_face_interior(const X_monotone_curve_2& cv,
   // and link them together to form a new connected component, a hole in f.
   DHalfedge           *he1 = _dcel().new_edge();
   DHalfedge           *he2 = he1->opposite();
-  DInner_ccb          *ic = _dcel().new_inner_ccb();
+  DCcb                *ic = _dcel().new_inner_ccb();
   X_monotone_curve_2  *dup_cv = _new_curve (cv);
 
   ic->set_face (f);
@@ -2449,8 +2451,8 @@ _insert_from_vertex(const X_monotone_curve_2& cv,
 
   // Get the incident face of the previous halfedge. Note that this will also
   // be the incident face of the two new halfedges we are about to create.
-  DInner_ccb  *ic = (prev->is_on_inner_ccb()) ? prev->inner_ccb() : NULL;
-  DOuter_ccb  *oc = (ic == NULL) ? prev->outer_ccb() : NULL;
+  DCcb  *ic = (prev->is_on_inner_ccb()) ? prev->inner_ccb() : NULL;
+  DCcb  *oc = (ic == NULL) ? prev->outer_ccb() : NULL;
 
   // The first vertex is the one that the prev halfedge points to.
   // The second vertex is given by v.
@@ -2634,11 +2636,11 @@ _insert_at_vertices(const X_monotone_curve_2& cv,
   
   // Get the components containing the two previous halfedges and the incident
   // face (which should be the same for the two components).
-  DInner_ccb  *ic1 = (prev1->is_on_inner_ccb()) ? prev1->inner_ccb() : NULL;
-  DOuter_ccb  *oc1 = (ic1 == NULL) ? prev1->outer_ccb() : NULL;
+  DCcb  *ic1 = (prev1->is_on_inner_ccb()) ? prev1->inner_ccb() : NULL;
+  DCcb  *oc1 = (ic1 == NULL) ? prev1->outer_ccb() : NULL;
   DFace       *f1 = (ic1 != NULL) ? ic1->face() : oc1->face();
-  DInner_ccb  *ic2 = (prev2->is_on_inner_ccb()) ? prev2->inner_ccb() : NULL;
-  DOuter_ccb  *oc2 = (ic2 == NULL) ? prev2->outer_ccb() : NULL;
+  DCcb  *ic2 = (prev2->is_on_inner_ccb()) ? prev2->inner_ccb() : NULL;
+  DCcb  *oc2 = (ic2 == NULL) ? prev2->outer_ccb() : NULL;
   DFace       *f2 = (ic2 != NULL) ? ic2->face() : oc2->face();
   
   // some verbosity
@@ -2838,8 +2840,8 @@ _insert_at_vertices(const X_monotone_curve_2& cv,
       // In this case (3.2) we connect a hole (inner CCB) with an outer CCB
       // of the face that contains it. We remove the hole and associate the
       // pair of new halfedges with the outer boundary of the face f.
-      DInner_ccb  *del_ic;
-      DOuter_ccb  *oc;
+      DCcb        *del_ic;
+      DCcb        *oc;
       DHalfedge   *ccb_first;
       DHalfedge   *ccb_last;
       
@@ -2931,7 +2933,7 @@ _insert_at_vertices(const X_monotone_curve_2& cv,
     // Create a new outer CCB that for the face f, and make 
     // he1 (arbitrary choice) the representative halfedge 
     // of this component.
-    DOuter_ccb  *new_oc1 = _dcel().new_outer_ccb();
+    DCcb  *new_oc1 = _dcel().new_outer_ccb();
 
     f1->add_outer_ccb (new_oc1, he1); // sets he1 as initial leftmost pointer (ignoring direction)
     new_oc1->set_face (f1);
@@ -2961,7 +2963,7 @@ _insert_at_vertices(const X_monotone_curve_2& cv,
 
     // Create a new outer CCB that for the face f, and make 
     // he2 (implied choice) the representative halfedge of this component.
-    DOuter_ccb  *new_oc2 = _dcel().new_outer_ccb();
+    DCcb  *new_oc2 = _dcel().new_outer_ccb();
 
     f1->add_outer_ccb (new_oc2, he2); // sets he2 as initial leftmost pointer
     new_oc2->set_face (f1);
@@ -3014,7 +3016,7 @@ _insert_at_vertices(const X_monotone_curve_2& cv,
 #endif
     
     // Second, create a single outer component which should point to he2!!!
-    DOuter_ccb  *new_oc2 = _dcel().new_outer_ccb();
+    DCcb  *new_oc2 = _dcel().new_outer_ccb();
     new_f->add_outer_ccb (new_oc2, he2); // sets he2 as initial leftmost pointer
     new_oc2->set_face (new_f);
 
@@ -3114,7 +3116,7 @@ _insert_at_vertices(const X_monotone_curve_2& cv,
 
         // Create a new outer CCB that for the face f, and make he1 the
         // representative halfedge of this component.
-        DOuter_ccb  *new_oc1 = _dcel().new_outer_ccb();
+        DCcb  *new_oc1 = _dcel().new_outer_ccb();
         f1->add_outer_ccb (new_oc1, he1); // sets he1 as initial leftmost pointer
         new_oc1->set_face (f1);
         he1->set_outer_ccb (new_oc1);
@@ -3156,8 +3158,8 @@ _insert_at_vertices(const X_monotone_curve_2& cv,
 
         // Go over all other outer CCBs of f and check whether they should be
         // moved to be outer CCBs of the new face.
-        DOuter_ccb_iter  oc_it = f1->outer_ccbs_begin();
-        DOuter_ccb_iter  oc_to_move;
+        DCcb_iter  oc_it = f1->outer_ccbs_begin();
+        DCcb_iter  oc_to_move;
 
         while (oc_it != f1->outer_ccbs_end())
         {
@@ -3328,8 +3330,8 @@ _relocate_inner_ccbs_in_new_face (DHalfedge *new_he)
   
   // Examine the inner CCBs inside the existing old face and move the relevant
   // ones into the new face.
-  DInner_ccb_iter    ic_it = old_face->inner_ccbs_begin();
-  DInner_ccb_iter    ic_to_move;
+  DCcb_iter    ic_it = old_face->inner_ccbs_begin();
+  DCcb_iter    ic_to_move;
 
   while (ic_it != old_face->inner_ccbs_end())
   {
@@ -3535,10 +3537,10 @@ _split_edge(DHalfedge *e, DVertex *v,
   // Get the split halfedge and its twin, its source and target.
   DHalfedge       *he1 = e;
   DHalfedge       *he2 = he1->opposite();
-  DInner_ccb      *ic1 = (he1->is_on_inner_ccb()) ? he1->inner_ccb() : NULL;
-  DOuter_ccb      *oc1 = (ic1 == NULL) ? he1->outer_ccb() : NULL;
-  DInner_ccb      *ic2 = (he2->is_on_inner_ccb()) ? he2->inner_ccb() : NULL;
-  DOuter_ccb      *oc2 = (ic2 == NULL) ? he2->outer_ccb() : NULL;
+  DCcb            *ic1 = (he1->is_on_inner_ccb()) ? he1->inner_ccb() : NULL;
+  DCcb            *oc1 = (ic1 == NULL) ? he1->outer_ccb() : NULL;
+  DCcb            *ic2 = (he2->is_on_inner_ccb()) ? he2->inner_ccb() : NULL;
+  DCcb            *oc2 = (ic2 == NULL) ? he2->outer_ccb() : NULL;
 
   // Notify the observers that we are about to split an edge.
   _notify_before_split_edge (Halfedge_handle (e), Vertex_handle (v), cv1, cv2);
@@ -4249,11 +4251,11 @@ _remove_edge (DHalfedge *e, bool remove_source, bool remove_target)
   // belong to and their incident faces.
   DHalfedge   *he1 = e;
   DHalfedge   *he2 = e->opposite();
-  DInner_ccb  *ic1 = (he1->is_on_inner_ccb()) ? he1->inner_ccb() : NULL;
-  DOuter_ccb  *oc1 = (ic1 == NULL) ? he1->outer_ccb() : NULL;
+  DCcb        *ic1 = (he1->is_on_inner_ccb()) ? he1->inner_ccb() : NULL;
+  DCcb        *oc1 = (ic1 == NULL) ? he1->outer_ccb() : NULL;
   DFace       *f1 = (oc1 != NULL) ? oc1->face() : ic1->face();
-  DInner_ccb  *ic2 = (he2->is_on_inner_ccb()) ? he2->inner_ccb() : NULL;
-  DOuter_ccb  *oc2 = (ic2 == NULL) ? he2->outer_ccb() : NULL;
+  DCcb        *ic2 = (he2->is_on_inner_ccb()) ? he2->inner_ccb() : NULL;
+  DCcb        *oc2 = (ic2 == NULL) ? he2->outer_ccb() : NULL;
   DFace       *f2 = (oc2 != NULL) ? oc2->face() : ic2->face();
   DHalfedge   *prev1 = he1->prev();
   DHalfedge   *prev2 = he2->prev();
@@ -4381,16 +4383,23 @@ _remove_edge (DHalfedge *e, bool remove_source, bool remove_target)
       // In case the halfedges to be deleted are represantatives of their
       // CCB (note that both should belong to the same CCB, be it an outer
       // CCB or an inner one), make prev1 the components representative.
-      // TODO 
       if (oc1 != NULL && (oc1->halfedge() == he1 ||
                           oc1->halfedge() == he2))
       {
-        oc1->set_halfedge (prev1);
+        // either prev1 is pointing to leftmost now
+        _update_ccb_with(oc1, prev1);
+        // or he2->next(), which is prev1->next()
+        _update_ccb_with(oc1, prev1->next());
       }
       else if (ic1 != NULL && (ic1->halfedge() == he1 ||
                                ic1->halfedge() == he2))
       {
-        ic1->set_halfedge (prev1);
+        // either prev1 is pointing to leftmost now
+        // TODO do no compare with he1/he2 in update!
+        _update_ccb_with(ic1, prev1);
+        // or he2->next(), which is prev1->next()
+        // TODO do no compare with he1/he2 in update!
+        _update_ccb_with(ic1, prev1->next());
       }
 
       // In case he2 is the representative halfedge of its target vertex,
@@ -4443,175 +4452,14 @@ _remove_edge (DHalfedge *e, bool remove_source, bool remove_target)
       return (f1);
     }
 
+    // not remove from face and not an antenna:
     // In this case the degree of both end-vertices is at least 2, so we
     // can use the two predecessor halfedges of he1 and he2.
-    bool        add_inner_ccb = false;
-
-    if (ic1 != NULL && ic1 == ic2)
-    {
-      // If both halfedges lie on the same inner component (hole) inside the
-      // face (case 3.1), we have to split this component into two holes.
-      //
-      //    +-----------------------------+
-      //    |           prev1             |
-      //    |   +----+ /    +----+        |
-      //    |   |    +......+    |        |
-      //    |   +----+      +----+        |
-      //    |                             |
-      //    +-----------------------------+
-      //
-      // Notify the observers we are about to split an inner CCB.
-      _notify_before_split_inner_ccb (Face_handle (f1),
-                                      (Halfedge_handle 
-                                       (*(ic1->iterator())))->ccb(),
-                                      Halfedge_handle (he1));
-
-      // We first make prev1 the new representative halfedge of the first
-      // inner CCB.
-      ic1->set_halfedge (prev1);
-
-      // Create a new component that represents the new hole we split.
-      DInner_ccb     *new_ic = _dcel().new_inner_ccb();
-
-      f1->add_inner_ccb (new_ic, prev2); // sets prev2 as initial leftmost pointer
-      new_ic->set_face (f1);
-
-      // Associate all halfedges along the hole boundary with the new inner
-      // component.
-      DHalfedge       *curr;
-
-      for (curr = he1->next(); curr != he2; curr = curr->next())
-        curr->set_inner_ccb (new_ic);
-
-      // Notify the observers that the hole has been split.
-      _notify_after_split_inner_ccb (Face_handle (f1),
-                                     (Halfedge_handle (prev1))->ccb(),
-                                     (Halfedge_handle (prev2))->ccb());
-    }
-    else if (oc1 != oc2)
-    {
-      // RWRW: NEW!
-      CGAL_assertion (oc1 != NULL && oc2 != NULL);
-
-      // In case both halfegdes he1 and he2 are incident to the same face
-      // but lie on different outer CCBs of this face, removing this pair of
-      // halfedge causes the two components two merge and to become an
-      // inner CCB in the face.
-      // We first remove the outer CCB oc1 from f, and inform the observers
-      // on doing so.
-      Face_handle               fh1 (f1);
-
-      _notify_before_remove_outer_ccb (fh1, (Halfedge_handle(he1))->ccb());
-
-      f1->erase_outer_ccb (oc1);
-      _dcel().delete_outer_ccb (oc1);
-
-      _notify_after_remove_outer_ccb (fh1);
-
-      // We now remove the outer CCBs oc2 from f, and inform the observers
-      // on doing so.
-      _notify_before_remove_outer_ccb (fh1, (Halfedge_handle(he2))->ccb());
-
-      f2->erase_outer_ccb (oc2);
-      _dcel().delete_outer_ccb (oc2);
-
-      _notify_after_remove_outer_ccb (fh1);
-
-      // Mark that we should eventually add a new inner CCB inside the face.
-      add_inner_ccb = true;
-    }
-    else
-    {
-      CGAL_assertion (oc1 != NULL && oc1 == oc2);
-
-      // If both halfedges are incident to the same outer CCB of their
-      // face (case 3.2), we have to distinguish two sub-cases:
-      if (m_topol_traits.hole_creation_after_edge_removal (he1))
-      {
-        // We have to create a new hole in the interior of the incident face
-        // (case 3.2.1):
-        //
-        //    +-----------------------------+
-        //    | prev1                       |
-        //    v         +----+              |
-        //    +........>+    |              |
-        //    |   he1   +----+              |
-        //    |                             |
-        //    +-----------------------------+
-        //
-        // Note that it is guaranteed that he1 points at this new hole, while
-        // he2 points at the boundary of the face that contains this hole.
-        // First notify the observers we are about to form a new inner
-        // CCB inside f1.
-        _notify_before_add_inner_ccb (Face_handle (f1),
-                                      Halfedge_handle (he1->next()));
-
-        // Create a new component that represents the new hole.
-        DInner_ccb   *new_ic = _dcel().new_inner_ccb();
-
-        f1->add_inner_ccb (new_ic, he1->next()); // sets he1->next as initial leftmost pointer
-        new_ic->set_face (f1);
- 
-        // Associate all halfedges along the hole boundary with the new inner
-        // component.
-        DHalfedge       *curr;
-
-        for (curr = he1->next(); curr != he2; curr = curr->next())
-          curr->set_inner_ccb (new_ic);
-
-        // As the outer CCB of f1 may be represented by any of the
-        // halfedges in between he1 -> ... -> he2 (the halfedges in between
-        // represent the outer boundary of the new hole that is formed),
-        // We represent the outer boundary of f1 by prev1, which definately
-        // stays on the outer boundary.
-        oc1->set_halfedge (prev1);
-
-        // Notify the observers that a new hole has been formed.
-        Ccb_halfedge_circulator   hccb = (Halfedge_handle(he1->next()))->ccb();
-
-        _notify_after_add_inner_ccb (hccb);
-      }
-      else
-      {
-        // We have to split the outer CCB into two outer components
-        // (case 3.2.2), such that the number of outer CCBs of the face is
-        // incremented.
-        // First we notify the observers that we are about to split an outer
-        // component.
-        _notify_before_split_outer_ccb (Face_handle (f1),
-                                        Halfedge_handle (he1)->ccb(),
-                                        Halfedge_handle (he1));
-
-        // Create a new outer component.
-        DOuter_ccb   *new_oc = _dcel().new_outer_ccb();
-
-        f1->add_outer_ccb (new_oc, he1->next());
-        new_oc->set_face (f1);
-
-        // Associate all halfedges from he1 until he2 with the new CCB.
-        DHalfedge       *curr;
-
-        for (curr = he1->next(); curr != he2; curr = curr->next())
-          curr->set_outer_ccb (new_oc);
-
-        // As the outer CCB of f1 may be represented by any of the
-        // halfedges in between he1 -> ... -> he2 (the halfedges in between
-        // are on the new outer CCB we have just created), we represent the
-        // former outer CCB by prev1, which definately stays on it.
-        oc1->set_halfedge (prev1);
-
-        // Notify the observers that a new outer CCB has been formed.
-        Ccb_halfedge_circulator   hccb = (Halfedge_handle(he1->next()))->ccb();
-
-        _notify_after_split_outer_ccb (Face_handle (f1),
-                                       Halfedge_handle (he1->next())->ccb(),
-                                       Halfedge_handle (prev1)->ccb());
-      }
-    }
 
     // Disconnect the two halfedges we are about to delete from the edge list.
     prev1->set_next (he2->next());
     prev2->set_next (he1->next());
+    // Note from here we can check perimetricy of the new (implicit) CCBs 
 
     // If one of these edges is an incident halfedge of its target vertex,
     // replace it by the appropriate predecessor.
@@ -4640,11 +4488,82 @@ _remove_edge (DHalfedge *e, bool remove_source, bool remove_target)
     // Delete the pair of halfedges.
     _dcel().delete_edge (he1);
 
-    // RWRW: NEW!
-    // In case we have to create a new inner CCB inside the face (new removal
-    // case), do it now.
-    if (add_inner_ccb)
+    // The only task left now is to update the ccbs:
+    if (ic1 != NULL && ic1 == ic2)
     {
+      // If both halfedges lie on the same inner component (hole) inside the
+      // face (case 3.1), we have to split this component into two holes.
+      //
+      //    +-----------------------------+
+      //    |           prev1             |
+      //    |   +----+ /    +----+        |
+      //    |   |    +......+    |        |
+      //    |   +----+      +----+        |
+      //    |                             |
+      //    +-----------------------------+
+      //
+      // Notify the observers we are about to split an inner CCB.
+      _notify_before_split_inner_ccb (Face_handle (f1),
+                                      (Halfedge_handle 
+                                       (*(ic1->iterator())))->ccb(),
+                                      Halfedge_handle (he1));
+
+      // We first make prev1 the new representative halfedge of the first
+      // inner CCB.
+      // TODO update leftmost pointer of ic1
+      ic1->set_halfedge (prev1);
+
+      // Create a new component that represents the new hole we split.
+      DCcb     *new_ic2 = _dcel().new_inner_ccb();
+
+      f1->add_inner_ccb (new_ic2, prev2); // sets prev2 as initial leftmost pointer
+      new_ic2->set_face (f1);
+
+      // Associate all halfedges along the hole boundary with the new inner
+      // component.
+      DHalfedge       *curr;
+
+      // TODO set leftmost pointer of new_ic2
+      for (curr = he1->next(); curr != he2; curr = curr->next()) {
+        curr->set_inner_ccb (new_ic2);
+      }
+      
+      // Notify the observers that the hole has been split.
+      _notify_after_split_inner_ccb (Face_handle (f1),
+                                     (Halfedge_handle (prev1))->ccb(),
+                                     (Halfedge_handle (prev2))->ccb());
+    }
+    else if (oc1 != oc2)
+    {
+      // RWRW: NEW!
+      CGAL_assertion (oc1 != NULL && oc2 != NULL);
+
+      // In case both halfegdes he1 and he2 are incident to the same face
+      // but lie on different (perimetic) outer CCBs of this face, removing this pair of
+      // halfedge causes the two components to merge and to become an
+      // inner CCB in the face. 
+      // We first remove the outer CCB oc1 from f, and inform the observers
+      // on doing so.
+      Face_handle               fh1 (f1);
+
+      _notify_before_remove_outer_ccb (fh1, (Halfedge_handle(he1))->ccb());
+
+      f1->erase_outer_ccb (oc1);
+      _dcel().delete_outer_ccb (oc1);
+
+      _notify_after_remove_outer_ccb (fh1);
+
+      // We now remove the outer CCBs oc2 from f, and inform the observers
+      // on doing so.
+      _notify_before_remove_outer_ccb (fh1, (Halfedge_handle(he2))->ccb());
+
+      f2->erase_outer_ccb (oc2);
+      _dcel().delete_outer_ccb (oc2);
+
+      _notify_after_remove_outer_ccb (fh1);
+
+      // In this case we now have to create a new inner CCB inside the face:
+
       // Notify the observers that we are about to create a new inner CCB
       // inside the merged face.
       Halfedge_handle   hh (prev1);
@@ -4652,23 +4571,202 @@ _remove_edge (DHalfedge *e, bool remove_source, bool remove_target)
       _notify_before_add_inner_ccb (Face_handle (f1), hh);
 
       // Initiate a new inner CCB inside the given face.
-      DInner_ccb   *new_ic = _dcel().new_inner_ccb();
+      DCcb   *new_ic1 = _dcel().new_inner_ccb();
 
-      f1->add_inner_ccb (new_ic, prev1); // sets prev1 as initial leftmost pointer
-      new_ic->set_face (f1);
+      f1->add_inner_ccb (new_ic1, prev1); // sets prev1 as initial leftmost pointer
+      new_ic1->set_face (f1);
 
       // Set the innser CCB of the halfedges along the component boundary.
       DHalfedge   *curr = prev1;
       
+      // TODO set leftmost pointer of new_ic1
       do
       {
-        curr->set_inner_ccb (new_ic);
+        curr->set_inner_ccb (new_ic1);
         curr = curr->next();
       } while (curr != prev1);
 
       // Notify the observers that we have formed a new inner CCB.
       _notify_after_add_inner_ccb (hh->ccb());
     }
+    else
+    {
+      CGAL_assertion (oc1 != NULL && oc1 == oc2);
+
+      // As the old outer CCB of f1 may be represented by any of the
+      // halfedges in between he1 -> ... -> he2 (the halfedges in between
+      // represent the outer boundary of the new hole that is formed),
+      // We represent the outer boundary of f1 by prev1, which definately
+      // stays on the outer boundary.
+      // TODO update leftmost pointer of oc1
+      oc1->set_halfedge (prev1);
+
+#if 0
+      // TODO unify CCB classes and combine/simplify the following two cases:
+      // TODO new ccb (NOT INNER/OUTER)
+
+      // Create a new component that represents the new hole.
+      // TODO check whether new_inner/outer ccb can be done without giving halfedge
+      void* new_ccb;
+
+      new_ccb->set_halfedge(he1->next()); // initial halfedge/leftmost pointer
+      
+      new_ccb->set_face (f1);
+
+      _determine_ccb_perimetricy(new_ccb);
+      
+      // TODO set leftmost pointer of new_ccb
+      for (DHalfedge* curr = he1->next(); curr != he2; curr = curr->next()) {
+
+      }
+
+      // If both halfedges are incident to the same outer CCB of their
+      // face (case 3.2), we have to distinguish two sub-cases:
+      if (oc1->is_perimetric() && new_ccb->is_perimetric())
+      {
+        // If both are perimetric, we have to split 
+        // the outer CCB into two outer components
+        // (case 3.2.2), such that the number of outer 
+        // CCBs of the face is incremented.
+        
+        // First we notify the observers that we are about to split an outer
+        // component.
+        _notify_before_split_outer_ccb (Face_handle (f1),
+                                        Halfedge_handle (he1)->ccb(),
+                                        Halfedge_handle (he1));
+
+        // Create a new outer component.
+        // TODO check what add_outer_ccb does with he1->next, and if it needs it
+        f1->add_outer_ccb (new_oc2, he1->next());
+
+        // Associate all halfedges from he1 until he2 with the new CCB.
+        for (DHalfedge* curr = he1->next(); curr != he2; curr = curr->next()) {
+          curr->set_outer_ccb (new_oc2);
+        }
+
+        // Notify the observers that a new outer CCB has been formed.
+        Ccb_halfedge_circulator   hccb = (Halfedge_handle(he1->next()))->ccb();
+
+        _notify_after_split_outer_ccb (Face_handle (f1),
+                                       Halfedge_handle (he1->next())->ccb(),
+                                       Halfedge_handle (prev1)->ccb());
+      } else {
+        
+        // If one is not perimetric, we have to create 
+        // a new hole in the interior of the incident face
+        // (case 3.2.1):
+        //
+        //    +-----------------------------+
+        //    | prev1                       |
+        //    v         +----+              |
+        //    +........>+    |              |
+        //    |   he1   +----+              |
+        //    |                             |
+        //    +-----------------------------+
+        //
+        // Note that it is guaranteed that he1 points at this new hole, while
+        // he2 points at the boundary of the face that contains this hole.
+        // First notify the observers we are about to form a new inner
+        // CCB inside f1.
+        _notify_before_add_inner_ccb (Face_handle (f1),
+                                      Halfedge_handle (he1->next()));
+
+        // Add a new component that represents the new hole.
+        // TODO check what add_inner_ccb does with he1->next, and if it needs it
+        f1->add_inner_ccb (new_ccb, he1->next()); // sets he1->next as initial leftmost pointer
+ 
+        // Associate all halfedges along the hole boundary with the new inner
+        // component.
+        for (DHalfedge* curr = he1->next(); curr != he2; curr = curr->next()) {
+          curr->set_inner_ccb (new_ic2);
+        }
+
+        // Notify the observers that a new hole has been formed.
+        Ccb_halfedge_circulator   hccb = (Halfedge_handle(he1->next()))->ccb();
+
+        _notify_after_add_inner_ccb (hccb);
+      }
+    
+
+#else // TODO remove the else case!
+
+      // If both halfedges are incident to the same outer CCB of their
+      // face (case 3.2), we have to distinguish two sub-cases:
+      // TODO implement in terms of perimetricy and is_left_facing_topright
+      if (m_topol_traits.hole_creation_after_edge_removal (he1))
+      {
+        // We have to create a new hole in the interior of the incident face
+        // (case 3.2.1):
+        //
+        //    +-----------------------------+
+        //    | prev1                       |
+        //    v         +----+              |
+        //    +........>+    |              |
+        //    |   he1   +----+              |
+        //    |                             |
+        //    +-----------------------------+
+        //
+        // Note that it is guaranteed that he1 points at this new hole, while
+        // he2 points at the boundary of the face that contains this hole.
+        // First notify the observers we are about to form a new inner
+        // CCB inside f1.
+        _notify_before_add_inner_ccb (Face_handle (f1),
+                                      Halfedge_handle (he1->next()));
+
+        // Create a new component that represents the new hole.
+        DCcb   *new_ic2 = _dcel().new_inner_ccb();
+
+        f1->add_inner_ccb (new_ic2, he1->next()); // sets he1->next as initial leftmost pointer
+        new_ic2->set_face (f1);
+ 
+        // Associate all halfedges along the hole boundary with the new inner
+        // component.
+        DHalfedge       *curr;
+
+        // TODO set leftmost pointer of new_ic2
+        for (curr = he1->next(); curr != he2; curr = curr->next()) {
+          curr->set_inner_ccb (new_ic2);
+        }
+
+        // Notify the observers that a new hole has been formed.
+        Ccb_halfedge_circulator   hccb = (Halfedge_handle(he1->next()))->ccb();
+
+        _notify_after_add_inner_ccb (hccb);
+      }
+      else
+      {
+        // We have to split the outer CCB into two outer components
+        // (case 3.2.2), such that the number of outer CCBs of the face is
+        // incremented.
+        // First we notify the observers that we are about to split an outer
+        // component.
+        _notify_before_split_outer_ccb (Face_handle (f1),
+                                        Halfedge_handle (he1)->ccb(),
+                                        Halfedge_handle (he1));
+
+        // Create a new outer component.
+        DCcb   *new_oc2 = _dcel().new_outer_ccb();
+
+        f1->add_outer_ccb (new_oc2, he1->next());
+        new_oc2->set_face (f1);
+
+        // Associate all halfedges from he1 until he2 with the new CCB.
+        DHalfedge       *curr;
+
+        // TODO update leftmost pointer for new_oc2
+        for (curr = he1->next(); curr != he2; curr = curr->next()) {
+          curr->set_outer_ccb (new_oc2);
+        }
+
+        // Notify the observers that a new outer CCB has been formed.
+        Ccb_halfedge_circulator   hccb = (Halfedge_handle(he1->next()))->ccb();
+
+        _notify_after_split_outer_ccb (Face_handle (f1),
+                                       Halfedge_handle (he1->next())->ccb(),
+                                       Halfedge_handle (prev1)->ccb());
+      }
+    }
+#endif      
 
     // Notify the observers that an edge has been deleted.
     _notify_after_remove_edge();
@@ -4676,6 +4774,8 @@ _remove_edge (DHalfedge *e, bool remove_source, bool remove_target)
     // Return the incident face.
     return (f1);
   }
+
+  // TODO from here
 
   CGAL_assertion(f1 != f2);
 
@@ -4736,8 +4836,8 @@ _remove_edge (DHalfedge *e, bool remove_source, bool remove_target)
     }
 
     // Move the holes inside f2 to f1.
-    DInner_ccb_iter    ic_it = f2->inner_ccbs_begin();
-    DInner_ccb_iter    ic_to_move;
+    DCcb_iter    ic_it = f2->inner_ccbs_begin();
+    DCcb_iter    ic_to_move;
     
     while (ic_it != f2->inner_ccbs_end())
     {
@@ -4823,7 +4923,7 @@ _remove_edge (DHalfedge *e, bool remove_source, bool remove_target)
       _notify_before_add_inner_ccb (Face_handle (f1), hh);
 
       // Initiate a new inner CCB inside the given face.
-      DInner_ccb   *new_ic = _dcel().new_inner_ccb();
+      DCcb   *new_ic = _dcel().new_inner_ccb();
 
       f1->add_inner_ccb (new_ic, prev1); // sets prev1 as initial leftmost pointer
       new_ic->set_face (f1);
@@ -4875,8 +4975,8 @@ _remove_edge (DHalfedge *e, bool remove_source, bool remove_target)
     curr->set_inner_ccb (ic1);
 
   // Move the inner CCBs inside f2 to f1.
-  DInner_ccb_iter    ic_it = f2->inner_ccbs_begin();
-  DInner_ccb_iter    ic_to_move;
+  DCcb_iter    ic_it = f2->inner_ccbs_begin();
+  DCcb_iter    ic_to_move;
 
   while (ic_it != f2->inner_ccbs_end())
   {
@@ -4915,7 +5015,8 @@ _remove_edge (DHalfedge *e, bool remove_source, bool remove_target)
         
   if (he2->vertex()->halfedge() == he2)
     he2->vertex()->set_halfedge (prev1);
-      
+  
+  // TODO unify with previous case?
   // Disconnect the two halfedges we are about to delete from the edge
   // list.
   prev1->set_next (he2->next());
@@ -5228,9 +5329,9 @@ _is_valid (Face_const_handle f) const
 {
   // Check if all outer components of the face refer to f.
   const DFace                   *p_f = _face (f);
-  DOuter_ccb_const_iter          oc_it;
+  DCcb_const_iter                oc_it;
   const DHalfedge               *he;
-  const DOuter_ccb              *oc;
+  const DCcb                    *oc;
 
   for (oc_it = p_f->outer_ccbs_begin();
        oc_it != p_f->outer_ccbs_end(); ++oc_it)
@@ -5248,8 +5349,8 @@ _is_valid (Face_const_handle f) const
   }
  
   // Check if all inner components of the face refer to f.
-  DInner_ccb_const_iter          ic_it;
-  const DInner_ccb              *ic;
+  DCcb_const_iter          ic_it;
+  const DCcb              *ic;
 
   for (ic_it = p_f->inner_ccbs_begin();
        ic_it != p_f->inner_ccbs_end(); ++ic_it)
@@ -5292,7 +5393,7 @@ _is_valid (Face_const_handle f) const
 //
 template<class GeomTraits, class TopTraits>
 bool Arrangement_on_surface_2<GeomTraits, TopTraits>::
-_is_outer_ccb_valid (const DOuter_ccb *oc, const DHalfedge *first) const
+_is_outer_ccb_valid (const DCcb *oc, const DHalfedge *first) const
 {
   // Make sure that all halfedges along the CCB refer to the same component.
   const DHalfedge   *curr = first;
@@ -5321,7 +5422,7 @@ _is_outer_ccb_valid (const DOuter_ccb *oc, const DHalfedge *first) const
 //
 template<class GeomTraits, class TopTraits>
 bool Arrangement_on_surface_2<GeomTraits, TopTraits>::
-_is_inner_ccb_valid (const DInner_ccb *ic, const DHalfedge *first) const
+_is_inner_ccb_valid (const DCcb *ic, const DHalfedge *first) const
 {
   // Make sure that all halfedges along the CCB refer to the same component.
   const DHalfedge   *curr = first;

@@ -136,14 +136,10 @@ public:
                                       Ccb_halfedge_circulator;
   typedef typename Base_arr_2::Ccb_halfedge_const_circulator
                                       Ccb_halfedge_const_circulator;
-  typedef typename Base_arr_2::Outer_ccb_iterator       
-                                      Outer_ccb_iterator;
-  typedef typename Base_arr_2::Outer_ccb_const_iterator
-                                      Outer_ccb_const_iterator;
-  typedef typename Base_arr_2::Inner_ccb_iterator       
-                                      Inner_ccb_iterator;
-  typedef typename Base_arr_2::Inner_ccb_const_iterator
-                                      Inner_ccb_const_iterator;
+  typedef typename Base_arr_2::Ccb_iterator       
+                                      Ccb_iterator;
+  typedef typename Base_arr_2::Ccb_const_iterator
+                                      Ccb_const_iterator;
   typedef typename Base_arr_2::Isolated_vertex_iterator
                                       Isolated_vertex_iterator;
   typedef typename Base_arr_2::Isolated_vertex_const_iterator

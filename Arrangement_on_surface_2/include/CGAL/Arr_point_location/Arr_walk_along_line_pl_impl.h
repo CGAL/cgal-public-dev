@@ -40,7 +40,7 @@ Object Arr_walk_along_line_point_location<Arrangement>::locate
   // and an invalid halfedge representing the closest edge to p from above it
   // so far.
   typename Traits_adaptor_2::Equal_2  equal = geom_traits->equal_2_object();
-  Inner_ccb_const_iterator            ic_it;
+  Ccb_const_iterator                  ic_it;
   Face_const_handle                   face;
   Halfedge_const_handle               closest_he;
   bool                                is_in_face;
@@ -221,7 +221,7 @@ _vertical_ray_shoot (const Point_2& p,
   // so far.
   typename Traits_adaptor_2::Is_vertical_2        is_vertical =
                                          geom_traits->is_vertical_2_object();
-  Inner_ccb_const_iterator            ic_it;
+  Ccb_const_iterator                  ic_it;
   Face_const_handle                   face;
   Halfedge_const_handle               closest_he;
   bool                                is_in_face;

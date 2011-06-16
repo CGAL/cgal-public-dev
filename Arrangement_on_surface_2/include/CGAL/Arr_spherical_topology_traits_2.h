@@ -80,8 +80,7 @@ public:
   typedef typename Dcel::Vertex                           Vertex;
   typedef typename Dcel::Halfedge                         Halfedge;
   typedef typename Dcel::Face                             Face;
-  typedef typename Dcel::Outer_ccb                        Outer_ccb;
-  typedef typename Dcel::Inner_ccb                        Inner_ccb;
+  typedef typename Dcel::Ccb                              Ccb;
   typedef typename Dcel::Isolated_vertex                  Isolated_vertex;
   //@}
 

@@ -63,8 +63,7 @@ private:
   typedef typename Arrangement_2::DVertex               DVertex;
   typedef typename Arrangement_2::DHalfedge             DHalfedge;
   typedef typename Arrangement_2::DFace                 DFace;
-  typedef typename Arrangement_2::DOuter_ccb            DOuter_ccb;
-  typedef typename Arrangement_2::DInner_ccb            DInner_ccb;
+  typedef typename Arrangement_2::DCcb                  DCcb;
   typedef typename Arrangement_2::DIso_vertex           DIso_vertex;
 
 private:
@@ -238,10 +237,10 @@ public:
     if (he1 == he2)
       return (0);
 
-    const DInner_ccb *ic1 = (he1->is_on_inner_ccb()) ? he1->inner_ccb() : NULL;
-    const DOuter_ccb *oc1 = (ic1 == NULL) ? he1->outer_ccb() : NULL;
-    const DInner_ccb *ic2 = (he2->is_on_inner_ccb()) ? he2->inner_ccb() : NULL;
-    const DOuter_ccb *oc2 = (ic2 == NULL) ? he2->outer_ccb() : NULL;
+    const DCcb *ic1 = (he1->is_on_inner_ccb()) ? he1->inner_ccb() : NULL;
+    const DCcb *oc1 = (ic1 == NULL) ? he1->outer_ccb() : NULL;
+    const DCcb *ic2 = (he2->is_on_inner_ccb()) ? he2->inner_ccb() : NULL;
+    const DCcb *oc2 = (ic2 == NULL) ? he2->outer_ccb() : NULL;
 
     if (oc1 != oc2 || ic1 != ic2)
       return (-1);
@@ -743,15 +742,15 @@ public:
    */
   bool are_on_same_inner_component (Halfedge_handle e1, Halfedge_handle e2)
   {
-     DHalfedge        *he1 = p_arr->_halfedge (e1);
-     DHalfedge        *he2 = p_arr->_halfedge (e2);
+     DHalfedge *he1 = p_arr->_halfedge (e1);
+     DHalfedge *he2 = p_arr->_halfedge (e2);
 
-    const DInner_ccb  *ic1 = (he1->is_on_inner_ccb()) ? he1->inner_ccb() : NULL;
+    const DCcb *ic1 = (he1->is_on_inner_ccb()) ? he1->inner_ccb() : NULL;
 
     if (ic1 == NULL)
       return (false);
 
-    const DInner_ccb  *ic2 = (he2->is_on_inner_ccb()) ? he2->inner_ccb() : NULL;
+    const DCcb *ic2 = (he2->is_on_inner_ccb()) ? he2->inner_ccb() : NULL;
 
     return (ic1 == ic2);
   }
@@ -767,12 +766,12 @@ public:
      DHalfedge        *he1 = p_arr->_halfedge (e1);
      DHalfedge        *he2 = p_arr->_halfedge (e2);
 
-    const DOuter_ccb  *oc1 = (he1->is_on_outer_ccb()) ? he1->outer_ccb() : NULL;
+    const DCcb  *oc1 = (he1->is_on_outer_ccb()) ? he1->outer_ccb() : NULL;
 
     if (oc1 == NULL)
       return (false);
 
-    const DOuter_ccb  *oc2 = (he2->is_on_outer_ccb()) ? he2->outer_ccb() : NULL;
+    const DCcb  *oc2 = (he2->is_on_outer_ccb()) ? he2->outer_ccb() : NULL;
 
     return (oc1 == oc2);
   }
@@ -819,18 +818,14 @@ public:
   typedef typename Arrangement_2::DVertex_const_iter  Dcel_vertex_iterator;
   typedef typename Arrangement_2::DEdge_const_iter    Dcel_edge_iterator;
   typedef typename Arrangement_2::DFace_const_iter    Dcel_face_iterator;
-  typedef typename Arrangement_2::DOuter_ccb_const_iter
-                                                      Dcel_outer_ccb_iterator;
-  typedef typename Arrangement_2::DInner_ccb_const_iter
-                                                      Dcel_inner_ccb_iterator;
+  typedef typename Arrangement_2::DCcb_const_iter     Dcel_ccb_iterator;
   typedef typename Arrangement_2::DIso_vertex_const_iter
                                                       Dcel_iso_vertex_iterator;
 
   typedef DVertex                               Dcel_vertex;
   typedef DHalfedge                             Dcel_halfedge;
   typedef DFace                                 Dcel_face;
-  typedef DOuter_ccb                            Dcel_outer_ccb;
-  typedef DInner_ccb                            Dcel_inner_ccb;
+  typedef DCcb                                  Dcel_ccb;
   typedef DIso_vertex                           Dcel_isolated_vertex;
 
   /*!
@@ -932,7 +927,7 @@ public:
    * Create a new outer CCB.
    * \return A pointer to the created DCEL outer CCB.
    */
-  Dcel_outer_ccb* new_outer_ccb ()
+  Dcel_ccb* new_outer_ccb ()
   {
     return (p_arr->_dcel().new_outer_ccb());
   }
@@ -941,7 +936,7 @@ public:
    * Create a new inner CCB.
    * \return A pointer to the created DCEL inner CCB.
    */
-  Dcel_inner_ccb* new_inner_ccb ()
+  Dcel_ccb* new_inner_ccb ()
   {
     return (p_arr->_dcel().new_inner_ccb());
   }

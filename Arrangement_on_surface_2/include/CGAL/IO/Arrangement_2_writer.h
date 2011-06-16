@@ -55,10 +55,7 @@ protected:
   typedef typename Arr_accessor::Dcel_edge_iterator     Edge_const_iterator;
   typedef typename Arr_accessor::Dcel_face_iterator     Face_const_iterator;
 
-  typedef typename Arr_accessor::Dcel_outer_ccb_iterator
-                                                   Outer_ccb_iterator;
-  typedef typename Arr_accessor::Dcel_inner_ccb_iterator
-                                                   Inner_ccb_iterator;
+  typedef typename Arr_accessor::Dcel_ccb_iterator      Ccb_iterator;
   typedef typename Arr_accessor::Dcel_iso_vertex_iterator
                                                    Isolated_vertex_iterator;
 
@@ -245,7 +242,7 @@ protected:
 
     // Write the outer CCBs of the face.
     const std::size_t    n_occbs = f->number_of_outer_ccbs();
-    Outer_ccb_iterator   oc_it;
+    Ccb_iterator         oc_it;
 
     formatter.write_outer_ccbs_begin();
     formatter.write_size ("number_of_outer_ccbs", n_occbs);
@@ -261,7 +258,7 @@ protected:
 
     // Write the inner CCBs of the face.
     const std::size_t    n_iccbs = f->number_of_inner_ccbs();
-    Inner_ccb_iterator   ic_it;
+    Ccb_iterator         ic_it;
 
     formatter.write_inner_ccbs_begin();
     formatter.write_size ("number_of_inner_ccbs", n_iccbs);

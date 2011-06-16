@@ -97,7 +97,7 @@ Object Arr_naive_point_location<Arrangement>::locate (const Point_2& p) const
         // This is a workaround for MSVC. For some reason the compiler barfs
         // when the iterator is not saved in a variable and only then the
         // source() of its value_type is accessed.
-        typename Arrangement_2::Outer_ccb_const_iterator it =
+        typename Arrangement_2::Ccb_const_iterator it =
           fh->outer_ccbs_begin();
         Vertex_const_handle  v = (*it)->source();
 
