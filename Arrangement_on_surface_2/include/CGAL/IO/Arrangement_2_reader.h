@@ -264,7 +264,7 @@ protected:
     for (k = 0; k < n_occbs; k++)
     {
       // Allocate a new outer CCB record and set its incident face.
-      new_occb = m_arr_access.new_outer_ccb();
+      new_occb = m_arr_access.new_ccb();
       new_occb->set_face (new_f);
 
       // Read the current outer CCB.
@@ -283,7 +283,7 @@ protected:
     for (k = 0; k < n_iccbs; k++)
     {
       // Allocate a new inner CCB record and set its incident face.
-      new_iccb = m_arr_access.new_inner_ccb();
+      new_iccb = m_arr_access.new_ccb();
       new_iccb->set_face (new_f);
 
       // Read the current inner CCB.

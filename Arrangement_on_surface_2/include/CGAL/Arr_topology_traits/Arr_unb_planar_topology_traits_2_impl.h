@@ -191,8 +191,8 @@ void Arr_unb_planar_topology_traits_2<GeomTraits, Dcel_>::init_dcel ()
   Halfedge           *he3_t = he3->opposite();
   Halfedge           *he4 = this->m_dcel.new_edge();
   Halfedge           *he4_t = he4->opposite();
-  Ccb                *oc = this->m_dcel.new_outer_ccb();
-  Ccb                *ic = this->m_dcel.new_inner_ccb();
+  Ccb                *oc = this->m_dcel.new_ccb();
+  Ccb                *ic = this->m_dcel.new_ccb();
   Face               *in_f = this->m_dcel.new_face();
 
   he1->set_curve (NULL);

@@ -1037,15 +1037,13 @@ protected:
   Vertex_list         vertices;             // The vertices container.
   Halfedge_list       halfedges;            // The halfedges container.
   Face_list           faces;                // The faces container.
-  Ccb_list            outer_ccbs;           // The outer CCBs.
-  Ccb_list            inner_ccbs;           // The inner CCBs.
+  Ccb_list            ccbs;                 // The Ccb container.
   Iso_vert_list       iso_verts;            // The isolated vertices.
 
   Vertex_allocator    vertex_alloc;         // An allocator for vertices.
   Halfedge_allocator  halfedge_alloc;       // An allocator for halfedges.
   Face_allocator      face_alloc;           // An allocator for faces.
-  Ccb_allocator       outer_ccb_alloc;      // An allocator for outer CCBs.
-  Ccb_allocator       inner_ccb_alloc;      // An allocator for outer CCBs.
+  Ccb_allocator       ccb_alloc;            // An allocator for CCBs.
   Iso_vert_allocator  iso_vert_alloc;       // Allocator for isolated vertices.
 
 public:
@@ -1106,16 +1104,10 @@ public:
     return (faces.size());
   }
 
-  /*! Get the number of outer CCBs. */
-  Size size_of_outer_ccbs() const
+  /*! Get the number of CCBs. */
+  Size size_of_ccbs() const
   {
-    return (outer_ccbs.size());
-  }
-
-  /*! Get the number of inner CCBs. */
-  Size size_of_inner_ccbs() const
-  {
-    return (inner_ccbs.size());
+    return (ccbs.size());
   }
 
   /*! Get the number of isolated vertices. */
@@ -1185,22 +1177,12 @@ public:
     return (f);
   }
 
-  /*! Create a new outer CCB. */
-  Ccb* new_outer_ccb ()
+  /*! Create a new CCB. */
+  Ccb* new_ccb ()
   {
-    Ccb  *oc = outer_ccb_alloc.allocate (1);
-    outer_ccb_alloc.construct (oc, Ccb());
-    outer_ccbs.push_back (*oc);
-    return (oc);
-  }
-
-  /*! Create a new inner CCB. */
-  Ccb* new_inner_ccb ()
-  {
-    Ccb  *ic = inner_ccb_alloc.allocate (1);
-    
-    inner_ccb_alloc.construct (ic, Ccb());
-    inner_ccbs.push_back (*ic);
+    Ccb  *ic = ccb_alloc.allocate (1);
+    ccb_alloc.construct (ic, Ccb());
+    ccbs.push_back (*ic);
     return (ic);
   }
 
@@ -1242,20 +1224,12 @@ public:
     face_alloc.deallocate (f, 1);
   }
 
-  /*! Delete an existing outer CCB. */
-  void delete_outer_ccb (Ccb *oc)
+  /*! Delete an existing CCB. */
+  void delete_ccb (Ccb *oc)
   {
-    outer_ccbs.erase (oc);
-    outer_ccb_alloc.destroy (oc);
-    outer_ccb_alloc.deallocate (oc, 1);
-  }
-
-  /*! Delete an existing inner CCB. */
-  void delete_inner_ccb (Ccb *ic)
-  {
-    inner_ccbs.erase (ic);
-    inner_ccb_alloc.destroy (ic);
-    inner_ccb_alloc.deallocate (ic, 1);
+    ccbs.erase (oc);
+    ccb_alloc.destroy (oc);
+    ccb_alloc.deallocate (oc, 1);
   }
 
   /*! Delete an existing isolated vertex. */
@@ -1300,23 +1274,13 @@ public:
     }
 
     // Free all outer CCBs.
-    typename Ccb_list::iterator   ocit = outer_ccbs.begin(), oc_curr;
+    typename Ccb_list::iterator   ccit = ccbs.begin(), cc_curr;
 
-    while (ocit != outer_ccbs.end())
+    while (ccit != ccbs.end())
     {
-      oc_curr = ocit;
-      ++ocit;
-      delete_outer_ccb (&(*oc_curr));
-    }
-
-    // Free all inner CCBs.
-    typename Ccb_list::iterator   icit = inner_ccbs.begin(), ic_curr;
-
-    while (icit != inner_ccbs.end())
-    {
-      ic_curr = icit;
-      ++icit;
-      delete_inner_ccb (&(*ic_curr));
+      cc_curr = ccit;
+      ++ccit;
+      delete_ccb (&(*cc_curr));
     }
 
     // Free all isolated vertices.
@@ -1380,24 +1344,14 @@ public:
       f_map.insert (typename Face_map::value_type(&(*fit), dup_f));
     }
 
-    Ccb_map                            oc_map;
-    typename Ccb_list::const_iterator  ocit;
-    Ccb                               *dup_oc;
+    Ccb_map                            cc_map;
+    typename Ccb_list::const_iterator  ccit;
+    Ccb                               *dup_cc;
 
-    for (ocit = dcel.out_ccbs.begin(); ocit != dcel.out_ccbs.end(); ++ocit)
+    for (ccit = dcel.ccbs.begin(); ccit != dcel.ccbs.end(); ++ccit)
     {
-      dup_oc = new_outer_ccb();
-      oc_map.insert (typename Ccb_map::value_type(&(*ocit), dup_oc));
-    }
-
-    Ccb_map                            ic_map;
-    typename Ccb_list::const_iterator  icit;
-    Ccb                               *dup_ic;
-
-    for (icit = dcel.in_ccbs.begin(); icit != dcel.in_ccbs.end(); ++icit)
-    {
-      dup_ic = new_inner_ccb();
-      ic_map.insert (typename Ccb_map::value_type(&(*icit), dup_ic));
+      dup_cc = new_ccb();
+      cc_map.insert (typename Ccb_map::value_type(&(*ccit), dup_cc));
     }
 
     Iso_vert_map                            iv_map;
@@ -1469,14 +1423,14 @@ public:
       {
         // The halfedge lies on an inner CCB - set its inner CCB record.
         ic = h->inner_ccb();
-        dup_ic = (ic_map.find (ic))->second;
+        Ccb* dup_ic = (cc_map.find (ic))->second;
         dup_h->set_inner_ccb (dup_ic);
       }
       else
       {
         // The halfedge lies on an outer CCB - set its outer CCB record.
         oc = h->outer_ccb();
-        dup_oc = (oc_map.find (oc))->second;
+        Ccb* dup_oc = (cc_map.find (oc))->second;
         dup_h->set_outer_ccb (dup_oc);
       }
     }
@@ -1505,7 +1459,7 @@ public:
         hccb = *out_ccb_it;
 
         dup_hccb = (he_map.find (hccb))->second;
-        dup_oc = dup_hccb->outer_ccb();
+        Ccb* dup_oc = dup_hccb->outer_ccb();
 
         dup_oc->set_face (dup_f);
         dup_f->add_outer_ccb (dup_oc, dup_hccb);
@@ -1518,7 +1472,7 @@ public:
         hccb = *in_ccb_it;
 
         dup_hccb = (he_map.find (hccb))->second;
-        dup_ic = dup_hccb->inner_ccb();
+        Ccb* dup_ic = dup_hccb->inner_ccb();
 
         dup_ic->set_face (dup_f);
         dup_f->add_inner_ccb (dup_ic, dup_hccb);

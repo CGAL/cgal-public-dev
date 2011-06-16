@@ -924,21 +924,12 @@ public:
   }
 
   /*!
-   * Create a new outer CCB.
+   * Create a new CCB.
    * \return A pointer to the created DCEL outer CCB.
    */
-  Dcel_ccb* new_outer_ccb ()
+  Dcel_ccb* new_ccb ()
   {
-    return (p_arr->_dcel().new_outer_ccb());
-  }
-
-  /*!
-   * Create a new inner CCB.
-   * \return A pointer to the created DCEL inner CCB.
-   */
-  Dcel_ccb* new_inner_ccb ()
-  {
-    return (p_arr->_dcel().new_inner_ccb());
+    return (p_arr->_dcel().new_ccb());
   }
 
   /*!
