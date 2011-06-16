@@ -4505,7 +4505,7 @@ _remove_edge (DHalfedge *e, bool remove_source, bool remove_target)
       // Notify the observers we are about to split an inner CCB.
       _notify_before_split_inner_ccb (Face_handle (f1),
                                       (Halfedge_handle 
-                                       (*(ic1->iterator())))->ccb(),
+                                       ((ic1->halfedge())))->ccb(),
                                       Halfedge_handle (he1));
 
       // We first make prev1 the new representative halfedge of the first
@@ -4601,22 +4601,20 @@ _remove_edge (DHalfedge *e, bool remove_source, bool remove_target)
       // TODO update leftmost pointer of oc1
       oc1->set_halfedge (prev1);
 
-#if 0
+#if 1
       // Create a new component that represents the new hole.
-      // TODO check whether new_inner/outer ccb can be done without giving halfedge
-      void* new_ccb;
-
-      new_ccb->set_halfedge(he1->next()); // initial halfedge/leftmost pointer
-      
+      DCcb* new_ccb = _dcel().new_ccb();
       new_ccb->set_face (f1);
-
-      _determine_ccb_perimetricy(new_ccb);
-      
+      // TODO pick correct initial halfedge
+      // initial halfedge must be set to determine "next"-cycle to determine perimetricy
+      new_ccb->set_halfedge(he1->next()); // initial halfedge/leftmost pointer
       // TODO set leftmost pointer of new_ccb
       for (DHalfedge* curr = he1->next(); curr != he2; curr = curr->next()) {
-
+        
       }
-
+      
+      _determine_ccb_perimetricy(new_ccb);
+      
       // If both halfedges are incident to the same outer CCB of their
       // face (case 3.2), we have to distinguish two sub-cases:
       if (oc1->is_perimetric() && new_ccb->is_perimetric())
@@ -4631,19 +4629,19 @@ _remove_edge (DHalfedge *e, bool remove_source, bool remove_target)
         _notify_before_split_outer_ccb (Face_handle (f1),
                                         Halfedge_handle (he1)->ccb(),
                                         Halfedge_handle (he1));
-
+        
         // Create a new outer component.
         // TODO check what add_outer_ccb does with he1->next, and if it needs it
-        f1->add_outer_ccb (new_oc2, he1->next());
-
+        f1->add_outer_ccb (new_ccb, new_ccb->halfedge());
+        
         // Associate all halfedges from he1 until he2 with the new CCB.
         for (DHalfedge* curr = he1->next(); curr != he2; curr = curr->next()) {
-          curr->set_outer_ccb (new_oc2);
+          curr->set_outer_ccb (new_ccb);
         }
-
+        
         // Notify the observers that a new outer CCB has been formed.
         Ccb_halfedge_circulator   hccb = (Halfedge_handle(he1->next()))->ccb();
-
+        
         _notify_after_split_outer_ccb (Face_handle (f1),
                                        Halfedge_handle (he1->next())->ccb(),
                                        Halfedge_handle (prev1)->ccb());
@@ -4667,22 +4665,23 @@ _remove_edge (DHalfedge *e, bool remove_source, bool remove_target)
         // CCB inside f1.
         _notify_before_add_inner_ccb (Face_handle (f1),
                                       Halfedge_handle (he1->next()));
-
+        
         // Add a new component that represents the new hole.
         // TODO check what add_inner_ccb does with he1->next, and if it needs it
         f1->add_inner_ccb (new_ccb, he1->next()); // sets he1->next as initial leftmost pointer
- 
+        
         // Associate all halfedges along the hole boundary with the new inner
         // component.
         for (DHalfedge* curr = he1->next(); curr != he2; curr = curr->next()) {
-          curr->set_inner_ccb (new_ic2);
+          curr->set_inner_ccb (new_ccb);
         }
-
+        
         // Notify the observers that a new hole has been formed.
         Ccb_halfedge_circulator   hccb = (Halfedge_handle(he1->next()))->ccb();
-
+        
         _notify_after_add_inner_ccb (hccb);
       }
+    
     
 
 #else // TODO remove the else case!
@@ -4762,8 +4761,8 @@ _remove_edge (DHalfedge *e, bool remove_source, bool remove_target)
                                        Halfedge_handle (he1->next())->ccb(),
                                        Halfedge_handle (prev1)->ccb());
       }
-    }
 #endif      
+    }
 
     // Notify the observers that an edge has been deleted.
     _notify_after_remove_edge();
