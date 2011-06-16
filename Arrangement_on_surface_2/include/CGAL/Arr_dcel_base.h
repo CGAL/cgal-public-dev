@@ -274,7 +274,7 @@ protected:
   };
 
   int                          flags;      // Face flags.
-  Ccbs_container               outer_ccbs; // The outer CCBs of the faces.
+  Ccbs_container               outer_ccbs; // The outer CCBs of the face.
   Ccbs_container               inner_ccbs; // The inner CCBs of the face.
   Isolated_vertices_container  iso_verts;  // The isolated vertices inside
                                            // the face.
@@ -798,7 +798,7 @@ public:
 
 private:
 
-  Face               *p_f;    // The face that contains the CCB in its interior.
+  Face          *p_f;         // The face that contains the CCB in its interior.
                               // The LSB of the pointer indicates whether
                               // the left of the ccb is in facing topright corner
                               // of the parameter space (or not).
