@@ -132,6 +132,7 @@ protected:
   typedef typename Dcel::Face_iterator              DFace_iter;
   typedef typename Dcel::Face_const_iterator        DFace_const_iter;
 
+  typedef typename DFace::Ccbs_container            DCcbs_container;
   typedef typename DFace::Ccb_iterator              DCcb_iter;
   typedef typename DFace::Ccb_const_iterator        DCcb_const_iter;
 
