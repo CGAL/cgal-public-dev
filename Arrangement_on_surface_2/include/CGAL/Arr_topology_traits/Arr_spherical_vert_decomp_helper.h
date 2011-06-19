@@ -67,7 +67,7 @@ public:
   /*! Constructor.
    * \param arr The arrangement.
    */
-  Arr_spherical_vert_decomp_helper(const Arrangement_2 *arr) :
+  Arr_spherical_vert_decomp_helper(const Arrangement_2* arr) :
     m_top_traits(arr->topology_traits())
   {}
 
@@ -81,18 +81,18 @@ public:
    * A notification invoked after the sweep-line finishes handling the given
    * event.
    */
-  void after_handle_event(Event * event);
+  void after_handle_event(Event* event);
   //@}
 
   /*! Get the current top object. */
-  CGAL::Object top_object () const
+  CGAL::Object top_object() const
   {
     return (m_valid_north_pole) ?
-      CGAL::make_object (m_north_pole) : CGAL::make_object (m_above_event_face);
+      CGAL::make_object(m_north_pole) : CGAL::make_object(m_above_event_face);
   }
 
   /*! Get the current bottom object. */
-  CGAL::Object bottom_object () const
+  CGAL::Object bottom_object() const
   {
     return (m_valid_south_pole) ?
       CGAL::make_object(m_south_pole) : CGAL::make_object(m_below_event_face);
@@ -112,11 +112,11 @@ void Arr_spherical_vert_decomp_helper<Tr, Arr>::before_sweep()
   // Get the north pole and the face that intially contains it.
   m_valid_north_pole = (m_top_traits->north_pole() != NULL);
   if (m_valid_north_pole)
-    m_north_pole = Vertex_const_handle (m_top_traits->north_pole());
+    m_north_pole = Vertex_const_handle(m_top_traits->north_pole());
 
   // initialize face above with top_face; it is updated at "after_handle_event"
   // TODO EBEF use "top_face()"
-  m_above_event_face = Face_const_handle (m_top_traits->spherical_face());
+  m_above_event_face = Face_const_handle(m_top_traits->spherical_face());
 
   // Get the south pole and the face that intially contains it.
   m_valid_south_pole = (m_top_traits->south_pole() != NULL);
@@ -125,7 +125,7 @@ void Arr_spherical_vert_decomp_helper<Tr, Arr>::before_sweep()
 
   // initialize face below with bottom_face; it is updated at "after_handle_event"
   // TODO EBEF use "bottom_face()"
-  m_below_event_face = Face_const_handle (m_top_traits->south_face());
+  m_below_event_face = Face_const_handle(m_top_traits->min_face());
 }
 
 //-----------------------------------------------------------------------------
@@ -134,7 +134,7 @@ void Arr_spherical_vert_decomp_helper<Tr, Arr>::before_sweep()
 ///
 template <class Tr, class Arr>
 void
-Arr_spherical_vert_decomp_helper<Tr, Arr>::after_handle_event (Event *event)
+Arr_spherical_vert_decomp_helper<Tr, Arr>::after_handle_event(Event* event)
 {
   // Ignore events that are not incident to the poles.
   if (event->parameter_space_in_y() == ARR_INTERIOR)
@@ -148,8 +148,8 @@ Arr_spherical_vert_decomp_helper<Tr, Arr>::after_handle_event (Event *event)
                   (event->number_of_right_curves() == 0)));
 
   const Arr_curve_end   ind =
-    (event->number_of_left_curves() == 0 &&
-     event->number_of_right_curves() == 1) ? ARR_MIN_END : ARR_MAX_END;
+    ((event->number_of_left_curves() == 0) &&
+     (event->number_of_right_curves() == 1)) ? ARR_MIN_END : ARR_MAX_END;
   const X_monotone_curve_2& xc = (ind == ARR_MIN_END) ?
     (*(event->right_curves_begin()))->last_curve() :
     (*(event->left_curves_begin()))->last_curve();
@@ -159,21 +159,17 @@ Arr_spherical_vert_decomp_helper<Tr, Arr>::after_handle_event (Event *event)
   if (event->parameter_space_in_y() == ARR_TOP_BOUNDARY)
   {
     // The event is incident to the north pole: update the face above the event
-    if (ind == ARR_MIN_END)
-      m_above_event_face = xc.halfedge_handle()->twin()->face();
-    else
-      m_above_event_face = xc.halfedge_handle()->face();
+      m_above_event_face = (ind == ARR_MIN_END) ?
+        xc.halfedge_handle()->twin()->face() :
+        xc.halfedge_handle()->face();
   }
   else if (event->parameter_space_in_y() == ARR_BOTTOM_BOUNDARY)
   {
     // The event is incident to the south pole: update the face below the event
-    if (ind == ARR_MIN_END)
-      m_below_event_face = xc.halfedge_handle()->face();
-    else
-      m_below_event_face = xc.halfedge_handle()->twin()->face();
+      m_below_event_face = (ind == ARR_MIN_END) ?
+        xc.halfedge_handle()->face() :
+        xc.halfedge_handle()->twin()->face();
   }
-
-  return;
 }
 
 } //namespace CGAL

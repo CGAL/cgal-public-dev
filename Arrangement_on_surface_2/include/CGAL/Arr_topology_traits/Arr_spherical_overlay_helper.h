@@ -35,12 +35,12 @@ namespace CGAL {
  * of Arrangement_on_surface_2 objects instantiated with a topology-traits
  * class for bounded curves in the plane.
  */
-template <class Traits_,
-          class ArrangementRed_,
-          class ArrangementBlue_,
-          class Arrangement_,
-          class Event_,
-          class Subcurve_>
+template <typename Traits_,
+          typename ArrangementRed_,
+          typename ArrangementBlue_,
+          typename Arrangement_,
+          typename Event_,
+          typename Subcurve_>
 class Arr_spherical_overlay_helper
 {
 public:
@@ -66,8 +66,8 @@ public:
 
 protected:
   // Data members:
-  const typename Arrangement_red_2::Topology_traits * m_red_top_traits;
-  const typename Arrangement_blue_2::Topology_traits * m_blue_top_traits;
+  const typename Arrangement_red_2::Topology_traits* m_red_top_traits;
+  const typename Arrangement_blue_2::Topology_traits* m_blue_top_traits;
 
   //! Red spherical face
   Face_handle_red m_red_nf;
@@ -77,8 +77,8 @@ protected:
 
 public:
   /*! Constructor, given the input red and blue arrangements. */
-  Arr_spherical_overlay_helper(const Arrangement_red_2 * red_arr,
-                               const Arrangement_blue_2 * blue_arr) :
+  Arr_spherical_overlay_helper(const Arrangement_red_2* red_arr,
+                               const Arrangement_blue_2* blue_arr) :
     m_red_top_traits(red_arr->topology_traits()),
     m_blue_top_traits(blue_arr->topology_traits())
   {}
@@ -89,29 +89,28 @@ public:
   /* A notification issued before the sweep process starts. */
   void before_sweep()
   {
-    // Get in each arrangement the face corresponding to the "minimal"
-    // event, i.e., the one containing the lower left corner of the parameter space
+    // Get in each arrangement the face corresponding to the "minimal" event,
+    // i.e., the one containing the lower left corner of the parameter space
     // TODO EBEF use "bottom_face" and change name "nf" -> "face"
-    m_red_nf = Face_handle_red(m_red_top_traits->south_face());
-    m_blue_nf = Face_handle_blue(m_blue_top_traits->south_face());
-    return;
+    m_red_nf = Face_handle_red(m_red_top_traits->min_face());
+    m_blue_nf = Face_handle_blue(m_blue_top_traits->min_face());
   }
 
   /*! A notification invoked before the sweep-line starts handling the given
    * event.
    */  
-  void before_handle_event(Event * event)
+  void before_handle_event(Event* event)
   {
     // TODO EFEF Enhance for case where a face is incident to edge on identification and northpole
-    if (event->parameter_space_in_y() != ARR_TOP_BOUNDARY &&
-        event->parameter_space_in_x() != ARR_LEFT_BOUNDARY)
+    if ((event->parameter_space_in_y() != ARR_TOP_BOUNDARY) &&
+        (event->parameter_space_in_x() != ARR_LEFT_BOUNDARY))
       return;
 
-    Arr_curve_end ind = (event->number_of_left_curves() == 0 &&
-                     event->number_of_right_curves() != 0) ?
+    Arr_curve_end ind = ((event->number_of_left_curves() == 0) &&
+                         (event->number_of_right_curves() != 0)) ?
       ARR_MIN_END : ARR_MAX_END;
 
-    const Subcurve  *sc = (ind == ARR_MIN_END) ?
+    const Subcurve* sc = (ind == ARR_MIN_END) ?
       (*(event->right_curves_begin())) :
       (*(event->left_curves_begin()));
 
@@ -122,17 +121,15 @@ public:
       // The curve is incident to the north pole.
       switch (sc->color()) {
        case Traits_2::RED :
-        if (ind == ARR_MIN_END)
-          m_red_nf = sc->red_halfedge_handle()->twin()->face();
-        else
-          m_red_nf = sc->red_halfedge_handle()->face();
+        m_red_nf = (ind == ARR_MIN_END) ?
+          sc->red_halfedge_handle()->twin()->face() :
+          sc->red_halfedge_handle()->face();
         break;
           
        case Traits_2::BLUE :
-        if (ind == ARR_MIN_END)
-          m_blue_nf = sc->blue_halfedge_handle()->twin()->face();
-        else
-          m_blue_nf = sc->blue_halfedge_handle()->face();
+        m_blue_nf = (ind == ARR_MIN_END) ?
+          sc->blue_halfedge_handle()->twin()->face() :
+          sc->blue_halfedge_handle()->face();
         break;
 
        case Traits_2::RB_OVERLAP :

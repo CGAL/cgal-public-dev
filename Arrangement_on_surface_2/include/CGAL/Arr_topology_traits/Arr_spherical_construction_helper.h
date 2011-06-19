@@ -35,7 +35,8 @@ namespace CGAL {
  * for an Arrangement_on_surface_2 instantiated with a topology-traits class
  * for bounded curves in the plane.
  */
-template <class Traits_, class Arrangement_, class Event_, class Subcurve_> 
+template <typename Traits_, typename Arrangement_, typename Event_,
+          typename Subcurve_> 
 class Arr_spherical_construction_helper
 {
 public:
@@ -66,7 +67,7 @@ protected:
   // Data members:
 
   //! The topology-traits class
-  Topology_traits * m_top_traits;
+  Topology_traits* m_top_traits;
 
   //! An arrangement accessor
   Arr_accessor<Arrangement_2> m_arr_access;
@@ -79,11 +80,11 @@ protected:
 
   //! A pointer to a map of halfedges to indices lists
   // (stored in the visitor class)
-  Halfedge_indices_map * m_he_ind_map_p;
+  Halfedge_indices_map* m_he_ind_map_p;
 
 public:
   /*! Constructor. */
-  Arr_spherical_construction_helper(Arrangement_2 * arr) :
+  Arr_spherical_construction_helper(Arrangement_2* arr) :
     m_top_traits(arr->topology_traits()),
     m_arr_access(*arr),
     m_he_ind_map_p(NULL)
@@ -98,18 +99,17 @@ public:
   /* A notification issued before the sweep process starts. */
   virtual void before_sweep()
   {
-    //! get the face "containing" the first event, which is at the lower left corner of the parameter space.
-    //! As a new arrangement is constructed from scratch, there is only one face at this point (i.e., the 
-    //! reference face).
-    // it is never updated during construction
-    // TODO use "top_face"
-    m_above_event_face = Face_handle(m_top_traits->reference_face());
+    //! Obtain the face "containing" the first event, which is at the lower
+    // left corner of the parameter space. As a new arrangement is constructed
+    // from scratch, there is only one face at this point (i.e., the max face
+    // or the min face).
+    m_above_event_face = Face_handle(m_top_traits->max_face());
   }
 
   /*! A notification invoked before the sweep-line starts handling the given
    * event.
    */
-  virtual void before_handle_event(Event * event)
+  virtual void before_handle_event(Event* event)
   {
     // Act according to the boundary type:
     Arr_parameter_space ps_x = event->parameter_space_in_x();
@@ -125,7 +125,7 @@ public:
       Arr_curve_end ind = (event->number_of_left_curves() == 0 &&
                        event->number_of_right_curves() == 1) ?
         ARR_MIN_END : ARR_MAX_END;
-      const X_monotone_curve_2 & xc = (ind == ARR_MIN_END) ?
+      const X_monotone_curve_2& xc = (ind == ARR_MIN_END) ?
         (*(event->right_curves_begin()))->last_curve() :
         (*(event->left_curves_begin()))->last_curve();
 
@@ -155,7 +155,7 @@ public:
                        event->number_of_right_curves() == 1) ?
         ARR_MIN_END : ARR_MAX_END;
 
-      const X_monotone_curve_2 & xc = (ind == ARR_MIN_END) ?
+      const X_monotone_curve_2& xc = (ind == ARR_MIN_END) ?
         (*(event->right_curves_begin()))->last_curve() :
         (*(event->left_curves_begin()))->last_curve();
 
@@ -180,7 +180,7 @@ public:
       {
         event->set_vertex_handle(Vertex_handle (m_top_traits->north_pole()));
 
-        DHalfedge * dprev =
+        DHalfedge* dprev =
           m_top_traits->locate_around_boundary_vertex(m_top_traits->
                                                       north_pole(), xc, ind,
                                                       ps_x, ps_y);
@@ -193,7 +193,7 @@ public:
           // Associate all curve indices of subcurves that "see" the top face
           // from below with the left portion of the twin of the predecessor.
           if (m_he_ind_map_p != NULL) {
-            Indices_list & list_ref = (*m_he_ind_map_p)[prev->twin()];
+            Indices_list& list_ref = (*m_he_ind_map_p)[prev->twin()];
             list_ref.splice(list_ref.end(), m_subcurves_at_nf);
           }
           else
@@ -212,9 +212,9 @@ public:
       // The event has only right curves.
       CGAL_assertion(event->number_of_left_curves() == 0 &&
                      event->number_of_right_curves() == 1);
-      const X_monotone_curve_2 & xc =
+      const X_monotone_curve_2& xc =
         (*(event->right_curves_begin()))->last_curve();
-      DVertex * v = m_top_traits->discontinuity_vertex(xc, ARR_MIN_END);
+      DVertex* v = m_top_traits->discontinuity_vertex(xc, ARR_MIN_END);
 
       // Check whether a corresponding vertex already exists on the line
       // of discontinuity. If not, create one now.
@@ -235,9 +235,9 @@ public:
        // The event has only left curves.
       CGAL_assertion(event->number_of_left_curves() == 1 &&
                      event->number_of_right_curves() == 0);
-      const X_monotone_curve_2 & xc =
+      const X_monotone_curve_2& xc =
         (*(event->left_curves_begin()))->last_curve();
-      DVertex * v = m_top_traits->discontinuity_vertex(xc, ARR_MAX_END);
+      DVertex* v = m_top_traits->discontinuity_vertex(xc, ARR_MAX_END);
 
       // Check whether a corresponding vertex already exists on the line
       // of discontinuity. If not, create one now.
@@ -256,7 +256,7 @@ public:
   }
 
   /*! A notification invoked when a new subcurve is created. */
-  virtual void add_subcurve(Halfedge_handle he, Subcurve * sc) { return; }
+  virtual void add_subcurve(Halfedge_handle he, Subcurve* sc) { return; }
 
   /*! Collect a subcurve index that does not see any status-line from below.
    */
@@ -267,13 +267,13 @@ public:
   }
 
   /*! A notification invoked before the given event it deallocated. */
-  void before_deallocate_event(Event * event) { return; }
+  void before_deallocate_event(Event* event) { return; }
   //@} 
   
   /*! Set the map that maps each halfedge to the list of subcurve indices
    * that "see" the halfedge from below.
    */
-  void set_halfedge_indices_map(Halfedge_indices_map & table)
+  void set_halfedge_indices_map(Halfedge_indices_map& table)
   {
     m_he_ind_map_p = &table;
     return;
@@ -282,12 +282,12 @@ public:
   /*! Determine if we should swap the order of predecessor halfedges when
    * calling insert_at_vertices_ex() .
    */
-  bool swap_predecessors (Event * event) const
+  bool swap_predecessors(Event* event) const
   {
     // If we insert an edge whose right end lies on the north pole, we have
     // to flip the order of predecessor halfegdes.
-    return (event->parameter_space_in_x() == ARR_INTERIOR &&
-            event->parameter_space_in_y() == ARR_TOP_BOUNDARY);
+    return ((event->parameter_space_in_x() == ARR_INTERIOR) &&
+            (event->parameter_space_in_y() == ARR_TOP_BOUNDARY));
   }
 
   // TODO EBEF rename to "above_event face"

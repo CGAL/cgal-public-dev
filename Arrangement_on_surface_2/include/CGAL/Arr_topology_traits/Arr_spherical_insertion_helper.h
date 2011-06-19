@@ -35,7 +35,8 @@ namespace CGAL {
  * for an Arrangement_on_surface_2 instantiated with a topology-traits class
  * for bounded curves in the plane.
  */
-template <class Traits_, class Arrangement_, class Event_, class Subcurve_> 
+template <typename Traits_, typename Arrangement_, typename Event_,
+          typename Subcurve_> 
 class Arr_spherical_insertion_helper :
   public Arr_spherical_construction_helper<Traits_, Arrangement_,
                                            Event_, Subcurve_>
@@ -69,12 +70,12 @@ public:
 
 public:
   /*! Constructor */
-  Arr_spherical_insertion_helper (Arrangement_2 *arr) :
+  Arr_spherical_insertion_helper(Arrangement_2* arr) :
     Base (arr)
   {}
 
   /*! Destructor. */
-  virtual ~Arr_spherical_insertion_helper ()
+  virtual ~Arr_spherical_insertion_helper()
   {}
 
   /// \name Notification functions.
@@ -87,7 +88,7 @@ public:
     // get the face that contains the "minimal" event, i.e., the one
     // containing the lower left corner of the parameter space
     // TODO EBEF use "bottom_face"
-    this->m_above_event_face = Face_handle(this->m_top_traits->south_face());
+    this->m_above_event_face = Face_handle(this->m_top_traits->min_face());
     // it is updated in "before_handle_event"
   }
 
@@ -95,7 +96,7 @@ public:
    * A notification invoked before the sweep-line starts handling the given
    * event.
    */
-  virtual void before_handle_event (Event* event);
+  virtual void before_handle_event(Event* event);
   //@}
 
 };
@@ -108,15 +109,15 @@ public:
 // A notification invoked before the sweep-line starts handling the given
 // event.
 //
-template <class Tr, class Arr, class Evnt, class Sbcv> 
-void Arr_spherical_insertion_helper<Tr,Arr,Evnt,Sbcv>::before_handle_event
-    (Event* event)
+template <typename Tr, typename Arr, typename Evnt, typename Sbcv> 
+void Arr_spherical_insertion_helper<Tr, Arr, Evnt, Sbcv>::
+before_handle_event(Event* event)
 {
   // Ignore events that do not have boundary conditions.
   const Arr_parameter_space ps_x = event->parameter_space_in_x();
   const Arr_parameter_space ps_y = event->parameter_space_in_y();
 
-  if (ps_x == ARR_INTERIOR && ps_y == ARR_INTERIOR)
+  if ((ps_x == ARR_INTERIOR) && (ps_y == ARR_INTERIOR))
     return;
 
   // The is exactly one curve incident to an event with boundary conditions.
@@ -128,7 +129,7 @@ void Arr_spherical_insertion_helper<Tr,Arr,Evnt,Sbcv>::before_handle_event
                   (event->number_of_right_curves() == 0)));
 
   const Arr_curve_end   ind =
-    (event->number_of_left_curves() == 0 &&
+    ((event->number_of_left_curves() == 0) &&
      event->number_of_right_curves() == 1) ? ARR_MIN_END : ARR_MAX_END;
   const X_monotone_curve_2& xc = (ind == ARR_MIN_END) ?
     (*(event->right_curves_begin()))->last_curve() :
@@ -138,8 +139,7 @@ void Arr_spherical_insertion_helper<Tr,Arr,Evnt,Sbcv>::before_handle_event
   {
     // The curve is not in the arrangement, use the base construction helper
     // to handle the event:
-    Base::before_handle_event (event);
-    return;
+    Base::before_handle_event(event);
   }
 
   // In case we encounter an existing curve incident to the curve of
@@ -152,11 +152,9 @@ void Arr_spherical_insertion_helper<Tr,Arr,Evnt,Sbcv>::before_handle_event
   }
   else if (ps_x == ARR_LEFT_BOUNDARY)
   {
-    CGAL_assertion (ind == ARR_MIN_END);
+    CGAL_assertion(ind == ARR_MIN_END);
     this->m_above_event_face = xc.halfedge_handle()->twin()->face();
   }
-
-  return;
 }
 
 } //namespace CGAL
