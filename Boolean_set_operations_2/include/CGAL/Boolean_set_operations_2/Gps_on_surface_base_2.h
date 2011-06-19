@@ -40,24 +40,6 @@
 #include <CGAL/Boolean_set_operations_2/Gps_polygon_simplifier.h>
 #include <CGAL/Boolean_set_operations_2/Ccb_curve_iterator.h>
 
-//add OpenMP header
-#ifdef _OPENMP
-#include<omp.h>
-#endif
-
-//determine the maximum number of hardware threads in the system
-#ifdef _OPENMP
-int maxthreads = omp_get_num_procs();
-#endif
-
-
-//define current total number of threads running
-//used in _divide_and_conquer function to spawn new threads as long as there are still idle processors, but no more
-#ifdef _OPENMP
-int current_num_threads;
-#endif
-
-
 /*!
   \file   Gps_on_surface_base_2.h
   \brief  A class that allows Boolean set operations.
@@ -651,9 +633,9 @@ public:
     unsigned int i;
 	InputIterator itr;
 
-	//create a parallel region with number of threads set to maxthreads
+	//create a parallel region with number of threads set to value of OMP_NUM_THREADS environment variable
 	#ifdef _OPENMP
-	#pragma omp parallel private(itr,i) num_threads(maxthreads)
+	#pragma omp parallel private(itr,i) 
 	#endif	
 	{
 		for (itr = begin, i = 1; itr != end; ++itr, ++i)
@@ -688,9 +670,9 @@ public:
     unsigned int i;
 	InputIterator itr;
 	
-	//create a parallel region with number of threads set to maxthreads
+	//create a parallel region with number of threads set to value of OMP_NUM_THREADS environment variable
 	#ifdef _OPENMP
-	#pragma omp parallel private(itr,i) num_threads(maxthreads)
+	#pragma omp parallel private(itr,i)
 	#endif	
 	{	
 		for (itr = begin,i = 1; itr!=end; ++itr, ++i)
@@ -728,16 +710,16 @@ public:
 	InputIterator1 itr1;
 	InputIterator2 itr2;
 		
-	//create a parallel region with number of threads set to maxthreads
-	#ifdef _OPENMP
-	#pragma omp parallel private(itr2,itr1,i) num_threads(maxthreads)
-	#endif	
+	//create a parallel region with number of threads set to value of OMP_NUM_THREADS environment variable
+	/* #ifdef _OPENMP
+	#pragma omp parallel private(itr2,itr1,i) 
+	#endif	*/
 	{
 		for (itr1 = begin1,i = 1; itr1!=end1; ++itr1, ++i)
 		{
-			#ifdef _OPENMP
+			/* #ifdef _OPENMP
 			#pragma omp single nowait
-			#endif	
+			#endif	*/
 			{
 			  arr_vec[i].first = new Aos_2(m_traits);
 			  _insert(*itr1, *(arr_vec[i].first));
@@ -746,9 +728,9 @@ public:
 	
 		for (itr2 = begin2,i = 1; itr2!=end2; ++itr2, ++i)
 		{
-			#ifdef _OPENMP
+		/*	#ifdef _OPENMP
 			#pragma omp single nowait
-			#endif	
+			#endif	*/
 			{
 			  arr_vec[i].first = new Aos_2(m_traits);
 			  _insert(*itr2, *(arr_vec[i].first));
@@ -790,9 +772,9 @@ public:
     unsigned int i;
 	InputIterator itr;
 	
-    //create a parallel region with number of threads set to maxthreads
+    //create a parallel region with number of threads set to value of OMP_NUM_THREADS environment variable
 	#ifdef _OPENMP
-	#pragma omp parallel private(itr,i) num_threads(maxthreads)
+	#pragma omp parallel private(itr,i)
 	#endif	
 	{
 		for (itr = begin,i = 1; itr!=end; ++itr, ++i)
@@ -827,9 +809,9 @@ public:
     unsigned int i;
 	InputIterator itr;
 	
-	//create a parallel region with number of threads set to maxthreads
+	//create a parallel region with number of threads set to value of OMP_NUM_THREADS environment variable
 	#ifdef _OPENMP
-	#pragma omp parallel private(itr,i) num_threads(maxthreads)
+	#pragma omp parallel private(itr,i) 
 	#endif	
 	{	    
 		for (itr = begin,i = 1; itr!=end; ++itr, ++i)
@@ -867,9 +849,9 @@ public:
     InputIterator1 itr1;
 	InputIterator2 itr2;
 	
-	//create a parallel region with number of threads set to maxthreads
+	//create a parallel region with number of threads set to value of OMP_NUM_THREADS environment variable
 	#ifdef _OPENMP
-	#pragma omp parallel private(itr2,itr1,i) num_threads(maxthreads)
+	#pragma omp parallel private(itr2,itr1,i) 
 	#endif	
 	{	
 		for (itr1 = begin1,i = 1; itr1!=end1; ++itr1, ++i)
@@ -933,9 +915,9 @@ public:
 	InputIterator itr;
 	
 	
-	//create a parallel region with number of threads set to maxthreads
+	//create a parallel region with number of threads set to value of OMP_NUM_THREADS environment variable
 	#ifdef _OPENMP
-	#pragma omp parallel private(itr,i) num_threads(maxthreads)
+	#pragma omp parallel private(itr,i) 
 	#endif	
 	{    
 		for (itr = begin; itr!=end; ++itr, ++i)
@@ -970,9 +952,9 @@ public:
     unsigned int i = 1;
 	InputIterator itr;
 	
-	//create a parallel region with number of threads set to maxthreads
+	//create a parallel region with number of threads set to value of OMP_NUM_THREADS environment variable
 	#ifdef _OPENMP
-	#pragma omp parallel private(itr,i) num_threads(maxthreads)
+	#pragma omp parallel private(itr,i)
 	#endif
 	{
 		for (itr = begin; itr!=end; ++itr, ++i)
@@ -1010,9 +992,9 @@ public:
 	InputIterator1 itr1;
 	InputIterator2 itr2;
 	
-	//create a parallel region with number of threads set to maxthreads
+	//create a parallel region with number of threads set to value of OMP_NUM_THREADS environment variable
 	#ifdef _OPENMP
-	#pragma omp parallel private(itr2,itr1,i) num_threads(maxthreads)
+	#pragma omp parallel private(itr2,itr1,i) 
 	#endif	
 	{    
 		for (itr1 = begin1; itr1!=end1; ++itr1, ++i)
@@ -1105,54 +1087,25 @@ protected:
 	Edge_iterator eit;
 	Halfedge_handle he;
 	Construct_opposite_2 ctr_opp;
-	
-	//create a parallel region with number of threads set to maxthreads
-	#ifdef _OPENMP
-	#pragma omp parallel private(fit,eit,he,ctr_opp) num_threads(maxthreads)
-	#endif	
-	{    
-		for (fit = arr->faces_begin();
-			 fit != arr->faces_end();
-			 ++fit)
-		{
-			#ifdef _OPENMP
-			#pragma omp single nowait
-			#endif	
-			{
-				fit->set_contained(!fit->contained());
-			}
-		}
-		
-		//thread barrier before proceeding to the next statement
-		#ifdef _OPENMP
-		#pragma omp barrier
-		#endif
 
-		#ifdef _OPENMP
-		#pragma omp barrier
-		#endif
+	for (fit = arr->faces_begin();
+		 fit != arr->faces_end();
+		 ++fit)
+	{
+		fit->set_contained(!fit->contained());
+	}
 		
-		ctr_opp = m_traits->construct_opposite_2_object();
+	ctr_opp = m_traits->construct_opposite_2_object();
 		
-		//thread barrier before proceeding to the next loop
-		#ifdef _OPENMP
-		#pragma omp barrier
-		#endif
-
-		for (eit = arr->edges_begin();
-			 eit != arr->edges_end();
-			 ++eit)
-		{
-			#ifdef _OPENMP
-			#pragma omp single nowait
-			#endif
-			{
-			  he = eit;
-			  const X_monotone_curve_2& cv = he->curve();
-			  arr->modify_edge(he, ctr_opp(cv));
-			}
-		}
-	} //end omp parallel
+	for (eit = arr->edges_begin();
+		 eit != arr->edges_end();
+		 ++eit)
+	{
+		he = eit;
+		const X_monotone_curve_2& cv = he->curve();
+		arr->modify_edge(he, ctr_opp(cv));
+		
+	}
   }
 
   //fix the directions of the curves (given correct marked face)
@@ -1167,9 +1120,9 @@ protected:
 	Construct_opposite_2 ctr_opp = 
 	arr.geometry_traits()->construct_opposite_2_object();
 	
-	//create a parallel region with number of threads set to maxthreads
+	//create a parallel region with number of threads set to value of OMP_NUM_THREADS environment variable
 	#ifdef _OPENMP
-	#pragma omp parallel private(eit) num_threads(maxthreads)
+	#pragma omp parallel private(eit) 
 	#endif
 	{			
 		for (eit = arr.edges_begin();
@@ -1199,9 +1152,9 @@ protected:
   void _build_sorted_vertices_vectors (std::vector<Arr_entry>& arr_vec)
   {
     
-	//create a parallel region with number of threads set to maxthreads
+	//create a parallel region with number of threads set to value of OMP_NUM_THREADS environment variable
 	#ifdef _OPENMP
-	#pragma omp parallel num_threads(maxthreads)
+	#pragma omp parallel 
 	#endif
 	{	
 
@@ -1253,38 +1206,20 @@ protected:
 	int curr_lower;
 	
 	#ifdef _OPENMP
-	if(current_num_threads < maxthreads)
+	#pragma omp parallel  
 	{
-		#pragma omp atomic
-		current_num_threads += maxthreads - 1;
-		
-		#pragma omp parallel num_threads(maxthreads) 
+		#pragma omp for
+		for(curr_lower = lower; curr_lower < (lower + ((k - 1) * sub_size)); curr_lower += sub_size)
 		{
-			#pragma omp for
-			for(curr_lower = lower; curr_lower < (lower + (4 * sub_size)); curr_lower += sub_size)
-			{
-				 _divide_and_conquer(curr_lower, curr_lower + sub_size-1, arr_vec, k,
-									  merge_func);
-			}
-		} // end omp parallel
-		
-		current_num_threads -= (maxthreads - 1);
-		curr_lower = lower + (4 * sub_size);
-		_divide_and_conquer (curr_lower, upper,arr_vec, k, merge_func);
-
-	} //end if
-	else	
-	#endif
-	{		
-		curr_lower = lower;
-		for (unsigned int i = 0; i<k-1; ++i, curr_lower += sub_size )
-		{
-		  _divide_and_conquer(curr_lower, curr_lower + sub_size-1, arr_vec, k,
-							  merge_func);
+			 _divide_and_conquer(curr_lower, curr_lower + sub_size-1, arr_vec, k,
+								  merge_func);
 		}
-		_divide_and_conquer (curr_lower, upper,arr_vec, k, merge_func);
-	}
-	
+	} // end omp parallel
+		
+	curr_lower = lower + ((k - 1) * sub_size);
+	_divide_and_conquer (curr_lower, upper,arr_vec, k, merge_func);
+	#endif
+
     merge_func (lower, curr_lower, sub_size ,arr_vec);
     
     return;
@@ -1300,9 +1235,9 @@ protected:
   {
     Face_const_iterator fit;
 	
-	//create a parallel region with number of threads set to maxthreads
+	//create a parallel region with number of threads set to value of OMP_NUM_THREADS environment variable
 	#ifdef _OPENMP
-	#pragma omp parallel private(fit) num_threads(maxthreads)
+	#pragma omp parallel private(fit) 
 	#endif
 	{	
 		for ( fit = arr->faces_begin(); fit != arr->faces_end(); ++fit)
@@ -1466,22 +1401,12 @@ protected:
       Face_iterator fit;
       // Even in an empty arrangement there can be several faces
       // (because of the topology traits).
-	  //create a parallel region with number of threads set to maxthreads
-		#ifdef _OPENMP
-		#pragma omp parallel private(fit) num_threads(maxthreads)
-		#endif
-		{		
-		  for (fit = this->m_arr->faces_begin();
-			   fit != this->m_arr->faces_end(); ++fit)
-			{
-				#ifdef _OPENMP
-				#pragma omp single nowait
-				#endif
-				{
-					fit->set_contained(true);
-				}
-			}
-		} //end omp parallel
+	  for (fit = this->m_arr->faces_begin();
+			fit != this->m_arr->faces_end(); ++fit)
+	  {
+			fit->set_contained(true);
+	  }
+		
       return;
     }
     if (this->is_empty())
@@ -1509,23 +1434,13 @@ protected:
       Face_iterator fit;
       // Even in an empty arrangement there can be several faces
       // (because of the topology traits).
-	  //create a parallel region with number of threads set to maxthreads
-		#ifdef _OPENMP
-		#pragma omp parallel private(fit) num_threads(maxthreads)
-		#endif
-		{		
-		  for (fit = this->m_arr->faces_begin();
-			   fit != this->m_arr->faces_end(); ++fit)
-			{
-				#ifdef _OPENMP
-				#pragma omp single nowait
-				#endif
-				{
-					fit->set_contained(true);
-				}
-			}
-		} //end omp parallel
-      return;
+	  for (fit = this->m_arr->faces_begin();
+		  fit != this->m_arr->faces_end(); ++fit)
+     {
+		fit->set_contained(true);
+	  
+	 }
+	  return;
     }
     if (this->is_empty())
     {
