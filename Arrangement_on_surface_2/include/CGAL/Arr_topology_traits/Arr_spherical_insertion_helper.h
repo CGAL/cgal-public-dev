@@ -87,7 +87,6 @@ public:
     // as we're inserting into an existing arrangement, we need to 
     // get the face that contains the "minimal" event, i.e., the one
     // containing the lower left corner of the parameter space
-    // TODO EBEF use "bottom_face"
     this->m_above_event_face = Face_handle(this->m_top_traits->min_face());
     // it is updated in "before_handle_event"
   }

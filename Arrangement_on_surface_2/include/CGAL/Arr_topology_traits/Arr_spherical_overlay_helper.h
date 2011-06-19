@@ -70,10 +70,10 @@ protected:
   const typename Arrangement_blue_2::Topology_traits* m_blue_top_traits;
 
   //! Red spherical face
-  Face_handle_red m_red_nf;
+  Face_handle_red m_red_face;
 
   //! Blue spherical face
-  Face_handle_blue m_blue_nf;
+  Face_handle_blue m_blue_face;
 
 public:
   /*! Constructor, given the input red and blue arrangements. */
@@ -91,9 +91,8 @@ public:
   {
     // Get in each arrangement the face corresponding to the "minimal" event,
     // i.e., the one containing the lower left corner of the parameter space
-    // TODO EBEF use "bottom_face" and change name "nf" -> "face"
-    m_red_nf = Face_handle_red(m_red_top_traits->min_face());
-    m_blue_nf = Face_handle_blue(m_blue_top_traits->min_face());
+    m_red_face = Face_handle_red(m_red_top_traits->min_face());
+    m_blue_face = Face_handle_blue(m_blue_top_traits->min_face());
   }
 
   /*! A notification invoked before the sweep-line starts handling the given
@@ -121,13 +120,13 @@ public:
       // The curve is incident to the north pole.
       switch (sc->color()) {
        case Traits_2::RED :
-        m_red_nf = (ind == ARR_MIN_END) ?
+        m_red_face = (ind == ARR_MIN_END) ?
           sc->red_halfedge_handle()->twin()->face() :
           sc->red_halfedge_handle()->face();
         break;
           
        case Traits_2::BLUE :
-        m_blue_nf = (ind == ARR_MIN_END) ?
+        m_blue_face = (ind == ARR_MIN_END) ?
           sc->blue_halfedge_handle()->twin()->face() :
           sc->blue_halfedge_handle()->face();
         break;
@@ -135,13 +134,13 @@ public:
        case Traits_2::RB_OVERLAP :
         if (ind == ARR_MIN_END)
         {
-          m_red_nf = sc->red_halfedge_handle()->twin()->face();
-          m_blue_nf = sc->blue_halfedge_handle()->twin()->face();
+          m_red_face = sc->red_halfedge_handle()->twin()->face();
+          m_blue_face = sc->blue_halfedge_handle()->twin()->face();
         }
         else
         {
-          m_red_nf = sc->red_halfedge_handle()->face();
-          m_blue_nf = sc->blue_halfedge_handle()->face();
+          m_red_face = sc->red_halfedge_handle()->face();
+          m_blue_face = sc->blue_halfedge_handle()->face();
         }
         break;
       }
@@ -152,16 +151,16 @@ public:
       CGAL_assertion (ind == ARR_MIN_END);
       switch (sc->color()) {
        case Traits_2::RED :
-        m_red_nf = sc->red_halfedge_handle()->twin()->face();
+        m_red_face = sc->red_halfedge_handle()->twin()->face();
         break;
           
        case Traits_2::BLUE :
-        m_blue_nf = sc->blue_halfedge_handle()->twin()->face();
+        m_blue_face = sc->blue_halfedge_handle()->twin()->face();
         break;
 
        case Traits_2::RB_OVERLAP :
-        m_red_nf = sc->red_halfedge_handle()->twin()->face();
-        m_blue_nf = sc->blue_halfedge_handle()->twin()->face();
+        m_red_face = sc->red_halfedge_handle()->twin()->face();
+        m_blue_face = sc->blue_halfedge_handle()->twin()->face();
         break;
       }
     }
@@ -170,18 +169,11 @@ public:
   }
   //@}
 
-  // TODO rename to red/blue_face
-  /*! Get the current red top face. */
-  Face_handle_red red_top_face() const
-  {
-    return m_red_nf;
-  }
+  /*! Obtain the current red face. */
+  Face_handle_red red_face() const { return m_red_face; }
 
-  /*! Get the current blue top face. */
-  Face_handle_blue blue_top_face() const
-  {
-    return m_blue_nf;
-  }
+  /*! Obtain the current blue face. */
+  Face_handle_blue blue_face() const { return m_blue_face; }
 };
 
 } //namespace CGAL

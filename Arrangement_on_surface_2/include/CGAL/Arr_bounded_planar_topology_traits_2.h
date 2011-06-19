@@ -122,13 +122,13 @@ public:
   //@{
 
   /*! Default constructor. */
-  Arr_bounded_planar_topology_traits_2 () :
+  Arr_bounded_planar_topology_traits_2() :
     Base(),
     unb_face(NULL)
   {}
 
   /*! Constructor with a geometry-traits class. */
-  Arr_bounded_planar_topology_traits_2 (const Geometry_traits_2* tr) :
+  Arr_bounded_planar_topology_traits_2(const Geometry_traits_2* tr) :
     Base(tr),
     unb_face(NULL)
   {}
@@ -181,20 +181,20 @@ public:
   }
 
   /*! Get the number of valid halfedges. */
-  Size number_of_valid_halfedges () const
+  Size number_of_valid_halfedges() const
   {
     // All halfedges are valid.
     return (this->m_dcel.size_of_halfedges());
   }
 
   /*! Check if the given face is valid (not a fictitious one). */
-  inline bool is_valid_face (const Face*) const
+  inline bool is_valid_face(const Face*) const
   {
     return true;
   }
 
   /*! Get the number of valid faces. */
-  Size number_of_valid_faces () const
+  Size number_of_valid_faces() const
   {
     // All faces are valid.
     return (this->m_dcel.size_of_faces());
@@ -324,9 +324,9 @@ public:
     typedef typename Base::Event                              Event;
     typedef typename Base::Subcurve                           Subcurve;
 
-    Sweep_line_vertical_decomposition_visitor (const Arr *arr,
-                                               Output_iterator *oi) :
-      Base (arr, oi)
+    Sweep_line_vertical_decomposition_visitor(const Arr* arr,
+                                              Output_iterator* oi) :
+      Base(arr, oi)
     {}
   };
 
@@ -362,11 +362,11 @@ public:
     typedef typename Base::Event                     Event;
     typedef typename Base::Subcurve                  Subcurve;
 
-    Sweep_line_overlay_visitor (const ArrangementA_2 *arrA,
-                                const ArrangementB_2 *arrB,
-                                Arrangement_result_2 *arr_res,
-                                Overlay_traits *overlay_tr) :
-      Base (arrA, arrB, arr_res, overlay_tr)
+    Sweep_line_overlay_visitor(const ArrangementA_2* arrA,
+                               const ArrangementB_2* arrB,
+                               Arrangement_result_2* arr_res,
+                               Overlay_traits* overlay_tr) :
+      Base(arrA, arrB, arr_res, overlay_tr)
     {}
   };
 
@@ -411,15 +411,13 @@ public:
     {
       // Compare v with the left endpoint of cv.
       return (this->traits->equal_2_object()
-              (this->traits->construct_min_vertex_2_object()(cv),
-               v->point()));
+              (this->traits->construct_min_vertex_2_object()(cv), v->point()));
     }
     else
     {
       // Compare v with the right endpoint of cv.
       return (this->traits->equal_2_object()
-              (this->traits->construct_max_vertex_2_object()(cv),
-               v->point()));
+              (this->traits->construct_max_vertex_2_object()(cv), v->point()));
     }
   }
 
@@ -518,7 +516,7 @@ public:
    * \param v The vertex.
    * \return Whether v is redundant, and should be erased.
    */
-  bool is_redundant (const Vertex*) const
+  bool is_redundant(const Vertex*) const
   {
     // There are no redundant vertices.
     return false;
@@ -609,7 +607,7 @@ public:
    */
   virtual Comparison_result compare_x(const Point_2& p, const Vertex* v) const
   {
-    return (this->traits->compare_x_2_object() (p, v->point()));
+    return (this->traits->compare_x_2_object()(p, v->point()));
   }
 
   /*!
@@ -620,7 +618,7 @@ public:
    */
   virtual Comparison_result compare_xy(const Point_2& p, const Vertex* v) const
   {
-    return (this->traits->compare_xy_2_object() (p, v->point()));
+    return (this->traits->compare_xy_2_object()(p, v->point()));
   }
 
   /*!
@@ -634,7 +632,7 @@ public:
   virtual Comparison_result compare_y_at_x(const Point_2& p,
                                            const Halfedge* he) const
   {
-    return (this->traits->compare_y_at_x_2_object() (p, he->curve()));
+    return (this->traits->compare_y_at_x_2_object()(p, he->curve()));
   }
   //@}
 };

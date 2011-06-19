@@ -46,7 +46,7 @@ namespace CGAL {
  *   otherwise thay are both NULL.
  *
  */
-template<class Traits_>
+template<typename Traits_>
 class Sweep_line_subcurve
 {
 public:
@@ -57,9 +57,8 @@ public:
 
   typedef Sweep_line_subcurve<Traits_2>              Self;
   typedef Curve_comparer<Traits_2, Self>             Compare_curves;
-  typedef Multiset<Self*,
-                   Compare_curves,
-                   CGAL_ALLOCATOR(int)>              Status_line;
+  typedef Multiset<Self*, Compare_curves, CGAL_ALLOCATOR(int)>
+                                                     Status_line;
   typedef typename Status_line::iterator             Status_line_iterator;
 
   typedef Sweep_line_event<Traits_2, Self>           Event;
@@ -68,38 +67,38 @@ protected:
 
   // Data members:
 
-  X_monotone_curve_2   m_lastCurve;  // The portion of the curve that lies to
-                                     // the right of the last event point 
-                                     // that occured on the curve.
+  X_monotone_curve_2 m_last_curve;  // The portion of the curve that lies to
+                                    // the right of the last event point 
+                                    // that occured on the curve.
 
-  Event            *m_left_event;  // The event associated with the left end.
-  Event            *m_right_event; // The event associated with the right end
+  Event* m_left_event;              // The event associated with the left end.
+  Event* m_right_event;             // The event associated with the right end
   
-  Status_line_iterator m_hint;     // The location of the subcurve in the
-                                   // status line (the Y-structure).
+  Status_line_iterator m_hint;      // The location of the subcurve in the
+                                    // status line (the Y-structure).
 
-  Self             *m_orig_subcurve1; // The overlapping hierarchy
-  Self             *m_orig_subcurve2; // (relevant only in case of overlaps).
+  Self* m_orig_subcurve1;           // The overlapping hierarchy
+  Self* m_orig_subcurve2;           // (relevant only in case of overlaps).
 
 public:
 
   /*! Default constructor. */
-  Sweep_line_subcurve () :
-    m_orig_subcurve1 (NULL),
-    m_orig_subcurve2 (NULL)
+  Sweep_line_subcurve() :
+    m_orig_subcurve1(NULL),
+    m_orig_subcurve2(NULL)
   {}
 
   /*! Constructor given a curve. */
-  Sweep_line_subcurve (const X_monotone_curve_2 &curve) :
-    m_lastCurve (curve),
-    m_orig_subcurve1 (NULL),
-    m_orig_subcurve2 (NULL)
+  Sweep_line_subcurve(const X_monotone_curve_2& curve) :
+    m_last_curve(curve),
+    m_orig_subcurve1(NULL),
+    m_orig_subcurve2(NULL)
   {}
 
   /*! Initialize the subcurves by setting the curve. */
-  void init (const X_monotone_curve_2 &curve)
+  void init (const X_monotone_curve_2& curve)
   {
-    m_lastCurve = curve;
+    m_last_curve = curve;
   }
 
   /*! Destructor. */
@@ -107,26 +106,26 @@ public:
   {}
 
   /*! Get the last intersecing curve so far (const version). */
-  const X_monotone_curve_2& last_curve () const
+  const X_monotone_curve_2& last_curve() const
   { 
-    return (m_lastCurve); 
+    return (m_last_curve); 
   }
 
   /*! Get the last intersecing curve so far (non-const version). */
   X_monotone_curve_2& last_curve()
   { 
-    return (m_lastCurve); 
+    return (m_last_curve); 
   }
 
   /*! Set the last intersecing curve so far. */
-  void set_last_curve (const X_monotone_curve_2 &cv)
+  void set_last_curve(const X_monotone_curve_2 &cv)
   { 
-    m_lastCurve = cv; 
+    m_last_curve = cv; 
   }
 
   /*! Check if the given event is the matches the right-end event. */  
-  template<class SweepEvent>
-  bool is_end_point (const SweepEvent* event) const
+  template<typename SweepEvent>
+  bool is_end_point(const SweepEvent* event) const
   {
     return (m_right_event == (Event*)event);
   }
@@ -144,14 +143,14 @@ public:
   }
 
   /*! Set the event that corresponds to the left end of the subcurve. */
-  template<class SweepEvent>
+  template<typename SweepEvent>
   void set_left_event (SweepEvent* event)
   {
     m_left_event =(Event*)event;
   }
 
   /*! Set the event that corresponds to the right end of the subcurve. */
-  template<class SweepEvent>
+  template<typename SweepEvent>
   void set_right_event(SweepEvent* event)
   {
     m_right_event = (Event*)event;
@@ -192,8 +191,8 @@ public:
   }
 
   /*! Get all the leaf-nodes in the hierarchy of overlapping subcurves. */
-  template <class OutputIterator>
-  OutputIterator all_leaves (OutputIterator oi)
+  template <typename OutputIterator>
+  OutputIterator all_leaves(OutputIterator oi)
   {
     if (m_orig_subcurve1 == NULL)
     {
@@ -208,26 +207,25 @@ public:
   }
 
   /*! Check if the given subcurve is a node in the overlapping hierarchy. */
-  bool is_inner_node (Self *s)
+  bool is_inner_node(Self *s)
   {
     if (this == s)
-      return (true);
+      return true;
 
     if (m_orig_subcurve1 == NULL)
-      return (false);
+      return false;
 
     return (m_orig_subcurve1->is_inner_node (s) ||
             m_orig_subcurve2->is_inner_node (s));
   }
 
   /*! Check if the given subcurve is a leaf in the overlapping hierarchy. */
-  bool is_leaf (Self* s)
+  bool is_leaf(Self* s)
   {
     if (m_orig_subcurve1 == NULL)
       return (this == s);
 
-    return (m_orig_subcurve1->is_leaf (s) ||
-            m_orig_subcurve2->is_leaf (s));
+    return (m_orig_subcurve1->is_leaf (s) || m_orig_subcurve2->is_leaf (s));
   }
 
   /*! Check if the two hierarchies contain the same leaf nodes. */
@@ -245,21 +243,21 @@ public:
     {
       if (std::find(other_leaves.begin(), other_leaves.end(), *iter) ==
           other_leaves.end())
-        return (false);
+        return false;
     }
 
     for(iter = other_leaves.begin(); iter != other_leaves.end(); ++iter)
     {
       if (std::find(my_leaves.begin(), my_leaves.end(), *iter) ==
           my_leaves.end())
-        return (false);
+        return false;
     }
 
-    return (true);
+    return true;
   }
 
   /*! Check if the two hierarchies contain a common leaf node. */
-  bool has_common_leaf (Self *s)
+  bool has_common_leaf(Self *s)
   {
     std::list<Self*>   my_leaves;
     std::list<Self*>   other_leaves;
@@ -273,14 +271,14 @@ public:
     {
       if (std::find(other_leaves.begin(), other_leaves.end(), *iter) !=
           other_leaves.end())
-        return (true);
+        return true;
     }
-    return (false);
+    return false;
   }
 
   /*! Get all distinct nodes from the two hierarchies. */
-  template <class OutputIterator>
-  OutputIterator distinct_nodes(Self *s, OutputIterator oi)
+  template <typename OutputIterator>
+  OutputIterator distinct_nodes(Self* s, OutputIterator oi)
   {
     if (m_orig_subcurve1 == NULL)
     {
@@ -312,7 +310,7 @@ public:
       oi = m_orig_subcurve2->distinct_nodes (s, oi);
     }
 
-    return (oi);
+    return oi;
   }
 
   /*! Get the depth of the overlap hierarchy. */
@@ -336,11 +334,11 @@ public:
 };
 
 #ifdef CGAL_SL_VERBOSE
-  template<class Traits>
+  template<typename Traits>
   void Sweep_line_subcurve<Traits>::Print() const
   {
     std::cout << "Curve " << this 
-              << "  (" << m_lastCurve << ") " << std::endl;
+              << "  (" << m_last_curve << ") " << std::endl;
   }
 #endif
 

@@ -76,8 +76,8 @@ public:
 protected:
 
   // Data members:
-  const typename Arrangement_red_2::Topology_traits   *m_red_top_traits;
-  const typename Arrangement_blue_2::Topology_traits  *m_blue_top_traits;
+  const typename Arrangement_red_2::Topology_traits*  m_red_top_traits;
+  const typename Arrangement_blue_2::Topology_traits* m_blue_top_traits;
 
   Halfedge_handle_red        m_red_th;    // Red top fictitious halfedge.
   Halfedge_handle_blue       m_blue_th;   // Blue top fictitious halfedge.
@@ -88,36 +88,30 @@ protected:
 public:
 
   /*! Constructor, given the input red and blue arrangements. */
-  Arr_unb_planar_overlay_helper (const Arrangement_red_2 *red_arr,
-                                 const Arrangement_blue_2 *blue_arr) :
-    m_red_top_traits (red_arr->topology_traits()),
-    m_blue_top_traits (blue_arr->topology_traits())
+  Arr_unb_planar_overlay_helper(const Arrangement_red_2* red_arr,
+                                const Arrangement_blue_2* blue_arr) :
+    m_red_top_traits(red_arr->topology_traits()),
+    m_blue_top_traits(blue_arr->topology_traits())
   {}
 
   /// \name Notification functions.
   //@{
 
   /* A notification issued before the sweep process starts. */
-  void before_sweep ();
+  void before_sweep();
 
   /*!
    * A notification invoked before the sweep-line starts handling the given
    * event.
    */  
-  void before_handle_event (Event* e);
+  void before_handle_event(Event* e);
   //@}
 
   /*! Get the current red top face. */
-  Face_handle_red red_top_face () const
-  {
-    return (m_red_th->face());
-  }
+  Face_handle_red red_face() const { return (m_red_th->face()); }
 
   /*! Get the current blue top face. */
-  Face_handle_blue blue_top_face () const
-  {
-    return (m_blue_th->face());
-  }
+  Face_handle_blue blue_face() const { return (m_blue_th->face()); }
 };
 
 //-----------------------------------------------------------------------------
@@ -128,18 +122,18 @@ public:
 // A notification issued before the sweep process starts.
 //
 template <class Tr, class ArrR, class ArrB, class Arr, class Evnt, class Sbcv>
-void Arr_unb_planar_overlay_helper<Tr,ArrR,ArrB,Arr,Evnt,Sbcv>::before_sweep ()
+void Arr_unb_planar_overlay_helper<Tr,ArrR,ArrB,Arr,Evnt,Sbcv>::before_sweep()
 {
   // Get the top-left fictitious vertices in both arrangements.
-  v_red_tl = Vertex_handle_red (m_red_top_traits->top_left_vertex());
-  v_blue_tl = Vertex_handle_blue (m_blue_top_traits->top_left_vertex());
+  v_red_tl = Vertex_handle_red(m_red_top_traits->top_left_vertex());
+  v_blue_tl = Vertex_handle_blue(m_blue_top_traits->top_left_vertex());
 
   // Get the fictitious halfedges incident to the bottom-left fictitious
   // vertices in both red and blue arrangements. If there are no vertices
   // at x = -oo, we take the halfedge incident to the top-left vertex that
   // lies on the top edge of the fictitious face.
   Vertex_handle_red   v_red_bl = 
-    Vertex_handle_red (m_red_top_traits->bottom_left_vertex());
+    Vertex_handle_red(m_red_top_traits->bottom_left_vertex());
 
   m_red_th = v_red_bl->incident_halfedges();
 
@@ -150,7 +144,7 @@ void Arr_unb_planar_overlay_helper<Tr,ArrR,ArrB,Arr,Evnt,Sbcv>::before_sweep ()
     m_red_th = m_red_th->prev();
 
   Vertex_handle_blue  v_blue_bl = 
-    Vertex_handle_blue (m_blue_top_traits->bottom_left_vertex());
+    Vertex_handle_blue(m_blue_top_traits->bottom_left_vertex());
   
   m_blue_th = v_blue_bl->incident_halfedges();
   if (m_blue_th->source()->parameter_space_in_x() != ARR_LEFT_BOUNDARY)
@@ -158,8 +152,6 @@ void Arr_unb_planar_overlay_helper<Tr,ArrR,ArrB,Arr,Evnt,Sbcv>::before_sweep ()
   
   if (m_blue_th->source() == v_blue_tl)
     m_blue_th = m_blue_th->prev();
-
-  return;
 }
 
 //-----------------------------------------------------------------------------
@@ -167,8 +159,8 @@ void Arr_unb_planar_overlay_helper<Tr,ArrR,ArrB,Arr,Evnt,Sbcv>::before_sweep ()
 // event.
 //
 template <class Tr, class ArrR, class ArrB, class Arr, class Evnt, class Sbcv>
-void Arr_unb_planar_overlay_helper<Tr,ArrR,ArrB,Arr,Evnt,Sbcv>::
-before_handle_event (Event* e)
+void Arr_unb_planar_overlay_helper<Tr, ArrR, ArrB, Arr, Evnt, Sbcv>::
+before_handle_event(Event* e)
 {
   // Nothing to do in case the event represents a valid point.
   if (e->is_closed())
@@ -210,8 +202,6 @@ before_handle_event (Event* e)
       break;
     }
   }
-
-  return;
 }
 
 } //namespace CGAL

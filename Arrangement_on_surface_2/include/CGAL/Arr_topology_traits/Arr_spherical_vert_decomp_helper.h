@@ -114,17 +114,15 @@ void Arr_spherical_vert_decomp_helper<Tr, Arr>::before_sweep()
   if (m_valid_north_pole)
     m_north_pole = Vertex_const_handle(m_top_traits->north_pole());
 
-  // initialize face above with top_face; it is updated at "after_handle_event"
-  // TODO EBEF use "top_face()"
-  m_above_event_face = Face_const_handle(m_top_traits->spherical_face());
+  // Initialize face above with max_face; it is updated at "after_handle_event"
+  m_above_event_face = Face_const_handle(m_top_traits->max_face());
 
   // Get the south pole and the face that intially contains it.
   m_valid_south_pole = (m_top_traits->south_pole() != NULL);
   if (m_valid_south_pole)
     m_south_pole = Vertex_const_handle (m_top_traits->south_pole());
 
-  // initialize face below with bottom_face; it is updated at "after_handle_event"
-  // TODO EBEF use "bottom_face()"
+  // Initialize face below with min_face; it is updated at "after_handle_event"
   m_below_event_face = Face_const_handle(m_top_traits->min_face());
 }
 

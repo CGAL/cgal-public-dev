@@ -144,7 +144,7 @@ public:
   //@{
 
   /*! Default constructor. */
-  Arr_unb_planar_topology_traits_2 ();
+  Arr_unb_planar_topology_traits_2();
 
   /*! Constructor with a geometry-traits class. */
   Arr_unb_planar_topology_traits_2(const Geometry_traits_2* tr);
@@ -213,7 +213,7 @@ public:
   }
 
   /*! Get the number of valid faces. */
-  Size number_of_valid_faces () const
+  Size number_of_valid_faces() const
   {
     // We do not count the ficitious DCEL face.
     return (this->m_dcel.size_of_faces() - 1);
@@ -286,7 +286,7 @@ private:
     typedef typename Base::Subcurve                      Subcurve;
     typedef typename Base::Construction_helper           Construction_helper;
 
-    _Overlay_helper (const ArrangementA_* arrA, const ArrangementB_* arrB) :
+    _Overlay_helper(const ArrangementA_* arrA, const ArrangementB_* arrB) :
       Base(arrA, arrB)
     {}
   };
@@ -375,10 +375,10 @@ public:
     typedef typename Base::Event                     Event;
     typedef typename Base::Subcurve                  Subcurve;
 
-    Sweep_line_overlay_visitor (const ArrangementA_2* arrA,
-                                const ArrangementB_2* arrB,
-                                Arrangement_result_2* arr_res,
-                                Overlay_traits* overlay_tr) :
+    Sweep_line_overlay_visitor(const ArrangementA_2* arrA,
+                               const ArrangementB_2* arrB,
+                               Arrangement_result_2* arr_res,
+                               Overlay_traits* overlay_tr) :
       Base(arrA, arrB, arr_res, overlay_tr)
     {}
   };
@@ -500,7 +500,7 @@ public:
       bool prev2_outer =
         (cv.location(CGAL::ARR_MAX_END) == CGAL::ARR_TOP_BOUNDARY);
 
-      return (std::make_pair (true, prev2_outer));
+      return (std::make_pair(true, prev2_outer));
   }
 #endif
 

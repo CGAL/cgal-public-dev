@@ -60,16 +60,15 @@ public:
   typedef typename Arrangement_blue_2::Face_const_handle  Face_handle_blue;
 
   // Define the helper class for the construction visitor.
-  typedef Arr_bounded_planar_construction_helper<Traits_2,
-                                             Arrangement_2,
-                                             Event,
-                                             Subcurve>    Construction_helper;
+  typedef Arr_bounded_planar_construction_helper<Traits_2, Arrangement_2,
+                                                 Event, Subcurve>
+                                                          Construction_helper;
 
 protected:
 
   // Data members:
-  const typename Arrangement_red_2::Topology_traits   *m_red_top_traits;
-  const typename Arrangement_blue_2::Topology_traits  *m_blue_top_traits;
+  const typename Arrangement_red_2::Topology_traits*  m_red_top_traits;
+  const typename Arrangement_blue_2::Topology_traits* m_blue_top_traits;
 
   Face_handle_red        m_red_ubf;    // Red unbounded face.
   Face_handle_blue       m_blue_ubf;   // Blue unbounded face.
@@ -77,8 +76,8 @@ protected:
 public:
 
   /*! Constructor, given the input red and blue arrangements. */
-  Arr_bounded_planar_overlay_helper (const Arrangement_red_2 *red_arr,
-                                     const Arrangement_blue_2 *blue_arr) :
+  Arr_bounded_planar_overlay_helper(const Arrangement_red_2*  red_arr,
+                                    const Arrangement_blue_2* blue_arr) :
     m_red_top_traits (red_arr->topology_traits()),
     m_blue_top_traits (blue_arr->topology_traits())
   {}
@@ -87,35 +86,25 @@ public:
   //@{
 
   /* A notification issued before the sweep process starts. */
-  void before_sweep ()
+  void before_sweep()
   {
     // Get the unbounded faces in both arrangements.
-    m_red_ubf = Face_handle_red (m_red_top_traits->unbounded_face());
-    m_blue_ubf = Face_handle_blue (m_blue_top_traits->unbounded_face());
-    return;
+    m_red_ubf = Face_handle_red(m_red_top_traits->unbounded_face());
+    m_blue_ubf = Face_handle_blue(m_blue_top_traits->unbounded_face());
   }
 
   /*!
    * A notification invoked before the sweep-line starts handling the given
    * event.
    */  
-  void before_handle_event (Event* /* e */)
-  {
-    return;
-  }
+  void before_handle_event(Event* /* e */) { return; }
   //@}
 
-  /*! Get the current red top face. */
-  Face_handle_red red_top_face () const
-  {
-    return (m_red_ubf);
-  }
+  /*! Get the current red face. */
+  Face_handle_red red_face() const { return (m_red_ubf); }
 
-  /*! Get the current blue top face. */
-  Face_handle_blue blue_top_face () const
-  {
-    return (m_blue_ubf);
-  }
+  /*! Get the current blue face. */
+  Face_handle_blue blue_face() const { return (m_blue_ubf); }
 };
 
 } //namespace CGAL
