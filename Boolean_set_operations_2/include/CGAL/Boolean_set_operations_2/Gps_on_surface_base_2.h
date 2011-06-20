@@ -50,6 +50,11 @@
   General_polygon_set_on_surface_2.
 */
 
+//defines the level of recursion
+//used in _divide_and_conquer function to spawn new threads only in the first level of function call but no more on recursion
+#ifdef _OPENMP
+int level = 0;
+#endif
 
 namespace CGAL {
 
@@ -1206,20 +1211,38 @@ protected:
 	int curr_lower;
 	
 	#ifdef _OPENMP
-	#pragma omp parallel  
+	if(level == 0)
 	{
-		#pragma omp for
-		for(curr_lower = lower; curr_lower < (lower + ((k - 1) * sub_size)); curr_lower += sub_size)
-		{
-			 _divide_and_conquer(curr_lower, curr_lower + sub_size-1, arr_vec, k,
-								  merge_func);
-		}
-	} // end omp parallel
-		
-	curr_lower = lower + ((k - 1) * sub_size);
-	_divide_and_conquer (curr_lower, upper,arr_vec, k, merge_func);
-	#endif
 
+		level = 1;
+		
+		#pragma omp parallel 
+		{
+			#pragma omp for
+			for(curr_lower = lower; curr_lower < (lower + (4 * sub_size)); curr_lower += sub_size)
+			{
+				 _divide_and_conquer(curr_lower, curr_lower + sub_size-1, arr_vec, k,
+									  merge_func);
+			}
+		} // end omp parallel
+		
+		level = 0;
+		curr_lower = lower + (4 * sub_size);
+		_divide_and_conquer (curr_lower, upper,arr_vec, k, merge_func);
+
+	} //end if
+	else	
+	#endif
+	{		
+		curr_lower = lower;
+		for (unsigned int i = 0; i<k-1; ++i, curr_lower += sub_size )
+		{
+		  _divide_and_conquer(curr_lower, curr_lower + sub_size-1, arr_vec, k,
+							  merge_func);
+		}
+		_divide_and_conquer (curr_lower, upper,arr_vec, k, merge_func);
+	}
+	
     merge_func (lower, curr_lower, sub_size ,arr_vec);
     
     return;
