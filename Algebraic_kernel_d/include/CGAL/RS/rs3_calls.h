@@ -1,4 +1,6 @@
-// Copyright (c) 2006-2009 Inria Lorraine (France). All rights reserved.
+// Copyright (c) 2011 INRIA Nancy-Grand Est (France).
+// Copyright (c) 2011 National and Kapodistrian University of Athens (Greece).
+// All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org); you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public License as
@@ -11,10 +13,13 @@
 // This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
 // WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
-// $URL: svn+ssh://algerbya@scm.gforge.inria.fr/svn/cgal/branches/features/Algebraic_kernel_d-RS_bivariate-nancy/Algebraic_kernel_d/include/CGAL/RS/rs3_calls.h $
-// $Id: rs3_calls.h 63060 2011-04-20 12:13:38Z penarand $
+// $URL$
+// $Id$
 //
-// 
+// Authors: Yacine Bouzidi <yacine.bouzidi@inria.fr>
+//          Luis Peñaranda <luis.penaranda@gmx.com>
+//          Marc Pouget <marc.pouget@inria.fr>
+//          Fabrice Rouillier <fabrice.rouillier@inria.fr>
 
 #ifndef CGAL_RS_RS3_CALLS_H
 #define CGAL_RS_RS3_CALLS_H
@@ -331,8 +336,19 @@ std::vector< std::vector< std::vector<Gmpz> > > Rurs_sys_list()
     ident_elt_x=rs_export_elt_vect_ibfr(ident_vect,0);
     ident_elt_y=rs_export_elt_vect_ibfr(ident_vect,1);    
     
+    // TODO: Since the Gmpfi is not constructed correctly, we will copy it
+    // by now. We will return to the old code after fixing the constructor
+    // Gmpfi(mpfi_srcptr). There is no problem in modyfing this, since it
+    // is not documented.
+    mpfi_t tempx,tempy;
+    mpfi_init_set_tempx((mpfi_ptr)rs_export_ibfr_mpfi(ident_elt_x));
+    mpfi_init_set_tempy((mpfi_ptr)rs_export_ibfr_mpfi(ident_elt_y));
+    *sol++ = std::make_pair(CGAL::Gmpfi(tempx),
+			    CGAL::Gmpfi(tempy));
+    // old code:
     *sol++ = std::make_pair(CGAL::Gmpfi((mpfi_ptr)rs_export_ibfr_mpfi(ident_elt_x)),
 			    CGAL::Gmpfi((mpfi_ptr)rs_export_ibfr_mpfi(ident_elt_y)));
+
     // affiche_vect_ibfr(ident_vect);
     /* on passe a l'élément suivant */
     ident_node=rs_export_list_vect_ibfr_nextnode(ident_node);
