@@ -34,6 +34,11 @@
 
 #if (defined(CGAL_USE_GMP) && defined(CGAL_USE_MPFI) && defined(CGAL_USE_RS))
 #include <CGAL/Algebraic_kernel_d/Real_solve.h>
+// TODO remove Real_solve and replace with Luis': #include <CGAL/RS/isolator_1.h>
+#endif
+
+#if CGAL_BISOLVE_ENABLE_ARCAVOID
+#include <CGAL/Arcavoid_root_isolator.h>
 #endif
 
 namespace CGAL {
@@ -75,15 +80,25 @@ struct Algebraic_kernel_d_1_generator {
       CGAL::internal::Descartes< CGAL::Polynomial< Coefficient >, Bound >
     > Algebraic_kernel_with_qir_and_descartes_1;
 
-
 #if (defined(CGAL_USE_GMP) && defined(CGAL_USE_MPFI) && defined(CGAL_USE_RS))
     typedef CGAL::Algebraic_kernel_d_1
     < Coefficient, 
       Bound,
       CGAL::internal::Algebraic_real_quadratic_refinement_rep_bfi
-           < Coefficient, Bound >,
+      < Coefficient, Bound >,
       CGAL::internal::Real_solve< CGAL::Polynomial< Coefficient >, Bound >
+      //CGAL::internal::RS_real_root_isolator< CGAL::Polynomial< Coefficient >, Bound >
     > Algebraic_kernel_with_qir_and_rs_1;
+#endif
+
+#if CGAL_BISOLVE_ENABLE_ARCAVOID
+    typedef CGAL::Algebraic_kernel_d_1
+    < Coefficient, 
+      Bound,
+      CGAL::internal::Algebraic_real_quadratic_refinement_rep_bfi< Coefficient, Bound >,
+      CGAL::Arcavoid< CGAL::internal::Bitstream_coefficient_kernel<Coefficient>, 
+                      CGAL::Arcavoid_real_root_isolator_tag > 
+    > Algebraic_kernel_with_qir_and_arcavoid_1;
 #endif
 
 };
