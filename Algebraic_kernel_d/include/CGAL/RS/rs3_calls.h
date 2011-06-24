@@ -47,7 +47,7 @@ namespace CGAL{
   
     typedef Polynomial<Gmpz> Polynomial_1;
     typedef Polynomial<Polynomial_1> Polynomial_2;
-    typedef Rur_2<Polynomial_1> rur_2;
+    typedef Rur_2<Polynomial_2> rur_2;
     
   // initialize RS solver
     inline void init_solver(){
@@ -113,7 +113,30 @@ namespace CGAL{
       }
     
     
-
+    void create_rs_rur_for_refine(rur_2 list_constr, mpfi_t interval)
+    {
+      rs_import_uppring((char*)"t");
+	
+	CGALRS_PTR(ident_list);
+	CGALRS_PTR(ident_poly);
+	CGALRS_PTR(ident_interval);
+	// create a rur for a bivariate systeme
+	ident_list = rs_get_default_rur_num_vars();
+        // add the main polynomial of the rur
+	create_rs_upoly(list_constr.get_f(), rs_get_default_rur_ext());
+	// add the denominator of the rur
+	create_rs_upoly(list_constr.get_g(), rs_get_default_rur_den());
+	// add the polynomials of the two coordinates into a list
+	ident_poly=rs_export_new_list_mon_upp_bz();
+	create_rs_upoly(list_constr.get_g1(),ident_poly);
+	rs_dappend_list_sup_bz(ident_list,ident_poly);
+	ident_poly=rs_export_new_list_mon_upp_bz();
+	create_rs_upoly(list_constr.get_g2(),ident_poly);
+	rs_dappend_list_sup_bz(ident_list,ident_poly);
+	ident_interval = rs_get_todo_interv_u_mpfi();
+	rs_import_todo_interv_u_mpfi(ident_interval, TO_RSPTR_IN(interval));
+      
+    }
 
  
 
@@ -341,13 +364,13 @@ std::vector< std::vector< std::vector<Gmpz> > > Rurs_sys_list()
     // Gmpfi(mpfi_srcptr). There is no problem in modyfing this, since it
     // is not documented.
     mpfi_t tempx,tempy;
-    mpfi_init_set_tempx((mpfi_ptr)rs_export_ibfr_mpfi(ident_elt_x));
-    mpfi_init_set_tempy((mpfi_ptr)rs_export_ibfr_mpfi(ident_elt_y));
+    mpfi_init_set(tempx,(mpfi_ptr)rs_export_ibfr_mpfi(ident_elt_x));
+    mpfi_init_set(tempy,(mpfi_ptr)rs_export_ibfr_mpfi(ident_elt_y));
     *sol++ = std::make_pair(CGAL::Gmpfi(tempx),
 			    CGAL::Gmpfi(tempy));
     // old code:
-    *sol++ = std::make_pair(CGAL::Gmpfi((mpfi_ptr)rs_export_ibfr_mpfi(ident_elt_x)),
-			    CGAL::Gmpfi((mpfi_ptr)rs_export_ibfr_mpfi(ident_elt_y)));
+    /* *sol++ = std::make_pair(CGAL::Gmpfi((mpfi_ptr)rs_export_ibfr_mpfi(ident_elt_x)), */
+    /* 			    CGAL::Gmpfi((mpfi_ptr)rs_export_ibfr_mpfi(ident_elt_y))); */
 
     // affiche_vect_ibfr(ident_vect);
     /* on passe a l'élément suivant */
