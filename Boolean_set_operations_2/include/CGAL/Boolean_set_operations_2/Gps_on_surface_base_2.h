@@ -40,6 +40,11 @@
 #include <CGAL/Boolean_set_operations_2/Gps_polygon_simplifier.h>
 #include <CGAL/Boolean_set_operations_2/Ccb_curve_iterator.h>
 
+//add OpenMP header
+#ifdef _OPENMP
+#include<omp.h>
+#endif
+
 /*!
   \file   Gps_on_surface_base_2.h
   \brief  A class that allows Boolean set operations.
@@ -49,12 +54,6 @@
   policy. A different validation policy example can be found in 
   General_polygon_set_on_surface_2.
 */
-
-//defines the level of recursion
-//used in _divide_and_conquer function to spawn new threads only in the first level of function call but no more on recursion
-#ifdef _OPENMP
-int level = 0;
-#endif
 
 namespace CGAL {
 
@@ -150,7 +149,12 @@ protected:
 
   // the underlying arrangement
   Aos_2*        m_arr;
-
+  
+	//define current total number of threads running
+	//used in _divide_and_conquer function to spawn new threads as long as there are still idle processors, but no more
+	#ifdef _OPENMP
+	int current_num_threads;
+	#endif
 
 public:
 
@@ -158,7 +162,8 @@ public:
   Gps_on_surface_base_2() : m_traits(new Traits_2()),
                             m_traits_adaptor(*m_traits),
                             m_traits_owner(true),
-                            m_arr(new Aos_2(m_traits))       
+                            m_arr(new Aos_2(m_traits)),
+							current_num_threads(1)
   {}
 
 
@@ -166,7 +171,8 @@ public:
   Gps_on_surface_base_2(Traits_2& tr) : m_traits(&tr),
                                         m_traits_adaptor(*m_traits),
                                         m_traits_owner(false),
-                                        m_arr(new Aos_2(m_traits)) 
+                                        m_arr(new Aos_2(m_traits)),
+										current_num_threads(1)
   {}
 
 
@@ -174,7 +180,8 @@ public:
     m_traits(new Traits_2(*(ps.m_traits))),
     m_traits_adaptor(*m_traits),
     m_traits_owner(true),
-    m_arr(new Aos_2(*(ps.m_arr)))
+    m_arr(new Aos_2(*(ps.m_arr))),
+	current_num_threads(1)
   {}
 
   
@@ -1211,23 +1218,23 @@ protected:
 	int curr_lower;
 	
 	#ifdef _OPENMP
-	if(level == 0)
+	if(current_num_threads < omp_get_max_threads())
 	{
-
-		level = 1;
+		#pragma omp atomic
+		current_num_threads += (omp_get_max_threads() - 1);
 		
 		#pragma omp parallel 
 		{
 			#pragma omp for
-			for(curr_lower = lower; curr_lower < (lower + (4 * sub_size)); curr_lower += sub_size)
+			for(curr_lower = lower; curr_lower < (lower + ((k - 1) * sub_size)); curr_lower += sub_size)
 			{
 				 _divide_and_conquer(curr_lower, curr_lower + sub_size-1, arr_vec, k,
 									  merge_func);
 			}
 		} // end omp parallel
 		
-		level = 0;
-		curr_lower = lower + (4 * sub_size);
+		current_num_threads -= (omp_get_max_threads() - 1);
+		curr_lower = lower + ((k - 1) * sub_size);
 		_divide_and_conquer (curr_lower, upper,arr_vec, k, merge_func);
 
 	} //end if
