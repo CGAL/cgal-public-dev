@@ -32,10 +32,69 @@
 
 #include <CGAL/number_type_basic.h>
 
+
 #include <iterator>
 
 #include <boost/iterator/transform_iterator.hpp>
 #include <boost/type_traits/is_same.hpp>
+
+#include <CGAL/compiler_config.h>
+
+#if !defined(CGAL_CFG_NO_CPP0X_RVALUE_REFERENCE) && !defined(CGAL_CFG_NO_CPP0X_DECLTYPE)
+#define CGAL_NEW_COERCION_TRAITS 1
+#include <type_traits>
+#include <boost/mpl/if.hpp>
+#include <boost/mpl/and.hpp>
+#include <boost/mpl/or.hpp>
+#endif
+
+#if defined(CGAL_NEW_COERCION_TRAITS)
+namespace CGAL {
+
+// Conversion_traits work automatically for all types that are
+// compatible with std::common_type
+template<typename A, typename B>
+struct Coercion_traits
+{
+  typedef typename std::common_type<A, B>::type Type;
+
+  // If common_type works, the types are not necessarily implicitly
+  // convertible to each other, as there could be a partial
+  // specialization of common_type thus we have to check if the
+  // implicit conversion is true. Are_explicit_interoperable is true in any
+  // case, we check to be consistent though.
+
+  // note: we don't care if A and B are convertible from and to each
+  // other, but if they are convertible to the common_type.
+  typedef typename boost::mpl::if_< 
+    typename boost::mpl::and_< typename std::is_convertible<A, Type>::type,
+                               typename std::is_convertible<B, Type>::type >::type,
+    CGAL::Tag_true,
+    CGAL::Tag_false >::type Are_implicit_interoperable;
+
+  typedef typename boost::mpl::if_< 
+    typename boost::mpl::and_< typename std::is_explicitly_convertible<A, Type>::type,
+                               typename std::is_explicitly_convertible<B, Type>::type >::type,
+    CGAL::Tag_true,
+    CGAL::Tag_false >::type Are_explicit_interoperable;
+
+  // if is_same<A,B>::value == true, we must only provide one operator()
+  template<typename T, typename U = CGAL::Tag_false>
+  struct Cast_i {
+    typedef Type result_type;
+    Type operator()(T&& x) { return Type(std::forward<T>(x)); }
+    Type operator()(U&& x) { return Type(std::forward<U>(x)); }
+    Type operator()(const T& x) { return Type(x); }
+    Type operator()(const U& x) { return Type(x); }
+  };
+
+  typedef typename boost::mpl::if_<
+    typename std::is_same<A, B>::type,
+    Cast_i<A>,
+    Cast_i<A, B> >::type Cast;
+};
+} // namespace CGAL
+#endif // CGAL_NEW_COERCION_TRAITS
 
 // Makro to define an additional operator for binary functors which takes
 // two number types as parameters that are interoperable with the
@@ -54,32 +113,37 @@
 #define CGAL_IMPLICIT_INTEROPERABLE_BINARY_OPERATOR( NT ) \
 CGAL_IMPLICIT_INTEROPERABLE_BINARY_OPERATOR_WITH_RT( NT, NT )
 
-#define CGAL_DEFINE_COERCION_TRAITS_FROM_TO(FROM,TO)                    \
-    template <>                                                         \
-    struct Coercion_traits< FROM , TO >{                                \
-        typedef Tag_true  Are_explicit_interoperable;                   \
-        typedef Tag_true  Are_implicit_interoperable;                   \
-        typedef TO Type;                                       \
-        struct Cast{                                                    \
-            typedef Type result_type;                          \
-            Type operator()(const TO& x)   const { return x;}  \
-            Type operator()(const FROM& x) const {             \
-                return Type(x);}                               \
-        };                                                              \
-    };                                                                  \
-    template <>                                                         \
-    struct Coercion_traits< TO , FROM >{                                \
-        typedef Tag_true  Are_explicit_interoperable;                   \
-        typedef Tag_true  Are_implicit_interoperable;                   \
-        typedef TO Type;                                       \
-        struct Cast{                                                    \
-            typedef Type result_type;                          \
-            Type operator()(const TO& x)   const { return x;}  \
-            Type operator()(const FROM& x) const {             \
-                return Type(x);}                               \
-        };                                                              \
-    };      
+#if !defined(CGAL_NEW_COERCION_TRAITS)
+#define CGAL_DEFINE_COERCION_TRAITS_FROM_TO(FROM,TO)    \
+  template <>                                           \
+  struct Coercion_traits< FROM , TO >{                  \
+    typedef Tag_true  Are_explicit_interoperable;       \
+    typedef Tag_true  Are_implicit_interoperable;       \
+    typedef TO Type;                                    \
+    struct Cast{                                        \
+      typedef Type result_type;                         \
+      Type operator()(const TO& x)   const { return x;} \
+      Type operator()(const FROM& x) const {            \
+        return Type(x);}                                \
+    };                                                  \
+  };                                                    \
+  template <>                                           \
+  struct Coercion_traits< TO , FROM >{                  \
+    typedef Tag_true  Are_explicit_interoperable;       \
+    typedef Tag_true  Are_implicit_interoperable;       \
+    typedef TO Type;                                    \
+    struct Cast{                                        \
+      typedef Type result_type;                         \
+      Type operator()(const TO& x)   const { return x;} \
+      Type operator()(const FROM& x) const {            \
+        return Type(x);}                                \
+    };                                                  \
+  };      
+#else
+#define CGAL_DEFINE_COERCION_TRAITS_FROM_TO(FROM,TO)
+#endif
 
+#if !defined(CGAL_NEW_COERCION_TRAITS)
 #define CGAL_DEFINE_COERCION_TRAITS_FROM_TO_TEM(FROM,TO,TEM)            \
     template <TEM>                                                      \
     struct Coercion_traits< FROM , TO >{                                \
@@ -105,9 +169,11 @@ CGAL_IMPLICIT_INTEROPERABLE_BINARY_OPERATOR_WITH_RT( NT, NT )
                 return Type(x);}                               \
         };                                                              \
     };   
-
+#else
+#define CGAL_DEFINE_COERCION_TRAITS_FROM_TO_TEM(FROM,TO,TEM)
+#endif
                                                  
-
+#if !defined(CGAL_NEW_COERCION_TRAITS)
 #define CGAL_DEFINE_COERCION_TRAITS_FOR_SELF(A)                         \
     template <>                                                         \
     struct Coercion_traits< A , A >{                                    \
@@ -119,18 +185,26 @@ CGAL_IMPLICIT_INTEROPERABLE_BINARY_OPERATOR_WITH_RT( NT, NT )
             Type operator()(const A& x) const { return x;}     \
         };                                                              \
     };    
+#else
+#define CGAL_DEFINE_COERCION_TRAITS_FOR_SELF(A)
+#endif 
 
+#if !defined(CGAL_NEW_COERCION_TRAITS)
 #define CGAL_DEFINE_COERCION_TRAITS_FOR_SELF_TEM(A,TEM)                 \
     template <TEM>                                                      \
     struct Coercion_traits< A , A >{                                    \
         typedef Tag_true  Are_explicit_interoperable;                   \
         typedef Tag_true  Are_implicit_interoperable;                   \
-        typedef A Type;                                        \
+        typedef A Type;                                                 \
         struct Cast{                                                    \
             typedef Type result_type;                          \
             Type operator()(const A& x) const {return x;}      \
         };                                                              \
-    };    
+    };
+#else    
+#define CGAL_DEFINE_COERCION_TRAITS_FOR_SELF_TEM(A,TEM)
+#endif
+
 
 namespace CGAL {
 
@@ -190,6 +264,7 @@ CGAL_DEFINE_COERCION_TRAITS_FROM_TO(float,long double)
 CGAL_DEFINE_COERCION_TRAITS_FROM_TO(double,long double)
 
 //! Specialization for equal types.
+#if !defined(CGAL_NEW_COERCION_TRAITS)
 template <class A>    
 struct Coercion_traits<A,A>{ 
     typedef Tag_true Are_explicit_interoperable;
@@ -202,6 +277,7 @@ struct Coercion_traits<A,A>{
         }       
     };
 };
+#endif
     
 CGAL_DEFINE_COERCION_TRAITS_FOR_SELF(short)
 CGAL_DEFINE_COERCION_TRAITS_FOR_SELF(int)  
@@ -232,9 +308,10 @@ struct Coercion_traits_for_level<A,B,0> {
     typedef Null_functor Cast;
 };
 
+#if !defined(CGAL_NEW_COERCION_TRAITS)
 template<class A , class B> 
 struct Coercion_traits :public Coercion_traits_for_level<A,B,CTL_TOP>{};
-
+#endif
  
 } //namespace CGAL
 
