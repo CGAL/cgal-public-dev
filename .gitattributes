@@ -973,6 +973,7 @@ BGL/test/BGL/data/triangle.off -text svneol=unset#application/octet-stream
 BGL/test/BGL/data/triangular_hole.off -text svneol=unset#application/octet-stream
 BGL/test/BGL/halfedge_graph_traits_Polyhedron_3.cmd eol=lf
 BGL/test/BGL/properties_Polyhedron_3.cmd eol=lf
+Boolean_set_operations_2/benchmark/Boolean_set_operations_2/compute_intersection_points.cpp -text
 Boolean_set_operations_2/benchmark/Boolean_set_operations_2/data/test_3 -text
 Boolean_set_operations_2/benchmark/Boolean_set_operations_2/data/test_4.txt -text
 Boolean_set_operations_2/benchmark/Boolean_set_operations_2/data/test_8 -text
