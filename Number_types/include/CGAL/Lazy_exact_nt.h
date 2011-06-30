@@ -1092,6 +1092,7 @@ template < typename ET > class Real_embeddable_traits< Lazy_exact_nt<ET> >
 
 };
 
+#if !defined(CGAL_NEW_COERCION_TRAITS)
 template <class ET1, class ET2, class F>
 class Lazy_exact_nt_coercion_traits_base {
 public:
@@ -1166,6 +1167,7 @@ CGAL_COERCION_TRAITS_LAZY_EXACT(short)
 CGAL_COERCION_TRAITS_LAZY_EXACT(double)
 CGAL_COERCION_TRAITS_LAZY_EXACT(float)
 #undef CGAL_COERCION_TRAITS_LAZY_EXACT
+#endif
 
 namespace INTERN_LAZY_EXACT_NT {
 
