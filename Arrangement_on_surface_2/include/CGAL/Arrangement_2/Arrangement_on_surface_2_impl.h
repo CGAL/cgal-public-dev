@@ -4756,8 +4756,6 @@ _remove_edge (DHalfedge *e, bool remove_source, bool remove_target)
         }
 
         // Notify the observers that a new outer CCB has been formed.
-        Ccb_halfedge_circulator   hccb = (Halfedge_handle(he1->next()))->ccb();
-
         _notify_after_split_outer_ccb (Face_handle (f1),
                                        Halfedge_handle (he1->next())->ccb(),
                                        Halfedge_handle (prev1)->ccb());
