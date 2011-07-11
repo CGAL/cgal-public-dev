@@ -448,6 +448,25 @@ public:
       return insert_in_hole(cell_begin, cell_end, begin, i, create_vertex());
   }
 
+  //PESHO GSOC
+private:
+  void collect_vertices_and_edges_from_link(Vertex_handle v,
+                                              Vertex_handle_set& vertices,
+                                              Unoriented_edge_set& edges);
+  bool is_top_collapsible(const Edge& edge);
+  bool do_is_top_collapsible(const Edge& edge);
+  void get_revolving_vertices(const Edge& edge, Vertex_handle_set& vertices); 
+  void get_revolving_uedges(const Edge& edge,
+                              Unoriented_edge_set& uedges);
+
+  Vertex_handle any_other_vertex(Cell_handle cell,
+		Vertex_handle va, Vertex_handle vb);
+  Vertex_handle remaining_vertex(Cell_handle cell,
+      		Vertex_handle va, Vertex_handle vb, Vertex_handle vc);
+
+public:
+  bool collapse_edge(const Edge& edge);
+
   //INSERTION
 
   Vertex_handle insert_in_cell(Cell_handle c);

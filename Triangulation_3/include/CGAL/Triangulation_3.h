@@ -698,6 +698,14 @@ public:
   }
   void flip_flippable(Cell_handle c, int i, int j);
 
+  //PESHO GSOC
+public:
+  bool collapse_edge(const Edge& edge)
+  {
+     return _tds.collapse_edge(edge);
+  }
+  bool is_collapsible(const Edge& edge);
+
   //INSERTION
 
   Vertex_handle insert(const Point & p, Vertex_handle hint)
