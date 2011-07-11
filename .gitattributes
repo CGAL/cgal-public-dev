@@ -4255,6 +4255,7 @@ Triangulation_3/examples/Triangulation_3/info_insert_with_pair_iterator.cpp -tex
 Triangulation_3/examples/Triangulation_3/info_insert_with_pair_iterator_regular.cpp -text
 Triangulation_3/examples/Triangulation_3/info_insert_with_transform_iterator.cpp -text
 Triangulation_3/examples/Triangulation_3/info_insert_with_zip_iterator.cpp -text
+Triangulation_3/include/CGAL/collapse.h -text
 Triangulation_3/include/CGAL/internal/Static_filters/Compare_weighted_squared_radius_3.h -text
 Triangulation_3/include/CGAL/internal/Static_filters/Power_test_3.h -text
 Triangulation_3/include/CGAL/internal/Static_filters/Regular_triangulation_static_filters_traits_3.h -text
