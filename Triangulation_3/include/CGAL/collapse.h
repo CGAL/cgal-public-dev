@@ -11,8 +11,28 @@ less_Cell_handle
 {
 	bool operator()(const Cell_handle &s1, const Cell_handle &s2) const
 	{
-		// different cells are allocated on different places
-		return &s1 < &s2;
+		Vertex_handle v1[] = {
+				s1->vertex(0),
+				s1->vertex(1),
+				s1->vertex(2),
+				s1->vertex(3) };
+
+		Vertex_handle v2[] = {
+				s2->vertex(0),
+				s2->vertex(1),
+				s2->vertex(2),
+				s2->vertex(3) };
+
+		std::sort(v1, v1+4);
+		std::sort(v2, v2+4);
+
+		int i;
+		for(i=0; i<4; i++)
+			if (v1[i] != v2[i])
+				return v1[i] < v2[i];
+
+		// equivalent cells
+		return false;
 	}
 };
 
@@ -23,8 +43,7 @@ less_Vertex_handle
 {
 	bool operator()(const Vertex_handle &s1, const Vertex_handle &s2) const
 	{
-		// different verteces are allocated on different places
-		return &s1 < &s2;
+		return s1 < s2;
 	}
 };
 
