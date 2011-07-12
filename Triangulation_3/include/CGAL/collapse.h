@@ -1,8 +1,9 @@
 CGAL_BEGIN_NAMESPACE
 
-/////////
-// TDS //
-/////////
+/////////////////
+// TDS members //
+/////////////////
+
 template < class Vb, class Cb >
 template < class Cell_handle > 
 struct Triangulation_data_structure_3<Vb,Cb>::
@@ -28,11 +29,11 @@ less_Vertex_handle
 };
 
 template < class Vb, class Cb >
-template < class Edge, class Vertex_handle >
+template < class Edge, class Vertex_handle  >
 struct Triangulation_data_structure_3<Vb,Cb>::
 CUnoriented_edge
 {
-	Vertex_handle v1, v2;
+	std::pair<Vertex_handle, Vertex_handle> handles;
 
 	CUnoriented_edge(Edge edge) 
 	{
@@ -40,41 +41,56 @@ CUnoriented_edge
 		int v1_index = edge.second;
 		int v2_index = edge.third;
 
-		v1 = cell.vertex(v1_index);
-		v2 = cell.vertex(v2_index);
+		handles.first = cell->vertex(v1_index);
+		handles.second = cell->vertex(v2_index);
 
-		if (v2<v1) swap(v1,v2);		
+		if (handles.first < handles.second)
+			std::swap(handles.first, handles.second);		
 	}
+
+	bool operator<(const CUnoriented_edge &another_edge) const
+	{
+		// different verteces are allocated on different places
+		return handles < another_edge.handles;
+	}	
 };
 
-/*
+
+template < class Vb, class Cb >
+typename Triangulation_data_structure_3<Vb,Cb>::Vertex_handle
+Triangulation_data_structure_3<Vb,Cb>::
+facet_vertex(Facet facet, int index)
+{
+	Cell_handle cell = facet.first;
+	return cell->vertex(index);
+}
+
 template < class Vb, class Cb >
 void
 Triangulation_data_structure_3<Vb,Cb>::
 collect_vertices_and_edges_from_link(Vertex_handle v,
                                               Vertex_handle_set& vertices,
                                               Unoriented_edge_set& edges)
-    {
-        std::list<Cell_handle> cells;		
-        Dt::incident_cells(v, std::back_inserter(cells));
-        typename std::list<Cell_handle>::iterator it;
-        for (it = cells.begin(); it != cells.end(); it++)
-        {
-            Cell_handle cell = *it;
-            int index = cell->index(v);
-            Facet facet(cell, index);
-            Vertex_handle v0 = facet_vertex(facet, 0);
-            Vertex_handle v1 = facet_vertex(facet, 1);
-            Vertex_handle v2 = facet_vertex(facet, 2);
-            vertices.insert(v0);
-            vertices.insert(v1);
-            vertices.insert(v2);
-            edges.insert(Unoriented_edge(Edge(cell, (index+1)%4, (index+2)%4)));
-            edges.insert(Unoriented_edge(Edge(cell, (index+1)%4, (index+3)%4)));
-            edges.insert(Unoriented_edge(Edge(cell, (index+2)%4, (index+3)%4)));
-        }
-    }
-*/
+{
+	std::list<Cell_handle> cells;		
+	incident_cells(v, std::back_inserter(cells));
+	typename std::list<Cell_handle>::iterator it;
+	for (it = cells.begin(); it != cells.end(); it++)
+	{
+		Cell_handle cell = *it;
+		int index = cell->index(v);
+		Facet facet(cell, index);
+		Vertex_handle v0 = facet_vertex(facet, 0);
+		Vertex_handle v1 = facet_vertex(facet, 1);
+		Vertex_handle v2 = facet_vertex(facet, 2);
+		vertices.insert(v0);
+		vertices.insert(v1);
+		vertices.insert(v2);
+		edges.insert(Unoriented_edge(Edge(cell, (index+1)%4, (index+2)%4)));
+		edges.insert(Unoriented_edge(Edge(cell, (index+1)%4, (index+3)%4)));
+		edges.insert(Unoriented_edge(Edge(cell, (index+2)%4, (index+3)%4)));
+	}
+}
     
 template < class Vb, class Cb >
 bool
@@ -92,99 +108,123 @@ template < class Vb, class Cb >
 bool
 Triangulation_data_structure_3<Vb,Cb>::
 do_is_top_collapsible(const Edge& edge)
-    {
-        // edge pq
-        Cell_handle cell = edge.first;
-        Vertex_handle source = source_vertex(edge);
-        Vertex_handle target = target_vertex(edge);
-        
-        // get revolving vertices and edges
-        Vertex_handle_set revolving_vertices;
-        Unoriented_edge_set revolving_edges; 
-        get_revolving_vertices(edge, revolving_vertices);
-        get_revolving_uedges(edge, revolving_edges);
-        /*
-        // get vertices and edges in link of source, then target
-        Vertex_handle_set svertices, tvertices;
-        Unoriented_edge_set sedges, tedges;
-        collect_vertices_and_edges_from_link(source, svertices, sedges);
-        collect_vertices_and_edges_from_link(target, tvertices, tedges);
-        
-        // compute l(a) inter l(b) for vertices
-        Vertex_handle_set vinter;
-        typename Vertex_handle_set::iterator vit;
-        for (vit = svertices.begin(); vit != svertices.end(); vit++)
-            if (tvertices.find(*vit) != tvertices.end())
-                vinter.insert(*vit);
-        
-        // compare the two sets in size then element by element
-        if (vinter.size() != revolving_vertices.size())
-            return false;
-        for (vit = vinter.begin(); vit != vinter.end(); vit++)
-            if (revolving_vertices.find(*vit) == revolving_vertices.end())
-                return false;
-        
-        // compute l(a) inter l(b) for edges
-        Unoriented_edge_set einter;
-        typename Unoriented_edge_set::iterator eit;
-        for (eit = sedges.begin(); eit != sedges.end(); eit++)
-            if (tedges.find(*eit) != tedges.end())
-                einter.insert(*eit);
-        
-        // compare the two sets in size then element by element
-        if (einter.size() != revolving_edges.size())
-            return false;
-        for (eit = einter.begin(); eit != einter.end(); eit++)
-            if (revolving_edges.find(*eit) == revolving_edges.end())
-                return false;
-        */
-        // finally
-        return true;
-    }
+{	
+	// edge pq
+	Cell_handle cell = edge.first;
+	Vertex_handle source = source_vertex(edge);
+	Vertex_handle target = target_vertex(edge);
+
+	// get revolving vertices and edges
+	Vertex_handle_set revolving_vertices;
+	Unoriented_edge_set revolving_edges; 
+	get_revolving_vertices(edge, revolving_vertices);
+	get_revolving_uedges(edge, revolving_edges);
+
+	// get vertices and edges in link of source, then target
+	Vertex_handle_set svertices, tvertices;
+	Unoriented_edge_set sedges, tedges;
+	collect_vertices_and_edges_from_link(source, svertices, sedges);
+	collect_vertices_and_edges_from_link(target, tvertices, tedges);
+	 
+	// compute l(a) inter l(b) for vertices
+	Vertex_handle_set vinter;
+	typename Vertex_handle_set::iterator vit;
+	for (vit = svertices.begin(); vit != svertices.end(); vit++)
+	    if (tvertices.find(*vit) != tvertices.end())
+		vinter.insert(*vit);
+	
+	// compare the two sets in size then element by element
+	if (vinter.size() != revolving_vertices.size())
+	    return false;
+	for (vit = vinter.begin(); vit != vinter.end(); vit++)
+	    if (revolving_vertices.find(*vit) == revolving_vertices.end())
+		return false;
+
+	// compute l(a) inter l(b) for edges
+	Unoriented_edge_set einter;
+	typename Unoriented_edge_set::iterator eit;
+	for (eit = sedges.begin(); eit != sedges.end(); eit++)
+	    if (tedges.find(*eit) != tedges.end())
+		einter.insert(*eit);
+
+	// compare the two sets in size then element by element
+	if (einter.size() != revolving_edges.size())
+	    return false;
+	for (eit = einter.begin(); eit != einter.end(); eit++)
+	    if (revolving_edges.find(*eit) == revolving_edges.end())
+		return false;
+	
+	// finally
+	return true;
+}
 
 template < class Vb, class Cb >
 void
 Triangulation_data_structure_3<Vb,Cb>::
 get_revolving_vertices(const Edge& edge, Vertex_handle_set& vertices)
-    {
-        Cell_handle seed_cell = edge.first;
-        Vertex_handle s = source_vertex(edge);
-        Vertex_handle t = target_vertex(edge);
+{
+	Cell_handle seed_cell = edge.first;
+	Vertex_handle s = source_vertex(edge);
+	Vertex_handle t = target_vertex(edge);
         
-        Cell_handle cell = seed_cell;
-        Vertex_handle v = get_any_other_vertex(seed_cell, s, t);
-        do {
-            vertices.insert(v);
-            int index = cell->index(v);
-            v = get_remaining_vertex(cell, s, t, v);
-            cell = cell->neighbor(index);
-        } while (cell != seed_cell);
-    }
+	Cell_handle cell = seed_cell;
+	Vertex_handle v = get_any_other_vertex(seed_cell, s, t);
+	do {
+		vertices.insert(v);
+		int index = cell->index(v);
+		v = get_remaining_vertex(cell, s, t, v);
+		cell = cell->neighbor(index);
+	} while (cell != seed_cell);
+}
     
 template < class Vb, class Cb >
 void
 Triangulation_data_structure_3<Vb,Cb>::
-get_revolving_uedges(const Edge& edge, 
-                              Unoriented_edge_set& uedges)
-    {
-        Vertex_handle s = source_vertex(edge);
-        Vertex_handle t = target_vertex(edge);
+get_revolving_uedges(const Edge& edge, Unoriented_edge_set& uedges)
+{
+	Vertex_handle s = source_vertex(edge);
+	Vertex_handle t = target_vertex(edge);
         
-        Cell_circulator cell = incident_cells(edge); 
-        Cell_circulator end = cell;
-        CGAL_For_all(cell, end)
+	Cell_circulator cell = incident_cells(edge); 
+	Cell_circulator end = cell;
+	
+	CGAL_For_all(cell, end)
         {
-            Vertex_handle u = get_any_other_vertex(cell, s, t);
-            Vertex_handle v = get_remaining_vertex(cell, s, t, u);
-            Edge e(cell, cell->index(u), cell->index(v));
-            uedges.insert(Unoriented_edge(e));
-        }
-    }
+		Vertex_handle u = get_any_other_vertex(cell, s, t);
+		Vertex_handle v = get_remaining_vertex(cell, s, t, u);
+		Edge e(cell, cell->index(u), cell->index(v));
+		uedges.insert(Unoriented_edge(e));
+	}
+}
 
 template < class Vb, class Cb >
 typename Triangulation_data_structure_3<Vb,Cb>::Vertex_handle
 Triangulation_data_structure_3<Vb,Cb>::
-any_other_vertex(
+source_vertex(const Edge& edge)
+{
+	return edge.first->vertex(edge.second);
+}
+
+template < class Vb, class Cb >
+typename Triangulation_data_structure_3<Vb,Cb>::Vertex_handle
+Triangulation_data_structure_3<Vb,Cb>::
+target_vertex(const Edge& edge)
+{
+	return edge.first->vertex(edge.third);
+}
+
+template < class Vb, class Cb >
+typename Triangulation_data_structure_3<Vb,Cb>::Edge
+Triangulation_data_structure_3<Vb,Cb>::
+get_twin_edge(const Edge& edge)
+{
+	return Edge(edge.first, edge.third, edge.second);
+}
+
+template < class Vb, class Cb >
+typename Triangulation_data_structure_3<Vb,Cb>::Vertex_handle
+Triangulation_data_structure_3<Vb,Cb>::
+get_any_other_vertex(
 		Cell_handle cell,
 		Vertex_handle va,
 		Vertex_handle vb)
@@ -202,7 +242,7 @@ any_other_vertex(
 template < class Vb, class Cb >
 typename Triangulation_data_structure_3<Vb,Cb>::Vertex_handle
 Triangulation_data_structure_3<Vb,Cb>::
-remaining_vertex(Cell_handle cell,
+get_remaining_vertex(Cell_handle cell,
 	Vertex_handle va,
 	Vertex_handle vb,
 	Vertex_handle vc)
@@ -441,7 +481,7 @@ template < class Vb, class Cb>
 inline
 bool
 My_triangulation_data_structure_3<Vb,Cb>::
-has_vertex(const Facet & f, Vertex_handle v) const
+has_vertex(const dFacet & f, Vertex_handle v) const
 {
   return has_vertex(f.first, f.second, v);
 }
@@ -487,9 +527,9 @@ are_equal(const Facet & f, Cell_handle n, int j) const
 }
 */
 
-//////////////
-// COLLAPSE //
-//////////////
+///////////////////
+// COLLAPSE EDGE //
+///////////////////
 
 template < class Vb, class Cb >
 bool
@@ -580,10 +620,10 @@ collapse_edge(const Edge& edge)
 	return true;
 }
 
-/////////////////////
-// TRIANGULATION_3 //
-/////////////////////
-/*
+/////////////////////////////
+// TRIANGULATION_3 members //
+/////////////////////////////
+
 template < class GT, class Tds >
 bool
 Triangulation_3<GT,Tds>::
@@ -602,195 +642,6 @@ is_collapsible(const Edge& edge)
 
 	return true;
 }
-*/
-/*
-template < class Kernel, class TDS >
-class DT3 : public CGAL::Delaunay_triangulation_3<Kernel, TDS>
-{
-public:
-    typedef DT3<Kernel,TDS> Dt;
-    
-    typedef typename Kernel::FT FT;
-    typedef typename Kernel::Point_3 Point;
-    typedef typename Kernel::Plane_3 Plane;
-    typedef typename Kernel::Vector_3 Vector;
-    typedef typename Kernel::Segment_3 Segment;
-    typedef typename Kernel::Triangle_3 Triangle;
-    typedef typename Kernel::Tetrahedron_3 Tetrahedron;
-    typedef typename CGAL::Bbox_3 Bbox;
-    
-    typedef std::list<Point> Point_list;
-    typedef typename Point_list::iterator Point_list_iterator;
-    typedef typename Point_list::const_iterator Point_list_const_iterator;
-    
-    typedef typename Dt::Vertex                   Vertex;
-    typedef typename Dt::Vertex_handle            Vertex_handle;
-    typedef typename Dt::Vertex_iterator          Vertex_iterator;
-    typedef typename Dt::Finite_vertices_iterator Finite_vertices_iterator;
-    
-    typedef typename Dt::Edge                  Edge;
-    typedef typename Dt::Edge_iterator         Edge_iterator;
-    typedef typename Dt::Finite_edges_iterator Finite_edges_iterator;
-    
-    typedef typename Dt::Facet                   Facet;
-    typedef typename Dt::Facet_iterator          Facet_iterator;
-    typedef typename Dt::Facet_circulator        Facet_circulator;
-    typedef typename Dt::Finite_facets_iterator  Finite_facets_iterator;
-    
-    typedef typename Dt::Cell                  Cell;
-    typedef typename Dt::Cell_handle           Cell_handle;
-    typedef typename Dt::Cell_iterator         Cell_iterator;
-    typedef typename Dt::Cell_circulator       Cell_circulator;
-    typedef typename Dt::Finite_cells_iterator Finite_cells_iterator;
-    
-    typedef std::set< Cell_handle, less_Cell_handle<Cell_handle> > Cell_handle_set;
-    typedef std::set< Vertex_handle, less_Vertex_handle<Vertex_handle> > Vertex_handle_set;    
-    
-    typedef typename Render_transparent<Kernel>::Projected_facet Proj_facet;
-    
-    typedef CSample<Kernel> Sample;
-    typedef std::list<Sample*> Sample_list;
-    typedef typename Sample_list::iterator Sample_list_iterator;
-    typedef typename Sample_list::const_iterator Sample_list_const_iterator;
-    
-    typedef CSFacet<Facet, Vertex_handle, Cell_handle, Sample, Kernel> SFacet;
-    typedef std::list<SFacet> SFacet_list;
-    typedef std::set<SFacet> SFacet_set;
-    
-    typedef CUnoriented_edge<Edge, Vertex_handle> Unoriented_edge;
-    typedef std::set<Unoriented_edge> Unoriented_edge_set;
-    
-    typedef CPEdge<Edge, Vertex_handle> PEdge;
-    
-    typedef CPQueue<PEdge> PQueue;
-    
-    typedef CTransport<Kernel> Transport;
-    
-    typedef CCost<Kernel> Cost;
-   
-   //------------------//
-    // COLLAPSIBLE TEST //
-    //------------------//
-    
-    bool is_collapsible(const Edge& edge)
-    {
-        if (is_edge_dummy(edge))        
-        {
-            std::cerr << "one dummy edge tested against is_collapsible" << std::endl;
-            return false;
-        }
-        
-        if (is_infinite(edge))          return false;
-        if (is_edge_pinned(edge))       return false;
-        if (!is_geom_collapsible(edge)) return false;            
-        if (!is_top_collapsible(edge))  return false;
-        
-        return true;
-    }
-    
-    // check if edge has both vertices pinned
-    bool is_edge_dummy(const Edge& edge)
-    {
-        return (source_vertex(edge)->id() == target_vertex(edge)->id());
-    }
-    
-    // check if edge has one vertex pinned
-    bool is_edge_pinned(const Edge& edge)
-    {
-        Vertex_handle v0 = source_vertex(edge);        
-        if (v0->pinned()) return true;        
-        Vertex_handle v1 = target_vertex(edge);        
-        if (v1->pinned()) return true;        
-        return false;
-    }
-    
-    bool is_facet_pinned(const Facet& facet)
-    {
-        if (facet_vertex(facet,0)->pinned()) return true;
-        if (facet_vertex(facet,1)->pinned()) return true;
-        if (facet_vertex(facet,2)->pinned()) return true;
-        return false;
-    }
-
-    bool is_geom_collapsible(const Edge& edge)
-    {
-        m_timer_geom_tests.start();
-        m_nb_geom_tests_computed++;
-        bool test = do_is_geom_collapsible(edge);
-        m_timer_geom_tests.stop();
-        return test;
-    }
-    
-    bool do_is_geom_collapsible(const Edge& edge)
-    {
-        std::list<Triangle> triangles;
-        Vertex_handle s = source_vertex(edge);
-        Vertex_handle t = target_vertex(edge);
-        add_kernel_triangles_around(s, t, triangles);
-        return is_visible(t->point(), triangles.begin(), triangles.end());
-    }
-    
-    // triangles of link of s which do not go through t
-    void add_kernel_triangles_around(Vertex_handle s, Vertex_handle t, 
-                                     std::list<Triangle>& triangles)
-    {
-        assert(s != Vertex_handle());
-        
-        std::list<Cell_handle> cells;
-        Dt::incident_cells(s, std::back_inserter(cells));
-        
-        typename std::list<Cell_handle>::const_iterator it;
-        for (it = cells.begin(); it != cells.end(); it++)
-        {
-            Cell_handle cell = *it;
-            int index = cell->index(s);
-            
-            Facet facet(cell, index);
-            
-            // skip infinite facets 
-            if (Dt::is_infinite(facet))
-                continue;
-            
-            // FIXME: make option
-            //if (is_facet_pinned(facet)) continue;
-            
-            Vertex_handle va = facet_vertex(facet,0);
-            Vertex_handle vb = facet_vertex(facet,1);
-            Vertex_handle vc = facet_vertex(facet,2);
-            if (index%2 == 0) std::swap(vb, vc);
-            
-            if (va->id() == t->id()) continue;
-            if (vb->id() == t->id()) continue;
-            if (vc->id() == t->id()) continue;
-            
-            const Point& pa = va->point();
-            const Point& pb = vb->point();
-            const Point& pc = vc->point();
-            
-            // prevents adding degenerate triangles
-            if (pa == pb || pb == pc || pc == pa) continue;
-            
-            triangles.push_back(Triangle(pa, pb, pc));
-        }
-    }
-    
-    // check if a point query is inside the kernel of a set of triangles
-    template < class Iterator > // value_type = Triangle
-    bool is_visible(const Point& query, Iterator begin, Iterator end)
-    {
-        for (Iterator it = begin; it != end; it++)
-        {
-            const Triangle& triangle = *it;
-            const Point& a = triangle[0];
-            const Point& b = triangle[1];
-            const Point& c = triangle[2];
-            if (CGAL::orientation(a, b, c, query) == CGAL::NEGATIVE)
-                return false; 
-        }
-        return true;
-    }
-};
-*/
 
 CGAL_END_NAMESPACE
 
