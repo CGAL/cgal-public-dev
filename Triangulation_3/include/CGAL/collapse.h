@@ -3,7 +3,51 @@ CGAL_BEGIN_NAMESPACE
 /////////
 // TDS //
 /////////
+template < class Vb, class Cb >
+template < class Cell_handle > 
+struct Triangulation_data_structure_3<Vb,Cb>::
+less_Cell_handle
+{
+	bool operator()(const Cell_handle &s1, const Cell_handle &s2) const
+	{
+		// different cells are allocated on different places
+		return &s1 < &s2;
+	}
+};
 
+template < class Vb, class Cb >
+template < class Vertex_handle > 
+struct Triangulation_data_structure_3<Vb,Cb>::
+less_Vertex_handle
+{
+	bool operator()(const Vertex_handle &s1, const Vertex_handle &s2) const
+	{
+		// different verteces are allocated on different places
+		return &s1 < &s2;
+	}
+};
+
+template < class Vb, class Cb >
+template < class Edge, class Vertex_handle >
+struct Triangulation_data_structure_3<Vb,Cb>::
+CUnoriented_edge
+{
+	Vertex_handle v1, v2;
+
+	CUnoriented_edge(Edge edge) 
+	{
+		Cell_handle cell = edge.first;
+		int v1_index = edge.second;
+		int v2_index = edge.third;
+
+		v1 = cell.vertex(v1_index);
+		v2 = cell.vertex(v2_index);
+
+		if (v2<v1) swap(v1,v2);		
+	}
+};
+
+/*
 template < class Vb, class Cb >
 void
 Triangulation_data_structure_3<Vb,Cb>::
@@ -30,16 +74,17 @@ collect_vertices_and_edges_from_link(Vertex_handle v,
             edges.insert(Unoriented_edge(Edge(cell, (index+2)%4, (index+3)%4)));
         }
     }
+*/
     
 template < class Vb, class Cb >
 bool
 Triangulation_data_structure_3<Vb,Cb>::
 is_top_collapsible(const Edge& edge)
     {
-        m_timer_top_tests.start();
+        //m_timer_top_tests.start();
         bool test = do_is_top_collapsible(edge);
-        m_timer_top_tests.stop();
-        m_nb_top_tests_computed++;
+        //m_timer_top_tests.stop();
+        //m_nb_top_tests_computed++;
         return test;
     }
     
@@ -125,7 +170,7 @@ get_revolving_uedges(const Edge& edge,
         Vertex_handle s = source_vertex(edge);
         Vertex_handle t = target_vertex(edge);
         
-        Cell_circulator cell = Dt::incident_cells(edge); 
+        Cell_circulator cell = incident_cells(edge); 
         Cell_circulator end = cell;
         CGAL_For_all(cell, end)
         {
@@ -538,7 +583,7 @@ collapse_edge(const Edge& edge)
 /////////////////////
 // TRIANGULATION_3 //
 /////////////////////
-
+/*
 template < class GT, class Tds >
 bool
 Triangulation_3<GT,Tds>::
@@ -553,11 +598,11 @@ is_collapsible(const Edge& edge)
 	if (is_infinite(edge))          return false;
 //	if (is_edge_pinned(edge))       return false;
 //	if (!is_geom_collapsible(edge)) return false;            
-	if (!is_top_collapsible(edge))  return false;
+	if (!_tds.is_top_collapsible(edge))  return false;
 
 	return true;
 }
-
+*/
 /*
 template < class Kernel, class TDS >
 class DT3 : public CGAL::Delaunay_triangulation_3<Kernel, TDS>
