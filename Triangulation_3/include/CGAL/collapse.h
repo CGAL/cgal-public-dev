@@ -4,6 +4,8 @@ CGAL_BEGIN_NAMESPACE
 // TDS members //
 /////////////////
 
+// TODO: check how to identify the vertex without its address
+
 template < class Vb, class Cb >
 template < class Cell_handle > 
 struct Triangulation_data_structure_3<Vb,Cb>::
@@ -11,20 +13,22 @@ less_Cell_handle
 {
 	bool operator()(const Cell_handle &s1, const Cell_handle &s2) const
 	{
-		Vertex_handle v1[] = {
-				s1->vertex(0),
-				s1->vertex(1),
-				s1->vertex(2),
-				s1->vertex(3) };
+		Vertex_handle *v1[] = {
+				&s1->vertex(0),
+				&s1->vertex(1),
+				&s1->vertex(2),
+				&s1->vertex(3) };
 
-		Vertex_handle v2[] = {
-				s2->vertex(0),
-				s2->vertex(1),
-				s2->vertex(2),
-				s2->vertex(3) };
+		Vertex_handle *v2[] = {
+				&s2->vertex(0),
+				&s2->vertex(1),
+				&s2->vertex(2),
+				&s2->vertex(3) };
 
 		std::sort(v1, v1+4);
 		std::sort(v2, v2+4);
+
+		std::cout << "less_Cell_handle: " << v1[0]->point() << " " << v1[1]->point() << " " << v1[2]->point() << " " << v1[3]->point() << std::endl;
 
 		int i;
 		for(i=0; i<4; i++)
@@ -43,7 +47,7 @@ less_Vertex_handle
 {
 	bool operator()(const Vertex_handle &s1, const Vertex_handle &s2) const
 	{
-		return s1 < s2;
+		return &s1 < &s2;
 	}
 };
 
@@ -93,6 +97,9 @@ collect_vertices_and_edges_from_link(Vertex_handle v,
 {
 	std::list<Cell_handle> cells;		
 	incident_cells(v, std::back_inserter(cells));
+
+	//print_cells< std::list<Cell_handle> >(cells, "Incident to v");
+
 	typename std::list<Cell_handle>::iterator it;
 	for (it = cells.begin(); it != cells.end(); it++)
 	{
@@ -122,12 +129,12 @@ is_top_collapsible(const Edge& edge)
         //m_nb_top_tests_computed++;
         return test;
     }
-    
+
 template < class Vb, class Cb >
 bool
 Triangulation_data_structure_3<Vb,Cb>::
 do_is_top_collapsible(const Edge& edge)
-{	
+{
 	// edge pq
 	Cell_handle cell = edge.first;
 	Vertex_handle source = source_vertex(edge);
@@ -151,14 +158,20 @@ do_is_top_collapsible(const Edge& edge)
 	for (vit = svertices.begin(); vit != svertices.end(); vit++)
 	    if (tvertices.find(*vit) != tvertices.end())
 		vinter.insert(*vit);
-	
+
+	// DEBUG	
+	print_vertices<Vertex_handle_set>(svertices, "svertices");
+	print_vertices<Vertex_handle_set>(tvertices, "tvertices");
+	print_vertices<Vertex_handle_set>(vinter, "vinter");
+	print_vertices<Vertex_handle_set>(revolving_vertices, "revolving_vertices");
+
 	// compare the two sets in size then element by element
 	if (vinter.size() != revolving_vertices.size())
 	    return false;
 	for (vit = vinter.begin(); vit != vinter.end(); vit++)
 	    if (revolving_vertices.find(*vit) == revolving_vertices.end())
 		return false;
-
+/*
 	// compute l(a) inter l(b) for edges
 	Unoriented_edge_set einter;
 	typename Unoriented_edge_set::iterator eit;
@@ -172,7 +185,7 @@ do_is_top_collapsible(const Edge& edge)
 	for (eit = einter.begin(); eit != einter.end(); eit++)
 	    if (revolving_edges.find(*eit) == revolving_edges.end())
 		return false;
-	
+*/
 	// finally
 	return true;
 }
@@ -253,6 +266,7 @@ get_any_other_vertex(
 		if(cell->vertex(i) != va && 
 			cell->vertex(i) != vb)
 			return cell->vertex(i);
+
 	assert(false); // never come here
 	return Vertex_handle();
 }
@@ -272,9 +286,49 @@ get_remaining_vertex(Cell_handle cell,
 			cell->vertex(i) != vb && 
 			cell->vertex(i) != vc)
 			return cell->vertex(i);
+
 	assert(false); // never come here
 	return Vertex_handle();
 }
+
+// check if edge has both vertices pinned
+template < class Vb, class Cb >
+bool
+Triangulation_data_structure_3<Vb,Cb>::
+is_edge_dummy(const Edge& edge)
+{
+	return (source_vertex(edge) == target_vertex(edge));
+}
+/*
+// check if edge has one vertex pinned
+bool is_edge_pinned(const Edge& edge)
+{
+	Vertex_handle v;
+
+	v = source_vertex(edge);        
+	if (is_vertex_pinned(v)) return true;        
+	
+	v = target_vertex(edge);        
+	if (is_vertex_pinned(v)) return true;        
+	
+	return false;
+}
+
+// == is_vertex_on_the_boundery()
+bool is_vertex_pinned(Vertex_handle vertex)
+{
+	Vertex_handle vit;
+	std::list<Vertex_handle> adjacentv;
+
+	adjacent_vertices (vertex, adjacentv);
+
+	for(vit = adjacentv.begin(); vit != adjacentv.end(); vit++)
+		if( is_infinite(*vit) )
+			return true;
+
+	return false;
+}
+*/
 /*
 template < class Vb, class Cb>
 bool
@@ -648,11 +702,13 @@ bool
 Triangulation_3<GT,Tds>::
 is_collapsible(const Edge& edge)
 {
-//	if (is_edge_dummy(edge))        
-//	{
-//	    std::cerr << "one dummy edge tested against is_collapsible" << std::endl;
-//	    return false;
-//	}
+	CGAL_triangulation_expensive_precondition(_tds.is_valid() && is_valid());
+
+	if (_tds.is_edge_dummy(edge))        
+	{
+	    std::cerr << "one dummy edge tested against is_collapsible" << std::endl;
+	    return false;
+	}
 
 	if (is_infinite(edge))          return false;
 //	if (is_edge_pinned(edge))       return false;
@@ -661,6 +717,53 @@ is_collapsible(const Edge& edge)
 
 	return true;
 }
+
+// DEBUG
+
+template < class Vb, class Cb >
+template < class Cont >
+void
+Triangulation_data_structure_3<Vb,Cb>::
+print_cells(Cont S, std::string note)
+{
+	return;
+	std::cout << "Cells, " << note << std::endl;
+
+	typename Cont::iterator cit;
+	for (cit = S.begin(); cit != S.end(); cit++) {
+		Cell_handle c = *cit;
+
+		Vertex_handle v0 = c->vertex(0);
+		Vertex_handle v1 = c->vertex(1);
+		Vertex_handle v2 = c->vertex(2);
+		Vertex_handle v3 = c->vertex(3);
+
+		std::cout << "[  (" << v0->point() << ")   " << std::endl;
+		std::cout << "   (" << v1->point() << ")   " << std::endl;
+		std::cout << "   (" << v2->point() << ")   " << std::endl;
+		std::cout << "   (" << v3->point() << ")  ]" << std::endl;
+	}
+
+	std::cout << std::endl;
+}	
+
+template < class Vb, class Cb >
+template < class Cont >
+void
+Triangulation_data_structure_3<Vb,Cb>::
+print_vertices(Cont S, std::string note)
+{
+	return;
+	std::cout << "Vertices, " << note << std::endl;
+
+	typename Cont::iterator vit;
+	for (vit = S.begin(); vit != S.end(); vit++) {
+		Vertex_handle v = *vit;
+		std::cout << "(" << v->point() << ") ";
+	}
+
+	std::cout << std::endl;
+}	
 
 CGAL_END_NAMESPACE
 

@@ -31,6 +31,8 @@
 #include <CGAL/iterator.h>
 #include <CGAL/Location_policy.h>
 
+#define CGAL_TRIANGULATION_3_DONT_INSERT_RANGE_OF_POINTS_WITH_INFO
+
 #ifndef CGAL_TRIANGULATION_3_DONT_INSERT_RANGE_OF_POINTS_WITH_INFO
 #include <CGAL/Spatial_sort_traits_adapter_3.h>
 #include <CGAL/internal/info_check.h>

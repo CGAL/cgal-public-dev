@@ -131,6 +131,22 @@ public:
   typedef Triple<Cell_handle, int, int>            Edge;
 
   typedef Triangulation_simplex_3<Tds>             Simplex;
+
+// PESHO GSOC
+  template < class Cell_handle >
+      struct less_Cell_handle;
+  template < class Vertex_handle >
+      struct less_Vertex_handle;
+  template < class Edge, class Vertex_handle >
+      struct CUnoriented_edge;
+
+  typedef std::set< Cell_handle, less_Cell_handle<Cell_handle> > Cell_handle_set;
+  typedef std::set< Vertex_handle, less_Vertex_handle<Vertex_handle> > Vertex_handle_set;    
+
+  typedef CUnoriented_edge<Edge, Vertex_handle> Unoriented_edge;
+  typedef std::set<Unoriented_edge> Unoriented_edge_set;
+// PESHO END
+
 #ifndef CGAL_TDS_USE_OLD_CREATE_STAR_3
   //internally used for create_star_3 (faster than a tuple)
   struct iAdjacency_info{
@@ -448,24 +464,39 @@ public:
       return insert_in_hole(cell_begin, cell_end, begin, i, create_vertex());
   }
 
-  //PESHO GSOC
+  // PESHO GSOC
 private:
   void collect_vertices_and_edges_from_link(Vertex_handle v,
                                               Vertex_handle_set& vertices,
                                               Unoriented_edge_set& edges);
-  bool is_top_collapsible(const Edge& edge);
   bool do_is_top_collapsible(const Edge& edge);
   void get_revolving_vertices(const Edge& edge, Vertex_handle_set& vertices); 
   void get_revolving_uedges(const Edge& edge,
                               Unoriented_edge_set& uedges);
 
-  Vertex_handle any_other_vertex(Cell_handle cell,
+  Vertex_handle source_vertex(const Edge& edge);
+  Vertex_handle target_vertex(const Edge& edge);
+  Edge get_twin_edge(const Edge& edge);
+  Vertex_handle facet_vertex(Facet facet, int index);
+
+  Vertex_handle get_any_other_vertex(Cell_handle cell,
 		Vertex_handle va, Vertex_handle vb);
-  Vertex_handle remaining_vertex(Cell_handle cell,
+  Vertex_handle get_remaining_vertex(Cell_handle cell,
       		Vertex_handle va, Vertex_handle vb, Vertex_handle vc);
+  
+  // DEBUG
+  template< class Cont > void print_vertices(Cont S, std::string note);
+  template< class Cont > void print_cells(Cont S, std::string note);
+  // END DEBUG
 
 public:
   bool collapse_edge(const Edge& edge);
+  bool is_top_collapsible(const Edge& edge);
+  
+  bool is_edge_dummy(const Edge& edge);
+  bool is_edge_pinned(const Edge& edge);
+
+  // PESHO END
 
   //INSERTION
 
