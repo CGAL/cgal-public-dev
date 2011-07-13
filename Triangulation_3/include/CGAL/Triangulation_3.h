@@ -698,13 +698,31 @@ public:
   }
   void flip_flippable(Cell_handle c, int i, int j);
 
-  //PESHO GSOC
+  // PESHO GSOC
+  // edge collapse operator
+
+private:
+  void add_kernel_triangles_around(Vertex_handle s, Vertex_handle t, 
+			     std::list<Triangle>& triangles);
+  template < class Iterator > // value_type = Triangle
+  bool is_visible(const Point& query, Iterator begin, Iterator end);
+
 public:
-  bool collapse_edge(const Edge& edge)
+
+  bool is_geom_collapsible(const Edge& edge);
+  bool is_geom_collapsible(const Edge& edge, const Point& p);
+
+  bool is_top_collapsible(const Edge& edge)
   {
-     return _tds.collapse_edge(edge);
+    return _tds.is_top_collapsible(edge);
   }
-  bool is_collapsible(const Edge& edge);
+
+  bool collapse_edge(Edge& edge)
+  {
+    return _tds.collapse_edge(edge);
+  }
+
+  // PESHO END
 
   //INSERTION
 

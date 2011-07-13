@@ -465,11 +465,10 @@ public:
   }
 
   // PESHO GSOC
-private:
+public:
   void collect_vertices_and_edges_from_link(Vertex_handle v,
                                               Vertex_handle_set& vertices,
                                               Unoriented_edge_set& edges);
-  bool do_is_top_collapsible(const Edge& edge);
   void get_revolving_vertices(const Edge& edge, Vertex_handle_set& vertices); 
   void get_revolving_uedges(const Edge& edge,
                               Unoriented_edge_set& uedges);
@@ -490,7 +489,7 @@ private:
   // END DEBUG
 
 public:
-  bool collapse_edge(const Edge& edge);
+  bool collapse_edge(Edge& edge);
   bool is_top_collapsible(const Edge& edge);
   
   bool is_edge_dummy(const Edge& edge);
