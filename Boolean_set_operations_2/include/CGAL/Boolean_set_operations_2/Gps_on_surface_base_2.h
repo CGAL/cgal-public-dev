@@ -152,9 +152,7 @@ protected:
   
 	//define current total number of threads running
 	//used in _divide_and_conquer function to spawn new threads as long as there are still idle processors, but no more
-	#ifdef _OPENMP
-	int current_num_threads;
-	#endif
+  int current_num_threads;
 
 public:
 
@@ -163,7 +161,7 @@ public:
                             m_traits_adaptor(*m_traits),
                             m_traits_owner(true),
                             m_arr(new Aos_2(m_traits)),
-							current_num_threads(1)
+                            current_num_threads(1)
   {}
 
 
@@ -172,7 +170,7 @@ public:
                                         m_traits_adaptor(*m_traits),
                                         m_traits_owner(false),
                                         m_arr(new Aos_2(m_traits)),
-										current_num_threads(1)
+                                        current_num_threads(1)
   {}
 
 
@@ -181,7 +179,7 @@ public:
     m_traits_adaptor(*m_traits),
     m_traits_owner(true),
     m_arr(new Aos_2(*(ps.m_arr))),
-	current_num_threads(1)
+    current_num_threads(1)
   {}
 
   
