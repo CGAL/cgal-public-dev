@@ -195,7 +195,7 @@ public:
 		
 	delete m_arr;
 	m_traits = new Traits_2(*(ps.m_traits));
-	m_traits_adaptor = CGAL::Arr_traits_adaptor_2<Traits_2>(*m_traits)
+        m_traits_adaptor = CGAL::Arr_traits_adaptor_2<Traits_2>(*m_traits);
 	m_traits_owner = true;
 	m_arr = new Aos_2(*(ps.m_arr));
 	
