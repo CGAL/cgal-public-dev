@@ -11,6 +11,10 @@
 #include <NTL/ZZXFactoring.h>
 #endif 
 
+#if (defined CGAL_USE_GPU)
+#include <CGAL/GPU_algorithms/GPU_algorithm_facade.h>
+#endif
+
 namespace CGAL {
 
 namespace internal {
