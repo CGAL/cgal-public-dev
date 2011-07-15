@@ -26,6 +26,7 @@
 #include <CGAL/Arr_simple_point_location.h>
 #include <CGAL/Arr_walk_along_line_point_location.h>
 #include <CGAL/Arr_landmarks_point_location.h>
+#include <CGAL/Arr_point_location/Arr_landmarks_point_location_no_construction.h>
 #include <CGAL/Arr_point_location/Arr_lm_random_generator.h>
 #include <CGAL/Arr_point_location/Arr_lm_grid_generator.h>
 #include <CGAL/Arr_point_location/Arr_lm_halton_generator.h>
@@ -68,11 +69,27 @@ typedef CGAL::Arr_middle_edges_landmarks_generator<Arrangement_2>
                                                     Middle_edges_generator;
 typedef CGAL::Arr_landmarks_point_location<Arrangement_2, Middle_edges_generator> 
                                                     Lm_middle_edges_point_location;
-
 typedef CGAL::Arr_landmarks_specified_points_generator<Arrangement_2>
                                                     Specified_points_generator;
 typedef CGAL::Arr_landmarks_point_location<Arrangement_2, Specified_points_generator> 
                                                     Lm_specified_points_point_location;
+
+
+typedef CGAL::Arr_landmarks_point_location_no_construction<Arrangement_2> 
+                                                    Lm_point_location_no_c;
+typedef CGAL::Arr_landmarks_point_location_no_construction<Arrangement_2, Random_lm_generator> 
+                                                    Lm_random_point_location_no_c;
+typedef CGAL::Arr_landmarks_point_location_no_construction<Arrangement_2, Grid_lm_generator> 
+                                                    Lm_grid_point_location_no_c;
+typedef CGAL::Arr_landmarks_point_location_no_construction<Arrangement_2, Halton_lm_generator> 
+                                                    Lm_halton_point_location_no_c;
+typedef CGAL::Arr_landmarks_point_location_no_construction<Arrangement_2, Middle_edges_generator> 
+                                                    Lm_middle_edges_point_location_no_c;
+typedef CGAL::Arr_landmarks_point_location_no_construction<Arrangement_2, Specified_points_generator> 
+                                                    Lm_specified_points_point_location_no_c;
+
+
+
 
 //typedef CGAL::Arr_triangulation_point_location<Arrangement_2> 
 //                                                    Lm_triangulation_point_location;
@@ -87,7 +104,20 @@ typedef Objects_vector::iterator                          Object_iterator;
 
 // ===> Change the number of point-location startegies
 //      when a new point location is added. <===
-#define NUM_OF_POINT_LOCATION_STRATEGIES 9
+#define NUM_OF_POINT_LOCATION_STRATEGIES 15
+
+template <class PL, class Out>
+double run_pl (Points_list &plist, PL &pl, Out out) {
+  CGAL::Timer timer;
+  timer.reset(); 
+  timer.start(); //START
+  for (Point_iterator piter = plist.begin(); piter != plist.end(); piter++) {
+    CGAL::Object obj = pl.locate (*piter);
+    *out++ = obj;
+  }
+  timer.stop(); ///END
+  return timer.time();
+}
 
 /*! */
 int check_point_location (Arrangement_2 &arr, Points_list &plist)
@@ -102,30 +132,35 @@ int check_point_location (Arrangement_2 &arr, Points_list &plist)
 
   timer.reset(); timer.start();
   Lm_point_location               lm_pl (arr);                    // 3
+  Lm_point_location_no_c          lm_noc_pl (arr);                // 4
   timer.stop(); 
   std::cout << "Lm (vert) construction took " << timer.time() <<std::endl;
 
   timer.reset(); timer.start();
   Random_lm_generator             random_g(arr);    
-  Lm_random_point_location        random_lm_pl (arr, &random_g);  // 4
+  Lm_random_point_location        random_lm_pl (arr, &random_g);  // 5
+  Lm_random_point_location_no_c   random_lm_noc_pl (arr, &random_g);  // 6
   timer.stop(); 
   std::cout << "Random lm construction took " << timer.time() <<std::endl;
 
   timer.reset(); timer.start();
   Grid_lm_generator               grid_g(arr);      
-  Lm_grid_point_location          grid_lm_pl (arr, &grid_g);      // 5
+  Lm_grid_point_location          grid_lm_pl (arr, &grid_g);      // 7
+  Lm_grid_point_location_no_c     grid_lm_noc_pl (arr, &grid_g);      // 8
   timer.stop(); 
   std::cout << "Grid lm construction took " << timer.time() <<std::endl;
 
   timer.reset(); timer.start();
   Halton_lm_generator             halton_g(arr);
-  Lm_halton_point_location        halton_lm_pl (arr, &halton_g);  // 6
+  Lm_halton_point_location        halton_lm_pl (arr, &halton_g);  // 9
+  Lm_halton_point_location_no_c   halton_lm_noc_pl (arr, &halton_g);  // 10
   timer.stop(); 
   std::cout << "Halton lm construction took " << timer.time() <<std::endl;
 
   timer.reset(); timer.start();
   Middle_edges_generator             middle_edges_g(arr);
-  Lm_middle_edges_point_location        middle_edges_lm_pl (arr, &middle_edges_g);  // 7
+  Lm_middle_edges_point_location        middle_edges_lm_pl (arr, &middle_edges_g);  // 11
+  Lm_middle_edges_point_location_no_c   middle_edges_lm_noc_pl (arr, &middle_edges_g);  // 12
   timer.stop(); 
   std::cout << "Middle edges lm construction took " << timer.time() <<std::endl;
 
@@ -135,7 +170,8 @@ int check_point_location (Arrangement_2 &arr, Points_list &plist)
   timer.reset(); timer.start();
   //Specified_points_generator                specified_points_g(arr,points);
   Specified_points_generator                specified_points_g(arr);
-  Lm_specified_points_point_location        specified_points_lm_pl (arr, &specified_points_g);  // 8
+  Lm_specified_points_point_location        specified_points_lm_pl (arr, &specified_points_g);  // 13
+  Lm_specified_points_point_location_no_c   specified_points_lm_noc_pl (arr, &specified_points_g);  // 14
   timer.stop(); 
   std::cout << "Specified_points lm construction took " << timer.time() <<std::endl;
 
@@ -149,7 +185,6 @@ int check_point_location (Arrangement_2 &arr, Points_list &plist)
 
   // ===> Add new point location instance here. <===
 
-  CGAL::Object                    obj;
   Objects_vector                  objs[NUM_OF_POINT_LOCATION_STRATEGIES];
   Object_iterator                 ob_iter[NUM_OF_POINT_LOCATION_STRATEGIES];
   Arrangement_2::Vertex_const_handle    vh_ref, vh_curr;
@@ -157,112 +192,29 @@ int check_point_location (Arrangement_2 &arr, Points_list &plist)
   Arrangement_2::Face_const_handle      fh_ref, fh_curr;
   
   Point_2               q;
-  Point_iterator        piter;
 
   //LOCATE the points in the list using all PL strategies
 
   //std::cout << "Time in seconds" <<std::endl; ;
   std::cout << std::endl;
-  timer.reset(); 
-  timer.start(); //START
-  for (piter = plist.begin(); piter != plist.end(); piter++ )
-  {
-    q = (*piter);
-    obj = naive_pl.locate (q);
-    objs[0].push_back(obj);
-  }
-  timer.stop(); ///END
-  std::cout << "Naive location took " << timer.time() <<std::endl;
-
-  timer.reset(); 
-  timer.start(); //START
-  for (piter = plist.begin(); piter != plist.end(); piter++ )
-  {
-    q = (*piter);
-    obj = simple_pl.locate (q);
-    objs[1].push_back(obj);
-  }
-  timer.stop(); ///END
-  std::cout << "Simple location took " << timer.time() <<std::endl;
-
-  timer.reset(); 
-  timer.start(); //START
-  for (piter = plist.begin(); piter != plist.end(); piter++ )
-  {
-    q = (*piter);
-    obj = walk_pl.locate (q);
-    objs[2].push_back(obj);
-  }
-  timer.stop(); ///END
-  std::cout << "Walk location took " << timer.time() <<std::endl;
-
-  timer.reset(); 
-  timer.start(); //START
-  for (piter = plist.begin(); piter != plist.end(); piter++)
-  {
-    q = (*piter);
-    obj = lm_pl.locate (q);
-    objs[3].push_back(obj);
-  }
-  timer.stop(); ///END
-  std::cout << "Landmarks (vertices) location took " 
-            << timer.time() <<std::endl;
-
-  timer.reset(); 
-  timer.start(); //START
-  for (piter = plist.begin(); piter != plist.end(); piter++ )
-  {
-    q = (*piter);
-    obj = random_lm_pl.locate (q);
-    objs[4].push_back(obj);
-  }
-  timer.stop(); ///END
-  std::cout << "Random LM location took " << timer.time() <<std::endl;
-
-  timer.reset(); 
-  timer.start(); //START
-  for (piter = plist.begin(); piter != plist.end(); piter++ )
-  {
-    q = (*piter);
-    obj = grid_lm_pl.locate (q);
-    objs[5].push_back(obj);
-  }
-  timer.stop(); ///END
-  std::cout << "Grid LM location took " << timer.time() <<std::endl;
+  
+  std::cout << "Naive location took " << run_pl(plist, naive_pl, std::back_inserter(objs[0])) << std::endl;
+  std::cout << "Simple location took " << run_pl(plist, simple_pl, std::back_inserter(objs[1])) << std::endl;
+  std::cout << "Walk location took " << run_pl(plist, walk_pl, std::back_inserter(objs[2])) << std::endl;
+  std::cout << "Landmarks (vertices) location took "  << run_pl(plist, lm_pl, std::back_inserter(objs[3])) << std::endl;
+  std::cout << "Landmarks (vertices) location no construction took "  << run_pl(plist, lm_noc_pl, std::back_inserter(objs[4])) << std::endl;
+  std::cout << "Random LM location took "  << run_pl(plist, random_lm_pl, std::back_inserter(objs[5])) << std::endl;
+  std::cout << "Random LM location no construction took "  << run_pl(plist, random_lm_noc_pl, std::back_inserter(objs[6])) << std::endl;
+  std::cout << "Grid LM location took "  << run_pl(plist, grid_lm_pl, std::back_inserter(objs[7])) << std::endl;
+  std::cout << "Grid LM location no construction took "  << run_pl(plist, grid_lm_noc_pl, std::back_inserter(objs[8])) << std::endl;
+  std::cout << "Halton LM location took "  << run_pl(plist, halton_lm_pl, std::back_inserter(objs[9])) << std::endl;
+  std::cout << "Halton LM location no construction took "  << run_pl(plist, halton_lm_noc_pl, std::back_inserter(objs[10])) << std::endl;
+  std::cout << "Middle edges LM location took "  << run_pl(plist, middle_edges_lm_pl, std::back_inserter(objs[11])) << std::endl;
+  std::cout << "Middle edges LM location no construction took "  << run_pl(plist, middle_edges_lm_noc_pl, std::back_inserter(objs[12])) << std::endl;
+  std::cout << "Specified points LM location took " << run_pl(plist, specified_points_lm_pl, std::back_inserter(objs[13])) << std::endl;
+  std::cout << "Specified points LM location no construction took " << run_pl(plist, specified_points_lm_noc_pl, std::back_inserter(objs[14])) << std::endl;
 
 
-  timer.reset(); 
-  timer.start(); //START
-  for (piter = plist.begin(); piter != plist.end(); piter++ )
-  {
-    q = (*piter);
-    obj = halton_lm_pl.locate (q);
-    objs[6].push_back(obj);
-  }
-  timer.stop(); ///END
-  std::cout << "Halton LM location took " << timer.time() <<std::endl;
-
-  timer.reset(); 
-  timer.start(); //START
-  for (piter = plist.begin(); piter != plist.end(); piter++ )
-  {
-    q = (*piter);
-    obj = middle_edges_lm_pl.locate (q);
-    objs[7].push_back(obj);
-  }
-  timer.stop(); ///END
-  std::cout << "Middle edges LM location took " << timer.time() <<std::endl;
-
-  timer.reset(); 
-  timer.start(); //START
-  for (piter = plist.begin(); piter != plist.end(); piter++ )
-  {
-    q = (*piter);
-    obj = specified_points_lm_pl.locate (q);
-    objs[8].push_back(obj);
-  }
-  timer.stop(); ///END
-  std::cout << "Specified points LM location took " << timer.time() <<std::endl;
 /*
   timer.reset(); 
   timer.start(); //START
