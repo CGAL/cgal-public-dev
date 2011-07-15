@@ -3983,6 +3983,7 @@ remove_dim_down(Vertex_handle v, VertexRemover &remover, OutputItCells fit) {
   for(All_cells_iterator afi = tds().raw_cells_begin(); 
       afi != tds().raw_cells_end(); 
       afi++) *fit++ = afi;
+  return remover;
 }
 
 template < class Gt, class Tds >
@@ -3993,6 +3994,7 @@ remove_1D(Vertex_handle v, VertexRemover &remover, OutputItCells fit) {
   Point p = v->point();
   remove_1D(v, remover);
   *fit++ = locate(p);
+  return remover;
 }
 
 template < class Gt, class Tds >
@@ -5498,8 +5500,8 @@ operator==(const Triangulation_3<GT, Tds1> &t1,
         using namespace boost;
         std::vector<Point> V1 (t1.points_begin(), t1.points_end());
         std::vector<Point> V2 (t2.points_begin(), t2.points_end());
-        std::sort(V1.begin(), V1.end(), bind(cmp1, _1, _2) == NEGATIVE);
-        std::sort(V2.begin(), V2.end(), bind(cmp2, _1, _2) == NEGATIVE);
+        std::sort(V1.begin(), V1.end(), boost::bind(cmp1, _1, _2) == NEGATIVE);
+        std::sort(V2.begin(), V2.end(), boost::bind(cmp2, _1, _2) == NEGATIVE);
         return V1 == V2;
     }
 

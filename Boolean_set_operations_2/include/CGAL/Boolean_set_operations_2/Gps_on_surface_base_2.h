@@ -557,7 +557,6 @@ protected:
 
     Compare_endpoints_xy_2 cmp_endpoints =
       m_traits->compare_endpoints_xy_2_object();
-    Construct_opposite_2 ctr_opp = m_traits->construct_opposite_2_object();
 
     for (Edge_const_iterator eci = arr.edges_begin();
          eci != arr.edges_end();
@@ -1215,39 +1214,18 @@ protected:
     unsigned int sub_size = ((upper - lower + 1) / k);
 	int curr_lower;
 	
-	#ifdef _OPENMP
-	if(current_num_threads < omp_get_max_threads())
-	{
-		#pragma omp atomic
-		current_num_threads += (omp_get_max_threads() - 1);
-		
-		#pragma omp parallel 
-		{
-			#pragma omp for
-			for(curr_lower = lower; curr_lower < (lower + ((k - 1) * sub_size)); curr_lower += sub_size)
-			{
-				 _divide_and_conquer(curr_lower, curr_lower + sub_size-1, arr_vec, k,
-									  merge_func);
-			}
-		} // end omp parallel
-		
-		current_num_threads -= (omp_get_max_threads() - 1);
-		curr_lower = lower + ((k - 1) * sub_size);
-		_divide_and_conquer (curr_lower, upper,arr_vec, k, merge_func);
+#ifdef _OPENMP
+#pragma omp parallel for
+#endif
+    for(curr_lower = lower; curr_lower < (lower + k * sub_size); curr_lower += sub_size) {
+     
+     int curr_upper = (std::min)(curr_lower + sub_size - 1, upper);
+     _divide_and_conquer(curr_lower, curr_upper, arr_vec, k,
+                          merge_func);
+    }
 
-	} //end if
-	else	
-	#endif
-	{		
-		curr_lower = lower;
-		for (unsigned int i = 0; i<k-1; ++i, curr_lower += sub_size )
-		{
-		  _divide_and_conquer(curr_lower, curr_lower + sub_size-1, arr_vec, k,
-							  merge_func);
-		}
-		_divide_and_conquer (curr_lower, upper,arr_vec, k, merge_func);
-	}
-	
+
+    curr_lower = lower + ((k - 1) * sub_size);
     merge_func (lower, curr_lower, sub_size ,arr_vec);
     
     return;
