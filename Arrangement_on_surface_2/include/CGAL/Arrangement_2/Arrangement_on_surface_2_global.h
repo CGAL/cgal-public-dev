@@ -211,7 +211,7 @@ void insert (Arrangement_on_surface_2<GeomTraits, TopTraits>& arr,
 template <class GeomTraits, class TopTraits, class Curve, class PointLocation>
 void insert (Arrangement_on_surface_2<GeomTraits, TopTraits>& arr,
              const Curve& c, const PointLocation& pl,
-	     typename PointLocation::Point_2*)
+	     typename GeomTraits::Point_2*)
 {
   typedef Arrangement_on_surface_2<GeomTraits, TopTraits>  Arr;
   typedef typename TopTraits::Zone_insertion_visitor       Zone_visitor;
