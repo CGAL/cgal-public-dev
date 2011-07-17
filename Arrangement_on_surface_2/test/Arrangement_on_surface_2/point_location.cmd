@@ -7,3 +7,5 @@
 ./data/point_location/curves/test07.txt ./data/point_location/queries/test07.txt
 ./data/point_location/curves/test08.txt ./data/point_location/queries/test08.txt
 ./data/point_location/curves/test09.txt ./data/point_location/queries/test09.txt
+./data/point_location/curves/test10.txt ./data/point_location/queries/test10.txt
+

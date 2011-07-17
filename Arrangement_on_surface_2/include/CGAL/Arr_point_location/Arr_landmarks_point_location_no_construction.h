@@ -28,9 +28,6 @@
 //#define CGAL_DEBUG_LM
 
 #include <CGAL/Arrangement_2/Arr_traits_adaptor_2.h>
-// #include <CGAL/Arr_point_location/Arr_lm_vertices_generator.h>
-// #include <CGAL/Arr_point_location/Arr_lm_middle_edges_generator.h>
-// #include <CGAL/Arr_point_location/Arr_lm_random_generator.h>
 #include <set>
 
 #include <boost/foreach.hpp>
@@ -223,75 +220,46 @@ namespace CGAL {
 
     protected:
     
-    // TODO: unite the following two functions.
+    /** 
+     * Returns a face to a specific direction of vh.
+     * 
+     * @param vh The vertex.
+     * @param direction SMALLER - left, LARGER - right, EQUAL is not legal.
+     * 
+     * @return Returns a face to a specific direction of vh.
+     */
+    Face_const_handle _get_face_at_direction(Vertex_const_handle vh, CGAL::Comparison_result direction) const {
+      CGAL_precondition (direction != EQUAL);
 
-    CGAL::Object _walk(Vertex_const_handle vh, const Point_2& p) const {
-    
-      // This condition is in plase because it is only called from _walk(Face_const_handle, const Point&)
-      // and we take care that it is so. The twin function follow the same rule.
-      CGAL_precondition(compare_x(vh, p) == SMALLER); 
+      // if we want to move right, we first have to look at edges to our right.
+      Arr_halfedge_direction h_dir = (direction == LARGER) ? ARR_RIGHT_TO_LEFT : ARR_LEFT_TO_RIGHT;
 
-      // We walk from the vertex to the point and the vertex is smaller, so we need to
-      // follow an edge from right to left.
       Halfedge_around_vertex_const_circulator hec = vh->incident_halfedges();
       do {
         CGAL_precondition(vh == hec->target());
-        if (hec->direction() == ARR_RIGHT_TO_LEFT) {
+        if (hec->direction() == h_dir) {
           if (!hec->face()->is_fictitious())
-            return _walk(hec->face(), p);
+            return hec->face();
           else
-            return _walk(hec->twin()->face(), p); 
+            return hec->twin()->face();
         }
         hec++;
       } while(hec != vh->incident_halfedges());
       
-      // There are no edges going to the proper direction, so we take the upper edge of the other direction.
-      Halfedge_around_vertex_const_circulator left_max_edge = hec; hec++;
+      // There are no edges going to the proper direction, so we take the upper/lower edge of the other direction.
+      Halfedge_around_vertex_const_circulator left_ext_edge = hec; hec++;
       while(hec != vh->incident_halfedges()) {
         if(m_traits->compare_y_at_x_left_2_object()
-           (hec->curve(),left_max_edge->curve(),vh->point()) == LARGER) {
-          left_max_edge = hec;
+           (hec->curve(), left_ext_edge->curve(), vh->point()) == direction) {
+          left_ext_edge = hec;
         }
         hec++;
       }
       
-      if (!left_max_edge->face()->is_fictitious())
-        return _walk(left_max_edge->face(), p);
+      if (!left_ext_edge->face()->is_fictitious())
+        return left_ext_edge->face();
       else
-        return _walk(left_max_edge->twin()->face(), p); 
-    } 
-  
-    
-    CGAL::Object _walk(const Point_2& p, Vertex_const_handle vh) const {
-      CGAL_precondition(compare_x(p,vh)==SMALLER); 
-
-      // select the proper face to continue the walk 
-      Halfedge_around_vertex_const_circulator hec = vh->incident_halfedges();
-      do{
-        if(hec->direction() == ARR_LEFT_TO_RIGHT) {
-          if(!hec->face()->is_fictitious())
-            return _walk(hec->face(),p);
-          else
-            return _walk(hec->twin()->face(),p);
-        }
-        hec++;
-      }while(hec != vh->incident_halfedges());
-      // there is no edge coming from the left :( 
-    
-    
-      Halfedge_around_vertex_const_circulator right_min_edge = hec; 
-      hec++;
-      while(hec != vh->incident_halfedges()){
-        if(m_traits->compare_y_at_x_right_2_object()
-           (hec->curve(),right_min_edge->curve(),vh->point()) == SMALLER ){
-          right_min_edge = hec;        
-        }
-        hec++;
-      }
-      if(!right_min_edge->face()->is_fictitious())
-        return _walk(right_min_edge->face(),p);
-      else
-        return _walk(right_min_edge->twin()->face(),p); 
+        return left_ext_edge->twin()->face();
     }
 
     CGAL::Object _walk(Face_const_handle fh, const Point_2& p) const {
@@ -323,9 +291,9 @@ namespace CGAL {
         Ccb_halfedge_const_circulator hec = start;
         do {
           if (compare_x(hec->target(), vminh) == SMALLER)
-            vminh=hec->target();
+            vminh = hec->target();
           if (compare_x(hec->target(), vmaxh) == LARGER)
-            vmaxh=hec->target();
+            vmaxh = hec->target();
           hec++;
         } while(hec != start);
       }  
@@ -333,13 +301,24 @@ namespace CGAL {
       // a valid  face must have a non singular x-range 
       CGAL_postcondition(compare_x(vminh, vmaxh) == SMALLER);
  
+      // There are cases where there is no face to the right, and there is no boundary.
+      // For example, in the regular (bounded) segment traits there is no outer ccb which is 
+      // unbounded. If _get_face_at_direction returns to us the same face we are currently using
+      // it means that there is no other face in that direction, so we go vertical.
+      // 
       if (vmaxh->parameter_space_in_x() == ARR_INTERIOR && 
-          compare_x(vmaxh, p) == SMALLER)
-        return _walk(vmaxh, p);
+          compare_x(vmaxh, p) == SMALLER) {
+        Face_const_handle next_f = _get_face_at_direction(vmaxh, LARGER);
+        if (fh != next_f)
+          return _walk(next_f, p);
+      }
       
       if (vminh->parameter_space_in_x() == ARR_INTERIOR && 
-          compare_x(p, vminh) == SMALLER)
-        return _walk(p, vminh);
+          compare_x(p, vminh) == SMALLER) {
+        Face_const_handle next_f = _get_face_at_direction(vminh, SMALLER);
+        if (fh != next_f)
+          return _walk(next_f, p);
+      }
       
       return _vertical_walk(fh,p);
     }
