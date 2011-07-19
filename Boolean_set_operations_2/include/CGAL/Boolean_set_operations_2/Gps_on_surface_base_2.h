@@ -152,36 +152,60 @@ protected:
   
 	//define current total number of threads running
 	//used in _divide_and_conquer function to spawn new threads as long as there are still idle processors, but no more
-  int current_num_threads;
+	#ifdef _OPENMP
+	int current_num_threads;
+	#endif
 
 public:
 
   // default costructor
+  #ifdef _OPENMP
   Gps_on_surface_base_2() : m_traits(new Traits_2()),
                             m_traits_adaptor(*m_traits),
                             m_traits_owner(true),
                             m_arr(new Aos_2(m_traits)),
-                            current_num_threads(1)
+							current_num_threads(1)
   {}
-
+  #else
+  Gps_on_surface_base_2() : m_traits(new Traits_2()),
+                            m_traits_adaptor(*m_traits),
+                            m_traits_owner(true),
+                            m_arr(new Aos_2(m_traits))
+  {}
+  #endif
 
   // constructor with traits object
+  #ifdef _OPENMP
   Gps_on_surface_base_2(Traits_2& tr) : m_traits(&tr),
                                         m_traits_adaptor(*m_traits),
                                         m_traits_owner(false),
                                         m_arr(new Aos_2(m_traits)),
-                                        current_num_threads(1)
+										current_num_threads(1)
   {}
+  #else
+  Gps_on_surface_base_2(Traits_2& tr) : m_traits(&tr),
+                                        m_traits_adaptor(*m_traits),
+                                        m_traits_owner(false),
+                                        m_arr(new Aos_2(m_traits))
+  {}
+  #endif
 
-
+  #ifdef _OPENMP
   Gps_on_surface_base_2(const Self& ps) :
     m_traits(new Traits_2(*(ps.m_traits))),
     m_traits_adaptor(*m_traits),
     m_traits_owner(true),
     m_arr(new Aos_2(*(ps.m_arr))),
-    current_num_threads(1)
+	current_num_threads(1)
   {}
-
+  #else
+  Gps_on_surface_base_2(const Self& ps) :
+    m_traits(new Traits_2(*(ps.m_traits))),
+    m_traits_adaptor(*m_traits),
+    m_traits_owner(true),
+    m_arr(new Aos_2(*(ps.m_arr)))
+  {}
+  #endif
   
   Gps_on_surface_base_2& operator=(const Self& ps)
   {
@@ -193,7 +217,7 @@ public:
 		
 	delete m_arr;
 	m_traits = new Traits_2(*(ps.m_traits));
-        m_traits_adaptor = CGAL::Arr_traits_adaptor_2<Traits_2>(*m_traits);
+	m_traits_adaptor = CGAL::Arr_traits_adaptor_2<Traits_2>(*m_traits)
 	m_traits_owner = true;
 	m_arr = new Aos_2(*(ps.m_arr));
 	
@@ -557,6 +581,7 @@ protected:
 
     Compare_endpoints_xy_2 cmp_endpoints =
       m_traits->compare_endpoints_xy_2_object();
+    Construct_opposite_2 ctr_opp = m_traits->construct_opposite_2_object();
 
     for (Edge_const_iterator eci = arr.edges_begin();
          eci != arr.edges_end();
@@ -720,15 +745,15 @@ public:
 	InputIterator2 itr2;
 		
 	//create a parallel region with number of threads set to value of OMP_NUM_THREADS environment variable
-	/* #ifdef _OPENMP
+	#ifdef _OPENMP
 	#pragma omp parallel private(itr2,itr1,i) 
-	#endif	*/
+	#endif	
 	{
 		for (itr1 = begin1,i = 1; itr1!=end1; ++itr1, ++i)
 		{
-			/* #ifdef _OPENMP
+			 #ifdef _OPENMP
 			#pragma omp single nowait
-			#endif	*/
+			#endif	
 			{
 			  arr_vec[i].first = new Aos_2(m_traits);
 			  _insert(*itr1, *(arr_vec[i].first));
@@ -737,9 +762,9 @@ public:
 	
 		for (itr2 = begin2,i = 1; itr2!=end2; ++itr2, ++i)
 		{
-		/*	#ifdef _OPENMP
+			#ifdef _OPENMP
 			#pragma omp single nowait
-			#endif	*/
+			#endif	
 			{
 			  arr_vec[i].first = new Aos_2(m_traits);
 			  _insert(*itr2, *(arr_vec[i].first));
@@ -1214,18 +1239,39 @@ protected:
     unsigned int sub_size = ((upper - lower + 1) / k);
 	int curr_lower;
 	
-#ifdef _OPENMP
-#pragma omp parallel for
-#endif
-    for(curr_lower = lower; curr_lower < (lower + k * sub_size); curr_lower += sub_size) {
-     
-     int curr_upper = (std::min)(curr_lower + sub_size - 1, upper);
-     _divide_and_conquer(curr_lower, curr_upper, arr_vec, k,
-                          merge_func);
-    }
+	#ifdef _OPENMP
+	if(current_num_threads < omp_get_max_threads())
+	{
+		#pragma omp atomic
+		current_num_threads += (omp_get_max_threads() - 1);
+		
+		#pragma omp parallel 
+		{
+			#pragma omp for
+			for(curr_lower = lower; curr_lower < (lower + ((k - 1) * sub_size)); curr_lower += sub_size)
+			{
+				 _divide_and_conquer(curr_lower, curr_lower + sub_size-1, arr_vec, k,
+									  merge_func);
+			}
+		} // end omp parallel
+		
+		current_num_threads -= (omp_get_max_threads() - 1);
+		curr_lower = lower + ((k - 1) * sub_size);
+		_divide_and_conquer (curr_lower, upper,arr_vec, k, merge_func);
 
-
-    curr_lower = lower + ((k - 1) * sub_size);
+	} //end if
+	else	
+	#endif
+	{		
+		curr_lower = lower;
+		for (unsigned int i = 0; i<k-1; ++i, curr_lower += sub_size )
+		{
+		  _divide_and_conquer(curr_lower, curr_lower + sub_size-1, arr_vec, k,
+							  merge_func);
+		}
+		_divide_and_conquer (curr_lower, upper,arr_vec, k, merge_func);
+	}
+	
     merge_func (lower, curr_lower, sub_size ,arr_vec);
     
     return;
