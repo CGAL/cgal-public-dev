@@ -136,6 +136,17 @@ CGAL::Polynomial< NT > construct_polynomial_from_mpz(const MPZ_vector_1& zv) {
 
 #define ILOG2(x) mpz_sizeinbase(_.int2mpz(x), 2)
 
+#define ILOG2_MPZ(x) mpz_sizeinbase(x, 2)
+
+inline unsigned mpz_vector_bitlength(const MPZ_vector_1& v) {
+
+    unsigned bits(0), i;
+    for(i = 0; i < v.size(); i++) {
+        bits = std::max(bits, ILOG2_MPZ(&v[i]));
+    }
+    return bits;
+}
+
 //! computes maximal bitlength of a vector
 template < class NT >
 unsigned poly_bitlength(const CGAL::Polynomial< NT >& f) {
@@ -308,37 +319,9 @@ void compute_gcd_bitlength(
         unsigned b = ILOG2(g[i]);
         bits_g = std::max(bits_g, b);
     }
-    printf("bits_f: %d; bits_g: %d\n", bits_f, bits_g);
 //     min of two bitlength might not be enough
     bits = std::max(bits_f, bits_g);
     bits = std::max(bits, 80u); // at least 80 bits
-}
-
-// template < class NT >
-inline
-void compute_gcd_bitlength2(
-        const MPZ_vector_1& fv, const MPZ_vector_1& gv,
-        unsigned& bits) {
-
-//     MPZ_traits< NT > _;
-
-    unsigned n = fv.size(), m = gv.size(), i, bits_f(0), bits_g(0);
-    for(i = 0; i < n; i++) {
-        unsigned b = mpz_sizeinbase(&fv[i], 2);
-        bits_f = std::max(bits_f, b);
-    }
-    for(i = 0; i < m; i++) {
-        unsigned b = mpz_sizeinbase(&gv[i], 2);
-        bits_g = std::max(bits_g, b);
-    }
-    // min of two bitlength might not be enough
-
-//     bits = (bits_f + bits_g) / 2; // be careful here !!
-    
-    bits = std::max(bits_f, bits_g);
-    bits = std::max(bits, 80u); // at least 80 bits
-    printf("bits_f: %d; bits_g: %d ##gcdbits: %d\n", bits_f, bits_g,
-                std::max(bits_f, bits_g));
 
     printf("bits_f: %d; bits_g: %d ##gcdbits: %d\n", bits_f, bits_g, bits);
 }

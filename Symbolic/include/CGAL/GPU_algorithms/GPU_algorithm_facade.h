@@ -55,13 +55,15 @@ struct GPU_algorithm_facade {
         internal::construct_mpz_vector_1(f, fv);
         internal::construct_mpz_vector_1(g, gv);
 
-        unsigned deg_f = f.degree(), deg_g = g.degree();
+        unsigned deg_f = f.degree(), deg_g = g.degree(), bits;
         if(deg_f < deg_g) {
             std::swap(fv, gv);
             std::swap(deg_f, deg_g);
         }
 
-        if(obj.internal_compute(fv, gv, rv)) {
+        compute_gcd_bitlength(f, g, bits);
+
+        if(obj.internal_compute(fv, gv, rv, bits)) {
             ggcd = internal::construct_polynomial_from_mpz< NT >(rv);
             std::cout <<  "\nGGCD succeeded\n";
             internal::dispose_mpz_vector(rv);
@@ -87,16 +89,17 @@ struct GPU_algorithm_facade {
         const CGAL::Polynomial< CGAL::Polynomial< NT > >& g,
                 bool *pfailed = 0) {
 
+        if(pfailed != 0)
+           *pfailed = false;
+
         if(CGAL::is_zero(f) || CGAL::is_zero(g)) {
-            if(pfailed != 0)
-                *pfailed = false;
             return CGAL::Polynomial< NT >(NT(0));
         }
 
         if(f.degree() == 0) {
-            return CGAL::canonicalize(CGAL::ipower(f.lcoeff(), g.degree()));
+            return (CGAL::ipower(CGAL::canonicalize(f.lcoeff()), g.degree()));
         } else if(g.degree() == 0) {
-            return CGAL::canonicalize(CGAL::ipower(g.lcoeff(), f.degree()));
+            return (CGAL::ipower(CGAL::canonicalize(g.lcoeff()), f.degree()));
         }
 
         unsigned low_deg, high_deg, bits;

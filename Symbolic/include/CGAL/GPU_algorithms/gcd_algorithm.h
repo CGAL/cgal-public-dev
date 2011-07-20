@@ -38,7 +38,7 @@ public:
     }
 
     bool internal_compute(const MPZ_vector_1& fv, const MPZ_vector_1& gv,
-             MPZ_vector_1& r);
+             MPZ_vector_1& r, unsigned bits_);
 
     bool debug_run(int argc, char **argv);
 
@@ -50,11 +50,10 @@ protected:
     bool run_gpu_part(const MPZ_vector_1& fv, const MPZ_vector_1& gv,
          MPZ_vector_1& r);
 
-    bool coprime_check(const MPZ_vector_1& fv, const MPZ_vector_1& gv);
-
-    bool reference_solution(const unsigned *const_mem,
-        const unsigned *U, const unsigned *Mods, const unsigned *InvMods,
-        unsigned *reference, const unsigned *GPU_res);
+    bool reference_solution(const MPZ_vector_1& fv, const MPZ_vector_1& gv,
+            const unsigned *const_mem, const unsigned *GCDlc,
+            const unsigned *Mods, const unsigned *InvMods,
+            unsigned *reference, const unsigned *GPU_res);
 
     bool RNS_conversion(const MPZ_vector_1& fv, const MPZ_vector_1& gv,
          unsigned *U, void *pconst, unsigned *Mods, unsigned *InvKs,
@@ -64,7 +63,10 @@ protected:
             MPZ_vector_1& out);
 
     void launch_kernel(unsigned *const_mem, const unsigned *Mods,
-            const unsigned *U, unsigned *R);
+            const unsigned *U, unsigned *R, bool& coprime);
+
+    void mod_reduce_kernel_dispatch(const unsigned *devU,
+        unsigned *devR, const unsigned *Mods);
 
     void QR_gcd_kernel_dispatch(unsigned *& mem_out,
         unsigned *devIn, unsigned *devOut, unsigned *devU,
@@ -85,8 +87,10 @@ protected:
     void host_static_setup();
 
 protected:
-    unsigned nu, nv, bits; // poly degrees, estimated bitsize of result
+    unsigned nu, nv; // poly degrees, estimated bitsize of result
     unsigned max_nu, max_nv, n_moduli;  // padded poly degrees, # of moduli
+    unsigned nu_ofs4, nv_ofs4;  // offsets for correct data padding
+    unsigned limbs_f, limbs_g; // max # of words per coefficient 
 
     unsigned chunk_sz, n_blocks; // chunk size, # of blocks
 

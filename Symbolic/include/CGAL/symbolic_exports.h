@@ -11,6 +11,8 @@
 #include <NTL/ZZXFactoring.h>
 #endif 
 
+#define CGAL_MODULAR_FILTER_OFF     // do not use modular filter
+
 #if (defined CGAL_USE_GPU)
 #include <CGAL/GPU_algorithms/GPU_algorithm_facade.h>
 #endif
