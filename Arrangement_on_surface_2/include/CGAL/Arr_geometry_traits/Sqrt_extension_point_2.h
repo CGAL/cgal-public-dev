@@ -47,11 +47,11 @@ public:
   typedef NumberType_                                   NT;
   typedef Sqrt_extension_point_2_rep<NT, Filter_>       Self;
   typedef CGAL::Sqrt_extension<NT, NT, Tag_true, Boolean_tag<Filter_> >
-                                                        Sqrt_extension;
+                                                        Coord_NT;
 
 private:
-  Sqrt_extension m_x;            // The coordinates.
-  Sqrt_extension m_y;
+  Coord_NT m_x;            // The coordinates.
+  Coord_NT m_y;
 
 public:
   /*! Default constructor. */
@@ -60,7 +60,7 @@ public:
   /*! Constructor of a point with one-root coefficients. 
      This constructor of a point can also be used with rational coefficients
      thanks to convertor of CoordNT. */
-  Sqrt_extension_point_2_rep(const Sqrt_extension& x, const Sqrt_extension& y) :
+  Sqrt_extension_point_2_rep(const Coord_NT& x, const Coord_NT& y) :
     m_x(x),
     m_y(y)
   {}
@@ -76,7 +76,7 @@ class Sqrt_extension_point_2 :
 public:
   typedef NumberType_                                   NT;
   typedef Sqrt_extension_point_2<NT, Filter_>           Self;
-  typedef typename Point_rep::Sqrt_extension            Sqrt_extension;
+  typedef typename Point_rep::Coord_NT                  Coord_NT;
 
 private:
   typedef Sqrt_extension_point_2_rep<NT, Filter_>       Point_rep;
@@ -92,15 +92,15 @@ public:
   /*! Constructor of a point with one-root coefficients. 
      This constructor of a point can also be used with rational coefficients
      thanks to convertor of CoordNT. */
-  Sqrt_extension_point_2(const Sqrt_extension& x, const Sqrt_extension& y) :
+  Sqrt_extension_point_2(const Coord_NT& x, const Coord_NT& y) :
     Point_handle(Point_rep(x, y))
   {}
 
   /*! Obtains the x-coordinate. */
-  const Sqrt_extension& x() const { return (this->ptr()->_x); }
+  const Coord_NT& x() const { return (this->ptr()->_x); }
 
   /*! Obtains the y-coordinate. */
-  const Sqrt_extension& y() const { return (this->ptr()->_y); }
+  const Coord_NT& y() const { return (this->ptr()->_y); }
 
   /*! Checks for equality. */
   bool equal(const Self& p) const
@@ -124,13 +124,13 @@ public:
   void set(const NT& x, const NT& y)
   {
     this->copy_on_write();
-    this->ptr()->_x = Sqrt_extension(x);
-    this->ptr()->_y = Sqrt_extension(y);
+    this->ptr()->_x = Coord_NT(x);
+    this->ptr()->_y = Coord_NT(y);
     return;
   }
 
   /*! Sets the point coordinates. */
-  void set(const Sqrt_extension& x, const Sqrt_extension& y)
+  void set(const Coord_NT& x, const Coord_NT& y)
   {
     this->copy_on_write();
     this->ptr()->_x = x;

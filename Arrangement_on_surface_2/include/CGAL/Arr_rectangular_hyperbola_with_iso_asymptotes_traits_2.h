@@ -1,4 +1,4 @@
-// Copyright (c) 2006  Tel-Aviv University (Israel).
+// Copyright (c) 2011  Tel-Aviv University (Israel).
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org); you may redistribute it under
@@ -11,102 +11,74 @@
 // This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
 // WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
-// $URL: svn+ssh://asafpor@scm.gforge.inria.fr/svn/cgal/branches/features/Lines_through_segments_3-asafpor/Arrangement_on_surface_2/include/CGAL/Arr_rec_hyperbola_horizontal_asym_traits_2.h $
-// $Id: Arr_rec_hyperbola_horizontal_asym_traits_2.h 56667 2010-06-09 07:37:13Z sloriot $
+// $URL: $
+// $Id: $
 // 
 //
-// Author(s)     : Ron Wein          <wein@post.tau.ac.il>
+// Author(s): Asaf Porat          <asafpor@post.tau.ac.il>
+//            Efi Fogel           <efif@post.tau.ac.il>
 
-#ifndef CGAL_ARR_REC_HYPERBOLA_HORIZONTAL_ASYM_TRAITS_2_H
-#define CGAL_ARR_REC_HYPERBOLA_HORIZONTAL_ASYM_TRAITS_2_H
+#ifndef CGAL_ARR_RECTANGULAR_HYPERBOLA_WITH_ISO_ASYMPTOTES_TRAITS_2_H
+#define CGAL_ARR_RECTANGULAR_HYPERBOLA_WITH_ISO_ASYMPTOTES_TRAITS_2_H
 
 /*! \file
- * The traits-class for handling rectangular hyperbolas with vertical and horizontal asymptotes.
- * in the arrangement package.
+ * The traits-class for handling rectangular hyperbolas with vertical and
+ * horizontal asymptotes.
  */
 
+#include <fstream>
+
 #include <CGAL/tags.h>
-#include <CGAL/intersections.h>
 #include <CGAL/Arr_tags.h>
 #include <CGAL/Arr_enums.h>
-#include <CGAL/Arr_geometry_traits/Segment_assertions.h>
-#include <fstream>
+#include <CGAL/Arr_geometry_traits/Sqrt_extension_point_2.h>
+#include <CGAL/Arr_geometry_traits/Rectangular_hyperbola_with_iso_asymptotes_2.h>
 
 namespace CGAL {
 
-template <class Kernel_> class Arr_hyperbola_object_2;
-
 /*! \class
- * A traits class for maintaining an arrangement of linear objects (lines,
- * rays and segments), aoviding cascading of computations as much as possible.
+ * A traits class for maintaining an arrangement of rectangular hyperbolas
+ * with vertical and horiznotal asysmptotes.
  */
-template <class Kernel_>
-class Arr_rec_hyperbola_horizontal_asym_traits_2 : public Kernel_ {
-   friend class Arr_rec_hyperbola_horizontal_asym_object_2<Kernel_>;
-   
-
+template <typename Kernel_, typename Filter_ = true>
+class Arr_rectangular_hyperbola_with_iso_asymptotes_traits_2 {
 public:
-
-  typedef Kernel_                         Kernel;
-  typedef typename Kernel::FT             FT;
-
-  typedef typename Algebraic_structure_traits<FT>::Is_exact 
-  Has_exact_division;
+  typedef Kernel_                                     Kernel;
+  typedef typename Kernel::FT                         NT;
+  typedef typename Kernel::Point_2                    Rational_point_2;
+  typedef typename Kernel::Segment_2                  Rational_segment_2;
+  typedef CGAL::Sqrt_extension_point_2<NT, Filter_>   Point_2;
+  typedef typename Point_2::Coord_NT                  Coord_NT;
+  typedef X_monotone_rectangular_hyperbola_with_iso_asymptotes_2<Kernel, Filter_>
+                                                      X_monotone_curve_2;
+  typedef Rectangular_hyperbola_with_iso_asymptotes_2<Kernel, Filter_>
+                                                      Curve_2;
 
   // Category tags:
-  typedef Tag_true                        Has_left_category;
-  typedef Tag_true                        Has_merge_category;
-  typedef Tag_false                       Has_do_intersect_category;
+  typedef Tag_true                                    Has_left_category;
+  typedef Tag_true                                    Has_merge_category;
+  typedef Tag_false                                   Has_do_intersect_category;
 
-  typedef Arr_open_side_tag               Arr_left_side_category;
-  typedef Arr_open_side_tag               Arr_bottom_side_category;
-  typedef Arr_open_side_tag               Arr_top_side_category;
-  typedef Arr_open_side_tag               Arr_right_side_category;
+  typedef Arr_open_side_tag                           Arr_left_side_category;
+  typedef Arr_open_side_tag                           Arr_bottom_side_category;
+  typedef Arr_open_side_tag                           Arr_top_side_category;
+  typedef Arr_open_side_tag                           Arr_right_side_category;
   
   typedef typename Kernel::Line_2         Line_2;
   typedef typename Kernel::Segment_2      Segment_2;
-
-  typedef CGAL::Segment_assertions<Arr_rec_hyperbola_horizontal_asym_traits_2<Kernel> >
-  Segment_assertions;
-  
-public:
-
-  // Traits objects
-  typedef typename Kernel::Point_2                 Point_2;
-  typedef Arr_hyperbola_object_2<Kernel>           X_monotone_hyperbola_2;
-  typedef Arr_hyperbola_object_2<Kernel>           Hyperbola_2;
-  typedef unsigned int                             Multiplicity; // TODO: Ask Efi.
 
 public:
 
   /*!
    * Default constructor.
    */
-  Arr_rec_hyperbola_horizontal_asym_traits_2 ()
-  {}
+  Arr_rectangular_hyperbola_with_iso_asymptotes_traits_2() {}
 
   /// \name Basic functor definitions.
   //@{
 
   /*! A functor that compares the x-coordinates of two points */
   class Compare_x_2 {
-  protected:
-    typedef Arr_rec_hyperbola_horizontal_asym_traits_2<Kernel> Traits;
-
-    /*! The traits (in case it has state) */
-    const Traits * m_traits;
-
-    /*! Constructor
-     * \param traits the traits (in case it has state)
-     * The constructor is declared private to allow only the functor
-     * obtaining function, which is a member of the nesting class,
-     * constructing it.
-     */
-    Compare_x_2(const Traits * traits) : m_traits(traits) {}
-
-    //! Allow its functor obtaining function calling the private constructor.
-    friend class Arr_rec_hyperbola_horizontal_asym_traits_2<Kernel>;
-    
   public:
     /*!
      * Compare the x-coordinates of two points.
@@ -116,18 +88,15 @@ public:
      *         SMALLER if x(p1) < x(p2);
      *         EQUAL if x(p1) = x(p2).
      */
-    Comparison_result operator() (const Point_2& p1, const Point_2& p2) const
+    Comparison_result operator()(const Point_2& p1, const Point_2& p2) const
     {
-      const Kernel * kernel = m_traits;
-      return (kernel->compare_x_2_object()(p1, p2));
+      if (p1.identical(p2)) return EQUAL;
+      return CGAL::compare(p1.x(), p2.x());
     }
   };
 
   /*! Obtain a Compare_x_2 functor. */
-  Compare_x_2 compare_x_2_object () const
-  {
-    return Compare_x_2(this);
-  }
+  Compare_x_2 compare_x_2_object() const { return Compare_x_2(); }
 
   /*! A functor that compares the x-coordinates of two points */
   class Compare_xy_2 {
@@ -140,62 +109,56 @@ public:
      *         SMALLER if x(p1) < x(p2), or if x(p1) = x(p2) and y(p1) < y(p2);
      *         EQUAL if the two points are equal.
      */
-    Comparison_result operator() (const Point_2& p1, const Point_2& p2) const
+    Comparison_result operator()(const Point_2& p1, const Point_2& p2) const
     {
-      Kernel    kernel;
-      return (kernel.compare_xy_2_object()(p1, p2));
+      if (p1.identical(p2)) return EQUAL;
+      Comparison_result res = CGAL::compare(p1.x(), p2.x());
+      if (res != EQUAL) return res;
+      return CGAL::compare(p1.y(), p2.y());
     }
   };
 
   /*! Obtain a Compare_xy_2 functor object. */
-  Compare_xy_2 compare_xy_2_object () const
-  {
-    return Compare_xy_2();
-  }
+  Compare_xy_2 compare_xy_2_object() const { return Compare_xy_2(); }
 
   /*! A functor that obtains the left endpoint of a segment or a ray. */
-  class Construct_min_vertex_2
-  {
+  class Construct_min_vertex_2 {
   public:
     /*!
-     * Get the left endpoint of the x-monotone curve (segment).
+     * Get the left endpoint of the x-monotone curve.
      * \param cv The curve.
      * \pre The left end of cv is a valid (bounded) point.
      * \return The left endpoint.
      */
-    const Point_2& operator() (const X_monotone_curve_2& cv) const
+    const Point_2& operator()(const X_monotone_curve_2& cv) const
     {
        //TODO: ASAFP
     }
   };
 
   /*! Obtain a Construct_min_vertex_2 functor object. */
-  Construct_min_vertex_2 construct_min_vertex_2_object () const
-  {
-    return Construct_min_vertex_2();
-  }
+  Construct_min_vertex_2 construct_min_vertex_2_object() const
+  { return Construct_min_vertex_2(); }
 
   /*! A functor that obtains the right endpoint of a segment or a ray. */
   class Construct_max_vertex_2
   {
   public:
     /*!
-     * Get the right endpoint of the x-monotone curve (segment).
+     * Get the right endpoint of the x-monotone curve.
      * \param cv The curve.
      * \pre The right end of cv is a valid (bounded) point.
      * \return The right endpoint.
      */
-    const Point_2& operator() (const X_monotone_curve_2& cv) const
+    const Point_2& operator()(const X_monotone_curve_2& cv) const
      {
         //TODO // ASAFP
      }
   };
 
   /*! Obtain a Construct_max_vertex_2 functor object. */
-  Construct_max_vertex_2 construct_max_vertex_2_object () const
-  {
-    return Construct_max_vertex_2();
-  }
+  Construct_max_vertex_2 construct_max_vertex_2_object() const
+  { return Construct_max_vertex_2(); }
 
   /*! A functor that checks whether a given linear curve is vertical. */
   class Is_vertical_2
@@ -206,24 +169,22 @@ public:
      * \param cv The curve.
      * \return (true) if the curve is a vertical segment; (false) otherwise.
      */
-    bool operator() (const X_monotone_curve_2& cv) const
+    bool operator()(const X_monotone_curve_2& cv) const
      {
         //TOOD // ASAFP
     }
   };
 
   /*! Obtain an Is_vertical_2 functor object. */
-  Is_vertical_2 is_vertical_2_object () const
-  {
-    return Is_vertical_2();
-  }
+  Is_vertical_2 is_vertical_2_object() const { return Is_vertical_2(); }
 
   /*! A functor that compares the y-coordinates of a point and a line at
    * the point x-coordinate
    */
   class Compare_y_at_x_2 {
   protected:
-    typedef Arr_rec_hyperbola_horizontal_asym_traits_2<Kernel> Traits;
+    typedef Arr_rectangular_hyperbola_with_iso_asymptotes_traits_2<Kernel>
+      Traits;
 
     /*! The traits (in case it has state) */
     const Traits * m_traits;
@@ -237,7 +198,7 @@ public:
     Compare_y_at_x_2(const Traits * traits) : m_traits(traits) {}
 
     //! Allow its functor obtaining function calling the private constructor.
-    friend class Arr_rec_hyperbola_horizontal_asym_traits_2<Kernel>;
+    friend class Arr_rectangular_hyperbola_with_iso_asymptotes_traits_2<Kernel>;
     
   public:
     /*!
@@ -249,8 +210,8 @@ public:
      *         LARGER if y(p) > cv(x(p)), i.e. the point is above the curve;
      *         EQUAL if p lies on the curve.
      */
-    Comparison_result operator() (const Point_2& p,
-                                  const X_monotone_curve_2& cv) const
+    Comparison_result operator()(const Point_2& p,
+                                 const X_monotone_curve_2& cv) const
     {
       // TODO: //ASAFP
 
@@ -271,10 +232,8 @@ public:
   };
 
   /*! Obtain a Compare_y_at_x_2 functor object. */
-  Compare_y_at_x_2 compare_y_at_x_2_object () const
-  {
-    return Compare_y_at_x_2(this);
-  }
+  Compare_y_at_x_2 compare_y_at_x_2_object() const
+  { return Compare_y_at_x_2(this); }
 
   /*! A functor that compares compares the y-coordinates of two linear
    * curves immediately to the left of their intersection point.
@@ -293,9 +252,9 @@ public:
      * \return The relative position of cv1 with respect to cv2 immdiately to
      *         the left of p: SMALLER, LARGER or EQUAL.
      */
-    Comparison_result operator() (const X_monotone_curve_2& cv1,
-                                  const X_monotone_curve_2& cv2,
-                                  const Point_2& CGAL_precondition_code(p)) const
+    Comparison_result operator()(const X_monotone_curve_2& cv1,
+                                 const X_monotone_curve_2& cv2,
+                                 const Point_2& CGAL_precondition_code(p)) const
     {
       // CGAL_precondition (! cv1.is_degenerate());
       // CGAL_precondition (! cv2.is_degenerate());
@@ -330,10 +289,8 @@ public:
   };
 
   /*! Obtain a Compare_y_at_x_left_2 functor object. */
-  Compare_y_at_x_left_2 compare_y_at_x_left_2_object () const
-  {
-    return Compare_y_at_x_left_2();
-  }
+  Compare_y_at_x_left_2 compare_y_at_x_left_2_object() const
+  { return Compare_y_at_x_left_2(); }
 
   /*! A functor that compares compares the y-coordinates of two linear
    * curves immediately to the right of their intersection point.
@@ -352,9 +309,9 @@ public:
      * \return The relative position of cv1 with respect to cv2 immdiately to
      *         the right of p: SMALLER, LARGER or EQUAL.
      */
-    Comparison_result operator() (const X_monotone_curve_2& cv1,
-                                  const X_monotone_curve_2& cv2,
-                                  const Point_2& CGAL_precondition_code(p)) const
+    Comparison_result operator()(const X_monotone_curve_2& cv1,
+                                 const X_monotone_curve_2& cv2,
+                                 const Point_2& CGAL_precondition_code(p)) const
     {
       // CGAL_precondition (! cv1.is_degenerate());
       // CGAL_precondition (! cv2.is_degenerate());
@@ -388,10 +345,8 @@ public:
   };
 
   /*! Obtain a Compare_y_at_x_right_2 functor object. */
-  Compare_y_at_x_right_2 compare_y_at_x_right_2_object () const
-  {
-    return Compare_y_at_x_right_2();
-  }
+  Compare_y_at_x_right_2 compare_y_at_x_right_2_object() const
+  { return Compare_y_at_x_right_2(); }
 
   /*! A functor that checks whether two points and two linear curves are
    * identical.
@@ -406,8 +361,8 @@ public:
      * \param cv2 The second curve.
      * \return (true) if the two curves are the same; (false) otherwise.
      */
-    bool operator() (const X_monotone_curve_2& cv1,
-                     const X_monotone_curve_2& cv2) const
+    bool operator()(const X_monotone_curve_2& cv1,
+                    const X_monotone_curve_2& cv2) const
     {
       // CGAL_precondition (! cv1.is_degenerate());
       // CGAL_precondition (! cv2.is_degenerate());
@@ -444,7 +399,7 @@ public:
      * \param p2 The second point.
      * \return (true) if the two point are the same; (false) otherwise.
      */
-    bool operator() (const Point_2& p1, const Point_2& p2) const
+    bool operator()(const Point_2& p1, const Point_2& p2) const
     {
       Kernel    kernel;
       return (kernel.equal_2_object()(p1, p2));
@@ -452,10 +407,7 @@ public:
   };
 
   /*! Obtain an Equal_2 functor object. */
-  Equal_2 equal_2_object () const
-  {
-    return Equal_2();
-  }
+  Equal_2 equal_2_object() const { return Equal_2(); }
   //@}
 
   /// \name Functor definitions to handle boundaries
@@ -694,8 +646,8 @@ public:
      *           essentially the same as the input curve.
      * \return The past-the-end iterator.
      */
-    template<class OutputIterator>
-    OutputIterator operator() (const Curve_2& cv, OutputIterator oi) const
+    template<typename OutputIterator>
+    OutputIterator operator()(const Curve_2& cv, OutputIterator oi) const
     {
       // Wrap the curve with an object.
       *oi = make_object (cv);
@@ -707,12 +659,9 @@ public:
 
   /*! Obtain a Make_x_monotone_2 functor object. */
   Make_x_monotone_2 make_x_monotone_2_object () const
-  {
-    return Make_x_monotone_2();
-  }
+  { return Make_x_monotone_2(); }
 
-  class Split_2
-  {
+  class Split_2 {
   public:
     /*!
      * Split a given x-monotone curve at a given point into two sub-curves.
@@ -722,8 +671,8 @@ public:
      * \param c2 Output: The right resulting subcurve (p is its left endpoint).
      * \pre p lies on cv but is not one of its end-points.
      */
-    void operator() (const X_monotone_curve_2& cv, const Point_2& p,
-                     X_monotone_curve_2& c1, X_monotone_curve_2& c2) const
+    void operator()(const X_monotone_curve_2& cv, const Point_2& p,
+                    X_monotone_curve_2& c1, X_monotone_curve_2& c2) const
     {
       // CGAL_precondition (! cv.is_degenerate());
 
@@ -751,10 +700,7 @@ public:
   };
 
   /*! Obtain a Split_2 functor object. */
-  Split_2 split_2_object () const
-  {
-    return Split_2();
-  }
+  Split_2 split_2_object() const { return Split_2(); }
 
   class Intersect_2
   {
@@ -768,10 +714,10 @@ public:
      * \param oi The output iterator.
      * \return The past-the-end iterator.
      */
-    template<class OutputIterator>
-    OutputIterator operator() (const X_monotone_curve_2& cv1,
-                               const X_monotone_curve_2& cv2,
-                               OutputIterator oi) const
+    template<typename OutputIterator>
+    OutputIterator operator()(const X_monotone_curve_2& cv1,
+                              const X_monotone_curve_2& cv2,
+                              OutputIterator oi) const
     {
       // CGAL_precondition (! cv1.is_degenerate());
       // CGAL_precondition (! cv2.is_degenerate());
@@ -877,12 +823,9 @@ public:
 
   /*! Obtain an Intersect_2 functor object. */
   Intersect_2 intersect_2_object () const
-  {
-    return Intersect_2();
-  }
+  { return Intersect_2(); }
 
-  class Are_mergeable_2
-  {
+  class Are_mergeable_2 {
   public:
     /*!
      * Check whether it is possible to merge two given x-monotone curves.
@@ -917,13 +860,9 @@ public:
   };
 
   /*! Obtain an Are_mergeable_2 functor object. */
-  Are_mergeable_2 are_mergeable_2_object () const
-  {
-    return Are_mergeable_2();
-  }
+  Are_mergeable_2 are_mergeable_2_object () const { return Are_mergeable_2(); }
 
-  class Merge_2
-  {
+  class Merge_2 {
   public:
     /*!
      * Merge two given x-monotone curves into a single curve (segment).
@@ -933,9 +872,9 @@ public:
      * \pre The two curves are mergeable, that is they are supported by the
      *      same line and share a common endpoint.
      */
-    void operator() (const X_monotone_curve_2& cv1,
-                     const X_monotone_curve_2& cv2,
-                     X_monotone_curve_2& c) const
+    void operator()(const X_monotone_curve_2& cv1,
+                    const X_monotone_curve_2& cv2,
+                    X_monotone_curve_2& c) const
     {
       // CGAL_precondition (! cv1.is_degenerate());
       // CGAL_precondition (! cv2.is_degenerate());
@@ -980,18 +919,14 @@ public:
   };
 
   /*! Obtain a Merge_2 functor object. */
-  Merge_2 merge_2_object () const
-  {
-    return Merge_2();
-  }
+  Merge_2 merge_2_object () const { return Merge_2(); }
   //@}
 
   /// \name Functor definitions for the landmarks point-location strategy.
   //@{
-  typedef double                          Approximate_number_type;
+  typedef double Approximate_number_type;
 
-  class Approximate_2
-  {
+  class Approximate_2 {
   public:
 
     /*!
@@ -1002,8 +937,7 @@ public:
      * \return An approximation of p's x-coordinate (if i == 0), or an 
      *         approximation of p's y-coordinate (if i == 1).
      */
-    Approximate_number_type operator() (const Point_2& p,
-                                        int i) const
+    Approximate_number_type operator()(const Point_2& p, int i) const
     {
       CGAL_precondition (i == 0 || i == 1);
 
@@ -1015,13 +949,9 @@ public:
   };
 
   /*! Obtain an Approximate_2 functor object. */
-  Approximate_2 approximate_2_object () const
-  {
-    return Approximate_2();
-  }
+  Approximate_2 approximate_2_object () const { return Approximate_2(); }
 
-  class Construct_x_monotone_curve_2
-  {
+  class Construct_x_monotone_curve_2 {
   public:
 
     /*!
@@ -1031,8 +961,7 @@ public:
      * \pre p and q must not be the same.
      * \return A segment connecting p and q.
      */
-    X_monotone_curve_2 operator() (const Point_2& p,
-                                   const Point_2& q) const
+    X_monotone_curve_2 operator()(const Point_2& p, const Point_2& q) const
     {
       Kernel     kernel;
       Segment_2  seg = kernel.construct_segment_2_object() (p, q);
@@ -1047,180 +976,7 @@ public:
     return Construct_x_monotone_curve_2();
   }
   //@}
-
 };
-
-/*!
- * \class A representation of a segment, as used by the Arr_segment_traits_2
- * traits-class.
- */
-template <class Kernel_>
-class Arr_hyperbola_object_2 
-{
-
-public:
-
-  typedef Kernel_                                           Kernel;
-  typedef typename Kernel::FT                               FT;
-
-  typedef typename Kernel::Point_2                          Point_2;
-
-private:
-    Point_2   m_ps;               // The source point (if exists).
-    Point_2   m_pt;               // The target point (if exists).
-    bool      m_has_source;       // Is the source point valid
-    bool      m_has_target;       // Is the target point valid
-    bool      m_is_segment;       // Is segment.
-
-   /* y = (a*x + b)/(cx + d) */
-   FT m_a, m_b, m_c, m_d;
-   
-   
-public:
-
-  /*!
-   * Default constructor.
-   */
-  Arr_hyperbola_object_2 ()
-  {
-     has_source = false;
-     has_target = false;
-  }
-    
-  /*!
-   * Constructor from two points.
-   * \param s The source point.
-   * \param t The target point.
-   * \pre The two points must not be the same.
-   */
-  Arr_hyperbola_object_2(const FT& a,
-                         const FT& b,
-                         const FT& c,
-                         const FT& d,
-                         const Point_2& ps,
-                         const Point_2& pt)
-   {
-      m_ps = ps;
-      m_pt = pt;
-      m_has_source = true;
-      m_has_target = true;
-      m_a = a;
-      m_b = b;
-      m_c = c;
-      m_d = d;
-
-      m_is_segment = ((c == 0) && m_has_target && m_has_source);
-   }
-
-
-  /*!
-   * Check whether the object is actually a segment.
-   */
-  bool is_segment () const
-  {
-     return m_is_segment;
-  }
-
-
-  // /*!
-  //  * Check whether the object is actually a line.
-  //  */
-  // bool is_line () const
-  // {
-  //   return (! this->is_degen && ! this->has_source && ! this->has_target);
-  // }
-
-  // /*!
-  //  * Cast to a line.
-  //  * \pre The linear object is really a line.
-  //  */
-  // Line_2 line () const
-  // {
-  //   CGAL_precondition (is_line());
-  //   return (this->l);
-  // }
-
-
-  /*!
-   * Get the source point.
-   * \pre The object is a point, a segment or a ray.
-   */
-  const Point_2& source() const
-  {
-    CGAL_precondition (has_source);
-
-    return (this->ps);
-  }
-
-  /*!
-   * Get the target point.
-   * \pre The object is a point or a segment.
-   */
-  const Point_2& target() const
-  {
-    CGAL_precondition (has_target);
-
-    return (this->pt);
-  }
-
-};
-
-/*!
- * Exporter for the segment class used by the traits-class.
- */
-template <class Kernel, class OutputStream>
-OutputStream& operator<< (OutputStream& os,
-                          const Arr_hyperbola_object_2<Kernel>& lobj)
-{
-  // Print a letter identifying the object type, then the object itself.
-  if (lobj.is_segment())
-    os << " S " << lobj.segment();
-  else if (lobj.is_ray())
-    os << " R " << lobj.ray();
-  else
-    os << " L " << lobj.line();
-
-  return (os);
-}
-
-/*!
- * Importer for the segment class used by the traits-class.
- */
-template <class Kernel, class InputStream>
-InputStream& operator>> (InputStream& is, Arr_hyperbola_object_2<Kernel>& lobj)
-{
-  // Read the object type.
-  char        c;
-
-  do
-  {
-    is >> c;
-  } while ((c != 'S' && c != 's') &&
-           (c != 'R' && c != 'r') &&
-           (c != 'L' && c != 'l'));
-
-  // Read the object accordingly.
-  if (c == 'S' || c == 's')
-  {
-    typename Kernel::Segment_2  seg;
-    is >> seg;
-    lobj = seg;
-  }
-  else if (c == 'R' || c == 'r')
-  {
-    typename Kernel::Ray_2      ray;
-    is >> ray;
-    lobj = ray;
-  }
-  else
-  {
-    typename Kernel::Line_2     line;
-    is >> line;
-    lobj = line;
-  }
-
-  return (is);
-}
 
 } //namespace CGAL
 
