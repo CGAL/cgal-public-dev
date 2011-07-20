@@ -18,162 +18,27 @@
 // Author(s)     : Michael Hemmer <hemmer@googlemail.com> 
 //                 Ophir Setter <ophir.setter@cs.tau.ac.il>
 
-#ifndef CGAL_ARR_LANDMARKS_POINT_LOCATION_NO_CONSTRUCTION_H
-#define CGAL_ARR_LANDMARKS_POINT_LOCATION_NO_CONSTRUCTION_H
-
-/*! \file
- * Definition of the Arr_new_landmarks_point_location<Arrangement> template.
- */
-
-//#define CGAL_DEBUG_LM
-
-#include <CGAL/Arrangement_2/Arr_traits_adaptor_2.h>
-#include <set>
+#ifndef CGAL_ARR_LANDMARKS_PL_NO_CON_IMPL_H
+#define CGAL_ARR_LANDMARKS_PL_NO_CON_IMPL_H
 
 #include <boost/foreach.hpp>
 
 namespace CGAL {
 
-  /*! \class Arr_landmarks_point_location_no_construction
-   * A class that answers point-location queries on an arrangement using the
-   * landmarks algorithm, namely by locating the (approximately) nearest
-   * landmark point to the qury point and walking from it toward the query
-   * point.
-   * This class-template has two parameters:
-   * Arrangement corresponds to an arrangement-on-surface instantiation.
-   * Generator is a class that generates the set of landmarks.
+  /*!
+   * Locate the arrangement feature containing the given point.
+   * \param p The query point.
+   * \return An object representing the arrangement feature containing the
+   *         query point. This object is either a Face_const_handle or a
+   *         Halfedge_const_handle or a Vertex_const_handle.
    */
+  template <class Arr, class Gen, bool C>
+    Object Arr_landmarks_point_location<Arr, Gen, C>::locate
+    (const Point_2& p, boost::mpl::false_) const {
 
-  template <class Arrangement_, 
-    class Generator_ = Arr_landmarks_vertices_generator<Arrangement_> >
-    class Arr_landmarks_point_location_no_construction
-    {
-    public:
- 
-    typedef Arrangement_                                Arrangement_2;
-    typedef typename Arrangement_2::Geometry_traits_2   Geometry_traits_2;
-    typedef Generator_                                  Generator;
- 
-    protected:
- 
-    typedef typename Arrangement_2::Vertex_const_handle   Vertex_const_handle;
-    typedef typename Arrangement_2::Halfedge_const_handle Halfedge_const_handle;
-    typedef typename Arrangement_2::Face_const_handle     Face_const_handle;
-    
-    typedef typename Arrangement_2::Halfedge_around_vertex_const_circulator
-    Halfedge_around_vertex_const_circulator;
-    typedef typename Arrangement_2::Ccb_halfedge_const_circulator
-    Ccb_halfedge_const_circulator;
-    typedef typename Arrangement_2::Outer_ccb_const_iterator
-    Outer_ccb_const_iterator;
-    typedef typename Arrangement_2::Inner_ccb_const_iterator
-    Inner_ccb_const_iterator;
-    typedef typename Arrangement_2::Isolated_vertex_const_iterator
-    Isolated_vertex_const_iterator;
-    
-    typedef typename Arrangement_2::Point_2             Point_2;
-    typedef typename Arrangement_2::X_monotone_curve_2  X_monotone_curve_2;
-
-
-    typedef Arr_traits_basic_adaptor_2<Geometry_traits_2>    Traits_adaptor_2;
-
-    // Data members:
-    const Arrangement_2     *p_arr;     // The associated arrangement.
-    const Traits_adaptor_2  *m_traits;  // Its associated traits object.
-    Generator               *lm_gen;    // The associated landmark generator.
-    bool                     own_gen;   // Indicates whether the generator
-    // has been locally allocated.
-
-    public:
-
-    /*! Default constructor. */
-    Arr_landmarks_point_location_no_construction (): 
-    p_arr (NULL),
-    m_traits (NULL),
-    lm_gen(NULL),
-    own_gen (false)
-    {}
-
-    /*! Constructor given an arrangement only. */
-    Arr_landmarks_point_location_no_construction (const Arrangement_2& arr) :
-    p_arr (&arr)
-    {
-      // Allocate the landmarks generator.
-      m_traits = static_cast<const Traits_adaptor_2*> (p_arr->geometry_traits());
-      lm_gen = new Generator(arr);
-      own_gen = true;
-    }
-
-    /*! Constructor given an arrangement, and landmarks generator. */
-    Arr_landmarks_point_location_no_construction (const Arrangement_2& arr, 
-                                      Generator *gen) :
-    p_arr (&arr),
-    lm_gen (gen),
-    own_gen (false)
-    {
-      m_traits = static_cast<const Traits_adaptor_2*> (p_arr->geometry_traits());
-    }
-
-    /*! Destructor. */
-    ~Arr_landmarks_point_location_no_construction () 
-    {
-      if (own_gen) 
-        delete lm_gen;
-    }
-   
-    /*! Attach an arrangement object (and a generator, if supplied). */
-    void attach (const Arrangement_2& arr, Generator *gen = NULL)
-    {
-      // Keep a pointer to the associated arrangement.
-      p_arr = &arr;
-      m_traits = static_cast<const Traits_adaptor_2*> (p_arr->geometry_traits());
-
-      // Update the landmarks generator.
-      if (gen != NULL)
-        {
-          // In case a generator is given, keep a pointer to it.
-          CGAL_assertion (lm_gen == NULL);
-          lm_gen = gen;
-          own_gen = false;
-        }
-      else if (lm_gen != NULL)
-        {
-          // In case a generator exists internally, make sure it is attached to
-          // the given arrangement.
-          Arrangement_2 &non_const_arr = const_cast<Arrangement_2&>(*p_arr);
-          lm_gen->attach(non_const_arr); 
-        }
-      else
-        {
-          // Allocate a new generator, attached to the given arrangement.
-          lm_gen = new Generator(arr);
-          own_gen = true;
-        }
-    }
-
-    /*! Detach the instance from the arrangement object. */
-    void detach () 
-    {
-      p_arr = NULL;
-      m_traits = NULL;
-
-      CGAL_assertion(lm_gen != NULL);
-      if (lm_gen)
-        lm_gen->detach();
-    }
-  
-    /*!
-     * Locate the arrangement feature containing the given point.
-     * \param p The query point.
-     * \return An object representing the arrangement feature containing the
-     *         query point. This object is either a Face_const_handle or a
-     *         Halfedge_const_handle or a Vertex_const_handle.
-     */
-    Object locate (const Point_2& p) const {
-      
       // generator is empty, start blind walk
       if(lm_gen->is_empty())
-        return _walk(p_arr->faces_begin(),p); 
+        return _walk_no_construction(p_arr->faces_begin(),p); 
       
       // Use the generator and to find the closest landmark to the query point.
       Object         lm_location_obj; 
@@ -201,14 +66,14 @@ namespace CGAL {
         CGAL_assertion_msg(vh->is_at_open_boundary() == false, "Generator is not allowed to generate a fictitious point");
          
         if(vh->is_isolated())
-          return _walk(vh->face(), p);
+          return _walk_no_construction(vh->face(), p);
         else
-          return _walk(vh->incident_halfedges()->face(),p);
+          return _walk_no_construction(vh->incident_halfedges()->face(),p);
       }
       else if (assign(eh, lm_location_obj))
-        return _walk(eh->face(),p);
+        return _walk_no_construction(eh->face(),p);
       else if (assign(fh, lm_location_obj))
-        return _walk(fh, p);
+        return _walk_no_construction(fh, p);
       
       // never reached 
       CGAL_assertion_msg (! lm_location_obj.is_empty(),
@@ -216,9 +81,6 @@ namespace CGAL {
       assert(false);
       return CGAL::Object(); 
     }
-    
-
-    protected:
     
     /** 
      * Returns a face to a specific direction of vh.
@@ -228,7 +90,10 @@ namespace CGAL {
      * 
      * @return Returns a face to a specific direction of vh.
      */
-    Face_const_handle _get_face_at_direction(Vertex_const_handle vh, CGAL::Comparison_result direction) const {
+    template <class Arr, class Gen, bool C>
+      typename Arr::Face_const_handle
+      Arr_landmarks_point_location<Arr, Gen, C>::
+      _get_face_at_direction(Vertex_const_handle vh, CGAL::Comparison_result direction) const {
       CGAL_precondition (direction != EQUAL);
 
       // if we want to move right, we first have to look at edges to our right.
@@ -261,11 +126,13 @@ namespace CGAL {
       else
         return left_ext_edge->twin()->face();
     }
-
-    CGAL::Object _walk(Face_const_handle fh, const Point_2& p) const {
-
-      CGAL_postcondition(!fh->is_fictitious());
     
+    template <class Arr, class Gen, bool C>
+      CGAL::Object Arr_landmarks_point_location<Arr, Gen, C>::
+      _walk_no_construction(Face_const_handle fh, const Point_2& p) const {
+      
+      CGAL_postcondition(!fh->is_fictitious());
+      
       // if querry is in xrange start vertical walk 
       // otherwise continue walk in x direction by selecting 
       // the x-extremal vertex 
@@ -310,22 +177,24 @@ namespace CGAL {
           compare_x(vmaxh, p) == SMALLER) {
         Face_const_handle next_f = _get_face_at_direction(vmaxh, LARGER);
         if (fh != next_f)
-          return _walk(next_f, p);
+          return _walk_no_construction(next_f, p);
       }
       
       if (vminh->parameter_space_in_x() == ARR_INTERIOR && 
           compare_x(p, vminh) == SMALLER) {
         Face_const_handle next_f = _get_face_at_direction(vminh, SMALLER);
         if (fh != next_f)
-          return _walk(next_f, p);
+          return _walk_no_construction(next_f, p);
       }
       
       return _vertical_walk(fh,p);
     }
-  
-    template<class OutputIterator>
-    OutputIterator _get_edges_in_x_range(Ccb_halfedge_const_circulator begin, 
-                                         const Point_2& p,OutputIterator oit) const {
+    
+    template <class Arr, class Gen, bool C>
+      template<class OutputIterator>
+      OutputIterator Arr_landmarks_point_location<Arr, Gen, C>::
+      _get_edges_in_x_range(Ccb_halfedge_const_circulator begin, 
+                            const Point_2& p,OutputIterator oit) const {
       Ccb_halfedge_const_circulator hec = begin;
       do {
         if (hec->is_fictitious() == false &&
@@ -334,13 +203,15 @@ namespace CGAL {
         }
         hec++;
       } while(hec != begin);
-    
+      
       return oit;
     }
-
-  
-    CGAL::Object _vertical_walk(Face_const_handle fh, const Point_2& p) const {
     
+  
+    template <class Arr, class Gen, bool C>
+      CGAL::Object Arr_landmarks_point_location<Arr, Gen, C>::
+      _vertical_walk(Face_const_handle fh, const Point_2& p) const {
+      
       CGAL_postcondition(!fh->is_fictitious());
     
       std::vector<Ccb_halfedge_const_circulator> edges;
@@ -427,7 +298,10 @@ namespace CGAL {
       return _check_isolated_vertices(fh, p);
     }
   
-    CGAL::Object _check_isolated_vertices(Face_const_handle fh, const Point_2& p) const{    
+    
+    template <class Arr, class Gen, bool C>
+      CGAL::Object Arr_landmarks_point_location<Arr, Gen, C>::
+      _check_isolated_vertices(Face_const_handle fh, const Point_2& p) const {
       for(Isolated_vertex_const_iterator vit = fh->isolated_vertices_begin();
           vit != fh->isolated_vertices_end();vit++){
         if(m_traits->compare_xy_2_object()(p,vit->point()) == EQUAL){
@@ -438,11 +312,15 @@ namespace CGAL {
     };
 
   
-    CGAL::Comparison_result compare_x(Point_2 p , Vertex_const_handle vh) const { 
+    template <class Arr, class Gen, bool C>
+      CGAL::Comparison_result Arr_landmarks_point_location<Arr, Gen, C>::
+      compare_x(Point_2 p , Vertex_const_handle vh) const { 
       return  CGAL::opposite(compare_x(vh,p));
     }
-  
-    CGAL::Comparison_result compare_x(Vertex_const_handle vh, Point_2 p) const {    
+    
+    template <class Arr, class Gen, bool C>
+      CGAL::Comparison_result Arr_landmarks_point_location<Arr, Gen, C>::
+      compare_x(Vertex_const_handle vh, Point_2 p) const {
       if(vh->parameter_space_in_x()==ARR_INTERIOR){
         if(vh->parameter_space_in_y() == ARR_INTERIOR){
           return m_traits->compare_x_2_object()(vh->point(),p);
@@ -459,7 +337,9 @@ namespace CGAL {
     }
   
     
-    CGAL::Comparison_result compare_x(Vertex_const_handle v1, Vertex_const_handle v2) const {
+    template <class Arr, class Gen, bool C>
+      CGAL::Comparison_result Arr_landmarks_point_location<Arr, Gen, C>::
+      compare_x(Vertex_const_handle v1, Vertex_const_handle v2) const {
 
       if(v1 == v2) return EQUAL;
     
@@ -501,7 +381,7 @@ namespace CGAL {
       if(v2->parameter_space_in_x() == ARR_RIGHT_BOUNDARY) return SMALLER;
       return LARGER;   
     }
-    };
+
 } //namespace CGAL
 
 

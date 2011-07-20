@@ -26,7 +26,6 @@
 #include <CGAL/Arr_simple_point_location.h>
 #include <CGAL/Arr_walk_along_line_point_location.h>
 #include <CGAL/Arr_landmarks_point_location.h>
-#include <CGAL/Arr_point_location/Arr_landmarks_point_location_no_construction.h>
 #include <CGAL/Arr_point_location/Arr_lm_random_generator.h>
 #include <CGAL/Arr_point_location/Arr_lm_grid_generator.h>
 #include <CGAL/Arr_point_location/Arr_lm_halton_generator.h>
@@ -75,20 +74,18 @@ typedef CGAL::Arr_landmarks_point_location<Arrangement_2, Specified_points_gener
                                                     Lm_specified_points_point_location;
 
 
-typedef CGAL::Arr_landmarks_point_location_no_construction<Arrangement_2> 
+typedef CGAL::Arr_landmarks_point_location<Arrangement_2, CGAL::Arr_landmarks_vertices_generator<Arrangement_2>, false>
                                                     Lm_point_location_no_c;
-typedef CGAL::Arr_landmarks_point_location_no_construction<Arrangement_2, Random_lm_generator> 
+typedef CGAL::Arr_landmarks_point_location<Arrangement_2, Random_lm_generator, false> 
                                                     Lm_random_point_location_no_c;
-typedef CGAL::Arr_landmarks_point_location_no_construction<Arrangement_2, Grid_lm_generator> 
+typedef CGAL::Arr_landmarks_point_location<Arrangement_2, Grid_lm_generator, false> 
                                                     Lm_grid_point_location_no_c;
-typedef CGAL::Arr_landmarks_point_location_no_construction<Arrangement_2, Halton_lm_generator> 
+typedef CGAL::Arr_landmarks_point_location<Arrangement_2, Halton_lm_generator, false> 
                                                     Lm_halton_point_location_no_c;
-typedef CGAL::Arr_landmarks_point_location_no_construction<Arrangement_2, Middle_edges_generator> 
+typedef CGAL::Arr_landmarks_point_location<Arrangement_2, Middle_edges_generator, false> 
                                                     Lm_middle_edges_point_location_no_c;
-typedef CGAL::Arr_landmarks_point_location_no_construction<Arrangement_2, Specified_points_generator> 
+typedef CGAL::Arr_landmarks_point_location<Arrangement_2, Specified_points_generator, false> 
                                                     Lm_specified_points_point_location_no_c;
-
-
 
 
 //typedef CGAL::Arr_triangulation_point_location<Arrangement_2> 
@@ -113,6 +110,7 @@ double run_pl (Points_list &plist, PL &pl, Out out) {
   timer.start(); //START
   for (Point_iterator piter = plist.begin(); piter != plist.end(); piter++) {
     CGAL::Object obj = pl.locate (*piter);
+    CGAL_assertion(obj.is_empty() == false);
     *out++ = obj;
   }
   timer.stop(); ///END

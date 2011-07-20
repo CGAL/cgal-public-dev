@@ -17,6 +17,8 @@
 //
 // Author(s)     : Idit Haran   <haranidi@post.tau.ac.il>
 //                 Ron Wein     <wein@post.tau.ac.il>
+//                 Michael Hemmer <hemmer@googlemail.com> 
+//                 Ophir Setter <ophir.setter@cs.tau.ac.il>
 #ifndef CGAL_ARR_LANDMARKS_POINT_LOCATION_H
 #define CGAL_ARR_LANDMARKS_POINT_LOCATION_H
 
@@ -28,24 +30,37 @@
 
 #include <CGAL/Arrangement_2/Arr_traits_adaptor_2.h>
 #include <CGAL/Arr_point_location/Arr_lm_vertices_generator.h>
+
+#include <boost/mpl/has_xxx.hpp>
+#include <boost/mpl/bool.hpp>
+#include <boost/mpl/logical.hpp>
+
 #include <set>
 
 namespace CGAL {
-
+  
 /*! \class Arr_landmarks_point_location
  * A class that answers point-location queries on an arrangement using the
  * landmarks algorithm, namely by locating the (approximately) nearest
  * landmark point to the qury point and walking from it toward the query
  * point.
+ * If the given geometry doesn't have a Construct_x_monotone_curve function, then
+ * the walk will be performed first horizontally and then vertically.
  * This class-template has two parameters:
  * Arrangement corresponds to an arrangement-on-surface instantiation.
  * Generator is a class that generates the set of landmarks.
+ * use_construction, allows the user to tell the landmarks to not use the 
+ * Construct_x_monotone_curve even it it exists.
  */
 
 template <class Arrangement_, 
-          class Generator_ = Arr_landmarks_vertices_generator<Arrangement_> >
+  class Generator_ = Arr_landmarks_vertices_generator<Arrangement_>,
+  bool use_construction = true >
 class Arr_landmarks_point_location
 {
+  /// The macro create an meta function that checks whether a traits has Construct_x_monotone_curve_2 type.
+  BOOST_MPL_HAS_XXX_TRAIT_DEF(Construct_x_monotone_curve_2);
+
 public:
 
   typedef Arrangement_                                Arrangement_2;
@@ -185,7 +200,44 @@ public:
    *         query point. This object is either a Face_const_handle or a
    *         Halfedge_const_handle or a Vertex_const_handle.
    */
-  Object locate (const Point_2& p) const;
+   Object locate (const Point_2& p) const {
+     
+     typedef typename has_Construct_x_monotone_curve_2<Geometry_traits_2>::type
+     Has_construct;
+     typedef boost::mpl::bool_<use_construction> Should_construct;
+
+     typename boost::mpl::and_<Has_construct, Should_construct>::type x;
+     return locate (p, x);
+   }
+
+
+   /** 
+    * Locates the arrangement feature using the Construct_x_monotone_curve 
+    * functor.
+    *
+    * @param p The point to locate
+    * @param true_ The true type meaning that the geometry traits has a 
+    *              Construct_x_monotone_curve_2 type.
+    *
+    * @return An object representing the arrangement feature containing the
+    *         query point.
+    */
+    Object locate (const Point_2& p, boost::mpl::true_) const;
+
+    /** 
+     * Locates the arrangement feature WITHOUT using the
+     * Construct_x_monotone_curve functor. It first walks horizontaly
+     * and then vertically, instead of walking diagonaly like when the 
+     * functor is present.
+     *
+     * @param p The point to locate.
+     * @param false_ The false type meaning that the geometry traits has NO 
+     *               Construct_x_monotone_curve_2 type.
+     * 
+     * @return An object representing the arrangement feature containing the
+     *         query point.
+     */
+     Object locate (const Point_2& p, boost::mpl::false_) const;
 
 protected:
 
@@ -316,11 +368,116 @@ protected:
                                  bool& p_on_curve,
                                  bool& cv_and_seg_overlap,
                                  bool& cv_is_contained_in_seg) const;
+
+
+/******************* FUNCTIONS FOR THE NO CONSTRUCTION VERSION ***************************************/
+
+    /** 
+     * Returns a face to a specific direction of vh.
+     * 
+     * @param vh The vertex.
+     * @param direction SMALLER - left, LARGER - right, EQUAL is not legal.
+     * 
+     * @return Returns a face to a specific direction of vh.
+     */
+     Face_const_handle _get_face_at_direction(Vertex_const_handle vh, CGAL::Comparison_result direction) const;
+
+
+     /** 
+      * Walks to the given point starting with given face. It first walks
+      * horizontally, and then vertically.
+      * 
+      * @param fh The face to start walk from.
+      * @param p The point to walk to.
+      * 
+      * @return An arrangement feature that contains the point p.
+      */
+      CGAL::Object _walk_no_construction(Face_const_handle fh, const Point_2& p) const;
+
+      /** 
+      * Output all the edges of the given ccb which are in the x range of 
+      * a given point.
+      * 
+      * @param begin The ccb to begin walking from.
+      * @param p The point on which the edges needs to be in the x-range of.
+      * @param oit Output iterator
+      * 
+      * @return Output iterator.
+      */
+      template<class OutputIterator>
+      OutputIterator _get_edges_in_x_range(Ccb_halfedge_const_circulator begin, 
+                                           const Point_2& p, OutputIterator oit) const;
+  
+      /** 
+       * Performs a vertical walk from a given face to a given point p.
+       * 
+       * @param fh The face to start walking from.
+       * @param p The point to walk to.
+       * 
+       * @return An arrangement feature that contains the point p.
+       */
+       CGAL::Object _vertical_walk(Face_const_handle fh, const Point_2& p) const;
+
+
+       /** 
+        * Checks whether the isolated vertices of a face are features that contain
+        * the given point.
+        * 
+        * @param fh The face to look into.
+        * @param p The query point
+        * 
+        * @return If a vertex if found that the vertex handle is return, otherwise 
+        * the face handle is returned.
+        */
+        CGAL::Object _check_isolated_vertices(Face_const_handle fh, const Point_2& p) const;
+
+       /** 
+        * Compares the x coordinate in parameter space of the point p and the vertex
+        * vh. The function also supports the cases where vh is no inside the 
+        * parameter space.
+        * 
+        * @param p The point to compare.
+        * @param vh The vertex to compare.
+        * 
+        * @return The comparison between the x coordinates in parameter space.
+        * @todo replace this function with a utility function.
+        */
+        CGAL::Comparison_result compare_x(Point_2 p , Vertex_const_handle vh) const;
+  
+       /** 
+        * Compares the x coordinate in parameter space of the point p and the vertex
+        * vh. The function also supports the cases where vh is no inside the 
+        * parameter space.
+        * 
+        * @param vh The vertex to compare.
+        * @param p The point to compare.
+        * 
+        * @return The comparison between the x coordinates in parameter space.
+        * @todo replace this function with a utility function.
+        */
+        CGAL::Comparison_result compare_x(Vertex_const_handle vh, Point_2 p) const;
+    
+
+       /** 
+        * Compares the x coordinate in parameter space of two vertices.
+        * The function also supports the cases where the vertices are not
+        * inside the parameter space.
+        * 
+        * @param v1 The first vertex to compare.
+        * @param v2 The second vertex to compare.
+        * 
+        * @return The comparison between the x coordinates in parameter space.
+        * @todo replace this function with a utility function.
+        */
+        CGAL::Comparison_result compare_x(Vertex_const_handle v1, Vertex_const_handle v2) const;
 };
 
 } //namespace CGAL
 
 // The member-function definitions can be found under:
 #include <CGAL/Arr_point_location/Arr_landmarks_pl_impl.h>
+
+// The member-functions for supporting the point location without the construct_x_monotone_curve are under:
+#include <CGAL/Arr_point_location/Arr_landmarks_pl_no_con_impl.h>
 
 #endif

@@ -31,9 +31,10 @@ namespace CGAL {
 //-----------------------------------------------------------------------------
 // Locate the arrangement feature containing the given point.
 //
-template <class Arr, class Gen>
-Object Arr_landmarks_point_location<Arr, Gen>::locate
-    (const Point_2& p) const
+template <class Arr, class Gen, bool C>
+Object Arr_landmarks_point_location<Arr, Gen, C>::locate
+  (const Point_2& p,
+   boost::mpl::true_) const
 {
   // If the arrangement is empty, return its initial (empty and 
   // non-fictitious) face.
@@ -116,8 +117,8 @@ Object Arr_landmarks_point_location<Arr, Gen>::locate
 //-----------------------------------------------------------------------------
 // Walk from a given vertex to the query point.
 //
-template <class Arr, class Gen>
-Object Arr_landmarks_point_location<Arr, Gen>::_walk_from_vertex
+template <class Arr, class Gen, bool C>
+  Object Arr_landmarks_point_location<Arr, Gen, C>::_walk_from_vertex
     (Vertex_const_handle nearest_vertex,
      const Point_2& p,
      Halfedge_set& crossed_edges) const
@@ -225,8 +226,8 @@ Object Arr_landmarks_point_location<Arr, Gen>::_walk_from_vertex
 // Locate an edge around a given vertex that is the predecessor of the curve
 // connecting the vertex to the query point in a clockwise order.
 // 
-template <class Arr, class Gen>
-Object Arr_landmarks_point_location<Arr, Gen>::_find_face_around_vertex
+template <class Arr, class Gen, bool C>
+Object Arr_landmarks_point_location<Arr, Gen, C>::_find_face_around_vertex
     (Vertex_const_handle vh,
      const Point_2& p, 
      bool& new_vertex) const
@@ -352,8 +353,8 @@ Object Arr_landmarks_point_location<Arr, Gen>::_find_face_around_vertex
 //-----------------------------------------------------------------------------
 // Walk from the edge to the query point.
 //
-template <class Arr, class Gen>
-Object Arr_landmarks_point_location<Arr, Gen>::_walk_from_edge
+template <class Arr, class Gen, bool C>
+Object Arr_landmarks_point_location<Arr, Gen, C>::_walk_from_edge
     (Halfedge_const_handle eh,
      const Point_2 & np,
      const Point_2 & p,
@@ -483,8 +484,8 @@ Object Arr_landmarks_point_location<Arr, Gen>::_walk_from_edge
 // In case the arrangement's curve contained in the segment 
 // from the nearest landmark to the query point
 //
-template <class Arr, class Gen>
-Object Arr_landmarks_point_location<Arr, Gen>::
+template <class Arr, class Gen, bool C>
+  Object Arr_landmarks_point_location<Arr, Gen, C>::
     _deal_with_curve_contained_in_segment
     (Halfedge_const_handle he,
      bool p_is_left,
@@ -529,8 +530,8 @@ Object Arr_landmarks_point_location<Arr, Gen>::
 //-----------------------------------------------------------------------------
 // Walk from the given face to the query point.
 //
-template <class Arr, class Gen>
-Object Arr_landmarks_point_location<Arr, Gen>::_walk_from_face
+template <class Arr, class Gen, bool C>
+Object Arr_landmarks_point_location<Arr, Gen, C>::_walk_from_face
     (Face_const_handle face,
      const Point_2& np,
      const Point_2& p,
@@ -659,9 +660,9 @@ Object Arr_landmarks_point_location<Arr, Gen>::_walk_from_face
 // Find a halfedge on the given CCB that intersects the given x-monotone
 // curve, connecting the current landmark to the query point.
 //
-template <class Arr, class Gen>
-typename Arr_landmarks_point_location<Arr, Gen>::Halfedge_const_handle
-Arr_landmarks_point_location<Arr, Gen>::_intersection_with_ccb
+template <class Arr, class Gen, bool C>
+typename Arr_landmarks_point_location<Arr, Gen, C>::Halfedge_const_handle
+Arr_landmarks_point_location<Arr, Gen, C>::_intersection_with_ccb
     (Ccb_halfedge_const_circulator circ,
      const X_monotone_curve_2& seg,
      const Point_2& p, bool p_is_left,
@@ -795,9 +796,9 @@ Arr_landmarks_point_location<Arr, Gen>::_intersection_with_ccb
 //-----------------------------------------------------------------------------
 // Return the halfedge that contains the query point.
 //
-template <class Arr, class Gen>
-typename Arr_landmarks_point_location<Arr, Gen>::Halfedge_const_handle
-Arr_landmarks_point_location<Arr, Gen>::_in_case_p_is_on_edge
+template <class Arr, class Gen, bool C>
+  typename Arr_landmarks_point_location<Arr, Gen, C>::Halfedge_const_handle
+Arr_landmarks_point_location<Arr, Gen, C>::_in_case_p_is_on_edge
     (Halfedge_const_handle he, Halfedge_set& crossed_edges,
      const Point_2 & p, bool & is_target) const
 {
@@ -829,8 +830,8 @@ Arr_landmarks_point_location<Arr, Gen>::_in_case_p_is_on_edge
 // Check whether the given curve intersects a simple segment, which connects
 // the current landmark to the query point, an odd number of times.
 //
-template <class Arr, class Gen>
-bool Arr_landmarks_point_location<Arr, Gen>::
+template <class Arr, class Gen, bool C>
+bool Arr_landmarks_point_location<Arr, Gen, C>::
 _have_odd_intersections (const X_monotone_curve_2& cv,
                          const X_monotone_curve_2& seg,
                          bool p_is_left,
