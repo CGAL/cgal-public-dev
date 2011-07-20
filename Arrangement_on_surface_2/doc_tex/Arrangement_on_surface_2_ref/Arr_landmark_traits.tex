@@ -8,8 +8,8 @@
 % ===========
 The concept \ccRefName{} refines the general traits concept by adding
 operations needed for the landmarks point-location strategy, namely ---
-approximating points and connecting points with a simple $x$-monotone
-curve.
+approximating points and (optionally) connecting points with a simple
+$x$-monotone curve.
 
 A model of this concept must define the \ccc{Approximate_number_type}, which
 is used to approximate the coordinates of \ccc{Point_2} instances. It is
@@ -22,17 +22,20 @@ recommended to define the approximated number type as the built-in
 \ccTypes
 % ======
 \ccNestedType{Approximate_number_type}%
-  {the number type used to approximate point coordinates.}
+  {The number type used to approximate point coordinates.}
 
 \ccHeading{Functor Types}
 % =======================
 \ccThree{Construct_x_monotone_curve_2}{}{\hspace*{14cm}}
 \ccThreeToTwo
 \ccNestedType{Approximate_2}%
-  {models the concept \ccc{ArrTraits::Approximate_2}.}
+  {Models the concept \ccc{ArrTraits::Approximate_2}.}
 
 \ccNestedType{Construct_x_monotone_curve_2}%
-  {models the concept \ccc{ArrTraits::ConstructXMonotoneCurve_2}.}
+  {Optional. If this type is defined, the walking strategy uses the
+  constructed curve to walk in its direction. If it is not defined
+  then walk started first horizontally and then vertically.
+  Models the concept \ccc{ArrTraits::ConstructXMonotoneCurve_2}.}
 
 \ccCreationVariable{traits}
 % \ccCreation
