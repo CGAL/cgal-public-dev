@@ -132,21 +132,6 @@ public:
 
   typedef Triangulation_simplex_3<Tds>             Simplex;
 
-// PESHO GSOC
-  template < class Cell_handle >
-      struct less_Cell_handle;
-  template < class Vertex_handle >
-      struct less_Vertex_handle;
-  template < class Edge, class Vertex_handle >
-      struct CUnoriented_edge;
-
-  typedef std::set< Cell_handle, less_Cell_handle<Cell_handle> > Cell_handle_set;
-  typedef std::set< Vertex_handle, less_Vertex_handle<Vertex_handle> > Vertex_handle_set;    
-
-  typedef CUnoriented_edge<Edge, Vertex_handle> Unoriented_edge;
-  typedef std::set<Unoriented_edge> Unoriented_edge_set;
-// PESHO END
-
 #ifndef CGAL_TDS_USE_OLD_CREATE_STAR_3
   //internally used for create_star_3 (faster than a tuple)
   struct iAdjacency_info{
@@ -465,36 +450,58 @@ public:
   }
 
   // PESHO GSOC
+  typedef std::list<Facet>			Facet_list;  
+
+  template < class Cell_handle >		struct less_Cell_handle;
+  template < class Vertex_handle >		struct less_Vertex_handle;
+  template < class Edge >			struct less_Edge;
+
+  typedef std::set< Cell_handle, less_Cell_handle<Cell_handle> > Cell_handle_set;
+  typedef std::set< Vertex_handle, less_Vertex_handle<Vertex_handle> > Vertex_handle_set;    
+  typedef std::set< Edge, less_Edge<Edge> > Edge_set;
+
 public:
   void collect_vertices_and_edges_from_link(Vertex_handle v,
                                               Vertex_handle_set& vertices,
-                                              Unoriented_edge_set& edges);
+                                              Edge_set& edges);
   void get_revolving_vertices(const Edge& edge, Vertex_handle_set& vertices); 
-  void get_revolving_uedges(const Edge& edge,
-                              Unoriented_edge_set& uedges);
+  void get_revolving_uedges(const Edge& edge, Edge_set& uedges);
 
-  Vertex_handle source_vertex(const Edge& edge);
-  Vertex_handle target_vertex(const Edge& edge);
+  Vertex_handle get_source_vertex(const Edge& edge) const;
+  Vertex_handle get_target_vertex(const Edge& edge) const;
   Edge get_twin_edge(const Edge& edge);
   Vertex_handle facet_vertex(Facet facet, int index);
 
   Vertex_handle get_any_other_vertex(Cell_handle cell,
-		Vertex_handle va, Vertex_handle vb);
+		Vertex_handle va, Vertex_handle vb) const;
   Vertex_handle get_remaining_vertex(Cell_handle cell,
-      		Vertex_handle va, Vertex_handle vb, Vertex_handle vc);
-  
+      		Vertex_handle va, Vertex_handle vb, Vertex_handle vc) const;
+
+  // NEW
+  Vertex_handle get_vertex_from_facet(const Facet& facet, int index) const;
+  void get_vertices_from_facet(const Facet& facet, Vertex_handle& va, Vertex_handle& vb, Vertex_handle& vc) const;
+ 
+  void get_vertices_from_edge_link(const Edge& edge, Vertex_handle_set& vertices) const;
+  void get_edges_from_edge_link(const Edge& edge, Edge_set& edges) const;
+  void get_vertices_from_vertex_link(Vertex_handle vertex, Vertex_handle_set& vertices) const;
+  void get_edges_from_vertex_link(Vertex_handle vertex, Edge_set& edges) const;
+  void get_facets_from_link(Vertex_handle vertex, Facet_list& hull, bool outward) const;
+  Facet get_twin_facet(const Facet& facet) const;
+
+  bool check_link_test(const Edge& edge, int verbose) const; 
+  bool check_link_test_for_vertices(const Edge& edge, int verbose) const;
+  bool check_link_test_for_edges(const Edge& edge, int verbose) const;
+
   // DEBUG
-  template< class Cont > void print_vertices(Cont S, std::string note);
-  template< class Cont > void print_cells(Cont S, std::string note);
+  template< class Cont > void print_vertices(const Cont S, std::string note) const;
+  template< class Cont > void print_edges(const Cont S, std::string note) const;
+  template< class Cont > void print_cells(const Cont S, std::string note) const;
   // END DEBUG
 
 public:
   bool collapse_edge(Edge& edge);
   bool is_top_collapsible(const Edge& edge);
   
-  bool is_edge_dummy(const Edge& edge);
-  bool is_edge_pinned(const Edge& edge);
-
   // PESHO END
 
   //INSERTION
