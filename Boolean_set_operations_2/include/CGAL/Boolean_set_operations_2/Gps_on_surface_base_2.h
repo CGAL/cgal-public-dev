@@ -150,11 +150,11 @@ protected:
   // the underlying arrangement
   Aos_2*        m_arr;
   
-	//define current total number of threads running
-	//used in _divide_and_conquer function to spawn new threads as long as there are still idle processors, but no more
-	#ifdef _OPENMP
-	int current_num_threads;
-	#endif
+    //define current total number of threads running
+    //used in _divide_and_conquer function to spawn new threads as long as there are still idle processors, but no more
+    #ifdef _OPENMP
+    int current_num_threads;
+    #endif
 
 public:
 
@@ -164,7 +164,7 @@ public:
                             m_traits_adaptor(*m_traits),
                             m_traits_owner(true),
                             m_arr(new Aos_2(m_traits)),
-							current_num_threads(1)
+                            current_num_threads(1)
   {}
   #else
   Gps_on_surface_base_2() : m_traits(new Traits_2()),
@@ -180,7 +180,7 @@ public:
                                         m_traits_adaptor(*m_traits),
                                         m_traits_owner(false),
                                         m_arr(new Aos_2(m_traits)),
-										current_num_threads(1)
+                                        current_num_threads(1)
   {}
   #else
   Gps_on_surface_base_2(Traits_2& tr) : m_traits(&tr),
@@ -196,7 +196,7 @@ public:
     m_traits_adaptor(*m_traits),
     m_traits_owner(true),
     m_arr(new Aos_2(*(ps.m_arr))),
-	current_num_threads(1)
+    current_num_threads(1)
   {}
   #else
   Gps_on_surface_base_2(const Self& ps) :
@@ -212,16 +212,16 @@ public:
     if (this == &ps)
       return (*this);
 
-	if (m_traits_owner)
-		delete m_traits;
-		
-	delete m_arr;
-	m_traits = new Traits_2(*(ps.m_traits));
-	m_traits_adaptor = CGAL::Arr_traits_adaptor_2<Traits_2>(*m_traits)
-	m_traits_owner = true;
-	m_arr = new Aos_2(*(ps.m_arr));
-	
-	return (*this);
+    if (m_traits_owner)
+        delete m_traits;
+        
+    delete m_arr;
+    m_traits = new Traits_2(*(ps.m_traits));
+    m_traits_adaptor = CGAL::Arr_traits_adaptor_2<Traits_2>(*m_traits)
+    m_traits_owner = true;
+    m_arr = new Aos_2(*(ps.m_arr));
+    
+    return (*this);
   }
 
 
@@ -256,10 +256,10 @@ public:
   //destructor
   virtual ~Gps_on_surface_base_2()
   {
-		delete m_arr;
-	
-		if (m_traits_owner)
-		  delete m_traits;
+        delete m_arr;
+    
+        if (m_traits_owner)
+          delete m_traits;
   }
 
   void simplify(const Polygon_2& pgn, Polygon_with_holes_2& res)
@@ -665,24 +665,24 @@ public:
  
     arr_vec[0].first = this->m_arr;
     unsigned int i;
-	InputIterator itr;
+    InputIterator itr;
 
-	//create a parallel region with number of threads set to value of OMP_NUM_THREADS environment variable
-	#ifdef _OPENMP
-	#pragma omp parallel private(itr,i) 
-	#endif	
-	{
-		for (itr = begin, i = 1; itr != end; ++itr, ++i)
-		{
-			#ifdef _OPENMP
-			#pragma omp single nowait
-			#endif	
-			{
-			  arr_vec[i].first = new Aos_2(m_traits);
-			  _insert(*itr, *(arr_vec[i].first));
-			}
-		}
-	} //end omp parallel
+    //create a parallel region with number of threads set to value of OMP_NUM_THREADS environment variable
+    #ifdef _OPENMP
+    #pragma omp parallel private(itr,i) 
+    #endif    
+    {
+        for (itr = begin, i = 1; itr != end; ++itr, ++i)
+        {
+            #ifdef _OPENMP
+            #pragma omp single nowait
+            #endif    
+            {
+              arr_vec[i].first = new Aos_2(m_traits);
+              _insert(*itr, *(arr_vec[i].first));
+            }
+        }
+    } //end omp parallel
 
     Join_merge<Aos_2> join_merge;
     _build_sorted_vertices_vectors (arr_vec);
@@ -702,24 +702,24 @@ public:
     arr_vec[0].first = this->m_arr;
  
     unsigned int i;
-	InputIterator itr;
-	
-	//create a parallel region with number of threads set to value of OMP_NUM_THREADS environment variable
-	#ifdef _OPENMP
-	#pragma omp parallel private(itr,i)
-	#endif	
-	{	
-		for (itr = begin,i = 1; itr!=end; ++itr, ++i)
-		{
-			#ifdef _OPENMP
-			#pragma omp single nowait
-			#endif	
-			{
-			  arr_vec[i].first = new Aos_2(m_traits);
-			  _insert(*itr, *(arr_vec[i].first));
-			}
-		}
-	} //end omp parallel
+    InputIterator itr;
+    
+    //create a parallel region with number of threads set to value of OMP_NUM_THREADS environment variable
+    #ifdef _OPENMP
+    #pragma omp parallel private(itr,i)
+    #endif    
+    {    
+        for (itr = begin,i = 1; itr!=end; ++itr, ++i)
+        {
+            #ifdef _OPENMP
+            #pragma omp single nowait
+            #endif    
+            {
+              arr_vec[i].first = new Aos_2(m_traits);
+              _insert(*itr, *(arr_vec[i].first));
+            }
+        }
+    } //end omp parallel
 
     Join_merge<Aos_2> join_merge;
     _build_sorted_vertices_vectors (arr_vec);
@@ -741,38 +741,38 @@ public:
  
     arr_vec[0].first = this->m_arr;
     unsigned int i;
-	InputIterator1 itr1;
-	InputIterator2 itr2;
-		
-	//create a parallel region with number of threads set to value of OMP_NUM_THREADS environment variable
-	#ifdef _OPENMP
-	#pragma omp parallel private(itr2,itr1,i) 
-	#endif	
-	{
-		for (itr1 = begin1,i = 1; itr1!=end1; ++itr1, ++i)
-		{
-			 #ifdef _OPENMP
-			#pragma omp single nowait
-			#endif	
-			{
-			  arr_vec[i].first = new Aos_2(m_traits);
-			  _insert(*itr1, *(arr_vec[i].first));
-			}
-		}
-	
-		for (itr2 = begin2,i = 1; itr2!=end2; ++itr2, ++i)
-		{
-			#ifdef _OPENMP
-			#pragma omp single nowait
-			#endif	
-			{
-			  arr_vec[i].first = new Aos_2(m_traits);
-			  _insert(*itr2, *(arr_vec[i].first));
-			}
-		}
-	} //end omp parallel
+    InputIterator1 itr1;
+    InputIterator2 itr2;
+        
+    //create a parallel region with number of threads set to value of OMP_NUM_THREADS environment variable
+    #ifdef _OPENMP
+    #pragma omp parallel private(itr2,itr1,i) 
+    #endif    
+    {
+        for (itr1 = begin1,i = 1; itr1!=end1; ++itr1, ++i)
+        {
+             #ifdef _OPENMP
+            #pragma omp single nowait
+            #endif    
+            {
+              arr_vec[i].first = new Aos_2(m_traits);
+              _insert(*itr1, *(arr_vec[i].first));
+            }
+        }
+    
+        for (itr2 = begin2,i = 1; itr2!=end2; ++itr2, ++i)
+        {
+            #ifdef _OPENMP
+            #pragma omp single nowait
+            #endif    
+            {
+              arr_vec[i].first = new Aos_2(m_traits);
+              _insert(*itr2, *(arr_vec[i].first));
+            }
+        }
+    } //end omp parallel
 
-	Join_merge<Aos_2> join_merge;
+    Join_merge<Aos_2> join_merge;
     _build_sorted_vertices_vectors (arr_vec);
     _divide_and_conquer(0, arr_vec.size()-1, arr_vec, k, join_merge);
 
@@ -804,25 +804,25 @@ public:
     std::vector<Arr_entry> arr_vec (std::distance(begin, end) + 1);
     arr_vec[0].first = this->m_arr;
     unsigned int i;
-	InputIterator itr;
-	
+    InputIterator itr;
+    
     //create a parallel region with number of threads set to value of OMP_NUM_THREADS environment variable
-	#ifdef _OPENMP
-	#pragma omp parallel private(itr,i)
-	#endif	
-	{
-		for (itr = begin,i = 1; itr!=end; ++itr, ++i)
-		{
-			#ifdef _OPENMP
-			#pragma omp single nowait
-			#endif	
-			{
-			  ValidationPolicy::is_valid((*itr), *m_traits);
-			  arr_vec[i].first = new Aos_2(m_traits);
-			  _insert(*itr, *(arr_vec[i].first));
-			}
-		}
-	} //end omp parallel
+    #ifdef _OPENMP
+    #pragma omp parallel private(itr,i)
+    #endif    
+    {
+        for (itr = begin,i = 1; itr!=end; ++itr, ++i)
+        {
+            #ifdef _OPENMP
+            #pragma omp single nowait
+            #endif    
+            {
+              ValidationPolicy::is_valid((*itr), *m_traits);
+              arr_vec[i].first = new Aos_2(m_traits);
+              _insert(*itr, *(arr_vec[i].first));
+            }
+        }
+    } //end omp parallel
     
     Intersection_merge<Aos_2> intersection_merge;
     _build_sorted_vertices_vectors (arr_vec);
@@ -841,26 +841,26 @@ public:
     std::vector<Arr_entry> arr_vec (std::distance(begin, end) + 1);
     arr_vec[0].first = this->m_arr;
     unsigned int i;
-	InputIterator itr;
-	
-	//create a parallel region with number of threads set to value of OMP_NUM_THREADS environment variable
-	#ifdef _OPENMP
-	#pragma omp parallel private(itr,i) 
-	#endif	
-	{	    
-		for (itr = begin,i = 1; itr!=end; ++itr, ++i)
-		{
-			#ifdef _OPENMP
-			#pragma omp single nowait
-			#endif	
-			{
-			  ValidationPolicy::is_valid((*itr), *m_traits);
-			  arr_vec[i].first = new Aos_2(m_traits);
-			  _insert(*itr, *(arr_vec[i].first));
-			}
-		}
+    InputIterator itr;
+    
+    //create a parallel region with number of threads set to value of OMP_NUM_THREADS environment variable
+    #ifdef _OPENMP
+    #pragma omp parallel private(itr,i) 
+    #endif    
+    {        
+        for (itr = begin,i = 1; itr!=end; ++itr, ++i)
+        {
+            #ifdef _OPENMP
+            #pragma omp single nowait
+            #endif    
+            {
+              ValidationPolicy::is_valid((*itr), *m_traits);
+              arr_vec[i].first = new Aos_2(m_traits);
+              _insert(*itr, *(arr_vec[i].first));
+            }
+        }
     } //end omp parallel
-	
+    
     Intersection_merge<Aos_2> intersection_merge;
     _build_sorted_vertices_vectors (arr_vec);
     _divide_and_conquer(0, arr_vec.size()-1, arr_vec, k, intersection_merge);
@@ -881,36 +881,36 @@ public:
     arr_vec[0].first = this->m_arr;
     unsigned int i;
     InputIterator1 itr1;
-	InputIterator2 itr2;
-	
-	//create a parallel region with number of threads set to value of OMP_NUM_THREADS environment variable
-	#ifdef _OPENMP
-	#pragma omp parallel private(itr2,itr1,i) 
-	#endif	
-	{	
-		for (itr1 = begin1,i = 1; itr1!=end1; ++itr1, ++i)
-		{
-			#ifdef _OPENMP
-			#pragma omp single nowait
-			#endif	
-			{
-			  ValidationPolicy::is_valid(*itr1, *m_traits);
-			  arr_vec[i].first = new Aos_2(m_traits);
-			  _insert(*itr1, *(arr_vec[i].first));
-			}
-		}
-		
-		for (itr2 = begin2,i = 1; itr2!=end2; ++itr2, ++i)
-		{
-			#ifdef _OPENMP
-			#pragma omp single nowait
-			#endif	
-			{
-			  ValidationPolicy::is_valid(*itr2,*m_traits);
-			  arr_vec[i].first = new Aos_2(m_traits);
-			  _insert(*itr2, *(arr_vec[i].first));
-			}
-		}
+    InputIterator2 itr2;
+    
+    //create a parallel region with number of threads set to value of OMP_NUM_THREADS environment variable
+    #ifdef _OPENMP
+    #pragma omp parallel private(itr2,itr1,i) 
+    #endif    
+    {    
+        for (itr1 = begin1,i = 1; itr1!=end1; ++itr1, ++i)
+        {
+            #ifdef _OPENMP
+            #pragma omp single nowait
+            #endif    
+            {
+              ValidationPolicy::is_valid(*itr1, *m_traits);
+              arr_vec[i].first = new Aos_2(m_traits);
+              _insert(*itr1, *(arr_vec[i].first));
+            }
+        }
+        
+        for (itr2 = begin2,i = 1; itr2!=end2; ++itr2, ++i)
+        {
+            #ifdef _OPENMP
+            #pragma omp single nowait
+            #endif    
+            {
+              ValidationPolicy::is_valid(*itr2,*m_traits);
+              arr_vec[i].first = new Aos_2(m_traits);
+              _insert(*itr2, *(arr_vec[i].first));
+            }
+        }
     }
     Intersection_merge<Aos_2> intersection_merge;
     _build_sorted_vertices_vectors (arr_vec);
@@ -946,26 +946,26 @@ public:
     std::vector<Arr_entry> arr_vec (std::distance(begin, end) + 1);
     arr_vec[0].first = this->m_arr;
     unsigned int i = 1;
-	InputIterator itr;
-	
-	
-	//create a parallel region with number of threads set to value of OMP_NUM_THREADS environment variable
-	#ifdef _OPENMP
-	#pragma omp parallel private(itr,i) 
-	#endif	
-	{    
-		for (itr = begin; itr!=end; ++itr, ++i)
-		{
-			#ifdef _OPENMP
-			#pragma omp single nowait
-			#endif	
-			{
-			  ValidationPolicy::is_valid(*itr,*m_traits);
-			  arr_vec[i].first = new Aos_2(m_traits);
-			  _insert(*itr, *(arr_vec[i].first));
-			}
-		}
-	} //end omp parallel
+    InputIterator itr;
+    
+    
+    //create a parallel region with number of threads set to value of OMP_NUM_THREADS environment variable
+    #ifdef _OPENMP
+    #pragma omp parallel private(itr,i) 
+    #endif    
+    {    
+        for (itr = begin; itr!=end; ++itr, ++i)
+        {
+            #ifdef _OPENMP
+            #pragma omp single nowait
+            #endif    
+            {
+              ValidationPolicy::is_valid(*itr,*m_traits);
+              arr_vec[i].first = new Aos_2(m_traits);
+              _insert(*itr, *(arr_vec[i].first));
+            }
+        }
+    } //end omp parallel
     
     Xor_merge<Aos_2> xor_merge;
     _build_sorted_vertices_vectors (arr_vec);
@@ -984,25 +984,25 @@ public:
     std::vector<Arr_entry> arr_vec (std::distance(begin, end) + 1);
     arr_vec[0].first = this->m_arr;
     unsigned int i = 1;
-	InputIterator itr;
-	
-	//create a parallel region with number of threads set to value of OMP_NUM_THREADS environment variable
-	#ifdef _OPENMP
-	#pragma omp parallel private(itr,i)
-	#endif
-	{
-		for (itr = begin; itr!=end; ++itr, ++i)
-		{
-			#ifdef _OPENMP
-			#pragma omp single nowait
-			#endif	
-			{
-			  ValidationPolicy::is_valid(*itr,*m_traits);
-			  arr_vec[i].first = new Aos_2(m_traits);
-			  _insert(*itr, *(arr_vec[i].first));
-			}
-		}
-	} //end omp parallel
+    InputIterator itr;
+    
+    //create a parallel region with number of threads set to value of OMP_NUM_THREADS environment variable
+    #ifdef _OPENMP
+    #pragma omp parallel private(itr,i)
+    #endif
+    {
+        for (itr = begin; itr!=end; ++itr, ++i)
+        {
+            #ifdef _OPENMP
+            #pragma omp single nowait
+            #endif    
+            {
+              ValidationPolicy::is_valid(*itr,*m_traits);
+              arr_vec[i].first = new Aos_2(m_traits);
+              _insert(*itr, *(arr_vec[i].first));
+            }
+        }
+    } //end omp parallel
     
     Xor_merge<Aos_2> xor_merge;
     _build_sorted_vertices_vectors (arr_vec);
@@ -1023,37 +1023,37 @@ public:
                                     std::distance(begin2, end2)+1);
     arr_vec[0].first = this->m_arr;
     unsigned int i = 1;
-	InputIterator1 itr1;
-	InputIterator2 itr2;
-	
-	//create a parallel region with number of threads set to value of OMP_NUM_THREADS environment variable
-	#ifdef _OPENMP
-	#pragma omp parallel private(itr2,itr1,i) 
-	#endif	
-	{    
-		for (itr1 = begin1; itr1!=end1; ++itr1, ++i)
-		{
-			#ifdef _OPENMP
-			#pragma omp single nowait
-			#endif	
-			{
-			  ValidationPolicy::is_valid(*itr1, *m_traits);
-			  arr_vec[i].first = new Aos_2(m_traits);
-			  _insert(*itr1, *(arr_vec[i].first));
-			}
-		}
-		
-		for (itr2 = begin2; itr2!=end2; ++itr2, ++i)
-		{
-			#ifdef _OPENMP
-			#pragma omp single nowait
-			#endif	
-			{
-			  ValidationPolicy::is_valid(*itr2, *m_traits);
-			  arr_vec[i].first = new Aos_2(m_traits);
-			  _insert(*itr2, *(arr_vec[i].first));
-			}
-		}
+    InputIterator1 itr1;
+    InputIterator2 itr2;
+    
+    //create a parallel region with number of threads set to value of OMP_NUM_THREADS environment variable
+    #ifdef _OPENMP
+    #pragma omp parallel private(itr2,itr1,i) 
+    #endif    
+    {    
+        for (itr1 = begin1; itr1!=end1; ++itr1, ++i)
+        {
+            #ifdef _OPENMP
+            #pragma omp single nowait
+            #endif    
+            {
+              ValidationPolicy::is_valid(*itr1, *m_traits);
+              arr_vec[i].first = new Aos_2(m_traits);
+              _insert(*itr1, *(arr_vec[i].first));
+            }
+        }
+        
+        for (itr2 = begin2; itr2!=end2; ++itr2, ++i)
+        {
+            #ifdef _OPENMP
+            #pragma omp single nowait
+            #endif    
+            {
+              ValidationPolicy::is_valid(*itr2, *m_traits);
+              arr_vec[i].first = new Aos_2(m_traits);
+              _insert(*itr2, *(arr_vec[i].first));
+            }
+        }
     } //end omp parallel
     Xor_merge<Aos_2> xor_merge;
     _build_sorted_vertices_vectors (arr_vec);
@@ -1117,111 +1117,111 @@ protected:
 
   void _complement(Aos_2* arr)
   {
-	Face_iterator fit;
-	Edge_iterator eit;
-	Halfedge_handle he;
-	Construct_opposite_2 ctr_opp;
+    Face_iterator fit;
+    Edge_iterator eit;
+    Halfedge_handle he;
+    Construct_opposite_2 ctr_opp;
 
-	for (fit = arr->faces_begin();
-		 fit != arr->faces_end();
-		 ++fit)
-	{
-		fit->set_contained(!fit->contained());
-	}
-		
-	ctr_opp = m_traits->construct_opposite_2_object();
-		
-	for (eit = arr->edges_begin();
-		 eit != arr->edges_end();
-		 ++eit)
-	{
-		he = eit;
-		const X_monotone_curve_2& cv = he->curve();
-		arr->modify_edge(he, ctr_opp(cv));
-		
-	}
+    for (fit = arr->faces_begin();
+         fit != arr->faces_end();
+         ++fit)
+    {
+        fit->set_contained(!fit->contained());
+    }
+        
+    ctr_opp = m_traits->construct_opposite_2_object();
+        
+    for (eit = arr->edges_begin();
+         eit != arr->edges_end();
+         ++eit)
+    {
+        he = eit;
+        const X_monotone_curve_2& cv = he->curve();
+        arr->modify_edge(he, ctr_opp(cv));
+        
+    }
   }
 
   //fix the directions of the curves (given correct marked face)
   // it should be called mostly after  symmetric_difference.
   void _fix_curves_direction(Aos_2& arr)
   {
-	Edge_iterator eit;	
+    Edge_iterator eit;    
 
-	Compare_endpoints_xy_2 cmp_endpoints =
-	arr.geometry_traits()->compare_endpoints_xy_2_object();
-			
-	Construct_opposite_2 ctr_opp = 
-	arr.geometry_traits()->construct_opposite_2_object();
-	
-	//create a parallel region with number of threads set to value of OMP_NUM_THREADS environment variable
-	#ifdef _OPENMP
-	#pragma omp parallel private(eit) 
-	#endif
-	{			
-		for (eit = arr.edges_begin();
-			 eit != arr.edges_end();
-			 ++eit)
-		{
-			#ifdef _OPENMP
-			#pragma omp single nowait
-			#endif
-			{
-			  Halfedge_handle            he = eit;
-			  const X_monotone_curve_2&  cv = he->curve();
-			  const bool                 is_cont = he->face()->contained();
-			  const Comparison_result    he_res = 
-				((Arr_halfedge_direction)he->direction() == ARR_LEFT_TO_RIGHT) ?
-				SMALLER : LARGER;
-			  const bool                 has_same_dir = (cmp_endpoints(cv) == he_res);
-			  
-			  if ((is_cont && !has_same_dir) || (!is_cont && has_same_dir)) {
-				arr.modify_edge(he, ctr_opp(cv));
-			  }
-			}
-		}
-	} //end omp parallel
+    Compare_endpoints_xy_2 cmp_endpoints =
+    arr.geometry_traits()->compare_endpoints_xy_2_object();
+            
+    Construct_opposite_2 ctr_opp = 
+    arr.geometry_traits()->construct_opposite_2_object();
+    
+    //create a parallel region with number of threads set to value of OMP_NUM_THREADS environment variable
+    #ifdef _OPENMP
+    #pragma omp parallel private(eit) 
+    #endif
+    {            
+        for (eit = arr.edges_begin();
+             eit != arr.edges_end();
+             ++eit)
+        {
+            #ifdef _OPENMP
+            #pragma omp single nowait
+            #endif
+            {
+              Halfedge_handle            he = eit;
+              const X_monotone_curve_2&  cv = he->curve();
+              const bool                 is_cont = he->face()->contained();
+              const Comparison_result    he_res = 
+                ((Arr_halfedge_direction)he->direction() == ARR_LEFT_TO_RIGHT) ?
+                SMALLER : LARGER;
+              const bool                 has_same_dir = (cmp_endpoints(cv) == he_res);
+              
+              if ((is_cont && !has_same_dir) || (!is_cont && has_same_dir)) {
+                arr.modify_edge(he, ctr_opp(cv));
+              }
+            }
+        }
+    } //end omp parallel
   }
 
   void _build_sorted_vertices_vectors (std::vector<Arr_entry>& arr_vec)
   {
     
-	//create a parallel region with number of threads set to value of OMP_NUM_THREADS environment variable
-	#ifdef _OPENMP
-	#pragma omp parallel 
-	#endif
-	{	
+    //create a parallel region with number of threads set to value of OMP_NUM_THREADS environment variable
+    #ifdef _OPENMP
+    #pragma omp parallel 
+    #endif
+    {    
 
-		Less_vertex_handle    comp (m_traits->compare_xy_2_object());
-		Aos_2                 *p_arr;
-		Vertex_iterator       vit;
-		const std::size_t     n = arr_vec.size();
-		std::size_t           i, j;
+        Less_vertex_handle    comp (m_traits->compare_xy_2_object());
+        Aos_2                 *p_arr;
+        Vertex_iterator       vit;
+        const std::size_t     n = arr_vec.size();
+        std::size_t           i, j;
 
-		for (i = 0; i < n; i++)
-		{
-		  	#ifdef _OPENMP
-			#pragma omp single nowait
-			#endif
-			{		  
-			  // Allocate a vector of handles to all vertices in the current
-			  // arrangement.
-			  p_arr = arr_vec[i].first;
-			  arr_vec[i].second = new std::vector<Vertex_handle>;
-			  arr_vec[i].second->resize (p_arr->number_of_vertices());
-			  
-			  for (j = 0, vit = p_arr->vertices_begin();
-				   vit != p_arr->vertices_end();
-				   j++, ++vit)
-			  {
-				(*(arr_vec[i].second))[j] = vit;
-			  }
-			  
-			  // Sort the vector.
-			  std::sort (arr_vec[i].second->begin(), arr_vec[i].second->end(), comp);
-			}
-		}
-	}
+        for (i = 0; i < n; i++)
+        {
+              #ifdef _OPENMP
+            #pragma omp single nowait
+            #endif
+            {          
+              // Allocate a vector of handles to all vertices in the current
+              // arrangement.
+              p_arr = arr_vec[i].first;
+              arr_vec[i].second = new std::vector<Vertex_handle>;
+              arr_vec[i].second->resize (p_arr->number_of_vertices());
+              
+              for (j = 0, vit = p_arr->vertices_begin();
+                   vit != p_arr->vertices_end();
+                   j++, ++vit)
+              {
+                (*(arr_vec[i].second))[j] = vit;
+              }
+              
+              // Sort the vector.
+              std::sort (arr_vec[i].second->begin(), arr_vec[i].second->end(), comp);
+            }
+        }
+    }
   }
   
    template <class Merge>
@@ -1229,7 +1229,7 @@ protected:
                             std::vector<Arr_entry>& arr_vec,
                             unsigned int k, Merge merge_func)
   {
-	
+    
     if ((upper - lower) < k)
     {
       merge_func(lower, upper, 1, arr_vec);
@@ -1237,41 +1237,44 @@ protected:
     }
 
     unsigned int sub_size = ((upper - lower + 1) / k);
-	int curr_lower;
-	
-	#ifdef _OPENMP
-	if(current_num_threads < omp_get_max_threads())
-	{
-		#pragma omp atomic
-		current_num_threads += (omp_get_max_threads() - 1);
-		
-		#pragma omp parallel 
-		{
-			#pragma omp for
-			for(curr_lower = lower; curr_lower < (lower + ((k - 1) * sub_size)); curr_lower += sub_size)
-			{
-				 _divide_and_conquer(curr_lower, curr_lower + sub_size-1, arr_vec, k,
-									  merge_func);
-			}
-		} // end omp parallel
-		
-		current_num_threads -= (omp_get_max_threads() - 1);
-		curr_lower = lower + ((k - 1) * sub_size);
-		_divide_and_conquer (curr_lower, upper,arr_vec, k, merge_func);
-
-	} //end if
-	else	
-	#endif
-	{		
-		curr_lower = lower;
-		for (unsigned int i = 0; i<k-1; ++i, curr_lower += sub_size )
-		{
-		  _divide_and_conquer(curr_lower, curr_lower + sub_size-1, arr_vec, k,
-							  merge_func);
-		}
-		_divide_and_conquer (curr_lower, upper,arr_vec, k, merge_func);
-	}
-	
+    int curr_lower;
+    
+    #ifdef _OPENMP
+    if(current_num_threads < omp_get_max_threads())
+    {
+        #pragma omp atomic
+        current_num_threads += (omp_get_max_threads() - 1);
+        
+        #pragma omp parallel private(curr_lower)
+        {
+            #pragma omp for
+            for (int i = 0; i < k; ++i) {
+                curr_lower = lower + i * sub_size;
+                int curr_upper = (i < (k - 1)) ? curr_lower + sub_size - 1 : upper;
+ 
+                _divide_and_conquer(curr_lower, curr_upper, arr_vec, k,
+                          merge_func);
+            }
+          
+        } // end omp parallel
+        
+        current_num_threads -= (omp_get_max_threads() - 1);
+        curr_lower = lower + ((k - 1) * sub_size);
+    } //end if
+    else    
+    #endif
+    {        
+        curr_lower = lower;
+        for (unsigned int i = 0; i < k; ++i, curr_lower += sub_size )
+        {
+            int curr_upper = (i < (k - 1)) ? curr_lower + sub_size - 1 : upper;
+ 
+            _divide_and_conquer(curr_lower, curr_upper, arr_vec, k,
+                          merge_func);
+        }
+        curr_lower = lower + ((k - 1) * sub_size);
+    }
+    
     merge_func (lower, curr_lower, sub_size ,arr_vec);
     
     return;
@@ -1286,22 +1289,22 @@ protected:
   void _reset_faces(Aos_2* arr) const
   {
     Face_const_iterator fit;
-	
-	//create a parallel region with number of threads set to value of OMP_NUM_THREADS environment variable
-	#ifdef _OPENMP
-	#pragma omp parallel private(fit) 
-	#endif
-	{	
-		for ( fit = arr->faces_begin(); fit != arr->faces_end(); ++fit)
-		{
-			#ifdef _OPENMP
-			#pragma omp single nowait
-			#endif
-			{
-				fit->set_visited(false);
-			}
-		}
-	} //end omp parallel
+    
+    //create a parallel region with number of threads set to value of OMP_NUM_THREADS environment variable
+    #ifdef _OPENMP
+    #pragma omp parallel private(fit) 
+    #endif
+    {    
+        for ( fit = arr->faces_begin(); fit != arr->faces_end(); ++fit)
+        {
+            #ifdef _OPENMP
+            #pragma omp single nowait
+            #endif
+            {
+                fit->set_visited(false);
+            }
+        }
+    } //end omp parallel
   }
 
 
@@ -1453,12 +1456,12 @@ protected:
       Face_iterator fit;
       // Even in an empty arrangement there can be several faces
       // (because of the topology traits).
-	  for (fit = this->m_arr->faces_begin();
-			fit != this->m_arr->faces_end(); ++fit)
-	  {
-			fit->set_contained(true);
-	  }
-		
+      for (fit = this->m_arr->faces_begin();
+            fit != this->m_arr->faces_end(); ++fit)
+      {
+            fit->set_contained(true);
+      }
+        
       return;
     }
     if (this->is_empty())
@@ -1486,13 +1489,13 @@ protected:
       Face_iterator fit;
       // Even in an empty arrangement there can be several faces
       // (because of the topology traits).
-	  for (fit = this->m_arr->faces_begin();
-		  fit != this->m_arr->faces_end(); ++fit)
+      for (fit = this->m_arr->faces_begin();
+          fit != this->m_arr->faces_end(); ++fit)
      {
-		fit->set_contained(true);
-	  
-	 }
-	  return;
+        fit->set_contained(true);
+      
+     }
+      return;
     }
     if (this->is_empty())
     {
