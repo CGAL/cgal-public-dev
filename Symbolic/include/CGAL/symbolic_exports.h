@@ -2,6 +2,11 @@
 #ifndef CGAL_SYMBOLIC_EXPORTS_H
 #define CGAL_SYMBOLIC_EXPORTS_H
 
+#if (defined CGAL_USE_GPU) || (defined CGAL_USE_NTL)
+#warning Switching off CGAL`s modular filter !!
+#define CGAL_MODULAR_FILTER_OFF     // do not use modular filter
+#endif
+
 #include <CGAL/config.h>
 #include <CGAL/Arithmetic_kernel.h>
 #include <CGAL/Polynomial.h>
@@ -10,8 +15,6 @@
 #include <NTL/ZZX.h>
 #include <NTL/ZZXFactoring.h>
 #endif 
-
-#define CGAL_MODULAR_FILTER_OFF     // do not use modular filter
 
 #if (defined CGAL_USE_GPU)
 #include <CGAL/GPU_algorithms/GPU_algorithm_facade.h>
