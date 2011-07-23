@@ -29,6 +29,8 @@
 #include <CGAL/Algebraic_kernel_d_1.h>
 #include <CGAL/Algebraic_kernel_d_1_generator.h>*/
 
+// #define STILL_ALIVE std::cout << __LINE__ << "\n";
+
 namespace CGAL {
 
 namespace internal {
@@ -340,9 +342,6 @@ void compute_resultant_bounds(
         Bigfloat_interval BFI;
 
     typedef typename CGAL::Bigfloat_interval_traits< BFI >::Bound BigFloat;
-    // use low precision for estimates
-    long oldp = CGAL::set_precision(BFI(), 53);
-
     typename Real_embeddable_extension< BigFloat >::Ceil_log2_abs log2_abs;
 
     unsigned n = f.degree(), m = g.degree(), i, j, k;
@@ -356,25 +355,26 @@ void compute_resultant_bounds(
     unsigned cols_min_deg(0);
     unsigned rows_deg(0), cols_deg(0), degx_f(0), degx_g(0);
 
+// use low precision for estimates
+    t = CGAL::upper(CGAL::convert_to_bfi(NT(1)));
+    long oldp = CGAL::set_precision(BFI(), 64);    
+
     unsigned t_degf(0), t_degg(0); // total degrees of f/g
     for(i = 0; i <= n; i++) {
         const CGAL::Polynomial< NT >& poly = f[i];
         degx_f = std::max(degx_f, (unsigned)poly.degree());
-
         t_degf = std::max(t_degf, i + poly.degree());
 
         NT cf(0);
         for(k = poly.degree(); (int)k >= 0 ; k--) {
             cf += CGAL::abs(poly[k]);
-//             if(poly[k] != NT(0))
-//                 deg2 = std::min(deg2, k);
         }
         t = CGAL::upper(CGAL::convert_to_bfi(cf)), s += t * t;
         sum_f[i] = t;
     }
+
     rows_bits = log2_abs(s) * m; // the # of bits in fp-number
     rows_deg = degx_f * m;
-
     s = 0;
     for(i = 0; i <= m; i++) {
         const CGAL::Polynomial< NT >& poly = g[i];
@@ -397,7 +397,6 @@ void compute_resultant_bounds(
         if((int)k < 0) {
             j -= k, k = 0;
         }
-
         for(; j < m && k <= n; j++, k++) {
             const CGAL::Polynomial< NT >& poly = f[k];
             deg = std::max(deg, (unsigned)poly.degree());
@@ -434,7 +433,6 @@ void compute_resultant_bounds(
         cols_deg += deg;
         cols_min_deg += deg2;
     }
-
     rows_deg = std::min(rows_deg, cols_deg);
     rows_bits = std::min(rows_bits, cols_bits) / 2;
 
@@ -446,7 +444,6 @@ void compute_resultant_bounds(
     rows_deg = std::min(rows_deg, new_deg);
 
     CGAL::set_precision(BFI(), oldp);
-
     printf("resultant bounds: degree = %d; height = %d\n\n",
             rows_deg, rows_bits);
 
