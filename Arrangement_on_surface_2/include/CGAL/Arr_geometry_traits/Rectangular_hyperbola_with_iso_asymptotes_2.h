@@ -22,8 +22,8 @@
 #define CGAL_RECTANGULAR_HYPERBOLA_WITH_ISO_ASYMPTOTES_2_H
 
 /*! \file
- * A header file for the class templates that represent general and arbitrary
- * rectangular hyperbola with vertical and horizontal asymptotes.
+ * A header file for the class templates that represents a general and an
+ * arbitrary rectangular hyperbola with vertical and horizontal asymptotes.
  */
 
 #include <CGAL/Arr_geometry_traits/Sqrt_extension_point_2.h>
