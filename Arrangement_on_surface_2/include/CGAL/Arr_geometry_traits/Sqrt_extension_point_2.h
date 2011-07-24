@@ -46,7 +46,7 @@ class Sqrt_extension_point_2_rep {
 public:
   typedef NumberType_                                   NT;
   typedef Sqrt_extension_point_2_rep<NT, Filter_>       Self;
-  typedef CGAL::Sqrt_extension<NT, NT, Tag_true, Boolean_tag<Filter_> >
+  typedef Sqrt_extension<NT, NT, Tag_true, Boolean_tag<Filter_> >
                                                         Coord_NT;
 
 private:
@@ -55,7 +55,7 @@ private:
 
 public:
   /*! Default constructor. */
-  Sqrt_extension_point_2_rep () : m_x(0), m_y(0) {}
+  Sqrt_extension_point_2_rep() : m_x(0), m_y(0) {}
 
   /*! Constructor of a point with one-root coefficients. 
      This constructor of a point can also be used with rational coefficients
