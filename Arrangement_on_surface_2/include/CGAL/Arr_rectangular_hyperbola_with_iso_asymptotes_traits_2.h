@@ -44,14 +44,16 @@ template <typename Kernel_, typename Filter_ = true>
 class Arr_rectangular_hyperbola_with_iso_asymptotes_traits_2 {
 public:
   typedef Kernel_                                     Kernel;
+  typedef Filter_                                     Filter;
+  
   typedef typename Kernel::FT                         NT;
   typedef typename Kernel::Point_2                    Rational_point_2;
   typedef typename Kernel::Segment_2                  Rational_segment_2;
-  typedef CGAL::Sqrt_extension_point_2<NT, Filter_>   Point_2;
+  typedef Sqrt_extension_point_2<NT, Filter>          Point_2;
   typedef typename Point_2::Coord_NT                  Coord_NT;
-  typedef X_monotone_rectangular_hyperbola_with_iso_asymptotes_2<Kernel, Filter_>
+  typedef X_monotone_rectangular_hyperbola_with_iso_asymptotes_2<Kernel, Filter>
                                                       X_monotone_curve_2;
-  typedef Rectangular_hyperbola_with_iso_asymptotes_2<Kernel, Filter_>
+  typedef Rectangular_hyperbola_with_iso_asymptotes_2<Kernel, Filter>
                                                       Curve_2;
 
   // Category tags:
@@ -64,8 +66,8 @@ public:
   typedef Arr_open_side_tag                           Arr_top_side_category;
   typedef Arr_open_side_tag                           Arr_right_side_category;
   
-  typedef typename Kernel::Line_2         Line_2;
-  typedef typename Kernel::Segment_2      Segment_2;
+  typedef typename Kernel::Line_2                     Line_2;
+  typedef typename Kernel::Segment_2                  Segment_2;
 
 public:
 
@@ -132,7 +134,8 @@ public:
      */
     const Point_2& operator()(const X_monotone_curve_2& cv) const
     {
-       //TODO: ASAFP
+      // CGAL_precondition();
+       //TODO
     }
   };
 
@@ -141,8 +144,7 @@ public:
   { return Construct_min_vertex_2(); }
 
   /*! A functor that obtains the right endpoint of a segment or a ray. */
-  class Construct_max_vertex_2
-  {
+  class Construct_max_vertex_2 {
   public:
     /*!
      * Get the right endpoint of the x-monotone curve.
@@ -161,18 +163,15 @@ public:
   { return Construct_max_vertex_2(); }
 
   /*! A functor that checks whether a given linear curve is vertical. */
-  class Is_vertical_2
-  {
+  class Is_vertical_2 {
   public:
     /*!
-     * Check whether the given x-monotone curve is a vertical segment.
+     * Checks whether the given x-monotone curve is a vertical segment.
      * \param cv The curve.
      * \return (true) if the curve is a vertical segment; (false) otherwise.
      */
     bool operator()(const X_monotone_curve_2& cv) const
-     {
-        //TOOD // ASAFP
-    }
+    { return cv.is_vertical(); }
   };
 
   /*! Obtain an Is_vertical_2 functor object. */
@@ -238,8 +237,7 @@ public:
   /*! A functor that compares compares the y-coordinates of two linear
    * curves immediately to the left of their intersection point.
    */
-  class Compare_y_at_x_left_2
-  {
+  class Compare_y_at_x_left_2 {
   public:
     /*!
      * Compare the y value of two x-monotone curves immediately to the left
@@ -295,8 +293,7 @@ public:
   /*! A functor that compares compares the y-coordinates of two linear
    * curves immediately to the right of their intersection point.
    */
-  class Compare_y_at_x_right_2
-  {
+  class Compare_y_at_x_right_2 {
   public:
     /*!
      * Compare the y value of two x-monotone curves immediately to the right
@@ -351,8 +348,7 @@ public:
   /*! A functor that checks whether two points and two linear curves are
    * identical.
    */
-  class Equal_2
-  {
+  class Equal_2 {
   public:
     /*!
      * Check whether the two x-monotone curves are the same (have the same
@@ -364,33 +360,8 @@ public:
     bool operator()(const X_monotone_curve_2& cv1,
                     const X_monotone_curve_2& cv2) const
     {
-      // CGAL_precondition (! cv1.is_degenerate());
-      // CGAL_precondition (! cv2.is_degenerate());
-
-      // Kernel                    kernel;
-      // typename Kernel::Equal_2  equal = kernel.equal_2_object();
-
-      // // Check that the two supporting lines are the same.
-      // if (! equal (cv1.supp_line(), cv2.supp_line()) &&
-      //     ! equal (cv1.supp_line(), 
-      //              kernel.construct_opposite_line_2_object()(cv2.supp_line())))
-      // {
-      //   return (false);
-      // }
-
-      // // Check that either the two left endpoints are at infinity, or they
-      // // are bounded and equal.
-      // if ((cv1.has_left() != cv2.has_left()) ||
-      //     (cv1.has_left() && ! equal (cv1.left(), cv2.left())))
-      // {
-      //   return (false);
-      // }
-
-      // // Check that either the two right endpoints are at infinity, or they
-      // // are bounded and equal.
-      // return ((cv1.has_right() == cv2.has_right()) &&
-      //         (! cv1.has_right() || equal (cv1.right(), cv2.right())));
-       //TODO: ASAFP
+      if (&cv1 == &cv2) return true;
+      return (cv1 == cv2);
     }
 
     /*!
@@ -401,8 +372,8 @@ public:
      */
     bool operator()(const Point_2& p1, const Point_2& p2) const
     {
-      Kernel    kernel;
-      return (kernel.equal_2_object()(p1, p2));
+      if (&p1 == &p2) return true;
+      return (p1 == p2);
     }
   };
 
@@ -499,47 +470,61 @@ public:
   Parameter_space_in_y_2 parameter_space_in_y_2_object() const
   { return Parameter_space_in_y_2(); }
 
+  /*! A function object that compares at limit
+   */
+  class Compare_x_at_limit_2 {
+   public:
+    /*! Compares the x coordinate of p with the curve end
+     * of xcv that is defined by ce at its limit. 
+     * Returns SMALLER, EQUAL, or LARGER accordingly.
+     */
+    Comparison_result operator()(const Point_2& p,
+                                 const X_monotone_curve_2&  xcv, 
+                                 Arr_curve_end ce)
+    {
+      CGAL_precondition(Parameter_space_in_x_2()(xcv,ce) == ARR_INTERIOR);
+      CGAL_precondition(Parameter_space_in_y_2()(xcv,ce) != ARR_INTERIOR);
+      return CGAL::compare(p.x(),
+                           (ce == ARR_MIN_END) ? xcv.left_x() : xcv.right_x());
+    }
+
+    /*! Compares the curve end of  xcv1 that is defined by ce1 
+     * with the curve end of xcv2 that is defined by ce2
+     * at their limits in x. 
+     * Returns SMALLER, EQUAL, or LARGER accordingly.
+     */
+    Comparison_result operator()(const X_monotone_curve_2&  xcv1, 
+                                 Arr_curve_end ce1,
+                                 const X_monotone_curve_2&  xcv2, 
+                                 Arr_curve_end ce2)
+    {
+      CGAL_precondition(Parameter_space_in_x_2()(xcv1,ce1) == ARR_INTERIOR);
+      CGAL_precondition(Parameter_space_in_y_2()(xcv1,ce1) != ARR_INTERIOR);
+      CGAL_precondition(Parameter_space_in_x_2()(xcv2,ce2) == ARR_INTERIOR);
+      CGAL_precondition(Parameter_space_in_y_2()(xcv2,ce2) != ARR_INTERIOR);
+
+      return CGAL::compare((ce1 == ARR_MIN_END) ? xcv1.left_x() : xcv1.right_x(),
+                           (ce2 == ARR_MIN_END) ? xcv2.left_x() : xcv2.right_x());
+    }
+
+  };
+
+  /*! Obtain a Compare_x_at_limit_2 function object */
+  Compare_x_at_limit_2 compare_x_at_limit_2_object() const
+  { return Compare_x_at_limit_2(); }
+
   /*! A function object that compares the x-coordinates of arc ends near the
    * boundary of the parameter space
    */
-  class Compare_x_near_boundary_2 {
+  class Compare_x_near_limit_2 {
   public:
-    /*! Compare the x-coordinate of a point with the x-coordinate of
-     * a line end near the boundary at y = +/- oo.
-     * \param p the point direction.
-     * \param xcv the line, the endpoint of which is compared.
-     * \param ce the line-end indicator -
-     *            ARR_MIN_END - the minimal end of xc or
-     *            ARR_MAX_END - the maximal end of xc.
-     * \return the comparison result:
-     *         SMALLER - x(p) < x(xc, ce);
-     *         EQUAL   - x(p) = x(xc, ce);
-     *         LARGER  - x(p) > x(xc, ce).     
-     * \pre p lies in the interior of the parameter space.
-     * \pre the ce end of the line xcv lies on a boundary.
-     */
-    Comparison_result operator()(const Point_2 & p,
-                                 const X_monotone_curve_2 & xcv,
-                                 Arr_curve_end ) const
-    {
-      // CGAL_precondition (! xcv.is_degenerate());
-      // CGAL_precondition (xcv.is_vertical());
-
-      // Kernel                    kernel;
-      // return (kernel.compare_x_at_y_2_object() (p, xcv.supp_line()));
-       //TODO: //ASAFP
-    }
-
     /*! Compare the x-coordinates of 2 arcs ends near the boundary of the
      * parameter space at y = +/- oo.
      * \param xcv1 the first arc.
-     * \param ce1 the first arc end indicator -
-     *            ARR_MIN_END - the minimal end of xcv1 or
-     *            ARR_MAX_END - the maximal end of xcv1.
      * \param xcv2 the second arc.
-     * \param ce2 the second arc end indicator -
-     *            ARR_MIN_END - the minimal end of xcv2 or
-     *            ARR_MAX_END - the maximal end of xcv2.
+     * \param ce the arc end indicator -
+     *           ARR_MIN_END - the minimal end of xcv2 or
+     *           ARR_MAX_END - the maximal end of xcv2.
      * \return the second comparison result:
      *         SMALLER - x(xcv1, ce1) < x(xcv2, ce2);
      *         EQUAL   - x(xcv1, ce1) = x(xcv2, ce2);
@@ -548,21 +533,10 @@ public:
      * \pre the ce2 end of the line xcv2 lies on a boundary.
      */
     Comparison_result operator()(const X_monotone_curve_2 & xcv1,
-                                 Arr_curve_end /* ce1 */,
                                  const X_monotone_curve_2 & xcv2,
-                                 Arr_curve_end /*! ce2 */) const
+                                 Arr_curve_end ce) const
     {
-      // CGAL_precondition (! xcv1.is_degenerate());
-      // CGAL_precondition (! xcv2.is_degenerate());
-      // CGAL_precondition (xcv1.is_vertical());
-      // CGAL_precondition (xcv2.is_vertical());
-
-      // Kernel                    kernel;
-      // typename Kernel::Point_2 p = kernel.construct_point_2_object() (ORIGIN);
-      // return (kernel.compare_x_at_y_2_object() (p,
-      //                                           xcv1.supp_line(),
-      //                                           xcv2.supp_line()));
-       //TODO // ASAFP
+      return SMALLER;
     }
   };
 
@@ -633,8 +607,7 @@ public:
   /// \name Functor definitions for supporting intersections.
   //@{
 
-  class Make_x_monotone_2
-  {
+  class Make_x_monotone_2 {
   public:
     /*!
      * Cut the given curve into x-monotone subcurves and insert them into the
@@ -650,10 +623,9 @@ public:
     OutputIterator operator()(const Curve_2& cv, OutputIterator oi) const
     {
       // Wrap the curve with an object.
-      *oi = make_object (cv);
-      ++oi;
+      *oi++ = make_object(cv);
 
-      return (oi);
+      return oi;
     }
   };
 
@@ -702,8 +674,7 @@ public:
   /*! Obtain a Split_2 functor object. */
   Split_2 split_2_object() const { return Split_2(); }
 
-  class Intersect_2
-  {
+  class Intersect_2 {
   public:
     /*!
      * Find the intersections of the two given curves and insert them into the
@@ -817,13 +788,12 @@ public:
       //   oi++;
       // }
        //TODO //ASAFP
-      return (oi);
+      return oi;
     }
   };
 
   /*! Obtain an Intersect_2 functor object. */
-  Intersect_2 intersect_2_object () const
-  { return Intersect_2(); }
+  Intersect_2 intersect_2_object () const { return Intersect_2(); }
 
   class Are_mergeable_2 {
   public:
@@ -834,8 +804,8 @@ public:
      * \return (true) if the two curves are mergeable - if they are supported
      *         by the same line and share a common endpoint; (false) otherwise.
      */
-    bool operator() (const X_monotone_curve_2& cv1,
-                     const X_monotone_curve_2& cv2) const
+    bool operator()(const X_monotone_curve_2& cv1,
+                    const X_monotone_curve_2& cv2) const
     {
       // CGAL_precondition (! cv1.is_degenerate());
       // CGAL_precondition (! cv2.is_degenerate());
@@ -939,42 +909,50 @@ public:
      */
     Approximate_number_type operator()(const Point_2& p, int i) const
     {
-      CGAL_precondition (i == 0 || i == 1);
-
-      if (i == 0)
-        return (CGAL::to_double(p.x()));
-      else
-        return (CGAL::to_double(p.y()));
+      CGAL_precondition(i == 0 || i == 1);
+      return (i == 0) ? CGAL::to_double(p.x()) : CGAL::to_double(p.y());
     }
   };
 
   /*! Obtain an Approximate_2 functor object. */
   Approximate_2 approximate_2_object () const { return Approximate_2(); }
 
-  class Construct_x_monotone_curve_2 {
+  // No Construct_x_monotone_curve_2!
+  //@}
+
+  /// \name Functor definitions for the Boolean set-operation traits.
+  //@{
+  class Compare_endpoints_xy_2 {
   public:
-
     /*!
-     * Return an x-monotone curve connecting the two given endpoints.
-     * \param p The first point.
-     * \param q The second point.
-     * \pre p and q must not be the same.
-     * \return A segment connecting p and q.
+     * Compare the endpoints of an $x$-monotone curve lexicographically.
+     * (assuming the curve has a designated source and target points).
+     * \param cv The curve.
+     * \return SMALLER if the curve is directed right;
+     *         LARGER if the curve is directed left.
      */
-    X_monotone_curve_2 operator()(const Point_2& p, const Point_2& q) const
-    {
-      Kernel     kernel;
-      Segment_2  seg = kernel.construct_segment_2_object() (p, q);
-
-      return (X_monotone_curve_2 (seg));
-    }
+    Comparison_result operator()(const X_monotone_curve_2& cv)
+    { return (cv.is_directed_right()) ? SMALLER : LARGER; }
   };
 
-  /*! Obtain a Construct_x_monotone_curve_2 functor object. */
-  Construct_x_monotone_curve_2 construct_x_monotone_curve_2_object () const
-  {
-    return Construct_x_monotone_curve_2();
-  }
+  /*! Obtain a Compare_endpoints_xy_2 functor object. */
+  Compare_endpoints_xy_2 compare_endpoints_xy_2_object() const
+  { return Compare_endpoints_xy_2(); }
+
+  class Construct_opposite_2 {
+  public:
+    /*!
+     * Construct an opposite x-monotone (with swapped source and target).
+     * \param cv The curve.
+     * \return The opposite curve.
+     */
+    X_monotone_curve_2 operator()(const X_monotone_curve_2& cv)
+    { return cv.flip(); }
+  };
+
+  /*! Obtain a Construct_opposite_2 functor object. */
+  Construct_opposite_2 construct_opposite_2_object() const
+  { return Construct_opposite_2(); }
   //@}
 };
 

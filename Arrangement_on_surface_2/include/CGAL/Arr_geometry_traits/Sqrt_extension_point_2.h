@@ -29,26 +29,28 @@
 #include <ostream>
 
 #include <CGAL/basic.h>
+#include <CGAL/Handle_for.h>
 #include <CGAL/Sqrt_extension.h>
 
 namespace CGAL {
 
 // Forward declaration:
-template <class NumberType_, bool Filter_> class _One_root_point_2;
+template <typename NumberType_, bool Filter_> class Sqrt_extension_point_2;
 
 /*! \class
  * A representation of a point whose coordinates are square-root numbers.
  */
-template <class NumberType_, bool Filter_>
+template <typename NumberType_, bool Filter_>
 class Sqrt_extension_point_2_rep {
-  friend class Sqrt_extension_point_2<NumberType_, Filter_>;
-
 public:
-  typedef NumberType_                                   NT;
-  typedef Sqrt_extension_point_2_rep<NT, Filter_>       Self;
-  typedef Sqrt_extension<NT, NT, Tag_true, Boolean_tag<Filter_> >
-                                                        Coord_NT;
+  typedef NumberType_                                            NT;
+  typedef Filter_                                                Filter;
 
+  typedef Sqrt_extension_point_2_rep<NT, Filter_>                Self;
+  typedef Sqrt_extension<NT, NT, Tag_true, Boolean_tag<Filter> > Coord_NT;
+
+  friend class Sqrt_extension_point_2<NumberType_, Filter_>;
+  
 private:
   Coord_NT m_x;            // The coordinates.
   Coord_NT m_y;
@@ -69,20 +71,22 @@ public:
 /*! \class
  * A handle for a point whose coordinates are one-root numbers.
  */
-template <class NumberType_, bool Filter_>
+template <typename NumberType_, bool Filter_>
 class Sqrt_extension_point_2 :
   public Handle_for<Sqrt_extension_point_2_rep<NumberType_, Filter_> >
 {
 public:
   typedef NumberType_                                   NT;
-  typedef Sqrt_extension_point_2<NT, Filter_>           Self;
-  typedef typename Point_rep::Coord_NT                  Coord_NT;
-
+  typedef Filter_                                       Filter;
+  
 private:
-  typedef Sqrt_extension_point_2_rep<NT, Filter_>       Point_rep;
+  typedef Sqrt_extension_point_2<NT, Filter>            Self;
+  typedef Sqrt_extension_point_2_rep<NT, Filter>        Point_rep;
   typedef Handle_for<Point_rep>                         Point_handle;
 
 public:
+  typedef typename Point_rep::Coord_NT                  Coord_NT;
+
   /*! Default constructor. */
   Sqrt_extension_point_2() : Point_handle(Point_rep()) {}
 
@@ -97,25 +101,25 @@ public:
   {}
 
   /*! Obtains the x-coordinate. */
-  const Coord_NT& x() const { return (this->ptr()->_x); }
+  const Coord_NT& x() const { return (this->ptr()->m_x); }
 
   /*! Obtains the y-coordinate. */
-  const Coord_NT& y() const { return (this->ptr()->_y); }
+  const Coord_NT& y() const { return (this->ptr()->m_y); }
 
   /*! Checks for equality. */
   bool equal(const Self& p) const
   {
     if (this->identical(p)) return true;
-    return (CGAL::compare(this->ptr()->_x, p.ptr()->_x) == EQUAL &&
-            CGAL::compare(this->ptr()->_y, p.ptr()->_y) == EQUAL);
+    return (CGAL::compare(this->ptr()->m_x, p.ptr()->m_x) == EQUAL &&
+            CGAL::compare(this->ptr()->m_y, p.ptr()->m_y) == EQUAL);
   }
 
   /*! Checks for equality. */
   bool operator=(const Self& p, const Self& q) const
   {
     if (p.identical(q)) return true;
-    return (CGAL::compare(p.ptr()->_x, q.ptr()->_x) == EQUAL &&
-            CGAL::compare(p.ptr()->_y, q.ptr()->_y) == EQUAL);
+    return (CGAL::compare(p.ptr()->m_x, q.ptr()->m_x) == EQUAL &&
+            CGAL::compare(p.ptr()->m_y, q.ptr()->m_y) == EQUAL);
   }
   
   bool operator!=(const Self& p, const Self& q) const { return !(p == q); }
@@ -126,23 +130,21 @@ public:
     this->copy_on_write();
     this->ptr()->_x = Coord_NT(x);
     this->ptr()->_y = Coord_NT(y);
-    return;
   }
 
   /*! Sets the point coordinates. */
   void set(const Coord_NT& x, const Coord_NT& y)
   {
     this->copy_on_write();
-    this->ptr()->_x = x;
-    this->ptr()->_y = y;
-    return;
+    this->ptr()->m_x = x;
+    this->ptr()->m_y = y;
   }
 };
 
 /*!
  * An exporter for Sqrt_extension_point_2.
  */
-template <class NT, bool Filter>
+template <typename NT, bool Filter>
 std::ostream& operator<<(std::ostream& os,
                          const Sqrt_extension_point_2<NT, Filter>& p)
 {
