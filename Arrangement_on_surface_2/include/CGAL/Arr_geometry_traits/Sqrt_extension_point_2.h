@@ -52,16 +52,21 @@ public:
   friend class Sqrt_extension_point_2<NumberType_, Filter_>;
   
 private:
-  Coord_NT m_x;            // The coordinates.
+  //! The x coordinate.
+  Coord_NT m_x;
+
+  //! The y coordinate.
   Coord_NT m_y;
 
 public:
-  /*! Default constructor. */
+  /*!
+   * Default constructor.
+   */
   Sqrt_extension_point_2_rep() : m_x(0), m_y(0) {}
 
-  /*! Constructor of a point with one-root coefficients. 
-     This constructor of a point can also be used with rational coefficients
-     thanks to convertor of CoordNT. */
+  /*!
+   * Constructor of a point with coordinate (sqrt-extension) coefficients.
+   */
   Sqrt_extension_point_2_rep(const Coord_NT& x, const Coord_NT& y) :
     m_x(x),
     m_y(y)
@@ -98,7 +103,7 @@ public:
   Sqrt_extension_point_2(const Self& p) : Point_handle(p) {}
 
   /*!
-   * Constructor of a point with coordinate coefficients.
+   * Constructor of a point with coordinate (sqrt-extension) coefficients.
    */
   Sqrt_extension_point_2(const Coord_NT& x, const Coord_NT& y) :
     Point_handle(Point_rep(x, y)) {}
