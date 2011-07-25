@@ -143,14 +143,14 @@ public:
   class Construct_min_vertex_2 {
   public:
     /*! Obtains the left endpoint of the x-monotone curve.
-     * \param xcv The curve.
-     * \pre The left end of xcv is a valid (bounded) point.
+     * \param xc The curve.
+     * \pre The left end of xc is a valid (bounded) point.
      * \return The left endpoint.
      */
-    const Point_2& operator()(const X_monotone_curve_2& xcv) const
+    const Point_2& operator()(const X_monotone_curve_2& xc) const
     {
-      CGAL_precondition(xcv.has_right());
-      return xcv.right();
+      CGAL_precondition(xc.has_right());
+      return xc.right();
     }
   };
 
@@ -164,14 +164,14 @@ public:
   class Construct_max_vertex_2 {
   public:
     /*! Obtains the right endpoint of the x-monotone curve.
-     * \param xcv The curve.
-     * \pre The right end of xcv is a valid (bounded) point.
+     * \param xc The curve.
+     * \pre The right end of xc is a valid (bounded) point.
      * \return The right endpoint.
      */
-    const Point_2& operator()(const X_monotone_curve_2& xcv) const
+    const Point_2& operator()(const X_monotone_curve_2& xc) const
     {
-      CGAL_precondition(xcv.has_left());
-      return xcv.left();
+      CGAL_precondition(xc.has_left());
+      return xc.left();
     }
   };
 
@@ -185,11 +185,11 @@ public:
   class Is_vertical_2 {
   public:
     /*! Checks whether the given x-monotone curve is a vertical segment.
-     * \param xcv The curve.
+     * \param xc The curve.
      * \return (true) if the curve is a vertical segment; (false) otherwise.
      */
-    bool operator()(const X_monotone_curve_2& xcv) const
-    { return xcv.is_vertical(); }
+    bool operator()(const X_monotone_curve_2& xc) const
+    { return xc.is_vertical(); }
   };
 
   /*! Obtains an Is_vertical_2 functor object. */
@@ -220,15 +220,15 @@ public:
   public:
     /*!
      * Return the location of the given point with respect to the input curve.
-     * \param xcv The curve.
+     * \param xc The curve.
      * \param p The point.
-     * \pre p is in the x-range of xcv.
-     * \return SMALLER if y(p) < xcv(x(p)), i.e. the point is below the curve;
-     *         LARGER if y(p) > xcv(x(p)), i.e. the point is above the curve;
+     * \pre p is in the x-range of xc.
+     * \return SMALLER if y(p) < xc(x(p)), i.e. the point is below the curve;
+     *         LARGER if y(p) > xc(x(p)), i.e. the point is above the curve;
      *         EQUAL if p lies on the curve.
      */
     Comparison_result operator()(const Point_2& p,
-                                 const X_monotone_curve_2& xcv) const
+                                 const X_monotone_curve_2& xc) const
     {
       // TODO
       return EQUAL;
@@ -247,16 +247,16 @@ public:
   public:
     /*! Compares the y value of two x-monotone curves immediately to the left
      * of their intersection point.
-     * \param xcv1 The first curve.
-     * \param xcv2 The second curve.
+     * \param xc1 The first curve.
+     * \param xc2 The second curve.
      * \param p The intersection point.
      * \pre The point p lies on both curves, and both of them must be also be
      *      defined (lexicographically) to its left.
-     * \return The relative position of xcv1 with respect to xcv2 immdiately to
+     * \return The relative position of xc1 with respect to xc2 immdiately to
      *         the left of p: SMALLER, LARGER or EQUAL.
      */
-    Comparison_result operator()(const X_monotone_curve_2& xcv1,
-                                 const X_monotone_curve_2& xcv2,
+    Comparison_result operator()(const X_monotone_curve_2& xc1,
+                                 const X_monotone_curve_2& xc2,
                                  const Point_2& CGAL_precondition_code(p)) const
     {
       // TODO
@@ -276,16 +276,16 @@ public:
   public:
     /*! Compares the y value of two x-monotone curves immediately to the right
      * of their intersection point.
-     * \param xcv1 The first curve.
-     * \param xcv2 The second curve.
+     * \param xc1 The first curve.
+     * \param xc2 The second curve.
      * \param p The intersection point.
      * \pre The point p lies on both curves, and both of them must be also be
      *      defined (lexicographically) to its right.
-     * \return The relative position of xcv1 with respect to xcv2 immdiately to
+     * \return The relative position of xc1 with respect to xc2 immdiately to
      *         the right of p: SMALLER, LARGER or EQUAL.
      */
-    Comparison_result operator()(const X_monotone_curve_2& xcv1,
-                                 const X_monotone_curve_2& xcv2,
+    Comparison_result operator()(const X_monotone_curve_2& xc1,
+                                 const X_monotone_curve_2& xc2,
                                  const Point_2& CGAL_precondition_code(p)) const
     {
       // TODO
@@ -305,13 +305,13 @@ public:
   public:
     /*! Checks whether the two x-monotone curves are the same (have the same
      * graph).
-     * \param xcv1 The first curve.
-     * \param xcv2 The second curve.
+     * \param xc1 The first curve.
+     * \param xc2 The second curve.
      * \return (true) if the two curves are the same; (false) otherwise.
      */
-    bool operator()(const X_monotone_curve_2& xcv1,
-                    const X_monotone_curve_2& xcv2) const
-    { return (xcv1 == xcv2); }
+    bool operator()(const X_monotone_curve_2& xc1,
+                    const X_monotone_curve_2& xc2) const
+    { return (xc1 == xc2); }
 
     /*! Checks whether the two points are the same.
      * \param p1 The first point.
@@ -336,18 +336,18 @@ public:
   class Parameter_space_in_x_2 {
   public:
     /*! Obtains the parameter space at the end of a line along the x-axis.
-     * \param xcv the line
+     * \param xc the line
      * \param ce the line end indicator:
      *     ARR_MIN_END - the minimal end of xc or
      *     ARR_MAX_END - the maximal end of xc
-     * \return the parameter space at the ce end of the line xcv.
+     * \return the parameter space at the ce end of the line xc.
      *   ARR_LEFT_BOUNDARY  - the curve end is unbounded at the left of the
      *                        parameter space.
      *   ARR_INTERIOR       - the curve end is bounded.
      *   ARR_RIGHT_BOUNDARY - the curve end is unbounded at the right of the
      *                        parameter space.
      */
-    Arr_parameter_space operator()(const X_monotone_curve_2 & xcv,
+    Arr_parameter_space operator()(const X_monotone_curve_2 & xc,
                                    Arr_curve_end ce) const
     {
       return (ce == ARR_MIN_END) ?
@@ -372,25 +372,26 @@ public:
      * be approaching the boundary, but not on the boundary.
      * If the line coincides with the identification arc, it is assumed to
      * be smaller than any other object.
-     * \param xcv the line
+     * \param xc the line
      * \param ce the line end indicator:
      *     ARR_MIN_END - the minimal end of xc or
      *     ARR_MAX_END - the maximal end of xc
-     * \return the parameter space at the ce end of the line xcv.
+     * \return the parameter space at the ce end of the line xc.
      *   ARR_BOTTOM_BOUNDARY - the curve end is unbounded at the bottom of
      *                         the parameter space.     
      *   ARR_INTERIOR        - the curve end is bounded.
      *   ARR_TOP_BOUNDARY    - the curve end is unbounded at the top of
      *                         the parameter space.     
      */
-    Arr_parameter_space operator()(const X_monotone_curve_2 & xcv,
+    Arr_parameter_space operator()(const X_monotone_curve_2 & xc,
                                    Arr_curve_end ce) const
     {
+      // TODO
       return (ce == ARR_MIN_END) ?
-        (xcv.has_left_y() ? ARR_INTERIOR :
-         ((cv.b()*cv.c() < xcv.d()) ? ARR_BOTTOM_BOUNDARY : ARR_TOP_BOUNDARY)) :
-        (xcv.has_right_y() ? ARR_INTERIOR :
-         ((cv.b()*cv.c() < xcv.d()) ? ARR_BOTTOM_BOUNDARY : ARR_TOP_BOUNDARY)) :
+        (xc.has_left_y() ? ARR_INTERIOR :
+         ((xc.b()*xc.c() < xc.d()) ? ARR_BOTTOM_BOUNDARY : ARR_TOP_BOUNDARY)) :
+        (xc.has_right_y() ? ARR_INTERIOR :
+         ((xc.b()*xc.c() < xc.d()) ? ARR_BOTTOM_BOUNDARY : ARR_TOP_BOUNDARY)) :
     }
   };
 
@@ -408,7 +409,7 @@ public:
      * the vertical asymptote of a hyperbola.
      * a line end on the boundary at y = +/- oo.
      * \param p the point direction.
-     * \param xcv the line, the endpoint of which is compared.
+     * \param xc the line, the endpoint of which is compared.
      * \param ce the line-end indicator -
      *            ARR_MIN_END - the minimal end of xc or
      *            ARR_MAX_END - the maximal end of xc.
@@ -417,35 +418,35 @@ public:
      *         EQUAL   - x(p) = x(xc, ce);
      *         LARGER  - x(p) > x(xc, ce).     
      * \pre p lies in the interior of the parameter space.
-     * \pre the ce end of the curve xcv lies on a boundary.
+     * \pre the ce end of the curve xc lies on a boundary.
      */
     Comparison_result operator()(const Point_2& p,
-                                 const X_monotone_curve_2&  xcv, 
+                                 const X_monotone_curve_2&  xc, 
                                  Arr_curve_end ce)
     {
-      CGAL_precondition(Parameter_space_in_x_2()(xcv,ce) == ARR_INTERIOR);
-      CGAL_precondition(Parameter_space_in_y_2()(xcv,ce) != ARR_INTERIOR);
+      CGAL_precondition(Parameter_space_in_x_2()(xc,ce) == ARR_INTERIOR);
+      CGAL_precondition(Parameter_space_in_y_2()(xc,ce) != ARR_INTERIOR);
       return CGAL::compare(p.x(),
-                           (ce == ARR_MIN_END) ? xcv.left_x() : xcv.right_x());
+                           (ce == ARR_MIN_END) ? xc.left_x() : xc.right_x());
     }
 
-    /*! Compares the curve end of  xcv1 that is defined by ce1 
-     * with the curve end of xcv2 that is defined by ce2
+    /*! Compares the curve end of  xc1 that is defined by ce1 
+     * with the curve end of xc2 that is defined by ce2
      * at their limits in x. 
      * Returns SMALLER, EQUAL, or LARGER accordingly.
      */
-    Comparison_result operator()(const X_monotone_curve_2&  xcv1, 
+    Comparison_result operator()(const X_monotone_curve_2&  xc1, 
                                  Arr_curve_end ce1,
-                                 const X_monotone_curve_2&  xcv2, 
+                                 const X_monotone_curve_2&  xc2, 
                                  Arr_curve_end ce2)
     {
-      CGAL_precondition(Parameter_space_in_x_2()(xcv1,ce1) == ARR_INTERIOR);
-      CGAL_precondition(Parameter_space_in_y_2()(xcv1,ce1) != ARR_INTERIOR);
-      CGAL_precondition(Parameter_space_in_x_2()(xcv2,ce2) == ARR_INTERIOR);
-      CGAL_precondition(Parameter_space_in_y_2()(xcv2,ce2) != ARR_INTERIOR);
+      CGAL_precondition(Parameter_space_in_x_2()(xc1,ce1) == ARR_INTERIOR);
+      CGAL_precondition(Parameter_space_in_y_2()(xc1,ce1) != ARR_INTERIOR);
+      CGAL_precondition(Parameter_space_in_x_2()(xc2,ce2) == ARR_INTERIOR);
+      CGAL_precondition(Parameter_space_in_y_2()(xc2,ce2) != ARR_INTERIOR);
 
-      return CGAL::compare((ce1 == ARR_MIN_END) ? xcv1.left_x() : xcv1.right_x(),
-                           (ce2 == ARR_MIN_END) ? xcv2.left_x() : xcv2.right_x());
+      return CGAL::compare((ce1 == ARR_MIN_END) ? xc1.left_x() : xc1.right_x(),
+                           (ce2 == ARR_MIN_END) ? xc2.left_x() : xc2.right_x());
     }
 
   };
@@ -462,29 +463,30 @@ public:
   public:
     /*! Compares the x-coordinates of 2 arcs ends near the boundary of the
      * parameter space at y = +/- oo.
-     * \param xcv1 the first arc.
-     * \param xcv2 the second arc.
+     * \param xc1 the first arc.
+     * \param xc2 the second arc.
      * \param ce the arc end indicator -
-     *           ARR_MIN_END - the minimal end of xcv2 or
-     *           ARR_MAX_END - the maximal end of xcv2.
+     *           ARR_MIN_END - the minimal end of xc2 or
+     *           ARR_MAX_END - the maximal end of xc2.
      * \return the second comparison result:
-     *         SMALLER - x(xcv1, ce1) < x(xcv2, ce2);
-     *         EQUAL   - x(xcv1, ce1) = x(xcv2, ce2);
-     *         LARGER  - x(xcv1, ce1) > x(xcv2, ce2).
-     * \pre the ce1 end of the line xcv1 lies on a boundary.
-     * \pre the ce2 end of the line xcv2 lies on a boundary.
+     *         SMALLER - x(xc1, ce1) < x(xc2, ce2);
+     *         EQUAL   - x(xc1, ce1) = x(xc2, ce2);
+     *         LARGER  - x(xc1, ce1) > x(xc2, ce2).
+     * \pre the ce1 end of the line xc1 lies on a boundary.
+     * \pre the ce2 end of the line xc2 lies on a boundary.
      */
-    Comparison_result operator()(const X_monotone_curve_2 & xcv1,
-                                 const X_monotone_curve_2 & xcv2,
+    Comparison_result operator()(const X_monotone_curve_2 & xc1,
+                                 const X_monotone_curve_2 & xc2,
                                  Arr_curve_end ce) const
     {
+      // TODO
       return SMALLER;
     }
   };
 
-  /*! Obtains a Compare_x_near_boundary_2 function object */
-  Compare_x_near_boundary_2 compare_x_near_boundary_2_object() const
-  { return Compare_x_near_boundary_2(); }
+  /*! Obtains a Compare_x_near_limit_2 function object */
+  Compare_x_near_limit_2 compare_x_near_limit_2_object() const
+  { return Compare_x_near_limit_2(); }
     
 
   /*! \class
@@ -495,15 +497,15 @@ public:
   public:
     /*! Compares the y-coordinates of 2 lines at their ends near the boundary
      * of the parameter space at x = +/- oo.
-     * \param xcv1 the first arc.
-     * \param xcv2 the second arc.
+     * \param xc1 the first arc.
+     * \param xc2 the second arc.
      * \param ce the line end indicator.
      * \return the second comparison result.
-     * \pre the ce ends of the lines xcv1 and xcv2 lie either on the left
+     * \pre the ce ends of the lines xc1 and xc2 lie either on the left
      * boundary or on the right boundary of the parameter space.
      */
-    Comparison_result operator()(const X_monotone_curve_2 & xcv1,
-                                 const X_monotone_curve_2 & xcv2,
+    Comparison_result operator()(const X_monotone_curve_2 & xc1,
+                                 const X_monotone_curve_2 & xc2,
                                  Arr_curve_end ce) const
     {
       // TODO
@@ -551,14 +553,14 @@ public:
   class Split_2 {
   public:
     /*! Splits a given x-monotone curve at a given point into two sub-curves.
-     * \param xcv The curve to split
+     * \param xc The curve to split
      * \param p The split point.
-     * \param xcv1 Output: The left resulting subcurve (p is its right endpoint).
-     * \param xcv2 Output: The right resulting subcurve (p is its left endpoint).
-     * \pre p lies on xcv but is not one of its end-points.
+     * \param xc1 Output: The left resulting subcurve (p is its right endpoint).
+     * \param xc2 Output: The right resulting subcurve (p is its left endpoint).
+     * \pre p lies on xc but is not one of its end-points.
      */
     void operator()(const X_monotone_curve_2& cv, const Point_2& p,
-                    X_monotone_curve_2& xcv1, X_monotone_curve_2& xcv2) const
+                    X_monotone_curve_2& xc1, X_monotone_curve_2& xc2) const
     {
       // TODO
       return;
@@ -576,14 +578,14 @@ public:
      * Find the intersections of the two given curves and insert them into the
      * given output iterator. As two segments may itersect only once, only a
      * single intersection will be contained in the iterator.
-     * \param xcv1 The first curve.
-     * \param xcv2 The second curve.
+     * \param xc1 The first curve.
+     * \param xc2 The second curve.
      * \param oi The output iterator.
      * \return The past-the-end iterator.
      */
     template<typename OutputIterator>
-    OutputIterator operator()(const X_monotone_curve_2& xcv1,
-                              const X_monotone_curve_2& xcv2,
+    OutputIterator operator()(const X_monotone_curve_2& xc1,
+                              const X_monotone_curve_2& xc2,
                               OutputIterator oi) const
     {
       return oi;
@@ -599,13 +601,13 @@ public:
   public:
     /*!
      * Check whether it is possible to merge two given x-monotone curves.
-     * \param xcv1 The first curve.
-     * \param xcv2 The second curve.
+     * \param xc1 The first curve.
+     * \param xc2 The second curve.
      * \return (true) if the two curves are mergeable - if they are supported
      *         by the same line and share a common endpoint; (false) otherwise.
      */
-    bool operator()(const X_monotone_curve_2& xcv1,
-                    const X_monotone_curve_2& xcv2) const
+    bool operator()(const X_monotone_curve_2& xc1,
+                    const X_monotone_curve_2& xc2) const
     {
        // TODO
       return false;
@@ -621,14 +623,14 @@ public:
   public:
     /*!
      * Merge two given x-monotone curves into a single curve (segment).
-     * \param xcv1 The first curve.
-     * \param xcv2 The second curve.
+     * \param xc1 The first curve.
+     * \param xc2 The second curve.
      * \param c Output: The merged curve.
      * \pre The two curves are mergeable, that is they are supported by the
      *      same line and share a common endpoint.
      */
-    void operator()(const X_monotone_curve_2& xcv1,
-                    const X_monotone_curve_2& xcv2,
+    void operator()(const X_monotone_curve_2& xc1,
+                    const X_monotone_curve_2& xc2,
                     X_monotone_curve_2& c) const
     {
       // TODO
@@ -678,12 +680,12 @@ public:
     /*!
      * Compare the endpoints of an $x$-monotone curve lexicographically.
      * (assuming the curve has a designated source and target points).
-     * \param xcv The curve.
+     * \param xc The curve.
      * \return SMALLER if the curve is directed right;
      *         LARGER if the curve is directed left.
      */
-    Comparison_result operator()(const X_monotone_curve_2& xcv)
-    { return (xcv.is_directed_right()) ? SMALLER : LARGER; }
+    Comparison_result operator()(const X_monotone_curve_2& xc)
+    { return (xc.is_directed_right()) ? SMALLER : LARGER; }
   };
 
   /*! Obtains a Compare_endpoints_xy_2 functor object. */
@@ -695,16 +697,16 @@ public:
   class Construct_opposite_2 {
   public:
     /*! Constructs an opposite x-monotone.
-     * \param xcv The curve.
+     * \param xc The curve.
      * \return The opposite curve.
      */
-    X_monotone_curve_2 operator()(const X_monotone_curve_2& xcv)
+    X_monotone_curve_2 operator()(const X_monotone_curve_2& xc)
     {
-      X_monotone_curve_2(xcv.a(), xcv.b(), xcv.c(), xcv.d(),
-                         xcv.right(), xcv.left(), 
-                         xcv.has_right_x(), xcv.has_right_y()
-                         xcv.has_left_x(), xcv.has_left_y()
-                         !xcv.is_directed_right(), xcv.is_continuous());
+      X_monotone_curve_2(xc.a(), xc.b(), xc.c(), xc.d(),
+                         xc.right(), xc.left(), 
+                         xc.has_right_x(), xc.has_right_y()
+                         xc.has_left_x(), xc.has_left_y()
+                         !xc.is_directed_right(), xc.is_continuous());
     }
   };
 
@@ -793,11 +795,11 @@ public:
       CGAL_assertion(!has_left_x || (-c <= x));
       CGAL_assertion(!has_right_x || (x <= -c));
             
-      X_monotone_curve_2 xcv =
+      X_monotone_curve_2 xc =
         X_monotone_curve_2(a, b, c, d, left, right,
                            has_left_x, has_left_y, has_right_x, has_right_y,
                            is_directed_right, true);
-      return xcv;
+      return xc;
     }
 
     /*!
@@ -830,11 +832,11 @@ public:
       bool has_left_y = asymptote_x != left.x();
       bool has_right_y = asymptote_x != right.x();
       CGAL_assertion((asymptote_x <= left.x()) || (right.x() <= asymptote_x));
-      X_monotone_curve_2 xcv =
+      X_monotone_curve_2 xc =
         X_monotone_curve_2(a, b, c, d, left, right,
                            true, has_left_y, true, has_right_y,
                            is_directed_right, true);
-      return xcv;
+      return xc;
     }
 
     /*! Constructor for curves bounded at one endpoint.
@@ -895,11 +897,11 @@ public:
       const Point_2& left = (is_directed_right) ? source : target;
       const Point_2& right = (is_directed_right) ? target : left;
       
-      X_monotone_curve_2 xcv =
+      X_monotone_curve_2 xc =
         X_monotone_curve_2(a, b, c, d, left, right,
                            has_left_x, has_left_y, has_right_x, has_right_y,
                            is_directed_right, true);
-      return xcv;
+      return xc;
     }
   };
   
@@ -920,8 +922,8 @@ public:
     X_monotone_curve_2 operator()(bool a,
                                   const NT& b, const NT& c, const NT& d)
     {
-      X_monotone_curve_2 xcv = X_monotone_curve_2(a, b, c, d);
-      return xcv;
+      X_monotone_curve_2 xc = X_monotone_curve_2(a, b, c, d);
+      return xc;
     }
 
     /*! Constructor for curves bounded at their source and target.
@@ -951,11 +953,11 @@ public:
       bool has_right_y = asymptote_x != right.x();
       bool is_continuous =
         (asymptote_x <= left.x()) || (right.x() <= asymptote_x);
-      X_monotone_curve_2 xcv =
+      X_monotone_curve_2 xc =
         X_monotone_curve_2(a, b, c, d, left, right,
                            true, has_left_y, true, has_right_y,
                            is_directed_right, is_continuous);
-      return xcv;
+      return xc;
     }
 
     /*! Constructor for a curve bounded at one endpoint.
@@ -1010,11 +1012,11 @@ public:
       const Point_2& left = (is_directed_right) ? source : target;
       const Point_2& right = (is_directed_right) ? target : left;
       
-     X_monotone_curve_2 xcv =
+     X_monotone_curve_2 xc =
         X_monotone_curve_2(a, b, c, d, left, right,
                            has_left_x, has_left_y, has_right_x, has_right_y,
                            is_directed_right, is_continuous);
-      return xcv;
+      return xc;
     }
   };
   
