@@ -450,6 +450,8 @@ public:
   }
 
   // PESHO GSOC
+
+public:
   typedef std::list<Facet>			Facet_list;  
 
   template < class Cell_handle >		struct less_Cell_handle;
@@ -460,7 +462,6 @@ public:
   typedef std::set< Vertex_handle, less_Vertex_handle<Vertex_handle> > Vertex_handle_set;    
   typedef std::set< Edge, less_Edge<Edge> > Edge_set;
 
-public:
   void collect_vertices_and_edges_from_link(Vertex_handle v,
                                               Vertex_handle_set& vertices,
                                               Edge_set& edges);

@@ -214,6 +214,17 @@ public:
       insert(first, last);
   }
 
+// PIVANOV GSOC
+
+  //typedef typename Tr_Base::Facet_list		Facet_list;
+
+  bool check_kernel_test(const Edge& edge) const;
+  bool check_kernel_test(const Edge& edge, const Point& point) const;
+
+  bool check_delaunay_property(const Edge& edge) const;
+
+// END PIVANOV
+
 #ifndef CGAL_TRIANGULATION_3_DONT_INSERT_RANGE_OF_POINTS_WITH_INFO
   template < class InputIterator >
   std::ptrdiff_t

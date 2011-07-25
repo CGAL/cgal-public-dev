@@ -698,14 +698,13 @@ public:
   }
   void flip_flippable(Cell_handle c, int i, int j);
 
-  // PESHO GSOC
+  // PIVANOV GSOC
   // edge collapse operator
 
-private:
+protected:
   typedef typename GT::FT			FT;  
   typedef typename GT::Vector_3			Vector;
   typedef typename Tds::Facet_list		Facet_list;
-
 
   void add_kernel_triangles_around(Vertex_handle s, Vertex_handle t, 
 			     std::list<Triangle>& triangles);
@@ -713,14 +712,16 @@ private:
   bool is_visible(const Point& query, Iterator begin, Iterator end);
 
 public:
-  bool is_geom_collapsible(const Edge& edge);
-  bool is_geom_collapsible(const Edge& edge, const Point& p);
+  //bool is_geom_collapsible(const Edge& edge);
+  //bool is_geom_collapsible(const Edge& edge, const Point& p);
 
   bool is_top_collapsible(const Edge& edge)
   {
     return _tds.check_link_test(edge);
     //return _tds.is_top_collapsible(edge);
   }
+
+  bool collapse_edge(Edge& edge, const Point& point);
 
   bool collapse_edge(Edge& edge)
   {
@@ -731,9 +732,9 @@ public:
   bool check_kernel_test(const Edge& edge, const Point& point) const;
   
   template <class Iterator>
-	bool is_in_kernel(Vertex_handle query, Iterator begin, Iterator end) const;
+	bool is_in_kernel(Point query, Iterator begin, Iterator end) const;
 
-  // PESHO END
+  // PIVANOV END
 
   //INSERTION
 

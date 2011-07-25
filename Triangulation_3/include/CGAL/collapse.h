@@ -14,6 +14,11 @@ CGAL_BEGIN_NAMESPACE
 	type\
 	Triangulation_3<Vb,Cb>::
 
+#define DT_FUNC(type) \
+	template < class Vb, class Cb >\
+	type\
+	Delaunay_triangulation_3<Vb,Cb>::
+
 /////////////////
 // TDS structs //
 /////////////////
@@ -115,15 +120,7 @@ get_target_vertex(const Edge& edge) const
 {
 	return edge.first->vertex(edge.third);
 }
-/*
-template < class Vb, class Cb >
-typename Triangulation_data_structure_3<Vb,Cb>::Edge
-Triangulation_data_structure_3<Vb,Cb>::
-get_twin_edge(const Edge& edge)
-{
-	return Edge(edge.first, edge.third, edge.second);
-}
-*/
+
 template < class Vb, class Cb >
 typename Triangulation_data_structure_3<Vb,Cb>::Vertex_handle
 Triangulation_data_structure_3<Vb,Cb>::
@@ -134,8 +131,8 @@ get_any_other_vertex(
 {
 	int i;
 	for(i=0;i<4;i++)
-		if(cell->vertex(i) != va && 
-			cell->vertex(i) != vb)
+		if(cell->vertex(i) != va
+		&& cell->vertex(i) != vb)
 			return cell->vertex(i);
 
 	assert(false); // never come here
@@ -153,9 +150,9 @@ get_remaining_vertex(Cell_handle cell,
 {
 	int i;
 	for(i=0;i<4;i++)
-		if(cell->vertex(i) != va && 
-			cell->vertex(i) != vb && 
-			cell->vertex(i) != vc)
+		if(cell->vertex(i) != va
+		&& cell->vertex(i) != vb
+		&& cell->vertex(i) != vc)
 			return cell->vertex(i);
 
 	assert(false); // never come here
@@ -227,8 +224,7 @@ get_vertices_from_vertex_link(Vertex_handle vertex, Vertex_handle_set& vertices)
 	incident_cells(vertex, std::back_inserter(cells));
 	
 	typename std::list<Cell_handle>::const_iterator it;
-        for (it = cells.begin(); it != cells.end(); it++)
-        {
+	for (it = cells.begin(); it != cells.end(); it++) {
 		Cell_handle cell = *it;
 		Vertex_handle v0, v1, v2;
 		Facet facet(cell, cell->index(vertex));
@@ -245,8 +241,7 @@ get_edges_from_vertex_link(Vertex_handle vertex, Edge_set& edges) const
 	std::list<Cell_handle> cells;		
 	incident_cells(vertex, std::back_inserter(cells));
 	typename std::list<Cell_handle>::const_iterator it;
-	for (it = cells.begin(); it != cells.end(); it++)
-	{
+	for (it = cells.begin(); it != cells.end(); it++) {
 		Cell_handle cell = *it;
 		Vertex_handle v0, v1, v2;
 		Facet facet(cell, cell->index(vertex));
@@ -259,17 +254,7 @@ get_edges_from_vertex_link(Vertex_handle vertex, Edge_set& edges) const
 		edges.insert( Edge(cell, i2, i0) );
 	}
 }
-/*
-template < class Vb, class Cb >
-typename Triangulation_data_structure_3<Vb,Cb>::Facet
-Triangulation_data_structure_3<Vb,Cb>::
-get_twin_facet(const Facet& facet) const
-{        
-	Cell_handle c  = facet.first;
-	Cell_handle nc = c->neighbor(facet.second);
-	return Facet(nc, nc->index(c));
-}
-*/ 
+
 TDS_FUNC(void)
 get_facets_from_link(Vertex_handle vertex, Facet_list& hull, bool outward = false) const
 {
@@ -277,12 +262,9 @@ get_facets_from_link(Vertex_handle vertex, Facet_list& hull, bool outward = fals
 	incident_cells(vertex, std::back_inserter(cells));
 	
 	typename std::list<Cell_handle>::const_iterator it;
-	for (it = cells.begin(); it != cells.end(); ++it)
-	{
+	for (it = cells.begin(); it != cells.end(); ++it) {
 		Cell_handle cell = *it;
-
 		Facet facet(cell, cell->index(vertex));
-		//if (outward) facet = get_twin_facet(facet);
 		hull.push_back(facet);
 	}
 }
@@ -353,16 +335,12 @@ check_link_test_for_edges(const Edge& edge, int verbose = 0) const
 	Edge_set eedges;
 	get_edges_from_edge_link(edge, eedges);
         
-	if (iedges.size() != eedges.size()) {
-		//std::cout << "#1";
+	if (iedges.size() != eedges.size())
 		return false;
-	}
 
 	for (eit = iedges.begin(); eit != iedges.end(); ++eit)
-		if (eedges.find(*eit) == eedges.end()) {
-			//std::cout << "#2";
+		if (eedges.find(*eit) == eedges.end())
 			return false;
-		}
 
         return true;        
 }
@@ -378,13 +356,13 @@ collapse_edge(Edge& edge)
 	Cell_handle seed_cell = edge.first;
 	Vertex_handle source = seed_cell->vertex(edge.second);
 	Vertex_handle target = seed_cell->vertex(edge.third);
-	assert(source != target);
+	
+	CGAL_assertion(source != target);
 
 	// collect all cells incident to source - as this vertex will disappear
 	// we will have to update source to target later in these cells.
 	std::list<Cell_handle> scells;
 	incident_cells(source, std::back_inserter(scells)); // precondition: dimension()==3
-	//std::cout << "scells.size() = " << scells.size() << std::endl;
 
 	// stores all cells incident to edge pq (they will be deleted)
 	std::list<Cell_handle> rcells; 
@@ -425,11 +403,6 @@ collapse_edge(Edge& edge)
 		u->set_cell(cell_tuv);
 		target->set_cell(cell_tuv);
 
-		//std::cout << cell->vertex(0)->id() << " "
-		//					<< cell->vertex(1)->id() << " "
-		//					<< cell->vertex(2)->id() << " "
-		//					<< cell->vertex(3)->id() << std::endl;
-
 		// revolves to neighboring cell
 		cell = cell->neighbor(cell->index(u));
 		u = v;
@@ -446,52 +419,107 @@ collapse_edge(Edge& edge)
 	delete_cells(rcells.begin(),rcells.end());
 	delete_vertex(source);
 
-	//std::cerr << "Edge collapsed!" << std::endl;
-
 	return true;
 }
 
+////////////////////////////////////
+// DELAUNAY_TRIANGULATION members //
+////////////////////////////////////
+
+DT_FUNC(bool)
+check_kernel_test(const Edge& edge) const
+{
+	return 	Tr_Base::check_kernel_test(edge)
+		&& check_delaunay_property(edge);
+}
+
+DT_FUNC(bool)
+check_delaunay_property(const Edge& edge) const
+{
+	Cell_handle seed_cell = edge.first;
+	Vertex_handle source = seed_cell->vertex(edge.second);
+	Vertex_handle target = seed_cell->vertex(edge.third);
+
+	std::list<Cell_handle> scells;
+	incident_cells(source, std::back_inserter(scells)); // precondition: dimension()==3
+
+	typename std::list<Cell_handle>::iterator it;
+	for(it = scells.begin(); it != scells.end(); it++) {
+		Cell_handle c = *it;
+		if (is_infinite(c)) continue;
+		if (c->has_vertex(target)) continue;
+
+		Vertex_handle v[4] = { c->vertex(0), c->vertex(1), c->vertex(2), c->vertex(3) };
+		CGAL_assertion( c->has_vertex(source) );
+		v[ c->index(source) ] = target;
+
+		for (int i=0; i<4; i++ ) {
+			//std::cout << "Lala2" << std::endl;
+			//std::cout << "(" << v[0]->point() << ") " << std::endl;
+			//std::cout << "(" << v[1]->point() << ") " << std::endl;
+			//std::cout << "(" << v[2]->point() << ") " << std::endl;
+			//std::cout << "(" << v[3]->point() << ") " << std::endl;
+			//std::cout << " (" << c->vertex((c->neighbor(i))->index(c))->point() << ")" << std::endl;
+			
+			Vertex_handle query = c->neighbor(i)->vertex(c->neighbor(i)->index(c));// c->vertex((c->neighbor(i))->index(c));
+			if (is_infinite(query)) continue;
+
+			// 'perturb'=false
+			if ( side_of_sphere(v[0], v[1], v[2], v[3], query->point(), false) == ON_BOUNDED_SIDE )
+				return false;
+		}
+	}
+
+	return true;
+}
+  
 /////////////////////////////
 // TRIANGULATION_3 members //
 /////////////////////////////
 
 TRI_FUNC(bool)
+collapse_edge(Edge& edge, const Point& point)
+{
+	Cell_handle cell = edge.first;
+	Vertex_handle target = cell->vertex(edge.third);
+	target->set_point(point);	
+
+	return collapse_edge(edge);
+}
+
+TRI_FUNC(bool)
 check_kernel_test(const Edge& edge) const
 {
-        Vertex_handle s = _tds.get_source_vertex(edge);
-        Vertex_handle t = _tds.get_target_vertex(edge);
-
-	CGAL_assertion( !infinite_vertex(s) );
-	CGAL_assertion( !infinite_vertex(t) );
-	        
-        Facet_list hull;
-        _tds.get_facets_from_link(s, hull);
-        _tds.get_facets_from_link(t, hull); // not needed
-
-        return is_in_kernel(t, hull.begin(), hull.end());
+	return check_kernel_test(edge, _tds.get_target_vertex(edge)->point());
 }
-  
+
 TRI_FUNC(bool)
 check_kernel_test(const Edge& edge, const Point& point) const
 {
+	CGAL_triangulation_precondition( dimension() == 3 );	
+
 	Vertex_handle s = _tds.get_source_vertex(edge);
         Vertex_handle t = _tds.get_target_vertex(edge);
 
-	CGAL_assertion( !infinite_vertex(s) );
-	CGAL_assertion( !infinite_vertex(t) );
-	        
-        Facet_list hull;
-        _tds.get_facets_from_link(s, hull);
-        _tds.get_facets_from_link(t, hull);
+	CGAL_assertion( !is_infinite(s) );
+	CGAL_assertion( !is_infinite(t) );
 
-        return is_in_kernel(t, hull.begin(), hull.end());
+        
+        Facet_list hull;
+	if (point != s->point()) // then 'point' may not be visible from the link of 's'
+		_tds.get_facets_from_link(s, hull);
+        
+	if (point != t->point()) // then 'point' may not be visible from the link of 't'
+		_tds.get_facets_from_link(t, hull);
+
+        return is_in_kernel(point, hull.begin(), hull.end());
 }  
 
 template < class Vb, class Cb >
 template < class Iterator > // value_type = Face
 bool
 Triangulation_3<Vb,Cb>::
-is_in_kernel(Vertex_handle query, Iterator begin, Iterator end) const
+is_in_kernel(Point query, Iterator begin, Iterator end) const
 {
 	for (Iterator it = begin; it != end; ++it) {
 		Facet facet = *it;
@@ -501,7 +529,7 @@ is_in_kernel(Vertex_handle query, Iterator begin, Iterator end) const
 		Vertex_handle va, vb, vc;
 		_tds.get_vertices_from_facet(facet, va, vb, vc);
 	
-		if (CGAL::orientation(query->point(), va->point(), vb->point(), vc->point()) == CGAL::POSITIVE)
+		if (CGAL::orientation(query, va->point(), vb->point(), vc->point()) == CGAL::POSITIVE)
 			return false; 
 	}
 
