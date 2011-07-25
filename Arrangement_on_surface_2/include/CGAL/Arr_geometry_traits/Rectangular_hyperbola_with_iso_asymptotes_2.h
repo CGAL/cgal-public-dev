@@ -56,14 +56,18 @@ private:
   typedef Rectangular_hyperbola_with_iso_asymptotes_2_rep<Kernel, Filter>
                                                         Self;
   
-  Point_2   m_source;           // The source point (if exists).
-  Point_2   m_target;           // The target point (if exists).
-  bool      m_has_source;       // Is the source point valid
-  bool      m_has_target;       // Is the target point valid
-
-  /* y = (a*x + b)/(cx + d) */
+  /* axy + bx + cy + d = 0 */
   NT m_a, m_b, m_c, m_d;
   
+  Point_2   m_source;        // The source point (if exists).
+  Point_2   m_target;        // The target point (if exists).
+  bool      m_has_source;    // Is the source point valid?
+  bool      m_has_target;    // Is the target point valid?
+  bool      m_is_directed_right; // Is the curve directed right?
+  bool      m_has_left_x;    // Has the curve a vertical asymptote on the left 
+  bool      m_has_right_x;   // Has the curve a vertical asymptote on the right 
+  bool      m_is_continuous; // Is the curve continuous?
+
 public:
   /*!
    * Default constructor.
@@ -74,79 +78,118 @@ public:
   {}
 
   /*!
-   * Constructor from two points.
-   * \param s The source point.
-   * \param t The target point.
+   * Constructor from all data fields.
+   * \param a The a coefficient.
+   * \param b The a coefficient.
+   * \param c The a coefficient.
+   * \param d The a coefficient.
+   * \param sourse The source point.
+   * \param target The target point.
+   * \param has_source Indicates whether the curve has a valid source point.
+   * \param has_source Indicates whether the curve has a valid target point.
+   * \param is_directed_right Indicates whether the curve is directed right.
+   * \param has_left_x Indicates whether the curve has a vertical asymptote
+   *        on the left.
+   * \param has_right_x Indicates whether the curve has a vertical asymptote
+   *        on the right.
+   * \param is_continuous Indicates the curve continuous.
    * \pre The two points must not be the same.
+   * \pre The source is on the hyperbola.
+   * \pre The target is on the hyperbola.
    */
-  Rectangular_hyperbola_with_iso_asymptotes_2(const FT& a,
-                                              const FT& b,
-                                              const FT& c,
-                                              const FT& d,
+  Rectangular_hyperbola_with_iso_asymptotes_2(const FT& a, const FT& b,
+                                              const FT& c, const FT& d,
                                               const Point_2& source,
-                                              const Point_2& target) :
-    m_source(source),
-    m_target(target),
-    m_has_source(true),
-    m_has_target(true),
+                                              const Point_2& target,
+                                              bool has_source, bool has_target,
+                                              bool is_directed_right,
+                                              bool has_left_x, bool has_right_x,
+                                              bool is_continuous) :
     m_a(a),
     m_b(b),
     m_c(c),
-    m_d(d)
+    m_d(d),
+    m_source(source),
+    m_target(target),
+    m_has_source(has_source),
+    m_has_target(has_target),
+    m_is_directed_right(is_directed_right),
+    m_has_left_x(has_left_x),
+    m_has_right_x(has_right_x),
+    m_is_continuous(is_continuous)
   {}
 
   /*!
-   * Flips the curve direction
-   */
-  Self flip()
-  {
-    std::swap(m_source, m_target);
-    std::swap(m_has_source, m_has_target);
-    m_a = -m_a;
-    m_b = -m_b;
-    m_c = -m_c;
-    m_d = -m_d;
-  }
-  
-  /*!
-   * Obtains the 'a' coefficient
+   * Obtains the 'a' coefficient of the hyperbola.
+   * \return The 'a' coefficient.
    */
   const NT& a() const { return m_a; }
 
   /*!
-   * Obtains the 'b' coefficient
+   * Obtains the 'b' coefficient of the hyperbola.
+   * \return The 'b' coefficient.
    */
   const NT& b() const { return m_b; }
 
   /*!
-   * Obtains the 'c' coefficient
+   * Obtains the 'c' coefficient of the hyperbola.
+   * \return The 'c' coefficient.
    */
   const NT& c() const { return m_c; }
 
   /*!
-   * Obtains the 'd' coefficient
+   * Obtains the 'd' coefficient of the hyperbola.
+   * \return The 'd' coefficient.
    */
   const NT& d() const { return m_d; }
 
   /*!
-   * Checks whether the curve has a source point.
-   */
-  bool has_source() const { return m_has_source; }
-
-  /*!
-   * Checks whether the curve has a target point.
-   */
-  bool has_target() const { return m_has_target; }
-
-  /*!
    * Obtains the source point.
+   * \return The source point.
    */
   Point_2& source() const { return m_source; }
 
   /*!
    * Obtains the target point.
+   * \return The target point.
    */
   Point_2& target() const { return m_target; }
+
+  /*!
+   * Checks whether the curve has a source point.
+   * \return If the curve has a source point, true; otherwise false.
+   */
+  bool has_source() const { return m_has_source; }
+
+  /*!
+   * Checks whether the curve has a target point.
+   * \return If the curve has a target point, true; otherwise false.
+   */
+  bool has_target() const { return m_has_target; }
+
+  /*!
+   * Indicates whether the curve is directed right.
+   * \return If the curve is directed right, true; otherwise false.
+   */
+  bool is_directed_right() const { return m_is_directed_right; }
+
+  /*!
+   * Indicates whether the curve has an asymptote on the left.
+   * \return If the curve has an asymptote on the left, true; otherwise false.
+   */
+  bool has_left_x() const { return m_has_left_x; }
+
+  /*!
+   * Indicates whether the curve has an asymptote on the right.
+   * \return If the curve has an asymptote on the right, true; otherwise false.
+   */
+  bool has_right_x() const { return m_has_right_x; }
+
+  /*!
+   * Indicates whether the curve is continuous.
+   * \return If the curve is continuous, true; otherwise false.
+   */
+  bool is_continuous() const { return m_is_continuous; }
 };
 
 /*!
@@ -187,18 +230,36 @@ public:
     Curve_handle(cv) {}
   
   /*!
-   * Constructor from two points.
-   * \param s The source point.
-   * \param t The target point.
+   * Constructor from all data fields.
+   * \param a The a coefficient.
+   * \param b The a coefficient.
+   * \param c The a coefficient.
+   * \param d The a coefficient.
+   * \param sourse The source point.
+   * \param target The target point.
+   * \param has_source Indicates whether the curve has a valid source point.
+   * \param has_source Indicates whether the curve has a valid target point.
+   * \param is_directed_right Indicates whether the curve is directed right.
+   * \param has_left_x Indicates whether the curve has a vertical asymptote
+   *        on the left.
+   * \param has_right_x Indicates whether the curve has a vertical asymptote
+   *        on the right.
+   * \param is_continuous Indicates the curve continuous.
    * \pre The two points must not be the same.
+   * \pre The source is on the hyperbola.
+   * \pre The target is on the hyperbola.
    */
-  Rectangular_hyperbola_with_iso_asymptotes_2(const FT& a,
-                                              const FT& b,
-                                              const FT& c,
-                                              const FT& d,
+  Rectangular_hyperbola_with_iso_asymptotes_2(const FT& a, const FT& b,
+                                              const FT& c, const FT& d,
                                               const Point_2& source,
-                                              const Point_2& target) :
-    Curve_handle(a, b, c, d, source, target) {}
+                                              const Point_2& target,
+                                              bool has_source, bool has_target,
+                                              bool is_directed_right,
+                                              bool has_left_x, bool has_right_x,
+                                              bool is_continuous) :
+    Curve_handle(a, b, c, d, source, target, has_source, has_target,
+                 is_directed_right, has_left_x, has_right_x, is_continuous)
+  {}
 
   /*!
    * Assignment operator.
@@ -222,7 +283,6 @@ public:
    */
   bool is_segment() const
   { return (is_zero(rep().a()) && rep().has_target() && rep().has_source()); }
-
 
   /*!
    * Checks whether the object is a ray.
@@ -308,10 +368,9 @@ operator>>(InputStream& is,
   Point_2 source;
   Point_2 target;
   char c;
-  do {
-    is >> c;
-  } while ((c != 'P' && c != 'p') &&
-           (c != 'H' && c != 'h'));
+
+  do is >> c;
+  while ((c != 'P' && c != 'p') && (c != 'H' && c != 'h'));
 
   // Read the object accordingly.
   if (c == 'P' || c == 'p') {
