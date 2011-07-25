@@ -59,13 +59,11 @@ private:
   Coord_NT m_y;
 
 public:
-  /*!
-   * Default constructor.
+  /*! Default constructor.
    */
   Sqrt_extension_point_2_rep() : m_x(0), m_y(0) {}
 
-  /*!
-   * Constructor of a point with coordinate (sqrt-extension) coefficients.
+  /*! Constructor of a point with coordinate (sqrt-extension) coefficients.
    */
   Sqrt_extension_point_2_rep(const Coord_NT& x, const Coord_NT& y) :
     m_x(x),
@@ -92,24 +90,20 @@ private:
 public:
   typedef typename Point_rep::Coord_NT                  Coord_NT;
 
-  /*!
-   * Default constructor.
+  /*! Default constructor.
    */
   Sqrt_extension_point_2() : Point_handle(Point_rep()) {}
 
-  /*!
-   * Copy constructor.
+  /*! Copy constructor.
    */
   Sqrt_extension_point_2(const Self& p) : Point_handle(p) {}
 
-  /*!
-   * Constructor of a point with coordinate (sqrt-extension) coefficients.
+  /*! Constructor of a point with coordinate (sqrt-extension) coefficients.
    */
   Sqrt_extension_point_2(const Coord_NT& x, const Coord_NT& y) :
     Point_handle(Point_rep(x, y)) {}
 
-  /*!
-   * Assignment operator.
+  /*! Assignment operator.
    */
   Self& operator=(const Self& p)
   {
@@ -144,6 +138,8 @@ public:
   bool operator!=(const Self& p, const Self& q) const { return !(p == q); }
 
   /*! Sets the point coordinates.
+   * \param x The x-coordinate.
+   * \param x The y-coordinate.
    */
   void set(const NT& x, const NT& y)
   {
@@ -152,7 +148,10 @@ public:
     this->ptr()->m_y = Coord_NT(y);
   }
 
-  /*! Sets the point coordinates. */
+  /*! Sets the point coordinates.
+   * \param x The x-coordinate.
+   * \param x The y-coordinate.
+   */
   void set(const Coord_NT& x, const Coord_NT& y)
   {
     this->copy_on_write();
@@ -168,9 +167,20 @@ template <typename NT, bool Filter>
 std::ostream& operator<<(std::ostream& os,
                          const Sqrt_extension_point_2<NT, Filter>& p)
 {
-  return (os << CGAL::to_double(p.x()) << ' ' << CGAL::to_double(p.y()));
+  os << p.x() << " " p.y();
+  return os;
 }
 
+/*!
+ * An importer for Sqrt_extension_point_2.
+ */
+template <typename NT, bool Filter, typename InputStream>
+InputStream& operator>>(InputStream& is, Sqrt_extension_point_2<NT, Filter>& p)
+{
+  Coord_NT x, y;
+  is >> x >> y;
+  p = Sqrt_extension_point_2(x, y);
+  return is;
 }
 
 #nedif

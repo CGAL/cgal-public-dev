@@ -71,8 +71,7 @@ public:
 
 public:
 
-  /*!
-   * Default constructor.
+  /*! Default constructor.
    */
   Arr_rectangular_hyperbola_with_iso_asymptotes_traits_2() {}
 
@@ -82,8 +81,7 @@ public:
   /*! A functor that compares the x-coordinates of two points */
   class Compare_x_2 {
   public:
-    /*!
-     * Compare the x-coordinates of two points.
+    /*! Compares the x-coordinates of two points.
      * \param p1 The first point.
      * \param p2 The second point.
      * \return LARGER if x(p1) > x(p2);
@@ -97,14 +95,15 @@ public:
     }
   };
 
-  /*! Obtain a Compare_x_2 functor. */
+  /*! Obtains a Compare_x_2 functor. */
   Compare_x_2 compare_x_2_object() const { return Compare_x_2(); }
 
-  /*! A functor that compares the x-coordinates of two points */
+  /*! \class
+   * A functor that compares the x-coordinates of two points
+   */
   class Compare_xy_2 {
   public:
-    /*!
-     * Compare two points lexigoraphically: by x, then by y.
+    /*! Compares two points lexigoraphically: by x, then by y.
      * \param p1 The first point.
      * \param p2 The second point.
      * \return LARGER if x(p1) > x(p2), or if x(p1) = x(p2) and y(p1) > y(p2);
@@ -120,14 +119,15 @@ public:
     }
   };
 
-  /*! Obtain a Compare_xy_2 functor object. */
+  /*! Obtains a Compare_xy_2 functor object. */
   Compare_xy_2 compare_xy_2_object() const { return Compare_xy_2(); }
 
-  /*! A functor that obtains the left endpoint of a segment or a ray. */
+  /*! \class
+   * A functor that obtains the left endpoint of a segment or a ray.
+   */
   class Construct_min_vertex_2 {
   public:
-    /*!
-     * Get the left endpoint of the x-monotone curve.
+    /*! Obtains the left endpoint of the x-monotone curve.
      * \param xcv The curve.
      * \pre The left end of xcv is a valid (bounded) point.
      * \return The left endpoint.
@@ -139,15 +139,16 @@ public:
     }
   };
 
-  /*! Obtain a Construct_min_vertex_2 functor object. */
+  /*! Obtains a Construct_min_vertex_2 functor object. */
   Construct_min_vertex_2 construct_min_vertex_2_object() const
   { return Construct_min_vertex_2(); }
 
-  /*! A functor that obtains the right endpoint of a segment or a ray. */
+  /*! \class
+   * A functor that obtains the right endpoint of a segment or a ray.
+   */
   class Construct_max_vertex_2 {
   public:
-    /*!
-     * Get the right endpoint of the x-monotone curve.
+    /*! Obtains the right endpoint of the x-monotone curve.
      * \param xcv The curve.
      * \pre The right end of xcv is a valid (bounded) point.
      * \return The right endpoint.
@@ -159,15 +160,16 @@ public:
     }
   };
 
-  /*! Obtain a Construct_max_vertex_2 functor object. */
+  /*! Obtains a Construct_max_vertex_2 functor object. */
   Construct_max_vertex_2 construct_max_vertex_2_object() const
   { return Construct_max_vertex_2(); }
 
-  /*! A functor that checks whether a given linear curve is vertical. */
+  /*! \class
+   * A functor that checks whether a given linear curve is vertical.
+   */
   class Is_vertical_2 {
   public:
-    /*!
-     * Checks whether the given x-monotone curve is a vertical segment.
+    /*! Checks whether the given x-monotone curve is a vertical segment.
      * \param xcv The curve.
      * \return (true) if the curve is a vertical segment; (false) otherwise.
      */
@@ -175,11 +177,11 @@ public:
     { return xcv.is_vertical(); }
   };
 
-  /*! Obtain an Is_vertical_2 functor object. */
+  /*! Obtains an Is_vertical_2 functor object. */
   Is_vertical_2 is_vertical_2_object() const { return Is_vertical_2(); }
 
   /*! A functor that compares the y-coordinates of a point and a line at
-   * the point x-coordinate
+   * the point x-coordinate.
    */
   class Compare_y_at_x_2 {
   protected:
@@ -218,17 +220,17 @@ public:
     }
   };
 
-  /*! Obtain a Compare_y_at_x_2 functor object. */
+  /*! Obtains a Compare_y_at_x_2 functor object. */
   Compare_y_at_x_2 compare_y_at_x_2_object() const
   { return Compare_y_at_x_2(this); }
 
-  /*! A functor that compares compares the y-coordinates of two linear
+  /*! \class
+   * A functor that compares compares the y-coordinates of two linear
    * curves immediately to the left of their intersection point.
    */
   class Compare_y_at_x_left_2 {
   public:
-    /*!
-     * Compare the y value of two x-monotone curves immediately to the left
+    /*! Compares the y value of two x-monotone curves immediately to the left
      * of their intersection point.
      * \param xcv1 The first curve.
      * \param xcv2 The second curve.
@@ -247,17 +249,17 @@ public:
     }
   };
 
-  /*! Obtain a Compare_y_at_x_left_2 functor object. */
+  /*! Obtains a Compare_y_at_x_left_2 functor object. */
   Compare_y_at_x_left_2 compare_y_at_x_left_2_object() const
   { return Compare_y_at_x_left_2(); }
 
-  /*! A functor that compares compares the y-coordinates of two linear
+  /*! \class
+   * A functor that compares compares the y-coordinates of two linear
    * curves immediately to the right of their intersection point.
    */
   class Compare_y_at_x_right_2 {
   public:
-    /*!
-     * Compare the y value of two x-monotone curves immediately to the right
+    /*! Compares the y value of two x-monotone curves immediately to the right
      * of their intersection point.
      * \param xcv1 The first curve.
      * \param xcv2 The second curve.
@@ -276,17 +278,17 @@ public:
     }
   };
 
-  /*! Obtain a Compare_y_at_x_right_2 functor object. */
+  /*! Obtains a Compare_y_at_x_right_2 functor object. */
   Compare_y_at_x_right_2 compare_y_at_x_right_2_object() const
   { return Compare_y_at_x_right_2(); }
 
-  /*! A functor that checks whether two points and two linear curves are
+  /*! \class
+   * A functor that checks whether two points and two linear curves are
    * identical.
    */
   class Equal_2 {
   public:
-    /*!
-     * Check whether the two x-monotone curves are the same (have the same
+    /*! Checks whether the two x-monotone curves are the same (have the same
      * graph).
      * \param xcv1 The first curve.
      * \param xcv2 The second curve.
@@ -296,8 +298,7 @@ public:
                     const X_monotone_curve_2& xcv2) const
     { return (xcv1 == xcv2); }
 
-    /*!
-     * Check whether the two points are the same.
+    /*! Checks whether the two points are the same.
      * \param p1 The first point.
      * \param p2 The second point.
      * \return (true) if the two point are the same; (false) otherwise.
@@ -306,14 +307,15 @@ public:
     { return (p1 == p2); }
   };
 
-  /*! Obtain an Equal_2 functor object. */
+  /*! Obtains an Equal_2 functor object. */
   Equal_2 equal_2_object() const { return Equal_2(); }
   //@}
 
   /// \name Functor definitions to handle boundaries
   //@{
 
-  /*! A function object that obtains the parameter space of a geometric
+  /*! \class
+   * A function object that obtains the parameter space of a geometric
    * entity along the x-axis
    */
   class Parameter_space_in_x_2 {
@@ -339,11 +341,12 @@ public:
     }
   };
 
-  /*! Obtain a Parameter_space_in_x_2 function object */
+  /*! Obtains a Parameter_space_in_x_2 function object */
   Parameter_space_in_x_2 parameter_space_in_x_2_object() const
   { return Parameter_space_in_x_2(); }
   
-  /*! A function object that obtains the parameter space of a geometric
+  /*! \class
+   * A function object that obtains the parameter space of a geometric
    * entity along the y-axis
    */
   class Parameter_space_in_y_2 {
@@ -376,11 +379,12 @@ public:
     }
   };
 
-  /*! Obtain a Parameter_space_in_y_2 function object */
+  /*! Obtains a Parameter_space_in_y_2 function object */
   Parameter_space_in_y_2 parameter_space_in_y_2_object() const
   { return Parameter_space_in_y_2(); }
 
-  /*! A function object that compares the x-limits of arc ends on the
+  /*! \class
+   * A function object that compares the x-limits of arc ends on the
    * boundary of the parameter space
    */
   class Compare_x_at_limit_2 {
@@ -431,16 +435,17 @@ public:
 
   };
 
-  /*! Obtain a Compare_x_at_limit_2 function object */
+  /*! Obtains a Compare_x_at_limit_2 function object */
   Compare_x_at_limit_2 compare_x_at_limit_2_object() const
   { return Compare_x_at_limit_2(); }
 
-  /*! A function object that compares the x-coordinates of arc ends near the
+  /*! \class
+   * A function object that compares the x-coordinates of arc ends near the
    * boundary of the parameter space
    */
   class Compare_x_near_limit_2 {
   public:
-    /*! Compare the x-coordinates of 2 arcs ends near the boundary of the
+    /*! Compares the x-coordinates of 2 arcs ends near the boundary of the
      * parameter space at y = +/- oo.
      * \param xcv1 the first arc.
      * \param xcv2 the second arc.
@@ -462,17 +467,18 @@ public:
     }
   };
 
-  /*! Obtain a Compare_x_near_boundary_2 function object */
+  /*! Obtains a Compare_x_near_boundary_2 function object */
   Compare_x_near_boundary_2 compare_x_near_boundary_2_object() const
   { return Compare_x_near_boundary_2(); }
     
 
-  /*! A function object that compares the y-coordinates of arc ends near the
+  /*! \class
+   * A function object that compares the y-coordinates of arc ends near the
    * boundary of the parameter space.
    */
   class Compare_y_near_boundary_2 {
   public:
-    /*! Compare the y-coordinates of 2 lines at their ends near the boundary
+    /*! Compares the y-coordinates of 2 lines at their ends near the boundary
      * of the parameter space at x = +/- oo.
      * \param xcv1 the first arc.
      * \param xcv2 the second arc.
@@ -485,42 +491,12 @@ public:
                                  const X_monotone_curve_2 & xcv2,
                                  Arr_curve_end ce) const
     {
-      // // Make sure both curves are defined at x = -oo (or at x = +oo).
-      // CGAL_precondition (! xcv1.is_degenerate());
-      // CGAL_precondition (! xcv2.is_degenerate());
-      // CGAL_precondition ((ce == ARR_MIN_END &&
-      //                     xcv1.left_infinite_in_x() == ARR_LEFT_BOUNDARY &&
-      //                     xcv2.left_infinite_in_x() == ARR_LEFT_BOUNDARY) ||
-      //                    (ce == ARR_MAX_END &&
-      //                     xcv1.right_infinite_in_x() == ARR_RIGHT_BOUNDARY &&
-      //                     xcv2.right_infinite_in_x() == ARR_RIGHT_BOUNDARY));
-
-      // // Compare the slopes of the two supporting lines.
-      // Kernel                    kernel;
-      // const Comparison_result   res_slopes =
-      //   kernel.compare_slope_2_object() (xcv1.supp_line(), xcv2.supp_line());
-
-      // if (res_slopes == EQUAL) {
-      //   // In case the two supporting line are parallel, compare their
-      //   // relative position at x = 0, which is the same as their position
-      //   // at infinity.
-      //   typename Kernel::Point_2 p = kernel.construct_point_2_object() (ORIGIN);
-      //   return (kernel.compare_y_at_x_2_object() (p,
-      //                                             xcv1.supp_line(),
-      //                                             xcv2.supp_line()));
-      // }
-
-      // if (ce == ARR_MIN_END)
-      //   // Flip the slope result if we compare at x = -oo:
-      //   return ((res_slopes == LARGER) ? SMALLER : LARGER);
-
-      // // If we compare at x = +oo, the slope result is what we need:
-      // return (res_slopes);
-       //TODO // ASAFP
+      // TODO
+      return EQUAL;
     }
   };
 
-  /*! Obtain a Compare_y_near_boundary_2 function object */
+  /*! Obtains a Compare_y_near_boundary_2 function object */
   Compare_y_near_boundary_2 compare_y_near_boundary_2_object() const
   { return Compare_y_near_boundary_2(); }
   
@@ -529,12 +505,12 @@ public:
   /// \name Functor definitions for supporting intersections.
   //@{
 
+  /*! \class
+   */
   class Make_x_monotone_2 {
   public:
-    /*!
-     * Cut the given curve into x-monotone subcurves and insert them into the
-     * given output iterator. As segments are always x_monotone, only one
-     * object will be contained in the iterator.
+    /*! Decomposes the given curve into x-monotone subcurves and insert them
+     * into the given output iterator.
      * \param cv The curve.
      * \param oi The output iterator, whose value-type is Object. The output
      *           object is a wrapper of an X_monotone_curve_2 which is
@@ -544,21 +520,22 @@ public:
     template<typename OutputIterator>
     OutputIterator operator()(const Curve_2& cv, OutputIterator oi) const
     {
-      // Wrap the curve with an object.
+      // TODO
       *oi++ = make_object(cv);
 
       return oi;
     }
   };
 
-  /*! Obtain a Make_x_monotone_2 functor object. */
+  /*! Obtains a Make_x_monotone_2 functor object. */
   Make_x_monotone_2 make_x_monotone_2_object () const
   { return Make_x_monotone_2(); }
 
+  /*! \class
+   */
   class Split_2 {
   public:
-    /*!
-     * Split a given x-monotone curve at a given point into two sub-curves.
+    /*! Splits a given x-monotone curve at a given point into two sub-curves.
      * \param xcv The curve to split
      * \param p The split point.
      * \param xcv1 Output: The left resulting subcurve (p is its right endpoint).
@@ -573,9 +550,11 @@ public:
     }
   };
 
-  /*! Obtain a Split_2 functor object. */
+  /*! Obtains a Split_2 functor object. */
   Split_2 split_2_object() const { return Split_2(); }
 
+  /*! \class
+   */
   class Intersect_2 {
   public:
     /*!
@@ -596,9 +575,11 @@ public:
     }
   };
 
-  /*! Obtain an Intersect_2 functor object. */
+  /*! Obtains an Intersect_2 functor object. */
   Intersect_2 intersect_2_object () const { return Intersect_2(); }
 
+  /*! \class
+   */
   class Are_mergeable_2 {
   public:
     /*!
@@ -616,9 +597,11 @@ public:
     }
   };
 
-  /*! Obtain an Are_mergeable_2 functor object. */
+  /*! Obtains an Are_mergeable_2 functor object. */
   Are_mergeable_2 are_mergeable_2_object () const { return Are_mergeable_2(); }
 
+  /*! \class
+   */
   class Merge_2 {
   public:
     /*!
@@ -638,7 +621,7 @@ public:
     }
   };
 
-  /*! Obtain a Merge_2 functor object. */
+  /*! Obtains a Merge_2 functor object. */
   Merge_2 merge_2_object () const { return Merge_2(); }
   //@}
 
@@ -646,11 +629,11 @@ public:
   //@{
   typedef double Approximate_number_type;
 
+  /*! \class
+   */
   class Approximate_2 {
   public:
-
-    /*!
-     * Return an approximation of a point coordinate.
+    /*! Obtains an approximation of a point coordinate.
      * \param p The exact point.
      * \param i The coordinate index (either 0 or 1).
      * \pre i is either 0 or 1.
@@ -664,7 +647,7 @@ public:
     }
   };
 
-  /*! Obtain an Approximate_2 functor object. */
+  /*! Obtains an Approximate_2 functor object. */
   Approximate_2 approximate_2_object () const { return Approximate_2(); }
 
   // No Construct_x_monotone_curve_2!
@@ -672,6 +655,9 @@ public:
 
   /// \name Functor definitions for the Boolean set-operation traits.
   //@{
+
+  /*! \class
+   */
   class Compare_endpoints_xy_2 {
   public:
     /*!
@@ -685,14 +671,15 @@ public:
     { return (xcv.is_directed_right()) ? SMALLER : LARGER; }
   };
 
-  /*! Obtain a Compare_endpoints_xy_2 functor object. */
+  /*! Obtains a Compare_endpoints_xy_2 functor object. */
   Compare_endpoints_xy_2 compare_endpoints_xy_2_object() const
   { return Compare_endpoints_xy_2(); }
 
+  /*! \class
+   */
   class Construct_opposite_2 {
   public:
-    /*!
-     * Construct an opposite x-monotone (with swapped source and target).
+    /*! Constructs an opposite x-monotone (with swapped source and target).
      * \param xcv The curve.
      * \return The opposite curve.
      */
@@ -706,7 +693,7 @@ public:
     }
   };
 
-  /*! Obtain a Construct_opposite_2 functor object. */
+  /*! Obtains a Construct_opposite_2 functor object. */
   Construct_opposite_2 construct_opposite_2_object() const
   { return Construct_opposite_2(); }
   //@}
@@ -714,7 +701,9 @@ public:
   /// \name Constructors.
   //@{
 
-  // A constructor object of x-monotone curves
+  /*! \class
+   * A constructor object of x-monotone curves.
+   */
   class Construct_x_monotone_curve_2 {
   protected:
     typedef Arr_rectangular_hyperbola_with_iso_asymptotes_traits_2<Kernel>
@@ -735,8 +724,7 @@ public:
     friend class Arr_rectangular_hyperbola_with_iso_asymptotes_traits_2<Kernel>;
 
   public:
-    /*!
-     * Constructor from all data fields.
+    /*! Constructor from all data fields.
      * \param a The a coefficient.
      * \param b The a coefficient.
      * \param c The a coefficient.
@@ -825,8 +813,7 @@ public:
       return xcv;
     }
 
-    /*!
-     * Constructor for a curve bounded at one endpoint.
+    /*! Constructor for a curve bounded at one endpoint.
      * (a) If is_directed_right
      *     (i)  If source.x < -c/a, then has_left_x <= true
      *     (ii) Otherwise (source.x > -c/a), has_left_x <= false
@@ -864,14 +851,15 @@ public:
     }
   };
   
-  /*! Obtain a Construct_x_monotone_curve_2 functor object. */
+  /*! Obtains a Construct_x_monotone_curve_2 functor object. */
   Construct_x_monotone_curve_2 construct_x_monotone_curve_2_object() const
   { return Construct_x_monotone_curve_2(this); }
 
-  // A constructor object of curves
+  /*! \class
+   * A constructor object of curves.
+   */
   class Construct_curve_2 {
-    /*!
-     * Constructor an unbounded curve.
+    /*! Constructor an unbounded curve.
      * \param a The a coefficient.
      * \param b The a coefficient.
      * \param c The a coefficient.
@@ -895,8 +883,7 @@ public:
       return xcv;
     }
 
-    /*!
-     * Constructor for a curve bounded at the source and at the target.
+    /*! Constructor for a curve bounded at the source and at the target.
      * \param a The a coefficient.
      * \param b The a coefficient.
      * \param c The a coefficient.
@@ -923,8 +910,7 @@ public:
       return xcv;
     }
 
-    /*!
-     * Constructor for a curve bounded at one endpoint.
+    /*! Constructor for a curve bounded at one endpoint.
      * \param a The a coefficient.
      * \param b The a coefficient.
      * \param c The a coefficient.
@@ -969,7 +955,7 @@ public:
     }
   };
   
-  /*! Obtain a Construct_curve_2 functor object. */
+  /*! Obtains a Construct_curve_2 functor object. */
   Construct_curve_2 construct_curve_2_object() const
   { return Construct_curve_2(); }
   //@}

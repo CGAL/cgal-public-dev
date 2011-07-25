@@ -36,8 +36,7 @@ namespace CGAL {
 template <typename NumberType_, bool Filter_>
 class Rectangular_hyperbola_with_iso_asymptotes_2;
 
-/*!
- * \class
+/*! \class
  * A representation of a rectangular hyperbola with vertical and horizontal
  * asymptotes.
  */
@@ -69,8 +68,7 @@ private:
   bool      m_is_continuous;     // Is the curve continuous?
 
 public:
-  /*!
-   * Default constructor.
+  /*! Default constructor.
    */
   Rectangular_hyperbola_with_iso_asymptotes_2_rep() :
     has_left_x(false),
@@ -79,8 +77,7 @@ public:
     has_right_y(false)
   {}
 
-  /*!
-   * Constructor from all data fields.
+  /*! Constructor from all data fields.
    * \param a The a coefficient (either 0 or 1).
    * \param b The a coefficient.
    * \param c The a coefficient.
@@ -135,8 +132,7 @@ public:
   {}
 };
 
-/*!
- * \class
+/*! \class
  * A representation of a rectangular hyperbola with vertical and horizontal
  * asymptotes used by the traits class
  * Arr_rectangular_hyperbola_with_iso_asymptotes_traits_2.
@@ -163,17 +159,16 @@ public:
   typedef Sqrt_extension_point_2<NT, Filter>            Point_2;
   typedef typename Curve_rep::Coord_NT                  Coord_NT;
 
-  /*!
-   * Default constructor.
+  /*! Default constructor.
    */
   Rectangular_hyperbola_with_iso_asymptotes_2() : Curve_handle(Curve_rep()) {}
 
-  /*! Copy constructor. */
+  /*! Copy constructor.
+   */
   Rectangular_hyperbola_with_iso_asymptotes_2(const Self& cv) :
     Curve_handle(cv) {}
   
-  /*!
-   * Constructor from all data fields.
+  /*! Constructor from all data fields.
    * \param a The a coefficient (either 0 or 1).
    * \param b The a coefficient.
    * \param c The a coefficient.
@@ -217,8 +212,7 @@ public:
                  is_directed_right, is_continuous)
   {}
 
-  /*!
-   * Assignment operator.
+  /*! Assignment operator.
    */
   Self& operator=(const Self& cv)
   {
@@ -228,7 +222,9 @@ public:
   }
 
 private:
-  // Obtain the representation.
+  /*! Obtains the representation.
+   * \return The representation.
+   */
   inline const Curve_rep& rep() const { return (*(this->ptr())); }
 
   inline Curve_rep& rep() { return (*(this->ptr())); }
@@ -254,152 +250,130 @@ public:
             (cv1.is_continuous() == cv2.is_continuous()));
   }
 
-  /*!
-   * Obtains the 'a' coefficient of the curve.
+  /*! Obtains the 'a' coefficient of the curve.
    * \return If the curve is a linear object, false; Otherwise, true.
    */
   bool a() const { return rep().m_a; }
 
-  /*!
-   * Obtains the 'b' coefficient of the hyperbola.
+  /*! Obtains the 'b' coefficient of the hyperbola.
    * \return The 'b' coefficient.
    */
   const NT& b() const { return rep().m_b; }
 
-  /*!
-   * Obtains the 'c' coefficient of the hyperbola.
+  /*! Obtains the 'c' coefficient of the hyperbola.
    * \return The 'c' coefficient.
    */
   const NT& c() const { return rep().m_c; }
 
-  /*!
-   * Obtains the 'd' coefficient of the hyperbola.
+  /*! Obtains the 'd' coefficient of the hyperbola.
    * \return The 'd' coefficient.
    */
   const NT& d() const { return rep().m_d; }
 
-  /*!
-   * Obtains the left point.
+  /*! Obtains the left point.
    * \return The left point.
    */
   Point_2& left() const { return rep().m_left; }
 
-  /*!
-   * Obtains the right point.
+  /*! Obtains the right point.
    * \return The right point.
    */
   Point_2& right() const { return rep().m_right; }
 
-  /*!
-   * Indicates whether the curve is directed right.
+  /*! Indicates whether the curve is directed right.
    * \return If the curve is directed right, true; otherwise false.
    */
   bool is_directed_right() const { return rep().m_is_directed_right; }
 
-  /*!
-   * Indicates whether the left point has a valid x-coordinate.
+  /*! Indicates whether the left point has a valid x-coordinate.
    * \return If the left point has a valid x-coordinate, true; otherwise, false.
    */
   bool has_left_x() const { return rep().m_has_left_x; }
 
-  /*!
-   * Indicates whether the left point has a valid y-coordinate.
+  /*! Indicates whether the left point has a valid y-coordinate.
    * \return If the left point has a valid y-coordinate, true; otherwise, false.
    */
   bool has_left_y() const { return rep().m_has_left_y; }
 
-  /*!
-   * Indicates whether the right point has a valid x-coordinate.
+  /*! Indicates whether the right point has a valid x-coordinate.
    * \return If the right point a valid x-coordinate, true; otherwise, false.
    */
   bool has_right_x() const { return rep().m_has_right_x; }
 
-  /*!
-   * Indicates whether the right point has a valid y-coordinate.
+  /*! Indicates whether the right point has a valid y-coordinate.
    * \return If the right point a valid y-coordinate, true; otherwise, false.
    */
   bool has_right_y() const { return rep().m_has_right_y; }
   
-  /*!
-   * Indicates whether the curve is continuous.
+  /*! Indicates whether the curve is continuous.
    * \return If the curve is continuous, true; otherwise false.
    */
   bool is_continuous() const { return rep().m_is_continuous; }
 
-  /*!
-   * Indicates whether the left point is a valid left endpoint of the curve.
+  /*! Indicates whether the left point is a valid left endpoint of the curve.
    * \return If the left point is a valid left endpoint of the curve, true;
    *         otherwise, false.
    */
   bool has_left() const { return has_left_x() && has_left_y(); }
 
-  /*!
-   * Indicates whether the right point is a valid right endpoint of the curve.
+  /*! Indicates whether the right point is a valid right endpoint of the curve.
    * \return If the right point is a valid right endpoint of the curve, true;
    *         otherwise, false.
    */
   bool has_right() const { return has_right_x() && has_right_y(); }
 
-  /*!
-   * Indicates whether x-coordinate of the left point is the x-coordinate of
+  /*! Indicates whether x-coordinate of the left point is the x-coordinate of
    * an asymptote at the left end of the curve.
    * \return If the x-coordinate of the left point is the x-coordinate of
    *         an asymptote at the left end of the curve, true; otherwise, false.
    */
   bool has_left_asymptote() const { return has_left_x() && !has_left_y(); }
 
-  /*!
-   * Indicates whether x-coordinate of the right point is the x-coordinate of
+  /*! Indicates whether x-coordinate of the right point is the x-coordinate of
    * an asymptote at the right end of the curve.
    * \return If the x-coordinate of the right point is the x-coordinate of
    *         an asymptote at the right end of the curve, true; otherwise, false.
    */
   bool has_right_asymptote() const { return has_right_x() && !has_right_y(); }
 
-  /*!
-   * Checks whether the curve is linear.
+  /*! Checks whether the curve is linear.
    * \return If the curve is linear, true; otherwise, false.
    */
   bool is_linear() const { return !a(); }
   
   
-  /*!
-   * Checks whether the object is a segment.
+  /*! Checks whether the object is a segment.
    * \return If the object has two valid endpoints, true; otherwise, false.
    */
   bool is_segment() const
   { return (is_linear() && has_left() && has_right()); }
 
-  /*!
-   * Checks whether the object is a ray.
+  /*! Checks whether the object is a ray.
    * \return If the object has exactly one valid endpoint, true;
    * otherwise, false.
    */
   bool is_ray() const
   { return (is_linear() && has_right() != has_left())); }
 
-  /*!
-   * Check whether the object is a line.
+  /*! Check whether the object is a line.
    * \return If the object has no valid endpoint, true; otherwise, false.
    */
   bool is_line() const
   { return (is_linear() && !has_right() && !has_left()); }
 
-  /*!
-   * Checks whether the curve is vertical.
+  /*! Checks whether the curve is vertical.
    * \return If the curve is vertical, true; otherwise, false.
    */
   bool is_vertical() const { return (is_linear() && is_zero(rep().c())); }
 
-  /*!
-   * Checks whether the curve is horizontal.
+  /*! Checks whether the curve is horizontal.
    * \return If the curve is horizontal, true; otherwise, false.
    */
   bool is_vertical() const { return (is_linear() && is_zero(rep().b())); }
   
-  /*!
-   * Get the left point.
-   * \pre The object is a point, a segment or a ray.
+  /*! Obtains the left point.
+   * \return The left point.
+   * \pre The curve has a valid left end point.
    */
   const Point_2& left() const
   {
@@ -407,9 +381,8 @@ public:
     return rep().left();
   }
 
-  /*!
-   * Get the right point.
-   * \pre The object is a point or a segment.
+  /*! Obtains the right point.
+   * \pre The curve has a valid right end point.
    */
   const Point_2& right() const
   {
@@ -450,9 +423,9 @@ operator>>(InputStream& is,
   Point_2 left, right;
   bool has_left_x, has_left_y, has_right_x, has_right_y;
   bool is_directed_right, is_continuous;
-  is << a << b << c << d << left << right <<
-     << has_left_x << has_left_y << has_right_x << has_right_y
-     << is_directed_right << is_continuous;
+  is >> a >> b >> c >> d >> left >> right >>
+     >> has_left_x >> has_left_y >> has_right_x >> has_right_y
+     >> is_directed_right >> is_continuous;
   cv = Curve_2(a, b, c, d, left, right,
                has_left_x, has_left_y, has_right_x, has_right_y,
                is_directed_right, is_continuous);
