@@ -294,21 +294,7 @@ public:
      */
     bool operator()(const X_monotone_curve_2& xcv1,
                     const X_monotone_curve_2& xcv2) const
-    {
-      if (cv1.identical(cv2)) return true;
-      return ((xcv1.a() == xcv2.a()) &&
-              (xcv1.b() == xcv2.b())
-              (xcv1.c() == xcv2.c())
-              (xcv1.d() == xcv2.d())
-              (xcv1.left() == xcv2.left())
-              (xcv1.right() == xcv2.right())
-              (xcv1.has_left_x() == xcv2.has_left_x())
-              (xcv1.has_left_y() == xcv2.has_left_y())
-              (xcv1.has_right_x() == xcv2.has_right_x())
-              (xcv1.has_right_y() == xcv2.has_right_y())
-              (xcv1.is_directed_right() == xcv2.is_directed_right())
-              (xcv1.is_continuous() == xcv2.is_continuous()));
-    }
+    { return (xcv1 == xcv2); }
 
     /*!
      * Check whether the two points are the same.
@@ -317,10 +303,7 @@ public:
      * \return (true) if the two point are the same; (false) otherwise.
      */
     bool operator()(const Point_2& p1, const Point_2& p2) const
-    {
-      if (p1.identical(p2)) return true;
-      return ((p1.x() == p2.x()) && (p1.y() == p2.y()));
-    }
+    { return (p1 == p2); }
   };
 
   /*! Obtain an Equal_2 functor object. */

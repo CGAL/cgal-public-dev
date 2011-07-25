@@ -234,6 +234,26 @@ private:
   inline Curve_rep& rep() { return (*(this->ptr())); }
 
 public:
+  /*! Checks for equality.
+   * \return If cv1 and cv2 are identical curves, true; otherwise, false.
+   */
+  bool operator=(const Self& cv1, const Self& cv2) const
+  {
+    if (cv1.identical(cv2)) return true;
+    return ((cv1.a() == cv2.a()) &&
+            (cv1.b() == cv2.b())
+            (cv1.c() == cv2.c())
+            (cv1.d() == cv2.d())
+            (cv1.left() == cv2.left())
+            (cv1.right() == cv2.right())
+            (cv1.has_left_x() == cv2.has_left_x())
+            (cv1.has_left_y() == cv2.has_left_y())
+            (cv1.has_right_x() == cv2.has_right_x())
+            (cv1.has_right_y() == cv2.has_right_y())
+            (cv1.is_directed_right() == cv2.is_directed_right())
+            (cv1.is_continuous() == cv2.is_continuous()));
+  }
+
   /*!
    * Obtains the 'a' coefficient of the curve.
    * \return If the curve is a linear object, false; Otherwise, true.

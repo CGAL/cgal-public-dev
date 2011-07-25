@@ -87,49 +87,64 @@ private:
 public:
   typedef typename Point_rep::Coord_NT                  Coord_NT;
 
-  /*! Default constructor. */
+  /*!
+   * Default constructor.
+   */
   Sqrt_extension_point_2() : Point_handle(Point_rep()) {}
 
-  /*! Copy constructor. */
+  /*!
+   * Copy constructor.
+   */
   Sqrt_extension_point_2(const Self& p) : Point_handle(p) {}
 
-  /*! Constructor of a point with one-root coefficients. 
-     This constructor of a point can also be used with rational coefficients
-     thanks to convertor of CoordNT. */
+  /*!
+   * Constructor of a point with coordinate coefficients.
+   */
   Sqrt_extension_point_2(const Coord_NT& x, const Coord_NT& y) :
-    Point_handle(Point_rep(x, y))
-  {}
+    Point_handle(Point_rep(x, y)) {}
 
-  /*! Obtains the x-coordinate. */
-  const Coord_NT& x() const { return (this->ptr()->m_x); }
-
-  /*! Obtains the y-coordinate. */
-  const Coord_NT& y() const { return (this->ptr()->m_y); }
-
-  /*! Checks for equality. */
-  bool equal(const Self& p) const
+  /*!
+   * Assignment operator.
+   */
+  Self& operator=(const Self& p)
   {
-    if (this->identical(p)) return true;
-    return (CGAL::compare(this->ptr()->m_x, p.ptr()->m_x) == EQUAL &&
-            CGAL::compare(this->ptr()->m_y, p.ptr()->m_y) == EQUAL);
+    if (this == &p || this->identical(p)) return *this;
+    Point_handle::operator=(p);
+    return *this;
   }
 
-  /*! Checks for equality. */
+  /*! Obtains the x-coordinate.
+   * \return The x-coordinate of the point.
+   */
+  const Coord_NT& x() const { return (this->ptr()->m_x); }
+
+  /*! Obtains the y-coordinate.
+   * \return The y-coordinate of the point.
+   */
+  const Coord_NT& y() const { return (this->ptr()->m_y); }
+
+  /*! Checks for equality.
+   * \return If p and q are identical points, true; otherwise, false.
+   */
   bool operator=(const Self& p, const Self& q) const
   {
     if (p.identical(q)) return true;
-    return (CGAL::compare(p.ptr()->m_x, q.ptr()->m_x) == EQUAL &&
-            CGAL::compare(p.ptr()->m_y, q.ptr()->m_y) == EQUAL);
+    return (CGAL::compare(p.x(), q.x()) == EQUAL &&
+            CGAL::compare(p.y(), q.y()) == EQUAL);
   }
-  
+
+  /*! Checks for inequality.
+   * \return If p and q are not identical points, true; otherwise, false.
+   */
   bool operator!=(const Self& p, const Self& q) const { return !(p == q); }
 
-  /*! Sets the point coordinates. */
+  /*! Sets the point coordinates.
+   */
   void set(const NT& x, const NT& y)
   {
     this->copy_on_write();
-    this->ptr()->_x = Coord_NT(x);
-    this->ptr()->_y = Coord_NT(y);
+    this->ptr()->m_x = Coord_NT(x);
+    this->ptr()->m_y = Coord_NT(y);
   }
 
   /*! Sets the point coordinates. */
