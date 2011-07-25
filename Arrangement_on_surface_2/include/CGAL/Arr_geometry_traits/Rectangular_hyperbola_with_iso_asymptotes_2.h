@@ -133,78 +133,6 @@ public:
     m_is_directed_right(is_directed_right),
     m_is_continuous(is_continuous)
   {}
-
-  /*!
-   * Obtains the 'a' coefficient of the curve.
-   * \return If the curve is a linear object, false; Otherwise, true.
-   */
-  bool a() const { return m_a; }
-
-  /*!
-   * Obtains the 'b' coefficient of the hyperbola.
-   * \return The 'b' coefficient.
-   */
-  const NT& b() const { return m_b; }
-
-  /*!
-   * Obtains the 'c' coefficient of the hyperbola.
-   * \return The 'c' coefficient.
-   */
-  const NT& c() const { return m_c; }
-
-  /*!
-   * Obtains the 'd' coefficient of the hyperbola.
-   * \return The 'd' coefficient.
-   */
-  const NT& d() const { return m_d; }
-
-  /*!
-   * Obtains the left point.
-   * \return The left point.
-   */
-  Point_2& left() const { return m_left; }
-
-  /*!
-   * Obtains the right point.
-   * \return The right point.
-   */
-  Point_2& right() const { return m_right; }
-
-  /*!
-   * Indicates whether the curve is directed right.
-   * \return If the curve is directed right, true; otherwise false.
-   */
-  bool is_directed_right() const { return m_is_directed_right; }
-
-  /*!
-   * Indicates whether the left point has a valid x-coordinate.
-   * \return If the left point has a valid x-coordinate, true; otherwise, false.
-   */
-  bool has_left_x() const { return m_has_left_x; }
-
-  /*!
-   * Indicates whether the left point has a valid y-coordinate.
-   * \return If the left point has a valid y-coordinate, true; otherwise, false.
-   */
-  bool has_left_y() const { return m_has_left_y; }
-
-  /*!
-   * Indicates whether the right point has a valid x-coordinate.
-   * \return If the right point a valid x-coordinate, true; otherwise, false.
-   */
-  bool has_right_x() const { return m_has_right_x; }
-
-  /*!
-   * Indicates whether the right point has a valid y-coordinate.
-   * \return If the right point a valid y-coordinate, true; otherwise, false.
-   */
-  bool has_right_y() const { return m_has_right_y; }
-  
-  /*!
-   * Indicates whether the curve is continuous.
-   * \return If the curve is continuous, true; otherwise false.
-   */
-  bool is_continuous() const { return m_is_continuous; }
 };
 
 /*!
@@ -307,18 +235,90 @@ private:
 
 public:
   /*!
+   * Obtains the 'a' coefficient of the curve.
+   * \return If the curve is a linear object, false; Otherwise, true.
+   */
+  bool a() const { return rep().m_a; }
+
+  /*!
+   * Obtains the 'b' coefficient of the hyperbola.
+   * \return The 'b' coefficient.
+   */
+  const NT& b() const { return rep().m_b; }
+
+  /*!
+   * Obtains the 'c' coefficient of the hyperbola.
+   * \return The 'c' coefficient.
+   */
+  const NT& c() const { return rep().m_c; }
+
+  /*!
+   * Obtains the 'd' coefficient of the hyperbola.
+   * \return The 'd' coefficient.
+   */
+  const NT& d() const { return rep().m_d; }
+
+  /*!
+   * Obtains the left point.
+   * \return The left point.
+   */
+  Point_2& left() const { return rep().m_left; }
+
+  /*!
+   * Obtains the right point.
+   * \return The right point.
+   */
+  Point_2& right() const { return rep().m_right; }
+
+  /*!
+   * Indicates whether the curve is directed right.
+   * \return If the curve is directed right, true; otherwise false.
+   */
+  bool is_directed_right() const { return rep().m_is_directed_right; }
+
+  /*!
+   * Indicates whether the left point has a valid x-coordinate.
+   * \return If the left point has a valid x-coordinate, true; otherwise, false.
+   */
+  bool has_left_x() const { return rep().m_has_left_x; }
+
+  /*!
+   * Indicates whether the left point has a valid y-coordinate.
+   * \return If the left point has a valid y-coordinate, true; otherwise, false.
+   */
+  bool has_left_y() const { return rep().m_has_left_y; }
+
+  /*!
+   * Indicates whether the right point has a valid x-coordinate.
+   * \return If the right point a valid x-coordinate, true; otherwise, false.
+   */
+  bool has_right_x() const { return rep().m_has_right_x; }
+
+  /*!
+   * Indicates whether the right point has a valid y-coordinate.
+   * \return If the right point a valid y-coordinate, true; otherwise, false.
+   */
+  bool has_right_y() const { return rep().m_has_right_y; }
+  
+  /*!
+   * Indicates whether the curve is continuous.
+   * \return If the curve is continuous, true; otherwise false.
+   */
+  bool is_continuous() const { return rep().m_is_continuous; }
+
+  /*!
    * Indicates whether the left point is a valid left endpoint of the curve.
    * \return If the left point is a valid left endpoint of the curve, true;
    *         otherwise, false.
    */
-  bool has_left() const { return rep().has_left_x() && rep().has_left_y(); }
+  bool has_left() const { return has_left_x() && has_left_y(); }
 
   /*!
    * Indicates whether the right point is a valid right endpoint of the curve.
    * \return If the right point is a valid right endpoint of the curve, true;
    *         otherwise, false.
    */
-  bool has_right() const { return rep().has_right_x() && rep().has_right_y(); }
+  bool has_right() const { return has_right_x() && has_right_y(); }
 
   /*!
    * Indicates whether x-coordinate of the left point is the x-coordinate of
@@ -326,8 +326,7 @@ public:
    * \return If the x-coordinate of the left point is the x-coordinate of
    *         an asymptote at the left end of the curve, true; otherwise, false.
    */
-  bool has_left_asymptote() const
-  { return rep().has_left_x() && !rep().has_left_y(); }
+  bool has_left_asymptote() const { return has_left_x() && !has_left_y(); }
 
   /*!
    * Indicates whether x-coordinate of the right point is the x-coordinate of
@@ -335,14 +334,13 @@ public:
    * \return If the x-coordinate of the right point is the x-coordinate of
    *         an asymptote at the right end of the curve, true; otherwise, false.
    */
-  bool has_right_asymptote() const
-  { return rep().has_right_x() && !rep().has_right_y(); }
+  bool has_right_asymptote() const { return has_right_x() && !has_right_y(); }
 
   /*!
    * Checks whether the curve is linear.
    * \return If the curve is linear, true; otherwise, false.
    */
-  bool is_linear() const { return !rep().a(); }
+  bool is_linear() const { return !a(); }
   
   
   /*!
@@ -371,15 +369,13 @@ public:
    * Checks whether the curve is vertical.
    * \return If the curve is vertical, true; otherwise, false.
    */
-  bool is_vertical() const
-  { return (is_linear() && is_zero(rep().c())); }
+  bool is_vertical() const { return (is_linear() && is_zero(rep().c())); }
 
   /*!
    * Checks whether the curve is horizontal.
    * \return If the curve is horizontal, true; otherwise, false.
    */
-  bool is_vertical() const
-  { return (is_linear() && is_zero(rep().b())); }
+  bool is_vertical() const { return (is_linear() && is_zero(rep().b())); }
   
   /*!
    * Get the left point.
