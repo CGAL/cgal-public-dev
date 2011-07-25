@@ -128,14 +128,14 @@ public:
   public:
     /*!
      * Get the left endpoint of the x-monotone curve.
-     * \param cv The curve.
-     * \pre The left end of cv is a valid (bounded) point.
+     * \param xcv The curve.
+     * \pre The left end of xcv is a valid (bounded) point.
      * \return The left endpoint.
      */
-    const Point_2& operator()(const X_monotone_curve_2& cv) const
+    const Point_2& operator()(const X_monotone_curve_2& xcv) const
     {
-      CGAL_precondition(cv.has_right());
-      return cv.right();
+      CGAL_precondition(xcv.has_right());
+      return xcv.right();
     }
   };
 
@@ -148,14 +148,14 @@ public:
   public:
     /*!
      * Get the right endpoint of the x-monotone curve.
-     * \param cv The curve.
-     * \pre The right end of cv is a valid (bounded) point.
+     * \param xcv The curve.
+     * \pre The right end of xcv is a valid (bounded) point.
      * \return The right endpoint.
      */
-    const Point_2& operator()(const X_monotone_curve_2& cv) const
+    const Point_2& operator()(const X_monotone_curve_2& xcv) const
     {
-      CGAL_precondition(cv.has_left());
-      return cv.left();
+      CGAL_precondition(xcv.has_left());
+      return xcv.left();
     }
   };
 
@@ -168,11 +168,11 @@ public:
   public:
     /*!
      * Checks whether the given x-monotone curve is a vertical segment.
-     * \param cv The curve.
+     * \param xcv The curve.
      * \return (true) if the curve is a vertical segment; (false) otherwise.
      */
-    bool operator()(const X_monotone_curve_2& cv) const
-    { return cv.is_vertical(); }
+    bool operator()(const X_monotone_curve_2& xcv) const
+    { return xcv.is_vertical(); }
   };
 
   /*! Obtain an Is_vertical_2 functor object. */
@@ -203,15 +203,15 @@ public:
   public:
     /*!
      * Return the location of the given point with respect to the input curve.
-     * \param cv The curve.
+     * \param xcv The curve.
      * \param p The point.
-     * \pre p is in the x-range of cv.
-     * \return SMALLER if y(p) < cv(x(p)), i.e. the point is below the curve;
-     *         LARGER if y(p) > cv(x(p)), i.e. the point is above the curve;
+     * \pre p is in the x-range of xcv.
+     * \return SMALLER if y(p) < xcv(x(p)), i.e. the point is below the curve;
+     *         LARGER if y(p) > xcv(x(p)), i.e. the point is above the curve;
      *         EQUAL if p lies on the curve.
      */
     Comparison_result operator()(const Point_2& p,
-                                 const X_monotone_curve_2& cv) const
+                                 const X_monotone_curve_2& xcv) const
     {
       // TODO
       return EQUAL;
@@ -230,16 +230,16 @@ public:
     /*!
      * Compare the y value of two x-monotone curves immediately to the left
      * of their intersection point.
-     * \param cv1 The first curve.
-     * \param cv2 The second curve.
+     * \param xcv1 The first curve.
+     * \param xcv2 The second curve.
      * \param p The intersection point.
      * \pre The point p lies on both curves, and both of them must be also be
      *      defined (lexicographically) to its left.
-     * \return The relative position of cv1 with respect to cv2 immdiately to
+     * \return The relative position of xcv1 with respect to xcv2 immdiately to
      *         the left of p: SMALLER, LARGER or EQUAL.
      */
-    Comparison_result operator()(const X_monotone_curve_2& cv1,
-                                 const X_monotone_curve_2& cv2,
+    Comparison_result operator()(const X_monotone_curve_2& xcv1,
+                                 const X_monotone_curve_2& xcv2,
                                  const Point_2& CGAL_precondition_code(p)) const
     {
       // TODO
@@ -259,16 +259,16 @@ public:
     /*!
      * Compare the y value of two x-monotone curves immediately to the right
      * of their intersection point.
-     * \param cv1 The first curve.
-     * \param cv2 The second curve.
+     * \param xcv1 The first curve.
+     * \param xcv2 The second curve.
      * \param p The intersection point.
      * \pre The point p lies on both curves, and both of them must be also be
      *      defined (lexicographically) to its right.
-     * \return The relative position of cv1 with respect to cv2 immdiately to
+     * \return The relative position of xcv1 with respect to xcv2 immdiately to
      *         the right of p: SMALLER, LARGER or EQUAL.
      */
-    Comparison_result operator()(const X_monotone_curve_2& cv1,
-                                 const X_monotone_curve_2& cv2,
+    Comparison_result operator()(const X_monotone_curve_2& xcv1,
+                                 const X_monotone_curve_2& xcv2,
                                  const Point_2& CGAL_precondition_code(p)) const
     {
       // TODO
@@ -288,26 +288,26 @@ public:
     /*!
      * Check whether the two x-monotone curves are the same (have the same
      * graph).
-     * \param cv1 The first curve.
-     * \param cv2 The second curve.
+     * \param xcv1 The first curve.
+     * \param xcv2 The second curve.
      * \return (true) if the two curves are the same; (false) otherwise.
      */
-    bool operator()(const X_monotone_curve_2& cv1,
-                    const X_monotone_curve_2& cv2) const
+    bool operator()(const X_monotone_curve_2& xcv1,
+                    const X_monotone_curve_2& xcv2) const
     {
       if (cv1.identical(cv2)) return true;
-      return ((cv1.a() == cv2.a()) &&
-              (cv1.b() == cv2.b())
-              (cv1.c() == cv2.c())
-              (cv1.d() == cv2.d())
-              (cv1.left() == cv2.left())
-              (cv1.right() == cv2.right())
-              (cv1.has_left_x() == cv2.has_left_x())
-              (cv1.has_left_y() == cv2.has_left_y())
-              (cv1.has_right_x() == cv2.has_right_x())
-              (cv1.has_right_y() == cv2.has_right_y())
-              (cv1.is_directed_right() == cv2.is_directed_right())
-              (cv1.is_continuous() == cv2.is_continuous()));
+      return ((xcv1.a() == xcv2.a()) &&
+              (xcv1.b() == xcv2.b())
+              (xcv1.c() == xcv2.c())
+              (xcv1.d() == xcv2.d())
+              (xcv1.left() == xcv2.left())
+              (xcv1.right() == xcv2.right())
+              (xcv1.has_left_x() == xcv2.has_left_x())
+              (xcv1.has_left_y() == xcv2.has_left_y())
+              (xcv1.has_right_x() == xcv2.has_right_x())
+              (xcv1.has_right_y() == xcv2.has_right_y())
+              (xcv1.is_directed_right() == xcv2.is_directed_right())
+              (xcv1.is_continuous() == xcv2.is_continuous()));
     }
 
     /*!
@@ -386,10 +386,10 @@ public:
                                    Arr_curve_end ce) const
     {
       return (ce == ARR_MIN_END) ?
-        (cv.has_left_y() ? ARR_INTERIOR :
-         ((cv.b()*cv.c() < cv.d()) ? ARR_BOTTOM_BOUNDARY : ARR_TOP_BOUNDARY)) :
-        (cv.has_right_y() ? ARR_INTERIOR :
-         ((cv.b()*cv.c() < cv.d()) ? ARR_BOTTOM_BOUNDARY : ARR_TOP_BOUNDARY)) :
+        (xcv.has_left_y() ? ARR_INTERIOR :
+         ((cv.b()*cv.c() < xcv.d()) ? ARR_BOTTOM_BOUNDARY : ARR_TOP_BOUNDARY)) :
+        (xcv.has_right_y() ? ARR_INTERIOR :
+         ((cv.b()*cv.c() < xcv.d()) ? ARR_BOTTOM_BOUNDARY : ARR_TOP_BOUNDARY)) :
     }
   };
 
@@ -576,36 +576,16 @@ public:
   public:
     /*!
      * Split a given x-monotone curve at a given point into two sub-curves.
-     * \param cv The curve to split
+     * \param xcv The curve to split
      * \param p The split point.
-     * \param c1 Output: The left resulting subcurve (p is its right endpoint).
-     * \param c2 Output: The right resulting subcurve (p is its left endpoint).
-     * \pre p lies on cv but is not one of its end-points.
+     * \param xcv1 Output: The left resulting subcurve (p is its right endpoint).
+     * \param xcv2 Output: The right resulting subcurve (p is its left endpoint).
+     * \pre p lies on xcv but is not one of its end-points.
      */
     void operator()(const X_monotone_curve_2& cv, const Point_2& p,
-                    X_monotone_curve_2& c1, X_monotone_curve_2& c2) const
+                    X_monotone_curve_2& xcv1, X_monotone_curve_2& xcv2) const
     {
-      // CGAL_precondition (! cv.is_degenerate());
-
-      // // Make sure that p lies on the interior of the curve.
-      // CGAL_precondition_code (
-      //   Kernel                        kernel;
-      //   typename Kernel::Compare_xy_2 compare_xy = kernel.compare_xy_2_object();
-      // );
-
-      // CGAL_precondition
-      //   (Segment_assertions::_assert_is_point_on (p, cv,
-      //                                             Has_exact_division()) &&
-      //    (! cv.has_left() || compare_xy(cv.left(), p) == SMALLER) &&
-      //    (! cv.has_right() || compare_xy(cv.right(), p) == LARGER));
-
-      // // Perform the split.
-      // c1 = cv;
-      // c1.set_right (p);
-
-      // c2 = cv;
-      // c2.set_left (p);
-//TODO // ASAFP
+      // TODO
       return;
     }
   };
@@ -619,114 +599,16 @@ public:
      * Find the intersections of the two given curves and insert them into the
      * given output iterator. As two segments may itersect only once, only a
      * single intersection will be contained in the iterator.
-     * \param cv1 The first curve.
-     * \param cv2 The second curve.
+     * \param xcv1 The first curve.
+     * \param xcv2 The second curve.
      * \param oi The output iterator.
      * \return The past-the-end iterator.
      */
     template<typename OutputIterator>
-    OutputIterator operator()(const X_monotone_curve_2& cv1,
-                              const X_monotone_curve_2& cv2,
+    OutputIterator operator()(const X_monotone_curve_2& xcv1,
+                              const X_monotone_curve_2& xcv2,
                               OutputIterator oi) const
     {
-      // CGAL_precondition (! cv1.is_degenerate());
-      // CGAL_precondition (! cv2.is_degenerate());
-
-      // // Intersect the two supporting lines.
-      // Kernel       kernel;
-      // CGAL::Object obj = kernel.intersect_2_object()(cv1.supp_line(),
-      //                                                cv2.supp_line());
-
-      // if (obj.is_empty())
-      // {
-      //   // The supporting line are parallel lines and do not intersect:
-      //   return (oi);
-      // }
-
-      // // Check whether we have a single intersection point.
-      // const Point_2  *ip = object_cast<Point_2> (&obj);
-      
-      // if (ip != NULL)
-      // {
-      //   // Check whether the intersection point ip lies on both segments.
-      //   const bool    ip_on_cv1 = cv1.is_vertical() ? cv1.is_in_y_range(*ip) :
-      //                                                 cv1.is_in_x_range(*ip);
-
-      //   if (ip_on_cv1)
-      //   {
-      //     const bool  ip_on_cv2 = cv2.is_vertical() ? cv2.is_in_y_range(*ip) :
-      //                                                 cv2.is_in_x_range(*ip);
-
-      //     if (ip_on_cv2)
-      //     {
-      //       // Create a pair representing the point with its multiplicity,
-      //       // which is always 1 for line segments.
-      //       std::pair<Point_2, unsigned int>   ip_mult (*ip, 1);
-      //       *oi = make_object (ip_mult);
-      //       oi++;
-      //     }
-      //   }
-      //   return (oi);
-      // }
-
-      // // In this case, the two supporting lines overlap.
-      // // We start with the entire cv1 curve as the overlapping subcurve,
-      // // then clip it to form the true overlapping curve.
-      // typename Kernel::Compare_xy_2  compare_xy = kernel.compare_xy_2_object();
-      // X_monotone_curve_2             ovlp = cv1;
-
-      // if (cv2.has_left())
-      // {
-      //   // If the left endpoint of cv2 is to the right of cv1's left endpoint,
-      //   // clip the overlapping subcurve.
-      //   if (! cv1.has_left())
-      //   {
-      //     ovlp.set_left (cv2.left(), false);
-      //   }
-      //   else
-      //   {
-      //     if (compare_xy (cv1.left(), cv2.left()) == SMALLER)
-      //       ovlp.set_left (cv2.left(), false);
-      //   }
-      // }
-
-      // if (cv2.has_right())
-      // {
-      //   // If the right endpoint of cv2 is to the left of cv1's right endpoint,
-      //   // clip the overlapping subcurve.
-      //   if (! cv1.has_right())
-      //   {
-      //     ovlp.set_right (cv2.right(), false);
-      //   }
-      //   else
-      //   {
-      //     if (compare_xy (cv1.right(), cv2.right()) == LARGER)
-      //       ovlp.set_right (cv2.right(), false);
-      //   }
-      // }
-
-      // // Examine the resulting subcurve.
-      // Comparison_result        res = SMALLER;
-
-      // if (ovlp.has_left() && ovlp.has_right())
-      //   res = compare_xy (ovlp.left(), ovlp.right());
-
-      // if (res == SMALLER)
-      // {
-      //   // We have discovered a true overlapping subcurve:
-      //   *oi = make_object (ovlp);
-      //   oi++;
-      // }
-      // else if (res == EQUAL)
-      // {
-      //   // The two objects have the same supporting line, but they just share
-      //   // a common endpoint. Thus we have an intersection point, but we leave
-      //   // the multiplicity of this point undefined.
-      //   std::pair<Point_2, unsigned int>   ip_mult (ovlp.left(), 0);
-      //   *oi = make_object (ip_mult);
-      //   oi++;
-      // }
-       //TODO //ASAFP
       return oi;
     }
   };
@@ -738,33 +620,16 @@ public:
   public:
     /*!
      * Check whether it is possible to merge two given x-monotone curves.
-     * \param cv1 The first curve.
-     * \param cv2 The second curve.
+     * \param xcv1 The first curve.
+     * \param xcv2 The second curve.
      * \return (true) if the two curves are mergeable - if they are supported
      *         by the same line and share a common endpoint; (false) otherwise.
      */
-    bool operator()(const X_monotone_curve_2& cv1,
-                    const X_monotone_curve_2& cv2) const
+    bool operator()(const X_monotone_curve_2& xcv1,
+                    const X_monotone_curve_2& xcv2) const
     {
-      // CGAL_precondition (! cv1.is_degenerate());
-      // CGAL_precondition (! cv2.is_degenerate());
-
-      // Kernel                    kernel;
-      // typename Kernel::Equal_2  equal = kernel.equal_2_object();
-
-      // // Check whether the two curves have the same supporting line.
-      // if (! equal (cv1.supp_line(), cv2.supp_line()) && 
-      //     ! equal (cv1.supp_line(), 
-      //              kernel.construct_opposite_line_2_object()(cv2.supp_line())))
-      //   return (false);
-
-      // // Check whether the left endpoint of one curve is the right endpoint of the
-      // // other.
-      // return ((cv1.has_right() && cv2.has_left() &&
-      //          equal (cv1.right(), cv2.left())) ||
-      //         (cv2.has_right() && cv1.has_left() &&
-      //          equal (cv2.right(), cv1.left())));
-       //TODO: ASAFP
+       // TODO
+      return false;
     }
   };
 
@@ -775,54 +640,17 @@ public:
   public:
     /*!
      * Merge two given x-monotone curves into a single curve (segment).
-     * \param cv1 The first curve.
-     * \param cv2 The second curve.
+     * \param xcv1 The first curve.
+     * \param xcv2 The second curve.
      * \param c Output: The merged curve.
      * \pre The two curves are mergeable, that is they are supported by the
      *      same line and share a common endpoint.
      */
-    void operator()(const X_monotone_curve_2& cv1,
-                    const X_monotone_curve_2& cv2,
+    void operator()(const X_monotone_curve_2& xcv1,
+                    const X_monotone_curve_2& xcv2,
                     X_monotone_curve_2& c) const
     {
-      // CGAL_precondition (! cv1.is_degenerate());
-      // CGAL_precondition (! cv2.is_degenerate());
-
-      // Kernel                    kernel;
-      // typename Kernel::Equal_2  equal = kernel.equal_2_object();
-
-      // CGAL_precondition
-      //   (equal (cv1.supp_line(), 
-      //           cv2.supp_line()) ||
-      //    equal (cv1.supp_line(),
-      //           kernel.construct_opposite_line_2_object()(cv2.supp_line())));
-
-      // // Check which curve extends to the right of the other.
-      // if (cv1.has_right() && cv2.has_left() &&
-      //     equal (cv1.right(), cv2.left()))
-      // {
-      //   // cv2 extends cv1 to the right.
-      //   c = cv1;
-
-      //   if (cv2.has_right())
-      //     c.set_right (cv2.right());
-      //   else
-      //     c.set_right();      // Unbounded endpoint. 
-      // }
-      // else
-      // {
-      //   CGAL_precondition (cv2.has_right() && cv1.has_left() &&
-      //                      equal (cv2.right(), cv1.left()));
-
-      //   // cv1 extends cv2 to the right.
-      //   c = cv2;
-
-      //   if (cv1.has_right())
-      //     c.set_right (cv1.right());
-      //   else
-      //     c.set_right();      // Unbounded endpoint.
-      // }
-      //TODO: ASAFP
+      // TODO
       return;
     }
   };
@@ -866,12 +694,12 @@ public:
     /*!
      * Compare the endpoints of an $x$-monotone curve lexicographically.
      * (assuming the curve has a designated source and target points).
-     * \param cv The curve.
+     * \param xcv The curve.
      * \return SMALLER if the curve is directed right;
      *         LARGER if the curve is directed left.
      */
-    Comparison_result operator()(const X_monotone_curve_2& cv)
-    { return (cv.is_directed_right()) ? SMALLER : LARGER; }
+    Comparison_result operator()(const X_monotone_curve_2& xcv)
+    { return (xcv.is_directed_right()) ? SMALLER : LARGER; }
   };
 
   /*! Obtain a Compare_endpoints_xy_2 functor object. */
@@ -882,16 +710,16 @@ public:
   public:
     /*!
      * Construct an opposite x-monotone (with swapped source and target).
-     * \param cv The curve.
+     * \param xcv The curve.
      * \return The opposite curve.
      */
-    X_monotone_curve_2 operator()(const X_monotone_curve_2& cv)
+    X_monotone_curve_2 operator()(const X_monotone_curve_2& xcv)
     {
-      X_monotone_curve_2(cv.a(), cv.b(), cv.c(), cv.d(),
-                         cv.target(), cv.source(), 
-                         cv.has_target(), cv.has_source(), 
-                         !cv.is_directed_right(),
-                         cv.has_right_x(), cv.has_left_x());
+      X_monotone_curve_2(xcv.a(), xcv.b(), xcv.c(), xcv.d(),
+                         xcv.target(), xcv.source(), 
+                         xcv.has_target(), xcv.has_source(), 
+                         !xcv.is_directed_right(),
+                         xcv.has_right_x(), xcv.has_left_x());
     }
   };
 
@@ -972,11 +800,11 @@ public:
                                   bool has_left_x = true,
                                   bool has_right_x = true)
     {
-      X_monotone_curve_2 cv =
+      X_monotone_curve_2 xcv =
         X_monotone_curve_2(a, b, c, d, source, target,
                            has_source, has_target, is_directed_right,
                            has_left_x, has_right_x, true);
-      return cv;
+      return xcv;
     }
 
     /*!
@@ -1008,10 +836,10 @@ public:
       NT x_singular = -c/a;
       bool has_source = x_singular != source.x();
       bool has_target = x_singular != target.x();
-      X_monotone_curve_2 cv =
+      X_monotone_curve_2 xcv =
         X_monotone_curve_2(a, b, c, d, source, target, has_source, has_target,
                            is_directed_right, true, true, true);
-      return cv;
+      return xcv;
     }
 
     /*!
@@ -1046,10 +874,10 @@ public:
         has_right_x = (source.x() > -c/a);
       }
       Point_2 target = Point_2(x_singular, 0);
-      X_monotone_curve_2 cv =
+      X_monotone_curve_2 xcv =
         X_monotone_curve_2(a, b, c, d, source, target, true, false,
                            is_directed_right, has_left_x, has_right_x, true);
-      return cv;
+      return xcv;
     }
   };
   
@@ -1078,10 +906,10 @@ public:
       Point_2 source = Point_2();
       Point_2 target = Point_2();
       bool is_continuous = has_left_x || has_right_x;
-      X_monotone_curve_2 cv =
+      X_monotone_curve_2 xcv =
         X_monotone_curve_2(a, b, c, d, source, target, false, false, true,
                            has_left_x, has_right_x, is_continuous);
-      return cv;
+      return xcv;
     }
 
     /*!
@@ -1106,10 +934,10 @@ public:
       bool is_continuous =
         (is_directed_right) ? ((source.x() < -c/a) && (-c/a < target.x())) :
         ((target.x() < -c/a) && (-c/a < source.x()))
-      X_monotone_curve_2 cv =
+      X_monotone_curve_2 xcv =
         X_monotone_curve_2(a, b, c, d, source, target, true, true,
                            is_directed_right, true, true, is_continuous);
-      return cv;
+      return xcv;
     }
 
     /*!
@@ -1150,11 +978,11 @@ public:
           has_right_x = false;
         }
       }
-      X_monotone_curve_2 cv =
+      X_monotone_curve_2 xcv =
         X_monotone_curve_2(a, b, c, d, source, target, true, false,
                            is_directed_right, has_left_x, has_right_x,
                            is_continuous);
-      return cv;
+      return xcv;
     }
   };
   
