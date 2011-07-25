@@ -86,26 +86,26 @@ public:
    * \param right The right point.
    * \param is_directed_right Indicates whether the curve is directed right.
    * \param has_left_x Indicates whether the left endpoint of the curve has a
-   *        valid x-coordinate stored as the x-coordinate of 'm_left'.
+   *        valid x-coordinate stored as the x-coordinate of m_left.
    * \param has_left_y Indicates whether the left endpoint of the curve has a
-   *        valid y-coordinate stored as the y-coordinate of 'm_left'.
+   *        valid y-coordinate stored as the y-coordinate of m_left.
    * \param has_right_x Indicates whether the right endpoint of the curve has a
-   *        valid x-coordinate stored as the x-coordinate of 'm_right'.
+   *        valid x-coordinate stored as the x-coordinate of m_right.
    * \param has_right_y Indicates whether the right endpoint of the curve has a
-   *        valid y-coordinate stored as the y-coordinate of 'm_right'.
+   *        valid y-coordinate stored as the y-coordinate of m_right.
    * \param is_directed_right Indicates whether the curve is directed right.
    * \param is_continuous Indicates the curve continuous.
    * \pre The two points must not be the same.
    * \pre If has_left_x && has_left_y, m_left is on the underlying hyperbola.
    *      If has_left_x && !has_left_y, the left end of the underlying
-   *      hyperbola has a vertical asymptote at the x-coordinate 'm_left'.
+   *      hyperbola has a vertical asymptote at the x-coordinate of m_left.
    *      If !has_left_x && has_left_y, the left end of the underlying
-   *      hyperbola has a horizontal asymptote at the y-coordinate 'm_left'.
+   *      hyperbola has a horizontal asymptote at the y-coordinate of m_left.
    * \pre If has_right_x && has_right_y, m_right is on the underlying hyperbola.
    *      If has_right_x && !has_right_y, the right end of the underlying
-   *      hyperbola has a vertical asymptote at the x-coordinate 'm_right'.
+   *      hyperbola has a vertical asymptote at the x-coordinate of m_right.
    *      If !has_right_x && has_right_y, the right end of the underlying
-   *      hyperbola has a horizontal asymptote at the y-coordinate 'm_right'.
+   *      hyperbola has a horizontal asymptote at the y-coordinate of m_right.
    */
   Rectangular_hyperbola_with_iso_asymptotes_2(bool a,
                                               const NT& b,
@@ -129,6 +129,27 @@ public:
     m_has_right_y(has_right_y),
     m_is_directed_right(is_directed_right),
     m_is_continuous(is_continuous)
+  {}
+
+  /*! Constructor for unbounded curves.
+   * \param a The a coefficient (either 0 or 1).
+   * \param b The a coefficient.
+   * \param c The a coefficient.
+   * \param d The a coefficient.
+   */
+  Rectangular_hyperbola_with_iso_asymptotes_2(bool a,
+                                              const NT& b,
+                                              const NT& c,
+                                              const NT& d) :
+    m_a(a),
+    m_b(b),
+    m_c(c),
+    m_d(d),
+    m_has_left_x(false),
+    m_has_left_y(false),
+    m_has_right_x(false),
+    m_has_right_y(false),
+    m_is_continuous(false)
   {}
 };
 
@@ -212,6 +233,19 @@ public:
                  is_directed_right, is_continuous)
   {}
 
+  /*! Constructor for unbounded curves.
+   * \param a The a coefficient (either 0 or 1).
+   * \param b The a coefficient.
+   * \param c The a coefficient.
+   * \param d The a coefficient.
+   */
+  Rectangular_hyperbola_with_iso_asymptotes_2(bool a,
+                                              const NT& b,
+                                              const NT& c,
+                                              const NT& d) :
+    Curve_handle(a, b, c, d)
+  {}
+  
   /*! Assignment operator.
    */
   Self& operator=(const Self& cv)
@@ -388,6 +422,46 @@ public:
   {
     CGAL_precondition(has_right());
     return rep().right();
+  }
+
+  /*! Obtains the x-coordinate of the left endpoint.
+   * \return The x-coordinate of the left endpoint.
+   * \pre The left endpoint of the curve has a valid x-coordinate.
+   */
+  const NT& left_x() const
+  {
+    CGAL_precondition(has_left_x());
+    return left().x();
+  }
+
+  /*! Obtains the y-coordinate of the left endpoint.
+   * \return The y-coordinate of the left endpoint.
+   * \pre The left endpoint of the curve has a valid y-coordinate.
+   */
+  const NT& left_y() const
+  {
+    CGAL_precondition(has_left_y());
+    return left().y();
+  }
+
+  /*! Obtains the x-coordinate of the right endpoint.
+   * \return The x-coordinate of the right endpoint.
+   * \pre The right endpoint of the curve has a valid x-coordinate.
+   */
+  const NT& right_x() const
+  {
+    CGAL_precondition(has_right_x());
+    return right().x();
+  }
+
+  /*! Obtains the y-coordinate of the right endpoint.
+   * \return The y-coordinate of the right endpoint.
+   * \pre The right endpoint of the curve has a valid y-coordinate.
+   */
+  const NT& right_y() const
+  {
+    CGAL_precondition(has_right_y());
+    return right().y();
   }
 };
 

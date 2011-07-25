@@ -46,7 +46,7 @@ public:
   typedef Kernel_                                     Kernel;
   typedef Filter_                                     Filter;
   
-  typedef typename Kernel::FT                         NT;
+  typedef typename Kernel::NT                         NT;
   typedef typename Kernel::Point_2                    Rational_point_2;
   typedef typename Kernel::Segment_2                  Rational_segment_2;
   typedef Sqrt_extension_point_2<NT, Filter>          Point_2;
@@ -70,6 +70,21 @@ public:
   typedef typename Kernel::Segment_2                  Segment_2;
 
 public:
+  /*! Checks whether the polynomial evaluate to zero.
+   * \param x The x-coordinate.
+   * \param y The y-coordinate.
+   * \param b The b coefficien.t
+   * \param c The c coefficient.
+   * \param d The d coefficient.
+   * \return If true, if x * y + b * x + c * y + d = 0; otherwise, false.
+   */
+  static bool is_zero(const Coord_NT& x, const Coord_NT& y,
+                      const NT& b, const NT& c, const NT& d) const
+  {
+    // TODO
+    return true;
+  }
+    
 
   /*! Default constructor.
    */
@@ -679,17 +694,17 @@ public:
    */
   class Construct_opposite_2 {
   public:
-    /*! Constructs an opposite x-monotone (with swapped source and target).
+    /*! Constructs an opposite x-monotone.
      * \param xcv The curve.
      * \return The opposite curve.
      */
     X_monotone_curve_2 operator()(const X_monotone_curve_2& xcv)
     {
       X_monotone_curve_2(xcv.a(), xcv.b(), xcv.c(), xcv.d(),
-                         xcv.target(), xcv.source(), 
-                         xcv.has_target(), xcv.has_source(), 
-                         !xcv.is_directed_right(),
-                         xcv.has_right_x(), xcv.has_left_x());
+                         xcv.right(), xcv.left(), 
+                         xcv.has_right_x(), xcv.has_right_y()
+                         xcv.has_left_x(), xcv.has_left_y()
+                         !xcv.is_directed_right(), xcv.is_continuous());
     }
   };
 
@@ -725,128 +740,165 @@ public:
 
   public:
     /*! Constructor from all data fields.
-     * \param a The a coefficient.
+     * \param a The a coefficient (either 0 or 1).
      * \param b The a coefficient.
      * \param c The a coefficient.
      * \param d The a coefficient.
-     * \param sourse The source point.
-     * \param target The target point.
-     * \param has_source Indicates whether the curve has a valid source point.
-     * \param has_source Indicates whether the curve has a valid target point.
+     * \param left The left point.
+     * \param right The right point.
      * \param is_directed_right Indicates whether the curve is directed right.
-     * \param has_left_x Indicates whether the curve has a vertical asymptote
-     *        on the left.
-     * \param has_right_x Indicates whether the curve has a vertical asymptote
-     *        on the right.
+     * \param has_left_x Indicates whether the left endpoint of the curve has a
+     *        valid x-coordinate stored as the x-coordinate of m_left.
+     * \param has_left_y Indicates whether the left endpoint of the curve has a
+     *        valid y-coordinate stored as the y-coordinate of m_left.
+     * \param has_right_x Indicates whether the right endpoint of the curve has a
+     *        valid x-coordinate stored as the x-coordinate of m_right.
+     * \param has_right_y Indicates whether the right endpoint of the curve has a
+     *        valid y-coordinate stored as the y-coordinate of m_right.
+     * \param is_directed_right Indicates whether the curve is directed right.
+     * \param is_continuous Indicates the curve continuous.
      * \pre The two points must not be the same.
-     * \pre The source is on the hyperbola.
-     * \pre The target is on the hyperbola.
-     * \pre The curve is continueous, which implies one of the following:
-     * (1) If has_source and has_target, then
-     *     the closed interval bounded by the x-coordinates of source and
-     *     target does not contain -c/a (the x-coordinate of the vertical
-     *     asymptotes).
-     * (2) If has_source and !has_target
-     *     (a) If is_directed_right
-     *         (i)  If has_left_x, then source.x < -c/a = target.x.
-     *         (ii) Otherwise (!has_left_x), -c/a < source.x.
-     *     (b) Otherwise (!is_directed_right)
-     *         (i)  If has_right_x, then source.x > -c/a = target.x
-     *         (ii) Otherwise (!has_right_x), -c/a > source.x.
-     * (3) Similar for !has_source and has_target
-     * (4) If !has_source and !has_target
-     *     (a) has_left_x != has_right_x
-     *     (b) If is_directed_right,
-     *         (i)   If has_left_x, then -c/a = target.x.
-     *         (ii)  If has_right_x, then -c/a = source.x.
-     *     (c) Otherwise (!is_directed_right),
-     *         (i)   If has_right_x, then -c/a = target.x.
-     *         (ii)  If has_left_x, then -c/a = source.x.
+     * \pre If has_left_x && has_left_y, m_left is on the underlying hyperbola.
+     *      If has_left_x && !has_left_y, the left end of the underlying
+     *      hyperbola has a vertical asymptote at the x-coordinate of m_left.
+     *      If !has_left_x && has_left_y, the left end of the underlying
+     *      hyperbola has a horizontal asymptote at the y-coordinate of m_left.
+     * \pre If has_right_x && has_right_y, m_right is on the underlying
+     *      hyperbola.
+     *      If has_right_x && !has_right_y, the right end of the underlying
+     *      hyperbola has a vertical asymptote at the x-coordinate of m_right.
+     *      If !has_right_x && has_right_y, the right end of the underlying
+     *      hyperbola has a horizontal asymptote at the y-coordinate of m_right.
+     * \pre The curve is continueous, that is
+     *      (1) TODO
      */
-    X_monotone_curve_2 operator()(const FT& a, const FT& b,
-                                  const FT& c, const FT& d,
-                                  const Point_2& source, const Point_2& target,
-                                  bool has_source, bool has_target,
-                                  bool is_directed_right,
-                                  bool has_left_x = true,
-                                  bool has_right_x = true)
+    X_monotone_curve_2 operator()(bool a, const NT& b, const NT& c, const NT& d,
+                                  const Point_2& left, const Point_2& right,
+                                  bool has_left_x, bool has_left_y,
+                                  bool has_right_x, bool has_right_y,
+                                  bool is_directed_right)
     {
+      // Validity check:
+      CGAL_assertion(!(has_left_x && has_left_y) || 
+                     m_traits->is_zero(left.x(), left.y(), b, c, d));
+      CGAL_assertion(!(has_left_x && !has_left_y) || (left.x() == -c));
+      CGAL_assertion(!(!has_left_x && has_left_y) || (left.y() == -b));
+
+      CGAL_assertion(!(has_right_x && has_right_y) || 
+                     m_traits->is_zero(right.x(), right.y(), b, c, d));
+      CGAL_assertion(!(has_right_x && !has_right_y) || (right.x() == -c));
+      CGAL_assertion(!(!has_right_x && has_right_y) || (right.y() == -b));
+
+      // Continuity check:
+      CGAL_assertion(!has_left_x || (-c <= x));
+      CGAL_assertion(!has_right_x || (x <= -c));
+            
       X_monotone_curve_2 xcv =
-        X_monotone_curve_2(a, b, c, d, source, target,
-                           has_source, has_target, is_directed_right,
-                           has_left_x, has_right_x, true);
+        X_monotone_curve_2(a, b, c, d, left, right,
+                           has_left_x, has_left_y, has_right_x, has_right_y,
+                           is_directed_right, true);
       return xcv;
     }
 
     /*!
-     * Constructor for a curve bounded at the source and at the target.
-     * \param a The a coefficient.
+     * Constructor for curves bounded at their source and at target.
+     * \param a The a coefficient (either 0 or 1).
      * \param b The a coefficient.
      * \param c The a coefficient.
      * \param d The a coefficient.
-     * \param sourse The source point.
-     * \pre a != 0.
+     * \param source The source point.
+     * \param target The target point.
      * \pre The two points must not be the same.
-     * \pre The source is on the underlying hyperbola or the curve source
-     *      has a vertical asymptote at the x-coordinate of the source.
-     * \pre The target is on the underlying hyperbola or the curve target
-     *      has a vertical asymptote at the x-coordinate of the source.
+     * \pre source is on the underlying hyperbola or the curve has a
+     *      vertical asymptote at the x-coordinate of source.
+     * \pre target is on the underlying hyperbola or the curve has a
+     *      vertical asymptote at the x-coordinate of right.
      * \pre The curve is continueous. That is, the open interval bounded by
-     *      the x-coordinates of source and target does not contain -c/a (the
+     *      the x-coordinates of source and target does not contain -c (the
      *      x-coordinate of the vertical asymptotes).
      */
-    X_monotone_curve_2 operator()(const FT& a, const FT& b,
-                                  const FT& c, const FT& d,
-                                  const Point_2& source, const Point_2& target)
+    X_monotone_curve_2 operator()(bool a, const NT& b, const NT& c, const NT& d,
+                                  const Point_2& left, const Point_2& right)
     {
-      CGAL_assertion(!is_zero(a));
-      Comparison_result res = compare_xy_2_object()(source, target);
+      Comparison_result res = m_traits->compare_xy_2_object()(left, right);
       CGAL_assertion(res != EQUAL);
       bool is_directed_right = (res == SMALLER);
       
-      NT x_singular = -c/a;
-      bool has_source = x_singular != source.x();
-      bool has_target = x_singular != target.x();
+      NT asymptote_x = -c;
+      const Point_2& left = (is_directed_right) ? source : target;
+      const Point_2& right = (is_directed_right) ? target : left;
+      bool has_left_y = asymptote_x != left.x();
+      bool has_right_y = asymptote_x != right.x();
+      CGAL_assertion((asymptote_x <= left.x()) || (right.x() <= asymptote_x));
       X_monotone_curve_2 xcv =
-        X_monotone_curve_2(a, b, c, d, source, target, has_source, has_target,
-                           is_directed_right, true, true, true);
+        X_monotone_curve_2(a, b, c, d, left, right,
+                           true, has_left_y, true, has_right_y,
+                           is_directed_right, true);
       return xcv;
     }
 
-    /*! Constructor for a curve bounded at one endpoint.
+    /*! Constructor for curves bounded at one endpoint.
      * (a) If is_directed_right
-     *     (i)  If source.x < -c/a, then has_left_x <= true
-     *     (ii) Otherwise (source.x > -c/a), has_left_x <= false
+     *     (i)  If source.x < -c, then has_left_x <- true
+     *     (ii) Otherwise (source.x > -c), has_left_x <- false
      * (b) Otherwise (!is_directed_right)
-     *     (i)  If source.x > -c/a, then has_right_x <= true
-     *     (ii) Otherwise (source.x > -c/a), has_right_x <= false
-     * \param a The a coefficient.
+     *     (i)  If source.x > -c, then has_right_x <- true
+     *     (ii) Otherwise (source.x > -c), has_right_x <- false
+     * \param a The a coefficient (either 0 or 1).
      * \param b The a coefficient.
      * \param c The a coefficient.
      * \param d The a coefficient.
-     * \param sourse The source point.
+     * \param source The source point.
      * \param is_directed_right Indicates whether the curve is directed right.
-     * \pre The source is on the hyperbola.
-     * The curve must be continueous, which implies: 
+     * \pre source is on the underlying hyperbola or the curve has a
+     *      vertical asymptote at the x-coordinate of source.
      */
-    X_monotone_curve_2 operator()(const FT& a, const FT& b,
-                                  const FT& c, const FT& d,
+    X_monotone_curve_2 operator()(bool a, const NT& b, const NT& c, const NT& d,
                                   const Point_2& source, bool is_directed_right)
     {
-      NT x;
-      NT x_singular = -c/a;
-      bool has_left_x, has_right_x;
+      NT asymptote_x = -c;
+      NT asymptote_y = -b;
+      Point_2 target = Point_2(asymptote_x, asymptote_y);
+      bool has_left_x, has_left_y, has_right_x, has_right_y;
       if (is_directed_right) {
-        has_left_x = (source.x() < -c/a);
-        has_right_x = true;
-      } else {
         has_left_x = true;
-        has_right_x = (source.x() > -c/a);
+        if (asymptote_x < source.x()) {
+          has_left_y = true;
+          has_rihgt_x = false;
+          has_right_y = true;
+        } else if (source.x() == asymptote_x) {
+          has_left_y = false;
+          has_rihgt_x = false;
+          has_right_y = true;
+        } else {
+          has_left_y = true;
+          has_rihgt_x = true;
+          has_right_y = false;
+        }
+      } else {
+        has_right_x = true;
+        if (asymptote_x > source.x()) {
+          has_right_y = true;
+          has_left_x = false;
+          has_left_y = true;
+        } else if (source.x() == asymptote_x) {
+          has_right_y = false;
+          has_left_x = false;
+          has_left_y = true;
+        } else {
+          has_right_y = true;
+          has_left_x = true;
+          has_left_y = false;
+        }
       }
-      Point_2 target = Point_2(x_singular, 0);
+      
+      const Point_2& left = (is_directed_right) ? source : target;
+      const Point_2& right = (is_directed_right) ? target : left;
+      
       X_monotone_curve_2 xcv =
-        X_monotone_curve_2(a, b, c, d, source, target, true, false,
-                           is_directed_right, has_left_x, has_right_x, true);
+        X_monotone_curve_2(a, b, c, d, left, right,
+                           has_left_x, has_left_y, has_right_x, has_right_y,
+                           is_directed_right, true);
       return xcv;
     }
   };
@@ -859,98 +911,109 @@ public:
    * A constructor object of curves.
    */
   class Construct_curve_2 {
-    /*! Constructor an unbounded curve.
-     * \param a The a coefficient.
+    /*! Constructor for unbounded curves.
+     * \param a The a coefficient (either 0 or 1).
      * \param b The a coefficient.
      * \param c The a coefficient.
      * \param d The a coefficient.
-     * \param has_left_x Indicates whether the curve has a vertical asymptote
-     *        on the left.
-     * \param has_right_x Indicates whether the curve has a vertical asymptote
-     *        on the right.
      */
-    X_monotone_curve_2 operator()(const FT& a, const FT& b,
-                                  const FT& c, const FT& d,
-                                  bool has_left_x = false,
-                                  bool has_right_x = false)
+    X_monotone_curve_2 operator()(bool a,
+                                  const NT& b, const NT& c, const NT& d)
     {
-      Point_2 source = Point_2();
-      Point_2 target = Point_2();
-      bool is_continuous = has_left_x || has_right_x;
-      X_monotone_curve_2 xcv =
-        X_monotone_curve_2(a, b, c, d, source, target, false, false, true,
-                           has_left_x, has_right_x, is_continuous);
+      X_monotone_curve_2 xcv = X_monotone_curve_2(a, b, c, d);
       return xcv;
     }
 
-    /*! Constructor for a curve bounded at the source and at the target.
-     * \param a The a coefficient.
+    /*! Constructor for curves bounded at their source and target.
+     * \param a The a coefficient (either 0 or 1).
      * \param b The a coefficient.
      * \param c The a coefficient.
      * \param d The a coefficient.
-     * \param sourse The source point.
+     * \param source The source point.
+     * \param target The target point.
      * \pre The two points must not be the same.
-     * \pre The source is on the hyperbola.
-     * \pre The target is on the hyperbola.
+     * \pre source is on the underlying hyperbola or the curve has a
+     *      vertical asymptote at the x-coordinate of source.
+     * \pre target is on the underlying hyperbola or the curve has a
+     *      vertical asymptote at the x-coordinate of right.
      */
-    X_monotone_curve_2 operator()(const FT& a, const FT& b,
-                                  const FT& c, const FT& d,
-                                  const Point_2& source, const Point_2& target)
+    X_monotone_curve_2 operator()(bool a, const NT& b, const NT& c, const NT& d,
+                                  const Point_2& left, const Point_2& right)
     {
-      Comparison_result res = compare_xy_2_object()(source, target);
+      Comparison_result res = m_traits->compare_xy_2_object()(left, right);
       CGAL_assertion(res != EQUAL);
       bool is_directed_right = (res == SMALLER);
-      NT x_singular = -c/a;
+      
+      NT asymptote_x = -c;
+      const Point_2& left = (is_directed_right) ? source : target;
+      const Point_2& right = (is_directed_right) ? target : left;
+      bool has_left_y = asymptote_x != left.x();
+      bool has_right_y = asymptote_x != right.x();
       bool is_continuous =
-        (is_directed_right) ? ((source.x() < -c/a) && (-c/a < target.x())) :
-        ((target.x() < -c/a) && (-c/a < source.x()))
+        (asymptote_x <= left.x()) || (right.x() <= asymptote_x);
       X_monotone_curve_2 xcv =
-        X_monotone_curve_2(a, b, c, d, source, target, true, true,
-                           is_directed_right, true, true, is_continuous);
+        X_monotone_curve_2(a, b, c, d, left, right,
+                           true, has_left_y, true, has_right_y,
+                           is_directed_right, is_continuous);
       return xcv;
     }
 
     /*! Constructor for a curve bounded at one endpoint.
-     * \param a The a coefficient.
+     * \param a The a coefficient (either 0 or 1).
      * \param b The a coefficient.
      * \param c The a coefficient.
      * \param d The a coefficient.
-     * \param sourse The source point.
+     * \param sourse The left point.
      * \param is_directed_right Indicates whether the curve is directed right.
-     * \pre The source is on the hyperbola.
+     * \pre source is on the underlying hyperbola or the curve has a
+     *      vertical asymptote at the x-coordinate of source.
      */
-    X_monotone_curve_2 operator()(const FT& a, const FT& b,
-                                  const FT& c, const FT& d,
+    X_monotone_curve_2 operator()(bool a, const NT& b, const NT& c, const NT& d,
                                   const Point_2& source,
-                                  bool is_directed_right,
-                                  bool is_bounded = false)
+                                  bool is_directed_right)
     {
-      NT x_singular = -c/a;
-      Point_2 target = Point_2(x_singular, 0);
-      bool has_left_x, has_right_x, is_continuous;
+      NT asymptote_x = -c;
+      NT asymptote_y = -b;
+      Point_2 target = Point_2(asymptote_x, asymptote_y);
+      bool has_left_x, has_left_y, has_right_x, has_right_y;
+      bool is_continuous;
       if (is_directed_right) {
-        has_right_x = true;
-        if (source.x() < x_singular) {
-          is_continuous = is_bounded;
-          has_left_x = is_bounded
-        } else {
+        has_left_x = true;
+        has_rihgt_x = false;
+        has_right_y = true;
+        if (asymptote_x < source.x()) {
+          has_left_y = true;
           is_continuous = true;
-          has_left_x = false;
+        } else if (source.x() == asymptote_x) {
+          has_left_y = false;
+          is_continuous = true;
+        } else {
+          has_left_y = true;
+          is_continuous = false;
         }
       } else {
-        has_left_x = true;
-        if (source.x() > x_singular) {
-          is_continuous = is_bounded;
-          has_right_x = is_bounded
-        } else {
+        has_right_x = true;
+        has_left_x = false;
+        has_left_y = false;
+        if (asymptote_x > source.x()) {
+          has_right_y = true;
           is_continuous = true;
-          has_right_x = false;
+        } else if (source.x() == asymptote_x) {
+          has_right_y = false;
+          is_continuous = true;
+        } else {
+          has_right_y = true;
+          is_continuous = false;
         }
       }
-      X_monotone_curve_2 xcv =
-        X_monotone_curve_2(a, b, c, d, source, target, true, false,
-                           is_directed_right, has_left_x, has_right_x,
-                           is_continuous);
+
+      const Point_2& left = (is_directed_right) ? source : target;
+      const Point_2& right = (is_directed_right) ? target : left;
+      
+     X_monotone_curve_2 xcv =
+        X_monotone_curve_2(a, b, c, d, left, right,
+                           has_left_x, has_left_y, has_right_x, has_right_y,
+                           is_directed_right, is_continuous);
       return xcv;
     }
   };
