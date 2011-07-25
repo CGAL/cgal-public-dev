@@ -134,8 +134,8 @@ public:
      */
     const Point_2& operator()(const X_monotone_curve_2& cv) const
     {
-      // CGAL_precondition();
-       //TODO
+      CGAL_precondition(cv.has_right());
+      return cv.right();
     }
   };
 
@@ -153,9 +153,10 @@ public:
      * \return The right endpoint.
      */
     const Point_2& operator()(const X_monotone_curve_2& cv) const
-     {
-        //TODO // ASAFP
-     }
+    {
+      CGAL_precondition(cv.has_left());
+      return cv.left();
+    }
   };
 
   /*! Obtain a Construct_max_vertex_2 functor object. */
@@ -212,21 +213,8 @@ public:
     Comparison_result operator()(const Point_2& p,
                                  const X_monotone_curve_2& cv) const
     {
-      // TODO: //ASAFP
-
-      // const Kernel * kernel = m_traits;
-      // if (! cv.is_vertical())
-      //   // Compare p with the segment's supporting line.
-      //   return (kernel->compare_y_at_x_2_object()(p, cv.supp_line()));
-
-      // // Compare with the vertical segment's end-points.
-      // typename Kernel::Compare_y_2  compare_y = kernel->compare_y_2_object();
-      // const Comparison_result res1 =
-      //   cv.has_left() ? compare_y (p, cv.left()) : LARGER;
-      // const Comparison_result res2 = 
-      //   cv.has_right() ? compare_y (p, cv.right()) : SMALLER;
+      // TODO
       return EQUAL;
-//      return (res1 == res2) ? res1 : EQUAL;
     }
   };
 
@@ -254,35 +242,8 @@ public:
                                  const X_monotone_curve_2& cv2,
                                  const Point_2& CGAL_precondition_code(p)) const
     {
-      // CGAL_precondition (! cv1.is_degenerate());
-      // CGAL_precondition (! cv2.is_degenerate());
-
-      // Kernel                        kernel;
-
-      // // Make sure that p lies on both curves, and that both are defined to its
-      // // left (so their left endpoint is lexicographically smaller than p).
-      // CGAL_precondition_code (
-      //   typename Kernel::Compare_xy_2 compare_xy = kernel.compare_xy_2_object();
-      // );
-
-      // CGAL_precondition 
-      //   (Segment_assertions::_assert_is_point_on (p, cv1, 
-      //                                             Has_exact_division()) &&
-      //    Segment_assertions::_assert_is_point_on (p, cv2,
-      //                                             Has_exact_division()));
-
-      // CGAL_precondition ((! cv1.has_left() ||
-      //                     compare_xy(cv1.left(), p) == SMALLER) &&
-      //                    (! cv2.has_left() ||
-      //                     compare_xy(cv2.left(), p) == SMALLER));
-
-      // // Compare the slopes of the two segments to determine thir relative
-      // // position immediately to the left of q.
-      // // Notice we use the supporting lines in order to compare the slopes,
-      // // and that we swap the order of the curves in order to obtain the
-      // // correct result to the left of p.
-      // return (kernel.compare_slope_2_object()(cv2.supp_line(), cv1.supp_line()));
-       //TODO //asaFP
+      // TODO
+      return EQUAL;
     }
   };
 
@@ -310,34 +271,8 @@ public:
                                  const X_monotone_curve_2& cv2,
                                  const Point_2& CGAL_precondition_code(p)) const
     {
-      // CGAL_precondition (! cv1.is_degenerate());
-      // CGAL_precondition (! cv2.is_degenerate());
-
-      // Kernel                        kernel;
-
-      // // Make sure that p lies on both curves, and that both are defined to its
-      // // right (so their right endpoint is lexicographically larger than p).
-      // CGAL_precondition_code (
-      //   typename Kernel::Compare_xy_2 compare_xy = kernel.compare_xy_2_object();
-      // );
-
-      // CGAL_precondition
-      //   (Segment_assertions::_assert_is_point_on (p, cv1, 
-      //                                             Has_exact_division()) &&
-      //    Segment_assertions::_assert_is_point_on (p, cv2,
-      //                                             Has_exact_division()));
-
-      // CGAL_precondition ((! cv1.has_right() ||
-      //                     compare_xy(cv1.right(), p) == LARGER) &&
-      //                    (! cv2.has_right() ||
-      //                     compare_xy(cv2.right(), p) == LARGER));
-
-      // // Compare the slopes of the two segments to determine thir relative
-      // // position immediately to the left of q.
-      // // Notice we use the supporting lines in order to compare the slopes.
-      // return (kernel.compare_slope_2_object()(cv1.supp_line(),
-      //                                         cv2.supp_line()));
-       //TODO: ASAFP
+      // TODO
+      return EQUAL;
     }
   };
 
@@ -360,8 +295,19 @@ public:
     bool operator()(const X_monotone_curve_2& cv1,
                     const X_monotone_curve_2& cv2) const
     {
-      if (&cv1 == &cv2) return true;
-      return (cv1 == cv2);
+      if (cv1.identical(cv2)) return true;
+      return ((cv1.a() == cv2.a()) &&
+              (cv1.b() == cv2.b())
+              (cv1.c() == cv2.c())
+              (cv1.d() == cv2.d())
+              (cv1.left() == cv2.left())
+              (cv1.right() == cv2.right())
+              (cv1.has_left_x() == cv2.has_left_x())
+              (cv1.has_left_y() == cv2.has_left_y())
+              (cv1.has_right_x() == cv2.has_right_x())
+              (cv1.has_right_y() == cv2.has_right_y())
+              (cv1.is_directed_right() == cv2.is_directed_right())
+              (cv1.is_continuous() == cv2.is_continuous()));
     }
 
     /*!
@@ -372,8 +318,8 @@ public:
      */
     bool operator()(const Point_2& p1, const Point_2& p2) const
     {
-      if (&p1 == &p2) return true;
-      return (p1 == p2);
+      if (p1.identical(p2)) return true;
+      return ((p1.x() == p2.x()) && (p1.y() == p2.y()));
     }
   };
 
@@ -395,28 +341,18 @@ public:
      *     ARR_MIN_END - the minimal end of xc or
      *     ARR_MAX_END - the maximal end of xc
      * \return the parameter space at the ce end of the line xcv.
-     *   ARR_LEFT_BOUNDARY  - the line approaches the identification arc from
-     *                        the right at the line left end.
-     *   ARR_INTERIOR       - the line does not approache the identification arc.
-     *   ARR_RIGHT_BOUNDARY - the line approaches the identification arc from
-     *                        the left at the line right end.
+     *   ARR_LEFT_BOUNDARY  - the curve end is unbounded at the left of the
+     *                        parameter space.
+     *   ARR_INTERIOR       - the curve end is bounded.
+     *   ARR_RIGHT_BOUNDARY - the curve end is unbounded at the right of the
+     *                        parameter space.
      */
     Arr_parameter_space operator()(const X_monotone_curve_2 & xcv,
                                    Arr_curve_end ce) const
     {
-      // CGAL_precondition (! xcv.is_degenerate());
-      // return (ce == ARR_MIN_END) ?
-      //   xcv.left_infinite_in_x() : xcv.right_infinite_in_x();
-       //TODO ASAFP
-    }
-
-    /*! Obtains the parameter space at a point along the x-axis.
-     * \param p the point.
-     * \return the parameter space at p.
-     */
-    Arr_parameter_space operator()(const Point_2 ) const
-    {
-      return ARR_INTERIOR;
+      return (ce == ARR_MIN_END) ?
+        (cv.has_left_x() ? ARR_INTERIOR : ARR_LEFT_BOUNDARY) :
+        (cv.has_right_x() ? ARR_INTERIOR : ARR_RIGHT_BOUNDARY);
     }
   };
 
@@ -440,29 +376,20 @@ public:
      *     ARR_MIN_END - the minimal end of xc or
      *     ARR_MAX_END - the maximal end of xc
      * \return the parameter space at the ce end of the line xcv.
-     *   ARR_BOTTOM_BOUNDARY  - the line approaches the south pole at the line
-     *                          left end.
-     *   ARR_INTERIOR         - the line does not approache a contraction point.
-     *   ARR_TOP_BOUNDARY     - the line approaches the north pole at the line
-     *                          right end.
+     *   ARR_BOTTOM_BOUNDARY - the curve end is unbounded at the bottom of
+     *                         the parameter space.     
+     *   ARR_INTERIOR        - the curve end is bounded.
+     *   ARR_TOP_BOUNDARY    - the curve end is unbounded at the top of
+     *                         the parameter space.     
      */
     Arr_parameter_space operator()(const X_monotone_curve_2 & xcv,
                                    Arr_curve_end ce) const
     {
-      // CGAL_precondition (! xcv.is_degenerate());
-
-      // return (ce == ARR_MIN_END) ?
-      //   xcv.left_infinite_in_y() : xcv.right_infinite_in_y();
-       //TODO //ASAFP
-    }
-
-    /*! Obtains the parameter space at a point along the y-axis.
-     * \param p the point.
-     * \return the parameter space at p.
-     */
-    Arr_parameter_space operator()(const Point_2 ) const
-    {
-      return ARR_INTERIOR;
+      return (ce == ARR_MIN_END) ?
+        (cv.has_left_y() ? ARR_INTERIOR :
+         ((cv.b()*cv.c() < cv.d()) ? ARR_BOTTOM_BOUNDARY : ARR_TOP_BOUNDARY)) :
+        (cv.has_right_y() ? ARR_INTERIOR :
+         ((cv.b()*cv.c() < cv.d()) ? ARR_BOTTOM_BOUNDARY : ARR_TOP_BOUNDARY)) :
     }
   };
 
@@ -470,13 +397,25 @@ public:
   Parameter_space_in_y_2 parameter_space_in_y_2_object() const
   { return Parameter_space_in_y_2(); }
 
-  /*! A function object that compares at limit
+  /*! A function object that compares the x-limits of arc ends on the
+   * boundary of the parameter space
    */
   class Compare_x_at_limit_2 {
    public:
-    /*! Compares the x coordinate of p with the curve end
-     * of xcv that is defined by ce at its limit. 
-     * Returns SMALLER, EQUAL, or LARGER accordingly.
+    /*! Compare the x-coordinate of a point with the x-coordinate of
+     * the vertical asymptote of a hyperbola.
+     * a line end on the boundary at y = +/- oo.
+     * \param p the point direction.
+     * \param xcv the line, the endpoint of which is compared.
+     * \param ce the line-end indicator -
+     *            ARR_MIN_END - the minimal end of xc or
+     *            ARR_MAX_END - the maximal end of xc.
+     * \return the comparison result:
+     *         SMALLER - x(p) < x(xc, ce);
+     *         EQUAL   - x(p) = x(xc, ce);
+     *         LARGER  - x(p) > x(xc, ce).     
+     * \pre p lies in the interior of the parameter space.
+     * \pre the ce end of the curve xcv lies on a boundary.
      */
     Comparison_result operator()(const Point_2& p,
                                  const X_monotone_curve_2&  xcv, 
@@ -1047,10 +986,13 @@ public:
      * \param c The a coefficient.
      * \param d The a coefficient.
      * \param sourse The source point.
+     * \pre a != 0.
      * \pre The two points must not be the same.
-     * \pre The source is on the hyperbola.
-     * \pre The target is on the hyperbola.
-     * \pre The curve is continueous. That is, the closed interval bounded by
+     * \pre The source is on the underlying hyperbola or the curve source
+     *      has a vertical asymptote at the x-coordinate of the source.
+     * \pre The target is on the underlying hyperbola or the curve target
+     *      has a vertical asymptote at the x-coordinate of the source.
+     * \pre The curve is continueous. That is, the open interval bounded by
      *      the x-coordinates of source and target does not contain -c/a (the
      *      x-coordinate of the vertical asymptotes).
      */
@@ -1058,11 +1000,16 @@ public:
                                   const FT& c, const FT& d,
                                   const Point_2& source, const Point_2& target)
     {
+      CGAL_assertion(!is_zero(a));
       Comparison_result res = compare_xy_2_object()(source, target);
       CGAL_assertion(res != EQUAL);
       bool is_directed_right = (res == SMALLER);
+      
+      NT x_singular = -c/a;
+      bool has_source = x_singular != source.x();
+      bool has_target = x_singular != target.x();
       X_monotone_curve_2 cv =
-        X_monotone_curve_2(a, b, c, d, source, target, true, true,
+        X_monotone_curve_2(a, b, c, d, source, target, has_source, has_target,
                            is_directed_right, true, true, true);
       return cv;
     }
