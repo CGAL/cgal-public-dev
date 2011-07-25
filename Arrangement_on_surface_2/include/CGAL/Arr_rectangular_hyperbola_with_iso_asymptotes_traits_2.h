@@ -1195,6 +1195,13 @@ public:
         }
       } else {
         has_left_x = true;
+        if (source.x() > x_singular) {
+          is_continuous = is_bounded;
+          has_right_x = is_bounded
+        } else {
+          is_continuous = true;
+          has_right_x = false;
+        }
       }
       X_monotone_curve_2 cv =
         X_monotone_curve_2(a, b, c, d, source, target, true, false,
