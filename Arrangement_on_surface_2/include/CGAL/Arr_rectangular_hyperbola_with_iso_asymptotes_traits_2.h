@@ -31,8 +31,8 @@
 #include <CGAL/tags.h>
 #include <CGAL/Arr_tags.h>
 #include <CGAL/Arr_enums.h>
-#include <CGAL/Arr_geometry_traits/Sqrt_extension_point_2.h>
 #include <CGAL/Arr_geometry_traits/Rectangular_hyperbola_with_iso_asymptotes_2.h>
+
 
 namespace CGAL {
 
@@ -40,20 +40,20 @@ namespace CGAL {
  * A traits class for maintaining an arrangement of rectangular hyperbolas
  * with vertical and horiznotal asysmptotes.
  */
-template <typename Kernel_, typename Filter_ = true>
+template <typename Kernel_>
 class Arr_rectangular_hyperbola_with_iso_asymptotes_traits_2 {
 public:
-  typedef Kernel_                                     Kernel;
-  typedef Filter_                                     Filter;
-  
-  typedef typename Kernel::NT                         NT;
-  typedef Sqrt_extension_point_2<NT, Filter>          Point_2;
-  typedef typename Point_2::Coord_NT                  Coord_NT;
-  typedef X_monotone_rectangular_hyperbola_with_iso_asymptotes_2<Kernel, Filter>
-                                                      X_monotone_curve_2;
-  typedef Rectangular_hyperbola_with_iso_asymptotes_2<Kernel, Filter>
-                                                      Curve_2;
+  typedef Kernel_                                       Kernel;  
+  typedef typename Kernel::NT                           NT;
+ 
 
+  typedef Rectangular_hyperbola_with_iso_asymptotes_2<Kernel>
+  X_monotone_curve_2;
+  typedef Rectangular_hyperbola_with_iso_asymptotes_2<Kernel>
+  Curve_2;
+  typedef typename Curve_2::Root_of_2_kernel Root_of_2_kernel; 
+  typedef typename Curve_2::Root_of_2_point  Root_of_2_point; 
+  
   // Category tags:
   typedef Tag_true                                    Has_left_category;
   typedef Tag_true                                    Has_merge_category;
@@ -70,7 +70,7 @@ public:
   typedef typename Kernel::Segment_2                  Segment_2;
 
 private:
-  typedef Arr_rectangular_hyperbola_with_iso_asymptotes_traits_2<Kernel, Filter>
+  typedef Arr_rectangular_hyperbola_with_iso_asymptotes_traits_2<Kernel>
                                                       Self;
   
   mutable Kernel* m_kernel;
@@ -98,13 +98,13 @@ public:
     m_own_kernel(other.own_kernel())
   {
     m_kernel = (own_kernel) ?
-      new Algebraic_kernel_d_1(*other.kernel()) : other.kernel();
+      new Kernel(*other.kernel()) : other.kernel();
   }
 
   /*! Destructor
    */
   ~Arr_rectangular_hyperbola_with_iso_asymptotes_traits_2()
-  { if (m_own_traits) delete(m_kernel); }
+  { if (m_own_kernel) delete(m_kernel); }
   
   /*! Obtains the kernel
    * \return the kernel.
@@ -114,7 +114,7 @@ public:
   /*! Obtains the flag that indicates whether the kernel is owned by the traits.
    * \return the flag that indicates whether the kernel is owned by the traits.
    */
-  Kernel* own_traits() const {return m_own_traits;}
+  bool own_kernel() const {return m_own_kernel;}
   
   /*! \class
    * A functor that checks whether a point is on a curve
@@ -132,9 +132,10 @@ public:
      *           true, if p.x * p.y + b * p.x + c * p.y + d = 0;
      *           false, otherwise
      */
-    bool is_on(const Point_2& p,
+    bool is_on(const Root_of_2_point& p,
                bool a, const NT& b, const NT& c, const NT& d) const
     {
+      assert(false);
       if (a) {
         // Line: b * p.x + c * p.y + d = 0
         // TODO
@@ -151,49 +152,20 @@ public:
   
   /// \name Basic functor definitions.
   //@{
-
+  
   /*! \class
-   * A functor that compares the x-coordinates of two points.
+   * A functor that compares the x-coordinates of two points
    */
-  class Compare_x_2 {
-  public:
-    /*! Compares the x-coordinates of two points.
-     * \param p1 The first point.
-     * \param p2 The second point.
-     * \return LARGER if x(p1) > x(p2);
-     *         SMALLER if x(p1) < x(p2);
-     *         EQUAL if x(p1) = x(p2).
-     */
-    Comparison_result operator()(const Point_2& p1, const Point_2& p2) const
-    {
-      if (p1.identical(p2)) return EQUAL;
-      return CGAL::compare(p1.x(), p2.x());
-    }
-  };
+  typedef typename Root_of_2_kernel::Compare_x_2 Compare_x_2; 
 
   /*! Obtains a Compare_x_2 functor. */
   Compare_x_2 compare_x_2_object() const { return Compare_x_2(); }
 
   /*! \class
-   * A functor that compares the x-coordinates of two points
+   * A functor that compares the xy-coordinates of two points
    */
-  class Compare_xy_2 {
-  public:
-    /*! Compares two points lexigoraphically: by x, then by y.
-     * \param p1 The first point.
-     * \param p2 The second point.
-     * \return LARGER if x(p1) > x(p2), or if x(p1) = x(p2) and y(p1) > y(p2);
-     *         SMALLER if x(p1) < x(p2), or if x(p1) = x(p2) and y(p1) < y(p2);
-     *         EQUAL if the two points are equal.
-     */
-    Comparison_result operator()(const Point_2& p1, const Point_2& p2) const
-    {
-      if (p1.identical(p2)) return EQUAL;
-      Comparison_result res = CGAL::compare(p1.x(), p2.x());
-      if (res != EQUAL) return res;
-      return CGAL::compare(p1.y(), p2.y());
-    }
-  };
+  typedef typename Root_of_2_kernel::Compare_xy_2 Compare_xy_2; 
+  
 
   /*! Obtains a Compare_xy_2 functor object. */
   Compare_xy_2 compare_xy_2_object() const { return Compare_xy_2(); }
@@ -208,10 +180,10 @@ public:
      * \pre The left end of xc is a valid (bounded) point.
      * \return The left endpoint.
      */
-    const Point_2& operator()(const X_monotone_curve_2& xc) const
+    const Root_of_2_point& operator()(const X_monotone_curve_2& xc) const
     {
-      CGAL_precondition(xc.has_right());
-      return xc.right();
+      CGAL_precondition(xc.has_left());
+      return xc.left();
     }
   };
 
@@ -229,10 +201,10 @@ public:
      * \pre The right end of xc is a valid (bounded) point.
      * \return The right endpoint.
      */
-    const Point_2& operator()(const X_monotone_curve_2& xc) const
+    const Root_of_2_point& operator()(const X_monotone_curve_2& xc) const
     {
-      CGAL_precondition(xc.has_left());
-      return xc.left();
+      CGAL_precondition(xc.has_right());
+      return xc.right();
     }
   };
 
@@ -261,8 +233,7 @@ public:
    */
   class Compare_y_at_x_2 {
   protected:
-    typedef Arr_rectangular_hyperbola_with_iso_asymptotes_traits_2<Kernel,
-                                                                   Filter>
+    typedef Arr_rectangular_hyperbola_with_iso_asymptotes_traits_2<Kernel>
       Traits;
 
     /*! The traits (in case it has state) */
@@ -277,8 +248,7 @@ public:
     Compare_y_at_x_2(const Traits* traits) : m_traits(traits) {}
 
     //! Allow its functor obtaining function calling the private constructor.
-    friend class Arr_rectangular_hyperbola_with_iso_asymptotes_traits_2<Kernel,
-                                                                        Filter>;
+    friend class Arr_rectangular_hyperbola_with_iso_asymptotes_traits_2<Kernel>;
     
   public:
     /*!
@@ -290,10 +260,11 @@ public:
      *         LARGER if y(p) > xc(x(p)), i.e. the point is above the curve;
      *         EQUAL if p lies on the curve.
      */
-    Comparison_result operator()(const Point_2& p,
+    Comparison_result operator()(const Root_of_2_point& p,
                                  const X_monotone_curve_2& xc) const
     {
       // TODO
+      assert(false); 
       return EQUAL;
     }
   };
@@ -320,9 +291,10 @@ public:
      */
     Comparison_result operator()(const X_monotone_curve_2& xc1,
                                  const X_monotone_curve_2& xc2,
-                                 const Point_2& CGAL_precondition_code(p)) const
+                                 const Root_of_2_point& CGAL_precondition_code(p)) const
     {
       // TODO
+      assert(false);
       return EQUAL;
     }
   };
@@ -332,7 +304,7 @@ public:
   { return Compare_y_at_x_left_2(); }
 
   /*! \class
-   * A functor that compares compares the y-coordinates of two linear
+   * A functor that compares the y-coordinates of two linear
    * curves immediately to the right of their intersection point.
    */
   class Compare_y_at_x_right_2 {
@@ -349,9 +321,10 @@ public:
      */
     Comparison_result operator()(const X_monotone_curve_2& xc1,
                                  const X_monotone_curve_2& xc2,
-                                 const Point_2& CGAL_precondition_code(p)) const
+                                 const Root_of_2_point& CGAL_precondition_code(p)) const
     {
       // TODO
+      assert(false);
       return EQUAL;
     }
   };
@@ -381,7 +354,7 @@ public:
      * \param p2 The second point.
      * \return (true) if the two point are the same; (false) otherwise.
      */
-    bool operator()(const Point_2& p1, const Point_2& p2) const
+    bool operator()(const Root_of_2_point& p1, const Root_of_2_point& p2) const
     { return (p1 == p2); }
   };
 
@@ -414,8 +387,8 @@ public:
                                    Arr_curve_end ce) const
     {
       return (ce == ARR_MIN_END) ?
-        (cv.has_left_x() ? ARR_INTERIOR : ARR_LEFT_BOUNDARY) :
-        (cv.has_right_x() ? ARR_INTERIOR : ARR_RIGHT_BOUNDARY);
+        (xc.has_left_x() ? ARR_INTERIOR : ARR_LEFT_BOUNDARY) :
+        (xc.has_right_x() ? ARR_INTERIOR : ARR_RIGHT_BOUNDARY);
     }
   };
 
@@ -451,12 +424,12 @@ public:
     {
       return (ce == ARR_MIN_END) ?
         (xc.has_left_y() ? ARR_INTERIOR :
-         ((xc.b()*xc.c() < xc.d()) ? ARR_BOTTOM_BOUNDARY : ARR_TOP_BOUNDARY)) :
+            ((xc.b()*xc.c() < xc.d()) ? ARR_BOTTOM_BOUNDARY : ARR_TOP_BOUNDARY)) :
         (xc.has_right_y() ? ARR_INTERIOR :
-         ((xc.b()*xc.c() < xc.d()) ? ARR_BOTTOM_BOUNDARY : ARR_TOP_BOUNDARY)) :
+            ((xc.b()*xc.c() < xc.d()) ? ARR_BOTTOM_BOUNDARY : ARR_TOP_BOUNDARY)) ;
     }
   };
-
+  
   /*! Obtains a Parameter_space_in_y_2 function object */
   Parameter_space_in_y_2 parameter_space_in_y_2_object() const
   { return Parameter_space_in_y_2(); }
@@ -467,8 +440,7 @@ public:
    */
   class Compare_x_at_limit_2 {
   protected:
-    typedef Arr_rectangular_hyperbola_with_iso_asymptotes_traits_2<Kernel,
-                                                                   Filter>
+    typedef Arr_rectangular_hyperbola_with_iso_asymptotes_traits_2<Kernel>
       Traits;
 
     /*! The traits (in case it has state) */
@@ -483,9 +455,8 @@ public:
     Compare_x_at_limit_2(const Traits* traits) : m_traits(traits) {}
 
     //! Allow its functor obtaining function calling the private constructor.
-    friend class Arr_rectangular_hyperbola_with_iso_asymptotes_traits_2<Kernel,
-                                                                        Filter>;
-    
+    friend class Arr_rectangular_hyperbola_with_iso_asymptotes_traits_2<Kernel>;
+
   public:
     /*! Compare the x-coordinate of a point with the x-coordinate of
      * the vertical asymptote of a hyperbola or a vertical line.
@@ -502,7 +473,7 @@ public:
      * \pre p lies in the interior of the parameter space.
      * \pre the ce end of the curve xc lies on the bottom or top boundary.
      */
-    Comparison_result operator()(const Point_2& p,
+    Comparison_result operator()(const Root_of_2_point& p,
                                  const X_monotone_curve_2&  xc, 
                                  Arr_curve_end ce)
     {
@@ -582,15 +553,15 @@ public:
                                  const X_monotone_curve_2 & xc2,
                                  Arr_curve_end ce) const
     {
-      CGAL_precondition_code
-      (
-        Parameter_space_in_x_2 psx = m_traits->parameter_space_in_x_2_object();
-        Parameter_space_in_y_2 psy = m_traits->parameter_space_in_y_2_object();
-      )
-      CGAL_precondition(psx(xc1, ce) == ARR_INTERIOR);
-      CGAL_precondition(psy(xc1, ce) != ARR_INTERIOR);
-      CGAL_precondition(psx(xc2, ce) == ARR_INTERIOR);
-      CGAL_precondition(psy(xc2, ce) != ARR_INTERIOR);
+//       CGAL_precondition_code
+//       (
+//         Parameter_space_in_x_2 psx = m_traits->parameter_space_in_x_2_object();
+//         Parameter_space_in_y_2 psy = m_traits->parameter_space_in_y_2_object();
+//       )
+//       CGAL_precondition(psx(xc1, ce) == ARR_INTERIOR);
+//       CGAL_precondition(psy(xc1, ce) != ARR_INTERIOR);
+//       CGAL_precondition(psx(xc2, ce) == ARR_INTERIOR);
+//       CGAL_precondition(psy(xc2, ce) != ARR_INTERIOR);
         
       if (xc1.is_vertical() && xc2.is_vertical) return EQUAL;
       if (xc2.is_vertical) return (ce == ARR_MAX_END) ? SMALLER : LARGER;
@@ -598,6 +569,7 @@ public:
 
       // Both curves are hyperbola.
       // TODO
+      assert(false); 
       return SMALLER;
     }
   };
@@ -629,24 +601,25 @@ public:
                                  const X_monotone_curve_2 & xc2,
                                  Arr_curve_end ce) const
     {
-      CGAL_precondition_code
-      (
-        Parameter_space_in_x_2 psx = m_traits->parameter_space_in_x_2_object();
-        Parameter_space_in_y_2 psy = m_traits->parameter_space_in_y_2_object();
-      )
-      CGAL_precondition(psx(xc1, ce) != ARR_INTERIOR);
-      CGAL_precondition(psy(xc1, ce) == ARR_INTERIOR);
-      CGAL_precondition(psx(xc2, ce) != ARR_INTERIOR);
-      CGAL_precondition(psy(xc2, ce) == ARR_INTERIOR);
+//       CGAL_precondition_code
+//       (
+//         Parameter_space_in_x_2 psx = m_traits->parameter_space_in_x_2_object();
+//         Parameter_space_in_y_2 psy = m_traits->parameter_space_in_y_2_object();
+//       )
+//       CGAL_precondition(psx(xc1, ce) != ARR_INTERIOR);
+//       CGAL_precondition(psy(xc1, ce) == ARR_INTERIOR);
+//       CGAL_precondition(psx(xc2, ce) != ARR_INTERIOR);
+//       CGAL_precondition(psy(xc2, ce) == ARR_INTERIOR);
 
       Comparison_result res =
-        CGAL::compare((ce1 == ARR_MIN_END) ? xc1.left_x() : xc1.right_x(),
-                      (ce2 == ARR_MIN_END) ? xc2.left_x() : xc2.right_x());
+        CGAL::compare((xc1 == ARR_MIN_END) ? xc1.left_x() : xc1.right_x(),
+                      (xc2 == ARR_MIN_END) ? xc2.left_x() : xc2.right_x());
       if (res != EQUAL) return res;
-      if (ce1.is_horizontal() && ce2.is_horizontal()) return EQUAL;
+      if (xc1.is_horizontal() && xc2.is_horizontal()) return EQUAL;
 
       // At most one of the curves is horizontal.
       // TODO
+      assert(false); 
       return EQUAL;
     }
   };
@@ -681,7 +654,7 @@ public:
       const NT& c = cv.c();
       const NT& d = cv.d();
       bool is_directed_right = cv.is_directed_right();
-      Point_2 p(-c, 0);
+      Root_of_2_point p(-c, 0);
       *oi++ = make_object(X_monotone_curve_2(true, b, c, d, cv.left(), p,
                                              cv.has_left_x(), cv.has_left_y(),
                                              true, false, 
@@ -710,14 +683,14 @@ public:
      * \param xc2 Output: The right resulting subcurve (p is its left endpoint).
      * \pre p lies on xc but is not one of its end-points.
      */
-    void operator()(const X_monotone_curve_2& cv, const Point_2& p,
+    void operator()(const X_monotone_curve_2& xc, const Root_of_2_point& p,
                     X_monotone_curve_2& xc1, X_monotone_curve_2& xc2) const
     {
       bool a = xc.a();
       const NT& b = xc.b();
       const NT& c = xc.c();
       const NT& d = xc.d();
-      CGAL_precondition(m_traits->is_on_object_2()(p, a, b, c, d));
+      //CGAL_precondition(m_traits->is_on_object_2()(p, a, b, c, d));
       xc1 = X_monotone_curve_2(a, b, c, d, xc.left(), p,
                                xc.has_left_x(), xc.has_left_y(), true, true,
                                xc.is_directed_right(), true);
@@ -748,6 +721,8 @@ public:
                               const X_monotone_curve_2& xc2,
                               OutputIterator oi) const
     {
+      //TODO
+      assert(false);
       return oi;
     }
   };
@@ -769,11 +744,11 @@ public:
     bool operator()(const X_monotone_curve_2& xc1,
                     const X_monotone_curve_2& xc2) const
     {
-      return ((xc1.a() == ac2.a()) &&
-              (xc1.b() == ac2.b())
-              (xc1.c() == ac2.c())
-              (xc1.d() == ac2.d())
-              (xc1.is_directed_right() == ac2.is_directed_right()) &&
+      return ((xc1.a() == xc2.a()) &&
+              (xc1.b() == xc2.b())
+              (xc1.c() == xc2.c())
+              (xc1.d() == xc2.d())
+              (xc1.is_directed_right() == xc2.is_directed_right()) &&
               ((xc1.has_right_x() && xc1.has_right_y() &&
                 xc2.has_left_x() && xc2.has_left_y() &&
                 (xc1.right() == xc2.left())) ||
@@ -790,8 +765,7 @@ public:
    */
   class Merge_2 {
   protected:
-    typedef Arr_rectangular_hyperbola_with_iso_asymptotes_traits_2<Kernel,
-                                                                   Filter>
+    typedef Arr_rectangular_hyperbola_with_iso_asymptotes_traits_2<Kernel>
       Traits;
 
     /*! The traits (in case it has state) */
@@ -806,8 +780,7 @@ public:
     Merge_2(const Traits* traits) : m_traits(traits) {}
 
     //! Allow its functor obtaining function calling the private constructor.
-    friend class Arr_rectangular_hyperbola_with_iso_asymptotes_traits_2<Kernel,
-                                                                        Filter>;
+    friend class Arr_rectangular_hyperbola_with_iso_asymptotes_traits_2<Kernel>;
     
   public:
     /*!
@@ -820,7 +793,7 @@ public:
      */
     void operator()(const X_monotone_curve_2& xc1,
                     const X_monotone_curve_2& xc2,
-                    X_monotone_curve_2& c) const
+                    X_monotone_curve_2& xc) const
     {
       CGAL_assertion(m_traits->are_mergeable_2_object()(xc1, xc2));
 
@@ -829,20 +802,20 @@ public:
           (xc1.right() == xc2.left()))
       {
         xc = X_monotone_curve_2(xc1.a(), xc1.b(), xc1.c(), xc1.d(),
-                                xxx.left(), xc2.right(),
+                                xc1.left(), xc2.right(),
                                 xc1.has_left_x(), xc1.has_left_y(),
                                 xc2.has_right_x(), xc2.has_right_y(),
-                                xc1.is_rected_right(), true);
+                                xc1.is_directed_right(), true);
         return;
       }
       CGAL_assertion(xc2.has_right_x() && xc2.has_right_y() &&
                      xc1.has_left_x() && xc1.has_left_y() &&
                      (xc2.right() == xc1.left()));
-      xc = X_monotone_curve_2(ac2.a(), ac2.b(), ac2.c(), ac2.d(),
-                              ac2.left(), xc1.right(),
-                              ac2.has_left_x(), ac2.has_left_y(),
+      xc = X_monotone_curve_2(xc2.a(), xc2.b(), xc2.c(), xc2.d(),
+                              xc2.left(), xc1.right(),
+                              xc2.has_left_x(), xc2.has_left_y(),
                               xc1.has_right_x(), xc1.has_right_y(),
-                              ac2.is_rected_right(), true);       
+                              xc2.is_directed_right(), true);       
     }
   };
 
@@ -865,7 +838,7 @@ public:
      * \return An approximation of p's x-coordinate (if i == 0), or an 
      *         approximation of p's y-coordinate (if i == 1).
      */
-    Approximate_number_type operator()(const Point_2& p, int i) const
+    Approximate_number_type operator()(const Root_of_2_point& p, int i) const
     {
       CGAL_precondition(i == 0 || i == 1);
       return (i == 0) ? CGAL::to_double(p.x()) : CGAL::to_double(p.y());
@@ -910,11 +883,14 @@ public:
      */
     X_monotone_curve_2 operator()(const X_monotone_curve_2& xc)
     {
-      X_monotone_curve_2(xc.a(), xc.b(), xc.c(), xc.d(),
-                         xc.right(), xc.left(), 
-                         xc.has_right_x(), xc.has_right_y()
-                         xc.has_left_x(), xc.has_left_y()
-                         !xc.is_directed_right(), xc.is_continuous());
+      assert(false);
+      return X_monotone_curve_2();
+//       return X_monotone_curve_2(
+//           xc.is_directed_right(), xc.b(), xc.c(), xc.d(),
+//           xc.right(), xc.left(), 
+//           xc.has_right_x(), xc.has_right_y()
+//           xc.has_left_x(), xc.has_left_y()
+//           !xc.is_directed_right(), xc.is_continuous());
     }
   };
 
@@ -931,8 +907,7 @@ public:
    */
   class Construct_x_monotone_curve_2 {
   protected:
-    typedef Arr_rectangular_hyperbola_with_iso_asymptotes_traits_2<Kernel,
-                                                                   Filter>
+    typedef Arr_rectangular_hyperbola_with_iso_asymptotes_traits_2<Kernel>
       Traits;
 
     /*! The traits (in case it has state) */
@@ -947,8 +922,7 @@ public:
     Construct_x_monotone_curve_2(const Traits* traits) : m_traits(traits) {}
 
     //! Allow its functor obtaining function calling the private constructor.
-    friend class Arr_rectangular_hyperbola_with_iso_asymptotes_traits_2<Kernel,
-                                                                        Filter>;
+    friend class Arr_rectangular_hyperbola_with_iso_asymptotes_traits_2<Kernel>;
 
   public:
     /*! Constructor from all data fields.
@@ -984,7 +958,7 @@ public:
      * \pre The curve is continueous.
      */
     X_monotone_curve_2 operator()(bool a, const NT& b, const NT& c, const NT& d,
-                                  const Point_2& left, const Point_2& right,
+                                  const Root_of_2_point& left, const Root_of_2_point& right,
                                   bool has_left_x, bool has_left_y,
                                   bool has_right_x, bool has_right_y,
                                   bool is_directed_right)
@@ -1001,8 +975,8 @@ public:
       CGAL_assertion(has_right_x || !has_right_y || (right.y() == -b));
 
       // Continuity check:
-      CGAL_assertion(!has_left_x || (-c <= x));
-      CGAL_assertion(!has_right_x || (x <= -c));
+      CGAL_assertion(!has_left_x  || (-c <= left.x()));
+      CGAL_assertion(!has_right_x || (right.x() <= -c));
             
       X_monotone_curve_2 xc =
         X_monotone_curve_2(a, b, c, d, left, right,
@@ -1017,16 +991,17 @@ public:
      */
     X_monotone_curve_2 operator()(bool is_vertical, const NT& k)
     {
-      X_monotone_curve_2 xc;
-      if (is_vertical) {
-        Point_2 p(k, 0);
-        xc = X_monotone_curve_2(false, b, c, d, p, p, true, false, true, false,
-                                true, true);
-      } else {
-        Point_2 p(0, k);
-        xc = X_monotone_curve_2(false, b, c, d, p, p, false, true, false, true,
-                                true, true);
-      }
+      assert(false); 
+      X_monotone_curve_2 xc; 
+//      if (is_vertical) {
+//         Root_of_2_point p(k, 0);
+//         xc = X_monotone_curve_2(false, b, c, d, p, p, true, false, true, false,
+//                                 true, true);
+//       } else {
+//         Root_of_2_point p(0, k);
+//         xc = X_monotone_curve_2(false, b, c, d, p, p, false, true, false, true,
+//                                 true, true);
+//       }
       return xc;
     }
     
@@ -1048,15 +1023,16 @@ public:
      *      x-coordinate of the vertical asymptotes).
      */
     X_monotone_curve_2 operator()(bool a, const NT& b, const NT& c, const NT& d,
-                                  const Point_2& left, const Point_2& right)
+        const Root_of_2_point& source,
+        const Root_of_2_point& target)
     {
-      Comparison_result res = m_traits->compare_xy_2_object()(left, right);
+      Comparison_result res = CGAL::compare_xy(source, target);
       CGAL_assertion(res != EQUAL);
       bool is_directed_right = (res == SMALLER);
       
       NT asymptote_x = -c;
-      const Point_2& left = (is_directed_right) ? source : target;
-      const Point_2& right = (is_directed_right) ? target : left;
+      const Root_of_2_point& left = (is_directed_right) ? source : target;
+      const Root_of_2_point& right = (is_directed_right) ? target : left;
       bool has_left_y = asymptote_x != left.x();
       bool has_right_y = asymptote_x != right.x();
       CGAL_assertion((asymptote_x <= left.x()) || (right.x() <= asymptote_x));
@@ -1084,25 +1060,25 @@ public:
      *      vertical asymptote at the x-coordinate of source.
      */
     X_monotone_curve_2 operator()(bool a, const NT& b, const NT& c, const NT& d,
-                                  const Point_2& source, bool is_directed_right)
+                                  const Root_of_2_point& source, bool is_directed_right)
     {
       NT asymptote_x = -c;
       NT asymptote_y = -b;
-      Point_2 target = Point_2(asymptote_x, asymptote_y);
+      Root_of_2_point target = Root_of_2_point(asymptote_x, asymptote_y);
       bool has_left_x, has_left_y, has_right_x, has_right_y;
       if (is_directed_right) {
         has_left_x = true;
         if (asymptote_x < source.x()) {
           has_left_y = true;
-          has_rihgt_x = false;
+          has_right_x = false;
           has_right_y = true;
         } else if (source.x() == asymptote_x) {
           has_left_y = false;
-          has_rihgt_x = false;
+          has_right_x = false;
           has_right_y = true;
         } else {
           has_left_y = true;
-          has_rihgt_x = true;
+          has_right_x = true;
           has_right_y = false;
         }
       } else {
@@ -1122,8 +1098,8 @@ public:
         }
       }
       
-      const Point_2& left = (is_directed_right) ? source : target;
-      const Point_2& right = (is_directed_right) ? target : left;
+      const Root_of_2_point& left = (is_directed_right) ? source : target;
+      const Root_of_2_point& right = (is_directed_right) ? target : left;
       
       X_monotone_curve_2 xc =
         X_monotone_curve_2(a, b, c, d, left, right,
@@ -1163,14 +1139,16 @@ public:
       Comparison_result res = kernel.compare_xy_2_object()(source, target);
       CGAL_assertion (res != EQUAL);
       bool is_directed_right = (res == SMALLER);
-      Point_2 ps(source);
-      Point_2 pt(target);
-      X_monotone_curve_2 xc = (is_directed_right) ?
-        X_monotone_curve_2(false, b, c, d, ps, pt, true, true, false, false,
-                           is_directed_right, true) :
-        X_monotone_curve_2(false, b, c, d, pt, ps, false, false, true, true, 
-                           is_directed_right, true);
-      }
+      Root_of_2_point ps(source);
+      Root_of_2_point pt(target);
+      assert(false);
+      X_monotone_curve_2 xc;
+//       xc = (is_directed_right) ?
+//         X_monotone_curve_2(false, b, c, d, ps, pt, true, true, false, false,
+//                            is_directed_right, true) :
+//         X_monotone_curve_2(false, b, c, d, pt, ps, false, false, true, true, 
+//                            is_directed_right, true);
+      
       return xc;
     }
 
@@ -1184,19 +1162,21 @@ public:
       Kernel* kernel = m_traits->kerne();
       typename Kernel::Construct_point_on_2
         construct_vertex = kernel.construct_point_on_2_object();
-      Rational_point_2 source = construct_vertex(ray, 0); // The source point.
-      Rational_point_2 target = construct_vertex(ray, 1); // Some point on ray.
+      Rational_point_2 source = construct_vertex(segment, 0); // The source point.
+      Rational_point_2 target = construct_vertex(segment, 1); // Some point on ray.
       Comparison_result res = kernel.compare_xy_2_object()(source, target);
       CGAL_assertion (res != EQUAL);
       bool is_directed_right = (res == SMALLER);
-      Point_2 ps(source);
-      Point_2 pt(target);
-      X_monotone_curve_2 xc = (is_directed_right) ?
-        X_monotone_curve_2(false, b, c, d, ps, pt, true, true, true, true,
-                           is_directed_right, true) :
-        X_monotone_curve_2(false, b, c, d, pt, ps, true, true, true, true, 
-                           is_directed_right, true);
-      }
+      Root_of_2_point ps(source);
+      Root_of_2_point pt(target);
+      X_monotone_curve_2 xc;
+      assert(false);
+//       xc = (is_directed_right) ?
+//         X_monotone_curve_2(false, b, c, d, ps, pt, true, true, true, true,
+//                            is_directed_right, true) :
+//         X_monotone_curve_2(false, b, c, d, pt, ps, true, true, true, true, 
+//                            is_directed_right, true);
+      
       return xc;
     }
   };
@@ -1215,16 +1195,17 @@ public:
      */
     X_monotone_curve_2 operator()(bool is_vertical, const NT& k)
     {
-      X_monotone_curve_2 xc;
-      if (is_vertical) {
-        Point_2 p(k, 0);
-        xc = X_monotone_curve_2(false, b, c, d, p, p, true, false, true, false,
-                                true, true);
-      } else {
-        Point_2 p(0, k);
-        xc = X_monotone_curve_2(false, b, c, d, p, p, false, true, false, true,
-                                true, true);
-      }
+      X_monotone_curve_2 xc;                    \
+      assert(false);
+ //      if (is_vertical) {
+//         Root_of_2_point p(k, 0);
+//         xc = X_monotone_curve_2(false, b, c, d, p, p, true, false, true, false,
+//                                 true, true);
+//       } else {
+//         Root_of_2_point p(0, k);
+//         xc = X_monotone_curve_2(false, b, c, d, p, p, false, true, false, true,
+//                                 true, true);
+//       }
       return xc;
     }
     
@@ -1235,7 +1216,7 @@ public:
      */
     X_monotone_curve_2 operator()(const NT& b, const NT& c, const NT& d)
     {
-      Point_2 p(0, -b);
+      Root_of_2_point p(0, -b);
       X_monotone_curve_2 xc =
         X_monotone_curve_2(true, b, c, d, p, p, false, true, false, true,
                            true, false);
@@ -1277,15 +1258,16 @@ public:
      *      vertical asymptote at the x-coordinate of right.
      */
     X_monotone_curve_2 operator()(bool a, const NT& b, const NT& c, const NT& d,
-                                  const Point_2& left, const Point_2& right)
+                                  const Root_of_2_point& source, 
+                                  const Root_of_2_point& target)
     {
-      Comparison_result res = m_traits->compare_xy_2_object()(left, right);
+      Comparison_result res = CGAL::compare_xy(source, target);
       CGAL_assertion(res != EQUAL);
       bool is_directed_right = (res == SMALLER);
       
       NT asymptote_x = -c;
-      const Point_2& left = (is_directed_right) ? source : target;
-      const Point_2& right = (is_directed_right) ? target : left;
+      const Root_of_2_point& left = (is_directed_right) ? source : target;
+      const Root_of_2_point& right = (is_directed_right) ? target : left;
       bool has_left_y = asymptote_x != left.x();
       bool has_right_y = asymptote_x != right.x();
       bool is_continuous =
@@ -1308,17 +1290,17 @@ public:
      *      vertical asymptote at the x-coordinate of source.
      */
     X_monotone_curve_2 operator()(bool a, const NT& b, const NT& c, const NT& d,
-                                  const Point_2& source,
+                                  const Root_of_2_point& source,
                                   bool is_directed_right)
     {
       NT asymptote_x = -c;
       NT asymptote_y = -b;
-      Point_2 target = Point_2(asymptote_x, asymptote_y);
+      Root_of_2_point target = Root_of_2_point(asymptote_x, asymptote_y);
       bool has_left_x, has_left_y, has_right_x, has_right_y;
       bool is_continuous;
       if (is_directed_right) {
         has_left_x = true;
-        has_rihgt_x = false;
+        has_right_x = false;
         has_right_y = true;
         if (asymptote_x < source.x()) {
           has_left_y = true;
@@ -1346,8 +1328,8 @@ public:
         }
       }
 
-      const Point_2& left = (is_directed_right) ? source : target;
-      const Point_2& right = (is_directed_right) ? target : left;
+      const Root_of_2_point& left = (is_directed_right) ? source : target;
+      const Root_of_2_point& right = (is_directed_right) ? target : left;
       
      X_monotone_curve_2 xc =
         X_monotone_curve_2(a, b, c, d, left, right,
