@@ -2827,7 +2827,7 @@ protected:
 template <class GeomTraits, class TopTraits, class Curve, class PointLocation>
 void insert (Arrangement_on_surface_2<GeomTraits, TopTraits>& arr,
 	     const Curve& c, const PointLocation& pl,
-	     typename GeomTraits::Point_2* = 0);
+	     typename PointLocation::Point_2* = 0);
 
 /*!
  * Insert a curve or x-monotone curve into the arrangement (incremental
