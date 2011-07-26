@@ -675,8 +675,21 @@ public:
     template<typename OutputIterator>
     OutputIterator operator()(const Curve_2& cv, OutputIterator oi) const
     {
-      // TODO
-      *oi++ = make_object(cv);
+      if (cv.is_continuous()) return *oi++ = make_object(cv);
+
+      const NT& b = cv.b();
+      const NT& c = cv.c();
+      const NT& d = cv.d();
+      bool is_directed_right = cv.is_directed_right();
+      Point_2 p(-c, 0);
+      *oi++ = make_object(X_monotone_curve_2(true, b, c, d, cv.left(), p,
+                                             cv.has_left_x(), cv.has_left_y(),
+                                             true, false, 
+                                             is_directed_right, true));
+      *oi++ = make_object(X_monotone_curve_2(true, b, c, d, p, cv.right(), 
+                                             true, false,
+                                             cv.has_right_x(), cv.has_right_y(),
+                                             is_directed_right, true));
 
       return oi;
     }
