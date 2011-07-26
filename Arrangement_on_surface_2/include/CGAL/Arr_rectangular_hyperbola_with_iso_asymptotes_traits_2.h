@@ -700,8 +700,17 @@ public:
     void operator()(const X_monotone_curve_2& cv, const Point_2& p,
                     X_monotone_curve_2& xc1, X_monotone_curve_2& xc2) const
     {
-      // TODO
-      return;
+      bool a = xc.a();
+      const NT& b = xc.b();
+      const NT& c = xc.c();
+      const NT& d = xc.d();
+      CGAL_precondition(m_traits->is_on_object_2()(p, a, b, c, d));
+      xc1 = X_monotone_curve_2(a, b, c, d, xc.left(), p,
+                               xc.has_left_x(), xc.has_left_y(), true, true,
+                               xc.is_directed_right(), true);
+      xc2 = X_monotone_curve_2(a, b, c, d, p, xc.right(), 
+                               true, true, xc.has_right_x(), xc.has_right_y(), 
+                               xc.is_directed_right(), true);
     }
   };
 
@@ -747,8 +756,17 @@ public:
     bool operator()(const X_monotone_curve_2& xc1,
                     const X_monotone_curve_2& xc2) const
     {
-      // TODO
-      return false;
+      return ((xc1.a() == ac2.a()) &&
+              (xc1.b() == ac2.b())
+              (xc1.c() == ac2.c())
+              (xc1.d() == ac2.d())
+              (xc1.is_directed_right() == ac2.is_directed_right()) &&
+              ((xc1.has_right_x() && xc1.has_right_y() &&
+                xc2.has_left_x() && xc2.has_left_y() &&
+                (xc1.right() == xc2.left())) ||
+               (xc2.has_right_x() && xc2.has_right_y() &&
+                xc1.has_left_x() && xc1.has_left_y() &&
+                (xc2.right() == xc1.left()))));
     }
   };
 
@@ -758,6 +776,26 @@ public:
   /*! \class
    */
   class Merge_2 {
+  protected:
+    typedef Arr_rectangular_hyperbola_with_iso_asymptotes_traits_2<Kernel,
+                                                                   Filter>
+      Traits;
+
+    /*! The traits (in case it has state) */
+    const Traits* m_traits;
+
+    /*! Constructor
+     * \param traits the traits (in case it has state)
+     * The constructor is declared private to allow only the functor
+     * obtaining function, which is a member of the nesting class,
+     * constructing it.
+     */
+    Merge_2(const Traits* traits) : m_traits(traits) {}
+
+    //! Allow its functor obtaining function calling the private constructor.
+    friend class Arr_rectangular_hyperbola_with_iso_asymptotes_traits_2<Kernel,
+                                                                        Filter>;
+    
   public:
     /*!
      * Merge two given x-monotone curves into a single curve (segment).
@@ -771,13 +809,32 @@ public:
                     const X_monotone_curve_2& xc2,
                     X_monotone_curve_2& c) const
     {
-      // TODO
-      return;
+      CGAL_assertion(m_traits->are_mergeable_2_object()(xc1, xc2));
+
+      if (xc1.has_right_x() && xc1.has_right_y() &&
+          xc2.has_left_x() && xc2.has_left_y() &&
+          (xc1.right() == xc2.left()))
+      {
+        xc = X_monotone_curve_2(xc1.a(), xc1.b(), xc1.c(), xc1.d(),
+                                xxx.left(), xc2.right(),
+                                xc1.has_left_x(), xc1.has_left_y(),
+                                xc2.has_right_x(), xc2.has_right_y(),
+                                xc1.is_rected_right(), true);
+        return;
+      }
+      CGAL_assertion(xc2.has_right_x() && xc2.has_right_y() &&
+                     xc1.has_left_x() && xc1.has_left_y() &&
+                     (xc2.right() == xc1.left()));
+      xc = X_monotone_curve_2(ac2.a(), ac2.b(), ac2.c(), ac2.d(),
+                              ac2.left(), xc1.right(),
+                              ac2.has_left_x(), ac2.has_left_y(),
+                              xc1.has_right_x(), xc1.has_right_y(),
+                              ac2.is_rected_right(), true);       
     }
   };
 
   /*! Obtains a Merge_2 functor object. */
-  Merge_2 merge_2_object () const { return Merge_2(); }
+  Merge_2 merge_2_object () const { return Merge_2(this); }
   //@}
 
   /// \name Functor definitions for the landmarks point-location strategy.
