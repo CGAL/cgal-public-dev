@@ -137,9 +137,11 @@ public:
     {
       if (a) {
         // Line: b * p.x + c * p.y + d = 0
+        // TODO
         return true;
       }
       // Hyperbola: p.x * p.y + b * p.x + c * p.y + d = 0
+      // TODO
       return true;
     }
   };
@@ -984,19 +986,17 @@ public:
         construct_vertex = kernel.construct_point_on_2_object();
       Rational_point_2 source = construct_vertex(ray, 0); // The source point.
       Rational_point_2 target = construct_vertex(ray, 1); // Some point on ray.
-      Comparison_result  res = kernel.compare_xy_2_object()(ps, pt);
+      Comparison_result res = kernel.compare_xy_2_object()(source, target);
       CGAL_assertion (res != EQUAL);
       bool is_directed_right = (res == SMALLER);
-
-      if (is_directed_right) {
-        // TODO
-      } else {
-        // TODO
-      }
-      X_monotone_curve_2 xc =
-        X_monotone_curve_2(false, b, c, d, left, right,
-                           has_left_x, has_left_y, has_right_x, has_right_y,
+      Point_2 ps(source);
+      Point_2 pt(target);
+      X_monotone_curve_2 xc = (is_directed_right) ?
+        X_monotone_curve_2(false, b, c, d, ps, pt, true, true, false, false,
+                           is_directed_right, true) :
+        X_monotone_curve_2(false, b, c, d, pt, ps, false, false, true, true, 
                            is_directed_right, true);
+      }
       return xc;
     }
 
@@ -1004,11 +1004,22 @@ public:
      */
     X_monotone_curve_2 operator()(const Segment_2& segment)
     {
-      // TODO
-      X_monotone_curve_2 xc =
-        X_monotone_curve_2(false, b, c, d, left, right,
-                           true, true, true, true,
+      Kernel* kernel = m_traits->kerne();
+      typename Kernel::Construct_point_on_2
+        construct_vertex = kernel.construct_point_on_2_object();
+      Rational_point_2 source = construct_vertex(ray, 0); // The source point.
+      Rational_point_2 target = construct_vertex(ray, 1); // Some point on ray.
+      Comparison_result res = kernel.compare_xy_2_object()(source, target);
+      CGAL_assertion (res != EQUAL);
+      bool is_directed_right = (res == SMALLER);
+      Point_2 ps(source);
+      Point_2 pt(target);
+      X_monotone_curve_2 xc = (is_directed_right) ?
+        X_monotone_curve_2(false, b, c, d, ps, pt, true, true, true, true,
+                           is_directed_right, true) :
+        X_monotone_curve_2(false, b, c, d, pt, ps, true, true, true, true, 
                            is_directed_right, true);
+      }
       return xc;
     }
   };
