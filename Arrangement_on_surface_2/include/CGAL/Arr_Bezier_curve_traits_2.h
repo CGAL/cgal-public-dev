@@ -802,6 +802,23 @@ public:
     return Construct_opposite_2();
   }
 
+  typedef double Approximate_number_type;
+
+  class Approximate_2 {
+  public:
+    Approximate_number_type operator()(const Point_2& p, int i) {
+      std::pair<double, double> pp = p.approximate();
+      if (i % 2 == 0)
+        return pp.first;
+      return pp.second;
+    }
+  };
+
+  Approximate_2 approximate_2_object() const {
+    return Approximate_2();
+  }
+
+
   //@}
 };
 

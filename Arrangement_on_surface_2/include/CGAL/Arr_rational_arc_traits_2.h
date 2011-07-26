@@ -796,6 +796,23 @@ public:
     return Construct_opposite_2();
   }
 
+  /// ArrangementLandmarkTraits_2
+
+  typedef double Approximate_number_type;
+
+  class Approximate_2 {
+  public:
+    Approximate_number_type operator()(const Point_2& p, int i) {
+      if (i % 2 == 0)
+        return CGAL::to_double(p.x());
+      return CGAL::to_double(p.y());
+    }
+  };
+
+  Approximate_2 approximate_2_object() const {
+    return Approximate_2();
+  }
+
   //@}
 };
 

@@ -33,6 +33,12 @@
 #include <CGAL/Arr_point_location/Arr_lm_specified_points_generator.h>
 //#include <CGAL/Arr_triangulation_point_location.h>
 
+#include <CGAL/Arr_circle_segment_traits_2.h>
+#include <CGAL/CORE_algebraic_number_traits.h>
+#include <CGAL/Arr_rational_arc_traits_2.h>
+#include <CGAL/Arr_Bezier_curve_traits_2.h>
+
+
 typedef CGAL::Cartesian<Number_type>                    Kernel;
 typedef CGAL::Arr_segment_traits_2<Kernel>              Traits_2;
 
@@ -391,6 +397,16 @@ int read_points(const char * points_filename, Points_list &plist)
   return 0;
 }
 
+template <class Arr>
+void check_compilation() {
+  typedef typename Arr::Geometry_traits_2::Point_2 Point_2;
+
+  Arr arr;
+  CGAL::Arr_landmarks_point_location<Arr> pl(arr);
+
+  pl.locate(Point_2(0, 0));
+}
+
 bool test(const char* curves_filename, const char* points_filename)
 {
   //read curves and insert them into the arrangement 
@@ -456,5 +472,19 @@ int main (int argc, char * argv[])
     }
   }
 
+  // Test compilation of other traits.
+  // circle-segment
+  check_compilation<CGAL::Arrangement_2<CGAL::Arr_circle_segment_traits_2<Kernel> > >();
+
+  // rational arc
+  check_compilation<CGAL::Arrangement_2<
+    CGAL::Arr_rational_arc_traits_2<CGAL::Cartesian<CGAL::CORE_algebraic_number_traits::Algebraic>,
+                                    CGAL::CORE_algebraic_number_traits> > > ();
+  // Bezier
+  check_compilation<CGAL::Arrangement_2<
+    CGAL::Arr_Bezier_curve_traits_2<CGAL::Cartesian<CGAL::CORE_algebraic_number_traits::Rational>,
+                                    CGAL::Cartesian<CGAL::CORE_algebraic_number_traits::Algebraic>,
+                                    CGAL::CORE_algebraic_number_traits> > > ();
+  
   return (success);
 }
