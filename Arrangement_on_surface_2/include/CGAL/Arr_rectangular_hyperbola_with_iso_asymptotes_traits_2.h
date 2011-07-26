@@ -47,8 +47,6 @@ public:
   typedef Filter_                                     Filter;
   
   typedef typename Kernel::NT                         NT;
-  typedef typename Kernel::Point_2                    Rational_point_2;
-  typedef typename Kernel::Segment_2                  Rational_segment_2;
   typedef Sqrt_extension_point_2<NT, Filter>          Point_2;
   typedef typename Point_2::Coord_NT                  Coord_NT;
   typedef X_monotone_rectangular_hyperbola_with_iso_asymptotes_2<Kernel, Filter>
@@ -66,34 +64,95 @@ public:
   typedef Arr_open_side_tag                           Arr_top_side_category;
   typedef Arr_open_side_tag                           Arr_right_side_category;
   
+  typedef typename Kernel::Point_2                    Rational_point_2;
   typedef typename Kernel::Line_2                     Line_2;
+  typedef typename Kernel::Ray_2                      Ray_2;
   typedef typename Kernel::Segment_2                  Segment_2;
 
+private:
+  typedef Arr_rectangular_hyperbola_with_iso_asymptotes_traits_2<Kernel, Filter>
+                                                      Self;
+  
+  mutable Kernel* m_kernel;
+  bool            m_own_kernel;
+  
 public:
-  /*! Checks whether the polynomial evaluate to zero.
-   * \param x The x-coordinate.
-   * \param y The y-coordinate.
-   * \param b The b coefficien.t
-   * \param c The c coefficient.
-   * \param d The d coefficient.
-   * \return If true, if x * y + b * x + c * y + d = 0; otherwise, false.
-   */
-  static bool is_zero(const Coord_NT& x, const Coord_NT& y,
-                      const NT& b, const NT& c, const NT& d) const
-  {
-    // TODO
-    return true;
-  }
-    
-
   /*! Default constructor.
    */
-  Arr_rectangular_hyperbola_with_iso_asymptotes_traits_2() {}
+  Arr_rectangular_hyperbola_with_iso_asymptotes_traits_2() :
+    m_own_kernel(false)
+  {
+    m_kernel = new Kernel;
+  }
 
+  /*! Constructor from a kernel.
+   */
+  Arr_rectangular_hyperbola_with_iso_asymptotes_traits_2(Kernel* kernel) :
+    m_kernel(kernel),
+    m_own_kernel(true)
+  {}
+
+  /*! Copy constructor.
+   */
+  Arr_rectangular_hyperbola_with_iso_asymptotes_traits_2(const Self& other) :
+    m_own_kernel(other.own_kernel())
+  {
+    m_kernel = (own_kernel) ?
+      new Algebraic_kernel_d_1(*other.kernel()) : other.kernel();
+  }
+
+  /*! Destructor
+   */
+  ~Arr_rectangular_hyperbola_with_iso_asymptotes_traits_2()
+  { if (m_own_traits) delete(m_kernel); }
+  
+  /*! Obtains the kernel
+   * \return the kernel.
+   */
+  Kernel* kernel() const {return m_kernel;}
+
+  /*! Obtains the flag that indicates whether the kernel is owned by the traits.
+   * \return the flag that indicates whether the kernel is owned by the traits.
+   */
+  Kernel* own_traits() const {return m_own_traits;}
+  
+  /*! \class
+   * A functor that checks whether a point is on a curve
+   */
+  class Is_on_2 {
+    /*! Checks whether the polynomial evaluate to zero.
+     * \param p The point.
+     * \param a The a coefficien.
+     * \param b The b coefficien.
+     * \param c The c coefficient.
+     * \param d The d coefficient.
+     * \return If (a == 0),
+     *           true, if b * p.x + c * p.y + d = 0; false, otherwise.
+     *         else,
+     *           true, if p.x * p.y + b * p.x + c * p.y + d = 0;
+     *           false, otherwise
+     */
+    bool is_on(const Point_2& p,
+               bool a, const NT& b, const NT& c, const NT& d) const
+    {
+      if (a) {
+        // Line: b * p.x + c * p.y + d = 0
+        return true;
+      }
+      // Hyperbola: p.x * p.y + b * p.x + c * p.y + d = 0
+      return true;
+    }
+  };
+
+  /*! Obtains a Is_on_2 functor. */
+  Is_on_2 is_on_2_object() const { return Is_on_2(); }
+  
   /// \name Basic functor definitions.
   //@{
 
-  /*! A functor that compares the x-coordinates of two points */
+  /*! \class
+   * A functor that compares the x-coordinates of two points.
+   */
   class Compare_x_2 {
   public:
     /*! Compares the x-coordinates of two points.
@@ -200,7 +259,8 @@ public:
    */
   class Compare_y_at_x_2 {
   protected:
-    typedef Arr_rectangular_hyperbola_with_iso_asymptotes_traits_2<Kernel>
+    typedef Arr_rectangular_hyperbola_with_iso_asymptotes_traits_2<Kernel,
+                                                                   Filter>
       Traits;
 
     /*! The traits (in case it has state) */
@@ -215,7 +275,8 @@ public:
     Compare_y_at_x_2(const Traits* traits) : m_traits(traits) {}
 
     //! Allow its functor obtaining function calling the private constructor.
-    friend class Arr_rectangular_hyperbola_with_iso_asymptotes_traits_2<Kernel>;
+    friend class Arr_rectangular_hyperbola_with_iso_asymptotes_traits_2<Kernel,
+                                                                        Filter>;
     
   public:
     /*!
@@ -723,7 +784,8 @@ public:
    */
   class Construct_x_monotone_curve_2 {
   protected:
-    typedef Arr_rectangular_hyperbola_with_iso_asymptotes_traits_2<Kernel>
+    typedef Arr_rectangular_hyperbola_with_iso_asymptotes_traits_2<Kernel,
+                                                                   Filter>
       Traits;
 
     /*! The traits (in case it has state) */
@@ -738,7 +800,8 @@ public:
     Construct_x_monotone_curve_2(const Traits* traits) : m_traits(traits) {}
 
     //! Allow its functor obtaining function calling the private constructor.
-    friend class Arr_rectangular_hyperbola_with_iso_asymptotes_traits_2<Kernel>;
+    friend class Arr_rectangular_hyperbola_with_iso_asymptotes_traits_2<Kernel,
+                                                                        Filter>;
 
   public:
     /*! Constructor from all data fields.
@@ -753,10 +816,10 @@ public:
      *        valid x-coordinate stored as the x-coordinate of m_left.
      * \param has_left_y Indicates whether the left endpoint of the curve has a
      *        valid y-coordinate stored as the y-coordinate of m_left.
-     * \param has_right_x Indicates whether the right endpoint of the curve has a
-     *        valid x-coordinate stored as the x-coordinate of m_right.
-     * \param has_right_y Indicates whether the right endpoint of the curve has a
-     *        valid y-coordinate stored as the y-coordinate of m_right.
+     * \param has_right_x Indicates whether the right endpoint of the curve has
+     *        a valid x-coordinate stored as the x-coordinate of m_right.
+     * \param has_right_y Indicates whether the right endpoint of the curve has
+     *        a valid y-coordinate stored as the y-coordinate of m_right.
      * \param is_directed_right Indicates whether the curve is directed right.
      * \param is_continuous Indicates the curve continuous.
      * \pre The two points must not be the same.
@@ -779,17 +842,17 @@ public:
                                   bool has_left_x, bool has_left_y,
                                   bool has_right_x, bool has_right_y,
                                   bool is_directed_right)
-    {
+    {    
       // Validity check:
-      CGAL_assertion(!(has_left_x && has_left_y) || 
-                     m_traits->is_zero(left.x(), left.y(), b, c, d));
-      CGAL_assertion(!(has_left_x && !has_left_y) || (left.x() == -c));
-      CGAL_assertion(!(!has_left_x && has_left_y) || (left.y() == -b));
+      CGAL_assertion(!has_left_x || !has_left_y || 
+                     m_traits->is_on_object_2()(left, a, b, c, d));
+      CGAL_assertion(!has_left_x || has_left_y || (left.x() == -c));
+      CGAL_assertion(has_left_x || !has_left_y || (left.y() == -b));
 
-      CGAL_assertion(!(has_right_x && has_right_y) || 
-                     m_traits->is_zero(right.x(), right.y(), b, c, d));
-      CGAL_assertion(!(has_right_x && !has_right_y) || (right.x() == -c));
-      CGAL_assertion(!(!has_right_x && has_right_y) || (right.y() == -b));
+      CGAL_assertion(!has_right_x || !has_right_y || 
+                     m_traits->is_on_object_2()(right, a, b, c, d));
+      CGAL_assertion(!has_right_x || has_right_y || (right.x() == -c));
+      CGAL_assertion(has_right_x || !has_right_y || (right.y() == -b));
 
       // Continuity check:
       CGAL_assertion(!has_left_x || (-c <= x));
@@ -803,7 +866,7 @@ public:
     }
 
     /*!
-     * Constructor for curves bounded at their source and at target.
+     * Constructor of a curve bounded at their source and at target.
      * \param a The a coefficient (either 0 or 1).
      * \param b The a coefficient.
      * \param c The a coefficient.
@@ -839,7 +902,7 @@ public:
       return xc;
     }
 
-    /*! Constructor for curves bounded at one endpoint.
+    /*! Constructor of a curve bounded at one endpoint.
      * (a) If is_directed_right
      *     (i)  If source.x < -c, then has_left_x <- true
      *     (ii) Otherwise (source.x > -c), has_left_x <- false
@@ -903,6 +966,51 @@ public:
                            is_directed_right, true);
       return xc;
     }
+
+    /*! Constructor of a curve from a line
+     */
+    X_monotone_curve_2 operator()(const Line_2& line)
+    {
+      X_monotone_curve_2 xc = X_monotone_curve_2(false, b, c, d);
+      return xc;
+    }
+
+    /*! Constructor of a curve from a ray
+     */
+    X_monotone_curve_2 operator()(const Ray_2& ray)
+    {
+      Kernel* kernel = m_traits->kerne();
+      typename Kernel::Construct_point_on_2
+        construct_vertex = kernel.construct_point_on_2_object();
+      Rational_point_2 source = construct_vertex(ray, 0); // The source point.
+      Rational_point_2 target = construct_vertex(ray, 1); // Some point on ray.
+      Comparison_result  res = kernel.compare_xy_2_object()(ps, pt);
+      CGAL_assertion (res != EQUAL);
+      bool is_directed_right = (res == SMALLER);
+
+      if (is_directed_right) {
+        // TODO
+      } else {
+        // TODO
+      }
+      X_monotone_curve_2 xc =
+        X_monotone_curve_2(false, b, c, d, left, right,
+                           has_left_x, has_left_y, has_right_x, has_right_y,
+                           is_directed_right, true);
+      return xc;
+    }
+
+    /*! Constructor of a curve from a segment
+     */
+    X_monotone_curve_2 operator()(const Segment_2& segment)
+    {
+      // TODO
+      X_monotone_curve_2 xc =
+        X_monotone_curve_2(false, b, c, d, left, right,
+                           true, true, true, true,
+                           is_directed_right, true);
+      return xc;
+    }
   };
   
   /*! Obtains a Construct_x_monotone_curve_2 functor object. */
@@ -913,7 +1021,7 @@ public:
    * A constructor object of curves.
    */
   class Construct_curve_2 {
-    /*! Constructor for unbounded curves.
+    /*! Constructor of an unbounded curve.
      * \param a The a coefficient (either 0 or 1).
      * \param b The a coefficient.
      * \param c The a coefficient.
@@ -926,7 +1034,7 @@ public:
       return xc;
     }
 
-    /*! Constructor for curves bounded at their source and target.
+    /*! Constructor of a curve bounded at their source and target.
      * \param a The a coefficient (either 0 or 1).
      * \param b The a coefficient.
      * \param c The a coefficient.
@@ -960,7 +1068,7 @@ public:
       return xc;
     }
 
-    /*! Constructor for a curve bounded at one endpoint.
+    /*! Constructor of a curve bounded at one endpoint.
      * \param a The a coefficient (either 0 or 1).
      * \param b The a coefficient.
      * \param c The a coefficient.

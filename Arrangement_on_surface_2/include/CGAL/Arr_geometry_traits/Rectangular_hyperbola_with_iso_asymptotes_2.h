@@ -306,13 +306,22 @@ public:
 
   /*! Obtains the left point.
    * \return The left point.
+   * \pre The curve has a valid left end point.
    */
-  Point_2& left() const { return rep().m_left; }
+  const Point_2& left() const
+  {
+    CGAL_precondition(has_left());
+    return rep().m_left;
+  }
 
   /*! Obtains the right point.
    * \return The right point.
    */
-  Point_2& right() const { return rep().m_right; }
+  const Point_2& right() const
+  {
+    CGAL_precondition(has_right());
+    return rep().m_right;
+  }
 
   /*! Indicates whether the curve is directed right.
    * \return If the curve is directed right, true; otherwise false.
@@ -375,7 +384,6 @@ public:
    */
   bool is_linear() const { return !a(); }
   
-  
   /*! Checks whether the object is a segment.
    * \return If the object has two valid endpoints, true; otherwise, false.
    */
@@ -398,32 +406,13 @@ public:
   /*! Checks whether the curve is vertical.
    * \return If the curve is vertical, true; otherwise, false.
    */
-  bool is_vertical() const { return (is_linear() && is_zero(rep().c())); }
+  bool is_vertical() const { return (is_linear() && is_zero(rep().m_c)); }
 
   /*! Checks whether the curve is horizontal.
    * \return If the curve is horizontal, true; otherwise, false.
    */
-  bool is_vertical() const { return (is_linear() && is_zero(rep().b())); }
+  bool is_vertical() const { return (is_linear() && is_zero(rep().m_b)); }
   
-  /*! Obtains the left point.
-   * \return The left point.
-   * \pre The curve has a valid left end point.
-   */
-  const Point_2& left() const
-  {
-    CGAL_precondition(has_left());
-    return rep().left();
-  }
-
-  /*! Obtains the right point.
-   * \pre The curve has a valid right end point.
-   */
-  const Point_2& right() const
-  {
-    CGAL_precondition(has_right());
-    return rep().right();
-  }
-
   /*! Obtains the x-coordinate of the left endpoint.
    * \return The x-coordinate of the left endpoint.
    * \pre The left endpoint of the curve has a valid x-coordinate.
@@ -431,7 +420,7 @@ public:
   const NT& left_x() const
   {
     CGAL_precondition(has_left_x());
-    return left().x();
+    return rep().m_left.x();
   }
 
   /*! Obtains the y-coordinate of the left endpoint.
@@ -441,7 +430,7 @@ public:
   const NT& left_y() const
   {
     CGAL_precondition(has_left_y());
-    return left().y();
+    return rep().m_left.y();
   }
 
   /*! Obtains the x-coordinate of the right endpoint.
@@ -451,7 +440,7 @@ public:
   const NT& right_x() const
   {
     CGAL_precondition(has_right_x());
-    return right().x();
+    return rep().m_right.x();
   }
 
   /*! Obtains the y-coordinate of the right endpoint.
@@ -461,7 +450,7 @@ public:
   const NT& right_y() const
   {
     CGAL_precondition(has_right_y());
-    return right().y();
+    return rep().m_right.y();
   }
 };
 
