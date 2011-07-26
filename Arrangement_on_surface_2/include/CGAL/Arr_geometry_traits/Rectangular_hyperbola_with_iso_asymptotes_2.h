@@ -34,7 +34,7 @@
 namespace CGAL {
 
 // Forward declaration:
-template <typename NumberType_>
+template <typename Kernel_>
 class Rectangular_hyperbola_with_iso_asymptotes_2;
 
 /*! \class
@@ -45,7 +45,7 @@ template <typename Kernel_>
 class Rectangular_hyperbola_with_iso_asymptotes_2_rep {
 public:
   typedef Kernel_                                       Kernel;
-  typedef typename Kernel::NT                           NT;
+  typedef typename Kernel::FT                           NT;
   typedef typename CGAL::Root_of_traits<NT>::Root_of_2  Root_of_2; 
   typedef Cartesian<Root_of_2>                          Root_of_2_kernel; 
   typedef typename Root_of_2_kernel::Point_2            Root_of_2_point; 
@@ -53,19 +53,19 @@ public:
   friend class Rectangular_hyperbola_with_iso_asymptotes_2<Kernel>;
   
 private:
-  typedef Rectangular_hyperbola_with_iso_asymptotes_2_rep<Kernel>  Self;
+  typedef Rectangular_hyperbola_with_iso_asymptotes_2_rep<Kernel> Self;
   
-  bool m_is_linear;                // Indicates whether the curve is linear.
-  NT m_b, m_c, m_d;              // axy + bx + cy + d = 0
+  bool m_is_linear;             // Indicates whether the curve is linear.
+  NT m_b, m_c, m_d;             // xy + bx + cy + d = 0
   
-  Root_of_2_point   m_left;              // The left point (if exists).
-  Root_of_2_point   m_right;             // The right point (if exists).
-  bool      m_has_left_x;        // The left endpoint has a valid x-coordinate. 
-  bool      m_has_left_y;        // The left endpoint has a valid y-coordinate. 
-  bool      m_has_right_x;       // The right endpoint has a valid x-coordinate. 
-  bool      m_has_right_y;       // The right endpoint has a valid y-coordinate. 
-  bool      m_is_directed_right; // Is the curve directed right?
-  bool      m_is_continuous;     // Is the curve continuous?
+  Root_of_2_point m_left;       // The left point (if exists).
+  Root_of_2_point m_right;      // The right point (if exists).
+  bool m_has_left_x;            // The left endpoint has a valid x-coordinate. 
+  bool m_has_left_y;            // The left endpoint has a valid y-coordinate. 
+  bool m_has_right_x;           // The right endpoint has a valid x-coordinate. 
+  bool m_has_right_y;           // The right endpoint has a valid y-coordinate. 
+  bool m_is_directed_right;     // Is the curve directed right?
+  bool m_is_continuous;         // Is the curve continuous?
 
 public:
   /*! Default constructor.
@@ -77,8 +77,25 @@ public:
     m_has_right_y(false)
   {}
 
+  /*! Copy constructor (isn't really used).
+   */
+  Rectangular_hyperbola_with_iso_asymptotes_2_rep(const Self& other) :
+    m_is_linear(other.m_is_linear),
+    m_b(other.m_b),
+    m_c(other.m_c),
+    m_d(other.m_d),
+    m_left(other.m_left),
+    m_right(other.m_right),
+    m_has_left_x(other.m_has_left_x),
+    m_has_left_y(other.m_has_left_y),
+    m_has_right_x(other.m_has_right_x),
+    m_has_right_y(other.m_has_right_y),
+    m_is_directed_right(other.m_is_directed_right),
+    m_is_continuous(other.m_is_continuous)
+  {}
+ 
   /*! Constructor from all data fields.
-   * \param a The a coefficient (either 0 or 1).
+   * \param is_linear Indicates whether the curve is linear.
    * \param b The a coefficient.
    * \param c The a coefficient.
    * \param d The a coefficient.
@@ -107,17 +124,18 @@ public:
    *      If !has_right_x && has_right_y, the right end of the underlying
    *      hyperbola has a horizontal asymptote at the y-coordinate of m_right.
    */
-  Rectangular_hyperbola_with_iso_asymptotes_2_rep(
-      bool  is_linear,
-      const NT& b,
-      const NT& c,
-      const NT& d,
-      const Root_of_2_point& left,
-      const Root_of_2_point& right,
-      bool has_left_x, bool has_left_y,
-      bool has_right_x, bool has_right_y,
-      bool is_directed_right,
-      bool is_continuous) :
+  Rectangular_hyperbola_with_iso_asymptotes_2_rep(bool is_linear,
+                                                  const NT& b,
+                                                  const NT& c,
+                                                  const NT& d,
+                                                  const Root_of_2_point& left,
+                                                  const Root_of_2_point& right,
+                                                  bool has_left_x,
+                                                  bool has_left_y,
+                                                  bool has_right_x,
+                                                  bool has_right_y,
+                                                  bool is_directed_right,
+                                                  bool is_continuous) :
     m_is_linear(is_linear),
     m_b(b),
     m_c(c),
@@ -140,21 +158,22 @@ public:
  */
 template <typename Kernel_>
 class Rectangular_hyperbola_with_iso_asymptotes_2 :
-  public Handle_for<Rectangular_hyperbola_with_iso_asymptotes_2_rep<Kernel_> >
+    public Handle_for<Rectangular_hyperbola_with_iso_asymptotes_2_rep<Kernel_> >
 {
 public:
-  typedef Kernel_                                       Kernel;
-  typedef typename Kernel::NT                           NT; 
+  typedef Kernel_                                             Kernel;
+  typedef typename Kernel::FT                                 NT; 
   
-private:  
+private:
   typedef Rectangular_hyperbola_with_iso_asymptotes_2<Kernel> Self;
-  typedef Rectangular_hyperbola_with_iso_asymptotes_2_rep<NT> Curve_rep;
+  typedef Rectangular_hyperbola_with_iso_asymptotes_2_rep<Kernel>
+                                                              Curve_rep;
   typedef Handle_for<Curve_rep>                               Curve_handle;
-  typedef Handle_for<Rectangular_hyperbola_with_iso_asymptotes_2_rep<Kernel_> > Base; 
   
 public:
-  typedef typename Curve_rep::Root_of_2_point           Root_of_2_point;
-  typedef typename Curve_rep::Root_of_2_point           Root_of_2; 
+  typedef typename Curve_rep::Root_of_2                       Root_of_2; 
+  typedef typename Curve_rep::Root_of_2_kernel                Root_of_2_kernel;
+  typedef typename Curve_rep::Root_of_2_point                 Root_of_2_point;
   
   /*! Default constructor.
    */
@@ -166,7 +185,7 @@ public:
     Curve_handle(cv) {}
   
   /*! Constructor from all data fields.
-   * \param a The a coefficient.
+   * \param is_linear Indicates whether the curve is linear.
    * \param b The a coefficient.
    * \param c The a coefficient.
    * \param d The a coefficient.
@@ -194,19 +213,21 @@ public:
    *      If !has_right_x && has_right_y, the right end of the underlying
    *      hyperbola has a horizontal asymptote at the y-coordinate 'm_right'.
    */
-  Rectangular_hyperbola_with_iso_asymptotes_2(bool  is_linear,
+  Rectangular_hyperbola_with_iso_asymptotes_2(bool is_linear,
                                               const NT& b,
                                               const NT& c,
                                               const NT& d,
                                               const Root_of_2_point& left,
                                               const Root_of_2_point& right,
-                                              bool has_left_x, bool has_left_y,
-                                              bool has_right_x, bool has_right_y,
+                                              bool has_left_x,
+                                              bool has_left_y,
+                                              bool has_right_x,
+                                              bool has_right_y,
                                               bool is_directed_right,
                                               bool is_continuous) :
-    Curve_handle(is_linear, b, c, d, left, right,
-                 has_left_x, has_left_y, has_right_x, has_right_y,
-                 is_directed_right, is_continuous)
+    Curve_handle(Curve_rep(is_linear, b, c, d, left, right,
+                           has_left_x, has_left_y, has_right_x, has_right_y,
+                           is_directed_right, is_continuous))
   {}
 
   /*! Assignment operator.
@@ -233,7 +254,7 @@ public:
   bool operator==(const Self& cv2) const
   {
     if (this->identical(cv2)) return true;
-    return ((this->a() == cv2.a()) &&
+    return ((this->is_linear() == cv2.is_linear()) &&
             (this->b() == cv2.b())
             (this->c() == cv2.c())
             (this->d() == cv2.d())
@@ -247,10 +268,10 @@ public:
             (this->is_continuous() == cv2.is_continuous()));
   }
 
-  /*! Obtains the 'a' coefficient of the curve.
-   * \return If the curve is a linear object, false; Otherwise, true.
+  /*! Checks whether the curve is linear.
+   * \return If the curve is linear, true; otherwise, false.
    */
-  bool a() const { return rep().m_a; }
+  bool is_linear() const { return rep().m_is_linear; }
 
   /*! Obtains the 'b' coefficient of the hyperbola.
    * \return The 'b' coefficient.
@@ -342,11 +363,6 @@ public:
    */
   bool has_right_asymptote() const { return has_right_x() && !has_right_y(); }
 
-  /*! Checks whether the curve is linear.
-   * \return If the curve is linear, true; otherwise, false.
-   */
-  bool is_linear() const { return !a(); }
-  
   /*! Checks whether the object is a segment.
    * \return If the object has two valid endpoints, true; otherwise, false.
    */
@@ -425,7 +441,8 @@ OutputStream&
 operator<<(OutputStream& os,
            const Rectangular_hyperbola_with_iso_asymptotes_2<Kernel>& cv)
 {
-  os << cv.a() << " " << cv.b() << " " << cv.c() << " " << cv.d() << " "
+  os << cv.is_linear() << " "
+     << cv.b() << " " << cv.c() << " " << cv.d() << " "
      << cv.left << " " << cv.right << " "
      << cv.has_left_x() << " " << cv.has_left_y() << " "
      << cv.has_right_x() << " " << cv.has_right_y() << " "
@@ -437,7 +454,7 @@ operator<<(OutputStream& os,
  * Importer for the segment class used by the traits-class.
  */
 template <typename Kernel, typename InputStream>
-InputStream&
+InputStream& 
 operator>>(InputStream& is,
            Rectangular_hyperbola_with_iso_asymptotes_2<Kernel>& cv)
 {
@@ -445,15 +462,15 @@ operator>>(InputStream& is,
   typedef Rectangular_hyperbola_with_iso_asymptotes_2<Kernel> Curve_2;
   typedef typename Curve_2::Root_of_2_point Root_of_2_point;  
 
-  bool a;
+  bool is_linear;
   NT b, c, d;
   Root_of_2_point left, right;
   bool has_left_x, has_left_y, has_right_x, has_right_y;
   bool is_directed_right, is_continuous;
-  is >> a >> b >> c >> d >> left >> right
+  is >> is_linear >> b >> c >> d >> left >> right
      >> has_left_x >> has_left_y >> has_right_x >> has_right_y
      >> is_directed_right >> is_continuous;
-  cv = Curve_2(a, b, c, d, left, right,
+  cv = Curve_2(is_linear, b, c, d, left, right,
                has_left_x, has_left_y, has_right_x, has_right_y,
                is_directed_right, is_continuous);
   return is;
