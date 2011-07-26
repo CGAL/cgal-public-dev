@@ -45,7 +45,7 @@ namespace CGAL {
       const Point_2& landmark_point = lm_gen->closest_landmark (p, lm_location_obj);
       
       // easy exit, querry is a landmark point
-      if (landmark_point == p)
+      if (m_traits->equal_2_object() (landmark_point, p))
         return lm_location_obj;
 
   
