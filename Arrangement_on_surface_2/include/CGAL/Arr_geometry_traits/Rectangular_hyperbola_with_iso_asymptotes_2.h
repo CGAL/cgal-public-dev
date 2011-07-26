@@ -130,27 +130,6 @@ public:
     m_is_directed_right(is_directed_right),
     m_is_continuous(is_continuous)
   {}
-
-  /*! Constructor for unbounded curves.
-   * \param a The a coefficient (either 0 or 1).
-   * \param b The a coefficient.
-   * \param c The a coefficient.
-   * \param d The a coefficient.
-   */
-  Rectangular_hyperbola_with_iso_asymptotes_2(bool a,
-                                              const NT& b,
-                                              const NT& c,
-                                              const NT& d) :
-    m_a(a),
-    m_b(b),
-    m_c(c),
-    m_d(d),
-    m_has_left_x(false),
-    m_has_left_y(false),
-    m_has_right_x(false),
-    m_has_right_y(false),
-    m_is_continuous(false)
-  {}
 };
 
 /*! \class
@@ -233,19 +212,6 @@ public:
                  is_directed_right, is_continuous)
   {}
 
-  /*! Constructor for unbounded curves.
-   * \param a The a coefficient (either 0 or 1).
-   * \param b The a coefficient.
-   * \param c The a coefficient.
-   * \param d The a coefficient.
-   */
-  Rectangular_hyperbola_with_iso_asymptotes_2(bool a,
-                                              const NT& b,
-                                              const NT& c,
-                                              const NT& d) :
-    Curve_handle(a, b, c, d)
-  {}
-  
   /*! Assignment operator.
    */
   Self& operator=(const Self& cv)

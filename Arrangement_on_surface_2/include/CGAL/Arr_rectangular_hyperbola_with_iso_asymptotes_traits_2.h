@@ -449,7 +449,6 @@ public:
     Arr_parameter_space operator()(const X_monotone_curve_2 & xc,
                                    Arr_curve_end ce) const
     {
-      // TODO
       return (ce == ARR_MIN_END) ?
         (xc.has_left_y() ? ARR_INTERIOR :
          ((xc.b()*xc.c() < xc.d()) ? ARR_BOTTOM_BOUNDARY : ARR_TOP_BOUNDARY)) :
@@ -467,9 +466,29 @@ public:
    * boundary of the parameter space
    */
   class Compare_x_at_limit_2 {
-   public:
+  protected:
+    typedef Arr_rectangular_hyperbola_with_iso_asymptotes_traits_2<Kernel,
+                                                                   Filter>
+      Traits;
+
+    /*! The traits (in case it has state) */
+    const Traits* m_traits;
+
+    /*! Constructor
+     * \param traits the traits (in case it has state)
+     * The constructor is declared private to allow only the functor
+     * obtaining function, which is a member of the nesting class,
+     * constructing it.
+     */
+    Compare_x_at_limit_2(const Traits* traits) : m_traits(traits) {}
+
+    //! Allow its functor obtaining function calling the private constructor.
+    friend class Arr_rectangular_hyperbola_with_iso_asymptotes_traits_2<Kernel,
+                                                                        Filter>;
+    
+  public:
     /*! Compare the x-coordinate of a point with the x-coordinate of
-     * the vertical asymptote of a hyperbola.
+     * the vertical asymptote of a hyperbola or a vertical line.
      * a line end on the boundary at y = +/- oo.
      * \param p the point direction.
      * \param xc the line, the endpoint of which is compared.
@@ -481,32 +500,51 @@ public:
      *         EQUAL   - x(p) = x(xc, ce);
      *         LARGER  - x(p) > x(xc, ce).     
      * \pre p lies in the interior of the parameter space.
-     * \pre the ce end of the curve xc lies on a boundary.
+     * \pre the ce end of the curve xc lies on the bottom or top boundary.
      */
     Comparison_result operator()(const Point_2& p,
                                  const X_monotone_curve_2&  xc, 
                                  Arr_curve_end ce)
     {
-      CGAL_precondition(Parameter_space_in_x_2()(xc,ce) == ARR_INTERIOR);
-      CGAL_precondition(Parameter_space_in_y_2()(xc,ce) != ARR_INTERIOR);
+      CGAL_precondition(m_traits->parameter_space_in_x_2_object()(xc, ce) ==
+                        ARR_INTERIOR);
+      CGAL_precondition(m_traits->parameter_space_in_y_2_object()(xc, ce) !=
+                        ARR_INTERIOR);
       return CGAL::compare(p.x(),
                            (ce == ARR_MIN_END) ? xc.left_x() : xc.right_x());
     }
 
-    /*! Compares the curve end of  xc1 that is defined by ce1 
-     * with the curve end of xc2 that is defined by ce2
-     * at their limits in x. 
-     * Returns SMALLER, EQUAL, or LARGER accordingly.
+    /*! Compare the x-coordinates of the vertical asymptote of a hyperbolas or
+     * vertical lines.
+     * \param xc1 the first arc.
+     * \param ce1 the first arc end indicator -
+     *            ARR_MIN_END - the minimal end of xcv1 or
+     *            ARR_MAX_END - the maximal end of xcv1.
+     * \param xcv2 the second arc.
+     * \param ce2 the second arc end indicator -
+     *            ARR_MIN_END - the minimal end of xcv2 or
+     *            ARR_MAX_END - the maximal end of xcv2.
+     * \return the second comparison result:
+     *         SMALLER - x(xcv1, ce1) < x(xcv2, ce2);
+     *         EQUAL   - x(xcv1, ce1) = x(xcv2, ce2);
+     *         LARGER  - x(xcv1, ce1) > x(xcv2, ce2).
+     * \pre the ce1 end of the curve xc1 lies on the bottom or top boundary.
+     * \pre the ce2 end of the curve xc2 lies on the bottom or top boundary.
      */
     Comparison_result operator()(const X_monotone_curve_2&  xc1, 
                                  Arr_curve_end ce1,
                                  const X_monotone_curve_2&  xc2, 
                                  Arr_curve_end ce2)
     {
-      CGAL_precondition(Parameter_space_in_x_2()(xc1,ce1) == ARR_INTERIOR);
-      CGAL_precondition(Parameter_space_in_y_2()(xc1,ce1) != ARR_INTERIOR);
-      CGAL_precondition(Parameter_space_in_x_2()(xc2,ce2) == ARR_INTERIOR);
-      CGAL_precondition(Parameter_space_in_y_2()(xc2,ce2) != ARR_INTERIOR);
+      CGAL_precondition_code
+      (
+        Parameter_space_in_x_2 psx = m_traits->parameter_space_in_x_2_object();
+        Parameter_space_in_y_2 psy = m_traits->parameter_space_in_y_2_object();
+      )
+      CGAL_precondition(psx(xc1, ce1) == ARR_INTERIOR);
+      CGAL_precondition(psy(xc1, ce1) != ARR_INTERIOR);
+      CGAL_precondition(psx(xc2, ce2) == ARR_INTERIOR);
+      CGAL_precondition(psy(xc2, ce2) != ARR_INTERIOR);
 
       return CGAL::compare((ce1 == ARR_MIN_END) ? xc1.left_x() : xc1.right_x(),
                            (ce2 == ARR_MIN_END) ? xc2.left_x() : xc2.right_x());
@@ -516,7 +554,7 @@ public:
 
   /*! Obtains a Compare_x_at_limit_2 function object */
   Compare_x_at_limit_2 compare_x_at_limit_2_object() const
-  { return Compare_x_at_limit_2(); }
+  { return Compare_x_at_limit_2(this); }
 
   /*! \class
    * A function object that compares the x-coordinates of arc ends near the
@@ -532,16 +570,33 @@ public:
      *           ARR_MIN_END - the minimal end of xc2 or
      *           ARR_MAX_END - the maximal end of xc2.
      * \return the second comparison result:
-     *         SMALLER - x(xc1, ce1) < x(xc2, ce2);
-     *         EQUAL   - x(xc1, ce1) = x(xc2, ce2);
-     *         LARGER  - x(xc1, ce1) > x(xc2, ce2).
-     * \pre the ce1 end of the line xc1 lies on a boundary.
-     * \pre the ce2 end of the line xc2 lies on a boundary.
+     *         SMALLER - x(xc1, ce) < x(xc2, ce);
+     *         EQUAL   - x(xc1, ce) = x(xc2, ce);
+     *         LARGER  - x(xc1, ce) > x(xc2, ce).
+     * \pre the ce end of the line xc1 lies on the bottom or top boundary.
+     * \pre the ce end of the line xc2 lies on the bottom or top boundary.
+     * \pre the $x$-coordinates of xc1 and xc2 at their limit at their ce
+     *      ends are equal.
      */
     Comparison_result operator()(const X_monotone_curve_2 & xc1,
                                  const X_monotone_curve_2 & xc2,
                                  Arr_curve_end ce) const
     {
+      CGAL_precondition_code
+      (
+        Parameter_space_in_x_2 psx = m_traits->parameter_space_in_x_2_object();
+        Parameter_space_in_y_2 psy = m_traits->parameter_space_in_y_2_object();
+      )
+      CGAL_precondition(psx(xc1, ce) == ARR_INTERIOR);
+      CGAL_precondition(psy(xc1, ce) != ARR_INTERIOR);
+      CGAL_precondition(psx(xc2, ce) == ARR_INTERIOR);
+      CGAL_precondition(psy(xc2, ce) != ARR_INTERIOR);
+        
+      if (xc1.is_vertical() && xc2.is_vertical) return EQUAL;
+      if (xc2.is_vertical) return (ce == ARR_MAX_END) ? SMALLER : LARGER;
+      if (xc1.is_vertical) return (ce == ARR_MAX_END) ? LARGER : SMALLER;
+
+      // Both curves are hyperbola.
       // TODO
       return SMALLER;
     }
@@ -563,7 +618,10 @@ public:
      * \param xc1 the first arc.
      * \param xc2 the second arc.
      * \param ce the line end indicator.
-     * \return the second comparison result.
+     * \return the second comparison result:
+     *         SMALLER - y(xc1, ce) < y(xc2, ce);
+     *         EQUAL   - y(xc1, ce) = y(xc2, ce);
+     *         LARGER  - y(xc1, ce) > y(xc2, ce).
      * \pre the ce ends of the lines xc1 and xc2 lie either on the left
      * boundary or on the right boundary of the parameter space.
      */
@@ -571,6 +629,23 @@ public:
                                  const X_monotone_curve_2 & xc2,
                                  Arr_curve_end ce) const
     {
+      CGAL_precondition_code
+      (
+        Parameter_space_in_x_2 psx = m_traits->parameter_space_in_x_2_object();
+        Parameter_space_in_y_2 psy = m_traits->parameter_space_in_y_2_object();
+      )
+      CGAL_precondition(psx(xc1, ce) != ARR_INTERIOR);
+      CGAL_precondition(psy(xc1, ce) == ARR_INTERIOR);
+      CGAL_precondition(psx(xc2, ce) != ARR_INTERIOR);
+      CGAL_precondition(psy(xc2, ce) == ARR_INTERIOR);
+
+      Comparison_result res =
+        CGAL::compare((ce1 == ARR_MIN_END) ? xc1.left_x() : xc1.right_x(),
+                      (ce2 == ARR_MIN_END) ? xc2.left_x() : xc2.right_x());
+      if (res != EQUAL) return res;
+      if (ce1.is_horizontal() && ce2.is_horizontal()) return EQUAL;
+
+      // At most one of the curves is horizontal.
       // TODO
       return EQUAL;
     }
@@ -672,7 +747,7 @@ public:
     bool operator()(const X_monotone_curve_2& xc1,
                     const X_monotone_curve_2& xc2) const
     {
-       // TODO
+      // TODO
       return false;
     }
   };
@@ -836,8 +911,7 @@ public:
      *      hyperbola has a vertical asymptote at the x-coordinate of m_right.
      *      If !has_right_x && has_right_y, the right end of the underlying
      *      hyperbola has a horizontal asymptote at the y-coordinate of m_right.
-     * \pre The curve is continueous, that is
-     *      (1) TODO
+     * \pre The curve is continueous.
      */
     X_monotone_curve_2 operator()(bool a, const NT& b, const NT& c, const NT& d,
                                   const Point_2& left, const Point_2& right,
@@ -867,6 +941,25 @@ public:
       return xc;
     }
 
+    /*! Constructor of either a vertical or a horizontal line.
+     * \param k The x- or y-coordinate.
+     * \pre if the curve is a line, it must be either vertical or horizontal.
+     */
+    X_monotone_curve_2 operator()(bool is_vertical, const NT& k)
+    {
+      X_monotone_curve_2 xc;
+      if (is_vertical) {
+        Point_2 p(k, 0);
+        xc = X_monotone_curve_2(false, b, c, d, p, p, true, false, true, false,
+                                true, true);
+      } else {
+        Point_2 p(0, k);
+        xc = X_monotone_curve_2(false, b, c, d, p, p, false, true, false, true,
+                                true, true);
+      }
+      return xc;
+    }
+    
     /*!
      * Constructor of a curve bounded at their source and at target.
      * \param a The a coefficient (either 0 or 1).
@@ -970,17 +1063,28 @@ public:
     }
 
     /*! Constructor of a curve from a line
+     * \pre the line must be either vertical or horizontal
      */
     X_monotone_curve_2 operator()(const Line_2& line)
     {
-      X_monotone_curve_2 xc = X_monotone_curve_2(false, b, c, d);
+      CGAL_assertion(is_vertical(line) || is_horizontal(line));
+
+      Kernel* kernel = m_traits->kerne();
+      Is_vertical_2 is_vertical = kernel->is_vertical_2_object();
+      Is_vertical_2 is_horizontal = kernel->is_horizontal_2_object();
+      X_monotone_curve_2 xc = (is_vertical) ?
+        operator()(true, -line.c()/line.a()) :
+        operator()(false, -line.c()/line.b());
       return xc;
     }
 
     /*! Constructor of a curve from a ray
+     * \pre the ray must be either vertical or horizontal
      */
     X_monotone_curve_2 operator()(const Ray_2& ray)
     {
+      CGAL_assertion(is_vertical(ray) || is_horizontal(ray));
+
       Kernel* kernel = m_traits->kerne();
       typename Kernel::Construct_point_on_2
         construct_vertex = kernel.construct_point_on_2_object();
@@ -1001,9 +1105,12 @@ public:
     }
 
     /*! Constructor of a curve from a segment
+     * \pre the segment must be either vertical or horizontal
      */
     X_monotone_curve_2 operator()(const Segment_2& segment)
     {
+      CGAL_assertion(is_vertical(segment) || is_horizontal(segment));
+
       Kernel* kernel = m_traits->kerne();
       typename Kernel::Construct_point_on_2
         construct_vertex = kernel.construct_point_on_2_object();
@@ -1032,16 +1139,57 @@ public:
    * A constructor object of curves.
    */
   class Construct_curve_2 {
+    /*! Constructor of either a vertical or a horizontal line.
+     * \param k The x- or y-coordinate.
+     * \pre if the curve is a line, it must be either vertical or horizontal.
+     */
+    X_monotone_curve_2 operator()(bool is_vertical, const NT& k)
+    {
+      X_monotone_curve_2 xc;
+      if (is_vertical) {
+        Point_2 p(k, 0);
+        xc = X_monotone_curve_2(false, b, c, d, p, p, true, false, true, false,
+                                true, true);
+      } else {
+        Point_2 p(0, k);
+        xc = X_monotone_curve_2(false, b, c, d, p, p, false, true, false, true,
+                                true, true);
+      }
+      return xc;
+    }
+    
+    /*! Constructor of a hyperbola.
+     * \param b The b coefficient.
+     * \param c The c coefficient.
+     * \param d The d coefficient.
+     */
+    X_monotone_curve_2 operator()(const NT& b, const NT& c, const NT& d)
+    {
+      Point_2 p(0, -b);
+      X_monotone_curve_2 xc =
+        X_monotone_curve_2(true, b, c, d, p, p, false, true, false, true,
+                           true, false);
+      return xc;
+    }
+    
     /*! Constructor of an unbounded curve.
      * \param a The a coefficient (either 0 or 1).
-     * \param b The a coefficient.
-     * \param c The a coefficient.
-     * \param d The a coefficient.
+     * \param b The b coefficient.
+     * \param c The c coefficient.
+     * \param d The d coefficient.
+     * \pre if the curve is a line, it must be either vertical or horizontal.
      */
-    X_monotone_curve_2 operator()(bool a,
-                                  const NT& b, const NT& c, const NT& d)
+    X_monotone_curve_2 operator()(bool a, const NT& b, const NT& c, const NT& d)
     {
-      X_monotone_curve_2 xc = X_monotone_curve_2(a, b, c, d);
+      if (a) {                                  // The curve is a line
+        CGAL_assertion(((b == 0) && (c != 0)) || ((b != 0) && (c == 0)));
+        X_monotone_curve_2 xc = (b == 0) ?
+          operator()(false, -d/c) : operator()(true, -d/b);
+        return xc;
+      }
+
+      // The curve is a hyperbola.
+      X_monotone_curve_2 xc = operator()(b, c, d);
       return xc;
     }
 
