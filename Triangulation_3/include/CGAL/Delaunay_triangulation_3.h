@@ -218,10 +218,12 @@ public:
 
   //typedef typename Tr_Base::Facet_list		Facet_list;
 
+protected:
+  bool check_delaunay_property(const Edge& edge, const Point& point) const;
+
+public:
   bool check_kernel_test(const Edge& edge) const;
   bool check_kernel_test(const Edge& edge, const Point& point) const;
-
-  bool check_delaunay_property(const Edge& edge) const;
 
 // END PIVANOV
 

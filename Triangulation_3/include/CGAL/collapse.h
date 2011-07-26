@@ -427,18 +427,28 @@ collapse_edge(Edge& edge)
 ////////////////////////////////////
 
 DT_FUNC(bool)
-check_kernel_test(const Edge& edge) const
+check_kernel_test(const Edge& edge, const Point& point) const
 {
-	return 	Tr_Base::check_kernel_test(edge)
-		&& check_delaunay_property(edge);
+	return 	Tr_Base::check_kernel_test(edge, point)
+		&& check_delaunay_property(edge, point);
 }
 
 DT_FUNC(bool)
-check_delaunay_property(const Edge& edge) const
+check_kernel_test(const Edge& edge) const
+{
+	return 	check_kernel_test(edge, Tr_Base::_tds.get_target_vertex(edge)->point());
+}
+
+// protected:
+DT_FUNC(bool)
+check_delaunay_property(const Edge& edge, const Point& point) const
 {
 	Cell_handle seed_cell = edge.first;
 	Vertex_handle source = seed_cell->vertex(edge.second);
 	Vertex_handle target = seed_cell->vertex(edge.third);
+
+	CGAL_triangulation_precondition( dimension() == 3 );
+	CGAL_triangulation_precondition( !is_infinite(edge) );
 
 	std::list<Cell_handle> scells;
 	incident_cells(source, std::back_inserter(scells)); // precondition: dimension()==3
@@ -446,12 +456,24 @@ check_delaunay_property(const Edge& edge) const
 	typename std::list<Cell_handle>::iterator it;
 	for(it = scells.begin(); it != scells.end(); it++) {
 		Cell_handle c = *it;
+		CGAL_assertion( c->has_vertex(source) );
+
+		// shperes of infinite cells are not defined
 		if (is_infinite(c)) continue;
+		
+		// the cells incident to target are deleted due to the collapse
 		if (c->has_vertex(target)) continue;
 
-		Vertex_handle v[4] = { c->vertex(0), c->vertex(1), c->vertex(2), c->vertex(3) };
-		CGAL_assertion( c->has_vertex(source) );
-		v[ c->index(source) ] = target;
+		// TODO: optimize without the array
+		Point p[4] = {
+			c->vertex(0)->point(),
+			c->vertex(1)->point(),
+			c->vertex(2)->point(),
+			c->vertex(3)->point()
+		};		
+
+		// replace the source with the target vertex
+		p[ c->index(source) ] = point;
 
 		for (int i=0; i<4; i++ ) {
 			//std::cout << "Lala2" << std::endl;
@@ -465,7 +487,7 @@ check_delaunay_property(const Edge& edge) const
 			if (is_infinite(query)) continue;
 
 			// 'perturb'=false
-			if ( side_of_sphere(v[0], v[1], v[2], v[3], query->point(), false) == ON_BOUNDED_SIDE )
+			if ( (Bounded_side) side_of_oriented_sphere(p[0], p[1], p[2], p[3], query->point(), false) == ON_BOUNDED_SIDE )
 				return false;
 		}
 	}
@@ -504,7 +526,6 @@ check_kernel_test(const Edge& edge, const Point& point) const
 	CGAL_assertion( !is_infinite(s) );
 	CGAL_assertion( !is_infinite(t) );
 
-        
         Facet_list hull;
 	if (point != s->point()) // then 'point' may not be visible from the link of 's'
 		_tds.get_facets_from_link(s, hull);
