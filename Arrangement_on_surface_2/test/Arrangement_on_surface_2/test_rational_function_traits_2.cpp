@@ -51,7 +51,6 @@ int main(int argc, char* argv[])
   typedef Traits_2::Are_mergeable_2 Are_mergeable_2; 
   typedef Traits_2::Merge_2 Merge_2;
   typedef Traits_2::Make_x_monotone_2 Make_x_monotone_2;
-  typedef Traits_2::Approximate_2 Approximate_2;
 
   // construction traits 
   // default construction 
@@ -275,6 +274,22 @@ int main(int argc, char* argv[])
       std::sort(points.begin(),points.end(), traits.compare_xy_2_object());
       std::sort(points.begin(),points.end(), traits.compare_x_2_object());
     }
+  }
+
+
+  { // test for landmarks 
+    typedef Traits_2::Approximate_2 Approximate_2;
+    const Approximate_2& approximate_2 = traits.approximate_2_object();
+    
+    X_monotone_curve_2 xcurve= construct_x_monotone_curve_2(P,Q,one,two);
+    Point_2 p = xcurve.left(); 
+    Point_2 q = xcurve.right();
+    
+    assert(approximate_2(p,0)==1);
+    assert(approximate_2(p,1)==0);
+    assert(approximate_2(q,0)==2);
+    assert(approximate_2(q,1)==0);
+
   }
   return 0;
 }
