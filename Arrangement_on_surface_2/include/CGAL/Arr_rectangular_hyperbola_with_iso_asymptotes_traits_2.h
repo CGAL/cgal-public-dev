@@ -118,30 +118,51 @@ public:
    * A functor that checks whether a point is on a curve
    */
   class Is_on_2 {
-    /*! Checks whether the polynomial evaluate to zero.
+    /*! Checks whether the point is on the vertical or horizontal line.
      * \param p The point.
-     * \param a The a coefficien.
+     * \param is_vertical Indicates whether the line is vertical or horizontal.
+     * \param d The d coefficient.
+     * \return If vertical, true, if p.x = -d; false, otherwise.
+     *         else, true, if p.y = -d; false, otherwise..
+     */
+    bool operator()(const Point_2& p, bool is_vertical, const NT& d) const
+    { return (is_vertical) ? (p.x == -d) : (p.y == -d); }
+
+    /*! Checks whether the point is on the hyperbola.
+     * \param p The point.
      * \param b The b coefficien.
      * \param c The c coefficient.
      * \param d The d coefficient.
-     * \return If (a == 0),
+     * \return true, if p.x * p.y + b * p.x + c * p.y + d = 0; false, otherwise.
+     */
+    bool operator()(const Point_2& p,
+                    const NT& b, const NT& c, const NT& d) const
+    {
+      assert(false);
+      return true;
+    }
+    
+    /*! Checks whether the point is on the curve.
+     * \param p The point.
+     * \param is_linear Indicates whether the curve is linear.
+     * \param b The b coefficien.
+     * \param c The c coefficient.
+     * \param d The d coefficient.
+     * \return If (is_linear),
      *           true, if b * p.x + c * p.y + d = 0; false, otherwise.
      *         else,
      *           true, if p.x * p.y + b * p.x + c * p.y + d = 0;
-     *           false, otherwise
+     *           false, otherwise.
+     * \pre If is_linear, either (b == 0 && c != 0) or (b != 0 && c == 0).
      */
-    bool is_on(const Point_2& p,
-               bool is_linear, const NT& b, const NT& c, const NT& d) const
+    bool operator()(const Point_2& p,
+                    bool is_linear, const NT& b, const NT& c, const NT& d) const
     {
-      assert(false);
       if (is_linear) {
-        // Line: b * p.x + c * p.y + d = 0
-        // TODO
-        return true;
+        CGAL_assertion(((b == 0) && (c != 0)) || ((b != 0) && (c == 0)));
+        return (c == 0) ? operator()(true, d/b) : operator()(false, d/c)
       }
-      // Hyperbola: p.x * p.y + b * p.x + c * p.y + d = 0
-      // TODO
-      return true;
+      return operator()(p, b, c, d);
     }
   };
 
@@ -688,7 +709,9 @@ public:
       const NT& b = xc.b();
       const NT& c = xc.c();
       const NT& d = xc.d();
-      //CGAL_precondition(m_traits->is_on_object_2()(p, a, b, c, d));
+
+      CGAL_precondition(m_traits->is_on_object_2()(p, is_linear, b, c, d));
+      
       xc1 = X_monotone_curve_2(is_linear, b, c, d, xc.left(), p,
                                xc.has_left_x(), xc.has_left_y(), true, true,
                                xc.is_directed_right(), true);
@@ -922,9 +945,9 @@ public:
   public:
     /*! Constructor from all data fields.
      * \param is_linear Indicates whether the curve is linear.
-     * \param b The a coefficient.
-     * \param c The a coefficient.
-     * \param d The a coefficient.
+     * \param b The b coefficient.
+     * \param c The c coefficient.
+     * \param d The d coefficient.
      * \param left The left point.
      * \param right The right point.
      * \param is_directed_right Indicates whether the curve is directed right.
@@ -961,12 +984,12 @@ public:
     {    
       // Validity check:
       CGAL_assertion(!has_left_x || !has_left_y || 
-                     m_traits->is_on_object_2()(left, a, b, c, d));
+                     m_traits->is_on_object_2()(left, is_linear, b, c, d));
       CGAL_assertion(!has_left_x || has_left_y || (left.x() == -c));
       CGAL_assertion(has_left_x || !has_left_y || (left.y() == -b));
 
       CGAL_assertion(!has_right_x || !has_right_y || 
-                     m_traits->is_on_object_2()(right, a, b, c, d));
+                     m_traits->is_on_object_2()(right, is_linear, b, c, d));
       CGAL_assertion(!has_right_x || has_right_y || (right.x() == -c));
       CGAL_assertion(has_right_x || !has_right_y || (right.y() == -b));
 
@@ -982,29 +1005,59 @@ public:
     }
 
     /*! Constructor of either a vertical or a horizontal line.
-     * \param k The x- or y-coordinate.
+     * \param is_vertical Indicates whether the curve is vertical or horizontal.
+     * \param d The d coefficient.
      * \pre if the curve is a line, it must be either vertical or horizontal.
      */
-    X_monotone_curve_2 operator()(bool is_vertical, const NT& k)
+    X_monotone_curve_2 operator()(bool is_vertical, const NT& d)
     {
       X_monotone_curve_2 xc; 
-     if (is_vertical) {
-        Point_2 p(k, 0);
-        xc = X_monotone_curve_2(false, b, c, d, p, p, true, false, true, false,
+      if (is_vertical) {
+        Point_2 p(-d, 0);
+        xc = X_monotone_curve_2(true, 1, 0, d, p, p, true, false, true, false,
                                 true, true);
       } else {
-        Point_2 p(0, k);
-        xc = X_monotone_curve_2(false, b, c, d, p, p, false, true, false, true,
+        Point_2 p(0, -d);
+        xc = X_monotone_curve_2(true, 0, 1, d, p, p, false, true, false, true,
                                 true, true);
       }
       return xc;
     }
     
-    /*! Constructor of a curve bounded at their source and at target.
-     * \param a The a coefficient (either 0 or 1).
-     * \param b The a coefficient.
-     * \param c The a coefficient.
-     * \param d The a coefficient.
+    /*! Constructor of a vertical or a horizontal segment.
+     * \param is_vertical Indicates whether the curve is vertical or horizontal.
+     * \param d The d coefficient.
+     * \param source The source point.
+     * \param target The target point.
+     * \pre The two points must not be the same.
+     * \pre source is on the underlying line.
+     * \pre target is on the underlying line.
+     */
+    X_monotone_curve_2 operator()(bool is_vertical, const NT& d,
+                                  const Point_2& source, const Point_2& target)
+    {
+      Comparison_result res = CGAL::compare_xy(source, target);
+      CGAL_assertion(res != EQUAL);
+      bool is_directed_right = (res == SMALLER);
+
+      bool is_vertical = c == 0;
+      CGAL_assertion(m_traits->is_on_object_2()(left, is_vertical, d));
+      CGAL_assertion(m_traits->is_on_object_2()(right, is_vertical, d));
+        
+      const Point_2& left = (is_directed_right) ? source : target;
+      const Point_2& right = (is_directed_right) ? target : left;
+      X_monotone_curve_2 xc = (is_vertical) ?
+        X_monotone_curve_2(true, 1, 0, d, left, right,
+                           true, true, true, true, is_directed_right, true) :
+        X_monotone_curve_2(true, 0, 1, d, left, right,
+                           true, true, true, true, is_directed_right, true);
+      return xc;
+    }
+
+    /*! Constructor of a hyperbolic arc.
+     * \param b The b coefficient.
+     * \param c The c coefficient.
+     * \param d The d coefficient.
      * \param source The source point.
      * \param target The target point.
      * \pre The two points must not be the same.
@@ -1030,11 +1083,46 @@ public:
       bool has_left_y = asymptote_x != left.x();
       bool has_right_y = asymptote_x != right.x();
       CGAL_assertion((asymptote_x <= left.x()) || (right.x() <= asymptote_x));
+
+      CGAL_assertion(!has_left_y || 
+                     m_traits->is_on_object_2()(left, is_linear, b, c, d));
+      CGAL_assertion(!has_right_y || 
+                     m_traits->is_on_object_2()(right, is_linear, b, c, d));
+        
       X_monotone_curve_2 xc =
         X_monotone_curve_2(is_linear, b, c, d, left, right,
                            true, has_left_y, true, has_right_y,
                            is_directed_right, true);
       return xc;
+    }
+
+    /*! Constructor of a curve bounded at source and target.
+     * \param is_linear Indicates whether the curve is linear.
+     * \param b The b coefficient.
+     * \param c The c coefficient.
+     * \param d The d coefficient.
+     * \param source The source point.
+     * \param target The target point.
+     * \pre The two points must not be the same.
+     * \pre source is on the underlying hyperbola or the curve has a
+     *      vertical asymptote at the x-coordinate of source.
+     * \pre target is on the underlying hyperbola or the curve has a
+     *      vertical asymptote at the x-coordinate of right.
+     * \pre The curve is continueous. That is, the open interval bounded by
+     *      the x-coordinates of source and target does not contain -c (the
+     *      x-coordinate of the vertical asymptotes).
+     */
+    X_monotone_curve_2 operator()(bool is_linear,
+                                  const NT& b, const NT& c, const NT& d,
+                                  const Point_2& source, const Point_2& target)
+    {
+      if (is_linear) {
+        CGAL_assertion(((b == 0) && (c != 0)) || ((b != 0) && (c == 0)));
+        return (c == 0) ?
+          operator()(true, d/b, source, target) :
+          operator()(false, d/c, source, target) :
+      }
+      return operator()(p, b, c, d, source, target);
     }
 
     /*! Constructor of a curve bounded at one endpoint.
@@ -1044,10 +1132,10 @@ public:
      * (b) Otherwise (!is_directed_right)
      *     (i)  If source.x > -c, then has_right_x <- true
      *     (ii) Otherwise (source.x > -c), has_right_x <- false
-     * \param a The a coefficient (either 0 or 1).
-     * \param b The a coefficient.
-     * \param c The a coefficient.
-     * \param d The a coefficient.
+     * \param is_linear Indicates whether the curve is linear.
+     * \param b The b coefficient.
+     * \param c The c coefficient.
+     * \param d The d coefficient.
      * \param source The source point.
      * \param is_directed_right Indicates whether the curve is directed right.
      * \pre source is on the underlying hyperbola or the curve has a
@@ -1110,13 +1198,13 @@ public:
     {
       CGAL_assertion(is_vertical(line) || is_horizontal(line));
 
-      Kernel* kernel = m_traits->kerne();
+      Kernel* kernel = m_traits->kernel();
       Is_vertical_2 is_vertical = kernel->is_vertical_2_object();
-      Is_vertical_2 is_horizontal = kernel->is_horizontal_2_object();
-      X_monotone_curve_2 xc = (is_vertical) ?
-        operator()(true, -line.c()/line.a()) :
-        operator()(false, -line.c()/line.b());
-      return xc;
+      CGAL_assertion(is_vertical(line) ||
+                     kernel->is_horizontal_2_object()(line));
+      return (is_vertical) ?
+        operator()(true, line.c()/line.a()) :
+        operator()(false, line.c()/line.b());
     }
 
     /*! Constructor of a curve from a ray
@@ -1124,23 +1212,23 @@ public:
      */
     X_monotone_curve_2 operator()(const Ray_2& ray)
     {
-      CGAL_assertion(is_vertical(ray) || is_horizontal(ray));
-
-      Kernel* kernel = m_traits->kerne();
+      // TODO
+      assert(false)
+      Kernel* kernel = m_traits->kernel();
       typename Kernel::Construct_point_on_2
         construct_vertex = kernel.construct_point_on_2_object();
       Rational_point_2 source = construct_vertex(ray, 0); // The source point.
       Rational_point_2 target = construct_vertex(ray, 1); // Some point on ray.
       Comparison_result res = kernel.compare_xy_2_object()(source, target);
-      CGAL_assertion (res != EQUAL);
+      CGAL_assertion(res != EQUAL);
       bool is_directed_right = (res == SMALLER);
       Point_2 ps(source);
       Point_2 pt(target);
       X_monotone_curve_2 xc;
       xc = (is_directed_right) ?
-        X_monotone_curve_2(false, b, c, d, ps, pt, true, true, false, false,
+        X_monotone_curve_2(true, b, c, d, ps, pt, true, true, false, false,
                            is_directed_right, true) :
-        X_monotone_curve_2(false, b, c, d, pt, ps, false, false, true, true, 
+        X_monotone_curve_2(true, b, c, d, pt, ps, false, false, true, true, 
                            is_directed_right, true);      
       return xc;
     }
@@ -1150,25 +1238,26 @@ public:
      */
     X_monotone_curve_2 operator()(const Segment_2& segment)
     {
-      CGAL_assertion(is_vertical(segment) || is_horizontal(segment));
-
-      Kernel* kernel = m_traits->kerne();
+      Kernel* kernel = m_traits->kernel();
+      CGAL_assertion(is_vertical(segment) ||
+                     kernel->is_horizontal_2_object()(segment));
+      
       typename Kernel::Construct_point_on_2
         construct_vertex = kernel.construct_point_on_2_object();
       Rational_point_2 source = construct_vertex(segment, 0); // source point.
       Rational_point_2 target = construct_vertex(segment, 1); // target point.
       Comparison_result res = kernel.compare_xy_2_object()(source, target);
-      CGAL_assertion (res != EQUAL);
+      CGAL_assertion(res != EQUAL);
       bool is_directed_right = (res == SMALLER);
       Point_2 ps(source);
       Point_2 pt(target);
-      X_monotone_curve_2 xc;
-      xc = (is_directed_right) ?
-        X_monotone_curve_2(false, b, c, d, ps, pt, true, true, true, true,
-                           is_directed_right, true) :
-        X_monotone_curve_2(false, b, c, d, pt, ps, true, true, true, true, 
-                           is_directed_right, true);
-      return xc;
+      return (is_directed_right) ?
+        ((is_vertical) ?
+         operator()(true, line.c()/line.a(), ps, pt) :
+         operator()(false, line.c()/line.b(), ps, pt)) :
+        ((is_vertical) ?
+         operator()(true, line.c()/line.a(), pt, ps) :
+         operator()(false, line.c()/line.b(), pt, ps))
     }
   };
   
@@ -1181,19 +1270,19 @@ public:
    */
   class Construct_curve_2 {
     /*! Constructor of either a vertical or a horizontal line.
-     * \param k The x- or y-coordinate.
+     * \param d The d coefficient.
      * \pre if the curve is a line, it must be either vertical or horizontal.
      */
-    X_monotone_curve_2 operator()(bool is_vertical, const NT& k)
+    X_monotone_curve_2 operator()(bool is_vertical, const NT& d)
     {
-      X_monotone_curve_2 xc;                    \
+      X_monotone_curve_2 xc;
       if (is_vertical) {
-        Point_2 p(k, 0);
-        xc = X_monotone_curve_2(false, b, c, d, p, p, true, false, true, false,
+        Point_2 p(-d, 0);
+        xc = X_monotone_curve_2(false, 1, 0, d, p, p, true, false, true, false,
                                 true, true);
       } else {
-        Point_2 p(0, k);
-        xc = X_monotone_curve_2(false, b, c, d, p, p, false, true, false, true,
+        Point_2 p(0, -d);
+        xc = X_monotone_curve_2(false, 0, 1, d, p, p, false, true, false, true,
                                 true, true);
       }
       return xc;
@@ -1206,7 +1295,7 @@ public:
      */
     X_monotone_curve_2 operator()(const NT& b, const NT& c, const NT& d)
     {
-      Point_2 p(0, -b);
+      Point_2 p(-c, -b);
       X_monotone_curve_2 xc =
         X_monotone_curve_2(true, b, c, d, p, p, false, true, false, true,
                            true, false);
@@ -1214,7 +1303,7 @@ public:
     }
     
     /*! Constructor of an unbounded curve.
-     * \param a The a coefficient (either 0 or 1).
+     * \param is_linear Indicates whether the curve is linear.
      * \param b The b coefficient.
      * \param c The c coefficient.
      * \param d The d coefficient.
@@ -1225,21 +1314,16 @@ public:
     {
       if (is_linear) {                                  // The curve is a line
         CGAL_assertion(((b == 0) && (c != 0)) || ((b != 0) && (c == 0)));
-        X_monotone_curve_2 xc = (b == 0) ?
-          operator()(false, -d/c) : operator()(true, -d/b);
-        return xc;
+        return (c == 0) ? operator()(true, d/b) : operator()(false, d/c);
       }
-
-      // The curve is a hyperbola.
-      X_monotone_curve_2 xc = operator()(b, c, d);
-      return xc;
+      return X_monotone_curve_2 xc = operator()(b, c, d);
     }
 
-    /*! Constructor of a curve bounded at their source and target.
+    /*! Constructor of a curve bounded at source and target.
      * \param is_linear Indicates whether the curve is linear.
-     * \param b The a coefficient.
-     * \param c The a coefficient.
-     * \param d The a coefficient.
+     * \param b The b coefficient.
+     * \param c The c coefficient.
+     * \param d The d coefficient.
      * \param source The source point.
      * \param target The target point.
      * \pre The two points must not be the same.
