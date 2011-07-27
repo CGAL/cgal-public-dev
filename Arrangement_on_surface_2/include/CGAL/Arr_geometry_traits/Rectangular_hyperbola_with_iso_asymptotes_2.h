@@ -166,6 +166,8 @@ public:
   
 private:
   typedef Rectangular_hyperbola_with_iso_asymptotes_2<Kernel> Self;
+
+protected:
   typedef Rectangular_hyperbola_with_iso_asymptotes_2_rep<Kernel>
                                                               Curve_rep;
   typedef Handle_for<Curve_rep>                               Curve_handle;
@@ -224,7 +226,7 @@ public:
                                               bool has_right_x,
                                               bool has_right_y,
                                               bool is_directed_right,
-                                              bool is_continuous) :
+                                              bool is_continuous = true) :
     Curve_handle(Curve_rep(is_linear, b, c, d, left, right,
                            has_left_x, has_left_y, has_right_x, has_right_y,
                            is_directed_right, is_continuous))
@@ -293,19 +295,13 @@ public:
    * \pre The curve has a valid left end point.
    */
   const Root_of_2_point& left() const
-  {
-    CGAL_precondition(has_left());
-    return rep().m_left;
-  }
+  { return rep().m_left; }
 
   /*! Obtains the right point.
    * \return The right point.
    */
   const Root_of_2_point& right() const
-  {
-    CGAL_precondition(has_right());
-    return rep().m_right;
-  }
+  { return rep().m_right; }
 
   /*! Indicates whether the curve is directed right.
    * \return If the curve is directed right, true; otherwise false.
@@ -431,6 +427,80 @@ public:
     CGAL_precondition(has_right_y());
     return rep().m_right.y();
   }
+};
+
+/*! \class
+ * A representation of an x-monotone rectangular hyperbola with vertical
+ * and horizontal asymptotes used by the traits class
+ * Arr_rectangular_hyperbola_with_iso_asymptotes_traits_2.
+ */
+template <typename Kernel_>
+class X_monotone_rectangular_hyperbola_with_iso_asymptotes_2 :
+    public Rectangular_hyperbola_with_iso_asymptotes_2<Kernel_>
+{
+private:
+  typedef X_monotone_rectangular_hyperbola_with_iso_asymptotes_2<Kernel> Self;
+
+public:
+  typedef typename Curve_rep::Root_of_2                       Root_of_2; 
+  typedef typename Curve_rep::Root_of_2_kernel                Root_of_2_kernel;
+  typedef typename Curve_rep::Root_of_2_point                 Root_of_2_point;
+  
+  /*! Default constructor.
+   */
+  X_monotone_rectangular_hyperbola_with_iso_asymptotes_2() :
+    Rectangular_hyperbola_with_iso_asymptotes_2() {}
+  
+  /*! Copy constructor.
+   */
+  X_monotone_rectangular_hyperbola_with_iso_asymptotes_2(const Self& cv) :
+    Rectangular_hyperbola_with_iso_asymptotes_2(cv) {}
+  
+  /*! Constructor from all data fields.
+   * \param is_linear Indicates whether the curve is linear.
+   * \param b The a coefficient.
+   * \param c The a coefficient.
+   * \param d The a coefficient.
+   * \param left The left point.
+   * \param right The right point.
+   * \param has_left_x Indicates whether the left endpoint of the curve has a
+   *        valid x-coordinate.
+   * \param has_left_y Indicates whether the left endpoint of the curve has a
+   *        valid y-coordinate.
+   * \param has_right_x Indicates whether the right endpoint of the curve has a
+   *        valid x-coordinate.
+   * \param has_right_y Indicates whether the right endpoint of the curve has a
+   *        valid y-coordinate.
+   * \pre The two points must not be the same.
+   * \pre The two points must not be the same.
+   * \pre If has_left_x && has_left_y, m_left is on the underlying hyperbola.
+   *      If has_left_x && !has_left_y, the left end of the underlying
+   *      hyperbola has a vertical asymptote at the x-coordinate 'm_left'.
+   *      If !has_left_x && has_left_y, the left end of the underlying
+   *      hyperbola has a horizontal asymptote at the y-coordinate 'm_left'.
+   * \pre If has_right_x && has_right_y, m_right is on the underlying hyperbola.
+   *      If has_right_x && !has_right_y, the right end of the underlying
+   *      hyperbola has a vertical asymptote at the x-coordinate 'm_right'.
+   *      If !has_right_x && has_right_y, the right end of the underlying
+   *      hyperbola has a horizontal asymptote at the y-coordinate 'm_right'.
+   */
+  X_monotone_rectangular_hyperbola_with_iso_asymptotes_2
+    (bool is_linear,
+     const NT& b,
+     const NT& c,
+     const NT& d,
+     const Root_of_2_point& left,
+     const Root_of_2_point& right,
+     bool has_left_x,
+     bool has_left_y,
+     bool has_right_x,
+     bool has_right_y,
+     bool is_directed_right) :
+    Rectangular_hyperbola_with_iso_asymptotes_2(is_linear, b, c, d, left, right,
+                                                has_left_x, has_left_y,
+                                                has_right_x, has_right_y,
+                                                is_directed_right, true)
+  {}
 };
 
 /*!
