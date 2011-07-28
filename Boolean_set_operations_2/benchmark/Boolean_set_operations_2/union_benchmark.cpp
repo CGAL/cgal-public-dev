@@ -11,6 +11,17 @@
 #include <CGAL/Timer.h>
 #include <iostream>
 #include <cstdlib>
+#include <time.h>
+
+//to enable user to enable or disable OpenMP only for Boolean_set_operations_2 package
+#ifndef CGAL_BOOLEAN_SET_OPERATIONS_2_DONT_USE_OPENMP
+#define CGAL_BOOLEAN_SET_OPERATIONS_2_USE_OPENMP 
+#endif
+
+//add OpenMP header
+#if defined _OPENMP && defined CGAL_BOOLEAN_SET_OPERATIONS_2_USE_OPENMP
+#include<omp.h>
+#endif
 
 typedef CGAL::Exact_predicates_exact_constructions_kernel K;
 typedef K::Point_2                                 Point_2;
@@ -40,10 +51,10 @@ int main() {
 	// Read the polygons from the file.
 	
 	CGAL::Timer                    t_read;
-	  
+      
 	std::cout << "Reading <" << filename << "> ... " << std::flush;
 	t_read.start();
-	
+       	
 	int number_of_polygons;
 	
 	input_file >> number_of_polygons;
@@ -77,21 +88,42 @@ int main() {
 	}
 	
 	t_read.stop();
+           
 	std::cout << "Done! (" << t_read.time() << " seconds)." << std::endl;
 	std::cout << std::distance (pgns.begin(), pgns.end()) << " polygons, " << std::endl;
-	
-	input_file.close();
+    
+   	input_file.close();
 	
 	// Compute their union.
 	CGAL::Timer                    t_union;
+ 	time_t                         s,e;
 
 	std::cout << "Computing the union ... " << std::flush;
+
 	t_union.start();
+     	s = time(NULL);
+
+        #if defined _OPENMP && defined CGAL_BOOLEAN_SET_OPERATIONS_2_USE_OPENMP
+        double start,end;
+        start = omp_get_wtime(); 
+        #endif     
 	
 	gps.join (pgns.begin(), pgns.end());
+ 
+        #if defined _OPENMP && defined CGAL_BOOLEAN_SET_OPERATIONS_2_USE_OPENMP
+        end = omp_get_wtime();
+        #endif
 
 	t_union.stop();
-	std::cout << "Done! (" << t_union.time() << " seconds)." << std::endl;
+        e = time(NULL);
+
+        #if defined _OPENMP && defined CGAL_BOOLEAN_SET_OPERATIONS_2_USE_OPENMP
+        std::cout << "Done! time using omp_get_wtime() (" << end-start << " seconds)." << std::endl;
+        #endif 
+  
+	std::cout << "Done! time using CGAL::Timer (using measure of clock cycles) (" << t_union.time() << " seconds).\n";
+
+        std::cout << "Done! time using time() (" << difftime(e,s) << " seconds)." << std::endl;
 
 	std::cout << "The result:"
 			  << "  |V| = " << gps.arrangement().number_of_vertices()
