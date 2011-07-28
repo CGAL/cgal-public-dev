@@ -51,7 +51,6 @@
 #  include <boost/thread/tss.hpp>
 #endif
 
-
 namespace CGAL {
 
 // TODO : noms : Vb != Vertex_base : clarifier.
@@ -182,6 +181,7 @@ public:
 
   size_type number_of_cells() const
     {
+	//PIVANOV
       if ( dimension() < 3 ) return 0;
       return cells().size();
     }
@@ -449,7 +449,7 @@ public:
       return insert_in_hole(cell_begin, cell_end, begin, i, create_vertex());
   }
 
-  // PESHO GSOC
+  // PIVANOV GSOC
 
 public:
   typedef std::list<Facet>			Facet_list;  
@@ -489,9 +489,9 @@ public:
   void get_facets_from_link(Vertex_handle vertex, Facet_list& hull, bool outward) const;
   Facet get_twin_facet(const Facet& facet) const;
 
-  bool check_link_test(const Edge& edge, int verbose) const; 
-  bool check_link_test_for_vertices(const Edge& edge, int verbose) const;
-  bool check_link_test_for_edges(const Edge& edge, int verbose) const;
+  bool is_top_collapsible(const Edge& edge) const; 
+  bool check_link_test_for_vertices(const Edge& edge) const;
+  bool check_link_test_for_edges(const Edge& edge) const;
 
   // DEBUG
   template< class Cont > void print_vertices(const Cont S, std::string note) const;
@@ -503,7 +503,7 @@ public:
   bool collapse_edge(Edge& edge);
   bool is_top_collapsible(const Edge& edge);
   
-  // PESHO END
+  // PIVANOV END
 
   //INSERTION
 
@@ -936,7 +936,8 @@ public:
     CGAL_triangulation_expensive_precondition( is_valid() );
 
     if (dimension() == 1) {
-      CGAL_triangulation_assertion( number_of_vertices() >= 3);
+      //PIVANOV
+      CGAL_triangulation_assertion( number_of_vertices() >= 2);
       Cell_handle n0 = v->cell();
       Cell_handle n1 = n0->neighbor(1-n0->index(v));
       *edges++ = Edge(n0, n0->index(v), 1-n0->index(v));

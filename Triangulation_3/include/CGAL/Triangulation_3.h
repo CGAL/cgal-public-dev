@@ -715,24 +715,22 @@ public:
   //bool is_geom_collapsible(const Edge& edge);
   //bool is_geom_collapsible(const Edge& edge, const Point& p);
 
-  bool is_top_collapsible(const Edge& edge)
+  bool is_top_collapsible(const Edge& edge) const
   {
-    return _tds.check_link_test(edge);
-    //return _tds.is_top_collapsible(edge);
+    //return _tds.check_link_test(edge);
+    return _tds.is_top_collapsible(edge);
   }
 
   bool collapse_edge(Edge& edge, const Point& point);
+  bool collapse_edge(Edge& edge);
 
-  bool collapse_edge(Edge& edge)
-  {
-    return _tds.collapse_edge(edge);
-  }
-
-  bool check_kernel_test(const Edge& edge) const;
-  bool check_kernel_test(const Edge& edge, const Point& point) const;
+  bool is_geom_collapsible(const Edge& edge) const;
+  bool is_geom_collapsible(const Edge& edge, const Point& point) const;
   
   template <class Iterator>
 	bool is_in_kernel(Point query, Iterator begin, Iterator end) const;
+
+  bool is_simplex( Cell_handle c ) const; // to document the tds::is_simlex too
 
   // PIVANOV END
 

@@ -270,14 +270,32 @@ get_facets_from_link(Vertex_handle vertex, Facet_list& hull, bool outward = fals
 }
 
 TDS_FUNC(bool)
-check_link_test(const Edge& edge, int verbose = 0) const
+is_top_collapsible(const Edge& edge) const
 {
-	return 	check_link_test_for_vertices(edge, verbose)	
-		&& check_link_test_for_edges(edge, verbose);
+	CGAL_triangulation_precondition( dimension() >= 1 );
+	CGAL_triangulation_precondition( number_of_vertices() >= 2 );
+	
+	switch( dimension() ) {
+		case 1: {
+			CGAL_triangulation_expensive_precondition( is_edge(edge.first, edge.second, edge.third) );
+			return true;
+		}
+		case 2: {
+			//TODO
+			return true;
+		}
+		case 3: {
+			CGAL_triangulation_expensive_precondition( is_cell(edge.first) );
+			CGAL_triangulation_expensive_precondition( is_edge(edge.first, edge.second, edge.third) );
+		
+			return 	check_link_test_for_vertices(edge)	
+				&& check_link_test_for_edges(edge);
+		}
+	}
 }
     
 TDS_FUNC(bool)
-check_link_test_for_vertices(const Edge& edge, int verbose = 0) const
+check_link_test_for_vertices(const Edge& edge) const
 {
 	Cell_handle cell = edge.first;
 	Vertex_handle source = get_source_vertex(edge);
@@ -309,7 +327,7 @@ check_link_test_for_vertices(const Edge& edge, int verbose = 0) const
 }
     
 TDS_FUNC(bool)
-check_link_test_for_edges(const Edge& edge, int verbose = 0) const
+check_link_test_for_edges(const Edge& edge) const
 {
 	Cell_handle cell = edge.first;
 
@@ -320,11 +338,6 @@ check_link_test_for_edges(const Edge& edge, int verbose = 0) const
 	Edge_set sedges, tedges;
 	get_edges_from_vertex_link(source, sedges);
 	get_edges_from_vertex_link(target, tedges);
-
-#ifdef PESHO_DEBUG
-	print_edges(sedges, "sedges");
-	print_edges(tedges, "tedges");
-#endif        
 
 	Edge_set iedges;
 	typename Edge_set::const_iterator eit;
@@ -349,76 +362,119 @@ check_link_test_for_edges(const Edge& edge, int verbose = 0) const
 // COLLAPSE EDGE //
 ///////////////////
 
+// TODO: maybe void?
 TDS_FUNC(bool)
 collapse_edge(Edge& edge)
 {
+	CGAL_triangulation_precondition( dimension() >= 1 );
+	CGAL_triangulation_precondition( number_of_vertices() >= 2 );
+
 	// edge source-target: source is removed
 	Cell_handle seed_cell = edge.first;
 	Vertex_handle source = seed_cell->vertex(edge.second);
 	Vertex_handle target = seed_cell->vertex(edge.third);
 	
-	CGAL_assertion(source != target);
+	std::cout << "!!! " << edge.second << " " << edge.third << std::endl;
 
-	// collect all cells incident to source - as this vertex will disappear
-	// we will have to update source to target later in these cells.
-	std::list<Cell_handle> scells;
-	incident_cells(source, std::back_inserter(scells)); // precondition: dimension()==3
+	CGAL_triangulation_assertion(source != target);
 
-	// stores all cells incident to edge pq (they will be deleted)
-	std::list<Cell_handle> rcells; 
+	switch ( dimension() ) {
+		case 1: {
+			// before the collapse:
+			//       prev_cell      seed_cell      next_cell
+			// ---x--------------x------------>x----------------
+			//                 source        target
 
-	// revolve on cells around edge pq and update
-	// incidence between mate cells.
-	Cell_handle cell = seed_cell;
-	Vertex_handle u = get_any_other_vertex(cell,target,source);
+			// after the collapse:
+			//              prev_cell              next_cell
+			// ---x----------------------------x----------------
+			//                               target
+
+			CGAL_triangulation_assertion( seed_cell->index(target) <= 1 && seed_cell->index(source) <= 1 );
+			Cell_handle prev_cell = seed_cell->neighbor( seed_cell->index(target) );
+			Cell_handle next_cell = seed_cell->neighbor( seed_cell->index(source) );
+		
+			//CGAL_triangulation_assertion( prev_cell->has_vertex(source) );
+			//CGAL_triangulation_assertion( !prev_cell->has_vertex(target) );
 	
-	do {
-		// add cell to revolving cells
-		rcells.push_back(cell);
+			int source_index = prev_cell->index(source);
+			prev_cell->set_vertex( source_index, target );
+			prev_cell->set_neighbor( 1-source_index, next_cell );
+			next_cell->set_neighbor( 1-next_cell->index(target), prev_cell );
+			target->set_cell(next_cell);
 
-		// get mate cells
-		Vertex_handle v = get_remaining_vertex(cell,target,source,u);
-		Cell_handle cell_suv = cell->neighbor(cell->index(target));
-		Cell_handle cell_tuv = cell->neighbor(cell->index(source));
-		Vertex_handle mt = mirror_vertex(cell,cell->index(target));
-		Vertex_handle ms = mirror_vertex(cell,cell->index(source));
-
-		// update incidence relationships
-		int index_mt = cell_suv->index(mt);
-		int index_ms = cell_tuv->index(ms);
-
-		assert(!cell_suv->has_neighbor(cell_tuv));
-		assert(!cell_tuv->has_neighbor(cell_suv));
-
-		if(cell_suv->has_neighbor(cell_tuv) || cell_tuv->has_neighbor(cell_suv)) {
-			std::cerr << "ERROR: non-manifold edge collapse - must DELETE the triangulation as it is invalid" << std::endl; 
-//			return false;
+			delete_cell(seed_cell);
+			delete_vertex(source);
+			
+			break;
 		}
+		case 2: {
+		}
+		case 3: {
+			// collect all cells incident to source - as this vertex will disappear
+			// we will have to update source to target later in these cells.
+			std::list<Cell_handle> scells;
+			incident_cells(source, std::back_inserter(scells));
 
-		cell_suv->set_neighbor(index_mt, cell_tuv);
-		cell_tuv->set_neighbor(index_ms, cell_suv);
+			// stores all cells incident to edge pq (they will be deleted)
+			std::list<Cell_handle> rcells; 
 
-		// set incident cell to ensure that vertices do not point
-		// to a deleted cell (among scells).
-		u->set_cell(cell_tuv);
-		target->set_cell(cell_tuv);
+			// revolve on cells around edge pq and update
+			// incidence between mate cells.
+			Cell_handle cell = seed_cell;
+			Vertex_handle u = get_any_other_vertex(cell,target,source);
 
-		// revolves to neighboring cell
-		cell = cell->neighbor(cell->index(u));
-		u = v;
-	} while(cell != seed_cell);
+			// merge the two circle sets of cells
+			do {
+				// add cell to revolving cells
+				rcells.push_back(cell);
 
-	// update cells incident to source
-	typename std::list<Cell_handle>::iterator it;
-	for(it = scells.begin(); it != scells.end(); it++) {
-		Cell_handle cell = *it;
-		cell->set_vertex(cell->index(source),target);
+				// get mate cells
+				Vertex_handle v = get_remaining_vertex(cell,target,source,u);
+				Cell_handle cell_suv = cell->neighbor(cell->index(target));
+				Cell_handle cell_tuv = cell->neighbor(cell->index(source));
+				Vertex_handle mt = mirror_vertex(cell,cell->index(target));
+				Vertex_handle ms = mirror_vertex(cell,cell->index(source));
+
+				// update incidence relationships
+				int index_mt = cell_suv->index(mt);
+				int index_ms = cell_tuv->index(ms);
+
+				//CGAL_triangulation_assertion(!cell_suv->has_neighbor(cell_tuv));
+				//CGAL_triangulation_assertion(!cell_tuv->has_neighbor(cell_suv));
+
+				cell_suv->set_neighbor(index_mt, cell_tuv);
+				cell_tuv->set_neighbor(index_ms, cell_suv);
+
+				// set incident cell to ensure that vertices do not point
+				// to a deleted cell (among scells).
+				u->set_cell(cell_tuv);
+				target->set_cell(cell_tuv);
+
+				// revolves to neighboring cell
+				cell = cell->neighbor(cell->index(u));
+				u = v;
+			} while(cell != seed_cell);
+
+			// update cells incident to source
+			typename std::list<Cell_handle>::iterator it;
+			for(it = scells.begin(); it != scells.end(); it++) {
+				Cell_handle cell = *it;
+				cell->set_vertex(cell->index(source),target);
+			}
+
+			// delete cells and vertex source
+			delete_cells(rcells.begin(),rcells.end());
+			delete_vertex(source);
+
+			// less than a tetrahedral
+			//if ( number_of_vertices() < 5 ) 
+			//	set_dimension( dimension()-1 );
+			
+			break;
+		}
 	}
-
-	// delete cells and vertex source
-	delete_cells(rcells.begin(),rcells.end());
-	delete_vertex(source);
-
+	
 	return true;
 }
 
@@ -427,16 +483,16 @@ collapse_edge(Edge& edge)
 ////////////////////////////////////
 
 DT_FUNC(bool)
-check_kernel_test(const Edge& edge, const Point& point) const
+is_geom_collapsible(const Edge& edge, const Point& point) const
 {
-	return 	Tr_Base::check_kernel_test(edge, point)
+	return 	Tr_Base::is_geom_collapsible(edge, point)
 		&& check_delaunay_property(edge, point);
 }
 
 DT_FUNC(bool)
-check_kernel_test(const Edge& edge) const
+is_geom_collapsible(const Edge& edge) const
 {
-	return 	check_kernel_test(edge, Tr_Base::_tds.get_target_vertex(edge)->point());
+	return 	is_geom_collapsible(edge, Tr_Base::_tds.get_target_vertex(edge)->point());
 }
 
 // protected:
@@ -483,7 +539,9 @@ check_delaunay_property(const Edge& edge, const Point& point) const
 			//std::cout << "(" << v[3]->point() << ") " << std::endl;
 			//std::cout << " (" << c->vertex((c->neighbor(i))->index(c))->point() << ")" << std::endl;
 			
-			Vertex_handle query = c->neighbor(i)->vertex(c->neighbor(i)->index(c));// c->vertex((c->neighbor(i))->index(c));
+			
+			Vertex_handle query = Tr_Base::mirror_vertex(c,i);
+			//Vertex_handle query = c->neighbor(i)->vertex(c->neighbor(i)->index(c));
 			if (is_infinite(query)) continue;
 
 			// 'perturb'=false
@@ -499,6 +557,7 @@ check_delaunay_property(const Edge& edge, const Point& point) const
 // TRIANGULATION_3 members //
 /////////////////////////////
 
+// TODO: maybe void?
 TRI_FUNC(bool)
 collapse_edge(Edge& edge, const Point& point)
 {
@@ -510,15 +569,22 @@ collapse_edge(Edge& edge, const Point& point)
 }
 
 TRI_FUNC(bool)
-check_kernel_test(const Edge& edge) const
+collapse_edge(Edge& edge)
 {
-	return check_kernel_test(edge, _tds.get_target_vertex(edge)->point());
+	return _tds.collapse_edge(edge);
 }
 
 TRI_FUNC(bool)
-check_kernel_test(const Edge& edge, const Point& point) const
+is_geom_collapsible(const Edge& edge) const
 {
-	CGAL_triangulation_precondition( dimension() == 3 );	
+	return is_geom_collapsible(edge, _tds.get_target_vertex(edge)->point());
+}
+
+TRI_FUNC(bool)
+is_geom_collapsible(const Edge& edge, const Point& point) const
+{
+	// TODO: what about <3?
+	//CGAL_triangulation_precondition( dimension() == 3 );	
 
 	Vertex_handle s = _tds.get_source_vertex(edge);
         Vertex_handle t = _tds.get_target_vertex(edge);
@@ -555,6 +621,20 @@ is_in_kernel(Point query, Iterator begin, Iterator end) const
 	}
 
 	return true;
+}
+
+// TODO: add into Tri_3
+TRI_FUNC(bool)
+is_simplex( Cell_handle c ) const
+{
+  switch(dimension()) {
+    case 3 : return _tds.is_cell(c);
+    case 2 : return _tds.is_facet(c, 3);
+    case 1 : return _tds.is_edge(c, 0, 1);
+    case 0 : return _tds.is_vertex(c->vertex(0));
+    case -1 : return c == _tds.cells().begin();
+  }
+  return false;
 }
 
 ///////////
