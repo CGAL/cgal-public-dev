@@ -155,12 +155,12 @@ protected:
 
   // the underlying arrangement
   Aos_2*        m_arr;
-  
-    //define current total number of threads running
-    //used in _divide_and_conquer function to spawn new threads as long as there are still idle processors, but no more
-    #if defined _OPENMP && defined CGAL_BOOLEAN_SET_OPERATIONS_2_USE_OPENMP
-    int current_num_threads;
-    #endif
+ 
+  //define current total number of threads running
+  //used in _divide_and_conquer function to spawn new threads as long as there are still idle processors, but no more
+  #if defined _OPENMP && defined CGAL_BOOLEAN_SET_OPERATIONS_2_USE_OPENMP
+  int m_current_num_threads;
+  #endif
 
 public:
 
@@ -170,7 +170,7 @@ public:
                             m_traits_adaptor(*m_traits),
                             m_traits_owner(true),
                             m_arr(new Aos_2(m_traits)),
-                            current_num_threads(1)
+                            m_current_num_threads(1)
   {}
   #else
   Gps_on_surface_base_2() : m_traits(new Traits_2()),
@@ -186,7 +186,7 @@ public:
                                         m_traits_adaptor(*m_traits),
                                         m_traits_owner(false),
                                         m_arr(new Aos_2(m_traits)),
-                                        current_num_threads(1)
+                                        m_current_num_threads(1)
   {}
   #else
   Gps_on_surface_base_2(Traits_2& tr) : m_traits(&tr),
@@ -202,7 +202,7 @@ public:
     m_traits_adaptor(*m_traits),
     m_traits_owner(true),
     m_arr(new Aos_2(*(ps.m_arr))),
-    current_num_threads(1)
+    m_current_num_threads(1)
   {}
   #else
   Gps_on_surface_base_2(const Self& ps) :
@@ -669,7 +669,7 @@ public:
   {
     std::vector<Arr_entry> arr_vec (std::distance(begin, end) + 1);
 	
-	arr_vec[0].first = this->m_arr;
+    arr_vec[0].first = this->m_arr;
     unsigned int i;
     InputIterator itr;
 
@@ -678,16 +678,16 @@ public:
     #pragma omp parallel private(itr,i) 
     #endif    
     {
-        for (itr = begin, i = 1; itr != end; ++itr, ++i)
+      for (itr = begin, i = 1; itr != end; ++itr, ++i)
+      {
+        #if defined _OPENMP && defined CGAL_BOOLEAN_SET_OPERATIONS_2_USE_OPENMP
+        #pragma omp single nowait
+        #endif    
         {
-            #if defined _OPENMP && defined CGAL_BOOLEAN_SET_OPERATIONS_2_USE_OPENMP
-            #pragma omp single nowait
-            #endif    
-            {
-              arr_vec[i].first = new Aos_2(m_traits);
-              _insert(*itr, *(arr_vec[i].first));
-            }
+          arr_vec[i].first = new Aos_2(m_traits);
+          _insert(*itr, *(arr_vec[i].first));
         }
+      }
     } //end omp parallel
 
     Join_merge<Aos_2> join_merge;
@@ -715,16 +715,16 @@ public:
     #pragma omp parallel private(itr,i)
     #endif    
     {    
-        for (itr = begin,i = 1; itr!=end; ++itr, ++i)
+      for (itr = begin,i = 1; itr!=end; ++itr, ++i)
+      {
+        #if defined _OPENMP && defined CGAL_BOOLEAN_SET_OPERATIONS_2_USE_OPENMP
+        #pragma omp single nowait
+        #endif    
         {
-            #if defined _OPENMP && defined CGAL_BOOLEAN_SET_OPERATIONS_2_USE_OPENMP
-            #pragma omp single nowait
-            #endif    
-            {
-              arr_vec[i].first = new Aos_2(m_traits);
-              _insert(*itr, *(arr_vec[i].first));
-            }
+          arr_vec[i].first = new Aos_2(m_traits);
+          _insert(*itr, *(arr_vec[i].first));
         }
+      }
     } //end omp parallel
 
     Join_merge<Aos_2> join_merge;
@@ -755,27 +755,27 @@ public:
     #pragma omp parallel private(itr2,itr1,i) 
     #endif    
     {
-        for (itr1 = begin1,i = 1; itr1!=end1; ++itr1, ++i)
+      for (itr1 = begin1,i = 1; itr1!=end1; ++itr1, ++i)
+      {
+        #if defined _OPENMP && defined CGAL_BOOLEAN_SET_OPERATIONS_2_USE_OPENMP
+        #pragma omp single nowait
+        #endif    
         {
-            #if defined _OPENMP && defined CGAL_BOOLEAN_SET_OPERATIONS_2_USE_OPENMP
-            #pragma omp single nowait
-            #endif    
-            {
-              arr_vec[i].first = new Aos_2(m_traits);
-              _insert(*itr1, *(arr_vec[i].first));
-            }
+          arr_vec[i].first = new Aos_2(m_traits);
+          _insert(*itr1, *(arr_vec[i].first));
         }
+      }
     
-        for (itr2 = begin2,i = 1; itr2!=end2; ++itr2, ++i)
+      for (itr2 = begin2,i = 1; itr2!=end2; ++itr2, ++i)
+      {
+        #if defined _OPENMP && defined CGAL_BOOLEAN_SET_OPERATIONS_2_USE_OPENMP
+        #pragma omp single nowait
+        #endif    
         {
-            #if defined _OPENMP && defined CGAL_BOOLEAN_SET_OPERATIONS_2_USE_OPENMP
-            #pragma omp single nowait
-            #endif    
-            {
-              arr_vec[i].first = new Aos_2(m_traits);
-              _insert(*itr2, *(arr_vec[i].first));
-            }
+          arr_vec[i].first = new Aos_2(m_traits);
+          _insert(*itr2, *(arr_vec[i].first));
         }
+      }
     } //end omp parallel
 
     Join_merge<Aos_2> join_merge;
@@ -817,17 +817,17 @@ public:
     #pragma omp parallel private(itr,i)
     #endif    
     {
-        for (itr = begin,i = 1; itr!=end; ++itr, ++i)
+      for (itr = begin,i = 1; itr!=end; ++itr, ++i)
+      {
+        #if defined _OPENMP && defined CGAL_BOOLEAN_SET_OPERATIONS_2_USE_OPENMP
+        #pragma omp single nowait
+        #endif    
         {
-            #if defined _OPENMP && defined CGAL_BOOLEAN_SET_OPERATIONS_2_USE_OPENMP
-            #pragma omp single nowait
-            #endif    
-            {
-              ValidationPolicy::is_valid((*itr), *m_traits);
-              arr_vec[i].first = new Aos_2(m_traits);
-              _insert(*itr, *(arr_vec[i].first));
-            }
+          ValidationPolicy::is_valid((*itr), *m_traits);
+          arr_vec[i].first = new Aos_2(m_traits);
+          _insert(*itr, *(arr_vec[i].first));
         }
+      }
     } //end omp parallel
     
     Intersection_merge<Aos_2> intersection_merge;
@@ -854,17 +854,17 @@ public:
     #pragma omp parallel private(itr,i) 
     #endif    
     {        
-        for (itr = begin,i = 1; itr!=end; ++itr, ++i)
+      for (itr = begin,i = 1; itr!=end; ++itr, ++i)
+      {
+        #if defined _OPENMP && defined CGAL_BOOLEAN_SET_OPERATIONS_2_USE_OPENMP
+        #pragma omp single nowait
+        #endif    
         {
-            #if defined _OPENMP && defined CGAL_BOOLEAN_SET_OPERATIONS_2_USE_OPENMP
-            #pragma omp single nowait
-            #endif    
-            {
-              ValidationPolicy::is_valid((*itr), *m_traits);
-              arr_vec[i].first = new Aos_2(m_traits);
-              _insert(*itr, *(arr_vec[i].first));
-            }
+          ValidationPolicy::is_valid((*itr), *m_traits);
+          arr_vec[i].first = new Aos_2(m_traits);
+          _insert(*itr, *(arr_vec[i].first));
         }
+      }
     } //end omp parallel
     
     Intersection_merge<Aos_2> intersection_merge;
@@ -894,29 +894,29 @@ public:
     #pragma omp parallel private(itr2,itr1,i) 
     #endif    
     {    
-        for (itr1 = begin1,i = 1; itr1!=end1; ++itr1, ++i)
+      for (itr1 = begin1,i = 1; itr1!=end1; ++itr1, ++i)
+      {
+        #if defined _OPENMP && defined CGAL_BOOLEAN_SET_OPERATIONS_2_USE_OPENMP
+        #pragma omp single nowait
+        #endif    
         {
-            #if defined _OPENMP && defined CGAL_BOOLEAN_SET_OPERATIONS_2_USE_OPENMP
-            #pragma omp single nowait
-            #endif    
-            {
-              ValidationPolicy::is_valid(*itr1, *m_traits);
-              arr_vec[i].first = new Aos_2(m_traits);
-              _insert(*itr1, *(arr_vec[i].first));
-            }
+          ValidationPolicy::is_valid(*itr1, *m_traits);
+          arr_vec[i].first = new Aos_2(m_traits);
+          _insert(*itr1, *(arr_vec[i].first));
         }
+      }
         
-        for (itr2 = begin2,i = 1; itr2!=end2; ++itr2, ++i)
+      for (itr2 = begin2,i = 1; itr2!=end2; ++itr2, ++i)
+      {
+        #if defined _OPENMP && defined CGAL_BOOLEAN_SET_OPERATIONS_2_USE_OPENMP
+        #pragma omp single nowait
+        #endif    
         {
-            #if defined _OPENMP && defined CGAL_BOOLEAN_SET_OPERATIONS_2_USE_OPENMP
-            #pragma omp single nowait
-            #endif    
-            {
-              ValidationPolicy::is_valid(*itr2,*m_traits);
-              arr_vec[i].first = new Aos_2(m_traits);
-              _insert(*itr2, *(arr_vec[i].first));
-            }
+          ValidationPolicy::is_valid(*itr2,*m_traits);
+          arr_vec[i].first = new Aos_2(m_traits);
+          _insert(*itr2, *(arr_vec[i].first));
         }
+      }
     }
     Intersection_merge<Aos_2> intersection_merge;
     _build_sorted_vertices_vectors (arr_vec);
@@ -960,17 +960,17 @@ public:
     #pragma omp parallel private(itr,i) 
     #endif    
     {    
-        for (itr = begin; itr!=end; ++itr, ++i)
+      for (itr = begin; itr!=end; ++itr, ++i)
+      {
+        #if defined _OPENMP && defined CGAL_BOOLEAN_SET_OPERATIONS_2_USE_OPENMP
+        #pragma omp single nowait
+        #endif    
         {
-            #if defined _OPENMP && defined CGAL_BOOLEAN_SET_OPERATIONS_2_USE_OPENMP
-            #pragma omp single nowait
-            #endif    
-            {
-              ValidationPolicy::is_valid(*itr,*m_traits);
-              arr_vec[i].first = new Aos_2(m_traits);
-              _insert(*itr, *(arr_vec[i].first));
-            }
+          ValidationPolicy::is_valid(*itr,*m_traits);
+          arr_vec[i].first = new Aos_2(m_traits);
+          _insert(*itr, *(arr_vec[i].first));
         }
+      }
     } //end omp parallel
     
     Xor_merge<Aos_2> xor_merge;
@@ -997,17 +997,17 @@ public:
     #pragma omp parallel private(itr,i)
     #endif
     {
-        for (itr = begin; itr!=end; ++itr, ++i)
+      for (itr = begin; itr!=end; ++itr, ++i)
+      {
+        #if defined _OPENMP && defined CGAL_BOOLEAN_SET_OPERATIONS_2_USE_OPENMP
+        #pragma omp single nowait
+        #endif    
         {
-            #if defined _OPENMP && defined CGAL_BOOLEAN_SET_OPERATIONS_2_USE_OPENMP
-            #pragma omp single nowait
-            #endif    
-            {
-              ValidationPolicy::is_valid(*itr,*m_traits);
-              arr_vec[i].first = new Aos_2(m_traits);
-              _insert(*itr, *(arr_vec[i].first));
-            }
+          ValidationPolicy::is_valid(*itr,*m_traits);
+          arr_vec[i].first = new Aos_2(m_traits);
+          _insert(*itr, *(arr_vec[i].first));
         }
+      }
     } //end omp parallel
     
     Xor_merge<Aos_2> xor_merge;
@@ -1037,29 +1037,29 @@ public:
     #pragma omp parallel private(itr2,itr1,i) 
     #endif    
     {    
-        for (itr1 = begin1; itr1!=end1; ++itr1, ++i)
+      for (itr1 = begin1; itr1!=end1; ++itr1, ++i)
+      {
+        #if defined _OPENMP && defined CGAL_BOOLEAN_SET_OPERATIONS_2_USE_OPENMP
+        #pragma omp single nowait
+        #endif    
         {
-            #if defined _OPENMP && defined CGAL_BOOLEAN_SET_OPERATIONS_2_USE_OPENMP
-            #pragma omp single nowait
-            #endif    
-            {
-              ValidationPolicy::is_valid(*itr1, *m_traits);
-              arr_vec[i].first = new Aos_2(m_traits);
-              _insert(*itr1, *(arr_vec[i].first));
-            }
+          ValidationPolicy::is_valid(*itr1, *m_traits);
+          arr_vec[i].first = new Aos_2(m_traits);
+          _insert(*itr1, *(arr_vec[i].first));
         }
+      }
         
-        for (itr2 = begin2; itr2!=end2; ++itr2, ++i)
+      for (itr2 = begin2; itr2!=end2; ++itr2, ++i)
+      {
+        #if defined _OPENMP && defined CGAL_BOOLEAN_SET_OPERATIONS_2_USE_OPENMP
+        #pragma omp single nowait
+        #endif    
         {
-            #if defined _OPENMP && defined CGAL_BOOLEAN_SET_OPERATIONS_2_USE_OPENMP
-            #pragma omp single nowait
-            #endif    
-            {
-              ValidationPolicy::is_valid(*itr2, *m_traits);
-              arr_vec[i].first = new Aos_2(m_traits);
-              _insert(*itr2, *(arr_vec[i].first));
-            }
+          ValidationPolicy::is_valid(*itr2, *m_traits);
+          arr_vec[i].first = new Aos_2(m_traits);
+          _insert(*itr2, *(arr_vec[i].first));
         }
+      }
     } //end omp parallel
     Xor_merge<Aos_2> xor_merge;
     _build_sorted_vertices_vectors (arr_vec);
@@ -1165,27 +1165,27 @@ protected:
     #pragma omp parallel private(eit) 
     #endif
     {            
-        for (eit = arr.edges_begin();
-             eit != arr.edges_end();
+      for (eit = arr.edges_begin();
+      eit != arr.edges_end();
              ++eit)
+      {
+        #if defined _OPENMP && defined CGAL_BOOLEAN_SET_OPERATIONS_2_USE_OPENMP
+        #pragma omp single nowait
+        #endif
         {
-            #if defined _OPENMP && defined CGAL_BOOLEAN_SET_OPERATIONS_2_USE_OPENMP
-            #pragma omp single nowait
-            #endif
-            {
-              Halfedge_handle            he = eit;
-              const X_monotone_curve_2&  cv = he->curve();
-              const bool                 is_cont = he->face()->contained();
-              const Comparison_result    he_res = 
-                ((Arr_halfedge_direction)he->direction() == ARR_LEFT_TO_RIGHT) ?
-                SMALLER : LARGER;
-              const bool                 has_same_dir = (cmp_endpoints(cv) == he_res);
+          Halfedge_handle            he = eit;
+          const X_monotone_curve_2&  cv = he->curve();
+          const bool                 is_cont = he->face()->contained();
+          const Comparison_result    he_res = 
+            ((Arr_halfedge_direction)he->direction() == ARR_LEFT_TO_RIGHT) ?
+            SMALLER : LARGER;
+          const bool                 has_same_dir = (cmp_endpoints(cv) == he_res);
               
-              if ((is_cont && !has_same_dir) || (!is_cont && has_same_dir)) {
+          if ((is_cont && !has_same_dir) || (!is_cont && has_same_dir)) {
                 arr.modify_edge(he, ctr_opp(cv));
-              }
-            }
+          }
         }
+      }
     } //end omp parallel
   }
 
@@ -1197,36 +1197,35 @@ protected:
     #pragma omp parallel 
     #endif
     {    
+      Less_vertex_handle    comp (m_traits->compare_xy_2_object());
+      Aos_2                 *p_arr;
+      Vertex_iterator       vit;
+      const std::size_t     n = arr_vec.size();
+      std::size_t           i, j;
 
-        Less_vertex_handle    comp (m_traits->compare_xy_2_object());
-        Aos_2                 *p_arr;
-        Vertex_iterator       vit;
-        const std::size_t     n = arr_vec.size();
-        std::size_t           i, j;
-
-        for (i = 0; i < n; i++)
-        {
-            #if defined _OPENMP && defined CGAL_BOOLEAN_SET_OPERATIONS_2_USE_OPENMP
-            #pragma omp single nowait
-            #endif
-            {          
-              // Allocate a vector of handles to all vertices in the current
-              // arrangement.
-              p_arr = arr_vec[i].first;
-              arr_vec[i].second = new std::vector<Vertex_handle>;
-              arr_vec[i].second->resize (p_arr->number_of_vertices());
+      for (i = 0; i < n; i++)
+      {
+        #if defined _OPENMP && defined CGAL_BOOLEAN_SET_OPERATIONS_2_USE_OPENMP
+        #pragma omp single nowait
+        #endif
+        {          
+          // Allocate a vector of handles to all vertices in the current
+          // arrangement.
+          p_arr = arr_vec[i].first;
+          arr_vec[i].second = new std::vector<Vertex_handle>;
+          arr_vec[i].second->resize (p_arr->number_of_vertices());
               
-              for (j = 0, vit = p_arr->vertices_begin();
-                   vit != p_arr->vertices_end();
-                   j++, ++vit)
-              {
-                (*(arr_vec[i].second))[j] = vit;
-              }
+          for (j = 0, vit = p_arr->vertices_begin();
+               vit != p_arr->vertices_end();
+               j++, ++vit)
+          {
+            (*(arr_vec[i].second))[j] = vit;
+          }
               
-              // Sort the vector.
-              std::sort (arr_vec[i].second->begin(), arr_vec[i].second->end(), comp);
-            }
+          // Sort the vector.
+          std::sort (arr_vec[i].second->begin(), arr_vec[i].second->end(), comp);
         }
+      }
     }
   }
   
@@ -1235,7 +1234,6 @@ protected:
                             std::vector<Arr_entry>& arr_vec,
                             unsigned int k, Merge merge_func)
   {
-    
     if ((upper - lower) < k)
     {
       merge_func(lower, upper, 1, arr_vec);
@@ -1246,39 +1244,40 @@ protected:
     int curr_lower;
     
     #if defined _OPENMP && defined CGAL_BOOLEAN_SET_OPERATIONS_2_USE_OPENMP
-    if(current_num_threads < omp_get_max_threads())
+    if(m_current_num_threads < omp_get_max_threads())
     {
-        #pragma omp atomic
-        current_num_threads += (omp_get_max_threads() - 1);
+      #pragma omp atomic
+      m_current_num_threads += (omp_get_max_threads() - 1);
         
-        #pragma omp parallel private(curr_lower)
+      #pragma omp parallel private(curr_lower)
+      {
+        #pragma omp for
+        for (int i = 0; i < k; ++i)
         {
-            #pragma omp for
-            for (int i = 0; i < k; ++i) {
-                curr_lower = lower + i * sub_size;
-                int curr_upper = (i < (k - 1)) ? curr_lower + sub_size - 1 : upper;
+          curr_lower = lower + i * sub_size;
+          int curr_upper = (i < (k - 1)) ? curr_lower + sub_size - 1 : upper;
  
-                _divide_and_conquer(curr_lower, curr_upper, arr_vec, k,
+          _divide_and_conquer(curr_lower, curr_upper, arr_vec, k,
                           merge_func);
-            }
+        }
           
-        } // end omp parallel
+      } // end omp parallel
         
-        current_num_threads -= (omp_get_max_threads() - 1);
-        curr_lower = lower + ((k - 1) * sub_size);
+      m_current_num_threads -= (omp_get_max_threads() - 1);
+      curr_lower = lower + ((k - 1) * sub_size);
     } //end if
     else    
     #endif
     {        
-        curr_lower = lower;
-        for (unsigned int i = 0; i < k; ++i, curr_lower += sub_size )
-        {
-            int curr_upper = (i < (k - 1)) ? curr_lower + sub_size - 1 : upper;
+      for (unsigned int i = 0; i < k; ++i)
+      {
+        curr_lower = lower + i * sub_size;
+        int curr_upper = (i < (k - 1)) ? curr_lower + sub_size - 1 : upper;
  
-            _divide_and_conquer(curr_lower, curr_upper, arr_vec, k,
+        _divide_and_conquer(curr_lower, curr_upper, arr_vec, k,
                           merge_func);
-        }
-        curr_lower = lower + ((k - 1) * sub_size);
+      }
+      curr_lower = lower + ((k - 1) * sub_size);
     }
     
     merge_func (lower, curr_lower, sub_size ,arr_vec);
@@ -1301,15 +1300,15 @@ protected:
     #pragma omp parallel private(fit) 
     #endif
     {    
-        for ( fit = arr->faces_begin(); fit != arr->faces_end(); ++fit)
+      for ( fit = arr->faces_begin(); fit != arr->faces_end(); ++fit)
+      {
+        #if defined _OPENMP && defined CGAL_BOOLEAN_SET_OPERATIONS_2_USE_OPENMP
+        #pragma omp single nowait
+        #endif
         {
-            #if defined _OPENMP && defined CGAL_BOOLEAN_SET_OPERATIONS_2_USE_OPENMP
-            #pragma omp single nowait
-            #endif
-            {
-                fit->set_visited(false);
-            }
+          fit->set_visited(false);
         }
+      }
     } //end omp parallel
   }
 
