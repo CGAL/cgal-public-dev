@@ -983,6 +983,7 @@ Boolean_set_operations_2/benchmark/Boolean_set_operations_2/compute_intersection
 Boolean_set_operations_2/benchmark/Boolean_set_operations_2/data/test_3 -text
 Boolean_set_operations_2/benchmark/Boolean_set_operations_2/data/test_4.txt -text
 Boolean_set_operations_2/benchmark/Boolean_set_operations_2/data/test_8 -text
+Boolean_set_operations_2/benchmark/Boolean_set_operations_2/dxf_union.cpp -text
 Boolean_set_operations_2/benchmark/Boolean_set_operations_2/test_polygonset_generator.cpp -text
 Boolean_set_operations_2/benchmark/Boolean_set_operations_2/union_benchmark.cpp -text
 Boolean_set_operations_2/demo/Boolean_set_operations_2/Qt_widget_locate_layer.cpp -text
