@@ -940,67 +940,6 @@ public:
     Construct_base_curve_2(const Traits* traits) : m_traits(traits) {}
     
   public:
-    /*! Constructor from all data fields.
-     * \param is_linear Indicates whether the curve is linear.
-     * \param b The b coefficient.
-     * \param c The c coefficient.
-     * \param d The d coefficient.
-     * \param left The left point.
-     * \param right The right point.
-     * \param is_directed_right Indicates whether the curve is directed right.
-     * \param has_left_x Indicates whether the left endpoint of the curve has a
-     *        valid x-coordinate stored as the x-coordinate of m_left.
-     * \param has_left_y Indicates whether the left endpoint of the curve has a
-     *        valid y-coordinate stored as the y-coordinate of m_left.
-     * \param has_right_x Indicates whether the right endpoint of the curve has
-     *        a valid x-coordinate stored as the x-coordinate of m_right.
-     * \param has_right_y Indicates whether the right endpoint of the curve has
-     *        a valid y-coordinate stored as the y-coordinate of m_right.
-     * \param is_directed_right Indicates whether the curve is directed right.
-     * \param is_continuous Indicates the curve continuous.
-     * \pre The two points must not be the same.
-     * \pre If has_left_x && has_left_y, m_left is on the underlying hyperbola.
-     *      If has_left_x && !has_left_y, the left end of the underlying
-     *      hyperbola has a vertical asymptote at the x-coordinate of m_left.
-     *      If !has_left_x && has_left_y, the left end of the underlying
-     *      hyperbola has a horizontal asymptote at the y-coordinate of m_left.
-     * \pre If has_right_x && has_right_y, m_right is on the underlying
-     *      hyperbola.
-     *      If has_right_x && !has_right_y, the right end of the underlying
-     *      hyperbola has a vertical asymptote at the x-coordinate of m_right.
-     *      If !has_right_x && has_right_y, the right end of the underlying
-     *      hyperbola has a horizontal asymptote at the y-coordinate of m_right.
-     * \pre The curve is continueous.
-     */
-    Curve_type operator()(bool is_linear,
-                          const NT& b, const NT& c, const NT& d,
-                          const Point_2& left, const Point_2& right,
-                          bool has_left_x, bool has_left_y,
-                          bool has_right_x, bool has_right_y,
-                          bool is_directed_right)
-    {    
-      // Validity check:
-      CGAL_assertion(!has_left_x || !has_left_y || 
-                     m_traits->is_on_object_2()(left, is_linear, b, c, d));
-      CGAL_assertion(!has_left_x || has_left_y || (left.x() == -c));
-      CGAL_assertion(has_left_x || !has_left_y || (left.y() == -b));
-
-      CGAL_assertion(!has_right_x || !has_right_y || 
-                     m_traits->is_on_object_2()(right, is_linear, b, c, d));
-      CGAL_assertion(!has_right_x || has_right_y || (right.x() == -c));
-      CGAL_assertion(has_right_x || !has_right_y || (right.y() == -b));
-
-      // Continuity check:
-      CGAL_assertion(!has_left_x  || (-c <= left.x()));
-      CGAL_assertion(!has_right_x || (right.x() <= -c));
-            
-      Curve_type xc =
-        Curve_type(is_linear, b, c, d, left, right,
-                   has_left_x, has_left_y, has_right_x, has_right_y,
-                   is_directed_right);
-      return xc;
-    }
-
     /*! Constructor of either a vertical or a horizontal line.
      * \param is_vertical Indicates whether the curve is vertical or horizontal.
      * \param d The d coefficient.
@@ -1046,46 +985,6 @@ public:
                     is_directed_right) :
          Curve_type(true, 0, 1, d, target, source, true, true, true, true,
                     is_directed_right));
-      return xc;
-    }
-
-    /*! Constructor of a hyperbolic arc.
-     * \param b The b coefficient.
-     * \param c The c coefficient.
-     * \param d The d coefficient.
-     * \param source The source point.
-     * \param target The target point.
-     * \pre The two points must not be the same.
-     * \pre source is on the underlying hyperbola or the curve has a
-     *      vertical asymptote at the x-coordinate of source.
-     * \pre target is on the underlying hyperbola or the curve has a
-     *      vertical asymptote at the x-coordinate of right.
-     * \pre The curve is continueous. That is, the open interval bounded by
-     *      the x-coordinates of source and target does not contain -c (the
-     *      x-coordinate of the vertical asymptotes).
-     */
-    Curve_type operator()(const NT& b, const NT& c, const NT& d,
-                          const Point_2& source, const Point_2& target)
-    {
-      Comparison_result res = CGAL::compare_xy(source, target);
-      CGAL_assertion(res != EQUAL);
-      bool is_directed_right = (res == SMALLER);
-      
-      NT asymptote_x = -c;
-      const Point_2& left = (is_directed_right) ? source : target;
-      const Point_2& right = (is_directed_right) ? target : left;
-      bool has_left_y = asymptote_x != left.x();
-      bool has_right_y = asymptote_x != right.x();
-      CGAL_assertion((asymptote_x <= left.x()) || (right.x() <= asymptote_x));
-
-      CGAL_assertion(!has_left_y || 
-                     m_traits->is_on_object_2()(left, is_linear, b, c, d));
-      CGAL_assertion(!has_right_y || 
-                     m_traits->is_on_object_2()(right, is_linear, b, c, d));
-        
-      Curve_type xc =
-        Curve_type(is_linear, b, c, d, left, right,
-                   true, has_left_y, true, has_right_y, is_directed_right);
       return xc;
     }
 
@@ -1164,70 +1063,6 @@ public:
         Curve_type(true, 0, 1, d, source, source,
                    is_directed_right, is_directed_right,
                    !is_directed_right, !is_directed_right, is_directed_right);        
-      return xc;
-    }
-
-    /*! Constructor of a hyperbola bounded at one endpoint.
-     * (a) If is_directed_right
-     *     (i)  If source.x < -c, then has_left_x <- true
-     *     (ii) Otherwise (source.x > -c), has_left_x <- false
-     * (b) Otherwise (!is_directed_right)
-     *     (i)  If source.x > -c, then has_right_x <- true
-     *     (ii) Otherwise (source.x > -c), has_right_x <- false
-     * \param b The b coefficient.
-     * \param c The c coefficient.
-     * \param d The d coefficient.
-     * \param source The source point.
-     * \param is_directed_right Indicates whether the curve is directed right.
-     * \pre source is on the underlying hyperbola or the curve has a
-     *      vertical asymptote at the x-coordinate of source.
-     */
-    Curve_type operator()(const NT& b, const NT& c, const NT& d,
-                          const Point_2& source, bool is_directed_right)
-    {
-      NT asymptote_x = -c;
-      NT asymptote_y = -b;
-      Point_2 target = Point_2(asymptote_x, asymptote_y);
-      bool has_left_x, has_left_y, has_right_x, has_right_y;
-      if (is_directed_right) {
-        has_left_x = true;
-        if (asymptote_x < source.x()) {
-          has_left_y = true;
-          has_right_x = false;
-          has_right_y = true;
-        } else if (source.x() == asymptote_x) {
-          has_left_y = false;
-          has_right_x = false;
-          has_right_y = true;
-        } else {
-          has_left_y = true;
-          has_right_x = true;
-          has_right_y = false;
-        }
-      } else {
-        has_right_x = true;
-        if (asymptote_x > source.x()) {
-          has_right_y = true;
-          has_left_x = false;
-          has_left_y = true;
-        } else if (source.x() == asymptote_x) {
-          has_right_y = false;
-          has_left_x = false;
-          has_left_y = true;
-        } else {
-          has_right_y = true;
-          has_left_x = true;
-          has_left_y = false;
-        }
-      }
-      
-      const Point_2& left = (is_directed_right) ? source : target;
-      const Point_2& right = (is_directed_right) ? target : left;
-      
-      Curve_type xc =
-        Curve_type(false, b, c, d, left, right,
-                   has_left_x, has_left_y, has_right_x, has_right_y,
-                   is_directed_right);
       return xc;
     }
 
@@ -1378,6 +1213,173 @@ public:
 
     //! Allow its functor obtaining function calling the private constructor.
     friend class Arr_rectangular_hyperbola_with_iso_asymptotes_traits_2<Kernel>;
+
+  public:
+    /*! Constructor from all data fields.
+     * \param is_linear Indicates whether the curve is linear.
+     * \param b The b coefficient.
+     * \param c The c coefficient.
+     * \param d The d coefficient.
+     * \param left The left point.
+     * \param right The right point.
+     * \param is_directed_right Indicates whether the curve is directed right.
+     * \param has_left_x Indicates whether the left endpoint of the curve has a
+     *        valid x-coordinate stored as the x-coordinate of m_left.
+     * \param has_left_y Indicates whether the left endpoint of the curve has a
+     *        valid y-coordinate stored as the y-coordinate of m_left.
+     * \param has_right_x Indicates whether the right endpoint of the curve has
+     *        a valid x-coordinate stored as the x-coordinate of m_right.
+     * \param has_right_y Indicates whether the right endpoint of the curve has
+     *        a valid y-coordinate stored as the y-coordinate of m_right.
+     * \param is_directed_right Indicates whether the curve is directed right.
+     * \param is_continuous Indicates the curve continuous.
+     * \pre The two points must not be the same.
+     * \pre If has_left_x && has_left_y, m_left is on the underlying hyperbola.
+     *      If has_left_x && !has_left_y, the left end of the underlying
+     *      hyperbola has a vertical asymptote at the x-coordinate of m_left.
+     *      If !has_left_x && has_left_y, the left end of the underlying
+     *      hyperbola has a horizontal asymptote at the y-coordinate of m_left.
+     * \pre If has_right_x && has_right_y, m_right is on the underlying
+     *      hyperbola.
+     *      If has_right_x && !has_right_y, the right end of the underlying
+     *      hyperbola has a vertical asymptote at the x-coordinate of m_right.
+     *      If !has_right_x && has_right_y, the right end of the underlying
+     *      hyperbola has a horizontal asymptote at the y-coordinate of m_right.
+     * \pre The curve is continueous.
+     */
+    X_monotone_curve_2 operator()(bool is_linear,
+                                  const NT& b, const NT& c, const NT& d,
+                                  const Point_2& left, const Point_2& right,
+                                  bool has_left_x, bool has_left_y,
+                                  bool has_right_x, bool has_right_y,
+                                  bool is_directed_right)
+    {    
+      // Validity check:
+      CGAL_assertion(!has_left_x || !has_left_y || 
+                     m_traits->is_on_object_2()(left, is_linear, b, c, d));
+      CGAL_assertion(!has_left_x || has_left_y || (left.x() == -c));
+      CGAL_assertion(has_left_x || !has_left_y || (left.y() == -b));
+
+      CGAL_assertion(!has_right_x || !has_right_y || 
+                     m_traits->is_on_object_2()(right, is_linear, b, c, d));
+      CGAL_assertion(!has_right_x || has_right_y || (right.x() == -c));
+      CGAL_assertion(has_right_x || !has_right_y || (right.y() == -b));
+
+      // Continuity check:
+      CGAL_assertion(!has_left_x  || (-c <= left.x()));
+      CGAL_assertion(!has_right_x || (right.x() <= -c));
+            
+      X_monotone_curve_2 xc =
+        X_monotone_curve_2(is_linear, b, c, d, left, right,
+                           has_left_x, has_left_y, has_right_x, has_right_y,
+                           is_directed_right);
+      return xc;
+    }
+    
+    /*! Constructor of a hyperbolic arc.
+     * \param b The b coefficient.
+     * \param c The c coefficient.
+     * \param d The d coefficient.
+     * \param source The source point.
+     * \param target The target point.
+     * \pre The two points must not be the same.
+     * \pre source is on the underlying hyperbola or the curve has a
+     *      vertical asymptote at the x-coordinate of source.
+     * \pre target is on the underlying hyperbola or the curve has a
+     *      vertical asymptote at the x-coordinate of right.
+     * \pre The curve is continueous. That is, the open interval bounded by
+     *      the x-coordinates of source and target does not contain -c (the
+     *      x-coordinate of the vertical asymptotes).
+     */
+    X_monotone_curve_2 operator()(const NT& b, const NT& c, const NT& d,
+                                  const Point_2& source, const Point_2& target)
+    {
+      Comparison_result res = CGAL::compare_xy(source, target);
+      CGAL_assertion(res != EQUAL);
+      bool is_directed_right = (res == SMALLER);
+      
+      NT asymptote_x = -c;
+      const Point_2& left = (is_directed_right) ? source : target;
+      const Point_2& right = (is_directed_right) ? target : left;
+      bool has_left_y = asymptote_x != left.x();
+      bool has_right_y = asymptote_x != right.x();
+      CGAL_assertion((asymptote_x <= left.x()) || (right.x() <= asymptote_x));
+
+      CGAL_assertion(!has_left_y || 
+                     m_traits->is_on_object_2()(left, is_linear, b, c, d));
+      CGAL_assertion(!has_right_y || 
+                     m_traits->is_on_object_2()(right, is_linear, b, c, d));
+        
+      X_monotone_curve_2 xc =
+        X_monotone_curve_2(is_linear, b, c, d, left, right,
+                           true, has_left_y, true, has_right_y,
+                           is_directed_right);
+      return xc;
+    }
+
+    /*! Constructor of a hyperbola bounded at one endpoint.
+     * (a) If is_directed_right
+     *     (i)  If source.x < -c, then has_left_x <- true
+     *     (ii) Otherwise (source.x > -c), has_left_x <- false
+     * (b) Otherwise (!is_directed_right)
+     *     (i)  If source.x > -c, then has_right_x <- true
+     *     (ii) Otherwise (source.x > -c), has_right_x <- false
+     * \param b The b coefficient.
+     * \param c The c coefficient.
+     * \param d The d coefficient.
+     * \param source The source point.
+     * \param is_directed_right Indicates whether the curve is directed right.
+     * \pre source is on the underlying hyperbola or the curve has a
+     *      vertical asymptote at the x-coordinate of source.
+     */
+    X_monotone_curve_2 operator()(const NT& b, const NT& c, const NT& d,
+                                  const Point_2& source, bool is_directed_right)
+    {
+      NT asymptote_x = -c;
+      NT asymptote_y = -b;
+      Point_2 target = Point_2(asymptote_x, asymptote_y);
+      bool has_left_x, has_left_y, has_right_x, has_right_y;
+      if (is_directed_right) {
+        has_left_x = true;
+        if (asymptote_x < source.x()) {
+          has_left_y = true;
+          has_right_x = false;
+          has_right_y = true;
+        } else if (source.x() == asymptote_x) {
+          has_left_y = false;
+          has_right_x = false;
+          has_right_y = true;
+        } else {
+          has_left_y = true;
+          has_right_x = true;
+          has_right_y = false;
+        }
+      } else {
+        has_right_x = true;
+        if (asymptote_x > source.x()) {
+          has_right_y = true;
+          has_left_x = false;
+          has_left_y = true;
+        } else if (source.x() == asymptote_x) {
+          has_right_y = false;
+          has_left_x = false;
+          has_left_y = true;
+        } else {
+          has_right_y = true;
+          has_left_x = true;
+          has_left_y = false;
+        }
+      }
+      
+      const Point_2& left = (is_directed_right) ? source : target;
+      const Point_2& right = (is_directed_right) ? target : left;
+      
+      X_monotone_curve_2 xc =
+        X_monotone_curve_2(false, b, c, d, left, right,
+                           has_left_x, has_left_y, has_right_x, has_right_y,
+                           is_directed_right);
+      return xc;
+    }
   };
   
   /*! Obtains a Construct_x_monotone_curve_2 functor object. */
