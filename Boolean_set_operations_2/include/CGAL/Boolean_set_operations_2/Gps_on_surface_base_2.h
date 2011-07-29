@@ -619,6 +619,22 @@ protected:
 
 public:
 
+  // k is the magic number in which we switch to a sweep-based algorithm
+  // instead of a D&C algorithm. 
+  // function to get default value of k
+  // if OpenMP is not being used it is set to 5 
+  // else it is set to either 5 or return value of omp_max_threads() whichever is greater
+  unsigned int get_default_k()
+  {
+    unsigned int k;
+   
+    #if defined _OPENMP && defined CGAL_BOOLEAN_SET_OPERATIONS_2_USE_OPENMP
+    return  (std::max)(5, omp_get_max_threads());
+    #else
+    return 5;
+    #endif
+  }
+
   /*! */
   bool is_valid()
   {
@@ -631,7 +647,15 @@ public:
 
   // test for intersection of a range of polygons
   template <typename InputIterator>
-  bool do_intersect(InputIterator begin, InputIterator end, unsigned int k = 5)
+  void do_intersect(InputIterator begin, InputIterator end)
+  {
+    unsigned int k = get_default_k();
+
+    do_intersect(begin,end,k);
+  }
+
+  template <typename InputIterator>
+  bool do_intersect(InputIterator begin, InputIterator end, unsigned int k)
   {
     Self other(*this);
     other.intersection(begin, end, k);
@@ -639,9 +663,18 @@ public:
   }
 
   template <typename InputIterator1, typename InputIterator2>
+  void do_intersect(InputIterator1 begin1, InputIterator1 end1,
+                    InputIterator2 begin2, InputIterator2 end2)
+  {
+    unsigned int k = get_default_k();
+
+    do_intersect(begin1,end1,begin2,end2);
+  }
+
+  template <typename InputIterator1, typename InputIterator2>
   bool do_intersect(InputIterator1 begin1, InputIterator1 end1,
                     InputIterator2 begin2, InputIterator2 end2,
-                    unsigned int k = 5)
+                    unsigned int k)
   {
     Self other(*this);
     other.intersection(begin1, end1, begin2, end2, k);
@@ -650,25 +683,35 @@ public:
 
   // join a range of polygons
   template <typename InputIterator>
-  void join(InputIterator begin, InputIterator end, unsigned int k = 5)
+  inline void join(InputIterator begin, InputIterator end)
+  {
+    unsigned int k = get_default_k();
+    join(begin,end,k);
+  }
+
+  template <typename InputIterator>
+  inline void join(InputIterator begin, InputIterator end, unsigned int k)
   {
     typename std::iterator_traits<InputIterator>::value_type pgn;
     this->join(begin, end, pgn, k);
     this->remove_redundant_edges();
     this->_reset_faces();
   }
-
   
-  // join range of simple polygons
-  // 5 is the magic number in which we switch to a sweep-based algorithm
-  // instead of a D&C algorithm. This point should be further studies, as
-  // it is hard to believe that this is the best value for all applications.
+  // join range of simple polygons 
+  template <typename InputIterator>
+  inline void join(InputIterator begin, InputIterator end, Polygon_2& polygon)
+  {
+    unsigned int k = get_default_k();
+  
+    join(begin,end,polygon,k);
+  }
+
   template <typename InputIterator>
   inline void join(InputIterator begin, InputIterator end, Polygon_2&,
-                   unsigned int k = 5)
+                   unsigned int k)
   {
     std::vector<Arr_entry> arr_vec (std::distance(begin, end) + 1);
-	
     arr_vec[0].first = this->m_arr;
     unsigned int i;
     InputIterator itr;
@@ -699,10 +742,19 @@ public:
     delete arr_vec[0].second;
   }
 
-  //join range of polygons with holes (see previous comment about k=5).
+  //join range of polygons with holes 
   template <typename InputIterator>
   inline void join(InputIterator begin, InputIterator end,
-                   Polygon_with_holes_2&, unsigned int k = 5)
+                   Polygon_with_holes_2& polygon_with_holes)
+  {
+    unsigned int k = get_default_k();
+  
+    join(begin,end,polygon_with_holes,k);
+  }
+
+  template <typename InputIterator>
+  inline void join(InputIterator begin, InputIterator end,
+                   Polygon_with_holes_2&, unsigned int k)
   {
     std::vector<Arr_entry> arr_vec (std::distance(begin, end) + 1);
     arr_vec[0].first = this->m_arr;
@@ -736,11 +788,19 @@ public:
     delete arr_vec[0].second;
   }
 
-  // (see previous comment about k=5).
+  template <typename InputIterator1, typename InputIterator2>
+  inline void join(InputIterator1 begin1, InputIterator1 end1,
+                   InputIterator2 begin2, InputIterator2 end2)
+  {
+    unsigned int k = get_default_k();
+    
+    join(begin1,end1,begin2,end2,k);
+  }
+    
   template <typename InputIterator1, typename InputIterator2>
   inline void join(InputIterator1 begin1, InputIterator1 end1,
                    InputIterator2 begin2, InputIterator2 end2,
-                   unsigned int k = 5)
+                   unsigned int k)
   {
     std::vector<Arr_entry> arr_vec (std::distance(begin1, end1)+
                                     std::distance(begin2, end2)+1);
@@ -789,20 +849,34 @@ public:
     this->_reset_faces();
   }
 
+  // intersect range of polygons
+  template <typename InputIterator>
+  inline void intersection(InputIterator begin, InputIterator end)
+  {
+    unsigned int k = get_default_k();
+  
+    intersection(begin,end,k);
+  }
 
-  // intersect range of polygins (see previous comment about k=5).
   template <typename InputIterator>
   inline void intersection(InputIterator begin, InputIterator end,
-                           unsigned int k = 5)
+                           unsigned int k)
   {
     typename std::iterator_traits<InputIterator>::value_type pgn;
     this->intersection(begin, end, pgn, k);
     this->remove_redundant_edges();
     this->_reset_faces();
   }
-  
-  
+
   // intersect range of simple polygons
+  template <typename InputIterator>
+  inline void intersection(InputIterator begin, InputIterator end, Polygon_2& polygon)
+  {
+    unsigned int k = get_default_k();
+  
+    intersection(begin,end,polygon,k);
+  }
+  
   template <typename InputIterator>
   inline void intersection(InputIterator begin, InputIterator end,
                            Polygon_2&, unsigned int k)
@@ -837,9 +911,18 @@ public:
     //the result arrangement is at index 0
     this->m_arr = arr_vec[0].first;
     delete arr_vec[0].second;
-  }
-  
+  }  
+
   //intersect range of polygons with holes
+  template <typename InputIterator>
+  inline void intersection(InputIterator begin, InputIterator end,
+                   Polygon_with_holes_2& polygon_with_holes)
+  {
+    unsigned int k = get_default_k();
+  
+    intersection(begin,end,polygon_with_holes,k);
+  }
+
   template <typename InputIterator>
   inline void intersection(InputIterator begin, InputIterator end,
                            Polygon_with_holes_2&, unsigned int k)
@@ -875,12 +958,20 @@ public:
     this->m_arr = arr_vec[0].first;
     delete arr_vec[0].second;
   }
-  
+
+  template <typename InputIterator1, typename InputIterator2>
+  inline void intersection(InputIterator1 begin1, InputIterator1 end1,
+                   InputIterator2 begin2, InputIterator2 end2)
+  {
+    unsigned int k = get_default_k();
+    
+    intersection(begin1,end1,begin2,end2,k);
+  }  
   
   template <typename InputIterator1, typename InputIterator2>
   inline void intersection(InputIterator1 begin1, InputIterator1 end1,
                            InputIterator2 begin2, InputIterator2 end2,
-                           unsigned int k = 5)
+                           unsigned int k)
   {
     std::vector<Arr_entry> arr_vec (std::distance(begin1, end1)+
                                     std::distance(begin2, end2)+1);
@@ -929,25 +1020,37 @@ public:
     this->_reset_faces();
   }
   
-  
-  
   // symmetric_difference of a range of polygons (similar to xor)
-  // (see previous comment about k=5).
   template <typename InputIterator>
-    inline void symmetric_difference(InputIterator begin, InputIterator end,
-                                     unsigned int k = 5)
+  inline void symmetric_difference(InputIterator begin, InputIterator end)
+  {
+    unsigned int k = get_default_k();
+  
+    symmetric_difference(begin,end,k);
+  }   
+
+  template <typename InputIterator>
+  inline void symmetric_difference(InputIterator begin, InputIterator end,
+                                     unsigned int k)
   {
     typename std::iterator_traits<InputIterator>::value_type pgn;
     this->symmetric_difference(begin, end, pgn, k);
     this->remove_redundant_edges();
     this->_reset_faces();
   }
+
+  // symmetric_difference of a range of simple polygons (similar to xor)
+  template <typename InputIterator>
+  inline void symmetric_difference(InputIterator begin, InputIterator end, Polygon_2& polygon)
+  {
+    unsigned int k = get_default_k();
   
+    symmetric_difference(begin,end,polygon,k);
+  }  
   
-  // intersect range of simple polygons (see previous comment about k=5).
   template <typename InputIterator>
   inline void symmetric_difference(InputIterator begin, InputIterator end,
-                                   Polygon_2&, unsigned int k = 5)
+                                   Polygon_2&, unsigned int k)
   {
     std::vector<Arr_entry> arr_vec (std::distance(begin, end) + 1);
     arr_vec[0].first = this->m_arr;
@@ -981,11 +1084,20 @@ public:
     this->m_arr = arr_vec[0].first;
     delete arr_vec[0].second;
   }
-  
-  //intersect range of polygons with holes (see previous comment about k=5).
+
+  // symmetric_difference of a range of polygons with holes (similar to xor)  
   template <typename InputIterator>
-    inline void symmetric_difference(InputIterator begin, InputIterator end,
-                                     Polygon_with_holes_2&, unsigned int k = 5)
+  inline void symmetric_difference(InputIterator begin, InputIterator end,
+                   Polygon_with_holes_2& polygon_with_holes)
+  {
+    unsigned int k = get_default_k();
+  
+    symmetric_difference(begin,end,polygon_with_holes,k);
+  }
+
+  template <typename InputIterator>
+  inline void symmetric_difference(InputIterator begin, InputIterator end,
+                                     Polygon_with_holes_2&, unsigned int k)
   {
     std::vector<Arr_entry> arr_vec (std::distance(begin, end) + 1);
     arr_vec[0].first = this->m_arr;
@@ -1019,11 +1131,19 @@ public:
     delete arr_vec[0].second;
   }
   
-  // (see previous comment about k=5).
+  template <typename InputIterator1, typename InputIterator2>
+  inline void symmetric_difference(InputIterator1 begin1, InputIterator1 end1,
+                   InputIterator2 begin2, InputIterator2 end2)
+  {
+    unsigned int k = get_default_k();
+    
+    symmetric_difference(begin1,end1,begin2,end2,k);
+  }  
+
   template <typename InputIterator1, typename InputIterator2>
   inline void symmetric_difference(InputIterator1 begin1, InputIterator1 end1,
                                    InputIterator2 begin2, InputIterator2 end2,
-                                   unsigned int k = 5)
+                                   unsigned int k)
   {
     std::vector<Arr_entry> arr_vec (std::distance(begin1, end1)+
                                     std::distance(begin2, end2)+1);
