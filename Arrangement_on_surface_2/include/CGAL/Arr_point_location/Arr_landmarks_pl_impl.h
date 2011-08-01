@@ -50,7 +50,7 @@ Object Arr_landmarks_point_location<Arr, Gen, C>::locate
   Object         lm_location_obj; 
   const Point_2& landmark_point = lm_gen->closest_landmark (p, lm_location_obj);
 
-  if (landmark_point==p)
+  if (m_traits->equal_2_object() (landmark_point, p))
   {
     //the easy case, the query point and the landmark point
     //are the same so return the landmark location
