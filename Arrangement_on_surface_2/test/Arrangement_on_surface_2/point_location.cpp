@@ -35,9 +35,11 @@
 
 #include <CGAL/Arr_circle_segment_traits_2.h>
 #include <CGAL/CORE_algebraic_number_traits.h>
-#include <CGAL/Arr_rational_arc_traits_2.h>
+#include <CGAL/CORE_BigInt.h>
+#include <CGAL/Algebraic_kernel_d_1.h>
+#include <CGAL/Arr_rational_function_traits_2.h>
 #include <CGAL/Arr_Bezier_curve_traits_2.h>
-
+#include <CGAL/Arr_polyline_traits_2.h>
 
 typedef CGAL::Cartesian<Number_type>                    Kernel;
 typedef CGAL::Arr_segment_traits_2<Kernel>              Traits_2;
@@ -403,8 +405,9 @@ void check_compilation() {
 
   Arr arr;
   CGAL::Arr_landmarks_point_location<Arr> pl(arr);
-
-  pl.locate(Point_2(0, 0));
+  
+  Point_2 *p;
+  pl.locate(*p);
 }
 
 bool test(const char* curves_filename, const char* points_filename)
@@ -472,19 +475,25 @@ int main (int argc, char * argv[])
     }
   }
 
+  void (*function_p)(void) = NULL;
+
   // Test compilation of other traits.
   // circle-segment
-  check_compilation<CGAL::Arrangement_2<CGAL::Arr_circle_segment_traits_2<Kernel> > >();
+  function_p = check_compilation<CGAL::Arrangement_2<CGAL::Arr_circle_segment_traits_2<Kernel> > >;
 
   // rational arc
-  check_compilation<CGAL::Arrangement_2<
-    CGAL::Arr_rational_arc_traits_2<CGAL::Cartesian<CGAL::CORE_algebraic_number_traits::Algebraic>,
-                                    CGAL::CORE_algebraic_number_traits> > > ();
+  function_p = check_compilation<CGAL::Arrangement_2<
+    CGAL::Arr_rational_function_traits_2<CGAL::Algebraic_kernel_d_1<CORE::BigInt> > > >;
+  
   // Bezier
-  check_compilation<CGAL::Arrangement_2<
+  function_p = check_compilation<CGAL::Arrangement_2<
     CGAL::Arr_Bezier_curve_traits_2<CGAL::Cartesian<CGAL::CORE_algebraic_number_traits::Rational>,
                                     CGAL::Cartesian<CGAL::CORE_algebraic_number_traits::Algebraic>,
-                                    CGAL::CORE_algebraic_number_traits> > > ();
+                                    CGAL::CORE_algebraic_number_traits> > >;
+  
+  // polyline
+  function_p = check_compilation<CGAL::Arrangement_2<
+    CGAL::Arr_polyline_traits_2<Traits_2> > >;
   
   return (success);
 }

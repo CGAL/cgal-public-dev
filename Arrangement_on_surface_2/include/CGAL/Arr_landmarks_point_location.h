@@ -31,9 +31,8 @@
 #include <CGAL/Arrangement_2/Arr_traits_adaptor_2.h>
 #include <CGAL/Arr_point_location/Arr_lm_vertices_generator.h>
 
-#include <boost/mpl/has_xxx.hpp>
 #include <boost/mpl/bool.hpp>
-#include <boost/mpl/logical.hpp>
+#include <boost/mpl/and.hpp>
 
 #include <set>
 
@@ -58,9 +57,6 @@ template <class Arrangement_,
   bool use_construction = true >
 class Arr_landmarks_point_location
 {
-  /// The macro create an meta function that checks whether a traits has Construct_x_monotone_curve_2 type.
-  BOOST_MPL_HAS_XXX_TRAIT_DEF(Construct_x_monotone_curve_2);
-
 public:
 
   typedef Arrangement_                                Arrangement_2;
@@ -202,8 +198,10 @@ public:
    */
    Object locate (const Point_2& p) const {
      
-     typedef typename has_Construct_x_monotone_curve_2<Geometry_traits_2>::type
-     Has_construct;
+     typedef typename Geometry_traits_2::Has_construct_x_monotone_curve_2_category 
+       Has_construct_tag;
+     
+     typedef boost::mpl::bool_<Has_construct_tag::value> Has_construct;
      typedef boost::mpl::bool_<use_construction> Should_construct;
 
      typename boost::mpl::and_<Has_construct, Should_construct>::type x;

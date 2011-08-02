@@ -72,6 +72,8 @@ public:
   typedef Arr_contracted_side_tag               Top_side_category;
   typedef Arr_identified_side_tag               Right_side_category;
 
+  typedef Tag_true                              Has_construct_x_monotone_curve_2_category;
+
   /*! Default constructor */
   Arr_geodesic_arc_on_sphere_traits_2(){}
 

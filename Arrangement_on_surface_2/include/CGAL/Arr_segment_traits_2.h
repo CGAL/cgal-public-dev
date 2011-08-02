@@ -67,7 +67,10 @@ public:
   typedef Arr_oblivious_side_tag          Bottom_side_category;
   typedef Arr_oblivious_side_tag          Top_side_category;
   typedef Arr_oblivious_side_tag          Right_side_category;
- 
+
+  typedef Tag_true                        Has_construct_x_monotone_curve_2_category;
+
+
   typedef typename Kernel::Line_2         Line_2;
   typedef CGAL::Segment_assertions<Arr_segment_traits_2<Kernel> >
                                           Segment_assertions;

@@ -68,6 +68,12 @@ public:
   typedef typename Base_traits_2::Has_do_intersect_category
                                                       Has_do_intersect_category;
 
+  #warning "This may not compile on all traits"
+  typedef typename Base_traits_2::Has_construct_x_monotone_curve_2_category
+                                                Has_construct_x_monotone_curve_2_category;
+
+
+
   typedef typename internal::Arr_complete_left_side_category< Base_traits_2 >::Category
                                                       Left_side_category;
   typedef typename internal::Arr_complete_bottom_side_category< Base_traits_2 >::Category

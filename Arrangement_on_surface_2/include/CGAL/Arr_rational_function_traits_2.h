@@ -100,6 +100,9 @@ public:
   typedef Arr_open_side_tag          Top_side_category;
   typedef Arr_open_side_tag          Right_side_category;
 
+  typedef Tag_false                  Has_construct_x_monotone_curve_2_category;
+
+
 private:
   mutable Cache                   _cache;
   mutable Algebraic_kernel_d_1*   _ak_ptr;

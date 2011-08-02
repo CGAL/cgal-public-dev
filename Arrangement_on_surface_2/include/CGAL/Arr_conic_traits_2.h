@@ -73,6 +73,10 @@ public:
   typedef Tag_true                        Has_merge_category;
   typedef Tag_false                       Has_do_intersect_category;
 
+  #warning "Is this documented?"
+  typedef Tag_true                        Has_construct_x_monotone_curve_2_category;
+
+
   typedef Arr_oblivious_side_tag          Left_side_category;
   typedef Arr_oblivious_side_tag          Bottom_side_category;
   typedef Arr_oblivious_side_tag          Top_side_category;

@@ -73,7 +73,9 @@ public:
   typedef Arr_oblivious_side_tag                Bottom_side_category;
   typedef Arr_oblivious_side_tag                Top_side_category;
   typedef Arr_oblivious_side_tag                Right_side_category;
-    
+
+  typedef Tag_true                              Has_construct_x_monotone_curve_2_category;
+
   /*! Default Constructor */
   Arr_non_caching_segment_basic_traits_2()
   {}
