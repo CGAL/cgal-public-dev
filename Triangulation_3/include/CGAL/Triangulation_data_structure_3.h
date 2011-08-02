@@ -181,7 +181,6 @@ public:
 
   size_type number_of_cells() const
     {
-	//PIVANOV
       if ( dimension() < 3 ) return 0;
       return cells().size();
     }
@@ -453,6 +452,7 @@ public:
 
 public:
   typedef std::list<Facet>			Facet_list;  
+  typedef std::list<Edge>			Edge_list;  
 
   template < class Cell_handle >		struct less_Cell_handle;
   template < class Vertex_handle >		struct less_Vertex_handle;
@@ -462,16 +462,10 @@ public:
   typedef std::set< Vertex_handle, less_Vertex_handle<Vertex_handle> > Vertex_handle_set;    
   typedef std::set< Edge, less_Edge<Edge> > Edge_set;
 
-  void collect_vertices_and_edges_from_link(Vertex_handle v,
-                                              Vertex_handle_set& vertices,
-                                              Edge_set& edges);
-  void get_revolving_vertices(const Edge& edge, Vertex_handle_set& vertices); 
-  void get_revolving_uedges(const Edge& edge, Edge_set& uedges);
-
   Vertex_handle get_source_vertex(const Edge& edge) const;
   Vertex_handle get_target_vertex(const Edge& edge) const;
   Edge get_twin_edge(const Edge& edge);
-  Vertex_handle facet_vertex(Facet facet, int index);
+  //Vertex_handle facet_vertex(Facet facet, int index);
 
   Vertex_handle get_any_other_vertex(Cell_handle cell,
 		Vertex_handle va, Vertex_handle vb) const;
@@ -481,17 +475,21 @@ public:
   // NEW
   Vertex_handle get_vertex_from_facet(const Facet& facet, int index) const;
   void get_vertices_from_facet(const Facet& facet, Vertex_handle& va, Vertex_handle& vb, Vertex_handle& vc) const;
+  void get_vertices_from_edge(const Edge& edge, Vertex_handle& va, Vertex_handle& vb) const;
  
   void get_vertices_from_edge_link(const Edge& edge, Vertex_handle_set& vertices) const;
   void get_edges_from_edge_link(const Edge& edge, Edge_set& edges) const;
   void get_vertices_from_vertex_link(Vertex_handle vertex, Vertex_handle_set& vertices) const;
   void get_edges_from_vertex_link(Vertex_handle vertex, Edge_set& edges) const;
-  void get_facets_from_link(Vertex_handle vertex, Facet_list& hull, bool outward) const;
+  
+// code reuse
+  void get_facets_from_link(Vertex_handle vertex, Vertex_handle dont_include, Facet_list& hull) const;
+  void get_edges_from_link(Vertex_handle vertex, Vertex_handle dont_include, Edge_list& hull) const;
+  
   Facet get_twin_facet(const Facet& facet) const;
 
-  bool is_top_collapsible(const Edge& edge) const; 
-  bool check_link_test_for_vertices(const Edge& edge) const;
-  bool check_link_test_for_edges(const Edge& edge) const;
+  bool is_collapsible_for_vertices(const Edge& edge) const;
+  bool is_collapsible_for_edges(const Edge& edge) const;
 
   // DEBUG
   template< class Cont > void print_vertices(const Cont S, std::string note) const;
@@ -501,7 +499,7 @@ public:
 
 public:
   bool collapse_edge(Edge& edge);
-  bool is_top_collapsible(const Edge& edge);
+  bool is_collapsible(const Edge& edge) const;
   
   // PIVANOV END
 
@@ -937,11 +935,17 @@ public:
 
     if (dimension() == 1) {
       //PIVANOV
-      CGAL_triangulation_assertion( number_of_vertices() >= 2);
+      CGAL_triangulation_assertion( number_of_vertices() >= 3 );
       Cell_handle n0 = v->cell();
       Cell_handle n1 = n0->neighbor(1-n0->index(v));
-      *edges++ = Edge(n0, n0->index(v), 1-n0->index(v));
-      *edges++ = Edge(n1, n1->index(v), 1-n1->index(v));
+
+// + patched
+      if(!f(n0->vertex(1-n0->index(v)))) *edges++ = Edge(n0, n0->index(v), 1-n0->index(v));
+	if(!f(n1->vertex(1-n1->index(v)))) *edges++ = Edge(n1, n1->index(v), 1-n1->index(v));
+
+// -
+//	*edges++ = Edge(n0, n0->index(v), 1-n0->index(v));
+//	*edges++ = Edge(n1, n1->index(v), 1-n1->index(v));
       return edges;
     }
     return visit_incident_cells<Vertex_extractor<Edge_feeder_treatment<OutputIterator>,
@@ -977,8 +981,15 @@ public:
       CGAL_triangulation_assertion( number_of_vertices() >= 3);
       Cell_handle n0 = v->cell();
       Cell_handle n1 = n0->neighbor(1-n0->index(v));
-      *vertices++ = n0->vertex(1-n0->index(v));
-      *vertices++ = n1->vertex(1-n1->index(v));
+// -
+//      *vertices++ = n0->vertex(1-n0->index(v));
+//      *vertices++ = n1->vertex(1-n1->index(v));
+
+// + patched
+      Vertex_handle v1 = n0->vertex(1-n0->index(v));
+      Vertex_handle v2 = n1->vertex(1-n1->index(v));
+      if(!f(v1)) *vertices++ = v1;
+      if(!f(v2)) *vertices++ = v2;
       return vertices;
     }
     return visit_incident_cells<Vertex_extractor<Vertex_feeder_treatment<OutputIterator>,

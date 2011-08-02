@@ -705,30 +705,28 @@ protected:
   typedef typename GT::FT			FT;  
   typedef typename GT::Vector_3			Vector;
   typedef typename Tds::Facet_list		Facet_list;
+  typedef typename Tds::Edge_list		Edge_list;
 
   void add_kernel_triangles_around(Vertex_handle s, Vertex_handle t, 
 			     std::list<Triangle>& triangles);
   template < class Iterator > // value_type = Triangle
   bool is_visible(const Point& query, Iterator begin, Iterator end);
-
+ 
 public:
-  //bool is_geom_collapsible(const Edge& edge);
-  //bool is_geom_collapsible(const Edge& edge, const Point& p);
-
-  bool is_top_collapsible(const Edge& edge) const
-  {
-    //return _tds.check_link_test(edge);
-    return _tds.is_top_collapsible(edge);
-  }
-
-  bool collapse_edge(Edge& edge, const Point& point);
-  bool collapse_edge(Edge& edge);
-
+  // TODO: make protected/private
   bool is_geom_collapsible(const Edge& edge) const;
   bool is_geom_collapsible(const Edge& edge, const Point& point) const;
+
+  bool collapse_edge(Edge& edge);
+  bool collapse_edge(Edge& edge, const Point& point);
+
+  bool is_collapsible(const Edge& edge) const;
+  bool is_collapsible(const Edge& edge, const Point& point) const;
   
   template <class Iterator>
 	bool is_in_kernel(Point query, Iterator begin, Iterator end) const;
+  template <class Iterator>
+	bool is_in_kernel_2d(Point query, Iterator begin, Iterator end) const;
 
   bool is_simplex( Cell_handle c ) const; // to document the tds::is_simlex too
 

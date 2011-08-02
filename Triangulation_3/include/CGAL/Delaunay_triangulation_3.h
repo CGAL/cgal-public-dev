@@ -222,8 +222,8 @@ protected:
   bool check_delaunay_property(const Edge& edge, const Point& point) const;
 
 public:
-  bool is_geom_collapsible(const Edge& edge) const;
-  bool is_geom_collapsible(const Edge& edge, const Point& point) const;
+  bool is_collapsible(const Edge& edge) const;
+  bool is_collapsible(const Edge& edge, const Point& point) const;
 
 // END PIVANOV
 
