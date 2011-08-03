@@ -43,6 +43,7 @@ struct Simple_comparator_1{
         CGAL::Comparison_result
         operator()(const Polynomial &p1,Bound &l1,Bound &r1,
                    const Polynomial &p2,Bound &l2,Bound &r2)const{
+                CGAL_precondition(l1<=r1&&l2<=r2);
                 if(l1<=l2){
                         if(r1<l2)
                                 return SMALLER;
@@ -51,7 +52,7 @@ struct Simple_comparator_1{
                                 return LARGER;
                 }
                 Polynomial G=Gcd()(p1,p2);
-                if(Degree()(G)==1)
+                if(Degree()(G)==0)
                         return compare_unequal(p1,l1,r1,p2,l2,r2);
                 Signat sg(G);
                 CGAL::Sign sleft=sg(l1>l2?l1:l2);
@@ -69,9 +70,11 @@ struct Simple_comparator_1{
         CGAL::Comparison_result
         compare_unequal(const Polynomial &p1,Bound &l1,Bound &r1,
                         const Polynomial &p2,Bound &l2,Bound &r2)const{
+                CGAL_precondition(l1<=r1&&l2<=r2);
                 do{
                         Refiner()(p1,l1,r1,100);
                         Refiner()(p2,l2,r2,100);
+                        CGAL_assertion(l1<=r1&&l2<=r2);
                 }while(l1<=l2?r1>=l2:r2>=l1);
                 return (r1<l2?SMALLER:LARGER);
         }

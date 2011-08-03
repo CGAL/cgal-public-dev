@@ -68,17 +68,18 @@ Simple_signat_1<Polynomial<Gmpz>,Gmpfr>::operator()(const Gmpfr &x){
         if(d==0)
                 return pol[0].sign();
         Gmpfi h(pol[d],x.get_precision()+2*d);
-        if(h.sign()!=Uncertain<Sign>::indeterminate())
+        Uncertain<CGAL::Sign> indet=Uncertain<CGAL::Sign>::indeterminate();
+        if(h.sign().is_same(indet))
                 return Exact_sign(pol)(x);
         for(int i=1;i<=d;++i){
                 h*=x;
-                if(h.sign()!=Uncertain<Sign>::indeterminate())
+                if(h.sign().is_same(indet))
                         return Exact_sign(pol)(x);
                 h+=pol[d-i];
-                if(h.sign()!=Uncertain<Sign>::indeterminate())
+                if(h.sign().is_same(indet))
                         return Exact_sign(pol)(x);
         }
-        CGAL_assertion(h.sign()!=Uncertain<Sign>::indeterminate());
+        CGAL_assertion(!h.sign().is_same(indet));
         return h.sign();
 };
 

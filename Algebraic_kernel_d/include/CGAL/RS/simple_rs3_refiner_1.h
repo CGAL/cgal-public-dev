@@ -48,6 +48,9 @@ operator()(const Polynomial<Gmpz> &pol,Gmpfr &left,Gmpfr &right,int prec){
         typedef Polynomial_traits_d<Polynomial>         Ptraits;
         typedef Ptraits::Degree                         Degree;
         CGAL_precondition(left<=right);
+        // TODO: add precondition to check whether the interval is a point
+        // or the evaluations on its endpoints have different signs
+        //std::cout<<"refining ["<<left<<","<<right<<"]"<<std::endl;
         int deg=Degree()(pol);
         mpz_t* coefficients=(mpz_t*)malloc((deg+1)*sizeof(mpz_t));
         __mpfi_struct interval;
@@ -57,6 +60,7 @@ operator()(const Polynomial<Gmpz> &pol,Gmpfr &left,Gmpfr &right,int prec){
                 mpfr_set(new_left_mpfr,left.fr(),GMP_RNDN);
                 CGAL_assertion(mpfr_equal_p(new_left_mpfr,left.fr()));
                 left=Gmpfr(new_left_mpfr);
+                CGAL_assertion(left.is_unique());
         }
         if(!right.is_unique()){
                 mpfr_t new_right_mpfr;
@@ -64,6 +68,7 @@ operator()(const Polynomial<Gmpz> &pol,Gmpfr &left,Gmpfr &right,int prec){
                 mpfr_set(new_right_mpfr,right.fr(),GMP_RNDN);
                 CGAL_assertion(mpfr_equal_p(new_right_mpfr,right.fr()));
                 right=Gmpfr(new_right_mpfr);
+                CGAL_assertion(right.is_unique());
         }
         interval.left=*(left.fr());
         interval.right=*(right.fr());
@@ -82,6 +87,7 @@ operator()(const Polynomial<Gmpz> &pol,Gmpfr &left,Gmpfr &right,int prec){
                              mpfr_get_prec(&interval.right),
                              mpfr_custom_get_mantissa(&interval.right));
         CGAL_postcondition(left<=right);
+        //std::cout<<"ref root is ["<<left<<","<<right<<"]"<<std::endl;
         return;
 };
 

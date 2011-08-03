@@ -23,6 +23,7 @@
 #include <gmp.h>
 #include <mpfr.h>
 #include <mpfi.h>
+#include <mpfi_io.h>
 #include <rs_exports.h>
 
 #ifdef CGAL_RS_OLD_INCLUDES
@@ -41,6 +42,7 @@ struct Simple_rs2_calls{
                 if(first){
                         first=false;
                         rs_init_rs();
+                        rs_reset_all();
                 }else
                         rs_reset_all();
         }
@@ -72,6 +74,7 @@ struct Simple_rs2_calls{
                 ident_sols_eqs=rs_get_default_sols_eqs();
                 nb_elts=rs_export_list_vect_ibfr_nb(ident_sols_eqs);
                 ident_node=rs_export_list_vect_ibfr_firstnode(ident_sols_eqs);
+                mpfi_t *roots=(mpfi_t*)malloc(nb_elts*sizeof(mpfi_t));
                 for(int i=0;i<nb_elts;++i){
                         ident_vect=rs_export_list_vect_ibfr_monnode
                                 (ident_node);
@@ -79,7 +82,15 @@ struct Simple_rs2_calls{
                                                 (ident_vect)==1,
                                            "vector dimension must be 1");
                         ident_elt=rs_export_elt_vect_ibfr(ident_vect,0);
-                        x[i]=(mpfi_ptr)rs_export_ibfr_mpfi(ident_elt);
+                        mpfi_ptr root_pointer=
+                                (mpfi_ptr)rs_export_ibfr_mpfi(ident_elt);
+                        mpfi_init2(roots[i],mpfi_get_prec(root_pointer));
+                        mpfi_set(roots[i],root_pointer);
+                        x[i]=roots[i];
+                        // This doesn't work because RS relocates the
+                        // mpfrs that form the mpfi. Nevertheless, the
+                        // mpfi address is not changed.
+                        //x[i]=(mpfi_ptr)rs_export_ibfr_mpfi(ident_elt);
                         ident_node=rs_export_list_vect_ibfr_nextnode
                                 (ident_node);
                 }

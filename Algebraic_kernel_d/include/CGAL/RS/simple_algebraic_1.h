@@ -101,13 +101,17 @@ boost::totally_ordered<Simple_algebraic_1<Polynomial_,
                 pol=Coefficient(mpq_denref(q))*
                         shift()(Polynomial(1),1,0)-
                         Coefficient(mpq_numref(q));
-                left=Bound(d);
-                right=Bound(d);
-                CGAL_assertion(left<=d&&right>=d);
+                left=Bound(d/*,std::round_toward_neg_infinity*/);
+                right=Bound(d/*,std::round_toward_infinity*/);
+                CGAL_assertion((left==right&&left==d)||(left<d&&right>d));
         }
         Simple_algebraic_1(const Algebraic &a):
         pol(a.pol),left(a.left),right(a.right){}
         // TODO: constructors from types such as int, unsigned and long
+        template <class T>
+        Simple_algebraic_1(const T &t){
+                CGAL_error_msg("constructor not implemented");
+        }
         ~Simple_algebraic_1(){}
 
         Simple_algebraic_1& operator=(const Algebraic &a){
