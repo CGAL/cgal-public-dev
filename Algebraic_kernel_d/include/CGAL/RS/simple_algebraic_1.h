@@ -23,6 +23,7 @@
 #include <boost/operators.hpp>
 #include <CGAL/Real_embeddable_traits.h>
 #include <CGAL/Polynomial_traits_d.h>
+#include <CGAL/Gmpq.h>
 
 namespace CGAL{
 namespace SimpleAK1{
@@ -90,23 +91,31 @@ boost::totally_ordered<Simple_algebraic_1<Polynomial_,
                            const Bound &r):pol(p),left(l),right(r){
                 CGAL_assertion(l<=r);
         }
+        Simple_algebraic_1(const Algebraic &a):
+        pol(a.pol),left(a.left),right(a.right){}
+        // This assumes that Gmpq is constructible from bound type and
+        // that polynomial coefficient type is constructible from mpz_t.
+        Simple_algebraic_1(const Bound &b):left(b),right(b){
+                typedef typename Ptraits::Shift         shift;
+                Gmpq q(b);
+                pol=Coefficient(mpq_denref(q.mpq()))*
+                        shift()(Polynomial(1),1,0)-
+                        Coefficient(mpq_numref(q.mpq()));
+                CGAL_assertion(left==right&&left==b);
+        }
         // TODO: make this constructor generic, the coefficient type is
         // assumed to be constructible from mpz_t (rewrite in terms of
         // Gmpq/Gmpz)
         Simple_algebraic_1(double d){
                 typedef typename Ptraits::Shift         shift;
-                mpq_t q;
-                mpq_init(q);
-                mpq_set_d(q,d);
-                pol=Coefficient(mpq_denref(q))*
+                Gmpq q(d);
+                pol=Coefficient(mpq_denref(q.mpq()))*
                         shift()(Polynomial(1),1,0)-
-                        Coefficient(mpq_numref(q));
+                        Coefficient(mpq_numref(q.mpq()));
                 left=Bound(d/*,std::round_toward_neg_infinity*/);
                 right=Bound(d/*,std::round_toward_infinity*/);
                 CGAL_assertion((left==right&&left==d)||(left<d&&right>d));
         }
-        Simple_algebraic_1(const Algebraic &a):
-        pol(a.pol),left(a.left),right(a.right){}
         // TODO: constructors from types such as int, unsigned and long
         template <class T>
         Simple_algebraic_1(const T &t){

@@ -86,8 +86,11 @@ struct Solve_1{
         OutputIterator operator()(const Polynomial_1 &p,
                                   bool known_to_be_square_free,
                                   OutputIterator res)const{
-                // TODO
-                CGAL_error_msg("not implemented");
+                Isolator isol(p);
+                for(int l=0;l<isol.number_of_real_roots();++l)
+                        *res++=Algebraic(p,
+                                         isol.left_bound(l),
+                                         isol.right_bound(l));
                 return res;
         }
 
@@ -96,8 +99,15 @@ struct Solve_1{
                                   const Bound &l,
                                   const Bound &u,
                                   OutputIterator res)const{
-                // TODO 
-                CGAL_error_msg("not implemented");
+                typedef std::vector<std::pair<Algebraic,int> >  RMV;
+                typedef typename RMV::iterator                  RMVI;
+                RMV roots;
+                this->operator()(p,std::back_inserter(roots));
+                // TODO: only compute multiplicities of the returned
+                // intervals
+                for(RMVI it=roots.begin();it!=roots.end();++it)
+                        if(it->first>=l&&it->first<=u)
+                                *res++=*it;
                 return res;
         }
 
@@ -107,8 +117,15 @@ struct Solve_1{
                                   const Bound &l,
                                   const Bound &u,
                                   OutputIterator res)const{
-                // TODO 
-                CGAL_error_msg("not implemented");
+                typedef std::vector<Algebraic>                  RV;
+                typedef typename RV::iterator                   RVI;
+                RV roots;
+                this->operator()(p,
+                                 known_to_be_square_free,
+                                 std::back_inserter(roots));
+                for(RVI it=roots.begin();it!=roots.end();it++)
+                        if(*it>=l&&*it<=u)
+                                *res++=*it;
                 return res;
         }
 
