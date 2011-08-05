@@ -53,6 +53,7 @@ typedef Triangulation::Finite_vertices_iterator 	Finite_vertices_iterator;
 typedef Triangulation::Finite_edges_iterator 		Finite_edges_iterator;
 typedef Triangulation::Finite_facets_iterator 		Finite_facets_iterator;
 typedef Triangulation::Finite_cells_iterator 		Finite_cells_iterator;
+typedef Triangulation::Face_circulator 			Face_circulator;
 typedef Triangulation::Cell_circulator 			Cell_circulator;
 typedef Triangulation::Simplex        			Simplex;
 typedef Triangulation::Locate_type    			Locate_type;
@@ -63,6 +64,7 @@ typedef Triangulation::Tetrahedron			Tetrahedron;
 typedef Triangulation::Vertex_handle			Vertex_handle;
 typedef Triangulation::Cell_handle			Cell_handle;
 typedef Triangulation::Facet				Facet;
+typedef Triangulation::Cell				Cell;
 typedef Triangulation::Edge				Edge;
 
 typedef CGAL::Creator_uniform_3<double,Point>  		Creator;
@@ -101,7 +103,7 @@ std::list<Point> get_my_points()
 {
 	std::list<Point> L;
 	
-	L.push_front(Point(0,2,0));
+	//L.push_front(Point(0,2,0));
 	L.push_front(Point(0,0,1));
 	L.push_front(Point(0,1,1));
 	L.push_front(Point(0,0,0));
@@ -241,35 +243,57 @@ void insert_finite_edges_to_queue(Triangulation &T, PQ_of_edges &pq)
 
 void insert_adjacent_edges_to_queue(Triangulation &T, PQ_of_edges &pq, Vertex_handle v)
 {
-	vector<Edge> edges;
-	T.incident_edges (v, back_inserter(edges));
+	switch( T.dimension() ) {
+	case 1: {
+		vector<Edge> edges;
+		T.incident_edges (v, back_inserter(edges));
 
-	for(vector<Edge>::iterator eit=edges.begin(); eit!=edges.end(); eit++) {
-		Edge e = *eit;
-		if(!T.is_infinite(e)) {
-			push_edge(pq,e);
+		for(vector<Edge>::iterator eit=edges.begin(); eit!=edges.end(); eit++) {
+			Edge e = *eit;
+			if(!T.is_infinite(e)) {
+				push_edge(pq,e);
+			}
 		}
+
+		return;
 	}
+	case 2: {
+		Face_circulator fcirc = T.tds().incident_faces(v);
+		Face_circulator fend = fcirc;
+
+		CGAL_For_all(fcirc,fend) {
+			for(int i=0; i<3; i++) {
+				Edge e(fcirc, i, (i+1)%3);
+				if(!T.is_infinite(e)) {
+					push_edge(pq,e);
+				}
+			}	
+		}
+
+		return;
+	}
+	case 3:
+		vector<Cell_handle> cells;
+		T.incident_cells (v, back_inserter(cells));
+
+		for(vector<Cell_handle>::iterator cit=cells.begin(); cit!=cells.end(); cit++) {
+			for(int i=0; i<3; i++)
+				for(int j=i+1; j<3; j++) {
+					Edge e(*cit, i, j);
+					if(!T.is_infinite(e)) {
+						push_edge(pq,e);
+					}
+				}
+		}
+
+		return;
+	}
+
 }
 
 void insert_edges_from_adjacent_cells_to_queue(Triangulation &T, PQ_of_edges &pq, Vertex_handle v)
 {
-	vector<Cell_handle> cells;
-	T.incident_cells (v, back_inserter(cells));
 
-	//cout << "dim: " << T.dimension() << endl;
-	//cout << "number of cells: " << T.number_of_cells() << endl;
-	//cout << "incident cells: " << cells.size() << endl;
-
-	for(vector<Cell_handle>::iterator cit=cells.begin(); cit!=cells.end(); cit++) {
-		for(int i=0; i<3; i++)
-			for(int j=i+1; j<3; j++) {
-				Edge e(*cit, i, j);
-				if(!T.is_infinite(e)) {
-					push_edge(pq,e);
-				}
-			}
-	}
 }
 
 int number_of_incident_cells(Triangulation &T, Edge e)
@@ -298,6 +322,15 @@ bool incident_to_inf(Triangulation &T, Vertex_handle v)
 	return false;
 }
 
+void print_info(Triangulation &T)
+{
+	cout << "vertices: " << T.number_of_vertices() << endl;
+	cout << "cells: " << T.number_of_cells() << endl;
+	cout << "facets: " << T.number_of_facets() << endl;
+	cout << "edges: " << T.number_of_edges() << endl;
+	cout << "dim: " << T.dimension() << endl;
+}
+
 int collapse_all_edges(Geomview_stream &gs1, Geomview_stream &gs2, Triangulation &T, int n)
 {
 	int stat_start = 0;
@@ -309,11 +342,7 @@ int collapse_all_edges(Geomview_stream &gs1, Geomview_stream &gs2, Triangulation
 	int stat_collapsed_inf = 0;
 	int cnt = 0;
 
-	cout << "vertices: " << T.number_of_vertices() << endl;
-	cout << "cells: " << T.number_of_cells() << endl;
-	cout << "facets: " << T.number_of_facets() << endl;
-	cout << "edges: " << T.number_of_edges() << endl;
-	cout << "dim: " << T.dimension() << endl;
+	print_info(T);
 	
 	gs1.clear();
 	gs2.clear();
@@ -341,8 +370,7 @@ int collapse_all_edges(Geomview_stream &gs1, Geomview_stream &gs2, Triangulation
 		int v1_index, v2_index;
 
 	cout << ".0";
-		//if (!T.is_cell(c)) continue;
-		if(!T.is_simplex(c)) continue; // is_cell?
+		if(!T.is_simplex(c)) continue;
 
 		if(!c->has_vertex(v1, v1_index)) continue;
 		if(!c->has_vertex(v2, v2_index)) continue;
@@ -355,9 +383,8 @@ int collapse_all_edges(Geomview_stream &gs1, Geomview_stream &gs2, Triangulation
 		//gs1 << mid;
 	cout << ".1";
 		Edge e( c, v1_index, v2_index );
-		bool top = T.tds().is_collapsible(e);
+		bool top =  T.tds().is_collapsible(e);
 
-		break;
 	cout << ".2";
 		bool geom = T.is_geom_collapsible(e);
 
@@ -368,43 +395,38 @@ int collapse_all_edges(Geomview_stream &gs1, Geomview_stream &gs2, Triangulation
 
 		cout << "top: " << top << " geom: " << geom << endl;
 
-		//if (cnt++ < n) continue;
-		geomview_show_edge(gs1,v1,v2);
-		//break;
+		//geomview_show_edge(gs1,v1,v2);
 
 		if (top && geom) {
-			
+			//cout << "cnt: " << cnt << " n: " << n << endl;
+			//if (cnt++ < n) continue;
+
 			stat_collapsed++;
 			if (!incident_to_inf(T,v2)) stat_collapsed_internal++;
 			if (T.is_infinite(e)) stat_collapsed_inf++;	
 	cout << ".4";
-			//geomview_show_edge(gs1,v1,v2);
+			geomview_show_edge(gs1,v1,v2);
 
 			cout << "vertices: " << T.number_of_vertices() << endl;
-			T.collapse_edge(e);
+			if (!T.collapse(e)) cout << "Hm.. Strange!" << endl;
+			cout << "collapsed dim=" << T.dimension() << endl;
 
 	cout << ".5";
-			T.is_valid(false);
-			//break;
-
+			T.is_valid(true);
+	cout << ".6";
 			//gs2.clear();
 			//geomview_show(gs2, T);
 			//gs2 << v2->point();
 			//cin.get();
 
-			switch( T.dimension() ) {
-			case 1:
-				insert_adjacent_edges_to_queue(T, pq, v2);
-				break;
-			case 3:
-				insert_edges_from_adjacent_cells_to_queue(T, pq, v2);
-				break;
-			}
+			insert_adjacent_edges_to_queue(T, pq, v2);
 		}
 	}
 
 	gs2 << T;
 	geomview_show_vertices(gs2, T);
+
+	print_info(T);
 
 	cout << "start: " << stat_start << endl;
 	cout << "examined: " << stat_examined << endl;

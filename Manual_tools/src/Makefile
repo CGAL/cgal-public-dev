@@ -21,9 +21,11 @@
 # into the cc_extract_html program as default config path.
 # The same variable is used in the latex_to_html script.
 # LATEX_CONV_CONFIG = ${PUBLIC}/CGAL/Tools/latex_converter_config
+LATEX_CONV_CONFIG = /home/cheater/workspace/cgal/workingcopy/Manual_tools/src/latex_converter_config
 
 # Path where to copy/move the executables during installation:
 # LATEX_CONV_BIN = ${PUBLIC}/${SYSTEM}/bin
+LATEX_CONV_BIN = /home/cheater/workspace/cgal/workingcopy/Manual_tools/bin
 
 # Analog of the TEXINPUTS environment variable for the cc_extract_html
 # program. It should contain a colon-separated list of directories where
@@ -36,6 +38,7 @@ LATEX_CONV_INPUTS = .
 
 # C++ Compiler: tested compilers are: Gnu g++ 3.3 and 3.4
 # CXX = g++-3.4
+CXX = g++-4.4
 
 # C++ Compiler Options:
 # CXXFLAGS = -v
@@ -43,6 +46,7 @@ CXXFLAGS = -g -O0
 
 # C Compiler: Gnu gcc 2.6.3 (or above) or the usual system cc:
 # CC = gcc
+CC = gcc
 
 # C Preprocessor Flags: (e.g. -g or -O or STL include path)
 # CPPFLAGS = 

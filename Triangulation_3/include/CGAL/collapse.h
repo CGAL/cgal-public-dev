@@ -1,6 +1,8 @@
 // the functions from this file will be copied to the TDS and Tri_3
 
 #include<cmath>
+using std::cout;
+using std::endl;
 
 CGAL_BEGIN_NAMESPACE
 
@@ -189,60 +191,90 @@ get_vertices_from_edge(const Edge& edge, Vertex_handle& va, Vertex_handle& vb) c
 }
 
 // GET LINK //
-    
-TDS_FUNC(void)
-get_vertices_from_edge_link(const Edge& edge, Vertex_handle_set& vertices) const
-{
-	Vertex_handle s = get_source_vertex(edge);
-	Vertex_handle t = get_target_vertex(edge);
-	Cell_circulator ccirc = incident_cells(edge); 
-	Cell_circulator cend  = ccirc;
-
-	CGAL_For_all(ccirc, cend)
-	{
-		Cell_handle cell = ccirc;
-		Vertex_handle u = get_any_other_vertex(cell, s, t);
-		Vertex_handle v = get_remaining_vertex(cell, s, t, u);
-		vertices.insert(u);
-		vertices.insert(v);
-	}
-}
-    
-TDS_FUNC(void)
-get_edges_from_edge_link(const Edge& edge, Edge_set& edges) const
-{
-	Vertex_handle s = get_source_vertex(edge);
-	Vertex_handle t = get_target_vertex(edge); 
-	Cell_circulator ccirc = incident_cells(edge); 
-	Cell_circulator cend  = ccirc;
-	CGAL_For_all(ccirc, cend)
-	{
-		Cell_handle cell = ccirc;
-		Vertex_handle u = get_any_other_vertex(cell, s, t);
-		Vertex_handle v = get_remaining_vertex(cell, s, t, u);
-		Edge e(cell, cell->index(u), cell->index(v));
-		edges.insert(e);
-	}
-}
-    
+   
 TDS_FUNC(void)
 get_vertices_from_vertex_link(Vertex_handle vertex, Vertex_handle_set& vertices) const
 {
-	std::list<Cell_handle> cells;		
-	incident_cells(vertex, std::back_inserter(cells));
-	
-	typename std::list<Cell_handle>::const_iterator it;
-	for (it = cells.begin(); it != cells.end(); it++) {
-		Cell_handle cell = *it;
-		Vertex_handle v0, v1, v2;
-		Facet facet(cell, cell->index(vertex));
-		get_vertices_from_facet(facet, v0, v1, v2);
-		vertices.insert(v0);
-		vertices.insert(v1);
-		vertices.insert(v2);
+	switch ( dimension() ) {
+		case 3: {
+			std::list<Cell_handle> cells;		
+			incident_cells(vertex, std::back_inserter(cells));
+			
+			typename std::list<Cell_handle>::const_iterator it;
+			for (it = cells.begin(); it != cells.end(); it++) {
+				Cell_handle cell = *it;
+				Vertex_handle v0, v1, v2;
+				Facet facet(cell, cell->index(vertex));
+				get_vertices_from_facet(facet, v0, v1, v2);
+				vertices.insert(v0);
+				vertices.insert(v1);
+				vertices.insert(v2);
+			}
+
+			return;
+		}
+		case 2: {
+			Face_circulator fcirc = incident_faces(vertex);
+			Face_circulator fend  = fcirc;
+
+			CGAL_For_all(fcirc, fend) {
+				Cell cell = *fcirc;
+				int index = cell.index(vertex);
+				vertices.insert( cell.vertex( (index+1) % 3 ) );
+				vertices.insert( cell.vertex( (index+2) % 3 ) );
+			}
+
+			return;
+		}
 	}
+
+	CGAL_triangulation_assertion( false );
 }
         
+TDS_FUNC(void)
+get_vertices_from_edge_link(const Edge& edge, Vertex_handle_set& vertices) const
+{
+	CGAL_triangulation_precondition( dimension() >= 2 );
+
+	Vertex_handle s = get_source_vertex(edge);
+	Vertex_handle t = get_target_vertex(edge);
+
+	switch ( dimension() ) {
+		case 3: {
+			Cell_circulator ccirc = incident_cells(edge); 
+			Cell_circulator cend  = ccirc;
+
+			CGAL_For_all(ccirc, cend)
+			{
+				Cell_handle cell = ccirc;
+				Vertex_handle u = get_any_other_vertex(cell, s, t);
+				Vertex_handle v = get_remaining_vertex(cell, s, t, u);
+				vertices.insert(u);
+				vertices.insert(v);
+			}
+
+			return;
+		}
+		case 2: {
+			Face_circulator fcirc = incident_faces(s);
+			Face_circulator fend  = fcirc;
+
+			CGAL_For_all(fcirc, fend) {
+				Cell cell = *fcirc;
+				int indt;
+				if ( cell.has_vertex(t, indt) ) {
+					int inds = cell.index(s);
+					vertices.insert( cell.vertex( 3-(inds+indt) ) );
+				}
+			}
+			
+			return;
+		}
+	}
+	
+	CGAL_triangulation_assertion( false );
+}
+   
 TDS_FUNC(void)
 get_edges_from_vertex_link(Vertex_handle vertex, Edge_set& edges) const
 {
@@ -263,6 +295,23 @@ get_edges_from_vertex_link(Vertex_handle vertex, Edge_set& edges) const
 	}
 }
 
+TDS_FUNC(void)
+get_edges_from_edge_link(const Edge& edge, Edge_set& edges) const
+{
+	Vertex_handle s = get_source_vertex(edge);
+	Vertex_handle t = get_target_vertex(edge); 
+	Cell_circulator ccirc = incident_cells(edge); 
+	Cell_circulator cend  = ccirc;
+	CGAL_For_all(ccirc, cend)
+	{
+		Cell_handle cell = ccirc;
+		Vertex_handle u = get_any_other_vertex(cell, s, t);
+		Vertex_handle v = get_remaining_vertex(cell, s, t, u);
+		Edge e(cell, cell->index(u), cell->index(v));
+		edges.insert(e);
+	}
+}
+     
 TDS_FUNC(void)
 get_facets_from_link(Vertex_handle vertex, Vertex_handle dont_include, Facet_list& hull) const
 {
@@ -310,13 +359,13 @@ is_collapsible(const Edge& edge) const
 	
 	switch( dimension() ) {
 		case 3: {
-			bool for_vertices = is_collapsible_for_vertices(edge);
-			bool for_edges = is_collapsible_for_edges(edge);
+			//bool for_vertices = is_collapsible_for_vertices(edge);
+			//bool for_edges = is_collapsible_for_edges(edge);
 
-			std::cout << "top_for_vertices: " << for_vertices << std::endl;
-			std::cout << "top_for_edges" << for_edges << std::endl;
+			//std::cout << "top_for_vertices: " << for_vertices << std::endl;
+			//std::cout << "top_for_edges" << for_edges << std::endl;
 
-			return for_vertices && for_edges;		
+			//return for_vertices && for_edges;		
 	
 			return 	is_collapsible_for_vertices(edge)	
 				&& is_collapsible_for_edges(edge);
@@ -336,6 +385,7 @@ is_collapsible(const Edge& edge) const
 TDS_FUNC(bool)
 is_collapsible_for_vertices(const Edge& edge) const
 {
+	CGAL_triangulation_precondition( dimension() >= 2 );
 	CGAL_triangulation_expensive_precondition( is_cell(edge.first) );
 	CGAL_triangulation_expensive_precondition( is_edge(edge.first, edge.second, edge.third) );
 
@@ -349,12 +399,12 @@ is_collapsible_for_vertices(const Edge& edge) const
 	Vertex_handle_set tvertices;
 	get_vertices_from_vertex_link(target, tvertices);
 
-        Vertex_handle_set ivertices;
+	Vertex_handle_set ivertices;
 	typename Vertex_handle_set::const_iterator vit;
 	for (vit = svertices.begin(); vit != svertices.end(); ++vit)
 		if (tvertices.find(*vit) != tvertices.end())
 			ivertices.insert(*vit);
-                
+
 	Vertex_handle_set evertices;
 	get_vertices_from_edge_link(edge, evertices);
 
@@ -364,13 +414,14 @@ is_collapsible_for_vertices(const Edge& edge) const
 	for (vit = ivertices.begin(); vit != ivertices.end(); ++vit)
 		if (evertices.find(*vit) == evertices.end())
 			return false;
-        
+	
 	return true;
 }
     
 TDS_FUNC(bool)
 is_collapsible_for_edges(const Edge& edge) const
 {
+	CGAL_triangulation_precondition( dimension() == 3 );
 	CGAL_triangulation_expensive_precondition( is_cell(edge.first) );
 	CGAL_triangulation_expensive_precondition( is_edge(edge.first, edge.second, edge.third) );
 
@@ -399,8 +450,6 @@ is_collapsible_for_edges(const Edge& edge) const
 	Edge_set eedges;
 	get_edges_from_edge_link(edge, eedges);
  
-	std::cout << iedges.size() << " <-> " << eedges.size() << std::endl; 
-       
 	if (iedges.size() != eedges.size())
 		return false;
 
@@ -415,13 +464,254 @@ is_collapsible_for_edges(const Edge& edge) const
 // COLLAPSE EDGE //
 ///////////////////
 
-// O( |star(edge)| )
 TDS_FUNC(bool)
-collapse_edge(Edge& edge)
+collapse(Edge& edge)
+{
+	if (!is_collapsible(edge))
+		return false;
+
+	collapse_collapsible(edge);
+	return true;
+}
+/*
+TDS_FUNC(void)
+remove_degree_3_dim_2(Vertex_handle v, Cell_handle f)
+// remove vertex 'v' of degree 3
+{
+	//                  right  i=v
+	//         li=q *---------*         * ri=q
+	//             / \       / \ right / \
+	//            /   \left /   \     /   \
+	//           /  ll \   /  f  \   / rr  \
+	//          /       \ /       \ /       \
+	//         *---------*---------*---------*
+	//        lli      ccw(i)     cw(i)      rri
+        
+	// after:
+	//                   ----------*
+	//                  /         /|
+	//                 /   ll    / |
+	//                /         /  |
+	//               /       q /   |
+	//       ccw(i) *---------*  rr|
+	//               \         \   |
+	//                \    f    \  |
+	//                 \         \ |
+	//                  \         \|
+	//                   ----------* cw(i) 
+
+	CGAL_triangulation_precondition(v != Vertex_handle());
+	CGAL_triangulation_precondition(degree(v) == 3);
+
+	if (f == Cell_handle()) f = v->cell();
+	else CGAL_triangulation_assertion( f->has_vertex(v));
+
+	int i = f->index(v);
+	Cell_handle left = f->neighbor(cw(i));
+	int li = mirror_index(f,cw(i)); 
+	Cell_handle right = f->neighbor(ccw(i));
+	int ri = mirror_index(f,ccw(i)); 
+
+	Cell_handle ll, rr;
+	Vertex_handle q = left->vertex(li);
+	CGAL_triangulation_assertion( left->vertex(li) == right->vertex(ri));
+    
+	ll = left->neighbor(cw(li));
+	if(ll != Cell_handle()) {
+		int lli = mirror_index(left,cw(li)); 
+		ll->set_neighbor(lli, f);
+	} 
+
+	f->set_neighbor(cw(i), ll);
+	if (f->vertex(ccw(i))->cell() == left)
+		f->vertex(ccw(i))->set_cell(f);    
+        
+	rr = right->neighbor(ccw(ri));
+	if(rr != Cell_handle()) {
+		int rri =  mirror_index(right,ccw(ri));
+		rr->set_neighbor(rri, f);
+	} 
+
+	f->set_neighbor(ccw(i), rr);
+	//if (f->vertex(cw(i))->cell() == right)
+		f->vertex(cw(i))->set_cell(f);  
+
+	f->set_vertex(i, q);
+	//if (q->cell() == right || q->cell() == left)
+		q->set_cell(f);
+
+	delete_cell(right);
+	delete_cell(left);
+	delete_vertex(v);
+	
+	CGAL_triangulation_postcondition( is_valid() );	
+}
+
+TDS_FUNC(void)
+remove_degree_2_dim_2(Vertex_handle v)
+{
+	CGAL_precondition( degree(v) == 2 );
+
+	Cell_handle f1 = v->cell();
+	int i = f1->index(v);
+
+	Cell_handle f2 = f1->neighbor( ccw(i) );
+	int j = f2->index(v);
+
+	Cell_handle ff1 = f1->neighbor( i );
+	Cell_handle ff2 = f2->neighbor( j );
+
+	int id1 = mirror_index(f1,i);
+	int id2 = mirror_index(f2,j);
+
+	set_adjacency(ff1, id1, ff2, id2);
+
+	Vertex_handle v1 = f1->vertex( ccw(i) );
+	//    if ( v1->face() == f1 || v1->face() == f2 )
+	v1->set_cell(ff1);
+
+	Vertex_handle v2 = f1->vertex( cw(i) );
+	//    if ( v2->face() == f1 || v2->face() == f2 )
+	v2->set_cell(ff2);
+
+	delete_cell(f1);
+	delete_cell(f2);
+
+	delete_vertex(v);
+
+	CGAL_triangulation_postcondition( is_valid() );	
+}
+*/
+TDS_FUNC(void)
+collapse_high_degree_dim_2(Edge edge)
+{
+	// from Triangulation_data_structure_2
+	//
+	// The following drawing corrsponds to the variables
+	// used in this part...
+	// The vertex target is returned...
+	//
+	//        itl       i=v3      itr
+	//         *---------*---------*
+	//          \       / \       /
+	//           \  tl /   \  tr /
+	//            \   /  f  \   /
+	//             \ /       \ /
+	//target=ccw(i) *<--------* cw(i)=source
+	//             / \       / \
+	//            /   \  g  /   \
+	//           /  bl \   /  br \
+	//          /       \ /       \
+	//         *---------*---------*
+	//        ibl       j=v4      ibr
+	//                                                           
+	// The situation after the "join"-operation is as follows:
+	//
+	//                 i
+	//           *-----*-----*
+	//            \    |    /
+	//             \ tl|tr /
+	//              \  |  /
+	//               \ | /
+	//                \|/
+	//                 *  target
+	//                /|\
+	//               / | \
+	//              /  |  \
+	//             / bl|br \
+	//            /    |    \
+	//           *-----*-----*
+	//
+	
+using std::cout;
+using std::endl;
+	Cell_handle f = edge.first;
+	Vertex_handle source = get_source_vertex(edge);
+	Vertex_handle target = get_target_vertex(edge);
+	int i = 3 - (edge.second + edge.third);
+	CGAL_assertion(i <= 2);
+
+	// not right orientation?
+	if (edge.third == (edge.second+1)%3) {
+		cout << "inverted" << endl;
+		f = f->neighbor(i);
+		i = 3 - (f->index(source)+f->index(target));
+	}
+
+	CGAL_precondition( dimension() == 2 );
+	CGAL_precondition( degree(source) >= 4 );
+
+	// first we register all the needed info
+	CGAL_assertion(f->vertex(i) != source);
+	CGAL_assertion(f->vertex(i) != target);
+
+	Cell_handle g = f->neighbor(i);
+	int j = mirror_index(f, i);
+
+	Cell_handle tl = f->neighbor( cw(i)  );
+	Cell_handle tr = f->neighbor( ccw(i) );
+
+	int itl = mirror_index(f, cw(i)  );
+	int itr = mirror_index(f, ccw(i) );
+
+	Cell_handle bl = g->neighbor( ccw(j) );
+	Cell_handle br = g->neighbor( cw(j)  );
+
+	int ibl = mirror_index(g, ccw(j) );
+	int ibr = mirror_index(g, cw(j)  );
+
+	std::list<Cell_handle> source_star_cells;
+	Face_circulator fcirc = incident_faces(source);
+	Face_circulator fend  = fcirc;
+
+	// we need to store the faces adjacent to source as well as the
+	// indices of source w.r.t. these faces, so that afterwards we can set 
+	// target to be the vertex for these faces
+	CGAL_For_all(fcirc, fend)
+		source_star_cells.push_back( fcirc );
+	
+	CGAL_assertion(tl->has_vertex(target));
+	// first set the neighbors
+	set_adjacency(tl, itl, tr, itr);
+	set_adjacency(bl, ibl, br, ibr);
+	
+	// then make sure that all the vertices have correct pointers to faces
+	Vertex_handle v3 = f->vertex(i);
+	Vertex_handle v4 = g->vertex(j);
+
+	v3->set_cell(tr);
+	v4->set_cell(br);
+	target->set_cell(tl);
+
+	#ifndef CGAL_NO_ASSERTIONS
+	  for (Cell_iterator cit = cells_begin(); cit != cells_end(); ++cit)
+	    CGAL_triangulation_assertion( !cit->has_vertex(source) );
+	#endif
+
+	typename std::list<Cell_handle>::iterator cit;
+	for(cit=source_star_cells.begin(); cit!=source_star_cells.end(); cit++) {
+		Cell_handle cell = *cit;
+		CGAL_assertion(is_simplex(cell));
+		int id = cell->index(source);
+		CGAL_triangulation_assertion( id <= 2 );
+		CGAL_triangulation_assertion( cell->vertex(id) == source );
+		cell->set_vertex( id, target );
+	}
+
+	delete_cell(f);
+	delete_cell(g);
+	delete_vertex(source);
+
+	CGAL_triangulation_postcondition(is_valid());
+}
+
+// O( |star(edge)| )
+TDS_FUNC(void)
+collapse_collapsible(Edge& edge)
 {
 	CGAL_triangulation_precondition( is_collapsible(edge) );
 	CGAL_triangulation_precondition( dimension() >= 1 );
-	
+
 	// two infinite and one finite
 	CGAL_triangulation_precondition( number_of_vertices() >= 3 );
 
@@ -431,6 +721,7 @@ collapse_edge(Edge& edge)
 				//seed_cell->vertex(edge.second);
 	Vertex_handle target = get_target_vertex(edge);
 				//seed_cell->vertex(edge.third);
+	int deg = degree(source);
 	
 	CGAL_triangulation_precondition( source != target );
 	CGAL_triangulation_precondition( is_vertex(source) );
@@ -438,8 +729,19 @@ collapse_edge(Edge& edge)
 	CGAL_triangulation_precondition( is_simplex(seed_cell) );
 	CGAL_triangulation_precondition( is_edge(edge.first, edge.second, edge.third) );
 
+	cout << "collapse dim=" << dimension() << ", deg=" << deg << endl;
+
 	switch ( dimension() ) {
 		case 3: {
+			CGAL_triangulation_precondition( deg >= 4 );
+			if ( deg == 4 ) {
+				cout << "Decrease!" << endl;
+				CGAL_assertion(is_valid());
+				remove_from_maximal_dimension_simplex(source);
+				CGAL_assertion(is_valid());
+				return;
+			}
+
 			// collect all cells incident to source - as this vertex will disappear
 			// we will have to update source to target later in these cells.
 			std::list<Cell_handle> scells;
@@ -472,8 +774,10 @@ collapse_edge(Edge& edge)
 				CGAL_triangulation_assertion(!cell_suv->has_neighbor(cell_tuv));
 				CGAL_triangulation_assertion(!cell_tuv->has_neighbor(cell_suv));
 
-				cell_suv->set_neighbor(index_mt, cell_tuv);
-				cell_tuv->set_neighbor(index_ms, cell_suv);
+				set_adjacency(cell_suv, index_mt, cell_tuv, index_ms);
+
+				//cell_suv->set_neighbor(index_mt, cell_tuv);
+				//cell_tuv->set_neighbor(index_ms, cell_suv);
 
 				// set incident cell to ensure that vertices do not point
 				// to a deleted cell (among scells).
@@ -497,134 +801,31 @@ collapse_edge(Edge& edge)
 			delete_vertex(source);
 
 			// less than a tetrahedral
-			if ( number_of_vertices() <= 4 ) 
-				set_dimension(2);
-			
+			//if ( number_of_vertices() <= 4 ) 
+			//	set_dimension(2);
+
 			CGAL_triangulation_expensive_postcondition( is_valid() );
-			return true;
+			return;
 		}
 		case 2: {
-			// The following drawing corrsponds to the variables
-			// used in this part...
-			// The vertex target is returned...
-			//
-			//        itl       i=v3      itr
-			//         *---------*---------*
-			//          \       / \       /
-			//           \  tl /   \  tr /
-			//            \   /  f  \   /
-			//             \ /       \ /
-			//target=ccw(i) *---------* cw(i)=source
-			//             / \       / \
-			//            /   \  g  /   \
-			//           /  bl \   /  br \
-			//          /       \ /       \
-			//         *---------*---------*
-			//        ibl       j=v4      ibr
-			//                                                           
-			// The situation after the "join"-operation is as follows:
-			//
-			//                 i
-			//           *-----*-----*
-			//            \    |    /
-			//             \ tl|tr /
-			//              \  |  /
-			//               \ | /
-			//                \|/
-			//                 *  target
-			//                /|\
-			//               / | \
-			//              /  |  \
-			//             / bl|br \
-			//            /    |    \
-			//           *-----*-----*
-			//
-
-			int deg2 = degree(source);
-
-			//CGAL_triangulation_precondition( deg2 >= 3 );
-
-			//if ( deg2 == 3 ) {
-			//	remove_degree_3(source, f->neighbor(ccw(i)));
-			//	return target;
-			//}
-			  
-			// first we register all the needed info
-			Cell_handle f = seed_cell;
-			int i = 3 - (edge.second + edge.third);
-			Cell_handle g = f->neighbor(i);
-			int j = mirror_index(f, i);
-
-			Cell_handle tl = f->neighbor( cw(i)  );
-			Cell_handle tr = f->neighbor( ccw(i) );
-
-			int itl = mirror_index(f, cw(i)  );
-			int itr = mirror_index(f, ccw(i) );
-
-			Cell_handle bl = g->neighbor( ccw(j) );
-			Cell_handle br = g->neighbor( cw(j)  );
-
-			int ibl = mirror_index(g, ccw(j) );
-			int ibr = mirror_index(g, cw(j)  );
-
-			// we need to store the faces adjacent to source as well as the
-			// indices of source w.r.t. these faces, so that afterwards we can set 
-			// target to be the vertex for these faces
-			std::list<Cell_handle> scells;
-			//std::list<int> star_indices_of_source;
-
-			incident_cells(source, std::back_inserter(scells));
-			CGAL_triangulation_assertion( int(scells.size()) == deg2 );
-
-			// from this point and on we modify the values
-			
-			// first set the neighbors
-			tl->set_neighbor(itl, tr);
-			tr->set_neighbor(itr, tl);
-			bl->set_neighbor(ibl, br);
-			br->set_neighbor(ibr, bl);
-			
-			// make sure that all the faces containing source
-			// now contain target
-			typename std::list<Cell_handle>::iterator cit;
-			for (cit = scells.begin(); cit != scells.end(); cit++) {
-				Cell_handle cell = *cit;
-				int id = cell->index(source);
-				CGAL_triangulation_assertion( cell->vertex(id) == source );
-				cell->set_vertex( id, target );
+			CGAL_triangulation_precondition( deg >= 3 );
+		
+			if ( deg == 3 ) {
+				remove_from_maximal_dimension_simplex(source);
+				//Cell_handle f = seed_cell;
+				//int i = 3 - (edge.second + edge.third);
+//				//remove_degree_3_dim_2(source, f->neighbor( ccw(i) ));
+				return;
 			}
-
-			// then make sure that all the vertices have correct pointers to 
-			// faces
-			Vertex_handle v3 = f->vertex(i);
-			Vertex_handle v4 = g->vertex(j);
-			//if ( v3->cell() == f )
-				v3->set_cell(tr);
-			//if ( v4->cell() == g )
-				v4->set_cell(br);
-			//if ( target->cell() == f || target->cell() == g )
-				target->set_cell(tl);
-
-			#ifndef CGAL_NO_ASSERTIONS
-			  for (Cell_iterator cit = cells_begin(); cit != cells_end(); ++cit)
-			    CGAL_triangulation_assertion( !cit->has_vertex(source) );
-			#endif
-
-			// memory management
-			//star_faces_of_source.clear();
-			//star_indices_of_source.clear();
-
-			delete_cell(f);
-			delete_cell(g);
-
-			delete_vertex(source);
+			
+			collapse_high_degree_dim_2(edge);
 
 			// one finite plus the infinite one
-			if (number_of_vertices() == 3)
-				set_dimension(1);
+			//if (number_of_vertices() == 3)
+			//	set_dimension(1);
 
 			CGAL_triangulation_expensive_postcondition( is_valid() );
-			return true;
+			return;
 		}
 		case 1: {
 			// before the collapse:
@@ -646,8 +847,10 @@ collapse_edge(Edge& edge)
 	
 			int source_index = prev_cell->index(source);
 			prev_cell->set_vertex( source_index, target );
-			prev_cell->set_neighbor( 1-source_index, next_cell );
-			next_cell->set_neighbor( 1-next_cell->index(target), prev_cell );
+
+			set_adjacency(prev_cell, 1-source_index, next_cell, 1-next_cell->index(target));
+			//prev_cell->set_neighbor( 1-source_index, next_cell );
+			//next_cell->set_neighbor( 1-next_cell->index(target), prev_cell );
 			target->set_cell(next_cell);
 
 			delete_cell(seed_cell);
@@ -658,11 +861,9 @@ collapse_edge(Edge& edge)
 				set_dimension(0);
 			
 			CGAL_triangulation_expensive_postcondition( is_valid() );
-			return true;
+			return;
 		}
 	}
-
-	CGAL_triangulation_assertion( false );
 }
 
 ////////////////////////////////////
@@ -679,7 +880,7 @@ is_collapsible(const Edge& edge, const Point& point) const
 DT_FUNC(bool)
 is_collapsible(const Edge& edge) const
 {
-	return 	is_collapsible(edge, Tr_Base::_tds.get_target_vertex(edge)->point());
+	return is_collapsible(edge, Tr_Base::_tds.get_target_vertex(edge)->point());
 }
 
 // protected:
@@ -733,6 +934,7 @@ check_delaunay_property(const Edge& edge, const Point& point) const
 						return false;
 				}
 			}
+			return true;
 		}
 		case 2: {
 			//TODO:
@@ -744,7 +946,7 @@ check_delaunay_property(const Edge& edge, const Point& point) const
 		}
 	}
 
-	return true;
+	CGAL_triangulation_assertion( false );
 }
   
 /////////////////////////////
@@ -752,39 +954,59 @@ check_delaunay_property(const Edge& edge, const Point& point) const
 /////////////////////////////
 
 TRI_FUNC(bool)
-collapse_edge(Edge& edge, const Point& point)
+collapse(Edge& edge, const Point& point)
+{
+	if (!is_collapsible(edge,point))
+		return false;
+
+	collapse_collapsible(edge,point);
+	return true;
+}
+
+TRI_FUNC(bool)
+collapse(Edge& edge)
+{
+	if (!is_collapsible(edge))
+		return false;
+
+	collapse_collapsible(edge);
+	return true;
+}
+
+TRI_FUNC(void)
+collapse_collapsible(Edge& edge, const Point& point)
 {
 	//TODO: check for moving target to an existing point
-	CGAL_triangulation_precondition( is_geom_collapsible(edge, point) );
+	CGAL_triangulation_precondition( is_collapsible(edge, point) );
 
 	Cell_handle cell = edge.first;
 	Vertex_handle target = cell->vertex(edge.third);
 	target->set_point(point);
 
-	return collapse_edge(edge);
+	collapse_collapsible(edge);
 }
 
-TRI_FUNC(bool)
-collapse_edge(Edge& edge)
+TRI_FUNC(void)
+collapse_collapsible(Edge& edge)
 {
-	CGAL_triangulation_precondition( is_geom_collapsible(edge) );
+	CGAL_triangulation_precondition( is_collapsible(edge) );
 
-	bool res = _tds.collapse_edge(edge);
+	_tds.collapse_collapsible(edge);
 
 	switch( dimension() ) {
 		case 3: {
 			// TODO: remove flat cells
+			return;
 		}
 		case 2: {
 			// TODO: remove flat facets
+			return;
 		}
 		case 1: {
 			// TODO: nothing?
+			return;
 		}
 	}
-	
-
-	return res;
 }
 
 TRI_FUNC(bool)
@@ -873,8 +1095,10 @@ is_in_kernel(Point query, Iterator begin, Iterator end) const
 		
 		Vertex_handle va, vb, vc;
 		_tds.get_vertices_from_facet(facet, va, vb, vc);
-	
-		if (CGAL::orientation(query, va->point(), vb->point(), vc->point()) != CGAL::NEGATIVE)
+
+		// TODO	
+		if (CGAL::orientation(query, va->point(), vb->point(), vc->point()) == CGAL::POSITIVE)
+		//if (CGAL::orientation(query, va->point(), vb->point(), vc->point()) != CGAL::NEGATIVE)
 			return false; 
 	}
 
@@ -905,14 +1129,16 @@ is_in_kernel_2d(Point query, Iterator begin, Iterator end) const
 TRI_FUNC(bool)
 is_simplex( Cell_handle c ) const
 {
-  switch(dimension()) {
-    case 3 : return _tds.is_cell(c);
-    case 2 : return _tds.is_facet(c, 3);
-    case 1 : return _tds.is_edge(c, 0, 1);
-    case 0 : return _tds.is_vertex(c->vertex(0));
-    case -1 : return c == _tds.cells().begin();
-  }
-  return false;
+  return _tds.is_simplex(c);
+
+  //switch(dimension()) {
+  //  case 3 : return _tds.is_cell(c);
+  //  case 2 : return _tds.is_facet(c, 3);
+  //  case 1 : return _tds.is_edge(c, 0, 1);
+  //  case 0 : return _tds.is_vertex(c->vertex(0));
+  //  case -1 : return c == _tds.cells().begin();
+  //}
+  //return false;
 }
 
 ///////////

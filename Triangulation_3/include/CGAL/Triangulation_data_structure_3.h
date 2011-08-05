@@ -482,11 +482,14 @@ public:
   void get_vertices_from_vertex_link(Vertex_handle vertex, Vertex_handle_set& vertices) const;
   void get_edges_from_vertex_link(Vertex_handle vertex, Edge_set& edges) const;
   
-// code reuse
+// TODO: code reuse between in following two functions
   void get_facets_from_link(Vertex_handle vertex, Vertex_handle dont_include, Facet_list& hull) const;
   void get_edges_from_link(Vertex_handle vertex, Vertex_handle dont_include, Edge_list& hull) const;
   
   Facet get_twin_facet(const Facet& facet) const;
+  void remove_degree_3_dim_2(Vertex_handle v, Cell_handle f);
+  void remove_degree_2_dim_2(Vertex_handle v);
+  void collapse_high_degree_dim_2(Edge edge);
 
   bool is_collapsible_for_vertices(const Edge& edge) const;
   bool is_collapsible_for_edges(const Edge& edge) const;
@@ -498,7 +501,8 @@ public:
   // END DEBUG
 
 public:
-  bool collapse_edge(Edge& edge);
+  bool collapse(Edge& edge);
+  void collapse_collapsible(Edge& edge);
   bool is_collapsible(const Edge& edge) const;
   
   // PIVANOV END
@@ -2565,7 +2569,9 @@ remove_decrease_dimension(Vertex_handle v, Vertex_handle w)
             if (j != dimension()) {
 	        f->set_vertex(j, f->vertex(dimension()));
 	        f->set_neighbor(j, f->neighbor(dimension()));
-	        if (dimension() >= 1)
+	        
+		// PIVANOV TODO
+		if (dimension() >= 1)
 		    change_orientation(f);
 	    }
 	    f->set_vertex(dimension(), Vertex_handle());

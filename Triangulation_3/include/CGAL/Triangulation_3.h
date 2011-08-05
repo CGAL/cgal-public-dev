@@ -717,8 +717,11 @@ public:
   bool is_geom_collapsible(const Edge& edge) const;
   bool is_geom_collapsible(const Edge& edge, const Point& point) const;
 
-  bool collapse_edge(Edge& edge);
-  bool collapse_edge(Edge& edge, const Point& point);
+  bool collapse(Edge& edge);
+  bool collapse(Edge& edge, const Point& point);
+
+  void collapse_collapsible(Edge& edge);
+  void collapse_collapsible(Edge& edge, const Point& point);
 
   bool is_collapsible(const Edge& edge) const;
   bool is_collapsible(const Edge& edge, const Point& point) const;
