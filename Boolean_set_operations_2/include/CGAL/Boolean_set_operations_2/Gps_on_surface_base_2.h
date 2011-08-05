@@ -40,14 +40,8 @@
 #include <CGAL/Boolean_set_operations_2/Gps_polygon_simplifier.h>
 #include <CGAL/Boolean_set_operations_2/Ccb_curve_iterator.h>
 
-//to enable user to enable or disable OpenMP only for Boolean_set_operations_2 package
-#ifndef CGAL_BOOLEAN_SET_OPERATIONS_2_DONT_USE_OPENMP
-#define CGAL_BOOLEAN_SET_OPERATIONS_2_USE_OPENMP 
-#endif
-
-
-//add OpenMP header
-#if defined _OPENMP && defined CGAL_BOOLEAN_SET_OPERATIONS_2_USE_OPENMP
+// add OpenMP header
+#if !defined(CGAL_BOOLEAN_SET_OPERATIONS_2_SERIAL) && defined(_OPENMP)
 #include<omp.h>
 #endif
 
@@ -157,15 +151,16 @@ protected:
   Aos_2*        m_arr;
  
   //define current total number of threads running
-  //used in _divide_and_conquer function to spawn new threads as long as there are still idle processors, but no more
-  #if defined _OPENMP && defined CGAL_BOOLEAN_SET_OPERATIONS_2_USE_OPENMP
+  //used in _divide_and_conquer function to spawn new threads as long as there are still idle processors
+  //(if OMP_NUM_THREADS is not specified) or till it equals OMP_NUM_THREADS, but no more
+  #if !defined(CGAL_BOOLEAN_SET_OPERATIONS_2_SERIAL) && defined(_OPENMP)
   int m_current_num_threads;
   #endif
 
 public:
 
   // default costructor
-  #if defined _OPENMP && defined CGAL_BOOLEAN_SET_OPERATIONS_2_USE_OPENMP
+  #if !defined(CGAL_BOOLEAN_SET_OPERATIONS_2_SERIAL) && defined(_OPENMP)
   Gps_on_surface_base_2() : m_traits(new Traits_2()),
                             m_traits_adaptor(*m_traits),
                             m_traits_owner(true),
@@ -181,7 +176,7 @@ public:
   #endif
 
   // constructor with traits object
-  #if defined _OPENMP && defined CGAL_BOOLEAN_SET_OPERATIONS_2_USE_OPENMP
+  #if !defined(CGAL_BOOLEAN_SET_OPERATIONS_2_SERIAL) && defined(_OPENMP)
   Gps_on_surface_base_2(Traits_2& tr) : m_traits(&tr),
                                         m_traits_adaptor(*m_traits),
                                         m_traits_owner(false),
@@ -196,7 +191,7 @@ public:
   {}
   #endif
 
-  #if defined _OPENMP && defined CGAL_BOOLEAN_SET_OPERATIONS_2_USE_OPENMP
+  #if !defined(CGAL_BOOLEAN_SET_OPERATIONS_2_SERIAL) && defined(_OPENMP)
   Gps_on_surface_base_2(const Self& ps) :
     m_traits(new Traits_2(*(ps.m_traits))),
     m_traits_adaptor(*m_traits),
@@ -628,7 +623,7 @@ public:
   {
     unsigned int k;
    
-    #if defined _OPENMP && defined CGAL_BOOLEAN_SET_OPERATIONS_2_USE_OPENMP
+    #if !defined(CGAL_BOOLEAN_SET_OPERATIONS_2_SERIAL) && defined(_OPENMP)
     return  (std::max)(5, omp_get_max_threads());
     #else
     return 5;
@@ -717,13 +712,13 @@ public:
     InputIterator itr;
 
     //create a parallel region with number of threads set to value of OMP_NUM_THREADS environment variable
-    #if defined _OPENMP && defined CGAL_BOOLEAN_SET_OPERATIONS_2_USE_OPENMP
+    #if !defined(CGAL_BOOLEAN_SET_OPERATIONS_2_SERIAL) && defined(_OPENMP)
     #pragma omp parallel private(itr,i) 
     #endif    
     {
       for (itr = begin, i = 1; itr != end; ++itr, ++i)
       {
-        #if defined _OPENMP && defined CGAL_BOOLEAN_SET_OPERATIONS_2_USE_OPENMP
+        #if !defined(CGAL_BOOLEAN_SET_OPERATIONS_2_SERIAL) && defined(_OPENMP)
         #pragma omp single nowait
         #endif    
         {
@@ -763,13 +758,13 @@ public:
     InputIterator itr;
     
     //create a parallel region with number of threads set to value of OMP_NUM_THREADS environment variable
-    #if defined _OPENMP && defined CGAL_BOOLEAN_SET_OPERATIONS_2_USE_OPENMP
+    #if !defined(CGAL_BOOLEAN_SET_OPERATIONS_2_SERIAL) && defined(_OPENMP)
     #pragma omp parallel private(itr,i)
     #endif    
     {    
       for (itr = begin,i = 1; itr!=end; ++itr, ++i)
       {
-        #if defined _OPENMP && defined CGAL_BOOLEAN_SET_OPERATIONS_2_USE_OPENMP
+        #if !defined(CGAL_BOOLEAN_SET_OPERATIONS_2_SERIAL) && defined(_OPENMP)
         #pragma omp single nowait
         #endif    
         {
@@ -804,20 +799,20 @@ public:
   {
     std::vector<Arr_entry> arr_vec (std::distance(begin1, end1)+
                                     std::distance(begin2, end2)+1);
- 
+
     arr_vec[0].first = this->m_arr;
     unsigned int i;
     InputIterator1 itr1;
     InputIterator2 itr2;
         
     //create a parallel region with number of threads set to value of OMP_NUM_THREADS environment variable
-    #if defined _OPENMP && defined CGAL_BOOLEAN_SET_OPERATIONS_2_USE_OPENMP
+    #if !defined(CGAL_BOOLEAN_SET_OPERATIONS_2_SERIAL) && defined(_OPENMP)
     #pragma omp parallel private(itr2,itr1,i) 
     #endif    
     {
       for (itr1 = begin1,i = 1; itr1!=end1; ++itr1, ++i)
       {
-        #if defined _OPENMP && defined CGAL_BOOLEAN_SET_OPERATIONS_2_USE_OPENMP
+        #if !defined(CGAL_BOOLEAN_SET_OPERATIONS_2_SERIAL) && defined(_OPENMP)
         #pragma omp single nowait
         #endif    
         {
@@ -828,7 +823,7 @@ public:
     
       for (itr2 = begin2,i = 1; itr2!=end2; ++itr2, ++i)
       {
-        #if defined _OPENMP && defined CGAL_BOOLEAN_SET_OPERATIONS_2_USE_OPENMP
+        #if !defined(CGAL_BOOLEAN_SET_OPERATIONS_2_SERIAL) && defined(_OPENMP)
         #pragma omp single nowait
         #endif    
         {
@@ -887,13 +882,13 @@ public:
     InputIterator itr;
     
     //create a parallel region with number of threads set to value of OMP_NUM_THREADS environment variable
-    #if defined _OPENMP && defined CGAL_BOOLEAN_SET_OPERATIONS_2_USE_OPENMP
+    #if !defined(CGAL_BOOLEAN_SET_OPERATIONS_2_SERIAL) && defined(_OPENMP)
     #pragma omp parallel private(itr,i)
     #endif    
     {
       for (itr = begin,i = 1; itr!=end; ++itr, ++i)
       {
-        #if defined _OPENMP && defined CGAL_BOOLEAN_SET_OPERATIONS_2_USE_OPENMP
+        #if !defined(CGAL_BOOLEAN_SET_OPERATIONS_2_SERIAL) && defined(_OPENMP)
         #pragma omp single nowait
         #endif    
         {
@@ -933,13 +928,13 @@ public:
     InputIterator itr;
     
     //create a parallel region with number of threads set to value of OMP_NUM_THREADS environment variable
-    #if defined _OPENMP && defined CGAL_BOOLEAN_SET_OPERATIONS_2_USE_OPENMP
+    #if !defined(CGAL_BOOLEAN_SET_OPERATIONS_2_SERIAL) && defined(_OPENMP)
     #pragma omp parallel private(itr,i) 
     #endif    
     {        
       for (itr = begin,i = 1; itr!=end; ++itr, ++i)
       {
-        #if defined _OPENMP && defined CGAL_BOOLEAN_SET_OPERATIONS_2_USE_OPENMP
+        #if !defined(CGAL_BOOLEAN_SET_OPERATIONS_2_SERIAL) && defined(_OPENMP)
         #pragma omp single nowait
         #endif    
         {
@@ -981,13 +976,13 @@ public:
     InputIterator2 itr2;
     
     //create a parallel region with number of threads set to value of OMP_NUM_THREADS environment variable
-    #if defined _OPENMP && defined CGAL_BOOLEAN_SET_OPERATIONS_2_USE_OPENMP
+    #if !defined(CGAL_BOOLEAN_SET_OPERATIONS_2_SERIAL) && defined(_OPENMP)
     #pragma omp parallel private(itr2,itr1,i) 
     #endif    
     {    
       for (itr1 = begin1,i = 1; itr1!=end1; ++itr1, ++i)
       {
-        #if defined _OPENMP && defined CGAL_BOOLEAN_SET_OPERATIONS_2_USE_OPENMP
+        #if !defined(CGAL_BOOLEAN_SET_OPERATIONS_2_SERIAL) && defined(_OPENMP)
         #pragma omp single nowait
         #endif    
         {
@@ -999,7 +994,7 @@ public:
         
       for (itr2 = begin2,i = 1; itr2!=end2; ++itr2, ++i)
       {
-        #if defined _OPENMP && defined CGAL_BOOLEAN_SET_OPERATIONS_2_USE_OPENMP
+        #if !defined(CGAL_BOOLEAN_SET_OPERATIONS_2_SERIAL) && defined(_OPENMP)
         #pragma omp single nowait
         #endif    
         {
@@ -1059,13 +1054,13 @@ public:
     
     
     //create a parallel region with number of threads set to value of OMP_NUM_THREADS environment variable
-    #if defined _OPENMP && defined CGAL_BOOLEAN_SET_OPERATIONS_2_USE_OPENMP
+    #if !defined(CGAL_BOOLEAN_SET_OPERATIONS_2_SERIAL) && defined(_OPENMP)
     #pragma omp parallel private(itr,i) 
     #endif    
     {    
       for (itr = begin; itr!=end; ++itr, ++i)
       {
-        #if defined _OPENMP && defined CGAL_BOOLEAN_SET_OPERATIONS_2_USE_OPENMP
+        #if !defined(CGAL_BOOLEAN_SET_OPERATIONS_2_SERIAL) && defined(_OPENMP)
         #pragma omp single nowait
         #endif    
         {
@@ -1105,13 +1100,13 @@ public:
     InputIterator itr;
     
     //create a parallel region with number of threads set to value of OMP_NUM_THREADS environment variable
-    #if defined _OPENMP && defined CGAL_BOOLEAN_SET_OPERATIONS_2_USE_OPENMP
+    #if !defined(CGAL_BOOLEAN_SET_OPERATIONS_2_SERIAL) && defined(_OPENMP)
     #pragma omp parallel private(itr,i)
     #endif
     {
       for (itr = begin; itr!=end; ++itr, ++i)
       {
-        #if defined _OPENMP && defined CGAL_BOOLEAN_SET_OPERATIONS_2_USE_OPENMP
+        #if !defined(CGAL_BOOLEAN_SET_OPERATIONS_2_SERIAL) && defined(_OPENMP)
         #pragma omp single nowait
         #endif    
         {
@@ -1153,13 +1148,13 @@ public:
     InputIterator2 itr2;
     
     //create a parallel region with number of threads set to value of OMP_NUM_THREADS environment variable
-    #if defined _OPENMP && defined CGAL_BOOLEAN_SET_OPERATIONS_2_USE_OPENMP
+    #if !defined(CGAL_BOOLEAN_SET_OPERATIONS_2_SERIAL) && defined(_OPENMP)
     #pragma omp parallel private(itr2,itr1,i) 
     #endif    
     {    
       for (itr1 = begin1; itr1!=end1; ++itr1, ++i)
       {
-        #if defined _OPENMP && defined CGAL_BOOLEAN_SET_OPERATIONS_2_USE_OPENMP
+        #if !defined(CGAL_BOOLEAN_SET_OPERATIONS_2_SERIAL) && defined(_OPENMP)
         #pragma omp single nowait
         #endif    
         {
@@ -1171,7 +1166,7 @@ public:
         
       for (itr2 = begin2; itr2!=end2; ++itr2, ++i)
       {
-        #if defined _OPENMP && defined CGAL_BOOLEAN_SET_OPERATIONS_2_USE_OPENMP
+        #if !defined(CGAL_BOOLEAN_SET_OPERATIONS_2_SERIAL) && defined(_OPENMP)
         #pragma omp single nowait
         #endif    
         {
@@ -1252,6 +1247,7 @@ protected:
          fit != arr->faces_end();
          ++fit)
     {
+
         fit->set_contained(!fit->contained());
     }
         
@@ -1281,7 +1277,7 @@ protected:
     arr.geometry_traits()->construct_opposite_2_object();
     
     //create a parallel region with number of threads set to value of OMP_NUM_THREADS environment variable
-    #if defined _OPENMP && defined CGAL_BOOLEAN_SET_OPERATIONS_2_USE_OPENMP
+    #if !defined(CGAL_BOOLEAN_SET_OPERATIONS_2_SERIAL) && defined(_OPENMP)
     #pragma omp parallel private(eit) 
     #endif
     {            
@@ -1289,7 +1285,7 @@ protected:
       eit != arr.edges_end();
              ++eit)
       {
-        #if defined _OPENMP && defined CGAL_BOOLEAN_SET_OPERATIONS_2_USE_OPENMP
+        #if !defined(CGAL_BOOLEAN_SET_OPERATIONS_2_SERIAL) && defined(_OPENMP)
         #pragma omp single nowait
         #endif
         {
@@ -1313,7 +1309,7 @@ protected:
   {
     
     //create a parallel region with number of threads set to value of OMP_NUM_THREADS environment variable
-    #if defined _OPENMP && defined CGAL_BOOLEAN_SET_OPERATIONS_2_USE_OPENMP
+    #if !defined(CGAL_BOOLEAN_SET_OPERATIONS_2_SERIAL) && defined(_OPENMP)
     #pragma omp parallel 
     #endif
     {    
@@ -1325,7 +1321,7 @@ protected:
 
       for (i = 0; i < n; i++)
       {
-        #if defined _OPENMP && defined CGAL_BOOLEAN_SET_OPERATIONS_2_USE_OPENMP
+        #if !defined(CGAL_BOOLEAN_SET_OPERATIONS_2_SERIAL) && defined(_OPENMP)
         #pragma omp single nowait
         #endif
         {          
@@ -1363,7 +1359,7 @@ protected:
     unsigned int sub_size = ((upper - lower + 1) / k);
     int curr_lower;
     
-    #if defined _OPENMP && defined CGAL_BOOLEAN_SET_OPERATIONS_2_USE_OPENMP
+    #if !defined(CGAL_BOOLEAN_SET_OPERATIONS_2_SERIAL) && defined(_OPENMP)
     if(m_current_num_threads < omp_get_max_threads())
     {
       #pragma omp atomic
@@ -1416,13 +1412,13 @@ protected:
     Face_const_iterator fit;
     
     //create a parallel region with number of threads set to value of OMP_NUM_THREADS environment variable
-    #if defined _OPENMP && defined CGAL_BOOLEAN_SET_OPERATIONS_2_USE_OPENMP
+    #if !defined(CGAL_BOOLEAN_SET_OPERATIONS_2_SERIAL) && defined(_OPENMP)
     #pragma omp parallel private(fit) 
     #endif
     {    
       for ( fit = arr->faces_begin(); fit != arr->faces_end(); ++fit)
       {
-        #if defined _OPENMP && defined CGAL_BOOLEAN_SET_OPERATIONS_2_USE_OPENMP
+        #if !defined(CGAL_BOOLEAN_SET_OPERATIONS_2_SERIAL) && defined(_OPENMP)
         #pragma omp single nowait
         #endif
         {
