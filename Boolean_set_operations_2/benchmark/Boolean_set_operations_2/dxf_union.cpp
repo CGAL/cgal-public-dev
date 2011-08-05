@@ -13,13 +13,8 @@
 #include <cstdlib>
 #include <time.h>
 
-//to enable user to enable or disable OpenMP only for Boolean_set_operations_2 package
-#ifndef CGAL_BOOLEAN_SET_OPERATIONS_2_DONT_USE_OPENMP
-#define CGAL_BOOLEAN_SET_OPERATIONS_2_USE_OPENMP 
-#endif
-
-//add OpenMP header
-#if defined _OPENMP && defined CGAL_BOOLEAN_SET_OPERATIONS_2_USE_OPENMP
+// add OpenMP header
+#if !defined(CGAL_BOOLEAN_SET_OPERATIONS_2_SERIAL) && defined(_OPENMP)
 #include<omp.h>
 #endif
 
@@ -37,6 +32,7 @@ static const int DEFAULT_GROUP_SIZE = 5;
 //   ex_dxf_union [DXF file] [simplify] [group size]
 int main (int argc, char* argv[])
 {
+
   // Open the input DXF file.
   const char* filename = (argc >= 2) ? argv[1] : "test.dxf";
   std::ifstream input_file (filename);
@@ -65,7 +61,7 @@ int main (int argc, char* argv[])
   }
 
   // Read the circular polygons from the DXF file.
-  General_polygon_set_2          gps;
+  General_polygon_set_2          gps,gps2,gps1;
   Polygons_vec                   pgns;
   Polygons_with_holes_vec        pgns_with_holes;
   CGAL::Dxf_bsop_reader<Kernel>  reader;
@@ -96,7 +92,7 @@ int main (int argc, char* argv[])
   t_union.start();
   s = time(NULL);
 
-  #if defined _OPENMP && defined CGAL_BOOLEAN_SET_OPERATIONS_2_USE_OPENMP
+  #if !defined(CGAL_BOOLEAN_SET_OPERATIONS_2_SERIAL) && defined(_OPENMP)
   double start,end;
   start = omp_get_wtime(); 
   #endif     
@@ -105,14 +101,14 @@ int main (int argc, char* argv[])
             pgns_with_holes.begin(), pgns_with_holes.end(),
             group_size);
  
-  #if defined _OPENMP && defined CGAL_BOOLEAN_SET_OPERATIONS_2_USE_OPENMP
+  #if !defined(CGAL_BOOLEAN_SET_OPERATIONS_2_SERIAL) && defined(_OPENMP)
   end = omp_get_wtime();
   #endif
 
   t_union.stop();
   e = time(NULL);
 
-  #if defined _OPENMP && defined CGAL_BOOLEAN_SET_OPERATIONS_2_USE_OPENMP
+  #if !defined(CGAL_BOOLEAN_SET_OPERATIONS_2_SERIAL) && defined(_OPENMP)
   std::cout << "Done! time using omp_get_wtime() (" << end-start << " seconds)." << std::endl;
   #endif 
   
