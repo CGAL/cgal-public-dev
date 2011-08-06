@@ -1,0 +1,30 @@
+\section{Parallel Computation\label{bso_sec:bso_par}}
+% ==================================================
+
+\lcTex{%
+  \setlength{\BooleanSetOpsWidthRight}{1.4cm}
+  \setlength{\BooleanSetOpsWidthLeft}{\BooleanSetOpsWidthLineReal}
+  \addtolength{\BooleanSetOpsWidthLeft}{-\BooleanSetOpsWidthRight}
+  \begin{minipage}{\BooleanSetOpsWidthLeft}
+}
+
+The divide-and-conquer approach used to perform Boolean set operations on a set of polygons is naturally recursive and has been parallelized using OpenMP 2.0. Threaded implementation significantly improves performance of the algorithm especially with large amounts of data. 
+
+% ------------------------------------
+\subsection{Compiling with OpenMP\label{bso_ssec:compiling_with_openmp}}
+% ------------------------------------
+
+To enable threaded implementation, code needs to be compiled with OpenMP enabled. All major compilers have OpenMP support. 
+
+% ---------------------------------------------------
+\subsection{Setting the number of threads\label{bso_ssec:set_num_thread}}
+% ---------------------------------------------------
+
+The number of threads created can be controlled by setting OMP_NUM_THREADS environment variable. By default the number of threads created will be equal to the number of hardware threads available on the system.
+
+% ---------------------------------------------------
+\subsection{Disabling Parallel Computation\label{bso_ssec:disable_parallel}}
+% ---------------------------------------------------
+
+To disable OpenMP for this package define the compilation flag CGAL_BOOLEAN_SET_OPERATIONS_2_SERIAL
+
