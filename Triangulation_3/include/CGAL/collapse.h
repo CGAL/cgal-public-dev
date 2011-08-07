@@ -21,6 +21,11 @@ CGAL_BEGIN_NAMESPACE
 	type\
 	Delaunay_triangulation_3<Vb,Cb>::
 
+#define RT_FUNC(type) \
+	template < class Vb, class Cb >\
+	type\
+	Regular_triangulation_3<Vb,Cb>::
+
 /////////////////
 // TDS structs //
 /////////////////
@@ -195,6 +200,8 @@ get_vertices_from_edge(const Edge& edge, Vertex_handle& va, Vertex_handle& vb) c
 TDS_FUNC(void)
 get_vertices_from_vertex_link(Vertex_handle vertex, Vertex_handle_set& vertices) const
 {
+	CGAL_triangulation_precondition( dimension() >= 2 );
+
 	switch ( dimension() ) {
 		case 3: {
 			std::list<Cell_handle> cells;		
@@ -278,6 +285,8 @@ get_vertices_from_edge_link(const Edge& edge, Vertex_handle_set& vertices) const
 TDS_FUNC(void)
 get_edges_from_vertex_link(Vertex_handle vertex, Edge_set& edges) const
 {
+	CGAL_triangulation_precondition( dimension() == 3 );
+
 	std::list<Cell_handle> cells;		
 	incident_cells(vertex, std::back_inserter(cells));
 	typename std::list<Cell_handle>::const_iterator it;
@@ -298,6 +307,8 @@ get_edges_from_vertex_link(Vertex_handle vertex, Edge_set& edges) const
 TDS_FUNC(void)
 get_edges_from_edge_link(const Edge& edge, Edge_set& edges) const
 {
+	CGAL_triangulation_precondition( dimension() == 3 );
+
 	Vertex_handle s = get_source_vertex(edge);
 	Vertex_handle t = get_target_vertex(edge); 
 	Cell_circulator ccirc = incident_cells(edge); 
@@ -323,6 +334,7 @@ get_facets_from_link(Vertex_handle vertex, Vertex_handle dont_include, Facet_lis
 	typename std::list<Cell_handle>::const_iterator it;
 	for (it = cells.begin(); it != cells.end(); ++it) {
 		Cell_handle cell = *it;
+		// TODO: without this check
 		if (!cell->has_vertex(dont_include)) {
 			Facet facet(cell, cell->index(vertex));
 			hull.push_back(facet);
@@ -335,16 +347,13 @@ get_edges_from_link(Vertex_handle vertex, Vertex_handle dont_include, Edge_list&
 {
 	CGAL_triangulation_precondition( dimension() == 2 );
 
-	std::list<Cell_handle> cells;
-	//incident_faces
-	incident_cells(vertex, std::back_inserter(cells));
-	
-	typename std::list<Cell_handle>::const_iterator it;
-	for (it = cells.begin(); it != cells.end(); ++it) {
-		Cell_handle cell = *it;
-		if (!cell->has_vertex(dont_include)) {
-			int id = cell->index(vertex);
-			Edge edge(cell, cw(id), ccw(id));
+	Face_circulator fcirc = incident_faces(vertex);
+	Face_circulator fend  = fcirc;
+
+	CGAL_For_all(fcirc, fend) {
+		if (!fcirc->has_vertex(dont_include)) {
+			int id = fcirc->index(vertex);
+			Edge edge(fcirc, cw(id), ccw(id));
 			hull.push_back(edge);
 		}
 	}
@@ -359,14 +368,6 @@ is_collapsible(const Edge& edge) const
 	
 	switch( dimension() ) {
 		case 3: {
-			//bool for_vertices = is_collapsible_for_vertices(edge);
-			//bool for_edges = is_collapsible_for_edges(edge);
-
-			//std::cout << "top_for_vertices: " << for_vertices << std::endl;
-			//std::cout << "top_for_edges" << for_edges << std::endl;
-
-			//return for_vertices && for_edges;		
-	
 			return 	is_collapsible_for_vertices(edge)	
 				&& is_collapsible_for_edges(edge);
 		}
@@ -623,8 +624,6 @@ collapse_high_degree_dim_2(Edge edge)
 	//           *-----*-----*
 	//
 	
-using std::cout;
-using std::endl;
 	Cell_handle f = edge.first;
 	Vertex_handle source = get_source_vertex(edge);
 	Vertex_handle target = get_target_vertex(edge);
@@ -639,7 +638,7 @@ using std::endl;
 	}
 
 	CGAL_precondition( dimension() == 2 );
-	CGAL_precondition( degree(source) >= 4 );
+	CGAL_precondition( degree(source) >= 3 ); // >=4 TODO
 
 	// first we register all the needed info
 	CGAL_assertion(f->vertex(i) != source);
@@ -718,9 +717,7 @@ collapse_collapsible(Edge& edge)
 	// edge source-target: source is removed
 	Cell_handle seed_cell = edge.first;
 	Vertex_handle source = get_source_vertex(edge);
-				//seed_cell->vertex(edge.second);
 	Vertex_handle target = get_target_vertex(edge);
-				//seed_cell->vertex(edge.third);
 	int deg = degree(source);
 	
 	CGAL_triangulation_precondition( source != target );
@@ -733,12 +730,16 @@ collapse_collapsible(Edge& edge)
 
 	switch ( dimension() ) {
 		case 3: {
-			CGAL_triangulation_precondition( deg >= 4 );
-			if ( deg == 4 ) {
-				cout << "Decrease!" << endl;
-				CGAL_assertion(is_valid());
-				remove_from_maximal_dimension_simplex(source);
-				CGAL_assertion(is_valid());
+			// a single tetrahedral
+			if (number_of_vertices() == 5) {
+				remove_decrease_dimension(source);
+
+//set_dimension(2);
+
+				//cout << "Decrease!" << endl;
+				//CGAL_assertion(is_valid());
+				//remove_from_maximal_dimension_simplex(source);
+				//CGAL_assertion(is_valid());
 				return;
 			}
 
@@ -800,18 +801,15 @@ collapse_collapsible(Edge& edge)
 			delete_cells(rcells.begin(),rcells.end());
 			delete_vertex(source);
 
-			// less than a tetrahedral
-			//if ( number_of_vertices() <= 4 ) 
-			//	set_dimension(2);
-
 			CGAL_triangulation_expensive_postcondition( is_valid() );
 			return;
 		}
 		case 2: {
 			CGAL_triangulation_precondition( deg >= 3 );
 		
-			if ( deg == 3 ) {
+			if (number_of_vertices() == 4) {
 				remove_from_maximal_dimension_simplex(source);
+
 				//Cell_handle f = seed_cell;
 				//int i = 3 - (edge.second + edge.third);
 //				//remove_degree_3_dim_2(source, f->neighbor( ccw(i) ));
@@ -849,8 +847,6 @@ collapse_collapsible(Edge& edge)
 			prev_cell->set_vertex( source_index, target );
 
 			set_adjacency(prev_cell, 1-source_index, next_cell, 1-next_cell->index(target));
-			//prev_cell->set_neighbor( 1-source_index, next_cell );
-			//next_cell->set_neighbor( 1-next_cell->index(target), prev_cell );
 			target->set_cell(next_cell);
 
 			delete_cell(seed_cell);
@@ -896,11 +892,11 @@ check_delaunay_property(const Edge& edge, const Point& point) const
 			Vertex_handle source = seed_cell->vertex(edge.second);
 			Vertex_handle target = seed_cell->vertex(edge.third);
 
-			CGAL_triangulation_precondition( dimension() == 3 );
+			// TODO: infinite edges also?
 			CGAL_triangulation_precondition( !is_infinite(edge) );
 
 			std::list<Cell_handle> scells;
-			incident_cells(source, std::back_inserter(scells)); // precondition: dimension()==3
+			incident_cells(source, std::back_inserter(scells));
 
 			typename std::list<Cell_handle>::iterator it;
 			for(it = scells.begin(); it != scells.end(); it++) {
@@ -913,7 +909,7 @@ check_delaunay_property(const Edge& edge, const Point& point) const
 				// the cells incident to both source and target are deleted due to the collapse
 				if (c->has_vertex(target)) continue;
 
-				// TODO: optimize without the array
+				// TODO: optimize without the array?
 				Point p[4] = {
 					c->vertex(0)->point(),
 					c->vertex(1)->point(),
@@ -937,7 +933,40 @@ check_delaunay_property(const Edge& edge, const Point& point) const
 			return true;
 		}
 		case 2: {
-			//TODO:
+			Cell_handle seed_cell = edge.first;
+			Vertex_handle source = seed_cell->vertex(edge.second);
+			Vertex_handle target = seed_cell->vertex(edge.third);
+
+			CGAL_triangulation_precondition( !is_infinite(edge) );
+
+			Face_circulator f = tds().incident_faces(source);
+			Face_circulator fend  = f;
+
+			CGAL_For_all(f, fend) {
+				CGAL_assertion( f->has_vertex(source) );
+
+				// shperes of infinite cells are not defined
+				if (is_infinite(f, 3)) continue;
+				
+				// the cells incident to both source and target are deleted due to the collapse
+				if (f->has_vertex(target)) continue;
+
+				Point p[3] = {
+					f->vertex(0)->point(),
+					f->vertex(1)->point(),
+					f->vertex(2)->point()
+				};
+
+				// replace the source with the target vertex
+				p[ f->index(source) ] = point;
+				
+				for (int i=0; i<3; i++ ) {
+					Vertex_handle query = Tr_Base::mirror_vertex(f,i);
+					if (is_infinite(query)) continue;
+					if ( coplanar_side_of_bounded_circle( p[0], p[1], p[2], query->point(), false) == ON_BOUNDED_SIDE)
+						return false;
+				}
+			}
 			return true;
 		}
 		case 1: {
@@ -948,7 +977,126 @@ check_delaunay_property(const Edge& edge, const Point& point) const
 
 	CGAL_triangulation_assertion( false );
 }
-  
+
+///////////////////////////////////
+// REGULAR_TRIANGULATION members //
+///////////////////////////////////
+
+RT_FUNC(bool)
+is_collapsible(const Edge& edge, const Weighted_point& point) const
+{
+	return 	Tr_Base::is_collapsible(edge, point)
+		&& check_regular_property(edge, point);
+}
+
+RT_FUNC(bool)
+is_collapsible(const Edge& edge) const
+{
+	return is_collapsible(edge, Tr_Base::_tds.get_target_vertex(edge)->point());
+}
+
+// protected:
+RT_FUNC(bool)
+check_regular_property(const Edge& edge, const Weighted_point& point) const
+{
+	CGAL_triangulation_precondition( dimension() >= 1 );
+	CGAL_triangulation_precondition( number_of_vertices() >= 2 );
+
+	Cell_handle seed_cell = edge.first;
+	Vertex_handle source = seed_cell->vertex(edge.second);
+	Vertex_handle target = seed_cell->vertex(edge.third);
+
+	switch ( dimension() ) {
+		case 3: {	
+			// TODO: infinite edges also?
+			CGAL_triangulation_precondition( !is_infinite(edge) );
+
+			std::list<Cell_handle> scells;
+			incident_cells(source, std::back_inserter(scells));
+
+			typename std::list<Cell_handle>::iterator it;
+			for(it = scells.begin(); it != scells.end(); it++) {
+				Cell_handle c = *it;
+				CGAL_assertion( c->has_vertex(source) );
+
+				// shperes of infinite cells are not defined
+				if (is_infinite(c)) continue;
+				
+				// the cells incident to both source and target are deleted due to the collapse
+				if (c->has_vertex(target)) continue;
+
+				// TODO: optimize without the array?
+				Weighted_point p[4] = {
+					c->vertex(0)->point(),
+					c->vertex(1)->point(),
+					c->vertex(2)->point(),
+					c->vertex(3)->point()
+				};		
+
+				// replace the source with the target vertex
+				p[ c->index(source) ] = point;
+
+				for (int i=0; i<4; i++ ) {
+					Vertex_handle query = Tr_Base::mirror_vertex(c,i);
+					//Vertex_handle query = c->neighbor(i)->vertex(c->neighbor(i)->index(c));
+					if (is_infinite(query)) continue;
+
+					// 'perturb'=false
+					if ( (Bounded_side) side_of_oriented_power_sphere(p[0], p[1], p[2], p[3], query->point(), false) == ON_BOUNDED_SIDE )
+						return false;
+				}
+			}
+			return true;
+		}
+		case 2: {
+			CGAL_triangulation_precondition( !is_infinite(edge) );
+
+			Face_circulator f = tds().incident_faces(source);
+			Face_circulator fend  = f;
+
+			CGAL_For_all(f, fend) {
+				CGAL_assertion( f->has_vertex(source) );
+
+				// shperes of infinite cells are not defined
+				if (is_infinite(f, 3)) continue;
+				
+				// the cells incident to both source and target are deleted due to the collapse
+				if (f->has_vertex(target)) continue;
+
+				Weighted_point p[3] = {
+					f->vertex(0)->point(),
+					f->vertex(1)->point(),
+					f->vertex(2)->point()
+				};
+
+				// replace the source with the target vertex
+				p[ f->index(source) ] = point;
+				
+				for (int i=0; i<3; i++ ) {
+					Vertex_handle query = Tr_Base::mirror_vertex(f,i);
+					if (is_infinite(query)) continue;
+					if ( Bounded_side( side_of_oriented_power_circle( p[0], p[1], p[2], query->point(), false) ) == ON_BOUNDED_SIDE)
+						return false;
+				}
+			}
+			return true;
+		}
+		case 1: {
+			Vertex_handle query = Tr_Base::mirror_vertex(seed_cell, edge.third);
+
+			if( is_infinite(query) )
+				return true;
+
+			if (side_of_bounded_power_segment(point, source->point(), query->point(), false) == ON_BOUNDED_SIDE)
+				return false;
+
+			return true;	
+		}
+	}
+
+	CGAL_triangulation_assertion( false );
+}
+ 
 /////////////////////////////
 // TRIANGULATION_3 members //
 /////////////////////////////
@@ -987,6 +1135,18 @@ collapse_collapsible(Edge& edge, const Point& point)
 }
 
 TRI_FUNC(void)
+fix_orientation()
+{
+	CGAL_triangulation_assertion( dimension() == 2 );
+
+	Facet f = *finite_facets_begin();
+        if (coplanar_orientation(f.first->vertex(0)->point(),
+                                 f.first->vertex(1)->point(),
+                                 f.first->vertex(2)->point()) == NEGATIVE)
+            tds().reorient();
+}
+
+TRI_FUNC(void)
 collapse_collapsible(Edge& edge)
 {
 	CGAL_triangulation_precondition( is_collapsible(edge) );
@@ -999,11 +1159,10 @@ collapse_collapsible(Edge& edge)
 			return;
 		}
 		case 2: {
-			// TODO: remove flat facets
+			fix_orientation();
 			return;
 		}
 		case 1: {
-			// TODO: nothing?
 			return;
 		}
 	}
@@ -1036,6 +1195,7 @@ is_geom_collapsible(const Edge& edge, const Point& point) const
 	CGAL_triangulation_precondition( dimension() >= 1 );
 	CGAL_triangulation_expensive_precondition( is_simplex(edge.first) );
 	CGAL_triangulation_expensive_precondition( is_edge(edge.first, edge.second, edge.third) );
+	CGAL_triangulation_expensive_precondition( is_simplex(edge.first) );
 
 	Vertex_handle source = _tds.get_source_vertex(edge);
 	Vertex_handle target = _tds.get_target_vertex(edge);
@@ -1045,6 +1205,7 @@ is_geom_collapsible(const Edge& edge, const Point& point) const
 	
 	switch( dimension() ) {
 		case 3: {
+			// TODO: decide about the infinites
 			if (is_infinite(target)) return true;
 
 			Facet_list hull;
@@ -1057,7 +1218,7 @@ is_geom_collapsible(const Edge& edge, const Point& point) const
 			if (point != target->point()) 
 				_tds.get_facets_from_link(target, source, hull);
 
-			return is_in_kernel(point, hull.begin(), hull.end());
+			return is_in_kernel_3D(point, hull);
 		}
 		case 2: {
 			if (is_infinite(target)) return true;
@@ -1072,7 +1233,7 @@ is_geom_collapsible(const Edge& edge, const Point& point) const
 			if (point != target->point()) 
 				_tds.get_edges_from_link(target, source, hull);
 
-			return is_in_kernel_2d(point, hull.begin(), hull.end());
+			return is_in_kernel_2D(point, hull);
 		}
 		case 1: {
 			return true;
@@ -1083,12 +1244,13 @@ is_geom_collapsible(const Edge& edge, const Point& point) const
 }  
 
 template < class Vb, class Cb >
-template < class Iterator > // value_type = Face
 bool
 Triangulation_3<Vb,Cb>::
-is_in_kernel(Point query, Iterator begin, Iterator end) const
+is_in_kernel_3D(Point query, Facet_list& hull) const
 {
-	for (Iterator it = begin; it != end; ++it) {
+	typename Facet_list::iterator it;
+ 
+	for (it = hull.begin(); it != hull.end(); ++it) {
 		Facet facet = *it;
 		if (is_infinite(facet))
 			continue;
@@ -1106,12 +1268,15 @@ is_in_kernel(Point query, Iterator begin, Iterator end) const
 }
 
 template < class Vb, class Cb >
-template < class Iterator > // value_type = Face
 bool
 Triangulation_3<Vb,Cb>::
-is_in_kernel_2d(Point query, Iterator begin, Iterator end) const
+is_in_kernel_2D(Point query, Edge_list& hull) const
 {
-	for (Iterator it = begin; it != end; ++it) {
+	CGAL_triangulation_assertion( dimension() == 2 );
+	
+	typename Edge_list::iterator it;
+
+	for (it = hull.begin(); it != hull.end(); ++it) {
 		Edge edge = *it;
 		if (is_infinite(edge))
 			continue;
@@ -1119,7 +1284,8 @@ is_in_kernel_2d(Point query, Iterator begin, Iterator end) const
 		Vertex_handle va, vb;
 		_tds.get_vertices_from_edge(edge, va, vb);
 
-		if (CGAL::coplanar_orientation(query, va->point(), vb->point()) != CGAL::NEGATIVE)
+		if (CGAL::coplanar_orientation(query, va->point(), vb->point()) == CGAL::POSITIVE)
+		//if (CGAL::coplanar_orientation(query, va->point(), vb->point()) != CGAL::NEGATIVE)
 			return false;
 	}
 
@@ -1140,7 +1306,7 @@ is_simplex( Cell_handle c ) const
   //}
   //return false;
 }
-
+/*
 ///////////
 // DEBUG //
 ///////////
@@ -1204,6 +1370,6 @@ print_edges(const Cont S, std::string note) const
 
 	std::cout << std::endl;
 }	
-
+*/
 CGAL_END_NAMESPACE
 

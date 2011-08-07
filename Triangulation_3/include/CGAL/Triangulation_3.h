@@ -726,13 +726,11 @@ public:
   bool is_collapsible(const Edge& edge) const;
   bool is_collapsible(const Edge& edge, const Point& point) const;
   
-  template <class Iterator>
-	bool is_in_kernel(Point query, Iterator begin, Iterator end) const;
-  template <class Iterator>
-	bool is_in_kernel_2d(Point query, Iterator begin, Iterator end) const;
+  bool is_in_kernel_3D(Point query, Facet_list& hull) const;
+  bool is_in_kernel_2D(Point query, Edge_list& hull) const;
 
   bool is_simplex( Cell_handle c ) const; // to document the tds::is_simlex too
-
+  void fix_orientation(); // TODO: use it in remove_dim_down
   // PIVANOV END
 
   //INSERTION

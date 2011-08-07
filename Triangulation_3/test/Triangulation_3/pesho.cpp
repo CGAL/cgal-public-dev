@@ -1,9 +1,12 @@
 #include <CGAL/Exact_predicates_exact_constructions_kernel.h>
-#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
+//#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/Triangulation_3.h>
 #include <CGAL/Delaunay_triangulation_3.h>
+#include <CGAL/Regular_triangulation_3.h>
 #include <CGAL/Triangulation_vertex_base_with_info_3.h>
 #include <CGAL/utility.h>
+
+#include <CGAL/Regular_triangulation_euclidean_traits_3.h>
 
 #include <CGAL/collapse.h>
 
@@ -41,10 +44,13 @@ using namespace std;
 //typedef CGAL::Exact_predicates_inexact_constructions_kernel		K;
 typedef CGAL::Exact_predicates_exact_constructions_kernel		K;
 
+typedef CGAL::Regular_triangulation_euclidean_traits_3<K>		traits;
+
 typedef CGAL::Triangulation_vertex_base_with_info_3<CGAL::Color, K>	Vb;
 typedef CGAL::Triangulation_data_structure_3<Vb>			Tds;
-typedef CGAL::Triangulation_3<K, Tds>					Triangulation;
+//typedef CGAL::Triangulation_3<K, Tds>					Triangulation;
 //typedef CGAL::Delaunay_triangulation_3<K, Tds>				Triangulation;
+typedef CGAL::Regular_triangulation_3<traits>				Triangulation;
 
 typedef K::FT FT;
 typedef K::Vector_3					Vector;
@@ -77,7 +83,8 @@ struct my_edge_cmp {
 	bool operator()(const Simple_edge &a, const Simple_edge &b)
 	{
 		return a < b;
-
+		
+		// TODO: random!
 		Vertex_handle av1 = a.second;
 		Vertex_handle av2 = a.third;
 		Vertex_handle bv1 = b.second;
@@ -97,7 +104,7 @@ struct my_edge_cmp {
 
 typedef priority_queue< Simple_edge, vector<Simple_edge>, my_edge_cmp >	PQ_of_edges;
 
-CGAL::Random my_rand(42);
+CGAL::Random my_rand(40);
 
 std::list<Point> get_my_points()
 {
@@ -108,6 +115,18 @@ std::list<Point> get_my_points()
 	L.push_front(Point(0,1,1));
 	L.push_front(Point(0,0,0));
 	L.push_front(Point(1,1,1));
+
+	return L;
+}
+
+std::list<Point> get_my_2d_points()
+{
+	std::list<Point> L;
+	
+	L.push_front(Point(0,0,0));
+	L.push_front(Point(0,2,0));
+	L.push_front(Point(0,0,3));
+	L.push_front(Point(0,1,1));
 
 	return L;
 }
@@ -177,6 +196,13 @@ void geomview_show_edge(Geomview_stream &gs, Vertex_handle v1, Vertex_handle v2)
 	//gs.set_vertex_color( CGAL::YELLOW );
 	gs << v2->point();	
 	//gs.set_vertex_color( CGAL::GREEN );
+}
+
+void geomview_show_point (Geomview_stream &gs, double x, double y, double z, CGAL::Color color)
+{
+	Point p(x,y,z);
+	gs.set_vertex_color(color);
+	gs << p;	
 }
 
 void geomview_show_cell (Geomview_stream &gs, Point &p1, Point &p2, Point &p3, Point &p4, CGAL::Color color)
@@ -378,7 +404,7 @@ int collapse_all_edges(Geomview_stream &gs1, Geomview_stream &gs2, Triangulation
 		//Point p1 = v1->point();
 		//Point p2 = v2->point();
 		//Vector segm(p1,p2);
-		//Point mid = p2;// + segm/2;
+		//Point mid = p2;//p1 + segm*0.9;
 
 		//gs1 << mid;
 	cout << ".1";
@@ -386,7 +412,7 @@ int collapse_all_edges(Geomview_stream &gs1, Geomview_stream &gs2, Triangulation
 		bool top =  T.tds().is_collapsible(e);
 
 	cout << ".2";
-		bool geom = T.is_geom_collapsible(e);
+		bool geom = T.is_collapsible(e);
 
 	cout << ".3";
 		stat_examined ++;
@@ -400,6 +426,9 @@ int collapse_all_edges(Geomview_stream &gs1, Geomview_stream &gs2, Triangulation
 		if (top && geom) {
 			//cout << "cnt: " << cnt << " n: " << n << endl;
 			//if (cnt++ < n) continue;
+			
+			cout << "before collapse:";
+			T.is_valid(true);
 
 			stat_collapsed++;
 			if (!incident_to_inf(T,v2)) stat_collapsed_internal++;
@@ -408,16 +437,19 @@ int collapse_all_edges(Geomview_stream &gs1, Geomview_stream &gs2, Triangulation
 			geomview_show_edge(gs1,v1,v2);
 
 			cout << "vertices: " << T.number_of_vertices() << endl;
+
+			//if (T.number_of_vertices() == 4) T.tds().remove_from_maximal_dimension_simplex(v1);
+			//else
 			if (!T.collapse(e)) cout << "Hm.. Strange!" << endl;
 			cout << "collapsed dim=" << T.dimension() << endl;
 
 	cout << ".5";
 			T.is_valid(true);
 	cout << ".6";
-			//gs2.clear();
-			//geomview_show(gs2, T);
-			//gs2 << v2->point();
-			//cin.get();
+			gs2.clear();
+			gs2 << T;
+			gs2 << v2->point();
+			cin.get();
 
 			insert_adjacent_edges_to_queue(T, pq, v2);
 		}
@@ -454,9 +486,26 @@ int main(int argn, char *args[])
 
 	//L = get_rand_in_sphere(n, r);
 	//L = get_my_points();
+	//L = get_my_2d_points();
 	L = get_2D(n);
 	//L = get_1D(n);
 	Triangulation T(L.begin(), L.end());
+
+	gs1 << T;
+
+	T.is_valid(true);
+	/*
+	Triangulation::All_vertices_iterator vit;
+	for(vit=T.all_vertices_begin(); vit!=T.all_vertices_end(); vit++)
+		if (!n--) {
+			Vertex_handle v = vit;
+			T.tds().remove_from_maximal_dimension_simplex(v);
+			cout << T.is_valid(true) << endl;
+			T.tds().reorient();
+			cout << T.is_valid(true) << endl;
+			break;
+		}
+	*/
 
 	//write_to_OFF("init.off", T);
 	//std::ofstream oFileT("output",std::ios::out);

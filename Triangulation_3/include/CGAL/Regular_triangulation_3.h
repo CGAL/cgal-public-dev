@@ -78,6 +78,7 @@ public:
   typedef typename Tr_Base::Facet_iterator      Facet_iterator;
   typedef typename Tr_Base::Edge_iterator       Edge_iterator;
   typedef typename Tr_Base::Facet_circulator    Facet_circulator;
+  typedef typename Tr_Base::Face_circulator     Face_circulator;
 
   typedef typename Tr_Base::Finite_vertices_iterator Finite_vertices_iterator;
   typedef typename Tr_Base::Finite_cells_iterator    Finite_cells_iterator;
@@ -153,6 +154,14 @@ public:
   {
       insert(first, last);
   }
+
+// PIVANOV GSOC
+  bool is_collapsible(const Edge& edge, const Weighted_point& point) const;
+  bool is_collapsible(const Edge& edge) const;
+
+  bool check_regular_property(const Edge& edge, const Weighted_point& point) const;
+
+// END PIVANOV
 
 #ifndef CGAL_TRIANGULATION_3_DONT_INSERT_RANGE_OF_POINTS_WITH_INFO
   template < class InputIterator >
