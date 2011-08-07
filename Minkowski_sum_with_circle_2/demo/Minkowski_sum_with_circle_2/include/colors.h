@@ -23,7 +23,9 @@ struct Polygon_color
   QColor yellow;
   QColor cyan;
   QColor magenta;
-  QColor grey;  
+  QColor cyan_dark;
+  QColor magenta_dark;
+  QColor grey;
   QColor orange;
   QColor green_dark;
   QColor red_dark;
@@ -36,6 +38,8 @@ struct Polygon_color
     orange(255,127,0),
     cyan(0,255,255),
     magenta(255,0,255),
+    cyan_dark(0,127,127),
+    magenta_dark(127,0,127),
     grey(180,180,180),
     green_dark(0,127,0),
     red_dark(127,0,0),
