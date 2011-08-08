@@ -406,7 +406,7 @@ void check_compilation() {
   Arr arr;
   CGAL::Arr_landmarks_point_location<Arr> pl(arr);
   
-  Point_2 *p;
+  Point_2 *p = NULL;
   pl.locate(*p);
 }
 

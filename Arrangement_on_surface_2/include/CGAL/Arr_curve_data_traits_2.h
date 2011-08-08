@@ -27,6 +27,10 @@
 
 #include<CGAL/Arr_tags.h>
 #include<CGAL/Arr_geometry_traits/Curve_data_aux.h>
+
+#include <boost/mpl/has_xxx.hpp>
+#include <boost/mpl/if.hpp>
+
 #include<list>
 
 namespace CGAL {
@@ -68,11 +72,16 @@ public:
   typedef typename Base_traits_2::Has_do_intersect_category
                                                       Has_do_intersect_category;
 
-  #warning "This may not compile on all traits"
-  typedef typename Base_traits_2::Has_construct_x_monotone_curve_2_category
-                                                Has_construct_x_monotone_curve_2_category;
+/**
+ * It could be that Base_traits_2 is not a model of the PointLocationTraits, but it
+ * can also be that it does. We have define it to Tag_false if it does not exist.
+ * 
+ */
+  BOOST_MPL_HAS_XXX_TRAIT_DEF(Has_construct_x_monotone_curve_2_category)
 
-
+  typedef typename boost::mpl::if_<typename has_Has_construct_x_monotone_curve_2_category<Base_traits_2>::type,
+          typename Base_traits_2::Has_construct_x_monotone_curve_2_category, CGAL::Tag_false>::type
+                                                      Has_construct_x_monotone_curve_2_category;
 
   typedef typename internal::Arr_complete_left_side_category< Base_traits_2 >::Category
                                                       Left_side_category;
