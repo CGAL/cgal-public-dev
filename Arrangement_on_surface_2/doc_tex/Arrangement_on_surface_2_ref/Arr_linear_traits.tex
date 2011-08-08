@@ -31,6 +31,9 @@ are constructible from a point, a line segment, a ray and from a line
 hand, when we are given a curve we can find out its actual type and convert
 it to the respective kernel object (say, to a \ccc{Kernel::Ray_2}).
 
+The traits-class models the \ccc{ArrangementLandmarkTraits_2} concept
+and defines \ccc{Has_construct_x_monotone_curve_2_category} to
+be \ccc{Tag_true}.
 \ccc{Compare_at_x_left_2} is provided and the \ccc{Has_left_category}
 is defined to be \ccc{Tag_true}.
 

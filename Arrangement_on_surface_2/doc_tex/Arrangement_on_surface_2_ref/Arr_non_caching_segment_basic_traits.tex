@@ -29,9 +29,14 @@ instantiations for the kernel. Using other (inexact) number types
 \ccStyle{Simple_cartesian<double>}) is also possible, at the user's own
 risk.
 
+The class is able to construct an \ccc{X_monotone_curve_2} given two
+points and therefore
+defines \ccc{Has_construct_x_monotone_curve_2_category} to be true.
 \ccc{Compare_at_x_left_2} is provided and the \ccc{Has_left_category}
 is defined to be \ccc{Tag_true}.
-    
+
+
+
 \ccInclude{CGAL/Arr_non_caching_segment_basic_traits_2.h}
  
 \ccIsModel

@@ -61,9 +61,11 @@ each segment, so constructing arrangements of huge sets of non-intersecting
 segments (or segments that intersect very sparsely) could be more efficient
 with the \ccStyle{Arr_non_caching_segment_traits_2} traits-class.
 
+The traits-class models the \ccc{ArrangementLandmarkTraits_2} concept
+and defines \ccc{Has_construct_x_monotone_curve_2_category} to
+be \ccc{Tag_true}.
 \ccc{Compare_at_x_left_2} is provided and the \ccc{Has_left_category}
 is defined to be \ccc{Tag_true}.
-
 
 \ccInclude{CGAL/Arr_segment_traits_2.h}
  
