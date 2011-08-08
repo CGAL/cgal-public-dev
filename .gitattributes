@@ -472,6 +472,8 @@ Arrangement_on_surface_2/examples/Arrangement_on_surface_2/fan_grids.dat -text
 Arrangement_on_surface_2/examples/Arrangement_on_surface_2/io_unbounded.cpp -text
 Arrangement_on_surface_2/examples/Arrangement_on_surface_2/points.dat -text
 Arrangement_on_surface_2/examples/Arrangement_on_surface_2/unb_planar_vertical_decomposition.cpp -text
+Arrangement_on_surface_2/include/CGAL/Algebraic_kernel_2_1.h -text
+Arrangement_on_surface_2/include/CGAL/Arr_add_vertical_segment_traits.h -text
 Arrangement_on_surface_2/include/CGAL/Arr_algebraic_segment_traits_2.h -text
 Arrangement_on_surface_2/include/CGAL/Arr_geodesic_arc_on_sphere_partition_traits_2.h -text
 Arrangement_on_surface_2/include/CGAL/Arr_point_location/Arr_lm_specified_points_generator.h -text
@@ -829,6 +831,7 @@ Arrangement_on_surface_2/test/Arrangement_on_surface_2/test_rational_function_tr
 Arrangement_on_surface_2/test/Arrangement_on_surface_2/test_rectangular_hyperbola_with_iso_asymptotes_traits_2.cpp -text
 Arrangement_on_surface_2/test/Arrangement_on_surface_2/test_traits_adaptor.cpp -text
 Arrangement_on_surface_2/test/Arrangement_on_surface_2/test_traits_adaptor.h -text
+Arrangement_on_surface_2/test/Arrangement_on_surface_2/test_vertical_segment_traits.cpp -text
 Arrangement_on_surface_2/test/Arrangement_on_surface_2/test_zone.cpp -text
 Arrangement_on_surface_2/test/Arrangement_on_surface_2/todo -text
 Arrangement_on_surface_2/test/Sweep_line_2/CompareCurveList.h eol=lf
