@@ -48,9 +48,9 @@ typedef CGAL::Regular_triangulation_euclidean_traits_3<K>		traits;
 
 typedef CGAL::Triangulation_vertex_base_with_info_3<CGAL::Color, K>	Vb;
 typedef CGAL::Triangulation_data_structure_3<Vb>			Tds;
-//typedef CGAL::Triangulation_3<K, Tds>					Triangulation;
+typedef CGAL::Triangulation_3<K, Tds>					Triangulation;
 //typedef CGAL::Delaunay_triangulation_3<K, Tds>				Triangulation;
-typedef CGAL::Regular_triangulation_3<traits>				Triangulation;
+//typedef CGAL::Regular_triangulation_3<traits>				Triangulation;
 
 typedef K::FT FT;
 typedef K::Vector_3					Vector;
@@ -110,11 +110,45 @@ std::list<Point> get_my_points()
 {
 	std::list<Point> L;
 	
-	//L.push_front(Point(0,2,0));
+	L.push_front(Point(0,2,0));
 	L.push_front(Point(0,0,1));
 	L.push_front(Point(0,1,1));
 	L.push_front(Point(0,0,0));
 	L.push_front(Point(1,1,1));
+
+	return L;
+}
+
+std::list<Point> get_layered_2d_points(int n, int m)
+{
+	std::list<Point> L;
+
+	for(int i=0; i<n; i++) {
+		for(int j=0; j<m; j++) {
+			double x = my_rand.get_double(0.0, 5.0);
+			double y = x;
+			double z = i;
+
+			L.push_front(Point(x,y,z));
+		}
+	}
+
+	return L;
+}
+
+std::list<Point> get_layered_3d_points(int n, int m)
+{
+	std::list<Point> L;
+
+	for(int i=0; i<n; i++) {
+		for(int j=0; j<m; j++) {
+			double x = my_rand.get_double(0.0, 5.0);
+			double y = my_rand.get_double(0.0, 5.0);
+			double z = i;
+
+			L.push_front(Point(x,y,z));
+		}
+	}
 
 	return L;
 }
@@ -419,7 +453,7 @@ int collapse_all_edges(Geomview_stream &gs1, Geomview_stream &gs2, Triangulation
 		stat_top_collapsible += top;
 		stat_geom_collapsible += geom;
 
-		cout << "top: " << top << " geom: " << geom << endl;
+		//cout << "top: " << top << " geom: " << geom << endl;
 
 		//geomview_show_edge(gs1,v1,v2);
 
@@ -446,10 +480,10 @@ int collapse_all_edges(Geomview_stream &gs1, Geomview_stream &gs2, Triangulation
 	cout << ".5";
 			T.is_valid(true);
 	cout << ".6";
-			gs2.clear();
-			gs2 << T;
-			gs2 << v2->point();
-			cin.get();
+			//gs2.clear();
+			//gs2 << T;
+			//gs2 << v2->point();
+			//cin.get();
 
 			insert_adjacent_edges_to_queue(T, pq, v2);
 		}
@@ -484,11 +518,13 @@ int main(int argn, char *args[])
 
 	list<Point> L;
 
+	//L = get_layered_2d_points(n, 10*n);	
+	//L = get_layered_3d_points(n, 10*n);	
 	//L = get_rand_in_sphere(n, r);
 	//L = get_my_points();
 	//L = get_my_2d_points();
-	L = get_2D(n);
-	//L = get_1D(n);
+	//L = get_2D(n);
+	L = get_1D(n);
 	Triangulation T(L.begin(), L.end());
 
 	gs1 << T;

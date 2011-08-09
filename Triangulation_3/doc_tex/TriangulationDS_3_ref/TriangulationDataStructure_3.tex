@@ -465,6 +465,21 @@ dimension 3, \ccVar.\ccc{insert_in_facet(v)} in dimension 2, and
 \ccPrecond{\ccVar.\ccc{degree(v)} $=$ \ccVar.\ccc{dimension()+1}.}
 }
 
+\ccMethod{bool collapse(Edge e);}
+{Collapses \ccc{e=(c,i,j)} preserving the vertex of index \ccc{j}. Removes the vertex of index \ccc{i} and all the simplices of maximal dimension incident to \ccc{e}. By removing such simplex its two neighbouring simplices which are not incident to \ccc{e} are made adjacent to each other. Before collapsing, this method invokes \ccc{is_collapsible(e)} (which is quite expensive) and returns \ccc{false} or \ccc{true} according to this test.
+\ccPrecond{\ccVar.\ccc{dimension()} $\geq 1$.}
+}
+
+\ccMethod{void collapse_collapsible(Edge e);}
+{Should be preferred to the previous method when the edge is known to be collapsible.
+\ccPrecond{The edge is collapsible.}
+}
+
+\ccMethod{bool is_collapsible(Edge e) const;}
+{Checks whether the simlicial complex would remain valid (i.e. topologically valid) after collapsing \ccc{e}.
+\ccPrecond{\ccVar.\ccc{dimension()} $\geq 1$.}
+}
+  
 \newpage
 
 \ccHeading{Dimension Manipulation}

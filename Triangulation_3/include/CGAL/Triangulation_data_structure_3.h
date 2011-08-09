@@ -454,6 +454,7 @@ public:
   typedef std::list<Facet>			Facet_list;  
   typedef std::list<Edge>			Edge_list;  
 
+public:
   template < class Cell_handle >		struct less_Cell_handle;
   template < class Vertex_handle >		struct less_Vertex_handle;
   template < class Edge >			struct less_Edge;
@@ -487,18 +488,9 @@ public:
   void get_edges_from_link(Vertex_handle vertex, Vertex_handle dont_include, Edge_list& hull) const;
   
   Facet get_twin_facet(const Facet& facet) const;
-  void remove_degree_3_dim_2(Vertex_handle v, Cell_handle f);
-  void remove_degree_2_dim_2(Vertex_handle v);
-  void collapse_high_degree_dim_2(Edge edge);
 
   bool is_collapsible_for_vertices(const Edge& edge) const;
   bool is_collapsible_for_edges(const Edge& edge) const;
-
-  // DEBUG
-  template< class Cont > void print_vertices(const Cont S, std::string note) const;
-  template< class Cont > void print_edges(const Cont S, std::string note) const;
-  template< class Cont > void print_cells(const Cont S, std::string note) const;
-  // END DEBUG
 
 public:
   bool collapse(Edge& edge);
