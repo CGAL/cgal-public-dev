@@ -2591,6 +2591,7 @@ Minkowski_sum_2/benchmark/Minkowski_sum_2/data/comb.dat -text
 Minkowski_sum_2/benchmark/Minkowski_sum_2/data/fork.dat -text
 Minkowski_sum_2/benchmark/Minkowski_sum_2/data/knife.dat -text
 Minkowski_sum_2/benchmark/Minkowski_sum_2/data/random.dat -text
+Minkowski_sum_2/benchmark/Minkowski_sum_2/data/random2.dat -text
 Minkowski_sum_2/benchmark/Minkowski_sum_2/data/star.dat -text
 Minkowski_sum_2/benchmark/Minkowski_sum_2/sum_by_decomposition.cpp -text
 Minkowski_sum_2/doc_tex/Minkowski_sum_2/fig/Minkowski_sum_2.png -text
