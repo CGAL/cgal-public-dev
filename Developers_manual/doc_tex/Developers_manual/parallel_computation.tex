@@ -13,64 +13,148 @@
 \chapter{Parallel Computation\label{chap:parallel_computation}}
 \ccChapterRelease{Chapter Version: 1.0}
 
-Certain algorithms in \cgal\ are ideal candidates for performance enhancement using multithreading. Threaded implementation of these can significantly improve their efficiency.
+Certain algorithms in \cgal{} are ideal candidates for performance
+enhancement using multi-threading. Threaded implementations of these
+can significantly improve their efficiency.
+For example, one such algorithm is the divide-and-conquer approach
+used to perform Boolean set operations on a set of polygons. It is
+naturally recursive and has been parallelized using
+OpenMP~2.0. Threaded implementation significantly improves the performance
+of the algorithm given the proper hardware and especially with large
+amounts of data.
 
-One such algorithm is the divide-and-conquer approach used to perform Boolean set operations on a set of polygons. It is naturally recursive and has been parallelized using OpenMP 2.0. Threaded implementation significantly improves performance of the algorithm especially with large amounts of data. 
+This chapter provides general guidelines for using and implementing
+multi-threading in \cgal{}.
 
-Here we provide certain general guidelines on how to use OpenMP in CGAL which will help with future optimizations of other functions.
-
+% =============================================================================
 \section{The OpenMP API\label{sec:openmp}}
+% =============================================================================
+The OpenMP Application Program Interface (API) supports multi-platform
+shared-memory parallel programming in C++ on various
+architectures. OpenMP is a portable, scalable model that gives a
+simple and flexible interface for developing parallel applications.
 
-The OpenMP Application Program Interface (API) supports multi-platform shared-memory parallel programming in C++ on all architectures, including Unix platforms and Windows NT platforms. OpenMP is a portable, scalable model that gives a simple and flexible interface for developing parallel applications.
+In \cgal{} only OpenMP 2.0 is supported (3.0 is not). This is due to
+the lack of support of certain prominent compilers in OpenMP 3.0
+(Microsoft Visual C++).
 
-The benchmark results for Boolean-set-operations show a very good performance improvement by using OpenMP 2.0.
 
-Please note that only OpenMP 2.0 is supported. OpenMP 3.0 is not supported. OpenMP 2.0 has been used instead of OpenMP 3.0 due to better compiler support for OpenMP 2.0 (Visual C++ does not support 3.0 yet). 
+%%% SANDHYAA, If you don't give specific information on specific
+%%% compilers and cmake, this is not very interesting.
+%% % =============================================================================
+%% \section{Compiling with OpenMP\label{sec:compiling_with_openmp}}
+%% % =============================================================================
+%% To enable threaded implementation, code needs to be compiled with
+%% OpenMP enabled. All major compilers have OpenMP support.
 
-\section{Compiling with OpenMP\label{sec:compiling_with_openmp}}
 
-To enable threaded implementation, code needs to be compiled with OpenMP enabled. All major compilers have OpenMP support.
+% =============================================================================
+\section{Controlling the Number of Executing Threads\label{sec:set_num_thread}}
+% =============================================================================
+The number of threads created can be controlled by setting
+\ccc{OMP_NUM_THREADS} environment variable. By default the number of
+threads created will be equal to the number of hardware threads
+available on the system.
 
-\section{Setting the number of threads\label{sec:set_num_thread}}
 
-The number of threads created can be controlled by setting \ccc{OMP_NUM_THREADS} environment variable. By default the number of threads created will be equal to the number of hardware threads available on the system.
 
+% =============================================================================
 \section{Disabling Parallel Computation\label{sec:disable_parallel}}
+% =============================================================================
+The developer must make sure that if OpenMP is not used the function
+still works. He must also provide a specific flag to disable
+multi-threading in the package. If the package name is \ccc{XXX} then
+if the user defines the \ccc{CGAL_XXX_SERIAL} compilation flag then
+the function must use a single thread.
+For example, in the \ccc{Boolean_set_operations_2} package the user
+can define the \ccc{CGAL_BOOLEAN_SET_OPERATIONS_2_SERIAL} to enable
+serial execution.
 
-To disable OpenMP for the \ccc{Boolean_set_operations_2} package the user must define the compilation flag \ccc{CGAL_BOOLEAN_SET_OPERATIONS_2_SERIAL}
+We need this flag situations where a user compiles with OpenMP but
+does not want to use OpenMP in a certain package. For example, while
+trying to use multi-threading at a higher level.
 
-We need this flag in a situation where a user compiles with OpenMP but does not want to use OpenMP in the package. For example while parallelizing on a higher level. This flag gives the option to toggle explicitly the feature by proper defines. 
+In the future we could allow different multi-threading methods and
+allow the user to select the method desired. To this end we could
+introduce a general header parallel.h where we introduce the macro
+\ccc{CGAL_PARALLEL_METHOD} which can have values like
+\ccc{CGAL_PARALLEL_METHOD_OPENMP} or \ccc{CGAL_PARALLEL_METHOD_BOOST}
+which are all defined in parallel.h. Then packages can have a macro by
+name \ccc{CGAL_PACKAGE_NAME_PARALLEL_METHOD} set to
+\ccc{CGAL_PARALLEL_METHOD} by default.
+The introduction of parallel.h and what could go into it is to be
+discussed.
 
-In the future we could allow different methods of parallelising and allow the user to select the method desired. To this end we could introduce a general header parallel.h where we introduce the macro \ccc{CGAL_PARALLEL_METHOD} which can have values like \ccc{CGAL_PARALLEL_METHOD_OPENMP} or \ccc{CGAL_PARALLEL_METHOD_BOOST} which are all defined in parallel.h. Then packages can have a macro by name \ccc{CGAL_PACKAGE_NAME_PARALLEL_METHOD} set to \ccc{CGAL_PARALLEL_METHOD} by default.
-The introduction of parallel.h and what could go into it is to be discussed.
+A few questions arise. How will the \ccc{PARALLEL_METHOD} macros be
+defined in parallel.h? Will each have a unique number as value? There
+is also the question of default values. What will
+\ccc{CGAL_PARALLEL_METHOD} be set to by default? Which will in turn
+determine what \ccc{CGAL_PACKAGE_NAME_PARALLEL_METHOD} is set to by
+default.
 
-A few questions arise. How will the \ccc{PARALLEL_METHOD} macros be defined in parallel.h? Will each have a unique number as value? There is also the question of default values. What will \ccc{CGAL_PARALLEL_METHOD} be set to by default? Which will in turn determine what \ccc{CGAL_PACKAGE_NAME_PARALLEL_METHOD} is set to by default.
+%% SANDHYAA, can you check what happens with the current threading in
+%% CGAL? Does it appear in the docs? This will be asked...
 
-\section{Nested parallelism\label{sec:nested_parallelism}}
+% =============================================================================
+\section{Nested Parallelism\label{sec:nested_parallelism}}
+% =============================================================================
 
-By default nested parallelism is disabled in OpenMP. When a parallel region is encountered within another parallel region, new threads are not created. This means that in recursive calls, new threads are created when the recursive function is first called and not for further recursive calls. With respect to the Boolean set operations, the first time \ccc{_divide_and_conquer} is called, threads are created when the parallel directive is encountered. Further recursive calls to the function do not create more threads when the parallel directive is encountered. However if nested parallelism is enabled by the user, then each recursive call would result in the creation of threads when the parallel directive is encountered. This would result in rapid exponential increase in the number of threads causing the program to crash. So we have provided a check for current number of threads using the member variable \ccc{m_current_num_threads} before the parallel directive in \ccc{_divide_and_conquer}. If the \ccc{m_current_num_threads} is less than \ccc{OMP_NUM_THREADS} (or default value if it is not set) new threads are created, if not, new threads are not created.
-The user may enable nested parallelism if needed by setting the environment variable \ccc{OMP_NESTED} to TRUE. This will not affect the performance.
+By default nested parallelism is disabled in OpenMP. When a parallel
+region is encountered within another parallel region, new threads are
+not created. This means that in recursive calls, new threads are
+created when the recursive function is first called and not for
+further recursive calls.
 
+%% With respect to the Boolean set operations, the first time
+%% \ccc{_divide_and_conquer} is called, threads are created when the
+%% parallel directive is encountered. Further recursive calls to the
+%% function do not create more threads when the parallel directive is
+%% encountered.
+
+
+However if nested parallelism is enabled by the user, then each
+recursive call would result in the creation of threads when the
+parallel directive is encountered.
+This would result in rapid exponential increase in the number of
+threads causing the program to crash.
+The developer must make sure that enabling nested parallelism is
+supported by the package.
+Our recommended approach is to use a member counter. New threads are
+created only if this member counter is less
+than~\ccc{OMP_NUM_THREADS}.
+
+%% So we have provided a check for current number of
+%% threads using the member variable \ccc{m_current_num_threads} before
+%% the parallel directive in \ccc{_divide_and_conquer}. If the
+%% \ccc{m_current_num_threads} is less than \ccc{OMP_NUM_THREADS} (or
+%% default value if it is not set) new threads are created, if not, new
+%% threads are not created. 
+The user can enable nested parallelism by setting the environment
+variable \ccc{OMP_NESTED} to true. This will not affect the
+performance.
+
+% =============================================================================
 \section{Why OpenMP\label{sec:why_openmp}}
+% =============================================================================
 
 The other alternatives we were considering were: 
 
-1. Boost threads
+\begin{enumerate}
+\item Boost threads
+\item Intel Thread Building Blocks(TBB)
+\end{enumerate}
 
-2. Intel Thread Building Blocks(TBB) 
-
-After a lot of discussion we decided on OpenMP 2.0 because of the following:
-
-1. We didn't see anything that OpenMP didn't have that TBB did. Moreover TBB is less widely known and used (in my opinion) and it requires more change to the code than OpenMP.
-
-2. Boost threads has an advantage of being cross-platform. However support for OpenMP is there on all major compilers.
-
-3. OpenMP is a defacto standard
-
-4. Boost threads requires much more modification of existing code to parallelise. OpenMP required very little modification of existing code. This reduces the chance of inadvertently introducing bugs.
-
-5. We were thinking of trying OpenMP as a start and switch to Boost if required. However the performance gain with OpenMP has been significant and results show good scalability.
-
-6. The divide and conquer algorithms don't require handling complex tasks (shared memory, synchronization, locks and so on) hence OpenMP was a more straightforward choice. boost:thread would have been a better choice if any of the above were required.
-
-7. OpenMP allows much more easier scaling than Boost.
+After a lot of discussion we decided on OpenMP 2.0 because of the
+following:
+\begin{enumerate}
+\item We didn't see anything that OpenMP didn't have that TBB
+  did. Moreover TBB is less widely known and used (in my opinion) and
+  it requires more change to the code than OpenMP.
+\item Boost threads has an advantage of being cross-platform. However
+  support for OpenMP is there on all major compilers.
+\item OpenMP is a defacto standard
+\item Boost threads requires much more modification of existing code to parallelise. OpenMP required very little modification of existing code. This reduces the chance of inadvertently introducing bugs.
+\item We were thinking of trying OpenMP as a start and switch to Boost if required. However the performance gain with OpenMP has been significant and results show good scalability.
+\item The divide and conquer algorithms don't require handling complex tasks (shared memory, synchronization, locks and so on) hence OpenMP was a more straightforward choice. boost:thread would have been a better choice if any of the above were required.
+\item OpenMP allows much more easier scaling than Boost.
+\end{enumerate}
