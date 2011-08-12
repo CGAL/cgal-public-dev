@@ -38,16 +38,6 @@ In \cgal{} only OpenMP 2.0 is supported (3.0 is not). This is due to
 the lack of support of certain prominent compilers in OpenMP 3.0
 (Microsoft Visual C++).
 
-
-%%% SANDHYAA, If you don't give specific information on specific
-%%% compilers and cmake, this is not very interesting.
-%% % =============================================================================
-%% \section{Compiling with OpenMP\label{sec:compiling_with_openmp}}
-%% % =============================================================================
-%% To enable threaded implementation, code needs to be compiled with
-%% OpenMP enabled. All major compilers have OpenMP support.
-
-
 % =============================================================================
 \section{Controlling the Number of Executing Threads\label{sec:set_num_thread}}
 % =============================================================================
@@ -55,8 +45,6 @@ The number of threads created can be controlled by setting
 \ccc{OMP_NUM_THREADS} environment variable. By default the number of
 threads created will be equal to the number of hardware threads
 available on the system.
-
-
 
 % =============================================================================
 \section{Disabling Parallel Computation\label{sec:disable_parallel}}
@@ -70,7 +58,7 @@ For example, in the \ccc{Boolean_set_operations_2} package the user
 can define the \ccc{CGAL_BOOLEAN_SET_OPERATIONS_2_SERIAL} to enable
 serial execution.
 
-We need this flag situations where a user compiles with OpenMP but
+We need this flag in situations where a user compiles with OpenMP but
 does not want to use OpenMP in a certain package. For example, while
 trying to use multi-threading at a higher level.
 
@@ -92,9 +80,6 @@ is also the question of default values. What will
 determine what \ccc{CGAL_PACKAGE_NAME_PARALLEL_METHOD} is set to by
 default.
 
-%% SANDHYAA, can you check what happens with the current threading in
-%% CGAL? Does it appear in the docs? This will be asked...
-
 % =============================================================================
 \section{Nested Parallelism\label{sec:nested_parallelism}}
 % =============================================================================
@@ -105,13 +90,6 @@ not created. This means that in recursive calls, new threads are
 created when the recursive function is first called and not for
 further recursive calls.
 
-%% With respect to the Boolean set operations, the first time
-%% \ccc{_divide_and_conquer} is called, threads are created when the
-%% parallel directive is encountered. Further recursive calls to the
-%% function do not create more threads when the parallel directive is
-%% encountered.
-
-
 However if nested parallelism is enabled by the user, then each
 recursive call would result in the creation of threads when the
 parallel directive is encountered.
@@ -121,40 +99,77 @@ The developer must make sure that enabling nested parallelism is
 supported by the package.
 Our recommended approach is to use a member counter. New threads are
 created only if this member counter is less
-than~\ccc{OMP_NUM_THREADS}.
+than \ccc{OMP_NUM_THREADS}.
 
-%% So we have provided a check for current number of
-%% threads using the member variable \ccc{m_current_num_threads} before
-%% the parallel directive in \ccc{_divide_and_conquer}. If the
-%% \ccc{m_current_num_threads} is less than \ccc{OMP_NUM_THREADS} (or
-%% default value if it is not set) new threads are created, if not, new
-%% threads are not created. 
 The user can enable nested parallelism by setting the environment
 variable \ccc{OMP_NESTED} to true. This will not affect the
 performance.
 
-% =============================================================================
-\section{Why OpenMP\label{sec:why_openmp}}
-% =============================================================================
+% ==========================================================================================
+\section{Parallelizing Divide and Conquer using OpenMP\label{sec:divide_and_conquer_openmp}}
+% ==========================================================================================
 
-The other alternatives we were considering were: 
+How to parallelize divide and conquer funtions in some package XXX in CGAL using 
+OpenMP? Here we show an example using the general structure of divide and 
+conquer algorithms. 
 
-\begin{enumerate}
-\item Boost threads
-\item Intel Thread Building Blocks(TBB)
-\end{enumerate}
+In order to take care of the case where nested parallelism is enabled by the 
+user, a member counter should be used \ccc{(m_current_num_threads)} which is 
+initially set to 1. We compare the current value of this counter to the value 
+returned by \ccc{omp_get_max_threads()} each time \ccc{_divide_and_conquer} is 
+called. \ccc{omp_get_max_threads()} returns the value of \ccc{OMP_NUM_THREADS} 
+(or the number of hardware threads on the system if it is not set). 
 
-After a lot of discussion we decided on OpenMP 2.0 because of the
-following:
-\begin{enumerate}
-\item We didn't see anything that OpenMP didn't have that TBB
-  did. Moreover TBB is less widely known and used (in my opinion) and
-  it requires more change to the code than OpenMP.
-\item Boost threads has an advantage of being cross-platform. However
-  support for OpenMP is there on all major compilers.
-\item OpenMP is a defacto standard
-\item Boost threads requires much more modification of existing code to parallelise. OpenMP required very little modification of existing code. This reduces the chance of inadvertently introducing bugs.
-\item We were thinking of trying OpenMP as a start and switch to Boost if required. However the performance gain with OpenMP has been significant and results show good scalability.
-\item The divide and conquer algorithms don't require handling complex tasks (shared memory, synchronization, locks and so on) hence OpenMP was a more straightforward choice. boost:thread would have been a better choice if any of the above were required.
-\item OpenMP allows much more easier scaling than Boost.
-\end{enumerate}
+If the current number of threads is less than this, create a parallel region 
+with number of threads equal to \ccc{OMP_NUM_THREADS} and then set 
+\ccc{m_current_num_threads} to \ccc{OMP_NUM_THREADS}. The omp atomic directive 
+identifies a specific memory location that must be updated atomically and not be 
+exposed to multiple, simultaneous writing threads. The omp for directive 
+instructs the compiler to distribute loop iterations within the team of threads 
+that encounters this work-sharing construct. The team of threads run 
+simultaneously. At the end of the parallel region, the counter is decremented. 
+
+If the current number of threads is greater than or equal to \ccc{OMP_NUM_THREADS} 
+then new threads should not be spawned and the for loop executes serially.
+ 
+\begin{verbatim}
+_divide_and_conquer ()
+{
+  if (some base case)
+  {
+    conquer ();
+    return;
+  }
+
+  #if !defined(CGAL_XXX_SERIAL) && defined(_OPENMP)
+  if(m_current_num_threads < omp_get_max_threads())
+  {
+    #pragma omp atomic
+    m_current_num_threads += (omp_get_max_threads() - 1);
+       
+    #pragma omp parallel
+    {
+      #pragma omp for
+      for (int i = 0; i < k; ++i)
+      {
+        _divide_and_conquer ();
+      }         
+    } // end omp parallel
+        
+    m_current_num_threads -= (omp_get_max_threads() - 1);
+  } //end if
+  else    
+  #endif
+  {        
+    for (unsigned int i = 0; i < k; ++i)
+    {
+      _divide_and_conquer ();
+    }
+  }
+    
+  conquer ();
+    
+  return;
+}
+\end{verbatim}
+
