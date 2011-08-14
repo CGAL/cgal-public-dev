@@ -7,8 +7,10 @@
 #include <CGAL/utility.h>
 
 #include <CGAL/Regular_triangulation_euclidean_traits_3.h>
+//#include <CGAL/Periodic_3_triangulation_traits_3.h>
+//#include <CGAL/Periodic_3_Delaunay_triangulation_3.h>
 
-#include <CGAL/collapse.h>
+//#include <CGAL/collapse.h>
 
 #include <CGAL/IO/Color.h>
 #include <CGAL/IO/Geomview_stream.h>
@@ -46,11 +48,13 @@ typedef CGAL::Exact_predicates_exact_constructions_kernel		K;
 
 typedef CGAL::Regular_triangulation_euclidean_traits_3<K>		traits;
 
-typedef CGAL::Triangulation_vertex_base_with_info_3<CGAL::Color, K>	Vb;
+typedef CGAL::Triangulation_vertex_base_with_info_3<int, K>		Vb;
 typedef CGAL::Triangulation_data_structure_3<Vb>			Tds;
 typedef CGAL::Triangulation_3<K, Tds>					Triangulation;
 //typedef CGAL::Delaunay_triangulation_3<K, Tds>				Triangulation;
 //typedef CGAL::Regular_triangulation_3<traits>				Triangulation;
+//typedef CGAL::Periodic_3_triangulation_traits_3<K>			GT;
+//typedef CGAL::Periodic_3_Delaunay_triangulation_3<GT>			Triangulation;
 
 typedef K::FT FT;
 typedef K::Vector_3					Vector;
@@ -61,7 +65,6 @@ typedef Triangulation::Finite_facets_iterator 		Finite_facets_iterator;
 typedef Triangulation::Finite_cells_iterator 		Finite_cells_iterator;
 typedef Triangulation::Face_circulator 			Face_circulator;
 typedef Triangulation::Cell_circulator 			Cell_circulator;
-typedef Triangulation::Simplex        			Simplex;
 typedef Triangulation::Locate_type    			Locate_type;
 typedef Triangulation::Point          			Point;
 typedef Triangulation::Triangle          		Triangle;
@@ -76,33 +79,26 @@ typedef Triangulation::Edge				Edge;
 typedef CGAL::Creator_uniform_3<double,Point>  		Creator;
 typedef CGAL::Geomview_stream				Geomview_stream;
 
-typedef CGAL::Triple<Cell_handle, Vertex_handle, Vertex_handle>	Simple_edge;
-
-// to make to choice better
-struct my_edge_cmp {
-	bool operator()(const Simple_edge &a, const Simple_edge &b)
-	{
-		return a < b;
-		
-		// TODO: random!
-		Vertex_handle av1 = a.second;
-		Vertex_handle av2 = a.third;
-		Vertex_handle bv1 = b.second;
-		Vertex_handle bv2 = b.third;
-
-		if (av1==bv1 && av2==bv2)
-			return 0;
-
-		FT da = squared_distance(av1->point(), av2->point());
-		FT db = squared_distance(bv1->point(), bv2->point());
-		
-		if (da==db)
-			return a < b;
-		return da > db;
+struct Simple_edge {
+	Cell_handle first;
+	Vertex_handle second, third;
+	FT len;
+	Simple_edge(Cell_handle _first, Vertex_handle _v1, Vertex_handle _v2) {
+		first = _first;
+		second = _v1;
+		third = _v2;
+		FT len = squared_distance(second->point(), third->point());
 	}
 };
 
-typedef priority_queue< Simple_edge, vector<Simple_edge>, my_edge_cmp >	PQ_of_edges;
+bool operator<(const Simple_edge &a, const Simple_edge &b)
+{
+	if (a.len != b.len) return a.len > b.len;
+	if (a.second != b.second) return a.second < b.second;
+	return a.third < b.third;
+}
+
+typedef priority_queue< Simple_edge, vector<Simple_edge> >	PQ_of_edges;
 
 CGAL::Random my_rand(40);
 
@@ -277,8 +273,10 @@ void push_edge(PQ_of_edges &pq, Edge &e)
 	Cell_handle cell = e.first;
 	Vertex_handle v1 = cell->vertex( e.second );
 	Vertex_handle v2 = cell->vertex( e.third );
-	pq.push( make_triple(cell, v1, v2) );
-	pq.push( make_triple(cell, v2, v1) );
+	//pq.push( make_triple(cell, v1, v2) );
+	//pq.push( make_triple(cell, v2, v1) );
+	pq.push( Simple_edge(cell, v1, v2) );
+	pq.push( Simple_edge(cell, v2, v1) );
 }
 
 void insert_all_edges_to_queue(Triangulation &T, PQ_of_edges &pq)
@@ -520,11 +518,11 @@ int main(int argn, char *args[])
 
 	//L = get_layered_2d_points(n, 10*n);	
 	//L = get_layered_3d_points(n, 10*n);	
-	//L = get_rand_in_sphere(n, r);
+	L = get_rand_in_sphere(n, r);
 	//L = get_my_points();
 	//L = get_my_2d_points();
 	//L = get_2D(n);
-	L = get_1D(n);
+	//L = get_1D(n);
 	Triangulation T(L.begin(), L.end());
 
 	gs1 << T;

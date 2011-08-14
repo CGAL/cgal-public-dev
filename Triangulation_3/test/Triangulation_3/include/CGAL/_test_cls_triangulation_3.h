@@ -26,6 +26,8 @@
 #include "_test_cls_iterator.h"
 #include "_test_cls_circulator.h"
 
+#include "_test_collapse.h"
+
 #include <CGAL/Random.h>
 
 template <class Triangulation>
@@ -822,6 +824,10 @@ _test_cls_triangulation_3(const Triangulation &)
     std::cout << nbflips << " flips 2-3" << std::endl;
   }
   
+  // Edge collapse over a random triangulation in a sphere
+  std::cout << "    Testing edge collapse in Triangulation_3:" << std::endl; 
+  _test_collapse<Triangulation>();
+
   // Finite incident_* in dimension 2 test
   std::cout << "    Testing finite_incident_* in dim 2  "<< std::endl;
   Cls* T2[2];

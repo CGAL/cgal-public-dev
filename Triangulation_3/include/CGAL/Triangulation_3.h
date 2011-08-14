@@ -704,8 +704,6 @@ public:
 protected:
   typedef typename GT::FT			FT;  
   typedef typename GT::Vector_3			Vector;
-  typedef typename Tds::Facet_list		Facet_list;
-  typedef typename Tds::Edge_list		Edge_list;
 
   void add_kernel_triangles_around(Vertex_handle s, Vertex_handle t, 
 			     std::list<Triangle>& triangles);
@@ -713,27 +711,63 @@ protected:
   bool is_visible(const Point& query, Iterator begin, Iterator end);
  
 public:
-  bool is_geom_collapsible(const Edge& edge) const;
+//  bool is_geom_collapsible(const Edge& edge) const;
   bool is_geom_collapsible(const Edge& edge, const Point& point) const;
-
-public:
-  bool collapse(Edge& edge);
-  bool collapse(Edge& edge, const Point& point);
 
   void collapse_collapsible(Edge& edge);
   void collapse_collapsible(Edge& edge, const Point& point);
 
-  bool is_collapsible(const Edge& edge) const;
-  bool is_collapsible(const Edge& edge, const Point& point) const;
+public:
+//  bool collapse(Edge& edge);
+//  bool collapse(Edge& edge, const Point& point);
+
+//  bool is_collapsible(const Edge& edge) const;
+//  bool is_collapsible(const Edge& edge, const Point& point) const;
+
+  bool collapse(Edge& edge, const Point& point)
+  {
+    if (!is_collapsible(edge,point))
+      return false;
+  
+    collapse_collapsible(edge,point);
+    return true;
+  }
+  
+  bool collapse(Edge& edge)
+  {
+    if (!is_collapsible(edge))
+      return false;
+  
+    collapse_collapsible(edge);
+    return true;
+  }
+
+  bool is_collapsible(const Edge& edge) const
+  {
+    return  is_geom_collapsible(edge)
+      && _tds.is_collapsible(edge);
+  }
+  
+  bool is_collapsible(const Edge& edge, const Point& point) const
+  {
+    return  is_geom_collapsible(edge, point)
+      && _tds.is_collapsible(edge);
+  }
+  
+  bool is_geom_collapsible(const Edge& edge) const
+  {
+    return is_geom_collapsible(edge, _tds.get_target_vertex(edge)->point());
+  }
 
 //private:
 public:
   bool arrise_flat_cells(Vertex_handle source, Vertex_handle target, Point point) const;  
  
-  bool is_in_kernel_3D(Point query, Facet_list& hull) const;
-  bool is_in_kernel_2D(Point query, Edge_list& hull) const;
+  bool is_in_kernel_3D(Point query, std::vector<Facet>& hull) const;
+  bool is_in_kernel_2D(Point query, std::vector<Edge>& hull) const;
 
   bool is_simplex( Cell_handle c ) const; // to document the tds::is_simlex too
+	
   // PIVANOV END
 
   //INSERTION
@@ -2868,6 +2902,249 @@ flip_flippable( Cell_handle c, int i, int j )
 		   c->vertex(next_around_edge(i,j))->point() ) == POSITIVE );
 #endif
   _tds.flip_flippable(c, i, j);
+}
+
+template < class GT, class Tds >
+void
+Triangulation_3<GT,Tds>::
+collapse_collapsible(Edge& edge, const Point& point)
+{
+  //TODO: check for moving target to an existing point
+  CGAL_triangulation_precondition( is_collapsible(edge, point) );
+
+  Cell_handle cell = edge.first;
+  Vertex_handle target = cell->vertex(edge.third);
+  target->set_point(point);
+
+  collapse_collapsible(edge);
+}
+
+template < class GT, class Tds >
+void
+Triangulation_3<GT,Tds>::
+collapse_collapsible(Edge& edge)
+{
+  CGAL_triangulation_precondition( dimension() >= 1 );
+  CGAL_triangulation_precondition( is_collapsible(edge) );
+
+  int old_dimension = dimension();
+  _tds.collapse_collapsible(edge);
+
+  // TODO: remove flat cells
+
+  switch( dimension() ) {
+    case 3: {
+      return;
+    }
+    case 2: {
+      if (old_dimension == 3) {
+        Facet f = *finite_facets_begin();
+        if (coplanar_orientation(f.first->vertex(0)->point(),
+           f.first->vertex(1)->point(),
+           f.first->vertex(2)->point()) == NEGATIVE)
+            _tds.reorient();
+      }
+
+      return;
+    }
+    case 1: {
+      if (old_dimension == 2) {
+        Cell_handle c_inf = infinite_vertex()->cell();
+        int inf_index = c_inf->index( infinite_vertex() );
+        Cell_handle c = c_inf->neighbor( inf_index );
+        const Point& p0 = c->vertex(0)->point();
+        const Point& p1 = c->vertex(1)->point();
+
+        Cell_handle c_next = c->neighbor( !inf_index );
+        Vertex_handle v = c_next->vertex( c_next->index(c) );
+        if ( ! is_infinite(v) ) {
+          if ( collinear_position(p0, p1, v->point()) != MIDDLE )
+            _tds.reorient();
+        }
+      }
+
+      return;
+    }
+    case 0: {
+      return;
+    }
+  }
+
+  CGAL_triangulation_assertion( false );
+}
+
+// O( |star(edge)| )
+template < class GT, class Tds >
+bool
+Triangulation_3<GT,Tds>::
+is_geom_collapsible(const Edge& edge, const Point& point) const
+{
+  CGAL_triangulation_precondition( dimension() >= 1 );
+  CGAL_triangulation_expensive_precondition( is_simplex(edge.first) );
+  CGAL_triangulation_expensive_precondition( is_edge(edge.first, edge.second, edge.third) );
+  CGAL_triangulation_expensive_precondition( is_simplex(edge.first) );
+
+  Vertex_handle source = _tds.get_source_vertex(edge);
+  Vertex_handle target = _tds.get_target_vertex(edge);
+
+  if( is_infinite(edge) )
+    return false;
+  
+  switch( dimension() ) {
+    case 3: {
+      std::vector<Facet> hull;
+
+      // then 'point' may not be visible from the link of 'source'
+      //if (arrise_flat_cells(source, target, point))
+      //  return false;
+      
+      // TODO: remove the check because it is always true
+      if (point != source->point())
+        _tds.get_facets_from_link(source, target, hull);
+  
+      // then 'point' may not be visible from the link of 'target'
+      if (point != target->point()) 
+        _tds.get_facets_from_link(target, source, hull);
+
+      return is_in_kernel_3D(point, hull);
+    }
+    case 2: {
+      std::vector<Edge> hull;
+
+      //if (arrise_flat_cells(source, target, point))
+      //  return false;
+
+      // then 'point' may not be visible from the link of 'source'
+      if (point != source->point())
+        _tds.get_edges_from_link(source, target, hull);
+  
+      // then 'point' may not be visible from the link of 'target'
+      if (point != target->point()) 
+        _tds.get_edges_from_link(target, source, hull);
+
+      return is_in_kernel_2D(point, hull);
+    }
+    case 1: {
+      return true;
+    }
+  }
+
+  CGAL_triangulation_assertion( false );
+}  
+
+//not used for now
+template < class GT, class Tds >
+bool
+Triangulation_3<GT,Tds>::
+arrise_flat_cells(Vertex_handle source, Vertex_handle target, Point point) const
+{
+  CGAL_triangulation_assertion( dimension() >= 2 );
+
+  switch( dimension() ) {
+    case 3: {
+      std::list<Cell_handle> scells;
+      finite_incident_cells(source, std::back_inserter(scells));
+
+      typename std::list<Cell_handle>::iterator it;
+      for(it = scells.begin(); it != scells.end(); it++) {
+        Cell_handle cell = *it;
+        CGAL_triangulation_assertion( !is_infinite(cell) );
+        if (!cell->has_vertex(target)) {
+          int index = cell->index(source);
+          CGAL_triangulation_assertion( index <= 3);
+          Vertex_handle va = cell->vertex((index+1)%4);
+          Vertex_handle vb = cell->vertex((index+2)%4);
+          Vertex_handle vc = cell->vertex((index+3)%4);
+          if (coplanar(point, va->point(), vb->point(), vc->point()))
+            return true;
+        }
+      }
+      
+      return false;
+    }
+    case 2: {
+      std::list<Cell_handle> scells;
+      finite_incident_cells(source, std::back_inserter(scells));
+
+      typename std::list<Cell_handle>::iterator it;
+      for(it = scells.begin(); it != scells.end(); it++) {
+        Cell_handle cell = *it;
+        CGAL_triangulation_assertion( !is_infinite(cell, 3) );
+        if (!cell->has_vertex(target)) {
+          int index = cell->index(source);
+          CGAL_triangulation_assertion( index <= 2);
+
+          Vertex_handle va = cell->vertex((index+1)%3);
+          Vertex_handle vb = cell->vertex((index+2)%3);
+          CGAL_triangulation_assertion(coplanar(point, va->point(), vb->point(), source->point()));
+          if (collinear(point, va->point(), vb->point()))
+            return true;
+        }
+      }
+      
+      return false;
+    }
+  }
+
+  CGAL_triangulation_assertion( false );
+  return false;
+}
+
+template < class GT, class Tds >
+bool
+Triangulation_3<GT,Tds>::
+is_in_kernel_3D(Point query, std::vector<Facet>& hull) const
+{
+  typename std::vector<Facet>::iterator it;
+ 
+  for (it = hull.begin(); it != hull.end(); ++it) {
+    Facet facet = *it;
+    if (is_infinite(facet))
+      continue;
+    
+    Vertex_handle va, vb, vc;
+    _tds.get_vertices_from_facet(facet, va, vb, vc);
+
+    // TODO  
+    //if (CGAL::orientation(query, va->point(), vb->point(), vc->point()) == CGAL::POSITIVE)
+    if (orientation(query, va->point(), vb->point(), vc->point()) != NEGATIVE)
+      return false; 
+  }
+
+  return true;
+}
+
+template < class GT, class Tds >
+bool
+Triangulation_3<GT,Tds>::
+is_in_kernel_2D(Point query, std::vector<Edge>& hull) const
+{
+  CGAL_triangulation_assertion( dimension() == 2 );
+  
+  typename std::vector<Edge>::iterator it;
+
+  for (it = hull.begin(); it != hull.end(); ++it) {
+    Edge edge = *it;
+    if (is_infinite(edge))
+      continue;
+
+    Vertex_handle va, vb;
+    _tds.get_vertices_from_edge(edge, va, vb);
+
+    //if (CGAL::coplanar_orientation(query, va->point(), vb->point()) == CGAL::POSITIVE)
+    if (coplanar_orientation(query, va->point(), vb->point()) != NEGATIVE)
+      return false;
+  }
+
+  return true;
+}
+
+template < class GT, class Tds >
+bool
+Triangulation_3<GT,Tds>::
+is_simplex( Cell_handle c ) const
+{
+  return _tds.is_simplex(c);
 }
 
 template < class GT, class Tds >

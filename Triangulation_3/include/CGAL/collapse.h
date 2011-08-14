@@ -102,16 +102,6 @@ less_Edge
 /////////////////
 // TDS members //
 /////////////////
-/*
-template < class Vb, class Cb >
-typename Triangulation_data_structure_3<Vb,Cb>::Vertex_handle
-Triangulation_data_structure_3<Vb,Cb>::
-facet_vertex(Facet facet, int index)
-{
-	Cell_handle cell = facet.first;
-	return cell->vertex(index);
-}
-*/
 template < class Vb, class Cb >
 typename Triangulation_data_structure_3<Vb,Cb>::Vertex_handle
 Triangulation_data_structure_3<Vb,Cb>::
@@ -837,7 +827,7 @@ check_delaunay_property(const Edge& edge, const Point& point) const
 				for (int i=0; i<3; i++ ) {
 					Vertex_handle query = Tr_Base::mirror_vertex(f,i);
 					if (is_infinite(query)) continue;
-					if ( coplanar_side_of_bounded_circle( p[0], p[1], p[2], query->point(), false) == ON_BOUNDED_SIDE)
+					if ( (Bounded_side) coplanar_side_of_bounded_circle( p[0], p[1], p[2], query->point(), false) == ON_BOUNDED_SIDE)
 						return false;
 				}
 			}
@@ -949,7 +939,7 @@ check_regular_property(const Edge& edge, const Weighted_point& point) const
 				for (int i=0; i<3; i++ ) {
 					Vertex_handle query = Tr_Base::mirror_vertex(f,i);
 					if (is_infinite(query)) continue;
-					if ( Bounded_side( side_of_oriented_power_circle( p[0], p[1], p[2], query->point(), false) ) == ON_BOUNDED_SIDE)
+					if ( (Bounded_side) side_of_oriented_power_circle( p[0], p[1], p[2], query->point(), false) == ON_BOUNDED_SIDE)
 						return false;
 				}
 			}
@@ -1103,6 +1093,7 @@ is_geom_collapsible(const Edge& edge, const Point& point) const
 			//if (arrise_flat_cells(source, target, point))
 			//	return false;
 			
+			// TODO: remove the check because it is always true
 			if (point != source->point())
 				_tds.get_facets_from_link(source, target, hull);
 	
