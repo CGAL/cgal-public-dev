@@ -173,11 +173,6 @@ void _test_collapse() {
 		if(!c->has_vertex(v1, v1_index)) continue;
 		if(!c->has_vertex(v2, v2_index)) continue;
 
-		//Point p1 = v1->point();
-		//Point p2 = v2->point();
-		//Vector segm(p1,p2);
-		//Point mid = p2;//p1 + segm*0.9;
-
 		typename Tri::Edge e( c, v1_index, v2_index );
 		if (T.is_collapsible(e)) {
 			stat_collapsed++;

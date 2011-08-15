@@ -889,7 +889,7 @@ check_regular_property(const Edge& edge, const Weighted_point& point) const
 				// the cells incident to both source and target are deleted due to the collapse
 				if (c->has_vertex(target)) continue;
 
-				// TODO: optimize without the array?
+				// TODO: make pointers
 				Weighted_point p[4] = {
 					c->vertex(0)->point(),
 					c->vertex(1)->point(),
