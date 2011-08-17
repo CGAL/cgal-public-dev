@@ -451,6 +451,44 @@ public:
   // PIVANOV GSOC
 
 public:
+  // edge removal
+  struct Triangulation_table;
+  void flip_23_recurse(Vertex_handle a, Vertex_handle b, Triangulation_table& K, int i, int j);
+  void remove_edge_flips(Vertex_handle a, Vertex_handle b,
+                        std::vector<Vertex_handle>& v,
+                        Triangulation_table& K);
+
+  Facet get_internal_facet(Vertex_handle a, Vertex_handle b)
+  {
+    std::vector<Cell_handle> cells;
+    incident_cells(a, back_inserter(cells)); 
+
+    typename std::vector<Cell_handle>::iterator cit;
+    for(cit=cells.begin(); cit!=cells.end(); cit++) {
+      Cell_handle cell = *cit;
+      int indexa = cell->index(a);
+      if (mirror_vertex(cell, indexa) == b)
+        return Facet(cell, indexa);
+    }
+
+    CGAL_triangulation_assertion(false);
+  }
+
+  Edge get_internal_edge(Vertex_handle a, Vertex_handle b)
+  {
+    std::vector<Edge> edges;
+    incident_edges(a, back_inserter(edges));
+
+    typename std::vector<Edge>::iterator eit;
+    for(eit=edges.begin(); eit!=edges.end(); eit++)
+      if (get_source_vertex(*eit) == b || get_target_vertex(*eit) == b)
+        return *eit;
+
+    CGAL_triangulation_assertion(false);
+    return Edge();
+  }
+
+public:
   template < class Cell_handle >		struct less_Cell_handle;
   template < class Vertex_handle >		struct less_Vertex_handle;
   template < class Edge >			struct less_Edge;
@@ -482,7 +520,7 @@ public:
   void get_facets_from_link(Vertex_handle vertex, Vertex_handle dont_include, std::vector<Facet>& hull) const;
   void get_edges_from_link(Vertex_handle vertex, Vertex_handle dont_include, std::vector<Edge>& hull) const;
   
-  Facet get_twin_facet(const Facet& facet) const;
+  //Facet get_twin_facet(const Facet& facet) const;
 
   bool is_collapsible_for_vertices(const Edge& edge) const;
   bool is_collapsible_for_edges(const Edge& edge) const;
@@ -940,11 +978,12 @@ public:
 
 // + patched
       if(!f(n0->vertex(1-n0->index(v)))) *edges++ = Edge(n0, n0->index(v), 1-n0->index(v));
-	if(!f(n1->vertex(1-n1->index(v)))) *edges++ = Edge(n1, n1->index(v), 1-n1->index(v));
+      if(!f(n1->vertex(1-n1->index(v)))) *edges++ = Edge(n1, n1->index(v), 1-n1->index(v));
 
 // -
 //	*edges++ = Edge(n0, n0->index(v), 1-n0->index(v));
 //	*edges++ = Edge(n1, n1->index(v), 1-n1->index(v));
+ 
       return edges;
     }
     return visit_incident_cells<Vertex_extractor<Edge_feeder_treatment<OutputIterator>,

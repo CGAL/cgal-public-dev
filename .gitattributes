@@ -4263,6 +4263,7 @@ Triangulation_3/include/CGAL/internal/info_check.h -text
 Triangulation_3/test/Triangulation_3/include/CGAL/_test_collapse.h -text
 Triangulation_3/test/Triangulation_3/include/CGAL/_test_remove_cluster.h -text
 Triangulation_3/test/Triangulation_3/pesho.cpp -text
+Triangulation_3/test/Triangulation_3/test_edge_removal.cpp -text
 Triangulation_3/test/Triangulation_3/test_regular_insert_range_with_info.cpp -text
 Triangulation_3/test/Triangulation_3/test_static_filters.cpp -text
 Voronoi_diagram_2/doc_tex/Voronoi_diagram_2/voronoi.png -text

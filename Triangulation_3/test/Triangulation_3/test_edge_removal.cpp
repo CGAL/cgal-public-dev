@@ -1,5 +1,5 @@
-#include <CGAL/Exact_predicates_exact_constructions_kernel.h>
-//#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
+//#include <CGAL/Exact_predicates_exact_constructions_kernel.h>
+#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/Triangulation_3.h>
 #include <CGAL/Delaunay_triangulation_3.h>
 #include <CGAL/Regular_triangulation_3.h>
@@ -10,7 +10,7 @@
 //#include <CGAL/Periodic_3_triangulation_traits_3.h>
 //#include <CGAL/Periodic_3_Delaunay_triangulation_3.h>
 
-//#include <CGAL/collapse.h>
+#include <CGAL/edge_removal.h>
 
 #include <CGAL/IO/Color.h>
 #include <CGAL/IO/Geomview_stream.h>
@@ -43,18 +43,20 @@ using namespace std;
 
 //typedef CORE::Expr							NT;
 //typedef CGAL::Cartesian<NT>   						K;
-//typedef CGAL::Exact_predicates_inexact_constructions_kernel		K;
-typedef CGAL::Exact_predicates_exact_constructions_kernel		K;
+typedef CGAL::Exact_predicates_inexact_constructions_kernel		K;
+//typedef CGAL::Exact_predicates_exact_constructions_kernel		K;
 
 typedef CGAL::Regular_triangulation_euclidean_traits_3<K>		traits;
 
 typedef CGAL::Triangulation_vertex_base_with_info_3<int, K>		Vb;
 typedef CGAL::Triangulation_data_structure_3<Vb>			Tds;
-//typedef CGAL::Triangulation_3<K, Tds>					Triangulation;
+typedef CGAL::Triangulation_3<K, Tds>					Triangulation;
 //typedef CGAL::Delaunay_triangulation_3<K, Tds>				Triangulation;
 //typedef CGAL::Regular_triangulation_3<traits>				Triangulation;
 //typedef CGAL::Periodic_3_triangulation_traits_3<K>			GT;
 //typedef CGAL::Periodic_3_Delaunay_triangulation_3<GT>			Triangulation;
+
+typedef CGAL::Random							Random;
 
 typedef K::FT FT;
 typedef K::Vector_3					Vector;
@@ -79,28 +81,7 @@ typedef Triangulation::Edge				Edge;
 typedef CGAL::Creator_uniform_3<double,Point>  		Creator;
 typedef CGAL::Geomview_stream				Geomview_stream;
 
-struct Simple_edge {
-	Cell_handle first;
-	Vertex_handle second, third;
-	FT len;
-	Simple_edge(Cell_handle _first, Vertex_handle _v1, Vertex_handle _v2) {
-		first = _first;
-		second = _v1;
-		third = _v2;
-		FT len = squared_distance(second->point(), third->point());
-	}
-};
-
-bool operator<(const Simple_edge &a, const Simple_edge &b)
-{
-	if (a.len != b.len) return a.len > b.len;
-	if (a.second != b.second) return a.second < b.second;
-	return a.third < b.third;
-}
-
-typedef priority_queue< Simple_edge, vector<Simple_edge> >	PQ_of_edges;
-
-CGAL::Random my_rand(40);
+Random my_rand(40);
 
 std::list<Point> get_my_points()
 {
@@ -268,92 +249,6 @@ void write_to_OFF(const char *filename, Triangulation &T)
 	}
 }
 
-void push_edge(PQ_of_edges &pq, Edge &e)
-{
-	Cell_handle cell = e.first;
-	Vertex_handle v1 = cell->vertex( e.second );
-	Vertex_handle v2 = cell->vertex( e.third );
-	//pq.push( make_triple(cell, v1, v2) );
-	//pq.push( make_triple(cell, v2, v1) );
-	pq.push( Simple_edge(cell, v1, v2) );
-	pq.push( Simple_edge(cell, v2, v1) );
-}
-
-void insert_all_edges_to_queue(Triangulation &T, PQ_of_edges &pq)
-{
-	Triangulation::All_edges_iterator eit;	
-	for (eit=T.all_edges_begin(); eit!=T.all_edges_end(); eit++) {
-		Edge e = *eit;
-		if (T.is_infinite(e))
-			push_edge(pq, e);
-	}
-}
-
-void insert_finite_edges_to_queue(Triangulation &T, PQ_of_edges &pq)
-{
-	Finite_edges_iterator eit;
-	for (eit=T.finite_edges_begin(); eit != T.finite_edges_end(); eit++) {
-
-		Edge e = *eit;
-			push_edge(pq, e);
-	}
-}
-
-void insert_adjacent_edges_to_queue(Triangulation &T, PQ_of_edges &pq, Vertex_handle v)
-{
-	switch( T.dimension() ) {
-	case 1: {
-		vector<Edge> edges;
-		T.incident_edges (v, back_inserter(edges));
-
-		for(vector<Edge>::iterator eit=edges.begin(); eit!=edges.end(); eit++) {
-			Edge e = *eit;
-			if(!T.is_infinite(e)) {
-				push_edge(pq,e);
-			}
-		}
-
-		return;
-	}
-	case 2: {
-		Face_circulator fcirc = T.tds().incident_faces(v);
-		Face_circulator fend = fcirc;
-
-		CGAL_For_all(fcirc,fend) {
-			for(int i=0; i<3; i++) {
-				Edge e(fcirc, i, (i+1)%3);
-				if(!T.is_infinite(e)) {
-					push_edge(pq,e);
-				}
-			}	
-		}
-
-		return;
-	}
-	case 3:
-		vector<Cell_handle> cells;
-		T.incident_cells (v, back_inserter(cells));
-
-		for(vector<Cell_handle>::iterator cit=cells.begin(); cit!=cells.end(); cit++) {
-			for(int i=0; i<3; i++)
-				for(int j=i+1; j<3; j++) {
-					Edge e(*cit, i, j);
-					if(!T.is_infinite(e)) {
-						push_edge(pq,e);
-					}
-				}
-		}
-
-		return;
-	}
-
-}
-
-void insert_edges_from_adjacent_cells_to_queue(Triangulation &T, PQ_of_edges &pq, Vertex_handle v)
-{
-
-}
-
 int number_of_incident_cells(Triangulation &T, Edge e)
 {
 	int cnt = 0;
@@ -389,119 +284,57 @@ void print_info(Triangulation &T)
 	cout << "dim: " << T.dimension() << endl;
 }
 
-int collapse_all_edges(Geomview_stream &gs1, Geomview_stream &gs2, Triangulation &T, int n)
+bool border_edge(Triangulation &T, Edge e)
 {
-	int stat_start = 0;
-	int stat_examined = 0;
-	int stat_top_collapsible = 0;
-	int stat_geom_collapsible = 0;
-	int stat_collapsed = 0;
-	int stat_collapsed_internal = 0;
-	int stat_collapsed_inf = 0;
-	int cnt = 0;
+	vector<Cell_handle> cells;
+	Cell_circulator ccirc = T.incident_cells(e);
+	Cell_circulator cend = ccirc;
 
-	print_info(T);
-	
+	CGAL_For_all(ccirc, cend)
+		if(T.is_infinite(ccirc))
+			return true;
+
+	return false;
+}
+
+void insert_internal_edges_to_vector(Triangulation &T, vector<Edge> &V)
+{
+	Finite_edges_iterator eit;
+	for (eit=T.finite_edges_begin(); eit != T.finite_edges_end(); eit++) {
+		Edge e = *eit;
+		if ( !border_edge(T, e) )
+		//if ( !incident_to_inf(T, e.first->vertex(e.second))
+		//	&& !incident_to_inf(T, e.first->vertex(e.third)) ) {
+			V.push_back(e);
+		//}
+	}
+}
+
+void edge_removal(Geomview_stream &gs1, Geomview_stream &gs2, Triangulation &T)
+{
 	gs1.clear();
 	gs2.clear();
 	gs1.set_vertex_color( CGAL::GREEN );
 	gs2.set_vertex_color( CGAL::GREEN );
 	gs1.set_wired(true);
 	gs2.set_wired(true);
-	
-	PQ_of_edges pq;
-	insert_finite_edges_to_queue(T, pq);
-
-	stat_start = pq.size();
-	T.is_valid(true);
 
 	gs1 << T;
-	//geomview_show_vertices(gs1, T);
-
-	while(T.dimension() >= 1 && !pq.empty()) {// && T.number_of_vertices()>4) {
-		Simple_edge se = pq.top();
-		pq.pop();
-
-		Cell_handle c = se.first;
-		Vertex_handle v1 = se.second;
-		Vertex_handle v2 = se.third;;
-		int v1_index, v2_index;
-
-	cout << ".0";
-		if(!T.is_simplex(c)) continue;
-
-		if(!c->has_vertex(v1, v1_index)) continue;
-		if(!c->has_vertex(v2, v2_index)) continue;
-
-		//Point p1 = v1->point();
-		//Point p2 = v2->point();
-		//Vector segm(p1,p2);
-		//Point mid = p2;//p1 + segm*0.9;
-
-		//gs1 << mid;
-	cout << ".1";
-		Edge e( c, v1_index, v2_index );
-		bool top =  T.tds().is_collapsible(e);
-
-	cout << ".2";
-		bool geom = T.is_collapsible(e);
-
-	cout << ".3";
-		stat_examined ++;
-		stat_top_collapsible += top;
-		stat_geom_collapsible += geom;
-
-		//cout << "top: " << top << " geom: " << geom << endl;
-
-		//geomview_show_edge(gs1,v1,v2);
-
-		if (top && geom) {
-			//cout << "cnt: " << cnt << " n: " << n << endl;
-			//if (cnt++ < n) continue;
-			
-			cout << "before collapse:";
-			T.is_valid(true);
-
-			stat_collapsed++;
-			if (!incident_to_inf(T,v2)) stat_collapsed_internal++;
-			if (T.is_infinite(e)) stat_collapsed_inf++;	
-	cout << ".4";
-			geomview_show_edge(gs1,v1,v2);
-
-			cout << "vertices: " << T.number_of_vertices() << endl;
-
-			//if (T.number_of_vertices() == 4) T.tds().remove_from_maximal_dimension_simplex(v1);
-			//else
-			if (!T.collapse(e)) cout << "Hm.. Strange!" << endl;
-			cout << "collapsed dim=" << T.dimension() << endl;
-
-	cout << ".5";
-			T.is_valid(true);
-	cout << ".6";
-			//gs2.clear();
-			//gs2 << T;
-			//gs2 << v2->point();
-			//cin.get();
-
-			insert_adjacent_edges_to_queue(T, pq, v2);
-		}
-	}
-
-	gs2 << T;
-	geomview_show_vertices(gs2, T);
 
 	print_info(T);
 
-	cout << "start: " << stat_start << endl;
-	cout << "examined: " << stat_examined << endl;
-	cout << "edges_examined: " << stat_examined << endl;
-	cout << "top_collapsible: " << stat_top_collapsible << endl;
-	cout << "geom_collapsible: " << stat_geom_collapsible << endl;
-	cout << "collapsed: " << stat_collapsed << endl;
-	cout << "collapsed_internal: " << stat_collapsed_internal << endl;
-	cout << "collapsed_inf: " << stat_collapsed_inf << endl;
+	vector<Edge> V;
+	insert_internal_edges_to_vector(T, V);
 
-	return stat_collapsed;
+
+	Edge e = V[0];
+	geomview_show_edge(gs1, e.first->vertex(e.second), e.first->vertex(e.third));
+	geomview_show_edge(gs2, e.first->vertex(e.second), e.first->vertex(e.third));
+	T.remove(e);
+	
+	print_info(T);
+
+	gs2 << T;
 }
 
 // call <number of vertices>
@@ -511,8 +344,8 @@ int main(int argn, char *args[])
 	double r = 1.0;
 	Geomview_stream gs1, gs2;//, gs3, gs4;
 	
-	if (argn >= 2)
-		n = atoi(args[1]);
+	if (argn >= 2) n = atoi(args[1]);
+	if (argn >= 3) my_rand = Random( atoi(args[2]) );
 
 	list<Point> L;
 
@@ -528,27 +361,16 @@ int main(int argn, char *args[])
 	gs1 << T;
 
 	T.is_valid(true);
-	/*
-	Triangulation::All_vertices_iterator vit;
-	for(vit=T.all_vertices_begin(); vit!=T.all_vertices_end(); vit++)
-		if (!n--) {
-			Vertex_handle v = vit;
-			T.tds().remove_from_maximal_dimension_simplex(v);
-			cout << T.is_valid(true) << endl;
-			T.tds().reorient();
-			cout << T.is_valid(true) << endl;
-			break;
-		}
-	*/
+	edge_removal(gs1, gs2, T);
 
 	//write_to_OFF("init.off", T);
 	//std::ofstream oFileT("output",std::ios::out);
 	//oFileT << T;
 
 	//while (collapse_all_edges(gs1, gs2, T));
-	collapse_all_edges(gs1, gs2, T, n);
+	//collapse_all_edges(gs1, gs2, T, n);
 	
 	cin.get();
-	
+
 	return 0;
 }

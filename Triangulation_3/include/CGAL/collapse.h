@@ -1236,5 +1236,6 @@ is_simplex( Cell_handle c ) const
 {
   return _tds.is_simplex(c);
 }
+
 CGAL_END_NAMESPACE
 

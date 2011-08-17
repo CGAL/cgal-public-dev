@@ -156,9 +156,20 @@ public:
   }
 
 // PIVANOV GSOC
-  bool is_collapsible(const Edge& edge, const Weighted_point& point) const;
-  bool is_collapsible(const Edge& edge) const;
+//  bool is_collapsible(const Edge& edge, const Weighted_point& point) const;
+//  bool is_collapsible(const Edge& edge) const;
 
+  bool is_collapsible(const Edge& edge, const Weighted_point& point) const
+  {
+    return Tr_Base::is_collapsible(edge, point)
+	    && check_regular_property(edge, point);
+  }
+
+  bool is_collapsible(const Edge& edge) const
+  {
+    return is_collapsible(edge, Tr_Base::_tds.get_target_vertex(edge)->point());
+  }
+  
   bool check_regular_property(const Edge& edge, const Weighted_point& point) const;
 
 // END PIVANOV
@@ -1380,6 +1391,110 @@ Regular_triangulation_3<Gt,Tds>::
 is_Gabriel(Vertex_handle v) const
 {
   return nearest_power_vertex( v->point().point(), v->cell()) == v;
+}
+
+// protected:
+template < class Gt, class Tds >
+bool
+Regular_triangulation_3<Gt,Tds>::
+check_regular_property(const Edge& edge, const Weighted_point& point) const
+{
+	CGAL_triangulation_precondition( dimension() >= 1 );
+	CGAL_triangulation_precondition( number_of_vertices() >= 2 );
+
+	Cell_handle seed_cell = edge.first;
+	Vertex_handle source = seed_cell->vertex(edge.second);
+	Vertex_handle target = seed_cell->vertex(edge.third);
+
+	switch ( dimension() ) {
+		case 3: {	
+			// TODO: infinite edges also?
+			CGAL_triangulation_precondition( !is_infinite(edge) );
+
+			std::list<Cell_handle> scells;
+			incident_cells(source, std::back_inserter(scells));
+
+			typename std::list<Cell_handle>::iterator it;
+			for(it = scells.begin(); it != scells.end(); it++) {
+				Cell_handle c = *it;
+				CGAL_assertion( c->has_vertex(source) );
+
+				// shperes of infinite cells are not defined
+				if (is_infinite(c)) continue;
+				
+				// the cells incident to both source and target are deleted due to the collapse
+				if (c->has_vertex(target)) continue;
+
+				// TODO: make pointers
+				Weighted_point p[4] = {
+					c->vertex(0)->point(),
+					c->vertex(1)->point(),
+					c->vertex(2)->point(),
+					c->vertex(3)->point()
+				};		
+
+				// replace the source with the target vertex
+				p[ c->index(source) ] = point;
+
+				for (int i=0; i<4; i++ ) {
+					Vertex_handle query = Tr_Base::mirror_vertex(c,i);
+					//Vertex_handle query = c->neighbor(i)->vertex(c->neighbor(i)->index(c));
+					if (is_infinite(query)) continue;
+
+					// 'perturb'=false
+					if ( (Bounded_side) side_of_oriented_power_sphere(p[0], p[1], p[2], p[3], query->point(), false) == ON_BOUNDED_SIDE )
+						return false;
+				}
+			}
+			return true;
+		}
+		case 2: {
+			CGAL_triangulation_precondition( !is_infinite(edge) );
+
+			Face_circulator f = tds().incident_faces(source);
+			Face_circulator fend  = f;
+
+			CGAL_For_all(f, fend) {
+				CGAL_assertion( f->has_vertex(source) );
+
+				// shperes of infinite cells are not defined
+				if (is_infinite(f, 3)) continue;
+				
+				// the cells incident to both source and target are deleted due to the collapse
+				if (f->has_vertex(target)) continue;
+
+				Weighted_point p[3] = {
+					f->vertex(0)->point(),
+					f->vertex(1)->point(),
+					f->vertex(2)->point()
+				};
+
+				// replace the source with the target vertex
+				p[ f->index(source) ] = point;
+				
+				for (int i=0; i<3; i++ ) {
+					Vertex_handle query = Tr_Base::mirror_vertex(f,i);
+					if (is_infinite(query)) continue;
+					if ( (Bounded_side) side_of_oriented_power_circle( p[0], p[1], p[2], query->point(), false) == ON_BOUNDED_SIDE)
+						return false;
+				}
+			}
+			return true;
+		}
+		case 1: {
+			Vertex_handle query = Tr_Base::mirror_vertex(seed_cell, edge.third);
+
+			if( is_infinite(query) )
+				return true;
+
+			if (side_of_bounded_power_segment(point, source->point(), query->point(), false) == ON_BOUNDED_SIDE)
+				return false;
+
+			return true;	
+		}
+	}
+
+	CGAL_triangulation_assertion( false );
 }
 
 template < class Gt, class Tds >
