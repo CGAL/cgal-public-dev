@@ -90,7 +90,7 @@ Section~\ref{arr_ssec:pl}) needs its associated arrangement to be
 instantiated with a model of the refined
 \ccc{ArrangementLandmarkTraits_2} traits concept. A model of this
 concept must define a fixed precision number type (typically
-\ccc{double}) and support the additional operations:
+\ccc{double}) and support the additional operation:
 \begin{description}
 \item[\ccc{Approximate_2}:]
   Given a point \ccc{p}, approximate the $x$ and $y$-coordinates
@@ -99,6 +99,11 @@ concept must define a fixed precision number type (typically
   operations in the search for the location of the point that need not
   be exact and we can perform them faster than other operations.
 %
+\end{description}
+
+An additional operation is optional and is intended to expedite the
+walk:
+\begin{description}
 \item[\ccc{Construct_x_monotone_curve_2}:] Optional: Given two points $p_1$ and
   $p_2$, this predicate constructs an $x$-monotone curve connecting
   $p_1$ and $p_2$.
@@ -585,11 +590,12 @@ of dilated polygons.
 
 The \ccc{Arr_circle_segment_traits_2<Kernel>} class-template is designed
 for efficient handling of arrangements of circular arcs and line segments.
-It is a model of the concepts \ccc{ArrangementTraits_2} and
+It is a model of the concepts \ccc{ArrangementTraits_2},
+\ccc{ArrangementLandmarkTraits_2} and
 \ccc{ArrangementDirectionalXMonotoneTraits_2}; the later enables
-Boolean set operations. Note that it is not a model of
-\ccc{ArrangementLandmarkTraits_2} concept, so it is impossible to
-use the landmark point-location strategy. The traits class template 
+Boolean set operations. Note that though the class models the
+\ccc{ArrangementLandmarkTraits_2} it does not supply the
+\ccc{Construct_x_monotone_curve_2} functor. The traits class template 
 is parameterized by a geometric kernel, and can handle arrangements of
 segments of \ccc{Kernel::Circle_2} objects (full circles are also supported)
 or of \ccc{Kernel::Line_2} objects---namely circular arcs and line segments.
@@ -843,11 +849,12 @@ e.g.,~\cite[Chapter~3]{cgal:ptvf-nrcpp-02}.
 
 \ccc{Arr_rational_function_traits_2<AlgebraicKernel_d_1>} is a model
 of the concepts \ccc{ArrangementTraits_2},
-\ccc{ArrangementOpenBoundaryTraits_2}, and
+\ccc{ArrangementOpenBoundaryTraits_2},
+\ccc{ArrangementLandmarkTraits_2} and
 \ccc{ArrangementDirectionalXMonotoneTraits_2}; the later enables
-Boolean set operations. Note that it is not a model of
-\ccc{ArrangementLandmarkTraits_2} concept, so it is impossible to use
-the landmark point-location strategy with this traits class.
+Boolean set operations. Note that though the class models the
+\ccc{ArrangementLandmarkTraits_2} it does not supply the
+\ccc{Construct_x_monotone_curve_2} functor.
 %\footnote{This requires a relaxation of \ccc{ArrangementLandmarkTraits_2}, 
 %which will be submitted separately.}
 
@@ -1003,10 +1010,10 @@ See the Reference Manual for the exact interface of the \ccc{Point_2},
 \ccc{Curve_2} and \ccc{X_monotone_curve_2} defined by the traits class.
 
 The \ccc{Arr_Bezier_curve_traits_2} is a model of the
-\ccc{ArrangementTraits_2} concept (but not of the
-\ccc{ArrangementLandmarkTraits_2} concept, so it is impossible
-to use the landmark point-location strategy for arrangements of
-rational arcs).
+\ccc{ArrangementTraits_2} and \ccc{ArrangementLandmarkTraits_2}.
+Note that though the class models the
+\ccc{ArrangementLandmarkTraits_2} it does not supply the
+\ccc{Construct_x_monotone_curve_2} functor.
 
 \begin{figure}[t]
 \begin{ccTexOnly}

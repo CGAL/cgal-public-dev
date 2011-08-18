@@ -111,10 +111,16 @@ arrangement and moves downward toward the query point until
 locating the arrangement cell containing it.
 %
 \item \ccc{Arr_landmarks_point_location<Arrangement,Generator>}
-uses a set of ``landmark'' points whose location in the
-arrangement is known. Given a query point, it uses a \kdtree\ to
-find the nearest landmark and then traverses the straight line
-segment connecting this landmark to the query point.
+uses a set of ``landmark'' points, the location of which in the
+arrangement is known.
+Given a query point, it uses a \kdtree\ to find the nearest landmark
+and walk from the landmark point to the query point.
+The default walking strategy is to first walk horizontally and then
+vertically (similar to the
+\ccc{Arr_walk_along_a_line_point_location<Arrangement>} strategy.
+The walk could be expedited by constructing a curve connecting the
+landmark point and the query point (which not all traits classes
+support).
 
 There are various ways to select the landmark set in the
 arrangement, determined by the \ccc{Generator} template parameter.
