@@ -1426,15 +1426,15 @@ check_regular_property(const Edge& edge, const Weighted_point& point) const
 				if (c->has_vertex(target)) continue;
 
 				// TODO: make pointers
-				Weighted_point p[4] = {
-					c->vertex(0)->point(),
-					c->vertex(1)->point(),
-					c->vertex(2)->point(),
-					c->vertex(3)->point()
+				const Weighted_point *p[4] = {
+					&(c->vertex(0)->point()),
+					&(c->vertex(1)->point()),
+					&(c->vertex(2)->point()),
+					&(c->vertex(3)->point())
 				};		
 
 				// replace the source with the target vertex
-				p[ c->index(source) ] = point;
+				p[ c->index(source) ] = &point;
 
 				for (int i=0; i<4; i++ ) {
 					Vertex_handle query = Tr_Base::mirror_vertex(c,i);
@@ -1442,7 +1442,7 @@ check_regular_property(const Edge& edge, const Weighted_point& point) const
 					if (is_infinite(query)) continue;
 
 					// 'perturb'=false
-					if ( (Bounded_side) side_of_oriented_power_sphere(p[0], p[1], p[2], p[3], query->point(), false) == ON_BOUNDED_SIDE )
+					if ( (Bounded_side) side_of_oriented_power_sphere(*p[0], *p[1], *p[2], *p[3], query->point(), false) == ON_BOUNDED_SIDE )
 						return false;
 				}
 			}
@@ -1463,19 +1463,19 @@ check_regular_property(const Edge& edge, const Weighted_point& point) const
 				// the cells incident to both source and target are deleted due to the collapse
 				if (f->has_vertex(target)) continue;
 
-				Weighted_point p[3] = {
-					f->vertex(0)->point(),
-					f->vertex(1)->point(),
-					f->vertex(2)->point()
+				const Weighted_point *p[3] = {
+					&(f->vertex(0)->point()),
+					&(f->vertex(1)->point()),
+					&(f->vertex(2)->point())
 				};
 
 				// replace the source with the target vertex
-				p[ f->index(source) ] = point;
+				p[ f->index(source) ] = &point;
 				
 				for (int i=0; i<3; i++ ) {
 					Vertex_handle query = Tr_Base::mirror_vertex(f,i);
 					if (is_infinite(query)) continue;
-					if ( (Bounded_side) side_of_oriented_power_circle( p[0], p[1], p[2], query->point(), false) == ON_BOUNDED_SIDE)
+					if ( (Bounded_side) side_of_oriented_power_circle( *p[0], *p[1], *p[2], query->point(), false) == ON_BOUNDED_SIDE)
 						return false;
 				}
 			}

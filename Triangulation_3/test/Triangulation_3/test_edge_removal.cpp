@@ -41,9 +41,9 @@ using namespace std;
 
 //#define PESHO_DEBUG
 
-//typedef CORE::Expr							NT;
-//typedef CGAL::Cartesian<NT>   						K;
-typedef CGAL::Exact_predicates_inexact_constructions_kernel		K;
+typedef CORE::Expr							NT;
+typedef CGAL::Cartesian<NT>   						K;
+//typedef CGAL::Exact_predicates_inexact_constructions_kernel		K;
 //typedef CGAL::Exact_predicates_exact_constructions_kernel		K;
 
 typedef CGAL::Regular_triangulation_euclidean_traits_3<K>		traits;

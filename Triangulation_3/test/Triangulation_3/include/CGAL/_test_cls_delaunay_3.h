@@ -698,7 +698,6 @@ _test_cls_delaunay_3(const Triangulation &)
   }
 
   //#######################################################################
-  // TODO:
   std::cout << "    Testing edge collapse in Delaunay_3:" << std::endl; 
   _test_collapse<Triangulation>();
 

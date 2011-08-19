@@ -3299,9 +3299,6 @@ remove_decrease_dimension(Vertex_handle v, Vertex_handle w)
 	        to_delete.push_back(ib);
         }
 
-	std::cout << "to_downgrade:" << to_downgrade.size() << std::endl;
-	std::cout << "to_delete:" << to_delete.size() << std::endl;
-
         typename std::vector<Cell_handle>::iterator lfit=to_downgrade.begin();
         for( ; lfit != to_downgrade.end(); ++lfit) {
 	    Cell_handle f = *lfit;
@@ -3311,10 +3308,8 @@ remove_decrease_dimension(Vertex_handle v, Vertex_handle w)
 	        f->set_vertex(j, f->vertex(dimension()));
 	        f->set_neighbor(j, f->neighbor(dimension()));
 	        
-		if (dimension() >= 1) {
+		if (dimension() >= 1)
 		    change_orientation(f);
-		    std::cout << "changed orientation!" << std::endl;
-		}
 	    }
 	    f->set_vertex(dimension(), Vertex_handle());
 	    f->set_neighbor(dimension(), Cell_handle());

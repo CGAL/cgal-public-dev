@@ -761,19 +761,19 @@ check_delaunay_property(const Edge& edge, const Point& point) const
         // the cells incident to both source and target are deleted due to the collapse
         if (f->has_vertex(target)) continue;
 
-        Point p[3] = {
-          f->vertex(0)->point(),
-          f->vertex(1)->point(),
-          f->vertex(2)->point()
+        const Point *p[3] = {
+          &(f->vertex(0)->point()),
+          &(f->vertex(1)->point()),
+          &(f->vertex(2)->point())
         };
 
         // replace the source with the target vertex
-        p[ f->index(source) ] = point;
+        p[ f->index(source) ] = &point;
         
         for (int i=0; i<3; i++ ) {
           Vertex_handle query = Tr_Base::mirror_vertex(f,i);
           if (is_infinite(query)) continue;
-          if ( (Bounded_side) coplanar_side_of_bounded_circle( p[0], p[1], p[2], query->point(), false) == ON_BOUNDED_SIDE)
+          if ( (Bounded_side) coplanar_side_of_bounded_circle( *p[0], *p[1], *p[2], query->point(), false) == ON_BOUNDED_SIDE)
             return false;
         }
       }

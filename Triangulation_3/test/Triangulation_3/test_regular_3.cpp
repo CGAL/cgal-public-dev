@@ -27,6 +27,7 @@
 
 #include <CGAL/_test_types.h>
 #include <CGAL/_test_cls_regular_3.h>
+#include <CGAL/_test_collapse.h>
 
 bool del=true;
 
@@ -435,6 +436,10 @@ int main()
   assert(T5.is_Gabriel(v3));
   assert(!T5.is_Gabriel(v0));
 
+  // collapse operation
+  std::cout << "    Testing edge collapse in Regular_3:" << std::endl; 
+  _test_collapse<Cls>();
+  
   std::cout << " quit " << std::endl;
   return 0;
 }
