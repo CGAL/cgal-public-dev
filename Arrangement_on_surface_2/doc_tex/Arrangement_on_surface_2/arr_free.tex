@@ -351,8 +351,9 @@ between these functions and the member functions of the \ccc{Arrangement_2}
 template having the same name is that they allow the merger of two curves
 associated with adjacent edges to form a single edge. Thus, they require
 that the traits class that instantiates the arrangement instance is a model
-of the refined \ccc{ArrangementXMonotoneTraits_2} concept (see
-Section~\ref{arr_sec:traits}).
+of the~\ccc{ArrangementXMonotoneTraits_2} traits concept, which
+refines the~\ccc{ArrangementBasicTraits_2} traits concept.
+(see Section~\ref{arr_sec:traits}).
 
 The function \ccc{remove_vertex(arr, v)} removes the vertex
 \ccc{v} from the given arrangement \ccc{arr}, where \ccc{v} is

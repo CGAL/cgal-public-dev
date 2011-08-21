@@ -48,10 +48,10 @@ which returns a single data object that represents the merged data field
 of \ccc{d1} and \ccc{d2}. The $x$-monotone curve that represents the overlap
 is associated with the output of this functor.
 
-The traits-class models the \ccc{ArrangementLandmarkTraits_2} only
-if \ccc{Tr} models the concept and
-defines \ccc{Has_construct_x_monotone_curve_2_category} to identical
-to the one in~\ccc{Tr}.
+The traits-class models the~\ccc{ArrangementLandmarkTraits_2} concept
+if and only if \ccc{Tr}~models the concept.
+In this case~\ccc{Has_construct_x_monotone_curve_2_category} is
+identical to the one in~\ccc{Tr}.
 
 Both \ccc{Compare_at_x_left_2} and \ccc{Has_left_category} are defined
 to be identical as the types in \ccc{Tr}.
@@ -61,7 +61,7 @@ to be identical as the types in \ccc{Tr}.
  
 \ccIsModel
     \ccc{ArrangementTraits_2} \\
-    \ccc{ArrangementLandmarkTraits_2} (only if \ccc{Tr} models the
+    \ccc{ArrangementLandmarkTraits_2} (if and only if \ccc{Tr} models the
     \ccc{ArrangementLandmarkTraits_2}.) \\
 
 \ccTypes

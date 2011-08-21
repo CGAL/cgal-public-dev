@@ -118,9 +118,10 @@ and walk from the landmark point to the query point.
 The default walking strategy is to first walk horizontally and then
 vertically (similar to the
 \ccc{Arr_walk_along_a_line_point_location<Arrangement>} strategy.
-The walk could be expedited by constructing a curve connecting the
-landmark point and the query point (which not all traits classes
-support).
+However, the walk can be expedited in case the traits also provides
+the optional construction of a curve that connects a landmark point
+and a query point. See the~\ccc{ArrangementLandmarkTraits_2} concept
+for the details of the interface.
 
 There are various ways to select the landmark set in the
 arrangement, determined by the \ccc{Generator} template parameter.
