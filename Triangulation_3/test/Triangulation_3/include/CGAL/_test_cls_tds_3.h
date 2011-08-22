@@ -24,6 +24,7 @@
 
 #include "_test_cls_tds_vertex.h"
 #include "_test_cls_tds_cell.h"
+#include "_test_collapse_tds.h"
 
 #include <CGAL/Triangulation_vertex_base_with_info_3.h>
 #include <CGAL/Triangulation_cell_base_with_info_3.h>
@@ -254,6 +255,10 @@ _test_cls_tds_3( const Tds &)
   }
   std::cout << nbflips << " flips 3-2" << std::endl;
   assert(tds6.number_of_vertices()==8);
+
+  // edge collapse
+  //std::cout << "    Testing edge collapse in TDS:" << std::endl; 
+  //_test_collapse<Tds>();
 
   // test destructor and return
   std::cout << "    test destructors and return" << std::endl;

@@ -1,5 +1,6 @@
 #include <CGAL/point_generators_3.h>
 #include <CGAL/Random.h>
+#include <CGAL/algorithm.h>
 
 #include <vector>
 #include <list>
@@ -21,7 +22,7 @@ struct Simple_edge {
     first = _first;
     second = _v1;
     third = _v2;
-    FT len = squared_distance(second->point(), third->point());
+    len = squared_distance(second->point(), third->point());
   }
 
   bool operator<(const Simple_edge &b) const
@@ -95,7 +96,7 @@ std::list<Point> get_my_2d_points()
 }
 
 template <typename Point> 
-std::list<Point> get_1D(int n)
+std::list<Point> get_rand_in_line(int n)
 {
 	int i;
 	std::list<Point> L;
@@ -113,7 +114,7 @@ std::list<Point> get_1D(int n)
 }
 
 template <typename Point> 
-std::list<Point> get_2D(int n)
+std::list<Point> get_rand_in_disc(int n)
 {
 	int i;
 	std::list<Point> L;
@@ -144,16 +145,20 @@ std::list<Point> get_rand_in_sphere(int n, int r)
 }
 
 template<typename Triangulation, typename PQ_of_edges>
-void push_edge(PQ_of_edges &pq, const typename Triangulation::Edge &e) 
-{
-  typename Triangulation::Cell_handle cell = e.first;
-  typename Triangulation::Vertex_handle v1 = cell->vertex( e.second );
-  typename Triangulation::Vertex_handle v2 = cell->vertex( e.third );
+struct push_edge_t {
+  static void push_edge(Triangulation &T, PQ_of_edges &pq, const typename Triangulation::Edge &e) 
+  {
+    typename Triangulation::Cell_handle cell = e.first;
+    typename Triangulation::Vertex_handle v1 = cell->vertex( e.second );
+    typename Triangulation::Vertex_handle v2 = cell->vertex( e.third );
 
-  // PQ_of_edges::values_type stands for Simple_edge
-  pq.push( typename PQ_of_edges::value_type(cell, v1, v2) );
-  pq.push( typename PQ_of_edges::value_type(cell, v2, v1) );
-}
+    if (!T.is_infinite(e)) {
+      // PQ_of_edges::values_type stands for Simple_edge
+      pq.push( typename PQ_of_edges::value_type(cell, v1, v2) );
+      pq.push( typename PQ_of_edges::value_type(cell, v2, v1) );
+    }
+  }
+};
 
 // inserts all the edges incident to a vertex v to the priority queue
 template<typename Triangulation, typename PQ_of_edges>
@@ -170,8 +175,7 @@ void insert_adjacent_edges_to_queue(Triangulation &T, PQ_of_edges &pq, typename 
 
     for(typename std::vector<Edge>::iterator eit=edges.begin(); eit!=edges.end(); eit++) {
       Edge e = *eit;
-      if(!T.is_infinite(e))
-        push_edge<Triangulation,PQ_of_edges>(pq,e);
+      push_edge_t<Triangulation,PQ_of_edges>::push_edge(T,pq,e);
     }
 
     return;
@@ -183,8 +187,7 @@ void insert_adjacent_edges_to_queue(Triangulation &T, PQ_of_edges &pq, typename 
     CGAL_For_all(fcirc,fend) {
       for(int i=0; i<3; i++) {
         Edge e(fcirc, i, (i+1)%3);
-        if(!T.is_infinite(e))
-          push_edge<Triangulation,PQ_of_edges>(pq,e);
+        push_edge_t<Triangulation,PQ_of_edges>::push_edge(T,pq,e);
       }  
     }
 
@@ -198,8 +201,7 @@ void insert_adjacent_edges_to_queue(Triangulation &T, PQ_of_edges &pq, typename 
       for(int i=0; i<3; i++)
         for(int j=i+1; j<3; j++) {
           Edge e(*cit, i, j);
-          if(!T.is_infinite(e))
-            push_edge<Triangulation,PQ_of_edges>(pq,e);
+          push_edge_t<Triangulation,PQ_of_edges>::push_edge(T,pq,e);
         }
     }
 
@@ -210,7 +212,7 @@ void insert_adjacent_edges_to_queue(Triangulation &T, PQ_of_edges &pq, typename 
 // generates a set of random points and iteratively tries to collapse the remaining edges
 // until the triangulation becames a single finite point and no more collapses are possible
 template <typename Triangulation>
-void collapse_to_a_point(std::list<typename Triangulation::Point> L)
+void collapse_to_a_point(Triangulation T)
 {
   typedef typename Triangulation::Finite_edges_iterator     Finite_edges_iterator;
   typedef typename Triangulation::Vertex_handle             Vertex_handle;
@@ -218,7 +220,6 @@ void collapse_to_a_point(std::list<typename Triangulation::Point> L)
 
   typedef std::priority_queue< Simple_edge<Triangulation> >  PQ_of_edges;
 
-  Triangulation T(L.begin(), L.end());
   assert(T.is_valid());
 
   int stat_collapsed = 0;
@@ -227,7 +228,7 @@ void collapse_to_a_point(std::list<typename Triangulation::Point> L)
   // insert all the finite edges (reversed too) to priority queue
   Finite_edges_iterator eit;
   for (eit=T.finite_edges_begin(); eit != T.finite_edges_end(); eit++) 
-    push_edge<Triangulation,PQ_of_edges>(pq, *eit);
+    push_edge_t<Triangulation,PQ_of_edges>::push_edge(T, pq, *eit);
 
   // until a single finite and an infinite point remains
   while (!pq.empty()) {
@@ -269,17 +270,17 @@ void _test_collapse() {
 
   std::list<Point> L;
 
-  L = get_1D<Point>(n);
-  collapse_to_a_point<Triangulation>(L);
-  std::cout << "        1D triangulation of " << n << "random points in a line collapsed to a single point." << std::endl;
+  L = get_rand_in_line<Point>(n);
+  collapse_to_a_point<Triangulation>( Triangulation(L.begin(), L.end()) );
+  std::cout << "        1D triangulation of " << n << " random points in a line collapsed to a single point." << std::endl;
   
-  L = get_2D<Point>(n);
-  collapse_to_a_point<Triangulation>(L);
-  std::cout << "        2D triantulation of " << n << "random points in a disc collapsed to a single point." << std::endl;
+  L = get_rand_in_disc<Point>(n);
+  collapse_to_a_point<Triangulation>( Triangulation(L.begin(), L.end()) );
+  std::cout << "        2D triantulation of " << n << " random points in a disc collapsed to a single point." << std::endl;
 
   L = get_rand_in_sphere<Point>(n, 1.0);
-  collapse_to_a_point<Triangulation>(L);
-  std::cout << "        3D triangulation of " << n << "random points in a sphere collapsed to a single point." << std::endl;
+  collapse_to_a_point<Triangulation>( Triangulation(L.begin(), L.end()) );
+  std::cout << "        3D triangulation of " << n << " random points in a sphere collapsed to a single point." << std::endl;
 
   /*
   L = get_layered_2d_points<Point>(3, n); 
