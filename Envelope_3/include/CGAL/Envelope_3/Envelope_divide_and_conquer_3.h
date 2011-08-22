@@ -46,6 +46,8 @@
 #include <boost/graph/dijkstra_shortest_paths.hpp>
 #endif
 
+#include<omp.h>
+
 // this base divide & conquer algorithm splits the input into 2 groups,
 // calculates the result over the 2 groups, and then merges the results like
 // this:
@@ -294,10 +296,21 @@ protected:
     
     // recursively calculate the LU_envelope of the 2 groups
     Minimization_diagram_2 result1(m_geom_traits), result2(m_geom_traits);
+
+    #pragma omp parallel private(group1,group2,result1,result2)
+    {
+   
+    #pragma omp single nowait
+    {
     construct_lu_envelope_xy_monotones(group1.begin(), group1.end(),
                                        result1, dividor);
+    }
+    #pragma omp single
+    {
     construct_lu_envelope_xy_monotones(group2.begin(), group2.end(),
                                        result2, dividor);
+    }
+    }
         
     // merge the results:
     merge_envelopes(result1, result2, result);
