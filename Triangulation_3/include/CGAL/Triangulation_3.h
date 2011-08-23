@@ -710,21 +710,21 @@ public:
   // edge removal
   typedef typename Tds::Triangulation_table	Triangulation_table;
 
-  FT quality(Cell_handle cell)
+  FT quality(const Cell_handle cell) const
   {
     return quality( cell->vertex(0), cell->vertex(1),
                     cell->vertex(2), cell->vertex(3) );
   }
 
-  FT quality(Vertex_handle v1, Vertex_handle v2, Vertex_handle v3, Vertex_handle v4)
+  FT quality(const Vertex_handle v1, const Vertex_handle v2, const Vertex_handle v3, const Vertex_handle v4) const
   {
      return 5.0;
     //return Mesh_3::minimum_dihedral_angle<GT>(v1->point(), v2->point(), v3->point(), v4->point());
   }
 
   FT fill_table(Vertex_handle a, Vertex_handle b,
-			const std::vector<Vertex_handle>& v,
-			Triangulation_table& K);
+			std::vector<Vertex_handle>& v,
+			Triangulation_table& K) const;
   void remove(Edge& edge);
 
 protected:
@@ -3017,11 +3017,10 @@ is_geom_collapsible(const Edge& edge, const Point& point) const
     case 3: {
       std::vector<Facet> hull;
 
-      // then 'point' may not be visible from the link of 'source'
       //if (arrise_flat_cells(source, target, point))
       //  return false;
       
-      // TODO: remove the check because it is always true
+      // then 'point' may not be visible from the link of 'source'
       if (point != source->point())
         _tds.get_facets_from_link(source, target, hull);
   

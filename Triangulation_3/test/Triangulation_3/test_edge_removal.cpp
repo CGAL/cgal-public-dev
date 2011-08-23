@@ -87,10 +87,11 @@ std::list<Point> get_my_points()
 {
 	std::list<Point> L;
 	
-	L.push_front(Point(0,2,0));
-	L.push_front(Point(0,0,1));
-	L.push_front(Point(0,1,1));
 	L.push_front(Point(0,0,0));
+	L.push_front(Point(0,0,1));
+	L.push_front(Point(0,1,0));
+	L.push_front(Point(1,0,0));
+	L.push_front(Point(1.5,1,1));
 	L.push_front(Point(1,1,1));
 
 	return L;
@@ -223,6 +224,31 @@ void geomview_show_cell (Geomview_stream &gs, Point &p1, Point &p2, Point &p3, P
 	gs << t;	
 }
 
+void geomview_show_facet (Geomview_stream &gs, Point &p1, Point &p2, Point &p3, CGAL::Color color)
+{
+	gs.set_face_color(color);
+	Triangle t(p1,p2,p3);
+	gs << t;	
+}
+
+void show_all_finite_facets (Geomview_stream &gs, Triangulation &T)
+{
+	Finite_facets_iterator fit = T.finite_facets_begin();
+	for(; fit!=T.finite_facets_end(); fit++) {
+		Cell_handle c = fit->first;
+		int index = fit->second;
+
+		if (T.is_infinite(c->vertex(index)) || T.is_infinite(T.mirror_vertex(c,index)))
+			continue;
+
+		Point p1 = c->vertex((index+1)%4)->point();
+		Point p2 = c->vertex((index+2)%4)->point();
+		Point p3 = c->vertex((index+3)%4)->point();
+
+		geomview_show_facet(gs, p1, p2, p3, CGAL::BLUE);
+	}
+}
+
 void write_to_OFF(const char *filename, Triangulation &T)
 {
 	ofstream oFile(filename, std::ios::out);
@@ -277,11 +303,11 @@ bool incident_to_inf(Triangulation &T, Vertex_handle v)
 
 void print_info(Triangulation &T)
 {
+	cout << "dim: " << T.dimension() << endl;
 	cout << "vertices: " << T.number_of_vertices() << endl;
 	cout << "cells: " << T.number_of_cells() << endl;
 	cout << "facets: " << T.number_of_facets() << endl;
 	cout << "edges: " << T.number_of_edges() << endl;
-	cout << "dim: " << T.dimension() << endl;
 }
 
 bool border_edge(Triangulation &T, Edge e)
@@ -326,15 +352,21 @@ void edge_removal(Geomview_stream &gs1, Geomview_stream &gs2, Triangulation &T)
 	vector<Edge> V;
 	insert_internal_edges_to_vector(T, V);
 
-
+	assert(V.size()>=1);
 	Edge e = V[0];
 	geomview_show_edge(gs1, e.first->vertex(e.second), e.first->vertex(e.third));
-	geomview_show_edge(gs2, e.first->vertex(e.second), e.first->vertex(e.third));
+	//geomview_show_edge(gs2, e.first->vertex(e.second), e.first->vertex(e.third));
+	show_all_finite_facets(gs1, T);
+	
+	cout << "Remove start" << endl;
+	CGAL_triangulation_assertion(T.is_valid());
 	T.remove(e);
 	
+	gs2 << T;
+	show_all_finite_facets(gs2, T);
 	print_info(T);
 
-	gs2 << T;
+	CGAL_triangulation_assertion(T.is_valid());
 }
 
 // call <number of vertices>
@@ -351,16 +383,13 @@ int main(int argn, char *args[])
 
 	//L = get_layered_2d_points(n, 10*n);	
 	//L = get_layered_3d_points(n, 10*n);	
-	L = get_rand_in_sphere(n, r);
-	//L = get_my_points();
+	//L = get_rand_in_sphere(n, r);
+	L = get_my_points();
 	//L = get_my_2d_points();
 	//L = get_2D(n);
 	//L = get_1D(n);
 	Triangulation T(L.begin(), L.end());
 
-	gs1 << T;
-
-	T.is_valid(true);
 	edge_removal(gs1, gs2, T);
 
 	//write_to_OFF("init.off", T);
