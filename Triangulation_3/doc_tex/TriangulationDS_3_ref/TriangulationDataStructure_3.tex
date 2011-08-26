@@ -467,7 +467,7 @@ dimension 3, \ccVar.\ccc{insert_in_facet(v)} in dimension 2, and
 
 \ccHeading{Edge collapse}
 
-The \ccc{edge collapse} operation over an edge \ccc{e=(c,i,j)} preserves the vertex of index \ccc{j}. The vertex of index \ccc{i} and all the simplices of maximal dimension incident to \ccc{e} are removed. By removing such simplex its two neighbouring simplices which are not incident to \ccc{e} are made adjacent to each other. No other changes are made. The \texttt{is\_collapsible} test guarantees that collapsing a specific edge would not produce non-simplices invalidating the triangulation.
+The \ccc{edge collapse} operation over an edge \ccc{e=(c,i,j)} preserves the vertex of index \ccc{j}. The vertex of index \ccc{i} and all the simplices of maximal dimension incident to \ccc{e} are removed. By removing such simplex its two neighbouring simplices which are not incident to \ccc{e} are made adjacent to each other. No other changes are made. The \texttt{is\_collapsible} test guarantees that collapsing a specific edge would not invalidate the triangulation.
 
 \ccMethod{bool collapse(Edge e);}
 {Collapses \ccc{e=(c,i,j)} onto the vertex of index \ccc{j}. Before eventually collapsing, this method invokes \texttt{is\_collapsible} (which is quite expensive) and returns \ccc{false} or \ccc{true} according to this test.
@@ -480,7 +480,8 @@ The \ccc{edge collapse} operation over an edge \ccc{e=(c,i,j)} preserves the ver
 }
 
 \ccMethod{bool is_collapsible(Edge e);}
-{Checks for validity of collapsing \ccc{e=(c,i,j)} onto the vertex of index \ccc{j}. 
+{Checks for validity of collapsing \ccc{e=(c,i,j)} onto the vertex of index \ccc{j}. This method returns false for edges collapsing which lead to non-simplices. Otherwise it returns true.
+
 \ccPrecond{\ccVar.\ccc{dimension()} $\geq 1$.}
 }
 

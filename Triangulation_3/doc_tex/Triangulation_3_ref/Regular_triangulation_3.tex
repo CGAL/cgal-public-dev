@@ -189,7 +189,7 @@ lies inside the hole, which is star-shaped wrt \ccc{p}}.}
 
 \ccHeading{Edge collapse}
 
-The \ccc{edge collapse} operation over a finite edge \ccc{e=(c,i,j)} preserves the vertex of index \ccc{j}. The vertex of index \ccc{i} and all the simplices of maximal dimension incident to \ccc{e} are removed. By removing such simplex its two neighbouring simplices which are not incident to \ccc{e} are made adjacent to each other. No other changes are made. The \texttt{is\_collapsible} test guarantees that collapsing a specific edge would not produce inverted, flat, non-Gabriel or non-simplices invalidating the triangulation.
+The \ccc{edge collapse} operation over a finite edge \ccc{e=(c,i,j)} preserves the vertex of index \ccc{j}. The vertex of index \ccc{i} and all the simplices of maximal dimension incident to \ccc{e} are removed. By removing such simplex its two neighbouring simplices which are not incident to \ccc{e} are made adjacent to each other. No other changes are made. The \texttt{is\_collapsible} test guarantees that collapsing a specific edge would not invalidate the triangulation.
 
 \ccMethod{bool collapse(Edge e);}{}
 \ccGlue
@@ -208,7 +208,7 @@ The \ccc{edge collapse} operation over a finite edge \ccc{e=(c,i,j)} preserves t
 \ccMethod{bool is_collapsible(Edge e);}{}
 \ccGlue
 \ccMethod{bool is_collapsible(Edge e, Point p);}
-{Check for validity of collapsing \ccc{e=(c,i,j)} onto the vertex of index \ccc{j} which geometrical position is changed to \ccc{p} if the second argument is given. This method returns false for infinite edges and arguments \ccc{p} which lie outside the cells incident to \ccc{e}. 
+{Check for validity of collapsing \ccc{e=(c,i,j)} onto the vertex of index \ccc{j} which geometrical position is changed to \ccc{p} if the second argument is given. These methods return false for infinite edges, edges collapsing which lead to inverted, flat or non-simplices, and edges collapsing which invalidate the Regular property. Otherwise they return true.
 \ccPrecond{\ccVar.\ccc{dimension()} $\geq 1$.}
 }
 
