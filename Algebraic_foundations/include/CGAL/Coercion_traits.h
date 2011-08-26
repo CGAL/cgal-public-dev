@@ -37,7 +37,44 @@
 #include <boost/iterator/transform_iterator.hpp>
 #include <boost/type_traits/is_same.hpp>
 
-// Makro to define an additional operator for binary functors which takes
+#include <boost/mpl/if.hpp>
+#include <boost/type_traits/is_convertible.hpp>
+#include <boost/type_traits/common_type.hpp>
+#include <boost/type_traits/integral_constant.hpp>
+
+// namespace CGAL {
+//   namespace internal {
+//     template<typename A, typename B, typename Type>
+//     struct Default_explicit_cast {
+//       // XXX needs move
+//       Type operator(const A& f) {
+//         return Type(f);
+//       }
+
+//       Type operator(const B& f) {
+//         return Type(f);
+//       }
+//     };
+//   }
+
+//   template<class From, class To>
+//   struct Coercion_traits_base {
+//     typedef boost::common_type<From, To>::type Type;
+//     typedef boost::mpl::if_< mpl::and_< boost::is_convertible<From, Type> , boost::is_convertible<To, Type> >,
+//                              boost::true_type, boost::false_type >::type Is_implicitly_convertible;
+
+//     typedef boost::true_type Is_explicitly_convertible;
+//     typedef Default_explicit_cast<From, To, Type> Cast;
+//   };
+
+//   template<class A, class B>
+//   struct Coercion_traits : Coercion_traits_base<A, B> { 
+//     // empty, if this is picked all definitions from the base are exposed
+//     // if it is specialized the definitions here will be picked
+//   };
+// };
+
+// Macro to define an additional operator for binary functors which takes
 // two number types as parameters that are interoperable with the
 // number type
 #define CGAL_IMPLICIT_INTEROPERABLE_BINARY_OPERATOR_WITH_RT( NT, Result_type  ) \
@@ -234,7 +271,6 @@ struct Coercion_traits_for_level<A,B,0> {
 
 template<class A , class B> 
 struct Coercion_traits :public Coercion_traits_for_level<A,B,CTL_TOP>{};
-
  
 } //namespace CGAL
 
