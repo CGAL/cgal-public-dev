@@ -448,10 +448,10 @@ public:
       return insert_in_hole(cell_begin, cell_end, begin, i, create_vertex());
   }
 
-  // PIVANOV GSOC
+// PIVANOV GSOC 2011 BEGIN
 
 public:
-  // edge removal
+// edge removal NOT documented members BEGIN
   struct Triangulation_table;
   void flip_23_recurse(Vertex_handle a, Vertex_handle b, Triangulation_table& K, int i, int j);
   void remove_edge_flips(Vertex_handle a, Vertex_handle b,
@@ -489,6 +489,7 @@ public:
   }
 
 public:
+// edge removal NOT documented members BEGIN
   template < class Cell_handle >		struct less_Cell_handle;
   template < class Vertex_handle >		struct less_Vertex_handle;
   template < class Edge >			struct less_Edge;
@@ -499,14 +500,12 @@ public:
 
   Vertex_handle get_source_vertex(const Edge& edge) const;
   Vertex_handle get_target_vertex(const Edge& edge) const;
-  Edge get_twin_edge(const Edge& edge);
 
   Vertex_handle get_any_other_vertex(Cell_handle cell,
 		Vertex_handle va, Vertex_handle vb) const;
   Vertex_handle get_remaining_vertex(Cell_handle cell,
       		Vertex_handle va, Vertex_handle vb, Vertex_handle vc) const;
 
-  // NEW
   Vertex_handle get_vertex_from_facet(const Facet& facet, int index) const;
   void get_vertices_from_facet(const Facet& facet, Vertex_handle& va, Vertex_handle& vb, Vertex_handle& vc) const;
   void get_vertices_from_edge(const Edge& edge, Vertex_handle& va, Vertex_handle& vb) const;
@@ -520,13 +519,12 @@ public:
   void get_facets_from_link(Vertex_handle vertex, Vertex_handle dont_include, std::vector<Facet>& hull) const;
   void get_edges_from_link(Vertex_handle vertex, Vertex_handle dont_include, std::vector<Edge>& hull) const;
   
-  //Facet get_twin_facet(const Facet& facet) const;
-
   bool is_collapsible_for_vertices(const Edge& edge) const;
   bool is_collapsible_for_edges(const Edge& edge) const;
+// edge removal NOT documented members END
 
 public:
-//  bool collapse(Edge& edge);
+// edge collapse DOCUMENTED members BEGIN 
   void collapse_collapsible(Edge& edge);
   bool is_collapsible(const Edge& edge) const;
  
@@ -538,7 +536,8 @@ public:
     collapse_collapsible(edge);
     return true;
   }
-  // PIVANOV END
+// edge collapse DOCUMENTED members END
+// PIVANOV GSOC 2011 END
 
   //INSERTION
 

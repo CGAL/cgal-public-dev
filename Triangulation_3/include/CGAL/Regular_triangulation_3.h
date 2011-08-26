@@ -155,10 +155,7 @@ public:
       insert(first, last);
   }
 
-// PIVANOV GSOC
-//  bool is_collapsible(const Edge& edge, const Weighted_point& point) const;
-//  bool is_collapsible(const Edge& edge) const;
-
+// PIVANOV GSOC BEGIN
   bool is_collapsible(const Edge& edge, const Weighted_point& point) const
   {
     return Tr_Base::is_collapsible(edge, point)
@@ -171,7 +168,6 @@ public:
   }
   
   bool check_regular_property(const Edge& edge, const Weighted_point& point) const;
-
 // END PIVANOV
 
 #ifndef CGAL_TRIANGULATION_3_DONT_INSERT_RANGE_OF_POINTS_WITH_INFO

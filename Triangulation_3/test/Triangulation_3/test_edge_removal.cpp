@@ -1,3 +1,11 @@
+
+//convexity check
+#include <CGAL/Simple_cartesian.h>
+#include <CGAL/Polyhedron_incremental_builder_3.h>
+#include <CGAL/Polyhedron_3.h>
+#include <CGAL/convexity_check_3.h>
+
+
 //#include <CGAL/Exact_predicates_exact_constructions_kernel.h>
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/Triangulation_3.h>
@@ -38,8 +46,6 @@
 #include <queue>
 
 using namespace std;
-
-//#define PESHO_DEBUG
 
 typedef CORE::Expr							NT;
 typedef CGAL::Cartesian<NT>   						K;
@@ -338,68 +344,63 @@ void insert_internal_edges_to_vector(Triangulation &T, vector<Edge> &V)
 
 void edge_removal(Geomview_stream &gs1, Geomview_stream &gs2, Triangulation &T)
 {
-	gs1.clear();
-	gs2.clear();
-	gs1.set_vertex_color( CGAL::GREEN );
-	gs2.set_vertex_color( CGAL::GREEN );
-	gs1.set_wired(true);
-	gs2.set_wired(true);
+  gs1.clear();
+  gs2.clear();
+  gs1.set_vertex_color( CGAL::GREEN );
+  gs2.set_vertex_color( CGAL::GREEN );
+  gs1.set_wired(true);
+  gs2.set_wired(true);
 
-	gs1 << T;
+  gs1 << T;
 
-	print_info(T);
+  print_info(T);
 
-	vector<Edge> V;
-	insert_internal_edges_to_vector(T, V);
+  vector<Edge> V;
+  insert_internal_edges_to_vector(T, V);
 
-	assert(V.size()>=1);
-	Edge e = V[0];
-	geomview_show_edge(gs1, e.first->vertex(e.second), e.first->vertex(e.third));
-	//geomview_show_edge(gs2, e.first->vertex(e.second), e.first->vertex(e.third));
-	show_all_finite_facets(gs1, T);
-	
-	cout << "Remove start" << endl;
-	CGAL_triangulation_assertion(T.is_valid());
-	T.remove(e);
-	
-	gs2 << T;
-	show_all_finite_facets(gs2, T);
-	print_info(T);
+  assert(V.size()>=1);
+  Edge e = V[0];
+  geomview_show_edge(gs1, e.first->vertex(e.second), e.first->vertex(e.third));
+  //geomview_show_edge(gs2, e.first->vertex(e.second), e.first->vertex(e.third));
+  show_all_finite_facets(gs1, T);
+  
+  cout << "Remove start" << endl;
+  CGAL_triangulation_assertion(T.is_valid());
 
-	CGAL_triangulation_assertion(T.is_valid());
+  if (T.is_removable(e))
+    T.remove(e);
+  
+  gs2 << T;
+  show_all_finite_facets(gs2, T);
+  print_info(T);
+
+  CGAL_triangulation_assertion(T.is_valid());
 }
 
 // call <number of vertices>
 int main(int argn, char *args[])
 {
-	int n = 10;
-	double r = 1.0;
-	Geomview_stream gs1, gs2;//, gs3, gs4;
-	
-	if (argn >= 2) n = atoi(args[1]);
-	if (argn >= 3) my_rand = Random( atoi(args[2]) );
+  int n = 10;
+  double r = 1.0;
+  Geomview_stream gs1, gs2;//, gs3, gs4;
+  
+  if (argn >= 2) n = atoi(args[1]);
+  if (argn >= 3) my_rand = Random( atoi(args[2]) );
 
-	list<Point> L;
+  list<Point> L;
 
-	//L = get_layered_2d_points(n, 10*n);	
-	//L = get_layered_3d_points(n, 10*n);	
-	//L = get_rand_in_sphere(n, r);
-	L = get_my_points();
-	//L = get_my_2d_points();
-	//L = get_2D(n);
-	//L = get_1D(n);
-	Triangulation T(L.begin(), L.end());
+  //L = get_layered_2d_points(n, 10*n);	
+  //L = get_layered_3d_points(n, 10*n);	
+  //L = get_rand_in_sphere(n, r);
+  L = get_my_points();
+  //L = get_my_2d_points();
+  //L = get_2D(n);
+  //L = get_1D(n);
+  Triangulation T(L.begin(), L.end());
 
-	edge_removal(gs1, gs2, T);
+  edge_removal(gs1, gs2, T);
 
-	//write_to_OFF("init.off", T);
-	//std::ofstream oFileT("output",std::ios::out);
-	//oFileT << T;
+  cin.get();
 
-	//while (collapse_all_edges(gs1, gs2, T));
-	//collapse_all_edges(gs1, gs2, T, n);
-	
-	cin.get();
-
-	return 0;
+  return 0;
 }

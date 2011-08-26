@@ -215,8 +215,7 @@ public:
       insert(first, last);
   }
 
-// PIVANOV GSOC
-
+// PIVANOV GSOC 2011
 public:
   bool is_collapsible(const Edge& edge, const Point& point) const
   {

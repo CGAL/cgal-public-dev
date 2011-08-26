@@ -69,6 +69,7 @@ _test_cls_triangulation_3_input_output(const Triangulation & T,
   assert(Tfromfile_binary.number_of_vertices() == n);
 }
 
+// TODO: not empty
 template <typename Triangulation>
 void _test_cls_triangulation_3_collapse() {
   typedef typename Triangulation::Vector                    Vector;
@@ -77,140 +78,6 @@ void _test_cls_triangulation_3_collapse() {
   typedef typename Triangulation::Vertex_handle             Vertex_handle;
   typedef typename Triangulation::Cell_handle               Cell_handle;
   typedef typename Triangulation::Locate_type               Locate_type;
-
-  {
-    // collapses a signle tetrahedral to a point
-    std::cout << "        Verify that infinite edges cannot collapse... ";
-
-    Point p[4] = { Point(0,0,0), Point(2,3,1), Point(4,2,2), Point(4,-5,-1)};
-
-    Triangulation T(p,p+4);
-    assert( T.is_valid() );
-    assert( T.dimension() == 3 );
-
-    // check that infinite edges cannot collapse
-    std::vector<Edge> ve;
-    T.incident_edges( T.infinite_vertex(), back_inserter(ve) );
-    assert( ve.size() == 4 );
-    Edge e = *ve.begin();
-    assert( T.is_collapsible(e) == false );
-    assert( T.is_collapsible( Edge(e.first, e.third, e.second) ) == false );
-
-    std::cout << "OK" << std::endl;
-  }
-
-  {
-    // collapses a signle tetrahedral to a point
-    std::cout << "        Collapsing a single tetrahedral... ";
-
-    Point p[4] = { Point(0,0,0), Point(2,3,1), Point(4,2,2), Point(4,-5,-1)};
-
-    Triangulation T(p,p+4);
-    assert( T.is_valid() );
-    assert( T.dimension() == 3 );
-
-    for(int i=2; i>=0; i--) {
-      assert( T.number_of_finite_edges() >= 1 );
-      Edge e = *T.finite_edges_begin();
-      assert( T.is_collapsible(e) );
-      
-      T.collapse(e);
-      
-      assert( T.dimension() == i );
-      assert( T.number_of_vertices() == i+1 );
-      assert( T.is_valid() );
-    }
-
-    std::cout << "OK" << std::endl;
-  }
-  
-  {
-    // collapses a signle tetrahedral to a point
-    // moving the target point at each step
-    std::cout << "        Collapsing a single tetrahedral with vertex move... ";
-
-    Point p[4] = { Point(0,0,0), Point(2,3,1), Point(4,2,2), Point(4,-5,-1)};
-
-    Triangulation T(p,p+4);
-    assert( T.dimension() == 3 );
-    assert( T.number_of_finite_cells() == 1);
-    Cell_handle c = T.finite_cells_begin();
-
-    for(int i=2; i>=0; i--) {
-      assert( T.number_of_finite_edges() >= 1 );
-      Edge e = *T.finite_edges_begin();
-
-      Vertex_handle v1 = e.first->vertex( e.second );
-      Vertex_handle v2 = e.first->vertex( e.third );
-      Point p1 = v1->point();
-      Point p2 = v2->point();
-      Vector segm(p1,p2);
-      
-      Point p = p1 + segm*0.5;
-
-      assert( T.is_collapsible(e, p) );
-      T.collapse(e, p);
-
-      Cell_handle c;
-      Locate_type lt;
-      int li, lj;
-      
-      c = T.locate(p, lt, li, lj);
-      assert( lt == Triangulation::VERTEX );
-      Vertex_handle v = c->vertex(li);
-    
-      assert( v->point() == p );
-      assert( T.dimension() == i );
-      assert( T.number_of_vertices() == i+1 );
-      assert( T.is_valid() );
-    }
-
-    std::cout << "OK" << std::endl;
-  }
-
-  {
-    // the order is important: 'a' and 'b' must be the first points to be inserted
-    // so that there will be an edge (a,b) with 3 cells around it
-    // then the topological collapse test has to fail:
-    // the infinite vertex is neighbouring 'a' and 'b' but is not incident to (a,b)
-    std::cout << "        Verify a topological impossibility of collapse... ";
-    
-    Point pa(0,0,0), pb(2,0,0);
-    Point p[5]= { pa, pb, Point(1,-1,1), Point(1,1,0), Point(1,0,-1) };
-   
-    Triangulation T;
-    
-    for (int i=0; i<5; i++) {
-      T.insert(p[i]);
-      if (i<=3) assert( T.dimension() == i );
-    }
-
-    assert( T.dimension() == 3 );
-    assert( T.number_of_vertices() == 5 );
-    assert( T.number_of_finite_edges() == 10 );
-    assert( T.number_of_finite_cells() == 3 );
-    assert( T.is_valid() );
-
-    Vertex_handle va, vb;
-    
-    Cell_handle ca, cb;
-    Locate_type lt;
-    int li, lj;
-    
-    ca = T.locate(pa, lt, li, lj);
-    assert( lt == Triangulation::VERTEX );
-    va = ca->vertex(li);
-
-    cb = T.locate(pb, lt, li, lj, ca);
-    assert( ca == cb );
-    assert( lt == Triangulation::VERTEX );
-    vb = ca->vertex(li);
-
-    Edge e(ca, ca->index(va), ca->index(vb));
-    assert( T.is_collapsible(e) == false );
-
-    std::cout << "OK" << std::endl;
-  }
 }
 
 template <class Triangulation>

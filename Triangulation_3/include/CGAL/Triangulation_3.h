@@ -701,13 +701,13 @@ public:
   }
   void flip_flippable(Cell_handle c, int i, int j);
 
-  // PIVANOV GSOC
-  // edge collapse operator
-  typedef typename GT::FT			FT;  
-  typedef typename GT::Vector_3			Vector;
+// PIVANOV GSOC 2011 BEGIN
 
 public:
-  // edge removal
+// EDGE REMOVAL
+// edge removal NOT-documented members BEGIN
+  typedef typename GT::FT			FT;  
+  typedef typename GT::Vector_3			Vector;
   typedef typename Tds::Triangulation_table	Triangulation_table;
 
   FT quality(const Cell_handle cell) const
@@ -725,28 +725,78 @@ public:
   FT fill_table(Vertex_handle a, Vertex_handle b,
 			std::vector<Vertex_handle>& v,
 			Triangulation_table& K) const;
-  void remove(Edge& edge);
 
-protected:
+// edge removal NOT-documented members END
+
+public:
+// edge removal NOT-documented members BEGIN
+//  template <class HDS> class Build_triangle : public CGAL::Modifier_base<HDS>;
+
+
+// A modifier creating a triangle with the incremental builder.
+template <  class HDS >
+class Build_triangle : public CGAL::Modifier_base<HDS> {
+public:
+//  typedef typename CGAL::Polyhedron_incremental_builder_3<HDS>::Point_3 Point;// B(hds, true);
+  Point a, b;
+
+  std::vector<Point> m_vertices; // all the vertices of the polyhedron/triangulation
+
+  Build_triangle(Point _a, Point _b, std::vector<Point> &v) {
+    a = _a; b = _b;
+    copy(v.begin(), v.end(), m_vertices.end());
+//    for()
+  }
+
+  void operator() (HDS& hds) {
+    CGAL::Polyhedron_incremental_builder_3<HDS> B(hds, true);
+    
+    B.begin_surface(m_vertices.size(), m_vertices.size());
+ 
+    for(typename std::vector<Point>::iterator vertexIterator = m_vertices.begin(); vertexIterator != m_vertices.end(); ++vertexIterator) {
+//      typename CGAL::Polyhedron_incremental_builder_3<HDS>::Point_3 p = *vertexIterator;
+//      B.add_vertex(*vertexIterator);
+//      B.add_vertex(p);
+    }
+
+    /*
+    for(typename std::vector<triangle>::iterator triangleIterator = m_triangles.begin(); triangleIterator != m_triangles.end(); ++triangleIterator) {
+      B.begin_facet();
+      B.add_vertex_to_facet((*triangleIterator).indexA);
+      B.add_vertex_to_facet((*triangleIterator).indexB);
+      B.add_vertex_to_facet((*triangleIterator).indexC);
+      B.end_facet();
+    }
+    */
+    B.end_surface();
+  }
+};
+
+
+  void remove(Edge& edge);
+  bool is_removable(Edge& edge);
+// edge removal NOT-documented members END
+
+public:
+// EDGE COLLAPSE
+// edge collapse NOT-documented members BEGIN
   void add_kernel_triangles_around(Vertex_handle s, Vertex_handle t, 
 			     std::list<Triangle>& triangles);
   template < class Iterator > // value_type = Triangle
   bool is_visible(const Point& query, Iterator begin, Iterator end);
  
-public:
-//  bool is_geom_collapsible(const Edge& edge) const;
   bool is_geom_collapsible(const Edge& edge, const Point& point) const;
 
-  void collapse_collapsible(Edge& edge);
-  void collapse_collapsible(Edge& edge, const Point& point);
+  bool arrise_flat_cells(Vertex_handle source, Vertex_handle target, Point point) const;  
+ 
+  bool is_in_kernel_3D(Point query, std::vector<Facet>& hull) const;
+  bool is_in_kernel_2D(Point query, std::vector<Edge>& hull) const;
+
+  bool is_simplex( Cell_handle c ) const; // TODO: document this function(?); tds::is_simlex too(?)
+// edge collapse NOT-documented members END
 
 public:
-//  bool collapse(Edge& edge);
-
-
-//  bool is_collapsible(const Edge& edge) const;
-//  bool is_collapsible(const Edge& edge, const Point& point) const;
-
+// edge collapse DOCUMENTED members BEGIN
   bool collapse(Edge& edge, const Point& point)
   {
     if (!is_collapsible(edge,point))
@@ -765,6 +815,9 @@ public:
     return true;
   }
 
+  void collapse_collapsible(Edge& edge);
+  void collapse_collapsible(Edge& edge, const Point& point);
+
   bool is_collapsible(const Edge& edge) const
   {
     return  is_geom_collapsible(edge)
@@ -781,17 +834,8 @@ public:
   {
     return is_geom_collapsible(edge, _tds.get_target_vertex(edge)->point());
   }
-
-//private:
-public:
-  bool arrise_flat_cells(Vertex_handle source, Vertex_handle target, Point point) const;  
- 
-  bool is_in_kernel_3D(Point query, std::vector<Facet>& hull) const;
-  bool is_in_kernel_2D(Point query, std::vector<Edge>& hull) const;
-
-  bool is_simplex( Cell_handle c ) const; // to document the tds::is_simlex too
-	
-  // PIVANOV END
+// edge collapse DOCUMENTED members END
+// PIVANOV END
 
   //INSERTION
 
