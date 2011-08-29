@@ -297,7 +297,7 @@ protected:
     // recursively calculate the LU_envelope of the 2 groups
     Minimization_diagram_2 result1(m_geom_traits), result2(m_geom_traits);
 
-    #pragma omp parallel private(group1,group2,result1,result2)
+    #pragma omp parallel 
     {
    
     #pragma omp single nowait
