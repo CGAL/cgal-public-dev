@@ -20,23 +20,20 @@
 #ifndef CGAL_RS_SIMPLE_COMPARATOR_1_H
 #define CGAL_RS_SIMPLE_COMPARATOR_1_H
 
-#include <CGAL/Polynomial_traits_d.h>
-
 namespace CGAL{
 namespace SimpleAK1{
 
 template <class Polynomial_,
           class Bound_,
           class Refiner_,
-          class Signat_/*,
-          class Ptraits_*/>
+          class Signat_,
+          class Ptraits_>
 struct Simple_comparator_1{
         typedef Polynomial_                                     Polynomial;
         typedef Bound_                                          Bound;
         typedef Refiner_                                        Refiner;
         typedef Signat_                                         Signat;
-        //typedef Ptraits_                                        Ptraits;
-        typedef CGAL::Polynomial_traits_d<Polynomial>           Ptraits;
+        typedef Ptraits_                                        Ptraits;
         typedef typename Ptraits::Gcd_up_to_constant_factor     Gcd;
         typedef typename Ptraits::Degree                        Degree;
 

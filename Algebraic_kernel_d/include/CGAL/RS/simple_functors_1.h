@@ -20,24 +20,55 @@
 #ifndef CGAL_RS_SIMPLE_FUNCTORS_1_H
 #define CGAL_RS_SIMPLE_FUNCTORS_1_H
 
-#include <CGAL/Polynomial_traits_d.h>
 #include <vector>
 
 namespace CGAL{
 namespace SimpleAK1{
 
+template <class Polynomial_,class Ptraits_>
+struct Is_coprime_1{
+        typedef Polynomial_                                     Polynomial;
+        typedef Ptraits_                                        Ptraits;
+        typedef typename Ptraits::Gcd_up_to_constant_factor     Gcd;
+        typedef typename Ptraits::Degree                        Degree;
+        inline bool operator()(const Polynomial &p1,const Polynomial &p2)const{
+                return Degree()(Gcd()(p1,p2))==0;
+        }
+}; // struct Is_coprime_1
+
+template <class Polynomial_,class Ptraits_>
+struct Make_coprime_1{
+        typedef Polynomial_                                     Polynomial;
+        typedef Ptraits_                                        Ptraits;
+        typedef typename Ptraits::Gcd_up_to_constant_factor     Gcd;
+        typedef typename Ptraits::Degree                        Degree;
+        typedef typename Ptraits::Integral_division_up_to_constant_factor
+                                                                IDiv;
+        bool operator()(const Polynomial &p1,
+                        const Polynomial &p2,
+                        Polynomial &g,
+                        Polynomial &q1,
+                        Polynomial &q2)const{
+                g=Gcd()(p1,p2);
+                q1=IDiv()(p1,g);
+                q2=IDiv()(p2,g);
+                return Degree()(Gcd()(p1,p2))==0;
+        }
+}; // struct Make_coprime_1
+
 template <class Polynomial_,
           class Bound_,
           class Algebraic_,
           class Isolator_,
-          class Signat_>
+          class Signat_,
+          class Ptraits_>
 struct Solve_1{
         typedef Polynomial_                                     Polynomial_1;
         typedef Bound_                                          Bound;
         typedef Algebraic_                                      Algebraic;
         typedef Isolator_                                       Isolator;
         typedef Signat_                                         Signat;
-        typedef Polynomial_traits_d<Polynomial_1>               Ptraits;
+        typedef Ptraits_                                        Ptraits;
         typedef typename Ptraits::Gcd_up_to_constant_factor     Gcd;
         typedef typename Ptraits::Square_free_factorize_up_to_constant_factor
                                                                 Sqfr;
@@ -173,7 +204,7 @@ struct Solve_1{
                 return res;
         }
 
-};  // Solve_1
+}; // Solve_1
 
 } // namespace SimpleAK1
 } // namespace CGAL

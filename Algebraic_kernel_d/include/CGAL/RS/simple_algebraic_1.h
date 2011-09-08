@@ -22,7 +22,6 @@
 
 #include <boost/operators.hpp>
 #include <CGAL/Real_embeddable_traits.h>
-#include <CGAL/Polynomial_traits_d.h>
 #include <CGAL/Gmpq.h>
 
 namespace CGAL{
@@ -56,29 +55,28 @@ namespace SimpleAK1{
 template <class Polynomial_,
           class Bound_,
           class Refiner_,
-          class Comparator_/*,
-          class Ptraits_*/>
+          class Comparator_,
+          class Ptraits_>
 class Simple_algebraic_1:
 boost::totally_ordered<Simple_algebraic_1<Polynomial_,
                                           Bound_,
                                           Refiner_,
-                                          Comparator_/*,
-                                          Ptraits*/>,
+                                          Comparator_,
+                                          Ptraits_>,
                        double>{
         private:
         typedef Polynomial_                             Polynomial;
         typedef Bound_                                  Bound;
         typedef Refiner_                                Refiner;
         typedef Comparator_                             Comparator;
-        //typedef Ptraits_                                Ptraits;
-        typedef Polynomial_traits_d<Polynomial>         Ptraits;
+        typedef Ptraits_                                Ptraits;
         typedef typename Ptraits::Coefficient_type      Coefficient;
         typedef typename Ptraits::Scale                 Scale;
         typedef Simple_algebraic_1<Polynomial,
                                    Bound,
                                    Refiner,
-                                   Comparator/*,
-                                   Ptraits*/>
+                                   Comparator,
+                                   Ptraits>
                                                         Algebraic;
 
         Polynomial pol;
@@ -194,19 +192,25 @@ boost::totally_ordered<Simple_algebraic_1<Polynomial_,
 } // namespace SimpleAK1
 
 // We define Simple_algebraic_1 as real-embeddable
-template <class Polynomial_,class Bound_,class Refiner_,class Comparator_>
+template <class Polynomial_,
+          class Bound_,
+          class Refiner_,
+          class Comparator_,
+          class Ptraits_>
 class Real_embeddable_traits<SimpleAK1::Simple_algebraic_1<Polynomial_,
                                                            Bound_,
                                                            Refiner_,
-                                                           Comparator_> >{
+                                                           Comparator_,
+                                                           Ptraits_> >{
         typedef Polynomial_                             P;
         typedef Bound_                                  B;
         typedef Refiner_                                R;
         typedef Comparator_                             C;
+        typedef Ptraits_                                T;
 
         public:
 
-        typedef SimpleAK1::Simple_algebraic_1<P,B,R,C>  Type;
+        typedef SimpleAK1::Simple_algebraic_1<P,B,R,C,T> Type;
         typedef CGAL::Tag_true                          Is_real_embeddable;
         typedef bool                                    Boolean;
         typedef CGAL::Sign                              Sign;

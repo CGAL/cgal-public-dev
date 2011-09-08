@@ -21,7 +21,7 @@
 #define CGAL_RS_SIMPLE_AK_1_H
 
 #include <cstddef> // included only to define size_t
-//#include <CGAL/Polynomial_traits_d.h>
+#include <CGAL/Polynomial_traits_d.h>
 #include <CGAL/RS/simple_algebraic_1.h>
 #include <CGAL/RS/simple_comparator_1.h>
 #include <CGAL/RS/simple_signat_1.h>
@@ -32,8 +32,8 @@ namespace SimpleAK1{
 template <class Polynomial_,
           class Bound_,
           class Isolator_,
-          class Refiner_/*,
-          class Ptraits_=CGAL::Polynomial_traits_d<Polynomial_>*/ >
+          class Refiner_,
+          class Ptraits_=CGAL::Polynomial_traits_d<Polynomial_> >
 class Simple_algebraic_kernel_1{
         public:
         typedef Polynomial_                             Polynomial_1;
@@ -42,20 +42,22 @@ class Simple_algebraic_kernel_1{
         private:
         typedef Isolator_                               Isolator;
         typedef Refiner_                                Refiner;
-        //typedef Ptraits_                                Ptraits;
+        typedef Ptraits_                                Ptraits;
         typedef CGAL::SimpleAK1::Simple_signat_1<Polynomial_1,
                                                  Bound>
                                                         Signat;
         typedef CGAL::SimpleAK1::Simple_comparator_1<Polynomial_1,
                                                      Bound,
                                                      Refiner,
-                                                     Signat>
+                                                     Signat,
+                                                     Ptraits>
                                                         Comparator;
         public:
         typedef CGAL::SimpleAK1::Simple_algebraic_1<Polynomial_1,
                                                     Bound,
                                                     Refiner,
-                                                    Comparator>
+                                                    Comparator,
+                                                    Ptraits>
                                                         Algebraic_real_1;
         typedef size_t                                  size_type;
         typedef unsigned                                Multiplicity_type;
@@ -70,16 +72,19 @@ class Simple_algebraic_kernel_1{
         // TODO: Construct_algebraic_real_1
         // TODO: Compute_polynomial_1
         // TODO: Isolate_1
-        // TODO: Is_square_free_1
-        // TODO: Make_square_free_1
-        // TODO: Square_free_factorize_1
-        // TODO: Is_coprime_1
-        // TODO: Make_coprime_1
+        typedef typename Ptraits::Is_square_free        Is_square_free_1;
+        typedef typename Ptraits::Make_square_free      Make_square_free_1;
+        typedef typename Ptraits::Square_free_factorize Square_free_factorize_1;
+        typedef CGAL::SimpleAK1::Is_coprime_1<Polynomial_1,Ptraits>
+                                                        Is_coprime_1;
+        typedef CGAL::SimpleAK1::Make_coprime_1<Polynomial_1,Ptraits>
+                                                        Make_coprime_1;
         typedef CGAL::SimpleAK1::Solve_1<Polynomial_1,
                                          Bound,
                                          Algebraic_real_1,
                                          Isolator,
-                                         Signat>
+                                         Signat,
+                                         Ptraits>
                                                         Solve_1;
         // TODO: Number_of_solutions_1
         // TODO: Sign_at_1
@@ -97,6 +102,7 @@ class Simple_algebraic_kernel_1{
                                       compute_polynomial_1)
         CREATE_SIMPLE_FUNCTION_OBJECT(Isolate_1,
                                       isolate_1)
+        */
         CREATE_SIMPLE_FUNCTION_OBJECT(Is_square_free_1,
                                       is_square_free_1)
         CREATE_SIMPLE_FUNCTION_OBJECT(Make_square_free_1,
@@ -107,7 +113,6 @@ class Simple_algebraic_kernel_1{
                                       is_coprime_1)
         CREATE_SIMPLE_FUNCTION_OBJECT(Make_coprime_1,
                                       make_coprime_1)
-        */
         CREATE_SIMPLE_FUNCTION_OBJECT(Solve_1,
                                       solve_1)
         /*

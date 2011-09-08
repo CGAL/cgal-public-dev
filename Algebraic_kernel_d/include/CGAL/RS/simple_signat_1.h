@@ -21,30 +21,28 @@
 #define CGAL_RS_SIMPLE_SIGNAT_1_H
 
 #include <CGAL/Gmpfi.h>
+#include <CGAL/Polynomial_traits_d.h>
 //#include <boost/mpl/assert.hpp>
 
 namespace CGAL{
 namespace SimpleAK1{
 
-template <class Polynomial_,class Bound_/*,class Ptraits_*/>
+template <class Polynomial_,class Bound_>
 struct Simple_signat_1{
         typedef Polynomial_                                     Polynomial;
         typedef Bound_                                          Bound;
-        //typedef Ptraits_                                        Ptraits;
-        typedef Polynomial_traits_d<Polynomial>                 Ptraits;
+        typedef CGAL::Polynomial_traits_d<Polynomial>           PT;
+        typedef typename PT::Degree                             Degree;
         Polynomial pol;
         Simple_signat_1(const Polynomial &p):pol(p){};
         CGAL::Sign operator()(const Bound&);
-}; //struct Simple_signat_1{
+}; // struct Simple_signat_1
 
-template <class Polynomial_,class Bound_/*,class Ptraits_*/>
+template <class Polynomial_,class Bound_>
 inline CGAL::Sign
 Simple_signat_1<Polynomial_,Bound_>::operator()(const Bound_ &x){
         typedef Polynomial_                                     Polynomial;
         typedef Bound_                                          Bound;
-        //typedef Ptraits_                                        Ptraits;
-        typedef Polynomial_traits_d<Polynomial>                 Ptraits;
-        typedef typename Ptraits::Degree                        Degree;
         typedef Real_embeddable_traits<Bound>                   REtraits;
         typedef typename REtraits::Sgn                          BSign;
         typedef Algebraic_structure_traits<Bound>               AStraits;
@@ -61,8 +59,6 @@ Simple_signat_1<Polynomial_,Bound_>::operator()(const Bound_ &x){
 template <>
 inline CGAL::Sign
 Simple_signat_1<Polynomial<Gmpz>,Gmpfr>::operator()(const Gmpfr &x){
-        typedef Ptraits::Degree                                 Degree;
-        typedef Ptraits::Substitute                             Substitute;
         typedef Simple_signat_1<Polynomial,Gmpq>                Exact_sign;
         int d=Degree()(pol);
         if(d==0)
