@@ -99,15 +99,57 @@ struct Solve_1{
                                   const Bound &l,
                                   const Bound &u,
                                   OutputIterator res)const{
-                typedef std::vector<std::pair<Algebraic,int> >  RMV;
-                typedef typename RMV::iterator                  RMVI;
-                RMV roots;
-                this->operator()(p,std::back_inserter(roots));
-                // TODO: only compute multiplicities of the returned
-                // intervals
-                for(RMVI it=roots.begin();it!=roots.end();++it)
-                        if(it->first>=l&&it->first<=u)
-                                *res++=*it;
+                typedef std::vector<Algebraic>                  RV;
+                typedef typename RV::iterator                   RVI;
+                typedef std::pair<Polynomial_1,int>             PM;
+                typedef std::vector<PM>                         PMV;
+                typedef typename PMV::iterator                  PMVI;
+                CGAL_precondition_msg(l<=u,
+                                      "left bound must be <= right bound");
+                RV roots; // all roots of the polynomial
+                this->operator()(p,false,std::back_inserter(roots));
+                size_t nb_roots=roots.size();
+                // indices of the first and last roots to be reported:
+                int index_l=0,index_u;
+                while(index_l<nb_roots&&roots[index_l]<l)
+                        ++index_l;
+                CGAL_assertion(index_l<=nb_roots);
+                if(index_l==nb_roots)
+                        return res;
+                index_u=index_l;
+                while(index_u<nb_roots&&roots[index_u]<u)
+                        ++index_u;
+                CGAL_assertion(index_u<=nb_roots);
+                if(index_u==index_l)
+                        return res;
+                // now, we have to return roots in [index_l,index_u)
+                PMV sfv;
+                Sqfr()(p,std::back_inserter(sfv)); // square-free fact. of p
+                // array to store the multiplicities
+                int *m=(int*)calloc(nb_roots,sizeof(int));
+                // we iterate over all the pairs <root,mult> and match the
+                // roots in the interval [index_l,index_u)
+                for(PMVI i=sfv.begin();i!=sfv.end();++i){
+                        int k=Degree()(i->first);
+                        Signat signof(i->first);
+                        for(int j=index_l;k&&j<index_u;++j){
+                                if(!m[j]){
+                                        CGAL::Sign sg_l=
+                                                signof(roots[j].get_left());
+                                        CGAL::Sign sg_r=
+                                                signof(roots[j].get_right());
+                                        if((sg_l!=sg_r)||
+                                           ((sg_l==CGAL::ZERO)&&
+                                            (sg_r==CGAL::ZERO))){
+                                                m[j]=i->second;
+                                                --k;
+                                        }
+                                }
+                        }
+                }
+                for(int l=index_l;l<index_u;++l)
+                        *res++=std::make_pair(roots[l],m[l]);
+                free(m);
                 return res;
         }
 
@@ -119,6 +161,8 @@ struct Solve_1{
                                   OutputIterator res)const{
                 typedef std::vector<Algebraic>                  RV;
                 typedef typename RV::iterator                   RVI;
+                CGAL_precondition_msg(l<=u,
+                                      "left bound must be <= right bound");
                 RV roots;
                 this->operator()(p,
                                  known_to_be_square_free,
