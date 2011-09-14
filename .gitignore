@@ -27,6 +27,8 @@ AABB_tree/test/AABB_tree/aabb_naive_vs_tree_distance_segment_test
 AABB_tree/test/AABB_tree/aabb_projection_triangle_test
 AABB_tree/test/AABB_tree/aabb_projection_triangle_test.vcproj
 AABB_tree/test/AABB_tree/cgal_test_with_cmake
+/Algebraic_kernel_2-experimental
+/Algebraic_kernel_d-experimental
 Alpha_shapes_2/demo/Alpha_shapes_2/*.exe
 Alpha_shapes_2/demo/Alpha_shapes_2/*.vcproj
 Alpha_shapes_2/demo/Alpha_shapes_2/Makefile
@@ -51,6 +53,7 @@ Apollonius_graph_2/demo/Apollonius_graph_2/*.exe
 Apollonius_graph_2/demo/Apollonius_graph_2/*.vcproj
 Apollonius_graph_2/demo/Apollonius_graph_2/Makefile
 Apollonius_graph_2/demo/Apollonius_graph_2/apollonius_graph_2
+/Arcavoid-akobel
 Arrangement_on_surface_2/examples/Arrangement_on_surface_2/Bezier_curves
 Arrangement_on_surface_2/examples/Arrangement_on_surface_2/CMakeLists.txt
 Arrangement_on_surface_2/examples/Arrangement_on_surface_2/dual_lines
@@ -747,6 +750,7 @@ Number_types/test/Number_types/rounding_modes
 Number_types/test/Number_types/simplest_rational
 Number_types/test/Number_types/to_interval_test
 Number_types/test/Number_types/utilities
+/Numerical_algebraic_kernel_d-eric
 Optimisation_basic/*.aux
 Optimisation_basic/*.bbl
 Optimisation_basic/*.blg
