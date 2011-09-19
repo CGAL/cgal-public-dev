@@ -1,5 +1,5 @@
 # Top level CMakeLists.txt for CGAL-branchbuild
-CMAKE_MINIMUM_REQUIRED(VERSION 2.6.0 FATAL_ERROR)
+cmake_minimum_required(VERSION 2.6.2)
 
 # option for branch build
 
@@ -20,16 +20,32 @@ endif()
 
 if ( ${CGAL_SCM_NAME} STREQUAL "svn" )
 
-  FIND_PROGRAM(SVN_EXECUTABLE svn DOC "subversion command line client")
+  find_program(SVN_EXECUTABLE svn DOC "subversion command line client")
 
-  # TODO detect name
-  set ( CGAL_SCM_BRANCH_NAME "n/a" )
+  function(Subversion_GET_URL dir variable)
+    # use svnversion
+    execute_process(COMMAND "${SVN_EXECUTABLE}" info --xml "${dir}"
+      OUTPUT_VARIABLE ${variable}
+      OUTPUT_STRIP_TRAILING_WHITESPACE)
+    string(REGEX REPLACE ".*<url>([^<]+)</url>.*" "\\1" ${variable} "${${variable}}")
+    if(NOT variable)
+      message("Warning: can not get the Subversion URL of directory ${dir}")
+    endif()
+    set(${variable} ${${variable}} PARENT_SCOPE)
+  endfunction(Subversion_GET_URL)
 
+  Subversion_GET_URL("${CGAL_INSTALLATION_PACKAGE_DIR}" CGAL_INSTALLATION_SVN_URL)
+  # Remove the "/Installation" suffix.
+  string(REGEX REPLACE "(.*)/Installation" "\\1" CGAL_TMP_SVN_BRANCH_NAME "${CGAL_INSTALLATION_SVN_URL}")
+  # Remove the prefix of the URL "https://scm.gforge.inria.fr/".
+  string(REGEX REPLACE "[a-z+]+://[a-z0-9.]+" "" CGAL_TMP_SVN_BRANCH_NAME "${CGAL_TMP_SVN_BRANCH_NAME}")
+
+  set ( CGAL_SCM_BRANCH_NAME "${CGAL_TMP_SVN_BRANCH_NAME}" )
 endif()
 
 if ( ${CGAL_SCM_NAME} STREQUAL "git" )
 
-  FIND_PROGRAM(GIT_EXECUTABLE git DOC "git command line client")
+  find_program(GIT_EXECUTABLE git DOC "git command line client")
 
 #  EXECUTE_PROCESS(COMMAND ${GIT_EXECUTABLE} --git-dir=${CMAKE_SOURCE_DIR}/.git branch
 #      OUTPUT_VARIABLE CGAL_GIT_BRANCH_OUT

@@ -5,15 +5,17 @@
 # ${CMAKE_BINARY_DIR} or ${CMAKE_BINARY_DIR}.
 project(CGAL)
 
-CMAKE_MINIMUM_REQUIRED(VERSION 2.6.0 FATAL_ERROR)
+# Minimal version of CMake:
+cmake_minimum_required(VERSION 2.6.2)
 
-# This allows else(), endif(), etc... (without repeating the expression)
-set(CMAKE_ALLOW_LOOSE_LOOP_CONSTRUCTS true)
-
-if ( COMMAND cmake_policy )
-  # Libraries linked via full path no longer produce linker search paths.
-  cmake_policy( SET CMP0003 NEW )  
-endif( COMMAND cmake_policy )
+# Tested version:
+if("${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION}" VERSION_GREATER 2.6)
+  if("${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION}.${CMAKE_PATCH_VERSION}" VERSION_GREATER 2.8.3)
+    cmake_policy(VERSION 2.8.4)
+  else()
+    cmake_policy(VERSION 2.6)
+  endif()
+endif()
 
 #--------------------------------------------------------------------------------------------------
 #
@@ -42,7 +44,7 @@ if ( CGAL_BRANCH_BUILD )
 
   set(CGAL_INSTALLATION_PACKAGE_DIR "${CMAKE_SOURCE_DIR}/Installation" CACHE PATH "Directory containing the Installation package")
   set(CGAL_MAINTENANCE_PACKAGE_DIR "${CMAKE_SOURCE_DIR}/Maintenance" CACHE PATH "Directory containing the Maintenance package")
-  set(CGAL_CORE_PACKAGE_DIR "${CMAKE_SOURCE_DIR}/Core" CACHE PATH "Directory containing the Maintenance package")
+  set(CGAL_CORE_PACKAGE_DIR "${CMAKE_SOURCE_DIR}/Core" CACHE PATH "Directory containing the Core package")
 
   message(STATUS "Installation package directory: ${CGAL_INSTALLATION_PACKAGE_DIR}")
   message(STATUS "Maintenance package directory: ${CGAL_MAINTENANCE_PACKAGE_DIR}")
@@ -62,7 +64,7 @@ else ( CGAL_BRANCH_BUILD )
 
   set(CGAL_INSTALLATION_PACKAGE_DIR "${CMAKE_SOURCE_DIR}" CACHE PATH "Directory containing the Installation package")
   set(CGAL_MAINTENANCE_PACKAGE_DIR "${CMAKE_SOURCE_DIR}" CACHE PATH "Directory containing the Maintenance package")
-  set(CGAL_CORE_PACKAGE_DIR "${CMAKE_SOURCE_DIR}" CACHE PATH "Directory containing the Maintenance package")
+  set(CGAL_CORE_PACKAGE_DIR "${CMAKE_SOURCE_DIR}" CACHE PATH "Directory containing the Core package")
 
 endif (CGAL_BRANCH_BUILD )
 
@@ -120,19 +122,25 @@ if ( CGAL_BRANCH_BUILD )
   string (LENGTH "${CGAL_MINOR_VERSION}" CGAL_MINOR_LEN)
   if ("${CGAL_MINOR_LEN}" EQUAL 1) 
     set(CGAL_TMP_MINOR "0${CGAL_MINOR_VERSION}")
+  else()
+    set(CGAL_TMP_MINOR "${CGAL_MINOR_VERSION}")
   endif()
   set(CGAL_CREATED_VERSION_NR "1${CGAL_TMP_MAJOR}${CGAL_TMP_MINOR}${CGAL_BUGFIX_VERSION}0000")
   message(STATUS "CGAL_VERSION_NR is 1${CGAL_TMP_MAJOR}${CGAL_TMP_MINOR}${CGAL_BUGFIX_VERSION}0000")
 
   if ( ${CGAL_SCM_NAME} STREQUAL "svn" )
 
-    MACRO(Subversion_GET_REVISION dir variable)
-      # EXECUTE_PROCESS(COMMAND ${SVN_EXECUTABLE} info ${dir} -r HEAD
-      EXECUTE_PROCESS(COMMAND ${SVN_EXECUTABLE} info ${dir}
+    function(Subversion_GET_REVISION dir variable)
+      # use svnversion
+      execute_process(COMMAND "${SVN_EXECUTABLE}" info --xml "${dir}"
         OUTPUT_VARIABLE ${variable}
         OUTPUT_STRIP_TRAILING_WHITESPACE)
-      STRING(REGEX REPLACE "^(.*\n)?Revision: ([^\n]+).*" "\\2" ${variable} "${${variable}}")
-    ENDMACRO(Subversion_GET_REVISION)
+      string(REGEX REPLACE "^(.*\n)?   revision=\"([^\n]+)\".*url.*" "\\2" ${variable} "${${variable}}")
+      if(NOT variable)
+        message("Warning: can not get the Subversion revision of directory ${dir}")
+      endif()
+      set(${variable} ${${variable}} PARENT_SCOPE)
+    endfunction(Subversion_GET_REVISION)
 
     # define CGAL_SVN_REVISION 50602
     Subversion_GET_REVISION("${CGAL_INSTALLATION_PACKAGE_DIR}" CGAL_TMP_REVISION)
@@ -264,17 +272,15 @@ message( STATUS "CGAL_BUGFIX_VERSION=${CGAL_BUGFIX_VERSION}" )
 #   CGAL<=3.5  : (unversionned)
 #   CGAL-3.5   : 4.0.0
 #   CGAL-3.5.1 : 4.0.1
-#   CGAL-3.5   : 5.0.0
+#   CGAL-3.6   : 5.0.0
 #   CGAL-3.6.1 : 5.0.0 (should have been 5.0.1)
-#   CGAL-3.7  :  6.0.0 (certainly: some types have been turned from int to
-#                       std::size_t, which is different on some platforms)
-#   CGAL-3.8  :  7.0.0 (At least CGAL::Random has changed its member fields.)
+#   CGAL-3.7   : 6.0.0 (certainly: some types have been turned from int to
+#                        std::size_t, which is different on some platforms)
+#   CGAL-3.8   : 7.0.0 (At least CGAL::Random has changed its member fields.)
+#   CGAL-3.9   : 8.0.0 (No way to check the binary compatibility.)
 
-set( CGAL_SONAME_VERSION "7"     CACHE STRING "soname-version" )
-set( CGAL_SOVERSION      "7.0.0" CACHE STRING "soversion" )
-
-mark_as_advanced(CGAL_SONAME_VERSION)
-mark_as_advanced(CGAL_SOVERSION)
+set( CGAL_SONAME_VERSION "8" )
+set( CGAL_SOVERSION      "8.0.0" )
 
 message( STATUS "CGAL_SONAME_VERSION=${CGAL_SONAME_VERSION}" )
 message( STATUS "CGAL_SOVERSION     =${CGAL_SOVERSION}" )
@@ -443,13 +449,15 @@ macro( add_config_flag flag )
 
 endmacro()
 
+cache_get(CONFIG_CXX_FLAGS)
+
 foreach(config_test_cpp ${all_config_tests})
     
     # Test's name is .cpp's base name
     get_filename_component(config_test_name ${config_test_cpp} NAME_WE)
     
     # Compile and run ${config_test_cpp}. Exit code is stored in ${config_test_name}.
-    if( RUNNING_CGAL_AUTO_TEST OR "${config_test_name}" MATCHES "^${config_test_name}$" )
+    if( RUNNING_CGAL_AUTO_TEST OR "${config_test_name}" MATCHES "^${config_test_name}$" OR NOT ${CONFIG_CXX_FLAGS} STREQUAL  ${CMAKE_CXX_FLAGS})
 
       CHECK_CXX_FILE_RUNS(${config_test_cpp} ${config_test_name} ${config_test_name})
 
@@ -464,6 +472,8 @@ foreach(config_test_cpp ${all_config_tests})
     add_config_flag( ${config_test_name} ${config_test_name} )
     
 endforeach()
+
+cache_set(CONFIG_CXX_FLAGS ${CMAKE_CXX_FLAGS})
 
 add_config_flag( CGAL_USE_GMP )
 add_config_flag( CGAL_USE_MPFR )
@@ -762,7 +772,7 @@ if( WITH_CPACK AND EXISTS "${CMAKE_ROOT}/Modules/CPack.cmake" )
         set(CPACK_SOURCE_STRIP_FILES "")
     endif()
 
-    INCLUDE(CPack)
+    include(CPack)
     
 endif()
 

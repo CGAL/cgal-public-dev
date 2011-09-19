@@ -1,11 +1,12 @@
 project(image_to_vtk_viewer)
 
-cmake_minimum_required(VERSION 2.4.5)
-
-set(CMAKE_ALLOW_LOOSE_LOOP_CONSTRUCTS true)
-
-if ( COMMAND cmake_policy )
-  cmake_policy( SET CMP0003 NEW )  
+cmake_minimum_required(VERSION 2.6.2)
+if("${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION}" VERSION_GREATER 2.6)
+  if("${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION}.${CMAKE_PATCH_VERSION}" VERSION_GREATER 2.8.3)
+    cmake_policy(VERSION 2.8.4)
+  else()
+    cmake_policy(VERSION 2.6)
+  endif()
 endif()
 
 
@@ -29,13 +30,17 @@ endforeach()
 find_package(CGAL REQUIRED ImageIO)
 include( ${CGAL_USE_FILE} )
 find_package(VTK QUIET)
+find_package(Qt3-patched QUIET)
 
-if(VTK_FOUND)
+if(QT3_FOUND AND VTK_FOUND)
   add_definitions(-DCGAL_USE_VTK)
   include(${VTK_USE_FILE})
 
+  add_definitions(${QT3_DEFINITIONS})
+
   if(VTK_USE_QVTK)
     include_directories( ${VTK_QT_INCLUDE_DIR} )
+    include_directories( ${QT3_INCLUDE_DIR} )
     add_executable( image_to_vtk_viewer image_to_vtk_viewer.cpp )
     add_to_cached_list( CGAL_EXECUTABLE_TARGETS image_to_vtk_viewer )
 
@@ -47,12 +52,16 @@ if(VTK_FOUND)
       vtkCommon
       ${CGAL_LIBRARIES} ${CGAL_3RD_PARTY_LIBRARIES}
       ${VTK_QT_QT_LIBRARY}
+      ${QT3_LIBRARIES}
       )
   else(VTK_USE_QVTK)
     message(STATUS "NOTICE: This demo needs QVTK, and will not be compiled.")
   endif(VTK_USE_QVTK)
-else(VTK_FOUND)
-
-  message(STATUS "NOTICE: This demo needs VTK, and will not be compiled.")
-
-endif(VTK_FOUND)
+else()
+  if(NOT VTK_FOUND)
+    message(STATUS "NOTICE: This demo needs VTK, and will not be compiled.")
+  endif()
+  if(NOT QT3_FOUND)
+    message(STATUS "NOTICE: This demo needs Qt3, and will not be compiled.")
+  endif()
+endif()
