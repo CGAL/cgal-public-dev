@@ -236,6 +236,21 @@ public:
       std::swap(ptr_, h.ptr_);
     }
 
+    // Added by Luis Peñaranda <luis.penaranda@gmx.com>
+    // If avoid_destruction_on_exit() was not called (or if it was called
+    // the same number of times than destroy_on_exit()), the referenced
+    // object is destroyed and the memory is freed when this object is
+    // destroyed. However, if avoid_destruction_on_exit() was called more
+    // times than destroy_on_exit(), there is no means to free the memory
+    // this object used. The deallocate() function forces the deallocation
+    // of the memory occupied by the referenced object. This function must
+    // be called only once, and no operation on *this must be done after!
+    void
+    deallocate()
+    {
+        allocator.deallocate(ptr_,1);
+    }
+
 protected:
 
     // Added by Luis Peñaranda <luis.penaranda@gmx.com>
@@ -258,21 +273,6 @@ protected:
     destroy_on_exit()
     {
         --ptr_->count;
-    }
-
-    // Added by Luis Peñaranda <luis.penaranda@gmx.com>
-    // If avoid_destruction_on_exit() was not called (or if it was called
-    // the same number of times than destroy_on_exit()), the referenced
-    // object is destroyed and the memory is freed when this object is
-    // destroyed. However, if avoid_destruction_on_exit() was called more
-    // times than destroy_on_exit(), there is no means to free the memory
-    // this object used. The deallocate() function forces the deallocation
-    // of the memory occupied by the referenced object. This function must
-    // be called only once, and no operation on *this must be done after!
-    void
-    deallocate()
-    {
-        allocator.deallocate(ptr_,1);
     }
 
     void
