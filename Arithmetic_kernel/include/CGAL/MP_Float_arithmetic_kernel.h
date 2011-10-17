@@ -36,6 +36,7 @@
 #define CGAL_HAS_MP_FLOAT_ARITHMETIC_KERNEL 
 
 #include <CGAL/MP_Float.h>
+#include <CGAL/Quotient.h>
 
 namespace CGAL {
 
@@ -54,6 +55,7 @@ template <>
 struct Get_arithmetic_kernel<MP_Float> {
   typedef MP_Float_arithmetic_kernel Arithmetic_kernel;
 };
+
 
 } //namespace CGAL
 

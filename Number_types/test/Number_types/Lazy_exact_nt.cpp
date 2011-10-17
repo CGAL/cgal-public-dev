@@ -19,7 +19,7 @@ typedef leda_real        Exact_NT;
 //#  include <CGAL/Gmpq.h>
 //typedef CGAL::Gmpq       Exact_NT;
 #else
-typedef CGAL::Quotient<CGAL::MP_Float> Exact_NT; // doesn't do exact sqrt()
+typedef CGAL::Gmpq Exact_NT; // doesn't do exact sqrt()
 namespace CGAL {
 Exact_NT sqrt(const Exact_NT &)
 {
@@ -123,8 +123,27 @@ void test_to_double()
   }
 }
 
+
+void test_lazy_arithmetic_kernel(){
+  typedef CGAL::Get_arithmetic_kernel<NT>::Arithmetic_kernel       LAK; 
+  typedef CGAL::Get_arithmetic_kernel<Exact_NT>::Arithmetic_kernel EAK; 
+  typedef LAK::Integer LInteger; 
+  typedef LAK::Rational LRational; 
+  typedef LAK::Bigfloat_interval LBigfloat_interval; 
+
+  typedef CGAL::Lazy_exact_nt<EAK::Integer>  EInteger; 
+  typedef CGAL::Lazy_exact_nt<EAK::Rational> ERational; 
+  typedef EAK::Bigfloat_interval EBigfloat_interval; 
+  
+  CGAL_static_assertion( (::boost::is_same<LInteger,EInteger>::value));
+  CGAL_static_assertion( (::boost::is_same<LRational,ERational>::value));
+  CGAL_static_assertion( (::boost::is_same<LBigfloat_interval,EBigfloat_interval>::value));  
+}
+
 int main ()
 {
+  test_lazy_arithmetic_kernel();
+
   std::cout.precision(20);
   // NT a;
   // NT b(a);

@@ -18,8 +18,6 @@
 #include <CGAL/Test/test_root_of_traits.h>
 
 
-
-
 template <class Integer, class Rational> 
 void test_root_of_traits_for_set(Integer, Rational, CGAL::Null_tag){
   {

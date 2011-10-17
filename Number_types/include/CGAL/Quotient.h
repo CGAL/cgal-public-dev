@@ -851,6 +851,13 @@ public:
     };
 };
 
+template <class NT> class Get_arithmetic_kernel; 
+
+template <class RT>
+struct Get_arithmetic_kernel<CGAL::Quotient<RT> > {
+  typedef typename Get_arithmetic_kernel<RT>::Arithmetic_kernel Arithmetic_kernel;
+};
+
 } //namespace CGAL
 
 #endif  // CGAL_QUOTIENT_H
