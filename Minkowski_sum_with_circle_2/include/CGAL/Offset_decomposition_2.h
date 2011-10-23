@@ -71,11 +71,17 @@ public:
       Offset_statistics outer_core_stats;
       Offset_statistics inner_core_stats;
 
+      Polygon_statistics outer_eps_app_stats;
+      Polygon_statistics inner_eps_app_stats;
+      
       Polygon_statistics outer_core_app_stats;
       Polygon_statistics inner_core_app_stats;
       
       Polygon_statistics outer_core_ms_stats;
       Polygon_statistics inner_core_ms_stats;
+
+      Polygon_statistics outer_core_msr_stats;
+      Polygon_statistics inner_core_msr_stats;
       
       Polygon_statistics outer_diff_stats;
       Polygon_statistics inner_diff_stats;
@@ -131,8 +137,14 @@ public:
 
   const Polygon_2& ms_kgon() const { return m_ms_kgon; }
 
+  const Kgon_sum_polygon_2& outer_eps_app() const { return m_outer_eps_app; }
+  const Kgon_sum_polygon_2& inner_eps_app() const { return m_inner_eps_app; }
+
   const Kgon_sum_polygon_2& outer_core_ms() const { return m_outer_core_ms; }
   const Kgon_sum_polygon_2& inner_core_ms() const { return m_inner_core_ms; }
+
+  const Kgon_sum_polygon_2& outer_core_msr() const { return m_outer_core_msr; }
+  const Kgon_sum_polygon_2& inner_core_msr() const { return m_inner_core_msr; }
 
   const Kgon_sum_polygon_2& outer_core_diff() const { return m_outer_core_diff; }
   const Kgon_sum_polygon_2& inner_core_diff() const { return m_inner_core_diff; }
@@ -160,7 +172,12 @@ public:
 //  void compute_outer_core_off() { compute_core_off(false); }
 //  // inner: inner eps-offset delta-approximation of input polygon (Q)
 //  void compute_inner_core_off() { compute_core_off(true); }
-  
+
+  // outer: outer eps-offset delta-approximation of input polygon (Q)
+  void compute_outer_eps_app() { compute_eps_app(false); }
+  // inner: inner eps-offset delta-approximation of input polygon (Q)
+  void compute_inner_eps_app() { compute_eps_app(true); }
+
   // outer: inner r-inset delta-approximation of outer eps-offset delta-approximation of input polygon (Q)
   void compute_outer_core_app() { compute_core_app(false); }
   // inner: outer r-inset delta-approximation of inner eps-offset delta-approximation of input polygon (Q)
@@ -170,6 +187,11 @@ public:
   void compute_outer_core_ms() { compute_core_ms(false); }
   // inner: inner r+eps-offset delta-approximation of inner core approximation
   void compute_inner_core_ms() { compute_core_ms(true); }
+
+  // outer: outer r-offset delta-approximation of outer core approximation
+  void compute_outer_core_msr() { compute_core_msr(false); }
+  // inner: inner r-offset delta-approximation of inner core approximation
+  void compute_inner_core_msr() { compute_core_msr(true); }
 
   // outer: outer r+eps-offset delta-approximation diff with input
   void compute_outer_core_diff() { compute_core_diff(false); }
@@ -201,12 +223,14 @@ public:
 
 private:
 
-//  // eps-offset delta-approximation of input polygon (Q)
-//  void compute_core_off(const bool& is_inner_app);
+  // eps-offset delta-approximation of input polygon (Q)
+  void compute_eps_app(const bool& is_inner_app);
   // r-inset delta-approximation of eps-offset of input polygon (Q)
   void compute_core_app(const bool& is_inner_app);
   // r+eps-offset delta-approximation of core approximation
   void compute_core_ms(const bool& is_inner_app);
+  // r-offset delta-approximation of core approximation
+  void compute_core_msr(const bool& is_inner_app);  
   // diff of input polygon (Q) and core approximation offset
   void compute_core_diff(const bool& is_inner_app);  
 
@@ -247,12 +271,18 @@ private:
     bool m_approximability;
     Exact_segment_list_2 m_approximable_data;
     Exact_segment_list_2 m_non_approximable_data;
+
+    Kgon_sum_polygon_2 m_inner_eps_app;
+    Kgon_sum_polygon_2 m_outer_eps_app;
     
     Polygon_2 m_inner_core_app;
     Polygon_2 m_outer_core_app;
     
     Kgon_sum_polygon_2 m_inner_core_ms;
     Kgon_sum_polygon_2 m_outer_core_ms;
+
+    Kgon_sum_polygon_2 m_inner_core_msr;
+    Kgon_sum_polygon_2 m_outer_core_msr;  
     
     Kgon_sum_polygon_2 m_inner_core_diff;
     Kgon_sum_polygon_2 m_outer_core_diff;
@@ -280,11 +310,15 @@ void Offset_decomposition_2<CPolygon_2>::clear()
   m_approximable_data.clear();
   m_non_approximable_data.clear();
 
+  m_inner_eps_app.clear();
+  m_outer_eps_app.clear();
   m_inner_core_app.clear();
   m_outer_core_app.clear();
 
   m_inner_core_ms.clear();
   m_outer_core_ms.clear();
+  m_inner_core_msr.clear();
+  m_outer_core_msr.clear();
 
   m_inner_core_diff.clear();
   m_outer_core_diff.clear();
@@ -658,15 +692,16 @@ bool Offset_decomposition_2<CPolygon_2>::decide_approximability_convex(
     return approximability;
 }
 
-// r-inset delta-approximation of eps-offset of input polygon (Q)
-template <typename CPolygon_2>
-void Offset_decomposition_2<CPolygon_2>::compute_core_app(const bool& is_inner_app)
-{
-  Polygon_2& core_app = (is_inner_app? m_inner_core_app: m_outer_core_app);
-  core_app.clear();
 
-  Polygon_statistics& core_app_stats = (is_inner_app? m_statistics.inner_core_app_stats: m_statistics.outer_core_app_stats);
-  
+// eps-offset delta-approximation of input polygon (Q)
+template <typename CPolygon_2>
+void Offset_decomposition_2<CPolygon_2>::compute_eps_app(const bool& is_inner_app)
+{
+  Kgon_sum_polygon_2& eps_app = (is_inner_app? m_inner_eps_app: m_outer_eps_app);
+  eps_app.clear();
+
+  Polygon_statistics& eps_app_stats = (is_inner_app? m_statistics.inner_eps_app_stats: m_statistics.outer_eps_app_stats);
+
   //////////////////////////////
   // offset(eps) inner/outer
 //  Input_rational delta_hat1 = delta / epsilon;    // delta / epsilon;
@@ -683,15 +718,31 @@ void Offset_decomposition_2<CPolygon_2>::compute_core_app(const bool& is_inner_a
   m_ms_polygon = m_polygon;
   m_ms_constructor.compute_kgon_sum();
 
-  Kgon_sum_polygon_2 offset_eps = m_ms_constructor.kgon_sum();
-  Polygon_2 offset_eps_outer_boundary = offset_eps.outer_boundary();
+  eps_app = m_ms_constructor.kgon_sum();
 
-  if(offset_eps.number_of_holes() > 0)
+  eps_app_stats.time = m_circle_app.statistics().kgon_stats.time + m_ms_constructor.statistics().kgon_sum_stats.time;
+
+  //if (verbose())
+  {
+    OUT_DEBUG << "Approximability 1st step computed in " << eps_app_stats.time << " seconds." << std::endl;
+  }
+}
+
+// r-inset delta-approximation of eps-offset of input polygon (Q)
+template <typename CPolygon_2>
+void Offset_decomposition_2<CPolygon_2>::compute_core_app(const bool& is_inner_app)
+{
+  Kgon_sum_polygon_2& eps_app = (is_inner_app? m_inner_eps_app: m_outer_eps_app);
+  Polygon_2& core_app = (is_inner_app? m_inner_core_app: m_outer_core_app);
+  core_app.clear();
+
+  Polygon_statistics& core_app_stats = (is_inner_app? m_statistics.inner_core_app_stats: m_statistics.outer_core_app_stats);
+  
+  Polygon_2 eps_app_outer_boundary = eps_app.outer_boundary();
+  if(eps_app.number_of_holes() > 0)
   {
     LIM_DEBUG << "!!! offset eps holes not handled yet !!!" << std::endl;
   }
-
-  core_app_stats.time = m_circle_app.statistics().kgon_stats.time + m_ms_constructor.statistics().kgon_sum_stats.time;
 
   //////////////////////////////
   // inset(r) outer/inner
@@ -706,14 +757,14 @@ void Offset_decomposition_2<CPolygon_2>::compute_core_app(const bool& is_inner_a
   m_circle_app.compute_kgon();
 //  Polygon_2 kgon_r = circ_app.kgon();
 
-  m_ms_polygon = offset_eps_outer_boundary;
+  m_ms_polygon = eps_app_outer_boundary;
   m_ms_constructor.compute_kgon_diff();
 
-  core_app_stats.time += m_circle_app.statistics().kgon_stats.time + m_ms_constructor.statistics().kgon_diff_stats.time;
+  core_app_stats.time = m_circle_app.statistics().kgon_stats.time + m_ms_constructor.statistics().kgon_diff_stats.time;
 
   //if (verbose())
   {
-    OUT_DEBUG << "Approximability 1st and 2nd step computed in " << core_app_stats.time << " seconds." << std::endl;
+    OUT_DEBUG << "Approximability 2nd step computed in " << core_app_stats.time << " seconds." << std::endl;
   }
   
   Polygon_with_hole_set_2 inset_r = m_ms_constructor.kgon_diff();
@@ -723,6 +774,35 @@ void Offset_decomposition_2<CPolygon_2>::compute_core_app(const bool& is_inner_a
   LOG_DEBUG << "created the polygon P:" << std::endl;
   LOG_DEBUG << core_app << std::endl;
   LOG_DEBUG << std::endl;
+
+}
+
+// r-offset delta-approximation of core approximation
+template <typename CPolygon_2>
+void Offset_decomposition_2<CPolygon_2>::compute_core_msr(const bool& is_inner_app)
+{
+  Polygon_2& core_app = (is_inner_app? m_inner_core_app: m_outer_core_app);
+  Kgon_sum_polygon_2& core_msr = (is_inner_app? m_inner_core_msr: m_outer_core_msr);
+  core_msr.clear();
+
+  Polygon_statistics& core_msr_stats = (is_inner_app? m_statistics.inner_core_msr_stats: m_statistics.outer_core_msr_stats);
+
+  //////////////////////////////
+  // offset(r) inner/outer
+  m_ms_offset = m_offset;
+  m_ms_epsilon = m_delta;
+  m_ms_inner = is_inner_app;
+
+  m_circle_app.compute_kgon();
+//  Polygon_2 kgon_r = m_circle_app.kgon();
+
+  m_ms_polygon = core_app;
+  m_ms_constructor.compute_kgon_sum();
+
+  core_msr = m_ms_constructor.kgon_sum();
+
+  core_msr_stats.time = m_circle_app.statistics().kgon_stats.time + m_ms_constructor.statistics().kgon_sum_stats.time;
+  OUT_DEBUG << "Core r-offset approximation computed in " << core_msr_stats.time << " seconds." << std::endl;
 
 }
 
@@ -819,12 +899,15 @@ bool Offset_decomposition_2<CPolygon_2>::decide_approximability_app(const bool& 
 {
   LOG_DEBUG << "decide_approximability_app " << (is_inner_app? "inner":"outer" ) << std::endl;
 
+  Kgon_sum_polygon_2& eps_app = (is_inner_app? m_inner_eps_app: m_outer_eps_app);
   Polygon_2& core_app = (is_inner_app? m_inner_core_app: m_outer_core_app);
   Kgon_sum_polygon_2& core_ms = (is_inner_app? m_inner_core_ms: m_outer_core_ms);
   Kgon_sum_polygon_2& core_diff = (is_inner_app? m_inner_core_diff: m_outer_core_diff);
 
   Polygon_statistics& approximability_stats = (is_inner_app? 
     m_statistics.inner_approximability_stats: m_statistics.outer_approximability_stats);
+  const Polygon_statistics& eps_app_stats = (is_inner_app?
+    m_statistics.inner_eps_app_stats: m_statistics.outer_eps_app_stats);
   const Polygon_statistics& core_app_stats = (is_inner_app? 
     m_statistics.inner_core_app_stats: m_statistics.outer_core_app_stats);
   const Polygon_statistics& core_ms_stats = (is_inner_app? 
@@ -838,18 +921,25 @@ bool Offset_decomposition_2<CPolygon_2>::decide_approximability_app(const bool& 
   
   bool approximable = !is_inner_app;
 
+  LOG_DEBUG << "compute_eps_app" << std::endl;
+  if(eps_app.is_unbounded()) // is empty
+    compute_eps_app(is_inner_app);
+  
+  LOG_DEBUG << "compute_core_app" << std::endl;
   if(core_app.is_empty())
     compute_core_app(is_inner_app);
 
+  LOG_DEBUG << "compute_core_ms" << std::endl;  
   if(core_ms.is_unbounded()) // is empty
     compute_core_ms(is_inner_app);
 
+  LOG_DEBUG << "compute_core_diff" << std::endl;  
   if(core_diff.is_unbounded()) // is empty
     compute_core_diff(is_inner_app);
 
   approximable = (core_diff.is_unbounded()); // is empty
 
-  approximability_stats.time = core_app_stats.time + core_ms_stats.time + diff_stats.time;
+  approximability_stats.time = eps_app_stats.time + core_app_stats.time + core_ms_stats.time + diff_stats.time;
 
   return approximable;
 }
