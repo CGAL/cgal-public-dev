@@ -101,7 +101,14 @@ public:
 
   const Statistics& statistics() const { return m_statistics; }
 
+  const Input_rational& epsilon_yes() const { return m_search_epsilon_yes; }
+  const Input_rational& epsilon_no() const { return m_search_epsilon_no; }
+
+  const Input_rational& delta_yes() const { return m_search_delta_yes; }
+  const Input_rational& delta_no() const { return m_search_delta_no; }
+
   void compute_critical_epsilon();
+  void compute_critical_epsilon_uniformly();
   void compute_maximal_radius();
 
 private:
@@ -115,9 +122,131 @@ private:
   Off_decomposition_2 m_inner_decomposer;
   Off_decomposition_2 m_outer_decomposer;
 
+  // the result of search operation
+  Input_rational m_search_offset_yes;
+  Input_rational m_search_offset_no;  
+  Input_rational m_search_epsilon_yes;
+  Input_rational m_search_epsilon_no;
+  Input_rational m_search_delta_yes;
+  Input_rational m_search_delta_no;
+  
+//  Off_decomposition_2 m_eps_search;
+//  Off_decomposition_2 m_radius_search;
+  
   Statistics m_statistics;
 };
   
+template <typename CPolygon_2>
+void Offset_search_2<CPolygon_2>::compute_critical_epsilon_uniformly()
+{
+  LOG_DEBUG << "compute_critical_epsilon for r=" << m_offset << " and delta=" << m_delta  << " (eps diff limit)" << std::endl;
+
+  m_statistics.eps_search_time = 0;
+  m_statistics.eps_search_decisions = 0;
+  m_statistics.eps_search_iterations = 0;
+
+  // we assume eps = r has an answer YES (approximable with core = input polygon)
+  // and eps = 0 has an answer NO (not approximable)
+
+  // we perform a binary search for eps in [0 ... r] with delta = I/16 at every step
+  // if decision algorithms return YES or NO we update the known eps limits accordingly,
+  // half the delta and run next step of the search.
+
+  // if both sides of the decision algorithm are UNDECIDED
+  // it means that we are at most 2xdelta from the critical epsilon, that is
+  // we can still halve the interval by updating limits to eps_curr +-4xdelta,
+  // and proceed in the same manner halving the delta to the next step.
+
+  // if limits got closer then required delta_limit we stop and return yes limit.
+
+  Input_rational delta_limit = m_delta;
+  
+  Input_rational& eps_yes = m_search_epsilon_yes;
+  Input_rational& eps_no = m_search_epsilon_no;
+  eps_yes = m_offset;
+  eps_no = 0;
+  
+  Input_rational sixtieenth(1, 16);
+  Input_rational eps_curr = (eps_yes + eps_no)/2;
+  Input_rational interval = (eps_yes - eps_no);
+  Input_rational delta_ratio = sixtieenth;
+  Input_rational delta_curr = interval * delta_ratio;
+
+  Input_rational& delta_yes = m_search_delta_yes;
+  Input_rational& delta_no = m_search_delta_no;
+  delta_yes = delta_curr;
+  delta_no = delta_curr;
+  
+  for(; interval > delta_limit;
+        interval = (eps_yes - eps_no),
+        eps_curr = (eps_yes + eps_no)/2,
+        delta_curr = interval * delta_ratio)
+  {
+    m_epsilon = eps_curr;
+    m_delta = delta_curr;                                                                                                                                                                                                                                                                                                                                                                     
+
+    LOG_DEBUG << "eps_curr = " << eps_curr << std::endl;
+    LOG_DEBUG << "interval = " << interval << std::endl;
+    LOG_DEBUG << "delta_ratio = " << delta_ratio << std::endl;
+    LOG_DEBUG << "delta_curr = " << delta_curr << std::endl;
+
+    ++m_statistics.eps_search_iterations;
+
+    // check if YES
+    m_decomposer.clear();
+    m_decomposer.decide_inner_approximability();
+    bool is_yes = m_decomposer.inner_approximability();
+    ++m_statistics.eps_search_decisions;
+    m_statistics.eps_search_time += m_decomposer.statistics().inner_approximability_stats.time;
+
+    if(is_yes)
+    {
+      OUT_DEBUG << "YES: eps = " << m_epsilon << ", delta = " << m_delta << std::endl;
+      eps_yes = m_epsilon;
+      delta_yes = m_delta;
+    }
+    else
+    {
+      // check if NO
+      m_decomposer.decide_outer_approximability();
+      bool is_no = !m_decomposer.outer_approximability();
+      ++m_statistics.eps_search_decisions;
+      m_statistics.eps_search_time += m_decomposer.statistics().outer_approximability_stats.time;
+
+      if(is_no)
+      {
+        OUT_DEBUG << "NO_: eps = " << m_epsilon << ", delta = " << m_delta << std::endl;
+        eps_no = m_epsilon;
+        delta_no = m_delta;
+      }
+      else
+      {
+        // is UNDECIDED
+        OUT_DEBUG << "UND: eps = " << m_epsilon << ", delta = " << m_delta << std::endl;
+
+        Input_rational new_half_interval = 4 * m_delta;
+        eps_yes = m_epsilon + new_half_interval;
+        eps_no = m_epsilon - new_half_interval;
+        delta_yes = m_delta;
+        delta_no = m_delta;
+      }
+    }
+  }
+
+  Input_rational r_eps_rat = m_offset / eps_yes;
+
+  OUT_DEBUG << "R " << m_offset << " RE " << r_eps_rat << " I " << interval << " (eps, delta):"
+            << " YES(" << eps_yes << ", " << delta_yes <<"), NO(" << eps_no << ", " << delta_no <<")"
+            << std::endl << std::endl;
+//  OUT_DEBUG << m_offset << " " << r_eps_rat << " " << eps_yes << " " << delta_yes
+//            << " " << eps_no << " " << delta_no << std::endl << std::endl;
+            
+  LOG_DEBUG << "Critical epsilon is within " << interval << " from eps_yes = " << eps_yes
+            << " (computed with delta = " << delta_yes << ") final delta = " << m_delta << std::endl;
+  LOG_DEBUG << "Critical epsilon search has taken " << m_statistics.eps_search_time << " time for " << m_statistics.eps_search_decisions
+            << " decision procedures in " << m_statistics.eps_search_iterations << " iterations." << std::endl;
+
+}
 
 template <typename CPolygon_2>
 void Offset_search_2<CPolygon_2>::compute_critical_epsilon()
