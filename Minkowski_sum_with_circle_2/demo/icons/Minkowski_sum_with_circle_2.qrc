@@ -21,6 +21,10 @@
     <file>Inner_core_ms_2.png</file>   
     <file>Outer_core_diff_2.png</file>
     <file>Inner_core_diff_2.png</file>   
+    <file>Outer_tolerance_2.png</file>
+    <file>Inner_tolerance_2.png</file>   
+    <file>Outer_offset_app_2.png</file>
+    <file>Inner_offset_app_2.png</file>   
     <file>Forward.png</file>
     <file>Backward.png</file>
     <file>Approximability_y.png</file>

@@ -2600,7 +2600,9 @@ Minkowski_sum_with_circle_2/demo/icons/Inner_core_2.png -text
 Minkowski_sum_with_circle_2/demo/icons/Inner_core_app_2.png -text
 Minkowski_sum_with_circle_2/demo/icons/Inner_core_diff_2.png -text
 Minkowski_sum_with_circle_2/demo/icons/Inner_core_ms_2.png -text
+Minkowski_sum_with_circle_2/demo/icons/Inner_offset_app_2.png -text
 Minkowski_sum_with_circle_2/demo/icons/Inner_skel_2.png -text
+Minkowski_sum_with_circle_2/demo/icons/Inner_tolerance_2.png -text
 Minkowski_sum_with_circle_2/demo/icons/Input.qrc -text
 Minkowski_sum_with_circle_2/demo/icons/Inset_2.png -text
 Minkowski_sum_with_circle_2/demo/icons/Kgon_2.png -text
@@ -2613,7 +2615,9 @@ Minkowski_sum_with_circle_2/demo/icons/Outer_core_2.png -text
 Minkowski_sum_with_circle_2/demo/icons/Outer_core_app_2.png -text
 Minkowski_sum_with_circle_2/demo/icons/Outer_core_diff_2.png -text
 Minkowski_sum_with_circle_2/demo/icons/Outer_core_ms_2.png -text
+Minkowski_sum_with_circle_2/demo/icons/Outer_offset_app_2.png -text
 Minkowski_sum_with_circle_2/demo/icons/Outer_skel_2.png -text
+Minkowski_sum_with_circle_2/demo/icons/Outer_tolerance_2.png -text
 Minkowski_sum_with_circle_2/demo/icons/Polygon_2.png -text
 Minkowski_sum_with_circle_2/demo/icons/Triangulation_2.qrc -text
 Minkowski_sum_with_circle_2/demo/icons/Voronoi_diagram_2.png -text
