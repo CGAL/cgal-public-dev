@@ -3,6 +3,13 @@
 //#define SET_WIDTH // uncomment to modify the width of drawn lines (for taking pictures)
 double MainWindow::LineStyle::pen_width;
 
+std::string MainWindow::rat_to_str(const MSWC::Input_rational& i_rat)
+{
+  std::ostringstream rat_stream;
+  rat_stream << i_rat;
+  return rat_stream.str();
+}
+
 template <typename GI>
 void 
 MainWindow::setupGI(const Data_type& i_data, GI* i_gi, QAction* i_action, const LineStyle& line_style)
@@ -221,12 +228,20 @@ MainWindow::MainWindow(): DemosMainWindow()
           LineStyle(polygon_color.approximability_negative));
   setupGI(approximability_bwd_neg_gi, actionCheckApproximability,
           LineStyle(polygon_color.approximability_negative));
-    
+
+  inner_eps_app_fwd_gi = new HoledPolygonGI(&mswc.inner_eps_app(true));
+  inner_eps_app_bwd_gi = new HoledPolygonGI(&mswc.inner_eps_app(false));
+  setupGI(MSWC::Data_approximate_inner_eps, inner_eps_app_fwd_gi, inner_eps_app_bwd_gi,
+    actionConstructInnerTolerance, LineStyle(polygon_color.green_dark, Qt::SolidLine));
+  outer_eps_app_fwd_gi = new HoledPolygonGI(&mswc.outer_eps_app(true));
+  outer_eps_app_bwd_gi = new HoledPolygonGI(&mswc.outer_eps_app(false));
+  setupGI(MSWC::Data_approximate_outer_eps, outer_eps_app_fwd_gi, outer_eps_app_bwd_gi,
+    actionConstructOuterTolerance, LineStyle(polygon_color.red_dark, Qt::SolidLine)); // Qt::DashLine));
+          
   inner_core_app_fwd_gi = new PolygonGI(&mswc.inner_core_app(true));
   inner_core_app_bwd_gi = new PolygonGI(&mswc.inner_core_app(false));
   setupGI(MSWC::Data_approximate_inner_core, inner_core_app_fwd_gi, inner_core_app_bwd_gi,
     actionConstructInnerCoreApp, LineStyle(polygon_color.green, Qt::SolidLine));
-
   outer_core_app_fwd_gi = new PolygonGI(&mswc.outer_core_app(true));
   outer_core_app_bwd_gi = new PolygonGI(&mswc.outer_core_app(false));
   setupGI(MSWC::Data_approximate_outer_core, outer_core_app_fwd_gi, outer_core_app_bwd_gi,
@@ -236,17 +251,37 @@ MainWindow::MainWindow(): DemosMainWindow()
   inner_core_ms_bwd_gi = new HoledPolygonGI(&mswc.inner_core_ms(false));
   setupGI(MSWC::Data_approximate_inner_kgon_sum, inner_core_ms_fwd_gi, inner_core_ms_bwd_gi,
     actionConstructInnerCoreSum, LineStyle(polygon_color.cyan, Qt::SolidLine));
-
   outer_core_ms_fwd_gi = new HoledPolygonGI(&mswc.outer_core_ms(true));
   outer_core_ms_bwd_gi = new HoledPolygonGI(&mswc.outer_core_ms(false));
   setupGI(MSWC::Data_approximate_outer_kgon_sum, outer_core_ms_fwd_gi, outer_core_ms_bwd_gi,
-    actionConstructOuterCoreSum, LineStyle(polygon_color.magenta, Qt::SolidLine)); // Qt::DotLine)); 
-  
+   actionConstructOuterCoreSum, LineStyle(polygon_color.magenta, Qt::SolidLine)); // Qt::DotLine));
+
+  inner_core_msr_fwd_gi = new HoledPolygonGI(&mswc.inner_core_msr(true));
+  inner_core_msr_bwd_gi = new HoledPolygonGI(&mswc.inner_core_msr(false));
+  setupGI(MSWC::Data_approximate_inner_offset, inner_core_msr_fwd_gi, inner_core_msr_bwd_gi,
+    actionConstructInnerOffsetApp, LineStyle(polygon_color.cyan_dark, Qt::SolidLine));
+  outer_core_msr_fwd_gi = new HoledPolygonGI(&mswc.outer_core_msr(true));
+  outer_core_msr_bwd_gi = new HoledPolygonGI(&mswc.outer_core_msr(false));
+  setupGI(MSWC::Data_approximate_outer_offset, outer_core_msr_fwd_gi, outer_core_msr_bwd_gi,
+   actionConstructOuterOffsetApp, LineStyle(polygon_color.magenta_dark, Qt::SolidLine)); // Qt::DotLine));
+
+//  inner_core_offr_fwd_gi = new ExactPolygonGI(&mswc.inner_core_offr(true));
+//  inner_core_offr_bwd_gi = new ExactPolygonGI(&mswc.inner_core_offr(false));
+//  setupGI(MSWC::Data_approximate_inner_offset_exact, inner_core_offr_fwd_gi, inner_core_offr_bwd_gi,
+//    actionConstructInnerOffset, LineStyle(polygon_color.cyan_dark, Qt::SolidLine));
+//  outer_core_offr_fwd_gi = new ExactPolygonGI(&mswc.outer_core_offr(true));
+//  outer_core_offr_bwd_gi = new ExactPolygonGI(&mswc.outer_core_offr(false));
+//  setupGI(MSWC::Data_approximate_outer_offset_exact, outer_core_offr_fwd_gi, outer_core_offr_bwd_gi,
+//   actionConstructOuterOffset, LineStyle(polygon_color.magenta_dark, Qt::SolidLine)); // Qt::DotLine));
+   
+// actionSearchMinEpsilon;
+// actionSearchMaxRadius;
+   
   inner_approximability_fwd_diff_gi = new HoledPolygonGI(&mswc.inner_core_diff(true));
   inner_approximability_bwd_diff_gi = new HoledPolygonGI(&mswc.inner_core_diff(false));
   setupGI(MSWC::Data_approximate_inner_decision, inner_approximability_fwd_diff_gi, inner_approximability_bwd_diff_gi,
     actionConstructInnerDiffApp, LineStyle(polygon_color.orange));
-  
+
   outer_approximability_fwd_diff_gi = new HoledPolygonGI(&mswc.outer_core_diff(true));
   outer_approximability_bwd_diff_gi = new HoledPolygonGI(&mswc.outer_core_diff(false));
   setupGI(MSWC::Data_approximate_outer_decision, outer_approximability_fwd_diff_gi, outer_approximability_bwd_diff_gi,
@@ -888,11 +923,12 @@ MainWindow::update_parameter_indicators()
     LOG_DEBUG << "bbox of size " << bboxSize << std::endl;
   }
   Minsum_with_circle_2::Input_rational bboxRatSize(ceil(bboxSize));
-  std::ostringstream bbox_stream;
-  bbox_stream << bboxRatSize;
-  std::string bbox_string = bbox_stream.str();
-  EditParametersDialog::saved_polygon_bbox(bbox_string);
+  EditParametersDialog::saved_polygon_bbox(rat_to_str(bboxRatSize));
 
+//  EditParametersDialog::saved_radius(rat_to_str(mswc.offset()));
+  EditParametersDialog::saved_epsilon(rat_to_str(mswc.epsilon()));
+  EditParametersDialog::saved_delta(rat_to_str(mswc.delta()));
+  
   QString pgon_size_str = QString(" polygon size = ") + QString::number(uint(mswc.polygon().size())) + " " +
     QString(" bbox = ") + QString::number(uint(ceil(bboxSize))) + " ";
   emit pgonSize(pgon_size_str);
