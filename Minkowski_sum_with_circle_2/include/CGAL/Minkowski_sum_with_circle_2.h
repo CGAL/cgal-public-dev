@@ -120,16 +120,22 @@ public:
     Data_inner_core,
     Data_outer_core,
     Data_approximability,
+    Data_approximate_inner_eps,
+    Data_approximate_outer_eps,
     Data_approximate_inner_core,
     Data_approximate_outer_core,
     Data_approximate_inner_kgon_sum,
     Data_approximate_outer_kgon_sum,
+    Data_approximate_inner_offset,
+    Data_approximate_outer_offset,
+    //Data_approximate_inner_offset_exact,
+    //Data_approximate_outer_offset_exact,
     Data_approximate_inner_decision,
     Data_approximate_outer_decision,   
     Data_approximate_approximability,
-//    Data_search_epsilon,
-//    Data_search_radius,
     Data_type_size
+//    Data_search_epsilon
+//    Data_search_radius,   
   };
 
     Minkowski_sum_with_circle_2();
@@ -189,6 +195,45 @@ public:
       if(m_delta != delta) delta_changed();
       m_delta = delta;
     }
+
+    const Input_rational& search_offset() const { return m_search_offset; }
+    void search_offset(const Input_rational& search_offset) {
+      m_search_offset = search_offset;
+    }
+    const Input_rational& search_epsilon() const { return m_search_epsilon; }
+    void search_epsilon(const Input_rational& search_epsilon)
+    {
+      m_search_epsilon = search_epsilon;
+    }
+
+    bool compute_search_epsilon(const bool& update_params = true)
+    {
+       Search_2& searcher = (m_forward_construction? m_kgon_sum_search: m_polygon_search);
+      
+       //case Data_search_epsilon:
+
+       // TODO: incorporate search properly in UI
+        m_search_offset = m_offset;
+        m_search_epsilon = m_epsilon;
+        m_search_delta = m_delta;
+
+        searcher.compute_critical_epsilon_uniformly();
+        if(update_params)
+        {
+          epsilon(searcher.epsilon_yes(), false);
+          delta(searcher.delta_yes());
+        }
+        
+        //searcher.compute_maximal_radius();
+
+        return update_params;
+    }
+    
+    const Input_rational& search_delta() const { return m_search_delta; }
+    void search_delta(const Input_rational& search_delta) {
+      m_search_delta = search_delta;
+    }
+    
     
     // circle approximation by kgon and its parameters (offset is circle radius)
     const Circle_app_2& circle_app() const { return m_circle_app; }
@@ -307,6 +352,17 @@ public:
       return decomposer.non_approximable_data();
     }    
 
+    const Kgon_sum_polygon_2& outer_eps_app(const bool& is_fwd) const
+    {
+      const Decomposition_2& decomposer = (is_fwd? m_kgon_sum_decomposer: m_polygon_decomposer);
+      return decomposer.outer_eps_app();
+    }
+    const Kgon_sum_polygon_2& inner_eps_app(const bool& is_fwd) const
+    {
+      const Decomposition_2& decomposer = (is_fwd? m_kgon_sum_decomposer: m_polygon_decomposer);
+      return decomposer.inner_eps_app();
+    }
+
     const Polygon_2& outer_core_app(const bool& is_fwd) const
     {
       const Decomposition_2& decomposer = (is_fwd? m_kgon_sum_decomposer: m_polygon_decomposer);
@@ -317,6 +373,7 @@ public:
       const Decomposition_2& decomposer = (is_fwd? m_kgon_sum_decomposer: m_polygon_decomposer);
       return decomposer.inner_core_app();
     }
+    
     const Kgon_sum_polygon_2& outer_core_ms(const bool& is_fwd) const
     {
       const Decomposition_2& decomposer = (is_fwd? m_kgon_sum_decomposer: m_polygon_decomposer);
@@ -326,7 +383,19 @@ public:
     {
       const Decomposition_2& decomposer = (is_fwd? m_kgon_sum_decomposer: m_polygon_decomposer);
       return decomposer.inner_core_ms();
-    }    
+    }
+    
+    const Kgon_sum_polygon_2& outer_core_msr(const bool& is_fwd) const
+    {
+      const Decomposition_2& decomposer = (is_fwd? m_kgon_sum_decomposer: m_polygon_decomposer);
+      return decomposer.outer_core_msr();
+    }
+    const Kgon_sum_polygon_2& inner_core_msr(const bool& is_fwd) const
+    {
+      const Decomposition_2& decomposer = (is_fwd? m_kgon_sum_decomposer: m_polygon_decomposer);
+      return decomposer.inner_core_msr();
+    }
+    
     const Kgon_sum_polygon_2& outer_core_diff(const bool& is_fwd) const
     {
       const Decomposition_2& decomposer = (is_fwd? m_kgon_sum_decomposer: m_polygon_decomposer);
@@ -519,15 +588,20 @@ void Minkowski_sum_with_circle_2<CPolygon_2>::update()
 
   update(Data_approximability);
 
+  update(Data_approximate_inner_eps);
+  update(Data_approximate_outer_eps);
   update(Data_approximate_inner_core);
   update(Data_approximate_outer_core);
   update(Data_approximate_inner_kgon_sum);
   update(Data_approximate_outer_kgon_sum);
+  update(Data_approximate_inner_offset);
+  update(Data_approximate_outer_offset);
   update(Data_approximate_inner_decision);
   update(Data_approximate_outer_decision);
 
   update(Data_approximate_approximability);
 
+  //compute_search_epsilon(false);
 }
 
 template <typename CPolygon_2>
@@ -542,7 +616,7 @@ void Minkowski_sum_with_circle_2<CPolygon_2>::needs_update()
 template <typename CPolygon_2>
 void Minkowski_sum_with_circle_2<CPolygon_2>::needs_update(const Data_type& i_data)
 {
-  m_needs_update[i_data] = true;
+    m_needs_update[i_data] = true;
 }
 
 template <typename CPolygon_2>
@@ -566,10 +640,14 @@ void Minkowski_sum_with_circle_2<CPolygon_2>::polygon_changed()
 
   needs_update(Data_approximability);
 
+  needs_update(Data_approximate_inner_eps);
+  needs_update(Data_approximate_outer_eps);
   needs_update(Data_approximate_inner_core);
   needs_update(Data_approximate_outer_core);
   needs_update(Data_approximate_inner_kgon_sum);
   needs_update(Data_approximate_outer_kgon_sum);
+  needs_update(Data_approximate_inner_offset);
+  needs_update(Data_approximate_outer_offset);
   needs_update(Data_approximate_inner_decision);
   needs_update(Data_approximate_outer_decision);
 
@@ -593,16 +671,20 @@ void Minkowski_sum_with_circle_2<CPolygon_2>::offset_changed()
     needs_update(Data_inner_skeleton);
   }
   needs_update(Data_outer_skeleton); // boundary depends on offset
-    
+
   needs_update(Data_inner_core);
   needs_update(Data_outer_core);
 
   needs_update(Data_approximability);
 
+  needs_update(Data_approximate_inner_eps);
+  needs_update(Data_approximate_outer_eps);
   needs_update(Data_approximate_inner_core);
   needs_update(Data_approximate_outer_core);
   needs_update(Data_approximate_inner_kgon_sum);
   needs_update(Data_approximate_outer_kgon_sum);
+  needs_update(Data_approximate_inner_offset);
+  needs_update(Data_approximate_outer_offset);
   needs_update(Data_approximate_inner_decision);
   needs_update(Data_approximate_outer_decision);
 
@@ -613,8 +695,8 @@ void Minkowski_sum_with_circle_2<CPolygon_2>::offset_changed()
 template <typename CPolygon_2>
 void Minkowski_sum_with_circle_2<CPolygon_2>::epsilon_changed()
 {
-  m_delta = m_epsilon/4;
-  delta_changed();
+  //m_delta = m_epsilon/4;
+  //delta_changed();
   
   needs_update(Data_approximate_offset_polygon);
 
@@ -627,16 +709,20 @@ void Minkowski_sum_with_circle_2<CPolygon_2>::epsilon_changed()
 
   needs_update(Data_inner_skeleton);
   needs_update(Data_outer_skeleton);
-  
+
   needs_update(Data_inner_core);
   needs_update(Data_outer_core);
 
   needs_update(Data_approximability);
 
+  needs_update(Data_approximate_inner_eps);
+  needs_update(Data_approximate_outer_eps);
   needs_update(Data_approximate_inner_core);
   needs_update(Data_approximate_outer_core);
   needs_update(Data_approximate_inner_kgon_sum);
   needs_update(Data_approximate_outer_kgon_sum);
+  needs_update(Data_approximate_inner_offset);
+  needs_update(Data_approximate_outer_offset);
   needs_update(Data_approximate_inner_decision);
   needs_update(Data_approximate_outer_decision);
 
@@ -647,11 +733,14 @@ void Minkowski_sum_with_circle_2<CPolygon_2>::epsilon_changed()
 template <typename CPolygon_2>
 void Minkowski_sum_with_circle_2<CPolygon_2>::delta_changed()
 {
-
+  needs_update(Data_approximate_inner_eps);
+  needs_update(Data_approximate_outer_eps);
   needs_update(Data_approximate_inner_core);
   needs_update(Data_approximate_outer_core);
   needs_update(Data_approximate_inner_kgon_sum);
   needs_update(Data_approximate_outer_kgon_sum);
+  needs_update(Data_approximate_inner_offset);
+  needs_update(Data_approximate_outer_offset);
   needs_update(Data_approximate_inner_decision);
   needs_update(Data_approximate_outer_decision);
 
@@ -671,16 +760,20 @@ void Minkowski_sum_with_circle_2<CPolygon_2>::kgon_type_changed()
   {
     needs_update(Data_inner_skeleton);
     needs_update(Data_outer_skeleton);
-    
+
     needs_update(Data_inner_core);
     needs_update(Data_outer_core);
-    
+
     needs_update(Data_approximability);
 
+    needs_update(Data_approximate_inner_eps);
+    needs_update(Data_approximate_outer_eps);
     needs_update(Data_approximate_inner_core);
     needs_update(Data_approximate_outer_core);
     needs_update(Data_approximate_inner_kgon_sum);
     needs_update(Data_approximate_outer_kgon_sum);
+    needs_update(Data_approximate_inner_offset);
+    needs_update(Data_approximate_outer_offset);
     needs_update(Data_approximate_inner_decision);
     needs_update(Data_approximate_outer_decision);
 
@@ -700,16 +793,20 @@ void Minkowski_sum_with_circle_2<CPolygon_2>::kgon_size_changed()
   {
     needs_update(Data_inner_skeleton);
     needs_update(Data_outer_skeleton);
-    
+
     needs_update(Data_inner_core);
     needs_update(Data_outer_core);
-    
+
     needs_update(Data_approximability);
 
+    needs_update(Data_approximate_inner_eps);
+    needs_update(Data_approximate_outer_eps);
     needs_update(Data_approximate_inner_core);
     needs_update(Data_approximate_outer_core);
     needs_update(Data_approximate_inner_kgon_sum);
     needs_update(Data_approximate_outer_kgon_sum);
+    needs_update(Data_approximate_inner_offset);
+    needs_update(Data_approximate_outer_offset);
     needs_update(Data_approximate_inner_decision);
     needs_update(Data_approximate_outer_decision);
 
@@ -721,6 +818,8 @@ void Minkowski_sum_with_circle_2<CPolygon_2>::kgon_size_changed()
 template <typename CPolygon_2>
 bool Minkowski_sum_with_circle_2<CPolygon_2>::update(const Data_type& i_data)
 {
+  assert(i_data < Data_type_size);
+  
   if(m_needs_update[i_data])
   {
     // for dual (fwd/bwd) modes:
@@ -785,24 +884,44 @@ bool Minkowski_sum_with_circle_2<CPolygon_2>::update(const Data_type& i_data)
         update(Data_outer_core);
         decomposer.compute_approximability();
         break;
-        
+
+      case Data_approximate_inner_eps:
+        update(input_data);        
+        decomposer.compute_inner_eps_app();
+        break;
       case Data_approximate_inner_core:
-        update(input_data);
+        update(Data_approximate_inner_eps);
         decomposer.compute_inner_core_app();
         //decomposer.save_inner_core();
         break;
-      case Data_approximate_outer_core:
+        
+      case Data_approximate_outer_eps:
         update(input_data);
+        decomposer.compute_outer_eps_app();
+        break;
+     case Data_approximate_outer_core:
+        update(Data_approximate_outer_eps);
         decomposer.compute_outer_core_app();
+        break;
+
+      case Data_approximate_inner_offset:
+        update(Data_approximate_inner_core);
+        decomposer.compute_inner_core_msr();
         break;
       case Data_approximate_inner_kgon_sum:
         update(Data_approximate_inner_core);
         decomposer.compute_inner_core_ms();
         break;
+
+      case Data_approximate_outer_offset:
+        update(Data_approximate_outer_core);
+        decomposer.compute_outer_core_msr();
+        break;
       case Data_approximate_outer_kgon_sum:
         update(Data_approximate_outer_core);
         decomposer.compute_outer_core_ms();
         break;
+        
       case Data_approximate_inner_decision:
         update(Data_approximate_inner_kgon_sum);
         decomposer.compute_inner_core_diff();
@@ -813,6 +932,7 @@ bool Minkowski_sum_with_circle_2<CPolygon_2>::update(const Data_type& i_data)
         decomposer.compute_outer_core_diff();
         decomposer.decide_outer_approximability();
         break;
+        
       case Data_approximate_approximability:
         update(Data_approximate_inner_decision);
         if(!decomposer.inner_approximability())
@@ -820,18 +940,13 @@ bool Minkowski_sum_with_circle_2<CPolygon_2>::update(const Data_type& i_data)
           update(Data_approximate_outer_decision); 
         decomposer.compute_approximability_app();
         m_app_indicator = get_approximability_color();
-
-        // TODO: incorporate search properly in UI
-        m_search_offset = m_offset;
-        m_search_epsilon = m_epsilon;
-        m_search_delta = m_delta;
-        
-        //searcher.compute_critical_epsilon();
-        //searcher.compute_maximal_radius();
-
         break;
 
-//      case Data_core_offset:
+//      case Data_search_epsilon:
+//        compute_search_epsilon();
+//        break;
+
+//      case Data_approximate_inner_offset_exact:
 //        update(Data_approximate_inner_core);
 //        decomposer.compute_exact_offset();
 //        break;
