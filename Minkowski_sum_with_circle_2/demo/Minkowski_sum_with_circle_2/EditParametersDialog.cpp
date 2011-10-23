@@ -14,7 +14,13 @@ EditParametersDialog::EditParametersDialog(QWidget *parent)
   // can't update radius at this point, so updating ratio
   // even if it is against current "keep ratio" setting
   radius.update(m_saved.bboxP, false);
-  
+
+  // or update epsilon/delta ratio if they were changed by search
+  ValueAndRatio epsilon(m_saved.epsilon, m_saved.epsilonRatio);
+  epsilon.update(m_saved.radius, false);
+  ValueAndRatio delta(m_saved.delta, m_saved.deltaRatio);
+  delta.update(m_saved.epsilon, false);
+
   // update default setup values according to our data
   m_edited = m_saved;
 
