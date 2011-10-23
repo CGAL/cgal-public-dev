@@ -71,6 +71,22 @@ MainWindow::on_actionCheckApproximability_toggled(bool checked)
 // rational approximability constructions
 
 void
+MainWindow::on_actionConstructInnerTolerance_toggled(bool checked)
+{
+  std::clog << "actionConstructInnerTolerance " << checked << std::endl;
+
+  set_visible(checked, MSWC::Data_approximate_inner_eps);
+}
+
+void
+MainWindow::on_actionConstructOuterTolerance_toggled(bool checked)
+{
+  std::clog << "actionConstructOuterTolerance " << checked << std::endl;
+
+  set_visible(checked, MSWC::Data_approximate_outer_eps);
+}
+
+void
 MainWindow::on_actionConstructOuterCoreApp_toggled(bool checked)
 {
   std::clog << "actionConstructOuterCoreApp " << checked << std::endl;
@@ -100,6 +116,38 @@ MainWindow::on_actionConstructInnerCoreSum_toggled(bool checked)
   std::clog << "actionConstructInnerCoreAppSum " << checked << std::endl;
 
   set_visible(checked, MSWC::Data_approximate_inner_kgon_sum);
+}
+
+void
+MainWindow::on_actionConstructInnerOffsetApp_toggled(bool checked)
+{
+  std::clog << "actionConstructInnerOffsetApp " << checked << std::endl;
+
+  set_visible(checked, MSWC::Data_approximate_inner_offset);
+}
+
+void
+MainWindow::on_actionConstructOuterOffsetApp_toggled(bool checked)
+{
+  std::clog << "actionConstructOuterOffsetApp " << checked << std::endl;
+
+  set_visible(checked, MSWC::Data_approximate_outer_offset);
+}
+
+void
+MainWindow::on_actionConstructInnerOffset_toggled(bool checked)
+{
+  std::clog << "actionConstructInnerOffset " << checked << std::endl;
+
+//  set_visible(checked, MSWC::Data_approximate_inner_offset_exact);
+}
+
+void
+MainWindow::on_actionConstructOuterOffset_toggled(bool checked)
+{
+  std::clog << "actionConstructOuterOffset " << checked << std::endl;
+
+//  set_visible(checked, MSWC::Data_approximate_outer_offset_exact);
 }
 
 void
@@ -140,6 +188,21 @@ MainWindow::on_actionCheckApproximabilityApp_toggled(bool checked)
   std::clog << "actionCheckApproximabilityApp " << checked << std::endl;
 
   set_visible(checked, MSWC::Data_approximate_approximability);
+}
+
+
+// search activation
+void
+MainWindow::on_actionSearchMinEpsilon_triggered()
+{
+  std::clog << "actionSearchMinEpsilon " << std::endl;
+
+  bool update_params = true;
+  mswc.compute_search_epsilon(update_params);
+  //mswc.update(MSWC::Data_search_epsilon);
+
+  if(update_params)
+    update_if_needed();
 }
 
 
