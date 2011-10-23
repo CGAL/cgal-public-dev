@@ -7,8 +7,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>913</width>
-    <height>531</height>
+    <width>1199</width>
+    <height>758</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -117,8 +117,8 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>913</width>
-     <height>22</height>
+     <width>1199</width>
+     <height>31</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -217,17 +217,30 @@
     <addaction name="actionConstructOuterCore"/>
     <addaction name="actionCheckApproximability"/>
     <addaction name="separator"/>
+    <addaction name="actionConstructInnerTolerance"/>
     <addaction name="actionConstructInnerCoreApp"/>
     <addaction name="actionConstructInnerCoreSum"/>
     <addaction name="actionConstructInnerDiffApp"/>
+    <addaction name="actionConstructInnerOffsetApp"/>
+    <addaction name="actionConstructInnerOffset"/>
     <addaction name="actionYesApproximability"/>
     <addaction name="separator"/>
+    <addaction name="actionConstructOuterTolerance"/>
     <addaction name="actionConstructOuterCoreApp"/>
     <addaction name="actionConstructOuterCoreSum"/>
     <addaction name="actionConstructOuterDiffApp"/>
+    <addaction name="actionConstructOuterOffsetApp"/>
+    <addaction name="actionConstructOuterOffset"/>
     <addaction name="actionNoApproximability"/>
     <addaction name="separator"/>
     <addaction name="actionCheckApproximabilityApp"/>
+   </widget>
+   <widget class="QMenu" name="menuSearch">
+    <property name="title">
+     <string>Search</string>
+    </property>
+    <addaction name="actionSearchMinEpsilon"/>
+    <addaction name="actionSearchMaxRadius"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuEdit"/>
@@ -236,6 +249,7 @@
    <addaction name="menuConstruct"/>
    <addaction name="menuDeconstruct"/>
    <addaction name="menuReverse_Engineering"/>
+   <addaction name="menuSearch"/>
   </widget>
   <widget class="QToolBar" name="compareToolBar">
    <property name="windowTitle">
@@ -289,15 +303,18 @@
    <attribute name="toolBarBreak">
     <bool>false</bool>
    </attribute>
+   <addaction name="actionConstructInnerTolerance"/>
    <addaction name="actionConstructInnerCoreApp"/>
+   <addaction name="actionConstructInnerOffsetApp"/>
    <addaction name="actionConstructInnerCoreSum"/>
    <addaction name="actionConstructInnerDiffApp"/>
-   <addaction name="actionYesApproximability"/>
    <addaction name="separator"/>
+   <addaction name="actionConstructOuterTolerance"/>
    <addaction name="actionConstructOuterCoreApp"/>
+   <addaction name="actionConstructOuterOffsetApp"/>
    <addaction name="actionConstructOuterCoreSum"/>
    <addaction name="actionConstructOuterDiffApp"/>
-   <addaction name="actionNoApproximability"/>
+   <addaction name="separator"/>
   </widget>
   <widget class="QToolBar" name="convexToolBar">
    <property name="windowTitle">
@@ -638,7 +655,7 @@
      <normaloff>:/cgal/Polygon_offset_2/icons/Outer_core_2.png</normaloff>:/cgal/Polygon_offset_2/icons/Outer_core_2.png</iconset>
    </property>
    <property name="text">
-    <string>Outer Core</string>
+    <string>Exact Outer Core</string>
    </property>
    <property name="toolTip">
     <string>Inset r-eps</string>
@@ -695,7 +712,7 @@
      <normaloff>:/cgal/Polygon_offset_2/icons/Approximability_2.png</normaloff>:/cgal/Polygon_offset_2/icons/Approximability_2.png</iconset>
    </property>
    <property name="text">
-    <string>Check Approximability</string>
+    <string>Exact Check Approximability</string>
    </property>
    <property name="toolTip">
     <string>Is (convex) polygon close to offset?</string>
@@ -722,7 +739,7 @@
      <normaloff>:/cgal/Polygon_offset_2/icons/Inner_core_2.png</normaloff>:/cgal/Polygon_offset_2/icons/Inner_core_2.png</iconset>
    </property>
    <property name="text">
-    <string>Inner Core</string>
+    <string>Exact Inner Core</string>
    </property>
    <property name="toolTip">
     <string>Inset r+eps</string>
@@ -752,7 +769,7 @@
      <normaloff>:/cgal/Polygon_offset_2/icons/Inner_core_app_2.png</normaloff>:/cgal/Polygon_offset_2/icons/Inner_core_app_2.png</iconset>
    </property>
    <property name="text">
-    <string>Approximate Inner Core</string>
+    <string>Inner Core (r-inset)</string>
    </property>
    <property name="toolTip">
     <string>~Inner Core</string>
@@ -767,10 +784,10 @@
      <normaloff>:/cgal/Polygon_offset_2/icons/Outer_core_app_2.png</normaloff>:/cgal/Polygon_offset_2/icons/Outer_core_app_2.png</iconset>
    </property>
    <property name="text">
-    <string>Approximate Outer Core</string>
+    <string>Outer Core (r-inset)</string>
    </property>
    <property name="toolTip">
-    <string>~Outer Core</string>
+    <string>Outer r-inset</string>
    </property>
   </action>
   <action name="actionConstructInnerCoreSum">
@@ -782,10 +799,10 @@
      <normaloff>:/cgal/Polygon_offset_2/icons/Inner_core_ms_2.png</normaloff>:/cgal/Polygon_offset_2/icons/Inner_core_ms_2.png</iconset>
    </property>
    <property name="text">
-    <string>Approximate Inner Core Sum</string>
+    <string>Inner r+eps-offset</string>
    </property>
    <property name="toolTip">
-    <string>~Inner Core Sum</string>
+    <string>Inner r+eps-offset</string>
    </property>
   </action>
   <action name="actionConstructOuterCoreSum">
@@ -797,18 +814,18 @@
      <normaloff>:/cgal/Polygon_offset_2/icons/Outer_core_ms_2.png</normaloff>:/cgal/Polygon_offset_2/icons/Outer_core_ms_2.png</iconset>
    </property>
    <property name="text">
-    <string>Approximate Outer Core Sum</string>
+    <string>Outer r+eps-offset</string>
    </property>
    <property name="toolTip">
-    <string>~Outer Core Sum</string>
+    <string>Outer r+eps-offset</string>
    </property>
   </action>
   <action name="actionNoApproximability">
    <property name="checkable">
-    <bool>false</bool>
+    <bool>true</bool>
    </property>
    <property name="enabled">
-    <bool>false</bool>
+    <bool>true</bool>
    </property>
    <property name="icon">
     <iconset resource="Polygon_offset_2.qrc">
@@ -824,10 +841,13 @@
   </action>
   <action name="actionYesApproximability">
    <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
     <bool>false</bool>
    </property>
    <property name="enabled">
-    <bool>false</bool>
+    <bool>true</bool>
    </property>
    <property name="icon">
     <iconset resource="Polygon_offset_2.qrc">
@@ -850,7 +870,7 @@
      <normaloff>:/cgal/Polygon_offset_2/icons/Inner_core_diff_2.png</normaloff>:/cgal/Polygon_offset_2/icons/Inner_core_diff_2.png</iconset>
    </property>
    <property name="text">
-    <string>Approximate Inner Diff</string>
+    <string>Inner Diff</string>
    </property>
    <property name="toolTip">
     <string>~ Inner Diff</string>
@@ -865,10 +885,102 @@
      <normaloff>:/cgal/Polygon_offset_2/icons/Outer_core_diff_2.png</normaloff>:/cgal/Polygon_offset_2/icons/Outer_core_diff_2.png</iconset>
    </property>
    <property name="text">
-    <string>Approximate Outer Diff</string>
+    <string>Outer Diff</string>
    </property>
    <property name="toolTip">
     <string>~ Outer Diff</string>
+   </property>
+  </action>
+  <action name="actionConstructInnerTolerance">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="Polygon_offset_2.qrc">
+     <normaloff>:/cgal/Polygon_offset_2/icons/Inner_tolerance_2.png</normaloff>:/cgal/Polygon_offset_2/icons/Inner_tolerance_2.png</iconset>
+   </property>
+   <property name="text">
+    <string>Inner eps-offset</string>
+   </property>
+  </action>
+  <action name="actionConstructOuterTolerance">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="Polygon_offset_2.qrc">
+     <normaloff>:/cgal/Polygon_offset_2/icons/Outer_tolerance_2.png</normaloff>:/cgal/Polygon_offset_2/icons/Outer_tolerance_2.png</iconset>
+   </property>
+   <property name="text">
+    <string>Outer eps-offset</string>
+   </property>
+  </action>
+  <action name="actionConstructInnerOffsetApp">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="Polygon_offset_2.qrc">
+     <normaloff>:/cgal/Polygon_offset_2/icons/Inner_offset_app_2.png</normaloff>:/cgal/Polygon_offset_2/icons/Inner_offset_app_2.png</iconset>
+   </property>
+   <property name="text">
+    <string>Inner r-offset</string>
+   </property>
+  </action>
+  <action name="actionConstructOuterOffsetApp">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="Polygon_offset_2.qrc">
+     <normaloff>:/cgal/Polygon_offset_2/icons/Outer_offset_app_2.png</normaloff>:/cgal/Polygon_offset_2/icons/Outer_offset_app_2.png</iconset>
+   </property>
+   <property name="text">
+    <string>Outer r-offset</string>
+   </property>
+  </action>
+  <action name="actionConstructInnerOffset">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Inner r-offset (exact)</string>
+   </property>
+  </action>
+  <action name="actionConstructOuterOffset">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Outer r-offset (exact)</string>
+   </property>
+  </action>
+  <action name="actionSearchMinEpsilon">
+   <property name="text">
+    <string>Minimal Tolerance</string>
+   </property>
+  </action>
+  <action name="actionSearchMaxRadius">
+   <property name="text">
+    <string>Maximal Radius</string>
    </property>
   </action>
  </widget>
