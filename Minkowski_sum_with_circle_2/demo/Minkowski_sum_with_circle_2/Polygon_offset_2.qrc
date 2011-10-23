@@ -20,7 +20,11 @@
     <file>../icons/Outer_core_ms_2.png</file>
     <file>../icons/Inner_core_ms_2.png</file>   
     <file>../icons/Outer_core_diff_2.png</file>
-    <file>../icons/Inner_core_diff_2.png</file>     
+    <file>../icons/Inner_core_diff_2.png</file>   
+    <file>../icons/Outer_tolerance_2.png</file>
+    <file>../icons/Inner_tolerance_2.png</file>   
+    <file>../icons/Outer_offset_app_2.png</file>
+    <file>../icons/Inner_offset_app_2.png</file>     
     <file>../icons/Forward.png</file>
     <file>../icons/Backward.png</file>
     <file>../icons/Approximability_y.png</file>
