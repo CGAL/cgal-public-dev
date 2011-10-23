@@ -15,7 +15,7 @@ void construct_critical_epsilon(MSWC& mswc, const std::string& fileName);
 int main(int argc, char **argv)
 {
   // check arguments
-  if(argc > 4)
+  if(argc > 5)
   {
     std::cerr 
       << "Usage: Polygon_offset_2 (gui) or Polygon_offset_2 InputPolygonFile "
@@ -77,7 +77,7 @@ int main(int argc, char **argv)
     bool no_delta = true;
     if (argc > 4)
     {
-      no_eps = false;
+      no_delta = false;
       std::istringstream str_delta(argv[4]);
       str_delta >> delta;
       std::clog << "delta: " << delta << std::endl;
@@ -100,23 +100,29 @@ int main(int argc, char **argv)
     mswc.kgon_type(Circle_app_2::Kgon_regular);
 //    mswc.kgon_type(Circle_app_2::Kgon_dependent);
 
+
     // compute all things with usual out/log
-    if(!no_eps)
+    if(no_eps)
     {
+      std::clog << "construct_all" << std::endl;
       //construct_kgon(mswc);
       construct_all(mswc);
     }
     else
     // if eps is not given - test ofset construction with eps from 10^-1 to 10^-MAX_DEGREE
     {
-      if(!no_delta)
+      if(no_delta)
       {
+        std::clog << "compare_offset_construction" << std::endl;
+        mswc.forward_construction(true);
         compare_offset_construction(mswc, fileName);
       }
       else
       // if delta is given - find critical epsilon for a given radius
       // TODO: find critical epsilon for a bunch of radius values
       {
+        std::clog << "construct_critical_epsilon" << std::endl;
+        mswc.forward_construction(false);
         construct_critical_epsilon(mswc, fileName);
       }
     }
@@ -205,6 +211,22 @@ void construct_critical_epsilon(MSWC& mswc, const std::string& fileName)
     std::string epsFileName = fileNameStream.str();
     std::ofstream eps_file(epsFileName.c_str());
 
-    eps_file << "file: " << fileName << " delta: " << mswc.delta() << " polygon: " << mswc.polygon().size() <<std::endl;
-  
+    eps_file << "file: " << fileName << " radius: " << mswc.offset() << " delta: " << mswc.delta() << " polygon: " << mswc.polygon().size() <<std::endl;
+
+    NT radius = mswc.offset();
+    int tests = 50;
+    NT increment = radius/tests;
+    NT test_radius = increment; 
+    
+    for(int iter=0; iter < tests; ++iter, test_radius = test_radius + increment)
+    {
+      std::cout << "TEST[" << iter << "]: radius " << test_radius << std::endl;
+
+      mswc.offset(test_radius);
+      mswc.epsilon(test_radius / 10);
+//    mswc.update(MSWC::Data_search_epsilon);
+      mswc.compute_search_epsilon(false);
+    }
+//    mswc.search_offset(mswc.offset());
+
 }
