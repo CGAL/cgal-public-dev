@@ -31,6 +31,7 @@ public:
   typedef EditParametersDialog::Parameters Parameters;
   typedef Minsum_with_circle_2 MSWC;
   typedef MSWC::Data_type Data_type;
+  typedef MSWC::Input_rational Input_rational;
 
 public slots:
 
@@ -75,15 +76,24 @@ public slots:
 
   void on_actionCheckApproximability_toggled(bool checked);
 
+  void on_actionConstructInnerTolerance_toggled(bool checked);
+  void on_actionConstructOuterTolerance_toggled(bool checked);
   void on_actionConstructOuterCoreApp_toggled(bool checked);
   void on_actionConstructInnerCoreApp_toggled(bool checked);
   void on_actionConstructOuterCoreSum_toggled(bool checked);
   void on_actionConstructInnerCoreSum_toggled(bool checked);
+  void on_actionConstructInnerOffsetApp_toggled(bool checked);
+  void on_actionConstructOuterOffsetApp_toggled(bool checked);  
+  void on_actionConstructInnerOffset_toggled(bool checked);
+  void on_actionConstructOuterOffset_toggled(bool checked);
   void on_actionConstructOuterDiffApp_toggled(bool checked);
   void on_actionConstructInnerDiffApp_toggled(bool checked);
   void on_actionYesApproximability_toggled(bool checked);
   void on_actionNoApproximability_toggled(bool checked);
   void on_actionCheckApproximabilityApp_toggled(bool checked);
+
+  // search
+  void on_actionSearchMinEpsilon_triggered();  
  
   // Reverse Engineering menu
   void compute_lines();
@@ -141,6 +151,9 @@ private:
       return QPen(color, width, style, Qt::RoundCap, Qt::RoundJoin);
     }
   };
+
+  std::string rat_to_str(const Input_rational& i_rat);
+  
   template <typename GI>
   void setupGI(const Data_type& i_data, GI* i_gi, QAction* i_action, const LineStyle& line_style);
 
@@ -228,6 +241,13 @@ private:
   SegmentsGI * approximability_bwd_pos_gi;
   SegmentsGI * approximability_bwd_neg_gi;
 
+  // the approximate inner and outer inflation
+  // inner/outer eps-offset
+  HoledPolygonGI * inner_eps_app_fwd_gi;
+  HoledPolygonGI * inner_eps_app_bwd_gi;
+  HoledPolygonGI * outer_eps_app_fwd_gi;
+  HoledPolygonGI * outer_eps_app_bwd_gi;
+  
   // the approximate inner and outer core (first contour)
   // inner/outer eps-offset with outer/inner r-inset
   PolygonGI * inner_core_app_fwd_gi;
@@ -242,6 +262,20 @@ private:
   HoledPolygonGI * outer_core_ms_fwd_gi;
   HoledPolygonGI * outer_core_ms_bwd_gi;
 
+  // the approximate offset of inner and outer core (first contour)
+  // inner/outer r-offset
+  HoledPolygonGI * inner_core_msr_fwd_gi;
+  HoledPolygonGI * inner_core_msr_bwd_gi;
+  HoledPolygonGI * outer_core_msr_fwd_gi;
+  HoledPolygonGI * outer_core_msr_bwd_gi;
+
+  // the exact offset of inner and outer core (first contour)
+  // inner/outer r-offset
+  ExactPolygonGI * inner_core_offr_fwd_gi;
+  ExactPolygonGI * inner_core_offr_bwd_gi;
+  ExactPolygonGI * outer_core_offr_fwd_gi;
+  ExactPolygonGI * outer_core_offr_bwd_gi;
+  
   // the approximability
   HoledPolygonGI * inner_approximability_fwd_diff_gi;
   HoledPolygonGI * inner_approximability_bwd_diff_gi;
