@@ -2636,6 +2636,7 @@ Minkowski_sum_with_circle_2/demo/resources/about_CGAL.html -text
 Minkowski_sum_with_circle_2/demo/resources/cgal_large_FAF8E8.gif -text
 Minkowski_sum_with_circle_2/demo/resources/cgal_logo.xpm -text
 Minkowski_sum_with_circle_2/doxigen.cfg -text
+Minkowski_sum_with_circle_2/doxygen.cfg -text
 Minkowski_sum_with_circle_2/examples/Minkowski_sum_with_circle_2/data/rooms_star.dat -text
 Minkowski_sum_with_circle_2/examples/Minkowski_sum_with_circle_2/data/spiked.dat -text
 Minkowski_sum_with_circle_2/examples/Minkowski_sum_with_circle_2/data/tight.dat -text
