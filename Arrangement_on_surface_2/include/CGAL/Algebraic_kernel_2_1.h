@@ -28,7 +28,7 @@
 #include <CGAL/basic.h>
 #include <CGAL/Polynomial.h>
 #include <CGAL/Root_of_traits.h>
-
+#include <boost/foreach.hpp>
 namespace CGAL {
 
 
