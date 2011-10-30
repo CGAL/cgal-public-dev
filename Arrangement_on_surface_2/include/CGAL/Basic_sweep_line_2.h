@@ -44,6 +44,7 @@
 #define CGAL_PRINT_INSERT(a)
 #define CGAL_PRINT_ERASE(a)
 #define CGAL_PRINT_NEW_EVENT(p, e) 
+#define CGAL_PRINT_UPDATE_EVENT(p, e) 
 #define CGAL_PRINT(a)
 
 #else
@@ -61,6 +62,9 @@
                           (a)->Print(); }
 #define CGAL_PRINT_NEW_EVENT(p, e) \
 { std::cout << "%%% a new event was created at " << (p) << std::endl; \
+  (e)->Print(); }
+#define CGAL_PRINT_UPDATE_EVENT(p, e) \
+{ std::cout << "%%% an event was updated at " << (p) << std::endl; \
   (e)->Print(); }
 #define CGAL_PRINT(a) { std::cout << a ; }
 
@@ -412,7 +416,8 @@ protected:
   void _init_sweep (CurveInputIterator curves_begin,
                     CurveInputIterator curves_end)
   {
-    m_num_of_subCurves = std::distance (curves_begin, curves_end);
+    // m_num_of_subCurves should be a size_t for "huge" data sets
+    m_num_of_subCurves = static_cast<int>(std::distance (curves_begin, curves_end));
 
     _init_structures();
 

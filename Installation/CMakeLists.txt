@@ -45,6 +45,9 @@ if ( CGAL_BRANCH_BUILD )
   set(CGAL_INSTALLATION_PACKAGE_DIR "${CMAKE_SOURCE_DIR}/Installation" CACHE PATH "Directory containing the Installation package")
   set(CGAL_MAINTENANCE_PACKAGE_DIR "${CMAKE_SOURCE_DIR}/Maintenance" CACHE PATH "Directory containing the Maintenance package")
   set(CGAL_CORE_PACKAGE_DIR "${CMAKE_SOURCE_DIR}/Core" CACHE PATH "Directory containing the Core package")
+  mark_as_advanced(CGAL_INSTALLATION_PACKAGE_DIR)
+  mark_as_advanced(CGAL_MAINTENANCE_PACKAGE_DIR)
+  mark_as_advanced(CGAL_CORE_PACKAGE_DIR)
 
   message(STATUS "Installation package directory: ${CGAL_INSTALLATION_PACKAGE_DIR}")
   message(STATUS "Maintenance package directory: ${CGAL_MAINTENANCE_PACKAGE_DIR}")
@@ -122,6 +125,8 @@ if ( CGAL_BRANCH_BUILD )
   string (LENGTH "${CGAL_MINOR_VERSION}" CGAL_MINOR_LEN)
   if ("${CGAL_MINOR_LEN}" EQUAL 1) 
     set(CGAL_TMP_MINOR "0${CGAL_MINOR_VERSION}")
+  else()
+    set(CGAL_TMP_MINOR "${CGAL_MINOR_VERSION}")
   endif()
   set(CGAL_CREATED_VERSION_NR "1${CGAL_TMP_MAJOR}${CGAL_TMP_MINOR}${CGAL_BUGFIX_VERSION}0000")
   message(STATUS "CGAL_VERSION_NR is 1${CGAL_TMP_MAJOR}${CGAL_TMP_MINOR}${CGAL_BUGFIX_VERSION}0000")
@@ -276,9 +281,10 @@ message( STATUS "CGAL_BUGFIX_VERSION=${CGAL_BUGFIX_VERSION}" )
 #                        std::size_t, which is different on some platforms)
 #   CGAL-3.8   : 7.0.0 (At least CGAL::Random has changed its member fields.)
 #   CGAL-3.9   : 8.0.0 (No way to check the binary compatibility.)
+#   CGAL-3.10  : 9.0.0 (No way to check the binary compatibility.)
 
-set( CGAL_SONAME_VERSION "8" )
-set( CGAL_SOVERSION      "8.0.0" )
+set( CGAL_SONAME_VERSION "9" )
+set( CGAL_SOVERSION      "9.0.0" )
 
 message( STATUS "CGAL_SONAME_VERSION=${CGAL_SONAME_VERSION}" )
 message( STATUS "CGAL_SOVERSION     =${CGAL_SOVERSION}" )
@@ -305,7 +311,15 @@ if ( RUNNING_CGAL_AUTO_TEST )
     if ( EXISTS ${CGAL_REFERENCE_CACHE_DIR} )
       if ( EXISTS ${CGAL_REFERENCE_CACHE_DIR}/CMakeCache.txt )
         message( STATUS "Loading reference cache from ${CGAL_REFERENCE_CACHE_DIR}" )
-        load_cache( ${CGAL_REFERENCE_CACHE_DIR} EXCLUDE CGAL_Core_LIBRARY )
+        load_cache( ${CGAL_REFERENCE_CACHE_DIR} 
+          EXCLUDE CGAL_Core_LIBRARY 
+                  CGAL_CORE_PACKAGE_DIR
+                  CGAL_INSTALLATION_PACKAGE_DIR
+                  CGAL_MAINTENANCE_PACKAGE_DIR
+                  CGAL_PDB_BINARY_DIR
+                  CGAL_PDB_SOURCE_DIR
+                  CGAL_Qt3_SOURCE_DIR
+                  CGAL_SOURCE_DIR)
       endif()
     endif()
   endif()
