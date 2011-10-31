@@ -223,11 +223,11 @@ MainWindow::MainWindow(): DemosMainWindow()
   approximability_bwd_neg_gi = new SegmentsGI(&mswc.non_approximable_data(false));
 
   setupGI(MSWC::Data_approximability, approximability_fwd_pos_gi, approximability_bwd_pos_gi,
-    actionCheckApproximability, LineStyle(polygon_color.approximability_positive));
+    actionCheckApproximability, LineStyle(polygon_color.green));
   setupGI(approximability_fwd_neg_gi, actionCheckApproximability,
-          LineStyle(polygon_color.approximability_negative));
+          LineStyle(polygon_color.red));
   setupGI(approximability_bwd_neg_gi, actionCheckApproximability,
-          LineStyle(polygon_color.approximability_negative));
+          LineStyle(polygon_color.red));
 
   inner_eps_app_fwd_gi = new HoledPolygonGI(&mswc.inner_eps_app(true));
   inner_eps_app_bwd_gi = new HoledPolygonGI(&mswc.inner_eps_app(false));
@@ -945,6 +945,8 @@ MainWindow::update_parameter_indicators()
 
   EditParametersDialog::saved_size(mswc.kgon().size());
   QString kgon_size_str = QString(" kgon size = ") + QString::number(uint(mswc.kgon().size())) + " ";
+  // do not show kgon size in deconstract mode (should implement a more complex current ms/kgon info)
+  if(!mswc.forward_construction()) kgon_size_str = QString(""); 
   emit kgonSize(kgon_size_str);
 }
 
