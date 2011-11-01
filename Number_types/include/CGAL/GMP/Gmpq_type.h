@@ -68,6 +68,11 @@ class Gmpq
   , boost::ordered_field_operators2< Gmpq, Gmpfr
     > > > > > >
 {
+private:
+  struct No_init {};
+  static const No_init no_init; // should be instantiated in src? maybe reformulate to avoid that...
+  Gmpq(No_init) {} // skip the 0 affectation
+
 public:
   typedef Tag_false  Has_gcd;
   typedef Tag_true   Has_division;
@@ -257,7 +262,7 @@ inline
 Gmpq
 Gmpq::operator-() const
 {
-    Gmpq Res;
+    Gmpq Res(no_init);
     mpq_neg(Res.mpq(), mpq());
     return Res;
 }
@@ -266,14 +271,14 @@ inline
 Gmpq
 Gmpq::operator+() const
 {
-  return Gmpq(mpq());
+  return *this;
 }
 
 inline
 Gmpq&
 Gmpq::operator+=(const Gmpq &z)
 {
-    Gmpq Res;
+    Gmpq Res (no_init);
     mpq_add(Res.mpq(), mpq(), z.mpq());
     swap(Res);
     return *this;
@@ -283,7 +288,7 @@ inline
 Gmpq&
 Gmpq::operator-=(const Gmpq &z)
 {
-    Gmpq Res;
+    Gmpq Res (no_init);
     mpq_sub(Res.mpq(), mpq(), z.mpq());
     swap(Res);
     return *this;
@@ -293,7 +298,7 @@ inline
 Gmpq&
 Gmpq::operator*=(const Gmpq &z)
 {
-    Gmpq Res;
+    Gmpq Res (no_init);
     mpq_mul(Res.mpq(), mpq(), z.mpq());
     swap(Res);
     return *this;
@@ -304,7 +309,7 @@ Gmpq&
 Gmpq::operator/=(const Gmpq &z)
 {
     CGAL_precondition(z != 0);
-    Gmpq Res;
+    Gmpq Res (no_init);
     mpq_div(Res.mpq(), mpq(), z.mpq());
     swap(Res);
     return *this;
@@ -315,7 +320,7 @@ Gmpq& Gmpq::operator+=(const Gmpz &z){
   if(unique()){
     mpz_addmul(mpq_numref(mpq()),mpq_denref(mpq()),z.mpz());
   }else{
-    Gmpq result;
+    Gmpq result (no_init);
     mpz_mul(mpq_numref(result.mpq()),
             mpq_denref(mpq()),
             z.mpz());
@@ -333,7 +338,7 @@ Gmpq& Gmpq::operator-=(const Gmpz &z){
   if(unique()){
     mpz_submul(mpq_numref(mpq()),mpq_denref(mpq()),z.mpz());
   }else{
-    Gmpq result;
+    Gmpq result (no_init);
     mpz_mul(mpq_numref(result.mpq()),
             mpq_denref(mpq()),
             z.mpz());
@@ -352,7 +357,7 @@ Gmpq& Gmpq::operator*=(const Gmpz &z){
     mpz_mul(mpq_numref(mpq()),mpq_numref(mpq()),z.mpz());
     mpq_canonicalize(mpq());
   }else{
-    Gmpq result;
+    Gmpq result (no_init);
     mpz_mul(mpq_numref(result.mpq()),mpq_numref(mpq()),z.mpz());
     mpz_set(mpq_denref(result.mpq()),mpq_denref(mpq()));
     mpq_canonicalize(result.mpq());
@@ -367,7 +372,7 @@ Gmpq& Gmpq::operator/=(const Gmpz &z){
     mpz_mul(mpq_denref(mpq()),mpq_denref(mpq()),z.mpz());
     mpq_canonicalize(mpq());
   }else{
-    Gmpq result;
+    Gmpq result (no_init);
     mpz_mul(mpq_denref(result.mpq()),mpq_denref(mpq()),z.mpz());
     mpz_set(mpq_numref(result.mpq()),mpq_numref(mpq()));
     mpq_canonicalize(result.mpq());
