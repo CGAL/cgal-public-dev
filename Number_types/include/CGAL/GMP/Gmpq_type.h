@@ -189,7 +189,12 @@ public:
   { return Gmpz(mpq_denref(mpq())); }
 
   Gmpq operator+() const;
+#ifndef CGAL_CFG_NO_CPP0X_RVALUE_THIS_REFERENCE
+  Gmpq operator-() const&;
+  Gmpq operator-() &&;
+#else
   Gmpq operator-() const;
+#endif
 
   Gmpq& operator+=(const Gmpq &q);
   Gmpq& operator-=(const Gmpq &q);
@@ -261,11 +266,24 @@ public:
 inline
 Gmpq
 Gmpq::operator-() const
+#ifndef CGAL_CFG_NO_CPP0X_RVALUE_THIS_REFERENCE
+                       &
+#endif
 {
     Gmpq Res(no_init);
     mpq_neg(Res.mpq(), mpq());
     return Res;
 }
+
+#ifndef CGAL_CFG_NO_CPP0X_RVALUE_THIS_REFERENCE
+inline
+Gmpq
+Gmpq::operator-() &&
+{
+    mpq_neg(mpq(), mpq());
+    return *this; // return std::move(*this) ?
+}
+#endif
 
 inline
 Gmpq
