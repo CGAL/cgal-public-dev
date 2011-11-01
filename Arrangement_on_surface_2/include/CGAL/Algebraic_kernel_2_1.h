@@ -60,7 +60,7 @@ public:
       if(degree(p)==0) return oit; 
       
       CGAL_precondition( CGAL::degree(p)<=2);
-      CGAL::solve_1(
+      CGAL::compute_roots_of_2(
           CGAL::get_coefficient(p,2),
           CGAL::get_coefficient(p,1),
           CGAL::get_coefficient(p,0),
