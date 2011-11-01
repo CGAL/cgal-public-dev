@@ -278,41 +278,57 @@ inline
 Gmpq&
 Gmpq::operator+=(const Gmpq &z)
 {
+  if(unique()){
+    mpq_add(mpq(), mpq(), z.mpq());
+  }else{
     Gmpq Res (no_init);
     mpq_add(Res.mpq(), mpq(), z.mpq());
     swap(Res);
-    return *this;
+  }
+  return *this;
 }
 
 inline
 Gmpq&
 Gmpq::operator-=(const Gmpq &z)
 {
+  if(unique()){
+    mpq_sub(mpq(), mpq(), z.mpq());
+  }else{
     Gmpq Res (no_init);
     mpq_sub(Res.mpq(), mpq(), z.mpq());
     swap(Res);
-    return *this;
+  }
+  return *this;
 }
 
 inline
 Gmpq&
 Gmpq::operator*=(const Gmpq &z)
 {
+  if(unique()){
+    mpq_mul(mpq(), mpq(), z.mpq());
+  }else{
     Gmpq Res (no_init);
     mpq_mul(Res.mpq(), mpq(), z.mpq());
     swap(Res);
-    return *this;
+  }
+  return *this;
 }
 
 inline
 Gmpq&
 Gmpq::operator/=(const Gmpq &z)
 {
-    CGAL_precondition(z != 0);
+  CGAL_precondition(z != 0);
+  if(unique()){
+    mpq_div(mpq(), mpq(), z.mpq());
+  }else{
     Gmpq Res (no_init);
     mpq_div(Res.mpq(), mpq(), z.mpq());
     swap(Res);
-    return *this;
+  }
+  return *this;
 }
 
 inline
