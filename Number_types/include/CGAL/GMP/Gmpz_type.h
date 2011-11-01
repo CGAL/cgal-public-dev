@@ -51,7 +51,7 @@ struct Gmpz_rep
 
   mpz_t mpZ;
 
-  Gmpz_rep() {}
+  Gmpz_rep()  { mpz_init(mpZ); }
   ~Gmpz_rep() { mpz_clear(mpZ); }
 
 private:
@@ -62,7 +62,7 @@ private:
 
 
 class Gmpz
-  : Handle_for<Gmpz_rep>,
+  : Handle_for<Gmpz_rep,CGAL_ALLOCATOR(Gmpz_rep),2>,
     boost::ordered_euclidian_ring_operators1< Gmpz
   , boost::ordered_euclidian_ring_operators2< Gmpz, int
   , boost::ordered_euclidian_ring_operators2< Gmpz, long
@@ -72,7 +72,6 @@ class Gmpz
   , boost::bitwise<Gmpz
 > > > > > > >
 {
-  typedef Handle_for<Gmpz_rep> Base;
 public:
   typedef Tag_true  Has_gcd;
   typedef Tag_true  Has_division;
@@ -83,29 +82,29 @@ public:
   typedef Tag_false Has_exact_sqrt;
 
   Gmpz()
-  { mpz_init(mpz()); }
+  { mpz_set_ui(mpz(),0); }
 
   Gmpz(const mpz_t z)
-  { mpz_init_set(mpz(), z); }
+  { mpz_set(mpz(), z); }
 
   Gmpz(int i)
-  { mpz_init_set_si(mpz(), i); }
+  { mpz_set_si(mpz(), i); }
 
   Gmpz(long l)
-  { mpz_init_set_si(mpz(), l); }
+  { mpz_set_si(mpz(), l); }
 
   Gmpz(unsigned long l)
-  { mpz_init_set_ui(mpz(), l); }
+  { mpz_set_ui(mpz(), l); }
 
   Gmpz(double d)
   {
      CGAL_warning_msg(is_integer(d), "Gmpz constructed from non-integer double value");
      CGAL_assertion(is_finite(d));
-     mpz_init_set_d(mpz(), d);
+     mpz_set_d(mpz(), d);
    }
 
   Gmpz(const std::string& str, int base = 10)
-  { mpz_init_set_str(mpz(), str.c_str(), base); }
+  { mpz_set_str(mpz(), str.c_str(), base); }
 
   // returns the number of bits used to represent this number
   size_t bit_size() const { return mpz_sizeinbase(mpz(),2); }

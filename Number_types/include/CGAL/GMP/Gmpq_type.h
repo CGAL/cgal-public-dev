@@ -68,7 +68,6 @@ class Gmpq
   , boost::ordered_field_operators2< Gmpq, Gmpfr
     > > > > > >
 {
-  typedef Handle_for<Gmpq_rep,CGAL_ALLOCATOR(Gmpq_rep),2> Base;
 public:
   typedef Tag_false  Has_gcd;
   typedef Tag_true   Has_division;
