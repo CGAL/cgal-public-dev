@@ -59,7 +59,7 @@ private:
 
 
 class Gmpq
-  : Handle_for<Gmpq_rep>,
+  : Handle_for<Gmpq_rep,CGAL_ALLOCATOR(Gmpq_rep),2>,
     boost::ordered_field_operators1< Gmpq
   , boost::ordered_field_operators2< Gmpq, int
   , boost::ordered_field_operators2< Gmpq, long
@@ -68,7 +68,7 @@ class Gmpq
   , boost::ordered_field_operators2< Gmpq, Gmpfr
     > > > > > >
 {
-  typedef Handle_for<Gmpq_rep> Base;
+  typedef Handle_for<Gmpq_rep,CGAL_ALLOCATOR(Gmpq_rep),2> Base;
 public:
   typedef Tag_false  Has_gcd;
   typedef Tag_true   Has_division;
@@ -78,7 +78,8 @@ public:
   typedef Tag_true   Has_exact_division;
   typedef Tag_false  Has_exact_sqrt;
 
-  Gmpq() {}
+  Gmpq()
+  { mpq_set_ui(mpq(), 0, 1); }
 
   Gmpq(const mpq_t q)
   { mpq_set(mpq(), q); }

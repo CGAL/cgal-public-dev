@@ -27,8 +27,10 @@
 
 #include <boost/config.hpp>
 #include <CGAL/memory.h>
+#include <CGAL/assertions.h>
 #include <algorithm>
 #include <cstddef>
+#include <vector>
 
 #if defined(BOOST_MSVC)
 #  pragma warning(push)
@@ -36,7 +38,11 @@
 #endif
 namespace CGAL {
 
-template <class T, class Alloc = CGAL_ALLOCATOR(T) >
+// The recycle parameter has to go last for compatibility :-(
+// recycle == 0: don't recycle anything
+// recycle == 1: recycle the allocated space
+// recycle == 2: recycle the objects (don't call the destructor)
+template <class T, class Alloc = CGAL_ALLOCATOR(T), int recycle=0>
 class Handle_for
 {
     // Wrapper that adds the reference counter.
@@ -51,31 +57,61 @@ class Handle_for
     static Allocator   allocator;
     pointer            ptr_;
 
+    static std::vector<RefCounted*> pool;
+
 public:
 
     typedef T element_type;
     
     typedef std::ptrdiff_t Id_type ;
 
+    // With recycle == 2, this may return an old object with a
+    // non-default value. We may want to use a different constructor
+    // Handle_for(struct Whatever) for that.
+    //
+    // This constructor is the only one used by Gmpq (besides copy/move)
     Handle_for()
-      : ptr_(allocator.allocate(1))
     {
-        new (&(ptr_->t)) element_type(); // we get the warning here 
+	if (recycle>=1 && !pool.empty()) {
+		ptr_=pool.back();
+		pool.pop_back();
+		if (recycle<=1) 
+			new (&(ptr_->t)) element_type();
+	} else {
+		ptr_=allocator.allocate(1);
+		new (&(ptr_->t)) element_type(); // we get the warning here 
+	}
         ptr_->count = 1;
     }
 
     Handle_for(const element_type& t)
-      : ptr_(allocator.allocate(1))
     {
-        new (&(ptr_->t)) element_type(t);
+	if (recycle>=1 && !pool.empty()) {
+		ptr_=pool.back();
+		pool.pop();
+		if (recycle<=1) 
+			new (&(ptr_->t)) element_type(t);
+		else ptr_->t = t; // recycle == 2 requires assignable here
+	} else {
+		ptr_=allocator.allocate(1);
+		new (&(ptr_->t)) element_type(t);
+	}
         ptr_->count = 1;
     }
 
 #ifndef CGAL_CFG_NO_CPP0X_RVALUE_REFERENCE
     Handle_for(element_type && t)
-      : ptr_(allocator.allocate(1))
     {
-        new (&(ptr_->t)) element_type(std::move(t));
+	if (recycle>=1 && !pool.empty()) {
+		ptr_=pool.back();
+		pool.pop();
+		if (recycle<=1) 
+			new (&(ptr_->t)) element_type(std::move(t));
+		else ptr_->t = std::move(t);
+	} else {
+		ptr_=allocator.allocate(1);
+		new (&(ptr_->t)) element_type(std::move(t));
+	}
         ptr_->count = 1;
     }
 #endif
@@ -94,32 +130,56 @@ public:
 #if !defined CGAL_CFG_NO_CPP0X_VARIADIC_TEMPLATES && !defined CGAL_CFG_NO_CPP0X_RVALUE_REFERENCE
     template < typename T1, typename T2, typename... Args >
     Handle_for(T1 && t1, T2 && t2, Args && ... args)
-      : ptr_(allocator.allocate(1))
     {
-        new (&(ptr_->t)) element_type(std::forward<T1>(t1), std::forward<T2>(t2), std::forward<Args>(args)...);
+	if (recycle>=1 && !pool.empty()) {
+		ptr_=pool.back();
+		pool.pop();
+		if (recycle==2) allocator.destroy(ptr_);
+	} else {
+		ptr_=allocator.allocate(1);
+	}
+	new (&(ptr_->t)) element_type(std::forward<T1>(t1), std::forward<T2>(t2), std::forward<Args>(args)...);
         ptr_->count = 1;
     }
 #else
     template < typename T1, typename T2 >
     Handle_for(const T1& t1, const T2& t2)
-      : ptr_(allocator.allocate(1))
     {
+	if (recycle>=1 && !pool.empty()) {
+		ptr_=pool.back();
+		pool.pop();
+		if (recycle==2) allocator.destroy(ptr_);
+	} else {
+		ptr_=allocator.allocate(1);
+	}
         new (&(ptr_->t)) element_type(t1, t2);
         ptr_->count = 1;
     }
 
     template < typename T1, typename T2, typename T3 >
     Handle_for(const T1& t1, const T2& t2, const T3& t3)
-      : ptr_(allocator.allocate(1))
     {
+	if (recycle>=1 && !pool.empty()) {
+		ptr_=pool.back();
+		pool.pop();
+		if (recycle==2) allocator.destroy(ptr_);
+	} else {
+		ptr_=allocator.allocate(1);
+	}
         new (&(ptr_->t)) element_type(t1, t2, t3);
         ptr_->count = 1;
     }
 
     template < typename T1, typename T2, typename T3, typename T4 >
     Handle_for(const T1& t1, const T2& t2, const T3& t3, const T4& t4)
-      : ptr_(allocator.allocate(1))
     {
+	if (recycle>=1 && !pool.empty()) {
+		ptr_=pool.back();
+		pool.pop();
+		if (recycle==2) allocator.destroy(ptr_);
+	} else {
+		ptr_=allocator.allocate(1);
+	}
         new (&(ptr_->t)) element_type(t1, t2, t3, t4);
         ptr_->count = 1;
     }
@@ -143,7 +203,7 @@ public:
     operator=(const element_type &t)
     {
         if (is_shared())
-            *this = Handle_for(t);
+            Handle_for(t).swap(*this);
         else
             ptr_->t = t;
 
@@ -165,7 +225,7 @@ public:
     operator=(element_type && t)
     {
         if (is_shared())
-            *this = Handle_for(std::move(t));
+            Handle_for(std::move(t)).swap(*this);
         else
             ptr_->t = std::move(t);
 
@@ -176,8 +236,9 @@ public:
     ~Handle_for()
     {
       if (--(ptr_->count) == 0) {
-          allocator.destroy( ptr_);
-          allocator.deallocate( ptr_, 1);
+          if (recycle<=1) allocator.destroy( ptr_);
+          if (recycle==0) allocator.deallocate( ptr_, 1);
+	  else pool.push_back( ptr_);
       }
     }
 
@@ -255,33 +316,37 @@ protected:
 };
 
 
-template <class T, class Allocator>
-typename Handle_for<T, Allocator>::Allocator
-Handle_for<T, Allocator>::allocator;
+template <class T, class Allocator, int r>
+typename Handle_for<T, Allocator, r>::Allocator
+Handle_for<T, Allocator, r>::allocator;
 
-template <class T, class Allocator>
+template <class T, class Allocator, int r>
+std::vector<typename Handle_for<T, Allocator, r>::RefCounted*>
+Handle_for<T, Allocator, r>::pool;
+
+template <class T, class Allocator, int r>
 inline
 void
-swap(Handle_for<T, Allocator> &h1, Handle_for<T, Allocator> &h2)
+swap(Handle_for<T, Allocator, r> &h1, Handle_for<T, Allocator, r> &h2)
 {
     h1.swap(h2);
 }
 
-template <class T, class Allocator>
+template <class T, class Allocator, int r>
 inline
 bool
-identical(const Handle_for<T, Allocator> &h1,
-          const Handle_for<T, Allocator> &h2)
+identical(const Handle_for<T, Allocator, r> &h1,
+          const Handle_for<T, Allocator, r> &h2)
 {
     return h1.identical(h2);
 }
 
 template <class T> inline bool identical(const T &t1, const T &t2) { return &t1 == &t2; }
 
-template <class T, class Allocator>
+template <class T, class Allocator, int r>
 inline
 const T&
-get(const Handle_for<T, Allocator> &h)
+get(const Handle_for<T, Allocator, r> &h)
 {
     return *(h.Ptr());
 }
