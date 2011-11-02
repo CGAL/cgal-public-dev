@@ -72,6 +72,10 @@ class Gmpz
   , boost::bitwise<Gmpz
 > > > > > > >
 {
+private:
+  struct No_init {};
+  Gmpz(No_init) {} // skip the 0 affectation
+
 public:
   typedef Tag_true  Has_gcd;
   typedef Tag_true  Has_division;
@@ -129,7 +133,7 @@ public:
 
 #define CGAL_GMPZ_OBJECT_OPERATOR(_op,_class,_fun)    \
   Gmpz& _op(const _class& z){                        \
-    Gmpz Res;                                         \
+    Gmpz Res=No_init();                                         \
     _fun(Res.mpz(), mpz(), z.mpz());                  \
     swap(Res);                                        \
     return *this;                                     \
@@ -151,21 +155,21 @@ public:
   { return mpz_cmp(this->mpz(), b.mpz()) == 0; }
 
 
-  Gmpz operator+() const {return Gmpz( mpz() );}
+  Gmpz operator+() const {return *this;}
   Gmpz operator-() const {
-    Gmpz Res;
+    Gmpz Res=No_init();
     mpz_neg(Res.mpz(), mpz());
     return Res;
   }
 
   Gmpz& operator <<= (const unsigned long& i){
-    Gmpz Res;
+    Gmpz Res=No_init();
     mpz_mul_2exp(Res.mpz(),this->mpz(), i);
     swap(Res);
     return *this;
   }
   Gmpz& operator >>= (const unsigned long& i){
-    Gmpz Res;
+    Gmpz Res=No_init();
     mpz_tdiv_q_2exp(Res.mpz(),this->mpz(), i);
     swap(Res);
     return *this;
@@ -207,7 +211,7 @@ public:
 
 #define CGAL_GMPZ_SCALAR_OPERATOR(_op,_type,_fun)   \
   inline Gmpz& Gmpz::_op(_type z) {                 \
-    Gmpz Res;                                       \
+    Gmpz Res=No_init();                                       \
     _fun(Res.mpz(), mpz(), z);                      \
     swap(Res);                                      \
     return *this;                                   \
@@ -225,7 +229,7 @@ CGAL_GMPZ_SCALAR_OPERATOR(operator/=,unsigned long,mpz_tdiv_q_ui)
 
 inline Gmpz& Gmpz::operator+=(int i)
 {
-  Gmpz Res;
+  Gmpz Res=No_init();
   if (i >= 0)
     mpz_add_ui(Res.mpz(), mpz(), i);
   else
@@ -236,7 +240,7 @@ inline Gmpz& Gmpz::operator+=(int i)
 
 inline Gmpz& Gmpz::operator+=(long i)
 {
-  Gmpz Res;
+  Gmpz Res=No_init();
   if (i >= 0)
     mpz_add_ui(Res.mpz(), mpz(), i);
   else
@@ -252,7 +256,7 @@ inline Gmpz& Gmpz::operator-=(long i){return *this+=-i;}
 
 inline Gmpz& Gmpz::operator/=(int b) {
   if (b>0) {
-    Gmpz Res;
+    Gmpz Res=No_init();
     mpz_tdiv_q_ui(Res.mpz(), mpz(), b);
     swap(Res);
     return *this;
@@ -262,7 +266,7 @@ inline Gmpz& Gmpz::operator/=(int b) {
 
 inline Gmpz& Gmpz::operator/=(long b) {
   if (b>0) {
-    Gmpz Res;
+    Gmpz Res=No_init();
     mpz_tdiv_q_ui(Res.mpz(), mpz(), b);
     swap(Res);
     return *this;
