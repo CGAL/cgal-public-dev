@@ -2004,6 +2004,7 @@ Lines_through_segments_3/test/Lines_through_segments_3/input.txt -text
 Lines_through_segments_3/test/Lines_through_segments_3/lines_through_4_polytopes.cpp -text
 Lines_through_segments_3/test/Lines_through_segments_3/lines_through_4_segments.cpp -text
 Lines_through_segments_3/test/Lines_through_segments_3/lines_through_4_segments.qrc -text
+Lines_through_segments_3/test/Lines_through_segments_3/rat_func_traits.cpp -text
 Lines_through_segments_3/test/Lines_through_segments_3/run_cmake -text
 Lines_through_segments_3/test/Lines_through_segments_3/run_cmake_with_prof -text
 Lines_through_segments_3/test/Lines_through_segments_3/run_gprof -text
