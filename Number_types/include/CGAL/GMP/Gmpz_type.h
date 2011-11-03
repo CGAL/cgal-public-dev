@@ -44,11 +44,6 @@ namespace CGAL {
 // Wrapper around mpz_t to get the destructor call mpz_clear.
 struct Gmpz_rep
 {
-// FIXME : bug if ~() is called before an mpz_init*() is called.
-// not a problem in practice, but not nice.
-// maybe the mpz_init_set* functions should move back to Gmpz_rep.
-// But then we should use the Storage_traits::construct/get...
-
   mpz_t mpZ;
 
   Gmpz_rep()  { mpz_init(mpZ); }

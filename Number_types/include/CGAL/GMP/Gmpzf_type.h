@@ -48,14 +48,9 @@ Gmpzf approximate_sqrt(const Gmpzf &f);
 
 struct Gmpzf_rep // as in Gmpz.h
 {
-// FIXME : bug if ~() is called before an mpz_init*() is called.
-// not a problem in practice, but not nice.
-// maybe the mpz_init_set* functions should move back to Gmpz_rep.
-// But then we should use the Storage_traits::construct/get...
-
   mpz_t mpZ;
 
-  Gmpzf_rep() {}
+  Gmpzf_rep() { mpz_init(mpZ); }
   ~Gmpzf_rep() { mpz_clear(mpZ); }
 
 private:
@@ -76,7 +71,9 @@ class Gmpzf :
   , boost::ordered_euclidian_ring_operators2< Gmpzf, int
     > >
 {
-  typedef Handle_for<Gmpzf_rep> Base;
+private:
+  struct No_init {};
+  Gmpzf(No_init) {} // skip the 0 affectation
 
 public:
 
@@ -120,7 +117,7 @@ public:
   Gmpzf( )
     : e(0)
   {
-    mpz_init(man());
+    mpz_set_ui(man(), 0);
     CGAL_postcondition(is_canonical());
   }
 
@@ -128,7 +125,7 @@ public:
   Gmpzf(const mpz_t z)
     : e(0)
   {
-    mpz_init_set(man(), z);
+    mpz_set(man(), z);
     canonicalize();
   }
 
@@ -136,7 +133,7 @@ public:
   Gmpzf(const Gmpz& n )
     : e(0)
   {
-    mpz_init_set(man(), n.mpz());
+    mpz_set(man(), n.mpz());
     canonicalize();
   }
 
@@ -144,14 +141,14 @@ public:
   Gmpzf( int i)
     : e(0)
   {
-    mpz_init_set_si( man(), i);
+    mpz_set_si( man(), i);
     canonicalize();
   }
 
   Gmpzf( long l)
     : e(0)
   {
-    mpz_init_set_si( man(), l);
+    mpz_set_si( man(), l);
     canonicalize();
   }
 
@@ -159,15 +156,15 @@ public:
   {
     Protect_FPU_rounding<> P(CGAL_FE_TONEAREST);
     if (d == 0) {
-      mpz_init (man());
+      mpz_set_ui (man(), 0);
       e = 0;
       return;
     }
-    static int p = std::numeric_limits<double>::digits;
+    static const int p = std::numeric_limits<double>::digits;
     CGAL_assertion(CGAL_NTS is_finite(d) & is_valid(d));
     int exp;
     double x = std::frexp(d, &exp); // x in [1/2, 1], x*2^exp = d
-    mpz_init_set_d (man(), // to the following integer:
+    mpz_set_d (man(), // to the following integer:
 		    std::ldexp( x, p));
     e = exp - p;
     canonicalize();
@@ -222,7 +219,7 @@ Gmpzf Gmpzf::operator+() const
 inline
 Gmpzf Gmpzf::operator-() const
 {
-  Gmpzf result;
+  Gmpzf result = No_init();
   mpz_neg (result.man(), man());
   result.e = exp();
   CGAL_postcondition(result.is_canonical());
@@ -232,8 +229,8 @@ Gmpzf Gmpzf::operator-() const
 inline
 Gmpzf& Gmpzf::operator+=( const Gmpzf& b)
 {
-  Gmpzf result;
   if (b.is_zero()) return *this; // important in sparse contexts
+  Gmpzf result = No_init();
   const mpz_t *a_aligned, *b_aligned;
   align (a_aligned, b_aligned, e, *this, b);
   mpz_add(result.man(), *a_aligned, *b_aligned);
@@ -251,8 +248,8 @@ Gmpzf& Gmpzf::operator+=( int i)
 inline
 Gmpzf& Gmpzf::operator-=( const Gmpzf& b)
 {
-  Gmpzf result;
   if (b.is_zero()) return *this; // important in sparse contexts
+  Gmpzf result = No_init();
   const mpz_t *a_aligned, *b_aligned;
   align (a_aligned, b_aligned, e, *this, b);
   mpz_sub(result.man(), *a_aligned, *b_aligned);
@@ -270,7 +267,7 @@ Gmpzf& Gmpzf::operator-=( int i)
 inline
 Gmpzf& Gmpzf::operator*=( const Gmpzf& b)
 {
-  Gmpzf result;
+  Gmpzf result = No_init();
   mpz_mul(result.man(), man(), b.man());
   e += b.exp();
   swap (result);
@@ -282,7 +279,7 @@ Gmpzf& Gmpzf::operator*=( const Gmpzf& b)
 inline
 Gmpzf& Gmpzf::operator*=( int i)
 {
-  Gmpzf result;
+  Gmpzf result = No_init();
   mpz_mul_si(result.man(), man(), i);
   swap (result);
   canonicalize();
@@ -298,7 +295,7 @@ inline
 Gmpzf& Gmpzf::div(const Gmpzf& b)
 {
   CGAL_precondition(!b.is_zero());
-  Gmpzf result;
+  Gmpzf result = No_init();
   const mpz_t *a_aligned, *b_aligned;
   align (a_aligned, b_aligned, e, *this, b);
   mpz_tdiv_q (result.man(), *a_aligned, *b_aligned); // round towards zero
@@ -312,7 +309,7 @@ inline
 Gmpzf& Gmpzf::operator%= (const Gmpzf& b)
 {
   CGAL_precondition(!b.is_zero());
-  Gmpzf result;
+  Gmpzf result = No_init();
   const mpz_t *a_aligned, *b_aligned;
   align (a_aligned, b_aligned, e, *this, b);
   mpz_tdiv_r (result.man(), *a_aligned, *b_aligned);
@@ -348,7 +345,7 @@ Sign Gmpzf::sign() const
 inline
 Gmpzf Gmpzf::integral_division(const Gmpzf& b) const
 {
-  Gmpzf result;
+  Gmpzf result = No_init();
   mpz_divexact(result.man(), man(), b.man());
   result.e = exp()-b.exp();
   result.canonicalize();
@@ -359,8 +356,9 @@ Gmpzf Gmpzf::integral_division(const Gmpzf& b) const
 inline
 Gmpzf Gmpzf::gcd (const Gmpzf& b) const
 {
-  Gmpzf result;
-  mpz_gcd (result.man(), man(), b.man()); // exponent is 0
+  Gmpzf result = No_init();
+  result.e = 0;
+  mpz_gcd (result.man(), man(), b.man());
   result.canonicalize();
   return result;
 }
@@ -371,7 +369,7 @@ Gmpzf approximate_sqrt(const Gmpzf &f)
   // is there a well-defined sqrt at all?? Here we do the
   // following: write *this as m * 2 ^ e with e even, and
   // then return sqrt(m) * 2 ^ (e/2)
-  Gmpzf result;
+  Gmpzf result = Gmpzf::No_init();
   // make exponent even
   if (f.exp() % 2 == 0) {
     mpz_set (result.man(), f.man());
