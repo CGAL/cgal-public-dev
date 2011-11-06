@@ -111,6 +111,9 @@ public:
 private:
   void initialize()
   {
+    _numer = CGAL::integral_division(numer(),CGAL::unit_part(denom()));
+    _denom = CGAL::integral_division(denom(),CGAL::unit_part(denom()));
+
     CGAL_precondition(_ak_ptr != NULL);
     CGAL_precondition(CGAL::is_zero(_denom) == false);
     if (CGAL::is_zero(_numer))
