@@ -309,14 +309,14 @@ public:
   }
 
 private:
-  bool get_is_above_near_minus_infinity()
+  bool get_is_above_near_minus_infinity() const 
   {
     bool r = _get_is_above_near_minus_infinity();
     CGAL_postcondition(r == __get_is_above_near_minus_infinity());
     return r; 
   }
 
-  bool _get_is_above_near_minus_infinity()
+  bool _get_is_above_near_minus_infinity() const 
   {
     int f_deg = CGAL::degree(_f.numer()) - CGAL::degree(_f.denom());
     int g_deg = CGAL::degree(_g.numer()) - CGAL::degree(_g.denom());
@@ -335,7 +335,7 @@ private:
           (sign == CGAL::POSITIVE) ? false   :
           (_f.sign_near_minus_infinity() == CGAL::POSITIVE);  // _g == zero;
       }
-            
+    
     //both have the same degree difference, 
     //check who's leading coeeficient ratio is larger
     Coefficient lead_coeff_ratio =
@@ -354,7 +354,7 @@ private:
     return __get_is_above_near_minus_infinity();
   }
 
-  bool __get_is_above_near_minus_infinity()
+  bool __get_is_above_near_minus_infinity() const 
   {
     Bound b;
     if (_event_roots.empty())
@@ -366,7 +366,7 @@ private:
     return is_above_at(b);
   }
 
-  bool is_above_at(const Bound& b)
+  bool is_above_at(const Bound& b) const 
   {
     //return true if f is above g at b which means return (sign  == positive) of :
     //
