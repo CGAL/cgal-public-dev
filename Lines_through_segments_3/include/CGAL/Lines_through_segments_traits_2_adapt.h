@@ -459,7 +459,7 @@ public:
        Rational_arc_point_2 ps(traits_2.construct_point_2_object()(source.x(),source.y()));
        Rational_arc_point_2 pt(traits_2.construct_point_2_object()(target.x(),target.y()));
 //       Vertical_segment ver_todo = traits_2.construct_vertical_segment_object()(ps, pt);
-       std::cout << change_color(CGAL_RED,"TOOD create verical segment") << std::endl;
+       std::cout << "TOOD create verical segment" << std::endl;
        CGAL_error_msg("");
        
 //       cv = Rational_arc_curve_2(ps,pt); TODO TODO TODO //asafp asaf
@@ -637,7 +637,7 @@ public:
 
   bool is_vertical(const Rational_arc_x_monotone_curve_2& arc)
   {
-     std::cout << change_color(CGAL_RED,"TOOD return is vertical") << std::endl;
+     std::cout << "TOOD return is vertical" << std::endl;
      CGAL_error_msg("");
      return (// arc.left_infinite_in_x() == CGAL::ARR_INTERIOR && //TODO asafp can not find the function infinite_in_x()
             // arc.right_infinite_in_x() == CGAL::ARR_INTERIOR &&
@@ -659,7 +659,7 @@ public:
        // Rational_arc_point_2 ps(traits_2.construct_point_2_object()(old_cv.source.x(),old_cv.source.y()));
        // Rational_arc_point_2 pt(traits_2.construct_point_2_object()(old_cv.target.x(),old_cv.target.y()));
 //       Vertical_segment ver_todo = traits_2.construct_vertical_segment_object()(ps, pt);
-       std::cout << change_color(CGAL_RED,"TOOD create vertical line") << std::endl;
+       std::cout << "TOOD create vertical line" << std::endl;
        CGAL_error_msg("");
 //      new_cv = Rational_arc_curve_2(old_cv.source(), old_cv.target()); TODO TODO asafp
       return;
@@ -724,7 +724,7 @@ public:
 //     Rational_arc_traits_arr_on_plane_2 traits_2;
 //     Vertical_segment ver_todo = traits_2.construct_vertical_segment_object()(
 //        traits_2.construct_point_2_object()(source.x(),source.y()));
-     std::cout << change_color(CGAL_RED,"TOOD create vertical segment") << std::endl;
+     std::cout << "TOOD create vertical segment" << std::endl;
      CGAL_error_msg("");
 //    cv = Rational_arc_curve_2(Rational_arc_point_2(source.x(),source.y()));TODO TODO TODO //asafp asaf
   }
@@ -736,7 +736,7 @@ public:
 //     Rational_arc_traits_arr_on_plane_2 traits_2;
 //     Vertical_segment ver_todo = traits_2.construct_vertical_segment_object()(
 //        traits_2.construct_point_2_object()(source.x(),source.y()), is_dir_up);
-     std::cout << change_color(CGAL_RED,"TOOD create vertical segment") << std::endl;
+     std::cout << "TOOD create vertical segment" << std::endl;
      CGAL_error_msg("");
     // cv = Rational_arc_curve_2(Rational_arc_point_2(source.x(), source.y()), 
     //                           is_dir_up); TODO TODO TODO //asafp asaf
