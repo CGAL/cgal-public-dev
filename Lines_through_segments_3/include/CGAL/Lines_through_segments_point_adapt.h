@@ -23,9 +23,9 @@
 
 #include <CGAL/Arr_conic_traits_2.h>
 #include <CGAL/CORE_algebraic_number_traits.h>
-#include <CGAL/Arr_rational_arc_traits_d_1.h>
-#include <CGAL/Arr_vertical_segment_traits.h>
+#include <CGAL/Arr_rational_function_traits_2.h>
 #include <CGAL/Algebraic_kernel_d_1.h>
+#include <CGAL/Algebraic_kernel_2_1.h>
 
 /*! \file
  *
@@ -49,6 +49,10 @@ public:
       LTS_VERTEX_Y_MINUS_INFINITY = 4,
       LTS_VERTEX_Y_PLUS_INFINITY = 8
    } Point_type;
+
+public:
+  typedef typename Traits_3::Rational_NT                Rational;
+  typedef typename Traits_3::Algebraic_NT               Algebraic;
    
 private:
   typedef Lines_through_segments_point_adapt_2          Self;
@@ -60,21 +64,17 @@ private:
   typedef CGAL::CORE_algebraic_number_traits            Nt_traits;
   typedef CGAL::Arr_conic_traits_2<Rational_kernel, Alg_kernel, Nt_traits>
     Conic_traits_arr_on_plane_2;
-  
-  /* Specific typedefs for Rational arc traits . */
-  typedef CGAL::Arr_rational_arc_traits_d_1<Rational_kernel>
-                                                        Traits_d_1;
-  typedef CGAL::Arr_traits_with_vertical_segments <Traits_d_1>
-    Rational_arc_traits_arr_on_plane_2;
-
+   typedef CORE::BigInt                                  Integer;
+   /* Specific typedefs for Rational arc traits . */
+   typedef CGAL::Algebraic_kernel_2_1<Integer>	   AK1;//changed from d_1
+   
+   typedef CGAL::Arr_rational_function_traits_2<AK1>  Rational_arc_traits_arr_on_plane_2;
+   
   typedef typename Rational_kernel::Point_2         Rational_point_2;
 
 protected:
   typedef Number_type_                                  Number_type;
       
-public:
-  typedef typename Traits_3::Rational_NT                Rational;
-  typedef typename Traits_3::Algebraic_NT               Algebraic;
   
 protected:  
   /* If the point was created with rational representation keep it. */
@@ -183,7 +183,7 @@ public:
     m_y = y;
   }
 
-  Lines_through_segments_point_adapt_2(const typename Traits_d_1::Algebraic_real_1& number, 
+  Lines_through_segments_point_adapt_2(const typename Rational_arc_traits_arr_on_plane_2::Algebraic_real_1& number, 
                                        Point_type ver_type)
   {
     Lines_through_segments_traits_on_plane_adapt<

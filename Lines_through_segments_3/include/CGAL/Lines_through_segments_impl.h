@@ -622,8 +622,11 @@ public:
         m_g_func.get_scalar_from_point_on_line(ipoint,
                                                m_S2->supporting_line(),S2_t);
                   
+        typename Traits_arr_on_plane_2::Point_2 temp_p;
+        m_traits_2_adapt.construct_point(temp_p, Rational(0), S2_t);
+        
         m_isolated_points_on_plane.add_element
-          (Point_on_plane_and_line_pair(Point_2(m_traits_2_adapt.construct_point(Rational(0), S2_t),
+          (Point_on_plane_and_line_pair(Point_2(temp_p,
                                                 Rational(0), S2_t),
                                         &S3));
       }
@@ -640,9 +643,12 @@ public:
       {
         m_g_func.get_scalar_from_point_on_line(ipoint,
                                                m_S1->supporting_line(),S1_t);
-                  
+
+        typename Traits_arr_on_plane_2::Point_2 temp_p;
+        m_traits_2_adapt.construct_point(temp_p, S1_t, Rational(0));
+          
         m_isolated_points_on_plane.add_element
-          (Point_on_plane_and_line_pair(Point_2(m_traits_2_adapt.construct_point(S1_t, Rational(0)),
+          (Point_on_plane_and_line_pair(Point_2(temp_p,
                                                 S1_t, Rational(0)),
                                         &S3));
       }
@@ -699,9 +705,12 @@ public:
           m_g_func.get_scalar_from_point_on_line(ipoint,
                                                  m_S2->supporting_line(),
                                                  S2_t);
+
+          typename Traits_arr_on_plane_2::Point_2 temp_p;
+          m_traits_2_adapt.construct_point(temp_p, Rational(0), S2_t);
+
           m_isolated_points_on_plane.add_element
-            (Point_on_plane_and_line_pair(Point_2(m_traits_2_adapt.construct_point(Rational(0),
-                                                                                   S2_t),
+            (Point_on_plane_and_line_pair(Point_2(temp_p,
                                                   Rational(0), S2_t),
                                           &S3));
         }
@@ -721,8 +730,11 @@ public:
             Rational S2_t;
             m_g_func.get_scalar_from_point_on_line(qpoint,m_S2->supporting_line(),S2_t);
 
+            typename Traits_arr_on_plane_2::Point_2 temp_p;
+            m_traits_2_adapt.construct_point(temp_p, Rational(0), S2_t);
+
             m_isolated_points_on_plane.add_element
-              (Point_on_plane_and_line_pair(Point_2(m_traits_2_adapt.construct_point(Rational(0),S2_t),
+              (Point_on_plane_and_line_pair(Point_2(temp_p,
                                                     Rational(0),S2_t), &S3));
           }
         }
@@ -1033,9 +1045,10 @@ public:
             m_g_func.get_scalar_from_point_on_line(ipoint_S1,
                                                    m_S1->supporting_line(),
                                                    S1_t);
+            typename Traits_arr_on_plane_2::Point_2 temp_p;
+            m_traits_2_adapt.construct_point(temp_p, S1_t, S2_t),
             m_isolated_points_on_plane.add_element
-              (Point_on_plane_and_line_pair(Point_2(m_traits_2_adapt.
-                                                    construct_point(S1_t, S2_t),
+              (Point_on_plane_and_line_pair(Point_2(temp_p,
                                                     S1_t,S2_t),&S3));
           }
         }
@@ -1386,8 +1399,21 @@ private:
     typename std::list<Rational_arc_2>  arcs;
     obj.get_all_arcs_in_positive_unit_square(arcs,
                                              m_isolated_points_on_plane);
-         
+    
+    // typename std::list<Rational_arc_2>::iterator it;
+    // for (it = arcs.begin(); it != arcs.end(); ++it)
+    // {
+    //    std::cout << *it << std::endl;
+       
+    // }
+    
     insert (*m_arr_on_plane, arcs.begin(), arcs.end());
+
+    // std::cout << "Arr on plane arrangement size:" 
+    //   << "   V = " << m_arr_on_plane->number_of_vertices()
+    //   << ",  E = " << m_arr_on_plane->number_of_edges()
+    //   << ",  F = " << m_arr_on_plane->number_of_faces() << std::endl;
+
   }
       
   /*************************************************************

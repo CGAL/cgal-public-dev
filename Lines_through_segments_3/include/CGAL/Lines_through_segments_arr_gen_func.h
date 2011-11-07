@@ -1143,11 +1143,12 @@ public:
       if ((*seg_it).get_min() == (*seg_it).get_max())
       {
         typedef typename Point_on_plane_and_line_pair::PL_Point Point_2;
+        typename Traits_arr_on_plane_2::Point_2 temp_p;
+        traits_2_adapt.construct_point(temp_p, ((*seg_it).get_min().bound()),S2_t);
         isolated_points_on_plane.add_element(
            Point_on_plane_and_line_pair(
               Point_2(
-                 traits_2_adapt.
-                 construct_point(((*seg_it).get_min().bound()),S2_t),
+                 temp_p,
                  ((*seg_it).get_min().bound()),S2_t), 
               &ext_point_obj));    
       }
@@ -1245,10 +1246,12 @@ public:
       if (((*seg_it).get_min()) == ((*seg_it).get_max()))
       {
         typedef typename Point_on_plane_and_line_pair::PL_Point Point_2;
+        typename Traits_arr_on_plane_2::Point_2 temp_p;
+        traits_2_adapt.construct_point(temp_p, S1_t, (*seg_it).get_min().bound());
+
         isolated_points_on_plane.add_element(
            Point_on_plane_and_line_pair(Point_2(
-                                           traits_2_adapt.construct_point(
-                                              S1_t, (*seg_it).get_min().bound()),
+                                           temp_p,
                                            S1_t, (*seg_it).get_min().bound()),
                                         &ext_point_obj));
       }
@@ -1519,13 +1522,15 @@ public:
             m_g_func.get_scalar_from_point_on_line(ipoint_temp,
                                                    S2.supporting_line(),
                                                    y_coord);
+            typename Traits_arr_on_plane_2::Point_2 temp_p;
+            traits_2_adapt.construct_point(temp_p, ((*seg_it).get_min().bound()),
+                                             y_coord);
+
             ret_isolated_points_on_plane.add_element
-              (Point_on_plane_and_line_pair(Point_2
-                                            (traits_2_adapt.construct_point
-                                             (((*seg_it).get_min().bound()),
-                                              y_coord),
-                                             ((*seg_it).get_min().bound()),
-                                             y_coord), &S3));
+               (Point_on_plane_and_line_pair(Point_2(
+                                                temp_p,
+                                                ((*seg_it).get_min().bound()),
+                                                y_coord), &S3));
           }
           else
           {

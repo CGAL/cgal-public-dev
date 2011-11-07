@@ -69,6 +69,8 @@ private:
   typedef Lines_through_segments_bounded_seg<Rational>  Bounded_seg;
   typedef Lines_through_segments_rbound_unbound_union<Rational>  LTS_rbound;  
 
+  typedef typename Traits_3::Traits_arr_on_plane_2
+  Traits_arr_on_plane_2;
   static const int CGAL_SEGMENT_INVALID = -314;
   static const unsigned int CGAL_MAX_ITERATIONS = 6;
   static const unsigned int CGAL_VALID_ITERATION = (CGAL_MAX_ITERATIONS+1);
@@ -2517,9 +2519,10 @@ public:
               y_coord[0] == y_coord[1])
           {
             typedef typename Point_and_line_pair::PL_Point Point_2;
+            typename Traits_arr_on_plane_2::Point_2 temp_p;
+            m_traits_2_adapt.construct_point(temp_p, x_coord[0], y_coord[0]);
             isolated_points.add_element
-              (Point_and_line_pair(Point_2(m_traits_2_adapt.construct_point
-                                           (x_coord[0], y_coord[0]),
+              (Point_and_line_pair(Point_2(temp_p,
                                            x_coord[0], y_coord[0]),
                                    m_creator_segment));
           }
@@ -2624,9 +2627,11 @@ public:
             Point_and_line_pair;
                   
           typedef typename Point_and_line_pair::PL_Point Point_2;
+          typename Traits_arr_on_plane_2::Point_2 temp_p;
+          m_traits_2_adapt.construct_point(temp_p, x_coord[0], y_coord[0]);
+
           isolated_points.add_element
-            (Point_and_line_pair(Point_2(m_traits_2_adapt.construct_point
-                                         (x_coord[0], y_coord[0]),
+            (Point_and_line_pair(Point_2(temp_p,
                                          x_coord[0], y_coord[0]), &ext_obj));
         }
         else
@@ -2754,11 +2759,12 @@ public:
         typedef typename Isolated_points::IP_point_and_line_pair 
           Point_and_line_pair;
         typedef typename Point_and_line_pair::PL_Point Point_2;
-                     
+        typename Traits_arr_on_plane_2::Point_2 temp_p;
+        m_traits_2_adapt.construct_point(temp_p, (*horizontal_seg_it).get_min().bound(),
+                                         m_horizontal_segment_y_coordinate);
+
         isolated_points.add_element
-          (Point_and_line_pair(Point_2(m_traits_2_adapt.construct_point
-                                       ((*horizontal_seg_it).get_min().bound(),
-                                        m_horizontal_segment_y_coordinate),
+           (Point_and_line_pair(Point_2(temp_p,
                                        (*horizontal_seg_it).get_min().bound(),
                                        m_horizontal_segment_y_coordinate),
                                &ext_obj));
@@ -2843,11 +2849,13 @@ public:
         typedef typename Isolated_points::IP_point_and_line_pair 
           Point_and_line_pair;
         typedef typename Point_and_line_pair::PL_Point Point_2;
+        
+        typename Traits_arr_on_plane_2::Point_2 temp_p;
+        m_traits_2_adapt.construct_point(temp_p, m_vertical_segment_x_coordinate,
+                                         (*vertical_seg_it).get_min().bound());
 
         isolated_points.add_element
-          (Point_and_line_pair(Point_2(m_traits_2_adapt.construct_point
-                                       (m_vertical_segment_x_coordinate,
-                                        (*vertical_seg_it).get_min().bound()),
+          (Point_and_line_pair(Point_2(temp_p,
                                        m_vertical_segment_x_coordinate,
                                        (*vertical_seg_it).get_min().bound()),
                                &ext_obj));
@@ -2888,10 +2896,11 @@ public:
         /* Isolated point */
         Rational y_coordinate = (x_coordinate * this->m_a1 + this->m_a0) / 
           (x_coordinate * this->m_b1 + this->m_b0);
-               
+        typename Traits_arr_on_plane_2::Point_2 temp_p;
+        m_traits_2_adapt.construct_point(temp_p, x_coordinate, y_coordinate);
+        
         isolated_points.add_element
-          (Point_and_line_pair(Point_2(m_traits_2_adapt.construct_point
-                                       (x_coordinate, y_coordinate),
+          (Point_and_line_pair(Point_2(temp_p,
                                        x_coordinate,y_coordinate),
                                &ext_obj));
       }

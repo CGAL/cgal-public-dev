@@ -239,6 +239,7 @@ protected:
 #endif
             line_through_segs_obj.add_element_to_arrangement(*segs[S3]);
           }
+
           line_through_segs_obj.find_all_lines(rational_output);
 
           if (With_arrangement())
