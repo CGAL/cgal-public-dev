@@ -38,7 +38,7 @@
 #include <CGAL/Algebraic_kernel_2_1.h>
 #include <CGAL/Root_of_traits.h>
 
-#define LTS_SQRT 1
+#define LTS_SQRT 0
 namespace CGAL {
    
 template <typename Traits_3_>

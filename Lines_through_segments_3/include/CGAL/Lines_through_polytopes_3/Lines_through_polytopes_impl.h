@@ -28,7 +28,6 @@
 #include <CGAL/Lines_through_segments_arr_ext_dcel.h>
 #include <CGAL/Lines_through_segments_arr_observer.h>
 
-#include <CGAL/Arrangement_with_history_2.h>
 #include <CGAL/Env_default_diagram_1.h>
 #include <CGAL/envelope_2.h>
 #include <CGAL/Lines_through_polytopes_3/Lines_through_polytopes_con_component.h>
@@ -86,9 +85,9 @@ class Lines_through_polytopes_impl {
                                               Rational_polyhedron_3>
   Dcel_on_plane;
 
-  typedef CGAL::Arrangement_with_history_2<Traits_arr_on_plane_2,
-                                           Dcel_on_plane>  Arrangement_on_plane_2;
-
+  typedef CGAL::Arrangement_2<Traits_arr_on_plane_2,
+                              Dcel_on_plane>  Arrangement_on_plane_2;
+   
   typedef Lines_through_segments_arr_observer<Rational_polyhedron_3,
                                               Arrangement_on_plane_2> 
   Lines_through_segments_arr_observer_on_plane;

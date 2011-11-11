@@ -23,7 +23,6 @@
 #define LINE_THROUGH_SEGMENTS_OUTPUT_OBJ_H
 
 #include <CGAL/General_polygon_2.h>
-#include <CGAL/Arrangement_with_history_2.h>
 #include <CGAL/Arrangement_on_surface_with_history_2.h>
 #include <CGAL/Arr_spherical_topology_traits_2.h>
 
@@ -310,7 +309,7 @@ public:
    typedef Lines_through_segments_arr_ext_dcel<Traits_arr_on_plane_2,
                                                Ext_obj>
    Dcel_on_plane;
-   typedef CGAL::Arrangement_with_history_2<Traits_arr_on_plane_2,
+   typedef CGAL::Arrangement_2<Traits_arr_on_plane_2,
                                             Dcel_on_plane>  
    Arrangement_2;
    

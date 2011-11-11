@@ -322,8 +322,6 @@ public:
          eit != arr_on_plane.edges_end();
          ++eit)
     {
-      CGAL_assertion(arr_on_plane.number_of_originating_curves(eit) == 
-                     eit->num_of_segments());
       /* Add Edges that created by two or more identical curves. */
       if (!eit->get_added_to_output() &&
           ((eit->twin()->face()->num_of_overlap_plane_faces() == 1 &&
@@ -342,9 +340,6 @@ public:
 #if ARR_ON_SUR_DEBUG
         std::cout << change_color(CGAL_RED,"ADD PLANE") << std::endl;
         std::cout << eit->curve() << std::endl;
-        std::cout << "number_of_originating_curves = "
-                  << arr_on_plane.number_of_originating_curves(eit)
-                  << std::endl;
         if (eit->twin()->face()->num_of_overlap_plane_faces() == 1 &&
             eit->face()->num_of_overlap_plane_faces() == 1 &&
             *(eit->face()->segs_begin()) != 
@@ -426,8 +421,8 @@ public:
           /* In case the point represent the intersection point
              of S1 and S2. */
           Alg_line_3 common_line;
-          if (m_g_func.add_line_to_output(s1,s2,s1_s2_intersect,vit->point(),
-                                          common_line))
+          if (!s1_s2_intersect || m_g_func.add_line_to_output(s1,s2,s1_s2_intersect,vit->point(),
+                                                              common_line))
           {
 #if ARR_ON_SUR_DEBUG
                      
@@ -441,7 +436,7 @@ public:
               << "," 
               << std::endl;
 #endif
-            Rational_point_2 rp;
+           Rational_point_2 rp;
 
             bool is_rational = (rational_output && 
                                 is_degenerate_hyp(vit->incident_halfedges(),

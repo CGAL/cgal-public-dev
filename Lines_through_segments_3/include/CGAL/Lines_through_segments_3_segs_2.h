@@ -72,7 +72,7 @@ private:
   typedef Lines_through_segments_arr_ext_dcel<Traits_arr_on_plane_2,
                                               Rational_segment_3>
                                                          Dcel_on_plane;
-  typedef CGAL::Arrangement_with_history_2<Traits_arr_on_plane_2, Dcel_on_plane>
+  typedef CGAL::Arrangement_2<Traits_arr_on_plane_2, Dcel_on_plane>
     Arrangement_on_plane_2;
   typedef Lines_through_segments_point_adapt_2<Traits_3,
     typename Traits_arr_on_plane_2::Point_2, Algebraic>  Point_2;

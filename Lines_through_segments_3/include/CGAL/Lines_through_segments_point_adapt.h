@@ -66,7 +66,7 @@ private:
     Conic_traits_arr_on_plane_2;
    typedef CORE::BigInt                                  Integer;
    /* Specific typedefs for Rational arc traits . */
-   typedef CGAL::Algebraic_kernel_2_1<Integer>	   AK1;//changed from d_1
+   typedef CGAL::Algebraic_kernel_d_1<Integer>	   AK1;//changed from d_1
    
    typedef CGAL::Arr_rational_function_traits_2<AK1>  Rational_arc_traits_arr_on_plane_2;
    

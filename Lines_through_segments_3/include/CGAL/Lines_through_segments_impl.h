@@ -20,7 +20,6 @@
 #ifndef LINES_THROUGH_SEGMENTS_IMPL_H
 #define LINES_THROUGH_SEGMENTS_IMPL_H
 
-#include <CGAL/Arrangement_with_history_2.h>
 #include <CGAL/Arrangement_on_surface_with_history_2.h>
 #include <CGAL/Arr_spherical_topology_traits_2.h>
 
@@ -88,8 +87,8 @@ private:
   typedef Lines_through_segments_arr_ext_dcel<Traits_arr_on_plane_2,
                                               Rational_segment_3>
   Dcel_on_plane;
-  typedef CGAL::Arrangement_with_history_2<Traits_arr_on_plane_2,
-                                           Dcel_on_plane>  
+  typedef CGAL::Arrangement_2<Traits_arr_on_plane_2,
+                              Dcel_on_plane>  
   Arrangement_on_plane_2;
   typedef Lines_through_segments_point_adapt_2<
     Traits_3,
@@ -259,6 +258,7 @@ public:
       
 private:
   Arrangement_on_plane_2 * m_arr_on_plane;
+//  std::list<Rational_arc_2> arcs_cont;
   Arrangement_on_sphere_2 * m_arr_on_sphere;
   Lines_through_segments_arr_observer_on_plane * m_obs_on_plane;
   Lines_through_segments_arr_observer_on_sphere * m_obs_on_sphere;
@@ -1400,12 +1400,12 @@ private:
     obj.get_all_arcs_in_positive_unit_square(arcs,
                                              m_isolated_points_on_plane);
     
-    // typename std::list<Rational_arc_2>::iterator it;
-    // for (it = arcs.begin(); it != arcs.end(); ++it)
-    // {
-    //    std::cout << *it << std::endl;
-       
-    // }
+//     typename std::list<Rational_arc_2>::iterator it;
+//     for (it = arcs.begin(); it != arcs.end(); ++it)
+//     {
+// //       insert (*m_arr_on_plane, *it);
+// //       std::cout << *it << std::endl;
+//    }
     
     insert (*m_arr_on_plane, arcs.begin(), arcs.end());
 
@@ -1448,6 +1448,13 @@ private:
                                                          *m_rat_kernel, m_intersection_point_S1S2,
                                                          m_isolated_points_on_plane, arcs, false, &ret_end_points, 
                                                          m_S1_S2_intersect);
+
+//     typename std::list<Rational_arc_2>::iterator it;
+//     for (it = arcs.begin(); it != arcs.end(); ++it)
+//     {
+// //       insert (*m_arr_on_plane, *it);
+// //       std::cout << *it << std::endl;
+//     }
 
     insert (*m_arr_on_plane, arcs.begin(), arcs.end());
   }
@@ -1505,8 +1512,7 @@ public:
    * creator lines and the lines which represents the edges of the hyperbola.
    **************************************************************/
   void find_all_lines(bool rational_output)
-  {
-
+  {   
     if (m_S1_S2_on_the_same_line)
     {
       if (m_S1_S2_num_of_common_lines >= 2)
@@ -1539,7 +1545,7 @@ public:
       }
 
       Created_from_2_unique_lines<Arrangement_on_plane_2> valid_vertex;
-            
+      
       m_arr_g_func.find_all_lines_plane(*m_arr_on_plane,
                                         m_insert_itertor,
                                         *m_S1,*m_S2,m_S1_S2_intersect,
@@ -1594,19 +1600,14 @@ private:
            eit != m_arr_on_sphere->edges_end();
            ++eit)
       {
-        CGAL_assertion(m_arr_on_sphere->number_of_originating_curves(eit) == 
-                       eit->num_of_segments());
         /* Add Edges that created by two or more identical curves. */
         if (!eit->get_added_to_output() &&
-            m_arr_on_sphere->number_of_originating_curves(eit) >= 
-            (2 - m_num_of_intersection))
+            (eit->num_of_segments() >= 
+             (2 - m_num_of_intersection)))
         {
 #if ARR_ON_SUR_DEBUG
           std::cout << change_color(CGAL_RED,"ADD PLANE") << std::endl;
           std::cout << eit->curve() << std::endl;
-          std::cout << "number_of_originating_curves"
-                    << m_arr_on_sphere->number_of_originating_curves(eit)
-                    << std::endl;
 #endif
           
           Rational_segment_3
