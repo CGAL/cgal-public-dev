@@ -75,6 +75,7 @@ endif()
 
 #create_single_source_cgal_program( "lines_through_4_polytopes.cpp" )
 create_single_source_cgal_program( "lines_through_4_segments.cpp" )
+create_single_source_cgal_program( "rat_func_traits.cpp" )
 #create_single_source_cgal_program( "lines_through_4_segments_rat_traits_debug.cpp" )
 #create_single_source_cgal_program( "lines_through_4_segments_rat_traits_debug1.cpp" )
 #create_single_source_cgal_program( "lines_through_4_segments_rat_traits_debug2.cpp" )

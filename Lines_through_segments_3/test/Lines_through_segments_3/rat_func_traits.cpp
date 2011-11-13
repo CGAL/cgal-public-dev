@@ -31,8 +31,8 @@ Curve_2 construct_curve(double start, double end,
                      const char* num, const char* den)
 {
    //typedef CORE::Polynomial<Rational>                    PNT_1;//
-   typedef typename Rational_arc_arr_traits_arr_on_plane_2::Polynomial_1 PNT_1;
-   typedef typename Rational_arc_arr_traits_arr_on_plane_2::Algebraic_real_1 NT;
+   typedef Rational_arc_arr_traits_arr_on_plane_2::Polynomial_1 PNT_1;
+   typedef Rational_arc_arr_traits_arr_on_plane_2::Algebraic_real_1 NT;
 
    Rational_arc_arr_traits_arr_on_plane_2 traits_2;
    std::stringstream ss_num(num);
