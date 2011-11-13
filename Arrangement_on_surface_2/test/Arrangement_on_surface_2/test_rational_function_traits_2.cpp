@@ -9,11 +9,12 @@
 
 #include <CGAL/Algebraic_kernel_2_1.h>
 
-#if 1
+#if 0
 typedef CORE::BigInt                               NT;
 typedef CGAL::Algebraic_kernel_d_1<NT>             AK1; 
 #else
 typedef CORE::BigRat                               Rational;
+//typedef Rational                                   FT;
 typedef CGAL::Lazy_exact_nt<Rational>              FT; 
 typedef CGAL::Algebraic_kernel_2_1<FT>             AK1;
 #endif
@@ -33,6 +34,7 @@ int main(int argc, char* argv[])
   typedef Traits_2::Algebraic_kernel_d_1 Algebraic_kernel_d_1; 
   typedef Traits_2::Construct_curve_2 Construct_curve_2;
   typedef Traits_2::Construct_x_monotone_curve_2 Construct_x_monotone_curve_2; 
+  typedef Traits_2::Construct_point_2 Construct_point_2;
   
   // typedef induced by concept 
 
@@ -169,6 +171,7 @@ int main(int argc, char* argv[])
     typedef X_monotone_curve_2::Algebraic_real_1 Algebraic_real_1; 
     typedef X_monotone_curve_2::Point_2 Point_2; 
     
+    
     X_monotone_curve_2 xcurve= construct_x_monotone_curve_2(P,Q,one,two);
 
     {X_monotone_curve_2 dummy;}
@@ -197,6 +200,12 @@ int main(int argc, char* argv[])
     typedef Point_2::Algebraic_real_1 Algebraic_real_1;
     typedef Point_2::Bound Bound; 
 
+
+    {  
+      Construct_point_2 construct_point_2 = traits.construct_point_2_object(); 
+      Point_2 p = construct_point_2(Rational(1),Rational(1));
+    }
+    
     X_monotone_curve_2 xcurve= construct_x_monotone_curve_2(P,Q,one,two);
     Point_2 p = xcurve.left(); 
     Point_2 q = xcurve.right();

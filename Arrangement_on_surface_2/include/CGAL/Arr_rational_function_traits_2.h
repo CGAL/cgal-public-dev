@@ -420,24 +420,15 @@ public:
     }
 
     Point_2 operator()(const Rational& x, const Rational& y)
-    { 
-      Integer  y_numer,y_denom;
-      typename FT_rat_1::Decompose()(y,y_numer,y_denom);
-      
-      return Point_2(_traits->cache().get_rational_function(Rational(y_numer,
-                                                                     y_denom)),
+    {      
+      return Point_2(_traits->cache().get_rational_function(y),
                      _traits->algebraic_kernel_d_1()->
                        construct_algebraic_real_1_object()(x));
     }
 
     Point_2 operator()(const Algebraic_real_1& x, const Rational& y)
     {   
-      Integer  y_numer;
-      Integer  y_denom;
-      typename FT_rat_1::Decompose()(y, y_numer, y_denom);
-      return Point_2(_traits->cache().get_rational_function(Rational(y_numer,
-                                                                     y_denom)),
-                     x);
+      return Point_2(_traits->cache().get_rational_function(y), x);
     }
   }; //Construct_point
 
