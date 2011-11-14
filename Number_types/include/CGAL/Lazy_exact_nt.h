@@ -1167,7 +1167,7 @@ CGAL_COERCION_TRAITS_LAZY_EXACT(double)
 CGAL_COERCION_TRAITS_LAZY_EXACT(float)
 #undef CGAL_COERCION_TRAITS_LAZY_EXACT
 
-  template <class NT> class Get_arithmetic_kernel; 
+  template <class NT> struct Get_arithmetic_kernel; 
 
 template <class ET1>
 class Coercion_traits< Lazy_exact_nt<ET1>, 
@@ -1412,10 +1412,10 @@ public:
   typedef typename ET_Arithmetic_kernel::Bigfloat_interval Bigfloat_interval; 
 };
 
-// template <class NT> class Get_arithmetic_kernel; 
+// template <class NT> struct Get_arithmetic_kernel; 
 
 template<class ET>
-class Get_arithmetic_kernel<Lazy_exact_nt<ET> > {
+struct Get_arithmetic_kernel<Lazy_exact_nt<ET> > {
 public:
   typedef Lazy_exact_arithmetic_kernel<ET> Arithmetic_kernel;   
 };

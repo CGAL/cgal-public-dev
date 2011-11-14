@@ -851,7 +851,7 @@ public:
     };
 };
 
-template <class NT> class Get_arithmetic_kernel; 
+template <class NT> struct Get_arithmetic_kernel; 
 
 template <class RT>
 struct Get_arithmetic_kernel<CGAL::Quotient<RT> > {
