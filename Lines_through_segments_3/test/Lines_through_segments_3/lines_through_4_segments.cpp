@@ -1,5 +1,6 @@
 
 #define CGAL_LEDA_VERSION 620
+#define CGAL_LAZY_KERNEL_DEBUG 1
 
 /* Set the required traits */
 #define USE_CONIC_TRAITS 0
@@ -20,7 +21,7 @@
 #include <algorithm>
 #include <CGAL/Timer.h>
 
-#define USE_LEDA 0
+#define USE_LEDA 1
 
 /* Only for internal debug purposes may be removed later. */
 #define CGAL_PRINT_COLOR 1
