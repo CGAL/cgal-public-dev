@@ -253,11 +253,16 @@ public:
     Algebraic mid_x = source.x() +
       (target.x()- source.x())/2;
 
+#if 1
+    Algebraic y_numer = curve.numerator().evaluate(mid_x);
+    Algebraic y_denom = curve.denominator().evaluate(mid_x);
+#else
     Polynomial core_numer = convert_polynomial(curve.numerator());
     Polynomial core_denom = convert_polynomial(curve.denominator());
 
     Algebraic y_numer = core_numer.eval(mid_x);
     Algebraic y_denom = core_denom.eval(mid_x);
+#endif
 
     Algebraic mid_y(y_numer / y_denom);
 
@@ -1097,7 +1102,7 @@ public:
 #if USE_SQRT_TRAITS
   Algebraic convert_real_to_algebraic(const Sqrt_ext& r)  const
   {    
-     typename CGAL::Coercion_traits<Sqrt_ext, CORE::Expr>::Cast cast;
+     typename CGAL::Coercion_traits<Sqrt_ext, Algebraic>::Cast cast;
      
      return cast(r);
   }
