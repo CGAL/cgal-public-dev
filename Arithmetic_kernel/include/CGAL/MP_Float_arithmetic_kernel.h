@@ -56,6 +56,10 @@ struct Get_arithmetic_kernel<MP_Float> {
   typedef MP_Float_arithmetic_kernel Arithmetic_kernel;
 };
 
+template <>
+struct Get_arithmetic_kernel<CGAL::Quotient<MP_Float> > {
+  typedef MP_Float_arithmetic_kernel Arithmetic_kernel;
+};
 
 } //namespace CGAL
 
