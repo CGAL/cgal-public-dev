@@ -20,7 +20,7 @@
 #ifndef LINES_THROUGH_SEGMENTS_IMPL_H
 #define LINES_THROUGH_SEGMENTS_IMPL_H
 
-#include <CGAL/Arrangement_on_surface_with_history_2.h>
+#include <CGAL/Arrangement_on_surface_2.h>
 #include <CGAL/Arr_spherical_topology_traits_2.h>
 
 #include <CGAL/basic.h>
@@ -39,7 +39,7 @@
 #if LTS_DRAW_ARR
 #include "Arrangement_general_functions.h"
 #endif
-
+#define ONE_SWEEP 1
 /*************************************************************
  * This class is the core of the implementation, it holds arrangements on
  * surface at the following types:
@@ -94,6 +94,7 @@ private:
     Traits_3,
     typename Traits_arr_on_plane_2::Point_2,Algebraic> Point_2;
   typedef typename Traits_arr_on_plane_2::Curve_2         Rational_arc_2;
+
   typedef Lines_through_segments_arr_observer<Rational_segment_3,
                                               Arrangement_on_plane_2> 
   Lines_through_segments_arr_observer_on_plane;
@@ -126,8 +127,10 @@ private:
   typedef typename Traits_arr_on_sphere_2::X_monotone_curve_2
   X_monotone_curve_On_Sphere_2;
   typedef typename Traits_arr_on_sphere_2::Curve_2        Curve_2;
-  typedef CGAL::Arrangement_on_surface_with_history_2<Traits_arr_on_sphere_2,
-                                                      Topol_traits_2>
+  typedef typename Traits_3::Traits_arr_on_sphere_2_no_data::Curve_2 Curve_2_no_data;
+  
+  typedef CGAL::Arrangement_on_surface_2<Traits_arr_on_sphere_2,
+                                         Topol_traits_2>
   Arrangement_on_sphere_2;
 
   typedef class Lines_through_segments_arr_plane_faces
@@ -258,7 +261,7 @@ public:
       
 private:
   Arrangement_on_plane_2 * m_arr_on_plane;
-//  std::list<Rational_arc_2> arcs_cont;
+  std::list<Rational_arc_2> arcs_cont;
   Arrangement_on_sphere_2 * m_arr_on_sphere;
   Lines_through_segments_arr_observer_on_plane * m_obs_on_plane;
   Lines_through_segments_arr_observer_on_sphere * m_obs_on_sphere;
@@ -684,7 +687,7 @@ public:
 
   void add_element_to_one_dimensional_arrangement(const Rational_segment_3& S3)
   {
-    m_obs_on_plane->set_last_inserted_segment(&S3,false);
+    m_obs_on_plane->set_is_plane(false);
     /* Get the intersection point of */
     CGAL::Object result = m_rat_kernel->intersect_3_object()(S3.supporting_line(),
                                                              m_S1_S2_plane);
@@ -915,25 +918,29 @@ public:
 
       m_traits_2_adapt.create_segment_on_plane_arr(t_arc,
                                                    Rational_point_2(S1_t_min,Rational(0)),
-                                                   Rational_point_2(S1_t_max,Rational(0)));
+                                                   Rational_point_2(S1_t_max,Rational(0)),
+                                                   &S3);
       arcs_to_insert.push_back(t_arc);
          
       m_traits_2_adapt.create_segment_on_plane_arr(t_arc,
                                                    Rational_point_2(S1_t_min,Rational(1)),
-                                                   Rational_point_2(S1_t_max,Rational(1)));
+                                                   Rational_point_2(S1_t_max,Rational(1)),
+                                                   &S3);
       arcs_to_insert.push_back(t_arc);
 
       m_traits_2_adapt.create_segment_on_plane_arr(t_arc,
                                                    Rational_point_2(S1_t_min,Rational(0)),
-                                                   Rational_point_2(S1_t_min,Rational(1)));
+                                                   Rational_point_2(S1_t_min,Rational(1)),
+                                                   &S3);
       arcs_to_insert.push_back(t_arc);
 
       m_traits_2_adapt.create_segment_on_plane_arr(t_arc,
                                                    Rational_point_2(S1_t_max,Rational(0)),
-                                                   Rational_point_2(S1_t_max,Rational(1)));
+                                                   Rational_point_2(S1_t_max,Rational(1)),
+                                                   &S3);
       arcs_to_insert.push_back(t_arc);
                         
-      temp_obs_on_plane->set_last_inserted_segment(&S3,true);
+      temp_obs_on_plane->set_is_plane(true);
             
       insert (*temp_arr_on_plane, arcs_to_insert.begin(), 
               arcs_to_insert.end());
@@ -978,25 +985,29 @@ public:
             
       m_traits_2_adapt.create_segment_on_plane_arr(t_arc,
                                                    Rational_point_2(Rational(0),S2_t_min),
-                                                   Rational_point_2(Rational(0),S2_t_max));
+                                                   Rational_point_2(Rational(0),S2_t_max),
+                                                   &S3);
       arcs_to_insert.push_back(t_arc);
             
       m_traits_2_adapt.create_segment_on_plane_arr(t_arc,
                                                    Rational_point_2(Rational(1),S2_t_min),
-                                                   Rational_point_2(Rational(1),S2_t_max));
+                                                   Rational_point_2(Rational(1),S2_t_max),
+                                                   &S3);
       arcs_to_insert.push_back(t_arc);
 
       m_traits_2_adapt.create_segment_on_plane_arr(t_arc,
                                                    Rational_point_2(Rational(0),S2_t_min),
-                                                   Rational_point_2(Rational(1),S2_t_min));
+                                                   Rational_point_2(Rational(1),S2_t_min),
+                                                   &S3);
       arcs_to_insert.push_back(t_arc);
 
       m_traits_2_adapt.create_segment_on_plane_arr(t_arc,
                                                    Rational_point_2(Rational(0),S2_t_max),
-                                                   Rational_point_2(Rational(1),S2_t_max));
+                                                   Rational_point_2(Rational(1),S2_t_max),
+                                                   &S3);
       arcs_to_insert.push_back(t_arc);
 
-      temp_obs_on_plane->set_last_inserted_segment(&S3,true);
+      temp_obs_on_plane->set_is_plane(true);
       insert (*temp_arr_on_plane, arcs_to_insert.begin(), 
               arcs_to_insert.end());
             
@@ -1009,7 +1020,7 @@ public:
     }
     else
     {
-      m_obs_on_plane->set_last_inserted_segment(&S3,false);
+      m_obs_on_plane->set_is_plane(false);
       if (S3.source() == S3.target())
       {
 #if ARR_ON_SUR_DEBUG            
@@ -1150,7 +1161,7 @@ public:
 private:
   void add_element_to_sphere_arrangement(const Rational_segment_3& S3)
   {
-    m_obs_on_sphere->set_last_inserted_segment(&S3,false);
+    m_obs_on_sphere->set_is_plane(false);
     Rational p0_x_diff = (S3.source().x() - m_intersection_point_S1S2.x());
     Rational p0_y_diff = (S3.source().y() - m_intersection_point_S1S2.y());
     Rational p0_z_diff = (S3.source().z() - m_intersection_point_S1S2.z());
@@ -1205,7 +1216,7 @@ private:
     {
 #if ARR_ON_SUR_DEBUG
       std::cout << "Add arc1 = "
-                << Curve_2(Point_on_sphere_2(p0_x_diff, 
+                << Curve_2_no_data(Point_on_sphere_2(p0_x_diff, 
                                              p0_y_diff, 
                                              p0_z_diff).get_original_point(),
                            Point_on_sphere_2(p1_x_diff, 
@@ -1213,18 +1224,19 @@ private:
                                              p1_z_diff).get_original_point())
                 << std::endl;
 #endif            
-      arcs.push_back(Curve_2(Point_on_sphere_2(p0_x_diff, 
-                                               p0_y_diff, 
-                                               p0_z_diff).get_original_point(),
-                             Point_on_sphere_2(p1_x_diff, 
-                                               p1_y_diff, 
-                                               p1_z_diff).get_original_point()));
+      arcs.push_back(Curve_2(Curve_2_no_data(Point_on_sphere_2(p0_x_diff, 
+                                                               p0_y_diff, 
+                                                               p0_z_diff).get_original_point(),
+                                             Point_on_sphere_2(p1_x_diff, 
+                                                               p1_y_diff, 
+                                                               p1_z_diff).get_original_point()),
+                             &S3));
     }
     else if (p0_z_diff <= 0 && p1_z_diff <= 0)
     {
 #if ARR_ON_SUR_DEBUG
       std::cout << "Add arc2 = "
-                << Curve_2(Point_on_sphere_2(-p0_x_diff,
+                << Curve_2_no_data(Point_on_sphere_2(-p0_x_diff,
                                              -p0_y_diff, 
                                              -p0_z_diff).get_original_point(),
                            Point_on_sphere_2(-p1_x_diff,
@@ -1232,12 +1244,13 @@ private:
                                              -p1_z_diff).get_original_point())
                 << std::endl;
 #endif
-      arcs.push_back(Curve_2(Point_on_sphere_2(-p0_x_diff, 
-                                               -p0_y_diff,
-                                               -p0_z_diff).get_original_point(),
+      arcs.push_back(Curve_2(Curve_2_no_data(Point_on_sphere_2(-p0_x_diff, 
+                                                               -p0_y_diff,
+                                                               -p0_z_diff).get_original_point(),
                              Point_on_sphere_2(-p1_x_diff,
                                                -p1_y_diff,
-                                               -p1_z_diff).get_original_point()));
+                                               -p1_z_diff).get_original_point()),
+                             &S3));
     }
     else
     {
@@ -1266,7 +1279,7 @@ private:
                
 #if ARR_ON_SUR_DEBUG
         std::cout << "Add arc3 = "
-                  << Curve_2(Point_on_sphere_2(z_0_ipoint.x(),
+                  << Curve_2_no_data(Point_on_sphere_2(z_0_ipoint.x(),
                                                z_0_ipoint.y(),
                                                z_0_ipoint.z()).get_original_point(),
                              Point_on_sphere_2(p1_x_diff,
@@ -1274,15 +1287,16 @@ private:
                                                p1_z_diff).get_original_point())
                   << std::endl;
 #endif            
-        arcs.push_back(Curve_2(Point_on_sphere_2(z_0_ipoint.x(), z_0_ipoint.y(),
-                                                 z_0_ipoint.z()).get_original_point(),
-                               Point_on_sphere_2(p1_x_diff, p1_y_diff,
-                                                 p1_z_diff).get_original_point()));
+        arcs.push_back(Curve_2(Curve_2_no_data(Point_on_sphere_2(z_0_ipoint.x(), z_0_ipoint.y(),
+                                                                 z_0_ipoint.z()).get_original_point(),
+                                               Point_on_sphere_2(p1_x_diff, p1_y_diff,
+                                                                 p1_z_diff).get_original_point()),
+                               &S3));
                
 
 #if ARR_ON_SUR_DEBUG
         std::cout << "Add arc4 = "
-                  << Curve_2(Point_on_sphere_2(-z_0_ipoint.x(),
+                  << Curve_2_no_data(Point_on_sphere_2(-z_0_ipoint.x(),
                                                -z_0_ipoint.y(),
                                                -z_0_ipoint.z()).get_original_point(),
                              Point_on_sphere_2(-p0_x_diff,
@@ -1290,47 +1304,50 @@ private:
                                                -p0_z_diff).get_original_point())
                   << std::endl;
 #endif            
-        arcs.push_back(Curve_2(Point_on_sphere_2(-z_0_ipoint.x(),
-                                                 -z_0_ipoint.y(),
-                                                 -z_0_ipoint.z()).get_original_point(),
-                               Point_on_sphere_2(-p0_x_diff,
+        arcs.push_back(Curve_2(Curve_2_no_data(Point_on_sphere_2(-z_0_ipoint.x(),
+                                                                 -z_0_ipoint.y(),
+                                                                 -z_0_ipoint.z()).get_original_point(),
+                                               Point_on_sphere_2(-p0_x_diff,
                                                  -p0_y_diff,
-                                                 -p0_z_diff).get_original_point()));
+                                                                 -p0_z_diff).get_original_point()),
+                               &S3));
       }
       else
       {
 #if ARR_ON_SUR_DEBUG
         std::cout << "Add arc5 = " <<
-          Curve_2(Point_on_sphere_2(z_0_ipoint.x(),
+          Curve_2_no_data(Point_on_sphere_2(z_0_ipoint.x(),
                                     z_0_ipoint.y(),
                                     z_0_ipoint.z()).get_original_point(),
                   Point_on_sphere_2(p0_x_diff,
                                     p0_y_diff,
                                     p0_z_diff).get_original_point()) << std::endl;
 #endif
-        arcs.push_back(Curve_2(Point_on_sphere_2
-                               (z_0_ipoint.x(),
-                                z_0_ipoint.y(),
-                                z_0_ipoint.z()).get_original_point(),
-                               Point_on_sphere_2(p0_x_diff,
-                                                 p0_y_diff,
-                                                 p0_z_diff).get_original_point()));
-               
+        arcs.push_back(Curve_2(Curve_2_no_data(Point_on_sphere_2
+                                               (z_0_ipoint.x(),
+                                                z_0_ipoint.y(),
+                                                z_0_ipoint.z()).get_original_point(),
+                                               Point_on_sphere_2(p0_x_diff,
+                                                                 p0_y_diff,
+                                                                 p0_z_diff).get_original_point()),
+                               &S3));
+                       
 #if ARR_ON_SUR_DEBUG
         std::cout << "Add arc6 = " <<
-          Curve_2(Point_on_sphere_2(-z_0_ipoint.x(),
+          Curve_2_no_data(Point_on_sphere_2(-z_0_ipoint.x(),
                                     -z_0_ipoint.y(),
                                     -z_0_ipoint.z()).get_original_point(),
                   Point_on_sphere_2(-p1_x_diff,
                                     -p1_y_diff,
                                     -p1_z_diff).get_original_point()) << std::endl;
 #endif            
-        arcs.push_back(Curve_2(Point_on_sphere_2(-z_0_ipoint.x(),
+        arcs.push_back(Curve_2(Curve_2_no_data(Point_on_sphere_2(-z_0_ipoint.x(),
                                                  -z_0_ipoint.y(),
-                                                 -z_0_ipoint.z()).get_original_point(),
-                               Point_on_sphere_2(-p1_x_diff,
-                                                 -p1_y_diff,
-                                                 -p1_z_diff).get_original_point()));
+                                                                 -z_0_ipoint.z()).get_original_point(),
+                                               Point_on_sphere_2(-p1_x_diff,
+                                                                 -p1_y_diff,
+                                                                 -p1_z_diff).get_original_point()),
+                               &S3));
       }
     }
 #endif
@@ -1396,19 +1413,24 @@ private:
     std::cout <<"get_all_arcs_in_positive_unit_square" <<std::endl;
 #endif
          
+
+#if ONE_SWEEP
+    obj.get_all_arcs_in_positive_unit_square(arcs_cont,
+                                             m_isolated_points_on_plane);
+#else
     typename std::list<Rational_arc_2>  arcs;
     obj.get_all_arcs_in_positive_unit_square(arcs,
                                              m_isolated_points_on_plane);
-    
+
 //     typename std::list<Rational_arc_2>::iterator it;
 //     for (it = arcs.begin(); it != arcs.end(); ++it)
 //     {
 // //       insert (*m_arr_on_plane, *it);
 // //       std::cout << *it << std::endl;
 //    }
-    
+   
     insert (*m_arr_on_plane, arcs.begin(), arcs.end());
-
+#endif
     // std::cout << "Arr on plane arrangement size:" 
     //   << "   V = " << m_arr_on_plane->number_of_vertices()
     //   << ",  E = " << m_arr_on_plane->number_of_edges()
@@ -1441,12 +1463,12 @@ private:
      * the bounded segment [0,1].
      */
    
-    m_obs_on_plane->set_last_inserted_segment(&S3,false);
-
+    m_obs_on_plane->set_is_plane(false);
+#if ONE_SWEEP
     m_arr_g_func.get_all_lines_through_point_and_2_lines(*m_S1,
                                                          *m_S2, S3, true /* bound s1 s2*/, qpoint, 
                                                          *m_rat_kernel, m_intersection_point_S1S2,
-                                                         m_isolated_points_on_plane, arcs, false, &ret_end_points, 
+                                                         m_isolated_points_on_plane, arcs_cont, false, &ret_end_points, 
                                                          m_S1_S2_intersect);
 
 //     typename std::list<Rational_arc_2>::iterator it;
@@ -1455,8 +1477,15 @@ private:
 // //       insert (*m_arr_on_plane, *it);
 // //       std::cout << *it << std::endl;
 //     }
+#else
+    m_arr_g_func.get_all_lines_through_point_and_2_lines(*m_S1,
+                                                         *m_S2, S3, true /* bound s1 s2*/, qpoint, 
+                                                         *m_rat_kernel, m_intersection_point_S1S2,
+                                                         m_isolated_points_on_plane, arcs, false, &ret_end_points, 
+                                                         m_S1_S2_intersect);
 
     insert (*m_arr_on_plane, arcs.begin(), arcs.end());
+#endif
   }
 
    /*************************************************************
@@ -1513,6 +1542,27 @@ public:
    **************************************************************/
   void find_all_lines(bool rational_output)
   {   
+#if ONE_SWEEP
+    if (arcs_cont.size() != 0)
+    {
+       typename std::list<Rational_arc_2>::iterator it;
+       // for (it = arcs_cont.begin(); it != arcs_cont.end(); ++it)
+       // {
+       //    std::cout << *it << std::endl;
+       //    std::cout << *(it->data()) << std::endl;
+       // }
+       // std::cout << "Afer insert" << std::endl;
+       
+       // for (it = arcs_cont.begin(); it != arcs_cont.end(); ++it)
+       // {
+       //    std::cout << *it << std::endl;
+       //    std::cout << *(it->data()) << std::endl;
+       // }
+       
+       insert (*m_arr_on_plane, arcs_cont.begin(), arcs_cont.end());
+    }
+#endif
+     
     if (m_S1_S2_on_the_same_line)
     {
       if (m_S1_S2_num_of_common_lines >= 2)

@@ -2531,7 +2531,8 @@ public:
             m_traits_2_adapt.create_segment_on_plane_arr
               (t_arc,
                Rational_point_2(x_coord[0],y_coord[0]),
-               Rational_point_2(x_coord[1],y_coord[1]));
+               Rational_point_2(x_coord[1],y_coord[1]),
+               m_creator_segment);
                      
 #if OBJ_ON_ARR_DEBUG
             std::cout << "Arc = " << t_arc << std::endl;
@@ -2639,7 +2640,8 @@ public:
           m_traits_2_adapt.create_segment_on_plane_arr
             (t_arc,
              Rational_point_2(x_coord[0],y_coord[0]),
-             Rational_point_2(x_coord[1],y_coord[1]));
+             Rational_point_2(x_coord[1],y_coord[1]),
+             m_creator_segment);
                   
 #if OBJ_ON_ARR_DEBUG
           std::cout << "Arc = " << t_arc << std::endl;
@@ -2739,17 +2741,17 @@ public:
         if (!dir_left && !dir_right)
         {
           m_traits_2_adapt.create_horizontal_curve_on_plane_arr
-            (t_arc, m_horizontal_segment_y_coordinate, source, target);
+            (t_arc, m_horizontal_segment_y_coordinate, source, target,m_creator_segment);
         }
         else if (dir_left && dir_right)
         {
           m_traits_2_adapt.create_horizontal_curve_on_plane_arr
-            (t_arc, m_horizontal_segment_y_coordinate);
+             (t_arc, m_horizontal_segment_y_coordinate,m_creator_segment);
         }
         else
         {
           m_traits_2_adapt.create_horizontal_curve_on_plane_arr
-            (t_arc, m_horizontal_segment_y_coordinate, source, dir_right);
+            (t_arc, m_horizontal_segment_y_coordinate, source, dir_right,m_creator_segment);
         }
                
         arcs.push_back (t_arc);
@@ -2818,7 +2820,8 @@ public:
         }
         if (up_valid && down_valid)
         {
-          m_traits_2_adapt.create_segment_on_plane_arr (t_arc, down, up);
+          m_traits_2_adapt.create_segment_on_plane_arr (t_arc, down, up,
+                                                        m_creator_segment);
         }
         else if (up_valid)
         {
@@ -2912,23 +2915,27 @@ public:
           m_traits_2_adapt.create_curve_on_plane_arr(arc,
                                                      (*it).get_min().bound(),
                                                      (*it).get_max().bound(),
-                                                     V);
+                                                     V,
+                                                     m_creator_segment);
         }
         else if ((*it).get_max().is_bound())
         {
           m_traits_2_adapt.create_curve_on_plane_arr(arc,
                                                      (*it).get_max().bound(),
-                                                     false, V);
+                                                     false, V,
+                                                     m_creator_segment);
         }
         else if ((*it).get_min().is_bound())
         {
           m_traits_2_adapt.create_curve_on_plane_arr(arc,
                                                      (*it).get_min().bound(),
-                                                     true, V);
+                                                     true, V,
+                                                     m_creator_segment);
         }
         else
         {
-          m_traits_2_adapt.create_curve_on_plane_arr(arc, V);
+          m_traits_2_adapt.create_curve_on_plane_arr(arc, V,
+                                                     m_creator_segment);
         }
                
                

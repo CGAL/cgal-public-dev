@@ -24,7 +24,7 @@
 #include <CGAL/Arr_conic_traits_2.h>
 #include <CGAL/Arr_spherical_topology_traits_2.h>
 #include <CGAL/Arr_geodesic_arc_on_sphere_traits_2.h>
-
+#include <CGAL/Arr_curve_data_traits_2.h>
 /*! \file
 *************************************************************
 * The following class represents traits for the computation of line through
@@ -57,9 +57,13 @@ public:
   typedef typename Rational_kernel_::FT         Rational_NT;
   typedef Alg_kernel_                           Alg_kernel;
   typedef Rational_kernel_                      Rational_kernel;
-
-  typedef Traits_arr_on_plane_2_                Traits_arr_on_plane_2;
-  typedef Traits_arr_on_sphere_2_               Traits_arr_on_sphere_2;
+  typedef typename Rational_kernel::Segment_3   Rational_segment_3;
+  typedef Traits_arr_on_sphere_2_               Traits_arr_on_sphere_2_no_data;
+      
+  typedef CGAL::Arr_curve_data_traits_2<Traits_arr_on_plane_2_,const Rational_segment_3*>
+  Traits_arr_on_plane_2;
+  typedef CGAL::Arr_curve_data_traits_2<Traits_arr_on_sphere_2_,const Rational_segment_3*>
+  Traits_arr_on_sphere_2;
 private:
             
 };

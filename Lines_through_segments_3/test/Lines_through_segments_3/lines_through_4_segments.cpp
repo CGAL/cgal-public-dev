@@ -1,6 +1,13 @@
 
 #define CGAL_LEDA_VERSION 620
 
+/* Set the required traits */
+#define USE_CONIC_TRAITS 0
+#define USE_RATIONAL_ARC_TRAITS 0
+#define USE_SQRT_TRAITS 1
+#define USE_LAZY 1
+
+
 #include <iostream>
 #include <fstream>
 #include <stdio.h>
@@ -14,9 +21,6 @@
 #include <CGAL/Timer.h>
 
 #define USE_LEDA 0
-/* Set the required traits */
-#define USE_CONIC_TRAITS 1
-#define USE_RATIONAL_ARC_TRAITS 0
 
 /* Only for internal debug purposes may be removed later. */
 #define CGAL_PRINT_COLOR 1
@@ -61,8 +65,7 @@ std::string change_color(int color, const T& value,const Args&... args)
 
 #endif
 
-#include <Arrangement_general_functions.h>
-
+//#include <Arrangement_general_functions.h>
 #define LTS_DRAW_ARR 0
 #define ARR_ON_SUR_DEBUG 0
 #define LINES_DEBUG 0
@@ -70,8 +73,8 @@ std::string change_color(int color, const T& value,const Args&... args)
 #define BOUNDED_SEGMENTS_VECTOR_DEBUG 0
 #define OBSERVER_PRINTS 0
 #define OBJ_ON_ARR_DEBUG 0
-#define CGAL_DEBUG_OUTPUT 1
-#define CGAL_LTS_MEASURE_TIME 0
+#define CGAL_DEBUG_OUTPUT 0
+#define CGAL_LTS_MEASURE_TIME 1
 
 #define PRINT_OUTPUT 0
 #define CGAL_IDENTIFICATION_XY CGAL_X_MINUS_11_Y_7
@@ -82,12 +85,15 @@ std::string change_color(int color, const T& value,const Args&... args)
 #include <CGAL/Arr_conic_traits_2.h>
 #endif
 #if USE_RATIONAL_ARC_TRAITS
-#include <CGAL/Arr_rational_arc_traits_d_1.h>
-#include <CGAL/Arr_vertical_segment_traits.h>
+#include <CGAL/Arr_rational_function_traits_2.h>
 #include <CGAL/Algebraic_kernel_d_1.h>
 #endif
 
-#include <CGAL/Arrangement_2.h>
+#if USE_SQRT_TRAITS
+#include <CGAL/Arr_rational_function_traits_2.h>
+#include <CGAL/Algebraic_kernel_2_1.h>
+#include <CGAL/Lazy_exact_nt.h>
+#endif
 
 #include <CGAL/Arr_spherical_topology_traits_2.h>
 #include <CGAL/Arr_geodesic_arc_on_sphere_traits_2.h>
@@ -114,6 +120,7 @@ typedef leda_integer                                    Integer;
 typedef CGAL::CORE_algebraic_number_traits              Nt_traits;
 typedef Nt_traits::Algebraic                            Algebraic;
 typedef Nt_traits::Rational                             Rational;
+typedef CORE::BigInt                                    Integer;
 #endif
 
 typedef CGAL::Cartesian<Algebraic>                      Alg_kernel;
@@ -132,8 +139,16 @@ typedef boost::false_type With_segments;
 typedef CGAL::Arr_conic_traits_2<Rational_kernel, Alg_kernel, Nt_traits>    Conic_traits_arr_on_plane_2;
 #endif
 #if USE_RATIONAL_ARC_TRAITS
-typedef CGAL::Arr_rational_arc_traits_d_1<Rational_kernel>                  Traits_d_1;
-typedef CGAL::Arr_traits_with_vertical_segments <Traits_d_1>                Rational_arc_arr_traits_arr_on_plane_2;
+typedef CGAL::Algebraic_kernel_d_1<Integer>	  AK1;
+typedef CGAL::Arr_rational_function_traits_2<AK1>                  Rational_arc_arr_traits_arr_on_plane_2;
+#endif
+#if USE_SQRT_TRAITS
+#if USE_LAZY
+typedef CGAL::Algebraic_kernel_2_1<CGAL::Lazy_exact_nt<Rational> >	  AK1;
+#else
+typedef CGAL::Algebraic_kernel_2_1<Rational >	  AK1;
+#endif
+typedef CGAL::Arr_rational_function_traits_2<AK1>                  Rational_arc_arr_traits_arr_on_plane_2;
 #endif
 typedef CGAL::Arr_geodesic_arc_on_sphere_traits_2<Rational_kernel>          Traits_arr_on_sphere_2;
 #if USE_CONIC_TRAITS
@@ -142,7 +157,7 @@ typedef CGAL::Lines_through_segments_traits_3<Alg_kernel,
                                               Conic_traits_arr_on_plane_2,
                                               Traits_arr_on_sphere_2> Lines_through_segs_traits_using_conic_2;
 #endif
-#if USE_RATIONAL_ARC_TRAITS
+#if (USE_RATIONAL_ARC_TRAITS || USE_SQRT_TRAITS)
 typedef CGAL::Lines_through_segments_traits_3<Alg_kernel,
                                               Rational_kernel,
                                               Rational_arc_arr_traits_arr_on_plane_2,
@@ -464,6 +479,9 @@ bool get_all_common_lines(
 // }
    t.stop();
    std::cout << t.time() << std::endl;
+   std::cout << "list size = " << output_list.size() << std::endl;
+   exit(0);
+   
 #endif
    
    typename list<LTS_output_obj>::iterator it_output_list;
@@ -484,7 +502,6 @@ bool get_all_common_lines(
    
    typename Lines_through_segs::Transversal                   transversal;
    typename Lines_through_segs::Transversal_with_segments     *transversalw;
-   
    
    for (it_output_list = output_list.begin(); it_output_list != output_list.end(); it_output_list++)
    {
@@ -800,12 +817,13 @@ int main (int argc,char **args)
    Rational_kernel rat_kernel;
    
 #if USE_CONIC_TRAITS      
-   CGAL::Lines_through_segments_3_with_arrangements<
+   CGAL::Lines_through_segments_3<
    Lines_through_segs_traits_using_conic_2,With_segments> 
       line_through_segs_use_conic(alg_kernel,rat_kernel);
 #endif
-#if USE_RATIONAL_ARC_TRAITS
-   CGAL::Lines_through_segments_3<Lines_through_segs_traits_using_rational_arc_2> 
+#if (USE_RATIONAL_ARC_TRAITS || USE_SQRT_TRAITS)
+   CGAL::Lines_through_segments_3<
+      Lines_through_segs_traits_using_rational_arc_2,With_segments> 
       line_through_segs_use_rat_arc(alg_kernel,rat_kernel);
 #endif
 
@@ -831,7 +849,7 @@ int main (int argc,char **args)
                            expected_num_of_arr_arcs,
                            expected_num_of_overlap_seg_3);
 #endif
-#if USE_RATIONAL_ARC_TRAITS
+#if (USE_RATIONAL_ARC_TRAITS || USE_SQRT_TRAITS)
       run_all_permutations(line_through_segs_use_rat_arc,
                            lines, arr, lines.size(), 0,
                            true,
@@ -876,7 +894,7 @@ int main (int argc,char **args)
       expected_num_of_arr_arcs_flip,
       expected_num_of_overlap_seg_3_flip);
 #endif
-#if USE_RATIONAL_ARC_TRAITS
+#if (USE_RATIONAL_ARC_TRAITS || USE_SQRT_TRAITS)
       flip(line_through_segs_use_rat_arc,lines,
       expected_num_of_lines,
       expected_num_of_arr_curves,
@@ -913,14 +931,14 @@ int main (int argc,char **args)
                            expected_num_of_arr_arcs,
                            expected_num_of_overlap_seg_3);
 #endif
-      std::cout << "Num of lines = " << expected_num_of_lines << std::endl;
-      std::cout << "Num of curves = " << expected_num_of_arr_curves << std::endl;
-      std::cout << "Num of polygons = " << expected_num_of_arr_polygons << std::endl;
-      std::cout << "Num of overlap segs = " << expected_num_of_overlap_seg_3 << std::endl;
-      std::cout << "Num of points = " << expected_num_of_point_3 << std::endl;
-      std::cout << "Num of arcs = " << expected_num_of_arr_arcs << std::endl;
+      // std::cout << "Num of lines = " << expected_num_of_lines << std::endl;
+      // std::cout << "Num of curves = " << expected_num_of_arr_curves << std::endl;
+      // std::cout << "Num of polygons = " << expected_num_of_arr_polygons << std::endl;
+      // std::cout << "Num of overlap segs = " << expected_num_of_overlap_seg_3 << std::endl;
+      // std::cout << "Num of points = " << expected_num_of_point_3 << std::endl;
+      // std::cout << "Num of arcs = " << expected_num_of_arr_arcs << std::endl;
 
-#if USE_RATIONAL_ARC_TRAITS
+#if (USE_RATIONAL_ARC_TRAITS || USE_SQRT_TRAITS)
       expected_num_of_lines = -1;
       expected_num_of_arr_curves = -1;
       expected_num_of_arr_polygons = -1;
@@ -937,12 +955,12 @@ int main (int argc,char **args)
                            expected_num_of_overlap_seg_3);
 #endif
      
-      std::cout << "Num of lines = " << expected_num_of_lines << std::endl;
-      std::cout << "Num of curves = " << expected_num_of_arr_curves << std::endl;
-      std::cout << "Num of polygons = " << expected_num_of_arr_polygons << std::endl;
-      std::cout << "Num of overlap segs = " << expected_num_of_overlap_seg_3 << std::endl;
-      std::cout << "Num of points = " << expected_num_of_point_3 << std::endl;
-      std::cout << "Num of arcs = " << expected_num_of_arr_arcs << std::endl;
+      // std::cout << "Num of lines = " << expected_num_of_lines << std::endl;
+      // std::cout << "Num of curves = " << expected_num_of_arr_curves << std::endl;
+      // std::cout << "Num of polygons = " << expected_num_of_arr_polygons << std::endl;
+      // std::cout << "Num of overlap segs = " << expected_num_of_overlap_seg_3 << std::endl;
+      // std::cout << "Num of points = " << expected_num_of_point_3 << std::endl;
+      // std::cout << "Num of arcs = " << expected_num_of_arr_arcs << std::endl;
 
    }
       
@@ -1015,3 +1033,19 @@ int main (int argc,char **args)
    return 0;
 }
 #endif
+// {0*x^2 + 0*y^2 + -690*xy + 650*x + 480*y + -433} : (0.6435,0.409195) --cw--> (0.666154,0)
+// 1 1 1 5 5 5
+// {0*x^2 + 0*y^2 + -690*xy + 650*x + 480*y + -433} : (0.538914,0.764738) --cw--> (0.666154,0)
+// 3 3 3 7 7 7
+// before_create_edge
+// c = {0*x^2 + 0*y^2 + -690*xy + 650*x + 480*y + -433} : (0.538914,0.764738) --cw--> (0.6435,0.409195)
+// c.data() = 0x11050a8
+// m_last_inserted_segment = 3 3 3 7 7 7
+// after_create_edge
+// curve = ({0*x^2 + 0*y^2 + -690*xy + 650*x + 480*y + -433} : (0.538914,0.764738) --cw--> (0.6435,0.409195))
+// before_create_edge
+// c = {0*x^2 + 0*y^2 + -690*xy + 650*x + 480*y + -433} : (0.6435,0.409195) --cw--> (0.666154,0)
+// c.data() = 0x11050a8
+// m_last_inserted_segment = 3 3 3 7 7 7
+// after_create_edge
+// curve = ({0*x^2 + 0*y^2 + -690*xy + 650*x + 480*y + -433} : (0.6435,0.409195) --cw--> (0.666154,0))

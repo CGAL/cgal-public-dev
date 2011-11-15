@@ -26,7 +26,6 @@
  * arrangement traits classes.
  * Currently, Conic and algebraic traits classes are supported.
  */
-
 #include <CGAL/Algebraic_structure_traits.h>
 #include <CGAL/Lines_through_segments_traits_3.h>
 #include <CGAL/predicates_on_points_2.h>
@@ -35,10 +34,13 @@
 #include <CGAL/Arr_conic_traits_2.h>
 #include <CGAL/Arr_rational_function_traits_2.h>
 #include <CGAL/Algebraic_kernel_d_1.h>
+#if USE_SQRT_TRAITS
 #include <CGAL/Algebraic_kernel_2_1.h>
+#include <CGAL/Lazy_exact_nt.h>
+#endif
 #include <CGAL/Root_of_traits.h>
 
-#define LTS_SQRT 0
+
 namespace CGAL {
    
 template <typename Traits_3_>
@@ -63,29 +65,40 @@ private:
   /* Specific typedefs for conic arc traits. */
   typedef CGAL::CORE_algebraic_number_traits            Nt_traits;
   typedef CGAL::Arr_conic_traits_2<Rational_kernel, Alg_kernel, Nt_traits> 
-    Conic_traits_arr_on_plane_2;
+    Conic_traits_arr_on_plane_2_;
+   typedef CGAL::Arr_curve_data_traits_2<Conic_traits_arr_on_plane_2_,const Rational_segment_3*>
+  Conic_traits_arr_on_plane_2;
+
   typedef typename Conic_traits_arr_on_plane_2::Point_2 Conic_point_2;
-  typedef typename Conic_traits_arr_on_plane_2::Curve_2 Conic_curve_2;
+  typedef typename Conic_traits_arr_on_plane_2::Curve_2 Conic_curve_2_wd;
+   typedef typename Conic_traits_arr_on_plane_2_::Curve_2 Conic_curve_2;
   typedef typename Conic_traits_arr_on_plane_2::X_monotone_curve_2
     Conic_x_monotone_curve_2;
   
   /* Specific typedefs for Rational arc traits . */
-#if LTS_SQRT
-   typedef CGAL::Algebraic_kernel_2_1<Integer>	   AK1;
-   typedef Root_of_traits<Integer>                ROT;
-   typedef typename  ROT::Root_of_2               Sqrt_ext;
+#if USE_SQRT_TRAITS
+#if USE_LAZY
+   typedef CGAL::Algebraic_kernel_2_1<CGAL::Lazy_exact_nt<Rational> >	   AK1;
+#else
+   typedef CGAL::Algebraic_kernel_2_1<Rational >	   AK1;
+#endif
+   typedef typename  AK1::Algebraic_real_1                                 Sqrt_ext;
 #else
    typedef CGAL::Algebraic_kernel_d_1<Integer>	  AK1;
 #endif
 
-   typedef CGAL::Arr_rational_function_traits_2<AK1>  Rational_arc_traits_arr_on_plane_2;
+  typedef CGAL::Arr_rational_function_traits_2<AK1>  Rational_arc_traits_arr_on_plane_2_;
+  typedef CGAL::Arr_curve_data_traits_2<Rational_arc_traits_arr_on_plane_2_,const Rational_segment_3*>
+  Rational_arc_traits_arr_on_plane_2;
    
   typedef typename Rational_arc_traits_arr_on_plane_2::Point_2
                                                         Rational_arc_point_2;
   typedef typename Rational_arc_traits_arr_on_plane_2::X_monotone_curve_2
     Rational_arc_x_monotone_curve_2;
-  typedef typename Rational_arc_traits_arr_on_plane_2::Curve_2
+  typedef typename Rational_arc_traits_arr_on_plane_2_::Curve_2
                                                         Rational_arc_curve_2;
+  typedef typename Rational_arc_traits_arr_on_plane_2::Curve_2
+  Rational_arc_curve_2_wd;
 
   typedef CORE::Polynomial<Rational>                    Polynomial;
   typedef typename CORE::BigFloat                       CORE_big_float;
@@ -107,7 +120,7 @@ public:
    *      CGAL::COLLINEAR or CGAL::COUNTERCLOCKWISE or CGAL::CLOCKWISE
    ***************************************************************/
 
-  CGAL::Orientation orientation(const Conic_curve_2& curve,
+  CGAL::Orientation orientation(const Conic_curve_2_wd& curve,
                                 const Alg_kernel* ker)
   {
     return this->orientation_conic_traits(curve,ker);
@@ -133,7 +146,7 @@ public:
     return this->orientation_rational_arc_traits(curve,ker);
   }
       
-  CGAL::Orientation orientation(const Rational_arc_curve_2& curve,
+  CGAL::Orientation orientation(const Rational_arc_curve_2_wd& curve,
                                 const Alg_kernel* ker)
   {
     return this->orientation_rational_arc_traits(curve,ker);
@@ -178,7 +191,7 @@ public:
    ***************************************************************/
 
   template <typename Point_2>
-  void get_mid_point(const Conic_curve_2& curve, Point_2& output_p)
+  void get_mid_point(const Conic_curve_2_wd& curve, Point_2& output_p)
   {
     return get_mid_point_conic_traits(curve,output_p);
   }
@@ -216,7 +229,7 @@ public:
 
 
   template <typename Point_2>
-  void get_mid_point(const Rational_arc_curve_2& curve, Point_2& output_p)
+  void get_mid_point(const Rational_arc_curve_2_wd& curve, Point_2& output_p)
   {
     return get_mid_point_rational_arc_traits(curve,output_p);
   }
@@ -259,7 +272,7 @@ public:
    ***************************************************************/
 
   template <typename Number_type>
-  Algebraic get_y_val(const Conic_curve_2& curve, const Number_type& x)
+  Algebraic get_y_val(const Conic_curve_2_wd& curve, const Number_type& x)
   {
     return get_y_val_conic_traits(curve,x);
   }
@@ -308,13 +321,13 @@ public:
 
 
   template <typename Number_type>
-  Algebraic get_y_val(const Rational_arc_curve_2& curve,
+  Algebraic get_y_val(const Rational_arc_curve_2_wd& curve,
                       const Number_type& x)
   {
     return get_y_val_rational_arc_traits(curve,x);
   }
 
-  Rational get_x_val(const Conic_curve_2& curve,
+  Rational get_x_val(const Conic_curve_2_wd& curve,
                      const Rational& y)
   {
      return (-curve.w() - curve.v() * y) / 
@@ -349,7 +362,7 @@ public:
     return get_x_val_rational_arc_traits(curve,y);
   }
            
-  Rational get_x_val(const Rational_arc_curve_2& curve,
+  Rational get_x_val(const Rational_arc_curve_2_wd& curve,
                      const Rational& y)
   {
     return get_x_val_rational_arc_traits(curve,y);
@@ -433,23 +446,26 @@ public:
    *
    ***************************************************************/
 
-  void create_segment_on_plane_arr(Conic_curve_2& cv, 
+  void create_segment_on_plane_arr(Conic_curve_2_wd& cv, 
                                    const Rational_point_2& source,
-                                   const Rational_point_2& target)
+                                   const Rational_point_2& target,
+                                   const Rational_segment_3* data)
   {
-    cv = Conic_curve_2(Rational_segment_2(source, target));
+     cv = Conic_curve_2_wd(Conic_curve_2(Rational_segment_2(source, target)),data);
   }
 
-  void create_segment_on_plane_arr(Rational_arc_curve_2& cv, 
+  void create_segment_on_plane_arr(Rational_arc_curve_2_wd& cv, 
                                    const Rational_arc_point_2& source,
-                                   const Rational_arc_point_2& target)
+                                   const Rational_arc_point_2& target,
+                                   const Rational_segment_3* data)
   {
     cv = Rational_arc_curve_2(source, target);
   }
 
-  void create_segment_on_plane_arr(Rational_arc_curve_2& cv, 
+  void create_segment_on_plane_arr(Rational_arc_curve_2_wd& cv, 
                                    const Rational_point_2& source,
-                                   const Rational_point_2& target)
+                                   const Rational_point_2& target,
+                                   const Rational_segment_3* data)
   {
     std::vector<Rational>        P (2);
     Rational_arc_traits_arr_on_plane_2 traits_2;
@@ -496,10 +512,11 @@ public:
    *
    ***************************************************************/
 
-  void create_curve_on_plane_arr(Conic_curve_2& cv,
+  void create_curve_on_plane_arr(Conic_curve_2_wd& cv,
                                  const Rational& source_x,
                                  const Rational& target_x,
-                                 const Rational coefficients[4])
+                                 const Rational coefficients[4],
+                                 const Rational_segment_3* data)
          
   {
     CGAL_assertion((target_x * coefficients[3] + coefficients[1]) != 
@@ -518,14 +535,15 @@ public:
     Conic_point_2 a_source(source.x(), source.y());
     Conic_point_2 a_target(target.x(), target.y());
         
-    create_curve_on_plane_arr(cv, a_source, a_target, coefficients);
+    create_curve_on_plane_arr(cv, a_source, a_target, coefficients, data);
   }
          
 private:
-  void create_curve_on_plane_arr(Conic_curve_2& cv,
+  void create_curve_on_plane_arr(Conic_curve_2_wd& cv,
                                  const Conic_point_2& a_source,
                                  const Conic_point_2& a_target,
-                                 const Rational coefficients[4])
+                                 const Rational coefficients[4],
+                                 const Rational_segment_3* data)
          
   {      
     Algebraic mid_point_y = (a_target.y() + a_source.y())/2;
@@ -536,32 +554,36 @@ private:
          
     if (mid_point_y < mid_point_on_hyp_y)
     {
-      cv = Conic_curve_2(Rational(0), Rational(0),
-                         coefficients[3], coefficients[2],
-                         coefficients[1], coefficients[0],
-                         CGAL::CLOCKWISE, a_source, a_target);
+       cv = Conic_curve_2_wd(Conic_curve_2(Rational(0), Rational(0),
+                                           coefficients[3], coefficients[2],
+                                           coefficients[1], coefficients[0],
+                                           CGAL::CLOCKWISE, a_source, a_target),
+                             data);
     }
     else if (mid_point_y > mid_point_on_hyp_y)
     {
-      cv = Conic_curve_2(Rational(0), Rational(0),
-                         coefficients[3], coefficients[2],
-                         coefficients[1], coefficients[0],
-                         CGAL::COUNTERCLOCKWISE, a_source, a_target);
+      cv = Conic_curve_2_wd(Conic_curve_2(Rational(0), Rational(0),
+                                          coefficients[3], coefficients[2],
+                                          coefficients[1], coefficients[0],
+                                          CGAL::COUNTERCLOCKWISE, a_source, a_target),
+                            data);
     }
     else
     {
-      cv = Conic_curve_2(Rational(0), Rational(0),
-                         coefficients[3], coefficients[2],
-                         coefficients[1], coefficients[0],
-                         CGAL::COLLINEAR, a_source, a_target);
+       cv = Conic_curve_2_wd(Conic_curve_2(Rational(0), Rational(0),
+                                           coefficients[3], coefficients[2],
+                                           coefficients[1], coefficients[0],
+                                           CGAL::COLLINEAR, a_source, a_target),
+                             data);
     }
   }
       
 public:
-  void create_curve_on_plane_arr(Rational_arc_curve_2& cv,
+  void create_curve_on_plane_arr(Rational_arc_curve_2_wd& cv,
                                  const Rational& source_x,
                                  const Rational& target_x,
-                                 const Rational coefficients[4])
+                                 const Rational coefficients[4],
+                                 const Rational_segment_3* data)
   {
     std::vector<Rational>        P2(2);
     P2[0] = -coefficients[0];
@@ -575,12 +597,14 @@ public:
     Algebraic_real_1 xt(target_x);
 
     Rational_arc_traits_arr_on_plane_2 traits_2;
-    cv = traits_2.construct_curve_2_object()(P2.begin(), P2.end(), Q2.begin(), Q2.end(), xs, xt);
+    cv = Rational_arc_curve_2_wd(
+       traits_2.construct_curve_2_object()(P2.begin(), P2.end(), Q2.begin(), Q2.end(), xs, xt),
+       data);
 //    cv = Rational_arc_curve_2(P2, Q2,xs,xt);
   }
   
   template <typename NT1, typename NT2>
-  void create_curve_on_plane_arr(Rational_arc_curve_2& new_cv,
+  void create_curve_on_plane_arr(Rational_arc_curve_2_wd& new_cv,
                                  const NT1& source_x,
                                  const NT2& target_x,
                                  const Rational_arc_curve_2& old_cv)
@@ -628,7 +652,7 @@ public:
 //    new_cv = Rational_arc_curve_2(P2, Q2,xs,xt);
   }
 
-  bool is_vertical(const Rational_arc_curve_2& arc)
+  bool is_vertical(const Rational_arc_curve_2_wd& arc)
   {
     return (// arc.source_infinite_in_x() == CGAL::ARR_INTERIOR &&//TODO vertical
             // arc.target_infinite_in_x() == CGAL::ARR_INTERIOR &&
@@ -649,7 +673,7 @@ public:
      return (curve.t() == 0 && curve.v() == 0);
   }
          
-  void create_curve_on_plane_arr(Rational_arc_curve_2& new_cv,
+  void create_curve_on_plane_arr(Rational_arc_curve_2_wd& new_cv,
                                  const Rational_arc_x_monotone_curve_2& old_cv)
   {
     typename Rational_arc_traits_arr_on_plane_2::Is_vertical_2 is_ver_obj;
@@ -684,10 +708,11 @@ public:
     // new_cv = Rational_arc_curve_2(P2, Q2, xs, xt);
   }
 
-  void create_curve_on_plane_arr(Rational_arc_curve_2& cv,
+  void create_curve_on_plane_arr(Rational_arc_curve_2_wd& cv,
                                  const Rational& source_x,
                                  bool dir_right,
-                                 const Rational coefficients[4])
+                                 const Rational coefficients[4],
+                                 const Rational_segment_3* data)
   {
     std::vector<Rational>        P2(2);
     P2[0] = -coefficients[0];
@@ -699,12 +724,15 @@ public:
        
     Algebraic_real_1 xs(source_x);
     Rational_arc_traits_arr_on_plane_2 traits_2;
-    cv = traits_2.construct_curve_2_object()(P2.begin(), P2.end(), Q2.begin(), Q2.end(), xs, dir_right);
+    cv = Rational_arc_curve_2_wd(
+       traits_2.construct_curve_2_object()(P2.begin(), P2.end(), Q2.begin(), Q2.end(), xs, dir_right),
+       data);
 //    cv = Rational_arc_curve_2(P2, Q2,xs,dir_right);
   }
 
-  void create_curve_on_plane_arr(Rational_arc_curve_2& cv,
-                                 const Rational coefficients[4])
+  void create_curve_on_plane_arr(Rational_arc_curve_2_wd& cv,
+                                 const Rational coefficients[4],
+                                 const Rational_segment_3* data)
   {
     std::vector<Rational>        P2(2);
     P2[0] = -coefficients[0];
@@ -714,11 +742,13 @@ public:
     Q2[0] = coefficients[1];
     Q2[1] = coefficients[3];
     Rational_arc_traits_arr_on_plane_2 traits_2;
-    cv = traits_2.construct_curve_2_object()(P2.begin(), P2.end(), Q2.begin(), Q2.end());
+    cv = Rational_arc_curve_2_wd(
+       traits_2.construct_curve_2_object()(P2.begin(), P2.end(), Q2.begin(), Q2.end()),
+       data);
 //    cv = Rational_arc_curve_2(P2, Q2);
   }
 
-  void create_vertical_segment_on_plane_arr(Rational_arc_curve_2& cv, 
+  void create_vertical_segment_on_plane_arr(Rational_arc_curve_2_wd& cv, 
                                             const Rational_point_2& source)
   {
 //     Rational_arc_traits_arr_on_plane_2 traits_2;
@@ -729,7 +759,7 @@ public:
 //    cv = Rational_arc_curve_2(Rational_arc_point_2(source.x(),source.y()));TODO TODO TODO //asafp asaf
   }
 
-  void create_vertical_segment_on_plane_arr(Rational_arc_curve_2& cv,
+  void create_vertical_segment_on_plane_arr(Rational_arc_curve_2_wd& cv,
                                             const Rational_point_2& source,
                                             bool is_dir_up)
   {
@@ -742,33 +772,35 @@ public:
     //                           is_dir_up); TODO TODO TODO //asafp asaf
   }
 
-  void create_vertical_segment_on_plane_arr(Conic_curve_2& cv, 
+  void create_vertical_segment_on_plane_arr(Conic_curve_2_wd& cv, 
                                             const Rational_point_2& source)
   {
     CGAL_error_msg("Conic arc traits do not support infinite vertical line.");
   }
 
-  void create_vertical_segment_on_plane_arr(Conic_curve_2& cv,
+  void create_vertical_segment_on_plane_arr(Conic_curve_2_wd& cv,
                                             const Rational_point_2& source,
                                             bool is_dir_up)
   {
     CGAL_error_msg("Conic arc traits do not support infinite vertical line.");
   }
 
-  void create_horizontal_curve_on_plane_arr(Rational_arc_curve_2& cv,
+  void create_horizontal_curve_on_plane_arr(Rational_arc_curve_2_wd& cv,
                                             const Rational& S2_t,
                                             const Rational& source_x,
-                                            bool dir_right)
+                                            bool dir_right,
+                                            const Rational_segment_3* data)
   {
-    create_horizontal_curve_on_plane_arr_pr(cv,S2_t,source_x,dir_right);
+     create_horizontal_curve_on_plane_arr_pr(cv,S2_t,source_x,dir_right, data);
   }
 
   void create_horizontal_curve_on_plane_arr_pr(Rational_arc_x_monotone_curve_2& cv,
                                                const Rational& S2_t,
                                                const Rational& source_x,
-                                               bool dir_right)
+                                               bool dir_right,
+                                               const Rational_segment_3* data)
   {
-    create_horizontal_curve_on_plane_arr_pr(cv,S2_t,source_x,dir_right);
+     create_horizontal_curve_on_plane_arr_pr(cv,S2_t,source_x,dir_right, data);
   }
          
 private:
@@ -776,7 +808,8 @@ private:
   void create_horizontal_curve_on_plane_arr_pr(Curve_2& cv,
                                                const Rational& S2_t,
                                                const Rational& source_x,
-                                               bool dir_right)
+                                               bool dir_right,
+                                               const Rational_segment_3* data)
   {
     std::vector<Rational> P2(1);
     P2[0] = S2_t;
@@ -786,26 +819,31 @@ private:
 
     Algebraic_real_1 xs(source_x);
     Rational_arc_traits_arr_on_plane_2 traits_2;
-    cv = traits_2.construct_curve_2_object()(P2.begin(), P2.end(), Q2.begin(), Q2.end(), xs, dir_right);
+    cv = Curve_2(
+       traits_2.construct_curve_2_object()(P2.begin(), P2.end(), Q2.begin(), Q2.end(), xs, dir_right),
+       data);
 //    cv = Rational_arc_curve_2(P2, Q2,xs,dir_right); 
   }
 public:
-  void create_horizontal_curve_on_plane_arr(Rational_arc_curve_2& cv,
-                                            const Rational& S2_t)
+  void create_horizontal_curve_on_plane_arr(Rational_arc_curve_2_wd& cv,
+                                            const Rational& S2_t,
+                                            const Rational_segment_3* data)
   {
-    create_horizontal_curve_on_plane_arr_pr(cv,S2_t);
+     create_horizontal_curve_on_plane_arr_pr(cv,S2_t, data);
   }
 
   void create_horizontal_curve_on_plane_arr(Rational_arc_x_monotone_curve_2& cv,
-                                            const Rational& S2_t)
+                                            const Rational& S2_t,
+                                            const Rational_segment_3* data)
   {
-    create_horizontal_curve_on_plane_arr_pr(cv,S2_t);
+     create_horizontal_curve_on_plane_arr_pr(cv,S2_t, data);
   }
 
 private:
   template <typename Curve_2>
   void create_horizontal_curve_on_plane_arr_pr(Curve_2& cv,
-                                               const Rational& S2_t)
+                                               const Rational& S2_t,
+                                               const Rational_segment_3* data)
   {
     std::vector<Rational>        P2(1);
     P2[0] = S2_t;
@@ -813,15 +851,17 @@ private:
     std::vector<Rational>        Q2(1);
     Q2[0] = Rational(1);
     Rational_arc_traits_arr_on_plane_2 traits_2;
-    cv = traits_2.construct_curve_2_object()(P2.begin(), P2.end(), Q2.begin(), Q2.end());
+    cv = Curve_2(traits_2.construct_curve_2_object()(P2.begin(), P2.end(), Q2.begin(), Q2.end()),
+                 data);
 //    cv = Rational_arc_curve_2(P2, Q2);
   }
 public:
   template <typename NT1, typename NT2>
-  void create_horizontal_curve_on_plane_arr(Rational_arc_curve_2& cv,
+  void create_horizontal_curve_on_plane_arr(Rational_arc_curve_2_wd& cv,
                                             const Rational& S2_t,
                                             const NT1& source_x,
-                                            const NT2& target_x)
+                                            const NT2& target_x,
+                                            const Rational_segment_3* data)
   {
     std::vector<Rational>        P2(1);
     P2[0] = S2_t;
@@ -833,11 +873,13 @@ public:
     Algebraic_real_1 xs(source_x);
     Algebraic_real_1 xt(target_x);
     Rational_arc_traits_arr_on_plane_2 traits_2;
-    cv = traits_2.construct_curve_2_object()(P2.begin(), P2.end(), Q2.begin(), Q2.end(), xs, xt);
+    cv = Rational_arc_curve_2_wd(
+       traits_2.construct_curve_2_object()(P2.begin(), P2.end(), Q2.begin(), Q2.end(), xs, xt),
+       data);
 //    cv = Rational_arc_curve_2(P2, Q2, xs, xt);
   }
 
-  bool is_horizontal(const Rational_arc_curve_2& curve)
+  bool is_horizontal(const Rational_arc_curve_2_wd& curve)
   {
     const int    deg_p (CGAL::degree(curve.numerator()));
     const int    deg_q (CGAL::degree(curve.denominator()));
@@ -882,13 +924,13 @@ public:
      return ((curve.t() * y + curve.u()) != 0);
   }
 
-  bool has_x_value_at_y(const Conic_curve_2& curve,
+  bool has_x_value_at_y(const Conic_curve_2_wd& curve,
                         const Rational& y)
   {
      return ((curve.t() * y + curve.u()) != 0);
   }
    
-  bool is_horizontal(const Conic_curve_2& curve)
+  bool is_horizontal(const Conic_curve_2_wd& curve)
   {
      return (curve.t() == 0 && curve.u() == 0); /* Horizontal line segment*/
   }
@@ -898,7 +940,7 @@ public:
      return (curve.t() == 0 && curve.u() == 0); /* Horizontal line segment*/
   }
 
-  Rational get_y_val_of_horizontal_curve(const Conic_curve_2& curve)
+  Rational get_y_val_of_horizontal_curve(const Conic_curve_2_wd& curve)
   {
      CGAL_assertion(is_horizontal(curve));
      return (-curve.w()/
@@ -934,28 +976,31 @@ public:
    ***************************************************************/
 public:
 
-  void create_curve_on_plane_arr(Conic_curve_2& cv,
-                                 const Rational coefficients[4])
+  void create_curve_on_plane_arr(Conic_curve_2_wd& cv,
+                                 const Rational coefficients[4],
+                                 const Rational_segment_3* data)
   {
     CGAL_error_msg("Unbounded arcs are not supported with the conic traits");
   }
 
-  void create_curve_on_plane_arr(Conic_curve_2& cv,
+  void create_curve_on_plane_arr(Conic_curve_2_wd& cv,
                                  const Rational_point_2 point_1,
                                  const Rational_point_2 point_2,
                                  const Rational_point_2 point_3,
                                  const Rational_point_2 point_4,
-                                 const Rational_point_2 point_5)
+                                 const Rational_point_2 point_5,
+                                 const Rational_segment_3* data)
   {
-    cv = Conic_curve_2(point_1, point_2, point_3, point_4, point_5);
+     cv = Conic_curve_2_wd(Conic_curve_2(point_1, point_2, point_3, point_4, point_5),data);
   }
       
-  void create_curve_on_plane_arr(Rational_arc_curve_2& cv,
+  void create_curve_on_plane_arr(Rational_arc_curve_2_wd& cv,
                                  const Rational_point_2 point_1,
                                  const Rational_point_2 point_2,
                                  const Rational_point_2 point_3,
                                  const Rational_point_2 point_4,
-                                 const Rational_point_2 point_5)
+                                 const Rational_point_2 point_5,
+                                 const Rational_segment_3* data)
   {
     typename Rational_kernel::Conic_2   temp_conic;
     Rational                       coefficients [4];
@@ -976,10 +1021,10 @@ public:
     coefficients[1] = temp_conic.v();
     coefficients[0] = temp_conic.w();
          
-    create_curve_on_plane_arr(cv, point_1.x(), point_5.x(), coefficients);
+    create_curve_on_plane_arr(cv, point_1.x(), point_5.x(), coefficients, data);
   }
 
-  void create_horizontal_curve_on_plane_arr(Conic_curve_2& cv,
+  void create_horizontal_curve_on_plane_arr(Conic_curve_2_wd& cv,
                                             const Rational& S2_t,
                                             const Rational& source_x,
                                             bool dir_right)
@@ -987,21 +1032,23 @@ public:
     CGAL_error_msg("Unbounded arcs are not supported with the conic traits");
   }
 
-  void create_horizontal_curve_on_plane_arr(Conic_curve_2& cv,
-                                            const Rational& S2_t)
+  void create_horizontal_curve_on_plane_arr(Conic_curve_2_wd& cv,
+                                            const Rational& S2_t,
+                                            const Rational_segment_3* data)
   {
     CGAL_error_msg("Unbounded arcs are not supported with the conic traits");
   }
       
-  void create_horizontal_curve_on_plane_arr(Conic_curve_2& cv,
+  void create_horizontal_curve_on_plane_arr(Conic_curve_2_wd& cv,
                                             const Rational& S2_t,
                                             const Rational& source_x,
-                                            const Rational& target_x)
+                                            const Rational& target_x,
+                                            const Rational_segment_3* data)
   {
     Rational_point_2 p1(source_x, S2_t);
     Rational_point_2 p2(target_x, S2_t);
        
-    create_segment_on_plane_arr(cv,p1,p2);
+    create_segment_on_plane_arr(cv,p1,p2, data);
   }
 
   /**************************************************************
@@ -1033,25 +1080,26 @@ public:
 private:
   Polynomial convert_polynomial(const Polynomial_1 poly) const
   {
-    const int    d = CGAL::degree(poly);
-    Rational* coeffs = new Rational[d+1];
+    // const int    d = CGAL::degree(poly);
+    // Rational* coeffs = new Rational[d+1];
     Polynomial core_poly;
-    for (int ii = 0 ; ii <= d; ++ii)
-    {
-      coeffs[ii] = CGAL::get_coefficient(poly,ii);
-    }
+    // for (int ii = 0 ; ii <= d; ++ii)
+    // {
+    //   coeffs[ii] = CGAL::get_coefficient(poly,ii);
+    // }
 
-    core_poly = Polynomial (d,coeffs);
+    // core_poly = Polynomial (d,coeffs);
          
     return core_poly;
   }
 
 public:
-#if LTS_SQRT
+#if USE_SQRT_TRAITS
   Algebraic convert_real_to_algebraic(const Sqrt_ext& r)  const
   {    
-     return Algebraic (CGAL::Coercion_traits<Sqrt_ext,
-                                             CORE::Expr>::Cast()(r));
+     typename CGAL::Coercion_traits<Sqrt_ext, CORE::Expr>::Cast cast;
+     
+     return cast(r);
   }
 
   template <typename Point_2,typename Number_type>
@@ -1121,8 +1169,12 @@ private:
   typedef CORE::BigInt                                  Integer;
   typedef typename Traits_3::Rational_kernel            Rational_kernel;
    typedef typename Rational_kernel::FT                 Rational;
-#if LTS_SQRT
-   typedef CGAL::Algebraic_kernel_2_1<Integer>	   AK1;
+#if USE_SQRT_TRAITS
+#if USE_LAZY
+   typedef CGAL::Algebraic_kernel_2_1<CGAL::Lazy_exact_nt<Rational> >	   AK1;
+#else
+   typedef CGAL::Algebraic_kernel_2_1<Rational >	   AK1;
+#endif
 #else
    typedef CGAL::Algebraic_kernel_d_1<Integer>	   AK1;
 #endif

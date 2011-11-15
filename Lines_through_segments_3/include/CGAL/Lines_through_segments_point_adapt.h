@@ -26,7 +26,7 @@
 #include <CGAL/Arr_rational_function_traits_2.h>
 #include <CGAL/Algebraic_kernel_d_1.h>
 #include <CGAL/Algebraic_kernel_2_1.h>
-
+#include <CGAL/Lazy_exact_nt.h>
 /*! \file
  *
  * This class adapts the representation of Point_2 at the algebraic traits.
@@ -58,17 +58,30 @@ private:
   typedef Lines_through_segments_point_adapt_2          Self;
   
   typedef typename Traits_3::Rational_kernel            Rational_kernel;
+  typedef typename Rational_kernel::Segment_3           Rational_segment_3;
+   
   typedef typename Traits_3::Alg_kernel                 Alg_kernel;
       
   /* Specific typedefs for conic arc traits. */
   typedef CGAL::CORE_algebraic_number_traits            Nt_traits;
-  typedef CGAL::Arr_conic_traits_2<Rational_kernel, Alg_kernel, Nt_traits>
-    Conic_traits_arr_on_plane_2;
-   typedef CORE::BigInt                                  Integer;
+  typedef CGAL::Arr_conic_traits_2<Rational_kernel, Alg_kernel, Nt_traits> 
+  Conic_traits_arr_on_plane_2_;
+  typedef CGAL::Arr_curve_data_traits_2<Conic_traits_arr_on_plane_2_,Rational_segment_3*>
+  Conic_traits_arr_on_plane_2;
+  typedef CORE::BigInt                                  Integer;
    /* Specific typedefs for Rational arc traits . */
-   typedef CGAL::Algebraic_kernel_d_1<Integer>	   AK1;//changed from d_1
-   
-   typedef CGAL::Arr_rational_function_traits_2<AK1>  Rational_arc_traits_arr_on_plane_2;
+#if USE_SQRT_TRAITS
+#if USE_LAZY
+   typedef CGAL::Algebraic_kernel_2_1<CGAL::Lazy_exact_nt<Rational> >	   AK1;
+#else
+   typedef CGAL::Algebraic_kernel_2_1<Rational >	   AK1;
+#endif
+#else
+  typedef CGAL::Algebraic_kernel_d_1<Integer>	   AK1;
+#endif
+  typedef CGAL::Arr_rational_function_traits_2<AK1>  Rational_arc_traits_arr_on_plane_2_;
+  typedef CGAL::Arr_curve_data_traits_2<Rational_arc_traits_arr_on_plane_2_,Rational_segment_3*>
+  Rational_arc_traits_arr_on_plane_2;
    
   typedef typename Rational_kernel::Point_2         Rational_point_2;
 

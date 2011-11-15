@@ -340,7 +340,8 @@ private:
                                                  Rational_point_2(Rational(0),
                                                                   Rational(0)),
                                                  Rational_point_2(Rational(0),
-                                                                  Rational(1)));
+                                                                  Rational(1)),
+                                                 &S3);
     arcs_to_insert.push_back(arc);
          
 
@@ -348,7 +349,8 @@ private:
                                                  Rational_point_2(Rational(0),
                                                                   Rational(1)),
                                                  Rational_point_2(Rational(1),
-                                                                  Rational(1)));
+                                                                  Rational(1)),
+                                                 &S3);
     arcs_to_insert.push_back(arc);
         
         
@@ -356,7 +358,8 @@ private:
                                                  Rational_point_2(Rational(1),
                                                                   Rational(1)),
                                                  Rational_point_2(Rational(1),
-                                                                  Rational(0)));
+                                                                  Rational(0)),
+                                                 &S3);
     arcs_to_insert.push_back(arc);
         
         
@@ -364,7 +367,8 @@ private:
                                                  Rational_point_2(Rational(1),
                                                                   Rational(0)),
                                                  Rational_point_2(Rational(0),
-                                                                  Rational(0)));
+                                                                  Rational(0)),
+                                                 &S3);
     arcs_to_insert.push_back(arc);
 
     /* Push the arcs - for each verify that it is not one of the square 
@@ -404,7 +408,7 @@ private:
     Lines_through_segments_arr_observer_on_plane* temp_obs_on_plane =
       new Lines_through_segments_arr_observer_on_plane(*temp_arr_on_plane);
 
-    temp_obs_on_plane->set_last_inserted_segment(&S3,true);
+    temp_obs_on_plane->set_is_plane(true);
 
     insert (*temp_arr_on_plane, arcs_to_insert.begin(), 
             arcs_to_insert.end());
@@ -588,18 +592,18 @@ private:
       temp_edge = curr;
       if (temp_edge != max_e && temp_edge->twin() != max_e)
       {
-        if (curr->curve().left().x() <= mid_p.x() &&
-            curr->curve().right().x() >= mid_p.x())
-        {
-          /* Get the y value of curve at x = mid_p.x() */
-          Algebraic temp_y = m_traits_2_adapt.get_y_val(curr->curve(),
-                                                        mid_p.x());
+        // if (curr->curve().left().x() <= mid_p.x() &&
+        //     curr->curve().right().x() >= mid_p.x())
+        // {
+        //   /* Get the y value of curve at x = mid_p.x() */
+        //   Algebraic temp_y = m_traits_2_adapt.get_y_val(curr->curve(),
+        //                                                 mid_p.x());
 
-          if (temp_y > max_y)
-          {
-            max_y = temp_y;
-          }
-        }
+        //   if (temp_y > max_y)
+        //   {
+        //     max_y = temp_y;
+        //   }
+//        }
       }
       curr++;
     } while (curr != circ);

@@ -322,7 +322,7 @@ public:
          eit != arr_on_plane.edges_end();
          ++eit)
     {
-      /* Add Edges that created by two or more identical curves. */
+       /* Add Edges that created by two or more identical curves. */
       if (!eit->get_added_to_output() &&
           ((eit->twin()->face()->num_of_overlap_plane_faces() == 1 &&
             eit->face()->num_of_overlap_plane_faces() == 1 &&
@@ -1157,7 +1157,8 @@ public:
              LTS_rbound::LTS_BS_UNBOUNDED_PLUS_INFINITY))
         {
           traits_2_adapt.create_horizontal_curve_on_plane_arr(t_arc,
-                                                              S2_t);
+                                                              S2_t,
+                                                              &S3);
         }
         else if ((*seg_it).get_min() == 
                  LTS_rbound::LTS_BS_UNBOUNDED_MINUS_INFINITY)
@@ -1166,7 +1167,7 @@ public:
              t_arc,
              S2_t,
              ((*seg_it).get_max().bound()),
-             false);
+             false, &S3);
         }
         else if ((*seg_it).get_max() == 
                  LTS_rbound::LTS_BS_UNBOUNDED_PLUS_INFINITY)
@@ -1175,14 +1176,15 @@ public:
              t_arc,
              S2_t,
              ((*seg_it).get_min().bound()),
-             true);
+             true, &S3);
         }
         else
         {
           traits_2_adapt.create_segment_on_plane_arr(
              t_arc,
              Rational_point_2(((*seg_it).get_min().bound()),S2_t),
-             Rational_point_2(((*seg_it).get_max().bound()),S2_t));
+             Rational_point_2(((*seg_it).get_max().bound()),S2_t),
+             &S3);
         }
         
 #if LINES_DEBUG
@@ -1282,7 +1284,8 @@ public:
           traits_2_adapt.create_segment_on_plane_arr(
              arc,
              Rational_point_2(S1_t, ((*seg_it).get_min().bound())),
-             Rational_point_2(S1_t, ((*seg_it).get_max().bound())));
+             Rational_point_2(S1_t, ((*seg_it).get_max().bound())),
+             &S3);
         }
                
 #if LINES_DEBUG
@@ -1353,7 +1356,8 @@ public:
         traits_2_adapt.create_segment_on_plane_arr(
            te_arc,
            Rational_point_2(Rational(0),S2_t),
-           Rational_point_2(Rational(1),S2_t));
+           Rational_point_2(Rational(1),S2_t),
+             &S3);
         
 #if LINES_DEBUG
         std::cout << " push horizontal line " << te_arc << std::endl;
@@ -1386,7 +1390,8 @@ public:
         traits_2_adapt.create_segment_on_plane_arr(
            te_arc,
            Rational_point_2(S1_t,Rational(0)),
-           Rational_point_2(S1_t,Rational(1)));
+           Rational_point_2(S1_t,Rational(1)),
+             &S3);
         
 #if LINES_DEBUG
         std::cout << " push vertical line " << te_arc << std::endl;
@@ -1415,7 +1420,8 @@ public:
         traits_2_adapt.create_segment_on_plane_arr(
            te_arc,
            Rational_point_2(S1_t,Rational(0)),
-           Rational_point_2(S1_t,Rational(1)));
+           Rational_point_2(S1_t,Rational(1)),
+             &S3);
 #if LINES_DEBUG
         std::cout <<" push vertical line " << te_arc << std::endl;
 #endif         
@@ -1449,7 +1455,8 @@ public:
         traits_2_adapt.create_segment_on_plane_arr(
            te_arc,
            Rational_point_2(Rational(0),S2_t),
-           Rational_point_2(Rational(1),S2_t));
+           Rational_point_2(Rational(1),S2_t),
+             &S3);
         
 #if LINES_DEBUG
         std::cout << " push horizontal line " << te_arc << std::endl;
@@ -1581,7 +1588,8 @@ public:
           traits_2_adapt.create_segment_on_plane_arr
             (te_arc,
              Rational_point_2(x_coord[0],y_coord[0]),
-             Rational_point_2(x_coord[4],y_coord[4]));
+             Rational_point_2(x_coord[4],y_coord[4]),
+             &S3);
           ret_arcs.push_back(te_arc);
                   
           if (ret_end_points)
@@ -1609,7 +1617,8 @@ public:
           traits_2_adapt.create_segment_on_plane_arr
             (te_arc,
              Rational_point_2(x_coord[0], y_coord[0]),
-             Rational_point_2(x_coord[4], y_coord[4]));
+             Rational_point_2(x_coord[4], y_coord[4]),
+             &S3);
           ret_arcs.push_back(te_arc);
             
           if (ret_end_points)
@@ -1637,7 +1646,8 @@ public:
                                       Rational_point_2(x_coord[1],y_coord[1]),
                                       Rational_point_2(x_coord[2],y_coord[2]),
                                       Rational_point_2(x_coord[3],y_coord[3]),
-                                      Rational_point_2(x_coord[4],y_coord[4]));
+                                      Rational_point_2(x_coord[4],y_coord[4]),
+                                      &S3);
           ret_arcs.push_back(arc);
                   
           if (ret_end_points)

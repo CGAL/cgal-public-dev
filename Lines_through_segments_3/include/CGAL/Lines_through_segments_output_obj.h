@@ -23,7 +23,8 @@
 #define LINE_THROUGH_SEGMENTS_OUTPUT_OBJ_H
 
 #include <CGAL/General_polygon_2.h>
-#include <CGAL/Arrangement_on_surface_with_history_2.h>
+#include <CGAL/Arrangement_2.h>
+#include <CGAL/Arrangement_on_surface_2.h>
 #include <CGAL/Arr_spherical_topology_traits_2.h>
 
 #include <CGAL/Lines_through_segments_traits_3.h>
@@ -310,8 +311,7 @@ public:
                                                Ext_obj>
    Dcel_on_plane;
    typedef CGAL::Arrangement_2<Traits_arr_on_plane_2,
-                                            Dcel_on_plane>  
-   Arrangement_2;
+                               Dcel_on_plane> Arrangement_2;
    
 private:
    const Arrangement_2* m_arr;
@@ -493,8 +493,8 @@ public:
                                                  Dcel_geom_traits>
    Topol_traits_2;
    
-   typedef CGAL::Arrangement_on_surface_with_history_2<Traits_arr_on_sphere_2,
-                                                       Topol_traits_2>
+   typedef CGAL::Arrangement_on_surface_2<Traits_arr_on_sphere_2,
+                                          Topol_traits_2>
    Arrangement_2;
    
 private:
