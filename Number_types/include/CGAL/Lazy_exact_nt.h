@@ -192,7 +192,7 @@ struct Lazy_exact_unary : public Lazy_exact_nt_rep<ET>
     this->print_at_et(os, level);
     if(this->is_lazy()){
       msg(os, level, "Unary number operator:");
-      print_dag(op1, os, level+1);
+      CGAL::print_dag(op1, os, level+1);
     }
   }
 #endif
@@ -225,8 +225,8 @@ struct Lazy_exact_binary : public Lazy_exact_nt_rep<ET>
     this->print_at_et(os, level);
     if(this->is_lazy()){
       msg(os, level, "Binary number operator:");
-      print_dag(op1, os, level+1);
-      print_dag(op2, os, level+1);
+      CGAL::print_dag(op1, os, level+1);
+      CGAL::print_dag(op2, os, level+1);
     }
   }
 #endif
