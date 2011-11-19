@@ -66,7 +66,7 @@ private:
   typedef CGAL::CORE_algebraic_number_traits            Nt_traits;
   typedef CGAL::Arr_conic_traits_2<Rational_kernel, Alg_kernel, Nt_traits> 
     Conic_traits_arr_on_plane_2_;
-   typedef CGAL::Arr_curve_data_traits_2<Conic_traits_arr_on_plane_2_,const Rational_segment_3*>
+   typedef CGAL::Arr_consolidated_curve_data_traits_2<Conic_traits_arr_on_plane_2_,const Rational_segment_3*>
   Conic_traits_arr_on_plane_2;
 
   typedef typename Conic_traits_arr_on_plane_2::Point_2 Conic_point_2;
@@ -88,7 +88,7 @@ private:
 #endif
 
   typedef CGAL::Arr_rational_function_traits_2<AK1>  Rational_arc_traits_arr_on_plane_2_;
-  typedef CGAL::Arr_curve_data_traits_2<Rational_arc_traits_arr_on_plane_2_,const Rational_segment_3*>
+  typedef CGAL::Arr_consolidated_curve_data_traits_2<Rational_arc_traits_arr_on_plane_2_,const Rational_segment_3*>
   Rational_arc_traits_arr_on_plane_2;
    
   typedef typename Rational_arc_traits_arr_on_plane_2::Point_2

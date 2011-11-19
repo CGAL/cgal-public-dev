@@ -45,7 +45,8 @@ class Lines_through_segments_arr_observer :
   typedef typename Arrangement_2::Point_2             Point_2;
    
 private:
-  const Ext_obj* m_last_inserted_segment;
+   const X_monotone_curve_2* create_new_edge_curve; //save the last inserted curve at before_create_edge.
+   const Ext_obj* m_last_inserted_segment;
   std::list<const Ext_obj*> m_last_splitted_edge_segment_list;
   bool m_is_last_plane;
       
@@ -70,6 +71,11 @@ public:
   {
     m_is_last_plane = _is_plane;
   }
+
+  void set_last_inserted_segment(const Ext_obj* s)
+  {
+    m_last_inserted_segment = s;
+  }
             
   /*
    * issued just before a new edge that corresponds to the x-monotone curve c
@@ -79,13 +85,17 @@ public:
                                   Vertex_handle v1, 
                                   Vertex_handle v2)
   {
-     m_last_inserted_segment = (const Ext_obj*)c.data();
-     
+     create_new_edge_curve = &c;
 #if OBSERVER_PRINTS
     std::cout << change_color(CGAL_BLINK,"before_create_edge") << std::endl;
     std::cout << "c = " << c << std::endl;
-    std::cout << "c.data() = " << c.data() << std::endl;
-    std::cout << "m_last_inserted_segment = " << *m_last_inserted_segment << std::endl;
+    typename Arrangement_2::Geometry_traits_2::Data_container::const_iterator       dit;
+
+     for (dit = c.data().begin(); dit != c.data().end();
+          ++dit)
+     {
+        std::cout << "c.data() = " << **dit << std::endl;
+     }
 #endif
   }
    
@@ -95,7 +105,14 @@ public:
   virtual void before_modify_edge(Halfedge_handle e, 
                                   const X_monotone_curve_2& c)
   {
-     m_last_inserted_segment = (const Ext_obj*)c.data();
+     typename Arrangement_2::Geometry_traits_2::Data_container::const_iterator       dit;
+     for (dit = c.data().begin(); dit != c.data().end();
+          ++dit)
+     {
+        e->add_segment(*dit);
+        e->twin()->add_segment(*dit);
+     }
+
 #if OBSERVER_PRINTS
     std::cout << change_color(CGAL_BLINK,"before_modify_edge") << std::endl;
     std::cout << "e = (" << e->curve().source() << "," << e->curve().target()
@@ -113,8 +130,6 @@ public:
     std::cout << "e = (" << e->curve().source() << "," << e->curve().target()
               << ")" << std::endl;
 #endif
-    e->add_segment(m_last_inserted_segment);
-    e->twin()->add_segment(m_last_inserted_segment);
   }
      
   /* 
@@ -127,8 +142,14 @@ public:
     std::cout << change_color(CGAL_BLINK,"after_create_edge") << std::endl;
     std::cout << "curve = (" << e->curve() << ")" << std::endl;
 #endif
-    e->add_segment(m_last_inserted_segment);
-    e->twin()->add_segment(m_last_inserted_segment);
+    typename Arrangement_2::Geometry_traits_2::Data_container::const_iterator       dit;
+    for (dit = create_new_edge_curve->data().begin(); dit != create_new_edge_curve->data().end();
+         ++dit)
+    {
+       e->add_segment(*dit);
+       e->twin()->add_segment(*dit);
+    }
+    create_new_edge_curve = NULL;
   }
 
   /* issued just before an edge e is split into two edges that should be
@@ -144,9 +165,24 @@ public:
 #if OBSERVER_PRINTS
     std::cout << change_color(CGAL_BLINK,"before split edge") << std::endl;
     std::cout << c1 << std::endl;
-    std::cout << *(c1.data())  << std::endl;
+    typename Arrangement_2::Geometry_traits_2::Data_container::const_iterator       dit;
+
+     for (dit = c1.data().begin(); dit != c1.data().end();
+          ++dit)
+     {
+        std::cout << "c1.data() = " << **dit << std::endl;
+     }
+
+//    std::cout << *(c1.data())  << std::endl;
     std::cout << c2  << std::endl;
-    std::cout << *(c2.data())  << std::endl;
+    dit;
+
+     for (dit = c2.data().begin(); dit != c2.data().end();
+          ++dit)
+     {
+        std::cout << "c2.data() = " << *dit << std::endl;
+     }
+//  std::cout << *(c2.data())  << std::endl;
 #endif
     m_last_splitted_edge_segment_list = e->get_segments_list();
   }
@@ -178,7 +214,10 @@ public:
 #endif
     if (m_is_last_plane)
     {
-      f2->add_segment(m_last_inserted_segment);
+#if OBSERVER_PRINTS
+       std::cout << "f2->add_segment " << *m_last_inserted_segment << std::endl;
+#endif
+       f2->add_segment(m_last_inserted_segment);
     }
   }
 

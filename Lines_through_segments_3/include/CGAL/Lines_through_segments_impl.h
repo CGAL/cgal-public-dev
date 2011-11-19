@@ -941,6 +941,7 @@ public:
       arcs_to_insert.push_back(t_arc);
                         
       temp_obs_on_plane->set_is_plane(true);
+      temp_obs_on_plane->set_last_inserted_segment(&S3);
             
       insert (*temp_arr_on_plane, arcs_to_insert.begin(), 
               arcs_to_insert.end());
@@ -1008,6 +1009,7 @@ public:
       arcs_to_insert.push_back(t_arc);
 
       temp_obs_on_plane->set_is_plane(true);
+      temp_obs_on_plane->set_last_inserted_segment(&S3);
       insert (*temp_arr_on_plane, arcs_to_insert.begin(), 
               arcs_to_insert.end());
             

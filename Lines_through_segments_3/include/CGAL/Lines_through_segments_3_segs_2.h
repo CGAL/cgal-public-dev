@@ -409,6 +409,7 @@ private:
       new Lines_through_segments_arr_observer_on_plane(*temp_arr_on_plane);
 
     temp_obs_on_plane->set_is_plane(true);
+    temp_obs_on_plane->set_last_inserted_segment(&S3);
 
     insert (*temp_arr_on_plane, arcs_to_insert.begin(), 
             arcs_to_insert.end());
@@ -592,6 +593,7 @@ private:
       temp_edge = curr;
       if (temp_edge != max_e && temp_edge->twin() != max_e)
       {
+
         // if (curr->curve().left().x() <= mid_p.x() &&
         //     curr->curve().right().x() >= mid_p.x())
         // {
@@ -603,7 +605,7 @@ private:
         //   {
         //     max_y = temp_y;
         //   }
-//        }
+         //     }
       }
       curr++;
     } while (curr != circ);

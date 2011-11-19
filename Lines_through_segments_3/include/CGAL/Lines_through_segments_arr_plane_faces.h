@@ -187,7 +187,7 @@ public:
     Arrangement_2 *ov_arr = merge_arrangements(0,this->size()-1);
          
     Arrangement_2* res_arr = new Arrangement_2();
-    const Overlay_traits_private OT;
+    Overlay_traits_private OT;
             
     CGAL::overlay(*ov_arr,
                   *arr_on_plane,
@@ -214,7 +214,7 @@ private:
     else if (start + 1 == end)
     {
       Arrangement_2* res_arr = new Arrangement_2();
-      const Overlay_traits_private OT;
+      Overlay_traits_private OT;
             
       CGAL::overlay(*arr_vector[start], *arr_vector[end], *res_arr, OT);
             
@@ -227,7 +227,7 @@ private:
     {
       Arrangement_2* res_arr = new Arrangement_2();
       Arrangement_2 *arr1,*arr2;
-      const Overlay_traits_private OT;
+      Overlay_traits_private OT;
             
       arr1 = merge_arrangements(start, start + (end - start)/2);
       arr2 = merge_arrangements(start + (end - start)/2 + 1, end);
