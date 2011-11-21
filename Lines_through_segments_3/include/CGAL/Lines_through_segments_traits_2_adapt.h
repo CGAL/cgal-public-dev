@@ -78,7 +78,7 @@ private:
   /* Specific typedefs for Rational arc traits . */
 #if USE_SQRT_TRAITS
 #if USE_LAZY
-   typedef CGAL::Algebraic_kernel_2_1<CGAL::Lazy_exact_nt<Rational> >	   AK1;
+   typedef CGAL::Algebraic_kernel_2_1<Rational >	   AK1;
 #else
    typedef CGAL::Algebraic_kernel_2_1<Rational >	   AK1;
 #endif
@@ -1100,13 +1100,17 @@ private:
 
 public:
 #if USE_SQRT_TRAITS
-  Algebraic convert_real_to_algebraic(const Sqrt_ext& r)  const
-  {    
-     typename CGAL::Coercion_traits<Sqrt_ext, Algebraic>::Cast cast;
-     
-     return cast(r);
+  template <class ET> 
+  Algebraic convert_real_to_algebraic(const Lazy_exact_nt<ET>& r) const {
+    typename CGAL::Coercion_traits<ET, typename Algebraic::ET>::Cast cast;
+    return cast(r.exact());
   }
-
+  template <class NT> 
+  Algebraic convert_real_to_algebraic(const NT& r) const {
+    typename CGAL::Coercion_traits<NT, Algebraic>::Cast cast;
+    return cast(r);
+  }
+  
   template <typename Point_2,typename Number_type>
   void convert_point_y_coordinate (const Point_2& p, const Sqrt_ext& p_x, Number_type& y) const
   {
@@ -1175,13 +1179,9 @@ private:
   typedef typename Traits_3::Rational_kernel            Rational_kernel;
    typedef typename Rational_kernel::FT                 Rational;
 #if USE_SQRT_TRAITS
-#if USE_LAZY
-   typedef CGAL::Algebraic_kernel_2_1<CGAL::Lazy_exact_nt<Rational> >	   AK1;
+   typedef CGAL::Algebraic_kernel_2_1<Rational>	        AK1;
 #else
-   typedef CGAL::Algebraic_kernel_2_1<Rational >	   AK1;
-#endif
-#else
-   typedef CGAL::Algebraic_kernel_d_1<Integer>	   AK1;
+   typedef CGAL::Algebraic_kernel_d_1<Integer>	        AK1;
 #endif
    typedef CGAL::Arr_rational_function_traits_2<AK1>  Rational_arc_traits_arr_on_plane_2;
 

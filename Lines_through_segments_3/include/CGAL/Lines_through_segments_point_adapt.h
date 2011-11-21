@@ -71,11 +71,7 @@ private:
   typedef CORE::BigInt                                  Integer;
    /* Specific typedefs for Rational arc traits . */
 #if USE_SQRT_TRAITS
-#if USE_LAZY
-   typedef CGAL::Algebraic_kernel_2_1<CGAL::Lazy_exact_nt<Rational> >	   AK1;
-#else
-   typedef CGAL::Algebraic_kernel_2_1<Rational >	   AK1;
-#endif
+   typedef CGAL::Algebraic_kernel_2_1<Rational>	   AK1;
 #else
   typedef CGAL::Algebraic_kernel_d_1<Integer>	   AK1;
 #endif

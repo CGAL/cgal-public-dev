@@ -1,13 +1,13 @@
 
 #define CGAL_LEDA_VERSION 620
-#define CGAL_LAZY_KERNEL_DEBUG 1
+#define CGAL_LAZY_KERNEL_DEBUG 0
 
 /* Set the required traits */
 #define USE_CONIC_TRAITS 0
 #define USE_RATIONAL_ARC_TRAITS 0
 #define USE_SQRT_TRAITS 1
 #define USE_LAZY 1
-
+#define USE_LEDA 1
 
 #include <iostream>
 #include <fstream>
@@ -21,7 +21,6 @@
 #include <algorithm>
 #include <CGAL/Timer.h>
 
-#define USE_LEDA 1
 
 /* Only for internal debug purposes may be removed later. */
 #define CGAL_PRINT_COLOR 1
@@ -113,6 +112,22 @@ std::string change_color(int color, const T& value,const Args&... args)
 #include <CGAL/Lines_through_segments_3.h>
 #include <CGAL/Lines_through_segments_traits_3.h>
 
+
+#if USE_LAZY
+
+#if USE_LEDA
+typedef CGAL::Lazy_exact_nt<leda_real>                  Algebraic;
+typedef CGAL::Lazy_exact_nt<leda_rational>              Rational;
+typedef CGAL::Lazy_exact_nt<leda_integer>               Integer;
+#else
+typedef CGAL::CORE_algebraic_number_traits              Nt_traits;
+typedef CGAL::Lazy_exact_nt<Nt_traits::Algebraic>       Algebraic;
+typedef CGAL::Lazy_exact_nt<Nt_traits::Rational>        Rational;
+typedef CGAL::Lazy_exact_nt<CORE::BigInt>               Integer;
+#endif
+
+#else // USE_LAZY
+
 #if USE_LEDA
 typedef leda_real                                       Algebraic;
 typedef leda_rational                                   Rational;
@@ -123,6 +138,10 @@ typedef Nt_traits::Algebraic                            Algebraic;
 typedef Nt_traits::Rational                             Rational;
 typedef CORE::BigInt                                    Integer;
 #endif
+
+#endif // USE_LAZY
+
+
 
 typedef CGAL::Cartesian<Algebraic>                      Alg_kernel;
 typedef CGAL::Cartesian<Rational>                       Rational_kernel;
@@ -144,11 +163,7 @@ typedef CGAL::Algebraic_kernel_d_1<Integer>	  AK1;
 typedef CGAL::Arr_rational_function_traits_2<AK1>                  Rational_arc_arr_traits_arr_on_plane_2;
 #endif
 #if USE_SQRT_TRAITS
-#if USE_LAZY
-typedef CGAL::Algebraic_kernel_2_1<CGAL::Lazy_exact_nt<Rational> >	  AK1;
-#else
 typedef CGAL::Algebraic_kernel_2_1<Rational >	  AK1;
-#endif
 typedef CGAL::Arr_rational_function_traits_2<AK1>                  Rational_arc_arr_traits_arr_on_plane_2;
 #endif
 typedef CGAL::Arr_geodesic_arc_on_sphere_traits_2<Rational_kernel>          Traits_arr_on_sphere_2;
