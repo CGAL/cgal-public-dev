@@ -71,7 +71,7 @@ private:
 
   typedef typename Traits_3::Traits_arr_on_plane_2
   Traits_arr_on_plane_2;
-  static const int CGAL_SEGMENT_INVALID = -314;
+#define  CGAL_SEGMENT_INVALID -314
   static const unsigned int CGAL_MAX_ITERATIONS = 6;
   static const unsigned int CGAL_VALID_ITERATION = (CGAL_MAX_ITERATIONS+1);
       
