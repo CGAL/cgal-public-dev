@@ -1039,13 +1039,13 @@ public:
           /* If S1 is not bounded the bounded segments is either 
              a point, or a half segment. */
           Rational_point_3 temp_point_plus(S1.source().x() + 
-                                           (*it + Rational(1,2)) * 
+                                           (*it + (Rational(1)/Rational(2))) * 
                                            (S1.target().x() - S1.source().x()),
                                            S1.source().y() + 
-                                           (*it + Rational(1,2)) * 
+                                           (*it + (Rational(1)/Rational(2))) * 
                                            (S1.target().y() - S1.source().y()),
                                            S1.source().z() + 
-                                           (*it + Rational(1,2)) * 
+                                           (*it + (Rational(1)/Rational(2))) * 
                                            (S1.target().z() - S1.source().z()));
               
           Rational_line_3 temp_line_plus(qpoint,temp_point_plus);
@@ -1061,13 +1061,13 @@ public:
           {
             Rational_point_3 temp_point_minus(
                S1.source().x() + 
-               (*it - Rational(1,2)) * 
+               (*it - (Rational(1)/Rational(2))) * 
                (S1.target().x() - S1.source().x()),
                S1.source().y() + 
-               (*it - Rational(1,2)) * 
+               (*it - (Rational(1)/Rational(2))) * 
                (S1.target().y() - S1.source().y()),
                S1.source().z() + 
-               (*it - Rational(1,2)) * 
+               (*it - (Rational(1)/Rational(2))) * 
                (S1.target().z() - S1.source().z()));
             
             Rational_line_3 temp_line_minus(qpoint,temp_point_minus);
