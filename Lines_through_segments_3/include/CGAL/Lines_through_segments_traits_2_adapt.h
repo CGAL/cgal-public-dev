@@ -530,11 +530,11 @@ public:
                    Rational(0));
          
     Rational_point_2 source(source_x,
-                            (source_x * (- coefficients[2]) - coefficients[0])/
+                            (source_x * (coefficients[2]) + coefficients[0])/
                             (source_x * coefficients[3] + coefficients[1]));
 
     Rational_point_2 target(target_x,
-                            (target_x * (- coefficients[2]) - coefficients[0])/
+                            (target_x * (coefficients[2]) + coefficients[0])/
                             (target_x * coefficients[3] + coefficients[1]));
 
     Conic_point_2 a_source(source.x(), source.y());
@@ -554,30 +554,30 @@ private:
     Algebraic mid_point_y = (a_target.y() + a_source.y())/2;
     Algebraic mid_point_x = (a_target.x() + a_source.x())/2;
     Algebraic mid_point_on_hyp_y =
-      ((mid_point_x * (-coefficients[2]) + (-coefficients[0])) /
+      ((mid_point_x * (coefficients[2]) + (coefficients[0])) /
        (mid_point_x * coefficients[3] + coefficients[1]));
          
     if (mid_point_y < mid_point_on_hyp_y)
     {
        cv = Conic_curve_2_wd(Conic_curve_2(Rational(0), Rational(0),
-                                           coefficients[3], coefficients[2],
-                                           coefficients[1], coefficients[0],
+                                           coefficients[3], -coefficients[2],
+                                           coefficients[1], -coefficients[0],
                                            CGAL::CLOCKWISE, a_source, a_target),
                              data);
     }
     else if (mid_point_y > mid_point_on_hyp_y)
     {
       cv = Conic_curve_2_wd(Conic_curve_2(Rational(0), Rational(0),
-                                          coefficients[3], coefficients[2],
-                                          coefficients[1], coefficients[0],
+                                          coefficients[3], -coefficients[2],
+                                          coefficients[1], -coefficients[0],
                                           CGAL::COUNTERCLOCKWISE, a_source, a_target),
                             data);
     }
     else
     {
        cv = Conic_curve_2_wd(Conic_curve_2(Rational(0), Rational(0),
-                                           coefficients[3], coefficients[2],
-                                           coefficients[1], coefficients[0],
+                                           coefficients[3], -coefficients[2],
+                                           coefficients[1], -coefficients[0],
                                            CGAL::COLLINEAR, a_source, a_target),
                              data);
     }
@@ -591,8 +591,8 @@ public:
                                  const Rational_segment_3* data)
   {
     std::vector<Rational>        P2(2);
-    P2[0] = -coefficients[0];
-    P2[1] = -coefficients[2];
+    P2[0] = coefficients[0];
+    P2[1] = coefficients[2];
          
     std::vector<Rational>        Q2(2);
     Q2[0] = coefficients[1];
@@ -720,8 +720,8 @@ public:
                                  const Rational_segment_3* data)
   {
     std::vector<Rational>        P2(2);
-    P2[0] = -coefficients[0];
-    P2[1] = -coefficients[2];
+    P2[0] = coefficients[0];
+    P2[1] = coefficients[2];
        
     std::vector<Rational>        Q2(2);
     Q2[0] = coefficients[1];
@@ -740,8 +740,8 @@ public:
                                  const Rational_segment_3* data)
   {
     std::vector<Rational>        P2(2);
-    P2[0] = -coefficients[0];
-    P2[1] = -coefficients[2];
+    P2[0] = coefficients[0];
+    P2[1] = coefficients[2];
        
     std::vector<Rational>        Q2(2);
     Q2[0] = coefficients[1];

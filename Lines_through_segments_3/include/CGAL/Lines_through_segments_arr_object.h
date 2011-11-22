@@ -2880,9 +2880,9 @@ public:
     Rational_arc_2 t_arc;
 
     Rational        V[4];
-    V[0] = -m_a0;
+    V[0] = m_a0;
     V[1] = m_b0;
-    V[2] = -m_a1;
+    V[2] = m_a1;
     V[3] = m_b1;
 
     typename Bounded_segs_vector::iterator it;
