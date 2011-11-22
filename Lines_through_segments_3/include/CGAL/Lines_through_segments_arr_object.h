@@ -595,7 +595,7 @@ public:
    * -----------------------------------------------------------------------
    *      
    *  S1.t =(C4 + S2.t * t * C5 + t * C6) / (C3 * (1 - t))
-   *S1.t =(C4 + C5 *((C102 + (C104 - C103) * (1-t) * S1.t + t * C106) / C101)
+   S1.t =(C4 + C5 *((C102 + (C104 - C103) * (1-t) * S1.t + t * C106) / C101)
    *     + t * C6) / (C3 * (1 - t))
    *  
    *  Multiply by C101:
@@ -634,7 +634,7 @@ public:
    *
    *  S2.t = (C102 + (C104 - C103) * (1-t) * S1.t + t * C106) /(t * C101)
    *
-   *S2.t = (C102 + (C104 - C103) * ((C203 +  t * C201) /  C202) + t * C106) /
+   S2.t = (C102 + (C104 - C103) * ((C203 +  t * C201) /  C202) + t * C106) /
    *      (t * C101)
    * 
    *  S2.t = (C102 * C202 + (C104 - C103) * ((C203 +  t * C201)) + 
@@ -741,116 +741,106 @@ public:
       Rational_point_3 S3_P1 = m_creator_segment->source();
       Rational_point_3 S3_P2 = m_creator_segment->target();
             
-      const Rational* S1_x1 = &S1_P1.x();
-      const Rational* S1_y1 = &S1_P1.y();
-      const Rational* S1_z1 = &S1_P1.z();
-      Rational S1_x2_val = S1_P2.x() - *S1_x1;
-      Rational S1_y2_val = S1_P2.y() - *S1_y1;
-      Rational S1_z2_val = S1_P2.z() - *S1_z1;
+      Rational S1_x1 = S1_P1.x();
+      Rational S1_y1 = S1_P1.y();
+      Rational S1_z1 = S1_P1.z();      
+      Rational S1_x2 = S1_P2.x() - S1_x1;
+      Rational S1_y2 = S1_P2.y() - S1_y1;
+      Rational S1_z2 = S1_P2.z() - S1_z1;
 
-      Rational* S1_x2 = &S1_x2_val;
-      Rational* S1_y2 = &S1_y2_val;
-      Rational* S1_z2 = &S1_z2_val;
-            
-      const Rational* S2_x1 = &S2_P1.x();
-      const Rational* S2_y1 = &S2_P1.y();
-      const Rational* S2_z1 = &S2_P1.z();
-      Rational S2_x2_val = S2_P2.x() - *S2_x1;
-      Rational S2_y2_val = S2_P2.y() - *S2_y1;
-      Rational S2_z2_val = S2_P2.z() - *S2_z1;
-      Rational* S2_x2 = &S2_x2_val;
-      Rational* S2_y2 = &S2_y2_val;
-      Rational* S2_z2 = &S2_z2_val;
-            
-      const Rational* S3_x1 = &S3_P1.x();
-      const Rational* S3_y1 = &S3_P1.y();
-      const Rational* S3_z1 = &S3_P1.z();
-      Rational S3_x2_val = S3_P2.x() - *S3_x1;
-      Rational S3_y2_val = S3_P2.y() - *S3_y1;
-      Rational S3_z2_val = S3_P2.z() - *S3_z1;
-      Rational* S3_x2 = &S3_x2_val;
-      Rational* S3_y2 = &S3_y2_val;
-      Rational* S3_z2 = &S3_z2_val;
+      Rational S2_x1 = S2_P1.x();
+      Rational S2_y1 = S2_P1.y();
+      Rational S2_z1 = S2_P1.z();      
+      Rational S2_x2 = S2_P2.x() - S2_x1;
+      Rational S2_y2 = S2_P2.y() - S2_y1;
+      Rational S2_z2 = S2_P2.z() - S2_z1;
+
+      Rational S3_x1 = S3_P1.x();
+      Rational S3_y1 = S3_P1.y();
+      Rational S3_z1 = S3_P1.z();      
+      Rational S3_x2 = S3_P2.x() - S3_x1;
+      Rational S3_y2 = S3_P2.y() - S3_y1;
+      Rational S3_z2 = S3_P2.z() - S3_z1;
             
       /* If t is constant the calculation is dependent on S3_t. */
-      if ((*S1_x2 == 0 &&
-           *S2_x2 == 0 &&
-           *S3_x2 == 0))
+      if ((S1_x2 == 0 &&
+           S2_x2 == 0 &&
+           S3_x2 == 0))
       {
         /* (1-t) * S1_x1 + t * S2_x1 = S3_x1 */
-        CGAL_assertion(*S2_x1 != *S1_x1);
-        Rational t = (*S3_x1 - *S1_x1)/(*S2_x1 - *S1_x1);
+        CGAL_assertion(S2_x1 != S1_x1);
+        Rational t = (S3_x1 - S1_x1)/(S2_x1 - S1_x1);
 #if OBJ_ON_ARR_DEBUG
         std::cout << "t1 = " << t << std::endl;
 #endif
-        Rational C_y((*S3_y1 - (1 - t) * *S1_y1 - t * *S2_y1));
-        Rational C_z((*S3_z1 - (1 - t) * *S1_z1 - t * *S2_z1));
-        Rational S1_y_temp(*S1_y2 * (1-t));
-        Rational S2_y_temp(*S2_y2 * t);
-        Rational S1_z_temp(*S1_z2 * (1-t));
-        Rational S2_z_temp(*S2_z2 * t);
+        Rational C_y((S3_y1 - (1 - t) * S1_y1 - t * S2_y1));
+        Rational C_z((S3_z1 - (1 - t) * S1_z1 - t * S2_z1));
+        Rational S1_y_temp(S1_y2 * (1-t));
+        Rational S2_y_temp(S2_y2 * t);
+        Rational S1_z_temp(S1_z2 * (1-t));
+        Rational S2_z_temp(S2_z2 * t);
 
-        calc_obj_on_arr_t_is_constant(&S1_y_temp,
-                                      &S2_y_temp,
+        calc_obj_on_arr_t_is_constant(S1_y_temp,
+                                      S2_y_temp,
                                       S3_y2,
-                                      &C_y,
-                                      &S1_z_temp,
-                                      &S2_z_temp,
+                                      C_y,
+                                      S1_z_temp,
+                                      S2_z_temp,
                                       S3_z2,
-                                      &C_z);
+                                      C_z);
       }
-      else if (*S1_y2 == 0 &&
-               *S2_y2 == 0 &&
-               *S3_y2 == 0)
+      else if (S1_y2 == 0 &&
+               S2_y2 == 0 &&
+               S3_y2 == 0)
       {
         /* (1-t) * S1_y1 + t * S2_y1 = S3_y1 */
-        CGAL_assertion(*S2_y1 != *S1_y1);
-        Rational t = (*S3_y1 - *S1_y1)/(*S2_y1 - *S1_y1);
+        CGAL_assertion(S2_y1 != S1_y1);
+        Rational t = (S3_y1 - S1_y1)/(S2_y1 - S1_y1);
 #if OBJ_ON_ARR_DEBUG
         std::cout << "t2 = " << t << std::endl;
 #endif
-        Rational C_x((*S3_x1 - (1 - t) * *S1_x1 - t * *S2_x1));
-        Rational C_z((*S3_z1 - (1 - t) * *S1_z1 - t * *S2_z1));
-        Rational S1_x_temp(*S1_x2 * (1-t));
-        Rational S2_x_temp(*S2_x2 * t);
-        Rational S1_z_temp(*S1_z2 * (1-t));
-        Rational S2_z_temp(*S2_z2 * t);
+        Rational C_x((S3_x1 - (1 - t) * S1_x1 - t * S2_x1));
+        Rational C_z((S3_z1 - (1 - t) * S1_z1 - t * S2_z1));
+        Rational S1_x_temp(S1_x2 * (1-t));
+        Rational S2_x_temp(S2_x2 * t);
+        Rational S1_z_temp(S1_z2 * (1-t));
+        Rational S2_z_temp(S2_z2 * t);
                
-        calc_obj_on_arr_t_is_constant(&S1_x_temp,
-                                      &S2_x_temp,
+        calc_obj_on_arr_t_is_constant(S1_x_temp,
+                                      S2_x_temp,
                                       S3_x2,
-                                      &C_x,
-                                      &S1_z_temp,
-                                      &S2_z_temp,
+                                      C_x,
+                                      S1_z_temp,
+                                      S2_z_temp,
                                       S3_z2,
-                                      &C_z);
+                                      C_z);
       }
-      else if (*S1_z2 == 0 &&
-               *S2_z2 == 0 &&
-               *S3_z2 == 0)
+      else if (S1_z2 == 0 &&
+               S2_z2 == 0 &&
+               S3_z2 == 0)
       {
         /* (1-t) * S1_z1 + t * S2_z1 = S3_z1 */
-        CGAL_assertion(*S2_z1 != *S1_z1);
+        CGAL_assertion(S2_z1 != S1_z1);
          
-        Rational t = (*S3_z1 - *S1_z1)/(*S2_z1 - *S1_z1);
+        Rational t = (S3_z1 - S1_z1)/(S2_z1 - S1_z1);
 #if OBJ_ON_ARR_DEBUG
         std::cout << "t3 = " << t << std::endl;
 #endif
-        Rational C_x(-(*S3_x1 - (1 - t) * *S1_x1 - t * *S2_x1));
-        Rational C_y((*S3_y1 - (1 - t) * *S1_y1 - t * *S2_y1));
-        Rational S1_x_temp(*S1_x2 * (1-t));
-        Rational S2_x_temp(*S2_x2 * t);
-        Rational S1_y_temp(*S1_y2 * (1-t));
-        Rational S2_y_temp(*S2_y2 * t);
+        Rational C_x(-(S3_x1 - (1 - t) * S1_x1 - t * S2_x1));
+        Rational C_y((S3_y1 - (1 - t) * S1_y1 - t * S2_y1));
+        Rational S1_x_temp(S1_x2 * (1-t));
+        Rational S2_x_temp(S2_x2 * t);
+        Rational S1_y_temp(S1_y2 * (1-t));
+        Rational S2_y_temp(S2_y2 * t);
 
-        calc_obj_on_arr_t_is_constant(&S1_x_temp,
-                                      &S2_x_temp,
+        calc_obj_on_arr_t_is_constant(S1_x_temp,
+                                      S2_x_temp,
                                       S3_x2,
-                                      &C_x,
-                                      &S1_y_temp,
-                                      &S2_y_temp,
+                                      C_x,
+                                      S1_y_temp,
+                                      S2_y_temp,
                                       S3_y2,
-                                      &C_y);
+                                      C_y);
       }
       else
       {
@@ -883,48 +873,48 @@ public:
         while (iteration < CGAL_MAX_ITERATIONS)
         {                                  
 #if OBJ_ON_ARR_DEBUG
-          std::cout << "S1_x1 = " << *S1_x1 << std::endl;
-          std::cout << "S1_y1 = " << *S1_y1 << std::endl;
-          std::cout << "S1_z1 = " << *S1_z1 << std::endl;
-          std::cout << "S1_x2 = " << *S1_x2 << std::endl;
-          std::cout << "S1_y2 = " << *S1_y2 << std::endl;
-          std::cout << "S1_z2 = " << *S1_z2 << std::endl<< std::endl;
+          std::cout << "S1_x1 = " << S1_x1 << std::endl;
+          std::cout << "S1_y1 = " << S1_y1 << std::endl;
+          std::cout << "S1_z1 = " << S1_z1 << std::endl;
+          std::cout << "S1_x2 = " << S1_x2 << std::endl;
+          std::cout << "S1_y2 = " << S1_y2 << std::endl;
+          std::cout << "S1_z2 = " << S1_z2 << std::endl<< std::endl;
                   
-          std::cout << "S2_x1 = " << *S2_x1 << std::endl;
-          std::cout << "S2_y1 = " << *S2_y1 << std::endl;
-          std::cout << "S2_z1 = " << *S2_z1 << std::endl;
-          std::cout << "S2_x2 = " << *S2_x2 << std::endl;
-          std::cout << "S2_y2 = " << *S2_y2 << std::endl;
-          std::cout << "S2_z2 = " << *S2_z2 << std::endl<< std::endl;
+          std::cout << "S2_x1 = " << S2_x1 << std::endl;
+          std::cout << "S2_y1 = " << S2_y1 << std::endl;
+          std::cout << "S2_z1 = " << S2_z1 << std::endl;
+          std::cout << "S2_x2 = " << S2_x2 << std::endl;
+          std::cout << "S2_y2 = " << S2_y2 << std::endl;
+          std::cout << "S2_z2 = " << S2_z2 << std::endl<< std::endl;
                   
-          std::cout << "S3_x1 = " << *S3_x1 << std::endl;
-          std::cout << "S3_y1 = " << *S3_y1 << std::endl;
-          std::cout << "S3_z1 = " << *S3_z1 << std::endl;
-          std::cout << "S3_x2 = " << *S3_x2 << std::endl;
-          std::cout << "S3_y2 = " << *S3_y2 << std::endl;
-          std::cout << "S3_z2 = " << *S3_z2 << std::endl;
+          std::cout << "S3_x1 = " << S3_x1 << std::endl;
+          std::cout << "S3_y1 = " << S3_y1 << std::endl;
+          std::cout << "S3_z1 = " << S3_z1 << std::endl;
+          std::cout << "S3_x2 = " << S3_x2 << std::endl;
+          std::cout << "S3_y2 = " << S3_y2 << std::endl;
+          std::cout << "S3_z2 = " << S3_z2 << std::endl;
 
 #endif
 
 #if OBJ_ON_ARR_DEBUG
           std::cout << "iteration = " << iteration << std::endl;
 #endif
-          C1 = *S3_z2 * *S1_x2;
-          C2 = *S3_x2 * *S1_z2;
+          C1 = S3_z2 * S1_x2;
+          C2 = S3_x2 * S1_z2;
           C3 = C1 - C2;
-          C4 = *S3_x1 * *S3_z2 + *S3_x2 * *S1_z1 - 
-            *S3_x2 * *S3_z1 - *S3_z2 * *S1_x1;
-          C5 = *S3_x2 * *S2_z2 - *S3_z2 * *S2_x2;
-          C6 = - *S3_x2 * *S1_z1 + *S3_x2 * *S2_z1 + *S3_z2 * *S1_x1 - 
-            *S3_z2 * *S2_x1;
+          C4 = S3_x1 * S3_z2 + S3_x2 * S1_z1 - 
+            S3_x2 * S3_z1 - S3_z2 * S1_x1;
+          C5 = S3_x2 * S2_z2 - S3_z2 * S2_x2;
+          C6 = - S3_x2 * S1_z1 + S3_x2 * S2_z1 + S3_z2 * S1_x1 - 
+            S3_z2 * S2_x1;
                
-          C101 = *S3_z2 * *S2_y2 - *S2_z2 * *S3_y2;
-          C102 = *S3_y1 * *S3_z2 + *S1_z1 * *S3_y2 - *S3_z2 * *S1_y1 - 
-            *S3_z1 * *S3_y2;
-          C103 = *S3_z2 * *S1_y2;
-          C104 = *S1_z2 * *S3_y2;
-          C106 = *S3_z2 * *S1_y1 - *S1_z1 * *S3_y2 + *S2_z1 * *S3_y2 - 
-            *S3_z2 * *S2_y1;
+          C101 = S3_z2 * S2_y2 - S2_z2 * S3_y2;
+          C102 = S3_y1 * S3_z2 + S1_z1 * S3_y2 - S3_z2 * S1_y1 - 
+            S3_z1 * S3_y2;
+          C103 = S3_z2 * S1_y2;
+          C104 = S1_z2 * S3_y2;
+          C106 = S3_z2 * S1_y1 - S1_z1 * S3_y2 + S2_z1 * S3_y2 - 
+            S3_z2 * S2_y1;
                
           C201 = C5 * C106 + C6 * C101;
           C202 = C101 * C3 - C5 * C104 + C5 * C103;
@@ -933,7 +923,7 @@ public:
           std::cout << change_color(CGAL_YELLOW,"  C101 = ",C101) 
                     << std::endl;
 #endif
-          if (*S3_z2 != 0 && C101 != 0)
+          if (S3_z2 != 0 && C101 != 0)
           {
             iteration = CGAL_VALID_ITERATION;
           }
@@ -965,26 +955,26 @@ public:
         CGAL_assertion(iteration != CGAL_MAX_ITERATIONS);
                
 #if OBJ_ON_ARR_DEBUG
-        std::cout << "S1_x1 = " << *S1_x1 << std::endl;
-        std::cout << "S1_y1 = " << *S1_y1 << std::endl;
-        std::cout << "S1_z1 = " << *S1_z1 << std::endl;
-        std::cout << "S1_x2 = " << *S1_x2 << std::endl;
-        std::cout << "S1_y2 = " << *S1_y2 << std::endl;
-        std::cout << "S1_z2 = " << *S1_z2 << std::endl<< std::endl;
+        std::cout << "S1_x1 = " << S1_x1 << std::endl;
+        std::cout << "S1_y1 = " << S1_y1 << std::endl;
+        std::cout << "S1_z1 = " << S1_z1 << std::endl;
+        std::cout << "S1_x2 = " << S1_x2 << std::endl;
+        std::cout << "S1_y2 = " << S1_y2 << std::endl;
+        std::cout << "S1_z2 = " << S1_z2 << std::endl<< std::endl;
 
-        std::cout << "S2_x1 = " << *S2_x1 << std::endl;
-        std::cout << "S2_y1 = " << *S2_y1 << std::endl;
-        std::cout << "S2_z1 = " << *S2_z1 << std::endl;
-        std::cout << "S2_x2 = " << *S2_x2 << std::endl;
-        std::cout << "S2_y2 = " << *S2_y2 << std::endl;
-        std::cout << "S2_z2 = " << *S2_z2 << std::endl<< std::endl;
+        std::cout << "S2_x1 = " << S2_x1 << std::endl;
+        std::cout << "S2_y1 = " << S2_y1 << std::endl;
+        std::cout << "S2_z1 = " << S2_z1 << std::endl;
+        std::cout << "S2_x2 = " << S2_x2 << std::endl;
+        std::cout << "S2_y2 = " << S2_y2 << std::endl;
+        std::cout << "S2_z2 = " << S2_z2 << std::endl<< std::endl;
 
-        std::cout << "S3_x1 = " << *S3_x1 << std::endl;
-        std::cout << "S3_y1 = " << *S3_y1 << std::endl;
-        std::cout << "S3_z1 = " << *S3_z1 << std::endl;
-        std::cout << "S3_x2 = " << *S3_x2 << std::endl;
-        std::cout << "S3_y2 = " << *S3_y2 << std::endl;
-        std::cout << "S3_z2 = " << *S3_z2 << std::endl;
+        std::cout << "S3_x1 = " << S3_x1 << std::endl;
+        std::cout << "S3_y1 = " << S3_y1 << std::endl;
+        std::cout << "S3_z1 = " << S3_z1 << std::endl;
+        std::cout << "S3_x2 = " << S3_x2 << std::endl;
+        std::cout << "S3_y2 = " << S3_y2 << std::endl;
+        std::cout << "S3_z2 = " << S3_z2 << std::endl;
 
 #endif
 
@@ -996,13 +986,13 @@ public:
            * (1-t)*(S1.x1 + S1.t * S1.x2) + t * (S2.x1 + S2.t * S2.x2) = 
            *    (S3.x1 + S3.t * S3.x2)
            * S1.t * S1.x2 * (1-t) + S2.t * S2.x2 * t = S3.t * S3.x2 + 
-           *    (S3.x1 - (1 - t) *S1.x1 - t * S2.x1)
+           *    (S3.x1 - (1 - t) S1.x1 - t * S2.x1)
            * C_x = (S3.x1 - (1 - t) * S1.x1 - t * S2.x1)
            *
            * (1-t)*(S1.y1 + S1.t * S1.y2) + t*(S2.y1 + S2.t * S2.y2) =
            *     (S3.y1 + S3.t * S3.y2)
            * S1.t * S1.y2 * (1-t) + S2.t * S2.y2 * t = S3.t * S3.y2 +
-           *     (S3.y1 - (1-t) *S1.y1 - t * S2.y1)
+           *     (S3.y1 - (1-t) S1.y1 - t * S2.y1)
            * C_y = (S3.y1 - (1 - t) * S1.y1 - t * S2.y1)
            */
 
@@ -1041,21 +1031,21 @@ public:
               std::swap(S1_z1,S1_x1);
             }
                        
-            C_x = (*S3_x1 - (1 - t) * *S1_x1 - t * *S2_x1);
-            C_y = (*S3_y1 - (1 - t) * *S1_y1 - t * *S2_y1);
-            S1_x_temp = (*S1_x2 * (1-t));
-            S2_x_temp = (*S2_x2 * t);
-            S1_y_temp = (*S1_y2 * (1-t));
-            S2_y_temp = (*S2_y2 * t);
+            C_x = (S3_x1 - (1 - t) * S1_x1 - t * S2_x1);
+            C_y = (S3_y1 - (1 - t) * S1_y1 - t * S2_y1);
+            S1_x_temp = (S1_x2 * (1-t));
+            S2_x_temp = (S2_x2 * t);
+            S1_y_temp = (S1_y2 * (1-t));
+            S2_y_temp = (S2_y2 * t);
                        
-            status = calc_obj_on_arr_t_is_constant(&S1_x_temp,
-                                                   &S2_x_temp,
+            status = calc_obj_on_arr_t_is_constant(S1_x_temp,
+                                                   S2_x_temp,
                                                    S3_x2,
-                                                   &C_x,
-                                                   &S1_y_temp,
-                                                   &S2_y_temp,
+                                                   C_x,
+                                                   S1_y_temp,
+                                                   S2_y_temp,
                                                    S3_y2,
-                                                   &C_y);
+                                                   C_y);
             ++iteration;
           }
           while (status != LTS_g_func::CGAL_QUERY_SUCCEED && iteration != 3);
@@ -1092,11 +1082,11 @@ public:
         std::cout << this << std::endl;
 #endif
         find_bounded_segs(C203,C201,C202,C301,C302,C303,
-                          *S1_z1,*S1_z2,
-                          *S2_z1,*S2_z2,
-                          *S3_z1,*S3_z2);
+                          S1_z1,S1_z2,
+                          S2_z1,S2_z2,
+                          S3_z1,S3_z2);
       }
-    }
+             }
   }
 
   ~Lines_through_segments_arr_object()
@@ -2972,8 +2962,8 @@ public:
    * The following functions gets 2 intersected segments S1 and S3 and
    * computes the degenrate hyperbola.
    *************************************************************/
-  void calc_degenerate_hyperbola(const Rational_segment_3 *S1,
-                                 const Rational_segment_3 *S2,
+  void calc_degenerate_hyperbola(const Rational_segment_3* S1,
+                                 const Rational_segment_3* S2,
                                  Bounded_segs_vector&
                                    _horizontal_segment_bounded_segs,
                                  Rational& _vertical_segment_x_coordinate,
@@ -3088,22 +3078,22 @@ public:
    * 2. S1_t * S1_y + S2_t * S2_y = S3_t * S3_y + C_y
    *
    *************************************************************/
-  int calc_obj_on_arr_t_is_constant(Rational* S1_x,
-                                    Rational* S2_x,
-                                    Rational* S3_x,
-                                    Rational* C_x,
-                                    Rational* S1_y,
-                                    Rational* S2_y,
-                                    Rational* S3_y,
-                                    Rational* C_y)
+  int calc_obj_on_arr_t_is_constant(Rational  S1_x,
+                                    Rational  S2_x,
+                                    Rational  S3_x,
+                                    Rational  C_x,
+                                    Rational  S1_y,
+                                    Rational  S2_y,
+                                    Rational  S3_y,
+                                    Rational  C_y)
   {
 #if OBJ_ON_ARR_DEBUG    
-    std::cout << "S1_t * " << *S1_x << " + S2_t * " << *S2_x << " = S3_t * "
-              << *S3_x << " + " << *C_x << std::endl;
-    std::cout << "S1_t * " << *S1_y << " + S2_t * " << *S2_y << " = S3_t * "
-              << *S3_y << " + " << *C_y << std::endl;
+    std::cout << "S1_t * " << S1_x << " + S2_t * " << S2_x << " = S3_t * "
+              << S3_x << " + " << C_x << std::endl;
+    std::cout << "S1_t * " << S1_y << " + S2_t * " << S2_y << " = S3_t * "
+              << S3_y << " + " << C_y << std::endl;
 #endif
-    if (*S3_y == 0)
+    if (S3_y == 0)
     {
       std::swap(S1_x,S1_y);
       std::swap(S2_x,S2_y);
@@ -3111,16 +3101,16 @@ public:
       std::swap(C_x,C_y);
     }
 
-    if (*S3_x == 0)
+    if (S3_x == 0)
     {
       /* The object is a segment at the arrangement. */
       /*  S2_t =  (C_x - S1_t * S1_x)/S2_x */
-      CGAL_assertion(*S2_x != 0);
+      CGAL_assertion(S2_x != 0);
       {
         /* S2_t =  (C_x - S1_t * S1_x)/S2_x */
         /*   y = (x * m_a1 + a0) / (x * b1 + m_b0) */
-        m_a1 = - (*S1_x / *S2_x);
-        m_a0 = *C_x / *S2_x;
+        m_a1 = - (S1_x / S2_x);
+        m_a0 = C_x / S2_x;
         m_b0 = 1;
         m_b1 = 0;
         m_obj_on_arr_type = CGAL_SEGMENT;
@@ -3130,7 +3120,7 @@ public:
 #endif
         /* S3_t does not make any difference since its coefficients are 
            equal to 0. Compute bounded segment over S1_t */
-        if (*S3_y == 0)
+        if (S3_y == 0)
         {
           if (m_bound_s1_s2)
           {
@@ -3183,9 +3173,9 @@ public:
        * 
        */
 
-      Rational B1 = *S1_x * *S3_y - *S1_y * *S3_x;
-      Rational B2 = *C_y * *S3_x - *C_x * *S3_y;
-      Rational B3 = *S2_y * *S3_x - *S2_x * *S3_y;
+      Rational B1 = S1_x * S3_y - S1_y * S3_x;
+      Rational B2 = C_y * S3_x - C_x * S3_y;
+      Rational B3 = S2_y * S3_x - S2_x * S3_y;
             
       if (B3 == 0)
          return LTS_g_func::CGAL_QUERY_FAILD;
@@ -3253,14 +3243,14 @@ public:
    *
    *
    *************************************************************/
-  void calc_bounded_segments_t_is_constant(Rational* S1_y,
-                                           Rational* S2_y,
-                                           Rational* S3_y,
-                                           Rational* C_y)
+  void calc_bounded_segments_t_is_constant(const Rational&  S1_y,
+                                           const Rational&  S2_y,
+                                           const Rational&  S3_y,
+                                           const Rational&  C_y)
   {
-    Rational D1 = *S1_y * m_b0 + m_a1 * *S2_y;
-    Rational D2 = m_a0 * *S2_y - *C_y * m_b0;
-    Rational D3 = *S3_y * m_b0;
+    Rational D1 = S1_y * m_b0 + m_a1 * S2_y;
+    Rational D2 = m_a0 * S2_y - C_y * m_b0;
+    Rational D3 = S3_y * m_b0;
 
 #if OBJ_ON_ARR_DEBUG                 
     std::cout << "D1 = " << D1 << " D2 = " << D2 << " D3 = " << D3 
