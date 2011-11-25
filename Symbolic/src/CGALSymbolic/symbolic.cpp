@@ -115,11 +115,16 @@ CGAL::Polynomial< CORE::BigInt > resultant(
 }
 #endif
 
+#if (defined CGAL_USE_NTL)
+template < class NT > inline
+Polynomial< NT > gcd_NTL(const Polynomial< NT >& p1,
+                         const Polynomial< NT >& p2);
+#endif
+
 template < class Poly >
 Poly gcd_gpu(const Poly& F_, const Poly& G_) {
 
 //    std::cout << "--------- Using our lovely libs!! -------------\n";
-
 //     n_ggcd_calls++;
 //     tm_ggcd.start();
     Poly ggcd = GPU_algorithm_facade::gcd(F_,G_);
@@ -127,9 +132,10 @@ Poly gcd_gpu(const Poly& F_, const Poly& G_) {
 
 #if CGAL_BISOLVE_CHECK_GPU_GCDS_SANITY
     printf("\nGGCD sanity check..\n");
-    Poly truth = /*gcd_NTL(F_, G_);*/
-                    modular_gcd_utcf_dfai(F_, G_);
+    Poly truth = gcd_NTL(F_, G_);
+//                     modular_gcd_utcf_dfai(F_, G_);
     if(truth != ggcd) {
+        std::cout << "truth: " << truth << "\n\nggcd: " << ggcd << "\n";
         writeout(F_, G_);
         std::cerr << "Wrong gcd!!\n";
         throw "WTF?";
