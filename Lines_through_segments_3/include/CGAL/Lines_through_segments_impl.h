@@ -781,12 +781,16 @@ public:
     if (seg1.source() == seg1.target() ||
         seg2.source() == seg2.target())
       return false;
-    Rational_line_3 line;
 
-    CGAL::Object result = m_rat_kernel->intersect_3_object()(seg1.supporting_line(),
-                                                             seg2.supporting_line());
+    bool lines_are_equal = m_rat_kernel->equal_3_object()
+      (seg1.supporting_line(),seg2.supporting_line());
+      
+    // TODO: 
+    // change this such that it just used the xyz order of the points
+    // The segments overlap if the intervals induced by the ordered points 
+    // overlap 
         
-    if (CGAL::assign(line, result))
+    if (lines_are_equal)
     {
       if (seg2.has_on(seg1.source()) && 
           seg2.source() != seg1.source() &&
