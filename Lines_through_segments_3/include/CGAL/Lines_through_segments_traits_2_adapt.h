@@ -1007,26 +1007,29 @@ public:
                                  const Rational_point_2 point_5,
                                  const Rational_segment_3* data)
   {
-    typename Rational_kernel::Conic_2   temp_conic;
-    Rational                       coefficients [4];
-         
-    temp_conic.set (point_1, point_2, point_3, point_4, point_5);
+    
+    assert(false);
 
-    /* 
-     * Get the conic coefficients:
-     * rx^2 + sy^2 + txy + ux + vy + w = 0 
-     * r and s equal to 0.
-     *
-     * txy + ux + vy + w = 0 
-     */
-    CGAL_precondition((temp_conic.r() == 0) && (temp_conic.s() == 0));
-
-    coefficients[3] = temp_conic.t();
-    coefficients[2] = temp_conic.u();
-    coefficients[1] = temp_conic.v();
-    coefficients[0] = temp_conic.w();
+//     typename Rational_kernel::Conic_2   temp_conic;
+//     Rational                       coefficients [4];
          
-    create_curve_on_plane_arr(cv, point_1.x(), point_5.x(), coefficients, data);
+//     temp_conic.set (point_1, point_2, point_3, point_4, point_5);
+
+//     /* 
+//      * Get the conic coefficients:
+//      * rx^2 + sy^2 + txy + ux + vy + w = 0 
+//      * r and s equal to 0.
+//      *
+//      * txy + ux + vy + w = 0 
+//      */
+//     CGAL_precondition((temp_conic.r() == 0) && (temp_conic.s() == 0));
+
+//     coefficients[3] = temp_conic.t();
+//     coefficients[2] = temp_conic.u();
+//     coefficients[1] = temp_conic.v();
+//     coefficients[0] = temp_conic.w();
+         
+//     create_curve_on_plane_arr(cv, point_1.x(), point_5.x(), coefficients, data);
   }
 
   void create_horizontal_curve_on_plane_arr(Conic_curve_2_wd& cv,
