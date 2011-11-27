@@ -1,6 +1,6 @@
 
 #define CGAL_LEDA_VERSION 620
-#define CGAL_LAZY_KERNEL_DEBUG 0
+//#define CGAL_LAZY_KERNEL_DEBUG 1 // comment out if not needed 
 
 /* Set the required traits */
 #define USE_CONIC_TRAITS 0
@@ -8,6 +8,7 @@
 #define USE_SQRT_TRAITS 1
 #define USE_LAZY 1
 #define USE_LEDA 1
+
 
 #include <iostream>
 #include <fstream>
@@ -20,6 +21,11 @@
 #include <vector>
 #include <algorithm>
 #include <CGAL/Timer.h>
+
+#include <CGAL/Simple_cartesian.h>
+#include <CGAL/Filtered_kernel.h>
+#include <CGAL/Lazy_exact_nt.h>
+#include <CGAL/Lazy_kernel.h>
 
 
 /* Only for internal debug purposes may be removed later. */
@@ -48,7 +54,7 @@ inline std::string change_color_rec(std::ostringstream& o, int color)
 
 template <typename T, typename... Args>
 std::string change_color_rec(std::ostringstream& o, int color, const T& value, 
-                             Args&... args)
+    Args&... args)
 {
   o << "\033[1;" << color << "m" << value << "\033[0m";
   return change_color_rec(o, color, args...);
@@ -98,6 +104,7 @@ std::string change_color(int color, const T& value,const Args&... args)
 #include <CGAL/Arr_spherical_topology_traits_2.h>
 #include <CGAL/Arr_geodesic_arc_on_sphere_traits_2.h>
 
+
 #include <CGAL/CORE_algebraic_number_traits.h>
 
 #if USE_LEDA
@@ -112,39 +119,56 @@ std::string change_color(int color, const T& value,const Args&... args)
 #include <CGAL/Lines_through_segments_3.h>
 #include <CGAL/Lines_through_segments_traits_3.h>
 
-
-#if USE_LAZY
-
 #if USE_LEDA
-typedef CGAL::Lazy_exact_nt<leda_real>                  Algebraic;
-typedef CGAL::Lazy_exact_nt<leda_rational>              Rational;
-typedef CGAL::Lazy_exact_nt<leda_integer>               Integer;
+typedef leda_real                                       _Algebraic;
+typedef leda_rational                                   _Rational;
+typedef leda_integer                                    _Integer;
 #else
 typedef CGAL::CORE_algebraic_number_traits              Nt_traits;
-typedef CGAL::Lazy_exact_nt<Nt_traits::Algebraic>       Algebraic;
-typedef CGAL::Lazy_exact_nt<Nt_traits::Rational>        Rational;
-typedef CGAL::Lazy_exact_nt<CORE::BigInt>               Integer;
+typedef Nt_traits::Algebraic                            _Algebraic;
+typedef Nt_traits::Rational                             _Rational;
+typedef CORE::BigInt                                    _Integer;
 #endif
 
-#else // USE_LAZY
+#if  USE_LAZY
+typedef CGAL::Lazy_exact_nt<_Algebraic>                 Algebraic;
+typedef CGAL::Lazy_exact_nt<_Rational>                  Rational;
+typedef CGAL::Lazy_exact_nt<_Integer>                   Integer;
 
-#if USE_LEDA
-typedef leda_real                                       Algebraic;
-typedef leda_rational                                   Rational;
-typedef leda_integer                                    Integer;
+#if 1
+// seems faster 
+typedef CGAL::Cartesian<CGAL::Lazy_exact_nt<_Rational> >  Rational_kernel;
 #else
-typedef CGAL::CORE_algebraic_number_traits              Nt_traits;
-typedef Nt_traits::Algebraic                            Algebraic;
-typedef Nt_traits::Rational                             Rational;
-typedef CORE::BigInt                                    Integer;
+// but I leave this here for now
+
+// class Rational_kernel
+//   : public CGAL::internal::Static_filters<
+//       CGAL::Type_equality_wrapper<
+//              CGAL::Lazy_kernel_base< CGAL::Simple_cartesian<_Rational>, CGAL::Simple_cartesian<CGAL::Interval_nt_advanced>,
+// 	                       CGAL::Cartesian_converter< CGAL::Simple_cartesian<_Rational>, CGAL::Simple_cartesian<CGAL::Interval_nt_advanced> >, Rational_kernel>,
+//              Rational_kernel >, false>
+// {};
+
+class Rational_kernel
+  : public CGAL::Type_equality_wrapper<
+             CGAL::Lazy_kernel_base< CGAL::Simple_cartesian<_Rational>, CGAL::Simple_cartesian<CGAL::Interval_nt_advanced>,
+	                       CGAL::Cartesian_converter< CGAL::Simple_cartesian<_Rational>, CGAL::Simple_cartesian<CGAL::Interval_nt_advanced> >, Rational_kernel>,
+             Rational_kernel >
+{};
+#endif 
+
+#else
+typedef _Algebraic                                      Algebraic;
+typedef _Rational                                       Rational;
+typedef _Integer                                        Integer; 
+typedef CGAL::Cartesian<Rational>                       Rational_kernel;
+
 #endif
 
-#endif // USE_LAZY
 
 
 
 typedef CGAL::Cartesian<Algebraic>                      Alg_kernel;
-typedef CGAL::Cartesian<Rational>                       Rational_kernel;
 typedef CGAL::Segment_3<Rational_kernel>                Rational_segment_3;
 typedef CGAL::Line_3<Rational_kernel>                   Rational_line_3;
 typedef CGAL::Point_3<Rational_kernel>                  Rational_point_3;
@@ -183,9 +207,9 @@ using namespace std;
 
 void ReportError(std::string str, int line, std::string file)
 {
-   std::cout << change_color(CGAL_RED,str) << std::endl;
-   std::cout << change_color(CGAL_RED,"File = ", file, "\tLine = ", line) << std::endl;
-   exit(0);
+  std::cout << change_color(CGAL_RED,str) << std::endl;
+  std::cout << change_color(CGAL_RED,"File = ", file, "\tLine = ", line) << std::endl;
+  exit(0);
 }
 
 /* Parse line at the inputfile */
@@ -195,27 +219,27 @@ void ReportError(std::string str, int line, std::string file)
 template <class Rational>
 static void ParseInputFileLine(Rational coordinates[NUM_OF_COORDINATES],char line[LINE_SIZE])
 {
-   int pos = 0,next_pos = 0;
-   string temp_str;
-   int number_index = 0;
-   string line_str(line);
+  int pos = 0,next_pos = 0;
+  string temp_str;
+  int number_index = 0;
+  string line_str(line);
       
-   while (number_index < 6)
-   {
+  while (number_index < 6)
+    {
       while ((next_pos = line_str.find(" ",pos)) != string::npos)
-      {
-         temp_str = line_str.substr(pos,next_pos-pos);
+        {
+          temp_str = line_str.substr(pos,next_pos-pos);
 #if 0
-         std::cout << change_color(CGAL_RED,"NOTE the parser can't parse fractions") << std::endl;
-         double temp = atof(temp_str.c_str());
-         coordinates[number_index] = Rational(temp);
+          std::cout << change_color(CGAL_RED,"NOTE the parser can't parse fractions") << std::endl;
+          double temp = atof(temp_str.c_str());
+          coordinates[number_index] = Rational(temp);
 #else
-         coordinates[number_index] = Rational(strtod (temp_str.c_str(),NULL));
+          coordinates[number_index] = Rational(strtod (temp_str.c_str(),NULL));
 #endif
          
-         number_index++;
-         pos = next_pos + 1;
-      }
+          number_index++;
+          pos = next_pos + 1;
+        }
 
       temp_str = line_str.substr(pos,line_str.size()-pos);
 #if 0
@@ -226,12 +250,12 @@ static void ParseInputFileLine(Rational coordinates[NUM_OF_COORDINATES],char lin
       coordinates[number_index] = Rational(strtod (temp_str.c_str(),NULL));
 #endif
       number_index++;
-   }
+    }
    
-   if (number_index != 6)
-   {
+  if (number_index != 6)
+    {
       ReportError("Bad number format",__LINE__,__FILE__);		
-   }
+    }
 
 }
 
@@ -253,274 +277,280 @@ static void ParseInputFileLine(Rational coordinates[NUM_OF_COORDINATES],char lin
 
 template <class Rational_segment_3,class Rational,class Rational_point_3>
 int ReadInputFileFlip(char* input_file_name,vector<Rational_segment_3> &lines,
-int &expected_num_of_lines,
-int &expected_num_of_arr_curves,
-int &expected_num_of_arr_polygons,
-int &expected_num_of_point_3,
-int &expected_num_of_arr_arcs,
-int &expected_num_of_overlap_seg_3,
-bool flip,
-int &expected_num_of_lines_flip,
-int &expected_num_of_arr_curves_flip,
-int &expected_num_of_arr_polygons_flip,
-int &expected_num_of_point_3_flip,
-int &expected_num_of_arr_arcs_flip,
-int &expected_num_of_overlap_seg_3_flip)
+    int &expected_num_of_lines,
+    int &expected_num_of_arr_curves,
+    int &expected_num_of_arr_polygons,
+    int &expected_num_of_point_3,
+    int &expected_num_of_arr_arcs,
+    int &expected_num_of_overlap_seg_3,
+    bool flip,
+    int &expected_num_of_lines_flip,
+    int &expected_num_of_arr_curves_flip,
+    int &expected_num_of_arr_polygons_flip,
+    int &expected_num_of_point_3_flip,
+    int &expected_num_of_arr_arcs_flip,
+    int &expected_num_of_overlap_seg_3_flip)
 {
-   int ii = 0;
-   int num_of_lines_coord = 0;
-   int num_of_lines = 0;
-   char line[LINE_SIZE];
-   Rational coordinates[NUM_OF_COORDINATES];
-   cout<<input_file_name<<endl;
+  int ii = 0;
+  int num_of_lines_coord = 0;
+  int num_of_lines = 0;
+  char line[LINE_SIZE];
+  Rational coordinates[NUM_OF_COORDINATES];
+  cout<<input_file_name<<endl;
 
-   ifstream input_file(input_file_name);
+  ifstream input_file(input_file_name);
    
-   if (input_file.fail())
-   {
+  if (input_file.fail())
+    {
       ReportError("Error opening file",__LINE__,__FILE__);
-   }
-   input_file.getline(line,LINE_SIZE);
+    }
+  input_file.getline(line,LINE_SIZE);
    
    
-   if (sscanf(line,"%d",&num_of_lines,LINE_SIZE) != 1)
-   {
+  if (sscanf(line,"%d",&num_of_lines,LINE_SIZE) != 1)
+    {
       ReportError("Number of lines at file not specified.",__LINE__,__FILE__);
-   }
+    }
    
-   /* Read the file */
-   while (!input_file.eof() && ii < num_of_lines)
-   {
+  /* Read the file */
+  while (!input_file.eof() && ii < num_of_lines)
+    {
       input_file.getline(line,sizeof(line));
       ParseInputFileLine(coordinates,line);
       ii++;
       lines.push_back(Rational_segment_3(
-                         Rational_point_3(coordinates[0],coordinates[1],coordinates[2]),
-                         Rational_point_3(coordinates[3],coordinates[4],coordinates[5])));
-   }
+                          Rational_point_3(coordinates[0],coordinates[1],coordinates[2]),
+                          Rational_point_3(coordinates[3],coordinates[4],coordinates[5])));
+    }
    
-   if (ii != num_of_lines)
-   {
+  if (ii != num_of_lines)
+    {
       ReportError("Two many lines in file",__LINE__,__FILE__);
-   }
+    }
 
-   input_file.getline(line,sizeof(line));
-   if (strncmp("OUTPUT:",line,7) != 0)
-   {
+  input_file.getline(line,sizeof(line));
+  if (strncmp("OUTPUT:",line,7) != 0)
+    {
       ReportError("OUTPUT is missing",__LINE__,__FILE__);
-   }
+    }
    
-   input_file.getline(line,sizeof(line));
-   if (sscanf(line,"%d",&expected_num_of_lines,LINE_SIZE) != 1)
-   {
+  input_file.getline(line,sizeof(line));
+  if (sscanf(line,"%d",&expected_num_of_lines,LINE_SIZE) != 1)
+    {
       ReportError("Number of output lines at file not specified.",__LINE__,__FILE__);
-   }
+    }
 
-   input_file.getline(line,sizeof(line));
-   if (sscanf(line,"%d",&expected_num_of_arr_curves,LINE_SIZE) != 1)
-   {
+  input_file.getline(line,sizeof(line));
+  if (sscanf(line,"%d",&expected_num_of_arr_curves,LINE_SIZE) != 1)
+    {
       ReportError("Number of output curves at file not specified.",__LINE__,__FILE__);
-   }
+    }
 
-   input_file.getline(line,sizeof(line));
-   if (sscanf(line,"%d",&expected_num_of_arr_polygons,LINE_SIZE) != 1)
-   {
+  input_file.getline(line,sizeof(line));
+  if (sscanf(line,"%d",&expected_num_of_arr_polygons,LINE_SIZE) != 1)
+    {
       ReportError("Number of output polygons at file not specified.",__LINE__,__FILE__);
-   }
+    }
 
-   input_file.getline(line,sizeof(line));
-   if (sscanf(line,"%d",&expected_num_of_point_3,LINE_SIZE) != 1)
-   {
+  input_file.getline(line,sizeof(line));
+  if (sscanf(line,"%d",&expected_num_of_point_3,LINE_SIZE) != 1)
+    {
       ReportError("Number of output point 3 at file not specified.",__LINE__,__FILE__);
-   }
+    }
 
-   input_file.getline(line,sizeof(line));
-   if (sscanf(line,"%d",&expected_num_of_arr_arcs,LINE_SIZE) != 1)
-   {
+  input_file.getline(line,sizeof(line));
+  if (sscanf(line,"%d",&expected_num_of_arr_arcs,LINE_SIZE) != 1)
+    {
       ReportError("Number of output arcs at file not specified.",__LINE__,__FILE__);
-   }
+    }
 
-   input_file.getline(line,sizeof(line));
-   if (sscanf(line,"%d",&expected_num_of_overlap_seg_3,LINE_SIZE) != 1)
-   {
+  input_file.getline(line,sizeof(line));
+  if (sscanf(line,"%d",&expected_num_of_overlap_seg_3,LINE_SIZE) != 1)
+    {
       ReportError("Number of output overlap segs at file not specified.",__LINE__,__FILE__);
-   }
-   input_file.getline(line,sizeof(line));
-   if (flip && strncmp("AFTER FLIP:",line,11) == 0)
-   {
+    }
+  input_file.getline(line,sizeof(line));
+  if (flip && strncmp("AFTER FLIP:",line,11) == 0)
+    {
       input_file.getline(line,sizeof(line));
       if (sscanf(line,"%d",&expected_num_of_lines_flip,LINE_SIZE) != 1)
-      {
-         ReportError("Number of output lines at file not specified.",__LINE__,__FILE__);
-      }
+        {
+          ReportError("Number of output lines at file not specified.",__LINE__,__FILE__);
+        }
       
       input_file.getline(line,sizeof(line));
       if (sscanf(line,"%d",&expected_num_of_arr_curves_flip,LINE_SIZE) != 1)
-      {
-         ReportError("Number of output curves at file not specified.",__LINE__,__FILE__);
-      }
+        {
+          ReportError("Number of output curves at file not specified.",__LINE__,__FILE__);
+        }
 
       input_file.getline(line,sizeof(line));
       if (sscanf(line,"%d",&expected_num_of_arr_polygons_flip,LINE_SIZE) != 1)
-      {
-         ReportError("Number of output polygons at file not specified.",__LINE__,__FILE__);
-      }
+        {
+          ReportError("Number of output polygons at file not specified.",__LINE__,__FILE__);
+        }
       
       input_file.getline(line,sizeof(line));
       if (sscanf(line,"%d",&expected_num_of_point_3_flip,LINE_SIZE) != 1)
-      {
-         ReportError("Number of output point 3 at file not specified.",__LINE__,__FILE__);
-      }
+        {
+          ReportError("Number of output point 3 at file not specified.",__LINE__,__FILE__);
+        }
       
       input_file.getline(line,sizeof(line));
       if (sscanf(line,"%d",&expected_num_of_arr_arcs_flip,LINE_SIZE) != 1)
-      {
-         ReportError("Number of output arcs at file not specified.",__LINE__,__FILE__);
-      }
+        {
+          ReportError("Number of output arcs at file not specified.",__LINE__,__FILE__);
+        }
       
       input_file.getline(line,sizeof(line));
       if (sscanf(line,"%d",&expected_num_of_overlap_seg_3_flip,LINE_SIZE) != 1)
-      {
-         ReportError("Number of output overlap segs at file not specified.",__LINE__,__FILE__);
-      }
-   }
+        {
+          ReportError("Number of output overlap segs at file not specified.",__LINE__,__FILE__);
+        }
+    }
    
-   input_file.close();
-   return num_of_lines;
+  input_file.close();
+  return num_of_lines;
 }
 
 template <class Rational_segment_3,class Rational,class Rational_point_3>
 int ReadInputFile(char* input_file_name,vector<Rational_segment_3> &lines,
-int &expected_num_of_lines,
-int &expected_num_of_arr_curves,
-int &expected_num_of_arr_polygons,
-int &expected_num_of_point_3,
-int &expected_num_of_arr_arcs,
-int &expected_num_of_overlap_seg_3)
+    int &expected_num_of_lines,
+    int &expected_num_of_arr_curves,
+    int &expected_num_of_arr_polygons,
+    int &expected_num_of_point_3,
+    int &expected_num_of_arr_arcs,
+    int &expected_num_of_overlap_seg_3)
 {
-   int unused;
-   ReadInputFileFlip
-   <Rational_segment_3,Rational,Rational_point_3>(input_file_name,lines,
-   expected_num_of_lines,
-   expected_num_of_arr_curves,
-   expected_num_of_arr_polygons,
-   expected_num_of_point_3,
-   expected_num_of_arr_arcs,
-   expected_num_of_overlap_seg_3,
-   false,
-   unused,
-   unused,
-   unused,
-   unused,
-   unused,
-   unused);
+  int unused;
+  ReadInputFileFlip
+    <Rational_segment_3,Rational,Rational_point_3>(input_file_name,lines,
+        expected_num_of_lines,
+        expected_num_of_arr_curves,
+        expected_num_of_arr_polygons,
+        expected_num_of_point_3,
+        expected_num_of_arr_arcs,
+        expected_num_of_overlap_seg_3,
+        false,
+        unused,
+        unused,
+        unused,
+        unused,
+        unused,
+        unused);
 }
 
 template<typename LTS_output_obj>
 class My_front_insert_iterator
 {
-   typedef list<LTS_output_obj> My_container;
+  typedef list<LTS_output_obj> My_container;
 protected:
-   My_container* container;
+  My_container* container;
       
 public:
       
-   /* The explicit function specifier controls unwanted implicit type conversions. 
-      It can only be used in declarations of constructors within a class declaration. 
-      For example, except for the default constructor, 
-      the constructors in the following class are converting constructors.*/
-   explicit My_front_insert_iterator(My_container& x)
-   {
-      container = &x;
-   }
+  /* The explicit function specifier controls unwanted implicit type conversions. 
+     It can only be used in declarations of constructors within a class declaration. 
+     For example, except for the default constructor, 
+     the constructors in the following class are converting constructors.*/
+  explicit My_front_insert_iterator(My_container& x)
+  {
+    container = &x;
+  }
       
-   My_front_insert_iterator& operator= (typename My_container::const_reference value)
-   { 
-      container->push_front(value);
-      return *this;
-   }
+  My_front_insert_iterator& operator= (typename My_container::const_reference value)
+  { 
+    container->push_front(value);
+    return *this;
+  }
 
-   My_front_insert_iterator& operator* ()
-   { 
-      return *this;
-   }
+  My_front_insert_iterator& operator* ()
+  { 
+    return *this;
+  }
 
-   My_front_insert_iterator& operator++ (int)
-   { 
-      return *this;
-   }
+  My_front_insert_iterator& operator++ (int)
+  { 
+    return *this;
+  }
 
-   My_front_insert_iterator& operator++ ()
-   { 
-      return *this;
-   }
+  My_front_insert_iterator& operator++ ()
+  { 
+    return *this;
+  }
 };
 
 template <typename Lines_through_segs>
 bool get_all_common_lines(
-   Lines_through_segs& line_through_segs,
-   vector<Rational_segment_3> &lines,
-   int &expected_num_of_lines,
-   int &expected_num_of_arr_curves,
-   int &expected_num_of_arr_polygons,
-   int &expected_num_of_point_3,
-   int &expected_num_of_arr_arcs,
-   int &expected_num_of_overlap_seg_3)
+    Lines_through_segs& line_through_segs,
+    vector<Rational_segment_3> &lines,
+    int &expected_num_of_lines,
+    int &expected_num_of_arr_curves,
+    int &expected_num_of_arr_polygons,
+    int &expected_num_of_point_3,
+    int &expected_num_of_arr_arcs,
+    int &expected_num_of_overlap_seg_3)
 {
-   int num_of_lines = 0;
-   int num_of_arr_curves = 0;
-   int num_of_arr_polygons = 0;
-   int num_of_points = 0;
-   int num_of_arr_arcs = 0;
-   int num_of_overlap_seg_3 = 0;
+  int num_of_lines = 0;
+  int num_of_arr_curves = 0;
+  int num_of_arr_polygons = 0;
+  int num_of_points = 0;
+  int num_of_arr_arcs = 0;
+  int num_of_overlap_seg_3 = 0;
 #if LTS_WITH_SEGMENTS
-   typedef typename Lines_through_segs::Transversal_with_segments LTS_output_obj;
+  typedef typename Lines_through_segs::Transversal_with_segments LTS_output_obj;
 #else
-   typedef typename Lines_through_segs::Transversal LTS_output_obj;
+  typedef typename Lines_through_segs::Transversal LTS_output_obj;
 #endif
-   
-   list<LTS_output_obj> output_list;
-   
+  
+  list<LTS_output_obj> output_list;
+  
 #if CGAL_LTS_MEASURE_TIME
-   CGAL::Timer t;
-   t.reset();
-   t.start();
-// for (int ii = 0;ii<1;ii++)
-// {
-//    output_list.clear();
-#endif
-   line_through_segs(lines.begin(),lines.end(),
-      My_front_insert_iterator<LTS_output_obj>(output_list));
-#if CGAL_LTS_MEASURE_TIME
-// }
-   t.stop();
-   std::cout << t.time() << std::endl;
-   std::cout << "list size = " << output_list.size() << std::endl;
-   exit(0);
-   
-#endif
-   
-   typename list<LTS_output_obj>::iterator it_output_list;
-#if PRINT_OUTPUT
-   cout << "OUTPUT:" << endl;
-#endif
-   
-   typename Lines_through_segs::Mapped_general_polygon_2   *polygon_obj;
-   typename Lines_through_segs::Mapped_x_monotone_curve_2  *curve_obj;
-   typename Lines_through_segs::Mapped_point_2             *arr_point_2_obj;
-   typename Lines_through_segs::Line_3                     *line_obj;
-   typename Lines_through_segs::Through_point_3            *point_obj;
-   typename Lines_through_segs::Through_point_3_segment_3  *arc_obj;
-   typename Lines_through_segs::Through_segment_3          *seg_obj;
+    CGAL::Timer t;
+    t.reset();
+    t.start();
 
-   typename Lines_through_segs::Mapped_2                   *mapped_obj;
-   typename Lines_through_segs::Through_3                  *through_obj;
+    int count =0; 
+    int runs = 1;
+    while (count ++ < runs ){
+      output_list.clear();
+#endif // CGAL_LTS_MEASURE_TIME
+      line_through_segs(lines.begin(),lines.end(),
+          My_front_insert_iterator<LTS_output_obj>(output_list));
+#if CGAL_LTS_MEASURE_TIME
+    }
+    t.stop();
+    
+    std::cout << t.time()/runs << std::endl;
+    std::cout << "list size = " << output_list.size() << std::endl;
+    exit(0);
+#endif // CGAL_LTS_MEASURE_TIME
+
+  
    
-   typename Lines_through_segs::Transversal                   transversal;
-   typename Lines_through_segs::Transversal_with_segments     *transversalw;
+
    
-   for (it_output_list = output_list.begin(); it_output_list != output_list.end(); it_output_list++)
-   {
+  typename list<LTS_output_obj>::iterator it_output_list;
+#if PRINT_OUTPUT
+  cout << "OUTPUT:" << endl;
+#endif
+   
+  typename Lines_through_segs::Mapped_general_polygon_2   *polygon_obj;
+  typename Lines_through_segs::Mapped_x_monotone_curve_2  *curve_obj;
+  typename Lines_through_segs::Mapped_point_2             *arr_point_2_obj;
+  typename Lines_through_segs::Line_3                     *line_obj;
+  typename Lines_through_segs::Through_point_3            *point_obj;
+  typename Lines_through_segs::Through_point_3_segment_3  *arc_obj;
+  typename Lines_through_segs::Through_segment_3          *seg_obj;
+
+  typename Lines_through_segs::Mapped_2                   *mapped_obj;
+  typename Lines_through_segs::Through_3                  *through_obj;
+   
+  typename Lines_through_segs::Transversal                   transversal;
+  typename Lines_through_segs::Transversal_with_segments     *transversalw;
+   
+  for (it_output_list = output_list.begin(); it_output_list != output_list.end(); it_output_list++)
+    {
 #if LTS_WITH_SEGMENTS
 #if PRINT_OUTPUT
       cout << "S1 = " << *it_output_list->second[0] << std::endl;
@@ -539,120 +569,120 @@ bool get_all_common_lines(
 #endif
       
       if (line_obj = 
-                boost::get < typename Lines_through_segs::Line_3 > (&transversal))
-      {
-         num_of_lines++;
-      }
+          boost::get < typename Lines_through_segs::Line_3 > (&transversal))
+        {
+          num_of_lines++;
+        }
       else if (mapped_obj = 
-               boost::get<typename Lines_through_segs::Mapped_2> 
-               (&transversal))
-      {
-         typename Lines_through_segs::Mapped_2::Mapped_line_3 line = mapped_obj->line();
-         typename Lines_through_segs::Mapped_transversal mapped_transversal = mapped_obj->mapped_transversal();
-         if (curve_obj = 
-             boost::get<typename Lines_through_segs::Mapped_x_monotone_curve_2> 
-             (&mapped_transversal))
-         {
-            num_of_arr_curves++;
-         }
-         else if (polygon_obj = 
-                  boost::get<typename Lines_through_segs::Mapped_general_polygon_2> (&mapped_transversal))
-         {
-            num_of_arr_polygons++;
-         }
-         else if (arr_point_2_obj = 
-                  boost::get<typename Lines_through_segs::Mapped_point_2> (&mapped_transversal))
-         {
-            num_of_lines++;
-         }
-         else
-         {
-            ReportError("Unexpected Error - invalid mapped obj value",__LINE__,__FILE__);
-         }
-      }
+          boost::get<typename Lines_through_segs::Mapped_2> 
+          (&transversal))
+        {
+          typename Lines_through_segs::Mapped_2::Mapped_line_3 line = mapped_obj->line();
+          typename Lines_through_segs::Mapped_transversal mapped_transversal = mapped_obj->mapped_transversal();
+          if (curve_obj = 
+              boost::get<typename Lines_through_segs::Mapped_x_monotone_curve_2> 
+              (&mapped_transversal))
+            {
+              num_of_arr_curves++;
+            }
+          else if (polygon_obj = 
+              boost::get<typename Lines_through_segs::Mapped_general_polygon_2> (&mapped_transversal))
+            {
+              num_of_arr_polygons++;
+            }
+          else if (arr_point_2_obj = 
+              boost::get<typename Lines_through_segs::Mapped_point_2> (&mapped_transversal))
+            {
+              num_of_lines++;
+            }
+          else
+            {
+              ReportError("Unexpected Error - invalid mapped obj value",__LINE__,__FILE__);
+            }
+        }
       else if (through_obj = boost::get<typename Lines_through_segs::Through_3> 
-               (&transversal))
-      {
-         typename Lines_through_segs::Through_transversal through_transversal = through_obj->through_transversal();
-         if (arc_obj = 
-             boost::get<typename Lines_through_segs::Through_point_3_segment_3> 
-             (&through_transversal))
-         {
-            num_of_arr_arcs++;
-         }
-         else if (seg_obj = 
-                  boost::get<typename Lines_through_segs::Through_segment_3> (&through_transversal))
-         {
-            num_of_overlap_seg_3++;
-         }
-         else if (point_obj = 
-                  boost::get<typename Lines_through_segs::Through_point_3> (&through_transversal))
-         {
-            num_of_points++;
-         }
-         else
-         {
-            ReportError("Unexpected Error - Invalid through obj type",__LINE__,__FILE__);
-         }
-      }
+          (&transversal))
+        {
+          typename Lines_through_segs::Through_transversal through_transversal = through_obj->through_transversal();
+          if (arc_obj = 
+              boost::get<typename Lines_through_segs::Through_point_3_segment_3> 
+              (&through_transversal))
+            {
+              num_of_arr_arcs++;
+            }
+          else if (seg_obj = 
+              boost::get<typename Lines_through_segs::Through_segment_3> (&through_transversal))
+            {
+              num_of_overlap_seg_3++;
+            }
+          else if (point_obj = 
+              boost::get<typename Lines_through_segs::Through_point_3> (&through_transversal))
+            {
+              num_of_points++;
+            }
+          else
+            {
+              ReportError("Unexpected Error - Invalid through obj type",__LINE__,__FILE__);
+            }
+        }
       else
-      {
-         ReportError("Unexpected Error - Invalied output obj type",__LINE__,__FILE__);
-      }
-   }
+        {
+          ReportError("Unexpected Error - Invalied output obj type",__LINE__,__FILE__);
+        }
+    }
    
 #if PRINT_OUTPUT
-   cout<<endl<<endl<<endl;
+  cout<<endl<<endl<<endl;
 #endif
 //    std::cout << "num_of_lines = " << num_of_lines << std::endl;
 //    std::cout << "num_of_arr_polygons = " << num_of_arr_polygons << std::endl;
 //    std::cout << "num_of_arr_curves = " << num_of_arr_curves << std::endl;
 //   std::cout << "num_of_arr_arcs = " << num_of_arr_arcs << std::endl;
    
-   if (expected_num_of_lines == -1)
-   {
+  if (expected_num_of_lines == -1)
+    {
       expected_num_of_lines = num_of_lines;
       expected_num_of_arr_curves = num_of_arr_curves;
       expected_num_of_arr_polygons = num_of_arr_polygons;
       expected_num_of_arr_arcs = num_of_arr_arcs;
       expected_num_of_overlap_seg_3 = num_of_overlap_seg_3;
       expected_num_of_point_3 = num_of_points;
-   }
-   else
-   {
+    }
+  else
+    {
       if (expected_num_of_lines != num_of_lines)
-      {
-         std::cout << "num_of_lines = " << num_of_lines << std::endl;
-         return false;
-      }
+        {
+          std::cout << "num_of_lines = " << num_of_lines << std::endl;
+          return false;
+        }
       
       if (expected_num_of_arr_curves != num_of_arr_curves)
-      {
-         return false;
-      }
+        {
+          return false;
+        }
       
       if (expected_num_of_arr_polygons != num_of_arr_polygons)
-      {
-         return false;
-      }
+        {
+          return false;
+        }
 
       if (expected_num_of_arr_arcs != num_of_arr_arcs)
-      {
-         return false;
-      }
+        {
+          return false;
+        }
 
       if (expected_num_of_overlap_seg_3 != num_of_overlap_seg_3)
-      {
-         return false;
-      }
+        {
+          return false;
+        }
 
       if (expected_num_of_point_3 != num_of_points)
-      {
-         return false;
-      }
+        {
+          return false;
+        }
       
-   }
-   return true;
+    }
+  return true;
 }
 
 
@@ -662,391 +692,393 @@ static int iteration = -1;
 
 template <typename Lines_through_segs>
 void run_all_permutations(
-   Lines_through_segs& line_through_segs, 
-   vector<Rational_segment_3> &lines,
-   int *lines_index,
-   unsigned int len ,
-   int min, 
-   bool print,
-   int &expected_num_of_lines,
-   int &expected_num_of_arr_curves,
-   int &expected_num_of_arr_polygons,
-   int &expected_num_of_point_3,
-   int &expected_num_of_arr_arcs,
-   int &expected_num_of_overlap_seg_3)
+    Lines_through_segs& line_through_segs, 
+    vector<Rational_segment_3> &lines,
+    int *lines_index,
+    unsigned int len ,
+    int min, 
+    bool print,
+    int &expected_num_of_lines,
+    int &expected_num_of_arr_curves,
+    int &expected_num_of_arr_polygons,
+    int &expected_num_of_point_3,
+    int &expected_num_of_arr_arcs,
+    int &expected_num_of_overlap_seg_3)
 {
-   if(min == len || iteration > 2000)
-   {
+  if(min == len || iteration > 2000)
+    {
       return;
-   }
+    }
           
-   if (print)
-   {
+  if (print)
+    {
       iteration++;
          
       if (!get_all_common_lines(line_through_segs,
-                                lines,
-                                expected_num_of_lines,
-                                expected_num_of_arr_curves,
-                                expected_num_of_arr_polygons,
-                                expected_num_of_point_3,
-                                expected_num_of_arr_arcs,
-                                expected_num_of_overlap_seg_3))
-      {
+              lines,
+              expected_num_of_lines,
+              expected_num_of_arr_curves,
+              expected_num_of_arr_polygons,
+              expected_num_of_point_3,
+              expected_num_of_arr_arcs,
+              expected_num_of_overlap_seg_3))
+        {
            
-         cout << change_color(CGAL_RED,"Iteration Error: ",iteration,"(");
-         for (int ii = 0; ii < len-1; ii++)
-         {
-            cout << change_color(CGAL_RED,lines_index[ii],", ");
-         }
-         cout << change_color(CGAL_RED,lines_index[len-1],")") << endl;
-         exit(0);
-      }
-   }
+          cout << change_color(CGAL_RED,"Iteration Error: ",iteration,"(");
+          for (int ii = 0; ii < len-1; ii++)
+            {
+              cout << change_color(CGAL_RED,lines_index[ii],", ");
+            }
+          cout << change_color(CGAL_RED,lines_index[len-1],")") << endl;
+          exit(0);
+        }
+    }
    
-   for (int ii = min; ii < len;ii++)
-   {
+  for (int ii = min; ii < len;ii++)
+    {
       swap(lines.at(min),lines.at(ii));
       swap(lines_index[min],lines_index[ii]);
          
       run_all_permutations(line_through_segs,
-                           lines, lines_index, 
-                           len ,min + 1, ii != min,
-                           expected_num_of_lines,
-                           expected_num_of_arr_curves,
-                           expected_num_of_arr_polygons,
-                           expected_num_of_point_3,
-                           expected_num_of_arr_arcs,
-                           expected_num_of_overlap_seg_3);
+          lines, lines_index, 
+          len ,min + 1, ii != min,
+          expected_num_of_lines,
+          expected_num_of_arr_curves,
+          expected_num_of_arr_polygons,
+          expected_num_of_point_3,
+          expected_num_of_arr_arcs,
+          expected_num_of_overlap_seg_3);
          
       swap(lines.at(min),lines.at(ii));
       swap(lines_index[min],lines_index[ii]);
          
-   }
+    }
 }
 
 
 template <typename Lines_through_segs>
 void flip(
-   Lines_through_segs& line_through_segs, 
-   vector<Rational_segment_3> &lines,
-   int &expected_num_of_lines,
-   int &expected_num_of_arr_curves,
-   int &expected_num_of_arr_polygons,
-   int &expected_num_of_point_3,
-   int &expected_num_of_arr_arcs,
-   int &expected_num_of_overlap_seg_3,
-   int &expected_num_of_lines_flip,
-   int &expected_num_of_arr_curves_flip,
-   int &expected_num_of_arr_polygons_flip,
-   int &expected_num_of_point_3_flip,
-   int &expected_num_of_arr_arcs_flip,
-   int &expected_num_of_overlap_seg_3_flip)
+    Lines_through_segs& line_through_segs, 
+    vector<Rational_segment_3> &lines,
+    int &expected_num_of_lines,
+    int &expected_num_of_arr_curves,
+    int &expected_num_of_arr_polygons,
+    int &expected_num_of_point_3,
+    int &expected_num_of_arr_arcs,
+    int &expected_num_of_overlap_seg_3,
+    int &expected_num_of_lines_flip,
+    int &expected_num_of_arr_curves_flip,
+    int &expected_num_of_arr_polygons_flip,
+    int &expected_num_of_point_3_flip,
+    int &expected_num_of_arr_arcs_flip,
+    int &expected_num_of_overlap_seg_3_flip)
 
 {
-   if (expected_num_of_lines_flip < 0)
-   {
+  if (expected_num_of_lines_flip < 0)
+    {
       ReportError("Unexpected error",__LINE__,__FILE__);
-   }
+    }
    
 #if LINES_DEBUG   
-   cout <<"  get_all_common_lines iteration = " << 0 << endl;
+  cout <<"  get_all_common_lines iteration = " << 0 << endl;
 #endif
-   if (!get_all_common_lines(line_through_segs,
-                        lines,
-                        expected_num_of_lines,
-                        expected_num_of_arr_curves,
-                        expected_num_of_arr_polygons,
-                        expected_num_of_point_3,
-                        expected_num_of_arr_arcs,
-   expected_num_of_overlap_seg_3))
-   {
+  if (!get_all_common_lines(line_through_segs,
+          lines,
+          expected_num_of_lines,
+          expected_num_of_arr_curves,
+          expected_num_of_arr_polygons,
+          expected_num_of_point_3,
+          expected_num_of_arr_arcs,
+          expected_num_of_overlap_seg_3))
+    {
       ReportError("Error iteration 0",__LINE__,__FILE__);
-   }
+    }
    
 
-   unsigned int len = lines.size()/2;
-   for (int ii = 0; ii < len;ii++)
-   {
+  unsigned int len = lines.size()/2;
+  for (int ii = 0; ii < len;ii++)
+    {
       swap(lines.at(ii),lines.at((lines.size()-1)-ii));
-   }
+    }
    
-   if (!get_all_common_lines(line_through_segs,
-                             lines,
-                             expected_num_of_lines_flip,
-                             expected_num_of_arr_curves_flip,
-                             expected_num_of_arr_polygons_flip,
-                             expected_num_of_point_3_flip,
-                             expected_num_of_arr_arcs_flip,
-                             expected_num_of_overlap_seg_3_flip))
-   {
+  if (!get_all_common_lines(line_through_segs,
+          lines,
+          expected_num_of_lines_flip,
+          expected_num_of_arr_curves_flip,
+          expected_num_of_arr_polygons_flip,
+          expected_num_of_point_3_flip,
+          expected_num_of_arr_arcs_flip,
+          expected_num_of_overlap_seg_3_flip))
+    {
       ReportError("Error iteration 1",__LINE__,__FILE__);
-   }
+    }
 }
 
 void create_random_input(int num_of_lines)
 {
-   std::ofstream outputfile;
-   outputfile.open("input.txt");
-   outputfile << num_of_lines << std::endl;
+  std::ofstream outputfile;
+  outputfile.open("input.txt");
+  outputfile << num_of_lines << std::endl;
     
-   for (int ii = 0; ii < num_of_lines; ii++)
-   {
+  for (int ii = 0; ii < num_of_lines; ii++)
+    {
       for(int jj = 0;jj<5;jj++)
-      {
-         outputfile << std::rand() % 10000 << " ";
-      }
+        {
+          outputfile << std::rand() % 10000 << " ";
+        }
       outputfile << std::rand() % 10000 << std::endl;
-   }
+    }
 }
 
 #if 1
 int main (int argc,char **args)
 {
-   int expected_num_of_lines = -1;
-   int expected_num_of_arr_curves = -1;
-   int expected_num_of_arr_polygons = -1;
-   int expected_num_of_point_3 = -1;
-   int expected_num_of_arr_arcs = -1;
-   int expected_num_of_overlap_seg_3 = -1;
+  int count = 0; 
+    int expected_num_of_lines = -1;
+    int expected_num_of_arr_curves = -1;
+    int expected_num_of_arr_polygons = -1;
+    int expected_num_of_point_3 = -1;
+    int expected_num_of_arr_arcs = -1;
+    int expected_num_of_overlap_seg_3 = -1;
 
-   int expected_num_of_lines_flip = -1;
-   int expected_num_of_arr_curves_flip = -1;
-   int expected_num_of_arr_polygons_flip = -1;
-   int expected_num_of_point_3_flip = -1;
-   int expected_num_of_arr_arcs_flip = -1;
-   int expected_num_of_overlap_seg_3_flip = -1;
+    int expected_num_of_lines_flip = -1;
+    int expected_num_of_arr_curves_flip = -1;
+    int expected_num_of_arr_polygons_flip = -1;
+    int expected_num_of_point_3_flip = -1;
+    int expected_num_of_arr_arcs_flip = -1;
+    int expected_num_of_overlap_seg_3_flip = -1;
 
-   vector<Rational_segment_3> lines;
-   int arr[40];
-   for (int ii = 0; ii < 40; ii++)
-   {
-      arr[ii] = ii;
-   }
+    vector<Rational_segment_3> lines;
+    int arr[40];
+    for (int ii = 0; ii < 40; ii++)
+      {
+        arr[ii] = ii;
+      }
       
-   if (argc < 3)
-   {
-      ReportError("File name not specified\n",__LINE__,__FILE__);
-   }
+    if (argc < 3)
+      {
+        ReportError("File name not specified\n",__LINE__,__FILE__);
+      }
       
-   Alg_kernel alg_kernel;
-   Rational_kernel rat_kernel;
+    Alg_kernel alg_kernel;
+    Rational_kernel rat_kernel;
    
 #if USE_CONIC_TRAITS      
-   CGAL::Lines_through_segments_3<
-   Lines_through_segs_traits_using_conic_2,With_segments> 
+    CGAL::Lines_through_segments_3<
+    Lines_through_segs_traits_using_conic_2,With_segments> 
       line_through_segs_use_conic(alg_kernel,rat_kernel);
 #endif
 #if (USE_RATIONAL_ARC_TRAITS || USE_SQRT_TRAITS)
-   CGAL::Lines_through_segments_3<
-      Lines_through_segs_traits_using_rational_arc_2,With_segments> 
+    CGAL::Lines_through_segments_3<
+    Lines_through_segs_traits_using_rational_arc_2,With_segments> 
       line_through_segs_use_rat_arc(alg_kernel,rat_kernel);
 #endif
 
-   if (argc >= 2 && strncmp(args[2],"run_perm",8) == 0)
-   {
-      ReadInputFile<Rational_segment_3,Rational,Rational_point_3>(args[1],lines,
-      expected_num_of_lines,
-      expected_num_of_arr_curves,
-      expected_num_of_arr_polygons,
-      expected_num_of_point_3,
-      expected_num_of_arr_arcs,
-      expected_num_of_overlap_seg_3);
+    if (argc >= 2 && strncmp(args[2],"run_perm",8) == 0)
+      {
+        ReadInputFile<Rational_segment_3,Rational,Rational_point_3>(args[1],lines,
+            expected_num_of_lines,
+            expected_num_of_arr_curves,
+            expected_num_of_arr_polygons,
+            expected_num_of_point_3,
+            expected_num_of_arr_arcs,
+            expected_num_of_overlap_seg_3);
 
 
 #if USE_CONIC_TRAITS
-      run_all_permutations(line_through_segs_use_conic,
-                           lines, arr, lines.size(), 0,
-                           true,
-                           expected_num_of_lines,
-                           expected_num_of_arr_curves,
-                           expected_num_of_arr_polygons,
-                           expected_num_of_point_3,
-                           expected_num_of_arr_arcs,
-                           expected_num_of_overlap_seg_3);
+        run_all_permutations(line_through_segs_use_conic,
+            lines, arr, lines.size(), 0,
+            true,
+            expected_num_of_lines,
+            expected_num_of_arr_curves,
+            expected_num_of_arr_polygons,
+            expected_num_of_point_3,
+            expected_num_of_arr_arcs,
+            expected_num_of_overlap_seg_3);
 #endif
 #if (USE_RATIONAL_ARC_TRAITS || USE_SQRT_TRAITS)
-      run_all_permutations(line_through_segs_use_rat_arc,
-                           lines, arr, lines.size(), 0,
-                           true,
-                           expected_num_of_lines,
-                           expected_num_of_arr_curves,
-                           expected_num_of_arr_polygons,
-                           expected_num_of_point_3,
-                           expected_num_of_arr_arcs,
-                           expected_num_of_overlap_seg_3);
+        run_all_permutations(line_through_segs_use_rat_arc,
+            lines, arr, lines.size(), 0,
+            true,
+            expected_num_of_lines,
+            expected_num_of_arr_curves,
+            expected_num_of_arr_polygons,
+            expected_num_of_point_3,
+            expected_num_of_arr_arcs,
+            expected_num_of_overlap_seg_3);
 #endif
 
-   }
-   else if (argc >= 2 && strncmp(args[2],"flip",4) == 0)
-   {
-      ReadInputFileFlip<Rational_segment_3,Rational,Rational_point_3>(args[1],lines,
-      expected_num_of_lines,
-      expected_num_of_arr_curves,
-      expected_num_of_arr_polygons,
-      expected_num_of_point_3,
-      expected_num_of_arr_arcs,
-      expected_num_of_overlap_seg_3,
-      true,
-      expected_num_of_lines_flip,
-      expected_num_of_arr_curves_flip,
-      expected_num_of_arr_polygons_flip,
-      expected_num_of_point_3_flip,
-      expected_num_of_arr_arcs_flip,
-      expected_num_of_overlap_seg_3_flip);
+      }
+    else if (argc >= 2 && strncmp(args[2],"flip",4) == 0)
+      {
+        ReadInputFileFlip<Rational_segment_3,Rational,Rational_point_3>(args[1],lines,
+            expected_num_of_lines,
+            expected_num_of_arr_curves,
+            expected_num_of_arr_polygons,
+            expected_num_of_point_3,
+            expected_num_of_arr_arcs,
+            expected_num_of_overlap_seg_3,
+            true,
+            expected_num_of_lines_flip,
+            expected_num_of_arr_curves_flip,
+            expected_num_of_arr_polygons_flip,
+            expected_num_of_point_3_flip,
+            expected_num_of_arr_arcs_flip,
+            expected_num_of_overlap_seg_3_flip);
 
 #if USE_CONIC_TRAITS
-      flip(line_through_segs_use_conic,lines,
-      expected_num_of_lines,
-      expected_num_of_arr_curves,
-      expected_num_of_arr_polygons,
-      expected_num_of_point_3,
-      expected_num_of_arr_arcs,
-      expected_num_of_overlap_seg_3,
-      expected_num_of_lines_flip,
-      expected_num_of_arr_curves_flip,
-      expected_num_of_arr_polygons_flip,
-      expected_num_of_point_3_flip,
-      expected_num_of_arr_arcs_flip,
-      expected_num_of_overlap_seg_3_flip);
+        flip(line_through_segs_use_conic,lines,
+            expected_num_of_lines,
+            expected_num_of_arr_curves,
+            expected_num_of_arr_polygons,
+            expected_num_of_point_3,
+            expected_num_of_arr_arcs,
+            expected_num_of_overlap_seg_3,
+            expected_num_of_lines_flip,
+            expected_num_of_arr_curves_flip,
+            expected_num_of_arr_polygons_flip,
+            expected_num_of_point_3_flip,
+            expected_num_of_arr_arcs_flip,
+            expected_num_of_overlap_seg_3_flip);
 #endif
 #if (USE_RATIONAL_ARC_TRAITS || USE_SQRT_TRAITS)
-      flip(line_through_segs_use_rat_arc,lines,
-      expected_num_of_lines,
-      expected_num_of_arr_curves,
-      expected_num_of_arr_polygons,
-      expected_num_of_point_3,
-      expected_num_of_arr_arcs,
-      expected_num_of_overlap_seg_3,
-      expected_num_of_lines_flip,
-      expected_num_of_arr_curves_flip,
-      expected_num_of_arr_polygons_flip,
-      expected_num_of_point_3_flip,
-      expected_num_of_arr_arcs_flip,
-      expected_num_of_overlap_seg_3_flip);
+        flip(line_through_segs_use_rat_arc,lines,
+            expected_num_of_lines,
+            expected_num_of_arr_curves,
+            expected_num_of_arr_polygons,
+            expected_num_of_point_3,
+            expected_num_of_arr_arcs,
+            expected_num_of_overlap_seg_3,
+            expected_num_of_lines_flip,
+            expected_num_of_arr_curves_flip,
+            expected_num_of_arr_polygons_flip,
+            expected_num_of_point_3_flip,
+            expected_num_of_arr_arcs_flip,
+            expected_num_of_overlap_seg_3_flip);
 #endif
-   }
-   else
-   {
-      ReadInputFile<Rational_segment_3,Rational,Rational_point_3>(args[1],lines,
-      expected_num_of_lines,
-      expected_num_of_arr_curves,
-      expected_num_of_arr_polygons,
-      expected_num_of_point_3,
-      expected_num_of_arr_arcs,
-      expected_num_of_overlap_seg_3);
+      }
+    else
+      {
+        ReadInputFile<Rational_segment_3,Rational,Rational_point_3>(args[1],lines,
+            expected_num_of_lines,
+            expected_num_of_arr_curves,
+            expected_num_of_arr_polygons,
+            expected_num_of_point_3,
+            expected_num_of_arr_arcs,
+            expected_num_of_overlap_seg_3);
   
-      cout <<"get_all_common_lines iteration = " << iteration << endl;
+        cout <<"get_all_common_lines iteration = " << iteration << endl;
 #if USE_CONIC_TRAITS
-      get_all_common_lines(line_through_segs_use_conic,
-                           lines,
-                           expected_num_of_lines,
-                           expected_num_of_arr_curves,
-                           expected_num_of_arr_polygons,
-                           expected_num_of_point_3,
-                           expected_num_of_arr_arcs,
-                           expected_num_of_overlap_seg_3);
+        get_all_common_lines(line_through_segs_use_conic,
+            lines,
+            expected_num_of_lines,
+            expected_num_of_arr_curves,
+            expected_num_of_arr_polygons,
+            expected_num_of_point_3,
+            expected_num_of_arr_arcs,
+            expected_num_of_overlap_seg_3);
 #endif
-      // std::cout << "Num of lines = " << expected_num_of_lines << std::endl;
-      // std::cout << "Num of curves = " << expected_num_of_arr_curves << std::endl;
-      // std::cout << "Num of polygons = " << expected_num_of_arr_polygons << std::endl;
-      // std::cout << "Num of overlap segs = " << expected_num_of_overlap_seg_3 << std::endl;
-      // std::cout << "Num of points = " << expected_num_of_point_3 << std::endl;
-      // std::cout << "Num of arcs = " << expected_num_of_arr_arcs << std::endl;
+        // std::cout << "Num of lines = " << expected_num_of_lines << std::endl;
+        // std::cout << "Num of curves = " << expected_num_of_arr_curves << std::endl;
+        // std::cout << "Num of polygons = " << expected_num_of_arr_polygons << std::endl;
+        // std::cout << "Num of overlap segs = " << expected_num_of_overlap_seg_3 << std::endl;
+        // std::cout << "Num of points = " << expected_num_of_point_3 << std::endl;
+        // std::cout << "Num of arcs = " << expected_num_of_arr_arcs << std::endl;
 
 #if (USE_RATIONAL_ARC_TRAITS || USE_SQRT_TRAITS)
-      expected_num_of_lines = -1;
-      expected_num_of_arr_curves = -1;
-      expected_num_of_arr_polygons = -1;
-      expected_num_of_point_3 = -1;
-      expected_num_of_arr_arcs = -1;
-      expected_num_of_overlap_seg_3 = -1;
-      get_all_common_lines(line_through_segs_use_rat_arc,
-                           lines,
-                           expected_num_of_lines,
-                           expected_num_of_arr_curves,
-                           expected_num_of_arr_polygons,
-                           expected_num_of_point_3,
-                           expected_num_of_arr_arcs,
-                           expected_num_of_overlap_seg_3);
+        expected_num_of_lines = -1;
+        expected_num_of_arr_curves = -1;
+        expected_num_of_arr_polygons = -1;
+        expected_num_of_point_3 = -1;
+        expected_num_of_arr_arcs = -1;
+        expected_num_of_overlap_seg_3 = -1;
+        get_all_common_lines(line_through_segs_use_rat_arc,
+            lines,
+            expected_num_of_lines,
+            expected_num_of_arr_curves,
+            expected_num_of_arr_polygons,
+            expected_num_of_point_3,
+            expected_num_of_arr_arcs,
+            expected_num_of_overlap_seg_3);
 #endif
      
-      // std::cout << "Num of lines = " << expected_num_of_lines << std::endl;
-      // std::cout << "Num of curves = " << expected_num_of_arr_curves << std::endl;
-      // std::cout << "Num of polygons = " << expected_num_of_arr_polygons << std::endl;
-      // std::cout << "Num of overlap segs = " << expected_num_of_overlap_seg_3 << std::endl;
-      // std::cout << "Num of points = " << expected_num_of_point_3 << std::endl;
-      // std::cout << "Num of arcs = " << expected_num_of_arr_arcs << std::endl;
+        // std::cout << "Num of lines = " << expected_num_of_lines << std::endl;
+        // std::cout << "Num of curves = " << expected_num_of_arr_curves << std::endl;
+        // std::cout << "Num of polygons = " << expected_num_of_arr_polygons << std::endl;
+        // std::cout << "Num of overlap segs = " << expected_num_of_overlap_seg_3 << std::endl;
+        // std::cout << "Num of points = " << expected_num_of_point_3 << std::endl;
+        // std::cout << "Num of arcs = " << expected_num_of_arr_arcs << std::endl;
 
-   }
+      }
       
-   cout << "Program finished successfully" << endl;
-
-   return 0;
+    cout << "Program finished successfully" << endl;
+ 
+  return 0;
 }
 
 #else
 
 int main (int argc,char **args)
 {
-   //    typedef CGAL::CORE_algebraic_number_traits              Nt_traits;
-   // typedef Nt_traits::Algebraic                            Algebraic;
-   // typedef Nt_traits::Rational                             Rational;
-   //   typedef CGAL::Cartesian<Rational>                       Rational_kernel;
-   // typedef CGAL::Arr_rational_arc_traits_d_1<Rational_kernel>                  Traits_d_1;
-   // typedef CGAL::Arr_traits_with_vertical_segments <Traits_d_1>                Rational_arc_arr_traits_arr_on_plane_2;
+  //    typedef CGAL::CORE_algebraic_number_traits              Nt_traits;
+  // typedef Nt_traits::Algebraic                            Algebraic;
+  // typedef Nt_traits::Rational                             Rational;
+  //   typedef CGAL::Cartesian<Rational>                       Rational_kernel;
+  // typedef CGAL::Arr_rational_arc_traits_d_1<Rational_kernel>                  Traits_d_1;
+  // typedef CGAL::Arr_traits_with_vertical_segments <Traits_d_1>                Rational_arc_arr_traits_arr_on_plane_2;
 
-   typedef CGAL::Arrangement_2<Rational_arc_arr_traits_arr_on_plane_2> Arrangement_2;
-   typedef Rational_arc_arr_traits_arr_on_plane_2::Point_2 Point_2;
-   typedef Rational_arc_arr_traits_arr_on_plane_2::Curve_2 Curve_2;
-   typedef Traits_d_1::Algebraic_real_1         Algebraic_real_1;
-   std::list<Curve_2> arcs;
-   Arrangement_2 arr;
-   std::vector<Rational>        P (2);
+  typedef CGAL::Arrangement_2<Rational_arc_arr_traits_arr_on_plane_2> Arrangement_2;
+  typedef Rational_arc_arr_traits_arr_on_plane_2::Point_2 Point_2;
+  typedef Rational_arc_arr_traits_arr_on_plane_2::Curve_2 Curve_2;
+  typedef Traits_d_1::Algebraic_real_1         Algebraic_real_1;
+  std::list<Curve_2> arcs;
+  Arrangement_2 arr;
+  std::vector<Rational>        P (2);
 
-   arcs.push_back(Curve_2(Point_2(0.5,0),Point_2(0.5,1))); // vertical
+  arcs.push_back(Curve_2(Point_2(0.5,0),Point_2(0.5,1))); // vertical
 
-   Algebraic_real_1 xs(0);
-   Algebraic_real_1 xt(1);
+  Algebraic_real_1 xs(0);
+  Algebraic_real_1 xt(1);
             
-   P[1] = 0;
-   P[0] = 0.33333;  
+  P[1] = 0;
+  P[0] = 0.33333;  
 
-   Curve_2 cv(P,xs,xt);
-   arcs.push_back(cv);//horizontal
+  Curve_2 cv(P,xs,xt);
+  arcs.push_back(cv);//horizontal
 
-   for (std::list<Curve_2>::iterator it = arcs.begin();
-        it != arcs.end();
-        it++)
-   {
+  for (std::list<Curve_2>::iterator it = arcs.begin();
+       it != arcs.end();
+       it++)
+    {
       std::cout <<*it << std::endl;
-   }
+    }
 
-   insert (arr, arcs.begin(), arcs.end());
-   arcs.clear();
-   arcs.push_back(Curve_2(Point_2(0.5,0),Point_2(0.5,1)));//vertical 
-   xs = (0);
-   xt = (1);
+  insert (arr, arcs.begin(), arcs.end());
+  arcs.clear();
+  arcs.push_back(Curve_2(Point_2(0.5,0),Point_2(0.5,1)));//vertical 
+  xs = (0);
+  xt = (1);
             
-   Rational x = 19;
-   Rational y = 58;
-   P[1] = Rational(0);
-   P[0] = x/y;
+  Rational x = 19;
+  Rational y = 58;
+  P[1] = Rational(0);
+  P[0] = x/y;
 
-   arcs.push_back(Curve_2(P,xs,xt));//horizontal
+  arcs.push_back(Curve_2(P,xs,xt));//horizontal
 
-   for (std::list<Curve_2>::iterator it = arcs.begin();
-        it != arcs.end();
-        it++)
-   {
+  for (std::list<Curve_2>::iterator it = arcs.begin();
+       it != arcs.end();
+       it++)
+    {
       std::cout <<*it << std::endl;
-   }
+    }
 
-   insert (arr, arcs.begin(), arcs.end());
+  insert (arr, arcs.begin(), arcs.end());
 
-   cout << "Program finished successfully" << endl;
+  cout << "Program finished successfully" << endl;
+ 
 
-   return 0;
+  return 0;
 }
 #endif
 // {0*x^2 + 0*y^2 + -690*xy + 650*x + 480*y + -433} : (0.6435,0.409195) --cw--> (0.666154,0)
