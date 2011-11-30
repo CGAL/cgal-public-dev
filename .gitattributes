@@ -2011,6 +2011,11 @@ Lines_through_segments_3/test/Lines_through_segments_3/experiments/35_lines_shor
 Lines_through_segments_3/test/Lines_through_segments_3/experiments/40_lines_long.exp -text
 Lines_through_segments_3/test/Lines_through_segments_3/experiments/40_lines_rand.exp -text
 Lines_through_segments_3/test/Lines_through_segments_3/experiments/40_lines_short.exp -text
+Lines_through_segments_3/test/Lines_through_segments_3/experiments/40_segs_grid.tst -text
+Lines_through_segments_3/test/Lines_through_segments_3/experiments/40_segs_grid_m1.tst -text
+Lines_through_segments_3/test/Lines_through_segments_3/experiments/40_segs_grid_per.tst -text
+Lines_through_segments_3/test/Lines_through_segments_3/experiments/40_segs_grid_per_m1.tst -text
+Lines_through_segments_3/test/Lines_through_segments_3/experiments/40_segs_grid_per_m2.tst -text
 Lines_through_segments_3/test/Lines_through_segments_3/experiments/50_lines_long.exp -text
 Lines_through_segments_3/test/Lines_through_segments_3/experiments/50_lines_rand.exp -text
 Lines_through_segments_3/test/Lines_through_segments_3/experiments/50_lines_short.exp -text
