@@ -356,8 +356,9 @@ void compute_resultant_bounds(
     unsigned rows_deg(0), cols_deg(0), degx_f(0), degx_g(0);
 
 // use low precision for estimates
-    t = CGAL::upper(CGAL::convert_to_bfi(NT(1)));
-    long oldp = CGAL::set_precision(BFI(), 64);    
+//     t = CGAL::upper(CGAL::convert_to_bfi(NT(1)));
+    long oldp = CGAL::set_precision(BFI(), 53);
+    CGAL::set_precision(BFI(), 64);
 
     unsigned t_degf(0), t_degg(0); // total degrees of f/g
     for(i = 0; i <= n; i++) {
