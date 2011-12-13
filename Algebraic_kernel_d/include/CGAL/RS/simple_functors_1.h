@@ -25,6 +25,36 @@
 namespace CGAL{
 namespace SimpleAK1{
 
+template <class Polynomial_,
+          class Algebraic_,
+          class Bound_,
+          class Coefficient_,
+          class Isolator_>
+struct Construct_algebraic_real_1{
+        typedef Polynomial_                                     Polynomial;
+        typedef Algebraic_                                      Algebraic;
+        typedef Bound_                                          Bound;
+        typedef Coefficient_                                    Coefficient;
+        typedef Isolator_                                       Isolator;
+
+        template <class T>
+        Algebraic& operator()(const T &a)const{
+                return Algebraic(a);
+        }
+
+        Algebraic& operator()(const Polynomial &p,size_t i)const{
+                Isolator isol(p);
+                return Algebraic(p,isol.left_bound(i),isol.right_bound(i));
+        }
+
+        Algebraic& operator()(const Polynomial &p,
+                              const Bound &l,
+                              const Bound &r)const{
+                return Algebraic(p,l,r);
+        }
+
+}; // struct Construct_algebraic_1
+
 template <class Polynomial_,class Algebraic_>
 struct Compute_polynomial_1{
         typedef Polynomial_                                     Polynomial;

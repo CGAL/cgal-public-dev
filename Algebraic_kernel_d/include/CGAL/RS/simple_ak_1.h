@@ -69,7 +69,12 @@ class Simple_algebraic_kernel_1{
 
         // functors from the CGAL concept
         public:
-        // TODO: Construct_algebraic_real_1
+        typedef CGAL::SimpleAK1::Construct_algebraic_real_1<Polynomial_1,
+                                                            Algebraic_real_1,
+                                                            Bound,
+                                                            Coefficient,
+                                                            Isolator>
+                                                Construct_algebraic_real_1;
         typedef CGAL::SimpleAK1::Compute_polynomial_1<Polynomial_1,
                                                       Algebraic_real_1>
                                                         Compute_polynomial_1;
@@ -109,10 +114,8 @@ class Simple_algebraic_kernel_1{
 
 #define CREATE_SIMPLE_FUNCTION_OBJECT(T,N) \
         T N##_object()const{return T();}
-        /*
         CREATE_SIMPLE_FUNCTION_OBJECT(Construct_algebraic_real_1,
                                       construct_algebraic_real_1)
-        */
         CREATE_SIMPLE_FUNCTION_OBJECT(Compute_polynomial_1,
                                       compute_polynomial_1)
         CREATE_SIMPLE_FUNCTION_OBJECT(Isolate_1,
