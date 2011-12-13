@@ -141,6 +141,10 @@ boost::totally_ordered<Simple_algebraic_1<Polynomial_,
         (Comparator()(get_pol(),get_left(),get_right(), \
                       (_a).get_pol(),(_a).get_left(),(_a).get_right()))
 
+        Comparison_result compare(const Algebraic &a)const{
+                return CGAL_RS_COMPARE_ALGEBRAIC(a);
+        };
+
 #define CGAL_RS_COMPARE_ALGEBRAIC_TYPE(_t) \
         bool operator<(_t t)const \
         {Algebraic a(t);return CGAL_RS_COMPARE_ALGEBRAIC(a)==CGAL::SMALLER;} \
@@ -186,6 +190,16 @@ boost::totally_ordered<Simple_algebraic_1<Polynomial_,
                                       TI()(get_right().second));
         }
 #undef CGAL_RS_DBL_PREC
+
+        void set_left(const Bound &l){
+                left=l;
+        }
+        void set_right(const Bound &r){
+                right=r;
+        }
+        void set_pol(const Polynomial &p){
+                pol=p;
+        }
 
 }; // class Simple_algebraic_1
 

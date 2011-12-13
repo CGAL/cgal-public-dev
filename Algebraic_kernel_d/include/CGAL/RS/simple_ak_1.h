@@ -71,7 +71,14 @@ class Simple_algebraic_kernel_1{
         public:
         // TODO: Construct_algebraic_real_1
         // TODO: Compute_polynomial_1
-        // TODO: Isolate_1
+        typedef CGAL::SimpleAK1::Isolate_1<Polynomial_1,
+                                           Bound,
+                                           Algebraic_real_1,
+                                           Isolator,
+                                           Comparator,
+                                           Signat,
+                                           Ptraits>
+                                                        Isolate_1;
         typedef typename Ptraits::Is_square_free        Is_square_free_1;
         typedef typename Ptraits::Make_square_free      Make_square_free_1;
         typedef typename Ptraits::Square_free_factorize Square_free_factorize_1;
@@ -90,7 +97,10 @@ class Simple_algebraic_kernel_1{
                                                         Number_of_solutions_1;
 
         // TODO: Sign_at_1
-        // TODO: Compare_1
+        typedef CGAL::SimpleAK1::Compare_1<Algebraic_real_1,
+                                           Bound,
+                                           Comparator>
+                                                        Compare_1;
         // TODO: Bound_between_1
         // TODO: Approximate_absolute_1
         // TODO: Approximate_relative_1
@@ -102,9 +112,9 @@ class Simple_algebraic_kernel_1{
                                       construct_algebraic_real_1)
         CREATE_SIMPLE_FUNCTION_OBJECT(Compute_polynomial_1,
                                       compute_polynomial_1)
+        */
         CREATE_SIMPLE_FUNCTION_OBJECT(Isolate_1,
                                       isolate_1)
-        */
         CREATE_SIMPLE_FUNCTION_OBJECT(Is_square_free_1,
                                       is_square_free_1)
         CREATE_SIMPLE_FUNCTION_OBJECT(Make_square_free_1,
@@ -122,8 +132,10 @@ class Simple_algebraic_kernel_1{
         /*
         CREATE_SIMPLE_FUNCTION_OBJECT(Sign_at_1,
                                       sign_at_1)
+        */
         CREATE_SIMPLE_FUNCTION_OBJECT(Compare_1,
                                       compare_1)
+        /*
         CREATE_SIMPLE_FUNCTION_OBJECT(Bound_between_1,
                                       bound_between_1)
         CREATE_SIMPLE_FUNCTION_OBJECT(Approximate_absolute_1,

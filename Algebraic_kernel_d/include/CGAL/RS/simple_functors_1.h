@@ -217,6 +217,74 @@ struct Number_of_solutions_1{
         }
 }; // Number_of_solutions_1
 
+// This functor not only compares two algebraic numbers. In case they are
+// different, it refines them until they do not overlap.
+template <class Algebraic_,
+          class Bound_,
+          class Comparator_>
+class Compare_1{
+        private:
+        typedef Algebraic_                                      Algebraic;
+        typedef Bound_                                          Bound;
+        typedef Comparator_                                     Comparator;
+
+        CGAL::Comparison_result operator()(Algebraic &a,Algebraic &b)const{
+                Bound al=a.get_left();
+                Bound ar=a.get_right();
+                Bound bl=b.get_left();
+                Bound br=b.get_right();
+                CGAL::Comparison_result c=Comparator()(a.get_pol(),al,ar,
+                                                       b.get_pol(),bl,br);
+                a.set_left(al);
+                a.set_right(ar);
+                b.set_left(bl);
+                b.set_right(br);
+                return c;
+        }
+
+}; // Compare_1
+
+template <class Polynomial_,
+          class Bound_,
+          class Algebraic_,
+          class Isolator_,
+          class Comparator_,
+          class Signat_,
+          class Ptraits_>
+struct Isolate_1{
+        typedef Polynomial_                                     Polynomial_1;
+        typedef Bound_                                          Bound;
+        typedef Algebraic_                                      Algebraic;
+        typedef Isolator_                                       Isolator;
+        typedef Comparator_                                     Comparator;
+        typedef Signat_                                         Signat;
+        typedef Ptraits_                                        Ptraits;
+
+        std::pair<Bound,Bound>
+        operator()(const Algebraic &a,const Polynomial_1 &p){
+                std::vector<Algebraic> roots;
+                std::back_insert_iterator<std::vector<Algebraic> > rit(roots);
+                // we put true to avoid computing the square-free part of p
+                typedef Solve_1<Polynomial_1,
+                                Bound,
+                                Algebraic,
+                                Isolator,
+                                Signat,
+                                Ptraits>                        Solve;
+                typedef Compare_1<Algebraic,Bound,Comparator>   Compare;
+                Solve()(p,true,rit);
+                for(typename std::vector<Algebraic>::size_type i=0;
+                    i<roots.size();
+                    ++i){
+                        // we use the comparison functor, that makes both
+                        // intervals disjoint iff the algebraic numbers they
+                        // represent are not equal
+                        Compare()(a,roots[i]);
+                }
+                return std::make_pair(a.left(),a.right());
+        }
+}; // Isolate_1
+
 } // namespace SimpleAK1
 } // namespace CGAL
 
