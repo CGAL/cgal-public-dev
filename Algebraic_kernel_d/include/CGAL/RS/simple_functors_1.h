@@ -206,6 +206,17 @@ struct Solve_1{
 
 }; // Solve_1
 
+template <class Polynomial_,class Isolator_>
+struct Number_of_solutions_1{
+        typedef Polynomial_                                     Polynomial_1;
+        typedef Isolator_                                       Isolator;
+        size_t operator()(const Polynomial_1 &p){
+                // TODO: make sure that p is square free (precondition)
+                Isolator isol(p);
+                return isol.number_of_real_roots();
+        }
+}; // Number_of_solutions_1
+
 } // namespace SimpleAK1
 } // namespace CGAL
 

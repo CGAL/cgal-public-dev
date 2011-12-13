@@ -86,7 +86,9 @@ class Simple_algebraic_kernel_1{
                                          Signat,
                                          Ptraits>
                                                         Solve_1;
-        // TODO: Number_of_solutions_1
+        typedef CGAL::SimpleAK1::Number_of_solutions_1<Polynomial_1,Isolator>
+                                                        Number_of_solutions_1;
+
         // TODO: Sign_at_1
         // TODO: Compare_1
         // TODO: Bound_between_1
@@ -115,9 +117,9 @@ class Simple_algebraic_kernel_1{
                                       make_coprime_1)
         CREATE_SIMPLE_FUNCTION_OBJECT(Solve_1,
                                       solve_1)
-        /*
         CREATE_SIMPLE_FUNCTION_OBJECT(Number_of_solutions_1,
                                       number_of_solutions_1)
+        /*
         CREATE_SIMPLE_FUNCTION_OBJECT(Sign_at_1,
                                       sign_at_1)
         CREATE_SIMPLE_FUNCTION_OBJECT(Compare_1,
