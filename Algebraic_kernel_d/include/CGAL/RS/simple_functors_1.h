@@ -210,7 +210,7 @@ template <class Polynomial_,class Isolator_>
 struct Number_of_solutions_1{
         typedef Polynomial_                                     Polynomial_1;
         typedef Isolator_                                       Isolator;
-        size_t operator()(const Polynomial_1 &p){
+        size_t operator()(const Polynomial_1 &p)const{
                 // TODO: make sure that p is square free (precondition)
                 Isolator isol(p);
                 return isol.number_of_real_roots();
@@ -242,6 +242,33 @@ class Compare_1{
                 return c;
         }
 
+        CGAL::Comparison_result operator()(Algebraic &a,const Bound &b)const{
+                Bound al=a.get_left();
+                Bound ar=a.get_right();
+                Algebraic balg(b);
+                CGAL::Comparison_result c=Comparator()(a.get_pol(),al,ar,
+                                                       balg.get_pol(),b,b);
+                a.set_left(al);
+                a.set_right(ar);
+                return c;
+        }
+
+        template <class T>
+        CGAL::Comparison_result operator()(Algebraic &a,const T &b)const{
+                Bound al=a.get_left();
+                Bound ar=a.get_right();
+                Algebraic balg(b);
+                CGAL::Comparison_result c=Comparator()(a.get_pol(),
+                                                       al,
+                                                       ar,
+                                                       balg.get_pol(),
+                                                       balg.get_left(),
+                                                       balg.get_right());
+                a.set_left(al);
+                a.set_right(ar);
+                return c;
+        }
+
 }; // Compare_1
 
 template <class Polynomial_,
@@ -261,10 +288,9 @@ struct Isolate_1{
         typedef Ptraits_                                        Ptraits;
 
         std::pair<Bound,Bound>
-        operator()(const Algebraic &a,const Polynomial_1 &p){
+        operator()(const Algebraic &a,const Polynomial_1 &p)const{
                 std::vector<Algebraic> roots;
                 std::back_insert_iterator<std::vector<Algebraic> > rit(roots);
-                // we put true to avoid computing the square-free part of p
                 typedef Solve_1<Polynomial_1,
                                 Bound,
                                 Algebraic,
@@ -272,7 +298,7 @@ struct Isolate_1{
                                 Signat,
                                 Ptraits>                        Solve;
                 typedef Compare_1<Algebraic,Bound,Comparator>   Compare;
-                Solve()(p,true,rit);
+                Solve()(p,false,rit);
                 for(typename std::vector<Algebraic>::size_type i=0;
                     i<roots.size();
                     ++i){
