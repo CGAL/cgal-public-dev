@@ -25,6 +25,15 @@
 namespace CGAL{
 namespace SimpleAK1{
 
+template <class Polynomial_,class Algebraic_>
+struct Compute_polynomial_1{
+        typedef Polynomial_                                     Polynomial;
+        typedef Algebraic_                                      Algebraic;
+        Algebraic& operator()(const Algebraic &x)const{
+                return x.get_pol();
+        }
+}; // struct Compute_polynomial_1
+
 template <class Polynomial_,class Ptraits_>
 struct Is_coprime_1{
         typedef Polynomial_                                     Polynomial;
