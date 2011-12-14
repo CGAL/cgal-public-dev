@@ -103,7 +103,13 @@ class Simple_algebraic_kernel_1{
         typedef CGAL::SimpleAK1::Number_of_solutions_1<Polynomial_1,Isolator>
                                                         Number_of_solutions_1;
 
-        // TODO: Sign_at_1
+        typedef CGAL::SimpleAK1::Sign_at_1<Polynomial_1,
+                                           Bound,
+                                           Algebraic_real_1,
+                                           Refiner,
+                                           Signat,
+                                           Ptraits>
+                                                        Sign_at_1;
         typedef CGAL::SimpleAK1::Compare_1<Algebraic_real_1,
                                            Bound,
                                            Comparator>
@@ -134,10 +140,8 @@ class Simple_algebraic_kernel_1{
                                       solve_1)
         CREATE_SIMPLE_FUNCTION_OBJECT(Number_of_solutions_1,
                                       number_of_solutions_1)
-        /*
         CREATE_SIMPLE_FUNCTION_OBJECT(Sign_at_1,
                                       sign_at_1)
-        */
         CREATE_SIMPLE_FUNCTION_OBJECT(Compare_1,
                                       compare_1)
         /*

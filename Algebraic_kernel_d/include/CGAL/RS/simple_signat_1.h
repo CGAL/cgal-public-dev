@@ -35,12 +35,12 @@ struct Simple_signat_1{
         typedef typename PT::Degree                             Degree;
         Polynomial pol;
         Simple_signat_1(const Polynomial &p):pol(p){};
-        CGAL::Sign operator()(const Bound&);
+        CGAL::Sign operator()(const Bound&)const;
 }; // struct Simple_signat_1
 
 template <class Polynomial_,class Bound_>
 inline CGAL::Sign
-Simple_signat_1<Polynomial_,Bound_>::operator()(const Bound_ &x){
+Simple_signat_1<Polynomial_,Bound_>::operator()(const Bound_ &x)const{
         typedef Polynomial_                                     Polynomial;
         typedef Bound_                                          Bound;
         typedef Real_embeddable_traits<Bound>                   REtraits;
@@ -58,7 +58,7 @@ Simple_signat_1<Polynomial_,Bound_>::operator()(const Bound_ &x){
 
 template <>
 inline CGAL::Sign
-Simple_signat_1<Polynomial<Gmpz>,Gmpfr>::operator()(const Gmpfr &x){
+Simple_signat_1<Polynomial<Gmpz>,Gmpfr>::operator()(const Gmpfr &x)const{
         typedef Simple_signat_1<Polynomial,Gmpq>                Exact_sign;
         int d=Degree()(pol);
         if(d==0)

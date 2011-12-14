@@ -21,6 +21,7 @@
 #define CGAL_RS_SIMPLE_FUNCTORS_1_H
 
 #include <vector>
+#include <CGAL/Gmpfi.h>
 
 namespace CGAL{
 namespace SimpleAK1{
@@ -244,6 +245,111 @@ struct Solve_1{
         }
 
 }; // Solve_1
+
+template <class Polynomial_,
+          class Bound_,
+          class Algebraic_,
+          class Refiner_,
+          class Signat_,
+          class Ptraits_>
+class Sign_at_1{
+        // This implementation will work with any polynomial type whose
+        // coefficient type is explicit interoperable with Gmpfi.
+        // TODO: Make this function generic.
+        public:
+        typedef Polynomial_                                     Polynomial_1;
+        typedef Bound_                                          Bound;
+        typedef Algebraic_                                      Algebraic;
+        typedef Refiner_                                        Refiner;
+        typedef Signat_                                         Signat;
+        typedef Ptraits_                                        Ptraits;
+
+        private:
+        CGAL::Uncertain<CGAL::Sign> eval_interv(const Polynomial_1 &p,
+                                                const Bound &l,
+                                                const Bound &r)const{
+                typedef typename Ptraits::Substitute                    Subst;
+                std::vector<CGAL::Gmpfi> substitutions;
+                substitutions.push_back(CGAL::Gmpfi(l,r));
+                CGAL::Gmpfi eval=Subst()(p,substitutions);
+                return eval.sign();
+        }
+
+        // This function assumes that the sign of the evaluation is not zero,
+        // it just refines x until having the correct sign.
+        CGAL::Sign refine_and_return(const Polynomial_1 &p,
+                                     const Algebraic &x)const{
+                CGAL::Gmpfr xl(x.get_left());
+                CGAL::Gmpfr xr(x.get_right());
+                CGAL::Uncertain<CGAL::Sign> s;
+                for(;;){
+                        Refiner()(x.get_pol(),
+                                  xl,
+                                  xr,
+                                  2*CGAL::max(xl.get_precision(),
+                                              xr.get_precision()));
+                        s=eval_interv(p,xl,xr);
+                        if(!s.is_same(Uncertain<CGAL::Sign>::indeterminate())){
+                                x.set_left(xl);
+                                x.set_right(xr);
+                                return s;
+                        }
+                }
+        }
+
+        public:
+        CGAL::Sign operator()(const Polynomial_1 &p,const Algebraic &x)const{
+                typedef typename Ptraits::Substitute                    Subst;
+                typedef typename Ptraits::Gcd_up_to_constant_factor     Gcd;
+                typedef typename Ptraits::Make_square_free              Sfpart;
+                typedef typename Ptraits::Degree                        Degree;
+                typedef typename Ptraits::Differentiate                 Deriv;
+                CGAL::Uncertain<CGAL::Sign> unknown=
+                                        Uncertain<CGAL::Sign>::indeterminate();
+                CGAL::Uncertain<CGAL::Sign> s=eval_interv(p,
+                                                          x.get_left(),
+                                                          x.get_right());
+                if(!s.is_same(unknown))
+                        return s;
+                // We are not sure about the sign. We calculate the gcd in
+                // order to know if both polynomials have common roots.
+                Polynomial_1 sfpp=Sfpart()(p);
+                Polynomial_1 gcd=Gcd()(sfpp,Sfpart()(x.get_pol()));
+                if(Degree()(gcd)==0)
+                        return refine_and_return(p,x);
+
+                // At this point, gcd is not 1; we proceed as follows:
+                // -we refine x until having p monotonic in x's interval (to be
+                // sure that p has at most one root on that interval),
+                // -if the gcd has a root on this interval, both roots are
+                // equal (we return 0), otherwise, we refine until having a
+                // result.
+
+                // How to assure that p is monotonic in an interval: when its
+                // derivative is never zero in that interval.
+                Polynomial_1 dsfpp=Deriv()(sfpp);
+                CGAL::Gmpfr xl(x.get_left());
+                CGAL::Gmpfr xr(x.get_right());
+                while(eval_interv(dsfpp,xl,xr).is_same(unknown)){
+                        Refiner()(x.get_pol(),
+                                  xl,
+                                  xr,
+                                  2*CGAL::max(xl.get_precision(),
+                                              xr.get_precision()));
+                }
+                x.set_left(xl);
+                x.set_right(xr);
+
+                // How to know that the gcd has a root: evaluate endpoints.
+                CGAL::Sign sleft,sright;
+                Signat sign_at_gcd(gcd);
+                if((sleft=sign_at_gcd(x.get_left()))==CGAL::ZERO||
+                   (sright=sign_at_gcd(x.get_right()))==CGAL::ZERO||
+                   (sleft!=sright))
+                        return CGAL::ZERO;
+                return refine_and_return(p,x);
+        }
+}; // struct Sign_at_1
 
 template <class Polynomial_,class Isolator_>
 struct Number_of_solutions_1{
