@@ -596,9 +596,18 @@ public std::binary_function<Algebraic_,int,std::pair<Bound_,Bound_> >{
         typedef Algebraic_                                      Algebraic;
         typedef Refiner_                                        Refiner;
 
+        // TODO: implement generically
         std::pair<Bound,Bound> operator()(Algebraic &x,int a)const{
                 Bound xl(x.get_left()),xr(x.get_right());
-                Refiner()(x.get_pol(),xl,xr,1+CGAL::abs(a));
+                // refsteps=log2(xl-xr)
+                mpfr_t temp;
+                mpfr_init(temp);
+                mpfr_sub(temp,xr.fr(),xl.fr(),GMP_RNDU);
+                mpfr_log2(temp,temp,GMP_RNDU);
+                CGAL_assertion(mpfr_fits_slong_p(temp,GMP_RNDU));
+                long refsteps=mpfr_get_si(temp,GMP_RNDU);
+                mpfr_clear(temp);
+                Refiner()(x.get_pol(),xl,xr,CGAL::abs(refsteps+a));
                 x.set_left(xl);
                 x.set_right(xr);
                 CGAL_assertion(a>0?

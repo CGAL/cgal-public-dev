@@ -75,7 +75,13 @@ operator()(const Polynomial<Gmpz> &pol,Gmpfr &left,Gmpfr &right,int prec){
         for(int i=0;i<=deg;++i)
                 coefficients[i][0]=*(pol[i].mpz());
         RS2::Simple_rs2_calls::init_solver();
-        rs3_refine_u_root(&interval,coefficients,deg,prec,0,0);
+        rs3_refine_u_root(&interval,
+                          coefficients,
+                          deg,
+                          prec+CGAL::max(left.get_precision(),
+                                         right.get_precision()),
+                          0,
+                          0);
         mpfr_custom_init_set(left.fr(),
                              mpfr_custom_get_kind(&interval.left),
                              mpfr_custom_get_exp(&interval.left),

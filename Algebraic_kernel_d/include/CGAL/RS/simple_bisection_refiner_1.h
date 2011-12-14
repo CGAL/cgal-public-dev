@@ -81,7 +81,6 @@ operator()(const Polynomial<Gmpz> &pol,Gmpfr &left,Gmpfr &right,int prec){
         CGAL::Sign sl,sc;
         mp_prec_t pl,pc;
         mpfr_t center;
-        unsigned long i;
         int round;
 
         sl=signof(left);
@@ -95,7 +94,7 @@ operator()(const Polynomial<Gmpz> &pol,Gmpfr &left,Gmpfr &right,int prec){
         CGAL_assertion(!round);
         round=mpfr_prec_round(right.fr(),pc,GMP_RNDN);
         CGAL_assertion(!round);
-        for(i=0;i<prec;++i){
+        for(int i=0;i<prec;++i){
                 round=mpfr_add(center,left.fr(),right.fr(),GMP_RNDN);
                 CGAL_assertion(!round);
                 round=mpfr_div_2ui(center,center,1,GMP_RNDN);

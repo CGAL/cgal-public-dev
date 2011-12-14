@@ -60,6 +60,8 @@ template <>
 inline CGAL::Sign
 Simple_signat_1<Polynomial<Gmpz>,Gmpfr>::operator()(const Gmpfr &x)const{
         typedef Simple_signat_1<Polynomial,Gmpq>                Exact_sign;
+        // This seems to work faster for small polynomials:
+        // return Exact_sign(pol)(x);
         int d=Degree()(pol);
         if(d==0)
                 return pol[0].sign();
@@ -69,8 +71,6 @@ Simple_signat_1<Polynomial<Gmpz>,Gmpfr>::operator()(const Gmpfr &x)const{
                 return Exact_sign(pol)(x);
         for(int i=1;i<=d;++i){
                 h*=x;
-                if(h.sign().is_same(indet))
-                        return Exact_sign(pol)(x);
                 h+=pol[d-i];
                 if(h.sign().is_same(indet))
                         return Exact_sign(pol)(x);
