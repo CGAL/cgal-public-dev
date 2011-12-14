@@ -25,7 +25,11 @@
 #include <CGAL/Polynomial.h>
 #include <CGAL/RS/simple_functors_1.h>
 #include <CGAL/RS/simple_rs2_isolator_1.h>
+#ifdef CGAL_USE_RS3
 #include <CGAL/RS/simple_rs3_refiner_1.h>
+#else
+#include <CGAL/RS/simple_bisection_refiner_1.h>
+#endif
 #include <CGAL/RS/simple_ak_1.h>
 
 namespace CGAL{
@@ -35,8 +39,13 @@ typedef CGAL::SimpleAK1::Simple_algebraic_kernel_1<
         CGAL::Gmpfr,
         CGAL::RS2::Simple_rs2_isolator_1<CGAL::Polynomial<CGAL::Gmpz>,
                                          CGAL::Gmpfr>,
+#ifdef CGAL_USE_RS3
         CGAL::RS3::Simple_rs3_refiner_1<CGAL::Polynomial<CGAL::Gmpz>,
                                         CGAL::Gmpfr> >
+#else
+        CGAL::Simple_bisection_refiner_1<CGAL::Polynomial<CGAL::Gmpz>,
+                                         CGAL::Gmpfr> >
+#endif
 
                 Simple_algebraic_kernel_rs_gmpz_d_1;
 
