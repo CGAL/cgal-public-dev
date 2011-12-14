@@ -23,6 +23,7 @@
 #include <boost/operators.hpp>
 #include <CGAL/Real_embeddable_traits.h>
 #include <CGAL/Gmpq.h>
+#include <iostream>
 
 namespace CGAL{
 namespace SimpleAK1{
@@ -114,10 +115,19 @@ boost::totally_ordered<Simple_algebraic_1<Polynomial_,
                 right=Bound(d/*,std::round_toward_infinity*/);
                 CGAL_assertion((left==right&&left==d)||(left<d&&right>d));
         }
-        // TODO: constructors from types such as int, unsigned and long
+        // TODO: Constructors from types such as int, unsigned and long. This
+        // implementation assumes that the bound type is Gmpfr and that T can
+        // be exactly converted to Gmpq.
         template <class T>
         Simple_algebraic_1(const T &t){
-                CGAL_error_msg("constructor not implemented");
+                typedef typename Ptraits::Shift         shift;
+                CGAL::Gmpq q(t);
+                pol=Coefficient(mpq_denref(q.mpq()))*
+                    shift()(Polynomial(1),1,0)-
+                        Coefficient(mpq_numref(q.mpq()));
+                left=Bound(t,std::round_toward_neg_infinity);
+                right=Bound(t,std::round_toward_infinity);
+                CGAL_assertion(left<=t&&right>=t);
         }
         ~Simple_algebraic_1(){}
 
@@ -131,8 +141,8 @@ boost::totally_ordered<Simple_algebraic_1<Polynomial_,
         Bound& get_left()const{return left;}
         Bound& get_right()const{return right;}
 
-        Algebraic& operator-()const{
-                return Algebraic(Scale(get_pol(),Coefficient(-1)),
+        Algebraic operator-()const{
+                return Algebraic(Scale()(get_pol(),Coefficient(-1)),
                                  -right,
                                  -left);
         }
@@ -141,7 +151,7 @@ boost::totally_ordered<Simple_algebraic_1<Polynomial_,
         (Comparator()(get_pol(),get_left(),get_right(), \
                       (_a).get_pol(),(_a).get_left(),(_a).get_right()))
 
-        Comparison_result compare(const Algebraic &a)const{
+        Comparison_result compare(Algebraic a)const{
                 return CGAL_RS_COMPARE_ALGEBRAIC(a);
         };
 
@@ -153,17 +163,17 @@ boost::totally_ordered<Simple_algebraic_1<Polynomial_,
         bool operator==(_t t)const \
         {Algebraic a(t);return CGAL_RS_COMPARE_ALGEBRAIC(a)==CGAL::EQUAL;}
 
-        bool operator==(const Algebraic &a)const
+        bool operator==(Algebraic a)const
                 {return CGAL_RS_COMPARE_ALGEBRAIC(a)==CGAL::EQUAL;}
-        bool operator!=(const Algebraic &a)const
+        bool operator!=(Algebraic a)const
                 {return CGAL_RS_COMPARE_ALGEBRAIC(a)!=CGAL::EQUAL;}
-        bool operator<(const Algebraic &a)const
+        bool operator<(Algebraic a)const
                 {return CGAL_RS_COMPARE_ALGEBRAIC(a)==CGAL::SMALLER;}
-        bool operator<=(const Algebraic &a)const
+        bool operator<=(Algebraic a)const
                 {return CGAL_RS_COMPARE_ALGEBRAIC(a)!=CGAL::LARGER;}
-        bool operator>(const Algebraic &a)const
+        bool operator>(Algebraic a)const
                 {return CGAL_RS_COMPARE_ALGEBRAIC(a)==CGAL::LARGER;}
-        bool operator>=(const Algebraic &a)const
+        bool operator>=(Algebraic a)const
                 {return CGAL_RS_COMPARE_ALGEBRAIC(a)!=CGAL::SMALLER;}
 
         CGAL_RS_COMPARE_ALGEBRAIC_TYPE(double)
@@ -183,11 +193,11 @@ boost::totally_ordered<Simple_algebraic_1<Polynomial_,
                 CGAL_assertion(TD()(get_left())==TD()(get_right()));
                 return TD()(get_left());
         }
-        std::pair<double,double> to_interval(){
+        std::pair<double,double> to_interval()const{
                 typedef Real_embeddable_traits<Bound>                   RT;
                 typedef typename RT::To_interval                        TI;
-                return std::make_pair(TI()(get_left().first),
-                                      TI()(get_right().second));
+                return std::make_pair(TI()(get_left()).first,
+                                      TI()(get_right()).second);
         }
 #undef CGAL_RS_DBL_PREC
 
@@ -215,7 +225,14 @@ class Real_embeddable_traits<SimpleAK1::Simple_algebraic_1<Polynomial_,
                                                            Bound_,
                                                            Refiner_,
                                                            Comparator_,
-                                                           Ptraits_> >{
+                                                           Ptraits_> >:
+public INTERN_RET::Real_embeddable_traits_base<
+                SimpleAK1::Simple_algebraic_1<Polynomial_,
+                                              Bound_,
+                                              Refiner_,
+                                              Comparator_,
+                                              Ptraits_>,
+                CGAL::Tag_true>{
         typedef Polynomial_                             P;
         typedef Bound_                                  B;
         typedef Refiner_                                R;
@@ -243,7 +260,7 @@ class Real_embeddable_traits<SimpleAK1::Simple_algebraic_1<Polynomial_,
 
         class To_double:public std::unary_function<Type,double>{
                 public:
-                double operator()(const Type &a)const{return a.to_double();}
+                double operator()(Type a)const{return a.to_double();}
         };
 
         class To_interval:
@@ -272,6 +289,66 @@ class Real_embeddable_traits<SimpleAK1::Simple_algebraic_1<Polynomial_,
                         return Sgn()(a)==CGAL::NEGATIVE?-a:a;
                 }
         };
+};
+
+template <class P,class B,class R,class C,class T>
+inline
+SimpleAK1::Simple_algebraic_1<P,B,R,C,T> min
+BOOST_PREVENT_MACRO_SUBSTITUTION(SimpleAK1::Simple_algebraic_1<P,B,R,C,T> a,
+                                 SimpleAK1::Simple_algebraic_1<P,B,R,C,T> b){
+        return(a<b?a:b);
+};
+
+template <class P,class B,class R,class C,class T>
+inline
+SimpleAK1::Simple_algebraic_1<P,B,R,C,T> max
+BOOST_PREVENT_MACRO_SUBSTITUTION(SimpleAK1::Simple_algebraic_1<P,B,R,C,T> a,
+                                 SimpleAK1::Simple_algebraic_1<P,B,R,C,T> b){
+        return(a>b?a:b);
+};
+
+template <class P,class B,class R,class C,class T>
+inline
+std::ostream& operator<<(std::ostream &o,
+                         const SimpleAK1::Simple_algebraic_1<P,B,R,C,T> &a){
+        return(o<<'['<<a.get_pol()<<','<<
+               a.get_left()<<','<<
+               a.get_right()<<']');
+};
+
+template <class P,class B,class R,class C,class T>
+inline
+std::istream& operator>>(std::istream &i,
+                         SimpleAK1::Simple_algebraic_1<P,B,R,C,T> &a){
+        // TODO: cleanly write this function
+        std::istream::int_type c;
+        P pol;
+        B lb,rb;
+        c=i.get();
+        if(c!='['){
+                CGAL_error_msg("error reading istream, \'[\' expected");
+                return i;
+        }
+        i>>pol;
+        c=i.get();
+        if(c!=','){
+                CGAL_error_msg("error reading istream, \',\' expected");
+                return i;
+        }
+        i>>lb;
+        c=i.get();
+        if(c!=','){
+                CGAL_error_msg("error reading istream, \',\' expected");
+                return i;
+        }
+        i>>rb;
+        c=i.get();
+        if(c!=']'){
+                CGAL_error_msg("error reading istream, \']\' expected");
+                return i;
+        }
+        a=SimpleAK1::Simple_algebraic_1<P,B,R,C,T>(pol,lb,rb);
+        return i;
 };
 
 } // namespace CGAL

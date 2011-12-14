@@ -40,18 +40,18 @@ struct Construct_algebraic_real_1{
         typedef Algebraic                                       result_type;
 
         template <class T>
-        Algebraic& operator()(const T &a)const{
+        Algebraic operator()(const T &a)const{
                 return Algebraic(a);
         }
 
-        Algebraic& operator()(const Polynomial &p,size_t i)const{
+        Algebraic operator()(const Polynomial &p,size_t i)const{
                 Isolator isol(p);
                 return Algebraic(p,isol.left_bound(i),isol.right_bound(i));
         }
 
-        Algebraic& operator()(const Polynomial &p,
-                              const Bound &l,
-                              const Bound &r)const{
+        Algebraic operator()(const Polynomial &p,
+                             const Bound &l,
+                             const Bound &r)const{
                 return Algebraic(p,l,r);
         }
 
@@ -62,7 +62,7 @@ struct Compute_polynomial_1:
 public std::unary_function<Algebraic_,Polynomial_>{
         typedef Polynomial_                                     Polynomial;
         typedef Algebraic_                                      Algebraic;
-        Polynomial& operator()(const Algebraic &x)const{
+        Polynomial operator()(const Algebraic &x)const{
                 return x.get_pol();
         }
 }; // struct Compute_polynomial_1
@@ -275,14 +275,15 @@ public std::binary_function<Polynomial_,Algebraic_,CGAL::Sign>{
                 typedef typename Ptraits::Substitute                    Subst;
                 std::vector<CGAL::Gmpfi> substitutions;
                 substitutions.push_back(CGAL::Gmpfi(l,r));
-                CGAL::Gmpfi eval=Subst()(p,substitutions);
+                CGAL::Gmpfi eval=Subst()(p,
+                                         substitutions.begin(),
+                                         substitutions.end());
                 return eval.sign();
         }
 
         // This function assumes that the sign of the evaluation is not zero,
         // it just refines x until having the correct sign.
-        CGAL::Sign refine_and_return(const Polynomial_1 &p,
-                                     const Algebraic &x)const{
+        CGAL::Sign refine_and_return(const Polynomial_1 &p,Algebraic x)const{
                 CGAL::Gmpfr xl(x.get_left());
                 CGAL::Gmpfr xr(x.get_right());
                 CGAL::Uncertain<CGAL::Sign> s;
@@ -302,7 +303,7 @@ public std::binary_function<Polynomial_,Algebraic_,CGAL::Sign>{
         }
 
         public:
-        CGAL::Sign operator()(const Polynomial_1 &p,const Algebraic &x)const{
+        CGAL::Sign operator()(const Polynomial_1 &p,Algebraic x)const{
                 typedef typename Ptraits::Substitute                    Subst;
                 typedef typename Ptraits::Gcd_up_to_constant_factor     Gcd;
                 typedef typename Ptraits::Make_square_free              Sfpart;
@@ -361,11 +362,12 @@ template <class Polynomial_,
           class Refiner_,
           class Signat_,
           class Ptraits_>
-struct Is_zero_at_1:
+class Is_zero_at_1:
 public std::binary_function<Polynomial_,Algebraic_,bool>{
         // This implementation will work with any polynomial type whose
         // coefficient type is explicit interoperable with Gmpfi.
         // TODO: Make this function generic.
+        public:
         typedef Polynomial_                                     Polynomial_1;
         typedef Bound_                                          Bound;
         typedef Algebraic_                                      Algebraic;
@@ -373,6 +375,20 @@ public std::binary_function<Polynomial_,Algebraic_,bool>{
         typedef Signat_                                         Signat;
         typedef Ptraits_                                        Ptraits;
 
+        private:
+        CGAL::Uncertain<CGAL::Sign> eval_interv(const Polynomial_1 &p,
+                                                const Bound &l,
+                                                const Bound &r)const{
+                typedef typename Ptraits::Substitute                    Subst;
+                std::vector<CGAL::Gmpfi> substitutions;
+                substitutions.push_back(CGAL::Gmpfi(l,r));
+                CGAL::Gmpfi eval=Subst()(p,     
+                                         substitutions.begin(),
+                                         substitutions.end());
+                return eval.sign();
+        }
+
+        public:
         bool operator()(const Polynomial_1 &p,Algebraic x)const{
                 typedef typename Ptraits::Substitute                    Subst;
                 typedef typename Ptraits::Gcd_up_to_constant_factor     Gcd;
@@ -422,7 +438,7 @@ public std::binary_function<Polynomial_,Algebraic_,bool>{
                        (sright=sign_at_gcd(x.get_right()))==CGAL::ZERO||
                        (sleft!=sright));
         }
-}; // struct Is_zero_at_1
+}; // class Is_zero_at_1
 
 // TODO: it says in the manual that this should return a size_type, but test
 // programs assume that this is equal to int
@@ -506,7 +522,7 @@ public std::binary_function<Algebraic_,Algebraic_,Bound_>{
                 typename Bound::Precision_type prec;
                 switch(Compare()(a,b)){
                         case CGAL::LARGER:
-                                CGAL_ASSERTION(b.get_right()<a.get_left());
+                                CGAL_assertion(b.get_right()<a.get_left());
                                 prec=CGAL::max(b.get_right().get_precision(),
                                                a.get_left().get_precision());
                                         return Bound::add(b.get_right(),
@@ -514,7 +530,7 @@ public std::binary_function<Algebraic_,Algebraic_,Bound_>{
                                                           1+prec)/2;
                                 break;
                         case CGAL::SMALLER:
-                                CGAL_ASSERTION(a.get_right()<b.get_left());
+                                CGAL_assertion(a.get_right()<b.get_left());
                                 prec=CGAL::max(a.get_right().get_precision(),
                                                b.get_left().get_precision());
                                         return Bound::add(a.get_right(),
@@ -582,7 +598,7 @@ public std::binary_function<Algebraic_,int,std::pair<Bound_,Bound_> >{
 
         std::pair<Bound,Bound> operator()(Algebraic &x,int a)const{
                 Bound xl(x.get_left()),xr(x.get_right());
-                Refiner()(x.get_pol(),xl,xr,CGAL::abs(a));
+                Refiner()(x.get_pol(),xl,xr,1+CGAL::abs(a));
                 x.set_left(xl);
                 x.set_right(xr);
                 CGAL_assertion(a>0?
@@ -618,16 +634,14 @@ public std::binary_function<Algebraic_,int,std::pair<Bound_,Bound_> >{
                                         CGAL::max(xl.get_precision(),
                                                   xr.get_precision())));
                         max_b=(CGAL::max)(CGAL::abs(xr),CGAL::abs(xl));
-                        x.set_left(xl);
-                        x.set_right(xr);
-                        CGAL_assertion(
+                }
+                x.set_left(xl);
+                x.set_right(xr);
+                CGAL_assertion(
                                 a>0?
                                 (xr-xl)*CGAL::ipower(Bound(2),a)<=max_b:
                                 (xr-xl)<=CGAL::ipower(Bound(2),-a)*max_b);
-                        return std::make_pair(xl,xr);
-                }
-
-
+                return std::make_pair(xl,xr);
         }
 }; // struct Approximate_relative_1
 

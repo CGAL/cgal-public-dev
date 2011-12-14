@@ -68,9 +68,15 @@ struct Simple_comparator_1{
         compare_unequal(const Polynomial &p1,Bound &l1,Bound &r1,
                         const Polynomial &p2,Bound &l2,Bound &r2)const{
                 CGAL_precondition(l1<=r1&&l2<=r2);
+                int prec=CGAL::max(
+                                CGAL::max(l1.get_precision(),
+                                          r1.get_precision()),
+                                CGAL::max(l2.get_precision(),
+                                          r2.get_precision()));
                 do{
-                        Refiner()(p1,l1,r1,100);
-                        Refiner()(p2,l2,r2,100);
+                        prec*=2;
+                        Refiner()(p1,l1,r1,prec);
+                        Refiner()(p2,l2,r2,prec);
                         CGAL_assertion(l1<=r1&&l2<=r2);
                 }while(l1<=l2?r1>=l2:r2>=l1);
                 return (r1<l2?SMALLER:LARGER);
