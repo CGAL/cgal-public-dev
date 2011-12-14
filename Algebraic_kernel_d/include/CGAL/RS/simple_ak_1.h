@@ -118,8 +118,16 @@ class Simple_algebraic_kernel_1{
                                                  Bound,
                                                  Comparator>
                                                         Bound_between_1;
-        // TODO: Approximate_absolute_1
-        // TODO: Approximate_relative_1
+        typedef CGAL::SimpleAK1::Approximate_absolute_1<Polynomial_1,
+                                                        Bound,
+                                                        Algebraic_real_1,
+                                                        Refiner>
+                                                Approximate_absolute_1;
+        typedef CGAL::SimpleAK1::Approximate_relative_1<Polynomial_1,
+                                                        Bound,
+                                                        Algebraic_real_1,
+                                                        Refiner>
+                                                Approximate_relative_1;
 
 #define CREATE_SIMPLE_FUNCTION_OBJECT(T,N) \
         T N##_object()const{return T();}
@@ -149,12 +157,10 @@ class Simple_algebraic_kernel_1{
                                       compare_1)
         CREATE_SIMPLE_FUNCTION_OBJECT(Bound_between_1,
                                       bound_between_1)
-        /*
         CREATE_SIMPLE_FUNCTION_OBJECT(Approximate_absolute_1,
                                       approximate_absolute_1)
         CREATE_SIMPLE_FUNCTION_OBJECT(Approximate_relative_1,
                                       approximate_relative_1)
-        */
 #undef CREATE_SIMPLE_FUNCTION_OBJECT
 
 }; // class Simple_algebraic_kernel_1

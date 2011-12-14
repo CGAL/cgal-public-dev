@@ -492,6 +492,66 @@ struct Isolate_1{
         }
 }; // Isolate_1
 
+template <class Polynomial_,
+          class Bound_,
+          class Algebraic_,
+          class Refiner_>
+struct Approximate_absolute_1{
+        typedef Polynomial_                                     Polynomial_1;
+        typedef Bound_                                          Bound;
+        typedef Algebraic_                                      Algebraic;
+        typedef Refiner_                                        Refiner;
+
+        std::pair<Bound,Bound> operator()(Algebraic &x,int a)const{
+                Bound xl(x.get_left()),xr(x.get_right());
+                Refiner()(x.get_pol(),xl,xr,CGAL::abs(a));
+                x.set_left(xl);
+                x.set_right(xr);
+                CGAL_assertion(a>0?
+                               (xr-xl)*CGAL::ipower(Bound(2),a)<=Bound(1):
+                               (xr-xl)<=CGAL::ipower(Bound(2),-a));
+                return std::make_pair(xl,xr);
+        }
+}; // struct Approximate_absolute_1
+
+template <class Polynomial_,
+          class Bound_,
+          class Algebraic_,
+          class Refiner_>
+struct Approximate_relative_1{
+        typedef Polynomial_                                     Polynomial_1;
+        typedef Bound_                                          Bound;
+        typedef Algebraic_                                      Algebraic;
+        typedef Refiner_                                        Refiner;
+
+        std::pair<Bound,Bound> operator()(Algebraic &x,int a)const{
+                if(CGAL::is_zero(x))
+                        return std::make_pair(Bound(0),Bound(0));
+                Bound error=CGAL::ipower(Bound(2),CGAL::abs(a));
+                Bound xl(x.get_left()),xr(x.get_right());
+                Bound max_b=(CGAL::max)(CGAL::abs(xr),CGAL::abs(xl));
+                while(a>0?(xr-xl)*error>max_b:(xr-xl)>error*max_b){
+                        Refiner()(x.get_pol(),
+                                  xl,
+                                  xr,
+                                  std::max<unsigned>(
+                                        CGAL::abs(a),
+                                        CGAL::max(xl.get_precision(),
+                                                  xr.get_precision())));
+                        max_b=(CGAL::max)(CGAL::abs(xr),CGAL::abs(xl));
+                        x.set_left(xl);
+                        x.set_right(xr);
+                        CGAL_assertion(
+                                a>0?
+                                (xr-xl)*CGAL::ipower(Bound(2),a)<=max_b:
+                                (xr-xl)<=CGAL::ipower(Bound(2),-a)*max_b);
+                        return std::make_pair(xl,xr);
+                }
+
+
+        }
+}; // struct Approximate_relative_1
+
 } // namespace SimpleAK1
 } // namespace CGAL
 
