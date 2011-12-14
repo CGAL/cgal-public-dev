@@ -244,7 +244,7 @@ struct Solve_1{
                 return res;
         }
 
-}; // Solve_1
+}; // struct Solve_1
 
 template <class Polynomial_,
           class Bound_,
@@ -360,7 +360,7 @@ struct Number_of_solutions_1{
                 Isolator isol(p);
                 return isol.number_of_real_roots();
         }
-}; // Number_of_solutions_1
+}; // struct Number_of_solutions_1
 
 // This functor not only compares two algebraic numbers. In case they are
 // different, it refines them until they do not overlap.
@@ -414,7 +414,43 @@ class Compare_1{
                 return c;
         }
 
-}; // Compare_1
+}; // class Compare_1
+
+template <class Algebraic_,
+          class Bound_,
+          class Comparator_>
+struct Bound_between_1{
+        private:
+        typedef Algebraic_                                      Algebraic;
+        typedef Bound_                                          Bound;
+        typedef Comparator_                                     Comparator;
+
+        Bound operator()(Algebraic &a,Algebraic &b)const{
+                typedef Compare_1<Algebraic,Bound,Comparator>   Compare;
+                typename Bound::Precision_type prec;
+                switch(Compare()(a,b)){
+                        case CGAL::LARGER:
+                                CGAL_ASSERTION(b.get_right()<a.get_left());
+                                prec=CGAL::max(b.get_right().get_precision(),
+                                               a.get_left().get_precision());
+                                        return Bound::add(b.get_right(),
+                                                          a.get_left(),
+                                                          1+prec)/2;
+                                break;
+                        case CGAL::SMALLER:
+                                CGAL_ASSERTION(a.get_right()<b.get_left());
+                                prec=CGAL::max(a.get_right().get_precision(),
+                                               b.get_left().get_precision());
+                                        return Bound::add(a.get_right(),
+                                                          b.get_left(),
+                                                          1+prec)/2;
+                                break;
+                        default:
+                                CGAL_error_msg(
+                                        "bound between two equal numbers");
+                }
+        }
+}; // struct Bound_between_1
 
 template <class Polynomial_,
           class Bound_,

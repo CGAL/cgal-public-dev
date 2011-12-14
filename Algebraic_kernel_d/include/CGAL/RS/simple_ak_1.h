@@ -114,7 +114,10 @@ class Simple_algebraic_kernel_1{
                                            Bound,
                                            Comparator>
                                                         Compare_1;
-        // TODO: Bound_between_1
+        typedef CGAL::SimpleAK1::Bound_between_1<Algebraic_real_1,
+                                                 Bound,
+                                                 Comparator>
+                                                        Bound_between_1;
         // TODO: Approximate_absolute_1
         // TODO: Approximate_relative_1
 
@@ -144,9 +147,9 @@ class Simple_algebraic_kernel_1{
                                       sign_at_1)
         CREATE_SIMPLE_FUNCTION_OBJECT(Compare_1,
                                       compare_1)
-        /*
         CREATE_SIMPLE_FUNCTION_OBJECT(Bound_between_1,
                                       bound_between_1)
+        /*
         CREATE_SIMPLE_FUNCTION_OBJECT(Approximate_absolute_1,
                                       approximate_absolute_1)
         CREATE_SIMPLE_FUNCTION_OBJECT(Approximate_relative_1,
