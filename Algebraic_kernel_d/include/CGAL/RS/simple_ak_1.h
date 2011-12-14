@@ -88,7 +88,8 @@ class Simple_algebraic_kernel_1{
                                                         Isolate_1;
         typedef typename Ptraits::Is_square_free        Is_square_free_1;
         typedef typename Ptraits::Make_square_free      Make_square_free_1;
-        typedef typename Ptraits::Square_free_factorize Square_free_factorize_1;
+        typedef typename Ptraits::Square_free_factorize
+                                                Square_free_factorize_1;
         typedef CGAL::SimpleAK1::Is_coprime_1<Polynomial_1,Ptraits>
                                                         Is_coprime_1;
         typedef CGAL::SimpleAK1::Make_coprime_1<Polynomial_1,Ptraits>
@@ -110,6 +111,13 @@ class Simple_algebraic_kernel_1{
                                            Signat,
                                            Ptraits>
                                                         Sign_at_1;
+        typedef CGAL::SimpleAK1::Is_zero_at_1<Polynomial_1,
+                                              Bound,
+                                              Algebraic_real_1,
+                                              Refiner,
+                                              Signat,
+                                              Ptraits>
+                                                        Is_zero_at_1;
         typedef CGAL::SimpleAK1::Compare_1<Algebraic_real_1,
                                            Bound,
                                            Comparator>
@@ -153,6 +161,8 @@ class Simple_algebraic_kernel_1{
                                       number_of_solutions_1)
         CREATE_SIMPLE_FUNCTION_OBJECT(Sign_at_1,
                                       sign_at_1)
+        CREATE_SIMPLE_FUNCTION_OBJECT(Is_zero_at_1,
+                                      is_zero_at_1)
         CREATE_SIMPLE_FUNCTION_OBJECT(Compare_1,
                                       compare_1)
         CREATE_SIMPLE_FUNCTION_OBJECT(Bound_between_1,

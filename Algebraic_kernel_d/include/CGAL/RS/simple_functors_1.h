@@ -37,6 +37,7 @@ struct Construct_algebraic_real_1{
         typedef Bound_                                          Bound;
         typedef Coefficient_                                    Coefficient;
         typedef Isolator_                                       Isolator;
+        typedef Algebraic                                       result_type;
 
         template <class T>
         Algebraic& operator()(const T &a)const{
@@ -57,16 +58,18 @@ struct Construct_algebraic_real_1{
 }; // struct Construct_algebraic_1
 
 template <class Polynomial_,class Algebraic_>
-struct Compute_polynomial_1{
+struct Compute_polynomial_1:
+public std::unary_function<Algebraic_,Polynomial_>{
         typedef Polynomial_                                     Polynomial;
         typedef Algebraic_                                      Algebraic;
-        Algebraic& operator()(const Algebraic &x)const{
+        Polynomial& operator()(const Algebraic &x)const{
                 return x.get_pol();
         }
 }; // struct Compute_polynomial_1
 
 template <class Polynomial_,class Ptraits_>
-struct Is_coprime_1{
+struct Is_coprime_1:
+public std::binary_function<Polynomial_,Polynomial_,bool>{
         typedef Polynomial_                                     Polynomial;
         typedef Ptraits_                                        Ptraits;
         typedef typename Ptraits::Gcd_up_to_constant_factor     Gcd;
@@ -252,7 +255,8 @@ template <class Polynomial_,
           class Refiner_,
           class Signat_,
           class Ptraits_>
-class Sign_at_1{
+class Sign_at_1:
+public std::binary_function<Polynomial_,Algebraic_,CGAL::Sign>{
         // This implementation will work with any polynomial type whose
         // coefficient type is explicit interoperable with Gmpfi.
         // TODO: Make this function generic.
@@ -351,8 +355,80 @@ class Sign_at_1{
         }
 }; // struct Sign_at_1
 
+template <class Polynomial_,
+          class Bound_,
+          class Algebraic_,
+          class Refiner_,
+          class Signat_,
+          class Ptraits_>
+struct Is_zero_at_1:
+public std::binary_function<Polynomial_,Algebraic_,bool>{
+        // This implementation will work with any polynomial type whose
+        // coefficient type is explicit interoperable with Gmpfi.
+        // TODO: Make this function generic.
+        typedef Polynomial_                                     Polynomial_1;
+        typedef Bound_                                          Bound;
+        typedef Algebraic_                                      Algebraic;
+        typedef Refiner_                                        Refiner;
+        typedef Signat_                                         Signat;
+        typedef Ptraits_                                        Ptraits;
+
+        bool operator()(const Polynomial_1 &p,Algebraic x)const{
+                typedef typename Ptraits::Substitute                    Subst;
+                typedef typename Ptraits::Gcd_up_to_constant_factor     Gcd;
+                typedef typename Ptraits::Make_square_free              Sfpart;
+                typedef typename Ptraits::Degree                        Degree;
+                typedef typename Ptraits::Differentiate                 Deriv;
+                CGAL::Uncertain<CGAL::Sign> unknown=
+                                        Uncertain<CGAL::Sign>::indeterminate();
+                CGAL::Uncertain<CGAL::Sign> s=eval_interv(p,
+                                                          x.get_left(),
+                                                          x.get_right());
+                if(!s.is_same(unknown))
+                        return (s==CGAL::ZERO);
+                // We are not sure about the sign. We calculate the gcd in
+                // order to know if both polynomials have common roots.
+                Polynomial_1 sfpp=Sfpart()(p);
+                Polynomial_1 gcd=Gcd()(sfpp,Sfpart()(x.get_pol()));
+                if(Degree()(gcd)==0)
+                        return false;
+
+                // At this point, gcd is not 1; we proceed as follows:
+                // -we refine x until having p monotonic in x's interval (to be
+                // sure that p has at most one root on that interval),
+                // -if the gcd has a root on this interval, both roots are
+                // equal (we return 0), otherwise, we refine until having a
+                // result.
+
+                // How to assure that p is monotonic in an interval: when its
+                // derivative is never zero in that interval.
+                Polynomial_1 dsfpp=Deriv()(sfpp);
+                CGAL::Gmpfr xl(x.get_left());
+                CGAL::Gmpfr xr(x.get_right());
+                while(eval_interv(dsfpp,xl,xr).is_same(unknown)){
+                        Refiner()(x.get_pol(),
+                                  xl,
+                                  xr,
+                                  2*CGAL::max(xl.get_precision(),
+                                              xr.get_precision()));
+                }
+                x.set_left(xl);
+                x.set_right(xr);
+
+                // How to know that the gcd has a root: evaluate endpoints.
+                CGAL::Sign sleft,sright;
+                Signat sign_at_gcd(gcd);
+                return((sleft=sign_at_gcd(x.get_left()))==CGAL::ZERO||
+                       (sright=sign_at_gcd(x.get_right()))==CGAL::ZERO||
+                       (sleft!=sright));
+        }
+}; // struct Is_zero_at_1
+
+// TODO: it says in the manual that this should return a size_type, but test
+// programs assume that this is equal to int
 template <class Polynomial_,class Isolator_>
-struct Number_of_solutions_1{
+struct Number_of_solutions_1:
+public std::unary_function<Polynomial_,int>{
         typedef Polynomial_                                     Polynomial_1;
         typedef Isolator_                                       Isolator;
         size_t operator()(const Polynomial_1 &p)const{
@@ -367,13 +443,13 @@ struct Number_of_solutions_1{
 template <class Algebraic_,
           class Bound_,
           class Comparator_>
-class Compare_1{
-        private:
+struct Compare_1:
+public std::binary_function<Algebraic_,Algebraic_,CGAL::Comparison_result>{
         typedef Algebraic_                                      Algebraic;
         typedef Bound_                                          Bound;
         typedef Comparator_                                     Comparator;
 
-        CGAL::Comparison_result operator()(Algebraic &a,Algebraic &b)const{
+        CGAL::Comparison_result operator()(Algebraic a,Algebraic b)const{
                 Bound al=a.get_left();
                 Bound ar=a.get_right();
                 Bound bl=b.get_left();
@@ -387,7 +463,7 @@ class Compare_1{
                 return c;
         }
 
-        CGAL::Comparison_result operator()(Algebraic &a,const Bound &b)const{
+        CGAL::Comparison_result operator()(Algebraic a,const Bound &b)const{
                 Bound al=a.get_left();
                 Bound ar=a.get_right();
                 Algebraic balg(b);
@@ -399,7 +475,7 @@ class Compare_1{
         }
 
         template <class T>
-        CGAL::Comparison_result operator()(Algebraic &a,const T &b)const{
+        CGAL::Comparison_result operator()(Algebraic a,const T &b)const{
                 Bound al=a.get_left();
                 Bound ar=a.get_right();
                 Algebraic balg(b);
@@ -419,13 +495,13 @@ class Compare_1{
 template <class Algebraic_,
           class Bound_,
           class Comparator_>
-struct Bound_between_1{
-        private:
+struct Bound_between_1:
+public std::binary_function<Algebraic_,Algebraic_,Bound_>{
         typedef Algebraic_                                      Algebraic;
         typedef Bound_                                          Bound;
         typedef Comparator_                                     Comparator;
 
-        Bound operator()(Algebraic &a,Algebraic &b)const{
+        Bound operator()(Algebraic a,Algebraic b)const{
                 typedef Compare_1<Algebraic,Bound,Comparator>   Compare;
                 typename Bound::Precision_type prec;
                 switch(Compare()(a,b)){
@@ -459,7 +535,8 @@ template <class Polynomial_,
           class Comparator_,
           class Signat_,
           class Ptraits_>
-struct Isolate_1{
+struct Isolate_1:
+public std::binary_function<Algebraic_,Polynomial_,std::pair<Bound_,Bound_> >{
         typedef Polynomial_                                     Polynomial_1;
         typedef Bound_                                          Bound;
         typedef Algebraic_                                      Algebraic;
@@ -496,7 +573,8 @@ template <class Polynomial_,
           class Bound_,
           class Algebraic_,
           class Refiner_>
-struct Approximate_absolute_1{
+struct Approximate_absolute_1:
+public std::binary_function<Algebraic_,int,std::pair<Bound_,Bound_> >{
         typedef Polynomial_                                     Polynomial_1;
         typedef Bound_                                          Bound;
         typedef Algebraic_                                      Algebraic;
@@ -518,7 +596,8 @@ template <class Polynomial_,
           class Bound_,
           class Algebraic_,
           class Refiner_>
-struct Approximate_relative_1{
+struct Approximate_relative_1:
+public std::binary_function<Algebraic_,int,std::pair<Bound_,Bound_> >{
         typedef Polynomial_                                     Polynomial_1;
         typedef Bound_                                          Bound;
         typedef Algebraic_                                      Algebraic;
