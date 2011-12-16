@@ -34,6 +34,9 @@ if ( CGAL_FOUND )
 
   include_directories (BEFORE ../../include)
   include_directories (BEFORE include)
+  include_directories (BEFORE ../../../Algebraic_foundations/include)
+  include_directories (BEFORE ../../../Testsuite/include)
+  include_directories (BEFORE ../../../Polynomial/include)
 
   create_single_source_cgal_program( "Algebraic_curve_kernel_2.cpp" )
   create_single_source_cgal_program( "algebraic_curve_kernel_2_tools.cpp" )
@@ -55,8 +58,6 @@ if ( CGAL_FOUND )
   else()
     message(STATUS "NOTICE: Some tests require the RS library, and will not be compiled.")
   endif()
-  create_single_source_cgal_program( "simple_rs2_isolator.cpp" )
-  create_single_source_cgal_program( "simple_rs3_refiner.cpp" )
   create_single_source_cgal_program( "simple_rs_ak1.cpp" )
 
 else()
