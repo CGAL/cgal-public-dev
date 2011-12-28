@@ -21,6 +21,21 @@ MainWindow::on_actionSavePolygon_triggered()
   if(! fileName.isEmpty()){
     std::ofstream ofs(qPrintable(fileName));
     ofs << mswc.polygon();
+
+    if(mswc.forward_construction())
+    {
+      // save also kgon and its minkowski sum
+      QString fileNameKgon = fileName;
+      fileNameKgon.append("_kgon");
+      std::ofstream ofsk(qPrintable(fileNameKgon));
+      ofsk << mswc.kgon();
+
+      
+      QString fileNameKgonSum = fileName;
+      fileNameKgonSum.append("_kgon_sum");
+      std::ofstream ofsks(qPrintable(fileNameKgonSum));
+      ofsks << mswc.kgon_sum();
+    }
   }
 }
 
