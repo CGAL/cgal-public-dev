@@ -587,12 +587,33 @@ bool Offset_decomposition_2<CPolygon_2>::decide_approximability_convex(
 
     // assert(!Q.empty() && !P.empty());
 
-    PDist_2 in_dist = type_cast<PDist_2>(radius + epsilon);
-    PDist_2 dist = in_dist * 2;
-    in_dist *= in_dist;
-    dist *= dist;
+    if(Q.is_empty()) return false;
+    if(P.is_empty()) return false;
 
-    QVertex_iterator q_start = Q.vertices_begin();
+    CGAL::Orientation p_orientation = P.orientation();
+    CGAL::Orientation q_orientation = Q.orientation();
+    Rat_polygon_2 oriented_Q = Q;
+    if(p_orientation != q_orientation)
+    {
+      LOG_DEBUG << "matching Q orientation to P " << (p_orientation == CGAL::CLOCKWISE? "clockwise": "counterclockwise") << std::endl;
+      oriented_Q.reverse_orientation();
+    }
+      
+    
+    // assumption: both polygons have the same orientation
+    // that is are counterclockwise oriented
+
+    // we have a polygon Q (with rational coordinates)
+    // and a polygon P (with possible sqrt in coordinates)
+
+    // we take an arbitrary vertex of (convex) Q and
+    // find a closest vertex of (convex) P.
+    // 
+    PDist_2 in_dist = type_cast<PDist_2>(radius + epsilon);
+    in_dist *= in_dist;   // (r + eps)^2
+    LOG_DEBUG << "in_dist: " << in_dist << std::endl;
+
+    QVertex_iterator q_start = oriented_Q.vertices_begin();
     QVertex_iterator qit = q_start;
 
     QPoint_2 pnt = *qit;
@@ -621,27 +642,29 @@ bool Offset_decomposition_2<CPolygon_2>::decide_approximability_convex(
     }
 
     Exact_segment_2 curr_segment = Exact_segment_2(q_pnt, p_curr->source());
-    approximability = (min_dist <= in_dist);
+    bool in_range = (min_dist <= in_dist);
 
-    if (!approximability)
+    if (!in_range)
     {
-       LOG_DEBUG << "no app: did not find match for " << *qit << std::endl;
+       LOG_DEBUG << "no app: did not find a match for " << *qit << std::endl;
        o_no_data.push_back(curr_segment);
-       return approximability;
+//       return approximability;
     }
     else
     { 
-       LOG_DEBUG << "app: found match for " << *qit << std::endl;
+       LOG_DEBUG << "app: found a match for " << *qit << std::endl;
        o_yes_data.push_back(curr_segment);
     }
 
+    PDist_2 max_dist = min_dist;
     // go "in parallel" on vertices of p and q
-    // and check that all q vertices are in
-    // r+e distance of respective p vertices
-    for(++qit; qit != Q.vertices_end(); ++qit)
+    // and match q to a locally closest p neighbour
+    // Q approximable if hausdorff distance
+    // (maximum of these min distances)
+    // is in r+e range
+    for(++qit; qit != oriented_Q.vertices_end(); ++qit)
     {
         pit = p_curr;
-        bool found_match = false;
 
         QPoint_2 pnt = *qit;
         PPoint_2 q_pnt = PPoint_2(
@@ -649,45 +672,63 @@ bool Offset_decomposition_2<CPolygon_2>::decide_approximability_convex(
                          type_cast<PDist_2>(pnt.y()));
 
         PPoint_2 p_pnt = pit->source();
-
+//        LOG_DEBUG << "q: " << q_pnt << std::endl;
+//        LOG_DEBUG << "p: " << p_pnt << std::endl;
         min_dist = CGAL::squared_distance(q_pnt, p_pnt);
         PCurve_iterator min_pit = pit;
+//        LOG_DEBUG << "dist: " << min_dist << std::endl;
+        
+        ++pit;
+        if(pit == P.curves_end()) pit = p_start;
 
         do
         {
             PPoint_2 p_pnt = pit->source();
+//            LOG_DEBUG << "p: " << p_pnt << std::endl;
 
-            dist = CGAL::squared_distance(q_pnt, p_pnt);
-            if (dist < min_dist)
+            PDist_2 dist = CGAL::squared_distance(q_pnt, p_pnt);
+//            LOG_DEBUG << "dist: " << dist << std::endl;
+            if (dist > min_dist)
             {
-                min_dist = dist;
-                min_pit = pit;
+//              LOG_DEBUG << ">" << min_dist << std::endl;
+              break;
+            }
+            else
+            {
+//              LOG_DEBUG << "<=" << min_dist << std::endl;
+              min_dist = dist;
+              min_pit = pit;
             }
 
-            found_match = (dist <= in_dist);
-
-            if (found_match) break;
             ++pit;
-            if(pit == P.curves_end()) pit = p_start;
+            if(pit == P.curves_end()) pit = p_start;            
         }
         while(pit != p_curr);
 
         curr_segment = Exact_segment_2(q_pnt, min_pit->source());
+        in_range = (min_dist <= in_dist);
 
-        if(!found_match)
+        if(!in_range)
         {
-            approximability = false;
-            LOG_DEBUG << "no app: did not find match for " << *qit << std::endl;
+            LOG_DEBUG << "no app: did not find a match for " << *qit << std::endl;
             o_no_data.push_back(curr_segment);
-            break;
         }
         else
         {
-            p_curr = pit;
-            LOG_DEBUG << "app: found match for " << *qit << std::endl;
+            LOG_DEBUG << "app: found a match for " << *qit << std::endl;
             o_yes_data.push_back(curr_segment);
         }
+
+        // continue matching from current P vertex
+        p_curr = min_pit;
+
+        // update hausdorff distance (to max of observed minimums)
+        if(min_dist > max_dist)
+          max_dist = min_dist;
     }
+
+    LOG_DEBUG << "max_dist: " << max_dist << std::endl;
+    approximability = (max_dist <= in_dist);
 
     return approximability;
 }
