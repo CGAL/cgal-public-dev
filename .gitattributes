@@ -2579,6 +2579,8 @@ Minkowski_sum_with_circle_2/demo/Minkowski_sum_with_circle_2/data/tight.dat -tex
 Minkowski_sum_with_circle_2/demo/Minkowski_sum_with_circle_2/data/wheels_part1.dat -text
 Minkowski_sum_with_circle_2/demo/Minkowski_sum_with_circle_2/data/wheels_part2.dat -text
 Minkowski_sum_with_circle_2/demo/Minkowski_sum_with_circle_2/include/EditParametersDialog.h -text
+Minkowski_sum_with_circle_2/demo/Minkowski_sum_with_circle_2/make_with_logs -text
+Minkowski_sum_with_circle_2/demo/Minkowski_sum_with_circle_2/run_with_logs -text
 Minkowski_sum_with_circle_2/demo/Minkowski_sum_with_circle_2/zz_common_engineering.cpp -text
 Minkowski_sum_with_circle_2/demo/icons/App_offset_2.png -text
 Minkowski_sum_with_circle_2/demo/icons/Approximability_2.png -text

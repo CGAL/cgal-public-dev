@@ -1,0 +1,1 @@
+make 1> make.out 2> make.log
