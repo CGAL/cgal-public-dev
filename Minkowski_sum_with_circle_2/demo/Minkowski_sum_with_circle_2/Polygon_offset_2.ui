@@ -12,7 +12,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>CGAL Polygon Offset</string>
+   <string>CGAL Construction and Deconstruction of Approximate Offsets</string>
   </property>
   <property name="windowIcon">
    <iconset resource="../resources/CGAL.qrc">
@@ -148,6 +148,12 @@
     <addaction name="actionRecenter"/>
    </widget>
    <widget class="QMenu" name="menuReverse_Engineering">
+    <property name="enabled">
+     <bool>true</bool>
+    </property>
+    <property name="tearOffEnabled">
+     <bool>false</bool>
+    </property>
     <property name="title">
      <string>Reverse Engineering</string>
     </property>
@@ -202,8 +208,8 @@
      <string>Construct</string>
     </property>
     <addaction name="actionViewKgon"/>
-    <addaction name="separator"/>
     <addaction name="actionConstructKgonSum"/>
+    <addaction name="separator"/>
     <addaction name="actionConstructKgonInducedCircles"/>
     <addaction name="actionShowKgonSkippedCircles"/>
     <addaction name="separator"/>
@@ -248,8 +254,8 @@
    <addaction name="menuCompare"/>
    <addaction name="menuConstruct"/>
    <addaction name="menuDeconstruct"/>
-   <addaction name="menuReverse_Engineering"/>
    <addaction name="menuSearch"/>
+   <addaction name="menuReverse_Engineering"/>
   </widget>
   <widget class="QToolBar" name="compareToolBar">
    <property name="windowTitle">
@@ -263,6 +269,9 @@
    </attribute>
    <addaction name="actionConstructExactOffset"/>
    <addaction name="actionConstructAppOffset"/>
+   <addaction name="separator"/>
+   <addaction name="actionConstructKgonOffset"/>
+   <addaction name="actionConstructKgonInducedCircles"/>
   </widget>
   <widget class="QToolBar" name="constructionToolBar">
    <property name="windowTitle">
@@ -277,9 +286,6 @@
    <addaction name="actionViewKgon"/>
    <addaction name="separator"/>
    <addaction name="actionConstructKgonSum"/>
-   <addaction name="actionConstructKgonInducedCircles"/>
-   <addaction name="separator"/>
-   <addaction name="actionConstructKgonOffset"/>
   </widget>
   <widget class="QToolBar" name="decisionToolBar">
    <property name="windowTitle">
