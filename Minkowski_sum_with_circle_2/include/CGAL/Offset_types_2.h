@@ -42,6 +42,8 @@ public:
   typedef typename Polygon_traits_2::Segment_2   Segment_2;
   typedef typename Polygon_traits_2::Direction_2   Direction_2;
   typedef typename CGAL::Aff_transformation_2<Polygon_traits_2>  Transformation_2;
+  // Polygon_set_2
+  // General_polygon_set_2
 
   /// approximate (rational) traits 
   typedef typename CGAL::Gps_circle_segment_traits_2<Polygon_traits_2>  Rat_traits_2;
