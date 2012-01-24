@@ -1,49 +1,53 @@
-\def\betats{\ccTexHtml{$\beta$}{&beta;}}
-\def\betazero{\ccTexHtml{$\beta_0$}{&beta;<SUB>0</SUB>}}
-\def\betaun{\ccTexHtml{$\beta_1$}{&beta;<SUB>1</SUB>}}
-\def\betadeux{\ccTexHtml{$\beta_2$}{&beta;<SUB>2</SUB>}}
-\def\betatrois{\ccTexHtml{$\beta_3$}{&beta;<SUB>3</SUB>}}
-\def\betaquatre{\ccTexHtml{$\beta_4$}{&beta;<SUB>4</SUB>}}
-\def\betai{\ccTexHtml{$\beta_i$}{&beta;<SUB>i</SUB>}}
-\def\betad{\ccTexHtml{$\beta_d$}{&beta;<SUB>d</SUB>}}	
-\def\betadprim{\ccTexHtml{$\beta_{d'}$}{&beta;<SUB>d'</SUB>}}
-\def\betaimun{\ccTexHtml{$\beta_{i-1}$}{&beta;<SUB>i-1</SUB>}}
-\def\betaipun{\ccTexHtml{$\beta_{i+1}$}{&beta;<SUB>i+1</SUB>}}
-\def\betaimdeux{\ccTexHtml{$\beta_{i-2}$}{&beta;<SUB>i-2</SUB>}}
-\def\betaipdeux{\ccTexHtml{$\beta_{i+2}$}{&beta;<SUB>i+2</SUB>}}
-\def\betaj{\ccTexHtml{$\beta_j$}{&beta;<SUB>j</SUB>}}
-\def\betajmun{\ccTexHtml{$\beta_{j-1}$}{&beta;<SUB>j-1</SUB>}}
-\def\betaiinv{\ccTexHtml{$\beta_i^{-1}$}{&beta;<sub>i</sub><sup>-1</sup>}}
-\def\betajinv{\ccTexHtml{$\beta_j^{-1}$}{&beta;<sub>j</sub><sup>-1</sup>}}
+% Here we usae providecommand in case of Combinatorial_map.tex was used before
+% this file.
+\providecommand{\nulldart}{\ccc{null\_dart\_handle}}
 
-\def\comp{\ccTexHtml{$\circ$}{&deg;}}
-\def\pinv{\ccTexHtml{$p^{-1}$}{p<SUP>-1</SUP>}}
-\def\myith{\ccTexHtml{$i^{\mbox{th}}$}{i<SUP>th</SUP>}}
+\providecommand{\betats}{\ccTexHtml{$\beta$}{&beta;}}
+\providecommand{\betazero}{\ccTexHtml{$\beta_0$}{&beta;<SUB>0</SUB>}}
+\providecommand{\betaun}{\ccTexHtml{$\beta_1$}{&beta;<SUB>1</SUB>}}
+\providecommand{\betadeux}{\ccTexHtml{$\beta_2$}{&beta;<SUB>2</SUB>}}
+\providecommand{\betatrois}{\ccTexHtml{$\beta_3$}{&beta;<SUB>3</SUB>}}
+\providecommand{\betaquatre}{\ccTexHtml{$\beta_4$}{&beta;<SUB>4</SUB>}}
+\providecommand{\betai}{\ccTexHtml{$\beta_i$}{&beta;<SUB>i</SUB>}}
+\providecommand{\betad}{\ccTexHtml{$\beta_d$}{&beta;<SUB>d</SUB>}}	
+\providecommand{\betadprim}{\ccTexHtml{$\beta_{d'}$}{&beta;<SUB>d'</SUB>}}
+\providecommand{\betaimun}{\ccTexHtml{$\beta_{i-1}$}{&beta;<SUB>i-1</SUB>}}
+\providecommand{\betaipun}{\ccTexHtml{$\beta_{i+1}$}{&beta;<SUB>i+1</SUB>}}
+\providecommand{\betaimdeux}{\ccTexHtml{$\beta_{i-2}$}{&beta;<SUB>i-2</SUB>}}
+\providecommand{\betaipdeux}{\ccTexHtml{$\beta_{i+2}$}{&beta;<SUB>i+2</SUB>}}
+\providecommand{\betaj}{\ccTexHtml{$\beta_j$}{&beta;<SUB>j</SUB>}}
+\providecommand{\betajmun}{\ccTexHtml{$\beta_{j-1}$}{&beta;<SUB>j-1</SUB>}}
+\providecommand{\betaiinv}{\ccTexHtml{$\beta_i^{-1}$}{&beta;<sub>i</sub><sup>-1</sup>}}
+\providecommand{\betajinv}{\ccTexHtml{$\beta_j^{-1}$}{&beta;<sub>j</sub><sup>-1</sup>}}
 
-\def\myneq{\ccTexHtml{$\neq$}{&ne;}}
-\def\myleq{\ccTexHtml{$\leq$}{&le;}}
-\def\mylt{\ccTexHtml{$<$}{&lt;}}
-\def\mygt{\ccTexHtml{$>$}{&gt;}}
-\def\mygeq{\ccTexHtml{$\geq$}{&ge;}}
-\def\mysubseteq{\ccTexHtml{$\subseteq$}{&sube;}}
-\def\myforall{\ccTexHtml{$\forall$}{&forall;}}
-\def\myemptyset{\ccTexHtml{$\emptyset$}{&empty;}}
-\def\myRightarrow{\ccTexHtml{$\Rightarrow$}{&rArr;}}
-\def\myrightarrow{\ccTexHtml{$\rightarrow$}{&rarr;}}
-\def\myin{\ccTexHtml{$\in$}{&isin;}}
-\def\mynotin{\ccTexHtml{$\notin$}{&notin;}}
-\def\mycup{\ccTexHtml{$\cup$}{&cup;}}
-\def\myphi{\ccTexHtml{$\phi$}{&phi;}}
-\def\mysetminus{\ccTexHtml{$\setminus$}{\ }}
-\def\myldots{\ccTexHtml{$\ldots$}{&hellip;}}
-\def\mytimes{\ccTexHtml{$\times$}{&times;}}
+\providecommand{\comp}{\ccTexHtml{$\circ$}{&deg;}}
+\providecommand{\pinv}{\ccTexHtml{$p^{-1}$}{p<SUP>-1</SUP>}}
+\providecommand{\myith}{\ccTexHtml{$i^{\mbox{th}}$}{i<SUP>th</SUP>}}
 
-\newcommand{\cell}[1]{\emph{#1}-cell}
-\newcommand{\cells}[1]{\emph{#1}-cells}
-\newcommand{\orbit}[1]{\ccTexHtml{$\langle{}$}{&lang;}#1\ccTexHtml{$\rangle{}$}{&rang;}}
+\providecommand{\myneq}{\ccTexHtml{$\neq$}{&ne;}}
+\providecommand{\myleq}{\ccTexHtml{$\leq$}{&le;}}
+\providecommand{\mylt}{\ccTexHtml{$<$}{&lt;}}
+\providecommand{\mygt}{\ccTexHtml{$>$}{&gt;}}
+\providecommand{\mygeq}{\ccTexHtml{$\geq$}{&ge;}}
+\providecommand{\mysubseteq}{\ccTexHtml{$\subseteq$}{&sube;}}
+\providecommand{\myforall}{\ccTexHtml{$\forall$}{&forall;}}
+\providecommand{\myemptyset}{\ccTexHtml{$\emptyset$}{&empty;}}
+\providecommand{\myRightarrow}{\ccTexHtml{$\Rightarrow$}{&rArr;}}
+\providecommand{\myrightarrow}{\ccTexHtml{$\rightarrow$}{&rarr;}}
+\providecommand{\myin}{\ccTexHtml{$\in$}{&isin;}}
+\providecommand{\mynotin}{\ccTexHtml{$\notin$}{&notin;}}
+\providecommand{\mycup}{\ccTexHtml{$\cup$}{&cup;}}
+\providecommand{\myphi}{\ccTexHtml{$\phi$}{&phi;}}
+\providecommand{\mysetminus}{\ccTexHtml{$\setminus$}{\ }}
+\providecommand{\myldots}{\ccTexHtml{$\ldots$}{&hellip;}}
+\providecommand{\mytimes}{\ccTexHtml{$\times$}{&times;}}
 
-\newcommand{\mb}[1]{\beta_{#1}}
-\newcommand{\orb}[1]{\langle{}#1\rangle{}}
+\providecommand{\cell}[1]{\emph{#1}-cell}
+\providecommand{\cells}[1]{\emph{#1}-cells}
+\providecommand{\orbit}[1]{\ccTexHtml{$\langle{}$}{&lang;}#1\ccTexHtml{$\rangle{}$}{&rang;}}
+
+
+
 
 \section{Introduction}
 
@@ -57,7 +61,7 @@ on.
 
 The combinatorial part of a linear cell complex is described by a
 \emph{d}D combinatorial map (it is strongly recommended to first
-read \ccRef[the combinatorial maps chapter]{Pkg:CombinatorialMaps}
+read \ccRef[the combinatorial maps chapter]{ChapterCombinatorialMap}
 for definitions).  To add
 the linear geometrical embedding, a point (a model of
 \ccc{CGAL::Point_2} or \ccc{CGAL::Point_3} or \ccc{CGAL::Point_d}) is
@@ -172,13 +176,13 @@ Section~\ref{ssec-attribute-wp}).
     \end{ccHtmlOnly}
     \caption{UML diagram of the main classes of the package. Gray
       elements come from the 
-      \ccRef[combinatorial map package]{Pkg:CombinatorialMaps}.}
+      \ccRef[combinatorial map package]{ChapterCombinatorialMap}.}
     \label{fig-diagram_class_lcc}
 \end{figure}
 
 \subsection{Linear Cell Complex}\label{ssec-linear-cell-complex}
 
-The \ccc{CGAL::Linear_cell_complex<d,d2,Traits_,Items_,Alloc_>} class
+The \ccc{CGAL::Linear_cell_complex<d,d2,LCCTraits,CMItems,Alloc>} class
 is a model of the \ccc{CombinatorialMap} concept. It guarantees that
 each vertex of the combinatorial map is associated with an attribute
 containing a point. This class can be used in geometric algorithms (it
@@ -197,7 +201,7 @@ the traits, items, and for the allocator classes, and by default
 A linear cell complex is valid, if it is a valid combinatorial map
 where each dart is associated with an attribute containing a point
 (i.e.  an instance of a model of the \ccc{CellAttributeWithPoint}
-concept).  Note that there are no validity constraint on the geometry
+concept).  Note that there are no validity constraints on the geometry
 (test on self intersection, planarity of 2-cells...).
 We can see two examples of \ccc{CGAL::Linear_cell_complex} in
 Figure~\ref{fig-combi_map_with_point}.
@@ -249,9 +253,9 @@ example \ccc{Construct_translated_point} or
 
 The class \ccc{CGAL::Linear_cell_complex_traits<d,K>} is a model of
 \ccc{LinearCellComplexTraits}. It defines the different types which
-are obtained from \ccc{K} that, depending on \ccc{d}, is either a model of
-the concept \ccc{Kernel} if \ccc{d==2} or \ccc{d==3}, a model of the
-concept \ccc{Kernel_d} otherwise.
+are obtained from \ccc{K} that, depending on \ccc{d}, is a model of
+the concept \ccc{Kernel} if \ccc{d==2} or \ccc{d==3}, and a model of
+the concept \ccc{Kernel_d} otherwise.
 
 
 \subsection{Linear Cell Complex Items}\label{ssec-lcc-item}
@@ -289,7 +293,7 @@ automatically decide which point to create. These operations are:
 \ccc{insert_dangling_cell_1_in_cell_2}, plus all the creation
 operations. For these operations, new versions are proposed taking
 some points as additional parameters.  Lastly, some new operations are
-defined, which use the geometry (see Sections~\ref{ssec-constructions-op} and
+defined, which use the geometry (see sections~\ref{ssec-constructions-op} and
 \ref{ssec-modif-op}).
 
 All the operations given in this section guarantee that given a valid
@@ -300,14 +304,13 @@ restore the validity conditions.
 
 \subsection{Sewing and Unsewing \label{ssec-lcc-link-darts}}
 
-As explained in the 
-\ccRef[combinatorial map user manual]{Pkg:CombinatorialMaps},
-it is possible to glue two
-\emph{i}-cells along an (\emph{i}-1)-cell by using the \ccc{sew<i>}
-method. Since this method updates non void attributes, and since
-points are specific attributes, they are automatically updated during
-the \ccc{sew<i>} method. Thus the sewing of two \emph{i}-cells could
-deform the geometry of the concerned objects.
+As explained in the combinatorial map user manual,
+Section~\ref{ssec-link-darts}, it is possible to glue two \emph{i}-cells
+along an (\emph{i}-1)-cell by using the \ccc{sew<i>} method. Since
+this method updates non void attributes, and since points are specific
+attributes, they are automatically updated during the \ccc{sew<i>}
+method. Thus the sewing of two \emph{i}-cells could deform the
+geometry of the concerned objects.
 
 For example, in Figure~\ref{fig-lcc-exemple-sew}, we want to 3-sew the
 two initial 3-cells. \ccc{sew<3>(1,5)} links by \betatrois{} the pairs
@@ -318,7 +321,7 @@ called four times). Thus, after the sew, there are only four
 0-attributes around the facet. By default, the attributes associated
 with the first dart of the sew operation are kept (but this can be
 modified by defining your own functor in the attribute class as
-explained in package \ccRef[combinatorial map]{Pkg:CombinatorialMaps}). 
+explained in the package combinatorial map, Section~\ref{ssec-link-darts}). 
 Intuitively, the
 geometry of the second 2-cell is deformed to fit to the first 2-cell.
 %
@@ -488,7 +491,7 @@ This example uses a 3-dimensional linear cell complex. It creates two
 tetrahedra and displays all the points of the linear cell complex
 thanks to a \ccc{Vertex_attribute_const_range}. Then, the two
 tetrahedra are 3-sewn and we translate all the points of the second
-tetrahedron along vector \ccc{v(3,1,1)}.  Since the two tetrahedron
+tetrahedron along vector \ccc{v(3,1,1)}.  Since the two tetrahedra
 are 3-sewn, this translation moves also the 2-cell of the first
 tetrahedron shared with the second one.  This is illustrated by
 displaying all the points of each 3-cell. For that we use a
@@ -524,8 +527,8 @@ the linear cell complex.
 This example uses a 4-dimensional linear cell complex embedded in a
 5-dimensional ambient space.  It creates two tetrahedra having 5D
 points and sews the two tetrahedra by \betaquatre{}. Then we use some high
-level operations, displays the number of cells of the linear cell
-complex, and checks its validity.  Last we use the reverse operations
+level operations, display the number of cells of the linear cell
+complex, and check its validity.  Last we use the reverse operations
 to get back to the initial configuration.
 
 \ccIncludeExampleCode{Linear_cell_complex/linear_cell_complex_4.cpp}
@@ -554,7 +557,7 @@ given by an \ccc{int} (the second template parameter of the
 resulting of the merging of two vertices to the average of the two
 initial values. This functor is associated with the vertex attribute
 by passing it as template parameter.  Using this items class instead of
-the default one is chosen during the instantiation of template
+the default one is done during the instantiation of template
 parameters of the \ccc{CGAL::Linear_cell_complex} class.
 
 Now we can use \ccc{LCC_3} in which each vertex is associated with an
@@ -592,7 +595,7 @@ Before applying the sew operation, the eight vertices of the first
 cube are colored by 1, and the eight vertices of the second cube by
 19. After the sew operation, there are eight vertices which are merged
 two by two, and due to the average functor, the color of the four
-resulting vertices are now 10. Then we insert a vertex in the center
+resulting vertices is now 10. Then we insert a vertex in the center
 of the common 2-cell between the two cubes.  The coordinates of this
 vertex are initialized with the barycenter of the 2-cell
 (-1,0.5,0.5), and its color is not initialized by the method, thus we
