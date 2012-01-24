@@ -113,6 +113,11 @@ if ( NTL_FOUND )
 
 endif ( NTL_FOUND )
 
+if(COMMAND add_config_flag)
+  set( CGAL_HAS_SYMBOLIC TRUE ) 
+  add_config_flag( CGAL_HAS_SYMBOLIC )
+endif()
+
 include_directories( ${CGAL_3RD_PARTY_INCLUDE_DIRS} ${CGAL_Symbolic_3RD_PARTY_INCLUDE_DIRS} )
   
 build_cgal_library( CGAL_Symbolic CGALSymbolic "")
