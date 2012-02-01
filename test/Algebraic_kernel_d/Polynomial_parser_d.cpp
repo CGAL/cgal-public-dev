@@ -18,7 +18,7 @@
 #include <CGAL/Polynomial_type_generator.h>
 #include <CGAL/Fraction_traits.h>
 
-#include <CGAL/GMP_arithmetic_kernel.h>
+// #include <CGAL/GMP_arithmetic_kernel.h>
 
 template < class Poly_d_ >
 struct My_policy :
