@@ -44,7 +44,7 @@
 
 namespace CGAL {
 
-namespace {
+namespace internal {
 
 class Parser_exception {
 
@@ -61,9 +61,9 @@ private:
  
 };
 
-} // anonymous namespace
+} // namespace internal
 
-//! default policy: read in a coefficient of type \c InputCoeff from the input
+//! default policy: reads in a coefficient of type \c InputCoeff from the input
 //! stream and converts it to \c Poly_d_ coefficients type using provided
 //! type coercion
 template < class Poly_d_, class InputCoeff =
@@ -79,6 +79,12 @@ struct Default_parser_policy {
     typedef typename  CGAL::Polynomial_traits_d< Poly_d >::
         Innermost_coefficient_type Coeff;
 
+    enum CoeffType {
+        COEFF_INTEGER,
+        COEFF_RATIONAL,
+        COEFF_FLOAT
+    };
+
     //! default constructor
     Default_parser_policy() {
     }
@@ -87,17 +93,7 @@ struct Default_parser_policy {
     //! to \c Coeff type using provided type coercion
     //! \c is points to the first digit character of the coefficient
     Coeff read_coefficient(std::istream& is) const {
-
-        Input_coeff cf;
-        is >> CGAL::iformat(cf);
-//         postprocess(cf);
-        typename CGAL::Coercion_traits< Input_coeff, Coeff >::Cast cvt;
-        return cvt(cf);
-    }
-
-    //! returns \c false if the coefficient does not pass the validity check
-    virtual bool validity_check(const Coeff&) {
-        return true;
+        return read_coeff_proxy(is, COEFF_INTEGER);
     }
 
     //! checking for degree overflow: can be used in real-time applications
@@ -105,11 +101,9 @@ struct Default_parser_policy {
         return true;
     }
 
-    //! postprocess the input coefficient before casting it to \c Coeff type
-    //! and returning to the parser: for instance, rounding to the required
-    //! precision can take place here
-//     virtual void postprocess(Input_coeff&) const {
-//     }
+    virtual Coeff read_coeff_proxy(std::istream& is, CoeffType) const {
+        return _read_coeff< Input_coeff >(is);
+    }
 
     virtual ~Default_parser_policy() {
     }
@@ -119,6 +113,17 @@ struct Default_parser_policy {
     static const int n_var_names = 4;    
     static const char *var_names_lower;
     static const char *var_names_upper;
+
+protected:
+
+    template < class NT >
+    Coeff _read_coeff(std::istream& is) const {
+        NT cf;
+        is >> CGAL::iformat(cf);
+        typename CGAL::Coercion_traits< NT, Coeff >::Cast cvt;
+        return cvt(cf);
+    }
+
 };
 
 template < class Poly_d_, class InputCoeff >
@@ -149,6 +154,8 @@ struct Mixed_rational_parser_policy :
     typedef typename AK::Integer Integer;
     //! rational number type
     typedef typename AK::Rational Rational;
+    //! input coefficient types
+    typedef typename Base::CoeffType CoeffType;
 
     //! default constructor
     Mixed_rational_parser_policy() {
@@ -165,12 +172,19 @@ struct Mixed_rational_parser_policy :
 
         bool read_rational; // recognised as rational coeff
         if(!_eat_characters(is, buf, read_rational))
-            throw Parser_exception("Wrong coefficient type");
+            throw internal::Parser_exception("Wrong coefficient type");
 
-        if(!read_rational) 
-            return _read_coeff< Integer >(buf);
-        else
-            return _read_coeff< Rational >(buf);
+        return read_coeff_proxy(buf, read_rational ?
+            Base::COEFF_RATIONAL : Base::COEFF_INTEGER);
+    }
+
+    virtual Coeff read_coeff_proxy(std::istream& is, CoeffType type)
+            const {
+
+        if(type == Base::COEFF_INTEGER)
+            return Base::template _read_coeff< Integer >(is);
+        else 
+            return Base::template _read_coeff< Rational >(is);
     }
 
 protected:
@@ -203,14 +217,6 @@ protected:
         }
         return true;
     }
-
-    template < class NT >
-    Coeff _read_coeff(std::istream& is) const {
-        NT cf;
-        is >> CGAL::iformat(cf);
-        typename CGAL::Coercion_traits< NT, Coeff >::Cast cvt;
-        return cvt(cf);
-    }
 };
 
 //! This parser policy allows to mix integer, rational and floating-point
@@ -238,6 +244,8 @@ struct Mixed_floating_point_parser_policy :
     //! bigfloat number type
     typedef typename CGAL::Bigfloat_interval_traits<
             typename AK::Bigfloat_interval >::Bound BigFloat;
+    //! input coefficient types
+    typedef typename Base::CoeffType CoeffType;
 
     //! default constructor
     Mixed_floating_point_parser_policy() {
@@ -250,18 +258,17 @@ struct Mixed_floating_point_parser_policy :
     Coeff read_coefficient(std::istream& is) const {
 
         std::stringstream buf;
-
         bool read_rational; // recognised as rational coeff
-        // first try to find rationa coeffs, so we do not bother ourselves
+        // first try to find rational coeffs, so we do not bother ourselves
         // with them later 
         if(!Base::_eat_characters(is, buf, read_rational))
-            throw Parser_exception("Wrong coefficient type");
+            throw internal::Parser_exception("Wrong coefficient type");
 
         if(read_rational) { // successfully read rational coeff => done
-            return Base::template _read_coeff< Rational >(buf);
+            return read_coeff_proxy(buf, Base::COEFF_RATIONAL);
         }
 
-        // now we either hit a non-digit character, found an exponent
+        // now we either hit a non-digit character, found the exponent
         // or fraction delimiter '.'; assume the first option
         int fp_type = -1; // -1 - integer, 0 - float, 1 - float scientific,
 
@@ -275,7 +282,7 @@ struct Mixed_floating_point_parser_policy :
                    fp_type = 1; // found exponent => scientific format
 
                else if(fp_type != -1) // all other combinations: error
-                   throw Parser_exception("Wrong floating-point coefficient");
+                   throw internal::Parser_exception("Wrong floating-point coefficient");
 
                if(parse_exp) {
                    buf.put(is.get());
@@ -285,7 +292,7 @@ struct Mixed_floating_point_parser_policy :
                        ch = is.peek();
                    }
                    if(!isdigit(ch))
-                       throw Parser_exception("Wrong fp exponent");
+                       throw internal::Parser_exception("Wrong fp exponent");
                } 
                if(fp_type == -1)
                    fp_type = 0; // recognised as floating-point
@@ -296,11 +303,21 @@ struct Mixed_floating_point_parser_policy :
                 break;
         }
 
-        if(fp_type == -1)
-            return Base::template _read_coeff< Integer >(buf);
-        else
-            return Base::template _read_coeff< BigFloat >(buf);
+        return read_coeff_proxy(buf, (fp_type == -1 ? Base::COEFF_INTEGER :
+                Base::COEFF_FLOAT));
     }
+
+    virtual Coeff read_coeff_proxy(std::istream& is, CoeffType type)
+            const {
+
+        if(type == Base::COEFF_INTEGER)
+            return Base::template _read_coeff< Integer >(is);
+        else if(type == Base::COEFF_RATIONAL)
+            return Base::template _read_coeff< Rational >(is);
+        else // floating-point
+            return Base::template _read_coeff< BigFloat >(is);
+    }
+
 };
 
 /*! \brief parsing d-variate polynomials in Maple format
@@ -367,7 +384,7 @@ public:
                 poly -= tmp;
             }
         } 
-        catch(Parser_exception ex) {
+        catch(internal::Parser_exception ex) {
             std::cerr << "Parser error: " << ex.get_message() << std::endl;
             return false;
         }
@@ -442,11 +459,7 @@ protected:
 
         if(isdigit(ch)) {
             coeff = policy.read_coefficient(is);
-
-            if(!policy.validity_check(coeff)) {
-                throw Parser_exception("Coefficient validity check failed");
-            }
-            which_case = 0; // number        
+            which_case = 0; // number
         
         } else if(check_var_names(ch, idx)) {
             which_case = 1;
@@ -458,7 +471,7 @@ protected:
             // to the opening ')'
             std::size_t pos = match_parenth(is);
             if(pos == -1u)
-                throw Parser_exception(
+                throw internal::Parser_exception(
                     "Parentheses do not match in basic term");
         
             std::size_t beg = (std::size_t)is.tellg() + 1u;
@@ -467,17 +480,19 @@ protected:
             tmp = get_poly(t);
             which_case = 2;
 
-        } else 
-            throw Parser_exception("Error in parsing basic term");
-        
+        } else {
+            printf("############ch: %c\n", ch);
+            throw internal::Parser_exception("Error in parsing basic term");
+        }
+
         // adjust i to be pointed to the next char
         if(is.peek() == '^') {
             is.ignore(1); // ignore one character
             if(!isdigit(is.peek()))
-                throw Parser_exception("Incorrect power for basic term");
+                throw internal::Parser_exception("Incorrect power for basic term");
             is >> CGAL::iformat(power);
             if(!policy.exponent_check(power))
-                throw Parser_exception("Power is too large for basic term");
+                throw internal::Parser_exception("Power is too large for basic term");
         }
 
         switch(which_case) {
@@ -491,7 +506,7 @@ protected:
         case 2: // control degree overflow
             int degree = CGAL::total_degree(tmp);
             if(!policy.exponent_check(degree * power))
-                throw Parser_exception(
+                throw internal::Parser_exception(
                     "Power is too large for polynomial in basic term ");
             tmp = CGAL::ipower(tmp, static_cast< long >(power));
         }
@@ -556,7 +571,7 @@ protected:
             else if(ch == '-')
                 res -= tmp;
             else
-                throw Parser_exception(
+                throw internal::Parser_exception(
                     "Illegal character while parsing polynomial");
         }
         return res;
