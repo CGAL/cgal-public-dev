@@ -12,18 +12,61 @@
 // ============================================================================
 
 #include <CGAL/basic.h>
-#include <CGAL/Algebraic_kernel_d/Polynomial_parser_d.h>
 #include <CGAL/Arithmetic_kernel.h>
+#include <CGAL/Algebraic_kernel_d/Polynomial_parser_d.h>
 #include <CGAL/Polynomial.h>
 #include <CGAL/Polynomial_type_generator.h>
 #include <CGAL/Fraction_traits.h>
 
-// namespace boost { // dirty hack...
-// namespace detail {
-// tss::~tss() {
-//  
-// }
-// } }
+#include <CGAL/GMP_arithmetic_kernel.h>
+
+template < class Poly_d_ >
+struct My_policy :
+        public CGAL::Mixed_rational_parser_policy< Poly_d_ > {
+
+    //! template argument type
+    typedef Poly_d_ Poly_d;
+    //! base class
+    typedef CGAL::Mixed_rational_parser_policy< Poly_d > Base;
+    //! type of polynomial coefficient
+    typedef typename Base::Coeff Coeff;
+
+    typedef typename CGAL::Get_arithmetic_kernel< Coeff >::
+             Arithmetic_kernel AK;
+    //! integer number type
+    typedef typename AK::Integer Integer;
+    //! rational number type
+    typedef typename AK::Rational Rational;
+    //! input coefficient types
+    typedef typename Base::CoeffType CoeffType;
+
+    virtual Coeff read_coeff_proxy(std::istream& is,
+          CoeffType type) const {
+
+        if(type == Base::COEFF_RATIONAL) {
+            Integer num, denom;
+
+            is >> CGAL::iformat(num); // read numerator
+            is.get(); // skip '/'
+            is >> CGAL::iformat(denom);
+
+            std::cout << "rational: " << num << "/" << denom << "\n";
+            throw CGAL::internal::Parser_exception("error!");
+            return Coeff(0);
+        } else
+            return Base::read_coeff_proxy(is, type);
+    }
+
+    //! checking for degree overflow: can be used in real-time applications
+    virtual bool exponent_check(unsigned e) const {
+        std::cout << "exponent_check: " << e << "\n";
+        return true;
+    }
+
+protected:
+
+
+};
 
 template<typename ArithmeticKernel>
 void test_routine() {
@@ -135,6 +178,16 @@ void test_routine() {
     Parser() (pol_str,p2);
     
     CGAL_assertion(p1==p2);
+
+    typedef CGAL::Polynomial_parser_d<Polynomial_2,
+        My_policy< Polynomial_2 > > Custom_parser;
+
+    pol_str="x^5*8/000*y^17-5/0*(-111y-x^2)+10/2134234";
+
+    if(!Custom_parser() (pol_str,p2)) {
+        printf("smth bogus happend..\n");
+    }
+    std::cout << "\ndone\n";
     
   }
   {
