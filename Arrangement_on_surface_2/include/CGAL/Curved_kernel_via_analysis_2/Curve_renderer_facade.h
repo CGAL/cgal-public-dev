@@ -62,8 +62,9 @@
 #endif
 #endif
 
-// I still breathe !!!
+#ifndef STILL_ALIVE // I still breathe !!!
 #define STILL_ALIVE std::cout << __LINE__ << "\n";
+#endif 
 
 #include <CGAL/basic.h>
 #include <CGAL/Bbox_2.h>
@@ -162,11 +163,11 @@ public:
     //! instance of a curve renderer
     typedef Curve_renderer_2<Curved_kernel_via_analysis_2, Float>
         Default_renderer_2;
-#ifdef CGAL_CKVA_USE_MULTIPREC_ARITHMETIC
-    //! the curve renderer instantiated with BigFloat
-    typedef Curve_renderer_2<Curved_kernel_via_analysis_2, Bigfloat>
-        Bigfloat_renderer_2;
-#endif
+// #ifdef CGAL_CKVA_USE_MULTIPREC_ARITHMETIC
+//     //! the curve renderer instantiated with BigFloat
+//     typedef Curve_renderer_2<Curved_kernel_via_analysis_2, Bigfloat>
+//         Bigfloat_renderer_2;
+// #endif
 #ifdef CGAL_CKVA_USE_RATIONAL_ARITHMETIC
     //! the curve renderer instantiated with Rationals
     typedef Curve_renderer_2<Curved_kernel_via_analysis_2, Rational>
@@ -179,13 +180,13 @@ public:
         static Default_renderer_2 rend;
         return rend;
     }
-#ifdef CGAL_CKVA_USE_MULTIPREC_ARITHMETIC
-    static Bigfloat_renderer_2& bigfloat_renderer()
-    {
-        static Bigfloat_renderer_2 rend;
-        return rend;
-    }
-#endif
+// #ifdef CGAL_CKVA_USE_MULTIPREC_ARITHMETIC
+//     static Bigfloat_renderer_2& bigfloat_renderer()
+//     {
+//         static Bigfloat_renderer_2 rend;
+//         return rend;
+//     }
+// #endif
 #ifdef CGAL_CKVA_USE_RATIONAL_ARITHMETIC
     static Exact_renderer_2& exact_renderer()
     {
@@ -198,12 +199,12 @@ public:
     Default_renderer_2& renderer() {
         return rend;
     }
-#ifdef CGAL_CKVA_USE_MULTIPREC_ARITHMETIC
-    Bigfloat_renderer_2 bigfloat_rend;
-    Bigfloat_renderer_2& bigfloat_renderer() {
-        return bigfloat_rend;
-    }
-#endif
+// #ifdef CGAL_CKVA_USE_MULTIPREC_ARITHMETIC
+//     Bigfloat_renderer_2 bigfloat_rend;
+//     Bigfloat_renderer_2& bigfloat_renderer() {
+//         return bigfloat_rend;
+//     }
+// #endif
 #ifdef CGAL_CKVA_USE_RATIONAL_ARITHMETIC
     Exact_renderer_2 exact_rend;
     Exact_renderer_2& exact_renderer() {
