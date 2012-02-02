@@ -473,6 +473,10 @@ void draw(const Arc_2& arc,
                 break;
             }
             bnd = approximate_x(x0, 1);
+
+            Gfx_OUT("[" << (bnd.first) << "; " << (bnd.second) << "] " <<
+            (engine.x_max_r) << "; " <<
+                    (engine.x_min_r) << "\n");
         }
     }            
 
