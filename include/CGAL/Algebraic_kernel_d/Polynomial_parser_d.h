@@ -275,17 +275,21 @@ struct Mixed_floating_point_parser_policy :
         while(!is.eof()) {
             char ch = is.peek();
 
-            bool parse_exp = (ch == 'e' || ch == 'E'); 
+            bool parse_exp = (ch == 'e' || ch == 'E');
+
+// printf("ch = %c; fp_type: %d; parse_exp: %d: buf: %s\n", ch,
+//                     fp_type, parse_exp, buf.str().c_str());
+
             if(ch == '.' || parse_exp) {
 
-               if(parse_exp && (fp_type == -1 || fp_type == 0))
+                if(parse_exp && (fp_type == -1 || fp_type == 0))
                    fp_type = 1; // found exponent => scientific format
 
                else if(fp_type != -1) // all other combinations: error
                    throw internal::Parser_exception("Wrong floating-point coefficient");
 
+               buf.put(is.get()); // eat comma
                if(parse_exp) {
-                   buf.put(is.get());
                    ch = is.peek();
                    if(ch == '-' || ch == '+') {
                        buf.put(is.get());
@@ -293,7 +297,8 @@ struct Mixed_floating_point_parser_policy :
                    }
                    if(!isdigit(ch))
                        throw internal::Parser_exception("Wrong fp exponent");
-               } 
+               }
+
                if(fp_type == -1)
                    fp_type = 0; // recognised as floating-point
 
@@ -302,7 +307,6 @@ struct Mixed_floating_point_parser_policy :
             } else 
                 break;
         }
-
         return read_coeff_proxy(buf, (fp_type == -1 ? Base::COEFF_INTEGER :
                 Base::COEFF_FLOAT));
     }
