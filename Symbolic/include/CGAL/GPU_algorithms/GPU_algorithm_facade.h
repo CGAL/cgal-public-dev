@@ -30,7 +30,7 @@ struct GPU_algorithm_facade {
 
     template < class NT >
     static CGAL::Polynomial< NT > gcd(const CGAL::Polynomial< NT >& f_,
-                const CGAL::Polynomial< NT >& g_) {
+                const CGAL::Polynomial< NT >& g_, bool *pfailed = 0) {
 
         typedef CGAL::Polynomial< NT > Poly;
     
@@ -63,6 +63,9 @@ struct GPU_algorithm_facade {
 
         compute_gcd_bitlength(f, g, bits);
 
+        if(pfailed != 0)
+            *pfailed = false;
+
         if(obj.internal_compute(fv, gv, rv, bits)) {
             ggcd = internal::construct_polynomial_from_mpz< NT >(rv);
             std::cout <<  "\nGGCD succeeded\n";
@@ -70,7 +73,9 @@ struct GPU_algorithm_facade {
             
         } else  {
             std::cout <<  "GGCD failed\n";
-//             throw "WTF ??";
+            if(pfailed != 0)
+                *pfailed = true;
+            return Poly(NT(0));
         }
         ggcd /= ggcd.content();
 
@@ -89,7 +94,7 @@ struct GPU_algorithm_facade {
         const CGAL::Polynomial< CGAL::Polynomial< NT > >& g,
                 bool *pfailed = 0) {
 
-        if(pfailed != 0)
+         if(pfailed != 0)
            *pfailed = false;
 
         if(CGAL::is_zero(f) || CGAL::is_zero(g)) {
@@ -122,18 +127,15 @@ struct GPU_algorithm_facade {
         CGAL::Polynomial< NT > res;
         bool failed = true;
 
-        if(obj.setup(deg_f, deg_g, deg_x1, deg_x2,
-            low_deg, high_deg, bits)) {
+        internal::MPZ_vector_1 r;
 
-            internal::MPZ_vector_1 r;
-            if(obj.internal_compute(*pfv, *pgv, r)) {
+        if(obj.internal_compute(*pfv, *pgv, r, deg_f, deg_g, deg_x1, deg_x2,
+                low_deg, high_deg, bits)) {
 
-                std::cout <<  "GRES succeeded\n";
-                failed = false;
-
-                res = internal::construct_polynomial_from_mpz< NT >(r);
-                internal::dispose_mpz_vector(r);
-            }
+            res = internal::construct_polynomial_from_mpz< NT >(r);
+            internal::dispose_mpz_vector(r);
+            std::cout <<  "GRES succeeded\n";
+            failed = false;
         }
 
          // if the algorithm failed here: decompose one of the polynomials

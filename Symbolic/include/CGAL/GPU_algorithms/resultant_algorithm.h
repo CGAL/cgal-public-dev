@@ -38,18 +38,21 @@ public:
         return obj;
     }
 
-    bool setup(unsigned deg_y1_, unsigned deg_y2_,unsigned deg_x1_,
-        unsigned deg_x2_, unsigned low_deg_, unsigned high_deg_,
-        unsigned bits);
-
     bool internal_compute(const MPZ_vector_2& fv,
-        const MPZ_vector_2& gv, MPZ_vector_1& r);
+        const MPZ_vector_2& gv, MPZ_vector_1& r, unsigned deg_y1_,
+        unsigned deg_y2_, unsigned deg_x1_, unsigned deg_x2_,
+        unsigned low_deg_, unsigned high_deg_, unsigned bits_);
 
     bool debug_run(int argc, char **argv);
 
     ~GPU_resultant();
     
 protected:
+
+    bool setup(unsigned deg_y1_, unsigned deg_y2_,unsigned deg_x1_,
+        unsigned deg_x2_, unsigned low_deg_, unsigned high_deg_,
+        unsigned bits_);
+
 
     bool quick_run();
     bool run_gpu_part(const MPZ_vector_2& fv, const MPZ_vector_2& gv,

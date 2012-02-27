@@ -449,6 +449,10 @@ void compute_resultant_bounds(
             rows_deg, rows_bits);
 
     bits = (unsigned)rows_bits, low_deg = cols_min_deg, high_deg = rows_deg;
+
+    if(high_deg >= 1024*4 - 30)
+        high_deg = 1024*4 - 30;
+
 } // compute_resultant_bounds
 
 extern gmp_randstate_t rands;

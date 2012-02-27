@@ -45,6 +45,7 @@ public:
     ~GPU_gcd();
 
 protected:
+
     bool setup(unsigned deg_f_, unsigned deg_g_, unsigned bits_);
 
     bool run_gpu_part(const MPZ_vector_1& fv, const MPZ_vector_1& gv,
