@@ -12,8 +12,8 @@
 // This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
 // WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
-// $URL$
-// $Id$
+// $URL: svn+ssh://penarand@scm.gforge.inria.fr/svn/cgal/branches/features/Kernel_d-new_models-penarand_vfisikop/Kernel_d/include/CGAL/Kernel_d/Indexed_point_d.h $
+// $Id: Indexed_point_d.h 67920 2012-03-01 16:00:51Z penarand $
 //
 //
 // Authors:     Vissarion Fisikopoulos <vissarion@di.uoa.gr>
