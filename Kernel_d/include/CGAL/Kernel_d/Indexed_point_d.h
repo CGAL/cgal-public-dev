@@ -77,7 +77,7 @@ class Indexed_point:public _P{
                 Base_point(d,first,last,D),
                 _index(Base_kernel::get_and_increment_index()){}
 
-        explicit Indexed_point(const Self &p):
+        Indexed_point(const Self &p):
                 Base_point(p),_index(p.index()){}
 
         explicit Indexed_point(const Base_point &p):
@@ -94,6 +94,7 @@ class Indexed_point:public _P{
                 {return static_cast<Self&>(Self(Base_point::operator-=(v)));}
 
         size_t index()const{return _index;}
+        void set_entry(int i,const FT &x){this->entry(i)=x;}
 
         private:
         size_t _index;
@@ -102,4 +103,3 @@ class Indexed_point:public _P{
 } // namespace CGAL
 
 #endif // CGAL_KERNEL_D_INDEXED_POINT_D_H
-
