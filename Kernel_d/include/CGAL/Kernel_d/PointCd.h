@@ -45,6 +45,7 @@ class PointCd : public Handle_for< Tuple_d<_FT,_LA> > {
 
   using Base::ptr;
 
+protected:
 typename _LA::Vector& vector_rep() { return ptr()->v; }
 const typename _LA::Vector& vector_rep() const { return ptr()->v; }
 _FT& entry(int i) { return ptr()->v[i]; }

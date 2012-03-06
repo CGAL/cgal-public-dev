@@ -69,6 +69,7 @@ We call $p_i$, $0 \leq i < d$ the $i$-th Cartesian coordinate and
 $h_i$, $0 \le i \le d$, the $i$-th homogeneous coordinate. We call $d$
 the dimension of the point.}*/
 
+protected:
 const typename _LA::Vector& vector_rep() const { return ptr()->v; }
 _RT& entry(int i) { return ptr()->v[i]; }
 const _RT& entry(int i) const { return ptr()->v[i]; }
