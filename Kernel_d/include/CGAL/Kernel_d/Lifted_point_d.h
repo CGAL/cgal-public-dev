@@ -64,7 +64,8 @@ class Lifted_point:public _P{
 
         Lifted_point(const Self &p):Base_point(p){}
 
-        explicit Lifted_point(const Base_point &p):Base_point(p){}
+        template <class P>
+        Lifted_point(const P &p):Base_point(p){}
 
         void set_lifting(const FT &x){
                 if(!this->unique()){
@@ -78,6 +79,33 @@ class Lifted_point:public _P{
                         this->swap(other);
                 }
                 this->entry(this->dimension()-1)=x;
+        }
+
+        Self operator+(const Vector_d<R> &v)const
+                {return Self(Base_point::operator+(v));}
+        Self operator-(const Vector_d<R> &v)const
+                {return Self(Base_point::operator-(v));}
+        Self& operator+=(const Vector_d<R> &v)
+                {return static_cast<Self&>(Self(Base_point::operator+=(v)));}
+        Self& operator-=(const Vector_d<R> &v)
+                {return static_cast<Self&>(Self(Base_point::operator-=(v)));}
+        Vector_d<R> operator-(const Self &s)const{
+                CGAL_assertion(this->dimension()==s.dimension());
+                size_t d=std::distance(this->vector_rep().begin(),
+                                       this->vector_rep().end());
+                std::vector<FT> v;
+                v.reserve(d);
+                CGAL_assertion_msg(d==this->dimension(),
+                                   "Only cartesian points are implemented");
+                // TODO: Homogeneous points.
+                for(size_t i=0;i<d;++i)
+                        v.push_back(this->cartesian(i)-s.cartesian(i));
+                return Vector_d<R>(this->dimension(),v.begin(),v.end());
+        }
+        Vector_d<R> operator-(const Origin&)const{
+                return Vector_d<R>(this->dimension(),
+                                   this->vector_rep().begin(),
+                                   this->vector_rep().end());
         }
 };
 

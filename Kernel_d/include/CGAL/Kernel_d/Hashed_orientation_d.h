@@ -24,6 +24,7 @@
 
 #include <CGAL/assertions.h>
 #include "sort_swap.h"
+#include <CGAL/Convex_hull_d.h>
 
 namespace CGAL{
 
@@ -117,7 +118,6 @@ class HashedOrientation{
                         p_ind[i]=all_p_ind[i];
                         ++i;
                 }
-                std::cout<<"det = "<<det<<std::endl;
                 if(det==0)
                         return ZERO;
                 if(swap)

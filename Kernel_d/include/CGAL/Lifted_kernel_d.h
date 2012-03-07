@@ -46,7 +46,7 @@ namespace CGAL{
 #include <boost/thread/tss.hpp>
 static boost::thread_specific_ptr<void*> _det_table;
 #else
-static void* _det_table;
+static void* _det_table=NULL;
 #endif
 
 template <class _IK>
@@ -57,14 +57,33 @@ class Lifted_kernel_d:public _IK{
         typedef Lifted_kernel_d<Base_kernel>                    Self;
         typedef typename Base_kernel::Point_d                   Base_point;
         typedef Lifted_point<Base_point,Self>                   Point_d;
+        typedef typename Base_kernel::Vector_d                  Vector_d;
         typedef std::vector<size_t>                             Index;
         typedef typename Base_kernel::FT                        FT;
         typedef boost::unordered_map<Index,FT>                  Table;
 
-        // To override the orientation from the base kernel:
+        // To override some functors from the base kernel:
         public:
+
         typedef HashedOrientation<Self>                         Orientation_d;
         Orientation_d orientation_d_object()const{return Orientation_d();}
+
+        struct Point_to_vector_d{
+                Vector_d operator()(const Point_d& p)const{
+                        return p-CGAL::ORIGIN;
+                }
+        };
+        Point_to_vector_d point_to_vector_d_object()const{
+                return Point_to_vector_d();
+        }
+        struct Vector_to_point_d{
+                Point_d operator()(const Vector_d &v)const{
+                        return CGAL::ORIGIN+v;
+                }
+        };
+        Vector_to_point_d vector_to_point_d_object()const{
+                return Vector_to_point_d();
+        }
 
         public:
         template <class T>
@@ -79,8 +98,9 @@ class Lifted_kernel_d:public _IK{
                         _det_table.reset((void**)(new Table()));
                 return (Table&)(*_det_table);
 #else
-                // TODO: Initialize at first use.
-                return (Table&)_det_table;
+                if(_det_table==NULL)
+                        _det_table=(void*)(new Table());
+                return (Table&)*(Table*)_det_table;
 #endif
         };
 };

@@ -96,7 +96,6 @@ class Indexed_point:public _P{
                 {return static_cast<Self&>(Self(Base_point::operator+=(v)));}
         Self& operator-=(const Vector_d<R> &v)
                 {return static_cast<Self&>(Self(Base_point::operator-=(v)));}
-
         size_t index()const{return _index;}
 
         private:
