@@ -69,7 +69,7 @@ class Lifted_kernel_d:public _IK{
         public:
         template <class T>
         static void set_lifting(Point_d &point,const T &l){
-                point.set_entry(point.dimension()-1,l);
+                point.set_lifting(l);
         };
 
         public:

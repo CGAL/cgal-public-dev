@@ -66,7 +66,19 @@ class Lifted_point:public _P{
 
         explicit Lifted_point(const Base_point &p):Base_point(p){}
 
-        void set_entry(int i,const FT &x){this->entry(i)=x;}
+        void set_lifting(const FT &x){
+                if(!this->unique()){
+                        // The storage is not unique. A new point must be
+                        // created, having the same index as *this.
+                        Base_point other(this->dimension(),
+                                         this->vector_rep().begin(),
+                                         this->vector_rep().end(),
+                                         FT(1),
+                                         this->index());
+                        this->swap(other);
+                }
+                this->entry(this->dimension()-1)=x;
+        }
 };
 
 } // namespace CGAL

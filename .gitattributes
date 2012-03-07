@@ -1878,6 +1878,7 @@ Kernel_d/include/CGAL/Kernel_d/Cartesian_const_iterator_d.h -text
 Kernel_d/include/CGAL/Kernel_d/Hashed_orientation_d.h -text
 Kernel_d/include/CGAL/Kernel_d/Indexed_point_d.h -text
 Kernel_d/include/CGAL/Kernel_d/Lifted_point_d.h -text
+Kernel_d/include/CGAL/Kernel_d/sort_swap.h -text
 Kernel_d/include/CGAL/Lifted_kernel_d.h -text
 Kernel_d/test/Kernel_d/Indexed_kernel_d.cpp -text
 Kernel_d/test/Kernel_d/Linear_algebra-test.cmd eol=lf

@@ -69,13 +69,17 @@ class Indexed_point:public _P{
                 Base_point(d,first,last),
                 _index(Base_kernel::get_and_increment_index()){}
 
+        // This constructor has one more parameter than the analog original
+        // constructor. It is useful to construct copies of one input point
+        // with another index, on which the storage is not a reference to
+        // the original one.
         template <class InputIterator>
         Indexed_point(int d,
                       InputIterator first,
                       InputIterator last,
-                      const RT &D):
-                Base_point(d,first,last,D),
-                _index(Base_kernel::get_and_increment_index()){}
+                      const RT &D,
+                      size_t idx=Base_kernel::get_and_increment_index()):
+                Base_point(d,first,last,D),_index(idx){}
 
         Indexed_point(const Self &p):
                 Base_point(p),_index(p.index()){}
