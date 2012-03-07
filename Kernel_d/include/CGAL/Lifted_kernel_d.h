@@ -22,6 +22,7 @@
 #ifndef CGAL_LIFTED_KERNEL_D
 #define CGAL_LIFTED_KERNEL_D
 
+#include "Kernel_d/Lifted_point_d.h"
 #include "Kernel_d/Hashed_orientation_d.h"
 
 // The boost implementation of hash tables appeared in version 1.36. If the
@@ -54,7 +55,8 @@ class Lifted_kernel_d:public _IK{
         typedef _IK                                             Base_kernel;
         public:
         typedef Lifted_kernel_d<Base_kernel>                    Self;
-        typedef typename Base_kernel::Point_d                   Point_d;
+        typedef typename Base_kernel::Point_d                   Base_point;
+        typedef Lifted_point<Base_point,Self>                   Point_d;
         typedef std::vector<size_t>                             Index;
         typedef typename Base_kernel::FT                        FT;
         typedef boost::unordered_map<Index,FT>                  Table;

@@ -94,7 +94,6 @@ class Indexed_point:public _P{
                 {return static_cast<Self&>(Self(Base_point::operator-=(v)));}
 
         size_t index()const{return _index;}
-        void set_entry(int i,const FT &x){this->entry(i)=x;}
 
         private:
         size_t _index;
