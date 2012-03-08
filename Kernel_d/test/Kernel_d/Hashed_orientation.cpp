@@ -20,14 +20,12 @@
 //              Luis Peñaranda <luis.penaranda@gmx.com>
 
 #include <CGAL/Cartesian_d.h>
-#include <CGAL/Indexed_kernel_d.h>
 #include <CGAL/Lifted_kernel_d.h>
 #include <CGAL/assertions.h>
 
 int main(){
         typedef CGAL::Cartesian_d<double>                       Base;
-        typedef CGAL::Indexed_point_kernel_d<Base>              Indexed;
-        typedef CGAL::Lifted_kernel_d<Indexed>                  K;
+        typedef CGAL::Lifted_kernel_d<Base>                     K;
         typedef K::Point_d                                      Point;
         Point p(5,-1),q(3,-4),r(1,2);
         Point s(q);

@@ -25,7 +25,7 @@
 // -their indices are copied by the copy constructor.
 
 #include <CGAL/Cartesian_d.h>
-#include <CGAL/Indexed_kernel_d.h>
+#include <CGAL/Kernel_d/Indexed_kernel_d.h>
 #include <CGAL/assertions.h>
 #include <vector>
 

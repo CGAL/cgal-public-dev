@@ -20,22 +20,25 @@
 //              Luis Peñaranda <luis.penaranda@gmx.com>
 
 #include <CGAL/Cartesian_d.h>
-#include <CGAL/Indexed_kernel_d.h>
 #include <CGAL/Lifted_kernel_d.h>
 #include <CGAL/assertions.h>
 
 int main(){
         typedef CGAL::Cartesian_d<double>                       Base;
-        typedef CGAL::Indexed_point_kernel_d<Base>              Indexed;
-        typedef CGAL::Lifted_kernel_d<Indexed>                  K;
+        typedef CGAL::Lifted_kernel_d<Base>                     K;
         typedef K::Point_d                                      Point;
         typedef CGAL::Convex_hull_d<K>                          CH;
 
-        Point p(5,-1),q(3,-4),r(1,2);
+        Point p(5,-1),q(3,-4),r(1,2),s(4,2),t(3,0);
         CH ch1(2);
         ch1.insert(p);
         ch1.insert(q);
         ch1.insert(r);
+        ch1.insert(s);
+        ch1.insert(t);
+
+        CGAL_assertion(ch1.is_valid());
+        ch1.print_statistics();
 
         K::set_lifting(q,4);
         K mykernel;
@@ -45,6 +48,9 @@ int main(){
         points.push_back(r);
         CH ch2(2,mykernel);
         ch2.insert(points.begin(),points.end());
+
+        CGAL_assertion(ch2.is_valid());
+        ch2.print_statistics();
 
         return 0;
 }

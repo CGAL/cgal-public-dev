@@ -56,7 +56,7 @@ class HashedOrientation{
                 }
                 ret=LA::determinant(M);
                 return;
-        };
+        }
 
         public:
         template <class ForwardIterator>

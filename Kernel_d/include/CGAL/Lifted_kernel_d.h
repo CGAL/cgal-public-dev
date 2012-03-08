@@ -22,6 +22,7 @@
 #ifndef CGAL_LIFTED_KERNEL_D
 #define CGAL_LIFTED_KERNEL_D
 
+#include "Kernel_d/Indexed_kernel_d.h"
 #include "Kernel_d/Lifted_point_d.h"
 #include "Kernel_d/Hashed_orientation_d.h"
 
@@ -50,9 +51,9 @@ static void* _det_table=NULL;
 #endif
 
 template <class _IK>
-class Lifted_kernel_d:public _IK{
+class Lifted_kernel_d:public Indexed_point_kernel_d<_IK>{
         private:
-        typedef _IK                                             Base_kernel;
+        typedef Indexed_point_kernel_d<_IK>                     Base_kernel;
         public:
         typedef Lifted_kernel_d<Base_kernel>                    Self;
         typedef typename Base_kernel::Point_d                   Base_point;
@@ -89,7 +90,7 @@ class Lifted_kernel_d:public _IK{
         template <class T>
         static void set_lifting(Point_d &point,const T &l){
                 point.set_lifting(l);
-        };
+        }
 
         public:
         static Table& get_table(){

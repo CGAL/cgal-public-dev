@@ -19,10 +19,10 @@
 // Authors:     Vissarion Fisikopoulos <vissarion@di.uoa.gr>
 //              Luis Peñaranda <luis.penaranda@gmx.com>
 
-#ifndef CGAL_INDEXED_KERNEL_D_H
-#define CGAL_INDEXED_KERNEL_D_H
+#ifndef CGAL_KERNEL_D_INDEXED_KERNEL_D_H
+#define CGAL_KERNEL_D_INDEXED_KERNEL_D_H
 
-#include "Kernel_d/Indexed_point_d.h"
+#include "Indexed_point_d.h"
 
 namespace CGAL{
 
@@ -68,4 +68,4 @@ class Indexed_point_kernel_d:public _K{
 
 } // namespace CGAL
 
-#endif // CGAL_INDEXED_KERNEL_D_H
+#endif // CGAL_KERNEL_D_INDEXED_KERNEL_D_H
