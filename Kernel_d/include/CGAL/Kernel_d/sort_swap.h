@@ -29,26 +29,23 @@
 #else
 #include <boost/range/algorithm_ext/is_sorted.hpp>
 #endif
-#include <boost/tuple/tuple.hpp>
 
-// This function sorts the index vector v, permutes the input vector perm
-// exactly in the same way v was permuted and counts the number of swaps
-// needed for the sort. It returns true iff this number of swap is even.
+// This function sorts the index vector v and permutes the input vector
+// perm exactly in the same way v was permuted. It returns true iff the
+// number of swaps in the permutation is even.
 template <class Index,class PermutationVector>
 bool inplace_sort_permute_count(Index &v,PermutationVector &perm){
         typedef typename Index::value_type                      elt_t;
         size_t n=v.size();
         CGAL_assertion(v.size()==perm.size());
         bool swaps=true; // The number of swaps used is even.
-        elt_t tmp;
-        size_t min;
         for(size_t i=0;i+1<n;++i){
-                min=i;
+                size_t min=i;
                 for(size_t j=i+1;j<n;++j)
                         if(v[j]<v[min])
                                 min=j;
                 if(min!=i){
-                        tmp=v[min];
+                        elt_t tmp=v[min];
                         v[min]=v[i];
                         v[i]=tmp;
                         swaps=!swaps;
