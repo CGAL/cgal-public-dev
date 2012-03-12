@@ -26,6 +26,12 @@
 #include <CGAL/determinant.h>
 #include <CGAL/assertions.h>
 
+#ifndef CGAL_HASHED_ORIENTATION_SIZE_LIMIT
+// This value comes from empirical observations. When working with rational
+// points, coming from doubles, this limits the process size to around 2Gb.
+#define CGAL_HASHED_ORIENTATION_SIZE_LIMIT 7999999
+#endif
+
 namespace CGAL{
 
 template <class _K>
@@ -110,6 +116,11 @@ class HashedOrientation{
                 size_t d=std::distance(first,last);
                 CGAL_assertion_msg(first->dimension()+1==d,
                                    "Hashed_orientation_d: needs d+1 points");
+#ifndef CGAL_HASHED_ORIENTATION_DONT_CLEAR
+                // Clear the table when it consumes much memory.
+                if(K::get_table().size()>CGAL_HASHED_ORIENTATION_SIZE_LIMIT)
+                        K::get_table().clear();
+#endif
                 // The vector all_p_ind contains all the indices of the
                 // points whose orientation must be computed. all_ind[i] is
                 // defined to i. all_p_ind will be sorted, and all_ind's
@@ -172,5 +183,7 @@ class HashedOrientation{
 };
 
 } // namespace CGAL
+
+#undef CGAL_HASHED_ORIENTATION_SIZE_LIMIT
 
 #endif // CGAL_KERNEL_D_HASHED_ORIENTATION_D_H
