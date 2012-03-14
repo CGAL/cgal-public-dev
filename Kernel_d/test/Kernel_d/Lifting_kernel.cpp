@@ -53,11 +53,16 @@ int main(){
 
         CGAL_assertion(ch2.is_valid());
 
+        // Test predicates with d+1 points.
         CGAL_assertion(Ori()(points.begin(),points.end())==
                        CGAL::COUNTERCLOCKWISE);
+        CGAL_assertion(Vol()(points.begin(),points.end())==14);
 
+        // Test predicates with d points.
         points.pop_back();
         CGAL_assertion(Vol()(points.begin(),points.end())==2);
+        CGAL_assertion(Ori()(points.begin(),points.end())==
+                       CGAL::COUNTERCLOCKWISE);
 
         return 0;
 }

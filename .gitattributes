@@ -1875,6 +1875,7 @@ Kernel_d/doc_tex/Kernel_d_ref/Kernel_Less_coordinate_d.tex -text
 Kernel_d/doc_tex/Kernel_d_ref/Kernel_Point_dimension_d.tex -text
 Kernel_d/doc_tex/Kernel_d_ref/Lifting_kernel_d.tex -text
 Kernel_d/include/CGAL/Kernel_d/Cartesian_const_iterator_d.h -text
+Kernel_d/include/CGAL/Kernel_d/Hashed_determinant_d.h -text
 Kernel_d/include/CGAL/Kernel_d/Hashed_orientation_d.h -text
 Kernel_d/include/CGAL/Kernel_d/Hashed_volume_d.h -text
 Kernel_d/include/CGAL/Kernel_d/Indexed_kernel_d.h -text

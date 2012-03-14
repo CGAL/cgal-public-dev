@@ -53,6 +53,7 @@ static void* _det_table=NULL;
 
 template <class _IK>
 class Lifting_kernel_d:public Indexed_point_kernel_d<_IK>{
+        template <class _SomeKernel> friend class HashedDeterminant;
         private:
         typedef Indexed_point_kernel_d<_IK>                     Base_kernel;
         public:
@@ -62,6 +63,7 @@ class Lifting_kernel_d:public Indexed_point_kernel_d<_IK>{
         typedef typename Base_kernel::Vector_d                  Vector_d;
         typedef std::vector<size_t>                             Index;
         typedef typename Base_kernel::FT                        FT;
+        typedef typename Base_kernel::LA                        LA;
         typedef boost::unordered_map<Index,FT>                  Table;
 
         // To override some functors from the base kernel:
@@ -96,7 +98,71 @@ class Lifting_kernel_d:public Indexed_point_kernel_d<_IK>{
                 point.set_lifting(l);
         }
 
-        public:
+        protected:
+        template <class ForwardIterator>
+        static void compute_determinant(ForwardIterator first,
+                                        ForwardIterator last,
+                                        const Index &idx,
+                                        FT &ret){
+                // This constructs a matrix by subtracting the last column
+                // from all the others. Its determinant is the same as the
+                // original orientation matrix, but it's one dimension
+                // smaller.
+                size_t d=idx.size()-1;
+                typename LA::Matrix M(d);
+                for(size_t col=0;col<d;++col){
+                        for(size_t row=0;row<d;++row)
+                                M(col,row)=(*(first+idx[col]))[row]-
+                                           (*(first+idx[d]))[row];
+                }
+                switch(d){
+                        case 1:
+                                ret=M(0,0);
+                                break;
+                        case 2:
+                                ret=CGAL::determinant(M(0,0),M(1,0),
+                                                      M(0,1),M(1,1));
+                                break;
+                        case 3:
+                                ret=CGAL::determinant(M(0,0),M(1,0),M(2,0),
+                                                      M(0,1),M(1,1),M(2,1),
+                                                      M(0,2),M(1,2),M(2,2));
+                                break;
+                        case 4:
+                                ret=CGAL::determinant(
+                                        M(0,0),M(1,0),M(2,0),M(3,0),
+                                        M(0,1),M(1,1),M(2,1),M(3,1),
+                                        M(0,2),M(1,2),M(2,2),M(3,2),
+                                        M(0,3),M(1,3),M(2,3),M(3,3));
+                                break;
+                        case 5:
+                                ret=CGAL::determinant(
+                                        M(0,0),M(1,0),M(2,0),M(3,0),M(4,0),
+                                        M(0,1),M(1,1),M(2,1),M(3,1),M(4,1),
+                                        M(0,2),M(1,2),M(2,2),M(3,2),M(4,2),
+                                        M(0,3),M(1,3),M(2,3),M(3,3),M(4,3),
+                                        M(0,4),M(1,4),M(2,4),M(3,4),M(4,4));
+                                break;
+                        // In theory, Laplace is faster than Gaussian
+                        // elimination for d<6. In practice, we observed
+                        // that here it is also faster for d=6.
+                        case 6:
+                                ret=CGAL::determinant(
+                                M(0,0),M(1,0),M(2,0),M(3,0),M(4,0),M(5,0),
+                                M(0,1),M(1,1),M(2,1),M(3,1),M(4,1),M(5,1),
+                                M(0,2),M(1,2),M(2,2),M(3,2),M(4,2),M(5,2),
+                                M(0,3),M(1,3),M(2,3),M(3,3),M(4,3),M(5,3),
+                                M(0,4),M(1,4),M(2,4),M(3,4),M(4,4),M(5,4),
+                                M(0,5),M(1,5),M(2,5),M(3,5),M(4,5),M(5,5));
+                                break;
+                        default:
+                                // TODO: use something faster than CGAL, Eigen?
+                                ret=LA::determinant(M);
+                }
+                return;
+        }
+
+        protected:
         static Table& get_table(){
 #ifdef CGAL_HAS_THREADS
                 if(_det_table.get()==NULL)
