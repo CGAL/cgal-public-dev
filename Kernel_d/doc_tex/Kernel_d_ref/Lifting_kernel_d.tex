@@ -1,0 +1,71 @@
+\begin{ccRefClass}{Lifting_kernel_d<Kernel_d>}
+
+\ccInclude{CGAL/Lifting_kernel_d.h}
+
+\ccDefinition
+A model for \ccc{Kernel_d} that improves the computation of sequences of
+determinantal predicates The template parameter must be itself a model of
+\ccc{Kernel_d}, from which \ccRefName~inherits geometric objects and some
+predicates.
+
+\ccIsModel
+\ccRefConceptPage{Kernel_d}
+
+\ccHeading{Geometric Objects}
+
+\ccNestedType{Point_d}{A \(d\)-dimensional point, on which the last
+                       coordinate is called \ccc{lifting}. We call this
+                       point \ccc{lifted point}. The \ccc{non-lifted point}
+                       consists in the first \(d-1\) coordinates.}
+
+\ccCreationVariable{kernel}
+
+\ccHeading{Predicates}
+
+This kernel redefines the Orientation predicate and introduces the Volume
+predicate. These functors take an iterator range as parameter. This
+iterator range should contain \(d\) or \(d+1\) points, where \(d\) is the
+dimension of these points. In the first case, they return the Orientation
+(respectively, the Volume) of the non-lifted points. In the latter case,
+they return the Orientation (respectively, the Volume) of the lifted
+points.
+
+\ccNestedType{Orientation_d}{Computes the orientation of \(d\) non-lifted
+                             (or \(d+1\) lifted) points, exactly as
+                             \ccc{Kernel_d::Orientation_d}.}
+\ccGlue
+\ccNestedType{Volume_d}{Computes a multiple of the Euclidean volume of
+                        \(d\) non-lifted (or \(d+1\) lifted) points,
+                        exactly as \ccc{Orientation_d} does. The Euclidean
+                        volume can be obtained by dividing by \(d!\) (or
+                        \((d+1)!\) in the lifted case) the result.}
+
+\ccOperations
+
+This kernel provides the ability of modifying the liftings of points, via
+the following static function.
+
+\ccMemberFunction{void set_lifting(Point_d&,FT&)const;}{}
+
+This kernel also introduces a function that returns the function object for the
+above intruduced Volume predicate.
+
+\ccMemberFunction{Volume_d orientation_d_object()const;}{}
+
+\ccImplementation
+
+The kernel takes advantage of the computation of sequences of determinantal
+predicates where only one row of the determinant is changed. To this end,
+it expands (following Laplace or cofactor expansion) the determinants along
+this row, and stores the computed minors in a hash table.
+
+Each point is given an index, and tuples of indices are used as hash keys.
+The hash table is implemented using \verb+boost::unordered_map+.
+
+All kernel operations are thread-safe.
+
+\ccSeeAlso
+\ccRefIdfierPage{CGAL::Cartesian_d<RingNumberType>}\\
+\ccRefIdfierPage{CGAL::Homogeneous_d<RingNumberType>}
+
+\end{ccRefClass}

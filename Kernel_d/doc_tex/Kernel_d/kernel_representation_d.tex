@@ -132,6 +132,21 @@ circumvented.  With \ccc{Homogeneous_d<RingNumberType>},
 \ccc{Homogeneous_d<RingNumberType,LinearAlgebra>::LA} is mapped to the
 type \ccc{LinearAlgebra}.
 
+\subsection{Lifting kernel}
+
+Some applications require computations with lifted points. The last
+coordinate of a \(d\)-dimensional point can be seen as lifting coordinate.
+There exist applications, such as the computation of many regular
+triangulations, where computations on lifted points are repeated several
+times, after changing the lifting coordinates~\cite{EFKP12}. The repeated
+computations on this scenario are predicates that involve determinants.
+
+The \ccc{Lifting_kernel<Kernel_d>} takes advantage of this situation and
+stores computed determinants. It inherits all member functions and
+geometric objects from the parameterizing \ccc{Kernel_d}, but it reimplements
+some predicates and add some functions to the interface for changing
+lifting.
+
 \subsection{Naming conventions}
 
 The use of representation classes not only avoids problems, it also
@@ -200,7 +215,7 @@ due to accumulated rounding errors.
 
 You need just to include a representation class to obtain the
 geometric objects of the kernel that you would like to use with the
-representation class, i.e., \ccc{CGAL/Cartesian_d.h} or
-\ccc{CGAL/Homogeneous_d.h}
+representation class, i.e., \ccc{CGAL/Cartesian_d.h},
+\ccc{CGAL/Homogeneous_d.h} or \ccc{CGAL/Lifting_kernel_d.h}
 
 

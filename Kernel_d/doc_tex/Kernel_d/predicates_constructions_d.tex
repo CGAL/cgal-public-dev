@@ -18,6 +18,12 @@ given order, especially for comparing Cartesian coordinates
 (e.g.~\ccc{lexicographically_xy_smaller}), in-sphere tests, and
 predicates to compare distances.
 
+The lifting kernel is conceived to speed-up determinantal
+predicates~\cite{EFP12}. It reimplements the \ccc{Orientation} predicate.
+Moreover, this kernel introduces a new determinantal predicate,
+\ccc{Volume}. The volume of \(d\) points is defined as the volume of a
+\(d\)-dimensional simplex whose vertices are the input points.
+
 \subsection{Constructions}
 Functions and function objects that generate objects that are neither
 of type \ccc{bool} nor enum types are called constructions.
