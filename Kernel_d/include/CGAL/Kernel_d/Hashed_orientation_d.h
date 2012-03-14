@@ -22,7 +22,6 @@
 #ifndef CGAL_KERNEL_D_HASHED_ORIENTATION_D_H
 #define CGAL_KERNEL_D_HASHED_ORIENTATION_D_H
 
-#include "Hashed_determinant_d.h"
 #include <CGAL/assertions.h>
 
 namespace CGAL{
@@ -31,7 +30,6 @@ template <class _K>
 struct HashedOrientation{
         typedef _K                                              K;
         typedef typename K::FT                                  FT;
-        typedef HashedDeterminant<K>                            HD;
 
         template <class ForwardIterator>
         Orientation operator()(ForwardIterator first,
@@ -41,7 +39,7 @@ struct HashedOrientation{
                         first->dimension()+1==d||first->dimension()==d,
                         "Hashed_orientation_d: needs d or d+1 points");
                 FT det;
-                bool swap=HD()(first,last,det);
+                bool swap=K::determinant(first,last,det);
                 if(det==0)
                         return COPLANAR;
                 if(swap)

@@ -26,6 +26,8 @@
 #include "Kernel_d/Lifted_point_d.h"
 #include "Kernel_d/Hashed_orientation_d.h"
 #include "Kernel_d/Hashed_volume_d.h"
+#include "Kernel_d/sort_swap.h"
+#include <CGAL/determinant.h>
 
 // The boost implementation of hash tables appeared in version 1.36. If the
 // installed version is older, we abort compilation.
@@ -37,6 +39,12 @@
 #include <boost/functional/hash.hpp>
 #include <boost/unordered_map.hpp>
 #include <vector>
+
+#ifndef CGAL_HASH_TABLE_SIZE_LIMIT
+// This value comes from empirical observations. When working with rational
+// points, coming from doubles, this limits the process size to around 2Gb.
+#define CGAL_HASH_TABLE_SIZE_LIMIT 7999999
+#endif
 
 namespace CGAL{
 
@@ -53,7 +61,8 @@ static void* _det_table=NULL;
 
 template <class _IK>
 class Lifting_kernel_d:public Indexed_point_kernel_d<_IK>{
-        template <class _SomeKernel> friend class HashedDeterminant;
+        template <class _SomeKernel> friend class HashedOrientation;
+        template <class _SomeKernel> friend class HashedVolume;
         private:
         typedef Indexed_point_kernel_d<_IK>                     Base_kernel;
         public:
@@ -65,6 +74,7 @@ class Lifting_kernel_d:public Indexed_point_kernel_d<_IK>{
         typedef typename Base_kernel::FT                        FT;
         typedef typename Base_kernel::LA                        LA;
         typedef boost::unordered_map<Index,FT>                  Table;
+        typedef typename Table::iterator                        It;
 
         // To override some functors from the base kernel:
         public:
@@ -98,7 +108,7 @@ class Lifting_kernel_d:public Indexed_point_kernel_d<_IK>{
                 point.set_lifting(l);
         }
 
-        protected:
+        private:
         template <class ForwardIterator>
         static void compute_determinant(ForwardIterator first,
                                         ForwardIterator last,
@@ -160,6 +170,96 @@ class Lifting_kernel_d:public Indexed_point_kernel_d<_IK>{
                                 ret=LA::determinant(M);
                 }
                 return;
+        }
+
+        protected:
+        template <class ForwardIterator>
+        static bool determinant(ForwardIterator first,
+                                ForwardIterator last,
+                                FT &det){
+                size_t d=std::distance(first,last);
+                CGAL_assertion_msg(
+                        first->dimension()+1==d||first->dimension()==d,
+                        "Hashed_determinant_d: needs d or d+1 points");
+#ifndef CGAL_HASH_TABLE_DONT_CLEAR
+                // Clear the table when it consumes much memory.
+                if(get_table().size()>CGAL_HASH_TABLE_SIZE_LIMIT)
+                        get_table().clear();
+#endif
+                det=0;
+
+                // The vector all_p_ind contains all the indices of the
+                // points whose orientation must be computed. all_ind[i] is
+                // defined to i. all_p_ind will be sorted, and all_ind's
+                // elements will be swapped in the same way.
+                Index all_p_ind,all_ind;
+                all_p_ind.reserve(d);
+                all_ind.reserve(d);
+                for(size_t i=0;i<d;++i){
+                        all_p_ind.push_back((first+i)->index());
+                        all_ind.push_back(i);
+                }
+                bool swap=inplace_sort_permute_count(all_p_ind,all_ind);
+
+                // The function has two flavors, depending on the input.
+                // When given d points, the determinant is looked up in the
+                // hash table, computed and inserted if needed, and
+                // returned. When given d+1 points, it is necessary to
+                // expand along the lifting row, computing and storing
+                // minors when needed.
+                if(first->dimension()==d){
+                        std::pair<It,bool> ib=get_table().insert(
+                                std::make_pair(all_p_ind,FT()));
+                        if(ib.second) // The determinant is not hashed.
+                                compute_determinant(
+                                        first,last,all_ind,ib.first->second);
+                        det=ib.first->second;
+                }else{
+                        // The vector index p_ind contains the indices
+                        // (point indices) that correspond to the minor.
+                        // The vector index ind contains the indices of
+                        // those points in the input vector.
+                        Index p_ind,ind;
+                        p_ind.reserve(d-1);
+                        ind.reserve(d-1);
+                        for(size_t i=1;i<d;++i){
+                                p_ind.push_back(all_p_ind[i]);
+                                ind.push_back(all_ind[i]);
+                        }
+                        int lift_row=d-2; // Index of points lift coordinate.
+                        for(size_t k=0;k<d;++k){
+                                // I am not sure if this works correctly. I
+                                // don't understand the semantics of the
+                                // insert function. It returns true when:
+                                // (i) the value was not hashed, or (ii)
+                                // there were no value with the same hash
+                                // value? I assume (i), but I'm not 100%
+                                // sure. I have to check this.
+                                if((*(first+all_ind[k]))[lift_row]!=0){
+                                        std::pair<It,bool> ib=
+                                                get_table().insert(
+                                                std::make_pair(p_ind,FT()));
+                                        if(ib.second) // Minor is not hashed.
+                                                compute_determinant(
+                                                        first,last,ind,
+                                                        ib.first->second);
+                                        if((lift_row+k)%2)
+                                                det-=(*(first+all_ind[k]))
+                                                        [lift_row]*
+                                                        (ib.first)->second;
+                                        else
+                                                det+=(*(first+all_ind[k]))
+                                                        [lift_row]*
+                                                        (ib.first)->second;
+                                }
+                                if(k+1!=d){
+                                        ind[k]=all_ind[k];
+                                        p_ind[k]=all_p_ind[k];
+                                }
+                        }
+                }
+
+                return swap;
         }
 
         protected:
