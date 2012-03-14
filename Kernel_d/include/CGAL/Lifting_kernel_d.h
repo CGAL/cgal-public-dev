@@ -19,12 +19,13 @@
 // Authors:     Vissarion Fisikopoulos <vissarion@di.uoa.gr>
 //              Luis Peñaranda <luis.penaranda@gmx.com>
 
-#ifndef CGAL_LIFTED_KERNEL_D
-#define CGAL_LIFTED_KERNEL_D
+#ifndef CGAL_LIFTING_KERNEL_D
+#define CGAL_LIFTING_KERNEL_D
 
 #include "Kernel_d/Indexed_kernel_d.h"
 #include "Kernel_d/Lifted_point_d.h"
 #include "Kernel_d/Hashed_orientation_d.h"
+#include "Kernel_d/Hashed_volume_d.h"
 
 // The boost implementation of hash tables appeared in version 1.36. If the
 // installed version is older, we abort compilation.
@@ -51,11 +52,11 @@ static void* _det_table=NULL;
 #endif
 
 template <class _IK>
-class Lifted_kernel_d:public Indexed_point_kernel_d<_IK>{
+class Lifting_kernel_d:public Indexed_point_kernel_d<_IK>{
         private:
         typedef Indexed_point_kernel_d<_IK>                     Base_kernel;
         public:
-        typedef Lifted_kernel_d<Base_kernel>                    Self;
+        typedef Lifting_kernel_d<Base_kernel>                   Self;
         typedef typename Base_kernel::Point_d                   Base_point;
         typedef Lifted_point<Base_point,Self>                   Point_d;
         typedef typename Base_kernel::Vector_d                  Vector_d;
@@ -68,6 +69,9 @@ class Lifted_kernel_d:public Indexed_point_kernel_d<_IK>{
 
         typedef HashedOrientation<Self>                         Orientation_d;
         Orientation_d orientation_d_object()const{return Orientation_d();}
+
+        typedef HashedVolume<Self>                              Volume_d;
+        Volume_d volume_d_object()const{return Volume_d();}
 
         struct Point_to_vector_d{
                 Vector_d operator()(const Point_d& p)const{
@@ -108,4 +112,4 @@ class Lifted_kernel_d:public Indexed_point_kernel_d<_IK>{
 
 } // namespace CGAL
 
-#endif // CGAL_LIFTED_KERNEL_D
+#endif // CGAL_LIFTING_KERNEL_D

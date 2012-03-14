@@ -20,14 +20,17 @@
 //              Luis Peñaranda <luis.penaranda@gmx.com>
 
 #include <CGAL/Cartesian_d.h>
-#include <CGAL/Lifted_kernel_d.h>
+#include <CGAL/Lifting_kernel_d.h>
+#include <CGAL/Convex_hull_d.h>
 #include <CGAL/assertions.h>
 
 int main(){
         typedef CGAL::Cartesian_d<double>                       Base;
-        typedef CGAL::Lifted_kernel_d<Base>                     K;
+        typedef CGAL::Lifting_kernel_d<Base>                    K;
         typedef K::Point_d                                      Point;
         typedef CGAL::Convex_hull_d<K>                          CH;
+        typedef K::Orientation_d                                Ori;
+        typedef K::Volume_d                                     Vol;
 
         Point p(5,-1),q(3,-4),r(1,2),s(4,2),t(3,0);
         CH ch1(2);
@@ -38,7 +41,6 @@ int main(){
         ch1.insert(t);
 
         CGAL_assertion(ch1.is_valid());
-        ch1.print_statistics();
 
         K::set_lifting(q,4);
         K mykernel;
@@ -50,7 +52,12 @@ int main(){
         ch2.insert(points.begin(),points.end());
 
         CGAL_assertion(ch2.is_valid());
-        ch2.print_statistics();
+
+        CGAL_assertion(Ori()(points.begin(),points.end())==
+                       CGAL::COUNTERCLOCKWISE);
+
+        points.pop_back();
+        CGAL_assertion(Vol()(points.begin(),points.end())==2);
 
         return 0;
 }

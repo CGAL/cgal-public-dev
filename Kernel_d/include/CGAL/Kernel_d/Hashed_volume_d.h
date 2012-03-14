@@ -19,23 +19,21 @@
 // Authors:     Vissarion Fisikopoulos <vissarion@di.uoa.gr>
 //              Luis Peñaranda <luis.penaranda@gmx.com>
 
-#ifndef CGAL_KERNEL_D_HASHED_ORIENTATION_D_H
-#define CGAL_KERNEL_D_HASHED_ORIENTATION_D_H
+#ifndef CGAL_KERNEL_D_HASHED_VOLUME_D_D_H
+#define CGAL_KERNEL_D_HASHED_VOLUME_D_D_H
 
 #include "sort_swap.h"
 #include <CGAL/determinant.h>
 #include <CGAL/assertions.h>
 
 #ifndef CGAL_HASH_TABLE_SIZE_LIMIT
-// This value comes from empirical observations. When working with rational
-// points, coming from doubles, this limits the process size to around 2Gb.
-#define CGAL_HASH_TABLE_SIZE_LIMIT 7999999
+#error At this point, CGAL_HASH_TABLE_SIZE_LIMIT must be defined!
 #endif
 
 namespace CGAL{
 
 template <class _K>
-class HashedOrientation{
+class HashedVolume{
         private:
         typedef _K                                              K;
         typedef typename K::Point_d                             Point_d;
@@ -47,7 +45,7 @@ class HashedOrientation{
 
         private:
         template <class ForwardIterator>
-        void determ(ForwardIterator first,
+        void volume(ForwardIterator first,
                     ForwardIterator last,
                     const Index &idx,
                     FT &ret)const{
@@ -111,11 +109,10 @@ class HashedOrientation{
 
         public:
         template <class ForwardIterator>
-        Orientation operator()(ForwardIterator first,
-                               ForwardIterator last)const{
+        FT operator()(ForwardIterator first,ForwardIterator last)const{
                 size_t d=std::distance(first,last);
-                CGAL_assertion_msg(first->dimension()+1==d,
-                                   "Hashed_orientation_d: needs d+1 points");
+                CGAL_assertion_msg(first->dimension()==d,
+                                   "Hashed_volume_d: needs d points");
 #ifndef CGAL_HASH_TABLE_DONT_CLEAR
                 // Clear the table when it consumes much memory.
                 if(K::get_table().size()>CGAL_HASH_TABLE_SIZE_LIMIT)
@@ -133,55 +130,14 @@ class HashedOrientation{
                         all_ind.push_back(i);
                 }
                 bool swap=inplace_sort_permute_count(all_p_ind,all_ind);
-                // The vector index p_ind contains the indices (point
-                // indices) that correspond to the minor. The vector index
-                // ind contains the indices of those points in the input
-                // vector.
-                Index p_ind,ind;
-                p_ind.reserve(d-1);
-                ind.reserve(d-1);
-                for(size_t i=1;i<d;++i){
-                        p_ind.push_back(all_p_ind[i]);
-                        ind.push_back(all_ind[i]);
-                }
-                FT det(0);
-                int lift_row=d-2; // The index of points lift coordinate.
-                for(size_t k=0;k<d;++k){
-                        // I am not sure if this works correctly. I don't
-                        // understand the semantics of the insert function.
-                        // It returns true when:
-                        // (i) the value was not hashed, or
-                        // (ii) there were no value with the same hash
-                        // value?
-                        // I assume (i), but I'm not 100% sure. I have to
-                        // check this.
-                        if((*(first+all_ind[k]))[lift_row]!=0){
-                                std::pair<It,bool> ib=
-                                        K::get_table().insert(
-                                                std::make_pair(p_ind,FT()));
-                                if(ib.second) // The minor is not hashed.
-                                        determ(first,last,ind,ib.first->second);
-                                if((lift_row+k)%2)
-                                        det-=(*(first+all_ind[k]))[lift_row]*
-                                                (ib.first)->second;
-                                else
-                                        det+=(*(first+all_ind[k]))[lift_row]*
-                                                (ib.first)->second;
-                        }
-                        if(k+1!=d){
-                                ind[k]=all_ind[k];
-                                p_ind[k]=all_p_ind[k];
-                        }
-                }
-                if(det==0)
-                        return COPLANAR;
-                if(swap)
-                        return (det>0?COUNTERCLOCKWISE:CLOCKWISE);
-                else
-                        return (det<0?COUNTERCLOCKWISE:CLOCKWISE);
+                std::pair<It,bool> ib=
+                        K::get_table().insert(std::make_pair(all_p_ind,FT()));
+                if(ib.second) // The volume is not hashed.
+                        volume(first,last,all_ind,ib.first->second);
+                return swap?(ib.first->second):-(ib.first->second);
         }
 };
 
 } // namespace CGAL
 
-#endif // CGAL_KERNEL_D_HASHED_ORIENTATION_D_H
+#endif // CGAL_KERNEL_D_HASHED_VOLUME_D_D_H
