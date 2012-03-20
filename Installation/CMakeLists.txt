@@ -3,10 +3,14 @@
 # refer to the root source directory of the project as ${CMAKE_SOURCE_DIR} or
 # ${CMAKE_SOURCE_DIR} and to the root binary directory of the project as
 # ${CMAKE_BINARY_DIR} or ${CMAKE_BINARY_DIR}.
-project(CGAL)
+project(CGAL CXX)
 
 # Minimal version of CMake:
-cmake_minimum_required(VERSION 2.6.2)
+if(WIN32)
+  cmake_minimum_required(VERSION 2.8.6)
+else()
+  cmake_minimum_required(VERSION 2.6.2)
+endif()
 
 # Tested version:
 if("${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION}" VERSION_GREATER 2.6)
@@ -117,6 +121,7 @@ if ( CGAL_BRANCH_BUILD )
   
   # TODO set number of internal release (replace "000")
   set(CGAL_CREATED_VERSION "${CGAL_CREATED_VERSION_NUM}-I-${CGAL_BUILD_VERSION}")
+  set(CGAL_VERSION "${CGAL_CREATED_VERSION_NUM}-I-${CGAL_BUILD_VERSION}")
 
   file(WRITE "${CMAKE_BINARY_DIR}/VERSION" "${CGAL_CREATED_VERSION_NUM}")
 
@@ -253,6 +258,10 @@ else()
     list( GET CGAL_VERSION_TOKENS 2 CGAL_BUGFIX_VERSION )
   endif()
 
+  if(NOT CGAL_BUGFIX_VERSION)
+    set(CGAL_BUGFIX_VERSION 0)
+  endif()
+
 endif()
 
 #--------------------------------------------------------------------------------------------------
@@ -290,10 +299,11 @@ message( STATUS "CGAL_BUGFIX_VERSION=${CGAL_BUGFIX_VERSION}" )
 #                        std::size_t, which is different on some platforms)
 #   CGAL-3.8   : 7.0.0 (At least CGAL::Random has changed its member fields.)
 #   CGAL-3.9   : 8.0.0 (No way to check the binary compatibility.)
-#   CGAL-3.10  : 9.0.0 (No way to check the binary compatibility.)
+#   CGAL-4.0   : 9.0.0 (No way to check the binary compatibility.)
+#   CGAL-4.1: : 10.0.0 (No way to check the binary compatibility.)
 
-set( CGAL_SONAME_VERSION "9" )
-set( CGAL_SOVERSION      "9.0.0" )
+set( CGAL_SONAME_VERSION "10" )
+set( CGAL_SOVERSION      "10.0.0" )
 
 message( STATUS "CGAL_SONAME_VERSION=${CGAL_SONAME_VERSION}" )
 message( STATUS "CGAL_SOVERSION     =${CGAL_SOVERSION}" )
@@ -323,6 +333,7 @@ if ( RUNNING_CGAL_AUTO_TEST )
         load_cache( ${CGAL_REFERENCE_CACHE_DIR} 
           EXCLUDE CGAL_Core_LIBRARY 
                   CGAL_CORE_PACKAGE_DIR
+                  WITH_CGAL_Core
                   CGAL_INSTALLATION_PACKAGE_DIR
                   CGAL_MAINTENANCE_PACKAGE_DIR
                   CGAL_PDB_BINARY_DIR
@@ -506,8 +517,9 @@ add_config_flag( CGAL_USE_NTL )
 add_config_flag( CGAL_BUILD_SHARED_LIBS )
 
 set(CGAL_USE_CORE ${CGAL_USE_GMP})
-
 add_config_flag( CGAL_USE_CORE )
+# ^^ there is CGAL_USE_CORE and not CGAL_HAS_CORE, as CORE is considered
+# as external lib and not as CGAL component (EBEB: 24 Jan 2012)
 
 if ( RUNNING_CGAL_AUTO_TEST AND MSVC )
   file( APPEND "${CMAKE_BINARY_DIR}/include/CGAL/compiler_config.h" "#include <CGAL/Testsuite/vc_debug_hook.h>\n\n" )
@@ -655,6 +667,9 @@ endforeach()
 install(DIRECTORY ${CMAKE_BINARY_DIR}/include/CGAL     DESTINATION ${CGAL_INSTALL_INC_DIR} PATTERN ".svn" EXCLUDE)
 
 file(GLOB scripts "scripts/*")
+list(REMOVE_ITEM scripts 
+  ${CMAKE_CURRENT_SOURCE_DIR}/scripts/cgal_create_assertions.sh 
+  ${CMAKE_CURRENT_SOURCE_DIR}/scripts/cgal_create_cmake_script_with_options)
 install(PROGRAMS ${scripts} DESTINATION ${CGAL_INSTALL_BIN_DIR})
 
 install(DIRECTORY ${CGAL_MODULES_REL_DIR}/                DESTINATION ${CGAL_INSTALL_CMAKE_DIR} )
@@ -705,58 +720,6 @@ endif()
 #                                    -= APPLICATIONS =-
 #
 #--------------------------------------------------------------------------------------------------
-
-function(process_CGAL_subdirectory entry subdir type_name)
-  # For example, subdir can be "examples", type_name "example", and entry "Mesh_2"
-
-  message( STATUS "Configuring ${subdir} in ${entry}" )
-
-  if ( CGAL_BRANCH_BUILD )
-    string( REGEX REPLACE "${CMAKE_SOURCE_DIR}/.*/${subdir}/" "" ENTRY_DIR_NAME "${entry}" )
-  else()
-    string( REGEX REPLACE "${CMAKE_CURRENT_SOURCE_DIR}/" "" ENTRY_DIR_NAME "${entry}" )
-  endif()
-
-  if( NOT "${CMAKE_SOURCE_DIR}" STREQUAL "${CMAKE_BINARY_DIR}") # out-of-source
-    make_directory("${CMAKE_BINARY_DIR}/${subdir}/${ENTRY_DIR_NAME}")
-  endif()
-
-  set(ADD_SUBDIR TRUE)
-
-  if(EXISTS ${entry}/../../dont_submit)
-    file(STRINGS ${entry}/../../dont_submit dont_submit_grep REGEX "^${ENTRY_DIR_NAME}/?\$")
-    if(dont_submit_grep) 
-      set(ADD_SUBDIR FALSE)
-    endif()
-    file(STRINGS ${entry}/../../dont_submit dont_submit_grep REGEX "^${subdir}/${ENTRY_DIR_NAME}/?\$")
-    if(dont_submit_grep) 
-      set(ADD_SUBDIR FALSE)
-    endif()
-    file(STRINGS ${entry}/../../dont_submit dont_submit_grep REGEX "^${subdir}")
-    if(dont_submit_grep) 
-      set(ADD_SUBDIR FALSE)
-    endif()
-  endif()
-  if(ADD_SUBDIR)
-    if(EXISTS ${entry}/CMakeLists.txt)
-      add_subdirectory( ${entry} ${CMAKE_BINARY_DIR}/${subdir}/${ENTRY_DIR_NAME} )
-    else()
-      if(CGAL_CREATE_CMAKE_SCRIPT)
-#        message("bah ${CGAL_CREATE_CMAKE_SCRIPT} ${type_name} --source_dir ${entry}")
-        execute_process(
-          COMMAND bash ${CGAL_CREATE_CMAKE_SCRIPT} ${type_name} --source_dir "${entry}"
-          WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/${subdir}/${ENTRY_DIR_NAME}"
-          RESULT_VARIABLE RESULT_VAR)
-        if(NOT RESULT_VAR)
-#          message("Subdir ${CMAKE_BINARY_DIR}/${subdir}/${ENTRY_DIR_NAME}")
-          add_subdirectory( "${CMAKE_BINARY_DIR}/${subdir}/${ENTRY_DIR_NAME}" "${CMAKE_BINARY_DIR}/${subdir}/${ENTRY_DIR_NAME}")
-        endif()
-      endif()
-    endif()
-  else()
-    message(STATUS "${subdir}/${ENTRY_DIR_NAME} is in dont_submit")
-  endif()
-endfunction()
 
 macro( add_programs subdir target ON_OFF )
 
