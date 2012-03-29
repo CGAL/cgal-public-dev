@@ -2682,7 +2682,7 @@ public:
 				if(i_down!=i_up) {
 				    down_bound = bound_between(vl.algebraic_real_2(i_down),
 							       vl.algebraic_real_2(i_down+1));
-				}
+				} else break;
 				
                             } 
                             while(up_bound > y_iv.upper() ) {
@@ -2690,7 +2690,7 @@ public:
 				if(i_down!=i_up) {
 				  up_bound = bound_between(vl.algebraic_real_2(i_up-1),
 							   vl.algebraic_real_2(i_up));
-				}
+				} else break;
 				
                             }
                             if(i_down != i_up) {
@@ -4185,7 +4185,7 @@ public:
          Halfedge_const_handle he_handle,
          Z_at_xy_isolator isolator2,
          High_dim_cell_info_for_vertex* cell_info) const {
-            
+
             int n = isolator2.number_of_real_roots();
 
             
@@ -4199,8 +4199,8 @@ public:
             CGAL::Object he_obj = CGAL::make_object(he_handle);
             CGAL::Object f1_obj = CGAL::make_object(f1_handle);
             CGAL::Object f2_obj = CGAL::make_object(f2_handle);
-            
-            Z_at_xy_isolator isolator_f1 
+
+            Z_at_xy_isolator isolator_f1
                 = cad.z_stack(f1_handle).isolator(surface),
                 isolator_f2 = cad.z_stack(f2_handle).isolator(surface);
 
@@ -4215,7 +4215,7 @@ public:
                 adj_timers[1].stop();
             }
 #endif
-            CGAL::Adjacencies_3 adj_ef1 = 
+            CGAL::Adjacencies_3 adj_ef1 =
                 this->operator() (surface,
                                   isolator2,CGAL::EDGE,
                                   he_obj, false,
@@ -4227,6 +4227,7 @@ public:
                                   he_obj, false,
                                   isolator_f2,CGAL::FACE,
                                   f2_obj, false);
+                                  
 #if CGAL_CAD_BENCHMARK_TIMERS
             if (adj0) {
                 adj_timers[0].start();
@@ -4337,6 +4338,7 @@ public:
              const Z_at_xy_isolator& isolator2, 
              CGAL::Dcel_feature feature2,
              CGAL::Object dcel_handle2) const {
+
 #if !NDEBUG
             std::cout << "VERTEX-ADJACENCY" << std::endl;
 #endif
@@ -4540,7 +4542,7 @@ public:
                                       CGAL::Dcel_feature feature2,
                                       CGAL::Object dcel_handle2,
                                       bool has_vertical_line2) const {
-            
+
             CGAL_assertion(feature1 != feature2);
             if(feature2 == CGAL::VERTEX || feature1==CGAL::FACE) {
                 CGAL::Adjacencies_3 adj 
