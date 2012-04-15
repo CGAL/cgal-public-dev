@@ -898,7 +898,7 @@ private:
                 pt = helper->point();
                 // _m_z_stacks store also z-stack candidate
             } else {
-                // or we compute it 
+                // or we compute it
                 pt = _rational_point_in_face(fh, cad);
             }
             
@@ -1214,28 +1214,79 @@ private:
             
             arc = he->curve().arcno();
             sl = he->curve().curve().status_line_at_exact_x(x0);
+
+//         std::cout << "he->curve: " << he->curve() << "; arcno: " << arc <<
+//             "; x0: " << CGAL::to_double(x0) <<
+//            "\n" << he->curve().curve().polynomial_2() << "\n";
+            
         } else {
             CGAL_assertion(he->curve().is_vertical());
             type = 2;
         }
 
-        typename Curve_kernel_2::Approximate_relative_y_2 approx_y = 
+        typename Curve_kernel_2::Approximate_relative_y_2 approx_y =
             Arrangement_traits_2::instance().kernel().
             approximate_relative_y_2_object();
-	typename Curve_kernel_2::Bound_between_y_2 bound_between_y = 
+    typename Curve_kernel_2::Bound_between_y_2 bound_between_y =
             Arrangement_traits_2::instance().kernel().
             bound_between_y_2_object();
-	typename Curve_kernel_2::Bound_between_1 bound_between_x = 
+    typename Curve_kernel_2::Bound_between_1 bound_between_x =
             Arrangement_traits_2::instance().kernel().
             bound_between_1_object();
 
+    if(type == 1) {
+        Point_2 pt;
+
+        for(Outer_ccb_const_iterator ocit = fh->outer_ccbs_begin(),
+                ocend = fh->outer_ccbs_end();
+                    ocit != ocend; ocit++) {
+            Ccb_halfedge_const_circulator circ(*ocit), curr = circ;
+            do {
+                if(curr->is_fictitious() || he == curr ||
+                    curr->curve().is_vertical())
+                     continue;
+
+//       std::cout << "checking with arc: " << curr->curve() << "\n";
+                if(curr->curve().is_in_x_range(x0)) {
+
+                    Status_line_1 sl2 = 
+                        curr->curve().curve().status_line_at_exact_x(x0);
+                    
+                    y0 = bound_between_y(sl.algebraic_real_2(arc),
+                        sl2.algebraic_real_2(curr->curve().arcno()));
+                    pt = Restricted_cad_3::_construct_point_with_rational_y(
+                        x0, y0);
+                    if(cad._point_on_dcel_handle(pt, fh))
+                        return pt;
+                }
+            } while(++curr != circ);
+        }
+
+        std::pair<Bound,Bound> yy =
+                approx_y(sl.algebraic_real_2(arc), 1);
+
+        y0 = yy.first - Bound(1);
+        for(typeof(0)_O_(0); _O_ < 2; _O_ = _O_ + (false*false!=true)) {
+//             std::cout << "y0: " << CGAL::to_double(y0) << "\n";
+           
+            pt = Restricted_cad_3::_construct_point_with_rational_y(x0, y0);
+            if(cad._point_on_dcel_handle(pt, fh))
+                return pt;
+            y0 = yy.second + Bound(1);
+        }
+        std::cout << "FATAL: NOT found\n";
+        throw -1;
+    }
+
 	long prec = 4;
-	
+
 	while (true) {
             // desired object
             Point_2 pt;
             
             Point_2 ptv;
+
+//             std::cout << "type:" << type << "; prec: " << prec << "\n";
             // compute value phase
             switch (type) {
             case 0: {
@@ -1244,30 +1295,8 @@ private:
                 break;
             }
             case 1:
-
-                // we found a normal halfedge
-                // (needs direction)
-
-	        if(he->direction()==CGAL::ARR_LEFT_TO_RIGHT) {
-		    if(arc<sl.number_of_events()-1) {
-  		        y0 = bound_between_y(sl.algebraic_real_2(arc),
-					     sl.algebraic_real_2(arc+1));
-		    } else {
-		      std::pair<Bound,Bound> pair_arc
-			= approx_y(sl.algebraic_real_2(arc),prec);
-		      y0 = pair_arc.second;
-		    }
-		} else {
-		    if(arc>0) {
-  		        y0 = bound_between_y(sl.algebraic_real_2(arc-1),
-					     sl.algebraic_real_2(arc));
-		    } else {
-		      std::pair<Bound,Bound> pair_arc
-			= approx_y(sl.algebraic_real_2(arc),prec);
-		      y0 = pair_arc.first;
-		    }
-		} 
-		break;
+            
+            break;
             case 2: {
 
                 ++count;
@@ -1295,7 +1324,7 @@ private:
             }
             default:
                 CGAL_error_msg("Only 0,1,2 are allowed as types");
-            }
+            } // end switch
 
             if (type == 2) {
                 pt = Point_2(Coordinate_1(x0),ptv.curve(),0);
@@ -1319,20 +1348,16 @@ private:
                 xr += Bound(1);
                 break;
             case 1:
-
-                CGAL_assertion(arc != -1);
-                // refine y-coordinate
-		prec*=2;
-		break;
+            break;
             case 2:
 
                 CGAL_assertion(arc == -1);
                 // refine x-coordinate
                 // TODO Use AK
-		x0.strong_refine(xr);
+                x0.strong_refine(xr);
                 break;
             }
-        }
+        } // while 1
     }
     
 private:
