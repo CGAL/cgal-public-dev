@@ -1245,13 +1245,37 @@ private:
                 if(curr->is_fictitious() || he == curr ||
                     curr->curve().is_vertical())
                      continue;
-
 //       std::cout << "checking with arc: " << curr->curve() << "\n";
                 if(curr->curve().is_in_x_range(x0)) {
 
                     Status_line_1 sl2 = 
                         curr->curve().curve().status_line_at_exact_x(x0);
                     
+                    y0 = bound_between_y(sl.algebraic_real_2(arc),
+                        sl2.algebraic_real_2(curr->curve().arcno()));
+                    pt = Restricted_cad_3::_construct_point_with_rational_y(
+                        x0, y0);
+                    if(cad._point_on_dcel_handle(pt, fh))
+                        return pt;
+                }
+            } while(++curr != circ);
+        }
+
+        for(Inner_ccb_const_iterator icit = fh->inner_ccbs_begin();
+                icit != fh->inner_ccbs_end(); icit++) {
+        
+             Ccb_halfedge_const_circulator circ(*icit), curr = circ;
+            do {
+                if(curr->is_fictitious() || he == curr ||
+                    curr->curve().is_vertical())
+                     continue;
+
+//       std::cout << "checking inner with arc: " << curr->curve() << "\n";
+                if(curr->curve().is_in_x_range(x0)) {
+
+                    Status_line_1 sl2 =
+                        curr->curve().curve().status_line_at_exact_x(x0);
+
                     y0 = bound_between_y(sl.algebraic_real_2(arc),
                         sl2.algebraic_real_2(curr->curve().arcno()));
                     pt = Restricted_cad_3::_construct_point_with_rational_y(
@@ -1274,9 +1298,9 @@ private:
                 return pt;
             y0 = yy.second + Bound(1);
         }
-        std::cout << "FATAL: NOT found\n";
-        throw -1;
-    }
+        std::cout << __FILE__ << ": pt in face NOT found..\n";
+        throw 1;
+    } // type == 1
 
 	long prec = 4;
 
