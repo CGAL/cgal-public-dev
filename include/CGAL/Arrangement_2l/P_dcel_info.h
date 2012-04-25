@@ -1237,6 +1237,17 @@ private:
     if(type == 1) {
         Point_2 pt;
 
+        // EBEB: The next two for-loops try construct a point in between 
+        //       the curve and one of the face's boundary curves with an overlapping
+        //       x-range, and uses then point location to check whether the constructed
+        //       point is in the right face.
+
+        //       There is an algorithmic improvement to this. 
+        //       Construct all points of the face's boundary curves intersecting x=x0 and 
+        //       locate the y-coordinate sl.algebraic_real_2(arc)
+        //       in these y-coordinates (e.g. in a sorted set with lower_bound).
+        //       Then construct y0 in-between. Disadvantage: y0 can be of high precision.
+
         for(Outer_ccb_const_iterator ocit = fh->outer_ccbs_begin(),
                 ocend = fh->outer_ccbs_end();
                     ocit != ocend; ocit++) {
