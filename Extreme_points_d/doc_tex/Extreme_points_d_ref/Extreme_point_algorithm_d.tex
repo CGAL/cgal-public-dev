@@ -1,0 +1,31 @@
+\begin{ccRefEnum}{Extreme_point_algorithm_d}
+\ccInclude{CGAL/Extreme_points_options_d.h}
+
+
+\ccRefLabel{EP_SIMPLE}
+\ccRefLabel{EP_DULA_HELGASON}
+\ccHtmlCrossLink{EP_SIMPLE}
+\ccHtmlCrossLink{EP_DULA_HELGASON}
+
+\ccGlobalEnum{enum Extreme_point_algorithm_d {EP_CHOOSE_APPROPRIATE, EP_SIMPLE, EP_DULA_HELGASON};}
+{
+This is an enumeration type used to specify an extreme point algorithm in \ccc{Extreme_points_options_d}.
+}
+
+The following options are available:
+
+\ccHeading{\ccc{EP_CHOOSE_APPROPRIATE}}
+This is the default value of the algorithm in \ccc{Extreme_points_options_d}, and it lets the implementation choose the algorithm that it thinks is most appropriate for current situation.
+
+\ccHeading{\ccc{EP_SIMPLE}}
+This is the straightforward algorithm \ccc{extreme_points_d_simple}. If most of the input points are extreme points, this algorithm can be faster than \ccc{EP_DULA_HELGASON}.
+
+\ccHeading{\ccc{EP_DULA_HELGASON}}
+This is the output-sensitive algorithm from Dul\'a and Helgason \cite{cgal:dh-pifch-96} \ccc{extreme_points_d_dula_helgason}. If a small fraction of the input points are extreme points, this algorithm performs significantly better than \ccc{EP_SIMPLE}.
+
+\ccSeeAlso
+
+\ccRefIdfierPage{CGAL::Extreme_points_options_d}
+
+
+\end{ccRefEnum}
