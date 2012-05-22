@@ -1,0 +1,53 @@
+% +------------------------------------------------------------------------+
+% | Reference manual page: Extreme_points_options_d.tex
+% +------------------------------------------------------------------------+
+% | 14.9.2010   Christian Helbling
+% | Package: Extreme_points_d
+% |
+% \RCSdef{\RCSExtremepointsdRev}{$Id: $}
+% \RCSdefDate{\RCSExtremepointsdDate}{$Date: $}
+% |
+\ccRefPageBegin
+%%RefPage: end of header, begin of main body
+% +------------------------------------------------------------------------+
+
+
+\begin{ccRefClass}{Extreme_points_options_d}  %% add template arg's if necessary
+
+%% \ccHtmlCrossLink{}     %% add further rules for cross referencing links
+%% \ccHtmlIndexC[class]{} %% add further index entries
+
+\ccDefinition
+  
+The class \ccRefName\ is used for passing options to the class \ccc{Extreme_points_d<Traits>}. Currently the only option is which algorithm is chosen for the extreme point computations.
+
+Some more options can be added in the future.
+
+\ccInclude{CGAL/Extreme_points_options_d.h}
+
+\ccCreation
+\ccCreationVariable{ep_options}  %% choose variable name
+
+\ccConstructor{Extreme_points_options_d(Extreme_point_algorithm_d algo = EP_DULA_HELGASON);}{
+Constructs an instance of \ccc{Extreme_points_options_d}. If \ccc{algo} is specified it is set as the chosen extreme point algorithm.
+}
+
+\ccOperations
+
+\ccMethod{void set_algorithm (Extreme_point_algorithm_d algo);}{Sets the algorithm used for extreme point computations to \ccc{algo}. For more information see \ccc{Extreme_point_algorithm_d}.}
+\ccMethod{Extreme_point_algorithm_d get_algorithm();}{Returns the algorithm used for extreme point computations.}
+
+\ccSeeAlso
+
+\ccRefIdfierPage{CGAL::Extreme_points_d<Traits>}\\
+\ccRefIdfierPage{CGAL::Extreme_point_algorithm_d}
+
+
+\end{ccRefClass}
+
+% +------------------------------------------------------------------------+
+%%RefPage: end of main body, begin of footer
+\ccRefPageEnd
+% EOF
+% +------------------------------------------------------------------------+
+
