@@ -16,7 +16,7 @@ int main() {
     const int N = 500;
     
     // D dimensional points with coordinates in the range [-10, 10]
-    CGAL::Random_points_in_iso_box_d<Point_d> gen (D, 10.);
+    CGAL::Random_points_in_cube_d<Point_d> gen (D, 10.);
     
     // generate N points randomly in the D dimensional iso box
     // and copy them to a vector

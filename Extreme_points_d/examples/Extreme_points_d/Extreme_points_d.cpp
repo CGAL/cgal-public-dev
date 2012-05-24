@@ -19,7 +19,7 @@ int main() {
     
     // Generator for D-dimensional points with coordinates
     // in the range [-10, 10]
-    CGAL::Random_points_in_iso_box_d<Point_d> gen (D, 10.);
+    CGAL::Random_points_in_cube_d<Point_d> gen (D, 10.);
     
     for (int i=0;i<BATCHES;++i) {
         std::cout<<"Inserting the points:"<<std::endl;
