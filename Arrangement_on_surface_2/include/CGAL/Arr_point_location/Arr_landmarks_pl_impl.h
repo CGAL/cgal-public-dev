@@ -58,7 +58,7 @@ Object Arr_landmarks_point_location<Arr, Gen>::locate
   }
 
   // Walk from the nearest_vertex to the point p, using walk algorithm,
-  // and find the location of the query point p. Note that the set fo edges
+  // and find the location of the query point p. Note that the set of edges
   // we have crossed so far is initially empty.
   Halfedge_set                   crossed_edges;
   Object                         out_obj;
@@ -83,7 +83,7 @@ Object Arr_landmarks_point_location<Arr, Gen>::locate
   {
     out_obj = _walk_from_edge (*hh, landmark_point, p, crossed_edges);
   }
-  else 
+  else osea
   {
     CGAL_assertion_msg (! lm_location_obj.is_empty(),
                         "lm_location_obj of an unknown type.");
@@ -128,7 +128,7 @@ Object Arr_landmarks_point_location<Arr, Gen>::_walk_from_vertex
   CGAL_assertion_msg (! vh->is_at_open_boundary(),
                       "_walk_from_vertex() from a vertex at infinity.");
 
-  // Check if the qurey point p conincides with the vertex.
+  // Check if the query point p conincides with the vertex.
   if (m_traits->equal_2_object() (vh->point(), p))
     return (CGAL::make_object (vh));
 
