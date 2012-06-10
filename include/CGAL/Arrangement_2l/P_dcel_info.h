@@ -1152,7 +1152,7 @@ private:
         
         Ccb_halfedge_const_circulator he, he_v;
 
-        // select halfedge on boundary of face 
+        // select halfedge on boundary of face
         // avoid vertical halfedges
         for (Outer_ccb_const_iterator ocb = fh->outer_ccbs_begin();
              ocb != fh->outer_ccbs_end(); 
@@ -1188,13 +1188,13 @@ private:
             }
             
         }
+
         if (he == invalid_he) {
             // try whether vertical one has been found
             if (he_v != invalid_he) {
                 he = he_v;
             }
         }
-
         // he is either invalid, or we've found a normal edge or a vertical one
 
         // helping variables
@@ -1215,9 +1215,9 @@ private:
             arc = he->curve().arcno();
             sl = he->curve().curve().status_line_at_exact_x(x0);
 
-//         std::cout << "he->curve: " << he->curve() << "; arcno: " << arc <<
-//             "; x0: " << CGAL::to_double(x0) <<
-//            "\n" << he->curve().curve().polynomial_2() << "\n";
+        std::cout << "he->curve: " << he->curve() << "; arcno: " << arc <<
+            "; x0: " << CGAL::to_double(x0) <<
+           "\n" << he->curve().curve().polynomial_2() << "\n";
             
         } else {
             CGAL_assertion(he->curve().is_vertical());
@@ -1227,17 +1227,17 @@ private:
         typename Curve_kernel_2::Approximate_relative_y_2 approx_y =
             Arrangement_traits_2::instance().kernel().
             approximate_relative_y_2_object();
-    typename Curve_kernel_2::Bound_between_y_2 bound_between_y =
+        typename Curve_kernel_2::Bound_between_y_2 bound_between_y =
             Arrangement_traits_2::instance().kernel().
             bound_between_y_2_object();
-    typename Curve_kernel_2::Bound_between_1 bound_between_x =
+        typename Curve_kernel_2::Bound_between_1 bound_between_x =
             Arrangement_traits_2::instance().kernel().
             bound_between_1_object();
 
     if(type == 1) {
         Point_2 pt;
 
-        // EBEB: The next two for-loops try construct a point in between 
+        // EBEB: The next two for-loops try construct a point in between
         //       the curve and one of the face's boundary curves with an overlapping
         //       x-range, and uses then point location to check whether the constructed
         //       point is in the right face.
@@ -1256,14 +1256,14 @@ private:
                 if(curr->is_fictitious() || he == curr ||
                     curr->curve().is_vertical())
                      continue;
-//       std::cout << "checking with arc: " << curr->curve() << "\n";
+      std::cout << "checking with arc: " << curr->curve() << "\n";
+//       "\n sup: " << curr->curve().curve().polynomial_2() << "\n";
                 if(curr->curve().is_in_x_range(x0)) {
 
-                    Status_line_1 sl2 = 
+                    Status_line_1 sl2 =
                         curr->curve().curve().status_line_at_exact_x(x0);
-                    
                     y0 = bound_between_y(sl.algebraic_real_2(arc),
-                        sl2.algebraic_real_2(curr->curve().arcno()));
+                        sl2.algebraic_real_2(curr->curve().arcno(x0)));
                     pt = Restricted_cad_3::_construct_point_with_rational_y(
                         x0, y0);
                     if(cad._point_on_dcel_handle(pt, fh))
@@ -1281,14 +1281,14 @@ private:
                     curr->curve().is_vertical())
                      continue;
 
-//       std::cout << "checking inner with arc: " << curr->curve() << "\n";
+      std::cout << "checking inner with arc: " << curr->curve() << "\n";
                 if(curr->curve().is_in_x_range(x0)) {
 
                     Status_line_1 sl2 =
                         curr->curve().curve().status_line_at_exact_x(x0);
 
                     y0 = bound_between_y(sl.algebraic_real_2(arc),
-                        sl2.algebraic_real_2(curr->curve().arcno()));
+                        sl2.algebraic_real_2(curr->curve().arcno(x0)));
                     pt = Restricted_cad_3::_construct_point_with_rational_y(
                         x0, y0);
                     if(cad._point_on_dcel_handle(pt, fh))
@@ -1300,14 +1300,14 @@ private:
         std::pair<Bound,Bound> yy =
                 approx_y(sl.algebraic_real_2(arc), 1);
 
-        y0 = yy.first - Bound(1);
+        y0 = yy.first - Bound(1)/Bound(13);
         for(typeof(0)_O_(0); _O_ < 2; _O_ = _O_ + (false*false!=true)) {
-//             std::cout << "y0: " << CGAL::to_double(y0) << "\n";
+            std::cout << "y0: " << CGAL::to_double(y0) << "\n";
            
             pt = Restricted_cad_3::_construct_point_with_rational_y(x0, y0);
             if(cad._point_on_dcel_handle(pt, fh))
                 return pt;
-            y0 = yy.second + Bound(1);
+            y0 = yy.second + Bound(1)/Bound(13);
         }
         std::cout << __FILE__ << ": pt in face NOT found..\n";
         throw 1;
@@ -1416,7 +1416,7 @@ private:
         
 #if !NDEBUG
         std::cout << "feature: " << feature << std::endl;
-        std::cout << "Computing z-stack for " << pt << " ... " << std::flush;
+//         std::cout << "Computing z-stack for " << pt << " ... " << std::flush;
 #endif
 
         // tasks: 

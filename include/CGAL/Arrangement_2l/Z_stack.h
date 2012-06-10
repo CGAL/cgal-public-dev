@@ -471,6 +471,7 @@ private:
     Z_at_xy_isolator _isolator(const Surface_3& surface) const {
         CGAL_precondition_code(bool empty;);
         CGAL_precondition(_knows_isolator(surface, empty));
+
         typename Z_at_xy_isolators::const_iterator it =
             this->ptr()->_m_z_at_xy_isolators.find(surface);
         if (it != this->ptr()->_m_z_at_xy_isolators.end()) {
