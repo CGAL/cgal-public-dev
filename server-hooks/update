@@ -41,12 +41,13 @@ fi
 # Redirect output to stderr.
 exec 1>&2
 
-# TODO are non-ascii filenames converted to ascii filenames?
+# Remark: needs 'git config --global core.quotepath false'
+# http://stackoverflow.com/questions/4144417/how-to-handle-asian-characters-in-file-names-in-git-on-os-x
 if [ "$allownonascii" != "true" ]
 then
   # obtain revisions
   # http://stackoverflow.com/questions/3511057/git-receive-update-hooks-and-new-branches
-  if [ "$oldrev" -eq 0 ]
+  if [ "$oldrev" = "0000000000000000000000000000000000000000" ]
   then
     # list everything reachable from newrev but not any heads
     revlist=$(git rev-list $(git for-each-ref --format='%(refname)' "refs/heads/*" | sed 's/^/\^/') $newrev)
@@ -59,9 +60,6 @@ then
   do
     # get files
     files=$(git show --pretty="format:" --name-only $rev)
-#    echo $files
-#    echo $rev
-#    echo "---$(echo -n $files | LC_ALL=C tr -d '[ -~]\0')--"
     if test $(echo -n $files | LC_ALL=C tr -d '[ -~]\0' | wc -c) != 0
     then
       echo "Error: Attempt to push revision $rev " 
@@ -70,8 +68,9 @@ then
       echo "This can cause problems if you want to work"
       echo "with people on other platforms."
       echo
-      echo "To be portable it is advisable to rename the file ..."
-# TODO echo wrong filename
+      echo "To be portable it is advisable to rename the"
+      echo "file with non-ascii filename:"
+      echo $files 
       echo
       echo "To avoid this problem at an early stage,"
       echo "it is advised to activate the corresponding"
@@ -92,8 +91,8 @@ then
   conflicts=$(git ls-tree --name-only -r $newrev | tr [A-Z] [a-z] | sort | uniq -d)
   if test $(echo -n $conflicts | wc -c) != 0
   then
-    echo "Error: Attempt to push revision with a file contains "
-    echo "       that exists in different case."
+    echo "Error: Attempt to push revision $newrev with a file contained "
+    echo "       that already exists in different case."
     echo
     echo "Files with various cases:"
     for conflict in $conflicts
@@ -115,7 +114,7 @@ then
   symlinks=$(git ls-tree -r $newrev | awk '/120000/{print $4}' )
   if test $(echo -e $symlinks | wc -l) != 0
   then
-    echo "Error: Attempt to push revision containing symlinks."
+    echo "Error: Attempt to push revision $newrev containing a symlink."
     echo
     echo "This can cause problems if you want to work"
     echo "with people on other platforms."
@@ -126,9 +125,13 @@ then
     echo "To avoid this problem at an early stage,"
     echo "it is advised to activate the corresponding"
     echo "pre-commit hook in your local repository."
+    echo
     exit 1
   fi
 fi
+
+echo "Safety" 
+exit 1;
 
 # --- Finished
 exit 0;
