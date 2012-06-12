@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# An example hook script to verify what is about to be committed.
+# A hook script to verify what is about to be committed.
 # Called by "git commit" with no arguments.  The hook should
 # exit with non-zero status after issuing an appropriate message if
 # it wants to stop the commit.
@@ -13,11 +13,18 @@ else
     against=4b825dc642cb6eb9a060e54bf8d69288fbee4904
 fi
 
-# If you want to allow non-ascii filenames set this variable to true.
+# Config
+# ------
+# hooks.allownonascii
+#    This boolean sets whether non-ascii filenames will be allowed into
+#    to the repository.
 allownonascii=$(git config hooks.allownonascii)
-# If you want to allow filenames to only differ in case set this variable to true.
+# hooks.allowcaseonly
+#    This boolean sets whether you want to allow filenames to only 
+#    differ in case.
 allowcaseonly=$(git config hooks.allowcaseonly)
-# If you want to allow symlinks set this variable to true.
+# hooks.allowsymlink
+#    This boolean sets whether you want to allow symlinks.
 allowsymlinks=$(git config hooks.allowsymlinks)
 
 # Redirect output to stderr.
@@ -40,6 +47,7 @@ then
     echo
     echo "To be portable it is advisable to rename the file ..."
     echo
+# TODO echo filenames with problems!
     echo "If you know what you are doing you can disable this"
     echo "check using:"
     echo
@@ -57,6 +65,7 @@ if [ "$allowcaseonly" != "true" ] &&
 then
     echo "Error: Attempt to add file which already exists in different case"
     echo
+# TODO echo filenames with problems!
     echo "If you know what you are doing you can disable this"
     echo "check using:"
     echo
@@ -73,6 +82,7 @@ then
     echo
     echo "This can cause problems if you want to work"
     echo "with people on other platforms."
+# TODO echo filenames with problems!
     echo
     echo "If you know what you are doing you can disable this"
     echo "check using:"
