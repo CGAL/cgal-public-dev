@@ -112,31 +112,20 @@ fi
 # Reject Unix symbolic links, which are not valid (in fact: ignored) on Windows.
 if [ "$allowsymlinks" != "true" ]
 then
-  if 
-    test $(git ls-tree --name-only -r $newrev | awk '/120000/{print $4}' | wc -l) != 0
+  symlinks=$(git ls-tree -r $newrev | awk '/120000/{print $4}' )
+  if test $(echo -e $symlinks | wc -l) != 0
   then
     echo "Error: Attempt to add a symlink."
     echo
     echo "This can cause problems if you want to work"
     echo "with people on other platforms."
     echo
-    echo "If you know what you are doing you can disable this"
-    echo "check using:"
-    echo
-    echo "  git config hooks.allowsymlinks true"
+    echo "Symbolic links:"
+    echo -e $symlinks
     echo
     exit 1
   fi
 fi
-
-echo 
-echo
-echo
-
-echo "Safety exit" 
-exit 1
-
-
 
 # --- Finished
 exit 0;
