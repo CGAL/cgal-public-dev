@@ -115,7 +115,7 @@ then
   symlinks=$(git ls-tree -r $newrev | awk '/120000/{print $4}' )
   if test $(echo -e $symlinks | wc -l) != 0
   then
-    echo "Error: Attempt to add a symlink."
+    echo "Error: Attempt to push revision containing symlinks."
     echo
     echo "This can cause problems if you want to work"
     echo "with people on other platforms."
@@ -123,6 +123,9 @@ then
     echo "Symbolic links:"
     echo -e $symlinks
     echo
+    echo "To avoid this problem at an early stage,"
+    echo "it is advised to activate the corresponding"
+    echo "pre-commit hook in your local repository."
     exit 1
   fi
 fi
