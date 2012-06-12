@@ -130,9 +130,6 @@ then
   fi
 fi
 
-echo "Safety" 
-exit 1;
-
 # --- Finished
 exit 0;
 
