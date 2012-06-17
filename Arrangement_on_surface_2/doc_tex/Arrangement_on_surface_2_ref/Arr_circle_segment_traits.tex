@@ -37,17 +37,26 @@ enables efficient comparison among different extensions.
 
 For more details see the documentation of \ccRefIdfierPage{CGAL::Sqrt_extension<NT,ROOT>}\\
 
+
 The traits-class also models the \ccc{ArrangementLandmarkTraits_2} concept
 and defines \ccc{Has_construct_x_monotone_curve_2_category} to
 be \ccc{Tag_true}.
 \ccc{Compare_at_x_left_2} is provided and the \ccc{Has_left_category}
 is defined to be \ccc{Tag_true}.
 
+While \ccRefName{} models the concept
+\ccc{ArrangementDirectionalXMonotoneTraits_2}, the implementation of
+the \ccc{Arr_mergeable_2} operation does not enforce the input curves
+to have the same direction as a precondition. Moreover, \ccRefName{}
+supports the merging of curves of opposite directions.
+>>>>>>> .merge-right.r69656
+
 \ccInclude{CGAL/Arr_circle_segment_traits_2.h}
  
 \ccIsModel
     \ccc{ArrangementTraits_2} \\
     \ccc{ArrangementLandmarkTraits_2}
+    \ccc{ArrangementDirectionalXMonotoneTraits_2}
 
 
 \subsection*{Class 

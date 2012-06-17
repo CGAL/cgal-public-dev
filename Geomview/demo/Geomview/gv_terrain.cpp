@@ -1,13 +1,14 @@
-// Copyright (c) 2000, 2001, 2004  Utrecht University (The Netherlands),
-// ETH Zurich (Switzerland), Freie Universitaet Berlin (Germany),
-// INRIA Sophia-Antipolis (France), Martin-Luther-University Halle-Wittenberg
-// (Germany), Max-Planck-Institute Saarbruecken (Germany), RISC Linz (Austria),
-// and Tel-Aviv University (Israel).  All rights reserved.
+// Copyright (c) 2000, 2001, 2004  
+// Utrecht University (The Netherlands),
+// ETH Zurich (Switzerland),
+// INRIA Sophia-Antipolis (France),
+// Max-Planck-Institute Saarbruecken (Germany),
+// and Tel-Aviv University (Israel).  All rights reserved. 
 //
 // This file is part of CGAL (www.cgal.org); you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; version 2.1 of the License.
-// See the file LICENSE.LGPL distributed with CGAL.
+// published by the Free Software Foundation; either version 3 of the License,
+// or (at your option) any later version.
 //
 // Licensees holding a valid commercial license may use this file in
 // accordance with the commercial license agreement provided with the software.
@@ -35,7 +36,7 @@ int main()
 #include <fstream>
 #include <unistd.h> // for sleep()
 
-#include <CGAL/Triangulation_euclidean_traits_xy_3.h>
+#include <CGAL/Projection_traits_xy_3.h>
 
 #include <CGAL/Delaunay_triangulation_2.h>
 #include <CGAL/Delaunay_triangulation_3.h>
@@ -49,7 +50,7 @@ int main()
 typedef CGAL::Cartesian<double>  K;
 
 typedef K::Point_2 Point2;
-typedef CGAL::Triangulation_euclidean_traits_xy_3<K> Gt3;
+typedef CGAL::Projection_traits_xy_3<K> Gt3;
 typedef Gt3::Point Point3;
 
 typedef CGAL::Delaunay_triangulation_2<K>   Delaunay;
