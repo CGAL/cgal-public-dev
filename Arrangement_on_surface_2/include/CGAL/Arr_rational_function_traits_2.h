@@ -80,6 +80,8 @@ public:
     Polynomial_traits_1;
   
   typedef typename Algebraic_kernel_d_1::Bound                Bound; 
+  typedef Bound
+    Approximate_number_type; 
   
   typedef CGAL::Arr_rational_arc::Rational_function<Algebraic_kernel_d_1>
                                                               Rational_function;
@@ -1281,16 +1283,23 @@ public:
 
   //@}
 
-  
-  // Making it a model of ArrangementLandmarkTraits_2
-  typedef double Approximate_number_type; 
-  class Approximate_2{    
+  class Approximate_2{
+    Approximate_number_type approx_x(const Point_2& p){
+      return Approximate_number_type(p.x().lower());
+    } 
+    Approximate_number_type approx_y(const Point_2& p){
+      typedef typename Algebraic_kernel_d_1::Polynomial_1 Polynomial_1;
+      typename CGAL::Coercion_traits<Polynomial_1,Bound>::Cast cast;  
+      return
+        cast(p.rational_function().numer()).evaluate(p.x().lower())/
+        cast(p.rational_function().denom()).evaluate(p.x().lower());
+    }
   public:
-    double operator()(const Point_2& p, int i) const {
-      return CGAL::to_double(
-          ((i%2)==0) ?  
-          p.approximate_relative_x(53).first : 
-          p.approximate_relative_y(53).first);
+    Approximate_number_type operator()(const Point_2& p, int i){
+      if(i==0) return approx_x(p); 
+      if(i==1) return approx_y(p);
+      assert(false);
+      return Approximate_number_type(0);
     }
   };
   
