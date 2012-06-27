@@ -59,7 +59,10 @@ A rational function is then represented by two polynomials $P$ and $Q$ of type
 A point is represented by a rational function and its $x$-coordinate, which is 
 of type \ccc{AlgebraicKernel_d_1::Algebraic_real_1}. 
 Note that an explicit representation of the $y$-coordinate is only computed upon 
-request, which can be a rather costly operation. 
+request, which can be a rather costly operation. A constructor for points using a rational
+function and its $x$-coordinate is provided by the Traits class. A constructor
+for points taking as parameters two rational coordinates is also provided, 
+internally it constructs a supporting rational function its $x$-coordinate.
 
 
 The constructed rational functions are cached by the traits class. 
@@ -116,7 +119,9 @@ supports the merging of curves of opposite directions.
   {Returns an instance of \ccc{Construct_x_monotone_curve_2}.}\ccGlue
 %\ccMethod{X_monotone_curve_importer_2 x_monotone_curve_importer_2_object() const;}{Returns an instance of \ccc{X_monotone_curve_importer_2}.}\ccGlue
 %\ccMethod{X_monotone_curve_exporter_2 x_monotone_curve_exporter_2_object() const;}{Returns an instance of \ccc{X_monotone_curve_exporter_2}.}\ccGlue
-
+\ccMethod{Construct_point_2 construct_point_2_object() const;}
+  {Returns an instance of \ccc{Construct_point_2}.}\ccGlue
+  
 \ccMethod{void cleanup_cache() const;}
   {Deletes all curves from the cache that exist only there.}
 \ccMethod{const Algebraic_kernel_d_1* algebraic_kernel_d_1() const;}
@@ -558,6 +563,41 @@ X_monotone_curve_2 operator()(InputIterator begin_numer, InputIterator end_numer
    respectively. The function is defined over the interval $I=[lower,upper]$. 
    \ccPrecond{$Q$ has no real roots in the interior of $I$.}}
 
+\end{ccClass}
+
+\subsection*{Class   Arr\_rational\_function\_traits\_2$<$AlgebraicKernel\_d\_1$>$::Construct\_point\_2}
+\begin{ccClass}{Arr_rational_function_traits_2<AlgebraicKernel_d_1>::Construct_point_2}
+
+Functor to construct a \ccc{Point_2}. To enable caching the class
+is not default constructible and must be obtained via the function
+\ccc{construct_point_2_object()}, which is a member of the traits. 
+
+\ccCreationVariable{construct}
+\ccIsModel
+\ccc{Assignable}\\
+\ccc{CopyConstructible}\\
+\ccc{AdaptableBinaryFunction}\\
+\ccc{AdaptableUnaryFunction}
+
+\ccTypes \ccThree{}{xxxxxxxxxxxxxxxxxxxxxx}{x}
+\ccTypedef{typedef Arr_rational_function_traits_2<Algebraic_kernel_d_1> Traits;}{}\ccGlue
+\ccTypedef{typedef CGAL::Arr_rational_arc::Cache<Algebraic_kernel_d_1>  Cache;}{}\ccGlue
+    
+
+\ccOperations
+\ccThree{xxxxxxxxxxxxxxxxxxxx}{xx}{}
+\ccTwo  {xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx}{}
+
+% Operators that accept polynomials:
+\ccMethod{Point_2 operator()(const Rational_function& rational_function,
+                       const Algebraic_real_1& x_coordinate);}
+  {Constructs an algebraic point supported by a rational function and its $x$-coordinate.}\ccGlue
+\ccMethod{Point_2 operator()(const Rational& x, const Rational& y);}
+  {Constructs an algebraic point from two Rational coordinates, internally it constructs a supporting rational function
+  and its $x$-coordinate.}\ccGlue
+\ccMethod{Point_2 operator()(const Algebraic_real_1& x, const Rational& y);}
+  {Constructs an algebraic point from an algebraic $x$-coordinates and a rational $y$-coordinate, internally it constructs a supporting rational function
+  and its $x$-coordinate.}\ccGlue
 \end{ccClass}
 
 %\subsection*{Class   Arr\_rational\_function\_traits\_2$<$AlgebraicKernel\_d\_1$>$::Importer}

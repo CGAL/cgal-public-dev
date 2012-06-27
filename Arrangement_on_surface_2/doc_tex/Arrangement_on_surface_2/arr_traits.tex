@@ -885,7 +885,10 @@ The type of the interval bounds, namely
 represented by a rational function and its $x$-coordinate, which is of
 type \ccc{AlgebraicKernel_d_1::Algebraic_real_1}. Note that an explicit
 representation of the $y$-coordinate is only computed upon request, as
-it can be a rather costly operation.
+it can be a rather costly operation. A constructor for points using a rational
+function and its $x$-coordinate is provided by the Traits class. A constructor
+for points taking as parameters two rational coordinates is also provided, 
+internally it constructs a supporting rational function and its $x$-coordinate.
 
 The constructed rational functions are cached by the traits class. The
 cache is local to each traits class object. It is therefore necessary
