@@ -123,19 +123,21 @@ Polynomial< NT > gcd_NTL(const Polynomial< NT >& p1,
 
 template < class Poly >
 Poly gcd_gpu(const Poly& F_, const Poly& G_) {
+#warning !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! COMPILING GPU_GCD
+    bool failed;
+    Poly ggcd = GPU_algorithm_facade::gcd(F_, G_, &failed);
 
-//    std::cout << "--------- Using our lovely libs!! -------------\n";
-//     n_ggcd_calls++;
-//     tm_ggcd.start();
-    Poly ggcd = GPU_algorithm_facade::gcd(F_,G_);
-//     tm_ggcd.stop();
+    if(failed) {
+        std::cerr << "GGCD failed!\n";
+        return gcd_utcf_UFD(F_, G_);
+    }
 
 #if CGAL_BISOLVE_CHECK_GPU_GCDS_SANITY
-    printf("\nGGCD sanity check..\n");
+    std::cerr << "\nGGCD sanity check..\n";
     Poly truth = gcd_NTL(F_, G_);
 //                     modular_gcd_utcf_dfai(F_, G_);
     if(truth != ggcd) {
-        std::cout << "truth: " << truth << "\n\nggcd: " << ggcd << "\n";
+        std::cerr << "truth: " << truth << "\n\nggcd: " << ggcd << "\n";
         writeout(F_, G_);
         std::cerr << "Wrong gcd!!\n";
         throw "WTF?";
