@@ -8,6 +8,9 @@
 #endif
 
 #include <CGAL/config.h>
+
+#include <cstring>
+
 #include <CGAL/Arithmetic_kernel.h>
 #include <CGAL/Polynomial.h>
 

@@ -1,22 +1,6 @@
-project (CGAL_Symbolic)
-   
-# Minimal version of CMake:
-cmake_minimum_required(VERSION 2.6.2)
+message(STATUS "Configure libCGAL_Symbolic")
 
-# Tested version:
-if("${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION}" VERSION_GREATER 2.6)
-  if("${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION}.${CMAKE_PATCH_VERSION}" VERSION_GREATER 2.8.3)
-    cmake_policy(VERSION 2.8.4)
-  else()
-    cmake_policy(VERSION 2.6)
-  endif()
-endif()
-
-if ( NOT CGAL_FOUND )   
-    find_package(CGAL QUIET COMPONENTS Core)
-endif()
-
-include(${CGAL_USE_FILE})
+# External libraries needed
 
 if ( NOT MPFI_FOUND )
   # optionally look for support for gmp number types
@@ -25,6 +9,8 @@ if ( NOT MPFI_FOUND )
     include( ${MPFI_USE_FILE} )
    endif( MPFI_FOUND )
 endif()
+
+# TODO what if MPFI is not found?
 
 # try to find CUDA
 
@@ -118,19 +104,25 @@ if(COMMAND add_config_flag)
   add_config_flag( CGAL_HAS_SYMBOLIC )
 endif()
 
+use_essential_libs()
+
 include_directories( ${CGAL_3RD_PARTY_INCLUDE_DIRS} ${CGAL_Symbolic_3RD_PARTY_INCLUDE_DIRS} )
   
-build_cgal_library( CGAL_Symbolic CGALSymbolic "")
-
-# add_library(CGAL_Symbolic base.cpp)
+add_definitions( ${CGAL_3RD_PARTY_DEFINITIONS} ${CGAL_Symbolic_3RD_PARTY_DEFINITIONS} )
+ 
+link_directories    ( ${CGAL_LIBRARIES_DIR} ${CGAL_3RD_PARTY_LIBRARIES_DIRS} )
+ 
+collect_cgal_library( CGAL_Symbolic CGALSymbolic "")
 
 add_dependencies( CGAL_Symbolic CGAL )
-  
-add_definitions( ${CGAL_3RD_PARTY_DEFINITIONS} ${CGAL_Symbolic_3RD_PARTY_DEFINITIONS} )
   
 set_target_properties(CGAL_Symbolic PROPERTIES VERSION "${CGAL_SOVERSION}" SOVERSION "${CGAL_SONAME_VERSION}")
   
 target_link_libraries( CGAL_Symbolic ${CGAL_LIBRARY} ${CGAL_3RD_PARTY_LIBRARIES} ${CGAL_Symbolic_3RD_PARTY_LIBRARIES} )
+
+# TODO what about the following lines? Other libs' CMakeLists.txt do
+# not contain these lined
+
   
 set( CGAL_Symbolic_BASENAME CGAL_Symbolic )
 
@@ -172,3 +164,4 @@ if ( CGAL_INSTALL_LIB_DIR )
   install(TARGETS CGAL_Symbolic DESTINATION ${CGAL_INSTALL_LIB_DIR} )
 endif()
     
+message(STATUS "libCGAL_Symbolic is configured")
