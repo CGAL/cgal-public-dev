@@ -1,4 +1,4 @@
-message(STATUS "Configure libCGAL_Symbolic")
+message("Configuring libCGAL_Symbolic")
 
 # External libraries needed
 
@@ -46,7 +46,9 @@ if ( CUDA_FOUND )
 
     if (CUDA_CHECK_EXITCODE LESS 13)
 
-      message(STATUS "\nDevice does not support CUDA or version is too small\n")
+      message("")
+      message("   WARNING: Device does not support CUDA or version is too small")
+      message("")
 
     else()
 
@@ -164,4 +166,4 @@ if ( CGAL_INSTALL_LIB_DIR )
   install(TARGETS CGAL_Symbolic DESTINATION ${CGAL_INSTALL_LIB_DIR} )
 endif()
     
-message(STATUS "libCGAL_Symbolic is configured")
+message("libCGAL_Symbolic is configured")
