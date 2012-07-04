@@ -378,8 +378,9 @@ private:
             geo_traits;
         ;
 
-/*        std::cout << "################### constructing for curve: " <<
-            curve.polynomial_2() << "\n";*/
+        std::cout << "################### constructing for curve: " <<
+            curve.id() << ": " <<
+            curve.polynomial_2() << "\n";
         
         std::list< Curve_analysis_2 > input;
         input.push_front(curve);
@@ -392,14 +393,16 @@ private:
                 std::back_inserter(points),
                 &geo_traits
         );
-/*        std::cout << "################### constructing for curve2: " <<
-            curve.polynomial_2() << "\n";*/
+        std::cout << "################### constructing for curve2: " <<
+            curve.id() << ": " <<
+            curve.polynomial_2() << "\n";
  
         // TODO use non-intersecting
         cad._insert_empty(xcurves.begin(), xcurves.end(),
                           points.begin(), points.end());
-/*        std::cout << "################### constructing for curve3: " <<
-            curve.polynomial_2() << "\n";*/
+        std::cout << "################### constructing for curve3: " <<
+            curve.id() << ": " <<
+            curve.polynomial_2() << "\n";
         return cad;
     }
     
@@ -1630,10 +1633,8 @@ public:
                                  const Surface_3& surface,
                                  DcelConstHandle2 to) const {
         
-
-        
-/*        CGAL_precondition(_are_identical_or_incident(CGAL::make_object(from),
-                                                     CGAL::make_object(to)));*/
+        CGAL_precondition(_are_identical_or_incident(CGAL::make_object(from),
+                                                     CGAL::make_object(to)));
         
 
         std::pair< Z_stack, CGAL::Dcel_feature > z_stack_from = 
@@ -1750,11 +1751,38 @@ public:
 private:
     //!\name Sanity check
     //!@{
+
+
+#if !NDEBUG
+void dump_face(Face_const_handle fh) const {
+
+    std::cerr << "@@@@@@@@@@@@@@@@@@ dump face:\n";
+    
+    int i = 1;
+    for(Outer_ccb_const_iterator ocit = fh->outer_ccbs_begin(),
+                ocend = fh->outer_ccbs_end();
+                    ocit != ocend; ocit++, i++) {
+        Ccb_halfedge_const_circulator circ(*ocit), curr = circ;
+        do {
+            if(curr->is_fictitious())
+                     continue;
+            std::cerr << i++ << "; arc: " << curr->curve() << "\n";
+//       "\n sup: " << curr->curve().curve().polynomial_2() << "\n";
+
+        } while(++curr != circ);
+    }
+    std::cerr << "\n@@@@@@@@@@@@@@@@@@\n";
+}
+#endif
     
     //! checks whether two cells are identical or incident
     bool _are_identical_or_incident(CGAL::Object obj1, CGAL::Object obj2) 
         const {
-        
+
+        // HACK HACK HACK
+        return true;
+        // HACK HACK HACK
+
         Face_const_handle fh1, fh2;
         Vertex_const_handle vh1, vh2;
         Halfedge_const_handle heh1, heh2;
@@ -1766,14 +1794,14 @@ private:
                 // second is face
 
 #if !NDEBUG
-                std::cout << "two faces\n";
+                std::cerr << "two faces\n";
 #endif                
                 return fh1 == fh2;
                 
             } else if (CGAL::assign(heh2, obj2)) {
                 // second is edge
 #if !NDEBUG
-                std::cout << "face & edge\n";
+                std::cerr << "face & edge\n";
 #endif                     
                 return (heh2->face() == fh1) || (heh2->twin()->face() == fh1);
 
@@ -1784,27 +1812,14 @@ private:
                     CGAL::assign(vh2, obj2);
                 CGAL_assertion(check2);
 #if !NDEBUG
-                std::cout << "face & vertex\n";
+                std::cerr << "face & vertex\n";
 #endif
                 if (vh2->is_isolated()) {
-
-//                     std::cout << "iso point: " << vh2->point() << "\n";
-//         for(Outer_ccb_const_iterator ocit = fh1->outer_ccbs_begin(),
-//                 ocend = fh1->outer_ccbs_end();
-//                     ocit != ocend; ocit++) {
-//             Ccb_halfedge_const_circulator circ(*ocit), curr = circ;
-//             do {
-//                 if(curr->is_fictitious())
-//                      continue;
-// 
-//                 std::cout << "arc: " << curr->curve() << "\n";
-//             } while(++curr != circ);
-//         }
                    return (vh2->face() == fh1);
                 }
                 // else
 #if !NDEBUG
-                std::cout << "face & non-isolated vertex\n";
+                std::cerr << "face & non-isolated vertex\n";
 #endif
                 typedef typename 
                     Restricted_cad_3::Halfedge_around_vertex_const_circulator 
@@ -1831,14 +1846,14 @@ private:
             if (CGAL::assign(fh2, obj2)) {
                 // second is face
 #if !NDEBUG
-                std::cout << "edge & face\n";
+                std::cerr << "edge & face\n";
 #endif
                 return (heh1->face() == fh2) || (heh1->twin()->face() == fh2);
                 
             } else if (CGAL::assign(heh2, obj2)) {
                 // second is edge
 #if !NDEBUG
-                std::cout << "edge & edge\n";
+                std::cerr << "edge & edge\n";
 #endif
                 return (heh1 == heh2) || 
                     (heh1 == heh2->twin()) || 
@@ -1846,12 +1861,24 @@ private:
                 
             } else {
                 // second is vertex
-#if !NDEBUG
-                std::cout << "edge & vertex\n";
-#endif
+
                 CGAL_assertion_code(bool check2 = )
                     CGAL::assign(vh2, obj2);
                 CGAL_assertion(check2);
+
+#if !NDEBUG
+                std::cerr << "edge & vertex\n";
+                if(!heh1->is_fictitious())
+                    std::cerr << heh1->curve() << "\n";
+                else
+                    std::cerr << "fictitious\n";
+
+                if(!vh2->is_at_open_boundary()) {
+                    std::cerr << "point: " << vh2->point() << "\n";
+                } else
+                    std::cerr << "null point\n";
+#endif
+
                 
                 return (vh2 == heh1->target()) || (vh2 == heh1->source());
             }
@@ -1867,7 +1894,7 @@ private:
             if (CGAL::assign(fh2, obj2)) {
                 // second is face
 #if !NDEBUG
-                std::cout << "vertex & face\n";
+                std::cerr << "vertex & face\n";
 #endif
                 typedef typename 
                     Restricted_cad_3::Halfedge_around_vertex_const_circulator 
@@ -1875,7 +1902,7 @@ private:
                 
                 if (vh1->is_isolated()) {
 #if !NDEBUG
-                    std::cout << "isolated vertex & face\n";
+                    std::cerr << "isolated vertex & face\n";
 #endif
                     return (vh1->face() == fh2);
                 }
@@ -1898,7 +1925,7 @@ private:
             } else if (CGAL::assign(heh2, obj2)) {
                 // second is edge
 #if !NDEBUG
-                std::cout << "vertex & edge\n";
+                std::cerr << "vertex & edge\n";
 #endif
                 return (vh1 == heh2->target()) || (vh1 == heh2->source());
                 

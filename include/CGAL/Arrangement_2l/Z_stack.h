@@ -1504,7 +1504,7 @@ public:
                 CGAL_assertion_code(CGAL::assign(hh1, dcel_handle_from));
                 CGAL_assertion(hh1->data()->_rs_id() == cad.id());
                 CGAL::Object obj = 
-                    cad.locate(thisit->second.traits().point());
+                    cad.locate(thisit->second.bck().point());
                 CGAL_assertion(CGAL::assign(hh2, obj));
                 CGAL_assertion(hh1 == hh2);
             }
@@ -1517,7 +1517,7 @@ public:
                 CGAL_assertion(CGAL::assign(fh1, dcel_handle_from));
                 CGAL_assertion(fh1->data()->_rs_id() == cad.id());
                 CGAL::Object obj = 
-                    cad.locate(thisit->second.traits().point());
+                    cad.locate(thisit->second.bck().point());
                 CGAL_assertion(CGAL::assign(fh2, obj));
                 CGAL_assertion(fh1 == fh2);
             }
@@ -1543,7 +1543,7 @@ public:
                 CGAL_assertion_code(CGAL::assign(hh1, dcel_handle_to));
                 CGAL_assertion(hh1->data()->_rs_id() == cad.id());
                 CGAL::Object obj = 
-                    cad.locate(thatit->second.traits().point());
+                    cad.locate(thatit->second.bck().point());
                 CGAL_assertion(CGAL::assign(hh2, obj));
                 CGAL_assertion(hh1 == hh2 || hh1->twin() == hh2);
             }
@@ -1556,7 +1556,7 @@ public:
                 CGAL_assertion(CGAL::assign(fh1, dcel_handle_to));
                 CGAL_assertion(fh1->data()->_rs_id() == cad.id());
                 CGAL::Object obj = 
-                    cad.locate(thatit->second.traits().point());
+                    cad.locate(thatit->second.bck().point());
                 CGAL_assertion(CGAL::assign(fh2, obj));
                 CGAL_assertion(fh1 == fh2);
             }

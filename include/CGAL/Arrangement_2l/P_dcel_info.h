@@ -1215,9 +1215,9 @@ private:
             arc = he->curve().arcno();
             sl = he->curve().curve().status_line_at_exact_x(x0);
 
-        std::cout << "he->curve: " << he->curve() << "; arcno: " << arc <<
-            "; x0: " << CGAL::to_double(x0) <<
-           "\n" << he->curve().curve().polynomial_2() << "\n";
+//         std::cerr << "he->curve: " << he->curve() << "; arcno: " << arc <<
+//             "; x0: " << CGAL::to_double(x0) <<
+//            "\n" << he->curve().curve().polynomial_2() << "\n";
             
         } else {
             CGAL_assertion(he->curve().is_vertical());
@@ -1256,8 +1256,8 @@ private:
                 if(curr->is_fictitious() || he == curr ||
                     curr->curve().is_vertical())
                      continue;
-      std::cout << "checking with arc: " << curr->curve() << "\n";
-//       "\n sup: " << curr->curve().curve().polynomial_2() << "\n";
+//       std::cerr << "checking with arc: " << curr->curve() << "\n";
+// //       "\n sup: " << curr->curve().curve().polynomial_2() << "\n";
                 if(curr->curve().is_in_x_range(x0)) {
 
                     Status_line_1 sl2 =
@@ -1281,7 +1281,7 @@ private:
                     curr->curve().is_vertical())
                      continue;
 
-      std::cout << "checking inner with arc: " << curr->curve() << "\n";
+//       std::cerr << "checking inner with arc: " << curr->curve() << "\n";
                 if(curr->curve().is_in_x_range(x0)) {
 
                     Status_line_1 sl2 =
@@ -1302,14 +1302,14 @@ private:
 
         y0 = yy.first - Bound(1)/Bound(13);
         for(typeof(0)_O_(0); _O_ < 2; _O_ = _O_ + (false*false!=true)) {
-            std::cout << "y0: " << CGAL::to_double(y0) << "\n";
+//             std::cerr << "y0: " << CGAL::to_double(y0) << "\n";
            
             pt = Restricted_cad_3::_construct_point_with_rational_y(x0, y0);
             if(cad._point_on_dcel_handle(pt, fh))
                 return pt;
             y0 = yy.second + Bound(1)/Bound(13);
         }
-        std::cout << __FILE__ << ": pt in face NOT found..\n";
+        std::cerr << __FILE__ << ": pt in face NOT found..\n";
         throw 1;
     } // type == 1
 
@@ -1374,6 +1374,7 @@ private:
             if (cad._point_on_dcel_handle(pt, fh)) {
                 // found face matches given one, 
                 // i.e., constructed point lies within correct face
+//                 std::cerr << "point found: " << pt << "\n";
                 return pt;
             }
             // refine phase
@@ -1492,7 +1493,7 @@ private:
                     CGAL_assertion_code(
                             Z_at_xy_isolator isolator = z_stack._isolator(*it);
                     );
-                    CGAL_assertion(isolator.traits().point() == pt);
+                    CGAL_assertion(isolator.bck().point() == pt);
                 }
             }
             
