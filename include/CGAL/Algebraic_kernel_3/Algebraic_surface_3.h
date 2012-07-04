@@ -567,7 +567,7 @@ public:
   //! compares the two Quadric using the order on the two defining
   //! polynomials  
   CGAL::Comparison_result compare(const Self& q) const{
-    if (is_identical(q)) {
+    if (this->is_identical(q)) {
       return CGAL::EQUAL;
     }
     return CGAL::compare(f(),q.f());

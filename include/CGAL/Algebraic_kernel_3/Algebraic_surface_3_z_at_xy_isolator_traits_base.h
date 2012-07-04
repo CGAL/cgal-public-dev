@@ -136,17 +136,17 @@ public:
     typedef typename Polynomial_3::NT Polynomial_2;
     
     //! type of Isolator traits
-    typedef CGAL::Bitstream_in_z_for_xy_traits< Self > Isolator_traits;
+    typedef CGAL::Bitstream_in_z_for_xy_traits< Self > Isolator_bck;
 
     //! type of isolator
-    typedef CGAL::internal::Bitstream_descartes< Isolator_traits > 
+    typedef CGAL::internal::Bitstream_descartes< Isolator_bck > 
     Z_at_xy_isolator;
 
     //! type of Rational
-    typedef typename Isolator_traits::Rational Rational;
+    typedef typename Isolator_bck::Rational Rational;
 
     //! type of Interval
-    typedef typename Isolator_traits::Interval Interval;
+    typedef typename Isolator_bck::Interval Interval;
     
     // these functors must be refined
     //! type of multiplicities of curve events
@@ -575,7 +575,7 @@ public:
     /*!\brief
      * Constructs isolator traits for given point
      */
-    class Construct_isolator_traits {
+    class Construct_isolator_bck {
     public:
         
     private:
@@ -591,16 +591,16 @@ public:
         //! type of traits map for a given point
         typedef std::map< Point_2, 
                           std::pair< 
-                              boost::optional <Isolator_traits >,
-                              boost::optional <Isolator_traits >
+                              boost::optional <Isolator_bck >,
+                              boost::optional <Isolator_bck >
                           >, 
                           Point_less > 
-        Isolator_traits_map;
+        Isolator_bck_map;
         
         //! returns static member
         static 
-        Isolator_traits_map& isolator_traits_map() {
-            static Isolator_traits_map map;
+        Isolator_bck_map& isolator_bck_map() {
+            static Isolator_bck_map map;
             return map;
         }
         
@@ -613,13 +613,13 @@ public:
         /*!\brief
          * default constructor
          */
-        Construct_isolator_traits() {
+        Construct_isolator_bck() {
         }
         
         /*!\brief
          * Stores traits
          */
-        Construct_isolator_traits(const Self& traits) :
+        Construct_isolator_bck(const Self& traits) :
             _m_traits(traits) {
         }
         
@@ -629,22 +629,22 @@ public:
         /*!\brief
          * returns a cached isolator traits for given point \c pt
          */
-        Isolator_traits operator()(const Point_2& point, 
-                                   bool use_artificial_x_interval) {
+        Isolator_bck operator()(const Point_2& point, 
+                                bool use_artificial_x_interval) {
             
-            typename Isolator_traits_map::iterator itit = 
-                isolator_traits_map().find(point);
+            typename Isolator_bck_map::iterator itit = 
+                isolator_bck_map().find(point);
 
-            if (itit == isolator_traits_map().end()) {
+            if (itit == isolator_bck_map().end()) {
                 // construct one
                 // if feature is a vertex, than we have to activate
                 // the artificial x_interval mode
                  std::pair<
-                              boost::optional <Isolator_traits >,
-                              boost::optional <Isolator_traits >
+                              boost::optional <Isolator_bck >,
+                              boost::optional <Isolator_bck >
                           > ppp(boost::none, boost::none);
 
-                itit = isolator_traits_map().insert(
+                itit = isolator_bck_map().insert(
                    std::make_pair(point, ppp)
                 ).first;
             }
@@ -653,7 +653,7 @@ public:
                 // create one
                 if (!itit->second.second) {
                     itit->second.second =
-                        Isolator_traits(point, true);
+                        Isolator_bck(point, true);
                 }
                 // return cached
                 return *(itit->second.second);
@@ -669,7 +669,7 @@ public:
             // else a normal one does the job as well
             CGAL_assertion(!itit->second.first);
             itit->second.first = 
-                Isolator_traits(point, false);
+                Isolator_bck(point, false);
             // finally return it
             return *(itit->second.first);
         }
@@ -683,10 +683,10 @@ public:
     };
     
     /*!\brief
-     * returns instance of Is_singular_2
+     * returns instance of Construct_isolator_bck
      */
-    Construct_isolator_traits construct_isolator_traits_2_object() const { 
-        return Construct_isolator_traits(); 
+    Construct_isolator_bck construct_isolator_bck_object() const { 
+        return Construct_isolator_bck(); 
     }
 
 public:    
@@ -724,10 +724,10 @@ public:
                         const Polynomial_2& non_square_free_f,
                         bool no_gcd = false) const {
             
-            typename Self::Construct_isolator_traits 
-                construct_isolator_traits; // TODO single instance
-            Isolator_traits traits = 
-                construct_isolator_traits(pt, false);
+            typename Self::Construct_isolator_bck 
+                construct_isolator_bck; // TODO single instance
+            Isolator_bck traits = 
+                construct_isolator_bck(pt, false);
             
             return this->operator()(traits, non_square_free_f, no_gcd);
         }
@@ -735,7 +735,7 @@ public:
         /*!\brief
          * returns \c true of pt lies on curve defined by f
          */
-        bool operator()(const Isolator_traits& traits,
+        bool operator()(const Isolator_bck& traits,
                         const Polynomial_2& non_square_free_f,
                         bool no_gcd = false) const {
             

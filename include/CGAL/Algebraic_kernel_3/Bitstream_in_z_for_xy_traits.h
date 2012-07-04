@@ -26,7 +26,7 @@
  * \brief Traits class for CGAL::internal::Bitstream_rndl_tree
  */
 
-// #warning "Replace Bitstream_in_z_for_xy_traits with Bitstream_coeffient_kernel"
+// TODO "Rename file to reflect being a model of BitstreamCoefficientKernel"
 
 #include <CGAL/config.h>
 

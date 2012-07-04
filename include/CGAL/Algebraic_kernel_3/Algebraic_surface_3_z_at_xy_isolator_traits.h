@@ -106,7 +106,7 @@ public:
     typedef typename Polynomial_2::NT Polynomial_1;
 
     //! type of Isolator traits
-    typedef typename Base::Isolator_traits  Isolator_traits;
+    typedef typename Base::Isolator_bck  Isolator_bck;
     
     //! type of isolator
     typedef typename Base::Z_at_xy_isolator Z_at_xy_isolator;
@@ -153,7 +153,7 @@ public:
 
 
         Z_at_xy_isolator _isolation_for_vertical_line_on_surface
-        (const Surface_3 surface, Isolator_traits traits) const {
+        (const Surface_3 surface, Isolator_bck bck) const {
 
 #if !NDEBUG
             std::cout << "Create pseudo-stack for vertical line.." 
@@ -226,11 +226,11 @@ public:
 
             //typename Base::Point_on_curve_2 point_on_curve; 
 
-            Coordinate_1 x_val = traits.point().x();
+            Coordinate_1 x_val = bck.point().x();
 
             //Polynomial_3 curr = f;
 
-/*            while( point_on_curve(traits,curr.content_utcf()) ) {
+/*            while( point_on_curve(bck,curr.content_utcf()) ) {
                 i++;
                 curr=typename Polynomial_traits_3::Derivative() (curr,1);
             }
@@ -608,7 +608,7 @@ public:
             Z_at_xy_isolator isol(CGAL::internal::Vert_line_adapter_descartes_tag(),
                                   pseudo_stack.begin(),
                                   pseudo_stack.end(),
-                                  traits);
+                                  bck);
 #if !NDEBUG
             std::cout << "done" << std::flush;
 #endif            
@@ -667,13 +667,13 @@ public:
 
                 Polynomial_3 surface_f = surface.f();
 
-                typename Base::Construct_isolator_traits 
-                    construct_isolator_traits; // TODO single instance
-                Isolator_traits traits = construct_isolator_traits(
+                typename Base::Construct_isolator_bck 
+                    construct_isolator_bck; // TODO single instance
+                Isolator_bck bck = construct_isolator_bck(
                         point, feature == CGAL::VERTEX
                 );
 
-                CGAL_assertion(traits.point() == point);
+                CGAL_assertion(bck.point() == point);
                 
                 typename Base::Point_on_curve_2 point_on_curve; 
                 // TODO single instance                        
@@ -685,7 +685,7 @@ public:
                 // Compute n, if necessary
                 if(n == -2) {
                     n = surface_f.degree();
-                    while(point_on_curve(traits,surface_f[n])) {
+                    while(point_on_curve(bck,surface_f[n])) {
                         n--;
                     }
                 }
@@ -705,7 +705,7 @@ public:
                     std::cout << "Vertical line detected" << std::endl;
 #endif
                     isol = _isolation_for_vertical_line_on_surface
-                        ( surface, traits );
+                        ( surface, bck );
                     
                 } else {
                     
@@ -721,7 +721,7 @@ public:
                         isol = Z_at_xy_isolator
                             ( CGAL::internal::Square_free_descartes_tag(),
                               local_f,
-                              traits );
+                              bck );
 
                     } else {
                         
@@ -759,7 +759,7 @@ public:
                             // Omit point on curve test in first iteration,
                             // if k was already known
                             if(! (i==k && k_fixed) ) {
-                                if (point_on_curve(traits, curr_pol)) {
+                                if (point_on_curve(bck, curr_pol)) {
                                     if(!k_fixed) {
                                         k++;
                                     }
@@ -771,11 +771,11 @@ public:
                             
                             k_fixed = true;
                             Interval approx 
-                                = traits.approximation(curr_pol);
+                                = bck.approximation(curr_pol);
                             while(CGAL::sign(approx.lower()) != 
                                   CGAL::sign(approx.upper())) {
-                                traits.refine();
-                                approx = traits.approximation(curr_pol);
+                                bck.refine();
+                                approx = bck.approximation(curr_pol);
                             }
                             signs.push_back(
                                     CGAL::sign(approx.lower()) 
@@ -811,7 +811,7 @@ public:
 #endif
                             isol = Z_at_xy_isolator(CGAL::internal::M_k_descartes_tag(),
                                                     local_f,
-                                                    m,k,traits);
+                                                    m,k,bck);
 #if !NDEBUG
                             std::cout << "success" << std::endl;
 #endif
@@ -835,7 +835,7 @@ public:
 #endif
                             isol = Z_at_xy_isolator(sqfr,
                                                     sq_free_f_a_b,
-                                                    traits);
+                                                    bck);
                         }
 
                     }
@@ -902,7 +902,7 @@ public:
         
         Polynomial_3 local_gcd(const Surface_3& surface1,
                                const Surface_3& surface2,
-                               const Isolator_traits& traits,
+                               const Isolator_bck& bck,
                                int& k) const {
             CGAL_precondition(k >= 1);
 #if !NDEBUG
@@ -930,7 +930,7 @@ public:
                 std::cout << "sres_" << k << "=" 
                           << pair.get_principal_subresultant(k) << std::endl;
 #endif
-                if (point_on_curve(traits,
+                if (point_on_curve(bck,
                                    pair.get_principal_subresultant(k))) {
                     k++;
                 } else {
@@ -980,18 +980,18 @@ public:
             CGAL_assertion(isolator1.bck().point() ==
                            isolator2.bck().point());
 
-            Isolator_traits traits = isolator1.bck();
+            Isolator_bck bck = isolator1.bck();
 
             int k = 1;
             
-            Point_2 point = traits.point();
+            Point_2 point = bck.point();
             
 
 #if !NDEBUG
             std::cout << "done" << std::endl;
 #endif
             
-            Polynomial_3 local_gcd_p = local_gcd(surface1, surface2, traits,k);
+            Polynomial_3 local_gcd_p = local_gcd(surface1, surface2, bck,k);
             
             // Question now: Is local_gcd_p square free ?
             
@@ -1015,7 +1015,7 @@ public:
                 
                 CGAL::Sign sign_left1, sign_right1;
                 
-                typedef typename Isolator_traits::Integer Integer;
+                typedef typename Isolator_bck::Integer Integer;
                 
                 typedef typename CGAL::Coercion_traits<Polynomial_2,Rational>
                     ::Type Polynomial_rat_2;
@@ -1039,11 +1039,11 @@ public:
                                           local_gcd_at_left1,
                                           denom);
                 
-                Interval approx = traits.approximation(local_gcd_at_left1);
+                Interval approx = bck.approximation(local_gcd_at_left1);
                 while (CGAL::sign(approx.lower()) != 
                        CGAL::sign(approx.upper())) {
-                    traits.refine();
-                    approx = traits.approximation(local_gcd_at_left1);
+                    bck.refine();
+                    approx = bck.approximation(local_gcd_at_left1);
                 }
                 
                 sign_left1 = CGAL::sign(approx.lower());
@@ -1061,11 +1061,11 @@ public:
                                           local_gcd_at_right1,
                                           denom);
                                 
-                approx = traits.approximation(local_gcd_at_right1);
+                approx = bck.approximation(local_gcd_at_right1);
                 while(CGAL::sign(approx.lower()) != 
                       CGAL::sign(approx.upper())) {
-                    traits.refine();
-                    approx = traits.approximation(local_gcd_at_right1);
+                    bck.refine();
+                    approx = bck.approximation(local_gcd_at_right1);
                 }
                 
                 sign_right1 = CGAL::sign(approx.lower());
@@ -1099,7 +1099,7 @@ public:
                 // implicitly set: mynk.set_k(-2);
                 
                 Z_at_xy_isolator gcd_isol =
-                    construct_isolator(local_gcd_p, traits.point(), 
+                    construct_isolator(local_gcd_p, bck.point(), 
                                        mynk, CGAL::EDGE);
                 // false as isolators define finite number of roots
                 // -> gcd must also have finite number of roots
@@ -1374,8 +1374,8 @@ public:
 
         // Just for testing
         void print_point(const Point_2 p) const {
-            Isolator_traits traits(p);
-            typename Isolator_traits::Box box = traits.approximation_square(52);
+            Isolator_bck bck(p);
+            typename Isolator_bck::Box box = bck.approximation_square(52);
             std::cout << "(" <<  CGAL::to_double(box.first.upper())
                       << "," <<  CGAL::to_double(box.second.upper())
                       << std::endl;
@@ -1567,7 +1567,7 @@ public:
 
             // Look for a "half-rational" point on the edge.
 
-            Isolator_traits traits = isolator1.bck();
+            Isolator_bck bck = isolator1.bck();
             
             Rational rat_val;
 
@@ -1576,10 +1576,10 @@ public:
 
             if(! is_vertical) {
 
-                CGAL_assertion(traits.point().x().is_rational());
+                CGAL_assertion(bck.point().x().is_rational());
                 
                 rat_val 
-                    = traits.point().x().rational();
+                    = bck.point().x().rational();
             } else {
 
                 // Use the defining equation of the point
@@ -1598,7 +1598,7 @@ public:
             if(is_vertical) {            
                 
                 // easy, take the x-coordinate of the point
-                he_it->second.sample_value = traits.point().x();
+                he_it->second.sample_value = bck.point().x();
                 
 
             } else {
@@ -1618,7 +1618,7 @@ public:
                 
                 Polynomial_rat_1 p_at_rat_val_with_denom 
                     = typename CGAL::Polynomial_traits_d<Polynomial_2>::Swap()
-                        (traits.point().curve().polynomial_2(),0,1)
+                        (bck.point().curve().polynomial_2(),0,1)
                             .evaluate(rat_val);
 
                 typename FT::Numerator_type local_sil;
@@ -1635,7 +1635,7 @@ public:
                 solve_1(local_sil, std::back_inserter(y_roots));
                 
                 // Find the "right" y-root for the edge - easy with arcno
-                int arcno = traits.point().arcno();
+                int arcno = bck.point().arcno();
 
                 CGAL_assertion(arcno >= 0);
                 CGAL_assertion(arcno < static_cast<int> (y_roots.size()));
@@ -1893,29 +1893,29 @@ public:
           InputIterator points_end,
           int initial_bound ) const {
             
-            typedef typename Isolator_traits::Box Box;
+            typedef typename Isolator_bck::Box Box;
 
-            // First, create IsolatorTraits for all points
+            // First, create IsolatorBck for all points
 
-            Isolator_traits vertex_traits(p);
+            Isolator_bck vertex_bck(p);
 
-            std::vector<Isolator_traits> traits_points;
+            std::vector<Isolator_bck> bck_points;
             for( InputIterator it = points_begin; it!= points_end; it++ ) {
-                traits_points.push_back( Isolator_traits(*it) );
+                bck_points.push_back( Isolator_bck(*it) );
             }
 
             // Set precision to initial precision
             int bound = initial_bound;
 
-            Box pbox = vertex_traits.approximation_square(bound);
+            Box pbox = vertex_bck.approximation_square(bound);
             
-            // Iterate through traits with variable it
-            typename std::vector<Isolator_traits>::iterator it 
-                = traits_points.begin();
+            // Iterate through bck with variable it
+            typename std::vector<Isolator_bck>::iterator it 
+                = bck_points.begin();
 
             // Now, refine boxes until all boxes are away from p's box
-            while(! traits_points.empty() ) {
-                CGAL_assertion( it != traits_points.end() );
+            while(! bck_points.empty() ) {
+                CGAL_assertion( it != bck_points.end() );
                 Box cbox = it->approximation_square(bound);
                 // check for an overlap
                 
@@ -1928,16 +1928,16 @@ public:
 
                 if(! ( overlap_x && overlap_y ) ) {
                     // this point is outside the pbox
-                    it = traits_points.erase(it);
+                    it = bck_points.erase(it);
                 } else {
                     it++;
                 }
 
-                if( it == traits_points.end() && ! (traits_points.empty() ) ) {
+                if( it == bck_points.end() && ! (bck_points.empty() ) ) {
                     
                     bound++;
-                    pbox = vertex_traits.approximation_square(bound);
-                    it = traits_points.begin();
+                    pbox = vertex_bck.approximation_square(bound);
+                    it = bck_points.begin();
 
                 }
                 
@@ -2814,10 +2814,10 @@ void dump_face(Face_const_handle fh) const {
                                                                v_handle, 
                                                                bound);
             
-            typename Isolator_traits::Box v_box 
+            typename Isolator_bck::Box v_box 
                 = isolator1.bck().approximation_square(bound);
 
-            typename Isolator_traits::Interval x_iv = v_box.first,
+            typename Isolator_bck::Interval x_iv = v_box.first,
                 y_iv = v_box.second;
 
 #if !NDEBUG            
@@ -2936,7 +2936,7 @@ void dump_face(Face_const_handle fh) const {
                     
                     bound++;
 
-                    typename Isolator_traits::Box v_box 
+                    typename Isolator_bck::Box v_box 
                         = isolator1.bck().approximation_square(bound);
                     
                     x_iv = v_box.first;
@@ -3861,10 +3861,10 @@ void dump_face(Face_const_handle fh) const {
                                                  edge_endpoints.end(),
                                                  bound );
             
-            typename Isolator_traits::Box v_box 
+            typename Isolator_bck::Box v_box 
                 = isolator1.bck().approximation_square(bound);
 
-            typename Isolator_traits::Interval x_iv = v_box.first,
+            typename Isolator_bck::Interval x_iv = v_box.first,
                 y_iv = v_box.second;
 #if !NDEBUG            
 
@@ -3967,7 +3967,7 @@ void dump_face(Face_const_handle fh) const {
                     
                     bound++;
 
-                    typename Isolator_traits::Box v_box 
+                    typename Isolator_bck::Box v_box 
                         = isolator1.bck().approximation_square(bound);
                     
                     x_iv = v_box.first;
