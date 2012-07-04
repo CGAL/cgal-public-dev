@@ -24,9 +24,8 @@
 
 // Needed for the "fast" kernel
 #include <CGAL/Algebraic_kernel_d/Algebraic_real_quadratic_refinement_rep_bfi.h>
-#include <CGAL/Algebraic_kernel_d/Bitstream_descartes.h>
-#include <CGAL/Algebraic_kernel_d/Bitstream_descartes_rndl_tree_traits.h>
 #include <CGAL/Algebraic_kernel_d/Bitstream_coefficient_kernel.h>
+#include <CGAL/Algebraic_kernel_d/Bitstream_descartes.h>
 
 // Needed for the bisection kernel
 #include <CGAL/Algebraic_kernel_d/Algebraic_real_rep.h>
@@ -67,8 +66,7 @@ struct Algebraic_kernel_d_1_generator {
       CGAL::internal::Algebraic_real_quadratic_refinement_rep_bfi
            < Coefficient, Bound >,
       CGAL::internal::Bitstream_descartes
-        < CGAL::internal::Bitstream_descartes_rndl_tree_traits
-            < CGAL::internal::Bitstream_coefficient_kernel<Coefficient> > 
+            < CGAL::internal::Bitstream_coefficient_kernel<Coefficient> 
         >
     > Algebraic_kernel_with_qir_and_bitstream_1;
 
