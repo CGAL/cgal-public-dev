@@ -298,7 +298,7 @@ protected:
                 
                 std::vector< Polynomial_1 > cfactors;
                 std::vector< int > cmultiplicities;
-                CGAL::internal::filtered_square_free_factorize(
+                CGAL::internal::square_free_factorize(
                         content, 
                         std::back_inserter(cfactors),
                         std::back_inserter(cmultiplicities)
@@ -322,7 +322,7 @@ protected:
                 f /= content;
                 
                 // then for content-free polynomial
-                CGAL::internal::filtered_square_free_factorize(
+                CGAL::internal::square_free_factorize(
                         f, 
                         std::back_inserter(factors), 
                         std::back_inserter(multiplicities)
@@ -381,9 +381,8 @@ protected:
             }
             
             const Data& clist = curves_cache()(f);
-            
-            std::copy(clist.begin(), clist.end(), oi);
 
+            std::copy(clist.begin(), clist.end(), oi);
             return clist.size();
         }
     };
@@ -412,7 +411,7 @@ public:
         int operator()(const Surface_3& surface, OutputIterator oi) const {
             
             Polynomial_3 surface_f = surface.f();
-            CGAL_precondition(typename CGAL::Polynomial_traits_d< Polynomial_3 >::Is_square_free()(surface_f));
+//             CGAL_precondition(typename CGAL::Polynomial_traits_d< Polynomial_3 >::Is_square_free()(surface_f));
             
             // compute correct polynomial
             CGAL_assertion(surface_f.degree() > 0 ||
@@ -442,7 +441,7 @@ public:
                        OutputIterator oi) const {
             
             Polynomial_3 surface_f = surface.f();
-            CGAL_precondition(typename CGAL::Polynomial_traits_d< Polynomial_3 >::Is_square_free()(surface_f));
+/*            CGAL_precondition(typename CGAL::Polynomial_traits_d< Polynomial_3 >::Is_square_free()(surface_f));*/
             
             CGAL_precondition(0 <= i);
             CGAL_precondition(i <= surface_f.degree());
@@ -461,7 +460,7 @@ public:
         bool operator()(const Surface_3& surface, int i) {
 
             Polynomial_3 surface_f = surface.f();
-            CGAL_precondition(typename CGAL::Polynomial_traits_d< Polynomial_3 >::Is_square_free()(surface_f));
+/*            CGAL_precondition(typename CGAL::Polynomial_traits_d< Polynomial_3 >::Is_square_free()(surface_f));*/
             
             CGAL_precondition(0 <= i);
             CGAL_precondition(i <= surface_f.degree());
@@ -481,7 +480,7 @@ public:
                        OutputIterator oi) const {
             
             Polynomial_3 surface_f = surface.f();
-            CGAL_precondition(typename CGAL::Polynomial_traits_d< Polynomial_3 >::Is_square_free()(surface_f));
+//             CGAL_precondition(typename CGAL::Polynomial_traits_d< Polynomial_3 >::Is_square_free()(surface_f));
 
             CGAL_precondition(0 <= k);
             CGAL_precondition(k <= surface_f.degree());
@@ -505,7 +504,7 @@ public:
         bool operator()(const Surface_3& surface, int k, int n) {
             
             Polynomial_3 surface_f = surface.f();
-            CGAL_precondition(typename CGAL::Polynomial_traits_d< Polynomial_3 >::Is_square_free()(surface_f));
+/*            CGAL_precondition(typename CGAL::Polynomial_traits_d< Polynomial_3 >::Is_square_free()(surface_f));*/
             
             CGAL_precondition(0 <= k);
             CGAL_precondition(k <= surface_f.degree());
@@ -635,26 +634,25 @@ public:
             
             typename Isolator_traits_map::iterator itit = 
                 isolator_traits_map().find(point);
-            
+
             if (itit == isolator_traits_map().end()) {
                 // construct one
                 // if feature is a vertex, than we have to activate
                 // the artificial x_interval mode
+                 std::pair<
+                              boost::optional <Isolator_traits >,
+                              boost::optional <Isolator_traits >
+                          > ppp(boost::none, boost::none);
+
                 itit = isolator_traits_map().insert(
-                            itit, 
-                            std::make_pair(
-                                    point, std::make_pair(
-                                            boost::none, boost::none
-                                    )
-                            )
-                );
+                   std::make_pair(point, ppp)
+                ).first;
             }
-            
             // if artificial interval is forced
             if (use_artificial_x_interval) {
                 // create one
                 if (!itit->second.second) {
-                    itit->second.second = 
+                    itit->second.second =
                         Isolator_traits(point, true);
                 }
                 // return cached
@@ -672,7 +670,6 @@ public:
             CGAL_assertion(!itit->second.first);
             itit->second.first = 
                 Isolator_traits(point, false);
-            
             // finally return it
             return *(itit->second.first);
         }

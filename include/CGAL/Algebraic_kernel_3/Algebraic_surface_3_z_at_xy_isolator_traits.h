@@ -977,10 +977,10 @@ public:
             CGAL_precondition(isolator2.polynomial().degree() > 0);
             
             // test equalities
-            CGAL_assertion(isolator1.traits().point() == 
-                           isolator2.traits().point());
+            CGAL_assertion(isolator1.bck().point() ==
+                           isolator2.bck().point());
 
-            Isolator_traits traits = isolator1.traits();
+            Isolator_traits traits = isolator1.bck();
 
             int k = 1;
             
@@ -1567,7 +1567,7 @@ public:
 
             // Look for a "half-rational" point on the edge.
 
-            Isolator_traits traits = isolator1.traits();
+            Isolator_traits traits = isolator1.bck();
             
             Rational rat_val;
 
@@ -1584,7 +1584,7 @@ public:
 
                 // Use the defining equation of the point
                 Point_2 sample_point 
-                    = isolator1.traits().point();
+                    = isolator1.bck().point();
                 Curve_analysis_2 sample_curve = sample_point.curve();
                 CGAL_assertion(sample_curve.polynomial_2().degree() == 1);
                 typename CGAL::Fraction_traits<Rational>::Compose compose;
@@ -1788,7 +1788,7 @@ public:
             Face_cell_info_for_edge this_face, twin_face;
             this_face.adjacencies = adj_this_face;
             twin_face.adjacencies = adj_twin_face;
-            
+
             // Now, we have to adjacency vectors, and we have to decide
             // which belongs to which face
             
@@ -1826,7 +1826,7 @@ public:
                     CGAL::assign(he_handle, dcel_handle1);
             CGAL_assertion(check_edge);
             CGAL_assertion(
-                    acc.point_on_dcel_handle(isolator1.traits().point(), 
+                    acc.point_on_dcel_handle(isolator1.bck().point(),
                                              he_handle)
             );
             
@@ -1845,7 +1845,7 @@ public:
                     CGAL::assign(face_handle, dcel_handle2);
             CGAL_assertion(check_face);
             CGAL_assertion(
-                     acc.point_on_dcel_handle(isolator2.traits().point(), 
+                     acc.point_on_dcel_handle(isolator2.bck().point(),
                                               face_handle)
             );
             typename Facepoints_edge::iterator fp_it 
@@ -1858,7 +1858,7 @@ public:
             CGAL_assertion(fp_it != facepoints.end());
             
             Face_cell_info_for_edge& face_info = fp_it->second;
-            
+
             if(! face_info.adjacencies) {
                 // Compute adjacencies
 
@@ -2563,6 +2563,34 @@ public:
             return sample_point_for_face;
         }
 
+void dump_face(Face_const_handle fh) const {
+#if !NDEBUG
+    std::cerr << "@@@@@@@@@@@@@@@@@@ dump face: " << fh.ptr() << " (" <<
+            CGAL::circulator_size(fh->outer_ccb()) << ")\n";
+
+    typedef typename Restricted_cad_3::Ccb_halfedge_const_circulator
+         Ccb_halfedge_const_circulator;
+
+    typedef typename Restricted_cad_3::Outer_ccb_const_iterator
+        Outer_ccb_const_iterator;
+
+    int i = 1;
+    for(Outer_ccb_const_iterator ocit = fh->outer_ccbs_begin(),
+                ocend = fh->outer_ccbs_end();
+                    ocit != ocend; ocit++, i++) {
+        Ccb_halfedge_const_circulator circ(*ocit), curr = circ;
+        do {
+            if(curr->is_fictitious())
+                     continue;
+            std::cerr << i++ << "; arc: " << curr->curve() << "\n";
+//                 "sup: " << curr->curve().curve().polynomial_2() << "\n";
+
+        } while(++curr != circ);
+    }
+    std::cerr << "\n@@@@@@@@@@@@@@@@@@\n";
+#endif    
+}
+
         void _create_sample_points_around_non_vertical_vertex
             ( const Surface_3& surface,
               const Z_at_xy_isolator& isolator1, 
@@ -2607,7 +2635,7 @@ public:
 
                 while(true) {
                     std::pair<Interval,Interval> box 
-                        = isolator1.traits().approximation_square(bound);
+                        = isolator1.bck().approximation_square(bound);
                 
                     Interval approx 
                         = evaluate_polynomial_2_at_approximated_point
@@ -2620,9 +2648,8 @@ public:
                 }
                 
             }
-
+// NOTE NOTE NOTE: here is something wrong..
             if( v_handle->is_isolated() ) {
-                
                 // We only need a sample point in the unique adjacent face
 
                 // Iterate over ALL silhouette curves
@@ -2632,12 +2659,12 @@ public:
                     ( surface, 
                       std::back_inserter(silhouette_curves)
                     );
-                Interval y_iv 
-                    = isolator1.traits().approximation_square(bound).second;
+                Interval y_iv
+                    = isolator1.bck().approximation_square(bound).second;
 
                 Rational y_val = y_iv.upper();
 
-                Algebraic_real_1 x_val = isolator1.traits().point().x();
+                Algebraic_real_1 x_val = isolator1.bck().point().x();
                     
                 typename Base::Point_on_curve_2 point_on_curve; 
 
@@ -2657,12 +2684,12 @@ public:
                          = silhouette_curves.begin();
                      it != silhouette_curves.end();
                      it++ ) {
-                    
+
                     typedef typename Curve_analysis_2::Status_line_1 Vert_line;
                     
                     Vert_line vl = it->first.status_line_at_exact_x(x_val);
                     
-                    if( point_on_curve(isolator1.traits(),
+                    if( point_on_curve(isolator1.bck(),
                                        it->first.polynomial_2()) ) {
 
                       // Search the arcno of the point
@@ -2694,7 +2721,7 @@ public:
 				
                             }
                             if(i_down != i_up) {
-                                y_iv = isolator1.traits().
+                                y_iv = isolator1.bck().
                                     approximation_square(++bound).second; 
                             }
                             
@@ -2711,7 +2738,7 @@ public:
                         }
 			
                         
-                    } else { // !point_on_curve(isolator1.traits(), it->first)
+                    } else { // !point_on_curve(isolator1.bck(), it->first)
                         
                         // Search the arcno of the point above
                         int i = 0;
@@ -2735,7 +2762,7 @@ public:
                                 
                                 if (upper_i-lower_i >=
                                     y_iv.upper() - y_iv.lower()) {
-                                    y_iv = isolator1.traits().
+                                    y_iv = isolator1.bck().
                                         approximation_square(++bound).second; 
                                     
                                 } else {
@@ -2752,9 +2779,12 @@ public:
                     } // end of !point_on_curve
 
                 } // end of iteration over all curves
-                
-                Point_2 sample_point 
+                Point_2 sample_point
                     = Accessor::construct_point_with_rational_y( x_val,y_val );
+
+/*                CGAL::Object obj=cad.locate(sample_point);
+                Face_const_handle face_handle_2;
+                CGAL::assign(face_handle_2, obj);*/
                 
                 CGAL_assertion_code(CGAL::Object obj=cad.locate(sample_point));
                 CGAL_assertion_code(Face_const_handle face_handle_2);
@@ -2769,6 +2799,7 @@ public:
                 High_dim_cell_info_for_vertex face_cell;
                 face_cell.sample_point = sample_point;
 
+//                 facepoints[face_handle_2] = face_cell;
                 facepoints[face_handle] = face_cell;
                 
                 return;
@@ -2784,7 +2815,7 @@ public:
                                                                bound);
             
             typename Isolator_traits::Box v_box 
-                = isolator1.traits().approximation_square(bound);
+                = isolator1.bck().approximation_square(bound);
 
             typename Isolator_traits::Interval x_iv = v_box.first,
                 y_iv = v_box.second;
@@ -2807,7 +2838,7 @@ public:
                 (surface, 
                  std::back_inserter(silhouette_curves)
                 );
-            
+
             std::vector< Algebraic_real_1 > 
                 box_roots_left, box_roots_right,
                 box_roots_bottom, box_roots_top;
@@ -2906,7 +2937,7 @@ public:
                     bound++;
 
                     typename Isolator_traits::Box v_box 
-                        = isolator1.traits().approximation_square(bound);
+                        = isolator1.bck().approximation_square(bound);
                     
                     x_iv = v_box.first;
                     y_iv = v_box.second;
@@ -3017,7 +3048,7 @@ public:
 
                 // Now for the face left of the edge
                 Face_const_handle face_handle = he_handle->face();
-                
+
                 if(facepoints.find(face_handle) == facepoints.end()) {
                     facepoints[face_handle] = High_dim_cell_info_for_vertex();
                 }
@@ -3045,7 +3076,8 @@ public:
                          box_roots_top);
    
                 }
-            }
+                CGAL_assertion(face_info.sample_point);
+            } // for(...)
         }
 
         class Non_coprime_exception {
@@ -3830,7 +3862,7 @@ public:
                                                  bound );
             
             typename Isolator_traits::Box v_box 
-                = isolator1.traits().approximation_square(bound);
+                = isolator1.bck().approximation_square(bound);
 
             typename Isolator_traits::Interval x_iv = v_box.first,
                 y_iv = v_box.second;
@@ -3936,7 +3968,7 @@ public:
                     bound++;
 
                     typename Isolator_traits::Box v_box 
-                        = isolator1.traits().approximation_square(bound);
+                        = isolator1.bck().approximation_square(bound);
                     
                     x_iv = v_box.first;
                     y_iv = v_box.second;
@@ -4352,7 +4384,7 @@ public:
                     CGAL::assign(v_handle, dcel_handle1);
             CGAL_assertion(check_vertex);
             CGAL_assertion(
-                     acc.point_on_dcel_handle(isolator1.traits().point(), 
+                     acc.point_on_dcel_handle(isolator1.bck().point(),
                                               v_handle)
             );
 
@@ -4379,7 +4411,7 @@ public:
                     CGAL::assign(face_handle, dcel_handle2);
                 CGAL_assertion(check_face);
                 CGAL_assertion(
-                        acc.point_on_dcel_handle(isolator2.traits().point(), 
+                        acc.point_on_dcel_handle(isolator2.bck().point(),
                                                  face_handle)
                 );
                 
@@ -4393,7 +4425,9 @@ public:
                     fp_it = facepoints.find(face_handle);
                 }
                 CGAL_assertion(fp_it != facepoints.end());
+
                 cell_info = &fp_it->second;
+
             } else { // feature2==CGAL::EDGE
                 Halfedgepoints& halfedgepoints = v_it->second.halfedgepoints;
                 
@@ -4401,7 +4435,7 @@ public:
                     CGAL::assign(he_handle, dcel_handle2);
                 CGAL_assertion(check_edge);
                 CGAL_assertion(
-                        acc.point_on_dcel_handle(isolator2.traits().point(), 
+                        acc.point_on_dcel_handle(isolator2.bck().point(),
                                                  he_handle)
                 );
                 
@@ -4419,7 +4453,6 @@ public:
                 cell_info = &he_it->second;
             }
             
-            
             // Adjacencies known?
             if(!cell_info->adjacencies) {
 
@@ -4430,6 +4463,7 @@ public:
                       isolator1.polynomial() == isolator2.polynomial() ) {
                     cell_info->adjacencies = _adjacency_by_m_k_descartes
                         (isolator1, isolator2);
+                        
                 } else { // No MK-Filter
                     
                     // Transitivity filter
@@ -4441,15 +4475,9 @@ public:
                                                     he_handle,
                                                     isolator2,
                                                     cell_info) ) {
-                        
                         // No transitivity filter
                         // Sample point known?
                         if(!cell_info->sample_point) {
-#if !NDEBUG
-                            std::cout << "Create sample point for vertex ";
-                            print_point(v_handle->point()) ;
-                            std::cout << std::endl;
-#endif
                             if(! has_vertical_line1) {
                                 _create_sample_points_around_non_vertical_vertex
                                     (surface, isolator1, v_handle);
@@ -4462,6 +4490,7 @@ public:
                         }
                         // Maybe, adjacencies have been computed as side effect
                         if(! cell_info->adjacencies) {
+
                             CGAL_assertion(cell_info->sample_point);
                             Construct_isolator construct_isolator;
                             
@@ -4571,9 +4600,9 @@ public:
                       << ( (feature2 == CGAL::EDGE) ? "Edge" : "Face" )
                       << std::endl;
             std::cout << "Point 1: ";
-            print_point(isolator1.traits().point());
+            print_point(isolator1.bck().point());
             std::cout << "), Point 2: ";
-            print_point(isolator2.traits().point());
+            print_point(isolator2.bck().point());
             std::cout << ")" << std::endl;
 #endif
             if(feature1 == CGAL::EDGE) {

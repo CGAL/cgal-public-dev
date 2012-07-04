@@ -26,7 +26,7 @@
  * \brief Traits class for CGAL::internal::Bitstream_rndl_tree
  */
 
-#warning "Replace Bitstream_in_z_for_xy_traits with Bitstream_coeffient_kernel"
+// #warning "Replace Bitstream_in_z_for_xy_traits with Bitstream_coeffient_kernel"
 
 #include <CGAL/config.h>
 
@@ -71,6 +71,10 @@ public:
     
     //! type of rational numbers
     typedef typename Coordinate_1::Rational Rational;
+
+    //! bigfloat interval
+    typedef typename CGAL::Get_arithmetic_kernel< Rational >::
+             Arithmetic_kernel::Bigfloat_interval Bigfloat_interval;
 
     //! type of curve analysis
     typedef typename Curve_analysis_2::Status_line_1 Status_line_1;
@@ -134,6 +138,7 @@ private:
 
 } // namespace internal
 
+/** *******************************************************************/
 
 /*!\brief
  * Model of BitstreamDescartesRndlTreeTraits concept to isolate the
@@ -184,6 +189,9 @@ public:
     
     //! type for rational numbers
     typedef typename Rep::Rational Rational;
+
+    //! type for bifgloat intervals
+    typedef typename Rep::Bigfloat_interval Bigfloat_interval;
 
     //! type for intervals
     typedef typename Rep::Interval Interval;
@@ -261,7 +269,7 @@ public:
         
         return _evaluate_iv_2(p, x_iv, y_iv);
     }
-    
+
 private:
     
     //! returns finite x-coordinate of stored point
@@ -408,10 +416,17 @@ public:
             
             Rational x_len = x_iv.upper() - x_iv.lower();
             Rational y_len = y_iv.upper() - y_iv.lower();
+
+//             if(x_len <= 0) {
+//                 std::cerr << "x_len: " << x_len << "; " << CGAL::to_double(x_len) << "\n";
+//             }
+//             if(y_len <= 0) {
+//                 std::cerr << "y_len: " << y_len << "; " << CGAL::to_double(y_len) << "\n";
+//             }
             
-            CGAL_assertion(x_len > 0);
-            CGAL_assertion(y_len > 0);
-            
+            CGAL_assertion(x_len >= 0);
+            CGAL_assertion(y_len >= 0);
+
             if (x_len > y_len) {
                 do_refine_y = false;
             }
@@ -667,6 +682,119 @@ public:
 public:
 
     // TASK document functors
+    /** *********************************************************************/
+
+    struct Is_zero : public std::unary_function<Coefficient,bool> {
+
+        Is_zero(const Self& traits) :
+            _m_traits(traits) {
+        }
+        
+        bool operator() (Coefficient f) const {
+            return _m_traits.is_zero(f); 
+        }
+
+    private:
+        // members
+        mutable Self _m_traits;
+
+    };
+
+    Is_zero is_zero_object() const {
+        return Is_zero(*this);
+    }
+
+    struct Convert_to_bfi
+        : public std::unary_function<Coefficient,Bigfloat_interval> {
+
+        Convert_to_bfi(const Self& traits) :
+            _m_traits(traits) {
+        }
+
+        Bigfloat_interval operator() (Coefficient f) const {
+
+            long p = CGAL::get_precision(Bigfloat_interval());
+            long prec = 16;
+            long wbit = 0;
+
+            typedef typename CGAL::Polynomial_traits_d<Coefficient>
+                ::template Rebind<Bigfloat_interval ,2>::Other P_traits_bfi;
+            typedef typename P_traits_bfi::Type Poly_bfi_2;
+
+            typename P_traits_bfi::Substitute subs;
+            const Point_2& pt = this->_m_traits.point();
+            Bigfloat_interval pt_bfi;
+
+            while(true) {
+                CGAL::set_precision(Bigfloat_interval(), prec);
+
+                Interval x_iv(this->_m_traits._x_iv());
+                Interval y_iv(this->_m_traits._y_iv(pt));
+
+#if 1
+                typename CGAL::Coercion_traits<
+                    Coefficient, Poly_bfi_2 >::Cast cvt;
+
+                Poly_bfi_2 f_bfi = cvt(f);
+
+                Bigfloat_interval s[] =
+                    {CGAL::hull(CGAL::convert_to_bfi(x_iv.lower()),
+                        CGAL::convert_to_bfi(x_iv.upper())),
+                          CGAL::hull(CGAL::convert_to_bfi(y_iv.lower()),
+                        CGAL::convert_to_bfi(y_iv.upper()))};
+
+                pt_bfi = subs(f_bfi, s, s + 2);
+
+//                 std::cerr << std::setprecision(8);
+//                  std::cerr << "prec: " << prec << "; " <<
+//                         s[0] << "; and " << s[1] << "; val: " <<
+//                         pt_bfi << "\n" <<
+//                         f << "\n" << f_bfi << "\n";
+#else
+                Interval f_eval_iv = this->_m_traits._evaluate_iv_2(f, x_iv, y_iv);
+
+                pt_bfi = CGAL::hull(CGAL::convert_to_bfi(f_eval_iv.lower()),
+                         CGAL::convert_to_bfi(f_eval_iv.upper()));
+
+//                 std::cerr << "prec: " << prec << "; [" <<
+//                     CGAL::to_double(f_eval_iv.lower()) << ", " <<  CGAL::to_double(f_eval_iv.upper()) << "]; " <<  pt_bfi <<
+//                      CGAL::width(pt_bfi) <<   "\n";
+#endif
+
+   // TASK precision might be too high if already rational!!!
+//       if (CGAL::compare(f_eval_iv.upper() - f_eval_iv.lower(), bound)
+//                     == CGAL::SMALLER) {
+//                     break;
+//                 }
+
+               if(!CGAL::singleton(pt_bfi)) {
+                    long ceil = CGAL::internal::ceil_log2_abs(pt_bfi);
+                    long signi = CGAL::get_significant_bits(pt_bfi);
+                    wbit = ceil - signi + p;
+                }
+
+                if(wbit < -5 || CGAL::singleton(pt_bfi)) 
+                    break;
+
+                prec *= 2;
+                // if bound not met: refine
+                this->_m_traits.refine();
+            }
+            CGAL::set_precision(Bigfloat_interval(),p);
+            return pt_bfi;
+        }
+
+    private:
+        mutable Self _m_traits;
+    };
+
+    Convert_to_bfi convert_to_bfi_object() const {
+      return Convert_to_bfi(*this);
+    }
+
+    /** *********************************************************************/
+
+    
     
     class Approximator {
     public:
