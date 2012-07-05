@@ -92,12 +92,14 @@ OutputIterator locate
   Vertex_const_handle         iso_v;
 
   i = 0;
-  for (vit = arr.vertices_begin(); vit != arr.vertices_end(); ++vit, ++i)
+  //FIXED BUG: We get segmentation fault, incremented i even if vit was not isolated.
+  for (vit = arr.vertices_begin(); vit != arr.vertices_end(); ++vit)
   {
     if (vit->is_isolated())
     {
       iso_v = vit;
       iso_pts_vec[i] = Bpl_point_2 (vit->point(), iso_v);
+      ++i;
     }
   }
     
@@ -138,3 +140,4 @@ OutputIterator locate
 } //namespace CGAL
 
 #endif
+
