@@ -36,6 +36,8 @@
 
 #include <CGAL/Arrangement_2l/macros.h>
 
+// TODO unify access to "point"
+
 namespace CGAL {
 
 // predeclaration
@@ -733,15 +735,15 @@ public:
 
 #if 1
                 typename CGAL::Coercion_traits<
-                    Coefficient, Poly_bfi_2 >::Cast cvt;
+                  Coefficient /* = Polynomial_2 */, Poly_bfi_2 >::Cast cvt;
 
                 Poly_bfi_2 f_bfi = cvt(f);
 
                 Bigfloat_interval s[] =
                     {CGAL::hull(CGAL::convert_to_bfi(x_iv.lower()),
-                        CGAL::convert_to_bfi(x_iv.upper())),
-                          CGAL::hull(CGAL::convert_to_bfi(y_iv.lower()),
-                        CGAL::convert_to_bfi(y_iv.upper()))};
+                                CGAL::convert_to_bfi(x_iv.upper())),
+                     CGAL::hull(CGAL::convert_to_bfi(y_iv.lower()),
+                                CGAL::convert_to_bfi(y_iv.upper()))};
 
                 pt_bfi = subs(f_bfi, s, s + 2);
 
@@ -754,7 +756,7 @@ public:
                 Interval f_eval_iv = this->_m_traits._evaluate_iv_2(f, x_iv, y_iv);
 
                 pt_bfi = CGAL::hull(CGAL::convert_to_bfi(f_eval_iv.lower()),
-                         CGAL::convert_to_bfi(f_eval_iv.upper()));
+                                    CGAL::convert_to_bfi(f_eval_iv.upper()));
 
 //                 std::cerr << "prec: " << prec << "; [" <<
 //                     CGAL::to_double(f_eval_iv.lower()) << ", " <<  CGAL::to_double(f_eval_iv.upper()) << "]; " <<  pt_bfi <<
@@ -767,14 +769,17 @@ public:
 //                     break;
 //                 }
 
-               if(!CGAL::singleton(pt_bfi)) {
-                    long ceil = CGAL::internal::ceil_log2_abs(pt_bfi);
-                    long signi = CGAL::get_significant_bits(pt_bfi);
-                    wbit = ceil - signi + p;
-                }
+               if (CGAL::singleton(pt_bfi)) {
+                 break
+               } 
 
-                if(wbit < -5 || CGAL::singleton(pt_bfi)) 
-                    break;
+               long ceil = CGAL::internal::ceil_log2_abs(pt_bfi);
+               long signi = CGAL::get_significant_bits(pt_bfi);
+               wbit = ceil - signi + p;
+            
+               if (wbit < -5) {
+                 break;
+               }
 
                 prec *= 2;
                 // if bound not met: refine
