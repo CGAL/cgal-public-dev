@@ -713,6 +713,9 @@ public:
             _m_traits(traits) {
         }
 
+// TASK convert_to_bfi should only use computations over bigfloats
+// to avoid double conversion from rational to bigfloat and again
+// to rational
         Bigfloat_interval operator() (Coefficient f) const {
 
             long p = CGAL::get_precision(Bigfloat_interval());
