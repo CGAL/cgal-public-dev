@@ -1375,7 +1375,7 @@ public:
         // Just for testing
         void print_point(const Point_2 p) const {
             Isolator_bck bck(p);
-            typename Isolator_bck::Box box = bck.approximation_square(52);
+            typename Isolator_bck::Box box = bck.approximation_box(52);
             std::cout << "(" <<  CGAL::to_double(box.first.upper())
                       << "," <<  CGAL::to_double(box.second.upper())
                       << std::endl;
@@ -1907,7 +1907,7 @@ public:
             // Set precision to initial precision
             int bound = initial_bound;
 
-            Box pbox = vertex_bck.approximation_square(bound);
+            Box pbox = vertex_bck.approximation_box(bound);
             
             // Iterate through bck with variable it
             typename std::vector<Isolator_bck>::iterator it 
@@ -1916,7 +1916,7 @@ public:
             // Now, refine boxes until all boxes are away from p's box
             while(! bck_points.empty() ) {
                 CGAL_assertion( it != bck_points.end() );
-                Box cbox = it->approximation_square(bound);
+                Box cbox = it->approximation_box(bound);
                 // check for an overlap
                 
                 bool overlap_x 
@@ -1936,7 +1936,7 @@ public:
                 if( it == bck_points.end() && ! (bck_points.empty() ) ) {
                     
                     bound++;
-                    pbox = vertex_bck.approximation_square(bound);
+                    pbox = vertex_bck.approximation_box(bound);
                     it = bck_points.begin();
 
                 }
@@ -2635,7 +2635,7 @@ void dump_face(Face_const_handle fh) const {
 
                 while(true) {
                     std::pair<Interval,Interval> box 
-                        = isolator1.bck().approximation_square(bound);
+                        = isolator1.bck().approximation_box(bound);
                 
                     Interval approx 
                         = evaluate_polynomial_2_at_approximated_point
@@ -2660,7 +2660,7 @@ void dump_face(Face_const_handle fh) const {
                       std::back_inserter(silhouette_curves)
                     );
                 Interval y_iv
-                    = isolator1.bck().approximation_square(bound).second;
+                    = isolator1.bck().approximation_box(bound).second;
 
                 Rational y_val = y_iv.upper();
 
@@ -2722,7 +2722,7 @@ void dump_face(Face_const_handle fh) const {
                             }
                             if(i_down != i_up) {
                                 y_iv = isolator1.bck().
-                                    approximation_square(++bound).second; 
+                                    approximation_box(++bound).second; 
                             }
                             
                         }
@@ -2763,7 +2763,7 @@ void dump_face(Face_const_handle fh) const {
                                 if (upper_i-lower_i >=
                                     y_iv.upper() - y_iv.lower()) {
                                     y_iv = isolator1.bck().
-                                        approximation_square(++bound).second; 
+                                        approximation_box(++bound).second; 
                                     
                                 } else {
                                     prec*=2;
@@ -2815,7 +2815,7 @@ void dump_face(Face_const_handle fh) const {
                                                                bound);
             
             typename Isolator_bck::Box v_box 
-                = isolator1.bck().approximation_square(bound);
+                = isolator1.bck().approximation_box(bound);
 
             typename Isolator_bck::Interval x_iv = v_box.first,
                 y_iv = v_box.second;
@@ -2937,7 +2937,7 @@ void dump_face(Face_const_handle fh) const {
                     bound++;
 
                     typename Isolator_bck::Box v_box 
-                        = isolator1.bck().approximation_square(bound);
+                        = isolator1.bck().approximation_box(bound);
                     
                     x_iv = v_box.first;
                     y_iv = v_box.second;
@@ -3862,7 +3862,7 @@ void dump_face(Face_const_handle fh) const {
                                                  bound );
             
             typename Isolator_bck::Box v_box 
-                = isolator1.bck().approximation_square(bound);
+                = isolator1.bck().approximation_box(bound);
 
             typename Isolator_bck::Interval x_iv = v_box.first,
                 y_iv = v_box.second;
@@ -3968,7 +3968,7 @@ void dump_face(Face_const_handle fh) const {
                     bound++;
 
                     typename Isolator_bck::Box v_box 
-                        = isolator1.bck().approximation_square(bound);
+                        = isolator1.bck().approximation_box(bound);
                     
                     x_iv = v_box.first;
                     y_iv = v_box.second;

@@ -39,7 +39,7 @@
 
 
 #include <CGAL/Algebraic_kernel_d/Bitstream_descartes.h>
-#include <CGAL/Algebraic_kernel_3/Bitstream_in_z_for_xy_traits.h>
+#include <CGAL/Algebraic_kernel_3/Bitstream_coefficient_kernel_at_point_2.h>
 
 namespace CGAL {
 
@@ -136,7 +136,7 @@ public:
     typedef typename Polynomial_3::NT Polynomial_2;
     
     //! type of Isolator traits
-    typedef CGAL::Bitstream_in_z_for_xy_traits< Self > Isolator_bck;
+    typedef CGAL::Bitstream_coefficient_kernel_at_point_2< Self > Isolator_bck;
 
     //! type of isolator
     typedef CGAL::internal::Bitstream_descartes< Isolator_bck > 

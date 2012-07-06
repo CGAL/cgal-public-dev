@@ -1,4 +1,4 @@
-// Copyright (c) 2006-2008 Max-Planck-Institute Saarbruecken (Germany), 
+// Copyright (c) 2006-2012 Max-Planck-Institute Saarbruecken (Germany), 
 // and Tel-Aviv University (Israel).  All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org); you can redistribute it and/or
@@ -19,14 +19,12 @@
 // Author(s)     : Eric Berberich <eric@mpi-inf.mpg.de>
 //                 Michael Kerber <mkerber@mpi-inf.mpg.de>
 
-#ifndef CGAL_ALGEBRAIC_KERNEL_3_BITSTREAM_IN_Z_FOR_Y_TRAITS_H
-#define CGAL_ALGEBRAIC_KERNEL_3_BITSTREAM_IN_Z_FOR_XY_TRAITS_H 1
+#ifndef CGAL_ALGEBRAIC_KERNEL_3_BITSTREAM_COEFFICIENT_KERNEL_AT_POINT_2_H
+#define CGAL_ALGEBRAIC_KERNEL_3_BITSTREAM_COEFFICIENT_KERNEL_AT_POINT_2_H 1
 
-/*!\file include/CGAL/Algebraic_kernel_3/Bitstream_in_z_for_xy_traits.h
- * \brief Traits class for CGAL::internal::Bitstream_rndl_tree
+/*!\file include/CGAL/Algebraic_kernel_3/Bitstream_coefficient_kernel_at_point_2.h
+ * \brief Kernel class for CGAL::internal::Bitstream_descartes
  */
-
-// TODO "Rename file to reflect being a model of BitstreamCoefficientKernel"
 
 #include <CGAL/config.h>
 
@@ -36,13 +34,13 @@
 
 #include <CGAL/Arrangement_2l/macros.h>
 
-// TODO unify access to "point"
+// TODO 2012 unify access to "point"
 
 namespace CGAL {
 
 // predeclaration
 template < class SurfaceZAtXyIsolatorTraits >
-class Bitstream_in_z_for_xy_traits;
+class Bitstream_coefficient_kernel_at_point_2;
 
 namespace internal { 
 
@@ -50,7 +48,7 @@ namespace internal {
  * Representation class for traits of bitstream tree
  */
 template < class SurfaceZAtXyIsolatorTraits >
-class Bitstream_in_z_for_xy_traits_rep {
+class Bitstream_coefficient_kernel_at_point_2_rep {
 public:
 
     // types
@@ -60,6 +58,7 @@ public:
     CGAL_SURFACE_Z_AT_XY_ISOLATOR_TRAITS_SNAP_TYPEDEFS(
             Surface_z_at_xy_isolator_traits
     );
+
 #if DOXYGEN_RUNNING
     //! type of point
     typedef typename Surface_z_at_xy_isolator_traits::Point_2 Point_2;
@@ -76,7 +75,7 @@ public:
 
     //! bigfloat interval
     typedef typename CGAL::Get_arithmetic_kernel< Rational >::
-             Arithmetic_kernel::Bigfloat_interval Bigfloat_interval;
+      Arithmetic_kernel::Bigfloat_interval Bigfloat_interval;
 
     //! type of curve analysis
     typedef typename Curve_analysis_2::Status_line_1 Status_line_1;
@@ -93,18 +92,20 @@ public:
     //!\name Constructors
     //!@{
     
+ private:
     /*!\brief
      * default constructor
      */
-    Bitstream_in_z_for_xy_traits_rep() {
-    };
-
+    Bitstream_coefficient_kernel_at_point_2_rep() {
+    }
+   
+public:
     
     /*!\brief
      * standard constructor from a given refineable point
      */
-    Bitstream_in_z_for_xy_traits_rep(const Point_2& pt,
-                                     bool use_artificial_x_interval) :
+    Bitstream_coefficient_kernel_at_point_2_rep(const Point_2& pt,
+                                                bool use_artificial_x_interval) :
         _m_point(pt),
         _m_use_artificial_x_interval(use_artificial_x_interval),
         _m_prec_y(4) {
@@ -114,6 +115,7 @@ public:
 
 private:
     // members
+
     //! the stored projected point
     mutable Point_2 _m_point;
     
@@ -132,25 +134,23 @@ private:
     mutable int _m_prec_y;
     
     // friends
-    friend 
-    class 
-    CGAL::Bitstream_in_z_for_xy_traits< Surface_z_at_xy_isolator_traits >;
+    friend class CGAL::Bitstream_coefficient_kernel_at_point_2< Surface_z_at_xy_isolator_traits >;
     
-}; // Bitstream_in_z_for_xy_traits_rep
+}; // Bitstream_coefficient_kernel_at_point_2_rep
 
 } // namespace internal
 
 /** *******************************************************************/
 
 /*!\brief
- * Model of BitstreamDescartesRndlTreeTraits concept to isolate the
+ * Model of BitstreamCoefficientKernel concept to isolate the
  * real roots of a square-free polynomial defined by an algebraic
  * surface in 3d and a line parallel to the z-axis running through a
  * given point, whose coordinates are usally algebraic.
  */
 template < class SurfaceZAtXyIsolatorTraits >
-class Bitstream_in_z_for_xy_traits : public 
-::CGAL::Handle_with_policy< CGAL::internal::Bitstream_in_z_for_xy_traits_rep< 
+class Bitstream_coefficient_kernel_at_point_2 : public 
+::CGAL::Handle_with_policy< CGAL::internal::Bitstream_coefficient_kernel_at_point_2_rep< 
 SurfaceZAtXyIsolatorTraits > > {
     
 public:
@@ -162,19 +162,17 @@ public:
     CGAL_SURFACE_Z_AT_XY_ISOLATOR_TRAITS_SNAP_TYPEDEFS(
             Surface_z_at_xy_isolator_traits
     );
+
 #if DOXYGEN_RUNNING
     //! type of point
     typedef typename Surface_z_at_xy_isolator_traits::Point_2 Point_2;
 #endif
     
     //! type of instantiated class
-    typedef Bitstream_in_z_for_xy_traits< Surface_z_at_xy_isolator_traits > 
-    Self;
+    typedef Bitstream_coefficient_kernel_at_point_2< Surface_z_at_xy_isolator_traits >  Self;
 
     //! type of representation
-    typedef 
-    internal::Bitstream_in_z_for_xy_traits_rep< Surface_z_at_xy_isolator_traits >
-    Rep;
+    typedef internal::Bitstream_coefficient_kernel_at_point_2_rep< Surface_z_at_xy_isolator_traits > Rep;
 
     //! type of Base
     typedef CGAL::Handle_with_policy< Rep > Base;
@@ -198,9 +196,6 @@ public:
     //! type for intervals
     typedef typename Rep::Interval Interval;
 
-    //! type for Bitstream_descartes.h
-    typedef Polynomial_3 POLY;
-    
 public:
     // BS-types
     //!\name Types for Bitstream Traits
@@ -226,14 +221,17 @@ public:
     /*!\ brief
      * Default constructor
      */
-    Bitstream_in_z_for_xy_traits() :
-        Base(Rep()) {
+    // TODO check whether default constructor is useful
+    Bitstream_coefficient_kernel_at_point_2() :
+      Base(Rep()) {
     }
+
+ public:
 
     /*!\brief
      * Standard constructor to define xy with the help of a point
      */
-    Bitstream_in_z_for_xy_traits(
+    Bitstream_coefficient_kernel_at_point_2(
             const Point_2& pt,
             bool use_artificial_x_interval = false) : 
         Base(Rep(pt, use_artificial_x_interval)) {
@@ -277,15 +275,15 @@ private:
     //! returns finite x-coordinate of stored point
     inline
     static
-    Coordinate_1 _x(const Point_2& point) {
-        return point.x();
+    Coordinate_1 _x(const Point_2& pt) {
+        return pt.x();
     }
 
     //! returns arcno of stored point
     inline 
     static
-    int _arcno(const Point_2& point) {
-        return point.arcno();
+    int _arcno(const Point_2& pt) {
+        return pt.arcno();
     }
 
     /*!\brief
@@ -294,8 +292,8 @@ private:
      */
     inline
     static 
-    Status_line_1 _sl(const Point_2& point) {
-        return point.curve().status_line_at_exact_x(_x(point));
+    Status_line_1 _sl(const Point_2& pt) {
+        return pt.curve().status_line_at_exact_x(_x(pt));
     }
     
     //!@}
@@ -352,14 +350,14 @@ private:
     
     //! return current interval for y
     inline
-    Interval _y_iv(const Point_2& point) const {
+    Interval _y_iv(const Point_2& pt) const {
         
         typename Arrangement_traits_2::Curve_kernel_2::Approximate_relative_y_2
             approx_y = 
             Arrangement_traits_2::instance().kernel().
             approximate_relative_y_2_object();
 
-	std::pair<Bound,Bound> bound_pair = approx_y(point.xy(),this->ptr()->_m_prec_y);
+	std::pair<Bound,Bound> bound_pair = approx_y(pt.xy(),this->ptr()->_m_prec_y);
 	
         return Interval(bound_pair.first,bound_pair.second);
 	
@@ -400,6 +398,7 @@ private:
     
     //!\name Representation
     //!@{
+
 public:    
     //! refines stored representation
     inline
@@ -472,23 +471,24 @@ public:
     //! refines approximation until \c pt does not lie in approximation
     //! \pre pt != stored point
     inline
-    void refine_against(const Self& traits) {
-        CGAL_precondition(traits.point() != this->point());
+    void refine_against(const Self& bck) {
+        CGAL_precondition(bck.point() != this->point());
         
         Interval this_x_iv = x_interval();
         Interval this_y_iv = y_interval();
         
-        Interval that_x_iv = traits.x_interval();
-        Interval that_y_iv = traits.y_interval();
+        Interval that_x_iv = bck.x_interval();
+        Interval that_y_iv = bck.y_interval();
         
         while (boost::numeric::overlap(this_x_iv, that_x_iv) && 
                boost::numeric::overlap(this_y_iv, that_y_iv)) {
             this->refine();
-            traits.refine();
+            bck.refine();
         }
     }
 
-    Box approximation_square(long prec) {
+    //! returns approximation as a box around the point
+    Box approximation_box(long prec) {
         
         typename CGAL::Fraction_traits<Rational>::Compose compose;
 
@@ -593,26 +593,9 @@ private:
     
 
     // TODO add refine_y
-private:
-    /*!\brief
-     * tests whether coefficient is zero
-     *
-     * I.e., whether stored point lies on the given curve
-     */
-    inline 
-    bool is_zero(const Coefficient& f) {
-        typename Surface_z_at_xy_isolator_traits::Point_on_curve_2 
-            point_on_curve
-                    // TODO (point_on_curve_object())
-            ;
-        bool on_curve = point_on_curve(this->ptr()->_m_point, f);
-
-        return on_curve;
-    }
-
-    //!@}
 
 public:
+
     //!\name Rational neighbors
     //!@{
     
@@ -674,7 +657,7 @@ public:
     
     //! returns whether a given \c y is in current y-approximation
     bool is_in_y_interval_interior(Rational y) const {
-        Interval y_iv = _y_iv(this->ptr()->_m_point);
+        Interval y_iv = _y_iv(point());
         return (y_iv.lower() < y) && (y < y_iv.upper());
     }
     
@@ -688,17 +671,24 @@ public:
 
     struct Is_zero : public std::unary_function<Coefficient,bool> {
 
-        Is_zero(const Self& traits) :
-            _m_traits(traits) {
+        Is_zero(const Self& bck) :
+            _m_bck(bck) {
         }
         
+        inline
         bool operator() (Coefficient f) const {
-            return _m_traits.is_zero(f); 
+          typename Surface_z_at_xy_isolator_traits::Point_on_curve_2 
+            point_on_curve
+            // TODO (point_on_curve_object())
+            ;
+          bool on_curve = point_on_curve(_m_bck.point(), f);
+          
+          return on_curve;
         }
 
     private:
         // members
-        mutable Self _m_traits;
+        mutable Self _m_bck;
 
     };
 
@@ -706,17 +696,18 @@ public:
         return Is_zero(*this);
     }
 
-    struct Convert_to_bfi
-        : public std::unary_function<Coefficient,Bigfloat_interval> {
-
-        Convert_to_bfi(const Self& traits) :
-            _m_traits(traits) {
-        }
-
 // TASK convert_to_bfi should only use computations over bigfloats
 // to avoid double conversion from rational to bigfloat and again
 // to rational
+    struct Convert_to_bfi : public std::unary_function< Coefficient, Bigfloat_interval > {
+
+        Convert_to_bfi(const Self& bck) :
+            _m_bck(bck) {
+        }
+
         Bigfloat_interval operator() (Coefficient f) const {
+
+          // TASK cleanup implementation
 
             long p = CGAL::get_precision(Bigfloat_interval());
 //             long prec = 16, wbit = 0;
@@ -732,15 +723,15 @@ public:
 //             typedef typename P_traits_bfi::Type Poly_bfi_2;
 // 
 //             typename P_traits_bfi::Substitute subs;
-            const Point_2& pt = this->_m_traits.point();
+            const Point_2& pt = this->_m_bck.point();
 //             Bigfloat_interval pt_bfi;
 
             Interval f_eval_iv;
             while(true) {
 //                 CGAL::set_precision(Bigfloat_interval(), prec);
 
-                Interval x_iv(this->_m_traits._x_iv());
-                Interval y_iv(this->_m_traits._y_iv(pt));
+                Interval x_iv(this->_m_bck._x_iv());
+                Interval y_iv(this->_m_bck._y_iv(pt));
 
 #if 0
                 typename CGAL::Coercion_traits<
@@ -760,7 +751,7 @@ public:
 //                         x_bounds.second - x_bounds.first) <<
 //                      "; y-width: " << CGAL::convert_to_bfi(y_iv.upper() - y_iv.lower()) << "; pt_bfi: " << pt_bfi << "\n";
 #else
-                f_eval_iv = this->_m_traits._evaluate_iv_2(f, x_iv, y_iv);
+                f_eval_iv = this->_m_bck._evaluate_iv_2(f, x_iv, y_iv);
 #endif
 
 //                if (CGAL::singleton(pt_bfi)) {
@@ -779,14 +770,14 @@ public:
                  break;
                }
                 prec *= 2;*/
-                this->_m_traits.refine();
+                this->_m_bck.refine();
             }
             return CGAL::hull(CGAL::convert_to_bfi(f_eval_iv.lower()),
                                 CGAL::convert_to_bfi(f_eval_iv.upper()));
         }
 
     private:
-        mutable Self _m_traits;
+        mutable Self _m_bck;
     };
 
     Convert_to_bfi convert_to_bfi_object() const {
@@ -795,7 +786,7 @@ public:
 
     /** *********************************************************************/
 
-    
+#if 0 // TODO delete old traits functors
     
     class Approximator {
     public:
@@ -1146,9 +1137,12 @@ public:
     typedef typename 
         CGAL::internal::Real_embeddable_extension< long >::Ceil_log2_abs 
         Ceil_log2_abs_long;
-};
+
+#endif // #if 0
+
+}; // class Bitstream_coefficient_kernel_at_point_2
 
 } //namespace CGAL
 
-#endif // CGAL_ALGEBRAIC_KERNEL_3_BITSTREAM_IN_Z_FOR_XY_TRAITS_H
+#endif // CGAL_ALGEBRAIC_KERNEL_3_BITSTREAM_COEFFICIENT_KERNEL_AT_POINT_2_H
 // EOF
