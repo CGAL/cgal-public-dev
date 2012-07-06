@@ -716,77 +716,70 @@ public:
         Bigfloat_interval operator() (Coefficient f) const {
 
             long p = CGAL::get_precision(Bigfloat_interval());
-            long prec = 16;
-            long wbit = 0;
+//             long prec = 16, wbit = 0;
 
-            typedef typename CGAL::Polynomial_traits_d<Coefficient>
-                ::template Rebind<Bigfloat_interval ,2>::Other P_traits_bfi;
-            typedef typename P_traits_bfi::Type Poly_bfi_2;
-
-            typename P_traits_bfi::Substitute subs;
+            //! can \c p be less than 0 ?? nope..
+            Rational bound = (Integer)1 << std::abs(p);
+            if(p > 0) {
+                bound = Rational(1) / bound;
+            }    
+            
+//             typedef typename CGAL::Polynomial_traits_d<Coefficient>
+//                 ::template Rebind<Bigfloat_interval ,2>::Other P_traits_bfi;
+//             typedef typename P_traits_bfi::Type Poly_bfi_2;
+// 
+//             typename P_traits_bfi::Substitute subs;
             const Point_2& pt = this->_m_traits.point();
-            Bigfloat_interval pt_bfi;
+//             Bigfloat_interval pt_bfi;
 
+            Interval f_eval_iv;
             while(true) {
-                CGAL::set_precision(Bigfloat_interval(), prec);
+//                 CGAL::set_precision(Bigfloat_interval(), prec);
 
                 Interval x_iv(this->_m_traits._x_iv());
                 Interval y_iv(this->_m_traits._y_iv(pt));
 
-#if 1
+#if 0
                 typename CGAL::Coercion_traits<
                   Coefficient /* = Polynomial_2 */, Poly_bfi_2 >::Cast cvt;
 
                 Poly_bfi_2 f_bfi = cvt(f);
 
                 Bigfloat_interval s[] =
-                    {CGAL::hull(CGAL::convert_to_bfi(x_iv.lower()),
+                    { CGAL::hull(CGAL::convert_to_bfi(x_iv.lower()),
                                 CGAL::convert_to_bfi(x_iv.upper())),
                      CGAL::hull(CGAL::convert_to_bfi(y_iv.lower()),
                                 CGAL::convert_to_bfi(y_iv.upper()))};
 
                 pt_bfi = subs(f_bfi, s, s + 2);
-
-//                 std::cerr << std::setprecision(8);
-//                  std::cerr << "prec: " << prec << "; " <<
-//                         s[0] << "; and " << s[1] << "; val: " <<
-//                         pt_bfi << "\n" <<
-//                         f << "\n" << f_bfi << "\n";
+//                  std::cerr << "prec: " << prec <<
+//                     "; x-width: " << CGAL::convert_to_bfi(
+//                         x_bounds.second - x_bounds.first) <<
+//                      "; y-width: " << CGAL::convert_to_bfi(y_iv.upper() - y_iv.lower()) << "; pt_bfi: " << pt_bfi << "\n";
 #else
-                Interval f_eval_iv = this->_m_traits._evaluate_iv_2(f, x_iv, y_iv);
-
-                pt_bfi = CGAL::hull(CGAL::convert_to_bfi(f_eval_iv.lower()),
-                                    CGAL::convert_to_bfi(f_eval_iv.upper()));
-
-//                 std::cerr << "prec: " << prec << "; [" <<
-//                     CGAL::to_double(f_eval_iv.lower()) << ", " <<  CGAL::to_double(f_eval_iv.upper()) << "]; " <<  pt_bfi <<
-//                      CGAL::width(pt_bfi) <<   "\n";
+                f_eval_iv = this->_m_traits._evaluate_iv_2(f, x_iv, y_iv);
 #endif
 
+//                if (CGAL::singleton(pt_bfi)) {
+//                  break;
+//                }
+// 
    // TASK precision might be too high if already rational!!!
-//       if (CGAL::compare(f_eval_iv.upper() - f_eval_iv.lower(), bound)
-//                     == CGAL::SMALLER) {
-//                     break;
-//                 }
-
-               if (CGAL::singleton(pt_bfi)) {
-                 break
-               } 
-
-               long ceil = CGAL::internal::ceil_log2_abs(pt_bfi);
+                if(f_eval_iv.upper() - f_eval_iv.lower() < bound) {
+                    break;
+                }
+/*               long ceil = CGAL::internal::ceil_log2_abs(pt_bfi);
                long signi = CGAL::get_significant_bits(pt_bfi);
                wbit = ceil - signi + p;
             
                if (wbit < -5) {
                  break;
                }
-
-                prec *= 2;
-                // if bound not met: refine
+                prec *= 2;*/
                 this->_m_traits.refine();
             }
-            CGAL::set_precision(Bigfloat_interval(),p);
-            return pt_bfi;
+            return CGAL::hull(CGAL::convert_to_bfi(f_eval_iv.lower()),
+                                CGAL::convert_to_bfi(f_eval_iv.upper()));
         }
 
     private:
