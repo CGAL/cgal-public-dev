@@ -265,7 +265,7 @@ public:
         Interval x_iv(_x_iv());
         
         // initialize y_iv
-        Interval y_iv(_y_iv(point()));
+        Interval y_iv(_y_iv());
         
         return _evaluate_iv_2(p, x_iv, y_iv);
     }
@@ -312,7 +312,7 @@ public:
     //! returns current interval approximation for y
     inline
     Interval y_interval() const {
-        return _y_iv(point());
+        return _y_iv();
     }
     
 private:
@@ -329,7 +329,7 @@ private:
             return *this->ptr()->_m_x_interval;
         } else {
             if (use_axiv && _x(point()).is_rational()) {
-                Interval y_iv = _y_iv(point());
+                Interval y_iv = _y_iv();
                 Rational mid = _x(point()).low();
                 this->ptr()->_m_x_rational = mid;
                 Rational eps = 
@@ -350,14 +350,14 @@ private:
     
     //! return current interval for y
     inline
-    Interval _y_iv(const Point_2& pt) const {
+    Interval _y_iv() const {
         
         typename Arrangement_traits_2::Curve_kernel_2::Approximate_relative_y_2
             approx_y = 
             Arrangement_traits_2::instance().kernel().
             approximate_relative_y_2_object();
 
-	std::pair<Bound,Bound> bound_pair = approx_y(pt.xy(),this->ptr()->_m_prec_y);
+	std::pair<Bound,Bound> bound_pair = approx_y(point().xy(),this->ptr()->_m_prec_y);
 	
         return Interval(bound_pair.first,bound_pair.second);
 	
@@ -406,14 +406,12 @@ public:
         
         // Goal: keep xy-approx as quadratic as possible
         
-        const Point_2& point = this->ptr()->_m_point;
-
         bool do_refine_y = true;
 
         if (this->ptr()->_m_use_artificial_x_interval || !is_x_rational()) {
             
             Interval x_iv = _x_iv();
-            Interval y_iv = _y_iv(point);
+            Interval y_iv = _y_iv();
             
             Rational x_len = x_iv.upper() - x_iv.lower();
             Rational y_len = y_iv.upper() - y_iv.lower();
@@ -651,13 +649,13 @@ public:
     
     //! returns mean value of y-approximation
     Rational mean_y() const {
-        Interval y_iv = _y_iv(point());
+        Interval y_iv = _y_iv();
         return (y_iv.upper() - y_iv.lower()) / Rational(2);
     }
     
     //! returns whether a given \c y is in current y-approximation
     bool is_in_y_interval_interior(Rational y) const {
-        Interval y_iv = _y_iv(point());
+        Interval y_iv = _y_iv();
         return (y_iv.lower() < y) && (y < y_iv.upper());
     }
     
@@ -723,7 +721,6 @@ public:
 //             typedef typename P_traits_bfi::Type Poly_bfi_2;
 // 
 //             typename P_traits_bfi::Substitute subs;
-            const Point_2& pt = this->_m_bck.point();
 //             Bigfloat_interval pt_bfi;
 
             Interval f_eval_iv;
@@ -731,7 +728,7 @@ public:
 //                 CGAL::set_precision(Bigfloat_interval(), prec);
 
                 Interval x_iv(this->_m_bck._x_iv());
-                Interval y_iv(this->_m_bck._y_iv(pt));
+                Interval y_iv(this->_m_bck._y_iv());
 
 #if 0
                 typename CGAL::Coercion_traits<
