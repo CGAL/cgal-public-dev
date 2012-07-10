@@ -3321,6 +3321,7 @@ Polynomial/include/CGAL/Polynomial/Coercion_traits.h -text
 Polynomial/include/CGAL/Polynomial/Degree.h -text
 Polynomial/include/CGAL/Polynomial/Get_arithmetic_kernel.h -text
 Polynomial/include/CGAL/Polynomial/Monomial_representation.h -text
+Polynomial/include/CGAL/Polynomial/Polynomial_parser_d.h -text
 Polynomial/include/CGAL/Polynomial/bezout_matrix.h -text
 Polynomial/include/CGAL/Polynomial/determinant.h -text
 Polynomial/include/CGAL/Polynomial/hgdelta_update.h -text
