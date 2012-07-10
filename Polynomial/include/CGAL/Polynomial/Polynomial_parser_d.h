@@ -337,7 +337,7 @@ struct Polynomial_parser_d
     //! this instance's template argument
     typedef Poly_d_ Poly_d;
     //! this instance's second template argument
-    typedef ParserPolicy Parser_policy;
+    typedef ParserPolicy Policy;
     
     //! polynomial policy
     typedef CGAL::Polynomial_traits_d< Poly_d > PT;
