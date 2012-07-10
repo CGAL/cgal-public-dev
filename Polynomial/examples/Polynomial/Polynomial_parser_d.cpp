@@ -7,27 +7,38 @@
 // $Id: $
 // 
 //
-// Author(s)     : Michael Kerber    <mkerber@mpi-inf.mpg.de> 
+// Author(s)     : Pavel Emeliyanenko    <asm@mpi-inf.mpg.de>
 //
 // ============================================================================
 
 #include <CGAL/basic.h>
 #include <CGAL/Arithmetic_kernel.h>
-#include <CGAL/Algebraic_kernel_d/Polynomial_parser_d.h>
+#include <CGAL/Polynomial/Polynomial_parser_d.h>
 #include <CGAL/Polynomial.h>
 #include <CGAL/Polynomial_type_generator.h>
 #include <CGAL/Fraction_traits.h>
+#include <CGAL/convert_to_bfi.h>
 
-// #include <CGAL/GMP_arithmetic_kernel.h>
+#include <CGAL/LEDA_arithmetic_kernel.h>
+#include <CGAL/CORE_arithmetic_kernel.h>
+#include <CGAL/GMP_arithmetic_kernel.h>
 
+// maximal polynomial degree
+#define PARSER_MAX_POLY_DEGREE 30
+// bits to approximate bigfloat coefficients
+#define PARSER_FLOAT_APPROX_BITS 53 
+
+//! example of custom parser policy to parse polynomials with
+//! integer, rational and bigfloat coefficients (with supported rounding)
+//! and degree check
 template < class Poly_d_ >
-struct My_policy :
-        public CGAL::Mixed_rational_parser_policy< Poly_d_ > {
+struct Custom_parser_policy :
+        public CGAL::Mixed_floating_point_parser_policy< Poly_d_ > {
 
     //! template argument type
     typedef Poly_d_ Poly_d;
     //! base class
-    typedef CGAL::Mixed_rational_parser_policy< Poly_d > Base;
+    typedef CGAL::Mixed_floating_point_parser_policy< Poly_d > Base;
     //! type of polynomial coefficient
     typedef typename Base::Coeff Coeff;
 
@@ -37,6 +48,10 @@ struct My_policy :
     typedef typename AK::Integer Integer;
     //! rational number type
     typedef typename AK::Rational Rational;
+    //! BFI type
+    typedef typename AK::Bigfloat_interval BFI;
+    //! BigFloat type
+    typedef typename CGAL::Bigfloat_interval_traits< BFI >::Bound BigFloat;
     //! input coefficient types
     typedef typename Base::CoeffType CoeffType;
 
@@ -49,22 +64,38 @@ struct My_policy :
             is >> CGAL::iformat(num); // read numerator
             is.get(); // skip '/'
             is >> CGAL::iformat(denom);
+//             std::cout << "rational: " << num << "/" << denom << "\n";
+            if(CGAL::is_zero(denom))
+                throw CGAL::internal::Parser_exception("Zero divisor!");
 
-            std::cout << "rational: " << num << "/" << denom << "\n";
-            throw CGAL::internal::Parser_exception("error!");
-            return Coeff(0);
+            typedef CGAL::Fraction_traits< Rational > FT;
+            return typename FT::Compose()(num, denom);
+
+        } else if(type == Base::COEFF_FLOAT) {
+
+            double ld;
+            is >> CGAL::iformat(ld);
+            BigFloat bf(ld);
+
+            long prec = CGAL::set_precision(BFI(), PARSER_FLOAT_APPROX_BITS);
+            BFI bfi = CGAL::convert_to_bfi(bf);
+            CGAL::set_precision(BFI(), prec);
+
+            return CGAL::lower(bfi);
+
         } else
             return Base::read_coeff_proxy(is, type);
     }
 
     //! checking for degree overflow: can be used in real-time applications
     virtual bool exponent_check(unsigned e) const {
-        std::cout << "exponent_check: " << e << "\n";
+//         std::cout << "exponent_check: " << e << "\n";
+        if(e > PARSER_MAX_POLY_DEGREE)
+            return false;
         return true;
     }
 
 protected:
-
 
 };
 
@@ -180,14 +211,22 @@ void test_routine() {
     CGAL_assertion(p1==p2);
 
     typedef CGAL::Polynomial_parser_d<Polynomial_2,
-        My_policy< Polynomial_2 > > Custom_parser;
+        Custom_parser_policy< Polynomial_2 > > Custom_parser;
 
-    pol_str="x^5*8/000*y^17-5/0*(-111y-x^2)+10/2134234";
+    // polynomial with invalid coefficients
+    pol_str="123.3453x^5*8/000*y^17-5/0*(-111y-x^2)+10/2134234";
 
     if(!Custom_parser() (pol_str,p2)) {
-        printf("smth bogus happend..\n");
+        printf("don't worry: this was intended..\n");
     }
-    std::cout << "\ndone\n";
+
+    // example polynomial with mixed integer/rational and fp-coefficients
+    pol_str="234523.4(x-y)^5-y^17-5/32*(-111y-345.332342345x^2)+10/34234";
+
+    if(!Custom_parser() (pol_str,p2)) {
+        printf("wrong poly coefficients..\n");
+    }
+    std::cout << "constructed polynomial: " << p2 << "\n";
     
   }
   {
