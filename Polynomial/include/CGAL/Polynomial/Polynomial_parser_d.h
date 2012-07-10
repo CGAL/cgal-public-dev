@@ -277,9 +277,6 @@ struct Mixed_floating_point_parser_policy :
 
             bool parse_exp = (ch == 'e' || ch == 'E');
 
-// printf("ch = %c; fp_type: %d; parse_exp: %d: buf: %s\n", ch,
-//                     fp_type, parse_exp, buf.str().c_str());
-
             if(ch == '.' || parse_exp) {
 
                 if(parse_exp && (fp_type == -1 || fp_type == 0))
