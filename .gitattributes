@@ -3311,7 +3311,7 @@ Polynomial/doc_tex/Polynomial_ref/subresultant_def.gif -text
 Polynomial/doc_tex/Polynomial_ref/sylvester_matrix.gif -text
 Polynomial/doc_tex/Polynomial_ref/underbrace.gif -text
 Polynomial/examples/Polynomial/Polynomial_parser_d.cpp -text
-Polynomial/examples/Polynomial/Polynomial_parser_simple.cpp -text
+Polynomial/examples/Polynomial/Polynomial_parser_d_advanced.cpp -text
 Polynomial/examples/Polynomial/coefficient_access.cpp -text
 Polynomial/examples/Polynomial/construction.cpp -text
 Polynomial/examples/Polynomial/degree.cpp -text
