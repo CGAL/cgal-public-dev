@@ -111,8 +111,6 @@ void test_routine() {
     Parser() (pol_str,p2);
 
     CGAL_assertion(p1==p2);
- 
-
   }
   {
     typedef typename CGAL::Polynomial_type_generator<Integer,2>::Type 
