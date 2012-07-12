@@ -451,7 +451,7 @@ protected:
 
     void get_basic_term(std::istringstream& is, Poly_d& res)
     {
-        char var = 'x', ch = is.peek();
+        char ch = is.peek();
         int idx = -1;
 
         Poly_d tmp;
@@ -464,7 +464,7 @@ protected:
         
         } else if(check_var_names(ch, idx)) {
             which_case = 1;
-            var = is.get();
+            /* char var = */ is.get();
             
         } else if(ch =='(') {
         
