@@ -1,11 +1,9 @@
-// ============================================================================
+// Copyright (c) 2008 Max-Planck-Institute Saarbruecken (Germany)
 //
-// Copyright (c) 2001-2006 Max-Planck-Institut Saarbruecken (Germany).
-// All rights reserved.
-//
-// This file is part of EXACUS (http://www.mpi-inf.mpg.de/projects/EXACUS/);
-// you may redistribute it under the terms of the Q Public License version 1.0.
-// See the file LICENSE.QPL distributed with EXACUS.
+// This file is part of CGAL (www.cgal.org); you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public License as
+// published by the Free Software Foundation; either version 3 of the License,
+// or (at your option) any later version.
 //
 // Licensees holding a valid commercial license may use this file in
 // accordance with the commercial license agreement provided with the software.
@@ -13,13 +11,9 @@
 // This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
 // WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
-// ----------------------------------------------------------------------------
+// $URL: svn+ssh://eric@scm.gforge.inria.fr/svn/cgal/branches/features/Polynomial-Polynomial_parser-asm/Polynomial/include/CGAL/Polynomial/Polynomial_type.h $
+// $Id: Polynomial_type.h 67240 2012-01-18 09:57:46Z afabri $
 //
-// Library       : ??
-// File          : ../Polynomial_parser_d.h
-// SoX_release   : $Name:  $
-// Revision      : $Revision: 67815 $
-// Revision_date : $Date: 2012-02-20 14:31:18 +0100 (Mon, 20 Feb 2012) $
 //
 // Author(s)     : Pavel Emeliyanenko <asm@mpi-sb.mpg.de>
 //
