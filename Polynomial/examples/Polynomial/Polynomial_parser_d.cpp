@@ -1,17 +1,4 @@
-// TODO: Add licence
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
-//
-// $URL:$
-// $Id: $
-// 
-//
-// Author(s)     : Pavel Emeliyanenko    <asm@mpi-inf.mpg.de>
-//
-// ============================================================================
-
-#include <CGAL/basic.h>
+#include <CGAL/config.h>
 #include <CGAL/Arithmetic_kernel.h>
 #include <CGAL/Polynomial/Polynomial_parser_d.h>
 #include <CGAL/Polynomial.h>
@@ -186,9 +173,7 @@ void test_routine() {
 
     CGAL_assertion(p1==p2);
  
-
   }
-  
   {
     typedef typename CGAL::Polynomial_type_generator<Rational,2>::Type 
       Polynomial_2;
