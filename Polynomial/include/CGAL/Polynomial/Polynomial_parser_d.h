@@ -1,4 +1,4 @@
-// Copyright (c) 2008 Max-Planck-Institute Saarbruecken (Germany)
+// Copyright (c) 2009-2012 Max-Planck-Institute Saarbruecken (Germany)
 //
 // This file is part of CGAL (www.cgal.org); you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public License as
