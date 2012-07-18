@@ -1313,7 +1313,7 @@ private:
         throw 1;
     } // type == 1
 
-	long prec = 4;
+        //long prec = 4;
 
 	while (true) {
             // desired object
