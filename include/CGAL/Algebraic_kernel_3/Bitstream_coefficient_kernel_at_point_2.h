@@ -84,6 +84,9 @@ public:
     //! type of coefficient for Bitstream_descartes_rndl_tree
     typedef Polynomial_2 Coefficient;
     
+    //! type of polynomial
+    typedef Polynomial_3 Polynomial;
+
     //! type of integer for Bitstream_descartes_rndl_tree
     typedef typename CGAL::Fraction_traits< Rational >::Numerator_type Integer;
     
@@ -147,9 +150,8 @@ private:
  * given point, whose coordinates are usally algebraic.
  */
 template < class SurfaceZAtXyIsolatorTraits >
-class Bitstream_coefficient_kernel_at_point_2 : public 
-::CGAL::Handle_with_policy< CGAL::internal::Bitstream_coefficient_kernel_at_point_2_rep< 
-SurfaceZAtXyIsolatorTraits > > {
+class Bitstream_coefficient_kernel_at_point_2 : 
+  public ::CGAL::Handle_with_policy< CGAL::internal::Bitstream_coefficient_kernel_at_point_2_rep< SurfaceZAtXyIsolatorTraits > > {
     
 public:
     
@@ -211,6 +213,9 @@ public:
     //! type for the box
     typedef std::pair<Interval, Interval> Box;
     
+    //! type of polynomial
+    typedef Polynomial_3 Polynomial;
+
     //!@}
 
     //!\name Constructors
