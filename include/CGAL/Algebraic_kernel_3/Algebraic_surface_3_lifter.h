@@ -16,7 +16,8 @@
 // $Id$
 // 
 //
-// Author(s)     :  Eric Berberich <eric.berberich@cgal.org>
+// Author(s)     :  Michael Kerber <mkerber@mpi-inf.mpg.de>
+//                  Eric Berberich <eric.berberich@cgal.org>
 //
 // ============================================================================
 
@@ -47,8 +48,8 @@ namespace internal {
  *
  */
 template< typename BitstreamCoefficientKernel, typename VerticalLine, typename HandlePolicy > // no default on policy, should be decided in higher level
-class Vertical_line_adapter_bitstream_descartes_rep : 
-  public Generic_bitstream_descartes_isolator_rep< BitstreamCoefficientKernel, HandlePolicy > {
+class Vertical_line_adapter_rep : 
+  public Generic_bitstream_descartes_isolator_rep< BitstreamCoefficientKernel, HandlePolicy > { // TODO 2012 derived from new bck-only-rep
        
   // tags are inherited
     
@@ -70,7 +71,7 @@ public:
   typedef Generic_bitstream_descartes_isolator_rep< Bitstream_coefficient_kernel, Handle_policy > Base;
 
   //! the class itself
-  typedef Vertical_line_adapter_bitstream_descartes_rep< Bitstream_coefficient_kernel, Vertical_line, Handle_policy > Self;
+  typedef Vertical_line_adapter_rep< Bitstream_coefficient_kernel, Vertical_line, Handle_policy > Self;
       
   //! The polynomial type
   typedef typename Bitstream_coefficient_kernel::Polynomial Polynomial;
@@ -93,9 +94,8 @@ public:
    * \brief Constructor
    */
   template<typename InputIterator>
-  Vertical_line_adapter_bitstream_descartes_rep(InputIterator begin,
-                                                InputIterator end,
-                                                Bitstream_coefficient_kernel bck)
+  Vertical_line_adapter_rep(InputIterator begin, InputIterator end,
+                            Bitstream_coefficient_kernel bck)
     : Base(Polynomial(0), bck) 
   {
     for (InputIterator it = begin; it != end; it++) {
@@ -128,7 +128,7 @@ public:
   //!@{
         
   //! Destructor (does nothing)
-  virtual ~Vertical_line_adapter_bitstream_descartes_rep() {
+  virtual ~Vertical_line_adapter_rep() {
   }
 
   //!@}
@@ -209,7 +209,7 @@ public:
 
   //! Needed for the referencing counting mechanism
   virtual CGAL::Reference_counted_hierarchy<>* clone() {
-    return new Vertical_line_adapter_bitstream_descartes_rep(*this);
+    return new Vertical_line_adapter_rep(*this);
   }
 
   //!@} // Access members
@@ -220,7 +220,7 @@ protected:
   //! index. Also, current precision of each root is stored
   mutable std::vector<std::pair<std::pair<Vertical_line, int>, int> > _m_root_vec;
 
-}; // Vertical_line_adapter_bitstream_descartes_rep
+}; // Vertical_line_adapter_rep
 
 
 //! will be used for lifting over faces, edges, vertices in Surface_analysis
@@ -270,6 +270,9 @@ class Algebraic_surface_3_lifter :
 
   //! the representation class for mk case
   typedef Mk_bitstream_descartes_isolator_rep <Bitstream_coefficient_kernel, Handle_policy > Mk_rep;
+
+  //! the following needs a parameter given only for the corresponding constructor, thus it's commented out here:
+  // typedef Vertical_line_adapter_rep<Bitstream_coefficient_kernel, typename InputIterator::value_type::first_type, Handle_policy > Vertical_line_rep;
 
   //! the base type
   typedef internal::Generic_isolator< Polynomial, Bound, Handle_policy, Square_free_rep /* in fact, provide all of the used reps! */ > Base;
@@ -336,7 +339,7 @@ class Algebraic_surface_3_lifter :
                              InputIterator end,
                              Bitstream_coefficient_kernel bck,
                              bool isolate = true) : 
-    Base(new CGAL::internal::Vertical_line_adapter_bitstream_descartes_rep<Bitstream_coefficient_kernel, typename InputIterator::value_type::first_type, Handle_policy >(begin, end, bck))
+    Base(new Vertical_line_adapter_rep<Bitstream_coefficient_kernel, typename InputIterator::value_type::first_type, Handle_policy >(begin, end, bck))
   {
     if (isolate) {
       this->isolate();
