@@ -42,8 +42,8 @@ void test_comparison_operators()
   typedef CGAL::MP_Float     RT;
   typedef CGAL::Quotient<RT> QT;
 
-  RT r(1);
-  QT q(1);
+  RT r(1L);
+  QT q(1L);
 
   q+q; q+r; r+q; q+1; 1+q;
   q-q; q-r; r-q; q-1; 1-q;
