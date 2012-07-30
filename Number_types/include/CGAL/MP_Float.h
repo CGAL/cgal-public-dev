@@ -118,7 +118,6 @@ class MP_Float
 public:
   typedef short      limb;
   typedef int        limb2;
-  typedef long long  limb4;
   typedef double     exponent_type;
 
   typedef std::vector<limb>  V;
@@ -126,8 +125,6 @@ public:
   typedef V::iterator        iterator;
 
 private:
-  CGAL_static_assertion(sizeof(limb2)==2*sizeof(limb));
-  CGAL_static_assertion(sizeof(limb4)==4*sizeof(limb));
 
   void remove_leading_zeros()
   {
@@ -171,20 +168,6 @@ public:
     CGAL_postcondition ( l == low + ( static_cast<limb2>(high) << sizeof_limb ) );
   }
 
-  // Splits a limb4 into 2 limb2s (high and low).
-  static
-  void split2(limb4 l, limb2 & high, limb2 & low)
-  {
-    const unsigned int sizeof_limb2=8*sizeof(limb2);
-    const limb4 mask= ~( static_cast<limb4>(-1) << sizeof_limb2 ); //0000ffff
-    //Note: For Integer type, if the destination type is signed, the value is unchanged 
-    //if it can be represented in the destination type)
-    low=static_cast<limb2>(l & mask); //extract low bits from l 
-    high = (l - low) >> sizeof_limb2; //extract high bits from l
-    
-    CGAL_postcondition ( l == low + ( static_cast<limb4>(high) << sizeof_limb2 ) );
-  }
-
   // Given a limb2, returns the higher limb.
   static
   limb higher_limb(limb2 l)
@@ -203,6 +186,7 @@ public:
   MP_Float()
       : exp(0)
   {
+    CGAL_assertion(sizeof(limb2) == 2*sizeof(limb));
     CGAL_assertion(v.empty());
     // Creates zero.
   }
@@ -222,31 +206,6 @@ public:
     split(i, v[1], v[0]);
     canonicalize();
   }
-
-  MP_Float(limb4 i)
-  : v(4), exp(0)
-  {
-    limb2 h, l;
-    split2(i, h, l);
-    split(l, v[1], v[0]);
-    split(h, v[3], v[2]);
-    canonicalize();
-  }
-
-  MP_Float(long i)
-  : v(sizeof(long)/sizeof(limb)), exp(0)
-  {
-    if(sizeof(long)==sizeof(limb2)){
-      split(i, v[1], v[0]);
-    } else {
-      limb2 h, l;
-      split2(i, h, l);
-      split(l, v[1], v[0]);
-      split(h, v[3], v[2]);
-    }
-    canonicalize();
-  }
-  // TODO: constructors from _unsigned_ int/long/long long
 
   MP_Float(float d);
 
