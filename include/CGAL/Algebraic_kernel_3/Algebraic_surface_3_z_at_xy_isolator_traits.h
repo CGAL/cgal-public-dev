@@ -605,16 +605,21 @@ public:
 #if !NDEBUG
             std::cout << "Isolator.." << std::flush;
 #endif
+#if CGAL_AK3_USE_NEW_ISOLATORS
+            // vert-line
+            Z_at_xy_isolator isol(pseudo_stack.begin(),
+                                  pseudo_stack.end(),
+                                  bck);
+#else
             Z_at_xy_isolator isol(CGAL::internal::Vert_line_adapter_descartes_tag(),
                                   pseudo_stack.begin(),
                                   pseudo_stack.end(),
                                   bck);
+#endif
 #if !NDEBUG
             std::cout << "done" << std::flush;
-#endif            
-
+#endif       
             return isol;
-            
         }
 
     public:
@@ -704,8 +709,7 @@ public:
 #if !NDEBUG
                     std::cout << "Vertical line detected" << std::endl;
 #endif
-                    isol = _isolation_for_vertical_line_on_surface
-                        ( surface, bck );
+                    isol = _isolation_for_vertical_line_on_surface( surface, bck );
                     
                 } else {
                     
@@ -717,12 +721,15 @@ public:
                     int k = nk.k();
 
                     if (k == 0) {
-                        
+#if CGAL_AK3_USE_NEW_ISOLATORS
+                        // square-free
+                        isol = Z_at_xy_isolator( local_f, bck );
+#else
                         isol = Z_at_xy_isolator
                             ( CGAL::internal::Square_free_descartes_tag(),
                               local_f,
                               bck );
-
+#endif
                     } else {
                         
                         // Compute 
@@ -809,9 +816,15 @@ public:
 #if !NDEBUG
                             std::cout << "Try m-k-Descartes.." << std::flush;
 #endif
+                            // m-k-version
+#if CGAL_AK3_USE_NEW_ISOLATORS
+                            isol = Z_at_xy_isolator(local_f, m, k, bck);
+#else
                             isol = Z_at_xy_isolator(CGAL::internal::M_k_descartes_tag(),
                                                     local_f,
                                                     m,k,bck);
+#endif
+
 #if !NDEBUG
                             std::cout << "success" << std::endl;
 #endif
@@ -828,14 +841,18 @@ public:
                             Polynomial_3 sq_free_f_a_b = 
                                 surface.cofactor_for_fz(k-1,n);
                             
-                            CGAL::internal::Square_free_descartes_tag sqfr;
-                            
 #if !NDEBUG
                             std::cout << "isolate sq-free part" << std::endl;
 #endif
-                            isol = Z_at_xy_isolator(sqfr,
+                            // square-free
+#if CGAL_AK3_USE_NEW_ISOLATORS
+                            isol = Z_at_xy_isolator( sq_free_f_a_b, bck);
+#else
+                            isol = Z_at_xy_isolator(CGAL::internal::Square_free_descartes_tag(),
                                                     sq_free_f_a_b,
                                                     bck);
+#endif
+
                         }
 
                     }
@@ -847,7 +864,7 @@ public:
                 std::cout << "done." << std::endl;
 #endif
                 // Insert isolator into map
-                pit = it->second.insert(pit, std::make_pair(point, isol));       
+                pit = it->second.insert(pit, std::make_pair(point, isol));
                 
             }
             
@@ -1269,8 +1286,13 @@ public:
             (const Z_at_xy_isolator& isolator1,
              const Z_at_xy_isolator& isolator2) const {
             
+#if CGAL_AK3_USE_NEW_ISOLATORS
+            CGAL_precondition(isolator1.type() == Z_at_xy_isolator::MK);
+            CGAL_precondition(isolator2.type() == Z_at_xy_isolator::SF);
+#else
             CGAL_precondition(isolator1.type() == CGAL::internal::M_K_DESCARTES);
             CGAL_precondition(isolator2.type() == CGAL::internal::SQUARE_FREE_DESCARTES);
+#endif
             
             CGAL_precondition( isolator1.polynomial() ==
                                isolator2.polynomial() );
@@ -1864,8 +1886,13 @@ public:
 
                 // 1) Use m-k-filter:
 
-                if(isolator1.type() == CGAL::internal::M_K_DESCARTES &&
-                   isolator1.polynomial() == isolator2.polynomial() ) {
+                if(isolator1.type() == 
+#if CGAL_AK3_USE_NEW_ISOLATORS 
+                   Z_at_xy_isolator::MK 
+#else 
+                   CGAL::internal::M_K_DESCARTES 
+#endif
+                   && isolator1.polynomial() == isolator2.polynomial() ) {
 
                     face_info.adjacencies = _adjacency_by_m_k_descartes
                         (isolator1, isolator2);
@@ -3656,10 +3683,9 @@ void dump_face(Face_const_handle fh) const {
         }
 
 
-        void _compute_adjacencies_around_vertical_vertex
-        (const Surface_3& surface,
-         const Z_at_xy_isolator& isolator1,
-         Vertex_const_handle v_handle) const {
+        void _compute_adjacencies_around_vertical_vertex(const Surface_3& surface,
+                                                         Z_at_xy_isolator& isolator1,
+                                                         Vertex_const_handle v_handle) const {
 
             // We need the cad later for point location and n-k-queries
             Restricted_cad_3 cad = Restricted_cad_3::cad_cache()(surface);
@@ -4304,15 +4330,15 @@ void dump_face(Face_const_handle fh) const {
 #endif
             CGAL::Adjacencies_3 adj_f1v = 
                 this->operator() (surface,
-                                  isolator_f1,CGAL::FACE,
+                                  isolator_f1, CGAL::FACE,
                                   f1_obj, false,
-                                  isolator1,CGAL::VERTEX,
+                                  isolator1, CGAL::VERTEX,
                                   v_obj, false);
             CGAL::Adjacencies_3 adj_f2v = 
                 this->operator() (surface,
-                                  isolator_f2,CGAL::FACE,
+                                  isolator_f2, CGAL::FACE,
                                   f2_obj, false,
-                                  isolator1,CGAL::VERTEX,
+                                  isolator1, CGAL::VERTEX,
                                   v_obj, false);
 #if CGAL_CAD_BENCHMARK_TIMERS
             if (adj0) {
@@ -4362,15 +4388,14 @@ void dump_face(Face_const_handle fh) const {
         }
         
 
-        CGAL::Adjacencies_3 _vertex_adjacency
-            (const Surface_3& surface,
-             const Z_at_xy_isolator& isolator1, 
-             CGAL::Object dcel_handle1,
-             bool has_vertical_line1,
-             const Z_at_xy_isolator& isolator2, 
-             CGAL::Dcel_feature feature2,
-             CGAL::Object dcel_handle2) const {
-
+        CGAL::Adjacencies_3 _vertex_adjacency(const Surface_3& surface,
+                                              Z_at_xy_isolator& isolator1, 
+                                              CGAL::Object dcel_handle1,
+                                              bool has_vertical_line1,
+                                              Z_at_xy_isolator& isolator2, 
+                                              CGAL::Dcel_feature feature2,
+                                              CGAL::Object dcel_handle2) const {
+          
 #if !NDEBUG
             std::cout << "VERTEX-ADJACENCY" << std::endl;
 #endif
@@ -4458,8 +4483,13 @@ void dump_face(Face_const_handle fh) const {
 
                 // M-K-Filter
                 //if(false) {
-                if(isolator1.type() == CGAL::internal::M_K_DESCARTES &&
-                      feature2 == CGAL::FACE &&
+                if(isolator1.type() == 
+#if CGAL_AK3_USE_NEW_ISOLATORS 
+                   Z_at_xy_isolator::MK 
+#else 
+                   CGAL::internal::M_K_DESCARTES 
+#endif
+                     && feature2 == CGAL::FACE &&
                       isolator1.polynomial() == isolator2.polynomial() ) {
                     cell_info->adjacencies = _adjacency_by_m_k_descartes
                         (isolator1, isolator2);
@@ -4563,11 +4593,11 @@ void dump_face(Face_const_handle fh) const {
          * from \c dcel_handle1 to \c dcel_handle2
          */
         CGAL::Adjacencies_3 operator()(const Surface_3& surface,
-                                      const Z_at_xy_isolator& isolator1, 
+                                      Z_at_xy_isolator& isolator1, 
                                       CGAL::Dcel_feature feature1,
                                       CGAL::Object dcel_handle1,
                                       bool has_vertical_line1,
-                                      const Z_at_xy_isolator& isolator2, 
+                                      Z_at_xy_isolator& isolator2, 
                                       CGAL::Dcel_feature feature2,
                                       CGAL::Object dcel_handle2,
                                       bool has_vertical_line2) const {
@@ -4576,10 +4606,10 @@ void dump_face(Face_const_handle fh) const {
             if(feature2 == CGAL::VERTEX || feature1==CGAL::FACE) {
                 CGAL::Adjacencies_3 adj 
                     = this->operator() (surface,
-                                        isolator2,feature2,
-                                        dcel_handle2,has_vertical_line2,
-                                        isolator1,feature1,
-                                        dcel_handle1,has_vertical_line1);
+                                        isolator2, feature2,
+                                        dcel_handle2, has_vertical_line2,
+                                        isolator1, feature1,
+                                        dcel_handle1, has_vertical_line1);
                 
                 return adj.swap();
             }

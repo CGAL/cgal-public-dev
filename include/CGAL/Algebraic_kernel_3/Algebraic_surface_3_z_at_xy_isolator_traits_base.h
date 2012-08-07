@@ -28,6 +28,10 @@
 
 #include <CGAL/config.h>
 
+#ifndef CGAL_AK3_USE_NEW_ISOLATORS
+#define CGAL_AK3_USE_NEW_ISOLATORS 1
+#endif
+
 #include <CGAL/Cache.h>
 
 #include <boost/optional.hpp>
@@ -37,9 +41,12 @@
 #include <boost/numeric/interval.hpp>
 #include <boost/iterator/counting_iterator.hpp>
 
-
-#include <CGAL/Algebraic_kernel_d/Bitstream_descartes.h>
 #include <CGAL/Algebraic_kernel_3/Bitstream_coefficient_kernel_at_point_2.h>
+#if CGAL_AK3_USE_NEW_ISOLATORS
+#include <CGAL/Algebraic_kernel_3/Algebraic_surface_3_lifter.h>
+#else
+#include <CGAL/Algebraic_kernel_d/Bitstream_descartes.h>
+#endif
 
 namespace CGAL {
 
@@ -139,9 +146,11 @@ public:
     typedef CGAL::Bitstream_coefficient_kernel_at_point_2< Self > Isolator_bck;
 
     //! type of isolator
-    typedef CGAL::internal::Bitstream_descartes< Isolator_bck > 
-    Z_at_xy_isolator;
-
+#if CGAL_AK3_USE_NEW_ISOLATORS
+    typedef CGAL::internal::Algebraic_surface_3_lifter< Isolator_bck > Z_at_xy_isolator;
+#else
+    typedef CGAL::internal::Bitstream_descartes< Isolator_bck > Z_at_xy_isolator;
+#endif
     //! type of Rational
     typedef typename Isolator_bck::Rational Rational;
 
