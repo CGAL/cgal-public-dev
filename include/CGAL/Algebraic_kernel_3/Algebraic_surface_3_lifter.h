@@ -205,6 +205,7 @@ public:
   }
 
   bool termination_condition() { // TODO 2012 get rid of empty implementation by introducing non-bitstream-bck-rep
+    return false;
   }
 
   //! Needed for the referencing counting mechanism
