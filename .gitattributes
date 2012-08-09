@@ -312,6 +312,7 @@ Arrangement_on_surface_2/demo/Arr_algebraic_segment_traits_2/xalci/include/xalci
 Arrangement_on_surface_2/demo/Arr_algebraic_segment_traits_2/xalci/misc.cpp -text
 Arrangement_on_surface_2/demo/Arr_algebraic_segment_traits_2/xalci/poly2ntl.cpp -text
 Arrangement_on_surface_2/demo/Arr_algebraic_segment_traits_2/xalci/xalci.cpp -text
+Arrangement_on_surface_2/demo/Arr_algebraic_segment_traits_2/xalci_lite/CMakeLists.txt -text
 Arrangement_on_surface_2/demo/Arr_algebraic_segment_traits_2/xalci_lite/axis.xpm -text
 Arrangement_on_surface_2/demo/Arr_algebraic_segment_traits_2/xalci_lite/data/bad_sing_asym_cont_7 -text
 Arrangement_on_surface_2/demo/Arr_algebraic_segment_traits_2/xalci_lite/data/covertical_sings_8 -text

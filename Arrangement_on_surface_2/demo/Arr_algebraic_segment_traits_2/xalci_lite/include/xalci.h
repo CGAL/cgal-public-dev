@@ -32,17 +32,10 @@
 #include <iostream>
 #include <vector>
 
-#include <qplatinumstyle.h>
 #include <qapplication.h>
 #include <qmainwindow.h>
 #include <qstatusbar.h>
 #include <qerrormessage.h>
-#include <qfiledialog.h>
-#include <qmessagebox.h>
-#include <qpopupmenu.h>
-#include <qmenubar.h>
-#include <qtoolbutton.h>
-#include <qtoolbar.h>
 #include <qtimer.h>
 #include <qlistbox.h>
 #include <qlayout.h>
@@ -71,7 +64,7 @@
 #define CGAL_BISOLVE_VERBOSE 0
 
 #define CGAL_BISOLVE_USE_RS_AK 0
-#define CGAL_BISOLVE_USE_RS_ISOLATOR 1 // 1 is default
+#define CGAL_BISOLVE_USE_RS_ISOLATOR 0 // 1 is default
 
 #define CGAL_ACK_DEBUG_FLAG 0
 #define CGAL_ACK_DEBUG_PRINT std::cout
@@ -79,8 +72,8 @@
 #define CGAL_BISOLVE_USE_RESULTANT_COFACTORS 1
 #define CGAL_BISOLVE_ARRANGEMENTS 1 // 0 is default
 
-#define CGAL_BISOLVE_USE_GMP 1
-#define CGAL_BISOLVE_USE_CORE 0
+#define CGAL_BISOLVE_USE_GMP  0
+#define CGAL_BISOLVE_USE_CORE 1
 
 #define CGAL_MODULAR_FILTER_OFF
 
@@ -96,7 +89,7 @@ typedef CGAL::GMP_arithmetic_kernel AK;
 typedef CGAL::CORE_arithmetic_kernel AK;
 #endif
 
-#include <symbolic_speedups.cpp>
+// #include <symbolic_speedups.cpp>
 
 #include <CGAL/Polynomial.h>
 #include <CGAL/Polynomial_traits_d.h>
@@ -113,7 +106,6 @@ typedef CGAL::CORE_arithmetic_kernel AK;
 #endif
 
 #include <CGAL/Algebraic_kernel_d_2.h>
-#include <CGAL/Arrangement_2l/Adjacencies_3.h>
 
 #include <CGAL/Arrangement_2.h>
 #include <CGAL/Curved_kernel_via_analysis_2/Curved_kernel_via_analysis_2_impl.h>
@@ -186,27 +178,10 @@ public:
 
 public slots:
 
-    void cad_analyse_click();
-    void cad_rasterize_click();
-    void cad_seg_list_click();
-    void cad_curve_list_click();
-    void cad_file_search_click();
-    void cad_partial_selection_click();
-    void cad_complete_toggle(bool);
-
-    void arr_analyse_click();
-    void arr_rasterize_click();
-    void arr_edge_list_click();
-    void arr_node_list_click();
-    void arr_file_search_click();
-    void arr_partial_selection_click();
-    void arr_complete_toggle(bool);
-
     void oc_analyse_click();
     void oc_rasterize_click();
     void oc_seg_list_click();
     void oc_complete_toggle(bool);
-    void oc_switch_method(int);
 
     void axis_toggle();
 
@@ -256,12 +231,8 @@ protected slots:
         CGAL::Arr_curve_end end, std::ostream& os);
     void print_point(const Point_2& pt, std::ostream& os);
         
-    void arr_activate_layers();
-    void cad_activate_layers();
     void oc_activate_layers();
 
-    void arr_deactivate_layers();
-    void cad_deactivate_layers();
     void oc_deactivate_layers();
 
     
@@ -269,18 +240,13 @@ protected:
 
     Poly_int2 make_square_free(const Poly_int2& poly);
 
-    bool input_poly(Poly_int2& p, const char *ascii);
+    bool input_poly(std::vector< Poly_int2 >& p, const char *ascii);
 
-    template<typename OutputIterator>
-    bool read_polys_from_file(QString filename,OutputIterator out);
-        
-    void cad_to_segments();
     void arr_compute_arrangement();
 
     CGAL::Bbox_2 bbox;
-    
-    std::vector< Poly_int2 > cad_curves, arr_curves;
-
+  
+    std::vector< Poly_int2 > arr_curves;
     Curve_selection_dialog* curve_selection_dialog;
 
     QErrorMessage* err_msg_dialog;
@@ -294,15 +260,12 @@ protected:
     QHButtonGroup *arr_method;
     QRadioButton *arr_cgal, *arr_leda;
     QCheckBox *cad_complete_check,*oc_complete_check, *arr_complete_check;
-    QListBox *cad_seg_list, *cad_curve_list,*oc_seg_list, *cad_ps_curve_list, 
-          *arr_edge_list, *arr_node_list;
+    QListBox *oc_seg_list, *arr_edge_list, *arr_node_list;
           
     QTabWidget *tab_widget;
     QFrame* one_curve_tab, *cad_tab, *arr_tab;
     QLabel *arr_node_label,*arr_edge_label;
-    std::vector<bool> cad_curve_list_selection;
     
-    QLineEdit *cad_input, *arr_input;
     QTextEdit *oc_input;
     QComboBox *oc_method_box;
     Graphic_layer *axis;
