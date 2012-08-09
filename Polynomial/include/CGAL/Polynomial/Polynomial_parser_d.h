@@ -347,7 +347,8 @@ public:
     //!@{
 
     //! default constructor
-    Polynomial_parser_d() {
+    Polynomial_parser_d(const Policy& policy_ = Policy()) :
+            policy(policy_) {
     }
 
     //! \brief functor invokation operator
