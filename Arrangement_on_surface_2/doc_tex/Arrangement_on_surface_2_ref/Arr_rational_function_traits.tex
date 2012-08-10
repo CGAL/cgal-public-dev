@@ -596,7 +596,10 @@ is not default constructible and must be obtained via the function
   {Constructs an algebraic point from two Rational coordinates, internally it constructs a supporting rational function
   and its $x$-coordinate.}\ccGlue
 \ccMethod{Point_2 operator()(const Algebraic_real_1& x, const Rational& y);}
-  {Constructs an algebraic point from an algebraic $x$-coordinates and a rational $y$-coordinate, internally it constructs a supporting rational function
+  {Constructs an algebraic point from an algebraic $x$-coordinate and a rational $y$-coordinate, internally it constructs a supporting rational function
+  and its $x$-coordinate.}\ccGlue
+\ccMethod{Point_2 operator()(int x, int y);}
+  {Constructs an algebraic point from two integer coordinates, internally it constructs a supporting rational function
   and its $x$-coordinate.}\ccGlue
 \end{ccClass}
 

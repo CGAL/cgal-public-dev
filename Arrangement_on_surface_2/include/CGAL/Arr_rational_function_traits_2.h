@@ -460,6 +460,16 @@ public:
                                                                      y_denom)),
                      x);
     }
+
+    Point_2 operator()(int y, int x)
+    {
+        Integer  y_numer;
+        Integer  y_denom;
+        typename FT_rat_1::Decompose()(y, y_numer, y_denom);
+        return Point_2(_traits->cache().get_rational_function(Rational(y_numer,
+                                                                       y_denom)),
+                       x);
+    }
   }; //Construct_point
 
   Construct_point_2 construct_point_2_object() const
