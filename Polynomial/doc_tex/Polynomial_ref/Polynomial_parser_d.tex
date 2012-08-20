@@ -9,41 +9,7 @@
 
 \ccDefinition
 
-The purpose of the polynomial parser is to provide an alternative way to input CGAL polynomials in a human-readable format. By default, the class \ccc{CGAL::Polynomial<Coeff>} provides an \ccc{operator >>} to read polynomials from an input stream in an ASCII format:
-\begin{ccTexOnly}
-\[
-\begin{array}{l}
-P[8(0,P[8(0,P[8(0,2)(2,-16)(4,80)(6,-128)(8,64)])(2,P[0(0,-16)])(4,P[0(0,80)])\\
-\quad {}(6,P[0(0,-128)])(8,P[0(0,64)])])(2,P[0(0,P[0(0,-16)])])(4,P[0(0,P[0(0,80)])])\\
-\quad {}(6,P[0(0,P[0(0,-128)])])(8,P[0(0,P[0(0,64)])])]
-\end{array}
-\]
-\end{ccTexOnly}
-\begin{ccHtmlOnly}
-<span>oops..</span>
-\end{ccHtmlOnly}
-which corresponds to the following trivariate polynomial:
-\begin{ccTexOnly}
-\[\begin{array}{l}
-64z^8 + (-128)z^6 + 80z^4 + (-16)z^2 + (64y^8 + (-128)y^6 + 80y^4 + (-16)y^2 + \\
-\quad {}(64x^8 + (-128)x^6 + 80x^4 + (-16)x^2 + 2)).
-\end{array}\]
-\end{ccTexOnly}
-\begin{ccHtmlOnly}
-<span>oops..</span>
-\end{ccHtmlOnly}
-The parser can handle polynomials in any number of indeterminates (variables) and 
-can parse arbitrary algebraic expressions, e.g., those of the form: 
-\begin{ccTexOnly}
-\[\begin{array}{l}
-((y-1)^4 - x*y^3)^5 + (x + z)^2 - (2123234523*x^2 - 2*y*y*x + 3^{10}*x*132123)^3,\\
-\quad {}(y + x - z + w - 3)^3 = x + y - 123/12312 + 1.00001*z*x^2.
-\end{array}\]
-\end{ccTexOnly}
-\begin{ccHtmlOnly}
-<span>oops..</span>
-\end{ccHtmlOnly}
-Note that, the multiplication symbol (*) is optional and can be omitted in the above expressions.
+The polnomial parser extends the functionality of \ccc{operator >>} provided by \ccc{CGAL::Polynomial<Coeff>} with the ability to input polynomials in a human-readable format.
 
 The parser's behavior is fully customizeable vie the so-called {\em parser policy} 
 which is supplied as a template parameter to the parser. 
@@ -121,6 +87,10 @@ if the degree \ccc{deg} of a monomial being parsed lies within the accepted rang
 If no \ccc{ParserPolicy} template parameter is supplied to the parser class,
 then the parser is instantiated with a default parser policy. 
 
+\ccSeeAlso
+% \ccRefIdfierPage{Polynomial_parser_d}\\
+\ccRefIdfierPage{CGAL::Polynomial_parser_d< Poly_d_, ParserPolicy >}
+
 \end{ccRefConcept}
 
 \begin{ccRefClass} {Default_parser_policy< Poly_d_, InputCoeff >}
@@ -146,8 +116,6 @@ The default policy provides no type explicit conversions: in other words, polyno
 
 \ccConstructor{Default_parser_policy();}
 {Default constructor.}
-
-\ccIncludeExampleCode{Polynomial/default_parser_policy.cpp}
 
 \end{ccRefClass}
 
@@ -179,9 +147,6 @@ the innermost coefficients type of \ccc{Poly_d_}.
 \ccConstructor{Mixed_rational_parser_policy();}
 {Default constructor.}
 
-\ccIncludeExampleCode{Polynomial/mixed_rational_parser_policy.cpp}
-
-
 \end{ccRefClass}
 
 \begin{ccRefClass} {Mixed_floating_point_parser_policy< Poly_d_, InputCoeff >}
@@ -211,9 +176,6 @@ the innermost coefficients type of \ccc{Poly_d_}.
 
 \ccConstructor{Mixed_floating_point_parser_policy();}
 {Default constructor.}
-
-\ccIncludeExampleCode{Polynomial/mixed_floating_point_parser_policy.cpp}
-
 
 \end{ccRefClass}
 
