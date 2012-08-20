@@ -4,7 +4,7 @@
 #include <CGAL/Polynomial.h>
 #include <CGAL/Polynomial_type_generator.h>
 
-#include <CGAL/GMP_arithmetic_kernel.h>
+#include <CGAL/Gmpq.h>
 
 int main() {
    typedef typename CGAL::Polynomial_type_generator<CGAL::Gmpq,2>::Type 
