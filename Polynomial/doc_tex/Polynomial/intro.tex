@@ -178,6 +178,61 @@ The following example illustrates the application of the functors
 discussed above:
 \ccIncludeExampleCode{Polynomial/coefficient_access.cpp}
 
+\section{Polynomial parser}
+
+The purpose of the polynomial parser is to provide an alternative way to input CGAL polynomials in a human-readable format. By default, the class \ccc{CGAL::Polynomial<Coeff>} provides an \ccc{operator >>} to read polynomials from an input stream in an ASCII format:
+\begin{ccTexOnly}
+\[
+\begin{array}{l}
+P[8(0,P[8(0,P[8(0,2)(2,-16)(4,80)(6,-128)(8,64)])(2,P[0(0,-16)])(4,P[0(0,80)])\\
+\quad {}(6,P[0(0,-128)])(8,P[0(0,64)])])(2,P[0(0,P[0(0,-16)])])(4,P[0(0,P[0(0,80)])])\\
+\quad {}(6,P[0(0,P[0(0,-128)])])(8,P[0(0,P[0(0,64)])])]
+\end{array}
+\]
+\end{ccTexOnly}
+\begin{ccHtmlOnly}
+<span>oops..</span>
+\end{ccHtmlOnly}
+which corresponds to the following trivariate polynomial:
+\begin{ccTexOnly}
+\[\begin{array}{l}
+64z^8 + (-128)z^6 + 80z^4 + (-16)z^2 + (64y^8 + (-128)y^6 + 80y^4 + (-16)y^2 + \\
+\quad {}(64x^8 + (-128)x^6 + 80x^4 + (-16)x^2 + 2)).
+\end{array}\]
+\end{ccTexOnly}
+\begin{ccHtmlOnly}
+<span>oops..</span>
+\end{ccHtmlOnly}
+The parser can handle polynomials in any number of indeterminates (variables) and 
+can parse arbitrary algebraic expressions, e.g., those of the form: 
+\begin{ccTexOnly}
+\[\begin{array}{l}
+((y-1)^4 - x*y^3)^5 + (x + z)^2 - (2123234523*x^2 - 2*y*y*x + 3^{10}*x*132123)^3,\\
+\quad {}(y + x - z + w - 3)^3 = x + y - 123/12312 + 1.00001*z*x^2.
+\end{array}\]
+\end{ccTexOnly}
+\begin{ccHtmlOnly}
+<span>oops..</span>
+\end{ccHtmlOnly}
+Note that, the multiplication symbol (*) is optional and can be omitted in the above expressions.
+
+The parser is configured via the so-called \ccc{parser policy} provided as a template parameter.
+There are three parser policies available by default:
+
+\begin{itemize}
+\item \ccc{Default_parser_policy}: parses polynomials "as is". In other words, \ccc{Innermost_coefficient_type} of the target polynomial must agree with the type of coefficients
+read from the input stream;
+\item \ccc{Mixed_rational_parser_policy}: extends \ccc{Default_parser_policy}, and allows mixing coefficients of integer and rational number types in the same expression;
+\item \ccc{Mixed_floating_point_parser_policy}: extends \ccc{Mixed_rational_parser_policy}, and allows mixing the coefficients of integer, rational and floating-point number types in the same expression.
+\end{itemize}
+For additional information on parser policies, see the corresponding reference pages.
+
+\ccIncludeExampleCode{Polynomial/default_parser_policy.cpp}
+
+\ccIncludeExampleCode{Polynomial/mixed_rational_parser_policy.cpp}
+
+\ccIncludeExampleCode{Polynomial/mixed_floating_point_parser_policy.cpp}
+
 
 \section{Degree, total degree and degree vector}
 
@@ -422,6 +477,7 @@ polynomials, and how to count the number of distinct real roots
 of a polynomial using its principal Sturm-Habicht coefficients.
 
 \ccIncludeExampleCode{Polynomial/subresultants.cpp}
+
 
 \section{Design and Implementation History}
 
