@@ -149,35 +149,6 @@ bivariate polynomial:
 \ccIncludeExampleCode{Polynomial/construction.cpp}
 
 
-
-% ###########################
-\section{Coefficient Access}
- 
-In order to obtain a certain coefficient the traits class provides 
-several functors. 
-Note that the functors do not allow a write access to the coefficients. 
-\begin{itemize}
-\item \ccc{PolynomialTraits_d::GetCoefficient}: 
-a model of this concept provides access to a coefficient in the univariate view,
-that is, it returns elements of $R[x_0,\dots,x_{d-2}]$.
-\item \ccc{PolynomialTraits_d::GetInnermostCoefficient}: 
-a model of this concept provides access to a coefficient in the multivariate 
-view, that is, it returns elements of $R$.
-\item \ccc{PolynomialTraits_d::LeadingCoefficient}: 
-a model of this concept provides access to the leading coefficient in 
-the univariate view. 
-\item \ccc{PolynomialTraits_d::InnermostLeadingCoefficient}: 
-a model of this concept provides access to the leading coefficient in 
-the multivariate view, that is,
-it returns the (innermost) coefficient of the leading multivariate monomial. 
-See also  \ccc{PolynomialTraits_d::DegreeVector}.          
-\end{itemize}
-
-\subsection{Examples}
-The following example illustrates the application of the functors 
-discussed above:
-\ccIncludeExampleCode{Polynomial/coefficient_access.cpp}
-
 \section{Polynomial parser}
 
 The purpose of the polynomial parser is to provide an alternative way to input CGAL polynomials in a human-readable format. By default, the class \ccc{CGAL::Polynomial<Coeff>} provides an \ccc{operator >>} to read polynomials from an input stream in an ASCII format:
@@ -233,6 +204,34 @@ For additional information on parser policies, see the corresponding reference p
 
 \ccIncludeExampleCode{Polynomial/mixed_floating_point_parser_policy.cpp}
 
+
+% ###########################
+\section{Coefficient Access}
+ 
+In order to obtain a certain coefficient the traits class provides 
+several functors. 
+Note that the functors do not allow a write access to the coefficients. 
+\begin{itemize}
+\item \ccc{PolynomialTraits_d::GetCoefficient}: 
+a model of this concept provides access to a coefficient in the univariate view,
+that is, it returns elements of $R[x_0,\dots,x_{d-2}]$.
+\item \ccc{PolynomialTraits_d::GetInnermostCoefficient}: 
+a model of this concept provides access to a coefficient in the multivariate 
+view, that is, it returns elements of $R$.
+\item \ccc{PolynomialTraits_d::LeadingCoefficient}: 
+a model of this concept provides access to the leading coefficient in 
+the univariate view. 
+\item \ccc{PolynomialTraits_d::InnermostLeadingCoefficient}: 
+a model of this concept provides access to the leading coefficient in 
+the multivariate view, that is,
+it returns the (innermost) coefficient of the leading multivariate monomial. 
+See also  \ccc{PolynomialTraits_d::DegreeVector}.          
+\end{itemize}
+
+\subsection{Examples}
+The following example illustrates the application of the functors 
+discussed above:
+\ccIncludeExampleCode{Polynomial/coefficient_access.cpp}
 
 \section{Degree, total degree and degree vector}
 
