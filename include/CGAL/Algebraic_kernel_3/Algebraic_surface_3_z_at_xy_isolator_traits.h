@@ -3684,7 +3684,7 @@ void dump_face(Face_const_handle fh) const {
 
 
         void _compute_adjacencies_around_vertical_vertex(const Surface_3& surface,
-                                                         Z_at_xy_isolator& isolator1,
+                                                         const Z_at_xy_isolator& isolator1,
                                                          Vertex_const_handle v_handle) const {
 
             // We need the cad later for point location and n-k-queries
@@ -3751,12 +3751,12 @@ void dump_face(Face_const_handle fh) const {
                     // Rechoose intermediate value
                     Rational& z = v_it->second.intermediate_values.get()[i];
                     while( z <= isolator1.right_bound(i-1) ) {
-                        isolator1.refine_interval(i-1);
+                      const_cast< Z_at_xy_isolator& >(isolator1).refine_interval(i-1);
                     }
                     z = ( z + isolator1.right_bound(i-1) ) / 2;
                 }
             }                    
-                    
+                  
 
             //Create all bucket curves
 
@@ -4239,9 +4239,9 @@ void dump_face(Face_const_handle fh) const {
         bool _adjacency_by_transitivity
         (const Surface_3& surface,
          Vertex_const_handle v_handle,
-         Z_at_xy_isolator isolator1,
+         const Z_at_xy_isolator& isolator1,
          Halfedge_const_handle he_handle,
-         Z_at_xy_isolator isolator2,
+         const Z_at_xy_isolator& isolator2,
          High_dim_cell_info_for_vertex* cell_info) const {
 
             int n = isolator2.number_of_real_roots();
@@ -4389,10 +4389,10 @@ void dump_face(Face_const_handle fh) const {
         
 
         CGAL::Adjacencies_3 _vertex_adjacency(const Surface_3& surface,
-                                              Z_at_xy_isolator& isolator1, 
+                                              const Z_at_xy_isolator& isolator1, 
                                               CGAL::Object dcel_handle1,
                                               bool has_vertical_line1,
-                                              Z_at_xy_isolator& isolator2, 
+                                              const Z_at_xy_isolator& isolator2, 
                                               CGAL::Dcel_feature feature2,
                                               CGAL::Object dcel_handle2) const {
           
@@ -4593,11 +4593,11 @@ void dump_face(Face_const_handle fh) const {
          * from \c dcel_handle1 to \c dcel_handle2
          */
         CGAL::Adjacencies_3 operator()(const Surface_3& surface,
-                                      Z_at_xy_isolator& isolator1, 
+                                      const Z_at_xy_isolator& isolator1, 
                                       CGAL::Dcel_feature feature1,
                                       CGAL::Object dcel_handle1,
                                       bool has_vertical_line1,
-                                      Z_at_xy_isolator& isolator2, 
+                                      const Z_at_xy_isolator& isolator2, 
                                       CGAL::Dcel_feature feature2,
                                       CGAL::Object dcel_handle2,
                                       bool has_vertical_line2) const {
