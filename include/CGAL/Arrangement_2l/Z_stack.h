@@ -1158,8 +1158,8 @@ private:
                     CGAL_assertion(!surely_equal);
                     
                     // otherwise, we refine interval
-                    isolator1.refine_interval(root1);
-                    isolator2.refine_interval(root2);
+                    const_cast< Z_at_xy_isolator& >(isolator1).refine_interval(root1);
+                    const_cast< Z_at_xy_isolator& >(isolator2).refine_interval(root2);
 
                     // the next combination is equal to this one,
                     // which is cannot be equal!

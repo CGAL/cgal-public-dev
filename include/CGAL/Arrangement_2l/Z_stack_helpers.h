@@ -168,8 +168,8 @@ public:
                     for (typename std::list< int >::iterator it = 
                              ovl1[i1].begin();
                          it != ovl1[i1].end(); it++) {
-                        isolator1.refine_interval(i1);
-                        isolator2.refine_interval(*it);
+                        const_cast< Real_root_isolator& >(isolator1).refine_interval(i1);
+                        const_cast< Real_root_isolator& >(isolator2).refine_interval(*it);
                         if (this->overlap_or_order(isolator1, i1, 
                                                    isolator2, *it) != 
                             CGAL::EQUAL) {
@@ -201,8 +201,8 @@ public:
                     for (typename std::list< int >::iterator it = 
                              ovl2[i2].begin();
                          it != ovl2[i2].end(); it++) {
-                        isolator1.refine_interval(*it);
-                        isolator2.refine_interval(i2);
+                        const_cast< Real_root_isolator& >(isolator1).refine_interval(*it);
+                        const_cast< Real_root_isolator& >(isolator2).refine_interval(i2);
                         if (this->overlap_or_order(isolator1, *it, 
                                                    isolator2, i2) != 
                             CGAL::EQUAL) {
@@ -265,8 +265,8 @@ public:
             for (typename std::list< std::pair< int, int > >::iterator 
                      it = overlaps.begin(); it != overlaps.end(); it++) {
                 // refine overlapping intervals
-                isolator1.refine_interval(it->first);
-                isolator2.refine_interval(it->second);
+                const_cast< Real_root_isolator& >(isolator1).refine_interval(it->first);
+                const_cast< Real_root_isolator& >(isolator2).refine_interval(it->second);
 
                 // and remove non-overlapping pairs
                 if (this->overlap_or_order(
