@@ -90,6 +90,25 @@ public:
   //!@\name Constructors
   //!@{
 
+  //! Default constructor (does nothing)
+#if CGAL_ALGEBRAIC_KERNEL_D_ISOLATORS_DISABLE_DEFAULT_CONSTRUCTIBLE
+  protected:
+#else
+  public:
+#endif
+  Vertical_line_adapter_rep() {} // = default
+
+  // needs no special assignable-implementation as no pointers 
+  // and this is a Rep of a handle class (depending on Handle_policy!)
+#if CGAL_ALGEBRAIC_KERNEL_D_ISOLATORS_DISABLE_ASSIGNABLE
+  protected:
+  // TODO 2012 check whether this cannot be re-disabled
+  Vertical_line_adapter_rep(const Self&); // {} // = disable
+  Vertical_line_adapter_rep& operator=(const Self&); // = disable
+#endif
+
+  public:
+
   /*! 
    * \brief Constructor
    */
@@ -122,7 +141,6 @@ public:
   }
   
   //!@} // Constructors
-
 
   //!\name Destructor
   //!@{
