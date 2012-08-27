@@ -605,7 +605,7 @@ public:
 #if !NDEBUG
             std::cout << "Isolator.." << std::flush;
 #endif
-#if CGAL_AK3_USE_NEW_ISOLATORS
+#if !CGAL_AK_USE_OLD_BITSTREAM_DESCARTES
             // vert-line
             Z_at_xy_isolator isol(pseudo_stack.begin(),
                                   pseudo_stack.end(),
@@ -721,7 +721,7 @@ public:
                     int k = nk.k();
 
                     if (k == 0) {
-#if CGAL_AK3_USE_NEW_ISOLATORS
+#if !CGAL_AK_USE_OLD_BITSTREAM_DESCARTES
                         // square-free
                         isol = Z_at_xy_isolator( local_f, bck );
 #else
@@ -817,7 +817,7 @@ public:
                             std::cout << "Try m-k-Descartes.." << std::flush;
 #endif
                             // m-k-version
-#if CGAL_AK3_USE_NEW_ISOLATORS
+#if !CGAL_AK_USE_OLD_BITSTREAM_DESCARTES
                             isol = Z_at_xy_isolator(local_f, m, k, bck);
 #else
                             isol = Z_at_xy_isolator(CGAL::internal::M_k_descartes_tag(),
@@ -845,7 +845,7 @@ public:
                             std::cout << "isolate sq-free part" << std::endl;
 #endif
                             // square-free
-#if CGAL_AK3_USE_NEW_ISOLATORS
+#if !CGAL_AK_USE_OLD_BITSTREAM_DESCARTES
                             isol = Z_at_xy_isolator( sq_free_f_a_b, bck);
 #else
                             isol = Z_at_xy_isolator(CGAL::internal::Square_free_descartes_tag(),
@@ -1286,7 +1286,7 @@ public:
             (const Z_at_xy_isolator& isolator1,
              const Z_at_xy_isolator& isolator2) const {
             
-#if CGAL_AK3_USE_NEW_ISOLATORS
+#if !CGAL_AK_USE_OLD_BITSTREAM_DESCARTES
             CGAL_precondition(isolator1.type() == Z_at_xy_isolator::MK);
             CGAL_precondition(isolator2.type() == Z_at_xy_isolator::SF);
 #else
@@ -1887,7 +1887,7 @@ public:
                 // 1) Use m-k-filter:
 
                 if(isolator1.type() == 
-#if CGAL_AK3_USE_NEW_ISOLATORS 
+#if !CGAL_AK_USE_OLD_BITSTREAM_DESCARTES
                    Z_at_xy_isolator::MK 
 #else 
                    CGAL::internal::M_K_DESCARTES 
@@ -4484,7 +4484,7 @@ void dump_face(Face_const_handle fh) const {
                 // M-K-Filter
                 //if(false) {
                 if(isolator1.type() == 
-#if CGAL_AK3_USE_NEW_ISOLATORS 
+#if !CGAL_AK_USE_OLD_BITSTREAM_DESCARTES
                    Z_at_xy_isolator::MK 
 #else 
                    CGAL::internal::M_K_DESCARTES 

@@ -28,8 +28,8 @@
 
 #include <CGAL/config.h>
 
-#ifndef CGAL_AK3_USE_NEW_ISOLATORS
-#define CGAL_AK3_USE_NEW_ISOLATORS 1
+#ifndef CGAL_AK_USE_OLD_BITSTREAM_DESCARTES
+#define CGAL_AK_USE_OLD_BITSTREAM_DESCARTES 0
 #endif
 
 #include <CGAL/Cache.h>
@@ -42,7 +42,7 @@
 #include <boost/iterator/counting_iterator.hpp>
 
 #include <CGAL/Algebraic_kernel_3/Bitstream_coefficient_kernel_at_point_2.h>
-#if CGAL_AK3_USE_NEW_ISOLATORS
+#if !CGAL_AK_USE_OLD_BITSTREAM_DESCARTES 
 #include <CGAL/Algebraic_kernel_3/Algebraic_surface_3_lifter.h>
 #else
 #include <CGAL/Algebraic_kernel_d/Bitstream_descartes.h>
@@ -146,7 +146,7 @@ public:
     typedef CGAL::Bitstream_coefficient_kernel_at_point_2< Self > Isolator_bck;
 
     //! type of isolator
-#if CGAL_AK3_USE_NEW_ISOLATORS
+#if !CGAL_AK_USE_OLD_BITSTREAM_DESCARTES
     typedef CGAL::internal::Algebraic_surface_3_lifter< Isolator_bck > Z_at_xy_isolator;
 #else
     typedef CGAL::internal::Bitstream_descartes< Isolator_bck > Z_at_xy_isolator;
