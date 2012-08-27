@@ -102,8 +102,7 @@ public:
   // and this is a Rep of a handle class (depending on Handle_policy!)
 #if CGAL_ALGEBRAIC_KERNEL_D_ISOLATORS_DISABLE_ASSIGNABLE
   protected:
-  // TODO 2012 check whether this cannot be re-disabled
-  Vertical_line_adapter_rep(const Self&); // {} // = disable
+  // Vertical_line_adapter_rep(const Self&); // = default
   Vertical_line_adapter_rep& operator=(const Self&); // = disable
 #endif
 
@@ -226,6 +225,8 @@ public:
     return false;
   }
 
+  private:
+
   //! Needed for the referencing counting mechanism
   virtual CGAL::Reference_counted_hierarchy<>* clone() {
     return new Vertical_line_adapter_rep(*this);
@@ -299,12 +300,6 @@ class Algebraic_surface_3_lifter :
   //! the class itself
   typedef Algebraic_surface_3_lifter< Bitstream_coefficient_kernel, Handle_policy > Self;
 
-
-#if 0 // TODO 2012 remove? if nothing in AK_3 asks for it!
-  //! type of bitstream tree
-  typedef typename Rep::Bitstream_tree Bitstream_tree;
-#endif
-
   //!@} // Public types
 
  public:
@@ -315,6 +310,8 @@ class Algebraic_surface_3_lifter :
   //! default constructor // TODO 2012 remove?
   Algebraic_surface_3_lifter() : Base(typename Base::Use_with_initialize_with()) {
   }
+
+  // Comment: Copy and assign constructor are default!
 
   // TODO 2012 replace all constructors by one ctor for event and one ctor for internal
   // and let this class decide which is the best isolator (e.g. with help of modular arithmetic)
