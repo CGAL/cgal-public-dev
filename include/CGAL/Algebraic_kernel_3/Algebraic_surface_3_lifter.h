@@ -34,7 +34,7 @@
 
 #include <CGAL/Handle_with_policy.h>
 
-#include <CGAL/Algebraic_kernel_d/isolators.h>
+#include <CGAL/Algebraic_kernel_d/Generic_isolator.h>
 #include <CGAL/Algebraic_kernel_d/Bitstream_descartes_isolator_reps.h> // for Generic_bitstream_descartes_isolator_rep
 #include <CGAL/Algebraic_kernel_d/Curve_analysis_2_mkbs_lifter.h> // contains Mk_bitstream_descartes_isolator_rep
 
