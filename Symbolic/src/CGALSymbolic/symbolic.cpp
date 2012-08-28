@@ -123,7 +123,6 @@ Polynomial< NT > gcd_NTL(const Polynomial< NT >& p1,
 
 template < class Poly >
 Poly gcd_gpu(const Poly& F_, const Poly& G_) {
-#warning !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! COMPILING GPU_GCD
     bool failed;
     Poly ggcd = GPU_algorithm_facade::gcd(F_, G_, &failed);
 

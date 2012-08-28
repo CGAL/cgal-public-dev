@@ -16,7 +16,7 @@ endif()
 
 INCLUDE (CheckCXXSourceRuns)
 
-# set(CUDA_TOOLKIT_ROOT_DIR "$ENV{HOME}/cuda3.0/cuda")
+set(CUDA_TOOLKIT_ROOT_DIR "$ENV{HOME}/cuda4.0/cuda")
 
 # REMARK: We require the following variables to be set:
 # export CUDA_BIN_PATH=$HOME/cuda3.0/cuda/bin
@@ -40,9 +40,11 @@ if ( CUDA_FOUND )
 
   if ( CUDA_CHECK_COMPILED )
 
-    message(STATUS  "test_CUDA compiled successfully")
+    message(STATUS  "test_CUDA compiled successfully: ${CUDA_CHECK_EXITCODE}")
     MATH(EXPR CUDA_MAJOR '${CUDA_CHECK_EXITCODE}/10')
     MATH(EXPR CUDA_MINOR '${CUDA_CHECK_EXITCODE}%10')
+
+    
 
     if (CUDA_CHECK_EXITCODE LESS 13)
 
