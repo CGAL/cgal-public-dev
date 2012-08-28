@@ -68,7 +68,7 @@ struct GPU_algorithm_facade {
 
         if(obj.internal_compute(fv, gv, rv, bits)) {
             ggcd = internal::construct_polynomial_from_mpz< NT >(rv);
-            std::cout <<  "\nGGCD succeeded\n";
+//             std::cout << "GGCD succeeded\n";
             internal::dispose_mpz_vector(rv);
             
         } else  {
@@ -134,7 +134,7 @@ struct GPU_algorithm_facade {
 
             res = internal::construct_polynomial_from_mpz< NT >(r);
             internal::dispose_mpz_vector(r);
-            std::cout <<  "GRES succeeded\n";
+//             std::cout <<  "GRES succeeded\n";
             failed = false;
         }
 

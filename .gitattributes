@@ -4279,6 +4279,7 @@ Symbolic/include/CGAL/GPU_algorithms/common_defs.h -text
 Symbolic/include/CGAL/GPU_algorithms/gcd_algorithm.h -text
 Symbolic/include/CGAL/GPU_algorithms/resultant_algorithm.h -text
 Symbolic/include/CGAL/symbolic_exports.h -text
+Symbolic/include/CGAL/symbolic_standalone.h -text
 Symbolic/src/CGALSymbolic/libgpu_symbolic_sm_13.so -text
 Symbolic/src/CGALSymbolic/libgpu_symbolic_sm_20.so -text
 Symbolic/src/CGALSymbolic/moduli_set24 -text

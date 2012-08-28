@@ -325,7 +325,7 @@ void compute_gcd_bitlength(
     bits = std::max(bits_f, bits_g);
     bits = std::max(bits, 80u); // at least 80 bits
 
-    printf("bits_f: %d; bits_g: %d ##gcdbits: %d\n", bits_f, bits_g, bits);
+//     printf("bits_f: %d; bits_g: %d ##gcdbits: %d\n", bits_f, bits_g, bits);
 }
 
 #undef ILOG2
@@ -389,7 +389,8 @@ void compute_resultant_bounds(
         t = CGAL::upper(CGAL::convert_to_bfi(cf)), s += t * t;
         sum_g[i] = t;
     }
-    rows_bits += log2_abs(s) * n;
+    if(!CGAL::is_zero(s))
+        rows_bits += log2_abs(s) * n;
     rows_deg += degx_g * n;
 
     unsigned minf, ming, deg(0), deg2(0);
@@ -430,7 +431,8 @@ void compute_resultant_bounds(
             // NOTE: what if 's' does not fit a double value ??
             t = sum_g[k], s += t * t;
         }
-        cols_bits += log2_abs(s);  
+        if(!CGAL::is_zero(s))
+            cols_bits += log2_abs(s);  
         cols_deg += deg;
         cols_min_deg += deg2;
     }
