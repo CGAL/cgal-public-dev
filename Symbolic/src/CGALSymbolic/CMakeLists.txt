@@ -22,7 +22,7 @@ set(CUDA_TOOLKIT_ROOT_DIR "$ENV{HOME}/cuda4.0/cuda")
 # export CUDA_BIN_PATH=$HOME/cuda3.0/cuda/bin
 # export CUDA_LIB_PATH=$HOME/cuda3.0/cuda/lib
 
-find_package(CUDA QUIET REQUIRED)
+find_package(CUDA QUIET)
 
 if ( CUDA_FOUND )
 
