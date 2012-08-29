@@ -61,7 +61,7 @@ struct GPU_algorithm_facade {
             std::swap(deg_f, deg_g);
         }
 
-        compute_gcd_bitlength(f, g, bits);
+        internal::compute_gcd_bitlength(f, g, bits);
 
         if(pfailed != 0)
             *pfailed = false;
@@ -141,7 +141,6 @@ struct GPU_algorithm_facade {
          // if the algorithm failed here: decompose one of the polynomials
          // as g * y^k, then the resultant is res(f, g/y^k) * f[0]^k
         if(failed) { // trying to remove trailing zero coeffs
-            bool zeros_g = true;
             CGAL::Polynomial< CGAL::Polynomial< NT > >
                 poly = f, reduced = g;
 
