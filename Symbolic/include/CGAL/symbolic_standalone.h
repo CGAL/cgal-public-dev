@@ -94,12 +94,10 @@ namespace CGAL {
 
 namespace internal {
 
-#if CGAL_BISOLVE_USE_GPU_RESULTANTS
-
 template < class NT >
 void writeout(const CGAL::Polynomial< NT >& p1,
         const CGAL::Polynomial< NT >& p2) {
-    
+
     std::stringstream ss, ss2;
     CGAL::set_pretty_mode(ss);
     CGAL::set_pretty_mode(ss2);
@@ -112,6 +110,9 @@ void writeout(const CGAL::Polynomial< NT >& p1,
     o2 << ss2.str();
     o2.close();
 }
+
+
+#if CGAL_BISOLVE_USE_GPU_RESULTANTS
 
 // repeat original version of "resultant"
 template < class Coeff > 
@@ -822,7 +823,7 @@ void Polynomial< Polynomial< CGAL::Gmpz > >::euclidean_division(
     Polynomial< Polynomial< CGAL::Gmpz > >& q,
     Polynomial< Polynomial< CGAL::Gmpz > >& r) {
 
-    q = bi_exact_div(f, g);
+    q = internal::bi_exact_div(f, g);
     r = Polynomial< Polynomial< CGAL::Gmpz > >
         (Polynomial< CGAL::Gmpz >(CGAL::Gmpz(0)));
 }
@@ -865,7 +866,7 @@ void Polynomial< Polynomial< CORE::BigInt > >::euclidean_division(
     Polynomial< Polynomial< CORE::BigInt > >& q,
     Polynomial< Polynomial< CORE::BigInt > >& r) {
 
-    q = bi_exact_div(f, g);
+    q = internal::bi_exact_div(f, g);
     r = Polynomial< Polynomial< CORE::BigInt > >
         (Polynomial< CORE::BigInt >(CORE::BigInt(0)));
 }
