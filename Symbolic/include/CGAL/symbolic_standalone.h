@@ -388,7 +388,7 @@ Poly_2 _bi_gcd(const Poly_2& F_, const Poly_2& G_) {
     }
 
     if(degfx == 0 || deggx == 0) {
-        Poly_2 res = bi_gcd(swap(f, 0, 1), swap(g, 0, 1));
+        Poly_2 res = internal::_bi_gcd(swap(f, 0, 1), swap(g, 0, 1));
         res = swap(res, 0, 1) * gcdc;
         return res;
     }
@@ -432,7 +432,7 @@ Poly_2 _bi_gcd(const Poly_2& F_, const Poly_2& G_) {
 template < class Poly_2 > inline
 Poly_2 bi_gcd(const Poly_2& F_, const Poly_2& G_) {
 
-    Poly_2 res = _bi_gcd(F_, G_);
+    Poly_2 res = internal::_bi_gcd(F_, G_);
 #if CGAL_BIGCD_CHECK_SANITY
     std::cout << "bigcd: computing reference solution..\n";
     Poly_2 truth = CGAL::internal::gcd_utcf_UFD(F_, G_);
@@ -771,7 +771,7 @@ template <> inline
 CGAL::Polynomial< CGAL::Gmpz > gcd(
         const CGAL::Polynomial< CGAL::Gmpz >& F_,
         const CGAL::Polynomial< CGAL::Gmpz >& G_) {
-    return gcd_(F_,G_);
+    return internal::gcd_(F_,G_);
 }
 #endif
 
@@ -781,7 +781,7 @@ template <> inline
 CGAL::Polynomial< CORE::BigInt > gcd(
         const CGAL::Polynomial< CORE::BigInt >& F_,
         const CGAL::Polynomial< CORE::BigInt >& G_) {
-    return gcd_(F_,G_);
+    return internal::gcd_(F_,G_);
 }
 
 #endif
