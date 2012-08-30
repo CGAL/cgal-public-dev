@@ -214,9 +214,7 @@ if( NOT CGAL_MACROS_FILE_INCLUDED )
 
       if ( NOT ${vlib}_SETUP ) # avoid double usage
 
-        string( LENGTH "${usefile}" length )
-
-        if ( ("${ARGC}" EQUAL "2") AND ("${length}" GREATER "0") ) 
+        if ( "${ARGC}" EQUAL "2" )
 
           set (usefile "${ARGV1}")
 
@@ -229,7 +227,7 @@ if( NOT CGAL_MACROS_FILE_INCLUDED )
         else()
 
           ####message( STATUS "${lib} include:     ${${vlib}_INCLUDE_DIR}" )
-          include_directories ( ${${vlib}_INCLUDE_DIR} )
+          include_directories ( SYSTEM ${${vlib}_INCLUDE_DIR} )
 
           # TODO EBEB remove definitions?       
           ####message( STATUS "${lib} definitions: ${${vlib}_DEFINITIONS}" )
@@ -308,7 +306,7 @@ if( NOT CGAL_MACROS_FILE_INCLUDED )
           message( STATUS "External libraries are all used")
           foreach ( CGAL_3RD_PARTY_LIB ${CGAL_SUPPORTING_3RD_PARTY_LIBRARIES})
             if (${CGAL_3RD_PARTY_LIB}_FOUND) 
-              use_lib( ${CGAL_3RD_PARTY_LIB} "${${CGAL_3RD_PARTY_LIB}_USE_FILE}")
+              use_lib( ${CGAL_3RD_PARTY_LIB} ${${CGAL_3RD_PARTY_LIB}_USE_FILE})
             endif()
           endforeach()
         else()
@@ -325,7 +323,7 @@ if( NOT CGAL_MACROS_FILE_INCLUDED )
         if ( NOT CGAL_IGNORE_PRECONFIGURED_${component} AND ${vlib}_FOUND) 
 
           ####message( STATUS "External library ${component} has been preconfigured")
-          use_lib( ${component} "${${vlib}_USE_FILE}")
+          use_lib( ${component} ${${vlib}_USE_FILE})
 
         else()
 
@@ -333,7 +331,8 @@ if( NOT CGAL_MACROS_FILE_INCLUDED )
           find_package( ${component} )
           ####message( STATUS "External library ${vlib} after find")
           if (${vlib}_FOUND) 
-            use_lib( ${component} "${${vlib}_USE_FILE}")
+            ####message( STATUS "External library ${vlib} about to be used")
+            use_lib( ${component} ${${vlib}_USE_FILE})
           endif()
      
         endif()
@@ -351,12 +350,27 @@ if( NOT CGAL_MACROS_FILE_INCLUDED )
     #          - or even less specific if order becomes less relevant
     # Eric Berberich 2012/06/29
 
+    if(RS_FOUND)
+      use_component( RS )
+    endif()
+
+    if(MPFI_FOUND)
+      use_component( MPFI )
+    endif()
+
     use_component( MPFR )
     if (GMPXX_FOUND) 
       use_component( GMPXX )
     endif()
     use_component( GMP )
 
+    if(LEDA_FOUND)
+      use_component( LEDA )
+    endif()
+
+    if(NTL_FOUND)
+      use_component( NTL )
+    endif()
   endmacro()
 
 

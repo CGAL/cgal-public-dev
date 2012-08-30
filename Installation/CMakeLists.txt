@@ -13,12 +13,10 @@ else()
 endif()
 
 # Tested version:
-if("${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION}" VERSION_GREATER 2.6)
-  if("${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION}.${CMAKE_PATCH_VERSION}" VERSION_GREATER 2.8.3)
-    cmake_policy(VERSION 2.8.4)
-  else()
-    cmake_policy(VERSION 2.6)
-  endif()
+if("${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION}.${CMAKE_PATCH_VERSION}" VERSION_GREATER 2.8.3)
+  cmake_policy(VERSION 2.8.4)
+else()
+  cmake_policy(VERSION 2.6)
 endif()
 
 #--------------------------------------------------------------------------------------------------
@@ -264,9 +262,13 @@ else()
     # it is for example "I" or "Ic"):
     if(NOT CGAL_BUGFIX_VERSION GREATER 0 AND NOT CGAL_BUGFIX_VERSION EQUAL 0)
       set(CGAL_BUGFIX_VERSION 0)
-      list( GET CGAL_VERSION_TOKENS 3 CGAL_BUILD_VERSION )
+      if( CGAL_VERSION_TOKENS_LEN GREATER 3 )
+        list( GET CGAL_VERSION_TOKENS 3 CGAL_BUILD_VERSION )
+      endif()
     else()
-      list( GET CGAL_VERSION_TOKENS 4 CGAL_BUILD_VERSION )
+      if( CGAL_VERSION_TOKENS_LEN GREATER 4 )
+        list( GET CGAL_VERSION_TOKENS 4 CGAL_BUILD_VERSION )
+      endif()
     endif()
     # If CGAL_BUILD_VERSION is not a strictly positive number, error
     if(NOT CGAL_BUILD_VERSION GREATER 0)
@@ -485,9 +487,13 @@ message( "== Generate version files (DONE) ==\n")
 #
 #--------------------------------------------------------------------------------------------------
  
-message("== Detect external libraries ==")
+message("== Set up flags ==")
 
 include(CGAL_SetupFlags)
+
+message("== Set up flags (DONE) ==\n")
+
+message("== Detect external libraries ==")
 
 macro( add_config_flag flag )
 
@@ -571,6 +577,7 @@ cache_set(CGAL_3RD_PARTY_LIBRARIES_DIRS "" )
 
 # default is on, but some use-cases need to set it to off, e.g., debian packages
 option( CGAL_ENABLE_PRECONFIG "Select to allow to preconfiguration of external libraries" ON)
+
 # additional info: some header files in CGAL add additional code if
 # certain optional libs are installed, and some examples/tests rely on
 # this; e.g. in MPFI/RS in Algebraic_kernel_d. For these cases CGAL
@@ -633,9 +640,10 @@ add_config_flag( CGAL_USE_LEDA )
 add_config_flag( CGAL_USE_MPFI )
 add_config_flag( CGAL_USE_RS )
 add_config_flag( CGAL_USE_NTL )
+
 add_config_flag( CGAL_BUILD_SHARED_LIBS )
 
-if (NOT WITH_CGAL_Core) 
+if (NOT ${WITH_CGAL_Core}) 
   set(CGAL_USE_CORE FALSE)
 else()
   set(CGAL_USE_CORE ${CGAL_USE_GMP})
@@ -760,21 +768,26 @@ endif()
 #
 #--------------------------------------------------------------------------------------------------
 
-# Set CGAL_LIBRARY_NAME, CGAL_Qt3_LIBRARY_NAME and so on. Those variables
-# are the name of CGAL libraries, without the path. Used in the generation
-# of the installed CGALConfig.cmake
-get_filename_component(CGAL_LIBRARY_NAME "${CGAL_LIBRARY}" NAME CACHE)
-hide_variable(CGAL_LIBRARY_NAME)
-foreach(lib ${CGAL_CONFIGURED_LIBRARIES})
-  get_filename_component(CGAL_${lib}_LIBRARY_NAME "${CGAL_${lib}_LIBRARY}" NAME CACHE)
-  hide_variable(CGAL_${lib}_LIBRARY_NAME)
-endforeach()
-
 # fake to simplify loop
 set(CGAL_CGAL_LIBRARY ${CGAL_LIBRARY})
 hide_variable(CGAL_CGAL_LIBRARY)
-set(CGAL_CGAL_LIBRARY_NAME ${CGAL_LIBRARY_NAME})
-hide_variable(CGAL_CGAL_LIBRARY_NAME)
+
+# Set CGAL_INSTALLED_LIBRARY, CGAL_INSTALLED_Qt3_LIBRARY and so on. Those
+# variables are the path to the libraries installed by the install
+# target. Used in the generation of the installed CGALConfig.cmake
+foreach(lib ${CGAL_CONFIGURED_LIBRARIES} CGAL) # note the added fake 'CGAL'
+  if(CGAL_${lib}_LIBRARY)
+    get_filename_component(lib_name "${CGAL_${lib}_LIBRARY}" NAME)
+    set(CGAL_INSTALLED_${lib}_LIBRARY "${CMAKE_INSTALL_PREFIX}/${CGAL_INSTALL_LIB_DIR}/${lib_name}")
+  else()
+    set(CGAL_INSTALLED_${lib}_LIBRARY "")
+  endif()
+  hide_variable(CGAL_INSTALLED_${lib}_LIBRARY)
+endforeach()
+
+# set back from the fake
+set(CGAL_INSTALLED_LIBRARY  ${CGAL_INSTALLED_CGAL_LIBRARY})
+hide_variable(CGAL_INSTALLED_LIBRARY)
 
 create_CGALconfig_files()
 
@@ -881,6 +894,7 @@ if ( NOT RUNNING_CGAL_AUTO_TEST )
 
   add_programs(examples examples OFF )
   add_programs(demo     demos    OFF )
+  add_programs(test     tests    OFF )
   
 endif()
 
