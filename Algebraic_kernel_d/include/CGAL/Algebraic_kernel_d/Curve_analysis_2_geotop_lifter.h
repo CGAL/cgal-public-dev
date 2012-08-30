@@ -29,7 +29,7 @@
 
 #include <CGAL/config.h>
 
-#include <CGAL/Bi_solve_2_flags.h>
+#include <CGAL/Algebraic_kernel_2/Bi_solve_2_flags.h>
 
 #include <CGAL/Handle_with_policy.h>
 
@@ -43,14 +43,13 @@
 
 #include <CGAL/Polynomial_traits_d.h>
 #include <CGAL/Algebraic_kernel_d/Interval_evaluate_2.h>
-
 #include <CGAL/Algebraic_kernel_d/Bi_diff_vanish_2.h>
 
 #if CGAL_ACK_CURVE_ANALYSES_BISOLVE_USE_TEISSIER
-#include <CGAL/Certifier_cofactor_arcavoid_traits.h>
+#include <CGAL/Algebraic_kernel_2/Certifier_cofactor_arcavoid_traits.h>
 #include <CGAL/Arcavoid.h>
 #else
-#include <CGAL/Certifier_cofactor_bitstream_traits.h>
+#include <CGAL/Algebraic_kernel_2/Certifier_cofactor_bitstream_traits.h>
 #endif
 
 #ifndef Bisolve_telemetry_code

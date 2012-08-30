@@ -30,8 +30,8 @@
 #include <set>
 #include <map>
 
-#include <CGAL/Bi_solve_2_flags.h>
-#include <CGAL/Bi_solve_2.h>
+#include <CGAL/Algebraic_kernel_2/Bi_solve_2_flags.h>
+#include <CGAL/Algebraic_kernel_2/Bi_solve_2.h>
 
 namespace CGAL {
 

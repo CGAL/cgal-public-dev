@@ -40,8 +40,8 @@
 #include <CGAL/Algebraic_kernel_d/exceptions.h>
 
 #if CGAL_ACK_CURVE_PAIR_ANALYSES_USE_BISOLVE
-#include <CGAL/Certifier_cofactor_arcavoid_traits.h>
-#include <CGAL/Bi_solve_2.h>
+#include <CGAL/Algebraic_kernel_2/Certifier_cofactor_arcavoid_traits.h>
+#include <CGAL/Algebraic_kernel_2/Bi_solve_2.h>
 #else
 #include <CGAL/Algebraic_kernel_d/Shear_controller.h>
 #include <CGAL/Algebraic_kernel_d/Shear_transformation.h>

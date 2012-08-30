@@ -49,6 +49,7 @@
 #include <CGAL/Algebraic_kernel_d_1.h>
 #include <CGAL/Algebraic_kernel_d/Algebraic_real_quadratic_refinement_rep_bfi.h>
 #include <CGAL/Algebraic_kernel_d/Bitstream_coefficient_kernel.h>
+
 #include <CGAL/Algebraic_kernel_d/Bitstream_descartes.h>
 
 #include <CGAL/Algebraic_kernel_d/Algebraic_curve_kernel_2.h>

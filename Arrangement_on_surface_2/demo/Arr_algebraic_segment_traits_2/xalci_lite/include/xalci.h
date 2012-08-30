@@ -95,7 +95,7 @@ typedef CGAL::CORE_arithmetic_kernel AK;
 #include <CGAL/Polynomial_traits_d.h>
 #include <CGAL/Polynomial_type_generator.h>
 
-#include <CGAL/Rounding_ak_d_1.h>
+#include <CGAL/Algebraic_kernel_2/Rounding_ak_d_1.h>
 
 #if CGAL_BISOLVE_USE_RS_AK
 #include <CGAL/Algebraic_kernel_d/Float_traits.h>
