@@ -17,9 +17,7 @@
 // 
 //
 // Author(s)     : Michael Kerber <mkerber@mpi-inf.mpg.de>
-//                 Eric Berberich <eric@mpi-inf.mpg.de>
-//
-// ============================================================================
+//                 Eric Berberich <eric.berberich@cgal.org>
 
 #ifndef CGAL_ALGEBRAIC_CURVE_KERNEL_CURVE_ANALYSIS_2_ALCIX_H
 #define CGAL_ALGEBRAIC_CURVE_KERNEL_CURVE_ANALYSIS_2_ALCIX_H

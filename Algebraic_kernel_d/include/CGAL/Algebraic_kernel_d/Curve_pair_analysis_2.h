@@ -16,7 +16,7 @@
 // $Id$
 // 
 //
-// Author(s)     : Eric Berberich <eric@mpi-inf.mpg.de>
+// Author(s)     : Eric Berberich <eric.berberich@cgal.org>
 //                 Michael Kerber <mkerber@mpi-inf.mpg.de>
 //
 // ============================================================================

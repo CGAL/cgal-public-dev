@@ -1,9 +1,10 @@
-// Copyright (c) 2010-2011 Max-Planck-Institut fuer Informatik (Germany).
+// Copyright (c) 2010, 2011, 2012 Max-Planck-Institut fuer Informatik (Germany).
 // All rights reserved.
 //
-// This file is part of CGAL (www.cgal.org); you may redistribute it under
-// the terms of the Q Public License version 1.0.
-// See the file LICENSE.QPL distributed with CGAL.
+// This file is part of CGAL (www.cgal.org); you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public License as
+// published by the Free Software Foundation; either version 3 of the License,
+// or (at your option) any later version.
 //
 // Licensees holding a valid commercial license may use this file in
 // accordance with the commercial license agreement provided with the software.
@@ -15,8 +16,7 @@
 // $Id$
 //
 //
-// Author(s): Eric Berberich    <eric@mpi-inf.mpg.de>
-// ============================================================================
+// Author(s): Eric Berberich  <eric.berberich@cgal.org>
 
 #ifndef CGAL_BI_DIFF_VANISH_2_H
 #define CGAL_BI_DIFF_VANISH_2_H
@@ -438,3 +438,4 @@ public:
 } // namespace CGAL
 
 #endif // CGAL_BI_DIFF_VANISH_2_H
+// EOF

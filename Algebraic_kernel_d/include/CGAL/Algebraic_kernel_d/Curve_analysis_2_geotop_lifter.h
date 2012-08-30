@@ -1,4 +1,4 @@
-// Copyright (c) 2009-2012 Max-Planck-Institute Saarbruecken (Germany).
+// Copyright (c) 2009, 2010, 2011, 2012 Max-Planck-Institute Saarbruecken (Germany).
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org); you can redistribute it and/or
@@ -17,8 +17,6 @@
 // 
 //
 // Author(s)     :  Eric Berberich <eric.berberich@cgal.org>
-//
-// ============================================================================
 
 /*! \file CGAL/Algebraic_kernel_d/Curve_analysis_2_geotop_lifter.h
   \brief Defines Geotop_lifter for Curve_analysis_2

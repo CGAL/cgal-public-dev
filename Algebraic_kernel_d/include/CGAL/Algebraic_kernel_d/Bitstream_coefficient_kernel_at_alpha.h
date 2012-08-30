@@ -1,4 +1,4 @@
-// Copyright (c) 2006-2009 Max-Planck-Institute Saarbruecken (Germany).
+// Copyright (c) 2006, 2007, 2008, 2009 Max-Planck-Institute Saarbruecken (Germany).
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org); you can redistribute it and/or
@@ -17,8 +17,6 @@
 // 
 //
 // Author(s)     : Michael Kerber  <mkerber@mpi-inf.mpg.de>
-//
-// ============================================================================
 
 #ifndef CGAL_ALGEBRAIC_KERNEL_D_BITSTREAM_COEFFICIENT_KERNEL_AT_ALPHA_H
 #define CGAL_ALGEBRAIC_KERNEL_D_BITSTREAM_COEFFICIENT_KERNEL_AT_ALPHA_H 1
@@ -248,5 +246,5 @@ public:
 
 } //namespace CGAL
 
-
 #endif // CGAL_ALGEBRAIC_KERNEL_D_BITSTREAM_COEFFICIENT_KERNEL_AT_ALPHA_H
+// EOF

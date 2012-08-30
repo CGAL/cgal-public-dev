@@ -1,4 +1,4 @@
-// Copyright (c) 2006-2009 Max-Planck-Institute Saarbruecken (Germany).
+// Copyright (c) 2006, 2007, 2008, 2009, 2012 Max-Planck-Institute Saarbruecken (Germany).
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org); you can redistribute it and/or
@@ -17,8 +17,7 @@
 // 
 //
 // Author(s)     : Pavel Emeliyanenko <asm@mpi-sb.mpg.de>
-//
-// ============================================================================
+//                 Eric Berberich <eric.berberich@cgal.org>
 
 #ifndef CGAL_ALGEBRAIC_CURVE_KERNEL_STATUS_LINE_CPA_1_H
 #define CGAL_ALGEBRAIC_CURVE_KERNEL_STATUS_LINE_CPA_1_H
@@ -491,3 +490,5 @@ std::ostream& operator<< (std::ostream& os,
 } //namespace CGAL
 
 #endif // CGAL_ALGEBRAIC_CURVE_KERNEL_STATUS_LINE_CPA_1_H
+// EOF
+

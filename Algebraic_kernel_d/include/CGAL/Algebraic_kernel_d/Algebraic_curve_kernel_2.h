@@ -16,11 +16,9 @@
 // $Id$
 // 
 //
-// Author(s)     : Eric Berberich <eric@mpi-inf.mpg.de>
+// Author(s)     : Eric Berberich <eric.berberich@cgal.org>
 //                 Pavel Emeliyanenko <asm@mpi-sb.mpg.de>
 //                 Michael Kerber <mkerber@mpi-inf.mpg.de>
-//
-// ============================================================================
 
 /*! \file Algebraic_curve_kernel_2.h
  *  \brief defines class \c Algebraic_curve_kernel_2
@@ -2941,3 +2939,4 @@ mutable boost::shared_ptr<Gcd_cache_2> _m_gcd_cache_2;
 } // namespace CGAL
 
 #endif // CGAL_ALGEBRAIC_CURVE_KERNEL_D_2_H
+// EOF

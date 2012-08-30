@@ -17,8 +17,7 @@
 // 
 //
 // Author(s)     : Michael Kerber <mkerber@mpi-inf.mpg.de>
-//
-// ==========================================================================
+//                 Eric Berberich <eric.berberich@cgal.org>
 
 #ifndef CGAL_ALGEBRAIC_KERNEL_D_BITSTREAM_COEFFICIENT_KERNEL_H
 #define CGAL_ALGEBRAIC_KERNEL_D_BITSTREAM_COEFFICIENT_KERNEL_H 1

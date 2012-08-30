@@ -1,4 +1,4 @@
-// Copyright (c) 2006-2009 Max-Planck-Institute Saarbruecken (Germany).
+// Copyright (c) 2006, 2007, 2008, 2009 Max-Planck-Institute Saarbruecken (Germany).
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org); you can redistribute it and/or
@@ -16,10 +16,8 @@
 // $Id$
 // 
 //
-// Author(s)     : Eric Berberich <eric@mpi-inf.mpg.de>
+// Author(s)     : Eric Berberich <eric.berberich@cgal.org>
 //                 Pavel Emeliyanenko <asm@mpi-sb.mpg.de>
-//
-// ============================================================================
 
 #ifndef CGAL_ALGEBRAIC_CURVE_KERNEL_XY_COORDINATE_2_H
 #define CGAL_ALGEBRAIC_CURVE_KERNEL_XY_COORDINATE_2_H
@@ -792,3 +790,4 @@ std::istream& operator >> (
 } //namespace CGAL
 
 #endif // CGAL_ALGEBRAIC_CURVE_KERNEL_XY_COORDINATE_2_H
+// EOF
