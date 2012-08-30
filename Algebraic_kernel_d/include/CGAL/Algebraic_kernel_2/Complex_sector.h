@@ -1,9 +1,10 @@
-// Copyright (c) 2009, 2010 Max-Planck-Institut fuer Informatik (Germany).
+// Copyright (c) 2009, 2010, 2011, 2012 Max-Planck-Institut fuer Informatik (Germany).
 // All rights reserved.
 //
-// This file is part of CGAL (www.cgal.org); you may redistribute it under
-// the terms of the Q Public License version 1.0.
-// See the file LICENSE.QPL distributed with CGAL.
+// This file is part of CGAL (www.cgal.org); you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public License as
+// published by the Free Software Foundation; either version 3 of the License,
+// or (at your option) any later version.
 //
 // Licensees holding a valid commercial license may use this file in
 // accordance with the commercial license agreement provided with the software.
@@ -16,14 +17,15 @@
 //
 //
 // Author(s): Pavel Emeliyanenko <asm@mpi-sb.mpg.de>
-// ============================================================================
 
-#ifndef COMPLEX_SECTOR_H
-#define COMPLEX_SECTOR_H
+#ifndef CGAL_ALGEBRAIC_KERNEL_2_COMPLEX_SECTOR_H
+#define CGAL_ALGEBRAIC_KERNEL_2_COMPLEX_SECTOR_H
 
 /*! \file Complex_sector.h
  * arithmetic on sectors in C specified by angles and magnitudes range
  */
+
+#include <CGAL/config.h>
 
 namespace CGAL {
 
@@ -1108,4 +1110,5 @@ std::ostream& operator<< (std::ostream& os, const Complex_sector< NT_ >& s) {
 
 } // namespace CGAL
 
-#endif // COMPLEX_SECTOR_H
+#endif // CGAL_ALGEBRAIC_KERNEL_2_COMPLEX_SECTOR_H
+// EOF

@@ -1,9 +1,10 @@
-// Copyright (c) 2009, 2010 Max-Planck-Institut fuer Informatik (Germany).
+// Copyright (c) 2009, 2010, 2011, 2012 Max-Planck-Institut fuer Informatik (Germany).
 // All rights reserved.
 //
-// This file is part of CGAL (www.cgal.org); you may redistribute it under
-// the terms of the Q Public License version 1.0.
-// See the file LICENSE.QPL distributed with CGAL.
+// This file is part of CGAL (www.cgal.org); you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public License as
+// published by the Free Software Foundation; either version 3 of the License,
+// or (at your option) any later version.
 //
 // Licensees holding a valid commercial license may use this file in
 // accordance with the commercial license agreement provided with the software.
@@ -13,12 +14,13 @@
 //
 // $URL$
 // $Id$
+// 
 //
-//
-// Author(s): Eric Berberich    <eric@mpi-inf.mpg.de>
+// Author(s): Eric Berberich <eric.berberich@cgal.org>
 
-#ifndef CGAL_BI_ALGEBRAIC_REAL_2_H
-#define CGAL_BI_ALGEBRAIC_REAL_2_H
+
+#ifndef CGAL_ALGEBRAIC_KERNEL_2_BI_ALGEBRAIC_REAL_2_H
+#define CGAL_ALGEBRAIC_KERNEL_2_BI_ALGEBRAIC_REAL_2_H
 
 /*! \file
  * The header file for the Bisolve_2 class.
@@ -28,7 +30,6 @@
 #include <CGAL/Handle_with_policy.h>
 
 namespace CGAL {
-
 
 template < class AlgebraicKernel_1 >
 class Bi_algebraic_real_2;
@@ -274,4 +275,5 @@ std::ostream& operator<<(std::ostream& os,
 
 } // namespace CGAL
 
-#endif // CGAL_BI_ALGEBRAIC_REAL_2
+#endif // CGAL_ALGEBRAIC_KERNEL_2_BI_ALGEBRAIC_REAL_2
+// EOF

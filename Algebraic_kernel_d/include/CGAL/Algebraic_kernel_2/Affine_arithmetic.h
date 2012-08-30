@@ -1,11 +1,10 @@
-// ============================================================================
-//
-// Copyright (c) 2001-2006 Max-Planck-Institut Saarbruecken (Germany).
+// Copyright (c) 2009, 2010, 2011, 2012 Max-Planck-Institut Saarbruecken (Germany).
 // All rights reserved.
 //
-// This file is part of EXACUS (http://www.mpi-inf.mpg.de/projects/EXACUS/);
-// you may redistribute it under the terms of the Q Public License version 1.0.
-// See the file LICENSE.QPL distributed with EXACUS.
+// This file is part of CGAL (www.cgal.org); you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public License as
+// published by the Free Software Foundation; either version 3 of the License,
+// or (at your option) any later version.
 //
 // Licensees holding a valid commercial license may use this file in
 // accordance with the commercial license agreement provided with the software.
@@ -13,34 +12,29 @@
 // This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
 // WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
-// ----------------------------------------------------------------------------
-//
-// Library       : SoX
-// File          : include/SoX/GAPS/Affine_arithmetic.h
-// SoX_release   : $Name:  $
-// Revision      : $Revision: 1.9 $
-// Revision_date : $Date: 2007-09-04 10:28:32 $
+// $URL: svn+ssh://eric@scm.gforge.inria.fr/svn/cgal/branches/features/Symbolic-mpi/Algebraic_kernel_d/include/CGAL/Algebraic_kernel_d/Curve_analysis_2.h $
+// $Id: Curve_analysis_2.h 71840 2012-08-30 11:29:52Z eric $
+// 
 //
 // Author(s)     : Pavel Emeliyanenko <asm@mpi-sb.mpg.de>
-//
-// ============================================================================
 
-/*!\file SoX/GAPS/Affine_arithmetic.h
- * \brief this file defines the class \c SoX::Affine_form
+#ifndef CGAL_ALGEBRAIC_KERNEL_2_AFFINE_ARITHMETIC_H
+#define CGAL_ALGEBRAIC_KERNEL_2_AFFINE_ARITHMETIC_H
+
+/*!\file Affine_arithmetic.h
+ * \brief this file defines the class \c Affine_form
  */
 
-#ifndef SoX_AFFINE_ARITHMETIC_H
-#define SoX_AFFINE_ARITHMETIC_H
+#include <CGAL/config.h>
 
-namespace CGAL 
-{
+namespace CGAL {
 
 template <class NT> class Affine_form;
 
 template <class NT>
 std::ostream & operator <<(std::ostream&, const Affine_form<NT>&);
 
-namespace Intern {
+namespace internal {
 
 // \brief tag type to distinguish a certain constructor of \c Affine_form
 class Creation_tag {};
@@ -128,13 +122,13 @@ class Affine_form_rep
 
 template <class NT> unsigned Affine_form_rep<NT>::last = 0; 
 
-} // namespace Intern
+} // namespace internal
 
 template <class NT_>
 class Affine_form : public
-     ::CGAL::Handle_with_policy<Intern::Affine_form_rep<NT_> >
+     ::CGAL::Handle_with_policy<internal::Affine_form_rep<NT_> >
 /*      LiS::Handle_without_union,
-        ::std::allocator<Intern::Affine_form_rep<NT_> > >*/
+        ::std::allocator<internal::Affine_form_rep<NT_> > >*/
 {
 public:
     //! \name Typedefs 
@@ -142,7 +136,7 @@ public:
     //! coefficient type of this instance 
     typedef NT_ NT; 
     //! representation pointed to by this handle 
-    typedef Intern::Affine_form_rep<NT> Rep;
+    typedef internal::Affine_form_rep<NT> Rep;
     //! base class  
     typedef ::CGAL::Handle_with_policy<Rep> Base;
     //! myself
@@ -166,7 +160,7 @@ protected:
     const Int_vector& indexes() const { return this->ptr()->index; }
     
     //! create an empty affine_form with n_coeffs noise terms
-    Affine_form(Intern::Creation_tag f, const NT& center_, unsigned n_coeffs,
+    Affine_form(internal::Creation_tag f, const NT& center_, unsigned n_coeffs,
         unsigned n_indexes)
         : Base(Rep(f, center_, n_coeffs, n_indexes))
     { }
@@ -237,7 +231,7 @@ public:
     //! computes the sum of two affine forms
     Self operator + (const Self& p) const 
     {
-        Intern::Creation_tag TAG;
+        internal::Creation_tag TAG;
         unsigned len = length() + p.length();
         Self res(TAG, center() + p.center(), len, len); 
         //res.ptr()->center = center() + p.center();
@@ -288,11 +282,11 @@ public:
     //! computes the difference of two affine forms
     Self operator - (const Self& p) const 
     {
-        Intern::Creation_tag TAG;
+        internal::Creation_tag TAG;
         unsigned len = length() + p.length();
         Self res(TAG, center() - p.center(), len, len); 
         
-        //Intern::Creation_tag TAG;
+        //internal::Creation_tag TAG;
         //Self res; 
         //res.ptr()->center = center() - p.center();
         //this->copy_on_write();
@@ -339,7 +333,7 @@ public:
     Self operator * (const Self& p) const 
     {
         NT cnt1 = center(), cnt2 = p.center();
-        Intern::Creation_tag TAG;
+        internal::Creation_tag TAG;
         unsigned len = length() + p.length()+1;
         Self res(TAG, cnt1 * cnt2, len, len); 
     
@@ -528,6 +522,7 @@ Affine_form<NT> pow(const Affine_form<NT>& p, int exp)
     }
 }
 
-} // namespace SoX
+} // namespace CGAL
 
-#endif // SoX_AFFINE_ARITHMETIC_H
+#endif // CGAL_ALGEBRAIC_KERNEL_2_AFFINE_ARITHMETIC_H
+// EOF

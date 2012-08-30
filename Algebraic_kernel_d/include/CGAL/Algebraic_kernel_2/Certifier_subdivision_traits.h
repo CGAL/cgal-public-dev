@@ -1,7 +1,10 @@
-// Copyright (c) 2010 Max-Planck-Institut fuer Informatik (Germany).
+// Copyright (c) 2010, 2011, 2012 Max-Planck-Institut fuer Informatik (Germany).
 // All rights reserved.
 //
-// LGPL?
+// This file is part of CGAL (www.cgal.org); you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public License as
+// published by the Free Software Foundation; either version 3 of the License,
+// or (at your option) any later version.
 //
 // Licensees holding a valid commercial license may use this file in
 // accordance with the commercial license agreement provided with the software.
@@ -13,12 +16,11 @@
 // $Id: Certifier_cofactor_traits.h 57108 2010-06-25 13:54:53Z eric $
 //
 //
-// Author(s): Eric Berberich    <eric@mpi-inf.mpg.de>
+// Author(s): Eric Berberich <eric.berberich@cgal.org>
 //            Pavel Emeliyanenko <asm@mpi-inf.mpg.de>
-// ============================================================================
 
-#ifndef CGAL_CERTIFIER_SUBDIVISION_TRAITS_H
-#define CGAL_CERTIFIER_SUBDIVISION_TRAITS_H
+#ifndef CGAL_ALGEBRAIC_KERNEL_2_CERTIFIER_SUBDIVISION_TRAITS_H
+#define CGAL_ALGEBRAIC_KERNEL_2_CERTIFIER_SUBDIVISION_TRAITS_H
 
 /*! \file
  * Traits class implementing subdivision root certification
@@ -558,4 +560,5 @@ protected:
 
 } // namespace CGAL
 
-#endif // CGAL_CERTIFIER_SUBDIVISION_TRAITS_H
+#endif // CGAL_ALGEBRAIC_KERNEL_2_CERTIFIER_SUBDIVISION_TRAITS_H
+// EOF

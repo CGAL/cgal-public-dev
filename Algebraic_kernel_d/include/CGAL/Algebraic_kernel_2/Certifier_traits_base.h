@@ -1,7 +1,10 @@
 // Copyright (c) 2010, 2011 Max-Planck-Institut fuer Informatik (Germany).
 // All rights reserved.
 //
-// LGPL?
+// This file is part of CGAL (www.cgal.org); you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public License as
+// published by the Free Software Foundation; either version 3 of the License,
+// or (at your option) any later version.
 //
 // Licensees holding a valid commercial license may use this file in
 // accordance with the commercial license agreement provided with the software.
@@ -14,11 +17,9 @@
 //
 //
 // Author(s): Pavel Emeliyanenko <asm@mpi-inf.mpg.de>
-//
-// ============================================================================
 
-#ifndef CGAL_CERTIFIER_TRAITS_BASE_H
-#define CGAL_CERTIFIER_TRAITS_BASE_H 
+#ifndef CGAL_ALGEBRAIC_KERNEL_2_CERTIFIER_TRAITS_BASE_H
+#define CGAL_ALGEBRAIC_KERNEL_2_CERTIFIER_TRAITS_BASE_H 
 
 /*! \file
  * Base class for certifier traits unifying the interface
@@ -229,4 +230,6 @@ protected:
 
 } // namespace CGAL
 
-#endif // CGAL_CERTIFIER_TRAITS_BASE_H
+#endif // CGAL_ALGEBRAIC_KERNEL_2_CERTIFIER_TRAITS_BASE_H
+// EOF
+

@@ -1,9 +1,10 @@
-// Copyright (c) 2009, 2010, 2011 Max-Planck-Institut fuer Informatik (Germany).
+// Copyright (c) 2009, 2010, 2011, 2012 Max-Planck-Institut fuer Informatik (Germany).
 // All rights reserved.
 //
-// This file is part of CGAL (www.cgal.org); you may redistribute it under
-// the terms of the Q Public License version 1.0.
-// See the file LICENSE.QPL distributed with CGAL.
+// This file is part of CGAL (www.cgal.org); you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public License as
+// published by the Free Software Foundation; either version 3 of the License,
+// or (at your option) any later version.
 //
 // Licensees holding a valid commercial license may use this file in
 // accordance with the commercial license agreement provided with the software.
@@ -13,18 +14,16 @@
 //
 // $URL$
 // $Id$
+// 
 //
-//
-// Author(s): Eric Berberich    <eric@mpi-inf.mpg.de>
+// Author(s): Eric Berberich <eric.berberich@cgal.org>
 //            Pavel Emeliyanenko <asm@mpi-inf.mpg.de>
-// ============================================================================
 
-#ifndef CGAL_BI_SOLVE_2_H
-#define CGAL_BI_SOLVE_2_H
-
+#ifndef CGAL_ALGEBRAIC_KERNEL_2_BI_SOLVE_2_H
+#define CGAL_ALGEBRAIC_KERNEL_2_BI_SOLVE_2_H
 
 /*! \file
- * The header file for the Bisolve_2 class.
+ * The header file for the Bi_solve_2 class.
  */
 
 // TODO dependency graph of actions to take ... search for right design pattern
@@ -32,6 +31,7 @@
 #include <CGAL/config.h>
 
 #ifndef CGAL_BISOLVE_ENABLE_NTL_FACTORIZE
+// TODO 2012 symbolic_exports.h???
 #include <CGAL/symbolic_exports.h>
 #endif
 
@@ -1490,4 +1490,5 @@ OutputIterator operator()(const Algebraic_real_1& x, OutputIterator oi, bool loc
 
 } // namespace CGAL
 
-#endif // CGAL_BI_SOLVE_2_H
+#endif // CGAL_ALGEBRAIC_KERNEL_2_BI_SOLVE_2_H
+// EOF

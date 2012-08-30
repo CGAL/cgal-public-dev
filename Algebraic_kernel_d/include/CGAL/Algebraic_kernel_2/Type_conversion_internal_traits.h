@@ -1,4 +1,13 @@
-// TODO: Add licence
+// Copyright (c) 2010, 2011, 2012 Max-Planck-Institut fuer Informatik (Germany).
+// All rights reserved.
+//
+// This file is part of CGAL (www.cgal.org); you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public License as
+// published by the Free Software Foundation; either version 3 of the License,
+// or (at your option) any later version.
+//
+// Licensees holding a valid commercial license may use this file in
+// accordance with the commercial license agreement provided with the software.
 //
 // This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
 // WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
@@ -8,13 +17,11 @@
 // 
 //
 // Author(s)     : Pavel Emeliyanenko <asm@mpi-sb.mpg.de>
-//
-// ============================================================================
 
-#ifndef CGAL_TYPE_CONVERSION_INTERNAL_TRAITS_H
-#define CGAL_TYPE_CONVERSION_INTERNAL_TRAITS_H
+#ifndef CGAL_ALGEBRAIC_KERNEL_2_TYPE_CONVERSION_INTERNAL_TRAITS_H
+#define CGAL_ALGEBRAIC_KERNEL_2_TYPE_CONVERSION_INTERNAL_TRAITS_H
 
-#include <CGAL/basic.h>
+#include <CGAL/config.h>
 #include <CGAL/function_objects.h>
 #include <CGAL/Arithmetic_kernel.h>
 #include <CGAL/Polynomial_type_generator.h>
@@ -725,4 +732,6 @@ struct Type_conversion_internal_traits<leda::rational, leda::rational> :
 
 } // namespace CGAL
 
-#endif // CGAL_TYPE_CONVERSION_INTERNAL_TRAITS_H
+#endif // CGAL_ALGEBRAIC_KERNEL_2_TYPE_CONVERSION_INTERNAL_TRAITS_H
+// EOF
+

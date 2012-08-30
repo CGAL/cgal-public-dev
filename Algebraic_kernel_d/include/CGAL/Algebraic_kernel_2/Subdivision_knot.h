@@ -1,9 +1,10 @@
 // Copyright (c) 2009, 2010 Max-Planck-Institut fuer Informatik (Germany).
 // All rights reserved.
 //
-// This file is part of CGAL (www.cgal.org); you may redistribute it under
-// the terms of the Q Public License version 1.0.
-// See the file LICENSE.QPL distributed with CGAL.
+// This file is part of CGAL (www.cgal.org); you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public License as
+// published by the Free Software Foundation; either version 3 of the License,
+// or (at your option) any later version.
 //
 // Licensees holding a valid commercial license may use this file in
 // accordance with the commercial license agreement provided with the software.
@@ -16,16 +17,16 @@
 //
 //
 // Author(s): Pavel Emeliyanenko <asm@mpi-sb.mpg.de>
-// ============================================================================
 
-#ifndef SUBDIVISION_KNOT_H
-#define SUBDIVISION_KNOT_H
+#ifndef CGAL_ALGEBRAIC_KERNEL_2_SUBDIVISION_KNOT_H
+#define CGAL_ALGEBRAIC_KERNEL_2_SUBDIVISION_KNOT_H
 
 /*! \file Subdivision_knot.h
  *  flyweight object representing a point for subdivision in C^2
  *  shares floating-point approximation of rational coordinates through rep
  */
 
+#include <CGAL/config.h>
 #include <boost/optional.hpp>
 
 namespace CGAL {
@@ -223,4 +224,6 @@ std::ostream& operator<< (std::ostream& os,
 
 } // namespace CGAL
 
-#endif // SUBDIVISION_KNOT_H
+#endif // CGAL_ALGEBRAIC_KERNEL_2_SUBDIVISION_KNOT_H
+// EOF
+

@@ -1,5 +1,28 @@
-#ifndef CGAL_BI_SOLVE_2_FLAGS_H
-#define CGAL_BI_SOLVE_2_FLAGS_H 1
+// Copyright (c) 2009, 2010, 2011, 2012 Max-Planck-Institut Saarbruecken (Germany).
+// All rights reserved.
+//
+// This file is part of CGAL (www.cgal.org); you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public License as
+// published by the Free Software Foundation; either version 3 of the License,
+// or (at your option) any later version.
+//
+// Licensees holding a valid commercial license may use this file in
+// accordance with the commercial license agreement provided with the software.
+//
+// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
+// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+//
+// $URL$
+// $Id$
+// 
+//
+// Author(s)     : Eric Berberich <eric.berberich@cgal.org> 
+//                 Pavel Emeliyanenko <asm@mpi-sb.mpg.de>
+
+#ifndef CGAL_ALGEBRAIC_KERNEL_2_BI_SOLVE_2_FLAGS_H
+#define CGAL_ALGEBRAIC_KERNEL_2_BI_SOLVE_2_FLAGS_H 1
+
+#include <CGAL/config.h>
 
 // bisolve
 
@@ -106,4 +129,5 @@
 #endif
 
 
-#endif // CGAL_BI_SOLVE_2_FLAGS_H
+#endif // CGAL_ALGEBRAIC_KERNEL_2_BI_SOLVE_2_FLAGS_H
+// EOF

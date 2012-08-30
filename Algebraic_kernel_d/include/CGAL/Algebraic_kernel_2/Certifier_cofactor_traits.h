@@ -1,7 +1,10 @@
 // Copyright (c) 2010, 2011 Max-Planck-Institut fuer Informatik (Germany).
 // All rights reserved.
 //
-// LGPL?
+// This file is part of CGAL (www.cgal.org); you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public License as
+// published by the Free Software Foundation; either version 3 of the License,
+// or (at your option) any later version.
 //
 // Licensees holding a valid commercial license may use this file in
 // accordance with the commercial license agreement provided with the software.
@@ -9,16 +12,15 @@
 // This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
 // WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
-// $URL: svn+ssh://asm@scm.gforge.inria.fr/svn/cgal/branches/experimental-packages/Algebraic_kernel_2/include/CGAL/Certifier_cofactor_traits.h $
-// $Id: Certifier_cofactor_traits.h 57108 2010-06-25 13:54:53Z eric $
+// $URL: svn+ssh://eric@scm.gforge.inria.fr/svn/cgal/branches/features/Symbolic-mpi/Algebraic_kernel_d/include/CGAL/Algebraic_kernel_d/Curve_analysis_2.h $
+// $Id: Curve_analysis_2.h 71840 2012-08-30 11:29:52Z eric $
 //
 //
-// Author(s): Eric Berberich    <eric@mpi-inf.mpg.de>
+// Author(s): Eric Berberich <eric.berberich@cgal.org>
 //            Pavel Emeliyanenko <asm@mpi-inf.mpg.de>
-// ============================================================================
 
-#ifndef CGAL_CERTIFIER_COFACTOR_TRAITS_H
-#define CGAL_CERTIFIER_COFACTOR_TRAITS_H 
+#ifndef CGAL_ALGEBRAIC_KERNEL_2_CERTIFIER_COFACTOR_TRAITS_H
+#define CGAL_ALGEBRAIC_KERNEL_2_CERTIFIER_COFACTOR_TRAITS_H 
 
 /*! \file
  * Traits class implementing cofactors root certification
@@ -458,4 +460,5 @@ protected:
 
 } // namespace CGAL
 
-#endif // CGAL_CERTIFIER_COFACTOR_TRAITS_H
+#endif // CGAL_ALGEBRAIC_KERNEL_2_CERTIFIER_COFACTOR_TRAITS_H
+// EOF
