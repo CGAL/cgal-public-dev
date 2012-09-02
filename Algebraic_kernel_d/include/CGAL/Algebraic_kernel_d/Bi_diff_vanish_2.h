@@ -302,43 +302,18 @@ public:
       typename std::list< Polynomial_2 >::const_iterator last, pred;
       last = CGAL::cpp0x::prev(chain.end());
       pred = CGAL::cpp0x::prev(last);
-      
-      std::cout << "common start" << std::endl;
-
+     
       Polynomial_1 gres_x(0), gres_y(0);
       bool failed_x = true;
       bool failed_y = true;
-#if CGAL_BISOLVE_USE_GPU_RESULTANTS
-      Bisolve_telemetry_code(
-        t_res[0].start();
-        t_res[1].start();
-      )
-      gres_x = CGAL::resultant(*pred, *last);
-      failed_x = CGAL::is_zero(gres_x);
-      if(!failed_x) {
-          typename Pure_bi_solve_2::PT_2::Swap swap;
-          gres_y = CGAL::resultant(swap(*pred,0,1), swap(*last,0,1));
-          failed_y = CGAL::is_zero(gres_y);
-      }
-      Bisolve_telemetry_code(
-        t_res[1].stop();
-        t_res[0].stop();
-      )
-#endif
 
       Bisolve_telemetry_code(t_common.start();)
 
       Polynomial_2 h;
-
-      if (failed_x || failed_y) {
-        h = CGAL::gcd_up_to_constant_factor(*pred, *last);
-      } else {
-        h = Polynomial_2(Polynomial_1(1));
-      } 
+      h = CGAL::gcd_up_to_constant_factor(*pred, *last);
 
       Bisolve_telemetry_code(t_common.stop();)
       
-      std::cout << "common stop" << std::endl;
       //std::cout << "BDV h: " << h << std::endl;
             
       if (h != Polynomial_2(Polynomial_1(1))) {

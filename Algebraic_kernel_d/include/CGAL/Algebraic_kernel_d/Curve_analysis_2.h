@@ -63,9 +63,6 @@
 #include <CGAL/symbolic_exports.h>
 #endif
 
-#if CGAL_BISOLVE_USE_GPU_RESULTANTS
-#include <CGAL/GPU_algorithms/GPU_algorithm_facade.h>
-#endif
 #include <CGAL/Algebraic_kernel_d/Curve_analysis_2_geotop_line_builder.h>
 #else
 #include <CGAL/Algebraic_kernel_d/Curve_analysis_2_mk_line_builder.h>
@@ -1811,48 +1808,21 @@ private:
             CGAL::differentiate(primitive_polynomial_2(), 1));
 
         Polynomial_1 gres(0);
-        bool failed = true;
 
-#if CGAL_BISOLVE_USE_GPU_RESULTANTS
-
-        std::cerr << "computing GRES:\n";
-        Bisolve_telemetry_code(t_mult_res.start();)
-        gres = CGAL::resultant(fx, fy);
-        std::cerr<< "done\n";
-        failed = CGAL::is_zero(gres);
-        
-        if(!failed) {
-            typename Polynomial_traits_2::Swap swap;
-            std::cerr << "computing GRES swapped\n";
-            failed = CGAL::is_zero(CGAL::resultant(swap(fx,0,1),
-                                  swap(fy,0,1)));
-            std::cerr << "done\n";
-        }
-
-        Bisolve_telemetry_code(t_mult_res.stop();)
-#endif
-        if (failed) {
           Bisolve_telemetry_code(t_mult_xy_gcd.start();)
           // divide out common factor
-          std::cerr << "GRES failed: computing bivariate GCD..\n";
           Polynomial_2 h = CGAL::gcd(fx, fy);
           if (CGAL::degree(h) > 0) {
             fx = fx/h;
             fy = fy/h;
           }
           Bisolve_telemetry_code(t_mult_xy_gcd.stop();)
-        }
 
         //std::cout << "fx: " << fx << std::endl;
         //std::cout << "fy: " << fy << std::endl;
 
         Bisolve_telemetry_code(t_mult_res.start();)
-        if (!failed) {
-          this->ptr()->resultant_of_coprime_derivative_x_and_derivative_y = gres;
-        } else {
-          this->ptr()->resultant_of_coprime_derivative_x_and_derivative_y = CGAL::resultant(fx, fy);
-
-        }
+        this->ptr()->resultant_of_coprime_derivative_x_and_derivative_y = CGAL::resultant(fx, fy);
         Bisolve_telemetry_code(t_mult_res.stop();)
         
 #if CGAL_ACK_DEBUG_FLAG
