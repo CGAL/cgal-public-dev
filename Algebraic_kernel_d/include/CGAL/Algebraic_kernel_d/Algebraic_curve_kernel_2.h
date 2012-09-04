@@ -169,8 +169,7 @@ public:
      */
     typedef CGAL::Curve_pair_analysis_2<Self> Curve_pair_analysis_2;
 
-
-    //  berfriending representations to make protected typedefs available
+    //  befriending representations to make protected typedefs available
     friend class internal::Curve_analysis_2_rep<Self>;
     friend class internal::Curve_pair_analysis_2_rep<Self>;
     
