@@ -144,7 +144,7 @@ inline unsigned mpz_vector_bitlength(const MPZ_vector_1& v) {
 
     unsigned bits(0), i;
     for(i = 0; i < v.size(); i++) {
-        bits = std::max(bits, ILOG2_MPZ(&v[i]));
+      bits = std::max(bits, (unsigned)ILOG2_MPZ(&v[i]));
     }
     return bits;
 }
