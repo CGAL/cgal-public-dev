@@ -14,7 +14,7 @@
 //
 // $URL$
 // $Id$
-// 
+//
 //
 // Author(s)     :  Eric Berberich <eric.berberich@cgal.org>
 
@@ -45,13 +45,13 @@
 
 #if CGAL_ACK_CURVE_ANALYSES_BISOLVE_USE_TEISSIER
 #include <CGAL/Algebraic_kernel_2/Certifier_cofactor_arcavoid_traits.h>
-#include <CGAL/Arcavoid.h>
+#include <CGAL/Algebraic_kernel_1/Arcavoid.h>
 #else
 #include <CGAL/Algebraic_kernel_2/Certifier_cofactor_bitstream_traits.h>
 #endif
 
 #ifndef Bisolve_telemetry_code
-# define Bisolve_telemetry_code(x) 
+# define Bisolve_telemetry_code(x)
 #endif
 
 #ifdef CGAL_XTri_USE_TIMERS
@@ -73,7 +73,7 @@ class Geotop_lifter_bisolve_rep :
 
   //!\name Tags
   //!@{
-    
+
 public:
   //! "refine_interval" function is implemented
   typedef CGAL::Tag_true Refine_interval_provided_tag;
@@ -99,7 +99,7 @@ public:
 
   //! the base class
   typedef Generic_isolator_rep< Polynomial, Bound, Handle_policy, Refine_interval_provided_tag > Base;
- 
+
   //! the class itself
   typedef Geotop_lifter_bisolve_rep< Bitstream_coefficient_kernel, Handle_policy > Self;
 
@@ -119,10 +119,10 @@ public:
   //! type of bi diff vanish
   typedef CGAL::Bi_diff_vanish_2< Certifier_traits > Bi_diff_vanish_2;
 
-  //! type of bi algebraic real 
+  //! type of bi algebraic real
   typedef typename Bi_diff_vanish_2::Algebraic_real_2 Algebraic_real_2;
-  
-  //! type of bi algebraic real 
+
+  //! type of bi algebraic real
   typedef typename Bi_diff_vanish_2::Polynomial_2 Polynomial_2;
 
 #if !CGAL_BISOLVE_DISABLE_ACTIVE_INTERVALS
@@ -156,8 +156,8 @@ public:
   Geotop_lifter_bisolve_rep() : Base(new Rep()) {}
 #endif
 
-  // needs no special assignable-implementation as no pointers 
-  // and this is a Rep of a handle class 
+  // needs no special assignable-implementation as no pointers
+  // and this is a Rep of a handle class
 #if CGAL_ALGEBRAIC_KERNEL_D_ISOLATORS_DISABLE_ASSIGNABLE
   protected:
     // Geotop_lifter_bisolve_rep(const Self&) // = default
@@ -166,7 +166,7 @@ public:
 
  public:
   //! standard constructor
-  Geotop_lifter_bisolve_rep(const Bitstream_coefficient_kernel& bck, 
+  Geotop_lifter_bisolve_rep(const Bitstream_coefficient_kernel& bck,
                             Multiplicity_type mult,
                             const Bi_diff_vanish_2& bdv,
                             bool local) :
@@ -194,7 +194,7 @@ public:
     if (Base::_m_is_isolated) {
       return;
     }
-    
+
     // std::cout << "FFYisol 1" << std::endl;
 
     _m_bi_diff_vanish._achieve(Bi_diff_vanish_2::CGAL_BISOLVE_ALL_BUT_LIFTING);
@@ -202,9 +202,9 @@ public:
     // std::cout << "FFYisol 1a" << std::endl;
 
     bool has_fiber = _m_bi_diff_vanish.has_fiber(this->_m_bck.alpha());
-    
+
     // std::cout << "FFYisol has_fiber: " << has_fiber << std::endl;
-    
+
     // std::cout << "FFYisol 1b" << std::endl;
 
     // _m_diff is not needed if non-event line
@@ -212,10 +212,10 @@ public:
       // std::cout << "FFYisol 2" << std::endl;
       _m_bi_diff_vanish(this->_m_bck.alpha(), _m_mult, std::back_inserter(_m_diff), _m_local);
       // std::cout << "FFYisol mdiffsz: " << _m_diff.size() << std::endl;
-      
+
       // isolate "roots" wrt to 'simple' solutions
       for (size_t i = 0; i < _m_diff.size(); i++) {
-        
+
         Polynomial_2 fym;
         // std::cout << "rx: " << CGAL::to_double(_m_diff[i].first.x()) << std::endl;
         // std::cout << "ry: " << CGAL::to_double(_m_diff[i].first.y()) << std::endl;
@@ -227,26 +227,26 @@ public:
                 _m_bi_diff_vanish.diff(_m_diff[i].second)));
         }
         //std::cout << "fym: " << fym << std::endl;
-        
+
         int prec = 2;
-        
+
         while (true) { // refine wrt f_{yˆm}
           typename internal::Interval_evaluate_2< Polynomial_2, Bound > ieval_2;
-          
+
           std::pair< Bound, Bound >
             rx = this->_m_bck.kernel()->approximate_absolute_1_object()(_m_diff[i].first.x(), prec),
             ry = this->_m_bck.kernel()->approximate_absolute_1_object()(_m_diff[i].first.y(), prec);
 
-          CGAL::cpp0x::array<Bound,4> box = 
+          CGAL::cpp0x::array<Bound,4> box =
             CGAL::make_array(rx.first, rx.second, ry.first, ry.second);
-          
+
           std::pair< Bound, Bound > fym_intv = ieval_2(fym, box);
-          if (CGAL::sign(fym_intv.first) == CGAL::sign(fym_intv.second) && 
+          if (CGAL::sign(fym_intv.first) == CGAL::sign(fym_intv.second) &&
               CGAL::sign(fym_intv.first) != CGAL::ZERO) {
             _m_diff_y_precs.push_back(prec);
             break;
           }
-          
+
           // else
           prec *= 2;
 
@@ -254,36 +254,36 @@ public:
         }
       }
 
-    } 
+    }
     // std::cout << "FFYisol 3" << std::endl;
-    
+
     Bisolve_telemetry_code(t_ai_init.start();)
-    
+
     bool has_vert_line = has_fiber && _m_bi_diff_vanish.has_vert_line_f(this->_m_bck.alpha());
     // std::cout << "FFYisol has_vert_line: " << has_vert_line << std::endl;
- 
-    // "active_intervals_set_at is "large enough", i.e., initial bound is well chosen 
-    _m_ais = 
+
+    // "active_intervals_set_at is "large enough", i.e., initial bound is well chosen
+    _m_ais =
     _m_bi_diff_vanish.certifier_traits()->active_intervals_set_at
-    (this->_m_bck.alpha(), 
+    (this->_m_bck.alpha(),
      _m_bi_diff_vanish.f().begin(), // TODO use PT_2 for range
      has_fiber || has_vert_line ? // TODO && !has_ver_line???
        _m_bi_diff_vanish.fiber(this->_m_bck.alpha()).f_end : _m_bi_diff_vanish.f().end()
     );
-    
+
     Bisolve_telemetry_code(t_ai_init.stop();)
 
     Active_intervals_set_iterator ait = _m_ais.begin();
-    
+
     size_t r = 0;
     int a = 0;
     r = 0;
-    
+
     // std::cout << "FFYisol 4" << std::endl;
 
     Bisolve_telemetry_code(t_ffy_refine.start();)
     while (ait != _m_ais.end()) { // _m_diff not at end and _m_ai not at end
-      
+
 #if CGAL_BISOLVE_ENABLE_ARCAVOID
       if (!ait->touch_real()) {
         ait++;
@@ -294,35 +294,35 @@ public:
 
       bool overlap_with_diff = false;
       bool mult1_found = false;
-      
-      // refine ait and _m_diff[r] until latter is contained in former or they are disjoint 
+
+      // refine ait and _m_diff[r] until latter is contained in former or they are disjoint
       // if disjoint, refine ait until mult = 1
       while (true) {
-        
+
         // std::cout << "FFYisol L1" << std::endl;
-        
+
         Bound al = _m_bi_diff_vanish.certifier_traits()->lower(_m_ais, ait);
         Bound ah = _m_bi_diff_vanish.certifier_traits()->upper(_m_ais, ait);
-        
+
         // std::cout << "al: " << (al) << std::endl;
         // std::cout << "ah: " << (ah) << std::endl;
         // std::cout << "ald: " << CGAL::to_double(al) << std::endl;
         // std::cout << "ahd: " << CGAL::to_double(ah) << std::endl;
-        
+
         Multiplicity_type multa = _m_bi_diff_vanish.certifier_traits()->upper_bound_on_multiplicity(_m_ais, ait);
         // TODO ??? Multiplicity_type multa = (_m_ais.max_var(ait) == _m_ais.min_var(ait) ? _m_ais.max_var(ait) : 0);
         // std::cout << "multa: " << multa << std::endl;
-        
+
         Multiplicity_type multr = -1;
-        
+
         // TODO FUTURE sum of mults of aits overlapping with rit == multr -> stop
 
         bool no_overlap = true;
         if (has_fiber && r < _m_diff.size()) {
-          
+
           multr = _m_diff[r].second;
           // std::cout << "multr: " << multr << std::endl;
-          
+
           std::pair< Bound, Bound >
             ry = this->_m_bck.kernel()->approximate_absolute_1_object()(_m_diff[r].first.y(),
                                                                         _m_diff_y_precs[r]);
@@ -339,7 +339,7 @@ public:
 //                  std::cout << "######## FFY AI includes Diff's interval ";
                 overlap_with_diff = true;
                 break;
-            } 
+            }
           } else if (rl <= al && ah <= rh) {
               if (multa <= multr + 1) {
 //                  std::cout << "######## FFY Diff's includes AI\n";
@@ -347,9 +347,9 @@ public:
                 break;
               }
           }
-          no_overlap = (ah <= rl);  
+          no_overlap = (ah <= rl);
         }
-        
+
         //! assuming that intervals are sorted, the only possibility that
         //! \c I=[al;ah] does not overlap with any diff's interval [rl;rh]
         //! is that \c I lies to the left of diff's intervals
@@ -357,7 +357,7 @@ public:
             mult1_found = true;
             break;
         }
-        
+
         // std::cout << "FFYisol L6 (subdiv)" << std::endl;
 
         Bisolve_telemetry_code(t_ffy_ais_subdivide.start();)
@@ -368,7 +368,7 @@ public:
         ce = cbe.second;
         Bisolve_telemetry_code(t_ffy_ais_subdivide.stop();)
         // std::cout << "FFYisol L7 dist: " << std::distance(cb, ce) << std::endl;
-        
+
         ait = cb;
         //break;
         if (cb == ce) {
@@ -376,36 +376,36 @@ public:
           break;
         }
       }
-      
+
       // std::cout << "FFYisol L9" << std::endl;
-      
+
       // not both conditions at the same time
       CGAL_assertion(!(overlap_with_diff && mult1_found));
-      
+
       if (overlap_with_diff) {
         // std::cout << "TRUE " << r << std::endl;
         _m_container_and_ids.push_back(std::make_pair(true, r));
         r++;
         ait++;
         a++;
-      } 
+      }
       if (mult1_found) {
         // std::cout << "FALSE " << a << std::endl;
         _m_container_and_ids.push_back(std::make_pair(false, a));
         ait++;
         a++;
-      } 
+      }
     }
     Bisolve_telemetry_code(t_ffy_refine.stop();)
     // std::cout << "FFYisol L12" << std::endl;
-    
+
 #if 0 // TODO not sure whether this past-processing is needed
     // increase precision of approximations until they are disjoint
     for (size_t i = 0; i < number_of_real_roots(); i++) {
-      
+
       bool sufficientleft = false;
       bool sufficientright = false;
-      
+
       //std::cout << "\n=== i : " << i << std::endl;
 
       do {
@@ -420,9 +420,9 @@ public:
           //std::cout << "pl " << CGAL::to_double(left_bound(i+1)) << std::endl;
           sufficientright = (CGAL::compare(right_bound(i), left_bound(i+1)) == CGAL::SMALLER);
         }
-        
+
         std::cout << std::endl;
-        
+
         if (!sufficientleft && (i > 0)) {
           refine_interval(i-1);
         }
@@ -432,19 +432,19 @@ public:
         if (!sufficientright && (i + 1 < number_of_real_roots())) {
           refine_interval(i+1);
         }
-        
+
       } while (!sufficientleft && !sufficientright);
 
     }
 #endif
     Base::_m_is_isolated = true;
-    
+
   }
 
   int number_of_real_roots() const {
     return _m_container_and_ids.size();
   }
-    
+
   Bound left_bound(size_t i) const {
     //std::cout << "lbi: "<< i << std::endl;
     //std::cout << "lbs: "<< _m_container_and_ids.size() << std::endl;
@@ -463,7 +463,7 @@ public:
     Bound lower = _m_bi_diff_vanish.certifier_traits()->lower(_m_ais, ait);
     return lower;
   }
-    
+
   Bound right_bound(size_t i) const {
     CGAL_assertion(i < _m_container_and_ids.size());
     const std::pair< bool, size_t > cai = _m_container_and_ids[i];
@@ -489,17 +489,17 @@ public:
   bool is_certainly_simple_root(size_t i) const {
     return (multiplicity_of_root(i) == 1);
   }
-  
+
   //!\brief Returns whether the \c i th root is definitely a multiple root of the isolated polynomial
   bool is_certainly_multiple_root(size_t i) const {
     return (multiplicity_of_root(i) > 1);
-  } 
-    
+  }
+
   int upper_bound_for_multiplicity(size_t i) const {
     return multiplicity_of_root(i);
   }
 
-  //! returns the \c i th root multiplicity                      
+  //! returns the \c i th root multiplicity
   int multiplicity_of_root(size_t i) const {
     CGAL_assertion(i < _m_container_and_ids.size());
     const std::pair< bool, size_t > cai = _m_container_and_ids[i];
@@ -572,16 +572,16 @@ protected:
 
   // TODO document Geotop_lifter_teissier_rep
 template< class BitstreamCoefficientKernel, typename HandlePolicy > // no default on policy, should be decided in higher level
-class Geotop_lifter_teissier_rep : 
+class Geotop_lifter_teissier_rep :
   // Comment: Multiple inheritance!
-  public Generic_isolator_rep_base< typename BitstreamCoefficientKernel::Bound, 
+  public Generic_isolator_rep_base< typename BitstreamCoefficientKernel::Bound,
                                     HandlePolicy,
                                     CGAL::Tag_true >,
   public Arcavoid_list< BitstreamCoefficientKernel > {
-    
+
   //!\name Tags
   //!@{
-    
+
 public:
   //! "refine_interval" function is implemented
   typedef CGAL::Tag_true Refine_interval_provided_tag;
@@ -589,13 +589,13 @@ public:
   //!@} // Tags
 
 public:
-  
-  //!\name Public typedefs  
+
+  //!\name Public typedefs
   //!@{
 
   //! this instance's template parameter
   typedef BitstreamCoefficientKernel Bitstream_coefficient_kernel;
-  
+
   //! the policy class
   typedef HandlePolicy Handle_policy;
 
@@ -610,24 +610,24 @@ public:
 
   //! the second base class
   typedef CGAL::internal::Arcavoid_list< Bitstream_coefficient_kernel > Arcavoid_list;
-    
+
   //! multiplicity type
   typedef typename Bitstream_coefficient_kernel::Algebraic_kernel_d_1::Multiplicity_type Multiplicity_type;
 
   //! type of Cluster
   typedef typename Arcavoid_list::Cluster Cluster;
-    
+
   //! type of const iterator
   typedef typename Arcavoid_list::Cluster_iterator Cluster_iterator;
 
   //! type of const iterator
   typedef typename Arcavoid_list::Cluster_const_iterator Cluster_const_iterator;
-  
+
   //!@} // Public typedefs
 
   //!\name Constructors
   //!@{
-  
+
 #if CGAL_ALGEBRAIC_KERNEL_D_ISOLATORS_DISABLE_DEFAULT_CONSTRUCTIBLE
  protected:
    Geotop_lifter_teissier_rep(); // = disable
@@ -637,8 +637,8 @@ public:
    Geotop_lifter_teissier_rep() : Base(new Rep()) {}
 #endif
 
-  // needs no special assignable-implementation as no pointers 
-  // and this is a Rep of a handle class 
+  // needs no special assignable-implementation as no pointers
+  // and this is a Rep of a handle class
 #if CGAL_ALGEBRAIC_KERNEL_D_ISOLATORS_DISABLE_ASSIGNABLE
   protected:
     //Geotop_lifter_teissier_rep(const Self&); // = default
@@ -649,13 +649,13 @@ public:
  public:
   //! standard constructor
   template< class CoefficientInputIterator >
-  Geotop_lifter_teissier_rep(const Bitstream_coefficient_kernel& bck, 
+  Geotop_lifter_teissier_rep(const Bitstream_coefficient_kernel& bck,
                              CoefficientInputIterator first, CoefficientInputIterator beyond,
-                             Multiplicity_type mult, 
+                             Multiplicity_type mult,
                              Multiplicity_type mult_r_fx_fy,
                              bool no_stop) :
     Arcavoid_list(bck, first, beyond),
-    _m_mult(mult), 
+    _m_mult(mult),
     _m_mult_r_fx_fy(mult_r_fx_fy),
     _m_no_stop(no_stop) {
 
@@ -663,26 +663,26 @@ public:
       CGAL_ACK_DEBUG_PRINT << "Use Teissier-isolator for status line at " << CGAL::to_double(this->kernel().alpha()) << std::endl;
 #endif
     }
-  
+
   //!@} // Constructors
 
 public:
-  
+
   //!\name Access functions
   //!@{
 
   void isolate() {
-    
+
     const int d = CGAL::degree(static_cast<Arcavoid_list*>(this)->polynomial());
-  
+
     if (d < 1) {
       _m_real_end = this->begin();
       Base::_m_is_isolated = true;
       return;
     }
-    
+
     // if not full degree
-    if (this->kernel().kernel()->sign_at_1_object()(CGAL::leading_coefficient(static_cast<Arcavoid_list*>(this)->polynomial()), 
+    if (this->kernel().kernel()->sign_at_1_object()(CGAL::leading_coefficient(static_cast<Arcavoid_list*>(this)->polynomial()),
                                                     this->kernel().alpha()) == CGAL::ZERO) {
 #if CGAL_ACK_DEBUG_FLAG
       CGAL_ACK_DEBUG_PRINT << "failed as polynomial as not full degree" << std::endl;
@@ -702,7 +702,7 @@ public:
       Base::_m_is_isolated = false;
       return;
     }
-    
+
     int num_clusters = std::distance(Arcavoid_list::begin(), Arcavoid_list::end());
 
     // EBEB for debugging
@@ -710,12 +710,12 @@ public:
     //int mult_sum;
 
     int i = 0;
-    
+
 #ifdef CGAL_XTri_USE_TIMERS
     tm_external_timer.start();
 #endif
     do {
-      
+
       typename Arcavoid_list::Cluster_iterator ait = Arcavoid_list::begin();
       while (ait != Arcavoid_list::end()) {
         if (ait->multiplicity() > 1) {
@@ -724,13 +724,13 @@ public:
           ait++;
         }
       }
-      
+
       num_clusters = std::distance(Arcavoid_list::begin(), Arcavoid_list::end());
       // for debugging
       // mult_sum = std::accumulate(Arcavoid_list::begin(), Arcavoid_list::end(), 0, cmadd);
-      
+
       // We ensure the conjugate-circle property by 2nr safety area of clusters
-            
+
       const int stop = 8;
       if (!_m_no_stop && i == stop) {
         // after "stop" iterations of num-solve let Bisolve do the job
@@ -760,7 +760,7 @@ public:
 #ifdef CGAL_XTri_USE_TIMERS
     tm_external_timer.stop();
 #endif
-    
+
     // obtain real intervals and store past-the-end iterator
     _m_real_end = Arcavoid_list::partition_and_sort_reals();
 
@@ -777,7 +777,7 @@ public:
     CGAL_precondition(_m_real_end);
     return std::distance(this->begin(), this->end());
   }
-  
+
   //! the lower bound of the \c i th root
   Bound left_bound(size_t i) const {
     CGAL_precondition(_m_real_end);
@@ -804,21 +804,21 @@ public:
   bool is_certainly_simple_root(size_t i) const {
     return (multiplicity_of_root(i) == 1);
   }
-  
+
   //!\brief Returns whether the \c i th root is definitely a multiple root of the isolated polynomial
   bool is_certainly_multiple_root(size_t i) const {
     return (multiplicity_of_root(i) > 1);
-  } 
-    
-  //! returns an upper bound of the \c i th root multiplicity                      
+  }
+
+  //! returns an upper bound of the \c i th root multiplicity
   int upper_bound_for_multiplicity(size_t i) const {
     CGAL_precondition(_m_real_end);
     Cluster_const_iterator it = this->begin();
     std::advance(it, i);
     return it->multiplicity();
   }
- 
-  //! returns the \c i th root multiplicity                      
+
+  //! returns the \c i th root multiplicity
   int multiplicity_of_root(size_t i) const {
     CGAL_precondition(_m_real_end);
     Cluster_const_iterator it = this->begin();
@@ -845,7 +845,7 @@ protected:
   // DO NOT DELETE. We have to return this, as this isolator is only referring to REAL roots
   Cluster_const_iterator end() const {
     CGAL_precondition(_m_real_end);
-    return *_m_real_end; 
+    return *_m_real_end;
   }
 
   //! Needed for reference counting
@@ -857,7 +857,7 @@ protected:
 
   //!\name Protected members
   //!@{
- 
+
   //! multiplicity of x as root of res
   Multiplicity_type _m_mult;
 
@@ -877,12 +877,12 @@ protected:
 #endif // CGAL_ACK_CURVE_ANALYSES_BISOLVE_USE_TEISSIER
 
 /*\brief Lifts critical and non-critical x-coordinates in a curve analysis.
- * 
+ *
  * Lifting means to compute the real roots (with multiplicities) for a
  * polynomial f(x0,y) with x0 possibly non-rational.
  * One out of four options are possible:
  * 1) lifting over a rational x0 -> RS
- * 2) lifting over a non-rational x0 (given by bck-instance), 
+ * 2) lifting over a non-rational x0 (given by bck-instance),
  *    but f(x0,y) stays square-free -> Bitstream_descartes
  * 3) lifting over a non-rational x0 (given by bck-instance),
  *    but f(x0,y) is not square-free -> iterated Bisolve
@@ -891,12 +891,12 @@ protected:
 template< class BitstreamCoefficientKernel, typename HandlePolicy = CGAL::Handle_policy_no_union >
 class Geotop_lifter :
   public internal::Generic_isolator< typename BitstreamCoefficientKernel::Polynomial,
-                                     typename BitstreamCoefficientKernel::Bound, 
+                                     typename BitstreamCoefficientKernel::Bound,
                                      HandlePolicy,
 #if CGAL_USE_RS3
-                                     RS_ak_1_isolator_rep< typename BitstreamCoefficientKernel::Polynomial::NT, typename BitstreamCoefficientKernel::Bound > 
+                                     RS_ak_1_isolator_rep< typename BitstreamCoefficientKernel::Polynomial::NT, typename BitstreamCoefficientKernel::Bound >
 #else
-                                     Square_free_bitstream_descartes_isolator_rep< BitstreamCoefficientKernel, HandlePolicy > 
+                                     Square_free_bitstream_descartes_isolator_rep< BitstreamCoefficientKernel, HandlePolicy >
 #endif
 > {
 
@@ -909,8 +909,8 @@ public:
   typedef BitstreamCoefficientKernel Bitstream_coefficient_kernel;
 
   //! second template paramter
-  typedef HandlePolicy Handle_policy; 
-   
+  typedef HandlePolicy Handle_policy;
+
   //! The polynomial type
   typedef typename Bitstream_coefficient_kernel::Polynomial Polynomial;
 
@@ -938,31 +938,31 @@ typedef internal::Generic_isolator< Polynomial, Bound, Handle_policy, Square_fre
   //!@} // Public typedefs
 
   private:
-  
+
   // TODO move to a helper file?
   struct Substitute_x {
-    
-    template< typename Polynomial_2, typename Bound > 
-    typename Polynomial_2::NT /* TODO use 'auto' in order to avoid fraction traits problems */ 
+
+    template< typename Polynomial_2, typename Bound >
+    typename Polynomial_2::NT /* TODO use 'auto' in order to avoid fraction traits problems */
     operator()(const Polynomial_2& p, const Bound& b) {
-      
+
       typedef CGAL::Fraction_traits< Bound > FT;
       typename FT::Decompose decompose;
-      
+
       typename FT::Numerator_type num;
       typename FT::Denominator_type denom;
       decompose(b, num, denom);
-      
+
       typename CGAL::Polynomial_traits_d<Polynomial_2>::
         Evaluate_homogeneous evh;
       typename CGAL::Polynomial_traits_d<Polynomial_2>::
         Move move;
-      
+
       return evh(move(p,0,1),num,denom);
     }
-    
+
   };
-  
+
     public:
   //!\name Constructors
   //!@{
@@ -991,7 +991,7 @@ typedef internal::Generic_isolator< Polynomial, Bound, Handle_policy, Square_fre
 
   //! bound constructor (uses RS directly)
   template< class CoefficientInputIterator >
-  Geotop_lifter(const Bitstream_coefficient_kernel& bck, 
+  Geotop_lifter(const Bitstream_coefficient_kernel& bck,
                 CoefficientInputIterator first, CoefficientInputIterator beyond,
                 const Bound& b /* b is kind of redundant here, as stored as bck.alpha().low() */) :
 #if CGAL_USE_RS3
@@ -1013,7 +1013,7 @@ Base(new Square_free_bitstream_descartes_isolator_rep< Bitstream_coefficient_ker
 
   //! bisolve constructor
   Geotop_lifter(const Bi_diff_vanish_2& bdv,
-                const Bitstream_coefficient_kernel& bck, 
+                const Bitstream_coefficient_kernel& bck,
                 Multiplicity_type mult,
                 bool local = false) :
     Base(new Geotop_lifter_bisolve_rep< Bitstream_coefficient_kernel, Handle_policy >(bck, mult, bdv, local))
@@ -1024,17 +1024,17 @@ Base(new Square_free_bitstream_descartes_isolator_rep< Bitstream_coefficient_ker
   //! arcavoid constructor
   template< class CoefficientInputIterator >
   Geotop_lifter(CoefficientInputIterator first, CoefficientInputIterator beyond,
-                const Bitstream_coefficient_kernel& bck, 
-                Multiplicity_type mult, 
+                const Bitstream_coefficient_kernel& bck,
+                Multiplicity_type mult,
                 Multiplicity_type mult_r_fx_fy,
                 bool no_stop = false) :
     Base(new Geotop_lifter_teissier_rep< Bitstream_coefficient_kernel, Handle_policy >(bck, first, beyond, mult, mult_r_fx_fy, no_stop))
   {
   }
 #endif // CGAL_ACK_CURVE_ANALYSES_BISOLVE_USE_TEISSIER
-  
+
   //!@} // Constructors
-  
+
   //!\name Destructor
   //!@{
 
@@ -1046,7 +1046,7 @@ Base(new Square_free_bitstream_descartes_isolator_rep< Bitstream_coefficient_ker
   // all member functions are derived from Generic_isolator
 
 };
-  
+
 } // namespace internal
 
 } // namespace CGAL

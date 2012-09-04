@@ -19,7 +19,7 @@
 // Author(s): Eric Berberich    <eric.berberich@cgal.org>
 
 #ifndef CGAL_ALGEBRAIC_KERNEL_2_CERTIFIER_COFACTOR_ARCAVOID_TRAITS_H
-#define CGAL_ALGEBRAIC_KERNEL_2_CERTIFIER_COFACTOR_ARCAVOID_TRAITS_H 
+#define CGAL_ALGEBRAIC_KERNEL_2_CERTIFIER_COFACTOR_ARCAVOID_TRAITS_H
 
 /*! \file
  * Traits class implementing cofactors root certification with aracavoid active intervals
@@ -31,7 +31,7 @@
 
 #include <CGAL/Algebraic_kernel_d/Bitstream_coefficient_kernel_at_alpha.h>
 
-#include <CGAL/Arcavoid.h>
+#include <CGAL/Algebraic_kernel_1/Arcavoid.h>
 
 namespace CGAL {
 
@@ -51,12 +51,12 @@ public:
 
     //! type of solution
     typedef typename Base::Algebraic_real_2 Algebraic_real_2;
-    
+
     //! type of univariate polynomial
     typedef typename Base::Polynomial_1 Polynomial_1;
 
     //! type of bivariate polynomial
-    typedef typename Base::Polynomial_2 Polynomial_2;  
+    typedef typename Base::Polynomial_2 Polynomial_2;
 
     //! type of algebraic real
     typedef typename Algebraic_kernel_d_1::Algebraic_real_1 Algebraic_real_1;
@@ -70,7 +70,7 @@ public:
     //! arithmetic kernel
     typedef typename CGAL::Get_arithmetic_kernel< Bound >::Arithmetic_kernel AK;
 
-    //! bigfloat interval 
+    //! bigfloat interval
     typedef typename AK::Bigfloat_interval BFI;
 
     //! our lovely bigfloats
@@ -88,10 +88,10 @@ public:
 
     //! Active intervals internal
     typedef CGAL::internal::Arcavoid_list< BCK> Arcavoid_list;
-    
+
     //! Active intervals
     typedef Arcavoid_list Active_intervals_set;
-    
+
     //! Active intervals iterator
     typedef typename Arcavoid_list::Cluster_iterator Active_intervals_set_iterator;
 
@@ -127,20 +127,20 @@ public:
     Active_intervals_set active_intervals_set_at(const Algebraic_real_1& x,
                                                  InputIterator first, InputIterator beyond,
                                                  long upper_bound_log2_abs = -1) { // -1 indicates local bound
-      
+
       BCK bck(this->kernel(), x);
-      
+
       return Arcavoid_list(bck, first, beyond);
 
     }
-    
+
     inline
     Bound lower(const Active_intervals_set& ais, Active_intervals_set_const_iterator ait) const {
       //std::cout << "laitc: "<< ait->center().real() << std::endl;
       //std::cout << "laitr: "<< ait->radius() << std::endl;
       return ait->center().real() - ait->radius();
     }
-    
+
     inline
     Bound upper(const Active_intervals_set& ais, Active_intervals_set_const_iterator ait) const {
       //std::cout << "uaitc: "<< ait->center().real() << std::endl;
@@ -152,17 +152,17 @@ public:
     bool is_real(const Active_intervals_set& ais, Active_intervals_set_iterator ait) const {
       return ait->touch_real();
     }
-    
+
     inline
     std::pair< Active_intervals_set_iterator, Active_intervals_set_iterator >
       refine(Active_intervals_set& ais, Active_intervals_set_iterator ait) {
-    
+
       return ais.real_subdivide_cluster(ait);
-      
+
     }
 
     inline
-    Multiplicity_type upper_bound_on_multiplicity(const Active_intervals_set& ais, 
+    Multiplicity_type upper_bound_on_multiplicity(const Active_intervals_set& ais,
                                                   Active_intervals_set_iterator ait) {
       return ait->multiplicity();
     }
