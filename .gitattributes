@@ -3339,6 +3339,7 @@ Polynomial/include/CGAL/Polynomial_type_generator.h -text
 Polynomial/include/CGAL/Test/_test_polynomial_traits_d.h -text
 Polynomial/test/Polynomial/Coercion_traits.cpp -text
 Polynomial/test/Polynomial/Get_arithmetic_kernel.cpp -text
+Polynomial/test/Polynomial/Polynomial_parser_d.cpp -text
 Polynomial/test/Polynomial/Polynomial_type_generator.cpp -text
 Polynomial/test/Polynomial/polynomial_utils.cpp -text
 Polynomial/test/Polynomial/sturm_habicht_sequence.cpp -text
