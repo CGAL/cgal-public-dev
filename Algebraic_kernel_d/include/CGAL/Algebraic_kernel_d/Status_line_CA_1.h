@@ -36,11 +36,10 @@ template <class CurveAnalysis_2, class Rep>
 std::ostream& operator<< (std::ostream&, 
     const Status_line_CA_1<CurveAnalysis_2, Rep>&);
 
-#if !CGAL_ACK_USE_EXACUS
+#if !CGAL_ACK_CURVE_ANALYSES_USE_BISOLVE
 template < typename AlgebraicCurveKernel_2 > 
 class Shear_transformation;
 #endif
-
 
 template < class AlgebraicCurveKernel_2 >
 class Status_line_CA_1_rep {
@@ -161,9 +160,6 @@ public:
     
      // befriending the handle
     friend class Status_line_CA_1<Curve_analysis_2, Self>;
-    //friend class Curve_analysis_2;
-    //friend class Shear_transformation<Curve_analysis_2>;
-
 };
 
 //! \brief The class provides information about the intersections of a curve 
@@ -487,14 +483,8 @@ public:
     void write(std::ostream& os) const {
 
         os << "status_line [CA@" << this->ptr()->_m_ca.id() << std::flush;
-#if CGAL_ACK_USE_EXACUS
-        os << "; x = " << x() << "; #events: " << number_of_events() << "; "
-           << std::flush;
-#else
         os << "; x = " << CGAL::to_double(x()) << "; #events: " 
            << number_of_events() << "; " << std::flush;
-#endif
-
 #if 0        
         if(is_event()) {
             os << "incident branches: {" << std::flush;

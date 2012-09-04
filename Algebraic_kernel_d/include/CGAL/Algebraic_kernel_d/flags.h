@@ -130,16 +130,6 @@
 #warning ACK factorizes univariate polynomials with NTL
 #endif
 
-
-/**
- * If set, the program uses the AlciX-code 
- * for the curve- and curve-pair-analysis.
- * This flag is only for debugging purposes.
- */
-#ifndef CGAL_ACK_USE_EXACUS
-#define CGAL_ACK_USE_EXACUS 0
-#endif
-
 /**
  * If set, the curve and curve pair analysis are using specialized code
  * to analyse conic curves, i.e. curves of degree 2

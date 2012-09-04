@@ -231,15 +231,9 @@ public:
         // unless x-coordiate was explicitly set with _set_x: compute its value
         if(!this->ptr()->_m_x) {
             this->ptr()->_m_x = (is_event() ?
-#if CGAL_ACK_USE_EXACUS
-                this->ptr()->_m_cpa._internal_curve_pair().event_x(index()) :
-                Algebraic_real_1(this->ptr()->_m_cpa._internal_curve_pair().
-                               bound_value_in_interval(index())));
-#else   
                 this->ptr()->_m_cpa.event_x(index()) :
                 Algebraic_real_1(this->ptr()->_m_cpa.
                     bound_value_in_interval(index())));
-#endif
         }
         return *(this->ptr()->_m_x);
     }

@@ -342,8 +342,6 @@ public:
   struct Ceil_log2_abs
     : public std::unary_function< CORE::BigFloat, long > {
     long operator()( CORE::BigFloat x ) const {
-      // (already commented out in EXACUS)...
-      //   NiX_precond(!(NiX::in_zero(x) && NiX::singleton(x)));
       x = CGAL::abs(x);
       return CORE::ceilLg(x.m()+x.err())+x.exp()*CORE::CHUNK_BIT;
     }

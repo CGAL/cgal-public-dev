@@ -210,7 +210,6 @@ public:
 
 #include <CGAL/Algebraic_kernel_d/Bitstream_descartes_rndl_tree_traits.h>
 
-// NOTE: If this flag is set, you need EXACUS!
 #if CGAL_ACK_BITSTREAM_USES_E08_TREE
 #include <CGAL/Algebraic_kernel_d/Bitstream_descartes_E08_tree.h>
 #else // CGAL_ACK_BITSTREAM_USES_E08_TREE
