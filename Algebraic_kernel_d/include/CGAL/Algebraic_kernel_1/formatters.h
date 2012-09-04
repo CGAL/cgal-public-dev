@@ -5,7 +5,7 @@
 #include <string>
 #include <boost/lexical_cast.hpp>
 
-#include <CGAL/Cartesian_complex.h>
+#include <CGAL/Algebraic_kernel_1/Cartesian_complex.h>
 #include <CGAL/GMP_arithmetic_kernel.h>
 
 #ifdef __GNUC__
@@ -35,7 +35,7 @@ public:
                                     char exp_char = 'e',
                                     int base = 10)
     : ed (error_digits), sc (scientific), ec (exp_char), b (base) {}
-  
+
   const int error_digits () const { return ed; }
   const bool scientific () const { return sc; }
   const char exponent_character () const { return ec; }
@@ -47,16 +47,16 @@ public:
 template<>
 struct Output_rep< Gmpfr, Parens_as_product_tag > {
   const Gmpfr &x;
-  
+
   Output_rep (const Gmpfr &x) : x(x) {}
 
   std::ostream & operator() (std::ostream &out) const {
     const int width = 40;
     char buf [width+20];
     std::string s;
-    
+
     const double abs_x = CGAL::abs (CGAL::to_double (x));
-    
+
     if (false && // always use scientific format
         1e-3 < abs_x && abs_x < 10) {
       int n = mpfr_sprintf (buf, "%.*RNf", width-3, x.fr());
@@ -73,7 +73,7 @@ struct Output_rep< Gmpfr, Parens_as_product_tag > {
         s += std::string (buf);
       }
     }
-    
+
     if (s.length() < width)
       s.insert (s.begin(), width - s.length(), ' ');
 
@@ -84,7 +84,7 @@ struct Output_rep< Gmpfr, Parens_as_product_tag > {
 template<>
 struct Output_rep< Gmpfr, Null_tag > {
   const Gmpfr &x;
-  
+
   Output_rep (const Gmpfr &x) : x(x) {}
 
   std::ostream & operator() (std::ostream &out) const {
@@ -95,7 +95,7 @@ struct Output_rep< Gmpfr, Null_tag > {
 template< class F >
 struct Output_rep< Gmpfr, F > {
   const Gmpfr &x;
-  
+
   Output_rep (const Gmpfr &x) : x(x) {}
 
   std::ostream & operator() (std::ostream &out) const {
@@ -204,7 +204,7 @@ struct Output_rep< Gmpfi, Question_mark_interval_formatter > {
       mpz_sub_ui (max_error, max_error, 1);
       mpz_mul_2exp (max_error, max_error, 1);
     }
-    
+
     int cur_error_digits = mpz_sizeinbase (cur_error, base);
     int max_error_digits = mpz_sizeinbase (max_error, base);
     int k = cur_error_digits - 1 - max_error_digits;
@@ -266,7 +266,7 @@ struct Output_rep< Gmpfi, Question_mark_interval_formatter > {
       scientific = true;
 
     const std::string mark = exact ? "?" : "!";
-    
+
     if (scientific)
       return out << sign_str << mant_str[0] << "." << mant_str.substr (1) << mark
                  << error_str << exp_char << sci_exp;

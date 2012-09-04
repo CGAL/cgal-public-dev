@@ -19,10 +19,10 @@
 #include <CGAL/GMP_arithmetic_kernel.h>
 #endif // CGAL_USE_GMP
 
-#include <CGAL/Cartesian_complex.h>
+#include <CGAL/Algebraic_kernel_1/Cartesian_complex.h>
 #include <CGAL/Polynomial_type_generator.h>
 
-#include <CGAL/Double_with_exponent.h>
+#include <CGAL/Algebraic_kernel_1/Double_with_exponent.h>
 
 namespace CGAL {
 
@@ -47,7 +47,7 @@ struct Convert_polynomial_to_bigfloat_base {
    long p,
    typename Polynomial_type_generator< Bigfloat, 1>::Type &out) const {
     typedef typename Polynomial_type_generator< Bigfloat, 1>::Type OutPoly;
-    
+
     const int n = in.degree();
 
     if (n < 0) {

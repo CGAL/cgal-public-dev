@@ -1,9 +1,9 @@
 /*
 ** Bitsize.h
-** 
+**
 ** Made by Alexander Kobel
 ** Login   <perpeduumimmobile@lidinoid>
-** 
+**
 ** Started on  Thu Apr 22 12:59:47 2010 Alexander Kobel
 ** Last update Thu Apr 22 12:59:47 2010 Alexander Kobel
 */
@@ -15,7 +15,7 @@
 #include <CGAL/Polynomial.h>
 #include <CGAL/LEDA_arithmetic_kernel.h>
 #include <CGAL/GMP_arithmetic_kernel.h>
-#include <CGAL/Cartesian_complex.h>
+#include <CGAL/Algebraic_kernel_1/Cartesian_complex.h>
 #include <gmpxx.h>
 
 namespace CGAL {

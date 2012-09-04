@@ -1,13 +1,13 @@
 #ifndef CGAL_BIGFLOAT_TRAITS_H
 #define CGAL_BIGFLOAT_TRAITS_H
 
-#include <CGAL/Cartesian_complex.h>
-#include <CGAL/Double_with_exponent.h>
+#include <CGAL/Algebraic_kernel_1/Cartesian_complex.h>
+#include <CGAL/Algebraic_kernel_1/Double_with_exponent.h>
 #include <CGAL/Algebraic_kernel_d/Float_traits.h>
 
 namespace CGAL {
 
-// Don't define default, results in more convinient compiler messages 
+// Don't define default, results in more convinient compiler messages
 template< class Bigfloat >
 class Bigfloat_traits;
 
@@ -87,7 +87,7 @@ public:
   // TODO
   struct Set_precision;
   //    : public std::binary_function< leda_bigfloat, long, void >;
-  
+
   struct Set_default_precision
     : public std::unary_function< long, void > {
     void operator() (long prec) const {
@@ -97,7 +97,7 @@ public:
 
   // TODO
   struct Get_precision;
-  
+
   struct Get_default_precision
     : public std::unary_function< void, long > {
     const long operator() () const {
@@ -211,7 +211,7 @@ public:
 
   // TODO
   struct Get_precision;
-  
+
   struct Get_default_precision
     : public std::unary_function< void, long > {
     const long operator() () const {
@@ -266,7 +266,7 @@ public:
 
   // TODO
   struct Get_precision;
-  
+
   struct Get_default_precision
     : public std::unary_function< void, long > {
     const long operator() () const {
@@ -341,7 +341,7 @@ public:
 
   // TODO
   struct Get_precision;
-  
+
   struct Get_default_precision
     : public std::unary_function< void, long > {
     const long operator() () const {
@@ -397,7 +397,7 @@ public:
     : public std::unary_function< double, long > {
     const long operator() (const double &x) { return 53; }
   };
-  
+
   struct Get_default_precision
     : public std::unary_function< void, long > {
     const long operator() () const { return 53; }

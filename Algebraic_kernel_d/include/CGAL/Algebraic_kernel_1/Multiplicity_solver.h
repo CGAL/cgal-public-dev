@@ -10,7 +10,7 @@
 
 #include <CGAL/basic.h>
 #include <CGAL/Arithmetic_kernel.h>
-#include <CGAL/Cartesian_complex.h>
+#include <CGAL/Algebraic_kernel_1/Cartesian_complex.h>
 
 #include <CGAL/Polynomial.h>
 #include <CGAL/Polynomial_traits_d.h>
@@ -18,8 +18,8 @@
 
 #include <boost/lexical_cast.hpp>
 
-#include <CGAL/Bitsize.h>
-#include <CGAL/Bigfloat_traits.h>
+#include <CGAL/Algebraic_kernel_1/Bitsize.h>
+#include <CGAL/Algebraic_kernel_1/Bigfloat_traits.h>
 
 namespace CGAL {
 
@@ -146,7 +146,7 @@ private:
       result = result && verify_root (i);
     return result;
   }
-  
+
   void print_verification () const {
     for (size_t i = 0; i < n; ++i)
       std::cerr << (verification[i] ? '+' : '-');
@@ -155,7 +155,7 @@ private:
 
   const RT durand_kerner_gauss () {
     RT max_diff = 0;
-    
+
     for (int i = 0; i < n; ++i) {
       const CT f_at_z_i = f.evaluate (roots[i]);
       CT den = f.lcoeff();
@@ -178,7 +178,7 @@ private:
   const RT durand_kerner_jacobi () {
     // NYETWORKING ?!
     RT max_diff = 0;
-    
+
     for (int i = 0; i < n; ++i)
       oldroots[i] = roots[i];
 
@@ -203,7 +203,7 @@ private:
 
   const RT durand_kerner_mult_old () {
     RT max_diff = 0;
-    
+
     for (int i = 0; i < n; ++i) {
       CT f_at_z_i;
       CT den = f.lcoeff();
@@ -245,7 +245,7 @@ private:
           if (i == j) continue;
           den *= roots[i] - roots[j];
         }
-        
+
         const CT difference = f_at_z_i / den;
         roots[i] = roots[i] - difference;
       } else {
@@ -258,7 +258,7 @@ private:
           if (in_cluster[i] == in_cluster[j]) continue;
           den *= roots[i] - roots[j];
         }
-        
+
         const CT difference = f_at_z_i / den;
         roots[i] = roots[i] - difference;
       }
@@ -289,7 +289,7 @@ private:
         if (i == j) continue;
         den *= roots[i] - roots[j];
       }
-      
+
       const CT difference = f_at_z_i / den;
       roots[i] = roots[i] - difference;
     }
@@ -413,7 +413,7 @@ public:
           //print_clusters();
           asy_clusters();
         }
-      
+
       if (diff > eps && count < prec) continue;
 
       print_verification();

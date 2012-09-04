@@ -1,9 +1,9 @@
 /*
 ** Complex.h
-** 
+**
 ** Made by Alexander Kobel
 ** Login   <perpeduumimmobile@lidinoid>
-** 
+**
 ** Started on  Sun Jan  3 13:36:50 2010 Alexander Kobel
 ** Last update Sun Jan  3 13:36:50 2010 Alexander Kobel
 */
@@ -34,7 +34,7 @@
 
 #include <CGAL/basic.h>
 #include <complex>
-#include <CGAL/Complex_embeddable_traits.h>
+#include <CGAL/Algebraic_kernel_1/Complex_embeddable_traits.h>
 #include <CGAL/Interval_traits.h>
 
 namespace CGAL {
@@ -221,7 +221,7 @@ public:
     const T ac = x * rhs.real();
     const T bd = y * rhs.imag();
     const T c_plus_d = rhs.real() + rhs.imag();
-    
+
     // compute Im
     y += x;
     y *= c_plus_d;
@@ -403,7 +403,7 @@ operator* (CGAL_CARTESIAN_COMPLEX_OPERATOR_ARGUMENTS) {
   const CT_type ac = a * c;
   const CT_type bd = b * d;
   const CT_type c_plus_d = c + d;
-  
+
   // compute Im
   CT_type y = a + b;
   y *= c_plus_d;
@@ -433,11 +433,11 @@ operator/ (CGAL_CARTESIAN_COMPLEX_OPERATOR_ARGUMENTS) {
    *   Re (lhs / rhs) * (c2+d2) = ac + bd
    *   Im (lhs / rhs) * (c2+d2) = bc - ad = (a + b)*(c - d) - ac + bd
    */
-  
+
   const CT_type ac = a * c;
   const CT_type bd = b * d;
   const CT_type c_minus_d = c - d;
-  
+
   // compute Re * (c2+d2)
   const CT_type x = ac + bd;
 
@@ -446,10 +446,10 @@ operator/ (CGAL_CARTESIAN_COMPLEX_OPERATOR_ARGUMENTS) {
   y *= c_minus_d;
   y -= ac;
   y += bd;
-  
+
   // compute (c2+d2)
   const CT_type den = CGAL::square (c) + CGAL::square (d);
-  
+
   return Cartesian (x / den, y / den);
 }
 
@@ -770,7 +770,7 @@ struct To_double< Cartesian_complex< Real_embeddable > >
                                 typename Complex_embeddable_traits< Cartesian_complex< Real_embeddable > >::To_double::result_type > {
   typename Complex_embeddable_traits< Cartesian_complex< Real_embeddable > >::To_double::result_type
   operator() (const Cartesian_complex< Real_embeddable > &z) const {
-    typename Complex_embeddable_traits< Cartesian_complex< Real_embeddable > >::To_double to_double;  
+    typename Complex_embeddable_traits< Cartesian_complex< Real_embeddable > >::To_double to_double;
     return to_double (z);
   }
 };
@@ -781,7 +781,7 @@ struct To_interval< Cartesian_complex< Real_embeddable > >
                                 typename Complex_embeddable_traits< Cartesian_complex< Real_embeddable > >::To_interval::result_type > {
   typename Complex_embeddable_traits< Cartesian_complex< Real_embeddable > >::To_interval::result_type
   operator() (const Cartesian_complex< Real_embeddable > &z) const {
-    typename Complex_embeddable_traits< Cartesian_complex< Real_embeddable > >::To_interval to_interval;  
+    typename Complex_embeddable_traits< Cartesian_complex< Real_embeddable > >::To_interval to_interval;
     return to_interval (z);
   }
 };
@@ -791,7 +791,7 @@ inline
 typename Complex_embeddable_traits< Cartesian_complex< Real_embeddable > >::To_double::result_type
 // std::complex< double >
 to_double (const Cartesian_complex< Real_embeddable > &z) {
-  typename Complex_embeddable_traits< Cartesian_complex< Real_embeddable > >::To_double to_double;  
+  typename Complex_embeddable_traits< Cartesian_complex< Real_embeddable > >::To_double to_double;
   return to_double (z);
 }
 
@@ -812,7 +812,7 @@ public:
   typedef Cartesian_complex< T > Type;
   typedef CGAL::Null_tag Is_interval;
   typedef CGAL::Null_tag With_empty_interval;
-  
+
   typedef CGAL::Null_functor Lower;
   typedef CGAL::Null_functor Upper;
   typedef CGAL::Null_functor Width;
@@ -872,7 +872,7 @@ public:
   };
 
   typedef CGAL::Null_functor In; // TODO
-  
+
   struct Zero_in : public std::unary_function< Type, bool > {
     const bool operator() (const Type &I) const
     { return (Zero_in_T() (I.real()) && Zero_in_T() (I.imag())); }

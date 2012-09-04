@@ -34,7 +34,7 @@
 
 #include <CGAL/Polynomial_traits_d.h>
 
-#include <CGAL/Arcavoid_root_isolator.h>
+#include <CGAL/Algebraic_kernel_1/Arcavoid_root_isolator.h>
 
 namespace CGAL {
 

@@ -1,7 +1,7 @@
 #ifndef CGAL_ARCAVOID_ROOT_ISOLATOR_H
 #define CGAL_ARCAVOID_ROOT_ISOLATOR_H
 
-#include <CGAL/Arcavoid.h>
+#include <CGAL/Algebraic_kernel_1/Arcavoid.h>
 #include <boost/detail/algorithm.hpp>
 #include <boost/detail/is_sorted.hpp>
 

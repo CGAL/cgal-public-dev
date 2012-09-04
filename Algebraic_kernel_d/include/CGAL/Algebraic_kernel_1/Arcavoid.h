@@ -112,7 +112,7 @@
 #include <CGAL/Profile_timer.h>
 
 #ifndef Bisolve_telemetry_code
-# define Bisolve_telemetry_code(x) 
+# define Bisolve_telemetry_code(x)
 #endif
 
 ////////////////////////////////////////////////////////////////
@@ -127,13 +127,13 @@
 # define CGAL_ARCAVOID_UNLIKELY(x) (x)
 #endif
 
-#include <CGAL/Arcavoid_kernel.h>
-#include <CGAL/Bitsize.h>
-#include <CGAL/Bigfloat_traits.h>
-#include <CGAL/Cartesian_complex.h>
+#include <CGAL/Algebraic_kernel_1/Arcavoid_kernel.h>
+#include <CGAL/Algebraic_kernel_1/Bitsize.h>
+#include <CGAL/Algebraic_kernel_1/Bigfloat_traits.h>
+#include <CGAL/Algebraic_kernel_1/Cartesian_complex.h>
 
 #if ! CGAL_ARCAVOID_DISABLE_DOUBLE_WITH_EXPONENT
-# include <CGAL/Double_with_exponent.h>
+# include <CGAL/Algebraic_kernel_1/Double_with_exponent.h>
 # include <boost/numeric/interval.hpp>
 #endif
 
@@ -429,8 +429,8 @@ protected:
   //// Input types (possibly multivariate + alpha)
   typedef typename CGAL::Polynomial_type_generator< Coefficient, 1 >::Type Input_polynomial;
   typedef typename CGAL::Complex_embeddable_traits< Coefficient >::Is_complex_embeddable Input_has_complex_coefficients_tag;
-  
-#if ! CGAL_ARCAVOID_DISABLE_DOUBLE  
+
+#if ! CGAL_ARCAVOID_DISABLE_DOUBLE
   //// double precision FP types
   typedef double                         RR;
   typedef Interval_nt< false >           RRI;
@@ -608,7 +608,7 @@ private:
     const _Approximation_const_iterator begin () const { return discs.begin(); }
     const _Approximation_iterator end () { return discs.end(); }
     const _Approximation_const_iterator end () const { return discs.end(); }
-    
+
     const bool touch_real () const { // TODO: cache this
       return CGAL::abs (center().imag()) <= radius();
     }
@@ -679,11 +679,11 @@ private:
   template< class Real > class Approximation_template {
     friend class Arcavoid_list< Bitstream_coefficient_kernel >;
     typedef Approximation_template< Real > Self;
-    
+
   public:
     typedef Real                            Radius_type;
     typedef CGAL::Cartesian_complex< Real > Center_type;
-    
+
   protected:
     /* Data members */
     Center_type z;
@@ -706,7 +706,7 @@ private:
       return rad;
     }
 
-    friend std::ostream & operator<< (std::ostream &out,  const Self &D) {      
+    friend std::ostream & operator<< (std::ostream &out,  const Self &D) {
       return out << "  Disc (" << CGAL::oformat (D.center()) << "; "
                  << CGAL::oformat (D.rad) << " <= 2^" << CGAL::abs_ilog2 (D.rad) << ")";
     }
@@ -837,7 +837,7 @@ private:
                              typename CGAL::Coercion_traits< typename Vector::value_type, T >::Type > horner_2 (const Vector &f, const T &z) {
     return _Horner< Vector, T >().horner_2 (f, z);
   }
-  
+
   //! evaluate Newton correction at a point using the parallel Ruffini-Horner scheme
   template< class Vector, class T >
   static const typename CGAL::Coercion_traits< typename Vector::value_type, T >::Type newton_correction (const Vector &f, const T &z) {
@@ -855,14 +855,14 @@ private:
     CGAL_TIME_PROFILER ("truncated_taylor_shift()");
 
     // TODO: write optimized variant using CGAL::square()
-    
+
     const int n = degree (f);
     std::vector< Type > coeffs (boost::make_transform_iterator (f.begin(), cast),
                                 boost::make_transform_iterator (f.end(), cast));
     for (int j = n-1; j >= 0; --j)
       for (int i = j; i < j+k && i < n; ++i)
         coeffs[i] += z * coeffs[i+1]; // intentionally no cast (spares time for T real, Type complex)
-    
+
     return std::vector< Type > (coeffs.begin(), coeffs.begin() + k);
   }
 
@@ -935,7 +935,7 @@ private:
         prec (0) {
       stage_cache.push_back (Approximation_stage());
     }
-    
+
     Approximation_cache (const Input_polynomial &_f, const Bitstream_coefficient_kernel &_bck)
       : input (_f),
         bck (_bck),
@@ -965,7 +965,7 @@ private:
       }
       return log_p;
     }
-    
+
     // TODO: promote ..._coeff_may_vanish to constructors
     void trim_zero_coefficients (bool leading_coeff_may_vanish = false,
                                  bool constant_coeff_may_vanish = true) {
@@ -984,19 +984,19 @@ private:
           ++degree_loss;
         }
       }
-      
+
       mult_zero = 0;
       if (constant_coeff_may_vanish) {
         // TODO: increase mult_zero adaptively during the algorithm
         while (mult_zero < N && coefficient_is_zero (input[mult_zero]))
           ++mult_zero;
       }
-      
+
       input_begin = input.begin();
       std::advance (input_begin, mult_zero);
       input_end = input.end();
       std::advance (input_end, -degree_loss);
-      
+
       n = N - mult_zero;
     }
 
@@ -1025,11 +1025,11 @@ private:
         std::for_each (s.Fiv.begin(), s.Fiv.end(), rounder);
         Bisolve_telemetry_code(t_arca_transform.stop());
       }
-      
+
       const MpRR delta = CGAL::ipow2< MpRR > (-prec);
       const MpCCI delta_iv = MpCCI (MpRRI (-delta, delta), MpRRI (-delta, delta));
       DBG_ARCA (std::clog << "Using delta = " << delta << std::endl);
-      
+
       // get widened interval approximation
       s.Fwiv = MpCCIVector (s.Fiv.begin(), s.Fiv.end());
       for (int i = 0; i <= n; ++i)
@@ -1039,7 +1039,7 @@ private:
       typename CGAL::Interval_traits< MpIInCoeff >::Median median;
       s.F = MpInVector (boost::make_transform_iterator (s.Fiv.begin(), median),
                         boost::make_transform_iterator (s.Fiv.end(), median));
-    }    
+    }
   };
   Approximation_cache approximation_cache;
 
@@ -1148,7 +1148,7 @@ public:
                       boost::make_transform_iterator (Fwiv.end(), mpcci_to_interval));
     f =  InVector (boost::make_transform_iterator (F.begin(), incoeff_to_double),
                    boost::make_transform_iterator (F.end(), incoeff_to_double));
-    
+
     DBG_ARCA (std::cerr << "double approximation f of F = ";
               print_polynomial (std::cerr, f);
               std::cerr << std::endl);
@@ -1161,7 +1161,7 @@ public:
 
   void initialize_roots () {
     CGAL_precondition (clusters.empty());
-    
+
     if (n <= 0)
       return;
 
@@ -1177,7 +1177,7 @@ public:
     const Approximation_iterator beyond = clusters.front().end();
     for (Approximation_iterator it = clusters.front().begin(); it != beyond; ++it)
       it->rad = fb_2; // may not be correct, but is not publicly visible, so it doesn't matter
-    
+
     // add zeros
     for (int i = 0; i < mult_zero; ++i) {
       clusters.front().discs.push_front (Approximation (MpCC::ZERO()));
@@ -1201,9 +1201,9 @@ public:
     int n = degree (f);
     CGAL_precondition (n > 0);
     CGAL_precondition (! CGAL::possibly (CGAL::is_zero (f[n])));
-    
+
     const long log2_lcoeff = floor_log2_abs (CGAL::abs (f[n]));
-    
+
     long fb_log2 = std::numeric_limits< long >::min();
 
     for (int i = 1; i < n; ++i)
@@ -1254,7 +1254,7 @@ public:
       const std::pair< double, long > d_e = CGAL::to_double_exponent (fkK);
       MpRR u = d_e.first;
       CGAL::mult_by_pow2< MpRR > (u, d_e.second);
-      
+
       if ((K-k) == 2)
         u = sqrt (u);
       else if ((K-k) > 2)
@@ -1306,7 +1306,7 @@ public:
         {
           CGAL_TIME_PROFILER ("  aberth_in_cluster () -> 1. compute Newton correction");
           boost::tie (fz, dfz) = horner_2 (F, it->z);
-          
+
           if (CGAL_ARCAVOID_UNLIKELY (CGAL::is_zero (dfz))) {
             MpCCI fziv, dfziv;
             boost::tie (fziv, dfziv) = horner_2 (Fiv, it->z);
@@ -1343,7 +1343,7 @@ public:
           for (Approximation_const_iterator jt = eps_nbh.begin(); jt != eps_nbh.end(); ++jt)
             abcorr += (it->z - jt->z).reciprocal();
         }
-          
+
         // 3. Apply correction
         CGAL_assertion (! CGAL::is_zero (CC (1) - f_df * abcorr)); // TODO: gracefully handle this
         const MpCC corr = f_df / (CC (1) - f_df * abcorr);      // TODO: check if inf can occur even if assertion holds
@@ -1393,7 +1393,7 @@ public:
     // TODO: protect rounding (by caller?)
 
     CGAL_TIME_PROFILER ("compute_radius_gershgorin()");
-    
+
     if (CGAL_ARCAVOID_UNLIKELY (dit->exact)) {
       dit->rad = 0;
       return;
@@ -1412,24 +1412,24 @@ public:
       for (Approximation_const_iterator jt = it->begin(); jt != it->end(); ++jt) {
         CGAL_postcondition_code (if (dit == jt) ++found_self);
         if (dit == jt) continue;
-        
+
          CGAL_postcondition_code (if (CGAL::is_zero (jt->z)) ++skipped);
          if (CGAL::is_zero (jt->z)) continue;
-        
+
         CGAL_postcondition_code (++count);
         ///prod *= CGAL::abs (dit->z - jt->z); // TODO: check rounding
         //prod *= CGAL::lower (CGAL::abs (MpCCI (dit->z) - MpCCI (jt->z)));
         prod *= distance_rnd_d (dit->z, jt->z);
       }
     }
-    
+
     for (Approximation_const_iterator jt = eps_nbh.begin(); jt != eps_nbh.end(); ++jt) {
       CGAL_postcondition_code (if (dit == jt) ++found_self);
       if (dit == jt) continue;
-      
+
       CGAL_postcondition_code (if (CGAL::is_zero (jt->z)) ++skipped);
       if (CGAL::is_zero (jt->z)) continue;
-      
+
       CGAL_postcondition_code (++count);
       //prod *= CGAL::abs (dit->z - jt->z); // TODO: check rounding
       //prod *= CGAL::lower (CGAL::abs (MpCCI (dit->z) - MpCCI (jt->z)));
@@ -1459,7 +1459,7 @@ public:
     std::vector< Approximation_iterator > dits;
     for (Approximation_iterator it = cit->discs.begin(); it != cit->discs.end(); ++it)
       dits.push_back (it);
-    
+
     /* initialize adjacency graph */
     boost::adjacency_matrix< boost::undirectedS > G (k);
     for (size_t i = 0; i < k; ++i)
@@ -1470,7 +1470,7 @@ public:
     /* compute connected components */
     std::vector< size_t > comp (k);
     const size_t nr_comp = boost::connected_components (G, &comp[0]);
-    
+
     Cluster_iterator beyond = cit;
     ++beyond;
 
@@ -1514,7 +1514,7 @@ public:
     DBG_ARCA (std::cerr << "LOW_PRECISION_STAGE" << std::endl);
     DBG_ARCA_TIME (CGAL::Timer t_aberth);
     DBG_ARCA_TIME (t_aberth.start());
-    
+
     Protector protector;
     Precision_guard guard (CGAL_ARCAVOID_DOUBLE_PRECISION);
     Floating_point_environment_handler fenv_handler;
@@ -1533,9 +1533,9 @@ public:
 
     if (CGAL_ARCAVOID_UNLIKELY (fenv_handler.exception_occured()))
       return false;
-    
+
     DBG_ARCA (std::cerr << "- CONVERSION DONE" << std::endl);
-    
+
     std::vector< bool > in_nbh (n, false);
     bool all_in_nbh = false;
 
@@ -1602,7 +1602,7 @@ public:
       stage = LOW_PRECISION_STAGE_COMPLETED;
       return false;
     }
-    
+
     it = begin;
     for (int i = 0; i < n; ++i) {
       const MpCC mpcc (MpRR (z[i].real()), MpRR (z[i].imag()));
@@ -1612,7 +1612,7 @@ public:
     }
 
     const Cluster_range range = split_cluster_into_newton_connected_components (clusters.begin());
-    
+
     stage = LOW_PRECISION_STAGE_COMPLETED;
 
     DBG_ARCA (std::cerr << "- END OF LOW_PRECISION_STAGE" << std::endl);
@@ -1746,7 +1746,7 @@ public:
           }
         }
       }
-      
+
       if (CGAL::abs (center - cit->center()) >= cit->radius()) {
         restarted = false;
         DBG_ARCA (std::cerr << "No restart: refined center not in cluster" << std::endl);
@@ -1758,17 +1758,17 @@ public:
       DBG_ARCA (std::cerr << "local F: ");
       DBG_ARCA (print_polynomial (std::cerr, shifted));
       DBG_ARCA (std::cerr << std::endl);
-      
+
       std::vector< MpCC > appr;
       get_initial_approximations (shifted, std::back_inserter (appr));
-      
+
       CGAL_assertion (appr.size() == k);
       if (! appr.size() == k) {
         restarted = false;
         DBG_ARCA (std::cerr << "DISCREPANCY: expected " << k << " approximations, got " << appr.size() << std::endl);
         break;
       }
-        
+
       // get widened interval approximation
       // const MpRR delta = CGAL::ipow2< MpRR > (-prec * k/n + CGAL::abs_ilog2 (static_cast< double > (n)));
       // const MpCCI delta_iv = MpCCI (MpRRI (-delta, delta), MpRRI (-delta, delta));
@@ -1781,27 +1781,27 @@ public:
       typename CGAL::Interval_traits< MpCCI >::Median median;
       const MpCCVector median_shifted (boost::make_transform_iterator (shifted.begin(), median),
                                        boost::make_transform_iterator (shifted.end(), median));
-        
+
       Approximation_iterator dit = cit->discs.begin();
       for (size_t i = 0; i < appr.size(); ++i) {
         dit->z = appr[i];
         DBG_ARCA (std::cerr << " ===> new approximation " << i << " at " << CGAL::oformat (dit->z + center) << std::endl);
         ++dit;
       }
-        
+
       aberth_in_cluster (*cit, median_shifted, shifted, shifted_widened, true, true);
-        
+
       {
         // DBG_ARCA (std::cerr << "Before backshift: " << std::endl);
         // DBG_ARCA (print_state (cit, CGAL::cpp0x::next(cit)));
-          
+
         CGAL_TIME_PROFILER ("  aberth_in_cluster () -> backshift and 5. (REDO) compute inclusion radii");
         for (Approximation_iterator it = cit->begin(); it != cit->end(); ++it)
           it->z += center;
-          
+
         DBG_ARCA (std::cerr << "After backshift: " << std::endl);
         DBG_ARCA (print_state (cit, CGAL::cpp0x::next(cit)));
-          
+
         eps_nbh.splice (eps_nbh.begin(), cit->discs);
         for (Approximation_iterator it = eps_nbh.begin(); it != eps_nbh.end(); ++it)
           compute_radius (it, cit->prec);
@@ -1812,7 +1812,7 @@ public:
     if (! restarted) {
       aberth_in_cluster (*cit, F, Fiv, Fwiv, false, false);
     }
-    
+
     cit->discs.splice (cit->discs.begin(), zeros);
 
     const Cluster_range range = split_cluster_into_newton_connected_components (cit);
@@ -1837,7 +1837,7 @@ public:
     DBG_ARCA (std::cerr << "STATE:" << std::endl);
     DBG_ARCA (print_state ());
     CGAL_precondition (cit->touch_real());
-    
+
     const Cluster_range range = subdivide_cluster (cit);
     CGAL_postcondition_code (int total = std::distance (range.first, range.second));
 
@@ -1861,7 +1861,7 @@ public:
   void sort_real_cluster_range (Cluster_range &real_range) {
     if (real_range.first == real_range.second) // empty range
       return;
-    
+
     Cluster_list real_clusters;
     real_clusters.splice (real_clusters.begin(), clusters, real_range.first, real_range.second);
     real_clusters.sort (typename Cluster::Compare_real());

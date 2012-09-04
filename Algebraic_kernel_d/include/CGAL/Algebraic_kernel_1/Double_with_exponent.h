@@ -35,7 +35,7 @@
 #else
 
 #define DPE_USE_LONG true
-#include "dpe.h"
+#include <CGAL/Algebraic_kernel_1/dpe.h>
 
 #define CGAL_DOUBLE_WITH_EXPONENT_BUILTIN_FLOAT_TYPES \
   (float) (double) (long double)
@@ -158,7 +158,7 @@ public:
 
 #ifdef CGAL_USE_GMP
 #ifdef CGAL_USE_MPFR
-  
+
   Double_with_exponent (const Gmpfr &x) {
     dpe_init (rep);
     boost::tie (DPE_MANT (rep), DPE_EXP (rep)) = x.to_double_exp();
@@ -166,7 +166,7 @@ public:
     // from dpe.h: dpe_normalize
     if (DPE_UNLIKELY (DPE_MANT (rep) == 0.0))
       DPE_EXP (rep) = DPE_EXPMIN;
-    
+
     CGAL_postcondition_code (dpe_t n;               \
                              dpe_init (n);          \
                              dpe_set (n, rep);      \
@@ -178,7 +178,7 @@ public:
   operator Gmpfr () const {
     return to_gmpfr();
   }
-  
+
   const Gmpfr to_gmpfr () const {
     Gmpfr x (DPE_MANT (rep));
     mpfr_set_exp (x.fr(), DPE_EXP (rep));
@@ -331,7 +331,7 @@ class Algebraic_structure_traits< Double_with_exponent >
 public:
   typedef Tag_false            Is_exact;
   typedef Tag_true             Is_numerical_sensitive;
-  
+
   class Sqrt
     : public std::unary_function< Type, Type > {
   public:
@@ -339,7 +339,7 @@ public:
       return x.sqrt();
     }
   };
-  
+
   class Kth_root
     : public std::binary_function<int, Type, Type> {
   public:
@@ -379,7 +379,7 @@ public:
   // TODO
   struct Set_precision;
   //    : public std::binary_function< leda_bigfloat, long, void >;
-  
+
   struct Set_default_precision
     : public std::unary_function< long, void > {
     void operator() (long) const {}
