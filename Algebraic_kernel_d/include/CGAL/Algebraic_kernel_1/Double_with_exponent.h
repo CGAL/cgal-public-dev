@@ -7,7 +7,7 @@
 #include <iostream>
 
 #include <CGAL/basic.h>
-#include <CGAL/Bigfloat_traits.h>
+#include <CGAL/Algebraic_kernel_1/Bigfloat_traits.h>
 
 #ifdef CGAL_USE_GMP
 #include <CGAL/GMP_arithmetic_kernel.h>
