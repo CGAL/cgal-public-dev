@@ -184,35 +184,6 @@ protected:
     //! \name private functors
     //!@{
  
-#if 0
-   
-    //! polynomial canonicalizer, needed for the cache
-    template <class Poly> 
-    struct Poly_canonicalizer : public std::unary_function< Poly, Poly >
-    {
-    // use Polynomial_traits_d<>::Canonicalize ?
-        Poly operator()(Poly p) 
-        {
-            typedef CGAL::Scalar_factor_traits<Poly> Sf_traits;
-            typedef typename Sf_traits::Scalar Scalar;
-            typename Sf_traits::Scalar_factor scalar_factor;
-            typename Sf_traits::Scalar_div scalar_div;
-            Scalar g = scalar_factor(p);
-            if (g == Scalar(0)) {
-                     CGAL_assertion(p == Poly(Scalar(0)));
-                     return p;
-            }
-            CGAL_assertion(g != Scalar(0));
-            if(g != Scalar(1)) 
-                scalar_div(p,g);
-            if(CGAL::leading_coefficient(CGAL::leading_coefficient(p))) < 0) 
-                scalar_div(p,Scalar(-1));
-            return p;        
-        }
-           
-    };
-#endif
-
     // NOT a curve pair in our notation, simply a std::pair of Curve_analysis_2
     typedef std::pair<Curve_analysis_2, Curve_analysis_2> Pair_of_curves_2;
     
