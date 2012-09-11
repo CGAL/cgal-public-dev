@@ -59,8 +59,6 @@
 
 #include <boost/shared_ptr.hpp>
 
-#warning Using numeric AK_d_2 !!
-
 namespace CGAL {
 
 
