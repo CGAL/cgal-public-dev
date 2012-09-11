@@ -225,7 +225,7 @@ public:
       return oi;
     }
     
-#if 1 || CGAL_AK_ENABLE_DEPRECATED_INTERFACE
+#if CGAL_AK_ENABLE_DEPRECATED_INTERFACE
     template< class OutputIterator >
     OutputIterator operator()( 
         const Polynomial_1& p, 
