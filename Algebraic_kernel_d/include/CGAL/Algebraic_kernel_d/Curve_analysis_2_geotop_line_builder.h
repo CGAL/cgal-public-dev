@@ -384,7 +384,7 @@ public:
         minf_arcs = pinf_arcs = std::make_pair(0,0);
         
 #if 0 && !CGAL_ACK_SHEAR_ALL_NOT_Y_REGULAR_CURVES
-        // TODO activate this, or let it done by bucketing?
+        // TODO 2012: check with MKMK; activate this, or let it done by bucketing?
         if (kernel()->is_zero_at_1_object() 
             (CGAL::leading_coefficient(pp),alpha)) {
           int d = CGAL::degree(pp,1);
