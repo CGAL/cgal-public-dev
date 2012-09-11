@@ -268,7 +268,8 @@ protected:
     // NEXT: r(xbar) * 1/4^mult * (3n/(3n+5))^n-mult
     // better: r(xbar) * 1/4^mult * 1/6
     // better: r(xbar) * 1/4^(mult+2)
-#if 1
+
+#if 1 // TODO 2012 added flag to distinguish bound 
 
     CGAL::set_precision(BFI(), prec);
     BigFloat crf; // compute correction with set precision
