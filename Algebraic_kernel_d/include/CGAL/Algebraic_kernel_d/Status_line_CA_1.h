@@ -485,7 +485,7 @@ public:
         os << "status_line [CA@" << this->ptr()->_m_ca.id() << std::flush;
         os << "; x = " << CGAL::to_double(x()) << "; #events: " 
            << number_of_events() << "; " << std::flush;
-#if 0        
+#if 0 // further output is deactivated EBEB 2012-09-11       
         if(is_event()) {
             os << "incident branches: {" << std::flush;
 //            typename Arc_container::const_iterator ait =
