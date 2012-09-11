@@ -496,18 +496,6 @@ namespace internal {
       _Refine_interval< Self, cond_true_f_arg_type >()(*this, i);
     }
 
-   
-#if 0 // needed in Generic_isolator?
-  //! The length of the <tt>i</tt>th isolating interval
-  Bound length(size_t i) const {
-    CGAL_precondition(i >= 0);
-    CGAL_precondition(static_cast<int>(i) < number_of_real_roots());
-    CGAL_precondition(this->is_isolated());
-    return (this->ptr()->right_bound(i) - 
-            this->ptr()->left_bound(i));
-  }
-#endif
-
     //!@} // Access members
 
   }; // Generic_isolator
