@@ -416,7 +416,9 @@ template<typename AlgebraicCurveKernel_2>
         result=(CGAL::sign(eval)==CGAL::ZERO);
     }
 #else
-#warning Uses no reduction modulo resultant!
+#if CGAL_AK_D_SHOW_COMPILE_OPTIONS_AS_WARNING
+#warning zero_test_bivariate: Uses no reduction modulo resultant!
+#endif
     Polynomial_1 h_0=CGAL::evaluate_homogeneous(h,p,q);
     result= kernel->is_zero_at_1_object() (h_0,alpha);
 #endif      

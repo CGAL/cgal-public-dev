@@ -1414,7 +1414,9 @@ private:
         } else {
 
 #if CGAL_ACK_USE_BEZOUT_MATRIX_FOR_SUBRESULTANTS
-#warning USES BEZOUT MATRIX FOR SUBRESULTANTS
+#if CGAL_AK_D_SHOW_COMPILE_OPTIONS_AS_WARNING
+#warning Curve_analysis_2: Uses Bezout Matrix for subresultants
+#endif
             CGAL::internal::bezout_polynomial_subresultants<Polynomial_traits_2>
                 (primitive_polynomial_2(),
                  CGAL::canonicalize(CGAL::differentiate(primitive_polynomial_2())),

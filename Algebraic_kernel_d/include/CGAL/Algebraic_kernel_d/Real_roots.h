@@ -277,8 +277,8 @@ int operator()(const Real_root_isolator&    isolator,
  *  of type \c int .
  *
  */
-#if CGAL_ACK_FACTORIZE_UNI_POLYNOMIALS
-#warning "Real_roots.h does not yet report polynomials grouped by multiplicity after factorizing"
+#if CGAL_AK_D_SHOW_COMPILE_OPTIONS_AS_WARNING && CGAL_ACK_FACTORIZE_UNI_POLYNOMIALS
+#warning Real_roots: does not yet report polynomials grouped by multiplicity after factorizing
 #else
 template <class AlgebraicRealOutputIterator,
           class IntOutputIterator, 

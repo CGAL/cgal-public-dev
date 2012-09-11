@@ -1,6 +1,8 @@
 #ifndef CGAL_ARCAVOID_H
 #define CGAL_ARCAVOID_H
 
+#include <CGAL/Algebraic_kernel_d/flags.h>
+
 ////////////////////////////////////////////////////////////////
 // PARAMETERS
 ////////////////////////////////////////////////////////////////
@@ -21,8 +23,8 @@
 # define CGAL_DEBUG_ARCAVOID 0
 #endif
 
-#warning Using Absolute_void with parameters:
-
+#if CGAL_AK_D_SHOW_COMPILE_OPTIONS_AS_WARNING
+#warning Arcavoid: Using Absolute_void with parameters:
 #if CGAL_ARCAVOID_DISABLE_DOUBLE_WITH_EXPONENT
 # warning - NOT using Double with exponent
 #else
@@ -38,6 +40,7 @@
 #else
 # warning - using Newton refinement
 #endif
+#endif
 
 ////////////////////////////////////////////////////////////////
 // MAGIC NUMBERS
@@ -51,7 +54,7 @@
 #endif
 #endif
 
-#if CGAL_ARCAVOID_DOUBLE_PRECISION != 53
+#if CGAL_AK_D_SHOW_COMPILE_OPTIONS_AS_WARNING && CGAL_ARCAVOID_DOUBLE_PRECISION != 53
 # warning - CGAL_ARCAVOID_DOUBLE_PRECISION (default: DBL_MANT_DIG) is not 53.
 # warning   You are sure I poor implementation am supposed to work properly on such a strange environment?
 #endif
@@ -74,11 +77,13 @@
 #ifndef CGAL_DEBUG_ARCAVOID_PRECISION
 # define CGAL_DEBUG_ARCAVOID_PRECISION CGAL_DEBUG_ARCAVOID
 #endif
+#if CGAL_AK_D_SHOW_COMPILE_OPTIONS_AS_WARNING
 #if CGAL_DEBUG_ARCAVOID
 # warning - DEBUG mode
 #endif
 #if CGAL_DEBUG_ARCAVOID
 # warning - DEBUG PRECISION mode
+#endif
 #endif
 
 #if CGAL_DEBUG_ARCAVOID

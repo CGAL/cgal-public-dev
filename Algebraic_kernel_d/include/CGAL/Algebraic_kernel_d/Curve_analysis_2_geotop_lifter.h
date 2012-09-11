@@ -55,7 +55,9 @@
 #endif
 
 #ifdef CGAL_XTri_USE_TIMERS
-#warning USING TIMERS!
+#if CGAL_AK_D_SHOW_COMPILE_OPTIONS_AS_WARNING
+#warning Curve_analysis_2_geotop_lifter: Using timers
+#endif
 extern CGAL::Timer tm_external_timer;
 #endif
 

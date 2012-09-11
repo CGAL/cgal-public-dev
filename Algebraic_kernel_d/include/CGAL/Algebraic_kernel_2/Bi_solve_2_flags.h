@@ -23,21 +23,22 @@
 #define CGAL_ALGEBRAIC_KERNEL_2_BI_SOLVE_2_FLAGS_H 1
 
 #include <CGAL/config.h>
+#include <CGAL/Algebraic_kernel_d/flags.h>
 
 // bisolve
 
 #ifndef CGAL_BISOLVE_DISABLE_LOCALIZED_OPERATOR
 #define CGAL_BISOLVE_DISABLE_LOCALIZED_OPERATOR 0 // 0 is default
 #endif
-#if CGAL_BISOLVE_DISABLE_LOCALIZED_OPERATOR
-#warning Disabled localized operator for x
+#if CGAL_AK_D_SHOW_COMPILE_OPTIONS_AS_WARNING && CGAL_BISOLVE_DISABLE_LOCALIZED_OPERATOR
+#warning Bi_solve_2: Disabled localized operator for x
 #endif
 
 #ifndef CGAL_BISOLVE_ENABLE_LENSE_FILTER_IN_T_TEST
 #define CGAL_BISOLVE_ENABLE_LENSE_FILTER_IN_T_TEST 0 // 0 is default
 #endif
-#if CGAL_BISOLVE_ENABLE_LENSE_FILTER_IN_T_TEST
-#warning Lense filter in well-seperation is enabled
+#if CGAL_AK_D_SHOW_COMPILE_OPTIONS_AS_WARNING && CGAL_BISOLVE_ENABLE_LENSE_FILTER_IN_T_TEST
+#warning Bi_solve_2: Lense filter in well-seperation is enabled
 #endif
  
 // certifier
@@ -45,15 +46,15 @@
 #ifndef CGAL_BISOLVE_DISABLE_COMBINATORIAL_CERTIFICATION
 #define CGAL_BISOLVE_DISABLE_COMBINATORIAL_CERTIFICATION 0 // 0 is default
 #endif
-#if CGAL_BISOLVE_DISABLE_COMBINATORIAL_CERTIFICATION
-#warning Combinatorial certification is disabled
+#if CGAL_AK_D_SHOW_COMPILE_OPTIONS_AS_WARNING && CGAL_BISOLVE_DISABLE_COMBINATORIAL_CERTIFICATION
+#warning Bi_solve_2: Combinatorial certification is disabled
 #endif
 
 #ifndef CGAL_BISOLVE_DISABLE_BIDIRECTIONAL_CERTIFICATION
 #define CGAL_BISOLVE_DISABLE_BIDIRECTIONAL_CERTIFICATION 0 // 0 is default
 #endif
-#if CGAL_BISOLVE_DISABLE_BIDIRECTIONAL_CERTIFICATION
-#warning Certification in both directions is disabled
+#if CGAL_AK_D_SHOW_COMPILE_OPTIONS_AS_WARNING && CGAL_BISOLVE_DISABLE_BIDIRECTIONAL_CERTIFICATION
+#warning Bi_solve_2: Certification in both directions is disabled
 #endif
 
 #ifndef CGAL_BISOLVE_ENABLE_ARCAVOID 
@@ -62,29 +63,31 @@
 #if CGAL_BISOLVE_ENABLE_ARCAVOID 
 #undef CGAL_BISOLVE_DISABLE_BITSTREAM_FILTER
 #define CGAL_BISOLVE_DISABLE_BITSTREAM_FILTER 1 // DISABLE BITSTREAM -- DO NOT CHANGE
-#warning Enabled Arcavoid numerical solver
+#if CGAL_AK_D_SHOW_COMPILE_OPTIONS_AS_WARNING
+#warning Bi_solve_2: Enabled Arcavoid numerical solver
+#endif
 #endif
 
 #ifndef CGAL_BISOLVE_ENABLE_NTL_FACTORIZE
 #define CGAL_BISOLVE_ENABLE_NTL_FACTORIZE 0 // 0 is default
 #endif
-#if CGAL_BISOLVE_ENABLE_NTL_FACTORIZE
-#warning NTL Factorize is enabled
+#if CGAL_AK_D_SHOW_COMPILE_OPTIONS_AS_WARNING && CGAL_BISOLVE_ENABLE_NTL_FACTORIZE
+#warning Bi_solve_2: factorization by NTL is enabled
 #endif
 
 
 #ifndef CGAL_BISOLVE_DISABLE_BITSTREAM_FILTER
 #define CGAL_BISOLVE_DISABLE_BITSTREAM_FILTER 0 // 0 is default
 #endif
-#if CGAL_BISOLVE_DISABLE_BITSTREAM_FILTER && !CGAL_BISOLVE_ENABLE_ARCAVOID
-#warning Bitstreamfilter is disabled
+#if CGAL_AK_D_SHOW_COMPILE_OPTIONS_AS_WARNING && CGAL_BISOLVE_DISABLE_BITSTREAM_FILTER && !CGAL_BISOLVE_ENABLE_ARCAVOID
+#warning Bi_solve_2: Bitstreamfilter is disabled
 #endif
 
 #ifndef CGAL_BISOLVE_DISABLE_ACTIVE_INTERVALS
 #define CGAL_BISOLVE_DISABLE_ACTIVE_INTERVALS (CGAL_BISOLVE_DISABLE_BITSTREAM_FILTER && !CGAL_BISOLVE_ENABLE_ARCAVOID)
 #endif
-#if CGAL_BISOLVE_DISABLE_ACTIVE_INTERVALS
-#warning Active intervals disabled
+#if CGAL_AK_D_SHOW_COMPILE_OPTIONS_AS_WARNING && CGAL_BISOLVE_DISABLE_ACTIVE_INTERVALS
+#warning Bi_solve_2: Active intervals disabled
 #endif
 
 #ifndef CGAL_ACK_BITSTREAM_USES_E08_TREE

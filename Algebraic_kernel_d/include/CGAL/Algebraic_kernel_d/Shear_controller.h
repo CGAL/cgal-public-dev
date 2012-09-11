@@ -54,7 +54,9 @@ namespace CGAL {
         , pos_next_factor(0)  {
           CGAL_assertion(m_max>=1);
 #if CGAL_ACK_STATIC_SEED
-	  #warning Warning, uses static seed!
+#if CGAL_AK_D_SHOW_COMPILE_OPTIONS_AS_WARNING
+#warning Shear_controller: Warning, uses static seed!
+#endif
           srand(CGAL_ACK_STATIC_SEED);
 #else
           srand(time(NULL));
