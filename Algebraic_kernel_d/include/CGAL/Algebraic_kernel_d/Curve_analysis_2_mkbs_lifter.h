@@ -643,7 +643,7 @@ public:
     }
   }
 
-#if 1 // TODO 2012 CA/CPA does not need this constructor (only _test_mkbs_lifter seems to call it)
+  // TODO 2012 CA/CPA does not need this constructor (only _test_mkbs_lifter seems to call it)
   /*! 
    * \brief Constructor for the m-k-Descartes method and a given bitstream tree
    *
@@ -666,7 +666,6 @@ public:
       this->isolate();
     }
   }
-#endif
 
   /*! 
    * \brief Constructor for the Backshear method
@@ -724,12 +723,11 @@ public:
     throw Virtual_method_exception();
   }
 
-#if 1 // TODO 2012 CA/CPA does not need this constructor (only _test_mkbs_lifter seems to call it)
+  // TODO 2012 CA/CPA does not need tree() function (only _test_mkbs_lifter seems to call it)
   //! returns the tree
   Bitstream_tree tree() const {
     return dynamic_cast<const Generic_bs_rep*>(this->ptr())->tree();
- }
-#endif
+  }
 
   //!@} Access members
 
