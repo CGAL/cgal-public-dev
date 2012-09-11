@@ -16,11 +16,7 @@ endif()
 
 INCLUDE (CheckCXXSourceRuns)
 
-set(CUDA_TOOLKIT_ROOT_DIR "$ENV{HOME}/cuda4.0/cuda")
-
-# REMARK: We require the following variables to be set:
-# export CUDA_BIN_PATH=$HOME/cuda3.0/cuda/bin
-# export CUDA_LIB_PATH=$HOME/cuda3.0/cuda/lib
+set(CUDA_TOOLKIT_ROOT_DIR "$ENV{CUDA_TOOLKIT_ROOT_DIR}")
 
 find_package(CUDA QUIET)
 
@@ -28,9 +24,9 @@ if ( CUDA_FOUND )
 
 # TODO TODO TODO: compile lib with debug support
 
-  set(CUDA_ATTACH_VS_BUILD_RULE_TO_CUDA_FILE OFF)
-  set(CUDA_VERBOSE_BUILD ON)
-  set(CUDA_64_BIT_DEVICE_CODE OFF)
+#   set(CUDA_ATTACH_VS_BUILD_RULE_TO_CUDA_FILE OFF)
+#   set(CUDA_VERBOSE_BUILD ON)
+#   set(CUDA_64_BIT_DEVICE_CODE OFF)
 
   set(CMAKE_REQUIRED_INCLUDES ${CUDA_INCLUDE_DIRS})
   set(CMAKE_REQUIRED_LIBRARIES ${CUDA_LIBRARIES})
