@@ -926,11 +926,10 @@ protected:
     }
     
 
-#if 0 && CGAL_BISOLVE_WRITE_ONLY_RESULTANTS // TODO implement in terms of achieve!
+#if CGAL_BISOLVE_WRITE_ONLY_RESULTANTS // TODO implement in terms of achieve!
       // early exits if we're only interested in resultants
       //return oi;
 #endif 
- 
   }
 
 
