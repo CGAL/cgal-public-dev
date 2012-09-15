@@ -84,29 +84,30 @@ class Rounding_ak_d_1 : public AlgebraicKernel_d_1 {
       }
     };
 
-    struct Approximate_relative_1:
-      public std::binary_function<Algebraic_real_1,int,std::pair<Bound,Bound> > {
-     
-      std::pair<Bound,Bound> 
-	operator()(const Algebraic_real_1& x, int prec) const {
-	
-	CGAL_precondition(prec >= 0);
-
-	typename Algebraic_kernel_d_1::Approximate_relative_1 approx;
-	
-	// max(2,prec) for GMP types
-	prec = std::max(2,prec);
-	return Rounding_algebraic_kernel_d_1::_round(approx(x, prec), prec);
-      }
-    };
+//     struct Approximate_relative_1:
+//       public std::binary_function<Algebraic_real_1,int,std::pair<Bound,Bound> > {
+//      
+//       std::pair<Bound,Bound> 
+// 	operator()(const Algebraic_real_1& x, int prec) const {
+// 	
+// 	CGAL_precondition(prec >= 0);
+// 
+// 	typename Algebraic_kernel_d_1::Approximate_relative_1 approx;
+// 	
+// 	// max(2,prec) for GMP types
+// 	prec = std::max(2,prec);
+// 	return Rounding_algebraic_kernel_d_1::_round(approx(x, prec), prec);
+//       }
+//     };
 
 
 #define CGAL_ALGEBRAIC_KERNEL_1_PRED(Y,Z) Y Z() const { return Y(); }
 
   CGAL_ALGEBRAIC_KERNEL_1_PRED(Approximate_absolute_1,
       approximate_absolute_1_object);
-  CGAL_ALGEBRAIC_KERNEL_1_PRED(Approximate_relative_1,
-      approximate_relative_1_object);
+
+//   CGAL_ALGEBRAIC_KERNEL_1_PRED(Approximate_relative_1,
+//       approximate_relative_1_object);
 
 #undef CGAL_ALGEBRAIC_KERNEL_1_PRED
 
