@@ -263,17 +263,6 @@ protected:
     
         T operator() (std::pair<T,T> pair) {
 
-          // TODO 2012 what about GPU resultants here?
-// #if CGAL_BISOLVE_USE_GPU_RESULTANTS
-//         Polynomial_1 gres =
-//             CGAL::resultant(*ppoly, CGAL::differentiate(*ppoly, 1));
-//         if(CGAL::is_zero(gres))
-// //             typename Polynomial_traits_2::Swap swap;
-// //             std::cout << "computing GRES swapped\n";
-// //             failed = CGAL::is_zero(CGAL::resultant(swap(fx,0,1),
-// //                                   swap(fy,0,1)));
-// #endif
-            
             return typename CGAL::Polynomial_traits_d<Polynomial_2>
                 ::Gcd_up_to_constant_factor()(pair.first,pair.second);
         }
@@ -2160,6 +2149,8 @@ public:
 	    if(ca_2.is_identical(r.curve())) {
 	      return CGAL::ZERO;
 	    }
+//         long def_prec = CGAL::get_precision(Bigfloat_interval());
+	    
 	    typename Algebraic_kernel_d_2::Approximate_absolute_x_2 approx_x
 	      = _m_kernel->approximate_absolute_x_2_object();
 	    typename Algebraic_kernel_d_2::Approximate_absolute_y_2 approx_y
@@ -2170,7 +2161,7 @@ public:
             typedef typename Interval_evaluate_2::result_type 
               Interval_result_type;
             Interval_evaluate_2 interval_evaluate_2;
-	    
+        
 	    long prec = 4;
 
             while(prec<=max_prec) {
@@ -2185,11 +2176,13 @@ public:
 							 y_pair.second));
                 CGAL::Sign s_lower = CGAL::sign(iv.first);
                 if(s_lower == sign(iv.second)) {
+//             CGAL::set_precision(Bigfloat_interval(), def_prec);
 		  return s_lower;
 		} else {
 		  prec*=2;
 		}
 	    }
+// 	    CGAL::set_precision(Bigfloat_interval(), def_prec);
 	    return CGAL::ZERO;
 	  
 	}
@@ -2197,16 +2190,24 @@ public:
         Sign operator()(const Curve_analysis_2& ca_2,
                         const Algebraic_real_2& r,
 			bool known_to_be_non_zero=false) const {
-                
+
+/*                std::cerr << "calling Sign_at_2.. " << CGAL::Gmpfi::get_default_precision() << "\n";*/
  	    if(ca_2.is_identical(r.curve())) {
 	      return CGAL::ZERO;
 	    }
 	    if(!known_to_be_non_zero &&
 	       _m_kernel->is_zero_at_2_object()(ca_2, r)) {
+//             std::cerr << "calling is_zero_at_2_object..\n";
 	      return CGAL::ZERO;
 	    }
+   /*     std::cerr << "after is_zero_at_2.. " << CGAL::Gmpfi::get_default_precision() << "\n";
+	*/    
 	    CGAL::Sign result = this->operator()
 	      (ca_2,r,(std::numeric_limits<int>::max)());
+      /*      std::cerr << "after numeric_limits.. " <<
+                    CGAL::Gmpfi::get_default_precision() << "\n";
+      */    
+          
 	    CGAL_assertion(result != CGAL::ZERO);
 	    return result;	    
         }
@@ -2238,15 +2239,27 @@ public:
 	if (CGAL::is_zero(ca_2.polynomial_2())) {
 	  return true;
 	}
-	
+	// TODO TODO TODO: precision changes !!
+    
+//     long def_prec = CGAL::get_precision(Bigfloat_interval());
 	Construct_curve_2 cc_2 = _m_kernel->construct_curve_2_object();
-	Construct_curve_pair_2 ccp_2 
+
+	Construct_curve_pair_2 ccp_2
 	  = _m_kernel->construct_curve_pair_2_object();
 
+//             std::cerr << "before1.. " <<
+//                     CGAL::Gmpfi::get_default_precision() << "\n";
+      
 	typename Curve_analysis_2::Status_line_1
 	  cv_line = ca_2.status_line_for_x(r.x());
+
+//     std::cerr << "after1.. " <<
+//                     CGAL::Gmpfi::get_default_precision() << "\n";
 	// fast check for the presence of status line at r.x()
-	if(cv_line.covers_line())    
+
+//     CGAL::set_precision(Bigfloat_interval(), def_prec);
+
+	if(cv_line.covers_line())
 	  return true;
 	
 	// Handle non-coprime polynomial
@@ -2254,6 +2267,7 @@ public:
 	  (std::make_pair(ca_2.polynomial_2(), r.curve().polynomial_2()));
 	
 	Curve_analysis_2 gcd_curve = cc_2(gcd);
+
 	if(CGAL::total_degree(gcd)>0) {
 	  
 	  Construct_curve_pair_2 ccp_2
@@ -2261,8 +2275,9 @@ public:
 	  Curve_analysis_2 r_curve_remainder =
 	    cc_2(CGAL::integral_division_up_to_constant_factor
 		 (r.curve().polynomial_2(), gcd));
-                    
+
 	  r.simplify_by(ccp_2(gcd_curve, r_curve_remainder));
+     
 	  if(r.curve().polynomial_2() == gcd) 
 	    return true;
 	}
@@ -2270,12 +2285,13 @@ public:
 	Curve_pair_analysis_2 cpa_2 = ccp_2(ca_2, r.curve());
 	typename Curve_pair_analysis_2::Status_line_1
 	  cpv_line = cpa_2.status_line_for_x(r.x());
-	
+
 	if(cpv_line.is_event() && cpv_line.is_intersection()) {
 	  // get an y-position of the point r
 	  int idx = cpv_line.event_of_curve(r.arcno(), r.curve());
 	  std::pair<int, int> ipair =
 	    cpv_line.curves_at_event(idx);
+
 	  if(ipair.first != -1 && ipair.second != -1)
 	    return true;
 	}

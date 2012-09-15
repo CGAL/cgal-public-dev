@@ -241,7 +241,7 @@ public:
 
     //! refines i-th root
     virtual void refine_interval(size_t i) {
-      std::cout << "RS refine_interval" << std::endl;
+      //std::cout << "RS refine_interval" << std::endl;
       CGAL_assertion(i >= 0);
       CGAL_assertion(static_cast<int>(i) < this->number_of_real_roots());
       CGAL_precondition(this->is_isolated());
