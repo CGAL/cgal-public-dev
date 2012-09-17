@@ -30,11 +30,112 @@
 #include <CGAL/config.h>
 #include <CGAL/convert_to_bfi.h>
 
+#include <CGAL/Fraction_traits.h>
 #include <CGAL/Algebraic_kernel_d/Real_embeddable_extension.h>
 
 namespace CGAL {
 
 namespace internal {
+
+#if CGAL_USE_CORE
+
+// Specialization for CORE::BigRat
+template<>
+class Real_embeddable_extension< CORE::BigRat > {
+public:
+  typedef CORE::BigRat Type;
+#if 0
+
+  struct Floor_log2_abs
+    : public std::unary_function< CORE::BigRat, long > {
+    long operator()( const CORE::BigRat& x ) const {
+      return CORE::floorLg(x);
+    }            
+  };
+     
+#endif
+   
+  struct Ceil_log2_abs
+    : public std::unary_function< CORE::BigRat, long > {
+    long operator()( const CORE::BigRat& x ) const {
+      return CORE::ceilLg(x);
+    }
+  };
+
+#if 0
+  struct Floor
+    : public std::unary_function< CORE::BigRat, CORE::BigRat > {
+    CORE::BigRat operator() (const CORE::BigRat& x) const { 
+      return x;
+    }
+  };
+  struct Ceil
+    : public std::unary_function< CORE::BigRat, CORE::BigRat > {
+    CORE::BigRat operator() (const CORE::BigRat& x) const { 
+      return x;
+    }
+  };
+#endif
+
+};
+
+#endif // CGAL_USE_CORE
+
+#if CGAL_USE_GMP
+
+// Specialization for Gmpq
+template<>
+class Real_embeddable_extension< Gmpq > {
+public:
+  typedef Gmpq Type;
+
+#if 0
+  struct Floor_log2_abs
+    : public std::unary_function< Gmpq, long > {
+    long operator()( const Gmpq& x ) const {
+      CGAL_precondition(!CGAL::is_zero(x));
+      return mpz_sizeinbase(x.mpz(),2)-1;
+    }            
+  };
+#endif
+        
+  struct Ceil_log2_abs
+    : public std::unary_function< Gmpq, long > {
+    long operator()( const Gmpq& x ) const {
+
+      typedef Fraction_traits< Gmpq > FT;
+      typename FT::Numerator_type num;
+      typename FT::Denominator_type denom;
+      typename FT::Decompose decomp;
+      
+      decomp(x, num, denom);
+      typename Real_embeddable_extension< typename FT::Numerator_type >::Ceil_log2_abs log2_abs_num;
+      typename Real_embeddable_extension< typename FT::Denominator_type >::Ceil_log2_abs log2_abs_den;
+      
+      return std::max(log2_abs_num(num), log2_abs_den(denom));
+    }
+  };
+
+#if 0
+  struct Floor
+    : public std::unary_function< Gmpq, Gmpq > {
+    Gmpq operator() (const Gmpq& x) const { 
+      return x;
+    }
+  };
+  struct Ceil
+    : public std::unary_function< Gmpq, Gmpq > {
+    Gmpq operator() (const Gmpq& x) const { 
+      return x;
+    }
+  };
+#endif
+};
+
+
+#endif // CGAL_USE_GMP
+
+
 
 template < class AlgebraicKernel_d_1 >
 class Rounding_ak_d_1 : public AlgebraicKernel_d_1 {
@@ -76,16 +177,21 @@ class Rounding_ak_d_1 : public AlgebraicKernel_d_1 {
    
       std::pair<Bound,Bound> 
 	operator()(const Algebraic_real_1& x, int prec) const {
-	
-	CGAL_precondition(prec >= 0);
-	
-	typename Algebraic_kernel_d_1::Approximate_absolute_1 approx;
-	
-	// max(2,prec) for GMP types
-	prec = std::max(2,prec);
-	return Rounding_algebraic_kernel_d_1::_round(approx(x, prec), prec);
+        
+        typename Algebraic_kernel_d_1::Approximate_absolute_1 approx;
+       	
+        if (prec > 0) {
+          
+          // max(2,prec) for GMP types
+          prec = std::max(2,prec+2);
+          return Rounding_algebraic_kernel_d_1::_round(approx(x, prec), prec);
+        }
+        
+        // else
+        return approx(x, prec);
       }
     };
+
 
     struct Approximate_relative_1:
       public std::binary_function<Algebraic_real_1,int,std::pair<Bound,Bound> > {
@@ -93,26 +199,26 @@ class Rounding_ak_d_1 : public AlgebraicKernel_d_1 {
       std::pair<Bound,Bound>
 	operator()(const Algebraic_real_1& x, int prec) const {
 
-	CGAL_precondition(prec >= 0);
+	//CGAL_precondition(prec >= 0);
 
 	typename Algebraic_kernel_d_1::Approximate_relative_1 approx;
     
-    typename Fraction_traits< Bound >::Decompose decomp;
-    typename Real_embeddable_extension< Coefficient >::Ceil_log2_abs
-        log2_abs;
-
+        typename Real_embeddable_extension< Bound >::Ceil_log2_abs
+          log2_abs;
+        
 	// max(2,prec) for GMP types
 	prec = std::max(2,prec);
-    std::pair<Bound, Bound> r = approx(x, prec);
+        std::pair<Bound, Bound> r = approx(x, prec);
+        
+        if (prec > 0) {
+          long r_prec = log2_abs(r.first);
+          r_prec = std::max(r_prec, log2_abs(r.second));
+          r_prec += (long)prec;
+          
+          return Rounding_algebraic_kernel_d_1::_round(r, r_prec);
+        }
 
-    Coefficient num, denom;
-    decomp(r.first, num, denom);
-    long r_prec = std::max(log2_abs(num), log2_abs(denom));
-    decomp(r.second, num, denom);
-    r_prec = std::max(r_prec, std::max(log2_abs(num), log2_abs(denom)));
-    r_prec += (long)prec;
-    
-	return Rounding_algebraic_kernel_d_1::_round(r, r_prec);
+        return r;
       }
     };
 
