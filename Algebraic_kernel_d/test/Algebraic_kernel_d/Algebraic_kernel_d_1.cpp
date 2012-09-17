@@ -25,17 +25,20 @@
 
 #define CGAL_TEST_ALL_AK_VARIANTS 1
 
-#include <CGAL/basic.h>
-#include <CGAL/Algebraic_kernel_d_1.h>
+#include <CGAL/config.h>
+#include <CGAL/Arithmetic_kernel.h>
 #include <CGAL/Algebraic_kernel_d/Algebraic_real_rep_bfi.h>
 #include <CGAL/Algebraic_kernel_d/Algebraic_real_rep.h>
 #include <CGAL/Algebraic_kernel_d/Algebraic_real_quadratic_refinement_rep_bfi.h>
 #include <CGAL/Algebraic_kernel_d/Bitstream_descartes.h>
 #include <CGAL/Algebraic_kernel_d/Bitstream_coefficient_kernel.h>
 #include <CGAL/Algebraic_kernel_d/Descartes.h>
+
+#include <CGAL/Algebraic_kernel_d_1.h>
+#include <CGAL/Algebraic_kernel_2/Rounding_ak_d_1.h>
+
 #include <CGAL/_test_algebraic_kernel_1.h>
 
-#include <CGAL/Arithmetic_kernel.h>
 
 
 template< class Coefficient_, class Bound_, class RepClass >
@@ -58,12 +61,22 @@ void test_algebraic_kernel_coeff_bound_rep() {
   typedef CGAL::Algebraic_kernel_d_1< Coefficient, Bound, Rep_class , BDescartes>
     Kernel_BDescartes;
 
+  typedef CGAL::internal::Rounding_ak_d_1< CGAL::Algebraic_kernel_d_1< Coefficient, Bound, Rep_class , Descartes> >
+    Rounding_Kernel_Descartes;
+  typedef CGAL::internal::Rounding_ak_d_1< CGAL::Algebraic_kernel_d_1< Coefficient, Bound, Rep_class , BDescartes> >
+    Rounding_Kernel_BDescartes;
+
+  std::cout << "Kernel_Descartes" << std::endl;
   CGAL::test_algebraic_kernel_1(Kernel_Descartes());
 #if CGAL_TEST_ALL_AK_VARIANTS
+  std::cout << "Kernel_BDescartes" << std::endl;
   CGAL::test_algebraic_kernel_1(Kernel_BDescartes());
+  std::cout << "Rounding_Kernel_Descartes" << std::endl;
+  CGAL::test_algebraic_kernel_1(Rounding_Kernel_BDescartes());
+  std::cout << "Rounding_Kernel_BDescartes" << std::endl;
+  CGAL::test_algebraic_kernel_1(Rounding_Kernel_BDescartes());
 #endif
 }
-
 
 template< class Coeff, class Bound >
 void test_algebraic_kernel_coeff_bound() {
