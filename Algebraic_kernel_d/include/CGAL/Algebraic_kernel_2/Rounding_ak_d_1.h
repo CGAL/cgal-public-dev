@@ -30,6 +30,8 @@
 #include <CGAL/config.h>
 #include <CGAL/convert_to_bfi.h>
 
+#include <CGAL/Algebraic_kernel_d/Real_embeddable_extension.h>
+
 namespace CGAL {
 
 namespace internal {
@@ -45,6 +47,7 @@ class Rounding_ak_d_1 : public AlgebraicKernel_d_1 {
     typedef Rounding_ak_d_1< Algebraic_kernel_d_1 > Rounding_algebraic_kernel_d_1;
 
     typedef typename Algebraic_kernel_d_1::Bound Bound;
+    typedef typename Algebraic_kernel_d_1::Coefficient Coefficient;
 
     typedef typename Algebraic_kernel_d_1::Algebraic_real_1 Algebraic_real_1;
 
@@ -84,21 +87,34 @@ class Rounding_ak_d_1 : public AlgebraicKernel_d_1 {
       }
     };
 
-//     struct Approximate_relative_1:
-//       public std::binary_function<Algebraic_real_1,int,std::pair<Bound,Bound> > {
-//      
-//       std::pair<Bound,Bound> 
-// 	operator()(const Algebraic_real_1& x, int prec) const {
-// 	
-// 	CGAL_precondition(prec >= 0);
-// 
-// 	typename Algebraic_kernel_d_1::Approximate_relative_1 approx;
-// 	
-// 	// max(2,prec) for GMP types
-// 	prec = std::max(2,prec);
-// 	return Rounding_algebraic_kernel_d_1::_round(approx(x, prec), prec);
-//       }
-//     };
+    struct Approximate_relative_1:
+      public std::binary_function<Algebraic_real_1,int,std::pair<Bound,Bound> > {
+
+      std::pair<Bound,Bound>
+	operator()(const Algebraic_real_1& x, int prec) const {
+
+	CGAL_precondition(prec >= 0);
+
+	typename Algebraic_kernel_d_1::Approximate_relative_1 approx;
+    
+    typename Fraction_traits< Bound >::Decompose decomp;
+    typename Real_embeddable_extension< Coefficient >::Ceil_log2_abs
+        log2_abs;
+
+	// max(2,prec) for GMP types
+	prec = std::max(2,prec);
+    std::pair<Bound, Bound> r = approx(x, prec);
+
+    Coefficient num, denom;
+    decomp(r.first, num, denom);
+    long r_prec = std::max(log2_abs(num), log2_abs(denom));
+    decomp(r.second, num, denom);
+    r_prec = std::max(r_prec, std::max(log2_abs(num), log2_abs(denom)));
+    r_prec += (long)prec;
+    
+	return Rounding_algebraic_kernel_d_1::_round(r, r_prec);
+      }
+    };
 
 
 #define CGAL_ALGEBRAIC_KERNEL_1_PRED(Y,Z) Y Z() const { return Y(); }
@@ -106,8 +122,8 @@ class Rounding_ak_d_1 : public AlgebraicKernel_d_1 {
   CGAL_ALGEBRAIC_KERNEL_1_PRED(Approximate_absolute_1,
       approximate_absolute_1_object);
 
-//   CGAL_ALGEBRAIC_KERNEL_1_PRED(Approximate_relative_1,
-//       approximate_relative_1_object);
+  CGAL_ALGEBRAIC_KERNEL_1_PRED(Approximate_relative_1,
+      approximate_relative_1_object);
 
 #undef CGAL_ALGEBRAIC_KERNEL_1_PRED
 
