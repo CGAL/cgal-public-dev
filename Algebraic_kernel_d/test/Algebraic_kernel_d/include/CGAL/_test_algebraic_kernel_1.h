@@ -296,15 +296,24 @@ void test_algebraic_kernel_1(const AlgebraicKernel_d_1& ak_1){
       solve_1((x*x-2),true,std::back_inserter(roots));
       Algebraic_real_1 root = (CGAL::max)(roots.front(),roots.back());
       BInterval bi = approximate_absolute_1(root,5);
+      //std::cout << "bi.first: " << bi.first << std::endl;
+      //std::cout << "bi.second: " << bi.second << std::endl;
+      //std::cout << "bi.second - bi.first: " << bi.second - bi.first << std::endl;
       assert(compare_1(bi.first ,root) != LARGER );
       assert(compare_1(Algebraic_real_1(bi.second),root) != SMALLER);
       assert(CGAL::sign(bi.second - bi.first) != NEGATIVE);
       assert((bi.second - bi.first) * ipower(Bound(2),5) <= Bound(1) );
+      if ((bi.second - bi.first) * ipower(Bound(2),10) <= Bound(1) ) {
+        std::cout << "Warning: high precision reported in approx abs test 1" << std::endl;
+      }
     }{
       std::list<Algebraic_real_1> roots;
       solve_1((x*x-3),true,std::back_inserter(roots));
       Algebraic_real_1 root = (CGAL::min)(roots.front(),roots.back());
       BInterval bi = approximate_absolute_1(root,-5);
+      //std::cout << "bi.first: " << bi.first << std::endl;
+      //std::cout << "bi.second: " << bi.second << std::endl;
+      //std::cout << "bi.second - bi.first: " << bi.second - bi.first << std::endl;
       assert(compare_1(bi.first ,root) != LARGER );
       assert(compare_1(bi.second,root) != SMALLER);
       assert(CGAL::sign(bi.second - bi.first) != NEGATIVE);
@@ -318,32 +327,52 @@ void test_algebraic_kernel_1(const AlgebraicKernel_d_1& ak_1){
       solve_1((x*x-2),true,std::back_inserter(roots));
       Algebraic_real_1 root = (CGAL::max)(roots.front(),roots.back());
       BInterval bi = approximate_relative_1(root,5);
+      //std::cout << "bi.first: " << bi.first << std::endl;
+      //std::cout << "bi.second: " << bi.second << std::endl;
+      //std::cout << "bi.second - bi.first: " << bi.second - bi.first << std::endl;
       assert(compare_1(bi.first ,root) != LARGER );
       assert(compare_1(bi.second,root) != SMALLER);
       assert(CGAL::sign(bi.second - bi.first) != NEGATIVE);
-      assert((bi.second - bi.first * ipower(Bound(2),5))
-          <= (CGAL::max)(abs(bi.first),abs(bi.second)));
+      assert((bi.second - bi.first) * ipower(Bound(2),5)
+             <= (CGAL::max)(abs(bi.first),abs(bi.second)));
+      if ((bi.second - bi.first) * ipower(Bound(2),10)
+          <= (CGAL::max)(abs(bi.first),abs(bi.second))) {
+        std::cout << "Warning: high precision reported in approx rel test 1" << std::endl;
+      }
     }{
       std::list<Algebraic_real_1> roots;
       solve_1((x*x-30),true,std::back_inserter(roots));
       Algebraic_real_1 root = (CGAL::min)(roots.front(),roots.back());
       BInterval bi = approximate_relative_1(root,-5);
+      //std::cout << "bi.first: " << bi.first << std::endl;
+      //std::cout << "bi.second: " << bi.second << std::endl;
+      //std::cout << "bi.second - bi.first: " << bi.second - bi.first << std::endl;
       assert(compare_1(bi.first ,root) != LARGER );
       assert(compare_1(bi.second,root) != SMALLER);
       assert(CGAL::sign(bi.second - bi.first) != NEGATIVE);
       assert((bi.second - bi.first)
-          <= (CGAL::max)(abs(bi.first),abs(bi.second)) * ipower(Bound(2),5));
+             <= (CGAL::max)(abs(bi.first),abs(bi.second)) * ipower(Bound(2),5));
     }
     {
       std::list<Algebraic_real_1> roots;
       solve_1((300*x*x-2),true,std::back_inserter(roots));
       Algebraic_real_1 root = (CGAL::min)(roots.front(),roots.back());
-      BInterval bi = approximate_relative_1(root,5);
-      assert(compare_1(bi.first ,root) != LARGER );
-      assert(compare_1(bi.second,root) != SMALLER);
-      assert(CGAL::sign(bi.second - bi.first) != NEGATIVE);
-      assert((bi.second - bi.first) * ipower(Bound(2),5)
-          <= (CGAL::max)(abs(bi.first),abs(bi.second)) );
+      for (int p = 4; p < 2000; p *= 2) {
+        //std::cout << "p: " << p << std::endl;
+        BInterval bi = approximate_relative_1(root,p);
+        //std::cout << "bi.first: " << bi.first << std::endl;
+        //std::cout << "bi.second: " << bi.second << std::endl;
+        //std::cout << "bi.second - bi.first: " << bi.second - bi.first << std::endl;
+        assert(compare_1(bi.first ,root) != LARGER );
+        assert(compare_1(bi.second,root) != SMALLER);
+        assert(CGAL::sign(bi.second - bi.first) != NEGATIVE);
+        assert((bi.second - bi.first) * ipower(Bound(2),p)
+               <= (CGAL::max)(abs(bi.first),abs(bi.second)) );
+        if ((bi.second - bi.first) * ipower(Bound(2),2*p)
+            <= (CGAL::max)(abs(bi.first),abs(bi.second)) ) {
+          std::cout << "Warning: high precision reported in approx rel test 3" << std::endl;
+        }
+      }
     }
   }
 
