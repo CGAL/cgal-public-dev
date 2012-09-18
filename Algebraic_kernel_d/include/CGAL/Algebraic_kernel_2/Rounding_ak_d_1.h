@@ -37,6 +37,8 @@ namespace CGAL {
 
 namespace internal {
 
+// TODO move specializations to other file
+
 #if CGAL_USE_CORE
 
 // Specialization for CORE::BigRat
@@ -160,7 +162,6 @@ class Rounding_ak_d_1 : public AlgebraicKernel_d_1 {
       
       typedef typename CGAL::Get_arithmetic_kernel< Bound >::Arithmetic_kernel::Bigfloat_interval BFI;
       long old_prec = CGAL::set_precision(BFI(), prec);
-
       prec = std::max(prec, 2);
       CGAL::set_precision(BFI(), prec);
       l = CGAL::lower(CGAL::convert_to_bfi(intv.first));
@@ -179,12 +180,12 @@ class Rounding_ak_d_1 : public AlgebraicKernel_d_1 {
 	operator()(const Algebraic_real_1& x, int prec) const {
         
         typename Algebraic_kernel_d_1::Approximate_absolute_1 approx;
-       	
+        
         if (prec > 0) {
-          
-          // max(2,prec) for GMP types
-          prec = std::max(2,prec+2);
-          return Rounding_algebraic_kernel_d_1::_round(approx(x, prec), prec);
+        
+          prec = std::max(2,prec); // for GMP types
+          return Rounding_algebraic_kernel_d_1::_round(approx(x, prec), prec+3);
+
         }
         
         // else
@@ -199,26 +200,24 @@ class Rounding_ak_d_1 : public AlgebraicKernel_d_1 {
       std::pair<Bound,Bound>
 	operator()(const Algebraic_real_1& x, int prec) const {
 
-	//CGAL_precondition(prec >= 0);
-
 	typename Algebraic_kernel_d_1::Approximate_relative_1 approx;
-    
-        typename Real_embeddable_extension< Bound >::Ceil_log2_abs
-          log2_abs;
-        
-	// max(2,prec) for GMP types
-	prec = std::max(2,prec);
-        std::pair<Bound, Bound> r = approx(x, prec);
-        
+       
         if (prec > 0) {
-          long r_prec = log2_abs(r.first);
-          r_prec = std::max(r_prec, log2_abs(r.second));
-          r_prec += (long)prec;
           
+          prec = std::max(2,prec); // for GMP types
+          std::pair<Bound, Bound> r = approx(x, prec);
+          
+          typename Real_embeddable_extension< Bound >::Ceil_log2_abs  log2_abs;
+
+          // TODO check "abs"
+          long r_prec = std::abs(std::max(log2_abs(r.first), log2_abs(r.second)));
+          r_prec += (long)prec;
+
           return Rounding_algebraic_kernel_d_1::_round(r, r_prec);
         }
 
-        return r;
+        return approx(x, prec);
+;
       }
     };
 
