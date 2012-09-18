@@ -66,14 +66,14 @@ void test_algebraic_kernel_coeff_bound_rep() {
   typedef CGAL::internal::Rounding_ak_d_1< CGAL::Algebraic_kernel_d_1< Coefficient, Bound, Rep_class , BDescartes> >
     Rounding_Kernel_BDescartes;
 
-  std::cout << "Kernel_Descartes" << std::endl;
+  std::cout << "Testing Kernel_Descartes" << std::endl;
   CGAL::test_algebraic_kernel_1(Kernel_Descartes());
+  std::cout << "Testing Rounding_Kernel_Descartes" << std::endl;
+  CGAL::test_algebraic_kernel_1(Rounding_Kernel_Descartes());
 #if CGAL_TEST_ALL_AK_VARIANTS
-  std::cout << "Kernel_BDescartes" << std::endl;
+  std::cout << "Testing Kernel_BDescartes" << std::endl;
   CGAL::test_algebraic_kernel_1(Kernel_BDescartes());
-  std::cout << "Rounding_Kernel_Descartes" << std::endl;
-  CGAL::test_algebraic_kernel_1(Rounding_Kernel_BDescartes());
-  std::cout << "Rounding_Kernel_BDescartes" << std::endl;
+  std::cout << "Testing Rounding_Kernel_BDescartes" << std::endl;
   CGAL::test_algebraic_kernel_1(Rounding_Kernel_BDescartes());
 #endif
 }

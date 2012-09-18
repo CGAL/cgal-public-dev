@@ -36,11 +36,11 @@ int main(){
   typedef AK::Algebraic_real_1 Algebraic_real_1;
   typedef AK::Multiplicity_type Multiplicity_type;
 
-  std::cout << "Algebraic_kernel_rs_gmpz_d_1" << std::endl;
+  std::cout << "Testing Algebraic_kernel_rs_gmpz_d_1" << std::endl;
   AK ak; // an object of Algebraic_kernel_rs_gmpz_d_1
   CGAL::test_algebraic_kernel_1<AK>(ak);
   
-  std::cout << "Rounding Algebraic_kernel_rs_gmpz_d_1" << std::endl;
+  std::cout << "Testing Rounding_Algebraic_kernel_rs_gmpz_d_1" << std::endl;
   RAK rak; // an object of Algebraic_kernel_rs_gmpz_d_1
   CGAL::test_algebraic_kernel_1<RAK>(rak);
 
