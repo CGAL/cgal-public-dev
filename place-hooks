@@ -18,6 +18,7 @@ cd /var/git/$REPO
 
 git checkout --orphan client-hooks
 git rm -fr *
+# TODO the cp -R is not nice
 cp -R ~/cgal-hooks/client-hooks/* .
 git add *
 git commit -m "placed client hooks"
@@ -26,6 +27,7 @@ git push origin client-hooks
 git checkout --orphan server-hooks
 git rm -fr *
 git add *
+# TODO the cp -R is not nice
 cp -R ~/cgal-hooks/server-hooks/* .
 git commit -m "placed server hooks"
 git push origin server-hooks
