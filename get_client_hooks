@@ -1,0 +1,4 @@
+cd .git/hooks
+git init
+git pull .. client-hooks
+cd ../..
