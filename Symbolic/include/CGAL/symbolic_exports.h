@@ -154,7 +154,7 @@ void poly2ntl(const Polynomial< NT >& p, NTL::ZZX& q) {
             sz = -sz;
         
         zz.SetSize(sz);
-        NTL_bigint_rep *rep = static_cast< NTL_bigint_rep* >(zz.rep);
+        NTL_bigint_rep *rep = reinterpret_cast< NTL_bigint_rep* >(zz.rep);
         rep->size = tmp->_mp_size;
         // copy limbs directly
         memcpy(&rep->data, tmp->_mp_d, sz*sizeof(mp_limb_t));
@@ -181,7 +181,7 @@ Polynomial< NT > ntl2poly(const NTL::ZZX& r) {
             continue;
         } 
 
-        NTL_bigint_rep *rep = static_cast< NTL_bigint_rep* >(zz.rep);
+        NTL_bigint_rep *rep = reinterpret_cast< NTL_bigint_rep* >(zz.rep);
         int sz = rep->size;
         if(sz < 0)
             sz = -sz;
@@ -228,7 +228,7 @@ inline Coeff factorize_NTL(const Polynomial< Coeff >& p,
   mpz_t tmp;
   mpz_init(tmp);
   
-  internal::NTL_bigint_rep *rep = static_cast< internal::NTL_bigint_rep* >(nc.rep);
+  internal::NTL_bigint_rep *rep = reinterpret_cast< internal::NTL_bigint_rep* >(nc.rep);
   int sz = rep->size;
   if(sz < 0)
     sz = -sz;
