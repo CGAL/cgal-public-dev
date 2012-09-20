@@ -1,0 +1,42 @@
+#!/bin/bash
+
+# TODO subgit uninstall
+
+# TODO disable svn-write
+
+# TODO remove www.cgal.org directory in cgal-web
+
+# TODO right user
+
+REPO=cgal-web
+
+# create branches for hooks
+
+git clone /var/git/$REPO.git /var/git/$REPO 
+
+cd /var/git/$REPO
+
+git checkout --orphan client-hooks
+git rm -fr *
+cp -R ~/cgal-hooks/client-hooks/* .
+git add *
+git commit -m "placed client hooks"
+git push origin client-hooks
+
+git checkout --orphan server-hooks
+git rm -fr *
+git add *
+cp -R ~/cgal-hooks/server-hooks/* .
+git commit -m "placed server hooks"
+git push origin server-hooks
+
+# install server hooks
+
+cd /var/git/$REPO.git/hooks
+git init 
+git pull .. server-hooks
+
+# rm -fr /var/git/$REPO
+
+
+
