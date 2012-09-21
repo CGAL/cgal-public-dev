@@ -18,7 +18,7 @@ while (<>) {
 
   my($old,$new,$ref) = ($1,$2,$3);
 
-  next unless $ref =~ /^(master|next)$/;
+  next unless $ref =~ /^(master|maint/integration)$/;
 
   die "$0: deleting of branch '$ref' is not permitted!\n"
     if $new =~ /^0+$/;
