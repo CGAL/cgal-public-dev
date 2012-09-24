@@ -1,6 +1,7 @@
 Server Hooks:
 
 * githook-proxy can be softlinked to any hook 
+  see http://codingkilledthecat.wordpress.com/2012/05/24/multiplexing-git-hooks/
 ** in order to call multiple scripts that all start with the same prefix
    as the hook name
 ** we do so for pre-receive which calls
