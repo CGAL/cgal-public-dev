@@ -5,5 +5,7 @@ Server Hooks:
    as the hook name
 ** we do so for pre-receive which calls
      pre-receive-dont-delete-main-branches
+** we do so for update which calls
+      update-check-files
 ** we do so for post-receive which calls
      post-receive-email.sh
