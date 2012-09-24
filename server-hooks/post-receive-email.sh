@@ -210,11 +210,7 @@ generate_email_header()
 	X-Git-Oldrev: $oldrev
 	X-Git-Newrev: $newrev
 
-	This is an automated email from the git hooks/post-receive script. It was
-	generated because a ref change was pushed to the repository containing
-	the project "$projectdesc".
-
-	The $refname_type, $short_refname has been ${change_type}d
+	The $refname_type '$short_refname' has been ${change_type}d
 	EOF
 }
 
@@ -396,10 +392,8 @@ generate_update_branch_email()
 
 	echo ""
 	if [ -z "$rewind_only" ]; then
-		echo "Those revisions listed above that are new to this repository have"
-		echo "not appeared on any other notification email; so we list those"
-		echo "revisions in full, below."
-
+		echo "Those revisions listed above that are new to this repository have not"
+		echo "appeared on any other notification email; full revisions are listed next:"
 		echo ""
 		echo $LOGBEGIN
 		show_new_revisions
@@ -655,8 +649,8 @@ send_mail()
 # ---------------------------- main()
 
 # --- Constants
-LOGBEGIN="- Log -----------------------------------------------------------------"
-LOGEND="-----------------------------------------------------------------------"
+LOGBEGIN="=== Log ==============================================================="
+  LOGEND="======================================================================="
 
 # --- Config
 # Set GIT_DIR either from the working directory, or from the environment
