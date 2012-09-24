@@ -16,19 +16,22 @@ git clone /var/git/$REPO.git /var/git/$REPO
 
 cd /var/git/$REPO
 
+git remote add hooks ~/cgal-hooks
+git fetch hooks
+
 git checkout --orphan client-hooks
 git rm -fr *
-# TODO the cp -R is not nice
-cp -R ~/cgal-hooks/client-hooks/* .
-git add *
+git commit -m "prepare to place client hooks" 
+git merge -s ours --no-commit hooks/master
+git read-tree --prefix=/ -u hooks/master:client-hooks
 git commit -m "placed client hooks"
 git push origin client-hooks
 
 git checkout --orphan server-hooks
 git rm -fr *
-git add *
-# TODO the cp -R is not nice
-cp -R ~/cgal-hooks/server-hooks/* .
+git commit -m "prepare to place server hooks" 
+git merge -s ours --no-commit hooks/master
+git read-tree --prefix=/ -u hooks/master:server-hooks
 git commit -m "placed server hooks"
 git push origin server-hooks
 
@@ -40,5 +43,11 @@ git pull .. server-hooks
 
 # rm -fr /var/git/$REPO
 
-
-
+# TODO email list
+echo >> /var/git/$REPO.git/config <<EOF
+[hooks]
+        mailinglist = "eric@mpi-inf.mpg.de"
+        senderemail = "git@scm.cgal.org"
+        emailprefix = "[cgal.git]"
+        showrev = "git show -C %s; echo" 
+EOF
