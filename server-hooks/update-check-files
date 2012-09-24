@@ -1,0 +1,135 @@
+#!/bin/bash
+#
+# A hook script to verify what is about to be updated on a rev.
+# The hook enforces the optional pre-commit hook on the client side.
+# Called by "git receive-pack" with arguments: refname sha1-old sha1-new
+# It should exit with non-zero status after issuing an appropriate 
+# message if it wants to stop the update.
+
+# Config
+# ------
+# hooks.allownonascii
+#    This boolean sets whether non-ascii filenames will be allowed into
+#    to the repository.
+allownonascii=$(git config hooks.allownonascii)
+# hooks.allowcaseonly
+#    This boolean sets whether you want to allow filenames to only 
+#    differ in case.
+allowcaseonly=$(git config hooks.allowcaseonly)
+# hooks.allowsymlink
+#    This boolean sets whether you want to allow symlinks.
+allowsymlinks=$(git config hooks.allowsymlinks)
+
+# --- Command line
+refname="$1"
+oldrev="$2"
+newrev="$3"
+
+# --- Safety check
+if [ -z "$GIT_DIR" ]; then
+	echo "Don't run this script from the command line." >&2
+	echo " (if you want, you could supply GIT_DIR then run" >&2
+	echo "  $0 <ref> <oldrev> <newrev>)" >&2
+	exit 1
+fi
+
+if [ -z "$refname" -o -z "$oldrev" -o -z "$newrev" ]; then
+	echo "Usage: $0 <ref> <oldrev> <newrev>" >&2
+	exit 1
+fi
+
+# Redirect output to stderr.
+exec 1>&2
+
+# Remark: needs 'git config --global core.quotepath false'
+# http://stackoverflow.com/questions/4144417/how-to-handle-asian-characters-in-file-names-in-git-on-os-x
+if [ "$allownonascii" != "true" ]
+then
+  # obtain revisions
+  # http://stackoverflow.com/questions/3511057/git-receive-update-hooks-and-new-branches
+  if [ "$oldrev" = "0000000000000000000000000000000000000000" ]
+  then
+    # list everything reachable from newrev but not any heads
+    revlist=$(git rev-list $(git for-each-ref --format='%(refname)' "refs/heads/*" | sed 's/^/\^/') $newrev)
+  else
+    revlist=$(git rev-list "$oldrev..$newrev")
+  fi
+
+  # for all revisions
+  for rev in $revlist
+  do
+    # get files
+    files=$(git show --pretty="format:" --name-only $rev)
+    if test $(echo -n $files | LC_ALL=C tr -d '[ -~]\0' | wc -c) != 0
+    then
+      echo "Error: Attempt to push revision $rev " 
+      echo "       containing a non-ascii file name."
+      echo
+      echo "This can cause problems if you want to work"
+      echo "with people on other platforms."
+      echo
+      echo "To be portable it is advisable to rename the"
+      echo "file with non-ascii filename:"
+      echo $files 
+      echo
+      echo "To avoid this problem at an early stage,"
+      echo "it is advised to activate the corresponding"
+      echo "pre-commit hook in your local repository."
+      echo
+      exit 1
+    fi
+  done
+fi
+
+# Check that transaction will not create files/folders
+# whose name differ only by case (illegal on Windows).
+# check for names that already exist but only differ in case
+# which can be problematic on non-casesensitive filesystems
+if [ "$allowcaseonly" != "true" ]
+then
+  # get files
+  conflicts=$(git ls-tree --name-only -r $newrev | tr [A-Z] [a-z] | sort | uniq -d)
+  if test $(echo -n $conflicts | wc -c) != 0
+  then
+    echo "Error: Attempt to push revision $newrev with a file contained "
+    echo "       that already exists in different case."
+    echo
+    echo "Files with various cases:"
+    for conflict in $conflicts
+    do     
+      echo $(git ls-tree --name-only -r $newrev | grep -i $conflict)
+    done
+    echo
+    echo "To avoid this problem at an early stage,"
+    echo "it is advised to activate the corresponding"
+    echo "pre-commit hook in your local repository."
+    echo
+    exit 1
+  fi
+fi 
+
+# Reject Unix symbolic links, which are not valid (in fact: ignored) on Windows.
+if [ "$allowsymlinks" != "true" ]
+then
+  symlinks=$(git ls-tree -r $newrev | awk '/120000/{print $4}' )
+  if test $(echo -e $symlinks | wc -l) != 0
+  then
+    echo "Error: Attempt to push revision $newrev containing a symlink."
+    echo
+    echo "This can cause problems if you want to work"
+    echo "with people on other platforms."
+    echo
+    echo "Symbolic links:"
+    echo -e $symlinks
+    echo
+    echo "To avoid this problem at an early stage,"
+    echo "it is advised to activate the corresponding"
+    echo "pre-commit hook in your local repository."
+    echo
+    exit 1
+  fi
+fi
+
+# --- Finished
+exit 0;
+
