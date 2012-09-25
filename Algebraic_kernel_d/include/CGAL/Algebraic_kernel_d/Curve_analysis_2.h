@@ -2296,8 +2296,8 @@ private:
         std::vector<Algebraic_real_1> roots_of_lcoeff;
 
         solve_1(leading_coefficient_in_x,
-                std::back_inserter(roots_of_lcoeff),
-                false);
+                false,
+                std::back_inserter(roots_of_lcoeff));
 
         std::vector<Bound> stripe_bounds;
         find_intermediate_values(kernel(),
@@ -2313,8 +2313,7 @@ private:
             Polynomial_1 poly_at_beta
 	      = kernel()->evaluate_utcf_2_object()(this->polynomial_2(),beta);
             std::vector<Algebraic_real_1> x_coordinates_at_beta;
-            solve_1(poly_at_beta,std::back_inserter(x_coordinates_at_beta),
-                    false);
+            solve_1(poly_at_beta, false, std::back_inserter(x_coordinates_at_beta));
             size_type number_of_roots
                 = static_cast<size_type>(x_coordinates_at_beta.size());
             if(number_of_roots>0) {
@@ -2336,7 +2335,7 @@ private:
 	  (typename Polynomial_traits_2::Swap() (this->polynomial_2(),0,1),
 	   leftmost_bound);
         std::vector<Algebraic_real_1> roots_at_left_end;
-        solve_1(curve_at_left_end,std::back_inserter(roots_at_left_end),false);
+        solve_1(curve_at_left_end, false, std::back_inserter(roots_at_left_end));
         size_type number_of_roots_at_left_end
             = static_cast<size_type>(roots_at_left_end.size());
         std::vector<Asymptote_y> asym_left_info;
@@ -2376,7 +2375,7 @@ private:
   	    (typename Polynomial_traits_2::Swap() (this->polynomial_2(),0,1),
              rightmost_bound);
         std::vector<Algebraic_real_1> roots_at_right_end;
-        solve_1(curve_at_right_end,std::back_inserter(roots_at_right_end),false);
+        solve_1(curve_at_right_end, false, std::back_inserter(roots_at_right_end));
         size_type number_of_roots_at_right_end
             = static_cast<size_type>(roots_at_right_end.size());
         std::vector<Asymptote_y> asym_right_info;
@@ -2437,7 +2436,7 @@ public:
             CGAL::internal::Real_roots< Algebraic_real_1, Num_isolator > real_roots;
             real_roots(p, std::back_inserter(p_roots));
 #else
-            kernel()->solve_1_object()(p,std::back_inserter(p_roots),false);
+            kernel()->solve_1_object()(p,false,std::back_inserter(p_roots);
 #endif
             this->ptr()->intermediate_cache.insert(std::make_pair(r,p_roots));
 
