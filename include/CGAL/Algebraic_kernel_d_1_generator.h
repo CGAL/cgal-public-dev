@@ -5,14 +5,14 @@
 //
 // $URL:$
 // $Id: $
-// 
+//
 //
 // Author(s)     : Michael Kerber <mkerber@mpi-inf.mpg.de>
 //
 // ============================================================================
 
 // This file defines several instances of Algebraic_kernel_d_1 that are often
-// used in tests and demos. 
+// used in tests and demos.
 
 #ifndef CGAL_ALGEBRAIC_KERNEL_1_GENERATOR_H
 #define CGAL_ALGEBRAIC_KERNEL_1_GENERATOR_H 1
@@ -37,16 +37,16 @@
 #endif
 
 #if CGAL_BISOLVE_ENABLE_ARCAVOID
-#include <CGAL/Arcavoid_root_isolator.h>
+#include <CGAL/Algebraic_kernel_1/Arcavoid_root_isolator.h>
 #endif
 
 namespace CGAL {
 
 /**
- * Defines default and a fast Algebraic_kernel_d_1, 
+ * Defines default and a fast Algebraic_kernel_d_1,
  * depending on the coefficient type.
  */
-template<typename Coefficient, 
+template<typename Coefficient,
          typename Bound = typename CGAL::Get_arithmetic_kernel< Coefficient >::Arithmetic_kernel::Rational >
 struct Algebraic_kernel_d_1_generator {
 
@@ -54,24 +54,24 @@ struct Algebraic_kernel_d_1_generator {
         Default_algebraic_kernel_1;
 
     typedef CGAL::Algebraic_kernel_d_1
-    < Coefficient, 
+    < Coefficient,
       Bound,
       CGAL::internal::Algebraic_real_rep< Coefficient, Bound >,
       CGAL::internal::Descartes< CGAL::Polynomial< Coefficient >, Bound >
     > Algebraic_kernel_with_bisection_and_descartes_1;
 
     typedef CGAL::Algebraic_kernel_d_1
-    < Coefficient, 
+    < Coefficient,
       Bound,
       CGAL::internal::Algebraic_real_quadratic_refinement_rep_bfi
            < Coefficient, Bound >,
       CGAL::internal::Bitstream_descartes
-            < CGAL::internal::Bitstream_coefficient_kernel<Coefficient> 
+            < CGAL::internal::Bitstream_coefficient_kernel<Coefficient>
         >
     > Algebraic_kernel_with_qir_and_bitstream_1;
 
     typedef CGAL::Algebraic_kernel_d_1
-    < Coefficient, 
+    < Coefficient,
       Bound,
       CGAL::internal::Algebraic_real_quadratic_refinement_rep_bfi
            < Coefficient, Bound >,
@@ -80,7 +80,7 @@ struct Algebraic_kernel_d_1_generator {
 
 #if (defined(CGAL_USE_GMP) && defined(CGAL_USE_MPFI) && defined(CGAL_USE_RS))
     typedef CGAL::Algebraic_kernel_d_1
-    < Coefficient, 
+    < Coefficient,
       Bound,
       CGAL::internal::Algebraic_real_quadratic_refinement_rep_bfi
       < Coefficient, Bound >,
@@ -91,11 +91,11 @@ struct Algebraic_kernel_d_1_generator {
 
 #if CGAL_BISOLVE_ENABLE_ARCAVOID
     typedef CGAL::Algebraic_kernel_d_1
-    < Coefficient, 
+    < Coefficient,
       Bound,
       CGAL::internal::Algebraic_real_quadratic_refinement_rep_bfi< Coefficient, Bound >,
-      CGAL::Arcavoid< CGAL::internal::Bitstream_coefficient_kernel<Coefficient>, 
-                      CGAL::Arcavoid_real_root_isolator_tag > 
+      CGAL::Arcavoid< CGAL::internal::Bitstream_coefficient_kernel<Coefficient>,
+                      CGAL::Arcavoid_real_root_isolator_tag >
     > Algebraic_kernel_with_qir_and_arcavoid_1;
 #endif
 
