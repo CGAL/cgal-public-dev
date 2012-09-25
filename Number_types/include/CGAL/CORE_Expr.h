@@ -1,13 +1,14 @@
-// Copyright (c) 2002-2004,2007  Utrecht University (The Netherlands),
-// ETH Zurich (Switzerland), Freie Universitaet Berlin (Germany),
-// INRIA Sophia-Antipolis (France), Martin-Luther-University Halle-Wittenberg
-// (Germany), Max-Planck-Institute Saarbruecken (Germany), RISC Linz (Austria),
-// and Tel-Aviv University (Israel).  All rights reserved.
+// Copyright (c) 2002-2004,2007  
+// Utrecht University (The Netherlands),
+// ETH Zurich (Switzerland),
+// INRIA Sophia-Antipolis (France),
+// Max-Planck-Institute Saarbruecken (Germany),
+// and Tel-Aviv University (Israel).  All rights reserved. 
 //
 // This file is part of CGAL (www.cgal.org); you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; version 2.1 of the License.
-// See the file LICENSE.LGPL distributed with CGAL.
+// published by the Free Software Foundation; either version 3 of the License,
+// or (at your option) any later version.
 //
 // Licensees holding a valid commercial license may use this file in
 // accordance with the commercial license agreement provided with the software.
@@ -160,7 +161,7 @@ template <> class Real_embeddable_traits< CORE::Expr >
       : public std::unary_function< Type, double > {
       public:
         double operator()( const Type& x ) const {
-          x.approx(53,1024);
+          x.approx(53,1075);
           return x.doubleValue();
         }
     };
@@ -170,7 +171,7 @@ template <> class Real_embeddable_traits< CORE::Expr >
       public:
         std::pair<double, double> operator()( const Type& x ) const {
             std::pair<double,double> result;
-            x.approx(53,1024);
+            x.approx(53,1075);
             x.doubleInterval(result.first, result.second);
             CGAL_expensive_assertion(result.first  <= x);
             CGAL_expensive_assertion(result.second >= x);
@@ -186,5 +187,30 @@ template <> class Real_embeddable_traits< CORE::Expr >
 #include <CGAL/CORE_BigInt.h> 
 #include <CGAL/CORE_BigRat.h>
 #include <CGAL/CORE_BigFloat.h>
+#include <CGAL/CORE_arithmetic_kernel.h>
+
+#ifdef CGAL_EIGEN3_ENABLED
+namespace Eigen {
+  template<class> struct NumTraits;
+  template<> struct NumTraits<CORE::Expr>
+  {
+    typedef CORE::Expr Real;
+    typedef CORE::Expr NonInteger;
+    typedef CORE::Expr Nested;
+
+    static inline Real epsilon() { return 0; }
+
+    enum {
+      IsInteger = 0,
+      IsSigned = 1,
+      IsComplex = 0,
+      RequireInitialization = 1,
+      ReadCost = 6,
+      AddCost = 200,
+      MulCost = 200
+    };
+  };
+}
+#endif
 
 #endif // CGAL_CORE_EXPR_H

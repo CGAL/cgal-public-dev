@@ -1,9 +1,10 @@
 // Copyright (c) 1997-2000  Max-Planck-Institute Saarbruecken (Germany).
 // All rights reserved.
 //
-// This file is part of CGAL (www.cgal.org); you may redistribute it under
-// the terms of the Q Public License version 1.0.
-// See the file LICENSE.QPL distributed with CGAL.
+// This file is part of CGAL (www.cgal.org).
+// You can redistribute it and/or modify it under the terms of the GNU
+// General Public License as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
 //
 // Licensees holding a valid commercial license may use this file in
 // accordance with the commercial license agreement provided with the software.
@@ -22,7 +23,11 @@
 #include <vector>
 #include <CGAL/basic.h>
 #include <CGAL/Unique_hash_map.h>
+#ifdef CGAL_I_DO_WANT_TO_USE_GENINFO
 #include <CGAL/Nef_2/geninfo.h>
+#else
+#include <boost/any.hpp>
+#endif
 #include <CGAL/Nef_2/Object_handle.h>
 #include <CGAL/Nef_S2/SM_decorator_traits.h>
 #undef CGAL_NEF_DEBUG
@@ -92,9 +97,8 @@ public:
   typedef typename Decorator_traits::SVertex_handle       SVertex_handle;   
   typedef typename Decorator_traits::SHalfedge_handle     SHalfedge_handle;   
   typedef typename Decorator_traits::SHalfloop_handle     SHalfloop_handle;   
-  typedef typename Decorator_traits::SHalfloop_const_handle     SHalfloop_const_handle;   
   typedef typename Decorator_traits::SFace_handle         SFace_handle;     
-  typedef typename Decorator_traits::SFace_const_handle         SFace_const_handle;     
+
 
   typedef typename Decorator_traits::SVertex_iterator     SVertex_iterator;
   typedef typename Decorator_traits::SHalfedge_iterator   SHalfedge_iterator;
@@ -182,7 +186,7 @@ public:
   enum SOLUTION { is_vertex_, is_edge_, is_loop_ };
   // enumeration for internal use
 
-  Object_handle locate(const Sphere_point& p, bool skipVEL = false) const
+  Object_handle locate(const Sphere_point& p, bool skipVEL = false)
   /*{\Mop returns a generic handle |h| to an object (vertex, halfedge,
   face) of the underlying plane map |P| which contains the point |p =
   s.source()| in its relative interior. |s.target()| must be a point
@@ -209,7 +213,7 @@ public:
       
       if ( this->has_shalfloop() && this->shalfloop()->circle().has_on(p)) {
 	CGAL_NEF_TRACEN( "  on loop");
-	return make_object(SHalfloop_const_handle(this->shalfloop()));
+	return make_object(SHalfloop_handle(this->shalfloop()));
       }
     }
     
@@ -224,7 +228,7 @@ public:
 
     SVertex_handle v_res;
     SHalfedge_handle e_res;
-    SHalfloop_const_handle l_res(this->shalfloop());
+    SHalfloop_handle l_res(this->shalfloop());
     SOLUTION solution;
 
     CGAL_NEF_TRACEN("  on face...");
@@ -312,7 +316,7 @@ public:
       case is_edge_: 
         return make_object(SFace_handle(e_res->incident_sface()));
       case is_loop_:
-        return make_object(SFace_const_handle(l_res->incident_sface()));
+        return make_object(SFace_handle(l_res->incident_sface()));
       case is_vertex_:
         return make_object(SFace_handle(v_res->incident_sface()));
       default: CGAL_error_msg("missing solution.");
@@ -320,6 +324,7 @@ public:
     return Object_handle(); // never reached!
   }
 
+#if 0 //THIS CODE DOES NOT SEEM TO BE USED
   template <typename Object_predicate>
   Object_handle ray_shoot(const Sphere_point& p, 
 			  const Sphere_direction& d,
@@ -336,7 +341,7 @@ public:
   { 
     Sphere_circle c(d.circle());
     Sphere_segment s;
-    Object_handle h = this->locate(p);
+    Object_handle h = locate(p);
     SVertex_handle v; 
     SHalfedge_handle e; 
     SHalfloop_handle l; 
@@ -404,7 +409,8 @@ public:
     CGAL_error_msg("not yet correct");
     return h;
   }
-
+#endif
+  
   Object_handle ray_shoot(const Sphere_point& p, 
 			  const Sphere_circle& c,
 			  Sphere_point& ip,

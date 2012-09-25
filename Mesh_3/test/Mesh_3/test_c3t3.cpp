@@ -1,9 +1,10 @@
 // Copyright (c) 2009 INRIA Sophia-Antipolis (France).
 // All rights reserved.
 //
-// This file is part of CGAL (www.cgal.org); you may redistribute it under
-// the terms of the Q Public License version 1.0.
-// See the file LICENSE.QPL distributed with CGAL.
+// This file is part of CGAL (www.cgal.org).
+// You can redistribute it and/or modify it under the terms of the GNU
+// General Public License as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
 //
 // Licensees holding a valid commercial license may use this file in
 // accordance with the commercial license agreement provided with the software.
@@ -33,6 +34,7 @@
 #include <iostream>
 #include <CGAL/IO/Polyhedron_iostream.h>
 #include <CGAL/IO/File_medit.h>
+#include <CGAL/IO/File_tetgen.h>
 
 
 
@@ -365,6 +367,10 @@ struct Tester
     assert ( std::distance(patch_fit_bis,fend) == 1 );
     assert ( c3t3.surface_patch_index(*patch_fit) == surface_patch_index );
     assert ( c3t3.surface_patch_index(*patch_fit_bis) == surface_patch_index_bis );
+
+    std::ofstream out_medit("test-medit.mesh");
+    CGAL::output_to_medit(out_medit, c3t3);
+    CGAL::output_to_tetgen("test-tetgen", c3t3);
   }
 };
 

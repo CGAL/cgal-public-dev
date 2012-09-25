@@ -1,11 +1,11 @@
 // ======================================================================
 //
-// Copyright (c) 2005-2006 by Le-Jeng Shiue.  All Rights Reserved.
+// Copyright (c) 2005-2011 GeometryFactory (France).  All Rights Reserved.
 //
 // This file is part of CGAL (www.cgal.org); you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; version 2.1 of the License.
-// See the file LICENSE.LGPL distributed with CGAL.
+// published by the Free Software Foundation; either version 3 of the License,
+// or (at your option) any later version.
 //
 // Licensees holding a valid commercial license may use this file in
 // accordance with the commercial license agreement provided with the software.
@@ -18,8 +18,6 @@
 // 
 //
 // Author(s): Le-Jeng Shiue <Andy.Shiue@gmail.com>
-//                          <1998-2005 SurfLab, CISE, University of Florida>
-//                          <2005-     RapidMind Inc.>
 //
 // ======================================================================
 
@@ -106,7 +104,7 @@ public:
     pt = vertex->point();
   }
   //
-  void border_node(Halfedge_handle edge, Point& ept, Point& vpt){
+  void border_node(Halfedge_handle edge, Point& ept, Point& /*vpt*/){
     edge_node(edge, ept);
   }
 };
@@ -239,9 +237,9 @@ public:
     if (n == 6) {
       pt = Point((10*S[0]+R[0])/16, (10*S[1]+R[1])/16, (10*S[2]+R[2])/16);
     } else {
-      FT Cn = (FT) (5.0/8.0 - std::sqrt(3+2*std::cos(6.283/n))/64.0);
-      FT Sw = n*(1-Cn)/Cn;
-      FT W = n/Cn;
+      FT Cn = (FT) (5.0/8.0 - std::sqrt(3+2*std::cos(6.283/(double)n))/64.0);
+      FT Sw = (double)n*(1-Cn)/Cn;
+      FT W = (double)n/Cn;
       pt = Point((Sw*S[0]+R[0])/W, (Sw*S[1]+R[1])/W, (Sw*S[2]+R[2])/W);
     }
   }
@@ -281,7 +279,7 @@ public:
 
 public:
   //
-  void corner_node(Halfedge_handle edge, Point& pt) {};
+  void corner_node(Halfedge_handle /*edge*/, Point& /*pt*/) {};
 };
 
 
@@ -360,11 +358,11 @@ public:
     Halfedge_around_vertex_circulator vcir = vertex->vertex_begin();
     size_t n = circulator_size(vcir);
 
-    FT a = (FT) ((4.0-2.0*std::cos(2.0*CGAL_PI/n))/9.0);
+    FT a = (FT) ((4.0-2.0*std::cos(2.0*CGAL_PI/(double)n))/9.0);
 
     Vector cv = ((FT)(1.0-a)) * (vertex->point() - CGAL::ORIGIN);
     for (size_t i = 1; i <= n; ++i, --vcir) {
-      cv = cv + (a/n)*(vcir->opposite()->vertex()->point()-CGAL::ORIGIN);
+      cv = cv + (a/FT(n))*(vcir->opposite()->vertex()->point()-CGAL::ORIGIN);
     }
 
     pt = CGAL::ORIGIN + cv;    

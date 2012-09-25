@@ -29,9 +29,6 @@
       </property>
      </widget>
     </item>
-    <item>
-     <widget class="QLabel" name="infoLabel"/>
-    </item>
    </layout>
   </widget>
   <widget class="QMenuBar" name="menubar">
@@ -40,7 +37,7 @@
      <x>0</x>
      <y>0</y>
      <width>978</width>
-     <height>26</height>
+     <height>21</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -53,6 +50,8 @@
     <addaction name="actionDuplicate"/>
     <addaction name="actionSaveAs"/>
     <addaction name="separator"/>
+    <addaction name="actionLoad_Script"/>
+    <addaction name="separator"/>
     <addaction name="actionQuit"/>
    </widget>
    <widget class="QMenu" name="menuEdit">
@@ -62,6 +61,7 @@
     <addaction name="actionShowHide"/>
     <addaction name="actionSetPolyhedronA"/>
     <addaction name="actionSetPolyhedronB"/>
+    <addaction name="actionSelect_all_items"/>
    </widget>
    <widget class="QMenu" name="menuOperations">
     <property name="title">
@@ -124,9 +124,21 @@
      </property>
      <addaction name="dummyAction"/>
     </widget>
+    <widget class="QMenu" name="menuCamera">
+     <property name="title">
+      <string>Ca&amp;mera</string>
+     </property>
+     <addaction name="actionDumpCamera"/>
+     <addaction name="action_Copy_camera"/>
+     <addaction name="action_Paste_camera"/>
+    </widget>
+    <addaction name="actionRecenterScene"/>
+    <addaction name="action_Look_at"/>
     <addaction name="actionAntiAliasing"/>
     <addaction name="actionDraw_two_sides"/>
+    <addaction name="actionSetBackgroundColor"/>
     <addaction name="menuDockWindows"/>
+    <addaction name="menuCamera"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuEdit"/>
@@ -139,7 +151,7 @@
     <locale language="English" country="UnitedStates"/>
    </property>
    <property name="windowTitle">
-    <string>Polyhedra</string>
+    <string>Geometric Objects</string>
    </property>
    <attribute name="dockWidgetArea">
     <number>1</number>
@@ -199,12 +211,15 @@
         </layout>
        </item>
        <item>
-        <widget class="QTreeView" name="treeView">
+        <widget class="QTreeView" name="sceneView">
          <property name="editTriggers">
           <set>QAbstractItemView::DoubleClicked|QAbstractItemView::EditKeyPressed|QAbstractItemView::SelectedClicked</set>
          </property>
          <property name="alternatingRowColors">
           <bool>true</bool>
+         </property>
+         <property name="selectionMode">
+          <enum>QAbstractItemView::ExtendedSelection</enum>
          </property>
          <property name="indentation">
           <number>0</number>
@@ -234,6 +249,82 @@
         <bool>true</bool>
        </property>
       </widget>
+     </item>
+    </layout>
+   </widget>
+  </widget>
+  <widget class="QDockWidget" name="infoDockWidget">
+   <property name="windowTitle">
+    <string>Infos</string>
+   </property>
+   <attribute name="dockWidgetArea">
+    <number>8</number>
+   </attribute>
+   <widget class="QWidget" name="dockWidgetContents_2">
+    <layout class="QHBoxLayout" name="horizontalLayout_2">
+     <item>
+      <layout class="QVBoxLayout" name="verticalLayout_4" stretch="0,0">
+       <property name="spacing">
+        <number>0</number>
+       </property>
+       <item>
+        <widget class="QScrollArea" name="scrollArea">
+         <property name="minimumSize">
+          <size>
+           <width>350</width>
+           <height>0</height>
+          </size>
+         </property>
+         <property name="frameShape">
+          <enum>QFrame::NoFrame</enum>
+         </property>
+         <property name="widgetResizable">
+          <bool>true</bool>
+         </property>
+         <widget class="QWidget" name="scrollAreaWidgetContents">
+          <property name="geometry">
+           <rect>
+            <x>0</x>
+            <y>0</y>
+            <width>545</width>
+            <height>178</height>
+           </rect>
+          </property>
+          <layout class="QGridLayout" name="gridLayout">
+           <item row="0" column="0">
+            <widget class="QLabel" name="infoLabel">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+               <horstretch>0</horstretch>
+               <verstretch>1</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="contextMenuPolicy">
+              <enum>Qt::DefaultContextMenu</enum>
+             </property>
+             <property name="lineWidth">
+              <number>0</number>
+             </property>
+             <property name="alignment">
+              <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
+             </property>
+             <property name="textInteractionFlags">
+              <set>Qt::LinksAccessibleByKeyboard|Qt::LinksAccessibleByMouse|Qt::TextBrowserInteraction|Qt::TextSelectableByKeyboard|Qt::TextSelectableByMouse</set>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLabel" name="displayLabel">
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </item>
+      </layout>
      </item>
     </layout>
    </widget>
@@ -431,16 +522,10 @@
    <property name="text">
     <string>Set polyhedron A</string>
    </property>
-   <property name="shortcut">
-    <string>Ctrl+A</string>
-   </property>
   </action>
   <action name="actionSetPolyhedronB">
    <property name="text">
     <string>Set polyhedron B</string>
-   </property>
-   <property name="shortcut">
-    <string>Ctrl+B</string>
    </property>
   </action>
   <action name="actionInsideOut">
@@ -451,6 +536,11 @@
   <action name="actionRemeshing">
    <property name="text">
     <string>&amp;Remeshing</string>
+   </property>
+  </action>
+  <action name="actionConvexDecomposition">
+   <property name="text">
+    <string>Convex Decomposition</string>
    </property>
   </action>
   <action name="actionMVC">
@@ -489,6 +579,19 @@
     <string>Ctrl+T</string>
    </property>
   </action>
+  <action name="actionRecenterScene">
+   <property name="text">
+    <string>Re&amp;center scene</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+C</string>
+   </property>
+  </action>
+  <action name="actionSetBackgroundColor">
+   <property name="text">
+    <string>Change &amp;background color...</string>
+   </property>
+  </action>
   <action name="actionMinkowskiSum">
    <property name="text">
     <string>&amp;Minkowski sum</string>
@@ -497,9 +600,37 @@
     <string>Ctrl+O, M</string>
    </property>
   </action>
-  <action name="actionConvexDecomposition">
+  <action name="action_Look_at">
    <property name="text">
-    <string>Convex Decomposition</string>
+    <string>&amp;Look at...</string>
+   </property>
+  </action>
+  <action name="actionDumpCamera">
+   <property name="text">
+    <string>&amp;Dump camera coordinates</string>
+   </property>
+  </action>
+  <action name="action_Copy_camera">
+   <property name="text">
+    <string>&amp;Copy camera</string>
+   </property>
+  </action>
+  <action name="action_Paste_camera">
+   <property name="text">
+    <string>&amp;Paste camera</string>
+   </property>
+  </action>
+  <action name="actionSelect_all_items">
+   <property name="text">
+    <string>Select all items</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+A</string>
+   </property>
+  </action>
+  <action name="actionLoad_Script">
+   <property name="text">
+    <string>Load &amp;Script</string>
    </property>
   </action>
  </widget>

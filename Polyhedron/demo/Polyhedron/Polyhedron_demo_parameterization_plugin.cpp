@@ -5,6 +5,7 @@
 #include "Scene_polyhedron_item.h"
 #include "Scene_textured_polyhedron_item.h"
 #include "Textured_polyhedron_type.h"
+#include "Polyhedron_type.h"
 
 #include <QTime>
 
@@ -34,6 +35,10 @@ public:
   QStringList actionsNames() const {
     return QStringList() << "actionMVC"
                          << "actionDCP";
+  }
+
+  bool applicable() const { 
+    return qobject_cast<Scene_polyhedron_item*>(scene->item(scene->mainSelectionIndex()));
   }
 
 public slots:

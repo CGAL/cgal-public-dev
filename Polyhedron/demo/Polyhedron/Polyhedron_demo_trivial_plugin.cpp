@@ -99,8 +99,13 @@ class Polyhedron_demo_trivial_plugin :
 
 public:
   void init(QMainWindow* mainWindow, Scene_interface* scene_interface);
-  QList<QAction*> actions() const;
+  QList<QAction*> actions() const { 
+    return QList<QAction*>() << actionBbox; 
+  }
 
+  bool applicable() const { 
+    return true;
+  }
 public slots:
   void bbox();
   void enableAction();
@@ -119,13 +124,9 @@ void Polyhedron_demo_trivial_plugin::init(QMainWindow* mainWindow, Scene_interfa
           this, SLOT(bbox()));
 }
 
-QList<QAction*> Polyhedron_demo_trivial_plugin::actions() const {
-  return QList<QAction*>() << actionBbox;
-}
-
 void Polyhedron_demo_trivial_plugin::bbox()
 {
-  for(size_t i = 0, end = scene->numberOfEntries();
+  for(int i = 0, end = scene->numberOfEntries();
       i < end; ++i)
   {
     if(qobject_cast<Scene_bbox_item*>(scene->item(i)))

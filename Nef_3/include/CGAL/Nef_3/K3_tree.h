@@ -1,9 +1,10 @@
 // Copyright (c) 1997-2000  Max-Planck-Institute Saarbruecken (Germany).
 // All rights reserved.
 //
-// This file is part of CGAL (www.cgal.org); you may redistribute it under
-// the terms of the Q Public License version 1.0.
-// See the file LICENSE.QPL distributed with CGAL.
+// This file is part of CGAL (www.cgal.org).
+// You can redistribute it and/or modify it under the terms of the GNU
+// General Public License as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
 //
 // Licensees holding a valid commercial license may use this file in
 // accordance with the commercial license agreement provided with the software.
@@ -504,8 +505,8 @@ public:
       std::list<Candidate> S;
       const Node* node;
       Traits traits;
-      CGAL_assertion_code( Segment_3 prev_segment);
-      CGAL_assertion_code( bool first_segment);
+      CGAL_assertion_code( Segment_3 prev_segment;)
+      CGAL_assertion_code( bool first_segment;)
     public:
       Iterator() : node(0) {}
       Iterator( const Node* root, const Segment_3& s) {
@@ -781,10 +782,6 @@ public:
     typedef typename SNC_structure::Vertex_iterator Vertex_iterator;
     typedef typename SNC_structure::Halfedge_iterator Halfedge_iterator;
     typedef typename SNC_structure::Halffacet_iterator Halffacet_iterator;
-    typedef typename SNC_structure::Halffacet_cycle_iterator
-                                    Halffacet_cycle_iterator;
-    typedef typename SNC_structure::SHalfedge_around_facet_circulator
-                                    SHalfedge_around_facet_circulator;
 
     CGAL_assertion( W != NULL);
     Object_list objects;
@@ -798,7 +795,11 @@ public:
       objects.push_back(make_object(Halfedge_handle(e)));
     CGAL_forall_facets( f, *W) {
 #ifdef CGAL_NEF3_TRIANGULATE_FACETS
-   
+      typedef typename SNC_structure::SHalfedge_around_facet_circulator
+                                      SHalfedge_around_facet_circulator;
+      typedef typename SNC_structure::Halffacet_cycle_iterator
+                                      Halffacet_cycle_iterator;
+
       Halffacet_cycle_iterator fci = f->facet_cycles_begin();
       CGAL_assertion(fci.is_shalfedge());
       SHalfedge_around_facet_circulator safc(fci);

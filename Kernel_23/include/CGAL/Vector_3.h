@@ -1,13 +1,14 @@
-// Copyright (c) 1999  Utrecht University (The Netherlands),
-// ETH Zurich (Switzerland), Freie Universitaet Berlin (Germany),
-// INRIA Sophia-Antipolis (France), Martin-Luther-University Halle-Wittenberg
-// (Germany), Max-Planck-Institute Saarbruecken (Germany), RISC Linz (Austria),
-// and Tel-Aviv University (Israel).  All rights reserved.
+// Copyright (c) 1999  
+// Utrecht University (The Netherlands),
+// ETH Zurich (Switzerland),
+// INRIA Sophia-Antipolis (France),
+// Max-Planck-Institute Saarbruecken (Germany),
+// and Tel-Aviv University (Israel).  All rights reserved. 
 //
 // This file is part of CGAL (www.cgal.org); you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; version 2.1 of the License.
-// See the file LICENSE.LGPL distributed with CGAL.
+// published by the Free Software Foundation; either version 3 of the License,
+// or (at your option) any later version.
 //
 // Licensees holding a valid commercial license may use this file in
 // accordance with the commercial license agreement provided with the software.
@@ -27,7 +28,7 @@
 #include <CGAL/Origin.h>
 #include <CGAL/Kernel/mpl.h>
 #include <CGAL/representation_tags.h>
-#include <boost/static_assert.hpp>
+#include <CGAL/assertions.h>
 #include <boost/type_traits.hpp>
 #include <CGAL/Kernel/Return_base_tag.h>
 #include <CGAL/Dimension.h>
@@ -48,7 +49,7 @@ class Vector_3 : public R_::Kernel_base::Vector_3
   typedef typename R_::Aff_transformation_3  Aff_transformation_3;
 
   typedef Vector_3                            Self;
-  BOOST_STATIC_ASSERT((boost::is_same<Self, typename R_::Vector_3>::value));
+  CGAL_static_assertion((boost::is_same<Self, typename R_::Vector_3>::value));
 
 public:
 
@@ -132,49 +133,49 @@ public:
    return R().construct_divided_vector_3_object()(*this,c);
   }
 
-  typename Qualified_result_of<typename R::Compute_x_3, Vector_3>::type
+  typename boost::result_of<typename R::Compute_x_3(Vector_3)>::type
   x() const
   {
     return R().compute_x_3_object()(*this);
   }
 
-  typename Qualified_result_of<typename R::Compute_y_3, Vector_3>::type
+  typename boost::result_of<typename R::Compute_y_3(Vector_3)>::type
   y() const
   {
     return R().compute_y_3_object()(*this);
   }
 
-  typename Qualified_result_of<typename R::Compute_z_3, Vector_3>::type
+  typename boost::result_of<typename R::Compute_z_3(Vector_3)>::type
   z() const
   {
     return R().compute_z_3_object()(*this);
   }
 
-  typename Qualified_result_of<typename R::Compute_hx_3, Vector_3>::type
+  typename boost::result_of<typename R::Compute_hx_3(Vector_3)>::type
   hx() const
   {
     return R().compute_hx_3_object()(*this);
   }
 
-  typename Qualified_result_of<typename R::Compute_hy_3, Vector_3>::type
+  typename boost::result_of<typename R::Compute_hy_3(Vector_3)>::type
   hy() const
   {
     return R().compute_hy_3_object()(*this);
   }
 
-  typename Qualified_result_of<typename R::Compute_hz_3, Vector_3>::type
+  typename boost::result_of<typename R::Compute_hz_3(Vector_3)>::type
   hz() const
   {
     return R().compute_hz_3_object()(*this);
   }
 
-  typename Qualified_result_of<typename R::Compute_hw_3, Vector_3>::type
+  typename boost::result_of<typename R::Compute_hw_3(Vector_3)>::type
   hw() const
   {
     return R().compute_hw_3_object()(*this);
   }
 
-  typename Qualified_result_of<typename R::Compute_x_3, Vector_3>::type
+  typename boost::result_of<typename R::Compute_x_3(Vector_3)>::type
   cartesian(int i) const
   {
     CGAL_kernel_precondition( (i == 0) || (i == 1) || (i == 2) );
@@ -183,7 +184,7 @@ public:
     return z();
   }
 
-  typename Qualified_result_of<typename R::Compute_hw_3, Vector_3>::type
+  typename boost::result_of<typename R::Compute_hw_3(Vector_3)>::type
   homogeneous(int i) const
   {
     CGAL_kernel_precondition( (i >= 0) || (i <= 3) );
@@ -198,7 +199,7 @@ public:
       return 3;
   }
 
-  typename Qualified_result_of<typename R::Compute_x_3, Vector_3>::type
+  typename boost::result_of<typename R::Compute_x_3(Vector_3)>::type
   operator[](int i) const
   {
       return cartesian(i);
@@ -214,7 +215,7 @@ public:
     return typename R::Construct_cartesian_const_iterator_3()(*this,3);
   }
 
-  typename Qualified_result_of<typename R::Compute_squared_length_3, Vector_3>::type
+  typename boost::result_of<typename R::Compute_squared_length_3(Vector_3)>::type
   squared_length() const
   {
     return R().compute_squared_length_3_object()(*this);

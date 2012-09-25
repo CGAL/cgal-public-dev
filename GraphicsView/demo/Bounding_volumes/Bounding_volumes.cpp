@@ -243,7 +243,7 @@ MainWindow::update()
 
   CGAL::Qt::Converter<K> convert;  
 
-  if(this->actionShowPCenter->isChecked()){
+  if(this->actionShowPCenter->isChecked() && convex_hull.size()>=3){
     for(std::size_t i=0; i< P; i++){
       p_center[i]->setRect(convert(p_center_iso_rectangle[i]));
       p_center[i]->show();
@@ -290,8 +290,8 @@ MainWindow::update()
 void
 MainWindow::update_from_points()
 {
-  convex_hull.clear();
-   CGAL::convex_hull_2(points.begin(), points.end(), std::back_inserter(convex_hull));
+    convex_hull.clear();
+    CGAL::convex_hull_2(points.begin(), points.end(), std::back_inserter(convex_hull));
    
     min_rectangle.clear();
     CGAL::min_rectangle_2(convex_hull.vertices_begin(), convex_hull.vertices_end(), std::back_inserter(min_rectangle));
@@ -305,7 +305,6 @@ MainWindow::update_from_points()
     CGAL::rectangular_p_center_2 (points.begin(), points.end(), std::back_inserter(center), radius, P);
     Vector_2 rvec(radius, radius);
 
-    CGAL::Qt::Converter<K> convert;  
     for(std::size_t i = 0; i < center.size(); i++){
       p_center_iso_rectangle[i] = Iso_rectangle_2(center[i]-rvec, center[i]+rvec);
     }
@@ -336,12 +335,13 @@ MainWindow::processInput(CGAL::Object o)
     
     std::vector<Point_2> center;
     double radius;
+    if (points.size()>=P){
+      CGAL::rectangular_p_center_2 (points.begin(), points.end(), std::back_inserter(center), radius, P);
+      Vector_2 rvec(radius, radius);
 
-    CGAL::rectangular_p_center_2 (points.begin(), points.end(), std::back_inserter(center), radius, P);
-    Vector_2 rvec(radius, radius);
-
-    for(std::size_t i=0; i < center.size(); i++){
-      p_center_iso_rectangle[i] = Iso_rectangle_2(center[i]-rvec, center[i]+rvec);
+      for(std::size_t i=0; i < center.size(); i++){
+        p_center_iso_rectangle[i] = Iso_rectangle_2(center[i]-rvec, center[i]+rvec);
+      }
     }
   }
   emit(changed());
@@ -433,7 +433,7 @@ MainWindow::on_actionInsertRandomPoints_triggered()
   QRectF rect = CGAL::Qt::viewportsBbox(&scene);
   CGAL::Qt::Converter<K> convert;  
   Iso_rectangle_2 isor = convert(rect);
-  CGAL::Random_points_in_iso_rectangle_2<Point_2> pg(isor.min(), isor.max());
+  CGAL::Random_points_in_iso_rectangle_2<Point_2> pg((isor.min)(), (isor.max)());
   bool ok = false;
   const int number_of_points = 
     QInputDialog::getInteger(this, 
@@ -441,7 +441,7 @@ MainWindow::on_actionInsertRandomPoints_triggered()
                              tr("Enter number of random points"),
 			     100,
 			     0,
-			     std::numeric_limits<int>::max(),
+			     (std::numeric_limits<int>::max)(),
 			     1,
 			     &ok);
 
@@ -529,6 +529,7 @@ MainWindow::on_actionRecenter_triggered()
 
 
 #include "Bounding_volumes.moc"
+#include <CGAL/Qt/resources.h>
 
 int main(int argc, char **argv)
 {
@@ -540,9 +541,7 @@ int main(int argc, char **argv)
 
   // Import resources from libCGALQt4.
   // See http://doc.trolltech.com/4.4/qdir.html#Q_INIT_RESOURCE
-  Q_INIT_RESOURCE(File);
-  Q_INIT_RESOURCE(Input);
-  Q_INIT_RESOURCE(CGAL);
+  CGAL_QT4_INIT_RESOURCES;
 
   MainWindow mainWindow;
   mainWindow.show();

@@ -1,13 +1,14 @@
-// Copyright (c) 1997  Utrecht University (The Netherlands),
-// ETH Zurich (Switzerland), Freie Universitaet Berlin (Germany),
-// INRIA Sophia-Antipolis (France), Martin-Luther-University Halle-Wittenberg
-// (Germany), Max-Planck-Institute Saarbruecken (Germany), RISC Linz (Austria),
-// and Tel-Aviv University (Israel).  All rights reserved.
+// Copyright (c) 1997  
+// Utrecht University (The Netherlands),
+// ETH Zurich (Switzerland),
+// INRIA Sophia-Antipolis (France),
+// Max-Planck-Institute Saarbruecken (Germany),
+// and Tel-Aviv University (Israel).  All rights reserved. 
 //
 // This file is part of CGAL (www.cgal.org); you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; version 2.1 of the License.
-// See the file LICENSE.LGPL distributed with CGAL.
+// published by the Free Software Foundation; either version 3 of the License,
+// or (at your option) any later version.
 //
 // Licensees holding a valid commercial license may use this file in
 // accordance with the commercial license agreement provided with the software.
@@ -46,7 +47,7 @@ skip_to_next_vertex( std::size_t current_vertex) {
             // It is not well stated in the Geomview manual
             // how color is coded following a vertex. It is
             // parsed similar to the optional color for facets.
-            Integer32 k;
+	    boost::int32_t k;
             I_Binary_read_big_endian_integer32( m_in, k);
             if (k<0 || k>4) {
                 m_in.clear( std::ios::badbit);
@@ -97,7 +98,7 @@ File_scanner_OFF::
 skip_to_next_facet( std::size_t current_facet) {
     // Take care of trailing informations like color triples.
     if ( binary()) {
-        Integer32 k;
+        boost::int32_t k;
         I_Binary_read_big_endian_integer32( m_in, k);
         if (k<0 || k>4) {
             m_in.clear( std::ios::badbit);

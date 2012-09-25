@@ -1,8 +1,9 @@
 // Copyright (c) 2006 Fernando Luis Cacciola Carballal. All rights reserved.
 //
-// This file is part of CGAL (www.cgal.org); you may redistribute it under
-// the terms of the Q Public License version 1.0.
-// See the file LICENSE.QPL distributed with CGAL.
+// This file is part of CGAL (www.cgal.org).
+// You can redistribute it and/or modify it under the terms of the GNU
+// General Public License as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
 //
 // Licensees holding a valid commercial license may use this file in
 // accordance with the commercial license agreement provided with the software.
@@ -137,8 +138,8 @@ bool test_aux ( Graph& aG )
       CHECK_EQUAL(oe,e->opposite());
       CHECK_EQUAL(ne,e->next());
       CHECK_EQUAL(pe,e->prev());
-      CHECK_EQUAL(ccwe,e->prev()->opposite());
-      CHECK_EQUAL(cwe,e->opposite()->next());
+      CHECK_EQUAL(ccwe,e->opposite()->prev());
+      CHECK_EQUAL(cwe,e->next()->opposite());
       
       vertex_descriptor s  = source(e,aG);
       vertex_descriptor t  = target(e,aG);

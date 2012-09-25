@@ -3,8 +3,8 @@
 //
 // This file is part of CGAL (www.cgal.org); you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; version 2.1 of the License.
-// See the file LICENSE.LGPL distributed with CGAL.
+// published by the Free Software Foundation; either version 3 of the License,
+// or (at your option) any later version.
 //
 // Licensees holding a valid commercial license may use this file in
 // accordance with the commercial license agreement provided with the software.
@@ -56,7 +56,7 @@ isolator<Polynomial<Gmpz> >::operator()(const Polynomial<Gmpz> &p,
         mpz_t *coeffs=(mpz_t*)malloc((degree+1)*sizeof(mpz_t));
         mpfi_ptr *intervals_mpfi=(mpfi_ptr*)malloc(degree*sizeof(mpfi_ptr));
         std::vector<Gmpfi> intervals;
-        for(int i=0;i<=degree;++i)
+        for(unsigned int i=0;i<=degree;++i)
                 coeffs[i][0]=*(p[i].mpz());
         init_solver();
         create_rs_upoly(coeffs,degree,rs_get_default_up());

@@ -3,12 +3,14 @@
 
 #include <QString>
 #include <QColor>
+#include <QList>
 #include <algorithm>
 
 class Scene_item;
 
 // OpenGL rendering mode
-enum RenderingMode { Points = 0, 
+enum RenderingMode { Points = 0,
+                     PointsPlusNormals,
                      Wireframe, 
                      Flat,
                      FlatPlusEdges,
@@ -50,6 +52,7 @@ public:
   virtual ~Scene_interface() {};
 
   virtual Item_id addItem(Scene_item* item) = 0;
+  virtual Scene_item* replaceItem(Item_id, Scene_item*) = 0;
 
   virtual Item_id erase(Item_id) = 0;
   // Returns the index of the item just before the one that is erased,
@@ -61,9 +64,10 @@ public:
   // clonable), returns -1.
 
   // Accessors (getters)
-  virtual size_t numberOfEntries() const = 0;
+  virtual int numberOfEntries() const = 0;
   virtual Scene_item* item(Item_id) const = 0;
   virtual Item_id mainSelectionIndex() const = 0;
+  virtual QList<Item_id> selectionIndices() const = 0;
   virtual Item_id selectionAindex() const = 0;
   virtual Item_id selectionBindex() const = 0;
 
@@ -75,6 +79,9 @@ public:
   // Notify the scene that an item was modified
   virtual void itemChanged(Item_id i) = 0; 
   virtual void itemChanged(Scene_item*) = 0;
+
+  // Select an item
+  virtual void setSelectedItem(Item_id) = 0;
   
 }; // end interface Scene_interface
 

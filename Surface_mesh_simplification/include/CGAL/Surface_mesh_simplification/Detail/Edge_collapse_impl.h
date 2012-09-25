@@ -1,8 +1,9 @@
 // Copyright (c) 2006  GeometryFactory (France). All rights reserved.
 //
-// This file is part of CGAL (www.cgal.org); you may redistribute it under
-// the terms of the Q Public License version 1.0.
-// See the file LICENSE.QPL distributed with CGAL.
+// This file is part of CGAL (www.cgal.org).
+// You can redistribute it and/or modify it under the terms of the GNU
+// General Public License as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
 //
 // Licensees holding a valid commercial license may use this file in
 // accordance with the commercial license agreement provided with the software.
@@ -110,6 +111,8 @@ void EdgeCollapse<M,SP,VIM,EIM,EBM,CF,PF,V>::Collect()
   CGAL_SURF_SIMPL_TEST_assertion_code ( size_type lInserted    = 0 ) ;
   CGAL_SURF_SIMPL_TEST_assertion_code ( size_type lNotInserted = 0 ) ;
 
+  std::vector<Profile> zero_length_edges;
+
   undirected_edge_iterator eb, ee ;
   for ( boost::tie(eb,ee) = undirected_edges(mSurface); eb!=ee; ++eb )
   {
@@ -133,6 +136,7 @@ void EdgeCollapse<M,SP,VIM,EIM,EBM,CF,PF,V>::Collect()
     }
     else
     {
+      zero_length_edges.push_back(lProfile);
       CGAL_SURF_SIMPL_TEST_assertion_code ( ++ lNotInserted ) ;
     }
 
@@ -144,6 +148,12 @@ void EdgeCollapse<M,SP,VIM,EIM,EBM,CF,PF,V>::Collect()
  
   CGAL_SURF_SIMPL_TEST_assertion ( lInserted + lNotInserted == mInitialEdgeCount ) ;
 
+  for (typename std::vector<Profile>::iterator it=zero_length_edges.begin(),it_end=zero_length_edges.end();it!=it_end;++it)
+  {
+    Placement_type lPlacement = get_placement(*it);
+    Collapse(*it,lPlacement);
+  }
+  
   CGAL_ECMS_TRACE(0,"Initial edge count: " << mInitialEdgeCount ) ;
 }
 
@@ -577,12 +587,12 @@ bool EdgeCollapse<M,SP,VIM,EIM,EBM,CF,PF,V>::Is_collapse_geometrically_valid( Pr
     typedef typename Profile::vertex_descriptor_vector::const_iterator const_link_iterator ;
     const_link_iterator linkb = aProfile.link().begin();
     const_link_iterator linke = aProfile.link().end  ();
-    const_link_iterator linkl = predecessor(linke) ;
+    const_link_iterator linkl = cpp0x::prev(linke) ;
     
     for ( const_link_iterator l = linkb ; l != linke && rR ; ++ l )
     {
-      const_link_iterator pv = ( l == linkb ? linkl : predecessor(l) );
-      const_link_iterator nx = ( l == linkl ? linkb : successor  (l) ) ;
+      const_link_iterator pv = ( l == linkb ? linkl : cpp0x::prev (l) );
+      const_link_iterator nx = ( l == linkl ? linkb : cpp0x::next  (l) ) ;
       
       // k0,k1 and k3 are three consecutive vertices along the link.
       vertex_descriptor k1 = *pv ;

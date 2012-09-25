@@ -155,6 +155,7 @@ discoverComponent(const CDT & ct,
 void 
 discoverComponents(const CDT & ct)
 {
+  if (ct.dimension()!=2) return;
   int index = 0;
   std::list<CDT::Edge> border;
   discoverComponent(ct, ct.infinite_face(), index++, border);
@@ -232,6 +233,8 @@ public slots:
   void on_actionRecenter_triggered();
 
   void on_actionLoadConstraints_triggered();
+
+  void loadFile(QString);
 
   void loadPolygonConstraints(QString);
 
@@ -422,7 +425,10 @@ void
 MainWindow::open(QString fileName)
 {
   if(! fileName.isEmpty()){
-    if(fileName.endsWith(".plg")){
+    if(fileName.endsWith(".cgal")){
+      loadFile(fileName);
+      this->addToRecentFiles(fileName);
+    } else if(fileName.endsWith(".plg")){
       loadPolygonConstraints(fileName);
       this->addToRecentFiles(fileName);
     } else if(fileName.endsWith(".edg")){
@@ -441,6 +447,18 @@ MainWindow::on_actionLoadConstraints_triggered()
 						  tr("Edge files (*.edg);;"
 						     "Poly files (*.plg)"));
   open(fileName);
+}
+
+void
+MainWindow::loadFile(QString fileName)
+{
+  std::ifstream ifs(qPrintable(fileName));
+  ifs >> cdt;
+  if(!ifs) abort();
+  initializeID(cdt);
+  discoverComponents(cdt);
+  emit(changed());
+  actionRecenter->trigger();
 }
 
 void
@@ -547,11 +565,10 @@ MainWindow::on_actionSaveConstraints_triggered()
 
 
 void
-MainWindow::saveConstraints(QString /*fileName*/)
+MainWindow::saveConstraints(QString fileName)
 {
-  QMessageBox::warning(this,
-                       tr("saveConstraints"),
-                       tr("Not implemented!"));
+  std::ofstream output(qPrintable(fileName));
+  if (output) output << cdt;
 }
 
 
@@ -655,7 +672,7 @@ MainWindow::on_actionInsertRandomPoints_triggered()
   QRectF rect = CGAL::Qt::viewportsBbox(&scene);
   CGAL::Qt::Converter<K> convert;
   Iso_rectangle_2 isor = convert(rect);
-  CGAL::Random_points_in_iso_rectangle_2<Point_2> pg(isor.min(), isor.max());
+  CGAL::Random_points_in_iso_rectangle_2<Point_2> pg((isor.min)(), (isor.max)());
   bool ok = false;
   const int number_of_points = 
     QInputDialog::getInteger(this, 
@@ -663,7 +680,7 @@ MainWindow::on_actionInsertRandomPoints_triggered()
                              tr("Enter number of random points"),
 			     100,
 			     0,
-			     std::numeric_limits<int>::max(),
+			     (std::numeric_limits<int>::max)(),
 			     1,
 			     &ok);
 
@@ -685,6 +702,7 @@ MainWindow::on_actionInsertRandomPoints_triggered()
 }
 
 #include "Constrained_Delaunay_triangulation_2.moc"
+#include <CGAL/Qt/resources.h>
 
 int main(int argc, char **argv)
 {
@@ -696,10 +714,7 @@ int main(int argc, char **argv)
 
   // Import resources from libCGALQt4.
   // See http://doc.trolltech.com/4.4/qdir.html#Q_INIT_RESOURCE
-  Q_INIT_RESOURCE(File);
-  Q_INIT_RESOURCE(Triangulation_2);
-  Q_INIT_RESOURCE(Input);
-  Q_INIT_RESOURCE(CGAL);
+  CGAL_QT4_INIT_RESOURCES;
 
   MainWindow mainWindow;
   mainWindow.show();

@@ -1,9 +1,10 @@
 // Copyright (c) 1999-2004   INRIA Sophia-Antipolis (France).
 // All rights reserved.
 //
-// This file is part of CGAL (www.cgal.org); you may redistribute it under
-// the terms of the Q Public License version 1.0.
-// See the file LICENSE.QPL distributed with CGAL.
+// This file is part of CGAL (www.cgal.org).
+// You can redistribute it and/or modify it under the terms of the GNU
+// General Public License as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
 //
 // Licensees holding a valid commercial license may use this file in
 // accordance with the commercial license agreement provided with the software.
@@ -32,7 +33,8 @@
 #include <CGAL/Location_policy.h>
 
 #ifndef CGAL_TRIANGULATION_3_DONT_INSERT_RANGE_OF_POINTS_WITH_INFO
-#include <CGAL/internal/spatial_sorting_traits_with_indices.h>
+#include <CGAL/Spatial_sort_traits_adapter_3.h>
+#include <CGAL/internal/info_check.h>
 
 #include <boost/tuple/tuple.hpp>
 #include <boost/iterator/zip_iterator.hpp>
@@ -45,12 +47,18 @@
 
 namespace CGAL {
 
+// Here is the declaration of a class template with three arguments, one
+// having a default value. There is no definition of that class template.
 template < class Gt,
            class Tds_ = Default,
            class Location_policy = Default >
 class Delaunay_triangulation_3;
 
+// There is a specialization Delaunay_triangulation_3<Gt, Tds, Fast_location>
+// defined in <CGAL/internal/Delaunay_triangulation_hierarchy_3.h>.
 
+// Here is the specialization Delaunay_triangulation_3<Gt, Tds>, with two
+// arguments, that is if Location_policy being the default value 'Default'.
 template < class Gt, class Tds_ >
 class Delaunay_triangulation_3<Gt, Tds_>
   : public Triangulation_3<Gt, Tds_>
@@ -216,9 +224,9 @@ public:
   std::ptrdiff_t
   insert( InputIterator first, InputIterator last,
           typename boost::enable_if<
-            boost::is_base_of<
-                Point,
-                typename std::iterator_traits<InputIterator>::value_type
+            boost::is_convertible<
+                typename std::iterator_traits<InputIterator>::value_type,
+                Point
             >
           >::type* = NULL
   )
@@ -243,6 +251,7 @@ public:
   
 #ifndef CGAL_TRIANGULATION_3_DONT_INSERT_RANGE_OF_POINTS_WITH_INFO
 private:  
+  //top stands for tuple-or-pair
   template <class Info>
   const Point& top_get_first(const std::pair<Point,Info>& pair) const { return pair.first; }
   template <class Info>
@@ -256,10 +265,10 @@ private:
   std::ptrdiff_t insert_with_info(InputIterator first,InputIterator last)
   {
     size_type n = number_of_vertices();
-    std::vector<std::size_t> indices;
+    std::vector<std::ptrdiff_t> indices;
     std::vector<Point> points;
     std::vector<typename Triangulation_data_structure::Vertex::Info> infos;
-    std::size_t index=0;
+    std::ptrdiff_t index=0;
     for (InputIterator it=first;it!=last;++it){
       Tuple_or_pair value=*it;
       points.push_back( top_get_first(value)  );
@@ -267,13 +276,12 @@ private:
       indices.push_back(index++);
     }
 
-    typedef internal::Vector_property_map<Point> Point_pmap;
-    typedef internal::Spatial_sort_traits_with_property_map_3<Geom_traits,Point_pmap> Search_traits;
+    typedef Spatial_sort_traits_adapter_3<Geom_traits,Point*> Search_traits;
     
-    spatial_sort(indices.begin(),indices.end(),Search_traits(Point_pmap(points),geom_traits()));
+    spatial_sort(indices.begin(),indices.end(),Search_traits(&(points[0]),geom_traits()));
 
     Vertex_handle hint;
-    for (typename std::vector<std::size_t>::const_iterator
+    for (typename std::vector<std::ptrdiff_t>::const_iterator
       it = indices.begin(), end = indices.end();
       it != end; ++it){
       hint = insert(points[*it], hint);
@@ -290,7 +298,7 @@ public:
   insert( InputIterator first,
           InputIterator last,
           typename boost::enable_if<
-            boost::is_same<
+            boost::is_convertible<
               typename std::iterator_traits<InputIterator>::value_type,
               std::pair<Point,typename internal::Info_check<typename Triangulation_data_structure::Vertex>::type>
             > >::type* =NULL
@@ -305,8 +313,8 @@ public:
           boost::zip_iterator< boost::tuple<InputIterator_1,InputIterator_2> > last,
           typename boost::enable_if<
             boost::mpl::and_<
-              boost::is_same< typename std::iterator_traits<InputIterator_1>::value_type, Point >,
-              boost::is_same< typename std::iterator_traits<InputIterator_2>::value_type, typename internal::Info_check<typename Triangulation_data_structure::Vertex>::type >
+              boost::is_convertible< typename std::iterator_traits<InputIterator_1>::value_type, Point >,
+              boost::is_convertible< typename std::iterator_traits<InputIterator_2>::value_type, typename internal::Info_check<typename Triangulation_data_structure::Vertex>::type >
             >
           >::type* =NULL
   )

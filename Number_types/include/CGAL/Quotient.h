@@ -1,13 +1,14 @@
-// Copyright (c) 1999-2007  Utrecht University (The Netherlands),
-// ETH Zurich (Switzerland), Freie Universitaet Berlin (Germany),
-// INRIA Sophia-Antipolis (France), Martin-Luther-University Halle-Wittenberg
-// (Germany), Max-Planck-Institute Saarbruecken (Germany), RISC Linz (Austria),
-// and Tel-Aviv University (Israel).  All rights reserved.
+// Copyright (c) 1999-2007  
+// Utrecht University (The Netherlands),
+// ETH Zurich (Switzerland),
+// INRIA Sophia-Antipolis (France),
+// Max-Planck-Institute Saarbruecken (Germany),
+// and Tel-Aviv University (Israel).  All rights reserved. 
 //
 // This file is part of CGAL (www.cgal.org); you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; version 2.1 of the License.
-// See the file LICENSE.LGPL distributed with CGAL.
+// published by the Free Software Foundation; either version 3 of the License,
+// or (at your option) any later version.
 //
 // Licensees holding a valid commercial license may use this file in
 // accordance with the commercial license agreement provided with the software.
@@ -851,5 +852,29 @@ public:
 };
 
 } //namespace CGAL
+
+#ifdef CGAL_EIGEN3_ENABLED
+namespace Eigen {
+  template<class> struct NumTraits;
+  template<class NT> struct NumTraits<CGAL::Quotient<NT> >
+  {
+    typedef CGAL::Quotient<NT> Real;
+    typedef CGAL::Quotient<NT> NonInteger;
+    typedef CGAL::Quotient<NT> Nested;
+
+    static inline Real epsilon() { return NumTraits<NT>::epsilon(); }
+
+    enum {
+      IsInteger = 0,
+      IsSigned = 1,
+      IsComplex = 0,
+      RequireInitialization = NumTraits<NT>::RequireInitialization,
+      ReadCost = 2*NumTraits<NT>::ReadCost,
+      AddCost = 150,
+      MulCost = 100
+    };
+  };
+}
+#endif
 
 #endif  // CGAL_QUOTIENT_H

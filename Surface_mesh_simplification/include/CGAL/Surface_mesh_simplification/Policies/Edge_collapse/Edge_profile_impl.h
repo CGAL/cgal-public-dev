@@ -1,8 +1,9 @@
 // Copyright (c) 2006  GeometryFactory (France). All rights reserved.
 //
-// This file is part of CGAL (www.cgal.org); you may redistribute it under
-// the terms of the Q Public License version 1.0.
-// See the file LICENSE.QPL distributed with CGAL.
+// This file is part of CGAL (www.cgal.org).
+// You can redistribute it and/or modify it under the terms of the GNU
+// General Public License as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
 //
 // Licensees holding a valid Surface_mesh_simplification license may use this file in
 // accordance with the Surface_mesh_simplification license agreement provided with the software.
@@ -189,8 +190,7 @@ void Edge_profile<ECM>::Extract_triangles_and_link( VertexIdxMap const&    verte
   
   do
   {
-    e02 = next_edge_ccw(e02,surface());
-    
+    e02 = opposite_edge(prev_edge(e02,surface()), surface());
     vertex_descriptor v2 = target(e02,surface());
   
     if ( v2 != mV1 )
@@ -212,7 +212,7 @@ void Edge_profile<ECM>::Extract_triangles_and_link( VertexIdxMap const&    verte
   
   v0 = mV1;
   
-  e02 = next_edge_ccw(mV1V0,surface());
+  e02 = opposite_edge(prev_edge(mV1V0,surface()), surface());
   
   v1 = target(e02,surface()); 
 
@@ -221,7 +221,7 @@ void Edge_profile<ECM>::Extract_triangles_and_link( VertexIdxMap const&    verte
   if ( v1 != mV0 && lCollected.find(vertex_idx[v1]) == lCollected.end() )
     mLink.push_back(v1) ;
   
-  e02 = next_edge_ccw(e02,surface());
+  e02 = opposite_edge(prev_edge(e02,surface()), surface());
   
   do
   {
@@ -235,8 +235,7 @@ void Edge_profile<ECM>::Extract_triangles_and_link( VertexIdxMap const&    verte
     
     v1 = v2 ;
      
-    e02 = next_edge_ccw(e02,surface());
-    
+    e02 = opposite_edge(prev_edge(e02,surface()), surface());
   }
   while ( e02 != mV1V0 ) ;
 }

@@ -1,6 +1,7 @@
 #include <QApplication>
 #include <QMessageBox>
 #include <QMainWindow>
+#include "Kernel_type.h"
 #include "Polyhedron_type.h"
 #include "Scene_polyhedron_item.h"
 
@@ -14,6 +15,8 @@
 #include <CGAL/self_intersect.h>
 #include <CGAL/Make_triangle_soup.h>
 
+typedef Kernel::Triangle_3 Triangle;
+
 class Polyhedron_demo_self_intersection_plugin : 
   public QObject,
   public Polyhedron_demo_plugin_helper
@@ -25,6 +28,10 @@ public:
   // used by Polyhedron_demo_plugin_helper
   QStringList actionsNames() const {
     return QStringList() << "actionSelfIntersection";
+  }
+
+  bool applicable() const { 
+    return qobject_cast<Scene_polyhedron_item*>(scene->item(scene->mainSelectionIndex()));
   }
 
 public slots:

@@ -1,9 +1,10 @@
-// Copyright (c) 2008-2009  INRIA Sophia-Antipolis (France), ETH Zurich (Switzerland).
+// Copyright (c) 2008-2009  INRIA Sophia-Antipolis (France).
 // All rights reserved.
 //
-// This file is part of CGAL (www.cgal.org); you may redistribute it under
-// the terms of the Q Public License version 1.0.
-// See the file LICENSE.QPL distributed with CGAL.
+// This file is part of CGAL (www.cgal.org).
+// You can redistribute it and/or modify it under the terms of the GNU
+// General Public License as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
 //
 // Licensees holding a valid commercial license may use this file in
 // accordance with the commercial license agreement provided with the software.
@@ -66,7 +67,7 @@ template<typename AABBTraits, typename Query>
 class First_intersection_traits
 {
   typedef typename AABBTraits::FT FT;
-  typedef typename AABBTraits::Point Point;
+  typedef typename AABBTraits::Point_3 Point;
   typedef typename AABBTraits::Primitive Primitive;
   typedef typename AABBTraits::Bounding_box Bounding_box;
   typedef typename AABBTraits::Primitive::Id Primitive_id;
@@ -109,7 +110,7 @@ template<typename AABBTraits, typename Query, typename Output_iterator>
 class Listing_intersection_traits
 {
   typedef typename AABBTraits::FT FT;
-  typedef typename AABBTraits::Point Point;
+  typedef typename AABBTraits::Point_3 Point;
   typedef typename AABBTraits::Primitive Primitive;
   typedef typename AABBTraits::Bounding_box Bounding_box;
   typedef typename AABBTraits::Primitive::Id Primitive_id;
@@ -151,7 +152,7 @@ template<typename AABBTraits, typename Query, typename Output_iterator>
 class Listing_primitive_traits
 {
   typedef typename AABBTraits::FT FT;
-  typedef typename AABBTraits::Point Point;
+  typedef typename AABBTraits::Point_3 Point;
   typedef typename AABBTraits::Primitive Primitive;
   typedef typename AABBTraits::Bounding_box Bounding_box;
   typedef typename AABBTraits::Primitive::Id Primitive_id;
@@ -191,7 +192,7 @@ template<typename AABBTraits, typename Query>
 class First_primitive_traits
 {
   typedef typename AABBTraits::FT FT;
-  typedef typename AABBTraits::Point Point;
+  typedef typename AABBTraits::Point_3 Point;
   typedef typename AABBTraits::Primitive Primitive;
   typedef typename AABBTraits::Bounding_box Bounding_box;
   typedef typename AABBTraits::Primitive::Id Primitive_id;
@@ -236,7 +237,7 @@ template<typename AABBTraits, typename Query>
 class Do_intersect_traits
 {
   typedef typename AABBTraits::FT FT;
-  typedef typename AABBTraits::Point Point;
+  typedef typename AABBTraits::Point_3 Point;
   typedef typename AABBTraits::Primitive Primitive;
   typedef typename AABBTraits::Bounding_box Bounding_box;
   typedef typename AABBTraits::Primitive::Id Primitive_id;
@@ -277,7 +278,7 @@ template <typename AABBTraits>
 class Projection_traits
 {
   typedef typename AABBTraits::FT FT;
-  typedef typename AABBTraits::Point Point;
+  typedef typename AABBTraits::Point_3 Point;
   typedef typename AABBTraits::Primitive Primitive;
   typedef typename AABBTraits::Bounding_box Bounding_box;
   typedef typename AABBTraits::Primitive::Id Primitive_id;

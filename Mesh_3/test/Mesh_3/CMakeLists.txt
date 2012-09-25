@@ -13,7 +13,7 @@ if("${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION}" VERSION_GREATER 2.6)
   endif()
 endif()
 
-find_package(CGAL QUIET COMPONENTS Core ImageIO)
+find_package(CGAL QUIET COMPONENTS Core )
 
 if ( CGAL_FOUND )
 
@@ -21,14 +21,14 @@ if ( CGAL_FOUND )
 
   include( CGAL_CreateSingleSourceCGALProgram )
 
-  include_directories (BEFORE ../../include)
-  include_directories (BEFORE ../../../AABB_tree/include)
+  include_directories (BEFORE "../../include")
 
   create_single_source_cgal_program( "test_backward_compatibility_MeshFoobarCriteria_3.cpp" )
   create_single_source_cgal_program( "test_boost_has_xxx.cpp" )
   create_single_source_cgal_program( "test_c3t3.cpp" )
   create_single_source_cgal_program( "test_c3t3_with_features.cpp" )
   create_single_source_cgal_program( "test_criteria.cpp" )
+  create_single_source_cgal_program( "test_dihedral_angle.cpp" )
   create_single_source_cgal_program( "test_domain_with_polyline_features.cpp" )
   create_single_source_cgal_program( "test_mesh_criteria_creation.cpp" )
   create_single_source_cgal_program( "test_meshing_3D_image.cpp" )

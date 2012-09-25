@@ -4,14 +4,21 @@
 
 #include <QtOpenGL/qgl.h>
 #include <CGAL/Qt/DemosMainWindow.h>
+#ifdef QT_SCRIPT_LIB
+#  include  <QScriptEngine>
+#endif
 
 #include <QVector>
+#include <QList>
+#include <QFileInfo>
+#include <QStringList>
 
 class Scene;
 class Viewer;
 class QTreeView;
 class QMenu;
 class Polyhedron_demo_io_plugin_interface;
+class Polyhedron_demo_plugin_interface;
 
 class Scene_item;
 
@@ -33,24 +40,68 @@ public:
   MainWindow(QWidget* parent = 0);
   ~MainWindow();
 
+  /// Find an IO plugin.
+  /// @throws `std::invalid_argument` if no loader with that argument can be found
+  /// @returns the IO plugin associated with `loader_name`
+  Polyhedron_demo_io_plugin_interface* find_loader(const QString& loader_name) const;
+  
+  /// Load an item with a given loader.
+  ///
+  /// @throws `std::logic_error` if loading does not succeed or
+  /// `std::invalid_argument` if `fileinfo` specifies an invalid file
+  Scene_item* load_item(QFileInfo fileinfo, Polyhedron_demo_io_plugin_interface*);
+
 public slots:
   void updateViewerBBox();
-  void open(QString filename);
+  void open(QString);
+
+  /// Open a file with a given loader, and return true iff it was successful.
+  ///
+  /// This slot is for use by scripts.
+  bool open(QString filename, QString loader_name);
+
+  /// Reloads an item. Expects to be called by a QAction with the
+  /// index of the item to be reloaded as data attached to the action.
+  /// The index must identify a valid `Scene_item`.
+  void reload_item();
+  
+  bool load_script(QString filename);
+  bool load_script(QFileInfo);
 
   void selectSceneItem(int i);
+  void showSelectedPoint(double, double, double);
+  void unSelectSceneItem(int i);
+  void selectAll();
+  void addSceneItemInSelection(int i);
+  void removeSceneItemFromSelection(int i); // same as unSelectSceneItem
 
   void setAddKeyFrameKeyboardModifiers(Qt::KeyboardModifiers);
 
   void clearMenu(QMenu*);
   void addAction(QAction*);
+  void addAction(QString actionName,
+                 QString actionText,
+                 QString menuName);
+  void viewerShow(float, float, float);
 
   void information(QString);
   void warning(QString);
   void error(QString);
+  void message(QString, QString, QString = QString("normal"));
+
+  bool hasPlugin(const QString&) const;
+  void enableScriptDebugger(bool = true);
 
 protected slots:
   void selectionChanged();
+
+  void contextMenuRequested(const QPoint& global_pos);
+  void showSceneContextMenu(int selectedItemIndex,
+                            const QPoint& global_pos);
+  void showSceneContextMenu(const QPoint& local_pos_of_treeview);
+
   void updateInfo();
+  void updateDisplayInfo();
   void removeManipulatedFrame(Scene_item*);
 
   // settings
@@ -63,6 +114,7 @@ protected slots:
   void on_actionLoad_triggered();
   bool on_actionErase_triggered();
   void on_actionDuplicate_triggered();
+  void on_actionLoad_Script_triggered();
 
   // Show/Hide
   void on_actionShowHide_triggered();
@@ -73,9 +125,20 @@ protected slots:
 
   // save as...
   void on_actionSaveAs_triggered(); 
+  void save(QString filename, Scene_item* item);
+
+  void on_actionSetBackgroundColor_triggered();
+
+  void on_action_Look_at_triggered();
+
+  QString camera_string() const;
+  void on_actionDumpCamera_triggered();
+  void on_action_Copy_camera_triggered();
+  void on_action_Paste_camera_triggered();
+
+  void filterOperations();
 
 protected:
-  void message(QString, QString, QString = QString("normal"));
   void loadPlugins();
   bool initPlugin(QObject*);
   bool initIOPlugin(QObject*);
@@ -84,15 +147,29 @@ protected:
 
   bool onePolygonIsSelected() const;
   int getSelectedSceneItemIndex() const;
+  QList<int> getSelectedSceneItemIndices() const;
 
 private:
   QString strippedName(const QString &fullFileName);
 
   Scene* scene;
   Viewer* viewer;
-  QTreeView* treeView;
+  QTreeView* sceneView;
   Ui::MainWindow* ui;
   QVector<Polyhedron_demo_io_plugin_interface*> io_plugins;
+
+  // typedef to make Q_FOREACH work
+  typedef QPair<Polyhedron_demo_plugin_interface*, QString> PluginNamePair;
+  QVector<PluginNamePair > plugins;
+#ifdef QT_SCRIPT_LIB
+  QScriptEngine* script_engine;
+public:
+  void evaluate_script(QString script, 
+                       const QString & fileName = QString(),
+                       const bool quiet = false);
+  void evaluate_script_quiet(QString script, 
+                             const QString & fileName = QString());
+#endif
 };
 
 #endif // ifndef MAINWINDOW_H

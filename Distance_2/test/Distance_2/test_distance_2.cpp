@@ -1,5 +1,9 @@
 // 2D distance tests.
 
+#ifdef NDEBUG
+#undef NDEBUG //this testsuite requires NDEBUG to be not defined
+#endif
+
 #include <CGAL/Object.h>
 #include <CGAL/Line_2.h>
 #include <CGAL/Point_2.h>
@@ -14,10 +18,6 @@
 #include <vector>
 #include <iostream>
 #include <cassert>
-
-#ifdef NDEBUG
-#  error The test-suite needs no NDEBUG defined
-#endif
 
 const double epsilon = 0.001;
 
@@ -70,7 +70,7 @@ struct Test {
   {
 	if (t1 == t2)
 		return true;
-	if (CGAL::abs(t1 - t2) / CGAL::max(CGAL::abs(t1), CGAL::abs(t2)) < epsilon)
+	if (CGAL::abs(t1 - t2) / (CGAL::max)(CGAL::abs(t1), CGAL::abs(t2)) < epsilon)
 		return true;
 	std::cout << " Approximate comparison failed between : " << t1 << "  and  " << t2 << "\n";
 	return false;

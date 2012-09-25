@@ -1,5 +1,5 @@
 #include "Scene_polyhedron_item.h"
-#include "Scene_polygon_soup.h"
+#include "Scene_polygon_soup_item.h"
 #include "Polyhedron_type.h"
 
 #include "Polyhedron_demo_io_plugin_interface.h"
@@ -13,17 +13,14 @@ class Polyhedron_demo_off_plugin :
   Q_INTERFACES(Polyhedron_demo_io_plugin_interface)
 
 public:
-  QStringList nameFilters() const;
+  QString name() const { return "Polyhedron_demo_off_plugin"; }
+  QString nameFilters() const { return "OFF files (*.off)"; }
   bool canLoad() const;
   Scene_item* load(QFileInfo fileinfo);
-
+  
   bool canSave(const Scene_item*);
   bool save(const Scene_item*, QFileInfo fileinfo);
 };
-
-QStringList Polyhedron_demo_off_plugin::nameFilters() const {
-  return QStringList() << "OFF files (*.off)";
-}
 
 bool Polyhedron_demo_off_plugin::canLoad() const {
   return true;
@@ -32,7 +29,7 @@ bool Polyhedron_demo_off_plugin::canLoad() const {
 
 Scene_item* 
 Polyhedron_demo_off_plugin::load(QFileInfo fileinfo) {
-
+  if(fileinfo.suffix().toLower() != "off") return 0;
   // Open file
   std::ifstream in(fileinfo.filePath().toUtf8());
   if(!in) {
@@ -48,7 +45,7 @@ Polyhedron_demo_off_plugin::load(QFileInfo fileinfo) {
     delete item;
 
     // Try to read .off in a polygon soup
-    Scene_polygon_soup* soup_item = new Scene_polygon_soup;
+    Scene_polygon_soup_item* soup_item = new Scene_polygon_soup_item;
     soup_item->setName(fileinfo.baseName());
     in.close();
     std::ifstream in2(fileinfo.filePath().toUtf8());
@@ -66,7 +63,7 @@ bool Polyhedron_demo_off_plugin::canSave(const Scene_item* item)
 {
   // This plugin supports polyhedrons and polygon soups
   return qobject_cast<const Scene_polyhedron_item*>(item) ||
-    qobject_cast<const Scene_polygon_soup*>(item);
+    qobject_cast<const Scene_polygon_soup_item*>(item);
 }
 
 bool Polyhedron_demo_off_plugin::save(const Scene_item* item, QFileInfo fileinfo)
@@ -74,8 +71,8 @@ bool Polyhedron_demo_off_plugin::save(const Scene_item* item, QFileInfo fileinfo
   // This plugin supports polyhedrons and polygon soups
   const Scene_polyhedron_item* poly_item = 
     qobject_cast<const Scene_polyhedron_item*>(item);
-  const Scene_polygon_soup* soup_item = 
-    qobject_cast<const Scene_polygon_soup*>(item);
+  const Scene_polygon_soup_item* soup_item = 
+    qobject_cast<const Scene_polygon_soup_item*>(item);
 
   if(!poly_item && !soup_item)
     return false;

@@ -3,8 +3,8 @@
 //
 // This file is part of CGAL (www.cgal.org); you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; version 2.1 of the License.
-// See the file LICENSE.LGPL distributed with CGAL.
+// published by the Free Software Foundation; either version 3 of the License,
+// or (at your option) any later version.
 //
 // Licensees holding a valid commercial license may use this file in
 // accordance with the commercial license agreement provided with the software.
@@ -25,6 +25,12 @@ namespace CGAL {
 
 namespace internal {
 
+template <class K>
+bool do_intersect_coplanar( const typename K::Point_3& A,
+                            const typename K::Point_3& B,
+                            const typename K::Point_3& C,  
+                            const typename K::Point_3 & p,
+                            const typename K::Point_3 & q, const K & k );
 
 template <class K>
 bool do_intersect_coplanar(const typename K::Triangle_3 &t, 
@@ -44,10 +50,6 @@ bool do_intersect_coplanar(const typename K::Triangle_3 &t,
   typename K::Construct_vertex_3 vertex_on =
     k.construct_vertex_3_object();
   
-  typename K::Coplanar_orientation_3 coplanar_orientation = 
-    k.coplanar_orientation_3_object();
-  
-
   const Point_3 & p = point_on(s,0);
   const Point_3 & q = point_on(s,1);
   
@@ -55,7 +57,22 @@ bool do_intersect_coplanar(const typename K::Triangle_3 &t,
   const Point_3 &  B = vertex_on(t,1);
   const Point_3 &  C = vertex_on(t,2);
   
+  return do_intersect_coplanar(A,B,C,p,q,k);
+}
 
+
+template <class K>
+bool do_intersect_coplanar( const typename K::Point_3& A,
+                            const typename K::Point_3& B,
+                            const typename K::Point_3& C,  
+                            const typename K::Point_3 & p,
+                            const typename K::Point_3 & q, const K & k )
+{
+  typedef typename K::Point_3 Point_3;  
+  
+  typename K::Coplanar_orientation_3 coplanar_orientation = 
+    k.coplanar_orientation_3_object();  
+  
   const Point_3 *  a = &A;
   const Point_3 *  b = &B;
   const Point_3 *  c = &C;

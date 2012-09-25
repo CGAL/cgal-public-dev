@@ -1,16 +1,3 @@
-// Copyright (c) 2006  INRIA Sophia-Antipolis (France).
-// All rights reserved.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
-//
-// $URL$
-// $Id$
-//
-//
-// Author(s)     : Steve OUDOT, Laurent RINEAU
-
-
 ///////////////// Definitions of several famous surfaces /////////////////
 double sphere_function (double, double, double);  // (c=(0,0,0), r=1)
 double ellipsoid_function (double, double, double);  // (c=(0,0,0), r=1)

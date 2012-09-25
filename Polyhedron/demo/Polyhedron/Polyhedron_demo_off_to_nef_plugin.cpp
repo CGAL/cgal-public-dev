@@ -12,17 +12,14 @@ class Polyhedron_demo_off_to_nef_plugin :
   Q_INTERFACES(Polyhedron_demo_io_plugin_interface)
 
 public:
-  QStringList nameFilters() const;
+  QString name() const { return "Polyhedron_demo_off_to_nef_plugin"; }
+  QString nameFilters() const { return "OFF files, into nef (*.off)"; }
   bool canLoad() const;
   Scene_item* load(QFileInfo fileinfo);
 
   bool canSave(const Scene_item*);
   bool save(const Scene_item*, QFileInfo fileinfo);
 };
-
-QStringList Polyhedron_demo_off_to_nef_plugin::nameFilters() const {
-  return QStringList() << "OFF files, into nef (*.off)";
-}
 
 bool Polyhedron_demo_off_to_nef_plugin::canLoad() const {
   return true;
@@ -36,7 +33,7 @@ Polyhedron_demo_off_to_nef_plugin::load(QFileInfo fileinfo) {
     std::cerr << "Error!\n";
   Scene_nef_polyhedron_item* item = new Scene_nef_polyhedron_item();
 
-  if(!item->load(in))
+  if(!item->load_from_off(in))
   {
     delete item;
     return 0;
@@ -46,12 +43,12 @@ Polyhedron_demo_off_to_nef_plugin::load(QFileInfo fileinfo) {
   return item;
 }
 
-bool Polyhedron_demo_off_to_nef_plugin::canSave(const Scene_item* item)
+bool Polyhedron_demo_off_to_nef_plugin::canSave(const Scene_item*)
 {
   return false;
 }
 
-bool Polyhedron_demo_off_to_nef_plugin::save(const Scene_item* item, QFileInfo fileinfo)
+bool Polyhedron_demo_off_to_nef_plugin::save(const Scene_item*, QFileInfo)
 {
   return false;
 }

@@ -1,9 +1,10 @@
 // Copyright (c) 2003-2004  INRIA Sophia-Antipolis (France).
 // All rights reserved.
 //
-// This file is part of CGAL (www.cgal.org); you may redistribute it under
-// the terms of the Q Public License version 1.0.
-// See the file LICENSE.QPL distributed with CGAL.
+// This file is part of CGAL (www.cgal.org).
+// You can redistribute it and/or modify it under the terms of the GNU
+// General Public License as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
 //
 // Licensees holding a valid commercial license may use this file in
 // accordance with the commercial license agreement provided with the software.
@@ -41,13 +42,16 @@ public:
 private:
   bool local;
   Segment _s;
+  Geom_traits traits;
 
 public:
   Delaunay_mesh_local_size_criteria_2(const double aspect_bound = 0.125, 
                                       const double size_bound = 0,
                                       const bool is_local_size = false,
-                                      const Segment s = Segment())
-    : Base(aspect_bound, size_bound), local(is_local_size), _s(s) {}
+                                      const Segment s = Segment(),
+                                      const Geom_traits& traits = Geom_traits())
+    : Base(aspect_bound, size_bound), local(is_local_size), _s(s)
+    , traits(traits) {}
 
   inline
   Segment segment() const { return _s; }
@@ -82,8 +86,9 @@ public:
     Is_bad(const double aspect_bound,
 	   const double size_bound,
 	   const bool l,
-	   const Segment_2 _s)
-      : Base::Is_bad(aspect_bound, size_bound), local(l), s(_s) {}
+	   const Segment_2 _s,
+           const Geom_traits& traits)
+      : Base::Is_bad(aspect_bound, size_bound, traits), local(l), s(_s) {}
 
     Mesh_2::Face_badness operator()(Quality q) const
     {
@@ -119,7 +124,7 @@ public:
   };
 
   Is_bad is_bad_object() const
-  { return Is_bad(this->bound(), this->size_bound(), local, segment()); }
+  { return Is_bad(this->bound(), this->size_bound(), local, segment(), traits); }
 };
 
 } //end namespace

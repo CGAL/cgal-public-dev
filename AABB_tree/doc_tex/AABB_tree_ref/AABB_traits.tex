@@ -25,19 +25,14 @@ The class \ccRefName\ is a model of the concept \ccc{AABBTraits}. This traits cl
 The template parameter \ccc{GeomTraits} provides the geometric types as well as the intersection tests and computations required. This type must be a model of the concept \ccc{AABBGeomTraits}. The template parameter \ccc{Primitive} provides the type of primitives stored in the AABB tree. This parameter must be a model of the concept \ccc{AABBPrimitive}.
 
 \ccInclude{CGAL/AABB_traits.h}
-Note that this file must be included before the kernel so that the compiler parses all intersection functions available in folder \ccc{AABB_intersections}.
 
 \ccTypes
 
-\ccTypedef{typedef GeomTraits::Point_3 Point_3;}{Point query type.}
+\ccTypedef{typedef GeomTraits::FT FT;}{}
 \ccGlue
-\ccTypedef{typedef GeomTraits::Ray_3  Ray_3;}{Ray query type.}
+\ccTypedef{typedef GeomTraits::Point_3  Point_3;}{}
 \ccGlue
-\ccTypedef{typedef GeomTraits::Line_3 Line_3;}{Line query type.}
-\ccGlue
-\ccTypedef{typedef GeomTraits::Segment_3 Segment_3;}{Segment query type.}
-\ccGlue
-\ccNestedType{size_type}{Unsigned integral type.}
+\ccTypedef{typedef CGAL::Bbox_3  Bounding_box;}{}
 
 %\ccCreation
 \ccCreationVariable{traits} 

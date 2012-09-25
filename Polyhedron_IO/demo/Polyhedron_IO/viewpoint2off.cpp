@@ -1,9 +1,10 @@
 // Copyright (c) 2002  Max Planck Institut fuer Informatik (Germany).
 // All rights reserved.
 //
-// This file is part of CGAL (www.cgal.org); you may redistribute it under
-// the terms of the Q Public License version 1.0.
-// See the file LICENSE.QPL distributed with CGAL.
+// This file is part of CGAL (www.cgal.org).
+// You can redistribute it and/or modify it under the terms of the GNU
+// General Public License as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
 //
 // Licensees holding a valid commercial license may use this file in
 // accordance with the commercial license agreement provided with the software.
@@ -21,7 +22,6 @@
 // ============================================================================
 
 #include <CGAL/Cartesian.h>
-#include <CGAL/known_bit_size_integers.h>
 #include <CGAL/IO/Verbose_ostream.h>
 #include <CGAL/IO/binary_file_io.h>
 #include <CGAL/IO/File_writer_OFF.h>
@@ -31,7 +31,7 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
-
+#include <boost/cstdint.hpp>
 
 using namespace std;
 
@@ -142,7 +142,7 @@ int main( int argc, char **argv) {
     if ( c < '0' && c > '9')
         binary_mesh = 1;
     in.putback(c);
-    CGAL::Integer32   number;
+    boost::int32_t    number;
     if ( ! binary_mesh) {
         in >> number;
         if ( number != 1)

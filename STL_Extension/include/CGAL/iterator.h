@@ -1,13 +1,14 @@
-// Copyright (c) 2003  Utrecht University (The Netherlands),
-// ETH Zurich (Switzerland), Freie Universitaet Berlin (Germany),
-// INRIA Sophia-Antipolis (France), Martin-Luther-University Halle-Wittenberg
-// (Germany), Max-Planck-Institute Saarbruecken (Germany), RISC Linz (Austria),
-// and Tel-Aviv University (Israel).  All rights reserved.
+// Copyright (c) 2003  
+// Utrecht University (The Netherlands),
+// ETH Zurich (Switzerland),
+// INRIA Sophia-Antipolis (France),
+// Max-Planck-Institute Saarbruecken (Germany),
+// and Tel-Aviv University (Israel).  All rights reserved. 
 //
 // This file is part of CGAL (www.cgal.org); you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; version 2.1 of the License.
-// See the file LICENSE.LGPL distributed with CGAL.
+// published by the Free Software Foundation; either version 3 of the License,
+// or (at your option) any later version.
 //
 // Licensees holding a valid commercial license may use this file in
 // accordance with the commercial license agreement provided with the software.
@@ -27,6 +28,8 @@
 #define CGAL_ITERATOR_H 1
 
 #include <CGAL/circulator.h>
+#include <CGAL/assertions.h>
+#include <CGAL/use.h>
 #include <vector>
 #include <map>
 #include <boost/type_traits.hpp>
@@ -316,6 +319,7 @@ public:
 
   Iterator  current_iterator() const { return nt;}
   bool operator==( Nullptr_t p) const {
+    CGAL_USE(p);
     CGAL_assertion( p == 0);
     return empty;
   }
@@ -1229,13 +1233,13 @@ class Dispatch_output_iterator < cpp0x::tuple<V...>, cpp0x::tuple<O...> >
  : private internal::Derivator<Dispatch_output_iterator< cpp0x::tuple<V...>, cpp0x::tuple<O...> >, cpp0x::tuple<V...>, cpp0x::tuple<O...> >
  , public cpp0x::tuple<O...>
 {
-  static_assert(sizeof...(V) == sizeof...(O),
+  CGAL_static_assertion_msg(sizeof...(V) == sizeof...(O),
                 "The number of explicit template parameters has to match the number of arguments");
 
   static const int size = sizeof...(V);
 
   template <typename D, typename V_, typename O_>
-  friend class internal::Derivator;
+  friend struct internal::Derivator;
 
 public:
 
@@ -1294,7 +1298,7 @@ class Dispatch_or_drop_output_iterator < cpp0x::tuple<V...>, cpp0x::tuple<O...> 
   typedef Dispatch_output_iterator< cpp0x::tuple<V...>, cpp0x::tuple<O...> > Base;
 
   template <typename D, typename V_, typename O_>
-  friend class internal::Derivator;
+  friend struct internal::Derivator;
 
 public:
 

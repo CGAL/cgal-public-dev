@@ -1,9 +1,10 @@
 // Copyright (c) 1997  INRIA Sophia-Antipolis (France).
 // All rights reserved.
 //
-// This file is part of CGAL (www.cgal.org); you may redistribute it under
-// the terms of the Q Public License version 1.0.
-// See the file LICENSE.QPL distributed with CGAL.
+// This file is part of CGAL (www.cgal.org).
+// You can redistribute it and/or modify it under the terms of the GNU
+// General Public License as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
 //
 // Licensees holding a valid commercial license may use this file in
 // accordance with the commercial license agreement provided with the software.
@@ -28,7 +29,8 @@
 #include <CGAL/iterator.h>
 
 #ifndef CGAL_TRIANGULATION_2_DONT_INSERT_RANGE_OF_POINTS_WITH_INFO
-#include <CGAL/internal/spatial_sorting_traits_with_indices.h>
+#include <CGAL/Spatial_sort_traits_adapter_2.h>
+#include <CGAL/internal/info_check.h>
 
 #include <boost/iterator/zip_iterator.hpp>
 #include <boost/mpl/and.hpp>
@@ -281,9 +283,9 @@ public:
   std::ptrdiff_t
   insert( InputIterator first, InputIterator last,
           typename boost::enable_if<
-            boost::is_base_of<
-                Point,
-                typename std::iterator_traits<InputIterator>::value_type
+            boost::is_convertible<
+                typename std::iterator_traits<InputIterator>::value_type,
+                Point
             >
           >::type* = NULL
   )
@@ -307,6 +309,7 @@ public:
 
 #ifndef CGAL_TRIANGULATION_2_DONT_INSERT_RANGE_OF_POINTS_WITH_INFO
 private:  
+  //top stands for tuple-or-pair
   template <class Info>
   const Point& top_get_first(const std::pair<Point,Info>& pair) const { return pair.first; }
   template <class Info>
@@ -320,10 +323,10 @@ private:
   std::ptrdiff_t insert_with_info(InputIterator first,InputIterator last)
   {
     size_type n = this->number_of_vertices();
-    std::vector<std::size_t> indices;
+    std::vector<std::ptrdiff_t> indices;
     std::vector<Point> points;
     std::vector<typename Tds::Vertex::Info> infos;
-    std::size_t index=0;
+    std::ptrdiff_t index=0;
     for (InputIterator it=first;it!=last;++it){
       Tuple_or_pair value=*it;
       points.push_back( top_get_first(value)  );
@@ -331,14 +334,13 @@ private:
       indices.push_back(index++);
     }
 
-    typedef internal::Vector_property_map<Point> Point_pmap;
-    typedef internal::Spatial_sort_traits_with_property_map_2<Geom_traits,Point_pmap> Search_traits;
+    typedef Spatial_sort_traits_adapter_2<Geom_traits,Point*> Search_traits;
     
-    spatial_sort(indices.begin(),indices.end(),Search_traits(Point_pmap(points),geom_traits()));
+    spatial_sort(indices.begin(),indices.end(),Search_traits(&(points[0]),geom_traits()));
 
     Vertex_handle v_hint;
     Face_handle hint;
-    for (typename std::vector<std::size_t>::const_iterator
+    for (typename std::vector<std::ptrdiff_t>::const_iterator
       it = indices.begin(), end = indices.end();
       it != end; ++it){
       v_hint = insert(points[*it], hint);
@@ -358,7 +360,7 @@ public:
   insert( InputIterator first,
           InputIterator last,
           typename boost::enable_if<
-            boost::is_same<
+            boost::is_convertible<
               typename std::iterator_traits<InputIterator>::value_type,
               std::pair<Point,typename internal::Info_check<typename Tds::Vertex>::type>
             > >::type* =NULL
@@ -373,8 +375,8 @@ public:
           boost::zip_iterator< boost::tuple<InputIterator_1,InputIterator_2> > last,
           typename boost::enable_if<
             boost::mpl::and_<
-              boost::is_same< typename std::iterator_traits<InputIterator_1>::value_type, Point >,
-              boost::is_same< typename std::iterator_traits<InputIterator_2>::value_type, typename internal::Info_check<typename Tds::Vertex>::type >
+              boost::is_convertible< typename std::iterator_traits<InputIterator_1>::value_type, Point >,
+              boost::is_convertible< typename std::iterator_traits<InputIterator_2>::value_type, typename internal::Info_check<typename Tds::Vertex>::type >
             >
           >::type* =NULL
   )
@@ -916,10 +918,27 @@ remove_and_give_new_faces(Vertex_handle v, OutputItFaces fit)
         afi++) *fit++ = afi;
   }
   else {
+    #ifdef CGAL_HAS_THREADS  
+    static boost::thread_specific_ptr< int > maxd_ptr;
+    static boost::thread_specific_ptr< std::vector<Face_handle> > f_ptr;
+    static boost::thread_specific_ptr< std::vector<int> > i_ptr;
+    static boost::thread_specific_ptr< std::vector<Vertex_handle> > w_ptr;
+    if (maxd_ptr.get() == NULL) {
+      maxd_ptr.reset(new int(30));
+      f_ptr.reset(new std::vector<Face_handle>(*maxd_ptr));
+      i_ptr.reset(new std::vector<int>(*maxd_ptr));
+      w_ptr.reset(new std::vector<Vertex_handle>(*maxd_ptr));
+    }
+    int& maxd=*maxd_ptr;
+    std::vector<Face_handle>& f=*f_ptr;
+    std::vector<int>& i=*i_ptr;
+    std::vector<Vertex_handle>& w=*w_ptr;
+    #else
     static int maxd=30;
     static std::vector<Face_handle> f(maxd);
     static std::vector<int> i(maxd);
     static std::vector<Vertex_handle> w(maxd);
+    #endif
     int d;
     remove_degree_init(v,f,w,i,d,maxd);
     remove_degree_triangulate(v,f,w,i,d);
@@ -943,10 +962,27 @@ remove(Vertex_handle v)
 
   if ( this->dimension() <= 1) { Triangulation::remove(v); return; }
 
+  #ifdef CGAL_HAS_THREADS  
+  static boost::thread_specific_ptr< int > maxd_ptr;
+  static boost::thread_specific_ptr< std::vector<Face_handle> > f_ptr;
+  static boost::thread_specific_ptr< std::vector<int> > i_ptr;
+  static boost::thread_specific_ptr< std::vector<Vertex_handle> > w_ptr;
+  if (maxd_ptr.get() == NULL) {
+    maxd_ptr.reset(new int(30));
+    f_ptr.reset(new std::vector<Face_handle>(*maxd_ptr));
+    i_ptr.reset(new std::vector<int>(*maxd_ptr));
+    w_ptr.reset(new std::vector<Vertex_handle>(*maxd_ptr));
+  }
+  int& maxd=*maxd_ptr;
+  std::vector<Face_handle>& f=*f_ptr;
+  std::vector<int>& i=*i_ptr;
+  std::vector<Vertex_handle>& w=*w_ptr;
+  #else
   static int maxd=30;
   static std::vector<Face_handle> f(maxd);
   static std::vector<int> i(maxd);
   static std::vector<Vertex_handle> w(maxd);
+  #endif
   remove_degree_init(v,f,w,i,d,maxd);
   if (d == 0) return; //  dim is going down
   remove_degree_triangulate(v,f,w,i,d);
@@ -2089,10 +2125,27 @@ move_if_no_collision(Vertex_handle v, const Point &p) {
 
   {
     int d;
+    #ifdef CGAL_HAS_THREADS  
+    static boost::thread_specific_ptr< int > maxd_ptr;
+    static boost::thread_specific_ptr< std::vector<Face_handle> > f_ptr;
+    static boost::thread_specific_ptr< std::vector<int> > i_ptr;
+    static boost::thread_specific_ptr< std::vector<Vertex_handle> > w_ptr;
+    if (maxd_ptr.get() == NULL) {
+      maxd_ptr.reset(new int(30));
+      f_ptr.reset(new std::vector<Face_handle>(*maxd_ptr));
+      i_ptr.reset(new std::vector<int>(*maxd_ptr));
+      w_ptr.reset(new std::vector<Vertex_handle>(*maxd_ptr));
+    }
+    int& maxd=*maxd_ptr;
+    std::vector<Face_handle>& f=*f_ptr;
+    std::vector<int>& i=*i_ptr;
+    std::vector<Vertex_handle>& w=*w_ptr;
+    #else
     static int maxd=30;
     static std::vector<Face_handle> f(maxd);
     static std::vector<int> i(maxd);
     static std::vector<Vertex_handle> w(maxd);
+    #endif
     remove_degree_init(v,f,w,i,d,maxd);
     remove_degree_triangulate(v,f,w,i,d);
   }
@@ -2196,7 +2249,6 @@ move_if_no_collision_and_give_new_faces(Vertex_handle v,
   CGAL_triangulation_precondition(!this->is_infinite(v));	
   if(v->point() == p) return v;
 
-  typedef std::list<Face_handle>                        Faces_list;	
   const int dim = this->dimension();
 
   if(dim == 2) {
@@ -2307,10 +2359,27 @@ move_if_no_collision_and_give_new_faces(Vertex_handle v,
 
 
   {
+    #ifdef CGAL_HAS_THREADS  
+    static boost::thread_specific_ptr< int > maxd_ptr;
+    static boost::thread_specific_ptr< std::vector<Face_handle> > f_ptr;
+    static boost::thread_specific_ptr< std::vector<int> > i_ptr;
+    static boost::thread_specific_ptr< std::vector<Vertex_handle> > w_ptr;
+    if (maxd_ptr.get() == NULL) {
+      maxd_ptr.reset(new int(30));
+      f_ptr.reset(new std::vector<Face_handle>(*maxd_ptr));
+      i_ptr.reset(new std::vector<int>(*maxd_ptr));
+      w_ptr.reset(new std::vector<Vertex_handle>(*maxd_ptr));
+    }
+    int& maxd=*maxd_ptr;
+    std::vector<Face_handle>& f=*f_ptr;
+    std::vector<int>& i=*i_ptr;
+    std::vector<Vertex_handle>& w=*w_ptr;
+    #else
     static int maxd=30;
     static std::vector<Face_handle> f(maxd);
     static std::vector<int> i(maxd);
     static std::vector<Vertex_handle> w(maxd);
+    #endif
     int d;
     remove_degree_init(v,f,w,i,d,maxd);
     remove_degree_triangulate(v,f,w,i,d);
