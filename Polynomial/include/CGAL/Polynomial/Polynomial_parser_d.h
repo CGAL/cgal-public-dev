@@ -57,20 +57,15 @@ private:
 
 } // namespace internal
 
-//! default policy: reads in a coefficient of type \c InputCoeff from the input
-//! stream and converts it to \c Poly_d_ coefficients type using provided
-//! type coercion
-template < class Poly_d_, class InputCoeff =
-        typename CGAL::Polynomial_traits_d< Poly_d_ >::
-            Innermost_coefficient_type >
+//! default policy: reads in a polynomial of type \c Polynomial_d_ from the
+//! input stream without any conversions
+template < class Polynomial_d_ >
 struct Default_parser_policy {
 
     //! first template argument type
-    typedef Poly_d_ Poly_d;
-    //! second template argument type
-    typedef InputCoeff Input_coeff;
+    typedef Polynomial_d_ Polynomial_d;
     //! coefficient type
-    typedef typename  CGAL::Polynomial_traits_d< Poly_d >::
+    typedef typename  CGAL::Polynomial_traits_d< Polynomial_d >::
         Innermost_coefficient_type Coeff;
 
     enum CoeffType {
@@ -96,7 +91,7 @@ struct Default_parser_policy {
     }
 
     virtual Coeff read_coeff_proxy(std::istream& is, CoeffType) const {
-        return _read_coeff< Input_coeff >(is);
+        return _read_coeff< Coeff >(is);
     }
 
     virtual ~Default_parser_policy() {
@@ -120,25 +115,25 @@ protected:
 
 };
 
-template < class Poly_d_, class InputCoeff >
-const char * Default_parser_policy< Poly_d_, InputCoeff >::
+template < class Polynomial_d_ >
+const char * Default_parser_policy< Polynomial_d_ >::
         var_names_lower = "xyzw";
 
-template < class Poly_d_, class InputCoeff >
-const char * Default_parser_policy< Poly_d_, InputCoeff >::
+template < class Polynomial_d_ >
+const char * Default_parser_policy< Polynomial_d_ >::
         var_names_upper = "XYZW";
 
 //! This parser policy allows to mix integer and rational coefficients in a
-//! single equation. Appropriate type coercion with the \c Poly_d_ coefficient
+//! single equation. Appropriate type coercion with the \c Polynomial_d_ coefficient
 //! type must be provided
-template < class Poly_d_ >
+template < class Polynomial_d_ >
 struct Mixed_rational_parser_policy :
-        public Default_parser_policy< Poly_d_ > {
+        public Default_parser_policy< Polynomial_d_ > {
 
     //! template argument type
-    typedef Poly_d_ Poly_d;
+    typedef Polynomial_d_ Polynomial_d;
     //! base class
-    typedef Default_parser_policy< Poly_d > Base;
+    typedef Default_parser_policy< Polynomial_d > Base;
     //! type of polynomial coefficient
     typedef typename Base::Coeff Coeff;
 
@@ -215,17 +210,17 @@ protected:
 
 //! This parser policy allows to mix integer, rational and floating-point
 //! coefficients in a single equation. Appropriate type coercion with the
-//! \c Poly_d_ coefficient type must be provided
+//! \c Polynomial_d_ coefficient type must be provided
 //! \c FP_rounding optional parameter can be used to round the floating-point
 //! number to desired precision before returning it to the parser
-template < class Poly_d_/*, class FP_rounding = CGAL::Identity<KeyType_>*/ >
+template < class Polynomial_d_/*, class FP_rounding = CGAL::Identity<KeyType_>*/ >
 struct Mixed_floating_point_parser_policy :
-        public Mixed_rational_parser_policy< Poly_d_ > {
+        public Mixed_rational_parser_policy< Polynomial_d_ > {
 
     //! template argument type
-    typedef Poly_d_ Poly_d;
+    typedef Polynomial_d_ Polynomial_d;
     //! base class
-    typedef Mixed_rational_parser_policy< Poly_d > Base;
+    typedef Mixed_rational_parser_policy< Polynomial_d > Base;
     //! type of polynomial coefficient
     typedef typename Base::Coeff Coeff;
 
@@ -321,25 +316,25 @@ struct Mixed_floating_point_parser_policy :
  * (y-1)^4 + (-1)*y^3 + (x + z)^2 - (2123234523*x^2 - 2*y*y*x + 3*x*132123)^3
  * (y + x - z + w - 3)^3 = x + y - 123/12312 + 1.00001z*x^2
  */
-template <class Poly_d_, class ParserPolicy =
-                    Default_parser_policy< Poly_d_ > >
+template <class Polynomial_d_, class ParserPolicy =
+                    Default_parser_policy< Polynomial_d_ > >
 struct Polynomial_parser_d
 {
     //!\name public typedefs
     //!@{
 
     //! this instance's template argument
-    typedef Poly_d_ Poly_d;
+    typedef Polynomial_d_ Polynomial_d;
     //! this instance's second template argument
     typedef ParserPolicy Policy;
     
     //! polynomial policy
-    typedef CGAL::Polynomial_traits_d< Poly_d > PT;
+    typedef CGAL::Polynomial_traits_d< Polynomial_d > PT;
 
     //! polynomial coefficient type
     typedef typename Policy::Coeff NT;
     //! multivariate dimension
-    static const int d = CGAL::internal::Dimension< Poly_d >::value;
+    static const int d = CGAL::internal::Dimension< Polynomial_d >::value;
 
     //!@}
 public: 
@@ -352,7 +347,7 @@ public:
     }
 
     //! \brief functor invokation operator
-    bool operator()(const std::string& in, Poly_d& poly) {
+    bool operator()(const std::string& in, Polynomial_d& poly) {
         
         try {
             // remove white spaces from the string: look for all possible
@@ -376,7 +371,7 @@ public:
             poly = get_poly(s);
 
             if(loc != std::string::npos) {
-                Poly_d tmp = get_poly(rhs);
+                Polynomial_d tmp = get_poly(rhs);
                 poly -= tmp;
             }
         } 
@@ -421,12 +416,12 @@ protected:
 
     //! constructs {x/y}^exp and returns the result as bivariate polynomial 
     //! \c res \c var encodes a variable (x or y) 
-    Poly_d construct_monomial(int idx, unsigned int exp) {
-        static Poly_d one(NT(1));
+    Polynomial_d construct_monomial(int idx, unsigned int exp) {
+        static Polynomial_d one(NT(1));
         if(exp == 0) // just return 1
             return one;
         typename PT::Shift shift;
-        Poly_d monom = shift(one, exp, idx);
+        Polynomial_d monom = shift(one, exp, idx);
         return monom;
     }
 
@@ -444,12 +439,12 @@ protected:
         return true;
     }
 
-    void get_basic_term(std::istringstream& is, Poly_d& res)
+    void get_basic_term(std::istringstream& is, Polynomial_d& res)
     {
         char ch = is.peek();
         int idx = -1;
 
-        Poly_d tmp;
+        Polynomial_d tmp;
         NT coeff;
         unsigned int which_case = 0, power = 1;
 
@@ -494,7 +489,7 @@ protected:
         switch(which_case) {
         case 0:
             coeff = CGAL::ipower(coeff, static_cast< long >(power));
-            tmp = Poly_d(coeff);
+            tmp = Polynomial_d(coeff);
             break;
         case 1:
             tmp = construct_monomial(idx, power);
@@ -509,13 +504,13 @@ protected:
         res = tmp;
     }
     
-    void get_term(std::istringstream& is, Poly_d& res)
+    void get_term(std::istringstream& is, Polynomial_d& res)
     {
         if(is.eof()) {
-            res = Poly_d(NT(0));
+            res = Polynomial_d(NT(0));
             return;
         }
-        Poly_d mul;
+        Polynomial_d mul;
         get_basic_term(is, mul);
         
         char ch = is.peek();
@@ -526,7 +521,7 @@ protected:
             // a '+' or '-' sign.
             if(ch == '*') 
                 is.ignore(1);
-            Poly_d tmp;
+            Polynomial_d tmp;
             get_basic_term(is, tmp);
             mul *= tmp;
             ch = is.peek();
@@ -536,29 +531,29 @@ protected:
         //std::cout << "getterm result: " << res << "\n";
     }
     
-    Poly_d get_poly(std::string &s)
+    Polynomial_d get_poly(std::string &s)
     {
        //std::cout << "getpoly: " << s << "\n";
         std::size_t len = s.length();
         if(len == 0) // zero polynomial
-            return Poly_d(NT(0));
+            return Polynomial_d(NT(0));
                
         len = s.length();
         std::istringstream is(s);
-        Poly_d res;
+        Polynomial_d res;
         // res will be the polynomial in which we accumulate the
         // sum and difference of the different terms.
         if(is.peek() == '-') {
             is.ignore(1);
             get_term(is, res);
-            res *= Poly_d(NT(-1)); // negate polynomial
+            res *= Polynomial_d(NT(-1)); // negate polynomial
         } else 
             get_term(is, res);
         
         //  here ind either points to +/- or to the end of string        
         while(!is.eof()) {
             
-            Poly_d tmp;
+            Polynomial_d tmp;
             char ch = is.get(); // must be +/-
             get_term(is, tmp);
             
