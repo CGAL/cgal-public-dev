@@ -112,9 +112,9 @@ public:
       
       decomp(x, num, denom);
       typename Real_embeddable_extension< typename FT::Numerator_type >::Ceil_log2_abs log2_abs_num;
-      typename Real_embeddable_extension< typename FT::Denominator_type >::Ceil_log2_abs log2_abs_den;
+      typename Real_embeddable_extension< typename FT::Denominator_type >::Floor_log2_abs log2_abs_den;
       
-      return std::max(log2_abs_num(num), log2_abs_den(denom));
+      return log2_abs_num(CGAL::abs(num)) - log2_abs_den(CGAL::abs(denom));
     }
   };
 
@@ -161,9 +161,8 @@ class Rounding_ak_d_1 : public AlgebraicKernel_d_1 {
       Bound l, u; 
       
       typedef typename CGAL::Get_arithmetic_kernel< Bound >::Arithmetic_kernel::Bigfloat_interval BFI;
-      long old_prec = CGAL::set_precision(BFI(), prec);
       prec = std::max(prec, 2);
-      CGAL::set_precision(BFI(), prec);
+      long old_prec = CGAL::set_precision(BFI(), prec);
       l = CGAL::lower(CGAL::convert_to_bfi(intv.first));
       u = CGAL::upper(CGAL::convert_to_bfi(intv.second));
       CGAL::set_precision(BFI(), old_prec);
@@ -181,15 +180,19 @@ class Rounding_ak_d_1 : public AlgebraicKernel_d_1 {
         
         typename Algebraic_kernel_d_1::Approximate_absolute_1 approx;
         
+        std::pair<Bound, Bound> r = approx(x, prec);
         if (prec > 0) {
         
-          prec = std::max(2,prec); // for GMP types
-          return Rounding_algebraic_kernel_d_1::_round(approx(x, prec), prec+3);
+          long a_prec = std::max(2,prec); // for GMP types
+          typename Real_embeddable_extension< Bound >::Ceil_log2_abs  log2_abs;
+          a_prec = std::max(a_prec, 
+                            a_prec + log2_abs(std::max(CGAL::abs(r.first), CGAL::abs(r.second))));
+          return Rounding_algebraic_kernel_d_1::_round(approx(x, prec), a_prec);
 
         }
         
         // else
-        return approx(x, prec);
+        return r;
       }
     };
 
@@ -199,25 +202,18 @@ class Rounding_ak_d_1 : public AlgebraicKernel_d_1 {
 
       std::pair<Bound,Bound>
 	operator()(const Algebraic_real_1& x, int prec) const {
-
+        
 	typename Algebraic_kernel_d_1::Approximate_relative_1 approx;
-       
+        
         if (prec > 0) {
-          
+        
           prec = std::max(2,prec); // for GMP types
-          std::pair<Bound, Bound> r = approx(x, prec);
-          
-          typename Real_embeddable_extension< Bound >::Ceil_log2_abs  log2_abs;
+          return Rounding_algebraic_kernel_d_1::_round(approx(x, prec), prec);
 
-          // TODO check "abs"
-          long r_prec = std::abs(std::max(log2_abs(r.first), log2_abs(r.second)));
-          r_prec += (long)prec;
-
-          return Rounding_algebraic_kernel_d_1::_round(r, r_prec);
         }
-
+        
+        // else
         return approx(x, prec);
-;
       }
     };
 
