@@ -2436,7 +2436,7 @@ public:
             CGAL::internal::Real_roots< Algebraic_real_1, Num_isolator > real_roots;
             real_roots(p, std::back_inserter(p_roots));
 #else
-            kernel()->solve_1_object()(p,false,std::back_inserter(p_roots);
+            kernel()->solve_1_object()(p,false,std::back_inserter(p_roots));
 #endif
             this->ptr()->intermediate_cache.insert(std::make_pair(r,p_roots));
 
