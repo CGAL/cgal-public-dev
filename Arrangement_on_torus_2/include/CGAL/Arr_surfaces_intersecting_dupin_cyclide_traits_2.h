@@ -1265,7 +1265,7 @@ public:
         return compare_x_near_boundary_2(*this, cv2, ce);
     }   
 
-#undef CGAL_CKvA_2_GRAB_CK_FUNCTOR_FOR_ARC(X, Y) 
+#undef CGAL_CKvA_2_GRAB_CK_FUNCTOR_FOR_ARC
 
 private:
 
@@ -1386,10 +1386,6 @@ public:
   typedef Coefficient_ Coefficient;
 
 private:
-
-  //! type of arithmetic kernel
-  typedef typename 
-  CGAL::Get_arithmetic_kernel< Coefficient >::Arithmetic_kernel AK;
 
   // TODO filtered variants?
   
