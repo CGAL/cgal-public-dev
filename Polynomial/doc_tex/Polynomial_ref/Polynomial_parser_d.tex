@@ -2,14 +2,17 @@
 % \section{Introduction}
 % 
 
-\begin{ccRefClass}{Polynomial_parser_d< Poly_d_, ParserPolicy >}
+\begin{ccRefClass}{Polynomial_parser_d< Polynomial_d_, ParserPolicy >}
 \def\ccTagOperatorLayout{\ccFalse}
 
 \ccInclude{CGAL/Polynomial/Polynomial_parser_d.h}
 
 \ccDefinition
 
-The polnomial parser extends the functionality of \ccc{operator >>} provided by \ccc{CGAL::Polynomial<Coeff>} with the ability to input polynomials in a human-readable format.
+The polynomial parser provide the functionality to read polynomials in a human-readable format which
+is not directly supported by \ccc{operator >>} of \ccc{CGAL::Polynomial<Coeff>}. However, note that,
+the polynomial parser is \ccc{not} a replacement or extension of the default \ccc{operator >>}. Instead,
+it is available as an independent feature..
 
 The parser's behavior is fully customizeable vie the so-called {\em parser policy} 
 which is supplied as a template parameter to the parser. 
@@ -23,7 +26,7 @@ or rename polynomial variables.
 
 \ccParameters
 The parser is instantiated with a type 
-of polynomials constructed \ccc{Poly_d_} and the corresponding parser policy \ccc{ParserPolicy}. 
+of polynomials constructed \ccc{Polynomial_d_} and the corresponding parser policy \ccc{ParserPolicy}. 
 
 
 \ccCreation
@@ -42,7 +45,7 @@ of polynomials constructed \ccc{Poly_d_} and the corresponding parser policy \cc
 
 \ccMethod{bool 
 operator()
-(const std::string& in, Poly_d_& poly);}
+(const std::string& in, Polynomial_d_& poly);}
 {Parses the input string \ccc{in} and constructs the resulting polynomial \ccc{poly}. 
 Returns \ccc{true} if parsing was successful.} 
 
@@ -66,10 +69,9 @@ Parser policy concept defines interface which any custom policy must provide.
 
 \ccCreationVariable{policy}
 
-\ccNestedType{Poly_d}{Type of the output polynomial to be constructed.}\ccGlue
-\ccNestedType{Input_coeff}{Type of polynomial coefficients as they are read from the input stream using \ccc{operator >>}. This can differ from the 
-innermost coefficient type of \ccc{Poly_d} if any type conversions take place.}\ccGlue
-\ccNestedType{Coeff}{Innermost coefficient type of \ccc{Poly_d}.}
+\ccNestedType{Polynomial_d}{Type of the output polynomial to be constructed.}
+\ccGlue
+\ccNestedType{Coeff}{Innermost coefficient type of \ccc{Polynomial_d}.}
 
 \ccOperations
 \ccMethod{Coeff read_coefficient(std::istream& is) const;}
@@ -80,23 +82,23 @@ innermost coefficient type of \ccc{Poly_d} if any type conversions take place.}\
 if the degree \ccc{deg} of a monomial being parsed lies within the accepted range and \ccc{false} otherwise.}
 
 \ccHasModels
-\ccc{CGAL::Default_parser_policy< Poly_d_, InputCoeff >}\\
-\ccc{CGAL::Mixed_rational_parser_policy< Poly_d_ >}\\
-\ccc{CGAL::Mixed_floating_point_parser_policy< Poly_d_ >}\\
+\ccc{CGAL::Default_parser_policy< Polynomial_d_ >}\\
+\ccc{CGAL::Mixed_rational_parser_policy< Polynomial_d_ >}\\
+\ccc{CGAL::Mixed_floating_point_parser_policy< Polynomial_d_ >}\\
 
 If no \ccc{ParserPolicy} template parameter is supplied to the parser class,
 then the parser is instantiated with a default parser policy. 
 
 \ccSeeAlso
 % \ccRefIdfierPage{Polynomial_parser_d}\\
-\ccRefIdfierPage{CGAL::Polynomial_parser_d< Poly_d_, ParserPolicy >}
+\ccRefIdfierPage{CGAL::Polynomial_parser_d< Polynomial_d_, ParserPolicy >}
 
 \end{ccRefConcept}
 
-\begin{ccRefClass} {Default_parser_policy< Poly_d_, InputCoeff >}
+\begin{ccRefClass} {Default_parser_policy< Polynomial_d_ >}
 
 \ccDefinition
-The default policy provides no type explicit conversions: in other words, polynomials are parsed ``as it is'' implying that there must be implicit type coercion between coefficients read from the input stream and the resulting polynomial coefficients. There must be an implicit type coercion between {\tt InputCoeff} and the type of innermost (scalar) coefficients of {\tt Poly\_d\_}.
+The default policy provides no type explicit conversions: in other words, polynomials are parsed ``as it is'', the coefficients of type \ccc{Polynomial_d_::Innermost_coefficient_type} are read from the input stream and are used to construct the resulting polynomial.
 
 \ccInclude{CGAL/Polynomial/Polynomial_parser_d.h}
 
@@ -105,8 +107,7 @@ The default policy provides no type explicit conversions: in other words, polyno
 
 \ccTypes
 
-\ccNestedType{Poly_d}{See \ccc{ParserPolicy} concept.}\ccGlue
-\ccNestedType{Input_coeff}{See \ccc{ParserPolicy} concept.}\ccGlue
+\ccNestedType{Polynomial_d}{See \ccc{ParserPolicy} concept.}\ccGlue
 
 % \ccInheritsFrom
 % \ccc{Fb}
@@ -119,11 +120,11 @@ The default policy provides no type explicit conversions: in other words, polyno
 
 \end{ccRefClass}
 
-\begin{ccRefClass} {Mixed_rational_parser_policy< Poly_d_, InputCoeff >}
+\begin{ccRefClass} {Mixed_rational_parser_policy< Polynomial_d_ >}
 
 \ccDefinition
-This parser policy allows mixing rational and integer coefficients in the same expression. \ccc{Poly_d_} must be a polynomial with rational coefficients or, otherwise, there must be an implicit coercion between \ccc{Rational} number type as defined below and
-the innermost coefficients type of \ccc{Poly_d_}. 
+This parser policy allows mixing rational and integer coefficients in the same expression. \ccc{Polynomial_d_} must be a polynomial with rational coefficients or, otherwise, there must be an implicit coercion between \ccc{Rational} number type as defined below and
+the innermost coefficients type of \ccc{Polynomial_d_}. 
 
 \ccInclude{CGAL/Polynomial/Polynomial_parser_d.h}
 
@@ -135,10 +136,10 @@ the innermost coefficients type of \ccc{Poly_d_}.
 
 \ccTypes
 
-\ccNestedType{Poly_d}{See \ccc{ParserPolicy} concept.}\ccGlue
-\ccNestedType{Input_coeff}{See \ccc{ParserPolicy} concept.}\ccGlue
-\ccNestedType{Integer}{Integer number type provided by \ccc{ArithmeticKernel} for \ccc{Input_coeff} number type.}\ccGlue
-\ccNestedType{Rational}{Rational number type provided by \ccc{ArithmeticKernel} for \ccc{Input_coeff} number type.}\ccGlue
+\ccNestedType{Polynomial_d}{See \ccc{ParserPolicy} concept.}\ccGlue
+\ccNestedType{Coeff}{See \ccc{ParserPolicy} concept.}\ccGlue
+\ccNestedType{Integer}{Integer number type provided by \ccc{ArithmeticKernel} for \ccc{Coeff} number type.}\ccGlue
+\ccNestedType{Rational}{Rational number type provided by \ccc{ArithmeticKernel} for \ccc{Coeff} number type.}\ccGlue
 
 
 \ccCreation
@@ -149,11 +150,11 @@ the innermost coefficients type of \ccc{Poly_d_}.
 
 \end{ccRefClass}
 
-\begin{ccRefClass} {Mixed_floating_point_parser_policy< Poly_d_, InputCoeff >}
+\begin{ccRefClass} {Mixed_floating_point_parser_policy< Polynomial_d_ >}
 
 \ccDefinition
-This parser policy allows mixing rational and integer and floating-point (BigFloat) coefficients in the same expression. \ccc{Poly_d_} must be a polynomial with rational coefficients or, otherwise, there must be an implicit coercion between \ccc{Rational} number type as defined below and
-the innermost coefficients type of \ccc{Poly_d_}. 
+This parser policy allows mixing rational and integer and floating-point (BigFloat) coefficients in the same expression. \ccc{Polynomial_d_} must be a polynomial with rational coefficients or, otherwise, there must be an implicit coercion between \ccc{Rational} number type as defined below and
+the innermost coefficients type of \ccc{Polynomial_d_}. 
 
 \ccInclude{CGAL/Polynomial/Polynomial_parser_d.h}
 
@@ -165,11 +166,11 @@ the innermost coefficients type of \ccc{Poly_d_}.
 
 \ccTypes
 
-\ccNestedType{Poly_d}{See \ccc{ParserPolicy} concept.}\ccGlue
-\ccNestedType{Input_coeff}{See \ccc{ParserPolicy} concept.}\ccGlue
-\ccNestedType{Integer}{Integer number type provided by \ccc{ArithmeticKernel} for \ccc{Input_coeff} number type.}\ccGlue
-\ccNestedType{Rational}{Rational number type provided by \ccc{ArithmeticKernel} for \ccc{Input_coeff} number type.}\ccGlue
-\ccNestedType{BigFloat}{BigFloat number type provided by \ccc{ArithmeticKernel} for \ccc{Input_coeff} number type.}\ccGlue
+\ccNestedType{Polynomial_d}{See \ccc{ParserPolicy} concept.}\ccGlue
+\ccNestedType{Coeff}{See \ccc{ParserPolicy} concept.}\ccGlue
+\ccNestedType{Integer}{Integer number type provided by \ccc{ArithmeticKernel} for \ccc{Coeff} number type.}\ccGlue
+\ccNestedType{Rational}{Rational number type provided by \ccc{ArithmeticKernel} for \ccc{Coeff} number type.}\ccGlue
+\ccNestedType{BigFloat}{BigFloat number type provided by \ccc{ArithmeticKernel} for \ccc{Coeff} number type.}\ccGlue
 
 \ccCreation
 \ccCreationVariable{fp_policy}
@@ -189,14 +190,14 @@ the innermost coefficients type of \ccc{Poly_d_}.
 % 
 % \ccStyle{Alpha_shape_2<Rt>}
 % \begin{lstlisting}[frame=none]
-% template < class Poly_d_, class InputCoeff >
+% template < class Polynomial_d_, class InputCoeff >
 % struct Default_parser_policy {
 %     // first template argument type
-%     typedef Poly_d_ Poly_d;
+%     typedef Polynomial_d_ Polynomial_d;
 %     // second template argument type
 %     typedef InputCoeff Input_coeff;
 %     // coefficient type
-%     typedef typename  CGAL::Polynomial_traits_d< Poly_d >::
+%     typedef typename  CGAL::Polynomial_traits_d< Polynomial_d >::
 %         Innermost_coefficient_type Coeff;
 % 
 %     // default constructor
