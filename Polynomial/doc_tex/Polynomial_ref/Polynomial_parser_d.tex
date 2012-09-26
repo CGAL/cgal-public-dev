@@ -14,12 +14,12 @@ is not directly supported by \ccc{operator >>} of \ccc{CGAL::Polynomial<Coeff>}.
 the polynomial parser is \ccc{not} a replacement or extension of the default \ccc{operator >>}. Instead,
 it is available as an independent feature..
 
-The parser's behavior is fully customizeable vie the so-called {\em parser policy} 
+The parser's behavior is fully customizeable via the so-called {\em parser policy} 
 which is supplied as a template parameter to the parser. 
 In the first place, the policy is responsible for reading polynomial 
 coefficients from the input stream and performing all necessary type conversions
 for the output polynomial. This, for instance, allows us to mix integer, rational and 
-floating-point numbers in a single expression as demonstrated in the above examples.
+floating-point numbers in a single expression (for examples, please see CGAL users manual).
 Besides, the parser policy can be used to perform maximal degree check,
 detect various erroneous situations (such as division by zero) 
 or rename polynomial variables.
