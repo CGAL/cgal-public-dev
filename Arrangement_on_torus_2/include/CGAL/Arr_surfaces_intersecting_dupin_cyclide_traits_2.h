@@ -1267,7 +1267,7 @@ public:
 
 #undef CGAL_CKvA_2_GRAB_CK_FUNCTOR_FOR_ARC
 
-private:
+    // TODO? private:
 
     CGAL::Comparison_result compare_x_at_limit(CGAL::Arr_curve_end ce1, 
                                                const Self& cv2, 

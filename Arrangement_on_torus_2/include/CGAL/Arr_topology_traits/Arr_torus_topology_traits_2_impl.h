@@ -699,11 +699,11 @@ locate_curve_end (const X_monotone_curve_2& cv, Arr_curve_end ind,
 template <class GeomTraits, class Dcel_>
 std::pair<bool, bool>
 Arr_torus_topology_traits_2<GeomTraits,Dcel_>::
-face_split_after_edge_insertion (const Halfedge *prev1,
-                                 const Halfedge *prev2,
-                                 const X_monotone_curve_2& cv) const
+  face_split_after_edge_insertion(std::pair< CGAL::Sign, CGAL::Sign > signs1,
+                                  std::pair< CGAL::Sign, CGAL::Sign > signs2) const
 {
-    // status: correct
+#if 0
+    // status: TODO
 #if CGAL_ARR_TOPOLOGY_TRAITS_VERBOSE 
     std::cout << " RDC-TOP face_split_after_edge_insertion\ncurve: " << cv 
               << std::endl;
@@ -752,6 +752,7 @@ face_split_after_edge_insertion (const Halfedge *prev1,
     // else
     // face is splitted and it forms a new hole in the old
     //std::cout << "face_split true, true";
+#endif
     return std::make_pair(true, true);
 }
 
