@@ -51,7 +51,11 @@ operator()
 Returns \ccc{true} if parsing was successful.} 
 
 Any user-defined parser policy must be the model of the \ccc{ParserPolicy}
-concept defined below.
+concept.
+
+\ccSeeAlso
+\ccRefIdfierPage{ParserPolicy}
+
 \end{ccRefClass}
 
 \begin{ccRefConcept}{ParserPolicy}
@@ -62,8 +66,12 @@ Parser policy concept defines interface which any custom policy must provide.
 
 \ccConstants
 
-\ccVariable{static const char *var_names_lower;}{Variable names in lower case, given without delimiters, in the order from innermost to the outermost variable, e.g., ``xyzw''}
-\ccVariable{static const char *var_names_upper;}{Variable names in upper case, given without delimiters, in the order from innermost to the outermost variable, e.g., ``XYZW''}
+\ccVariable{static const char *var_names_lower;}
+{Variable names in lower case, given without delimiters, in the order from innermost to the outermost variable, 
+e.g., ``xyzw''}\ccGlue
+\ccVariable{static const char *var_names_upper;}{Variable names in upper case, 
+given without delimiters, in the order from innermost to the outermost variable, 
+e.g., ``XYZW''}\ccGlue
 \ccVariable{static const int n_var_names;}{The number of variable names in the above arrays.}
 
 \ccTypes
@@ -76,23 +84,25 @@ Parser policy concept defines interface which any custom policy must provide.
 
 \ccOperations
 \ccMethod{Coeff read_coefficient(std::istream& is) const;}
-{Reads a polynomial coefficient from the input stream \ccc{is} and converts it to the output type \ccc{Coeff}, \ccc{is} points to the first digit character of the coefficient. Throws an exception of type \ccc{Parser_exception} in case of error.}
-
+{Reads a polynomial coefficient from the input stream \ccc{is} 
+and converts it to the output type \ccc{Coeff}, \ccc{is} points to the first 
+digit character of the coefficient. Throws an exception of type \ccc{Parser_exception} 
+in case of error.}\ccGlue
 \ccMethod{bool exponent_check(unsigned deg);}
 {Performs exponent check on the polynomial coefficients. Returns \ccc{true}
 if the degree \ccc{deg} of a monomial being parsed lies within the accepted range and \ccc{false} otherwise.}
-
-\ccHasModels
-\ccc{CGAL::Default_parser_policy< Polynomial_d_ >}\\
-\ccc{CGAL::Mixed_rational_parser_policy< Polynomial_d_ >}\\
-\ccc{CGAL::Mixed_floating_point_parser_policy< Polynomial_d_ >}\\
-
 If no \ccc{ParserPolicy} template parameter is supplied to the parser class,
-then the parser is instantiated with a default parser policy. 
+then the parser is instantiated with a default parser policy.\\ 
 
 \ccSeeAlso
 % \ccRefIdfierPage{Polynomial_parser_d}\\
 \ccRefIdfierPage{CGAL::Polynomial_parser_d< Polynomial_d_, ParserPolicy >}
+
+\ccHasModels
+
+\ccRefIdfierPage{CGAL::Default_parser_policy< Polynomial_d_ >}\\
+\ccRefIdfierPage{CGAL::Mixed_rational_parser_policy< Polynomial_d_ >}\\
+\ccRefIdfierPage{CGAL::Mixed_floating_point_parser_policy< Polynomial_d_ >}\\
 
 \end{ccRefConcept}
 
@@ -119,12 +129,19 @@ The default policy provides no type explicit conversions: in other words, polyno
 \ccConstructor{Default_parser_policy();}
 {Default constructor.}
 
+\ccSeeAlso
+\ccRefIdfierPage{ParserPolicy}\\
+\ccRefIdfierPage{CGAL::Polynomial_parser_d< Polynomial_d_, ParserPolicy >}
+
+
 \end{ccRefClass}
 
 \begin{ccRefClass} {Mixed_rational_parser_policy< Polynomial_d_ >}
 
 \ccDefinition
-This parser policy allows mixing rational and integer coefficients in the same expression. \ccc{Polynomial_d_} must be a polynomial with rational coefficients or, otherwise, there must be an implicit coercion between \ccc{Rational} number type as defined below and
+This parser policy allows mixing rational and integer coefficients in the same expression. 
+\ccc{Polynomial_d_} must be a polynomial with rational coefficients or, otherwise, 
+there must be an implicit coercion between \ccc{Rational} number type and
 the innermost coefficients type of \ccc{Polynomial_d_}. 
 
 \ccInclude{CGAL/Polynomial/Polynomial_parser_d.h}
@@ -149,12 +166,17 @@ the innermost coefficients type of \ccc{Polynomial_d_}.
 \ccConstructor{Mixed_rational_parser_policy();}
 {Default constructor.}
 
+\ccSeeAlso
+\ccRefIdfierPage{ParserPolicy}\\
+\ccRefIdfierPage{CGAL::Polynomial_parser_d< Polynomial_d_, ParserPolicy >}
+
 \end{ccRefClass}
 
 \begin{ccRefClass} {Mixed_floating_point_parser_policy< Polynomial_d_ >}
 
 \ccDefinition
-This parser policy allows mixing rational and integer and floating-point (BigFloat) coefficients in the same expression. \ccc{Polynomial_d_} must be a polynomial with rational coefficients or, otherwise, there must be an implicit coercion between \ccc{Rational} number type as defined below and
+This parser policy allows mixing rational and integer and floating-point (BigFloat) coefficients in the same expression. \ccc{Polynomial_d_} must be a polynomial with rational coefficients or, otherwise, 
+there must be an implicit coercion between \ccc{Rational} number type and
 the innermost coefficients type of \ccc{Polynomial_d_}. 
 
 \ccInclude{CGAL/Polynomial/Polynomial_parser_d.h}
@@ -178,6 +200,10 @@ the innermost coefficients type of \ccc{Polynomial_d_}.
 
 \ccConstructor{Mixed_floating_point_parser_policy();}
 {Default constructor.}
+
+\ccSeeAlso
+\ccRefIdfierPage{ParserPolicy}\\
+\ccRefIdfierPage{CGAL::Polynomial_parser_d< Polynomial_d_, ParserPolicy >}
 
 \end{ccRefClass}
 
