@@ -3,7 +3,6 @@
 
 #include <CGAL/Algebraic_kernel_1/Arcavoid.h>
 #include <boost/detail/algorithm.hpp>
-#include <boost/detail/is_sorted.hpp>
 
 #include <CGAL/Algebraic_kernel_d/Bitstream_coefficient_kernel.h>
 // For Bitstream-like interface. We offer
@@ -15,6 +14,45 @@ namespace CGAL {
 class Arcavoid_real_root_isolator_tag {};
 class Arcavoid_complex_root_isolator_tag {};
 
+
+namespace internal {
+namespace STL_extension {
+// borrowed from Boost 1.51.0: boost/detail/is_sorted.hpp
+template<class Iterator, class Comp>
+inline Iterator is_sorted_until (Iterator first, Iterator last, Comp c) {
+  if (first == last)
+    return last;
+
+  Iterator it = first; ++it;
+
+  for (; it != last; first = it, ++it)
+    if (c(*it, *first))
+      return it;
+
+  return it;
+}
+
+template<class Iterator>
+inline Iterator is_sorted_until (Iterator first, Iterator last) {
+  typedef typename boost::detail::iterator_traits<Iterator>::value_type
+    value_type;
+
+  typedef std::less<value_type> c;
+
+  return ::boost::detail::is_sorted_until(first, last, c());
+}
+
+template<class Iterator, class Comp>
+inline bool is_sorted (Iterator first, Iterator last, Comp c) {
+  return ::boost::detail::is_sorted_until(first, last, c) == last;
+}
+
+template<class Iterator>
+inline bool is_sorted (Iterator first, Iterator last) {
+  return ::boost::detail::is_sorted_until(first, last) == last;
+}
+} // namespace STL_extension
+} // namespace internal
 
 
 //typedef internal::Square_free_descartes_tag Square_free_arcavoid_tag;
@@ -429,8 +467,8 @@ private:
       real_roots.push_back (c);
     }
 
-    CGAL_postcondition (boost::detail::is_sorted (real_roots.begin(), real_roots.end(),
-                                                  typename Algebraic_complex_1::Compare_real()));
+    CGAL_postcondition (CGAL::internal::STL_extension::is_sorted (real_roots.begin(), real_roots.end(),
+                                                                  typename Algebraic_complex_1::Compare_real()));
   }
 
   void solve_to_n_complex_clusters() {
@@ -474,8 +512,8 @@ private:
       real_roots.push_back (c);
     }
 
-    CGAL_postcondition (boost::detail::is_sorted (real_roots.begin(), real_roots.end(),
-                                                  typename Algebraic_complex_1::Compare_real()));
+    CGAL_postcondition (CGAL::internal::STL_extension::is_sorted (real_roots.begin(), real_roots.end(),
+                                                                  typename Algebraic_complex_1::Compare_real()));
   }
 
   void solve_to_m_real_clusters() {
@@ -541,8 +579,8 @@ private:
       real_roots.push_back (c);
     }
 
-    CGAL_postcondition (boost::detail::is_sorted (real_roots.begin(), real_roots.end(),
-                                                  typename Algebraic_complex_1::Compare_real()));
+    CGAL_postcondition (CGAL::internal::STL_extension::is_sorted (real_roots.begin(), real_roots.end(),
+                                                                  typename Algebraic_complex_1::Compare_real()));
   }
 
 public:
