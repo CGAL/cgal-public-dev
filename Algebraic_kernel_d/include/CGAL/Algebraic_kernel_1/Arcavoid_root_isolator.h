@@ -17,7 +17,10 @@ class Arcavoid_complex_root_isolator_tag {};
 
 namespace internal {
 namespace STL_extension {
-// borrowed from Boost 1.51.0: boost/detail/is_sorted.hpp
+// borrowed from Boost 1.51.0: <boost/detail/is_sorted.hpp>
+// this is just because older Boost releases don't provide is_sorted.
+// TODO : eventually remove this, and replace by C++11 STL extension's is_sorted
+//        or use Boost directly
 template<class Iterator, class Comp>
 inline Iterator is_sorted_until (Iterator first, Iterator last, Comp c) {
   if (first == last)
