@@ -1,0 +1,31 @@
+! resultant of Mandelbrot polynomials of levels n and n-1
+! Seed:    1278076742
+! Degree:  20	(target: 2)
+! Bitsize: 10	(target: 16)
+! Fujiwara bound: 	2^5
+
+dri
+0
+20
+34
+90
+-98
+-482
+-660
+-746
+-500
+218
+542
+329
+120
+-138
+-307
+-150
+34
+36
+2
+8
+13
+6
+1
+

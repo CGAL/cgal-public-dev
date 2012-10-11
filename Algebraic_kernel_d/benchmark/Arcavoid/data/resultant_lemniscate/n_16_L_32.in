@@ -1,0 +1,5 @@
+# resultant of two sparse lemniscate polynomials
+# Degree: 9
+# Target bitsize: 32
+# x^9 + 14*x^8 + 21*x^7 + 57*x^6 + 18*x^5 + (-5)*x^4 + (-60)*x^3 + (-210)*x^2 + (-180)*x + (-45)
+P[9(0,-45)(1,-180)(2,-210)(3,-60)(4,-5)(5,18)(6,57)(7,21)(8,14)(9,1)]
