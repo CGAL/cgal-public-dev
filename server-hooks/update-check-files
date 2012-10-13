@@ -112,7 +112,7 @@ fi
 if [ "$allowsymlinks" != "true" ]
 then
   symlinks=$(git ls-tree -r $newrev | awk '/120000/{print $4}' )
-  if test $(echo -e $symlinks | wc -l) != 0
+  if test $(echo -n $symlinks | wc -l) != 0
   then
     echo "Error: Attempt to push revision $newrev containing a symlink."
     echo
