@@ -10,3 +10,6 @@ Server Hooks:
       update-check-files
 ** we do so for post-receive which calls
      post-receive-email.sh
+     post-receive-push 
+
+New version of hooks from main repo can be obtained by './refresh'
