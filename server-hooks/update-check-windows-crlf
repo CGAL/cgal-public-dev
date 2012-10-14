@@ -32,7 +32,7 @@ fi
 BINARAY_EXT="pdb dll exe png gif jpg"
 
 # returns 1 if the given filename is a binary file
-function IsBinary() 
+IsBinary() 
 {
     result=0
     for ext in $BINARAY_EXT; do
@@ -85,7 +85,7 @@ do
         echo "# Use 'git config core.autocrlf true' to activate CRLF conversion."
         echo "# OR use 'git reset HEAD~1' to undo your last commit and fix the line endings."
         echo "#"
- 	echo "# You might also consider to install a pre-commit hook to your repository, in order to get an
+ 	echo "# You might also consider to install a pre-commit hook to your repository, in order to get" 
 	echo "# notified about this problem earlier."
 	echo "###################################################################################################"
         ret=1
