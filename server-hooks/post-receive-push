@@ -1,3 +1,0 @@
-#!/bin/sh
-export GIT_SSH=/bin/cgal-ssh
-git push --mirror web
