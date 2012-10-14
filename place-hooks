@@ -1,14 +1,6 @@
 #!/bin/bash
 
-# TODO subgit uninstall
-
-# TODO disable svn-write
-
-# TODO remove www.cgal.org directory in cgal-web
-
-# TODO right user
-
-REPO=cgal-web
+REPO=$1
 
 # create branches for hooks
 
@@ -19,29 +11,29 @@ cd /var/git/$REPO
 git remote add hooks ~/cgal-hooks
 git fetch hooks
 
-git checkout --orphan client-hooks
+HC=hooks-for-clients
+git checkout --orphan $HC 
 git rm -fr *
 git commit -m "prepare to place client hooks" 
 git merge -s ours --no-commit hooks/master
 git read-tree --prefix=/ -u hooks/master:client-hooks
 git commit -m "placed client hooks"
-git push origin client-hooks
+git push origin $HC 
 
-git checkout --orphan server-hooks
+HS=hooks-on-server
+git checkout --orphan $HS 
 git rm -fr *
 git commit -m "prepare to place server hooks" 
 git merge -s ours --no-commit hooks/master
 git read-tree --prefix=/ -u hooks/master:server-hooks
 git commit -m "placed server hooks"
-git push origin server-hooks
+git push origin $HS 
 
 # install server hooks
 
 cd /var/git/$REPO.git/hooks
 git init 
-git pull .. server-hooks
-
-# rm -fr /var/git/$REPO
+git pull .. $HS 
 
 # TODO email list
 echo >> /var/git/$REPO.git/config <<EOF
@@ -51,3 +43,6 @@ echo >> /var/git/$REPO.git/config <<EOF
         emailprefix = "[cgal.git]"
         showrev = "git show -C %s; echo" 
 EOF
+
+#delete temporary repo
+rm -fr /var/git/$REPO
