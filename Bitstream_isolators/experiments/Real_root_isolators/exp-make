@@ -1,0 +1,102 @@
+#!/bin/bash
+
+if test "${CGAL_DIR_RELEASE+set}" = set; then
+  MY_CGAL_DIR=$CGAL_DIR_RELEASE
+else
+  MY_CGAL_DIR=$CGAL_DIR
+  echo "WARNING: Using CGAL_DIR and not CGAL_DIR_RELEASE."
+  echo "         CGAL might be configured in Debug mode."
+  echo
+fi
+
+echo "Using CGAL_DIR = $MY_CGAL_DIR"
+
+if [ -e CMakeCache.txt ]; then
+  rm -f CMakeCache.txt
+fi
+
+#if [ -e builds ]; then
+#  rm -fr builds
+#fi
+
+configs=`cat configs.txt`
+
+# possible options
+#configs="gmp-desc gmp-bist gmp-real gmp-star core-desc core-bist core-real core-star rs"
+
+echo "Configurations: $configs"
+echo
+
+if [ ! -e builds ]; then
+  mkdir builds
+fi
+
+for config in $configs; do
+
+  if [ ! -e builds/$config ]; then  
+    mkdir builds/$config
+  fi
+
+  FLAGS=""
+ 
+  echo "Build: $config"
+
+  if [[ "$config" =~ "gmp" ]]; then
+    FLAGS=$FLAGS" -DCGAL_ISOLATE_USE_GMP=1"
+  else 
+    FLAGS=$FLAGS" -DCGAL_ISOLATE_USE_GMP=0"
+  fi
+
+  if [[ "$config" =~ "core" ]]; then
+    FLAGS=$FLAGS" -DCGAL_ISOLATE_USE_CORE=1"
+  else 
+    FLAGS=$FLAGS" -DCGAL_ISOLATE_USE_CORE=0"
+  fi
+
+  if [[ "$config" =~ "rs" ]]; then
+    FLAGS=$FLAGS" -DCGAL_ISOLATE_USE_RS=1"
+  else 
+    FLAGS=$FLAGS" -DCGAL_ISOLATE_USE_RS=0"
+  fi
+
+  if [[ "$config" =~ "desc" ]]; then
+    FLAGS=$FLAGS" -DCGAL_ISOLATE_USE_DESCARTES=1"
+  else 
+    FLAGS=$FLAGS" -DCGAL_ISOLATE_USE_DESCARTES=0"
+  fi
+
+  if [[ "$config" =~ "bist" ]]; then
+    FLAGS=$FLAGS" -DCGAL_ISOLATE_USE_BITSTREAM_DESCARTES=1"
+  else 
+    FLAGS=$FLAGS" -DCGAL_ISOLATE_USE_BITSTREAM_DESCARTES=0"
+  fi
+
+  if [[ "$config" =~ "real" ]]; then
+    FLAGS=$FLAGS" -DCGAL_ISOLATE_USE_REAL_BITSTREAM_DESCARTES=1"
+  else 
+    FLAGS=$FLAGS" -DCGAL_ISOLATE_USE_REAL_BITSTREAM_DESCARTES=0"
+  fi
+
+  if [[ "$config" =~ "star" ]]; then
+    FLAGS=$FLAGS" -DCGAL_ISOLATE_USE_DESCARTES_STAR=1"
+  else 
+    FLAGS=$FLAGS" -DCGAL_ISOLATE_USE_DESCARTES_STAR=0"
+  fi
+
+ 
+#  echo "Configuring with flags: $FLAGS"
+ 
+  cd builds/$config
+  cmake -DCGAL_DIR=$MY_CGAL_DIR -DCGAL_CXX_FLAGS:STRING="$FLAGS -DCGAL_ISOLATE_DEBUG=1 -DCGAL_ISOLATE_VERBOSE=1" -DCGAL_DONT_OVERRIDE_CMAKE_FLAGS=FALSE ../../
+#  make VERBOSE=1
+  make
+  cd ../..
+
+done;
+
+echo
+
+echo "Experimental setup finished. Ready to run sets of experiments.  " 
+
+exit
+

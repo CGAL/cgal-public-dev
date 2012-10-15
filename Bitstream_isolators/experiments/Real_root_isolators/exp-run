@@ -1,0 +1,104 @@
+#!/bin/bash
+
+# Run tests
+
+if test "${2+set}" = set; then
+  LOOPS=$2
+else
+  LOOPS=3
+fi
+
+SPACING=4
+NOW=`date +%Y_%m_%d__%H_%M`
+PWD=`pwd`
+
+WDIR=`mktemp -d $PWD/exp_results__${NOW}__XXXXXXXX` # TODO string
+
+echo "Output directory: $WDIR"
+
+configs=`cat configs.txt`
+
+echo "Configurations: $configs"
+echo
+
+for config in $configs; do
+   if [ $SPACING -lt ${#config} ]; then
+      SPACING=${#config}
+   fi;
+done;
+
+SPACING=$(($SPACING + 2))
+
+# header line
+
+echo -en "File                     #L  " | tee -a $WDIR/results.tbl | tee -a $WDIR/results_plus.tbl
+
+for config in $configs; do
+
+  configname="                                     $config"
+  configname="${configname: -$SPACING}"
+  echo -en "$configname" | tee -a $WDIR/results.tbl | tee -a $WDIR/results_plus.tbl
+
+done;
+
+echo -e "        #Sol" | tee -a $WDIR/results.tbl | tee -a $WDIR/results_plus.tbl
+
+# actual runs
+
+for file in `ls $1`; do
+  
+  filename="$file                                                         " 
+ 
+  echo -en "${filename:0:20}     $(printf %2i $LOOPS)  " | tee -a $WDIR/results.tbl | tee -a $WDIR/results_plus.tbl
+
+  SOLUTIONS=-1
+  INCONSISTENT=0;
+
+  for config in $configs; do
+
+    TIME=0
+    TTIME_RES=0
+    TTIME=0
+    T2=0
+
+    mkdir -p $WDIR/$config
+   
+    for ((i=1;i<=$LOOPS;i+=1)); do
+      ./builds/$config/isolate $1/$file | tee -a $WDIR/$config/$file.out | tee $WDIR/$config/$file.loi.tmp > /dev/null
+      cat $WDIR/$config/$file.loi.tmp | grep -e "TIME total:" -e Set -e \#SOLUTIONS > $WDIR/$config/$file.loi;
+      tSOLUTIONS=`cat $WDIR/$config/$file.loi | grep -e "#SOLUTIONS" | cut -d ":" -f 2`;
+      if [ "$SOLUTIONS" = "-1" ]; then
+        SOLUTIONS=$tSOLUTIONS
+      else 
+        if [ "$SOLUTIONS" != "$tSOLUTIONS" ]; then
+          INCONSISTENT=1;
+        fi
+      fi
+      TIME=`cat $WDIR/$config/$file.loi | grep -e "TIME total" | cut -d ":" -f 2`;
+      rm -f  $WDIR/$config/$file.loi;
+      rm -f  $WDIR/$config/$file.loi.tmp;
+      TTIME=`echo "$TTIME + $TIME" | bc -q 2> /dev/null`
+    done;
+    TTIME=`echo "scale=5; $TTIME / $LOOPS" | bc -q 2> /dev/null`
+ 
+    stime=`echo -en "                $(printf '%.02f' $TTIME)"`
+    stime=${stime: -6}
+
+    stimes="                                                $stime"
+    stimes=${stimes: -${SPACING}}
+    echo -en "$stimes" | tee -a $WDIR/results.tbl | tee -a $WDIR/results_plus.tbl
+
+  done; # loops
+
+  if [ $INCONSISTENT == 1 ]; then
+    echo -e "         INCONSISTENT" | tee -a $WDIR/results.tbl | tee -a $WDIR/results_plus.tbl
+    grep SOLUTIONS $WDIR/*/$file.out | tee -a $WDIR/results_plus.tbl
+  else
+    echo -e "         $(printf %3i $SOLUTIONS)" | tee -a $WDIR/results.tbl | tee -a $WDIR/results_plus.tbl
+  fi
+
+done; # files
+
+exit
+
+

@@ -1,0 +1,1 @@
+Various new (real) root isolation methods using Bitstream ideas

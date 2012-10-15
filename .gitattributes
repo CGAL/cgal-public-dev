@@ -1022,6 +1022,26 @@ BGL/test/BGL/data/triangle.off -text svneol=unset#application/octet-stream
 BGL/test/BGL/data/triangular_hole.off -text svneol=unset#application/octet-stream
 BGL/test/BGL/halfedge_graph_traits_Polyhedron_3.cmd eol=lf
 BGL/test/BGL/properties_Polyhedron_3.cmd eol=lf
+Bitstream_isolators/examples/Bitstream_isolators/Bitstream_isolators.h -text
+Bitstream_isolators/examples/Bitstream_isolators/CheckoutDescartes.cpp -text
+Bitstream_isolators/examples/Bitstream_isolators/CheckoutPolys.cpp -text
+Bitstream_isolators/examples/Bitstream_isolators/Checkout_bitstream_isolators.cpp -text
+Bitstream_isolators/examples/Bitstream_isolators/HelloCGAL.cpp -text
+Bitstream_isolators/experiments/Real_root_isolators/configs.txt -text
+Bitstream_isolators/experiments/Real_root_isolators/data/sqrt/res_FTT_5_4_4 -text
+Bitstream_isolators/experiments/Real_root_isolators/data/sqrt/sqrt2 -text
+Bitstream_isolators/experiments/Real_root_isolators/data/sqrt/sqrt200 -text
+Bitstream_isolators/experiments/Real_root_isolators/exp-make -text
+Bitstream_isolators/experiments/Real_root_isolators/exp-run -text
+Bitstream_isolators/experiments/Real_root_isolators/isolate.cpp -text
+Bitstream_isolators/include/CGAL/Algebraic_kernel_d/Controlled_neighborhood_descartes.h -text
+Bitstream_isolators/include/CGAL/Algebraic_kernel_d/Descartes_star.h -text
+Bitstream_isolators/include/CGAL/Algebraic_kernel_d/Real_bitstream_descartes.h -text
+Bitstream_isolators/include/CGAL/Algebraic_kernel_d/Star_neighborhood_descartes.h -text
+Bitstream_isolators/include/CGAL/Bitstream_coefficient.h -text
+Bitstream_isolators/test/Bitstream_isolators/Descartes_star.cpp -text
+Bitstream_isolators/test/Bitstream_isolators/Real_bitstream_descartes.cpp -text
+Bitstream_isolators/test/Bitstream_isolators/_test_real_root_isolator.h -text
 Boolean_set_operations_2/demo/Boolean_set_operations_2/Qt_widget_locate_layer.cpp -text
 Boolean_set_operations_2/demo/Boolean_set_operations_2/boolean_operations_2.h -text
 Boolean_set_operations_2/demo/Boolean_set_operations_2/data/vlsi_1.dxf -text svneol=unset#application/octet-stream
