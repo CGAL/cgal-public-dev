@@ -1,0 +1,17 @@
+logfile=$1
+if (! test -n "$logfile") then
+logfile=/dev/null
+fi
+for K in 3 
+do
+echo k=$K | tee -a $logfile
+for N in 8 9 10 
+do
+infile=../data/bench/generic_`echo $N`
+../Voronoi_diagram_of_lines_hierarchy_3 $infile $K 1000 | tee -a $logfile
+done
+done  
+
+
+
+

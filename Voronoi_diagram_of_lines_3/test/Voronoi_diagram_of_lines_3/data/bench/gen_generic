@@ -1,0 +1,27 @@
+M=$1
+if (! test -n "$M") then
+M=0;
+fi
+N=2
+until [ $N -gt $M ]
+do
+file=generic_`echo $N`
+echo $N | tee -a $file
+J=1
+until [ $J -gt $N ]
+do
+let A=$RANDOM%16
+let B=$RANDOM%16
+let C=$RANDOM%16
+let D=$RANDOM%16
+let E=$RANDOM%16
+let F=$RANDOM%16
+echo $A $B $C $D $E $F | tee -a $file
+let J=J+1
+done
+let N=N+1
+done  
+
+
+
+

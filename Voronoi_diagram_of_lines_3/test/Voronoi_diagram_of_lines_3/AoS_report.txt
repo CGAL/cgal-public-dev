@@ -1,0 +1,17 @@
+This is just a collection of maybe even minor things that one may want to think of/ change in AoS_2. 
+
+The Topology_traits provides a function dcel_updated. 
+It initializes things in the top traits 
+or synchronizes the top traits with the dcel. 
+However, the name seems misleading, since its almost sounds like is_valid. 
+
+is_in_face:
+name does not reflect the fact that the function is supposed to ignore holes.
+
+functions that determine whether a path is perimetric are implemented in 
+Arrangement_on_surface_2_impl.h and  rely on a curve that supports every edge.
+That is, they do not allow a path that touches or is on an open Boundary. 
+An option may be to ask the TopTraits for the parameter_space_in_x/y of an edge, that is, with respect to its target. 
+
+
+

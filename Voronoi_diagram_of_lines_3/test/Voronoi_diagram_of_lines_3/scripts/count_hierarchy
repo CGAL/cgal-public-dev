@@ -1,0 +1,18 @@
+logfile=$1
+if (! test -n "$logfile") then
+logfile=/dev/null
+fi
+for N in 4 6 8 10 12
+do
+let NUML=$N*$N
+echo n=$NUML | tee -a $logfile
+for K in 2 4 8 10 12 14 16    
+do
+infile=../data/bench/parallel_grid_`echo $NUML`
+../Voronoi_diagram_of_lines_hierarchy_3 $infile $K | tee -a $logfile
+done
+done  
+
+
+
+
