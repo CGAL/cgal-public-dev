@@ -29,6 +29,8 @@ AABB_tree/test/AABB_tree/aabb_naive_vs_tree_distance_segment_test
 AABB_tree/test/AABB_tree/aabb_projection_triangle_test
 AABB_tree/test/AABB_tree/aabb_projection_triangle_test.vcproj
 AABB_tree/test/AABB_tree/cgal_test_with_cmake
+Algebraic_kernel_2_examples/examples/Algebraic_kernel_d/builds
+Algebraic_kernel_2_examples/examples/Algebraic_kernel_d/exp_results__*
 Algebraic_kernel_d/benchmark/Arcavoid/exp_results__*
 Algebraic_kernel_d/test/Algebraic_kernel_d/cgal_test_with_cmake
 Algebraic_kernel_d/test/Algebraic_kernel_d/rs_isolator

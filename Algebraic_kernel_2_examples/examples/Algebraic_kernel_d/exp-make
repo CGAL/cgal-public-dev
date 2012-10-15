@@ -1,0 +1,300 @@
+#!/bin/bash
+
+#PARALLEL_BUILD=true
+PARALLEL_BUILD=false
+
+#export CXX="ccache g++"
+
+function buildConfig()
+{
+  lconfig=$1
+
+  if [ ${lconfig:0:1} = "#" ]; then
+    echo "Skip $lconfig" 
+    return;
+  fi
+
+  if [ ! -e builds/$lconfig ]; then  
+    mkdir builds/$lconfig
+  fi
+
+  FLAGS=""
+ 
+  echo "Build: $lconfig"
+
+  # Choose correct CGAL_DIR
+
+  if test "${CGAL_DIR_RELEASE+set}" = set; then
+    MY_CGAL_DIR=$CGAL_DIR_RELEASE
+  else
+    MY_CGAL_DIR=$CGAL_DIR
+    echo "WARNING: Using CGAL_DIR and not CGAL_DIR_RELEASE."
+    echo "         CGAL might be configured in Debug mode."
+    echo
+  fi
+  
+  if [[ "$lconfig" =~ "debug" ]]; then
+    if test "${CGAL_DIR_DEBUG+set}" = set; then
+      MY_CGAL_DIR=$CGAL_DIR_DEBUG
+    fi
+      FLAGS=$FLAGS" -DCGAL_DEBUG_ARCAVOID=1 -DCGAL_BISOLVE_DEBUG=1 -DCGAL_BISOLVE_VERBOSE=1"
+  else
+      FLAGS=$FLAGS"  -DCGAL_BISOLVE_DEBUG=0 -DCGAL_BISOLVE_VERBOSE=1"
+  fi
+
+  if [[ "$lconfig" =~ "stldebug" ]]; then
+    if test "${CGAL_DIR_STLDEBUG+set}" = set; then
+      MY_CGAL_DIR=$CGAL_DIR_STLDEBUG
+    fi
+  fi
+
+  FLAGS=$FLAGS" -DCGAL_BISOLVE_CHECK_GPU_RESULTANTS_SANITY=0 -DCGAL_BISOLVE_CHECK_GPU_GCDS_SANITY=0"
+
+
+  echo "Using CGAL_DIR = $MY_CGAL_DIR"
+
+  # // Choose correct CGAL_DIR
+
+  if [[ "$lconfig" =~ "gmp" ]]; then
+    FLAGS=$FLAGS" -DCGAL_BISOLVE_USE_GMP=1"
+  else 
+    FLAGS=$FLAGS" -DCGAL_BISOLVE_USE_GMP=0"
+  fi
+
+  if [[ "$lconfig" =~ "core" ]]; then
+    FLAGS=$FLAGS" -DCGAL_BISOLVE_USE_CORE=1"
+  else 
+    FLAGS=$FLAGS" -DCGAL_BISOLVE_USE_CORE=0"
+  fi
+
+  if [[ "$lconfig" =~ "rsak" ]]; then
+    FLAGS=$FLAGS" -DCGAL_BISOLVE_USE_RS_AK=1"
+  else 
+    FLAGS=$FLAGS" -DCGAL_BISOLVE_USE_RS_AK=0"
+  fi
+
+  if [[ "$lconfig" =~ "rsisol" ]]; then
+    FLAGS=$FLAGS" -DCGAL_BISOLVE_USE_RS_ISOLATOR=1"
+  else 
+    FLAGS=$FLAGS" -DCGAL_BISOLVE_USE_RS_ISOLATOR=0"
+  fi
+
+  if [[ "$lconfig" =~ "gres" ]]; then
+    FLAGS=$FLAGS" -DCGAL_BISOLVE_USE_GPU_RESULTANTS=1"
+  else 
+    FLAGS=$FLAGS" -DCGAL_BISOLVE_USE_GPU_RESULTANTS=0"
+  fi
+
+  if [[ "$lconfig" =~ "ggcd" ]]; then
+    FLAGS=$FLAGS" -DCGAL_BISOLVE_USE_GPU_GCDS=1"
+  else 
+    FLAGS=$FLAGS" -DCGAL_BISOLVE_USE_GPU_GCDS=0"
+  fi
+
+  if [[ "$lconfig" =~ "fac" ]]; then
+    FLAGS=$FLAGS" -DCGAL_BISOLVE_ENABLE_NTL_FACTORIZE=1 -DCGAL_ACK_FACTORIZE_UNI_POLYNOMIALS=1"
+  else 
+    FLAGS=$FLAGS" -DCGAL_BISOLVE_ENABLE_NTL_FACTORIZE=0 -DCGAL_ACK_FACTORIZE_UNI_POLYNOMIALS=0"
+  fi
+
+
+  if [[ "$lconfig" =~ "nolocal" ]]; then
+    FLAGS=$FLAGS" -DCGAL_BISOLVE_DISABLE_LOCALIZED_OPERATOR=1"
+  else 
+    FLAGS=$FLAGS" -DCGAL_BISOLVE_DISABLE_LOCALIZED_OPERATOR=0"
+  fi
+
+  if [[ "$lconfig" =~ "nobs" ]]; then
+    FLAGS=$FLAGS" -DCGAL_BISOLVE_DISABLE_BITSTREAM_FILTER=1"
+  else 
+    FLAGS=$FLAGS" -DCGAL_BISOLVE_DISABLE_BITSTREAM_FILTER=0"
+  fi
+
+  if [[ "$lconfig" =~ "num" ]]; then
+    FLAGS=$FLAGS" -DCGAL_BISOLVE_ENABLE_ARCAVOID=1"
+  else
+    FLAGS=$FLAGS" -DCGAL_BISOLVE_ENABLE_ARCAVOID=0"
+  fi
+
+  if [[ "$lconfig" =~ "noabs" ]]; then
+    FLAGS=$FLAGS" -DCGAL_USE_ABSOLUTE_VOID=0"
+  else 
+    FLAGS=$FLAGS" -DCGAL_USE_ABSOLUTE_VOID=1" #default
+    FLAGS=$FLAGS" -DCGAL_PROFILE=1"
+#    FLAGS=$FLAGS" -DCGAL_DEBUG_ARCAVOID=1"
+#    FLAGS=$FLAGS" -DCGAL_DEBUG_ARCAVOID_TIME=1"
+#    FLAGS=$FLAGS" -DCGAL_GMPFR_NO_REFCOUNT=1"
+  fi
+
+#  if [[ "$lconfig" =~ "lense" ]]; then
+#    FLAGS=$FLAGS" -DCGAL_BISOLVE_ENABLE_LENSE_FILTER_IN_T_TEST=1"
+#  else 
+#    FLAGS=$FLAGS" -DCGAL_BISOLVE_ENABLE_LENSE_FILTER_IN_T_TEST=0"
+#  fi
+
+  if [[ "$lconfig" =~ "nocomb" ]]; then
+    FLAGS=$FLAGS" -DCGAL_BISOLVE_DISABLE_COMBINATORIAL_CERTIFICATION=1"
+  else 
+    FLAGS=$FLAGS" -DCGAL_BISOLVE_DISABLE_COMBINATORIAL_CERTIFICATION=0"
+  fi
+
+  if [[ "$lconfig" =~ "nobidir" ]]; then
+    FLAGS=$FLAGS" -DCGAL_BISOLVE_DISABLE_BIDIRECTIONAL_CERTIFICATION=1"
+  else 
+    FLAGS=$FLAGS" -DCGAL_BISOLVE_DISABLE_BIDIRECTIONAL_CERTIFICATION=0"
+  fi
+
+  if [[ "$lconfig" =~ "sub" ]]; then
+    FLAGS=$FLAGS" -DCGAL_BISOLVE_USE_RESULTANT_COFACTORS=0"
+  else 
+    FLAGS=$FLAGS" -DCGAL_BISOLVE_USE_RESULTANT_COFACTORS=1"
+  fi
+
+  if [[ "$config" =~ "mkarca" ]]; then
+    FLAGS=$FLAGS" -DCGAL_ACK_STATUS_LINE_USE_ARCAVOID=1"
+  else
+    FLAGS=$FLAGS" -DCGAL_ACK_STATUS_LINE_USE_ARCAVOID=0"
+  fi
+
+  if [[ "$lconfig" =~ "cc" ]]; then
+    FLAGS=$FLAGS" -DCGAL_BISOLVE_COMBINE_CURVES=1"
+  else 
+    FLAGS=$FLAGS" -DCGAL_BISOLVE_COMBINE_CURVES=0"
+  fi
+
+  if [[ "$lconfig" =~ "sc" ]]; then
+    FLAGS=$FLAGS" -DCGAL_BISOLVE_SINGLE_CURVES=1"
+  else 
+    FLAGS=$FLAGS" -DCGAL_BISOLVE_SINGLE_CURVES=0"
+  fi
+
+  if [[ "$lconfig" =~ "cana" ]]; then
+    FLAGS=$FLAGS" -DCGAL_BISOLVE_CURVE_ANALYSES=1"
+  else 
+    FLAGS=$FLAGS" -DCGAL_BISOLVE_CURVE_ANALYSES=0"
+  fi
+
+  if [[ "$lconfig" =~ "bca" ]]; then
+    FLAGS=$FLAGS" -DCGAL_ACK_CURVE_ANALYSES_USE_BISOLVE=1"
+  else 
+    FLAGS=$FLAGS" -DCGAL_ACK_CURVE_ANALYSES_USE_BISOLVE=0"
+  fi
+
+  if [[ "$lconfig" =~ "tes" ]]; then
+    FLAGS=$FLAGS" -DCGAL_ACK_CURVE_ANALYSES_BISOLVE_USE_TEISSIER=1"
+  else 
+    FLAGS=$FLAGS" -DCGAL_ACK_CURVE_ANALYSES_BISOLVE_USE_TEISSIER=0"
+  fi
+
+  if [[ "$lconfig" =~ "psa1" ]]; then
+    FLAGS=$FLAGS" -DCGAL_ACK_CURVE_ANALYSES_MULT_RES_FX_FY_PREFER_SIGN_AT=1"
+  else 
+    FLAGS=$FLAGS" -DCGAL_ACK_CURVE_ANALYSES_MULT_RES_FX_FY_PREFER_SIGN_AT=0"
+  fi
+
+  if [[ "$lconfig" =~ "ak2" ]]; then
+    FLAGS=$FLAGS" -DCGAL_BISOLVE_USE_AK2=1"
+  else 
+    FLAGS=$FLAGS" -DCGAL_BISOLVE_USE_AK2=0"
+  fi
+
+  if [[ "$lconfig" =~ "arr" ]]; then
+    FLAGS=$FLAGS" -DCGAL_BISOLVE_ARRANGEMENTS=1"
+  else 
+    FLAGS=$FLAGS" -DCGAL_BISOLVE_ARRANGEMENTS=0"
+  fi
+
+  if [[ "$lconfig" =~ "shr" ]]; then
+    FLAGS=$FLAGS" -DCGAL_BISOLVE_SHEAR_INPUT=1"
+  else 
+    FLAGS=$FLAGS" -DCGAL_BISOLVE_SHEAR_INPUT=0"
+  fi
+
+  echo "Configuring with flags: $FLAGS"
+ 
+  cd builds/$lconfig
+  cmake -DCGAL_DIR=$MY_CGAL_DIR -DCGAL_CXX_FLAGS:STRING="$FLAGS" -DCGAL_DONT_OVERRIDE_CMAKE_FLAGS=FALSE ../../
+#  make VERBOSE=1
+  make
+  cd ../..
+
+}
+
+
+
+
+if [ -e CMakeCache.txt ]; then
+  rm -f CMakeCache.txt
+fi
+
+#if [ -e builds ]; then
+#  rm -fr builds
+#fi
+
+configs=
+
+if [ $# -gt 0 ]
+then
+    configs="$*"
+else
+    configs=`cat configs.txt`
+fi
+
+# possible options
+#configs="gmp gmp-nolense gmp-nocomb-nobidir-nolense gmp-ak2"
+#configs="gmp core gmp-ak2 core-ak2"
+
+echo "Configurations: $configs"
+echo
+
+if [ ! -e builds ]; then
+  mkdir builds
+fi
+
+
+if ( $PARALLEL_BUILD ); # parallel
+then
+
+PMAX=1
+
+#http://stackoverflow.com/questions/394230/detect-os-from-a-bash-script
+if [[ `uname` == 'Linux' ]]; 
+then
+ # http://www.linux-magazin.de/Heft-Abo/Ausgaben/2009/02/Parallelarbeit/(offset)/2
+ PMAX=`ls -1d /sys/devices/system/cpu/cpu* | wc -l`
+else
+ # http://stackoverflow.com/questions/1715580/how-to-discover-number-of-cores-on-mac-os-x
+ PMAX=`sysctl hw.ncpu | awk '{print $2}'`
+fi
+
+echo $PMAX
+
+# http://www.linux-magazin.de/Heft-Abo/Ausgaben/2009/02/Parallelarbeit/(offset)/2
+currentProcess=0
+for config in $configs; do
+    configmap[$currentProcess]="${configmap[$currentProcess]} "$config""
+  shift
+  let currentProcess=$(( (currentProcess+1)%PMAX ))
+done
+
+for (( currentProcess=0; currentProcess < PMAX; currentProcess++ )); do
+    [ -n "${configmap[$currentProcess]}" ] &&
+    eval buildConfig ${configmap[$currentProcess]} &
+done
+
+wait
+
+else 
+# sequential
+
+for config in $configs; do
+ buildConfig $config
+done
+
+fi
+
+echo
+
+echo "Experimental setup finished. Ready to run sets of experiments.  " 
+
+exit

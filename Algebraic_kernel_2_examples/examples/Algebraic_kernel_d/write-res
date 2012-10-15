@@ -1,0 +1,47 @@
+#!/bin/bash
+
+if test "${CGAL_DIR_RELEASE+set}" = set; then
+  MY_CGAL_DIR=$CGAL_DIR_RELEASE
+else
+  MY_CGAL_DIR=$CGAL_DIR
+  echo "WARNING: Using CGAL_DIR and not CGAL_DIR_RELEASE."
+  echo "         CGAL might be configured in Debug mode."
+  echo
+fi
+
+echo "Using CGAL_DIR = $MY_CGAL_DIR"
+
+if [ -e CMakeCache.txt ]; then
+  rm -f CMakeCache.txt
+fi
+
+
+if [ ! -e resbuild ]; then
+  mkdir resbuild
+fi
+
+cd resbuild
+
+FLAGS="-DCGAL_BISOLVE_WRITE_ONLY_RESULTANTS=1 -DCGAL_BISOLVE_USE_CORE=1 -DCGAL_BISOLVE_USE_GPU_RESULTANTS=0 -DCGAL_BISOLVE_USE_RESULTANT_COFACTORS=1"
+
+cmake -DCGAL_DIR=$MY_CGAL_DIR -DCGAL_CXX_FLAGS:STRING="$FLAGS -DCGAL_BISOLVE_DEBUG=1 -DCGAL_BISOLVE_VERBOSE=1" -DCGAL_DONT_OVERRIDE_CMAKE_FLAGS=FALSE ../
+#  make VERBOSE=1
+make
+cd ..
+
+# Compute resultants
+for file in `ls $1`; do
+    
+    if [ ! -e resultants/res_$file ]; then
+      
+        echo "Processing $file" 
+        ./resbuild/bisolve $1/$file
+        mv oo.oo resultants/res_$file
+    
+    fi
+    
+done; # files
+
+exit
+
+
