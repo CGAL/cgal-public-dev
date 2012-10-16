@@ -1,0 +1,6 @@
+<RCC>
+  <qresource prefix="/cgal/help" lang="en" >
+    <file alias="about_CGAL.html" >./about_CGAL.html</file>
+    <file>./about_delaunay_graph_of_ellipses_2.html</file>
+  </qresource>
+</RCC>
