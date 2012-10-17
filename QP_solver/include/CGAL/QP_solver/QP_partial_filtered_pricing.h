@@ -31,7 +31,6 @@
 #include <CGAL/QP_solver/QP__partial_base.h>
 #include <CGAL/QP_solver/QP__filtered_base.h>
 
-namespace CGAL {
 
 // MSVC complains about inheritance through dominance when only one
 // base implements virtual functions from the top of the diamond.
