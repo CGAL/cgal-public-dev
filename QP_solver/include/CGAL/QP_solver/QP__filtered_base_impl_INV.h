@@ -1,4 +1,4 @@
-// Copyright (c) 1997-2012  ETH Zurich (Switzerland).
+// Copyright (c) 1997-2007  ETH Zurich (Switzerland).
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org); you may redistribute it under
@@ -11,15 +11,14 @@
 // This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
 // WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
-// $URL$
-// $Id$
+// $URL: https://ybrise@scm.gforge.inria.fr/svn/cgal/branches/experimental-packages/Sparse_QP_solver/include/CGAL/QP_solver/QP__filtered_base_impl.h $
+// $Id: QP__filtered_base_impl.h 67581 2012-02-02 20:46:29Z ybrise $
 // 
 //
 // Author(s)     : Sven Schoenherr
 //                 Bernd Gaertner <gaertner@inf.ethz.ch>
 //                 Franz Wessendorp
 //                 Kaspar Fischer
-//                 Yves Brise
 
 namespace CGAL {
 
@@ -35,12 +34,8 @@ set( )
     // reserve memory for NT versions of current solution
     //int  l = (std::min)( this->solver().number_of_variables(),
     //		           this->solver().number_of_constraints());
-    
-    // TAG: 1SWITCH
     int l = this->solver().get_l();
-    int m = this->solver().number_of_constraints();
-    //lambda_NT.resize( l, nt0);
-    lambda_NT.resize(m,nt0);
+    lambda_NT.resize( l, nt0);
     set( l, Is_linear());
 }
 
@@ -167,25 +162,17 @@ update_maxima( )
   bound1    = d_NT * row_max_c;
   bound2_wq = d_NT;
   
-  
-  
   // update row and column maxima of 'A'
-  //A_iterator  a_it = this->solver().a_begin(); // TAG: 1SWITCH
+  A_iterator  a_it = this->solver().a_begin();
   R_iterator  r_it = this->solver().row_type_begin();
   int         row, col;
   NT          row_max, z;
   
-  // TAG: 1SWITCH
-  A_sparse_iterator a_sparse_it = this->solver().a_sparse_begin();
-  A_sparse_column_iterator it, it_end;
-
-  
-  
-  Basic_constraint_index_iterator  constr_it;
+  Basic_constraint_index_iterator  it;
   Values_NT_iterator v_it = lambda_NT.begin();
-  for ( constr_it =  this->solver().basic_constraint_indices_begin();
-       constr_it != this->solver().basic_constraint_indices_end(); ++constr_it, ++v_it) {
-    row = *constr_it;
+  for ( it =  this->solver().basic_constraint_indices_begin();
+       it != this->solver().basic_constraint_indices_end(); ++it, ++v_it) {
+    row = *it;
     
     // row not handled yet?
     if ( ! handled_A[ row]) {
@@ -194,31 +181,12 @@ update_maxima( )
       row_max = (    ( r_it[ row] != CGAL::EQUAL)
                  || ( this->solver().phase() == 1) ? nt1 : nt0);
       
-      // TAG: 1SWITCH
-      // scan row and update maxima
-      for ( col = 0; col < n; ++col) {
-        // TAG: INEFFICIENT, binary search & invert loop...?
-        z = 0;
-        it = (*(a_sparse_it+col)).begin();
-        it_end = (*(a_sparse_it+col)).end();
-        while (it != it_end && it->first < row) {
-          ++it;
-        }
-        if (it != it_end && it->first == row) {
-          z = CGAL::abs(it->second);
-        }
-        if ( z > row_max      ) row_max       = z;
-        if ( z > col_max[ col]) col_max[ col] = z;
-      }
-      
-      /*
       // scan row and update maxima
       for ( col = 0; col < n; ++col) {
         z = CGAL::abs( *((*(a_it + col))+row));
         if ( z > row_max      ) row_max       = z;
         if ( z > col_max[ col]) col_max[ col] = z;
-      }*/
-      
+      }
       row_max_A[ row] = row_max;
       handled_A[ row] = true;
     }
@@ -251,62 +219,41 @@ update_maxima( )
   
 template < typename Q, typename ET, typename Tags, class NT_, class ET2NT_ >                // QP case
 void  QP__filtered_base<Q,ET,Tags,NT_,ET2NT_>::
-  update_maxima( Tag_false)
-  {
-
+update_maxima( Tag_false)
+{
     // update row and column maxima of 'D'
-    //D_row_iterator d_row_it;
-    D_sparse_column_iterator  d_row_it; // D is symmetric, i.e., rows == columns
-    D_sparse_column_iterator  d_row_it_end;
-    int             row;
+    D_row_iterator  d_row_it;
+    int             row, col;
     NT              row_max, z;
-    
+
     Basic_variable_index_iterator  it;
     Values_NT_iterator v_it = x_B_O_NT.begin();
     for ( it =  this->solver().basic_original_variable_indices_begin();
-         it != this->solver().basic_original_variable_indices_end();
-         ++it, ++v_it) {
-      row = *it;
-      
-      // row not handled yet?
-    
-      if ( ! handled_D[ row]) {
-      
-        // TAG: 0SWITCH
-        // scan row and update maxima
-        d_row_it = (*(this->solver().d_sparse_begin()+row)).begin();
-        d_row_it_end = (*(this->solver().d_sparse_begin()+row)).end();
-        row_max = nt0;
+	  it != this->solver().basic_original_variable_indices_end();
+	  ++it, ++v_it) {
+	row = *it;
 
-        while (d_row_it != d_row_it_end) {
-          z = CGAL::abs( d_row_it->second );
-          if ( z > row_max      ) row_max       = z;
-          if ( z > col_max[ d_row_it->first ]) col_max[ d_row_it->first ] = z;
-          ++d_row_it;
-        }
-        row_max_D[ row] = row_max;
-        handled_D[ row] = true;
-        
-        /*
-        // scan row and update maxima
-        d_row_it = this->solver().d_begin()[ row];
-        row_max = nt0;
-        for ( col = 0; col < n; ++col, ++d_row_it) {
-          z = CGAL::abs( *d_row_it);
-          if ( z > row_max      ) row_max       = z;
-          if ( z > col_max[ col]) col_max[ col] = z;
-        }
-        row_max_D[ row] = row_max;
-        handled_D[ row] = true;
-        */
-      }
-      // update bounds
-      z = CGAL::abs( (*v_it));
-      if ( z > bound2_wq) bound2_wq = z;
-      z *= row_max_D[ row];
-      if ( z > bound1) bound1 = z;
+	// row not handled yet?
+	if ( ! handled_D[ row]) {
+	    d_row_it = this->solver().d_begin()[ row];
+
+	    // scan row and update maxima
+	    row_max = nt0;
+	    for ( col = 0; col < n; ++col, ++d_row_it) {
+		z = CGAL::abs( *d_row_it);
+		if ( z > row_max      ) row_max       = z;
+		if ( z > col_max[ col]) col_max[ col] = z;
+	    }
+	    row_max_D[ row] = row_max;
+	    handled_D[ row] = true;
+	}
+	// update bounds
+	z = CGAL::abs( (*v_it));
+	if ( z > bound2_wq) bound2_wq = z;
+	z *= row_max_D[ row];
+	if ( z > bound1) bound1 = z;
     }
-  }
+}
 
 template < typename Q, typename ET, typename Tags, class NT_, class ET2NT_ >                // LP case
 void  QP__filtered_base<Q,ET,Tags,NT_,ET2NT_>::
@@ -398,7 +345,7 @@ certify_mu_j_NT( int j, Tag_false) const // case with bounds
 
   // the bounds are insufficient: compute and check exact 'mu_j'
   ET  mu_et = this->mu_j( j);
-  bool improving = this->is_improving(j, mu_et, this->et0);
+  bool improving = is_improving(j, mu_et, this->et0);
 
   CGAL_qpe_debug {
     this->vout() << "  " << (!improving ? "ok" : "MISSED")

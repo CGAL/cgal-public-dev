@@ -11,8 +11,8 @@
 // This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
 // WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
-// $URL$
-// $Id$
+// $URL: https://ybrise@scm.gforge.inria.fr/svn/cgal/branches/experimental-packages/Sparse_QP_solver/test/QP_solver/test_solver.cpp $
+// $Id: test_solver.cpp 66583 2011-11-28 22:33:04Z ybrise $
 // 
 //
 // Author(s)     : Kaspar Fischer <fischerk@inf.ethz.ch>
@@ -394,9 +394,9 @@ bool process(const std::string& filename,
  
   // now copy from the iterators, check for equality
   CGAL::Quadratic_program<IT> 
-    qp4 (qp.get_n(), qp.get_m(), qp.get_a_sparse(), qp.get_b(), qp.get_r(), 
+    qp4 (qp.get_n(), qp.get_m(), qp.get_a(), qp.get_b(), qp.get_r(), 
 	 qp.get_fl(), qp.get_l(), qp.get_fu(), qp.get_u(), 
-	 qp.get_d_sparse(), qp.get_c(), CGAL::Tag_true(), qp.get_c0());
+	 qp.get_d(), qp.get_c(), qp.get_c0());
   if (!CGAL::QP_functions_detail::are_equal_qp (qp, qp4)) {
     cout << "Program not correctly copied.\n" << endl;
     return false;
@@ -449,10 +449,10 @@ bool process(const std::string& filename,
     local_options.set_verbosity(0);
     local_options.set_pricing_strategy(CGAL::QP_DANTZIG);
     local_options.set_auto_validation(true);
-    LocalQP qplocal (qp.get_n(), qp.get_m(), qp.get_a_sparse(), qp.get_b(), 
+    LocalQP qplocal (qp.get_n(), qp.get_m(), qp.get_a(), qp.get_b(), 
 		     qp.get_r(), 
 		     qp.get_fl(), qp.get_l(), qp.get_fu(), qp.get_u(), 
-		     qp.get_d_sparse(), qp.get_c(), CGAL::Tag_true(), qp.get_c0()); 
+		     qp.get_d(), qp.get_c(), qp.get_c0()); 
     CGAL::solve_quadratic_program (qplocal, ET(), local_options);
     std::cout << "(c) ";
   }

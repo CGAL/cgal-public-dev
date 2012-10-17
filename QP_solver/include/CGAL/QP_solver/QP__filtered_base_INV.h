@@ -1,4 +1,4 @@
-// Copyright (c) 1997-2012  ETH Zurich (Switzerland).
+// Copyright (c) 1997-2007  ETH Zurich (Switzerland).
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org); you may redistribute it under
@@ -11,15 +11,14 @@
 // This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
 // WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
-// $URL$
-// $Id$
+// $URL: https://ybrise@scm.gforge.inria.fr/svn/cgal/branches/experimental-packages/Sparse_QP_solver/include/CGAL/QP_solver/QP__filtered_base.h $
+// $Id: QP__filtered_base.h 67581 2012-02-02 20:46:29Z ybrise $
 // 
 //
 // Author(s)     : Sven Schoenherr
 //                 Bernd Gaertner <gaertner@inf.ethz.ch>
 //                 Franz Wessendorp
-//                 Kaspar Fischer
-//                 Yves Brise
+//                 Kaspar Fischer 
 
 #ifndef CGAL_QP__FILTERED_BASE_H
 #define CGAL_QP__FILTERED_BASE_H
@@ -28,7 +27,6 @@
 #include <CGAL/QP_solver/QP_pricing_strategy.h>
 #include <CGAL/QP_solver/QP_solver.h>
 #include <cmath>
-
 
 namespace CGAL {
 
@@ -129,17 +127,10 @@ class QP__filtered_base : virtual public QP_pricing_strategy<Q, ET, Tags> {
 
     // some more types
     typedef  typename Q::A_iterator   A_iterator;
-    // TAG: 0SWITCH
-    typedef  typename QP_model_detail::Sparse_iterator_adaptor<Q, typename Q::Is_sparse>::A_sparse_iterator A_sparse_iterator;
-    //typedef  typename Q::A_sparse_iterator A_sparse_iterator;
-    // TAG: 0SWITCH
-    typedef  typename QP_model_detail::Sparse_iterator_adaptor<Q, typename Q::Is_sparse>::A_sparse_column_iterator A_sparse_column_iterator;
-    //typedef  typename Q::A_sparse_column_iterator A_sparse_column_iterator;
     typedef  typename Q::C_iterator   C_iterator;   
-    // TAG: 0SWITCH
-    typedef  typename QP_model_detail::Sparse_iterator_adaptor<Q, typename Q::Is_sparse>::D_sparse_column_iterator D_sparse_column_iterator;
-    //typedef  typename std::iterator_traits<typename Q::D_iterator>::value_type D_row_iterator;
-    
+    typedef  typename std::iterator_traits
+        <typename Q::D_iterator>::value_type
+                                        D_row_iterator;
     typedef  typename Q::R_iterator R_iterator;
 					
     typedef typename Base::QP_solver::C_auxiliary_iterator C_auxiliary_iterator;

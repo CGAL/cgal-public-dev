@@ -6,6 +6,7 @@
 #include <CGAL/QP_models.h>
 #include <CGAL/QP_options.h>
 #include <CGAL/QP_functions.h>
+#include <CGAL/Timer.h>
 
 // choose exact integral type
 #ifndef CGAL_USE_GMP
@@ -13,7 +14,7 @@
 typedef CGAL::MP_Float ET;
 #else
 #include <CGAL/Gmpz.h>
-typedef CGAL::Gmpz ET;
+typedef CGAL::Gmpzf ET;
 #endif
 
 // program and solution types
@@ -32,6 +33,9 @@ typedef CGAL::Quadratic_program_solution<ET> Solution;
 
 // random number generator
 CGAL::Random rd;
+
+// timer
+CGAL::Timer timer;
 
 // random entries
 int random_unsigned() 
@@ -135,21 +139,40 @@ int main() {
     CGAL::Quadratic_program_from_mps<int> qp2 (inout);
     assert(CGAL::QP_functions_detail::are_equal_qp (qp, qp2));
   
+    Solution s;
     // solve it
-    Solution s = CGAL::solve_quadratic_program (qp, ET(), options);
+    //CGAL::print_quadratic_program(std::cout, qp);
+    //std::cout << "solve_quadratic_program\n";
+    timer.start();
+    s = CGAL::solve_quadratic_program (qp, ET(), options);
+    timer.stop();
     assert(s.is_valid());
     statistics (s, qp_optimal, qp_infeasible, qp_unbounded);
 
+
     // also solve it as nqp, lp, nlp
+    //CGAL::print_quadratic_program(std::cout, qp);
+    //std::cout << "solve_nonnegative_quadratic_program\n";
+    timer.start();
     s = CGAL::solve_nonnegative_quadratic_program (qp, ET(), options); 
+    timer.stop();
     assert(s.is_valid());
     statistics (s, nqp_optimal, nqp_infeasible, nqp_unbounded);
-    s = CGAL::solve_linear_program (qp, ET(), options);    
+    //CGAL::print_quadratic_program(std::cout, qp);
+    //std::cout << "solve_linear_program\n";
+    timer.start();
+    s = CGAL::solve_linear_program (qp, ET(), options);
+    timer.stop();
     assert(s.is_valid()); 
     statistics (s, lp_optimal, lp_infeasible, lp_unbounded);
+    //CGAL::print_quadratic_program(std::cout, qp);
+    //std::cout << "solve_nonnegative_linear_program\n";
+    timer.start();
     s = CGAL::solve_nonnegative_linear_program (qp, ET(), options);   
+    timer.stop();
     assert(s.is_valid());  
     statistics (s, nlp_optimal, nlp_infeasible, nlp_unbounded);
+    
   }
   
   // output statistics
@@ -170,5 +193,9 @@ int main() {
 	    << nqp_unbounded << " / " 
 	    << lp_unbounded << " / " 
 	    << nlp_unbounded << std::endl;
+      
+  // output timer info
+  std::cout << "Used " << timer.time() << " seconds in total." << std::endl;      
+
   return 0;
 }

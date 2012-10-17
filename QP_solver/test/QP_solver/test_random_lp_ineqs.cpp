@@ -27,21 +27,12 @@ CGAL::Random rd;
 // timer
 CGAL::Timer timer;
 
-
 CGAL::Comparison_result random_rel()
 {
-  int z = rd.get_int(-1,2);
-  return CGAL::Comparison_result(z);
-}
-/*
-CGAL::Comparison_result random_rel() // only lt and gt
-{
   int z = rd.get_int(0,2);
-  z *= 2;
-  z -= 1;
-  return CGAL::Comparison_result(z);
+  return CGAL::Comparison_result( 2*z - 1 ); // only less than and greater than
 }
-*/
+
 void statistics (const Solution& s, 
 		 unsigned int& o, unsigned int& i, unsigned int& u)
 {
@@ -74,8 +65,7 @@ unsigned int nlp_infeasible = 0;
 unsigned int nlp_unbounded = 0;
 
 // parameters
-int tries = 5000;
-int max_dim = 11; // must be >1
+int no_ineq = 100000;
 int max_entry = 11; // must be >0
 
 int main() {  
@@ -86,11 +76,12 @@ int main() {
   CGAL::Quadratic_program_options options;
   options.set_auto_validation(true);
 
-  // generate a set of small random qp's
-  for (int i=0; i<tries; ++i) {
+  
+  
+  
     // first choose dimensions
-    int n = rd.get_int(1,max_dim);
-    int m = rd.get_int(1,max_dim);
+    int n = 2;
+    int m = no_ineq;
 
     // construct matrix D as C^T C, for C randomly chosen with n columns
     int k = rd.get_int (1, 2*n); // number of rows of C
@@ -107,11 +98,13 @@ int main() {
     // b, r
     for (int i=0; i<m/2; ++i) {
       p.set_b (rd.get_int(0,m), rd.get_double());
-      p.set_r (rd.get_int(0,m), random_rel());
+      //p.set_r (rd.get_int(0,m), random_rel());
     }
-    for (int i=0; i<m; ++i) {
+    
+    for(int i = 0; i < m; ++i) {
       p.set_r (i, random_rel());
     }
+    
     // fl, l, fu, u
     for (int j=0; j<n; ++j) {
       double l = rd.get_double();
@@ -148,18 +141,14 @@ int main() {
     */
     
     // solve it
-    
     CGAL::print_quadratic_program (std::cout, p);
-    
     timer.start();
     Solution s = CGAL::solve_quadratic_program (p, ET(), options);
     timer.stop();
     assert(s.is_valid());
     statistics (s, qp_optimal, qp_infeasible, qp_unbounded);
 
-
     // also solve it as nqp, lp, nlp
-    
     //CGAL::print_quadratic_program (std::cout, p);
     timer.start();
     s = CGAL::solve_nonnegative_quadratic_program (p, ET(), options); 
@@ -167,41 +156,19 @@ int main() {
     assert(s.is_valid());
     statistics (s, nqp_optimal, nqp_infeasible, nqp_unbounded);
     //CGAL::print_quadratic_program (std::cout, p);
-    
     timer.start();
     s = CGAL::solve_linear_program (p, ET(), options);    
     timer.stop();
     assert(s.is_valid()); 
     statistics (s, lp_optimal, lp_infeasible, lp_unbounded);
-    
     timer.start();
     s = CGAL::solve_nonnegative_linear_program (p, ET(), options);
     timer.stop();
     //CGAL::print_quadratic_program (std::cout, p);
     assert(s.is_valid());  
-    
     statistics (s, nlp_optimal, nlp_infeasible, nlp_unbounded);
-  }
-  
-  // output statistics
-  std::cout << "Solved " << tries 
-	    << " random QP / NQP  / LP / NLP .\n"
-	    << " Optimal:    " 
-	    << qp_optimal << " / " 
-	    << nqp_optimal << " / " 
-	    << lp_optimal << " / " 
-	    << nlp_optimal << "\n"
-	    << " Infeasible: "
-	    << qp_infeasible << " / " 
-	    << nqp_infeasible << " / " 
-	    << lp_infeasible << " / " 
-	    << nlp_infeasible << "\n"
-	    << " Unbounded:  "
-	    << qp_unbounded << " / " 
-	    << nqp_unbounded << " / " 
-	    << lp_unbounded << " / " 
-	    << nlp_unbounded << std::endl;
-      
+
+
   // output timer info
   std::cout << "Used " << timer.time() << " seconds in total." << std::endl;
 

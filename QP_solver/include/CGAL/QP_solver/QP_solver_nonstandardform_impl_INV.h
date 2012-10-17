@@ -1,4 +1,4 @@
-// Copyright (c) 1997-2012  ETH Zurich (Switzerland).
+// Copyright (c) 1997-2007  ETH Zurich (Switzerland).
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org); you may redistribute it under
@@ -11,15 +11,14 @@
 // This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
 // WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
-// $URL$
-// $Id$
+// $URL: https://ybrise@scm.gforge.inria.fr/svn/cgal/branches/experimental-packages/Sparse_QP_solver/include/CGAL/QP_solver/QP_solver_nonstandardform_impl.h $
+// $Id: QP_solver_nonstandardform_impl.h 67581 2012-02-02 20:46:29Z ybrise $
 // 
 //
 // Author(s)     : Sven Schoenherr
 //                 Bernd Gaertner <gaertner@inf.ethz.ch>
 //                 Franz Wessendorp
 //                 Kaspar Fischer
-//                 Yves Brise
 
 namespace CGAL {
 
@@ -61,12 +60,12 @@ ET QP_solver<Q, ET, Tags>::variable_numerator_value(int i) const
   typedef QP_solver<Q, ET, Tags> QP;
   switch (x_O_v_i[i]) {
   case QP::UPPER:
-    return static_cast<ET>(*(qp_u+i)) * denominator_;
+    return ET(*(qp_u+i)) * denominator_;
   case QP::ZERO:
     return et0;
   case QP::LOWER:
   case QP::FIXED:
-    return static_cast<ET>(*(qp_l+i)) * denominator_;
+    return ET(*(qp_l+i)) * denominator_;
   case QP::BASIC:
     return x_B_O[in_B[i]];
   default: // never reached
@@ -96,46 +95,23 @@ ET  QP_solver<Q, ET, Tags>::multiply__A_ixO(int row) const
   ET value = et0;
   ET temp = et0;
   
-  // TAG: 1SWITCH
-  
-  A_sparse_column_iterator it_begin, it_end, it;
-  
   for (int i = 0; i < qp_n; ++i) {
   
-  
-    
-  
-    // TAG: 1SWITCH
-    // TAG: INEFFICIENT binary search  
-    //temp = et0;
-    it_begin = (*(qp_A_sparse+i)).begin();
-    it_end = (*(qp_A_sparse+i)).end();
-    
-    // TAG: TRY binary search
-    //it = find_in_sparse_column<A_sparse_column_iterator>(it_begin, it_end, row);
-    
-    while (it_begin != it_end && it_begin->first < row) {
-      ++it_begin;
-    }
-       
+    //if (it->first == row) temp = static_cast<ET>(it->second);
     
     // Note: the following computes
     //
-    //   value += original_variable_value(i) * qp_old_A[i][row];
+    //   value += original_variable_value(i) * qp_A[i][row];
     //
     // but for efficiency, we only add summands that are known to be
     // nonzero.
     switch (x_O_v_i[i]) {
       case UPPER:
-        // TAG: 1SWITCH
-        value += static_cast<ET>(*(qp_u+i)) * static_cast<ET>((it_begin != it_end && it_begin->first == row) ? it_begin->second : et0);
-        //value += static_cast<ET>(*(qp_u+i)) * static_cast<ET>(*((*(qp_old_A+i))+row));
+        value += static_cast<ET>(*(qp_u+i)) * static_cast<ET>(*((*(qp_A+i))+row));
         break;
       case LOWER:
       case FIXED:
-        // TAG: 1SWITCH
-        value += static_cast<ET>(*(qp_l+i)) * static_cast<ET>((it_begin != it_end && it_begin->first == row) ? it_begin->second : et0);
-        //value += static_cast<ET>(*(qp_l+i)) * static_cast<ET>(*((*(qp_old_A+i))+row));
+        value += static_cast<ET>(*(qp_l+i)) * static_cast<ET>(*((*(qp_A+i))+row));
         break;
       case BASIC:
         CGAL_qpe_assertion(false);
@@ -146,54 +122,6 @@ ET  QP_solver<Q, ET, Tags>::multiply__A_ixO(int row) const
   
   return value;
 }
-
-
-// Computes r:= A x_init, where x_init is the solution
-// with which the solver starts the computation. I.e., computes the
-// scalar product of A and the vector x_init which
-// contains as its entries the values.
-// Note: Does the same job as calling multiply__A_ixO(i) for all
-// 0 <= i < qp_m, but is way more efficient in the context of
-// sparse iterator type input.
-// PRE: out is random access with qp_m reserved entries, zero initialized
-template < typename Q, typename ET, typename Tags >
-void
-QP_solver<Q, ET, Tags>::multiply__AxO(Value_iterator out) const
-{  
-  ET temp;
-  
-  A_sparse_column_iterator it, it_end;
-  
-  for (int i = 0; i < qp_n; ++i) {
-  
-    temp = et0;
- 
-    switch (x_O_v_i[i]) {
-      case UPPER:
-        temp = static_cast<ET>(*(qp_u+i));
-        break;
-      case LOWER:
-      case FIXED:
-        temp = static_cast<ET> (*(qp_l+i));
-        break;
-      case BASIC:
-        CGAL_qpe_assertion(false);
-      default:
-        break;
-    }
-
-     
-    it = (*(qp_A_sparse+i)).begin();
-    it_end = (*(qp_A_sparse+i)).end();
-    while (it != it_end) {
-      *(out+it->first) += temp * static_cast<ET>(it->second);
-      ++it;
-    }
-    
-  }
-  
-}
-
 
 // Computes r_{C}:= A_{C, N_O} x_{N_O}.
 //
@@ -207,36 +135,13 @@ multiply__A_CxN_O(Value_iterator out) const
   
   // initialize with zero vector:
   std::fill_n(out, C.size(), et0);
-  
-  // TAG: 1SWITCH
-  A_sparse_column_iterator it;
-  A_sparse_column_iterator it_end;
-  
-  if (no_ineq) { // in_C is not kept up to date, we have to set it up
-    std::fill_n(in_C.begin(), qp_m, -1);
-    for (int i = 0; i < qp_m; ++i) { // all equalities are in C
-      in_C[ C[i] ] = i;
-    }
-  }  
   for (int i = 0; i < qp_n; ++i) {
     if (!is_basic(i)) {
       const ET x_i = nonbasic_original_variable_value(i);
-      // TAG: 1SWITCH
-      //const A_column a_col = *(qp_old_A+i);
-      it = (*(qp_A_sparse+i)).begin();
-      it_end = (*(qp_A_sparse+i)).end();
-      while (it != it_end) {
-        if (in_C[it->first] >= 0) {
-          *(out + in_C[it->first]) += x_i * static_cast<ET>(it->second);
-        }
-        ++it;
-      }
-      
-      /*
+      const A_column a_col = *(qp_A+i);
       Value_iterator out_it = out;
       for (Index_const_iterator row_it = C.begin(); row_it != C.end(); ++row_it, ++out_it)
-        *out_it += x_i * static_cast<ET>(*(a_col+ *row_it));
-        */
+        *out_it += x_i * ET(*(a_col+ *row_it));
     }
   }
 }
@@ -260,31 +165,14 @@ multiply__2D_OxN_O(Value_iterator out) const
   // initialize with zero vector:
   std::fill_n(out, B_O.size(), et0);
   
-  // TAG: 0SWITCH
-  
   for (int row_it = 0; row_it < qp_n; ++row_it, ++out) {
-    D_sparse_column_iterator it = (*(qp_D_sparse+row_it)).begin();
-    D_sparse_column_iterator it_end = (*(qp_D_sparse+row_it)).end();
-    while (it != it_end) {
-      if (!is_basic(it->first)) {
-        const ET value = nonbasic_original_variable_value(it->first);
-        *out += static_cast<ET>(it->second) * value;
-      }
-      ++it;
-    }
-  }
-  
-  /*
-  for (int row_it = 0; row_it < qp_n; ++row_it, ++out) {
-    D_pairwise_accessor d_row(qp_old_D, row_it);
+    D_pairwise_accessor d_row(qp_D, row_it);
     for (int i = 0; i < qp_n; ++i)
       if (!is_basic(i)) {
-        const ET value = nonbasic_original_variable_value(i);
-        *out += d_row(i) * value;
+	const ET value = nonbasic_original_variable_value(i);
+	*out += d_row(i) * value;
       }
   }
-  */
-  
 }
 
 // Computes r_{S_B}:= A_{S_B, N_O} x_{N_O}.
@@ -298,38 +186,15 @@ multiply__A_S_BxN_O(Value_iterator out) const
   // initialize with zero vector:
   std::fill_n(out, S_B.size(), et0);
   
-  // TAG: 1SWITCH
-  Indices in_S_B(qp_m, -1); // TAG: TODO maybe make this global
-  int i = 0;
-  for (Index_const_iterator S_B_it = S_B.begin(); S_B_it != S_B.end(); ++S_B_it) {
-    in_S_B[*S_B_it] = i;
-    ++i;
-  }
-  A_sparse_column_iterator it;
-  A_sparse_column_iterator it_end;
-  
   
   for (int i = 0; i < qp_n; ++i) {
     if (!is_basic(i)) {
       const ET x_i = nonbasic_original_variable_value(i);
-      
-      // TAG: 1SWITCH
-      // reset A iterators
-      it = (*(qp_A_sparse+i)).begin();
-      it_end = (*(qp_A_sparse+i)).end();
-      while (it != it_end) {
-        if (in_S_B[it->first] >= 0) {
-          *(out + in_S_B[it->first]) += x_i * static_cast<ET>(it->second);
-        }
-        ++it;
-      }
-      /*
-      //const A_column a_col = *(qp_old_A+i);
+      const A_column a_col = *(qp_A+i);
       Value_iterator out_it = out;
       for (Index_const_iterator row_it = S_B.begin(); row_it != S_B.end(); ++row_it, ++out_it) {
-        *out_it += x_i * static_cast<ET>(*(a_col+ *row_it));
+        *out_it += x_i * ET(*(a_col+ *row_it));
       }
-      */
     }
   }
 }

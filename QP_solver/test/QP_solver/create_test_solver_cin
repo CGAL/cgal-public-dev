@@ -144,21 +144,21 @@ done
 
 # collect cycle MPS files:
 echo "Collecting cycle MPS files..."
-CYCLES=$(find test_solver_data/cycle_cases -name '*mps')
+INDIVIDUAL=$(find test_solver_data/individual_cases -name '*mps')
 
 # add cycle cases to file list:
-for cycle in $CYCLES
+for case in $INDIVIDUAL
   do
-  LIST="${LIST} $level eb $cycle" # only ad exact bland pricing
-  echo "  File '${cycle}' added."
+  LIST="${LIST} $level eb $case" # only ad exact bland pricing
+  echo "  File '${case}' added."
   
   # check whether the file exists in the SVN repository:
-    tmpf=`basename "$cycle"`
-    tmpd=`dirname "$cycle"`
+    tmpf=`basename "$case"`
+    tmpd=`dirname "$case"`
     if grep -q "name=\\\"$tmpf\\\"" "$tmpd/.svn/entries"; then 
 	echo -n ""; 
     else 
-	MISSINGFILES="$MISSINGFILES $cycle" 
+	MISSINGFILES="$MISSINGFILES $case" 
     fi
 done
 

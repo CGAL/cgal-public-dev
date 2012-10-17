@@ -18,7 +18,7 @@
 //
 // Author(s)     : Sven Schoenherr 
 //                 Bernd Gaertner <gaertner@inf.ethz.ch>
-//                 Franz Wessendorp 
+//                 Franz Wessendorp
 //                 Kaspar Fischer
 
 #ifndef CGAL_QP_SOLVER_FUNCTORS_H
@@ -241,7 +241,6 @@ class Map_with_default {
 public:
   typedef typename Map::mapped_type       mapped_type;
   //typedef typename Map::difference_type   difference_type;
-  typedef typename Map::size_type         size_type;
   typedef typename Map::key_type          key_type;
   typedef mapped_type                     result_type;
   // data members
@@ -269,6 +268,40 @@ public:
       return d;
   }
 };
+
+  
+// -------------------
+// Map_from_iterator
+// -------------------
+template <typename Iterator>
+  class Map_from_iterator {
+  public:
+    typedef typename std::iterator_traits<Iterator>::value_type mapped_type;
+    typedef int key_type;
+    typedef typename std::pair<key_type, mapped_type> result_type;
+    
+  private:
+    Iterator it_;
+    mutable result_type tmp_;
+    
+    // "Disable" standard constructor by putting it in the private
+    // section.
+    Map_from_iterator(): it_(0)
+    {}
+    
+  public:
+    Map_from_iterator (Iterator it) : it_(it)
+    {}
+    
+    // operator()
+    const result_type& operator() (key_type n) const {
+      assert(it_ != 0);
+      return tmp_ = std::make_pair(n, *(it_+n));
+    }
+};
+  
+
+
 
 } //namespace CGAL
 

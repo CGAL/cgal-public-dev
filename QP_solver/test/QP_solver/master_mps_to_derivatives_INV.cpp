@@ -11,8 +11,8 @@
 // This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
 // WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
-// $URL$
-// $Id$
+// $URL: https://ybrise@scm.gforge.inria.fr/svn/cgal/branches/experimental-packages/Sparse_QP_solver/test/QP_solver/master_mps_to_derivatives.cpp $
+// $Id: master_mps_to_derivatives.cpp 49226 2009-05-07 20:07:59Z spion $
 // 
 //
 // Author(s)     : Kaspar Fischer <fischerk@inf.ethz.ch>
@@ -165,7 +165,6 @@ void create_shifted_instance(const CGAL::Quadratic_program_from_mps <IT>& qp,
   //
   // where v = [1,...,n]^T.
 
-  typedef CGAL::Quadratic_program_from_mps<IT> P;
 
   // extract data from qp:
   const int n = qp.get_n();
@@ -178,38 +177,21 @@ void create_shifted_instance(const CGAL::Quadratic_program_from_mps <IT>& qp,
 
   // compute A v into Av;
   std::vector<IT> Av(m, IT(0));
-
-  for (int j = 0; j < n; ++j) {
-    typename P::A_sparse_column_iterator it = (*(qp.get_a_sparse()+j)).begin();
-    typename P::A_sparse_column_iterator it_end = (*(qp.get_a_sparse()+j)).end();
-    while (it != it_end) {
-      Av[it->first] += it->second * v[j];
-      ++it;
-    }
-  }
+  
+  for (int i=0; i<m; ++i) 
+    for (int j=0; j<n; ++j)
+      Av[i] += (*(qp.get_a()+j))[i] * v[j];
   
   // compute - 2 v^T D into mvTD:
   std::vector<IT> mvTD(n, IT(0));  // -2D^Tv
-
-  for (int j = 0; j < n; ++j) {
-    typename P::D_sparse_column_iterator it = (*(qp.get_d_sparse()+j)).begin();
-    typename P::D_sparse_column_iterator it_end = (*(qp.get_d_sparse()+j)).end();
-    while (it != it_end) {
-      mvTD[it->first] += it->second * v[j];
-      ++it;
-    }
-    mvTD[j] *= -1;
+  
+  for (int i=0; i<n; ++i) {
+    for (int j=0; j<n; ++j)
+      mvTD[i] 
+	+= ( j <= i ? (*(qp.get_d()+i))[j] : (*(qp.get_d()+j))[i]) * v[j];
+    mvTD[i] *= -1;
   }
-
-/*D_sparse_column_iterator it = (*(this->get_d_sparse()+i)).begin();
-      D_sparse_column_iterator it_end = (*(this->get_d_sparse()+i)).end();
-      while (it != it_end && it->first < j) {
-        if (it->first == j) {
-          old_val = it->second;
-        }
-        ++it;
-      }*/
-
+  
   // output:
   using boost::make_transform_iterator;
   using boost::make_zip_iterator;
@@ -220,10 +202,10 @@ void create_shifted_instance(const CGAL::Quadratic_program_from_mps <IT>& qp,
 		  "Shifted instance of original file",
 		  "master_mps_to_derivatives-create_shifted_instance",
 		  qp.get_problem_name(), 
-		  CGAL::make_quadratic_program_from_sparse_iterators(
+		  CGAL::make_quadratic_program_from_iterators(
      n, 
      m, 
-     qp.get_a_sparse(), 
+     qp.get_a(), 
      make_transform_iterator(
 			     make_zip_iterator(boost::make_tuple(qp.get_b(),Av.begin())),
 			     tuple_add<IT>()),
@@ -236,7 +218,7 @@ void create_shifted_instance(const CGAL::Quadratic_program_from_mps <IT>& qp,
      make_transform_iterator(
 			     make_zip_iterator(boost::make_tuple(qp.get_u(),v.begin())),
 			     tuple_add<IT>()),
-     qp.get_d_sparse(),
+     qp.get_d(),
      make_transform_iterator(
 			   make_zip_iterator(boost::make_tuple(qp.get_c(),mvTD.begin())),
 			   tuple_add<IT>()), 

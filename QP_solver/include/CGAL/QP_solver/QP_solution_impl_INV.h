@@ -11,18 +11,13 @@
 // This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
 // WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
-// $URL$
-// $Id$
+// $URL: svn+ssh://gaertner@scm.gforge.inria.fr/svn/cgal/trunk/QP_solver/include/CGAL/QP_solver/QP_solution_impl.h $
+// $Id: QP_solution_impl.h 38416 2007-04-23 09:12:34Z gaertner $
 // 
 //
 // Author(s)     : Bernd Gaertner <gaertner@inf.ethz.ch>
-//               : Yves Brise
-
 #ifndef CGAL_QP_SOLUTION_IMPL_H
 #define CGAL_QP_SOLUTION_IMPL_H
-
-#include <CGAL/QP_models.h>
-#include <CGAL/QP_solver/QP_sparse_vector.h>
 
 #include<iterator>
 
@@ -623,34 +618,14 @@ template <typename Program, typename Z_iterator >
 void Quadratic_program_solution<ET>::add_Az 
 (const Program& p, Z_iterator z, typename std::vector<ET>& v)
 {
-  // TAG: 0SWITCH
   // iterator types
-  typedef typename QP_model_detail::Sparse_iterator_adaptor<Program, typename Program::Is_sparse> Adaptor;
-  typedef typename Adaptor::A_sparse_iterator A_sparse_iterator;
-  typedef typename Adaptor::A_sparse_column_iterator A_sparse_column_iterator;
-  
-  Adaptor adaptor;
-  
-  // now compute the product
-  A_sparse_iterator a = adaptor.get_a_sparse(p);
-  int n = p.get_n();
-  for (int j = 0; j < n; ++j, ++z) {
-    if (!CGAL::is_zero(*z)) {
-      // add A_j * z_j to az
-      A_sparse_column_iterator it = (*(a+j)).begin();
-      A_sparse_column_iterator it_end = (*(a+j)).end();
-      while (it != it_end) {
-        v[it->first] += *z * ET(it->second);
-        ++it;
-      }
-    }
-  }
-  
-  
-  /*
+  typedef typename Program::A_iterator
+    A_matrix_iterator;
+  typedef typename std::iterator_traits<A_matrix_iterator>::value_type
+    A_column_iterator;
   // now compute the product
   A_matrix_iterator a = p.get_a();
-  //int n = p.get_n();
+  int n = p.get_n();
   for (int j=0; j<n; ++j, ++a, ++z) {
     if (!CGAL::is_zero(*z)) {
       // add A_j * z_j to az
@@ -659,7 +634,6 @@ void Quadratic_program_solution<ET>::add_Az
   	v[i] += *z * ET(*a_j);
     }
   }
-  */
 }
 
 // computes the product of 2D with the n-vector given by z
@@ -672,39 +646,38 @@ void Quadratic_program_solution<ET>::add_two_Dz
 {
   // we compute the contribution from the enries of D on or below
   // the diagonal rowwise, and the remaining entries columnwise
-  typedef typename QP_model_detail::Sparse_iterator_adaptor<Program, typename Program::Is_sparse> Adaptor;
-  typedef typename Adaptor::D_sparse_iterator D_sparse_iterator;
-  typedef typename Adaptor::D_sparse_column_iterator D_sparse_column_iterator;
-  
-  Adaptor adaptor;
-  
+  typedef typename Program::D_iterator
+  D_matrix_iterator;
+  typedef typename std::iterator_traits<D_matrix_iterator>::value_type
+  D_row_iterator;
   int n = p.get_n();
-  
   // make sure that we only handle the nonzero terms of z
-  QP_sparse_vector<ET> z_sparse(n);
-  Z_iterator z_tmp = z;
-  for (int i = 0; i < n; ++i, ++z_tmp) {
-    if (*z_tmp != 0) z_sparse.set_entry(i, *z_tmp);
-  }
-
+  std::vector<int> z_indices;
+  Z_iterator l = z;
+  for (int i=0; i<n; ++i, ++l) 
+    if (*l != 0) z_indices.push_back(i);
   
-  D_sparse_iterator d = adaptor.get_d_sparse(p);
-  typename QP_sparse_vector<ET>::sparse_iterator_t z_it_end = z_sparse.end();
-  for (int i = 0; i < n; ++i) {
-    D_sparse_column_iterator it = (*(d+i)).begin();
-    D_sparse_column_iterator it_end = (*(d+i)).end();
-    typename QP_sparse_vector<ET>::sparse_iterator_t z_it = z_sparse.begin();
-    while (it != it_end && z_it != z_it_end) {
-      if (it->first == z_it->first) {
-        v[i] += z_it->second * ET(it->second);
-        ++it;
-        ++z_it;
-      } else if (it->first < z_it->first) {
-        ++it;
-      } else { // it->first > z_it->first
-        ++z_it;
-      }
+  // the rowwise contribution: on/below the diagonal
+  D_matrix_iterator d = p.get_d();
+  for (int i=0; i<n; ++i, ++d) {
+    // handle row i
+    D_row_iterator d_i = *d;  // row i on/below diagonal
+    for (std::vector<int>::const_iterator 
+         k = z_indices.begin(); k < z_indices.end(); ++k) {
+      int j = *k;
+      if (j <= i) v[i] += *(z+j) * ET (*(d_i+j));
     }
+  }
+  
+  // the columnwise contribution: above the diagonal
+  d = p.get_d();
+  for (std::vector<int>::const_iterator 
+       k = z_indices.begin(); k < z_indices.end(); ++k) {
+    int j = *k;
+    // handle column j
+    D_row_iterator d_j = *(d+j); // column j above diagonal
+    for (int i=0; i<j; ++i, ++d_j)
+      v[i] += *(z+j) * ET (*d_j);
   }
 }
 
@@ -717,43 +690,26 @@ template <typename Program, typename Z_iterator >
 void  Quadratic_program_solution<ET>::add_zA 
 (const Program& p, Z_iterator z, typename std::vector<ET>& v)
 {
-
-  typedef typename QP_model_detail::Sparse_iterator_adaptor<Program, typename Program::Is_sparse> Adaptor;
-  typedef typename Adaptor::A_sparse_iterator A_sparse_iterator;
-  typedef typename Adaptor::A_sparse_column_iterator A_sparse_column_iterator;
-  
-  Adaptor adaptor;
-
+  typedef typename Program::A_iterator
+    A_matrix_iterator;
+  typedef typename std::iterator_traits<A_matrix_iterator>::value_type
+    A_column_iterator;
+  A_matrix_iterator a = p.get_a();
   int n = p.get_n();
   int m = p.get_m();
-  
   // make sure that we only handle the nonzero terms of z
-  QP_sparse_vector<ET> z_sparse(m);
-  Z_iterator z_tmp = z;
-  for (int i = 0; i < m; ++i, ++z_tmp) {
-    if (*z_tmp != 0) {
-      z_sparse.set_entry(i, *z_tmp);
-    }
-  }
-  
-  A_sparse_iterator a = adaptor.get_a_sparse(p);
-  typename QP_sparse_vector<ET>::sparse_iterator_t z_it_end = z_sparse.end();
-  for (int j = 0; j < n; ++j) {
-    A_sparse_column_iterator it = (*(a+j)).begin();
-    A_sparse_column_iterator it_end = (*(a+j)).end();
-    typename QP_sparse_vector<ET>::sparse_iterator_t z_it = z_sparse.begin();
-    while (it != it_end && z_it != z_it_end) {
-      if (it->first == z_it->first) {
-        v[j] += z_it->second * ET(it->second);
-        ++it;
-        ++z_it;
-      } else if (it->first < z_it->first) {
-        ++it;
-      } else { // it->first > z_it->first
-        ++z_it;
-      }
-    }
-  }
+  std::vector<int> z_indices; // indices of nonzero entries
+  Z_iterator l = z;
+  for (int i=0; i<m; ++i, ++l) 
+    if (*l != 0) z_indices.push_back(i);
+  // now compute the product columnwise 
+  for (int j=0; j<n; ++j, ++a) {
+    // add z^T * A_j to v[j] 
+    A_column_iterator a_j = *a;
+    for (std::vector<int>::const_iterator 
+	   k = z_indices.begin(); k < z_indices.end(); ++k)
+      v[j] += *(z+*k) * ET(*(a_j+*k));
+  }  
 }
 
 // adds d c^T to v; precondition: v has length n

@@ -17,9 +17,9 @@
 // 
 //
 // Author(s)     : Kaspar Fischer
-//               : Bernd Gaertner <gaertner@inf.ethz.ch>
-//               : Sven Schoenherr
-//               : Franz Wessendorp
+//                 Bernd Gaertner <gaertner@inf.ethz.ch>
+//                 Sven Schoenherr
+//                 Franz Wessendorp
 
 #ifndef CGAL_QP_SOLUTION_H
 #define CGAL_QP_SOLUTION_H
@@ -255,7 +255,8 @@ public:
 
   // destruction
   // -----------
-  virtual ~QP_solver_base() {}
+  virtual ~QP_solver_base() {
+  }
 };
 
 
@@ -728,7 +729,7 @@ namespace QP_solution_detail {
      Tag_true /*has_exact_division*/) const
     {
       if (CGAL::is_zero (q.numerator()))
-	return CGAL::Quotient<ET>(ET(0), ET(1));
+	return CGAL::Quotient<ET>(static_cast<ET>(0), static_cast<ET>(1));
       ET gcd = CGAL::gcd (q.numerator(), q.denominator());
       return CGAL::Quotient<ET> 
 	(CGAL::integral_division (q.numerator(), gcd),

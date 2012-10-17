@@ -1,4 +1,4 @@
-// Copyright (c) 1997-2007  ETH Zurich (Switzerland).
+// Copyright (c) 1997-2012  ETH Zurich (Switzerland).
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
@@ -20,6 +20,7 @@
 //                 Bernd Gaertner <gaertner@inf.ethz.ch>
 //                 Franz Wessendorp
 //                 Kaspar Fischer
+//                 Yves Brise
 
 #ifndef CGAL_QP_EXACT_BLAND_PRICING_H
 #define CGAL_QP_EXACT_BLAND_PRICING_H

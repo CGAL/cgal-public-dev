@@ -31,6 +31,7 @@
 #include <CGAL/QP_solver/QP__partial_base.h>
 #include <CGAL/QP_solver/QP__filtered_base.h>
 
+namespace CGAL {
 
 // MSVC complains about inheritance through dominance when only one
 // base implements virtual functions from the top of the diamond.
@@ -268,7 +269,7 @@ pricing_helper(int& /*direction*/, Tag_true /*is_in_standard_form*/ )
     // return index of entering variable, if any
     if ( min_mu < this->nt0) {
 	int  j = *min_it;
-        this->entering_basis( min_it);
+	this->entering_basis( min_it);
 	return j;
     }
 
@@ -300,7 +301,7 @@ pricing_helper(int& direction, Tag_false /*is_in_standard_form*/ )
 	// compute mu_j
 	mu = this->mu_j_NT( *it);
 
-	if (price_dantzig (*it, mu, this->nt0, min_j, min_mu, direction))
+	if (this->price_dantzig (*it, mu, this->nt0, min_j, min_mu, direction))
 	  min_it = it;
     }
 
@@ -347,14 +348,14 @@ pricing_helper(int& direction, Tag_false /*is_in_standard_form*/ )
 	    }
 
 	    // candidate for entering?
-	    if (is_improving(*it, mu, this->nt0)) {
+	    if (this->is_improving(*it, mu, this->nt0)) {
 
 		// make variable active
 		active_it = it;
 		this->activating( active_it);
 		
 		// new minimum
-		if (price_dantzig (*active_it, mu, this->nt0, 
+		if (this->price_dantzig (*active_it, mu, this->nt0,
 			            min_j, min_mu, direction))
 		  min_it = active_it;
 	    }

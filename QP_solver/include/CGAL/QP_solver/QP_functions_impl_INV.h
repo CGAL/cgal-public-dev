@@ -11,14 +11,11 @@
 // This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
 // WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
-// $URL$
-// $Id$
+// $URL: https://ybrise@scm.gforge.inria.fr/svn/cgal/branches/experimental-packages/Sparse_QP_solver/include/CGAL/QP_solver/QP_functions_impl.h $
+// $Id: QP_functions_impl.h 67581 2012-02-02 20:46:29Z ybrise $
 // 
 //
 // Author(s)     : Bernd Gaertner <gaertner@inf.ethz.ch>
-//                 Yves Brise
-
-
 #ifndef CGAL_QP_FUNCTIONS_IMPL_H
 #define CGAL_QP_FUNCTIONS_IMPL_H
 
@@ -59,22 +56,19 @@ namespace QP_functions_detail {
     // artificials have left the basis after phase I; the QP_solver 
     // diagnostics tells us this
     //
-    // auxiliary LP type
-    // TAG: 0SWITCH: make it a SPARSE auxiliary program	
-    typedef typename std::iterator_traits<typename Ar::C_iterator>::value_type C_value;
-    typedef typename std::iterator_traits<typename Ar::B_iterator>::value_type B_value;
+    // auxiliary LP type	
+    typedef typename 
+      std::iterator_traits<typename Ar::C_iterator>::value_type C_value;
+    typedef typename 
+      std::iterator_traits<typename Ar::B_iterator>::value_type B_value;
     typedef Const_oneset_iterator <C_value>  C_iterator;
     typedef Const_oneset_iterator <B_value>  B_iterator;
-    //typedef Nonnegative_linear_program_from_iterators <typename Ar::A_iterator, B_iterator, typename Ar::R_iterator, C_iterator> LP;
-      
-    typedef  typename QP_model_detail::Sparse_iterator_adaptor<Ar, typename Ar::Is_sparse> Sparse_adaptor;
-    typedef Nonnegative_linear_program_from_sparse_iterators <typename Sparse_adaptor::A_sparse_itertor, B_iterator, typename Ar::R_iterator, C_iterator> LP;
+    typedef Nonnegative_linear_program_from_iterators
+      <typename Ar::A_iterator, B_iterator, 
+      typename Ar::R_iterator, C_iterator> LP;
 
-    Sparse_adaptor sparse_adaptor;
-    
     //  auxiliary LP
-    LP lp (ar.get_n(), ar.get_m(), sparse_adaptor.get_a_sparse(ar), B_iterator(0), ar.get_r(), C_iterator(0));
-    //LP lp (ar.get_n(), ar.get_m(), ar.get_a(), B_iterator(0), ar.get_r(), C_iterator(0));
+    LP lp (ar.get_n(), ar.get_m(), ar.get_a(), B_iterator(0), ar.get_r(), C_iterator(0));
 
     //  solver Tags
     typedef QP_solver_impl::QP_tags<
@@ -138,33 +132,23 @@ namespace QP_functions_detail {
   (std::ostream& out, const P& p, 
    CGAL::Tag_false /*is_linear*/)
   {
-    typedef typename QP_model_detail::Sparse_iterator_adaptor<P, typename P::Is_sparse> PA;
-    PA pa;
-    typename PA::D_sparse_iterator d = pa.get_d_sparse(p);
+    typename P::D_iterator it = p.get_d();
     int n = p.get_n();
     bool empty_D = true;
-    for (int i=0; i<n; ++i) {
-      typename PA::D_sparse_column_iterator it = (*(d+i)).begin();
-      typename PA::D_sparse_column_iterator it_end = (*(d+i)).end();
-      
-      while (it != it_end) {
-        if (!CGAL::is_zero(it->second)) {
+    for (int i=0; i<n; ++i, ++it) {
+      // handle only entries on/below diagonal
+      for (int j=0; j<i+1; ++j)
+        if (!CGAL::is_zero(*(*it + j))) {
           if (empty_D) {
             // first time we see a nonzero entry
             out << "QMATRIX\n";
             empty_D = false;
           }
-          out << "  x" << i << "  x" << it->first << "  " << it->second << "\n";
-          
-          // TAG: OBSOLETE all the interfaces require a full matrix now (even the old iterator interface is wrapped in such a way)
-          /* 
+          out << "  x" << i << "  x" << j << "  " << *(*it + j) << "\n";
           // QMATRIX format prescribes symmetric matrix
-          if (i != it->first) {
-            out << "  x" << it->first << "  x" << i << "  " << it->second << "\n";
-          }*/
+          if (i != j)
+            out << "  x" << j << "  x" << i << "  " << *(*it + j) << "\n";
         }
-        ++it;
-      }        
     }
   }
 
@@ -175,120 +159,49 @@ namespace QP_functions_detail {
   bool are_equal_qp 
   (const Quadratic_program1 &qp1, const Quadratic_program2 &qp2)
   {
-    typedef typename QP_model_detail::Sparse_iterator_adaptor<Quadratic_program1, typename Quadratic_program1::Is_sparse> PA1;
-    typedef typename QP_model_detail::Sparse_iterator_adaptor<Quadratic_program2, typename Quadratic_program2::Is_sparse> PA2;
-    PA1 pa1;
-    PA2 pa2;
-        
     bool return_val = true;
     // check n
     if (qp1.get_n() != qp2.get_n()) {
       std::cerr << "Equality test fails with n: " 
-      << qp1.get_n() << " vs. " << qp2.get_n() << std::endl;
+		<< qp1.get_n() << " vs. " << qp2.get_n() << std::endl;
       return false; // wildly wrong, abort now
     }
     // check m
     if (qp1.get_m() != qp2.get_m()) {
       std::cerr << "Equality test fails with m: " 
-      << qp1.get_m() << " vs. " << qp2.get_m() << std::endl;
+		<< qp1.get_m() << " vs. " << qp2.get_m() << std::endl;
       return false; // wildly wrong, abort now
     }
     int n = qp1.get_n();
     int m = qp1.get_m();
-    
     // check A
-    
-    typename PA1::A_sparse_iterator a1 = pa1.get_a_sparse(qp1);
-    typename PA2::A_sparse_iterator a2 = pa2.get_a_sparse(qp2);
-    
-    for (int j=0; j<n; ++j) {
-      typename PA1::A_sparse_column_iterator it1 = (*(a1+j)).begin();
-      typename PA1::A_sparse_column_iterator it1_end = (*(a1+j)).end();
-      typename PA2::A_sparse_column_iterator it2 = (*(a2+j)).begin();
-      typename PA2::A_sparse_column_iterator it2_end = (*(a2+j)).end();
-      
-      while (it1 != it1_end && it2 != it2_end) {
-        if (it1->first < it2->first) {
-          if (it1->second != 0) {
-            std::cerr << "Equality test fails with A[" 
-            << j << "][" << it1->first << "]: "
-            << it1->second << " vs. " <<  0 << std::endl;
-            return_val = false;
-          }
-          ++it1;
-          continue;
-        } else if (it1->first > it2->first) {
-          if (it2->second != 0) {
-            std::cerr << "Equality test fails with A[" 
-            << j << "][" << it2->first << "]: "
-            << 0 << " vs. " <<  it2->second << std::endl;
-            return_val = false;
-          }
-          ++it2;
-          continue;
-        } else if (it1->second != it2->second) { // it1->first == it2->first
-          return_val = false;
-          std::cerr << "Equality test fails with A[" 
-          << j << "][" << it1->first << "]: "
-          << it1->second << " vs. " <<  it2->second << std::endl;
-        }
-        ++it1;
-        ++it2;
-      }
-      // maybe there are even more errors
-      while (it1 == it1_end && it2 != it2_end) {
-        if (it2->second != 0) {
-          std::cerr << "Equality test fails with A[" 
-          << j << "][" << it2->first << "]: "
-          << 0 << " vs. " <<  it2->second << std::endl;
-          return_val = false;
-        }
-        ++it2;
-      }
-      while (it2 == it2_end && it1 != it1_end) {
-        if (it1->second != 0) {
-          std::cerr << "Equality test fails with A[" 
-          << j << "][" << it1->first << "]: "
-          << it1->second << " vs. " <<  0 << std::endl;
-          return_val = false;
-        }
-        ++it1;
-      }
-    }
-    
+    typename Quadratic_program1::A_iterator a1 = qp1.get_a();
+    typename Quadratic_program2::A_iterator a2 = qp2.get_a();
+    for (int j=0; j<n; ++j, ++a1, ++a2)
+      for (int i=0; i<m; ++i) 
+	if (*((*a1)+i) != *((*a2)+i)) {
+	  std::cerr << "Equality test fails with A[" 
+		    << j << "][" << i << "]: "
+		    << *((*a1)+i) << " vs. " <<  *((*a2)+i) << std::endl;
+	  return_val = false;
+	}
     // check b
     typename Quadratic_program1::B_iterator b1 = qp1.get_b();
     typename Quadratic_program2::B_iterator b2 = qp2.get_b();
-    for (int i=0; i<m; ++i, ++b1, ++b2) {
+    for (int i=0; i<m; ++i, ++b1, ++b2)
       if (*b1 != *b2) {
-        /*
-        // TAG: DEBUG
-        std::cerr.precision(40);
-        */
-        
-        std::cerr << "Equality test fails with b[" << i << "]: "
-        << *b1 << " vs. " <<  *b2 << std::endl;
-        
-        /*
-        // TAG: DEBUG
-        std::cerr << "type1: " << typeid(typename std::iterator_traits<typename Quadratic_program1::B_iterator>::value_type).name() << std::endl;
-        std::cerr << "type2: " << typeid(typename std::iterator_traits<typename Quadratic_program2::B_iterator>::value_type).name() << std::endl;
-        std::cerr << "Equality: " << (*b1 != *b2) << std::endl;
-        std::cerr << "Difference: " << (*b1 - *b2) << std::endl;
-        */
-        
-        return_val = false;
+	std::cerr << "Equality test fails with b[" << i << "]: "
+		  << *b1 << " vs. " <<  *b2 << std::endl;	
+	return_val = false;
       }
-    }
-    
     // check r
     typename Quadratic_program1::R_iterator r1 = qp1.get_r();
     typename Quadratic_program2::R_iterator r2 = qp2.get_r();
     for (int i=0; i<m; ++i, ++r1, ++r2)
       if (*r1 != *r2) {
-        std::cerr << "Equality test fails with r[" << i << "]: "
-        << *r1 << " vs. " <<  *r2 << std::endl;	
-        return_val = false;
+	std::cerr << "Equality test fails with r[" << i << "]: "
+		  << *r1 << " vs. " <<  *r2 << std::endl;	
+	return_val = false;
       }
     // check fl, l
     typename Quadratic_program1::FL_iterator fl1 = qp1.get_fl();
@@ -297,14 +210,14 @@ namespace QP_functions_detail {
     typename Quadratic_program2::L_iterator l2 = qp2.get_l();
     for (int j=0; j<n; ++j, ++fl1, ++fl2, ++l1, ++l2) {
       if (*fl1 != *fl2) {
-        std::cerr << "Equality test fails with fl[" << j << "]: "
-        << *fl1 << " vs. " <<  *fl2 << std::endl;	
-        return_val = false;
+	std::cerr << "Equality test fails with fl[" << j << "]: "
+		  << *fl1 << " vs. " <<  *fl2 << std::endl;	
+	return_val = false;
       }
       if ((*fl1 == true) && (*l1 != *l2)) {
-        std::cerr << "Equality test fails with l[" << j << "]: "
-        << *l1 << " vs. " <<  *l2 << std::endl;
-        return_val = false;
+	std::cerr << "Equality test fails with l[" << j << "]: "
+		  << *l1 << " vs. " <<  *l2 << std::endl;
+	return_val = false;
       }
     }
     
@@ -315,93 +228,42 @@ namespace QP_functions_detail {
     typename Quadratic_program2::U_iterator u2 = qp2.get_u();
     for (int j=0; j<n; ++j, ++fu1, ++fu2, ++u1, ++u2) {
       if (*fu1 != *fu2) {
-        std::cerr << "Equality test fails with fu[" << j << "]: "
-        << *fu1 << " vs. " <<  *fu2 << std::endl;
-        return_val = false;
+	std::cerr << "Equality test fails with fu[" << j << "]: "
+		  << *fu1 << " vs. " <<  *fu2 << std::endl;
+	return_val = false;
       }
       if ((*fu1 == true) && (*u1 != *u2)) {
-        std::cerr << "Equality test fails with u[" << j << "]: "
-        << *u1 << " vs. " <<  *u2 << std::endl;
-        return_val = false;
+	std::cerr << "Equality test fails with u[" << j << "]: "
+		  << *u1 << " vs. " <<  *u2 << std::endl;
+	return_val = false;
       }
     }
-    
     // check d
-    typename PA1::D_sparse_iterator d1 = pa1.get_d_sparse(qp1);
-    typename PA2::D_sparse_iterator d2 = pa2.get_d_sparse(qp2);
-    
-    for (int i=0; i<n; ++i) {
-      typename PA1::D_sparse_column_iterator it1 = (*(d1+i)).begin();
-      typename PA1::D_sparse_column_iterator it1_end = (*(d1+i)).end();
-      typename PA2::D_sparse_column_iterator it2 = (*(d2+i)).begin();
-      typename PA2::D_sparse_column_iterator it2_end = (*(d2+i)).end();
-      
-      // only access entries on/below diagonal
-      while (it1 != it1_end && it2 != it2_end && it1->first <= i && it2->first <= i) {
-        if (it1->first < it2->first) {
-          if (it1->second != 0) {
-            std::cerr << "Equality test fails with D[" 
-            << i << "][" << it1->first << "]: "
-            << it1->second << " vs. " <<  0 << std::endl;
-            return_val = false;
-          }
-          ++it1;
-          continue;
-        } else if (it1->first > it2->first) {
-          if (it2->second != 0) {
-            std::cerr << "Equality test fails with D[" 
-            << i << "][" << it2->first << "]: "
-            << 0 << " vs. " <<  it2->second << std::endl;
-            return_val = false;
-          }
-          ++it2;
-          continue;
-        } else if (it1->second != it2->second) { // it1->first == it2->first
-          return_val = false;
-          std::cerr << "Equality test fails with D[" 
-          << i << "][" << it1->first << "]: "
-          << it1->second << " vs. " <<  it2->second << std::endl;
-        }
-        ++it1;
-        ++it2;
-      }
-      // maybe there are even more errors
-      while (it1 == it1_end && it2 != it2_end && it2->first <= i) {
-        if (it2->second != 0) {
-          std::cerr << "Equality test fails with D[" 
-          << i << "][" << it2->first << "]: "
-          << 0 << " vs. " <<  it2->second << std::endl;
-          return_val = false;
-        }
-        ++it2;
-      }
-      while (it2 == it2_end && it1 != it1_end && it1->first <= i) {
-        if (it1->second != 0) {
-          std::cerr << "Equality test fails with D[" 
-          << i << "][" << it1->first << "]: "
-          << it1->second << " vs. " <<  0 << std::endl;
-          return_val = false;
-        }
-        ++it1;
-      }
-    } 
-    
+    typename Quadratic_program1::D_iterator d1 = qp1.get_d();
+    typename Quadratic_program2::D_iterator d2 = qp2.get_d();
+    for (int i=0; i<n; ++i, ++d1, ++d2)
+      for (int j=0; j<i+1; ++j)  // only access entries on/below diagonal
+	if (*((*d1)+j) != *((*d2)+j)) {
+	  std::cerr << "Equality test fails with D["
+		    << i << "][" << j << "]: "
+		    << *((*d1)+j) << " vs. " <<  *((*d2)+j) << std::endl; 
+	  return_val = false;
+	}
     // check c
     typename Quadratic_program1::C_iterator c1 = qp1.get_c();
     typename Quadratic_program2::C_iterator c2 = qp2.get_c();
-    for (int j=0; j<n; ++j, ++c1, ++c2) {
+    for (int j=0; j<n; ++j, ++c1, ++c2)
       if (*c1 != *c2) {
-        std::cerr << "Equality test fails with c[" << j << "]: "
-        << *c1 << " vs. " <<  *c2 << std::endl;
-        return_val = false;
+	std::cerr << "Equality test fails with c[" << j << "]: "
+		  << *c1 << " vs. " <<  *c2 << std::endl;
+	return_val = false;
       }
-    }
     // check c0
     typename Quadratic_program1::C_entry c01 = qp1.get_c0();
     typename Quadratic_program2::C_entry c02 = qp2.get_c0();
     if (c01 != c02) {
       std::cerr << "Equality test fails with c0: "
-      << c01 << " vs. " <<  c02 << std::endl;
+		<< c01 << " vs. " <<  c02 << std::endl;
       return_val = false;
     }
     return return_val;
@@ -437,13 +299,11 @@ namespace QP_functions_detail {
     }
     
     // COLUMNS section:
-    typedef typename QP_model_detail::Sparse_iterator_adaptor<P, typename P::Is_sparse> PA;
-    typedef typename std::iterator_traits<typename P::C_iterator>::value_type IT;
-    PA pa;
-    typename PA::A_sparse_iterator a = pa.get_a_sparse(p);
+    typename P::A_iterator a = p.get_a();
     typename P::C_iterator c = p.get_c();
+    typedef typename std::iterator_traits<typename P::C_iterator>::value_type IT;
     out << "COLUMNS\n";
-    for (int j=0; j<n; ++j, ++c) {
+    for (int j=0; j<n; ++j, ++c, ++a) {
       // make sure that variable appears here even if it has only
       // zero coefficients
       bool written = false;
@@ -451,20 +311,16 @@ namespace QP_functions_detail {
         out << "  x" << j << "  obj  " << *c << "\n";
         written = true;
       }
-      (*(a+j)).begin();
-      typename PA::A_sparse_column_iterator it = (*(a+j)).begin();
-      typename PA::A_sparse_column_iterator it_end = (*(a+j)).end();
-      while (it != it_end) {
-        if (!CGAL_NTS is_zero (it->second)) {
-          out << "  x" << j << "  c" << it->first << "  " << it->second << "\n";
+      for (int i=0; i<m; ++i) { 
+        if (!CGAL_NTS is_zero (*((*a)+i))) {
+          out << "  x" << j << "  c" << i << "  " << *((*a)+i) << "\n";
           written = true;
         }
-        ++it;
       }
       if (!written)
         out << "  x" << j << "  obj  " << IT(0) << "\n";
     }
-    
+
     // RHS section:
     typename P::B_iterator b = p.get_b();
     out << "RHS\n";
