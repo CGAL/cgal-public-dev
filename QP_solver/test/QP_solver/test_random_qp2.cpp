@@ -149,7 +149,7 @@ int main() {
     
     // solve it
     
-    CGAL::print_quadratic_program (std::cout, p);
+    //CGAL::print_quadratic_program (std::cout, p);
     
     timer.start();
     Solution s = CGAL::solve_quadratic_program (p, ET(), options);
