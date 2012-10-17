@@ -1,3 +1,13 @@
+\ccNestedType{D_sparse_iterator}{A random access iterator type to go 
+  rowwise over the matrix $2D$. The value type
+  is an object that provides bidirectional sparse iterators
+  for the row in question
+  by member calls to \ccc{begin()} and \ccc{end()}.
+  Such a column iterator \ccc{it} is sparse, providing \ccc{(index,value)}
+  pairs of all non-zero elements of the row. The index is accessed
+  by \ccc{it->first} and the value is accessed by \ccc{it->second}.
+  }
+
 \ccNestedType{D_iterator}{A random access iterator type to go rowwise 
   over the matrix $2D$. The value type
   is a random access iterator type for an individual row that

@@ -3489,6 +3489,7 @@ QP_solver/doc_tex/QP_solver_ref/solve_linear_program.tex -text
 QP_solver/doc_tex/QP_solver_ref/solve_nonnegative_linear_program.tex -text
 QP_solver/doc_tex/QP_solver_ref/solve_nonnegative_quadratic_program.tex -text
 QP_solver/doc_tex/QP_solver_ref/solve_quadratic_program.tex -text
+QP_solver/documentation/html.sty -text
 QP_solver/examples/QP_solver/convex_hull_containment_benchmarks.cpp -text
 QP_solver/examples/QP_solver/cycling.cpp -text
 QP_solver/examples/QP_solver/cycling.mps -text

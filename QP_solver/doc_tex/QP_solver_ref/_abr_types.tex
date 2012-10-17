@@ -1,6 +1,16 @@
+\ccNestedType{A_sparse_iterator}{A random access iterator type to go 
+  columnwise over the constraint matrix $A$. The value type
+  is an object that provides bidirectional sparse iterators
+  for the column in question
+  by member calls to \ccc{begin()} and \ccc{end()}.
+  Such a column iterator \ccc{it} is sparse, providing \ccc{(index,value)}
+  pairs of all non-zero elements of the column. The index is accessed
+  by \ccc{it->first} and the value is accessed by \ccc{it->second}.
+  }
+  
 \ccNestedType{A_iterator}{A random access iterator type to go 
   columnwise over the constraint matrix $A$. The value type
-  is a random access iterator type for an individual column that
+  is an random access iterator type for an individual column that
   goes over the entries in that column.}
 
 \ccNestedType{B_iterator}{A random access iterator type to go over 
