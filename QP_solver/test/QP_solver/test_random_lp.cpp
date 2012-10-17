@@ -166,7 +166,7 @@ int main(const int argNr,const char **args) {
     
     bool print = false;
     
-    /*
+    
     // solve it
     Solution s;
     timer.reset();
@@ -191,10 +191,9 @@ int main(const int argNr,const char **args) {
     if (s.status() == CGAL::QP_OPTIMAL) print = true;
     std::cout << "Used " << timer.time() << " seconds (solve_nonnegative_linear_program)." << std::endl;
     total_time += timer.time();
-    */ 
+     
     
-    //if (print) CGAL::print_quadratic_program (std::cout, p);
-    if (true) CGAL::print_quadratic_program (std::cout, p);
+    if (print) CGAL::print_quadratic_program (std::cout, p);
   }
   
   // output statistics
