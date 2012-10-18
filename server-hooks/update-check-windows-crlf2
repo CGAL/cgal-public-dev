@@ -8,6 +8,8 @@
 # This script is based on the update.sample in git/contrib/hooks.
 # You are free to use this script for whatever you want.
 #
+# Modified by Eric Berberich <eric.berberich@cgal.org>
+# Taken from https://gist.github.com/1248871
 
 BINARY_REGEX='\.(pdb|dll|exe|png|gif|jpg|mwb|zip|tgz|gz|bz2|7z|rar|swf|fla|jar|mo|ttf|foo|mp3|icc|pdf|bmp|wmf)$'
 NO_EXTENSION_REGEX='/\w+$'
@@ -68,6 +70,10 @@ if [ "$FIRST" != "" ]; then
   echo "# \"git config core.autocrlf true\" to activate CRLF conversion."
   echo "# \"git commit --amend\" to change your most recent commit."
   echo "# \"git rebase -i ${FIRST:0:7}^\" to change all commits."
+  echo "#"
+  echo "# You might also consider to install a pre-commit hook"
+  echo "# to your repository, in order to get notified about"
+  echo "# this problem earlier."
   echo "###################################################################"
   echo -e "$ERRORS"
   exit 1
