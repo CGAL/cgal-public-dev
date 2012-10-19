@@ -11,11 +11,11 @@
 # will have put this somewhere standard.  You should make this script
 # executable then link to it in the repository you would like to use it in.
 # For example, on debian the hook is stored in
-# /usr/share/doc/git-core/contrib/hooks/post-receive-email:
+# /usr/share/git-core/contrib/hooks/post-receive-email:
 #
 #  chmod a+x post-receive-email
 #  cd /path/to/your/repository.git
-#  ln -sf /usr/share/doc/git-core/contrib/hooks/post-receive-email hooks/post-receive
+#  ln -sf /usr/share/git-core/contrib/hooks/post-receive-email hooks/post-receive
 #
 # This hook script assumes it is enabled on the central repository of a
 # project, with all users pushing only to it and not between each other.  It
@@ -55,6 +55,16 @@
 #     "t=%s; printf 'http://.../?id=%%s' \$t; echo;echo; git show -C \$t; echo"
 #   Be careful if "..." contains things that will be expanded by shell "eval"
 #   or printf.
+# hooks.emailmaxlines
+#   The maximum number of lines that should be included in the generated
+#   email body. If not specified, there is no limit.
+#   Lines beyond the limit are suppressed and counted, and a final
+#   line is added indicating the number of suppressed lines.
+# hooks.diffopts
+#   Alternate options for the git diff-tree invocation that shows changes.
+#   Default is "--stat --summary --find-copies-harder". Add -p to those
+#   options to include a unified diff of changes in addition to the usual
+#   summary output.
 #
 # Notes
 # -----
@@ -66,19 +76,10 @@
 # ---------------------------- Functions
 
 #
-# Top level email generation function.  This decides what type of update
-# this is and calls the appropriate body-generation routine after outputting
-# the common header
+# Function to prepare for email generation. This decides what type
+# of update this is and whether an email should even be generated.
 #
-# Note this function doesn't actually generate any email output, that is
-# taken care of by the functions it calls:
-#  - generate_email_header
-#  - generate_create_XXXX_email
-#  - generate_update_XXXX_email
-#  - generate_delete_XXXX_email
-#  - generate_email_footer
-#
-generate_email()
+prep_for_email()
 {
 	# --- Arguments
 	oldrev=$(git rev-parse $1)
@@ -147,13 +148,13 @@ generate_email()
 			short_refname=${refname##refs/remotes/}
 			echo >&2 "*** Push-update of tracking branch, $refname"
 			echo >&2 "***  - no email generated."
-			exit 0
+			return 1
 			;;
 		*)
 			# Anything else (is there anything else?)
 			echo >&2 "*** Unknown type of update to $refname ($rev_type)"
 			echo >&2 "***  - no email generated"
-			exit 1
+			return 1
 			;;
 	esac
 
@@ -169,9 +170,32 @@ generate_email()
 		esac
 		echo >&2 "*** $config_name is not set so no email will be sent"
 		echo >&2 "*** for $refname update $oldrev->$newrev"
-		exit 0
+		return 1
 	fi
 
+	return 0
+}
+
+#
+# Top level email generation function.  This calls the appropriate
+# body-generation routine after outputting the common header.
+#
+# Note this function doesn't actually generate any email output, that is
+# taken care of by the functions it calls:
+#  - generate_email_header
+#  - generate_create_XXXX_email
+#  - generate_update_XXXX_email
+#  - generate_delete_XXXX_email
+#  - generate_email_footer
+#
+# Note also that this function cannot 'exit' from the script; when this
+# function is running (in hook script mode), the send_mail() function
+# is already executing in another process, connected via a pipe, and
+# if this function exits without, whatever has been generated to that
+# point will be sent as an email... even if nothing has been generated.
+#
+generate_email()
+{
 	# Email parameters
 	# The email subject will contain the best description of the ref
 	# that we can build from the parameters
@@ -179,6 +203,9 @@ generate_email()
 	if [ -z "$describe" ]; then
 		describe=$rev
 	fi
+
+	# CGAL: no describe
+	describe=
 
 	generate_email_header
 
@@ -192,7 +219,12 @@ generate_email()
 		fn_name=atag
 		;;
 	esac
-	generate_${change_type}_${fn_name}_email
+
+	if [ -z "$maxlines" ]; then
+		generate_${change_type}_${fn_name}_email
+	else
+		generate_${change_type}_${fn_name}_email | limit_lines $maxlines
+	fi
 
 	generate_email_footer
 }
@@ -371,7 +403,7 @@ generate_update_branch_email()
 			echo "            \\"
 			echo "             O -- O -- O ($oldrev)"
 			echo ""
-			echo "The removed revisions are not necessarilly gone - if another reference"
+			echo "The removed revisions are not necessarily gone - if another reference"
 			echo "still refers to them they will stay in the repository."
 			rewind_only=1
 		else
@@ -390,6 +422,17 @@ generate_update_branch_email()
 		fi
 	fi
 
+	# The diffstat is shown from the old revision to the new revision.
+	# This is to show the truth of what happened in this change.
+	# There's no point showing the stat from the base to the new
+	# revision because the base is effectively a random revision at this
+	# point - the user will be interested in what this revision changed
+	# - including the undoing of previous revisions in the case of
+	# non-fast-forward updates.
+	echo ""
+	echo "Summary of changes:"
+	git diff-tree $diffopts $oldrev..$newrev
+
 	echo ""
 	if [ -z "$rewind_only" ]; then
 		echo "Those revisions listed above that are new to this repository have not"
@@ -406,17 +449,6 @@ generate_update_branch_email()
 	else
 		echo "No new revisions were added by this update."
 	fi
-
-	# The diffstat is shown from the old revision to the new revision.
-	# This is to show the truth of what happened in this change.
-	# There's no point showing the stat from the base to the new
-	# revision because the base is effectively a random revision at this
-	# point - the user will be interested in what this revision changed
-	# - including the undoing of previous revisions in the case of
-	# non-fast-forward updates.
-	echo ""
-	echo "Summary of changes:"
-	git diff-tree --stat --summary --find-copies-harder $oldrev..$newrev
 }
 
 #
@@ -426,7 +458,7 @@ generate_delete_branch_email()
 {
 	echo "       was  $oldrev"
 	echo ""
-	echo $LOGEND
+	echo $LOGBEGIN
 	git show -s --pretty=oneline $oldrev
 	echo $LOGEND
 }
@@ -526,7 +558,7 @@ generate_delete_atag_email()
 {
 	echo "       was  $oldrev"
 	echo ""
-	echo $LOGEND
+	echo $LOGBEGIN
 	git show -s --pretty=oneline $oldrev
 	echo $LOGEND
 }
@@ -591,7 +623,7 @@ generate_delete_general_email()
 {
 	echo "       was  $oldrev"
 	echo ""
-	echo $LOGEND
+	echo $LOGBEGIN
 	git show -s --pretty=oneline $oldrev
 	echo $LOGEND
 }
@@ -637,6 +669,24 @@ show_new_revisions()
 }
 
 
+limit_lines()
+{
+	lines=0
+	skipped=0
+	while IFS="" read -r line; do
+		lines=$((lines + 1))
+		if [ $lines -gt $1 ]; then
+			skipped=$((skipped + 1))
+		else
+			printf "%s\n" "$line"
+		fi
+	done
+	if [ $skipped -ne 0 ]; then
+		echo "... $skipped lines suppressed ..."
+	fi
+}
+
+
 send_mail()
 {
 	if [ -n "$envelopesender" ]; then
@@ -674,6 +724,9 @@ announcerecipients=$(git config hooks.announcelist)
 envelopesender=$(git config hooks.envelopesender)
 emailprefix=$(git config hooks.emailprefix || echo '[SCM] ')
 custom_showrev=$(git config hooks.showrev)
+maxlines=$(git config hooks.emailmaxlines)
+diffopts=$(git config hooks.diffopts)
+: ${diffopts:="--stat --summary --find-copies-harder"}
 
 # --- Main loop
 # Allow dual mode: run from the command line just like the update hook, or
@@ -682,10 +735,11 @@ if [ -n "$1" -a -n "$2" -a -n "$3" ]; then
 	# Output to the terminal in command line mode - if someone wanted to
 	# resend an email; they could redirect the output to sendmail
 	# themselves
-	PAGER= generate_email $2 $3 $1
+	prep_for_email $2 $3 $1 && PAGER= generate_email
 else
 	while read oldrev newrev refname
 	do
-		generate_email $oldrev $newrev $refname | send_mail
+		prep_for_email $oldrev $newrev $refname || continue
+		generate_email $maxlines | send_mail
 	done
 fi
