@@ -1,96 +1,80 @@
-#!/bin/sh
+#!/bin/bash
+# 
+# An "update" hook which rejects any update containing CRLF.
 #
 # Author: Gerhard Gappmeier, ascolab GmbH
+# Author: Colin Mollenhour
+#
 # This script is based on the update.sample in git/contrib/hooks.
 # You are free to use this script for whatever you want.
 #
-# To enable this hook, rename this file to "update".
-#
 # Modified by Eric Berberich <eric.berberich@cgal.org>
-# Taken from: http://gergap.wordpress.com/2010/05/12/git-crlf-hook/
+# Taken from https://gist.github.com/1248871
 
-# --- Command line
+BINARY_REGEX='\.(pdb|dll|exe|png|gif|jpg|mwb|zip|tgz|gz|bz2|7z|rar|swf|fla|jar|mo|ttf|foo|mp3|icc|pdf|bmp|wmf)$'
+NO_EXTENSION_REGEX='/\w+$'
+OVERRIDE_REGEX='Contains CRLF'
+
 refname="$1"
 oldrev="$2"
 newrev="$3"
-#echo "COMMANDLINE: $*"
+BADREV="0000000000000000000000000000000000000000"
 
-# --- Safety check
-if [ -z "$GIT_DIR" ]; then
-	echo "Don't run this script from the command line." >&2
-	echo " (if you want, you could supply GIT_DIR then run" >&2
-	echo "  $0 <ref> <oldrev> <newrev>)" >&2
-	exit 1
-fi
+[ -z "$refname" -o -z "$oldrev" -o -z "$newrev" ] && \
+  { echo "Usage: $0 <ref> <oldrev> <newrev>" >&2; exit 1; }
 
-if [ -z "$refname" -o -z "$oldrev" -o -z "$newrev" ]; then
-	echo "Usage: $0 <ref> <oldrev> <newrev>" >&2
-	exit 1
-fi
+# Skip checks on branch deletions
+[ "$newrev" = "$BADREV" ] && exit 0
 
-# TODO other extensions to ignore?
-BINARAY_EXT="pdb dll exe png gif jpg"
+# Skip checks on tag pushes
+[[ $refname =~ ^refs\/tags\/ ]] && exit 0
 
-# returns 1 if the given filename is a binary file
-IsBinary() 
-{
-    result=0
-    for ext in $BINARAY_EXT; do
-        if [ "$ext" = "${1#*.}" ]; then
-            result=1
-            break
-        fi
-    done
-
-    return $result
-}
-
-# make temp paths
-tmp=$(mktemp /tmp/git.update.XXXXXX)
-log=$(mktemp /tmp/git.update.log.XXXXXX)    
-tree=$(mktemp /tmp/git.diff-tree.XXXXXX)
-ret=0
-
-git diff-tree -r "$oldrev" "$newrev" > $tree
-#echo
-#echo diff-tree:
-#cat $tree
-
-# read $tree using the file descriptors
-exec 3<&0
-exec 0<$tree
-while read old_mode new_mode old_sha1 new_sha1 status name
+FIRST=""
+ERRORS=""
+CR=$(printf "\r")
+for rev in $(git rev-list --reverse "$newrev" $(git for-each-ref --format='%(refname)' "refs/heads/*" | sed 's/^/\^/'))
 do
-    # debug output
-    #echo "old_mode=$old_mode new_mode=$new_mode old_sha1=$old_sha1 new_sha1=$new_sha1 status=$status name=$name"
-    # skip lines showing parent commit
-    test -z "$new_sha1" && continue
-    # skip deletions
-    [ "$new_sha1" = "0000000000000000000000000000000000000000" ] && continue
-   
+  # skip when commit mesage contains override
+  MESSAGE=$(git show -s --format=format:"%s" $rev)
+  [[ $MESSAGE =~ $OVERRIDE_REGEX ]] && continue
+
+  IS_BAD=0
+  while read old_mode new_mode old_sha1 new_sha1 status name
+  do
+    # skip lines showing parent commit and deletions
+    [[ -z "$new_sha1" ]] || [ "$new_sha1" = "$BADREV" ] && continue
+
     # don't do a CRLF check for binary files
-    IsBinary $tmp
-    if [ $? -eq 1 ]; then
-        continue # skip binary files
+    [[ $name =~ $BINARY_REGEX ]] && continue
+
+    # Skip pngs without extensions
+    if [[ $name =~ $NO_EXTENSION_REGEX ]] && git cat-file blob $new_sha1 | head -n 1 | grep -Fq "PNG"; then
+      continue
     fi
-    
+
     # check for CRLF
-    git cat-file blob $new_sha1 > $tmp
-    RESULT=`grep -Pl '\r\n' $tmp`
-    echo $RESULT
-    if [ "$RESULT" = "$tmp" ]; then
-        echo "###################################################################################################"
-        echo "# '$name' contains CRLF! Dear Windows developer, please activate the GIT core.autocrlf feature,"
-        echo "# or change the line endings to LF before trying to push."
-        echo "# Use 'git config core.autocrlf true' to activate CRLF conversion."
-        echo "# OR use 'git reset HEAD~1' to undo your last commit and fix the line endings."
-        echo "#"
- 	echo "# You might also consider to install a pre-commit hook to your repository, in order to get" 
-	echo "# notified about this problem earlier."
-	echo "###################################################################################################"
-        ret=1
+    if git cat-file blob $new_sha1 | grep -Eq "$CR$"; then
+      if [ "$FIRST" = "" ]; then FIRST=$rev; fi
+      if [ $IS_BAD -eq 0 ]; then IS_BAD=1; ERRORS="${ERRORS}CRLF DETECTED IN ${rev:0:7}:\n"; fi
+      ERRORS="${ERRORS}   $name\n"
     fi
+  done < <(git diff-tree -r "$rev")
 done
-exec 0<&3
-# --- Finished
-exit $ret
+
+if [ "$FIRST" != "" ]; then
+  echo "###################################################################"
+  echo "# One or more files contained CRLF (Windows) line endings which are"
+  echo "# not allowed. Activate the autocrlf feature and/or change the line"
+  echo "# endings to LF before committing and before trying to push. You   "
+  echo "# will have to amend your existing commits to not contain CRLF.    "
+  echo "# \"git config core.autocrlf true\" to activate CRLF conversion."
+  echo "# \"git commit --amend\" to change your most recent commit."
+  echo "# \"git rebase -i ${FIRST:0:7}^\" to change all commits."
+  echo "#"
+  echo "# You might also consider to install a pre-commit hook"
+  echo "# to your repository, in order to get notified about"
+  echo "# this problem earlier."
+  echo "###################################################################"
+  echo -e "$ERRORS"
+  exit 1
+fi
