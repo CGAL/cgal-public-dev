@@ -1,0 +1,5 @@
+#!/bin/sh
+cd $HOME/work/apache2.0
+./bin/apachectl start
+cd $HOME/work/GPU_programs/webxalci_server
+ssh  -R *:80:wks-11-02:8080 root@infvm1700

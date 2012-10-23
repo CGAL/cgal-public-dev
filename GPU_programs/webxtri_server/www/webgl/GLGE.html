@@ -1,0 +1,156 @@
+<html><head> 
+ 
+ 
+<title>GLGE</title> 
+<meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
+ 
+ 
+<script type="text/javascript" src="GLGE_files/glge-compiled-min.html"></script>
+<style>
+body{background-color: #000;color: #fff;font-family:arial;margin:0}
+</style>
+</head><body>
+
+<div id="dump"></div>
+
+<div>
+
+<canvas id="canvas" width="1311" height="1033"></canvas>
+<div id="power" style="position:absolute; left: 50px; top: 20px; height: 30px; width: 230px;">
+Powered By <a style="color: rgb(0, 255, 0); text-decoration: none;" href="http://www.glge.org/">GLGE</a>
+</div>
+<div id="framerate" style="position:absolute; right: 50px; top: 20px; height: 30px; width: 130px;">
+<div id="debug" style="padding: 5px">Frame Rate:133</div>
+</div>
+
+
+</div>
+
+<script type="text/javascript">
+
+
+var canvas=document.getElementById('canvas');
+canvas.width=window.innerWidth;
+canvas.height=window.innerHeight;
+
+var doc = new GLGE.Document();
+doc.onLoad=function(){
+//create the renderer
+var gameRenderer=new GLGE.Renderer(canvas);
+gameScene=new GLGE.Scene();
+gameScene=doc.getElement("mainscene");
+var camera=doc.getElement("maincamera");
+var lookat=doc.getElement("lookat");
+var sun=doc.getElement("sun");
+var blue1=doc.getElement("blue1");
+var blue2=doc.getElement("blue2");
+var cloudmaterial=doc.getElement("cloudmaterial");
+var bots=doc.getElement("bots");
+var cloud=doc.getElement("cloud");
+
+gameRenderer.setScene(gameScene);
+
+filter=new GLGE.Filter2d();
+filter.setEmitBufferWidth(256);
+filter.setEmitBufferHeight(256);
+filter.renderEmit=true;
+gameScene.setFilter2d(filter);
+
+//god rays and sky
+filter.addPassFile("emit1.glsl");
+filter.addPassFile("emit2.glsl");
+
+
+sun.addEventListener("downloadComplete",function(){
+    var injection=[];
+    injection.push("uniform float time;\n");
+    injection.push("vec4 GLGE_Position(vec4 pos){\n");
+    injection.push("pos.x=pos.x+sin(pos.x*5.0+time*10.0)*0.1;\n");
+    injection.push("pos.y=pos.y+cos(pos.y*5.0+time*10.0)*0.1;\n");
+    injection.push("return pos;\n");
+    injection.push("}\n");
+    this.getObjects()[0].setVertexShaderInjection(injection.join(""));
+});
+
+
+var positions=[];
+for(var i=-20;i<20;i++){
+    positions.push(0);
+    positions.push(0);
+    positions.push(i);
+    positions.push(0);
+    positions.push(0);
+    positions.push((i+1));
+}
+
+var line=(new GLGE.Object).setDrawType(GLGE.DRAW_LINES).setLineWidth(3);
+line.setMesh((new GLGE.Mesh).setPositions(positions));
+line.setMaterial(blue1);
+bots.addObject(line);
+
+
+var line2=(new GLGE.Object).setDrawType(GLGE.DRAW_LINES).setLineWidth(3);
+line2.setMesh((new GLGE.Mesh).setPositions(positions));
+line2.setMaterial(blue2);
+line2.setRotY(1.57);
+bots.addObject(line2);
+
+var positions=[];
+for(var i=0;i<1000;i++){
+    var v=GLGE.toUnitVec3([(Math.random()-0.5)*2,(Math.random()-0.5)*2,(Math.random()-0.5)*2]);
+    positions.push(v[0]*Math.random()*Math.random()*50);
+    positions.push(v[1]*Math.random()*Math.random()*10);
+    positions.push(v[2]*Math.random()*Math.random()*50);
+}
+
+var points=(new GLGE.Object).setDrawType(GLGE.DRAW_POINTS).setPointSize(2);
+points.setMesh((new GLGE.Mesh).setPositions(positions));
+points.setMaterial(cloudmaterial);
+cloud.addObject(points);
+points.setZtransparent(true);
+
+var injection=[];
+injection.push("uniform float time;\n");
+injection.push("vec4 GLGE_Position(vec4 pos){\n");
+
+injection.push("pos.z=pos.z+(fract(sin(dot(pos.xy+vec2(time) ,vec2(12.9898,78.233))) * 43758.5453)-0.5)*0.5;\n");
+injection.push("pos.y=pos.y+(fract(sin(dot(pos.zx+vec2(time) ,vec2(12.9898,78.233))) * 43758.5453)-0.5)*0.5;\n");
+injection.push("return pos;\n");
+injection.push("}\n");
+line.setVertexShaderInjection(injection.join(""));
+line2.setVertexShaderInjection(injection.join(""));
+
+
+
+var lasttime=0;
+var frameratebuffer=60;
+start=parseInt(new Date().getTime());
+var now;
+function render(){
+    now=parseInt(new Date().getTime());
+    
+    sun.getObjects()[0].setUniform("1f","time",(now-start)/1000);
+    line.setUniform("1f","time",(now-start)/1000);
+    line2.setUniform("1f","time",(now-start)/1000);
+    points.setUniform("1f","time",(now-start)/1000);
+    
+    frameratebuffer=Math.round(((frameratebuffer*9)+1000/(now-lasttime))/10);
+        document.getElementById("debug").innerHTML="Frame Rate:"+frameratebuffer;
+   gameRenderer.render();
+   lasttime=now;
+}
+setInterval(render,15);
+
+canvas.onmousemove=function(e){
+    camera.setLocX((e.clientX/canvas.width-0.5)*70);
+    camera.setLocZ((e.clientY/canvas.height-0.5)*50+5);
+    lookat.setLocX((e.clientX/canvas.width-0.5)*-70);
+    lookat.setLocZ((e.clientY/canvas.height-0.5)*-50+5);
+}
+
+}
+doc.load("level.xml");
+</script>
+
+
+</body></html>

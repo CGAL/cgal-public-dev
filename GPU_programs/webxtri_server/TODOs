@@ -1,0 +1,8 @@
+
+1. some indicator that server is still running
+2. coordinate axes
+3. absolute x/y-bounds
+4. show silhouette curve
+5. surface origin (centroid of all points)
+6. implement recompute mesh using surfaceIDs
+

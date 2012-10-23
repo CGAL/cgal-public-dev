@@ -1,0 +1,20 @@
+x^7*y-26/100*x*y*z^4+8/10*z^7-15/100*x^4*y^2-197/100*x*y^2*z^5-x^3*y*z^3+x^3*y-x^2*y*z^5-x^4*z^3+x*z^2
+
+(mit a b c d = 26/100 8/10 -15/100 197/100 mal 0.01)
+
+x min = -2.1
+x max = 4
+y min = -2.1
+y max = 4
+z min = -2.1
+z max = 1,8
+
+
+-sx=100 -sy=100 -btm=-2 -top=4 -z-below=-2 -z-above=2
+
+surface 3:
+
+x^7*y-a*x*y*z^4+b*z^7+c*x^4*y^2-d*x*y^2*z^5-x^3*y*z^3+x^3*y-x^2*y*z^5-x^4*z^3+x*z^2
+
+x, y, z from -5 up to 5
+

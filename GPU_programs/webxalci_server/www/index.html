@@ -1,0 +1,304 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!--DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN"-->
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head><title>XAlci Webdemo - home</title>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1"/>
+
+<META NAME="author" CONTENT="Pavel Emeliyanenko">
+<META NAME="subject" CONTENT="Interactive algebraic curve arrangement visualization">
+<META NAME="Description" CONTENT="The interactive server allows to easily analyse and plot arrangements of plane algebraic curves, it has intuitively simple interface and a gallery of algebraic curves rendered using our EXACT method.">
+<META NAME="Classification" CONTENT="This online service allows to analyse and plot arrangements of plane algebraic curves. In contrast to other graphing tools, our curve rendering is EXACT in the sence that we always produce the true mathematical result. The curve renderer is based on CGAL libraries.">
+<META NAME="Keywords" CONTENT="EXACUS, ACS, CGAL, math, maths, interactive server, algebraic curve arrangement">
+<META NAME="Geography" CONTENT="Europe, Germany">
+<META NAME="Language" CONTENT="English">
+<META HTTP-EQUIV="Expires" CONTENT="never">
+<META NAME="Copyright" CONTENT="Max-Planck Institute for Informatics">
+<META NAME="Designer" CONTENT="Pavel Emeliyanenko">
+<META NAME="Publisher" CONTENT="Max-Planck Institute for Informatics">
+<META NAME="Revisit-After" CONTENT="7">
+<META NAME="distribution" CONTENT="Global">
+<META NAME="Robots" CONTENT="INDEX,FOLLOW">
+<META NAME="city" CONTENT="Saarbruecken">
+<META NAME="country" CONTENT="Germany">
+
+<meta http-equiv="Content-Style-Type" content="text/css"/>
+<meta http-equiv="Pragma" content="no-cache"/>
+<meta http-equiv="Cache-Control" content="no-cache"/>
+<link rel="SHORTCUT ICON" href="c/favicon.ico" />
+<link rel="stylesheet" type="text/css" media="screen" href="c/mpi-inf.css" />
+<link rel="stylesheet" type="text/css" media="screen" href="c/xalci.css" />
+<link rel="stylesheet" type="text/css" media="print" href="c/print.css" />
+<style type="text/css">
+.capital {
+    font-family: Comic Sans MS; 
+    font-size: 24pt;
+}
+.emph {
+    font-weight: bold;
+}
+.it {
+    font-style: italic;
+}
+.smcaps {
+    font-variant: small-caps;
+}
+
+#bullet-inside ul {
+        list-style-type: disc;
+        list-style-image: url(/i/listblack.gif);
+        list-style-position: inside;
+    margin:0 0 0 2em;
+    padding:0 0 0 1em;
+text-indent: 10em;
+ }
+
+a#hp-index, a:link#hp-index, a:visited#hp-index {background: rgb(80%,85%,90%);}
+.ak { text-decoration: underline }
+
+</style>
+<script type="text/javascript" src="c/curves.js"></script>
+<script type="text/javascript" src="c/script.js"></script>
+</head><body >
+
+<div id="head1o2">
+    <div id="mpiidotspacer"></div>
+    <div id="mpiidot"></div>
+    <br /><center><span style="color: #A0A0A0; font-size: 20pt">Exploring 2D arrangements of implicit algebraic curves using <span class="smcaps">Xalci</span> web-demo</span></center>
+</div>
+
+<div id="head2o2">
+    <div id="mpiitext">max planck institut<br/>informatik</div>
+    <img id="mpiilogo" src="../c/mpii.jpg" alt="mpii" usemap="#Map" width="300" height="100"/><map name="Map" id="Map"><area shape="rect" coords="97,14,296,70" href="http://www.mpi-sb.mpg.de" alt="mpii logo" /><area shape="circle" coords="41,49,40" href="http://www.mpg.de/" alt="Minerva of the Max Planck Society" /></map>
+</div>
+
+<div class="centerdiv">
+<div id="head2o2">
+    <div id="deco">
+        <div id="picture_div" style="position: relative;"><a href="http://www.mpi-inf.mpg.de/projects/EXACUS"><img src="c/exacus.png" width="185" border="1" alt="Efficient and Exact Algorithms for Curves and Surfaces" /></a><br /><br /><a href="http://www.cgal.org"><img border="1" src="../c/cgal_resize.png" width="185" alt="Computational Geometry Algorithms Library" title ="Computational Geometry Algorithms Library"/></a><br /><br /><a href="http://acs.cs.rug.nl"><img src="../c/acs_resize.gif" border="1" width="185" title="Algorithms for Complex Shapes" alt="Algorithms for Complex Shapes" /></a></div>
+        <script type="text/javascript">
+            show_menu(0, "100px");//show_authors("120px");</script>
+
+<div style="position: relative; top: 200px;">
+<a  href="http://www3.clustrmaps.com/counter/maps.php?url=http://infvm1700.ag1.mpi-sb.mpg.de/" id="clustrMapsLink"><img src="http://www3.clustrmaps.com/counter/index2.php?url=http://infvm1700.ag1.mpi-sb.mpg.de/" style="border:0px;" alt="Locations of visitors to this page" title="Locations of visitors to this page" id="clustrMapsImg" />
+</a>
+<script type="text/javascript">
+function cantload() {
+img = document.getElementById("clustrMapsImg");
+img.onerror = null;
+img.src = "http://www2.clustrmaps.com/images/clustrmaps-back-soon.jpg";
+document.getElementById("clustrMapsLink").href = "http://www2.clustrmaps.com";
+}
+img = document.getElementById("clustrMapsImg");
+img.onerror = cantload;
+</script>
+</div>
+
+    </div>
+</div>
+<div id="hspacer">&nbsp;</div>
+
+<div style="position: relative; left: 230px; top: 0px; font-size: 11pt; width: 80%" >
+<hr style="margin-left: 0em" size="1" />
+
+<div> 
+<p><b><a href="cgi-bin/xalci.cgi"><span class="smcaps">Xalci</span> web demo</a></b> is a web-based application with Macromedia Flash client interface
+which allows everyone to <b>analyse</b> the topology of algebraic curves
+and <b>visualize</b> the arrangements of such curves.
+A real plane <i>algebraic curve</i> is a zero set of a <i>bivariate polynomial</i> f(x,y).
+These curves split the plane into 0-, 1- and 2-dimensional components,
+called vertices, arcs and facets of an arrangement. 
+Our software provides a detailed information on an arrangement
+and allows to interactively explore it by <b>zooming</b> at certain locations
+or <b>selecting</b> individual features. <span class="smcaps">Xalci</span> can be used for demonstrative and educational purposes.
+See also our <a href="http://www.youtube.com/watch?v=8DCNYPtGWLs&feature=youtu.be">
+<b>video presentation</b></a> at SoCG'08.
+For more information on planar arrangements, see <a href="http://www.cgal.org/Manual/3.3/doc_html/cgal_manual/Arrangement_2/Chapter_main.html">CGAL manual</a>.</p>
+
+<!--<span style="font-variant: small-caps;  font-size: 24pt; font-weight: bold">XAlci </span>-->
+<span class="capital">Our software</span><br />
+<p><span class="smcaps">Xalci</span> was developed within
+<a href="http://www.mpi-inf.mpg.de/departments/d1/areas/GCCA.html">
+Geometric Computing and Computer Algebra</a> group at Max-Planck Insitute for Informatics. A major part of our software has evolved from the former <a href="http://www.mpi-inf.mpg.de/projects/EXACUS">Exacus</a></span>
+project (<span class="emph">E</span>fficient and E<b>x</b>act <b>A</b>lgorithms for <b>Cu</b>rves and <b>S</b>urfaces) which has later become a part of <span class="smcaps">CGAL</span>.
+<span class="smcaps"><a href="http://www.cgal.org">Cgal</a></span>
+is a large Open Source software library providing various geometric algorithms
+designed according to <em>generic programming paradigm</em> as it is widely known from <a href="http://www.sgi.com/tech/stl">STL</a>.
+Particularly, we have contributed to a number of <span class="smcaps">Cgal</span> packages including <i>Bivariate Algebraic Kernel</i> for manipulations with algebraic curves and <i>Curved Kernel via Analysis</i> which provides an interface to <i>Arrangements</i> package.
+<a href="http://www.cgal.org/Manual/3.3/doc_html/cgal_manual/Arrangement_2/Chapter_main.html">CGAL Arrangements</a> is a generic implementation of <i>Bentley-Ottmann</i> sweep-line algorithm which allows us to compute an arrangement of various geometric objects.</p>
+
+<p>Our main goal is to provide efficient, exact (in mathematical sense) and complete (handling highly degenerate cases) algorithms and implementations for various-degree non-linear geometry. Using our software one can compute the arrangements of arbitrary-degree algebraic curves
+in the plane and embedded on two-dimensional parametric surfaces. We also support boolean operations on polygons bounded by such curve arcs.
+
+Our algorithms can handle all degeneracies, such as singularities and intersections of high multiplicity; efficiency is guaranteed through the use of various <i>filtering techniques</i> to avoid expensive computations in many cases (modular filters, floating point filters) and special handling for fixed-degree algebraic curves. Additionally, we utilize the modern <i>graphics hardware</i> to dramatically reduce the cost of expensive symbolic arithemtic.
+</p>
+
+<p>A table below shows <span class="smcaps">Xalci</span>'s software hierarchy
+starting from the third-party libraries in the bottom (providing
+various data structures, exact number types, graphics support, etc.)
+all the way up to the generic arrangements algorithm from <span class="smcaps">Cgal</span>.
+
+Note that, the distinction between middle-level libraries (<span class="smcaps">ConiX</span>,
+<span class="smcaps">CubiX</span>, <span class="smcaps">QuadriX</span>
+and <span class="smcaps">AlciX</span>)
+providing the analyses of conics, cubics, projected quadrics and arbitrary-degree algebraic curves is merely kept for historical reasons
+as it used to be in <span>Exacus</span>.
+The major part of this functionality has been subsumed by Bivariate algebraic kernel.
+
+
+<!--<p>In the near future <span class="smcaps">Exacus</span> is planned to become a part of <span class="smcaps"><a href="http://www.cgal.org">Cgal</a></span> project. The table below depicts a high-level structure of <span class="smcaps">Exacus</span> in the current state of development. The top-level libraries (<span class="smcaps">ConiX</span>,
+<span class="smcaps">CubiX</span>, <span class="smcaps">QuadriX</span>
+and <span class="smcaps">AlciX</span>) provide curve and curve pair analyses of
+conics, cubics, projected quadrics and arbitrary-degree algebraic curves respectively. <span class="smcaps">SweepX</span> layer serves as a generic interface for arrangement computations, using one of the top-level libraries.
+<span class="smcaps">NumeriX</span> provides algebraic foundations for computations with generic number types and polynomials. On the bottom level there are third-party libraries which provide various data structures,
+  exact number types, graphic output, etc. Currently, some parts of <span class="smcaps">NumeriX</span> and <span class="smcaps">SweepX</span> layers are removed from <span class="smcaps">Exacus</span>, and instead integrated into the <span class="smcaps">Cgal</span> library.-->
+
+</p>
+
+<p>
+<center><table border="1" cellspacing="0" cellpadding="7" width="70%">
+<tr>
+<tr><td align="center"  colspan="4">
+CGAL Arrangements</td></tr>
+<tr><td align="center"  colspan="4">
+Curved Kernel via Analysis</td></tr>
+<td align="center" valign="bottom"><img height = "65px" 
+src="c/conix_resize.bmp" border="0"><br />
+<span class="smcaps">ConiX (CnX)</span></td>
+<td align="center"><img height = "65px" src="c/cubix_resize.bmp" 
+border="0"><br />
+<span class="smcaps">CubiX (CbX)</span></td>
+<td align="center"><img height = "65px" src="c/quadrix_resize.bmp" 
+border="0"><br />
+<span class="smcaps">QuadriX (QdX)</span></td>
+<td align="center"><img height = "75px" src="c/alcix_resize.bmp" 
+border="0"><br />
+<span class="smcaps">AlciX (AcX)</span></td>
+</tr>
+<tr><td align="center"  colspan="4">
+Bivariate Algebraic Kernel</td></tr>
+<tr><td align="center"  colspan="4">
+Univariate Algebraic Kernel (<a href="http://vegas.loria.fr/rs">Real Solve</a>)</td></tr>
+<tr><td align="center"  colspan="4">
+<span class="smcaps">Cgal</span> library support</td></tr>
+
+<tr>
+<td colspan="4">
+<table border="0" cellspacing="0" cellpadding="0" width="100%">
+<tr>
+<td align="center"><a href="http://www.sgi.com/tech/stl"><span class="smcaps">Stl</span></a></td>
+<td align="center"><a href="http://www.boost.org"><span class="smcaps">Boost</span></a></td>
+<td align="center"><a href="http://gmplib.org"><span class="smcaps">Gmp</span></a></td>
+<td align="center"><a href="http://www.mpfr.org"><span class="smcaps">Mpfr</span></a></td>
+<td align="center"><a href="https://gforge.inria.fr/projects/mpfi"><span class="smcaps">Mpfi</span></a></td>
+<!--<td align="center"><a href="http://cs.nyu.edu/exact"><span class="smcaps">Core</span></a></td>-->
+<td align="center"><a href="http://www.shoup.net/ntl"><span class="smcaps">Ntl</span></a></td>
+<!--<td align="center"><a href="http://www.mpi-inf.mpg.de/LEDA"><span class="smcaps">Leda</span></a></td>-->
+<td align="center"><a href="http://trolltech.com/products/qt"><span class="smcaps">Qt</span></a></td>
+</tr></table>
+</td></tr>
+</table></center></p>
+
+<p>To compute and manipulate algebraic arrangements, we utilize the following algorithms:
+<div style="margin-left: 3em;" id="bullet-inside">
+    <li>
+    <I>Decomposition of the algebraic curves in a set of x-monotone arcs</I>:
+    In this step we perform geometric-topological analysis of each algebraic curve using a fast symbolic-numeric lifting method <A HREF="#refs">[2,3]</A>. Our approach uses a novel <i>validation procedure</i> which favours low-precision number computations whenever possible and greatly reduces the overhead of expensive symbolic arithmetic.
+    The output of the analysis is equivalent to the computation of
+    a <i>cylindrical algebraic decomposition</i> (CAD) with adjacency information. A large portion of the software migrated from the previous approach used for curve and curve-pair analyses, see <A HREF="#refs">[4,5]</A>.<br />
+    <br />
+    </li>
+    <li>
+    <I>Arrangement computation of the curve arcs</I>: We use a generic
+    implementation of Bentley-Ottmann sweep-line algorithm offered by
+    <span class="smcaps">Cgal</span>'s Arrangements package. 
+    The geometric-topological analyses of a single algebraic curve and of a pair of curves are translated into geometric predicates on the curve arcs
+    using Curved Kernel via Analysis package, see <A HREF="#refs">[1]</A>.<br /><br />
+    </li>
+    <li>
+    <I>Visualization of the curve arcs of an arrangement</I>: Our algorithm is based on the combination of <i>curve tracing</i> and
+    <i>local space subdivision</i> methods, see <A HREF="#refs">[6,7]</A>. It computes a geometrically-correct piecewise-linear approximation of a curve arc which lies within a fixed Hausdorff distance (pixel size) from the actual curve graph. Robustness of our method is guaranteed by an adaptive precision model such that the
+    majority of algebraic curves can be handled using only low-precision floating-point computations while exact arithemtic is employed in tough cases.
+    </li>
+  </div>
+</p>
+All the subalgorithms mentioned above guarantee the correctness of the computed
+results such that resulting plot provides a mathematically true picture of the arrangement. We are also planning to integrate the graphics hardware support to further reduce the impact of expensive symbolic computations.
+
+<!--[3] P. Emeliyanenko. High-performance polynomial GCD computations on graphics processors. In HPCS`11, Istanbul, Turkey, pages 215-224, 2011, IEEE.
+
+[5] P. Emeliyanenko. Accelerating symbolic computations on NVidia Fermi. In GTC`10 (NVidia research summit), poster presentation. San Jose, California, 2010.
+[6] P. Emeliyanenko. A complete modular resultant algorithm targeted for realization on graphics hardware. In PASCO '10, pages 35-43, New York, NY, USA, 2010. ACM.
+[7] P. Emeliyanenko. Modular Resultant Algorithm for Graphics Processors. In ICA3PP '10, pages 427-440, Berlin, Heidelberg, 2010. Springer-Verlag.-->
+
+  <p><A name="refs"><b>References:</b></A></p>
+  <ol type=1>
+<li>E. Berberich, P. Emeliyanenko: CGAL's Curved Kernel via Analysis,
+Algorithms for Complex Shapes, MPI f&uuml;r Informatik, ACS-TR-123203-04, Technical Report, 2008</li><br />
+
+<li>E. Berberich, P. Emeliyanenko, A. Kobel, M. Sagraloff: <a href="http://arxiv.org/abs/1103.4697">
+Arrangement Computation for Planar Algebraic Curves.</a> In <i>SNC '11</i>, San Jose, California, 2011</li><br />
+<li>E. Berberich, P. Emeliyanenko, M. Sagraloff:
+<a href="http://www.siam.org/proceedings/alenex/2011/alx11_04_berberiche.pdf">An Elimination Method for Solving Bivariate Polynomial Systems: Eliminating the Usual Drawbacks.</a> In <i>ALENEX '11</i>, pages 35-47. SIAM, 2011</li><br />
+<li>A. Eigenwillig, M. Kerber, N. Wolpert: <A
+HREF="http://dx.doi.org/10.1145/1277548.1277570">Fast 
+and Exact Geometric Analysis of Real Algebraic Plane Curves</A>.
+In <i>ISSAC '07</i>, pages 151-158. New York, NY, USA, 2008. ACM</li><br />
+<li>A. Eigenwillig, M. Kerber: <A HREF="http://dl.acm.org/citation.cfm?id=1347096">Exact
+and Efficient 2D-Arrangements of Arbitrary Algebraic Curves</A>.
+In <i>SODA '08</i>, pages 122-131. SIAM, Philadelphia, PA, USA</li><br />
+<li>P. Emeliyanenko, E. Berberich, M. Sagraloff: <a href="http://dx.doi.org/10.1007/978-3-642-10331-5_57">Visualizing Acrs of Implicit Algebraic Curves, Exactly and Fast.</a> In <i>ISVC '09</i>, pages 608-619, Berlin, Heidelberg, 2009. Springer-Verlag</li><br />
+<li>P. Emeliyanenko, M. Kerber: <a href="http://dx.doi.org/10.1145/1377676.1377714">Visualizing and Exploring Planar Algebraic Arrangements - a Web Application.</a> In <i>SCG '08</i>, pages 224-225, video presentation. New York, NY, USA, 2008. ACM.</li><br />
+<!--<li>Pavel Emeliyanenko: <A
+HREF="https://domino.mpi-inf.mpg.de/intranet/ag1/ag1publ.nsf/20a0a8aecef76f33c12569e30040d63d/fb0c2a279bd897d1c12572900046c0a0!OpenDocument">Visualization
+of Points and Segments of Real Algebraic Plane Curves</A>. Master 
+thesis, Saarbr&uuml;cken, Germany 2007
+    </li><br />-->
+<!--<li>E. Berberich, A. Eigenwillig, M. Hemmer, S. Hert, L.
+Kettner, K. Mehlhorn, J. Reichel, Susanne Schmitt, Elmar
+Sch&ouml;mer, Nicola Wolpert: <A 
+HREF="https://domino.mpi-inf.mpg.de/intranet/ag1/ag1publ.nsf/20a0a8aecef76f33c12569e30040d63d/a9e7b6d8360440c4c1256f9300454742!OpenDocument">EXACUS: 
+Efficient and exact algorithms for curves and surfaces</A>. 13th Annual 
+European Symposium on Algorithms (ESA 2005), LNCS 3669, 155-166.
+    </li>-->
+  </ol>
+</p>
+<br /><hr style="margin-left: 0em" size="1" /><br />
+</div>
+
+
+<!-- Here starts counters -->
+<!-- Here starts counters -->
+<div align='left'>
+<!-- START COUNTER CODE -->
+<a href="http://www.apollofind.com/counter.html">
+<script language="JavaScript">
+<!--
+  var data = '&r=' + escape(document.referrer)
+    + '&n=' + escape(navigator.userAgent)
+    + '&p=' + escape(navigator.userAgent)
+    + '&g=' + escape(document.location.href);
+  if (navigator.userAgent.substring(0,1)>'3')
+    data = data + '&sd=' + screen.colorDepth 
+    + '&sw=' + escape(screen.width+'x'+screen.height);
+  document.write('<a href="http://www.apollofind.com/counter.html" target="_blank" >');
+  document.write('<img border=0 hspace=0 '+'vspace=0 src="http://www.apollofind.com/counter.php?i=7219' + data + '">');
+  document.write('</a>');
+ // -->
+</script></a><!--<br><a href="http://www.apollofind.com/counter.html">web site counter</a>-->
+<!-- END COUNTER CODE -->
+
+<!-- src="http://www.apollofind.com/counter.php?i=7219' + data + '">'); -->
+&nbsp;&nbsp;
+<a href="http://www.prchecker.info/" title="PageRank Checking Icon" target="_blank">
+<img src="http://pr.prchecker.info/getpr.php?codex=aHR0cDovL2V4YWN1cy5tcGktaW5mLm1wZy5kZQ==&tag=2" alt="PageRank Checking Icon" style="border:0;" /></a>
+&nbsp;&nbsp;
+</div>
+
+</div>
+
+
+<p align="center">Max-Planck-Institut f&uuml;r Informatik, <a href="http://www.mpi-inf.mpg.de/departments/d1/areas/GCCA.html">
+Geometric Computing Group</a>
+</p>
+
+</body></html>

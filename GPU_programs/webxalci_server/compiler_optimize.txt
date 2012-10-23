@@ -1,0 +1,2 @@
+
+-O3 -march=pentium4 -msse2 -fomit-frame-pointer -pipe

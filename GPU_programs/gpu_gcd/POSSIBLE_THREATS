@@ -1,0 +1,35 @@
+
+locations to check for:
+
+64-bits: negative offsets in 64-bit mode should be
+used with care since 32-bit unsigned numbers are NOT sign-extended
+when coverted to 64-bits !! 
+
+1. in GJG_update:
+if(!FullUpdate && !UpdateRun && thid == 0 && j == ChunkSz) {
+      G.z = mul_m(G.z, r[BlockSz - 1], m, invk);
+}
+
+note that G.z can be multiplied twice under certain conditions,
+for instance when during the last iteration 'di' > 0
+
+2.     if(FullUpdate && thid == BlockSz - 1 && g_row[4] == 0) {
+    // the upper thread is guaranteed to contain the correct data
+    //         if(G.x != 0 && G.x == G.z && G.y == G.w)
+            if(G.x == G.z && G.y == G.w) 
+                g_row[4] = 1;
+   }   
+
+yet unresolved situation when gcd degree is divisible by 'ChunkSz'
+in this case GCD detection might be troublesome
+especially when polynomial is sparse, i.e., f(x) = x^100 - 123x^2+1...
+
+3. in sqfree_factorize_gpu.cu
+it is unclear why the # of blocks should be:
+
+n_blocks = (nu + chunk_sz) / (2*chunk_sz) + 1;
+
+that is, one block more ?..
+
+4. when two polynomials are the same up to a scalar factor, the algorithm does not
+give the correct result.. ?
