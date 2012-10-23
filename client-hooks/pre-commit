@@ -52,11 +52,11 @@ then
     echo "To be portable it is advisable to rename the file ..."
     echo
 # TODO echo filenames with problems!
-    echo "If you know what you are doing you can disable this"
-    echo "check using:"
-    echo
-    echo "  git config hooks.allownonascii true"
-    echo
+    echo "If you know what you are doing check the pre-commit hook"
+    echo "on how to disable this behavior."
+#    echo
+#    echo "  git config hooks.allownonascii true"
+#    echo
     exit 1
 fi
 
@@ -70,11 +70,11 @@ then
     echo "Error: Attempt to add file which already exists in different case"
     echo
 # TODO echo filenames with problems!
-    echo "If you know what you are doing you can disable this"
-    echo "check using:"
-    echo
-    echo "  git config hooks.allowcaseonly true"
-    echo
+    echo "If you know what you are doing check the pre-commit hook"
+    echo "on how to disable this behavior."
+#    echo
+#    echo "  git config hooks.allowcaseonly true"
+#    echo
     exit 1
 fi 
 
@@ -88,11 +88,11 @@ then
     echo "with people on other platforms."
 # TODO echo filenames with problems!
     echo
-    echo "If you know what you are doing you can disable this"
-    echo "check using:"
-    echo
-    echo "  git config hooks.allowsymlinks true"
-    echo
+    echo "If you know what you are doing check the pre-commit hook"
+    echo "on how to disable this behavior."
+#    echo
+#    echo "  git config hooks.allowsymlinks true"
+#    echo
     exit 1
 fi
 
