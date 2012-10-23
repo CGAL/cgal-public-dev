@@ -26,6 +26,10 @@ allowcaseonly=$(git config hooks.allowcaseonly)
 # hooks.allowsymlink
 #    This boolean sets whether you want to allow symlinks.
 allowsymlinks=$(git config hooks.allowsymlinks)
+# hooks.rejectdotsvn
+#    This boolean sets whether .svn subdir are allowed to be added
+#    to the repository.
+allowdotsvn=$(git config hooks.allowdotsvn)
 
 # Redirect output to stderr.
 exec 1>&2
@@ -91,6 +95,27 @@ then
     echo
     exit 1
 fi
+
+# Check that transaction will not create olders
+# whose name is .svn
+if [ "$allowdotsvn" != "true" ]
+then
+  criticalfiles=$(git ls-files | grep ".svn/")
+  if test $(echo $criticalfiles | wc -c) != 0
+  then
+    echo "Error: Attempt to add .svn subdirectory:"
+    echo
+    echo $criticalfiles
+    echo
+    echo "If you know what you are doing check the pre-commit hook"
+    echo "on how to disable this behavior."
+#    echo
+#    echo "  git config hooks.allowdotsvn true"
+#    echo
+    exit 1
+  fi
+fi 
+
 
 # If there are whitespace errors, print the offending file names and fail.
 exec git diff-index --check --cached $against --
