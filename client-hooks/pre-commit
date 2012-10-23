@@ -26,7 +26,7 @@ allowcaseonly=$(git config hooks.allowcaseonly)
 # hooks.allowsymlink
 #    This boolean sets whether you want to allow symlinks.
 allowsymlinks=$(git config hooks.allowsymlinks)
-# hooks.rejectdotsvn
+# hooks.allowdotsvn
 #    This boolean sets whether .svn subdir are allowed to be added
 #    to the repository.
 allowdotsvn=$(git config hooks.allowdotsvn)
