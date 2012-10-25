@@ -1,4 +1,0 @@
-cd .git/hooks
-git init
-git pull .. hooks-for-clients
-cd ../..
