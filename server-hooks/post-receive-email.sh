@@ -65,9 +65,6 @@
 #   Default is "--stat --summary --find-copies-harder". Add -p to those
 #   options to include a unified diff of changes in addition to the usual
 #   summary output.
-# hooks.emailsplitlevel
-#   If set to "seperate" there is an email sent for each commit,
-#   otherwise each update on the rev gets only a single email.
 #
 # Notes
 # -----
@@ -176,9 +173,6 @@ prep_for_email()
 		return 1
 	fi
 
-	sender=$(git log -1 --pretty='format:%cn <%ce>' $newrev)
-	author=$(git log -1 --pretty='format:%an <%ae>' $newrev)
-
 	return 0
 }
 
@@ -210,21 +204,10 @@ generate_email()
 		describe=$rev
 	fi
 
-	if [ "$emailsplitlevel" = "seperate" ]; then
-		describe="$(git log -1 --pretty=format:%s $rev) ($(git log -1 --pretty=format:%h $rev))"
-	else
-		# CGAL: no describe
-		describe=
-	fi
+	# CGAL: no describe
+	describe=
 
-	if [ "$emailsplitlevel" = "seperate" ]; then
-		generate_email_header
-		git log -1 --pretty='format:%B' $newrev
-		echo
-		echo "The $refname_type '$short_refname' has been ${change_type}d"
-	else
-		generate_email_header
-	fi
+	generate_email_header
 
 	# Call the correct body generation function
 	fn_name=general
@@ -243,31 +226,16 @@ generate_email()
 		generate_${change_type}_${fn_name}_email | limit_lines $maxlines
 	fi
 
-	# CGAL: disable footer
-	#generate_email_footer
+	generate_email_footer
 }
 
 generate_email_header()
 {
 	# --- Email (all stdout will be the email)
 	# Generate header
-	if [ "$emailsplitlevel" = "seperate" ]; then
 	cat <<-EOF
 	To: $recipients
-	From: $sender
-	Subject: [${emailprefix}: $short_refname] $describe
-	Content-Type: text/plain; charset=utf-8
-	X-Git-Refname: $refname
-	X-Git-Reftype: $refname_type
-	X-Git-Oldrev: $oldrev
-	X-Git-Newrev: $newrev
-
-	EOF
-	else
-	#Subject: ${emailprefix}$projectdesc $refname_type '$short_refname' ${change_type}d. $describe
-	cat <<-EOF
-	To: $recipients
-	Subject: $refname_type '$short_refname' ${change_type}d. $describe
+	Subject: ${emailprefix}$projectdesc $refname_type '$short_refname' ${change_type}d. $describe
 	Content-Type: text/plain; charset=utf-8
 	X-Git-Refname: $refname
 	X-Git-Reftype: $refname_type
@@ -276,19 +244,19 @@ generate_email_header()
 
 	The $refname_type '$short_refname' has been ${change_type}d
 	EOF
-	fi
 }
 
 generate_email_footer()
 {
-	SPACE=" "
-	cat <<-EOF
-
-
-	hooks/post-receive
-	--${SPACE}
-	$projectdesc
-	EOF
+# disable footer
+#	SPACE=" "
+#	cat <<-EOF
+#
+#
+#	hooks/post-receive
+#	--${SPACE}
+#	$projectdesc
+#	EOF
 }
 
 # --------------- Branches
@@ -722,7 +690,7 @@ limit_lines()
 
 send_mail()
 {
-	if [ -n "$envelopesender" -a "emailsplitlevel" != "seperate" ]; then
+	if [ -n "$envelopesender" ]; then
 		/usr/sbin/sendmail -t -f "$envelopesender"
 	else
 		/usr/sbin/sendmail -t
@@ -755,13 +723,11 @@ fi
 recipients=$(git config hooks.mailinglist)
 announcerecipients=$(git config hooks.announcelist)
 envelopesender=$(git config hooks.envelopesender)
-sender=$envelopesender
 emailprefix=$(git config hooks.emailprefix || echo '[SCM] ')
 custom_showrev=$(git config hooks.showrev)
 maxlines=$(git config hooks.emailmaxlines)
 diffopts=$(git config hooks.diffopts)
 : ${diffopts:="--stat --summary --find-copies-harder"}
-emailsplitlevel=$(git config hooks.emailsplitlevel)
 
 # --- Main loop
 # Allow dual mode: run from the command line just like the update hook, or
@@ -770,32 +736,11 @@ if [ -n "$1" -a -n "$2" -a -n "$3" ]; then
 	# Output to the terminal in command line mode - if someone wanted to
 	# resend an email; they could redirect the output to sendmail
 	# themselves
-	if [ "$emailsplitlevel" = "seperate" ]; then
-		for rev in $(git rev-list $2..$3)
-		do
-			if [ $2 = $rev ]; then 
-                            continue
-			fi
-			prep_for_email $rev^1 $rev $1 && PAGER= generate_email
-		done
-	else
-		prep_for_email $2 $3 $1 && PAGER= generate_email
-	fi
+	prep_for_email $2 $3 $1 && PAGER= generate_email
 else
 	while read oldrev newrev refname
 	do
-	if [ "$emailsplitlevel" = "seperate" ]; then
-		for rev in $(git rev-list $oldrev..$newrev)
-		do
-			if [ $2 = $rev ]; then 
-                            continue
-			fi
-			prep_for_email $rev^1 $rev $refname
-			generate_email $maxlines | send_mail
-                done
-	else
 		prep_for_email $oldrev $newrev $refname || continue
 		generate_email $maxlines | send_mail
-	fi
 	done
 fi
