@@ -118,7 +118,7 @@ fi
 #-----------------------------------------------------------------------------
 # Reject Unix symbolic links, which are not valid (in fact: ignored) on Windows.
 if [ "$allowsymlinks" != "true" ] &&
-    test $(git ls-files -s | awk '/120000/{print $4}' | wc -l) != 0
+    test $(git diff --name-only --cached | xargs git ls-files -s | awk '/120000/{print $4}' | wc -l) != 0
 then
     echo "Error: Attempt to add a symlink."
     echo
@@ -140,7 +140,7 @@ fi
 if [ "$allowdotsvn" != "true" ]
 then
   criticalfiles=$(git ls-files | grep ".svn/")
-  if test $(echo $criticalfiles | wc -c) != 0
+  if test $(echo "$criticalfiles\c" | wc -w) != 0
   then
     echo "Error: Attempt to add .svn subdirectory:"
     echo
