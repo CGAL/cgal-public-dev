@@ -248,15 +248,14 @@ generate_email_header()
 
 generate_email_footer()
 {
-# disable footer
-#	SPACE=" "
-#	cat <<-EOF
-#
-#
-#	hooks/post-receive
-#	--${SPACE}
-#	$projectdesc
-#	EOF
+	SPACE=" "
+	cat <<-EOF
+
+
+	hooks/post-receive
+	--${SPACE}
+	$projectdesc
+	EOF
 }
 
 # --------------- Branches
