@@ -226,7 +226,7 @@ generate_email()
 		generate_${change_type}_${fn_name}_email | limit_lines $maxlines
 	fi
 
-	generate_email_footer
+#	generate_email_footer
 }
 
 generate_email_header()
