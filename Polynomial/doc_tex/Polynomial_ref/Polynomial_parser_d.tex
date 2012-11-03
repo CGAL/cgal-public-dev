@@ -2,6 +2,9 @@
 % \section{Introduction}
 % 
 
+% ../../Manual/developer_scripts/cgal_manual -pdf Polynomial_ref
+
+
 \begin{ccRefClass}{Polynomial_parser_d< Polynomial_d_, ParserPolicy >}
 \def\ccTagOperatorLayout{\ccFalse}
 
@@ -131,7 +134,8 @@ The default policy provides no type explicit conversions: in other words, polyno
 
 \ccSeeAlso
 \ccRefIdfierPage{ParserPolicy}\\
-\ccRefIdfierPage{CGAL::Polynomial_parser_d< Polynomial_d_, ParserPolicy >}
+\ccRefIdfierPage{CGAL::Polynomial_parser_d< Polynomial_d_, ParserPolicy >}\\
+\ccRefIdfierPage{CoercionTraits}
 
 
 \end{ccRefClass}
@@ -140,9 +144,8 @@ The default policy provides no type explicit conversions: in other words, polyno
 
 \ccDefinition
 This parser policy allows mixing rational and integer coefficients in the same expression. 
-\ccc{Polynomial_d_} must be a polynomial with rational coefficients or, otherwise, 
-there must be an implicit coercion between \ccc{Rational} number type and
-the innermost coefficients type of \ccc{Polynomial_d_}. 
+\ccc{Polynomial_d_} must be a polynomial with rational coefficients which are 
+\ccc{ExplicitInteroperable} with integer coefficients used in the same expression.
 
 \ccInclude{CGAL/Polynomial/Polynomial_parser_d.h}
 
@@ -155,9 +158,9 @@ the innermost coefficients type of \ccc{Polynomial_d_}.
 \ccTypes
 
 \ccNestedType{Polynomial_d}{See \ccc{ParserPolicy} concept.}\ccGlue
-\ccNestedType{Coeff}{See \ccc{ParserPolicy} concept.}\ccGlue
-\ccNestedType{Integer}{Integer number type provided by \ccc{ArithmeticKernel} for \ccc{Coeff} number type.}\ccGlue
-\ccNestedType{Rational}{Rational number type provided by \ccc{ArithmeticKernel} for \ccc{Coeff} number type.}\ccGlue
+\ccNestedType{Coeff}{Innermost coefficient type of \ccc{Polynomial_d}.}\ccGlue
+\ccNestedType{Integer}{Integer coefficient type which is \ccc{ExplicitInteroperable} with \ccc{Coeff} number type.}\ccGlue
+\ccNestedType{Rational}{Rational coefficient type which is \ccc{ExplicitInteroperable} with \ccc{Coeff} number type.}\ccGlue
 
 
 \ccCreation
@@ -168,16 +171,16 @@ the innermost coefficients type of \ccc{Polynomial_d_}.
 
 \ccSeeAlso
 \ccRefIdfierPage{ParserPolicy}\\
-\ccRefIdfierPage{CGAL::Polynomial_parser_d< Polynomial_d_, ParserPolicy >}
+\ccRefIdfierPage{CGAL::Polynomial_parser_d< Polynomial_d_, ParserPolicy >}\\
+\ccRefIdfierPage{CoercionTraits}
 
 \end{ccRefClass}
 
 \begin{ccRefClass} {Mixed_floating_point_parser_policy< Polynomial_d_ >}
 
 \ccDefinition
-This parser policy allows mixing rational and integer and floating-point (BigFloat) coefficients in the same expression. \ccc{Polynomial_d_} must be a polynomial with rational coefficients or, otherwise, 
-there must be an implicit coercion between \ccc{Rational} number type and
-the innermost coefficients type of \ccc{Polynomial_d_}. 
+This parser policy allows mixing rational and integer and floating-point (BigFloat) coefficients 
+in the same expression. \ccc{Polynomial_d_} must be a polynomial with rational coefficients. 
 
 \ccInclude{CGAL/Polynomial/Polynomial_parser_d.h}
 
@@ -190,10 +193,10 @@ the innermost coefficients type of \ccc{Polynomial_d_}.
 \ccTypes
 
 \ccNestedType{Polynomial_d}{See \ccc{ParserPolicy} concept.}\ccGlue
-\ccNestedType{Coeff}{See \ccc{ParserPolicy} concept.}\ccGlue
-\ccNestedType{Integer}{Integer number type provided by \ccc{ArithmeticKernel} for \ccc{Coeff} number type.}\ccGlue
-\ccNestedType{Rational}{Rational number type provided by \ccc{ArithmeticKernel} for \ccc{Coeff} number type.}\ccGlue
-\ccNestedType{BigFloat}{BigFloat number type provided by \ccc{ArithmeticKernel} for \ccc{Coeff} number type.}\ccGlue
+\ccNestedType{Coeff}{Innermost coefficient type of \ccc{Polynomial_d}.}\ccGlue
+\ccNestedType{Integer}{Integer coefficient type which is \ccc{ExplicitInteroperable} with \ccc{Coeff} number type.}\ccGlue
+\ccNestedType{Rational}{Rational coefficient type which is \ccc{ExplicitInteroperable} with \ccc{Coeff} number type.}\ccGlue
+\ccNestedType{BigFloat}{BigFloat coefficient type which is \ccc{ExplicitInteroperable}  with \ccc{Coeff} number type.}\ccGlue
 
 \ccCreation
 \ccCreationVariable{fp_policy}
@@ -203,7 +206,8 @@ the innermost coefficients type of \ccc{Polynomial_d_}.
 
 \ccSeeAlso
 \ccRefIdfierPage{ParserPolicy}\\
-\ccRefIdfierPage{CGAL::Polynomial_parser_d< Polynomial_d_, ParserPolicy >}
+\ccRefIdfierPage{CGAL::Polynomial_parser_d< Polynomial_d_, ParserPolicy >}\\
+\ccRefIdfierPage{CoercionTraits}
 
 \end{ccRefClass}
 
