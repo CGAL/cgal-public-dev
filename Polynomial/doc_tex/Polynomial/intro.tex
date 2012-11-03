@@ -191,8 +191,8 @@ The parser is configured via the so-called \ccc{parser policy} provided as a tem
 There are three parser policies available by default:
 
 \begin{itemize}
-\item \ccc{Default_parser_policy}: parses polynomials "as is". In other words, \ccc{Innermost_coefficient_type} of the target polynomial must agree with the type of coefficients
-read from the input stream;
+\item \ccc{Default_parser_policy}: parses polynomials "as is". In other words, coefficients of the type
+\ccc{Innermost_coefficient_type} of the target polynomial are read directly from the input stream;
 \item \ccc{Mixed_rational_parser_policy}: extends \ccc{Default_parser_policy}, and allows mixing coefficients of integer and rational number types in the same expression;
 \item \ccc{Mixed_floating_point_parser_policy}: extends \ccc{Mixed_rational_parser_policy}, and allows mixing the coefficients of integer, rational and floating-point number types in the same expression.
 \end{itemize}
