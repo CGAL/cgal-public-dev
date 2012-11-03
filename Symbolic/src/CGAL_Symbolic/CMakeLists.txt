@@ -54,10 +54,11 @@ if ( CUDA_FOUND )
       set(GPU_LIB_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
       if(CUDA_CHECK_EXITCODE LESS 20)
-          cache_set(CGAL_Symbolic_3RD_PARTY_LIBRARIES              ${GPU_LIB_DIR}/libgpu_symbolic_sm_13.so ${CUDA_LIBRARIES})
+          cache_set(CGAL_Symbolic_3RD_PARTY_LIBRARIES  
+		${GPU_LIB_DIR}/libgpu_symbolic_sm_13_32.so ${GPU_LIB_DIR}/libgpu_symbolic_sm_13_64.so  ${CUDA_LIBRARIES})
       else()
           cache_set(CGAL_Symbolic_3RD_PARTY_LIBRARIES 
-              ${GPU_LIB_DIR}/libgpu_symbolic_sm_20.so ${CUDA_LIBRARIES})
+              ${GPU_LIB_DIR}/libgpu_symbolic_sm_20_32.so ${GPU_LIB_DIR}/libgpu_symbolic_sm_20_64.so  ${CUDA_LIBRARIES})
       endif()
 
       cache_set(CGAL_Symbolic_3RD_PARTY_DEFINITIONS  "-DCGAL_USE_GPU")
