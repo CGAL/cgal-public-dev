@@ -10,12 +10,10 @@ project(gpu_gcd)
 set(CUMP_USE_32_BITS 0)
 
 if(CUMP_USE_32_BITS)
-set(CUDA_TOOLKIT_ROOT_DIR "$ENV{CUDA_TOOLKIT_ROOT_DIR}")
-set(CMAKE_CXX_FLAGS "${CMAKE_XXC_FLAGS} -m32")
-else()
-set(CUDA_TOOLKIT_ROOT_DIR "/var/tmp/cuda4.2-64/cuda")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -m32")
 endif()
 
+set(CUDA_TOOLKIT_ROOT_DIR "$ENV{CUDA_TOOLKIT_ROOT_DIR}")
 set(COMMON_INC_DIR "$ENV{HOME}/work/GPU_programs/common")
 set(GPU_SYMB_DIR "$ENV{HOME}/work/GPU_programs/gpu_symbolic")
 

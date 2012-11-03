@@ -151,6 +151,8 @@ void GPU_gcd::launch_kernel(unsigned *const_mem,
         *devMods = devR + data_sz, *devOuts = devMods + aux_cpu_mem;
 #endif
 
+//     printf("nu: %d; nv: %d\n", nu, nv);
+
     const_mem[NU] = nu, const_mem[NV] = nv;
     const_mem[NU_OFS4] = nu_ofs4, const_mem[NV_OFS4] = nv_ofs4;
     const_mem[MAX_NU] = max_nu;
@@ -228,6 +230,15 @@ void GPU_gcd::launch_kernel(unsigned *const_mem,
     LOCAL_TM_BEGIN(tma[0]);
     mod_reduce_kernel_dispatch(tmpLimbs, devU, devMods);
     LOCAL_TM_END(tmb[0]);
+
+//     int NN = 400;
+//     cudaMemcpy(R, devU, NN*sizeof(unsigned), cudaMemcpyDeviceToHost);
+// 
+//     for(unsigned i = 0; i < NN; i++) {
+//         printf("%d: %x\n", i, R[i]);
+//     }
+// 
+//     exit(1);
 
     LOCAL_TM_BEGIN(tma[1]);
 #if CUMP_USE_GCD_BLOCK_KERNEL

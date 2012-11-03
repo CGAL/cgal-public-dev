@@ -52,7 +52,7 @@ __device__ void __gload_chunk(unsigned *L, const unsigned *g_In,
     }
 
     if((int)thid < (int)chunk_sz) {
-        L[thid] = g_In[chunk_ofs + thid];
+        L[thid] = g_In[(int)(chunk_ofs + thid)];
     }
 }
 
@@ -109,7 +109,7 @@ __global__ void mod_reduce_kernel(unsigned *g_Out, const unsigned *g_In,
     //! ATTENTION: thid-based offset !!
     ofs = UMUL(NTHIDS + UMUL_PAD, bidx_y) + thid;
     if(ofs < n_mods)
-        m = g_Mods[ofs];
+        m = g_Mods[(int)ofs];
     d = m*2, v = -d;
 
     uint64 xx = 0xffffffffffffffffULL;
@@ -146,7 +146,7 @@ Lexit:
     if(bidx_x <= nu) {
         g_Out += bidx_x + nu_ofs4;
     } else {
-        g_Out += max_nu + bidx_x - (nu + 1) + nv_ofs4;
+        g_Out += (int)(max_nu + bidx_x - (nu + 1) + nv_ofs4);
     }
 
     unsigned mod_ofs = UMUL(NTHIDS + UMUL_PAD, bidx_y) + thid;

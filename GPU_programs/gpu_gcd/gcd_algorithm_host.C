@@ -111,13 +111,13 @@ bool GPU_gcd::setup(unsigned deg_f_, unsigned deg_g_,
 
     GPU_device_manager& obj = GPU_device_manager::instance();
 
-        n_moduli = bits_to_moduli(bits_, obj.mod_bits);
-        if(n_moduli == 0) {
-            std::cerr << "FATAL: moduli set exhausted !!\n";
-            return false;
-        }
+    n_moduli = bits_to_moduli(bits_, obj.mod_bits);
+    if(n_moduli == 0) {
+        std::cerr << "FATAL: moduli set exhausted !!\n";
+        return false;
+    }
 #if CUMP_COMPILE_DEBUG_KERNEL
-//        n_moduli = 270;
+//     n_moduli = 1;
 #endif
     CUMP_out2("============ nu: %d; nv: %d; bits: %d; n_moduli: %d\n",
             nu, nv, bits_, n_moduli);
@@ -203,10 +203,16 @@ bool GPU_gcd::internal_compute(const MPZ_vector_1& fv, const MPZ_vector_1& gv,
     limbs_f = mpz_vector_bitlength(fv);
     limbs_g = mpz_vector_bitlength(gv);
 
-    unsigned N_BITS = sizeof(unsigned) * 8;
+//     CUMP_out2("limbs_f: %d; limbs_g: %d\n", limbs_f, limbs_g);
+    unsigned N_BITS = GMP_NUMB_BITS, 
+        FACTOR = N_BITS / (sizeof(unsigned) * 8);
+    
+    limbs_f = ((limbs_f + N_BITS - 1) / N_BITS * FACTOR + 16) & ~15;
+    limbs_g = ((limbs_g + N_BITS - 1) / N_BITS * FACTOR + 16) & ~15;
+
     // padding to next divisible by 16 (+1 word to keep the actual size of cf)
-    limbs_f = ((limbs_f + N_BITS - 1) / N_BITS + 16) & ~15;
-    limbs_g = ((limbs_g + N_BITS - 1) / N_BITS + 16) & ~15;
+//     limbs_f = ((limbs_f + N_BITS - 1) / N_BITS + 16) & ~15;
+//     limbs_g = ((limbs_g + N_BITS - 1) / N_BITS + 16) & ~15;
     CUMP_out2("limbs_f: %d; limbs_g: %d\n", limbs_f, limbs_g);
 
 #if CUMP_GCD_USE_COPRIME_CHECK
@@ -389,7 +395,7 @@ bool GPU_gcd::reference_solution(const MPZ_vector_1& fv,
             break;
         case 64:
             gcd_host_sz = block_schur_QR_new< zmod, 64 >(mod_f, mod_g, ptr, stride);
-            break;
+             break;
         case 128:
             gcd_host_sz = block_schur_QR_new< zmod, 128 >(mod_f, mod_g, ptr, stride);
             break;
@@ -514,23 +520,26 @@ bool GPU_gcd::RNS_conversion(const MPZ_vector_1& fv,
     const int FACTOR = (int)GMP_NUMB_BITS / (sizeof(unsigned) * 8);
     for(i = 0; i <= nu; i++, plimbs += limbs_f) {
         int sz = fv[i]._mp_size;
+        
+        // NOTE NOTE NOTE: alternatively we can also remove zero here
+        // in case of 64 bits
+        //!!  if(fv[i]._mp_d[sz-1] != 0)
+        
         // NOTE NOTE NOTE: sz == 0 means the coefficient is 0 !! 
         memcpy(plimbs + 1, fv[i]._mp_d, std::abs(sz) * GMP_NUMB_BITS / 8);
         plimbs[0] = sz * FACTOR; // first word contains the data size (signed)
 
-        printf("size f %d: %d\n", i, (int)plimbs[0]);
-
-        print_limbs(plimbs + 1, plimbs[0]);
+//         printf("size f %d: %d\n", i, (int)plimbs[0]);
+//         print_limbs(plimbs + 1, plimbs[0]);
     }
     for(i = 0; i <= nv; i++, plimbs += limbs_g) {
         int sz = gv[i]._mp_size;
         memcpy(plimbs + 1, gv[i]._mp_d, std::abs(sz) * GMP_NUMB_BITS / 8);
         plimbs[0] = sz * FACTOR; // first word contains the data size (signed)
 
-        printf("size g %d: %d\n", i, (int)plimbs[0]);
-
+ /*       printf("size g %d: %d\n", i, (int)plimbs[0]);
         print_limbs(plimbs + 1, plimbs[0]);
-    }
+ */   }
 
 //     pf = U, pg = pf + max_nu; // leading elements already processed
 //     pf += nu_ofs4, pg += nv_ofs4;
@@ -747,23 +756,23 @@ bool GPU_gcd::debug_run(int argc, char **argv) {
 #if 1
 //! NOTE: these polynomials result in non-strongly regular case !!
 //      const char *sgcd = "(18*x^5-27652*x^2+112)",
-//         *sf="(x^6-345*x^2-4)", *sg = "(222*x^4-x^2+1)";
+//         *sf="(x^11+x^10+x^9+x^8+345*x^2+4)", *sg = "(22*x^14+77*x^3+1231x^2-x+11)";
 
 //     const char *sgcd = "(18*x^6-27652*x^4-x^3+112)",
 //         *sf="(x^17-77*x^13+345*x^2-4)", *sg = "1";//222*x^4-(x^2+1)^3-023";
 
-//     const char *sgcd = "344x^1000+(x^2-3x+1)^100-111-x+1",
-//         *sf = "2234523452345234523454*x^5000-(1*x^10-2*x-1)^400-111",
-//         *sg = "11234523452345*x^1000+(1*x^3-3*x+2)^500-(2*x-2)^200+123";
-    // 4 blocks: nu + nv = 5*32 = 160
+ /*   const char *sgcd = "344x^1000+(x^2-3x+1)^100-111-x+1",
+        *sf = "2234523452345234523454*x^5000-(1*x^10-2*x-1)^400-111",
+        *sg = "11234523452345*x^1000+(1*x^3-3*x+2)^500-(2*x-2)^200+123";
+ */   // 4 blocks: nu + nv = 5*32 = 160
 
 // dense case:
-    const char *sgcd = "1(x-1*x^10-1)^20-23",
+    const char *sgcd = "1(x+1*x^10+1)^18-23",
         *sf = "117x^101-(3311x^5-123x^2+1)^80-12",
         *sg = "888x^60 + 1123(x^4-891273x^2+1232)^60+888x-8977";
-
+    
 // sparse case:
-//     const char *sgcd = "x^28-1(x-111111111111111111111111111111123123121*x^10-1)^2-23",
+//     const char *sgcd = "27897x^38-1(87878x-111111111111111111111111111111123123121*x^10-234x^3+1)^2-23",
 //         *sf = "117x^101-(3311x^5-123x^2+1)^2-12",
 //         *sg = "1122x^20 + 1123(x^4-891273x^2+1232)^2+333x-8977";
 
@@ -778,7 +787,6 @@ bool GPU_gcd::debug_run(int argc, char **argv) {
 // HACK HACK HACK
 //     g = gcd_fg;
 
-//     CUMP_out("gcd_fg: " << gcd_fg << "\n")
 #else
     
     if(a.in_file == "" || !read_from_file(a.in_file, f, g)) {
@@ -803,6 +811,9 @@ bool GPU_gcd::debug_run(int argc, char **argv) {
     f = CGAL::canonicalize(f);
     g = CGAL::canonicalize(g);
 
+//    CUMP_out("sf: " << f << "\n")
+  //  CUMP_out("sg: " << g << "\n")
+    
     unsigned fi = 0, gi = 0;;
     while(f[fi] == Integer(0))
         fi++;
@@ -842,6 +853,8 @@ bool GPU_gcd::debug_run(int argc, char **argv) {
 
     ggcd = CGAL::canonicalize(ggcd);
 //     CUMP_out("gcd_check: " << ggcd << "\n\n")
+
+	CUMP_out("computing gcd..\n");
     gcd_fg = CGAL::gcd(f,g);
 //     CUMP_out("gcd_truth: " << gcd_fg << "\n\n")
 

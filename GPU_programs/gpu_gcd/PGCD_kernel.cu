@@ -339,8 +339,8 @@ __device__ __forceinline__ void __pgcd_quad_internal(unsigned *L, unsigned *lcF,
         if(thid < CacheLn) {
             j = 0;
             if((int)ofs >= 0)
-                j = f_in[ofs];
-            cache[CacheLn - 1 - thid] = j;
+                j = f_in[(int)ofs];
+            cache[(int)(CacheLn - 1 - thid)] = j;
         }
         j = 0;
     }
@@ -455,7 +455,7 @@ __device__ __forceinline__ void __lcf_scan(unsigned *L, unsigned *lcF, uint4& F,
         CU_SYNC
 
         if(thid-1 < last_thid) {
-            F.x = L[thid - 1];
+            F.x = L[(int)(thid - 1)];
         }
 
         nu--;
@@ -526,7 +526,7 @@ PGCD_quad_kernel(const unsigned *In0, unsigned *Out0) {
 //            e e 0 1 2 3 4 5 6 7 8 9
 //            x y z w x y z w x y z w
 
-    unsigned ofs, t = ((nu + 4) & ~3) - ((nv + 4) & ~3);
+    int ofs, t = ((nu + 4) & ~3) - ((nv + 4) & ~3);
 
     if(thid <= last_thid) {
         // data is aligned in such a way that g[nv] is loaded in G.w
@@ -691,14 +691,17 @@ Lexit:
 //     unsigned *Out0 = (unsigned *)dev_const_mem[DATA_OUT];
 
     if(thid == 0)
-        Out0[bidx_x] = // (unsigned)(Out0 - Out0_);
-                nv + 1; // size of a gcd (not the degree!!)
+        Out0[bidx_x] = nv + 1; // size of a gcd (not the degree!!)
 
 /*    if(thid == 0) {
         G.x = t;  G.y = nv;
     }*/
+
+//     G.x = dev_const_mem[NV];
+//     G.y = dev_const_mem[NU];
+//     G.z = last_thid;
     if(thid <= last_thid)
-        ((uint4 *)(Out0 + block_ofs))[thid] = G;
+        ((uint4 *)(Out0 + block_ofs))[(int)thid] = G;
 
 //     G.x = last_thid;  //G.y = nv;
 //     if(thid <= last_thid)
