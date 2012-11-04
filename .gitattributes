@@ -1996,9 +1996,8 @@ Lines_through_segments_3/test/Lines_through_segments_3/4_segs_debug.tst -text
 Lines_through_segments_3/test/Lines_through_segments_3/4_segs_degggggg -text
 Lines_through_segments_3/test/Lines_through_segments_3/Arrangement_general_functions.h -text
 Lines_through_segments_3/test/Lines_through_segments_3/CMakeLists.txt -text
-Lines_through_segments_3/test/Lines_through_segments_3/CMakeLists.txt.old -text
 Lines_through_segments_3/test/Lines_through_segments_3/Graphics.h -text
-Lines_through_segments_3/test/Lines_through_segments_3/cgal_cmake_options -text
+Lines_through_segments_3/test/Lines_through_segments_3/color_print.h -text
 Lines_through_segments_3/test/Lines_through_segments_3/experiments/10_lines_long.exp -text
 Lines_through_segments_3/test/Lines_through_segments_3/experiments/10_lines_rand.exp -text
 Lines_through_segments_3/test/Lines_through_segments_3/experiments/10_lines_short.exp -text
@@ -2025,7 +2024,6 @@ Lines_through_segments_3/test/Lines_through_segments_3/gprof2dot.py -text
 Lines_through_segments_3/test/Lines_through_segments_3/input.txt -text
 Lines_through_segments_3/test/Lines_through_segments_3/lines_through_4_polytopes.cpp -text
 Lines_through_segments_3/test/Lines_through_segments_3/lines_through_4_segments.cpp -text
-Lines_through_segments_3/test/Lines_through_segments_3/lines_through_4_segments.qrc -text
 Lines_through_segments_3/test/Lines_through_segments_3/rat_func_traits.cpp -text
 Lines_through_segments_3/test/Lines_through_segments_3/run_cmake -text
 Lines_through_segments_3/test/Lines_through_segments_3/run_cmake_with_prof -text

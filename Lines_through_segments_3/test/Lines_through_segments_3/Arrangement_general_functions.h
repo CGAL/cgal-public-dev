@@ -1,12 +1,14 @@
 #ifndef ARRANGEMENT_GENERAL_FUNCTIONS_H
 #define ARRANGEMENT_GENERAL_FUNCTIONS_H
+
 #include "Graphics.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <CGAL/basic.h>
 #include <CGAL/Arr_enums.h>
 
-#define SAMPLE_RATE 500
+const int SAMPLE_RATE = 500;
 
 template <typename Rational_kernel,
           typename Alg_kernel,
