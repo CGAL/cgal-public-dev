@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #
 # Copyright (c) 2007 Andy Parkins, modified 2012 for CGAL
 #
