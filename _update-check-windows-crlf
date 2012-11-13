@@ -1,5 +1,5 @@
 #!/bin/bash
-# 
+#
 # An "update" hook which rejects any update containing CRLF.
 #
 # Author: Gerhard Gappmeier, ascolab GmbH
