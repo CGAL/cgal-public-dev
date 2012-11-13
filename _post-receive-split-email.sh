@@ -773,7 +773,7 @@ if [ -n "$1" -a -n "$2" -a -n "$3" ]; then
 	if [ "$emailsplitlevel" = "seperate" ]; then
 		for rev in $(git rev-list $2..$3)
 		do
-			if [ $2 = $rev ]; then 
+			if [ $2 = $rev ]; then
                             continue
 			fi
 			prep_for_email $rev^1 $rev $1 && PAGER= generate_email
@@ -787,7 +787,7 @@ else
 	if [ "$emailsplitlevel" = "seperate" ]; then
 		for rev in $(git rev-list $oldrev..$newrev)
 		do
-			if [ $2 = $rev ]; then 
+			if [ $2 = $rev ]; then
                             continue
 			fi
 			prep_for_email $rev^1 $rev $refname
