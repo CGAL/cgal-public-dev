@@ -1,0 +1,15 @@
+Server Hooks:
+
+* githook-proxy can be softlinked to any hook 
+  see http://codingkilledthecat.wordpress.com/2012/05/24/multiplexing-git-hooks/
+** in order to call multiple scripts that all start with the same prefix
+   as the hook name
+** we do so for pre-receive which calls
+     pre-receive-dont-delete-main-branches
+** we do so for update which calls
+      update-check-files
+** we do so for post-receive which calls
+     post-receive-email.sh
+     post-receive-push 
+
+New version of hooks from main repo can be obtained by './refresh'
