@@ -212,6 +212,7 @@ generate_email()
 
 	if [ "$emailsplitlevel" = "seperate" ]; then
 		describe="$(git log -1 --pretty=format:%s $rev) ($(git log -1 --pretty=format:%h $rev))"
+		describe="\"$(git log -1 --pretty=format:%s $rev) ($(git log -1 --pretty=format:%h $rev)) $(git log -1 --pretty=format:%s $rev)\" in {$(git show --pretty='format:' --name-only $rev | sed "s|/.*||" | sort -u | tr "\n" " ")}"
 	else
 		# CGAL: no describe
 		describe=
