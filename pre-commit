@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #
 # A hook script to verify what is about to be committed.
 # Called by "git commit" with no arguments.  The hook should
@@ -139,8 +139,8 @@ fi
 # whose name is .svn
 if [ "$allowdotsvn" != "true" ]
 then
-  criticalfiles=$(git ls-files | grep ".svn/")
-  if test $(echo "$criticalfiles\c" | wc -w) != 0
+  criticalfiles=$(git ls-files | grep "\.svn/")
+  if [ -n "$criticalfiles" ]
   then
     echo "Error: Attempt to add .svn subdirectory:"
     echo
