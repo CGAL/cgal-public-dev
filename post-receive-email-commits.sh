@@ -32,12 +32,12 @@
 #
 # Config
 # ------
-# hooks.mailinglist
+# hooks.commitslist
 #   This is the list that all pushes will go to; leave it blank to not send
 #   emails for every ref update.
 # hooks.announcelist
 #   This is the list that all pushes of annotated tags will go to.  Leave it
-#   blank to default to the mailinglist field.  The announce emails lists
+#   blank to default to the commitslist field.  The announce emails lists
 #   the short log summary of the changes since the last annotated tag.
 # hooks.envelopesender
 #   If set then the -f option is passed to sendmail to allow the envelope
@@ -168,7 +168,7 @@ prep_for_email()
 				config_name="hooks.announcelist"
 				;;
 			*)
-				config_name="hooks.mailinglist"
+				config_name="hooks.commitslist"
 				;;
 		esac
 		echo >&2 "*** $config_name is not set so no email will be sent"
@@ -752,7 +752,7 @@ then
 	projectdesc="UNNAMED PROJECT"
 fi
 
-recipients=$(git config hooks.mailinglist)
+recipients=$(git config hooks.commitslist)
 announcerecipients=$(git config hooks.announcelist)
 envelopesender=$(git config hooks.envelopesender)
 sender=$envelopesender
