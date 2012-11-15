@@ -211,7 +211,7 @@ generate_email()
 	fi
 
 	if [ "$emailsplitlevel" = "seperate" ]; then
-		describe="$(git log -1 --pretty=format:%s $rev) ($(git log -1 --pretty=format:%h $rev))"
+		#describe="$(git log -1 --pretty=format:%s $rev) ($(git log -1 --pretty=format:%h $rev))"
 		describe="\"$(git log -1 --pretty=format:%s $rev) ($(git log -1 --pretty=format:%h $rev))\" in {$(git show --pretty='format:' --name-only $rev | sed "s|/.*||" | sort -u | tr "\n" " ")}"
 	else
 		# CGAL: no describe
@@ -256,7 +256,7 @@ generate_email_header()
 	cat <<-EOF
 	To: $recipients
 	From: $sender
-	Subject: ${emailprefix}: $short_refname $describe
+	Subject: ${emailprefix} $short_refname $describe
 	Content-Type: text/plain; charset=utf-8
 	X-Git-Refname: $refname
 	X-Git-Reftype: $refname_type
