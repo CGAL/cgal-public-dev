@@ -85,6 +85,7 @@ prep_for_email()
 	oldrev=$(git rev-parse $1)
 	newrev=$(git rev-parse $2)
 	refname="$3"
+	sender=$(git log -1 --pretty='format:%cn <%ce>' $newrev)
 
 	# --- Interpret
 	# 0000->1234 (create)
@@ -235,6 +236,7 @@ generate_email_header()
 	# Generate header
 	cat <<-EOF
 	To: $recipients
+	From: $sender
 	Subject: ${emailprefix} $refname_type '$short_refname' ${change_type}d. $describe
 	Content-Type: text/plain; charset=utf-8
 	X-Git-Refname: $refname
