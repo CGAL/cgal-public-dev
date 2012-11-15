@@ -19,10 +19,18 @@ int main()
 #include <CGAL/Arr_rational_function_traits_2.h>   //Traits
 #include <CGAL/Arrangement_2.h>                    //Arrangement
 #include <CGAL/Sweep_line_2_algorithms.h>
+#include <CGAL/Algebraic_kernel_2_1.h>
 #include <boost/foreach.hpp>
 
-typedef CGAL::CORE_arithmetic_kernel::Integer      Number_type;
-typedef CGAL::Algebraic_kernel_d_1<Number_type>    AK1;
+// d_1
+typedef CORE::BigInt                               NT;
+typedef CGAL::Algebraic_kernel_d_1<NT>             AK1; 
+
+// 2_1
+typedef CORE::BigRat                               Rational;
+typedef CGAL::Lazy_exact_nt<Rational>              FT; 
+typedef CGAL::Algebraic_kernel_2_1<FT>             AK2;
+
 typedef CGAL::Arr_rational_function_traits_2<AK1>  Traits_2;
 typedef CGAL::Arrangement_2<Traits_2>              Arrangement_2;
 typedef Traits_2::Point_2                          Point_2; 
@@ -47,6 +55,7 @@ int main(int argc, char* argv[])
   typedef Traits_2::Algebraic_kernel_d_1 Algebraic_kernel_d_1; 
   typedef Traits_2::Construct_curve_2 Construct_curve_2;
   typedef Traits_2::Construct_x_monotone_curve_2 Construct_x_monotone_curve_2; 
+  typedef Traits_2::Construct_point_2 Construct_point_2;
   
   // typedef induced by concept 
 
@@ -73,7 +82,6 @@ int main(int argc, char* argv[])
   typedef Traits_2::Are_mergeable_2 Are_mergeable_2; 
   typedef Traits_2::Merge_2 Merge_2;
   typedef Traits_2::Make_x_monotone_2 Make_x_monotone_2;
-  typedef Traits_2::Approximate_2 Approximate_2;
 
   // construction traits 
   // default construction 
@@ -97,7 +105,7 @@ int main(int argc, char* argv[])
   {
     typedef Construct_curve_2::Polynomial_1 Polynomial_1;
     typedef Construct_curve_2::Algebraic_real_1 Algebraic_real_1; 
-    typedef Construct_curve_2::Curve_2 Curve_2; 
+    typedef Construct_curve_2::result_type Curve_2; 
     typedef Construct_curve_2::argument_type argument_type;
     typedef Construct_curve_2::first_argument_type first_argument_type; 
     typedef Construct_curve_2::second_argument_type second_argument_type; 
@@ -109,12 +117,13 @@ int main(int argc, char* argv[])
   {Curve_2 curve = construct_curve_2(P,Q);}
   {Curve_2 curve = construct_curve_2(P,Q,one,true);}
   {Curve_2 curve = construct_curve_2(P,Q,one,false);}
-  //{Curve_2 curve = construct_curve_2(P,Q,one,two);}
+  {Curve_2 curve = construct_curve_2(P,Q,one,two);}
   {Curve_2 curve = construct_curve_2(P.begin(),P.end());}
   {Curve_2 curve = construct_curve_2(P.begin(),P.end(),one,true);}
   {Curve_2 curve = construct_curve_2(P.begin(),P.end(),one,false);}
   {Curve_2 curve = construct_curve_2(P.begin(),P.end(),one,two);}
   {Curve_2 curve = construct_curve_2(P.begin(),P.end());}
+  {Curve_2 curve = construct_curve_2(P.begin(),P.end(),Q.begin(),Q.end());}
   {Curve_2 curve = construct_curve_2(P.begin(),P.end(),Q.begin(),Q.end(),one,true);}
   {Curve_2 curve = construct_curve_2(P.begin(),P.end(),Q.begin(),Q.end(),one,false);}
   {Curve_2 curve = construct_curve_2(P.begin(),P.end(),Q.begin(),Q.end(),one,two);}
@@ -184,6 +193,7 @@ int main(int argc, char* argv[])
     typedef X_monotone_curve_2::Algebraic_real_1 Algebraic_real_1; 
     typedef X_monotone_curve_2::Point_2 Point_2; 
     
+    
     X_monotone_curve_2 xcurve= construct_x_monotone_curve_2(P,Q,one,two);
 
     {X_monotone_curve_2 dummy;}
@@ -211,7 +221,12 @@ int main(int argc, char* argv[])
     typedef Point_2::Algebraic_real_1 Algebraic_real_1;
     typedef Point_2::Bound Bound; 
 
-    X_monotone_curve_2 xcurve= construct_x_monotone_curve_2(P, Q, one, two);
+    {  
+      Construct_point_2 construct_point_2 = traits.construct_point_2_object(); 
+      Point_2 p = construct_point_2(Rational(1),Rational(1));
+    }
+    
+    X_monotone_curve_2 xcurve = construct_x_monotone_curve_2(P,Q,one,two);
     Point_2 p = xcurve.left(); 
     Point_2 q = xcurve.right();
     
@@ -252,6 +267,13 @@ int main(int argc, char* argv[])
       curves.push_back(construct_curve_2(x*x-2));
       curves.push_back(construct_curve_2(x*x*x));
       curves.push_back(construct_curve_2(x*x*x, x*x-2));
+
+      // asaf's
+
+      // curves.push_back(construct_curve_2(x-2,x-5));
+      // curves.push_back(construct_curve_2(5*x-5,x-4));
+      // curves.push_back(construct_curve_2(x-1,6*x-2));
+
       
       BOOST_FOREACH(const Curve_2& curve, curves){
         assert(CGAL::degree(curve.numerator()) >= 0);
@@ -278,9 +300,15 @@ int main(int argc, char* argv[])
       std::vector<Point_2> points;
       
       curves.push_back(construct_curve_2(Polynomial_1(1)));
+
       curves.push_back(construct_curve_2(x*x-2));
       curves.push_back(construct_curve_2(x*x*x));
       curves.push_back(construct_curve_2(x*x*x, x*x-2));
+
+      // asaf's
+      // curves.push_back(construct_curve_2(x-2,x-5));
+      // curves.push_back(construct_curve_2(5*x-5,x-4));
+      // curves.push_back(construct_curve_2(x-1,6*x-2));
       
       traits.cleanup_cache();
       BOOST_FOREACH(const Curve_2& curve, curves){
@@ -308,6 +336,7 @@ int main(int argc, char* argv[])
                 Cmp<Traits_2::Compare_xy_2>(traits.compare_xy_2_object()));
     }
   }
+
   return 0;
 }
 

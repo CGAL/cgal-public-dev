@@ -27,11 +27,40 @@
  * and the specialized boost::graph_traits<Dual<Arrangement_2> >class.
  */
 
+#include <boost/utility.hpp>
+
 #include <CGAL/Arrangement_on_surface_2.h>
 #include <CGAL/Arrangement_2.h>
 
 namespace CGAL {
 
+template <class T, class Enable = void> 
+class Dualx {
+  typedef typename T::Geometry_traits_2 Geometry_traits_2;
+  typedef typename T::Topology_traits   Topology_traits;
+};
+
+template <class T>
+class Dualx<T,
+            typename boost::enable_if
+            <boost::is_base_of<Arrangement_on_surface_2<
+                                 typename T::Geometry_traits_2,
+                                 typename T::Topology_traits>,
+                               T> >::type> :
+    public Dualx<typename T::Base>
+{
+public:
+  typedef Dualx<typename T::Base>                        Base;
+
+  /*! Default constructor. */
+  Dualx() : Base() {}
+
+  /*! Constructor from Base. */
+  Dualx(const typename T::Base& arr) : Base(arr) {}
+};
+  
+
+  
 // Forward declaration.
 template <class Type> class Dual;
 

@@ -1,0 +1,6 @@
+cmake \
+-DCMAKE_VERBOSE_MAKEFILE=ON \
+-DCGAL_CXX_FLAGS=" \
+-g \
+" \
+.

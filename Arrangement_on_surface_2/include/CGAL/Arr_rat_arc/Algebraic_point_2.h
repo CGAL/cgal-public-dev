@@ -126,9 +126,25 @@ public:
   const Polynomial_1& numerator() const { return _rational_function.numer(); }
   const Polynomial_1& denominator() const { return _rational_function.denom(); }
 
-  //new functions...
-  Algebraic_real_1 y() const
-  {
+
+  Algebraic_real_1 y() const {
+    typedef typename CGAL::Algebraic_structure_traits<Algebraic_real_1>
+      ::Algebraic_category Algebraic_category; 
+    return y_(Algebraic_category());
+  }
+  
+private:
+  // implementations for y()
+
+  Algebraic_real_1 y_(CGAL::Field_tag) const {
+    typedef CGAL::Coercion_traits<Polynomial_1,Algebraic_real_1> CT; 
+    typename CT::Cast cast; 
+    return  
+      CGAL::evaluate(cast(numerator()  ),x())/ 
+      CGAL::evaluate(cast(denominator()),x());
+  }
+  
+  Algebraic_real_1 y_(CGAL::Null_tag) const {
     typedef CGAL::Polynomial<Polynomial_1> Polynomial_2;
     //converting the defining polynomial of x and the rational function to
     //bivariate polynomials
@@ -165,6 +181,8 @@ public:
     CGAL_postcondition (roots.size() == 1);
     return roots.front();
   }
+
+public:
   std::pair<double,double> to_double() const
   {
     double x = CGAL::to_double(_x_coordinate);
@@ -350,8 +368,7 @@ private:
     static typename Rational_function::Polynomial_1 denom(1);
     static Rational_function rational_function(numer, denom, &kernel);
     
-    static Algebraic_real_1 x_coordinate =
-      kernel.construct_algebraic_real_1_object()(Rational(0));
+    static Algebraic_real_1 x_coordinate(0);
     
     static Self default_instance(rational_function,x_coordinate); 
     
@@ -370,8 +387,7 @@ public:
   Algebraic_point_2(const Self & p = get_default_instance()) :
     Base(static_cast<const Base &> (p)) {}
 
-  Comparison_result compare_xy_2(const Algebraic_point_2& other,
-                                 const Cache& cache) const
+  Comparison_result compare_xy_2(const Algebraic_point_2& other, const Cache& cache) const
   {
     if (this->is_identical (other))
       return CGAL::EQUAL;

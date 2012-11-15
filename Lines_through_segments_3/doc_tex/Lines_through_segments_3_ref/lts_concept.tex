@@ -1,0 +1,75 @@
+% +------------------------------------------------------------------------+
+% | Reference manual page: Lines_through_segments_traits_3.tex
+% +------------------------------------------------------------------------+
+% | 12.09.2010   Author Asaf Porat
+% | Package: Lines through segments 3
+% | 
+\RCSdef{\RCSLinesThroughSegmentsTraits_3Rev}{$Id: lts_concept.tex 28489 2010-09-12 10:08:15Z lsaboret $}
+\RCSdefDate{\RCSLinesThroughSegmentsTraits_3Date}{$Date: 2010-09-12 12:08:15 +0200 (Tue, 14 Feb 2006) $}
+% |
+%%RefPage: end of header, begin of main body
+% +------------------------------------------------------------------------+
+
+\begin{ccRefConcept}{LinesThroughSegmentsTraits_3}
+
+\ccDefinition
+  
+The concept \ccRefName\ lists the set of requirements that must be fulfilled by
+an instance of the \ccc{Traits} template-parameter of
+the class \ccc{CGAL::Lines_through_segments_3<Traits>}.
+This concept provides the types of the geometric primitives used in
+this class.
+
+\ccTypes
+\ccNestedType{Geodesic_traits_2}{models the concept 
+\ccc{GeodesicTraits_2}}
+\ccNestedType{Hyperbolict_traits_2}{models the concept 
+\ccc{HyperbolicTraits_2}}
+\ccGlue
+\ccNestedType{Point_3}{The point type.}
+\ccGlue
+\ccNestedType{Segment_3}{The segment type.}
+\ccGlue
+\ccNestedType{Line_3}{The line type.}
+
+\ccCreation
+This concept refines the standard concepts DefaultConstructible, Assignable and
+CopyConstructible.
+
+
+
+
+\ccHasModels
+\ccc{CGAL::Lines_through_segments_traits_3<Rational_kernel, Algebraic_kernel>}
+
+\ccSeeAlso
+\ccc{CGAL::Lines_through_segments_3<Traits>}
+
+\end{ccRefConcept}
+
+
+\begin{ccRefConcept}{Lines_through_segments_3::GeodesicTraits_2}
+
+\ccDefinition
+Refinement of the concept \ccc{ArrangementTraits_2}, used to construct and maintain arrangements of circular arcs embedded on spheres. 
+
+\ccHasModels
+\ccc{CGAL::Arr_geodesic_arc_on_sphere_traits_2<Kernel>}
+
+\end{ccRefConcept}
+
+\begin{ccRefConcept}{Lines_through_segments_3::HyperbolicTraits_2}
+
+\ccDefinition
+Refinement of the concept \ccc{ArrangementTraits_2}, used to construct and maintain arrangements of bounded segments of algebraic curves of degree 2 at most, also known as conic curves.
+
+\ccHasModels
+\ccc{CGAL::Arr_conic_traits_2<Rational_kernel, Alg_kernel, Nt_traits>}
+
+\end{ccRefConcept}
+
+% +------------------------------------------------------------------------+
+%%RefPage: end of main body, begin of footer
+% EOF
+% +------------------------------------------------------------------------+
+
