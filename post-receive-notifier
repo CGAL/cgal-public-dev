@@ -1,0 +1,8 @@
+#!/bin/bash
+
+# uses http://stackoverflow.com/questions/7917324/git-post-commit-hook-as-a-background-task
+
+nohup /var/local/git-notifier/git-notifier --emailprefix "[cgal.git]" --hostname "scm.cgal.org" --link "https://scm.cgal.org/gitweb/?p=cgal.git;a=commitdiff;h=%s" --mailinglist "eric.berberich@cgal.org" --mergediffs="master, integration, maint" --maxdiffsize 500 --repouri "ssh://git@scm.cgal.org/var/git/cgal.git" --sender "git@scm.cgal.org" &> /dev/null &
+
+# maybe we want to receive some more "commit mails" on certain branches
+# --allchanges master,integration,maint
