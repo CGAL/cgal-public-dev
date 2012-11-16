@@ -85,7 +85,7 @@ prep_for_email()
 	oldrev=$(git rev-parse $1)
 	newrev=$(git rev-parse $2)
 	refname="$3"
-	sender="$GIT_NAME <$GIT_USER@scm.gforge.inria.fr>"
+	sender="$GIT_NAME <$GIT_USER@users.gforge.inria.fr>"
 
 	# --- Interpret
 	# 0000->1234 (create)
