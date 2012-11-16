@@ -85,7 +85,7 @@ prep_for_email()
 	oldrev=$(git rev-parse $1)
 	newrev=$(git rev-parse $2)
 	refname="$3"
-	sender=$(git log -1 --pretty='format:%cn <%ce>' $newrev)
+	sender=$(git log -1 --pretty='format:%cn <git@scm.cgal.org>' $newrev)
 
 	# --- Interpret
 	# 0000->1234 (create)
