@@ -311,7 +311,7 @@ public:
   
   void _init(const Algebraic_real_1& x_s, const Algebraic_real_1& x_t)
   {
-    const Polynomial_1& P = numerator();
+    /* const Polynomial_1& P = numerator(); ??? */
     const Polynomial_1& Q = denominator();
     
     // Compare the x-coordinates and determine the direction.

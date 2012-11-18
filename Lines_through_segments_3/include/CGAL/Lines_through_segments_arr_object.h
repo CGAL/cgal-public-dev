@@ -230,12 +230,12 @@ public:
     {
       Rational_line_3 L2(m_S2->source(),m_S2->target());
 
-      if ((m_bound_s1_s2 && 
+      if (((m_bound_s1_s2 && 
            m_g_func.do_intersect_segments(*m_S2,*m_creator_segment,
-                                          i_point,m_rat_kernel)) ||
-          !m_bound_s1_s2 &&
+                                          i_point,m_rat_kernel))) ||
+          (!m_bound_s1_s2 &&
           m_g_func.do_intersect_line_segment(L2, *m_creator_segment,
-                                             m_rat_kernel))
+                                             m_rat_kernel)))
       {
         if (m_bound_s1_s2)
         {

@@ -197,7 +197,7 @@ int ReadInputFile(char* input_file_name,vector<Polyhedron_3> &polytopes)
    input_file.getline(line,LINE_SIZE);
    
    
-   if (sscanf(line,"%d",&num_of_lines,LINE_SIZE) != 1)
+   if (sscanf(line,"%d",&num_of_lines) != 1)
    {
       ReportError("Number of lines at file not specified.",__LINE__,__FILE__);
    }
@@ -343,20 +343,17 @@ bool get_all_common_lines(
       transversal = (*it_output_list);
 #endif
       
-      if (line_obj = 
-                boost::get < typename Lines_through_poly::Line_3 > (&transversal))
+      if ((line_obj = 
+           boost::get < typename Lines_through_poly::Line_3 > (&transversal)))
       {
          num_of_lines++;
-      }
-      else if (mapped_obj = 
-               boost::get<typename Lines_through_poly::Mapped_2> 
-               (&transversal))
+      } else if ((mapped_obj = boost::get<typename Lines_through_poly::Mapped_2>(&transversal)))
       {
          typename Lines_through_poly::Mapped_2::Mapped_line_3 line = mapped_obj->line();
          typename Lines_through_poly::Mapped_transversal mapped_transversal = mapped_obj->mapped_transversal();
-         if (curve_obj = 
+         if ((curve_obj = 
              boost::get<typename Lines_through_poly::Mapped_x_monotone_curve_2> 
-             (&mapped_transversal))
+              (&mapped_transversal)))
          {
             num_of_arr_curves++;
          }

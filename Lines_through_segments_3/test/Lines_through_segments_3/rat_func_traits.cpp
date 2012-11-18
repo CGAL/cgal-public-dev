@@ -49,7 +49,7 @@ Curve_2 construct_curve(double start, double end,
    return traits_2.construct_curve_2_object()(f_num, f_den, nt_start, nt_end);
 }
 
-int main (int argc,char **args)
+int main ()
 {
    typedef CGAL::Arrangement_with_history_2<Rational_arc_arr_traits_arr_on_plane_2> Arrangement_2;
    typedef Rational_arc_arr_traits_arr_on_plane_2::Point_2 Point_2;

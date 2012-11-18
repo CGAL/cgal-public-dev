@@ -249,7 +249,6 @@ int ReadInputFileFlip(char* input_file_name,vector<Rational_segment_3> &lines,
     int &expected_num_of_overlap_seg_3_flip)
 {
   int ii = 0;
-  int num_of_lines_coord = 0;
   int num_of_lines = 0;
   char line[LINE_SIZE];
   Rational coordinates[NUM_OF_COORDINATES];
@@ -264,7 +263,7 @@ int ReadInputFileFlip(char* input_file_name,vector<Rational_segment_3> &lines,
   input_file.getline(line,LINE_SIZE);
    
    
-  if (sscanf(line,"%d",&num_of_lines,LINE_SIZE) != 1)
+  if (sscanf(line,"%d",&num_of_lines) != 1)
     {
       ReportError("Number of lines at file not specified.",__LINE__,__FILE__);
     }
@@ -292,37 +291,37 @@ int ReadInputFileFlip(char* input_file_name,vector<Rational_segment_3> &lines,
     }
    
   input_file.getline(line,sizeof(line));
-  if (sscanf(line,"%d",&expected_num_of_lines,LINE_SIZE) != 1)
+  if (sscanf(line,"%d",&expected_num_of_lines) != 1)
     {
       ReportError("Number of output lines at file not specified.",__LINE__,__FILE__);
     }
 
   input_file.getline(line,sizeof(line));
-  if (sscanf(line,"%d",&expected_num_of_arr_curves,LINE_SIZE) != 1)
+  if (sscanf(line,"%d",&expected_num_of_arr_curves) != 1)
     {
       ReportError("Number of output curves at file not specified.",__LINE__,__FILE__);
     }
 
   input_file.getline(line,sizeof(line));
-  if (sscanf(line,"%d",&expected_num_of_arr_polygons,LINE_SIZE) != 1)
+  if (sscanf(line,"%d",&expected_num_of_arr_polygons) != 1)
     {
       ReportError("Number of output polygons at file not specified.",__LINE__,__FILE__);
     }
 
   input_file.getline(line,sizeof(line));
-  if (sscanf(line,"%d",&expected_num_of_point_3,LINE_SIZE) != 1)
+  if (sscanf(line,"%d",&expected_num_of_point_3) != 1)
     {
       ReportError("Number of output point 3 at file not specified.",__LINE__,__FILE__);
     }
 
   input_file.getline(line,sizeof(line));
-  if (sscanf(line,"%d",&expected_num_of_arr_arcs,LINE_SIZE) != 1)
+  if (sscanf(line,"%d",&expected_num_of_arr_arcs) != 1)
     {
       ReportError("Number of output arcs at file not specified.",__LINE__,__FILE__);
     }
 
   input_file.getline(line,sizeof(line));
-  if (sscanf(line,"%d",&expected_num_of_overlap_seg_3,LINE_SIZE) != 1)
+  if (sscanf(line,"%d",&expected_num_of_overlap_seg_3) != 1)
     {
       ReportError("Number of output overlap segs at file not specified.",__LINE__,__FILE__);
     }
@@ -330,37 +329,37 @@ int ReadInputFileFlip(char* input_file_name,vector<Rational_segment_3> &lines,
   if (flip && strncmp("AFTER FLIP:",line,11) == 0)
     {
       input_file.getline(line,sizeof(line));
-      if (sscanf(line,"%d",&expected_num_of_lines_flip,LINE_SIZE) != 1)
+      if (sscanf(line,"%d",&expected_num_of_lines_flip) != 1)
         {
           ReportError("Number of output lines at file not specified.",__LINE__,__FILE__);
         }
       
       input_file.getline(line,sizeof(line));
-      if (sscanf(line,"%d",&expected_num_of_arr_curves_flip,LINE_SIZE) != 1)
+      if (sscanf(line,"%d",&expected_num_of_arr_curves_flip) != 1)
         {
           ReportError("Number of output curves at file not specified.",__LINE__,__FILE__);
         }
 
       input_file.getline(line,sizeof(line));
-      if (sscanf(line,"%d",&expected_num_of_arr_polygons_flip,LINE_SIZE) != 1)
+      if (sscanf(line,"%d",&expected_num_of_arr_polygons_flip) != 1)
         {
           ReportError("Number of output polygons at file not specified.",__LINE__,__FILE__);
         }
       
       input_file.getline(line,sizeof(line));
-      if (sscanf(line,"%d",&expected_num_of_point_3_flip,LINE_SIZE) != 1)
+      if (sscanf(line,"%d",&expected_num_of_point_3_flip) != 1)
         {
           ReportError("Number of output point 3 at file not specified.",__LINE__,__FILE__);
         }
       
       input_file.getline(line,sizeof(line));
-      if (sscanf(line,"%d",&expected_num_of_arr_arcs_flip,LINE_SIZE) != 1)
+      if (sscanf(line,"%d",&expected_num_of_arr_arcs_flip) != 1)
         {
           ReportError("Number of output arcs at file not specified.",__LINE__,__FILE__);
         }
       
       input_file.getline(line,sizeof(line));
-      if (sscanf(line,"%d",&expected_num_of_overlap_seg_3_flip,LINE_SIZE) != 1)
+      if (sscanf(line,"%d",&expected_num_of_overlap_seg_3_flip) != 1)
         {
           ReportError("Number of output overlap segs at file not specified.",__LINE__,__FILE__);
         }
@@ -380,7 +379,7 @@ int ReadInputFile(char* input_file_name,vector<Rational_segment_3> &lines,
     int &expected_num_of_overlap_seg_3)
 {
   int unused;
-  ReadInputFileFlip
+  return ReadInputFileFlip
     <Rational_segment_3,Rational,Rational_point_3>(input_file_name,lines,
         expected_num_of_lines,
         expected_num_of_arr_curves,
@@ -525,14 +524,11 @@ bool get_all_common_lines(
       transversal = (*it_output_list);
 #endif
       
-      if (line_obj = 
-          boost::get < typename Lines_through_segs::Line_3 > (&transversal))
+      if ((line_obj = boost::get < typename Lines_through_segs::Line_3 >(&transversal)))
         {
           num_of_lines++;
         }
-      else if (mapped_obj = 
-          boost::get<typename Lines_through_segs::Mapped_2> 
-          (&transversal))
+      else if ((mapped_obj = boost::get<typename Lines_through_segs::Mapped_2>(&transversal)))
         {
           typename Lines_through_segs::Mapped_2::Mapped_line_3 line = mapped_obj->line();
           typename Lines_through_segs::Mapped_transversal mapped_transversal = mapped_obj->mapped_transversal();
@@ -682,7 +678,7 @@ void run_all_permutations(
         {
            
           cout << change_color(CGAL_RED,"Iteration Error: ",iteration,"(");
-          for (int ii = 0; ii < len-1; ii++)
+          for (unsigned int ii = 0; ii < len-1; ii++)
             {
               cout << change_color(CGAL_RED,lines_index[ii],", ");
             }
@@ -691,7 +687,7 @@ void run_all_permutations(
         }
     }
    
-  for (int ii = min; ii < len;ii++)
+  for (unsigned int ii = min; ii < len;ii++)
     {
       swap(lines.at(min),lines.at(ii));
       swap(lines_index[min],lines_index[ii]);
@@ -790,7 +786,6 @@ void create_random_input(int num_of_lines)
 #if 1
 int main (int argc,char **args)
 {
-  int count = 0; 
     int expected_num_of_lines = -1;
     int expected_num_of_arr_curves = -1;
     int expected_num_of_arr_polygons = -1;

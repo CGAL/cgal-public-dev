@@ -124,9 +124,7 @@ public:
     int jj = 0;
          
          
-    for (polytopes_start; 
-         polytopes_start != polytopes_end;
-         ++polytopes_start)
+    for (; polytopes_start != polytopes_end; ++polytopes_start)
     {
       Input_iterator temp = polytopes_start;
       std::advance(temp,3);
@@ -136,9 +134,7 @@ public:
       Input_iterator polytopes_start_second = polytopes_start;
       polytopes_start_second++;
             
-      for (polytopes_start_second;
-           polytopes_start_second != polytopes_end;
-           polytopes_start_second++)
+      for (; polytopes_start_second != polytopes_end; polytopes_start_second++)
       {
         temp = polytopes_start_second;
         std::advance(temp,2);

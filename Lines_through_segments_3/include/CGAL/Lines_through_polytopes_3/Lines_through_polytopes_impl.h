@@ -28,7 +28,7 @@
 #include <CGAL/Lines_through_segments_arr_ext_dcel.h>
 #include <CGAL/Lines_through_segments_arr_observer.h>
 
-#include <CGAL/Env_default_diagram_1.h>
+#include <CGAL/Envelope_diagram_1.h>
 #include <CGAL/envelope_2.h>
 #include <CGAL/Lines_through_polytopes_3/Lines_through_polytopes_con_component.h>
 #include <CGAL/Lines_through_polytopes_3/Lines_through_polytopes_intersection.h>
@@ -113,7 +113,7 @@ class Lines_through_polytopes_impl {
   typedef Lines_through_segments_traits_on_plane_adapt<Lines_through_segments_traits_3>
   Traits_2_adapt;
       
-  typedef CGAL::Env_default_diagram_1<Traits_arr_on_plane_2> Diagram_1;
+  typedef CGAL::Envelope_diagram_1<Traits_arr_on_plane_2> Diagram_1;
       
   typedef Lines_through_polytopes_con_component<
     Point_2,Rational_arc_2,Traits_2_adapt> LTP_con_comp;

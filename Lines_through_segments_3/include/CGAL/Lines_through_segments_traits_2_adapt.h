@@ -51,7 +51,7 @@ public:
 
 private:
   typedef typename Traits_3::Rational_kernel            Rational_kernel;
-   typedef typename Rational_kernel::FT                 Rational;
+  typedef typename Rational_kernel::FT                  Rational;
   typedef typename Traits_3::Alg_kernel                 Alg_kernel;
   typedef CORE::BigInt                                  Integer;
       
