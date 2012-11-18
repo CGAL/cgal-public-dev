@@ -31,7 +31,10 @@
 *
 *************************************************************
 */
+#include <boost/shared_ptr.hpp>
 #include <boost/variant.hpp>
+#include <boost/utility/addressof.hpp>
+
 #include <CGAL/Lines_through_segments_impl.h>
 #include <CGAL/Lines_through_segments_find_overlap_lines.h>
 #include <CGAL/Lines_through_segments_exceptions.h>
@@ -49,7 +52,6 @@ public:
   typedef typename Rational_kernel::Segment_3           Segment_3;
   typedef typename Traits_3::Alg_kernel                 Alg_kernel;
   typedef With_segments_                                With_segments;
-  typedef boost::false_type                             With_arrangement;
    
   /* Output objects */
   typedef typename Rational_kernel::Line_3              Line_3;
@@ -95,33 +97,34 @@ public:
                                                      Segment_3>::Arrangement_2
    Arr_on_sphere;
    
-protected:
-   std::vector<Rational_segment_3> m_segs;
-   Rational_kernel                 m_rational_kernel;
-   Alg_kernel                      m_alg_kernel;
-   const Rational_kernel*          m_rational_kernel_ptr;
-   const Alg_kernel*               m_alg_kernel_ptr;
+private:
+  /// used planar arrangements
+  std::vector< boost::shared_ptr<Arr_on_plane> > m_planar_arrangements;
 
-   
+  /// used spherical arrangements
+  std::vector< boost::shared_ptr<Arr_on_sphere> > m_spherical_arrangements;
+
+  /// generated segments
+  std::vector<Rational_segment_3> m_segs;
+
+  // kernels
+  Rational_kernel                 m_rational_kernel;
+  Alg_kernel                      m_alg_kernel;
+
 public:
-  /*! Empty constructor */
-  Lines_through_segments_3() {}
-      
   /*! Constructor
    * \param alg_kernel algebraic kernel.
    * \param rational_kernel rational kernel.
    */
-  Lines_through_segments_3(const Alg_kernel& alg_kernel,
-                           const Rational_kernel& rational_kernel) :
-    m_rational_kernel_ptr(&rational_kernel),
-    m_alg_kernel_ptr(&alg_kernel)
-  {
-  }
+  Lines_through_segments_3(const Alg_kernel& alg_kernel = Alg_kernel(), 
+                           const Rational_kernel& rational_kernel = Rational_kernel()) :
+    m_rational_kernel(rational_kernel),
+    m_alg_kernel(alg_kernel)
+  {}
 
   /*! Destructor */
   ~Lines_through_segments_3()
   {
-    m_segs.clear();
   }
   
   /*************************************************************
@@ -133,7 +136,7 @@ public:
    * A line equation of general line which intersects with 3 lines L1,L2,L3
    * is represented as an hyperbola at L1,L2 space. Intersection of 2
    * hyperbolas at this space represent a line which intersect with 4 
-   * segmetns.
+   * segments.
    *  
    * For each two segments the function gets over the n-2 segments and adds
    * for each, an object to the 2 dimensional arrangement derived by the two
@@ -161,45 +164,40 @@ public:
   {
      this->get_all_segments(begin, end, 
                             output_iterator,
-                            With_arrangement(),
                             copy_segs_container,
                             rational_output);
   }
    
 protected:   
   template <typename Input_iterator,
-            typename Output_iterator, 
-            typename With_arrangement>
+            typename Output_iterator>
   void get_all_segments(Input_iterator begin, Input_iterator end,
                         Output_iterator output_iterator,
-                        With_arrangement with_arrangement,
                         bool copy_segs_container,
                         bool rational_output)
   {
     typedef Lines_through_segments_impl<Traits_3, Output_iterator,
-                                        With_segments, With_arrangement>
+                                        With_segments, boost::true_type>
       Lines_through_segments_impl;
       
-     if (copy_segs_container)
-     {
-        m_segs.clear();
-        for (Input_iterator it = begin; it != end; ++it) 
-           m_segs.push_back(*it);
-     }
+    // this is tricky, InputIterators are not guaranteed to be
+    // multi-pass
+    if (copy_segs_container)
+    {
+      m_segs.assign(begin, end);
+    }
   
     std::vector<const Rational_segment_3*> segs;
 
     if (copy_segs_container)
     {
-       for (unsigned int index = 0; index < m_segs.size(); ++index)
-       {
-          segs.push_back(&m_segs[index]);
-       }
+      std::transform(m_segs.begin(), m_segs.end(), std::back_inserter(segs), 
+                     &boost::addressof<Rational_segment_3>);
     }
     else
     {
-       for (Input_iterator it = begin; it != end; ++it) 
-          segs.push_back(&(*it));
+      std::transform(begin, end, std::back_inserter(segs), 
+                     &boost::addressof<Rational_segment_3>);
     }
     
     if (segs.empty()) return;
@@ -225,7 +223,7 @@ protected:
         {
           Lines_through_segments_impl
             line_through_segs_obj(segs[S1], segs[S2], &output_iterator,
-                                  m_alg_kernel_ptr,m_rational_kernel_ptr);
+                                  &m_alg_kernel, &m_rational_kernel);
                     
           /* For each line add a new curve to the arrangement, the
            * intersection of the hyperbolas represent common lines. */
@@ -242,11 +240,8 @@ protected:
 
           line_through_segs_obj.find_all_lines(rational_output);
 
-          if (With_arrangement())
-          {
-             this->set_arrangements(line_through_segs_obj.arrangement_on_plane(),
-                                    line_through_segs_obj.arrangement_on_sphere());
-          }
+          this->set_arrangements(line_through_segs_obj.arrangement_on_plane(),
+                                 line_through_segs_obj.arrangement_on_sphere());
 #if LTS_DRAW_ARR
           line_through_segs_obj.draw_arr();
 #endif
@@ -277,127 +272,54 @@ protected:
       }
     }
   }
-  virtual void set_arrangements(Arr_on_plane* arr_on_plane,
-                                 Arr_on_sphere* arr_on_sphere)
+
+  void set_arrangements(Arr_on_plane* arr_on_plane,
+                        Arr_on_sphere* arr_on_sphere)
   {
+    m_planar_arrangements.push_back(boost::shared_ptr<Arr_on_plane>(arr_on_plane));
+    m_spherical_arrangements.push_back(boost::shared_ptr<Arr_on_sphere>(arr_on_sphere));
   }
 };
 
-template <typename Lines_through_segments_traits_3,
-          typename With_segments_ = boost::false_type>
-class Lines_through_segments_3_with_arrangements :
-      public Lines_through_segments_3<Lines_through_segments_traits_3,
-                                      With_segments_>
-{
-private:
-  typedef Lines_through_segments_3<Lines_through_segments_traits_3,
-                                   With_segments_>              Base;
-  typedef
-  Lines_through_segments_3_with_arrangements<Lines_through_segments_traits_3,
-                                             With_segments_>    Self;
+// template <typename Lines_through_segments_traits_3,
+//           typename With_segments_ = boost::false_type>
+// class Lines_through_segments_3_with_arrangements :
+//       public Lines_through_segments_3<Lines_through_segments_traits_3,
+//                                       With_segments_>
+// {
+// private:
+//   typedef Lines_through_segments_3<Lines_through_segments_traits_3,
+//                                    With_segments_>              Base;
+//   typedef
+//   Lines_through_segments_3_with_arrangements<Lines_through_segments_traits_3,
+//                                              With_segments_>    Self;
 
-public:
-  typedef typename Base::Traits_3                       Traits_3;
-  typedef With_segments_                                With_segments;
-  typedef boost::true_type                              With_arrangement;
-  typedef typename Base::Rational_kernel                Rational_kernel;
-  typedef typename Rational_kernel::Segment_3           Segment_3;
-  typedef typename Base::Alg_kernel                     Alg_kernel;
+// public:
+//   typedef Lines_through_segments_output_obj<Traits_3, 
+//                                             Segment_3>   LTS_output_obj;
+   
+//   typedef typename LTS_output_obj::Mapped_2_with_arr    Mapped_2;
+//   typedef typename Mapped_2::Point_2                    Mapped_point_2;
 
-  typedef Lines_through_segments_output_obj<Traits_3, 
-                                            Segment_3>   LTS_output_obj;
-   
-   
-  /* Output objects */
-  typedef typename Base::Line_3              Line_3;
-  typedef typename LTS_output_obj::Mapped_2_with_arr    Mapped_2;
-  typedef typename Mapped_2::Point_2                    Mapped_point_2;
-//  typedef typename Mapped_2::Rational_point_2           Mapped_rat_point_2;
-  typedef typename Mapped_2::X_monotone_curve_2
-    Mapped_x_monotone_curve_2;
-  typedef typename Mapped_2::General_polygon_2
-    Mapped_general_polygon_2;
+//   typedef typename Mapped_2::X_monotone_curve_2
+//     Mapped_x_monotone_curve_2;
+//   typedef typename Mapped_2::General_polygon_2
+//     Mapped_general_polygon_2;
 
-  typedef typename LTS_output_obj::Through_3_with_arr   Through_3;
+//   typedef typename LTS_output_obj::Through_3_with_arr   Through_3;
 
-  typedef typename Through_3::Point_3                   Through_point_3;
-  typedef typename Through_3::Segment_3                 Through_segment_3;
-  typedef typename Through_3::Point_3_segment_3
-    Through_point_3_segment_3;
+//   typedef typename Through_3::Point_3                   Through_point_3;
+//   typedef typename Through_3::Segment_3                 Through_segment_3;
+//   typedef typename Through_3::Point_3_segment_3
+//     Through_point_3_segment_3;
    
-  typedef typename Mapped_2::Mapped_transversal         Mapped_transversal;
-  typedef typename Through_3::Through_transversal       Through_transversal;
+//   typedef typename Mapped_2::Mapped_transversal         Mapped_transversal;
+//   typedef typename Through_3::Through_transversal       Through_transversal;
    
-  typedef typename LTS_output_obj::Transversal_with_arr Transversal;
+//   typedef typename LTS_output_obj::Transversal_with_arr Transversal;
    
-  typedef typename LTS_output_obj::Transversal_with_segments_with_arr 
-    Transversal_with_segments;
-
-private:
-
-  std::list<typename Base::Arr_on_plane*> m_planar_arrangements;
-  std::list<typename Base::Arr_on_sphere*> m_spherical_arrangements;
-
-public:
-  // Solve. The typename of the iterator is either Transversal or
-  // Transversal_with_segments based on the compile-time flag
-  // With_segments.
-  template <typename Input_iterator,
-            typename Output_iterator>
-  void operator() (Input_iterator begin, Input_iterator end,
-                   Output_iterator output_iterator,
-                   bool copy_segs_container = true,
-                   bool rational_output = false)
-  {
-     
-    Base::get_all_segments(begin, end, 
-                            output_iterator, 
-                           With_arrangement(),
-                           copy_segs_container,
-                           rational_output);
-  }
-   
-  /*! Empty constructor */
-  Lines_through_segments_3_with_arrangements() 
-    : Base() 
-  {}
-   
-  ~Lines_through_segments_3_with_arrangements()
-  {
-    typename std::list<typename Base::Arr_on_plane* >::iterator it_planar;
-    for (it_planar = m_planar_arrangements.begin();
-         it_planar != m_planar_arrangements.end();
-         ++it_planar)
-    {
-      delete *it_planar;
-    }
-      
-    typename std::list<typename Base::Arr_on_sphere* >::iterator it_spherical;
-    for (it_spherical = m_spherical_arrangements.begin();
-         it_spherical != m_spherical_arrangements.end();
-         ++it_spherical)
-    {
-      delete *it_spherical;
-    }
-      
-  }
-   
-  Lines_through_segments_3_with_arrangements(const Alg_kernel& alg_kernel,      
-                                             const Rational_kernel&
-                                             rational_kernel) :
-     Base(alg_kernel, rational_kernel)
-  {
-  }
-   
-private:
-  void set_arrangements(typename Base::Arr_on_plane* arr_on_plane,
-                        typename Base::Arr_on_sphere* arr_on_sphere)
-  {
-    m_planar_arrangements.push_back(arr_on_plane);
-    m_spherical_arrangements.push_back(arr_on_sphere);
-  }
-};
-   
+//   typedef typename LTS_output_obj::Transversal_with_segments_with_arr 
+//     Transversal_with_segments;
 } //namespace CGAL
 
 #endif /*LINE_THROUGH_SEGMENTS_3_H*/

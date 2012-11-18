@@ -3,7 +3,7 @@
 //#define CGAL_LAZY_KERNEL_DEBUG 1 // comment out if not needed 
 
 /* Set the required traits */
-#define USE_CONIC_TRAITS 0
+#define USE_CONIC_TRAITS 1
 #define USE_RATIONAL_ARC_TRAITS 0
 #define USE_SQRT_TRAITS 0
 #define USE_LAZY 0
@@ -37,7 +37,6 @@
 #define OBSERVER_PRINTS 0
 #define OBJ_ON_ARR_DEBUG 0
 #define CGAL_DEBUG_OUTPUT 0
-#define CGAL_LTS_MEASURE_TIME 1
 
 #define PRINT_OUTPUT 0
 #define CGAL_IDENTIFICATION_XY CGAL_X_MINUS_11_Y_7
@@ -421,30 +420,21 @@ bool get_all_common_lines(
   
   list<LTS_output_obj> output_list;
   
-#if CGAL_LTS_MEASURE_TIME
-    CGAL::Timer t;
-    t.reset();
-    t.start();
+  CGAL::Timer t;
+  t.reset();
+  t.start();
 
-    int count =0; 
-    int runs = 1;
-    while (count ++ < runs ){
-      output_list.clear();
-#endif // CGAL_LTS_MEASURE_TIME
-      line_through_segs(lines.begin(),lines.end(),
-                        std::front_inserter(output_list));
-#if CGAL_LTS_MEASURE_TIME
-    }
-    t.stop();
+  int count =0; 
+  int runs = 1;
+  while (count ++ < runs ){
+    output_list.clear();
+    line_through_segs(lines.begin(),lines.end(),
+                      std::front_inserter(output_list));
+  }
+  t.stop();
     
-    std::cout << t.time()/runs << std::endl;
-    std::cout << "list size = " << output_list.size() << std::endl;
-    exit(0);
-#endif // CGAL_LTS_MEASURE_TIME
-
-  
-   
-
+  std::cout << t.time()/runs << std::endl;
+  std::cout << "list size = " << output_list.size() << std::endl;
    
   typename list<LTS_output_obj>::iterator it_output_list;
 #if PRINT_OUTPUT
@@ -743,7 +733,6 @@ void create_random_input(int num_of_lines)
     }
 }
 
-#if 1
 int main (int argc,char **args)
 {
     int expected_num_of_lines = -1;
@@ -928,71 +917,6 @@ int main (int argc,char **args)
   return 0;
 }
 
-#else
-
-int main (int argc,char **args)
-{
-  //    typedef CGAL::CORE_algebraic_number_traits              Nt_traits;
-  // typedef Nt_traits::Algebraic                            Algebraic;
-  // typedef Nt_traits::Rational                             Rational;
-  //   typedef CGAL::Cartesian<Rational>                       Rational_kernel;
-  // typedef CGAL::Arr_rational_arc_traits_d_1<Rational_kernel>                  Traits_d_1;
-  // typedef CGAL::Arr_traits_with_vertical_segments <Traits_d_1>                Rational_arc_arr_traits_arr_on_plane_2;
-
-  typedef CGAL::Arrangement_2<Rational_arc_arr_traits_arr_on_plane_2> Arrangement_2;
-  typedef Rational_arc_arr_traits_arr_on_plane_2::Point_2 Point_2;
-  typedef Rational_arc_arr_traits_arr_on_plane_2::Curve_2 Curve_2;
-  typedef Traits_d_1::Algebraic_real_1         Algebraic_real_1;
-  std::list<Curve_2> arcs;
-  Arrangement_2 arr;
-  std::vector<Rational>        P (2);
-
-  arcs.push_back(Curve_2(Point_2(0.5,0),Point_2(0.5,1))); // vertical
-
-  Algebraic_real_1 xs(0);
-  Algebraic_real_1 xt(1);
-            
-  P[1] = 0;
-  P[0] = 0.33333;  
-
-  Curve_2 cv(P,xs,xt);
-  arcs.push_back(cv);//horizontal
-
-  for (std::list<Curve_2>::iterator it = arcs.begin();
-       it != arcs.end();
-       it++)
-    {
-      std::cout <<*it << std::endl;
-    }
-
-  insert (arr, arcs.begin(), arcs.end());
-  arcs.clear();
-  arcs.push_back(Curve_2(Point_2(0.5,0),Point_2(0.5,1)));//vertical 
-  xs = (0);
-  xt = (1);
-            
-  Rational x = 19;
-  Rational y = 58;
-  P[1] = Rational(0);
-  P[0] = x/y;
-
-  arcs.push_back(Curve_2(P,xs,xt));//horizontal
-
-  for (std::list<Curve_2>::iterator it = arcs.begin();
-       it != arcs.end();
-       it++)
-    {
-      std::cout <<*it << std::endl;
-    }
-
-  insert (arr, arcs.begin(), arcs.end());
-
-  cout << "Program finished successfully" << endl;
- 
-
-  return 0;
-}
-#endif
 // {0*x^2 + 0*y^2 + -690*xy + 650*x + 480*y + -433} : (0.6435,0.409195) --cw--> (0.666154,0)
 // 1 1 1 5 5 5
 // {0*x^2 + 0*y^2 + -690*xy + 650*x + 480*y + -433} : (0.538914,0.764738) --cw--> (0.666154,0)
