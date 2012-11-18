@@ -79,18 +79,17 @@ public:
   typedef typename Through_3::Through_transversal       Through_transversal;
       
    typedef typename Lines_through_segments_output_obj<
-      Traits_3, 
-      Segment_3>::Transversal   Transversal;
+      Traits_3, Segment_3>::Transversal                 Transversal;
 
   typedef typename
   Lines_through_segments_output_obj<Traits_3, Segment_3>::Transversal_with_segments 
   Transversal_with_segments;
 
    typedef typename Rational_kernel::Segment_3           Rational_segment_3;
-   typedef typename 
-   Lines_through_segments_mapped_2_with_arrangement<Traits_3,
-                                                    Rational_segment_3>::Arrangement_2
-   Arr_on_plane;
+
+   typedef typename
+   Lines_through_segments_mapped_2_with_arrangement<
+     Traits_3, Rational_segment_3>::Arrangement_2        Arr_on_plane;
 
    typedef typename 
    Lines_through_segments_through_3_with_arrangement<Traits_3,
@@ -100,7 +99,6 @@ public:
 private:
   /// used planar arrangements
   std::vector< boost::shared_ptr<Arr_on_plane> > m_planar_arrangements;
-
   /// used spherical arrangements
   std::vector< boost::shared_ptr<Arr_on_sphere> > m_spherical_arrangements;
 
@@ -122,11 +120,6 @@ public:
     m_alg_kernel(alg_kernel)
   {}
 
-  /*! Destructor */
-  ~Lines_through_segments_3()
-  {
-  }
-  
   /*************************************************************
    * The following function gets input iterator of segments and output all
    * common lines to an output iterator.

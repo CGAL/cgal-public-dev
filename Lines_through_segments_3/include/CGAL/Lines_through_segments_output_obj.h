@@ -652,34 +652,30 @@ public:
 //    }
 // };
 
-   template <typename Traits_3, typename Ext_obj>
+template <typename Traits_3, typename Ext_obj>
 class Lines_through_segments_output_obj {
   typedef typename Traits_3::Rational_kernel::Segment_3    Rational_segment_3;
   typedef typename Traits_3::Rational_kernel::Line_3       Line_3;
 
 public:      
-  typedef Traits_3
-    Lines_through_segments_traits_3;
-  typedef Lines_through_segments_mapped_2<Traits_3>        Mapped_2;
-  typedef Lines_through_segments_through_3<Traits_3>       Through_3;
+  typedef Traits_3                                   Lines_through_segments_traits_3;
+  typedef Lines_through_segments_mapped_2<Traits_3>  Mapped_2;
+  typedef Lines_through_segments_through_3<Traits_3> Through_3;
   typedef Lines_through_segments_mapped_2_with_arrangement<Traits_3, Ext_obj> 
-  Mapped_2_with_arr;
-      typedef Lines_through_segments_through_3_with_arrangement<Traits_3, Ext_obj>
-  Through_3_with_arr;
+    Mapped_2_with_arr;
+  typedef Lines_through_segments_through_3_with_arrangement<Traits_3, Ext_obj>
+    Through_3_with_arr;
 
-  typedef typename Mapped_2::Mapped_transversal            Mapped_transversal;
-  typedef typename Through_3::Through_transversal          Through_transversal;
+  typedef typename Mapped_2::Mapped_transversal   Mapped_transversal;
+  typedef typename Through_3::Through_transversal Through_transversal;
       
-   typedef boost::variant<Line_3, Through_3, Mapped_2 >     Transversal;
-   typedef boost::variant<Line_3, 
-                          Through_3_with_arr, 
-                          Mapped_2_with_arr >     Transversal_with_arr;
+  typedef boost::variant<Line_3, Through_3, Mapped_2 >     Transversal;
+  typedef boost::variant<Line_3, Through_3_with_arr, Mapped_2_with_arr >     
+    Transversal_with_arr;
       
-   typedef CGAL::cpp0x::array<const Rational_segment_3*, 4> Segments;
-   typedef std::pair<Transversal, Segments >
-   Transversal_with_segments;
-   typedef std::pair<Transversal_with_arr, Segments >
-   Transversal_with_segments_with_arr;
+  typedef CGAL::cpp0x::array<const Rational_segment_3*, 4> Segments;
+  typedef std::pair<Transversal, Segments> Transversal_with_segments;
+  typedef std::pair<Transversal_with_arr, Segments > Transversal_with_segments_with_arr;
 
 };
 
