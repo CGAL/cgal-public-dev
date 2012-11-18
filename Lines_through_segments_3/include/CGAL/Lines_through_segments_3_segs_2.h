@@ -594,18 +594,18 @@ private:
       if (temp_edge != max_e && temp_edge->twin() != max_e)
       {
 
-        // if (curr->curve().left().x() <= mid_p.x() &&
-        //     curr->curve().right().x() >= mid_p.x())
-        // {
-        //   /* Get the y value of curve at x = mid_p.x() */
-        //   Algebraic temp_y = m_traits_2_adapt.get_y_val(curr->curve(),
-        //                                                 mid_p.x());
+        if (curr->curve().left().x() <= mid_p.x() &&
+            curr->curve().right().x() >= mid_p.x())
+        {
+          /* Get the y value of curve at x = mid_p.x() */
+          Algebraic temp_y = m_traits_2_adapt.get_y_val(curr->curve(),
+                                                        mid_p.x());
 
-        //   if (temp_y > max_y)
-        //   {
-        //     max_y = temp_y;
-        //   }
-         //     }
+          if (temp_y > max_y)
+          {
+            max_y = temp_y;
+          }
+        }
       }
       curr++;
     } while (curr != circ);

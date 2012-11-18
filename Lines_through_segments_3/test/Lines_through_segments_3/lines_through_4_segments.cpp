@@ -5,8 +5,8 @@
 /* Set the required traits */
 #define USE_CONIC_TRAITS 0
 #define USE_RATIONAL_ARC_TRAITS 0
-#define USE_SQRT_TRAITS 1
-#define USE_LAZY 1
+#define USE_SQRT_TRAITS 0
+#define USE_LAZY 0
 #define USE_LEDA 0
 
 #include <iostream>
@@ -396,46 +396,6 @@ int ReadInputFile(char* input_file_name,vector<Rational_segment_3> &lines,
         unused);
 }
 
-template<typename LTS_output_obj>
-class My_front_insert_iterator
-{
-  typedef list<LTS_output_obj> My_container;
-protected:
-  My_container* container;
-      
-public:
-      
-  /* The explicit function specifier controls unwanted implicit type conversions. 
-     It can only be used in declarations of constructors within a class declaration. 
-     For example, except for the default constructor, 
-     the constructors in the following class are converting constructors.*/
-  explicit My_front_insert_iterator(My_container& x)
-  {
-    container = &x;
-  }
-      
-  My_front_insert_iterator& operator= (typename My_container::const_reference value)
-  { 
-    container->push_front(value);
-    return *this;
-  }
-
-  My_front_insert_iterator& operator* ()
-  { 
-    return *this;
-  }
-
-  My_front_insert_iterator& operator++ (int)
-  { 
-    return *this;
-  }
-
-  My_front_insert_iterator& operator++ ()
-  { 
-    return *this;
-  }
-};
-
 template <typename Lines_through_segs>
 bool get_all_common_lines(
     Lines_through_segs& line_through_segs,
@@ -472,7 +432,7 @@ bool get_all_common_lines(
       output_list.clear();
 #endif // CGAL_LTS_MEASURE_TIME
       line_through_segs(lines.begin(),lines.end(),
-          My_front_insert_iterator<LTS_output_obj>(output_list));
+                        std::front_inserter(output_list));
 #if CGAL_LTS_MEASURE_TIME
     }
     t.stop();

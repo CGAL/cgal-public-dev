@@ -666,8 +666,8 @@ public:
 
   bool is_vertical(const Rational_arc_x_monotone_curve_2& arc)
   {
-     std::cout << "TOOD return is vertical" << std::endl;
-     CGAL_error_msg("");
+     std::cout << "TODO return is vertical" << std::endl;
+     CGAL_error_msg("TODO return is vertical");
      return (// arc.left_infinite_in_x() == CGAL::ARR_INTERIOR && //TODO asafp can not find the function infinite_in_x()
             // arc.right_infinite_in_x() == CGAL::ARR_INTERIOR &&
             arc.source_x() == arc.target_x());
@@ -688,8 +688,8 @@ public:
        // Rational_arc_point_2 ps(traits_2.construct_point_2_object()(old_cv.source.x(),old_cv.source.y()));
        // Rational_arc_point_2 pt(traits_2.construct_point_2_object()(old_cv.target.x(),old_cv.target.y()));
 //       Vertical_segment ver_todo = traits_2.construct_vertical_segment_object()(ps, pt);
-       std::cout << "TOOD create vertical line" << std::endl;
-       CGAL_error_msg("");
+       std::cout << "TODO create vertical line" << std::endl;
+       CGAL_error_msg("TODO create vertical line");
 //      new_cv = Rational_arc_curve_2(old_cv.source(), old_cv.target()); TODO TODO asafp
       return;
     }
