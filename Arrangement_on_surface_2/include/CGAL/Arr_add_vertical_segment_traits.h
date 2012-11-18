@@ -445,8 +445,8 @@ public:
     { 
       const Traits& _traits;
       const Point_2& _p;
-      mutable X_monotone_curve_2& _c1;
-      mutable X_monotone_curve_2& _c2; 
+      X_monotone_curve_2& _c1;
+      X_monotone_curve_2& _c2; 
       
     public:
       Visitor(
