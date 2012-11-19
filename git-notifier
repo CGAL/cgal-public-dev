@@ -201,7 +201,7 @@ def git(args, stdout_to=subprocess.PIPE, all=False):
         child = subprocess.Popen("git " + args, shell=True, stdin=None, stdout=stdout_to, stderr=subprocess.PIPE)
         (stdout, stderr) = child.communicate()
     except OSError, e:
-        error("cannot start git: %s" % str(e))
+        error("cannot start git: %s; args: %s " % (str(e), args))
 
     if child.returncode != 0 and stderr:
         msg = ": %s" % stderr if stderr else ""
