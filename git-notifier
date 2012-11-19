@@ -15,6 +15,7 @@ VERSION   = "0.41-1"  # Filled in automatically.
 Name      = "git-notifier"
 CacheFile = ".%s.dat" % Name
 Separator = "\n================================================================\n"
+SeparatorThin = "\n----------------------------------------------------------------\n"
 NoDiff    = "[nodiff]"
 NoMail    = "[nomail]"
 
@@ -382,7 +383,7 @@ def sendChangeMail(rev, frommer, subject, heads, show_cmd, diff_cmd, stat_cmd):
 
     for line in git(show_cmd, all=True):
         if line == "---":
-            print >>out, Separator
+            print >>out, SeparatorThin
         else:
             print >>out, line
 
