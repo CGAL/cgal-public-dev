@@ -14,8 +14,8 @@ VERSION   = "0.41-1"  # Filled in automatically.
 
 Name      = "git-notifier"
 CacheFile = ".%s.dat" % Name
-Separator = "\n================================================================\n"
-SeparatorThin = "\n----------------------------------------------------------------\n"
+Separator = "================================================================\n"
+SeparatorThin = "----------------------------------------------------------------\n"
 NoDiff    = "[nodiff]"
 NoMail    = "[nomail]"
 
@@ -352,9 +352,11 @@ def sendChangeMail(rev, frommer, subject, heads, show_cmd, diff_cmd, stat_cmd):
     print >>out, mailTag("On branch%s" % multi, heads)
 
     if Config.link:
+        print >>out
         url = Config.link.replace("%s", rev)
         url = url.replace("%r", os.path.basename(os.getcwd()))
         print >>out, mailTag("Link", url)
+        print >>out
 
     footer = ""
     show = git(show_cmd)
