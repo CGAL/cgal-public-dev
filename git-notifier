@@ -356,8 +356,9 @@ def sendChangeMail(rev, frommer, replyto, subject, heads, packages, show_cmd, di
     print >>out, mailTag("On branch%s" % multi, heads)
     print >>out
 
-    print >>out, mailTag("Packages", ", ".join(packages))
-    print >>out
+    if packages:
+        print >>out, mailTag("Packages", ", ".join(packages))
+        print >>out
 
     if Config.link:
         url = Config.link.replace("%s", rev)
