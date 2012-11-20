@@ -24,7 +24,7 @@ NoMail    = "[nomail]"
 
 gitolite = "GL_USER" in os.environ
 whoami = os.environ["LOGNAME"]
-sender = os.environ["GL_USER"] if gitolite else whoami
+sender = os.environ["GL_USER"] if gitolite else "%s <%s@@users.gforge.inria.fr>" % (os.environ["GIT_NAME"], os.environ["GIT_USER"]) 
 
 Options = [
     # Name, argument, default, help,
@@ -322,8 +322,7 @@ def sendMail(out, fname):
 def entryAdded(key, value, rev):
     log("New %s %s" % (key, value))
 
-    # frommer = git("log -1 '--pretty=format:%%cn <%%ce>' %s" % rev, all=True)[0]
-    frommer = Config.sender
+    frommer = sender
 
     (out, fname) = generateMailHeader(frommer, "%s '%s' created" % (key, value))
 
@@ -335,8 +334,7 @@ def entryAdded(key, value, rev):
 def entryDeleted(key, value):
     log("Deleted %s %s" % (key, value))
 
-    # frommer = git("log -1 '--pretty=format:%%cn <%%ce>' %s" % rev, all=True)[0]
-    frommer = Config.sender
+    frommer = sender
 
     (out, fname) = generateMailHeader(frommer, "%s '%s' deleted" % (key, value))
 
@@ -433,7 +431,7 @@ def commit(current, rev, force=False, subject_head=None):
         if head in Config.allchanges or head in Config.mergediffs:
             merge_diff = "-m"
 
-    frommer = git("log -1 '--pretty=format:%%cn <%%ce>' %s" % rev, all=True)[0]
+    frommer = git("log -1 '--pretty=format:%%an <%%ae>' %s" % rev, all=True)[0]
 
     packages = git("show --pretty='format:' --name-only %s" % rev, all=False)
     packages = [re.sub(r'\/.*', r'', p) for p in packages]
@@ -460,7 +458,7 @@ def diff(head, first, last):
 
     log("Diffing %s..%s" % (first, last))
 
-    frommer = git("log -1 '--pretty=format:%%cn <%%ce>' %s" % last, all=True)[0]
+    frommer = git("log -1 '--pretty=format:%%an <%%ae>' %s" % last, all=True)[0]
 
     packages = ""
 
@@ -502,8 +500,7 @@ def reportPath(current, revs, force=False, subject_head=None):
 def headMoved(head, path):
     log("Head moved: %s -> %s" % (head, path[-1]))
 
-    # frommer = git("log -1 '--pretty=format:%%cn <%%ce>' %s" % rev, all=True)[0]
-    frommer = Config.sender
+    frommer = sender
 
     subject = git("show '--pretty=format:%%s (%%h)' -s %s" % path[-1])
 
