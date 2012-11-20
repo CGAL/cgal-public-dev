@@ -3,9 +3,6 @@
 # Comments:
 # - getReachableRefs is a slow operation 
 
-# TODOs:
-# - show + unicode
-
 import optparse
 import os
 import shutil
@@ -293,6 +290,7 @@ def generateMailHeader(frommer, subject):
 To: %s
 Subject: %s %s
 %sX-Git-Repository: %s
+Content-Type: text/plain; charset="utf-8"
 X-Mailer: %s %s
 
 %s
