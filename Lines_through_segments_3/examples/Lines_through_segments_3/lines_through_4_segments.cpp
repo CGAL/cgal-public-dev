@@ -33,7 +33,7 @@ typedef CGAL::Lines_through_segments_3<Traits_3,With_segments>
 typedef Lines_through_segments_3::Transversal_with_segments
   Transversal_with_segments;
 
-int main (int argc, char* args[])
+int main()
 {
   Alg_kernel alg_kernel;
   Rat_kernel rat_kernel;
@@ -55,8 +55,8 @@ int main (int argc, char* args[])
                                               rat_kernel);
   lines_through_segs(segments.begin(), 
                      segments.end(),
-                     std::back_inserter(output_list1),
-                     false,true);
+                     std::back_inserter(output_list1), true);
+  
   copy(output_list1.begin(), output_list1.end(),
        std::ostream_iterator<Transversal_with_segments>(std::cout, "\n"));
 
@@ -74,11 +74,10 @@ int main (int argc, char* args[])
 
   std::list<Transversal_with_segments> output_list2;
   lines_through_segs(segments.begin(), segments.end(),
-                     std::back_inserter(output_list2),
-                     false,true);
+                     std::back_inserter(output_list2), true);
 
   std::cout << output_list2.size() << std::endl;
-   
+
   typedef Lines_through_segments_3::Line_3      Line_3;
   typedef Lines_through_segments_3::Mapped_2    Mapped_2;
   typedef Lines_through_segments_3::Through_3   Through_3;

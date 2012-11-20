@@ -194,7 +194,6 @@ public:
                   *res_arr,
                   OT);
 
-    delete arr_on_plane;
     delete ov_arr;
     return res_arr;
   }

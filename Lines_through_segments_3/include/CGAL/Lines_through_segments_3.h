@@ -31,14 +31,16 @@
 *
 *************************************************************
 */
-#include <boost/shared_ptr.hpp>
-#include <boost/variant.hpp>
-#include <boost/utility/addressof.hpp>
-
 #include <CGAL/Lines_through_segments_impl.h>
 #include <CGAL/Lines_through_segments_find_overlap_lines.h>
 #include <CGAL/Lines_through_segments_exceptions.h>
 #include <CGAL/Lines_through_segments_output_obj.h>
+
+#include <utility>
+
+#include <boost/shared_ptr.hpp>
+#include <boost/variant.hpp>
+#include <boost/utility/addressof.hpp>
 
 namespace CGAL {
 
@@ -85,16 +87,15 @@ public:
   Lines_through_segments_output_obj<Traits_3, Segment_3>::Transversal_with_segments 
   Transversal_with_segments;
 
-   typedef typename Rational_kernel::Segment_3           Rational_segment_3;
+  typedef typename Rational_kernel::Segment_3           Rational_segment_3;
 
-   typedef typename
-   Lines_through_segments_mapped_2_with_arrangement<
-     Traits_3, Rational_segment_3>::Arrangement_2        Arr_on_plane;
+  typedef typename
+  Lines_through_segments_mapped_2_with_arrangement<
+    Traits_3, Rational_segment_3>::Arrangement_2        Arr_on_plane;
 
-   typedef typename 
-   Lines_through_segments_through_3_with_arrangement<Traits_3,
-                                                     Segment_3>::Arrangement_2
-   Arr_on_sphere;
+  typedef typename 
+  Lines_through_segments_through_3_with_arrangement<
+    Traits_3, Segment_3>::Arrangement_2                 Arr_on_sphere;
    
 private:
   /// used planar arrangements
@@ -152,47 +153,18 @@ public:
             typename Output_iterator>
   void operator() (Input_iterator begin, Input_iterator end,
                    Output_iterator output_iterator,
-                   bool copy_segs_container = true,
                    bool rational_output = false)
-  {
-     this->get_all_segments(begin, end, 
-                            output_iterator,
-                            copy_segs_container,
-                            rational_output);
-  }
-   
-protected:   
-  template <typename Input_iterator,
-            typename Output_iterator>
-  void get_all_segments(Input_iterator begin, Input_iterator end,
-                        Output_iterator output_iterator,
-                        bool copy_segs_container,
-                        bool rational_output)
   {
     typedef Lines_through_segments_impl<Traits_3, Output_iterator,
                                         With_segments, boost::true_type>
       Lines_through_segments_impl;
       
-    // this is tricky, InputIterators are not guaranteed to be
-    // multi-pass
-    if (copy_segs_container)
-    {
-      m_segs.assign(begin, end);
-    }
-  
-    std::vector<const Rational_segment_3*> segs;
+    if(begin == end) return;
 
-    if (copy_segs_container)
-    {
-      std::transform(m_segs.begin(), m_segs.end(), std::back_inserter(segs), 
-                     &boost::addressof<Rational_segment_3>);
-    }
-    else
-    {
-      std::transform(begin, end, std::back_inserter(segs), 
-                     &boost::addressof<Rational_segment_3>);
-    }
-    
+    std::vector<const Rational_segment_3*> segs;
+    std::transform(begin, end, std::back_inserter(segs), 
+                   &boost::addressof<Rational_segment_3>);
+
     if (segs.empty()) return;
 
     /* Holds the number of overlapping segments.
@@ -233,11 +205,9 @@ protected:
 
           line_through_segs_obj.find_all_lines(rational_output);
 
-          this->set_arrangements(line_through_segs_obj.arrangement_on_plane(),
-                                 line_through_segs_obj.arrangement_on_sphere());
-#if LTS_DRAW_ARR
-          line_through_segs_obj.draw_arr();
-#endif
+          m_planar_arrangements.push_back(line_through_segs_obj.arrangement_on_plane());
+          m_spherical_arrangements.push_back(line_through_segs_obj.arrangement_on_sphere());
+          
           num_of_overlap_segs = 0;
         }
         catch(const CGAL::Lines_through_segments_exp_2_lines_overlap& e)
@@ -266,11 +236,11 @@ protected:
     }
   }
 
-  void set_arrangements(Arr_on_plane* arr_on_plane,
-                        Arr_on_sphere* arr_on_sphere)
-  {
-    m_planar_arrangements.push_back(boost::shared_ptr<Arr_on_plane>(arr_on_plane));
-    m_spherical_arrangements.push_back(boost::shared_ptr<Arr_on_sphere>(arr_on_sphere));
+  std::pair< 
+      std::vector< boost::shared_ptr<Arr_on_plane> >
+    , std::vector< boost::shared_ptr<Arr_on_sphere> >  >
+  get_arrangements() const {
+    return std::make_pair(m_planar_arrangements, m_spherical_arrangements);
   }
 };
 

@@ -57,28 +57,27 @@ class Lines_through_segments_impl {
 public:
   typedef Lines_through_segments_traits_3 Traits_3;
 private:
-  typedef typename Traits_3::Algebraic_NT Algebraic;
-  typedef typename Traits_3::Rational_NT  Rational;
-  typedef typename Traits_3::Traits_arr_on_plane_2
-  Traits_arr_on_plane_2;
-  typedef typename Traits_3::Traits_arr_on_sphere_2
-  Traits_arr_on_sphere_2;
-  typedef typename Traits_3::Alg_kernel Alg_kernel;
-  typedef typename Traits_3::Rational_kernel 
-  Rational_kernel;
 
-  typedef typename Alg_kernel::Point_3                   Alg_point_3;
-  typedef typename Alg_kernel::Line_3                    Alg_line_3;
-  typedef typename Alg_kernel::Segment_3                 Alg_segment_3;
-  typedef typename Alg_kernel::Plane_3                   Alg_plane_3;
-    
-  typedef typename Rational_kernel::Point_3              Rational_point_3;
-  typedef typename Rational_kernel::Line_3               Rational_line_3;
-  typedef typename Rational_kernel::Segment_3            Rational_segment_3;
-  typedef typename Rational_kernel::Plane_3              Rational_plane_3;
-  typedef typename Rational_kernel::Point_2              Rational_point_2;
+ typedef typename Traits_3::Algebraic_NT           Algebraic;
+ typedef typename Traits_3::Rational_NT            Rational;
+ typedef typename Traits_3::Traits_arr_on_plane_2  Traits_arr_on_plane_2;
+ typedef typename Traits_3::Traits_arr_on_sphere_2 Traits_arr_on_sphere_2;
+ typedef typename Traits_3::Alg_kernel             Alg_kernel;
+ typedef typename Traits_3::Rational_kernel        Rational_kernel;
+ 
+ typedef typename Alg_kernel::Point_3   Alg_point_3;
+ typedef typename Alg_kernel::Line_3    Alg_line_3;
+ typedef typename Alg_kernel::Segment_3 Alg_segment_3;
+ typedef typename Alg_kernel::Plane_3   Alg_plane_3;
+ 
+ typedef typename Rational_kernel::Point_3   Rational_point_3;
+ typedef typename Rational_kernel::Line_3    Rational_line_3;
+ typedef typename Rational_kernel::Segment_3 Rational_segment_3;
+ typedef typename Rational_kernel::Plane_3   Rational_plane_3;
+ typedef typename Rational_kernel::Point_2   Rational_point_2;
+ typedef With_arrangement_                   With_arrangement;
 
-   typedef With_arrangement_                             With_arrangement;
+
    /***************************************************/
   /*    Arrangement on plane typedefs.               */
   /***************************************************/
@@ -158,15 +157,12 @@ private:
   typedef Point_and_segment_pair<Point_on_sphere_2,Rational_segment_3>
   Point_on_sphere_and_line_pair;
    
-  typedef Lines_through_segments_traits_on_plane_adapt<
-    Traits_3>  Traits_2_adapt;
+  typedef Lines_through_segments_traits_on_plane_adapt<Traits_3>  Traits_2_adapt;
 
   typedef typename Lines_through_segments_output_obj<
      Traits_3, Rational_segment_3>::Through_3 Through_3;
   typedef typename Lines_through_segments_output_obj<
      Traits_3, Rational_segment_3>::Through_3_with_arr Through_3_with_arr;
-
-                  
 
 public:
    
@@ -260,9 +256,11 @@ public:
   };
       
 private:
-  Arrangement_on_plane_2 * m_arr_on_plane;
+  boost::shared_ptr<Arrangement_on_plane_2> m_arr_on_plane;
+  boost::shared_ptr<Arrangement_on_sphere_2> m_arr_on_sphere;
+
   std::list<Rational_arc_2> arcs_cont;
-  Arrangement_on_sphere_2 * m_arr_on_sphere;
+
   Lines_through_segments_arr_observer_on_plane * m_obs_on_plane;
   Lines_through_segments_arr_observer_on_sphere * m_obs_on_sphere;
   Isolated_points_on_plane m_isolated_points_on_plane;
@@ -321,16 +319,8 @@ public:
     if (m_S1_S2_intersect)
     {
       delete m_obs_on_sphere;
-      if (!With_arrangement())
-      {
-         delete m_arr_on_sphere;
-      }
     }
     delete m_obs_on_plane;
-    if (!With_arrangement())
-    {
-       delete m_arr_on_plane;
-    }
   }
    
   Lines_through_segments_impl(const Rational_segment_3 * _s1,
@@ -338,13 +328,8 @@ public:
                               Insert_iterator * insert_it,
                               const Alg_kernel *alg_kernel,
                               const Rational_kernel *rational_kernel)
+    : m_arr_g_func(alg_kernel)
   {
-    m_arr_g_func = 
-      Lines_through_segments_arr_gen_func<
-     Traits_3,
-        With_segments,
-        With_arrangement>(alg_kernel);
-
     m_S1 = _s1;
     m_S2 = _s2;
     m_alg_kernel = alg_kernel;
@@ -359,8 +344,8 @@ public:
     m_S2_is_a_point = m_S2->source() == m_S2->target();
     m_S1_is_a_point = m_S1->source() == m_S1->target();
     m_S1_S2_num_of_common_lines = 0;
-    m_arr_on_plane = new Arrangement_on_plane_2();
-    m_arr_on_sphere = new Arrangement_on_sphere_2();
+    m_arr_on_plane.reset(new Arrangement_on_plane_2());
+    m_arr_on_sphere.reset(new Arrangement_on_sphere_2());
     // Compare_points_on_line<Rational_point_3, Rational_segment_3> cl;
     Compare_points_on_plane<Point_2, Rational_segment_3> cp;
     m_isolated_points_on_plane = Isolated_points_on_plane(cp);
@@ -760,8 +745,8 @@ public:
                                                  m_rat_kernel,
                                                  m_isolated_points_on_plane,
                                                  Rational(0),
-                                                 m_arr_on_plane,
-                                                 true, S3);
+                                                 m_arr_on_plane.get(),
+                                                 S3);
     }
          
   }
@@ -1094,8 +1079,8 @@ public:
                                                      m_rat_kernel,
                                                      m_isolated_points_on_plane,
                                                      S2_t,
-                                                     m_arr_on_plane,
-                                                     true,S3);
+                                                     m_arr_on_plane.get(),
+                                                     S3);
         }
       }
       else if (m_rat_kernel->are_parallel_3_object()(m_S2->supporting_line(),
@@ -1123,8 +1108,8 @@ public:
                                                      m_rat_kernel,
                                                      m_isolated_points_on_plane,
                                                      S1_t,
-                                                     m_arr_on_plane,
-                                                     true, S3);
+                                                     m_arr_on_plane.get(),
+                                                     S3);
         }
       }
       else 
@@ -1357,7 +1342,7 @@ private:
       }
     }
 #endif
-    insert (*m_arr_on_sphere, arcs.begin(), arcs.end());
+    CGAL::insert (*m_arr_on_sphere, arcs.begin(), arcs.end());
   }
   /*************************************************************
    * The following function gets an segment S3, and returns true if S3 is a 
@@ -1551,15 +1536,16 @@ public:
 #if ONE_SWEEP
     if (arcs_cont.size() != 0)
     {
-       typename std::list<Rational_arc_2>::iterator it;
-       // for (it = arcs_cont.begin(); it != arcs_cont.end(); ++it)
+       // for (typename std::list<Rational_arc_2>::iterator 
+       //      it = arcs_cont.begin(); it != arcs_cont.end(); ++it)
        // {
        //    std::cout << *it << std::endl;
        //    std::cout << *(it->data()) << std::endl;
        // }
        // std::cout << "Afer insert" << std::endl;
        
-       // for (it = arcs_cont.begin(); it != arcs_cont.end(); ++it)
+       // for (typename std::list<Rational_arc_2>::iterator
+       //      it = arcs_cont.begin(); it != arcs_cont.end(); ++it)
        // {
        //    std::cout << *it << std::endl;
        //    std::cout << *(it->data()) << std::endl;
@@ -1596,13 +1582,12 @@ public:
       /* Merge all of the arrangements at arr_vector to one arrangement. */
       if (m_arr_plane_faces.size() != 0)
       {
-        m_arr_on_plane = 
-          m_arr_plane_faces.get_overlaid_arr(m_arr_on_plane);
+        m_arr_on_plane.reset(m_arr_plane_faces.get_overlaid_arr(m_arr_on_plane.get()));
       }
 
       Created_from_2_unique_lines<Arrangement_on_plane_2> valid_vertex;
       
-      m_arr_g_func.find_all_lines_plane(*m_arr_on_plane,
+      m_arr_g_func.find_all_lines_plane(m_arr_on_plane,
                                         m_insert_itertor,
                                         *m_S1,*m_S2,m_S1_S2_intersect,
                                         m_isolated_points_on_plane,
@@ -1856,7 +1841,7 @@ private:
         Naive_pl     naive_pl;
                
         m_arr_g_func.add_isolated_points(m_isolated_points_on_sphere,
-                                         *m_arr_on_sphere,naive_pl, 
+                                         m_arr_on_sphere,naive_pl, 
                                          valid_vertex, m_insert_itertor,
                                          *m_S1, *m_S2,
                                          m_intersection_point_S1S2);
@@ -1924,30 +1909,14 @@ public:
   }
 
 public:
-   Arrangement_on_plane_2* arrangement_on_plane()
+   boost::shared_ptr<Arrangement_on_plane_2> arrangement_on_plane()
    {
-      typename Arrangement_on_plane_2::Edge_iterator   eit;
-      for (eit = m_arr_on_plane->edges_begin();
-           eit != m_arr_on_plane->edges_end();
-           ++eit)
-      {
-//         std::cout << eit->curve() << std::endl;
-      }
-      
-      typename Arrangement_on_plane_2::Face_iterator   fit;
-      for (fit = m_arr_on_plane->faces_begin();
-           fit != m_arr_on_plane->faces_end();
-           ++fit)
-      {
-//         std::cout << fit->num_of_overlap_plane_faces() << std::endl;
-      }
-      
-      return m_arr_on_plane;
+     return m_arr_on_plane;
    }
    
-   Arrangement_on_sphere_2* arrangement_on_sphere()
+   boost::shared_ptr<Arrangement_on_sphere_2> arrangement_on_sphere()
    {
-      return m_arr_on_sphere;
+     return m_arr_on_sphere;
    }
    
 #if LTS_DRAW_ARR      

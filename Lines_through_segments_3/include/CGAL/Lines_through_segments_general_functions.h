@@ -73,11 +73,6 @@ private:
   typedef Lines_through_segments_point_adapt_2<Traits_3, typename Traits_arr_on_plane_2::Point_2,Algebraic> Point_2;
 
 public:
-  Lines_through_segments_general_functions()
-  {
-
-  }
-
   bool has_the_same_supporting_but_not_intersect(const Rational_segment_3& s1,
                                                  const Rational_segment_3& s2)
   {

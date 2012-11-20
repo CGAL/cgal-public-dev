@@ -314,7 +314,7 @@ public:
                                Dcel_on_plane> Arrangement_2;
    
 private:
-   const Arrangement_2* m_arr;
+  boost::shared_ptr<Arrangement_2> m_arr;
 
 public:
    Lines_through_segments_mapped_2_with_arrangement(const Base& mapped) :
@@ -335,27 +335,14 @@ public:
    const typename Base::Rational_segment_3& s1,
    const typename Base::Rational_segment_3& s2) :
     Base(curve,s1,s2)
-  {
-     m_arr = NULL;
-  }
+  {}
 
   Lines_through_segments_mapped_2_with_arrangement
   (const typename Base::Point_2& point, 
    const typename Base::Rational_segment_3& s1,
    const typename Base::Rational_segment_3& s2) :
     Base(point,s1,s2)
-  {
-     m_arr = NULL;
-  }
-
-  // Lines_through_segments_mapped_2_with_arrangement
-  // (// const typename Base::Rational_point_2& point, 
-  //  const typename Base::Rational_segment_3& s1,
-  //  const typename Base::Rational_segment_3& s2) :
-  //   Base(point,s1,s2)
-  // {
-  //    m_arr = NULL;
-  // }
+  {}
 
    template <typename Input_iterator>
    Lines_through_segments_mapped_2_with_arrangement
@@ -364,16 +351,14 @@ public:
     const typename Base::Rational_segment_3& s1,
     const typename Base::Rational_segment_3& s2) :
      Base(curves_begin, curves_end, s1,s2)
-   {
-      m_arr = NULL;
-   }
+   {}
 
-   void set_arrangement(const Arrangement_2* arr)
+   void set_arrangement(const boost::shared_ptr<Arrangement_2>& arr)
    {
       m_arr = arr;
    }
 
-   const Arrangement_2* arrangement()
+   boost::shared_ptr<Arrangement_2> arrangement()
    {
       return m_arr;
    }
@@ -498,7 +483,7 @@ public:
    Arrangement_2;
    
 private:
-   const Arrangement_2* m_arr;
+  boost::shared_ptr<Arrangement_2> m_arr;
 
 public:
    Lines_through_segments_through_3_with_arrangement(const Base& through) :
@@ -517,31 +502,25 @@ public:
    Lines_through_segments_through_3_with_arrangement
    (const typename Base::Point_3& point) :
      Base(point)
-  {
-     m_arr = NULL;
-  }
+  {}
 
    Lines_through_segments_through_3_with_arrangement
    (const typename Base::Segment_3& segment) :
      Base(segment)
-  {
-     m_arr = NULL;
-  }
+  {}
 
   Lines_through_segments_through_3_with_arrangement
   (const typename Base::Segment_3& segment,
    const typename Base::Point_3& point) :
     Base(segment, point)
-  {
-     m_arr = NULL;
-  }   
-
-   void set_arrangement(const Arrangement_2* arr)
+  {}   
+  
+   void set_arrangement(boost::shared_ptr<Arrangement_2> arr)
    {
       m_arr = arr;
    }
 
-   const Arrangement_2* arrangement()
+   boost::shared_ptr<Arrangement_2> arrangement()
    {
       return m_arr;
    }

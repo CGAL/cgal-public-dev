@@ -132,12 +132,13 @@ public:
       }
       else if (started && num_of_overlap_lines == 3)
       {
-         typedef boost::false_type With_arrangement;
-        Lines_through_segments_general_functions<Traits_3> m_g_func;
+        typedef boost::false_type With_arrangement;
+
         Rational_segment_3 output_seg(start_point, it->m_point);
-        Lines_through_segments_arr_gen_func<Traits_3, With_segments,
-            With_arrangement>
-           m_arr_g_func;
+
+        Lines_through_segments_arr_gen_func<
+          Traits_3, With_segments, With_arrangement
+          > m_arr_g_func;
 
         started = false;
         

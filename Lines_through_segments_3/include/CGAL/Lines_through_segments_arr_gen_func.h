@@ -121,23 +121,10 @@ public:
     m_alg_kernel = alg_kernel;
   }
 
-  Lines_through_segments_arr_gen_func()
-  {
-  }
+  // XXX this is doomed to break and used from arr_object
+  Lines_through_segments_arr_gen_func() : m_alg_kernel(NULL)
+  {}
 
-  template <typename Insert_iterator,
-            typename Transversal>
-  void insert_transversal_to_output(Insert_iterator* m_insert_itertor,
-                                    Transversal& transversal,
-                                    boost::true_type with_segments,
-                                    const Rational_segment_3* s1,
-                                    const Rational_segment_3* s2,
-                                    const Rational_polyhedron_3* s3,
-                                    const Rational_polyhedron_3* s4)
-  {
-     CGAL_error_msg("Not supported for LTP");
-  }
-      
   template <typename Insert_iterator,
             typename Transversal>
   void insert_transversal_to_output(Insert_iterator* m_insert_itertor,
@@ -225,7 +212,7 @@ public:
             typename Ccb_halfedge_circulator,
             typename Insert_itertor,
             typename Ext_obj>
-  void find_plane_faces(const Arrangement_2 *arr,
+  void find_plane_faces(boost::shared_ptr<Arrangement_2> arr,
                         Ccb_halfedge_circulator circ,
                         Insert_itertor* insert_itertor,
                         const Rational_segment_3& s1,
@@ -280,7 +267,7 @@ public:
             typename Insert_iterator, 
             typename Isolated_points_on_plane,
             typename Vertex_valid_functor>
-  void find_all_lines_plane(Arr_on_plane& arr_on_plane,
+  void find_all_lines_plane(boost::shared_ptr<Arr_on_plane> arr_on_plane,
                             Insert_iterator* insert_itertor,
                             const Rational_segment_3& s1,
                             const Rational_segment_3& s2,
@@ -301,8 +288,8 @@ public:
      *    a plane that crosses 4 segments. 
      */
     typename Arr_on_plane::Face_iterator   fit;
-    for (fit = arr_on_plane.faces_begin(); fit != 
-           arr_on_plane.faces_end();
+    for (fit = arr_on_plane->faces_begin(); fit != 
+           arr_on_plane->faces_end();
          ++fit)
     {
       if (fit->num_of_overlap_plane_faces() > 1)
@@ -310,7 +297,7 @@ public:
         typename Arr_on_plane::Dcel::const_iterator it = fit->segs_begin();
         typename Arr_on_plane::Dcel::const_iterator next_it = fit->segs_begin();
         ++next_it;
-        find_plane_faces(&arr_on_plane,
+        find_plane_faces(arr_on_plane,
                          fit->outer_ccb(),
                          insert_itertor,s1,s2,
                          **it,**next_it);
@@ -318,8 +305,8 @@ public:
     }
 
     typename Arr_on_plane::Edge_iterator   eit;
-    for (eit = arr_on_plane.edges_begin(); 
-         eit != arr_on_plane.edges_end();
+    for (eit = arr_on_plane->edges_begin(); 
+         eit != arr_on_plane->edges_end();
          ++eit)
     {
        /* Add Edges that created by two or more identical curves. */
@@ -369,7 +356,7 @@ public:
            Traits_3, typename Arr_on_plane::Dcel::Ext_obj> Mapped_2_with_arr;
 
           Mapped_2_with_arr output_curve(eit->curve(), s1, s2);
-          output_curve.set_arrangement(&arr_on_plane);
+          output_curve.set_arrangement(arr_on_plane);
           insert_transversal_to_output(insert_itertor,
                                        output_curve,
                                        With_segments(),
@@ -398,8 +385,8 @@ public:
         
     typedef typename Arr_on_plane::Vertex_iterator Vertex_it;
     Vertex_it   vit;
-    for (vit = arr_on_plane.vertices_begin();
-         vit != arr_on_plane.vertices_end(); ++vit)
+    for (vit = arr_on_plane->vertices_begin();
+         vit != arr_on_plane->vertices_end(); ++vit)
     {
 #if ARR_ON_SUR_DEBUG
       std::cout<<"On Plane vit->degree() = "<<vit->degree()<<std::endl;
@@ -460,7 +447,7 @@ public:
                else
                {
                   Mapped_2_with_arr output_point(vit->point(), s1, s2);
-                  output_point.set_arrangement(&arr_on_plane);
+                  output_point.set_arrangement(arr_on_plane);
                   insert_transversal_to_output(insert_itertor,
                                                output_point,
                                                With_segments(),
@@ -502,11 +489,10 @@ public:
          
     if (isolated_points_on_plane.size() > 0)
     {
-      typedef CGAL::Arr_naive_point_location<Arr_on_plane>
-        Naive_pl;
+      typedef CGAL::Arr_naive_point_location<Arr_on_plane> Naive_pl;
       Naive_pl     naive_pl;
             
-      add_isolated_points(isolated_points_on_plane,arr_on_plane,
+      add_isolated_points(isolated_points_on_plane, arr_on_plane,
                           naive_pl, validate_vertex,
                           insert_itertor, s1, s2, 
                           intersection_point_S1S2);
@@ -532,9 +518,8 @@ public:
             typename Point_location,
             typename Validate_vertex,
             typename Insert_iterator>
-
   void add_isolated_points(Isolated_points& isolated_points,
-                           Arrangement_2& arr,
+                           boost::shared_ptr<Arrangement_2> arr,
                            Point_location& pl,
                            Validate_vertex& validate_vertex,
                            Insert_iterator* insert_iterator,
@@ -564,7 +549,7 @@ public:
          ++dup_it)
     {
        get_3D_point_from_point_on_arr(
-          &arr,
+          arr,
           dup_it->point,
           insert_iterator, 
           intersection_point_S1S2, S1, S2 ,
@@ -576,12 +561,12 @@ public:
      * an edge than it represents a valid line that goes through 4 segments.
      */
             
-    pl.attach (arr);
+    pl.attach(*arr);
             
     for (it = isolated_points.begin(); it != isolated_points.end(); ++it)
     {
       add_isolated_point_to_arr(
-         &arr, ((*it).get_point()),S1, S2,
+         arr, ((*it).get_point()),S1, S2,
            *((*it).get_segment()),intersection_point_S1S2,
            pl, validate_vertex, insert_iterator);
     }
@@ -590,7 +575,7 @@ public:
   template <typename Insert_itertor, 
             typename Arrangement_2, 
             typename Ext_obj>
-  void get_3D_point_from_point_on_arr(const Arrangement_2 *arr,
+  void get_3D_point_from_point_on_arr(boost::shared_ptr<Arrangement_2> arr,
                                       const Point_on_sphere_2& pt,
                                       Insert_itertor* insert_itertor,
                                       const Rational_point_3& intersection_point_S1S2,
@@ -626,7 +611,7 @@ public:
             typename Arrangement_2, 
             typename Ext_obj>
   void get_3D_point_from_point_on_arr(
-     const Arrangement_2 *arr,
+     boost::shared_ptr<Arrangement_2> arr,
      const Point_2& pt,
      Insert_itertor* insert_itertor,
      const Rational_point_3& intersection_point_S1S2,
@@ -704,7 +689,7 @@ public:
             typename Point_location,
             typename Validate_vertex,
             typename Insert_itertor>
-  void add_isolated_point_to_arr(const Arrangement_2 *arr,
+  void add_isolated_point_to_arr(boost::shared_ptr<Arrangement_2> arr,
                                  const Point& pt,
                                  const Rational_segment_3& S1,
                                  const Rational_segment_3& S2,
@@ -1103,7 +1088,6 @@ public:
      Isolated_points_on_plane& isolated_points_on_plane,
      const Rational& S2_t,
      Arr_on_plane* arr_on_plane,
-     bool insert_flag,
      const Ext_obj &ext_point_obj)
   {
     Lines_through_segments_traits_on_plane_adapt<
@@ -1193,10 +1177,7 @@ public:
         arcs.push_back(t_arc);
 
       }
-      if (insert_flag)
-      {
-        insert (*arr_on_plane, arcs.begin(), arcs.end());
-      }
+      insert (*arr_on_plane, arcs.begin(), arcs.end());
     }
   }
   template <typename Isolated_points_on_plane,
@@ -1212,7 +1193,6 @@ public:
      Isolated_points_on_plane& isolated_points_on_plane,
      const Rational& S1_t,
      Arr_on_plane* arr_on_plane,
-     bool insert_flag,
      const Ext_obj &ext_point_obj)
   {
     Lines_through_segments_traits_on_plane_adapt<
@@ -1295,10 +1275,7 @@ public:
 #endif
         arcs.push_back(arc);
       }
-      if (insert_flag)
-      {
-        insert (*arr_on_plane, arcs.begin(), arcs.end());
-      }
+      insert (*arr_on_plane, arcs.begin(), arcs.end());
     }
   }      
   /*************************************************************

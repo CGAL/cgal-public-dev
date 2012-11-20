@@ -165,7 +165,7 @@ void ReportError(std::string str, int line, std::string file)
 {
   std::cout << change_color(CGAL_RED,str) << std::endl;
   std::cout << change_color(CGAL_RED,"File = ", file, "\tLine = ", line) << std::endl;
-  exit(0);
+  exit(EXIT_FAILURE);
 }
 
 /* Parse line at the inputfile */
@@ -482,19 +482,15 @@ bool get_all_common_lines(
         {
           typename Lines_through_segs::Mapped_2::Mapped_line_3 line = mapped_obj->line();
           typename Lines_through_segs::Mapped_transversal mapped_transversal = mapped_obj->mapped_transversal();
-          if (curve_obj = 
-              boost::get<typename Lines_through_segs::Mapped_x_monotone_curve_2> 
-              (&mapped_transversal))
+          if ((curve_obj = boost::get<typename Lines_through_segs::Mapped_x_monotone_curve_2>(&mapped_transversal)))
             {
               num_of_arr_curves++;
             }
-          else if (polygon_obj = 
-              boost::get<typename Lines_through_segs::Mapped_general_polygon_2> (&mapped_transversal))
+          else if((polygon_obj = boost::get<typename Lines_through_segs::Mapped_general_polygon_2> (&mapped_transversal)))
             {
               num_of_arr_polygons++;
             }
-          else if (arr_point_2_obj = 
-              boost::get<typename Lines_through_segs::Mapped_point_2> (&mapped_transversal))
+          else if ((arr_point_2_obj = boost::get<typename Lines_through_segs::Mapped_point_2> (&mapped_transversal)))
             {
               num_of_lines++;
             }
@@ -503,23 +499,18 @@ bool get_all_common_lines(
               ReportError("Unexpected Error - invalid mapped obj value",__LINE__,__FILE__);
             }
         }
-      else if (through_obj = boost::get<typename Lines_through_segs::Through_3> 
-          (&transversal))
+      else if ((through_obj = boost::get<typename Lines_through_segs::Through_3>(&transversal)))
         {
           typename Lines_through_segs::Through_transversal through_transversal = through_obj->through_transversal();
-          if (arc_obj = 
-              boost::get<typename Lines_through_segs::Through_point_3_segment_3> 
-              (&through_transversal))
+          if ((arc_obj = boost::get<typename Lines_through_segs::Through_point_3_segment_3> (&through_transversal)))
             {
               num_of_arr_arcs++;
             }
-          else if (seg_obj = 
-              boost::get<typename Lines_through_segs::Through_segment_3> (&through_transversal))
+          else if ((seg_obj = boost::get<typename Lines_through_segs::Through_segment_3> (&through_transversal)))
             {
               num_of_overlap_seg_3++;
             }
-          else if (point_obj = 
-              boost::get<typename Lines_through_segs::Through_point_3> (&through_transversal))
+          else if ((point_obj = boost::get<typename Lines_through_segs::Through_point_3> (&through_transversal)))
             {
               num_of_points++;
             }
@@ -599,7 +590,7 @@ void run_all_permutations(
     vector<Rational_segment_3> &lines,
     int *lines_index,
     unsigned int len ,
-    int min, 
+    unsigned int min, 
     bool print,
     int &expected_num_of_lines,
     int &expected_num_of_arr_curves,
@@ -633,7 +624,7 @@ void run_all_permutations(
               cout << change_color(CGAL_RED,lines_index[ii],", ");
             }
           cout << change_color(CGAL_RED,lines_index[len-1],")") << endl;
-          exit(0);
+          exit(EXIT_FAILURE);
         }
     }
    
@@ -699,7 +690,7 @@ void flip(
    
 
   unsigned int len = lines.size()/2;
-  for (int ii = 0; ii < len;ii++)
+  for (unsigned int ii = 0; ii < len;ii++)
     {
       swap(lines.at(ii),lines.at((lines.size()-1)-ii));
     }
@@ -870,14 +861,16 @@ int main (int argc,char **args)
   
         cout <<"get_all_common_lines iteration = " << iteration << endl;
 #if USE_CONIC_TRAITS
-        get_all_common_lines(line_through_segs_use_conic,
-            lines,
-            expected_num_of_lines,
-            expected_num_of_arr_curves,
-            expected_num_of_arr_polygons,
-            expected_num_of_point_3,
-            expected_num_of_arr_arcs,
-            expected_num_of_overlap_seg_3);
+        if(!get_all_common_lines(
+             line_through_segs_use_conic,
+             lines,
+             expected_num_of_lines,
+             expected_num_of_arr_curves,
+             expected_num_of_arr_polygons,
+             expected_num_of_point_3,
+             expected_num_of_arr_arcs,
+             expected_num_of_overlap_seg_3))
+          return EXIT_FAILURE;
 #endif
         // std::cout << "Num of lines = " << expected_num_of_lines << std::endl;
         // std::cout << "Num of curves = " << expected_num_of_arr_curves << std::endl;
@@ -893,14 +886,16 @@ int main (int argc,char **args)
         expected_num_of_point_3 = -1;
         expected_num_of_arr_arcs = -1;
         expected_num_of_overlap_seg_3 = -1;
-        get_all_common_lines(line_through_segs_use_rat_arc,
-            lines,
-            expected_num_of_lines,
-            expected_num_of_arr_curves,
-            expected_num_of_arr_polygons,
-            expected_num_of_point_3,
-            expected_num_of_arr_arcs,
-            expected_num_of_overlap_seg_3);
+        if(!get_all_common_lines(
+             line_through_segs_use_rat_arc,
+             lines,
+             expected_num_of_lines,
+             expected_num_of_arr_curves,
+             expected_num_of_arr_polygons,
+             expected_num_of_point_3,
+             expected_num_of_arr_arcs,
+             expected_num_of_overlap_seg_3))
+          return EXIT_FAILURE;
 #endif
      
         // std::cout << "Num of lines = " << expected_num_of_lines << std::endl;
@@ -914,7 +909,7 @@ int main (int argc,char **args)
       
     cout << "Program finished successfully" << endl;
  
-  return 0;
+    return EXIT_SUCCESS;
 }
 
 // {0*x^2 + 0*y^2 + -690*xy + 650*x + 480*y + -433} : (0.6435,0.409195) --cw--> (0.666154,0)
