@@ -3,7 +3,7 @@
 # A hook script to verify what is about to be updated on a rev.
 # The hook enforces the optional pre-commit hook on the client side.
 # Called by "git receive-pack" with arguments: refname sha1-old sha1-new
-# It should exit with non-zero status after issuing an appropriate 
+# It should exit with non-zero status after issuing an appropriate
 # message if it wants to stop the update.
 
 # Config
@@ -13,7 +13,7 @@
 #    to the repository.
 allownonascii=$(git config hooks.allownonascii)
 # hooks.allowcaseonly
-#    This boolean sets whether you want to allow filenames to only 
+#    This boolean sets whether you want to allow filenames to only
 #    differ in case.
 allowcaseonly=$(git config hooks.allowcaseonly)
 # hooks.allowsymlink
@@ -41,6 +41,11 @@ fi
 # Redirect output to stderr.
 exec 1>&2
 
+if [ "$newrev" = "0000000000000000000000000000000000000000" ]; then
+  # exit as no file to be checked
+  exit;
+fi
+
 # Remark: needs 'git config --global core.quotepath false'
 # http://stackoverflow.com/questions/4144417/how-to-handle-asian-characters-in-file-names-in-git-on-os-x
 if [ "$allownonascii" != "true" ]
@@ -62,7 +67,7 @@ then
     files=$(git show --pretty="format:" --name-only $rev)
     if test $(echo -n $files | LC_ALL=C tr -d '[ -~]\0' | wc -c) != 0
     then
-      echo "Error: Attempt to push revision $rev " 
+      echo "Error: Attempt to push revision $rev "
       echo "       containing a non-ascii file name."
       echo
       echo "This can cause problems if you want to work"
@@ -70,7 +75,7 @@ then
       echo
       echo "To be portable it is advisable to rename the"
       echo "file with non-ascii filename:"
-      echo $files 
+      echo $files
       echo
       echo "To avoid this problem at an early stage,"
       echo "it is advised to activate the corresponding"
@@ -96,7 +101,7 @@ then
     echo
     echo "Files with various cases:"
     for conflict in $conflicts
-    do     
+    do
       echo $(git ls-tree --name-only -r $newrev | grep -i $conflict)
     done
     echo
@@ -106,7 +111,7 @@ then
     echo
     exit 1
   fi
-fi 
+fi
 
 # Reject Unix symbolic links, which are not valid (in fact: ignored) on Windows.
 if [ "$allowsymlinks" != "true" ]
@@ -129,6 +134,8 @@ then
     exit 1
   fi
 fi
+
+# TODO add .svn test
 
 # --- Finished
 exit 0;
