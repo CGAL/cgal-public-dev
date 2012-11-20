@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 # Modified for CGAL 2012
 # Comments:
-# - getReachableRefs is a slow operation 
+# - getReachableRefs is a slow operation
 
 import optparse
 import os
@@ -24,7 +24,7 @@ NoMail    = "[nomail]"
 
 gitolite = "GL_USER" in os.environ
 whoami = os.environ["LOGNAME"]
-sender = os.environ["GL_USER"] if gitolite else "%s <%s@@users.gforge.inria.fr>" % (os.environ["GIT_NAME"], os.environ["GIT_USER"]) 
+sender = os.environ["GL_USER"] if gitolite else "%s <%s@@users.gforge.inria.fr>" % (os.environ["GIT_NAME"], os.environ["GIT_USER"])
 
 Options = [
     # Name, argument, default, help,
@@ -290,7 +290,7 @@ def generateMailHeader(frommer, subject):
 To: %s
 Subject: %s %s
 %sX-Git-Repository: %s
-Content-Type: text/plain; charset="utf-8"
+Content-Type: text/plain; charset=utf-8
 X-Mailer: %s %s
 
 %s
@@ -433,7 +433,7 @@ def commit(current, rev, force=False, subject_head=None):
         if head in Config.allchanges or head in Config.mergediffs:
             merge_diff = "-m"
 
-    # Commit with From: AuthorName <authoremail> 
+    # Commit with From: AuthorName <authoremail>
     frommer = git("log -1 '--pretty=format:%%an <%%ae>' %s" % rev, all=True)[0]
 
     packages = git("show --pretty='format:' --name-only %s" % rev, all=False)
@@ -461,7 +461,7 @@ def diff(head, first, last):
 
     log("Diffing %s..%s" % (first, last))
 
-    # Manual Diff with From: AuthorName <authoremail> 
+    # Manual Diff with From: AuthorName <authoremail>
     frommer = git("log -1 '--pretty=format:%%an <%%ae>' %s" % last, all=True)[0]
 
     packages = ""
@@ -504,7 +504,7 @@ def reportPath(current, revs, force=False, subject_head=None):
 def headMoved(head, path):
     log("Head moved: %s -> %s" % (head, path[-1]))
 
-    # HeadMoved with From: GIT_USER@gforge 
+    # HeadMoved with From: GIT_USER@gforge
     frommer = sender
 
     subject = git("show '--pretty=format:%%s (%%h)' -s %s" % path[-1])
