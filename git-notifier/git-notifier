@@ -1,4 +1,7 @@
 #! /usr/bin/env python
+# Modified for CGAL 2012
+# Comments:
+# - getReachableRefs is a slow operation
 
 import optparse
 import os
@@ -8,18 +11,20 @@ import sys
 import subprocess
 import tempfile
 import time
+import re
 
 VERSION   = "0.41-1"  # Filled in automatically.
 
 Name      = "git-notifier"
 CacheFile = ".%s.dat" % Name
-Separator = "\n>---------------------------------------------------------------\n"
+Separator = "================================================================\n"
+SeparatorThin = "----------------------------------------------------------------\n"
 NoDiff    = "[nodiff]"
 NoMail    = "[nomail]"
 
 gitolite = "GL_USER" in os.environ
 whoami = os.environ["LOGNAME"]
-sender = os.environ["GL_USER"] if gitolite else whoami
+sender = os.environ["GL_USER"] if gitolite else "%s <%s@users.gforge.inria.fr>" % (os.environ["GIT_NAME"], os.environ["GIT_USER"])
 
 Options = [
     # Name, argument, default, help,
@@ -200,7 +205,7 @@ def git(args, stdout_to=subprocess.PIPE, all=False):
         child = subprocess.Popen("git " + args, shell=True, stdin=None, stdout=stdout_to, stderr=subprocess.PIPE)
         (stdout, stderr) = child.communicate()
     except OSError, e:
-        error("cannot start git: %s" % str(e))
+        error("cannot start git: %s; args: %s " % (str(e), args))
 
     if child.returncode != 0 and stderr:
         msg = ": %s" % stderr if stderr else ""
@@ -261,7 +266,7 @@ def deleteTmps():
 def mailTag(key, value):
     return "%-11s: %s" % (key, value)
 
-def generateMailHeader(subject):
+def generateMailHeader(frommer, subject, replyto=""):
 
     repo = Config.repouri
 
@@ -279,17 +284,18 @@ def generateMailHeader(subject):
 
     (out, fname) = makeTmp()
 
-    replyto = "Reply-To: %s\n" % Config.replyto if Config.replyto else ""
+    replyto_header = "Reply-To: %s\n" % Config.replyto if Config.replyto else "Reply-To: %s\n" % replyto if replyto else ""
 
     print >>out, """From: %s
 To: %s
 Subject: %s %s
 %sX-Git-Repository: %s
+Content-Type: text/plain; charset=utf-8
 X-Mailer: %s %s
 
 %s
 
-""" % (Config.sender, Config.mailinglist, Config.emailprefix, subject, replyto, repo,
+""" % (frommer, Config.mailinglist, Config.emailprefix, subject, replyto_header, repo,
        Name, VERSION, mailTag("Repository", repo)),
 
     return (out, fname)
@@ -316,7 +322,10 @@ def sendMail(out, fname):
 def entryAdded(key, value, rev):
     log("New %s %s" % (key, value))
 
-    (out, fname) = generateMailHeader("%s '%s' created" % (key, value))
+    # New branch/tag with From/Reply-To: $GIT_NAME <$GIT_USER@users.gforge.inria.fr>
+    frommer = sender
+
+    (out, fname) = generateMailHeader(frommer, "%s '%s' created" % (key, value))
 
     print >>out, mailTag("New %s" % key, value)
     print >>out, mailTag("Referencing", rev)
@@ -326,7 +335,10 @@ def entryAdded(key, value, rev):
 def entryDeleted(key, value):
     log("Deleted %s %s" % (key, value))
 
-    (out, fname) = generateMailHeader("%s '%s' deleted" % (key, value))
+    # Deleted branch/tag with From/Reply-To: $GIT_NAME <$GIT_USER@users.gforge.inria.fr>
+    frommer = sender
+
+    (out, fname) = generateMailHeader(frommer, "%s '%s' deleted" % (key, value))
 
     print >>out, mailTag("Deleted %s" % key, value)
 
@@ -334,19 +346,25 @@ def entryDeleted(key, value):
 
 # Sends a mail for a notification consistent of two parts: (1) the output of a
 # show command, and (2) the output of a diff command.
-def sendChangeMail(rev, subject, heads, show_cmd, diff_cmd, stat_cmd):
+def sendChangeMail(rev, frommer, replyto, subject, heads, packages, show_cmd, diff_cmd, stat_cmd):
 
-    (out, fname) = generateMailHeader(subject)
+    (out, fname) = generateMailHeader(frommer, subject, replyto)
 
     multi = "es" if len(heads) > 1 else ""
     heads = ",".join(heads)
 
     print >>out, mailTag("On branch%s" % multi, heads)
+    print >>out
+
+    if packages:
+        print >>out, mailTag("Packages", ", ".join(packages))
+        print >>out
 
     if Config.link:
         url = Config.link.replace("%s", rev)
         url = url.replace("%r", os.path.basename(os.getcwd()))
         print >>out, mailTag("Link", url)
+        print >>out
 
     footer = ""
     show = git(show_cmd)
@@ -375,7 +393,7 @@ def sendChangeMail(rev, subject, heads, show_cmd, diff_cmd, stat_cmd):
 
     for line in git(show_cmd, all=True):
         if line == "---":
-            print >>out, Separator
+            print >>out, SeparatorThin
         else:
             print >>out, line
 
@@ -415,14 +433,28 @@ def commit(current, rev, force=False, subject_head=None):
         if head in Config.allchanges or head in Config.mergediffs:
             merge_diff = "-m"
 
+    # Commit with
+    # From: $GIT_NAME <$GIT_USER@users.gforge.inria.fr>
+    # Reply-To: AuthorName <AuthorEmail>, CommitterName <CommitterEmail>
+    frommer = sender
+    author = git("log -1 '--pretty=format:%%an <%%ae>' %s" % rev, all=True)[0]
+    committer = git("log -1 '--pretty=format:%%cn <%%ce>' %s" % rev, all=True)[0]
+    replyto = committer
+    if committer != author:
+       replyto += "," + author
+
+    packages = git("show --pretty='format:' --name-only %s" % rev, all=False)
+    packages = [re.sub(r'\/.*', r'', p) for p in packages]
+    packages = sorted(set(packages))
+
     subject = git("show '--pretty=format:%%s (%%h)' -s %s" % rev)
-    subject = "%s: %s" % (subject_head, subject[0])
+    subject = "%s: %s in [%s]" % (subject_head, subject[0], ", ".join(packages))
 
     show_cmd = "show -s --no-color --find-copies-harder --pretty=medium %s" % rev
     diff_cmd = "diff-tree --root --patch-with-stat --no-color --find-copies-harder --ignore-space-at-eol %s %s" % (merge_diff, rev)
     stat_cmd = "diff-tree --root --stat --no-color --find-copies-harder --ignore-space-at-eol %s" % rev
 
-    sendChangeMail(rev, subject, heads, show_cmd, diff_cmd, stat_cmd)
+    sendChangeMail(rev, frommer, replyto, subject, heads, packages, show_cmd, diff_cmd, stat_cmd)
 
 # Sends a diff between two revisions.
 #
@@ -436,6 +468,18 @@ def diff(head, first, last):
 
     log("Diffing %s..%s" % (first, last))
 
+    # Manual diff with
+    # From: $GIT_NAME <$GIT_USER@users.gforge.inria.fr>
+    # Reply-To: AuthorName <AuthorEmail>, CommitterName <CommitterEmail>
+    frommer = sender
+    author = git("log -1 '--pretty=format:%%an <%%ae>' %s" % rev, all=True)[0]
+    committer = git("log -1 '--pretty=format:%%cn <%%ce>' %s" % rev, all=True)[0]
+    replyto = committer
+    if committer != author:
+       replyto += "," + author
+
+    packages = ""
+
     subject = git("show '--pretty=format:%%s (%%h)' -s %s" % last)
     subject = "%s diff: %s" % (head, subject[0])
 
@@ -445,7 +489,7 @@ def diff(head, first, last):
     diff_cmd = "diff --patch-with-stat -m --no-color --find-copies-harder --ignore-space-at-eol %s %s" % (first, last)
     stat_cmd = "diff --stat -m --no-color --find-copies-harder --ignore-space-at-eol %s %s" % (first, last)
 
-    sendChangeMail(last, subject, heads, show_cmd, diff_cmd, stat_cmd)
+    sendChangeMail(last, frommer, replyto, subject, heads, packages, show_cmd, diff_cmd, stat_cmd)
 
 # Sends pair-wise diffs for a path of revisions. Also records all revision on
 # the path as seen.
@@ -474,9 +518,12 @@ def reportPath(current, revs, force=False, subject_head=None):
 def headMoved(head, path):
     log("Head moved: %s -> %s" % (head, path[-1]))
 
+    # HeadMoved with From/Reply-To: $GIT_NAME <$GIT_USER@users.gforge.inria.fr>
+    frommer = sender
+
     subject = git("show '--pretty=format:%%s (%%h)' -s %s" % path[-1])
 
-    (out, fname) = generateMailHeader("%s's head updated: %s" % (head, subject[0]))
+    (out, fname) = generateMailHeader(frommer, "%s's head updated: %s" % (head, subject[0]))
 
     print >>out, "Branch '%s' now includes:" % head
     print >>out, ""
