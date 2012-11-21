@@ -1,6 +1,6 @@
 Server Hooks:
 
-* githook-proxy can be softlinked to any hook 
+* githook-proxy can be softlinked to any hook
   see http://codingkilledthecat.wordpress.com/2012/05/24/multiplexing-git-hooks/
 ** in order to call multiple scripts that all start with the same prefix
    as the hook name
@@ -10,6 +10,14 @@ Server Hooks:
       update-check-files
 ** we do so for post-receive which calls
      post-receive-email.sh
-     post-receive-push 
+     post-receive-push
 
 New version of hooks from main repo can be obtained by './refresh'
+
+
+git-notifier:
+This dir has been added with
+  git subtree add --squash --prefix=git-notifier git://git.icir.org/git-notifier master
+It is possible to pull upstream changes with
+  git subtree pull --prefix=git-notifier git://git.icir.org/git-notifier master
+We maintain this dir in this way as we have adaptions to the notifier.
