@@ -234,7 +234,7 @@ private:
       (*m_S1,*m_S2,S3,
        m_bound_s1_s2, S3.source(),
        *m_rat_kernel,intersection_point_S1S2,
-       local_isolated_points_f, arcs[0],
+       local_isolated_points_f, std::back_inserter(arcs[0]),
        true,&end_points[0],
        S1_S2_intersect);
          
@@ -251,7 +251,7 @@ private:
        m_bound_s1_s2, S3.target(),
        *m_rat_kernel,intersection_point_S1S2,
        local_isolated_points_s,
-       arcs[1], true, &end_points[1],
+       std::back_inserter(arcs[1]), true, &end_points[1],
        S1_S2_intersect);
          
     if (arcs[1].size() > 0)
@@ -295,7 +295,7 @@ private:
            *m_rat_kernel,
            intersection_point_S1S2,
            local_isolated_points_f,
-           arcs[0], true, &end_points[0],
+           std::back_inserter(arcs[0]), true, &end_points[0],
            S1_S2_intersect);
       }
             
@@ -308,7 +308,7 @@ private:
            *m_rat_kernel,
            intersection_point_S1S2,
            local_isolated_points_s,
-           arcs[1], true, &end_points[1],
+           std::back_inserter(arcs[1]), true, &end_points[1],
            S1_S2_intersect);
       }
       CGAL_assertion(arcs[1].size() <= 2);

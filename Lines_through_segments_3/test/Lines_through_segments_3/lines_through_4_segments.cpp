@@ -433,11 +433,20 @@ bool get_all_common_lines(
   }
   t.stop();
     
+  typename list<LTS_output_obj>::iterator it_output_list;
+
+  {
+    typename std::vector< boost::shared_ptr<typename Lines_through_segs::Arr_on_plane> >::iterator
+      b, e;
+    boost::tie(b, e) = line_through_segs.planar_arrangements();
+    typename std::vector< boost::shared_ptr<typename Lines_through_segs::Arr_on_sphere> >::iterator
+      bs, es;
+    boost::tie(bs, es) = line_through_segs.spherical_arrangements();
+  }
+
+#if PRINT_OUTPUT
   std::cout << t.time()/runs << std::endl;
   std::cout << "list size = " << output_list.size() << std::endl;
-   
-  typename list<LTS_output_obj>::iterator it_output_list;
-#if PRINT_OUTPUT
   cout << "OUTPUT:" << endl;
 #endif
    

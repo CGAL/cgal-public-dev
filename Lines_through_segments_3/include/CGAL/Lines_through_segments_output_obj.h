@@ -32,6 +32,8 @@
 #include <CGAL/Lines_through_segments_general_functions.h>
 #include <CGAL/Lines_through_segments_arr_ext_dcel.h>
 
+#include <boost/array.hpp>
+
 /*************************************************************
  * This file contains different classes, each represents output object:
  *
@@ -652,7 +654,7 @@ public:
   typedef boost::variant<Line_3, Through_3_with_arr, Mapped_2_with_arr >     
     Transversal_with_arr;
       
-  typedef CGAL::cpp0x::array<const Rational_segment_3*, 4> Segments;
+  typedef boost::array<const Rational_segment_3*, 4> Segments;
   typedef std::pair<Transversal, Segments> Transversal_with_segments;
   typedef std::pair<Transversal_with_arr, Segments > Transversal_with_segments_with_arr;
 

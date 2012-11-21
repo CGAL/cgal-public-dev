@@ -103,10 +103,6 @@ private:
                                             With_arrangement>
   Arr_object;
   
-  typedef typename Arrangement_on_plane_2::Hole_iterator  Hole_iterator;
-  typedef typename Arrangement_on_plane_2::Ccb_halfedge_circulator
-  Ccb_halfedge_circulator;
-  
   /***************************************************/
   /*    Arrangement on sphere typedefs.              */
   /***************************************************/
@@ -1179,29 +1175,7 @@ private:
       return;
 
     }      
-#if 0
-#if ARR_ON_SUR_DEBUG
-    std::cout << "Add arc debug1 = ("
-              << Curve_2(Point_on_Sphere_2(p0_x_diff, p0_y_diff, 
-                                           p0_z_diff).get_original_point(),
-                         Point_on_sphere_2(p1_x_diff, p1_y_diff, p1_z_diff))
-              << std::endl;
-
-    std::cout << "Add arc debug2 = ("
-              << Curve_2(Point_on_sphere_2(-p0_x_diff, -p0_y_diff, -p0_z_diff),
-                         Point_on_sphere_2(-p1_x_diff, -p1_y_diff, -p1_z_diff))
-              << std::endl;
-#endif            
-
-    arcs.push_back(Curve_2(Point_on_sphere_2(p0_x_diff, p0_y_diff, p0_z_diff),
-                           Point_on_sphere_2(p1_x_diff, p1_y_diff, p1_z_diff)));
-
-    arcs.push_back(Curve_2(Point_on_sphere_2(-p0_x_diff, -p0_y_diff, -p0_z_diff),
-                           Point_on_sphere_2(-p1_x_diff, -p1_y_diff,
-                                             -p1_z_diff)));
-
-         
-#else
+    
     /* Add arcs only on the upper half of the sphere. */
     if (p0_z_diff >= 0 && p1_z_diff >= 0)
     {
@@ -1341,7 +1315,6 @@ private:
                                &S3));
       }
     }
-#endif
     CGAL::insert (*m_arr_on_sphere, arcs.begin(), arcs.end());
   }
   /*************************************************************
@@ -1443,7 +1416,6 @@ private:
   void add_element_to_plane_arrangement(const Rational_point_3& qpoint,
                                         const Rational_segment_3& S3)
   {
-    std::list<Rational_arc_2>  arcs;
     std::list<Arc_end_points > ret_end_points;
 #if ARR_ON_SUR_DEBUG
     std::cout<<"Add point to plane arrangement = " << qpoint << std::endl;
@@ -1459,7 +1431,16 @@ private:
     m_arr_g_func.get_all_lines_through_point_and_2_lines(*m_S1,
                                                          *m_S2, S3, true /* bound s1 s2*/, qpoint, 
                                                          *m_rat_kernel, m_intersection_point_S1S2,
-                                                         m_isolated_points_on_plane, arcs_cont, false, &ret_end_points, 
+                                                         m_isolated_points_on_plane, std::back_inserter(arcs_cont), 
+                                                         false, &ret_end_points, 
+                                                         m_S1_S2_intersect);
+#else
+    std::list<Rational_arc_2>  arcs;
+    m_arr_g_func.get_all_lines_through_point_and_2_lines(*m_S1,
+                                                         *m_S2, S3, true /* bound s1 s2*/, qpoint, 
+                                                         *m_rat_kernel, m_intersection_point_S1S2,
+                                                         m_isolated_points_on_plane, std::back_inserter(arcs), 
+                                                         false, &ret_end_points, 
                                                          m_S1_S2_intersect);
 
 //     typename std::list<Rational_arc_2>::iterator it;
@@ -1468,13 +1449,6 @@ private:
 // //       insert (*m_arr_on_plane, *it);
 // //       std::cout << *it << std::endl;
 //     }
-#else
-    m_arr_g_func.get_all_lines_through_point_and_2_lines(*m_S1,
-                                                         *m_S2, S3, true /* bound s1 s2*/, qpoint, 
-                                                         *m_rat_kernel, m_intersection_point_S1S2,
-                                                         m_isolated_points_on_plane, arcs, false, &ret_end_points, 
-                                                         m_S1_S2_intersect);
-
     insert (*m_arr_on_plane, arcs.begin(), arcs.end());
 #endif
   }

@@ -1287,6 +1287,7 @@ public:
    * point on the line and the second point on the line
    *************************************************************/
   template <typename Isolated_points_on_plane,
+            typename OutputIterator1,
             typename Arc_end_points>
   void get_all_lines_through_point_and_2_lines(
      const Rational_segment_3& S1,
@@ -1297,7 +1298,7 @@ public:
      const Rational_kernel& rat_kernel,
      const Rational_point_3& intersection_point_S1S2,
      Isolated_points_on_plane& ret_isolated_points_on_plane,
-     std::list<Rational_arc_2>& ret_arcs,
+     OutputIterator1 ret_arcs,
      bool ret_end_points,
      std::list<Arc_end_points >* ret_end_points_list,
      bool S1_S2_intersect)
@@ -1339,7 +1340,7 @@ public:
 #if LINES_DEBUG
         std::cout << " push horizontal line " << te_arc << std::endl;
 #endif         
-        ret_arcs.push_back(te_arc);
+        *ret_arcs++ = te_arc;
 
         if (ret_end_points)
         {
@@ -1373,7 +1374,7 @@ public:
 #if LINES_DEBUG
         std::cout << " push vertical line " << te_arc << std::endl;
 #endif         
-        ret_arcs.push_back(te_arc);
+        *ret_arcs++ = te_arc;
 
         if (ret_end_points)
         {
@@ -1402,7 +1403,7 @@ public:
 #if LINES_DEBUG
         std::cout <<" push vertical line " << te_arc << std::endl;
 #endif         
-        ret_arcs.push_back(te_arc);
+        *ret_arcs++ = te_arc;
                
         if (ret_end_points)
         {
@@ -1438,7 +1439,7 @@ public:
 #if LINES_DEBUG
         std::cout << " push horizontal line " << te_arc << std::endl;
 #endif         
-        ret_arcs.push_back(te_arc);
+        *ret_arcs++ = te_arc;
 
         if (ret_end_points)
         {
@@ -1567,7 +1568,7 @@ public:
              Rational_point_2(x_coord[0],y_coord[0]),
              Rational_point_2(x_coord[4],y_coord[4]),
              &S3);
-          ret_arcs.push_back(te_arc);
+          *ret_arcs++ = te_arc;
                   
           if (ret_end_points)
           {
@@ -1596,7 +1597,7 @@ public:
              Rational_point_2(x_coord[0], y_coord[0]),
              Rational_point_2(x_coord[4], y_coord[4]),
              &S3);
-          ret_arcs.push_back(te_arc);
+          *ret_arcs++ = te_arc;
             
           if (ret_end_points)
           {
@@ -1625,7 +1626,7 @@ public:
                                       Rational_point_2(x_coord[3],y_coord[3]),
                                       Rational_point_2(x_coord[4],y_coord[4]),
                                       &S3);
-          ret_arcs.push_back(arc);
+          *ret_arcs++ = arc;
                   
           if (ret_end_points)
           {

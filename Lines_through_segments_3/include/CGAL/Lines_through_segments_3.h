@@ -205,6 +205,7 @@ public:
 
           line_through_segs_obj.find_all_lines(rational_output);
 
+          // extract the arrangments
           m_planar_arrangements.push_back(line_through_segs_obj.arrangement_on_plane());
           m_spherical_arrangements.push_back(line_through_segs_obj.arrangement_on_sphere());
           
@@ -226,9 +227,8 @@ public:
           ++num_of_overlap_segs;
           if (num_of_overlap_segs == segs.size() - S1)
           {
-            Lines_through_segments_find_overlap_lines<Traits_3, With_segments>
-              find_overlap;
-            find_overlap(S1, segs, &output_iterator);
+            // XXX we really need a Traits_3 value around here
+            LTS::find_overlap(Traits_3(), segs.begin() + S1, segs.end(), output_iterator, With_segments());
             return;
           }
         }
@@ -236,12 +236,24 @@ public:
     }
   }
 
-  std::pair< 
-      std::vector< boost::shared_ptr<Arr_on_plane> >
-    , std::vector< boost::shared_ptr<Arr_on_sphere> >  >
-  get_arrangements() const {
-    return std::make_pair(m_planar_arrangements, m_spherical_arrangements);
+  std::pair<
+      typename std::vector< boost::shared_ptr<Arr_on_plane> >::iterator
+    , typename std::vector< boost::shared_ptr<Arr_on_plane> >::iterator
+    >
+  planar_arrangements() {
+    return std::make_pair(m_planar_arrangements.begin(),
+                          m_planar_arrangements.end());
   }
+
+  std::pair< 
+      typename std::vector< boost::shared_ptr<Arr_on_sphere> >::iterator
+    , typename std::vector< boost::shared_ptr<Arr_on_sphere> >::iterator
+    >
+  spherical_arrangements() {
+    return std::make_pair(m_spherical_arrangements.begin(),
+                          m_spherical_arrangements.end());
+  }
+
 };
 
 // template <typename Lines_through_segments_traits_3,
