@@ -34,7 +34,7 @@
 
 namespace CGAL {
 
-template <typename Ext_obj, typename Arrangement_2>
+template <typename Arrangement_2>
 class Lines_through_segments_arr_observer 
   : public CGAL::Arr_observer<Arrangement_2>
 {
@@ -43,11 +43,12 @@ class Lines_through_segments_arr_observer
   typedef typename Arrangement_2::Face_handle         Face_handle;
   typedef typename Arrangement_2::X_monotone_curve_2  X_monotone_curve_2;
   typedef typename Arrangement_2::Point_2             Point_2;
+  typedef typename Arrangement_2::Geometry_traits_2::Curve_data Ext_obj;
    
 private:
   const X_monotone_curve_2* create_new_edge_curve; //save the last inserted curve at before_create_edge.
-  const Ext_obj* m_last_inserted_segment;
-  std::list<const Ext_obj*> m_last_splitted_edge_segment_list;
+  Ext_obj m_last_inserted_segment;
+  std::list<Ext_obj> m_last_splitted_edge_segment_list;
   bool m_is_last_plane;
       
 public:
@@ -68,7 +69,7 @@ public:
     m_is_last_plane = _is_plane;
   }
 
-  void set_last_inserted_segment(const Ext_obj* s)
+  void set_last_inserted_segment(Ext_obj s)
   {
     m_last_inserted_segment = s;
   }

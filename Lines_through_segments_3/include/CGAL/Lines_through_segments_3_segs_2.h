@@ -70,16 +70,16 @@ private:
   /***************************************************/
       
   /* Extended each edge its creator line, Extend each vertex with color.*/
-  typedef Lines_through_segments_arr_ext_dcel<Traits_arr_on_plane_2,
-                                              Rational_segment_3>
-                                                         Dcel_on_plane;
+  typedef Lines_through_segments_arr_ext_dcel<Traits_arr_on_plane_2, Rational_segment_3> 
+    Dcel_on_plane;
   typedef CGAL::Arrangement_2<Traits_arr_on_plane_2, Dcel_on_plane>
     Arrangement_on_plane_2;
+
   typedef Lines_through_segments_point_adapt_2<Traits_3,
     typename Traits_arr_on_plane_2::Point_2, Algebraic>  Point_2;
+
   typedef typename Traits_arr_on_plane_2::Curve_2        Rational_arc_2;
-  typedef Lines_through_segments_arr_observer<Rational_segment_3,
-                                              Arrangement_on_plane_2>
+  typedef Lines_through_segments_arr_observer<Arrangement_on_plane_2>
     Lines_through_segments_arr_observer_on_plane;
 
   typedef typename Arrangement_on_plane_2::Halfedge_handle 

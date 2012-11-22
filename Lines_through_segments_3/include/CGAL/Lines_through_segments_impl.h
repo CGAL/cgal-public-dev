@@ -94,9 +94,8 @@ private:
     typename Traits_arr_on_plane_2::Point_2,Algebraic> Point_2;
   typedef typename Traits_arr_on_plane_2::Curve_2         Rational_arc_2;
 
-  typedef Lines_through_segments_arr_observer<Rational_segment_3,
-                                              Arrangement_on_plane_2> 
-  Lines_through_segments_arr_observer_on_plane;
+  typedef Lines_through_segments_arr_observer<Arrangement_on_plane_2> 
+    Lines_through_segments_arr_observer_on_plane;
     
   typedef Lines_through_segments_arr_object<Traits_3,
                                             With_segments,
@@ -127,8 +126,8 @@ private:
   typedef CGAL::Arrangement_on_surface_2<Traits_arr_on_sphere_2,
                                          Topol_traits_2>             Arrangement_on_sphere_2;
 
-  typedef class Lines_through_segments_arr_plane_faces
-  <Arrangement_on_plane_2,Lines_through_segments_arr_observer_on_plane> 
+  typedef class Lines_through_segments_arr_plane_faces<
+    Arrangement_on_plane_2, Lines_through_segments_arr_observer_on_plane> 
   Lines_through_segments_arr_plane_faces;
 
   typedef Lines_through_segments_isolated_points
@@ -161,9 +160,8 @@ private:
 
 public:
    
-  typedef Lines_through_segments_arr_observer<Rational_segment_3,
-                                              Arrangement_on_sphere_2>
-  Lines_through_segments_arr_observer_on_sphere;
+  typedef Lines_through_segments_arr_observer<Arrangement_on_sphere_2>
+    Lines_through_segments_arr_observer_on_sphere;
    
    
   class Arc_end_points
