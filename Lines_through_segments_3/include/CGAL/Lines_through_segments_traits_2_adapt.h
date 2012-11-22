@@ -47,7 +47,7 @@ template <typename Traits_3_>
 class Lines_through_segments_traits_on_plane_adapt
 {
 public:
-   typedef Traits_3_                                     Traits_3;
+  typedef Traits_3_                                     Traits_3;
 
 private:
   typedef typename Traits_3::Rational_kernel            Rational_kernel;

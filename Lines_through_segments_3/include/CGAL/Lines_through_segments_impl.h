@@ -119,14 +119,13 @@ private:
     Traits_3,
     typename Traits_arr_on_sphere_2::Point_2,
     Rational> Point_on_sphere_2;
-  typedef typename Traits_arr_on_sphere_2::X_monotone_curve_2
-  X_monotone_curve_On_Sphere_2;
-  typedef typename Traits_arr_on_sphere_2::Curve_2        Curve_2;
-  typedef typename Traits_3::Traits_arr_on_sphere_2_no_data::Curve_2 Curve_2_no_data;
+
+  typedef typename Traits_arr_on_sphere_2::X_monotone_curve_2        X_monotone_curve_On_Sphere_2;
+  typedef typename Traits_arr_on_sphere_2::Curve_2                   Curve_2;
+  typedef typename Traits_arr_on_sphere_2::Base_curve_2              Curve_2_no_data;
   
   typedef CGAL::Arrangement_on_surface_2<Traits_arr_on_sphere_2,
-                                         Topol_traits_2>
-  Arrangement_on_sphere_2;
+                                         Topol_traits_2>             Arrangement_on_sphere_2;
 
   typedef class Lines_through_segments_arr_plane_faces
   <Arrangement_on_plane_2,Lines_through_segments_arr_observer_on_plane> 

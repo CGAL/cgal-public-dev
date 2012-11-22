@@ -48,21 +48,18 @@ template <typename Alg_kernel_,
           typename Traits_arr_on_plane_2_ =  
           CGAL::Arr_conic_traits_2<Rational_kernel_, 
                                    Alg_kernel_, 
-                                   typename CGAL::CORE_algebraic_number_traits>,
-          typename Traits_arr_on_sphere_2_ = 
-          typename CGAL::Arr_geodesic_arc_on_sphere_traits_2<Rational_kernel_> >
+                                   CGAL::CORE_algebraic_number_traits>,
+          typename Traits_arr_on_sphere_2_ = CGAL::Arr_geodesic_arc_on_sphere_traits_2<Rational_kernel_> >
 class Lines_through_segments_traits_3
 {
 public:
-  typedef Alg_kernel_                           Alg_kernel;
-  typedef Rational_kernel_                      Rational_kernel;
-  typedef typename Rational_kernel::Segment_3   Rational_segment_3;
-  typedef Traits_arr_on_sphere_2_               Traits_arr_on_sphere_2_no_data;
-      
-  typedef CGAL::Arr_consolidated_curve_data_traits_2<Traits_arr_on_plane_2_,const Rational_segment_3*>
-  Traits_arr_on_plane_2;
-  typedef CGAL::Arr_consolidated_curve_data_traits_2<Traits_arr_on_sphere_2_,const Rational_segment_3*>
-  Traits_arr_on_sphere_2;
+  typedef Alg_kernel_                                  Alg_kernel;
+  typedef Rational_kernel_                             Rational_kernel;
+  typedef typename Rational_kernel::Segment_3          Rational_segment_3;
+  typedef CGAL::Arr_consolidated_curve_data_traits_2<
+    Traits_arr_on_plane_2_,const Rational_segment_3*>  Traits_arr_on_plane_2;
+  typedef CGAL::Arr_consolidated_curve_data_traits_2<
+    Traits_arr_on_sphere_2_,const Rational_segment_3*> Traits_arr_on_sphere_2;
 };
  
 } //namespace CGAL
