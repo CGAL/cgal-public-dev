@@ -446,10 +446,11 @@ def commit(current, rev, force=False, subject_head=None):
     packages = git("show --pretty='format:' --name-only %s" % rev, all=False)
     packages = [re.sub(r'\/.*', r'', p) for p in packages]
     packages = sorted(set(packages))
+    subjectpackages = packages if len(packages) < 4 else ["--multiple packages--"]
 
-    commitsubject = git("show '--pretty=format:%%s' -s %s" % rev)
-    commithash = git("show '--pretty=format:%%h' -s %s" % rev)
-    subject = "%s: %s in [%s] (%s)" % (subject_head, commitsubject, ", ".join(packages), commithash)
+    commitsubject = git("show '--pretty=format:%%s' -s %s" % rev)[0]
+    commithash = git("show '--pretty=format:%%h' -s %s" % rev)[0]
+    subject = "%s: %s [%s] (%s)" % (subject_head, commitsubject, ", ".join(subjectpackages), commithash)
 
     show_cmd = "show -s --no-color --find-copies-harder --pretty=medium %s" % rev
     diff_cmd = "diff-tree --root --patch-with-stat --no-color --find-copies-harder --ignore-space-at-eol %s %s" % (merge_diff, rev)
@@ -482,7 +483,7 @@ def diff(head, first, last):
     # TODO packages
     packages = ""
 
-    commitsubject = git("show '--pretty=format:%%s (%%h)' -s %s" % last)
+    commitsubject = git("show '--pretty=format:%%s (%%h)' -s %s" % last)[0]
     subject = "%s diff: %s" % (head, commitsubject)
 
     heads = [head]
