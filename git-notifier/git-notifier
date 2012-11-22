@@ -453,7 +453,7 @@ def commit(current, rev, force=False, subject_head=None):
 
     commitsubject = git("show '--pretty=format:%%s' -s %s" % rev)[0]
     commithash = git("show '--pretty=format:%%h' -s %s" % rev)[0]
-    subject = "%s: %s [%s] (%s)" % (subject_head, commitsubject, ", ".join(subjectpackages), commithash)
+    subject = "%s: '%s' [%s] (%s)" % (subject_head, commitsubject, ", ".join(subjectpackages), commithash)
 
     show_cmd = "show -s --no-color --find-copies-harder --pretty=medium %s" % rev
     diff_cmd = "diff-tree --root --patch-with-stat --no-color --find-copies-harder --ignore-space-at-eol %s %s" % (merge_diff, rev)
@@ -486,8 +486,9 @@ def diff(head, first, last):
     # TODO packages
     packages = ""
 
-    commitsubject = git("show '--pretty=format:%%s (%%h)' -s %s" % last)[0]
-    subject = "%s diff: %s" % (head, commitsubject)
+    commitsubject = git("show '--pretty=format:%%s' -s %s" % last)[0]
+    commithash = git("show '--pretty=format:%%h' -s %s" % last)[0]
+    subject = "%s diff: '%s' [%s]" % (head, commitsubject, commithash)
 
     heads = [head]
 
@@ -526,10 +527,10 @@ def headMoved(head, path):
 
     # HeadMoved with From/Reply-To: $GIT_NAME <$GIT_USER@users.gforge.inria.fr>
     frommer = sender
+    headsubject = git("show '--pretty=format:%%s' -s %s" % path[-1])[0]
+    headhash = git("show '--pretty=format:%%h' -s %s" % path[-1])[0]
 
-    subject = git("show '--pretty=format:%%s (%%h)' -s %s" % path[-1])
-
-    (out, fname) = generateMailHeader(frommer, "%s's head updated: %s" % (head, subject[0]))
+    (out, fname) = generateMailHeader(frommer, "%s's head updated: '%s' (%s)" % (head, headsubject, headhash))
 
     print >>out, "Branch '%s' now includes:" % head
     print >>out, ""
