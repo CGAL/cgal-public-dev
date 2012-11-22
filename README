@@ -15,7 +15,7 @@ Server Hooks:
 New version of hooks from main repo can be obtained by './refresh'
 
 
-git-notifier:
+git-notifier (http://www.icir.org/robin/git-notifier/):
 This dir has been added with
   git subtree add --squash --prefix=git-notifier git://git.icir.org/git-notifier master
 It is possible to pull upstream changes with
