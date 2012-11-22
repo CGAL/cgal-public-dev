@@ -190,6 +190,12 @@ def error(msg):
     log("Error: %s" % msg)
     sys.exit(1)
 
+def cutMiddle(s):
+    if len(s) > 29:
+       return s[0:13] + "..." + s[-13:]
+
+    return s
+
 def git(args, stdout_to=subprocess.PIPE, all=False):
     if isinstance(args, tuple) or isinstance(args, list):
         args = " ".join(args)
@@ -453,7 +459,7 @@ def commit(current, rev, force=False, subject_head=None):
 
     commitsubject = git("show '--pretty=format:%%s' -s %s" % rev)[0]
     commithash = git("show '--pretty=format:%%h' -s %s" % rev)[0]
-    subject = "%s: '%s' [%s] (%s)" % (subject_head, commitsubject, ", ".join(subjectpackages), commithash)
+    subject = "%s: '%s' [%s] (%s)" % (cutMiddle(subject_head), commitsubject, ", ".join(subjectpackages), commithash)
 
     show_cmd = "show -s --no-color --find-copies-harder --pretty=medium %s" % rev
     diff_cmd = "diff-tree --root --patch-with-stat --no-color --find-copies-harder --ignore-space-at-eol %s %s" % (merge_diff, rev)
@@ -488,7 +494,7 @@ def diff(head, first, last):
 
     commitsubject = git("show '--pretty=format:%%s' -s %s" % last)[0]
     commithash = git("show '--pretty=format:%%h' -s %s" % last)[0]
-    subject = "%s diff: '%s' [%s]" % (head, commitsubject, commithash)
+    subject = "%s diff: '%s' [%s]" % (cutMiddle(head), commitsubject, commithash)
 
     heads = [head]
 
@@ -530,7 +536,7 @@ def headMoved(head, path):
     headsubject = git("show '--pretty=format:%%s' -s %s" % path[-1])[0]
     headhash = git("show '--pretty=format:%%h' -s %s" % path[-1])[0]
 
-    (out, fname) = generateMailHeader(frommer, "%s's head updated: '%s' (%s)" % (head, headsubject, headhash))
+    (out, fname) = generateMailHeader(frommer, "%s's head updated: '%s' (%s)" % (cutMiddle(head), headsubject, headhash))
 
     print >>out, "Branch '%s' now includes:" % head
     print >>out, ""
