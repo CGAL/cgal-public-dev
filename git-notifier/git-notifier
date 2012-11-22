@@ -444,6 +444,9 @@ def commit(current, rev, force=False, subject_head=None):
        replyto += "," + author
 
     packages = git("show --pretty='format:' --name-only %s" % rev, all=False)
+    # each file in root dir (i.e. without "/") will be replaced by "<root>"
+    packages = [re.sub(r'^(?!.*\/).*$', r'<root>', p) for p in packages]
+    # next strip off path after first "/"
     packages = [re.sub(r'\/.*', r'', p) for p in packages]
     packages = sorted(set(packages))
     subjectpackages = packages if len(packages) < 4 else ["--multiple packages--"]
