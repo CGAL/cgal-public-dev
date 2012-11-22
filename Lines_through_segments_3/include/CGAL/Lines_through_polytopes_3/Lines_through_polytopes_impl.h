@@ -42,16 +42,12 @@ const bool insert_to_arr_false = false;
 
 template <typename Lines_through_segments_traits_3, typename Insert_iterator>
 class Lines_through_polytopes_impl {      
-  typedef typename Lines_through_segments_traits_3::Algebraic_NT Algebraic;
-  typedef typename Lines_through_segments_traits_3::Rational_NT  Rational;
-  typedef typename Lines_through_segments_traits_3::Traits_arr_on_plane_2
-  Traits_arr_on_plane_2;
-  typedef typename Lines_through_segments_traits_3::Traits_arr_on_sphere_2
-  Traits_arr_on_sphere_2;
-  typedef typename Lines_through_segments_traits_3::Alg_kernel Alg_kernel;
-  typedef typename Lines_through_segments_traits_3::Rational_kernel 
-  Rational_kernel;
-
+  typedef typename Lines_through_segments_traits_3::Traits_arr_on_plane_2  Traits_arr_on_plane_2;
+  typedef typename Lines_through_segments_traits_3::Traits_arr_on_sphere_2 Traits_arr_on_sphere_2;
+  typedef typename Lines_through_segments_traits_3::Alg_kernel             Alg_kernel;
+  typedef typename Lines_through_segments_traits_3::Rational_kernel        Rational_kernel;
+  typedef typename Alg_kernel::FT                                          Algebraic;
+  typedef typename Rational_kernel::FT                                     Rational;
 
   typedef typename Alg_kernel::Point_3                    Alg_point_3;
   typedef typename Alg_kernel::Line_3                     Alg_line_3;

@@ -111,7 +111,7 @@ private:
 
 public:
   typedef typename Rational_arc_traits_arr_on_plane_2::Algebraic_real_1         Algebraic_real_1;
-  typedef typename Traits_3::Algebraic_NT               Algebraic;
+  typedef typename Alg_kernel::FT               Algebraic;
 
   /**************************************************************
    * The following function return the orientation of a curve.
@@ -1177,7 +1177,7 @@ class Lines_through_segments_get_algebraic_number_adapt
 private:
   typedef Traits_3_                                     Traits_3;
 
-  typedef typename Traits_3::Algebraic_NT               Algebraic;
+  typedef typename Traits_3::Alg_kernel::FT             Algebraic;
   typedef CORE::BigInt                                  Integer;
   typedef typename Traits_3::Rational_kernel            Rational_kernel;
    typedef typename Rational_kernel::FT                 Rational;

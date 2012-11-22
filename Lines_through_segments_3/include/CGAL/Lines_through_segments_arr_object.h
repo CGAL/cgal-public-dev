@@ -51,15 +51,15 @@ public:
 private:
   typedef Lines_through_segments_arr_object             Self;
   
-  typedef typename Traits_3::Algebraic_NT               Algebraic;
-  typedef typename Traits_3::Rational_NT                Rational;
-  typedef typename Traits_3::Rational_kernel            Rational_kernel;
-
-  typedef typename Rational_kernel::Point_3             Rational_point_3;
-  typedef typename Rational_kernel::Line_3              Rational_line_3;
-  typedef typename Rational_kernel::Segment_3           Rational_segment_3;
-  typedef typename Rational_kernel::Plane_3             Rational_plane_3;
-  typedef typename Rational_kernel::Point_2             Rational_point_2;
+  typedef typename Traits_3::Alg_kernel       Alg_kernel;
+  typedef typename Traits_3::Rational_kernel  Rational_kernel;
+  typedef typename Alg_kernel::FT             Algebraic;
+  typedef typename Rational_kernel::FT        Rational;
+  typedef typename Rational_kernel::Point_3   Rational_point_3;
+  typedef typename Rational_kernel::Line_3    Rational_line_3;
+  typedef typename Rational_kernel::Segment_3 Rational_segment_3;
+  typedef typename Rational_kernel::Plane_3   Rational_plane_3;
+  typedef typename Rational_kernel::Point_2   Rational_point_2;
   typedef Lines_through_segments_bounded_segs_vector<Rational>
                                                        Bounded_segs_vector;
 

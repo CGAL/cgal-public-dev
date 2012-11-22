@@ -50,17 +50,20 @@ public:
       LTS_VERTEX_Y_PLUS_INFINITY = 8
    } Point_type;
 
+private:
+  typedef typename Traits_3::Rational_kernel            Rational_kernel;
+  typedef typename Traits_3::Alg_kernel                 Alg_kernel;
+
 public:
-  typedef typename Traits_3::Rational_NT                Rational;
-  typedef typename Traits_3::Algebraic_NT               Algebraic;
+  typedef typename Rational_kernel::FT                  Rational;
+  typedef typename Alg_kernel::FT                       Algebraic;
    
 private:
   typedef Lines_through_segments_point_adapt_2          Self;
   
-  typedef typename Traits_3::Rational_kernel            Rational_kernel;
   typedef typename Rational_kernel::Segment_3           Rational_segment_3;
    
-  typedef typename Traits_3::Alg_kernel                 Alg_kernel;
+
       
   /* Specific typedefs for conic arc traits. */
   typedef CGAL::CORE_algebraic_number_traits            Nt_traits;

@@ -54,8 +54,6 @@ template <typename Alg_kernel_,
 class Lines_through_segments_traits_3
 {
 public:
-  typedef typename Alg_kernel_::FT              Algebraic_NT;
-  typedef typename Rational_kernel_::FT         Rational_NT;
   typedef Alg_kernel_                           Alg_kernel;
   typedef Rational_kernel_                      Rational_kernel;
   typedef typename Rational_kernel::Segment_3   Rational_segment_3;
@@ -65,8 +63,6 @@ public:
   Traits_arr_on_plane_2;
   typedef CGAL::Arr_consolidated_curve_data_traits_2<Traits_arr_on_sphere_2_,const Rational_segment_3*>
   Traits_arr_on_sphere_2;
-private:
-            
 };
  
 } //namespace CGAL

@@ -34,7 +34,7 @@
 #include <CGAL/Lines_through_segments_impl.h>
 #include <CGAL/Lines_through_segments_3/internal.h>
 #include <CGAL/Lines_through_segments_3/find_overlap.h>
-#include <CGAL/Lines_through_segments_exceptions.h>
+#include <CGAL/Lines_through_segments_3/exceptions.h>
 #include <CGAL/Lines_through_segments_output_obj.h>
 
 #include <utility>

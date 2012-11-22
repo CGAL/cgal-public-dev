@@ -53,15 +53,15 @@ namespace CGAL {
 template <typename Traits_3_>
 class Lines_through_segments_mapped_2 {
 public:
-   typedef Traits_3_                                    Traits_3;
+  typedef Traits_3_                                     Traits_3;
 protected:
   typedef typename Traits_3::Traits_arr_on_plane_2      Traits_2;
   typedef typename Traits_3::Rational_kernel            Rational_kernel;
   typedef typename Rational_kernel::Segment_3           Rational_segment_3;
   typedef typename Rational_kernel::Point_3             Rational_point_3;
-   typedef typename Rational_kernel::Line_3             Rational_line_3;
+  typedef typename Rational_kernel::Line_3              Rational_line_3;
 
-  typedef typename Traits_3::Algebraic_NT               Algebraic;
+  typedef typename Traits_3::Alg_kernel::FT             Algebraic;
 
 public:
   typedef Traits_3

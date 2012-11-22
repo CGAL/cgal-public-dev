@@ -47,13 +47,13 @@ public:
 
   typedef Lines_through_segments_traits_3               Traits_3;
 private:
-  typedef typename Traits_3::Algebraic_NT               Algebraic;
-  typedef typename Traits_3::Rational_NT                Rational;
   typedef typename Traits_3::Traits_arr_on_plane_2      Traits_arr_on_plane_2;
-  typedef typename Traits_3::Traits_arr_on_sphere_2
-    Traits_arr_on_sphere_2;
+  typedef typename Traits_3::Traits_arr_on_sphere_2     Traits_arr_on_sphere_2;
   typedef typename Traits_3::Alg_kernel                 Alg_kernel;
   typedef typename Traits_3::Rational_kernel            Rational_kernel;
+
+  typedef typename Alg_kernel::FT                       Algebraic;
+  typedef typename Rational_kernel::FT                  Rational;
 
   typedef Polyhedron_3<Rational_kernel>                 Rational_polyhedron_3;
 
