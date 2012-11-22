@@ -191,8 +191,8 @@ def error(msg):
     sys.exit(1)
 
 def cutMiddle(s):
-    if len(s) > 29:
-       return s[0:13] + "..." + s[-13:]
+    if len(s) > 63:
+       return s[0:30] + "..." + s[-30:]
 
     return s
 
