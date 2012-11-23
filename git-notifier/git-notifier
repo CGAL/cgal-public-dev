@@ -464,7 +464,7 @@ def commit(current, rev, force=False, subject_head=None):
 
     commitsubject = git("show '--pretty=format:%%s' -s %s" % rev)[0]
     commithash = git("show '--pretty=format:%%h' -s %s" % rev)[0]
-    subject = "%s: %s'%s' [%s] (%s)" % (cutMiddle(subject_head), resent, commitsubject, ", ".join(subjectpackages), commithash)
+    subject = "%s%s: '%s' [%s] (%s)" % (resent, cutMiddle(subject_head), commitsubject, ", ".join(subjectpackages), commithash)
 
     show_cmd = "show -s --no-color --find-copies-harder --pretty=medium %s" % rev
     diff_cmd = "diff-tree --root --patch-with-stat --no-color --find-copies-harder --ignore-space-at-eol %s %s" % (merge_diff, rev)
