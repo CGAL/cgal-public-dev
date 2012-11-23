@@ -433,16 +433,17 @@ def commit(current, rev, force=False, subject_head=None):
     if not subject_head:
         subject_head = ",".join(heads)
 
-    resent = ""
+    resent = ":"
     merge_diff = "--cc"
 
     for head in heads:
         if head in Config.allchanges or head in Config.mergediffs:
             merge_diff = "-m"
-        if head in Config.allchanges:
-           resent = ">>> "
-        if head in Config.mergediffs:
-           resent = "=>- " #looks like a "merge"
+        if rev in cache.revs:
+            if head in Config.allchanges:
+                resent = " <<<"
+            if head in Config.mergediffs:
+                resent = " =>-" #looks like a "merge"
 
     # Commit with
     # From: $GIT_NAME <$GIT_USER@users.gforge.inria.fr>
@@ -464,7 +465,7 @@ def commit(current, rev, force=False, subject_head=None):
 
     commitsubject = git("show '--pretty=format:%%s' -s %s" % rev)[0]
     commithash = git("show '--pretty=format:%%h' -s %s" % rev)[0]
-    subject = "%s%s: '%s' [%s] (%s)" % (resent, cutMiddle(subject_head), commitsubject, ", ".join(subjectpackages), commithash)
+    subject = "%s%s '%s' [%s] (%s)" % (cutMiddle(subject_head), resent, commitsubject, ", ".join(subjectpackages), commithash)
 
     show_cmd = "show -s --no-color --find-copies-harder --pretty=medium %s" % rev
     diff_cmd = "diff-tree --root --patch-with-stat --no-color --find-copies-harder --ignore-space-at-eol %s %s" % (merge_diff, rev)
@@ -547,6 +548,8 @@ def headMoved(head, path):
     print >>out, ""
 
     for rev in path:
+        if head in mergediffs:
+            commit(current, rev, force=False, subject_head=head)
         print >>out, "    ", git("show -s --pretty=oneline --abbrev-commit %s" % rev)[0]
 
     sendMail(out, fname)
