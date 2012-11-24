@@ -1,4 +1,4 @@
-// Copyright (c) 2006, 2010 Max-Planck-Institut fuer Informatik (Germany), 
+// Copyright (c) 2006, 2010 Max-Planck-Institut fuer Informatik (Germany),
 //               Tel-Aviv University (Israel).
 // All rights reserved.
 //
@@ -14,7 +14,7 @@
 //
 // $URL$
 // $Id$
-// 
+//
 //
 // Author(s): Eric Berberich    <eric@mpi-inf.mpg.de>
 //            Ron Wein          <wein@post.tau.ac.il>
@@ -22,6 +22,8 @@
 
 #ifndef CGAL_ARRANGEMENT_ON_TORUS_2_H
 #define CGAL_ARRANGEMENT_ON_TORUS_2_H
+
+// this file is also not ready
 
 /*! \file
  * The header file for the Arrangement_on_torus_2<GeometryTraits_2,Dcel> class.
@@ -36,7 +38,7 @@ namespace CGAL {
 /*! \class Arrangement_on_torus_2
  * The arrangement class, representing planar subdivisions induced by
  * a set of arbitrary curves embedded in a surfaces homeomorphic to a torus.
- * 
+ *
  * The GeomTraits parameter corresponds to a geometry-traits class that
  * defines the Point_2 and X_monotone_curve_2 types and implements the
  * geometric predicates and constructions for the family of curves it defines.
@@ -44,11 +46,11 @@ namespace CGAL {
  * the basic topological operations on a doubly-connected edge-list.
  * The supported surfaces deal with two pairs of identified sides.
  */
-template <class GeometryTraits_2, 
-          class Dcel_ = Arr_default_dcel< GeometryTraits_2 > > 
+template <class GeometryTraits_2,
+          class Dcel_ = Arr_default_dcel< GeometryTraits_2 > >
 class Arrangement_on_torus_2 :
   public Arrangement_on_surface_2
-    < GeometryTraits_2, 
+    < GeometryTraits_2,
       Arr_torus_topology_traits_2< GeometryTraits_2, Dcel_ > > {
 
 public:
@@ -79,7 +81,7 @@ public:
 
   typedef typename Base::Vertex_iterator          Vertex_iterator;
   typedef typename Base::Vertex_const_iterator    Vertex_const_iterator;
-  
+
   typedef typename Base::Halfedge_iterator        Halfedge_iterator;
   typedef typename Base::Halfedge_const_iterator  Halfedge_const_iterator;
 
@@ -88,8 +90,8 @@ public:
 
   typedef typename Base::Face_iterator            Face_iterator;
   typedef typename Base::Face_const_iterator      Face_const_iterator;
-  
-  typedef typename Base::Halfedge_around_vertex_circulator 
+
+  typedef typename Base::Halfedge_around_vertex_circulator
     Halfedge_around_vertex_circulator;
   typedef typename Base::Halfedge_around_vertex_const_circulator
     Halfedge_around_vertex_const_circulator;
@@ -97,7 +99,7 @@ public:
   typedef typename Base::Ccb_halfedge_circulator   Ccb_halfedge_circulator;
   typedef typename Base::Ccb_halfedge_const_circulator
     Ccb_halfedge_const_circulator;
-  
+
   typedef typename Base::Outer_ccb_iterator        Outer_ccb_iterator;
   typedef typename Base::Outer_ccb_const_iterator  Outer_ccb_const_iterator;
 
