@@ -548,8 +548,6 @@ def headMoved(head, path):
     print >>out, ""
 
     for rev in path:
-        if head in mergediffs:
-            commit(current, rev, force=False, subject_head=head)
         print >>out, "    ", git("show -s --pretty=oneline --abbrev-commit %s" % rev)[0]
 
     sendMail(out, fname)
@@ -635,6 +633,10 @@ if report:
         path = git(["rev-list", "--reverse --date-order", new_rev, "^%s" % old_rev])
 
         if head in Config.allchanges:
+            # Want to see all commits for this head, even if already reported
+            # in the past for some other. So we record these separately.
+            reportPath(current, path, subject_head=head)
+        if head in Config.mergediffs:
             # Want to see all commits for this head, even if already reported
             # in the past for some other. So we record these separately.
             reportPath(current, path, subject_head=head)
