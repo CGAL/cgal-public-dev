@@ -94,10 +94,16 @@ public:
   Lines_through_segments_mapped_2_with_arrangement<
     Traits_3, Rational_segment_3>::Arrangement_2        Arr_on_plane;
 
+  typedef typename std::vector< boost::shared_ptr<Arr_on_plane> >::iterator Arr_on_plane_iterator;
+  typedef std::pair< Arr_on_plane_iterator, Arr_on_plane_iterator> Arr_on_plane_range;
+
   typedef typename 
   Lines_through_segments_through_3_with_arrangement<
     Traits_3, Segment_3>::Arrangement_2                 Arr_on_sphere;
    
+  typedef typename std::vector< boost::shared_ptr<Arr_on_sphere> >::iterator Arr_on_sphere_iterator;
+  typedef std::pair< Arr_on_sphere_iterator, Arr_on_sphere_iterator> Arr_on_sphere_range;
+
 private:
   /// used planar arrangements
   std::vector< boost::shared_ptr<Arr_on_plane> > m_planar_arrangements;
@@ -205,8 +211,10 @@ public:
           line_through_segs_obj.find_all_lines(rational_output);
 
           // extract the arrangments
-          m_planar_arrangements.push_back(line_through_segs_obj.arrangement_on_plane());
-          m_spherical_arrangements.push_back(line_through_segs_obj.arrangement_on_sphere());
+          if(!line_through_segs_obj.arrangement_on_plane()->is_empty())
+            m_planar_arrangements.push_back(line_through_segs_obj.arrangement_on_plane());
+          if(!line_through_segs_obj.arrangement_on_sphere()->is_empty())
+            m_spherical_arrangements.push_back(line_through_segs_obj.arrangement_on_sphere());
           
           num_of_overlap_segs = 0;
         }
@@ -235,19 +243,13 @@ public:
     }
   }
 
-  std::pair<
-      typename std::vector< boost::shared_ptr<Arr_on_plane> >::iterator
-    , typename std::vector< boost::shared_ptr<Arr_on_plane> >::iterator
-    >
+  Arr_on_plane_range
   planar_arrangements() {
     return std::make_pair(m_planar_arrangements.begin(),
                           m_planar_arrangements.end());
   }
 
-  std::pair< 
-      typename std::vector< boost::shared_ptr<Arr_on_sphere> >::iterator
-    , typename std::vector< boost::shared_ptr<Arr_on_sphere> >::iterator
-    >
+  Arr_on_sphere_range
   spherical_arrangements() {
     return std::make_pair(m_spherical_arrangements.begin(),
                           m_spherical_arrangements.end());

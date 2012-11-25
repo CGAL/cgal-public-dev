@@ -24,7 +24,6 @@
 
 #include <CGAL/General_polygon_2.h>
 #include <CGAL/Arrangement_2.h>
-#include <CGAL/Arrangement_on_surface_2.h>
 #include <CGAL/Arr_spherical_topology_traits_2.h>
 
 #include <CGAL/Lines_through_segments_traits_3.h>
