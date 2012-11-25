@@ -63,21 +63,16 @@ protected:
   typedef typename Traits_3::Alg_kernel::FT             Algebraic;
 
 public:
-  typedef Traits_3
-    Lines_through_segments_traits_3;
+  typedef Traits_3 Lines_through_segments_traits_3;
   typedef typename Traits_3::Alg_kernel::Line_3         Mapped_line_3;
 
   typedef typename Traits_3::Alg_kernel::Point_3        Alg_point_3;
    
-//  typedef typename Rational_kernel::Point_2             Rational_point_2;
   typedef typename Traits_2::X_monotone_curve_2         X_monotone_curve_2;
   typedef typename Traits_3::Traits_arr_on_plane_2::Point_2 Point_2;
   typedef CGAL::General_polygon_2<Traits_2>             General_polygon_2;
 
-   typedef boost::variant<Point_2, X_monotone_curve_2, General_polygon_2// ,
-                          // Rational_point_2
-                          >
-    Mapped_transversal;
+  typedef boost::variant<Point_2, X_monotone_curve_2, General_polygon_2>  Mapped_transversal;
       
 private:
       
@@ -295,89 +290,6 @@ private:
   };
 };
 
-   template <typename Traits_3, typename Ext_obj>
-class Lines_through_segments_mapped_2_with_arrangement :
-      public Lines_through_segments_mapped_2<Traits_3>
-{
-   typedef Lines_through_segments_mapped_2<Traits_3> Base;
-public:
-   /***************************************************/
-   /*    Arrangement on plane typedefs.               */
-   /***************************************************/
-   typedef typename Traits_3::Traits_arr_on_plane_2
-   Traits_arr_on_plane_2;
-   
-   /* Extended each edge with its creator line segment.*/
-   typedef Lines_through_segments_arr_ext_dcel<Traits_arr_on_plane_2,
-                                               Ext_obj>
-   Dcel_on_plane;
-   typedef CGAL::Arrangement_2<Traits_arr_on_plane_2,
-                               Dcel_on_plane> Arrangement_2;
-   
-private:
-  boost::shared_ptr<Arrangement_2> m_arr;
-
-public:
-   Lines_through_segments_mapped_2_with_arrangement(const Base& mapped) :
-     Base(mapped)
-   {
-      CGAL_error_msg("Unexpected error");
-   }
-
-   Lines_through_segments_mapped_2_with_arrangement
-   (const Lines_through_segments_mapped_2_with_arrangement& to_copy)
-      : Base(to_copy)
-   {
-      m_arr = to_copy.m_arr;
-   }
-   
-  Lines_through_segments_mapped_2_with_arrangement
-  (const typename Base::X_monotone_curve_2& curve, 
-   const typename Base::Rational_segment_3& s1,
-   const typename Base::Rational_segment_3& s2) :
-    Base(curve,s1,s2)
-  {}
-
-  Lines_through_segments_mapped_2_with_arrangement
-  (const typename Base::Point_2& point, 
-   const typename Base::Rational_segment_3& s1,
-   const typename Base::Rational_segment_3& s2) :
-    Base(point,s1,s2)
-  {}
-
-   template <typename Input_iterator>
-   Lines_through_segments_mapped_2_with_arrangement
-   (Input_iterator curves_begin,
-    Input_iterator curves_end, 
-    const typename Base::Rational_segment_3& s1,
-    const typename Base::Rational_segment_3& s2) :
-     Base(curves_begin, curves_end, s1,s2)
-   {}
-
-   void set_arrangement(const boost::shared_ptr<Arrangement_2>& arr)
-   {
-      m_arr = arr;
-   }
-
-   boost::shared_ptr<Arrangement_2> arrangement()
-   {
-      return m_arr;
-   }
-   
-  std::string to_string() const
-   {
-      std::ostringstream o;
-      o << Base::to_string();
-      
-      o << "Arrangement size:" 
-        << "   V = " << m_arr->number_of_vertices()
-        << ",  E = " << m_arr->number_of_edges()
-        << ",  F = " << m_arr->number_of_faces() << std::endl;
-
-      return o.str();
-  }
-};
-   
 template <typename Traits_3>
 class Lines_through_segments_through_3 {
   typedef typename Traits_3::Rational_kernel          Rational_kernel;
@@ -460,203 +372,22 @@ private:
   };
 };
 
-   template <typename Traits_3, typename Ext_obj>
-class Lines_through_segments_through_3_with_arrangement :
-      public Lines_through_segments_through_3<Traits_3>
-{
-   typedef Lines_through_segments_through_3<Traits_3> Base;
-public:
-   /***************************************************/
-   /*    Arrangement on sphere typedefs.              */
-   /***************************************************/
-   typedef typename Traits_3::Traits_arr_on_sphere_2
-   Traits_arr_on_sphere_2;
-   
-   typedef Lines_through_segments_arr_ext_dcel<Traits_arr_on_sphere_2,
-                                               Ext_obj>
-   Dcel_geom_traits;
-   typedef CGAL::Arr_spherical_topology_traits_2<Traits_arr_on_sphere_2,
-                                                 Dcel_geom_traits>
-   Topol_traits_2;
-   
-   typedef CGAL::Arrangement_on_surface_2<Traits_arr_on_sphere_2,
-                                          Topol_traits_2>
-   Arrangement_2;
-   
-private:
-  boost::shared_ptr<Arrangement_2> m_arr;
-
-public:
-   Lines_through_segments_through_3_with_arrangement(const Base& through) :
-     Base(through)
-   {
-      CGAL_error_msg("Unexpected error");
-   }
-
-  Lines_through_segments_through_3_with_arrangement
-  (const Lines_through_segments_through_3_with_arrangement& through) :
-    Base(through)
-  {
-     m_arr = through.m_arr;
-  }
-      
-   Lines_through_segments_through_3_with_arrangement
-   (const typename Base::Point_3& point) :
-     Base(point)
-  {}
-
-   Lines_through_segments_through_3_with_arrangement
-   (const typename Base::Segment_3& segment) :
-     Base(segment)
-  {}
-
-  Lines_through_segments_through_3_with_arrangement
-  (const typename Base::Segment_3& segment,
-   const typename Base::Point_3& point) :
-    Base(segment, point)
-  {}   
-  
-   void set_arrangement(boost::shared_ptr<Arrangement_2> arr)
-   {
-      m_arr = arr;
-   }
-
-   boost::shared_ptr<Arrangement_2> arrangement()
-   {
-      return m_arr;
-   }
-   
-  std::string to_string() const
-   {
-      std::ostringstream o;
-      o << Base::to_string();
-      /* m_arr equals null in case of through segment. */
-      if (m_arr != NULL)
-      {
-         o << "Arrangement size:" 
-           << "   V = " << m_arr->number_of_vertices()
-           << ",  E = " << m_arr->number_of_edges()
-           << ",  F = " << m_arr->number_of_faces() << std::endl;
-      }
-      
-      return o.str();
-  }
-      
-
-};
-
-// template <typename Lines_through_segments_traits_3_,
-//           typename Transversal_without_segments>
-// class Lines_through_segments_transversal_with_segments
-// {
-//    typedef typename 
-//    Lines_through_segments_traits_3_::Rational_kernel::Segment_3 
-//    Rational_segment_3;
-//    typedef typename 
-//    Lines_through_segments_traits_3_::Rational_kernel::Line_3 Line_3;   
-
-// private:
-//    const Rational_segment_3* m_s1;
-//    const Rational_segment_3* m_s2;
-//    const Rational_segment_3* m_s3;
-//    const Rational_segment_3* m_s4;
-//    Transversal_without_segments m_tws;
-         
-// public:   
-//    Lines_through_segments_transversal_with_segments()
-//    {
-//       m_s1 = NULL;
-//       m_s2 = NULL;
-//       m_s3 = NULL;
-//       m_s4 = NULL;
-//    }
-         
-//    Lines_through_segments_transversal_with_segments(const Rational_segment_3 *s1,
-//                                                     const Rational_segment_3 *s2,
-//                                                     const Rational_segment_3 *s3,
-//                                                     const Rational_segment_3 *s4,
-//                                                     const Transversal_without_segments& tws)
-//    {
-//       m_s1 = s1;
-//       m_s2 = s2;
-//       m_s3 = s3;
-//       m_s4 = s4;
-//       m_tws = tws;
-//    }
-         
-//    Lines_through_segments_transversal_with_segments(
-//       const Lines_through_segments_transversal_with_segments &obj)
-//    {
-//       m_s1 = obj.m_s1;
-//       m_s2 = obj.m_s2;
-//       m_s3 = obj.m_s3;
-//       m_s4 = obj.m_s4;
-//       m_tws = obj.m_tws;
-//    }
-
-//    Transversal_without_segments transversal() const
-//    {
-//       return m_tws;
-//    }
-
-//    const Rational_segment_3* s1() const
-//    {
-//       return m_s1;
-//    }
-
-//    const Rational_segment_3* s2() const
-//    {
-//       return m_s2;
-//    }
-
-//    const Rational_segment_3* s3() const
-//    {
-//       return m_s3;
-//    }
-         
-//    const Rational_segment_3* s4() const
-//    {
-//       return m_s4;
-//    }
-         
-//    std::string to_string() const
-//    {
-//       std::ostringstream o;
-//       o << "S1 = " << *m_s1 << std::endl;
-//       o << "S2 = " << *m_s2 << std::endl;
-//       o << "S3 = " << *m_s3 << std::endl;
-//       o << "S4 = " << *m_s4 << std::endl;
-//       o << m_tws << std::endl;
-            
-//       return o.str();
-//    }
-// };
-
 template <typename Traits_3, typename Ext_obj>
 class Lines_through_segments_output_obj {
   typedef typename Traits_3::Rational_kernel::Segment_3    Rational_segment_3;
   typedef typename Traits_3::Rational_kernel::Line_3       Line_3;
-
 public:      
   typedef Traits_3                                   Lines_through_segments_traits_3;
   typedef Lines_through_segments_mapped_2<Traits_3>  Mapped_2;
   typedef Lines_through_segments_through_3<Traits_3> Through_3;
-  typedef Lines_through_segments_mapped_2_with_arrangement<Traits_3, Ext_obj> 
-    Mapped_2_with_arr;
-  typedef Lines_through_segments_through_3_with_arrangement<Traits_3, Ext_obj>
-    Through_3_with_arr;
 
   typedef typename Mapped_2::Mapped_transversal   Mapped_transversal;
   typedef typename Through_3::Through_transversal Through_transversal;
       
   typedef boost::variant<Line_3, Through_3, Mapped_2 >     Transversal;
-  typedef boost::variant<Line_3, Through_3_with_arr, Mapped_2_with_arr >     
-    Transversal_with_arr;
       
   typedef boost::array<const Rational_segment_3*, 4> Segments;
   typedef std::pair<Transversal, Segments> Transversal_with_segments;
-  typedef std::pair<Transversal_with_arr, Segments > Transversal_with_segments_with_arr;
-
 };
 
 } //namespace CGAL

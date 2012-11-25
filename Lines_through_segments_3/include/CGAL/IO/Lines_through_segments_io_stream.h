@@ -24,13 +24,11 @@
 
 namespace CGAL {
 
-template <typename Lines_through_segments_traits_3, typename With_segments,
-          typename With_arrangement>
+template <typename Lines_through_segments_traits_3, typename With_segments>
 inline std::ostream&
 operator<<(std::ostream& out,
            Lines_through_segments_arr_object<Lines_through_segments_traits_3,
-                                             With_segments,
-                                             With_arrangement>& to_print)
+                                             With_segments>& to_print)
 {
   out << to_print.to_string();
   return out;
@@ -66,12 +64,11 @@ operator<<(std::ostream & out,
 }
 
 template <typename Lines_through_segments_traits_3, typename Insert_iterator,
-          typename With_segments, typename With_arrangement>
+          typename With_segments>
 inline std::ostream&
 operator<<(std::ostream& out,
            Lines_through_segments_impl<Lines_through_segments_traits_3,
-           With_segments,
-           With_arrangement>& to_print)
+           With_segments>& to_print)
 {
   out << to_print.to_string();
   return out;

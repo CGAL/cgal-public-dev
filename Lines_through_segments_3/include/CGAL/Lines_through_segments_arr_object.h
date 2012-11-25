@@ -43,8 +43,7 @@
 namespace CGAL {
 
 template <typename Traits_3_, 
-          typename With_segments,
-          typename With_arrangement>
+          typename With_segments>
 class Lines_through_segments_arr_object {
 public:
    typedef Traits_3_                                     Traits_3;
@@ -107,8 +106,9 @@ private:
   
   Lines_through_segments_traits_on_plane_adapt<Traits_3> m_traits_2_adapt;
   typedef Lines_through_segments_general_functions<Traits_3> LTS_g_func;
-  typedef Lines_through_segments_arr_gen_func<Traits_3, With_segments,
-                                              With_arrangement> LTS_arr_g_func;
+  typedef Lines_through_segments_arr_gen_func<Traits_3, With_segments>
+    LTS_arr_g_func;
+
   LTS_arr_g_func m_arr_g_func;
   LTS_g_func m_g_func;
       

@@ -55,7 +55,23 @@ public:
   typedef typename Rational_kernel::Segment_3           Segment_3;
   typedef typename Traits_3::Alg_kernel                 Alg_kernel;
   typedef With_segments_                                With_segments;
-   
+
+  typedef CGAL::Arrangement_2< 
+      typename Traits_3::Traits_arr_on_plane_2
+    , Lines_through_segments_arr_ext_dcel<
+          typename Traits_3::Traits_arr_on_plane_2
+        , Segment_3>
+    > Arr_on_plane;
+
+  typedef CGAL::Arrangement_on_surface_2< 
+      typename Traits_3::Traits_arr_on_sphere_2
+    , CGAL::Arr_spherical_topology_traits_2<
+          typename Traits_3::Traits_arr_on_sphere_2
+        , Lines_through_segments_arr_ext_dcel<
+              typename Traits_3::Traits_arr_on_sphere_2
+            , Segment_3> >
+    > Arr_on_sphere;
+  
   /* Output objects */
   typedef typename Rational_kernel::Line_3              Line_3;
 
@@ -72,9 +88,7 @@ public:
     Mapped_x_monotone_curve_2;
   typedef typename Lines_through_segments_mapped_2<Traits_3>::Point_2
                                                         Mapped_point_2;
-  // typedef typename Lines_through_segments_mapped_2<Traits_3>::Rational_point_2
-  // Mapped_rat_point_2;
-   
+  
   typedef typename Lines_through_segments_mapped_2<Traits_3>::General_polygon_2  
                                                         Mapped_general_polygon_2;
 
@@ -90,17 +104,9 @@ public:
 
   typedef typename Rational_kernel::Segment_3           Rational_segment_3;
 
-  typedef typename
-  Lines_through_segments_mapped_2_with_arrangement<
-    Traits_3, Rational_segment_3>::Arrangement_2        Arr_on_plane;
-
   typedef typename std::vector< boost::shared_ptr<Arr_on_plane> >::iterator Arr_on_plane_iterator;
   typedef std::pair< Arr_on_plane_iterator, Arr_on_plane_iterator> Arr_on_plane_range;
 
-  typedef typename 
-  Lines_through_segments_through_3_with_arrangement<
-    Traits_3, Segment_3>::Arrangement_2                 Arr_on_sphere;
-   
   typedef typename std::vector< boost::shared_ptr<Arr_on_sphere> >::iterator Arr_on_sphere_iterator;
   typedef std::pair< Arr_on_sphere_iterator, Arr_on_sphere_iterator> Arr_on_sphere_range;
 
@@ -160,7 +166,7 @@ public:
                    Output_iterator output_iterator,
                    bool rational_output = false)
   {
-    typedef Lines_through_segments_impl<Traits_3, With_segments, boost::true_type>
+    typedef Lines_through_segments_impl<Traits_3, With_segments>
       Lines_through_segments_impl;
       
     if(begin == end) return;
@@ -254,46 +260,6 @@ public:
   }
 
 };
-
-// template <typename Lines_through_segments_traits_3,
-//           typename With_segments_ = boost::false_type>
-// class Lines_through_segments_3_with_arrangements :
-//       public Lines_through_segments_3<Lines_through_segments_traits_3,
-//                                       With_segments_>
-// {
-// private:
-//   typedef Lines_through_segments_3<Lines_through_segments_traits_3,
-//                                    With_segments_>              Base;
-//   typedef
-//   Lines_through_segments_3_with_arrangements<Lines_through_segments_traits_3,
-//                                              With_segments_>    Self;
-
-// public:
-//   typedef Lines_through_segments_output_obj<Traits_3, 
-//                                             Segment_3>   LTS_output_obj;
-   
-//   typedef typename LTS_output_obj::Mapped_2_with_arr    Mapped_2;
-//   typedef typename Mapped_2::Point_2                    Mapped_point_2;
-
-//   typedef typename Mapped_2::X_monotone_curve_2
-//     Mapped_x_monotone_curve_2;
-//   typedef typename Mapped_2::General_polygon_2
-//     Mapped_general_polygon_2;
-
-//   typedef typename LTS_output_obj::Through_3_with_arr   Through_3;
-
-//   typedef typename Through_3::Point_3                   Through_point_3;
-//   typedef typename Through_3::Segment_3                 Through_segment_3;
-//   typedef typename Through_3::Point_3_segment_3
-//     Through_point_3_segment_3;
-   
-//   typedef typename Mapped_2::Mapped_transversal         Mapped_transversal;
-//   typedef typename Through_3::Through_transversal       Through_transversal;
-   
-//   typedef typename LTS_output_obj::Transversal_with_arr Transversal;
-   
-//   typedef typename LTS_output_obj::Transversal_with_segments_with_arr 
-//     Transversal_with_segments;
 } //namespace CGAL
 
 #endif /*LINE_THROUGH_SEGMENTS_3_H*/

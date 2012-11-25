@@ -41,8 +41,7 @@ template <typename Traits_3_,
           typename Isolated_points_on_plane,
           typename Point_on_plane_and_line_pair,
           typename Arc_end_points,
-          typename With_segments,
-          typename With_arrangement>
+          typename With_segments>
 class Lines_through_segments_3_segs_2 {
 public:
   typedef Traits_3_                                      Traits_3;
@@ -98,8 +97,7 @@ private:
   typedef Lines_through_segments_general_functions<Traits_3> LTS_g_func;
    
   LTS_g_func m_g_func;
-  Lines_through_segments_arr_gen_func<Traits_3, With_segments,
-                                      With_arrangement> m_arr_g_func;
+  Lines_through_segments_arr_gen_func<Traits_3, With_segments> m_arr_g_func;
   bool m_bound_s1_s2;
     
 public:
@@ -147,8 +145,7 @@ public:
     m_bound_s1_s2 = bound_s1_s2;
          
     m_arr_g_func = 
-      Lines_through_segments_arr_gen_func<Traits_3, With_segments,
-                                          With_arrangement>(alg_kernel);
+      Lines_through_segments_arr_gen_func<Traits_3, With_segments>(alg_kernel);
     m_S1 = S1;
     m_S2 = S2;
     m_rat_kernel = rat_kernel;

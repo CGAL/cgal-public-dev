@@ -110,7 +110,6 @@ OutputIterator find_overlap(Traits /*t*/, ForwardIterator begin, ForwardIterator
     }
     else if (started && num_of_overlap_lines == 3)
     {
-      typedef boost::false_type With_arrangement;
       Rational_segment_3 output_seg(start_point, it->second);
       out_iter = insert_transversal(out_iter, output_seg, 
                                     *save, *(++save), *(++save), 

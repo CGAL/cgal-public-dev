@@ -39,8 +39,7 @@
 namespace CGAL {
 
 template <typename Lines_through_segments_traits_3,
-          typename With_segments,
-          typename With_arrangement>
+          typename With_segments>
 class Lines_through_segments_arr_gen_func
 {
 public:
@@ -186,8 +185,6 @@ public:
     Ccb_halfedge_circulator curr = circ;
     typedef typename Traits_arr_on_plane_2::X_monotone_curve_2 
        X_monotone_curve_2;
-    typedef Lines_through_segments_mapped_2_with_arrangement<
-     Traits_3, Ext_obj> Mapped_2_with_arr;
 
     std::list<X_monotone_curve_2> arcs;
     do {
@@ -200,21 +197,11 @@ public:
             
     } while (++curr != circ);
 
-    if (With_arrangement())
-    {
-      Mapped_2_with_arr OAP(arcs.begin(),arcs.end(),s1,s2);
-      OAP.set_arrangement(arr);
-      LTS::insert_transversal(out,
-                              OAP,
-                              &s1,&s2,&s3,&s4, With_segments());
-    }
-    else
-    {
-      Mapped_2 OAP(arcs.begin(),arcs.end(),s1,s2);
-      LTS::insert_transversal(out,
-                              OAP,
-                              &s1,&s2,&s3,&s4, With_segments());
-    }
+    Mapped_2 OAP(arcs.begin(),arcs.end(),s1,s2);
+    LTS::insert_transversal(out,
+                            OAP,
+                            &s1,&s2,&s3,&s4, With_segments());
+
   }
 
 
@@ -311,29 +298,12 @@ public:
           S4 = *(eit->face()->segs_begin());
         }
                               
-        if (With_arrangement())
-        {
-           typedef Lines_through_segments_mapped_2_with_arrangement<
-           Traits_3, typename Arr_on_plane::Dcel::Ext_obj> Mapped_2_with_arr;
-
-          Mapped_2_with_arr output_curve(eit->curve(), s1, s2);
-          output_curve.set_arrangement(arr_on_plane);
-          LTS::insert_transversal(out,
-                                  output_curve,
-                                  &s1, &s2, 
-                                  *eit->segs_begin(),
-                                  S4, With_segments());
-        }
-        else
-        {
-          Mapped_2 output_curve(eit->curve(), s1, s2);
-          LTS::insert_transversal(out,
-                                  output_curve,
-                                  &s1, &s2, 
-                                  *eit->segs_begin(),
-                                  S4, With_segments());
-        }
-               
+        Mapped_2 output_curve(eit->curve(), s1, s2);
+        LTS::insert_transversal(out,
+                                output_curve,
+                                &s1, &s2, 
+                                *eit->segs_begin(),
+                                S4, With_segments());
                
         eit->source()->set_added_to_output(true);
         eit->target()->set_added_to_output(true);
@@ -387,49 +357,22 @@ public:
             bool is_rational = (rational_output && 
                                 is_degenerate_hyp(vit->incident_halfedges(),
                                                   rp));
-            
-            if (With_arrangement())
+            if (is_rational)
             {
-               typedef Lines_through_segments_mapped_2_with_arrangement<
-               Traits_3, typename Arr_on_plane::Dcel::Ext_obj> Mapped_2_with_arr;
-               if (is_rational)
-               {
-                  Rational_line_3 output_line;
-                  m_g_func.get_line_from_intersection_point(rp.x(), rp.y(), s1, s2,
-                                                            output_line);
+              Rational_line_3 output_line;
+              m_g_func.get_line_from_intersection_point(rp.x(), rp.y(), s1, s2,
+                                                        output_line);
+              LTS::insert_transversal(out,
+                                      output_line,
+                                      &s1, &s2, S3, S4, With_segments());
 
-                  LTS::insert_transversal(out,
-                                          output_line,
-                                          &s1, &s2, S3, S4, With_segments());
-               }
-               else
-               {
-                  Mapped_2_with_arr output_point(vit->point(), s1, s2);
-                  output_point.set_arrangement(arr_on_plane);
-                  LTS::insert_transversal(out,
-                                          output_point,
-                                          &s1, &s2, S3, S4, With_segments());
-               }
             }
             else
             {
-               if (is_rational)
-               {
-                  Rational_line_3 output_line;
-                  m_g_func.get_line_from_intersection_point(rp.x(), rp.y(), s1, s2,
-                                                            output_line);
-                  LTS::insert_transversal(out,
-                                          output_line,
-                                          &s1, &s2, S3, S4, With_segments());
-
-               }
-               else
-               {
-                  Mapped_2 output_point(vit->point(), s1, s2);
-                  LTS::insert_transversal(out,
-                                          output_point,
-                                          &s1, &s2, S3, S4, With_segments());
-               }
+              Mapped_2 output_point(vit->point(), s1, s2);
+              LTS::insert_transversal(out,
+                                      output_point,
+                                      &s1, &s2, S3, S4, With_segments());
             }
           }
                   
@@ -579,25 +522,10 @@ public:
     Point_L ptl;
     pt.get_original_point(ptl);
          
-    if (With_arrangement())
-    {
-      typedef Lines_through_segments_mapped_2_with_arrangement<
-      Traits_3,Ext_obj> Mapped_2_with_arr;
-
-      Mapped_2_with_arr output_point(ptl, S1, S2);
-      output_point.set_arrangement(arr);
-      LTS::insert_transversal(out,
-                              output_point,
-                              &S1, &S2, &S3, &S4, With_segments());
-
-    }
-    else
-    {
-      Mapped_2 output_point(ptl, S1, S2);
-      LTS::insert_transversal(out,
-                              output_point,
-                              &S1, &S2, &S3, &S4, With_segments());
-    }
+    Mapped_2 output_point(ptl, S1, S2);
+    LTS::insert_transversal(out,
+                            output_point,
+                            &S1, &S2, &S3, &S4, With_segments());
          
 #if CGAL_DEBUG_OUTPUT
     Alg_line_3 common_line;

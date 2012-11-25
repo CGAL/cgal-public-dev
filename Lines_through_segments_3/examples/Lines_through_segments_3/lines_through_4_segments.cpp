@@ -13,6 +13,10 @@
 #include <CGAL/Lines_through_segments_3.h>
 #include <CGAL/Lines_through_segments_traits_3.h>
 
+template <typename T>
+struct print;
+
+
 typedef CGAL::CORE_algebraic_number_traits              Nt_traits;
 typedef Nt_traits::Algebraic                            Algebraic;
 typedef Nt_traits::Rational                             Rational;
@@ -77,16 +81,33 @@ int main()
                      std::back_inserter(output_list2), true);
 
   std::cout << output_list2.size() << std::endl;
+
+  typedef Lines_through_segments_3::Arr_on_plane Arr_on_plane;
+  typedef Lines_through_segments_3::Arr_on_sphere Arr_on_sphere;
+
+  
   {
     Lines_through_segments_3::Arr_on_plane_iterator b, e;
     for(boost::tie(b, e) = lines_through_segs.planar_arrangements(); b != e; ++b) {
-      
+      for(Arr_on_plane::Halfedge_iterator it = (*b)->halfedges_begin(); it != (*b)->halfedges_end(); ++it) { 
+        std::cout << "Halfedge: " << std::endl;
+        for(Arr_on_plane::Halfedge::const_iterator it2 = it->segs_begin(); it2 != it->segs_end(); ++it2) { 
+          std::cout << "  Segment: " << std::endl;
+          std::cout << "  " << (*it2)->source() << std::endl;
+          std::cout << "  " << (*it2)->target() << std::endl;
+        }
+      }
+
     }
   }
+
   {
     Lines_through_segments_3::Arr_on_sphere_iterator b, e;
     for(boost::tie(b, e) = lines_through_segs.spherical_arrangements(); b != e; ++b) {
-      
+      for(Arr_on_sphere::Halfedge_iterator it = (*b)->halfedges_begin(); it != (*b)->halfedges_end(); ++it) { 
+        // it->data();
+      }
+
     }
   }
 

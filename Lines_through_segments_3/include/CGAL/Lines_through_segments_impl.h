@@ -53,7 +53,7 @@
 namespace CGAL {
 
 template <typename Lines_through_segments_traits_3, 
-          typename With_segments, typename With_arrangement_>
+          typename With_segments>
 class Lines_through_segments_impl {
 public:
   typedef Lines_through_segments_traits_3 Traits_3;
@@ -76,7 +76,6 @@ private:
  typedef typename Rational_kernel::Segment_3 Rational_segment_3;
  typedef typename Rational_kernel::Plane_3   Rational_plane_3;
  typedef typename Rational_kernel::Point_2   Rational_point_2;
- typedef With_arrangement_                   With_arrangement;
 
 
    /***************************************************/
@@ -88,7 +87,7 @@ private:
                                               Rational_segment_3>
   Dcel_on_plane;
   typedef CGAL::Arrangement_2<Traits_arr_on_plane_2,
-                              Dcel_on_plane>  
+                              Dcel_on_plane>
   Arrangement_on_plane_2;
   typedef Lines_through_segments_point_adapt_2<
     Traits_3,
@@ -99,9 +98,8 @@ private:
     Lines_through_segments_arr_observer_on_plane;
     
   typedef Lines_through_segments_arr_object<Traits_3,
-                                            With_segments,
-                                            With_arrangement>
-  Arr_object;
+                                            With_segments>
+    Arr_object;
   
   /***************************************************/
   /*    Arrangement on sphere typedefs.              */
@@ -156,8 +154,6 @@ private:
 
   typedef typename Lines_through_segments_output_obj<
      Traits_3, Rational_segment_3>::Through_3 Through_3;
-  typedef typename Lines_through_segments_output_obj<
-     Traits_3, Rational_segment_3>::Through_3_with_arr Through_3_with_arr;
 
 public:
    
@@ -250,6 +246,13 @@ public:
   };
       
 private:
+  Lines_through_segments_arr_gen_func<Traits_3,
+                                      With_segments>
+    m_arr_g_func;
+
+  const Alg_kernel *m_alg_kernel;
+  const Rational_kernel *m_rat_kernel;
+
   boost::shared_ptr<Arrangement_on_plane_2> m_arr_on_plane;
   boost::shared_ptr<Arrangement_on_sphere_2> m_arr_on_sphere;
 
@@ -276,14 +279,6 @@ private:
   Traits_2_adapt m_traits_2_adapt;
   Lines_through_segments_general_functions<Traits_3>
   m_g_func;
-
-  Lines_through_segments_arr_gen_func<Traits_3,
-                                      With_segments,
-                                      With_arrangement>
-  m_arr_g_func;
-
-  const Rational_kernel *m_rat_kernel;
-  const Alg_kernel *m_alg_kernel;
 
   /* Holds the number of segments that passes through 
      m_intersection_point_S1S2  except of S1 and S2. */
@@ -320,12 +315,11 @@ public:
                               const Rational_segment_3 * _s2,
                               const Alg_kernel *alg_kernel,
                               const Rational_kernel *rational_kernel)
-    : m_arr_g_func(alg_kernel)
+    : m_arr_g_func(alg_kernel), m_alg_kernel(alg_kernel), m_rat_kernel(rational_kernel),
+      m_arr_on_plane(new Arrangement_on_plane_2()), m_arr_on_sphere(new Arrangement_on_sphere_2())
   {
     m_S1 = _s1;
     m_S2 = _s2;
-    m_alg_kernel = alg_kernel;
-    m_rat_kernel = rational_kernel;
 
     m_S1_S2_intersect = false;
     m_num_of_intersection = 0;
@@ -335,9 +329,6 @@ public:
     m_S2_is_a_point = m_S2->source() == m_S2->target();
     m_S1_is_a_point = m_S1->source() == m_S1->target();
     m_S1_S2_num_of_common_lines = 0;
-    m_arr_on_plane.reset(new Arrangement_on_plane_2());
-    m_arr_on_sphere.reset(new Arrangement_on_sphere_2());
-    // Compare_points_on_line<Rational_point_3, Rational_segment_3> cl;
     Compare_points_on_plane<Point_2, Rational_segment_3> cp;
     m_isolated_points_on_plane = Isolated_points_on_plane(cp);
     Compare_points_on_sphere< Point_on_sphere_2, Rational_segment_3> cs;
@@ -636,9 +627,11 @@ public:
     {
       typedef 
         Lines_through_segments_3_segs_2<Traits_3,
-        Lines_through_segments_arr_plane_faces,Isolated_points_on_plane,
-          Point_on_plane_and_line_pair,Arc_end_points, With_segments,
-          With_arrangement> 
+                                        Lines_through_segments_arr_plane_faces,
+                                        Isolated_points_on_plane,
+                                        Point_on_plane_and_line_pair,
+                                        Arc_end_points,
+                                        With_segments>
         Lines_through_segments_3_segs_2;
                
       Lines_through_segments_3_segs_2 lines_through_segments_3_segs;
@@ -1581,26 +1574,12 @@ private:
          
     if (m_num_of_intersection >= 2)
     {
-       if (With_arrangement())
-       {
-          Through_3_with_arr through_3(m_intersection_point_S1S2);
-          through_3.set_arrangement(m_arr_on_sphere);
-          LTS::insert_transversal(out,
-                                  through_3,
-                                  m_S1,m_S2,
-                                  m_S1_S2_concurrent_S3,
-                                  m_S1_S2_concurrent_S4, With_segments());
-
-       }
-       else
-       {
-          Through_3 through_3(m_intersection_point_S1S2);
-          LTS::insert_transversal(out,
-                                  through_3,
-                                  m_S1,m_S2,
-                                  m_S1_S2_concurrent_S3,
-                                  m_S1_S2_concurrent_S4, With_segments());
-       }
+      Through_3 through_3(m_intersection_point_S1S2);
+      LTS::insert_transversal(out,
+                              through_3,
+                              m_S1,m_S2,
+                              m_S1_S2_concurrent_S3,
+                              m_S1_S2_concurrent_S4, With_segments());
     }
     else
     {
@@ -1634,57 +1613,28 @@ private:
 
           if (m_num_of_intersection == 1)
           {
-             if (With_arrangement())
-             {
-                Through_3_with_arr through_3(segment,m_intersection_point_S1S2);
-                through_3.set_arrangement(m_arr_on_sphere);
-                LTS::insert_transversal(out,
-                                        through_3,
-                                        m_S1,m_S2,
-                                        m_S1_S2_concurrent_S3,
-                                        *eit->segs_begin(), With_segments());
-
-             }
-             else
-             {
-                Through_3 through_3(segment,m_intersection_point_S1S2);
-                LTS::insert_transversal(out,
-                                        through_3,
-                                        m_S1,m_S2,
-                                        m_S1_S2_concurrent_S3,
-                                        *eit->segs_begin(), With_segments());
-             }
+            Through_3 through_3(segment,m_intersection_point_S1S2);
+            LTS::insert_transversal(out,
+                                    through_3,
+                                    m_S1,m_S2,
+                                    m_S1_S2_concurrent_S3,
+                                    *eit->segs_begin(), With_segments());
           }
           else
           {
-            typedef Arrangement_segment_halfedge<
-              X_monotone_curve_On_Sphere_2,                         
-              Rational_segment_3> Edge;
+            typedef typename Arrangement_on_sphere_2::Halfedge Edge;
             typename Arrangement_on_sphere_2::Dcel::const_iterator it =
               eit->segs_begin();
             typename Arrangement_on_sphere_2::Dcel::const_iterator next_it = 
               eit->segs_begin();
             next_it++;
             
-            if (With_arrangement())
-            {
-               Through_3_with_arr through_3(segment,m_intersection_point_S1S2);
-               through_3.set_arrangement(m_arr_on_sphere);
-               LTS::insert_transversal(out,
-                                       through_3,
-                                       m_S1,m_S2,
-                                       *it,
-                                       *next_it, With_segments());
-            }
-            else
-            {
-               Through_3 through_3(segment,m_intersection_point_S1S2);
-               LTS::insert_transversal(out,
-                                       through_3,
-                                       m_S1,m_S2,
-                                       *it,
-                                       *next_it, With_segments());
-            }
+            Through_3 through_3(segment,m_intersection_point_S1S2);
+            LTS::insert_transversal(out,
+                                    through_3,
+                                    m_S1,m_S2,
+                                    *it,
+                                    *next_it, With_segments());
           }
                                     
           eit->set_added_to_output(true);
