@@ -77,6 +77,18 @@ int main()
                      std::back_inserter(output_list2), true);
 
   std::cout << output_list2.size() << std::endl;
+  {
+    Lines_through_segments_3::Arr_on_plane_iterator b, e;
+    for(boost::tie(b, e) = lines_through_segs.planar_arrangements(); b != e; ++b) {
+      
+    }
+  }
+  {
+    Lines_through_segments_3::Arr_on_sphere_iterator b, e;
+    for(boost::tie(b, e) = lines_through_segs.spherical_arrangements(); b != e; ++b) {
+      
+    }
+  }
 
   typedef Lines_through_segments_3::Line_3      Line_3;
   typedef Lines_through_segments_3::Mapped_2    Mapped_2;

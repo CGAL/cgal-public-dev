@@ -70,7 +70,6 @@ template <typename Lines_through_segments_traits_3, typename Insert_iterator,
 inline std::ostream&
 operator<<(std::ostream& out,
            Lines_through_segments_impl<Lines_through_segments_traits_3,
-           Insert_iterator,
            With_segments,
            With_arrangement>& to_print)
 {

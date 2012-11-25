@@ -24,6 +24,7 @@
 
 #include <CGAL/basic.h>
 #include <CGAL/Arr_naive_point_location.h>
+#include <CGAL/Lines_through_segments_3/internal.h>
 #include <CGAL/Lines_through_segments_bounded_seg.h>
 #include <CGAL/Lines_through_segments_bounded_segs_vector.h>
 #include <CGAL/Lines_through_segments_traits_2_adapt.h>
@@ -124,43 +125,6 @@ public:
   Lines_through_segments_arr_gen_func() : m_alg_kernel(NULL)
   {}
 
-  template <typename Insert_iterator,
-            typename Transversal>
-  void insert_transversal_to_output(Insert_iterator* m_insert_itertor,
-                                    Transversal& transversal,
-                                    boost::true_type with_segments,
-                                    const Rational_segment_3* s1,
-                                    const Rational_segment_3* s2,
-                                    const Rational_segment_3* s3,
-                                    const Rational_segment_3* s4)
-  {
-    typedef typename Lines_through_segments_output_obj<
-     Traits_3, Rational_segment_3>::Segments Segments;
-    Segments output_segs;
-    output_segs[0] = s1;
-    output_segs[1] = s2;
-    output_segs[2] = s3;
-    output_segs[3] = s4;
-         
-    *(*m_insert_itertor)++ = 
-      std::make_pair(transversal,output_segs);
-  }
-      
-  template <typename Insert_iterator,
-            typename Transversal,
-            typename Ext_obj>
-  void insert_transversal_to_output(Insert_iterator* m_insert_itertor,
-                                    Transversal& transversal,
-                                    boost::false_type with_segments,
-                                    const Rational_segment_3* s1,
-                                    const Rational_segment_3* s2,
-                                    const Ext_obj* s3,
-                                    const Ext_obj* s4)
-   {
-      *(*m_insert_itertor)++ = 
-         transversal;
-   }
-
    template <typename Halfedge_around_vertex_const_circulator>
    bool is_degenerate_hyp(Halfedge_around_vertex_const_circulator first,
                           Rational_point_2& output_p)
@@ -209,11 +173,11 @@ public:
    **************************************************************/
   template <typename Arrangement_2,
             typename Ccb_halfedge_circulator,
-            typename Insert_itertor,
+            typename OutputIterator,
             typename Ext_obj>
   void find_plane_faces(boost::shared_ptr<Arrangement_2> arr,
                         Ccb_halfedge_circulator circ,
-                        Insert_itertor* insert_itertor,
+                        OutputIterator out,
                         const Rational_segment_3& s1,
                         const Rational_segment_3& s2,
                         const Ext_obj& s3,
@@ -240,18 +204,16 @@ public:
     {
       Mapped_2_with_arr OAP(arcs.begin(),arcs.end(),s1,s2);
       OAP.set_arrangement(arr);
-      insert_transversal_to_output(insert_itertor,
-                                   OAP,
-                                   With_segments(),
-                                   &s1,&s2,&s3,&s4);
+      LTS::insert_transversal(out,
+                              OAP,
+                              &s1,&s2,&s3,&s4, With_segments());
     }
     else
     {
       Mapped_2 OAP(arcs.begin(),arcs.end(),s1,s2);
-      insert_transversal_to_output(insert_itertor,
-                                   OAP,
-                                   With_segments(),
-                                   &s1,&s2,&s3,&s4);
+      LTS::insert_transversal(out,
+                              OAP,
+                              &s1,&s2,&s3,&s4, With_segments());
     }
   }
 
@@ -263,11 +225,11 @@ public:
    * creator lines and the lines which represents the edges of the hyperbola.
    **************************************************************/
   template <typename Arr_on_plane, 
-            typename Insert_iterator, 
+            typename OutputIterator, 
             typename Isolated_points_on_plane,
             typename Vertex_valid_functor>
   void find_all_lines_plane(boost::shared_ptr<Arr_on_plane> arr_on_plane,
-                            Insert_iterator* insert_itertor,
+                            OutputIterator out,
                             const Rational_segment_3& s1,
                             const Rational_segment_3& s2,
                             bool s1_s2_intersect,
@@ -298,7 +260,7 @@ public:
         ++next_it;
         find_plane_faces(arr_on_plane,
                          fit->outer_ccb(),
-                         insert_itertor,s1,s2,
+                         out,s1,s2,
                          **it,**next_it);
       }
     }
@@ -356,22 +318,20 @@ public:
 
           Mapped_2_with_arr output_curve(eit->curve(), s1, s2);
           output_curve.set_arrangement(arr_on_plane);
-          insert_transversal_to_output(insert_itertor,
-                                       output_curve,
-                                       With_segments(),
-                                       &s1, &s2, 
-                                       *eit->segs_begin(),
-                                       S4);
+          LTS::insert_transversal(out,
+                                  output_curve,
+                                  &s1, &s2, 
+                                  *eit->segs_begin(),
+                                  S4, With_segments());
         }
         else
         {
           Mapped_2 output_curve(eit->curve(), s1, s2);
-          insert_transversal_to_output(insert_itertor,
-                                       output_curve,
-                                       With_segments(),
-                                       &s1, &s2, 
-                                       *eit->segs_begin(),
-                                       S4);
+          LTS::insert_transversal(out,
+                                  output_curve,
+                                  &s1, &s2, 
+                                  *eit->segs_begin(),
+                                  S4, With_segments());
         }
                
                
@@ -438,19 +398,17 @@ public:
                   m_g_func.get_line_from_intersection_point(rp.x(), rp.y(), s1, s2,
                                                             output_line);
 
-                  insert_transversal_to_output(insert_itertor,
-                                               output_line,
-                                               With_segments(),
-                                               &s1, &s2, S3, S4);
+                  LTS::insert_transversal(out,
+                                          output_line,
+                                          &s1, &s2, S3, S4, With_segments());
                }
                else
                {
                   Mapped_2_with_arr output_point(vit->point(), s1, s2);
                   output_point.set_arrangement(arr_on_plane);
-                  insert_transversal_to_output(insert_itertor,
-                                               output_point,
-                                               With_segments(),
-                                               &s1, &s2, S3, S4);
+                  LTS::insert_transversal(out,
+                                          output_point,
+                                          &s1, &s2, S3, S4, With_segments());
                }
             }
             else
@@ -460,19 +418,17 @@ public:
                   Rational_line_3 output_line;
                   m_g_func.get_line_from_intersection_point(rp.x(), rp.y(), s1, s2,
                                                             output_line);
-                  insert_transversal_to_output(insert_itertor,
-                                               output_line,
-                                               With_segments(),
-                                               &s1, &s2, S3, S4);
+                  LTS::insert_transversal(out,
+                                          output_line,
+                                          &s1, &s2, S3, S4, With_segments());
 
                }
                else
                {
                   Mapped_2 output_point(vit->point(), s1, s2);
-                  insert_transversal_to_output(insert_itertor,
-                                               output_point,
-                                               With_segments(),
-                                               &s1, &s2, S3, S4);
+                  LTS::insert_transversal(out,
+                                          output_point,
+                                          &s1, &s2, S3, S4, With_segments());
                }
             }
           }
@@ -493,7 +449,7 @@ public:
             
       add_isolated_points(isolated_points_on_plane, arr_on_plane,
                           naive_pl, validate_vertex,
-                          insert_itertor, s1, s2, 
+                          out, s1, s2, 
                           intersection_point_S1S2);
     }
   }
@@ -516,12 +472,12 @@ public:
             typename Arrangement_2,
             typename Point_location,
             typename Validate_vertex,
-            typename Insert_iterator>
+            typename OutputIterator>
   void add_isolated_points(Isolated_points& isolated_points,
                            boost::shared_ptr<Arrangement_2> arr,
                            Point_location& pl,
                            Validate_vertex& validate_vertex,
-                           Insert_iterator* insert_iterator,
+                           OutputIterator out,
                            const Rational_segment_3& S1,
                            const Rational_segment_3& S2,
                            const Rational_point_3& intersection_point_S1S2)
@@ -550,7 +506,7 @@ public:
        get_3D_point_from_point_on_arr(
           arr,
           dup_it->point,
-          insert_iterator, 
+          out, 
           intersection_point_S1S2, S1, S2 ,
           *dup_it->obj1 ,
           *dup_it->obj2);
@@ -567,16 +523,16 @@ public:
       add_isolated_point_to_arr(
          arr, ((*it).get_point()),S1, S2,
            *((*it).get_segment()),intersection_point_S1S2,
-           pl, validate_vertex, insert_iterator);
+           pl, validate_vertex, out);
     }
   }
 
-  template <typename Insert_itertor, 
+  template <typename OutputIterator, 
             typename Arrangement_2, 
             typename Ext_obj>
   void get_3D_point_from_point_on_arr(boost::shared_ptr<Arrangement_2> arr,
                                       const Point_on_sphere_2& pt,
-                                      Insert_itertor* insert_itertor,
+                                      OutputIterator out,
                                       const Rational_point_3& intersection_point_S1S2,
                                       const Rational_segment_3& S1,
                                       const Rational_segment_3& S2,
@@ -600,19 +556,18 @@ public:
                         intersection_point_S1S2.y() + pt.dy(),
                         intersection_point_S1S2.z() + pt.dz()));
     
-    insert_transversal_to_output(insert_itertor,
-                                 output_line,
-                                 With_segments(),
-                                 &S1,&S2,&S3,&S4);
+    LTS::insert_transversal(out,
+                            output_line,
+                            &S1,&S2,&S3,&S4,With_segments());
   }
       
-  template <typename Insert_itertor, 
+  template <typename OutputIterator, 
             typename Arrangement_2, 
             typename Ext_obj>
   void get_3D_point_from_point_on_arr(
      boost::shared_ptr<Arrangement_2> arr,
      const Point_2& pt,
-     Insert_itertor* insert_itertor,
+     OutputIterator out,
      const Rational_point_3& intersection_point_S1S2,
      const Rational_segment_3& S1,
      const Rational_segment_3& S2,
@@ -631,19 +586,17 @@ public:
 
       Mapped_2_with_arr output_point(ptl, S1, S2);
       output_point.set_arrangement(arr);
-      insert_transversal_to_output(insert_itertor,
-                                   output_point,
-                                   With_segments(),
-                                   &S1, &S2, &S3, &S4);
+      LTS::insert_transversal(out,
+                              output_point,
+                              &S1, &S2, &S3, &S4, With_segments());
 
     }
     else
     {
       Mapped_2 output_point(ptl, S1, S2);
-      insert_transversal_to_output(insert_itertor,
-                                   output_point,
-                                   With_segments(),
-                                   &S1, &S2, &S3, &S4);
+      LTS::insert_transversal(out,
+                              output_point,
+                              &S1, &S2, &S3, &S4, With_segments());
     }
          
 #if CGAL_DEBUG_OUTPUT
@@ -687,7 +640,7 @@ public:
             typename Arrangement_2,
             typename Point_location,
             typename Validate_vertex,
-            typename Insert_itertor>
+            typename OutputIterator>
   void add_isolated_point_to_arr(boost::shared_ptr<Arrangement_2> arr,
                                  const Point& pt,
                                  const Rational_segment_3& S1,
@@ -696,7 +649,7 @@ public:
                                  const Rational_point_3& intersection_point_S1S2,
                                  Point_location& pl,
                                  Validate_vertex& created_from_2_unique_lines,
-                                 Insert_itertor* insert_itertor)
+                                 OutputIterator out)
   {
     typedef typename Arrangement_2::Point_2 L_point_2;
     typedef typename Arrangement_2::Vertex_const_handle Vertex;
@@ -736,7 +689,7 @@ public:
           get_3D_point_from_point_on_arr(
              arr,
              pt, 
-             insert_itertor,intersection_point_S1S2, 
+             out,intersection_point_S1S2, 
              S1, S2, S3, *S4);
         }
       }
@@ -756,7 +709,7 @@ public:
         {
           typedef typename Arrangement_2::Dcel::Ext_obj Ext_obj;
           get_3D_point_from_point_on_arr(arr, pt, 
-                                         insert_itertor, 
+                                         out, 
                                          intersection_point_S1S2, 
                                          S1, S2, S3, **it);
           return;
@@ -778,7 +731,7 @@ public:
         {
           typedef typename Arrangement_2::Dcel::Ext_obj Ext_obj;
           get_3D_point_from_point_on_arr(arr, pt, 
-                                         insert_itertor,
+                                         out,
                                          intersection_point_S1S2, 
                                          S1, S2, S3, **it);
         }

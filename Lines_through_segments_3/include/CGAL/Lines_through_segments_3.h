@@ -160,8 +160,7 @@ public:
                    Output_iterator output_iterator,
                    bool rational_output = false)
   {
-    typedef Lines_through_segments_impl<Traits_3, Output_iterator,
-                                        With_segments, boost::true_type>
+    typedef Lines_through_segments_impl<Traits_3, With_segments, boost::true_type>
       Lines_through_segments_impl;
       
     if(begin == end) return;
@@ -191,9 +190,8 @@ public:
 #endif
         try
         {
-          Lines_through_segments_impl
-            line_through_segs_obj(segs[S1], segs[S2], &output_iterator,
-                                  &m_alg_kernel, &m_rational_kernel);
+          Lines_through_segments_impl line_through_segs_obj(
+            segs[S1], segs[S2], &m_alg_kernel, &m_rational_kernel);
                     
           /* For each line add a new curve to the arrangement, the
            * intersection of the hyperbolas represent common lines. */
@@ -208,7 +206,7 @@ public:
             line_through_segs_obj.add_element_to_arrangement(*segs[S3]);
           }
 
-          line_through_segs_obj.find_all_lines(rational_output);
+          line_through_segs_obj.find_all_lines(rational_output, output_iterator);
 
           // extract the arrangments
           if(!line_through_segs_obj.arrangement_on_plane()->is_empty())

@@ -32,6 +32,7 @@
 #include <CGAL/Lines_through_segments_arr_ext_dcel.h>
 #include <CGAL/Lines_through_segments_arr_plane_faces.h>
 #include <CGAL/Lines_through_segments_3_segs_2.h>
+#include <CGAL/Lines_through_segments_3/internal.h>
 #include <CGAL/Lines_through_segments_3/exceptions.h>
 #include <CGAL/Lines_through_segments_point_adapt.h>
 #include <CGAL/Lines_through_segments_traits_2_adapt.h>
@@ -51,7 +52,7 @@
 
 namespace CGAL {
 
-template <typename Lines_through_segments_traits_3, typename Insert_iterator,
+template <typename Lines_through_segments_traits_3, 
           typename With_segments, typename With_arrangement_>
 class Lines_through_segments_impl {
 public:
@@ -272,7 +273,6 @@ private:
   Rational_plane_3 m_S1_S2_plane;
   Rational_point_3 m_intersection_point_S1S2;
   int m_S1_S2_num_of_common_lines;
-  Insert_iterator* m_insert_itertor;
   Traits_2_adapt m_traits_2_adapt;
   Lines_through_segments_general_functions<Traits_3>
   m_g_func;
@@ -318,7 +318,6 @@ public:
    
   Lines_through_segments_impl(const Rational_segment_3 * _s1,
                               const Rational_segment_3 * _s2,
-                              Insert_iterator * insert_it,
                               const Alg_kernel *alg_kernel,
                               const Rational_kernel *rational_kernel)
     : m_arr_g_func(alg_kernel)
@@ -328,7 +327,6 @@ public:
     m_alg_kernel = alg_kernel;
     m_rat_kernel = rational_kernel;
 
-    m_insert_itertor = insert_it;
     m_S1_S2_intersect = false;
     m_num_of_intersection = 0;
     m_S1_S2_on_the_same_plane = false;
@@ -1502,7 +1500,8 @@ public:
    * for each vertex of degree > 1, it finds the line that passes through the
    * creator lines and the lines which represents the edges of the hyperbola.
    **************************************************************/
-  void find_all_lines(bool rational_output)
+  template <typename OutputIterator>
+  void find_all_lines(bool rational_output, OutputIterator out)
   {   
 #if ONE_SWEEP
     if (arcs_cont.size() != 0)
@@ -1530,24 +1529,23 @@ public:
     {
       if (m_S1_S2_num_of_common_lines >= 2)
       {
-        m_arr_g_func.insert_transversal_to_output(m_insert_itertor,
-                                                  m_S1_S2_line,
-                                                  With_segments(),
-                                                  m_S1,m_S2,
-                                                  m_S1_S2_on_the_same_line_S3,
-                                                  m_S1_S2_on_the_same_line_S4);
+        LTS::insert_transversal(out,
+                                m_S1_S2_line,
+                                m_S1,m_S2,
+                                m_S1_S2_on_the_same_line_S3,
+                                m_S1_S2_on_the_same_line_S4, With_segments());
       }
             
       if (m_S1_S2_intersect)
       {
-        find_all_lines_sphere();
+        find_all_lines_sphere(out);
       }
     }
     else
     {
       if (m_S1_S2_intersect)
       {
-        find_all_lines_sphere();
+        find_all_lines_sphere(out);
       }
             
       /* Merge all of the arrangements at arr_vector to one arrangement. */
@@ -1559,7 +1557,7 @@ public:
       Created_from_2_unique_lines<Arrangement_on_plane_2> valid_vertex;
       
       m_arr_g_func.find_all_lines_plane(m_arr_on_plane,
-                                        m_insert_itertor,
+                                        out,
                                         *m_S1,*m_S2,m_S1_S2_intersect,
                                         m_isolated_points_on_plane,
                                         valid_vertex,
@@ -1574,8 +1572,8 @@ public:
   }
       
 private:
-      
-  void find_all_lines_sphere()
+  template<typename OutputIterator>
+  void find_all_lines_sphere(OutputIterator out)
   {
     typedef typename Arrangement_on_sphere_2::Vertex_iterator Vertex_it;
     Vertex_it vit;
@@ -1587,23 +1585,21 @@ private:
        {
           Through_3_with_arr through_3(m_intersection_point_S1S2);
           through_3.set_arrangement(m_arr_on_sphere);
-          m_arr_g_func.insert_transversal_to_output(m_insert_itertor,
-                                                    through_3,
-                                                    With_segments(),
-                                                    m_S1,m_S2,
-                                                    m_S1_S2_concurrent_S3,
-                                                    m_S1_S2_concurrent_S4);
+          LTS::insert_transversal(out,
+                                  through_3,
+                                  m_S1,m_S2,
+                                  m_S1_S2_concurrent_S3,
+                                  m_S1_S2_concurrent_S4, With_segments());
 
        }
        else
        {
           Through_3 through_3(m_intersection_point_S1S2);
-          m_arr_g_func.insert_transversal_to_output(m_insert_itertor,
-                                                    through_3,
-                                                    With_segments(),
-                                                    m_S1,m_S2,
-                                                    m_S1_S2_concurrent_S3,
-                                                    m_S1_S2_concurrent_S4);
+          LTS::insert_transversal(out,
+                                  through_3,
+                                  m_S1,m_S2,
+                                  m_S1_S2_concurrent_S3,
+                                  m_S1_S2_concurrent_S4, With_segments());
        }
     }
     else
@@ -1642,23 +1638,21 @@ private:
              {
                 Through_3_with_arr through_3(segment,m_intersection_point_S1S2);
                 through_3.set_arrangement(m_arr_on_sphere);
-                m_arr_g_func.insert_transversal_to_output(m_insert_itertor,
-                                                          through_3,
-                                                          With_segments(),
-                                                          m_S1,m_S2,
-                                                          m_S1_S2_concurrent_S3,
-                                                          *eit->segs_begin());
+                LTS::insert_transversal(out,
+                                        through_3,
+                                        m_S1,m_S2,
+                                        m_S1_S2_concurrent_S3,
+                                        *eit->segs_begin(), With_segments());
 
              }
              else
              {
                 Through_3 through_3(segment,m_intersection_point_S1S2);
-                m_arr_g_func.insert_transversal_to_output(m_insert_itertor,
-                                                          through_3,
-                                                          With_segments(),
-                                                          m_S1,m_S2,
-                                                          m_S1_S2_concurrent_S3,
-                                                          *eit->segs_begin());
+                LTS::insert_transversal(out,
+                                        through_3,
+                                        m_S1,m_S2,
+                                        m_S1_S2_concurrent_S3,
+                                        *eit->segs_begin(), With_segments());
              }
           }
           else
@@ -1676,22 +1670,20 @@ private:
             {
                Through_3_with_arr through_3(segment,m_intersection_point_S1S2);
                through_3.set_arrangement(m_arr_on_sphere);
-               m_arr_g_func.insert_transversal_to_output(m_insert_itertor,
-                                                         through_3,
-                                                         With_segments(),
-                                                         m_S1,m_S2,
-                                                         *it,
-                                                         *next_it);
+               LTS::insert_transversal(out,
+                                       through_3,
+                                       m_S1,m_S2,
+                                       *it,
+                                       *next_it, With_segments());
             }
             else
             {
                Through_3 through_3(segment,m_intersection_point_S1S2);
-               m_arr_g_func.insert_transversal_to_output(m_insert_itertor,
-                                                         through_3,
-                                                         With_segments(),
-                                                         m_S1,m_S2,
-                                                         *it,
-                                                         *next_it);
+               LTS::insert_transversal(out,
+                                       through_3,
+                                       m_S1,m_S2,
+                                       *it,
+                                       *next_it, With_segments());
             }
           }
                                     
@@ -1738,10 +1730,9 @@ private:
                               intersection_point.dz() +
                               m_intersection_point_S1S2.z()));
                   
-          m_arr_g_func.insert_transversal_to_output(m_insert_itertor,
-                                                    transversal,
-                                                    With_segments(),
-                                                    m_S1,m_S2,S3,S4);
+          LTS::insert_transversal(out,
+                                  transversal,
+                                  m_S1,m_S2,S3,S4, With_segments());
 
 #if CGAL_DEBUG_OUTPUT
           Rational_line_3 common_line;
@@ -1813,7 +1804,7 @@ private:
                
         m_arr_g_func.add_isolated_points(m_isolated_points_on_sphere,
                                          m_arr_on_sphere,naive_pl, 
-                                         valid_vertex, m_insert_itertor,
+                                         valid_vertex, out,
                                          *m_S1, *m_S2,
                                          m_intersection_point_S1S2);
       }

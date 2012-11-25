@@ -7,9 +7,9 @@
 
 namespace CGAL { namespace LTS {
 
-template <typename OutputIterator, typename Segment>
+template <typename OutputIterator, typename Transversal, typename Segment>
 OutputIterator insert_transversal(
-  OutputIterator out, const Segment& output_segment,
+  OutputIterator out, const Transversal& output_segment,
   const Segment* s1, const Segment* s2, 
   const Segment* s3, const Segment* s4,
   boost::true_type) 
@@ -18,9 +18,9 @@ OutputIterator insert_transversal(
   return *out++ = std::make_pair(output_segment, arr);
 }
 
-template <typename OutputIterator, typename Segment>
+template <typename OutputIterator, typename Transversal, typename Segment>
 OutputIterator insert_transversal(
-  OutputIterator out, const Segment& output_segment,
+  OutputIterator out, const Transversal& output_segment,
   const Segment* s1, const Segment* s2, 
   const Segment* s3, const Segment* s4,
   boost::false_type) 
