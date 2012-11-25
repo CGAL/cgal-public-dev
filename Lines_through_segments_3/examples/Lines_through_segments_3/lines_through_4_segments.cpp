@@ -13,10 +13,6 @@
 #include <CGAL/Lines_through_segments_3.h>
 #include <CGAL/Lines_through_segments_traits_3.h>
 
-template <typename T>
-struct print;
-
-
 typedef CGAL::CORE_algebraic_number_traits              Nt_traits;
 typedef Nt_traits::Algebraic                            Algebraic;
 typedef Nt_traits::Rational                             Rational;
@@ -64,6 +60,34 @@ int main()
   copy(output_list1.begin(), output_list1.end(),
        std::ostream_iterator<Transversal_with_segments>(std::cout, "\n"));
 
+  typedef Lines_through_segments_3::Arr_on_plane Arr_on_plane;
+  typedef Lines_through_segments_3::Arr_on_sphere Arr_on_sphere;
+  {
+    Lines_through_segments_3::Arr_on_plane_iterator b, e;
+    for(boost::tie(b, e) = lines_through_segs.planar_arrangements(); b != e; ++b) {
+      std::cout << "Planar Arrangment" << std::endl;
+      for(Arr_on_plane::Halfedge_iterator it = (*b)->halfedges_begin(); it != (*b)->halfedges_end(); ++it) { 
+        std::cout << "  Halfedge: " << it->curve() << std::endl;
+        for(Arr_on_plane::Halfedge::const_iterator it2 = it->segs_begin(); it2 != it->segs_end(); ++it2) { 
+          std::cout << "    Segment: " << **it2 << std::endl;
+        }
+      }
+    }
+  }
+
+  {
+    Lines_through_segments_3::Arr_on_sphere_iterator b, e;
+    for(boost::tie(b, e) = lines_through_segs.spherical_arrangements(); b != e; ++b) {
+      std::cout << "Spherical Arrangment" << std::endl;
+      for(Arr_on_sphere::Halfedge_iterator it = (*b)->halfedges_begin(); it != (*b)->halfedges_end(); ++it) { 
+        std::cout << "  Halfedge: " << it->curve() << std::endl;
+        for(Arr_on_sphere::Halfedge::const_iterator it2 = it->segs_begin(); it2 != it->segs_end(); ++it2) { 
+          std::cout << "    Segment: " << **it2 << std::endl;
+        }
+      }
+    }
+  }
+
   std::cout << "INPUT 2:" << std::endl;
   std::cout << "--------" << std::endl;
    
@@ -81,35 +105,6 @@ int main()
                      std::back_inserter(output_list2), true);
 
   std::cout << output_list2.size() << std::endl;
-
-  typedef Lines_through_segments_3::Arr_on_plane Arr_on_plane;
-  typedef Lines_through_segments_3::Arr_on_sphere Arr_on_sphere;
-
-  
-  {
-    Lines_through_segments_3::Arr_on_plane_iterator b, e;
-    for(boost::tie(b, e) = lines_through_segs.planar_arrangements(); b != e; ++b) {
-      for(Arr_on_plane::Halfedge_iterator it = (*b)->halfedges_begin(); it != (*b)->halfedges_end(); ++it) { 
-        std::cout << "Halfedge: " << std::endl;
-        for(Arr_on_plane::Halfedge::const_iterator it2 = it->segs_begin(); it2 != it->segs_end(); ++it2) { 
-          std::cout << "  Segment: " << std::endl;
-          std::cout << "  " << (*it2)->source() << std::endl;
-          std::cout << "  " << (*it2)->target() << std::endl;
-        }
-      }
-
-    }
-  }
-
-  {
-    Lines_through_segments_3::Arr_on_sphere_iterator b, e;
-    for(boost::tie(b, e) = lines_through_segs.spherical_arrangements(); b != e; ++b) {
-      for(Arr_on_sphere::Halfedge_iterator it = (*b)->halfedges_begin(); it != (*b)->halfedges_end(); ++it) { 
-        // it->data();
-      }
-
-    }
-  }
 
   typedef Lines_through_segments_3::Line_3      Line_3;
   typedef Lines_through_segments_3::Mapped_2    Mapped_2;
