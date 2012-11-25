@@ -118,9 +118,7 @@ public:
    */
   Lines_through_segments_3(const Alg_kernel& alg_kernel = Alg_kernel(), 
                            const Rational_kernel& rational_kernel = Rational_kernel()) :
-    m_rational_kernel(rational_kernel),
-    m_alg_kernel(alg_kernel)
-  {}
+    m_rational_kernel(rational_kernel), m_alg_kernel(alg_kernel) {}
 
   /*************************************************************
    * The following function gets input iterator of segments and output all

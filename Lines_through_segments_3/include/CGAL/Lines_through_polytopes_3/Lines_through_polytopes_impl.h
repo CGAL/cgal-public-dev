@@ -26,7 +26,7 @@
 #include <CGAL/Lines_through_segments_point_adapt.h>
 #include <CGAL/Lines_through_segments_arr_object.h>
 #include <CGAL/Lines_through_segments_arr_ext_dcel.h>
-#include <CGAL/Lines_through_segments_arr_observer.h>
+#include <CGAL/Lines_through_segments_3/observer.h>
 
 #include <CGAL/Envelope_diagram_1.h>
 #include <CGAL/envelope_2.h>

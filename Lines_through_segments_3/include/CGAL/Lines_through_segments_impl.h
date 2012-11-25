@@ -28,7 +28,7 @@
 #include <CGAL/Lines_through_segments_general_functions.h>
 #include <CGAL/Lines_through_segments_arr_gen_func.h>
 #include <CGAL/Lines_through_segments_isolated_points.h>
-#include <CGAL/Lines_through_segments_arr_observer.h>
+#include <CGAL/Lines_through_segments_3/observer.h>
 #include <CGAL/Lines_through_segments_arr_ext_dcel.h>
 #include <CGAL/Lines_through_segments_arr_plane_faces.h>
 #include <CGAL/Lines_through_segments_3_segs_2.h>

@@ -22,7 +22,7 @@
 
 #include <CGAL/Lines_through_segments_general_functions.h>
 #include <CGAL/Lines_through_segments_arr_gen_func.h>
-#include <CGAL/Lines_through_segments_arr_observer.h>
+#include <CGAL/Lines_through_segments_3/observer.h>
 #include <CGAL/Lines_through_segments_arr_plane_faces.h>
 #include <CGAL/Lines_through_segments_traits_2_adapt.h>
 #include <CGAL/Lines_through_segments_point_adapt.h>
