@@ -650,7 +650,7 @@ if report:
             if len(set(path) - new_revs):
                 log("Stable head '%s' moved" % head)
                 headMoved(head, path)
-        log("Stable head '%s' done" % head)
+        # log("Stable head '%s' done" % head)
 
 if not Config.noupdate:
     current.writeTo(CacheFile)
