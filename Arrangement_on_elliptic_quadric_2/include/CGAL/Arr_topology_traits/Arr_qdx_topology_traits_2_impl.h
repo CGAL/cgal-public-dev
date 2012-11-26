@@ -649,6 +649,30 @@ notify_on_boundary_vertex_creation
 }
 
 //-----------------------------------------------------------------------------
+// Decides which ccb becomes outer
+//
+template <class GeomTraits, class Dcel>
+bool
+Arr_qdx_topology_traits_2<GeomTraits, Dcel>::
+let_me_decide_the_outer_ccb(std::pair< CGAL::Sign, CGAL::Sign> signs1,
+                            std::pair< CGAL::Sign, CGAL::Sign> signs2,
+                            bool& swap_predecessors) const {
+
+    CGAL_precondition(signs1.second == CGAL::ZERO); // no perimetric in top-bottom for first loop
+    CGAL_precondition(signs2.second == CGAL::ZERO); // no perimetric in top-bottom for second loop
+
+    // choose prev1 to define outer ccb of new face if it is a non-perimetric loop,
+    // otherwise choose prev2
+    // TODO what if both are non-zero? does it occur?
+    // TODO EBEB check this!!!!
+    swap_predecessors = (signs1.first != CGAL::POSITIVE);
+
+    // but only if the at least one of the loops is perimetric, otherwise return false
+    // to let leftmost-vertex decide which becomes part of the new outer ccb
+    return signs1.first != CGAL::ZERO || signs2.first != CGAL::ZERO;
+  }
+
+//-----------------------------------------------------------------------------
 // Locate a DCEL feature that contains the given curve end.
 //
 template < class GeomTraits, class Dcel_ >
@@ -763,6 +787,8 @@ locate_curve_end (const X_monotone_curve_2& cv, CGAL::Arr_curve_end ind,
 
 }
 
+#if 0 // old code EBEB 2012-11-26
+
 //-----------------------------------------------------------------------------
 // Given two predecessor halfedges that belong to the same inner CCB of
 // a face, determine what happens when we insert an edge connecting the
@@ -793,7 +819,6 @@ Arr_qdx_topology_traits_2< GeomTraits, Dcel_ >::face_split_after_edge_insertion
 
     bool is_hole = true;
 
-#if 0
     if (_m_left == CGAL::ARR_OPEN && _m_right == CGAL::ARR_OPEN) {
 
         Sign_of_path sign_of_path(this);
@@ -816,7 +841,6 @@ Arr_qdx_topology_traits_2< GeomTraits, Dcel_ >::face_split_after_edge_insertion
 #if CGAL_ARR_TOPOLOGY_TRAITS_VERBOSE
     std::cout << "Result: face_split=" << face_split << ", is_hole="
               << is_hole << std::endl;
-#endif
 #endif
 
     return (std::make_pair (face_split, is_hole));
@@ -846,7 +870,6 @@ Arr_qdx_topology_traits_2< GeomTraits, Dcel_ >::face_update_upon_edge_insertion
     // usually prev1 will become outer of a new face
     bool prev2_outer = false;
 
-#if 0
     Sign_of_path sign_of_path(this);
 
 #if CGAL_ARR_TOPOLOGY_TRAITS_VERBOSE
@@ -879,10 +902,11 @@ Arr_qdx_topology_traits_2< GeomTraits, Dcel_ >::face_update_upon_edge_insertion
     std::cout << "Result: face_split=" << face_split << ", prev2_outer="
               << prev2_outer << std::endl;
 #endif
-#endif
     return (std::make_pair (face_split, prev2_outer));
 }
 #endif
+
+#endif // old code
 
 //-----------------------------------------------------------------------------
 // Determine whether the removal of the given edge will cause the creation

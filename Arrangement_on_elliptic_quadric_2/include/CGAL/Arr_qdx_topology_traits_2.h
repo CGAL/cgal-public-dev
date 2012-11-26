@@ -697,6 +697,21 @@ public:
                                              CGAL::Arr_parameter_space ps_y)
         const;
 
+    /*! Determines whether the function should decide on swapping the predecssor
+     * halfedges that imply two ccb (and whose signs are given here).
+     * If true, swap_predecessors will be correctly set. If false,
+     * generic way of searching for lexicographically minimal point and checking
+     * its incident halfedges will do the job to decide on swapping
+     * \param signs1 signs of first implied ccb in x- and y-direction
+     * \param signs2 signs of second implied ccb in x- and y-direction
+     * \param swap_predecessors Output swap predeccesors or not;
+     *        set correctly only if true is returned
+     */
+    bool let_me_decide_the_outer_ccb(std::pair< CGAL::Sign, CGAL::Sign> signs1,
+                                   std::pair< CGAL::Sign, CGAL::Sign> signs2,
+                                   bool& swap_predecessors) const;
+
+
     /*!
      * Locate a DCEL feature that contains the given curve end.
      * \param cv The x-monotone curve.
@@ -730,6 +745,24 @@ public:
     face_split_after_edge_insertion (const Halfedge *prev1,
                                      const Halfedge *prev2,
                                      const X_monotone_curve_2& cv) const;
+
+  /*!
+   * Given signs of two ccbs that show up when splitting upon insertion of
+   * curve into two, determine what happens to the face(s).
+   * \param signs1 signs in x and y of the first implied ccb
+   * \param signs2 signs in x and y of the secondd implied ccb
+   * \return A pair indicating whether the insertion will cause the face
+   *         to split (the first flag), and if so - whether the split face
+   *         will form a hole in the original face.
+   */
+  std::pair<bool, bool>
+  face_split_after_edge_insertion(std::pair< CGAL::Sign, CGAL::Sign > CGAL_precondition_code(signs1),
+                                  std::pair< CGAL::Sign, CGAL::Sign > CGAL_precondition_code(signs2)) const {
+    // In case of a spherical topology, connecting two vertices on the same
+    // inner CCB closes a new face that becomes a hole in the original face:
+    return (std::make_pair(true, true));
+  }
+
 
 #if CGAL_NEW_FACE_SPLIT_STRATEGY
     /*!
