@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2008 Max-Planck-Institute Saarbruecken (Germany), 
+// Copyright (c) 2007-2008 Max-Planck-Institute Saarbruecken (Germany),
 // and Tel-Aviv University (Israel).  All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org); you can redistribute it and/or
@@ -24,7 +24,7 @@
 
 /*!\file include/CGAL/Curved_kernel_via_analysis_2l/Surface_arc_2l.h
  * \brief defines class \c Surface_arc_2l
- *  
+ *
  * Arcs on surfaces, lifted from 2D.
  */
 
@@ -47,7 +47,7 @@ class Surface_arc_2l;
 
 //! representation class for arc on a surface
 template < class CurvedKernelViaAnalysis_2l, class SurfacePair_3 >
-class Surface_arc_2l_rep : 
+class Surface_arc_2l_rep :
         public Arc_2_rep< CurvedKernelViaAnalysis_2l > {
 
 public:
@@ -59,27 +59,27 @@ public:
     typedef SurfacePair_3 Surface_pair_3;
 
     //! the instance itself
-    typedef 
+    typedef
     Surface_arc_2l_rep< Curved_kernel_via_analysis_2l, Surface_pair_3 >
     Self;
-    
+
     //! the base type
     typedef Arc_2_rep< Curved_kernel_via_analysis_2l > Base;
-    
+
     //! typedef of Point_2 (Kernel_point_2)
     typedef typename Curved_kernel_via_analysis_2l::Point_2 Point_2;
 
     //! type of projected kernel
-    typedef typename 
+    typedef typename
     Curved_kernel_via_analysis_2l::Curved_kernel_via_analysis_2
     Projected_kernel_2;
-    
+
     //! type of projected point
     typedef typename Projected_kernel_2::Point_2 Projected_point_2;
 
     //! type of projected point
     typedef typename Projected_kernel_2::Arc_2 Projected_arc_2;
-    
+
     //! type of surface
     typedef typename Surface_pair_3::Surface_3 Surface_3;
 
@@ -88,7 +88,7 @@ public:
 
     //! standard constructor
     Surface_arc_2l_rep() :
-        _m_sheet(-1), _m_sheet_min(-1), _m_sheet_max(-1), 
+        _m_sheet(-1), _m_sheet_min(-1), _m_sheet_max(-1),
         _m_is_z_vertical(false) {
     }
 
@@ -111,10 +111,10 @@ public:
         Base::_m_min = p;
         Base::_m_max = q;
     }
-    
+
     //!@}
-    
-    
+
+
 protected:
     //! projected arc
     mutable boost::optional< Projected_arc_2 > _m_projected_arc;
@@ -130,15 +130,15 @@ protected:
 
     //! sheet number of arc at x-min point
     mutable int _m_sheet_min;
-    
+
     //! sheet number of arcs at x-max point
     mutable int _m_sheet_max;
-    
+
     //! indicates whether arc is vertical
     mutable bool _m_is_z_vertical;
-    
+
     // befriending the handle
-    friend class 
+    friend class
     Surface_arc_2l< Curved_kernel_via_analysis_2l, Surface_pair_3, Self >;
 
     // for setting sheets + projected_arcs
@@ -149,24 +149,24 @@ protected:
 
 
 //! represents an xy-monotone arc on a surface
-template < 
-  class CurvedKernelViaAnalysis_2l, 
+template <
+  class CurvedKernelViaAnalysis_2l,
   class SurfacePair_3,
-  class Rep_ = 
+  class Rep_ =
     internal::Surface_arc_2l_rep< CurvedKernelViaAnalysis_2l, SurfacePair_3 >
 >
-class Surface_arc_2l : public 
+class Surface_arc_2l : public
    CurvedKernelViaAnalysis_2l::Curved_kernel_via_analysis_2::Arc_2::
    template rebind< CurvedKernelViaAnalysis_2l, Rep_ >::Other {
-    
+
 public:
 
     //!\name Public types
     //!@{
-    
+
     //! this type's first template parameter
     typedef CurvedKernelViaAnalysis_2l Curved_kernel_via_analysis_2l;
-    
+
     //! this type's second template parameter
     typedef SurfacePair_3 Surface_pair_3;
 
@@ -174,15 +174,15 @@ public:
     typedef Rep_ Rep;
 
     //! the class itself
-    typedef 
+    typedef
     Surface_arc_2l< Curved_kernel_via_analysis_2l, Surface_pair_3, Rep >
     Self;
-    
+
     //! type of projected kernel
-    typedef typename 
+    typedef typename
     Curved_kernel_via_analysis_2l::Curved_kernel_via_analysis_2
     Projected_kernel_2;
-    
+
     //! type of projected point
     typedef typename Projected_kernel_2::Point_2 Projected_point_2;
 
@@ -191,39 +191,39 @@ public:
 
     //! type of surface
     typedef typename Surface_pair_3::Surface_3 Surface_3;
-    
+
     //! type of planar point
     typedef typename Curved_kernel_via_analysis_2l::Point_2 Surface_point_2l;
 
     //! typedef of Kernel_arc_2
     typedef typename Curved_kernel_via_analysis_2l::Arc_2 Kernel_arc_2;
-    
+
     //! type of rebinding
     typedef typename Projected_arc_2::
     template rebind < Curved_kernel_via_analysis_2l, Rep > Rebind;
-    
+
     //! the base class
     typedef typename Rebind::Other Base;
 
     //!@}
 
-public:    
+public:
     //!\name Standard constructors
     //!@{
 
     /*!\brief
      * Default constructor
      */
-    Surface_arc_2l() : 
-        Base() {   
+    Surface_arc_2l() :
+        Base() {
     }
-    
+
     //!@}
 
 public:
     //!\name Constructors based on bounded planar arcs
     //!@{
-    
+
     /*!\brief
      * Standard constructor for an bounded arc on xy-monotone part
      * of the surface.
@@ -233,15 +233,15 @@ public:
      * \pre arc.curve_end(MIN) = p.projected_point()
      * \pre arc.curve_end(MAX) = q.projected_point()
      */
-    Surface_arc_2l(const Projected_arc_2& arc, 
+    Surface_arc_2l(const Projected_arc_2& arc,
                    const Surface_point_2l& p,
                    const Surface_point_2l& q,
                    const Surface_3& surface,
                    int sheet, int sheet_p, int sheet_q) :
         Base(Rebind()(arc, p, q)) {
-        
+
         this->copy_on_write();
-        
+
         CGAL_precondition(arc.is_finite(CGAL::ARR_MIN_END));
         CGAL_precondition(arc.is_finite(CGAL::ARR_MAX_END));
 
@@ -255,21 +255,21 @@ public:
                 compare_xy(arc.curve_end(CGAL::ARR_MAX_END)) ==
                 CGAL::EQUAL
         );
-        
+
         this->ptr()->_m_projected_arc = arc;
-        
+
         this->ptr()->_m_surface = surface;
 
         CGAL_precondition_code(
                 int number_of_sheets = -1;
                 typedef typename Surface_pair_3::Restricted_cad_3
                 Restricted_cad_3;
-                typedef CGAL::Restricted_cad_3_accessor< Restricted_cad_3 > 
+                typedef CGAL::Restricted_cad_3_accessor< Restricted_cad_3 >
                 Accessor;
                 Restricted_cad_3 cad =
                 Restricted_cad_3::cad_cache()(surface);
         );
-        
+
         CGAL_precondition(sheet >= 0);
         CGAL_precondition_code(
                 Projected_point_2 pt = Accessor::point_in_interior(arc);
@@ -281,30 +281,30 @@ public:
 
         CGAL_precondition(sheet_p >= 0);
         CGAL_precondition_code(
-                number_of_sheets = 
+                number_of_sheets =
                 cad.z_stack_for(p.projected_point()).number_of_z_cells();
         );
         CGAL_precondition(sheet_p < number_of_sheets);
         CGAL_precondition_code(
                 // TODO add sanity checks for sheet_at_min/max wrt sheet (eriC
-                // use "adjacency information" 
+                // use "adjacency information"
         );
 
         this->ptr()->_m_sheet_min = sheet_p;
-        
+
         CGAL_precondition(sheet_q >= 0);
         CGAL_precondition_code(
-                number_of_sheets = 
+                number_of_sheets =
                 cad.z_stack_for(q.projected_point()).number_of_z_cells();
         );
         CGAL_precondition(sheet_q < number_of_sheets);
         CGAL_precondition_code(
                 // TODO add sanity checks for sheet_at_min/max wrt sheet (eriC
-                // use "adjacency information" 
+                // use "adjacency information"
         );
-        
+
         this->ptr()->_m_sheet_max = sheet_q;
-        
+
         CGAL_postcondition(this->_check_surface_arc_interior());
     }
 
@@ -314,10 +314,10 @@ public:
      * It represents the arc on \c surface covertical to \c arc which
      * lies on \c sheet of the xy-monotone subsurface.
      *
-     * \pre arc.curve_end(MIN) = p.projected_point() || 
+     * \pre arc.curve_end(MIN) = p.projected_point() ||
      *      arc.curve_end(MAX) = p.projected_point()
      */
-    Surface_arc_2l(const Projected_arc_2& arc, 
+    Surface_arc_2l(const Projected_arc_2& arc,
                    const Surface_point_2l& p,
                    CGAL::Arr_curve_end z_inf_end_other,
                    const Surface_3& surface,
@@ -326,30 +326,30 @@ public:
                       (arc.curve_end(CGAL::ARR_MIN_END).compare_xy(
                               p.projected_point()
                       ) == CGAL::EQUAL ?
-                       p : 
-                       Surface_point_2l(Rebind()(arc, CGAL::ARR_MIN_END), 
+                       p :
+                       Surface_point_2l(Rebind()(arc, CGAL::ARR_MIN_END),
                                         surface, z_inf_end_other)
                       ),
                       (arc.curve_end(CGAL::ARR_MAX_END).compare_xy(
                               p.projected_point()
                       ) == CGAL::EQUAL ?
-                       p : 
-                       Surface_point_2l(Rebind()(arc, CGAL::ARR_MAX_END), 
+                       p :
+                       Surface_point_2l(Rebind()(arc, CGAL::ARR_MAX_END),
                                         surface, z_inf_end_other)
                       )
              )
         ) {
-        
+
         this->copy_on_write();
 
         CGAL_precondition(arc.is_finite(CGAL::ARR_MIN_END));
         CGAL_precondition(arc.is_finite(CGAL::ARR_MAX_END));
-        
+
         this->ptr()->_m_projected_arc = arc;
 
         this->ptr()->_m_surface = surface;
 
-        bool p_at_min = 
+        bool p_at_min =
             p.projected_point().
             compare_xy(arc.curve_end(CGAL::ARR_MIN_END)) ==
             CGAL::EQUAL;
@@ -358,12 +358,12 @@ public:
                 int number_of_sheets = -1;
                 typedef typename Surface_pair_3::Restricted_cad_3
                 Restricted_cad_3;
-                typedef CGAL::Restricted_cad_3_accessor< Restricted_cad_3 > 
+                typedef CGAL::Restricted_cad_3_accessor< Restricted_cad_3 >
                 Accessor;
                 Restricted_cad_3 cad =
                 Restricted_cad_3::cad_cache()(surface);
         );
-        
+
         CGAL_precondition(sheet >= 0);
         CGAL_precondition_code(
                 Projected_point_2 pt = Accessor::point_in_interior(arc);
@@ -375,16 +375,16 @@ public:
 
         CGAL_precondition(sheet_p >= 0);
         CGAL_precondition_code(
-                number_of_sheets = 
+                number_of_sheets =
                 cad.z_stack_for(p.projected_point()).number_of_z_cells();
         );
         CGAL_precondition(sheet_p < number_of_sheets);
-        
+
         CGAL_precondition_code(
                 // TODO add sanity checks for sheet_at_min/max wrt sheet (eriC
-                // use "adjacency information" 
+                // use "adjacency information"
         );
-        
+
         if (p_at_min) {
             this->ptr()->_m_sheet_min = sheet_p;
             this->ptr()->_m_sheet_max = sheet;
@@ -395,30 +395,30 @@ public:
 
         CGAL_postcondition(this->_check_surface_arc_interior());
     }
-    
+
     /*!\brief
      * Standard constructor for an unbounded arc on xy-monotone part
      * of the surface with z-asympotic behavior at both ends.
      * It represents the arc on \c surface covertical to \c arc which
      * lies on \c sheet of the xy-monotone subsurface.
      */
-    Surface_arc_2l(const Projected_arc_2& arc, 
+    Surface_arc_2l(const Projected_arc_2& arc,
                    CGAL::Arr_curve_end z_inf_end_p,
                    CGAL::Arr_curve_end z_inf_end_q,
                    const Surface_3& surface,
                    int sheet) :
-        Base(Rebind()(arc, 
-                      Surface_point_2l(arc.curve_end(CGAL::ARR_MIN_END), 
+        Base(Rebind()(arc,
+                      Surface_point_2l(arc.curve_end(CGAL::ARR_MIN_END),
                                        surface, z_inf_end_p),
-                      Surface_point_2l(arc.curve_end(CGAL::ARR_MAX_END), 
+                      Surface_point_2l(arc.curve_end(CGAL::ARR_MAX_END),
                                        surface, z_inf_end_q))
         ) {
-        
+
         this->copy_on_write();
-        
+
         CGAL_precondition(arc.is_finite(CGAL::ARR_MIN_END));
         CGAL_precondition(arc.is_finite(CGAL::ARR_MAX_END));
-        
+
         this->ptr()->_m_projected_arc = arc;
 
         this->ptr()->_m_surface = surface;
@@ -427,12 +427,12 @@ public:
                 int number_of_sheets = -1;
                 typedef typename Surface_pair_3::Restricted_cad_3
                 Restricted_cad_3;
-                typedef CGAL::Restricted_cad_3_accessor< Restricted_cad_3 > 
+                typedef CGAL::Restricted_cad_3_accessor< Restricted_cad_3 >
                 Accessor;
                 Restricted_cad_3 cad =
                 Restricted_cad_3::cad_cache()(surface);
         );
-        
+
         CGAL_precondition(sheet >= 0);
         CGAL_precondition_code(
                 Projected_point_2 pt = Accessor::point_in_interior(arc);
@@ -442,7 +442,7 @@ public:
 
         CGAL_precondition_code(
                 // TODO add sanity checks for sheet_at_min/max wrt sheet (eriC
-                // use "adjacency information" 
+                // use "adjacency information"
         );
 
         this->ptr()->_m_sheet = sheet;
@@ -451,12 +451,12 @@ public:
 
         CGAL_postcondition(this->_check_surface_arc_interior());
     }
-    
+
     //!}
 
     //!\name Constructors based on planar rays
     //!@{
-    
+
     /*!\brief
      * Standard constructor for a ray on xy-monotone part
      * of the surface.
@@ -465,65 +465,65 @@ public:
      *
      * \pre arc.curve_end(MIN) = p || arc.curve_end(MAX) == p
      */
-    Surface_arc_2l(const Projected_arc_2& arc, 
+    Surface_arc_2l(const Projected_arc_2& arc,
                    const Surface_point_2l& p,
                    const Surface_3& surface,
                    int sheet, int sheet_p) :
-        Base(Rebind()(arc, 
+        Base(Rebind()(arc,
                       (arc.is_finite(CGAL::ARR_MIN_END) ?
                        p :
-                       Surface_point_2l(Rebind()(arc, CGAL::ARR_MIN_END), 
+                       Surface_point_2l(Rebind()(arc, CGAL::ARR_MIN_END),
                                         surface, sheet)),
-                      (arc.is_finite(CGAL::ARR_MAX_END) ? 
+                      (arc.is_finite(CGAL::ARR_MAX_END) ?
                        p :
                        Surface_point_2l(Rebind()(arc, CGAL::ARR_MAX_END),
                                         surface, sheet)))
         ) {
-        
+
         this->copy_on_write();
-        
+
         this->ptr()->_m_projected_arc = arc;
 
         this->ptr()->_m_surface = surface;
-        
+
         bool p_at_min = arc.is_finite(CGAL::ARR_MIN_END);
         CGAL_precondition_code(
                 bool p_at_max = (arc.is_finite(CGAL::ARR_MAX_END));
         );
         CGAL_precondition(p_at_min || (p_at_max && !(p_at_min && p_at_max)));
-        
+
         CGAL_precondition_code(
                 int number_of_sheets = -1;
                 typedef typename Surface_pair_3::Restricted_cad_3
                 Restricted_cad_3;
-                typedef CGAL::Restricted_cad_3_accessor< Restricted_cad_3 > 
+                typedef CGAL::Restricted_cad_3_accessor< Restricted_cad_3 >
                 Accessor;
                 Restricted_cad_3 cad =
                 Restricted_cad_3::cad_cache()(surface);
         );
-        
+
         CGAL_precondition(sheet >= 0);
         CGAL_precondition_code(
                 Projected_point_2 pt = Accessor::point_in_interior(arc);
-                number_of_sheets = 
+                number_of_sheets =
                 cad.z_stack_for(pt).number_of_z_cells();
         );
         CGAL_precondition(sheet < number_of_sheets);
-        
+
         this->ptr()->_m_sheet = sheet;
-        
+
         CGAL_precondition(sheet_p >= 0);
         CGAL_precondition_code(
-                number_of_sheets = 
+                number_of_sheets =
                 cad.z_stack_for(p.projected_point()).number_of_z_cells();
         );
         CGAL_precondition(sheet_p < number_of_sheets);
-        
+
         CGAL_precondition_code(
                 // TODO add sanity checks for sheet_at_min/max wrt sheet (eriC)
                 // use "adjacency information"
         );
-        
+
         if (p_at_min) {
             this->ptr()->_m_sheet_min = sheet_p;
             this->ptr()->_m_sheet_max = sheet;
@@ -542,50 +542,50 @@ public:
      * It represents the arc on \c surface covertical to \c arc which
      * lies on \c sheet of the xy-monotone subsurface
      */
-    Surface_arc_2l(const Projected_arc_2& arc, 
+    Surface_arc_2l(const Projected_arc_2& arc,
                    CGAL::Arr_curve_end z_inf_end,
                    const Surface_3& surface,
                    int sheet) :
-        Base(Rebind()(arc, 
-                      (arc.is_finite(CGAL::ARR_MIN_END) ? 
-                       Surface_point_2l(arc.curve_end(CGAL::ARR_MIN_END), 
+        Base(Rebind()(arc,
+                      (arc.is_finite(CGAL::ARR_MIN_END) ?
+                       Surface_point_2l(arc.curve_end(CGAL::ARR_MIN_END),
                                         surface, z_inf_end) :
                        Surface_point_2l(Rebind()(arc, CGAL::ARR_MIN_END),
                                         surface, sheet)),
-                      (arc.is_finite(CGAL::ARR_MAX_END) ? 
-                       Surface_point_2l(arc.curve_end(CGAL::ARR_MAX_END), 
+                      (arc.is_finite(CGAL::ARR_MAX_END) ?
+                       Surface_point_2l(arc.curve_end(CGAL::ARR_MAX_END),
                                         surface, z_inf_end) :
-                       Surface_point_2l(Rebind()(arc, CGAL::ARR_MAX_END), 
+                       Surface_point_2l(Rebind()(arc, CGAL::ARR_MAX_END),
                                         surface, sheet)))
         ) {
-        
+
         this->copy_on_write();
-        
+
         bool min_finite = (arc.is_finite(CGAL::ARR_MIN_END));
         CGAL_precondition_code(
                 bool max_finite = (arc.is_finite(CGAL::ARR_MAX_END));
         );
-        CGAL_precondition(min_finite || max_finite && 
+        CGAL_precondition(min_finite || max_finite &&
                           !(!min_finite && !max_finite));
-        
+
         this->ptr()->_m_projected_arc = arc;
-        
+
         this->ptr()->_m_surface = surface;
 
         CGAL_precondition_code(
                 int number_of_sheets = -1;
                 typedef typename Surface_pair_3::Restricted_cad_3
                 Restricted_cad_3;
-                typedef CGAL::Restricted_cad_3_accessor< Restricted_cad_3 > 
+                typedef CGAL::Restricted_cad_3_accessor< Restricted_cad_3 >
                 Accessor;
                 Restricted_cad_3 cad =
                 Restricted_cad_3::cad_cache()(surface);
         );
-        
+
         CGAL_precondition(sheet >= 0);
         CGAL_precondition_code(
                 Projected_point_2 pt = Accessor::point_in_interior(arc);
-                number_of_sheets = 
+                number_of_sheets =
                 cad.z_stack_for(pt).number_of_z_cells();
         );
         CGAL_precondition(sheet < number_of_sheets);
@@ -596,7 +596,7 @@ public:
                 // TODO add sanity checks for sheet_at_min/max wrt sheet (eriC)
                 // use "adjacency information"
         );
-        
+
         this->ptr()->_m_sheet_min = sheet;
         this->ptr()->_m_sheet_max = sheet;
 
@@ -604,40 +604,40 @@ public:
     }
 
     //!@}
-    
+
     //!\name Constructors based on planar branches
     //!@{
-    
+
     /*!\brief
      * Standard constructor for a branch on xy-monotone part
      * of the surface.
      * It represents the arc on \c surface covertical to \c arc which
      * lies on \c sheet of the xy-monotone subsurface.
      */
-    Surface_arc_2l(const Projected_arc_2& arc, 
+    Surface_arc_2l(const Projected_arc_2& arc,
                    const Surface_3& surface,
                    int sheet) :
         Base(Rebind()(arc,
-                      Surface_point_2l(Rebind()(arc, CGAL::ARR_MIN_END), 
+                      Surface_point_2l(Rebind()(arc, CGAL::ARR_MIN_END),
                                        surface, sheet),
                       Surface_point_2l(Rebind()(arc, CGAL::ARR_MAX_END),
                                        surface, sheet))
         ) {
-        
+
         this->copy_on_write();
-        
+
         CGAL_precondition(!arc.is_finite(CGAL::ARR_MIN_END));
         CGAL_precondition(!arc.is_finite(CGAL::ARR_MAX_END));
-        
+
         this->ptr()->_m_projected_arc = arc;
-        
+
         this->ptr()->_m_surface = surface;
 
         CGAL_precondition_code(
                 int number_of_sheets = -1;
                 typedef typename Surface_pair_3::Restricted_cad_3
                 Restricted_cad_3;
-                typedef CGAL::Restricted_cad_3_accessor< Restricted_cad_3 > 
+                typedef CGAL::Restricted_cad_3_accessor< Restricted_cad_3 >
                 Accessor;
                 Restricted_cad_3 cad =
                 Restricted_cad_3::cad_cache()(surface);
@@ -645,35 +645,37 @@ public:
         CGAL_precondition(sheet >= 0);
         CGAL_precondition_code(
                 Projected_point_2 pt = Accessor::point_in_interior(arc);
-                number_of_sheets = 
+                number_of_sheets =
                 cad.z_stack_for(pt).number_of_z_cells();
         );
-        
+        CGAL_precondition(sheet < number_of_sheets);
+
+
         this->ptr()->_m_sheet = sheet;
-        
+
         this->ptr()->_m_sheet_min = sheet;
         this->ptr()->_m_sheet_max = sheet;
 
         CGAL_postcondition(this->_check_surface_arc_interior());
     }
-    
+
     //!@}
 
-    //!\name Constructors for vertical arcs 
+    //!\name Constructors for vertical arcs
     //!@{
-    
+
     // Remark for vertical arcs:
-    // Their base is not an arc, i.e., the projection of the arc is a 
-    // single point, so we have to deal with it throughout 
-    // the whole class, i.e., 
+    // Their base is not an arc, i.e., the projection of the arc is a
+    // single point, so we have to deal with it throughout
+    // the whole class, i.e.,
     // This point must be used, as the default constructed Base is useless.
-    
+
     //! represents a bounded vertical arc
     Surface_arc_2l(const Surface_point_2l& p,
                    const Surface_point_2l& q,
                    const Surface_3& surface) :
         Base(Rep(p, q, surface)) {
-        
+
         CGAL_precondition(p.projected_point().
                           compare_xy(q.projected_point()) == CGAL::EQUAL);
         CGAL_precondition_code(
@@ -693,12 +695,12 @@ public:
     Surface_arc_2l(const Surface_point_2l& p,
                    CGAL::Arr_curve_end z_inf_end,
                    const Surface_3& surface) :
-        Base(Rep(p, 
-                 Surface_point_2l(p.projected_point(), surface, z_inf_end), 
+        Base(Rep(p,
+                 Surface_point_2l(p.projected_point(), surface, z_inf_end),
                  surface
              )
         ) {
-        
+
         CGAL_precondition_code(
                 typedef typename Surface_pair_3::Restricted_cad_3
                 Restricted_cad_3;
@@ -715,8 +717,8 @@ public:
     //! represents a vertical branch
     Surface_arc_2l(const Projected_point_2& p,
                    const Surface_3& surface) :
-        Base(Rep(Surface_point_2l(p, surface, CGAL::ARR_MIN_END), 
-                 Surface_point_2l(p, surface, CGAL::ARR_MAX_END), 
+        Base(Rep(Surface_point_2l(p, surface, CGAL::ARR_MIN_END),
+                 Surface_point_2l(p, surface, CGAL::ARR_MAX_END),
                  surface
              )
         ) {
@@ -731,18 +733,18 @@ public:
 
         CGAL_postcondition(this->_check_surface_arc_interior());
     }
-    
+
     //!@}
 
 protected:
     //!\name Constructors for rebind/replace_endpoints
     //!@{
-    
+
     /*!\brief
      * constructs an arc from a given represenation
      */
-    Surface_arc_2l(Rep rep) : 
-        Base(rep) { 
+    Surface_arc_2l(Rep rep) :
+        Base(rep) {
     }
 
     //!@}
@@ -771,7 +773,7 @@ public:
         CGAL_precondition(!this->is_z_vertical());
         if (!this->ptr()->_m_projected_arc) {
             CGAL_precondition(dynamic_cast< const Kernel_arc_2* >(this));
-            this->ptr()->_m_projected_arc = 
+            this->ptr()->_m_projected_arc =
                 typename Kernel_arc_2::Rebind()(
                         *dynamic_cast< const Kernel_arc_2* >(this)
                 );
@@ -817,18 +819,18 @@ public:
         CGAL_precondition(
                 this->projected_arc().compare_y_at_x(pt) == CGAL::EQUAL
         );
-        if (this->sheet() != this->sheet(CGAL::ARR_MIN_END) && 
-            this->projected_arc().is_finite(CGAL::ARR_MIN_END) && 
+        if (this->sheet() != this->sheet(CGAL::ARR_MIN_END) &&
+            this->projected_arc().is_finite(CGAL::ARR_MIN_END) &&
             this->projected_arc().curve_end(CGAL::ARR_MIN_END) == pt) {
             return this->ptr()->_m_sheet_min;
-        } else if (this->sheet() != this->sheet(CGAL::ARR_MAX_END) && 
-                   this->projected_arc().is_finite(CGAL::ARR_MAX_END) && 
+        } else if (this->sheet() != this->sheet(CGAL::ARR_MAX_END) &&
+                   this->projected_arc().is_finite(CGAL::ARR_MAX_END) &&
                    this->projected_arc().curve_end(CGAL::ARR_MAX_END) == pt) {
             return this->ptr()->_m_sheet_max;
         }
         return this->ptr()->_m_sheet;
     }
-    
+
     /*!\brief
      * return whether arc is z-vertical
      */
@@ -846,7 +848,7 @@ public:
         CGAL_precondition(this->ptr()->_m_projected_point);
         return *(this->ptr()->_m_projected_point);
     }
-    
+
     //!@}
 
 
@@ -854,20 +856,20 @@ protected:
     //!\name Proteced members
     //!@{
 
-    /*!\brief 
+    /*!\brief
      * replaces this arc's end-points by \c src and \c tgt with arcnos
      * \c arcno_min and \c arcno_max.
-     * 
-     * new curve ends are sorted lexicographical in case of need; 
+     *
+     * new curve ends are sorted lexicographical in case of need;
      * all preconditions must be checked by the caller
      */
-    std::pair< Kernel_arc_2, CGAL::Comparison_result > 
+    std::pair< Kernel_arc_2, CGAL::Comparison_result >
     _replace_endpoints(
             const Surface_point_2l& p1, const Surface_point_2l& p2,
             int arcno1, int arcno2,
             int sheet1, int sheet2) const {
-        
-        CERR("\n_sa_2l_replace_endpoints\n");    
+
+        CERR("\n_sa_2l_replace_endpoints\n");
 
         if (is_z_vertical()) {
             Rep rep(*this->ptr());
@@ -880,8 +882,8 @@ protected:
                 rep._m_max = p2;
             }
             return std::make_pair(Kernel_arc_2(rep), cmp);
-        } 
-        
+        }
+
         // else
         std::pair< Kernel_arc_2, CGAL::Comparison_result >
             replaced = Base::_replace_endpoints(
@@ -891,16 +893,16 @@ protected:
         if (replaced.second == CGAL::LARGER) {
             std::swap(sheet1, sheet2);
         }
-        
+
         if (sheet1 >= 0) {
             replaced.first.ptr()->_m_sheet_min = sheet1;
         }
         if (sheet2 >= 0) {
             replaced.first.ptr()->_m_sheet_max = sheet2;
         }
-        
+
         replaced.first.ptr()->_m_projected_arc = boost::none;
-        
+
         return replaced;
     }
 
@@ -909,9 +911,9 @@ protected:
 public:
     //!\name IO
     //!@{
-    
+
     //! write represenation to \c os
-    void write(std::ostream& os) const { 
+    void write(std::ostream& os) const {
         os << "Arc_2l@" << this->id() << "(";
         if (this->is_z_vertical()) {
             os << "Point_2(" << this->projected_point() << "), ";
@@ -922,9 +924,9 @@ public:
             os << "Arc_2(" << this->projected_arc() << "), ";
             os << "MinPoint(" << this->ptr()->_m_min << "), ";
             os << "MaxPoint(" << this->ptr()->_m_max << "), ";
-            os << "Surface(" << this->surface() << ", " 
+            os << "Surface(" << this->surface() << ", "
                << this->sheet(CGAL::ARR_MIN_END)
-               << ", " << this->sheet() 
+               << ", " << this->sheet()
                << ", " << this->sheet(CGAL::ARR_MAX_END)
                << ")";
         }
@@ -940,29 +942,29 @@ public:
     friend class Curved_kernel_via_analysis_2l::Trim_2;
     friend class Curved_kernel_via_analysis_2l::Split_2;
     friend class Curved_kernel_via_analysis_2l::Merge_2;
-   
+
     //! for replace endpoints
     friend class Self::Rebind;
-    
+
     //! for rebind
     friend class Self::Rebind::Other;
-    
+
     //!@}
-};    
+};
 
 /*!\relates Surface_arc_2l
- * \brief 
+ * \brief
  * output operator
  */
 template < class CurvedKernelViaAnalysis_2l, class SurfacePair_3, class Rep_ >
 std::ostream& operator<< (
         std::ostream& os,
-        const 
-        Surface_arc_2l< CurvedKernelViaAnalysis_2l, SurfacePair_3, Rep_ >& 
+        const
+        Surface_arc_2l< CurvedKernelViaAnalysis_2l, SurfacePair_3, Rep_ >&
         arc) {
-    
+
     arc.write(os);
-    
+
     return os;
 }
 
