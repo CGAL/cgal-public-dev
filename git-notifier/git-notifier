@@ -609,6 +609,7 @@ if report:
 
     stable_heads = new & old
     Config.allchanges = Config.allchanges & stable_heads
+    Config.mergediffs = Config.mergediffs & stable_heads
 
     # Check tags.
     old = set(cache.tags.keys())
@@ -624,7 +625,9 @@ if report:
     old = set(cache.revs)
     new = set(current.revs)
     new_revs = (new - old)
+    log("Report path current, new_revs")
     reportPath(current, new_revs)
+    log("Reported")
 
     # Do reports for the heads we want to see everything for.
     for head in stable_heads:
@@ -635,11 +638,15 @@ if report:
         if head in Config.allchanges:
             # Want to see all commits for this head, even if already reported
             # in the past for some other. So we record these separately.
+            log("Report path allchanges, path, head=%s" % head)
             reportPath(current, path, subject_head=head)
+            log("Reported")
         if head in Config.mergediffs:
             # Want to see all commits for this head, even if already reported
             # in the past for some other. So we record these separately.
+            log("Report path mergediffs, path, head=%s" % head)
             reportPath(current, path, subject_head=head)
+            log("Reported")
         else:
             # Just send a summary for heads that now include some new stuff.
             if len(set(path) - new_revs):
