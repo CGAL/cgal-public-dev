@@ -12,6 +12,10 @@ import subprocess
 import tempfile
 import time
 import re
+import smtplib
+from email.parser import Parser
+from email.mime.text import MIMEText
+import email
 
 VERSION   = "0.41-1"  # Filled in automatically.
 
@@ -311,13 +315,15 @@ def sendMail(out, fname):
 
     if Config.debug:
         for line in open(fname):
-            print "    |", line,
+            print "    |", line
         print ""
     else:
-        stdin = subprocess.Popen("/usr/sbin/sendmail -t -f git@scm.cgal.org", shell=True, stdin=subprocess.PIPE).stdin
-        for line in open(fname):
-            print >>stdin, line,
-        stdin.close()
+        f = open(fname)
+        msg = email.message_from_file(f)
+	f.close()
+        s = smtplib.SMTP('localhost')
+        s.sendmail(msg['from'] , msg['to'], msg.as_string())
+        s.quit()
 
     # Wait a bit in case we're going to send more mails. Otherwise, the mails
     # get sent back-to-back and are likely to end up with identical timestamps,
@@ -407,7 +413,7 @@ def sendChangeMail(rev, frommer, replyto, subject, heads, packages, show_cmd, di
 
     if tname:
         for line in open(tname):
-            print >>out, line,
+            print >>out, line
 
     print >>out, footer
 
@@ -553,9 +559,10 @@ def summaryPath(current, revs, force=False, subject_head=None):
     # next strip off path after first "/"
     packages = [re.sub(r'\/.*', r'', p) for p in packages]
     packages = sorted(set(packages))
+    headhash = git("show '--pretty=format:%%h' -s %s" % revs[-1])[0]
     subjectpackages = packages if len(packages) < 4 else ["--multiple packages--"]
 
-    subject = "Branch '%s' now includes commits in [%s] (%s)" % (cutMiddle(subject_head), ", ".join(subjectpackages), revs[-1])
+    subject = "Branch '%s' now includes commits in [%s] (%s)" % (cutMiddle(subject_head), ", ".join(subjectpackages), headhash)
 
     (out, fname) = generateMailHeader(frommer, subject, replyto)
 
@@ -611,13 +618,12 @@ def summaryPath(current, revs, force=False, subject_head=None):
             print >>out, SeparatorThin
         else:
             print >>out, line
-    print >>out
 
     print >>out, Separator
 
     if tname:
         for line in open(tname):
-            print >>out, line
+            print >>out, line,
 
     print >>out, footer
 
