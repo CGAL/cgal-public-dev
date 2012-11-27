@@ -533,6 +533,103 @@ def reportPath(current, revs, force=False, subject_head=None):
     for rev in revs:
         commit(current, rev, force=force, subject_head=subject_head)
 
+# Sends a commit notifications for a set of revisions.
+def summaryPath(current, revs, force=False, subject_head=None):
+    if not revs:
+        return
+    if not subject_head:
+        return
+
+    # Sort updates by time.
+    #revs = git("rev-list --no-walk --reverse --date-order %s" % " ".join(revs))
+
+    # Summary with
+    # From: $GIT_NAME <$GIT_USER@users.gforge.inria.fr>
+    frommer = sender
+    replyto = frommer;
+    packages = git("show --pretty='format:' --name-only %s" % " ".join(revs), all=False)
+    # each file in root dir (i.e. without "/") will be replaced by "<root>"
+    packages = [re.sub(r'^(?!.*\/).*$', r'<root>', p) for p in packages]
+    # next strip off path after first "/"
+    packages = [re.sub(r'\/.*', r'', p) for p in packages]
+    packages = sorted(set(packages))
+    subjectpackages = packages if len(packages) < 4 else ["--multiple packages--"]
+
+    subject = "Branch '%s' now includes commits in [%s] (%s)" % (cutMiddle(subject_head), ", ".join(subjectpackages), revs[-1])
+
+    (out, fname) = generateMailHeader(frommer, subject, replyto)
+
+    merge_diff = "--cc"
+    if subject_head in Config.allchanges or subject_head in Config.mergediffs:
+        merge_diff = "-m"
+
+    show_cmd = "show --no-color --find-copies-harder --format='format:(<A HREF=\"%s\">%%h</A>) %%s ---%%an---' -s %s..%s" % (Config.link.replace("%s", "%H"), revs[0] , revs[-1])
+    diff_cmd = "diff-tree --root --patch-with-stat --no-color --find-copies-harder --ignore-space-at-eol %s %s %s" % (merge_diff, revs[0], revs[-1])
+    stat_cmd = "diff-tree --root --stat --no-color --find-copies-harder --ignore-space-at-eol %s %s" % (revs[0], revs[-1])
+
+    print >>out, mailTag("On branch", subject_head)
+    print >>out
+
+    if packages:
+        print >>out, mailTag("Packages", ", ".join(packages))
+        print >>out
+
+    if Config.link:
+        url = Config.link.replace("%s", revs[-1])
+        url = url.replace("%r", os.path.basename(os.getcwd()))
+        print >>out, mailTag("Link", url)
+        print >>out
+
+    footer = ""
+    show = git(show_cmd)
+
+    for line in show:
+        if NoDiff in line:
+            break
+
+        if NoMail in line:
+            return
+
+    else:
+        (tmp, tname) = makeTmp()
+        diff = git(diff_cmd, stdout_to=tmp)
+        tmp.close()
+
+        size = os.path.getsize(tname)
+
+        if size > Config.maxdiffsize:
+            (tmp, tname) = makeTmp()
+            diff = git(stat_cmd, stdout_to=tmp)
+            tmp.close()
+            footer = "\nDiff suppressed because of size. To see it, use:\n\n    git %s" % diff_cmd
+
+    print >>out, Separator
+
+    print >>out, "Merged commits:"
+    for line in git(show_cmd, all=True):
+        if line == "---":
+            print >>out, SeparatorThin
+        else:
+            print >>out, line
+    print >>out
+
+    print >>out, Separator
+
+    if tname:
+        for line in open(tname):
+            print >>out, line
+
+    print >>out, footer
+
+    if Config.debug:
+        print >>out, "-- "
+        print >>out, "debug: show_cmd = git %s" % show_cmd
+        print >>out, "debug: diff_cmd = git %s" % diff_cmd
+        print >>out, "debug: stat_cmd = git %s" % stat_cmd
+
+    sendMail(out, fname)
+
+
 # Sends a summary mail for a set of revisions.
 def headMoved(head, path):
     log("Head moved: %s -> %s" % (head, path[-1]))
@@ -593,6 +690,7 @@ if Config.manual:
 
     revs = git(["rev-list", "--reverse --date-order", path[1], "^%s" % path[0]])
     reportPath(current, revs, force=True)
+    #summaryPath(current, path, False, "master")
 
     sys.exit(0)
 
@@ -640,11 +738,13 @@ if report:
             # in the past for some other. So we record these separately.
             log("Reporting path allchanges, path, head=%s" % head)
             reportPath(current, path, subject_head=head)
+            # TODO add config option summaryPath(current, path, False, head)
         if head in Config.mergediffs:
             # Want to see all commits for this head, even if already reported
             # in the past for some other. So we record these separately.
             log("Reporting path mergediffs, path, head=%s" % head)
-            reportPath(current, path, subject_head=head)
+            # TODO add config option reportPath(current, path, subject_head=head)
+            summaryPath(current, path, False, head)
         else:
             # Just send a summary for heads that now include some new stuff.
             if len(set(path) - new_revs):
