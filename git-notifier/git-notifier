@@ -742,7 +742,7 @@ if report:
         if head in Config.mergediffs:
             # Want to see all commits for this head, even if already reported
             # in the past for some other. So we record these separately.
-            log("Reporting path mergediffs, path, head=%s" % head)
+            log("Summarizing mergediffs, path, head=%s" % head)
             # TODO add config option reportPath(current, path, subject_head=head)
             summaryPath(current, path, False, head)
         else:
