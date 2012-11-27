@@ -314,7 +314,7 @@ def sendMail(out, fname):
             print "    |", line,
         print ""
     else:
-        stdin = subprocess.Popen("/usr/sbin/sendmail -t", shell=True, stdin=subprocess.PIPE).stdin
+        stdin = subprocess.Popen("/usr/sbin/sendmail -t -f git@scm.cgal.org", shell=True, stdin=subprocess.PIPE).stdin
         for line in open(fname):
             print >>stdin, line,
         stdin.close()
