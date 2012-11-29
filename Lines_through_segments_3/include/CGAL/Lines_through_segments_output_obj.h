@@ -32,6 +32,7 @@
 #include <CGAL/Lines_through_segments_arr_ext_dcel.h>
 
 #include <boost/array.hpp>
+#include <boost/variant.hpp>
 
 /*************************************************************
  * This file contains different classes, each represents output object:
