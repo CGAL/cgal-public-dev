@@ -42,10 +42,12 @@
 // - Quadratic_program_from_sparse_iterators
 // - Quadratic_program
 // - Quadratic_program_from_mps
-// - Nonngative_quadratic_program_from_iterators
-// - Nonngative_quadratic_program_from_sparse_iterators
+// - Nonnegative_quadratic_program_from_iterators
+// - Nonnegative_quadratic_program_from_sparse_iterators
 // - Linear_program_from_iterators
-// - Nonngative_linear_program_from_iterators
+// - Linear_program_from_sparse_iterators
+// - Nonnegative_linear_program_from_iterators
+// - Nonnegative_linear_program_from_sparse_iterators
 
 // for convenience, every model is actually a model of the
 // concept QuadraticProgramInterface:
