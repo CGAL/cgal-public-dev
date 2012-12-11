@@ -60,12 +60,11 @@ namespace QP_functions_detail {
     // diagnostics tells us this
     //
     // auxiliary LP type
-    // TAG: 0SWITCH: make it a SPARSE auxiliary program	
+    // TODO: make it a real SPARSE auxiliary program	
     typedef typename std::iterator_traits<typename Ar::C_iterator>::value_type C_value;
     typedef typename std::iterator_traits<typename Ar::B_iterator>::value_type B_value;
     typedef Const_oneset_iterator <C_value>  C_iterator;
     typedef Const_oneset_iterator <B_value>  B_iterator;
-    //typedef Nonnegative_linear_program_from_iterators <typename Ar::A_iterator, B_iterator, typename Ar::R_iterator, C_iterator> LP;
       
     typedef  typename QP_model_detail::Sparse_iterator_adaptor<Ar, typename Ar::Is_sparse> Sparse_adaptor;
     typedef Nonnegative_linear_program_from_sparse_iterators <typename Sparse_adaptor::A_sparse_itertor, B_iterator, typename Ar::R_iterator, C_iterator> LP;
@@ -74,7 +73,6 @@ namespace QP_functions_detail {
     
     //  auxiliary LP
     LP lp (ar.get_n(), ar.get_m(), sparse_adaptor.get_a_sparse(ar), B_iterator(0), ar.get_r(), C_iterator(0));
-    //LP lp (ar.get_n(), ar.get_m(), ar.get_a(), B_iterator(0), ar.get_r(), C_iterator(0));
 
     //  solver Tags
     typedef QP_solver_impl::QP_tags<
@@ -261,22 +259,8 @@ namespace QP_functions_detail {
     typename Quadratic_program2::B_iterator b2 = qp2.get_b();
     for (int i=0; i<m; ++i, ++b1, ++b2) {
       if (*b1 != *b2) {
-        /*
-        // TAG: DEBUG
-        std::cerr.precision(40);
-        */
-        
         std::cerr << "Equality test fails with b[" << i << "]: "
         << *b1 << " vs. " <<  *b2 << std::endl;
-        
-        /*
-        // TAG: DEBUG
-        std::cerr << "type1: " << typeid(typename std::iterator_traits<typename Quadratic_program1::B_iterator>::value_type).name() << std::endl;
-        std::cerr << "type2: " << typeid(typename std::iterator_traits<typename Quadratic_program2::B_iterator>::value_type).name() << std::endl;
-        std::cerr << "Equality: " << (*b1 != *b2) << std::endl;
-        std::cerr << "Difference: " << (*b1 - *b2) << std::endl;
-        */
-        
         return_val = false;
       }
     }

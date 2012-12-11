@@ -96,24 +96,11 @@ ET  QP_solver<Q, ET, Tags>::multiply__A_ixO(int row) const
   ET value = et0;
   ET temp = et0;
   
-  // TAG: 1SWITCH
-  
   A_sparse_column_iterator it_begin, it_end, it;
   
   for (int i = 0; i < qp_n; ++i) {
-  
-  
-    
-  
-    // TAG: 1SWITCH
-    // TAG: INEFFICIENT binary search  
-    //temp = et0;
     it_begin = (*(qp_A_sparse+i)).begin();
     it_end = (*(qp_A_sparse+i)).end();
-    
-    // TAG: TRY binary search
-    //it = find_in_sparse_column<A_sparse_column_iterator>(it_begin, it_end, row);
-    
     while (it_begin != it_end && it_begin->first < row) {
       ++it_begin;
     }
@@ -127,15 +114,11 @@ ET  QP_solver<Q, ET, Tags>::multiply__A_ixO(int row) const
     // nonzero.
     switch (x_O_v_i[i]) {
       case UPPER:
-        // TAG: 1SWITCH
         value += static_cast<ET>(*(qp_u+i)) * static_cast<ET>((it_begin != it_end && it_begin->first == row) ? it_begin->second : et0);
-        //value += static_cast<ET>(*(qp_u+i)) * static_cast<ET>(*((*(qp_old_A+i))+row));
         break;
       case LOWER:
       case FIXED:
-        // TAG: 1SWITCH
         value += static_cast<ET>(*(qp_l+i)) * static_cast<ET>((it_begin != it_end && it_begin->first == row) ? it_begin->second : et0);
-        //value += static_cast<ET>(*(qp_l+i)) * static_cast<ET>(*((*(qp_old_A+i))+row));
         break;
       case BASIC:
         CGAL_qpe_assertion(false);
@@ -208,7 +191,6 @@ multiply__A_CxN_O(Value_iterator out) const
   // initialize with zero vector:
   std::fill_n(out, C.size(), et0);
   
-  // TAG: 1SWITCH
   A_sparse_column_iterator it;
   A_sparse_column_iterator it_end;
   
@@ -221,8 +203,7 @@ multiply__A_CxN_O(Value_iterator out) const
   for (int i = 0; i < qp_n; ++i) {
     if (!is_basic(i)) {
       const ET x_i = nonbasic_original_variable_value(i);
-      // TAG: 1SWITCH
-      //const A_column a_col = *(qp_old_A+i);
+
       it = (*(qp_A_sparse+i)).begin();
       it_end = (*(qp_A_sparse+i)).end();
       while (it != it_end) {
@@ -260,8 +241,6 @@ multiply__2D_OxN_O(Value_iterator out) const
   // initialize with zero vector:
   std::fill_n(out, B_O.size(), et0);
   
-  // TAG: 0SWITCH
-  
   for (int row_it = 0; row_it < qp_n; ++row_it, ++out) {
     D_sparse_column_iterator it = (*(qp_D_sparse+row_it)).begin();
     D_sparse_column_iterator it_end = (*(qp_D_sparse+row_it)).end();
@@ -273,18 +252,6 @@ multiply__2D_OxN_O(Value_iterator out) const
       ++it;
     }
   }
-  
-  /*
-  for (int row_it = 0; row_it < qp_n; ++row_it, ++out) {
-    D_pairwise_accessor d_row(qp_old_D, row_it);
-    for (int i = 0; i < qp_n; ++i)
-      if (!is_basic(i)) {
-        const ET value = nonbasic_original_variable_value(i);
-        *out += d_row(i) * value;
-      }
-  }
-  */
-  
 }
 
 // Computes r_{S_B}:= A_{S_B, N_O} x_{N_O}.
@@ -298,7 +265,6 @@ multiply__A_S_BxN_O(Value_iterator out) const
   // initialize with zero vector:
   std::fill_n(out, S_B.size(), et0);
   
-  // TAG: 1SWITCH
   Indices in_S_B(qp_m, -1); // TAG: TODO maybe make this global
   int i = 0;
   for (Index_const_iterator S_B_it = S_B.begin(); S_B_it != S_B.end(); ++S_B_it) {
@@ -312,8 +278,7 @@ multiply__A_S_BxN_O(Value_iterator out) const
   for (int i = 0; i < qp_n; ++i) {
     if (!is_basic(i)) {
       const ET x_i = nonbasic_original_variable_value(i);
-      
-      // TAG: 1SWITCH
+
       // reset A iterators
       it = (*(qp_A_sparse+i)).begin();
       it_end = (*(qp_A_sparse+i)).end();
@@ -323,13 +288,6 @@ multiply__A_S_BxN_O(Value_iterator out) const
         }
         ++it;
       }
-      /*
-      //const A_column a_col = *(qp_old_A+i);
-      Value_iterator out_it = out;
-      for (Index_const_iterator row_it = S_B.begin(); row_it != S_B.end(); ++row_it, ++out_it) {
-        *out_it += x_i * static_cast<ET>(*(a_col+ *row_it));
-      }
-      */
     }
   }
 }

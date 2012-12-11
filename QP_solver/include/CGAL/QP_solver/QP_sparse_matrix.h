@@ -45,14 +45,6 @@ struct Conditional_pair_inc : public std::binary_function<int,
                                                      std::pair<int, int>,
                                                      std::pair<int, int> > {
   std::pair<int,int> operator() (int k, std::pair<int,int> a) const  {
-    
-    // TAG: DEBUG
-    //std::cout << "Hk: " << k << ", a.first: " << a.first << ", a.second: " << a.second << std::endl;
-      
-    //std::pair<int, int> test = (a.first < k ? a : std::pair<int,int>(a.first+1, a.second));
-    
-    //std::cout << "JHafter" << std::endl;
-  
     return (a.first < k ? a : std::pair<int,int>(a.first+1, a.second));
   }
 };

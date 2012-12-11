@@ -88,13 +88,7 @@ class Quadratic_program_from_iterators
 {
 public:
   // types
-  // TAG: 0SWITCH
-  typedef A_it   A_iterator;
-  /*typedef boost::transform_iterator<
-            Map_from_iterator<A_it>,
-            boost::counting_iterator<int,boost::use_default,int> >
-          A_iterator;*/
-  
+  typedef A_it   A_iterator;  
   typedef B_it   B_iterator; 
   typedef R_it   R_iterator;
   typedef FL_it  FL_iterator;
@@ -122,8 +116,7 @@ public:
   // construction
   Quadratic_program_from_iterators (
      int n, int m, // number of variables / constraints
-     const A_it& a, // TAG: 0SWITCH
-     //const A_it& a,                               
+     const A_it& a,
      const B_it& b,
      const R_it& r,
      const FL_it& fl,
@@ -134,7 +127,6 @@ public:
      const C_it& c,
      const C_entry& c0 = C_entry(0))
     : n_ (n), m_ (m),
-      // TAG: 0SWITCH
       a_it(a),
       b_it (b), r_it (r), fl_it (fl), l_it (l), 
       fu_it (fu), u_it (u), d_it (d), c_it (c), c_0 (c0)    

@@ -98,8 +98,7 @@ public:
   { return entry( row, column, Is_LP()); }
   
   
-  // TAG: DEBUG
-  
+  // DEBUG function (assumes gmpzf ET)
   int report_largest_GMPZF() const {
     int tmp;
     int ret = 0;
@@ -116,7 +115,7 @@ public:
     return CGAL::QP_solver_debug::timer.bit_size = ret;
   }
   
-  // TAG: DEBUG
+  // DEBUG function
   int report_matrix_size() const {
       return CGAL::QP_solver_debug::timer.matrix_size = size_E_cup_SN_+size_BO_;
   }
@@ -145,7 +144,7 @@ public:
     
     
   /*
-  // TAG: YVES delete
+  // TAG: DEPRECATED
   // vector-matrix multiplication ( x^T = u^T M )
   template < class ForwardIterator, class OutputIterator >  inline
   void  multiply_transposed( ForwardIterator u_l_it, ForwardIterator u_x_it,
@@ -476,8 +475,9 @@ public:
                   ForwardIterator y_x_it, const ET& z)
   {
     
-    // TAG: DEBUG
-    ++CGAL::QP_solver_debug::timer.counter_Oin;
+    CGAL_qpe_debug {
+      ++CGAL::QP_solver_debug::timer.counter_Oin;
+    }
   
     // assert QP case
     Assert_compile_time_tag( Tag_false(), Is_LP());
@@ -538,8 +538,9 @@ public:
   leave_slack( ForwardIterator u_x_it)
   {
     
-    // TAG: DEBUG
-    ++CGAL::QP_solver_debug::timer.counter_Sout;
+    CGAL_qpe_debug {
+      ++CGAL::QP_solver_debug::timer.counter_Sout;
+    }
   
     // assert QP case
     Assert_compile_time_tag( Tag_false(), Is_LP());
@@ -600,8 +601,9 @@ public:
   {
   
     
-    // TAG: DEBUG
-    ++CGAL::QP_solver_debug::timer.counter_O_O;
+    CGAL_qpe_debug {
+      ++CGAL::QP_solver_debug::timer.counter_O_O;
+    }
   
     // assert LP case or phase I
     CGAL_qpe_assertion( is_LP || is_phaseI);
@@ -670,8 +672,9 @@ public:
   {
   
     
-    // TAG: DEBUG
-    ++CGAL::QP_solver_debug::timer.counter_S_S;
+    CGAL_qpe_debug {
+      ++CGAL::QP_solver_debug::timer.counter_S_S;
+    }
     
     // assert LP case or phase I
     CGAL_qpe_assertion( is_LP || is_phaseI);
@@ -738,8 +741,9 @@ public:
                                     ForwardIterator2 u_x_it)
   {
     
-    // TAG: DEBUG
-    ++CGAL::QP_solver_debug::timer.counter_O_S;
+    CGAL_qpe_debug {
+      ++CGAL::QP_solver_debug::timer.counter_O_S;
+    }
   
     // assert LP case or phase I
     CGAL_qpe_assertion( is_LP || is_phaseI);
@@ -1012,23 +1016,11 @@ public:
     
     // compute u^T v
     NT sum = NT( 0);
-        
-    // TAG: DEBUG
-    /*
-    std::cout << "INV inner_product_l" << std::endl;
-    std::cout << "n: " << n << std::endl;
-    */
+      
             
     for ( unsigned int count = 0; count < n; ++count, ++u_it, ++v_it) {
       sum += NT(*u_it) * NT(*v_it);
-            
-      // TAG: DEBUG
-      //std::cout << "(" << NT(*u_it) << "," << NT(*v_it) << "), ";
     }
-        
-    // TAG: DEBUG
-    //std::cout << std::endl;
-    
     return sum;
   }
     
@@ -1201,8 +1193,9 @@ void  QP_basis_inverse<ET_,Is_LP_>::
 update_entry( ET& entry, const ET& d_new, const ET& y, const ET& d_old) const
 {
 
-  // TAG: DEBUG
-//  ++CGAL::QP_solver_debug::timer.counter_integral_division;
+  CGAL_qpe_debug {
+    ++CGAL::QP_solver_debug::timer.counter_integral_division;
+  }
 
   entry *= d_new;
   entry += y;

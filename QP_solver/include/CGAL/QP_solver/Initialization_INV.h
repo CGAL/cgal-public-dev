@@ -387,8 +387,6 @@ init_basis()
     s_i = art_s_i;               // s_i-th ineq. is most infeasible, see (C1)
     s_i_absolute = art_basic;    // absolute index of most infeasible ineq
     
-    // TAG: DEBUG
-    //std::cout << "Most negative index: " << s_i_absolute << std::endl;
     
     art_s_i = static_cast<int>(qp_n+s+art_A.size());    // number of special artificial var
     // BG: By construction of art_s_i (= i_max) in set_up_auxiliary_problem(),

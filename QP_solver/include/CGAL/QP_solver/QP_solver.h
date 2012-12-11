@@ -81,7 +81,6 @@ namespace QP_solver_impl {   // namespace for implemenation details
   template <class Q>
   struct D_selector<Q, Tag_false> // quadratic
   {
-    // TAG: 0SWITCH
     private:
       typedef  typename QP_model_detail::Sparse_iterator_adaptor<Q, typename Q::Is_sparse> Sparse_adaptor;
     public:
@@ -206,7 +205,6 @@ public: // public types
   
   // types from the QP
   typedef  typename Q::A_iterator   A_iterator;
-  // TAG: 0SWITCH
   typedef  typename QP_model_detail::Sparse_iterator_adaptor<Q, typename Q::Is_sparse> Sparse_adaptor;
   typedef  typename Sparse_adaptor::A_sparse_iterator A_sparse_iterator;
   typedef  typename Sparse_adaptor::A_sparse_column_iterator A_sparse_column_iterator;
@@ -221,7 +219,6 @@ public: // public types
   typedef  typename QP_solver_impl::
   D_selector<Q, typename Tags::Is_linear>::
   D_iterator D_iterator;
-  // TAG: 0SWITCH
   typedef  typename QP_solver_impl::
   D_selector<Q, typename Tags::Is_linear>::
   D_sparse_iterator D_sparse_iterator;
@@ -259,12 +256,6 @@ private: // private types
   
   
   // types of original problem:
-  // TAG: 0SWITCH
-  //typedef  typename std::iterator_traits<A_iterator>::value_type  A_column;
-  //typedef  typename std::iterator_traits<D_iterator>::value_type  D_row;
-  
-  //typedef  typename std::iterator_traits<A_column  >::value_type  A_entry;
-  //typedef  typename std::iterator_traits<D_row     >::value_type  D_entry;
   typedef  typename std::iterator_traits<A_sparse_column_iterator  >::value_type::second_type  A_entry;
   typedef  typename std::iterator_traits<D_sparse_column_iterator  >::value_type::second_type  D_entry;
   typedef  typename std::iterator_traits<B_iterator>::value_type  B_entry;
@@ -333,10 +324,6 @@ private:
   Value_by_basic_index;
 
   // access to original problem by basic variable/constraint index:
-  // TAG: 0SWITCH
-  //typedef  QP_vector_accessor<A_column, false, false >  A_by_index_accessor;
-  //typedef  boost::transform_iterator < A_by_index_accessor,Index_const_iterator >  A_by_index_iterator;
-
   // todo kf: following can be removed once we have all these (outdated)
   // accessors removed:
   typedef  QP_vector_accessor< B_iterator, false, false >  B_by_index_accessor;
@@ -345,20 +332,6 @@ private:
   typedef  QP_vector_accessor< C_iterator, false, false >  C_by_index_accessor;
   typedef  boost::transform_iterator<C_by_index_accessor, Index_const_iterator >  C_by_index_iterator;
 
-  // TAG: 0SWITCH
-  // typedef  QP_matrix_accessor< A_iterator, false, true, false, false>  A_accessor;
-  // typedef  boost::function1<typename A_accessor::result_type, int>  A_row_by_index_accessor;
-  // typedef  boost::transform_iterator < A_row_by_index_accessor, Index_iterator >  A_row_by_index_iterator;
-
-  // TAG: 0SWITCH
-  // Access to the matrix D sometimes converts to ET, and 
-  // sometimes retruns the original input type
-  /*
-  typedef  QP_matrix_pairwise_accessor< D_iterator, ET >  D_pairwise_accessor;
-  typedef boost::transform_iterator < D_pairwise_accessor, Index_const_iterator>  D_pairwise_iterator;
-  typedef  QP_matrix_pairwise_accessor< D_iterator, D_entry >  D_pairwise_accessor_input_type;
-  typedef  boost::transform_iterator < D_pairwise_accessor_input_type, Index_const_iterator >  D_pairwise_iterator_input_type;
-  */
 
   // access to special artificial column by basic constraint index:
   typedef  QP_vector_accessor< typename S_art::const_iterator, false, false>  S_by_index_accessor;
@@ -408,15 +381,11 @@ private:
   int                      qp_m;      // number of constraints
     
   // min x^T D x + c^T x + c0
-  // TAG: 0SWITCH
-  //A_iterator               qp_old_A;      // constraint matrix
   A_sparse_iterator        qp_A_sparse; // sparse contraint matrix
   B_iterator               qp_b;      // right-hand-side vector
   C_iterator               qp_c;      // objective vector
   C_entry                  qp_c0;     // constant term in objective function
   // attention: qp_old_D represents *twice* the matrix D
-  // TAG: 0SWITCH
-  //D_iterator               qp_old_D;      // objective matrix
   D_sparse_iterator        qp_D_sparse; // objective matrix
   Row_type_iterator        qp_r;      // row-types of constraints
   FL_iterator              qp_fl;     // lower bound finiteness vector
@@ -467,11 +436,8 @@ private:
   bool                     progress_flag;
   bool                     bland_flag;
   
-    
-  // TAG: 111SWITCH
   boost::shared_ptr<QP_sparse_matrix<ET> >     basis_matrix_; // used to store the basis matrix
   
-  // TAG: RECONSIDER mutable
   mutable QP_LU_factorization<ET, Is_linear, Self> lu_fact_;
 
   const ET&                denominator_;         // reference to `lu_fact_.get_denominator()'
@@ -482,7 +448,6 @@ private:
 
   Values                   x_B_S;     // basic variables (slack)
   Values                   lambda;    // lambda (from KKT conditions)
-  // TAG: 9SWITCH
   Values                   lambda_sorted; // during a pricing step this array represents the sorted lambda.
                                           // At the end of the pricing step it HAS to be set to contain ET(0) values.
   bool                     is_lambda_sorted;
@@ -542,8 +507,7 @@ private:
   // basis.  If the number in_B[i] is >=0, it is the basis heading of x_i.
   Indices                  in_B;      // variable   in basis, -1 if non-basic
 
-  // Given a number i in {0,...,qp_m-1} of a constraint, 
-  // TAG: 1SWITCH added mutable
+  // Given a number i in {0,...,qp_m-1} of a constraint,
   mutable Indices                  in_C;      // constraint in basis, -1 if non-basic
   // Note: in_C is only maintained if
   // there are inequality constraints.
@@ -620,7 +584,6 @@ public:
 
   virtual ~QP_solver()
   {
-    // TAG: CAST consider dynamic cast...
     if (strategyP != static_cast<Pricing_strategy*>(0))
       delete strategyP;
     /*if (basis_matrix_ != 0)
@@ -693,41 +656,18 @@ private:
     fingerprint_map_.clear();
     current_fingerprint_hash_ = static_cast<size_t> (0);
   
-    // TAG: DEBUG
-    //print_program();
-    //CGAL::QP_solver_debug::timer.reset();
-    //CGAL::QP_solver_debug::timer.total.start();
+    CGAL_qpe_debug {
+      if ( vout5.verbose()) {
+        print_program();
+      }
+      CGAL::QP_solver_debug::timer.reset();
+      CGAL::QP_solver_debug::timer.total.start();
+    }
     
     CGAL_qpe_assertion( phase() > 0);
     
     while ( phase() < 3) {
-    
-    
-      // TAG: DEBUG
-      /*
-      int csize, bosize;
-      if (is_QP) {
-        //std::cout << *get_basis_matrix(csize, bosize, Tag_true);
-        std::cout << "csize: " << csize << "\nbosize: " << bosize << std::endl;
-      } else if (is_LP) {
-        //std::cout << *get_basis_matrix(csize, bosize, Tag_false);
-        std::cout << "csize: " << csize << "\nbosize: " << bosize << std::endl;
-      }
-      */
-      
-      // TAG: DEBUG
-      //CGAL::QP_solver_debug::timer.reset();
-      //CGAL::QP_solver_debug::timer.gen_1.reset();
-      
-      // TODO: make all report routines consistent w.r.t. where they store what (QP_debug.h)
-      //std::cout << "BEFORE: " << std::endl;
-      //lu_fact_.report_largest_GMPZF();
-      //lu_fact_.report_matrix_size();
-      //lu_fact_.report_density();
-      //CGAL::QP_solver_debug::timer.print(Verbose_ostream(true, std::cout));
-      //CGAL::QP_solver_debug::timer.gen_1.start();
-      //CGAL::QP_solver_debug::timer.reset();
-      
+
       pivot_step();
       
       
@@ -744,38 +684,15 @@ private:
           fingerprint_map_.clear();
         }
       }
-      
-        // TAG: DEBUG
-        //CGAL::QP_solver_debug::timer.gen_1.stop();
-        //std::cout << "AFTER: " << std::endl;
-        //lu_fact_.report_largest_GMPZF();
-        //lu_fact_.report_matrix_size();
-        //lu_fact_.report_density();
-        //std::cout << m_pivots << std::endl;
-        //CGAL::QP_solver_debug::timer.print(Verbose_ostream(true, std::cout));
-      
-      // TAG: DEBUG
-      /*
-       std::cout << "=======================================================" << std::endl;
-       std::cout << "Here we are after a pivot step" << std::endl;
-       std::cout << *lu_fact_.recover_original_matrix();
-       std::cout << "=======================================================" << std::endl;
-      */
     }
     
-    // TAG: DEBUG     
-    //CGAL::QP_solver_debug::timer.total.stop();
-    //CGAL::QP_solver_debug::timer.print(Verbose_ostream(true, std::cout));
-    
-    
-
-    /*  
     CGAL_qpe_debug {
-      if ( vout.verbose()) {
-        vout1 << std::endl;
-        CGAL::QP_solver_debug::timer.print(vout1);
+      CGAL::QP_solver_debug::timer.total.stop();
+      if ( vout5.verbose()) {
+        vout5 << std::endl;
+        CGAL::QP_solver_debug::timer.print(vout5);
       }
-    }*/
+    }
 
     return status();
   }
@@ -787,10 +704,7 @@ public:
   // access to QP
   int  number_of_variables  ( ) const { return qp_n; }
   int  number_of_constraints( ) const { return qp_m; }
-    
-  // TAG: 0SWITCH
-  //A_iterator  a_begin( ) const { return qp_old_A;      }
-  //A_iterator  a_end  ( ) const { return qp_old_A+qp_n; }
+
   A_sparse_iterator a_sparse_begin( ) const { return qp_A_sparse; }
   A_sparse_iterator a_sparse_end( ) const { return qp_A_sparse+qp_n; }
     
@@ -801,10 +715,7 @@ public:
   C_iterator  c_end  ( ) const { return qp_c+qp_n; }
 
   C_entry     c_0    ( ) const { return qp_c0;}
-    
-  // TAG: 0SWITCH
-  //D_iterator  d_begin( ) const { return qp_old_D;      }
-  //D_iterator  d_end  ( ) const { return qp_old_D+qp_n; }
+
   D_sparse_iterator d_sparse_begin() const { return qp_D_sparse; }
   D_sparse_iterator d_sparse_end() const { return qp_D_sparse+qp_n; }
     
@@ -953,7 +864,6 @@ public:
   template < class RndAccIt1, class RndAccIt2, class NT >  
   NT  mu_j_( int j, RndAccIt1 lambda_it, RndAccIt2 x_it, const NT& dd) const;
 
-  // TAG: SWITCH
   ET  dual_variable( int i)
   {
   
@@ -962,22 +872,13 @@ public:
     einheit[i] = et1;
     lu_fact_.solve_x( einheit.begin(), tmp_x.begin());
     return std::inner_product(tmp_x.begin(), tmp_x.begin()+qp_m, minus_c_B.begin(), et0);
-    /*
-    for ( int j = 0; j < qp_m; ++j) {
-      //tmp_x[ j] = inv_M_B.entry( j, i);
-    }
-    return std::inner_product( tmp_x.begin(), tmp_x.begin()+qp_m,
-			       minus_c_B.begin(), et0);
-    */
   }
   
 
 public:
   // public access to compressed lambda (used in filtered base)
-  // TAG: 1SWITCH
   Value_const_iterator get_lambda_begin() const
-  { 
-    // return lambda.begin();
+  {
     return lambda_sorted.begin();
   }
   Value_const_iterator get_lambda_end() const
@@ -1551,9 +1452,6 @@ public:
     
 
     if ( j < qp_n) {                                // original variable
-      
-      // TAG: 1SWITCH
-      
       // [c_j +] A_Cj^T * lambda_C
       mu_j = ( is_phaseI ? NT( 0) : dd * NT(*(qp_c+ j)));
       mu_j__linear_part( mu_j, j, lambda_it, no_ineq);
@@ -1604,18 +1502,17 @@ mu_j( int j) const
 {
   CGAL_qpe_assertion(!is_basic(j));
   
-  // TAG: 1SWITCH
   if (!Is_nonnegative::value &&
       !Is_linear::value &&
       !is_phaseI && is_original(j)) {
     return mu_j(j,
-                /*lambda.begin()*/ lambda_sorted.begin(),
+                lambda_sorted.begin(),
                 basic_original_variables_numerator_begin(),
                 w_j_numerator(j),
                 variables_common_denominator());
   } else {
     return mu_j(j,
-                /*lambda.begin()*/ lambda_sorted.begin(),
+                lambda_sorted.begin(),
                 basic_original_variables_numerator_begin(),
                 variables_common_denominator());
   }
@@ -1629,37 +1526,12 @@ private:
   void
   mu_j__linear_part( NT& mu_j, int j, It lambda_it, Tag_true) const
   {
-    
-    // TAG: 1SWITCH
-    
-    //NT mu_j_2 = mu_j;
-    /*
-    std::vector<NT> lambda_sorted2(qp_m, NT(0));
-    for (int i = 0; i < static_cast<int>(C.size()); ++i) {
-      lambda_sorted2[ C[i] ] = *(lambda_it+i);
-    }
-    */
     A_sparse_column_iterator it = (*(qp_A_sparse+j)).begin();
     A_sparse_column_iterator it_end = (*(qp_A_sparse+j)).end();
     while (it != it_end) {
       mu_j += static_cast<NT>(it->second) * (*(lambda_it + it->first));
       ++it;
     }
-    
-    //mu_j_2 += lu_fact_.inner_product_l( lambda.begin(), *(qp_old_A+ j));
-    
-    // TAG: DEBUG
-    /*
-    if (mu_j != mu_j_2) {
-      std::cout << "AAA\n";
-      std::cout << "mu_j: " << mu_j << std::endl;
-      std::cout << "mu_j_2: " << mu_j_2 << std::endl;
-      std::copy(lambda_sorted.begin(), lambda_sorted.end(), std::ostream_iterator<ET>(std::cout, ", "));
-      std::cout << std::endl;
-      std::copy(lambda.begin(), lambda.end(), std::ostream_iterator<ET>(std::cout, ", "));
-      std::cout << std::endl;
-    }
-    */
   }
   
 
@@ -1667,30 +1539,12 @@ private:
   void
   mu_j__linear_part( NT& mu_j, int j, It lambda_it, Tag_false) const
   {
-    // TAG: 1SWITCH
-    
-    //NT mu_j_2 = mu_j;
-    /*
-    std::vector<NT> lambda_sorted2(qp_m, NT(0));
-    for (int i = 0; i < static_cast<int>(C.size()); ++i) {
-      lambda_sorted2[ C[i] ] = *(lambda_it+i);
-    }
-    */
     A_sparse_column_iterator it = (qp_A_sparse+j)->begin();
     A_sparse_column_iterator it_end = (qp_A_sparse+j)->end();
     while (it != it_end) {      
       mu_j += static_cast<NT>(it->second) * (*(lambda_it + it->first));
       ++it;
-    }    
-    
-    
-    // TAG: -1SWITCH
-    /*
-    mu_j_2 += lu_fact_.inner_product_l    
-      ( lambda.begin(),
-      	A_by_index_iterator( C.begin(),
-			  A_by_index_accessor( *(qp_old_A + j))));
-    */
+    }
   }
 
   template < class NT, class It > inline                     
@@ -1725,20 +1579,6 @@ private:
     if ( is_phaseII) {
       // 2 D_Bj^T * x_B
       
-      /*
-      // TAG: INEFFICIENT, maybe faster with binary search in the column
-      //D_sparse_column_iterator it = (*(qp_D_sparse+j)).begin();
-      D_sparse_column_iterator it_end = (*(qp_D_sparse+j)).end();
-      std::vector<D_entry> temp(B_O.size(), D_entry(0));
-      for (int i = 0; i < B_O.size(); ++i) {
-          D_sparse_column_iterator it = (*(qp_D_sparse+j)).begin();
-          while (it != it_end && it->first < B_O[i]) ++it;
-          if (it != it_end && it->first == B_O[i]) temp[i] = it->second;
-      }*/
-      
-      
-      // TAG: 0SWITCH
-      
       D_sparse_column_iterator it = (*(qp_D_sparse+j)).begin();
       D_sparse_column_iterator it_end = (*(qp_D_sparse+j)).end();
       std::vector<D_entry> temp(B_O.size(), D_entry(0));
@@ -1748,14 +1588,7 @@ private:
         }
         ++it;
       }
-      
-      /*
-      mu_j += lu_fact_.inner_product_x
-      	( x_it,
-	        D_pairwise_iterator_input_type( B_O.begin(),
-			    D_pairwise_accessor_input_type(qp_old_D, j)));
-      */
-       mu_j += lu_fact_.inner_product_x (x_it, temp.begin());
+      mu_j += lu_fact_.inner_product_x (x_it, temp.begin());
       
     }
   }
@@ -1766,9 +1599,6 @@ private:
 			const NT& dd, Tag_false) const
   {
     if ( is_phaseII) {
-    
-    
-      // TAG: 0SWITCH
       mu_j += dd * w_j;
       // 2 D_Bj^T * x_B
       D_sparse_column_iterator it = (*(qp_D_sparse+j)).begin();
@@ -1782,23 +1612,6 @@ private:
       }
       
       mu_j += lu_fact_.inner_product_x (x_it, temp.begin());
-      
-      
-     /* 
-      NT tmp_mu_j = mu_j;
-      
-      tmp_mu_j += dd * w_j;
-      tmp_mu_j += lu_fact_.inner_product_x
-      	( x_it,
-      	  D_pairwise_iterator_input_type( B_O.begin(),
-			    D_pairwise_accessor_input_type(qp_old_D, j)));
-      mu_j = tmp_mu_j;
-      */
-      /*
-      // TAG: DEBUG
-      std::cout << "mu_j: " << mu_j << std::endl;
-      std::cout << "tmp_mu_j: " << tmp_mu_j << std::endl;
-      */
     }
   }
 
@@ -1824,12 +1637,9 @@ private:
   {
     j -= qp_n;
 
-
-    // TAG: 1SWITCH (REMOVE second reordering via in_C)
     if ( j < static_cast<int>(slack_A.size())) {                 // slack variable
 
       // A_Cj^T * lambda_C
-      //mu_j = lambda_it[ in_C[ slack_A[ j].first]];
       mu_j = lambda_it[ slack_A[ j].first ];
       
       if ( slack_A[ j].second) mu_j = -mu_j;
@@ -1838,7 +1648,6 @@ private:
       j -= static_cast<int>(slack_A.size());
 
       // A_Cj^T * lambda_C
-      //mu_j = lambda_it[ in_C[ art_A[ j].first]];
       mu_j = lambda_it[ art_A[ j].first];
       
       if ( art_A[ j].second) mu_j = -mu_j;
@@ -1858,7 +1667,6 @@ private:
       mu_j__slack_or_artificial (mu_j, j, lambda_it, dd, Tag_false());
   }
   
-  // TAG: YVES ADDED
   template < class It >
   void
   print_vector(It vector, int n) {
@@ -1876,53 +1684,6 @@ private:
     }
   }
   
-  // TAG: JUNK
-  // TAG: INEFFICIENT... use binary search instead of linear
-  /*
-  template < class NT, class It >
-  NT
-  get_matrix_element( It matrix_it, int col, int row ) {
-    NT tmp(0);
-    A_sparse_column_iterator it = (*(qp_A_sparse+index_entering)).begin();
-    A_sparse_column_iterator it_end = (*(qp_A_sparse+index_entering)).end();
-    while (it != it_end) {
-      if (it->first >= new_row) {
-        if (it->first == new_row) tmp = it->second;
-        break;
-      }
-      ++it;
-    }    
-  }
-  */
-  
-  /*
-  template <class It>
-  It find_in_sparse_column(It begin, It end, int index) const {
-    It current;
-    ++begin;
-    begin++;
-    --begin;
-    begin--;
-    begin.distance_to(end);
-    //begin+= 2;
-    //begin+2;
-    //if (end - begin > 0) {
-      current = (begin + end) / 2;
-      if (current->first == index) {
-        return current;
-      } else if (current->first < index) {
-        return find_in_sparse_column<It>(current+1, end, index);
-      } else if (current->first > index) {
-        It tentative = find_in_sparse_column<It>(begin, current-1, index);
-        if (tentative == current-1) return end;
-        else return tentative;
-      }
-      
-    } else {
-      return end;
-    }
-  }
-  */
   
 };
 
@@ -1941,15 +1702,6 @@ template < class Q, typename ET, typename Tags >  inline                        
 void  QP_solver<Q, ET, Tags>::
 transition( Tag_false)
 {
-  // TAG: 0SIWTCH
-  /*
-  typedef  Creator_2< D_iterator, int, 
-    D_pairwise_accessor >  D_transition_creator_accessor;
-
-  typedef  Creator_2< Index_iterator, D_pairwise_accessor,
-    D_pairwise_iterator >  D_transition_creator_iterator;
-  */
-  
   // initialization of vector w and vector r_B_O:
   if (!Is_nonnegative::value) {
     init_w();                      
@@ -1967,16 +1719,6 @@ transition( Tag_false)
   //           (B_O.begin(), 
   //            D_pairwise_accessor(qp_old_D, i))
 
-  
-  // TAG: SWITCH
-  /*
-  inv_M_B.transition 
-    (boost::make_transform_iterator 
-     (B_O.begin(),
-      boost::bind 
-      (D_transition_creator_iterator(), B_O.begin(), 
-       boost::bind (D_transition_creator_accessor(), qp_old_D, _1))));
-  */
   lu_fact_.set_invalid();
 }
 
@@ -1984,8 +1726,6 @@ template < typename Q, typename ET, typename Tags >  inline                     
 void  QP_solver<Q, ET, Tags>::
 transition( Tag_true)
 {
-  // TAG: SWITCH
-  //inv_M_B.transition();
   lu_fact_.set_invalid();
 }
 
@@ -2066,7 +1806,6 @@ ratio_test_init__2_D_Bj( Value_iterator two_D_Bj_it, int j_, Tag_false,
 {
   // store exact version of `2 D_{B_O,j}'
   
-  // TAG: 0SWITCH
   D_sparse_column_iterator it = (*(qp_D_sparse+j_)).begin();
   D_sparse_column_iterator it_end = (*(qp_D_sparse+j_)).end();
   std::vector<D_entry> temp(B_O.size(), D_entry(0));
@@ -2077,13 +1816,6 @@ ratio_test_init__2_D_Bj( Value_iterator two_D_Bj_it, int j_, Tag_false,
     ++it;
   }
   std::copy(temp.begin(), temp.end(), two_D_Bj_it);
-  
-  /*
-  D_pairwise_accessor  d_accessor( qp_old_D, j_);
-  std::copy( D_pairwise_iterator( B_O.begin(), d_accessor),
-	     D_pairwise_iterator( B_O.end  (), d_accessor),
-	     two_D_Bj_it);
-  */
 }
 
 template < typename Q, typename ET, typename Tags > inline                                  // QP, has ineq
@@ -2093,16 +1825,7 @@ ratio_test_init__2_D_Bj( Value_iterator two_D_Bj_it, int j_, Tag_false,
 {
   // store exact version of `2 D_{B_O,j}'
   if ( j_ < qp_n) {                               // original variable
-    
-    // TAG: DEBUG
-    //std::cout << "check " << j_ << std::endl;
-    
     ratio_test_init__2_D_Bj( two_D_Bj_it, j_, Tag_false(), Tag_true());
-    
-    // TAG: DEBUG
-    //std::copy(two_D_Bj_it, two_D_Bj_it+B_O.size(), std::ostream_iterator<ET>(std::cout, " "));
-    //std::cout << std::endl;
-    
   } else {                                        // slack variable
     std::fill_n( two_D_Bj_it, B_O.size(), et0);
   }
@@ -2144,7 +1867,6 @@ ratio_test_1__q_x_S( Tag_false)
   
   // ( A_S_BxB_O * q_x_O) - A_S_Bxindex_entering
   if ( index_entering < qp_n) {
-    // TAG: 1SWITCH
     // TAG: INEFFICIENT because not S_B-filtered
     Indices in_S_B(qp_m, -1); // TAG: TODO maybe make this global
     Values a_s_b_temp(S_B.size(), et0);
@@ -2166,13 +1888,6 @@ ratio_test_1__q_x_S( Tag_false)
                    a_s_b_temp.begin(),
                    q_x_S.begin(),
                    compose2_2( std::minus<ET>(), Identity<ET>(), std::bind1st( std::multiplies<ET>(), denominator_)));
-    /*
-    std::transform( q_x_S.begin(),
-                   q_x_S.begin()+S_B.size(),
-                   A_by_index_iterator( S_B.begin(), A_by_index_accessor( *(qp_old_A + index_entering))),
-                   q_x_S.begin(),
-                   compose2_2( std::minus<ET>(), Identity<ET>(), std::bind1st( std::multiplies<ET>(), denominator_)));
-    */
   }
 
   // q_x_S = -+ ( A_S_BxB_O * q_x_O - A_S_Bxindex_entering)
@@ -2222,7 +1937,6 @@ void  QP_solver<Q, ET, Tags>::
 ratio_test_1__t_j( Tag_false)
 {
   if ( is_phaseII) {
-    // TAG: 1SWITCH
     // compute `nu' and `mu_j'
     // first, we neet to keept lambda sorted
     for (int i = 0; i < static_cast<int>(C.size()); ++i) {
@@ -2257,13 +1971,6 @@ ratio_test_1__t_j( Tag_false)
     }
     
     
-    /*
-    if ( index_entering < qp_n) {                                // original variable
-      nu -= denominator_*static_cast<ET>( (*(qp_old_D + index_entering))[ index_entering]);
-    }
-    */
-    
-    
     CGAL_qpe_assertion_msg(nu <= et0,
                            "nu <= et0 violated -- is your D matrix positive semidefinite?");
     
@@ -2287,35 +1994,12 @@ template < typename Q, typename ET, typename Tags >  inline                     
 void  QP_solver<Q, ET, Tags>::
 ratio_test_2__p( Tag_true)
 {
-  // TAG: SWITCH
   	Values einheit(C.size()+B_O.size(), et0);
-	  // get column index of entering variable in basis
+    // get column index of entering variable in basis
     einheit[in_B[index_entering]+C.size()]=et1;
        
     lu_fact_.solve( einheit.begin(), einheit.begin() + C.size(), q_lambda.begin(), q_x_O.begin(), Is_linear::value, is_phaseI);
 
-/*
-  // get column index of entering variable in basis
-  int  col = in_B[ index_entering];
- 
-  CGAL_qpe_assertion( col >= 0);
-  col += min_N_M_;
-
-  // get (last) column of `M_B^{-1}' (Note: `p_...' is stored in `q_...')
-  Value_iterator  it;
-  int             row;
-  unsigned int    k;
-  for (   k = 0,            row = 0,   it = q_lambda.begin();
-	  k < C.size();
-	  ++k,              ++row,     ++it                   ) {
-    *it = inv_M_B.entry( row, col);
-  }
-  for (   k = 0,            row = min_N_M_,   it = q_x_O.begin();
-	  k < B_O.size();
-	  ++k,              ++row,     ++it                   ) {
-    *it = inv_M_B.entry( row, col);
-  }
-  */
 }
 
 template < typename Q, typename ET, typename Tags >  inline                                 // has ineq.
@@ -2342,7 +2026,6 @@ ratio_test_2__p( Tag_false)
     int             row  = slack_A[ index_entering].first;
     bool            sign = slack_A[ index_entering].second;
     
-    // TAG: 1SWITCH
     A_sparse_column_iterator it, it_end;
     for (   i_it =  B_O.begin(),   v_it = tmp_x.begin();
          i_it != B_O.end();
@@ -2358,8 +2041,6 @@ ratio_test_2__p( Tag_false)
       } else {
         *v_it = et0;
       }
-      
-      //*v_it = ( sign ? *((*(qp_old_A+ *i_it))+ row) : - (*((*(qp_old_A + *i_it))+ row)));
     }
     
     // compute  ( p_l | p_x_O )^T = M_B^{-1} * ( 0 | A_{S_j,B_O} )^T
@@ -2509,7 +2190,6 @@ basis_matrix_stays_regular()
   if ( has_ineq && (index_leaving >= qp_n)) {	// slack variable
     new_row = slack_A[ index_leaving-qp_n].first;
     
-    // TAG: 1SWITCH
     A_sparse_column_iterator it, it_end;
     std::fill_n(tmp_x.begin(), B_O.size(), et0);
     Value_iterator val_it;
@@ -2526,13 +2206,6 @@ basis_matrix_stays_regular()
       }
     }
     
-    /*
-    A_row_by_index_accessor  a_accessor = boost::bind (A_accessor( qp_old_A, 0, qp_n), _1, new_row);
-    std::copy( A_row_by_index_iterator( B_O.begin(), a_accessor),
-              A_row_by_index_iterator( B_O.end  (), a_accessor),
-              tmp_x.begin());
-      */        
-    
 		Values first_zero(C.size(),et0);
 		lu_fact_.solve(first_zero.begin(), tmp_x.begin(), tmp_l_2.begin(), tmp_x_2.begin(), Is_linear::value, is_phaseI);
 				
@@ -2540,19 +2213,12 @@ basis_matrix_stays_regular()
 
 	
   } else {						// check original variable
-
-
-    // TAG: SWITCH
     Values einheit(C.size()+B_O.size(),et0), colvector(C.size()+B_O.size());
 		einheit[C.size()+in_B[index_leaving]] = et1;
 		lu_fact_.solve(einheit.begin(), einheit.begin()+C.size(), colvector.begin(), colvector.begin()+C.size(), Is_linear::value,is_phaseI); 
 
     return ( colvector[C.size()+in_B[index_leaving]] != et0);
 
-    /*
-    k = min_N_M_+in_B[ index_leaving];
-   return ( inv_M_B.entry( k, k) != et0);
-   */
   }
 
   /* ToDo: check, if really not needed in 'update_1':

@@ -394,44 +394,8 @@ QP_sparse_matrix<NT>::insert_row(int index, const QP_sparse_vector<NT>& v) {
     //index_it_end = columns_[i].end();
     //temp_elements.clear();
     // TODO: efficiency... inserting only instead of set_entry...
-    
-    // TAG: DEBUG
-    /*
-    std::cout << "**********************" << std::endl;
-    std::cout << "index: " << index << std::endl;
-    std::cout << "old_col: " << columns_[i] << std::endl;
-    std::cout << "temp_elements: ";
-    for (std::vector<std::pair<int, int> >::iterator it = temp_elements.begin(); it != temp_elements.end(); ++it) {
-      std::cout << "(" << it->first << "," << it->second << ")";
-    }
-    std::cout << std::endl;
-    std::cout << "new_col: " << new_col << std::endl;
-    */
-    
-    //std::transform(index_it, index_it_end, std::back_inserter(temp_elements), std::bind1st(Conditional_pair_inc(), index));
-    //new_col.insert(temp_elements.begin(), temp_elements.end());
-    
 
     std::transform(columns_[i].begin(), columns_[i].end(), std::inserter(new_col.entries_, new_col.entries_.end()), std::bind1st(Conditional_pair_inc(), index));
-    
-    
-    // TAG: DEBUG
-    /*
-    std::cout << "old_col: " << columns_[i] << std::endl;
-    std::cout << "temp_elements: ";
-    for (std::vector<std::pair<int, int> >::iterator it = temp_elements.begin(); it != temp_elements.end(); ++it) {
-      std::cout << "(" << it->first << "," << it->second << ")";
-    }
-    std::cout << std::endl;
-    std::cout << "new_col: " << new_col << std::endl;
-    */
-    
-    
-    /*
-    while (index_it != index_it_end) {
-      new_col.set_entry((index_it->first < index ? index_it->first : index_it->first+1), index_it->second);
-      ++index_it;
-    }*/
     columns_[i] = new_col;
   }
   

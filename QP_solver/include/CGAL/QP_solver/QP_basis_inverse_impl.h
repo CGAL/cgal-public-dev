@@ -65,8 +65,9 @@ leave_original( )
 {
 
     
-    // TAG: DEBUG
-    ++CGAL::QP_solver_debug::timer.counter_Oout;
+    CGAL_qpe_debug{
+     ++CGAL::QP_solver_debug::timer.counter_Oout;
+    }
     
     // assert QP case
     Assert_compile_time_tag( Tag_false(), Is_LP());
@@ -96,8 +97,9 @@ void  QP_basis_inverse<ET_,Is_LP_>::
 enter_slack( )
 {
     
-    // TAG: DEBUG
-    ++CGAL::QP_solver_debug::timer.counter_Sin;
+    CGAL_qpe_debug{
+      ++CGAL::QP_solver_debug::timer.counter_Sin;
+    }
 
     // assert QP case
     Assert_compile_time_tag( Tag_false(), Is_LP());
@@ -135,8 +137,9 @@ enter_slack_leave_original( )
 {
 
     
-    // TAG: DEBUG
-    ++CGAL::QP_solver_debug::timer.counter_S_O;
+    CGAL_qpe_debug{
+      ++CGAL::QP_solver_debug::timer.counter_S_O;
+    }
 
     // assert LP case or phase I
     CGAL_qpe_assertion( is_LP || is_phaseI);
@@ -186,8 +189,9 @@ z_replace_original_by_original(ForwardIterator y_l_it,
                                const ET& s_nu, unsigned int k_i)
 {
 
-    // TAG: DEBUG
-    ++CGAL::QP_solver_debug::timer.counter_UZ1;
+    CGAL_qpe_debug{
+      ++CGAL::QP_solver_debug::timer.counter_UZ1;
+    }
 
     // assert QP case and phaseII
     CGAL_qpe_assertion(is_QP && is_phaseII);
@@ -221,8 +225,9 @@ z_replace_original_by_original(ForwardIterator y_l_it,
     z_update_inplace(x_l.begin(), x_x.begin(), tmp_l.begin(), tmp_x.begin(),
                       hat_k_1 * hat_k_1, -hat_k_2, -hat_k_1, denominator_*denominator_);
     
-    // TAG: DEBUG
-//    ++CGAL::QP_solver_debug::timer.counter_integral_division;
+    CGAL_qpe_debug{
+      ++CGAL::QP_solver_debug::timer.counter_integral_division;
+    }
     
     // store new denominator
     denominator_ = CGAL::integral_division(hat_k_1 * hat_k_1, denominator_);
@@ -243,8 +248,9 @@ void  QP_basis_inverse<ET_,Is_LP_>::
 z_replace_original_by_slack( )
 {
 
-    // TAG: DEBUG
-    ++CGAL::QP_solver_debug::timer.counter_UZ2;
+    CGAL_qpe_debug{
+      ++CGAL::QP_solver_debug::timer.counter_UZ2;
+    }
 
     // assert QP case and phaseII
     CGAL_qpe_assertion(is_QP && is_phaseII);
@@ -270,8 +276,9 @@ z_replace_original_by_slack( )
     z_update_inplace(x_l.begin(), x_x.begin(), tmp_l.begin(), tmp_x.begin(),
                            hat_kappa * hat_kappa, hat_xi, -hat_kappa, denominator_ * denominator_);
 		     
-    // TAG: DEBUG
-//    ++CGAL::QP_solver_debug::timer.counter_integral_division;     
+    CGAL_qpe_debug{
+      ++CGAL::QP_solver_debug::timer.counter_integral_division;
+    }
          
     // store new denominator
     denominator_ = CGAL::integral_division(hat_kappa * hat_kappa, denominator_);
@@ -296,8 +303,9 @@ z_replace_slack_by_original(ForwardIterator y_l_it,
 		                    const ET& hat_nu)
 {
 
-    // TAG: DEBUG
-    ++CGAL::QP_solver_debug::timer.counter_UZ3;
+    CGAL_qpe_debug{
+      ++CGAL::QP_solver_debug::timer.counter_UZ3;
+    }
 
     // assert QP case and phaseII
     CGAL_qpe_assertion(is_QP && is_phaseII);
@@ -342,8 +350,9 @@ z_replace_slack_by_original(ForwardIterator y_l_it,
            row_it != M[size_E_cup_SN_].end() - 1;
 	 ++row_it,  ++x_l_it,  ++y_l_it                ) {
    
-   // TAG: DEBUG
-//    ++CGAL::QP_solver_debug::timer.counter_integral_division;
+    CGAL_qpe_debug{
+      ++CGAL::QP_solver_debug::timer.counter_integral_division;
+    }
     
         *row_it = 
 	  CGAL::integral_division((hat_nu * *x_l_it)-(hat_kappa * *y_l_it), denominator_);  
@@ -356,8 +365,9 @@ z_replace_slack_by_original(ForwardIterator y_l_it,
            count < size_BO_;
 	 ++matrix_it,  ++count, ++x_x_it, ++y_x_it                  ) {
    
-   // TAG: DEBUG
-//    ++CGAL::QP_solver_debug:: .counter_integral_division;
+     CGAL_qpe_debug{
+      ++CGAL::QP_solver_debug:: .counter_integral_division;
+     }
    
         (*matrix_it)[size_E_cup_SN_] = 
 	  CGAL::integral_division((hat_nu * *x_x_it) - (hat_kappa * *y_x_it), denominator_);
@@ -371,8 +381,9 @@ z_replace_slack_by_original(ForwardIterator y_l_it,
            count < size_E_cup_SN_;
 	 ++row_it,  ++count,  ++x_l_it                              ) {
    
-   // TAG: DEBUG
-//    ++CGAL::QP_solver_debug::timer.counter_integral_division;
+     CGAL_qpe_debug{
+      ++CGAL::QP_solver_debug::timer.counter_integral_division;
+     }
    
         *row_it = CGAL::integral_division(-hat_kappa * *x_l_it, denominator_);
     }
@@ -383,8 +394,9 @@ z_replace_slack_by_original(ForwardIterator y_l_it,
            count < size_BO_;
 	 ++row_it,  ++count,  ++x_x_it                                ) {
    
-   // TAG: DEBUG
-//    ++CGAL::QP_solver_debug::timer.counter_integral_division;
+    CGAL_qpe_debug{
+     ++CGAL::QP_solver_debug::timer.counter_integral_division;
+    }
    
         *row_it = CGAL::integral_division(-hat_kappa * *x_x_it, denominator_);
     }
@@ -394,8 +406,9 @@ z_replace_slack_by_original(ForwardIterator y_l_it,
     ++size_E_cup_SN_; ++size_BO_; 
 
 
-    // TAG: DEBUG
-//    ++CGAL::QP_solver_debug::timer.counter_integral_division;
+    CGAL_qpe_debug{
+      ++CGAL::QP_solver_debug::timer.counter_integral_division;
+    }
 
     // store new denominator
     denominator_ = CGAL::integral_division(hat_kappa * hat_kappa, denominator_);
@@ -418,8 +431,9 @@ z_replace_slack_by_slack(ForwardIterator u_x_it, unsigned int k_j)
 {
 
 
-    // TAG: DEBUG
-    ++CGAL::QP_solver_debug::timer.counter_UZ4;
+    CGAL_qpe_debug{
+      ++CGAL::QP_solver_debug::timer.counter_UZ4;
+    }
 
     // assert QP case and phaseII
     CGAL_qpe_assertion(is_QP && is_phaseII);
@@ -444,8 +458,9 @@ z_replace_slack_by_slack(ForwardIterator u_x_it, unsigned int k_j)
     z_update_inplace(x_l.begin(), x_x.begin(), tmp_l.begin(), tmp_x.begin(),
                      hat_k_1 * hat_k_1, -hat_k_3, -hat_k_1, denominator_ * denominator_);
 		     
-    // TAG: DEBUG
-//    ++CGAL::QP_solver_debug::timer.counter_integral_division;
+    CGAL_qpe_debug{
+      ++CGAL::QP_solver_debug::timer.counter_integral_division;
+    }
          
     // store new denominator
     denominator_ = CGAL::integral_division(hat_k_1 * hat_k_1, denominator_);

@@ -129,16 +129,10 @@ class QP__filtered_base : virtual public QP_pricing_strategy<Q, ET, Tags> {
 
     // some more types
     typedef  typename Q::A_iterator   A_iterator;
-    // TAG: 0SWITCH
     typedef  typename QP_model_detail::Sparse_iterator_adaptor<Q, typename Q::Is_sparse>::A_sparse_iterator A_sparse_iterator;
-    //typedef  typename Q::A_sparse_iterator A_sparse_iterator;
-    // TAG: 0SWITCH
     typedef  typename QP_model_detail::Sparse_iterator_adaptor<Q, typename Q::Is_sparse>::A_sparse_column_iterator A_sparse_column_iterator;
-    //typedef  typename Q::A_sparse_column_iterator A_sparse_column_iterator;
-    typedef  typename Q::C_iterator   C_iterator;   
-    // TAG: 0SWITCH
+    typedef  typename Q::C_iterator   C_iterator;
     typedef  typename QP_model_detail::Sparse_iterator_adaptor<Q, typename Q::Is_sparse>::D_sparse_column_iterator D_sparse_column_iterator;
-    //typedef  typename std::iterator_traits<typename Q::D_iterator>::value_type D_row_iterator;
     
     typedef  typename Q::R_iterator R_iterator;
 					

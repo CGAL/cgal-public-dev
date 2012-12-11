@@ -309,7 +309,7 @@ void QP_LU_factorization<ET, Is_LP, Matrix_Provider>
   
   //CGAL_qpe_assertion(matrix_provider_ != 0);
   
-  if (matrix_provider_ != 0) { // TAG: ARTIFACT
+  if (matrix_provider_ != 0) {
     
     matrix_u_ = matrix_provider_->get_basis_matrix(csize_, bosize_, is_linear);
     
@@ -750,7 +750,6 @@ QP_LU_factorization<ET, Is_LP, Matrix_Provider>
   }
   
   
-  // TAG: CODE DESIGN are both necessary (is_linear_ and is_phase_I)?
   if (is_linear_ || is_phase_I_) {
     solve_LP(v_l_it, v_x_it, y_l_it, y_x_it);
   } else {
@@ -908,8 +907,6 @@ QP_LU_factorization<ET, Is_LP, Matrix_Provider>
   
   CGAL_qpe_assertion(n_ == csize_ && n_ == bosize_);
   
-  
-  // TAG: INEFFICIENT (do update instead of recomputing every time)
   if (!valid_) {
     compute_factorization(is_linear_ || is_phase_I_);
   }
@@ -963,8 +960,6 @@ QP_LU_factorization<ET, Is_LP, Matrix_Provider>
     y.set_entry(perm_row_[j], integral_division(temp, d_row_[j+1]));
   }
   
-  
-  // TAG: INEFFICIENT2, because it's done several times...
   // clear y_l
   for (int i = 0; i < n_; ++i){
     *(y_l_it + i) = et0_;
@@ -989,7 +984,6 @@ QP_LU_factorization<ET, Is_LP, Matrix_Provider>
   
   CGAL_qpe_assertion(n_ == csize_ && n_ == bosize_);
   
-  // TAG: INEFFICIENT (do update instead of recomputing every time)
   if (!valid_) {
     compute_factorization(is_linear_ || is_phase_I_);
   }
@@ -1046,8 +1040,6 @@ QP_LU_factorization<ET, Is_LP, Matrix_Provider>
     y.set_entry(perm_column_[i], integral_division(temp, d_row_[i+1]));
   }
   
-  
-  // TAG: INEFFICIENT2, because it's done several times...
   // clear y_x
   for (int i = 0; i < n_; ++i) {
     *(y_x_it + i) = et0_;

@@ -281,20 +281,10 @@ namespace QP_model_detail {
     }
     
     bool equal(const Derived & other) const {
-    // TAG: DEBUG
-      //std::cout << "EQUAL: this->n_: " << n_ << ", this->i_: " << i_ << ", this->it_: " << it_ << ", other.n_: " << other.n_ << ", other.i_: " << other.i_ << ", other.it_: " << other.it_ << std::endl;
-      
       return (this->it_ == other.it_ && this->n_ == other.n_ && this->i_ == other.i_);
     }
     
     value_type& dereference() const {
-      // TAG: DEBUG
-      /*
-      std::cout << "DEREFERENCE_D: n_:" << n_ << ", i_: " << i_;
-      std::cout << ", row_: " << row_ << ", col_: " << col_;
-      std::cout << std::flush;
-      std::cout << ", val: " <<  *( (*(it_+col_)) + row_) << std::endl;
-      */
       return tmp_ = std::make_pair(n_, *( (*(it_+col_)) + row_) );
     }
     
@@ -320,14 +310,10 @@ namespace QP_model_detail {
     : it_(it), dim_(dim), i_(i) {}
     
     Mock_map_iterator_D<Iterator, Mock_map_D_iterator_value_type> begin() {
-      // TAG: DEBUG
-      //std::cout << "BEGIN: dim_:" << dim_ << ", i_: " << i_ << std::endl;
       return Mock_map_iterator_D<Iterator, Mock_map_D_iterator_value_type>(it_,0,i_);
     }
     
     Mock_map_iterator_D<Iterator, Mock_map_D_iterator_value_type> end() {
-      // TAG: DEBUG
-      //std::cout << "END: dim_:" << dim_ << ", i_: " << i_ << std::endl;
       return Mock_map_iterator_D<Iterator, Mock_map_D_iterator_value_type>(it_,dim_,i_);
     }
     
@@ -351,15 +337,10 @@ namespace QP_model_detail {
       : it_(it), dim_(dim), i_(i) {}
             
     result_type operator* () {
-    // TAG: DEBUG
-      //std::cout << "OPERATOR*: dim_:" << dim_ << ", i_: " << i_ << std::endl;
       return result_type(it_, dim_, i_);
     }
     
     Ptr_ptr_dereference_D<Iterator> operator+ (key_type i) const {
-        // TAG: DEBUG
-      //std::cout << "OPERATOR+: dim_:" << dim_ << ", i_: " << i_ << ", i: " << i << std::endl;
-      
       return Ptr_ptr_dereference_D<Iterator>(it_, dim_, i_+i);
     }
     
@@ -450,39 +431,6 @@ namespace QP_model_detail {
       }
   };
   
-  /*
-  template <typename Iterator>
-  struct Ptr_ptr_dereference_A {
-    
-    typedef int key_type;
-    typedef Mock_map<Iterator> result_type;
-    
-    Ptr_ptr_dereference_A()
-      : it_(0), dim_(-1), i_(-1) {}
-      
-    Ptr_ptr_dereference_A(Iterator it, int dim, key_type i = 0)
-      : it_(it), dim_(dim), i_(i) {}
-            
-    result_type operator* () {
-    // TAG: DEBUG
-      //std::cout << "OPERATOR*: dim_:" << dim_ << ", i_: " << i_ << std::endl;
-      return result_type(it_, dim_, i_);
-    }
-    
-    Ptr_ptr_dereference_D<Iterator> operator+ (key_type i) const {
-        // TAG: DEBUG
-      //std::cout << "OPERATOR+: dim_:" << dim_ << ", i_: " << i_ << ", i: " << i << std::endl;
-      
-      return Ptr_ptr_dereference_D<Iterator>(it_, dim_, i_+i);
-    }
-    
-    
-  private:
-    Iterator it_;
-    int dim_;
-    key_type i_;
-  };*/
-  
   // -------------------
   // Sparse_iterator_adaptor
   // -------------------
@@ -513,14 +461,10 @@ namespace QP_model_detail {
     typedef CGAL::Tag_false Is_sparse;
     
     A_sparse_iterator get_a_sparse(const Quadratic_program& qp) {
-      // TAG: DEBUG
-      //std::cout << "We're in the dense case...\n";
       return A_sparse_iterator(qp.get_a(), QP_model_detail::Ptr_ptr_dereference<A_iterator>(qp.get_m()));
     }
     
     D_sparse_iterator get_d_sparse(const Quadratic_program& qp) {
-      // TAG: DEBUG
-      //std::cout << "We're in the dense case...\n";
       return D_sparse_iterator(qp.get_d(), qp.get_n());
     }
   };
@@ -536,14 +480,10 @@ namespace QP_model_detail {
     typedef CGAL::Tag_true Is_sparse;
     
     A_sparse_iterator get_a_sparse(const Quadratic_program& qp) {
-      // TAG: DEBUG
-      //std::cout << "We're in the sparse case...\n";
       return qp.get_a_sparse();
     }
     
     D_sparse_iterator get_d_sparse(const Quadratic_program& qp) {
-      // TAG: DEBUG
-      //std::cout << "We're in the sparse case...\n";
       return qp.get_d_sparse();
     }
   };
@@ -928,7 +868,6 @@ class Quadratic_program_from_iterators
 {
 public:
   // types
-  // TAG: 0SWITCH
   typedef Tag_false Is_sparse;
   typedef A_it   A_iterator;
   typedef B_it   B_iterator; 
@@ -1360,9 +1299,9 @@ public:
     return m_;
   }
   /*
+  // DEPRECATED, won't work for purely sparse vectors any more
   A_iterator get_a() const    
-  { 
-    // TAG: DEBUG TODO
+  {
     //assert(false); // this function should not be called...
   
     CGAL_qpe_assertion(is_valid());
@@ -1424,11 +1363,10 @@ public:
 		       (&c_vector, NT(0)));
   }
   /*
+  // DEPRECATED, won't work for purely sparse vectors any more
   D_iterator get_d() const    
-  { 
-    // TAG: DEBUG TODO
+  {
     //assert(false); // this function should not be called...
-    
     CGAL_qpe_assertion(is_valid());
     return D_iterator (d_matrix.begin(), Beginner());
   }
@@ -1862,8 +1800,6 @@ public:
   { 
     CGAL_qpe_assertion (i >= 0);    
     CGAL_qpe_assertion (j >= 0);
-    // TAG: 0SWITCH
-    //CGAL_qpe_assertion (j <= i); // lower-diagonal entry  
     if (i >= n_) {
       n_ = i+1;
       grow_a_d(n_);
@@ -2426,7 +2362,6 @@ private:
             int new_index = this->get_m();
             row_names.insert(String_int_pair (dup_name, new_index)); 
             row_by_index.push_back (dup_name);	    
-            // TAG: 0SWITCH
             // TAG: INEFFICIENT use binary search
             for (unsigned int j=0; j<var_names.size(); ++j) {
               A_sparse_column_iterator it = (*(this->get_a_sparse()+j)).begin();
@@ -2440,12 +2375,7 @@ private:
               }
               this->set_a (j, new_index, val);
             }
-            
-            /*
-            for (unsigned int j=0; j<var_names.size(); ++j) {
-              NT val = (*(this->get_a()+j))[index];
-              this->set_a (j, new_index, val);
-            }*/
+
             
             // determine rhs for this new row. Here are the rules:
             // if r is the ranges value and b is the old right-hand 
@@ -2654,7 +2584,6 @@ private:
         i = var2_index; j = var1_index;
       }
       // rule out that we previously put a different (nonzero) value at (i,j)
-      // TAG: 0SWITCH
       // TAG: INEFFICIENT: do binary search
       NT old_val(0);
       D_sparse_column_iterator it = (*(this->get_d_sparse()+i)).begin();
@@ -2665,7 +2594,6 @@ private:
         }
         ++it;
       }
-      // old_val = (*(this->get_d()+i))[j];
       
       if (!CGAL::is_zero(old_val) && old_val != val)
         return this->err3("nonsymmetric '%' section at variables '%' and '%'",

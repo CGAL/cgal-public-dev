@@ -593,30 +593,13 @@ private:
   
   // solve QP
   Quadratic_program_status  solve( )
-  { 
-    // TAG: DEBUG
-    //print_program();
-    CGAL::QP_solver_debug::timer.reset();
-    CGAL::QP_solver_debug::timer.total.start();
-    
+  {
     // reset cycle detection
     fingerprint_map_.clear();
     current_fingerprint_hash_ = static_cast<size_t> (0);
     
     CGAL_qpe_assertion( phase() > 0);
     while ( phase() < 3) {
-      
-      // TAG: DEBUG
-      //CGAL::QP_solver_debug::timer.reset();
-      //std::cout << "BEFORE: " << std::endl;
-      //inv_M_B.report_matrix_size();
-      //inv_M_B.report_largest_GMPZF();
-      //CGAL::QP_solver_debug::timer.print(Verbose_ostream(true, std::cout));
-      //CGAL::QP_solver_debug::timer.gen_1.reset();
-      //CGAL::QP_solver_debug::timer.gen_1.start();
-      
-      
-      
       pivot_step();
       
       if (!bland_flag) {
@@ -632,20 +615,7 @@ private:
           fingerprint_map_.clear();
         }
       }
-      
-      // TAG: DEBUG
-      //CGAL::QP_solver_debug::timer.gen_1.stop();
-      //std::cout << "AFTER: " << std::endl;
-      //inv_M_B.report_matrix_size();
-      //inv_M_B.report_largest_GMPZF();
-      //std::cout << m_pivots << std::endl;
-      //CGAL::QP_solver_debug::timer.print(Verbose_ostream(true, std::cout));
-      
     }
-    
-    // TAG: DEBUG   
-    CGAL::QP_solver_debug::timer.total.stop();
-    CGAL::QP_solver_debug::timer.print(Verbose_ostream(true, std::cout));
     
     return status(); }
   

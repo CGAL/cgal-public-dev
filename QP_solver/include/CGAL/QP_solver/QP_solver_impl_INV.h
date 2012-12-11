@@ -193,13 +193,15 @@ pivot_step( )
   // pricing
   // -------
   
-  // TAG: DEBUG   
-  CGAL::QP_solver_debug::timer.pricing.start();
+  CGAL_qpe_debug {
+    //CGAL::QP_solver_debug::timer.pricing.start();
+  }
   
   pricing();
   
-  // TAG: DEBUG   
-  CGAL::QP_solver_debug::timer.pricing.stop();
+  CGAL_qpe_debug {
+    //CGAL::QP_solver_debug::timer.pricing.stop();
+  }
   
   
   // check for optimality
@@ -234,8 +236,9 @@ pivot_step( )
   }
   
   
-  // TAG: DEBUG   
-  CGAL::QP_solver_debug::timer.ratio_test.start();
+  CGAL_qpe_debug {
+   //CGAL::QP_solver_debug::timer.ratio_test.start();
+  }
   
   // ratio test & update (step 1)
   // ----------------------------
@@ -253,8 +256,9 @@ pivot_step( )
     }
   }
   
-  // TAG: DEBUG   
-  CGAL::QP_solver_debug::timer.ratio_test_1.start();
+  CGAL_qpe_debug {  
+    //CGAL::QP_solver_debug::timer.ratio_test_1.start();
+  }
   
   // loop (step 1)
   do {
@@ -296,9 +300,10 @@ pivot_step( )
     
   } while ( index_entering >= 0);
   
-  // TAG: DEBUG   
-  CGAL::QP_solver_debug::timer.ratio_test_1.stop();
-  CGAL::QP_solver_debug::timer.ratio_test_2.start();
+  CGAL_qpe_debug {
+    // CGAL::QP_solver_debug::timer.ratio_test_1.stop();
+    // CGAL::QP_solver_debug::timer.ratio_test_2.start();
+  }
   
   
   // ratio test & update (step 2)
@@ -354,9 +359,10 @@ pivot_step( )
     }
   } 
   
-  // TAG: DEBUG   
-  CGAL::QP_solver_debug::timer.ratio_test_2.stop();
-  CGAL::QP_solver_debug::timer.ratio_test_3.start();
+  CGAL_qpe_debug {
+    //CGAL::QP_solver_debug::timer.ratio_test_2.stop();
+    //CGAL::QP_solver_debug::timer.ratio_test_3.start();
+  }
   
   // ratio test & update (step 3)
   // ----------------------------
@@ -380,17 +386,13 @@ pivot_step( )
     transition();
   }
   
-  // TAG: DEBUG   
-  CGAL::QP_solver_debug::timer.ratio_test_3.stop();
-  CGAL::QP_solver_debug::timer.ratio_test.stop();
+  CGAL_qpe_debug {  
+    //CGAL::QP_solver_debug::timer.ratio_test_3.stop();
+    //CGAL::QP_solver_debug::timer.ratio_test.stop();
+  }
   
   // Cycle detection bookkeeping
-  
-  // TAG: DEBUG
-  //CGAL::QP_solver_debug::timer.gen_2.start();
   if (!bland_flag) {
-    
-    // TAG: DEBUG
     if (!progress_flag) {
       QP_solver_impl::Iteration_fingerprint<Indices> current_fingerprint(B_O, B_S);
       current_fingerprint_hash_ = QP_solver_impl::hash_value<Indices>(current_fingerprint);
@@ -399,11 +401,6 @@ pivot_step( )
       fingerprint_map_.clear();
     }
   }
-  
-  // TAG: DEBUG
-  //CGAL::QP_solver_debug::timer.gen_2.stop();
-  
-   
 }
 
 // pricing
@@ -1323,29 +1320,8 @@ expel_artificial_variables_from_basis( )
   // explicitly are synchronized during transition from phaseI to phaseII 
   for (unsigned int i_ = static_cast<unsigned int>(qp_n + slack_A.size()); i_ < static_cast<unsigned int>(in_B.size()); ++i_) {
     if (is_basic(i_)) { 					// is basic
-	    //if (has_ineq) {
-        //row_ind = in_C[ art_A[i_ - qp_n - slack_A.size()].first];
-        
-        // TAG: DEBUG
-        //std::cout << "in_C variant: " << row_ind << std::endl;
         row_ind = in_B[i_];
-        //std::cout << "in_B variant: " << row_ind << std::endl;
-        //CGAL_qpe_assertion(row_ind == in_C[ art_A[i_ - qp_n - slack_A.size()].first]);
-        
-        
-        /*
-        if (row_ind < 0) { // must be most infeasible linked to special artificial
-          row_ind = art_A[art_A.size()-1].first;
-          // TAG: DEBUG
-          std::cout << "gugugug\n";
-        }
-        */
-        
-        
-	    //} else {
-      //  row_ind = art_A[i_ - qp_n].first;
-	    //}
-	    
+
 	    // determine first possible entering variable,
 	    // if there is any
 	    for (unsigned int j_ = 0; j_ < static_cast<unsigned int>(qp_n + slack_A.size()); ++j_) {
@@ -2642,21 +2618,6 @@ compute_solution(Tag_true)
   inv_M_B.solve( b_C.begin(), minus_c_B.begin(),
                 lambda.begin(), x_B_O.begin());
   
-  // TAG: DEBUG
-  /*
-   std::cout << "Hyper (2606): ";
-   std::cout << "b_C: ";
-   std::copy(b_C.begin(), b_C.begin() + C.size(), std::ostream_iterator<ET>(std::cout, " "));
-   std::cout << "minus_c_B: ";
-   std::copy(minus_c_B.begin(), minus_c_B.begin() + B_O.size(), std::ostream_iterator<ET>(std::cout, " "));
-   std::cout << "lambda: ";
-   std::copy(lambda.begin(), lambda.begin() + C.size(), std::ostream_iterator<ET>(std::cout, " "));
-   std::cout << "x_B_O: ";
-   std::copy(x_B_O.begin(), x_B_O.begin() + B_O.size(), std::ostream_iterator<ET>(std::cout, " "));
-   std::cout << std::endl;
-   */
-  
-  
   // compute current solution, slack variables
   compute__x_B_S(no_ineq, Is_nonnegative());
 }
@@ -2683,40 +2644,11 @@ compute_solution(Tag_false)
     inv_M_B.solve( tmp_l.begin(), tmp_x.begin(),
                   lambda.begin(), x_B_O.begin());
     
-    // TAG: DEBUG
-    /*
-     std::cout << "Hyper (2636): ";
-     std::cout << "tmp_l: ";
-     std::copy(tmp_l.begin(), tmp_l.begin() + C.size(), std::ostream_iterator<ET>(std::cout, " "));
-     std::cout << "tmp_x: ";
-     std::copy(tmp_x.begin(), tmp_x.begin() + B_O.size(), std::ostream_iterator<ET>(std::cout, " "));
-     std::cout << "lambda: ";
-     std::copy(lambda.begin(), lambda.begin() + C.size(), std::ostream_iterator<ET>(std::cout, " "));
-     std::cout << "x_B_O: ";
-     std::copy(x_B_O.begin(), x_B_O.begin() + B_O.size(), std::ostream_iterator<ET>(std::cout, " "));
-     std::cout << std::endl;
-     */
-    
   } else {                                          // r_B_O == 0
     
     // compute current solution, original variables and lambdas        
     inv_M_B.solve( tmp_l.begin(), minus_c_B.begin(),
                   lambda.begin(), x_B_O.begin());
-    
-    // TAG: DEBUG
-    /*
-     std::cout << "Hyper (2648):\n";
-     std::cout << "tmp_l: ";
-     std::copy(tmp_l.begin(), tmp_l.begin() + C.size(), std::ostream_iterator<ET>(std::cout, " "));
-     std::cout << "minus_c_B: ";
-     std::copy(minus_c_B.begin(), minus_c_B.begin() + B_O.size(), std::ostream_iterator<ET>(std::cout, " "));
-     std::cout << "lambda: ";
-     std::copy(lambda.begin(), lambda.begin() + C.size(), std::ostream_iterator<ET>(std::cout, " "));
-     std::cout << "x_B_O: ";
-     std::copy(x_B_O.begin(), x_B_O.begin() + B_O.size(), std::ostream_iterator<ET>(std::cout, " "));
-     std::cout << std::endl;
-     */
-    
   }
   
   

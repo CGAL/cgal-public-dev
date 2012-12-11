@@ -33,13 +33,8 @@ void  QP__filtered_base<Q,ET,Tags,NT_,ET2NT_>::
 set( )
 {
     // reserve memory for NT versions of current solution
-    //int  l = (std::min)( this->solver().number_of_variables(),
-    //		           this->solver().number_of_constraints());
-    
-    // TAG: 1SWITCH
     int l = this->solver().get_l();
     int m = this->solver().number_of_constraints();
-    //lambda_NT.resize( l, nt0);
     lambda_NT.resize(m,nt0);
     set( l, Is_linear());
 }
@@ -170,12 +165,10 @@ update_maxima( )
   
   
   // update row and column maxima of 'A'
-  //A_iterator  a_it = this->solver().a_begin(); // TAG: 1SWITCH
   R_iterator  r_it = this->solver().row_type_begin();
   int         row, col;
   NT          row_max, z;
   
-  // TAG: 1SWITCH
   A_sparse_iterator a_sparse_it = this->solver().a_sparse_begin();
   A_sparse_column_iterator it, it_end;
 
@@ -194,7 +187,6 @@ update_maxima( )
       row_max = (    ( r_it[ row] != CGAL::EQUAL)
                  || ( this->solver().phase() == 1) ? nt1 : nt0);
       
-      // TAG: 1SWITCH
       // scan row and update maxima
       for ( col = 0; col < n; ++col) {
         // TAG: INEFFICIENT, binary search & invert loop...?
@@ -210,14 +202,6 @@ update_maxima( )
         if ( z > row_max      ) row_max       = z;
         if ( z > col_max[ col]) col_max[ col] = z;
       }
-      
-      /*
-      // scan row and update maxima
-      for ( col = 0; col < n; ++col) {
-        z = CGAL::abs( *((*(a_it + col))+row));
-        if ( z > row_max      ) row_max       = z;
-        if ( z > col_max[ col]) col_max[ col] = z;
-      }*/
       
       row_max_A[ row] = row_max;
       handled_A[ row] = true;
@@ -272,7 +256,6 @@ void  QP__filtered_base<Q,ET,Tags,NT_,ET2NT_>::
     
       if ( ! handled_D[ row]) {
       
-        // TAG: 0SWITCH
         // scan row and update maxima
         d_row_it = (*(this->solver().d_sparse_begin()+row)).begin();
         d_row_it_end = (*(this->solver().d_sparse_begin()+row)).end();
@@ -286,19 +269,6 @@ void  QP__filtered_base<Q,ET,Tags,NT_,ET2NT_>::
         }
         row_max_D[ row] = row_max;
         handled_D[ row] = true;
-        
-        /*
-        // scan row and update maxima
-        d_row_it = this->solver().d_begin()[ row];
-        row_max = nt0;
-        for ( col = 0; col < n; ++col, ++d_row_it) {
-          z = CGAL::abs( *d_row_it);
-          if ( z > row_max      ) row_max       = z;
-          if ( z > col_max[ col]) col_max[ col] = z;
-        }
-        row_max_D[ row] = row_max;
-        handled_D[ row] = true;
-        */
       }
       // update bounds
       z = CGAL::abs( (*v_it));

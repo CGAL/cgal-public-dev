@@ -35,7 +35,7 @@ QP_solver(const Q& qp, const Quadratic_program_options& options)
     basis_matrix_(),
     lu_fact_(vout4, this),
     denominator_(lu_fact_.get_denominator()),
-    is_lambda_sorted(false), // TAG: 9SWITCH
+    is_lambda_sorted(false),
     m_phase(-1), is_phaseI(false), is_phaseII(false),
     is_RTS_transition(false),
     is_LP(Is_linear::value), is_QP(!is_LP),
@@ -45,10 +45,6 @@ QP_solver(const Q& qp, const Quadratic_program_options& options)
     has_ineq(!no_ineq),
     is_nonnegative(Is_nonnegative::value)
 {
-
-
-  // TAG: DEBUG Ouput to test correct include paths...
-  //std::cout << "This is Sparse_QP_solver experimental package..." << std::endl;
 
   // init diagnostics
   diagnostics.redundant_equations = false;
@@ -75,19 +71,14 @@ template < typename Q, typename ET, typename Tags >
 void QP_solver<Q, ET, Tags>::
 set_D(const Q& /*qp*/, Tag_true /*is_linear*/)
 {
-  // dummy value, never used
-  // TAG: 0SWITCH
-  //qp_old_D = 0;
 }
 
 template < typename Q, typename ET, typename Tags >
 void QP_solver<Q, ET, Tags>::
 set_D(const Q& qp, Tag_false /*is_linear*/)
 {
-  // TAG: 0SWITCH
   Sparse_adaptor adaptor;
   qp_D_sparse = adaptor.get_d_sparse(qp);
-  //qp_old_D = qp.get_d();
 }
 
 template < typename Q, typename ET, typename Tags >
@@ -100,16 +91,10 @@ set(const Q& qp)
   
   // store QP
   qp_n = qp.get_n(); qp_m = qp.get_m();
+  qp_b = qp.get_b(); qp_c = qp.get_c(); qp_c0 = qp.get_c0();
   
-  // TAG: 0SWITCH
-  /*qp_old_A = qp.get_a();*/ qp_b = qp.get_b(); qp_c = qp.get_c(); qp_c0 = qp.get_c0();
-  
-  
-  
-  // TAG: 0SWITCH
   Sparse_adaptor adaptor;
   qp_A_sparse = adaptor.get_a_sparse(qp);
-  
   
   set_D(qp, Is_linear());
   qp_r = qp.get_r();
@@ -269,21 +254,7 @@ set_up_auxiliary_problem()
     // 0<=i<qp_n), and therefore, rhs=b-Ax is not simply b as in the standard
     // form case, but Ax_init-b:
     
-    /*
-    const ET rhs = Is_nonnegative::value ?
-    static_cast<ET>(*(qp_b+i)) : static_cast<ET>(*(qp_b+i)) - multiply__A_ixO(i);
-    */
-    
-    // TAG: DEBUG
-    /*
-    if (!Is_nonnegative::value) {
-      std::cout << "Is_nonnegative::value: " << Is_nonnegative::value << std::endl;
-      std::cout << "multiply__A_ixO(i): " << multiply__A_ixO(i) << std::endl;
-      std::cout << "AxO[i]: " << AxO[i] << std::endl;
-    }*/
-    
     //CGAL_qpe_assertion(Is_nonnegative::value || multiply__A_ixO(i) == AxO[i]);
-    
     
     const ET rhs = Is_nonnegative::value ?
     static_cast<ET>(*(qp_b+i)) : static_cast<ET>(*(qp_b+i)) - AxO[i];
@@ -448,31 +419,10 @@ init_basis()
     // infeasible row. Putting s_i here is therefore a mistake unless
     // we only have equality constraints
 
-    // art_A.push_back(std::make_pair(s_i, !slack_A[s_i].second)); 
     CGAL_qpe_assertion(s_i_absolute >= 0);
     CGAL_qpe_assertion(s_i_absolute == slack_A[s_i].first);
     
-    // TAG: 9SWITCH
-    // try to introduce the special artificial at the correct spot.
     art_A.push_back(std::make_pair(s_i_absolute, !slack_A[s_i].second));
-    /*
-    int i = 0;
-    for (; i < static_cast<int>(art_A.size()); ++i) {
-      if (s_i_absolute < art_A[i].first) {
-        break;
-      }
-    }
-    A_art::iterator it = art_A.begin() + i;
-    art_A.insert(it, std::make_pair(s_i_absolute, !slack_A[s_i].second));
-    s_a_index = i;
-    
-    // TAG: DEBUG
-    for (int i = 0; i < art_A.size(); ++i) {
-      std::cout << "(" << art_A[i].first << "," << art_A[i].second << "),";
-    }
-    std::cout << std::endl;
-    */
-    
   }
   
   // initialize indices of basic variables:
@@ -499,12 +449,6 @@ init_basis()
     if (vout.verbose()) print_basis();
   }
   
-  // TAG: SWITCH (not needed any more)
-  // initialize basis inverse (explain: 'art_s' not needed here (todo kf: don't
-  // understand this note)):
-  // BG: as we only look at the basic constraints, the fake column in art_A
-  // will do as nicely as the actual column arts_s
-  //inv_M_B.init(art_A.size(), art_A.begin());
   lu_fact_.set_invalid();
 }
 
@@ -573,7 +517,6 @@ init_basis__constraints(int s_i, Tag_false)  // Note: s_i-th inequality is the
   if (s_i >= 0) s_i = slack_A[s_i].first;    // now s_i is absolute index
                                             // of most infeasible row
 
-  // TAG: 9SWITCH
   for (i = 0, j = 0; i < qp_m; ++i)
     if (*(qp_r+i) == CGAL::EQUAL  /*|| (s_i >= 0 && s_i == i)*/) {             // equal. constraint basic
       C.push_back(i);
@@ -677,7 +620,6 @@ init_solution()
     else                                        // normal artificial
       aux_c[col-qp_n-slack_A.size()]= 1;
 
-  // TAG: 9SWITCH add lambda_sorted
   // allocate memory for current solution:
   if (!lambda.empty()) lambda.clear();
   if (!lambda_sorted.empty()) lambda_sorted.clear();

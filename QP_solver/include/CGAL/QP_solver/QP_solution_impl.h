@@ -623,7 +623,6 @@ template <typename Program, typename Z_iterator >
 void Quadratic_program_solution<ET>::add_Az 
 (const Program& p, Z_iterator z, typename std::vector<ET>& v)
 {
-  // TAG: 0SWITCH
   // iterator types
   typedef typename QP_model_detail::Sparse_iterator_adaptor<Program, typename Program::Is_sparse> Adaptor;
   typedef typename Adaptor::A_sparse_iterator A_sparse_iterator;
@@ -645,21 +644,6 @@ void Quadratic_program_solution<ET>::add_Az
       }
     }
   }
-  
-  
-  /*
-  // now compute the product
-  A_matrix_iterator a = p.get_a();
-  //int n = p.get_n();
-  for (int j=0; j<n; ++j, ++a, ++z) {
-    if (!CGAL::is_zero(*z)) {
-      // add A_j * z_j to az
-      A_column_iterator a_j = *a;
-      for (int i=0; i<p.get_m(); ++i, ++a_j)
-  	v[i] += *z * ET(*a_j);
-    }
-  }
-  */
 }
 
 // computes the product of 2D with the n-vector given by z

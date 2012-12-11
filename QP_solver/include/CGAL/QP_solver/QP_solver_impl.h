@@ -22,8 +22,6 @@
 //                 Yves Brise
 
 #include <CGAL/QP_solver/Initialization.h>
-
-// TAG: DEBUG
 #include <CGAL/Timer.h>
 
 namespace CGAL {
@@ -68,12 +66,7 @@ transition( )
   }
   
   transition( Is_linear());
-  
-  // TAG: SWITCH
-  /*
-   CGAL_qpe_debug {
-   check_basis_inverse();
-   }*/
+
   
   // initialize exact version of `-qp_c' (implicit conversion to ET)
   C_by_index_accessor  c_accessor( qp_c);
@@ -123,7 +116,6 @@ solution_numerator( ) const
       i = *i_it;
       
       // compute quadratic part: 2D_i x
-      // TAG: 0SWITCH
       s = et0;
       if (is_QP && is_phaseII) {
         D_sparse_column_iterator it = (*(qp_D_sparse+i)).begin();
@@ -148,36 +140,6 @@ solution_numerator( ) const
       
       // add x_i(2D_i x + 2c_i)
       z += s * *x_i_it; // endowed with a factor of d*d now
-      
-      /*
-       ET s2 = et0;
-       if ( is_QP && is_phaseII) {
-       // half the off-diagonal contribution
-       s2 += std::inner_product(x_B_O.begin(), x_i_it,
-       D_pairwise_iterator(
-       B_O.begin(),
-       D_pairwise_accessor( qp_old_D, i)),
-       et0);
-       // the other half
-       s2 *= et2;
-       // diagonal contribution
-       s2 += static_cast<ET>( (*(qp_old_D + i))[ i]) * *x_i_it;
-       }
-       // add linear part: 2c_i
-       s2 -= denominator_ * et2 * static_cast<ET>( *c_it);
-       */
-      
-      // TAG: DEBUG
-      /*
-       std::cout << "OLDs: " << s2 << std::endl;
-       std::cout << "NEWs: " << s << std::endl;
-       assert(s == s2);
-       */
-      
-      /*
-      // add x_i(2D_i x + 2c_i)
-      z += s2 * *x_i_it; // endowed with a factor of d*d now
-      */
     }
   } else {
     // nonstandard form and phase II, 
@@ -186,7 +148,6 @@ solution_numerator( ) const
     // order in i_it and j_it matches original variable order
     if (is_QP) {
     
-      // TAG: 0SWITCH
       // quadratic part
       i=0;
       for (Variable_numerator_iterator 
@@ -213,37 +174,6 @@ solution_numerator( ) const
         // accumulate
         z += s * *i_it;
       }
-      
-      /*
-      // quadratic part
-      i=0;
-      for (Variable_numerator_iterator 
-           i_it = this->original_variables_numerator_begin(); 
-           i_it < this->original_variables_numerator_end(); ++i_it, ++i) {
-        // do something only if *i_it != 0
-        if (*i_it == et0) continue;
-        s = et0; // contribution of i-th row
-        Variable_numerator_iterator j_it = 
-        this->original_variables_numerator_begin();
-        // half the off-diagonal contribution
-        j=0;
-        for (; j<i; ++j_it, ++j)
-          s += static_cast<ET>(*((*(qp_old_D+i))+j)) * *j_it;
-        // the other half
-        s *= et2;
-        // the diagonal entry
-        s += static_cast<ET>(*((*(qp_old_D+i))+j)) * *j_it;
-        // accumulate
-        z += s * *i_it;
-      }*/
-      
-      // TAG: DEBUG
-      /*
-       std::cout << "OLDs: " << s2 << std::endl;
-       std::cout << "NEWs: " << s << std::endl;
-       assert(s == s2);
-      */
-      
     }
     // linear part
     j=0; s = et0;
@@ -282,8 +212,9 @@ pivot_step( )
   // pricing
   // -------
   
-  // TAG: DEBUG   
-  //CGAL::QP_solver_debug::timer.pricing.start();
+  CGAL_qpe_debug {
+    //CGAL::QP_solver_debug::timer.pricing.start();
+  }
   
   // we need to make sure that lambda_sorted is properly set up.
   // we assume that it is filled with ET(0)'s at the beginning.
@@ -302,8 +233,9 @@ pivot_step( )
   is_lambda_sorted = false;
   
   
-  // TAG: DEBUG   
-  //CGAL::QP_solver_debug::timer.pricing.stop();
+  CGAL_qpe_debug { 
+    //CGAL::QP_solver_debug::timer.pricing.stop();
+  }
   
   // check for optimality
   if ( index_entering < 0) {
@@ -336,8 +268,9 @@ pivot_step( )
     return;
   }
   
-  // TAG: DEBUG   
-   // CGAL::QP_solver_debug::timer.ratio_test.start();
+  CGAL_qpe_debug {
+    //CGAL::QP_solver_debug::timer.ratio_test.start();
+  }
     
   
   
@@ -359,18 +292,12 @@ pivot_step( )
   }
   
   
-  // TAG: DEBUG   
-  //CGAL::QP_solver_debug::timer.ratio_test_1.start();
+  CGAL_qpe_debug {
+    //CGAL::QP_solver_debug::timer.ratio_test_1.start();
+  }
   
   // loop (step 1)
   do {
-
-    // TAG: DEBUG
-    //++counter;
-    //std::cout << "counter: " << counter << std::endl;
-    //std::cout << "index_entering: " << index_entering << std::endl;
-    //std::cout << "index_leaving: " << index_leaving << std::endl;
-
     // ratio test
     ratio_test_1();
     
@@ -394,16 +321,8 @@ pivot_step( )
                                     q_lambda.begin(),    q_x_O.begin());    
         
         if (is_QP) {
-          // TAG: 0SWITCH
           // TAG: INEFFICIENT maybe we need the whole column earlier, then we would not have
           // to traverse it for each entry separately.
-          /*
-          if (index_entering < qp_n) {
-            
-            nu -= denominator_*static_cast<ET>(*((*(qp_old_D+index_entering))+index_entering));
-          }
-          */
-        
           if (index_entering < qp_n) { 
             D_sparse_column_iterator it = (*(qp_D_sparse+index_entering)).begin();
             D_sparse_column_iterator it_end = (*(qp_D_sparse+index_entering)).end();
@@ -412,11 +331,6 @@ pivot_step( )
             if (it != it_end && it->first == index_entering) tmp = it->second;
             nu -= denominator_ * tmp;
           }
-          
-          
-          // TAG: DEBUG
-          //std::cout << "OLD: " << static_cast<ET>( (*(qp_old_D + index_entering))[ index_entering]) << std::endl;
-          //std::cout << "NEW: " << tmp << std::endl;
         }
         CGAL_qpe_assertion(nu == et0);
       }
@@ -424,19 +338,13 @@ pivot_step( )
     }
     // update
     update_1();
-    
-    // TAG: DEBUG
-    //std::cout << "index_entering: " << index_entering << std::endl;
-    //std::cout << "index_leaving: " << index_leaving << std::endl;
-    
-
-    
   } while ( index_entering >= 0);
   
   
-  // TAG: DEBUG   
-  //CGAL::QP_solver_debug::timer.ratio_test_1.stop();
-  //CGAL::QP_solver_debug::timer.ratio_test_2.start();
+  CGAL_qpe_debug {
+    //CGAL::QP_solver_debug::timer.ratio_test_1.stop();
+    //CGAL::QP_solver_debug::timer.ratio_test_2.start();
+  }
   
   // ratio test & update (step 2)
   // ----------------------------
@@ -491,9 +399,10 @@ pivot_step( )
     }
   } 
   
-  // TAG: DEBUG   
-  //CGAL::QP_solver_debug::timer.ratio_test_2.stop();
-  //CGAL::QP_solver_debug::timer.ratio_test_3.start();
+  CGAL_qpe_debug { 
+    //CGAL::QP_solver_debug::timer.ratio_test_2.stop();
+    //CGAL::QP_solver_debug::timer.ratio_test_3.start();
+  }
   
   // ratio test & update (step 3)
   // ----------------------------
@@ -517,41 +426,20 @@ pivot_step( )
     transition();
   }
   
-  // TAG: DEBUG   
-  //CGAL::QP_solver_debug::timer.ratio_test_3.stop();
-  //CGAL::QP_solver_debug::timer.ratio_test.stop();
+  CGAL_qpe_debug { 
+    //CGAL::QP_solver_debug::timer.ratio_test_3.stop();
+    //CGAL::QP_solver_debug::timer.ratio_test.stop();
+  }
   
   // Cycle detection bookkeeping
   if (!bland_flag) {
-    // TAG: DEBUG
-    //CGAL::QP_solver_debug::timer.gen_1.start();
-    //std::cout << "numerator bitsize: " << mpz_sizeinbase((solution_numerator()).man(), 2) << std::endl;
-    //std::cout << "denominator bitsize: " << mpz_sizeinbase((solution_denominator()).man(), 2) << std::endl;
-    
-    //double cur_it_opt_value = to_double(CGAL::Quotient<ET>(solution_numerator(), solution_denominator()));
-    
-    // TAG: DEBUG
-    //CGAL::QP_solver_debug::timer.gen_1.stop();
-    //CGAL::QP_solver_debug::timer.gen_2.start();
-    
-    
-    //if (prev_it_opt_value_ ==  cur_it_opt_value) {
     if (!progress_flag) {
       QP_solver_impl::Iteration_fingerprint<Indices> current_fingerprint(B_O, B_S);
       current_fingerprint_hash_ = QP_solver_impl::hash_value<Indices>(current_fingerprint);
       fingerprint_map_[current_fingerprint_hash_].push_back(std::pair<int, QP_solver_impl::Iteration_fingerprint<Indices> >(m_pivots, current_fingerprint));
     } else {
-      // TAG: DEBUG
-      //std::cout << std::endl << "PROGRESS OLD!" << m_pivots << std::endl;
-      
-      //prev_it_opt_value_ = cur_it_opt_value;
       fingerprint_map_.clear();
     }
-    // TAG: DEBUG
-    //CGAL::QP_solver_debug::timer.gen_2.stop();
-    
-    // TAG: DEBUG
-    //std::cout << "Hash_value: " << current_fingerprint_hash_ << std::endl;
   }
   
   
@@ -636,7 +524,6 @@ ratio_test_init__A_Cj( Value_iterator A_Cj_it, int j_, Tag_true)
   // store exact version of `A_Cj' (implicit conversion)
   if ( j_ < qp_n) {                                   // original variable
     
-    // TAG: 1SWITCH
     std::fill_n( A_Cj_it, qp_m, et0); // TAG: INEFFICIENT... it's a pity that we have to fill with zeros first.
     A_sparse_column_iterator it = (*(qp_A_sparse+j_)).begin();
     A_sparse_column_iterator it_end = (*(qp_A_sparse+j_)).end();
@@ -644,9 +531,6 @@ ratio_test_init__A_Cj( Value_iterator A_Cj_it, int j_, Tag_true)
       *(A_Cj_it + it->first) = it->second;
       ++it;
     }
-    
-//    CGAL::copy_n( *(qp_old_A + j_), qp_m, A_Cj_it);
-    
   } else {                                            // artificial variable
     
     unsigned int  k = j_;
@@ -664,15 +548,7 @@ ratio_test_init__A_Cj( Value_iterator A_Cj_it, int j_, Tag_false)
   if ( j_ < qp_n) {                                   // original 
     
     // TAG: INEFFICIENT because it's not C-filtered
-    // TAG: 1SWITCH
     std::fill_n( A_Cj_it, C.size(), et0);
-    /*
-    A_by_index_accessor  a_accessor( *(qp_old_A + j_));
-    std::copy( A_by_index_iterator( C.begin(), a_accessor),
-              A_by_index_iterator( C.end  (), a_accessor),
-              A_Cj_it);
-    */
-        
     A_sparse_column_iterator it = (*(qp_A_sparse+j_)).begin();
     A_sparse_column_iterator it_end = (*(qp_A_sparse+j_)).end();
     while (it != it_end) {
@@ -689,30 +565,14 @@ ratio_test_init__A_Cj( Value_iterator A_Cj_it, int j_, Tag_false)
     if ( k < static_cast<unsigned int>(slack_A.size()) ) {                      // slack variable
       A_Cj_it[ in_C[ slack_A[ k].first]] = ( slack_A[ k].second ? -et1
                                             :  et1);
-      // TAG: DEBUG
-      /*
-      std::cout << "III slack variable\n";
-      std::cout << "slack_A[ k].first: " << slack_A[ k].first << std::endl;
-      std::cout << "A_Cj_it[ in_C[ slack_A[ k].first]]: " << A_Cj_it[ in_C[ slack_A[ k].first]] << std::endl;
-      */
     } else {                                        // artificial variable
       k -= static_cast<unsigned int>(slack_A.size());
       
-      // TAG: 9SWITCH
-      // if (k >= s_a_index) {++k;}
-      
       if ( j_ != art_s_i) {                           // normal art.
-        // TAG: DEBUG
-        //std::cout << "III artificial variable\n";
-        
-        
         A_Cj_it[ in_C[ art_A[ k].first]] = ( art_A[ k].second ? -et1
                                             :  et1);
         
       } else {                                        // special art.
-        // TAG: DEBUG
-        //std::cout << "III special variable\n";
-        
         S_by_index_accessor  s_accessor( art_s.begin());
         std::copy( S_by_index_iterator( C.begin(), s_accessor),
                   S_by_index_iterator( C.end  (), s_accessor),
@@ -720,18 +580,9 @@ ratio_test_init__A_Cj( Value_iterator A_Cj_it, int j_, Tag_false)
       }	
     }
   }
-  
-  // TAG: DEBUG
-  /*
-  std::cout << std::endl;
-  std::copy(A_Cj_it, A_Cj_it+C.size(), std::ostream_iterator<ET>(std::cout,","));
-  std::cout << std::endl;
-  */
 }
 
-
-// TODO: EFFICIENCY maybe do more efficiently... not spend n^2 every time by storing the original
-// matrix somehow, or by fetching it from lu_fact_
+    
 template < typename Q, typename ET, typename Tags >
 void  QP_solver<Q, ET, Tags>::
 init__A_Ri( Value_iterator A_Ri_it, int i_, bool no_ineq)
@@ -764,41 +615,7 @@ init__A_Ri( Value_iterator A_Ri_it, int i_, bool no_ineq)
       }
     }
   }
-  
-  // TAG: DEBUG
-  //std::copy(A_Ri_it, A_Ri_it+B_O.size(), std::ostream_iterator<ET>(std::cout, " "));
-  //std::cout << std::endl;
 }
-
-/*
-template < typename Q, typename ET, typename Tags >
-void  QP_solver<Q, ET, Tags>::
-init__A_ij(ET& val, int i, int j, bool no_ineq) {
-  val = et0;
-  if (B_O[j] < qp_n) { // original variable
-      A_sparse_column_iterator it = (*(qp_A_sparse+B_O[j])).begin();
-      A_sparse_column_iterator it_end = (*(qp_A_sparse+B_O[j])).end();
-      while (it != it_end && it->first < i) {
-        ++it;
-      }
-      if (it != it_end && it->first == i) {
-        val = it->second;
-      }
-    } else {
-      if (B_O[j] != art_s_i) { // regular artificial
-        unsigned int k = B_O[j] - qp_n;
-        if (!no_ineq) k -= slack_A.size();
-        if (art_A[k].first == i) {
-          val = ( art_A[ k].second ? -et1 : et1);
-        }
-      } else { // special artificial
-        if (in_B[art_s_i] == j) {
-          val = static_cast<ET>(art_s[i]);
-        }
-      }
-    }
-}
-*/
 
 template < typename Q, typename ET, typename Tags >                                         // no ineq.
 void  QP_solver<Q, ET, Tags>::
@@ -849,40 +666,17 @@ init__A_ij( ET& val, int i, int j, Tag_false)
       if (in_C[ slack_A[ k].first] == i) {
         val = ( slack_A[ k].second ? -et1 : et1);
       }
-      // TAG: DEBUG
-      /*
-      std::cout << "III slack variable\n";
-      std::cout << "slack_A[ k].first: " << slack_A[ k].first << std::endl;
-      std::cout << "A_Cj_it[ in_C[ slack_A[ k].first]]: " << A_Cj_it[ in_C[ slack_A[ k].first]] << std::endl;
-      */
     } else {                                        // artificial variable
       k -= static_cast<unsigned int>(slack_A.size());
       if ( j != art_s_i) {                           // normal art.
-        // TAG: DEBUG
-        //std::cout << "III artificial variable\n";
         if (in_C[ art_A[ k].first] == i) {
           val = ( art_A[ k].second ? -et1 : et1);
         }        
       } else {                                        // special art.
-        // TAG: DEBUG
-        //std::cout << "III special variable\n";
         val = art_s[C[i]];
-        /*
-        S_by_index_accessor  s_accessor( art_s.begin());
-        std::copy( S_by_index_iterator( C.begin(), s_accessor),
-                  S_by_index_iterator( C.end  (), s_accessor),
-                  A_Cj_it);
-                  */
       }	
     }
   }
-  
-  // TAG: DEBUG
-  /*
-  std::cout << std::endl;
-  std::copy(A_Cj_it, A_Cj_it+C.size(), std::ostream_iterator<ET>(std::cout,","));
-  std::cout << std::endl;
-  */
 }
 
 /////////////////////////////////////////////
@@ -983,9 +777,6 @@ ratio_test_1( )
   
   // set progress flag for cycle detection
   progress_flag = ((q_i != et0 && x_i != 0) ? true : false);
-  
-  // TAG: DEBUG
-  //if (q_i != et0 && x_i != 0) std::cout << std::endl << "PROGRESS NEW!" << m_pivots << std::endl;
   
   // diagnostic output
   CGAL_qpe_debug {
@@ -1584,11 +1375,6 @@ update_1( )
   // update basis & basis inverse
   update_1( Is_linear());
   
-  // TAG: SWITCH
-  /*
-   CGAL_qpe_assertion(check_basis_inverse());
-   */
-  
   
   // check the updated vectors r_C and r_S_B
   CGAL_expensive_assertion(check_r_C(Is_nonnegative()));
@@ -1644,13 +1430,6 @@ update_2( Tag_false)
 
     // leave variable from basis
     leave_variable();
-  
-  // TAG: SWITCH
-  /*
-    CGAL_qpe_debug {
-        check_basis_inverse();
-    }
-   */
     
     // check the updated vectors r_C, r_S_B, r_B_O and w
     CGAL_expensive_assertion(check_r_C(Is_nonnegative()));
@@ -1684,36 +1463,11 @@ expel_artificial_variables_from_basis( )
     // The partial pricing strategies that keep the set of nonbasic vars
     // explicitly are synchronized during transition from phaseI to phaseII
     
-    // TAG: SWITCH
     for (unsigned int i_ = static_cast<unsigned int>(qp_n + slack_A.size()); i_ < static_cast<unsigned int>(in_B.size()); ++i_) {
       if (is_basic(i_)) { 					// is basic
-			  //if (has_ineq) {
-				  //row_ind = in_C[ art_A[i_ - qp_n - slack_A.size()].first]; // runs into problems sometimes when special artificial has to be treated
           row_ind = in_B[i_];
-			  //} else {
-				//  row_ind = art_A[i_ - qp_n].first;
-			  //}
-			
-			  Values colvector(C.size());
-			  //inv_M_B_get_lower_right_rowcol(row_ind, colvector.begin()); //bottleneck of this function
-        
-        // TAG: DEBUG
-        /*
-        Values colvector2(C.size());
-        std::cout << "row_ind: " << row_ind << std::endl;
-        std::cout << "art_A[i_ - qp_n - slack_A.size()].first: " << art_A[i_ - qp_n - slack_A.size()].first << std::endl;
-        Values einheit2(C.size()+B_O.size(),et0);
-	      Values dummy2(B_O.size());
-	      einheit2[C.size() + 0] = et1;
-	      lu_fact_.solve(einheit2.begin(), einheit2.begin() + C.size(), colvector2.begin(), dummy2.begin(), Is_linear::value, is_phaseI);
-        std::cout << "\ncolvector2: ";
-            std::copy(colvector2.begin(), colvector2.end(), std::ostream_iterator<ET>(std::cout, ", "));
-            std::cout << std::endl;
-        */
-        
-        // TODO: TAG consistency... possible replacable by ratio_test_init__A_Cj stuff, or at least a more specialized solver routine
-        // TODO: reconsider/replace variable names such as einheit, dummy, nonzero_of_colvector
-			  Values einheit(C.size()+B_O.size(),et0);
+		  Values colvector(C.size());
+		  Values einheit(C.size()+B_O.size(),et0);
 	      Values dummy(B_O.size());
 	      einheit[C.size() + row_ind] = et1;
 	      lu_fact_.solve(einheit.begin(), einheit.begin() + C.size(), colvector.begin(), dummy.begin(), Is_linear::value, is_phaseI);
@@ -1727,16 +1481,6 @@ expel_artificial_variables_from_basis( )
 			  for (unsigned int j_ = 0; j_ < static_cast<unsigned int>(qp_n + slack_A.size()); ++j_) {
 				  if (!is_basic(j_)) {  				// is nonbasic 
 					  ratio_test_init__A_Cj( A_Cj.begin(), j_, no_ineq);
-            
-            // TAG: DEBUG
-            /*
-            std::cout << "\nA_Cj:";
-            std::copy(A_Cj.begin(), A_Cj.end(), std::ostream_iterator<ET>(std::cout, ", "));
-            std::cout << "\ncolvector: ";
-            std::copy(colvector.begin(), colvector.end(), std::ostream_iterator<ET>(std::cout, ", "));
-            std::cout << std::endl;
-            */
-            
  					  r_A_Cj = et0;
 					  r_A_Cj = lu_fact_.inner_product(colvector.begin(), A_Cj.begin(), C.size());  // bottle neck of this function so sparse inner_product and representation of the vectors
             
@@ -1751,33 +1495,6 @@ expel_artificial_variables_from_basis( )
 			  }
 		  }
     }
-
-    /*
-        for (unsigned int i_ = qp_n + slack_A.size(); i_ < in_B.size(); ++i_) {
-          if (is_basic(i_)) { 					// is basic
-	          if (has_ineq) {
-	            row_ind = in_C[ art_A[i_ - qp_n - slack_A.size()].first];
-	          } else {
-	            row_ind = art_A[i_ - qp_n].first;
-	          }
-	    
-	          // determine first possible entering variable,
-	          // if there is any
-	          for (unsigned int j_ = 0; j_ < qp_n + slack_A.size(); ++j_) {
-	            if (!is_basic(j_)) {  				// is nonbasic 
-		            ratio_test_init__A_Cj( A_Cj.begin(), j_, no_ineq);
-		            r_A_Cj = inv_M_B.inv_M_B_row_dot_col(row_ind, A_Cj.begin());
-		            if (r_A_Cj != et0) {
-		              ratio_test_1__q_x_O(Is_linear());
-			            index_leaving = i_;
-			            index_entering = j_;
-			            update_1(Is_linear());
-			            break;
-		            } 
-		          }
-	          }
-	        }
-        }*/
     
         if ((art_basic != 0) && no_ineq) {
           // the vector in_C was not used in phase I, but now we remove redundant
@@ -1861,23 +1578,15 @@ replace_variable_original_original( )
     if ( vout2.verbose()) print_basis();
   }
   
-  
-  // update basis inverse
-  // TAG: SWITCH
-  //inv_M_B.enter_original_leave_original( q_x_O.begin(), k);
-
-  // TAG: DEBUG
-  //std::cout << "hereO_O\n";
-  
   bool success(false);
   success = update_basis_matrix_O_O(k, tmp, Tag_true()); // linear case, type U5
   //lu_fact_.set_invalid();
   
   
-  //CGAL_qpe_debug {
+  CGAL_qpe_debug {
       if (success) ++CGAL::QP_solver_debug::timer.counter_O_O;
       else ++CGAL::QP_solver_debug::timer.counter_O_O_fail;
-  //}
+  }
 }
 
 // update of the vector r for U_5 with upper bounding, note that we 
@@ -1956,31 +1665,17 @@ replace_variable_slack_slack( )
   CGAL_qpe_debug {
     if ( vout2.verbose()) print_basis();
   }
-  
-  
-  // TAG: SWITCH
-  // update basis inverse
-  /*
-   A_row_by_index_accessor  a_accessor =
-   boost::bind( A_accessor( qp_old_A, 0, qp_n), _1, new_row);
-   std::copy( A_row_by_index_iterator( B_O.begin(), a_accessor),
-   A_row_by_index_iterator( B_O.end  (), a_accessor),
-   tmp_x.begin());
-   if ( art_s_i > 0) {                                 // special artificial
-   tmp_x[ in_B[ art_s_i]] = static_cast<ET>( art_s[ new_row]);
-   }*/
-  //inv_M_B.enter_slack_leave_slack( tmp_x.begin(), k);
-  
+
 
   bool success(false);
   success = update_basis_matrix_LP_S_S(k, tmp); // type U6
-  //lu_fact_.set_invalid();
+  //lu_fact_.set_invalid(); // bail out variant (just refactor)
   
   
-  //CGAL_qpe_debug {
+  CGAL_qpe_debug {
       if (success) ++CGAL::QP_solver_debug::timer.counter_S_S;
       else ++CGAL::QP_solver_debug::timer.counter_S_S_fail;
-  //}
+  }
   
 }
 
@@ -2058,22 +1753,12 @@ replace_variable_slack_original( )
   
   bool success(false);
   success = update_basis_matrix_LP_S_O(l, old_row, k, old_col, last_row, last_col); // type U8
-  //lu_fact_.set_invalid();
+  //lu_fact_.set_invalid(); // bail out variant (just refactor)
   
-  
-  //CGAL_qpe_debug {
+  CGAL_qpe_debug {
       if (success) ++CGAL::QP_solver_debug::timer.counter_S_O;
       else ++CGAL::QP_solver_debug::timer.counter_S_O_fail;
-  //}
-  
-  
-  // update basis inverse
-  // TAG: SWITCH
-  //inv_M_B.swap_variable( k);
-  //inv_M_B.swap_constraint( l);
-  //inv_M_B.enter_slack_leave_original();
-  
-  
+  }
 }
 
 // update of the vector r for U_8 with upper bounding, note that we 
@@ -2151,33 +1836,17 @@ replace_variable_original_slack( )
   CGAL_qpe_debug {
     if ( vout2.verbose()) print_basis();
   }
-  
-  
-  
-  // TAG: SWITCH
-  // update basis inverse
-  /*
-  A_row_by_index_accessor  a_accessor =
-  boost::bind (A_accessor( qp_old_A, 0, qp_n), _1, new_row);
-  std::copy( A_row_by_index_iterator( B_O.begin(), a_accessor),
-            A_row_by_index_iterator( B_O.end  (), a_accessor),
-            tmp_x.begin());
-  if ( art_s_i > 0) {                                 // special art.
-    tmp_x[ in_B[ art_s_i]] = static_cast<ET>( art_s[ new_row]);
-  }
-  inv_M_B.enter_original_leave_slack( q_x_O.begin(), tmp_x.begin());
-  */
-  
+
   CGAL_qpe_assertion(B_O.size() == C.size());
   
   bool success(false);
   success = update_basis_matrix_LP_O_S(); // type U7
-  //lu_fact_.set_invalid();
+  //lu_fact_.set_invalid(); // bail out variant (just refactor)
   
-  //CGAL_qpe_debug {
+  CGAL_qpe_debug {
       if (success) ++CGAL::QP_solver_debug::timer.counter_O_S;
       else ++CGAL::QP_solver_debug::timer.counter_O_S_fail;
-  //}
+  }
 }
 
 // update of the vector r for U_7 with upper bounding, note that we 
@@ -2260,23 +1929,14 @@ remove_artificial_variable_and_constraint( )
     if ( vout2.verbose()) print_basis();
   }
   
-  // update basis inverse
-  // TAG: SWITCH
-  //inv_M_B.swap_variable( k);
-  //inv_M_B.swap_constraint( l);
-  //inv_M_B.enter_slack_leave_original();
-  
-  // TAG: DEBUG
-  //++CGAL::QP_solver_debug::timer.counter_3;
-  
   bool success(false);
   success = update_basis_matrix_LP_S_O(l, old_row, k, old_col, last_row, last_col); // type U8
-  //lu_fact_.set_invalid();
+  //lu_fact_.set_invalid(); // bail out variant (just refactor)
   
-  //CGAL_qpe_debug {
+  CGAL_qpe_debug {
     if (success) ++CGAL::QP_solver_debug::timer.counter_S_O;
     else ++CGAL::QP_solver_debug::timer.counter_S_O_fail;
-  //}
+  }
 }
 
 // update of the vector r with upper bounding for the removal of an
@@ -2392,19 +2052,16 @@ enter_variable( )
     
     // update basis inverse
     // note: (-1)\hat{\nu} is stored instead of \hat{\nu}
-    
-    // TAG: SWITCH
-    //inv_M_B.enter_original(q_lambda.begin(), q_x_O.begin(), -nu);
-    
+
     
     bool success(false);
     success = update_basis_matrix_QP_O_in(); // type U1
-    //lu_fact_.set_invalid();
+    //lu_fact_.set_invalid(); // bail out variant (just refactor)
     
-    //CGAL_qpe_debug {
+    CGAL_qpe_debug {
       if (success) ++CGAL::QP_solver_debug::timer.counter_Oin;
       else ++CGAL::QP_solver_debug::timer.counter_Oin_fail;
-    //}
+    }
   
   } else {                                  // slack variable
     
@@ -2442,19 +2099,15 @@ enter_variable( )
         print_basis();
     }
     
-    // update basis inverse:
-    // TAG: SWITCH
-    //inv_M_B.swap_constraint(k);  // swap to back
-    //inv_M_B.enter_slack();       // drop drop
     
     bool success(false);
     success = update_basis_matrix_QP_S_in(k, tmp, k2, last_constraint); // type U3
-    //lu_fact_.set_invalid();
+    //lu_fact_.set_invalid(); // bail out variant (just refactor)
     
-    //CGAL_qpe_debug {
+    CGAL_qpe_debug {
       if (success) ++CGAL::QP_solver_debug::timer.counter_Sin;
       else ++CGAL::QP_solver_debug::timer.counter_Sin_fail;
-    //}
+    }
     
   }
   
@@ -2559,27 +2212,17 @@ leave_variable( )
       if ( vout2.verbose()) print_basis();
     }
     
-    // update basis inverse
-    // TAG: SWITCH
-    //inv_M_B.swap_variable( k);
-    //inv_M_B.leave_original(); U2
-    
     bool success(false);
     success = update_basis_matrix_QP_O_out(k, tmp, last_col); // type U2
-    //lu_fact_.set_invalid();
+    //lu_fact_.set_invalid(); // bail out variant (just refactor)
     
-    //CGAL_qpe_debug {
+    CGAL_qpe_debug {
       if (success) ++CGAL::QP_solver_debug::timer.counter_Oout;
       else ++CGAL::QP_solver_debug::timer.counter_Oout_fail;
-    //}
+    }
     
   } else {                                            // slack variable
   
-    // TAG: DEBUG
-    //int dummy1, dummy2;
-    //std::cout << "NEBORE:\n";
-    //std::cout << *get_basis_matrix(dummy1, dummy2, false);
-    
     // updates for the upper bounded case
     leave_variable_slack_upd_w_r(Is_nonnegative());
     
@@ -2592,9 +2235,6 @@ leave_variable( )
     // enter inequality constraint [ in: index_leaving ]
     int new_row = slack_A[ index_leaving-qp_n].first;
     
-    // TAG: 1SWITCH
-    // TAG: INEFFICIENT... do binary search instead
-    // TAG: CENTRALIZE
     ET tmp = et0;
     if (index_entering < qp_n) {
       A_sparse_column_iterator it = (*(qp_A_sparse+index_entering)).begin();
@@ -2608,7 +2248,6 @@ leave_variable( )
       }    
     }
     A_Cj[ C.size()] = tmp;
-    //A_Cj[ C.size()] = ( index_entering < qp_n ? static_cast<ET>( *((*(qp_old_A + index_entering))+ new_row)) : et0);
     
     b_C[ C.size()] = static_cast<ET>( *(qp_b+ new_row));
     in_C[ new_row ] = static_cast<int>(C.size());
@@ -2619,26 +2258,14 @@ leave_variable( )
       if ( vout2.verbose()) print_basis();
     }
     
-    // TAG: SWITCH
-    // update basis inverse
-    /*
-    A_row_by_index_accessor  a_accessor =
-    boost::bind (A_accessor( qp_old_A, 0, qp_n), _1, new_row);
-    std::copy( A_row_by_index_iterator( B_O.begin(), a_accessor),
-              A_row_by_index_iterator( B_O.end  (), a_accessor),
-              tmp_x.begin());
-    inv_M_B.leave_slack( tmp_x.begin());
-    */
-    
     bool success(false);
     success = update_basis_matrix_QP_S_out(); // type U4
-    //lu_fact_.set_invalid();
+    //lu_fact_.set_invalid(); // bail out variant (just refactor)
     
-    
-    //CGAL_qpe_debug {
+    CGAL_qpe_debug {
       if (success) ++CGAL::QP_solver_debug::timer.counter_Sout;
       else ++CGAL::QP_solver_debug::timer.counter_Sout_fail;
-    //}
+    }
     
   }
   
@@ -2790,34 +2417,6 @@ z_replace_variable_original_by_original( )
     if ( vout2.verbose()) print_basis();
   }
   
-  // TAG: 0SWITCH
-  // compute s_delta
-  /*
-  D_sparse_column_iterator it = (*(qp_D_sparse+index_entering)).begin();
-  D_sparse_column_iterator it_end = (*(qp_D_sparse+index_entering)).end();
-  ET temp_entering(0), temp_leaving(0);
-  
-  while (it != it_end && it->first <= (index_entering < index_leaving ? index_leaving : index_entering) ) {
-    if (it->first == index_entering) temp_entering = it->second;
-    else if (it->first == index_leaving) temp_leaving = it->second;
-    ++it;
-  }
-  
-  ET s_delta = temp_entering - temp_leaving;
-  */
-  
-  /*
-  // compute s_delta
-  D_pairwise_accessor  d_accessor( qp_old_D, index_entering);
-  ET                   s_delta =d_accessor(index_entering)-d_accessor(index_leaving); 
-  */
-
-  
-  // update basis inverse
-  // note: (-1)\hat{\nu} is stored instead of \hat{\nu}
-  // TAG: SWITCH
-  //inv_M_B.z_replace_original_by_original( q_lambda.begin(), q_x_O.begin(), s_delta, -nu, k);
-  
   bool success(false);
   success = update_basis_matrix_O_O(k, tmp, Tag_false()); // quadratic case, type UZ1
   //lu_fact_.set_invalid();
@@ -2917,22 +2516,16 @@ z_replace_variable_original_by_slack( )
     CGAL_qpe_debug {
 	if ( vout2.verbose()) print_basis();
     }
-
-    // update basis inverse
-    // TAG: SWITCH
-     //inv_M_B.swap_variable( k);
-     //inv_M_B.swap_constraint( l);
-     //inv_M_B.z_replace_original_by_slack( );
      
   
   bool success(false);
   success = update_basis_matrix_QP_S_O(k1, old_constraint_row, k, old_variable_row, k2, last_constraint_row, last_variable_row); // type UZ2
-  //lu_fact_.set_invalid();
+  //lu_fact_.set_invalid(); // bail out variant (just refactor)
   
-  //CGAL_qpe_debug {
+  CGAL_qpe_debug {
     if (success) ++CGAL::QP_solver_debug::timer.counter_UZ2;
     else ++CGAL::QP_solver_debug::timer.counter_UZ2_fail;
-  //}
+  }
 
 }
 
@@ -3032,33 +2625,14 @@ z_replace_variable_slack_by_original( )
     if ( vout2.verbose()) print_basis();
   }
   
-  // TAG: SWITCH
-  // update basis inverse
-  // --------------------
-  /*
-   // prepare u
-   A_row_by_index_accessor  a_accessor =
-   boost::bind (A_accessor( qp_old_A, 0, qp_n), _1, new_row);
-   std::copy( A_row_by_index_iterator( B_O.begin(), a_accessor),
-   A_row_by_index_iterator( B_O.end  (), a_accessor),
-   tmp_x.begin());
-   
-   // prepare kappa
-   ET  kappa = denominator_ * static_cast<ET>(*((*(qp_old_A + index_entering))+new_row)) 
-   - inv_M_B.inner_product_x( tmp_x.begin(), q_x_O.begin());
-   // note: (-1)/hat{\nu} is stored instead of \hat{\nu}	 
-   inv_M_B.z_replace_slack_by_original( q_lambda.begin(), q_x_O.begin(),
-   tmp_x.begin(), kappa, -nu);
-   */
-  
   bool success(false);
   success = update_basis_matrix_QP_O_S(); // type UZ3
-  //lu_fact_.set_invalid();
+  //lu_fact_.set_invalid(); // bail out variant (just refactor)
   
-  //CGAL_qpe_debug {
+  CGAL_qpe_debug {
     if (success) ++CGAL::QP_solver_debug::timer.counter_UZ3;
     else ++CGAL::QP_solver_debug::timer.counter_UZ3_fail;
-  //}
+  }
   
 }
 
@@ -3135,30 +2709,16 @@ z_replace_variable_slack_by_slack( )
   CGAL_qpe_debug {
     if ( vout2.verbose()) print_basis();
   }
-    
-  // TAG: SWITCH
-  // update basis inverse
-  // --------------------
-  /*
-   A_row_by_index_accessor  a_accessor =
-   boost::bind ( A_accessor( qp_old_A, 0, qp_n), _1, new_row);
-   std::copy( A_row_by_index_iterator( B_O.begin(), a_accessor),
-   A_row_by_index_iterator( B_O.end  (), a_accessor),
-   tmp_x.begin());
-   
-   
-   inv_M_B.z_replace_slack_by_slack( tmp_x.begin(), k);
-   */
   
   
   bool success(false);
   success = update_basis_matrix_QP_S_S(k, old_column); // type UZ4
-  //lu_fact_.set_invalid();
+  //lu_fact_.set_invalid(); // bail out variant (just refactor)
   
-  //CGAL_qpe_debug {
+  CGAL_qpe_debug {
     if (success) ++CGAL::QP_solver_debug::timer.counter_UZ4;
     else ++CGAL::QP_solver_debug::timer.counter_UZ4_fail;
-  //}
+  }
   
 }
 
@@ -3189,7 +2749,6 @@ template < typename Q, typename ET, typename Tags >
 void  QP_solver<Q, ET, Tags>::
 update_r_C_r_S_B__j(ET& x_j)
 {
-  // TAG: 1SWITCH
   // TAG: INEFFICIENT because not C-filtered
   // TAG: TODO maybe make the no_ineq a template switch
   // update of vector r_{C}
@@ -3229,18 +2788,6 @@ update_r_C_r_S_B__j(ET& x_j)
     }
     ++it;
   }
-  
-  /*
-  A_by_index_accessor     a_accessor_j(*(qp_old_A + index_entering));
-  A_by_index_iterator     A_C_j_it(C.begin(), a_accessor_j);
-  for (Value_iterator r_C_it = r_C.begin(); r_C_it != r_C.end(); ++r_C_it, ++A_C_j_it) {
-    *r_C_it -= x_j * static_cast<ET>(*A_C_j_it); 
-  }  
-  // update of r_{S_{B}}
-  A_by_index_iterator     A_S_B_j_it(S_B.begin(), a_accessor_j);
-  for (Value_iterator r_S_B_it = r_S_B.begin(); r_S_B_it != r_S_B.end(); ++r_S_B_it, ++A_S_B_j_it) {
-    *r_S_B_it -= x_j * static_cast<ET>(*A_S_B_j_it);
-  }*/
 }
 
 // update of the vectors r_C and r_S_B with "x_j" and "x_i" column
@@ -3248,8 +2795,7 @@ template < typename Q, typename ET, typename Tags >
 void  QP_solver<Q, ET, Tags>::
 update_r_C_r_S_B__j_i(ET& x_j, ET& x_i)
 {
-  
-  // TAG: 1SWITCH
+
   // TAG: INEFFICIENT because not C-filtered
   // TAG: TODO maybe make the no_ineq a template switch
   // update of vector r_{C}
@@ -3305,29 +2851,6 @@ update_r_C_r_S_B__j_i(ET& x_j, ET& x_i)
     }
     ++it_leaving;
   }
-  
-  /*
-  // update of vector r_{C}
-  A_by_index_accessor     a_accessor_j(*(qp_old_A+index_entering));
-  A_by_index_accessor     a_accessor_i(*(qp_old_A+index_leaving));
-  
-  A_by_index_iterator     A_C_j_it(C.begin(), a_accessor_j);
-  A_by_index_iterator     A_C_i_it(C.begin(), a_accessor_i);
-  
-  for (Value_iterator r_C_it = r_C.begin(); r_C_it != r_C.end();
-       ++r_C_it, ++A_C_j_it, ++A_C_i_it) {
-    *r_C_it += (x_i * static_cast<ET>(*A_C_i_it)) - (x_j * static_cast<ET>(*A_C_j_it)); 
-  }
-  
-  // update of vector r_{S_{B}}
-  A_by_index_iterator     A_S_B_j_it(S_B.begin(), a_accessor_j);
-  A_by_index_iterator     A_S_B_i_it(S_B.begin(), a_accessor_i);
-  
-  for (Value_iterator r_S_B_it = r_S_B.begin(); r_S_B_it != r_S_B.end();
-       ++r_S_B_it, ++A_S_B_j_it, ++A_S_B_i_it) {
-    *r_S_B_it += (x_i * static_cast<ET>(*A_S_B_i_it)) - (x_j * static_cast<ET>(*A_S_B_j_it)); 
-  }
-  */
 }
 
 // update of the vectors r_C and r_S_B with "x_i'" column
@@ -3335,8 +2858,6 @@ template < typename Q, typename ET, typename Tags >
 void  QP_solver<Q, ET, Tags>::
 update_r_C_r_S_B__i(ET& x_i)
 {
-  
-  // TAG: 1SWITCH
   // TAG: INEFFICIENT because not C-filtered
   // TAG: TODO maybe make the no_ineq a template switch
   // update of vector r_{C}
@@ -3357,8 +2878,7 @@ update_r_C_r_S_B__i(ET& x_i)
     }
     ++it;
   }
-  
-  // TAG: 1SWITCH
+
   Indices in_S_B(qp_m, -1); // TAG: TODO maybe make this global
   int i = 0;
   for (Index_iterator S_B_it = S_B.begin(); S_B_it != S_B.end(); ++S_B_it) {
@@ -3377,26 +2897,6 @@ update_r_C_r_S_B__i(ET& x_i)
     }
     ++it;
   }
-  
-  
-  /*
-  // update of vector r_{C}
-  A_by_index_accessor     a_accessor_i(*(qp_old_A+index_leaving));
-  A_by_index_iterator     A_C_i_it(C.begin(), a_accessor_i);
-  
-  for (Value_iterator r_C_it = r_C.begin(); r_C_it != r_C.end(); 
-       ++r_C_it, ++A_C_i_it) {
-    *r_C_it += x_i * static_cast<ET>(*A_C_i_it); 
-  }
-  
-  // update of r_{S_{B}}
-  A_by_index_iterator     A_S_B_i_it(S_B.begin(), a_accessor_i);
-  
-  for (Value_iterator r_S_B_it = r_S_B.begin(); r_S_B_it != r_S_B.end();
-       ++r_S_B_it, ++A_S_B_i_it) {
-    *r_S_B_it += x_i * static_cast<ET>(*A_S_B_i_it);
-  }   
-  */
 }
   
 
@@ -3414,17 +2914,6 @@ update_w_r_B_O__j(ET& x_j)
   // Note: we only do anything it we are dealing with a QP.
   if (!Is_linear::value) {
 
-  /*
-    // TAG: DEBUG
-    Values w2(w.size());
-    std::copy(w.begin(), w.end(), w2.begin());
-    
-    Values r_B_O2(r_B_O.size());
-    std::copy(r_B_O.begin(), r_B_O.end(), r_B_O2.begin());
-    */
-    
-      
-    // TAG: 0SWITCH
     D_sparse_column_iterator it = (*(qp_D_sparse+index_entering)).begin();
     D_sparse_column_iterator it_end = (*(qp_D_sparse+index_entering)).end();
     Values temp(B_O.size(), et0);
@@ -3440,41 +2929,6 @@ update_w_r_B_O__j(ET& x_j)
       // update of r_B_O:
       r_B_O[i] -= temp[i] * x_j;
     }
-    
-    
-    /*
-    D_pairwise_accessor     d_accessor_j(qp_old_D, index_entering);
-    
-    // update of vector w:
-    for (int it = 0; it < qp_n; ++it) {
-      // TAG: DEBUG
-      //std::cout << "OLD: " << d_accessor_j(it) << std::endl;
-     //std::cout << "x_j: " << x_j << std::endl;
-      w2[it] -= d_accessor_j(it) * x_j;
-    }
-    */
-    
-    
-    /*
-    // update of r_B_O:
-    D_pairwise_iterator D_B_O_j_it(B_O.begin(), d_accessor_j);
-    for (Value_iterator r_B_O_it = r_B_O2.begin(); r_B_O_it != r_B_O2.end(); ++r_B_O_it, ++D_B_O_j_it) {
-        *r_B_O_it -= *D_B_O_j_it * x_j;
-    }
-    */
-    
-    
-    /*
-    // TAG: DEBUG
-    std::cout << "AFTER: ";std::cout << std::endl;
-    std::copy(w.begin(), w.end(), std::ostream_iterator<ET>(std::cout, ",")); std::cout << std::endl;
-    std::copy(w2.begin(), w2.end(), std::ostream_iterator<ET>(std::cout, ","));
-    std::cout << std::endl;
-    std::cout << "r_B_O: ";std::cout << std::endl;
-    std::copy(r_B_O.begin(), r_B_O.end(), std::ostream_iterator<ET>(std::cout, ","));std::cout << std::endl;
-    std::copy(r_B_O2.begin(), r_B_O2.end(), std::ostream_iterator<ET>(std::cout, ","));
-    std::cout << std::endl;
-    */
   }
 }
 
@@ -3489,7 +2943,6 @@ update_w_r_B_O__j_i(ET& x_j, ET& x_i)
   // Note: we only do anything it we are dealing with a QP.
   if (!Is_linear::value) {
   
-    // TAG: 0SWITCH
     D_sparse_column_iterator it_entering = (*(qp_D_sparse+index_entering)).begin();
     D_sparse_column_iterator it_entering_end = (*(qp_D_sparse+index_entering)).end();
     D_sparse_column_iterator it_leaving = (*(qp_D_sparse+index_leaving)).begin();
@@ -3550,22 +3003,6 @@ update_w_r_B_O__j_i(ET& x_j, ET& x_i)
       // update of r_B_O:
       r_B_O[i] += temp_leaving[i] * x_i - temp_entering[i] * x_j;
     }
-  
-  
-    /*
-    D_pairwise_accessor     d_accessor_i(qp_old_D, index_leaving);
-    D_pairwise_accessor     d_accessor_j(qp_old_D, index_entering);
-    
-    // update of vector w
-    for (int it = 0; it < qp_n; ++it)
-        w[it] += (d_accessor_i(it) * x_i) - (d_accessor_j(it) * x_j);
-    
-    // update of r_B_O
-    D_pairwise_iterator D_B_O_j_it(B_O.begin(), d_accessor_j);
-    D_pairwise_iterator D_B_O_i_it(B_O.begin(), d_accessor_i);
-    //for (Value_iterator r_B_O_it = r_B_O.begin(); r_B_O_it != r_B_O.end(); ++r_B_O_it, ++D_B_O_j_it, ++D_B_O_i_it)
-     //   *r_B_O_it += (*D_B_O_i_it * x_i) - (*D_B_O_j_it * x_j);
-      */  
   }
 }
 
@@ -3579,7 +3016,6 @@ update_w_r_B_O__i(ET& x_i)
   // Note: we only do anything it we are dealing with a QP.
   if (!Is_linear::value) {
 
-    // TAG: 0SWITCH
     D_sparse_column_iterator it = (*(qp_D_sparse+index_leaving)).begin();
     D_sparse_column_iterator it_end = (*(qp_D_sparse+index_leaving)).end();
     Values temp(B_O.size(), et0);
@@ -3595,22 +3031,6 @@ update_w_r_B_O__i(ET& x_i)
       // update of r_B_O:
       r_B_O[i] += temp[i] * x_i;
     }
-    
-    
-    /*
-    // update of vector w:
-    D_pairwise_accessor     d_accessor_i(qp_old_D, index_leaving);
-    
-    for (int it = 0; it < qp_n; ++it)
-        w[it] += d_accessor_i(it) * x_i;
-    
-    // update of r_B_O:
-    D_pairwise_iterator D_B_O_i_it(B_O.begin(), d_accessor_i);
-    for (Value_iterator r_B_O_it = r_B_O.begin();
-	 r_B_O_it != r_B_O.end();
-	 ++r_B_O_it, ++D_B_O_i_it)
-        *r_B_O_it += *D_B_O_i_it * x_i;
-    */
   }
 }
 
@@ -3670,8 +3090,6 @@ multiply__A_S_BxB_O(Value_iterator in, Value_iterator out) const
 {
   // initialize with zero vector
   std::fill_n( out, B_S.size(), et0);
-
-  // TAG: 1SWITCH  
   
   // foreach original column of A in B_O (artificial columns are zero in S_B except special)
   Value_iterator        out_it;
@@ -3711,37 +3129,6 @@ multiply__A_S_BxB_O(Value_iterator in, Value_iterator out) const
       }
     }
   }
-  
-  /*
-  // foreach original column of A in B_O (artificial columns are zero in S_B
-  A_column              a_col;                             // except special)
-  Index_const_iterator  row_it, col_it;
-  Value_iterator        out_it;
-  //ET                    in_value;
-
-  for ( col_it = B_O.begin(); col_it != B_O.end(); ++col_it, ++in) {
-    const ET in_value = *in;
-    out_it   = out;
-    
-    if ( *col_it < qp_n) {	                        // original variable
-      a_col = *(qp_old_A+ *col_it);
-      
-      // foreach row of A in S_B
-      for ( row_it = S_B.begin(); row_it != S_B.end(); ++row_it,
-           ++out_it) {
-        *out_it += static_cast<ET>( a_col[ *row_it]) * in_value;
-      }
-    } else {
-      if ( *col_it == art_s_i) {                  // special artificial
-        
-        // foreach row of 'art_s'
-        for ( row_it = S_B.begin(); row_it != S_B.end(); ++row_it, ++out_it) {
-          *out_it += static_cast<ET>( art_s[ *row_it]) * in_value;
-        }
-      }
-    }
-  }
-  */
 }
 
 // compare the updated vector r_{C} with t_r_C=A_{C, N_O}x_{N_O}
@@ -3823,8 +3210,6 @@ multiply__2D_B_OxN_O(Value_iterator out) const
     // foreach entry in r_B_O
     out_it = out;
     
-    // TAG: 0SWITCH
-    
     for (Index_const_iterator row_it = B_O.begin(); row_it != B_O.end(); ++row_it, ++out_it) {
       D_sparse_column_iterator it = (*(qp_D_sparse+*row_it)).begin();
       D_sparse_column_iterator it_end = (*(qp_D_sparse+*row_it)).end();
@@ -3836,18 +3221,6 @@ multiply__2D_B_OxN_O(Value_iterator out) const
         ++it;
       } 
     }
-    
-    /*
-    for (Index_const_iterator row_it = B_O.begin(); row_it != B_O.end(); ++row_it, ++out_it) {
-        D_pairwise_accessor d_accessor_i(qp_old_D, *row_it);
-        for (int i = 0; i < qp_n; ++i) {
-            if (!is_basic(i)) {
-                value = nonbasic_original_variable_value(i);
-                *out_it += d_accessor_i(i) * value;
-            }
-        }    
-    }
-    */
 }
 
 // compares the updated vector r_{B_O} with t_r_B_O=2D_{B_O, N_O}x_{N_O}
@@ -4002,15 +3375,12 @@ check_basis_inverse( Tag_false)
   CGAL_qpe_debug {
     vout4 << std::endl;
   }
-
-  // TAG: 1SWITCH
   A_sparse_column_iterator it, it_end;
   
   // left part of M_B
   std::fill_n( tmp_l.begin(), rows, et0);
   for ( col = 0; col < rows; ++col) {
-    
-    // TAG: 1SWITCH
+
     // get column of A_B^T (i.e. row of A_B)
     row = ( has_ineq ? C[ col] : col);
     v_it = tmp_x.begin();
@@ -4031,25 +3401,6 @@ check_basis_inverse( Tag_false)
       }
     }
     
-    /*
-    // get column of A_B^T (i.e. row of A_B)
-    row = ( has_ineq ? C[ col] : col);
-    v_it = tmp_x.begin();
-    for ( i_it = B_O.begin(); i_it != B_O.end(); ++i_it, ++v_it) {
-      *v_it = ( *i_it < qp_n ? *((*(qp_old_A+ *i_it))+ row) :  // original
-               art_A[ *i_it - qp_n].first != static_cast<int>(row) ? et0 :// artific.
-               ( art_A[ *i_it - qp_n].second ? -et1 : et1));
-    }
-    */
-    
-    // 	if ( art_s_i >= 0) {              // special artificial variable?
-    // 	  CGAL_qpe_assertion (static_cast<int>(in_B.size()) == art_s_i+1);  
-    // 	  // the special artificial variable has never been
-    // 	  // removed from the basis, consider it
-    // 	  tmp_x[ in_B[ art_s_i]] = art_s[ row];
-    // 	} 
-    // BG: currently, this check only runs in phase II, where we have no
-    // articficials
     CGAL_qpe_assertion (art_s_i < 0);
     
     lu_fact_.solve( tmp_l.begin(), tmp_x.begin(),
@@ -4224,7 +3575,6 @@ print_program( ) const
   vout4.out() << std::endl;
   vout4.out() << std::endl;
   
-  // TAG: 1SWITCH
   std::vector<A_sparse_column_iterator> it(qp_n);
   std::vector<A_sparse_column_iterator> it_end(qp_n);
   for (int i = 0; i < qp_n; ++i) {
@@ -4236,7 +3586,6 @@ print_program( ) const
   vout4.out() << "constraints:" << std::endl;
   for ( row = 0; row < qp_m; ++row) {
     // original variables
-    // TAG: 1SWITCH
     for (i = 0; i < qp_n; ++i) {
       if (it[i] != it_end[i]) {
         if (it[i]->first == row) {
@@ -4249,12 +3598,6 @@ print_program( ) const
         vout4.out() << et0 << ' ';
       }
     }
-    
-    
-    /*
-    for (i = 0; i < qp_n; ++i) 
-      vout4.out() << *((*(qp_old_A+ i))+row) << ' ';
-    */
     
     // slack variables
     if ( ! slack_A.empty()) {
@@ -4566,147 +3909,31 @@ get_l() const
     return min_N_M_;
 }
 
-// TAG: YVES added
-/*
-template <typename Q, typename ET, typename Tags>
-std::auto_ptr<QP_sparse_matrix<ET> >
-QP_solver<Q,ET,Tags>::get_basis_matrix( int& csize, int& bosize,
-                                       bool is_linear) {
-  
-  std::auto_ptr<QP_sparse_matrix<ET> >  ret;
-  
-  if (!is_linear) {
-    csize = C.size();
-    bosize = B_O.size();
-    
-    ret = std::auto_ptr<QP_sparse_matrix<ET> >
-    ( new QP_sparse_matrix<ET>(csize + bosize, csize + bosize, et0) );
-    
-    // Get A_B part of M_B
-    A_sparse_column_iterator it, it_end;
-    for (int col = 0; col < bosize; ++col) { // process columns of A_B
-      if (B_O[col] < qp_n ) {
-      
-        // TAG: DEBUG
-        //print_basis();
-        //std::cout << "jalla1" << std::endl;
-        
-        // TAG: 1SWITCH
-        // TAG: INEFFICIENT, binary search...?
-        it = (*(qp_A_sparse+B_O[col])).begin();
-        it_end = (*(qp_A_sparse+B_O[col])).end();
-        while (it != it_end) {
-          //int ineqrow = ( has_ineq ? C[row] : row);
-          //ET temp = *( (*(qp_old_A + B_O[col])) + ineqrow );
-          if (has_ineq) {
-            if (in_C[it->first] >= 0) {
-              ret->set_entry(csize + col, in_C[it->first], it->second);
-              ret->set_entry(in_C[it->first], csize + col, it->second);
-            }
-          } else {
-            ret->set_entry(csize + col, it->first, it->second);
-            ret->set_entry(it->first, csize + col, it->second);
-          }
-          ++it;
-        }
-        
-
-      } else { // articicial columns of A
-        // TAG: DEBUG
-        //std::cout << "jalla2" << std::endl;
-        
-        for (int row = 0; row < csize; ++row) {
-          int ineqrow = (has_ineq ? C[row] : row);
-          
-          // TAG: DEBUG
-          //std::cout << "ineqrow: " << ineqrow;
-          //std::cout << "art_A[B_O[col] - qp_n].first: " << art_A[B_O[col] - qp_n].first;
-          
-          if (art_A[B_O[col] - qp_n].first == ineqrow){
-            if( art_A[B_O[col] - qp_n].second){
-              ret->set_entry(row, col + csize, -et1);
-              ret->set_entry(col + csize, row, -et1);
-            } else {
-              ret->set_entry(row, col + csize, et1);
-              ret->set_entry(col + csize, row, et1);
-            }
-          }
-        }
-      }
-    }
-    
-    // TAG: 0SWITCH
-    // Get D_B part of M_B
-    D_sparse_column_iterator d_it, d_it_end;
-    for (int row = 0; row < bosize; ++row) {
-      d_it = (*(qp_D_sparse+B_O[row])).begin();
-      d_it_end = (*(qp_D_sparse+B_O[row])).end();
-      while (d_it != d_it_end) {
-        if (in_B[d_it->first] > -1 && B_O[in_B[d_it->first]] <= B_O[row]) {
-          // TAG: DEBUG
-          //std::cout << "NEW: I1: " << row << ", I2: " << in_B[d_it->first] << ", B_O[I1]: " << B_O[row] << ", B_O[I2]: " << B_O[in_B[d_it->first]] << ", val: " << (d_it->second) << std::endl;
-          basis_matrix_->set_entry(csize + row, csize + in_B[d_it->first], d_it->second);
-          basis_matrix_->set_entry(csize + in_B[d_it->first], csize + row, d_it->second);          
-        }
-        ++d_it;
-      }
-    }
-
-  } else { // is_linear
-    csize = C.size();
-    bosize = B_O.size();
-    
-    ret = std::auto_ptr<QP_sparse_matrix<ET> >
-    ( new QP_sparse_matrix<ET>(bosize, bosize, et0) );
-    
-    Values tmp(csize);  
-    
-    for (int col = 0; col < B_O.size(); ++col) {
-      ratio_test_init__A_Cj(tmp.begin(), B_O[col], no_ineq); //update acj
-      for (int row = 0; row < C.size(); ++row){
-        ret->set_entry(row, col, tmp[row]);
-      }
-    }  
-  }
-    
-
-  return ret;
-}
-*/
-
-// TAG: YVES added
 template <typename Q, typename ET, typename Tags>
 boost::shared_ptr<QP_sparse_matrix<ET> >
 QP_solver<Q,ET,Tags>::get_basis_matrix( int& csize, int& bosize,
                                        bool is_linear) {
   
-  // TAG: DEBUG
-//  CGAL::QP_solver_debug::timer.get_basis_matrix.start();
+  CGAL_qpe_debug {
+    //CGAL::QP_solver_debug::timer.get_basis_matrix.start();
+  }
   
   if (!is_linear) {
     csize = C.size();
     bosize = B_O.size();
     
-    basis_matrix_ = boost::shared_ptr<QP_sparse_matrix<ET> >(new QP_sparse_matrix<ET>(csize + bosize, csize + bosize, et0));
+    basis_matrix_ = boost::shared_ptr<QP_sparse_matrix<ET> >(
+        new QP_sparse_matrix<ET>(csize + bosize, csize + bosize, et0)
+    );
     
-    //std::auto_ptr<QP_sparse_matrix<ET> > ret(new QP_sparse_matrix<ET>(n, n, ET(0)) );
-  
     // Get A_B part of M_B
     A_sparse_column_iterator it, it_end;
     for (int col = 0; col < bosize; ++col) { // process columns of A_B
       if (B_O[col] < qp_n ) {
-      
-        // TAG: DEBUG
-        //print_basis();
-        //std::cout << "jalla1" << std::endl;
-        
-        // TAG: 1SWITCH
         // TAG: INEFFICIENT, binary search...?
         it = (*(qp_A_sparse+B_O[col])).begin();
         it_end = (*(qp_A_sparse+B_O[col])).end();
         while (it != it_end) {
-          //int ineqrow = ( has_ineq ? C[row] : row);
-          //ET temp = *( (*(qp_old_A + B_O[col])) + ineqrow );
           if (has_ineq) {
             if (in_C[it->first] >= 0) {
               basis_matrix_->set_entry(csize + col, in_C[it->first], it->second);
@@ -4723,10 +3950,6 @@ QP_solver<Q,ET,Tags>::get_basis_matrix( int& csize, int& bosize,
         for (int row = 0; row < csize; ++row) {
           int ineqrow = (has_ineq ? C[row] : row);
           
-          // TAG: DEBUG
-          //std::cout << "ineqrow: " << ineqrow;
-          //std::cout << "art_A[B_O[col] - qp_n].first: " << art_A[B_O[col] - qp_n].first;
-          
           if (art_A[B_O[col] - qp_n].first == ineqrow){
             if( art_A[B_O[col] - qp_n].second){
               basis_matrix_->set_entry(row, col + csize, -et1);
@@ -4740,7 +3963,6 @@ QP_solver<Q,ET,Tags>::get_basis_matrix( int& csize, int& bosize,
       }
     }
     
-    // TAG: 0SWITCH
     // Get D_B part of M_B
     D_sparse_column_iterator d_it, d_it_end;
     for (int row = 0; row < bosize; ++row) {
@@ -4769,24 +3991,10 @@ QP_solver<Q,ET,Tags>::get_basis_matrix( int& csize, int& bosize,
       }
     }  
   }
-    
-  // TAG: DEBUG
-  /*
-   std::cout << "=======================================================" << std::endl;
-   std::cout << "Here we are in Solver get_basis_matrix" << std::endl;
-   std::cout << "csize: " << C.size() << std::endl;
-   std::cout << "bosize: " << B_O.size() << std::endl;  
-   std::cout << "min_N_M_: " << min_N_M_ << std::endl;
-   std::cout << (is_linear?"linear":"quadratic") << std::endl;
-   std::cout << *basis_matrix_;
-   std::cout << "=======================================================" << std::endl;
-  */
 
-  // TAG: DEBUG
-//  CGAL::QP_solver_debug::timer.get_basis_matrix.stop();
-
-  // TAG: DEBUG
-  //std::cout << "BMATRIX:\n" << *basis_matrix_;
+  CGAL_qpe_debug {
+    //CGAL::QP_solver_debug::timer.get_basis_matrix.stop();
+  }
 
   return basis_matrix_;
 }
@@ -4828,13 +4036,6 @@ QP_solver<Q,ET,Tags>::update_basis_matrix_QP_O_in() {
   z.set_entry(csize+bosize-1, tmp[csize+bosize-1]-et1);
   
   
-  // TAG: DEBUG
-  
-  //std::cout << "diag_entry: " << diag_entry << std::endl;
-  //std::cout << "y1: " << y1 << std::endl;
-  //std::cout << "z1: " << z1 << std::endl;
-  
-  
   ret = lu_fact_.rank_1_update(et1, y, z);
   
   if (!ret) {
@@ -4844,13 +4045,6 @@ QP_solver<Q,ET,Tags>::update_basis_matrix_QP_O_in() {
   
   // do column update
   z.set_entry(csize+bosize-1, et0);
-  
-  
-  // TAG: DEBUG
-  
-  //std::cout << "y2: " << y2 << std::endl;
-  //std::cout << "z2: " << z2 << std::endl;
-  
   
   ret = lu_fact_.rank_1_update(et1, z, y);
   if (!ret) {
@@ -4864,9 +4058,6 @@ QP_solver<Q,ET,Tags>::update_basis_matrix_QP_O_in() {
 template <typename Q, typename ET, typename Tags>
 bool
 QP_solver<Q,ET,Tags>::update_basis_matrix_QP_O_out(unsigned int k, Values old_column, Values last_column) {
-
-  // TAG: DEBUG
-  //std::cout << "O_out" << std::endl;
 
   CGAL_qpe_assertion(!is_phaseI && !Is_linear::value);
   
@@ -4883,11 +4074,6 @@ QP_solver<Q,ET,Tags>::update_basis_matrix_QP_O_out(unsigned int k, Values old_co
   // TODO: better handling of symmetric/unsymmetric permutation
   if ( (index = lu_fact_.perm_col_inv(bosize+csize-1)) == lu_fact_.perm_row_inv(bosize+csize-1) ) { // pivot permuation symmetric
   
-      
-    // TAG: DEBUG
-    //++CGAL::QP_solver_debug::timer.counter_3;
-
-  
     // reset last column/row to unit col/row
     // do row update
     y.set_entry(bosize+csize-1, et1);
@@ -4897,16 +4083,8 @@ QP_solver<Q,ET,Tags>::update_basis_matrix_QP_O_out(unsigned int k, Values old_co
       z.set_entry(col, -last_column[col]);
     }
     z.set_entry(bosize+csize-1, et1 - last_column[bosize+csize-1]);
-    
-    // TAG: DEBUG
-    //std::cout << "y: " << y << std::endl;
-    //std::cout << "z: " << z << std::endl;
-    
+
     ret = lu_fact_.rank_1_update(et1, y, z);
-    
-    // TAG: DEBUG
-    //std::cout << *lu_fact_.recover_original_matrix();
-    //std::cout << "B1" << std::endl;
     
     if (!ret) {
       lu_fact_.set_invalid();
@@ -4917,16 +4095,8 @@ QP_solver<Q,ET,Tags>::update_basis_matrix_QP_O_out(unsigned int k, Values old_co
     
     // do column update
     z.set_entry(bosize+csize-1, et0);
-    
-    // TAG: DEBUG
-    //std::cout << "y: " << y << std::endl;
-    //std::cout << "z: " << z << std::endl;
-    
+
     ret = lu_fact_.rank_1_update(et1, z, y);
-    
-    // TAG: DEBUG
-    //std::cout << *lu_fact_.recover_original_matrix();
-    //std::cout << "B2" << std::endl;
     
     if (!ret) {
       lu_fact_.set_invalid();
@@ -4952,18 +4122,9 @@ QP_solver<Q,ET,Tags>::update_basis_matrix_QP_O_out(unsigned int k, Values old_co
       }
       z.set_entry(bosize+csize-1, et0);
       z.set_entry(csize+k, last_column[bosize+csize-1]-old_column[csize+k]);
-      
-      
-      // TAG: DEBUG
-      //std::cout << "y: " << y << std::endl;
-      //std::cout << "z: " << z << std::endl;
-      
+
       ret = lu_fact_.rank_1_update(et1, y, z);
-      
-      // TAG: DEBUG
-      //std::cout << *lu_fact_.recover_original_matrix();
-      //std::cout << "B3" << std::endl;
-      
+
       if (!ret) {
         lu_fact_.set_invalid();
         return ret; // bail out
@@ -4973,18 +4134,9 @@ QP_solver<Q,ET,Tags>::update_basis_matrix_QP_O_out(unsigned int k, Values old_co
       
       // do column update
       z.set_entry(csize+k, et0);
-      
-      
-      // TAG: DEBUG
-      //std::cout << "y: " << y << std::endl;
-      //std::cout << "z: " << z << std::endl;
-      
+
       ret = lu_fact_.rank_1_update(et1, z, y);
-      
-      // TAG: DEBUG
-      //std::cout << *lu_fact_.recover_original_matrix();
-      //std::cout << "B4" << std::endl;
-      
+
       if (!ret) {
         lu_fact_.set_invalid();
         return ret; // bail out
@@ -4993,10 +4145,6 @@ QP_solver<Q,ET,Tags>::update_basis_matrix_QP_O_out(unsigned int k, Values old_co
     }
     
     ret = lu_fact_.shrink(index, true /*is_basic*/);
-    
-    // TAG: DEBUG
-    //std::cout << *lu_fact_.recover_original_matrix();
-    //std::cout << "B5" << std::endl; 
     
     if (!ret) {
       lu_fact_.set_invalid();
@@ -5013,10 +4161,7 @@ QP_solver<Q,ET,Tags>::update_basis_matrix_QP_O_out(unsigned int k, Values old_co
   if (!ret) {
     lu_fact_.set_invalid();
   }
-  
-  // TAG: DEBUG
-  //std::cout << "BEND" << std::endl;
-  
+
   return ret;
 }
 
@@ -5025,9 +4170,6 @@ QP_solver<Q,ET,Tags>::update_basis_matrix_QP_O_out(unsigned int k, Values old_co
 template <typename Q, typename ET, typename Tags>
 bool
 QP_solver<Q,ET,Tags>::update_basis_matrix_QP_S_in(unsigned int k, Values old_column, unsigned int last_index, Values last_constraint) {
-  
-  // TAG: DEBUG
-  //std::cout << "S_in" << std::endl;
 
   CGAL_qpe_assertion(!is_phaseI && !Is_linear::value);
   
@@ -5039,30 +4181,10 @@ QP_solver<Q,ET,Tags>::update_basis_matrix_QP_S_in(unsigned int k, Values old_col
   
   QP_sparse_vector<ET> y(csize+bosize), z(csize+bosize);
   int index;
-  
-  
-  // TAG: DEBUG
-  /*
-    std::cout << "B0" << std::endl;
-    std::cout << "last_index: " << last_index << std::endl;
-    std::cout << "lu_fact_.perm_col_inv(last_index): " << (index = lu_fact_.perm_col_inv(last_index)) << std::endl;
-    std::cout << "B0B" << std::endl;
-    std::cout << "lu_fact_.perm_row_inv(last_index): " << lu_fact_.perm_row_inv(last_index) << std::endl;
-    std::cout << "B0BB" << std::endl;
-    */
-      
+ 
   // TODO: better handling of symmetric/unsymmetric permutation
   if ( (index = lu_fact_.perm_col_inv(last_index)) == lu_fact_.perm_row_inv(last_index) ) { // pivot permuation symmetric
-  
-      
-    // TAG: DEBUG
-    //++CGAL::QP_solver_debug::timer.counter_3;
 
-
-  // TAG: DEBUG
-    //std::cout << "B0C1" << std::endl;
-    //std::cout << *lu_fact_.recover_original_matrix();
-  
     // reset last column/row to unit col/row
     // do row update
     y.set_entry(last_index, et1);
@@ -5072,49 +4194,23 @@ QP_solver<Q,ET,Tags>::update_basis_matrix_QP_S_in(unsigned int k, Values old_col
       z.set_entry(col, -last_constraint[col]);
     }
     z.set_entry(last_index, et1 - last_constraint[last_index]);
-    
-    // TAG: DEBUG
-    //std::cout << "y: " << y << std::endl;
-    //std::cout << "z: " << z << std::endl;
-    
     ret = lu_fact_.rank_1_update(et1, y, z);
-    
-    // TAG: DEBUG
-    //std::cout << *lu_fact_.recover_original_matrix();
-    //std::cout << "B1" << std::endl;
-    
     if (!ret) {
       lu_fact_.set_invalid();
       return ret; // bail out
     }
-    
-     
     
     // do column update
     z.set_entry(last_index, et0);
-    
-    // TAG: DEBUG
-    //std::cout << "y: " << y << std::endl;
-    //std::cout << "z: " << z << std::endl;
-    
     ret = lu_fact_.rank_1_update(et1, z, y);
-    
-    // TAG: DEBUG
-    //std::cout << *lu_fact_.recover_original_matrix();
-    //std::cout << "B2" << std::endl;
-    
     if (!ret) {
       lu_fact_.set_invalid();
       return ret; // bail out
     }
-    
-     
     
     // install last column/row in place of column/row that will be dropped
     y.clear();
     z.clear();
-  
-
   
     // reset last column/row to unit col/row
     // do row update
@@ -5126,57 +4222,25 @@ QP_solver<Q,ET,Tags>::update_basis_matrix_QP_S_in(unsigned int k, Values old_col
     }
     z.set_entry(last_index, et0);
     z.set_entry(k, last_constraint[last_index]-old_column[k]);
-    
-    
-    // TAG: DEBUG
-    //std::cout << "y: " << y << std::endl;
-    //std::cout << "z: " << z << std::endl;
-    
     ret = lu_fact_.rank_1_update(et1, y, z);
-    
-    // TAG: DEBUG
-    //std::cout << *lu_fact_.recover_original_matrix();
-    //std::cout << "B3" << std::endl;
-    
     if (!ret) {
       lu_fact_.set_invalid();
       return ret; // bail out
     }
     
-     
-    
     // do column update
     z.set_entry(k, et0);
-        
-    
-    // TAG: DEBUG
-    //std::cout << "y: " << y << std::endl;
-    //std::cout << "z: " << z << std::endl;
-    
     ret = lu_fact_.rank_1_update(et1, z, y);
-    
-    // TAG: DEBUG
-    //std::cout << *lu_fact_.recover_original_matrix();
-    //std::cout << "B4" << std::endl;
-    
     if (!ret) {
       lu_fact_.set_invalid();
       return ret; // bail out
     }
     
     ret = lu_fact_.shrink(index, false /*is slack*/);
-    
-    // TAG: DEBUG
-    //std::cout << *lu_fact_.recover_original_matrix();
-    //std::cout << "B5" << std::endl; 
-    
     if (!ret) {
       lu_fact_.set_invalid();
       return ret; // bail out
-    }
-    
-    
-        
+    }     
   } else { // pivot permutation not symmetric
     // no swap strategy implemented yet
   }
@@ -5185,10 +4249,6 @@ QP_solver<Q,ET,Tags>::update_basis_matrix_QP_S_in(unsigned int k, Values old_col
   if (!ret) {
     lu_fact_.set_invalid();
   }
-  
-  // TAG: DEBUG
-  //std::cout << "BEND" << std::endl;
-  
   return ret;
 }
 
@@ -5199,13 +4259,8 @@ bool
 QP_solver<Q,ET,Tags>::update_basis_matrix_QP_S_out() {
 
   CGAL_qpe_assertion(!is_phaseI && !Is_linear::value);
-  
-  // TAG: DEBUG
-  //std::cout << "Beginning of update_basis_matrix_QP_S_out\n";
-  //std::cout << *lu_fact_.recover_original_matrix();
-  
+
   bool ret(false);
-  
   int csize(C.size()), bosize(B_O.size());
   QP_sparse_vector<ET> y(csize+bosize), z(csize+bosize);
   Values tmp(bosize, et0);
@@ -5215,13 +4270,6 @@ QP_solver<Q,ET,Tags>::update_basis_matrix_QP_S_out() {
     lu_fact_.set_invalid();
     return ret; // bail out
   }
-  
-  // TAG: DEBUG
-  /*
-  std::cout << "here02" << std::endl;
-  std::cout << "slack_A[ index_leaving-qp_n].first: " << slack_A[ index_leaving-qp_n].first << std::endl;
-  std::cout << "here02B" << std::endl;
-  */
   
   // get new row for basis matrix
   init__A_Ri(tmp.begin(), slack_A[ index_leaving-qp_n].first, no_ineq); //update ari
@@ -5234,13 +4282,6 @@ QP_solver<Q,ET,Tags>::update_basis_matrix_QP_S_out() {
     z.set_entry(col, tmp[col-csize]);
   }
   // TODO: check what happens if we subtract et1 in the following update not here
-  //z.set_entry(csize-1, -et1);
-  
-  
-  // TAG: DEBUG
-  //std::cout << "y: " << y << std::endl;
-  //std::cout << "z: " << z << std::endl;
-  
   ret = lu_fact_.rank_1_update(et1, y, z);
   
   if (!ret) {
@@ -5250,22 +4291,10 @@ QP_solver<Q,ET,Tags>::update_basis_matrix_QP_S_out() {
   
   // do column update
   z.set_entry(csize-1, -et1);
-  
-  
-  // TAG: DEBUG
-  //std::cout << "z: " << z << std::endl;
-  //std::cout << "y: " << y << std::endl;
-  
-  
   ret = lu_fact_.rank_1_update(et1, z, y);
     if (!ret) {
     lu_fact_.set_invalid();
   }
-  
-  // TAG: DEBUG
-  //std::cout << "End of update_basis_matrix_QP_S_out\n";
-  //std::cout << *lu_fact_.recover_original_matrix();
-  
   return ret;
 }
 
@@ -5292,48 +4321,18 @@ QP_solver<Q,ET,Tags>::update_basis_matrix_O_O(unsigned int k, Values old_column,
   // prepare update
   ratio_test_init__A_Cj(tmp.begin(), index_entering, no_ineq); //update acj
     
-  // TAG: 666SWITCH
   if (tmp[ lu_fact_.perm_row(lu_fact_.perm_col_inv(k)) ] == et0) { // pivot is bad
   //if (false) { // don't try swap
-    
-    // TAG: DEBUG // don't try the swap trick
-    //lu_fact_.set_invalid();
-    //return false; // bail out
     
     Values swap_col(csize, et0);
     
     QP_sparse_vector<ET> y1(csize), z1(csize);
     QP_sparse_vector<ET> y2(csize), z2(csize);
     
-    // TAG: DEBUG
-    
-    //std::cout << "here01" << std::endl;
-    /*
-     std::cout << "csize+k: " << csize+k << std::endl;
-     std::cout << "perm_column[perm_row_inv[csize+k]]: " << perm_column[perm_row_inv[csize+k]] << std::endl;
-     std::cout << "perm_row[perm_column_inv[csize+k]]: " << perm_row[perm_column_inv[csize+k]] << std::endl;
-     */
-    //int dummy1, dummy2;
-    //std::cout << *get_basis_matrix(dummy1, dummy2, true) << std::endl;
-    //lu_fact_.print(std::cout);
-    
-    // TAG: DEBUG
-    //++CGAL::QP_solver_debug::timer.counter_3;
-    
-    
-    
     // TAG: TODO more efficient finding of suitable column, i.e., there can't
     // be no extraction of A_Ri in the following loop, because this makes it n^3
     // We have to extract the corresponding element individually.
     // TODO: replace perm_row[perm_column_inv[csize+k]] by stored value
-    
-    // TAG: DEBUG
-    /*
-     std::cout << *lu_fact_.recover_original_matrix();
-     std::cout << "csize+k: " << csize+k << std::endl;
-     std::cout << "perm_column[perm_row_inv[csize+k]]: " << perm_column[perm_row_inv[csize+k]] << std::endl;
-     std::cout << "perm_row[perm_column_inv[csize+k]]: " << perm_row[perm_column_inv[csize+k]] << std::endl;
-     */
     
     // find suitable swap column
     for (int j = 0; j < bosize; ++j) {
@@ -5351,104 +4350,45 @@ QP_solver<Q,ET,Tags>::update_basis_matrix_O_O(unsigned int k, Values old_column,
     }
     
     
-    // TAG: DEBUG
-    //std::copy(swap_col.begin(), swap_col.end(), std::ostream_iterator<ET>(std::cout, " "));
-    //std::cout << std::endl;
-    //std::copy(tmp_col.begin(), tmp_col.end(), std::ostream_iterator<ET>(std::cout, " "));
-    //std::cout << std::endl;
-    
-    
     if (swap_index_col < 0) {
-      // TAG: DEBUG
-      //std::cout << "bail02" << std::endl;
       lu_fact_.set_invalid();
       return ret; // bail out
     } else { // get swap column
       ratio_test_init__A_Cj(swap_col.begin(), B_O[swap_index_col], no_ineq); //update acj
     }
-    //swap_col[k] = old_column[swap_index_col]; // we retrieved the new element already... so change back to old value
-    
-    
-    // TAG: DEBUG
-    //std::cout << *lu_fact_.recover_original_matrix();
-    //std::cout << "here02" << std::endl;
-    
-    
     // set up new column in place of the swap column
     z1.set_entry(swap_index_col, et1);
     for (int row = 0; row < bosize; ++row){
       y1.set_entry(row, tmp[row] - swap_col[row]);
     }
     
-    
-    // TAG: DEBUG
-    //std::cout << "y1: " << y1 << std::endl;
-    //std::cout << "z1: " << z1 << std::endl;
-    
     ret = lu_fact_.rank_1_update(et1, y1, z1);
     
     if (!ret) {
-      // TAG: DEBUG
-      //std::cout << "bail02" << std::endl;
-      
       lu_fact_.set_invalid();
       return ret; // bail out
     }
-    
-    // TAG: DEBUG
-    //std::cout << *lu_fact_.recover_original_matrix();
-    
-    // TAG: DEBUG
-    //std::cout << "here03" << std::endl;
-    
+
     // set up swap column in new place
     z2.set_entry(k, et1);
     for (int row = 0; row < bosize; ++row) {
       y2.set_entry(row, swap_col[row] - old_column[row]);
     }
-    
-    // TAG: DEBUG
-    //std::cout << y2.get_entry(csize-1) << std::endl;
-    // TAG: DEBUG
-    //std::cout << "y2: " << y2 << std::endl;
-    //std::cout << "z2: " << z2 << std::endl;
-    
     ret = lu_fact_.rank_1_update(et1, y2, z2);
     
     if (!ret) {
-      // TAG: DEBUG
-      //std::cout << "bail03" << std::endl;
       lu_fact_.set_invalid();
       return ret; // bail out
     }
-    
-    // TAG: DEBUG
-    //      std::cout << *lu_fact_.recover_original_matrix();
-    //std::cout << "here03B" << std::endl;
-    
-    
     // adjust internal permuations
     lu_fact_.swap_columns_physically(k, swap_index_col);
-    
-    
-    
   } else {
-    
-    
-    
-    
+
     z.set_entry(k, et1);
     // construct update column y
-    
-    
     for (int row = 0; row < csize; ++row){
       y.set_entry(row, tmp[row] - old_column[row]);
     }
-    
-    // TAG: DEBUG
-    //std::cout << "y: " << y << std::endl;
-    //std::cout << "z: " << z << std::endl;
-    
     ret = lu_fact_.rank_1_update(et1, y, z);
     
   }
@@ -5460,16 +4400,6 @@ QP_solver<Q,ET,Tags>::update_basis_matrix_O_O(unsigned int k, Values old_column,
 template <typename Q, typename ET, typename Tags>
 bool
 QP_solver<Q,ET,Tags>::update_basis_matrix_O_O(unsigned int k, Values old_column, Tag_false /*quadratic case*/) {
-
-  // TAG: DEBUG
-  /*
-  std::cout << "gugusgugsugusgug" << std::endl;
-  std::cout << "C.size(): " << C.size() << std::endl;
-  std::cout << "B_O.size(): " << B_O.size() << std::endl;
-  std::copy(old_column.begin(), old_column.end(), std::ostream_iterator<ET>(std::cout, " "));
-  std::cout << std::endl;
-  */
-  
 
   CGAL_qpe_assertion(old_column.size() == C.size()+B_O.size());
   CGAL_qpe_assertion(!is_phaseI && !Is_linear::value);
@@ -5495,102 +4425,37 @@ QP_solver<Q,ET,Tags>::update_basis_matrix_O_O(unsigned int k, Values old_column,
     y.set_entry(row, tmp[row] - old_column[row]);
   }
   
-  // TAG: 666SWITCH
   if (tmp[ lu_fact_.perm_col(lu_fact_.perm_row_inv(csize+k)) ] == et0 || tmp[ lu_fact_.perm_col(lu_fact_.perm_row_inv(csize+k)) ] == et0) { // pivot is bad
   //if (false) { // don't try swap
-  
-      // TAG: DEBUG // dont't try the swap trick
-      //lu_fact_.set_invalid();
-      //return false; // bail out
-      
 
       Values swap_col(csize+bosize, et0);
       Values swap_row(csize+bosize, et0);
-      //Values test_col(csize+bosize, et0);
   
       QP_sparse_vector<ET> y1(csize+bosize), z1(csize+bosize);
       QP_sparse_vector<ET> y2(csize+bosize), z2(csize+bosize);
   
-      // TAG: DEBUG
-      
-      //std::cout << "here01" << std::endl;
-      /*
-      std::cout << "csize+k: " << csize+k << std::endl;
-      std::cout << "perm_column[perm_row_inv[csize+k]]: " << perm_column[perm_row_inv[csize+k]] << std::endl;
-      std::cout << "perm_row[perm_column_inv[csize+k]]: " << perm_row[perm_column_inv[csize+k]] << std::endl;
-      */
-      //int dummy1, dummy2;
-      //std::cout << *get_basis_matrix(dummy1, dummy2, false) << std::endl;
-      //*lu_fact_.recover_original_matrix();
-  
-      // TAG: DEBUG
-      //++CGAL::QP_solver_debug::timer.counter_3;
-      
-      
-      
       // TAG: TODO more efficient finding of suitable column, i.e., there can't
       // be no extraction of A_Ri in the following loop, because this makes it n^3
       // We have to extract the corresponding element individually.
       // TODO: replace perm_row[perm_column_inv[csize+k]] by stored value
       
-      // TAG: DEBUG
-      /*
-      std::cout << *lu_fact_.recover_original_matrix();
-      std::cout << "csize+k: " << csize+k << std::endl;
-      std::cout << "perm_column[perm_row_inv[csize+k]]: " << perm_column[perm_row_inv[csize+k]] << std::endl;
-      std::cout << "perm_row[perm_column_inv[csize+k]]: " << perm_row[perm_column_inv[csize+k]] << std::endl;
-      */
       
       // find suitable swap column
       for (int j = bosize+csize-1; j >= 0; --j) {
         // check if pivots are alright
-        // TAG: DEBUG
-        /*std::cout << "j: " << j << std::endl;
-         std::cout << "tmp[j]: " << tmp[j] << std::endl;
-         std::cout << "tmp[ perm_row[perm_column_inv[j]] ]: " << tmp[ perm_row[perm_column_inv[j]] ] << std::endl;*/
-         if (tmp[ lu_fact_.perm_row(lu_fact_.perm_col_inv(j)) ] != et0) {
-        //if (tmp[ perm_row[perm_column_inv[j]] ] != et0) {
+           if (tmp[ lu_fact_.perm_row(lu_fact_.perm_col_inv(j)) ] != et0) {
           test_val = et0;
           if (j < csize){
             if (lu_fact_.perm_row(lu_fact_.perm_col_inv(csize+k)) >= csize) {
-            //if (perm_row[perm_column_inv[csize+k]] >= csize) {
-            // TAG: DEBUG
-              //std::cout << "hereA01" << std::endl;
-              //init__A_ij( test_val, j, B_O[ perm_row[perm_column_inv[csize+k]] - csize ], no_ineq);
               init__A_ij( test_val, j, B_O[ lu_fact_.perm_row(lu_fact_.perm_col_inv(csize+k)) - csize ], no_ineq);
             }
-            //std::fill(test_col.begin(), test_col.begin()+csize, et0);
-            //init__A_Ri(test_col.begin()+csize, j, no_ineq);
           } else {
-            //if (perm_row[perm_column_inv[csize+k]] < csize) {
             if (lu_fact_.perm_row(lu_fact_.perm_col_inv(csize+k)) < csize) {
-            /*
-              if (no_ineq) {
-                init__A_ij(test_val, perm_row[perm_column_inv[csize+k]], B_O[j-csize], no_ineq);
-              } else {
-                init__A_ij(test_val, C[perm_row[perm_column_inv[csize+k]]], B_O[j-csize], no_ineq);
-              }
-              */
-              // TAG: DEBUG
-              //std::cout << "hereA02" << std::endl;
-              //init__A_ij(test_val, perm_row[perm_column_inv[csize+k]], B_O[j-csize], no_ineq);
               init__A_ij(test_val, lu_fact_.perm_row(lu_fact_.perm_col_inv(csize+k)), B_O[j-csize], no_ineq);
             } else {
-            // TAG: DEBUG
-              //std::cout << "hereA03" << std::endl;
-              //init__2_D_ij(test_val, B_O[perm_row[perm_column_inv[csize+k]]-csize], B_O[j-csize], Tag_false()/*quadratic case*/);
               init__2_D_ij(test_val, B_O[lu_fact_.perm_row(lu_fact_.perm_col_inv(csize+k))-csize], B_O[j-csize], Tag_false()/*quadratic case*/);
             }
-            //ratio_test_init__A_Cj(test_col.begin(), B_O[j-csize], no_ineq); //update acj
-            //ratio_test_init__2_D_Bj(test_col.begin()+csize, B_O[j-csize], Tag_false()/*is linear?*/);
           }
-          
-          // TAG: DEBUG
-          /*
-          std::cout << "j: " << j << std::endl;
-          std::cout << "test_val: " << test_val << std::endl;
-          std::cout << "test_col[ perm_row[perm_column_inv[csize+k]] ]: " << test_col[ perm_row[perm_column_inv[csize+k]] ] << std::endl;
-          */
           
           //CGAL_qpe_assertion(test_val == test_col[ perm_row[perm_column_inv[csize+k]] ]);
           
@@ -5598,132 +4463,52 @@ QP_solver<Q,ET,Tags>::update_basis_matrix_O_O(unsigned int k, Values old_column,
             swap_index_col = j;
             break;
           }
-          /*
-          if (test_col[ perm_row[perm_column_inv[csize+k]] ] != et0) {
-            swap_index_col = j;
-            break;
-          }
-          */
         }
       }
       
-      
-      // TAG: DEBUG
-      //std::cout << "swap_col: ";
-      //std::copy(swap_col.begin(), swap_col.end(), std::ostream_iterator<ET>(std::cout, " "));
-      //std::cout << std::endl;
-
-      
       if (swap_index_col < 0) {
-      // TAG: DEBUG
-      //std::cout << "bail02" << std::endl;
         lu_fact_.set_invalid();
         return ret; // bail out
       } else if (swap_index_col < csize) { // get swap column from left part
         init__A_Ri(swap_col.begin()+csize, C[swap_index_col], no_ineq);
-        // TAG: DEBUG
-      //std::cout << "swoop_col: ";
-      //std::copy(swap_col.begin(), swap_col.end(), std::ostream_iterator<ET>(std::cout, " "));
-            //std::cout << std::endl;
       } else { // get swap column from right part
         ratio_test_init__A_Cj(swap_col.begin(), B_O[swap_index_col-csize], no_ineq); //update acj
-        // TAG: DEBUG
-      //std::cout << "swap_col: ";
-      //std::copy(swap_col.begin(), swap_col.end(), std::ostream_iterator<ET>(std::cout, " "));      std::cout << std::endl;
         ratio_test_init__2_D_Bj(swap_col.begin()+csize, B_O[swap_index_col-csize], Tag_false()/*is linear?*/);
-        // TAG: DEBUG
-      //std::cout << "swap_col: ";
-      //std::copy(swap_col.begin(), swap_col.end(), std::ostream_iterator<ET>(std::cout, " "));      std::cout << std::endl;
       }
       swap_col[csize+k] = old_column[swap_index_col]; // we retrieved the new element already... so change back to old value
-      
-      // TAG: DEBUG
-      //std::cout << "swap_col: ";
-      //std::copy(swap_col.begin(), swap_col.end(), std::ostream_iterator<ET>(std::cout, " "));
-      //std::cout << std::endl;
-      //std::cout << "new_col(tmp): ";
-      //std::copy(tmp.begin(), tmp.end(), std::ostream_iterator<ET>(std::cout, " "));
-      //std::cout << std::endl;
-      
-            
-      // TAG: DEBUG
-      //std::cout << *lu_fact_.recover_original_matrix();
-      //std::cout << "here02" << std::endl;
-      
-      
+
       // set up new column in place of the swap column
       z1.set_entry(swap_index_col, et1);
       for (int row = 0; row < csize+bosize; ++row){
         y1.set_entry(row, tmp[row] - swap_col[row]);
       }
       
-      
-      // TAG: DEBUG
-      //std::cout << "y1: " << y1 << std::endl;
-      //std::cout << "z1: " << z1 << std::endl;
-      
       ret = lu_fact_.rank_1_update(et1, y1, z1);
       
       if (!ret) {
-            // TAG: DEBUG
-            //std::cout << "bail02" << std::endl;
-      
         lu_fact_.set_invalid();
         return ret; // bail out
       }
-      
-      // TAG: DEBUG
-       //std::cout << *lu_fact_.recover_original_matrix();
-      
-      // TAG: DEBUG
-      //std::cout << "here03" << std::endl;
-      
+    
       // set up swap column in new place
       z2.set_entry(csize+k, et1);
       for (int row = 0; row < csize+bosize; ++row) {
         y2.set_entry(row, swap_col[row] - old_column[row]);
       }
       
-      // TAG: DEBUG
-      //std::cout << y2.get_entry(csize-1) << std::endl;
-      // TAG: DEBUG
-      //std::cout << "y2: " << y2 << std::endl;
-      //std::cout << "z2: " << z2 << std::endl;
-      
       ret = lu_fact_.rank_1_update(et1, y2, z2);
       
       if (!ret) {
-            // TAG: DEBUG
-            //std::cout << "bail03" << std::endl;
         lu_fact_.set_invalid();
         return ret; // bail out
       }
-      
-      // TAG: DEBUG
-      //std::cout << *lu_fact_.recover_original_matrix();
-      //std::cout << "here03B" << std::endl;
-      
-      
+
       // adjust internal permuations
       lu_fact_.swap_columns_physically(csize+k, swap_index_col);
-      
-      // TAG: DEBUG
-      //std::cout << *lu_fact_.recover_original_matrix();
-      
-      // TAG: DEBUG
-      //std::cout << "here04" << std::endl;
-      
-     
+
       // do row update
       //if (tmp[ perm_column[perm_row_inv[csize+k]] ] == et0) {
       if (tmp[ lu_fact_.perm_col(lu_fact_.perm_row_inv(csize+k)) ] == et0) {
-      
-      // TAG: DEBUG
-      /*
-      std::cout << "bailXXX" << std::endl;
-      lu_fact_.set_invalid();
-      return false; // bail out
-      */
       
         
         QP_sparse_vector<ET> y3(csize+bosize), z3(csize+bosize);
@@ -5734,49 +4519,27 @@ QP_solver<Q,ET,Tags>::update_basis_matrix_O_O(unsigned int k, Values old_column,
         for (int i = bosize+csize-1; i >= 0; --i) {
           test_val = et0;
           // check if pivots are alright
-          // TAG: DEBUG
-          /*std::cout << "i: " << i << std::endl;
-           std::cout << "tmp[i]: " << tmp[i] << std::endl;
-           std::cout << "tmp[ perm_row[perm_column_inv[i]] ]: " << tmp[ perm_row[perm_column_inv[i]] ] << std::endl;*/
-          //if (tmp[ perm_column[perm_row_inv[i]] ] != et0) {
           if (tmp[ lu_fact_.perm_col(lu_fact_.perm_row_inv(i)) ] != et0) {
             if (i < csize){
-              //if (perm_column[perm_row_inv[csize+k]] >= csize) {
               if (lu_fact_.perm_col(lu_fact_.perm_row_inv(csize+k)) >= csize) {
-                //init__A_ij(test_val, i, B_O[ perm_column[perm_row_inv[csize+k]]-csize ] , no_ineq);
                 init__A_ij(test_val, i, B_O[ lu_fact_.perm_col(lu_fact_.perm_row_inv(i))-csize ] , no_ineq);
               }
-              //std::fill(test_col.begin(), test_col.begin()+csize, et0);
-              //init__A_Ri(test_col.begin()+csize, i, no_ineq);
             } else {
-              //if (perm_column[perm_row_inv[csize+k]] < csize) {
               if (lu_fact_.perm_col(lu_fact_.perm_row_inv(csize+k)) < csize) {
-                //init__A_ij(test_val, perm_column[perm_row_inv[csize+k]], B_O[i-csize] , no_ineq);
                 init__A_ij(test_val, lu_fact_.perm_col(lu_fact_.perm_row_inv(csize+k)), B_O[i-csize] , no_ineq);
               } else {
-                //init__2_D_ij(test_val, B_O[i-csize], B_O[perm_column[perm_row_inv[csize+k]]-csize] , Tag_false());
                 init__2_D_ij(test_val, B_O[i-csize], B_O[lu_fact_.perm_col(lu_fact_.perm_row_inv(csize+k))-csize] , Tag_false());
               }
-              //ratio_test_init__A_Cj(test_col.begin(), B_O[i-csize], no_ineq); //update acj
-              //ratio_test_init__2_D_Bj(test_col.begin()+csize, B_O[i-csize], Tag_false()/*is linear?*/);
             }
             if (test_val != et0) {
               swap_index_row = i;
               break;
             }
-            /*
-            if (test_col[ perm_column[perm_row_inv[csize+k]] ] != et0) {
-              swap_index_row = i;
-              break;
-            }
-            */
           }
         }
         
         
         if (swap_index_row < 0) {
-          // TAG: DEBUG
-          //std::cout << "bail02X" << std::endl;
           lu_fact_.set_invalid();
           return ret; // bail out
         } else if (swap_index_row < csize) { // get swap column from left part
@@ -5786,114 +4549,52 @@ QP_solver<Q,ET,Tags>::update_basis_matrix_O_O(unsigned int k, Values old_column,
           ratio_test_init__2_D_Bj(swap_row.begin()+csize, B_O[swap_index_row-csize], Tag_false()/*is linear?*/);
         }
         
-        
-        // TAG: DEBUG
-        //std::cout << "here02X" << std::endl;
-        
-        
         // set up new row in place of the swap row
         y3.set_entry(swap_index_row, et1);
         for (int col = 0; col < csize+bosize; ++col){
           z3.set_entry(col, tmp[col] - swap_row[col]);
         }
         z3.set_entry(csize+k, tmp[csize+k]-tmp[swap_index_row]);
-        //z3.set_entry(swap_index_col, et0);
-        
-        
-        // TAG: DEBUG
-        //std::cout << "y3: " << y3 << std::endl;
-        //std::cout << "z3: " << z3 << std::endl;
-        
         ret = lu_fact_.rank_1_update(et1, y3, z3);
         
         if (!ret) {
-          // TAG: DEBUG
-          //std::cout << "bail02X" << std::endl;
-          
           lu_fact_.set_invalid();
           return ret; // bail out
         }
-        
-        // TAG: DEBUG
-       //std::cout << *lu_fact_.recover_original_matrix();
-        
-        // TAG: DEBUG
-        //std::cout << "here03X" << std::endl;
         
         // set up swap row in new place
         y4.set_entry(csize+k, et1);
         for (int col = 0; col < csize+bosize; ++col) {
           z4.set_entry(col, swap_row[col] - old_column[col]);
         }
-        //z4.set_entry(csize+k, swap_row[csize+k]-old_column[swap_index_col]);
-        //z4.set_entry(swap_index_col, swap_row[swap_index_col]-tmp[csize+k]);
         z4.set_entry(csize+k, swap_row[csize+k]-tmp[csize+k]);
-        
-        // TAG: DEBUG
-        //std::cout << y2.get_entry(csize-1) << std::endl;
-        // TAG: DEBUG
-        //std::cout << "y4: " << y4 << std::endl;
-        //std::cout << "z4: " << z4 << std::endl;
         
         ret = lu_fact_.rank_1_update(et1, y4, z4);
         
         if (!ret) {
-          // TAG: DEBUG
-          //std::cout << "bail03X" << std::endl;
           lu_fact_.set_invalid();
           return ret; // bail out
         }
         
-        // TAG: DEBUG
-       //std::cout << *lu_fact_.recover_original_matrix();
-        
         // adjust internal permuations
         lu_fact_.swap_rows_physically(csize+k, swap_index_row);
-
-        // TAG: DEBUG
-       //std::cout << *lu_fact_.recover_original_matrix();
-
-
       } else { // row update pivot alright
     
         y.set_entry(csize+k, et0);
         
-        // TAG: DEBUG
-        //std::cout << *lu_fact_.recover_original_matrix();
-        //std::cout << "z: " << y << std::endl;
-        //std::cout << "y: " << z << std::endl;
-        
         ret = lu_fact_.rank_1_update(et1, z, y);
         
         if (!ret) {
-          // TAG: DEBUG
-          //std::cout << "bail04" << std::endl;
           lu_fact_.set_invalid();
           return ret; // bail out
         }
-        
-        // TAG: DEBUG
-        //std::cout << *lu_fact_.recover_original_matrix();
-        
       }
-      
-    
-      
-      // TAG: DEBUG
-      //lu_fact_.print(std::cout);
-  
   } else { // pivot is ok
     
     
     ret = lu_fact_.rank_1_update(et1, y, z);
     
-    // TAG: DEBUG
     if (!ret) {
-      /*std::cout << "perm_column[perm_row_inv[csize+k]]: " << perm_column[perm_row_inv[csize+k]] << std::endl;
-      std::cout << "perm_row[perm_column_inv[csize+k]]: " << perm_row[perm_column_inv[csize+k]] << std::endl;
-      std::cout << "Row pivot ok?: " << tmp[perm_column[perm_row_inv[csize+k]]] << std::endl;
-      std::cout << "Col pivot ok?: " << tmp[perm_row[perm_column_inv[csize+k]]] << std::endl;*/
-      //std::cout << "bail05" << std::endl;
       lu_fact_.set_invalid();
       return ret;
     }
@@ -5902,28 +4603,11 @@ QP_solver<Q,ET,Tags>::update_basis_matrix_O_O(unsigned int k, Values old_column,
     y.set_entry(csize+k, et0);
     ret = lu_fact_.rank_1_update(et1, z, y);
     
-    // TAG: DEBUG
     if (!ret) {
-      /*std::cout << "perm_column[perm_row_inv[csize+k]]: " << perm_column[perm_row_inv[csize+k]] << std::endl;
-      std::cout << "perm_row[perm_column_inv[csize+k]]: " << perm_row[perm_column_inv[csize+k]] << std::endl;
-      std::cout << "Row pivot ok?: " << tmp[perm_column[perm_row_inv[csize+k]]] << std::endl;
-      std::cout << "Col pivot ok?: " << tmp[perm_row[perm_column_inv[csize+k]]] << std::endl;*/
-      //std::cout << "bail06" << std::endl;
       lu_fact_.set_invalid();
       return ret;
     }
-    
-    // TAG: DEBUG
-    //std::cout << "y: " << y << std::endl;
-    //std::cout << "z: " << z << std::endl;
-    
-    //return lu_fact_.rank_1_update(et1, y, z);
-    
   }
-  
-  // TAG: DEBUG
-  //std::cout << "hereEND" << std::endl;
-  
   return ret;
 }
 
@@ -5942,22 +4626,11 @@ QP_solver<Q,ET,Tags>::update_basis_matrix_LP_S_S(unsigned int k, Values old_row)
   
   y.set_entry(k, et1);
   
-  
-  // TODO: consolidate the two loops
   // construct update column z
   init__A_Ri(tmp.begin(), slack_A[ index_leaving-qp_n].first, no_ineq); //update ari
   for (int col = 0; col < B_O.size(); ++col){
         z.set_entry(col, tmp[col] - old_row[col]);
   }
-/*
-  for (int col = 0; col < B_O.size(); ++col){
-        z.set_entry(col, z.get_entry(col) - old_row[col]);
-  }
-*/
-  // TAG: DEBUG
-  //std::cout << "y: " << y << std::endl;
-  //std::cout << "z: " << z << std::endl;
-  
   return lu_fact_.rank_1_update(et1, y, z);
 }
 
@@ -5993,37 +4666,11 @@ QP_solver<Q,ET,Tags>::update_basis_matrix_LP_O_S() {
   // get new column for basis matrix
   ratio_test_init__A_Cj(tmp_col.begin(), index_entering, no_ineq); //update acj
   
-  // TAG: DEBUG
-  /*
-  std::cout << "k: " << k << std::endl;
-  std::copy(tmp_col.begin(), tmp_col.end(), std::ostream_iterator<ET>(std::cout, " "));
-  std::cout << std::endl;
-  std::copy(tmp_row.begin(), tmp_row.end(), std::ostream_iterator<ET>(std::cout, " "));
-  std::cout << std::endl;
-  */
-
   CGAL_qpe_assertion(tmp_col[csize-1] == tmp_row[bosize-1]);
   
-  // TAG: 666SWITCH
   if (tmp_col[csize-1] == et0) { // pivot is 0
-  //if (false) { // pivot is 0  
-  
-  
-        // TAG: DEBUG // don't try swap trick
-        //lu_fact_.set_invalid();
-        //return false; // bail out
   
       QP_sparse_vector<ET> y3(csize), z3(bosize);
-  
-      // TAG: DEBUG
-      //std::cout << "here01" << std::endl;
-      //int dummy1, dummy2;
-      //std::cout << *get_basis_matrix(dummy1, dummy2, true) << std::endl;
-      //lu_fact_.print(std::cout);
-  
-      // TAG: DEBUG
-      //++CGAL::QP_solver_debug::timer.counter_3;
-      
       // get permutations
       lu_fact_.get_perm_row(perm_row);
       lu_fact_.get_perm_col_inv(perm_column_inv);
@@ -6036,53 +4683,26 @@ QP_solver<Q,ET,Tags>::update_basis_matrix_LP_O_S() {
           break;
         }
       }
-      
-      // TAG: DEBUG
-      //std::copy(swap_col.begin(), swap_col.end(), std::ostream_iterator<ET>(std::cout, " "));
-      //std::cout << std::endl;
-      //std::copy(tmp_col.begin(), tmp_col.end(), std::ostream_iterator<ET>(std::cout, " "));
-      //std::cout << std::endl;
-
-      
       if (swap_index < 0) {
-        // TAG: DEBUG
-        //std::cout << "bail01" << std::endl;
-      
         lu_fact_.set_invalid();
         return ret; // bail out
       }
       
       // get swap column
       ratio_test_init__A_Cj(swap_col.begin(), B_O[swap_index], no_ineq);
-      
-      // TAG: DEBUG
-      //std::cout << "here02" << std::endl;
-      
-      
-      
+
       // set up new column in place of suitable column
       z1.set_entry(swap_index, et1);
       for (int row = 0; row < csize-1; ++row) {
         y1.set_entry(row, -swap_col[row]+tmp_col[row]);
       }
       y1.set_entry(csize-1, tmp_col[csize-1]);
-      
-      // TAG: DEBUG
-      //std::cout << "y1: " << y1 << std::endl;
-      //std::cout << "z1: " << z1 << std::endl;
-      
       ret = lu_fact_.rank_1_update(et1, y1, z1);
       
       if (!ret) {
-            // TAG: DEBUG
-            //std::cout << "bail02" << std::endl;
-      
         lu_fact_.set_invalid();
         return ret; // bail out
       }
-      
-      // TAG: DEBUG
-      //std::cout << "here03" << std::endl;
       
       // set up last column
       z2.set_entry(bosize-1, et1);
@@ -6090,25 +4710,11 @@ QP_solver<Q,ET,Tags>::update_basis_matrix_LP_O_S() {
         y2.set_entry(row, swap_col[row]);
       }
       y2.set_entry(csize-1, y2.get_entry(csize-1)-et1);
-      
-      // TAG: DEBUG
-      //std::cout << y2.get_entry(csize-1) << std::endl;
-      // TAG: DEBUG
-      //std::cout << "y2: " << y2 << std::endl;
-      //std::cout << "z2: " << z2 << std::endl;
-      
       ret = lu_fact_.rank_1_update(et1, y2, z2);
-      
       if (!ret) {
-            // TAG: DEBUG
-            //std::cout << "bail03" << std::endl;
         lu_fact_.set_invalid();
         return ret; // bail out
       }
-      
-      // TAG: DEBUG
-      //std::cout << "here04" << std::endl;
-      
       // TODO: put et0s in z3 instead of tmp_row...
       // do row update
       tmp_row[csize-1] = et0;
@@ -6117,32 +4723,16 @@ QP_solver<Q,ET,Tags>::update_basis_matrix_LP_O_S() {
       for (int col = 0; col < bosize; ++col){
         z3.set_entry(col, tmp_row[col]);
       }
-      
-      // TAG: DEBUG
-      //std::cout << "y3: " << y3 << std::endl;
-      //std::cout << "z3: " << z3 << std::endl;
-      
       ret = lu_fact_.rank_1_update(et1, y3, z3);
       
       if (!ret) {
-            // TAG: DEBUG
-            //std::cout << "bail04" << std::endl;
         lu_fact_.set_invalid();
         return ret; // bail out
       }
       
-      
-      
       // adjust internal permuations
       lu_fact_.swap_columns_physically(bosize-1, swap_index);
-    
-      
-      // TAG: DEBUG
-      //lu_fact_.print(std::cout);
-      
-      
   } else { // pivot is ok
-    
     
     // do row update
     y1.set_entry(bosize-1, et1);
@@ -6152,15 +4742,6 @@ QP_solver<Q,ET,Tags>::update_basis_matrix_LP_O_S() {
       z1.set_entry(col, tmp_row[col]);
     }
     z1.set_entry(bosize-1, z1.get_entry(bosize-1)-et1);
-    
-    
-    // TAG: DEBUG
-    /*
-     std::cout << "diag_entry: " << diag_entry << std::endl;
-     std::cout << "y1: " << y1 << std::endl;
-     std::cout << "z1: " << z1 << std::endl;
-     */
-    
     ret = lu_fact_.rank_1_update(et1, y1, z1);
     
     if (!ret) {
@@ -6176,13 +4757,6 @@ QP_solver<Q,ET,Tags>::update_basis_matrix_LP_O_S() {
       y2.set_entry(row, tmp_col[row]);
     }
     y2.set_entry(bosize-1, et0);
-    
-    // TAG: DEBUG
-    /*
-     std::cout << "y2: " << y2 << std::endl;
-     std::cout << "z2: " << z2 << std::endl;
-     */
-    
     ret = lu_fact_.rank_1_update(et1, y2, z2);
   }
   
@@ -6199,38 +4773,12 @@ bool
 QP_solver<Q,ET,Tags>::update_basis_matrix_LP_S_O(unsigned int old_row_index, Values old_row, unsigned int old_col_index, Values old_col, Values last_row, Values last_col) {
   
   CGAL_qpe_assertion(is_phaseI || Is_linear::value);
-  
-      // TAG: DEBUG
-      /*
-      std::cout << "=======================================================" << std::endl;
-      std::cout << "Here we are at the beginning of update_basis_matrix_LP_S_O" << std::endl;
-      std::cout << *lu_fact_.recover_original_matrix();
-      std::cout << "=======================================================" << std::endl;  
-      */
-      
-  // TAG: DEBUG
-  /*
-  std::copy(old_row.begin(), old_row.end(), std::ostream_iterator<ET>(std::cout, " ")); std::cout << std::endl;
-  std::copy(old_col.begin(), old_col.end(), std::ostream_iterator<ET>(std::cout, " ")); std::cout << std::endl;
-  std::copy(last_row.begin(), last_row.end(), std::ostream_iterator<ET>(std::cout, " ")); std::cout << std::endl;
-  std::copy(last_col.begin(), last_col.end(), std::ostream_iterator<ET>(std::cout, " ")); std::cout << std::endl;
-    */
-    
-          
   bool ret(false);
   int csize(C.size()+1), bosize(B_O.size()+1); // correct for reduced size
   QP_sparse_vector<ET> y1(csize), y2(csize), z1(bosize), z2(bosize);
   int index;
   
   if ( (index = lu_fact_.perm_col_inv(bosize-1)) == lu_fact_.perm_row_inv(csize-1) ) { // pivot permuation symmetric
-  
-  
-    // TAG: DEBUG
-    //++CGAL::QP_solver_debug::timer.counter_3;
-    // TAG: DEBUG
-    //std::cout << *lu_fact_.recover_original_matrix();
-    //std::cout << "B1" << std::endl; 
-  
     // reset last column/row to unit col/row
     // do row update
     y1.set_entry(csize-1, et1);
@@ -6240,17 +4788,7 @@ QP_solver<Q,ET,Tags>::update_basis_matrix_LP_S_O(unsigned int old_row_index, Val
       z1.set_entry(col, -last_row[col]);
     }
     z1.set_entry(bosize-1, et1 - last_row[bosize-1]);
-    
-    // TAG: DEBUG
-    //std::cout << "y1: " << y1 << std::endl;
-    //std::cout << "z1: " << z1 << std::endl;
-    
     ret = lu_fact_.rank_1_update(et1, y1, z1);
-    
-    // TAG: DEBUG
-    //std::cout << *lu_fact_.recover_original_matrix();
-    //std::cout << "B2" << std::endl;
-    
     if (!ret) {
       lu_fact_.set_invalid();
       return ret; // bail out
@@ -6266,17 +4804,7 @@ QP_solver<Q,ET,Tags>::update_basis_matrix_LP_S_O(unsigned int old_row_index, Val
       y2.set_entry(row, -last_col[row]);
     }
     y2.set_entry(csize-1, et0);
-    
-    // TAG: DEBUG
-    //std::cout << "y2: " << y2 << std::endl;
-    //std::cout << "z2: " << z2 << std::endl;
-    
     ret = lu_fact_.rank_1_update(et1, y2, z2);
-    
-    // TAG: DEBUG
-    //std::cout << *lu_fact_.recover_original_matrix();
-    //std::cout << "B3" << std::endl;
-    
     if (!ret) {
       lu_fact_.set_invalid();
       return ret; // bail out
@@ -6299,17 +4827,7 @@ QP_solver<Q,ET,Tags>::update_basis_matrix_LP_S_O(unsigned int old_row_index, Val
     }
     z1.set_entry(bosize-1, et0);
     z1.set_entry(old_col_index, last_row[bosize-1]-old_row[old_col_index]);
-    
-    // TAG: DEBUG
-    //std::cout << "y1: " << y1 << std::endl;
-    //std::cout << "z1: " << z1 << std::endl;
-    
     ret = lu_fact_.rank_1_update(et1, y1, z1);
-    
-    // TAG: DEBUG
-    //std::cout << *lu_fact_.recover_original_matrix();
-    //std::cout << "B4" << std::endl; 
-    
     if (!ret) {
       lu_fact_.set_invalid();
       return ret; // bail out
@@ -6326,100 +4844,17 @@ QP_solver<Q,ET,Tags>::update_basis_matrix_LP_S_O(unsigned int old_row_index, Val
     }
     y2.set_entry(old_row_index, et0);
     y2.set_entry(csize-1, et0);
-    
-    // TAG: DEBUG
-    //std::cout << "y2: " << y2 << std::endl;
-    //std::cout << "z2: " << z2 << std::endl;
-    
     ret = lu_fact_.rank_1_update(et1, y2, z2);
-    
-    // TAG: DEBUG
-    //std::cout << *lu_fact_.recover_original_matrix();
-    //std::cout << "B5" << std::endl; 
-    
     if (!ret) {
       lu_fact_.set_invalid();
       return ret; // bail out
     }
     
     ret = lu_fact_.shrink(index, true/*dummy*/);
-    
-    // TAG: DEBUG
-    //std::cout << *lu_fact_.recover_original_matrix();
-    //std::cout << "B6" << std::endl; 
-    
-    
   } else { // pivot permutation not symmetric
     // apply swap trick
   }
-  
-  /*
-  if ( (index = lu_fact_.perm_col_inv(old_col_index)) == lu_fact_.perm_row_inv(old_row_index) ) { // pivot permuation symmetric
     
-    // TAG: DEBUG
-    ++CGAL::QP_solver_debug::timer.counter_3;
-    
-    // do row update
-    y1.set_entry(old_row_index, et1);
-    
-    // construct update row z1
-    for (int col = 0; col < bosize; ++col){
-      z1.set_entry(col, -old_row[col]);
-    }
-    z1.set_entry(old_col_index, et1 - old_row[old_col_index]);
-    
-    // TAG: DEBUG
-    // TAG: DEBUG
-    //std::cout << *lu_fact_.recover_original_matrix();
-    std::cout << "B1" << std::endl;
-    //std::cout << "y1.get_size(): " << y1.get_size() << std::endl;
-    //std::cout << "z1.get_size(): " << z1.get_size() << std::endl;
-    
-    
-    ret = lu_fact_.rank_1_update(et1, y1, z1);
-    
-    if (!ret) {
-      lu_fact_.set_invalid();
-      return ret; // bail out
-    }
-    
-    // do column update
-    z2.set_entry(old_col_index, et1);
-    
-    // construct update column y2
-    for (int row = 0; row < csize; ++row) {
-      y2.set_entry(row, -old_col[row]);
-    }
-    y2.set_entry(old_row_index, et0);
-    
-    
-    // TAG: DEBUG
-    std::cout << *lu_fact_.recover_original_matrix();
-    std::cout << "B2" << std::endl; 
-    
-    ret = lu_fact_.rank_1_update(et1, y2, z2);
-    
-    
-    if (!ret) {
-      lu_fact_.set_invalid();
-      return ret; // bail out
-    }
-    
-    
-    // TAG: DEBUG
-    std::cout << *lu_fact_.recover_original_matrix();
-    std::cout << "B3" << std::endl; 
-    
-    ret = lu_fact_.shrink(index, true); // dummy bool
-    
-    
-    // TAG: DEBUG
-    //std::cout << *lu_fact_.recover_original_matrix();
-    std::cout << "B4" << std::endl; 
-    
-  } else { // pivot permutation not symmetric
-  }*/
-  
   if (!ret) {
     lu_fact_.set_invalid();
   }
@@ -6428,31 +4863,11 @@ QP_solver<Q,ET,Tags>::update_basis_matrix_LP_S_O(unsigned int old_row_index, Val
   
 }
 
-
-// TODO: PRE:
 template <typename Q, typename ET, typename Tags>
 bool
 QP_solver<Q,ET,Tags>::update_basis_matrix_QP_S_O(unsigned int old_constraint_row_index, Values old_constraint_row, unsigned int old_variable_row_index, Values old_variable_row, unsigned int last_constraint_row_index, Values last_constraint_row, Values last_variable_row) {
   
   CGAL_qpe_assertion(!is_phaseI && !Is_linear::value);
-  
-      // TAG: DEBUG
-      /*
-      std::cout << "=======================================================" << std::endl;
-      std::cout << "Here we are at the beginning of update_basis_matrix_QP_S_O" << std::endl;
-      std::cout << *lu_fact_.recover_original_matrix();
-      std::cout << "=======================================================" << std::endl;  
-      */
-      
-  // TAG: DEBUG
-  /*
-  std::copy(old_row.begin(), old_row.end(), std::ostream_iterator<ET>(std::cout, " ")); std::cout << std::endl;
-  std::copy(old_col.begin(), old_col.end(), std::ostream_iterator<ET>(std::cout, " ")); std::cout << std::endl;
-  std::copy(last_row.begin(), last_row.end(), std::ostream_iterator<ET>(std::cout, " ")); std::cout << std::endl;
-  std::copy(last_col.begin(), last_col.end(), std::ostream_iterator<ET>(std::cout, " ")); std::cout << std::endl;
-    */
-    
-          
   bool ret(false);
   int csize(C.size()+1), bosize(B_O.size()+1); // correct for reduced size
   QP_sparse_vector<ET> y1(csize+bosize), y2(csize+bosize), z1(csize+bosize), z2(csize+bosize);
@@ -6467,13 +4882,6 @@ QP_solver<Q,ET,Tags>::update_basis_matrix_QP_S_O(unsigned int old_constraint_row
     /////////////////////////////
     // do constraint update first
   
-    // TAG: DEBUG
-    //CGAL_qpe_assertion(false);
-    //++CGAL::QP_solver_debug::timer.counter_3;
-    // TAG: DEBUG
-    //std::cout << *lu_fact_.recover_original_matrix();
-    //std::cout << "B1" << std::endl; 
-  
     // reset last column/row to unit col/row
     // do row update
     y1.set_entry(last_constraint_row_index, et1);
@@ -6483,45 +4891,20 @@ QP_solver<Q,ET,Tags>::update_basis_matrix_QP_S_O(unsigned int old_constraint_row
       z1.set_entry(col, -last_constraint_row[col]);
     }
     z1.set_entry(last_constraint_row_index, et1 - last_constraint_row[last_constraint_row_index]);
-    
-    // TAG: DEBUG
-    //std::cout << "y1: " << y1 << std::endl;
-    //std::cout << "z1: " << z1 << std::endl;
-    
     ret = lu_fact_.rank_1_update(et1, y1, z1);
     
     if (!ret) {
       lu_fact_.set_invalid();
       return ret; // bail out
     }
-    
-    
-    // TAG: DEBUG
-    //std::cout << "S_O_2" << std::endl;
-    //std::cout << *lu_fact_.recover_original_matrix();
-    
-    
+
     // do column update
     z1.set_entry(last_constraint_row_index, et0);
-    
-    // TAG: DEBUG
-    //std::cout << "y1: " << y1 << std::endl;
-    //std::cout << "z1: " << z1 << std::endl;
-    
     ret = lu_fact_.rank_1_update(et1, z1, y1);
-    
-    
     if (!ret) {
       lu_fact_.set_invalid();
       return ret; // bail out
     }
-    
-    
-    // TAG: DEBUG
-    //std::cout << "S_O_3" << std::endl;
-    //std::cout << *lu_fact_.recover_original_matrix();
-
-    
     
     // install last constraint column/row in place of column/row that will be dropped
     if (old_constraint_row_index != last_constraint_row_index) {
@@ -6537,71 +4920,32 @@ QP_solver<Q,ET,Tags>::update_basis_matrix_QP_S_O(unsigned int old_constraint_row
       }
       z1.set_entry(last_constraint_row_index, et0);
       z1.set_entry(old_constraint_row_index, last_constraint_row[last_constraint_row_index]-old_constraint_row[old_constraint_row_index]);
-      
-      // TAG: DEBUG
-      //std::cout << "y1: " << y1 << std::endl;
-      //std::cout << "z1: " << z1 << std::endl;
-      
       ret = lu_fact_.rank_1_update(et1, y1, z1);
-      
-      
       if (!ret) {
         lu_fact_.set_invalid();
         return ret; // bail out
       }
-      
-      
-      // TAG: DEBUG
-      //std::cout << "S_O_4" << std::endl; 
-      //std::cout << *lu_fact_.recover_original_matrix();
 
-      
       // do column update
       z1.set_entry(old_constraint_row_index, et0);
-      
-      // TAG: DEBUG
-      //std::cout << "y1: " << y1 << std::endl;
-      //std::cout << "z1: " << z1 << std::endl;
-      
       ret = lu_fact_.rank_1_update(et1, z1, y1);
-      
-      
       if (!ret) {
         lu_fact_.set_invalid();
         return ret; // bail out
       }
-      
-      
-      // TAG: DEBUG
-      //std::cout << "S_O_5" << std::endl; 
-      //std::cout << *lu_fact_.recover_original_matrix();
-
     }
     
     
     
     ////////////////////////////
     // do variable update second
-    
-    // TAG: DEBUG
-    //std::cout << "B7" << std::endl;
-    
-    // TAG: DEBUG
-    //std::copy(old_variable_row.begin(), old_variable_row.end(), std::ostream_iterator<ET>(std::cout, ", ")); std::cout << std::endl;
-    //std::copy(last_variable_row.begin(), last_variable_row.end(), std::ostream_iterator<ET>(std::cout, ", ")); std::cout << std::endl;
-    //std::copy(old_constraint_row.begin(), old_constraint_row.end(), std::ostream_iterator<ET>(std::cout, ", ")); std::cout << std::endl;
-    //std::copy(last_constraint_row.begin(), last_constraint_row.end(), std::ostream_iterator<ET>(std::cout, ", ")); std::cout << std::endl;
-    
+
     // reflect changes of constraint swap
     old_variable_row[old_constraint_row_index] = last_constraint_row[csize+old_variable_row_index];
     old_variable_row[last_constraint_row_index] = et0;
     last_variable_row[old_constraint_row_index] = last_constraint_row[csize+bosize-1];
     last_variable_row[last_constraint_row_index] = et0;
-    
-    // TAG: DEBUG
-    //std::copy(old_variable_row.begin(), old_variable_row.end(), std::ostream_iterator<ET>(std::cout, ", ")); std::cout << std::endl;
-    //std::copy(last_variable_row.begin(), last_variable_row.end(), std::ostream_iterator<ET>(std::cout, ", ")); std::cout << std::endl;
-  
+
     // reset last column/row to unit col/row
     // do row update
     y2.set_entry(csize+bosize-1, et1);
@@ -6611,46 +4955,19 @@ QP_solver<Q,ET,Tags>::update_basis_matrix_QP_S_O(unsigned int old_constraint_row
       z2.set_entry(col, -last_variable_row[col]);
     }
     z2.set_entry(csize+bosize-1, et1 - last_variable_row[csize+bosize-1]);
-    
-    // TAG: DEBUG
-    //std::cout << "y2: " << y2 << std::endl;
-    //std::cout << "z2: " << z2 << std::endl;
-    
     ret = lu_fact_.rank_1_update(et1, y2, z2);
-    
-    
     if (!ret) {
       lu_fact_.set_invalid();
       return ret; // bail out
     }
-    
-    
-    // TAG: DEBUG
-    //std::cout << "S_O_8" << std::endl;
-    //std::cout << *lu_fact_.recover_original_matrix();
-
     
     // do column update
     z2.set_entry(csize+bosize-1, et0);
-    
-    // TAG: DEBUG
-    //std::cout << "y2: " << y2 << std::endl;
-    //std::cout << "z2: " << z2 << std::endl;
-    
     ret = lu_fact_.rank_1_update(et1, z2, y2);
-    
-    
     if (!ret) {
       lu_fact_.set_invalid();
       return ret; // bail out
     }
-    
-    
-    // TAG: DEBUG
-    //std::cout << "S_O_9" << std::endl;
-    //std::cout << *lu_fact_.recover_original_matrix();
-
-    
     
     // install last constraint column/row in place of column/row that will be dropped
     if (old_variable_row_index != bosize-1) {
@@ -6666,11 +4983,6 @@ QP_solver<Q,ET,Tags>::update_basis_matrix_QP_S_O(unsigned int old_constraint_row
       }
       z2.set_entry(csize+bosize-1, et0);
       z2.set_entry(csize+old_variable_row_index, last_variable_row[csize+bosize-1]-old_variable_row[csize+old_variable_row_index]);
-      
-      // TAG: DEBUG
-      //std::cout << "y2: " << y2 << std::endl;
-      //std::cout << "z2: " << z2 << std::endl;
-      
       ret = lu_fact_.rank_1_update(et1, y2, z2);
       
       
@@ -6679,66 +4991,23 @@ QP_solver<Q,ET,Tags>::update_basis_matrix_QP_S_O(unsigned int old_constraint_row
         return ret; // bail out
       }
       
-      
-      // TAG: DEBUG
-      //std::cout << "S_O_10" << std::endl; 
-      //std::cout << *lu_fact_.recover_original_matrix();
-
-      
       // do column update
       z2.set_entry(csize+old_variable_row_index, et0);
-      
-      // TAG: DEBUG
-      //std::cout << "y2: " << y2 << std::endl;
-      //std::cout << "z2: " << z2 << std::endl;
-      
       ret = lu_fact_.rank_1_update(et1, z2, y2);
-      
-      
       if (!ret) {
         lu_fact_.set_invalid();
         return ret; // bail out
       }
-      
-      
-      // TAG: DEBUG
-      //std::cout << "S_O_11" << std::endl; 
-      //std::cout << *lu_fact_.recover_original_matrix();
-
     }
-    
-    
-    
-    // TAG: DEBUG
-    //std::cout << "S_O_12" << std::endl;
-    //std::cout << *lu_fact_.recover_original_matrix();
-    //std::cout << "index1: " << index1 << std::endl;
-    //std::cout << "index2: " << index2 << std::endl;
-    
-    
     ret = lu_fact_.shrink((index2>index1 ? index2 : index1), true);
     if (!ret) {
       lu_fact_.set_invalid();
       return ret; // bail out
     }
-    
-    // TAG: DEBUG
-    //std::cout << "S_O_12B" << std::endl;
-    //std::cout << *lu_fact_.recover_original_matrix();
-
-    
-    ret = lu_fact_.shrink((index2>index1 ? index1 : index2), false);
-    
-  
+    ret = lu_fact_.shrink((index2>index1 ? index1 : index2), false);  
   } else { // last constraint row permutation not symmetric
    // apply swap trick
   }
-
-  // TAG: DEBUG
-  //std::cout << "S_O_13" << std::endl;
-  //std::cout << *lu_fact_.recover_original_matrix();
-
-    
   if (!ret) {
     lu_fact_.set_invalid();
   }
@@ -6761,17 +5030,7 @@ QP_solver<Q,ET,Tags>::update_basis_matrix_QP_O_S() {
   
   //Permutation perm_row, perm_column_inv;
   QP_sparse_vector<ET> y1(csize+bosize), y2(csize+bosize), z1(csize+bosize), z2(csize+bosize);
-  
-  // TAG: DEBUG
-  /*
-  std::cout << "=======================================================" << std::endl;
-  std::cout << "Here we are at the beginning of update_basis_matrix_QP_O_S" << std::endl;
-  std::cout << "csize: " << csize << std::endl;
-  std::cout << "bosize: " << bosize << std::endl;
-  std::cout << *lu_fact_.recover_original_matrix();
-  std::cout << "=======================================================" << std::endl;  
-*/
-  
+    
   // enlarge lu factorization (in rare cases this might not work, e.g. in the first
   // iteration of phase II, when the basis matrix is not valid initially)
   // TAG: TODO try different enlargement strategies for a and k in enlarge
@@ -6780,36 +5039,19 @@ QP_solver<Q,ET,Tags>::update_basis_matrix_QP_O_S() {
     lu_fact_.set_invalid();
     return ret; // bail out
   }
-  
-  // TAG: DEBUG
-  //std::cout << "B2" << std::endl;
-  //std::cout << *lu_fact_.recover_original_matrix();
-  
-  
   ret = lu_fact_.enlarge(csize-1, csize+bosize-1, false);
   if (!ret) {
     lu_fact_.set_invalid();
     return ret; // bail out
   }
-  
-  
-  // TAG: DEBUG
-  //std::cout << "B3" << std::endl;
-  //std::cout << *lu_fact_.recover_original_matrix();
-  
-    
-  
   Values new_variable_row(csize+bosize, et0), new_constraint_row(csize+bosize, et0);
   
   //TODO: think about sparsifying the fetching procedures for those rows and columns
-  
-
 
   // get new column for basis matrix
   ratio_test_init__A_Cj(new_variable_row.begin(), index_entering, no_ineq); //update acj
   ratio_test_init__2_D_Bj( new_variable_row.begin()+csize, index_entering, Tag_false());
-  
-  
+    
   // do variable row update
   y1.set_entry(csize+bosize-1, et1);
   
@@ -6820,48 +5062,20 @@ QP_solver<Q,ET,Tags>::update_basis_matrix_QP_O_S() {
   // TODO: check what happens if we subtract et1 in the following update not here
   z1.set_entry(csize+bosize-1, new_variable_row[csize+bosize-1]-et1);
   
-  
-  // TAG: DEBUG
-  //std::cout << "y1: " << y1 << std::endl;
-  //std::cout << "z1: " << z1 << std::endl;
-
-  
   ret = lu_fact_.rank_1_update(et1, y1, z1);
-  
-  // TAG: DEBUG
-  //std::cout << "B4" << std::endl;
-  //std::cout << "ret: " << ret << std::endl;
-  //std::cout << *lu_fact_.recover_original_matrix();
-  
   if (!ret) {
     lu_fact_.set_invalid();
     return ret; // bail out
   }
-  
-  // TAG: DEBUG
-  //std::cout << "B4B" << std::endl; 
-  //std::cout << *lu_fact_.recover_original_matrix();
 
   // do column update
   z1.set_entry(csize+bosize-1, et0);
-  
-  // TAG: DEBUG
-  //std::cout << "y1: " << y1 << std::endl;
-  //std::cout << "z1: " << z1 << std::endl;
-  
   ret = lu_fact_.rank_1_update(et1, z1, y1);
-  
-  
   if (!ret) {
     lu_fact_.set_invalid();
     return ret; // bail out
   }
-  
-  // TAG: DEBUG
-  //std::cout << "B5" << std::endl; 
-  //std::cout << *lu_fact_.recover_original_matrix();
-  
-    // get new row for basis matrix
+  // get new row for basis matrix
   init__A_Ri(new_constraint_row.begin()+csize, slack_A[ index_leaving-qp_n].first, no_ineq); //update ari
   
   // do constraint row update
@@ -6874,42 +5088,15 @@ QP_solver<Q,ET,Tags>::update_basis_matrix_QP_O_S() {
   // TODO: check what happens if we subtract et1 in the following update not here
   z2.set_entry(csize-1, new_constraint_row[csize-1]);
   z2.set_entry(csize+bosize-1, et0);
-  
-  // TAG: DEBUG
-  //std::cout << "y2: " << y2 << std::endl;
-  //std::cout << "z2: " << z2 << std::endl;
-  
-  
   ret = lu_fact_.rank_1_update(et1, y2, z2);
-  
-  
   if (!ret) {
     lu_fact_.set_invalid();
     return ret; // bail out
   }
-  
-  // TAG: DEBUG
-  //std::cout << "B6" << std::endl;
-  //std::cout << *lu_fact_.recover_original_matrix();
-  
-
   // do column update
   z2.set_entry(csize-1, -et1);
-  
-  // TAG: DEBUG
-  //std::cout << "y2: " << y2 << std::endl;
-  //std::cout << "z2: " << z2 << std::endl;
-  
-  
   ret = lu_fact_.rank_1_update(et1, z2, y2);
-  
   if (!ret) lu_fact_.set_invalid();
-  
-  
-  // TAG: DEBUG
-  //std::cout << "B7" << std::endl;  
-  //std::cout << *lu_fact_.recover_original_matrix();  
-  
   return ret;
 }
 
@@ -6937,36 +5124,18 @@ QP_solver<Q,ET,Tags>::update_basis_matrix_QP_S_S(unsigned int k, Values old_colu
   for (int col = csize; col < csize+bosize; ++col){
         z.set_entry(col, new_column[col-csize]-old_column[col-csize]);
   }
-  
-  // TAG: DEBUG
-  //std::cout << "y: " << y << std::endl;
-  //std::cout << "z: " << z << std::endl;
-  
   ret = lu_fact_.rank_1_update(et1, y, z);
-  
   if (!ret) {
     lu_fact_.set_invalid();
     return ret;
   }
-  
   ret = lu_fact_.rank_1_update(et1, z, y);
-  
   if (!ret) {
     lu_fact_.set_invalid();
   }
   
   return ret;
 }
-
-
-// TAG: 111SWITCH
-/*
-template <typename Q, typename ET, typename Tags>
-QP_sparse_matrix<ET>&
-QP_solver<Q,ET,Tags>::get_basis_matrix() {
-  return *basis_matrix_;
-}*/
-
 
 } //namespace CGAL
 
