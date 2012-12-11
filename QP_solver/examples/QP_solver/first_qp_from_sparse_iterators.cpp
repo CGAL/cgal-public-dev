@@ -16,9 +16,6 @@ typedef CGAL::Gmpz ET;
 typedef CGAL::MP_Float ET;
 #endif
 
-#include <CGAL/Gmpq.h>
-typedef CGAL::Gmpq MT; // Field type
-
 // program and solution types
 typedef typename std::vector<std::pair<int, int> > Col_sparse;
 typedef CGAL::Quadratic_program_from_sparse_iterators
@@ -34,7 +31,7 @@ int*>                                                 // for c
 Program_from_sparse_iterators;
 
 
-typedef CGAL::Quadratic_program_solution<MT> Solution;
+typedef CGAL::Quadratic_program_solution<ET> Solution;
 typedef CGAL::Quadratic_program_options Options;
 
 
@@ -74,7 +71,7 @@ int main(const int argNr, const char **args) {
     CGAL::print_quadratic_program (std::cout, qp);
     
     // solve the program, using ET as the exact type
-    Solution s = CGAL::solve_quadratic_program(qp, MT(), options);
+    Solution s = CGAL::solve_quadratic_program(qp, ET(), options);
     
     // output solution
     std::cout << s;

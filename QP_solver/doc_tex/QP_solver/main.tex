@@ -386,9 +386,40 @@ the vector \ccc{fl} for the finiteness of the lower bounds.
 \ref{sec:QP-makers} we show how the explicit construction of
 this type can be circumvented.
 
+\subsection{Constructing a Program from Sparse Iterators}
+
+The sample code below encodes the following small quadratic program:
+\[
+\begin{array}{lrcl}
+\mbox{minimize}       & 2 x^2 + 8 y^2 - 32y + 64 \\
+\mbox{subject to}     & x + 11 y &\leq& 7 \\
+                      & -11x + 2y &\leq& 4 \\
+                      & x &\geq& 0 \\
+                      & y &\geq& 0 \\
+                      & y &\leq& 4,
+\end{array}
+\] 
+which is a slight modification of the program above. The way we construct this
+program is that we use a \ccc{std::vector} of \ccc{std::pair} to encode
+the columns of the matrices.
+
+\ccIncludeExampleCode{QP_solver/first_qp_from_sparse_iterators.cpp}
+
+{\bf Note 1:} Instead of explicitly constructing the sparse iterators we can
+also provide them by implementing our own iterator or extending
+\ccc{boost::iterator_facade} for example. That way, we don't have to
+compute the whole input matrices in advance.
+
 \section{Common Pitfalls}
 In this section we will briefly common mistakes that can greatly affect
 the efficiency of the solver.
+\begin{itemize}
+\item Don't put simple bounds as regular constraints! That will be very
+slow.
+\item Don't forget to input $2 D$ (and not just $D$)
+\item Refrain from using explicit quotient types as input, because
+the result will be a quotient of quotients.
+\end{itemize}
 
 \section{Solving Linear and Nonnegative Programs\label{sec:QP-lp}}
 Let us reconsider the general form of (QP) from Section \ref{sec:QP-def} 
