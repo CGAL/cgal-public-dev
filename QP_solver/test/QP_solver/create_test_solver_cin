@@ -151,13 +151,9 @@ for file in $MASTERS
   done
 done
 
-<<<<<<< HEAD
-# collect cycle MPS files:
-echo "Collecting cycle MPS files..."
-=======
 # collect individual MPS files:
 echo "Collecting individual MPS files..."
->>>>>>> hot-fixes-for-Git
+
 INDIVIDUAL=$(find test_solver_data/individual_cases -name '*mps')
 
 # add cycle cases to file list:
@@ -169,18 +165,11 @@ for case in $INDIVIDUAL
   # check whether the file exists in the SVN repository:
     tmpf=`basename "$case"`
     tmpd=`dirname "$case"`
-<<<<<<< HEAD
-    if grep -q "name=\\\"$tmpf\\\"" "$tmpd/.svn/entries"; then 
-	echo -n ""; 
-    else 
-	MISSINGFILES="$MISSINGFILES $case" 
-=======
     
     if (echo "$GIT_UNVERSIONED" | grep -q "$tmpf") then
     	MISSINGFILES="$MISSINGFILES $case"
     else
     	echo -n "";
->>>>>>> hot-fixes-for-Git
     fi
 done
 
