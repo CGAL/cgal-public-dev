@@ -7,6 +7,11 @@ This template function creates an instance of
 iterators are too complicated (or of too little interest for you) 
 to write them down explicitly.
 
+Note that this way of constructing linear programs is not
+the most efficient, because internally, all computations are done using
+a sparse representation of \ccc{A_it}. If possible,
+use \ccc{make_linear_program_from_sparse_iterators}.
+
 \ccFunction{template <
    A_it,   
    B_it,   
@@ -40,4 +45,5 @@ with the simpler function \ccc{make_nonnegative_linear_program_from_iterators}.
 
 \ccSeeAlso
 \ccc{Linear_program_from_iterators<A_it, B_it, R_it, FL_it, L_it, FU_it, U_it, C_it>}
+\ccc{make_linear_program_from_sparse_iterators}
 \end{ccRefFunction}

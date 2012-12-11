@@ -13,12 +13,19 @@ nonnegative program.
 This class allows you to build your program entry by entry, using
 the set-methods below. 
 
-If you only need to wrap existing (random-access)
-iterators over your own data, then you may use any of the four models
+If you only need to wrap existing (random access) 
+iterators over your own data, then you may use any of the eight models
+\ccc{Quadratic_program_from_sparse_iterators<A_s_it, B_it, R_it, FL_it, L_it, FU_it, U_it, D_s_it, C_it>}, 
 \ccc{Quadratic_program_from_iterators<A_it, B_it, R_it, FL_it, L_it, FU_it, U_it, D_it, C_it>}, 
+\ccc{Linear_program_from_sparse_iterators<A_s_it, B_it, R_it, FL_it, L_it, FU_it, U_it, C_it>}, 
 \ccc{Linear_program_from_iterators<A_it, B_it, R_it, FL_it, L_it, FU_it, U_it, C_it>}, 
-\ccc{Nonnegative_quadratic_program_from_iterators<A_it, B_it, R_it, D_it, C_it>}, and
-\ccc{Nonnegative_linear_program_from_iterators<A_it, B_it, R_it, C_it>}. 
+\ccc{Nonnegative_quadratic_program_from_sparse_iterators<A_s_it, B_it, R_it, D_it, C_it>},
+\ccc{Nonnegative_quadratic_program_from_iterators<A_it, B_it, R_it, D_it, C_it>},
+\ccc{Nonnegative_linear_program_from_sparse_iterators<A_s_it, B_it, R_it, C_it>}, and
+\ccc{Nonnegative_linear_program_from_iterators<A_it, B_it, R_it, C_it>}.
+The non-sparse versions of the classes above are only for convenience and backward compatibility.
+Internally, everything is handled in a sparse way, and the sparse versions
+are generally more efficient.
 
 If you want to read a quadratic program in \ccc{MPSFormat} from a stream, 
 please use the model \ccc{Quadratic_program_from_mps<NT>}.
@@ -70,10 +77,15 @@ explicitly set will default to $0$.\ccPrecond if
 \ccReferToExampleCode{QP_solver/first_nonnegative_qp.cpp}\\
 \ccReferToExampleCode{QP_solver/first_nonnegative_lp.cpp}\\
 \ccReferToExampleCode{QP_solver/invert_matrix.cpp}
+
 \ccSeeAlso
+\ccc{Quadratic_program_from_sparse_iterators<A_it, B_it, R_it, FL_it, L_it, FU_it, U_it, D_s_it, C_it>}\\
 \ccc{Quadratic_program_from_iterators<A_it, B_it, R_it, FL_it, L_it, FU_it, U_it, D_it, C_it>}\\
+\ccc{Linear_program_from_sparse_iterators<A_s_it, B_it, R_it, FL_it, L_it, FU_it, U_it, C_it>}\\
 \ccc{Linear_program_from_iterators<A_it, B_it, R_it, FL_it, L_it, FU_it, U_it, C_it>}\\
+\ccc{Nonnegative_quadratic_program_from_sparse_iterators<A_s_it, B_it, R_it, D_it, C_it>}\\
 \ccc{Nonnegative_quadratic_program_from_iterators<A_it, B_it, R_it, D_it, C_it>}\\
+\ccc{Nonnegative_linear_program_from_iterators<A_s_it, B_it, R_it, C_it>}\\ 
 \ccc{Nonnegative_linear_program_from_iterators<A_it, B_it, R_it, C_it>}\\ 
 \ccc{Quadratic_program_from_mps<NT>}
 

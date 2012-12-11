@@ -43,30 +43,56 @@ $\quad$ (for linear and quadratic programs read from an input stream in
 
 Then there are specific models for any of the four program concepts above; 
 these are useful if you want to maintain the program data yourself, since
-they simply wrap random access iterators over the program data and involve
+they simply wrap random access or sparse iterators over the program data and involve
 no further copying of data.
 
-\ccRefIdfierPage{CGAL::Quadratic_program_from_iterators<A_it, B_it, R_it, FL_it, L_it, FU_it, U_it, D_it, C_it>}\\
-$\quad$ (for quadratic programs that wrap given iterators, without copying 
+Note that in the following, the distinction between \emph{dense} and \emph{sparse}
+iterators only concerns the matrices $A$ and $D$. Any other iterators are always
+assumed to be dense. A dense iterator is a two dimensional random access iterator.
+The sparse iterators are one dimensional iterators. The value type of those iterators
+ shall be an object that provides bidirectional sparse iterators
+  for one row or column of the matrix in question
+  by member calls to \ccc{begin()} and \ccc{end()}.
+
+\ccRefIdfierPage{CGAL::Quadratic_program_from_sparse_iterators<A_s_it, B_it, R_it, FL_it, L_it, FU_it, U_it, D_s_it, C_it>}\\
+$\quad$ (for quadratic programs that wrap given sparse iterators, without copying 
 data) 
+
+\ccRefIdfierPage{CGAL::Quadratic_program_from_iterators<A_it, B_it, R_it, FL_it, L_it, FU_it, U_it, D_it, C_it>}\\
+$\quad$ (for quadratic programs that wrap given dense iterators, without copying 
+data) 
+
+\ccRefIdfierPage{CGAL::Linear_program_from_sparse_iterators<A_s_it, B_it, R_it, FL_it, L_it, FU_it, U_it, C_it>}\\
+$\quad$ (for linear programs wrapping given sparse iterators) 
 
 \ccRefIdfierPage{CGAL::Linear_program_from_iterators<A_it, B_it, R_it, FL_it, L_it, FU_it, U_it, C_it>}\\
 $\quad$ (for linear programs wrapping given iterators) 
 
+\ccRefIdfierPage{CGAL::Nonnegative_quadratic_program_from_sparse_iterators<A_s_it, B_it, R_it, D_s_it, C_it>}\\
+$\quad$ (for nonnegative quadratic programs, wrapping given sparse iterators)
+
 \ccRefIdfierPage{CGAL::Nonnegative_quadratic_program_from_iterators<A_it, B_it, R_it, D_it, C_it>}\\
-$\quad$ (for nonnegative quadratic programs, wrapping given iterators)
+$\quad$ (for nonnegative quadratic programs, wrapping given dense iterators)
+
+\ccRefIdfierPage{CGAL::Nonnegative_linear_program_from_sparse_iterators<A_s_it, B_it, R_it, C_it>}\\
+$\quad$ (for nonnegative linear programs, wrapping given sparse iterators)
 
 \ccRefIdfierPage{CGAL::Nonnegative_linear_program_from_iterators<A_it, B_it, R_it, C_it>}\\
-$\quad$ (for nonnegative linear programs, wrapping given iterators)
+$\quad$ (for nonnegative linear programs, wrapping given dense iterators)
+
 \ccHeading{Functions}
 
 In case you want to construct a program from complicated iterators
 (whose types you don't know, or simply don't want to bother with), 
-we provide four makers.
+we provide eight makers.
 
+\ccRefIdfierPage{CGAL::make_quadratic_program_from_sparse_iterators}\\
 \ccRefIdfierPage{CGAL::make_quadratic_program_from_iterators}\\
+\ccRefIdfierPage{CGAL::make_linear_program_from_sparse_iterators}\\
 \ccRefIdfierPage{CGAL::make_linear_program_from_iterators}\\
+\ccRefIdfierPage{CGAL::make_nonnegative_quadratic_program_from_sparse_iterators}\\
 \ccRefIdfierPage{CGAL::make_nonnegative_quadratic_program_from_iterators}\\
+\ccRefIdfierPage{CGAL::make_nonnegative_linear_program_from_sparse_iterators}\\
 \ccRefIdfierPage{CGAL::make_nonnegative_linear_program_from_iterators}
 
 There are four functions to solve a program, one for each program

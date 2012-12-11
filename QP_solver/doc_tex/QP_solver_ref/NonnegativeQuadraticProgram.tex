@@ -11,6 +11,7 @@ comes in \emph{dense} representation which includes zero entries.
 \ccHasModels
 \ccc{Quadratic_program<NT>}\\
 \ccc{Quadratic_program_from_mps<NT>}\\
+\ccc{Nonnegative_quadratic_program_from_sparse_iterators<A_s_it, B_it, R_it, FL_it, L_it, FU_it, U_it, D_s_it, C_it>}\\
 \ccc{Nonnegative_quadratic_program_from_iterators<A_it, B_it, R_it, FL_it, L_it, FU_it, U_it, D_it, C_it>}\\
 
 \ccTypes
@@ -33,8 +34,10 @@ comes in \emph{dense} representation which includes zero entries.
 
 \ccRequirements
 
-The value types of all iterator types (nested iterator types,
-respectively, for \ccc{A_iterator} and \ccc{D_iterator}) must be
+The value types of all iterator types (nested iterator types
+for \ccc{A_iterator} and \ccc{D_iterator},
+and the types of \ccc{value} in the nested sparse iterators of
+\ccc{A_sparse_iterator} and \ccc{D_sparse_iterator}, respectively) must be
 convertible to some common \ccc{IntegralDomain} \ccc{ET}.
 
 \ccSeeAlso
@@ -42,7 +45,9 @@ The models
 
 \ccc{Quadratic_program<NT>}\\
 \ccc{Quadratic_program_from_mps<NT>}\\
+\ccc{Nonnegative_quadratic_program_from_sparse_iterators<A_s_it, B_it, R_it, FL_it, L_it, FU_it, U_it, D_s_it, C_it>}\\
 \ccc{Nonnegative_quadratic_program_from_iterators<A_it, B_it, R_it, D_it, C_it>}
+
 and the other concepts
 
 \ccc{QuadraticProgram}\\

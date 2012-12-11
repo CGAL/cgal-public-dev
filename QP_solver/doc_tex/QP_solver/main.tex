@@ -16,7 +16,7 @@
 \ccUserChapter{Linear and Quadratic Programming Solver\label{QPsolver}}
 \ccChapterRelease{Release: WIP (\today)}
 \ccChapterAuthor{Kaspar Fischer \and Bernd G{\"a}rtner 
-\and Sven Sch{\"o}nherr \and Frans Wessendorp}
+\and Sven Sch{\"o}nherr \and Frans Wessendorp \and Yves Brise}
 
 \input{QP_solver/PkgDescription}
 
@@ -76,44 +76,62 @@ or ``unbounded''), you can verify it yourself by using the certificates.
 Section \ref{sec:QP-certificates} says more about this.
 
 \subsection{Efficiency}
-The concept \ccc{QuadraticProgram} (as well as the
-other specialized ones) require a \emph{dense interface} 
+Historically, the concept \ccc{QuadraticProgram} (as well as the
+other specialized ones) required a \emph{dense interface} 
 of the program, in terms of \emph{random-access iterators} over 
-the matrices and vectors of (QP). Zero entries therefore play no
-special role and are treated like all other entries by the
+the matrices and vectors of (QP). Zero entries therefore played no
+special role and were treated like all other entries by the
 interface.  
 
-This has mainly historical
-reasons: the original motivation behind this package was 
-low-dimensional geometric optimization where 
+The  original motivation behind this was that the package should
+be used to solve 
+low-dimensional geometric optimization problems where 
 a dense representation is appropriate and efficient. In fact, 
 the \cgal\ packages \ccc{Min_annulus_d<Traits>} and
 \ccc{Polytope_distance_d<Traits>} internally use the linear 
 and quadratic programming solver. 
 
-As a user, however, you don't necessarily have to provide a dense
-\emph{representation} of your program. You do not pass vectors or
-matrices to the solution functions, but rather specify the vectors 
-and matrices through iterators. The iterator abstraction 
-easily allows to build models that convert a sparse representation 
-into a dense interface. The predefined models \ccc{Quadratic_program<NT>} 
-and \ccc{Quadratic_program_from_mps<NT>} do exactly this; in using them, 
-you can forget about the dense interface.  
+As a user, however, you didn't necessarily have to provide a dense
+\emph{representation} of your program. 
+The predefined models \ccc{Quadratic_program<NT>} 
+and \ccc{Quadratic_program_from_mps<NT>} have always served
+as a sparse and conceptually easy to use
+input interface. Internally, however, the entries provided
+were transformed into dense matrices and vectors. In the current
+version this is no longer the case. The internal representation
+of the matrices $A$ and $D$ is assumed to be sparse. All
+previous interfaces continue to exist, with the addition
+of models for sparse iterator input. See the next section
+about the concept of sparse iterator input.
 
-Nevertheless, if you care about efficiency, you cannot completely 
-ignore the issue. If
-you think about a quadratic program in $n$ variables and $m$
-constraints, its dense interface has $\Theta(n^2 + mn)$ entries,
-even if actually very few of them are nonzero. This has consequences 
+
+If you care about efficiency, think of a quadratic program in
+$n$ variables and $m$
+constraints. Its dense interface has $\Theta(n^2 + mn)$ entries,
+regardless of the number of non-zero elements. This has consequences 
 for the complexity of the internal computations. In fact, a single
-iteration of the solution process has complexity at least 
+iteration of the solution process would have complexity at least 
 $\Omega(mn)$, since usually, all entries of the matrix $A$ are accessed. 
-This implies that problems where $\min(n,m)$ is large cannot be solved
+This implies that problems where $\min(n,m)$ is large could not be solved
 efficiently, even if the number of nonzero entries in the problem
 description is very small.
 
-We can actually be quite precise about performance, in terms of the 
+In the sparse implementation, we can alleviate
+this problem in the following sense. Traversing the whole matrix
+$A$ can  be done in $\Theta(N_A)$,where $N_A \leq mn$ is the number
+of non-zeros of $A$. Therefore, the minimum complexity of
+one iteration drops to $\Omega(N_A)$, which can
+be considerably less for very sparse matrices, of course.
+
+The downside
+is that a sparse representation of factually dense input still
+describes a dense input, and the handling of this
+representation even incurs a certain overhead.
+Therefore, the following considerations have still to be taken into account.
+Assuming fully dense input, we can actually be quite precise about performance,
+in terms of the 
 following parameters.
+
 \begin{tabular}{lcl}
 $n$ &: & the number of variables (or columns of $A$),\\
 $m$ &: & the number of constraints (or rows of $A$),\\
@@ -143,7 +161,62 @@ within reasonable time, depending on the problem characteristics.
 
 If you have a problem where both $n$ and $e$ are well above
 $1,000$, say, then chances are high that \cgal\ cannot solve it
-within reasonable time.
+within reasonable time, except you are dealing with sparse input,
+and you are using the appropriate interfaces.
+
+\subsection{Sparse Input}
+
+When the input is given as sparse iterators,
+the following conventions are employed. Only the matrices
+$A$ and $D$ are given in a sparse fashion. All vectors
+are assumed to be dense. The matrices $A$ and $D$
+shall be given as a random access iterator over the columns
+(or in the case of $D$ also its rows, since it is symmetric)
+of the matrix. This means, that dereferencing a matrix
+iterator results in a specific column of the matrix. So far,
+this is the same semantics as with a two dimensional
+dense iterator.
+
+The sparse case, however, differs in the way one column looks.
+We assume that it shall be an object that is able to provide
+bidirectional \emph{begin} and \emph{end} iterators by
+calls to the two methods \ccc{begin} and \ccc{end}, and
+the appropriate iterator type through its iterator traits, respectively.
+The value type of a column is prescribed as well.
+It shall be pairs of type \ccc{(index, value)}.
+
+Of course, the idea is that zero entries are omitted from the
+sequence of \ccc{(index, value)} pairs.
+To make our description concrete,
+consider the following example of iterating
+over the row \ccc{j} of some matrix.
+
+\begin{verbatim}
+int j; // column index
+A_s_it matrix; // sparse matrix iterator
+typedef typename std::iterator_traits<A_s_it>::value_type Col; // column type
+typedef typename Col::iterator Col_it; // column iterator type
+
+Col col_j = *(matrix + j);
+for (Col_it it = col_j.begin(); it != col_j.end(); ++it) {
+   it->first; // access index of current element
+   it->second; // access value of current element
+}
+\end{verbatim}
+
+Since this method of constructing the input can be quite
+cumbersome and for backward compatibility with earlier
+versions of the solver, the dense input interfaces
+(using plain two dimensional iterators) are all still valid. The
+only restriction is that the methods \ccc{get\_a} and
+\ccc{get\_d} that existed previously are now replaced
+by \ccc{get\_a\_sparse} and \ccc{get\_d\_sparse} in every
+case. Note however that, if efficiency is an issue, it is advisable
+to always use a sparse input interface, because
+sparsity of a matrix is not optimally exploited if it is given as
+dense input.
+
+
 
 \subsection{Robustness\label{sec:QP-robustness}}
 Given that you use an \emph{exact number type} in the function
@@ -163,11 +236,9 @@ positive-semidefinite (see the discussion below).
   cope with these rare cases. There are means, however, to avoid such
   problems by switching to a slower non-filtered variant, see Section
   \ref{sec:QP-customization-filtering}.
-\item The solver internally cycles. This also happens in rare
-cases only. However, if
-you have a hunch that the solver cycles on your problem,
-there are means to switch to a slower variant that is guaranteed
-not to cycle, see Section \ref{sec:QP-customization-cycling}.
+\item The solver internally cycles. This should not really happen, however,
+because the solver can detect this, and switch to a variant that is
+guaranteed not to cycle, see Section \ref{sec:QP-customization-cycling}.
 \end{enumerate}
 
 The second item merits special attention. First, you may ask why the
@@ -314,6 +385,10 @@ the vector \ccc{fl} for the finiteness of the lower bounds.
 9 template arguments, one for each iterator type. In Section
 \ref{sec:QP-makers} we show how the explicit construction of
 this type can be circumvented.
+
+\section{Common Pitfalls}
+In this section we will briefly common mistakes that can greatly affect
+the efficiency of the solver.
 
 \section{Solving Linear and Nonnegative Programs\label{sec:QP-lp}}
 Let us reconsider the general form of (QP) from Section \ref{sec:QP-def} 
