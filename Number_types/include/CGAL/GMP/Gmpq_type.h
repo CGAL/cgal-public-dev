@@ -50,11 +50,8 @@ struct Gmpq_rep
 
   Gmpq_rep()  { mpq_init(mpQ); }
   ~Gmpq_rep() { mpq_clear(mpQ); }
-
-private:
-  // Make sure it does not get accidentally copied.
-  Gmpq_rep(const Gmpq_rep &);
-  Gmpq_rep & operator= (const Gmpq_rep &);
+  Gmpq_rep(const Gmpq_rep &x) { mpq_init(mpQ); mpq_set(mpQ, x.mpQ); }
+  Gmpq_rep& operator= (const Gmpq_rep &x) { mpq_set(mpQ, x.mpQ); return *this; }
 };
 
 
@@ -280,6 +277,7 @@ inline
 Gmpq
 Gmpq::operator-() &&
 {
+    this->copy_on_write();
     mpq_neg(mpq(), mpq());
     return *this; // return std::move(*this) ?
 }

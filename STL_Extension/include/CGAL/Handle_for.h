@@ -88,7 +88,7 @@ public:
     {
 	if (recycle>=1 && !pool.empty()) {
 		ptr_=pool.back();
-		pool.pop();
+		pool.pop_back();
 		if (recycle<=1) 
 			new (&(ptr_->t)) element_type(t);
 		else ptr_->t = t; // recycle == 2 requires assignable here
@@ -104,7 +104,7 @@ public:
     {
 	if (recycle>=1 && !pool.empty()) {
 		ptr_=pool.back();
-		pool.pop();
+		pool.pop_back();
 		if (recycle<=1) 
 			new (&(ptr_->t)) element_type(std::move(t));
 		else ptr_->t = std::move(t);
@@ -133,7 +133,7 @@ public:
     {
 	if (recycle>=1 && !pool.empty()) {
 		ptr_=pool.back();
-		pool.pop();
+		pool.pop_back();
 		if (recycle==2) allocator.destroy(ptr_);
 	} else {
 		ptr_=allocator.allocate(1);
@@ -147,7 +147,7 @@ public:
     {
 	if (recycle>=1 && !pool.empty()) {
 		ptr_=pool.back();
-		pool.pop();
+		pool.pop_back();
 		if (recycle==2) allocator.destroy(ptr_);
 	} else {
 		ptr_=allocator.allocate(1);
@@ -161,7 +161,7 @@ public:
     {
 	if (recycle>=1 && !pool.empty()) {
 		ptr_=pool.back();
-		pool.pop();
+		pool.pop_back();
 		if (recycle==2) allocator.destroy(ptr_);
 	} else {
 		ptr_=allocator.allocate(1);
@@ -175,7 +175,7 @@ public:
     {
 	if (recycle>=1 && !pool.empty()) {
 		ptr_=pool.back();
-		pool.pop();
+		pool.pop_back();
 		if (recycle==2) allocator.destroy(ptr_);
 	} else {
 		ptr_=allocator.allocate(1);
