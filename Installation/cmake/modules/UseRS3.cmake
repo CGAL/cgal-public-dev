@@ -3,7 +3,7 @@
 
 if( RS3_FOUND AND NOT RS3_SETUP )
 
-    include( CGAL_UseRS )
+    include( UseRS )
 
     # add rs3 parameters, if necessary (rs3 must be always after rsexport)
     message( STATUS "UseRS3" )
@@ -40,7 +40,7 @@ if( RS3_FOUND AND NOT RS3_SETUP )
       message( STATUS "Using old RS signatures" )
     endif( RS3_OLD_INCLUDES )
 
-    include(CGAL_UseMPFI)
+    include(UseMPFI)
 
   set (RS3_SETUP TRUE)
 

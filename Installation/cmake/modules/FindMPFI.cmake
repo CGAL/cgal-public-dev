@@ -41,5 +41,5 @@ else( GMP_FOUND )
 endif( GMP_FOUND )
 
 if( MPFI_FOUND )
-  set( MPFI_USE_FILE "CGAL_UseMPFI" )
+  set( MPFI_USE_FILE "UseMPFI" )
 endif( MPFI_FOUND )

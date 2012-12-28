@@ -305,5 +305,5 @@ else()
 endif(MKL_INCLUDE_DIR AND MKL_LIBRARIES)
 
 if(MKL_FOUND)
-  set(MKL_USE_FILE "CGAL_UseMKL")
+  set(MKL_USE_FILE "UseMKL")
 endif(MKL_FOUND)

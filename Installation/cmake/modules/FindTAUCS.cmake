@@ -125,5 +125,5 @@ else()
 endif(NOT LAPACK_FOUND)
 
 if(TAUCS_FOUND)
-  set(TAUCS_USE_FILE "CGAL_UseTAUCS")
+  set(TAUCS_USE_FILE "UseTAUCS")
 endif(TAUCS_FOUND)

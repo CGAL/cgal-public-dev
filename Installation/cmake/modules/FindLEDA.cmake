@@ -109,6 +109,6 @@ if ( LEDA_INCLUDE_DIR AND LEDA_LIBRARIES)
     endif()
   endif()
 
-  set(LEDA_USE_FILE "CGAL_UseLEDA")
+  set(LEDA_USE_FILE "UseLEDA")
 endif()
 

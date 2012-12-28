@@ -80,5 +80,5 @@ else( RS_FOUND )
 endif( RS_FOUND )
 
 if(RS3_FOUND)
-  set(RS3_USE_FILE "CGAL_UseRS3")
+  set(RS3_USE_FILE "UseRS3")
 endif(RS3_FOUND)

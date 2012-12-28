@@ -36,20 +36,20 @@
 -- External libraries supported: GMP;GMPXX;MPFR;zlib;OpenGL;LEDA;MPFI;RS;RS3;OpenNL;TAUCS;EIGEN3;BLAS;LAPACK;QGLViewer;ESBTL;NTL
 -- Preconfiguring library: GMP ...
 -- GMP has been preconfigured:
---   CGAL_UseGMP-file: 
+--   UseGMP-file: 
 --   GMP include:      /usr/include/
 --   GMP libraries:    /usr/lib/libgmp.so
 --   GMP definitions:  
 -- USING GMP_VERSION = '4.3.2'
 -- Preconfiguring library: GMPXX ...
 -- GMPXX has been preconfigured:
---   CGAL_UseGMPXX-file: 
+--   UseGMPXX-file: 
 --   GMPXX include:      /usr/include
 --   GMPXX libraries:    /usr/lib/libgmpxx.so
 --   GMPXX definitions:  
 -- Preconfiguring library: MPFR ...
 -- MPFR has been preconfigured:
---   CGAL_UseMPFR-file: 
+--   UseMPFR-file: 
 --   MPFR include:      /usr/include/
 --   MPFR libraries:    /usr/lib/libmpfr.so
 --   MPFR definitions:  

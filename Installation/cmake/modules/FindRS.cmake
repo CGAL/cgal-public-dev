@@ -65,5 +65,5 @@ else( MPFI_FOUND )
 endif( MPFI_FOUND )
 
 if(RS_FOUND)
-  set(RS_USE_FILE "CGAL_UseRS")
+  set(RS_USE_FILE "UseRS")
 endif(RS_FOUND)
