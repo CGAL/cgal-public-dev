@@ -102,6 +102,6 @@ include_directories( include $ENV{HOME}/work/CGAL/branches/experimental-packages
 
 add_to_cached_list( CGAL_EXECUTABLE_TARGETS xalci_lite )
 
-link_libraries( ${Boost_THREAD_LIBRARY})
+target_link_libraries( xalci_lite ${Boost_THREAD_LIBRARY} ${CGAL_3RD_PARTY_LIBRARIES} ${CGAL_LIBRARIES} -lCGAL_Core)
 
 
