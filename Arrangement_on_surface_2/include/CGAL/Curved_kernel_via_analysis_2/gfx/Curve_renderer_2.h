@@ -1694,11 +1694,19 @@ void horizontal_clip()
     decompose(engine.y_max_r, num, denom);
     top_poly = msf(support->polynomial_2().evaluate_homogeneous(num, denom));
 
+#if CGAL_AK_USE_OLD_BITSTREAM_DESCARTES
     CGAL::internal::Bitstream_descartes<
         CGAL::internal::Bitstream_descartes_rndl_tree_traits
         < CGAL::internal::Bitstream_coefficient_kernel
             < typename Poly_dst_1::NT >
-        > > isolator_btm(btm_poly), isolator_top(top_poly);
+        > > 
+#else    
+    CGAL::internal::Bitstream_descartes
+        < CGAL::internal::Bitstream_coefficient_kernel
+            < typename Poly_dst_1::NT >
+        >  
+#endif        
+        isolator_btm(btm_poly), isolator_top(top_poly);
 
     int n_roots = isolator_btm.number_of_real_roots(), i;
     Rational criteria = engine.pixel_w_r/CGAL_REFINE_CLIP_POINTS;
