@@ -1028,7 +1028,7 @@ public:
        
         bool found = (ci != cache_1.end());
         if(!found) {
-            typedef internal::Convert_and_normalize< Poly_int_1,
+            typedef internal::Convert_and_normalize1< Poly_int_1,
                  Arithmetic_kernel > C_and_n;
             _Cache_entry_1 ce;
 
@@ -1041,7 +1041,7 @@ public:
         if(!found || precision_change) {
             typedef typename CGAL::Coercion_traits< Rational, 
                 Float_coeff >::Cast Cast;        
-            internal::Transform< Poly_1, Poly_rat_1, Cast > convert_poly;
+            internal::Transform1< Poly_1, Poly_rat_1, Cast > convert_poly;
             // polynomial with outermost var y
             ci->second.poly_1 = convert_poly(ci->second.poly_rat);
         } 
@@ -1109,7 +1109,7 @@ public:
         bool found = (ci != cache_2.end());
         if(!found) {
             _Cache_entry_2 ce;
-            typedef internal::Convert_and_normalize< Poly_int_2,
+            typedef internal::Convert_and_normalize1< Poly_int_2,
                  Arithmetic_kernel > C_and_n;
 
             Rational factor(1);
@@ -1121,7 +1121,7 @@ public:
 
             typedef typename CGAL::Coercion_traits< Rational, 
                     Float_coeff >::Cast Cast;        
-            internal::Transform< Poly_2, Poly_rat_2, Cast > convert_poly;
+            internal::Transform1< Poly_2, Poly_rat_2, Cast > convert_poly;
             typedef CGAL::Polynomial_traits_d< Poly_2 > P2_traits;
 
             poly_y = convert_poly(ci->second.poly_rat); // y is outer var

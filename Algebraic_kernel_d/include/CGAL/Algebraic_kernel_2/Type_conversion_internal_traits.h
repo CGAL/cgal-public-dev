@@ -48,13 +48,13 @@ namespace internal {
 #endif
 
 template <class NT>
-struct Get_minmax {
+struct Get_minmax1 {
 
     template <class X>
     void operator()(const CGAL::Polynomial<X>& p, NT& pmin, NT& pmax) const
     {
         typename CGAL::Polynomial<X>::const_iterator it = p.begin();
-        Get_minmax< NT > minmax;
+        Get_minmax1< NT > minmax;
         minmax(*it, pmin, pmax);
         while(++it != p.end()) {
             NT smin, smax;
@@ -75,12 +75,12 @@ struct Get_minmax {
  * provided that there is a coercion between \c Input and \c Result types
  */
 template <class Result, class Input>
-struct Reduce_by {
+struct Reduce_by1 {
 
     typedef Input argument_type;
     typedef Result result_type;
 
-    Reduce_by(const Input& denom_) :
+    Reduce_by1(const Input& denom_) :
         denom(cast(denom_)) {
     }
     
@@ -101,7 +101,7 @@ struct Reduce_by {
  *             OutputPoly_2::Inntermost_coefficient_type</tt>
  */
 template <class OutputPoly_2, class InputPoly_2, class Op>
-struct Transform {
+struct Transform1 {
 
     typedef InputPoly_2  first_argument_type;
     typedef Op           second_argument_type;
@@ -110,7 +110,7 @@ struct Transform {
     template <class X>
     OutputPoly_2 operator()(const CGAL::Polynomial<X>& p, Op op = Op()) const {
 
-        Transform<typename OutputPoly_2::NT, typename InputPoly_2::NT, Op> tr;
+        Transform1<typename OutputPoly_2::NT, typename InputPoly_2::NT, Op> tr;
         return OutputPoly_2(
             ::boost::make_transform_iterator(p.begin(), std::bind2nd(tr, op)),
             ::boost::make_transform_iterator(p.end(), std::bind2nd(tr, op)));
@@ -127,7 +127,7 @@ struct Transform {
 //! coefficients are normalized by dividing them by geometric mean of min and
 //! max coefficient
 template < class PolyInt_d, class ArithmeticKernel >
-struct Convert_and_normalize {
+struct Convert_and_normalize1 {
 
     //! this first template argument
     // NOTE: apparently PolyInt_d coefficient type must match the one provided
@@ -159,7 +159,7 @@ struct Convert_and_normalize {
         factor = Rational(1);
         if(normalize) {
             Integer pmin(0), pmax(0); // pmin is guaranteed to be > 0
-            Get_minmax< Integer >()(in, pmin, pmax);
+            Get_minmax1< Integer >()(in, pmin, pmax);
     
             // approximate square root with lower precision
             long old_prec = CGAL::set_precision(BFI(), 40);
@@ -171,8 +171,8 @@ struct Convert_and_normalize {
             CGAL::set_precision(BFI(), old_prec);
         }
 
-        typedef Reduce_by< Rational, Rational > Reduce_op;
-        Transform< Poly_rat_d, Poly_int_d, Reduce_op > transform;
+        typedef Reduce_by1< Rational, Rational > Reduce_op;
+        Transform1< Poly_rat_d, Poly_int_d, Reduce_op > transform;
         Reduce_op op(factor);
 
         Poly_rat_d res = transform(in, op); // divides by ratio inside

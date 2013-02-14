@@ -106,13 +106,13 @@ public:
     long operator()( const Gmpq& x ) const {
 
       typedef Fraction_traits< Gmpq > FT;
-      typename FT::Numerator_type num;
-      typename FT::Denominator_type denom;
-      typename FT::Decompose decomp;
+       FT::Numerator_type num;
+       FT::Denominator_type denom;
+       FT::Decompose decomp;
       
       decomp(x, num, denom);
-      typename Real_embeddable_extension< typename FT::Numerator_type >::Ceil_log2_abs log2_abs_num;
-      typename Real_embeddable_extension< typename FT::Denominator_type >::Floor_log2_abs log2_abs_den;
+       Real_embeddable_extension<  FT::Numerator_type >::Ceil_log2_abs log2_abs_num;
+       Real_embeddable_extension<  FT::Denominator_type >::Floor_log2_abs log2_abs_den;
       
       return log2_abs_num(CGAL::abs(num)) - log2_abs_den(CGAL::abs(denom));
     }
