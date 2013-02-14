@@ -64,7 +64,7 @@
 #define CGAL_BISOLVE_VERBOSE 0
 
 #define CGAL_BISOLVE_USE_RS_AK 0
-#define CGAL_BISOLVE_USE_RS_ISOLATOR 0 // 1 is default
+#define CGAL_BISOLVE_USE_RS_ISOLATOR 1 // 1 is default
 
 #define CGAL_ACK_DEBUG_FLAG 0
 #define CGAL_ACK_DEBUG_PRINT std::cout
@@ -72,8 +72,11 @@
 #define CGAL_BISOLVE_USE_RESULTANT_COFACTORS 1
 #define CGAL_BISOLVE_ARRANGEMENTS 1 // 0 is default
 
-#define CGAL_BISOLVE_USE_GMP  0
-#define CGAL_BISOLVE_USE_CORE 1
+#define CGAL_BISOLVE_USE_GMP  1
+#define CGAL_BISOLVE_USE_CORE 0
+
+#define CGAL_AK_USE_OLD_BITSTREAM_DESCARTES 0
+#define CGAL_AK_ENABLE_DEPRECATED_INTERFACE 1
 
 #define CGAL_MODULAR_FILTER_OFF
 
@@ -89,7 +92,24 @@ typedef CGAL::GMP_arithmetic_kernel AK;
 typedef CGAL::CORE_arithmetic_kernel AK;
 #endif
 
-// #include <symbolic_speedups.cpp>
+/** **************************************************************************/
+
+// #define CGAL_BISOLVE_USE_BIGCD 1
+// #define CGAL_BIGCD_USE_SHIFT 0
+// #define CGAL_BIGCD_CHECK_SANITY 1
+// 
+// #define CGAL_BISOLVE_USE_GPU_RESULTANTS 1 // default?
+// #define CGAL_BISOLVE_CHECK_GPU_RESULTANTS_SANITY 0 // default 0
+// 
+// #define CGAL_BISOLVE_USE_GPU_GCDS 1  // default?
+// #define CGAL_BISOLVE_CHECK_GPU_GCDS_SANITY 0 // default 1
+// 
+// #define CGAL_BISOLVE_USE_NTL  1 // default 1 ??
+// 
+// #include <CGAL/symbolic_standalone.h>
+
+/** **************************************************************************/
+
 
 #include <CGAL/Polynomial.h>
 #include <CGAL/Polynomial_traits_d.h>
@@ -97,15 +117,20 @@ typedef CGAL::CORE_arithmetic_kernel AK;
 
 #include <CGAL/Algebraic_kernel_2/Rounding_ak_d_1.h>
 
+#include <CGAL/Algebraic_kernel_d/Generic_isolator.h>
+
 #if CGAL_BISOLVE_USE_RS_AK
 #include <CGAL/Algebraic_kernel_d/Float_traits.h>
 #include <CGAL/Algebraic_kernel_rs_gmpz_d_1.h>
 #else
 #include <CGAL/Algebraic_kernel_d_1.h>
+#include <CGAL/Algebraic_kernel_d/Bitstream_descartes.h>
 #include <CGAL/Algebraic_kernel_d_1_generator.h>
+#include <CGAL/Algebraic_kernel_d/Algebraic_real_quadratic_refinement_rep_bfi.h>
 #endif
 
 #include <CGAL/Algebraic_kernel_d_2.h>
+// #include <CGAL/Arcavoid_root_isolator.h>
 
 #include <CGAL/Arrangement_2.h>
 #include <CGAL/Curved_kernel_via_analysis_2/Curved_kernel_via_analysis_2_impl.h>
