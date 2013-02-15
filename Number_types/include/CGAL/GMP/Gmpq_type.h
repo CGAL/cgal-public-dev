@@ -76,10 +76,23 @@ struct Gmpq_rep
   { mpq_init(mpQ); }
   ~Gmpq_rep() { mpq_clear(mpQ); }
 
+  #ifdef CGAL_NO_REF_COUNTED_GMPQ
+  Gmpq_rep(const Gmpq_rep& other)
+  {
+    mpq_init(mpQ);
+    mpq_set(mpQ,other.mpQ);
+  }
+  Gmpq_rep& operator= (const Gmpq_rep& other)
+  {
+    mpq_set(mpQ,other.mpQ);
+    return *this;
+  }
+  #else
 private:
   // Make sure it does not get accidentally copied.
   Gmpq_rep(const Gmpq_rep &);
   Gmpq_rep & operator= (const Gmpq_rep &);
+  #endif
 };
 
 #ifdef CGAL_USE_BOOST_ATOMIC
@@ -277,7 +290,11 @@ class Gmpq
   #ifdef CGAL_USE_BOOST_ATOMIC
     Handle_with_intrusive_ptr<Gmpq_rep>,
   #else
-    Handle_for<Gmpq_rep>,
+    #ifdef CGAL_NO_REF_COUNTED_GMPQ
+      Gmpq_rep,
+    #else
+      Handle_for<Gmpq_rep>,
+    #endif
   #endif
     boost::ordered_field_operators1< Gmpq
   , boost::ordered_field_operators2< Gmpq, int
@@ -290,7 +307,11 @@ class Gmpq
   #ifdef CGAL_USE_BOOST_ATOMIC
   typedef Handle_with_intrusive_ptr<Gmpq_rep> Base;
   #else
-  typedef Handle_for<Gmpq_rep> Base;
+    #ifdef CGAL_NO_REF_COUNTED_GMPQ
+    typedef Gmpq_rep Base;
+    #else
+    typedef Handle_for<Gmpq_rep> Base;
+    #endif
   #endif
 public:
   typedef Tag_false  Has_gcd;
@@ -419,8 +440,13 @@ public:
   double to_double() const;
   Sign sign() const;
 
+  #ifdef CGAL_NO_REF_COUNTED_GMPQ
+  const mpq_t & mpq() const { return this->mpQ; }
+  mpq_t & mpq() { return this->mpQ; }
+  #else
   const mpq_t & mpq() const { return Ptr()->mpQ; }
   mpq_t & mpq() { return ptr()->mpQ; }
+  #endif
 
   ~Gmpq()
   {
@@ -495,45 +521,68 @@ inline
 Gmpq&
 Gmpq::operator+=(const Gmpq &z)
 {
+  #ifdef CGAL_NO_REF_COUNTED_GMPQ
+    mpq_add(mpq(), mpq(), z.mpq());
+    return *this;
+  #else
     Gmpq Res;
     mpq_add(Res.mpq(), mpq(), z.mpq());
     swap(Res);
     return *this;
+  #endif
 }
 
 inline
 Gmpq&
 Gmpq::operator-=(const Gmpq &z)
 {
+  #ifdef CGAL_NO_REF_COUNTED_GMPQ
+    mpq_sub(mpq(), mpq(), z.mpq());
+    return *this;
+  #else
     Gmpq Res;
     mpq_sub(Res.mpq(), mpq(), z.mpq());
     swap(Res);
     return *this;
+  #endif
 }
 
 inline
 Gmpq&
 Gmpq::operator*=(const Gmpq &z)
 {
+  #ifdef CGAL_NO_REF_COUNTED_GMPQ
+    mpq_mul(mpq(), mpq(), z.mpq());
+    return *this;
+  #else
     Gmpq Res;
     mpq_mul(Res.mpq(), mpq(), z.mpq());
     swap(Res);
     return *this;
+  #endif
 }
 
 inline
 Gmpq&
 Gmpq::operator/=(const Gmpq &z)
 {
-    CGAL_precondition(z != 0);
+  CGAL_precondition(z != 0);
+  #ifdef CGAL_NO_REF_COUNTED_GMPQ
+    mpq_div(mpq(), mpq(), z.mpq());
+    return *this;
+  #else
     Gmpq Res;
     mpq_div(Res.mpq(), mpq(), z.mpq());
     swap(Res);
     return *this;
+  #endif
 }
 
 inline
 Gmpq& Gmpq::operator+=(const Gmpz &z){
+  #ifdef CGAL_NO_REF_COUNTED_GMPQ
+    mpz_addmul(mpq_numref(mpq()),mpq_denref(mpq()),z.mpz());
+  #else
   if(unique()){
     mpz_addmul(mpq_numref(mpq()),mpq_denref(mpq()),z.mpz());
   }else{
@@ -547,11 +596,15 @@ Gmpq& Gmpq::operator+=(const Gmpz &z){
     mpz_set(mpq_denref(result.mpq()),mpq_denref(mpq()));
     swap(result);
   }
+  #endif
   return *this;
 }
 
 inline
 Gmpq& Gmpq::operator-=(const Gmpz &z){
+  #ifdef CGAL_NO_REF_COUNTED_GMPQ
+    mpz_submul(mpq_numref(mpq()),mpq_denref(mpq()),z.mpz());
+  #else
   if(unique()){
     mpz_submul(mpq_numref(mpq()),mpq_denref(mpq()),z.mpz());
   }else{
@@ -565,11 +618,16 @@ Gmpq& Gmpq::operator-=(const Gmpz &z){
     mpz_set(mpq_denref(result.mpq()),mpq_denref(mpq()));
     swap(result);
   }
+  #endif
   return *this;
 }
 
 inline
 Gmpq& Gmpq::operator*=(const Gmpz &z){
+  #ifdef CGAL_NO_REF_COUNTED_GMPQ
+    mpz_mul(mpq_numref(mpq()),mpq_numref(mpq()),z.mpz());
+    mpq_canonicalize(mpq());
+  #else
   if(unique()){
     mpz_mul(mpq_numref(mpq()),mpq_numref(mpq()),z.mpz());
     mpq_canonicalize(mpq());
@@ -580,11 +638,16 @@ Gmpq& Gmpq::operator*=(const Gmpz &z){
     mpq_canonicalize(result.mpq());
     swap(result);
   }
+  #endif
   return *this;
 }
 
 inline
 Gmpq& Gmpq::operator/=(const Gmpz &z){
+  #ifdef CGAL_NO_REF_COUNTED_GMPQ
+    mpz_mul(mpq_denref(mpq()),mpq_denref(mpq()),z.mpz());
+    mpq_canonicalize(mpq());
+  #else
   if(unique()){
     mpz_mul(mpq_denref(mpq()),mpq_denref(mpq()),z.mpz());
     mpq_canonicalize(mpq());
@@ -595,6 +658,7 @@ Gmpq& Gmpq::operator/=(const Gmpz &z){
     mpq_canonicalize(result.mpq());
     swap(result);
   }
+  #endif
   return *this;
 }
 
