@@ -40,7 +40,7 @@ if ( CUDA_FOUND )
     MATH(EXPR CUDA_MAJOR '${CUDA_CHECK_EXITCODE}/10')
     MATH(EXPR CUDA_MINOR '${CUDA_CHECK_EXITCODE}%10')
 
-    
+    message("exit code: ${CUDA_CHECK_EXITCODE}")
 
     if (CUDA_CHECK_EXITCODE LESS 13)
 
@@ -54,11 +54,21 @@ if ( CUDA_FOUND )
       set(GPU_LIB_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
       if(CUDA_CHECK_EXITCODE LESS 20)
-          cache_set(CGAL_Symbolic_3RD_PARTY_LIBRARIES  
-		${GPU_LIB_DIR}/libgpu_symbolic_sm_13_32.so ${GPU_LIB_DIR}/libgpu_symbolic_sm_13_64.so  ${CUDA_LIBRARIES})
+        if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+            cache_set(CGAL_Symbolic_3RD_PARTY_LIBRARIES  
+                 ${GPU_LIB_DIR}/libgpu_symbolic_sm_13_64.so  ${CUDA_LIBRARIES})
+        else()
+            cache_set(CGAL_Symbolic_3RD_PARTY_LIBRARIES  
+                 ${GPU_LIB_DIR}/libgpu_symbolic_sm_13_32.so  ${CUDA_LIBRARIES})  
+        endif()
       else()
-          cache_set(CGAL_Symbolic_3RD_PARTY_LIBRARIES 
-              ${GPU_LIB_DIR}/libgpu_symbolic_sm_20_32.so ${GPU_LIB_DIR}/libgpu_symbolic_sm_20_64.so  ${CUDA_LIBRARIES})
+        if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+            cache_set(CGAL_Symbolic_3RD_PARTY_LIBRARIES  
+                 ${GPU_LIB_DIR}/libgpu_symbolic_sm_20_64.so  ${CUDA_LIBRARIES})
+        else()
+            cache_set(CGAL_Symbolic_3RD_PARTY_LIBRARIES  
+                 ${GPU_LIB_DIR}/libgpu_symbolic_sm_20_32.so  ${CUDA_LIBRARIES})  
+        endif()
       endif()
 
       cache_set(CGAL_Symbolic_3RD_PARTY_DEFINITIONS  "-DCGAL_USE_GPU")
