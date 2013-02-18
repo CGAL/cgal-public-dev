@@ -15,7 +15,7 @@ set(CMAKE_BUILD_TYPE Release)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -m64")
 
 # Symbolic
-find_package( CGAL REQUIRED COMPONENTS  MPFI RS3 Core  Qt3 )
+find_package( CGAL REQUIRED COMPONENTS  MPFI RS3 Core Symbolic Qt3 )
 
 if ( NOT CGAL_FOUND )
   message(STATUS "This project requires the CGAL library, and will not be compiled.")
@@ -86,14 +86,13 @@ if ( QT3_FOUND )
  
   include_directories( ${QT3_INCLUDE_DIR} )
 
-  message(STATUS "oops ${QT3_INCLUDE_DIR}")
   qt3_automoc(  misc.cpp xalci.cpp )
 
 endif()
 
 add_executable( xalci_lite  misc.cpp xalci.cpp )
 
-include_directories( include $ENV{HOME}/work/CGAL/branches/experimental-packages/Algebraic_kernel_d/include )
+include_directories( include $ENV{HOME}/work/CGAL/branches/experimental-packages/Algebraic_kernel_d/include $ENV{HOME}/thirdparty_libs/ntl-64/include )
 # 
 # $ENV{HOME}/work/CGAL/branches/unsorted-branches/Numerical_algebraic_kernel_d/include $ENV{HOME}/work/CGAL/branches/experimental-packages/Algebraic_kernel_2/include
 # $ENV{HOME}/work/CGAL/branches/experimental-packages/Algebraic_kernel_d/include
@@ -102,6 +101,6 @@ include_directories( include $ENV{HOME}/work/CGAL/branches/experimental-packages
 
 add_to_cached_list( CGAL_EXECUTABLE_TARGETS xalci_lite )
 
-target_link_libraries( xalci_lite ${Boost_THREAD_LIBRARY} ${CGAL_3RD_PARTY_LIBRARIES} ${CGAL_LIBRARIES} -lCGAL_Core)
+target_link_libraries( xalci_lite ${Boost_THREAD_LIBRARY} ${CGAL_3RD_PARTY_LIBRARIES} ${CGAL_LIBRARIES} -lCGAL_Core $ENV{HOME}/thirdparty_libs/ntl-64/lib/libntl.a -lcuda -L/usr/lib64/nvidia -Wl,-rpath,/usr/lib64/nvidia)
 
 

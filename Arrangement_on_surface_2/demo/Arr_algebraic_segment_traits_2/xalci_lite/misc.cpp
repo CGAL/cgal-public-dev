@@ -163,9 +163,11 @@ void xAlci_main_window::oc_rasterize_click()
 bool xAlci_main_window::input_poly(
     std::vector< Poly_int2 >& polys, const char *ascii) {
 
-    if(ascii == NULL)
-        return false;
-
+    if(ascii == NULL || ascii == "")
+    {
+        ascii = "y^7 + (-3)*y^6 + (2*x^2 + (-1)*x + 2)*y^5 + (x^3 + (-6)*x^2 + x + 2)*y^4 + (x^4 + (-2)*x^3 + 2*x^2 + x + (-3))*y^3 + (2*x^5 + (-3)*x^4 + x^3 + 10*x^2 + (-1)*x + 1)*y^2 + ((-1)*x^5 + 3*x^4 + 4*x^3 + (-12)*x^2)*y + (x^7 + (-3)*x^5 + (-1)*x^4 + (-4)*x^3 + 4*x^2)";
+    }
+        
     typedef CGAL::Polynomial_type_generator< Rational, 2 >::Type Poly_rat_2;
 
     CGAL::Polynomial_parser_d< Poly_rat_2,

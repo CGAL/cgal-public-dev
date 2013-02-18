@@ -164,12 +164,11 @@ void xAlci_main_window::arr_compute_arrangement() {
             print_point(pt, os);
 
             if(!vit->is_isolated()) {
-                oc_seg_list->insertItem(os.str());
                 continue;
             }
             
             os << "; isolated";
-            arr_edge_list->insertItem(os.str());
+            oc_seg_list->insertItem(os.str());
 
             if(one_curve)
                 cindex = i;            
