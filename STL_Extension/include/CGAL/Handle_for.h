@@ -191,7 +191,7 @@ public:
     ~Handle_for()
     {
       #ifdef CGAL_USE_BOOST_ATOMIC
-      if (ptr_->count.fetch_sub(1, boost::memory_order_release) == 0) {
+      if (ptr_->count.fetch_sub(1, boost::memory_order_release) == 1) {
         boost::atomic_thread_fence(boost::memory_order_acquire);
         allocator.destroy( ptr_);
         allocator.deallocate( ptr_, 1);
