@@ -94,19 +94,19 @@ typedef CGAL::CORE_arithmetic_kernel AK;
 
 /** **************************************************************************/
 
-// #define CGAL_BISOLVE_USE_BIGCD 1
-// #define CGAL_BIGCD_USE_SHIFT 0
-// #define CGAL_BIGCD_CHECK_SANITY 1
-// 
-// #define CGAL_BISOLVE_USE_GPU_RESULTANTS 1 // default?
-// #define CGAL_BISOLVE_CHECK_GPU_RESULTANTS_SANITY 0 // default 0
-// 
-// #define CGAL_BISOLVE_USE_GPU_GCDS 1  // default?
-// #define CGAL_BISOLVE_CHECK_GPU_GCDS_SANITY 0 // default 1
-// 
-// #define CGAL_BISOLVE_USE_NTL  1 // default 1 ??
-// 
-// #include <CGAL/symbolic_standalone.h>
+#define CGAL_BISOLVE_USE_BIGCD 1
+#define CGAL_BIGCD_USE_SHIFT 0
+#define CGAL_BIGCD_CHECK_SANITY 1
+
+#define CGAL_BISOLVE_USE_GPU_RESULTANTS 1 // default?
+#define CGAL_BISOLVE_CHECK_GPU_RESULTANTS_SANITY 1 // default 0
+
+#define CGAL_BISOLVE_USE_GPU_GCDS 1  // default?
+#define CGAL_BISOLVE_CHECK_GPU_GCDS_SANITY 1 // default 1
+
+#define CGAL_BISOLVE_USE_NTL  1 // default 1 ??
+
+#include <CGAL/symbolic_standalone.h>
 
 /** **************************************************************************/
 
@@ -282,14 +282,15 @@ protected:
           *arr_partial_selection,
           *oc_analyse_btn, *oc_rasterize_btn;
           
-    QHButtonGroup *arr_method;
-    QRadioButton *arr_cgal, *arr_leda;
-    QCheckBox *cad_complete_check,*oc_complete_check, *arr_complete_check;
-    QListBox *oc_seg_list, *arr_edge_list, *arr_node_list;
+//     QHButtonGroup *arr_method;
+//     QRadioButton *arr_cgal, *arr_leda;
+    QCheckBox *oc_complete_check;
+    QListBox *oc_seg_list;
+    //*arr_edge_list, *arr_node_list;
           
     QTabWidget *tab_widget;
     QFrame* one_curve_tab, *cad_tab, *arr_tab;
-    QLabel *arr_node_label,*arr_edge_label;
+//     QLabel *arr_node_label,*arr_edge_label;
     
     QTextEdit *oc_input;
     QComboBox *oc_method_box;
