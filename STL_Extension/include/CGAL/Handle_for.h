@@ -36,6 +36,11 @@
 #  pragma warning(push)
 #  pragma warning(disable:4345) // Avoid warning  http://msdn.microsoft.com/en-us/library/wewb47ee(VS.80).aspx
 #endif
+
+#ifdef CGAL_USE_BOOST_ATOMIC
+#include <boost/atomic.hpp>
+#endif
+
 namespace CGAL {
 
 template <class T, class Alloc = CGAL_ALLOCATOR(T) >
@@ -44,7 +49,11 @@ class Handle_for
     // Wrapper that adds the reference counter.
     struct RefCounted {
         T t;
+        #ifdef CGAL_USE_BOOST_ATOMIC
+        boost::atomic<unsigned int> count;
+        #else
         unsigned int count;
+        #endif
     };
 
     typedef typename Alloc::template rebind<RefCounted>::other  Allocator;
@@ -130,7 +139,11 @@ public:
     Handle_for(const Handle_for& h)
       : ptr_(h.ptr_)
     {
+      #ifdef CGAL_USE_BOOST_ATOMIC
+        ptr_->count.fetch_add(1, boost::memory_order_relaxed);
+      #else
         ++(ptr_->count);
+      #endif
     }
 
     Handle_for&
@@ -177,10 +190,18 @@ public:
 
     ~Handle_for()
     {
+      #ifdef CGAL_USE_BOOST_ATOMIC
+      if (ptr_->count.fetch_sub(1, boost::memory_order_release) == 0) {
+        boost::atomic_thread_fence(boost::memory_order_acquire);
+        allocator.destroy( ptr_);
+        allocator.deallocate( ptr_, 1);
+      }
+      #else
       if (--(ptr_->count) == 0) {
           allocator.destroy( ptr_);
           allocator.deallocate( ptr_, 1);
       }
+      #endif
     }
 
     void

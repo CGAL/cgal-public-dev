@@ -39,11 +39,6 @@
 #include <CGAL/Handle_for.h>
 #include <CGAL/Profile_counter.h>
 
-#ifdef CGAL_USE_BOOST_ATOMIC
-#include <boost/intrusive_ptr.hpp>
-#include <boost/atomic.hpp>
-#endif
-
 namespace CGAL {
 
 // Wrapper around mpq_t to get the destructor call mpq_clear.
@@ -51,28 +46,9 @@ namespace CGAL {
 // so we simply call mpq_init() here.
 struct Gmpq_rep
 {
-  #ifdef CGAL_USE_BOOST_ATOMIC
-  mutable boost::atomic<int> m_counter;
-
-  friend void intrusive_ptr_add_ref(const Gmpq_rep * x)
-  {
-    x->m_counter.fetch_add(1, boost::memory_order_relaxed);
-  }
-  friend void intrusive_ptr_release(const Gmpq_rep * x)
-  {
-    if (x->m_counter.fetch_sub(1, boost::memory_order_release) == 1) {
-      boost::atomic_thread_fence(boost::memory_order_acquire);
-      delete x;
-    }
-  }
-  #endif
-
   mpq_t mpQ;
 
   Gmpq_rep()
-  #ifdef CGAL_USE_BOOST_ATOMIC
-    :m_counter(0)
-  #endif
   { mpq_init(mpQ); }
   ~Gmpq_rep() { mpq_clear(mpQ); }
 
@@ -95,206 +71,12 @@ private:
   #endif
 };
 
-#ifdef CGAL_USE_BOOST_ATOMIC
-//this is a blind copy of Handle_for for trying
-//replacing the internal counter by an intrusive_ptr
-template <class T>
-class Handle_with_intrusive_ptr
-{
-    typedef boost::intrusive_ptr<T> pointer;
-    pointer ptr_;
-
-public:
-
-    typedef T element_type;
-
-    typedef std::ptrdiff_t Id_type ;
-
-    Handle_with_intrusive_ptr()
-      : ptr_(new T())
-    {}
-
-#ifndef CGAL_CFG_NO_CPP0X_RVALUE_REFERENCE
-    Handle_with_intrusive_ptr(T && t)
-      : ptr_(new T(std::move(t)))
-    {}
-#endif
-
-
-#if !defined CGAL_CFG_NO_CPP0X_VARIADIC_TEMPLATES && !defined CGAL_CFG_NO_CPP0X_RVALUE_REFERENCE
-    template < typename T1, typename T2, typename... Args >
-    Handle_with_intrusive_ptr(T1 && t1, T2 && t2, Args && ... args)
-      : ptr_(new T(std::forward<T1>(t1), std::forward<T2>(t2), std::forward<Args>(args)...))
-    {}
-#else
-    template < typename T1, typename T2 >
-    Handle_with_intrusive_ptr(const T1& t1, const T2& t2)
-      : ptr_(new T(t1, t2))
-    {}
-
-    template < typename T1, typename T2, typename T3 >
-    Handle_with_intrusive_ptr(const T1& t1, const T2& t2, const T3& t3)
-      : ptr_(new T(t1, t2, t3))
-    {}
-
-    template < typename T1, typename T2, typename T3, typename T4 >
-    Handle_with_intrusive_ptr(const T1& t1, const T2& t2, const T3& t3, const T4& t4)
-      : ptr_(new T(t1, t2, t3, t4))
-    {}
-#endif // CGAL_CFG_NO_CPP0X_VARIADIC_TEMPLATES
-
-    Handle_with_intrusive_ptr&
-    operator=(const Handle_with_intrusive_ptr& h)
-    {
-        Handle_with_intrusive_ptr tmp = h;
-        swap(tmp);
-        return *this;
-    }
-
-    Handle_with_intrusive_ptr&
-    operator=(const T &t)
-    {
-        if (is_shared())
-            *this = Handle_with_intrusive_ptr(t);
-        else
-            *ptr = t;
-
-        return *this;
-    }
-
-#ifndef CGAL_CFG_NO_CPP0X_RVALUE_REFERENCE
-    // Note : I don't see a way to make a useful move constructor, apart
-    //        from e.g. using NULL as a ptr value, but this is drastic.
-
-    Handle_with_intrusive_ptr&
-    operator=(Handle_with_intrusive_ptr && h)
-    {
-        swap(h);
-        return *this;
-    }
-
-    Handle_with_intrusive_ptr&
-    operator=(element_type && t)
-    {
-        if (is_shared())
-            *this = Handle_with_intrusive_ptr(std::move(t));
-        else
-            *ptr_ = std::move(t);
-
-        return *this;
-    }
-#endif
-
-    void
-    initialize_with(const element_type& t)
-    {
-        // kept for backward compatibility.  Use operator=(t) instead.
-        *this = t;
-    }
-
-    Id_type id() const { return Ptr() - static_cast<T const*>(0); }
-
-    bool identical(const Handle_with_intrusive_ptr& h) const { return Ptr() == h.Ptr(); }
-
-
-    // Ptr() is the "public" access to the pointer to the object.
-    // The non-const version asserts that the instance is not shared.
-    const T *
-    Ptr() const
-    {
-       return ptr_.get();
-    }
-
-    /*
-    // The assertion triggers in a couple of places, so I comment it for now.
-    T *
-    Ptr()
-    {
-      CGAL_assertion(!is_shared());
-      return &(ptr_->t);
-    }
-    */
-
-    bool
-    is_shared() const
-    {
-	return ptr_->m_counter > 1;
-    }
-
-    bool
-    unique() const
-    {
-	return !is_shared();
-    }
-
-    int
-    use_count() const
-    {
-	return ptr_->m_counter;
-    }
-
-    void
-    swap(Handle_with_intrusive_ptr& h)
-    {
-      ptr_.swap(h.ptr_);
-    }
-
-protected:
-
-    void
-    copy_on_write()
-    {
-      if ( is_shared() ) Handle_with_intrusive_ptr(*ptr_).swap(*this);
-    }
-
-    // ptr() is the protected access to the pointer.  Both const and non-const.
-    // Redundant with Ptr().
-    T *
-    ptr()
-    { return ptr_.get(); }
-
-    const T *
-    ptr() const
-    { return ptr_.get(); }
-};
-
-
-template <class T, class Allocator>
-inline
-void
-swap(Handle_with_intrusive_ptr<T> &h1, Handle_with_intrusive_ptr<T> &h2)
-{
-    h1.swap(h2);
-}
-
-template <class T, class Allocator>
-inline
-bool
-identical(const Handle_with_intrusive_ptr<T> &h1,
-          const Handle_with_intrusive_ptr<T> &h2)
-{
-    return h1.identical(h2);
-}
-
-template <class T>
-inline
-const T&
-get(const Handle_with_intrusive_ptr<T> &h)
-{
-    return *(h.Ptr());
-}
-#endif
-
 class Gmpq
   :
-  #ifdef CGAL_USE_BOOST_ATOMIC
-    Handle_with_intrusive_ptr<Gmpq_rep>,
+  #ifdef CGAL_NO_REF_COUNTED_GMPQ
+    Gmpq_rep,
   #else
-    #ifdef CGAL_NO_REF_COUNTED_GMPQ
-      Gmpq_rep,
-    #else
-      Handle_for<Gmpq_rep>,
-    #endif
+    Handle_for<Gmpq_rep>,
   #endif
     boost::ordered_field_operators1< Gmpq
   , boost::ordered_field_operators2< Gmpq, int
@@ -304,14 +86,10 @@ class Gmpq
   , boost::ordered_field_operators2< Gmpq, Gmpfr
     > > > > > >
 {
-  #ifdef CGAL_USE_BOOST_ATOMIC
-  typedef Handle_with_intrusive_ptr<Gmpq_rep> Base;
+  #ifdef CGAL_NO_REF_COUNTED_GMPQ
+  typedef Gmpq_rep Base;
   #else
-    #ifdef CGAL_NO_REF_COUNTED_GMPQ
-    typedef Gmpq_rep Base;
-    #else
-    typedef Handle_for<Gmpq_rep> Base;
-    #endif
+  typedef Handle_for<Gmpq_rep> Base;
   #endif
 public:
   typedef Tag_false  Has_gcd;
