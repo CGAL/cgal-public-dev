@@ -156,12 +156,12 @@ private:
     //! creates the algebraic real from int \a i.
     explicit Algebraic_real_quadratic_refinement_rep_bfi(int i = 0)
       : Base(i), prec_(16), N(2) {
-      _set_prec(16);
+//       _set_prec(16);
     } 
     //! creates the algebraic real from Field \a m.
     explicit Algebraic_real_quadratic_refinement_rep_bfi(const Field& m)
         : Base(m), prec_(16), N(2) {
-      _set_prec(16);
+//       _set_prec(16);
     }
  
     /*! \brief creates the algebraic real as the unique root of \a P
@@ -188,7 +188,7 @@ private:
           f_low_bfi_(y.f_low_bfi_), high_bfi_(y.high_bfi_),
           f_high_bfi_(y.f_high_bfi_), N(y.N)
     {
-        _set_prec(prec_);
+//         _set_prec(prec_);
     }
 
     // assignment 
