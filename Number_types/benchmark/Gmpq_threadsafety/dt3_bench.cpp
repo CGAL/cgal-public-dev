@@ -16,7 +16,8 @@ typedef CGAL::Creator_uniform_3<CGAL::Gmpq,Kernel::Point_3>  Creator;
 int main(int argc,char** argv)
 {
   std::vector<Kernel::Point_3> points;
-  CGAL::Random_points_in_sphere_3<Kernel::Point_3,Creator> g(1);
+  CGAL::Random rand(0);
+  CGAL::Random_points_in_sphere_3<Kernel::Point_3,Creator> g(1, rand);
   
   int nb_pts = 1000;
   if (argc!=1)
