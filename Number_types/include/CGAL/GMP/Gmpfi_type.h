@@ -425,7 +425,21 @@ Gmpfi::Precision_type Gmpfi::set_default_precision(Gmpfi::Precision_type prec){
         Gmpfi::Precision_type old_prec=Gmpfi::get_default_precision();
         CGAL_assertion(prec>=MPFR_PREC_MIN&&prec<=MPFR_PREC_MAX);
 #ifdef CGAL_HAS_THREADS
-        *Gmpfi_default_precision_.get()=prec;
+//         if(Gmpfi_default_precision_.get() == 0)
+//                 Gmpfi::init_precision_for_thread();
+//         *Gmpfi_default_precision_.get()=prec;
+
+          mp_prec_t *ptr = Gmpfi_default_precision_.get();
+        if(ptr == 0) {
+            Gmpfi_default_precision_.reset(
+                new mp_prec_t(CGAL_GMPFI_DEFAULT_PRECISION));
+//             std::cout << "null pointer!\n";
+//              Gmpfi_default_precision_.reset(
+//                 new mp_prec_t(CGAL_GMPFI_DEFAULT_PRECISION));
+           ptr = Gmpfi_default_precision_.get();
+        }
+        *ptr = prec;
+//         *Gmpfi_default_precision_.get()=prec;
 #else
         Gmpfi_default_precision=prec;
 #endif
