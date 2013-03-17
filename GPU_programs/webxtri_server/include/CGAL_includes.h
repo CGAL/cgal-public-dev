@@ -99,10 +99,10 @@ typedef CGAL::CORE_arithmetic_kernel AT;
 #define CGAL_BIGCD_USE_SHIFT 0
 #define CGAL_BIGCD_CHECK_SANITY 0
 
-#define CGAL_BISOLVE_USE_GPU_RESULTANTS 1 // default?
+#define CGAL_BISOLVE_USE_GPU_RESULTANTS 0 // default?
 #define CGAL_BISOLVE_CHECK_GPU_RESULTANTS_SANITY 0 // default 0
 
-#define CGAL_BISOLVE_USE_GPU_GCDS 1  // default?
+#define CGAL_BISOLVE_USE_GPU_GCDS 0  // default?
 #define CGAL_BISOLVE_CHECK_GPU_GCDS_SANITY 0 // default 1
 
 #define CGAL_BISOLVE_USE_NTL  1 // default 1 ??
@@ -117,6 +117,9 @@ typedef CGAL::CORE_arithmetic_kernel AT;
 
 #include <CGAL/Algebraic_kernel_2/Rounding_ak_d_1.h>
 
+#include <CGAL/Algebraic_kernel_d/Generic_isolator.h>
+
+
 #if CGAL_BISOLVE_USE_RS_AK
 #include <CGAL/Algebraic_kernel_d/Float_traits.h>
 #include <CGAL/Algebraic_kernel_rs_gmpz_d_1.h>
@@ -129,8 +132,7 @@ typedef CGAL::CORE_arithmetic_kernel AT;
 #include <CGAL/Arrangement_2l/Adjacencies_3.h>
 #include <CGAL/Arrangement_2l/Restricted_cad_3_enums.h>
 
-#include <CGAL/Arcavoid_root_isolator.h>
-
+//#include <CGAL/Arcavoid_root_isolator.h>
 
 typedef AT::Integer Integer;
 typedef AT::Rational Rational;
@@ -155,9 +157,7 @@ typedef AT::Rational Rational;
       CGAL::internal::Algebraic_real_quadratic_refinement_rep_bfi
            < Integer, Rational >,
       CGAL::internal::Bitstream_descartes
-        < CGAL::internal::Bitstream_descartes_rndl_tree_traits
-            < CGAL::internal::Bitstream_coefficient_kernel< Integer > >
-        >
+        < CGAL::internal::Bitstream_coefficient_kernel< Integer > >
     > AK_1;
 #endif
 #endif // !CGAL_BISOLVE_USE_RS_AK

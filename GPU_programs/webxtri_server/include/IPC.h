@@ -84,7 +84,7 @@ enum Error_code {
 
 //! describes format of a message queue
 struct IPC_Message {   
-    uint m_type;
+    long m_type;
     union {
         key_t shm_key;         //! the key of a shared memory region
         Error_code err_code;   //! error code: 0 indicates no errors

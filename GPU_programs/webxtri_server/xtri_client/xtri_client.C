@@ -382,7 +382,7 @@ std::string CGI_Client::parse_output(char *poly)
 {
     std::string res(poly);
     while(1) {
-        unsigned idx = res.find("<");
+        std::size_t idx = res.find("<");
         if(idx == std::string::npos)
             break;
         res.replace(idx, 1, "&lt;");

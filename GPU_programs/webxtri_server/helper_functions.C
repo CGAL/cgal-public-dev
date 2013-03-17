@@ -280,11 +280,10 @@ struct Custom_parser_policy :
 
         if(type == Base::COEFF_RATIONAL) {
             Integer num, denom;
-
             is >> CGAL::iformat(num); // read numerator
             is.get(); // skip '/'
             is >> CGAL::iformat(denom);
-//             std::cout << "rational: " << num << "/" << denom << "\n";
+//              std::cout << "rational: " << num << "/" << denom << "\n";
             if(CGAL::is_zero(denom))
                 throw CGAL::internal::Parser_exception("zero div error!");
 
@@ -292,11 +291,9 @@ struct Custom_parser_policy :
             return typename FT::Compose()(num, denom);
 
         } else if(type == Base::COEFF_FLOAT) {
-
             long double ld;
             is >> CGAL::iformat(ld);
             BigFloat bf(ld);
-
             // TODO: fix the bug with floating-point arithmetic..
             // BFI set_precision fucked up..
             long prec = CGAL::get_precision(BFI());
@@ -304,7 +301,6 @@ struct Custom_parser_policy :
             prec = CGAL::set_precision(BFI(), PARSER_FLOAT_APPROX_BITS);
             BFI bfi = CGAL::convert_to_bfi(bf);
             CGAL::set_precision(BFI(), prec);
-
             return CGAL::lower(bfi);
 
         } else
@@ -353,10 +349,10 @@ bool XTri_server::parse_polynomial(char *ascii_poly, MD5_digest& poly_hash,
         return false;
     }
     
+    
     // now generate the checksum from sorted sequence polynomials
     MD5_CTX ctx;
     MD5_Init(&ctx);
-
     std::ostringstream outp;
     ::CGAL::set_mode(outp, ::CGAL::IO::ASCII);
     outp << tmp;

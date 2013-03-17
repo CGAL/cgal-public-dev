@@ -3,12 +3,11 @@
 ##  (Begin of automatically generated section)
 ##
 
-CXXFLAGS= -DNDEBUG -O2 -Wall -Wno-unused -pthread -m32
+CXXFLAGS= -DNDEBUG -O2 -Wall -Wno-unused -pthread 
 LIBS=
 LDFLAGS= -lpthread -lrt -lstdc++
 INCDIR=$(SRCDIR)/include
 # CC=$(HOME)/thirdparty_libs/gcc-4.1/gcc-4.1.2/bin/gcc-4.1
-CC=gcc -m32
 OBJS=
 LIB=
 # INCLUDES=-I$HOME/thirdparty_libs/gcc-4.1/gcc-4.1.2/include/c++/4.1.2 -pthread
