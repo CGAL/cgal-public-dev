@@ -120,7 +120,7 @@ enum Request_type {
 
 //! describes the format of message queue
 struct IPC_Message {   
-    uint m_type;             // request type
+    long m_type;             // request type
     union {
         key_t shm_key;       // the key of a shared memory region
         Error_code err_code; // error code: 0 indicates no errors
@@ -139,7 +139,7 @@ struct SHM_Data {
     pid_t PID;              //! client's PID
     in_addr_t host_addr;    //! client's IP-address
     Rasterize_mode mode;    //! rasterization mode
-    uint n_indices;         //! number of indices (zero for analyse requests)
+    long n_indices;         //! number of indices (zero for analyse requests)
     double x_min;           //! dimensions of a drawing window (rasterize only)
     double x_max;
     double y_min;
@@ -200,7 +200,7 @@ struct SHM_Point_query_reply {
 //! global functions
 void msg(const char *format, ...);
 void echo(const char *text);
-void err_msg(const char *text);
+inline void err_msg(const char *text);
 void err_exit();
 void sigint_handler(int);
 

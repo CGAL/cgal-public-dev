@@ -493,7 +493,7 @@ void *XAlci_server::main_request_thread(IPC_Message *pmsg)
     char *poly = NULL;
     const char *pstr;
     bool invalid = false;
-    
+       
     // retrieve the time of request and a hostname of the client
     Request_info request_info;
     time_t time_result = time(NULL);
@@ -714,11 +714,14 @@ void XAlci_server::run()
 
     while(1) {
         std::cout << server_id << ": waiting for clients..." << std::endl;
+                
         IPC_Message ipc_msg;
         if(msgrcv(mq_id, &ipc_msg, sizeof(ipc_msg)-4, MSGS_SERVER, 0) == -1) {
             err_msg("msgrcv");
             err_exit();
         } 
+        
+        
         if(ipc_msg.m_type == ANALYSE||ipc_msg.m_type == RASTERIZE||
             ipc_msg.m_type == COMMENT) {
             pthread_t child;

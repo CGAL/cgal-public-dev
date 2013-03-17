@@ -87,8 +87,8 @@ void CGI_Client::web_interface(Request_type req, int server_id)
     if(req == REQ_DEFAULT || req == REQ_COMMENT) {
 
         char *header, *footer;
-        unsigned sz_h = read_file("../htdocs/xalci_header.html", header),
-                 sz_f = read_file("../htdocs/xalci_footer.html", footer);
+        unsigned sz_h = read_file("../www/xalci_header.html", header),
+                 sz_f = read_file("../www/xalci_footer.html", footer);
 
 
         fwrite(header, sz_h, 1, cgiOut);
@@ -300,8 +300,7 @@ bool CGI_Client::process(Request_type req, Rasterize_mode mode,
         err_exit();
     }
     err_code = ERR_OK;
-    //fprintf(stderr, "referrer: %s\n", cgiReferrer);
-
+    
     if(req == REQ_COMMENT) {
         if(strstr(cgiReferrer, "/feedback.html") == NULL) {
             err_code = ERR_INVALID_REFERRER;
@@ -354,6 +353,14 @@ bool CGI_Client::process(Request_type req, Rasterize_mode mode,
     data->n_indices = 0;
     int *indices = (int *)(shm_addr + sizeof(SHM_Data));
 
+    /*! LISTS environment variables
+    char **pstr = environ;
+    while(*pstr != 0)
+    {
+        fprintf(stderr, "AAAAA %s\n", *pstr);
+        pstr++;
+    }*/
+    
     switch(req) {
     case REQ_ANALYSE:
         msg_type = ANALYSE;
@@ -449,7 +456,7 @@ bool CGI_Client::process(Request_type req, Rasterize_mode mode,
         err_msg("msgsnd");
         err_exit();
     }
-    
+       
     Thread_info info;
     pthread_t msg_thread_id;
     timespec ts;
@@ -463,7 +470,8 @@ bool CGI_Client::process(Request_type req, Rasterize_mode mode,
         
     clock_gettime(CLOCK_REALTIME, &ts);
     ts.tv_sec += CLIENT_TIMEOUT; 
-    if(sem_timedwait(&shadow_sem, &ts)!=0) 
+    if(sem_timedwait(&shadow_sem, &ts)!=0)
+    {    
         if(errno == ETIMEDOUT) {
             fputs("No connection to the server: cancelling receipt\n", stderr);
             pthread_cancel(msg_thread_id);  
@@ -473,7 +481,7 @@ bool CGI_Client::process(Request_type req, Rasterize_mode mode,
             err_msg("sem_timedwait");
             err_exit();
         }
-        
+    }    
     if(((unsigned *)shm_addr)[0] == 0xdeadbeef &&
             ((unsigned *)shm_addr)[1] == 0xdeadbeef) {
         err_code = ipc_msg.err_code;
@@ -545,7 +553,7 @@ void CGI_Client::run()
 
     switch(req) {
     case REQ_ANALYSE:
-//         fputs("analyse request\n", stderr);
+        fputs("analyse request\n", stderr);
         get_params(req);
         web_interface(req, sid);
         break;
@@ -639,7 +647,7 @@ std::string CGI_Client::parse_output(char *poly)
 {
     std::string res(poly);
     while(1) {
-        unsigned idx = res.find("<");
+        std::size_t idx = res.find("<");
         if(idx == std::string::npos)
             break;
         res.replace(idx, 1, "&lt;");
@@ -671,7 +679,7 @@ void err_exit()
     exit(1);
 }
 
-void err_msg(const char *text)
+inline void err_msg(const char *text)
 {
     fprintf(stderr, "File: %s; line: %d\n", __FILE__, __LINE__);
     perror(text);

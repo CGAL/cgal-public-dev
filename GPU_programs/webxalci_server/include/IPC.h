@@ -84,7 +84,7 @@ enum Error_code {
 
 //! describes format of a message queue
 struct IPC_Message {   
-    uint m_type;
+    long m_type;
     union {
         key_t shm_key;         //! the key of a shared memory region
         Error_code err_code;   //! error code: 0 indicates no errors
@@ -103,7 +103,7 @@ struct SHM_Data {
     pid_t PID;              //! client's PID
     in_addr_t host_addr;    //! client's IP-address
     Rasterize_mode mode;    //! rasterization mode
-    uint n_indices;         //! number of indices (zero for analyse requests)
+    long n_indices;         //! number of indices (zero for analyse requests)
     double x_min;           //! dimensions of a drawing window (rasterize only)
     double x_max;
     double y_min;
