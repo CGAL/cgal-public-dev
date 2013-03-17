@@ -34,7 +34,7 @@
 #define XTRI_CLIENT_H
 
 // a filename to be used to generate a unique IPC key
-#define KEY_FILENAME        "/etc/security/time.conf" 
+#define KEY_FILENAME        "/usr/include/stdio.h" 
     //"/root/xalci/problem_curve.txt"
    
 // CAUTION!!! this parameter must be changed very carefully

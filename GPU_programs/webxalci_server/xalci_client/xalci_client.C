@@ -87,8 +87,8 @@ void CGI_Client::web_interface(Request_type req, int server_id)
     if(req == REQ_DEFAULT || req == REQ_COMMENT) {
 
         char *header, *footer;
-        unsigned sz_h = read_file("../www/xalci_header.html", header),
-                 sz_f = read_file("../www/xalci_footer.html", footer);
+        unsigned sz_h = read_file("xalci_header.html", header),
+                 sz_f = read_file("xalci_footer.html", footer);
 
 
         fwrite(header, sz_h, 1, cgiOut);

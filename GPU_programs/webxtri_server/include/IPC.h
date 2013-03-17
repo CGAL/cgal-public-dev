@@ -41,7 +41,7 @@
 
 #define _THREAD_SAFE
 //! a filename to be used to generate unique IPC keys
-#define KEY_FILENAME        "/etc/security/time.conf"
+#define KEY_FILENAME        "/usr/include/stdio.h"
 
 // CAUTION!!! this parameter must be changed very carefully
 // taking into account maximal size of client-server messages
