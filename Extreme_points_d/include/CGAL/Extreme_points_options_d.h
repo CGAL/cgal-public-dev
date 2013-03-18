@@ -24,6 +24,8 @@
 
 namespace CGAL {
 
+/// \ingroup PkgExtremePointsDEnum
+/// This is an enumeration type used to specify an extreme point algorithm in `Extreme_points_options_d`.
 enum Extreme_point_algorithm_d {
     EP_CHOOSE_APPROPRIATE,
     EP_SIMPLE,

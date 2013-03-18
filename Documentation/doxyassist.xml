@@ -1211,13 +1211,18 @@ namespace for the XML file to be processed properly.  -->
 
       <project>
         <name>dD Extreme Points</name>
-        <input>../Extreme_points_d/doc/Extreme_points_d</input>
+        <input>../Extreme_points_d/doc</input>
+        <input>../Extreme_points_d/include</input>
         <doxygen>
           <string name="STRIP_FROM_PATH">../Extreme_points_d/include</string>
           <string name="STRIP_FROM_INC_PATH">../Extreme_points_d/include</string>
           <string name="GENERATE_TAGFILE">./tags/Extreme_points_d.tag</string>
           <string name="IMAGE_PATH">../Extreme_points_d/doc/Extreme_points_d/fig</string>
           <string name="EXAMPLE_PATH">../Extreme_points_d/examples</string>
+          <list name="TAGFILES" append="true">
+            <item>./tags/QP_solver.tag=../../CGAL.CGAL.Linear-and-Quadratic-Programming-Solver/html</item>
+            <item>./tags/Number_types.tag=../../CGAL.CGAL.Number-Types/html</item>
+          </list>
         </doxygen>
       </project>
 

@@ -89,16 +89,38 @@ OutputIterator
 extreme_points_d_simple(InputIterator first, InputIterator beyond,
                                 OutputIterator  result);
 
+/// \ingroup PkgExtremePointsDEnum
+/** Enum to classify a query point in relation to the convex hull of some point set. 
+  * The query point can be either completely outside the convex hull (\ccc{EXTERNAL_POINT}), 
+  * an extreme point (\ccc{EXTREME_POINT}) or some point inside the convex hull (\ccc{INTERNAL_POINT}).
+  * Note that internal points can also be located at the boundary of the convex hull.
+  **/
 enum Extreme_point_classification {INTERNAL_POINT=-1, EXTREME_POINT=0,
                                    EXTERNAL_POINT=1 };
 
+/// \addtogroup PkgExtremePointsDClasses
+/// @{
+
+/**
+  * The class `Extreme_points_d` holds a set of d dimensional points and answers extreme point queries. The point set can be
+  * enlarged dynamically. Extreme point computations are done lazily (i.e.\ only when a query has to be answered) and the 
+  * result of the last computation is kept. There is also the possibility to classify points relative to the convex hull 
+  * of the current point set (i.e.\ to tell whether they are inside, outside or an extreme point).
+  *
+  */
 template <class Traits>
 class Extreme_points_d {
     public:
         // types
-        typedef typename Traits::Point                          Point;
-        typedef typename Traits::Less_lexicographically         Less_lexicographically;
-        typedef typename Traits::RT                             RT;
+        #ifdef DOXYGEN_RUNNING
+          typedef typename Hidden_type                            Point;
+          typedef typename Hidden_type                            Less_lexicographically;
+          typedef typename Hidden_type                            RT;
+        #else
+          typedef typename Traits::Point                          Point;
+          typedef typename Traits::Less_lexicographically         Less_lexicographically;
+          typedef typename Traits::RT                             RT;
+        #endif
 
     private:
         // the exact type which is used in the QP-Solver
@@ -119,31 +141,39 @@ class Extreme_points_d {
         void update();
         
     public:
+        /// Constructor for extreme points computations in `d` dimensions. The optional argument 
+        /// `ep_options` can be used to set some options (see `Extreme_points_options_d`).
         Extreme_points_d(int d, Extreme_points_options_d ep_options = 
                                 Extreme_points_options_d())
             : dim(d), ep_options_(ep_options) {}
-        
+
+        /// Returns the dimension of the points
         int dimension() {
             return dim;
         }
-        
+ 
+        /// Clears the point set       
         void clear() {
             new_points.clear();
             extreme_points.clear();
         }
-        
-        void insert(const Point x) {
-            CGAL_precondition_msg(x.dimension() == dim,
+
+        /// Adds the point `p` to the point set
+        void insert(const Point p) {
+            CGAL_precondition_msg(p.dimension() == dim,
                                   "Invalid dimension of inserted point.");
-            new_points.push_back(x);
+            new_points.push_back(p);
         }
-        
+
+        /// Adds all the points from the range [`first`,`beyond`) to the point set
         template <typename InputIterator>
         void insert(InputIterator first, InputIterator beyond) {
             while (first != beyond) insert(*first++);
         }
         
-        // generates the extreme points of the given point set
+        /// Calculates the extreme points of the current point set. 
+        /// The resulting sequence of extreme points is placed starting at position `result`, 
+        ///and the past-the-end iterator for the resulting sequence is returned.
         template <class OutputIterator>
         OutputIterator
         get_extreme_points(OutputIterator  result) {
@@ -152,12 +182,13 @@ class Extreme_points_d {
                              result);
         }
         
-        // classifies the given point as internal, extreme or external point
-        // if is_input_point is set, p is assumed to be either an
-        // extreme point or an internal point
+        /// Classifies point `p` relative to the convex hull of the current point set. 
+        /// If `p` is an input point the argument `is_input_point` may be set to true which speeds up the query.
+        /// \pre `p` is an input point or `is_input_point == false`.
         enum Extreme_point_classification classify(Point p,
                                                    bool is_input_point=false);
 };
+/// @}
 
 namespace internal {
     // calculates the inner product of a d-dimensional point
@@ -287,6 +318,7 @@ void Extreme_points_d<Traits>::update() {
         new_points.clear();
     }
 }
+
 
 template <class Traits>
 enum Extreme_point_classification
@@ -437,9 +469,11 @@ extreme_points_d_dula_helgason(InputIterator first, InputIterator beyond,
     return extreme_points_d_dula_helgason(first, beyond, result, Traits());
 }
 
-// generates the extreme points of the given point set
-// simple (naive) algorithm
-// no general position assumptions
+/// \ingroup PkgExtremePointsDGlobal
+/** The function `extreme_points_d_simple` computes the extreme points of the given set of input points.
+  * Computes the extreme points of the point set in the range [`first`,`beyond`). The resulting sequence 
+  * of extreme points is placed starting at position `result`, and the past-the-end iterator for the resulting sequence is returned.
+  **/
 template <class InputIterator, class OutputIterator, class Traits>
 OutputIterator
 extreme_points_d_simple(InputIterator first, InputIterator beyond,
