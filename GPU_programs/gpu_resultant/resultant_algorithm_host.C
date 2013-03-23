@@ -35,6 +35,7 @@
 #include <matrix_algebra.C>
 
 #include <CGAL/Timer.h>
+ 
 
 namespace CGAL {
 
@@ -511,8 +512,6 @@ bool GPU_resultant::RNS_recover(const unsigned *R, const unsigned *Mods,
     }
 #else
  
-    printf("###### SIZE: %u %u\n", GMP_NUMB_BITS, sizeof(uint64));
-
     mpz_t *Zs = new mpz_t[CUMP_N_MODULI + 2],
             *zzs = Zs, *mzs = zzs + (CUMP_N_MODULI + 1) / 2;
     

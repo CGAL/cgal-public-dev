@@ -515,8 +515,6 @@ bool GPU_gcd::RNS_conversion(const MPZ_vector_1& fv,
         return false;
     }
 
-    printf("BITS: %d\n", GMP_NUMB_BITS);
-
     const int FACTOR = (int)GMP_NUMB_BITS / (sizeof(unsigned) * 8);
     for(i = 0; i <= nu; i++, plimbs += limbs_f) {
         int sz = fv[i]._mp_size;
@@ -753,7 +751,7 @@ bool GPU_gcd::debug_run(int argc, char **argv) {
     write_to_file = a.write_to_file;
 
     Poly_1 f, g;
-#if 1
+#if 0
 //! NOTE: these polynomials result in non-strongly regular case !!
 //      const char *sgcd = "(18*x^5-27652*x^2+112)",
 //         *sf="(x^11+x^10+x^9+x^8+345*x^2+4)", *sg = "(22*x^14+77*x^3+1231x^2-x+11)";
@@ -811,9 +809,9 @@ bool GPU_gcd::debug_run(int argc, char **argv) {
     f = CGAL::canonicalize(f);
     g = CGAL::canonicalize(g);
 
-//    CUMP_out("sf: " << f << "\n")
-  //  CUMP_out("sg: " << g << "\n")
-    
+//     CUMP_out("sf: " << f << "\n")
+//     CUMP_out("sg: " << g << "\n")
+//     
     unsigned fi = 0, gi = 0;;
     while(f[fi] == Integer(0))
         fi++;
@@ -852,11 +850,9 @@ bool GPU_gcd::debug_run(int argc, char **argv) {
            CGAL::internal::construct_polynomial_from_mpz< Integer >(rv);
 
     ggcd = CGAL::canonicalize(ggcd);
-//     CUMP_out("gcd_check: " << ggcd << "\n\n")
-
-	CUMP_out("computing gcd..\n");
+    CUMP_out("gcd_check: " << ggcd << "\n\n")
     gcd_fg = CGAL::gcd(f,g);
-//     CUMP_out("gcd_truth: " << gcd_fg << "\n\n")
+    CUMP_out("gcd_truth: " << gcd_fg << "\n\n")
 
     if(ggcd == gcd_fg)
         CUMP_out("GCD correct!!\n")
