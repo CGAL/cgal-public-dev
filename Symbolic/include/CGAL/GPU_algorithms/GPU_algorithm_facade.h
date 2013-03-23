@@ -77,6 +77,7 @@ struct GPU_algorithm_facade {
                 *pfailed = true;
             return Poly(NT(0));
         }
+        
         ggcd /= ggcd.content();
 
         } else {
