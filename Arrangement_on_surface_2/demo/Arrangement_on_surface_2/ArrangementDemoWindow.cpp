@@ -598,11 +598,11 @@ void ArrangementDemoWindow::updateEnvelope( QAction* newMode )
   bool show = newMode->isChecked( );
   if ( newMode == this->ui->actionLowerEnvelope )
   {
-    activeTab->getEnvelopeCallback( )->showUpperEnvelope( show );
+    activeTab->getEnvelopeCallback( )->showLowerEnvelope( show );
   }
   else if ( newMode == this->ui->actionUpperEnvelope )
   {
-    activeTab->getEnvelopeCallback( )->showLowerEnvelope( show );
+    activeTab->getEnvelopeCallback( )->showUpperEnvelope( show );
   }
 }
 
