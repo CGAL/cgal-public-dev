@@ -15,6 +15,9 @@
 #include <CGAL/Exact_predicates_exact_constructions_kernel.h>
 #include <CGAL/Cartesian.h>
 
+#include <CGAL/convex_hull_3.h>
+#include <CGAL/Polyhedron_3.h>
+
 typedef CGAL::Cartesian<double>                 Kernel;
 typedef Kernel::Point_3                         Point_3;
 typedef CGAL::Extreme_points_traits_d<Point_3>  EP_Traits_3;
@@ -51,14 +54,22 @@ void test1() {
 	
     std::vector<Point_3> extreme_points3;
     CGAL::extreme_points_d(points.begin(), points.end(), std::back_inserter(extreme_points3));
+ 
+    CGAL::Polyhedron_3<Kernel> polyh;
+    CGAL::convex_hull_3(points.begin(), points.end(), polyh);
+    std::vector<Point_3> extreme_points5;
+    for (CGAL::Polyhedron_3<Kernel>::Vertex_iterator it=polyh.vertices_begin(); it!=polyh.vertices_end(); ++it)
+      extreme_points5.push_back(it->point());
 
     assert(extreme_points.size()==number_of_extreme_points);
     assert(extreme_points2.size()==number_of_extreme_points);
     assert(extreme_points3.size()==number_of_extreme_points);
+    assert(extreme_points5.size()==number_of_extreme_points);
     
     sort(extreme_points.begin(),extreme_points.end(), Less_lexicographically());
     sort(extreme_points2.begin(),extreme_points2.end(), Less_lexicographically());
     sort(extreme_points3.begin(),extreme_points3.end(), Less_lexicographically());
+    sort(extreme_points5.begin(),extreme_points5.end(), Less_lexicographically());
     
     for (int i=0;i<extreme_points.size();++i)
         std::cout<<extreme_points[i]<<std::endl;
@@ -66,6 +77,7 @@ void test1() {
     // check that the different implementations produce the same output
     assert(std::equal(extreme_points.begin(),extreme_points.end(),extreme_points2.begin()));
     assert(std::equal(extreme_points.begin(),extreme_points.end(),extreme_points3.begin()));
+    assert(std::equal(extreme_points.begin(),extreme_points.end(),extreme_points5.begin()));
     
     // testing dynamic class
     CGAL::Extreme_points_d<EP_Traits_3> ep(3);

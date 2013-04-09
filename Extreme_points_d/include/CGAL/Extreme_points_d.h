@@ -77,7 +77,7 @@ namespace internal {
 //         make sure the chosen exact type is also compliant with T
         typedef typename Coercion_traits<T,ET>::Type Type;
     };
-}
+} // namespace internal
 
 template <class InputIterator, class OutputIterator>
 OutputIterator
@@ -91,14 +91,18 @@ extreme_points_d_simple(InputIterator first, InputIterator beyond,
 
 /// \ingroup PkgExtremePointsDEnum
 /** Enum to classify a query point in relation to the convex hull of some point set. 
-  * The query point can be either completely outside the convex hull (\ccc{EXTERNAL_POINT}), 
-  * an extreme point (\ccc{EXTREME_POINT}) or some point inside the convex hull (\ccc{INTERNAL_POINT}).
   * Note that internal points can also be located at the boundary of the convex hull.
+  *
   **/
-enum Extreme_point_classification {INTERNAL_POINT=-1, EXTREME_POINT=0,
-                                   EXTERNAL_POINT=1 };
+enum Extreme_point_classification {
+  /// Query point inside the convex hull
+  INTERNAL_POINT=-1, 
+  /// Query point is an extreme point
+  EXTREME_POINT=0,
+  /// Query point completely outside the convex hull
+  EXTERNAL_POINT=1 };
 
-/// \addtogroup PkgExtremePointsDClasses
+/// \ingroup PkgExtremePointsDClasses
 /// @{
 
 /**
@@ -107,14 +111,28 @@ enum Extreme_point_classification {INTERNAL_POINT=-1, EXTREME_POINT=0,
   * result of the last computation is kept. There is also the possibility to classify points relative to the convex hull 
   * of the current point set (i.e.\ to tell whether they are inside, outside or an extreme point).
   *
+  *
+  * \cgalRequires
+  * \tparam Traits is a model of the concept `ExtremePointsTraits_d`.
+  *
+  * \sa `CGAL::Extreme_points_d`
+  * \sa `CGAL::extreme_points_d_dula_helgason`
+  * \sa `CGAL::extreme_points_d_simple`
+  *
   */
+  // \cgalHeading{Types}
+  // The following types come directly from the traits class given as the template argument which must be a model of the 
+  // concept `ExtremePointsTraits_d`.
 template <class Traits>
 class Extreme_points_d {
     public:
         // types
         #ifdef DOXYGEN_RUNNING
+          ///The type of the input points.
           typedef typename Hidden_type                            Point;
+          ///The lexicographic compare functor for `Point`.
           typedef typename Hidden_type                            Less_lexicographically;
+          ///The number type, which is the ring type of the input points.
           typedef typename Hidden_type                            RT;
         #else
           typedef typename Traits::Point                          Point;
@@ -277,10 +295,11 @@ void Extreme_points_d<Traits>::update() {
             // a big extreme point ratio in which case the simple algorithm 
             // performs slightly better
             
-            if (4 * new_points.size() < extreme_points.size())
+            if (4 * new_points.size() < extreme_points.size()) {
                 algo=EP_SIMPLE;
-            else
+            } else {
                 algo=EP_DULA_HELGASON;
+            }
         }
         
         
@@ -295,10 +314,12 @@ void Extreme_points_d<Traits>::update() {
         // run the frame algorithm
         switch (algo) {
             case EP_SIMPLE:
-                extreme_points_d_dula_helgason(new_points.begin(), new_points.end(),
+                extreme_points_d_simple(new_points.begin(), new_points.end(),
                                                std::back_inserter(extreme_points),
                                                Traits(),
                                                ep_options_.get_qp_options() );
+                
+                //ep_options_.set_last_used_algorithm(EP_SIMPLE);
                 break;
             case EP_DULA_HELGASON:
             default:
@@ -306,6 +327,7 @@ void Extreme_points_d<Traits>::update() {
                                                std::back_inserter(extreme_points),
                                                Traits(),
                                                ep_options_.get_qp_options() );
+                //ep_options_.set_last_used_algorithm(EP_DULA_HELGASON);
                 break;
                 
         };
@@ -344,7 +366,7 @@ Extreme_points_d<Traits>::classify(Point p, bool is_input_point) {
     }
 }
 
-/**
+/*
 Algorithm by Dulá and Helgason from "A new procedure for identifying the frame
 of the convex hull of a finite collection of points in multidimensional space",
 1996 
@@ -358,7 +380,33 @@ as we don't assume the input data to be in general position:
 not in the convex hull of the frame elements found so far we consider
 lexicographical ordering in case multiple points have the same scalar
 product
-**/
+*/
+
+/// \ingroup PkgExtremePointsDGlobal
+/*!
+   The function `extreme_points_d_dula_helgason` computes the extreme points of the given set of input points.
+   \return computes the extreme points of the point set in the range [`first`,`beyond`). The resulting sequence 
+   of extreme points is placed starting at position `result`, and the past-the-end iterator for the resulting sequence is returned.
+   
+   The default traits class `Default_traits` is `Extreme_points_traits_d<Point>` where `Point` is `InputIterator::value_type`
+  
+   \cgalRequires
+   `InputIterator::value_type` and `OutputIterator::value_type` are equivalent to `ExtremePointsTraits_d::Point`.
+   
+   \sa `CGAL::Extreme_points_d<Traits>`
+   \sa `CGAL::extreme_points_d_simple`
+   \sa `CGAL::extreme_points_d`
+  
+   \cgalHeading{Implementation}
+   This function implements the extreme points algorithm from Dul'a and Helgason \cite dh-pifch-96 
+   as also described in \cite dl-cosfa-12 and \cite h-epmhd-10.
+   This algorithm requires \f$ O(d n m + n * LP_{d+1,m})\f$ time in the worst case where \f$n\f$ is the number of input 
+   points, \f$ m\f$ the number of extreme points, \f$ d\f$ the dimension and \f$ LP_{a,b}\f$ the runtime for solving a linear 
+   program with \f$ a\f$ equality constraints and \f$ b\f$ nonnegative variables using \cgal's QP solver package.
+  
+   \ref Extreme_points_d/extreme_points_d_dula_helgason.cpp
+  
+*/
 template <class InputIterator, class OutputIterator, class Traits>
 OutputIterator
 extreme_points_d_dula_helgason(InputIterator first, InputIterator beyond,
@@ -408,7 +456,7 @@ extreme_points_d_dula_helgason(InputIterator first, InputIterator beyond,
             QP_Solution s =
                 CGAL::internal::solve_convex_hull_containment_lp(
                     points[j], f.begin(), f.end(), ET(), ep_traits, qp_options);
-            
+           
             if (s.is_infeasible()) {
                 // points[j] \notin conv(f)
                 
@@ -470,10 +518,35 @@ extreme_points_d_dula_helgason(InputIterator first, InputIterator beyond,
 }
 
 /// \ingroup PkgExtremePointsDGlobal
-/** The function `extreme_points_d_simple` computes the extreme points of the given set of input points.
-  * Computes the extreme points of the point set in the range [`first`,`beyond`). The resulting sequence 
-  * of extreme points is placed starting at position `result`, and the past-the-end iterator for the resulting sequence is returned.
-  **/
+/*!
+   The function `extreme_points_d_simple` computes the extreme points of the given set of input points.
+   \return computes the extreme points of the point set in the range [`first`,`beyond`).
+   The resulting sequence of extreme points is placed starting at position `result`, and the 
+   past-the-end iterator for the resulting sequence is returned.
+  
+   The default traits class `Default_traits` is `Extreme_points_traits_d<Point>` where `Point` is `InputIterator::value_type`.
+  
+   \cgalRequires
+   `InputIterator::value_type` and `OutputIterator::value_type` are equivalent to `ExtremePointsTraits_d::Point`.
+   
+   \sa `CGAL::Extreme_points_d<Traits>`
+   \sa `CGAL::extreme_points_d_hula_helgason`
+   \sa `CGAL::extreme_points_d`
+ 
+   \cgalHeading{Implementation}
+  
+   This function implements a straightforward implementation of the extreme points algorithm 
+   using linear programming. Every point is tested for being an extreme point by a linear program 
+   involving all the other points. The algorithm is described in more detail in \cite h-epmhd-10.
+   This algorithm requires \f$O(n * LP_{d+1,n-1})\f$ time where \f$n\f$ is the number of input points, \f$d\f$ the 
+   dimension and \f$ LP_{a,b}\f$ the runtime for solving a linear program with \f$a\f$ equality constraints and \f$b\f$ 
+   nonnegative variables using \cgal's QP solver package.
+  
+   \cgalHeading{Example}
+   See the example of `extreme_points_d_dula_helgason` as its interface is exactly the same as the one of `extreme_points_d_simple`:
+  
+   \ref Extreme_points_d/extreme_points_d_dula_helgason.cpp
+*/
 template <class InputIterator, class OutputIterator, class Traits>
 OutputIterator
 extreme_points_d_simple(InputIterator first, InputIterator beyond,
@@ -542,6 +615,33 @@ extreme_points_d_simple(InputIterator first, InputIterator beyond,
     return extreme_points_d_simple(first, beyond, result, Traits());
 }
 
+/// \ingroup PkgExtremePointsDGlobal
+/*! 
+   The function `extreme_points_d` computes the extreme points of the given set of input points.
+
+   \return computes the extreme points of the point set in the range [`first`,`beyond`). 
+   The resulting sequence of extreme points is placed starting at position `result`, 
+   and the past-the-end iterator for the resulting sequence is returned.
+  
+   The default traits class `Default_traits` is `Extreme_points_traits_d<Point>` where `Point` is `InputIterator::value_type`.
+
+   \cgalRequires
+   `InputIterator::value_type` and `OutputIterator::value_type` are equivalent to `ExtremePointsTraits_d::Point`.
+
+   \sa `CGAL::extreme_points_d_simple`
+   \sa `CGAL::extreme_points_d_dula_helgason`
+   \sa `CGAL::Extreme_points_d<Traits>`
+  
+   \cgalHeading{Implementation}
+   At the moment this is just `extreme_points_d_dula_helgason`. However, the idea is that this function chooses 
+   the most appropriate algorithm based on some heuristics.
+  
+   Example 
+   --------------
+   See the example of `extreme_points_d_dula_helgason` as its interface is exactly the same as the one of `extreme_points_d`.
+
+   \ref Extreme_points_d/extreme_points_d_dula_helgason.cpp
+*/
 template <class InputIterator, class OutputIterator, class Traits>
 OutputIterator
 extreme_points_d(InputIterator first, InputIterator beyond,
