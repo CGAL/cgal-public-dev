@@ -81,7 +81,7 @@ void writeout(const std::vector< NT >& a, unsigned *out, unsigned stride,
         div = NT(mod_inverse(div.x, zmod::modulus));
     }
 
-    for(unsigned i = i_start; (int)i < (int)i_beyond; i++, out += stride) {
+    for(unsigned i = i_start; (int)i < (int)i_beyond; i++, out += (int)stride) {
         out[0] = (a[i] * div).x;
     }
 }

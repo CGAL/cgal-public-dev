@@ -129,7 +129,7 @@ unsigned pgcd_check(std::vector< NT >& A,
 
     unsigned div_counter = 0, ss;
     while(1) {
-
+        
     ss = 0;
     NT d = (*pB)[n], lcr; // leading coeff
     while(r >= n) { // r - degree of the divisor
@@ -170,13 +170,16 @@ unsigned pgcd_check(std::vector< NT >& A,
         
 //     printf("\nr: %d; n: %d; #iters: %d\n", r, n, ss);
 
-    if(r == 0 && (*pR)[0] == NT(0)) { // pB is a gcd
-//         printf("###################### GCD found: %d\n", n);
+    div_counter++;
+    if(div_counter == 2000 || (
+        r == 0 && (*pR)[0] == NT(0))) { // pB is a gcd
+//         printf("###################### GCD found: %d; counter: %d; "
+//             "next lcr/lcf: %d %d\n", 
+//                 n, div_counter, (*pR)[r].x, (*pB)[n].x);
         writeout((*pB), out /*+ (nv - n)*o_stride*/, o_stride, 0, n+1);
+//         writeout((*pR), out + 1*o_stride, o_stride, 0, r+1);
         break;
     }
-
-    div_counter++;
 
 //     if(div_counter >= 1) {
 //        printf("\nr: %d; n: %d; #iters: %d\n", r, n, ss);

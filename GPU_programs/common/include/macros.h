@@ -25,6 +25,7 @@ typedef unsigned char uchar;
 typedef unsigned short ushort;
 typedef unsigned int limb;
 
+typedef unsigned long ulong;
 typedef unsigned long long uint64;
 typedef long long int64;
 
