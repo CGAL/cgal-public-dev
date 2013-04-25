@@ -5,17 +5,16 @@ project(gpu_resultant)
 
 set(CUMP_USE_32_BITS 0)
 
+set(CUDA_TOOLKIT_ROOT_DIR "$ENV{CUDA_TOOLKIT_ROOT_DIR}")
+set(CUDA_DRV_DIR "/usr/lib64/nvidia")
+
 if(CUMP_USE_32_BITS)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -m32")
+set(CMAKE_CXX_FLAGS "${CMAKE_XXC_FLAGS} -m32")
+else()
 endif()
 
-set(CUDA_TOOLKIT_ROOT_DIR "$ENV{CUDA_TOOLKIT_ROOT_DIR}")
 set(COMMON_INC_DIR "$ENV{HOME}/work/GPU_programs/common")
 set(GPU_SYMB_DIR "$ENV{HOME}/work/GPU_programs/gpu_symbolic")
-
-# export CGAL_DIR=/KM/home-0/emeliyan/work/CGAL/build64/
-
-# set(CMAKE_MODULE_PATH "$ENV{CMAKE_MODULE_PATH}")
 
 find_package(CUDA QUIET REQUIRED)
 find_package(CGAL QUIET COMPONENTS Core)
@@ -32,7 +31,6 @@ endif()
 
 # set(CMAKE_BUILD_TYPE Debug)
 set(CMAKE_CXX_FLAGS_RELEASE "-O3")
-
 set(CMAKE_CXX_FLAGS_DEBUG "-frounding-math")
 
 set(CUDA_ARCH_FLAG "sm_20")
@@ -74,7 +72,8 @@ add_executable(gpu_resultant
 
 # set(CUDA_CUDART_LIBRARY "libcudart.so")
 
-target_link_libraries(gpu_resultant ${CGAL_LIBRARIES} ${CGAL_3RD_PARTY_LIBRARIES} ${CUDA_CUDART_LIBRARY} -lcuda)
+target_link_libraries(gpu_resultant ${CGAL_LIBRARIES} ${CGAL_3RD_PARTY_LIBRARIES} ${CUDA_CUDART_LIBRARY} -lcuda -lstdc++)
+
 
 endif()
 
