@@ -151,8 +151,6 @@ void GPU_gcd::launch_kernel(unsigned *const_mem,
         *devMods = devR + data_sz, *devOuts = devMods + aux_cpu_mem;
 #endif
 
-//     printf("nu: %d; nv: %d\n", nu, nv);
-
     const_mem[NU] = nu, const_mem[NV] = nv;
     const_mem[NU_OFS4] = nu_ofs4, const_mem[NV_OFS4] = nv_ofs4;
     const_mem[MAX_NU] = max_nu;
@@ -230,15 +228,6 @@ void GPU_gcd::launch_kernel(unsigned *const_mem,
     LOCAL_TM_BEGIN(tma[0]);
     mod_reduce_kernel_dispatch(tmpLimbs, devU, devMods);
     LOCAL_TM_END(tmb[0]);
-
-//     int NN = 400;
-//     cudaMemcpy(R, devU, NN*sizeof(unsigned), cudaMemcpyDeviceToHost);
-// 
-//     for(unsigned i = 0; i < NN; i++) {
-//         printf("%d: %x\n", i, R[i]);
-//     }
-// 
-//     exit(1);
 
     LOCAL_TM_BEGIN(tma[1]);
 #if CUMP_USE_GCD_BLOCK_KERNEL
@@ -455,8 +444,8 @@ void GPU_gcd::QR_gcd_kernel_dispatch(unsigned *& mem_out,
         unsigned shm_size = (nthids + CacheLn + 8) *
                     x2thids * sizeof(unsigned);
 
-        CUMP_out2("\n********** PGCD_quad_kernel: #thids: %dx%d shm_size: "
-            "%.2f (kb)\n", threads.x, threads.y, ((float)shm_size/1024.0f));
+        CUMP_out2("\n********** PGCD_quad_kernel: gridx: %d; #thids: %dx%d shm_size: "
+            "%.2f (kb)\n", gridx, threads.x, threads.y, ((float)shm_size/1024.0f));
 
 //         printf("devR: %x\n", devIn);
             

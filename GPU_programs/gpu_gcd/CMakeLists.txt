@@ -9,24 +9,20 @@ project(gpu_gcd)
 
 set(CUMP_USE_32_BITS 0)
 
+set(CUDA_TOOLKIT_ROOT_DIR "$ENV{CUDA_TOOLKIT_ROOT_DIR}")
+
 if(CUMP_USE_32_BITS)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -m32")
+else()
 endif()
 
-set(CUDA_TOOLKIT_ROOT_DIR "$ENV{CUDA_TOOLKIT_ROOT_DIR}")
 set(COMMON_INC_DIR "$ENV{HOME}/work/GPU_programs/common")
 set(GPU_SYMB_DIR "$ENV{HOME}/work/GPU_programs/gpu_symbolic")
 
-
-#set(CUDA_SDK_ROOT_DIR "$ENV{HOME}/cuda/sdk/C")
-# set(CUDA_INCLUDE_DIRS "$ENV{HOME}/cuda/sdk/C/common/inc")
-
-# set(CMAKE_MODULE_PATH "$ENV{CMAKE_MODULE_PATH}")
+set(CUMP_COMPILE_LIBRARY 0))
 
 find_package(CUDA QUIET REQUIRED)
 find_package(CGAL QUIET COMPONENTS Core)
-
-# message(STATUS "bla bla ${CGAL_USE_FILE}")
 
 if(NOT CUMP_COMPILE_LIBRARY) 
 
@@ -41,7 +37,6 @@ endif()
 set(CMAKE_BUILD_TYPE Release)
 set(CUDA_ARCH_FLAG "sm_20")
 
-# --ptxas-options;--maxrregcount=128;
 # set(CUDA_NVCC_FLAGS "--compiler-options;-mtune=core2;-mfpmath=sse")
 set(CUDA_NVCC_FLAGS "--compiler-options;-fno-strict-aliasing;-arch;${CUDA_ARCH_FLAG};--ptxas-options;-v")
 
@@ -87,8 +82,7 @@ add_executable(gpu_gcd
 
 # set(CUDA_CUDART_LIBRARY "libcudart.so")
 
-target_link_libraries(gpu_gcd ${CGAL_LIBRARIES} ${CGAL_3RD_PARTY_LIBRARIES}
- ${CUDA_CUDART_LIBRARY} -lcuda)
+target_link_libraries(gpu_gcd ${CGAL_LIBRARIES} ${CGAL_3RD_PARTY_LIBRARIES} ${CUDA_CUDART_LIBRARY} -lcuda -lstdc++)
 
 endif()
 

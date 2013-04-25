@@ -52,7 +52,7 @@ __device__ void __gload_chunk(unsigned *L, const unsigned *g_In,
     }
 
     if((int)thid < (int)chunk_sz) {
-        L[thid] = g_In[(int)(chunk_ofs + thid)];
+        L[thid] = g_In[chunk_ofs + thid];
     }
 }
 
@@ -109,7 +109,7 @@ __global__ void mod_reduce_kernel(unsigned *g_Out, const unsigned *g_In,
     //! ATTENTION: thid-based offset !!
     ofs = UMUL(NTHIDS + UMUL_PAD, bidx_y) + thid;
     if(ofs < n_mods)
-        m = g_Mods[(int)ofs];
+        m = g_Mods[ofs];
     d = m*2, v = -d;
 
     uint64 xx = 0xffffffffffffffffULL;
@@ -117,6 +117,15 @@ __global__ void mod_reduce_kernel(unsigned *g_Out, const unsigned *g_In,
     v = (unsigned)yy;
 
     int i, j;
+#if 0
+    c = 0;
+    for(i = n_limbs - 1; i >= 0; i--) {
+        if(ofs < n_mods) {
+            uint64 xx = (((uint64)c) << 32) + g_In[i];
+            c = (unsigned)(xx % m);
+        }
+    }
+#else
     for(i = n_limbs - 1; i >= 0; i -= ChunkSz) {
 
         if(ofs < n_mods) // make sure we do not wait for "dummy" threads
@@ -133,10 +142,11 @@ __global__ void mod_reduce_kernel(unsigned *g_Out, const unsigned *g_In,
 
     if(c >= m)
         c -= m;
+#endif
     if((int)r[0] < 0)
         c = m - c;
     }
-
+       
 Lexit:
     const unsigned max_nu = dev_const_mem[MAX_NU],
         data_pad = dev_const_mem[DATA_PAD],

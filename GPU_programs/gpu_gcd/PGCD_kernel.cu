@@ -269,7 +269,9 @@ __device__ __forceinline__ void __pgcd_quad_internal(unsigned *L, unsigned *lcF,
         volatile fp_limb invm, volatile unsigned mx100) {
 
     unsigned j = 0;
+        
     while(1) {
+        
 
     CU_SYNC
 
@@ -339,7 +341,7 @@ __device__ __forceinline__ void __pgcd_quad_internal(unsigned *L, unsigned *lcF,
         if(thid < CacheLn) {
             j = 0;
             if((int)ofs >= 0)
-                j = f_in[(int)ofs];
+                j = f_in[ofs];
             cache[(int)(CacheLn - 1 - thid)] = j;
         }
         j = 0;
@@ -526,14 +528,14 @@ PGCD_quad_kernel(const unsigned *In0, unsigned *Out0) {
 //            e e 0 1 2 3 4 5 6 7 8 9
 //            x y z w x y z w x y z w
 
-    int ofs, t = ((nu + 4) & ~3) - ((nv + 4) & ~3);
+    unsigned ofs, t = ((nu + 4) & ~3) - ((nv + 4) & ~3);
 
     if(thid <= last_thid) {
         // data is aligned in such a way that g[nv] is loaded in G.w
         G = ((uint4 *)g_in)[thid];
         // data offset to make sure f[nu] is loaded in F.w last thread
         // provided that both arrays are properly aligned
-        F = ((uint4 *)(f_in + t))[thid];
+        F = ((uint4 *)(f_in + (int)t))[thid];
     }
     
     // there is no any global loop counter:
@@ -573,9 +575,9 @@ PGCD_quad_kernel(const unsigned *In0, unsigned *Out0) {
         t = 0;
         if((int)ofs >= 0)
             t = f_in[ofs];
-        cache[CacheLn - 1 - thid] = t;
+        cache[(int)(CacheLn - 1 - thid)] = t;
     }
-
+    
     __pgcd_quad_internal< true >(L, lcF, lcG, F, G, nu, nv, last_thid,
             cache, CacheLn, ofs, f_in, thid, m, invk, invm, mx100);
 
@@ -587,6 +589,8 @@ PGCD_quad_kernel(const unsigned *In0, unsigned *Out0) {
     }
     unsigned FIRST_THID = 0/*, CNT = 0*/;
 
+//     int STOP = 2000;
+//     int ccnt = 0;
     // <-- loop
     while(1) {
 
@@ -596,12 +600,9 @@ PGCD_quad_kernel(const unsigned *In0, unsigned *Out0) {
     //! at this point we have nu = nv - 1 => total of 'nv' elements in \c F
     __lcf_scan(L, lcF, F, nu, nv, last_thid, thid, FIRST_THID);
 
-//     if(CNT == 0) {
+//     ccnt++;
+    if(/*ccnt == STOP ||*/ (int)nu < 0) { // G contains gcd
 //         G = F;
-//         goto Lexit;
-//     }
-
-    if((int)nu < 0) { // G contains gcd
         goto Lexit;
     }
 
@@ -636,7 +637,8 @@ PGCD_quad_kernel(const unsigned *In0, unsigned *Out0) {
     CU_SYNC // sync because F.x is loaded from shared mem
     __lcf_scan(L, lcG, G, nv, nu, last_thid, thid, FIRST_THID);
 
-    if((int)nv < 0) { // F contains gcd
+//     ccnt++;
+    if(/*ccnt == STOP ||*/ (int)nv < 0) { // F contains gcd
         G = F; nv = nu;
         lcG = lcF;
         goto Lexit;
@@ -650,12 +652,6 @@ PGCD_quad_kernel(const unsigned *In0, unsigned *Out0) {
 
     __pgcd_quad_internal< false >(L, lcF, lcG, F, G, nu, nv, last_thid,
             cache, CacheLn, ofs, f_in, thid, m, invk, invm, mx100);
-
-//     CNT++;
-//     if(CNT == 1) {
-//         G = F;
-//         goto Lexit;
-//     }
 
     }
     // loop -->
@@ -672,6 +668,7 @@ Lexit:
         L[thid + 1] = lcG[0];
     }
 
+    
     while(t != 0) {
         CU_SYNC
 
@@ -691,17 +688,11 @@ Lexit:
 //     unsigned *Out0 = (unsigned *)dev_const_mem[DATA_OUT];
 
     if(thid == 0)
-        Out0[bidx_x] = nv + 1; // size of a gcd (not the degree!!)
+        Out0[bidx_x] = // (unsigned)(Out0 - Out0_);
+                nv + 1; // size of a gcd (not the degree!!)
 
-/*    if(thid == 0) {
-        G.x = t;  G.y = nv;
-    }*/
-
-//     G.x = dev_const_mem[NV];
-//     G.y = dev_const_mem[NU];
-//     G.z = last_thid;
     if(thid <= last_thid)
-        ((uint4 *)(Out0 + block_ofs))[(int)thid] = G;
+        ((uint4 *)(Out0 + block_ofs))[thid] = G;
 
 //     G.x = last_thid;  //G.y = nv;
 //     if(thid <= last_thid)
