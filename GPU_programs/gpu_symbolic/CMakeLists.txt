@@ -43,6 +43,9 @@ endif()
 find_package(CUDA QUIET REQUIRED)
 find_package(CGAL QUIET COMPONENTS Core)
 
+FIND_PACKAGE( Boost REQUIRED COMPONENTS thread )
+INCLUDE_DIRECTORIES( ${Boost_INCLUDE_DIR} )
+
 include("cgal_cmake_lib_defs")
 
 set(CMAKE_BUILD_TYPE Release)
@@ -74,11 +77,13 @@ include_directories( BEFORE ${COMMON_INC_DIR} ${COMMON_INC_DIR}/include ${GCD_DI
 cuda_compile(CUDA_FILES ${GCD_DIR}/gcd_algorithm_gpu.cu
     ${RES_DIR}/resultant_algorithm_gpu.cu device_manager.cu)
 
-add_library(gpu_symbolic_${SONAME} SHARED 
+cuda_add_library(gpu_symbolic_${SONAME} SHARED 
     ${CUDA_FILES}
     ${GCD_DIR}/gcd_algorithm_host.C
     ${RES_DIR}/resultant_algorithm_host.C
     ${COMMON_INC_DIR}/modular_arithm.C)
+
+TARGET_LINK_LIBRARIES(gpu_symbolic_${SONAME}  ${Boost_LIBRARIES} )
    
 #    target_link_libraries(gpu_gcd ${CGAL_LIBRARIES} ${CGAL_3RD_PARTY_LIBRARIES} ${CUDA_CUDART_LIBRARY} -L${CUDA_DRV_DIR} -lcuda -lstdc++ -L/opt/gcc-4.4.7/lib64)
 
