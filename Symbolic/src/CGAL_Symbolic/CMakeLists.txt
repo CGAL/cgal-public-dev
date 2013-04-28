@@ -20,7 +20,7 @@ set(CUDA_TOOLKIT_ROOT_DIR "$ENV{CUDA_TOOLKIT_ROOT_DIR}")
 
 find_package(CUDA QUIET)
 
-if ( CUDA_FOUND )
+if  ( CUDA_FOUND )
 
 # TODO TODO TODO: compile lib with debug support
 
