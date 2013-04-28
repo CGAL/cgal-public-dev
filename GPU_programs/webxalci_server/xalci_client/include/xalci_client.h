@@ -33,6 +33,8 @@
 #ifndef XALCI_CLIENT_H
 #define XALCI_CLIENT_H
 
+//! unique key in order to randomize IPC message queue ID
+#define WEBXALCI_UNIQUE_KEY  0xdeadbeef
 // a filename to be used to generate a unique IPC key
 #define KEY_FILENAME        "/etc/security/limits.conf" 
     //"/root/xalci/problem_curve.txt"

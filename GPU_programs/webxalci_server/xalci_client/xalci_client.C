@@ -294,7 +294,7 @@ bool CGI_Client::process(Request_type req, Rasterize_mode mode,
         server_id = 0;
     
     key_t key;
-    key = ftok(KEY_FILENAME, 'm') + server_id;
+    key = ftok(KEY_FILENAME, 'm') + server_id + WEBXALCI_UNIQUE_KEY;
     if((mq_id = msgget(key, IPC_CREAT|0666)) == -1) {
         err_msg("msgget");
         err_exit();

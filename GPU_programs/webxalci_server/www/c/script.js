@@ -70,30 +70,35 @@ function init_mini()
 // shows a menu with 'index' item selected and relative y-position: 'y_top'
 function show_menu(index, y_top)
 {
-    var ids = ["hp-home", "hp-gallery", "hp-renderer", "hp-feedback", 
-        "hp-usage"];
-    var paths = ["index.html", "gallery.html", "cgi-bin/xalci.cgi", 
-        "feedback.html", "usage.html"];
+    var ids = ["hp-home", "hp-curve-gallery", "hp-surf-gallery", "hp-xalci", "hp-xtri",
+        "hp-feedback", "hp-usage"];
+    var paths = ["index.html", "gallery.html", "webgl/surface_gallery.html", "cgi-bin/xalci.cgi", 
+        "webgl/", "feedback.html", "usage.html"];
 
     ids[index] = "hp-index";
-    //if(index > 3)
-      //  ids[3] = "hp-index";
     
     var rel = "../";
-    if(index == 2) {
-        paths[0] = rel + paths[0];
-        paths[1] = rel + paths[1];
-        paths[2] = "xalci.cgi";
-        paths[3] = rel + paths[3];
-        paths[4] = rel + paths[4];
+    if(index >= 2 && index <= 4) {
+        for(var i = 0; i < paths.length; i++) {
+            paths[i] = rel + paths[i];
+        }
+        
+        if(index == 2)
+           paths[2] = "#";
+        else if(index == 3)
+           paths[3] = "xalci.cgi";
+        else 
+           paths[4] = "#";
     }
 
     var text = '<div style="position: relative; top: '+y_top+'; width: 15em; z-index:4;"><div id="col1o2content"><ul class="linklist">' + 
-'<li><a href="'+paths[0]+'" accesskey="c" title="XAlci web-demo home" id="'+ids[0]+'"><span class="ak">H</span>ome</a></li>' +
-'<li><a href="'+paths[1]+'" accesskey="g" title="Gallery of implicit algebraic curves and their arrangements" id="'+ids[1]+'"><span class="ak">G</span>allery of algebraic curves</a></li>' +
-'<li><a href="'+paths[2]+'" accesskey="c" title="XAlci web-demo" id="'+ids[2]+'"><span class="ak">W</span>eb demo</a></li>' +
-'<li><a href="'+paths[3]+'" accesskey="s" title="Send us your anonynous comments and suggestions how to improve the program" id="'+ids[3]+'"><span class="ak">S</span>end feedback</a></li>' +
-'<li><a href="'+paths[4]+'" accesskey="a" title="Using the program" id="'+ids[4]+'"><span class="ak">U</span>sing the program</a></li>';
+'<li><a href="'+paths[0]+'" accesskey="h" title="XAlci web-demo home" id="'+ids[0]+'"><span class="ak">H</span>ome</a></li>' +
+'<li><a href="'+paths[1]+'" accesskey="c" title="Gallery of implicit algebraic curves and their arrangements" id="'+ids[1]+'">Gallery of algebraic <span class="ak">c</span>urves</a></li>' +
+'<li><a href="'+paths[2]+'" accesskey="s" title="Gallery of implicit algebraic surfaces" id="'+ids[2]+'">Gallery of algebraic <span class="ak">s</span>urfaces <span style="color: #FF2222;">(NEW!)</span></a></li>' +
+'<li><a href="'+paths[3]+'" accesskey="a" title="XAlci web-demo" id="'+ids[3]+'">X<span class="ak">A</span>lci web-demo</a></li>' +
+'<li><a href="'+paths[4]+'" accesskey="t" title="XTri web-demo" id="'+ids[4]+'">X<span class="ak">T</span>ri web-demo <span style="color: #FF2222;">(NEW!)</span> </a> </li>' +
+'<li><a href="'+paths[5]+'" accesskey="f" title="Send us your anonynous comments and suggestions how to improve the program" id="'+ids[5]+'">Send <span class="ak">f</span>eedback</a></li>' +
+'<li><a href="'+paths[6]+'" accesskey="u" title="Using the program" id="'+ids[6]+'"><span class="ak">U</span>sing the program</a></li>';
     
     /*if(index >= 3) // insert submenu
         text += '<ul style="list-style:none; margin-left:1.5em; padding-left:0;"><li><a href="'+paths[4]+'" accesskey="u" title="Using  interactive server" id="'+ids[4]+'"><span class="ak">U</span>sing interactive server</a></li>'+

@@ -153,11 +153,19 @@ void XAlci_server::setup(int w, int h)
     prasterizer->setup(w, h);
        
     key_t key;
-    key = ftok(KEY_FILENAME, 'm') + server_id;
-    if((mq_id = msgget(key, IPC_CREAT|0666)) == -1) {
+    key = ftok(KEY_FILENAME, 'm') + server_id + WEBXALCI_UNIQUE_KEY;
+    std::cout << "xalci key: " << key << "\n";
+
+    if((mq_id = msgget(key, IPC_CREAT|
+#if 0
+           IPC_EXCL|
+#endif
+            0666)) == -1) { 
+               
         err_msg("msgget");
         err_exit();
     }
+# if 1
     // remove an existing message queue to truncate its size
     if(msgctl(mq_id, IPC_RMID, NULL) == -1) {
         err_msg("msgctl");
@@ -168,6 +176,7 @@ void XAlci_server::setup(int w, int h)
         err_msg("msgget");
         err_exit();
     }
+#endif
     sem_init(&ipc_msg_sem, 0, 0);
     sem_init(&shadow_sem, 0, 0);
     

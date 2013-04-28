@@ -45,7 +45,7 @@
 #define CGAL_BISOLVE_VERBOSE 0
 
 #define CGAL_BISOLVE_USE_RS_AK 0
-#define CGAL_BISOLVE_USE_RS_ISOLATOR 0 // 1 is default
+#define CGAL_BISOLVE_USE_RS_ISOLATOR 1 // 1 is default
 
 #define CGAL_ACK_DEBUG_FLAG 0
 #define CGAL_ACK_DEBUG_PRINT std::cerr
@@ -109,10 +109,10 @@ typedef CGAL::CORE_arithmetic_kernel AT;
 #define CGAL_BIGCD_USE_SHIFT 0
 #define CGAL_BIGCD_CHECK_SANITY 0
 
-#define CGAL_BISOLVE_USE_GPU_RESULTANTS 0 // default?
+#define CGAL_BISOLVE_USE_GPU_RESULTANTS 1 // default?
 #define CGAL_BISOLVE_CHECK_GPU_RESULTANTS_SANITY 0 // default 0
 
-#define CGAL_BISOLVE_USE_GPU_GCDS 0  // default?
+#define CGAL_BISOLVE_USE_GPU_GCDS 1  // default?
 #define CGAL_BISOLVE_CHECK_GPU_GCDS_SANITY 0 // default 1
 
 #define CGAL_BISOLVE_USE_NTL  1 // default 1 ??
@@ -137,7 +137,7 @@ typedef CGAL::CORE_arithmetic_kernel AT;
 #include <CGAL/Algebraic_kernel_d_1_generator.h>
 #endif
 
-// #include <CGAL/Arcavoid_root_isolator.h>
+#include <CGAL/Arcavoid_root_isolator.h>
 
 
 #include <CGAL/Algebraic_kernel_d/Algebraic_real_quadratic_refinement_rep_bfi.h>
@@ -163,9 +163,9 @@ typedef AT::Integer Integer;
   typedef CGAL::Algebraic_kernel_d_1_generator< Integer, Rational >
     ::Algebraic_kernel_with_qir_and_rs_1 Internal_ak_1;
 
-    typedef CGAL::internal::Rounding_ak_d_1< Internal_ak_1 > AK_1;
 
-    
+typedef CGAL::internal::Rounding_ak_d_1< Internal_ak_1 > AK_1;
+
 #else
 #warning using bitstream root isolator !
     typedef CGAL::Algebraic_kernel_d_1
@@ -177,6 +177,8 @@ typedef AT::Integer Integer;
     > AK_1;
 #endif
 #endif // !CGAL_BISOLVE_USE_RS_AK
+
+//typedef CGAL::internal::Rounding_ak_d_1< Actual_algebraic_kernel_d_1 > AK_1;
 
 typedef CGAL::Algebraic_curve_kernel_2< AK_1 > Kernel_2;
 

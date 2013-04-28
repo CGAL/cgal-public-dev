@@ -35,6 +35,10 @@
 #define XALCI_IPC_H
 
 #define _THREAD_SAFE
+
+//! unique key in order to randomize IPC message queue ID
+#define WEBXALCI_UNIQUE_KEY  0xdeadbeef
+
 //! a filename to be used to generate unique IPC keys
 #define KEY_FILENAME        "/etc/security/limits.conf"
 
