@@ -53,21 +53,23 @@ if  ( CUDA_FOUND )
       # TODO EBEB Find GPU_LIB_DIR by FindGPUSYM (which would imply GPU_LIB_DIR to be set as env-variable)
       set(GPU_LIB_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
+      set(libEXT ${CMAKE_SHARED_LIBRARY_SUFFIX}) 
+
       if(CUDA_CHECK_EXITCODE LESS 20)
         if(CMAKE_SIZEOF_VOID_P EQUAL 8)
             cache_set(CGAL_Symbolic_3RD_PARTY_LIBRARIES  
-                 ${GPU_LIB_DIR}/libgpu_symbolic_sm_13_64.so  ${CUDA_LIBRARIES})
+                 ${GPU_LIB_DIR}/libgpu_symbolic_sm_13_64.${libEXT}  ${CUDA_LIBRARIES})
         else()
             cache_set(CGAL_Symbolic_3RD_PARTY_LIBRARIES  
-                 ${GPU_LIB_DIR}/libgpu_symbolic_sm_13_32.so  ${CUDA_LIBRARIES})  
+                 ${GPU_LIB_DIR}/libgpu_symbolic_sm_13_32.${libEXT}  ${CUDA_LIBRARIES})  
         endif()
       else()
         if(CMAKE_SIZEOF_VOID_P EQUAL 8)
             cache_set(CGAL_Symbolic_3RD_PARTY_LIBRARIES  
-                 ${GPU_LIB_DIR}/libgpu_symbolic_sm_20_64.so  ${CUDA_LIBRARIES})
+                 ${GPU_LIB_DIR}/libgpu_symbolic_sm_20_64.${libEXT}  ${CUDA_LIBRARIES})
         else()
             cache_set(CGAL_Symbolic_3RD_PARTY_LIBRARIES  
-                 ${GPU_LIB_DIR}/libgpu_symbolic_sm_20_32.so  ${CUDA_LIBRARIES})  
+                 ${GPU_LIB_DIR}/libgpu_symbolic_sm_20_32.${libEXT}  ${CUDA_LIBRARIES})  
         endif()
       endif()
 
@@ -128,7 +130,7 @@ add_dependencies( CGAL_Symbolic CGAL )
   
 set_target_properties(CGAL_Symbolic PROPERTIES VERSION "${CGAL_SOVERSION}" SOVERSION "${CGAL_SONAME_VERSION}")
   
-target_link_libraries( CGAL_Symbolic ${CGAL_LIBRARY} ${CGAL_3RD_PARTY_LIBRARIES} ${CGAL_Symbolic_3RD_PARTY_LIBRARIES} )
+target_link_libraries( CGAL_Symbolic ${CGAL_LIBRARY} ${CGAL_Core_LIBRARY} ${CGAL_3RD_PARTY_LIBRARIES} ${CGAL_Symbolic_3RD_PARTY_LIBRARIES} )
 
 # TODO what about the following lines? Other libs' CMakeLists.txt do
 # not contain these lined
