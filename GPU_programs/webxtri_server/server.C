@@ -574,7 +574,6 @@ int main(int argc, char *argv[])
         exit(0);
     }
 
-//     std::cout << "hello I am parent process: " << getpid() << "\n";
     int ret = 1, inst;
     for(inst = 1; inst < N_SERVER_INSTANCES; inst++) {
         ret = fork();
@@ -585,9 +584,9 @@ int main(int argc, char *argv[])
     if(ret == 0) {
         std::cout << "hello I am child process: " << getpid()
             << "; inst: " << inst << "\n";
-//         exit(0);
     } else
         inst = 0;
+    
     std::cout << "Parent process: " << getpid() << " continue.. " <<
          inst << "\n";
     

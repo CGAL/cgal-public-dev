@@ -33,8 +33,10 @@
 #ifndef XTRI_CLIENT_H
 #define XTRI_CLIENT_H
 
+//! unique key in order to randomize IPC message queue ID
+#define WEBXTI_UNIQUE_KEY  0
 // a filename to be used to generate a unique IPC key
-#define KEY_FILENAME        "/usr/include/stdio.h" 
+#define KEY_FILENAME        "/etc/security/time.conf"
     //"/root/xalci/problem_curve.txt"
    
 // CAUTION!!! this parameter must be changed very carefully

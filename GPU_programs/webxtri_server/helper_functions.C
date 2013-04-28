@@ -132,11 +132,19 @@ void thread_cleanup_handler_proxy(void *data)
 void XTri_server::setup() {
      
     key_t key;
-    key = ftok(KEY_FILENAME, 'm') + server_id;
-    if((mq_id = msgget(key, IPC_CREAT|0666)) == -1) {
+    key = ftok(KEY_FILENAME, 'm') + server_id + WEBXTI_UNIQUE_KEY;
+
+    std::cout << "server_id: " << server_id << "; key: " << key << "\n";	
+
+    if((mq_id = msgget(key, IPC_CREAT|
+#if 0
+	IPC_EXCL|
+#endif
+		0666)) == -1) {
         err_msg("msgget");
         err_exit();
     }
+#if 1
     // remove an existing message queue to truncate its size
     if(msgctl(mq_id, IPC_RMID, NULL) == -1) {
         err_msg("msgctl");
@@ -147,6 +155,7 @@ void XTri_server::setup() {
         err_msg("msgget");
         err_exit();
     }
+#endif
     sem_init(&ipc_msg_sem, 0, 0);
     sem_init(&shadow_sem, 0, 0);
     cancelled_id = 0;

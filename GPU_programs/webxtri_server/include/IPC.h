@@ -40,8 +40,13 @@
 #include <netdb.h>
 
 #define _THREAD_SAFE
+
+//! unique key in order to randomize IPC message queue ID
+#define WEBXTI_UNIQUE_KEY  0
+
 //! a filename to be used to generate unique IPC keys
-#define KEY_FILENAME        "/usr/include/stdio.h"
+#define KEY_FILENAME        "/etc/security/time.conf"
+
 
 // CAUTION!!! this parameter must be changed very carefully
 // taking into account maximal size of client-server messages
