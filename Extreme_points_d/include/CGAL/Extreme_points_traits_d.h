@@ -35,6 +35,7 @@ namespace CGAL {
 
 // this one is not really useful (except the Kernel just happens to fit in)
 // but the specialized versions are..
+<<<<<<< HEAD
 
 /// \ingroup PkgExtremePointsDTraits
 /*! 
@@ -55,6 +56,8 @@ namespace CGAL {
    \sa `CGAL::extreme_points_d`
    \sa `CGAL::Extreme_points_d<Traits>`
 */
+=======
+>>>>>>> 083c99a7011158ef80f4df95610a836bc65e27bd
 template <class P>
 class Extreme_points_traits_d {
     // example which would work for Point_d

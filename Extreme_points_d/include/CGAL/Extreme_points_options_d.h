@@ -24,6 +24,7 @@
 
 namespace CGAL {
 
+<<<<<<< HEAD
 /// \ingroup PkgExtremePointsDEnum
 /// This is an enumeration type used to specify an extreme point algorithm in `Extreme_points_options_d`.
 /// \sa `CGAL::Extreme_points_options_d`
@@ -55,10 +56,22 @@ private:
     Extreme_point_algorithm_d algo_;
     bool deletion_;
     //Extreme_point_algorithm_d last_used_algo_;
+=======
+enum Extreme_point_algorithm_d {
+    EP_CHOOSE_APPROPRIATE,
+    EP_SIMPLE,
+    EP_DULA_HELGASON
+};
+
+class Extreme_points_options_d {
+private:
+    Extreme_point_algorithm_d algo_;
+>>>>>>> 083c99a7011158ef80f4df95610a836bc65e27bd
     Quadratic_program_options qp_options_;
     
 public:
     // default constructor
+<<<<<<< HEAD
     /// Constructs an instance of `Extreme_points_options_d`. If `algo` is specified it is set as the chosen extreme point algorithm.
     Extreme_points_options_d(Extreme_point_algorithm_d algo = EP_CHOOSE_APPROPRIATE, bool deletion=false, 
                 Quadratic_program_options qp_options = Quadratic_program_options())
@@ -67,17 +80,29 @@ public:
     // set/get algorithm
     // ------------------------
     /// Returns the algorithm used for extreme point computations.
+=======
+    Extreme_points_options_d(Extreme_point_algorithm_d algo = EP_CHOOSE_APPROPRIATE,
+                Quadratic_program_options qp_options = Quadratic_program_options())
+      : algo_(algo), qp_options_(qp_options) {}
+    
+    // set/get algorithm
+    // ------------------------
+>>>>>>> 083c99a7011158ef80f4df95610a836bc65e27bd
     Extreme_point_algorithm_d get_algorithm() const
     {
         return algo_;
     }
     
+<<<<<<< HEAD
     /// Sets the algorithm used for extreme point computations to `algo`. For more information see `Extreme_point_algorithm_d`.
+=======
+>>>>>>> 083c99a7011158ef80f4df95610a836bc65e27bd
     void set_algorithm (Extreme_point_algorithm_d algo)
     {
         algo_ = algo;
     }
     
+<<<<<<< HEAD
     // set/get deletion
     // ------------------------
     /// Returns whether or not we are permitted to delete
@@ -93,6 +118,8 @@ public:
     }
     
     
+=======
+>>>>>>> 083c99a7011158ef80f4df95610a836bc65e27bd
     // set/get qp_options
     // ------------------------
     Quadratic_program_options get_qp_options() const
@@ -104,6 +131,7 @@ public:
     {
         qp_options_ = qp_options;
     }
+<<<<<<< HEAD
 /*
     Extreme_point_algorithm_d get_last_used_algorithm() const
     {
@@ -118,6 +146,9 @@ public:
 */
 };
 /// @}
+=======
+};
+>>>>>>> 083c99a7011158ef80f4df95610a836bc65e27bd
 
 
 } //namespace CGAL
