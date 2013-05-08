@@ -53,15 +53,16 @@ enum Extreme_point_algorithm_d {
 class Extreme_points_options_d {
 private:
     Extreme_point_algorithm_d algo_;
+    bool deletion_;
     //Extreme_point_algorithm_d last_used_algo_;
     Quadratic_program_options qp_options_;
     
 public:
     // default constructor
     /// Constructs an instance of `Extreme_points_options_d`. If `algo` is specified it is set as the chosen extreme point algorithm.
-    Extreme_points_options_d(Extreme_point_algorithm_d algo = EP_CHOOSE_APPROPRIATE,
+    Extreme_points_options_d(Extreme_point_algorithm_d algo = EP_CHOOSE_APPROPRIATE, bool deletion=false, 
                 Quadratic_program_options qp_options = Quadratic_program_options())
-      : algo_(algo), qp_options_(qp_options) {}
+      : algo_(algo), deletion_(deletion), qp_options_(qp_options) {}
     
     // set/get algorithm
     // ------------------------
@@ -76,6 +77,21 @@ public:
     {
         algo_ = algo;
     }
+    
+    // set/get deletion
+    // ------------------------
+    /// Returns whether or not we are permitted to delete
+    bool get_deletion() const
+    {
+        return deletion_;
+    }
+    
+    /// Sets whether or not we are permitted to delete
+    void set_deletion (bool deletion)
+    {
+        deletion_ = deletion;
+    }
+    
     
     // set/get qp_options
     // ------------------------

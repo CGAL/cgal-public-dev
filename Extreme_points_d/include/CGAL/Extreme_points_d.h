@@ -38,6 +38,8 @@
 #include <boost/function.hpp>
 #include <boost/iterator.hpp>
 
+#include <set>
+
 #ifdef CGAL_USE_GMP
 #include <CGAL/Gmpz.h>
 #include <CGAL/Gmpzf.h>
@@ -126,6 +128,7 @@ enum Extreme_point_classification {
 template <class Traits>
 class Extreme_points_d {
     public:
+        std::set<Point,Less_lexicographically> all_points;
         // types
         #ifdef DOXYGEN_RUNNING
           ///The type of the input points.
@@ -174,6 +177,7 @@ class Extreme_points_d {
         void clear() {
             new_points.clear();
             extreme_points.clear();
+            all_points.clear();
         }
 
         /// Adds the point `p` to the point set
@@ -186,7 +190,28 @@ class Extreme_points_d {
         /// Adds all the points from the range [`first`,`beyond`) to the point set
         template <typename InputIterator>
         void insert(InputIterator first, InputIterator beyond) {
-            while (first != beyond) insert(*first++);
+          while (first != beyond) insert(*first++);
+          if (ep_options_.get_deletion()) all_points(first, beyond);
+        }
+
+        void remove(const Point p) {
+          assert(ep_options_.get_deletion());
+          Extreme_point_classification del_point = classify(p);
+          if ((del_point == CGAL::EXTREME_POINT) || (del_point == CGAL::INTERNAL_POINT)) {
+            typename std::set<Point,Less_lexicographically>::iterator it = all_points.find(p);
+            //delete the point from all_points if it exists
+            if (it != all_points.end()) {
+              all_points.erase(it);
+              //if it's an extreme point then we have to recalculate
+              if (del_point == CGAL::EXTREME_POINT) {
+                new_points.clear();
+                extreme_points.clear();
+                //this should have no duplicates, maybe we can tell that to update so as not to uniquify it.
+                new_points.insert(new_points.begin(), all_points.begin(), all_points.end());
+                update();
+              }
+            }
+          }
         }
         
         /// Calculates the extreme points of the current point set. 
@@ -207,6 +232,7 @@ class Extreme_points_d {
                                                    bool is_input_point=false);
 };
 /// @}
+
 
 namespace internal {
     // calculates the inner product of a d-dimensional point
@@ -456,7 +482,7 @@ extreme_points_d_dula_helgason(InputIterator first, InputIterator beyond,
             QP_Solution s =
                 CGAL::internal::solve_convex_hull_containment_lp(
                     points[j], f.begin(), f.end(), ET(), ep_traits, qp_options);
-           
+
             if (s.is_infeasible()) {
                 // points[j] \notin conv(f)
                 
@@ -590,7 +616,7 @@ extreme_points_d_simple(InputIterator first, InputIterator beyond,
     // using LP
     for (int i=0;i<n;++i) {
         // test i-th point
-        std::swap(points[i],points[0]); // move point to test at postition 0
+        std::swap(points[i],points[0]); // move point to test at position 0
         
         if (!CGAL::internal::is_in_convex_hull(points[0],
                                                points.begin()+1,
