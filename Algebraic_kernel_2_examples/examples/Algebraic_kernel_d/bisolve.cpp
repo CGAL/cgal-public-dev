@@ -4,16 +4,6 @@
 #define CGAL_AK_D_SHOW_COMPILE_OPTIONS_AS_WARNING 0 // 0 is default
 #endif
 
-#ifndef CGAL_BISOLVE_USE_GPU_RESULTANTS
-#define CGAL_BISOLVE_USE_GPU_RESULTANTS 1 // default?
-#define CGAL_BISOLVE_CHECK_GPU_RESULTANTS_SANITY 0 // default 0
-#endif
-
-#ifndef CGAL_BISOLVE_USE_GPU_GCDS
-#define CGAL_BISOLVE_USE_GPU_GCDS 1  // default?
-#define CGAL_BISOLVE_CHECK_GPU_GCDS_SANITY 0 // default 1
-#endif
-
 #define CGAL_BISOLVE_ENABLE_ARCAVOID 0 // default TODO?
 #define CGAL_ACK_BITSTREAM_USES_E08_TREE 1 // do not change
 #define CGAL_BISOLVE_USE_ADJUSTABLE_PRECISION 1 // 1 is default
@@ -35,9 +25,28 @@
 #define CGAL_BISOLVE_USE_GMP 1
 #define CGAL_BISOLVE_USE_CORE 0
 
-#if CGAL_HAS_SYMBOLIC
-#include <CGAL/symbolic_exports.h>
+#ifndef CGAL_BISOLVE_USE_GPU_RESULTANTS
+#define CGAL_BISOLVE_USE_GPU_RESULTANTS 1 // default?
+#define CGAL_BISOLVE_CHECK_GPU_RESULTANTS_SANITY 0 // default 0
 #endif
+
+#ifndef CGAL_BISOLVE_USE_GPU_GCDS
+#define CGAL_BISOLVE_USE_GPU_GCDS 1  // default?
+#define CGAL_BISOLVE_CHECK_GPU_GCDS_SANITY 0 // default 1
+#endif
+
+#ifndef CGAL_BISOLVE_USE_BIGCD
+#define CGAL_BISOLVE_USE_BIGCD 1
+#define CGAL_BIGCD_USE_SHIFT 0
+#define CGAL_BIGCD_CHECK_SANITY 0
+#endif
+
+#ifndef CGAL_BISOLVE_USE_NTL
+#define CGAL_BISOLVE_USE_NTL  1 // default 1 ??
+#endif
+
+#include <CGAL/symbolic_standalone.h>
+
 
 #undef CGAL_BISOLVE_USE_NT
 
@@ -259,14 +268,6 @@ int c_status_lines_tes[3];
 
 long g_max_prec;
 
-// switch of modular arithmetic, it was not really
-// faster, and at least it is slower than ntl's modular gcd.
-//#define CGAL_MODULAR_FILTER_OFF     // do not use modular filter
-
-#if !CGAL_HAS_SYMBOLIC
-// else local speedups
-#include "symbolic_speedups.cpp"
-#endif
 
 #if CGAL_BISOLVE_USE_GMP
 #include <CGAL/GMP_arithmetic_kernel.h>
