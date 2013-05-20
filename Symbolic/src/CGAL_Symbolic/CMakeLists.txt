@@ -58,18 +58,18 @@ if  ( CUDA_FOUND )
       if(CUDA_CHECK_EXITCODE LESS 20)
         if(CMAKE_SIZEOF_VOID_P EQUAL 8)
             cache_set(CGAL_Symbolic_3RD_PARTY_LIBRARIES  
-                 ${GPU_LIB_DIR}/libgpu_symbolic_sm_13_64.${libEXT}  ${CUDA_LIBRARIES})
+                 ${GPU_LIB_DIR}/libgpu_symbolic_sm_13_64${libEXT}  ${CUDA_LIBRARIES})
         else()
             cache_set(CGAL_Symbolic_3RD_PARTY_LIBRARIES  
-                 ${GPU_LIB_DIR}/libgpu_symbolic_sm_13_32.${libEXT}  ${CUDA_LIBRARIES})  
+                 ${GPU_LIB_DIR}/libgpu_symbolic_sm_13_32${libEXT}  ${CUDA_LIBRARIES})  
         endif()
       else()
         if(CMAKE_SIZEOF_VOID_P EQUAL 8)
             cache_set(CGAL_Symbolic_3RD_PARTY_LIBRARIES  
-                 ${GPU_LIB_DIR}/libgpu_symbolic_sm_20_64.${libEXT}  ${CUDA_LIBRARIES})
+                 ${GPU_LIB_DIR}/libgpu_symbolic_sm_20_64${libEXT}  ${CUDA_LIBRARIES})
         else()
             cache_set(CGAL_Symbolic_3RD_PARTY_LIBRARIES  
-                 ${GPU_LIB_DIR}/libgpu_symbolic_sm_20_32.${libEXT}  ${CUDA_LIBRARIES})  
+                 ${GPU_LIB_DIR}/libgpu_symbolic_sm_20_32${libEXT}  ${CUDA_LIBRARIES})  
         endif()
       endif()
 
