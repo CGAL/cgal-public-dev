@@ -221,7 +221,7 @@ Poly gcd_gpu(const Poly& F_, const Poly& G_) {
     }
 
 #if CGAL_BISOLVE_CHECK_GPU_GCDS_SANITY
-//     printf("\nGGCD sanity check..\n");
+    //printf("\nGGCD sanity check..\n");
     Poly truth = gcd_NTL(F_, G_);
 
     if(truth != ggcd) {
