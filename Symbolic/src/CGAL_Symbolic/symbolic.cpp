@@ -57,7 +57,8 @@ inline Coeff resultant_cpu(
 
 template < class Coeff >
 inline Coeff resultant_gpu(const CGAL::Polynomial<Coeff>& F_,
-                           const CGAL::Polynomial<Coeff>& G_) {
+                           const CGAL::Polynomial<Coeff>& G_,
+                            bool zero_when_failed = false) {
 
     if(F_.degree() < 5 && G_.degree() < 5)
         return resultant_cpu(F_,G_);
@@ -66,9 +67,10 @@ inline Coeff resultant_gpu(const CGAL::Polynomial<Coeff>& F_,
     Coeff res = GPU_algorithm_facade::resultant(F_,G_, &failed);
 
     if(failed) {
-/*        writeout(F_,G_);
-        throw "WTF!?";*/
-        std::cout << "\nGRES failed!!\n";
+        if(zero_when_failed)
+            return Coeff(0);
+
+	std::cout << "\nGRES failed!!\n";
         return resultant_cpu(F_,G_);
     }
 
@@ -81,7 +83,7 @@ inline Coeff resultant_gpu(const CGAL::Polynomial<Coeff>& F_,
     if(check != truth) {
         std::cout << "\nWrong GRES:\n" << check << "\n" <<
             truth << "\n";
-//         writeout(F_, G_);
+	writeout(F_, G_);
         throw "WTF!?";
     }
 #endif
