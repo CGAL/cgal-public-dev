@@ -74,12 +74,12 @@ void test(EP_d ep, EP_d ep2) {
         
         for (std::vector<Point_d>::iterator it=points.begin();it!=points.begin()+(i+1)*k;it++) {
             if (xp.find(*it)!=xp.end()) { // extreme point
-                assert(ep.classify(*it,true)==CGAL::EXTREME_POINT);
-                assert(ep.classify(*it)==CGAL::EXTREME_POINT);
+                assert(ep.classify(*it,true)==CGAL::ON_BOUNDARY);
+                assert(ep.classify(*it)==CGAL::ON_BOUNDARY);
             } else {
                 // internal point
-                assert(ep.classify(*it,true)==CGAL::INTERNAL_POINT);
-                assert(ep.classify(*it)==CGAL::INTERNAL_POINT);
+                assert(ep.classify(*it,true)==CGAL::ON_UNBOUNDED_SIDE);
+                assert(ep.classify(*it)==CGAL::ON_UNBOUNDED_SIDE);
             }
         }
     }
@@ -117,12 +117,12 @@ void test(EP_d ep, EP_d ep2) {
         
         for (std::vector<Point_d>::iterator it=points.begin();it!=points.begin()+(i+1)*k;it++) {
             if (xp.find(*it)!=xp.end()) { // extreme point
-                assert(ep2.classify(*it,true)==CGAL::EXTREME_POINT);
-                assert(ep2.classify(*it)==CGAL::EXTREME_POINT);
+                assert(ep2.classify(*it,true)==CGAL::ON_BOUNDARY);
+                assert(ep2.classify(*it)==CGAL::ON_BOUNDARY);
             } else {
                 // internal point
-                assert(ep2.classify(*it,true)==CGAL::INTERNAL_POINT);
-                assert(ep2.classify(*it)==CGAL::INTERNAL_POINT);
+                assert(ep2.classify(*it,true)==CGAL::ON_UNBOUNDED_SIDE);
+                assert(ep2.classify(*it)==CGAL::ON_UNBOUNDED_SIDE);
             }
         }
     }

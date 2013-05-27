@@ -33,16 +33,14 @@
 #include <CGAL/Kernel_traits.h>
 #include <CGAL/Extreme_points_traits_d.h>
 #include <CGAL/Extreme_points_options_d.h>
+#include <CGAL/enum.h>
 
 #include <boost/functional.hpp>
 #include <boost/function.hpp>
 #include <boost/iterator.hpp>
 
-<<<<<<< HEAD
 #include <set>
 
-=======
->>>>>>> 083c99a7011158ef80f4df95610a836bc65e27bd
 #ifdef CGAL_USE_GMP
 #include <CGAL/Gmpz.h>
 #include <CGAL/Gmpzf.h>
@@ -82,11 +80,7 @@ namespace internal {
 //         make sure the chosen exact type is also compliant with T
         typedef typename Coercion_traits<T,ET>::Type Type;
     };
-<<<<<<< HEAD
 } // namespace internal
-=======
-}
->>>>>>> 083c99a7011158ef80f4df95610a836bc65e27bd
 
 template <class InputIterator, class OutputIterator>
 OutputIterator
@@ -98,19 +92,23 @@ OutputIterator
 extreme_points_d_simple(InputIterator first, InputIterator beyond,
                                 OutputIterator  result);
 
-<<<<<<< HEAD
 /// \ingroup PkgExtremePointsDEnum
 /** Enum to classify a query point in relation to the convex hull of some point set. 
   * Note that internal points can also be located at the boundary of the convex hull.
   *
   **/
-enum Extreme_point_classification {
+#ifdef DOXYGEN_RUNNING
+enum Bounded_side { //Extreme_point_classification {
   /// Query point inside the convex hull
-  INTERNAL_POINT=-1, 
+  //INTERNAL_POINT=-1, 
+  ON_UNBOUNDED_SIDE,
   /// Query point is an extreme point
-  EXTREME_POINT=0,
+  //EXTREME_POINT=0,
+  ON_BOUNDARY,
   /// Query point completely outside the convex hull
-  EXTERNAL_POINT=1 };
+  //EXTERNAL_POINT=1 };
+  ON_BOUNDED_SIDE };
+#endif
 
 /// \ingroup PkgExtremePointsDClasses
 /// @{
@@ -136,7 +134,6 @@ enum Extreme_point_classification {
 template <class Traits>
 class Extreme_points_d {
     public:
-        std::set<Point,Less_lexicographically> all_points;
         // types
         #ifdef DOXYGEN_RUNNING
           ///The type of the input points.
@@ -150,18 +147,7 @@ class Extreme_points_d {
           typedef typename Traits::Less_lexicographically         Less_lexicographically;
           typedef typename Traits::RT                             RT;
         #endif
-=======
-enum Extreme_point_classification {INTERNAL_POINT=-1, EXTREME_POINT=0,
-                                   EXTERNAL_POINT=1 };
-
-template <class Traits>
-class Extreme_points_d {
-    public:
-        // types
-        typedef typename Traits::Point                          Point;
-        typedef typename Traits::Less_lexicographically         Less_lexicographically;
-        typedef typename Traits::RT                             RT;
->>>>>>> 083c99a7011158ef80f4df95610a836bc65e27bd
+        std::set<Point,Less_lexicographically> all_points;
 
     private:
         // the exact type which is used in the QP-Solver
@@ -182,7 +168,6 @@ class Extreme_points_d {
         void update();
         
     public:
-<<<<<<< HEAD
         /// Constructor for extreme points computations in `d` dimensions. The optional argument 
         /// `ep_options` can be used to set some options (see `Extreme_points_options_d`).
         Extreme_points_d(int d, Extreme_points_options_d ep_options = 
@@ -211,20 +196,27 @@ class Extreme_points_d {
         /// Adds all the points from the range [`first`,`beyond`) to the point set
         template <typename InputIterator>
         void insert(InputIterator first, InputIterator beyond) {
-          while (first != beyond) insert(*first++);
-          if (ep_options_.get_deletion()) all_points(first, beyond);
+          for (InputIterator it = first; it != beyond; it++)
+            insert(*it);
+          //std::cout << ep_options_.get_deletion() << std::endl;
+          if (ep_options_.get_deletion()) {
+            all_points.insert(first,beyond);
+          }
         }
 
         void remove(const Point p) {
           assert(ep_options_.get_deletion());
-          Extreme_point_classification del_point = classify(p);
-          if ((del_point == CGAL::EXTREME_POINT) || (del_point == CGAL::INTERNAL_POINT)) {
+          //Extreme_point_classification del_point = classify(p);
+          Bounded_side del_point = classify(p);
+          //if ((del_point == CGAL::EXTREME_POINT) || (del_point == CGAL::INTERNAL_POINT)) {
+          if ((del_point == CGAL::ON_BOUNDARY) || (del_point == CGAL::ON_UNBOUNDED_SIDE)) {
             typename std::set<Point,Less_lexicographically>::iterator it = all_points.find(p);
             //delete the point from all_points if it exists
             if (it != all_points.end()) {
               all_points.erase(it);
               //if it's an extreme point then we have to recalculate
-              if (del_point == CGAL::EXTREME_POINT) {
+              //if (del_point == CGAL::EXTREME_POINT) {
+              if (del_point == CGAL::ON_BOUNDARY) {
                 new_points.clear();
                 extreme_points.clear();
                 //this should have no duplicates, maybe we can tell that to update so as not to uniquify it.
@@ -238,33 +230,6 @@ class Extreme_points_d {
         /// Calculates the extreme points of the current point set. 
         /// The resulting sequence of extreme points is placed starting at position `result`, 
         ///and the past-the-end iterator for the resulting sequence is returned.
-=======
-        Extreme_points_d(int d, Extreme_points_options_d ep_options = 
-                                Extreme_points_options_d())
-            : dim(d), ep_options_(ep_options) {}
-        
-        int dimension() {
-            return dim;
-        }
-        
-        void clear() {
-            new_points.clear();
-            extreme_points.clear();
-        }
-        
-        void insert(const Point x) {
-            CGAL_precondition_msg(x.dimension() == dim,
-                                  "Invalid dimension of inserted point.");
-            new_points.push_back(x);
-        }
-        
-        template <typename InputIterator>
-        void insert(InputIterator first, InputIterator beyond) {
-            while (first != beyond) insert(*first++);
-        }
-        
-        // generates the extreme points of the given point set
->>>>>>> 083c99a7011158ef80f4df95610a836bc65e27bd
         template <class OutputIterator>
         OutputIterator
         get_extreme_points(OutputIterator  result) {
@@ -273,23 +238,15 @@ class Extreme_points_d {
                              result);
         }
         
-<<<<<<< HEAD
         /// Classifies point `p` relative to the convex hull of the current point set. 
         /// If `p` is an input point the argument `is_input_point` may be set to true which speeds up the query.
         /// \pre `p` is an input point or `is_input_point == false`.
-        enum Extreme_point_classification classify(Point p,
+        //enum Extreme_point_classification classify(Point p,
+        enum Bounded_side classify(Point p,
                                                    bool is_input_point=false);
 };
 /// @}
 
-=======
-        // classifies the given point as internal, extreme or external point
-        // if is_input_point is set, p is assumed to be either an
-        // extreme point or an internal point
-        enum Extreme_point_classification classify(Point p,
-                                                   bool is_input_point=false);
-};
->>>>>>> 083c99a7011158ef80f4df95610a836bc65e27bd
 
 namespace internal {
     // calculates the inner product of a d-dimensional point
@@ -378,18 +335,11 @@ void Extreme_points_d<Traits>::update() {
             // a big extreme point ratio in which case the simple algorithm 
             // performs slightly better
             
-<<<<<<< HEAD
             if (4 * new_points.size() < extreme_points.size()) {
                 algo=EP_SIMPLE;
             } else {
                 algo=EP_DULA_HELGASON;
             }
-=======
-            if (4 * new_points.size() < extreme_points.size())
-                algo=EP_SIMPLE;
-            else
-                algo=EP_DULA_HELGASON;
->>>>>>> 083c99a7011158ef80f4df95610a836bc65e27bd
         }
         
         
@@ -404,19 +354,12 @@ void Extreme_points_d<Traits>::update() {
         // run the frame algorithm
         switch (algo) {
             case EP_SIMPLE:
-<<<<<<< HEAD
                 extreme_points_d_simple(new_points.begin(), new_points.end(),
                                                std::back_inserter(extreme_points),
                                                Traits(),
                                                ep_options_.get_qp_options() );
                 
                 //ep_options_.set_last_used_algorithm(EP_SIMPLE);
-=======
-                extreme_points_d_dula_helgason(new_points.begin(), new_points.end(),
-                                               std::back_inserter(extreme_points),
-                                               Traits(),
-                                               ep_options_.get_qp_options() );
->>>>>>> 083c99a7011158ef80f4df95610a836bc65e27bd
                 break;
             case EP_DULA_HELGASON:
             default:
@@ -424,10 +367,7 @@ void Extreme_points_d<Traits>::update() {
                                                std::back_inserter(extreme_points),
                                                Traits(),
                                                ep_options_.get_qp_options() );
-<<<<<<< HEAD
                 //ep_options_.set_last_used_algorithm(EP_DULA_HELGASON);
-=======
->>>>>>> 083c99a7011158ef80f4df95610a836bc65e27bd
                 break;
                 
         };
@@ -441,19 +381,18 @@ void Extreme_points_d<Traits>::update() {
     }
 }
 
-<<<<<<< HEAD
 
-=======
->>>>>>> 083c99a7011158ef80f4df95610a836bc65e27bd
 template <class Traits>
-enum Extreme_point_classification
+//enum Extreme_point_classification
+enum Bounded_side
 Extreme_points_d<Traits>::classify(Point p, bool is_input_point) {
     update();
     
     if  (std::binary_search(extreme_points.begin(),extreme_points.end(),p,
                             Less_lexicographically())) {
         // p is an extreme point
-        return EXTREME_POINT;
+        //return EXTREME_POINT;
+        return ON_BOUNDARY;
     } else if (is_input_point || 
                CGAL::internal::is_in_convex_hull(p,
                                                  extreme_points.begin(),
@@ -462,18 +401,16 @@ Extreme_points_d<Traits>::classify(Point p, bool is_input_point) {
                                                  Traits(),
                                                  ep_options_.get_qp_options())) {
         // p is an internal point
-        return INTERNAL_POINT;
+        //return INTERNAL_POINT;
+        return ON_UNBOUNDED_SIDE;
     } else {
         // p is some external point
-        return EXTERNAL_POINT;
+        //return EXTERNAL_POINT;
+        return ON_BOUNDED_SIDE;
     }
 }
 
-<<<<<<< HEAD
 /*
-=======
-/**
->>>>>>> 083c99a7011158ef80f4df95610a836bc65e27bd
 Algorithm by Dulá and Helgason from "A new procedure for identifying the frame
 of the convex hull of a finite collection of points in multidimensional space",
 1996 
@@ -487,7 +424,6 @@ as we don't assume the input data to be in general position:
 not in the convex hull of the frame elements found so far we consider
 lexicographical ordering in case multiple points have the same scalar
 product
-<<<<<<< HEAD
 */
 
 /// \ingroup PkgExtremePointsDGlobal
@@ -515,9 +451,6 @@ product
    \ref Extreme_points_d/extreme_points_d_dula_helgason.cpp
   
 */
-=======
-**/
->>>>>>> 083c99a7011158ef80f4df95610a836bc65e27bd
 template <class InputIterator, class OutputIterator, class Traits>
 OutputIterator
 extreme_points_d_dula_helgason(InputIterator first, InputIterator beyond,
@@ -567,11 +500,7 @@ extreme_points_d_dula_helgason(InputIterator first, InputIterator beyond,
             QP_Solution s =
                 CGAL::internal::solve_convex_hull_containment_lp(
                     points[j], f.begin(), f.end(), ET(), ep_traits, qp_options);
-<<<<<<< HEAD
 
-=======
-            
->>>>>>> 083c99a7011158ef80f4df95610a836bc65e27bd
             if (s.is_infeasible()) {
                 // points[j] \notin conv(f)
                 
@@ -632,7 +561,6 @@ extreme_points_d_dula_helgason(InputIterator first, InputIterator beyond,
     return extreme_points_d_dula_helgason(first, beyond, result, Traits());
 }
 
-<<<<<<< HEAD
 /// \ingroup PkgExtremePointsDGlobal
 /*!
    The function `extreme_points_d_simple` computes the extreme points of the given set of input points.
@@ -663,11 +591,6 @@ extreme_points_d_dula_helgason(InputIterator first, InputIterator beyond,
   
    \ref Extreme_points_d/extreme_points_d_dula_helgason.cpp
 */
-=======
-// generates the extreme points of the given point set
-// simple (naive) algorithm
-// no general position assumptions
->>>>>>> 083c99a7011158ef80f4df95610a836bc65e27bd
 template <class InputIterator, class OutputIterator, class Traits>
 OutputIterator
 extreme_points_d_simple(InputIterator first, InputIterator beyond,
@@ -711,11 +634,7 @@ extreme_points_d_simple(InputIterator first, InputIterator beyond,
     // using LP
     for (int i=0;i<n;++i) {
         // test i-th point
-<<<<<<< HEAD
         std::swap(points[i],points[0]); // move point to test at position 0
-=======
-        std::swap(points[i],points[0]); // move point to test at postition 0
->>>>>>> 083c99a7011158ef80f4df95610a836bc65e27bd
         
         if (!CGAL::internal::is_in_convex_hull(points[0],
                                                points.begin()+1,
@@ -740,7 +659,6 @@ extreme_points_d_simple(InputIterator first, InputIterator beyond,
     return extreme_points_d_simple(first, beyond, result, Traits());
 }
 
-<<<<<<< HEAD
 /// \ingroup PkgExtremePointsDGlobal
 /*! 
    The function `extreme_points_d` computes the extreme points of the given set of input points.
@@ -768,8 +686,6 @@ extreme_points_d_simple(InputIterator first, InputIterator beyond,
 
    \ref Extreme_points_d/extreme_points_d_dula_helgason.cpp
 */
-=======
->>>>>>> 083c99a7011158ef80f4df95610a836bc65e27bd
 template <class InputIterator, class OutputIterator, class Traits>
 OutputIterator
 extreme_points_d(InputIterator first, InputIterator beyond,
