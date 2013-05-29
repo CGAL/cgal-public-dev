@@ -18,7 +18,7 @@ while (<>) {
 
   my($old,$new,$ref) = ($1,$2,$3);
 
-  next unless $ref =~ /^(master|maint|integration|hooks-on-server|hooks-for-clients)$/;
+  next unless $ref =~ /^(master|maint|integration|hooks-on-server|hooks-for-clients|git)$/;
 
   die "$0: deleting of branch '$ref' is not permitted!\n"
     if $new =~ /^0+$/;
