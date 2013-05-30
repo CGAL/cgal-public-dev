@@ -1,0 +1,10 @@
+#!/bin/bash
+PWD=$(pwd)
+if [ "${PWD:9}" = "cgal.git" ];
+then
+  branch=$(git rev-parse --symbolic --abbrev-ref $1)
+  if [ "${branch}" = "master" ];
+  then
+    git push gsoc master
+  fi
+fi
