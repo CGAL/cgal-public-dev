@@ -2,10 +2,10 @@
 ignore_merge: false
 
 # Optional parameter for the subject-line of the mail
-emailprefix: [cgal.git]
+emailprefix:
 
 # Set limit on maximum number of lines per file diff
-lines_per_diff: 1500
+lines_per_diff: 5000
 
 # Show file list only when too many files
 too_many_files: 500
@@ -43,7 +43,7 @@ show_summary: true
 # The default subject template varies a little depending on whether
 # or not group_email_by_push is set.
 #
-subject: "[${prefix}] ${branch_name}] ${commit_count_phrase2}${message}"
+subject: "[${repo_name}] ${commit_count_phrase} on '${branch_name}'"
 #subject: "[${prefix}${slash_branch_name}][${commit_number}] ${message}"
 
 # defines what branches to email for (defaults to all)
@@ -205,7 +205,7 @@ unique_commits_per_branch: false
 # Skip commits older than N days
 #skip_commits_older_than: 7
 
-show_master_branch_name: false
+show_master_branch_name: true
 
 # ignore whitespace?
 #  all: ignore all whitespace (same as true)
