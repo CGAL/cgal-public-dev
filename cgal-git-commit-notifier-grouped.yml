@@ -43,7 +43,7 @@ show_summary: true
 # The default subject template varies a little depending on whether
 # or not group_email_by_push is set.
 #
-subject: "[${repo_name}] ${commit_count_phrase} on '${branch_name}'"
+subject: "${repo_name} ${commit_count_phrase} on '${branch_name}'"
 #subject: "[${prefix}${slash_branch_name}][${commit_number}] ${message}"
 
 # defines what branches to email for (defaults to all)
