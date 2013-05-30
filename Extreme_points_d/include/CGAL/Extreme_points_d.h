@@ -204,18 +204,20 @@ class Extreme_points_d {
           }
         }
 
-        void remove(const Point p) {
+        /// Removes Point p from the input set, if it's allowed
+        /// from the options. It automatically recalculates the 
+        /// extreme points if needed. This is not fast but provided
+        /// nonetheless for convenience.
+        void remove(const Point p, bool is_input_point=false) {
           assert(ep_options_.get_deletion());
           //Extreme_point_classification del_point = classify(p);
-          Bounded_side del_point = classify(p);
-          //if ((del_point == CGAL::EXTREME_POINT) || (del_point == CGAL::INTERNAL_POINT)) {
+          Bounded_side del_point = classify(p,is_input_point);
           if ((del_point == CGAL::ON_BOUNDARY) || (del_point == CGAL::ON_UNBOUNDED_SIDE)) {
             typename std::set<Point,Less_lexicographically>::iterator it = all_points.find(p);
             //delete the point from all_points if it exists
             if (it != all_points.end()) {
               all_points.erase(it);
               //if it's an extreme point then we have to recalculate
-              //if (del_point == CGAL::EXTREME_POINT) {
               if (del_point == CGAL::ON_BOUNDARY) {
                 new_points.clear();
                 extreme_points.clear();
@@ -226,6 +228,41 @@ class Extreme_points_d {
             }
           }
         }
+        
+        /// Removes a range of points from the input set, if it's allowed
+        /// from the options. It automatically recalculates the 
+        /// extreme points if needed.
+        /*template <typename InputIterator>
+        void remove(InputIterator first, InputIterator beyond) {
+          assert(ep_options_.get_deletion());
+
+          bool recalc = false;
+          typename std::set<Point,Less_lexicographically>::iterator it;
+          while (first != beyond) {
+            std::cout << "IN" << std::endl;
+            Bounded_side del_point = classify(*first);
+            if ((del_point == CGAL::ON_BOUNDARY) || (del_point == CGAL::ON_UNBOUNDED_SIDE)) {
+              it = all_points.find(*first);
+              //delete the point from all_points if it exists
+              if (it != all_points.end()) {
+                all_points.erase(it);
+                //if it's an extreme point then we have to recalculate
+                if (del_point == CGAL::ON_BOUNDARY) {
+                  recalc=true;
+                }
+              }
+            }
+            first++;
+          }
+          if (recalc) {
+            new_points.clear();
+            extreme_points.clear();
+            //this should have no duplicates, maybe we can tell that to update so as not to uniquify it.
+            new_points.insert(new_points.begin(), all_points.begin(), all_points.end());
+            update();
+          }
+        }*/
+        
         
         /// Calculates the extreme points of the current point set. 
         /// The resulting sequence of extreme points is placed starting at position `result`, 

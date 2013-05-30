@@ -15,7 +15,9 @@ int main() {
     const int N = 100;     // number of points for every batch
     const int BATCHES = 3; // number of batches
     
-    CGAL::Extreme_points_d<EP_Traits_d> ep(D);
+    CGAL::Extreme_points_options_d op;
+    op.set_deletion(true);
+    CGAL::Extreme_points_d<EP_Traits_d> ep(D,op);
     
     // Generator for D-dimensional points with coordinates
     // in the range [-10, 10]
@@ -47,7 +49,7 @@ int main() {
         
         // we can use classify to see whether
         // some specific point was extreme
-        if (ep.classify(points[0], true) == CGAL::EXTREME_POINT) {
+        if (ep.classify(points[0], true) == CGAL::ON_BOUNDARY) {
             std::cout<<"The point \""<<points[0]
                      <<"\" is an extreme point."<<std::endl;
         } else {
@@ -58,17 +60,17 @@ int main() {
         // we can also classify some other random point
         Point_d p = *gen++;
         switch (ep.classify(p)) {
-            case CGAL::INTERNAL_POINT:
+            case CGAL::ON_UNBOUNDED_SIDE:
                 std::cout<<"The point \""<<p<<"\" is inside the "
                          <<"convex hull of the current point set "
                          <<"(but not an extreme point)."<<std::endl;
                 break;
-            case CGAL::EXTREME_POINT:
+            case CGAL::ON_BOUNDARY:
                 // the chance that this happens is practically zero..
                 std::cout<<"The point \""<<p<<"\" is an extreme point "
                          <<"of the current point set."<<std::endl;
                 break;
-            case CGAL::EXTERNAL_POINT:
+            case CGAL::ON_BOUNDED_SIDE:
                 std::cout<<"The point \""<<p<<"\" is outside the "
                          <<"convex hull of the current point set."
                          <<std::endl;
@@ -79,6 +81,9 @@ int main() {
                 assert(0);
         }
 	std::cout<<std::endl;
+
+        //delete a point
+        ep.remove(*points.begin());
     }
     
     return 0;

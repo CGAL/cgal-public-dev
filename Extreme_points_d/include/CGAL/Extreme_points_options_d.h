@@ -43,9 +43,6 @@ enum Extreme_point_algorithm_d {
 /// @{
 /*! 
    The class `Extreme_points_options_d` is used for passing options to the class `Extreme_points_d<Traits>`.
-   Currently the only option is which algorithm is chosen for the extreme point computations.
-
-   Some more options can be added in the future.
 
    \sa `CGAL::Extreme_points_d<Traits>`
    \sa `CGAL::Extreme_point_algorithm_d`
@@ -80,26 +77,27 @@ public:
     
     // set/get deletion
     // ------------------------
-    /// Returns whether or not we are permitted to delete
+    /// Returns whether or not deletion is permitted
     bool get_deletion() const
     {
         return deletion_;
     }
     
-    /// Sets whether or not we are permitted to delete
+    /// Sets whether or not deletion is permitted
     void set_deletion (bool deletion)
     {
         deletion_ = deletion;
     }
     
-    
     // set/get qp_options
     // ------------------------
+    /// Future option
     Quadratic_program_options get_qp_options() const
     {
         return qp_options_;
     }
     
+    /// Future option
     void set_qp_options (Quadratic_program_options qp_options)
     {
         qp_options_ = qp_options;
