@@ -3,8 +3,8 @@ PWD=$(pwd)
 if [ "${PWD:9}" = "cgal.git" ];
 then
   branch=$(git rev-parse --symbolic --abbrev-ref $1)
-  if [ "${branch}" = "master" ];
+  if [ "${branch}" = "master" -o "${branch}" = "hooks-for-client" -o "${branch}" = "hooks-on-server" ];
   then
-    git push gsoc master
+    git push gsoc $branch 
   fi
 fi
