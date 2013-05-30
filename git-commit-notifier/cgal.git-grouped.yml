@@ -48,7 +48,7 @@ subject: "${repo_name} ${commit_count_phrase} on '${branch_name}'"
 
 # defines what branches to email for (defaults to all)
 # include_branches: ['master', 'some_other_branch']
-#include_branches: 'master, integration'
+include_branches: 'master, integration'
 # include_branches:
 #   - master
 #   - some_other_branch
