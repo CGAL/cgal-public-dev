@@ -1,4 +1,4 @@
-// Copyright (c) 2006-2009 Max-Planck-Institute Saarbruecken (Germany).
+// Copyright (c) 2006, 2007, 2008, 2009, 2012 Max-Planck-Institute Saarbruecken (Germany).
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org); you can redistribute it and/or
@@ -17,7 +17,7 @@
 // 
 //
 // Author(s)     : Pavel Emeliyanenko <asm@mpi-sb.mpg.de>
-//
+//                 Eric Berberich <eric.berberich@cgal.org>
 // ============================================================================
 
 #ifndef CGAL_ALGEBRAIC_CURVE_KERNEL_STATUS_LINE_CPA_1_H
@@ -232,15 +232,9 @@ public:
         // unless x-coordiate was explicitly set with _set_x: compute its value
         if(!this->ptr()->_m_x) {
             this->ptr()->_m_x = (is_event() ?
-#if CGAL_ACK_USE_EXACUS
-                this->ptr()->_m_cpa._internal_curve_pair().event_x(index()) :
-                Algebraic_real_1(this->ptr()->_m_cpa._internal_curve_pair().
-                               bound_value_in_interval(index())));
-#else   
                 this->ptr()->_m_cpa.event_x(index()) :
                 Algebraic_real_1(this->ptr()->_m_cpa.
                     bound_value_in_interval(index())));
-#endif
         }
         return *(this->ptr()->_m_x);
     }
@@ -491,3 +485,4 @@ std::ostream& operator<< (std::ostream& os,
 } //namespace CGAL
 
 #endif // CGAL_ALGEBRAIC_CURVE_KERNEL_STATUS_LINE_CPA_1_H
+// EOF

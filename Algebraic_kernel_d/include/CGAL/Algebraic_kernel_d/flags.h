@@ -1,4 +1,4 @@
-// Copyright (c) 2006-2009 Max-Planck-Institute Saarbruecken (Germany).
+// Copyright (c) 2006-2011 Max-Planck-Institute Saarbruecken (Germany).
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org); you can redistribute it and/or
@@ -25,14 +25,18 @@
 #ifndef CGAL_ACK_FLAGS_H
 #define CGAL_ACK_FLAGS_H 1
 
-// TODO: use new interface and remove this flag 
-#ifndef CGAL_AK_ENABLE_DEPRECATED_INTERFACE 
-#define CGAL_AK_ENABLE_DEPRECATED_INTERFACE 0
+#ifndef CGAL_AK_D_SHOW_COMPILE_OPTIONS_AS_WARNING
+#define CGAL_AK_D_SHOW_COMPILE_OPTIONS_AS_WARNING 0 // 0 is default
+#endif 
+
+// TODO 2012: disable deprecated interface and remove this flag 
+#ifndef CGAL_ACK_ENABLE_DEPRECATED_INTERFACE 
+#define CGAL_ACK_ENABLE_DEPRECATED_INTERFACE 0
 #endif 
 
 // Is debug-information printed?
 #ifndef CGAL_ACK_DEBUG_FLAG
-#define CGAL_ACK_DEBUG_FLAG 0
+#define CGAL_ACK_DEBUG_FLAG 1
 #endif
 
 // If CGAL_ACK_DEBUG_FLAG is set, which output stream is used for debug?
@@ -72,14 +76,62 @@
 #define CGAL_ACK_BITSTREAM_USES_E08_TREE 1
 #endif
 
+/**
+ * If set, curve analyses are performed with bisolve
+ */
+#ifndef CGAL_ACK_CURVE_ANALYSES_USE_BISOLVE 
+#define CGAL_ACK_CURVE_ANALYSES_USE_BISOLVE 1
+#endif
+#if CGAL_AK_D_SHOW_COMPILE_OPTIONS_AS_WARNING && CGAL_ACK_CURVE_ANALYSES_USE_BISOLVE
+#warning ACK_2: uses bisolve for CA
+#endif
 
 /**
- * If set, the program uses the AlciX-code 
- * for the curve- and curve-pair-analysis.
- * This flag is only for debugging purposes.
+ * If set, curve analyses are performed with Teissier-filtered bisolve
  */
-#ifndef CGAL_ACK_USE_EXACUS
-#define CGAL_ACK_USE_EXACUS 0
+#if CGAL_ACK_CURVE_ANALYSES_USE_BISOLVE
+#ifndef CGAL_ACK_CURVE_ANALYSES_BISOLVE_USE_TEISSIER
+#define CGAL_ACK_CURVE_ANALYSES_BISOLVE_USE_TEISSIER 1
+#endif
+#if CGAL_AK_D_SHOW_COMPILE_OPTIONS_AS_WARNING && CGAL_ACK_CURVE_ANALYSES_BISOLVE_USE_TEISSIER
+#warning ACK_2: bisolve-CA uses Teissier test
+#else
+#ifndef CGAL_BISOLVE_ENABLE_ARCAVOID 
+#define CGAL_BISOLVE_ENABLE_ARCAVOID 0 // disable
+#endif
+#endif
+#endif
+
+/**
+ * If set, we avoid costly sign_at computations at the price of more gcds
+ */
+#if CGAL_ACK_CURVE_ANALYSES_MULT_RES_FX_FY_PREFER_SIGN_AT
+#ifndef CGAL_ACK_CURVE_ANALYSES_MULT_RES_FX_FY_PREFER_SIGN_AT
+#define CGAL_ACK_CURVE_ANALYSES_MULT_RES_FX_FY_PREFER_SIGN_AT 1 // default 1?
+#endif
+#if CGAL_AK_D_SHOW_COMPILE_OPTIONS_AS_WARNING && CGAL_ACK_CURVE_ANALYSES_MULT_RES_FX_FY_PREFER_SIGN_AT
+#warning ACK_2: bisolve-CA prefers sign_at_1 for mult_res_fx_fy
+#endif
+#endif
+
+/**
+ * If set, curve- and curve-pair analyses are performed with bisolve
+ */
+#ifndef CGAL_ACK_CURVE_PAIR_ANALYSES_USE_BISOLVE
+#define CGAL_ACK_CURVE_PAIR_ANALYSES_USE_BISOLVE CGAL_ACK_CURVE_ANALYSES_USE_BISOLVE // do not change
+#endif
+#if CGAL_AK_D_SHOW_COMPILE_OPTIONS_AS_WARNING && CGAL_ACK_CURVE_PAIR_ANALYSES_USE_BISOLVE
+#warning ACK_2: uses bisolve for CPA
+#endif
+
+/**
+ * If set, curve analyses are performed with bisolve
+ */
+#ifndef CGAL_ACK_FACTORIZE_UNI_POLYNOMIALS
+#define CGAL_ACK_FACTORIZE_UNI_POLYNOMIALS 0
+#endif
+#if CGAL_AK_D_SHOW_COMPILE_OPTIONS_AS_WARNING && CGAL_ACK_FACTORIZE_UNI_POLYNOMIALS
+#warning ACK_2: factorizes univariate polynomials with NTL
 #endif
 
 /**
@@ -158,8 +210,8 @@
  * Since this methods improves the performance, 
  * it is not recommended to set this flag unless for testing
  */
-#ifndef ACK_CGAL_NO_ARC_FLIP
-#define ACK_CGAL_NO_ARC_FLIP 0
+#ifndef CGAL_ACK_NO_ARC_FLIP
+#define CGAL_ACK_NO_ARC_FLIP 0
 #endif
 
 /**
@@ -197,8 +249,8 @@
 #define CGAL_ACK_USE_NO_REDUCTION_MODULO_RESULTANT 0
 #endif
 
-#ifndef CGAL_AK_DONT_USE_SIMPLE_BOUND_BETWEEN
-#define CGAL_AK_DONT_USE_SIMPLE_BOUND_BETWEEN 0
+#ifndef CGAL_ACK_DONT_USE_SIMPLE_BOUND_BETWEEN
+#define CGAL_ACK_DONT_USE_SIMPLE_BOUND_BETWEEN 0
 #endif
 
 /**

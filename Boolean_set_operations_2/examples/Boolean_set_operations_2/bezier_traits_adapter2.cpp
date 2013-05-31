@@ -193,7 +193,6 @@ int main(int argc, char* argv[])
 
   timer.start();
   
-
   if (! read_bezier(filename1, S1)) {
     std::cerr << "Failed to read " << filename1 << " ..." << std::endl;
     return 1;

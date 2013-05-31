@@ -1,0 +1,57 @@
+##################################################################################
+Many inconsistencies for random + shifted + silhouettes
+
+##################################################################################
+
+num analysis fails (probably endless loop) for 
+- challenge_12
+- cov_sol_20
+
+##################################################################################
+
+SA_2_4_eps has weird order
+
+##################################################################################
+hard_one, tryme faield for GPU
+
+
+
+##################################################################################
+rand_12_10_1                         1                            0.61                          7.43                          5.88         INCONSISTENT
+/Users/eric/CGAL/SVN/branches/experimental-packages/Algebraic_kernel_2/examples/Algebraic_kernel_d/exp_results__akobel_A_random__2011_03_12__11_18__73371/gmp-rsisol-sc-cana-bca-num/rand_12_10_1.out:#SOLUTIONS: 10
+/Users/eric/CGAL/SVN/branches/experimental-packages/Algebraic_kernel_2/examples/Algebraic_kernel_d/exp_results__akobel_A_random__2011_03_12__11_18__73371/gmp-rsisol-sc-cana-bca-tes/rand_12_10_1.out:#SOLUTIONS: 8
+/Users/eric/CGAL/SVN/branches/experimental-packages/Algebraic_kernel_2/examples/Algebraic_kernel_d/exp_results__akobel_A_random__2011_03_12__11_18__73371/gmp-rsisol-sc-cana-bca/rand_12_10_1.out:#SOLUTIONS: 10
+
+##################################################################################
+File                                    #L                   gmp-rsisol-sc    gmp-rsisol-sc-cana-bca-tes    gmp-rsisol-sc-cana-bca-num        gmp-rsisol-sc-cana-bca        #Sol
+    sil_4_4_8_1                          1                            1.06                          0.54                          2.64                          4.06         INCONSISTENT
+/Users/eric/CGAL/SVN/branches/experimental-packages/Algebraic_kernel_2/examples/Algebraic_kernel_d/exp_results__projections__2011_03_12__23_50__03089/gmp-rsisol-sc-cana-bca-num/sil_4_4_8_1.out:#SOLUTIONS: 12
+/Users/eric/CGAL/SVN/branches/experimental-packages/Algebraic_kernel_2/examples/Algebraic_kernel_d/exp_results__projections__2011_03_12__23_50__03089/gmp-rsisol-sc-cana-bca-tes/sil_4_4_8_1.out:#SOLUTIONS: 12
+/Users/eric/CGAL/SVN/branches/experimental-packages/Algebraic_kernel_2/examples/Algebraic_kernel_d/exp_results__projections__2011_03_12__23_50__03089/gmp-rsisol-sc-cana-bca/sil_4_4_8_1.out:#SOLUTIONS: 12
+/Users/eric/CGAL/SVN/branches/experimental-packages/Algebraic_kernel_2/examples/Algebraic_kernel_d/exp_results__projections__2011_03_12__23_50__03089/gmp-rsisol-sc/sil_4_4_8_1.out:#SOLUTIONS: 13
+
+
+##################################################################################
+challenge_12 gmp-gres-ggcd-rsisol-sc-cana-bca-num bucketing
+
+##################################################################################
+File                                    #L            gmp-rsisol-sc-cana-bca-tes          gmp-rsisol-sc-cana-bca-num    gmp-rsisol-sc-cana-bca-num-local        #Sol
+./exp-run: line 116: [: -eq: unary operator expected
+    sil_5_5_8_1                          1                                 36.96                              317.26^C                               t>inf          16
+
+##################################################################################
+File                                    #L                               gmp-gres-ggcd-rsisol-sc                         gmp-gres-ggcd-rsisol-num-sc                gmp-gres-ggcd-rsisol-sc-cana-bca-tes                    gmp-gres-ggcd-rsisol-sc-cana-bca            gmp-gres-ggcd-rsisol-sc-cana-bca-nobidir                gmp-gres-ggcd-rsisol-sc-cana-bca-num            gmp-gres-ggcd-rsisol-sc-cana-bca-nolocal    gmp-gres-ggcd-rsisol-sc-cana-bca-nolocal-nobidir        gmp-gres-ggcd-rsisol-sc-cana-bca-nolocal-num                        gmp-gres-ggcd-rsisol-sc-cana        #Sol
+*   deg16_7_curves                       1                                                  1.98                                                0.82                                                0.82                                                5.22                                                4.18                                                2.53                                                5.14                                                4.28                                                2.56                                               t>inf         INCONSISTENT
+/KM/home-1/eric/CGAL/SVN/branches/experimental-packages/Algebraic_kernel_2/examples/Algebraic_kernel_d/exp_results__tes__2011_03_13__00_11__09059/gmp-gres-ggcd-rsisol-num-sc/deg16_7_curves.out:#SOLUTIONS: 20
+/KM/home-1/eric/CGAL/SVN/branches/experimental-packages/Algebraic_kernel_2/examples/Algebraic_kernel_d/exp_results__tes__2011_03_13__00_11__09059/gmp-gres-ggcd-rsisol-sc-cana-bca-nobidir/deg16_7_curves.out:#SOLUTIONS: 19
+/KM/home-1/eric/CGAL/SVN/branches/experimental-packages/Algebraic_kernel_2/examples/Algebraic_kernel_d/exp_results__tes__2011_03_13__00_11__09059/gmp-gres-ggcd-rsisol-sc-cana-bca-nolocal-nobidir/deg16_7_curves.out:#SOLUTIONS: 19
+/KM/home-1/eric/CGAL/SVN/branches/experimental-packages/Algebraic_kernel_2/examples/Algebraic_kernel_d/exp_results__tes__2011_03_13__00_11__09059/gmp-gres-ggcd-rsisol-sc-cana-bca-nolocal-num/deg16_7_curves.out:#SOLUTIONS: 19
+/KM/home-1/eric/CGAL/SVN/branches/experimental-packages/Algebraic_kernel_2/examples/Algebraic_kernel_d/exp_results__tes__2011_03_13__00_11__09059/gmp-gres-ggcd-rsisol-sc-cana-bca-nolocal/deg16_7_curves.out:#SOLUTIONS: 19
+/KM/home-1/eric/CGAL/SVN/branches/experimental-packages/Algebraic_kernel_2/examples/Algebraic_kernel_d/exp_results__tes__2011_03_13__00_11__09059/gmp-gres-ggcd-rsisol-sc-cana-bca-num/deg16_7_curves.out:#SOLUTIONS: 19
+/KM/home-1/eric/CGAL/SVN/branches/experimental-packages/Algebraic_kernel_2/examples/Algebraic_kernel_d/exp_results__tes__2011_03_13__00_11__09059/gmp-gres-ggcd-rsisol-sc-cana-bca-tes/deg16_7_curves.out:#SOLUTIONS: 19
+/KM/home-1/eric/CGAL/SVN/branches/experimental-packages/Algebraic_kernel_2/examples/Algebraic_kernel_d/exp_results__tes__2011_03_13__00_11__09059/gmp-gres-ggcd-rsisol-sc-cana-bca/deg16_7_curves.out:#SOLUTIONS: 19
+/KM/home-1/eric/CGAL/SVN/branches/experimental-packages/Algebraic_kernel_2/examples/Algebraic_kernel_d/exp_results__tes__2011_03_13__00_11__09059/gmp-gres-ggcd-rsisol-sc/deg16_7_curves.out:#SOLUTIONS: 20
+
+
+##################################################################################
+swinnerston_dyer gmp-gres-ggcd-rsisol-sc-cana-bca-num

@@ -1,17 +1,33 @@
-// TODO: Add licence
+// Copyright (c) 2006-2012 Max-Planck-Institute Saarbruecken (Germany).
+// All rights reserved.
+//
+// This file is part of CGAL (www.cgal.org); you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public License as
+// published by the Free Software Foundation; either version 3 of the License,
+// or (at your option) any later version.
+//
+// Licensees holding a valid commercial license may use this file in
+// accordance with the commercial license agreement provided with the software.
 //
 // This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
 // WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
-// $URL:$
-// $Id: $
-// 
+// $URL: svn+ssh://eric@scm.gforge.inria.fr/svn/cgal/branches/unsorted-branches/eric/Numerical_algebraic_kernel_d/include/CGAL/Algebraic_kernel_d/Algebraic_curve_kernel_2.h $
+// $Id: Algebraic_curve_kernel_2.h 70264 2012-07-04 13:01:47Z eric $
 //
 // Author(s)     : Michael Kerber <mkerber@mpi-inf.mpg.de>
 //
 // ============================================================================
 
 #include <CGAL/config.h>
+
+#ifndef CGAL_ACK_CURVE_ANALYSES_USE_BISOLVE 
+#define CGAL_ACK_CURVE_ANALYSES_USE_BISOLVE 1
+#endif
+#ifndef CGAL_ACK_CURVE_ANALYSES_BISOLVE_USE_TEISSIER
+#define CGAL_ACK_CURVE_ANALYSES_BISOLVE_USE_TEISSIER 1
+#endif
+
 #include <CGAL/Algebraic_kernel_d/flags.h>
 
 // Switches on/off tests for Sqrt-extension types
@@ -32,9 +48,9 @@
 
 #include <CGAL/Algebraic_kernel_d_1.h>
 #include <CGAL/Algebraic_kernel_d/Algebraic_real_quadratic_refinement_rep_bfi.h>
-#include <CGAL/Algebraic_kernel_d/Bitstream_descartes.h>
-#include <CGAL/Algebraic_kernel_d/Bitstream_descartes_rndl_tree_traits.h>
 #include <CGAL/Algebraic_kernel_d/Bitstream_coefficient_kernel.h>
+
+#include <CGAL/Algebraic_kernel_d/Bitstream_descartes.h>
 
 #include <CGAL/Algebraic_kernel_d/Algebraic_curve_kernel_2.h>
 
@@ -92,10 +108,8 @@ template<typename Arithmetic_kernel> void test_routine() {
     typedef CGAL::internal::Algebraic_real_quadratic_refinement_rep_bfi
         < Coefficient, Rational > Rep_class;
     typedef CGAL::internal::Bitstream_descartes
-        < CGAL::internal::Bitstream_descartes_rndl_tree_traits
             < CGAL::internal::Bitstream_coefficient_kernel<Coefficient> 
             > 
-        > 
         Isolator;
     
     typedef CGAL::Algebraic_kernel_d_1<Coefficient,Rational,Rep_class, Isolator> 
@@ -132,7 +146,8 @@ template<typename Arithmetic_kernel> void test_routine() {
 
     Status_line_1 event;
 
-    Rational eps(1,1000);
+    Rational eps(1);
+    eps /= Rational(1000);
 
     {
 #if CGAL_ACK_DEBUG_FLAG
@@ -330,7 +345,7 @@ template<typename Arithmetic_kernel> void test_routine() {
 #if CGAL_ACK_DEBUG_FLAG
         CGAL_ACK_DEBUG_PRINT << "P[2(0,P[2(1,3)(2,6)])(1,P[2(0,-3)(1,-11)(2,1)])(2,P[1(0,5)(1,-1)])]" << std::endl;
 #endif
-#if !CGAL_ACK_USE_EXACUS
+#if !CGAL_ACK_USE_EXACUS && !CGAL_ACK_CURVE_ANALYSES_USE_BISOLVE
         assert(curve.polynomial_2()==curve.primitive_polynomial_2());
         assert(number_of_objects<Algebraic_kernel_d_2>(curve)==4);
         Curve_analysis_2 sh_curve=curve.shear_primitive_part(2);
@@ -387,10 +402,8 @@ template<typename Arithmetic_kernel> void test_routine() {
         typedef CGAL::internal::Algebraic_real_quadratic_refinement_rep_bfi
             < Coefficient, Rational > Rep_class;
         typedef CGAL::internal::Bitstream_descartes
-            < CGAL::internal::Bitstream_descartes_rndl_tree_traits
                 < CGAL::internal::Bitstream_coefficient_kernel<Coefficient> 
                 > 
-            > 
         Isolator;
     
         typedef CGAL::Algebraic_kernel_d_1<Coefficient,Rational,Rep_class, Isolator> 
@@ -540,7 +553,8 @@ int main() {
 #else
     std::cerr << "LEDA tests skipped" << std::endl;
 #endif
-#ifdef CGAL_HAS_CORE_ARITHMETIC_KERNEL
+#if defined(CGAL_HAS_CORE_ARITHMETIC_KERNEL) && !CGAL_ACK_CURVE_ANALYSES_USE_BISOLVE
+    // does not (yet) work with Core - missing BigfloatInterval
     test_routine<CGAL::CORE_arithmetic_kernel>();
 #else
     std::cerr << "CORE tests skipped" << std::endl;

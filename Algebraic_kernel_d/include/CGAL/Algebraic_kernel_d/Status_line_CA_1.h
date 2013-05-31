@@ -1,4 +1,4 @@
-// Copyright (c) 2006-2009 Max-Planck-Institute Saarbruecken (Germany).
+// Copyright (c) 2006, 2007, 2008, 2009, 2012 Max-Planck-Institute Saarbruecken (Germany).
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org); you can redistribute it and/or
@@ -17,18 +17,14 @@
 // 
 //
 // Author(s)     : Pavel Emeliyanenko <asm@mpi-sb.mpg.de>
-//
+//                 Eric Berberich <eric.berberich@cgal.org>
 // ============================================================================
 
 #ifndef CGAL_ALGEBRAIC_CURVE_KERNEL_STATUS_LINE_CA_1_H
 #define CGAL_ALGEBRAIC_CURVE_KERNEL_STATUS_LINE_CA_1_H
 
-#include <CGAL/basic.h>
+#include <CGAL/config.h>
 #include <CGAL/Handle_with_policy.h>
-
-#include <CGAL/Algebraic_kernel_d/Bitstream_descartes.h>
-#include <CGAL/Algebraic_kernel_d/Bitstream_descartes_rndl_tree_traits.h>
-#include <CGAL/Algebraic_kernel_d/Bitstream_coefficient_kernel_at_alpha.h>
 
 namespace CGAL {
 
@@ -41,14 +37,10 @@ template <class CurveAnalysis_2, class Rep>
 std::ostream& operator<< (std::ostream&, 
     const Status_line_CA_1<CurveAnalysis_2, Rep>&);
 
-#if !CGAL_ACK_USE_EXACUS
-template < typename AlgebraicCurveKernel_2 > 
-class Event_line_builder;
-
+#if !CGAL_ACK_CURVE_ANALYSES_USE_BISOLVE
 template < typename AlgebraicCurveKernel_2 > 
 class Shear_transformation;
 #endif
-
 
 template < class AlgebraicCurveKernel_2 >
 class Status_line_CA_1_rep {
@@ -86,20 +78,19 @@ public:
     typedef std::vector<Arc_pair> Arc_container;
 
     // Isolator type
-    typedef typename Curve_analysis_2::Bitstream_descartes Bitstream_descartes;
+    typedef typename Curve_analysis_2::Status_line_builder::Status_line_isolator Status_line_isolator;
+
+    // bound type
+    typedef typename Curve_analysis_2::Status_line_builder::Bound Bound;
 
     // constructors
-
-    // default constructor ()
-    Status_line_CA_1_rep() 
-    {   }
+    Status_line_CA_1_rep() {}
 
     // constructs status line over interval
     Status_line_CA_1_rep(
             Algebraic_real_1 x, size_type i,
             const Curve_analysis_2& ca, size_type n_arcs) :
-            _m_kernel(ca.kernel()),
-            _m_x(x), _m_index(i), _m_ca(ca),/*_m_num_arcs(n_arcs, n_arcs),*/
+            _m_x(x), _m_index(i), _m_ca(ca),
             _m_total_arcs(n_arcs), _m_vertical_line(false), _m_event(false),
             _m_num_arcs_minus_inf(0, 0), _m_num_arcs_plus_inf(0, 0),
                 _m_xy_coords(n_arcs)  {
@@ -110,17 +101,12 @@ public:
         Algebraic_real_1 x, size_type i,
         const Curve_analysis_2& ca, 
         size_type , size_type ) :
-      _m_kernel(ca.kernel()),
              _m_x(x), _m_index(i), _m_ca(ca),
-             /*_m_num_arcs(n_arcs_left, n_arcs_right),*/ _m_total_arcs(0),
+             _m_total_arcs(0),
              _m_vertical_line(false), _m_event(true),
              _m_num_arcs_minus_inf(0, 0), _m_num_arcs_plus_inf(0, 0) {
     };
 
-    //! kernel instance
-    // TODO remove kernel?
-    const Algebraic_curve_kernel_2 *_m_kernel;
-    
     //! x-coordinate of event info
     mutable Algebraic_real_1 _m_x;
 
@@ -171,14 +157,10 @@ public:
     mutable std::vector<boost::optional< Algebraic_real_2 > >_m_xy_coords;
 
     // stores the isolator instance
-    mutable boost::optional<Bitstream_descartes> isolator;
+    mutable boost::optional< Status_line_isolator > isolator;
     
      // befriending the handle
     friend class Status_line_CA_1<Curve_analysis_2, Self>;
-    //friend class Curve_analysis_2;
-    //friend class Event_line_builder<Curve_analysis_2>;
-    //friend class Shear_transformation<Curve_analysis_2>;
-
 };
 
 //! \brief The class provides information about the intersections of a curve 
@@ -231,10 +213,14 @@ public:
     typedef std::vector<Arc_pair> Arc_container;
 
     //! Local isolator type
-    typedef typename Rep::Bitstream_descartes Bitstream_descartes;
+    typedef typename Rep::Status_line_isolator Status_line_isolator;
     
-     //! the handle superclass
+    // bound type
+    typedef typename Rep::Bound Bound;
+
+    //! the handle superclass
     typedef ::CGAL::Handle_with_policy< Rep > Base;
+
     
     //!@}
 public:
@@ -242,11 +228,9 @@ public:
     //!@{
 
     /*!\brief
-     * Default constructor
+     * default constructor
      */
-    Status_line_CA_1() : 
-        Base(Rep()) {   
-    }
+    Status_line_CA_1() {}
 
     /*!\brief
      * copy constructor
@@ -458,11 +442,6 @@ public:
     const Arc_pair& number_of_branches_approaching_plus_infinity() const {
         return this->ptr()->_m_num_arcs_plus_inf;
     }
-protected:
-    Algebraic_curve_kernel_2* kernel() const {
-        return this->ptr()->_m_kernel;
-    }
-
 
     //!@}
 public:
@@ -505,15 +484,9 @@ public:
     void write(std::ostream& os) const {
 
         os << "status_line [CA@" << this->ptr()->_m_ca.id() << std::flush;
-#if CGAL_ACK_USE_EXACUS
-        os << "; x = " << x() << "; #events: " << number_of_events() << "; "
-           << std::flush;
-#else
         os << "; x = " << CGAL::to_double(x()) << "; #events: " 
            << number_of_events() << "; " << std::flush;
-#endif
-
-        
+#if 0 // further output is deactivated EBEB 2012-09-11       
         if(is_event()) {
             os << "incident branches: {" << std::flush;
 //            typename Arc_container::const_iterator ait =
@@ -526,7 +499,6 @@ public:
                     os << ", " << std::flush;
                 }
                 Algebraic_real_2 xy = algebraic_real_2(i);
-                typedef typename Bitstream_descartes::Bound Bound;
                 Bound th = CGAL::ipower(Bound(1,2),53);
 		std::pair<double,double> d_pair 
 		   = xy.to_double();
@@ -547,6 +519,7 @@ public:
                 os << "; covers line" << std::flush;
         } else 
             os << "interval line" << std::flush;
+#endif
 
         os << "]" << std::flush;
     }
@@ -554,12 +527,12 @@ public:
     //!@}
 
     //! Sets the isolator instance
-    void set_isolator (const Bitstream_descartes& isolator) const {
+    void set_isolator (const Status_line_isolator& isolator) const {
         this->ptr()->isolator = isolator;
     }
 
     //! Returns the isolator instance
-    Bitstream_descartes& isolator() const {
+    Status_line_isolator& isolator() const {
         CGAL_assertion(this->ptr()->isolator);
         return this->ptr()->isolator.get();
     }
@@ -569,31 +542,33 @@ public:
         return this->ptr()->isolator;
     }
 
-    typename Bitstream_descartes::Bound lower_bound(int index) const {
+    Bound lower_bound(int index) const {
         return isolator().left_bound(index);
     }
 
-    typename Bitstream_descartes::Bound upper_bound(int index) const {
+    Bound upper_bound(int index) const {
         return isolator().right_bound(index);
     }
 
-    typename Bitstream_descartes::Bound interval_length(int index) const {
+    Bound interval_length(int index) const {
         return isolator().right_bound(index)-
                isolator().left_bound(index);
     }
 
-    int get_upper_bound_for_multiplicity(int index) const {
-        return isolator().get_upper_bound_for_multiplicity(index);
+    int upper_bound_for_multiplicity(int index) const {
+        return isolator().upper_bound_for_multiplicity(index);
     }
 
     void refine(int index) const {
-        return isolator().refine_interval(index);
+      // TODO 2012 this asks for the interval refinement of the underlying isolator
+      //           which probably has no quadratic convergence!
+        isolator().refine_interval(index);
     }
 
-    void refine_to(int index, typename Bitstream_descartes::Bound b) {
-            while(upper_bound(index) - lower_bound(index) > b) {
-                refine(index);
-            }
+    void refine_to(int index, Bound b) {
+      while(upper_bound(index) - lower_bound(index) > b) {
+        refine(index);
+      }
     }
 
 
@@ -616,4 +591,4 @@ std::ostream& operator<< (
 } //namespace CGAL
 
 #endif // CGAL_ALGEBRAIC_CURVE_KERNEL_STATUS_LINE_CA_1_H
-
+// EOF

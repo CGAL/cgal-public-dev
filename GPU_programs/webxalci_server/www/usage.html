@@ -1,0 +1,157 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!--DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN"-->
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head><title>XAlci webdemo - usage</title>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1"/>
+
+<META NAME="author" CONTENT="Pavel Emeliyanenko">
+<META NAME="subject" CONTENT="Interactive algebraic curve visualization">
+<META NAME="Description" CONTENT="The interactive server allows to easily analyse and plot algebraic plane curves of arbitrary degree, with easy-to-use interface and a gallery of algebraic curves rendered using our EXACT method.">
+<META NAME="Classification" CONTENT="This online service allows to analyse and plot real algebraic plane curves of arbitraty degree. In contrast to other graphing tools, our curve rendering is EXACT in the sence that we always produce the true mathematical result. The curve renderer is based on CGAL libraries.">
+<META NAME="Keywords" CONTENT="EXACUS, ACS, CGAL, mathematics, mathematical, math, maths, interactive server">
+<META NAME="Geography" CONTENT="Europe, Germany">
+<META NAME="Language" CONTENT="English">
+<META HTTP-EQUIV="Expires" CONTENT="never">
+<META NAME="Copyright" CONTENT="Max-Planck Institute for Informatics">
+<META NAME="Designer" CONTENT="Pavel Emeliyanenko">
+<META NAME="Publisher" CONTENT="Max-Planck Institute for Informatics">
+<META NAME="Revisit-After" CONTENT="7">
+<META NAME="distribution" CONTENT="Global">
+<META NAME="Robots" CONTENT="INDEX,FOLLOW">
+<META NAME="city" CONTENT="Saarbruecken">
+<META NAME="country" CONTENT="Germany">
+
+<meta http-equiv="Content-Style-Type" content="text/css"/>
+<meta http-equiv="Pragma" content="no-cache"/>
+<meta http-equiv="Cache-Control" content="no-cache"/>
+
+<link rel="SHORTCUT ICON" href="c/favicon.ico" />
+<link rel="stylesheet" type="text/css" media="screen" href="c/mpi-inf.css" />
+<link rel="stylesheet" type="text/css" media="screen" href="c/xalci.css" />
+<link rel="stylesheet" type="text/css" media="print" href="c/print.css" />
+<style type="text/css">
+.capital {
+    font-family: Comic Sans MS; 
+    font-size: 24pt;
+}
+.emph {
+    font-weight: bold;
+}
+.it {
+    font-style: italic;
+}
+.smcaps {
+    font-variant: small-caps;
+}
+a#hp-index, a:link#hp-index, a:visited#hp-index {background: rgb(80%,85%,90%);}
+.ak { text-decoration: underline }
+</style>
+<script type="text/javascript" src="c/script.js"></script>
+</head><body>
+
+
+<div id="head1o2">
+    <div id="mpiidotspacer"></div>
+    <div id="mpiidot"></div>
+    <br /><center><span style="color: #A0A0A0; font-size: 24pt">Using
+<span style="smcaps">Xalci</span> interactive web-demo program</span></center>
+</div>
+
+<div id="head2o2">
+    <div id="mpiitext">max planck institut<br/>informatik</div>
+    <img id="mpiilogo" src="../c/mpii.jpg" alt="mpii" usemap="#Map" width="300" height="100"/><map name="Map" id="Map"><area shape="rect" coords="97,14,296,70" href="http://www.mpi-sb.mpg.de" alt="mpii logo" /><area shape="circle" coords="41,49,40" href="http://www.mpg.de/" alt="Minerva of the Max Planck Society" /></map>
+</div>
+
+<div class="centerdiv">
+<div id="head2o2">
+    <div id="deco">
+        <div id="picture_div" style="position: relative;"><a href="http://www.mpi-inf.mpg.de/projects/EXACUS"><img src="c/exacus.png" width="185" border="1" alt="Efficient and Exact Algorithms for Curves and Surfaces" /></a><br /><br /><a href="http://www.cgal.org"><img border="1" src="../c/cgal_resize.png" width="185" alt="Computational Geometry Algorithms Library" title ="Computational Geometry Algorithms Library"/></a><br /><br /><a href="http://acs.cs.rug.nl"><img src="../c/acs_resize.gif" border="1" width="185" title="Algorithms for Complex Shapes" alt="Algorithms for Complex Shapes" /></a></div>
+        <script type="text/javascript">
+            show_menu(6, "100px");//show_authors("120px");</script>
+
+<div style="position: relative; top: 200px;">
+<a  href="http://www3.clustrmaps.com/counter/maps.php?url=http://infvm1700.ag1.mpi-sb.mpg.de/" id="clustrMapsLink"><img src="http://www3.clustrmaps.com/counter/index2.php?url=http://infvm1700.ag1.mpi-sb.mpg.de/" style="border:0px;" alt="Locations of visitors to this page" title="Locations of visitors to this page" id="clustrMapsImg" />
+</a>
+<script type="text/javascript">
+function cantload() {
+img = document.getElementById("clustrMapsImg");
+img.onerror = null;
+img.src = "http://www2.clustrmaps.com/images/clustrmaps-back-soon.jpg";
+document.getElementById("clustrMapsLink").href = "http://www2.clustrmaps.com";
+}
+img = document.getElementById("clustrMapsImg");
+img.onerror = cantload;
+</script>
+</div>
+
+    </div>
+</div>
+<div id="hspacer">&nbsp;</div>
+
+<div style="position: relative; left: 230px; top: 0px; font-size: 11pt; width: 80%" >
+<hr style="margin-left: 0em" size="1" />
+
+  <div> <!-- InstanceBeginEditable name="col2o3" -->
+  
+<br /><br />
+<div style="text-align: justify">
+<span class="smcaps">Xalci</span> web-demo has an intuitively simple interface. To compute an arrangement, type in polynomial equations delimited by comma or select the ones from the <a href="gallery.html">Curve gallery</a> by clicking on the corresponding curve image.<br /><br /> Then, click <span class="emph">Analyse curves</span> button to get the lists of arcs/vertices/faces populated
+with an arrangement data. Please note that for very complicated curves the analysis phase may take a while. Though, for the majority of algebraic curves
+tested, it will not take more than a minute.
+Each curve arc is given in the following format: <br /><br />
+<center>
+<span style="font-size: 12pt; ">
+(<span class="it">starting-x</span>; <span class="it">starting-y</span>) -
+(<span class="it">final-x</span>; <span class="it">final-y</span>); <span class="emph">arcno</span>: <span class="it">arc number</span> | <span class="emph">vertical</span>
+</span></center>
+<br />
+Here <span class="it">starting-x/y</span> and <span class="it">ending-x/y</span>
+specify the coordinates or the end-points of a curve arc, while <span class="emph">arcno</span> defines a 0-based index (rank) of the arc at certain x-coordinate amongst all curve arcs crossing the vertical line at this x-coordinate counted from bottom to top; <span class="emph">vertical</span> means that the curve arc is vertical, and therefore does not have an assigned arc number. Isolated singularities (e.g., the one given by an implicit equation x^2+y^2=0) are treated as degenerate curve arcs for which the end-points coincide.<br /><br />
+
+<img width="280px;" style="float: right; margin-left: 20px;" src="c/selection_new.jpg" border="0" alt="screenshot" />
+Once a curve is analysed, we can visualize a complete curve by leaving a check box `<b>complete</b>' checked and clicking on <span class="emph">Plot curve arcs</span> button. By default, curve arcs will be rasterized in different colors. To visualize a complete curve using one color, use `<span class="emph">complete one-color</span>' checkbox.
+
+<br /><br />
+To visualize only selected curve arcs, use `<span class="emph">selected arcs</span>' checkbox, then hold Ctrl key and choose the arcs to be rasterized from the arcs list. Finally, click <span class="emph">Plot curve arcs</span> to see the results.<br /><br />
+
+<!--There also exists an alternative curve rendering method (<span class="emph">1D Space subdivision</span>) chosen in the drop-down box.
+Unlike default <span class="emph">Segment renderer</span>, this method is not exact in the sense that no topological information is involved and may result in visible artifacts, however it requires no expensive curve analysis phase, and therefore can quickly produce approximation plots of higher-degree algebraic curves. <br /><br />-->
+
+For more information on the arrangement and visualization algorithms visit
+<a href="index.html">Xalci homepage</a>.
+
+<br/><div style="clear: both;">
+Visualization interface supports the following operations:<br />
+
+<table border="0" cellspacing="3" cellpadding="0" width="100%">
+<tr><td align="center" valign="center">
+<img src="c/zoom-in.png" border="1">
+</td><td>zoom in by the factor of 2</td></tr>
+
+<tr><td align="center" valign="center">
+<img src="c/zoom-out.png" border="1">
+</td><td>zoom out by the factor of 2</td></tr>
+
+<tr><td align="center" valign="center">
+<img src="c/reset2.png" border="1">
+</td><td>reset to default view</td></tr>
+
+<tr><td align="center" valign="center">
+<img src="c/point.png" border="1">
+</td><td>feature selection mode</td></tr>
+
+<tr><td align="center" valign="center">
+<img src="c/region2.png" border="1">
+</td><td>focus on a certain region</td></tr>
+</table></div>
+
+
+</div>
+<br /><hr style="margin-left: 0em" size="1" />
+</div><br /></div>
+<p align="center">Max-Planck-Institut f&uuml;r Informatik, <a href="http://www.mpi-inf.mpg.de/departments/d1/areas/GCCA.html">
+Geometric Computing Group</a>
+</p>
+</body></html>
+
+

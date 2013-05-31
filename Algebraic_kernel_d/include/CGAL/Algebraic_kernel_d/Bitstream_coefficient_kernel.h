@@ -17,12 +17,15 @@
 // 
 //
 // Author(s)     : Michael Kerber <mkerber@mpi-inf.mpg.de>
-//
-// ==========================================================================
-#ifndef CGAL_BITSTREAM_COEFFICIENT_KERNEL_H
-#define CGAL_BITSTREAM_COEFFICIENT_KERNEL_H 1
+//                 Eric Berberich <eric.berberich@cgal.org>
+
+#ifndef CGAL_ALGEBRAIC_KERNEL_D_BITSTREAM_COEFFICIENT_KERNEL_H
+#define CGAL_ALGEBRAIC_KERNEL_D_BITSTREAM_COEFFICIENT_KERNEL_H 1
+
+#include <CGAL/config.h>
 
 #include <CGAL/Algebraic_structure_traits.h>
+#include <CGAL/Polynomial_type_generator.h>
 #include <CGAL/convert_to_bfi.h>
 
 namespace CGAL {
@@ -40,6 +43,8 @@ template <typename Coefficient_> struct Bitstream_coefficient_kernel {
     typedef typename Arithmetic_kernel::Bigfloat_interval Bigfloat_interval;
     typedef typename Arithmetic_kernel::Integer Integer;
     typedef typename Arithmetic_kernel::Rational Bound;
+    typedef typename CGAL::Polynomial_type_generator<Coefficient,1>::Type Polynomial; 
+
 
 
     typedef typename CGAL::Algebraic_structure_traits<Coefficient>
@@ -68,4 +73,4 @@ template <typename Coefficient_> struct Bitstream_coefficient_kernel {
 
 } //namespace CGAL
 
-#endif // CGAL_BITSTREAM_COEFFICIENT_KERNEL_H
+#endif // CGAL_ALGEBRAIC_KERNEL_D_BITSTREAM_COEFFICIENT_KERNEL_H

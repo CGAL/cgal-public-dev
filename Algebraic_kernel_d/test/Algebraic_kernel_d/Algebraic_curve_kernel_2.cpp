@@ -1,11 +1,19 @@
-// TODO: Add licence
+// Copyright (c) 2012 Max-Planck-Institute Saarbruecken (Germany).
+// All rights reserved.
+//
+// This file is part of CGAL (www.cgal.org); you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public License as
+// published by the Free Software Foundation; either version 3 of the License,
+// or (at your option) any later version.
+//
+// Licensees holding a valid commercial license may use this file in
+// accordance with the commercial license agreement provided with the software.
 //
 // This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
 // WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
-// $URL:$
-// $Id: $
-// 
+// $URL: svn+ssh://eric@scm.gforge.inria.fr/svn/cgal/branches/unsorted-branches/eric/Numerical_algebraic_kernel_d/include/CGAL/Algebraic_kernel_d/Bitstream_descartes.h $
+// $Id: Bitstream_descartes.h 70669 2012-07-23 08:45:50Z eric $
 //
 // Author(s)     : Pavel Emeliyanenko <asm@mpi-sb.mpg.de>
 //
@@ -15,10 +23,18 @@
 
 #define CGAL_ACK_DEBUG_FLAG 0
 
-#define CGAL_AK_ENABLE_DEPRECATED_INTERFACE 1
+#define CGAL_ACK_ENABLE_DEPRECATED_INTERFACE 1
+
+#include <CGAL/basic.h>
+
+#ifndef CGAL_ACK_CURVE_ANALYSES_USE_BISOLVE 
+#define CGAL_ACK_CURVE_ANALYSES_USE_BISOLVE 1
+#endif
+#ifndef CGAL_ACK_CURVE_ANALYSES_BISOLVE_USE_TEISSIER
+#define CGAL_ACK_CURVE_ANALYSES_BISOLVE_USE_TEISSIER 1
+#endif
 
 #include <CGAL/Algebraic_kernel_d/flags.h>
-#include <CGAL/basic.h>
 
 #include <CGAL/Arithmetic_kernel.h>
 
@@ -50,8 +66,7 @@ void test_algebraic_curve_kernel_2() {
     typedef CGAL::internal::Algebraic_real_quadratic_refinement_rep_bfi
         < Coefficient, Rational > Rep_class;
     typedef CGAL::internal::Bitstream_descartes< 
-        CGAL::internal::Bitstream_descartes_rndl_tree_traits<
-        CGAL::internal::Bitstream_coefficient_kernel<Coefficient > > > 
+        CGAL::internal::Bitstream_coefficient_kernel<Coefficient > > 
         Isolator;
     
     typedef CGAL::Algebraic_kernel_d_1<Coefficient,Rational,Rep_class, Isolator> 
@@ -103,11 +118,11 @@ int main() {
 #endif
 
 
-#ifdef CGAL_HAS_CORE_ARITHMETIC_KERNEL
+#if defined(CGAL_HAS_CORE_ARITHMETIC_KERNEL) && !CGAL_ACK_CURVE_ANALYSES_USE_BISOLVE
 #if CGAL_ACK_DEBUG_FLAG
     CGAL_ACK_DEBUG_PRINT << "TESTING CORE" << std::endl;
-#endif          
-
+#endif
+    // does not (yet) work with Core - missing BigfloatInterval
     test_algebraic_curve_kernel_2<CGAL::CORE_arithmetic_kernel>();
 #else
     std::cerr << "CORE tests skipped" << std::endl;

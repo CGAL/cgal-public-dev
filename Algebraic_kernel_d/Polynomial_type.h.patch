@@ -1,0 +1,31 @@
+Index: trunk/Polynomial/include/CGAL/Polynomial/Polynomial_type.h
+===================================================================
+--- trunk/Polynomial/include/CGAL/Polynomial/Polynomial_type.h	(revision 60528)
++++ trunk/Polynomial/include/CGAL/Polynomial/Polynomial_type.h	(working copy)
+@@ -92,7 +92,7 @@
+   {}
+ 
+   void reduce() {
+-    while ( coeff.size()>1 && CGAL::is_zero(coeff.back())) coeff.pop_back();
++    while ( coeff.size()>1 && CGAL::certainly (CGAL::is_zero(coeff.back()))) coeff.pop_back();
+   }
+ 
+   void simplify_coefficients() {
+@@ -1295,7 +1295,7 @@
+ void print_maple_monomial(std::ostream& os, const NT& coeff,
+     const char *var, int expn)
+ {
+-  if (expn == 0 || coeff != NT(1)) {
++  if (true || expn == 0 || coeff != NT(1)) { // TODO: repair
+     os << CGAL::oformat(coeff, Parens_as_product_tag());
+     if (expn >= 1) os << "*";
+   }
+@@ -1326,7 +1326,7 @@
+   int i = p.degree();
+   CGAL::print_maple_monomial(os, p[i], varname, i);
+   while (--i >= 0) {
+-    if (p[i] != NT(0)) {
++    if (true || ! CGAL::certainly (CGAL::is_zero (p[i]))) { // TODO: repair
+       os << " + ";
+       CGAL::print_maple_monomial(os, p[i], varname, i);
+     }

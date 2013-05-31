@@ -1,0 +1,5 @@
+# Regardless of the robot coming by - we don't grant any access
+User-agent: *
+# robots should not invoke cgi-scripts on the server
+Disallow: http://infvm1700.ag1.mpi-sb.mpg.de/cgi-bin/*
+Disallow: /cgi-bin/*

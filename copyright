@@ -116,6 +116,7 @@ R = RU Groningen
  Surface_mesh_simplification    G
  Surface_mesher                 I
  Surface_reconstruction_points_3I
+ Symbolic                       M
  Testsuite                      IG
  Triangulation_2                I
  Triangulation_3                I

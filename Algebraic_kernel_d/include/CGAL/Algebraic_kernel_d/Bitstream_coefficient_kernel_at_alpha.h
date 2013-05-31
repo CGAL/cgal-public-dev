@@ -1,4 +1,4 @@
-// Copyright (c) 2006-2009 Max-Planck-Institute Saarbruecken (Germany).
+// Copyright (c) 2006, 2007, 2008, 2009 Max-Planck-Institute Saarbruecken (Germany).
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org); you can redistribute it and/or
@@ -17,16 +17,16 @@
 // 
 //
 // Author(s)     : Michael Kerber  <mkerber@mpi-inf.mpg.de>
-//
-// ============================================================================
-#ifndef CGAL_BITSTREAM_COEFFICIENT_KERNEL_AT_ALPHA_H
-#define CGAL_BITSTREAM_COEFFICIENT_KERNEL_AT_ALPHA_H 1
+
+#ifndef CGAL_ALGEBRAIC_KERNEL_D_BITSTREAM_COEFFICIENT_KERNEL_AT_ALPHA_H
+#define CGAL_ALGEBRAIC_KERNEL_D_BITSTREAM_COEFFICIENT_KERNEL_AT_ALPHA_H 1
 
 namespace CGAL {
 
-#include <CGAL/basic.h>
+#include <CGAL/config.h>
 
 #include <CGAL/Arithmetic_kernel.h>
+#include <CGAL/Polynomial_type_generator.h>
 #include <CGAL/convert_to_bfi.h>
 
 namespace internal {
@@ -82,6 +82,9 @@ public:
 
     typedef Polynomial_1 Coefficient;
 
+    typedef CGAL::Polynomial<Polynomial_1> Polynomial; 
+
+
     typedef typename 
     CGAL::Get_arithmetic_kernel<typename Coefficient::NT>::Arithmetic_kernel
     Arithmetic_kernel; 
@@ -101,7 +104,7 @@ public:
 
 public:
     //! \name Constructors
-    // !@{
+    //!@{
 
     Bitstream_coefficient_kernel_at_alpha() : Base(Rep()) {}
 
@@ -111,6 +114,24 @@ public:
     Bitstream_coefficient_kernel_at_alpha(Algebraic_kernel_d_1* kernel,
                                           Algebraic_real_1 alpha) 
       : Base(kernel,alpha) {}
+
+    //!@}
+
+    //! \name Access
+    //! @{
+
+    Algebraic_kernel_d_1* kernel() {
+      return this->ptr()->_m_kernel;
+    }
+
+    const Algebraic_kernel_d_1* kernel() const {
+      return this->ptr()->_m_kernel;
+    }
+
+
+    const Algebraic_real_1& alpha() const {
+      return this->ptr()->_m_alpha;
+    }
 
     //@}
 
@@ -225,5 +246,5 @@ public:
 
 } //namespace CGAL
 
-
-#endif // CGAL_BITSTREAM_COEFFICIENT_KERNEL_AT_ALPHA_H
+#endif // CGAL_ALGEBRAIC_KERNEL_D_BITSTREAM_COEFFICIENT_KERNEL_AT_ALPHA_H
+// EOF

@@ -21,19 +21,25 @@
 #if defined(CGAL_USE_GMP) && defined(CGAL_USE_MPFI) && defined(CGAL_USE_RS)
 
 #include <CGAL/Algebraic_kernel_rs_gmpq_d_1.h>
+#include <CGAL/Algebraic_kernel_2/Rounding_ak_d_1.h>
 #include "include/CGAL/_test_algebraic_kernel_1.h"
 
 int main(){
-
-  typedef CGAL::Algebraic_kernel_rs_gmpq_d_1              AK;
+  typedef CGAL::Algebraic_kernel_rs_gmpq_d_1 AK;
+  typedef CGAL::internal::Rounding_ak_d_1< AK > RAK;
   typedef AK::Polynomial_1 Polynomial_1;
   typedef AK::Coefficient Coefficient;
   typedef AK::Bound Bound;
   typedef AK::Algebraic_real_1 Algebraic_real_1;
   typedef AK::Multiplicity_type Multiplicity_type;
 
-  AK ak;
+  std::cout << "Testing Algebraic_kernel_rs_gmpz_d_1" << std::endl;
+  AK ak; // an object of Algebraic_kernel_rs_gmpz_d_1
   CGAL::test_algebraic_kernel_1<AK>(ak);
+  
+  std::cout << "Testing RoundingAlgebraic_kernel_rs_gmpz_d_1" << std::endl;
+  RAK rak; // an object of Algebraic_kernel_rs_gmpz_d_1
+  CGAL::test_algebraic_kernel_1<RAK>(rak);
 
   AK::Solve_1 solve_1 = ak.solve_1_object();
   Polynomial_1 x = CGAL::shift(AK::Polynomial_1(1),1);

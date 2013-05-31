@@ -1,0 +1,161 @@
+/****************************************************************************
+** XTri_main_wnd meta object code from reading C++ file 'mainwnd.h'
+**
+** Created: Thu Jun 21 13:31:58 2012
+**      by: The Qt MOC ($Id: qt/moc_yacc.cpp   3.3.6   edited Mar 8 17:43 $)
+**
+** WARNING! All changes made in this file will be lost!
+*****************************************************************************/
+
+#undef QT_NO_COMPAT
+#include "include/mainwnd.h"
+#include <qmetaobject.h>
+#include <qapplication.h>
+
+#include <private/qucomextra_p.h>
+#if !defined(Q_MOC_OUTPUT_REVISION) || (Q_MOC_OUTPUT_REVISION != 26)
+#error "This file was generated using the moc from 3.3.6. It"
+#error "cannot be used with the include files from this version of Qt."
+#error "(The moc has changed too much.)"
+#endif
+
+const char *XTri_main_wnd::className() const
+{
+    return "XTri_main_wnd";
+}
+
+QMetaObject *XTri_main_wnd::metaObj = 0;
+static QMetaObjectCleanUp cleanUp_XTri_main_wnd( "XTri_main_wnd", &XTri_main_wnd::staticMetaObject );
+
+#ifndef QT_NO_TRANSLATION
+QString XTri_main_wnd::tr( const char *s, const char *c )
+{
+    if ( qApp )
+	return qApp->translate( "XTri_main_wnd", s, c, QApplication::DefaultCodec );
+    else
+	return QString::fromLatin1( s );
+}
+#ifndef QT_NO_TRANSLATION_UTF8
+QString XTri_main_wnd::trUtf8( const char *s, const char *c )
+{
+    if ( qApp )
+	return qApp->translate( "XTri_main_wnd", s, c, QApplication::UnicodeUTF8 );
+    else
+	return QString::fromUtf8( s );
+}
+#endif // QT_NO_TRANSLATION_UTF8
+
+#endif // QT_NO_TRANSLATION
+
+QMetaObject* XTri_main_wnd::staticMetaObject()
+{
+    if ( metaObj )
+	return metaObj;
+    QMetaObject* parentObject = QMainWindow::staticMetaObject();
+    static const QUMethod slot_0 = {"load_surf", 0, 0 };
+    static const QUMethod slot_1 = {"overlay_surf", 0, 0 };
+    static const QUMethod slot_2 = {"triangulate_surf", 0, 0 };
+    static const QUMethod slot_3 = {"write_STL", 0, 0 };
+    static const QUMethod slot_4 = {"reset_view", 0, 0 };
+    static const QUMethod slot_5 = {"snapshot", 0, 0 };
+    static const QUMethod slot_6 = {"toggle_2d3d_view", 0, 0 };
+    static const QUMethod slot_7 = {"toggle_fill_mode", 0, 0 };
+    static const QUMethod slot_8 = {"toggle_bg_color", 0, 0 };
+    static const QUMethod slot_9 = {"toggle_lighting", 0, 0 };
+    static const QUMethod slot_10 = {"toggle_transparency", 0, 0 };
+    static const QUMethod slot_11 = {"toggle_normals", 0, 0 };
+    static const QUMethod slot_12 = {"toggle_bumpy_surf", 0, 0 };
+    static const QUMethod slot_13 = {"toggle_show_grid", 0, 0 };
+    static const QUMethod slot_14 = {"toggle_show_triangles", 0, 0 };
+    static const QUMethod slot_15 = {"toggle_show_normals", 0, 0 };
+    static const QUMethod slot_16 = {"about", 0, 0 };
+    static const QUMethod slot_17 = {"aboutQt", 0, 0 };
+    static const QUMethod slot_18 = {"howto", 0, 0 };
+    static const QUParameter param_slot_19[] = {
+	{ 0, &static_QUType_int, 0, QUParameter::In }
+    };
+    static const QUMethod slot_19 = {"set_resolution", 1, param_slot_19 };
+    static const QMetaData slot_tbl[] = {
+	{ "load_surf()", &slot_0, QMetaData::Public },
+	{ "overlay_surf()", &slot_1, QMetaData::Public },
+	{ "triangulate_surf()", &slot_2, QMetaData::Public },
+	{ "write_STL()", &slot_3, QMetaData::Public },
+	{ "reset_view()", &slot_4, QMetaData::Public },
+	{ "snapshot()", &slot_5, QMetaData::Public },
+	{ "toggle_2d3d_view()", &slot_6, QMetaData::Public },
+	{ "toggle_fill_mode()", &slot_7, QMetaData::Public },
+	{ "toggle_bg_color()", &slot_8, QMetaData::Public },
+	{ "toggle_lighting()", &slot_9, QMetaData::Public },
+	{ "toggle_transparency()", &slot_10, QMetaData::Public },
+	{ "toggle_normals()", &slot_11, QMetaData::Public },
+	{ "toggle_bumpy_surf()", &slot_12, QMetaData::Public },
+	{ "toggle_show_grid()", &slot_13, QMetaData::Public },
+	{ "toggle_show_triangles()", &slot_14, QMetaData::Public },
+	{ "toggle_show_normals()", &slot_15, QMetaData::Public },
+	{ "about()", &slot_16, QMetaData::Public },
+	{ "aboutQt()", &slot_17, QMetaData::Public },
+	{ "howto()", &slot_18, QMetaData::Public },
+	{ "set_resolution(int)", &slot_19, QMetaData::Public }
+    };
+    metaObj = QMetaObject::new_metaobject(
+	"XTri_main_wnd", parentObject,
+	slot_tbl, 20,
+	0, 0,
+#ifndef QT_NO_PROPERTIES
+	0, 0,
+	0, 0,
+#endif // QT_NO_PROPERTIES
+	0, 0 );
+    cleanUp_XTri_main_wnd.setMetaObject( metaObj );
+    return metaObj;
+}
+
+void* XTri_main_wnd::qt_cast( const char* clname )
+{
+    if ( !qstrcmp( clname, "XTri_main_wnd" ) )
+	return this;
+    return QMainWindow::qt_cast( clname );
+}
+
+bool XTri_main_wnd::qt_invoke( int _id, QUObject* _o )
+{
+    switch ( _id - staticMetaObject()->slotOffset() ) {
+    case 0: load_surf(); break;
+    case 1: overlay_surf(); break;
+    case 2: triangulate_surf(); break;
+    case 3: write_STL(); break;
+    case 4: reset_view(); break;
+    case 5: snapshot(); break;
+    case 6: toggle_2d3d_view(); break;
+    case 7: toggle_fill_mode(); break;
+    case 8: toggle_bg_color(); break;
+    case 9: toggle_lighting(); break;
+    case 10: toggle_transparency(); break;
+    case 11: toggle_normals(); break;
+    case 12: toggle_bumpy_surf(); break;
+    case 13: toggle_show_grid(); break;
+    case 14: toggle_show_triangles(); break;
+    case 15: toggle_show_normals(); break;
+    case 16: about(); break;
+    case 17: aboutQt(); break;
+    case 18: howto(); break;
+    case 19: set_resolution((int)static_QUType_int.get(_o+1)); break;
+    default:
+	return QMainWindow::qt_invoke( _id, _o );
+    }
+    return TRUE;
+}
+
+bool XTri_main_wnd::qt_emit( int _id, QUObject* _o )
+{
+    return QMainWindow::qt_emit(_id,_o);
+}
+#ifndef QT_NO_PROPERTIES
+
+bool XTri_main_wnd::qt_property( int id, int f, QVariant* v)
+{
+    return QMainWindow::qt_property( id, f, v);
+}
+
+bool XTri_main_wnd::qt_static_property( QObject* , int , int , QVariant* ){ return FALSE; }
+#endif // QT_NO_PROPERTIES

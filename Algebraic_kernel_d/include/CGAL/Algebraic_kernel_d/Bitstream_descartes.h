@@ -1,4 +1,4 @@
-// Copyright (c) 2006-2009 Max-Planck-Institute Saarbruecken (Germany).
+// Copyright (c) 2006-2012 Max-Planck-Institute Saarbruecken (Germany).
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org); you can redistribute it and/or
@@ -14,26 +14,207 @@
 //
 // $URL$
 // $Id$
-// 
 //
 // Author(s)     : Michael Kerber <mkerber@mpi-inf.mpg.de>
+//                 Eric Berberich <eric.berberich@cgal.org>
 //
 // ============================================================================
 
-#ifndef CGAL_GENERIC_DESCARTES
-#define CGAL_GENERIC_DESCARTES 1
+#ifndef CGAL_BITSTREAM_DESCARTES_H
+#define CGAL_BITSTREAM_DESCARTES_H 1
 
+#if !CGAL_AK_USE_OLD_BITSTREAM_DESCARTES
+
+#include <CGAL/config.h>
+
+#include <CGAL/Algebraic_kernel_d/Generic_isolator.h>
+#include <CGAL/Algebraic_kernel_d/Bitstream_descartes_isolator_reps.h>
+
+namespace CGAL {
+
+namespace internal {
+
+// TODO 2012 keep Bitstream_descartes in internal namespace? (include BS_isolator_rep.h here?)
+
+// TODO 2012 document BitstreamCoefficientKernel concept
+/*!
+ * \brief Class for the Bitstream Descartes method
+ *
+ * Class for the real root isolation of polynomials, using the Bitstream
+ * Descartes method. The polynomials coefficient type is arbitrary, the 
+ * approximations of the coefficient type are obtained with the 
+ * \c BitstreamCoefficientKernel parameter. For the requirements
+ * of this traits class, see the documentation of the 
+ * BitstreamCoefficientKernel concept, which basically needs 
+ * a few types, Is_zero and Convert_to_bfi).
+ *
+ * Internally, an instance of CGAL::Bitstream_descartes_rndl_tree is explored
+ * in a specific way. That exploration strategy depends on the constructor
+ * that is used to create the object. A tag is passed that defines the
+ * variant of the Bitstream Descartes method: The Square_free_descartes_tag
+ * starts the usual Bitstream method for square free integer polynomials.
+ * With the M_k_descartes tag, it is able to handle one multiple root in 
+ * favourable situations, the Backshear_descartes_tag allows to isolate
+ * even more complicated polynomials, if the multiple roots with even
+ * multiplicity can be refined from outside. See the corresponding
+ * constructors for more information.
+ * 
+ */
+template < class BitstreamCoefficientKernel, typename HandlePolicy = CGAL::Handle_policy_no_union >
+class Bitstream_descartes : 
+  public internal::Generic_isolator< typename BitstreamCoefficientKernel::Polynomial,
+                                     typename BitstreamCoefficientKernel::Bound, 
+                                     HandlePolicy,
+                                     internal::Square_free_bitstream_descartes_isolator_rep< BitstreamCoefficientKernel, HandlePolicy > > {
+
+public:
+
+  //!\name Tags
+  //!@{
+
+  //! "refine_interval" function is implemented
+  typedef CGAL::Tag_true Refine_interval_provided_tag;
+
+  //!@} // Tags
+
+ public:
+
+  //!\name Public types
+  //!@{
+
+  //! first template parameter: Bitstream coefficient kernel
+  typedef BitstreamCoefficientKernel Bitstream_coefficient_kernel;
+
+  //! second template parameter
+  typedef HandlePolicy Handle_policy;
+
+  //! The polynomial type
+  typedef typename Bitstream_coefficient_kernel::Polynomial Polynomial;
+
+  //! How the boundaries of the isolating intervals are represented
+  typedef typename Bitstream_coefficient_kernel::Bound Bound;
+
+  //! the representation class
+  typedef internal::Square_free_bitstream_descartes_isolator_rep< Bitstream_coefficient_kernel, Handle_policy > Rep;
+
+  //! the base type
+  typedef internal::Generic_isolator< Polynomial, Bound, Handle_policy, Rep > Base;
+
+  //! the class itself
+  typedef Bitstream_descartes< Bitstream_coefficient_kernel, Handle_policy > Self;
+
+  //! type of bitstream tree
+  typedef typename Rep::Bitstream_tree Bitstream_tree;
+
+  //!@} // Public types
+
+  protected:
+
+  //! type of bitstream tree
+  typedef typename Rep::Bitstream_descartes_rndl_tree_traits Bitstream_descartes_rndl_tree_traits;
+
+  //!\name Constructors
+  //!@{
+
+#if CGAL_ALGEBRAIC_KERNEL_D_ISOLATORS_DISABLE_DEFAULT_CONSTRUCTIBLE
+ protected:
+  Bitstream_descartes(); // = disable
+#else // CGAL_ALGEBRAIC_KERNEL_D_ISOLATORS_DISABLE_DEFAULT_CONSTRUCTIBLE
+ public:
+  //! Default constructor
+ Bitstream_descartes() : Base(new Rep()) {}
+#endif // CGAL_ALGEBRAIC_KERNEL_D_ISOLATORS_DISABLE_DEFAULT_CONSTRUCTIBLE
+
+#if CGAL_ALGEBRAIC_KERNEL_D_ISOLATORS_DISABLE_ASSIGNABLE
+ protected:
+  Bitstream_descartes(const Self&); // = disable
+  Bitstream_descartes& operator=(const Self&); // = disable
+#endif // CGAL_ALGEBRAIC_KERNEL_D_ISOLATORS_DISABLE_ASSIGNABLE
+
+ public:
+  /*! 
+   * \brief Constructor for a polynomial \c f
+   */
+  Bitstream_descartes(const Polynomial& p,
+                      // TODO 2012 default bck? works only if no additional information is needed
+                      Bitstream_coefficient_kernel bck = Bitstream_coefficient_kernel(),
+                      bool isolate = true)
+    : Base(new Rep(p, bck))
+  {
+    if (isolate) {
+      this->isolate();
+    }
+  }
+
+  /*! 
+   * \brief Constructor for the square free Descartes method,
+   * using a precomputed tree
+   *
+   * The polynomial \c f must not have multiple real roots. The 
+   * Bitstream Descartes tree is traversed in a bfs manner until
+   * all leaves have sign variation zero or one.
+   * The tree must be adequate for the polynomial. 
+   * Use that constructor only if you know what you're doing!
+   */
+  Bitstream_descartes(const Polynomial& p,
+                      Bitstream_tree tree,
+                      // TODO 2012 default bck?
+                      Bitstream_coefficient_kernel bck = Bitstream_coefficient_kernel(),
+                      bool isolate = true)
+    : Base(new Rep(p, tree, bck))
+  {
+    if (isolate) {
+      this->isolate();
+    }
+  }
+
+  // TODO 2012 constructor for [a,b] range?
+
+  //!@}
+
+  //!\name Access members
+  //!@{
+
+  // the ones beyond those inherited from Base()
+
+  //! Returns the kernel class
+  Bitstream_coefficient_kernel bck() const {
+    return this->ptr()->bck();
+  } 
+
+  //! returns the underlying tree
+  Bitstream_tree tree() const {
+    return this->ptr()->tree();
+  }
+
+  protected:
+
+  //! Returns the traits class
+  Bitstream_descartes_rndl_tree_traits traits() const {
+    return this->ptr()->traits();
+  }
+
+  //!@} // Access members 
+
+}; // Bitstream_descartes
+
+} // namespace internal
+
+} // namespace CGAL
+
+#else // CGAL_AK_USE_OLD_BITSTREAM_DESCARTES
 
 #include <CGAL/basic.h>
 #include <CGAL/Polynomial.h>
 #include <CGAL/Polynomial_type_generator.h>
 
-// NOTE: If this flag is set, you need EXACUS!
+#include <CGAL/Algebraic_kernel_d/Bitstream_descartes_rndl_tree_traits.h>
+
 #if CGAL_ACK_BITSTREAM_USES_E08_TREE
 #include <CGAL/Algebraic_kernel_d/Bitstream_descartes_E08_tree.h>
-#else
+#else // CGAL_ACK_BITSTREAM_USES_E08_TREE
 #include <CGAL/Algebraic_kernel_d/Bitstream_descartes_rndl_tree.h>
-#endif
+#endif // CGAL_ACK_BITSTREAM_USES_E08_TREE
 
 #include <CGAL/Algebraic_kernel_d/exceptions.h>
 
@@ -50,8 +231,9 @@ enum Bitstream_descartes_type {
   VERT_LINE_ADAPTER_DESCARTES = 4 // ! < uses Vert_line_adapter_descartes
 };
 
-// pre-declaration
-template<typename BitstreamDescartesRndlTreeTraits>
+
+//! forward declaration
+template<typename BitstreamCoefficientKernel>
 class Bitstream_descartes;
 
 //! Tag for the square free Bitstream Descartes method
@@ -66,10 +248,6 @@ struct Backshear_descartes_tag {};
 //! Tag for the Exchange-Descartes method
 struct Vert_line_adapter_descartes_tag {};
 
-//! forward declaration
-template<typename BitstreamDescartesRndlTreeTraits>
-class Bitstream_descartes;
-
 
 /*
  * \brief Thrown whenever a non-specialised virtual member function is called
@@ -81,43 +259,45 @@ class Virtual_method_exception {};
  * \brief The base class for all variants of the Bitstream Descartes method.
  *
  */
-template<typename BitstreamDescartesRndlTreeTraits,
+template<typename BitstreamCoefficientKernel,
       typename Policy=CGAL::Handle_policy_no_union>
 class Generic_descartes_rep 
   : public Policy::template Hierarchy_base<CGAL_ALLOCATOR(char) >::Type {
   
 public:
-  
+
+  //! first template parameter: Bitstream coefficient kernel
+  typedef BitstreamCoefficientKernel Bitstream_coefficient_kernel;
+
   //! The traits class for approximations
-  typedef BitstreamDescartesRndlTreeTraits 
+  typedef CGAL::internal::Bitstream_descartes_rndl_tree_traits< Bitstream_coefficient_kernel >
   Bitstream_descartes_rndl_tree_traits;
   
   //! The Handle class
-  typedef Bitstream_descartes<Bitstream_descartes_rndl_tree_traits> Handle;
+  typedef Bitstream_descartes<Bitstream_coefficient_kernel> Handle;
   
   //! The Coeeficient type of the input polynomial
-  typedef typename Bitstream_descartes_rndl_tree_traits::Coefficient
-  Coefficient;
+  typedef typename Bitstream_coefficient_kernel::Coefficient Coefficient;
   
   //! The polynomial type
   typedef typename Bitstream_descartes_rndl_tree_traits::POLY Polynomial;
   
-  typedef Generic_descartes_rep<Bitstream_descartes_rndl_tree_traits> Self;
+  typedef Generic_descartes_rep<Bitstream_coefficient_kernel> Self;
   
   //! The type of the used Bitstream Descartes tree
 #if CGAL_ACK_BITSTREAM_USES_E08_TREE
   typedef CGAL::internal::Bitstream_descartes_E08_tree
   <Bitstream_descartes_rndl_tree_traits> 
   Bitstream_tree;
-#else
+#else // CGAL_ACK_BITSTREAM_USES_E08_TREE
   typedef CGAL::internal::Bitstream_descartes_rndl_tree
   <Bitstream_descartes_rndl_tree_traits> 
   Bitstream_tree;
-#endif
+#endif // CGAL_ACK_BITSTREAM_USES_E08_TREE
   
   
   //! The used integer type
-  typedef typename Bitstream_descartes_rndl_tree_traits::Integer Integer;
+  typedef typename Bitstream_coefficient_kernel::Integer Integer;
   
   //! The type for the iterator of the nodes of the bitstream tree
   typedef typename Bitstream_tree::Node_iterator Node_iterator;
@@ -126,7 +306,7 @@ public:
   typedef typename Bitstream_tree::Node_const_iterator Node_const_iterator;
   
   //! How the boundaries of the isolating intervals are represented
-  typedef typename Bitstream_descartes_rndl_tree_traits::Bound Bound;
+  typedef typename Bitstream_coefficient_kernel::Bound Bound;
   
   //! Default constructor (does nothing)
   Generic_descartes_rep(Bitstream_descartes_type type = GENERIC_DESCARTES) :
@@ -139,33 +319,33 @@ public:
    */
   Generic_descartes_rep(Bitstream_descartes_type type, 
                         Polynomial f,
-                        Bitstream_descartes_rndl_tree_traits traits) : 
+                        Bitstream_coefficient_kernel bck) : 
     type_(type), 
-    f_(f), 
-    traits_(traits), 
-    is_isolated_(false) {
+    _m_f(f), 
+    _m_traits(Bitstream_descartes_rndl_tree_traits(bck)), 
+    _m_is_isolated(false) {
     
     Integer lower,upper;
     long log_div;
-    this->get_interval(f,lower,upper,log_div,traits);
+    this->interval(f, lower, upper, log_div);
     //AcX_DSTREAM("f: " << f << std::endl);
     if (CGAL::degree(f) > 0) {
-      bitstream_tree 
+      _m_bitstream_tree 
 #if CGAL_ACK_BITSTREAM_USES_E08_TREE
         = Bitstream_tree(-log_div,
                          f.begin(),
                          f.end(),
                          typename Bitstream_tree::Monomial_basis_tag(),
-                         traits);
-#else
+                         _m_traits);
+#else // CGAL_ACK_BITSTREAM_USES_E08_TREE
       = Bitstream_tree(lower,upper,log_div,
                        f.begin(),
                        f.end(),
                        typename Bitstream_tree::Monomial_basis_tag(),
-                       traits);
-#endif
+                       _m_traits);
+#endif // CGAL_ACK_BITSTREAM_USES_E08_TREE
       
-      if (bitstream_tree.begin() == bitstream_tree.end()) {
+      if (_m_bitstream_tree.begin() == _m_bitstream_tree.end()) {
         number_of_intervals = 0;
       } else {
         number_of_intervals = 1;
@@ -183,19 +363,19 @@ public:
   Generic_descartes_rep(Bitstream_descartes_type type, 
                         Polynomial f,
                         Bitstream_tree tree,
-                        Bitstream_descartes_rndl_tree_traits traits) : 
+                        Bitstream_coefficient_kernel bck) : 
     type_(type), 
-    f_(f), 
-    traits_(traits), 
-    bitstream_tree(tree),
-    is_isolated_(false) {
+    _m_f(f), 
+    _m_bitstream_tree(tree),
+    _m_traits(Bitstream_descartes_rndl_tree_traits(bck)), 
+    _m_is_isolated(false) {
     
-    tree.set_traits(traits);
+    tree.set_traits(_m_traits);
     
     number_of_intervals = 0;
     
-    for(Node_iterator curr = bitstream_tree.begin();
-        curr != bitstream_tree.end();
+    for(Node_iterator curr = _m_bitstream_tree.begin();
+        curr != _m_bitstream_tree.end();
         curr++) {
       number_of_intervals++;
     }
@@ -217,7 +397,7 @@ public:
   virtual void refine_interval(int i) const {
     CGAL_assertion(i >= 0);
     CGAL_assertion(i < number_of_intervals);
-    Node_iterator curr = bitstream_tree.begin(), begin, end, 
+    Node_iterator curr = _m_bitstream_tree.begin(), begin, end, 
       new_begin, helper;
     std::advance(curr,i);
     int intervals = 1;
@@ -225,9 +405,9 @@ public:
     ++end;
     begin=curr;
     do {
-      //std::cout << bitstream_tree.lower(begin) << " " << bitstream_tree.upper(begin) << std::endl;
-      //std::cout << bitstream_tree.min_var(begin) << " " << bitstream_tree.max_var(begin) << std::endl;
-      int new_intervals = bitstream_tree.subdivide(begin,new_begin,helper);
+      //std::cout << _m_bitstream_tree.lower(begin) << " " << _m_bitstream_tree.upper(begin) << std::endl;
+      //std::cout << _m_bitstream_tree.min_var(begin) << " " << _m_bitstream_tree.max_var(begin) << std::endl;
+      int new_intervals = _m_bitstream_tree.subdivide(begin,new_begin,helper);
       intervals += new_intervals-1;
       begin = new_begin;
       curr = helper;
@@ -242,7 +422,7 @@ public:
       }
       
       while(curr != end) {
-        intervals += bitstream_tree.subdivide(curr,new_begin,helper)-1;
+        intervals += _m_bitstream_tree.subdivide(curr,new_begin,helper)-1;
         curr = helper;
       }
       
@@ -264,10 +444,10 @@ public:
     
     //AcX_DSTREAM("Starting isolation" << std::endl);
     
-    Node_iterator curr = bitstream_tree.begin(),dummy,new_curr;
+    Node_iterator curr = _m_bitstream_tree.begin(),dummy,new_curr;
     
-    if(curr == bitstream_tree.end()) {
-      is_isolated_ = true;
+    if(curr == _m_bitstream_tree.end()) {
+      _m_is_isolated = true;
       return;
     }
     
@@ -275,18 +455,18 @@ public:
     
     while (!this->termination_condition()) {
       
-      if (curr == bitstream_tree.end()) {
-        curr = bitstream_tree.begin();
+      if (curr == _m_bitstream_tree.end()) {
+        curr = _m_bitstream_tree.begin();
       }
       
-      if (bitstream_tree.max_var(curr) == 1) {
+      if (_m_bitstream_tree.max_var(curr) == 1) {
         ++curr;
       }
       else {
         //AcX_DSTREAM("Subdivision at " 
-        //<< CGAL::to_double(bitstream_tree.lower(curr)) << " " 
-        //<< CGAL::to_double(bitstream_tree.upper(curr)) << std::flush);
-        newly_created = bitstream_tree.subdivide(curr,dummy,new_curr);
+        //<< CGAL::to_double(_m_bitstream_tree.lower(curr)) << " " 
+        //<< CGAL::to_double(_m_bitstream_tree.upper(curr)) << std::flush);
+        newly_created = _m_bitstream_tree.subdivide(curr,dummy,new_curr);
         number_of_intervals += newly_created-1;
         curr = new_curr;
         //AcX_DSTREAM("done" << std::endl);
@@ -294,7 +474,7 @@ public:
       
     }
     this->process_nodes();
-    is_isolated_ = true;
+    _m_is_isolated = true;
   }
   
   /*!
@@ -304,17 +484,16 @@ public:
    * So far, the \c log_div variable is always set to zero, this means
    * that <i>[lower,upper]</i> is the interval containing all real roots
    */
-  virtual void get_interval(const Polynomial& p, Integer& lower, 
-                            Integer& upper, long& log_div,
-                            Bitstream_descartes_rndl_tree_traits traits) {
+  virtual void interval(const Polynomial& p, Integer& lower, 
+                        Integer& upper, long& log_div) {
     
     
     typename Bitstream_descartes_rndl_tree_traits::Lower_bound_log2_abs
-      lower_bound_log2_abs = traits.lower_bound_log2_abs_object();
+      lower_bound_log2_abs = this->_m_traits.lower_bound_log2_abs_object();
     typename 
       Bitstream_descartes_rndl_tree_traits::Upper_bound_log2_abs_approximator
       upper_bound_log2_abs_approximator 
-      = traits.upper_bound_log2_abs_approximator_object();
+      = this->_m_traits.upper_bound_log2_abs_approximator_object();
     //AcX_DSTREAM("Fujiwara bound.." << p <<  std::endl);
 #if CGAL_ACK_BITSTREAM_USES_E08_TREE
     log_div = -CGAL::internal::Fujiwara_root_bound_log
@@ -323,8 +502,7 @@ public:
        lower_bound_log2_abs,
        upper_bound_log2_abs_approximator
       );
-#else
-    
+#else // CGAL_ACK_BITSTREAM_USES_E08_TREE
     log_div = -CGAL::internal
       ::Fujiwara_root_bound_log
       (p.begin(),
@@ -332,7 +510,7 @@ public:
        lower_bound_log2_abs,
        upper_bound_log2_abs_approximator
       );
-#endif
+#endif // CGAL_ACK_BITSTREAM_USES_E08_TREE
     
     //AcX_DSTREAM("Fujiwara returns " << log_div << std::endl);
     // To be sure
@@ -352,23 +530,23 @@ public:
   virtual Bound left_bound(int i) const  {
     CGAL_assertion(i >= 0);
     CGAL_assertion(i < number_of_intervals);
-    Node_const_iterator curr = bitstream_tree.begin();
+    Node_const_iterator curr = _m_bitstream_tree.begin();
     std::advance(curr,i);
-    return bitstream_tree.lower(curr);
+    return _m_bitstream_tree.lower(curr);
   } 
   
   //! The upper bound of the \c i th root
   virtual Bound right_bound(int i) const {
     CGAL_assertion(i >= 0);
     CGAL_assertion(i < number_of_intervals);
-    Node_const_iterator curr = bitstream_tree.begin();
+    Node_const_iterator curr = _m_bitstream_tree.begin();
     std::advance(curr,i);
-    return bitstream_tree.upper(curr);
+    return _m_bitstream_tree.upper(curr);
   } 
   
   //! Returns the polynomial which is isolated
   Polynomial polynomial() const {
-    return f_;
+    return _m_f;
   }
   
   /*! 
@@ -420,12 +598,12 @@ public:
     return -1;
   }
   
-  virtual int get_upper_bound_for_multiplicity(int i) const {
+  virtual int upper_bound_for_multiplicity(int i) const {
     CGAL_assertion(i >= 0);
     CGAL_assertion(i < number_of_intervals);
-    Node_const_iterator curr = bitstream_tree.begin();
+    Node_const_iterator curr = _m_bitstream_tree.begin();
     std::advance(curr,i);
-    return bitstream_tree.min_var(curr);
+    return _m_bitstream_tree.min_var(curr);
   } 
   
   //! Must be specialized by the derived class
@@ -445,61 +623,69 @@ public:
     throw Virtual_method_exception();
     return Handle();
   }
-  
+
+  //! returns whether roots are already isolated
   bool is_isolated() const {
-    return is_isolated_;
+    return _m_is_isolated;
   }
   
+  //! access to tree
+  Bitstream_tree tree() const {
+    return _m_bitstream_tree;
+  }
+
+  //! access to kernel
+  Bitstream_coefficient_kernel bck() const {
+    return _m_traits.bck();
+  }
+
+  //! access to traits
   Bitstream_descartes_rndl_tree_traits traits() const {
-    return traits_;
+    return _m_traits;
   }
-  
-  Bitstream_tree get_tree() const {
-    
-    return bitstream_tree;
-    
-  }
-  
+
   //! type to distinguish used constructor
   Bitstream_descartes_type type_;
-  
+   
 protected:
   
-  //! Polynomial which is isolated
-  Polynomial f_;
-  
-  //! The traits class
-  Bitstream_descartes_rndl_tree_traits traits_;
+ //! Polynomial which is isolated
+  Polynomial _m_f;
   
   //! The tree of the Bitstream Descartes method
-  mutable Bitstream_tree bitstream_tree;
-  
+  mutable Bitstream_tree _m_bitstream_tree;
+
+  //! The traits class
+  Bitstream_descartes_rndl_tree_traits _m_traits;
+    
   //! The number of detected isolating intervals
   int number_of_intervals;
   
   //! Has isolation already taken place
-  mutable bool is_isolated_;
+  mutable bool _m_is_isolated;
   
 };
 
 /*
  * \brief Representation for square free polynomials
  */
-template<typename BitstreamDescartesRndlTreeTraits,
+template<typename BitstreamCoefficientKernel,
       typename Policy=CGAL::Handle_policy_no_union>
 class Square_free_descartes_rep 
-  : public Generic_descartes_rep<BitstreamDescartesRndlTreeTraits> {
+  : public Generic_descartes_rep<BitstreamCoefficientKernel> {
   
   
 public:
   
-  //! Traits type
-  typedef BitstreamDescartesRndlTreeTraits 
+  //! first template parameter: Bitstream coefficient kernel
+  typedef BitstreamCoefficientKernel Bitstream_coefficient_kernel;
+
+  //! The traits class for approximations
+  typedef CGAL::internal::Bitstream_descartes_rndl_tree_traits< Bitstream_coefficient_kernel >
   Bitstream_descartes_rndl_tree_traits;
-  
+
   //! The generic representation
-  typedef Generic_descartes_rep<BitstreamDescartesRndlTreeTraits,
-	Policy> Base;
+  typedef Generic_descartes_rep< Bitstream_coefficient_kernel, Policy > Base;
   
   //! Polynomial type
   typedef typename Base::Polynomial Polynomial;
@@ -515,8 +701,8 @@ public:
    */
   Square_free_descartes_rep(
       Polynomial f,
-      Bitstream_descartes_rndl_tree_traits traits) :
-    Base(SQUARE_FREE_DESCARTES, f,traits) {
+      Bitstream_coefficient_kernel bck) :
+    Base(SQUARE_FREE_DESCARTES, f, bck) {
   }
 
   /*! 
@@ -525,8 +711,8 @@ public:
   Square_free_descartes_rep(
       Polynomial f,
       Bitstream_tree tree,
-      Bitstream_descartes_rndl_tree_traits traits) :
-    Base(SQUARE_FREE_DESCARTES, f, tree, traits) {
+      Bitstream_coefficient_kernel bck) :
+    Base(SQUARE_FREE_DESCARTES, f, tree, bck) {
   }
 
   //! Needed for reference counting
@@ -538,9 +724,9 @@ public:
    * \brief Terminates when all detected roots are simple
    */
   virtual bool termination_condition() {
-    for(Node_iterator curr=Base::bitstream_tree.begin();
-        curr != Base::bitstream_tree.end();curr++) {
-      if(Base::bitstream_tree.max_var(curr)!=1) {
+    for(Node_iterator curr=Base::_m_bitstream_tree.begin();
+        curr != Base::_m_bitstream_tree.end();curr++) {
+      if(Base::_m_bitstream_tree.max_var(curr)!=1) {
         return false;
       }
     }
@@ -559,7 +745,7 @@ public:
         
   //! Polynomial is square free
   virtual Polynomial square_free_part() const {
-    return this->f_;
+    return this->_m_f;
   }
 
   //! Always true
@@ -577,21 +763,23 @@ public:
 /*
  * \brief Representation for polynomials with at most one multiple root
  */
-template<typename BitstreamDescartesRndlTreeTraits,
+template<typename BitstreamCoefficientKernel,
       typename Policy=CGAL::Handle_policy_no_union>
 class M_k_descartes_rep 
-  : public Generic_descartes_rep<BitstreamDescartesRndlTreeTraits> {
+  : public Generic_descartes_rep<BitstreamCoefficientKernel> {
 	
 	
 public:
 	
-  //! Traits class
-  typedef BitstreamDescartesRndlTreeTraits 
+  //! first template parameter: Bitstream coefficient kernel
+  typedef BitstreamCoefficientKernel Bitstream_coefficient_kernel;
+
+  //! The traits class for approximations
+  typedef CGAL::internal::Bitstream_descartes_rndl_tree_traits< Bitstream_coefficient_kernel >
   Bitstream_descartes_rndl_tree_traits;
-    
-  //! Generic representation
-  typedef Generic_descartes_rep<BitstreamDescartesRndlTreeTraits,
-                                        Policy> Base;
+
+  //! The generic representation
+  typedef Generic_descartes_rep< Bitstream_coefficient_kernel, Policy > Base;
 
   //! Polynomial type
   typedef typename Base::Polynomial Polynomial;
@@ -603,8 +791,7 @@ public:
   typedef typename Base::Node_const_iterator Node_const_iterator;
 
   //! The interval boundaries are represented in this type
-  typedef typename  Bitstream_descartes_rndl_tree_traits::Bound
-  Bound;
+  typedef typename  Bitstream_coefficient_kernel::Bound Bound;
 
   //! The type of the tree that controls the Bitstream instance
   typedef typename Base::Bitstream_tree Bitstream_tree;
@@ -619,8 +806,8 @@ public:
    * divisor of <tt>f</tt> with its partial derivative, respectively.
    */ 
   M_k_descartes_rep(Polynomial f,int m, int k,
-                    Bitstream_descartes_rndl_tree_traits traits) :
-    Base(M_K_DESCARTES, f,traits),
+                    Bitstream_coefficient_kernel bck) :
+    Base(M_K_DESCARTES, f, bck),
     number_of_roots(m),
     gcd_degree(k),
     index_of_multiple(-1) {
@@ -628,8 +815,8 @@ public:
 
   M_k_descartes_rep(Polynomial f,int m, int k,
                     Bitstream_tree tree,
-                    Bitstream_descartes_rndl_tree_traits traits) :
-    Base(M_K_DESCARTES, f, tree, traits),
+                    Bitstream_coefficient_kernel bck) :
+    Base(M_K_DESCARTES, f, tree, bck),
     number_of_roots(m),
     gcd_degree(k),
     index_of_multiple(-1) {
@@ -655,13 +842,13 @@ public:
   virtual bool termination_condition() {
     int counted_simple_roots=0;
     int max_max_var = 0; 
-    for(Node_iterator curr=Base::bitstream_tree.begin();
-        curr != Base::bitstream_tree.end(); curr++) {
-      int max_var = Base::bitstream_tree.max_var(curr);
+    for(Node_iterator curr=Base::_m_bitstream_tree.begin();
+        curr != Base::_m_bitstream_tree.end(); curr++) {
+      int max_var = Base::_m_bitstream_tree.max_var(curr);
       if(max_var > max_max_var) {
         max_max_var = max_var;
       }
-      if(max_var == 1) { // && Base::bitstream_tree.max_var(curr)==1) {
+      if(max_var == 1) { // && Base::_m_bitstream_tree.max_var(curr)==1) {
         ++counted_simple_roots;
       }
     }      
@@ -681,9 +868,9 @@ public:
   //! The index of the (possibly) multiple root is computed here.
   virtual void process_nodes() {
     int i = 0;
-    for (Node_iterator curr=Base::bitstream_tree.begin();
-        curr != Base::bitstream_tree.end(); curr++) {
-      if(Base::bitstream_tree.max_var(curr) > 1 ) {
+    for (Node_iterator curr=Base::_m_bitstream_tree.begin();
+        curr != Base::_m_bitstream_tree.end(); curr++) {
+      if(Base::_m_bitstream_tree.max_var(curr) > 1 ) {
         index_of_multiple = i;
         return;
       } else {
@@ -723,22 +910,27 @@ protected:
 };
 
     
-template<typename BitstreamDescartesRndlTreeTraits,
+template<typename BitstreamCoefficientKernel,
              typename EventRefinement,
              typename Policy=CGAL::Handle_policy_no_union>
 class Backshear_descartes_rep 
-  : public Generic_descartes_rep<BitstreamDescartesRndlTreeTraits> {
+  : public Generic_descartes_rep<BitstreamCoefficientKernel> {
                                    
 
 public:
 
+  //! first template parameter: Bitstream coefficient kernel
+  typedef BitstreamCoefficientKernel Bitstream_coefficient_kernel;
+
+  //! second template parameter: Event_refinement
   typedef EventRefinement Event_refinement;
-   
-  typedef BitstreamDescartesRndlTreeTraits 
+
+  //! The traits class for approximations
+  typedef CGAL::internal::Bitstream_descartes_rndl_tree_traits< Bitstream_coefficient_kernel >
   Bitstream_descartes_rndl_tree_traits;
-   
-  typedef Generic_descartes_rep<BitstreamDescartesRndlTreeTraits,
-                                        Policy> Base;
+
+  //! The generic representation
+  typedef Generic_descartes_rep< Bitstream_coefficient_kernel, Policy > Base;
 
   typedef typename Base::Polynomial Polynomial;
 
@@ -757,8 +949,8 @@ public:
       int number_of_non_event_points,
       int number_of_events,
       Event_refinement event_refinement,
-      Bitstream_descartes_rndl_tree_traits traits) :
-    Base(BACKSHEAR_DESCARTES,f,traits), 
+      Bitstream_coefficient_kernel bck) :
+    Base(BACKSHEAR_DESCARTES, f, bck), 
     number_of_non_event_points(number_of_non_event_points),
     number_of_events(number_of_events),
     event_refinement(event_refinement) {
@@ -773,10 +965,10 @@ public:
 
   virtual void isolate() {
       
-    Node_iterator curr = Base::bitstream_tree.begin(),sub_begin,new_curr;
+    Node_iterator curr = Base::_m_bitstream_tree.begin(),sub_begin,new_curr;
 
-    if(curr == Base::bitstream_tree.end()) {
-      this->is_isolated_ = true;
+    if(curr == Base::_m_bitstream_tree.end()) {
+      this->_m_is_isolated = true;
       return;
     }
     markings.clear();
@@ -788,19 +980,19 @@ public:
 
     while(! this->termination_condition()) {
       //AcX_DSTREAM("Subdivision..." << number_of_intervals << std::endl);
-      if (curr == Base::bitstream_tree.end()) {
-        curr = Base::bitstream_tree.begin();
+      if (curr == Base::_m_bitstream_tree.end()) {
+        curr = Base::_m_bitstream_tree.begin();
         CGAL_assertion(curr_mark == markings.end());
         curr_mark = markings.begin();
       }
-      if(Base::bitstream_tree.max_var(curr) == 1) {
+      if(Base::_m_bitstream_tree.max_var(curr) == 1) {
         ++curr;
         ++curr_mark;
         //AcX_DSTREAM("nothing happend" << std::endl);
       }
       else {
         newly_created = 
-          Base::bitstream_tree.subdivide(curr,sub_begin,new_curr);
+          Base::_m_bitstream_tree.subdivide(curr,sub_begin,new_curr);
         mark_helper = markings.erase(curr_mark);
         curr_mark = mark_helper;
         for(Node_iterator tmp_curr = sub_begin;
@@ -815,7 +1007,7 @@ public:
       }
     }
     this->process_nodes();
-    this->is_isolated_ = true;
+    this->_m_is_isolated = true;
   }
 
 
@@ -823,14 +1015,14 @@ public:
   virtual bool termination_condition() {
     int marked_intervals = 0;
     int unmarked_odd_intervals = 0;
-    Node_iterator curr = Base::bitstream_tree.begin();
+    Node_iterator curr = Base::_m_bitstream_tree.begin();
     Marking_iterator curr_mark = markings.begin();
-    for(;curr != Base::bitstream_tree.end(); curr++) {
+    for(;curr != Base::_m_bitstream_tree.end(); curr++) {
       if((*curr_mark) >= 0) {
         ++marked_intervals;
       }
       else {
-        if (Base::bitstream_tree.min_var(curr) % 2 == 1) { // odd
+        if (Base::_m_bitstream_tree.min_var(curr) % 2 == 1) { // odd
           ++unmarked_odd_intervals;
         }
       }
@@ -842,15 +1034,15 @@ public:
   }
 
   virtual void process_nodes() {
-    Node_iterator curr=Base::bitstream_tree.begin(),curr_helper;
+    Node_iterator curr=Base::_m_bitstream_tree.begin(),curr_helper;
     Marking_iterator curr_mark = markings.begin();
-    while(curr!=Base::bitstream_tree.end()) {
+    while(curr!=Base::_m_bitstream_tree.end()) {
       if(((*curr_mark) == -1) && 
-         (Base::bitstream_tree.min_var(curr) % 2 == 0)) {
+         (Base::_m_bitstream_tree.min_var(curr) % 2 == 0)) {
         ++curr;
         curr_helper = curr;
         curr_helper--;
-        Base::bitstream_tree.erase(curr_helper);
+        Base::_m_bitstream_tree.erase(curr_helper);
         curr_mark = markings.erase(curr_mark);
         Base::number_of_intervals--;
       } else {
@@ -869,9 +1061,9 @@ public:
   virtual bool is_certainly_simple_root(int i) const {
     CGAL_assertion(i >= 0);
     CGAL_assertion(i < Base::number_of_intervals);
-    Node_const_iterator curr=Base::bitstream_tree.begin();
+    Node_const_iterator curr=Base::_m_bitstream_tree.begin();
     std::advance(curr,i);
-    return (Base::bitstream_tree.max_var(curr) == 1);
+    return (Base::_m_bitstream_tree.max_var(curr) == 1);
   }
 	
   virtual bool is_certainly_multiple_root(int i) const {
@@ -896,8 +1088,8 @@ protected:
 protected:
 
   int check_marking(Node_iterator node) {
-    Bound lower = Base::bitstream_tree.lower(node),
-      upper = Base::bitstream_tree.upper(node);
+    Bound lower = Base::_m_bitstream_tree.lower(node),
+      upper = Base::_m_bitstream_tree.upper(node);
     for(int i = 0; i < number_of_events; i++) {
       while(true) {
         if(CGAL::compare(event_refinement.lower_bound(i),lower)
@@ -930,21 +1122,27 @@ protected:
  * (needed as dummy in surface analysis)
  *
  */
-template<typename BitstreamDescartesRndlTreeTraits,
+template<typename BitstreamCoefficientKernel,
       typename VertLine,
       typename Policy=CGAL::Handle_policy_no_union>
 class Vert_line_adapter_descartes_rep 
-  : public Generic_descartes_rep<BitstreamDescartesRndlTreeTraits> {
+  : public Generic_descartes_rep<BitstreamCoefficientKernel> {
         
 public:
         
-  //! The traits class for approximations
-  typedef BitstreamDescartesRndlTreeTraits 
-  Bitstream_descartes_rndl_tree_traits;
-        
-  //! type of vert line
+  //! first template parameter: Bitstream coefficient kernel
+  typedef BitstreamCoefficientKernel Bitstream_coefficient_kernel;
+
+  //! second template parameter: Vert_line
   typedef VertLine Vert_line;
 
+  //! The traits class for approximations
+  typedef CGAL::internal::Bitstream_descartes_rndl_tree_traits< Bitstream_coefficient_kernel >
+  Bitstream_descartes_rndl_tree_traits;
+
+  //! The generic representation
+  typedef Generic_descartes_rep< Bitstream_coefficient_kernel, Policy > Base;
+        
   //! type of Curve_analysis_2
   typedef typename Vert_line::Curve_analysis_2 Curve_analysis_2;
 
@@ -953,25 +1151,20 @@ public:
   Curve_kernel_2;
 
   //! The Coeeficient type of the input polynomial
-  typedef typename Bitstream_descartes_rndl_tree_traits::Coefficient 
-  Coefficient;
+  typedef typename Bitstream_coefficient_kernel::Coefficient Coefficient;
         
   //! The polynomial type
   typedef typename CGAL::Polynomial_type_generator<Coefficient,1>::Type 
   Polynomial;
         
   typedef Vert_line_adapter_descartes_rep
-  <Bitstream_descartes_rndl_tree_traits, Vert_line, Policy> Self;
+  <Bitstream_coefficient_kernel, Vert_line, Policy> Self;
         
   //! The used integer type
-  typedef typename Bitstream_descartes_rndl_tree_traits::Integer Integer;
+  typedef typename Bitstream_coefficient_kernel::Integer Integer;
         
   //! How the boundaries of the isolating intervals are represented
-  typedef typename Bitstream_descartes_rndl_tree_traits::Bound
-  Bound;
-        
-  typedef Generic_descartes_rep<Bitstream_descartes_rndl_tree_traits>
-  Base;
+  typedef typename Bitstream_coefficient_kernel::Bound Bound;
         
   //! The type for the inverse isolator
   typedef typename Base::Handle Handle;
@@ -982,16 +1175,16 @@ public:
   template<typename InputIterator>
   Vert_line_adapter_descartes_rep(InputIterator begin,
                                   InputIterator end,
-                                  Bitstream_descartes_rndl_tree_traits traits)
+                                  Bitstream_coefficient_kernel bck)
     : Base(VERT_LINE_ADAPTER_DESCARTES) 
   {
     for (InputIterator it = begin; it != end; it++) {
       root_vec.push_back(std::make_pair(*it, 4));
     }
 	    
-    this->is_isolated_ = true;
-    this->traits_ = traits;
-    this->f_  = Polynomial(0);
+    this->_m_is_isolated = true;
+    this->_m_traits = Bitstream_descartes_rndl_tree_traits(bck);
+    this->_m_f  = Polynomial(0);
     this->number_of_intervals 
       = static_cast<int>(root_vec.size());
     // Isolate all real roots until intervals are disjoint:
@@ -1029,7 +1222,7 @@ public:
   //! The lower bound of the \c i th root
   virtual Bound left_bound(int i) const  {
     typename Curve_kernel_2::Approximate_absolute_y_2
-      approx_y = Base::traits_.point().xy().kernel()
+      approx_y = this->bck().point().xy().kernel()
       ->approximate_absolute_y_2_object();
     return approx_y(root_vec[i].first.first.algebraic_real_2
                     (root_vec[i].first.second),
@@ -1039,7 +1232,7 @@ public:
   //! The upper bound of the \c i th root
   virtual Bound right_bound(int i) const {
     typename Curve_kernel_2::Approximate_absolute_y_2
-      approx_y = Base::traits_.point().xy().kernel()
+      approx_y = this->bck().point().xy().kernel()
       ->approximate_absolute_y_2_object();
     return approx_y(root_vec[i].first.first.algebraic_real_2
                     (root_vec[i].first.second),
@@ -1079,9 +1272,9 @@ protected:
  * Class for the real root isolation of polynomials, using the Bitstream
  * Descartes method. The polynomials coefficient type is arbitrary, the 
  * approximations of the coefficient type are obtained with the 
- * \c BitstreamDescartesRndlTreeTraits parameter. For the requirements
- * of this traits class, see the documentation of 
- * CGAL::Bitstream_descartes_rndl_tree. 
+ * \c BitstreamCoefficientKernel parameter. For the requirements
+ * of this traits class, see the documentation of the traits.
+
  *
  * Internally, an instance of CGAL::Bitstream_descartes_rndl_tree is explored
  * in a specific way. That exploration strategy depends on the constructor
@@ -1095,60 +1288,50 @@ protected:
  * constructors for more information.
  * 
  */
-template<typename BitstreamDescartesRndlTreeTraits>
+template<typename BitstreamCoefficientKernel>
 class Bitstream_descartes 
   : ::CGAL::Handle_with_policy<
-    CGAL::internal::Generic_descartes_rep<BitstreamDescartesRndlTreeTraits> > {
+    CGAL::internal::Generic_descartes_rep<BitstreamCoefficientKernel> > {
     
 public:
     
-  //! Traits class
-  typedef BitstreamDescartesRndlTreeTraits 
+  //! Bitstream coefficient kernel
+  typedef BitstreamCoefficientKernel Bitstream_coefficient_kernel;
+
+  //! the traits class
+  typedef CGAL::internal::Bitstream_descartes_rndl_tree_traits< Bitstream_coefficient_kernel >
   Bitstream_descartes_rndl_tree_traits;
       
   // The generic representation class
   typedef 
-  CGAL::internal::Generic_descartes_rep<BitstreamDescartesRndlTreeTraits> Rep;
+  CGAL::internal::Generic_descartes_rep< Bitstream_coefficient_kernel > Rep;
 
   // The Handle type
   typedef ::CGAL::Handle_with_policy<Rep> Base;
     
   //! The coefficients of the polynomial
-  typedef typename Bitstream_descartes_rndl_tree_traits::Coefficient
-  Coefficient;
+  typedef typename Bitstream_coefficient_kernel::Coefficient Coefficient;
     
   //! The polynomial's type
   typedef typename CGAL::Polynomial_type_generator<Coefficient,1>::Type 
   Polynomial;
     
-  typedef Bitstream_descartes<Bitstream_descartes_rndl_tree_traits> 
-  Self;
+  typedef Bitstream_descartes<Bitstream_coefficient_kernel> Self;
     
   // Type for the Bitstream Descartes tree
-#if CGAL_ACK_BITSTREAM_USES_E08_TREE
-  typedef CGAL::internal::Bitstream_descartes_E08_tree
-  <Bitstream_descartes_rndl_tree_traits> 
-  Bitstream_tree;
-#else
-  typedef CGAL::internal::Bitstream_descartes_rndl_tree
-  <Bitstream_descartes_rndl_tree_traits> 
-  Bitstream_tree;
-#endif
+  typedef typename Rep::Bitstream_tree Bitstream_tree;
 
   //! Type for Integers
-  typedef typename Bitstream_descartes_rndl_tree_traits::Integer Integer;
-
-  //! Iterator type for the leaves of the Descartes tree
-  typedef typename Bitstream_tree::Node_iterator 
-  Node_iterator;
-
-  //! Const iterator for the leaves
-  typedef typename Bitstream_tree::Node_const_iterator 
-  Node_const_iterator;
+  typedef typename Bitstream_coefficient_kernel::Integer Integer;
 
   //! Type for the interval boundaries of the isolating intervals
-  typedef typename Bitstream_descartes_rndl_tree_traits::Bound
-  Bound;
+  typedef typename Bitstream_coefficient_kernel::Bound Bound;
+
+  //! Iterator type for the leaves of the Descartes tree
+  typedef typename Bitstream_tree::Node_iterator Node_iterator;
+
+  //! Const iterator for the leaves
+  typedef typename Bitstream_tree::Node_const_iterator Node_const_iterator;
 
   //! Default constructor
   Bitstream_descartes() : Base(new Rep()) {}
@@ -1164,11 +1347,10 @@ public:
    * with \c Square_free_descartes_tag
    */
   Bitstream_descartes(Polynomial f,
-                      Bitstream_descartes_rndl_tree_traits traits
-                      = Bitstream_descartes_rndl_tree_traits(),
-                      bool isolate=true)
+                      Bitstream_coefficient_kernel bck = Bitstream_coefficient_kernel(),
+                      bool isolate = true)
     : Base(new CGAL::internal::Square_free_descartes_rep
-           <Bitstream_descartes_rndl_tree_traits>(f,traits))
+           <Bitstream_coefficient_kernel>(f, bck))
   {
     if (isolate) {
       this->isolate();
@@ -1184,11 +1366,10 @@ public:
    */
   Bitstream_descartes(Square_free_descartes_tag ,
                       Polynomial f,
-                      Bitstream_descartes_rndl_tree_traits traits
-                      = Bitstream_descartes_rndl_tree_traits(),
-                      bool isolate=true)
+                      Bitstream_coefficient_kernel bck = Bitstream_coefficient_kernel(),
+                      bool isolate = true)
     : Base(new CGAL::internal::Square_free_descartes_rep
-           <Bitstream_descartes_rndl_tree_traits>(f,traits))
+           <Bitstream_coefficient_kernel>(f, bck))
   {
     if (isolate) {
       this->isolate();
@@ -1208,13 +1389,12 @@ public:
   Bitstream_descartes(Square_free_descartes_tag ,
                       Polynomial f,
                       Bitstream_tree tree,
-                      Bitstream_descartes_rndl_tree_traits traits
-                      = Bitstream_descartes_rndl_tree_traits(),
-                      bool isolate=true)
+                      Bitstream_coefficient_kernel bck = Bitstream_coefficient_kernel(),
+                      bool isolate = true)
     : Base(new CGAL::internal::Square_free_descartes_rep
-           <Bitstream_descartes_rndl_tree_traits>(f, tree, traits))
+           <Bitstream_coefficient_kernel>(f, tree, bck))
   {
-    if(isolate) {
+    if (isolate) {
       this->isolate();
     }
   }
@@ -1232,11 +1412,10 @@ public:
    */
   Bitstream_descartes(M_k_descartes_tag /* t */,
                       Polynomial f,int m,int k,
-                      Bitstream_descartes_rndl_tree_traits traits
-                      = Bitstream_descartes_rndl_tree_traits(),
+                      Bitstream_coefficient_kernel bck = Bitstream_coefficient_kernel(),
                       bool isolate = true)
     : Base(new CGAL::internal::M_k_descartes_rep
-           <Bitstream_descartes_rndl_tree_traits>(f,m,k,traits))
+           <Bitstream_coefficient_kernel>(f, m, k, bck))
   {
     if (isolate) {
       this->isolate();
@@ -1247,11 +1426,10 @@ public:
   Bitstream_descartes(M_k_descartes_tag /* t */,
                       Polynomial f,int m,int k,
                       Bitstream_tree tree,
-                      Bitstream_descartes_rndl_tree_traits traits
-                      = Bitstream_descartes_rndl_tree_traits(),
+                      Bitstream_coefficient_kernel bck = Bitstream_coefficient_kernel(),
                       bool isolate = true)
     : Base(new CGAL::internal::M_k_descartes_rep
-           <Bitstream_descartes_rndl_tree_traits>(f,m,k,tree,traits))
+           <Bitstream_coefficient_kernel>(f, m, k, tree, bck))
   {
     if (isolate) {
       this->isolate();
@@ -1279,14 +1457,13 @@ public:
                       int number_of_real_roots,
                       int number_of_events,
                       EventRefinement event_refinement,
-                      Bitstream_descartes_rndl_tree_traits traits
-                      = Bitstream_descartes_rndl_tree_traits(),
+                      Bitstream_coefficient_kernel bck = Bitstream_coefficient_kernel(),
                       bool isolate = true)
     : Base(new 
            CGAL::internal::Backshear_descartes_rep
-           <Bitstream_descartes_rndl_tree_traits,EventRefinement>
-           (f,number_of_real_roots-number_of_events,
-            number_of_events,event_refinement,traits))
+           <Bitstream_coefficient_kernel, EventRefinement>
+           (f, number_of_real_roots-number_of_events,
+            number_of_events, event_refinement, bck))
   {
     if (isolate) {
       this->isolate();
@@ -1302,11 +1479,11 @@ public:
   Bitstream_descartes(Vert_line_adapter_descartes_tag /* t */,
                       InputIterator begin,
                       InputIterator end,
-                      Bitstream_descartes_rndl_tree_traits traits)
+                      Bitstream_coefficient_kernel bck)
     : Base(new CGAL::internal::Vert_line_adapter_descartes_rep
-           <Bitstream_descartes_rndl_tree_traits,
+           <Bitstream_coefficient_kernel,
            typename InputIterator::value_type::first_type>
-           (begin, end, traits) )
+           (begin, end, bck) )
   {
     // No isolation necessary
   }
@@ -1321,6 +1498,11 @@ public:
     CGAL_assertion(is_isolated());
     return this->ptr()->polynomial();
   }
+
+  //! Returns the kernel class
+  Bitstream_coefficient_kernel bck() const {
+    return this->ptr()->bck();
+  } 
 
   //! Returns the traits class
   Bitstream_descartes_rndl_tree_traits traits() const {
@@ -1408,9 +1590,9 @@ public:
   /*!
    * Returns an upper bound for the multiplicity of the ith root
    */
-  int get_upper_bound_for_multiplicity(int i) const {
+  int upper_bound_for_multiplicity(int i) const {
     CGAL_assertion(is_isolated());
-    return this->ptr()->get_upper_bound_for_multiplicity(i);
+    return this->ptr()->upper_bound_for_multiplicity(i);
   }
 
   /*!
@@ -1429,12 +1611,14 @@ public:
     this->ptr()->isolate();
   }
   
+  //! returns whether all roots are isolated
   bool is_isolated() const {
     return this->ptr()->is_isolated();
   }
-  
-  Bitstream_tree get_tree() const {
-    return this->ptr()->get_tree();
+
+  //! returns the underlying tree
+  Bitstream_tree tree() const {
+    return this->ptr()->tree();
   }
   
   //! returns the degree of the gcd of f and its derivative, if known
@@ -1449,8 +1633,12 @@ public:
   
 };
 
+
 } // namespace internal
 
 } // namespace CGAL
 
-#endif
+#endif // CGAL_AK_USE_OLD_BITSTREAM_DESCARTES
+
+#endif // CGAL_BITSTREAM_DESCARTES_H
+// EOF

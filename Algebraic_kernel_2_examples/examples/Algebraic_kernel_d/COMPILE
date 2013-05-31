@@ -1,0 +1,200 @@
+PATCHES EINSPIELEN IN TRUNK!
+von unsupported-branches/akobel/Arcavoid
+
+in CGAL/trunk/
+patch -p0 <../branches/unsorted-branches/akobel/Arcavoid/Gmpfi_type.h.complete-patch
+(oder alternativ den von -devel)
+
+Hotbuild CGAL_Packages.cmake:
+================================================================
+# Created by the script cgal_collect_packages
+
+set(CGAL_SVN_ROOT /KM/home-0/akobel/scratch/CGAL/SVN)
+
+list (APPEND CGAL_CONFIGURED_PACKAGES
+  ${CGAL_SVN_ROOT}/trunk/Algebraic_foundations
+  ${CGAL_SVN_ROOT}/trunk/Arithmetic_kernel
+  ${CGAL_SVN_ROOT}/trunk/Arrangement_on_surface_2
+  ${CGAL_SVN_ROOT}/trunk/Cartesian_kernel
+  ${CGAL_SVN_ROOT}/trunk/Circulator
+  ${CGAL_SVN_ROOT}/trunk/Conic_2
+  ${CGAL_SVN_ROOT}/trunk/Convex_hull_2
+  ${CGAL_SVN_ROOT}/trunk/Distance_2
+  ${CGAL_SVN_ROOT}/trunk/Distance_3
+  ${CGAL_SVN_ROOT}/trunk/Filtered_kernel
+  ${CGAL_SVN_ROOT}/trunk/Generator
+  ${CGAL_SVN_ROOT}/trunk/Geomview
+  ${CGAL_SVN_ROOT}/trunk/HalfedgeDS
+  ${CGAL_SVN_ROOT}/trunk/Hash_map
+  ${CGAL_SVN_ROOT}/trunk/Homogeneous_kernel
+  ${CGAL_SVN_ROOT}/trunk/Intersections_2
+  ${CGAL_SVN_ROOT}/trunk/Intersections_3
+  ${CGAL_SVN_ROOT}/trunk/Interval_support
+  ${CGAL_SVN_ROOT}/trunk/iostream
+  ${CGAL_SVN_ROOT}/trunk/Kernel_23
+  ${CGAL_SVN_ROOT}/trunk/LEDA
+  ${CGAL_SVN_ROOT}/trunk/Maintenance
+  ${CGAL_SVN_ROOT}/trunk/Modifier
+  ${CGAL_SVN_ROOT}/trunk/Modular_arithmetic
+  ${CGAL_SVN_ROOT}/trunk/Number_types
+  ${CGAL_SVN_ROOT}/trunk/Polynomial
+  ${CGAL_SVN_ROOT}/trunk/Profiling_tools
+  ${CGAL_SVN_ROOT}/trunk/Random_numbers
+  ${CGAL_SVN_ROOT}/trunk/STL_Extension
+  ${CGAL_SVN_ROOT}/trunk/Stream_support
+  ${CGAL_SVN_ROOT}/trunk/Testsuite
+
+  ${CGAL_SVN_ROOT}/branches/unsorted-branches/eric/Numerical_algebraic_kernel_d
+  ${CGAL_SVN_ROOT}/branches/unsorted-branches/eric/CMAKE/Core
+  ${CGAL_SVN_ROOT}/branches/unsorted-branches/eric/CMAKE/GraphicsView
+  ${CGAL_SVN_ROOT}/branches/unsorted-branches/eric/CMAKE/Scripts
+
+  ${CGAL_SVN_ROOT}/branches/experimental-packages/Algebraic_kernel_2
+  ${CGAL_SVN_ROOT}/branches/experimental-packages/Algebraic_kernel_3
+  ${CGAL_SVN_ROOT}/branches/experimental-packages/Algebraic_kernel_d
+
+  ${CGAL_SVN_ROOT}/branches/unsorted-branches/akobel/Arcavoid
+)
+
+
+Libraries:
+================================================================
+
+    #### CONFIG DIRECTORY
+
+    EXACUS_CONFIG_PREFIX=/KM/projects/ecg/software/linux/g++-4.3
+
+    #### GCC/G++
+
+    CC=/usr/bin/gcc-4.3
+    CXX=/usr/bin/g++-4.3
+    CXXFLAGS="-m32"
+
+    #### EXTERNAL LIBS
+
+    EXACUS_BOOST=/KM/projects/ecg/software/linux/g++-4.1/boost-1.39.0/
+    BOOST_ROOT=$EXACUS_BOOST
+    Boost_COMPILER=-gcc41
+
+    EXACUS_GMP=$EXACUS_CONFIG_PREFIX/gmp-4.3.2
+    EXACUS_MPFR=$EXACUS_CONFIG_PREFIX/mpfr32
+    MPFI_INC_DIR=$EXACUS_CONFIG_PREFIX/librs_3.0.133/include
+    MPFI_LIB_DIR=$EXACUS_CONFIG_PREFIX/librs_3.0.133/IBM_INTEL_LINUX
+    RS_INC_DIR=$EXACUS_CONFIG_PREFIX/librs_3.0.133/include
+    RS_LIB_DIR=$EXACUS_CONFIG_PREFIX/librs_3.0.133/IBM_INTEL_LINUX
+
+    EXACUS_NTL=/KM/projects/ecg/software/linux/g++-4.3/ntl-5.5
+    EXACUS_LEDA=/LEDA/LEDA-6.x/LEDA-6.2.1-std/linux/g++-4.1
+
+
+
+########################################
+# LEDA settings
+########################################
+export LEDAROOT="$CGAL/LEDA-6.2.1-FC8_686x64-g++-4.1.2-mt"
+export PATH="$LEDAROOT/Manual/cmd${PATH:+:}$PATH"
+export LD_LIBRARY_PATH="$LEDAROOT${LD_LIBRARY_PATH:+:}$LD_LIBRARY_PATH"
+
+
+
+
+CMAKE config fuer CGAL-compile
+================================================================
+
+
+ export CGAL_CMAKE_COMMON_FLAGS="-DCGAL_CXX_FLAGS=-frounding-math -DBoost_DEBUG=TRUE
+      -DBoost_INCLUDE_DIR=/KM/projects/ecg/software/linux/g++-4.1/boost-1.39.0/include/boost-1_39
+      -DBoost_THREAD_LIBRARY=/KM/projects/ecg/software/linux/g++-4.1/boost-1.39.0/lib/libboost_thread-gcc41-mt-1_39.so -DBoost_COMPILER:STRING="-gcc41"      
+      -DGMP_INCLUDE_DIR=$EXACUS_GMP/include/ -DGMP_LIBRARIES=$EXACUS_GMP/lib/libgmp.so
+      -DGMPXX_INCLUDE_DIR=$EXACUS_GMP/include/ -DGMPXX_LIBRARIES=$EXACUS_GMP/lib/libgmpxx.so
+      -DMPFR_INCLUDE_DIR=$EXACUS_MPFR/include/ -DMPFR_LIBRARIES=$EXACUS_MPFR/lib/libmpfr.so
+      -DLEDA_CXX_FLAGS=-ffriend-injection -DLEDA_INCLUDE_DIR=$EXACUS_LEDA/incl/ -DLEDA_LIBRARIES=$EXACUS_LEDA/libleda.so -DLEDA_LINKER_FLAGS=-lX11 
+      -DWITH_LEDA=ON
+      -DWITH_CGAL_Qt3=OFF
+      -DWITH_CGAL_Qt4=OFF
+      -DWITH_CGAL_Core=ON -DWITH_CGAL_ImageIO=OFF -DWITH_CGAL_PDB=OFF
+      -DWITH_examples=OFF -DWITH_demos=OFF
+      -DCMAKE_VERBOSE_MAKEFILE=ON"
+      -DWITH_GMPXX=ON \
+      -DMPFI_INCLUDE_DIR=$MPFI_INC_DIR \
+      -DMPFI_LIB_DIR=$MPFI_LIB_DIR \
+      -DRS_INCLUDE_DIR=$RS_INC_DIR \
+      -DRS_LIBRARIES_DIR=$RS_LIB_DIR \
+      -DRS_LIBRARIES=$RS_LIB_DIR/librs3.a 
+      -DCGAL_CXX_FLAGS=-m32"
+
+CGAL_CMAKE_PACKAGING_FLAGS="\
+    -DCGAL_PACKAGES_FILE=$CGAL/build/CGAL_Packages.cmake \
+                $CGAL/SVN/branches/unsorted-branches/eric/CMAKE/Installation \
+"
+
+
+Mein CGAL-Krempel aus .bashrc
+================================================================
+
+########################################
+# CGAL settings
+########################################
+export CGAL="$HOME/scratch/CGAL"
+export CGAL_SVN_ROOT="$CGAL/SVN"
+export CGAL_TRUNK="$CGAL_SVN_ROOT/trunk"
+
+export CGAL_RELEASE_DIR="$CGAL/build/release"
+export CGAL_DIR_RELEASE=$CGAL_RELEASE_DIR
+
+export CGAL_DEBUG_DIR="$CGAL/build/debug"
+export CGAL_DIR_DEBUG=$CGAL_DEBUG_DIR
+
+export CGAL_STLDEBUG_DIR="$CGAL/build/stldebug"
+export CGAL_DIR_STLDEBUG=$CGAL_STLDEBUG_DIR
+
+export CGAL_DIR="$CGAL_DIR_RELEASE"
+
+
+CMake CGAL
+================================================================
+
+alias cgalinst='cd $CGAL_DIR; cmake -DCMAKE_BUILD_TYPE="Debug" $CGAL_CMAKE_COMMON_FLAGS -DCGAL_PACKAGES_FILE=$CGAL_CMAKE_DIR/packages-to-include.txt $CGAL_INSTALLATION_SOURCE_DIR'
+
+
+CMake bisolve
+================================================================
+
+in Ak_2/examples/Ak_d: ./cgal_create_cmake_script_with_options -c rs:mpfi
+
+in CMakeLists:
+(Pfad in letzten beiden target_link_libraries(...) anpassen)
+================================================================
+[...]
+if ( CGAL_FOUND )
+
+  include_directories (BEFORE ../../include)
+
+  include_directories( BEFORE /KM/projects/ecg/software/linux/g++-4.3/ntl-5.5/include )
+
+#...
+
+  create_single_source_cgal_program( "bisolve.cpp" )
+
+  target_link_libraries(bisolve :/KM/projects/ecg/software/linux/g++-4.3/ntl-5.5/lib/libntl.so)
+
+  target_link_libraries(bisolve :/KM/home-0/akobel/scratch/CGAL/SVN/branches/experimental-packages/Algebraic_kernel_2/examples/Algebraic_kernel_d/binaries/libgpu_resultant_sm_13.so)
+  target_link_libraries(bisolve :/KM/home-0/akobel/scratch/CGAL/SVN/branches/experimental-packages/Algebraic_kernel_2/examples/Algebraic_kernel_d/binaries/libcudart.so.2)
+
+else()
+
+[...]
+
+
+symbolic_speedups.cpp
+================================================================
+
+#define CGAL_POLYNOMIAL_DONT_USE_CGAL_POLYNOMIAL // undef to disable
+
+#define CGAL_BISOLVE_USE_GPU_RESULTANTS 1
+
+
+library path
+================================================================
+
+LD_LIBRARY_PATH=/KM/home-0/akobel/scratch/CGAL/SVN/branches/experimental-packages/Algebraic_kernel_2/examples/Algebraic_kernel_d/binaries:$LD_LIBRARY_PATH

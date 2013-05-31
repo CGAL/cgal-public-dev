@@ -116,6 +116,7 @@ public:
     typedef typename Bitstream_coefficient_kernel::Bigfloat_interval BFI;
     typedef typename CGAL::Bigfloat_interval_traits<BFI>::Bound BF; 
     
+    // TODO read BCK::Polynomial instead of generator
     typedef typename 
         CGAL::Polynomial_type_generator<Coefficient,1>::Type POLY; 
     typedef  Bitstream_descartes_rndl_tree_traits
@@ -186,7 +187,7 @@ public:
                     break;
                 }
                 if(CGAL::internal::ceil_log2_abs(CGAL::upper(f_alpha_bfi)-
-                                              CGAL::lower(f_alpha_bfi)) <=-p) {
+                                                 CGAL::lower(f_alpha_bfi)) <=-p) {
                     break;
                 } else {
                     prec*=2;
@@ -427,6 +428,13 @@ public:
         ::Ceil_log2_abs Ceil_log2_abs_Integer;
     typedef typename CGAL::internal::Real_embeddable_extension<long>
         ::Ceil_log2_abs Ceil_log2_abs_long;
+
+
+  //! Returns the kernel class
+  Bitstream_coefficient_kernel bck() const {
+    return this->ptr()->_m_kernel;
+  } 
+
 
 }; // end of class Bitstream_descartes_rndl_tree_traits
     

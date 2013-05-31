@@ -34,7 +34,7 @@
 #include <algorithm>
 
 #include <CGAL/basic.h>
-#include <CGAL/Algebraic_kernel_d/Bitstream_descartes_rndl_tree.h> // TODO remove
+#include <CGAL/Algebraic_kernel_d/Bitstream_descartes_rndl_tree.h> // TODO refactor
 #include <CGAL/Handle_with_policy.h>
 #include <CGAL/Random.h>
 

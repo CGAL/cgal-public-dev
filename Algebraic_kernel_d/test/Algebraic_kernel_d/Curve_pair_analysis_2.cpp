@@ -1,17 +1,34 @@
-// TODO: Add licence
+// Copyright (c) 2012 Max-Planck-Institute Saarbruecken (Germany).
+// All rights reserved.
+//
+// This file is part of CGAL (www.cgal.org); you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public License as
+// published by the Free Software Foundation; either version 3 of the License,
+// or (at your option) any later version.
+//
+// Licensees holding a valid commercial license may use this file in
+// accordance with the commercial license agreement provided with the software.
 //
 // This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
 // WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
-// $URL:$
-// $Id: $
-// 
+// $URL: svn+ssh://eric@scm.gforge.inria.fr/svn/cgal/branches/unsorted-branches/eric/Numerical_algebraic_kernel_d/include/CGAL/Algebraic_kernel_d/Bitstream_descartes.h $
+// $Id: Bitstream_descartes.h 70669 2012-07-23 08:45:50Z eric $
 //
 // Author(s)     : Michael Kerber <mkerber@mpi-inf.mpg.de>
+//                 Eric Berberich <eric.berberich@cgal.org>
 //
 // ============================================================================
 
 #include <CGAL/config.h>
+
+#ifndef CGAL_ACK_CURVE_ANALYSES_USE_BISOLVE 
+#define CGAL_ACK_CURVE_ANALYSES_USE_BISOLVE 1
+#endif
+#ifndef CGAL_ACK_CURVE_ANALYSES_BISOLVE_USE_TEISSIER
+#define CGAL_ACK_CURVE_ANALYSES_BISOLVE_USE_TEISSIER 1
+#endif
+
 #include <CGAL/Algebraic_kernel_d/flags.h>
 
 // Switches on/off tests for Sqrt-extension types
@@ -34,9 +51,8 @@
 
 #include <CGAL/Algebraic_kernel_d_1.h>
 #include <CGAL/Algebraic_kernel_d/Algebraic_real_quadratic_refinement_rep_bfi.h>
-#include <CGAL/Algebraic_kernel_d/Bitstream_descartes.h>
-#include <CGAL/Algebraic_kernel_d/Bitstream_descartes_rndl_tree_traits.h>
 #include <CGAL/Algebraic_kernel_d/Bitstream_coefficient_kernel.h>
+#include <CGAL/Algebraic_kernel_d/Bitstream_descartes.h>
 
 #include <CGAL/Algebraic_kernel_d/Algebraic_curve_kernel_2.h>
 
@@ -63,10 +79,8 @@ void test_routine() {
     typedef CGAL::internal::Algebraic_real_quadratic_refinement_rep_bfi
         < Coefficient, Rational > Rep_class;
     typedef CGAL::internal::Bitstream_descartes
-        < CGAL::internal::Bitstream_descartes_rndl_tree_traits
             < CGAL::internal::Bitstream_coefficient_kernel<Coefficient> 
             > 
-        > 
         Isolator;
     
     typedef CGAL::Algebraic_kernel_d_1<Coefficient,Rational,Rep_class, Isolator> 
@@ -593,6 +607,8 @@ void test_routine() {
             assert(slice.curves_at_event(0).second==0);
             assert(slice.curves_at_event(1).first==1);
             assert(slice.curves_at_event(1).second==1);
+            std::cout << "mult0: " << slice.multiplicity_of_intersection(0) << std::endl;
+            std::cout << "mult1: " << slice.multiplicity_of_intersection(1) << std::endl;
             assert(slice.multiplicity_of_intersection(0)==1);
             assert(slice.multiplicity_of_intersection(1)==1);
         }
@@ -729,10 +745,8 @@ void test_routine() {
         typedef CGAL::internal::Algebraic_real_quadratic_refinement_rep_bfi
             < Coefficient, Rational > Rep_class;
         typedef CGAL::internal::Bitstream_descartes
-            < CGAL::internal::Bitstream_descartes_rndl_tree_traits
               < CGAL::internal::Bitstream_coefficient_kernel<Coefficient> 
               > 
-            > 
             Isolator;
 
         typedef CGAL::Algebraic_kernel_d_1< Coefficient,Rational,
@@ -1135,7 +1149,8 @@ int main() {
 #else
     std::cout << "LEDA tests skipped!" << std::endl;
 #endif
-#ifdef CGAL_HAS_CORE_ARITHMETIC_KERNEL
+#if defined(CGAL_HAS_CORE_ARITHMETIC_KERNEL) && !CGAL_ACK_CURVE_ANALYSES_USE_BISOLVE
+    // does not (yet) work with Core - missing BigfloatInterval
     test_routine<CGAL::CORE_arithmetic_kernel>();
 #else
     std::cout << "CORE tests skipped!" << std::endl;

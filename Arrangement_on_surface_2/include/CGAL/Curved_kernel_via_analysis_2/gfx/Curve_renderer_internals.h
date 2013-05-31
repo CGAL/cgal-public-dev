@@ -182,9 +182,11 @@ public:
     typedef typename Polynomial_2::NT Poly_dst_1;
 
     //! rational number type
-    typedef typename ::CGAL::Get_arithmetic_kernel<
-        typename Curve_kernel_2::Coefficient>::Arithmetic_kernel::Rational
-            Rational;
+    typedef typename CGAL::Get_arithmetic_kernel<
+        typename Curve_kernel_2::Coefficient>::Arithmetic_kernel
+             Arithmetic_kernel;
+
+    typedef typename Arithmetic_kernel::Rational Rational;
 
     typedef Curve_renderer_traits<Coeff, Rational> Renderer_traits;
 
@@ -491,6 +493,9 @@ bool setup(const CGAL::Bbox_2& box_, int res_w_, int res_h_)
 
     x_min_r = Rational(x_min), y_min_r = Rational(y_min);
     x_max_r = Rational(x_max), y_max_r = Rational(y_max);
+
+    Gfx_OUT("SETUP: " << x_min << "; " << x_max << "\n");
+    Gfx_OUT(x_min_r << "; " << x_max_r << "\n");
         
     pixel_w_r = (x_max_r - x_min_r) / res_w;
     pixel_h_r = (y_max_r - y_min_r) / res_h;
@@ -979,24 +984,35 @@ int evaluate_rational(int var, const NT& c, const NT& key)
 void precompute(const Polynomial_2& in) {
 
     typedef typename Polynomial_traits_2::Innermost_coefficient_type Coeff_src;
-    
-    Max_coeff<Coeff_src> max_coeff;
-    Coeff_src max_c = max_coeff(in);
-    /////// magic symbol ////////////
-    // somehow relates to double precision fix
-    std::cerr << ' ';
 
-    typedef Reduce_by<Rat_coercion_type, Coeff_src> Reduce_op;
-    Transform<Rational_poly_2, Polynomial_2, Reduce_op> transform;
-    Reduce_op op(max_c);
+    typedef Convert_and_normalize< Polynomial_2, Arithmetic_kernel > C_and_n;
+
+    C_and_n cn;
+    Rational factor(1);
+    *rational_y  = cn(in, factor, true);
     
     typedef CGAL::Polynomial_traits_d<Rational_poly_2> RP_traits;
-    *rational_y = transform(in, op); // divides by maximal coefficient
+//     *rational_y = transform(in, op); // divides by maximal coefficient
     *rational_x = typename RP_traits::Swap()(*rational_y, 0, 1);
 
     // rational fx and fy must have y outermost var and x innermost
     *rational_fx = typename RP_traits::Differentiate()(*rational_y, 0);
     *rational_fy = typename RP_traits::Differentiate()(*rational_y, 1);
+    
+//     Max_coeff<Coeff_src> max_coeff;
+//     Coeff_src max_c = max_coeff(in);
+// 
+//     typedef Reduce_by<Rat_coercion_type, Coeff_src> Reduce_op;
+//     Transform<Rational_poly_2, Polynomial_2, Reduce_op> transform;
+//     Reduce_op op(max_c);
+//     
+//     typedef CGAL::Polynomial_traits_d<Rational_poly_2> RP_traits;
+//     *rational_y = transform(in, op); // divides by maximal coefficient
+//     *rational_x = typename RP_traits::Swap()(*rational_y, 0, 1);
+// 
+//     // rational fx and fy must have y outermost var and x innermost
+//     *rational_fx = typename RP_traits::Differentiate()(*rational_y, 0);
+//     *rational_fy = typename RP_traits::Differentiate()(*rational_y, 1);
 
     typename Renderer_traits::Convert_poly convert_poly;
     ////////////////////////////////////////////////////////

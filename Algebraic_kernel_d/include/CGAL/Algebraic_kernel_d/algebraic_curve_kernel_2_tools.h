@@ -104,30 +104,37 @@ set_union_with_source(InputIterator1 first_begin,
 
 /*
  * \brief Removes the leading term of the polynomial \c f as long as it
+ * vanishes at \c alpha and returns past-the-end iterator
+ *
+ */
+template<typename Algebraic_kernel_d_1,typename Poly_2, typename Algebraic_real>
+typename Poly_2::const_iterator poly_end_non_vanish_leading_term(Algebraic_kernel_d_1* kernel,
+                                        const Poly_2& pol,
+                                        const Algebraic_real& alpha) {
+  typename Poly_2::const_iterator f_end = pol.end();
+  
+  while(f_end != pol.begin() && 
+        kernel->is_zero_at_1_object()(*CGAL::cpp0x::prev(f_end), alpha)) {
+    f_end--;
+  } 
+  return (f_end);
+}
+
+/*
+ * \brief Removes the leading term of the polynomial \c f as long as it
  * vanishes at \c alpha
  *
  */
 template<typename Algebraic_kernel_d_1,typename Poly_2, typename Algebraic_real>
 Poly_2 poly_non_vanish_leading_term(Algebraic_kernel_d_1* kernel,
                                     const Poly_2& pol,
-                                    Algebraic_real alpha) {
-    Poly_2 f(pol);
-    while(true) {
-	if(kernel->is_zero_at_1_object()
-           (CGAL::leading_coefficient(f),alpha)) {
-            typename Poly_2::const_iterator poly_end = f.end();
-            if(f.begin()==poly_end) {
-                break;
-            }
-            poly_end--;
-            f=Poly_2(f.begin(),poly_end);
-	}
-	else {
-            break;
-	}
-    }
-    return f;
+                                    const Algebraic_real& alpha) {
+  typename Poly_2::const_iterator f_end = 
+    poly_end_non_vanish_leading_term(kernel, pol, alpha);
+  
+  return Poly_2(pol.begin(), f_end);
 }
+
 
 /*!
  * \brief finds a Rational value left of an Algebraic real alpha
@@ -408,7 +415,9 @@ template<typename AlgebraicCurveKernel_2>
         result=(CGAL::sign(eval)==CGAL::ZERO);
     }
 #else
-#warning Uses no reduction modulo resultant!
+#if CGAL_AK_D_SHOW_COMPILE_OPTIONS_AS_WARNING
+#warning zero_test_bivariate: Uses no reduction modulo resultant!
+#endif
     Polynomial_1 h_0=CGAL::evaluate_homogeneous(h,p,q);
     result= kernel->is_zero_at_1_object() (h_0,alpha);
 #endif      

@@ -87,7 +87,7 @@ public:
       Bound operator()( const Type& t1, 
           const Type& t2 ) const {
 #if CGAL_AK_DONT_USE_SIMPLE_BOUND_BETWEEN
-#warning uses deprecated bound_between_1 functor
+#warning AK_1: uses deprecated bound_between_1 functor
         return t1.rational_between( t2 );
 #else
 	return internal::simple_bound_between(t1,t2);
@@ -225,7 +225,7 @@ public:
       return oi;
     }
     
-#if 1 || CGAL_AK_ENABLE_DEPRECATED_INTERFACE
+#if CGAL_AK_ENABLE_DEPRECATED_INTERFACE
     template< class OutputIterator >
     OutputIterator operator()( 
         const Polynomial_1& p, 

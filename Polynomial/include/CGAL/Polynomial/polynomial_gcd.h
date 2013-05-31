@@ -46,8 +46,10 @@
 #include <CGAL/Polynomial/polynomial_gcd_implementations.h>
 #include <CGAL/polynomial_utils.h>
 
+#if 0
 #ifdef CGAL_USE_NTL
 #include <CGAL/Polynomial/polynomial_gcd_ntl.h>
+#endif
 #endif
 
 #if CGAL_USE_INTERNAL_MODULAR_GCD 

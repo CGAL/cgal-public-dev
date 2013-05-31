@@ -1,0 +1,8 @@
+
+local port forwarding:
+ssh -L 139.19.4.21:80:wks-11-02:8080 emeliyan@wks-11-02
+
+netstat -tunelp
+
+remote port forwarding:
+ssh  -R *:80:wks-11-02:8080 root@infvm1700

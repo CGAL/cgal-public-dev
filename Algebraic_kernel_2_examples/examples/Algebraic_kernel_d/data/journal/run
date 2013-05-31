@@ -1,0 +1,12 @@
+#!/bin/bash
+
+./exp-make `cat data/journal/*.cfg`
+
+for set in `ls data/journal/*.dat`; do
+  echo "SET $set"
+  for dir in `cat $set`; do
+    echo $dir
+    ./exp-run $(cat ${set%.dat}.cfg) data/journal/$dir 1 $(cat ${set%.dat}.tim)
+  done
+done
+

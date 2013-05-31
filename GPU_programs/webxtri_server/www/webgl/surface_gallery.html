@@ -1,0 +1,172 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!--DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN"-->
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head><title>WebGL demo - gallery of implicit algebraic surfaces</title>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1"/>
+
+<META NAME="author" CONTENT="Pavel Emeliyanenko">
+<META NAME="subject" CONTENT="Triangulation of algebraic surfaces">
+<META NAME="Description" CONTENT="This interactive application enables everyone
+to triangulate and explore the structure algebraic surfaces. Visualization is provided using WebGL">
+<META NAME="Classification" CONTENT="This online service allows enables everyone to analyse and triangulate algebraic surfaces. Our software is based on CGAL library.">
+<META NAME="Keywords" CONTENT="EXACUS, ACS, CGAL, math, maths, algebraic surfaces">
+<META NAME="Geography" CONTENT="Europe, Germany">
+<META NAME="Language" CONTENT="English">
+<META HTTP-EQUIV="Expires" CONTENT="never">
+<META NAME="Copyright" CONTENT="Max-Planck Institute for Informatics">
+<META NAME="Designer" CONTENT="Pavel Emeliyanenko">
+<META NAME="Publisher" CONTENT="Max-Planck Institute for Informatics">
+<META NAME="Revisit-After" CONTENT="7">
+<META NAME="distribution" CONTENT="Global">
+<META NAME="Robots" CONTENT="INDEX,FOLLOW">
+<META NAME="city" CONTENT="Saarbruecken">
+<META NAME="country" CONTENT="Germany">
+
+<meta http-equiv="Content-Style-Type" content="text/css"/>
+<meta http-equiv="Pragma" content="no-cache"/>
+<meta http-equiv="Cache-Control" content="no-cache"/>
+<link rel="SHORTCUT ICON" href="../c/favicon.ico" />
+<link rel="stylesheet" type="text/css" media="screen" href="../c/mpi-inf.css" />
+<link rel="stylesheet" type="text/css" media="screen" href="../c/xalci.css" />
+<link rel="stylesheet" type="text/css" media="print" href="../c/print.css" />
+<style type="text/css" media="screen">
+.image_btn {
+    border: none;
+    padding: 0px;
+    cursor: pointer;
+}
+.smcaps {
+    font-variant: small-caps;
+}
+a#hp-index, a:link#hp-index, a:visited#hp-index {background: rgb(80%,85%,90%);}
+.ak { text-decoration: underline }
+</style>
+<script type="text/javascript" src="surfaces.js"></script>
+<script type="text/javascript" src="../c/script.js"></script>
+</head><body >
+
+<div id="head1o2">
+    <div id="mpiidotspacer"></div>
+    <div id="mpiidot"></div>
+    <br /><center>
+<span style="color: #A0A0A0; font-size: 24pt;">Gallery of algebraic surfaces <span style="color: #FF3333;">NEW !</span></span></center>
+</div>
+
+<div id="head2o2">
+    <div id="mpiitext">max planck institut<br/>informatik</div>
+    <img id="mpiilogo" src="../c/mpii.jpg" alt="mpii" usemap="#Map" width="300" height="100"/><map name="Map" id="Map"><area shape="rect" coords="97,14,296,70" href="http://www.mpi-sb.mpg.de" alt="mpii logo" /><area shape="circle" coords="41,49,40" href="http://www.mpg.de/" alt="Minerva of the Max Planck Society" /></map>
+</div>
+
+<div class="centerdiv">
+<div id="head2o2">
+    <div id="deco">
+        <div id="picture_div" style="position: relative;"><a href="http://www.mpi-inf.mpg.de/projects/EXACUS"><img src="../c/exacus.png" width="185" border="1" alt="Efficient and Exact Algorithms for Curves and Surfaces" /></a><br /><br /><a href="http://www.cgal.org"><img border="1" src="../c/cgal_resize.png" width="185" alt="Computational Geometry Algorithms Library" title ="Computational Geometry Algorithms Library"/></a><br /><br /><a href="http://acs.cs.rug.nl"><img src="../c/acs_resize.gif" border="1" width="185" title="Algorithms for Complex Shapes" alt="Algorithms for Complex Shapes" /></a></div>
+        <script type="text/javascript">
+            show_menu(1, "100px");//show_authors("120px");</script>
+
+<div style="position: relative; top: 200px;">
+<a  href="http://www3.clustrmaps.com/counter/maps.php?url=http://infvm1700.ag1.mpi-sb.mpg.de/" id="clustrMapsLink"><img src="http://www3.clustrmaps.com/counter/index2.php?url=http://infvm1700.ag1.mpi-sb.mpg.de/" style="border:0px;" alt="Locations of visitors to this page" title="Locations of visitors to this page" id="clustrMapsImg" />
+</a>
+<script type="text/javascript">
+function cantload() {
+img = document.getElementById("clustrMapsImg");
+img.onerror = null;
+img.src = "http://www2.clustrmaps.com/images/clustrmaps-back-soon.jpg";
+document.getElementById("clustrMapsLink").href = "http://www2.clustrmaps.com";
+}
+img = document.getElementById("clustrMapsImg");
+img.onerror = cantload;
+</script>
+</div>
+
+    </div>
+</div>
+<div id="hspacer">&nbsp;</div>
+
+<div id="main_content" style="position: relative; left: 230px; top: 0px; font-size: 11pt; width: 80%" >
+<hr style="margin-left: 0em" size="1" />
+  <div> <!-- InstanceBeginEditable name="col2o3" -->
+ <form action="index.html" method="post">
+ <input type="hidden" id="surf" name="surface" value=""  />
+ </form>
+
+ 
+<table border="0" cellspacing="10" cellpadding="0" width="100%">
+<tr><td colspan="3" align = "left">
+</td></tr>
+<tr><td colspan="3" align = "center" style="font-size: 12pt;">
+Below is a set of algebraic surfaces visualized
+using <span class="smcaps">Xtri</span>.<br /> Copy-paste a surface equation or click
+on the corresponding image to load it into the web-interface
+<br /><br />
+</td></tr>
+<tr style="font-weight:bold">
+<td align="center"><span style="font-size: 12pt">Description</span><br />
+degree: {z,y,x}
+</td>
+<td align="center"><a href="index.html"><span style="font-size: 14pt">XTri image</span></a><br />
+</td><td align="center"><span style="font-size: 14pt">Surface equation</span></td></tr>
+<tr><td colspan="3"><hr /></td></tr>
+<script type="text/javascript">
+//<!--
+// NOTE: curves must be listed in order they appear in curves.js file !!
+//set_arr(id, img, caption, f, e, v, i)
+
+// set_surface('trifolium', 'c/curves/degree4three_leaf.jpg', 'c/maple_curves/three_leaf_maple2.jpg', 'Trifolium', 4, 0);
+
+// set_surface('apple3D', 'surfaces/apple3D.png', 'Apple 3D', '{2,7,7}');
+
+set_surface('clebsch_diag_surf', 'surfaces/clebsch_diag_surf.png', 'Clebsch diagonal surface', '{2,3,3}');
+
+set_surface('tangle_cube', 'surfaces/tangle_cube.png', 'Tangle cube', '{4,4,4}');
+
+set_surface('KM43', 'surfaces/KM43.png', 'KM43', '{3,2,3}');
+
+set_surface('ffo', 'surfaces/ffo.png', 'Five-fold oddity', '{1,4,5}');
+
+set_surface('vis-a-vis', 'surfaces/visavis.png', 'Vis-a-Vis', '{4,4,3}');
+
+init_surfaces();
+//-->
+</script>
+<tr><td colspan="3" valign="top" align="left" width="90%">
+
+<!-- some bla -->
+
+</td></tr>
+</table>
+</div>
+<!-- Here starts counters -->
+<!-- Here starts counters -->
+<div align='left'>
+<!-- START COUNTER CODE -->
+<a href="http://www.apollofind.com/counter.html">
+<script language="JavaScript">
+<!--
+  var data = '&r=' + escape(document.referrer)
+    + '&n=' + escape(navigator.userAgent)
+    + '&p=' + escape(navigator.userAgent)
+    + '&g=' + escape(document.location.href);
+  if (navigator.userAgent.substring(0,1)>'3')
+    data = data + '&sd=' + screen.colorDepth 
+    + '&sw=' + escape(screen.width+'x'+screen.height);
+  document.write('<a href="http://www.apollofind.com/counter.html" target="_blank" >');
+  document.write('<img border=0 hspace=0 '+'vspace=0 src="http://www.apollofind.com/counter.php?i=7219' + data + '">');
+  document.write('</a>');
+ // -->
+</script></a><!--<br><a href="http://www.apollofind.com/counter.html">web site counter</a>-->
+<!-- END COUNTER CODE -->
+
+<!-- src="http://www.apollofind.com/counter.php?i=7219' + data + '">'); -->
+&nbsp;&nbsp;
+<a href="http://www.prchecker.info/" title="PageRank Checking Icon" target="_blank">
+<img src="http://pr.prchecker.info/getpr.php?codex=aHR0cDovL2V4YWN1cy5tcGktaW5mLm1wZy5kZQ==&tag=2" alt="PageRank Checking Icon" style="border:0;" /></a>
+&nbsp;&nbsp;
+
+</div>
+
+</div>
+<p align="center">Max-Planck-Institut f&uuml;r Informatik, <a href="http://www.mpi-inf.mpg.de/departments/d1/areas/GCCA.html">
+Geometric Computing Group</a>
+</p>
+</body></html>

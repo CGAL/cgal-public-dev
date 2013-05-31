@@ -31,8 +31,16 @@
 #include <CGAL/Arithmetic_kernel.h>
 #include <CGAL/ipower.h>
 
+// to get some macros
+#include <CGAL/Algebraic_kernel_d/Generic_isolator.h>
+
 #ifndef CGAL_TEST_REAL_ROOT_ISOLATOR_H
-#define CGAL_TEST_REAL_ROOT_ISOLATOR_H
+#define CGAL_TEST_REAL_ROOT_ISOLATOR_H 1
+
+#ifndef CGAL_TEST_REAL_ROOT_INTERVAL_ISOLATOR
+// this tests a constructor that is not part of the concept, but highly recommended
+#define CGAL_TEST_REAL_ROOT_INTERVAL_ISOLATOR 0
+#endif
 
 namespace CGAL {
   
@@ -40,7 +48,7 @@ namespace internal {
 	
 template <class RealRootIsolator>
 int check_intervals_real_root_isolator( 
-        const typename RealRootIsolator::Polynomial& P) {
+        const typename RealRootIsolator::Polynomial& p) {
 
     typedef RealRootIsolator Isolator;
     typedef typename Isolator::Bound Bound;
@@ -48,53 +56,66 @@ int check_intervals_real_root_isolator(
     typedef typename CGAL::Get_arithmetic_kernel< Bound >::Arithmetic_kernel AK;
     typedef typename AK::Rational Rational;
  
-    Isolator Isol(P);
-    int n = Isol.number_of_real_roots();
-    for(int i=0; i<n; i++) {
-       Rational left  = Isol.left_bound(i);
-       Rational right = Isol.right_bound(i);
+    Isolator isolator(p);
+    int n = isolator.number_of_real_roots();
+    assert(isolator.polynomial() == p); 
+    for(int i = 0; i < n; i++) {
+       Rational left  = isolator.left_bound(i);
+       Rational right = isolator.right_bound(i);
 
-       if(!Isol.is_exact_root(i)) {
+       if (!isolator.is_exact_root(i)) {
            assert(left < right);
 	       //std::cout << " left = " << left << std::endl;
 	       //std::cout << " right = " << right << std::endl;
-	       //std::cout << " P = " << P << std::endl;
-           assert(P.sign_at(left) * P.sign_at(right) == CGAL::NEGATIVE);
+	       //std::cout << " p = " << p << std::endl;
+           assert(p.sign_at(left) * p.sign_at(right) == CGAL::NEGATIVE);
        }else{
            assert(left == right);
-           assert(P.sign_at(left) == CGAL::ZERO);
+           assert(p.sign_at(left) == CGAL::ZERO);
        }
+       // TODO 2012 add tests for all functions in _test_real_root_isolator.h
+       // bool is_certainly_simple_root(size_t /* i */) const;
+       // bool is_certainly_multiple_root(size_t /* i */) const;
+       // int upper_bound_for_multiplicity(size_t /* i */) const;
+       // int multiplicity_of_root(size_t /* i */) const;
+       // isolator.refine_interval(i);
+
     }
     return n;
 }
 
 
+#if CGAL_TEST_REAL_ROOT_INTERVAL_ISOLATOR
 // Not part of the concept 
-/*
-  template <class RealRootIsolator, class Polynomial, class Bound>
-  int check_intervals_real_root_isolator( const Polynomial& P, 
-  const Bound& a,
-  const Bound& b) {
+ 
+template <class RealRootIsolator, class Polynomial, class Bound>
+int check_intervals_real_root_isolator(const Polynomial& p, 
+                                       const Bound& a,
+                                       const Bound& b) {
   
   typedef RealRootIsolator Isolator;
-  Isolator Isol(P,a,b);
-  int n = Isol.number_of_real_roots();
-  for(int i=0; i<n; i++) {
-  Bound left = Isol.left_bound(i);
-  Bound right = Isol.right_bound(i);
-  
-  assert( left < right || Isol.is_exact_root(i));
-  if(!Isol.is_exact_root(i)) {
-  //std::cout << " left = " << left << std::endl;
-  //std::cout << " right = " << right << std::endl;
-  //std::cout << " P = " << P << std::endl;
-  assert(CGAL::evaluate(P,left) * CGAL::evaluate(P,right) < 0);
-  }
+  Isolator isolator(p,a,b);
+  int n = isolator.number_of_real_roots();
+  assert(isolator.polynomial() == p); 
+  for (size_t i = 0; static_cast<int>(i) < n; i++) {
+    Bound left = isolator.left_bound(i);
+    Bound right = isolator.right_bound(i);
+    
+    assert( left < right || isolator.is_exact_root(i));
+    if (!isolator.is_exact_root(i)) {
+      assert(left < right);
+      //std::cout << " left = " << left << std::endl;
+      //std::cout << " right = " << right << std::endl;
+      //std::cout << " p = " << p << std::endl;
+      assert(p.sign_at(left) * p.sign_at(right) == CGAL::NEGATIVE);
+    } else {
+      assert(left == right);
+      assert(p.sign_at(left) == CGAL::ZERO);
+    }
   }
   return n;
-  };
-*/
-
+};
+#endif 
 
 template <class RealRootIsolator>
 void test_real_root_isolator() {
@@ -142,7 +163,9 @@ void test_real_root_isolator() {
         Isolator isolator(poly);
         assert(isolator.number_of_real_roots() == 0);
         assert(isolator.polynomial() == P_01); 
-    }{
+    }
+#if !CGAL_ALGEBRAIC_KERNEL_D_ISOLATORS_DISABLE_ASSIGNABLE 
+    {
         // copy constructor
         Isolator isolator_1(P_123);
         Isolator isolator_2(isolator_1);
@@ -157,6 +180,7 @@ void test_real_root_isolator() {
                 isolator_2.number_of_real_roots());
         assert(isolator_1.polynomial() == isolator_2.polynomial()); 
     }
+#endif
     {  
       assert( 3 == internal::check_intervals_real_root_isolator<Isolator>(P_123));       
     }{  
@@ -224,7 +248,7 @@ void test_real_root_isolator() {
         P = P + Polynomial(NT(4),z,z,z,-4*a);
         // x^{14}+2*10^{24}*x^{11}+10^{48}*x^8+4*x^7-4*10^{24}*X^4+4
     
-        Isolator isol(P);
+        Isolator isolator(P);
         assert( 4 == internal::check_intervals_real_root_isolator<Isolator>(P));
     }{
         //std::cout << "Polynomial with large and small clustered roots\n";
@@ -243,6 +267,19 @@ void test_real_root_isolator() {
         
         assert( 4 == internal::check_intervals_real_root_isolator<Isolator>(P));
     }
+
+#if CGAL_TEST_REAL_ROOT_INTERVAL_ISOLATOR
+    {
+      assert( 0 == internal::check_intervals_real_root_isolator<Isolator>(P_s2, Bound(0), Bound(1)));
+      assert( 1 == internal::check_intervals_real_root_isolator<Isolator>(P_s2, Bound(0), Bound(2)));
+      assert( 1 == internal::check_intervals_real_root_isolator<Isolator>(P_s2, Bound(1), Bound(2)));
+      assert( 0 == internal::check_intervals_real_root_isolator<Isolator>(P_s2, Bound(2), Bound(3)));
+      assert( 0 == internal::check_intervals_real_root_isolator<Isolator>(P_s2, Bound(-1), Bound(0)));
+      assert( 1 == internal::check_intervals_real_root_isolator<Isolator>(P_s2, Bound(-2), Bound(0)));
+      assert( 1 == internal::check_intervals_real_root_isolator<Isolator>(P_s2, Bound(-2), Bound(-1)));
+      assert( 0 == internal::check_intervals_real_root_isolator<Isolator>(P_s2, Bound(-3), Bound(-2))); 
+    }
+#endif
     
 }
 

@@ -1,0 +1,5 @@
+#!/bin/sh
+rm -rf resultants.cudafe*
+rm -rf resultants.cpp*
+rm -rf resultants.cu.c
+rm -rf *~

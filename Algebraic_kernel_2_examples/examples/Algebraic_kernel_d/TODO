@@ -1,0 +1,20 @@
+* Programming:
+  - check that curves do not share a non-trivial component
+  - work on TODOs in code
+  - GMP issue with Bigfloat-IA-discards
+
+* GPU
+  - subresultants
+  - subdivision
+
+* Tuning
+  - choose a good parameter for time ratio between bitstream and norm-test
+  - avoid y-solve if all x-roots have mult=1
+  - bitstream with precision handling (prec, BCK_at_alpha)
+
+* Bugs
+  - Rs-Kernel "hangs": gn4 
+  - Rs-Kernel has problem with tooooo many computed bits
+
+* Beyond
+  - Use 2d-subdivision + sign check of R*'s as "real root isolator"

@@ -1,0 +1,3 @@
+#!/bin/sh
+
+cp xalci.cgi $HOME/work/apache2.0/cgi-bin

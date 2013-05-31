@@ -16,11 +16,9 @@
 // $Id$
 // 
 //
-// Author(s)     : Eric Berberich <eric@mpi-inf.mpg.de>
+// Author(s)     : Eric Berberich <eric.berberich@cgal.org>
 //                 Pavel Emeliyanenko <asm@mpi-sb.mpg.de>
 //                 Michael Kerber <mkerber@mpi-inf.mpg.de>
-//
-// ============================================================================
 
 /*! \file Algebraic_curve_kernel_2.h
  *  \brief defines class \c Algebraic_curve_kernel_2
@@ -56,16 +54,10 @@
 #include <CGAL/Polynomial_type_generator.h>
 #include <CGAL/polynomial_utils.h>
 
-#if CGAL_ACK_USE_EXACUS
-#include <CGAL/Algebraic_curve_kernel_2/Curve_analysis_2_exacus.h>
-#include <CGAL/Algebraic_curve_kernel_2/Curve_pair_analysis_2_exacus.h>
-#else
 #include <CGAL/Algebraic_kernel_d/Curve_analysis_2.h>
 #include <CGAL/Algebraic_kernel_d/Curve_pair_analysis_2.h>
-#endif
 
 #include <boost/shared_ptr.hpp>
-
 
 namespace CGAL {
 
@@ -102,11 +94,7 @@ namespace CGAL {
  * when a kernel function deals with two polynomials,
  * implicitly or explicitly (e.g. \c Solve_2, \c Sign_at_2).
  */
-#if CGAL_ACK_USE_EXACUS
-template < class AlgebraicCurvePair_2, class AlgebraicKernel_d_1 >
-#else
 template < class AlgebraicKernel_d_1 >
-#endif
 class Algebraic_curve_kernel_2 : public AlgebraicKernel_d_1{
 
 // for each predicate functor defines a member function returning an instance
@@ -127,31 +115,14 @@ public:
     //! type of 1D algebraic kernel
     typedef AlgebraicKernel_d_1 Algebraic_kernel_d_1;
     
-#if CGAL_ACK_USE_EXACUS    
-    // type of an internal curve pair
-    typedef AlgebraicCurvePair_2 Internal_curve_pair_2;
-    
-    // type of an internal curve
-    typedef typename AlgebraicCurvePair_2::Algebraic_curve_2 Internal_curve_2;
-#endif
-
     //! type of x-coordinate
-#if CGAL_ACK_USE_EXACUS
-    typedef typename Internal_curve_2::X_coordinate Algebraic_real_1;
-#else
     typedef typename Algebraic_kernel_d_1::Algebraic_real_1 Algebraic_real_1;
-#endif
 
     //! type of polynomial coefficient
     typedef typename Algebraic_kernel_d_1::Coefficient Coefficient;
 
     // myself
-#if CGAL_ACK_USE_EXACUS
-    typedef Algebraic_curve_kernel_2<AlgebraicCurvePair_2, AlgebraicKernel_d_1>
-       Self;
-#else
     typedef Algebraic_curve_kernel_2<AlgebraicKernel_d_1> Self;
-#endif
 
     typedef Self Algebraic_kernel_d_2;
     
@@ -188,79 +159,31 @@ public:
      * type of the curve analysis, a model for the
      * \c AlgebraicKernelWithAnalysis_d_2::CurveAnalysis_2 concept
      */
-#if CGAL_ACK_USE_EXACUS
-    typedef internal::Curve_analysis_2<Self> Curve_analysis_2; 
-#else
-    typedef CGAL::Curve_analysis_2<Self> Curve_analysis_2; 
-#endif
+    typedef CGAL::Curve_analysis_2<Self> Curve_analysis_2;
 
     /*! 
      * type of the curve pair analysis, a model for the
      * \c AlgebraicKernelWithAnalysis_d_2::CurvePairAnalysis_2 concept
      */
-#if CGAL_ACK_USE_EXACUS
-    typedef internal::Curve_pair_analysis_2<Self> Curve_pair_analysis_2;
-#else
     typedef CGAL::Curve_pair_analysis_2<Self> Curve_pair_analysis_2;
-#endif
 
-    //! traits class used for approximations of y-coordinates
-
-
-    //  berfriending representations to make protected typedefs available
+    //  befriending representations to make protected typedefs available
     friend class internal::Curve_analysis_2_rep<Self>;
     friend class internal::Curve_pair_analysis_2_rep<Self>;
     
     //!@}
     //! \name rebind operator
     //!@{
-#if CGAL_ACK_USE_EXACUS
-    template <class NewCurvePair, class NewAlgebraicKernel>
-    struct rebind {
-        typedef Algebraic_curve_kernel_2<NewCurvePair,NewAlgebraicKernel> 
-            Other;
-    };
-#else
     template <class NewAlgebraicKernel> 
     struct rebind { 
         typedef Algebraic_curve_kernel_2<NewAlgebraicKernel> Other;        
     };
-#endif
 
     //!@}
 protected:
     //! \name private functors
     //!@{
  
-#if 0
-   
-    //! polynomial canonicalizer, needed for the cache
-    template <class Poly> 
-    struct Poly_canonicalizer : public std::unary_function< Poly, Poly >
-    {
-    // use Polynomial_traits_d<>::Canonicalize ?
-        Poly operator()(Poly p) 
-        {
-            typedef CGAL::Scalar_factor_traits<Poly> Sf_traits;
-            typedef typename Sf_traits::Scalar Scalar;
-            typename Sf_traits::Scalar_factor scalar_factor;
-            typename Sf_traits::Scalar_div scalar_div;
-            Scalar g = scalar_factor(p);
-            if (g == Scalar(0)) {
-                     CGAL_assertion(p == Poly(Scalar(0)));
-                     return p;
-            }
-            CGAL_assertion(g != Scalar(0));
-            if(g != Scalar(1)) 
-                scalar_div(p,g);
-            if(CGAL::leading_coefficient(CGAL::leading_coefficient(p))) < 0) 
-                scalar_div(p,Scalar(-1));
-            return p;        
-        }
-           
-    };
-#endif
-
     // NOT a curve pair in our notation, simply a std::pair of Curve_analysis_2
     typedef std::pair<Curve_analysis_2, Curve_analysis_2> Pair_of_curves_2;
     
@@ -270,8 +193,9 @@ protected:
         template<class T1, class T2>
         std::pair<T1, T2> operator()(const std::pair<T1, T2>& p) const {
             
-            if(p.first.id() > p.second.id())
+            if (p.first.id() > p.second.id()) {
                 return std::make_pair(p.second, p.first);
+            }
             return p;
         }
     };
@@ -331,13 +255,14 @@ protected:
         Curve_pair_analysis_2, internal::Pair_hasher, Pair_id_equal_to,
         Pair_id_order,
         Pair_creator<Curve_pair_analysis_2> > Curve_pair_cache_2;
-    
+
     typedef std::pair<Polynomial_2, Polynomial_2>
         Pair_of_polynomial_2;
 
     template<typename T> struct Gcd {
     
         T operator() (std::pair<T,T> pair) {
+
             return typename CGAL::Polynomial_traits_d<Polynomial_2>
                 ::Gcd_up_to_constant_factor()(pair.first,pair.second);
         }
@@ -440,9 +365,11 @@ public:
     {  
       _m_curve_cache_2 = boost::shared_ptr<Curve_cache_2>(new Curve_cache_2(this)); 
       _m_curve_pair_cache_2 =  boost::shared_ptr<Curve_pair_cache_2> (new Curve_pair_cache_2(this)); 
-      // std::cout << "CONSTRUCTION  Algebraic_curve_kernel_2 " << std::endl; 
+      //std::cout << "CONSTRUCTION  Algebraic_curve_kernel_2 " << std::endl; 
+      //std::cout << "KERNEL: " << this << std::endl;
+
     }
-    
+
 public: 
     static Algebraic_curve_kernel_2& get_static_instance(){
       // a default constructed ack_2 instance
@@ -993,7 +920,7 @@ public:
     };
     CGAL_Algebraic_Kernel_cons(Compute_x_2, compute_x_2_object);
     
-#if CGAL_AK_ENABLE_DEPRECATED_INTERFACE
+#if CGAL_ACK_ENABLE_DEPRECATED_INTERFACE
     typedef Compute_x_2 Get_x_2;
     CGAL_Algebraic_Kernel_cons(Get_x_2, get_x_2_object);
 #endif
@@ -1027,7 +954,7 @@ public:
     };
     CGAL_Algebraic_Kernel_cons(Compute_y_2, compute_y_2_object);
     
-#if CGAL_AK_ENABLE_DEPRECATED_INTERFACE
+#if CGAL_ACK_ENABLE_DEPRECATED_INTERFACE
     typedef Compute_x_2 Get_y_2;
     CGAL_Algebraic_Kernel_cons(Get_y_2, get_y_2_object);
 #endif
@@ -1195,7 +1122,7 @@ public:
         typedef Bound result_type;
 
 	typedef typename Algebraic_kernel_d_2::Curve_analysis_2
-	  ::Status_line_1::Bitstream_descartes Isolator;
+	  ::Status_line_1::Status_line_isolator Isolator;
 
         result_type operator()(const Algebraic_real_2& r1, 
                 const Algebraic_real_2& r2) const {
@@ -1272,7 +1199,7 @@ public:
 	  return _m_kernel->compare_1_object()(xy1.x(), xy2.x());
         }
 
-#if CGAL_AK_ENABLE_DEPRECATED_INTERFACE
+#if CGAL_ACK_ENABLE_DEPRECATED_INTERFACE
         Comparison_result operator()(const Algebraic_real_1& xy1, 
                                      const Algebraic_real_1& xy2) const {
 	  return _m_kernel->compare_1_object()(xy1, xy2);
@@ -1737,34 +1664,6 @@ public:
 #else 
 
             Construct_curve_2 cc_2 = _m_kernel->construct_curve_2_object();
-#if CGAL_ACK_USE_EXACUS
-            typedef std::vector<Internal_curve_2> Curves;
-
-            Curves parts_f, parts_g;
-
-            if(Internal_curve_2::decompose(ca1._internal_curve(),
-                                           ca2._internal_curve(), 
-                                           std::back_inserter(parts_f),
-                                           std::back_inserter(parts_g))) {
-                typename Curves::const_iterator cit;
-                // this is temporary solution while curves are cached on
-                // AlciX level
-                CGAL_precondition(parts_f[0].polynomial_2() == 
-                                  parts_g[0].polynomial_2());
-                *oib++ = cc_2(parts_f[0].polynomial_2());
-                
-                if(parts_f.size() > 1)
-                    for(cit = parts_f.begin() + 1; cit != parts_f.end(); cit++)
-                        *oi1++ = cc_2(cit->polynomial_2());
-                if(parts_g.size() > 1)
-                    for(cit = parts_g.begin() + 1; cit != parts_g.end(); cit++)
-                        *oi2++ = cc_2(cit->polynomial_2());
-                return true;
-            }
-                
-                
-#else          
-
             if (ca1.id() == ca2.id()) {
                 return false;
             }
@@ -1808,8 +1707,6 @@ public:
                 return true;
             }
 
-#endif
-                
             // copy original curves to the output iterator:
             *oi1++ = ca1;
             *oi2++ = ca2;
@@ -1910,8 +1807,7 @@ public:
     };
     CGAL_Algebraic_Kernel_cons(Make_coprime_2, make_coprime_2_object);
 
-
-#if CGAL_AK_ENABLE_DEPRECATED_INTERFACE
+#if CGAL_ACK_ENABLE_DEPRECATED_INTERFACE
 
     /*!
      * \brief computes the x-critical points of of a curve/a polynomial
@@ -2155,6 +2051,50 @@ public:
 	    return result;	    
         }
         
+           typedef typename 
+              CGAL::Get_arithmetic_kernel< Bound >::Arithmetic_kernel:: 
+              Bigfloat_interval BFI;
+
+      typedef typename 
+      CGAL::Polynomial_traits_d<Polynomial_1>::template Rebind<BFI,1>
+      ::Other::Type BFI_polynomial;
+      
+      CGAL::Sign operator()(const Polynomial_1& p, const Bound& r) const {
+
+          // TODO good implementation?
+          long prec = 4;
+
+          while (prec < 1025) {
+              
+              BFI_polynomial p_bfi = _convert_polynomial_to_bfi(p);
+              
+              BFI eval = p_bfi.evaluate(convert_to_bfi(r));
+              
+              CGAL::Sign sl = CGAL::sign(CGAL::lower(eval));
+              CGAL::Sign su = CGAL::sign(CGAL::upper(eval));
+              
+              if (sl == su && sl != CGAL::ZERO) {
+                  return sl;
+              }
+              
+              prec *= 2;
+              CGAL::set_precision(BFI(), prec);
+          }
+          
+          return p.sign_at(r);
+      }
+
+  private:
+ // TODO: replace by call of Coercion_traits<Poly,BFI>::Cast() 
+    BFI_polynomial _convert_polynomial_to_bfi(const Polynomial_1& f) const {
+        std::vector<BFI> coeffs;
+        for(int i = 0; i <= CGAL::degree(f); i++) {
+            coeffs.push_back(CGAL::convert_to_bfi(f[i]));
+        }
+        return BFI_polynomial(coeffs.begin(), coeffs.end());   
+    }
+
+
     protected:
         
         const Algebraic_kernel_d_2* _m_kernel;
@@ -2209,6 +2149,8 @@ public:
 	    if(ca_2.is_identical(r.curve())) {
 	      return CGAL::ZERO;
 	    }
+//         long def_prec = CGAL::get_precision(Bigfloat_interval());
+	    
 	    typename Algebraic_kernel_d_2::Approximate_absolute_x_2 approx_x
 	      = _m_kernel->approximate_absolute_x_2_object();
 	    typename Algebraic_kernel_d_2::Approximate_absolute_y_2 approx_y
@@ -2219,7 +2161,7 @@ public:
             typedef typename Interval_evaluate_2::result_type 
               Interval_result_type;
             Interval_evaluate_2 interval_evaluate_2;
-	    
+        
 	    long prec = 4;
 
             while(prec<=max_prec) {
@@ -2234,11 +2176,13 @@ public:
 							 y_pair.second));
                 CGAL::Sign s_lower = CGAL::sign(iv.first);
                 if(s_lower == sign(iv.second)) {
+//             CGAL::set_precision(Bigfloat_interval(), def_prec);
 		  return s_lower;
 		} else {
 		  prec*=2;
 		}
 	    }
+// 	    CGAL::set_precision(Bigfloat_interval(), def_prec);
 	    return CGAL::ZERO;
 	  
 	}
@@ -2246,16 +2190,24 @@ public:
         Sign operator()(const Curve_analysis_2& ca_2,
                         const Algebraic_real_2& r,
 			bool known_to_be_non_zero=false) const {
-                
+
+/*                std::cerr << "calling Sign_at_2.. " << CGAL::Gmpfi::get_default_precision() << "\n";*/
  	    if(ca_2.is_identical(r.curve())) {
 	      return CGAL::ZERO;
 	    }
 	    if(!known_to_be_non_zero &&
 	       _m_kernel->is_zero_at_2_object()(ca_2, r)) {
+//             std::cerr << "calling is_zero_at_2_object..\n";
 	      return CGAL::ZERO;
 	    }
+   /*     std::cerr << "after is_zero_at_2.. " << CGAL::Gmpfi::get_default_precision() << "\n";
+	*/    
 	    CGAL::Sign result = this->operator()
 	      (ca_2,r,(std::numeric_limits<int>::max)());
+      /*      std::cerr << "after numeric_limits.. " <<
+                    CGAL::Gmpfi::get_default_precision() << "\n";
+      */    
+          
 	    CGAL_assertion(result != CGAL::ZERO);
 	    return result;	    
         }
@@ -2287,15 +2239,27 @@ public:
 	if (CGAL::is_zero(ca_2.polynomial_2())) {
 	  return true;
 	}
-	
+	// TODO TODO TODO: precision changes !!
+    
+//     long def_prec = CGAL::get_precision(Bigfloat_interval());
 	Construct_curve_2 cc_2 = _m_kernel->construct_curve_2_object();
-	Construct_curve_pair_2 ccp_2 
+
+	Construct_curve_pair_2 ccp_2
 	  = _m_kernel->construct_curve_pair_2_object();
 
+//             std::cerr << "before1.. " <<
+//                     CGAL::Gmpfi::get_default_precision() << "\n";
+      
 	typename Curve_analysis_2::Status_line_1
 	  cv_line = ca_2.status_line_for_x(r.x());
+
+//     std::cerr << "after1.. " <<
+//                     CGAL::Gmpfi::get_default_precision() << "\n";
 	// fast check for the presence of status line at r.x()
-	if(cv_line.covers_line())    
+
+//     CGAL::set_precision(Bigfloat_interval(), def_prec);
+
+	if(cv_line.covers_line())
 	  return true;
 	
 	// Handle non-coprime polynomial
@@ -2303,6 +2267,7 @@ public:
 	  (std::make_pair(ca_2.polynomial_2(), r.curve().polynomial_2()));
 	
 	Curve_analysis_2 gcd_curve = cc_2(gcd);
+
 	if(CGAL::total_degree(gcd)>0) {
 	  
 	  Construct_curve_pair_2 ccp_2
@@ -2310,8 +2275,9 @@ public:
 	  Curve_analysis_2 r_curve_remainder =
 	    cc_2(CGAL::integral_division_up_to_constant_factor
 		 (r.curve().polynomial_2(), gcd));
-                    
+
 	  r.simplify_by(ccp_2(gcd_curve, r_curve_remainder));
+     
 	  if(r.curve().polynomial_2() == gcd) 
 	    return true;
 	}
@@ -2319,12 +2285,13 @@ public:
 	Curve_pair_analysis_2 cpa_2 = ccp_2(ca_2, r.curve());
 	typename Curve_pair_analysis_2::Status_line_1
 	  cpv_line = cpa_2.status_line_for_x(r.x());
-	
+
 	if(cpv_line.is_event() && cpv_line.is_intersection()) {
 	  // get an y-position of the point r
 	  int idx = cpv_line.event_of_curve(r.arcno(), r.curve());
 	  std::pair<int, int> ipair =
 	    cpv_line.curves_at_event(idx);
+
 	  if(ipair.first != -1 && ipair.second != -1)
 	    return true;
 	}
@@ -2444,7 +2411,7 @@ public:
         Solve_2(const Algebraic_kernel_d_2* kernel) 
             : _m_kernel(kernel) {}
 
-#if CGAL_AK_ENABLE_DEPRECATED_INTERFACE
+#if CGAL_ACK_ENABLE_DEPRECATED_INTERFACE
         template <class OutputIteratorRoots, class OutputIteratorMult>
         std::pair<OutputIteratorRoots, OutputIteratorMult>
            operator()
@@ -2489,7 +2456,7 @@ public:
                         res);
         }
 
-#if CGAL_AK_ENABLE_DEPRECATED_INTERFACE
+#if CGAL_ACK_ENABLE_DEPRECATED_INTERFACE
         template <class OutputIteratorRoots, class OutputIteratorMult>
         std::pair<OutputIteratorRoots, OutputIteratorMult>
            operator()
@@ -2682,7 +2649,7 @@ public:
     CGAL_Algebraic_Kernel_cons(Evaluate_utcf_2, 
 			       evaluate_utcf_2_object);
 
-#if CGAL_AK_ENABLE_DEPRECATED_INTERFACE
+#if CGAL_ACK_ENABLE_DEPRECATED_INTERFACE
     /*!
      * \brief Construct a curve with the roles of x and y interchanged.
      */
@@ -2884,3 +2851,4 @@ mutable boost::shared_ptr<Gcd_cache_2> _m_gcd_cache_2;
 } // namespace CGAL
 
 #endif // CGAL_ALGEBRAIC_CURVE_KERNEL_D_2_H
+// EOF

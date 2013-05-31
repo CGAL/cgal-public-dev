@@ -1,0 +1,6 @@
+#!/bin/bash
+myvar=0
+while [ true  ]
+do
+    bin/xalci_server
+done

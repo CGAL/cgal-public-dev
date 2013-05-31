@@ -354,6 +354,9 @@ void test_algebraic_kernel_1(const AlgebraicKernel_d_1& ak_1){
               std::cerr << "ERROR: Approximate_absolute_1 fails for prec = " << p 
                         << " of this root: " << *rit << std::endl;
             }
+            if ((bi.second - bi.first) * ipower(Bound(2),2*p+1) <= Bound(1) ) {
+              std::cout << "Warning: high precision reported in approx abs test 1" << std::endl;
+            }
           }
         }
         { // Approximate_absolute_1 with negative p
@@ -383,6 +386,10 @@ void test_algebraic_kernel_1(const AlgebraicKernel_d_1& ak_1){
               std::cerr << "ERROR: Approximate_relative_1 fails for prec = " << p 
                         << " of this root: " << *rit << std::endl;
 
+              if ((bi.second - bi.first) * ipower(Bound(2),2*p+1)
+                  <= (CGAL::max)(abs(bi.first),abs(bi.second))) {
+                std::cout << "Warning: high precision reported in approx rel test 1" << std::endl;
+              }
             }
           }
         }

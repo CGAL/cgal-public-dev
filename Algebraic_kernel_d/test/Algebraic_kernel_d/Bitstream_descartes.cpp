@@ -1,21 +1,27 @@
-// TODO: Add licence
+// Copyright (c) 2012 Max-Planck-Institute Saarbruecken (Germany).
+// All rights reserved.
+//
+// This file is part of CGAL (www.cgal.org); you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public License as
+// published by the Free Software Foundation; either version 3 of the License,
+// or (at your option) any later version.
+//
+// Licensees holding a valid commercial license may use this file in
+// accordance with the commercial license agreement provided with the software.
 //
 // This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
 // WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
-// $URL:$
-// $Id: $
-// 
+// $URL: svn+ssh://eric@scm.gforge.inria.fr/svn/cgal/branches/unsorted-branches/eric/Numerical_algebraic_kernel_d/include/CGAL/Algebraic_kernel_d/Bitstream_descartes.h $
+// $Id: Bitstream_descartes.h 70669 2012-07-23 08:45:50Z eric $
 //
-// Author(s)     :  
+// Author(s)     : 
+//                 
 //
 // ============================================================================
 
-// TODO: The comments are all original EXACUS comments and aren't adapted. So
-//         they may be wrong now.
-
-/*! \file NiX/Bitstream_descartes.C
- This is the test file for the class NiX::Bitstream_descartes.
+/*! \file Bitstream_descartes.cpp
+ This is the test file for the class CGAL::internal::Bitstream_descartes.
 
 */
 
@@ -23,39 +29,31 @@
 #include <cassert>
 
 // include these traits here by 'hand', since not in release 3.3
-#include <CGAL/Algebraic_extension_traits.h>
-#include <CGAL/Scalar_factor_traits.h>
+//#include <CGAL/Algebraic_extension_traits.h>
+//#include <CGAL/Scalar_factor_traits.h>
 
-#include <CGAL/Polynomial.h>
-
-#include <CGAL/_test_real_root_isolator.h>
-#include <CGAL/_test_bitstream_descartes.h>
-
-#include <CGAL/Algebraic_kernel_d/Bitstream_descartes.h>
-#include <CGAL/Algebraic_kernel_d/Algebraic_real_d_1.h>
 #include <CGAL/Arithmetic_kernel.h>
 
-#include <CGAL/Algebraic_kernel_d/Bitstream_descartes_rndl_tree_traits.h>
+#include <CGAL/Polynomial.h> 
+
 #include <CGAL/Algebraic_kernel_d/Bitstream_coefficient_kernel.h>
+#include <CGAL/Algebraic_kernel_d/Bitstream_descartes.h>
+#include <CGAL/Algebraic_kernel_d/Algebraic_real_d_1.h>
 
 #include <CGAL/Sqrt_extension.h> // used in this file 
+
+#include <CGAL/_test_real_root_isolator.h>
 
 template <class AT>
 void test_descartes(){
     typedef typename AT::Integer Integer;
     typedef typename AT::Rational Rational;
 
+    // Remark: the same test reappears in isolators.cpp
     {
         typedef CGAL::internal::Bitstream_descartes<
-            CGAL::internal::Bitstream_descartes_rndl_tree_traits
-            <CGAL::internal::Bitstream_coefficient_kernel<Integer> > > Isolator;
+            CGAL::internal::Bitstream_coefficient_kernel< Integer > > Isolator;
         
-        // general test of concept RealRootIsolator
-        CGAL::internal::test_real_root_isolator<Isolator>();
-    }{
-        typedef CGAL::internal::Bitstream_descartes<
-            CGAL::internal::Bitstream_descartes_rndl_tree_traits
-            <CGAL::internal::Bitstream_coefficient_kernel<Integer> > > Isolator;
         // general test of concept RealRootIsolator
         CGAL::internal::test_real_root_isolator<Isolator>();
     }{
@@ -63,8 +61,7 @@ void test_descartes(){
         typedef typename 
             CGAL::Polynomial_type_generator<EXT,1>::Type Polynomial;
         typedef CGAL::internal::Bitstream_descartes<
-            CGAL::internal::Bitstream_descartes_rndl_tree_traits
-            <CGAL::internal::Bitstream_coefficient_kernel<EXT> > > Isolator;
+            CGAL::internal::Bitstream_coefficient_kernel< EXT > > Isolator;
         // general test of concept RealRootIsolator
         CGAL::internal::test_real_root_isolator<Isolator>();
     
@@ -85,8 +82,6 @@ void test_descartes(){
         assert(r1 < isolator.right_bound(1));
     
     }
-    CGAL::internal::test_bitstream_descartes<AT>();
-    
 }
     
 int main(){

@@ -1,0 +1,315 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!--DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN"-->
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head><title>WebGL demo - triangulation of algebraic surfaces</title>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1"/>
+
+<META NAME="author" CONTENT="Pavel Emeliyanenko">
+<META NAME="subject" CONTENT="Triangulation of algebraic surfaces">
+<META NAME="Description" CONTENT="This interactive application enables everyone
+to triangulate and explore the structure algebraic surfaces. Visualization is provided using WebGL">
+<META NAME="Classification" CONTENT="This online service allows enables everyone to analyse and triangulate algebraic surfaces. Our software is based on CGAL library.">
+<META NAME="Keywords" CONTENT="EXACUS, ACS, CGAL, math, maths, algebraic surfaces">
+<META NAME="Geography" CONTENT="Europe, Germany">
+<META NAME="Language" CONTENT="English">
+<META HTTP-EQUIV="Expires" CONTENT="never">
+<META NAME="Copyright" CONTENT="Max-Planck Institute for Informatics">
+<META NAME="Designer" CONTENT="Pavel Emeliyanenko">
+<META NAME="Publisher" CONTENT="Max-Planck Institute for Informatics">
+<META NAME="Revisit-After" CONTENT="7">
+<META NAME="distribution" CONTENT="Global">
+<META NAME="Robots" CONTENT="INDEX,FOLLOW">
+<META NAME="city" CONTENT="Saarbruecken">
+<META NAME="country" CONTENT="Germany">
+
+<meta http-equiv="Content-Style-Type" content="text/css"/>
+<meta http-equiv="Pragma" content="no-cache"/>
+<meta http-equiv="Cache-Control" content="no-cache"/>
+<link rel="SHORTCUT ICON" href="../c/favicon.ico" />
+<link rel="stylesheet" type="text/css" media="screen" href="../c/mpi-inf.css" />
+<link rel="stylesheet" type="text/css" media="screen" href="../c/xalci.css" />
+<link rel="stylesheet" type="text/css" media="print" href="../c/print.css" />
+<style type="text/css" media="screen">
+.smcaps {
+    font-variant: small-caps;
+}
+a#hp-index, a:link#hp-index, a:visited#hp-index {background: rgb(80%,85%,90%);}
+.ak { text-decoration: underline }
+.controls {
+    border: solid 1px #7F9DB9;
+}
+.text_btn {
+    cursor: default;
+    color: black;
+/*      border: 2px inset black; */
+    border-width: 1px;
+/*     background-color: #AABBDD; */
+    /* top right bottom left */
+    padding: 3px 25px 3px 25px;
+    width: 200px;
+    cursor: pointer;
+
+/*     text-shadow: 0px 1px 0px #fff; */
+/*     -moz-border-radius: 3px; */
+/*     -webkit-border-radius: 3px; */
+
+background-image: -webkit-gradient(
+    linear,
+    left bottom,
+    left top,
+    color-stop(0, rgb(170,187,221)),
+    color-stop(0.8, rgb(170,200,220)),
+    color-stop(1, rgb(170,220,220))
+);
+background-image: -moz-linear-gradient(
+    center bottom,
+    rgb(170,187,221) 0%,
+    rgb(170,200,220) 80%,
+    rgb(170,220,220) 100%
+);
+}
+
+.text_btn:disabled {
+text-shadow: 0px 1px 0px #fff;
+cursor: default;
+}
+
+.img_btn {
+    cursor: default;
+    padding: 0px;
+    border-style: outset;
+    margin: 0px;
+}
+.inner_img {
+    /*position: relative;*/
+    left: 0px;
+    top: 0px;
+}
+label:hover {
+    cursor: pointer;
+    color: #8C87B5;
+}
+</style>
+<script type="text/javascript" src="webgl-utils.js"></script>
+<!-- <script type="text/javascript" src="CanvasMatrix.js"></script> -->
+<script type="text/javascript" src="glMatrix-0.js"></script>
+<script type="text/javascript" src="rendering_gl.js"></script>
+<script type="text/javascript" src="misc.js"></script>
+<script type="text/javascript" src="../c/script.js"></script>
+<script type="text/javascript" src="../c/jscolor/jscolor.js"></script>
+</head><body onload="start()">
+
+<!-- <div align="center"> -->
+<div id="head1o2">
+    <div id="mpiidotspacer"></div>
+    <div id="mpiidot"></div>
+    <br /><center>
+<span style="color: #A0A0A0; font-size: 24pt">Topologically-correct triangulation of algebraic surfaces</span></center>
+</div>
+
+<div id="head2o2">
+    <div id="mpiitext">max planck institut<br/>informatik</div>
+    <img id="mpiilogo" src="../c/mpii.jpg" alt="mpii" usemap="#Map" width="300" height="100"/><map name="Map" id="Map"><area shape="rect" coords="97,14,296,70" href="http://www.mpi-sb.mpg.de" alt="mpii logo" /><area shape="circle" coords="41,49,40" href="http://www.mpg.de/" alt="Minerva of the Max Planck Society" /></map>
+</div>
+
+<div class="centerdiv" id="centerdiv">
+<div id="head2o2">
+    <div id="deco">
+        <div id="picture_div" style="position: relative;"><a href="http://www.mpi-inf.mpg.de/projects/EXACUS"><img src="../c/exacus.png" width="185" border="1" alt="Efficient and Exact Algorithms for Curves and Surfaces" /></a><br /><br /><a href="http://www.cgal.org"><img border="1" src="../c/cgal_resize.png" width="185" alt="Computational Geometry Algorithms Library" title ="Computational Geometry Algorithms Library"/></a><br /><br /><a href="http://acs.cs.rug.nl"><img src="../c/acs_resize.gif" border="1" width="185" title="Algorithms for Complex Shapes" alt="Algorithms for Complex Shapes" /></a></div>
+        <script type="text/javascript">
+            show_menu(1, "80px");//show_authors("120px");</script>
+
+<div style="position: relative; top: 140px; color: #1C5180; border: solid 1px #002299; padding: 10px; font-size: 10pt; width: 80%;">
+<!--<td style="background-color: #E4E7FF; >-->
+<b>Z-patches</b> (multiple selections):<br />
+<select id="z-patches" multiple="multiple" style="font-size: 10pt; padding: 5px; width: 90%;" class="controls" size="6" onmouseup="return select_z_patch(this.value)">
+</select><br /><br />
+<label><input onchange="toggle_show_selected(this.checked);"
+class="controls" type="checkbox" id="show_selected" value="1" />&nbsp;show selected only
+</label>
+</div>
+
+<!--<div style="position: relative; top: 250px;">
+<a  href="http://www3.clustrmaps.com/counter/maps.php?url=http://infvm1700.ag1.mpi-sb.mpg.de/" id="clustrMapsLink"><img src="http://www3.clustrmaps.com/counter/index2.php?url=http://infvm1700.ag1.mpi-sb.mpg.de/" style="border:0px;" alt="Locations of visitors to this page" title="Locations of visitors to this page" id="clustrMapsImg" />
+</a>
+<script type="text/javascript">
+function cantload() {
+img = document.getElementById("clustrMapsImg");
+img.onerror = null;
+img.src = "http://www2.clustrmaps.com/images/clustrmaps-back-soon.jpg";
+document.getElementById("clustrMapsLink").href = "http://www2.clustrmaps.com";
+}
+img = document.getElementById("clustrMapsImg");
+img.onerror = cantload;
+</script>
+</div>-->
+
+    </div>
+</div>
+<div id="hspacer">&nbsp;</div>
+
+<div id="main_content" style="position: relative; left: 230px; top: 0px; font-size: 11pt; width: 80%" >
+<hr style="margin-left: 0em" size="1" />
+
+<table border="0" cellspacing="5" cellpadding="0">
+
+<tr>
+<!--
+<td valign="top">
+<script type="text/javascript">
+set_img_button("bzoomin", "../c/zoom-in.png", "return zoomin()","Zoom In", 0, 0);
+document.write("<br />");
+set_img_button("bzoomout", "../c/zoom-out.png", "return zoomout()","Zoom Out", 0, 0);
+document.write("<br />");
+set_img_button("breset", "../c/reset2.png", "return reset_view()","Reset view: set default window", 0, 0);document.write("<br /><br />");
+set_img_button("bpoint", "../c/point.png", "return on_point()", "Focus on point: click the curve<br /> plot to focus on a certain point", 2, 0);
+document.write("<br />");
+set_img_button("bregion", "../c/region2.png", "return on_region()", "Focus on region: press mouse<br /> button and select the area of interest", 1, 0);
+document.write("<br /><br />");
+set_img_button("bzoomback", "../c/zoom-undo.png", "return false","Back to previous zoom", 0, 0);
+
+</script></td>-->
+
+<td align="left" valign="top">
+
+<div><canvas id="glcanvas" width="800px" height="600px" class="controls">
+    Your browser doesn't appear to support the HTML5 <code>&lt;canvas&gt;</code> element.
+</canvas>
+</div>
+<br />
+
+<table border="0" cellspacing="0" cellpadding="0">
+<tr valign="center"><td>
+<script type="text/javascript">
+set_img_button("breset", "../c/reset.png", "return clear_text()","", 0, 0);
+</script>&nbsp;&nbsp;&nbsp;
+</td><td>
+Algebraic surface equation:
+</td></tr>
+
+</table>
+<textarea id="surf" name="surface"
+class="controls" style="width: 800px" cols="40" rows="3" wrap="virtual"></textarea>
+<br />
+<span style=" font-size: 10pt; ">
+Polynomials can be entered in both rational and floating-point formats, coefficients of arbitrary length are accepted:
+  <br />for example, <b>5/7x^4-5x^2+y^4-4y^2+1.075z^4-33/4z^2+11.788</b> is a valid input.
+<br /><br />
+Visit our <a href="surface_gallery.html">Algebraic Surface Gallery</a> (<span style="color: #FF2222;">NEW!</span>) for more examples of implicit algebraic surfaces.<br /> Web-application design and server software by <a href="http://www.mpi-inf.mpg.de/~emeliyan">Pavel Emeliyanenko</a>.
+</span>
+</td>
+
+<td valign="top">
+
+<table style="color: #1C5180" border="0" cellspacing="2" cellpadding="2">
+<tr><td align="left"><b>Parameters:</b></td></tr>
+<tr><td >
+
+<table style="color: #1C5180; font-size: 11pt;" border="0" cellspacing="2" cellpadding="2">
+
+<tr><td colspan="4">
+<label>
+<input onchange="toggle_use_abs_bounds(this.checked);" class="controls" type="checkbox" id="use_abs" name="use_abs" value="1" />&nbsp;use absolute <b>x/y</b>-bounds
+</label></td></tr>
+
+<tr><td>enlarge <b>x</b>-left:</td>
+<td><input type="text" class="controls" id="left-id" name="left" value="5" size="2" maxlength="3"/>&nbsp;&#37;&nbsp;</td>
+<td>enlarge <b>x</b>-right:</td>
+<td><input type="text" class="controls" id="right-id" name="right" value="5" size="2" maxlength="3"/>&nbsp;&#37;&nbsp;</td></tr>
+
+<tr><td>enlarge <b>y</b>-bottom:</td>
+<td><input type="text" class="controls" id="btm-id" name="btm" value="5" size="2" maxlength="3"/>&nbsp;&#37;&nbsp;</td>
+<td>enlarge <b>y</b>-top:</td>
+<td><input type="text" class="controls" id="top-id" name="top" value="5" size="2" maxlength="3"/>&nbsp;&#37;&nbsp;</td>
+</td></tr>
+
+<tr><td><b>x</b>-left:</td>
+<td><input type="text" class="controls" id="left-abs-id" name="left" value="-2" size="3" maxlength="8" disabled/>&nbsp;</td>
+<td><b>x</b>-right:</td>
+<td><input type="text" class="controls" id="right-abs-id" name="right" value="2" size="3" maxlength="8" disabled/>&nbsp;</td></tr>
+
+<tr><td><b>y</b>-bottom:</td>
+<td><input type="text" class="controls" id="btm-abs-id" name="btm" value="-2" size="3" maxlength="8" disabled/>&nbsp;</td>
+<td><b>y</b>-top:</td>
+<td><input type="text" class="controls" id="top-abs-id" name="top" value="2" size="3" maxlength="8" disabled/>&nbsp;</td>
+</td></tr>
+
+<tr><td><b>z</b>-below:</td>
+<td><input type="text" class="controls" id="below-id" name="below" value="-2" size="3" maxlength="7"/></td>
+<td><b>z</b>-above:</td>
+<td><input type="text" class="controls" id="above-id" name="above" value="2" size="3" maxlength="7"/>
+</td></tr>
+
+<tr><td>subdivisions in <b>x</b>:</td>
+<td><input type="text" class="controls" id="sx-id" name="sx" value="10" size="3" maxlength="2"/></td>
+<td>subdivisions in <b>y</b>:</td>
+<td><input type="text" class="controls" id="sy-id" name="sy" value="10" size="3" maxlength="2"/>
+</td></tr>
+
+<tr><td colspan="4"><hr style="margin-left: 0em" size="1" /></td></tr>
+
+<tr><td colspan="2">Front color:&nbsp;
+<input onchange="set_surface_color(0, this.color)" style="border: solid 1px #7F9DB9" class="color" value="66ff00" size="8" id="front_color"></td>
+<td  colspan="2">Back color:&nbsp;
+<input onchange="set_surface_color(1, this.color)" style="border: solid 1px #7F9DB9" class="color" value="66ff00" size="8" id="back_color"></td></tr>
+
+<tr><td colspan="2">Background color:&nbsp;
+<input onchange="set_clear_color(this.color)" style="border: solid 1px #7F9DB9" class="color" value="66ff00" size="8" id="clear_color"></td></tr>
+
+<!-- <tr><td colspan="4"></td></tr> -->
+<tr><td colspan="4"><hr style="margin-left: 0em" size="1" /></td></tr> 
+
+<tr><td colspan="2">
+<label>
+<input onchange="toggle_show_triangles(this.checked);" class="controls" type="checkbox" id="show_tris" name="show_tris" value="1" />&nbsp;show triangles
+</label></td>
+<td colspan="2">
+<label disabled><input class="controls" type="checkbox" id="transparent" name="transparent" value="1" disabled />&nbsp;transparency</label></td></tr>
+
+<tr><td colspan="2">
+<label><input onchange="toggle_inverse_normals(this.checked);" class="controls" type="checkbox" id="inv_normals" name="inv_normals" value="1" />&nbsp;inverse normals</label></td>
+<td colspan="2">
+<label><input
+onchange="toggle_show_silhouette(this.checked);" class="controls" type="checkbox" id="show_sil" name="transparent" value="1" />&nbsp;show silhouette</label></td>
+</tr>
+
+</table>
+</td></tr>
+<tr><td><hr style="margin-left: 0em" size="1" /></td></tr>
+
+<tr><td style="background-color: #E4E7FF; border: solid 1px #002299; padding: 10px; font-size: 10pt">
+<!-- <b>USAGE</b><br/><br/> -->
+Translation in <b>XY</b>-plane: <b>Ctrl</b>+<b>left</b> mouse button
+<br/>Zooming along <b>Z</b>-axis: <b>mouse wheel</b> or <b>Shift</b>+<b>left</b> mouse button<br/>
+<!--<span style="color: #00af00; font-weight: bold">HINT:</span> Use <b>inverse normals</b> check-box if surface is not colored properly-->
+
+</td></tr>
+</table>
+<!--</td>
+
+<td align="center" rowspan="2">-->
+<!--<tr><td align="center">-->
+<center>
+<script type="text/javascript">
+set_text_button("banalyse", "Triangulate surface", "return click_analyse();", false);
+</script>
+<br/>
+<script type="text/javascript">//<!--
+    set_text_button("btriangulate", "Recompute mesh", "return click_triangulate();", false);
+</script>
+<br /><br />
+<div id="error_msg" style="color: #ff0000"></div>
+<div id="progress_msg" style="color: #109f10"></div>
+</center>
+</td></tr>
+<tr><td></td></tr>
+
+</table>
+  </div></div>
+
+<!--   </div> -->
+  <p align="center">Max-Planck-Institut f&uuml;r Informatik,
+  <a href="http://www.mpi-inf.mpg.de/departments/d1/areas/GCCA.html">Geometric Computing Group</a></p>
+  </body></html>
+
+    

@@ -1086,7 +1086,8 @@ public:
         Handle_policy::find( h);
         h.ptr_->add_reference();
         h.ptr_->add_union_size( 1);
-        remove_reference();
+        if(ptr_ != 0)
+          remove_reference();
         ptr_ = h.ptr_;
         return *this;
     }

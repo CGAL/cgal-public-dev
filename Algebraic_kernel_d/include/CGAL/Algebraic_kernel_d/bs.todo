@@ -1,0 +1,41 @@
+TUNING:
+* localize 
+ - CACHE decided boxes + achieve (maybe via iterator)
+ - "lifting" is achieved if all boxes are decided
+* use of common factors in resultants
+* n*Tau for precision in num solve
+* mult in second direction
+** use numsolve to detect mult
+* Enabled Descartes@Rational in Bisolve
+
+DESIGN:
+* Active intervals:
+** remove DISABLE_BITSTREAM_FILTER
+** polynorphic active intervals to switch dynamically from Arcavoid to Bitstream if Arcavoid fails
+  (similar to ffy_at_alpha_isolator)
+** choose bitstream in CA/in CPA?/bitstream for ordinary roots?
+* Bi_algebraic_real_2 should store two Solution_1 (avoid construction of intermediate Solution_1)
+* unify "vertical line"
+* add precond for gcd(f,g) being trivial
+* Telemetry class?
+
+BUGS:
+* Do not construct Algebraic_curve_kernel_2 twice!
+* too many intermediate lines?
+* bisolve check that f and g are coprime
+
+EXPERIMENTS:
+* compare with sheared version!
+* Arrangements
+
+FUTURE:
+* CUDA@Mac
+* Improve: quadratic loop in BDV
+* sum of overlapping intervals
+
+* Improve ACK_2 methods (as Solve_2) with Bisolve etc
+
+KNOWN PROBLEMS
+* INCONSISTENCIES: is_event = (left, right) != (1,1)
+* AK_2 slow: 2xCA + 1xCPA
+

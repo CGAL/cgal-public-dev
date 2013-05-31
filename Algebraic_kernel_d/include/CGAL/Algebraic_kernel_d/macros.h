@@ -1,4 +1,4 @@
-// Copyright (c) 2006-2009 Max-Planck-Institute Saarbruecken (Germany).
+// Copyright (c) 2006 2007, 2008, 2009 Max-Planck-Institute Saarbruecken (Germany).
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org); you can redistribute it and/or
@@ -16,10 +16,8 @@
 // $Id$
 // 
 //
-// Author(s)     : Eric Berberich <eric@mpi-inf.mpg.de>
+// Author(s)     : Eric Berberich <eric.berberich@cgal.org>
 //                 Michael Kerber <mkerber@mpi-inf.mpg.de>
-//
-// ============================================================================
 
 #ifndef CGAL_ACK_MACROS_H
 #define CGAL_ACK_MACROS_H 1
@@ -38,24 +36,16 @@ namespace CGAL {
 
 #define CGAL_ACK_SNAP_ALGEBRAIC_CURVE_KERNEL_2_TYPEDEFS(Curve_analysis_2) \
   typedef typename Algebraic_kernel_with_analysis_2::Coefficient Coefficient; \
+  typedef typename Algebraic_kernel_with_analysis_2::Algebraic_real_1 Algebraic_real_1; \
   typedef typename Algebraic_kernel_with_analysis_2::Bound Bound;       \
+  typedef typename Algebraic_kernel_with_analysis_2::Multiplicity_type Multiplicity_type;  \
   typedef typename CGAL::Get_arithmetic_kernel<Bound>                   \
   ::Arithmetic_kernel Arithmetic_kernel;                                \
   typedef typename Arithmetic_kernel::Integer Integer;                  \
-  typedef typename Algebraic_kernel_with_analysis_2::Algebraic_real_1 Algebraic_real_1; \
   typedef typename Algebraic_kernel_with_analysis_2::Polynomial_1 Polynomial_1; \
   typedef typename Algebraic_kernel_with_analysis_2::Polynomial_2 Polynomial_2; \
   typedef typename Algebraic_kernel_with_analysis_2::Solve_1 Solve_1;   \
-  typedef CGAL::internal::Bitstream_coefficient_kernel_at_alpha         \
-  < Algebraic_kernel_with_analysis_2 > Bitstream_coefficient_kernel;    \
-  typedef CGAL::internal::Bitstream_descartes_rndl_tree_traits          \
-  < Bitstream_coefficient_kernel > Bitstream_traits;                    \
-  typedef CGAL::internal::Bitstream_descartes<Bitstream_traits>         \
-  Bitstream_descartes;                                                  \
-  typedef CGAL::internal::Status_line_CA_1< Algebraic_kernel_with_analysis_2 > \
-  Status_line_1                                                         \
-
-
+ 
 
 #define CGAL_SNAP_AK_3_TYPEDEFS(Arithmetic_kernel)          \
   CGAL_SNAP_ARITHMETIC_KERNEL_TYPEDEFS(Arithmetic_kernel);  \

@@ -1,0 +1,24 @@
+! Taylor expansion of exp at 0 until degree n
+! Seed:    0
+! Degree:  13	(target: 13)
+! Bitsize: 33	(target: 0)
+! Fujiwara bound: 	2^6
+
+dri
+0
+13
+6227020800
+6227020800
+3113510400
+1037836800
+259459200
+51891840
+8648640
+1235520
+154440
+17160
+1716
+156
+13
+1
+

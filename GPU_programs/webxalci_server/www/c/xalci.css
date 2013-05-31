@@ -1,0 +1,38 @@
+
+div.centerdiv {
+  padding: 0;
+  margin-top:0px;
+  margin-bottom:0px;
+  margin-right:9%;
+  margin-left:9%;
+/*  max-width: 1700px;
+  min-width: 900px;*/
+  border: none;
+  background: #fff none;
+}
+/*  {width: 1300px; margin:0px auto} */
+
+/*#wrap {
+    background: #FFF;
+    width: 820px; height: 100%;
+    margin: 0 auto;
+    text-align: left;
+}
+#content-wrap {
+    clear: both;
+    margin: 0; padding: 0;
+    background: #FFF;
+}*/
+
+#hspacer {
+    color:#036;
+    font-size:xx-small;
+    height:1px;
+    display:block;
+    clear:both;
+    z-index:3;
+    margin:0px;
+    margin-top:-10px; 
+    padding:0px;
+}
+

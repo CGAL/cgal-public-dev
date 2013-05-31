@@ -55,30 +55,27 @@ class Insufficient_rasterize_precision_exception
 #endif
 
 template <class NT>
-struct Max_coeff
-{
+struct Get_minmax {
+
     template <class X>
-    NT operator()(const CGAL::Polynomial<X>& p) const
+    void operator()(const CGAL::Polynomial<X>& p, NT& pmin, NT& pmax) const
     {
         typename CGAL::Polynomial<X>::const_iterator it = p.begin();
-        Max_coeff<NT> max_coeff;
-        NT max(max_coeff(*it));
+        Get_minmax< NT > minmax;
+        minmax(*it, pmin, pmax);
         while(++it != p.end()) {
-            NT tmp(max_coeff(*it));
-            if(max < CGAL_ABS(tmp))
-                max = CGAL_ABS(tmp);
+            NT smin, smax;
+            minmax(*it, smin, smax);
+            if(pmax < smax)
+                pmax = smax;
+            if(pmin == NT(0) || (smin != NT(0) && smin < pmin))
+                pmin = smin;
         }
-        return max;
     }
-    NT operator()(const NT& x) const
-    { return CGAL_ABS(x); }
+    void operator()(const NT& x, NT& xmin, NT& xmax) const
+    {  xmin = CGAL_ABS(x), xmax = xmin; }
 };
 
-/*!\brief
- * divides an input value by a contant
- *
- * provided that there is a coercion between \c Input and \c Result types
- */
 template <class Result, class Input>
 struct Reduce_by {
 
@@ -97,14 +94,6 @@ struct Reduce_by {
     Result denom;
 };
 
-/*!\brief
- * transforms bivaritate polynomial of type \c InputPoly_2 to
- * \c OutputPoly_2 by recursively applying operation \c Op to all of its
- * coefficients
- *
- * <tt>Op: InputPoly_2::Inntermost_coefficient_type ->
- *             OutputPoly_2::Inntermost_coefficient_type</tt>
- */
 template <class OutputPoly_2, class InputPoly_2, class Op>
 struct Transform {
 
@@ -122,9 +111,66 @@ struct Transform {
     }
 
     OutputPoly_2 operator()(
-        const typename Innermost_coefficient_type<InputPoly_2>::Type& x, Op op)
-        const {
+        const typename Innermost_coefficient_type<InputPoly_2>::Type& x,
+                Op op) const {
         return static_cast<OutputPoly_2>(op(x));
+    }
+};
+
+//! converts an integer polynomial to rational one;
+//! coefficients are normalized by dividing them by geometric mean of min and
+//! max coefficient
+template < class PolyInt_d, class ArithmeticKernel >
+struct Convert_and_normalize {
+
+    //! this first template argument
+    // NOTE: apparently PolyInt_d coefficient type must match the one provided
+    // by arithmetic kernel
+    typedef PolyInt_d Poly_int_d;
+    //! this second template argument
+    typedef ArithmeticKernel Arithmetic_kernel;
+
+    //! extract number types
+    typedef typename Arithmetic_kernel::Integer Integer;
+    typedef typename Arithmetic_kernel::Rational Rational;
+    typedef typename Arithmetic_kernel::Bigfloat_interval BFI;
+
+    //! dimensionality
+    static const int d = CGAL::internal::Dimension< PolyInt_d >::value;
+    //! polynomial over rationals
+    typedef typename CGAL::Polynomial_type_generator< Rational, d >::Type
+        Poly_rat_d;
+
+    typedef Poly_rat_d result_type;
+
+    //! returns normalization \c factor if \c normalize is true
+    Poly_rat_d operator()(const Poly_int_d& in,
+            Rational& factor, bool normalize = true) const {
+
+        typedef typename CGAL::Bigfloat_interval_traits< BFI >::Bound BigFloat;
+        typedef CGAL::Polynomial_traits_d< PolyInt_d > PT;
+        
+        factor = Rational(1);
+        if(normalize) {
+            Integer pmin(0), pmax(0); // pmin is guaranteed to be > 0
+            Get_minmax< Integer >()(in, pmin, pmax);
+    
+            // approximate square root with lower precision
+            long old_prec = CGAL::set_precision(BFI(), 40);
+            BigFloat bf(pmax*pmin);
+            // divide by geometric mean: sqrt(pmin*pmax)
+            bf = CGAL::sqrt(bf);
+            factor = typename CGAL::Coercion_traits< BigFloat, Rational >::
+                 Cast()(bf);
+            CGAL::set_precision(BFI(), old_prec);
+        }
+
+        typedef Reduce_by< Rational, Rational > Reduce_op;
+        Transform< Poly_rat_d, Poly_int_d, Reduce_op > transform;
+        Reduce_op op(factor);
+
+        Poly_rat_d res = transform(in, op); // divides by ratio inside
+        return res;
     }
 };
 
@@ -136,7 +182,6 @@ struct Transform {
  * this traits class prodives various number type conversions for the
  * curve renderer
  */              
-
 template <class Coeff_, class Integer_, class Rational_>
 struct Curve_renderer_traits_base 
 { 
@@ -419,6 +464,156 @@ struct Curve_renderer_traits<CORE::BigRat, CORE::BigRat> :
     };
 };
 #endif // CGAL_USE_CORE
+
+
+#ifdef CGAL_USE_GMP
+//! Specialization for \c CGAL::Interval_nt<true>
+template <>
+struct Curve_renderer_traits<CGAL::Interval_nt<true>, CGAL::Gmpq > :
+        public Curve_renderer_traits_base<CGAL::Interval_nt<true>, int,
+            CGAL::Gmpq> {
+ 
+    typedef double Float;
+
+    struct Rat_to_float {
+        typedef Float result_type;
+                
+        template <class Extended>
+        Float operator()(const Extended& x) const {
+            return CGAL::to_double(x); 
+        }
+    };
+
+    typedef Implicit_coercion<double> Float_to_rat;
+
+    struct Rat_to_integer {
+        typedef Rational argument_type;
+        typedef Integer result_type;
+
+        Integer operator()(const Rational& x) const {
+            return static_cast<int>(std::floor(CGAL::to_double(x)));
+        }
+    };
+
+    struct Extract_eval {
+        typedef Coeff argument_type;
+        typedef Float result_type;
+        
+        Float operator()(const Coeff& x, 
+                    bool *error_bounds = NULL) const { 
+            bool err_bnd;
+//             err_bnd = (CGAL_ABS(l) < 1E-15 || CGAL_ABS(u) < 1E-15) ||
+//                 ((l <= 0 && u >= 0));
+            Float l = x.inf(), u = x.sup(), mid = (l+u)/2;
+            err_bnd = ((l < 0 && u > 0)||(l == 0 && u == 0));
+            if(error_bounds != NULL)
+                *error_bounds = err_bnd;
+//! ATTENTION!!! if smth is screwed up try to uncomment the line below
+//! this is very crucial for performance & stability
+            if(err_bnd)  // &&  ABS(mid) < 1E-15)
+                return 0; 
+//! ATTENTION!!!
+            return mid;
+        }
+    };
+
+    //! compares a given quantity with the precision limit a floating-point
+    //! number type, returns \c true if this limit is exceeded
+    struct Precision_limit {
+        typedef bool result_type;
+        
+        template <class Float>
+        bool operator()(const Float& x) const
+        { return (CGAL_ABS(x) <= 1e-16); }
+    };
+
+    static const unsigned MAX_SUBDIVISION_LEVEL = 10;
+};
+
+#if 0
+//! Specialization for \c CORE::BigFloat
+template <>
+struct Curve_renderer_traits<CORE::BigFloat, class CORE::BigRat> 
+         : public Curve_renderer_traits_base<CORE::BigFloat, CORE::BigInt,
+                CORE::BigRat> {
+
+    typedef CORE::BigFloat Float;
+
+    struct Rat_to_integer {
+        typedef Rational argument_type;
+        typedef Integer result_type;
+        
+        Integer operator()(const Rational& x) const { 
+            return x.BigIntValue(); 
+        }
+    };
+
+    typedef Rat_to_float<Float> Rat_to_float;
+    
+    struct Float_to_rat {
+        typedef Float argument_type;
+        typedef Rational result_type;
+        
+        Rational operator()(const Float& x) const
+        { return x.BigRatValue(); }
+    };
+    
+    struct Hash_function {
+        typedef Float argument_type;
+        typedef std::size_t result_type;
+        
+        inline result_type operator()(const Float& key) const {
+            const CORE::BigFloatRep& rep = key.getRep();
+            std::size_t ret = reinterpret_cast<std::size_t>(&rep);
+            return ret;
+        }
+    };
+    
+    struct Make_exact {
+        typedef Float argument_type;
+        typedef void result_type;
+        
+        inline void operator()(Float& x) const
+        { x.makeExact(); }
+    };
+
+    static const unsigned MAX_SUBDIVISION_LEVEL = 12;
+};
+#endif
+
+//! Specialization for \c CGAL::Gmpq
+template <>
+struct Curve_renderer_traits<CGAL::Gmpq, CGAL::Gmpq> : 
+    public Curve_renderer_traits_base<CGAL::Gmpq, CGAL::Gmpz,
+        CGAL::Gmpq> {
+
+    typedef CGAL::Gmpq Float;
+
+    typedef Rat_to_float<Float> Rat_to_float;
+
+    typedef Implicit_coercion<Float> Float_to_rat;
+
+    struct Rat_to_integer {
+        typedef Rational argument_type;
+        typedef Integer result_type;
+        
+        Integer operator()(const Rational& x) const { 
+            return x.numerator(); 
+        }
+    };
+    
+    struct Hash_function {
+        typedef Float argument_type;
+        typedef std::size_t result_type;
+        
+        inline result_type operator()(const Float& key) const {
+//             std::size_t ret = reinterpret_cast<std::size_t>(&rep);
+            return key.numerator().size();
+        }
+    };
+};
+#endif // CGAL_USE_GMP
+
 
 #ifdef CGAL_USE_LEDA
 template <>

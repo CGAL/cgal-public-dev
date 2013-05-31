@@ -28,9 +28,6 @@
 #include <vector>
 
 #include <CGAL/Algebraic_kernel_d/macros.h>
-#include <CGAL/Algebraic_kernel_d/Bitstream_descartes.h>
-#include <CGAL/Algebraic_kernel_d/Bitstream_descartes_rndl_tree_traits.h>
-#include <CGAL/Algebraic_kernel_d/Bitstream_coefficient_kernel_at_alpha.h>
 #include <CGAL/Algebraic_kernel_d/shear.h>
 
 namespace CGAL {
@@ -53,6 +50,15 @@ public:
 
     CGAL_ACK_SNAP_ALGEBRAIC_CURVE_KERNEL_2_TYPEDEFS(Curve_analysis_2);
 
+    typedef typename Curve_analysis_2::Status_line_builder Status_line_builder;
+   
+    typedef typename Status_line_builder::Bitstream_coefficient_kernel
+      Bitstream_coefficient_kernel;
+
+    typedef typename Status_line_builder::Status_line_isolator Status_line_isolator; 
+
+    typedef typename Curve_analysis_2::Status_line_1 Status_line_1;
+
     typedef std::pair<Bound,Bound> Point;
 
     typedef std::vector< Algebraic_real_1 > Root_container;
@@ -69,6 +75,7 @@ private:
     typedef std::list<Y_structure_element> Y_structure;
 
     // TODO replace by something that we already have
+    // EBEB 2012-07-10: e.g. kdtree/include/CGAL/kdtree_d.h:  enum { MINUS_INFINITY = -1, FINITE = 0, PLUS_INFINITY = 1 };
     enum Coor_type { MINUS_INFTY,FINITE,PLUS_INFTY};
 
 public:
@@ -176,14 +183,12 @@ public:
 
             if(typename Polynomial_traits_2::Degree() (sh_pol) > 0) {
             
+                Polynomial_1 sh_disc = CGAL::resultant(sh_pol,der_sh_pol);
 
-                Polynomial_1 sh_disc 
-                    = CGAL::resultant(sh_pol,der_sh_pol);
-                
 #if CGAL_ACK_DEBUG_FLAG
                 CGAL_ACK_DEBUG_PRINT << "root isolation.." << std::flush;
 #endif
-                solve_1(sh_disc,std::back_inserter(sh_disc_roots),false);
+                solve_1(sh_disc, false, std::back_inserter(sh_disc_roots));
                 
             }
              
@@ -198,12 +203,13 @@ public:
 #endif
         Root_container ev_res_roots;
         if(typename Polynomial_traits_2::Degree() (sh_pol) > 0) {
+
             Polynomial_1 ev_res = CGAL::resultant(pol,sh_der_sh_pol);
             
 #if CGAL_ACK_DEBUG_FLAG
             CGAL_ACK_DEBUG_PRINT << "root isolation.." << std::flush;
 #endif
-            solve_1(ev_res,std::back_inserter(ev_res_roots),false);
+            solve_1(ev_res, false, std::back_inserter(ev_res_roots));
             
         }
         
@@ -339,24 +345,22 @@ private:
         lower_bound = upper_bound = Bound(0);
         for(int i=0;i<n;i++) {
             Algebraic_real_1 curr_bound(stripe_values[i]);
-            Bitstream_traits traits(Bitstream_coefficient_kernel
-                                    (kernel(),curr_bound));
-            CGAL::internal::Square_free_descartes_tag tag;
-            Bitstream_descartes descartes(tag,sh_pol,traits);
-            int m = descartes.number_of_real_roots();
+            Bitstream_coefficient_kernel bck (kernel(),curr_bound);
+            Status_line_isolator isolator(sh_pol,bck);
+            int m = isolator.number_of_real_roots();
             if(m>0) {
-                if(descartes.left_bound(0)<lower_bound) {
-                    lower_bound = descartes.left_bound(0);
+                if(isolator.left_bound(0)<lower_bound) {
+                    lower_bound = isolator.left_bound(0);
                 }
-                if(descartes.right_bound(m-1) 
+                if(isolator.right_bound(m-1) 
                    > upper_bound) {
-                    upper_bound = descartes.right_bound(m-1);
+                    upper_bound = isolator.right_bound(m-1);
                 }
             }
             // Create intermediate line for later use
             Algebraic_real_1 xval(curr_bound);
             Status_line_1 inter_line(xval,i,D,m);
-            inter_line.set_isolator(descartes);
+            inter_line.set_isolator(isolator);
             sh_intermediate_lines.push_back(inter_line);
         }
         far_left=(s<0) ? x_sheared(left_bound,upper_bound,-s)
@@ -1095,29 +1099,29 @@ private:
 
     Status_line_1 create_event_line(Curve_analysis_2& D,int i) {
         Algebraic_real_1 xval = sh_disc_roots[i];
-        Bitstream_traits traits(Bitstream_coefficient_kernel(kernel(),xval));
+        Bitstream_coefficient_kernel bck (kernel(),xval);
         int number_of_events 
             = static_cast<int>(pre_vert_lines[i].event_points.size());
         int number_of_roots 
             = pre_vert_lines[i].number_of_non_event_roots+number_of_events; 
         Polynomial_2 sh_pol_with_correct_degree 
             = CGAL::internal::poly_non_vanish_leading_term(kernel(),sh_pol,xval);
-        Bitstream_descartes descartes(CGAL::internal::Backshear_descartes_tag(),
-                                      sh_pol_with_correct_degree,
+
+        Status_line_isolator isolator(sh_pol_with_correct_degree,
                                       number_of_roots,
                                       number_of_events,
                                       pre_vert_lines[i],
-                                      traits);
+                                      bck);
         typename Status_line_1::Arc_container arc_container;
-        for(int j=0;j<descartes.number_of_real_roots();j++) {
-            if(descartes.is_certainly_multiple_root(j)) {
+        for(int j=0;j<isolator.number_of_real_roots();j++) {
+            if(isolator.is_certainly_multiple_root(j)) {
                 int n = static_cast<int>(pre_vert_lines[i].event_points.size());
                 int k=0;
                 while(k<n) {
                     if((pre_vert_lines[i].lower_bound(k)
-                        <=descartes.right_bound(j)) &&
+                        <=isolator.right_bound(j)) &&
                        (pre_vert_lines[i].upper_bound(k)
-                        >=descartes.left_bound(j))) {
+                        >=isolator.left_bound(j))) {
                         break;
                     }
                     else {
@@ -1136,7 +1140,7 @@ private:
                          pre_vert_lines[i].num_arcs_left(),
                          pre_vert_lines[i].num_arcs_right(),
                          arc_container);
-        ev.set_isolator(descartes);
+        ev.set_isolator(isolator);
         ev._set_number_of_branches_approaching_infinity
             (std::make_pair(pre_vert_lines[i].asym_left_minus,
                             pre_vert_lines[i].asym_right_minus),

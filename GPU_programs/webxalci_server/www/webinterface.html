@@ -1,0 +1,92 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><!--DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN"--><html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en"><head><title>EXACUS Algebraic curves rendering</title><meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1"/><meta name="description" content="input a polynomial, click analyse button to decompose the curve into sweepable segments, then click rasterize buttonto selected segments"/><meta name="keywords" content="EXACUS, ACS, CGAL, mathematics, mathematical, math, maths, interactive mathematics, interactive math, interactive maths, mathematic, online, mathematical education, teachingmathematics, algebra, geometry, calculus, function, curve, graphing, virtual class, virtual classes, virtual classroom, virtual classrooms, interactive documents, interactive document, geometry, computational geometry"/><meta name="Author" content="EMELIYANENKO Pavel (asm@mpi-sb.mpg.de)"/><meta http-equiv="Content-Style-Type" content="text/css"/><meta http-equiv="Pragma" content="no-cache"/><meta http-equiv="Cache-Control" content="no-cache"/><link rel="SHORTCUT ICON" href="c/favicon.ico" /><link rel="stylesheet" type="text/css" media="screen" href="c/mpi-inf.css" /><link rel="stylesheet" type="text/css" media="print" href="c/print.css" />
+<style type="text/css" media="screen">.text_btn {	cursor: default; 	color: black;	border: 1px outset black;	background-color: #AABBDD;	margin: 4px;}.img_btn {	cursor: default; 	padding: 0px;    border-style: outset;   margin: 1px;}.inner_img {	/*position: relative;*/ 	left: 0px; 	top: 0px; }
+
+a#hp-index, a:link#hp-index, a:visited#hp-index {background: rgb(80%,85%,90%);}.ak { text-decoration: underline }
+</style><script type="text/javascript">//<!--
+var window_min = 1.00000000000000003e-13;
+var window_max = 10000000000;
+var is_busy = 0;
+//-->
+</script><script type="text/javascript" src="c/script.js"></script></head><body onload="init()"><div id="head1o2"><div id="mpiidotspacer"></div>  <div id="mpiidot"></div><br /><center><span style="color: #A0A0A0; font-size: 24pt">EXACUS Algebraic curves rendering</span></center></div><div id="head2o2">
+
+<div id="deco"><a href="http://www.mpi-inf.mpg.de/projects/EXACUS"><img src="c/exacus.png" width="185" border="1" alt="Efficient and Exact Algorithms for Curves and Surfaces" /></a><br /><br /><a href="http://www.cgal.org"><img border="1" src="c/cgal_resize.png" width="185mm" /></a><br /><br /><a href="http://acs.cs.rug.nl"><img src="c/acs_resize.gif" border="1" width="185"/></a>
+
+<script type="text/javascript">
+show_menu(0, "40px");
+show_authors("100px");
+</script>
+</div>
+
+<div id="mpiitext">max planck institut<br/>informatik</div>
+<img id="mpiilogo" src="c/mpii.jpg" alt="mpii" usemap="#Map" width="300" height="100"/><map name="Map" id="Map"><area shape="rect" coords="97,14,296,70" href="http://www.mpi-sb.mpg.de" alt="mpii logo" /><area shape="circle" coords="41,49,40" href="http://www.mpg.de/" alt="Minerva of the Max Planck Society" /></map></div><div id="headerspacer">&nbsp;</div>
+
+
+<div style="position: absolute; left: 210px; top: 160px;" ><hr size="1" />
+
+<div><div>
+
+<div id="zoomer" style=" border: 1px solid #999980; position: absolute; left: 100px; top: 100px; width: 0px; height: 0px; z-index: 1000; visibility: hidden; cursor: crosshair;"></div>
+
+<center>
+
+<form action="xalci.cgi" method="post"  onsubmit="disable_controls(true);"><table border="0" cellspacing="5" cellpadding="0"><tr><td valign="top">
+<script type="text/javascript">//<!--
+set_img_button("bzoomin", "c/zoom-in.png", "return zoomin()","Zoom In", 0, 0); 
+document.write("<br />");
+set_img_button("bzoomout", "c/zoom-out.png", "return zoomout()","Zoom Out", 0, 0); 
+document.write("<br />");
+set_img_button("breset", "c/reset2.png", "return reset_view()","Reset view: set default window", 0, 0);document.write("<br /><br />");
+set_img_button("bpoint", "c/point.png", "return on_point()", "Focus on point: click the curve<br /> plot to focus on a certain point", 2, 0);
+document.write("<br />");
+set_img_button("bregion", "c/region2.png", "return on_region()", "Focus on region: press mouse<br /> button and select the area of interest", 1, 0);
+document.write("<br /><br />");
+set_img_button("bzoomback", "c/zoom-undo.png", "return false","Back to previous zoom", 0, 0);
+//-->
+
+</script></td><td colspan="2">
+
+<div>
+<img src="c/dummy.png" id="plot" style="position: relative; border: 1px solid #7F9DB9; cursor: crosshair" width="600px" height="450px" onclick="focus_on_point(event)" /></div>
+
+</td><td valign="top">    <table style="color: #334433" border="0" cellspacing="3" cellpadding="0"><tr><td style="color: #1C5180;" align="left">List of curve segments:</td></tr>       <tr><td>      <select id="idx" name="idx" size="26" multiple="multiple" style="width: 350px; overflow: auto;">       <option>qwedqwefqwefqwef</option> 
+<option>qwedqwefqwefqwef</option> 
+<option>qwedqwefqwefqwef</option> 
+<option>qwedqwefqwefqwef</option> 
+<option>qwedqwefqwefqwef</option> <option>qwedqwefqwefqwef</option> 
+<option>qwedqwefqwef qwehfdqwhefqhwefoiuqhwpuefqupwihfj qwefqwhefpuqhweupfhiqwef</option> 
+<option>qwedqwefqwefqwef</option> 
+
+</select>       </td></tr>     </table></td></tr><tr><td></td>
+
+<td align="left" width="320px;">Input polynomial [e.g. <span style='font-family: monospace; font-size: 9pt;'>(x^2 - 2)*y^2 - 3*x + 2]:</span></td>
+<td width="280px;" align="left" style="overflow: hidden;"><span id="coords">Coords: (0, 0)</span></td>
+
+<td rowspan="2" valign="top" align="left"><table border="0" cellspacing="1" cellpadding="0"><tr><td><input type="checkbox" disabled="disabled" id="all" name="all" value="1" /> rasterize complete curve<br />
+<input type="checkbox" disabled="disabled" id="Checkbox1" name="all" value="1" />
+rasterize in one-color
+</td>
+
+</tr><tr><td style="width: 350px;" align="center"><br />
+<select name="renderer" style="background-color: #AAAAAA; border: solid 1px #7F9DB9">
+<option>Segment renderer (default)</option>
+<option>1D Space subdivision</option>
+</select> <br />
+
+<script type="text/javascript">//<!--
+    set_text_button("banalyse", "<<&nbsp;&nbsp;Analyse curve&nbsp;&nbsp;>>", "return check_analyse();", false);//-->
+</script></td></tr><tr><td align="center"><script type="text/javascript">//<!--
+	set_text_button("brasterize", "<<&nbsp;&nbsp;Plot curve segments&nbsp;&nbsp;>>", "return check_plot();", 1);//-->
+</script></td></tr></table>
+</td></tr>
+
+<tr><td></td><td align="left" colspan="2"><textarea id="cv" name="curve" style="width: 600px;" cols="40" rows="5" wrap="virtual"></textarea><br />For examples of how to enter polynomial equations, please visit our <a href="../">Algebraic Curves Gallery</a></td><td valign="top" align="left">
+
+<!-- here is the place -->
+
+</td></tr></table><input type="hidden" id="s" name="s" value="0" /><input type="hidden" id="x_min" name="x_min" value="-2" /><input type="hidden" id="x_max" name="x_max" value="2" /><input type="hidden" id="y_min" name="y_min" value="-1.5" /><input type="hidden" id="y_max" name="y_max" value="1.5" /><input type="hidden" id="curveid" name="curveid" value="0 0 0 0" /></form></center></div></div><p align="center">Max-Planck-Institut f&uuml;r Informatik, <a href="http://www.mpi-sb.mpg.de/EXACUS">EXACUS project</a></p></div>
+
+
+
+
+
+</body></html>

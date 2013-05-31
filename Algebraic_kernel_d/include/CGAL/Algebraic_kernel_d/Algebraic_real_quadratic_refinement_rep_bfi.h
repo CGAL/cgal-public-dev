@@ -111,6 +111,8 @@ private:
 
     void _set_prec(long new_prec) const {
         
+        CGAL_assertion(new_prec > 1);
+
         prec_ = new_prec;
         CGAL::set_precision(BFI(), prec_);
 
@@ -150,15 +152,18 @@ private:
     // Stores whether the last bisection has taken the upper or lower part
     mutable bool last_bisect_lower;
 
-public:
+  public:
     //! creates the algebraic real from int \a i.
     explicit Algebraic_real_quadratic_refinement_rep_bfi(int i = 0)
-        : Base(i),N(2){
+      : Base(i), prec_(16), N(2) {
+//       _set_prec(16);
     } 
     //! creates the algebraic real from Field \a m.
     explicit Algebraic_real_quadratic_refinement_rep_bfi(const Field& m)
-        : Base(m),N(2) {
-    } 
+        : Base(m), prec_(16), N(2) {
+//       _set_prec(16);
+    }
+ 
     /*! \brief creates the algebraic real as the unique root of \a P
       in the open interval <var>]low,high[</var>.
       \pre the polynomial \a P is square free 
@@ -170,6 +175,7 @@ public:
                                                 Field LOW, 
                                                 Field HIGH) 
         : Base(P,LOW,HIGH), 
+          prec_(16), 
           N(2)
     { 
         _set_prec(16);
@@ -182,11 +188,14 @@ public:
           f_low_bfi_(y.f_low_bfi_), high_bfi_(y.high_bfi_),
           f_high_bfi_(y.f_high_bfi_), N(y.N)
     {
+//         _set_prec(prec_);
     }
 
     // assignment 
     Algebraic_real_quadratic_refinement_rep_bfi& operator=(const Self& y) {
         Base::operator=(y);
+        prec_ = y.prec_;
+        _set_prec(prec_);
 	f_low_bfi_=y.f_low_bfi_;
 	f_high_bfi_=y.f_high_bfi_;
         low_bfi_=y.low_bfi_;

@@ -31,8 +31,11 @@
 #ifndef CGAL_ALGEBRAIC_KERNEL_D_REAL_ROOTS_H
 #define CGAL_ALGEBRAIC_KERNEL_D_REAL_ROOTS_H
 
-#include <CGAL/basic.h>
+#include <CGAL/config.h>
+#include <CGAL/Algebraic_kernel_d/flags.h>
 #include <CGAL/Polynomial.h>
+
+#include <boost/bind.hpp>
 
 #include <list>
 #include <vector>
@@ -70,7 +73,7 @@ template < class PolynomialIterator,
            class IntIterator,
            class AlgebraicRealOutputIterator,              
            class IntOutputIterator>
-int gen_agebraic_reals_with_mults( PolynomialIterator           fac,
+int gen_algebraic_reals_with_mults(PolynomialIterator           fac,
                                    PolynomialIterator           fac_end,
                                    IntIterator                  mul,
                                    IntIterator                  CGAL_precondition_code(mul_end),
@@ -139,7 +142,6 @@ int operator()(const Polynomial&        poly ,
     CGAL_precondition_msg( typename CGAL::Polynomial_traits_d< Polynomial >::Is_square_free()(poly), "P not square free.");
     return (*this)(Real_root_isolator(poly),it);
 }
-   
 
 public:
 /*! \brief computes all roots of the polynomial P in ascending order
@@ -165,16 +167,34 @@ int operator()(const Polynomial&           poly,
     std::list<Polynomial>       sqffac;
     std::list<int>              facmul;
     
+#if CGAL_ACK_FACTORIZE_UNI_POLYNOMIALS
+    std::vector< std::pair< Polynomial, int > > factors;
+
+    CGAL::factorize_NTL(poly, std::back_inserter(factors));
+
+    std::sort(factors.begin(), factors.begin(), 
+              // Multiplicity_type?
+              boost::bind(&std::pair< Polynomial, int >::second, _1) <
+              boost::bind(&std::pair< Polynomial, int >::second, _2));
+
+    for (typename std::vector< std::pair< Polynomial, int > >::const_iterator fit =
+           factors.begin(); fit != factors.end(); fit++) {
+      sqffac.push_back(fit->first);
+      facmul.push_back(fit->second);
+    }
+    
+#else
+
     filtered_square_free_factorize_utcf(poly,
 					    std::back_inserter(sqffac), 
 					    std::back_inserter(facmul));
-    
+#endif
     
     int number_of_real_roots=
-        gen_agebraic_reals_with_mults(sqffac.begin(),sqffac.end(),
-                                      facmul.begin(),facmul.end(),
-                                      oi_root,
-                                      oi_mult);
+        gen_algebraic_reals_with_mults(sqffac.begin(),sqffac.end(),
+                                       facmul.begin(),facmul.end(),
+                                       oi_root,
+                                       oi_mult);
     return number_of_real_roots;
 }
          
@@ -257,6 +277,9 @@ int operator()(const Real_root_isolator&    isolator,
  *  of type \c int .
  *
  */
+#if CGAL_AK_D_SHOW_COMPILE_OPTIONS_AS_WARNING && CGAL_ACK_FACTORIZE_UNI_POLYNOMIALS
+#warning Real_roots: does not yet report polynomials grouped by multiplicity after factorizing
+#else
 template <class AlgebraicRealOutputIterator,
           class IntOutputIterator, 
           class PolynomialOutputIterator>
@@ -275,22 +298,45 @@ int operator()( const Polynomial&           poly,
     std::list<Polynomial>       sqffac;
     std::list<int>              facmul;
     
-    filtered_square_free_factorize_utcf(poly,
-					    std::back_inserter(sqffac),
-					    std::back_inserter(facmul));
+#if CGAL_ACK_FACTORIZE_UNI_POLYNOMIALS
+    std::vector< std::pair< Polynomial, int > > factors;
+
+    CGAL::factorize_NTL(poly, std::back_inserter(factors));
+
     
+    std::sort(factors.begin(), factors.begin(), 
+              // Multiplicity_type?
+              boost::bind(&std::pair< Polynomial, int >::second, _1) <
+              boost::bind(&std::pair< Polynomial, int >::second, _2));
+    
+    for (typename std::vector< std::pair< Polynomial, int > >::const_iterator fit =
+           factors.begin(); fit != factors.end(); fit++) {
+      sqffac.push_back(fit->first);
+      *oi_poly++ = fit->first; // TODO not written grouped by multiplicity
+      facmul.push_back(fit->second);
+    }
+    std::cerr << "Real_roots.h does not report polynomials grouped by multiplicity after factorizing" << std::endl;
+    
+#else
+    filtered_square_free_factorize_utcf(poly,
+                                        std::back_inserter(sqffac),
+                                        std::back_inserter(facmul));
     write_factors_by_multiplicity(sqffac.begin(),sqffac.end(),
                                   facmul.begin(),facmul.end(),
                                   oi_poly);
+#endif
+    
     
     int numer_of_real_roots =
-      gen_agebraic_reals_with_mults(sqffac.begin(),sqffac.end(),
-				    facmul.begin(),facmul.end(),
-				    oi_root,
-				    oi_mult);
+      gen_algebraic_reals_with_mults(sqffac.begin(),sqffac.end(),
+                                     facmul.begin(),facmul.end(),
+                                     oi_root,
+                                     oi_mult);
     return numer_of_real_roots;
-	  }
-	   };
+  }
+#endif
+
+};
 
 } // namespace internal
 

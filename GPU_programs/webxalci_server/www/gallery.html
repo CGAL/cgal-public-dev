@@ -1,0 +1,176 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!--DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN"-->
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head><title>XAlci Webdemo - gallery of algebraic curves</title>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1"/>
+
+<META NAME="author" CONTENT="Pavel Emeliyanenko">
+<META NAME="subject" CONTENT="Interactive algebraic curve arrangement visualization">
+<META NAME="Description" CONTENT="The interactive server allows to easily analyse and plot arrangements of plane algebraic curves, it has intuitively simple interface and a gallery of algebraic curves rendered using our EXACT method.">
+<META NAME="Classification" CONTENT="This online service allows to analyse and plot arrangements of plane algebraic curves. In contrast to other graphing tools, our curve rendering is EXACT in the sence that we always produce the true mathematical result. The curve renderer is based on CGAL libraries.">
+<META NAME="Keywords" CONTENT="EXACUS, ACS, CGAL, math, maths, interactive server, algebraic curve arrangement">
+<META NAME="Geography" CONTENT="Europe, Germany">
+<META NAME="Language" CONTENT="English">
+<META HTTP-EQUIV="Expires" CONTENT="never">
+<META NAME="Copyright" CONTENT="Max-Planck Institute for Informatics">
+<META NAME="Designer" CONTENT="Pavel Emeliyanenko">
+<META NAME="Publisher" CONTENT="Max-Planck Institute for Informatics">
+<META NAME="Revisit-After" CONTENT="7">
+<META NAME="distribution" CONTENT="Global">
+<META NAME="Robots" CONTENT="INDEX,FOLLOW">
+<META NAME="city" CONTENT="Saarbruecken">
+<META NAME="country" CONTENT="Germany">
+
+<meta http-equiv="Content-Style-Type" content="text/css"/>
+<meta http-equiv="Pragma" content="no-cache"/>
+<meta http-equiv="Cache-Control" content="no-cache"/>
+<link rel="SHORTCUT ICON" href="c/favicon.ico" />
+<link rel="stylesheet" type="text/css" media="screen" href="c/mpi-inf.css" />
+<link rel="stylesheet" type="text/css" media="screen" href="c/xalci.css" />
+<link rel="stylesheet" type="text/css" media="print" href="c/print.css" />
+<style type="text/css">
+.image_btn {
+    border: none;
+    padding: 0px;
+    cursor: pointer;
+}
+.smcaps {
+    font-variant: small-caps;
+}
+a#hp-index, a:link#hp-index, a:visited#hp-index {background: rgb(80%,85%,90%);}
+.ak { text-decoration: underline }
+</style>
+<script type="text/javascript" src="c/curves.js"></script>
+<script type="text/javascript" src="c/script.js"></script>
+</head><body >
+
+<div id="head1o2">
+    <div id="mpiidotspacer"></div>
+    <div id="mpiidot"></div>
+    <br /><center>
+<span style="color: #A0A0A0; font-size: 24pt">Gallery of algebraic curves and their arrangements</span></center>
+</div>
+
+<div id="head2o2">
+    <div id="mpiitext">max planck institut<br/>informatik</div>
+    <img id="mpiilogo" src="../c/mpii.jpg" alt="mpii" usemap="#Map" width="300" height="100"/><map name="Map" id="Map"><area shape="rect" coords="97,14,296,70" href="http://www.mpi-sb.mpg.de" alt="mpii logo" /><area shape="circle" coords="41,49,40" href="http://www.mpg.de/" alt="Minerva of the Max Planck Society" /></map>
+</div>
+
+<div class="centerdiv">
+<div id="head2o2">
+    <div id="deco">
+        <div id="picture_div" style="position: relative;"><a href="http://www.mpi-inf.mpg.de/projects/EXACUS"><img src="../c/exacus.png" width="185" border="1" alt="Efficient and Exact Algorithms for Curves and Surfaces" /></a><br /><br /><a href="http://www.cgal.org"><img border="1" src="../c/cgal_resize.png" width="185" alt="Computational Geometry Algorithms Library" title ="Computational Geometry Algorithms Library"/></a><br /><br /><a href="http://acs.cs.rug.nl"><img src="../c/acs_resize.gif" border="1" width="185" title="Algorithms for Complex Shapes" alt="Algorithms for Complex Shapes" /></a></div>
+        <script type="text/javascript">
+            show_menu(1, "100px");//show_authors("120px");</script>
+
+<div style="position: relative; top: 200px;">
+<a  href="http://www3.clustrmaps.com/counter/maps.php?url=http://infvm1700.ag1.mpi-sb.mpg.de/" id="clustrMapsLink"><img src="http://www3.clustrmaps.com/counter/index2.php?url=http://infvm1700.ag1.mpi-sb.mpg.de/" style="border:0px;" alt="Locations of visitors to this page" title="Locations of visitors to this page" id="clustrMapsImg" />
+</a>
+<script type="text/javascript">
+function cantload() {
+img = document.getElementById("clustrMapsImg");
+img.onerror = null;
+img.src = "http://www2.clustrmaps.com/images/clustrmaps-back-soon.jpg";
+document.getElementById("clustrMapsLink").href = "http://www2.clustrmaps.com";
+}
+img = document.getElementById("clustrMapsImg");
+img.onerror = cantload;
+</script>
+</div>
+
+    </div>
+</div>
+<div id="hspacer">&nbsp;</div>
+
+<div id="main_content" style="position: relative; left: 230px; top: 0px; font-size: 11pt; width: 80%" >
+<hr style="margin-left: 0em" size="1" />
+  <div> <!-- InstanceBeginEditable name="col2o3" -->
+ <form action="cgi-bin/xalci.cgi" method="post">
+ <input type="hidden" id="cv" name="curve" value=""  />
+ </form>
+
+ 
+<table border="0" cellspacing="10" cellpadding="0" width="100%">
+<tr><td colspan="3" align = "left">
+</td></tr>
+<tr><td colspan="3" align = "center" style="font-size: 12pt;">
+Below is a set of algebraic curves and their arrangements visualized
+using <b>implicitplot</b> from <a href="http://www.maplesoft.com">Maple 14</a> and <span class="smcaps">Xalci</span>.<br /> Copy-paste a curve equation or click
+on the corresponding <span class="smcaps">Xalci</span> curve image 
+to check this out on-line!
+<br /><br />
+</td></tr>
+<tr style="font-weight:bold"><td align="center"><a href="#maple"><span style="font-size: 14pt">Maple 14 image</span></a></td><td align="center"><a href="cgi-bin/xalci.cgi"><span style="font-size: 14pt">XAlci image</span></a><br />
+<!--<span style="font-weight: normal; ">(click on a curve plot to load a corresponding curve equation into Xalci interface)</span>-->
+</td><td align="center"><span style="font-size: 14pt">Curve equation</span></td></tr>
+<tr><td colspan="3"><hr /></td></tr>
+<script type="text/javascript">
+//<!--
+// NOTE: curves must be listed in order they appear in curves.js file !!
+//set_arr(id, img, caption, f, e, v, i)
+
+set_arr('arr_exacus', 'c/curves/arr_exacus.png', 'EXACUS arrangement', 8, 146, 146, 0);
+
+set_arr('arr_apple_trifolium', 'c/curves/arr_apple_trifolium.jpg', 'Arrangement induced by three curves below', 26, 63, 38, 0);
+
+set_curve('trifolium', 'c/curves/degree4three_leaf.jpg', 'c/maple_curves/three_leaf_maple2.jpg', 'Trifolium', 4, 0);
+
+set_curve('badrootsep10', 'c/curves/degree10_badrootsep1.jpg', 'c/maple_curves/bad_sep10_maple.jpg', 'A curve with bad arcs separation', 10, 11);
+
+set_curve('apple', 'c/curves/degree7apple.jpg', 'c/maple_curves/apple_maple_new.jpg', 'Apple-like curve', 7, "-1 (reducible)");
+set_curve('inf', 'c/curves/degree7inf.jpg', 'c/maple_curves/inf_maple_new.jpg', 'A curve with infinitesimal point', 7, 9);
+set_arr('arr_random_9', 'c/curves/arr_random_9.jpg', 'Arrangement of 9 random curves of degree 6', 391, 700, 400, 0);
+set_curve('cusps', 'c/curves/degree15cusps.jpg', 'c/maple_curves/cusps_maple.jpg', 'A curve with several cusps', 15, 22);
+set_curve('lemniscate', 'c/curves/degree16lemniscate.jpg', 'c/maple_curves/lemniscate_maple_new.jpg', 'Erdos Lemniscate', 16, 21);
+set_curve('angry_face', 'c/curves/degree10angry_face.jpg', 'c/maple_curves/angry_face_maple.jpg', '"Angry face"', 10, "-1 (reducible)");
+set_curve('flower', 'c/curves/degree16flower.jpg', 'c/maple_curves/flower_maple.jpg', '"Flower" (Lemniscate family)', 16, 25, "failed");
+set_curve('butterfly', 'c/curves/degree15butterfly.jpg', 'c/maple_curves/butterfly_maple.jpg', '"Butterfly" curve', 15, 83, "failed");
+set_curve('bundle', 'c/curves/degree26bundle.jpg', 'c/maple_curves/bundle_maple.jpg', '"Bundle" (curvature of Erdos Lemniscate)', 26, 88, "failed");
+set_curve('toching_points', 'c/curves/degree13touching_points.jpg', 'c/maple_curves/touching_points_maple.jpg', 'A curve with "touching" points', 13, 66, "failed");
+set_curve('grid_points', 'c/curves/degree10grid_points.jpg', 'c/maple_curves/grid_points_maple.jpg', 'A curve with a lot of grid points', 10, 36, "failed");
+init_curves();
+//-->
+</script>
+<tr><td colspan="3" valign="top" align="left" width="90%">
+<!--<a name="maple">"<b>plot_real_curve</b> failed" indicates that Maple's package <b>algcurves</b> was unable to plot a respective curve in the time allotted.-->
+Genus of algebraic curves was computed using Maple's <b>algcurves</b>
+package, <b>implicitplot</b> was configured with <tt>numpoints=100000</tt>
+and <tt>resolution=600</tt>.</a>
+
+</td></tr>
+</table>
+</div>
+<!-- Here starts counters -->
+<!-- Here starts counters -->
+<div align='left'>
+<!-- START COUNTER CODE -->
+<a href="http://www.apollofind.com/counter.html">
+<script language="JavaScript">
+<!--
+  var data = '&r=' + escape(document.referrer)
+    + '&n=' + escape(navigator.userAgent)
+    + '&p=' + escape(navigator.userAgent)
+    + '&g=' + escape(document.location.href);
+  if (navigator.userAgent.substring(0,1)>'3')
+    data = data + '&sd=' + screen.colorDepth 
+    + '&sw=' + escape(screen.width+'x'+screen.height);
+  document.write('<a href="http://www.apollofind.com/counter.html" target="_blank" >');
+  document.write('<img border=0 hspace=0 '+'vspace=0 src="http://www.apollofind.com/counter.php?i=7219' + data + '">');
+  document.write('</a>');
+ // -->
+</script></a><!--<br><a href="http://www.apollofind.com/counter.html">web site counter</a>-->
+<!-- END COUNTER CODE -->
+
+<!-- src="http://www.apollofind.com/counter.php?i=7219' + data + '">'); -->
+&nbsp;&nbsp;
+<a href="http://www.prchecker.info/" title="PageRank Checking Icon" target="_blank">
+<img src="http://pr.prchecker.info/getpr.php?codex=aHR0cDovL2V4YWN1cy5tcGktaW5mLm1wZy5kZQ==&tag=2" alt="PageRank Checking Icon" style="border:0;" /></a>
+&nbsp;&nbsp;
+
+</div>
+
+</div>
+<p align="center">Max-Planck-Institut f&uuml;r Informatik, <a href="http://www.mpi-inf.mpg.de/departments/d1/areas/GCCA.html">
+Geometric Computing Group</a>
+</p>
+</body></html>
