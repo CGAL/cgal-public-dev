@@ -55,11 +55,11 @@ subject: "${repo_name} (${branch_name}) ${message} <${short_commit_id}>"
 
 # The recipient (or newsgroup for nntp) for the commit
 # It can send to multiple destinations, just separate email addresses by ",".
-mailinglist: eric.berberich@cgal.org
+#mailinglist: eric.berberich@cgal.org
 # or setup mailing list per branch
-# mailinglist:
-#   master: developers@example.com,dev2@example.com,dev3@example.com,cto@example.com
-#   default: otherbranches@example.com
+mailinglist:
+   master:
+   default: eric.berberich@cgal.org,clement.jamin@inria.fr
 
 # If set to true, the committer (author) will receive the commit mail as well.
 send_mail_to_committer: false
