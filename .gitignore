@@ -624,6 +624,7 @@ Number_types/test/Number_types/test_nt_Coercion_traits
 Number_types/test/Number_types/to_interval_test
 Number_types/test/Number_types/unsigned
 Number_types/test/Number_types/utilities
+/Numerical_algebraic_kernel_d-eric
 Optimisation_basic/*.aux
 Optimisation_basic/*.bbl
 Optimisation_basic/*.blg
