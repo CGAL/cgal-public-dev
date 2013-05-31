@@ -1,0 +1,48 @@
+#!/bin/bash
+
+# --- Command line
+refname="$1"
+oldrev="$2"
+newrev="$3"
+
+# Special rights for a set of trusted people.
+case "$GIT_USER" in
+    (lrineau|sloriot|eric) exit 0;;
+esac
+
+# If the branch is not master, allow
+if [ "$refname" != master ]; then exit 0; fi
+
+# Forbid non-fast-forward updates to master
+if ! [ "$(git merge-base "$oldrev" "$newrev")" = "$oldrev" ]; then
+    echo ""
+    echo "ERROR:"
+    echo "  You cannot push a non fast-forward update to master!"
+    echo "  Ask for help on the mailing lists to solve that issue."
+    echo ""
+    exit 1
+fi
+
+# Accept minor fixes
+if git show "$newrev" | grep -iq 'minor fix.*master'; then
+    if [ $(git log --oneline "$oldrev..$newrev" | wc -l) = 1 ]; then
+        exit 0
+    fi
+fi
+
+# Accept pushes that are said to be approved by the RM
+if git show "$newrev" | grep -iEq 'App?rou?ved by the (RM|Release Manager)'; then
+    exit 0
+fi
+
+# Accept modifications to Maintenance, Documentation, and */doc
+if ! git diff-tree -r --raw "$oldrev" "$newrev" | grep -vE ' (Maintenance/|Documentation/|[^/]+/doc/)'; then
+    exit 0
+fi
+
+echo ""
+echo "ERROR:"
+echo "  You are not allowed to push the revision $newrev to master."
+echo "  Ask for help on the mailing lists to solve that issue."
+echo ""
+exit 1
