@@ -1,6 +1,8 @@
 #!/bin/bash
 # taken from: http://public.kitware.com/Wiki/CDash:Design#Nightly_Revisions
-# hooks/post-receive
+
+# EBEB 2013-05-31: Maybe restrict to master + integration
+
 while read oldrev newrev refname; do
   if echo $refname | grep "^refs/heads/" >/dev/null 2>&1; then
     branch="$(echo $refname | sed 's/^refs\/heads\///')"
