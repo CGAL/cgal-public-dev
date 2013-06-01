@@ -1,0 +1,8 @@
+#!/bin/sh
+cd /var/git/cgal.git/refs
+
+# TODO use branch given by CDash build server
+branch="$(wget -O- -q http://scm.cgal.org/CDash/todays_branch.txt)"
+date="$(date +%Y-%m-%d)"
+
+cp nightly/$branch/$date testsuite/$branch
