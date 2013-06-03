@@ -71,7 +71,7 @@ void test(int d, int n) {
     }
   }
   while (points.size() != 0) {
-    ep.remove(*points.begin(),true);
+    ep.remove(*points.begin());
     points.erase(points.begin());
     extreme_points.clear();
     ep.get_extreme_points(std::back_inserter(extreme_points));

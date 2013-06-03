@@ -208,10 +208,11 @@ class Extreme_points_d {
         /// from the options. It automatically recalculates the 
         /// extreme points if needed. This is not fast but provided
         /// nonetheless for convenience.
-        void remove(const Point p, bool is_input_point=false) {
+        void remove(const Point p) {
           assert(ep_options_.get_deletion());
+          assert(all_points.find(p) != all_points.end());
           //Extreme_point_classification del_point = classify(p);
-          Bounded_side del_point = classify(p,is_input_point);
+          Bounded_side del_point = classify(p,true);
           if ((del_point == CGAL::ON_BOUNDARY) || (del_point == CGAL::ON_UNBOUNDED_SIDE)) {
             typename std::set<Point,Less_lexicographically>::iterator it = all_points.find(p);
             //delete the point from all_points if it exists
