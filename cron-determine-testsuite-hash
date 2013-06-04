@@ -5,4 +5,11 @@ cd /var/git/cgal.git/refs
 branch="$(wget -O- -q http://scm.cgal.org/CDash/todays_branch.txt)"
 date="$(date +%Y-%m-%d)"
 
-cp nightly/$branch/$date testsuite/$branch
+#if new commit from today exit
+if [ -e nightly/$branch/$date ];
+then
+  cp nightly/$branch/$date testsuite/$branch
+else
+  # keep old version
+fi
+
