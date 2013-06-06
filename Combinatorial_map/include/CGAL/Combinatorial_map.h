@@ -38,11 +38,6 @@
 
 #include <CGAL/config.h>
 
-// suppress bogus warning when compiling with gcc>=4.3
-#if CGAL_GCC_VERSION >= 40300
-#pragma GCC diagnostic ignored "-Warray-bounds"
-#endif
-
 namespace CGAL {
 
   /** @file Combinatorial_map.h
@@ -611,7 +606,8 @@ namespace CGAL {
     {
       CGAL_assertion( is_reserved(amark) );
 
-      null_dart_handle->set_mark(amark, !mmask_marks[(size_type)amark]);
+      if ( null_dart_handle!=NULL ) // TODO to remove
+        null_dart_handle->set_mark(amark, !mmask_marks[(size_type)amark]);
     }
 
     /** Unmark null_dart.
@@ -621,7 +617,8 @@ namespace CGAL {
     {
       CGAL_assertion( is_reserved(amark) );
 
-      null_dart_handle->set_mark(amark, mmask_marks[(size_type)amark]);
+      if ( null_dart_handle!=NULL ) // TODO to remove
+        null_dart_handle->set_mark(amark, mmask_marks[(size_type)amark]);
     }
 
     /** Unmark all the darts of the map for a given mark.

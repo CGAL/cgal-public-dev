@@ -104,6 +104,64 @@ David A. Wheeler's 'SLOCCount'</a>, restricted to the <code>include/CGAL/</code>
 
 <HR>
 
+<h2 id="release4.3">Release 4.3 </h2>
+<div>
+  <p> Release date: September 2013 </p>
+
+  <h3>Algebraic Foundations</h3>
+  <ul>
+    <li> For convenience, add an overload of <code>make_rational()</code> taking a pair of numbers.</li>
+  </ul>
+
+  <h3>2D and 3D Geometry Kernel </h3>
+  <ul>
+    <li>A <code>Iso_rectangle_2</code> can now be constructed from a <code>Bbox_2</code> and an <code>Iso_cuboid_3</code> from a <code>Bbox_3</code>. </li>
+  </ul>
+
+  <h3>2D Triangulations</h3>
+  <ul>
+    <li>Extend the concept <code>TriangulationDataStructure_2</code> to require a more general <code>copy_tds</code>
+       function that allows a copy between TDS of different types. The CGAL model has been updated.</li>
+  </ul>
+
+  <h3>3D Triangulations</h3>
+  <ul>
+    <li>Extend the concept <code>TriangulationDataStructure_3</code> to require a more general <code>copy_tds</code>
+       function that allows a copy between TDS of different types. The CGAL model has been updated.</li>
+    <li>Add an advanced function to set the infinite vertex of the triangulation for low level operations</li>
+  </ul>
+
+  <h3>Combinatorial Maps</h3>
+  <ul>
+    <li>Two bug fixes: do not use the 2 least significant bits for cell attribute without dart support; add share a mark in CMap_cell_iterator.</li>
+  </ul>
+
+  <h3>2D Apollonius graphs</h3>
+  <ul>
+    <li>Modified insertion algorithm so that the code can handle
+      pseudo-circles as well.</li>
+    <li>Updated implementation of the vertex conflict predicate by a
+      faster version.</li>
+  </ul>
+
+  <h3>3D Boolean Operations on Nef Polyhedra</h3>
+  <ul>
+    <li>Bug-fix in IO when using <code>Lazy_exact_nt</code> as number type or <code>Exact_predicates_exact_constructions_kernel</code> as kernel.</li>
+  </ul>
+
+  <h3>3D Fast Intersection and Distance Computation</h3>
+  <ul>
+    <li> Fix a memory leak in the destructor of the class <code>AABB-tree</code>
+  </ul>
+
+  <h3>STL Extensions for CGAL</h3>
+  <ul>
+    <li>Add to <code>Dispatch_output_iterator</code> and <code>Dispatch_or_drop_output_iterator</code>
+        an operator to accept and dispatch a tuple of values.
+    </li>
+  </ul>
+</div>
+
 <h2 id="release4.2">Release 4.2 </h2>
 <div>
   <p> Release date: March 2013 </p>
@@ -120,8 +178,6 @@ David A. Wheeler's 'SLOCCount'</a>, restricted to the <code>include/CGAL/</code>
       flags <code>/bigobj</code> and <code>/wd4503</code> are added by CGAL
       CMake scripts.
     </li>
-  </ul>
-  <ul>
     <li>This is the last release whose "<tt>UseCGAL.cmake</tt>" file (if
       using CGAL in a CMake build environment) contains the line
 <pre>
@@ -146,18 +202,6 @@ David A. Wheeler's 'SLOCCount'</a>, restricted to the <code>include/CGAL/</code>
     </li>
   </ul>
 
-  <h3>3D Minkowski Sum of Polyhedra</h3>
-  <ul>
-    <li> Fix a memory leak.
-  </ul>
-
-  <h3>3D Fast Intersection and Distance Computation</h3>
-  <ul>
-    <li> Update requirements of the concepts <code>AABBTraits</code>
-    and <code>AABBGeomTraits</code> to match the implementation of the
-    package.
-  </ul>
-
   <h3>2D Arrangements</h3>
   <ul>
     <li> Enhanced the 2D-arrangements demonstration program and ported it
@@ -170,11 +214,37 @@ David A. Wheeler's 'SLOCCount'</a>, restricted to the <code>include/CGAL/</code>
       arrangements induced by unbounded curves.</li>
   </ul>
 
+  <h3>2D Circular Geometry Kernel</h3>
+  <ul>
+    <li>Fix the intersection type computed when intersecting two identical circles.</li>
+    <li>Forward correctly the result type of the linear kernel functors</li>
+  </ul>
+
   <h3>2D Triangulations</h3>
   <ul>
     <li> Add mechanism to avoid call stack overflow
     in <code>Delaunay_triangulation_2</code>
     and <code>Constrained_Delaunay_triangulation_2</code>.
+    <li> Add a constructor for <code>Regular_triangulation_2</code>
+    and <code>Delaunay_triangulation_2</code> from a range of points or a
+    range of points with info.
+  </ul>
+
+  <h3>2D Voronoi Diagram Adaptor</h3>
+  <ul>
+    <li> Bug-fix: Add ccb() method in face type as documented.
+  </ul>
+
+  <h3>3D Minkowski Sum of Polyhedra</h3>
+  <ul>
+    <li> Fix a memory leak.
+  </ul>
+
+  <h3>3D Fast Intersection and Distance Computation</h3>
+  <ul>
+    <li> Update requirements of the concepts <code>AABBTraits</code>
+    and <code>AABBGeomTraits</code> to match the implementation of the
+    package.
   </ul>
 
   <h3>Generator</h3>
@@ -198,18 +268,6 @@ David A. Wheeler's 'SLOCCount'</a>, restricted to the <code>include/CGAL/</code>
     <li> Performance improvements and addition of an option to better
     reconstruct undersampled zones. The poisson reconstruction plugin
     of the Polyhedron demo has an option to switch it on.
-  </ul>
-
-  <h3>2D Voronoi Diagram Adaptor</h3>
-  <ul>
-    <li> Bug-fix: Add ccb() method in face type as documented.
-  </ul>
-
-  <h3>2D Triangulations</h3>
-  <ul>
-    <li> Add a constructor for <code>Regular_triangulation_2</code>
-    and <code>Delaunay_triangulation_2</code> from a range of points or a
-    range of points with info.
   </ul>
 </div>
 
