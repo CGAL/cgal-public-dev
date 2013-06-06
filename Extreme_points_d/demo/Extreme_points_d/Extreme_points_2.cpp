@@ -206,7 +206,7 @@ void
 MainWindow::update_extreme_points()
 {
     extreme_points.clear();
-    ep.get_extreme_points(std::back_inserter(extreme_points));
+    ep.extreme_points(std::back_inserter(extreme_points));
 }
 
 

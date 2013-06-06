@@ -40,7 +40,7 @@ int main() {
         // compute the extreme points
         std::cout<<"\nExtreme points of the current set: "<<std::endl;
         std::vector<Point_d> extreme_points;
-        ep.get_extreme_points(std::back_inserter(extreme_points));
+        ep.extreme_points(std::back_inserter(extreme_points));
         for (std::vector<Point_d>::iterator it=extreme_points.begin();
              it!=extreme_points.end();
              it++) {

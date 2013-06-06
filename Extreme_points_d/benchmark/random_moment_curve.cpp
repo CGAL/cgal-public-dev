@@ -52,7 +52,7 @@ void test(int d, int n) {
   t1 = clock();
   CGAL::Extreme_points_d<EP_Traits_d> ep(d,op);
   ep.insert(points.begin(),points.end());
-  ep.get_extreme_points(std::back_inserter(extreme_points));
+  ep.extreme_points(std::back_inserter(extreme_points));
   t2 = clock();
   t3 = clock();
   CGAL::Convex_hull_d<Kernel> chull(d);

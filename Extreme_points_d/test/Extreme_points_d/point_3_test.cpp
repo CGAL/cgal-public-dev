@@ -83,7 +83,7 @@ void test1() {
     CGAL::Extreme_points_d<EP_Traits_3> ep(3);
     ep.insert(points.begin(),points.end());
     std::vector<Point_3> extreme_points4;
-    ep.get_extreme_points(std::back_inserter(extreme_points4));
+    ep.extreme_points(std::back_inserter(extreme_points4));
     
     // check that the different implementations produce the same output
     assert(extreme_points4.size()==number_of_extreme_points);

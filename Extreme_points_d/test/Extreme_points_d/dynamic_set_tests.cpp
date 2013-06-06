@@ -50,7 +50,7 @@ void test(EP_d ep, EP_d ep2) {
     for (int i=0;i<ROUNDS;++i) {
         std::vector<Point_d> extreme_points;
         ep.insert(points.begin() + (i*k), points.begin() + ((i+1)*k));
-        ep.get_extreme_points(std::back_inserter(extreme_points));
+        ep.extreme_points(std::back_inserter(extreme_points));
         
         std::vector<Point_d> extreme_points_ref;
         extreme_points_d_dula_helgason(points.begin(), points.begin() + ((i+1)*k),std::back_inserter(extreme_points_ref));
@@ -94,7 +94,7 @@ void test(EP_d ep, EP_d ep2) {
         // insert everything twice
         ep2.insert(points.begin() + (i*k), points.begin() + ((i+1)*k));
         ep2.insert(points.begin() + (i*k), points.begin() + ((i+1)*k));
-        ep2.get_extreme_points(std::back_inserter(extreme_points));
+        ep2.extreme_points(std::back_inserter(extreme_points));
         
         std::vector<Point_d> extreme_points_ref;
         extreme_points_d_dula_helgason(points.begin(), points.begin() + ((i+1)*k),std::back_inserter(extreme_points_ref));

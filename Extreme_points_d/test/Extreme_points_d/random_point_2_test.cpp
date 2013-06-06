@@ -46,7 +46,7 @@ void test1() {
     start = clock();
     CGAL::Extreme_points_d<EP_Traits_2> ep(2,op);
     ep.insert(points.begin(),points.end());
-    ep.get_extreme_points(std::back_inserter(extreme_points));
+    ep.extreme_points(std::back_inserter(extreme_points));
     end = clock();
     std::cout << "Test1 - extreme ~ points - SIMPLE " << (end-start)/CLOCKS_PER_SEC << std::endl;
 
@@ -57,7 +57,7 @@ void test1() {
     start = clock();
     CGAL::Extreme_points_d<EP_Traits_2> ep2(2,op);
     ep2.insert(points.begin(),points.end());
-    ep2.get_extreme_points(std::back_inserter(extreme_points));
+    ep2.extreme_points(std::back_inserter(extreme_points));
     end = clock();
     std::cout << "Test1 - extreme ~ points - DULA HELGASON " << (end-start)/CLOCKS_PER_SEC << std::endl;
     
@@ -86,7 +86,7 @@ void test1() {
     start = clock();
     CGAL::Extreme_points_d<EP_Traits_2> ep3(2,op);
     ep3.insert(points.begin(),points.end());
-    ep3.get_extreme_points(std::back_inserter(extreme_points));
+    ep3.extreme_points(std::back_inserter(extreme_points));
     end = clock();
     std::cout << "Test2 - extreme << points - SIMPLE " << (end-start)/CLOCKS_PER_SEC << std::endl;
     
@@ -97,7 +97,7 @@ void test1() {
     start = clock();
     CGAL::Extreme_points_d<EP_Traits_2> ep4(2,op);
     ep4.insert(points.begin(),points.end());
-    ep4.get_extreme_points(std::back_inserter(extreme_points));
+    ep4.extreme_points(std::back_inserter(extreme_points));
     end = clock();
     std::cout << "Test1 - extreme ~ points - DULA HELGASON " << (end-start)/CLOCKS_PER_SEC << std::endl;
     

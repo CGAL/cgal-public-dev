@@ -48,7 +48,7 @@ void test1() {
     start = clock();
     CGAL::Extreme_points_d<EP_Traits_2> ep(2,op);
     ep.insert(points.begin(),points.end());
-    ep.get_extreme_points(std::back_inserter(extreme_points));
+    ep.extreme_points(std::back_inserter(extreme_points));
     end = clock();
     std::cout << "Test1 - extreme ~ points - SIMPLE " << (end-start)/CLOCKS_PER_SEC << std::endl;
     std::cout << "CV size: " << extreme_points.size() << std::endl;
@@ -67,7 +67,7 @@ void test1() {
     //2000 POINTS ON A CIRCLE'S CIRCUMFERENCE
     start = clock();
     ep.insert(points.begin(),points.end());
-    ep.get_extreme_points(std::back_inserter(extreme_points));
+    ep.extreme_points(std::back_inserter(extreme_points));
     end = clock();
     std::cout << "Test2 - extreme << points - SIMPLE " << (end-start)/CLOCKS_PER_SEC << std::endl;
     std::cout << "CV size: " << extreme_points.size() << std::endl;
@@ -80,7 +80,7 @@ void test1() {
     //2000 POINTS ON A CIRCLE'S CIRCUMFERENCE
     ep.remove(Point_2(-1000.,-1000.));
     extreme_points.clear();
-    ep.get_extreme_points(std::back_inserter(extreme_points));
+    ep.extreme_points(std::back_inserter(extreme_points));
     std::cout << "Test2 - extreme << points - SIMPLE " << (end-start)/CLOCKS_PER_SEC << std::endl;
     std::cout << "CV size: " << extreme_points.size() << std::endl;
     assert(extreme_points.size() > 4);
@@ -90,14 +90,14 @@ void test1() {
     //REMOVE EXTERNAL POINT
     ep.remove(Point_2(-10000.,-10000.));
     extreme_points.clear();
-    ep.get_extreme_points(std::back_inserter(extreme_points));
+    ep.extreme_points(std::back_inserter(extreme_points));
     std::cout << "Test3 - extreme << points - SIMPLE " << (end-start)/CLOCKS_PER_SEC << std::endl;
     std::cout << "CV size: " << extreme_points.size() << std::endl;
  
     //REMOVE INTERNAL
     ep.remove(Point_2(1.,1.));
     extreme_points.clear();
-    ep.get_extreme_points(std::back_inserter(extreme_points));
+    ep.extreme_points(std::back_inserter(extreme_points));
     std::cout << "Test4 - extreme << points - SIMPLE " << (end-start)/CLOCKS_PER_SEC << std::endl;
     std::cout << "CV size: " << extreme_points.size() << std::endl;
  

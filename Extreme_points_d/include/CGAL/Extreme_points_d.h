@@ -114,7 +114,7 @@ enum Bounded_side { //Extreme_point_classification {
 /// @{
 
 /**
-  * The class `Extreme_points_d` holds a set of d dimensional points and answers extreme point queries. The point set can be
+  * The class `Extreme_points_d` stores the currently computed extreme points and answers extreme point queries. The point set can be
   * enlarged dynamically. Extreme point computations are done lazily (i.e.\ only when a query has to be answered) and the 
   * result of the last computation is kept. There is also the possibility to classify points relative to the convex hull 
   * of the current point set (i.e.\ to tell whether they are inside, outside or an extreme point).
@@ -162,7 +162,7 @@ class Extreme_points_d {
         std::vector<Point> new_points;
         
         // result of the last extreme point computation
-        std::vector<Point> extreme_points;
+        std::vector<Point> extr_points;
         
         // update the extreme_points vector if we have new points
         void update();
@@ -209,70 +209,54 @@ class Extreme_points_d {
         /// extreme points if needed. This is not fast but provided
         /// nonetheless for convenience.
         void remove(const Point p) {
-          assert(ep_options_.get_deletion());
-          assert(all_points.find(p) != all_points.end());
-          //Extreme_point_classification del_point = classify(p);
-          Bounded_side del_point = classify(p,true);
-          if ((del_point == CGAL::ON_BOUNDARY) || (del_point == CGAL::ON_UNBOUNDED_SIDE)) {
-            typename std::set<Point,Less_lexicographically>::iterator it = all_points.find(p);
-            //delete the point from all_points if it exists
-            if (it != all_points.end()) {
-              all_points.erase(it);
-              //if it's an extreme point then we have to recalculate
-              if (del_point == CGAL::ON_BOUNDARY) {
-                new_points.clear();
-                extreme_points.clear();
-                //this should have no duplicates, maybe we can tell that to update so as not to uniquify it.
-                new_points.insert(new_points.begin(), all_points.begin(), all_points.end());
-                update();
-              }
-            }
+          assert(ep_options_.get_deletion()); //are we permitted to delete?
+          typename std::set<Point,Less_lexicographically>::iterator it = all_points.find(p);
+          assert(it != all_points.end()); //is it an input point?
+          Bounded_side del_point = classify(p,true); //is it on the boundary or is it internal?
+          all_points.erase(it); //delete the point from all_points
+          if (del_point == CGAL::ON_BOUNDARY) { //if it's an extreme point then we have to recalculate
+            new_points.clear();
+            extr_points.clear();
+            //this should have no duplicates, maybe we can tell that to update so as not to uniquify it again
+            new_points.insert(new_points.begin(), all_points.begin(), all_points.end());
+            update();
           }
         }
         
         /// Removes a range of points from the input set, if it's allowed
         /// from the options. It automatically recalculates the 
         /// extreme points if needed.
-        /*template <typename InputIterator>
+        template <typename InputIterator>
         void remove(InputIterator first, InputIterator beyond) {
           assert(ep_options_.get_deletion());
-
-          bool recalc = false;
           typename std::set<Point,Less_lexicographically>::iterator it;
-          while (first != beyond) {
-            std::cout << "IN" << std::endl;
-            Bounded_side del_point = classify(*first);
-            if ((del_point == CGAL::ON_BOUNDARY) || (del_point == CGAL::ON_UNBOUNDED_SIDE)) {
-              it = all_points.find(*first);
-              //delete the point from all_points if it exists
-              if (it != all_points.end()) {
-                all_points.erase(it);
-                //if it's an extreme point then we have to recalculate
-                if (del_point == CGAL::ON_BOUNDARY) {
-                  recalc=true;
-                }
-              }
+          Bounded_side del_point;
+          bool force_update = false;
+          for (InputIterator itt = first; itt != beyond; itt++) {
+            it = all_points.find(*itt);
+            assert(it != all_points.end());
+            del_point = classify(*itt,true);
+            all_points.erase(it);
+            if (del_point == CGAL::ON_BOUNDARY) {
+              force_update = true;
             }
-            first++;
           }
-          if (recalc) {
+          if (force_update) {
             new_points.clear();
-            extreme_points.clear();
-            //this should have no duplicates, maybe we can tell that to update so as not to uniquify it.
+            extr_points.clear();
             new_points.insert(new_points.begin(), all_points.begin(), all_points.end());
             update();
           }
-        }*/
-        
+        }
         
         /// Calculates the extreme points of the current point set. 
         /// The resulting sequence of extreme points is placed starting at position `result`, 
         ///and the past-the-end iterator for the resulting sequence is returned.
         template <class OutputIterator>
         OutputIterator
-        get_extreme_points(OutputIterator  result) {
+        extreme_points(OutputIterator  result) {
             update();
-            return std::copy(extreme_points.begin(), extreme_points.end(),
+            return std::copy(extr_points.begin(), extr_points.end(),
                              result);
         }
         
@@ -373,7 +357,7 @@ void Extreme_points_d<Traits>::update() {
             // a big extreme point ratio in which case the simple algorithm 
             // performs slightly better
             
-            if (4 * new_points.size() < extreme_points.size()) {
+            if (4 * new_points.size() < extr_points.size()) {
                 algo=EP_SIMPLE;
             } else {
                 algo=EP_DULA_HELGASON;
@@ -382,18 +366,18 @@ void Extreme_points_d<Traits>::update() {
         
         
         // temporarily add extreme_points to new_points
-        new_points.insert(new_points.begin(), extreme_points.begin(),
-                          extreme_points.end());
+        new_points.insert(new_points.begin(), extr_points.begin(),
+                          extr_points.end());
         
         // delete extreme_points as we fill it with the new extreme points
-        extreme_points.clear();
+        extr_points.clear();
 
         
         // run the frame algorithm
         switch (algo) {
             case EP_SIMPLE:
                 extreme_points_d_simple(new_points.begin(), new_points.end(),
-                                               std::back_inserter(extreme_points),
+                                               std::back_inserter(extr_points),
                                                Traits(),
                                                ep_options_.get_qp_options() );
                 
@@ -402,7 +386,7 @@ void Extreme_points_d<Traits>::update() {
             case EP_DULA_HELGASON:
             default:
                 extreme_points_d_dula_helgason(new_points.begin(), new_points.end(),
-                                               std::back_inserter(extreme_points),
+                                               std::back_inserter(extr_points),
                                                Traits(),
                                                ep_options_.get_qp_options() );
                 //ep_options_.set_last_used_algorithm(EP_DULA_HELGASON);
@@ -411,7 +395,7 @@ void Extreme_points_d<Traits>::update() {
         };
         
         // sort extreme points as we want to use this array for binary search in the classify function
-        sort(extreme_points.begin(),extreme_points.end(),
+        sort(extr_points.begin(),extr_points.end(),
              Less_lexicographically());
         
         // clear the new_points array
@@ -426,15 +410,15 @@ enum Bounded_side
 Extreme_points_d<Traits>::classify(Point p, bool is_input_point) {
     update();
     
-    if  (std::binary_search(extreme_points.begin(),extreme_points.end(),p,
+    if  (std::binary_search(extr_points.begin(),extr_points.end(),p,
                             Less_lexicographically())) {
         // p is an extreme point
         //return EXTREME_POINT;
         return ON_BOUNDARY;
     } else if (is_input_point || 
                CGAL::internal::is_in_convex_hull(p,
-                                                 extreme_points.begin(),
-                                                 extreme_points.end(),
+                                                 extr_points.begin(),
+                                                 extr_points.end(),
                                                  ET(0),
                                                  Traits(),
                                                  ep_options_.get_qp_options())) {
