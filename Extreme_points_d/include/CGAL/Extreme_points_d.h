@@ -206,8 +206,7 @@ class Extreme_points_d {
 
         /// Removes Point p from the input set, if it's allowed
         /// from the options. It automatically recalculates the 
-        /// extreme points if needed. This is not fast but provided
-        /// nonetheless for convenience.
+        /// extreme points if needed.
         void remove(const Point p) {
           assert(ep_options_.get_deletion()); //are we permitted to delete?
           typename std::set<Point,Less_lexicographically>::iterator it = all_points.find(p);
