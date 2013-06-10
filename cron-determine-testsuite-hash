@@ -9,7 +9,7 @@ date="$(date +%Y-%m-%d)"
 if [ -e nightly/$branch/$date ];
 then
   cp nightly/$branch/$date testsuite/$branch
-else
+#else
   # keep old version
 fi
 
