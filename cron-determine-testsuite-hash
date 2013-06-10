@@ -3,13 +3,18 @@ cd /var/git/cgal.git/refs
 
 # TODO use branch given by CDash build server
 branch="$(wget -O- -q http://scm.cgal.org/CDash/todays_branch.txt)"
-date="$(date +%Y-%m-%d)"
 
-#if new commit from today exit
-if [ -e nightly/$branch/$date ];
+if [ "$branch" = "master" -o "$branch" = "integration" -o "$branch" = "Installation-testsuite-targets-pmoeller" ];
 then
-  cp nightly/$branch/$date testsuite/$branch
-#else
-  # keep old version
-fi
+  date="$(date +%Y-%m-%d)"
 
+  #if new commit from today exit
+  if [ -e nightly/$branch/$date ];
+  then
+    cp nightly/$branch/$date testsuite/$branch
+  #else
+    # keep old version
+  fi
+#else
+  # do nothing for other branches
+fi
