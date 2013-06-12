@@ -15,7 +15,7 @@ show_summary: true
 
 # Whether to expand css inline. May be compatible with more mail readers
 # but consumes much more space and more cpu. Defaults to true
-# expand_css: true
+expand_css: false
 
 # Determine whether to add plaintext alternative section to generated email.
 # This allows text-only readers an option, but greatly increases the size
