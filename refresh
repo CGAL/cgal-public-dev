@@ -1,2 +1,2 @@
 #/bin/sh
-git pull .. hooks-on-server
+git pull --rebase .. hooks-on-server && git submodule update
