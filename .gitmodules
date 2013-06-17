@@ -1,0 +1,3 @@
+[submodule "git-multimail"]
+	path = git-multimail
+	url = https://github.com/mhagger/git-multimail.git
