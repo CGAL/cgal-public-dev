@@ -7,7 +7,7 @@
 #include <CGAL/algorithm.h>
 
 #include <CGAL/double.h>
-#include "Triangle_2.h"
+#include "Random_points_in_triangle_2.h"
 
 typedef double RT;
 
