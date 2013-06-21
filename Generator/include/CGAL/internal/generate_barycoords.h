@@ -8,20 +8,25 @@
 #include <CGAL/Random.h>
 #include <CGAL/algorithm.h>
 #include <iterator>
+#include <cstdlib>
+#include <time.h>
 
 using namespace std;
 using namespace CGAL;
 typedef Cartesian_d<double>   K;
 typedef Point_d< K >                 Point;
+typedef Vector_d< K >                 Vector;
 
 namespace CGAL { namespace internal {
 
 	std::vector<double> generator(int d) {
 		CGAL::Random rand;
+		//srand(time(NULL));
 		vector<double> a;
 		a.push_back(0.0);
 		for(int i = 0; i < d; ++i) {
 			a.push_back(rand.get_double(0,1));
+			//a.push_back((double) rand() / RAND_MAX);
 		}
 		a.push_back(1.0);
 		sort(a.begin(),a.end());
@@ -44,7 +49,8 @@ namespace CGAL { namespace internal {
 
 	Point multiply(const Point &p, double c) {
 		int d = p.dimension();
-		return add(Point(d, ORIGIN), ((p - Point(d, ORIGIN)) * c));
+		Point aux(d,ORIGIN);
+		return aux + (c * (p - aux));
 	}
 
 	Point assign(const Point &p) {
@@ -55,11 +61,14 @@ namespace CGAL { namespace internal {
 	template <typename RandomAccessIterator, typename OutputIterator>
 	void barycoords_d(int d, RandomAccessIterator in, OutputIterator out) {
 		// in contains the coords of the simplex
-		vector<double> random = generator(d);
+		vector<double> random;
+		random.clear();
+		random = generator(d);
 		Point p(d, ORIGIN);
+//		cout << "What rand returns: " << random[0] << " " <<random[1] << '\n';
 		for (int i = 0; i < d; i++) {
-			cout << in[i].cartesian(0)<<'\n';
 			p = add(p, multiply(in[i], random[i]));
+			in++;
 		}
 		for (int i = 0; i < d; i++) {
 			*out = p.cartesian(i);
