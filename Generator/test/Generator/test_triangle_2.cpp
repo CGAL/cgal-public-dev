@@ -1,5 +1,5 @@
 #include <iostream>
-#include <CGAL/Simple_cartesian.h>
+#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/Polygon_2.h>
 #include <CGAL/point_generators_2.h>
 #include <CGAL/random_polygon_2.h>
@@ -12,20 +12,21 @@ typedef double RT;
 
 #define VERBOSE
 
-typedef CGAL::Simple_cartesian<RT>                        K;
-typedef K::Point_2                                        Point_2;
-typedef K::Vector_2										  Vector_2;
-typedef K::Triangle_2									  Triangle_2;
-typedef std::vector<Point_2>                              Container;
-typedef CGAL::Random_points_in_triangle_2<Point_2>        Point_generator;
+typedef CGAL::Exact_predicates_inexact_constructions_kernel		K;
+typedef K::Point_2												Point_2;
+typedef K::Vector_2												Vector_2;
+typedef K::Triangle_2											Triangle_2;
+typedef std::vector<Point_2>									Container;
+typedef CGAL::Random_points_in_triangle_2<Point_2>				Point_generator;
+
+const double EPS = 1e-30;
 
 template<class InputIterator>
-bool inside_triangle(const Triangle_2& tri,InputIterator begin, InputIterator end) {
+bool inside_or_close_to_triangle(const Triangle_2& tri,InputIterator begin, InputIterator end) {
 	while(begin!=end) {
-		if(tri.bounded_side(*begin) == CGAL::ON_UNBOUNDED_SIDE) {
-				std::cout<<"Point outside: "<<*begin<<std::endl;
-				std::cout<<"Triangle: "<<tri<<std::endl;
-				return false;
+		K::FT dist = squared_distance(tri,*begin);
+		if(dist>EPS) {
+			return false;
 		}
 		++begin;
 	}
@@ -77,39 +78,26 @@ bool is_uniform(const Triangle_2& tri, InputIterator begin, InputIterator end, d
 }
 
 int main() {
-   CGAL::Random rand;
-   Container point_set;
-   int number_triangles;
-   #ifdef VERBOSE
-   std::cout<<"Type the number of triangles: ";
-   #endif
-   std::cin>>number_triangles;
-   int number_points;
-   #ifdef VERBOSE
-   std::cout<<"Type the number of points inside each triangle: ";
-   #endif 
-   std::cin>>number_points;
-   #ifdef VERBOSE
-   std::cout<<"Type the factor: ";//the parameter r in function is_uniform
-   #endif 
-   double r;
-   std::cin>>r;
-   for(int i = 0; i < number_triangles; ++i) {
-   		Point_2 pts[3];
-   		for(int j = 0; j < 3; ++j) {
-   			pts[j]=Point_2(rand.get_double(),rand.get_double());
-   		}
-   		Triangle_2 tri(pts[0],pts[1],pts[2]);
-   		point_set.clear();
-   		CGAL::copy_n_unique(Point_generator( pts[0], pts[1], pts[2] ), 
-                       number_points,
-                       std::back_inserter(point_set));
-   		if(!inside_triangle(tri,point_set.begin(),point_set.end())) {
-   			std::cout<<"POINT OUTSIDE TRIANGLE\n";
-   		}
-   		if(!is_uniform(tri,point_set.begin(),point_set.end(),r)) {
-   			std::cout<<"GENERATOR IS NOT UNIFORM\n";
-   		}
-   }
+	CGAL::Random rand;
+	Container point_set;
+	const int MIN_TRIANGLES = 1;
+	const int MAX_TRIANGLES = 10;
+	const int MIN_POINTS = 1000;
+	const int MAX_POINTS = 1000000;
+	const int number_triangles = rand.get_int(MIN_TRIANGLES,MAX_TRIANGLES);
+	const int number_points = rand.get_int(MIN_POINTS, MAX_POINTS);
+	const double r = rand.get_double(0.2,0.8);
+	for(int i = 0; i < number_triangles; ++i) {
+		Point_2 pts[3];
+		for(int j = 0; j < 3; ++j) {
+			pts[j]=Point_2(rand.get_double(),rand.get_double());
+		}
+		Triangle_2 tri(pts[0],pts[1],pts[2]);
+		point_set.clear();
+		CGAL::cpp11::copy_n(Point_generator( pts[0], pts[1], pts[2] ), 
+		               number_points,
+		               std::back_inserter(point_set));
+		assert(inside_or_close_to_triangle(tri,point_set.begin(),point_set.end()));
+	}
    return 0;
 }
