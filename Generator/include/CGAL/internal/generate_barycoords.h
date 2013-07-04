@@ -11,22 +11,22 @@
 #include <cstdlib>
 #include <time.h>
 
+//#define WITH_STD_VECTOR
+
 using namespace std;
 using namespace CGAL;
-typedef Cartesian_d<double>   K;
+typedef Cartesian_d<double>          K;
 typedef Point_d< K >                 Point;
-typedef Vector_d< K >                 Vector;
+typedef Vector_d< K >                Vector;
 
 namespace CGAL { namespace internal {
 
-	std::vector<double> generator(int d) {
-		CGAL::Random rand;
-		//srand(time(NULL));
+	// general case for dD space
+	std::vector<double> generator(int d, CGAL::Random& rand) {
 		vector<double> a;
 		a.push_back(0.0);
 		for(int i = 0; i < d; ++i) {
 			a.push_back(rand.get_double(0,1));
-			//a.push_back((double) rand() / RAND_MAX);
 		}
 		a.push_back(1.0);
 		sort(a.begin(),a.end());
@@ -37,43 +37,92 @@ namespace CGAL { namespace internal {
 		return b;
 	}
 
-	Point add(const Point &p, const Point &q) {
-		int d = p.dimension();
-		vector<double> coords;
-		coords.reserve(d);
-		for (int i = 0; i < d; i++) {
-			coords.push_back(p.cartesian(i) + q.cartesian(i));
+	// optimized implementation for 2D space
+#ifdef WITH_STD_VECTOR
+	std::vector<double> generator_2(CGAL::Random& rand) {
+		vector<double> a;
+		a.push_back(0.0);
+		a.push_back(rand.get_double(0,1));
+		double aux = rand.get_double(0,1);
+
+		if (aux < a[1]) {
+			double tmp = a[1];
+			a.pop_back();
+			a.push_back(aux);
+			a.push_back(tmp);
+		} else {
+			a.push_back(aux);
 		}
-		return Point(d, coords.begin(), coords.end());
+
+		a.push_back(1.0);
+		vector<double> b;
+		for(int i = 0; i <= 2; ++i) {
+			b.push_back(a[i+1]-a[i]);
+		}
+		return b;
 	}
 
-	Point multiply(const Point &p, double c) {
-		int d = p.dimension();
-		Point aux(d,ORIGIN);
-		return aux + (c * (p - aux));
-	}
+#else
+	double* generator_2(CGAL::Random& rand) {
+		double a[4];
+		a[0] = 0.0;
+		a[1] = rand.get_double(0,1);
+		double aux = rand.get_double(0,1);
 
-	Point assign(const Point &p) {
-		int d = p.dimension();
-		return Point(d, p.cartesian_begin(), p.cartesian_end());
-	}
+		if (aux < a[1]) {
+			double tmp = a[1];
+			a[1] = aux;
+			a[2] = tmp;
+		} else {
+			a[2] = aux;
+		}
 
-	template <typename RandomAccessIterator, typename OutputIterator>
-	void barycoords_d(int d, RandomAccessIterator in, OutputIterator out) {
-		// in contains the coords of the simplex
-		vector<double> random;
-		random.clear();
-		random = generator(d);
-		Point p(d, ORIGIN);
-//		cout << "What rand returns: " << random[0] << " " <<random[1] << '\n';
-		for (int i = 0; i < d; i++) {
-			p = add(p, multiply(in[i], random[i]));
-			in++;
+		a[3] = 1.0;
+		double* b = new double[3];
+		for(int i = 0; i <= 2; i++) {
+			b[i] = a[i+1]-a[i];
 		}
-		for (int i = 0; i < d; i++) {
-			*out = p.cartesian(i);
-			out++;
+		return b;
+	}
+#endif
+
+	// optimized implementation for 3D space
+	double* generator_3(CGAL::Random& rand) {
+		double a[5];
+		a[0] = 0.0;
+		a[1] = rand.get_double(0,1);
+		double aux = rand.get_double(0,1);
+
+		if (aux < a[1]) {
+			double tmp = a[1];
+			a[1] = aux;
+			a[2] = tmp;
+		} else {
+			a[2] = aux;
 		}
+
+		aux = rand.get_double(0,1);
+
+		if (aux < a[1]) {
+			double tmp = a[1];
+			a[1] = aux;
+			a[2] = tmp;
+		} else {
+			if (aux > a[2]) {
+				a[3] = aux;
+			} else {
+				double tmp = a[2];
+				a[2] = aux;
+				a[3] = tmp;
+			}
+		}
+
+		a[4] = 1.0;
+		double* b = new double[4];
+		for(int i = 0; i <= 3; ++i) {
+			b[i] = a[i+1]-a[i];
+		}
+		return b;
 	}
 }; // namespace internal
 }; // namespace CGAL
