@@ -26,9 +26,9 @@
 
 #ifndef CGAL_INTERSECTION_2_H
 #define CGAL_INTERSECTION_2_H
-
 #include <CGAL/intersection_2_1.h>
 #include <CGAL/intersection_2_2.h>
 #include <CGAL/intersection_2_3.h>
+#include <CGAL/Bbox_2_intersection.h>
 
 #endif // CGAL_INTERSECTION_2_H
