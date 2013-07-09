@@ -11,7 +11,7 @@ endif()
 
 find_package(CGAL COMPONENTS Core Qt4 )
 
-find_package(Boost COMPONENTS thread system)
+find_package( Boost COMPONENTS program_options REQUIRED )
 include( ${CGAL_USE_FILE} )
 
 
