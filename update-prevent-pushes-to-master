@@ -11,14 +11,16 @@ case "$GIT_USER" in
 esac
 
 # If the branch is not master, allow
-if [ "$refname" != master ]; then exit 0; fi
+if [ "$refname" != refs/heads/master ]; then exit 0; fi
 
 # Forbid non-fast-forward updates to master
 if ! [ "$(git merge-base "$oldrev" "$newrev")" = "$oldrev" ]; then
     echo ""
     echo "ERROR:"
-    echo "  You cannot push a non fast-forward update to master!"
-    echo "  Ask for help on the mailing lists to solve that issue."
+    echo "  You cannot push a non fast-forward update to master in CGAL"
+    echo "  git repositories!"
+    echo "  Ask for help on the CGAL developers mailing list to solve"
+    echo "  that issue."
     echo ""
     exit 1
 fi
@@ -43,6 +45,7 @@ fi
 echo ""
 echo "ERROR:"
 echo "  You are not allowed to push the revision $newrev to master."
-echo "  Ask for help on the mailing lists to solve that issue."
+echo "  Ask for help on the CGAL developers mailing lists to solve"
+echo "   that issue."
 echo ""
 exit 1
