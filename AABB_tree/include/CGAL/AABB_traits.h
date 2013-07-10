@@ -22,15 +22,7 @@
 #ifndef CGAL_AABB_TRAITS_H_
 #define CGAL_AABB_TRAITS_H_
 
-#include <CGAL/Bbox_3.h>
-#include <CGAL/Iso_rectangle_2.h>
-#include <CGAL/AABB_intersections.h>
-#include <CGAL/internal/AABB_tree/Has_nested_type_Shared_data.h>
-#include <CGAL/internal/AABB_tree/Primitive_helper.h>
-#include <CGAL/internal/AABB_tree/Dimension_change_traits.h>
-#include <boost/optional.hpp>
-#include <boost/bind.hpp>
-#include <CGAL/AABB_geom_traits.h>
+#include <CGAL/AABB_traits_d.h>
 /// \file AABB_traits.h
 
 namespace CGAL {
@@ -56,7 +48,7 @@ namespace CGAL {
 /// \sa `AABBPrimitiveWithSharedData`
 template<typename GeomTraits, typename AABBPrimitive>
 class AABB_traits:
-  public AABB_geom_traits<GeomTraits,AABBPrimitive,AABBPrimitive::Datum::Ambient_dimension::value>
+  public AABB_traits_d<GeomTraits,AABBPrimitive,AABBPrimitive::Datum::Ambient_dimension::value>
 {
 public:
   /// Default constructor.
