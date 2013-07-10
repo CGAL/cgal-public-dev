@@ -13,6 +13,17 @@ esac
 # If the branch is not master, allow
 if [ "$refname" != refs/heads/master ]; then exit 0; fi
 
+if [ `basename "${PWD}"` = "cgal-gsoc" ]; then
+    if [ -z "$IN_CGAL_POST_UPDATE_PUSH_TO_GSOC" ]; then
+        echo "ERROR:"
+        echo "  You cannot push to master in the cgal-gsoc repository."
+        echo "  Ask for more information on the CGAL developers mailing"
+        echo "  list."
+        echo ""
+        exit 1
+    fi
+fi
+
 # Forbid non-fast-forward updates to master
 if ! [ "$(git merge-base "$oldrev" "$newrev")" = "$oldrev" ]; then
     echo ""
@@ -44,7 +55,8 @@ fi
 
 echo ""
 echo "ERROR:"
-echo "  You are not allowed to push the revision $newrev to master."
+echo "  You are not allowed to push the revision"
+echo "  $newrev to master."
 echo "  Ask for help on the CGAL developers mailing lists to solve"
 echo "   that issue."
 echo ""

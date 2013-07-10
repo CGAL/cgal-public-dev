@@ -5,6 +5,8 @@ then
   branch=$(git rev-parse --symbolic --abbrev-ref $1)
   if [ "${branch}" = "master" -o "${branch}" = "hooks-for-client" -o "${branch}" = "hooks-on-server" ];
   then
+    IN_CGAL_POST_UPDATE_PUSH_TO_GSOC=y
+    export IN_CGAL_POST_UPDATE_PUSH_TO_GSOC
     git push gsoc $branch 
   fi
 fi
