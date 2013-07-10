@@ -7,7 +7,7 @@ newrev="$3"
 
 # Special rights for a set of trusted people.
 case "$GIT_USER" in
-    (lrineau|sloriot|eric) exit 0;;
+    (cgal-web-admin|lrineau|sloriot|eric) exit 0;;
 esac
 
 # If the branch is not master, allow
