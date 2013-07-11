@@ -24,9 +24,9 @@ Value type of the `Squared_distance` functor.
 typedef unspecified_type FT; 
 
 /*! 
-Type of a 3D point. 
+Type of a d-Dimensional point.
 */ 
-typedef unspecified_type Point_3; 
+typedef unspecified_type Point_d;
 
 /*! 
 Type of primitive. 
@@ -50,7 +50,7 @@ typedef unspecified_type Bounding_box;
 /*! 
 
 */ 
-typedef std::pair<Point_3, Primitive::Id> Point_and_primitive_id; 
+typedef std::pair<Point_d, Primitive::Id> Point_and_primitive_id;
 
 /*! 
 \deprecated 
@@ -70,8 +70,8 @@ The type of the pair is given by the nested type `Type`.
 
 /// \name Splitting
 /// During the construction of the AABB tree, the primitives are
-/// sorted according to some comparison functions related to the \f$x\f$,
-/// \f$ y\f$ or \f$ z\f$ coordinate axis:
+/// sorted according to some comparison functions related to the coordinate,
+/// axis of the relevant dimension. Ex. x or y for 2D.
 /// @{
 
 /*! 
@@ -141,13 +141,13 @@ typedef unspecified_type Compare_distance;
 
 /*! 
 A functor object to compute closest point from the query on a primitive. Provides the operator: 
-`Point_3 operator()(const Query& query, const Primitive& primitive, const Point_3 & closest);` which returns the closest point to `query`, among `closest` and all points of the primitive. 
+`Point_d operator()(const Query& query, const Primitive& primitive, const Point_d & closest);` which returns the closest point to `query`, among `closest` and all points of the primitive.
 */ 
 typedef unspecified_type Closest_point; 
 
 /*! 
 A functor object to compute the squared distance between two points. Provides the operator: 
-`FT operator()(const Point& query, const Point_3 & p);` which returns the squared distance between `p` and `q`. 
+`FT operator()(const Point& query, const Point_d & p);` which returns the squared distance between `p` and `q`.
 */ 
 typedef unspecified_type Squared_distance; 
 
