@@ -1,5 +1,6 @@
-//This program is to read input file of Arrangement and transfer it into
-//Linear_cell_complex. A output file of Linear_cell_complex will be created
+//This program is to read input file of Arrangement and transfer
+//it into Linear_cell_complex. An output file of Linear_cell_complex
+//will be created
 #include "convertors.h"
 
 #include <iostream>
@@ -9,7 +10,7 @@
 #include <boost/program_options.hpp>
 #include <boost/program_options/options_description.hpp>
 namespace po = boost::program_options;
-using namespace std;
+//using namespace std;
 
 #include <CGAL/basic.h>
 #include <CGAL/Cartesian.h>
@@ -19,6 +20,8 @@ using namespace std;
 
 #include <CGAL/Linear_cell_complex.h>
 #include <CGAL/Linear_cell_complex_operations.h>
+#include <CGAL/Linear_cell_complex_constructors.h>
+#include <CGAL/Combinatorial_map_operations.h>
 
 typedef CGAL::Exact_predicates_exact_constructions_kernel   Kernel;
 typedef Kernel::FT                                          Number_type;
@@ -43,41 +46,24 @@ int main(int argc, char* argv[])
   LCC lcc;
   Dart_handle dart;
     
-   
-    boost::program_options::options_description desc;
-    desc.add_options()
+  //Boost-options to override the input or output files
+  boost::program_options::options_description desc;
+  desc.add_options()
     ("help", "produce help")
-    ("compression", po::value<int>(), "set compression level")
-    ;
-    
-    po::variables_map vm;
-    po::store(po::parse_command_line(argc, argv, desc), vm);
-    po::notify(vm);
-    
-    if (vm.count("help")) {
-        cout << desc << "\n";
-        return 1;
-    }
-    
-    if (vm.count("compression")) {
-        cout << "Compression level was set to "
-        << vm["compression"].as<int>() << ".\n";
-    } else {
-        cout << "Compression level was not set.\n";
-    }
-    
-    
-  if (argc < 2) {
-    std::cout << "Insufficient inputs" << std::endl;
-    return EXIT_SUCCESS;
+    ("input,i", po::value< std::string>(), "input file")
+    ("output,o", po::value<std::string>(),"output file")
+  ;
+  po::variables_map vm;
+  po::store(po::parse_command_line(argc, argv, desc), vm);
+  po::notify(vm);
+  //Check whether there exists input or output file
+  std::string filename;
+  if (vm.count("input")) {
+    filename = vm["input"].as<std::string>();
+  } else {
+    filename = "arr.dat";
   }
-     
-    
-  //  std::string filename;
-    
   //Read the input file
-    
-  std::string filename = argv[1];
   std::ifstream fin(filename.c_str());
   //Check whether the inpur file is valid
   if (fin.is_open()) {
@@ -98,14 +84,23 @@ int main(int argc, char* argv[])
   }
   fin.close();
   //Call the function that transfer the Arrangement to Linear_cell_complex
-  dart = arr2lcc<Arrangement, LCC>(arr, lcc);
+  dart = CGAL::arr2lcc<Arrangement, LCC>(arr, lcc);
   //Get the number of vertices and edges
   int num_ver = arr.number_of_vertices();
   int num_edge = arr.number_of_edges();
+    std::cout<<"here9" << std::endl;
+
+    std::cout<<"LCC characteristics: " << std::endl;
+    lcc.display_characteristics(std::cout) <<std::endl;
+    std::cout<<"valid=" << lcc.is_valid() << std::endl;
+    std::cout<<"here 10" << std::endl;
+    /*
   //Write file
   std::ofstream myfile;
   //Check whether the output file name is typed
-  if (argc > 2) myfile.open(argv[2]);
+  if (vm.count("output")) {
+    myfile.open((vm["output"].as<std::string>()).c_str());
+  }
   else myfile.open("lcc.dat");
   //Write the number of vertices and edges
   myfile << num_ver << "  " << num_edge << std::endl;
@@ -129,11 +124,9 @@ int main(int argc, char* argv[])
       }
       else myfile << "  ";
     }
-    else std::cout<<"mark"<<std::endl;
+    //else std::cout<<"mark"<<std::endl;
   }
-    
-    std::cout<<"size is "<<vert.size()<<std::endl;
-    
+       
   //Write the indexes of vertices according to the associate edges
   int count = 0;
   for (LCC::Vertex_attribute_range::iterator it =
@@ -154,6 +147,6 @@ int main(int argc, char* argv[])
     }
   }
   myfile.close();
-    
+     */
   return 0;
 }

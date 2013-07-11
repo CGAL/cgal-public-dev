@@ -9,7 +9,7 @@ else()
   cmake_policy(VERSION 2.6)
 endif()
 
-find_package(CGAL COMPONENTS Core Qt4 )
+find_package(CGAL COMPONENTS Core )
 
 find_package( Boost COMPONENTS program_options REQUIRED )
 include( ${CGAL_USE_FILE} )
@@ -25,8 +25,9 @@ if ( CGAL_FOUND AND Boost_FOUND)
 
    add_executable( arr2lcc
 	arr2lcc.cpp
-	convertors.h
+        convertors.h
       )   
+   
 
   target_link_libraries( arr2lcc
     ${CGAL_LIBRARIES}
