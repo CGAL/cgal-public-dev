@@ -5,6 +5,18 @@ refname="$1"
 oldrev="$2"
 newrev="$3"
 
+shortref=$(basename "$refname")
+date=$(date +%Y-%m-%d_%H%M%S)
+rejected_ref="refs/rejected-push/${shortref}_${date}_${GIT_USER}"
+
+function reject_push() {
+    git update-ref "$rejected_ref" "$newrev"
+    echo "  Specify the following reference:"
+    echo "    ${rejected_ref}"
+    echo ""
+    exit 1
+}
+
 # Special rights for a set of trusted people.
 case "$GIT_USER" in
     (cgal-web-admin|lrineau|sloriot|eric) exit 0;;
@@ -19,8 +31,7 @@ if [ `basename "${PWD}"` = "cgal-gsoc" ]; then
         echo "  You cannot push to master in the cgal-gsoc repository."
         echo "  Ask for more information on the CGAL developers mailing"
         echo "  list."
-        echo ""
-        exit 1
+        reject_push
     fi
 fi
 
@@ -32,8 +43,7 @@ if ! [ "$(git merge-base "$oldrev" "$newrev")" = "$oldrev" ]; then
     echo "  git repositories!"
     echo "  Ask for help on the CGAL developers mailing list to solve"
     echo "  that issue."
-    echo ""
-    exit 1
+    reject_push
 fi
 
 # Accept minor fixes
@@ -58,6 +68,5 @@ echo "ERROR:"
 echo "  You are not allowed to push the revision"
 echo "  $newrev to master."
 echo "  Ask for help on the CGAL developers mailing lists to solve"
-echo "   that issue."
-echo ""
-exit 1
+echo "  that issue."
+reject_push
