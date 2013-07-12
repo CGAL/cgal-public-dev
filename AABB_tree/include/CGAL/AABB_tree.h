@@ -43,9 +43,9 @@ namespace CGAL {
 
 	/**
    * Class AABB_tree is a static data structure for efficient
-   * intersection and distance computations in 3D. It builds a
+   * intersection and distance computations in 2D and 3D. It builds a
    * hierarchy of axis-aligned bounding boxes (an AABB tree) from a set
-   * of 3D geometric objects, and can receive intersection and distance
+   * of 2D/3D geometric objects, and can receive intersection and distance
    * queries, provided that the corresponding predicates are
    * implemented in the traits class AABBTraits.
    * An instance of the class `AABBTraits` is internally stored.
@@ -74,8 +74,8 @@ namespace CGAL {
 		typedef typename AABBTraits::FT FT;
 
 
-    /// Type of 3D point.
-		typedef typename AABBTraits::Point_3 Point;
+    /// Type of point.
+		typedef typename AABBTraits::Point_d Point;
 
     /// Type of input primitive.
 		typedef typename AABBTraits::Primitive Primitive;
@@ -1077,7 +1077,7 @@ public:
     typedef typename AABB_tree<Tr>::AABB_traits AABBTraits;
 		Do_intersect_traits<AABBTraits, Query> traversal_traits(m_traits);
 		this->traversal(query, traversal_traits);
-		return traversal_traits.is_intersection_found();
+		return traversal_traits.is_intersection_found();	
 	}
 
 	template<typename Tr>

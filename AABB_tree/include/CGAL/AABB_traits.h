@@ -30,14 +30,15 @@ namespace CGAL {
 /// \addtogroup PkgAABB_tree
 /// @{
 
-/// This traits class handles any type of 3D geometric
+/// This traits class handles any type of 2D/3D geometric
 /// primitives provided that the proper intersection tests and
 /// constructions are implemented. It handles points, rays, lines and
 /// segments as query types for intersection detection and
 /// computations, and it handles points as query type for distance
-/// queries.
+/// queries. The geometry specific functions are derived from the
+/// base class AABB_traits_d.
 /// \cgalModels AABBTraits
-/// \tparam GeomTraits must  be a model of the concept \ref AABBGeomTraits,
+/// \tparam GeomTraits must  be a model of the concept \ref AABBGeomTraits_2 or \ref AABBGeomTraits_3,
 /// snd provide the geometric types as well as the intersection tests and computations.
 /// \tparam Primitive provide the type of primitives stored in the AABB_tree.
 ///   It is a model of the concept `AABBPrimitive` or `AABBPrimitiveWithSharedData`.
@@ -85,13 +86,6 @@ public:
 
 };  // end class AABB_traits
 
-
-//-------------------------------------------------------
-// Private methods
-//-------------------------------------------------------
-
-
-/// @}
 
 }  // end namespace CGAL
 

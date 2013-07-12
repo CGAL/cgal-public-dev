@@ -90,11 +90,6 @@ struct AABB_traits_base<Primitive,true>{
 
 } }
 
-/// \addtogroup PkgAABB_tree
-/// @{
-///AABB_traits_d class works as the base class for the AABB_traits class exposed to the user.
-///This handles the geometry specific primitives defined by user. This can handle any type of
-///primitive given that the proper intersection and constructions are implemented.
 
 template<typename GeomTraits, typename AABBPrimitive, int Dimension>
 struct AABB_traits_d:public internal::AABB_tree::AABB_traits_base<AABBPrimitive>
@@ -133,11 +128,10 @@ struct AABB_traits_d <GeomTraits , AABBPrimitive ,2>:public internal::AABB_tree:
 
   typedef typename GeomTraits::Point_2 Point_d;
   typedef typename GeomTraits::Point_2 Point_d;
-  /// additionnal types for the search tree, required by the RangeSearchTraits concept
-  /// \bug This is not documented for now in the AABBTraits concept.
+
   typedef typename GeomTraits::Iso_rectangle_2 Iso_box_d;
-  //typedef typename GeomTraits::Iso_rectangle_2 Iso_cuboid_3;
-  ///
+
+
   typedef typename CGAL::Bbox_2 Bounding_box;
 
   /// @}
@@ -289,8 +283,7 @@ struct AABB_traits_d <GeomTraits , AABBPrimitive ,2>:public internal::AABB_tree:
          CGAL::Comparison_result operator()(const Point& p, const Solid& pr, const FT& sq_distance) const
          {
            return GeomTraits().do_intersect_2_object()
-             (GeomTraits().construct_circle_2_object()(p, sq_distance),
-           		  (AT::Iso_rectangle_2)pr) ?
+             (GeomTraits().construct_circle_2_object()(p, sq_distance), pr) ?
              CGAL::SMALLER :
              CGAL::LARGER;
          }
@@ -363,13 +356,14 @@ struct AABB_traits_d < GeomTraits , AABBPrimitive ,3>:public internal::AABB_tree
 
   typedef typename GeomTraits::Point_3 Point_d;
   typedef typename GeomTraits::Point_3 Point_d;
-  /// additionnal types for the search tree, required by the RangeSearchTraits concept
-  /// \bug This is not documented for now in the AABBTraits concept.
+
+
   typedef typename GeomTraits::Iso_cuboid_3 Iso_box_d;
-  ///
+
+
   typedef typename CGAL::Bbox_3 Bounding_box;
 
-  /// @}
+
 
   typedef typename GeomTraits::Sphere_3 Sphere_d;
    typedef typename GeomTraits::Sphere_3 Sphere_d;
@@ -534,7 +528,6 @@ struct AABB_traits_d < GeomTraits , AABBPrimitive ,3>:public internal::AABB_tree
 
      static Axis longest_axis(const Bounding_box& bbox);
 
-       /// Comparison functions
        static bool less_x(const Primitive& pr1, const Primitive& pr2,const AABB_traits_d<GeomTraits,AABBPrimitive,3>& traits)
        { return internal::Primitive_helper<AT>::get_reference_point(pr1,traits).x() < internal::Primitive_helper<AT>::get_reference_point(pr2,traits).x(); }
        static bool less_y(const Primitive& pr1, const Primitive& pr2,const AABB_traits_d<GeomTraits,AABBPrimitive,3>& traits)

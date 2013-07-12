@@ -30,8 +30,31 @@
 namespace CGAL {
 
 namespace internal {
+
+  template <class GeomTraits, class Iterator, int Dimension>
+  struct Point_from_triangle_d_iterator_property_map
+  {};
+
   template <class GeomTraits, class Iterator>
-  struct Point_from_triangle_3_iterator_property_map{
+    struct Point_from_triangle_d_iterator_property_map<GeomTraits, Iterator, 2>{
+      //classical typedefs
+      typedef Iterator key_type;
+      typedef typename GeomTraits::Point_2 value_type;
+      typedef typename cpp11::result_of<
+        typename GeomTraits::Construct_vertex_2(typename GeomTraits::Triangle_3,int)
+      >::type reference;
+      typedef boost::readable_property_map_tag category;
+
+      inline friend
+      typename Point_from_triangle_d_iterator_property_map<GeomTraits,Iterator,2>::reference
+      get(Point_from_triangle_d_iterator_property_map<GeomTraits,Iterator,2>, Iterator it)
+      {
+        return typename GeomTraits::Construct_vertex_2()( *it, 0 );
+      }
+    };
+
+  template <class GeomTraits, class Iterator>
+  struct Point_from_triangle_d_iterator_property_map<GeomTraits, Iterator, 3>{
     //classical typedefs
     typedef Iterator key_type;
     typedef typename GeomTraits::Point_3 value_type;
@@ -41,8 +64,8 @@ namespace internal {
     typedef boost::readable_property_map_tag category;
 
     inline friend
-    typename Point_from_triangle_3_iterator_property_map<GeomTraits,Iterator>::reference
-    get(Point_from_triangle_3_iterator_property_map<GeomTraits,Iterator>, Iterator it)
+    typename Point_from_triangle_d_iterator_property_map<GeomTraits,Iterator,3>::reference
+    get(Point_from_triangle_d_iterator_property_map<GeomTraits,Iterator,3>, Iterator it)
     {
       return typename GeomTraits::Construct_vertex_3()( *it, 0 );
     }
@@ -52,17 +75,16 @@ namespace internal {
 
 /*!
  * \ingroup PkgAABB_tree
- * Primitive type that uses as identifier an iterator with a 3D triangle as `value_type`.
+ * Primitive type that uses as identifier an iterator with a triangle as `value_type`.
  * The iterator from which the primitive is built should not be invalided
  * while the AABB tree holding the primitive is in use.
  *
  * \cgalModels `AABBPrimitive`
  *
- * \tparam GeomTraits is a traits class providing the nested type `Point_3` and `Triangle_3`.
- *         It also provides the functor `Construct_vertex_3` that has an operator taking a `Triangle_3`
- *         and an integer as parameters and returning a triangle point as a type convertible to `Point_3`.
- *         In addition `Construct_vertex_3` must support the result_of protocol.
- * \tparam Iterator is a model of `ForwardIterator` with its value type convertible to `GeomTraits::Triangle_3`
+ * \tparam GeomTraits is a traits class providing the the necessary geometric data types (Ex. Point_2, Point_3, Triangle_2, Triangle_3).
+ *         It also provides the functors (Ex. For 2D Construct_vertex_3) that has an operator taking a triangle type. (Ex. Triangle_2 for 2D)
+ *         and an integer as parameters and returning a triangle point as a type convertible to `Point_d`.
+ * \tparam Iterator is a model of `ForwardIterator` with its value type convertible to Ex. GeomTraits::Triangle_2 for 2D and accordingly.
  * \tparam cache_datum is either `CGAL::Tag_true` or `CGAL::Tag_false`. In the former case,
  *           the datum is stored in the primitive, while in the latter it is
  *           constructed on the fly to reduce the memory footprint.
@@ -81,14 +103,14 @@ class AABB_triangle_primitive
 #ifndef DOXYGEN_RUNNING
   : public AABB_primitive<  Iterator,
                             Input_iterator_property_map<Iterator>,
-                            internal::Point_from_triangle_3_iterator_property_map<GeomTraits, Iterator>,
+                            internal::Point_from_triangle_d_iterator_property_map<GeomTraits, Iterator,Iterator::value_type::Ambient_dimension::value>,
                             Tag_false,
                             cache_datum >
 #endif
 {
   typedef AABB_primitive< Iterator,
                           Input_iterator_property_map<Iterator>,
-                          internal::Point_from_triangle_3_iterator_property_map<GeomTraits, Iterator>,
+                          internal::Point_from_triangle_d_iterator_property_map<GeomTraits, Iterator,Iterator::value_type::Ambient_dimension::value>,
                           Tag_false,
                           cache_datum > Base;
 public:
