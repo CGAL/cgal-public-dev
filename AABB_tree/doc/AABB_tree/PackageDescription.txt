@@ -26,7 +26,8 @@
 - `AABBPrimitive`
 - `AABBPrimitiveWithSharedData`
 - `AABBTraits`
-- `AABBGeomTraits`
+- `AABBGeomTraits_2`
+- `AABBGeomTraits_3`
 
 ## Classes ##
 - `CGAL::AABB_traits<GeomTraits,Primitive>`
