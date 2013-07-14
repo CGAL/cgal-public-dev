@@ -8,7 +8,8 @@
 #include <CGAL/Implicit_mesh_domain_3.h>
 #include <CGAL/make_mesh_3.h>
 #include <CGAL/Timer.h>
-#include "../../include/CGAL/internal/element_sampling_class.h"
+#include <CGAL/internal/element_sampling_class.h>
+#include <CGAL/point_generators_3.h>
 
 using namespace std;
 
@@ -37,6 +38,22 @@ using namespace CGAL::parameters;
 // Function
 FT sphere_function (const Point& p)
 { return CGAL::squared_distance(p, Point(CGAL::ORIGIN))-1; }
+
+class PointGen {
+	private:
+		Tetrahedron_3 t;
+	public:
+		PointGen(Tetrahedron_3 T) {
+			t = T;
+		}
+
+		Point operator() () {
+			vector<Point> points;
+			CGAL::cpp11::copy_n(CGAL::Random_points_in_tetrahedron_3<Point>(t[0], t[1], t[2], t[3]),
+					1, std::back_inserter(points));
+			return points[0];
+		}
+};
 
 class VolTetrahedron {
 	private:
@@ -89,8 +106,8 @@ int main()
 		i++;
 	}
 	
-	CGAL::internal::ElementSampling <Tetrahedron_3 *, VolTetrahedron>
-		(Nr_cells, tetra, tetra+Nr_cells);
+	CGAL::internal::ElementSampling <Tetrahedron_3 *, VolTetrahedron,
+		PointGen> (Nr_cells, tetra, tetra+Nr_cells);
 
 //	timp.start();
 //	for (i = 0; i < Nr_cells; i++) {

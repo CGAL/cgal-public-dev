@@ -3,6 +3,7 @@
 #include <iostream>
 #include <vector>
 #include <algorithm>
+#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/Cartesian_d.h>
 #include <CGAL/point_generators_2.h>
 #include <CGAL/Random.h>
@@ -14,9 +15,12 @@
 #include "weighted_random_element.h"
 
 using namespace std;
+typedef CGAL::Exact_predicates_inexact_constructions_kernel K;
+typedef K::Point_3 Point;
 
 namespace CGAL { namespace internal {
-template<typename Element_RandomAccessIterator, typename VolumeElementFunctor>
+template<typename Element_RandomAccessIterator, typename VolumeElementFunctor,
+	typename PointGeneratorFunctor>
 class ElementSampling {
 	private:
 	public:
@@ -53,13 +57,20 @@ class ElementSampling {
 			int SampleIndex = SampleIterator - sums;
 			cout << "The picked Element is: " << SampleIndex << '\n';
 
-			//Element SampleElement = *(el_begin + SampleIndex);
+			Element_RandomAccessIterator SampleElement = el_begin + SampleIndex;
+			cout << "Coords of the picked element: " <<
+				SampleElement[0] << " " << SampleElement[1] <<
+				" " << SampleElement[2] << " " <<
+				SampleElement[3] << '\n';
 
 			//TODO: I haven't done yet the splitting into atomic elements of the
 			//picked Element; So far I have only tested on examples where Element is
 			//an atomic element itself
 
-
+			PointGeneratorFunctor randGen(*SampleElement);
+			Point p = randGen();
+			cout << "The generated point is " << p.x() << " " <<
+				p.y() << " " << p.z() << '\n';
 
 			delete[] volumes;
 			delete[] sums;
