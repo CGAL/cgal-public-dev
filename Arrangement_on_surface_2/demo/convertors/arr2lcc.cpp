@@ -12,17 +12,6 @@
 namespace po = boost::program_options;
 //using namespace std;
 
-#include <CGAL/basic.h>
-#include <CGAL/Cartesian.h>
-#include <CGAL/Arr_linear_traits_2.h>
-#include <CGAL/Exact_predicates_exact_constructions_kernel.h>
-#include <CGAL/Arrangement_2.h>
-
-#include <CGAL/Linear_cell_complex.h>
-#include <CGAL/Linear_cell_complex_operations.h>
-#include <CGAL/Linear_cell_complex_constructors.h>
-#include <CGAL/Combinatorial_map_operations.h>
-
 typedef CGAL::Exact_predicates_exact_constructions_kernel   Kernel;
 typedef Kernel::FT                                          Number_type;
 typedef CGAL::Arr_linear_traits_2<Kernel>                   Traits_2;

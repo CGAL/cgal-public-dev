@@ -4,7 +4,17 @@
 #define files_convertors_h
 #include <iostream>
 #include <vector>
-//#include <CGAL/Combinatorial_map_operations.h>
+
+#include <CGAL/basic.h>
+#include <CGAL/Cartesian.h>
+#include <CGAL/Arr_linear_traits_2.h>
+#include <CGAL/Exact_predicates_exact_constructions_kernel.h>
+#include <CGAL/Arrangement_2.h>
+
+#include <CGAL/Linear_cell_complex.h>
+#include <CGAL/Linear_cell_complex_operations.h>
+#include <CGAL/Linear_cell_complex_constructors.h>
+#include <CGAL/Combinatorial_map_operations.h>
 
 namespace CGAL {
     /** @file convertors.h
