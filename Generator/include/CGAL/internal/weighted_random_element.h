@@ -10,8 +10,36 @@ class Weighted_random_element {
 	public:
 		Weighted_random_element() {}
 
+		Weighted_random_element(Weighted_random_element &x) {
+			this->_weight = x._weight;
+			this->_rand = x._rand;
+			this->_presum = x._presum;
+		}
+
+		Weighted_random_element(MyRandom &rand, double presum, double
+				weight) {
+			_rand = rand;
+			_presum = presum;
+			_weight = weight;
+		}
+
+		double getPresum() {
+			return _presum;
+		}
+
+		MyRandom getRand() {
+			return _rand;
+		}
+
 		bool operator< (Weighted_random_element &rhs) {
 			return this->_weight < rhs._weight;
+		}
+
+		Weighted_random_element& operator=(Weighted_random_element &x) {
+			this->_weight = x._weight;
+			this->_rand = x._rand;
+			this->_presum = x._presum;
+			return *this;
 		}
 };
 };

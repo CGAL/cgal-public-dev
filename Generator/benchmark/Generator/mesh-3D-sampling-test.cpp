@@ -30,7 +30,7 @@ typedef CGAL::Mesh_complex_3_in_triangulation_3<Tr> C3t3;
 typedef CGAL::Mesh_criteria_3<Tr> Mesh_criteria;
 
 typedef Tr::Geom_traits GT;
-typedef GT::Tetrahedron_3 Tetrahedron_3;
+typedef GT::Tetrahedron_3 Tetrahedron3;
 
 // To avoid verbose function and named parameters call
 using namespace CGAL::parameters;
@@ -41,9 +41,9 @@ FT sphere_function (const Point& p)
 
 class PointGen {
 	private:
-		Tetrahedron_3 t;
+		Tetrahedron3 t;
 	public:
-		PointGen(Tetrahedron_3 T) {
+		PointGen(Tetrahedron3 T) {
 			t = T;
 		}
 
@@ -57,9 +57,9 @@ class PointGen {
 
 class VolTetrahedron {
 	private:
-		Tetrahedron_3 t;
+		Tetrahedron3 t;
 	public:
-		VolTetrahedron(Tetrahedron_3 T) {
+		VolTetrahedron(Tetrahedron3 T) {
 			t = T;
 		}
 
@@ -68,7 +68,7 @@ class VolTetrahedron {
 		}
 };
 
-//double VolTetrahedron(Tetrahedron_3 &t) {
+//double VolTetrahedron(Tetrahedron3 &t) {
 //	return t.volume();
 //}
 
@@ -97,8 +97,8 @@ int main()
 	int Nr_cells = tr.number_of_finite_cells();
 	cout << "Actual number of cells in triangulation: " <<
 		tr.number_of_finite_cells() << "\n";
-	Tetrahedron_3 *tetra;
-	tetra = new Tetrahedron_3[Nr_cells];
+	Tetrahedron3 *tetra;
+	tetra = new Tetrahedron3[Nr_cells];
 	int i = 0;
 	Tr::Finite_cells_iterator iter = tr.finite_cells_begin();
 	for ( ; iter != tr.finite_cells_end(); ++iter) {
@@ -106,7 +106,7 @@ int main()
 		i++;
 	}
 	
-	CGAL::internal::ElementSampling <Tetrahedron_3 *, VolTetrahedron,
+	CGAL::internal::ElementSampling <Tetrahedron3 *, VolTetrahedron,
 		PointGen> (Nr_cells, tetra, tetra+Nr_cells);
 
 //	timp.start();
