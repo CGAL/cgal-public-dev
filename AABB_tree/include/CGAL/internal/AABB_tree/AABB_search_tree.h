@@ -22,38 +22,38 @@
 #define CGAL_AABB_SEARCH_TREE_H
 
 #include <CGAL/Orthogonal_k_neighbor_search.h>
-#include <CGAL/Search_traits_3.h>
+#include <CGAL/Search_traits_d.h>
 
 namespace CGAL
 {
         template <class Underlying, class Id>
         class Add_decorated_point: public Underlying
         {
-                class Decorated_point: public Underlying::Point_3
+                class Decorated_point: public Underlying::Point_d
                 {
                 public:
                     const Id& id() const { return m_id; }
 
                     Decorated_point()
-                        : Underlying::Point_3()
+                        : Underlying::Point_d()
                         , m_id()
                         , m_is_id_initialized(false) {}
 
                     // Allows the user not to provide the id
                     // so that we don't break existing code
-                    Decorated_point(const typename Underlying::Point_3& p)
-                        : Underlying::Point_3(p)
+                    Decorated_point(const typename Underlying::Point_d& p)
+                        : Underlying::Point_d(p)
                         , m_id()
                         , m_is_id_initialized(false) {}
 
-                    Decorated_point(const typename Underlying::Point_3& p,
+                    Decorated_point(const typename Underlying::Point_d& p,
                                     const Id& id)
-                        : Underlying::Point_3(p)
+                        : Underlying::Point_d(p)
                         , m_id(id)
                         , m_is_id_initialized(true) {}
 
                     Decorated_point(const Decorated_point& rhs)
-                      : Underlying::Point_3(rhs)
+                      : Underlying::Point_d(rhs)
                       , m_id()
                       , m_is_id_initialized(rhs.m_is_id_initialized)
                     {
@@ -72,20 +72,22 @@ namespace CGAL
                     bool m_is_id_initialized;
                 };
         public:
-                typedef Decorated_point Point_3;
+                typedef Decorated_point Point_search_tree;
         };
+
 
         template <class Traits>
         class AABB_search_tree
         {
         public:
                 typedef typename Traits::FT FT;
-                typedef typename Traits::Point_3 Point;
+                typedef typename Traits::Point_d Point;
                 typedef typename Traits::Primitive Primitive;
                 typedef typename Traits::Point_and_primitive_id Point_and_primitive_id;
-                typedef typename CGAL::Search_traits_3<Add_decorated_point<Traits, typename Traits::Primitive::Id> > TreeTraits;
+                typedef typename CGAL::Search_traits_d<Add_decorated_point<Traits, typename Traits::Primitive::Id>> TreeTraits;
                 typedef typename CGAL::Orthogonal_k_neighbor_search<TreeTraits> Neighbor_search;
                 typedef typename Neighbor_search::Tree Tree;
+				typedef typename Add_decorated_point<Traits, typename Traits::Primitive::Id>::Point_search_tree Decorated_point;
         private:
                 Tree* m_p_tree;
 
@@ -104,7 +106,6 @@ namespace CGAL
                 AABB_search_tree(ConstPointIterator begin, ConstPointIterator beyond)
                     : m_p_tree(NULL)
                 {
-                        typedef typename Add_decorated_point<Traits, typename Traits::Primitive::Id>::Point_3 Decorated_point;
                         std::vector<Decorated_point> points;
                         while(begin != beyond) {
                                 Point_and_primitive_id pp = get_p_and_p(*begin);
@@ -126,7 +127,7 @@ namespace CGAL
                 Point_and_primitive_id closest_point(const Point& query) const
                 {
                         Neighbor_search search(*m_p_tree, query, 1);
-                        return Point_and_primitive_id(static_cast<Point>(search.begin()->first), search.begin()->first.id());
+                        return Point_and_primitive_id(static_cast<Point>(search.begin()->first), (static_cast<Decorated_point>(search.begin()->first)).id());
                 }
         };
 

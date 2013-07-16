@@ -38,8 +38,8 @@ namespace CGAL {
 /// queries. The geometry specific functions are derived from the
 /// base class AABB_traits_d.
 /// \cgalModels AABBTraits
-/// \tparam GeomTraits must  be a model of the concept \ref AABBGeomTraits_2 or \ref AABBGeomTraits_3,
-/// snd provide the geometric types as well as the intersection tests and computations.
+/// \tparam GeomTraits must  be a model of the concept `AABBGeomTraits_2` or `AABBGeomTraits_3`,
+/// and provide the geometric types as well as the intersection tests and computations.
 /// \tparam Primitive provide the type of primitives stored in the AABB_tree.
 ///   It is a model of the concept `AABBPrimitive` or `AABBPrimitiveWithSharedData`.
 ///
@@ -71,14 +71,13 @@ public:
     typename AT::Bounding_box operator()(ConstPrimitiveIterator first,
                                          ConstPrimitiveIterator beyond) const
       {
-        typename AT::Bounding_box bbox = internal::Primitive_helper<AT>::get_datum(*first,m_traits).bbox();//compute_bbox(*first,m_traits);
+        typename AT::Bounding_box bbox = internal::Primitive_helper<AT>::get_datum(*first,m_traits).bbox();
         for(++first; first != beyond; ++first)
         {
-          bbox = bbox + internal::Primitive_helper<AT>::get_datum(*first,m_traits).bbox();//compute_bbox(*first,m_traits);
+          bbox = bbox + internal::Primitive_helper<AT>::get_datum(*first,m_traits).bbox();
         }
         return bbox;
       }
-    int i;
   };
 
   Compute_bbox compute_bbox_object() const {return Compute_bbox(*this);}

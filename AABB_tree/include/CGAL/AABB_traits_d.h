@@ -28,7 +28,6 @@
 #include <CGAL/AABB_intersections.h>
 #include <CGAL/internal/AABB_tree/Has_nested_type_Shared_data.h>
 #include <CGAL/internal/AABB_tree/Primitive_helper.h>
-#include <CGAL/internal/AABB_tree/Dimension_change_traits.h>
 #include <boost/optional.hpp>
 #include <boost/bind.hpp>
 /// \file AABB_traits_d.h

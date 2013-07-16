@@ -64,7 +64,7 @@ template<typename AABBTraits, typename Query>
 class First_intersection_traits
 {
   typedef typename AABBTraits::FT FT;
-  typedef typename AABBTraits::Point_3 Point;
+  typedef typename AABBTraits::Point_d Point;
   typedef typename AABBTraits::Primitive Primitive;
   typedef typename AABBTraits::Bounding_box Bounding_box;
   typedef typename AABBTraits::Primitive::Id Primitive_id;
@@ -117,7 +117,7 @@ template<typename AABBTraits, typename Query, typename Output_iterator>
 class Listing_intersection_traits
 {
   typedef typename AABBTraits::FT FT;
-  typedef typename AABBTraits::Point_3 Point;
+  typedef typename AABBTraits::Point_d Point;
   typedef typename AABBTraits::Primitive Primitive;
   typedef typename AABBTraits::Bounding_box Bounding_box;
   typedef typename AABBTraits::Primitive::Id Primitive_id;
@@ -138,7 +138,7 @@ public:
     #else
     boost::optional< typename AABBTraits::template Intersection_and_primitive_id<Query>::Type >
     #endif
-    intersection = m_traits.intersection_object()(query, primitive);
+    intersection = AABBTraits().intersection_object()(query, primitive);
 
     if(intersection)
     {
@@ -164,7 +164,7 @@ template<typename AABBTraits, typename Query, typename Output_iterator>
 class Listing_primitive_traits
 {
   typedef typename AABBTraits::FT FT;
-  typedef typename AABBTraits::Point_3 Point;
+  typedef typename AABBTraits::Point_d Point;
   typedef typename AABBTraits::Primitive Primitive;
   typedef typename AABBTraits::Bounding_box Bounding_box;
   typedef typename AABBTraits::Primitive::Id Primitive_id;
@@ -204,7 +204,7 @@ template<typename AABBTraits, typename Query>
 class First_primitive_traits
 {
   typedef typename AABBTraits::FT FT;
-  typedef typename AABBTraits::Point_3 Point;
+  typedef typename AABBTraits::Point_d Point;
   typedef typename AABBTraits::Primitive Primitive;
   typedef typename AABBTraits::Bounding_box Bounding_box;
   typedef typename AABBTraits::Primitive::Id Primitive_id;
@@ -250,7 +250,7 @@ template<typename AABBTraits, typename Query>
 class Do_intersect_traits
 {
   typedef typename AABBTraits::FT FT;
-  typedef typename AABBTraits::Point_3 Point;
+  typedef typename AABBTraits::Point_d Point;
   typedef typename AABBTraits::Primitive Primitive;
   typedef typename AABBTraits::Bounding_box Bounding_box;
   typedef typename AABBTraits::Primitive::Id Primitive_id;
@@ -291,12 +291,14 @@ template <typename AABBTraits>
 class Projection_traits
 {
   typedef typename AABBTraits::FT FT;
-  typedef typename AABBTraits::Point_3 Point;
+  typedef typename AABBTraits::Point_d Point;
   typedef typename AABBTraits::Primitive Primitive;
   typedef typename AABBTraits::Bounding_box Bounding_box;
   typedef typename AABBTraits::Primitive::Id Primitive_id;
   typedef typename AABBTraits::Point_and_primitive_id Point_and_primitive_id;
   typedef typename AABBTraits::Object_and_primitive_id Object_and_primitive_id;
+  typedef typename AABBTraits::Sphere_d Sphere;
+
   typedef ::CGAL::AABB_node<AABBTraits> Node;
 
 public:
