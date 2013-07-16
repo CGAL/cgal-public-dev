@@ -7,7 +7,7 @@
 #include <CGAL/algorithm.h>
 #include <iterator>
 #include <CGAL/enum.h>
-#include "generate_barycoords_3_IFs.h"
+#include <CGAL/internal/generate_barycoords_3_IFs.h>
 #include <CGAL/Timer.h>
 
 #define D 3 // the dimension is set to 2

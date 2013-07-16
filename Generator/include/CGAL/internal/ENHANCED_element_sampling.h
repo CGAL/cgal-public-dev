@@ -31,7 +31,6 @@ class EnhancedElementSampling {
 			int i = 0;
 			for (; it != el_end; it++) {
 				VolumeElementFunctor volElem(*it);
-				double weight = volElem();
 				double presum = (i == 0 ? weight : weight +
 						container[i-1].getPresum());
 				PointGeneratorFunctor randGen(*it);

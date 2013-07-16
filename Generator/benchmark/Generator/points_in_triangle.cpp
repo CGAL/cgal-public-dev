@@ -8,8 +8,8 @@
 #include <CGAL/algorithm.h>
 #include <iterator>
 #include <CGAL/enum.h>
-#include "generate_barycoords.h"
-#include "barycoords_to_cartesian.h"
+#include <CGAL/internal/generate_barycoords.h>
+#include <CGAL/internal/barycoords_to_cartesian.h>
 #include <CGAL/Timer.h>
 
 #define D 2 // the d dimension

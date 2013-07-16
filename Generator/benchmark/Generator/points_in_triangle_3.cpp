@@ -7,9 +7,9 @@
 #include <CGAL/algorithm.h>
 #include <iterator>
 #include <CGAL/enum.h>
-#include "generate_barycoords.h"
+#include <CGAL/internal/generate_barycoords.h>
+#include <CGAL/internal/barycoords_to_cartesian.h>
 #include <CGAL/Timer.h>
-#include "barycoords_to_cartesian.h"
 
 #define D 3 // the dimension is set to 2
 #define total 1000000 // number of points that will be generated
