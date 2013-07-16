@@ -72,7 +72,7 @@ typedef unspecified_type Has_on_bounded_side_2;
 
 /*!
 A functor object to compute the squared radius of a circle. Provides the operator:
-`FT operator()(const Circle& s);` which returns the squared radius of `s`.
+`FT operator()(const Circle_2& s);` which returns the squared radius of `s`.
 */
 typedef unspecified_type Compute_squared_radius_2;
 
