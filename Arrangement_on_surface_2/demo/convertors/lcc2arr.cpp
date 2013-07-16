@@ -14,6 +14,7 @@ namespace po = boost::program_options;
 #include <CGAL/Arr_linear_traits_2.h>
 #include <CGAL/Exact_predicates_exact_constructions_kernel.h>
 #include <CGAL/Arrangement_2.h>
+#include <CGAL/IO/Arr_iostream.h>
 
 #include <CGAL/Linear_cell_complex.h>
 #include <CGAL/Linear_cell_complex_operations.h>
@@ -82,6 +83,11 @@ int main(int argc, char* argv[])
   }
   else myfile.open("arr.dat");
   //Write the associate coordinates corresponding to the segments
+    std::cout<<"#vertices: " << arr.number_of_vertices()<<std::endl;
+    std::cout<<"#edges: " << arr.number_of_edges()<<std::endl;
+    std::cout<<"#faces: " << arr.number_of_faces()<<std::endl;
+
+    /*
   int num_edge = arr.number_of_edges();
   int count = 0;
   Arrangement::Edge_const_iterator he;
@@ -92,7 +98,8 @@ int main(int argc, char* argv[])
     if (count == num_edge) myfile << p1 << "  " << p2;
     else myfile << p1 << "  " << p2 << std::endl;
   }
+     */
+    myfile << arr;
   myfile.close();
-    
   return 0;
 }

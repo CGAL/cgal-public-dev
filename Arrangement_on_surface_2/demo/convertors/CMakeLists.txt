@@ -1,6 +1,6 @@
 # This is the CMake script for compiling a CGAL application.
 
-project( arr2lcc ) 
+project( convertors ) 
 
 cmake_minimum_required(VERSION 2.6.2)
 if("${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION}.${CMAKE_PATCH_VERSION}" VERSION_GREATER 2.8.3)
@@ -23,16 +23,26 @@ if ( CGAL_FOUND AND Boost_FOUND)
 
   include_directories( ${Boost_INCLUDE_DIR} )
 
+   add_executable( lcc2arr
+	lcc2arr.cpp
+        convertors.h
+      )   
    add_executable( arr2lcc
 	arr2lcc.cpp
         convertors.h
-      )   
+   )   
    
 
   target_link_libraries( arr2lcc
     ${CGAL_LIBRARIES}
     ${CGAL_3RD_PARTY_LIBRARIES}
-    ${QT_LIBRARIES}
+    ${Boost_LIBRARIES}
+    ${Boost_PROGRAM_OPTIONS_LIBRARY}
+  )
+
+  target_link_libraries( lcc2arr
+    ${CGAL_LIBRARIES}
+    ${CGAL_3RD_PARTY_LIBRARIES}
     ${Boost_LIBRARIES}
     ${Boost_PROGRAM_OPTIONS_LIBRARY}
   )

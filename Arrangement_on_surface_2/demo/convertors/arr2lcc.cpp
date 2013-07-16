@@ -17,6 +17,7 @@ namespace po = boost::program_options;
 #include <CGAL/Arr_linear_traits_2.h>
 #include <CGAL/Exact_predicates_exact_constructions_kernel.h>
 #include <CGAL/Arrangement_2.h>
+#include <CGAL/IO/Arr_iostream.h>
 
 #include <CGAL/Linear_cell_complex.h>
 #include <CGAL/Linear_cell_complex_operations.h>
@@ -67,6 +68,7 @@ int main(int argc, char* argv[])
   std::ifstream fin(filename.c_str());
   //Check whether the inpur file is valid
   if (fin.is_open()) {
+      /*
     while (!fin.eof()) {
       Segment s;
       Number_type a, b, c, d;
@@ -77,6 +79,8 @@ int main(int argc, char* argv[])
       // add this curve into the Arrangement
       insert(arr, s);
     }
+       */
+      fin >> arr;
   }
   else {
     std::cout << "Invalid input file" << std::endl;
@@ -88,13 +92,13 @@ int main(int argc, char* argv[])
   //Get the number of vertices and edges
   int num_ver = arr.number_of_vertices();
   int num_edge = arr.number_of_edges();
-    std::cout<<"here9" << std::endl;
-
-    std::cout<<"LCC characteristics: " << std::endl;
-    lcc.display_characteristics(std::cout) <<std::endl;
-    std::cout<<"valid=" << lcc.is_valid() << std::endl;
-    std::cout<<"here 10" << std::endl;
-    /*
+    
+    std::cout<<"#vertices "<<num_ver<<std::endl;
+    std::cout<<"#edges "<<num_edge<<std::endl;
+ //   std::cout<<"LCC characteristics: " << std::endl;
+   // lcc.display_characteristics(std::cout) <<std::endl;
+   // std::cout<<"valid=" << lcc.is_valid() << std::endl;
+     
   //Write file
   std::ofstream myfile;
   //Check whether the output file name is typed
@@ -110,43 +114,36 @@ int main(int argc, char* argv[])
        lcc.vertex_attributes().begin(), itend=lcc.vertex_attributes().end();
        it!=itend; ++it) {
     Point temp = it->point();
-    bool mark = false;
-    int pos = 0;
-    for (pos = 0; pos < vert.size(); pos++) {
-      if (vert[pos] == temp) mark = true;
-    }
-    if (!mark) {
-      vert.push_back(temp);
-      myfile << it->point();
-      if (vert.size() == num_ver) {
-        myfile << std::endl;
-        break;
-      }
-      else myfile << "  ";
-    }
-    //else std::cout<<"mark"<<std::endl;
+    vert.push_back(temp);
+    myfile << it->point();
+    if (vert.size() != num_ver) myfile << "  ";
+    else myfile << std::endl;
   }
-       
+           
   //Write the indexes of vertices according to the associate edges
   int count = 0;
-  for (LCC::Vertex_attribute_range::iterator it =
-       lcc.vertex_attributes().begin(), itend=lcc.vertex_attributes().end();
-       it!=itend; ++it) {
-    Point temp = it->point();
-      //std::cout<<temp<<std::endl;
-      
+  for (LCC::One_dart_per_cell_range<1>::iterator it = lcc.one_dart_per_cell<1>().begin(), itend = lcc.one_dart_per_cell<1>().end();
+         it != itend; ++it) {
     ++count;
-    for (int i = 0; i < vert.size(); i++) {
-      if (vert[i] == temp) {
-        myfile << i;
-        if ((count % 2 == 0) && (count != 2*num_edge)) myfile << "  ";
-        else if (count == 2*num_edge) myfile << "";
-        else myfile << ' ';
-        break;
+    Point p1 = LCC::point(it);
+    Point p2 = LCC::point(it->other_extremity());
+    int first = 0, second = 0;
+    bool b1 = false, b2 = false;
+    //Find the indexes
+    for (int i = 0; i<vert.size(); ++i) {
+      if (vert[i] == p1) {
+        first = i;
+        b1 = true;
+      } else if (vert[i] == p2) {
+        second = i;
+        b2 = true;
       }
+      if (b1 && b2) break;
     }
+    //Print the indexes in the output file
+    myfile << first <<' ' << second;
+    if (count != num_edge) myfile << "  ";
   }
   myfile.close();
-     */
   return 0;
 }
