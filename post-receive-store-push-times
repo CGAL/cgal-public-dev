@@ -6,7 +6,7 @@
 while read oldrev newrev refname; do
   if echo $refname | grep "^refs/heads/" >/dev/null 2>&1; then
     # If newrev is 0 then the ref is deleted. Ignore.
-    if [ "$newrev" != "0000000000000000000000000000000000000000" ]]; then 
+    if [ "$newrev" != "0000000000000000000000000000000000000000" ]; then 
         branch="$(echo $refname | sed 's/^refs\/heads\///')"
         date="$(date +%Y-%m-%d)" # fix to account for nightly start time
         git update-ref -m "New commit published on this date" \
