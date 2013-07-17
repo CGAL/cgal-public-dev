@@ -8,7 +8,7 @@
 #include <CGAL/Implicit_mesh_domain_3.h>
 #include <CGAL/make_mesh_3.h>
 #include <CGAL/Timer.h>
-#include <CGAL/internal/element_sampling_class.h>
+#include <CGAL/internal/ENHANCED_element_sampling.h>
 #include <CGAL/point_generators_3.h>
 
 using namespace std;
@@ -43,11 +43,22 @@ class PointGen {
 	private:
 		Tetrahedron3 t;
 	public:
+		PointGen() {}
+
 		PointGen(Tetrahedron3 T) {
 			t = T;
 		}
 
-		Point operator() () {
+		PointGen(const PointGen &p) {
+			this->t = p.t;
+		}
+
+		PointGen operator= (const PointGen x) {
+			this->t = x.t;
+			return *this;
+		}
+
+		Point operator() (int q) {
 			vector<Point> points;
 			CGAL::cpp11::copy_n(CGAL::Random_points_in_tetrahedron_3<Point>(t[0], t[1], t[2], t[3]),
 					1, std::back_inserter(points));
@@ -106,7 +117,7 @@ int main()
 		i++;
 	}
 	
-	CGAL::internal::ElementSampling <Tetrahedron3 *, VolTetrahedron,
+	CGAL::internal::EnhancedElementSampling <Tetrahedron3 *, VolTetrahedron,
 		PointGen> (Nr_cells, tetra, tetra+Nr_cells);
 
 //	timp.start();

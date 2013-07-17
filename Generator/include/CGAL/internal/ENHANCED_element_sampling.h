@@ -22,7 +22,7 @@ namespace CGAL { namespace internal {
 template<typename Element_RandomAccessIterator, typename VolumeElementFunctor,
 	typename PointGeneratorFunctor>
 class EnhancedElementSampling {
-	private: vector<Weighted_random_element<PointGeneratorFunctor> > container;
+	private: vector<CGAL::internal::Weighted_random_element<PointGeneratorFunctor> > container;
 	public:
 		EnhancedElementSampling(int N, Element_RandomAccessIterator el_begin,
 				Element_RandomAccessIterator el_end) {
@@ -31,20 +31,24 @@ class EnhancedElementSampling {
 			int i = 0;
 			for (; it != el_end; it++) {
 				VolumeElementFunctor volElem(*it);
+				double weight = volElem();
 				double presum = (i == 0 ? weight : weight +
 						container[i-1].getPresum());
 				PointGeneratorFunctor randGen(*it);
-				Weighted_random_element<PointGeneratorFunctor> aux(randGen, presum, weight);
+				CGAL::internal::Weighted_random_element<PointGeneratorFunctor>
+					aux(randGen, presum);
 				container[i] = aux;
 				i++;
 			}
 
 
 			CGAL::Random rand;
-			double tmp = rand.get_double(0,
+			double tmp_presum = rand.get_double(0,
 					container[N-1].getPresum());
-			cout << tmp << '\n';
-			double* SampleIterator = upper_bound(container.begin(), container.end(), tmp);
+			CGAL::internal::Weighted_random_element<PointGeneratorFunctor>
+				tmp(tmp_presum);
+//			cout << tmp << '\n';
+			typename vector<CGAL::internal::Weighted_random_element<PointGeneratorFunctor> >::iterator SampleIterator = upper_bound(container.begin(), container.end(), tmp);
 
 			int SampleIndex = SampleIterator - container.begin();
 			cout << "The picked Element is: " << SampleIndex << '\n';
@@ -55,9 +59,10 @@ class EnhancedElementSampling {
 				" " << SampleElement[2] << " " <<
 				SampleElement[3] << '\n';
 
-			Point p = container[SampleIndex].getRand()();
+			Point p = container[SampleIndex].getRand()(6);
 			cout << "The generated point is " << p.x() << " " <<
 				p.y() << " " << p.z() << '\n';
+		}
 };
 };
 };
