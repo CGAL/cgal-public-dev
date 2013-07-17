@@ -28,6 +28,7 @@
 
 #include <CGAL/kernel_basic.h>
 #include <CGAL/enum.h>
+#include <CGAL/Point_2.h>
 
 
 namespace CGAL {
@@ -47,6 +48,7 @@ is_inside_triangle_3_aux(const typename K::Vector_3& w,
                          bool& outside,
                          const K& k)
 {
+
   typedef typename K::Vector_3 Vector_3;
   typedef typename K::FT FT;
 
@@ -230,7 +232,196 @@ nearest_point_3(const typename K::Point_3& origin,
   return moved_point;
 }
 
+template <class K>
+inline
+bool
+is_inside_triangle_2_aux(const typename K::Point_2& p1,
+                         const typename K::Point_2& p2,
+                         const typename K::Point_2& q,
+                         typename K::Point_2& result,
+                         bool& outside,
+                         const K& k)
+{
+  typedef typename K::Vector_2 Vector_2;
+  typedef typename K::FT FT;
+
+  typename K::Construct_vector_2 vector =
+    k.construct_vector_2_object();
+  typename K::Construct_projected_point_2 projection =
+    k.construct_projected_point_2_object();
+  typename K::Construct_line_2 line =
+    k.construct_line_2_object();
+  typename K::Compute_scalar_product_2 scalar_product =
+    k.compute_scalar_product_2_object();
+
+  //For 2D it the normal will only contain the z component.
+
+  double CrossProduct = (q.x() - p1.x())*(p2.y() - p1.y()) - (q.y() - p1.y())*(p2.x() - p1.x());
+
+  if ( CrossProduct > FT(0))
+  {
+    if (   scalar_product(vector(p1,q), vector(p1,p2)) >= FT(0)
+        && scalar_product(vector(p2,q), vector(p2,p1)) >= FT(0) )
+    {
+      result = projection(line(p1, p2), q);
+      return true;
+    }
+    outside = true;
+  }
+
+  return false;
+}
+
+
+/**
+ * Returns the nearest point of p1,p2,p3 from origin
+ * @param origin the origin point
+ * @param p1 the first point
+ * @param p2 the second point
+ * @param p3 the third point
+ * @param k the kernel
+ * @return the nearest point from origin
+ */
+template <class K>
+inline
+typename K::Point_2
+nearest_point_2(const typename K::Point_2& origin,
+                const typename K::Point_2& p1,
+                const typename K::Point_2& p2,
+                const typename K::Point_2& p3,
+                const K& k)
+{
+  typedef typename K::FT FT;
+
+  typename K::Compute_squared_distance_2 sq_distance =
+    k.compute_squared_distance_2_object();
+
+  const FT dist_origin_p1 = sq_distance(origin,p1);
+  const FT dist_origin_p2 = sq_distance(origin,p2);
+  const FT dist_origin_p3 = sq_distance(origin,p3);
+
+  if (   dist_origin_p2 >= dist_origin_p1
+      && dist_origin_p3 >= dist_origin_p1 )
+  {
+    return p1;
+  }
+  if ( dist_origin_p3 >= dist_origin_p2 )
+  {
+    return p2;
+  }
+
+  return p3;
+}
+
+/**
+ * @brief returns true if p is inside triangle t. If p is not inside t,
+ * result is the nearest point of t from p. WARNING: it is assumed that
+ * t and p are on the same plane.
+ * @param p the reference point
+ * @param t the triangle
+ * @param result if p is not inside t, the nearest point of t from p
+ * @param k the kernel
+ * @return true if p is inside t
+ */
+template <class K>
+inline
+bool
+is_inside_triangle_2(const typename K::Point_2& p,
+                     const typename K::Triangle_2& t,
+                     typename K::Point_2& result,
+                     const K& k)
+{
+  typedef typename K::Point_2 Point_2;
+  typedef typename K::Vector_2 Vector_2;
+
+  typename K::Construct_vector_2 vector =
+    k.construct_vector_2_object();
+  typename K::Construct_vertex_2 vertex_on =
+    k.construct_vertex_2_object();
+
+  const Point_2& t0 = vertex_on(t,0);
+  const Point_2& t1 = vertex_on(t,1);
+  const Point_2& t2 = vertex_on(t,2);
+
+
+  bool outside = false;
+  if (   is_inside_triangle_2_aux(t0, t1, p, result, outside, k)
+      || is_inside_triangle_2_aux(t1, t2, p, result, outside, k)
+      || is_inside_triangle_2_aux(t2, t0, p, result, outside, k) )
+  {
+    return false;
+  }
+
+  if ( outside )
+  {
+    result = nearest_point_2(p,t0,t1,t2,k);
+    return false;
+  }
+  else
+  {
+    return true;
+  }
+}
+
+/**
+ * @brief Computes the closest_point from origin between bound and
+ * any point of triangle.
+ * @param origin the origin point
+ * @param triangle the triangle
+ * @param bound the farthest point
+ * @param k the kernel
+ * @return nearest point: bound or a point inside triangle
+ */
+template <class K>
+typename K::Point_2
+nearest_point_2(const typename K::Point_2& origin,
+                const typename K::Triangle_2& triangle,
+                const typename K::Point_2& bound,
+                const K& k)
+{
+  typedef typename K::Point_2 Point_2;
+  typedef typename K::FT FT;
+
+  typename K::Compute_squared_distance_2 sq_distance =
+    k.compute_squared_distance_2_object();
+  typename K::Compare_squared_distance_2 compare_sq_distance =
+    k.compare_squared_distance_2_object();
+
+  // Distance from origin to bound
+  const FT bound_sq_dist = sq_distance(origin, bound);
+
+  Point_2 moved_point;
+  bool inside = is_inside_triangle_2(origin,triangle,moved_point,k);
+
+  // If origin is inside triangle, return it
+  if ( inside )
+  {
+    return origin;
+  }
+
+  // Else return the constructed point (nearest point of triangle from origin)
+  // if it is closest to origin than bound
+  if ( compare_sq_distance(origin, moved_point, bound_sq_dist)
+                                                        == CGAL::LARGER )
+  {
+    return bound;
+  }
+
+  return moved_point;
+}
+
 }  // end namespace internal
+
+
+template <class K>
+inline
+Point_2<K>
+nearest_point_2(const Point_2<K>& origin,
+                const Triangle_2<K>& triangle,
+                const Point_2<K>& bound)
+{
+  return internal::nearest_point_2(origin, triangle, bound, K());
+}
 
 
 template <class K>

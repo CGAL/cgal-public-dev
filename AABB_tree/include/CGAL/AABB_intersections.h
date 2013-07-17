@@ -21,4 +21,4 @@
 #include <CGAL/intersections.h>
 
 #include <CGAL/internal/AABB_tree/nearest_point_segment_d.h>
-#include <CGAL/internal/AABB_tree/nearest_point_triangle_3.h>
+#include <CGAL/internal/AABB_tree/nearest_point_triangle_d.h>
