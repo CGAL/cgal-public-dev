@@ -27,9 +27,9 @@ struct Custom_parser_policy :
     //! base class
     typedef CGAL::Mixed_floating_point_parser_policy< Poly_d > Base;
     //! type of polynomial coefficient
-    typedef typename Base::Coeff Coeff;
+    typedef typename Base::Innermost_coefficient_type Innermost_coefficient_type;
 
-    typedef typename CGAL::Get_arithmetic_kernel< Coeff >::
+    typedef typename CGAL::Get_arithmetic_kernel< Innermost_coefficient_type >::
              Arithmetic_kernel AK;
     //! integer number type
     typedef typename AK::Integer Integer;
@@ -40,10 +40,10 @@ struct Custom_parser_policy :
     //! BigFloat type
     typedef typename CGAL::Bigfloat_interval_traits< BFI >::Bound BigFloat;
     //! input coefficient types
-    typedef typename Base::CoeffType CoeffType;
+    typedef typename Base::CoefficientTypeID CoefficientTypeID;
 
-    virtual Coeff read_coeff_proxy(std::istream& is,
-          CoeffType type) const {
+    virtual Innermost_coefficient_type read_coeff_proxy(std::istream& is,
+          CoefficientTypeID type) const {
 
         if(type == Base::COEFF_RATIONAL) {
             Integer num, denom;
@@ -96,22 +96,12 @@ struct Rename_vars_5 : public CGAL::Default_parser_policy < Poly_d_ > {
     //! base class
     typedef CGAL::Default_parser_policy < Poly_d_ > Base;
     //! type of polynomial coefficient
-    typedef typename Base::Coeff Coeff;
-
-    static const int n_var_names = 5;
-    static const char *var_names_lower;
-    static const char *var_names_upper;
+    typedef typename Base::Innermost_coefficient_type Innermost_coefficient_type;
+    
+    Rename_vars_5() :
+        Base("abcde") {
+    }
 };
-
-template < class Poly_d_ >
-const char * Rename_vars_5< Poly_d_ >::
-        var_names_lower = "abcde";
-
-template < class Poly_d_ >
-const char * Rename_vars_5< Poly_d_ >::
-        var_names_upper = "ABCDE";
-
-
 
 template<typename ArithmeticKernel>
 void test_routine() {

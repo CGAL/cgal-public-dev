@@ -1,4 +1,4 @@
-// Copyright (c) 2009-2012 Max-Planck-Institute Saarbruecken (Germany)
+// Copyright (c) 2009-2013 Max-Planck-Institute Saarbruecken (Germany)
 //
 // This file is part of CGAL (www.cgal.org); you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public License as
@@ -15,7 +15,7 @@
 // $Id: Polynomial_type.h 67240 2012-01-18 09:57:46Z afabri $
 //
 //
-// Author(s)     : Pavel Emeliyanenko <asm@mpi-sb.mpg.de>
+// Author(s)     : Pavel Emeliyanenko <asm@mpi-inf.mpg.de>
 //
 // ============================================================================
 
@@ -66,62 +66,81 @@ struct Default_parser_policy {
     typedef Polynomial_d_ Polynomial_d;
     //! coefficient type
     typedef typename  CGAL::Polynomial_traits_d< Polynomial_d >::
-        Innermost_coefficient_type Coeff;
+        Innermost_coefficient_type Innermost_coefficient_type;
 
-    enum CoeffType {
+    enum CoefficientTypeID {
         COEFF_INTEGER,
         COEFF_RATIONAL,
         COEFF_FLOAT
     };
 
-    //! default constructor
-    Default_parser_policy() {
+    //! default constructor which optionally initilizes variable names
+    Default_parser_policy(const char *var_names_ = 0) {
+        _set_var_names(var_names_);
     }
-    
+        
     //! reads in the coefficient from the input stream and converts it
-    //! to \c Coeff type using provided type coercion
+    //! to \c Innermost_coefficient_type type using provided type coercion
     //! \c is points to the first digit character of the coefficient
-    Coeff read_coefficient(std::istream& is) const {
+    Innermost_coefficient_type read_coefficient(std::istream& is) const {
         return read_coeff_proxy(is, COEFF_INTEGER);
     }
 
     //! checking for degree overflow: can be used in real-time applications
-    virtual bool exponent_check(unsigned) const {
+    //! checks if the total degree \c deg of a monomial lies within given boundaries
+    //! and returns \c true in this case
+    virtual bool exponent_check(unsigned deg) const {
+        static_cast< void > (deg);
+        return true;
+    }
+    
+    //! computes a zero-based index of a polynomial variable name \c ch where
+    //! 0 corresponds to an innermost variable while d-1 corresponds to an
+    //! outermost variable (d is the number of polynomial variables)
+    //! if \c ch is not a valid variable name, returns \c false
+    virtual bool check_var_names(char ch, int& idx) const {
+
+        unsigned i;
+        ch = tolower(ch);
+        for(i = 0; i < var_names.size() && var_names[i] != ch; i++);
+        if(i == var_names.size())
+            return false;
+        idx = (int)i;
         return true;
     }
 
-    virtual Coeff read_coeff_proxy(std::istream& is, CoeffType) const {
-        return _read_coeff< Coeff >(is);
+    virtual Innermost_coefficient_type read_coeff_proxy(std::istream& is, CoefficientTypeID) const {
+        return _read_coeff< Innermost_coefficient_type >(is);
     }
 
     virtual ~Default_parser_policy() {
     }
-
-    //! variable names listed in the order from innermost to the outermost
-    //! variable as they appear in the resulting equation
-    static const int n_var_names = 4;    
-    static const char *var_names_lower;
-    static const char *var_names_upper;
-
+    
 protected:
 
     template < class NT >
-    Coeff _read_coeff(std::istream& is) const {
+    Innermost_coefficient_type _read_coeff(std::istream& is) const {
         NT cf;
         is >> CGAL::iformat(cf);
-        typename CGAL::Coercion_traits< NT, Coeff >::Cast cvt;
+        typename CGAL::Coercion_traits< NT, Innermost_coefficient_type >::Cast cvt;
         return cvt(cf);
     }
-
+    
+    void _set_var_names(const char *str) {
+        
+        if(str == 0) { //! set default variable names
+            str = "xyzw";
+        }    
+        int n = strlen(str);
+        var_names = std::vector< char >(n);
+        for(int i = 0; i < n; i++) {
+            var_names[i] = tolower(str[i]);
+        }
+    }
+    
+    //! variable names listed in the order from innermost to the outermost variable
+    std::vector< char > var_names;
 };
-
-template < class Polynomial_d_ >
-const char * Default_parser_policy< Polynomial_d_ >::
-        var_names_lower = "xyzw";
-
-template < class Polynomial_d_ >
-const char * Default_parser_policy< Polynomial_d_ >::
-        var_names_upper = "XYZW";
 
 //! This parser policy allows to mix integer and rational coefficients in a
 //! single equation. Appropriate type coercion with the \c Polynomial_d_ coefficient
@@ -135,27 +154,28 @@ struct Mixed_rational_parser_policy :
     //! base class
     typedef Default_parser_policy< Polynomial_d > Base;
     //! type of polynomial coefficient
-    typedef typename Base::Coeff Coeff;
+    typedef typename Base::Innermost_coefficient_type Innermost_coefficient_type;
 
-    typedef typename CGAL::Get_arithmetic_kernel< Coeff >::
+    typedef typename CGAL::Get_arithmetic_kernel< Innermost_coefficient_type >::
              Arithmetic_kernel AK;
     //! integer number type
     typedef typename AK::Integer Integer;
     //! rational number type
     typedef typename AK::Rational Rational;
     //! input coefficient types
-    typedef typename Base::CoeffType CoeffType;
+    typedef typename Base::CoefficientTypeID CoefficientTypeID;
 
-    //! default constructor
-    Mixed_rational_parser_policy() {
+     //! default constructor which optionally initializes variable names 
+    Mixed_rational_parser_policy(const char *var_names_ = 0) :
+        Base(var_names_) {
     }
-
+    
     //! reads in a rational or integer coefficient from the input stream
     //! depending on whether '/' has been met during parsing and converts
-    //! it to the \c Coeff type using provided coercion
+    //! it to the \c Innermost_coefficient_type type using provided coercion
     //! \c is points to the first digit character of the coefficient
     //! throws \c Parser_exception if error occurred
-    Coeff read_coefficient(std::istream& is) const {
+    Innermost_coefficient_type read_coefficient(std::istream& is) const {
 
         std::stringstream buf;
 
@@ -167,7 +187,7 @@ struct Mixed_rational_parser_policy :
             Base::COEFF_RATIONAL : Base::COEFF_INTEGER);
     }
 
-    virtual Coeff read_coeff_proxy(std::istream& is, CoeffType type)
+    virtual Innermost_coefficient_type read_coeff_proxy(std::istream& is, CoefficientTypeID type)
             const {
 
         if(type == Base::COEFF_INTEGER)
@@ -222,9 +242,9 @@ struct Mixed_floating_point_parser_policy :
     //! base class
     typedef Mixed_rational_parser_policy< Polynomial_d > Base;
     //! type of polynomial coefficient
-    typedef typename Base::Coeff Coeff;
+    typedef typename Base::Innermost_coefficient_type Innermost_coefficient_type;
 
-    typedef typename CGAL::Get_arithmetic_kernel< Coeff >::
+    typedef typename CGAL::Get_arithmetic_kernel< Innermost_coefficient_type >::
              Arithmetic_kernel AK;
     //! integer number type
     typedef typename AK::Integer Integer;
@@ -234,17 +254,18 @@ struct Mixed_floating_point_parser_policy :
     typedef typename CGAL::Bigfloat_interval_traits<
             typename AK::Bigfloat_interval >::Bound BigFloat;
     //! input coefficient types
-    typedef typename Base::CoeffType CoeffType;
+    typedef typename Base::CoefficientTypeID CoefficientTypeID;
 
-    //! default constructor
-    Mixed_floating_point_parser_policy() {
+    //! default constructor which optionally initializes variable names 
+    Mixed_floating_point_parser_policy(const char *var_names_ = 0) :
+        Base(var_names_) {
     }
 
     //! allows mixing of integer, rational and floating-point coefficients
     //! in a single equation
     //! \c is points to the first digit character of the coefficient
     //! throws \c Parser_exception if an error occurred
-    Coeff read_coefficient(std::istream& is) const {
+    Innermost_coefficient_type read_coefficient(std::istream& is) const {
 
         std::stringstream buf;
         bool read_rational; // recognised as rational coeff
@@ -297,7 +318,7 @@ struct Mixed_floating_point_parser_policy :
                 Base::COEFF_FLOAT));
     }
 
-    virtual Coeff read_coeff_proxy(std::istream& is, CoeffType type)
+    virtual Innermost_coefficient_type read_coeff_proxy(std::istream& is, CoefficientTypeID type)
             const {
 
         if(type == Base::COEFF_INTEGER)
@@ -332,7 +353,7 @@ struct Polynomial_parser_d
     typedef CGAL::Polynomial_traits_d< Polynomial_d > PT;
 
     //! polynomial coefficient type
-    typedef typename Policy::Coeff NT;
+    typedef typename Policy::Innermost_coefficient_type NT;
     //! multivariate dimension
     static const int d = CGAL::internal::Dimension< Polynomial_d >::value;
 
@@ -399,8 +420,9 @@ protected:
         int count = 0;
         std::size_t pos = 0, start = is.tellg(); // save pos of the first '('
         do {
-            if(is.eof())
-            return -1; // illegal number of parentheses
+            if(is.eof() || is.tellg() == (std::streampos)-1) {
+                return (std::size_t)-1u; // illegal number of parentheses
+            }
             char ch = is.peek();
             if(ch == '(')
                 count++;
@@ -425,20 +447,6 @@ protected:
         return monom;
     }
 
-    bool check_var_names(char ch, int& idx) {
-
-        int i;
-        for(i = 0; i < Policy::n_var_names; i++) {
-            if(Policy::var_names_lower[i] == ch ||
-                    Policy::var_names_upper[i] == ch)
-                break;
-        }
-        if(i == Policy::n_var_names || i >= d)
-            return false;
-        idx = i;
-        return true;
-    }
-
     void get_basic_term(std::istringstream& is, Polynomial_d& res)
     {
         char ch = is.peek();
@@ -452,7 +460,7 @@ protected:
             coeff = policy.read_coefficient(is);
             which_case = 0; // number
         
-        } else if(check_var_names(ch, idx)) {
+        } else if(policy.check_var_names(ch, idx) && idx < d) {
             which_case = 1;
             /* char var = */ is.get();
             
@@ -472,7 +480,7 @@ protected:
             which_case = 2;
 
         } else {
-            printf("############ch: %c\n", ch);
+            printf("############ ch: %c\n", ch);
             throw internal::Parser_exception("Error in parsing basic term");
         }
 

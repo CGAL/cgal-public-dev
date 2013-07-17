@@ -164,7 +164,7 @@ P[8(0,P[8(0,P[8(0,2)(2,-16)(4,80)(6,-128)(8,64)])(2,P[0(0,-16)])(4,P[0(0,80)])\\
 \begin{ccHtmlOnly}
 <span>oops..</span>
 \end{ccHtmlOnly}
-which corresponds to the following trivariate polynomial:
+\noindent which corresponds to the following trivariate polynomial:
 \begin{ccTexOnly}
 \[\begin{array}{l}
 64z^8 + (-128)z^6 + 80z^4 + (-16)z^2 + (64y^8 + (-128)y^6 + 80y^4 + (-16)y^2 + \\
@@ -174,8 +174,12 @@ which corresponds to the following trivariate polynomial:
 \begin{ccHtmlOnly}
 <span>oops..</span>
 \end{ccHtmlOnly}
+\noindent Apparently, parsing polynomials in the latter form has many advantages.
 The parser can handle polynomials in any number of indeterminates (variables) and 
-can parse arbitrary algebraic expressions, e.g., those of the form: 
+can parse any algebraic expression (with arbitrary number of parantheses) 
+which involves addition, subtraction, multiplication,
+and rasing to the (positive) integer power operations. It also supports an equality `\ccc{=}' operator. 
+For example, the following expressions are valid: 
 \begin{ccTexOnly}
 \[\begin{array}{l}
 ((y-1)^4 - x*y^3)^5 + (x + z)^2 - (2123234523*x^2 - 2*y*y*x + 3^{10}*x*132123)^3,\\
@@ -191,7 +195,7 @@ The parser is configured via the so-called \ccc{parser policy} provided as a tem
 There are three parser policies available by default:
 
 \begin{itemize}
-\item \ccc{Default_parser_policy}: parses polynomials "as is". In other words, coefficients of the type
+\item \ccc{Default_parser_policy}: no type conversions are performed. In other words, coefficients of the type
 \ccc{Innermost_coefficient_type} of the target polynomial are read directly from the input stream;
 \item \ccc{Mixed_rational_parser_policy}: extends \ccc{Default_parser_policy}, and allows mixing coefficients of integer and rational number types in the same expression;
 \item \ccc{Mixed_floating_point_parser_policy}: extends \ccc{Mixed_rational_parser_policy}, and allows mixing the coefficients of integer, rational and floating-point number types in the same expression.
@@ -495,9 +499,9 @@ introduced the \ccc{CGAL::Polynomial_traits_d<Polynomial_d>} giving also
 the symmetric view on polynomials and the opportunity to introduce and use
 other classes representing polynomials within \cgal. 
 
-The class \ccc{CGAL::Polynomial_parser_d< Poly_d_, ParserPolicy >} has been developed
+The class \ccc{CGAL::Polynomial_parser_d< Polynomial_d_, ParserPolicy >} has been developed
 by Pavel Emeliyanenko. It has evolved from a polynomial parser developed 
-specifically for \textsc{xAlci} web-demo in \exacus project. Later on, with the emergence of
+specifically for \textsc{xAlci} web-demo in \exacus\ project. Later on, with the emergence of
 polynomial traits, the parser has been redesigned providing the support for 
 multivariate polynomials and parser policy.
 

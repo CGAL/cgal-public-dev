@@ -7,7 +7,7 @@
 #include <CGAL/Gmpq.h>
 
 int main() {
-   typedef typename CGAL::Polynomial_type_generator<CGAL::Gmpq,2>::Type 
+   typedef CGAL::Polynomial_type_generator<CGAL::Gmpq,2>::Type 
       Polynomial_2;
     
       // parse bivariate polynomials with large integer, rational and fp coefficients

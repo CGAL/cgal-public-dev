@@ -6,7 +6,7 @@
 
 int main() {
 
-   typedefs CGAL::Polynomial_type_generator< double,2 >::Type
+   typedef CGAL::Polynomial_type_generator< double,2 >::Type
       Poly_double_2;
    
       // parse bivariate polynomial with double-precision coefficients
