@@ -280,51 +280,6 @@ void Random_points_in_tetrahedron_3<P, Creator>::generate_point() {
 	}
 	this->d_item = creator(ret[0],ret[1],ret[2]);
 }
-/*
-template < class P, class Creator = 
-Creator_uniform_3<typename Kernel_traits<P>::Kernel::RT,P> >
-class Random_points_in_mesh_3 : public Random_generator_base<P> {
-	P _mesh;
-	void generate_point();
-public:
-	typedef Random_points_in_mesh_3<P> This;
-	Random_points_in_mesh_3() {}
-	Random_points_in_mesh_3( const P& mesh, Random& rnd = default_random)
-	: Random_generator_base<P>( 1, rnd ),_mesh(mesh) {
-		generate_point();
-	}
-	This& operator++() {
-		generate_point();
-		return *this;
-	}
-	This operator++(int) {
-		This tmp = *this;
-		++(*this);
-		return tmp;
-	}
-};
-
-template<class P, class Creator >
-void Random_points_in_mesh_3<P, Creator>::generate_point() {
-	typedef typename Creator::argument_type T;
-	Creator creator;
-	double a[3];
-	for(int i = 0; i < 3; ++i) {
-		a[i]=this->_rnd.get_double(0,1);
-	}
-	std::sort(a,a+3);
-	double b[4];
-	b[0]=a[0];
-	b[1]=a[1]-a[0];
-	b[2]=a[2]-a[1];
-	b[3]=1.0-a[2];
-	T ret[3];
-	for(int i = 0; i < 3; ++i) {
-	    ret[i] = T(to_double(_p[i])*b[0]+to_double(_q[i])*b[1]+to_double(_r[i])*b[2]+to_double(_s[i])*b[3]);
-	}
-	this->d_item = creator(ret[0],ret[1],ret[2]);
-}
-*/
 
 // @param:
 // 	n = number of points that will be generated
