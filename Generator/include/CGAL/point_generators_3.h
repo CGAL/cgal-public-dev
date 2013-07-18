@@ -244,11 +244,27 @@ class Random_points_in_tetrahedron_3 : public Random_generator_base<P> {
 	void generate_point();
 public:
 	typedef Random_points_in_tetrahedron_3<P> This;
+	typedef typename Kernel_traits<P>::Kernel::Tetrahedron_3 Tetrahedron_3;
 	Random_points_in_tetrahedron_3() {}
+	Random_points_in_tetrahedron_3( const This& x,Random& rnd = default_random)
+	: Random_generator_base<P>( 1, rnd ),_p(x._p),_q(x._q),_r(x._r),_s(x._s) {
+		generate_point();
+	}
 	Random_points_in_tetrahedron_3( const P& p, const P& q, const P& r, const P& s,Random& rnd = default_random)
 	: Random_generator_base<P>( 1, rnd ),_p(p),_q(q),_r(r),_s(s) {
 		generate_point();
 	}
+	Random_points_in_tetrahedron_3( const Tetrahedron_3& tetrahedron,Random& rnd = default_random)
+	: Random_generator_base<P>( 1, rnd),_p(tetrahedron[0]),_q(tetrahedron[1]),_r(tetrahedron[2]),_s(tetrahedron[3]) {
+		generate_point();
+	}
+//	This& operator=(This& x) {
+//		_p = x._p;
+//		_q = x._q;
+//		_r = x._r;
+//		_s = x._s;
+//		return *this;
+//	}
 	This& operator++() {
 		generate_point();
 		return *this;
@@ -258,6 +274,12 @@ public:
 		++(*this);
 		return tmp;
 	}
+//	P operator() () {
+//		std::vector<P> points;
+//		CGAL::cpp11::copy_n(*this,
+//				1, std::back_inserter(points));
+//		return points[0];
+//	}
 };
 
 template<class P, class Creator >
@@ -314,7 +336,8 @@ Random_points_in_mesh_3( int n, Element_RandomAccessIterator el_begin,
 		typename std::vector<CGAL::internal::Weighted_random_element<PointGeneratorFunctor> >::iterator SampleIterator = upper_bound(container.begin(), container.end(), tmp);
 		int SampleIndex = SampleIterator - container.begin();
 		Element_RandomAccessIterator SampleElement = el_begin + SampleIndex;
-		*o++ = container[SampleIndex].getRand()();
+		//*o++ = container[SampleIndex].getRand()();
+		CGAL::cpp11::copy_n(container[SampleIndex].getRand,1, std::back_inserter(o));
 	}
 	return o;
 }
