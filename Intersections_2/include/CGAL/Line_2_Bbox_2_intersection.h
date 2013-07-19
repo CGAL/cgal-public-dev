@@ -1,4 +1,4 @@
-// Copyright (c) 2000  
+// Copyright (c) 2013
 // Utrecht University (The Netherlands),
 // ETH Zurich (Switzerland),
 // INRIA Sophia-Antipolis (France),
@@ -20,6 +20,39 @@
 // $Id$
 // 
 //
-// Author(s)     : Geert-Jan Giezeman
+// Author(s)     : Andreas Fabri
 
-#include <CGAL/Bbox_2_Line_2_intersection.h>
+
+#ifndef CGAL_LINE_2_BBOX_2_INTERSECTION_H
+#define CGAL_LINE_2_BBOX_2_INTERSECTION_H
+
+#include <CGAL/Bbox_2.h>
+#include <CGAL/Line_2.h>
+#include <CGAL/Iso_rectangle_2.h>
+
+namespace CGAL {
+
+
+template <class R>
+inline bool do_intersect(const Line_2<R> &t,
+                         const Bbox_2 &box)
+{
+  typename R::Iso_rectangle_2 ir(box);
+  return do_intersect(t, ir);
+}
+
+
+template <class R>
+inline bool do_intersect(const Bbox_2 &box,
+                         const Line_2<R> &t)
+{
+  typename R::Iso_rectangle_2 ir(box);
+  return do_intersect(t, ir);
+}
+
+
+} //namespace CGAL
+
+
+
+#endif

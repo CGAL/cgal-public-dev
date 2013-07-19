@@ -37,7 +37,7 @@ template <class R>
 inline bool do_intersect(const Segment_2<R> &s,
                          const Bbox_2 &box)
 {
-  typename K::Iso_rectangle_2 ir(box);
+  typename R::Iso_rectangle_2 ir(box);
   return do_intersect(s, ir);
 }
 
@@ -46,7 +46,7 @@ template <class R>
 inline bool do_intersect(const Bbox_2 &box,
                          const Segment_2<R> &s)
 {
-  typename K::Iso_rectangle_2 ir(box);
+  typename R::Iso_rectangle_2 ir(box);
   return do_intersect(s, ir);
 }
 
