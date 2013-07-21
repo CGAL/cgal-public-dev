@@ -32,10 +32,8 @@
 #include <algorithm>
 
 #include <iostream>
-#include <CGAL/Implicit_mesh_domain_3.h>
 #include <CGAL/Mesh_triangulation_3.h>
 #include <CGAL/Mesh_complex_3_in_triangulation_3.h>
-#include <CGAL/Mesh_criteria_3.h>
 
 namespace CGAL {
 
@@ -209,9 +207,19 @@ class Random_points_in_triangle_3 : public Random_generator_base<P> {
 	void generate_point();
 public:
 	typedef Random_points_in_triangle_3<P> This;
+	typedef typename Kernel_traits<P>::Kernel::Triangle_3 Triangle_3;
 	Random_points_in_triangle_3() {}
+	Random_points_in_triangle_3( const This& x,Random& rnd = default_random)
+	: Random_generator_base<P>( 1, rnd ),_p(x._p),_q(x._q),_r(x._r) {
+		generate_point();
+	}
 	Random_points_in_triangle_3( const P& p, const P& q, const P& r, Random& rnd = default_random)
 	: Random_generator_base<P>( 1, rnd ),_p(p),_q(q),_r(r) {
+		generate_point();
+	}
+	Random_points_in_triangle_3( const Triangle_3& triangle,Random& rnd = default_random)
+	: Random_generator_base<P>( 1,
+			rnd),_p(triangle[0]),_q(triangle[1]),_r(triangle[2]) {
 		generate_point();
 	}
 	This& operator++() {
