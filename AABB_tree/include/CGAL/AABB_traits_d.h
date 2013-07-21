@@ -134,8 +134,7 @@ struct AABB_traits_d <GeomTraits , AABBPrimitive ,2>:public internal::AABB_tree:
 
   /// @}
 
-  typedef typename GeomTraits::Circle_2 Circle_d;
-   typedef typename GeomTraits::Circle_2 Sphere_d;
+  typedef typename GeomTraits::Circle_2 Sphere_d;
 
   typedef typename GeomTraits::Cartesian_const_iterator_2 Cartesian_const_iterator_d;
   typedef typename GeomTraits::Construct_cartesian_const_iterator_2 Construct_cartesian_const_iterator_d;
@@ -195,7 +194,7 @@ struct AABB_traits_d <GeomTraits , AABBPrimitive ,2>:public internal::AABB_tree:
        bool operator()(const Query& q, const Bounding_box& bbox) const
        {
 
-   		return GeomTraits().do_intersect_2_object()(q, (IsoRect) bbox);
+   		return CGAL::do_intersect(q, bbox);
        }
 
        template<typename Query>
@@ -354,16 +353,13 @@ struct AABB_traits_d < GeomTraits , AABBPrimitive ,3>:public internal::AABB_tree
 
   typedef typename GeomTraits::Point_3 Point_d;
 
-
   typedef typename GeomTraits::Iso_cuboid_3 Iso_box_d;
 
 
   typedef typename CGAL::Bbox_3 Bounding_box;
 
 
-
   typedef typename GeomTraits::Sphere_3 Sphere_d;
-   typedef typename GeomTraits::Sphere_3 Sphere_d;
 
   typedef typename GeomTraits::Cartesian_const_iterator_3 Cartesian_const_iterator_d;
   typedef typename GeomTraits::Construct_cartesian_const_iterator_3 Construct_cartesian_const_iterator_d;
