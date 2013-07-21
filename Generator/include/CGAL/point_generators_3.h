@@ -31,6 +31,12 @@
 #include <vector>
 #include <algorithm>
 
+#include <iostream>
+#include <CGAL/Implicit_mesh_domain_3.h>
+#include <CGAL/Mesh_triangulation_3.h>
+#include <CGAL/Mesh_complex_3_in_triangulation_3.h>
+#include <CGAL/Mesh_criteria_3.h>
+
 namespace CGAL {
 
 template < class P, class Creator = 
@@ -258,13 +264,6 @@ public:
 	: Random_generator_base<P>( 1, rnd),_p(tetrahedron[0]),_q(tetrahedron[1]),_r(tetrahedron[2]),_s(tetrahedron[3]) {
 		generate_point();
 	}
-//	This& operator=(This& x) {
-//		_p = x._p;
-//		_q = x._q;
-//		_r = x._r;
-//		_s = x._s;
-//		return *this;
-//	}
 	This& operator++() {
 		generate_point();
 		return *this;
@@ -274,12 +273,6 @@ public:
 		++(*this);
 		return tmp;
 	}
-//	P operator() () {
-//		std::vector<P> points;
-//		CGAL::cpp11::copy_n(*this,
-//				1, std::back_inserter(points));
-//		return points[0];
-//	}
 };
 
 template<class P, class Creator >
@@ -303,13 +296,14 @@ void Random_points_in_tetrahedron_3<P, Creator>::generate_point() {
 	this->d_item = creator(ret[0],ret[1],ret[2]);
 }
 
+/*
 // @param:
 // 	n = number of points that will be generated
 template<typename OutputIterator, typename Element_RandomAccessIterator,
 	typename VolumeElementFunctor, typename PointGeneratorFunctor>
 OutputIterator
-Random_points_in_mesh_3( int n, Element_RandomAccessIterator el_begin,
-		Element_RandomAccessIterator el_end, OutputIterator o)
+Random_points_in_mesh_3( Element_RandomAccessIterator el_begin,
+		Element_RandomAccessIterator el_end,)
 {
 	int N = el_end - el_begin;
 	std::vector<CGAL::internal::Weighted_random_element<PointGeneratorFunctor> > container;
@@ -336,11 +330,101 @@ Random_points_in_mesh_3( int n, Element_RandomAccessIterator el_begin,
 		typename std::vector<CGAL::internal::Weighted_random_element<PointGeneratorFunctor> >::iterator SampleIterator = upper_bound(container.begin(), container.end(), tmp);
 		int SampleIndex = SampleIterator - container.begin();
 		Element_RandomAccessIterator SampleElement = el_begin + SampleIndex;
-		//*o++ = container[SampleIndex].getRand()();
+		// *o++ = container[SampleIndex].getRand()();
 		CGAL::cpp11::copy_n(container[SampleIndex].getRand,1, std::back_inserter(o));
 	}
 	return o;
 }
+*/
+
+// @template
+// 	P = type of points
+// 	C3t3 = type of mesh
+template < class Tri, class P, class C3t3, class VolumeElementFunctor, class
+PointGeneratorFunctor, class Creator = 
+Creator_uniform_3<typename Kernel_traits<P>::Kernel::RT,P> >
+class Random_points_in_mesh_3 : public Random_generator_base<P> {
+	C3t3 _c3t3;
+	void generate_point();
+public:
+	typedef Random_points_in_mesh_3<Tri, P, C3t3, VolumeElementFunctor,
+		PointGeneratorFunctor> This;
+	Random_points_in_mesh_3() {}
+	Random_points_in_mesh_3( const C3t3& c3t3, Random& rnd = default_random)
+	: Random_generator_base<P>( 1, rnd ),_c3t3(c3t3) {
+		generate_point();
+	}
+	This& operator++() {
+		generate_point();
+		return *this;
+	}
+	This operator++(int) {
+		This tmp = *this;
+		++(*this);
+		return tmp;
+	}
+};
+
+
+template<class Tri, class P, class C3t3, class VolumeElementFunctor, class
+PointGeneratorFunctor, class Creator >
+void Random_points_in_mesh_3<Tri, P,C3t3, VolumeElementFunctor,
+     PointGeneratorFunctor, Creator>::generate_point() {
+	typedef typename Creator::argument_type T;
+	typedef typename Kernel_traits<P>::Kernel::Tetrahedron_3 Tetrahedron_3;
+	Creator creator;
+
+	std::cout << "Actual number of cells in _c3t3 in complex: " <<
+		_c3t3.number_of_cells_in_complex() << "\n";
+	
+	Tri tr = _c3t3.triangulation();
+	int Nr_cells = _c3t3.number_of_cells_in_complex();
+	Tetrahedron_3 *tetra;
+	tetra = new Tetrahedron_3[Nr_cells];
+	int i = 0;
+	typename Tri::Finite_cells_iterator iter = tr.finite_cells_begin();
+	for ( ; iter != tr.finite_cells_end(); ++iter) {
+		if (_c3t3.is_in_complex(iter)) {
+			tetra[i] = tr.tetrahedron(iter);
+			i++;
+		} else {
+			Nr_cells--;
+		}
+	}
+
+
+	std::vector<CGAL::internal::Weighted_random_element<PointGeneratorFunctor> > container;
+	container.reserve(Nr_cells);
+	for (int i = 0; i < Nr_cells; i++) {
+		VolumeElementFunctor volElem(tetra[i]);
+		double weight = volElem();
+		double presum = (i == 0 ? weight : weight +
+				container[i-1].getPresum());
+		PointGeneratorFunctor randGen(tetra[i][0], tetra[i][1],
+				tetra[i][2], tetra[i][3]);
+		CGAL::internal::Weighted_random_element<PointGeneratorFunctor> aux(randGen, presum);
+		container[i] = aux;
+	}
+
+	CGAL::Random rand;
+	double tmp_presum = rand.get_double(0,
+			container[Nr_cells-1].getPresum());
+	CGAL::internal::Weighted_random_element<PointGeneratorFunctor>
+		tmp(tmp_presum);
+	typename std::vector<CGAL::internal::Weighted_random_element<PointGeneratorFunctor> >::iterator SampleIterator = upper_bound(container.begin(), container.end(), tmp);
+	int SampleIndex = SampleIterator - container.begin();
+	Tetrahedron_3 SampleElement = tetra[SampleIndex];
+
+	std::vector<P> ret;
+	ret.reserve(1);
+
+	CGAL::cpp11::copy_n(container[SampleIndex].getRand(),1,
+			std::back_inserter(ret));
+
+	this->d_item = creator(ret[0].x(),ret[1].y(),ret[2].z());
+	delete[] tetra;
+}
+
 } //namespace CGAL
 
 #endif // CGAL_POINT_GENERATORS_3_H //

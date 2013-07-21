@@ -44,6 +44,7 @@ typedef CGAL::Mesh_criteria_3<Tr> Mesh_criteria;
 typedef Tr::Geom_traits GT;
 typedef GT::Tetrahedron_3 Tetrahedron3;
 
+typedef CGAL::Creator_uniform_3<double,Point>  Creator;
 // To avoid verbose function and named parameters call
 using namespace CGAL::parameters;
 
@@ -107,35 +108,38 @@ void benchmark() {
 	std::ofstream medit_file("out.mesh");
 	c3t3.output_to_medit(medit_file);
 	
-	//TODO: why is there a difference between the number of cells in c3t3
-	//and the number of cells in the triangulation obtained from c3t3 ???
-	cout << "Actual number of cells in c3t3: " << c3t3.number_of_cells() << "\n";
-	
-	Tr tr = c3t3.triangulation();
-	int Nr_cells = tr.number_of_finite_cells();
-	cout << "Actual number of cells in triangulation: " <<
-		tr.number_of_finite_cells() << "\n";
-	Tetrahedron3 *tetra;
-	tetra = new Tetrahedron3[Nr_cells];
-	int i = 0;
-	Tr::Finite_cells_iterator iter = tr.finite_cells_begin();
-	for ( ; iter != tr.finite_cells_end(); ++iter) {
-		tetra[i] = tr.tetrahedron(iter);
-		i++;
-	}
+//	cout << "Actual number of cells in c3t3 in complex: " <<
+//		c3t3.number_of_cells_in_complex() << "\n";
+//	
+//	Tr tr = c3t3.triangulation();
+//	int Nr_cells = c3t3.number_of_cells_in_complex();
+//	Tetrahedron3 *tetra;
+//	tetra = new Tetrahedron3[Nr_cells];
+//	int i = 0;
+//	Tr::Finite_cells_iterator iter = tr.finite_cells_begin();
+//	for ( ; iter != tr.finite_cells_end(); ++iter) {
+//		if (c3t3.is_in_complex(iter2)) {
+//			tetra[i] = tr.tetrahedron(iter2);
+//			i++;
+//		} else {
+//			Nr_cells--;
+//		}
+//	}
 	
 	std::vector<Point> points;
 	points.reserve(5);
 	std::vector<Point>::iterator it = points.begin();
-	CGAL::Random_points_in_mesh_3 <std::vector<Point>::iterator, Tetrahedron3 *, VolTetrahedron,
-		PointGen> (3, tetra, tetra+Nr_cells, it);
+	CGAL::Random_points_in_mesh_3 <Tr, Point, C3t3, VolTetrahedron,
+		CGAL::Random_points_in_tetrahedron_3<Point> > g;
 
-	for (int i = 0; i < 3; i++) {
+	
+	CGAL::cpp11::copy_n( g, 2, std::back_inserter(points));
+
+	for (int i = 0; i < 2; i++) {
 		cout << points[i].x() << " " << points[i].y() << " " <<
 			points[i].z() << '\n';
 	}
 
-	delete[] tetra;
 }
 
 int main() {

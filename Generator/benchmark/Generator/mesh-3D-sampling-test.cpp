@@ -49,18 +49,19 @@ class PointGen {
 			t = T;
 		}
 
-		PointGen(const PointGen &p) {
-			this->t = p.t;
-		}
+//		PointGen(const PointGen &p) {
+//			this->t = p.t;
+//		}
 
-		PointGen operator= (const PointGen x) {
-			this->t = x.t;
-			return *this;
-		}
+//		PointGen operator= (const PointGen x) {
+//			this->t = x.t;
+//			return *this;
+//		}
 
 		Point operator() (int q) {
 			vector<Point> points;
-			CGAL::cpp11::copy_n(CGAL::Random_points_in_tetrahedron_3<Point>(t[0], t[1], t[2], t[3]),
+			//CGAL::cpp11::copy_n(CGAL::Random_points_in_tetrahedron_3<Point>(t[0], t[1], t[2], t[3]),
+			CGAL::cpp11::copy_n(CGAL::Random_points_in_tetrahedron_3<Point>(t),
 					1, std::back_inserter(points));
 			return points[0];
 		}
@@ -100,14 +101,10 @@ int main()
 	std::ofstream medit_file("out.mesh");
 	c3t3.output_to_medit(medit_file);
 	
-	//TODO: why is there a difference between the number of cells in c3t3
-	//and the number of cells in the triangulation obtained from c3t3 ???
-	cout << "Actual number of cells in c3t3: " << c3t3.number_of_cells() << "\n";
+	cout << "Actual number of cells in c3t3: " << c3t3.number_of_cells_in_complex() << "\n";
 	
 	Tr tr = c3t3.triangulation();
 	int Nr_cells = tr.number_of_finite_cells();
-	cout << "Actual number of cells in triangulation: " <<
-		tr.number_of_finite_cells() << "\n";
 	Tetrahedron3 *tetra;
 	tetra = new Tetrahedron3[Nr_cells];
 	int i = 0;

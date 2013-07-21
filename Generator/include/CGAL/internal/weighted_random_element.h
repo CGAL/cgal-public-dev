@@ -27,7 +27,7 @@ class Weighted_random_element {
 			return _presum;
 		}
 
-		MyRandom getRand() {
+		MyRandom& getRand() {
 			return _rand;
 		}
 
@@ -36,7 +36,7 @@ class Weighted_random_element {
 		}
 
 		Weighted_random_element& operator=(const Weighted_random_element &x) {
-			this->_rand = x._rand;
+			this->_rand = MyRandom(x._rand);
 			this->_presum = x._presum;
 			return *this;
 		}
