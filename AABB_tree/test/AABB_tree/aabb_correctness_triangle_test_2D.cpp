@@ -35,7 +35,6 @@
 #include <CGAL/AABB_tree.h>
 #include <CGAL/AABB_traits.h>
 #include <CGAL/AABB_triangle_primitive.h>
-#include <CGAL/Sphere_3.h>
 
 typedef CGAL::Simple_cartesian<double>  K;
 
@@ -66,8 +65,6 @@ bool load_triangle_set(LIST &list)
 template <typename K>
 int test()
 {
-	typedef typename K::Sphere_3 Sphere;
-	typedef typename K::Point_3 Poi;
 	// types
 	typedef typename K::FT FT;
 	typedef typename K::Line_2 Line;
@@ -75,9 +72,6 @@ int test()
 	typedef typename K::Segment_2 Segment;
 	typedef typename K::Triangle_2 Triangle;
 
-	Sphere sp1;
-	sp1 = K().construct_sphere_3_object()(Poi(0,0,0),Poi(2,2,2));
-	
 	// load simple triangle set
 	typedef std::list<Triangle> List_Triangle;
 	List_Triangle triangles;
