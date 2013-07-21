@@ -47,7 +47,7 @@ namespace CGAL {
    * hierarchy of axis-aligned bounding boxes (an AABB tree) from a set
    * of 2D/3D geometric objects, and can receive intersection and distance
    * queries, provided that the corresponding predicates are
-   * implemented in the traits class AABBTraits.
+   * implemented in the traits class `AABBTraits`.
    * An instance of the class `AABBTraits` is internally stored.
    *
    * \sa `AABBTraits`
@@ -75,6 +75,7 @@ namespace CGAL {
 
 
     /// Type of point.
+		typedef typename AABBTraits::Point_d Point_d;
 		typedef typename AABBTraits::Point_d Point;
 
     /// Type of input primitive.
@@ -402,7 +403,7 @@ public:
     /// first distance query, so that an internal secondary search
     /// structure is build, for improving performance.
 		/// \pre `!empty()`
-		FT squared_distance(const Point& query) const;
+		FT squared_distance(const Point_d& query) const;
 
     /// Returns the point in the union of all input primitives which
     /// is closest to the query. In case there are several closest
@@ -412,7 +413,7 @@ public:
     /// secondary search structure is build, for improving
     /// performance.
 		/// \pre `!empty()`
-		Point closest_point(const Point& query) const;
+		Point_d closest_point(const Point_d& query) const;
 
     
     /// Returns a `Point_and_primitive_id` which realizes the
@@ -422,7 +423,7 @@ public:
     /// secondary search structure is build, for improving
     /// performance.
 		/// \pre `!empty()`
-		Point_and_primitive_id closest_point_and_primitive(const Point& query) const;
+		Point_and_primitive_id closest_point_and_primitive(const Point_d& query) const;
 
 
     ///@}
@@ -508,20 +509,20 @@ public:
     /// Returns the minimum squared distance between the query point
     /// and all input primitives. The internal KD-tree is not used.
 		/// \pre `!empty()`
-		FT squared_distance(const Point& query, const Point& hint) const;
+		FT squared_distance(const Point_d& query, const Point_d& hint) const;
 
     /// Returns the point in the union of all input primitives which
     /// is closest to the query. In case there are several closest
     /// points, one arbitrarily chosen closest point is returned. The
     /// internal KD-tree is not used.
 		/// \pre `!empty()`
-		Point closest_point(const Point& query, const Point& hint) const;
+		Point_d closest_point(const Point_d& query, const Point_d& hint) const;
     
     /// Returns a `Point_and_primitive_id` which realizes the
     /// smallest distance between the query point and all input
     /// primitives. The internal KD-tree is not used.
 		/// \pre `!empty()`
-		Point_and_primitive_id closest_point_and_primitive(const Point& query, const Point_and_primitive_id& hint) const;
+		Point_and_primitive_id closest_point_and_primitive(const Point_d& query, const Point_and_primitive_id& hint) const;
 
     ///@}
 
@@ -581,7 +582,7 @@ public:
 		}
 
 	public:
-		Point_and_primitive_id best_hint(const Point& query) const
+		Point_and_primitive_id best_hint(const Point_d& query) const
 		{
 			if(m_search_tree_constructed)
 				return m_p_search_tree->closest_point(query);

@@ -19,7 +19,6 @@
 // Author(s)     : Sebastien Loriot
 //
 
-
 #ifndef CGAL_AABB_SEGMENT_PRIMITIVE_H_
 #define CGAL_AABB_SEGMENT_PRIMITIVE_H_
 

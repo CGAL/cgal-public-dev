@@ -24,7 +24,7 @@ Value type of the `Squared_distance` functor.
 typedef unspecified_type FT; 
 
 /*! 
-Type of a d-Dimensional point.
+Type of a 2 or 3-dimensional point.
 */ 
 typedef unspecified_type Point_d;
 
@@ -58,7 +58,8 @@ typedef std::pair<Point_d, Primitive::Id> Point_and_primitive_id;
 typedef std::pair<Object, Primitive::Id> Object_and_primitive_id;
 
 
-/*!  A nested class template providing as a pair the intersection result of a `Query` object
+/*!  
+A nested class template providing as a pair the intersection result of a `Query` object
 and a `Primitive::Datum`, together with the `Primitive::Id` of the primitive intersected.
 The type of the pair is given by the nested type `Type`.
 */
@@ -75,18 +76,18 @@ The type of the pair is given by the nested type `Type`.
 /// @{
 
 /*! 
-A functor object to split a range of primitives into two sub-ranges along the X-axis. Provides the operator: 
-`void operator()(InputIterator first, InputIterator beyond);` %Iterator type `InputIterator` must be a model of RandomAccessIterator and have `Primitive` as value type. The operator is used for determining the primitives assigned to the two children nodes of a given node, assuming that the goal is to split the X-dimension of the bounding box of the node. The primitives assigned to this node are passed as argument to the operator. It should modify the iterator range in such a way that its first half and its second half correspond to the two children nodes. 
+A functor object to split a range of primitives into two sub-ranges along the `x`-axis. Provides the operator: 
+`void operator()(InputIterator first, InputIterator beyond);` %Iterator type `InputIterator` must be a model of RandomAccessIterator and have `Primitive` as value type. The operator is used for determining the primitives assigned to the two children nodes of a given node, assuming that the goal is to split the `x`-dimension of the bounding box of the node. The primitives assigned to this node are passed as argument to the operator. It should modify the iterator range in such a way that its first half and its second half correspond to the two children nodes. 
 */ 
 typedef unspecified_type Split_primitives_along_x_axis; 
 
 /*! 
-A functor object to split a range of primitives into two sub-ranges along the Y-axis. See `Split_primitives_along_x_axis` for the detailed description. 
+A functor object to split a range of primitives into two sub-ranges along the `y`-axis. See `Split_primitives_along_x_axis` for the detailed description. 
 */ 
 typedef unspecified_type Split_primitives_along_y_axis; 
 
 /*! 
-A functor object to split a range of primitives into two sub-ranges along the Z-axis. See `Split_primitives_along_x_axis` for the detailed description. 
+A functor object to split a range of primitives into two sub-ranges along the `z`-axis. See `Split_primitives_along_x_axis` for the detailed description. 
 */ 
 typedef unspecified_type Split_primitives_along_z_axis; 
 
@@ -135,7 +136,7 @@ typedef unspecified_type Intersect;
 
 /*! 
 A functor object to compute distance comparisons between the query and the nodes of the tree. Provides the operators: 
-`bool operator()(const Query & query, const Bounding_box& box, const Point & closest);` which returns `true` iff the bounding box is closer to `query` than `closest` is, and `bool operator()(const Query & query, const Primitive & primitive, const Point & closest);` which returns `true` iff `primitive` is closer to the `query` than `closest` is. 
+`bool operator()(const Query & query, const Bounding_box& box, const Point_d & closest);` which returns `true` iff the bounding box is closer to `query` than `closest` is, and `bool operator()(const Query & query, const Primitive & primitive, const Point_d & closest);` which returns `true` iff `primitive` is closer to the `query` than `closest` is. 
 */ 
 typedef unspecified_type Compare_distance; 
 
@@ -147,7 +148,7 @@ typedef unspecified_type Closest_point;
 
 /*! 
 A functor object to compute the squared distance between two points. Provides the operator: 
-`FT operator()(const Point& query, const Point_d & p);` which returns the squared distance between `p` and `q`.
+`FT operator()(const Point_d& query, const Point_d & p);` which returns the squared distance between `p` and `q`.
 */ 
 typedef unspecified_type Squared_distance; 
 
@@ -157,17 +158,17 @@ typedef unspecified_type Squared_distance;
 /// @{
 
 /*! 
-Returns the primitive splitting functor for the X axis. 
+Returns the primitive splitting functor for the `x`-axis. 
 */ 
 Split_primitives_along_x_axis split_primitives_along_x_axis_object(); 
 
 /*! 
-Returns the primitive splitting functor for the Y axis. 
+Returns the primitive splitting functor for the `y`-axis. 
 */ 
 Split_primitives_along_y_axis split_primitives_along_y_axis_object(); 
 
 /*! 
-Returns the primitive splitting functor for the Z axis. 
+Returns the primitive splitting functor for the `z`-axis. 
 */ 
 Split_primitives_along_z_axis split_primitives_along_z_axis_object(); 
 
