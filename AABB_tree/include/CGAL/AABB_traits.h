@@ -40,16 +40,16 @@ namespace CGAL {
 /// \cgalModels AABBTraits
 /// \tparam GeomTraits must  be a model of the concept `AABBGeomTraits_2` or `AABBGeomTraits_3`,
 /// and provide the geometric types as well as the intersection tests and computations.
-/// \tparam Primitive provide the type of primitives stored in the AABB_tree.
+/// \tparam Primitive provide the type of primitives stored in the `AABB_tree`.
 ///   It is a model of the concept `AABBPrimitive` or `AABBPrimitiveWithSharedData`.
 ///
 /// \sa `AABBTraits`
 /// \sa `AABB_tree`
 /// \sa `AABBPrimitive`
 /// \sa `AABBPrimitiveWithSharedData`
-template<typename GeomTraits, typename AABBPrimitive>
+template<typename GeomTraits, typename Primitive>
 class AABB_traits:
-  public AABB_traits_d<GeomTraits,AABBPrimitive,AABBPrimitive::Datum::Ambient_dimension::value>
+  public AABB_traits_d<GeomTraits,Primitive,Primitive::Datum::Ambient_dimension::value>
 {
 public:
   /// Default constructor.
