@@ -75,44 +75,43 @@ namespace internal {
 
 /*!
  * \ingroup PkgAABB_tree
- * Primitive type that uses as identifier an iterator with a triangle as `value_type`.
- * The iterator from which the primitive is built should not be invalided
+ * Primitive type that uses as identifier an iterator with a triangle as value type.
+ * The iterator from which the primitive is built must not be invalidated
  * while the AABB tree holding the primitive is in use.
  *
  * \cgalModels `AABBPrimitive`
  *
- * \tparam GeomTraits is a traits class providing the the necessary geometric data types (Ex. Point_2, Point_3, Triangle_2, Triangle_3).
- *         It also provides the functors (Ex. For 2D Construct_vertex_2) that has an operator taking a triangle type. (Ex. Triangle_2 for 2D)
- *         and an integer as parameters and returning a triangle point as a type convertible to `Point_d`.
- * \tparam Iterator is a model of `ForwardIterator` with its value type convertible to Ex. GeomTraits::Triangle_2 for 2D and accordingly.
- * \tparam cache_datum is either `CGAL::Tag_true` or `CGAL::Tag_false`. In the former case,
+ * \tparam GeomTraits is a traits class providing geometric data types and functors. For 2D triangles: `Point_2`, `Triangle_2`, and `Construct_vertex_2`.
+ *         For 3D triangles: `Point_3`, `Triangle_3`, and `Construct_vertex_3`.
+ * \tparam Iterator is a model of `ForwardIterator` with its value type convertible to `GeomTraits::Triangle_2` or `GeomTraits::Triangle_3`
+ * \tparam CacheDatum is either `CGAL::Tag_true` or `CGAL::Tag_false`. In the former case,
  *           the datum is stored in the primitive, while in the latter it is
  *           constructed on the fly to reduce the memory footprint.
  *           The default is `CGAL::Tag_false` (datum is not stored).
  *
  * \sa `AABBPrimitive`
- * \sa `AABB_primitive<Id,ObjectPropertyMap,PointPropertyMapPolyhedron,ExternalPropertyMaps,cache_datum>`
- * \sa `AABB_segment_primitive<Iterator,cache_datum>`
- * \sa `AABB_HalfedgeGraph_segment_primitive<HalfedgeGraph,OneHalfedgeGraphPerTree,cache_datum>`
- * \sa `AABB_FaceGraph_triangle_primitive<FaceGraph,OneFaceGraphPerTree,cache_datum>`
+ * \sa `AABB_primitive<Id,ObjectPropertyMap,PointPropertyMapPolyhedron,ExternalPropertyMaps,CacheDatum>`
+ * \sa `AABB_segment_primitive<Iterator,CacheDatum>`
+ * \sa `AABB_HalfedgeGraph_segment_primitive<HalfedgeGraph,OneHalfedgeGraphPerTree,CacheDatum>`
+ * \sa `AABB_FaceGraph_triangle_primitive<FaceGraph,OneFaceGraphPerTree,CacheDatum>`
  */
 template < class GeomTraits,
            class Iterator,
-           class cache_datum=Tag_false>
+           class CacheDatum=Tag_false>
 class AABB_triangle_primitive
 #ifndef DOXYGEN_RUNNING
   : public AABB_primitive<  Iterator,
                             Input_iterator_property_map<Iterator>,
                             internal::Point_from_triangle_d_iterator_property_map<GeomTraits, Iterator,Iterator::value_type::Ambient_dimension::value>,
                             Tag_false,
-                            cache_datum >
+                            CacheDatum >
 #endif
 {
   typedef AABB_primitive< Iterator,
                           Input_iterator_property_map<Iterator>,
                           internal::Point_from_triangle_d_iterator_property_map<GeomTraits, Iterator,Iterator::value_type::Ambient_dimension::value>,
                           Tag_false,
-                          cache_datum > Base;
+                          CacheDatum > Base;
 public:
   ///Constructor from an iterator
   AABB_triangle_primitive(Iterator it) : Base(it){}
