@@ -119,7 +119,7 @@ int main()
 		Nr_cells << "\n";
 
 	Tetrahedron3 *tetra;
-	tetra = new Tetrahedron3[Nr_cells];
+	tetra = new Tetrahedron3[Nr_cells_in_cplx];
 	i = 0;
 	Tr::Finite_cells_iterator iter2 = tr.finite_cells_begin();
 	for ( ; iter2 != tr.finite_cells_end(); ++iter2) {
@@ -132,9 +132,9 @@ int main()
 	}
 	cout << "Actual number of cells in triangulation afterwards: " <<
 		Nr_cells << "\n";
-//	
-//	CGAL::internal::EnhancedElementSampling <Tetrahedron3 *, VolTetrahedron,
-//		PointGen> (Nr_cells, tetra, tetra+Nr_cells);
+	
+	CGAL::internal::EnhancedElementSampling <Tetrahedron3 *, VolTetrahedron,
+		PointGen> (Nr_cells, tetra, tetra+Nr_cells);
 
 //	timp.start();
 //	for (i = 0; i < Nr_cells; i++) {
