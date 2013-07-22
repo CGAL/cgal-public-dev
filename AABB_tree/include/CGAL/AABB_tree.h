@@ -1191,7 +1191,7 @@ public:
 	{
 		CGAL_precondition(!empty());
 		const Point closest = this->closest_point(query, hint);
-		return Tr().squared_distance_object()(query, closest);
+		return Tr().compute_squared_distance_object()(query, closest);
 	}
 
 	// squared distance without user-specified hint
@@ -1201,7 +1201,7 @@ public:
 	{
 		CGAL_precondition(!empty());
 		const Point closest = this->closest_point(query);
-		return Tr().squared_distance_object()(query, closest);
+		return Tr().compute_squared_distance_object()(query, closest);
 	}
 
 	// closest point with user-specified hint
