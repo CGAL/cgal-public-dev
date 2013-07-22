@@ -125,7 +125,7 @@ struct AABB_traits_d <GeomTraits , AABBPrimitive ,2>:public internal::AABB_tree:
    typedef enum { CGAL_AXIS_X = 0,
                  CGAL_AXIS_Y = 1} Axis;
 
-  typedef typename GeomTraits::Point_2 Point_d;
+  typedef typename GeomTraits::Point_2 Point;
 
   typedef typename GeomTraits::Iso_rectangle_2 Iso_box_d;
 
@@ -245,7 +245,7 @@ struct AABB_traits_d <GeomTraits , AABBPrimitive ,2>:public internal::AABB_tree:
 
    // This should go down to the GeomTraits, i.e. the kernel
      class Closest_point {
-         typedef typename AT::Point_d Point_d;
+         typedef typename AT::Point Point;
          typedef typename AT::Primitive Primitive;
        const AABB_traits_d<GeomTraits,AABBPrimitive,2>& m_traits;
      public:
@@ -253,7 +253,7 @@ struct AABB_traits_d <GeomTraits , AABBPrimitive ,2>:public internal::AABB_tree:
          : m_traits(traits) {}
 
 
-       Point_d operator()(const Point_d& p, const Primitive& pr, const Point_d& bound) const
+       Point operator()(const Point& p, const Primitive& pr, const Point& bound) const
        {
            return CGAL::nearest_point_2(p, internal::Primitive_helper<AT>::get_datum(pr,m_traits), bound);
        }
@@ -264,12 +264,12 @@ struct AABB_traits_d <GeomTraits , AABBPrimitive ,2>:public internal::AABB_tree:
      // do_intersect to something like does_contain (this is what we compute,
      // this is not the same do_intersect as the spherical kernel)
      class Compare_distance {
-         typedef typename AT::Point_d Point_d;
+         typedef typename AT::Point Point;
          typedef typename AT::FT FT;
          typedef typename AT::Primitive Primitive;
      public:
          template <class Solid>
-         CGAL::Comparison_result operator()(const Point_d& p, const Solid& pr, const Point_d& bound) const
+         CGAL::Comparison_result operator()(const Point& p, const Solid& pr, const Point& bound) const
          {
              return GeomTraits().do_intersect_2_object()
              (GeomTraits().construct_circle_2_object()
@@ -278,7 +278,7 @@ struct AABB_traits_d <GeomTraits , AABBPrimitive ,2>:public internal::AABB_tree:
          }
 
          template <class Solid>
-         CGAL::Comparison_result operator()(const Point_d& p, const Solid& pr, const FT& sq_distance) const
+         CGAL::Comparison_result operator()(const Point& p, const Solid& pr, const FT& sq_distance) const
          {
            return GeomTraits().do_intersect_2_object()
              (GeomTraits().construct_circle_2_object()(p, sq_distance), pr) ?
@@ -352,7 +352,7 @@ struct AABB_traits_d < GeomTraits , AABBPrimitive ,3>:public internal::AABB_tree
                  CGAL_AXIS_Y = 1,
                  CGAL_AXIS_Z = 2} Axis;
 
-  typedef typename GeomTraits::Point_3 Point_d;
+  typedef typename GeomTraits::Point_3 Point;
 
 
   typedef typename GeomTraits::Iso_cuboid_3 Iso_box_d;
@@ -476,7 +476,7 @@ struct AABB_traits_d < GeomTraits , AABBPrimitive ,3>:public internal::AABB_tree
 
      // This should go down to the GeomTraits, i.e. the kernel
        class Closest_point {
-           typedef typename AT::Point_d Point_d;
+           typedef typename AT::Point Point;
            typedef typename AT::Primitive Primitive;
          const AABB_traits_d<GeomTraits,AABBPrimitive,3>& m_traits;
        public:
@@ -484,7 +484,7 @@ struct AABB_traits_d < GeomTraits , AABBPrimitive ,3>:public internal::AABB_tree
            : m_traits(traits) {}
 
 
-         Point_d operator()(const Point_d& p, const Primitive& pr, const Point_d& bound) const
+         Point operator()(const Point& p, const Primitive& pr, const Point& bound) const
          {
              return CGAL::nearest_point_3(p, internal::Primitive_helper<AT>::get_datum(pr,m_traits), bound);
          }
@@ -495,12 +495,12 @@ struct AABB_traits_d < GeomTraits , AABBPrimitive ,3>:public internal::AABB_tree
        // do_intersect to something like does_contain (this is what we compute,
        // this is not the same do_intersect as the spherical kernel)
        class Compare_distance {
-           typedef typename AT::Point_d Point_d;
+           typedef typename AT::Point Point;
            typedef typename AT::FT FT;
            typedef typename AT::Primitive Primitive;
        public:
            template <class Solid>
-           CGAL::Comparison_result operator()(const Point_d& p, const Solid& pr, const Point_d& bound) const
+           CGAL::Comparison_result operator()(const Point& p, const Solid& pr, const Point& bound) const
            {
                return GeomTraits().do_intersect_3_object()
                (GeomTraits().construct_sphere_3_object()
@@ -509,7 +509,7 @@ struct AABB_traits_d < GeomTraits , AABBPrimitive ,3>:public internal::AABB_tree
            }
 
            template <class Solid>
-           CGAL::Comparison_result operator()(const Point_d& p, const Solid& pr, const FT& sq_distance) const
+           CGAL::Comparison_result operator()(const Point& p, const Solid& pr, const FT& sq_distance) const
            {
              return GeomTraits().do_intersect_3_object()
                (GeomTraits().construct_sphere_3_object()(p, sq_distance),pr) ?

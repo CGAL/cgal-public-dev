@@ -26,7 +26,7 @@ typedef unspecified_type FT;
 /*! 
 Type of a 2 or 3-dimensional point.
 */ 
-typedef unspecified_type Point_d;
+typedef unspecified_type Point;
 
 /*! 
 Type of primitive. 
@@ -50,7 +50,7 @@ typedef unspecified_type Bounding_box;
 /*! 
 
 */ 
-typedef std::pair<Point_d, Primitive::Id> Point_and_primitive_id;
+typedef std::pair<Point, Primitive::Id> Point_and_primitive_id;
 
 /*! 
 \deprecated 
@@ -136,19 +136,19 @@ typedef unspecified_type Intersect;
 
 /*! 
 A functor object to compute distance comparisons between the query and the nodes of the tree. Provides the operators: 
-`bool operator()(const Query & query, const Bounding_box& box, const Point_d & closest);` which returns `true` iff the bounding box is closer to `query` than `closest` is, and `bool operator()(const Query & query, const Primitive & primitive, const Point_d & closest);` which returns `true` iff `primitive` is closer to the `query` than `closest` is. 
+`bool operator()(const Query & query, const Bounding_box& box, const Point & closest);` which returns `true` iff the bounding box is closer to `query` than `closest` is, and `bool operator()(const Query & query, const Primitive & primitive, const Point & closest);` which returns `true` iff `primitive` is closer to the `query` than `closest` is. 
 */ 
 typedef unspecified_type Compare_distance; 
 
 /*! 
 A functor object to compute closest point from the query on a primitive. Provides the operator: 
-`Point_d operator()(const Query& query, const Primitive& primitive, const Point_d & closest);` which returns the closest point to `query`, among `closest` and all points of the primitive.
+`Point operator()(const Query& query, const Primitive& primitive, const Point & closest);` which returns the closest point to `query`, among `closest` and all points of the primitive.
 */ 
 typedef unspecified_type Closest_point; 
 
 /*! 
 A functor object to compute the squared distance between two points. Provides the operator: 
-`FT operator()(const Point_d& query, const Point_d & p);` which returns the squared distance between `p` and `q`.
+`FT operator()(const Point& query, const Point & p);` which returns the squared distance between `p` and `q`.
 */ 
 typedef unspecified_type Squared_distance; 
 
