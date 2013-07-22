@@ -33,6 +33,7 @@ class Random_points_in_ball_d : public Random_generator_base<P>{
     void generate_point();
     int dimension;
 public:
+    typedef P result_type;
     typedef Random_points_in_ball_d<P> This;
  Random_points_in_ball_d( int dim, double a = 1, 
 			       Random& rnd = default_random)
@@ -82,6 +83,7 @@ class Random_points_on_sphere_d : public Random_generator_base<P>{
     void generate_point();
     int dimension;
 public:
+    typedef P result_type;
     typedef Random_points_on_sphere_d<P> This;
  Random_points_on_sphere_d( int dim, double a = 1, 
 			       Random& rnd = default_random)
@@ -127,6 +129,7 @@ class Random_points_in_cube_d : public Random_generator_base<P>{
     void generate_point();
     int dimension;
 public:
+    typedef P result_type;
     typedef Random_points_in_cube_d<P> This;
  Random_points_in_cube_d( int dim, double a = 1, 
 			       Random& rnd = default_random)

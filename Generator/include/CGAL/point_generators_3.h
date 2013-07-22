@@ -42,6 +42,7 @@ template < class P, class Creator =
 class Random_points_in_sphere_3 : public Random_generator_base<P> {
     void generate_point();
 public:
+    typedef P result_type;
     typedef Random_points_in_sphere_3<P,Creator> This;
     Random_points_in_sphere_3( double r = 1, Random& rnd = default_random)
         // g is an input iterator creating points of type `P' uniformly
@@ -81,6 +82,7 @@ template < class P, class Creator =
 class Random_points_on_sphere_3 : public Random_generator_base<P> {
     void generate_point();
 public:
+    typedef P result_type;
     typedef Random_points_on_sphere_3<P,Creator> This;
     Random_points_on_sphere_3( double r = 1, Random& rnd = default_random)
         // g is an input iterator creating points of type `P' uniformly
@@ -119,6 +121,7 @@ template < class P, class Creator =
 class Random_points_in_cube_3 : public Random_generator_base<P>{
     void generate_point();
 public:
+    typedef P result_type;
     typedef Random_points_in_cube_3<P,Creator> This;
     Random_points_in_cube_3( double a = 1, Random& rnd = default_random)
     : Random_generator_base<P>( a, rnd) { generate_point(); }
@@ -206,6 +209,7 @@ class Random_points_in_triangle_3 : public Random_generator_base<P> {
 	P _p,_q,_r;
 	void generate_point();
 public:
+	typedef P result_type;
 	typedef Random_points_in_triangle_3<P> This;
 	typedef typename Kernel_traits<P>::Kernel::Triangle_3 Triangle_3;
 	Random_points_in_triangle_3() {}
@@ -257,6 +261,7 @@ class Random_points_in_tetrahedron_3 : public Random_generator_base<P> {
 	P _p,_q,_r,_s;
 	void generate_point();
 public:
+	typedef P result_type;
 	typedef Random_points_in_tetrahedron_3<P> This;
 	typedef typename Kernel_traits<P>::Kernel::Tetrahedron_3 Tetrahedron_3;
 	Random_points_in_tetrahedron_3() {}

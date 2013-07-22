@@ -35,6 +35,7 @@ template < class P, class Creator =
 class Random_points_in_disc_2 : public Random_generator_base<P>{
     void generate_point();
 public:
+    typedef P result_type;
     typedef Random_points_in_disc_2<P,Creator> This;
     Random_points_in_disc_2( double r = 1, Random& rnd = default_random)
         // g is an input iterator creating points of type `P' uniformly
@@ -70,6 +71,7 @@ template < class P, class Creator =
 class Random_points_on_circle_2 : public Random_generator_base<P> {
     void generate_point();
 public:
+    typedef P result_type;
     typedef Random_points_on_circle_2<P,Creator> This;
     Random_points_on_circle_2( double r = 1, Random& rnd = default_random)
         // g is an input iterator creating points of type `P' uniformly
@@ -104,6 +106,7 @@ template < class P, class Creator =
 class Random_points_in_square_2 : public Random_generator_base<P> {
     void generate_point();
 public:
+    typedef P result_type;
     typedef Random_points_in_square_2<P,Creator> This;
     Random_points_in_square_2( double a = 1, Random& rnd = default_random)
         // g is an input iterator creating points of type `P' uniformly
@@ -140,6 +143,7 @@ template < class P, class Creator =
 class Random_points_on_square_2 : public Random_generator_base<P> {
     void generate_point();
 public:
+    typedef P result_type;
     typedef Random_points_on_square_2<P,Creator> This;
     Random_points_on_square_2( double a = 1, Random& rnd = default_random)
         // g is an input iterator creating points of type `P' uniformly
@@ -193,6 +197,7 @@ class Random_points_in_iso_rectangle_2 : public Random_generator_base<P> {
   double left, right, top, bottom;
     void generate_point();
 public:
+    typedef P result_type;
     typedef Random_points_in_iso_rectangle_2<P,Creator> This;
     Random_points_in_iso_rectangle_2( const P&p, const P& q, Random& rnd = default_random)
       : Random_generator_base<P>( 1.0 , rnd)
@@ -235,6 +240,7 @@ class Random_points_on_segment_2 : public Random_generator_base<P> {
     P _q;
     void generate_point();
 public:
+    typedef P result_type;
     typedef Random_points_on_segment_2<P,Creator> This;
     Random_points_on_segment_2( const P& p = P( -1, 0),
                                 const P& q = P(  1, 0),
@@ -283,6 +289,7 @@ class Points_on_segment_2 : public Generator_base<P> {
     std::size_t  d_mx;
     void generate_point();
 public:
+    typedef P result_type;
     typedef Points_on_segment_2<P> This;
     Points_on_segment_2() {}
     Points_on_segment_2( const P& p, const P& q,
@@ -498,6 +505,7 @@ class Random_points_in_triangle_2 : public Random_generator_base<P> {
 	P _p,_q,_r;
 	void generate_point();
 public:
+	typedef P result_type;
 	typedef Random_points_in_triangle_2<P> This;
 	Random_points_in_triangle_2() {}
 	Random_points_in_triangle_2( const P& p, const P& q, const P& r, Random& rnd = default_random)
