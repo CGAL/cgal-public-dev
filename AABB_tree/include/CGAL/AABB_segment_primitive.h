@@ -86,34 +86,34 @@ namespace internal {
  * \tparam GeomTraits is a traits class providing geometric data types and functors. For 2D segments: `Point_2`, `Segment_2`, `Construct_source_2`, and `Construct_target_2`.
  *         For 3D segments: `Point_3`, `Segment_3`, `Construct_source_3`, and `Construct_target_3`.
  * \tparam Iterator is a model of ForwardIterator with its value type convertible to `GeomTraits::Segment_2` or `GeomTraits::Segment_3`.
- * \tparam CacheDatum is either `CGAL::Tag_true` or `CGAL::Tag_false`. In the former case,
+ * \tparam CacheDatumTag is either `CGAL::Tag_true` or `CGAL::Tag_false`. In the former case,
  *           the datum is stored in the primitive, while in the latter it is
  *           constructed on the fly to reduce the memory footprint.
  *           The default is `CGAL::Tag_false` (datum is not stored).
  *
  * \sa `AABBPrimitive`
- * \sa `AABB_primitive<Id,ObjectPropertyMap,PointPropertyMapPolyhedron,ExternalPropertyMaps,CacheDatum>`
- * \sa `AABB_triangle_primitive<Iterator,CacheDatum>`
- * \sa `AABB_HalfedgeGraph_segment_primitive<HalfedgeGraph,OneHalfedgeGraphPerTree,CacheDatum>`
- * \sa `AABB_FaceGraph_triangle_primitive<FaceGraph,OneFaceGraphPerTree,CacheDatum>`
+ * \sa `AABB_primitive<Id,ObjectPropertyMap,PointPropertyMapPolyhedron,ExternalPropertyMaps,CacheDatumTag>`
+ * \sa `AABB_triangle_primitive<Iterator,CacheDatumTag>`
+ * \sa `AABB_HalfedgeGraph_segment_primitive<HalfedgeGraph,OneHalfedgeGraphPerTree,CacheDatumTag>`
+ * \sa `AABB_FaceGraph_triangle_primitive<FaceGraph,OneFaceGraphPerTree,CacheDatumTag>`
  */
 template < class GeomTraits,
            class Iterator,
-           class CacheDatum=Tag_false>
+           class CacheDatumTag=Tag_false>
 class AABB_segment_primitive
 #ifndef DOXYGEN_RUNNING
   : public AABB_primitive<  Iterator,
                             Input_iterator_property_map<Iterator>,
                             internal::Source_of_segment_d_iterator_property_map<GeomTraits, Iterator,Iterator::value_type::Ambient_dimension::value>,
                             Tag_false,
-                            CacheDatum >
+                            CacheDatumTag >
 #endif
 {
   typedef AABB_primitive< Iterator,
                           Input_iterator_property_map<Iterator>,
                           internal::Source_of_segment_d_iterator_property_map<GeomTraits,Iterator,Iterator::value_type::Ambient_dimension::value>,
                           Tag_false,
-                          CacheDatum > Base;
+                          CacheDatumTag > Base;
 public:
   ///Constructor from an iterator
 	

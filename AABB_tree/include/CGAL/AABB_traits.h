@@ -37,11 +37,11 @@ namespace CGAL {
 /// computations, and it handles points as query type for distance
 /// queries. The geometry specific functions are derived from the
 /// base class AABB_traits_d.
-/// \cgalModels AABBTraits
+/// \cgalModels `AABBTraits`
 /// \tparam GeomTraits must  be a model of the concept `AABBGeomTraits_2` or `AABBGeomTraits_3`,
 /// and provide the geometric types as well as the intersection tests and computations.
 /// \tparam Primitive provide the type of primitives stored in the `AABB_tree`.
-///   It is a model of the concept `AABBPrimitive` or `AABBPrimitiveWithSharedData`.
+///   It must be a model of the concept `AABBPrimitive` or `AABBPrimitiveWithSharedData`.
 ///
 /// \sa `AABBTraits`
 /// \sa `AABB_tree`

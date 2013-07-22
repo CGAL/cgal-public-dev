@@ -29,31 +29,34 @@ namespace CGAL
         template <class Underlying, class Id>
         class Add_decorated_point: public Underlying
         {
-                class Decorated_point: public Underlying::Point_d
+        public:
+          typedef typename Underlying::Point Point_d;
+
+                class Decorated_point: public Underlying::Point
                 {
                 public:
                     const Id& id() const { return m_id; }
 
                     Decorated_point()
-                        : Underlying::Point_d()
+                        : Underlying::Point()
                         , m_id()
                         , m_is_id_initialized(false) {}
 
                     // Allows the user not to provide the id
                     // so that we don't break existing code
-                    Decorated_point(const typename Underlying::Point_d& p)
-                        : Underlying::Point_d(p)
+                    Decorated_point(const typename Underlying::Point& p)
+                        : Underlying::Point(p)
                         , m_id()
                         , m_is_id_initialized(false) {}
 
-                    Decorated_point(const typename Underlying::Point_d& p,
+                    Decorated_point(const typename Underlying::Point& p,
                                     const Id& id)
-                        : Underlying::Point_d(p)
+                        : Underlying::Point(p)
                         , m_id(id)
                         , m_is_id_initialized(true) {}
 
                     Decorated_point(const Decorated_point& rhs)
-                      : Underlying::Point_d(rhs)
+                      : Underlying::Point(rhs)
                       , m_id()
                       , m_is_id_initialized(rhs.m_is_id_initialized)
                     {
@@ -81,7 +84,7 @@ namespace CGAL
         {
         public:
                 typedef typename Traits::FT FT;
-                typedef typename Traits::Point_d Point;
+                typedef typename Traits::Point Point;
                 typedef typename Traits::Primitive Primitive;
                 typedef typename Traits::Point_and_primitive_id Point_and_primitive_id;
                 typedef typename CGAL::Search_traits_d<Add_decorated_point<Traits, typename Traits::Primitive::Id>> TreeTraits;
