@@ -25,7 +25,6 @@
 ## Concepts ##
 - `AABBPrimitive`
 - `AABBPrimitiveWithSharedData`
-- `AABBTraits`
 - `AABBGeomTraits_2`
 - `AABBGeomTraits_3`
 
