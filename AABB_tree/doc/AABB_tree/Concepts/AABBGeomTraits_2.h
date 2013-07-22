@@ -18,7 +18,7 @@ public:
 /// @{
 
 /*!
-Circle type, that should be consistent with the distance function chosen for the distance queries, namely the `Squared_distance_2` functor.
+Circle type, that should be consistent with the distance function chosen for the distance queries, namely the `Compute_squared_distance_2` functor.
 */
 typedef unspecified_type Circle_2;
 

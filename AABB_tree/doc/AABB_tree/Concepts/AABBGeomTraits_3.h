@@ -18,7 +18,7 @@ public:
 /// @{
 
 /*! 
-Sphere type, that should be consistent with the distance function chosen for the distance queries, namely the `Squared_distance_3` functor. 
+Sphere type, that should be consistent with the distance function chosen for the distance queries, namely the `Compute_squared_distance_3` functor. 
 */ 
 typedef unspecified_type Sphere_3; 
 
