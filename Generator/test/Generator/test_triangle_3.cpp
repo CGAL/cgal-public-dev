@@ -9,13 +9,13 @@
 
 typedef double RT;
 
-typedef CGAL::Exact_predicates_inexact_constructions_kernel 	K;
-typedef K::Point_3 												Point_3;
-typedef K::Vector_3 											Vector_3;
-typedef K::Triangle_3 											Triangle_3;
-typedef K::Plane_3 												Plane_3;
-typedef std::vector<Point_3>									Container;
-typedef CGAL::Random_points_in_triangle_3<Point_3> 				Point_generator;
+typedef CGAL::Exact_predicates_inexact_constructions_kernel 		K;
+typedef K::Point_3 							Point_3;
+typedef K::Vector_3 							Vector_3;
+typedef K::Triangle_3 							Triangle_3;
+typedef K::Plane_3 							Plane_3;
+typedef std::vector<Point_3>						Container;
+typedef CGAL::Random_points_in_triangle_3<Point_3> 			Point_generator;
 	
 const double EPS = 1e-30;
 
@@ -58,10 +58,26 @@ int main() {
 			pts[j]=Point_3(rand.get_double(),rand.get_double(),rand.get_double());
 		}
 		Triangle_3 tri(pts[0],pts[1],pts[2]);
+		Point_generator g1( pts[0], pts[1], pts[2] ); // constructor that is given points
+		Point_generator g2( tri ); // constructor that is given a triangle
+		Point_generator g3( g1 ); // copy-constructor
+
+		//Testing the point-constructor
 		point_set.clear();
-		CGAL::cpp11::copy_n(Point_generator( pts[0], pts[1], pts[2] ), 
-			           number_points,
-			           std::back_inserter(point_set));
+		CGAL::cpp11::copy_n( g1, number_points,
+		               std::back_inserter(point_set));
+		assert(inside_or_close_to_triangle(tri,point_set.begin(),point_set.end()));
+
+		//Testing the triangle-constructor
+		point_set.clear();
+		CGAL::cpp11::copy_n( g2, number_points,
+		               std::back_inserter(point_set));
+		assert(inside_or_close_to_triangle(tri,point_set.begin(),point_set.end()));
+
+		//Testing the copy-constructor;
+		point_set.clear();
+		CGAL::cpp11::copy_n( g3, number_points,
+		               std::back_inserter(point_set));
 		assert(inside_or_close_to_triangle(tri,point_set.begin(),point_set.end()));
 	}
 
