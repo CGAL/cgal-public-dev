@@ -277,6 +277,13 @@ public:
 	: Random_generator_base<P>( 1, rnd),_p(tetrahedron[0]),_q(tetrahedron[1]),_r(tetrahedron[2]),_s(tetrahedron[3]) {
 		generate_point();
 	}
+	This operator=(This x) {
+		_p = x._p;
+		_q = x._q;
+		_r = x._r;
+		_s = x._s;
+		return *this;
+	}
 	This& operator++() {
 		generate_point();
 		return *this;
