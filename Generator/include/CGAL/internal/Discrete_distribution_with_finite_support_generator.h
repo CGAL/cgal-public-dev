@@ -24,26 +24,27 @@ class Discrete_distribution_with_finite_support_generator {
 			container.reserve(N);
 			presums.reserve(N);
 			typename std::vector<Random_generator_with_weight>::iterator it = el_begin;
-			int i = 0;
 			for (; it != el_end; it++) {
-				container[i] = Random_generator_with_weight(*it);
-				i++;
+				container.push_back(Random_generator_with_weight(*it));
 			}
 
-			for (i = 0; i < N; i++) {
-				presums[i] = (i == 0 ? container[i].getWeight() :
+			for (int i = 0; i < N; i++) {
+				presums.push_back(i == 0 ? container[i].getWeight() :
 						container[i].getWeight() + presums[i-1]);
 			}
 		}
 
 		void generate() {
+			result_type q = container[2].getRand();
+//			std::cout << "Just testing " << q.x() << " " << q.y() <<
+//				" " << q.z() << std::endl;
+
+
 			int N = presums.size();
 			typename Container::iterator el_begin = container.begin();
 			typename Container::iterator el_end = container.end();
 			CGAL::Random rand;
 			double tmp_presum = rand.get_double(0, presums[N-1]);
-//			cout << tmp << '\n';
-			//typename vector<CGAL::internal::Weighted_random_element<PointGeneratorFunctor> >::iterator SampleIterator = upper_bound(container.begin(), container.end(), tmp);
 			typename std::vector<double>::iterator SampleIterator =
 				upper_bound(presums.begin(), presums.end(),
 						tmp_presum);
@@ -53,7 +54,7 @@ class Discrete_distribution_with_finite_support_generator {
 				std::endl;
 
 			Random_generator_with_weight SampleElement = *(el_begin + SampleIndex);
-			std::cout << "Coords of the picked element: " <<
+			std::cout << "Weight of the picked element: " <<
 				SampleElement.getWeight() << std::endl;
 
 			result_type p = container[SampleIndex].getRand();

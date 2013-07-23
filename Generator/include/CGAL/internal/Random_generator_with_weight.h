@@ -13,10 +13,6 @@ class Random_generator_with_weight {
 		typedef typename PointGeneratorClass::result_type result_type;
 		Random_generator_with_weight() {}
 
-//		Random_generator_with_weight(double weight) {
-//			_weight = weight;
-//		}
-
 		Random_generator_with_weight(const Random_generator_with_weight<PointGeneratorClass> &x) {
 			this->_rand = PointGeneratorClass(x._rand);
 			this->_weight = x._weight;
