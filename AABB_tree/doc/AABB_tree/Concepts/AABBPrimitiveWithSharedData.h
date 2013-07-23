@@ -16,7 +16,7 @@ of the primitives are required to access the datum and the reference point.
 ### Example ###
 
 The `Primitive` type can be a wrapper around an integer that refers to the position
-of an object in a vector. Assume for instance that the input objects are some triangles.
+of an object in a vector. Assume for instance that the input objects are some 3D triangles.
 The `Datum` would be a `Triangle_3` and the `Id` a `std::size_t`. The shared data here is a
 `std::vector<Triangle_3>`.
 The method `datum(const Shared_data&)` then returns a triangle from the vector.

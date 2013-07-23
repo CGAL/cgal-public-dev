@@ -3,11 +3,11 @@
 \ingroup PkgAABB_treeConcepts
 \cgalConcept
 
-The concept `AABBGeomTraits_2` defines the requirements for the first template parameter of the class `CGAL::AABB_traits<AABBGeomTraits, AABBPrimitive>`. It provides predicates and constructors to detect and compute intersections between query objects and the primitives stored in the AABB tree. In addition, it contains predicates and constructors to compute distances between a point query and the primitives stored in the AABB tree.
+The concept `AABBGeomTraits_2` defines the requirements for the first template parameter of the class `CGAL::AABB_traits<GeomTraits, Primitive>`. It provides predicates and constructors to detect and compute intersections between query objects and the primitives stored in the AABB tree. In addition, it contains predicates and constructors to compute distances between a point query and the primitives stored in the AABB tree.
 
 \cgalHasModel Any Kernel is a model of this traits concept.
 
-\sa `CGAL::AABB_traits<AABBGeomTraits,AABBPrimitive>`
+\sa `CGAL::AABB_traits<GeomTraits,Primitive>`
 
 */
 
@@ -26,6 +26,42 @@ typedef unspecified_type Circle_2;
 Point type.
 */
 typedef unspecified_type Point_2;
+
+/*!
+Iso box type.
+*/
+typedef unspecified_type Iso_rectangle_2;
+
+/*!
+An iterator over the %Cartesian coordinates.
+*/
+typedef unspecified_type Cartesian_const_iterator_2;
+
+/*!
+A functor with
+two function operators, which return the begin and past the end iterator for the %Cartesian coordinates.
+The functor for begin has as argument a `Point_2`. The functor for the past the end iterator,
+has as argument a `Point_2` and an `int`.
+*/
+typedef unspecified_type Construct_cartesian_const_iterator_2;
+
+/*!
+Functor with operator to construct
+the vertex with lexicographically smallest coordinates of an object of type `Iso_rectangle_2`.
+*/
+typedef unspecified_type Construct_min_vertex_2;
+
+/*!
+Functor with operator to construct
+the vertex with lexicographically largest coordinates of an object of type `Iso_rectangle_2`.
+*/
+typedef unspecified_type Construct_max_vertex_2;
+
+/*!
+Functor with operator to construct
+the iso rectangle from two points.
+*/
+typedef unspecified_type Construct_iso_rectangle_2;
 
 /*!
 A functor object to detect intersections between two geometric objects.
@@ -64,19 +100,6 @@ A functor object to compute the point on a geometric primitive which is closest 
 typedef unspecified_type Compute_closest_point_2;
 
 /*!
-A functor object to detect if a point lies inside a circle or not.
-Provides the operator:
-`bool operator()(const Circle_2& s, const Point_2& p);` which returns `true` iff the closed volume bounded by `s` contains `p`.
-*/
-typedef unspecified_type Has_on_bounded_side_2;
-
-/*!
-A functor object to compute the squared radius of a circle. Provides the operator:
-`FT operator()(const Circle_2& s);` which returns the squared radius of `s`.
-*/
-typedef unspecified_type Compute_squared_radius_2;
-
-/*!
 A functor object to compute the squared distance between two points. Provides the operator:
 `FT operator()(const Point_2& p, const Point_2& q);}` which returns the squared distance between \a p and \a q.
 */
@@ -107,16 +130,6 @@ Construct_circle_2 construct_circle_2_object();
 Returns the closest point constructor.
 */
 Compute_closest_point_2 compute_closest_point_2_object();
-
-/*!
-Returns the closest point constructor.
-*/
-Has_on_bounded_side_2 has_on_bounded_side_2_object();
-
-/*!
-Returns the squared radius functor.
-*/
-Compute_squared_radius_2 compute_squared_radius_2_object();
 
 /*!
 Returns the squared distance functor.

@@ -3,11 +3,11 @@
 \ingroup PkgAABB_treeConcepts
 \cgalConcept
 
-The concept `AABBGeomTraits` defines the requirements for the first template parameter of the class `CGAL::AABB_traits<AABBGeomTraits, AABBPrimitive>`. It provides predicates and constructors to detect and compute intersections between query objects and the primitives stored in the AABB tree. In addition, it contains predicates and constructors to compute distances between a point query and the primitives stored in the AABB tree. 
+The concept `AABBGeomTraits` defines the requirements for the first template parameter of the class `CGAL::AABB_traits<GeomTraits, Primitive>`. It provides predicates and constructors to detect and compute intersections between query objects and the primitives stored in the AABB tree. In addition, it contains predicates and constructors to compute distances between a point query and the primitives stored in the AABB tree.
 
 \cgalHasModel Any Kernel is a model of this traits concept.
 
-\sa `CGAL::AABB_traits<AABBGeomTraits,AABBPrimitive>`
+\sa `CGAL::AABB_traits<GeomTraits,Primitive>`
 
 */
 
@@ -26,6 +26,43 @@ typedef unspecified_type Sphere_3;
 Point type. 
 */ 
 typedef unspecified_type Point_3; 
+
+/*!
+Iso box type.
+*/
+typedef unspecified_type Iso_cuboid_3;
+
+/*!
+An iterator over the %Cartesian coordinates.
+*/
+typedef unspecified_type Cartesian_const_iterator_3;
+
+/*!
+A functor with
+two function operators, which return the begin and past the end iterator for the %Cartesian coordinates.
+The functor for begin has as argument a `Point_3`. The functor for the past the end iterator,
+has as argument a `Point_3` and an `int`.
+*/
+typedef unspecified_type Construct_cartesian_const_iterator_3;
+
+/*!
+Functor with operator to construct
+the vertex with lexicographically smallest coordinates of an object of type `Iso_cuboid_3`.
+*/
+typedef unspecified_type Construct_min_vertex_3;
+
+/*!
+Functor with operator to construct
+the vertex with lexicographically largest coordinates of an object of type `Iso_cuboid_3`.
+*/
+typedef unspecified_type Construct_max_vertex_3;
+
+/*!
+Functor with operator to construct
+the iso cuboid from two points.
+*/
+typedef unspecified_type Construct_iso_cuboid_3;
+
 
 /*! 
 A functor object to detect intersections between two geometric objects. 
@@ -63,18 +100,6 @@ A functor object to compute the point on a geometric primitive which is closest 
 */ 
 typedef unspecified_type Compute_closest_point_3; 
 
-/*! 
-A functor object to detect if a point lies inside a sphere or not. 
-Provides the operator: 
-`bool operator()(const Sphere_3& s, const Point_3& p);` which returns `true` iff the closed volume bounded by `s` contains `p`. 
-*/ 
-typedef unspecified_type Has_on_bounded_side_3; 
-
-/*! 
-A functor object to compute the squared radius of a sphere. Provides the operator: 
-`FT operator()(const Sphere_3& s);` which returns the squared radius of `s`. 
-*/ 
-typedef unspecified_type Compute_squared_radius_3; 
 
 /*!
 A functor object to compute the squared distance between two points. Provides the operator:
@@ -107,16 +132,6 @@ Construct_sphere_3 construct_sphere_3_object();
 Returns the closest point constructor. 
 */ 
 Compute_closest_point_3 compute_closest_point_3_object(); 
-
-/*! 
-Returns the closest point constructor. 
-*/ 
-Has_on_bounded_side_3 has_on_bounded_side_3_object(); 
-
-/*! 
-Returns the squared radius functor. 
-*/ 
-Compute_squared_radius_3 compute_squared_radius_3_object(); 
 
 /*!
 Returns the squared distance functor.

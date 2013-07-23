@@ -5,9 +5,9 @@
 
 The concept `AABBTraits` provides the geometric primitive types and methods for the class `CGAL::AABB_tree<AABBTraits>`.
 
-\cgalHasModel `CGAL::AABB_traits<AABBGeomTraits,AABBPrimitive>`
+\cgalHasModel `CGAL::AABB_traits<GeomTraits,Primitive>`
 
-\sa `CGAL::AABB_traits<AABBGeomTraits,AABBPrimitive>`
+\sa `CGAL::AABB_traits<GeomTraits,Primitive>`
 \sa `CGAL::AABB_tree<AABBTraits>`
 \sa `AABBPrimitive`
 
