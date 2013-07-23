@@ -29,12 +29,12 @@ int main()
     Point d(0.0, 0.0, 0.0);
 
     std::list<Triangle> triangles;
-    triangles.push_back(Triangle(a,b,c));
-    triangles.push_back(Triangle(a,b,d));
-    triangles.push_back(Triangle(a,d,c));
+    triangles.push_back(Triangle(a, b, c));
+    triangles.push_back(Triangle(a, b, d));
+    triangles.push_back(Triangle(a, d, c));
 
     // constructs AABB tree
-    Tree tree(triangles.begin(),triangles.end());
+    Tree tree(triangles.begin(), triangles.end());
 
     // counts #intersections
     Ray ray_query(a,b);

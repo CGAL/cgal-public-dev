@@ -40,8 +40,7 @@ typedef unspecified_type Cartesian_const_iterator_3;
 /*!
 A functor with
 two function operators, which return the begin and past the end iterator for the %Cartesian coordinates.
-The functor for begin has as argument a `Point_3`. The functor for the past the end iterator,
-has as argument a `Point_3` and an `int`.
+The functor for begin has as argument a `Point_3`. The functor for the past the end iterator, has as argument a `Point_3` and an `int`.
 */
 typedef unspecified_type Construct_cartesian_const_iterator_3;
 

@@ -19,12 +19,12 @@ typedef Tree::Point_and_primitive_id Point_and_primitive_id;
 
 int main()
 {
-    Point p(1.0, 0.0, 0.0);
-    Point q(0.0, 1.0, 0.0);
-    Point r(0.0, 0.0, 1.0);
-    Point s(0.0, 0.0, 0.0);
+    Point p1(1.0, 0.0, 0.0);
+    Point q1(0.0, 1.0, 0.0);
+    Point r1(0.0, 0.0, 1.0);
+    Point s1(0.0, 0.0, 0.0);
     Polyhedron polyhedron1;
-    polyhedron1.make_tetrahedron(p, q, r, s);
+    polyhedron1.make_tetrahedron(p1, q1, r1, s1);
 
 
     Point p2(11.0, 0.0, 0.0);
@@ -33,13 +33,14 @@ int main()
     Point s2(10.0, 0.0, 0.0);
     Polyhedron polyhedron2;
     polyhedron2.make_tetrahedron(p2, q2, r2, s2);
+
     // constructs AABB tree and computes internal KD-tree 
     // data structure to accelerate distance queries
-    Tree tree(polyhedron1.facets_begin(),polyhedron1.facets_end());
+    Tree tree(polyhedron1.facets_begin(), polyhedron1.facets_end());
 
     tree.accelerate_distance_queries();
 
-    tree.insert(polyhedron2.facets_begin(),polyhedron2.facets_end());
+    tree.insert(polyhedron2.facets_begin(), polyhedron2.facets_end());
 
     // query point
     Point query(0.0, 0.0, 3.0);

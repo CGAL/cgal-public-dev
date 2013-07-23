@@ -40,26 +40,22 @@ typedef unspecified_type Cartesian_const_iterator_2;
 /*!
 A functor with
 two function operators, which return the begin and past the end iterator for the %Cartesian coordinates.
-The functor for begin has as argument a `Point_2`. The functor for the past the end iterator,
-has as argument a `Point_2` and an `int`.
+The functor for begin has as argument a `Point_2`. The functor for the past the end iterator, has as argument a `Point_2` and an `int`.
 */
 typedef unspecified_type Construct_cartesian_const_iterator_2;
 
 /*!
-Functor with operator to construct
-the vertex with lexicographically smallest coordinates of an object of type `Iso_rectangle_2`.
+Functor with operator to construct the vertex with lexicographically smallest coordinates of an object of type `Iso_rectangle_2`.
 */
 typedef unspecified_type Construct_min_vertex_2;
 
 /*!
-Functor with operator to construct
-the vertex with lexicographically largest coordinates of an object of type `Iso_rectangle_2`.
+Functor with operator to construct the vertex with lexicographically largest coordinates of an object of type `Iso_rectangle_2`.
 */
 typedef unspecified_type Construct_max_vertex_2;
 
 /*!
-Functor with operator to construct
-the iso rectangle from two points.
+Functor with operator to construct the iso rectangle from two points.
 */
 typedef unspecified_type Construct_iso_rectangle_2;
 

@@ -31,12 +31,12 @@ int main()
     polyhedron.make_tetrahedron(p, q, r, s);
 
     // constructs AABB tree
-    Tree tree(polyhedron.facets_begin(),polyhedron.facets_end());
+    Tree tree(polyhedron.facets_begin(), polyhedron.facets_end());
 
     // constructs segment query
     Point a(-0.2, 0.2, -0.2);
     Point b(1.3, 0.2, 1.3);
-    Segment segment_query(a,b);
+    Segment segment_query(a, b);
 
     // tests intersections with segment query
     if(tree.do_intersect(segment_query))
@@ -68,8 +68,8 @@ int main()
     tree.all_intersected_primitives(segment_query, std::back_inserter(primitives));
 
     // constructs plane query
-    Vector vec(0.0,0.0,1.0);
-    Plane plane_query(a,vec);
+    Vector vec(0.0, 0.0, 1.0);
+    Plane plane_query(a, vec);
 
     // computes first encountered intersection with plane query
     // (generally a segment)

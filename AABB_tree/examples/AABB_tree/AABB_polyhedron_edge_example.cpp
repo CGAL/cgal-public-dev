@@ -29,11 +29,11 @@ int main()
 
     // constructs the AABB tree and the internal search tree for 
     // efficient distance queries.
-    Tree tree(polyhedron.edges_begin(),polyhedron.edges_end());
+    Tree tree(polyhedron.edges_begin(), polyhedron.edges_end());
     tree.accelerate_distance_queries();
 
     // counts #intersections with a triangle query
-    Triangle triangle_query(p,q,r);
+    Triangle triangle_query(p, q, r);
     std::cout << tree.number_of_intersected_primitives(triangle_query)
         << " intersections(s) with triangle" << std::endl;
 

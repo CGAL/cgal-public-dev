@@ -119,18 +119,14 @@ typedef CGAL::AABB_tree<Traits> Tree;
 
 \section aabb_tree_examples Examples
 
-The first example further illustrates how to initialize the 2D and 3D AABB tree, the 
-example is given for the triangle primitives. Other examples illustrate different 
-functionalities of the AABB tree. Note that currently 2D AABB works for triangle and 
-triangle primitives only. However, custom primitives can be defined if there is need 
-for a different primitive type.
+We first illustrate how to initialize the 2D and 3D AABB tree with triangle primitives. Other examples illustrate different functionalities of the AABB tree. Note that in 2D only triangle primitives are implemented. However, custom primitives may be defined 
+for other types of primitives.
 
 \subsection aabb_tree_examples_1 Tree of Triangles, for Intersection and Distance Queries
 
-In the following example it is illustrated how to initialized 2D or 3D AABB tree using
-2D or 3D triangle. The triangles are stored in a list. The AABB primitive
-wraps a triangle as `datum` and an iterator in the list as `id`. We compute the number of input
-triangles intersected by a ray query, as well as the closest point and
+The following example illustrates how to initialize a 2D or 3D AABB tree using
+2D or 3D triangles, the latter being stored in a list. The AABB primitive
+wraps a triangle as `datum` and an iterator in the list as `id`. We compute the number of input triangles intersected by a ray query, as well as the closest point and
 the squared distance from a point query.
 
 \cgalExample{AABB_tree/AABB_triangle_2_example.cpp}
@@ -139,7 +135,7 @@ the squared distance from a point query.
 
 \subsection aabb_tree_examples_2 Tree of Polyhedron Triangle Facets for Intersection Queries
 
- In the following example the AABB primitive wraps a facet handle of a
+In the following example the AABB primitive wraps a facet handle of a
 triangle polyhedral surface as `id` and the corresponding 3D
 triangle as geometric object. From a segment query we test the
 intersections, then compute the number of intersections, compute the
@@ -166,7 +162,7 @@ handle.
 
 \subsection aabb_tree_examples_4 Tree of Segments for Intersection and Distance Queries
 
- In the following example the segments are stored into a list, and the
+In the following example the segments are stored into a list, and the
 AABB primitive wraps a segment as `datum` and an iterator in the
 list as `id`. We compute the number of intersections with plane
 and triangles queries, and the closest point from a point query.
@@ -182,10 +178,8 @@ triangle query and the closest point from a point query.
 
 \subsection aabb_tree_examples_6 Incremental Insertion of Primitives
 
-The AABB tree is a static data structure, but it allows to insert
-primitives, and will internally rebuild triggered by the first query,
-or because the user calls the `AABB_tree::build()` method.  The following
-example illustrates this for two polyhedral surfaces.
+Although the AABB tree is a static data structure, it allows inserting new
+primitives. This is achieved either automatically through internally rebuilding the tree before the first next query, or through a user call to the `AABB_tree::build()` method.  We illustrate next this functionality for two polyhedral surfaces.
 
 \include AABB_insertion_example.cpp
 
