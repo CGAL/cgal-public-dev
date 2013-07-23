@@ -138,8 +138,6 @@ struct AABB_traits_d <GeomTraits , AABBPrimitive ,2>:public internal::AABB_tree:
 
   typedef typename GeomTraits::Cartesian_const_iterator_2 Cartesian_const_iterator_d;
   typedef typename GeomTraits::Construct_cartesian_const_iterator_2 Construct_cartesian_const_iterator_d;
-  typedef typename GeomTraits::Construct_center_2 Construct_center_d;
-  typedef typename GeomTraits::Compute_squared_radius_2 Compute_squared_radius_d;
   typedef typename GeomTraits::Construct_min_vertex_2 Construct_min_vertex_d;
   typedef typename GeomTraits::Construct_max_vertex_2 Construct_max_vertex_d;
   typedef typename GeomTraits::Construct_iso_rectangle_2 Construct_iso_box_d;
@@ -363,8 +361,6 @@ struct AABB_traits_d < GeomTraits , AABBPrimitive ,3>:public internal::AABB_tree
 
   typedef typename GeomTraits::Cartesian_const_iterator_3 Cartesian_const_iterator_d;
   typedef typename GeomTraits::Construct_cartesian_const_iterator_3 Construct_cartesian_const_iterator_d;
-  typedef typename GeomTraits::Construct_center_3 Construct_center_d;
-  typedef typename GeomTraits::Compute_squared_radius_2 Compute_squared_radius_d;
   typedef typename GeomTraits::Construct_min_vertex_3 Construct_min_vertex_d;
   typedef typename GeomTraits::Construct_max_vertex_3 Construct_max_vertex_d;
   typedef typename GeomTraits::Construct_iso_cuboid_3 Construct_iso_box_d;
