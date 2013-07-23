@@ -86,7 +86,7 @@ int test()
 	Tree tree(triangles.begin(),triangles.end());
 
 	// segment intersection query
-	Point p((FT) 0.25,  (FT) -1.251);
+	Point p((FT) 0.25,  (FT) 0.0);
 	Point q((FT) 0.25,  (FT) 1.255);
 	Segment pq(p,q);
 
@@ -96,7 +96,7 @@ int test()
 		return EXIT_FAILURE;
 	}
 
-	if(tree.number_of_intersected_primitives(pq) != 2)
+	if(tree.number_of_intersected_primitives(pq) != 1)
 	{
 		std::cerr << "number of intersections different than two" << std::endl;
 		return EXIT_FAILURE;
@@ -123,17 +123,13 @@ int test()
 		return EXIT_FAILURE;
 	}
 
-	//line intersection query
-	Line line_pq(p,q);
-	if(!tree.do_intersect(line_pq))
+	//check the iterator 
+	Iterator index = op.second;
+
+	if(std::distance(triangles.begin(), index)!=1)
 	{
-		std::cerr << "no intersection found with line" << std::endl;
-		return EXIT_FAILURE;
-	}
-	if(tree.number_of_intersected_primitives(line_pq) != 2)
-	{
-		std::cerr << "number of intersections different than two with line" << std::endl;
-		return EXIT_FAILURE;
+	  std::cerr << "Iterator gives a wrong index" << std::endl;
+	  return EXIT_FAILURE;
 	}
 
 	// closest point query
@@ -162,9 +158,4 @@ int main()
 
 	return EXIT_SUCCESS;
 }
-
-/***EMACS SETTINGS***/
-/* Local Variables: */
-/* tab-width: 2     */
-/* End:             */
 
