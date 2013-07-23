@@ -38,8 +38,8 @@
 
 typedef CGAL::Simple_cartesian<double>  K;
 
-template<typename K, typename LIST>
-bool load_triangle_set(LIST &list)
+template<typename K, typename Vector>
+bool load_triangle_set(Vector &vector)
 {
 	typedef typename K::Point_2 Point;
 	typedef typename K::Triangle_2 Triangle;
@@ -54,10 +54,10 @@ bool load_triangle_set(LIST &list)
 	Point h(-2,-1);
 	Point i(-1,-2);
 
-	list.push_back(Triangle(a,b,c));
-	list.push_back(Triangle(a,d,e));
-	list.push_back(Triangle(a,f,g));
-	list.push_back(Triangle(a,h,i));
+	vector.push_back(Triangle(a,b,c));
+	vector.push_back(Triangle(a,d,e));
+	vector.push_back(Triangle(a,f,g));
+	vector.push_back(Triangle(a,h,i));
 
 	return true;
 }
@@ -73,12 +73,12 @@ int test()
 	typedef typename K::Triangle_2 Triangle;
 
 	// load simple triangle set
-	typedef std::list<Triangle> List_Triangle;
-	List_Triangle triangles;
-	load_triangle_set<K,List_Triangle>(triangles);
+	typedef std::vector<Triangle> VectorTriangle;
+	VectorTriangle triangles;
+	load_triangle_set<K,VectorTriangle>(triangles);
 
 	// construct tree from triangles
-	typedef typename List_Triangle::iterator Iterator;
+	typedef typename VectorTriangle::iterator Iterator;
 	typedef typename CGAL::AABB_triangle_primitive<K, Iterator> Primitive;
 	typedef typename CGAL::AABB_traits<K,Primitive> Traits;
 	typedef typename CGAL::AABB_tree<Traits> Tree;
@@ -123,12 +123,12 @@ int test()
 		return EXIT_FAILURE;
 	}
 
-	//check the iterator 
+	//Iterator index of the intersected primitive 
 	Iterator index = op.second;
 
 	if(std::distance(triangles.begin(), index)!=1)
 	{
-	  std::cerr << "Iterator gives a wrong index" << std::endl;
+	  std::cerr << "wrong primitive index" << std::endl;
 	  return EXIT_FAILURE;
 	}
 
