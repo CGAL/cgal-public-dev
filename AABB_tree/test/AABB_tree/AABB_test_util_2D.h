@@ -84,10 +84,7 @@ template <typename Tree, typename K>
 void test_distance_speed(Tree& tree,
                          const double duration)
 {
-    // typedef typename K::FT FT;
-    // typedef typename K::Ray_3 Ray;
     typedef typename K::Point_2 Point;
-    // typedef typename K::Vector_3 Vector;
 
     std::cout<<duration<<std::endl;
     CGAL::Timer timer;
@@ -99,9 +96,8 @@ void test_distance_speed(Tree& tree,
             Point query = random_point_in<K>(tree.bbox());
             std::cout<<tree.bbox()<<std::endl;
             Point closest = tree.closest_point(query);
-	    (void) closest;
+            (void) closest;
             nb++;
-			 std::cout<<query<< std::endl;
     }
     double speed = (double)nb / timer.time();
     std::cout << speed << " distance queries/s" << std::endl;
