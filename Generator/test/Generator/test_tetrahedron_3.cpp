@@ -9,12 +9,12 @@ typedef double RT;
 
 #define VERBOSE
 
-typedef CGAL::Cartesian<RT>								K;
-typedef K::Point_3 										Point_3;
-typedef K::Vector_3 									Vector_3;
-typedef K::Tetrahedron_3 								Tetrahedron_3;
-typedef std::vector<Point_3> 							Container;
-typedef CGAL::Random_points_in_tetrahedron_3<Point_3> 	Point_generator;
+typedef CGAL::Cartesian<RT>					K;
+typedef K::Point_3 						Point_3;
+typedef K::Vector_3 						Vector_3;
+typedef K::Tetrahedron_3 					Tetrahedron_3;
+typedef std::vector<Point_3> 					Container;
+typedef CGAL::Random_points_in_tetrahedron_3<Point_3> 		Point_generator;
 
 template<class InputIterator>
 bool inside_tetrahedron(const Tetrahedron_3& tet,InputIterator begin, InputIterator end) {
@@ -93,10 +93,32 @@ int main() {
 			pts[j]=Point_3(rand.get_double(),rand.get_double(),rand.get_double());
 		}
 		Tetrahedron_3 tet(pts[0],pts[1],pts[2],pts[3]);
+		Point_generator g1( pts[0], pts[1], pts[2], pts[3] ); // constructor that is given points
+		Point_generator g2( tet ); // constructor that is given a tetrahedron
+		Point_generator g3( g1 ); // copy-constructor
+
+		//Testing the point-constructor
 		point_set.clear();
-		CGAL::cpp11::copy_n(Point_generator( pts[0], pts[1], pts[2],pts[3] ), 
-                       number_points,
-                       std::back_inserter(point_set));
+		CGAL::cpp11::copy_n( g1, number_points,
+		               std::back_inserter(point_set));
+		if(!inside_tetrahedron(tet,point_set.begin(),point_set.end())) {
+		    std::cout<<"POINT OUTSIDE TETRAHEDRON\n"<<std::endl;
+		}
+		is_uniform(tet,point_set.begin(),point_set.end(),r);
+
+		//Testing the tetrahedron-constructor
+		point_set.clear();
+		CGAL::cpp11::copy_n( g2, number_points,
+		               std::back_inserter(point_set));
+		if(!inside_tetrahedron(tet,point_set.begin(),point_set.end())) {
+		    std::cout<<"POINT OUTSIDE TETRAHEDRON\n"<<std::endl;
+		}
+		is_uniform(tet,point_set.begin(),point_set.end(),r);
+
+		//Testing the copy-constructor
+		point_set.clear();
+		CGAL::cpp11::copy_n( g3, number_points,
+		               std::back_inserter(point_set));
 		if(!inside_tetrahedron(tet,point_set.begin(),point_set.end())) {
 		    std::cout<<"POINT OUTSIDE TETRAHEDRON\n"<<std::endl;
 		}
