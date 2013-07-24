@@ -66,6 +66,7 @@ IMAGE_PATH = ${CMAKE_SOURCE_DIR}/Documentation/doc/Documentation/fig \
              ${CMAKE_SOURCE_DIR}/Mesh_2/doc/Mesh_2/fig \
              ${CMAKE_SOURCE_DIR}/Surface_mesher/doc/Surface_mesher/fig \
              ${CMAKE_SOURCE_DIR}/Mesh_3/doc/Mesh_3/fig \
+             ${CMAKE_SOURCE_DIR}/Swept_volume_mesh_generation_3/doc/Swept_volume_mesh_generation_3/fig \
              ${CMAKE_SOURCE_DIR}/Jet_fitting_3/doc/Jet_fitting_3/fig \
              ${CMAKE_SOURCE_DIR}/Minkowski_sum_2/doc/Minkowski_sum_2/fig \
              ${CMAKE_SOURCE_DIR}/Minkowski_sum_3/doc/Minkowski_sum_3/fig \

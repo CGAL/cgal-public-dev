@@ -18,7 +18,7 @@
 \todo check generated documentation
 
 \cgalPkgDescriptionBegin{3D Swept Volume Mesh Generation,PkgSVMG_3Summary}
-\cgalPkgPicture{SV_Demo.png}
+\cgalPkgPicture{SV_Demo-thumb.png}
 
 \cgalPkgSummaryBegin
 \cgalPkgAuthors{Andreas von Dziegielewski, Michael Hemmer}
