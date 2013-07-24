@@ -35,11 +35,6 @@ class Discrete_distribution_with_finite_support_generator {
 		}
 
 		void generate() {
-			result_type q = container[2].getRand();
-//			std::cout << "Just testing " << q.x() << " " << q.y() <<
-//				" " << q.z() << std::endl;
-
-
 			int N = presums.size();
 			typename Container::iterator el_begin = container.begin();
 			typename Container::iterator el_end = container.end();

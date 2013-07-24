@@ -2,6 +2,7 @@
 #define _RANDOM_GENERATOR_WITH_WEIGHT_H_
 #include <vector>
 #include <CGAL/algorithm.h>
+#include <iostream>
 
 namespace CGAL { namespace internal {
 template <typename PointGeneratorClass>
@@ -27,7 +28,7 @@ class Random_generator_with_weight {
 			return _weight;
 		}
 
-		result_type& getRand() {
+		result_type getRand() {
 			std::vector<result_type> output;
 			output.reserve(1);
 			CGAL::cpp11::copy_n( _rand, 1, std::back_inserter(output));
