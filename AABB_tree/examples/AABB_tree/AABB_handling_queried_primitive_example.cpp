@@ -21,8 +21,11 @@ typedef CGAL::AABB_segment_primitive<K, Iterator> Primitive;
 typedef CGAL::AABB_traits<K, Primitive> Traits;
 typedef CGAL::AABB_tree<Traits> Tree;
 
-//types to return primitive results
-typedef Tree::Object_and_primitive_id Object_and_primitive_id;
+//types to return primitive results, template argument is the query type
+//note that the return types are different with the CGAL_INTERSECTION_VERSION.
+typedef boost::optional< Tree::Intersection_and_primitive_id<Segment>::Type > Segment_intersection;
+
+//types to return primitive results for point queries
 typedef Tree::Point_and_primitive_id Point_and_primitive_id;
 
 
@@ -48,28 +51,22 @@ int main()
 	Segment pq(p,q);
 
 	//retrieve an intersection from the AABB tree
-	//The return type contain the exact intersected object and primitive that has been intersected.
-	//AABB Object_and_primitive_id is used to get the result. 
-	boost::optional<Object_and_primitive_id> any;
-	any = tree.any_intersection(pq);
+	//The return type contain the intersection by segment query and primitive that has been intersected.
+	
+	Segment_intersection intersection = tree.any_intersection(pq);
 
-	//First element of the std::pair<Object,typename Primitive::Id> contain the intersection result which is a
-	//CGAL::Object, in this example intersection is a point. 
-	Object_and_primitive_id op = *any;
-	CGAL::Object object = op.first;
+	//The first element of the pair Intersection_and_primitive_id contains the intersection
+	//result. In this example it is a point.
 	Point point;
+	if(boost::get<Point>(&(intersection->first)))
+        std::cout << "Intersection point " << point << std::endl;
 
-	//Assign the object to a point. Note that this should be checked if the intersection object
-	//type is not known.
-	CGAL::assign(point,object);
-
-	std::cout << "Intersection point: " << point << std::endl;
-
+	
 	//Primitive::Id is the iterator type provided while constructing the AABB tree.
-	//Second element of the std::pair<Object,typename Primitive::Id> contain the id of the primitive,
+	//Second element of the pair Intersection_and_primitive_id contain the id of the primitive,
 	//which is basically the index of the provided primitive vector.
 
-	Iterator index = op.second;
+	Iterator index = intersection->second;
 
 	//Get the integer index
 	unsigned int pindex = std::distance(segments.begin(), index);
