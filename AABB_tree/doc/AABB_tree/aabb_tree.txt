@@ -151,7 +151,7 @@ In the following example the AABB primitive wraps a 2D segment as `datum`
 and an iterator in a vector as `id`. First, from a segment query, 
 we compute the intersection type and intersected primitive and shows how 
 to handle queried primitives. In this example, the intersection is a point
-and the returned CGAL::object can be assigned to a point. If the intersection
+and the returned `Object` can be assigned to a point. If the intersection
  is not know before hand,necessary checks should be taken into account. 
  Second, from a point query we compute the closest point
 and closest primitive, much the same way. This is just an one way to handle
