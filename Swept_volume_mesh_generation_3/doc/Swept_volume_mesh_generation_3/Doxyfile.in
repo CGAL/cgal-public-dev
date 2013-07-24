@@ -1,0 +1,4 @@
+@INCLUDE = ${CGAL_DOC_PACKAGE_DEFAULTS}
+PROJECT_NAME = "CGAL ${CGAL_CREATED_VERSION_NUM} - 3D Swept Volume Mesh Generation"
+INPUT        = ${CMAKE_SOURCE_DIR}/Swept_volume_mesh_generation_3/doc/Swept_volume_mesh_generation_3/
+IMAGE_PATH  += ${CMAKE_SOURCE_DIR}/Swept_volume_mesh_generation_3/doc/Swept_volume_mesh_generation_3/fig

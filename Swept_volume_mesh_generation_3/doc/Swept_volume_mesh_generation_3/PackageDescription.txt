@@ -1,0 +1,40 @@
+// 3D Swept Volume Mesh Generation
+
+/// \defgroup PkgSVMG_3 3D Swept Volume Mesh Generation Reference
+/// \defgroup PkgSVMG_3Concepts Concepts
+/// \ingroup PkgSVMG_3
+
+/// \defgroup PkgSVMG_3AlgorithmClasses Algorithm Classes
+/// \ingroup PkgSVMG_3
+
+/// \defgroup PkgSVMG_3TraitsClasses Traits Classes
+/// \ingroup PkgSVMG_3
+
+/// \defgroup PkgSVMG_3Miscellaneous Miscellaneous
+/// \ingroup PkgSVMG_3
+
+/*!
+\addtogroup PkgSVMG_3
+\todo check generated documentation
+
+\cgalPkgDescriptionBegin{3D Swept Volume Mesh Generation,PkgSVMG_3Summary}
+\cgalPkgPicture{SV_Demo.png}
+
+\cgalPkgSummaryBegin
+\cgalPkgAuthors{Andreas von Dziegielewski, Michael Hemmer}
+\cgalPkgDesc{The 3D Swept Volume Mesh Generation package capability for the generation of a high quality mesh that approximates the outer boundary of a swept volume (SV). The approach comes with two guarantees. First, the approximation is conservative, i.e. the swept volume is enclosed by the output mesh. Second, the one-sided Hausdorff distance of the generated mesh to the swept volume is upper bounded by a user defined tolerance. Exploiting this tolerance the method produces an mesh which nicely adapts to the local complexity of the approximated swept volume boundary. The algorithm is two phased: a initialization phase that generates a conservative voxelization of the swept volume, and the actual mesh generation using the Mesh_3 package.}
+\cgalPkgManuals{Chapter_3D_Swept_Volume_Computation,PkgSVMG_3}
+\cgalPkgSummaryEnd
+
+\cgalPkgShortInfoBegin
+\cgalPkgSince{4.5}
+\cgalPkgDependsOn{\ref PkgMesh_3}
+\cgalPkgBib{cgal:dh-swept-volume-3}
+\cgalPkgLicense{\ref licensesGPL "GPL"}
+\cgalPkgDemo{DEMO 1,demo1.zip}
+\cgalPkgDemo{DEMO 2,demo2.zip}
+\cgalPkgShortInfoEnd
+
+\cgalPkgDescriptionEnd
+
+*/
