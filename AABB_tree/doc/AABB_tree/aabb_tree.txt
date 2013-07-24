@@ -131,7 +131,8 @@ typedef CGAL::AABB_tree<Traits> Tree;
 
 \section aabb_tree_examples Examples
 
-We first illustrate how to initialize the 2D and 3D AABB tree with triangle primitives. Other examples illustrate different functionalities of the AABB tree. Note that in 2D only triangle primitives are implemented. However, custom primitives may be defined 
+We first illustrate how to initialize the 2D and 3D AABB tree with triangle primitives. Other examples illustrate different functionalities of the AABB tree. 
+Currently, in 2D, only segment and triangle AABB primitives are implemented. However, custom primitives can be defined 
 for other types of primitives.
 
 \subsection aabb_tree_examples_1 Tree of Triangles, for Intersection and Distance Queries
@@ -151,7 +152,7 @@ In the following example the AABB primitive wraps a 2D segment as `datum`
 and an iterator in a vector as `id`. First, from a segment query, 
 we compute the intersection type and intersected primitive and shows how 
 to handle queried primitives. In this example, the intersection is a point
-and the returned `Object` can be assigned to a point. If the intersection
+and the returned CGAL::object can be assigned to a point. If the intersection
  is not know before hand,necessary checks should be taken into account. 
  Second, from a point query we compute the closest point
 and closest primitive, much the same way. This is just an one way to handle
