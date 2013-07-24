@@ -12,4 +12,5 @@
 \example AABB_tree/AABB_HalfedgeGraph_edge_example.cpp
 \example AABB_tree/AABB_FaceGraph_triangle_example.cpp
 \example AABB_tree/AABB_segment_2_example.cpp
+\example AABB_tree/AABB_handling_queried_primitive_example
 */
