@@ -93,24 +93,24 @@ int main() {
 			pts[j]=Point_2(rand.get_double(),rand.get_double());
 		}
 		Triangle_2 tri(pts[0],pts[1],pts[2]);
-		point_set.clear();
 		Point_generator g1( pts[0], pts[1], pts[2] ); // constructor that is given points
 		Point_generator g2( tri ); // constructor that is given a triangle
 		Point_generator g3( g1 ); // copy-constructor
 
 		//Testing the point-constructor
+		point_set.clear();
 		CGAL::cpp11::copy_n( g1, number_points,
 		               std::back_inserter(point_set));
 		assert(inside_or_close_to_triangle(tri,point_set.begin(),point_set.end()));
 
-		point_set.clear();
 		//Testing the triangle-constructor
+		point_set.clear();
 		CGAL::cpp11::copy_n( g2, number_points,
 		               std::back_inserter(point_set));
 		assert(inside_or_close_to_triangle(tri,point_set.begin(),point_set.end()));
 
-		point_set.clear();
 		//Testing the copy-constructor;
+		point_set.clear();
 		CGAL::cpp11::copy_n( g3, number_points,
 		               std::back_inserter(point_set));
 		assert(inside_or_close_to_triangle(tri,point_set.begin(),point_set.end()));
