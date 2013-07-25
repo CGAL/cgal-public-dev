@@ -19,16 +19,17 @@ class Random_generator_with_weight {
 			this->_weight = x._weight;
 		}
 
-		Random_generator_with_weight(PointGeneratorClass &rand, double weight) {
+		Random_generator_with_weight(const PointGeneratorClass &rand,
+				const double weight) {
 			_rand = PointGeneratorClass(rand);
 			_weight = weight;
 		}
 
-		double getWeight() {
+		double getWeight() const {
 			return _weight;
 		}
 
-		result_type getRand() {
+		result_type getRand() const {
 			std::vector<result_type> output;
 			output.reserve(1);
 			CGAL::cpp11::copy_n( _rand, 1, std::back_inserter(output));

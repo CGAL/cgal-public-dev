@@ -17,7 +17,7 @@ class ALTERED_Discrete_distribution_with_finite_support_generator {
 	public:
 		typedef std::vector<Random_generator_with_weight> Container;
 		ALTERED_Discrete_distribution_with_finite_support_generator(Container &input) {
-			int N = input.size();
+			const int N = input.size();
 			typename Container::iterator el_begin = input.begin();
 			typename Container::iterator el_end = input.end();
 			container.reserve(N);
@@ -34,18 +34,15 @@ class ALTERED_Discrete_distribution_with_finite_support_generator {
 		}
 
 		int generate(CGAL::Random &rand) {
-			int N = presums.size();
+			const int N = presums.size();
 			typename Container::iterator el_begin = container.begin();
 			typename Container::iterator el_end = container.end();
 			double tmp_presum = rand.get_double(0, 1);
-//			std::cout << tmp_presum << '\n';
 			typename std::vector<double>::iterator SampleIterator =
 				upper_bound(presums.begin(), presums.end(),
 						tmp_presum);
 
 			int SampleIndex = SampleIterator - presums.begin();
-//			std::cout << "The picked Element is: " << SampleIndex <<
-//				std::endl;
 			return SampleIndex;
 		}
 };

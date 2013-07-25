@@ -15,11 +15,11 @@ class ALTERED_Random_generator_with_weight {
 			this->_weight = x._weight;
 		}
 
-		ALTERED_Random_generator_with_weight(double weight) {
+		ALTERED_Random_generator_with_weight(const double weight) {
 			_weight = weight;
 		}
 
-		double getWeight() {
+		double getWeight() const {
 			return _weight;
 		}
 
