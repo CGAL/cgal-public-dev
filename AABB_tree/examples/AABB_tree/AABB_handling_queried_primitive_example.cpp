@@ -57,10 +57,11 @@ int main()
 
 	//The first element of the pair Intersection_and_primitive_id contains the intersection
 	//result. In this example it is a point.
-	Point point;
-	if(boost::get<Point>(&(intersection->first)))
-        std::cout << "Intersection point " << point << std::endl;
-
+	Point *point;
+	if( point = boost::get<Point>(&(intersection->first)))
+        std::cout << "Intersection point " << *point << std::endl;
+   
+	//point = boost::get<Point>(&(intersection->first))
 	
 	//Primitive::Id is the iterator type provided while constructing the AABB tree.
 	//Second element of the pair Intersection_and_primitive_id contain the id of the primitive,
