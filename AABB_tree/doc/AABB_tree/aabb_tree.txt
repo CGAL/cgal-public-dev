@@ -151,23 +151,9 @@ the squared distance from a point query.
 In the following example the AABB primitive wraps a 2D segment as `datum` 
 and an iterator in a vector as `id`. First, from a segment query, 
 we compute the intersection type and intersected primitive and shows how 
-to handle queried primitives. The return types are determined with the 
-CGAL intersection version used.
-
-	\code
-	#if CGAL_INTERSECTION_VERSION < 2
-                boost::optional<Object_and_primitive_id>
-    #else
-				boost::optional<typename Intersection_and_primitive_id<Query>::Type>
-    #endif
-	\endcode
-	
-Implicit conversion from new version to old version return types
-is possible. However, switching to new types is recommended. 
-
-In this example, the Intersection_and_primitive_id type is defined for 
-segment queries. The first element of the intersection return type contains
-the intersection result while the second element contains the actual 
+to handle queried primitives. In this example, the Intersection_and_primitive_id 
+type is defined for segment queries. The first element of the intersection 
+return type contains the intersection result while the second element contains the actual 
 primitive that has been intersected. In this example, the intersection is a 
 point which can be retrieved from the intersection result. If the intersection
 is not know before hand,necessary checks should be taken into account. 
