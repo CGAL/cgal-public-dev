@@ -1,3 +1,4 @@
+namespace CGAL{
 /*!
 \ingroup PkgSVMG_3Classes
 
@@ -13,7 +14,7 @@ swept volume and obeys a user defined a-priori geometric bound in terms of the o
 */
 
 template<typename GeometryTraits>
-class Swept_volume_domain_3 {
+class Swept_volume_domain_3{
 public:
 
 /// \name Types required by concept
@@ -278,4 +279,6 @@ Subdomain_index subdomain_index(Index index);
 
 /// @}
 
-}; /* end MeshDomain_3 */
+}; /* end Swept_volume_domain_3 */
+
+}
