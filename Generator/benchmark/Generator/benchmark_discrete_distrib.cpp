@@ -7,7 +7,6 @@
 
 #include <CGAL/Implicit_mesh_domain_3.h>
 #include <CGAL/make_mesh_3.h>
-#include <CGAL/Timer.h>
 #include <CGAL/internal/Discrete_distribution_with_finite_support_generator.h>
 #include <CGAL/internal/Random_generator_with_weight.h>
 #include <CGAL/point_generators_3.h>
@@ -47,14 +46,13 @@ typedef CGAL::internal::Random_generator_with_weight<PointGen>
 
 class WeightFunctor {
 	public:
-		double operator() (Tetrahedron3 t) {
+		double operator() (Tetrahedron3 &t) {
 			return t.volume();
 		}
 };
 
 int main()
 {
-	CGAL::Timer timp;
 	// Domain (Warning: Sphere_3 constructor uses squared radius !)
 	Mesh_domain domain(sphere_function, K::Sphere_3(CGAL::ORIGIN, 2.));
 	
@@ -65,11 +63,8 @@ int main()
 	// Mesh generation
 	C3t3 c3t3 = CGAL::make_mesh_3<C3t3>(domain, criteria);
 	
-	// Output
-	std::ofstream medit_file("out.mesh");
-	c3t3.output_to_medit(medit_file);
-	
-	cout << "Actual number of cells in c3t3 in complex: " << c3t3.number_of_cells_in_complex() << "\n";
+	cout << "Actual number of cells in c3t3 in complex: " <<
+		c3t3.number_of_cells_in_complex() << std::endl;
 	
 	int Nr_cells_in_cplx = c3t3.number_of_cells_in_complex();
 
