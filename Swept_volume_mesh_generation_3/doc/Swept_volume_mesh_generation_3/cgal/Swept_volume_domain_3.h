@@ -58,7 +58,7 @@ Assignable, DefaultConstructible and EqualityComparable.
 The default constructed value must match the label of the exterior of
 the domain (which contains at least the unbounded component).
 */
-typedef unspecified_type Subdomain_index;
+typedef int Subdomain_index;
 
 /*!
 Type of indices for surface patches
@@ -68,7 +68,7 @@ Assignable, DefaultConstructible and EqualityComparable.
 The default constructed value must be the index value assigned
 to a non surface facet.
 */
-typedef unspecified_type Surface_patch_index;
+typedef std::pair<int> Surface_patch_index;
 
 /*!
 Type of indices to be stored at mesh vertices
@@ -77,7 +77,7 @@ on which the vertex lies. Must be a model of CopyConstructible,
 Assignable, DefaultConstructible and EqualityComparable.
 
 */
-typedef unspecified_type Index;
+typedef boost::variant<Subdomain_index, Surface_patch_index> Index;
 
 /*!
 Return type of `Construct_intersection` queries.
@@ -193,8 +193,8 @@ swept_volume_criteria_3_object(const MeshCriteria_3& criteria);
 /// The following are constructors
 /// @{
 /*!
-The swept object (generator) must be given as an indexed face set, that is, a range of vertices and a range of triples.
-Each triple defines the indices of one triangle, the indices reference to the range of vertices.
+The swept object (generator) must be given as an indexed face set, that is, a range of vertices and a range of 3-tupels.
+Each tupel defines the indices of one triangle, the indices reference to the range of vertices.
 
 The trajectory is expected to be a sequence of rigid body transformations and has to be a 'Range' of 'Aff_transformation_3'. 
 The bound \f$ \epsilon\f$ determines the geometric fidelity of the final swept volume, the one-sided Hausdorff
@@ -204,7 +204,7 @@ With downstepping enabled, firstly a coarser approximation is computed, and then
 guarantees. It is a trade off between running time and memory consumption.
 */
 
-public Swept_volume_domain_3(range<Point_3> vertices, range< CGAL::cpp11::triple<int, int, int> > indices, range<Aff_transformation_3> trajectory, double epsilon, bool downstep = false);
+public Swept_volume_domain_3(range<Point_3> vertices, range< CGAL::cpp11::tuple<int, int, int> > indices, range<Aff_transformation_3> trajectory, double epsilon, bool downstep = false);
 
 
 
