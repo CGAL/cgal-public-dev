@@ -37,7 +37,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <iostream>
-#include </usr/include/GL/glut.h>
+//#include </usr/include/GL/glut.h>
 //#include "vecmath.h"
 //#include "OffReader.h"
 #include <stdlib.h>
