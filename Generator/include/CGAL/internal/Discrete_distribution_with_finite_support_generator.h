@@ -54,7 +54,7 @@ class Discrete_distribution_with_finite_support_generator {
 
 			result_type p = container[SampleIndex].getRand();
 			std::cout << "The generated point is " << p.x() << " " <<
-				p.y() << " " << p.z() << '\n';
+				p.y() << " " << p.z() << std::endl;
 		}
 };
 };
