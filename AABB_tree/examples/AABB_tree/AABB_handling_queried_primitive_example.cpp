@@ -22,7 +22,6 @@ typedef CGAL::AABB_traits<K, Primitive> Traits;
 typedef CGAL::AABB_tree<Traits> Tree;
 
 //types to return primitive results, template argument is the query type
-//note that the return types are different with the CGAL_INTERSECTION_VERSION.
 typedef boost::optional< Tree::Intersection_and_primitive_id<Segment>::Type > Segment_intersection;
 
 //types to return primitive results for point queries
@@ -61,7 +60,6 @@ int main()
 	if( point = boost::get<Point>(&(intersection->first)))
         std::cout << "Intersection point " << *point << std::endl;
    
-	//point = boost::get<Point>(&(intersection->first))
 	
 	//Primitive::Id is the iterator type provided while constructing the AABB tree.
 	//Second element of the pair Intersection_and_primitive_id contain the id of the primitive,
