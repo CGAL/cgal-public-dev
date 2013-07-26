@@ -2,6 +2,7 @@
 #define _RANDOM_GENERATOR_WITH_WEIGHT_H_
 #include <vector>
 #include <iostream>
+#include <CGAL/algorithm.h>
 
 namespace CGAL { namespace internal {
 template <typename PointGeneratorClass>

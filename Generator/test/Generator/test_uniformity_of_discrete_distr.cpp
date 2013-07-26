@@ -75,8 +75,7 @@ int main()
 
 	int *ret = (int *) calloc(N, sizeof(int));
 	for (int i = 0; i < number_points; i++) {
-		int index = randomGen.generate();
-		std::cout << "Index is: " << index << std::endl;
+		int index = randomGen.generate(rand);
 		ret[index]++;
 	}
 	for(int i = 0; i < N; i++) {

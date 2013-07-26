@@ -32,11 +32,10 @@ class Discrete_distribution_with_finite_support_generator {
 			}
 		}
 
-		result_type generate() {
+		result_type generate(CGAL::Random &rand) {
 			const int N = presums.size();
 			typename Container::iterator el_begin = container.begin();
 			typename Container::iterator el_end = container.end();
-			CGAL::Random rand;
 			double tmp_presum = rand.get_double(0, presums[N-1]);
 			typename std::vector<double>::iterator SampleIterator =
 				upper_bound(presums.begin(), presums.end(),
