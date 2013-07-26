@@ -1,9 +1,5 @@
 #ifndef _ALTERED_RANDOM_GENERATOR_WITH_WEIGHT_H_
 #define _ALTERED_RANDOM_GENERATOR_WITH_WEIGHT_H_
-#include <vector>
-#include <CGAL/algorithm.h>
-#include <iostream>
-
 namespace CGAL { namespace internal {
 class ALTERED_Random_generator_with_weight {
 	private:

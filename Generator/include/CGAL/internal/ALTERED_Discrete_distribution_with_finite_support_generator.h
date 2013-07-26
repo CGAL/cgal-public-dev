@@ -1,13 +1,7 @@
 #ifndef _ALTERED_DISCRETE_DISTRIBUTION_WITH_FINITE_SUPPORT_GENERATOR_H_
 #define _ALTERED_DISCRETE_DISTRIBUTION_WITH_FINITE_SUPPORT_GENERATOR_H_
-#include <iostream>
 #include <vector>
-#include <algorithm>
 #include <CGAL/Random.h>
-#include <CGAL/algorithm.h>
-#include <iterator>
-#include <cstdlib>
-
 namespace CGAL { namespace internal {
 template<typename Random_generator_with_weight>
 class ALTERED_Discrete_distribution_with_finite_support_generator {

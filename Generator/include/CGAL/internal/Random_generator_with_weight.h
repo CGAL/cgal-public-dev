@@ -1,7 +1,6 @@
 #ifndef _RANDOM_GENERATOR_WITH_WEIGHT_H_
 #define _RANDOM_GENERATOR_WITH_WEIGHT_H_
 #include <vector>
-#include <CGAL/algorithm.h>
 #include <iostream>
 
 namespace CGAL { namespace internal {

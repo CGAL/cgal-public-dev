@@ -2,11 +2,7 @@
 #define _DISCRETE_DISTRIBUTION_WITH_FINITE_SUPPORT_GENERATOR_H_
 #include <iostream>
 #include <vector>
-#include <algorithm>
 #include <CGAL/Random.h>
-#include <CGAL/algorithm.h>
-#include <iterator>
-#include <cstdlib>
 
 #define VERBOSE
 
