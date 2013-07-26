@@ -35,31 +35,34 @@ int main(int argc, char **argv){
 
     CGAL::Real_timer total; 
     total.start(); 
-
+	
 ///
 
 
-#if 0
-  typedef Kernel::Point_3 Point_3;
-	//typedef CGAL::Aff_transformation_3<Kernel> AT3;
-	typedef Kernel::Aff_transformation_3 AT_3;
+  //typedef Kernel::Point_3 Point_3;
+	////typedef CGAL::Aff_transformation_3<Kernel> AT3;
+	//typedef Kernel::Aff_transformation_3 AT_3;
 
-	Point_3 a(1,0,3);
-	Point_3 b(1,2,3);
+	//Point_3 a(1,0,3);
+	//Point_3 b(1,2,3);
 
-	AT_3 A(1,0,0,1,
-				0,1,0,1,
-				0,0,1,1,
-				      1);
-	a = A.transform(a);
-	std::cout << a.x() << " " << a.y() << " " << a.z() << std::endl;	
+	//AT_3 A(1,0,0,1,
+	//			0,1,0,1,
+	//			0,0,1,1,
+	//			      1);
+	//a = A.transform(a);
+	//std::cout << a.x() << " " << a.y() << " " << a.z() << std::endl;	
 
-		
+	//std::cout << CGAL::POSITIVE << std::endl;		
+	//std::cout << CGAL::NEGATIVE << std::endl;		
+	//std::cout << CGAL::COPLANAR << std::endl;		
+
+	//std::cout << !CGAL::POSITIVE << std::endl;		
+	//std::cout << !CGAL::NEGATIVE << std::endl;		
+	//std::cout << !CGAL::COPLANAR << std::endl;		
 
 
 
-
-#else
 
 #if 1
     std::string tarr_file = "../../data/Swept_volume/bunny/track.tarr";
@@ -67,6 +70,10 @@ int main(int argc, char **argv){
 #endif 
 
     // cmake -DCMAKE_BUILD_TYPE=Debug
+
+
+	
+
 
 #if 1
     int resolution_D = 9;
@@ -145,5 +152,4 @@ int main(int argc, char **argv){
 
   return 0; 
 
-#endif
 }

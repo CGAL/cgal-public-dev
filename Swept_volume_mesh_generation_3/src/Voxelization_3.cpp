@@ -104,6 +104,45 @@ namespace SV{
     // timer_total.stop();
   }  
 
+
+  Voxelization_3::Voxelization_3(
+      const char* filename_track, const char* filename_off, 
+      double eps, int downstep, int num_threads) 
+    :
+      m_epsilon(eps),
+      m_downstep(downstep), 
+      m_num_threads(num_threads),
+      cull_success(0),
+      cull_candidate(0)
+  {
+    // timer_total.start();
+
+    char* name_off = (char*) filename_off;	
+    char* name_track = (char*) filename_track;
+
+    std::cout <<"Loading off-File: " << filename_off << std::endl;
+    //Off-File laden:
+    LoadOffFile(filename_off,P,ind);
+    std::cout <<"Size of mesh: " << ind.size()/3 << std::endl;
+
+
+    loadFile(filename_track, Track);     // use tarr file
+#if 0
+    loadPathFile(filename_track, Track); // use teraport path file
+#endif
+
+    //normalize(P, Track);
+		computeResAndScale(P,Track,eps);
+
+    //Koordinaten normalisieren
+    std::cerr << "Anzahl Dreiecke: " << ind.size() << std::endl;
+    std::cerr << "Anzahl Vertices: " << P.size() << std::endl;
+
+    initialize_winged_edge();
+    generate_voxelization();
+
+    // timer_total.stop();
+  }  
   void Voxelization_3::initialize_winged_edge() {
     // Generate Winged edge Structure
     for (uint i = 0; i< ind.size(); i+=3){
@@ -524,6 +563,91 @@ void Voxelization_3::LoadOffFile(
     std::cerr << "Tarr mit " << steps << " Punkten geladen ..." << std::endl;
   }
 
+
+	void Voxelization_3::computeResAndScale(std::vector<Point_3>& P, std::vector< AT_3 >& Track, double eps ){
+
+    double x = P[0].x(); double X = P[0].x();
+    double y = P[0].y(); double Y = P[0].y();
+    double z = P[0].z(); double Z = P[0].z();
+
+    BOOST_FOREACH(Point_3 v, P){
+      BOOST_FOREACH(AT_3 M, Track){
+        Point_3 Mv = M.transform(v);
+        x= (std::min)(x,Mv.x());  
+        y= (std::min)(y,Mv.y());  
+        z= (std::min)(z,Mv.z()); 
+        X= (std::max)(X,Mv.x());  
+        Y= (std::max)(Y,Mv.y());  
+        Z= (std::max)(Z,Mv.z());                              
+      }
+    }
+
+		double diam = (std::max)((std::max)(X-x,Y-y),Z-z);
+	
+		eps = .02;
+		double m = 3;
+
+		double safety_scale = 0.9;
+		eps*=safety_scale;
+		
+	 double n_d = log2(m*sqrt(3)*diam/(eps*safety_scale));
+		std::cout << "n_d = " << n_d << std::endl;
+		std::cout << "diam = " << diam << std::endl;
+
+				
+	
+		m_resolution = (int)n_d + 1;	
+		std::cout << "resolution = " << m_resolution << std::endl;
+
+		double ss = pow( 2.0, n_d - m_resolution );
+    std::cerr << "ss: " << ss << std::endl;
+
+		// TODO _ANDI 0.7 seems a bit overkill to scale!
+    double s = ss * (safety_scale)/(std::max)((std::max)(X-x,Y-y),Z-z);
+    std::cerr << "s: " << s << std::endl;
+    // move lower left corner to origin 
+    // invert scale to get (0,0,0)-(1,1,1)cube 
+    // In order to write the original back, take this matrix 
+    // and multiply each point with its inverse 
+    //Matrix4d T1,T2,T3;
+    //T3.makeTranslate(0.125,0.125,0.125);
+    //T2.makeScale(s,s,s);
+    //T1.makeTranslate(-x,-y,-z);
+    //Matrix4d T = T3*T2*T1;
+		AT_3 T1(1,0,0,0.125,
+						0,1,0,0.125,
+						0,0,1,0.125, 1);
+		AT_3 T2(s,0,0,0,
+						0,s,0,0,
+						0,0,s,0, 1);
+		AT_3 T3(1,0,0,-x,
+						0,1,0,-y,
+						0,0,1,-z, 1);
+		AT_3 T = T3*T2*T1;
+
+    BOOST_FOREACH(AT_3& M, Track){
+      M=T*M;
+    }
+
+    // global MT for backtrafo
+    //Matrix4d TT1,TT2,TT3;
+    //TT3.makeTranslate(-0.125,-0.125,-0.125);
+    //TT2.makeScale(1/s,1/s,1/s);
+    //TT1.makeTranslate(x,y,z);
+    //m_back_transformation = TT1*TT2*TT3;
+		AT_3 TT1(1,0,0,-0.125,
+					   0,1,0,-0.125,
+						 0,0,1,-0.125, 1);
+		AT_3 TT2(1/s,0,0,0,
+					 	 0,1/s,0,0,
+						 0,0,1/s,0, 1);
+		AT_3 TT3(1,0,0,x,
+						 0,1,0,y,
+						 0,0,1,z, 1);
+    m_back_transformation = TT1*TT2*TT3;
+	
+	
+	}
 
   //Koordinaten auf [-1,1]^3 normalisieren:
   void Voxelization_3::normalize(std::vector<Point_3>& P, std::vector< AT_3 >& Track ) {

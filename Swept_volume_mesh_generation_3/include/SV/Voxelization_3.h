@@ -61,7 +61,6 @@
 #define USE_EXACT_CULLING 1
 #endif 
 
-// this is for NON exact only!
 #ifndef DONT_USE_CULLING_PATCH 
 #define DONT_USE_CULLING_PATCH 0
 #endif
@@ -116,6 +115,7 @@ public:
   int m_resolution;
   int m_downstep;
   int m_num_threads; 
+  int m_epsilon;
   
   mutable int cull_candidate;
   mutable int cull_success;
@@ -169,6 +169,10 @@ public:
       const char* filename_track, const char* filename_off, 
       int n = 10, int downstep = 1 , int num_threads = 1 );
   
+  Voxelization_3(
+      const char* filename_track, const char* filename_off, 
+      double eps, int downstep = 1 , int num_threads = 1 );
+  
   void clear(){   
     //P = std::vector<Vector3d>(); 
     P = std::vector<Point_3>(); 
@@ -194,6 +198,7 @@ private:
   void generate_voxelization() const;
   void initialize_winged_edge();
   void normalize(std::vector<Point_3>&, std::vector< AT_3 >&);
+  void computeResAndScale(std::vector<Point_3>& P, std::vector< AT_3 >& Track,double eps );
   void genObjectList(); 	
   void compress(int current_res, bool compute_inner_offset) const;
   
@@ -281,15 +286,15 @@ public:
     //Vector3d c2 = D0*P[we.at(3)]; 	
     //Vector3d c3 = D1*P[we.at(3)]; 	
 
-		Point_3 A0 = D0.transform(P[we.at(0)]);
-		Point_3 A1 = D1.transform(P[we.at(0)]);
-		Point_3 B0 = D0.transform(P[we.at(1)]);
-		Point_3 B1 = D1.transform(P[we.at(1)]);
-             
-		Point_3 C0 = D0.transform(P[we.at(2)]);
-		Point_3 C1 = D1.transform(P[we.at(2)]);
-		Point_3 C2 = D0.transform(P[we.at(3)]);
-		Point_3 C3 = D1.transform(P[we.at(3)]);
+	Point_3 A0 = D0.transform(P[we.at(0)]);
+	Point_3 A1 = D1.transform(P[we.at(0)]);
+	Point_3 B0 = D0.transform(P[we.at(1)]);
+	Point_3 B1 = D1.transform(P[we.at(1)]);
+     
+	Point_3 C0 = D0.transform(P[we.at(2)]);
+	Point_3 C1 = D1.transform(P[we.at(2)]);
+	Point_3 C2 = D0.transform(P[we.at(3)]);
+	Point_3 C3 = D1.transform(P[we.at(3)]);
 
     
     //Point_3 A0(a0.x(),a0.y(),a0.z()); 	
@@ -302,8 +307,13 @@ public:
     //Point_3 C3(c3.x(),c3.y(),c3.z());  
     
 #define SV_ON_SAME_SIDE(P1,P2,P3,Q1,Q2)         \
-    CGAL::orientation(P1,P2,P3,Q1)==            \
-      CGAL::orientation(P1,P2,P3,Q2)
+    (CGAL::orientation(P1,P2,P3,Q1)==            \
+      CGAL::orientation(P1,P2,P3,Q2))
+
+//#define SV_ON_SAME_SIDE(P1,P2,P3,Q1,Q2)         \
+//    (CGAL::orientation(P1,P2,P3,Q1)==            \
+//      CGAL::orientation(P1,P2,P3,Q2)&& \
+//      CGAL::orientation(P1,P2,P3,Q2)!=CGAL::COPLANAR) 
     
     // we are supposed to use the triangle pair that formes the largest angle 
     // this it done by chosing the 
@@ -335,6 +345,10 @@ public:
     }
 #undef SV_ON_SAME_SIDE
 
+
+#if DONT_USE_CULLING_PATCH
+	return true;	
+#endif
     // code reaches here: Quad discarded!
     cull_success += 2;
     return false; 
@@ -347,9 +361,9 @@ public:
     //const Matrix4d& D   = Track[i];
     //const Matrix4d& D_1 = Track[i-1];
     //const Matrix4d& D1  = Track[i+1];
-		AT_3 D   = Track[i];
-		AT_3 D_1 = Track[i-1];
-		AT_3 D1  = Track[i+1];
+	AT_3 D   = Track[i];
+	AT_3 D_1 = Track[i-1];
+	AT_3 D1  = Track[i+1];
 
     A   = D.transform(P[ind[j]]  ) ;
     B   = D.transform(P[ind[j+1]]) ;
@@ -384,17 +398,23 @@ public:
     //Point_3 B_1(b_1.x(),b_1.y(),b_1.z());  
     //Point_3 C_1(c_1.x(),c_1.y(),c_1.z());  
 
+
+#if DONT_USE_CULLING_FACET
+	return true;	
+#endif
+
+
     // for orientable meshes (correct normals)
     // if triangle normal points inwards for at least one prism (of timestep +/-)
     // and prism is well formed - we can cull
-    if( CGAL::orientation(A,B,C,A1) == CGAL::LEFT_TURN &&
-        CGAL::orientation(A,B,C,B1) == CGAL::LEFT_TURN &&
-        CGAL::orientation(A,B,C,C1) == CGAL::LEFT_TURN ){
+    if( CGAL::orientation(A,B,C,A1) == CGAL::POSITIVE &&
+        CGAL::orientation(A,B,C,B1) == CGAL::POSITIVE &&
+        CGAL::orientation(A,B,C,C1) == CGAL::POSITIVE ){
       cull_success++; return false;
     }
-    if( CGAL::orientation(A,B,C,A_1) == CGAL::LEFT_TURN &&
-        CGAL::orientation(A,B,C,B_1) == CGAL::LEFT_TURN &&
-        CGAL::orientation(A,B,C,C_1) == CGAL::LEFT_TURN ){
+    if( CGAL::orientation(A,B,C,A_1) == CGAL::POSITIVE &&
+        CGAL::orientation(A,B,C,B_1) == CGAL::POSITIVE &&
+        CGAL::orientation(A,B,C,C_1) == CGAL::POSITIVE ){
       cull_success++; return false;
     } 
      
@@ -431,10 +451,15 @@ public:
     //Point_3 A1(a1.x(),a1.y(),a1.z()); 
     //Point_3 B1(b1.x(),b1.y(),b1.z());  
     //Point_3 C1(c1.x(),c1.y(),c1.z());  
+
+
+#if DONT_USE_CULLING_FACET_NORMAL
+	return true;	
+#endif
         
-    if( CGAL::orientation(A,B,C,A1) == CGAL::LEFT_TURN &&
-        CGAL::orientation(A,B,C,B1) == CGAL::LEFT_TURN &&
-        CGAL::orientation(A,B,C,C1) == CGAL::LEFT_TURN ){
+    if( CGAL::orientation(A,B,C,A1) == CGAL::POSITIVE &&
+        CGAL::orientation(A,B,C,B1) == CGAL::POSITIVE &&
+        CGAL::orientation(A,B,C,C1) == CGAL::POSITIVE ){
       cull_success++; return false;
     }
     

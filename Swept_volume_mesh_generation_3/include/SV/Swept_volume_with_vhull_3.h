@@ -37,7 +37,7 @@
 
 #ifdef _OPENMP
 #ifndef USE_OMP
-#define USE_OMP 1
+#define USE_OMP 0
 #endif
 #endif 
 
@@ -143,10 +143,18 @@ public:
     
     
     initialization_timer.start();
+
+#if 0
+    vhull = 
+      Voxelization_3(
+          filename_track.c_str(),filename_off.c_str(),
+          0.01, downstep, num_threads);
+#else
     vhull = 
       Voxelization_3(
           filename_track.c_str(),filename_off.c_str(),
           n, downstep, num_threads);
+#endif
     backtrafo = vhull.back_transformation();
     Octree_3 volume = vhull.volume(); 
     // vhull.clear();
