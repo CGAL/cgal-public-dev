@@ -84,6 +84,9 @@ int main()
 	CGAL::internal::Discrete_distribution_with_finite_support_generator<GeneratorWithWeight
 		> randomGen(containing_structure);
 
-	randomGen.generate();
+	Point p = randomGen.generate();
+	std::cout << "The generated point is " << p.x() << " " <<
+		p.y() << " " << p.z() << std::endl;
+
 	return 0;
 }

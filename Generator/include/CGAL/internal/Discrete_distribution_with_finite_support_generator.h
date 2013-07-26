@@ -4,7 +4,7 @@
 #include <vector>
 #include <CGAL/Random.h>
 
-#define VERBOSE
+//#define VERBOSE
 
 namespace CGAL { namespace internal {
 template<typename Random_generator_with_weight>
@@ -32,7 +32,7 @@ class Discrete_distribution_with_finite_support_generator {
 			}
 		}
 
-		void generate() {
+		result_type generate() {
 			const int N = presums.size();
 			typename Container::iterator el_begin = container.begin();
 			typename Container::iterator el_end = container.end();
@@ -58,6 +58,7 @@ class Discrete_distribution_with_finite_support_generator {
 			std::cout << "The generated point is " << p.x() << " " <<
 				p.y() << " " << p.z() << std::endl;
 #endif
+			return p;
 		}
 };
 };
