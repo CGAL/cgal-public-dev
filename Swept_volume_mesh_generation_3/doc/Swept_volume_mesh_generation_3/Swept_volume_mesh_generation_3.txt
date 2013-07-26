@@ -6,10 +6,26 @@ namespace CGAL {
 \cgalAutoToc
 \author Andreas von Dziegielewski, Michael Hemmer
 
-The 3D Swept Volume Mesh Generation package capability 
-for the generation of a high quality mesh that approximates
- the outer boundary of a swept volume (SV). The approach 
-comes with two guarantees. First, the approximation is 
+
+\cgalFigureBegin{SweptStanfordBunny,sv-rotated-bunny-back.png}
+The Swept Volume of the Standford Bunny while rotating by about 90 degrees. 
+\cgalFigureEnd
+
+The swept volume \f$ SV \f$ is defined as the set of all points touched by 
+a solid (the generator) while performing a motion. 
+Its computation plays an important role in computer aided design (CAD),
+numerically controlled (NC) machining verification and 
+graphical modeling. In robotics and motion planing 
+the swept volume can be used for the determination of workspace 
+or to efficiently verify that an already computed path remains valid while 
+other parts of the design may change.
+
+The 3D Swept Volume Mesh Generation package is based on 
+\cite cgal:SV-vDHS-2012 .
+The package provides capability for the generation of a high quality mesh 
+that approximates  the outer boundary of a swept volume (SV). 
+The approach comes with two guarantees. 
+First, the approximation is 
 conservative, i.e. the swept volume is enclosed by the 
 output mesh. Second, the one-sided Hausdorff distance 
 of the generated mesh to the swept volume is upper 
@@ -21,9 +37,17 @@ initialization phase that generates a conservative
 voxelization of the swept volume, and the actual 
 mesh generation using the Mesh_3 package.
 
+
+
 \section secmydefinitions Definitions
 
-Section on definitions here ...
+The swept volume is defined as the entity of all points touched by 
+a solid (the generator) under the transformations of either a 
+continuous or discrete trajectory. 
+
+
+
+
 
 \section secmyexamples Examples
 
