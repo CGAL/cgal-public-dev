@@ -84,19 +84,30 @@ namespace CGAL { namespace internal {
 
 		aux = rand.get_double(0,1);
 
-		int ok = 1;
-		for (int i = 1; i < 3; i++) {
-			if (aux < a[i]) {
-				for (int j = i; j < 3; j++) {
-					a[j+1] = a[j];
-				}
-				a[i] = aux;
-				ok = 0;
-				break;
+//		int ok = 1;
+//		for (int i = 1; i < 3; i++) {
+//			if (aux < a[i]) {
+//				for (int j = i; j < 3; j++) {
+//					a[j+1] = a[j];
+//				}
+//				a[i] = aux;
+//				ok = 0;
+//				break;
+//			}
+//		}
+
+		if (aux < a[1]) {
+			double tmp = a[1];
+			a[1] = aux;
+			a[2] = tmp;
+		} else {
+			if (aux > a[2]) {
+				a[3] = aux;
+			} else {
+				double tmp = a[2];
+				a[2] = aux;
+				a[3] = tmp;
 			}
-		}
-		if (ok) { // if no change has been made inside the for loop
-			a[3] = aux;
 		}
 
 		a[4] = 1.0;
@@ -126,7 +137,7 @@ namespace CGAL { namespace internal {
 	}
 
 	template <typename RandomAccessIterator, typename OutputIterator>
-	void barycoords_3(RandomAccessIterator in, OutputIterator out,
+	void barycoords_2(RandomAccessIterator in, OutputIterator out,
 			CGAL::Random& rand) {
 		// in contains the coords of the simplex
 
