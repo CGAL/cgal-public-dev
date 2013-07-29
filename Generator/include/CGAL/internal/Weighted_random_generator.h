@@ -1,25 +1,25 @@
-#ifndef _RANDOM_GENERATOR_WITH_WEIGHT_H_
-#define _RANDOM_GENERATOR_WITH_WEIGHT_H_
+#ifndef _WEIGHTED_RANDOM_GENERATOR_H_
+#define _WEIGHTED_RANDOM_GENERATOR_H_
 #include <vector>
 #include <iostream>
 #include <CGAL/algorithm.h>
 
 namespace CGAL { namespace internal {
 template <typename PointGeneratorClass>
-class Random_generator_with_weight {
+class Weighted_random_generator {
 	private:
 		PointGeneratorClass _rand;
 		double _weight;
 	public:
 		typedef typename PointGeneratorClass::result_type result_type;
-		Random_generator_with_weight() {}
+		Weighted_random_generator() {}
 
-		Random_generator_with_weight(const Random_generator_with_weight<PointGeneratorClass> &x) {
+		Weighted_random_generator(const Weighted_random_generator<PointGeneratorClass> &x) {
 			this->_rand = PointGeneratorClass(x._rand);
 			this->_weight = x._weight;
 		}
 
-		Random_generator_with_weight(const PointGeneratorClass &rand,
+		Weighted_random_generator(const PointGeneratorClass &rand,
 				const double weight) {
 			_rand = PointGeneratorClass(rand);
 			_weight = weight;
@@ -36,7 +36,7 @@ class Random_generator_with_weight {
 			return output[0];
 		}
 
-		Random_generator_with_weight& operator=(const Random_generator_with_weight &x) {
+		Weighted_random_generator& operator=(const Weighted_random_generator &x) {
 			this->_rand = PointGeneratorClass(x._rand);
 			this->_weight = x._weight;
 			return *this;
@@ -44,5 +44,4 @@ class Random_generator_with_weight {
 };
 };
 };
-#endif //_RANDOM_GENERATOR_WITH_WEIGHT_H_
-
+#endif //_WEIGHTED_RANDOM_GENERATOR_H_

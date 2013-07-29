@@ -1,5 +1,5 @@
-#ifndef _DISCRETE_DISTRIBUTION_WITH_FINITE_SUPPORT_GENERATOR_H_
-#define _DISCRETE_DISTRIBUTION_WITH_FINITE_SUPPORT_GENERATOR_H_
+#ifndef _FINITE_SUPPORT_DISTRIBUTION_H_
+#define _FINITE_SUPPORT_DISTRIBUTION_H_
 #include <iostream>
 #include <vector>
 #include <CGAL/Random.h>
@@ -7,23 +7,23 @@
 //#define VERBOSE
 
 namespace CGAL { namespace internal {
-template<typename Random_generator_with_weight>
-class Discrete_distribution_with_finite_support_generator {
+template<typename Weighted_random_generator>
+class Finite_support_distribution {
 	private:
-		std::vector<Random_generator_with_weight> container;
+		std::vector<Weighted_random_generator> container;
 		std::vector<double> presums;
 	public:
-		typedef std::vector<Random_generator_with_weight> Container;
-		typedef typename Random_generator_with_weight::result_type result_type;
-		Discrete_distribution_with_finite_support_generator(Container &input) {
+		typedef std::vector<Weighted_random_generator> Container;
+		typedef typename Weighted_random_generator::result_type result_type;
+		Finite_support_distribution(Container &input) {
 			const int N = input.size();
 			typename Container::iterator el_begin = input.begin();
 			typename Container::iterator el_end = input.end();
 			container.reserve(N);
 			presums.reserve(N);
-			typename std::vector<Random_generator_with_weight>::iterator it = el_begin;
+			typename std::vector<Weighted_random_generator>::iterator it = el_begin;
 			for (; it != el_end; it++) {
-				container.push_back(Random_generator_with_weight(*it));
+				container.push_back(Weighted_random_generator(*it));
 			}
 
 			for (int i = 0; i < N; i++) {
@@ -46,7 +46,7 @@ class Discrete_distribution_with_finite_support_generator {
 			std::cout << "The picked Element is: " << SampleIndex <<
 				std::endl;
 #endif
-			Random_generator_with_weight SampleElement = *(el_begin + SampleIndex);
+			Weighted_random_generator SampleElement = *(el_begin + SampleIndex);
 #ifdef VERBOSE
 			std::cout << "Weight of the picked element: " <<
 				SampleElement.getWeight() << std::endl;
@@ -62,5 +62,5 @@ class Discrete_distribution_with_finite_support_generator {
 };
 };
 };
-#endif //_DISCRETE_DISTRIBUTION_WITH_FINITE_SUPPORT_GENERATOR_H_
+#endif //FINITE_SUPPORT_DISTRIBUTION_H_
 

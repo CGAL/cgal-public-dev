@@ -3,8 +3,8 @@
 #include <CGAL/number_type_basic.h>
 #include <CGAL/Random.h>
 #include <iostream>
-#include <CGAL/internal/Discrete_distribution_with_finite_support_generator.h>
-#include <CGAL/internal/Random_generator_with_weight.h>
+#include <CGAL/internal/Finite_support_distribution.h>
+#include <CGAL/internal/Weighted_random_generator.h>
 #include <CGAL/point_generators_3.h>
 #include <vector>
 #include <algorithm>
@@ -48,7 +48,7 @@ void Probability_1_generator<P>::generate_point() {
 
 //Random generator
 typedef
-CGAL::internal::Random_generator_with_weight<Probability_1_generator<int> > GeneratorWithWeight;
+CGAL::internal::Weighted_random_generator<Probability_1_generator<int> > GeneratorWithWeight;
 
 int main()
 {
@@ -70,7 +70,7 @@ int main()
 		containing_structure.push_back(tmp);
 	}
 
-	CGAL::internal::Discrete_distribution_with_finite_support_generator<GeneratorWithWeight
+	CGAL::internal::Finite_support_distribution<GeneratorWithWeight
 		> randomGen(containing_structure);
 
 	int *ret = (int *) calloc(N, sizeof(int));
