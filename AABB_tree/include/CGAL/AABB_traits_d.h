@@ -367,8 +367,8 @@ struct AABB_traits_d < GeomTraits , AABBPrimitive ,3>:public internal::AABB_tree
 
   AABB_traits_d(){ };
 
-  typedef typename GeomTraits::Compute_squared_distance_3 Squared_distance;
-     Squared_distance squared_distance_object() const { return GeomTraits().compute_squared_distance_3_object(); }
+  typedef typename GeomTraits::Compute_squared_distance_3 compute_squared_distance;
+  compute_squared_distance compute_squared_distance_object() const { return GeomTraits().compute_squared_distance_3_object(); }
 
 
      class Sort_primitives
