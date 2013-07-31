@@ -32,6 +32,24 @@ class Finite_support_distribution {
 			}
 		}
 
+		Finite_support_distribution(const Finite_support_distribution &in) {
+			Container input = in.container;
+			const int N = input.size();
+			typename Container::iterator el_begin = input.begin();
+			typename Container::iterator el_end = input.end();
+			container.reserve(N);
+			presums.reserve(N);
+			typename std::vector<Weighted_random_generator>::iterator it = el_begin;
+			for (; it != el_end; it++) {
+				container.push_back(Weighted_random_generator(*it));
+			}
+
+			for (int i = 0; i < N; i++) {
+				presums.push_back(i == 0 ? container[i].getWeight() :
+						container[i].getWeight() + presums[i-1]);
+			}
+		}
+
 		result_type generate(CGAL::Random &rand) {
 			const int N = presums.size();
 			typename Container::iterator el_begin = container.begin();
@@ -58,6 +76,11 @@ class Finite_support_distribution {
 				p.y() << " " << p.z() << std::endl;
 #endif
 			return p;
+		}
+
+		Finite_support_distribution& operator=(const
+				Finite_support_distribution &x) {
+			//TODO: copy for std::vector
 		}
 };
 };
