@@ -11,32 +11,16 @@ namespace CGAL {
 The Swept Volume of the Standford Bunny while rotating by about 90 degrees. 
 \cgalFigureEnd
 
+\section secmyexamples Introduction 
+
 The swept volume \f$ SV \f$ is defined as the set of all points touched by 
 a solid (the generator) while performing a motion. 
-Its computation plays an important role in computer aided design (CAD),
-numerically controlled (NC) machining verification and 
-graphical modeling. In robotics and motion planing 
-the swept volume can be used for the determination of workspace 
-or to efficiently verify that an already computed path remains valid while 
-other parts of the design may change.
-
 The 3D Swept Volume Mesh Generation package is based on 
 \cite cgal:SV-vDHS-2012 .
 The package provides capability for the generation of a high quality mesh 
-that approximates  the outer boundary of a swept volume (SV). 
-The approach comes with two guarantees. 
-First, the approximation is 
-conservative, i.e. the swept volume is enclosed by the 
-output mesh. Second, the one-sided Hausdorff distance 
-of the generated mesh to the swept volume is upper 
-bounded by a user defined tolerance. Exploiting this 
-tolerance the method produces an mesh which nicely 
-adapts to the local complexity of the approximated swept 
-volume boundary. The algorithm is two phased: a 
-initialization phase that generates a conservative 
-voxelization of the swept volume, and the actual 
-mesh generation using the Mesh_3 package.
-
+that approximates  the outer boundary of a swept volume (SV) that is 
+define by a polyhedral object and a discreet trajectory describing the 
+motion. 
 
 
 \section secmydefinitions Definitions
@@ -44,12 +28,60 @@ mesh generation using the Mesh_3 package.
 The swept volume is defined as the entity of all points touched by 
 a solid (the generator) under the transformations of either a 
 continuous or discrete trajectory. 
+Mathematical formulations describing the swept volume
+include Jacobian rank deficiency methods, sweep differential equations 
+and envelope theory; for a survey see the work of Abdel-Malek 
+et al. \cite Abdel-Malek2004 . 
+Numerical approximation of swept volume boundaries 
+utilizing implicit modeling was introduced in \cite Schroeder94 .
+For the special case of sweeping a polyhedral object,
+ Weld and Leu \cite Weld90  have 
+shown that it suffices to compute the swept volume of 
+the polygonal faces, which leads
+to ruled and developable surfaces and polygons of the generator itself. 
+Polyhedral approximations of these surfaces were proposed 
+by Abrams and Allen \cite Abrams00 .
+
+Currently this package provides capabilities to approximate the 
+swept volume given by a triangulated polyhedral surface and a 
+discrete trajectory. Since it is impossible to know the true 
+trajectory between two discrete steps we define the swept volume 
+as illustrated in Figure \cgalFigureRef{sv-fig-prism}. Between 
+two steps each triangle yields a prism with three ruled surfaces
+that are  approximated and tessellated by inserting the diagonal 
+with the lower dihedral angle. The union of all prism defined by all 
+triangles and all trajectory steps defines the swept volume $SV$. 
+
+\cgalFigureBegin{sv-fig-prism,sv-prism.png}
+Sweeping a triangle yields a prism with three ruled surfaces, each 
+of which is approximated and tessellated by inserting the diagonal 
+with the lower dihedral angle.
+\cgalFigureEnd
 
 
+The main class of this package is CGAL::Swept_volume_domain_3, which 
+is a model of the concept MeshDomain_3. This means, for instance,
+that an object of this class can be used to generate a mesh via the 
+function CGAL::make_mesh_3() of the \ref PkgMesh_3 in order to 
+generate an approximation of $SV$. Together with proper MeshCriteria_3
+this can already provide a mesh with nice properties such as an lower 
+bound on the smallest the angles of the surface mesh facets, see also 
+CGAL::Mesh_criteria_3. 
 
-
+However, it is also possible to obtain the following 
+additional guarantees by using another MeshCriteria_3 that is 
+constructed from an existing MeshCriteria_3 object using the 
+member function 
+CGAL::Swept_volume_domain_3::swept_volume_criteria_3_object():
+First, the approximation is conservative, i.e. $SV$ is enclosed by the 
+output mesh. 
+Second, the one-sided Hausdorff distance 
+of the generated mesh to $SV$ is upper bounded by a user defined 
+tolerance. 
 
 \section secmyexamples Examples
+
+\cgalExample{Swept_volume_mesh_generation_3/Swept_volume_example.cpp}
 
 \subsection myFirstExample First Example
 
