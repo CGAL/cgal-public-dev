@@ -38,8 +38,8 @@
 
 typedef CGAL::Simple_cartesian<double>  K;
 
-template<typename K, typename Vector>
-bool load_triangle_set(Vector &vector)
+template<typename K, typename List>
+bool load_triangle_set(List &list)
 {
 	typedef typename K::Point_2 Point;
 	typedef typename K::Triangle_2 Triangle;
@@ -54,10 +54,10 @@ bool load_triangle_set(Vector &vector)
 	Point h(-2,-1);
 	Point i(-1,-2);
 
-	vector.push_back(Triangle(a,b,c));
-	vector.push_back(Triangle(a,d,e));
-	vector.push_back(Triangle(a,f,g));
-	vector.push_back(Triangle(a,h,i));
+	list.push_back(Triangle(a,b,c));
+	list.push_back(Triangle(a,d,e));
+	list.push_back(Triangle(a,f,g));
+	list.push_back(Triangle(a,h,i));
 
 	return true;
 }
@@ -73,12 +73,12 @@ int test()
 	typedef typename K::Triangle_2 Triangle;
 
 	// load simple triangle set
-	typedef std::vector<Triangle> VectorTriangle;
-	VectorTriangle triangles;
-	load_triangle_set<K,VectorTriangle>(triangles);
+	typedef std::list<Triangle> ListTriangle;
+	ListTriangle triangles;
+	load_triangle_set<K,ListTriangle>(triangles);
 
 	// construct tree from triangles
-	typedef typename VectorTriangle::iterator Iterator;
+	typedef typename ListTriangle::iterator Iterator;
 	typedef typename CGAL::AABB_triangle_primitive<K, Iterator> Primitive;
 	typedef typename CGAL::AABB_traits<K,Primitive> Traits;
 	typedef typename CGAL::AABB_tree<Traits> Tree;
