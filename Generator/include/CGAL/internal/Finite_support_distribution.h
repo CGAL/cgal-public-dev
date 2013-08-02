@@ -55,6 +55,9 @@ class Finite_support_distribution {
 			typename Container::iterator el_begin = container.begin();
 			typename Container::iterator el_end = container.end();
 			double tmp_presum = rand.get_double(0, presums[N-1]);
+#ifdef VERBOSE
+			std::cout << "Random double: " << tmp_presum << std::endl;
+#endif
 			typename std::vector<double>::iterator SampleIterator =
 				upper_bound(presums.begin(), presums.end(),
 						tmp_presum);
@@ -72,8 +75,8 @@ class Finite_support_distribution {
 
 			result_type p = container[SampleIndex].getRand();
 #ifdef VERBOSE
-			std::cout << "The generated point is " << p.x() << " " <<
-				p.y() << " " << p.z() << std::endl;
+//			std::cout << "The generated point is " << p.x() << " " <<
+//				p.y() << " " << p.z() << std::endl;
 #endif
 			return p;
 		}

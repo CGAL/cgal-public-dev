@@ -223,6 +223,12 @@ public:
 			rnd),_p(triangle[0]),_q(triangle[1]),_r(triangle[2]) {
 		generate_point();
 	}
+	This operator=(This x) {
+		_p = x._p;
+		_q = x._q;
+		_r = x._r;
+		return *this;
+	}
 	This& operator++() {
 		generate_point();
 		return *this;
@@ -317,6 +323,7 @@ template < class P, class Creator =
 Creator_uniform_3<typename Kernel_traits<P>::Kernel::RT,P> >
 class Random_points_in_mesh_3 : public Random_generator_base<P> {
 	CGAL::internal::Finite_support_distribution<CGAL::internal::Weighted_random_generator<Random_points_in_tetrahedron_3<P> > > _fsp_distrib;
+	Random *_rand;
 	void generate_point();
 public:
 	typedef P result_type;
@@ -324,15 +331,18 @@ public:
 	typedef CGAL::internal::Finite_support_distribution<CGAL::internal::Weighted_random_generator<Random_points_in_tetrahedron_3<P> > > FspDistrib;
 	Random_points_in_mesh_3() {}
 	Random_points_in_mesh_3( const This& x,Random& rnd = default_random)
-	: Random_generator_base<P>( 1, rnd ),_fsp_distrib(x._fsp_distrib) {
+	: Random_generator_base<P>( 1, rnd
+			),_fsp_distrib(x._fsp_distrib),_rand(x._rand) {
 		generate_point();
 	}
-	Random_points_in_mesh_3( const FspDistrib& fsp_distrib,Random& rnd = default_random)
-	: Random_generator_base<P>( 1, rnd ),_fsp_distrib(fsp_distrib) {
+	Random_points_in_mesh_3( const FspDistrib& fsp_distrib,Random *rand,Random& rnd = default_random)
+	: Random_generator_base<P>( 1, rnd
+			),_fsp_distrib(fsp_distrib),_rand(rand) {
 		generate_point();
 	}
 	This operator=(This x) {
 		_fsp_distrib(x._fsp_distrib);
+		_rand = x._rand;
 		return *this;
 	}
 	This& operator++() {
@@ -350,8 +360,7 @@ template<class P, class Creator >
 void Random_points_in_mesh_3<P, Creator>::generate_point() {
 	typedef typename Creator::argument_type T;
 	Creator creator;
-	Random rand;
-	P ret = _fsp_distrib.generate(rand);
+	P ret = _fsp_distrib.generate(*_rand);
 	this->d_item = ret;
 }
 
@@ -359,6 +368,7 @@ template < class P, class Creator =
 Creator_uniform_3<typename Kernel_traits<P>::Kernel::RT,P> >
 class Random_points_in_surface_mesh : public Random_generator_base<P> {
 	CGAL::internal::Finite_support_distribution<CGAL::internal::Weighted_random_generator<Random_points_in_triangle_3<P> > > _fsp_distrib;
+	Random *_rand;
 	void generate_point();
 public:
 	typedef P result_type;
@@ -367,15 +377,19 @@ public:
 		CGAL::internal::Finite_support_distribution<CGAL::internal::Weighted_random_generator<Random_points_in_triangle_3<P> > > FspDistrib;
 	Random_points_in_surface_mesh() {}
 	Random_points_in_surface_mesh( const This& x,Random& rnd = default_random)
-	: Random_generator_base<P>( 1, rnd ),_fsp_distrib(x._fsp_distrib) {
+	: Random_generator_base<P>( 1, rnd
+			),_fsp_distrib(x._fsp_distrib),_rand(x._rand) {
 		generate_point();
 	}
-	Random_points_in_surface_mesh( const FspDistrib& fsp_distrib,Random& rnd = default_random)
-	: Random_generator_base<P>( 1, rnd ),_fsp_distrib(fsp_distrib) {
+	Random_points_in_surface_mesh( const FspDistrib& fsp_distrib,Random
+			*rand, Random& rnd = default_random)
+	: Random_generator_base<P>( 1, rnd
+			),_fsp_distrib(fsp_distrib),_rand(rand) {
 		generate_point();
 	}
 	This operator=(This x) {
 		_fsp_distrib(x._fsp_distrib);
+		_rand = x._rand;
 		return *this;
 	}
 	This& operator++() {
@@ -393,8 +407,7 @@ template<class P, class Creator >
 void Random_points_in_surface_mesh<P, Creator>::generate_point() {
 	typedef typename Creator::argument_type T;
 	Creator creator;
-	Random rand;
-	P ret = _fsp_distrib.generate(rand);
+	P ret = _fsp_distrib.generate(*_rand);
 	this->d_item = ret;
 }
 } //namespace CGAL
