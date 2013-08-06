@@ -84,7 +84,7 @@ int main() {
 	points.reserve(nr);
 	CGAL::internal::Finite_support_distribution<GeneratorWithWeight
 		> randomGen(containing_structure);
-	CGAL::Random_points_in_surface_mesh<Point_3> g(randomGen);
+	CGAL::Random_points_in_surface_mesh_3<Point_3> g(randomGen);
 
 	CGAL::cpp11::copy_n(g, nr, std::back_inserter(points));
 	std::cout << "The generated points are: " << std::endl;
