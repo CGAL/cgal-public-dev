@@ -381,10 +381,9 @@ public:
 			),_fsp_distrib(x._fsp_distrib),_rand(x._rand) {
 		generate_point();
 	}
-	Random_points_in_surface_mesh( const FspDistrib& fsp_distrib,Random
-			*rand, Random& rnd = default_random)
+	Random_points_in_surface_mesh( const FspDistrib& fsp_distrib, Random& rnd = default_random)
 	: Random_generator_base<P>( 1, rnd
-			),_fsp_distrib(fsp_distrib),_rand(rand) {
+			),_fsp_distrib(fsp_distrib),_rand(&rnd) {
 		generate_point();
 	}
 	This operator=(This x) {
