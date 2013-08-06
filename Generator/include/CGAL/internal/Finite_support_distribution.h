@@ -15,6 +15,7 @@ class Finite_support_distribution {
 	public:
 		typedef std::vector<Weighted_random_generator> Container;
 		typedef typename Weighted_random_generator::result_type result_type;
+		Finite_support_distribution() {}
 		Finite_support_distribution(Container &input) {
 			const int N = input.size();
 			typename Container::iterator el_begin = input.begin();
@@ -85,8 +86,10 @@ class Finite_support_distribution {
 		}
 
 		Finite_support_distribution& operator=(const
-				Finite_support_distribution &x) {
-			//TODO: copy for std::vector
+				Finite_support_distribution &in) {
+			this->container = Container(in.container);
+			this->presums = std::vector<double>(in.presums);
+			return *this;
 		}
 };
 };

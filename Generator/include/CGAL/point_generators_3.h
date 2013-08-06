@@ -364,7 +364,15 @@ void Random_points_in_mesh_3<P, Creator>::generate_point() {
 	this->d_item = ret;
 }
 
-template < class P, class Creator = 
+template <typename Triangle_3>
+class WeightFunctor_triangle_3 {
+	public:
+		double operator() (Triangle_3 &t) {
+			return sqrt(t.squared_area());
+		}
+};
+
+template < class P, class C2t3, class Creator = 
 Creator_uniform_3<typename Kernel_traits<P>::Kernel::RT,P> >
 class Random_points_in_surface_mesh_3 : public Random_generator_base<P> {
 	CGAL::internal::Finite_support_distribution<CGAL::internal::Weighted_random_generator<Random_points_in_triangle_3<P> > > _fsp_distrib;
@@ -372,9 +380,14 @@ class Random_points_in_surface_mesh_3 : public Random_generator_base<P> {
 	void generate_point();
 public:
 	typedef P result_type;
-	typedef Random_points_in_surface_mesh_3<P> This;
+	typedef Random_points_in_surface_mesh_3<P, C2t3> This;
+	typedef typename Kernel_traits<P>::Kernel::Triangle_3 Triangle_3;
+	typedef CGAL::Random_points_in_triangle_3<P> PointGen;
+	typedef CGAL::internal::Weighted_random_generator<PointGen>
+		GeneratorWithWeight;
 	typedef
 		CGAL::internal::Finite_support_distribution<CGAL::internal::Weighted_random_generator<Random_points_in_triangle_3<P> > > FspDistrib;
+	typedef typename C2t3::Triangulation Tr;
 	Random_points_in_surface_mesh_3() {}
 	Random_points_in_surface_mesh_3( const This& x,Random& rnd = default_random)
 	: Random_generator_base<P>( 1, rnd
@@ -384,6 +397,28 @@ public:
 	Random_points_in_surface_mesh_3( const FspDistrib& fsp_distrib, Random& rnd = default_random)
 	: Random_generator_base<P>( 1, rnd
 			),_fsp_distrib(fsp_distrib),_rand(&rnd) {
+		generate_point();
+	}
+	Random_points_in_surface_mesh_3( const C2t3 c2t3, Random& rnd = default_random)
+	: Random_generator_base<P>( 1, rnd),_rand(&rnd) {
+		WeightFunctor_triangle_3<Triangle_3> weightElem;
+		int Nr_cells = c2t3.number_of_facets();
+		std::vector<GeneratorWithWeight> containing_structure;
+		containing_structure.reserve(Nr_cells);
+		Tr tr = c2t3.triangulation();
+		typename Tr::Finite_facets_iterator iter = tr.finite_facets_begin();
+		for (; iter != tr.finite_facets_end(); ++iter) {
+			if (c2t3.is_in_complex(*iter)) {
+				Triangle_3 aux = tr.triangle(*iter);
+				double weight = weightElem(aux);
+				PointGen randGen(aux);
+				GeneratorWithWeight tmp = GeneratorWithWeight (randGen, weight);
+				containing_structure.push_back(tmp);
+			}
+		}
+		CGAL::internal::Finite_support_distribution<GeneratorWithWeight
+			> aux(containing_structure);
+		_fsp_distrib = aux;
 		generate_point();
 	}
 	This operator=(This x) {
@@ -402,8 +437,8 @@ public:
 	}
 };
 
-template<class P, class Creator >
-void Random_points_in_surface_mesh_3<P, Creator>::generate_point() {
+template<class P, class C2t3, class Creator >
+void Random_points_in_surface_mesh_3<P, C2t3, Creator>::generate_point() {
 	typedef typename Creator::argument_type T;
 	Creator creator;
 	P ret = _fsp_distrib.generate(*_rand);

@@ -3,7 +3,6 @@
 #include <CGAL/make_surface_mesh.h>
 #include <CGAL/Implicit_surface_3.h>
 #include <CGAL/Timer.h>
-#include <CGAL/internal/ENHANCED_element_sampling.h>
 #include <CGAL/point_generators_3.h>
 #include <cmath>
 #include <CGAL/internal/Finite_support_distribution.h>
@@ -35,13 +34,6 @@ typedef CGAL::Random_points_in_triangle_3<Point_3> PointGen;
 typedef CGAL::internal::Weighted_random_generator<PointGen>
 	GeneratorWithWeight;
 
-class WeightFunctor {
-	public:
-		double operator() (Triangle_3 &t) {
-			return sqrt(t.squared_area());
-		}
-};
-
 int main() {
 	Tr tr;            // 3D-Delaunay triangulation
 	C2t3 c2t3 (tr);   // 2D-complex in 3D-Delaunay triangulation
@@ -58,33 +50,10 @@ int main() {
 	// meshing surface
 	CGAL::make_surface_mesh(c2t3, surface, criteria, CGAL::Non_manifold_tag());
 
-	WeightFunctor weightElem;
-	int Nr_cells = c2t3.number_of_facets();
-	std::vector<GeneratorWithWeight> containing_structure;
-	containing_structure.reserve(Nr_cells);
-	Tr::Finite_facets_iterator iter = tr.finite_facets_begin();
-	int i = 0;
-	for (; iter != tr.finite_facets_end(); ++iter) {
-		if (c2t3.is_in_complex(*iter)) {
-			Triangle_3 aux = tr.triangle(*iter);
-			double weight = weightElem(aux);
-			PointGen randGen(aux);
-			GeneratorWithWeight tmp = GeneratorWithWeight (randGen, weight);
-			containing_structure.push_back(tmp);
-			i++;
-		}
-	}
-	
-	std::cout  << "Number of facets that I have counted: " << i << '\n';
-	std::cout << "Actual number of facets: " << Nr_cells << '\n';
-
-	CGAL::Random rand = CGAL::default_random;
 	int nr = 10000;
 	std::vector<Point_3> points;
 	points.reserve(nr);
-	CGAL::internal::Finite_support_distribution<GeneratorWithWeight
-		> randomGen(containing_structure);
-	CGAL::Random_points_in_surface_mesh_3<Point_3> g(randomGen);
+	CGAL::Random_points_in_surface_mesh_3<Point_3, C2t3> g(c2t3);
 
 	CGAL::cpp11::copy_n(g, nr, std::back_inserter(points));
 	std::cout << "The generated points are: " << std::endl;
