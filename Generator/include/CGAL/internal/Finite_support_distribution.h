@@ -33,7 +33,9 @@ class Finite_support_distribution {
 		}
 
 		Finite_support_distribution(const Finite_support_distribution &in) {
-			Container input = in.container;
+			container = Container(in.container);
+			presums = std::vector<double>(in.presums);
+			/*
 			const int N = input.size();
 			typename Container::iterator el_begin = input.begin();
 			typename Container::iterator el_end = input.end();
@@ -48,6 +50,7 @@ class Finite_support_distribution {
 				presums.push_back(i == 0 ? container[i].getWeight() :
 						container[i].getWeight() + presums[i-1]);
 			}
+			*/
 		}
 
 		result_type generate(CGAL::Random &rand) {
