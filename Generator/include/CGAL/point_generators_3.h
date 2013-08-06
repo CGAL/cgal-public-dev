@@ -319,7 +319,15 @@ void Random_points_in_tetrahedron_3<P, Creator>::generate_point() {
 	this->d_item = creator(ret[0],ret[1],ret[2]);
 }
 
-template < class P, class Creator = 
+template<typename Tetrahedron_3>
+class WeightFunctor_tetrahedron_3 {
+	public:
+		double operator() (Tetrahedron_3 &t) {
+			return t.volume();
+		}
+};
+
+template < class P, class C3t3, class Creator = 
 Creator_uniform_3<typename Kernel_traits<P>::Kernel::RT,P> >
 class Random_points_in_mesh_3 : public Random_generator_base<P> {
 	CGAL::internal::Finite_support_distribution<CGAL::internal::Weighted_random_generator<Random_points_in_tetrahedron_3<P> > > _fsp_distrib;
@@ -327,17 +335,44 @@ class Random_points_in_mesh_3 : public Random_generator_base<P> {
 	void generate_point();
 public:
 	typedef P result_type;
-	typedef Random_points_in_mesh_3<P> This;
+	typedef Random_points_in_mesh_3<P, C3t3> This;
+	typedef typename Kernel_traits<P>::Kernel::Tetrahedron_3 Tetrahedron_3;
+	typedef CGAL::Random_points_in_tetrahedron_3<P> PointGen;
+	typedef CGAL::internal::Weighted_random_generator<PointGen>
+		GeneratorWithWeight;
 	typedef CGAL::internal::Finite_support_distribution<CGAL::internal::Weighted_random_generator<Random_points_in_tetrahedron_3<P> > > FspDistrib;
+	typedef typename C3t3::Triangulation Tr;
 	Random_points_in_mesh_3() {}
 	Random_points_in_mesh_3( const This& x,Random& rnd = default_random)
 	: Random_generator_base<P>( 1, rnd
 			),_fsp_distrib(x._fsp_distrib),_rand(x._rand) {
 		generate_point();
 	}
-	Random_points_in_mesh_3( const FspDistrib& fsp_distrib,Random *rand,Random& rnd = default_random)
+	Random_points_in_mesh_3( const FspDistrib& fsp_distrib,Random& rnd = default_random)
 	: Random_generator_base<P>( 1, rnd
-			),_fsp_distrib(fsp_distrib),_rand(rand) {
+			),_fsp_distrib(fsp_distrib),_rand(&rnd) {
+		generate_point();
+	}
+	Random_points_in_mesh_3( const C3t3 c3t3,Random& rnd = default_random)
+	: Random_generator_base<P>( 1, rnd),_rand(&rnd) {
+		int Nr_cells_in_cplx = c3t3.number_of_cells_in_complex();
+		WeightFunctor_tetrahedron_3<Tetrahedron_3> weightElem;
+		Tr tr = c3t3.triangulation();
+		std::vector<GeneratorWithWeight> containing_structure;
+		containing_structure.reserve(Nr_cells_in_cplx);
+		typename Tr::Finite_cells_iterator iter = tr.finite_cells_begin();
+		for (; iter != tr.finite_cells_end(); ++iter) {
+			if (c3t3.is_in_complex(iter)) {
+				Tetrahedron_3 aux = tr.tetrahedron(iter);
+				double weight = weightElem(aux);
+				PointGen randGen(aux);
+				GeneratorWithWeight tmp = GeneratorWithWeight (randGen, weight);
+				containing_structure.push_back(tmp);
+			}
+		}
+		CGAL::internal::Finite_support_distribution<GeneratorWithWeight
+			> aux(containing_structure);
+		_fsp_distrib = aux;
 		generate_point();
 	}
 	This operator=(This x) {
@@ -356,8 +391,8 @@ public:
 	}
 };
 
-template<class P, class Creator >
-void Random_points_in_mesh_3<P, Creator>::generate_point() {
+template<class P, class C3t3, class Creator >
+void Random_points_in_mesh_3<P, C3t3, Creator>::generate_point() {
 	typedef typename Creator::argument_type T;
 	Creator creator;
 	P ret = _fsp_distrib.generate(*_rand);

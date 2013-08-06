@@ -43,13 +43,6 @@ typedef CGAL::Random_points_in_tetrahedron_3<Point> PointGen;
 typedef CGAL::internal::Weighted_random_generator<PointGen>
 	GeneratorWithWeight;
 
-class WeightFunctor {
-	public:
-		double operator() (Tetrahedron3 &t) {
-			return t.volume();
-		}
-};
-
 int main()
 {
 	// Domain (Warning: Sphere_3 constructor uses squared radius !)
@@ -67,29 +60,11 @@ int main()
 	cout << "Actual number of cells in c3t3 in complex: " <<
 		c3t3.number_of_cells_in_complex() << std::endl;
 	
-	int Nr_cells_in_cplx = c3t3.number_of_cells_in_complex();
-
-	WeightFunctor weightElem;
-	Tr tr = c3t3.triangulation();
-	std::vector<GeneratorWithWeight> containing_structure;
-	containing_structure.reserve(Nr_cells_in_cplx);
-	Tr::Finite_cells_iterator iter = tr.finite_cells_begin();
-	for (; iter != tr.finite_cells_end(); ++iter) {
-		if (c3t3.is_in_complex(iter)) {
-			Tetrahedron3 aux = tr.tetrahedron(iter);
-			double weight = weightElem(aux);
-			PointGen randGen(aux);
-			GeneratorWithWeight tmp = GeneratorWithWeight (randGen, weight);
-			containing_structure.push_back(tmp);
-		}
-	}
 
 	int nr = 10;
 	std::vector<Point> points;
 	points.reserve(nr);
-	CGAL::internal::Finite_support_distribution<GeneratorWithWeight
-		> randomGen(containing_structure);
-	CGAL::Random_points_in_mesh_3<Point> g(randomGen, &rand);
+	CGAL::Random_points_in_mesh_3<Point, C3t3> g(c3t3);
 
 	CGAL::cpp11::copy_n( g, nr, std::back_inserter(points));
 	std::cout << "The generated points are: " << std::endl;
