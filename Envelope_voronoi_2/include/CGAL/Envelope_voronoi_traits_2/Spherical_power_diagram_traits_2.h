@@ -206,9 +206,9 @@ public:
         CGAL_envelope_voronoi_assertion(p2);
       }
 
-      if (!p1 && !p2) EQUAL;
-      if (!p1) LARGER;
-      if (!p2) SMALLER;
+      if (!p1 && !p2) return EQUAL;
+      if (!p1) return LARGER;
+      if (!p2) return SMALLER;
 
       // is_opp_n tells if point pn is on the other side of the origin.
       bool is_opp_1 = are_along_line(point, o, *p1);
