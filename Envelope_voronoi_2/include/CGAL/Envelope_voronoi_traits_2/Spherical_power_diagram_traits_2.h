@@ -13,14 +13,14 @@
 //
 // $URL: $
 // $Id:  $
-// 
+//
 //
 // Author(s): Ophir Setter          <ophir.setter@post.tau.ac.il>
 //
 
 /*! \file Spherical_power_diagram_traits.h
-  This file contains an implementation of traits class for a power 
-  diagram of circles on the unit spheres. The circles are created by 
+  This file contains an implementation of traits class for a power
+  diagram of circles on the unit spheres. The circles are created by
   intersection the unit sphere with a rational plane.
 */
 
@@ -43,7 +43,7 @@ public:
   typedef T_Kernel                                             Kernel;
   typedef Arr_geodesic_arc_on_sphere_traits_2<Kernel>          Base;
   typedef Spherical_power_diagram_traits_2<Kernel>             Self;
- 
+
   typedef typename Kernel::Vector_3                            Vector_3;
   typedef typename Kernel::Direction_3                         Direction_3;
   typedef typename Kernel::Plane_3                             Plane_3;
@@ -53,10 +53,10 @@ public:
   typedef typename Kernel::Direction_2                         Direction_2;
 
   typedef typename Base::Point_2                               Point_2;
-  typedef typename Base::X_monotone_curve_2                    
+  typedef typename Base::X_monotone_curve_2
     X_monotone_curve_2;
   typedef typename Base::Curve_2                               Curve_2;
-  
+
   /*! \todo Get rid of the local var. 'ker'. Pass it through the constructor
    * instead!
    */
@@ -65,16 +65,16 @@ public:
   public:
     Site_2() {}
 
-    /*! The site represents a circle on the sphere that is contined in the 
+    /*! The site represents a circle on the sphere that is contined in the
      * given plane.
      */
     Site_2(const Plane_3& p) : Plane_3(p)
-    { 
+    {
       CGAL_envelope_voronoi_precondition_code(Kernel ker;);
-      CGAL_envelope_voronoi_precondition_code(                          \
-        Point_3 o = ker.construct_point_3_object()(CGAL::ORIGIN););
-      CGAL_envelope_voronoi_precondition(                               \
-        ker.compute_squared_distance_3_object()(o, p) <= 1);
+      CGAL_envelope_voronoi_precondition_code
+        (Point_3 o = ker.construct_point_3_object()(CGAL::ORIGIN););
+      CGAL_envelope_voronoi_precondition
+        (ker.compute_squared_distance_3_object()(o, p) <= 1);
     }
 
     /*! The site represents a point on the sphere (power circle of radius 0).
@@ -83,13 +83,13 @@ public:
     {
       Kernel ker;
       Point_3 o = ker.construct_point_3_object()(CGAL::ORIGIN);
-        
-      CGAL_envelope_voronoi_precondition(                               \
-        ker.compute_squared_distance_3_object()(o, p) <= 1);
+
+      CGAL_envelope_voronoi_precondition
+        (ker.compute_squared_distance_3_object()(o, p) <= 1);
 
       Vector_3 v = ker.construct_vector_3_object()(o, p);
       Direction_3 d = ker.construct_direction_3_object()(v);
-      *this = ker.construct_plane_3_object()(p, d);        
+      *this = ker.construct_plane_3_object()(p, d);
     }
   };
 
@@ -104,35 +104,44 @@ protected:
       \param s1 The first site.
       \param s2 The second site.
       \return The plane that creates the bisector between the two sites.
-  */ 
+  */
   static Plane_3 bisector_plane (const Site_2& s1, const Site_2& s2)
   {
     Kernel k;
     CGAL_envelope_voronoi_precondition(k.equal_3_object() (s1, s2) == false);
-    
-    Object obj = k.intersect_3_object() (s1, s2);
-    const Line_3 *pl = object_cast<Line_3> (&obj);
-    if (pl != NULL)
-    {
-      // The intersection of the two generating plane is a 3D line.
-      Point_3 o = k.construct_point_3_object() (ORIGIN);
-      
-      CGAL_envelope_voronoi_assertion_code(                     \
-        Point_3 p1 = k.construct_point_on_3_object()(*pl, 0));
-      CGAL_envelope_voronoi_assertion_code(                     \
-        Point_3 p2 = k.construct_point_on_3_object()(*pl, 1));
-      CGAL_envelope_voronoi_assertion(                                  \
-        k.coplanar_orientation_3_object() (o, p1, p2) != COLLINEAR);
-      return k.construct_plane_3_object() (*pl, o);
+    typename Kernel::Intersect_3 intersect = k.intersect_3_object();
+    const Plane_3& pl1 = s1;
+    const Plane_3& pl2 = s2;
+    // Object obj = intersect(pl1, pl2);
+    typename boost::result_of<typename Kernel::Intersect_3(Plane_3,
+                                                           Plane_3)>::type
+      result = intersect(pl1, pl2);
+
+    // const Line_3* pl = object_cast<Line_3>(&obj);
+    // if (pl != NULL)
+    if (result) {
+      const Line_3* pl =  boost::get<Line_3>(&*result);
+      if (pl) {
+        // The intersection of the two generating plane is a 3D line.
+        Point_3 o = k.construct_point_3_object()(ORIGIN);
+
+        CGAL_envelope_voronoi_assertion_code
+          (const Point_3& p1 = k.construct_point_on_3_object()(*pl, 0));
+        CGAL_envelope_voronoi_assertion_code
+          (const Point_3& p2 = k.construct_point_on_3_object()(*pl, 1));
+        CGAL_envelope_voronoi_assertion
+          (k.coplanar_orientation_3_object()(o, p1, p2) != COLLINEAR);
+        return k.construct_plane_3_object()(*pl, o);
+      }
     }
-    
+
     // intersection should be empty - don't support s1 and s2 that are same.
-    CGAL_envelope_voronoi_assertion (obj.is_empty());
-    
+    CGAL_envelope_voronoi_assertion(obj.is_empty());
+
     // planes are parallel, return a parallel plane through the origin.
-    Point_3 o = k.construct_point_3_object() (ORIGIN);
+    Point_3 o = k.construct_point_3_object()(ORIGIN);
     Vector_3 orth_v = k.construct_orthogonal_vector_3_object()(s1);
-    return k.construct_plane_3_object() (o, orth_v);
+    return k.construct_plane_3_object()(o, orth_v);
   }
 
 public:
@@ -141,9 +150,9 @@ public:
 
     //! The function compare the distance between a point and two sites.
     /*! The function compares the distance between a point on the sphere and
-      two circle sites. Currently, the point in the arrangement traits is 
+      two circle sites. Currently, the point in the arrangement traits is
       represented as an extended Kernel::Direction_3.
-      \return 
+      \return
     */
   public:
     Comparison_result operator()(const Site_2& h1,
@@ -151,7 +160,7 @@ public:
                                  const Point_2& p) const
     {
       // TODO: this function should intersect rays and planes.
-      //       This way we avoid the are_strictly along a line 
+      //       This way we avoid the are_strictly along a line
       //       (which is probably more expensive).
 
       typedef typename Kernel::FT                          FT;
@@ -159,64 +168,69 @@ public:
       Kernel kernel;
       if(kernel.equal_3_object() (h1, h2) == true)
         return EQUAL;
-      
+
       Point_3 o = kernel.construct_point_3_object() (ORIGIN);
       Line_3 line = kernel.construct_line_3_object() (o, p);
       Ray_3 ray = kernel.construct_ray_3_object()(o, p);
       Point_3 point = kernel.construct_point_on_3_object()(ray, 1);
-      
+
       typename Kernel::Intersect_3 intersect_3 = kernel.intersect_3_object();
-      typename Kernel::Compute_squared_distance_3 dist_3 = 
+      typename Kernel::Compute_squared_distance_3 dist_3 =
         kernel.compute_squared_distance_3_object();
-      typename Kernel::Are_strictly_ordered_along_line_3 are_along_line = 
+      typename Kernel::Are_strictly_ordered_along_line_3 are_along_line =
         kernel.are_strictly_ordered_along_line_3_object();
-      Object obj1 = intersect_3(line, h1);
-      Object obj2 = intersect_3(line, h2);
+      const Plane_3& pl1 = h1;
 
-      FT dist1, dist2;
-      const Point_3* p1 = object_cast<Point_3> (&obj1);
-      const Point_3* p2 = object_cast<Point_3> (&obj2);
-      if (p1 == NULL && p2 == NULL)
-      {
-        CGAL_envelope_voronoi_assertion(obj1.is_empty());
-        CGAL_envelope_voronoi_assertion(obj2.is_empty());
-        return EQUAL;
+      // Object obj1 = intersect_3(line, pl1);
+      // const Point_3* p1 = object_cast<Point_3>(&obj1);
+      typename
+        boost::result_of<typename Kernel::Intersect_3(Line_3, Plane_3)>::type
+        result1 = intersect_3(line, pl1);
+
+      const Plane_3& pl2 = h2;
+      // Object obj2 = intersect_3(line, pl2);
+      // const Point_3* p2 = object_cast<Point_3>(&obj2);
+      typename
+        boost::result_of<typename Kernel::Intersect_3(Line_3, Plane_3)>::type
+        result2 = intersect_3(line, pl2);
+
+      const Point_3* p1 = NULL;
+      if (result1) {
+        p1 = boost::get<Point_3>(&*result1);
+        CGAL_envelope_voronoi_assertion(p1);
       }
 
-      if (p1 == NULL)
-      {
-        CGAL_envelope_voronoi_assertion(obj1.is_empty());
-        return LARGER;
+      const Point_3* p2 = NULL;
+      if (result2) {
+        p2 =  boost::get<Point_3>(&*result2);
+        CGAL_envelope_voronoi_assertion(p2);
       }
-      if (p2 == NULL)
-      {
-        CGAL_envelope_voronoi_assertion(obj2.is_empty());
-        return SMALLER;
-      }
-      
+
+      if (!p1 && !p2) EQUAL;
+      if (!p1) LARGER;
+      if (!p2) SMALLER;
+
       // is_opp_n tells if point pn is on the other side of the origin.
       bool is_opp_1 = are_along_line(point, o, *p1);
       bool is_opp_2 = are_along_line(point, o, *p2);
-      if (is_opp_1 && !is_opp_2)
-        return LARGER;
-      if (!is_opp_1 && is_opp_2)
-        return SMALLER;
+      if (is_opp_1 && !is_opp_2) return LARGER;
+      if (!is_opp_1 && is_opp_2) return SMALLER;
 
       CGAL_envelope_voronoi_assertion(is_opp_1 == is_opp_2);
-      dist1 = dist_3 (o, *p1);
-      dist2 = dist_3 (o, *p2);
+      FT dist1 = dist_3 (o, *p1);
+      FT dist2 = dist_3 (o, *p2);
 
-      return is_opp_1 ? opposite(compare(dist1, dist2)) : 
+      return is_opp_1 ? opposite(compare(dist1, dist2)) :
         compare(dist1, dist2);
     }
   };
-  
+
   Compare_distance_at_point_2 compare_distance_at_point_2_object() const
   {
     return Compare_distance_at_point_2();
   }
 
-  
+
   class Construct_point_on_x_monotone_2
   {
     /*! The function constructs a point on an x-monotone curve.
@@ -236,11 +250,11 @@ public:
       typename Kernel::Construct_direction_3 cons_dir_3 =
         kernel.construct_direction_3_object();
 
-      
+
 
       Point_2 s = xcurve.source();
       Point_2 t = xcurve.target();
-      
+
       Point_3 o = cons_point_3(ORIGIN);
 
       Ray_3 ray_s = cons_ray_3(o, s);
@@ -259,7 +273,7 @@ public:
                                   kernel.construct_opposite_direction_3_object()
                                   (dir_t)))
       {
-        Vector_3 vec_res = 
+        Vector_3 vec_res =
           kernel.construct_cross_product_vector_3_object()
           (vec_t, vec_norm);
         return kernel.construct_direction_3_object()(vec_res);
@@ -267,10 +281,10 @@ public:
 
       Vector_3 vec_res = vec_s + vec_t;
 
-      Vector_3 cross = 
+      Vector_3 cross =
         kernel.construct_cross_product_vector_3_object()(vec_s, vec_t);
       Direction_3 dir_cross = cons_dir_3(cross);
-      
+
       if (kernel.equal_3_object()(dir_cross, xcurve.normal()) == false)
         vec_res = kernel.construct_opposite_vector_3_object()(vec_res);
 
@@ -288,7 +302,7 @@ public:
   public:
     Comparison_result operator()(const Site_2& h1,
                                  const Site_2& h2) const
-      
+
     {
       // One site dominates the other only if they are the same cite
       CGAL_envelope_voronoi_assertion_code(Kernel k;);
@@ -296,46 +310,46 @@ public:
       return EQUAL;
     }
   };
-  
+
   Compare_dominance_2 compare_dominance_2_object() const
   {
     return Compare_dominance_2();
   }
- 
+
   class Compare_distance_above_2
   {
   private:
     typedef Self Traits;
-    
+
     /*! The base traits instance (in case it has state) */
     const Traits * m_traits;
-    
+
   public:
     /*! Constructor
      * \param traits the traits instance
      */
   Compare_distance_above_2(const Traits * traits) : m_traits(traits) {}
-    
-    
+
+
     Comparison_result operator()(const Site_2& h1,
                                  const Site_2& h2,
                                  const X_monotone_curve_2& cv) const
     {
       typedef typename Kernel::FT                         FT;
-      
+
       Kernel kernel;
-      
-      typename Kernel::Construct_orthogonal_vector_3 ortho = 
+
+      typename Kernel::Construct_orthogonal_vector_3 ortho =
         kernel.construct_orthogonal_vector_3_object();
       Vector_3 v1 = ortho(h1);
       Vector_3 v2 = ortho(h2);
-      
-      typename Kernel::Construct_opposite_vector_3 oppo = 
+
+      typename Kernel::Construct_opposite_vector_3 oppo =
         kernel.construct_opposite_vector_3_object();
       v1 = oppo(v1);
       v2 = oppo(v2);
-      
-      typename Kernel::Construct_direction_3 dire = 
+
+      typename Kernel::Construct_direction_3 dire =
         kernel.construct_direction_3_object();
       Point_2 d1 = Point_2(dire(v1));
       Point_2 d2 = Point_2(dire(v2));
@@ -348,19 +362,19 @@ public:
       // the area of dominance.
       // We where is the center of the larger circle with respect to the arc.
       // (Do not forget to check if the curve is directed right.)
-      // \todo confirm that the following code is true. Voronoi diagram of 
+      // \todo confirm that the following code is true. Voronoi diagram of
       // points on the sphere returns opposite...
 
       CGAL_envelope_voronoi_assertion(cv.is_vertical() == true);
 
       Point_3 o = kernel.construct_point_3_object()(ORIGIN);
       Plane_3 cv_plane = kernel.construct_plane_3_object()(o, cv.normal());
-      
+
       FT h1_dist = kernel.compute_squared_distance_3_object()(o, h1);
       FT h2_dist = kernel.compute_squared_distance_3_object()(o, h2);
       bool h1_larger = (CGAL::compare(h1_dist, h2_dist) == SMALLER);
 
-      typename Kernel::Construct_translated_point_3   translate = 
+      typename Kernel::Construct_translated_point_3   translate =
         kernel.construct_translated_point_3_object();
       if (h1_larger)
         res = kernel.oriented_side_3_object()(cv_plane, translate(o, v1));
@@ -379,20 +393,20 @@ public:
   }
 
   /*! class Given to circles on a sphere (represented as planed intersecting
-    the sphere) create their bisector on the unit sphere. A precondition is 
+    the sphere) create their bisector on the unit sphere. A precondition is
     that both of the planes intersect the unit sphere.
   */
   class Construct_bisector_2
   {
   public:
-    
+
     template <class OutputIterator>
       OutputIterator operator()(const Site_2& s1,
                                 const Site_2& s2,
                                 OutputIterator o) const
     {
       Kernel kernel;
-      
+
       // check that both planes intersect the unit sphere.
       CGAL_envelope_voronoi_precondition_code (Point_3 origin = \
                               kernel.construct_point_3_object() (ORIGIN));
@@ -400,7 +414,7 @@ public:
                          (origin, s1) <= 1);
       CGAL_envelope_voronoi_precondition (kernel.compute_squared_distance_3_object() \
                          (origin, s2) <= 1);
-      
+
       // check that both plane are oriented correctly.
       CGAL_envelope_voronoi_precondition_msg (                          \
         kernel.oriented_side_3_object() (s1, origin) == ON_POSITIVE_SIDE, \
@@ -408,25 +422,25 @@ public:
       CGAL_envelope_voronoi_precondition_msg (                          \
         kernel.oriented_side_3_object() (s2, origin) == ON_POSITIVE_SIDE, \
         "the intersecting plane should be oriented the other way.");
-      
+
       Plane_3 bis = bisector_plane(s1, s2);
-      
+
 #if defined(CGAL_FULL_X_MONOTONE_GEODESIC_ARC_ON_SPHERE_IS_SUPPORTED)
       Curve_2 c(bis);
 #else
-      // we use 4 different directions to make sure that there is no 
+      // we use 4 different directions to make sure that there is no
       // arc bigger then 180 degrees.
       typedef typename Kernel::Vector_3                Vector_3;
       typedef typename Kernel::Direction_3             Direction_3;
-      
+
       Vector_3 v1 = kernel.construct_base_vector_3_object() (bis, 1);
       Vector_3 v2 = kernel.construct_base_vector_3_object() (bis, 2);
-      
+
       Direction_3 d1 = kernel.construct_direction_3_object() (v1);
       Direction_3 d2 = kernel.construct_direction_3_object() (v2);
       Direction_3 d3 = kernel.construct_opposite_direction_3_object() (d1);
       Direction_3 d4 = kernel.construct_opposite_direction_3_object() (d2);
-      
+
       Curve_2 c1 (d1, d2);
       Curve_2 c2 (d2, d3);
       Curve_2 c3 (d3, d4);
@@ -448,7 +462,7 @@ public:
       base.make_x_monotone_2_object()(c4, std::back_inserter(x_monotones));
 #endif
 
-      for (Object_list::iterator it = x_monotones.begin(); 
+      for (Object_list::iterator it = x_monotones.begin();
            it != x_monotones.end();
            ++it)
       {
@@ -461,7 +475,7 @@ public:
         // all have to be x-mono curves.
         CGAL_error_msg("All bisectors sub-curves should be x-mono curves");
       }
-      
+
       return o;
     }
   };
