@@ -107,6 +107,9 @@ class CgalScmEnvironment(
     def get_fromaddr(self):
         return self.get_pusher_email()
 
+    def get_sender(self):
+        return 'git@scm.cgal.org'
+
 def main(args):
     parser = optparse.OptionParser(
         description=__doc__,
@@ -128,21 +131,10 @@ def main(args):
     environment = CgalScmEnvironment(config=config)
 
     try:
-        mailer = config.get('mailer', default='sendmail')
-
         if options.stdout:
             mailer = git_multimail.OutputMailer(sys.stdout)
-        elif mailer == 'smtp':
-            smtpserver = config.get('smtpserver', default='localhost')
-            mailer = SMTPMailer(environment.sender or environment.fromaddr, smtpserver)
-        elif mailer == 'sendmail':
-            mailer = git_multimail.SendMailer(environment.sender)
         else:
-            sys.stderr.write(
-                'fatal: multimailhook.mailer is set to an incorrect value: "%s"\n' % mailer
-                + 'please use one of "smtp" or "sendmail".\n'
-                )
-            sys.exit(1)
+            mailer = git_multimail.choose_mailer(config, environment)
 
 
         # Dual mode: if arguments were specified on the command line, run
