@@ -85,6 +85,6 @@ int main(int argc, char **argv){
     C3t3 c3t3 = CGAL::make_mesh_3<C3t3>(domain, criteria);
       
     std::ofstream os("result_for_swept_volume_with_vhull_3.off");
-    SV::save_as_off(c3t3,os); 
+    c3t3.output_boundary_to_off(os);
   }
   
