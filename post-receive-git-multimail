@@ -136,7 +136,7 @@ def main(args):
             smtpserver = config.get('smtpserver', default='localhost')
             mailer = SMTPMailer(environment.sender or environment.fromaddr, smtpserver)
         elif mailer == 'sendmail':
-            mailer = SendMailer(environment.sender)
+            mailer = git_multimail.SendMailer(environment.sender)
         else:
             sys.stderr.write(
                 'fatal: multimailhook.mailer is set to an incorrect value: "%s"\n' % mailer
