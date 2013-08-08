@@ -37,7 +37,7 @@ import optparse
 # script):
 
 LIBDIR = '/var/git/cgal.git/hooks/git-multimail/git-multimail'
-LIBDIR = '/home/lrineau/Git/CGAL-hooks-on-server/git-multimail/git-multimail'
+#LIBDIR = '/home/lrineau/Git/CGAL-hooks-on-server/git-multimail/git-multimail'
 sys.path.insert(0, LIBDIR)
 
 import git_multimail
