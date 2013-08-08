@@ -11,9 +11,9 @@ namespace CGAL {
 The Swept Volume of the Standford Bunny while rotating by about 90 degrees. 
 \cgalFigureEnd
 
-\section secmyexamples Introduction 
+\section sec-sv-introduction Introduction 
 
-The swept volume \f$ SV \f$ is defined as the set of all points touched by 
+The swept volume is defined as the set of all points touched by 
 a solid (the generator) while performing a motion. 
 The 3D Swept Volume Mesh Generation package is based on 
 \cite cgal:SV-vDHS-2012 .
@@ -21,9 +21,14 @@ The package provides capability for the generation of a high quality mesh
 that approximates  the outer boundary of a swept volume (SV) that is 
 define by a polyhedral object and a discreet trajectory describing the 
 motion. 
+The approach comes with two guarantees. First, the approximation is 
+conservative, i.e. the swept volume is enclosed by the output mesh. Second, the 
+one-sided Hausdorff distance of the generated mesh to the swept volume 
+is upper bounded by a user defined tolerance.
 
 
-\section secmydefinitions Definitions
+
+\section sec-sv-definitions Definitions
 
 The swept volume is defined as the entity of all points touched by 
 a solid (the generator) under the transformations of either a 
@@ -50,7 +55,7 @@ as illustrated in Figure \cgalFigureRef{sv-fig-prism}. Between
 two steps each triangle yields a prism with three ruled surfaces
 that are  approximated and tessellated by inserting the diagonal 
 with the lower dihedral angle. The union of all prism defined by all 
-triangles and all trajectory steps defines the swept volume $SV$. 
+triangles and all trajectory steps defines the swept volume \f$SV\f$. 
 
 \cgalFigureBegin{sv-fig-prism,sv-prism.png}
 Sweeping a triangle yields a prism with three ruled surfaces, each 
@@ -63,7 +68,7 @@ The main class of this package is CGAL::Swept_volume_domain_3, which
 is a model of the concept MeshDomain_3. This means, for instance,
 that an object of this class can be used to generate a mesh via the 
 function CGAL::make_mesh_3() of the \ref PkgMesh_3 in order to 
-generate an approximation of $SV$. Together with proper MeshCriteria_3
+generate an approximation of \f$SV\f$. Together with proper MeshCriteria_3
 this can already provide a mesh with nice properties such as an lower 
 bound on the smallest the angles of the surface mesh facets, see also 
 CGAL::Mesh_criteria_3. 
@@ -73,19 +78,18 @@ additional guarantees by using another MeshCriteria_3 that is
 constructed from an existing MeshCriteria_3 object using the 
 member function 
 CGAL::Swept_volume_domain_3::swept_volume_criteria_3_object():
-First, the approximation is conservative, i.e. $SV$ is enclosed by the 
+First, the approximation is conservative, i.e. \f$SV\f$ is enclosed by the 
 output mesh. 
 Second, the one-sided Hausdorff distance 
-of the generated mesh to $SV$ is upper bounded by a user defined 
+of the generated mesh to \f$SV\f$ is upper bounded by a user defined 
 tolerance. 
 
-\section secmyexamples Examples
+\section sec-sv-examples Examples
 
+The following example reads the Standford bunny from an .off file and sweeps 
+it along some trajectory. 
+ 
 \cgalExample{Swept_volume_mesh_generation_3/Swept_volume_example.cpp}
-
-\subsection myFirstExample First Example
-
-The following example shows ...
 
 */
 } /* namespace CGAL */
