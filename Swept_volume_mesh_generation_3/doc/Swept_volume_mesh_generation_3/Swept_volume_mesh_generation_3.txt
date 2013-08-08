@@ -19,10 +19,10 @@ The 3D Swept Volume Mesh Generation package is based on
 \cite cgal:SV-vDHS-2012 .
 The package provides capability for the generation of a high quality mesh 
 that approximates  the outer boundary of a swept volume (SV) that is 
-define by a polyhedral object and a discreet trajectory describing the 
+define by a polyhedral object and a discrete trajectory describing the 
 motion. 
 The approach comes with two guarantees. First, the approximation is 
-conservative, i.e. the swept volume is enclosed by the output mesh. Second, the 
+conservative, i.e., the swept volume is enclosed by the output mesh. Second, the 
 one-sided Hausdorff distance of the generated mesh to the swept volume 
 is upper bounded by a user defined tolerance.
 
@@ -33,10 +33,9 @@ is upper bounded by a user defined tolerance.
 The swept volume is defined as the entity of all points touched by 
 a solid (the generator) under the transformations of either a 
 continuous or discrete trajectory. 
-Mathematical formulations describing the swept volume
-include Jacobian rank deficiency methods, sweep differential equations 
-and envelope theory; for a survey see the work of Abdel-Malek 
-et al. \cite Abdel-Malek2004 . 
+
+For a survey on mathematical formulations describing the swept volume 
+see the work of Abdel-Malek et al. \cite Abdel-Malek2004 . 
 Numerical approximation of swept volume boundaries 
 utilizing implicit modeling was introduced in \cite Schroeder94 .
 For the special case of sweeping a polyhedral object,
@@ -53,14 +52,13 @@ discrete trajectory. Since it is impossible to know the true
 trajectory between two discrete steps we define the swept volume 
 as illustrated in Figure \cgalFigureRef{sv-fig-prism}. Between 
 two steps each triangle yields a prism with three ruled surfaces
-that are  approximated and tessellated by inserting the diagonal 
-with the lower dihedral angle. The union of all prism defined by all 
+that are approximated and tessellated by inserting a diagonal.
+The union of all prism defined by all 
 triangles and all trajectory steps defines the swept volume \f$SV\f$. 
 
 \cgalFigureBegin{sv-fig-prism,sv-prism.png}
 Sweeping a triangle yields a prism with three ruled surfaces, each 
-of which is approximated and tessellated by inserting the diagonal 
-with the lower dihedral angle.
+of which is approximated and tessellated by inserting a diagonal.
 \cgalFigureEnd
 
 
@@ -69,8 +67,8 @@ is a model of the concept MeshDomain_3. This means, for instance,
 that an object of this class can be used to generate a mesh via the 
 function CGAL::make_mesh_3() of the \ref PkgMesh_3 in order to 
 generate an approximation of \f$SV\f$. Together with proper MeshCriteria_3
-this can already provide a mesh with nice properties such as an lower 
-bound on the smallest the angles of the surface mesh facets, see also 
+this can already provide a mesh with nice properties such as a lower 
+bound on the smallest angle of the surface mesh facets, see also 
 CGAL::Mesh_criteria_3. 
 
 However, it is also possible to obtain the following 
