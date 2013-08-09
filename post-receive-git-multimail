@@ -68,7 +68,7 @@ This is an automated email from the git hooks/post-receive-git-multimail script.
 %(pusher)s pushed a change to %(refname_type)s %(short_refname)s
 in repository %(repo_shortname)s.
 
-https://scm.cgal.org/gitweb/?p=%(repo_shortname)s.git;a=shortlog;h=%(new)s
+https://scm.cgal.org/gitweb/?p=%(repo_shortname)s.git;a=shortlog;h=%(newrev)s
 
 """
 
