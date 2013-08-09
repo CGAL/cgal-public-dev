@@ -68,6 +68,8 @@ This is an automated email from the git hooks/post-receive-git-multimail script.
 %(pusher)s pushed a change to %(refname_type)s %(short_refname)s
 in repository %(repo_shortname)s.
 
+https://scm.cgal.org/gitweb/?p=%(repo_shortname)s.git;a=shortlog;h=%(new)s
+
 """
 
 git_multimail.REVISION_INTRO_TEMPLATE = """\
@@ -76,7 +78,7 @@ This is an automated email from the git hooks/post-receive-git-multimail script.
 %(pusher)s pushed a commit to %(refname_type)s %(short_refname)s
 in repository %(repo_shortname)s.
 
-https://scm.cgal.org/gitweb?p=%(repo_shortname)s.git;a=commitdiff;h=%(rev)s
+https://scm.cgal.org/gitweb/?p=%(repo_shortname)s.git;a=commitdiff;h=%(rev)s
 
 """
 
