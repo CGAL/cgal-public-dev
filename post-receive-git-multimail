@@ -61,6 +61,7 @@ git_multimail.REF_DELETED_SUBJECT_TEMPLATE = (
     '%(emailprefix)s%(refname_type)s %(short_refname)s deleted.'
 )
 git_multimail.FOOTER_TEMPLATE = ( '' )
+git_multimail.REVISION_FOOTER_TEMPLATE = ( '' )
 
 git_multimail.REFCHANGE_INTRO_TEMPLATE = """\
 This is an automated email from the git hooks/post-receive-git-multimail script.
