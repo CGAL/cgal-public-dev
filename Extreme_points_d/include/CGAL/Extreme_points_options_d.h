@@ -29,7 +29,7 @@ namespace CGAL {
 /// \sa `CGAL::Extreme_points_options_d`
 enum Extreme_point_algorithm_d {
     /// This is the default value of the algorithm in `Extreme_points_options_d`, and it lets the implementation 
-    /// choose the algorithm that it thinks is most appropriate for current situation.
+    /// choose the algorithm that it thinks is most appropriate for the current situation.
     EP_CHOOSE_APPROPRIATE,
     /// This is the straightforward algorithm `Extreme_points_d_simple`.\ If most of the input points are extreme points, 
     /// this algorithm can be faster than `EP_DULA_HELGASON`.

@@ -115,9 +115,9 @@ enum Bounded_side { //Extreme_point_classification {
 
 /**
   * The class `Extreme_points_d` stores the currently computed extreme points and answers extreme point queries. The point set can be
-  * enlarged dynamically. Extreme point computations are done lazily (i.e.\ only when a query has to be answered) and the 
+  * enlarged dynamically. Extreme point computations are done lazily (i.e., only when a query has to be answered) and the 
   * result of the last computation is kept. There is also the possibility to classify points relative to the convex hull 
-  * of the current point set (i.e.\ to tell whether they are inside, outside or an extreme point).
+  * of the current point set (i.e., to tell whether they are inside, outside or an extreme point).
   *
   *
   * \cgalRequires
@@ -234,6 +234,7 @@ class Extreme_points_d {
           for (InputIterator itt = first; itt != beyond; itt++) {
             it = all_points.find(*itt);
             assert(it != all_points.end());
+            //if force_update false???
             del_point = classify(*itt,true);
             all_points.erase(it);
             if (del_point == CGAL::ON_BOUNDARY) {
@@ -249,7 +250,7 @@ class Extreme_points_d {
         }
         
         /// Calculates the extreme points of the current point set. 
-        /// The resulting sequence of extreme points is placed starting at position `result`, 
+        /// The resulting sequence of extreme points is placed starting at position `result` 
         ///and the past-the-end iterator for the resulting sequence is returned.
         template <class OutputIterator>
         OutputIterator
@@ -451,7 +452,7 @@ product
 /*!
    The function `extreme_points_d_dula_helgason` computes the extreme points of the given set of input points.
    \return computes the extreme points of the point set in the range [`first`,`beyond`). The resulting sequence 
-   of extreme points is placed starting at position `result`, and the past-the-end iterator for the resulting sequence is returned.
+   of extreme points is placed starting at position `result` and the past-the-end iterator for the resulting sequence is returned.
    
    The default traits class `Default_traits` is `Extreme_points_traits_d<Point>` where `Point` is `InputIterator::value_type`
   
@@ -586,7 +587,7 @@ extreme_points_d_dula_helgason(InputIterator first, InputIterator beyond,
 /*!
    The function `extreme_points_d_simple` computes the extreme points of the given set of input points.
    \return computes the extreme points of the point set in the range [`first`,`beyond`).
-   The resulting sequence of extreme points is placed starting at position `result`, and the 
+   The resulting sequence of extreme points is placed starting at position `result` and the 
    past-the-end iterator for the resulting sequence is returned.
   
    The default traits class `Default_traits` is `Extreme_points_traits_d<Point>` where `Point` is `InputIterator::value_type`.
@@ -595,7 +596,7 @@ extreme_points_d_dula_helgason(InputIterator first, InputIterator beyond,
    `InputIterator::value_type` and `OutputIterator::value_type` are equivalent to `ExtremePointsTraits_d::Point`.
    
    \sa `CGAL::Extreme_points_d<Traits>`
-   \sa `CGAL::extreme_points_d_hula_helgason`
+   \sa `CGAL::extreme_points_d_dula_helgason`
    \sa `CGAL::extreme_points_d`
  
    \cgalHeading{Implementation}
@@ -685,7 +686,7 @@ extreme_points_d_simple(InputIterator first, InputIterator beyond,
    The function `extreme_points_d` computes the extreme points of the given set of input points.
 
    \return computes the extreme points of the point set in the range [`first`,`beyond`). 
-   The resulting sequence of extreme points is placed starting at position `result`, 
+   The resulting sequence of extreme points is placed starting at position `result` 
    and the past-the-end iterator for the resulting sequence is returned.
   
    The default traits class `Default_traits` is `Extreme_points_traits_d<Point>` where `Point` is `InputIterator::value_type`.
