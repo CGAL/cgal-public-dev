@@ -135,7 +135,7 @@ def main(args):
     config = git_multimail.Config('multimailhook')
     environment = CgalScmEnvironment(config=config)
 
-    if not config.get_bool('enabled'):
+    if not config.get_bool('enabled', default=True):
         sys.exit(0)
 
     try:
