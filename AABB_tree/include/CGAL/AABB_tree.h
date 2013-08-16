@@ -393,6 +393,28 @@ public:
     any_intersection(const Query& query) const;
 
     ///@}
+    
+    /// \name Range Queries
+        ///@{
+
+    /// Outputs the list of all primitive ids fully contained
+	/// inside the query range. The containement is checked
+	/// using the bounding box of the primitive and the range.
+		template<typename Query, typename OutputIterator>
+		OutputIterator all_contained_primitives(const Query& query, OutputIterator out) const;
+
+
+    /// Returns the first encountered primitive's id which
+	/// is fully contained inside the query range.
+		template <typename Query>
+		boost::optional<Primitive_id>  any_contained_primitive(const Query& query) const;
+
+
+	/// Returns `true`, iff the range contains at least one of
+	/// the input primitives.
+		template<typename Query>
+		bool do_contain(const Query& query) const;
+    ///@}
 
     /// \name Distance Queries
     ///@{
@@ -1225,6 +1247,45 @@ public:
 		Projection_traits<AABBTraits> projection_traits(hint.first,hint.second,m_traits);
 		this->traversal(query, projection_traits);
 		return projection_traits.closest_point_and_primitive();
+	}
+	
+	template<typename Tr>
+	template<typename Query, typename OutputIterator>
+	OutputIterator 
+	AABB_tree<Tr>::all_contained_primitives(const Query& query, 
+			OutputIterator out) const
+	{
+		using namespace CGAL::internal::AABB_tree;
+		typedef typename AABB_tree<Tr>::AABB_traits AABBTraits;
+			Range_listing_primitive_traits<AABBTraits,
+		  Query, OutputIterator> traversal_traits(out,m_traits);
+			this->traversal(query, traversal_traits);
+			return out;
+
+	}
+	
+	template<typename Tr>
+	template <typename Query>
+	boost::optional<typename AABB_tree<Tr>::Primitive_id>
+	AABB_tree<Tr>::any_contained_primitive(const Query& query) const
+	{
+		using namespace CGAL::internal::AABB_tree;
+		typedef typename AABB_tree<Tr>::AABB_traits AABBTraits;
+			Range_first_primitive_traits<AABBTraits, Query> traversal_traits(m_traits);
+			this->traversal(query, traversal_traits);
+			return traversal_traits.result();
+	}
+
+	template<typename Tr>
+	template <typename Query>
+	bool
+		AABB_tree<Tr>::do_contain(const Query& query) const
+	{
+		using namespace CGAL::internal::AABB_tree;
+		typedef typename AABB_tree<Tr>::AABB_traits AABBTraits;
+		Do_contain_traits<AABBTraits, Query> traversal_traits(m_traits);
+			this->traversal(query, traversal_traits);
+			return traversal_traits.is_intersection_found();
 	}
 
 } // end namespace CGAL
