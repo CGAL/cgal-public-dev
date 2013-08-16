@@ -64,7 +64,7 @@ git_multimail.FOOTER_TEMPLATE = ( '' )
 git_multimail.REVISION_FOOTER_TEMPLATE = ( '' )
 
 git_multimail.REFCHANGE_INTRO_TEMPLATE = """\
-This is an automated email from the git hooks/post-receive-git-multimail script.
+This is an automated email from the git hooks/post-receive-git-multimail.py script.
 
 %(pusher)s pushed a change to %(refname_type)s %(short_refname)s
 in repository %(repo_shortname)s.
@@ -74,7 +74,7 @@ https://scm.cgal.org/gitweb/?p=%(repo_shortname)s.git;a=shortlog;h=%(newrev)s
 """
 
 git_multimail.REVISION_INTRO_TEMPLATE = """\
-This is an automated email from the git hooks/post-receive-git-multimail script.
+This is an automated email from the git hooks/post-receive-git-multimail.py script.
 
 %(pusher)s pushed a commit to %(refname_type)s %(short_refname)s
 in repository %(repo_shortname)s.
@@ -134,6 +134,9 @@ def main(args):
 
     config = git_multimail.Config('multimailhook')
     environment = CgalScmEnvironment(config=config)
+
+    if not config.get_bool('enabled'):
+        sys.exit(0)
 
     try:
         if options.stdout:
