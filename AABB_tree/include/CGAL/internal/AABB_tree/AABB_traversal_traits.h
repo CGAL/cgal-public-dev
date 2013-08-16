@@ -341,6 +341,125 @@ private:
   const AABBTraits& m_traits;
 };
 
+template<typename AABBTraits, typename Query, typename Output_iterator>
+class Range_listing_primitive_traits
+{
+  typedef typename AABBTraits::FT FT;
+  typedef typename AABBTraits::Point Point;
+  typedef typename AABBTraits::Primitive Primitive;
+  typedef typename AABBTraits::Bounding_box Bounding_box;
+  typedef typename AABBTraits::Primitive::Id Primitive_id;
+  typedef typename AABBTraits::Point_and_primitive_id Point_and_primitive_id;
+  typedef typename AABBTraits::Object_and_primitive_id Object_and_primitive_id;
+  typedef ::CGAL::AABB_node<AABBTraits> Node;
+
+public:
+  Range_listing_primitive_traits(Output_iterator out_it, const AABBTraits& traits)
+    : m_out_it(out_it), m_traits(traits) {}
+
+  bool go_further() const { return true; }
+
+  void fully_contain(const Query& query, const Primitive& primitive)
+  {
+    if( true )//need to implement
+    {
+      *m_out_it++ = primitive.id();
+    }
+  }
+
+  bool do_intersect(const Query& query, const Node& node) const
+  {
+    return m_traits.do_intersect_object()(query, node.bbox());
+  }
+
+private:
+  Output_iterator m_out_it;
+  const AABBTraits& m_traits;
+};
+
+
+template<typename AABBTraits, typename Query>
+class Range_first_primitive_traits
+{
+  typedef typename AABBTraits::FT FT;
+  typedef typename AABBTraits::Point Point;
+  typedef typename AABBTraits::Primitive Primitive;
+  typedef typename AABBTraits::Bounding_box Bounding_box;
+  typedef typename AABBTraits::Primitive::Id Primitive_id;
+  typedef typename AABBTraits::Point_and_primitive_id Point_and_primitive_id;
+  typedef typename AABBTraits::Object_and_primitive_id Object_and_primitive_id;
+  typedef ::CGAL::AABB_node<AABBTraits> Node;
+
+public:
+  Range_first_primitive_traits(const AABBTraits& traits)
+    : m_is_found(false)
+    , m_result()
+    , m_traits(traits) {}
+
+  bool go_further() const { return !m_is_found; }
+
+  void fully_contain(const Query& query, const Primitive& primitive)
+  {
+    if( true )//need to implement
+    {
+      m_result = boost::optional<typename Primitive::Id>(primitive.id());
+      m_is_found = true;
+    }
+  }
+
+  bool do_intersect(const Query& query, const Node& node) const
+  {
+    return m_traits.do_intersect_object()(query, node.bbox());
+  }
+
+  boost::optional<typename Primitive::Id> result() const { return m_result; }
+  bool is_fully_contain_found() const { return m_is_found; }
+
+private:
+  bool m_is_found;
+  boost::optional<typename Primitive::Id> m_result;
+  const AABBTraits& m_traits;
+};
+
+
+template<typename AABBTraits, typename Query>
+class Do_contain_traits
+{
+  typedef typename AABBTraits::FT FT;
+  typedef typename AABBTraits::Point Point;
+  typedef typename AABBTraits::Primitive Primitive;
+  typedef typename AABBTraits::Bounding_box Bounding_box;
+  typedef typename AABBTraits::Primitive::Id Primitive_id;
+  typedef typename AABBTraits::Point_and_primitive_id Point_and_primitive_id;
+  typedef typename AABBTraits::Object_and_primitive_id Object_and_primitive_id;
+  typedef ::CGAL::AABB_node<AABBTraits> Node;
+
+public:
+  Do_contain_traits(const AABBTraits& traits)
+    : m_is_found(false), m_traits(traits)
+  {}
+
+  bool go_further() const { return !m_is_found; }
+
+  void fully_contain(const Query& query, const Primitive& primitive)
+  {
+    if( true )//need to implement
+      m_is_found = true;
+  }
+
+  bool do_intersect(const Query& query, const Node& node) const
+  {
+    return m_traits.do_intersect_object()(query, node.bbox());
+  }
+
+  bool is_fully_contain_found() const { return m_is_found; }
+
+private:
+  bool m_is_found;
+  const AABBTraits& m_traits;
+};
+
+
 }}} // end namespace CGAL::internal::AABB_tree
 
 #endif // CGAL_AABB_TRAVERSAL_TRAITS_H
