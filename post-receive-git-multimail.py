@@ -90,7 +90,6 @@ Auto-Submitted: auto-generated
 git_multimail.REVISION_INTRO_TEMPLATE = """\
 repo:   %(repo_shortname)s
 %(refname_type)s: %(short_refname)s
-pusher: %(pusher)s <%(pusher_email)s>
 
 https://scm.cgal.org/gitweb/?p=%(repo_shortname)s.git;a=commitdiff;h=%(rev)s
 
