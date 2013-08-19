@@ -7,7 +7,7 @@ namespace CGAL {
 \author Andreas von Dziegielewski, Michael Hemmer
 
 
-\cgalFigureBegin{SweptStanfordBunny,sv-rotated-bunny-back.png}
+\cgalFigureBegin{SweptStanfordBunny,sv-rotated-bunny-back-small.png}
 The Swept Volume of the Standford Bunny while rotating by about 90 degrees. 
 \cgalFigureEnd
 
