@@ -121,22 +121,24 @@ protected:
     // if (pl != NULL)
     if (result) {
       const Line_3* pl =  boost::get<Line_3>(&*result);
-      if (pl) {
-        // The intersection of the two generating plane is a 3D line.
-        Point_3 o = k.construct_point_3_object()(ORIGIN);
 
-        CGAL_envelope_voronoi_assertion_code
-          (const Point_3& p1 = k.construct_point_on_3_object()(*pl, 0));
-        CGAL_envelope_voronoi_assertion_code
-          (const Point_3& p2 = k.construct_point_on_3_object()(*pl, 1));
-        CGAL_envelope_voronoi_assertion
-          (k.coplanar_orientation_3_object()(o, p1, p2) != COLLINEAR);
-        return k.construct_plane_3_object()(*pl, o);
-      }
+      // intersection should be empty - don't support s1 and s2 that are same.
+      CGAL_envelope_voronoi_assertion(pl);
+
+      // The intersection of the two generating plane is a 3D line.
+      Point_3 o = k.construct_point_3_object()(ORIGIN);
+
+      CGAL_envelope_voronoi_assertion_code
+        (const Point_3& p1 = k.construct_point_on_3_object()(*pl, 0));
+      CGAL_envelope_voronoi_assertion_code
+        (const Point_3& p2 = k.construct_point_on_3_object()(*pl, 1));
+      CGAL_envelope_voronoi_assertion
+        (k.coplanar_orientation_3_object()(o, p1, p2) != COLLINEAR);
+      return k.construct_plane_3_object()(*pl, o);
     }
 
     // intersection should be empty - don't support s1 and s2 that are same.
-    CGAL_envelope_voronoi_assertion(obj.is_empty());
+    // CGAL_envelope_voronoi_assertion(obj.is_empty());
 
     // planes are parallel, return a parallel plane through the origin.
     Point_3 o = k.construct_point_3_object()(ORIGIN);
