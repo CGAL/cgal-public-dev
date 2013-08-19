@@ -1,4 +1,4 @@
-#! /usr/bin/env python2.6
+#! /usr/bin/python2.7
 
 """Example post-receive hook based on git-multimail.
 
