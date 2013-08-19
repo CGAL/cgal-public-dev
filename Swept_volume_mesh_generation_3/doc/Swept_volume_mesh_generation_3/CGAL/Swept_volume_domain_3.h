@@ -53,101 +53,14 @@ A type to distinguish
 typedef CGAL::Tag_false Has_features;
 
 /*!
-Type of indices for subdomains of the
-input domain. Must be a model of CopyConstructible,
-Assignable, DefaultConstructible and EqualityComparable.
-The default constructed value must match the label of the exterior of
-the domain (which contains at least the unbounded component).
+Type used to index subdomains. 
 */
 typedef int Subdomain_index;
 
 /*!
-Type of indices for surface patches
-(boundaries and interfaces) of the
-input domain. Must be a model of CopyConstructible,
-Assignable, DefaultConstructible and EqualityComparable.
-The default constructed value must be the index value assigned
-to a non surface facet.
+Type to index surface patches. 
 */
 typedef std::pair<int> Surface_patch_index;
-
-/*!
-Type of indices to be stored at mesh vertices
-to characterize the lowest dimensional face of the input complex
-on which the vertex lies. Must be a model of CopyConstructible,
-Assignable, DefaultConstructible and EqualityComparable.
-
-*/
-typedef boost::variant<Subdomain_index, Surface_patch_index> Index;
-
-/*!
-Return type of `Construct_intersection` queries.
-`int` represents the
-dimension of the lower dimensional face of the input complex on which the intersection
-point lies and `Index` is the index of this face.
-*/
-typedef CGAL::cpp11::tuple<Point_3, Index, int> Intersection;
-
-/*!
-A function object to construct
-a set of initial points on the surface of the domain. Provides the
-following operators:
-
-`template<typename OutputIterator>`
-<br>
-`OutputIterator operator()(OutputIterator pts)`
-
-`template<typename OutputIterator>`
-<br>
-`OutputIterator operator()(int n, OutputIterator pts)`
-
-Those two operators output a set of (`n`) surface points to the
-output iterator `pts`, as objects of type `std::pair<Point_3,
-Index>`. If `n` is not given, the functor must provide enough
-points to initialize the mesh generation process.
-*/
-typedef unspecified_type Construct_initial_points;
-
-/*!
-A function object to query whether a point is in
-the input domain or not. In the positive case, it outputs the
-subdomain which includes the query point. Provides the operator:
-
-`boost::optional<Subdomain_index> operator()(Point_3 p)`
-*/
-typedef unspecified_type Is_in_domain;
-
-/*!
-A function object which answers
-intersection queries between the surface patches of the domain and
-objects of type `Segment_3`, `Ray_3` or
-`Line_3`. Provides the operators:
-
-`boost::optional<Surface_patch_index> operator()(Segment_3 s)`
-
-`boost::optional<Surface_patch_index> operator()(Ray_3 r)`
-
-`boost::optional<Surface_patch_index> operator()(Line_3 l)`
-
-The return type of the operators tell whether or not the query intersects a
-surface patch. In the positive case, it provides (through operator*()) the
-`Surface_patch_index` of one of the intersected surface patches.
-*/
-typedef unspecified_type Do_intersect_surface;
-
-/*!
-A function object to construct the
-intersection between an object of type `Segment_3`, `Ray_3` or
-`Line_3` and an interface. Provides the operators:
-
-`Intersection operator()(Segment_3 s)`
-
-`Intersection operator()(Ray_3 r)`
-
-`Intersection operator()(Line_3 l)`
-\pre do_intersect_surface(s/r/l) == true
-*/
-typedef unspecified_type Construct_intersection;
 
 /// @}
 
@@ -162,7 +75,7 @@ typedef  GeometryTraits::Aff_transformation_3 Aff_transformation_3;
 ///*!
 //3D Polyhedral Surfaces Type
 //*/
-//typedef   CGAL::Polyhedron_3 Polyhedron_3;
+typedef   CGAL::Polyhedron_3<GeometryTraits> Polyhedron_3;
 
 
 /*!
@@ -174,13 +87,17 @@ class Swept_volume_criteria_3;
 /*!
 The returned Swept_volume_criteria_3 object first applies the criteria 
 that are given. In case the given entety (face or cell) 
-is not already classified as bad, some additional criteria are 
-applied. 
-This ensures that  the generated mesh is conservative, i.e., 
+is not already classified as bad, the additional criteria discussed 
+in cgal:SV-vDHS-2012 are applied. 
+This ensures that the generated mesh is conservative, i.e., 
 the swept volume is enclosed by the output mesh, and that the 
 one-sided Hausdorff distance of the generated mesh to the swept volume is 
 upper bounded by the user defined tolerance (already given in the 
 constructor of 'Swept_volume_domain_3').
+
+The termination of the refinement process only depends on the criteria 
+as the additional criteria do not applie as soon as the current mesh 
+is within the tollarance area. 
 */
 template< typename MeshCriteria_3>
 Swept_volume_criteria_3<MeshCriteria_3> 
@@ -208,6 +125,23 @@ guarantees. It is a trade off between running time and memory consumption.
 public Swept_volume_domain_3(range<Point_3> vertices, range< CGAL::cpp11::tuple<int, int, int> > indices, range<Aff_transformation_3> trajectory, double epsilon, bool downstep = false);
 
 
+/*!
+The swept object (generator) is given by a Polyhedron.
+
+The trajectory is expected to be a sequence of rigid body transformations and has to be a 'Range' of 'Aff_transformation_3'. 
+The bound \f$ \epsilon\f$ determines the geometric fidelity of the final swept volume, the one-sided Hausdorff
+error between the actual SV and its approximation is guaranteed to be smaller than \f$ \epsilon \f$.
+
+With downstepping enabled, firstly a coarser approximation is computed, and then refined. This happens without loss of geometric 
+guarantees. It is a trade off between running time and memory consumption.
+
+\pre polyhedron.is_pure_triangle()
+*/
+
+public Swept_volume_domain_3(const Polyhedron& polyhedron, range<Aff_transformation_3> trajectory, double epsilon, bool downstep = false);
+
+
+
 
 
 
@@ -215,69 +149,6 @@ public Swept_volume_domain_3(range<Point_3> vertices, range< CGAL::cpp11::tuple<
 
 
 
-/// \name Operations
-/// The following functions give access to the function objects:
-/// @{
-
-/*!
-
-*/
-Construct_initial_points construct_initial_points_object();
-
-/*!
-
-*/
-Is_in_domain is_in_domain_object();
-
-/*!
-
-*/
-Do_intersect_surface do_intersect_surface_object();
-
-/*!
-
-*/
-Construct_intersection construct_intersection_object();
-
-/*!
-Returns in vertices and indices the computed mesh appoximating the swept volume.
-*/
-void getIndexedFaceSet(range<Point_3> &vertices, range< CGAL::cpp11::triple<int, int, int> > &indices);
-
-
-
-
-/// @}
-
-/// \name Index Conversion
-/// These methods are designed to convert indices:
-/// @{
-
-/*!
-Returns
-the index to be stored at a vertex lying on the surface patch identified by `surface_patch_index`.
-*/
-Index index_from_surface_patch_index(Surface_patch_index surface_patch_index);
-
-/*!
-Returns
-the index to be stored at a vertex lying in the subdomain identified by `subdomain_index`.
-*/
-Index index_from_subdomain_index(Subdomain_index subdomain_index);
-
-/*!
-Returns the `Surface_patch_index` of the surface patch
-where lies a vertex with dimension 2 and index `index`.
-*/
-Surface_patch_index surface_patch_index(Index index);
-
-/*!
-Returns the index
-of the subdomain containing a vertex with dimension 3 and index `index`.
-*/
-Subdomain_index subdomain_index(Index index);
-
-/// @}
 
 }; /* end Swept_volume_domain_3 */
 
