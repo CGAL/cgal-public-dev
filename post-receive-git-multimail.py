@@ -64,23 +64,18 @@ git_multimail.FOOTER_TEMPLATE = ( '' )
 git_multimail.REVISION_FOOTER_TEMPLATE = ( '' )
 
 git_multimail.REFCHANGE_INTRO_TEMPLATE = """\
-This is an automated email from the git hooks/post-receive-git-multimail.py script.
-
-%(pusher)s pushed a change to %(refname_type)s %(short_refname)s
-in repository %(repo_shortname)s.
-
+Repo:   %(repo_shortname)s
+%(refname_type)s: %(short_refname)s
+Pusher: %(pusher)s
 https://scm.cgal.org/gitweb/?p=%(repo_shortname)s.git;a=shortlog;h=%(newrev)s
 
 """
 
 git_multimail.REVISION_INTRO_TEMPLATE = """\
-This is an automated email from the git hooks/post-receive-git-multimail.py script.
-
-%(pusher)s pushed a commit to %(refname_type)s %(short_refname)s
-in repository %(repo_shortname)s.
-
+Repo:   %(repo_shortname)s
+%(refname_type)s: %(short_refname)s
+Pusher: %(pusher)s
 https://scm.cgal.org/gitweb/?p=%(repo_shortname)s.git;a=commitdiff;h=%(rev)s
-
 """
 
 # Specify which "git config" section contains the configuration for
@@ -159,4 +154,3 @@ def main(args):
 
 if __name__ == '__main__':
     main(sys.argv[1:])
-
