@@ -96,10 +96,10 @@ struct AABB_traits_d:public internal::AABB_tree::AABB_traits_base<AABBPrimitive>
 	typedef AABB_traits_d <GeomTraits, AABBPrimitive,Dimension>  AT;
 };
 
+//Template specification for 2D tree
 template<typename GeomTraits, typename AABBPrimitive>
 struct AABB_traits_d <GeomTraits , AABBPrimitive ,2>:public internal::AABB_tree::AABB_traits_base<AABBPrimitive>
 {
-  //Dimension Dependent parameters
   typedef typename CGAL::Object Object;
   typedef typename GeomTraits::FT FT;
   typedef AABBPrimitive Primitive;
@@ -122,6 +122,8 @@ struct AABB_traits_d <GeomTraits , AABBPrimitive ,2>:public internal::AABB_tree:
        typename Primitive::Id > Type;
    };
 
+  //Dimension dependent definitions
+
    typedef enum { CGAL_AXIS_X = 0,
                  CGAL_AXIS_Y = 1} Axis;
 
@@ -138,9 +140,11 @@ struct AABB_traits_d <GeomTraits , AABBPrimitive ,2>:public internal::AABB_tree:
 
   typedef typename GeomTraits::Cartesian_const_iterator_2 Cartesian_const_iterator_d;
   typedef typename GeomTraits::Construct_cartesian_const_iterator_2 Construct_cartesian_const_iterator_d;
+  typedef typename GeomTraits::Construct_vertex_2 Construct_vertex_d;
   typedef typename GeomTraits::Construct_min_vertex_2 Construct_min_vertex_d;
   typedef typename GeomTraits::Construct_max_vertex_2 Construct_max_vertex_d;
   typedef typename GeomTraits::Construct_iso_rectangle_2 Construct_iso_box_d;
+
 
   AABB_traits_d(){ };
 
@@ -320,7 +324,6 @@ AABB_traits_d<GT,P,2>::longest_axis(const Bounding_box& bbox)
 template<typename GeomTraits, typename AABBPrimitive>
 struct AABB_traits_d < GeomTraits , AABBPrimitive ,3>:public internal::AABB_tree::AABB_traits_base<AABBPrimitive>
 {
-  //Dimension Dependent parameters
   typedef typename CGAL::Object Object;
   typedef typename GeomTraits::FT FT;
   typedef AABBPrimitive Primitive;
@@ -345,6 +348,7 @@ struct AABB_traits_d < GeomTraits , AABBPrimitive ,3>:public internal::AABB_tree
        typename Primitive::Id > Type;
    };
 
+  //Dimension dependent definitions
    typedef enum { CGAL_AXIS_X = 0,
                  CGAL_AXIS_Y = 1,
                  CGAL_AXIS_Z = 2} Axis;
@@ -361,6 +365,7 @@ struct AABB_traits_d < GeomTraits , AABBPrimitive ,3>:public internal::AABB_tree
 
   typedef typename GeomTraits::Cartesian_const_iterator_3 Cartesian_const_iterator_d;
   typedef typename GeomTraits::Construct_cartesian_const_iterator_3 Construct_cartesian_const_iterator_d;
+  typedef typename GeomTraits::Construct_vertex_3 Construct_vertex_d;
   typedef typename GeomTraits::Construct_min_vertex_3 Construct_min_vertex_d;
   typedef typename GeomTraits::Construct_max_vertex_3 Construct_max_vertex_d;
   typedef typename GeomTraits::Construct_iso_cuboid_3 Construct_iso_box_d;
