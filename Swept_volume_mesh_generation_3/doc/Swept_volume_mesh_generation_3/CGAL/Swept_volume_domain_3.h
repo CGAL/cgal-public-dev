@@ -65,7 +65,7 @@ This ensures that the generated mesh is conservative, i.e.,
 the swept volume is enclosed by the output mesh, and that the 
 one-sided Hausdorff distance of the generated mesh to the swept volume is 
 upper bounded by the user defined tolerance (already given in the 
-constructor of 'Swept_volume_domain_3').
+constructor of `Swept_volume_domain_3`).
 
 The termination of the refinement process only depends on the criteria 
 as the additional criteria do not apply as soon as the current mesh 
@@ -88,7 +88,7 @@ swept_volume_criteria_3_object(const MeshCriteria_3& criteria);
 The swept object (generator) must be given as an indexed face set, that is, a range of vertices and a range of 3-tuples.
 Each tuple defines the indices of one triangle, the indices reference to the range of vertices.
 
-The trajectory is expected to be a sequence of rigid body transformations and has to be a 'Range' of 'Aff_transformation_3'. 
+The trajectory is expected to be a sequence of rigid body transformations and has to be a `Range` of `Aff_transformation_3`. 
 The bound \f$ \epsilon\f$ determines the geometric fidelity of the final swept volume, the one-sided Hausdorff
 error between the actual SV and its approximation is guaranteed to be smaller than \f$ \epsilon \f$.
 
@@ -104,7 +104,7 @@ public Swept_volume_domain_3(range<Point_3> vertices, range< CGAL::cpp11::tuple<
 
 The swept object (generator) is given by a polyhedron with triangular facets.
 
-The trajectory is expected to be a sequence of rigid body transformations and has to be a 'Range' of 'Aff_transformation_3'. 
+The trajectory is expected to be a sequence of rigid body transformations and has to be a `Range` of `Aff_transformation_3`. 
 The bound \f$ \epsilon\f$ determines the geometric fidelity of the final swept volume, the one-sided Hausdorff
 error between the actual SV and its approximation is guaranteed to be smaller than \f$ \epsilon \f$.
 
