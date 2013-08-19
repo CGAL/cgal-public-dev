@@ -2,16 +2,14 @@ namespace CGAL{
 /*!
 \ingroup PkgSVMG_3
 
+\brief The class `Swept_volume_domain_3` is a model of the concept 
+`MeshDomain_3`, it describes the knowledge required to generate a 
+mesh approximating a swept volume, given a generator and trajectory.
 
-
-The class `Swept_volume_domain_3` is a model of the concept 'MeshDomain_3', it 
-describes the knowledge required to generate a mesh approximating a swept volume,
-given a generator and trajectory.
-
-Using the provided meshing criteria 'Swept_volume_facet_criteria_3'
-the generated mesh is guaranteed to be conservative (i.e., does not intersect the actual)
-swept volume and obeys a user defined a-priori geometric bound in terms of the one-sided Hausdorff distance.
-
+Using the provided meshing criteria (see below) the generated mesh is 
+guaranteed to be conservative (i.e., does not intersect the actual)
+swept volume and obeys a user defined a-priori geometric bound in terms 
+of the one-sided Hausdorff distance.
 */
 
 template<typename GeometryTraits>
@@ -22,34 +20,7 @@ public:
 /// @{
 
 /*!
-Geometric traits class. This type is defined to ensure compatibility with
-`CGAL::Kernel_traits<T>`.
-*/
-typedef GeometryTraits R;
-
-/*!
-Point type.
-*/
-typedef GeometryTraits::Point_3 Point_3;
-
-/*!
-Segment type.
-*/
-typedef GeometryTraits::Segment_3 Segment_3;
-
-/*!
-Ray type.
-*/
-typedef GeometryTraits::Ray_3 Ray_3;
-
-/*!
-Line type.
-*/
-typedef GeometryTraits::Line_3 Line_3;
-
-/*!
-A type to distinguish
-`MeshDomain_3` models from `MeshDomainWithFeatures_3` models.
+`Swept_volume_domain_3` is not a model of `MeshDomainWithFeatures_3`.
 */
 typedef CGAL::Tag_false Has_features;
 
@@ -87,7 +58,7 @@ class Swept_volume_criteria_3;
 
 /*!
 The returned Swept_volume_criteria_3 object first applies the criteria 
-that are given. In case the given entety (face or cell) 
+that are given. In case the given entity (face or cell) 
 is not already classified as bad, the additional criteria discussed 
 in cgal:SV-vDHS-2012 are applied. 
 This ensures that the generated mesh is conservative, i.e., 
@@ -97,8 +68,8 @@ upper bounded by the user defined tolerance (already given in the
 constructor of 'Swept_volume_domain_3').
 
 The termination of the refinement process only depends on the criteria 
-as the additional criteria do not applie as soon as the current mesh 
-is within the tollarance area. 
+as the additional criteria do not apply as soon as the current mesh 
+is within the tolerance area. 
 */
 template< typename MeshCriteria_3>
 Swept_volume_criteria_3<MeshCriteria_3> 
@@ -112,8 +83,10 @@ swept_volume_criteria_3_object(const MeshCriteria_3& criteria);
 /// The following are constructors
 /// @{
 /*!
-The swept object (generator) must be given as an indexed face set, that is, a range of vertices and a range of 3-tupels.
-Each tupel defines the indices of one triangle, the indices reference to the range of vertices.
+\brief Construction from indexed face set and trajectory. 
+
+The swept object (generator) must be given as an indexed face set, that is, a range of vertices and a range of 3-tuples.
+Each tuple defines the indices of one triangle, the indices reference to the range of vertices.
 
 The trajectory is expected to be a sequence of rigid body transformations and has to be a 'Range' of 'Aff_transformation_3'. 
 The bound \f$ \epsilon\f$ determines the geometric fidelity of the final swept volume, the one-sided Hausdorff
@@ -127,7 +100,9 @@ public Swept_volume_domain_3(range<Point_3> vertices, range< CGAL::cpp11::tuple<
 
 
 /*!
-The swept object (generator) is given by a Polyhedron.
+\brief Construction from polyhedron and trajectory. 
+
+The swept object (generator) is given by a polyhedron with triangular facets.
 
 The trajectory is expected to be a sequence of rigid body transformations and has to be a 'Range' of 'Aff_transformation_3'. 
 The bound \f$ \epsilon\f$ determines the geometric fidelity of the final swept volume, the one-sided Hausdorff
