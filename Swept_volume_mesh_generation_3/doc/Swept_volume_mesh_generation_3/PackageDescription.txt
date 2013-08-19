@@ -1,17 +1,6 @@
 // 3D Swept Volume Mesh Generation
 
 /// \defgroup PkgSVMG_3 3D Swept Volume Mesh Generation 
-/// \defgroup PkgSVMG_3Concepts Concepts
-/// \ingroup PkgSVMG_3
-
-/// \defgroup PkgSVMG_3AlgorithmClasses Algorithm Classes
-/// \ingroup PkgSVMG_3
-
-/// \defgroup PkgSVMG_3TraitsClasses Traits Classes
-/// \ingroup PkgSVMG_3
-
-/// \defgroup PkgSVMG_3Miscellaneous Miscellaneous
-/// \ingroup PkgSVMG_3
 
 /*!
 \addtogroup PkgSVMG_3

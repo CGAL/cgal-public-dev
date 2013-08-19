@@ -1,6 +1,7 @@
 namespace CGAL{
 /*!
-\ingroup PkgSVMG_3Classes
+\ingroup PkgSVMG_3
+
 
 
 The class `Swept_volume_domain_3` is a model of the concept 'MeshDomain_3', it 

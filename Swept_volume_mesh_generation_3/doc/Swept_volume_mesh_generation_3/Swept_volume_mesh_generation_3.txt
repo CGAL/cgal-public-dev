@@ -35,16 +35,16 @@ a solid (the generator) under the transformations of either a
 continuous or discrete trajectory. 
 
 For a survey on mathematical formulations describing the swept volume 
-see the work of Abdel-Malek et al. \cite Abdel-Malek2004 . 
+see the work of Abdel-Malek et al. \cite Abdel-Malek2004. 
 Numerical approximation of swept volume boundaries 
-utilizing implicit modeling was introduced in \cite Schroeder94 .
+utilizing implicit modeling was introduced in \cite Schroeder94.
 For the special case of sweeping a polyhedral object,
- Weld and Leu \cite Weld90  have 
+ Weld and Leu \cite Weld90 have 
 shown that it suffices to compute the swept volume of 
 the polygonal faces, which leads
 to ruled and developable surfaces and polygons of the generator itself. 
 Polyhedral approximations of these surfaces were proposed 
-by Abrams and Allen \cite Abrams00 .
+by Abrams and Allen \cite Abrams00.
 
 Currently this package provides capabilities to approximate the 
 swept volume given by a triangulated polyhedral surface and a 
