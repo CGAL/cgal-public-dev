@@ -64,7 +64,7 @@ if git show "$newrev" | grep -iEq 'App?rou?ved by the (RM|Release Manager)'; the
 fi
 
 # Accept modifications to Maintenance, Documentation, and */doc
-if ! git diff --raw "$oldrev" "$newrev" | grep -vE ' (Maintenance/|Documentation/|[^/]+/doc/|Installation/changes.html)'; then
+if ! git diff --raw "$oldrev" "$newrev" | grep -vE '\b(Maintenance/|Documentation/|[^/]+/doc/|Installation/changes.html)'; then
     exit 0
 fi
 
