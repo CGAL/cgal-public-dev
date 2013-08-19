@@ -46,7 +46,7 @@ to ruled and developable surfaces and polygons of the generator itself.
 Polyhedral approximations of these surfaces were proposed 
 by Abrams and Allen \cite Abrams00.
 
-Currently this package provides capabilities to approximate the 
+The package provides capabilities to approximate the 
 swept volume given by a triangulated polyhedral surface and a 
 discrete trajectory. Since it is impossible to know the true 
 trajectory between two discrete steps we define the swept volume 
@@ -72,8 +72,8 @@ bound on the smallest angle of the surface mesh facets, see also
 CGAL::Mesh_criteria_3. 
 
 However, it is also possible to obtain the following 
-additional guarantees by using another MeshCriteria_3 that is 
-constructed from an existing MeshCriteria_3 object using the 
+additional guarantees by using another MeshCriteria_3 object that is 
+constructed from an existing one using the 
 member function 
 CGAL::Swept_volume_domain_3::swept_volume_criteria_3_object():
 First, the approximation is conservative, i.e. \f$SV\f$ is enclosed by the 
