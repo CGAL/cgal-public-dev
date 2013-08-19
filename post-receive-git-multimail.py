@@ -64,7 +64,7 @@ git_multimail.REF_DELETED_SUBJECT_TEMPLATE = (
 git_multimail.REFCHANGE_INTRO_TEMPLATE = """\
 repo:   %(repo_shortname)s
 %(refname_type)s: %(short_refname)s
-pusher: %(pusher)s
+pusher: %(pusher)s <%(pusher_email)s>
 https://scm.cgal.org/gitweb/?p=%(repo_shortname)s.git;a=shortlog;h=%(newrev)s
 
 """
