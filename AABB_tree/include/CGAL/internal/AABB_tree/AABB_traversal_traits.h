@@ -441,9 +441,9 @@ public:
 
   bool go_further() const { return !m_is_found; }
 
-  void fully_contain(const Query& query, const Primitive& primitive)
+  void intersection(const Query& query, const Primitive& primitive)
   {
-    if( true )//need to implement
+    if( m_traits.do_contain_object()(query,primitive) )//need to implement
       m_is_found = true;
   }
 
