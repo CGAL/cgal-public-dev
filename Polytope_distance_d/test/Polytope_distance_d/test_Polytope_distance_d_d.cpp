@@ -43,11 +43,11 @@ typedef CGAL::MP_Float RT;
 #include <sstream>
 #include <fstream>
 
-// fast and exact
+// slow and exact
 typedef  CGAL::Cartesian_d< double >                      CK1;
-typedef  CGAL::Polytope_distance_d_traits_d<CK1, RT, double>   CTraits1;
+typedef  CGAL::Polytope_distance_d_traits_d<CK1>          CTraits1;
 typedef  CGAL::Homogeneous_d< double >                    HK1;
-typedef  CGAL::Polytope_distance_d_traits_d<HK1, RT, double>   HTraits1;
+typedef  CGAL::Polytope_distance_d_traits_d<HK1>          HTraits1;
 
 #include <CGAL/Random.h>
 #include <vector>
@@ -62,7 +62,7 @@ void process ()
   p_points.reserve( 50);
   q_points.reserve( 50);
   {
-    int d = 10;
+    int d = 5;
     std::vector<double>  coords( d+1);
     int  i, j;
     double hom = 2.0;

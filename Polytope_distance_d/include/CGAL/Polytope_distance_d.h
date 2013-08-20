@@ -733,7 +733,7 @@ private:
   }
   
   Quadratic_program_pricing_strategy pricing_strategy( ET) {
-    return QP_PARTIAL_DANTZIG;
+    return QP_BLAND;
   }
     
 };
