@@ -27,8 +27,9 @@ script's behavior could be changed or customized.
 
 """
 
-import os
 import sys
+import os
+import re
 import optparse
 
 # If necessary, add the path to the directory containing
@@ -61,10 +62,17 @@ git_multimail.REF_DELETED_SUBJECT_TEMPLATE = (
     '%(emailprefix)s%(refname_type)s %(short_refname)s deleted.'
 )
 
+# options for refname_type are
+##branch
+##annotated tag
+##tag
+##reference
+# thus we use %(refname_type)-9s
+
 git_multimail.REFCHANGE_INTRO_TEMPLATE = """\
-repo:   %(repo_shortname)s
-%(refname_type)s: %(short_refname)s
-pusher: %(pusher)s <%(pusher_email)s>
+repo     : %(repo_shortname)s
+%(refname_type)-9s: %(short_refname)s
+pusher   : %(pusher)s <%(pusher_email)s>
 
 https://scm.cgal.org/gitweb/?p=%(repo_shortname)s.git;a=shortlog;h=%(newrev)s
 
@@ -84,17 +92,26 @@ X-Git-Repo: %(repo_shortname)s
 X-Git-Refname: %(refname)s
 X-Git-Reftype: %(refname_type)s
 X-Git-Rev: %(rev)s
+X-Git-CGALpackages: %(packages)s
 Auto-Submitted: auto-generated
 """
 
 git_multimail.REVISION_INTRO_TEMPLATE = """\
-repo:   %(repo_shortname)s
-%(refname_type)s: %(short_refname)s
-pusher: %(pusher)s <%(pusher_email)s>
+repo     : %(repo_shortname)s
+%(refname_type)-9s: %(short_refname)s
+pusher   : %(pusher)s <%(pusher_email)s>
+packages : %(packages)s
 
 https://scm.cgal.org/gitweb/?p=%(repo_shortname)s.git;a=commitdiff;h=%(rev)s
 
 """
+
+# The template used in summary tables.  It looks best if this uses the
+# same alignment as TAG_CREATED_TEMPLATE and TAG_UPDATED_TEMPLATE.
+# TODO-FUTURE packages=packages_outb(shorten_packages(get_packages(self.new))),
+#git_multimail.BRIEF_SUMMARY_TEMPLATE = """\
+#%(action)10s  %(rev_short)-9s %(text)s %(packages_short)s
+#"""
 
 git_multimail.FOOTER_TEMPLATE = ( '' )
 git_multimail.REVISION_FOOTER_TEMPLATE = ( '' )
@@ -107,6 +124,24 @@ git_multimail.REVISION_FOOTER_TEMPLATE = ( '' )
 # Select the type of environment:
 #environment = git_multimail.GenericEnvironment(config)
 #environment = git_multimail.GitoliteEnvironment(config)
+
+def get_packages(rev):
+    packages = list(git_multimail.read_git_lines(['diff-tree', '--no-commit-id', '--name-only', '-r', str(rev)], keepends=False))
+    # each file in root dir (i.e. without "/") will be replaced by "<root>"
+    packages = [re.sub(r'^(?!.*\/).*$', r'<root>', p) for p in packages]
+    # next strip off path after first "/"
+    packages = [re.sub(r'\/.*', r'', p) for p in packages]
+    return sorted(set(packages))
+
+def shorten_packages(packages):
+    return packages if len(packages) < 4 else ["--multiple--"]
+
+def packages_out(packages):
+    return ", ".join(packages)
+
+def packages_outb(packages):
+    return "{" + ", ".join(packages) + "}"
+
 
 class CgalScmEnvironment(
         git_multimail.ProjectdescEnvironmentMixin,
@@ -131,6 +166,42 @@ class CgalScmEnvironment(
 
     def get_sender(self):
         return 'git@scm.cgal.org'
+
+    def get_revision_recipients(self, revision):
+        packages = get_packages(revision.rev)
+        self._values['packages'] = packages_out(packages)
+        self._values['packages_short'] = packages_outb(shorten_packages(packages))
+        #print "CGAL get reply_to_commit"
+        #print revision.rev
+        #print self._values
+        return self.get_refchange_recipients(self)
+
+
+    def get_values(self):
+        """Return a dictionary {keyword : expansion} for this Environment.
+
+        This method is called by Change._compute_values().  The keys
+        in the returned dictionary are available to be used in any of
+        the templates.  The dictionary is created by calling
+        self.get_NAME() for each of the attributes named in
+        COMPUTED_KEYS and recording those that do not return None.
+        The return value is always a new dictionary."""
+
+        if self._values is None:
+            values = {}
+
+            for key in self.COMPUTED_KEYS:
+                value = getattr(self, 'get_%s' % (key,))()
+                if value is not None:
+                    values[key] = value
+
+            #values['packages'] = ''
+            #values['packages_short'] = ''
+
+            self._values = values
+
+        return self._values.copy()
+
 
 def main(args):
     parser = optparse.OptionParser(
