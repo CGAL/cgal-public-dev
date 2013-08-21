@@ -8,6 +8,19 @@
 #ifndef GET_PRIMITVE_VERTICE_SIZE_H_
 #define GET_PRIMITVE_VERTICE_SIZE_H_
 
+class Get_primitive_vertice_count_base
+{
+public:
+	Get_primitive_vertice_count_base(unsigned int count):number_of_vertices(count){};
+   
+	inline unsigned int operator()() const
+   {
+	   return number_of_vertices;
+   }
+private:
+   unsigned int number_of_vertices;
+};
+
 template<typename K,typename PrimitiveType>
 class Get_primitive_vertice_count
 {
@@ -15,62 +28,31 @@ class Get_primitive_vertice_count
 };
 
 template<typename K>
-class Get_primitive_vertice_count<K, typename K::Segment_2>
+class Get_primitive_vertice_count<K, typename K::Segment_2>:public Get_primitive_vertice_count
 {
 public:
-   Get_primitive_vertice_count():number_of_vertices(2){};
-   inline unsigned int operator()() const
-   {
+   Get_primitive_vertice_count():Get_primitive_vertice_count(2){};
+ };
 
-	   return number_of_vertices;
-   }
-private:
-   unsigned int number_of_vertices;
-
+template<typename K>
+class Get_primitive_vertice_count<K, typename K::Triangle_2>:public Get_primitive_vertice_count
+{
+public:
+   Get_primitive_vertice_count():Get_primitive_vertice_count(3){};
 };
 
 template<typename K>
-class Get_primitive_vertice_count<K, typename K::Triangle_2>
+class Get_primitive_vertice_count<K, typename K::Segment_3>:public Get_primitive_vertice_count
 {
 public:
-   Get_primitive_vertice_count():number_of_vertices(3){};
-   inline unsigned int operator()() const
-   {
-
-	   return number_of_vertices;
-   }
-private:
-   unsigned int number_of_vertices;
+   Get_primitive_vertice_count():Get_primitive_vertice_count(2){};
 };
 
 template<typename K>
-class Get_primitive_vertice_count<K, typename K::Segment_3>
+class Get_primitive_vertice_count<K, typename K::Triangle_3>:public Get_primitive_vertice_count
 {
 public:
-   Get_primitive_vertice_count():number_of_vertices(2){};
-   inline unsigned int operator()() const
-   {
-
-	   return number_of_vertices;
-   }
-private:
-   unsigned int number_of_vertices;
-
-};
-
-template<typename K>
-class Get_primitive_vertice_count<K, typename K::Triangle_3>
-{
-public:
-   Get_primitive_vertice_count():number_of_vertices(3){};
-   inline unsigned int operator()() const
-   {
-
-	   return number_of_vertices;
-   }
-private:
-   unsigned int number_of_vertices;
-
+   Get_primitive_vertice_count():Get_primitive_vertice_count(3){};
 };
 
 
