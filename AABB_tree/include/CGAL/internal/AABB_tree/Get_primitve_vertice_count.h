@@ -5,8 +5,8 @@
  *      Author: jayalatn
  */
 
-#ifndef GET_PRIMITVE_VERTICE_SIZE_H_
-#define GET_PRIMITVE_VERTICE_SIZE_H_
+#ifndef CGAL_GET_PRIMITVE_VERTICE_COUNT_H_
+#define CGAL_GET_PRIMITVE_VERTICE_COUNT_H_
 
 class Get_primitive_vertice_count_base
 {
