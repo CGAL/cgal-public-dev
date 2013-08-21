@@ -13,11 +13,3 @@ Server Hooks:
      post-receive-push
 
 New version of hooks from main repo can be obtained by './refresh'
-
-
-git-notifier (http://www.icir.org/robin/git-notifier/):
-This dir has been added with
-  git subtree add --squash --prefix=git-notifier git://git.icir.org/git-notifier master
-It is possible to pull upstream changes with
-  git subtree pull --prefix=git-notifier git://git.icir.org/git-notifier master
-We maintain this dir in this way as we have adaptions to the notifier.
