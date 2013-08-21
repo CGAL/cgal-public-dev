@@ -1,5 +1,7 @@
 Server Hooks:
 
+New version of hooks from main repo can be obtained by './refresh'
+
 * githook-proxy can be softlinked to any hook
   see http://codingkilledthecat.wordpress.com/2012/05/24/multiplexing-git-hooks/
 ** in order to call multiple scripts that all start with the same prefix
@@ -8,8 +10,13 @@ Server Hooks:
      pre-receive-dont-delete-main-branches
 ** we do so for update which calls
       update-check-files
+      update-prevent-pushes-to-master
 ** we do so for post-receive which calls
-     post-receive-email.sh
-     post-receive-push
+     post-receive-git-multimail.py (for sending refchange-summary and commit mails)
+     post-receive-push-to-gsoc (to push master to gsoc repository)
+     post-receive-store-push-times (to store push times of branches for CTest)
 
-New version of hooks from main repo can be obtained by './refresh'
+Besides there are cronjobs
+
+cron-determine-testsuite-hash (called at 21 CEST, to fix hash for testsuite, ensure pushes after 21:00 do not change testsuite-rev)
+cron-push-to-gforge (push clone to gforge)
