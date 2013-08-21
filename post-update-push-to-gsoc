@@ -7,6 +7,6 @@ then
   then
     IN_CGAL_POST_UPDATE_PUSH_TO_GSOC=y
     export IN_CGAL_POST_UPDATE_PUSH_TO_GSOC
-    git push gsoc $branch 
+    git push --quiet gsoc $branch 
   fi
 fi
