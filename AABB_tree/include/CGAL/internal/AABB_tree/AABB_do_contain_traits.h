@@ -5,8 +5,8 @@
  *      Author: jayalatn
  */
 
-#ifndef Do_contain_traits_H_
-#define Do_contain_traits_H_
+#ifndef CGAL_DO_CONTAIN_TRAITS_H_
+#define CGAL_DO_CONTAIN_TRAITS_H_
 
 #include "Get_primitve_vertice_count.h"
 
