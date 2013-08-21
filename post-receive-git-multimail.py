@@ -80,7 +80,7 @@ https://scm.cgal.org/gitweb/?p=%(repo_shortname)s.git;a=shortlog;h=%(newrev)s
 
 git_multimail.REVISION_HEADER_TEMPLATE = """\
 To: %(recipients)s
-Subject: %(emailprefix)s%(num)02d/%(tot)02d: %(oneline)s
+Subject: %(emailprefix)s%(num)02d/%(tot)02d: %(oneline)s %(packages_short)s
 MIME-Version: 1.0
 Content-Type: text/plain; charset=%(charset)s
 Content-Transfer-Encoding: 8bit
