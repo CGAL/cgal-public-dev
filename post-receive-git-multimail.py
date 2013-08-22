@@ -56,7 +56,7 @@ git_multimail.REF_CREATED_SUBJECT_TEMPLATE = (
     '%(emailprefix)s%(refname_type)s %(short_refname)s created.'
 )
 git_multimail.REF_UPDATED_SUBJECT_TEMPLATE = (
-    '%(emailprefix)s%(refname_type)s \'%(short_refname)s\' updated.'
+    '%(emailprefix)s%(refname_type)s \'%(short_refname)s\' updated. %(packages_short)s'
 )
 git_multimail.REF_DELETED_SUBJECT_TEMPLATE = (
     '%(emailprefix)s%(refname_type)s %(short_refname)s deleted.'
@@ -73,6 +73,7 @@ git_multimail.REFCHANGE_INTRO_TEMPLATE = """\
 repo     : %(repo_shortname)s
 %(refname_type)-9s: %(short_refname)s
 pusher   : %(pusher_email)s
+packages : %(packages)s
 
 https://scm.cgal.org/gitweb/?p=%(repo_shortname)s.git;a=shortlog;h=%(newrev)s
 
@@ -133,6 +134,14 @@ def get_packages(rev):
     packages = [re.sub(r'\/.*', r'', p) for p in packages]
     return sorted(set(packages))
 
+def get_packages2(rev1, rev2):
+    packages = list(git_multimail.read_git_lines(['diff-tree', '--name-only', '-r', rev1, rev2], keepends=False))
+    # each file in root dir (i.e. without "/") will be replaced by "<root>"
+    packages = [re.sub(r'^(?!.*\/).*$', r'<root>', p) for p in packages]
+    # next strip off path after first "/"
+    packages = [re.sub(r'\/.*', r'', p) for p in packages]
+    return sorted(set(packages))
+
 def shorten_packages(packages):
     return packages if len(packages) < 4 else ["--multiple--"]
 
@@ -147,10 +156,10 @@ class CgalScmEnvironment(
         git_multimail.ProjectdescEnvironmentMixin,
         git_multimail.ConfigMaxlinesEnvironmentMixin,
         git_multimail.ConfigFilterLinesEnvironmentMixin,
-        git_multimail.ConfigRecipientsEnvironmentMixin,
         git_multimail.PusherDomainEnvironmentMixin,
         git_multimail.ConfigOptionsEnvironmentMixin,
         git_multimail.GenericEnvironmentMixin,
+        git_multimail.ConfigRecipientsEnvironmentMixin,
         git_multimail.Environment,
 ):
     pass
@@ -167,15 +176,39 @@ class CgalScmEnvironment(
     def get_sender(self):
         return 'git@scm.cgal.org'
 
-    def get_revision_recipients(self, revision):
-        packages = get_packages(revision.rev)
+    def get_refchange_recipients(self, refchange):
+        """Abused to set packages for refchange summary email"""
+
+        # need to init here already, as called very early in git-multimail
+        self.init_values()
+
+        packages = get_packages2(str(refchange.old), str(refchange.new))
         self._values['packages'] = packages_out(packages)
         self._values['packages_short'] = packages_outb(shorten_packages(packages))
-        #print "CGAL get reply_to_commit"
-        #print revision.rev
-        #print self._values
-        return self.get_refchange_recipients(self)
+        return self._get_recipients(self.config, 'refchangelist', 'mailinglist')
 
+    def get_revision_recipients(self, revision):
+        """Abused to set packages for commit email of revision"""
+
+        packages = get_packages(revision.rev)
+        self.init_values()
+        self._values['packages'] = packages_out(packages)
+        self._values['packages_short'] = packages_outb(shorten_packages(packages))
+        return self._get_recipients(self.config, 'refchangelist', 'mailinglist')
+
+    def init_values(self):
+        if self._values is None:
+            values = {}
+
+            for key in self.COMPUTED_KEYS:
+                value = getattr(self, 'get_%s' % (key,))()
+                if value is not None:
+                    values[key] = value
+
+                #values['packages'] = ''
+                #values['packages_short'] = ''
+
+            self._values = values
 
     def get_values(self):
         """Return a dictionary {keyword : expansion} for this Environment.
@@ -187,18 +220,7 @@ class CgalScmEnvironment(
         COMPUTED_KEYS and recording those that do not return None.
         The return value is always a new dictionary."""
 
-        if self._values is None:
-            values = {}
-
-            for key in self.COMPUTED_KEYS:
-                value = getattr(self, 'get_%s' % (key,))()
-                if value is not None:
-                    values[key] = value
-
-            #values['packages'] = ''
-            #values['packages_short'] = ''
-
-            self._values = values
+        self.init_values()
 
         return self._values.copy()
 
