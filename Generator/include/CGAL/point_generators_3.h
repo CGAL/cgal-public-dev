@@ -32,6 +32,8 @@
 #include <CGAL/internal/Finite_support_distribution.h>
 #include <CGAL/internal/Weighted_random_generator.h>
 
+#include <CGAL/Timer.h>
+
 namespace CGAL {
 
 template < class P, class Creator = 
@@ -334,6 +336,8 @@ class Random_points_in_mesh_3 : public Random_generator_base<P> {
 	Random *_rand;
 	void generate_point();
 public:
+	CGAL::Timer t;
+
 	typedef P result_type;
 	typedef Random_points_in_mesh_3<P, C3t3> This;
 	typedef typename Kernel_traits<P>::Kernel::Tetrahedron_3 Tetrahedron_3;
@@ -355,28 +359,38 @@ public:
 	}
 	Random_points_in_mesh_3( const C3t3 c3t3,Random& rnd = default_random)
 	: Random_generator_base<P>( 1, rnd),_rand(&rnd) {
+		t.start();
+
 		int Nr_cells_in_cplx = c3t3.number_of_cells_in_complex();
 		WeightFunctor_tetrahedron_3<Tetrahedron_3> weightElem;
 		Tr tr = c3t3.triangulation();
-		std::vector<GeneratorWithWeight> containing_structure;
-		containing_structure.reserve(Nr_cells_in_cplx);
+		GeneratorWithWeight* containing_structure;
+		containing_structure = new GeneratorWithWeight[Nr_cells_in_cplx];
 		typename Tr::Finite_cells_iterator iter = tr.finite_cells_begin();
+		int i = 0;
 		for (; iter != tr.finite_cells_end(); ++iter) {
 			if (c3t3.is_in_complex(iter)) {
 				Tetrahedron_3 aux = tr.tetrahedron(iter);
 				double weight = weightElem(aux);
 				PointGen randGen(aux);
-				GeneratorWithWeight tmp = GeneratorWithWeight (randGen, weight);
-				containing_structure.push_back(tmp);
+				containing_structure[i] = GeneratorWithWeight (randGen, weight);
+				i++;
 			}
 		}
-		CGAL::internal::Finite_support_distribution<GeneratorWithWeight
-			> aux(containing_structure);
-		_fsp_distrib = aux;
+
+		_fsp_distrib =
+			CGAL::internal::Finite_support_distribution<GeneratorWithWeight>
+			(containing_structure, i);
 		generate_point();
+
+		t.stop();
+		std::cout << "Time elapsed for building the containing structure: "
+			<< t.time() << std::endl;
+		t.reset();
+		delete[] containing_structure;
 	}
 	This operator=(This x) {
-		_fsp_distrib(x._fsp_distrib);
+		_fsp_distrib = FspDistrib(x._fsp_distrib);
 		_rand = x._rand;
 		return *this;
 	}
@@ -393,8 +407,6 @@ public:
 
 template<class P, class C3t3, class Creator >
 void Random_points_in_mesh_3<P, C3t3, Creator>::generate_point() {
-	typedef typename Creator::argument_type T;
-	Creator creator;
 	P ret = _fsp_distrib.generate(*_rand);
 	this->d_item = ret;
 }

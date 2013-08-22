@@ -3,81 +3,73 @@
 #include <iostream>
 #include <vector>
 #include <CGAL/Random.h>
+#include <CGAL/Timer.h>
 
 //#define VERBOSE
+CGAL::Timer t;
 
 namespace CGAL { namespace internal {
 template<typename Weighted_random_generator>
 class Finite_support_distribution {
 	private:
-		std::vector<Weighted_random_generator> container;
-		std::vector<double> presums;
+		Weighted_random_generator* container;
+		double* presums;
+		int size;
 	public:
-		typedef std::vector<Weighted_random_generator> Container;
+		typedef Weighted_random_generator* Container;
 		typedef typename Weighted_random_generator::result_type result_type;
-		Finite_support_distribution() {}
-		Finite_support_distribution(Container &input) {
-			const int N = input.size();
-			typename Container::iterator el_begin = input.begin();
-			typename Container::iterator el_end = input.end();
-			container.reserve(N);
-			presums.reserve(N);
-			typename std::vector<Weighted_random_generator>::iterator it = el_begin;
-			for (; it != el_end; it++) {
-				container.push_back(Weighted_random_generator(*it));
+		Finite_support_distribution() {
+			presums = NULL;
+			container = NULL;
+		}
+		Finite_support_distribution(Container input, int size) {
+			t.start();
+			this->size = size;
+			container = new Weighted_random_generator[size];
+			presums = new double[size];
+			for (int i = 0; i < size; i++) {
+				container[i] = input[i];
 			}
-
-			for (int i = 0; i < N; i++) {
-				presums.push_back(i == 0 ? container[i].getWeight() :
+			for (int i = 0; i < size; i++) {
+				presums[i] = (i == 0 ? container[i].getWeight() :
 						container[i].getWeight() + presums[i-1]);
 			}
 		}
 
 		Finite_support_distribution(const Finite_support_distribution &in) {
-			container = Container(in.container);
-			presums = std::vector<double>(in.presums);
-			/*
-			const int N = input.size();
-			typename Container::iterator el_begin = input.begin();
-			typename Container::iterator el_end = input.end();
-			container.reserve(N);
-			presums.reserve(N);
-			typename std::vector<Weighted_random_generator>::iterator it = el_begin;
-			for (; it != el_end; it++) {
-				container.push_back(Weighted_random_generator(*it));
-			}
+			size = in.size;
+			container = new Weighted_random_generator[size];
+			presums = new double[size];
+			memmove(container, in.container, size * sizeof(in.container[0]));
+			memmove(presums, in.presums, size * sizeof(in.presums[0]));
+		}
 
-			for (int i = 0; i < N; i++) {
-				presums.push_back(i == 0 ? container[i].getWeight() :
-						container[i].getWeight() + presums[i-1]);
-			}
-			*/
+		~Finite_support_distribution() {
+			delete[] container;
+			delete[] presums;
 		}
 
 		result_type generate(CGAL::Random &rand) {
-			const int N = presums.size();
-			typename Container::iterator el_begin = container.begin();
-			typename Container::iterator el_end = container.end();
-			double tmp_presum = rand.get_double(0, presums[N-1]);
+			double tmp_presum = rand.get_double(0, presums[size-1]);
 #ifdef VERBOSE
 			std::cout << "Random double: " << tmp_presum << std::endl;
 #endif
-			typename std::vector<double>::iterator SampleIterator =
-				upper_bound(presums.begin(), presums.end(),
-						tmp_presum);
+			double* SampleIterator = std::upper_bound<double*,
+				double>(presums,
+					presums+size-1, tmp_presum);
 
-			int SampleIndex = SampleIterator - presums.begin();
+			int SampleIndex = SampleIterator - presums;
 #ifdef VERBOSE
 			std::cout << "The picked Element is: " << SampleIndex <<
 				std::endl;
 #endif
-			Weighted_random_generator SampleElement = *(el_begin + SampleIndex);
+			Weighted_random_generator SampleElement = container[SampleIndex];
 #ifdef VERBOSE
 			std::cout << "Weight of the picked element: " <<
 				SampleElement.getWeight() << std::endl;
 #endif
-
-			result_type p = container[SampleIndex].getRand();
+			result_type p;
+			p = container[SampleIndex].getRand();
 #ifdef VERBOSE
 //			std::cout << "The generated point is " << p.x() << " " <<
 //				p.y() << " " << p.z() << std::endl;
@@ -87,8 +79,14 @@ class Finite_support_distribution {
 
 		Finite_support_distribution& operator=(const
 				Finite_support_distribution &in) {
-			this->container = Container(in.container);
-			this->presums = std::vector<double>(in.presums);
+			this->size = in.size;
+
+			if (presums != NULL) delete[] presums;
+			if (container != NULL) delete[] container;
+			container = new Weighted_random_generator[size];
+			presums = new double[size];
+			memmove(container, in.container, size * sizeof(in.container[0]));
+			memmove(presums, in.presums, size * sizeof(in.presums[0]));
 			return *this;
 		}
 };

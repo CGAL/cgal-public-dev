@@ -33,7 +33,9 @@ class Weighted_random_generator {
 			std::vector<result_type> output;
 			output.reserve(1);
 			CGAL::cpp11::copy_n( _rand, 1, std::back_inserter(output));
-			return output[0];
+			result_type ret = output[0];
+			output.clear();
+			return ret;
 		}
 
 		Weighted_random_generator& operator=(const Weighted_random_generator &x) {
