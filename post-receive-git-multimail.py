@@ -135,6 +135,7 @@ def get_packages(rev):
     return sorted(set(packages))
 
 def get_packages2(rev1, rev2):
+    # question: do we need  ['%s..%s' % (rev1, rev2,)] instead?
     packages = list(git_multimail.read_git_lines(['diff-tree', '--name-only', '-r', rev1, rev2], keepends=False))
     # each file in root dir (i.e. without "/") will be replaced by "<root>"
     packages = [re.sub(r'^(?!.*\/).*$', r'<root>', p) for p in packages]
