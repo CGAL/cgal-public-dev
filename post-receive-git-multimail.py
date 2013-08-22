@@ -182,11 +182,17 @@ class CgalScmEnvironment(
         # need to init here already, as called very early in git-multimail
         self.init_values()
 
-        #packages = get_packages2(str(refchange.old), str(refchange.new))
-        #self._values['packages'] = packages_out(packages)
-        #self._values['packages_short'] = packages_outb(shorten_packages(packages))
-        self._values['packages'] = "n/a"
-        self._values['packages_short'] = "n/a"
+        old = refchange.old
+        new = refchange.new
+
+        if old.sha1 == None or new.sha1 == None:
+            self._values['packages'] = "n/a"
+            self._values['packages_short'] = ""
+        else:
+            packages = get_packages2(str(old), str(new))
+            self._values['packages'] = packages_out(packages)
+            self._values['packages_short'] = packages_outb(shorten_packages(packages))
+
         return self._get_recipients(self.config, 'refchangelist', 'mailinglist')
 
     def get_revision_recipients(self, revision):
