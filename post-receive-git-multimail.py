@@ -160,6 +160,7 @@ class CgalScmEnvironment(
         git_multimail.ConfigOptionsEnvironmentMixin,
         git_multimail.GenericEnvironmentMixin,
         git_multimail.ConfigRecipientsEnvironmentMixin,
+        git_multimail.GitoliteEnvironmentMixin,
         git_multimail.Environment,
 ):
     pass
