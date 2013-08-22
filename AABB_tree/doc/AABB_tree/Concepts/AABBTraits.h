@@ -152,6 +152,15 @@ A functor object to compute the squared distance between two points. Provides th
 */ 
 typedef unspecified_type Compute_squared_distance; 
 
+/// \name Range Queries
+
+
+/*! 
+A functor object to compute contain predicates between the query and the nodes of the tree. Provides the operators: 
+`bool operator()(const Query & q, const Bounding_box & box);` which returns `true` iff the query fully contains the bounding box, and `bool operator()(const Query & q, const Primitive & primitive);` which returns `true` iff the query fully contains the primitive. 
+*/
+typedef unspecified_type Do_contain;
+
 /// @} 
 
 /// \name Operations 

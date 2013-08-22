@@ -48,6 +48,8 @@ namespace CGAL {
    * of 2D/3D geometric objects, and can receive intersection and distance
    * queries, provided that the corresponding predicates are
    * implemented in the traits class `AABBTraits`.
+   * The AABB_tree also provide the support for range queries where primitives
+   * that are fully contained inside a range are reported.
    * An instance of the class `AABBTraits` is internally stored.
    *
    * \sa `AABBTraits`
@@ -571,7 +573,7 @@ public:
                         }
 		}
 
-	public:
+	
 
     /// \internal
 		template <class Query, class Traversal_traits>
@@ -588,6 +590,23 @@ public:
 				root_node()->template traversal<Traversal_traits,Query>(query, traits, m_primitives.size());
 			}
 		}
+		
+	/// \internal
+		template <class Query, class Traversal_traits>
+		void range_traversal(const Query& query, Traversal_traits& traits) const
+		{
+			switch(size())
+			{
+			case 0:
+				break;
+			case 1:
+				traits.contain(query, singleton_data());
+				break;
+			default: // if(size() >= 2)
+				root_node()->template range_traversal<Traversal_traits,Query>(query, traits, m_primitives.size());
+			}
+		}
+		
 
 	private:
 		typedef AABB_node<AABBTraits> Node;
@@ -1259,7 +1278,7 @@ public:
 		typedef typename AABB_tree<Tr>::AABB_traits AABBTraits;
 			Range_listing_primitive_traits<AABBTraits,
 		  Query, OutputIterator> traversal_traits(out,m_traits);
-			this->traversal(query, traversal_traits);
+			this->range_traversal(query, traversal_traits);
 			return out;
 
 	}
@@ -1272,7 +1291,7 @@ public:
 		using namespace CGAL::internal::AABB_tree;
 		typedef typename AABB_tree<Tr>::AABB_traits AABBTraits;
 			Range_first_primitive_traits<AABBTraits, Query> traversal_traits(m_traits);
-			this->traversal(query, traversal_traits);
+			this->range_traversal(query, traversal_traits);
 			return traversal_traits.result();
 	}
 
@@ -1284,8 +1303,8 @@ public:
 		using namespace CGAL::internal::AABB_tree;
 		typedef typename AABB_tree<Tr>::AABB_traits AABBTraits;
 		Do_contain_traits<AABBTraits, Query> traversal_traits(m_traits);
-			this->traversal(query, traversal_traits);
-			return traversal_traits.is_intersection_found();
+			this->range_traversal(query, traversal_traits);
+			return traversal_traits.is_fully_contain_found();
 	}
 
 } // end namespace CGAL

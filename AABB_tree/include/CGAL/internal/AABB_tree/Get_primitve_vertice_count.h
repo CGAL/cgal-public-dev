@@ -42,6 +42,13 @@ public:
 };
 
 template<typename K>
+class Get_primitive_vertice_count<K, typename K::Bbox_2>:public Get_primitive_vertice_count
+{
+public:
+   Get_primitive_vertice_count():Get_primitive_vertice_count(4){};
+};
+
+template<typename K>
 class Get_primitive_vertice_count<K, typename K::Segment_3>:public Get_primitive_vertice_count
 {
 public:
@@ -52,7 +59,14 @@ template<typename K>
 class Get_primitive_vertice_count<K, typename K::Triangle_3>:public Get_primitive_vertice_count
 {
 public:
-   Get_primitive_vertice_count():Get_primitive_vertice_count(3){};
+   Get_primitive_vertice_count():Get_primitive_vertice_count(4){};
+};
+
+template<typename K>
+class Get_primitive_vertice_count<K, typename K::Bbox_3>:public Get_primitive_vertice_count
+{
+public:
+   Get_primitive_vertice_count():Get_primitive_vertice_count(6){};
 };
 
 
