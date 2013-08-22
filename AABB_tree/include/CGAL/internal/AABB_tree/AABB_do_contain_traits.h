@@ -10,23 +10,31 @@
 
 #include "Get_primitve_vertice_count.h"
 
-template<typename AABBTraits, typename GeomTraits,typename PrimitiveType>
+using namespace internal;
+
+namespace CGAL
+
+{
+
+template<typename AABBTraits, typename GeomTraits, typename ObjectType>
 class Do_contain_traits
 {
 public:
-	Do_contain_traits():number_of_vertices(Get_primitve_vertice_count<GeomTraits,PrimitiveType>()()){};
+	Do_contain_traits(){
+		number_of_vertices = Get_primitive_vertice_count<GeomTraits,ObjectType>()();
+	}
 
 	template<typename Query>
-	bool operator() (Query &query, PrimitiveType &primitive) const
+	bool operator() (Query &query, ObjectType &object) const
 	{
-		int itr = number_of_vertices;
+		unsigned int count = number_of_vertices;
 
-		while(itr>0)
+		while(count>0)
 		{
-			AABBTraits::Point point = AABBTraits::Construct_vertex_d()(primitive,itr);
-
-			//Contain implementaion
-			itr++;
+			AABBTraits::Point point = AABBTraits::Construct_vertex_d()(object,count);
+			if(!query.contains(point))
+				return false;
+			count--;
 		}
 
 		return true;
@@ -41,26 +49,27 @@ private:
 //For sphere and circle
 
 
-template<typename GeomTraits>
-class Do_contain_traits<GeomTraits,GeomTraits::Sphere_3>
+template<typename AABBTraits,typename GeomTraits>
+class Do_contain_traits<AABBTraits,GeomTraits,typename GeomTraits::Sphere_3>
 {
 public:
-	Do_contain_traits():number_of_vertices(Get_primitve_vertice_count<GeomTraits,Primitive_type>()()){};
+	Do_contain_traits():number_of_vertices(Get_primitive_vertice_count<GeomTraits,Primitive_type>()()){}
 
 
 private:
 	unsigned int number_of_vertices;
 };
 
-template<typename GeomTraits>
-class Do_contain_traits<GeomTraits,GeomTraits::Circle_2>
+template<typename AABBTraits,typename GeomTraits>
+class Do_contain_traits<AABBTraits,GeomTraits,typename GeomTraits::Circle_2>
 {
 public:
-	Do_contain_traits():number_of_vertices(Get_primitve_vertice_count<GeomTraits,Primitive_type>()()){};
+	Do_contain_traits():number_of_vertices(Get_primitive_vertice_count<GeomTraits,Primitive_type>()()){}
 
 
 private:
 	unsigned int number_of_vertices;
 };
 
+}
 #endif /* Do_contain_traits_H_ */
