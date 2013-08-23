@@ -210,8 +210,8 @@ class CgalScmEnvironment(
                 if value is not None:
                     values[key] = value
 
-                #values['packages'] = ''
-                #values['packages_short'] = ''
+            values['packages'] = "n/a"
+            values['packages_short'] = ""
 
             self._values = values
 
