@@ -72,7 +72,7 @@ git_multimail.REF_DELETED_SUBJECT_TEMPLATE = (
 git_multimail.REFCHANGE_INTRO_TEMPLATE = """\
 repo     : %(repo_shortname)s
 %(refname_type)-9s: %(short_refname)s
-pusher   : %(pusher_email)s
+pusher   : %(pusher)s
 packages : %(packages)s
 
 https://scm.cgal.org/gitweb/?p=%(repo_shortname)s.git;a=shortlog;h=%(newrev)s
@@ -100,7 +100,7 @@ Auto-Submitted: auto-generated
 git_multimail.REVISION_INTRO_TEMPLATE = """\
 repo     : %(repo_shortname)s
 %(refname_type)-9s: %(short_refname)s
-pusher   : %(pusher_email)s
+pusher   : %(pusher)s
 packages : %(packages)s
 
 https://scm.cgal.org/gitweb/?p=%(repo_shortname)s.git;a=commitdiff;h=%(rev)s
