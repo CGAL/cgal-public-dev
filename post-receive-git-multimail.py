@@ -64,7 +64,7 @@ git_multimail.REF_DELETED_SUBJECT_TEMPLATE = (
 
 git_multimail.REFCHANGE_INTRO_TEMPLATE = """\
 repo:     %(repo_shortname)s
-reftype:  %(refname-type)s
+reftype:  %(refname_type)s
 refname:  %(short_refname)s
 pusher:   %(pusher)s
 packages: %(packages)s
@@ -93,7 +93,7 @@ Auto-Submitted: auto-generated
 
 git_multimail.REVISION_INTRO_TEMPLATE = """\
 repo:     %(repo_shortname)s
-reftype:  %(refname-type)s
+reftype:  %(refname_type)s
 refname:  %(short_refname)s
 pusher:   %(pusher)s
 packages: %(packages)s
