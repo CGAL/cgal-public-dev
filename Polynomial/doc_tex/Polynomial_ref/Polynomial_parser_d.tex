@@ -143,6 +143,8 @@ where the first character is the name of the innermost polynomial variable, and 
 is the name of the outermost polynomial variable. If \ccc{var_names} is \ccc{NULL}, the default
 string of variable names ``\ccc{xyzw}'' will be used.}
 
+The default parser policy does not perform exponent check: in other words, \ccc{exponent_check} always returns \ccc{true}.
+
 \ccSeeAlso
 \ccRefIdfierPage{ParserPolicy}\\
 \ccRefIdfierPage{CGAL::Polynomial_parser_d< Polynomial_d_, ParserPolicy >}\\
