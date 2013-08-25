@@ -332,7 +332,8 @@ class WeightFunctor_tetrahedron_3 {
 template < class P, class C3t3, class Creator = 
 Creator_uniform_3<typename Kernel_traits<P>::Kernel::RT,P> >
 class Random_points_in_mesh_3 : public Random_generator_base<P> {
-	CGAL::internal::Finite_support_distribution<CGAL::internal::Weighted_random_generator<Random_points_in_tetrahedron_3<P> > > _fsp_distrib;
+	CGAL::internal::Finite_support_distribution<CGAL::internal::Weighted_random_generator<Random_points_in_tetrahedron_3<P>
+		>, 1<<20 > _fsp_distrib;
 	Random *_rand;
 	void generate_point();
 public:
@@ -344,7 +345,9 @@ public:
 	typedef CGAL::Random_points_in_tetrahedron_3<P> PointGen;
 	typedef CGAL::internal::Weighted_random_generator<PointGen>
 		GeneratorWithWeight;
-	typedef CGAL::internal::Finite_support_distribution<CGAL::internal::Weighted_random_generator<Random_points_in_tetrahedron_3<P> > > FspDistrib;
+	typedef
+		CGAL::internal::Finite_support_distribution<CGAL::internal::Weighted_random_generator<Random_points_in_tetrahedron_3<P>
+		>, 1<<20 > FspDistrib;
 	typedef typename C3t3::Triangulation Tr;
 	Random_points_in_mesh_3() {}
 	Random_points_in_mesh_3( const This& x,Random& rnd = default_random)
@@ -379,7 +382,7 @@ public:
 		}
 
 		_fsp_distrib =
-			CGAL::internal::Finite_support_distribution<GeneratorWithWeight>
+			CGAL::internal::Finite_support_distribution<GeneratorWithWeight,1<<20>
 			(containing_structure, i);
 		generate_point();
 
@@ -418,7 +421,7 @@ class WeightFunctor_triangle_3 {
 			return sqrt(t.squared_area());
 		}
 };
-
+/*
 template < class P, class C2t3, class Creator = 
 Creator_uniform_3<typename Kernel_traits<P>::Kernel::RT,P> >
 class Random_points_in_surface_mesh_3 : public Random_generator_base<P> {
@@ -491,7 +494,7 @@ void Random_points_in_surface_mesh_3<P, C2t3, Creator>::generate_point() {
 	P ret = _fsp_distrib.generate(*_rand);
 	this->d_item = ret;
 }
+*/
 } //namespace CGAL
-
 #endif // CGAL_POINT_GENERATORS_3_H //
 // EOF //
