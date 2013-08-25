@@ -1,0 +1,291 @@
+% 
+% \section{Introduction}
+% 
+
+% ../../Manual/developer_scripts/cgal_manual -pdf Polynomial_ref
+
+
+\begin{ccRefClass}{Polynomial_parser_d< Polynomial_d_, ParserPolicy >}
+\def\ccTagOperatorLayout{\ccFalse}
+
+\ccInclude{CGAL/Polynomial/Polynomial_parser_d.h}
+
+\ccDefinition
+
+The polynomial parser provide the functionality to read polynomials in a human-readable format which
+is not directly supported by \ccc{operator >>} of \ccc{CGAL::Polynomial<Coeff>}. However, note that,
+the polynomial parser is \ccc{not} a replacement or extension of the default \ccc{operator >>}. Instead,
+it is available as an independent feature.
+
+The parser's behavior is fully customizeable via the so-called {\em parser policy} 
+which is supplied as a template parameter to the parser. 
+In the first place, the policy is responsible for reading polynomial 
+coefficients from the input stream and performing all necessary type conversions
+for the output polynomial. This, for instance, allows us to mix integer, rational and 
+floating-point numbers in a single expression (for examples, see the corresponding part of 
+the CGAL users manual).
+Besides, the parser policy can be used to perform maximal degree check,
+detect various erroneous situations (such as division by zero) 
+or rename polynomial variables.
+
+\ccParameters
+The parser is instantiated with a type 
+of polynomials constructed \ccc{Polynomial_d_} and the corresponding parser policy \ccc{ParserPolicy}. 
+
+
+\ccCreation
+\ccCreationVariable{parser}
+
+% \ccConstructor{Weighted_alpha_shape_2(
+%         const ParserPolicy& policy_ = ParserPolicy());}
+% 
+% {Default constructor, initializes from \ccc{policy_} object}
+
+\ccConstructor{parser(
+                const ParserPolicy& policy_ = ParserPolicy());}
+{Default constructor, initializes from \ccc{policy_} object.}
+
+\ccOperations
+
+\ccMethod{bool 
+operator()
+(const std::string& in, Polynomial_d_& poly);}
+{Parses the input string \ccc{in} and constructs the resulting polynomial \ccc{poly}. 
+Returns \ccc{true} if parsing was successful.} 
+
+Any user-defined parser policy must be the model of the \ccc{ParserPolicy}
+concept.
+
+\ccSeeAlso
+\ccRefIdfierPage{ParserPolicy}
+
+\end{ccRefClass}
+
+\begin{ccRefConcept}{ParserPolicy}
+
+\ccDefinition
+
+Parser policy concept defines interface which any custom policy must provide.
+
+% \ccConstants
+
+% \ccVariable{static const char *var_names_lower;}
+% {Variable names in lower case, given without delimiters, in the order from innermost to the outermost variable: e.g., for a string ``xyzw'', \ccc{x} is the innermost variable and \ccc{w} is outermost.}\ccGlue
+% \ccVariable{static const char *var_names_upper;}{Variable names in upper case, 
+% given without delimiters, in the order from innermost to the outermost variable, 
+% e.g., ``XYZW''}\ccGlue
+% \ccVariable{static const int n_var_names;}{The number of variable names in the above arrays.}
+
+\ccTypes
+
+\ccCreationVariable{policy}
+
+\ccNestedType{Polynomial_d}{Type of the output polynomial to be constructed.}
+\ccGlue
+\ccNestedType{Innermost_coefficient_type}{Innermost coefficient type of \ccc{Polynomial_d}.}
+
+\ccOperations
+\ccMethod{Innermost_coefficient_type read_coefficient(std::istream& is) const;}
+{Reads a polynomial coefficient from the input stream \ccc{is} 
+and converts it to the output type \ccc{Innermost_coefficient_type}, \ccc{is} points to the first 
+digit character of the coefficient. Throws an exception of type \ccc{Parser_exception} 
+in case of error.}\ccGlue
+\ccMethod{bool check_var_names(char ch, int& idx) const;}
+{The function takes a character \ccc{ch} as an input parameter.
+If \ccc{ch} is a not a valid polynomial variable name, it returns \ccc{false}.
+Otherwise, the function computes a 0-based index of this polynomial variable (where 0 corresponds
+to an innermost variable) and stores it in \ccc{idx} reference. In other words, if \ccc{idx} is set to 0, then \ccc{ch} is an innermost variable of a polynomial. Otherwise, if \ccc{idx} is \ccc{d-1}, where \ccc{d} is the number of polynomial variables, then \ccc{ch} is an outermost variable. 
+The function returns \ccc{true} if \ccc{ch} is a valid variable name.}\ccGlue
+\ccMethod{bool exponent_check(unsigned deg);}
+{Performs exponent check on the polynomial coefficients. Returns \ccc{true}
+if the degree \ccc{deg} of a monomial being parsed lies within the accepted range and \ccc{false} otherwise. If no exponent check is required, the function should always return \ccc{true}.}
+If no \ccc{ParserPolicy} template parameter is supplied to the parser class,
+then the parser is instantiated with a default parser policy.\\ 
+
+\ccSeeAlso
+% \ccRefIdfierPage{Polynomial_parser_d}\\
+\ccRefIdfierPage{CGAL::Polynomial_parser_d< Polynomial_d_, ParserPolicy >}
+
+\ccHasModels
+
+\ccRefIdfierPage{CGAL::Default_parser_policy< Polynomial_d_ >}\\
+\ccRefIdfierPage{CGAL::Mixed_rational_parser_policy< Polynomial_d_ >}\\
+\ccRefIdfierPage{CGAL::Mixed_floating_point_parser_policy< Polynomial_d_ >}\\
+
+\end{ccRefConcept}
+
+\begin{ccRefClass} {Default_parser_policy< Polynomial_d_ >}
+
+\ccDefinition
+The default policy provides no type explicit conversions: in other words, the default parser
+policy reads the coefficients of type \ccc{Polynomial_d_::Innermost_coefficient_type} from the input
+stream using the provided \ccc{operator >>} and constructs the resulting polynomial of type \ccc{Polynomial_d_}.
+
+\ccInclude{CGAL/Polynomial/Polynomial_parser_d.h}
+
+\ccIsModel
+\ccc{ParserPolicy}
+
+\ccTypes
+
+\ccNestedType{Polynomial_d}{See \ccc{ParserPolicy} concept.}\ccGlue
+\ccNestedType{Innermost_coefficient_type}{See \ccc{ParserPolicy} concept.}\ccGlue
+
+% \ccInheritsFrom
+% \ccc{Fb}
+
+\ccCreation
+\ccCreationVariable{default_policy}
+
+\ccConstructor{Default_parser_policy(const char *var_names = NULL);}
+{Standard constructor. Optionally takes a string of variable names \ccc{var_names} 
+where the first character is the name of the innermost polynomial variable, and the last one 
+is the name of the outermost polynomial variable. If \ccc{var_names} is \ccc{NULL}, the default
+string of variable names ``\ccc{xyzw}'' will be used.}
+
+The default parser policy does not perform exponent check: in other words, \ccc{exponent_check} always returns \ccc{true}.
+
+\ccSeeAlso
+\ccRefIdfierPage{ParserPolicy}\\
+\ccRefIdfierPage{CGAL::Polynomial_parser_d< Polynomial_d_, ParserPolicy >}\\
+\ccRefIdfierPage{CoercionTraits}
+
+
+\end{ccRefClass}
+
+\begin{ccRefClass} {Mixed_rational_parser_policy< Polynomial_d_ >}
+
+\ccDefinition
+This parser policy allows mixing rational and integer coefficients in the same expression. 
+\ccc{Polynomial_d_} must be a polynomial with rational coefficients which are 
+\ccc{ExplicitInteroperable} with integer coefficients used in the same expression.
+
+\ccInclude{CGAL/Polynomial/Polynomial_parser_d.h}
+
+\ccIsModel
+\ccc{ParserPolicy}
+
+\ccInheritsFrom
+\ccc{Default_parser_policy}
+
+\ccTypes
+
+\ccNestedType{Polynomial_d}{See \ccc{ParserPolicy} concept.}\ccGlue
+\ccNestedType{Innermost_coefficient_type}{Innermost coefficient type of \ccc{Polynomial_d}.}\ccGlue
+\ccNestedType{Integer}{Integer coefficient type which is \ccc{ExplicitInteroperable} with \ccc{Innermost_coefficient_type} number type.}\ccGlue
+\ccNestedType{Rational}{Rational coefficient type which is \ccc{ExplicitInteroperable} with \ccc{Innermost_coefficient_type} number type.}\ccGlue
+
+
+\ccCreation
+\ccCreationVariable{rat_policy}
+
+\ccConstructor{Mixed_rational_parser_policy(const char *var_names = NULL);}
+{Standard constructor. Optionally takes a string of variable names \ccc{var_names} 
+where the first character is the name of the innermost polynomial variable, and the last one 
+is the name of the outermost polynomial variable. If \ccc{var_names} is \ccc{NULL}, the default
+string of variable names ``\ccc{xyzw}'' will be used.}
+
+\ccSeeAlso
+\ccRefIdfierPage{ParserPolicy}\\
+\ccRefIdfierPage{CGAL::Polynomial_parser_d< Polynomial_d_, ParserPolicy >}\\
+\ccRefIdfierPage{CoercionTraits}
+
+\end{ccRefClass}
+
+\begin{ccRefClass} {Mixed_floating_point_parser_policy< Polynomial_d_ >}
+
+\ccDefinition
+This parser policy allows mixing rational and integer and floating-point (BigFloat) coefficients 
+in the same expression. \ccc{Polynomial_d_} must be a polynomial with rational coefficients. 
+
+\ccInclude{CGAL/Polynomial/Polynomial_parser_d.h}
+
+\ccIsModel
+\ccc{ParserPolicy}
+
+\ccInheritsFrom
+\ccc{Mixed_rational_parser_policy}
+
+\ccTypes
+
+\ccNestedType{Polynomial_d}{See \ccc{ParserPolicy} concept.}\ccGlue
+\ccNestedType{Innermost_coefficient_type}{Innermost coefficient type of \ccc{Polynomial_d}.}\ccGlue
+\ccNestedType{Integer}{Integer coefficient type which is \ccc{ExplicitInteroperable} with \ccc{Innermost_coefficient_type} number type.}\ccGlue
+\ccNestedType{Rational}{Rational coefficient type which is \ccc{ExplicitInteroperable} with \ccc{Innermost_coefficient_type} number type.}\ccGlue
+\ccNestedType{BigFloat}{BigFloat coefficient type which is \ccc{ExplicitInteroperable}  with \ccc{Innermost_coefficient_type} number type.}\ccGlue
+
+\ccCreation
+\ccCreationVariable{fp_policy}
+
+\ccConstructor{Mixed_floating_point_parser_policy(const char *var_names = NULL);}
+{Standard constructor. Optionally takes a string of variable names \ccc{var_names} 
+where the first character is the name of the innermost polynomial variable, and the last one 
+is the name of the outermost polynomial variable. If \ccc{var_names} is \ccc{NULL}, the default
+string of variable names ``\ccc{xyzw}'' will be used.}
+
+
+\ccSeeAlso
+\ccRefIdfierPage{ParserPolicy}\\
+\ccRefIdfierPage{CGAL::Polynomial_parser_d< Polynomial_d_, ParserPolicy >}\\
+\ccRefIdfierPage{CoercionTraits}
+
+\end{ccRefClass}
+
+
+% \ccCreation
+% \ccConstructor{Alpha_shape_vertex_base_3();}{default constructor.}
+% \ccGlue
+
+
+% \ccInheritsFrom
+% 
+% \ccStyle{Alpha_shape_2<Rt>}
+% \begin{lstlisting}[frame=none]
+% template < class Polynomial_d_, class InputCoeff >
+% struct Default_parser_policy {
+%     // first template argument type
+%     typedef Polynomial_d_ Polynomial_d;
+%     // second template argument type
+%     typedef InputCoeff Input_coeff;
+%     // coefficient type
+%     typedef typename  CGAL::Polynomial_traits_d< Polynomial_d >::
+%         Innermost_coefficient_type Coeff;
+% 
+%     // default constructor
+%     Default_parser_policy() { }
+%     
+%     // reads a coefficient from the input stream 
+%     Coeff read_coefficient(std::istream& is) const;
+% 
+%     // check for degree overflow
+%     virtual bool exponent_check(unsigned) const {
+%         return true;
+%     }
+% 
+%     virtual ~Default_parser_policy() { }
+% 
+%     // variable names listed in the order from innermost to the outermost
+%     // variable as they appear in the resulting equation
+%     static const int n_var_names = 4;    
+%     static const char *var_names_lower, *var_names_upper;
+%     ...
+% };
+% \end{lstlisting}
+% The first template parameter, {\tt Poly\_d\_}, is a type of output polynomial while 
+% the second one, {\tt InputCoeff}, defines the type of polynomial coefficients as
+% they are read from the input stream via {\tt operator >>}. 
+% There must be an implicit type coercion between {\tt InputCoeff} and 
+% the type of innermost (scalar) coefficients of {\tt Poly\_d\_}.
+%
+
+
+
+% 
+% Besides, the "parser policy" offers a great flexibility in controlling the way how the output polynomials are constructed.
+% All type conversions, precision and rounding of polynomial coefficients are ultimately handled by a given parser policy,
+% which completely separates the parser from the number type issues.
+% 
+% 
+% 
+% 
+%  
