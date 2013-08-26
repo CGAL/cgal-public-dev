@@ -21,14 +21,11 @@ class Finite_support_distribution {
 	public:
 		typedef Weighted_random_generator* Container;
 		typedef typename Weighted_random_generator::result_type result_type;
-		Finite_support_distribution() {
-			presums = NULL;
-			container = NULL;
-			offsets = NULL;
-			aux_array = NULL;
-			length = NULL;
-		}
+		Finite_support_distribution() :
+			presums(NULL),container(NULL),offsets(NULL),aux_array(NULL),length(NULL)
+			{}
 		Finite_support_distribution(Container input, int size) {
+			std::cout << "Constructor of FSD\n";
 			int parts = N / sizeof(std::vector<Weighted_random_generator>*);
 #ifdef VERBOSE
 			std::cout << "N = " << N << std::endl;
@@ -71,6 +68,7 @@ class Finite_support_distribution {
 		}
 
 		Finite_support_distribution(const Finite_support_distribution &in) {
+			std::cout << "Copy-Constructor of FSD\n";
 			size = in.size;
 			int parts = N / sizeof(std::vector<Weighted_random_generator>*);
 			container = new Weighted_random_generator[size];
@@ -92,6 +90,7 @@ class Finite_support_distribution {
 		}
 
 		~Finite_support_distribution() {
+			std::cout << "Destructor of FSD\n";
 			int parts = N / sizeof(std::vector<Weighted_random_generator>*);
 			delete[] container;
 			delete[] presums;
@@ -105,6 +104,7 @@ class Finite_support_distribution {
 		}
 
 		Finite_support_distribution& operator=(const Finite_support_distribution &in) {
+			std::cout << "Assignable\n";
 			this->size = in.size;
 			int parts = N / sizeof(std::vector<Weighted_random_generator>*);
 			if (presums != NULL) delete[] presums;
@@ -134,6 +134,7 @@ class Finite_support_distribution {
 		}
 
 		result_type generate(CGAL::Random &rand) {
+			std::cout << "generate() in FSD\n";
 			double tmp_presum = rand.get_double(0, presums[size-1]);
 #ifdef VERBOSE
 			std::cout << "Random double: " << tmp_presum << std::endl;

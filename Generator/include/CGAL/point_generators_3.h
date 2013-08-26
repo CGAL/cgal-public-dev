@@ -393,18 +393,21 @@ public:
 		delete[] containing_structure;
 	}
 	This operator=(This x) {
+		std::cout << "Copy-constructor of Random_points_in_mesh_3\n";
 		_fsp_distrib = FspDistrib(x._fsp_distrib);
 		_rand = x._rand;
 		return *this;
 	}
 	This& operator++() {
+		std::cout << "operator++()\n";
 		generate_point();
 		return *this;
 	}
-	This operator++(int) {
-		This tmp = *this;
+	This* operator++(int) {
+		std::cout << "operator++(int)\n";
+//		This tmp = *this;
 		++(*this);
-		return tmp;
+		return this-sizeof(This);
 	}
 };
 
