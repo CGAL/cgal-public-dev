@@ -341,6 +341,10 @@ private:
   const AABBTraits& m_traits;
 };
 
+/**
+ * @class Range_listing_primitive_traits
+ */
+
 template<typename AABBTraits, typename Query, typename Output_iterator>
 class Range_listing_primitive_traits
 {
@@ -358,13 +362,23 @@ public:
     : m_out_it(out_it), m_traits(traits) {}
 
   bool go_further() const { return true; }
-
-  void fully_contain(const Query& query, const Primitive& primitive)
+  
+  void add_primitive(const Primitive& primitive)
   {
-    if( true )//need to implement
+	  *m_out_it++ = primitive.id();
+  }
+
+  void contain(const Query& query, const Primitive& primitive)
+  {
+    if( m_traits.do_contain_object()(query,primitive) )//need to implement
     {
       *m_out_it++ = primitive.id();
     }
+  }
+  
+  bool contain(const Query& query, const Node& node)
+  {
+ 	 return m_traits.do_contain_object()(query,node.bbox());
   }
 
   bool do_intersect(const Query& query, const Node& node) const
@@ -398,15 +412,21 @@ public:
 
   bool go_further() const { return !m_is_found; }
 
-  void fully_contain(const Query& query, const Primitive& primitive)
+  void add_primitive(const Primitive& primitive)
   {
-    if( true )//need to implement
+	  m_result = boost::optional<typename Primitive::Id>(primitive.id());
+	  m_is_found = true;
+  }
+  
+  void contain(const Query& query, const Primitive& primitive)
+  {
+    if(  m_traits.do_contain_object()(query,primitive) )//need to implement
     {
       m_result = boost::optional<typename Primitive::Id>(primitive.id());
       m_is_found = true;
     }
   }
-
+  
   bool do_intersect(const Query& query, const Node& node) const
   {
     return m_traits.do_intersect_object()(query, node.bbox());
@@ -441,10 +461,22 @@ public:
 
   bool go_further() const { return !m_is_found; }
 
-  void intersection(const Query& query, const Primitive& primitive)
+  void add_primitive(const Primitive& primitive)
   {
-    if( m_traits.do_contain_object()(query,primitive) )//need to implement
+	  m_is_found = true;
+  }
+  
+  void contain(const Query& query, const Primitive& primitive)
+  {
+    if( m_traits.do_contain_object()(query,primitive) )
       m_is_found = true;
+  }
+  
+  bool contain(const Query& query, const Node& node)
+  {
+	if( m_traits.do_contain_object()(query,node.bbox()) )
+		m_is_found = true;
+	return m_is_found;		
   }
 
   bool do_intersect(const Query& query, const Node& node) const
