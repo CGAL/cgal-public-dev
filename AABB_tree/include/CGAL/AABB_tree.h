@@ -410,6 +410,12 @@ public:
 	/// is fully contained inside the query range.
 		template <typename Query>
 		boost::optional<Primitive_id>  any_contained_primitive(const Query& query) const;
+		
+		
+	/// Returns the number of primitives that are fully contained inside 
+	/// a user specified query range.
+		template<typename Query>
+		size_type number_of_contained_primitives(const Query& query) const;
 
 
 	/// Returns `true`, iff the range contains at least one of
@@ -1307,6 +1313,24 @@ public:
 			return traversal_traits.is_fully_contain_found();
 	}
 
+	template<typename Tr>
+		template<typename Query>
+		typename AABB_tree<Tr>::size_type
+			AABB_tree<Tr>::number_of_contained_primitives(const Query& query) const
+		{
+		    using namespace CGAL::internal::AABB_tree;
+		    using CGAL::internal::AABB_tree::Counting_output_iterator;
+		    typedef typename AABB_tree<Tr>::AABB_traits AABBTraits;
+		    typedef Counting_output_iterator<Primitive_id, size_type> Counting_iterator;
+		
+		    size_type counter = 0;
+		    Counting_iterator out(&counter);
+		
+		    Range_listing_primitive_traits<AABBTraits, 
+		      Query, Counting_iterator> traversal_traits(out,m_traits);
+				this->range_traversal(query, traversal_traits);
+				return counter;
+		}
 } // end namespace CGAL
 
 #endif // CGAL_AABB_TREE_H
