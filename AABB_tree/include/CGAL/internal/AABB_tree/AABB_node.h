@@ -52,6 +52,8 @@ public:
 
   /// Returns the bounding box of the node
   const Bounding_box& bbox() const { return m_bbox; }
+  
+  std::size_t get_primitive_count(){ return this->subtree_primitive_count; }
 
   /**
    * @brief Builds the tree by recursive expansion.
@@ -81,6 +83,33 @@ public:
   void traversal(const Query& query,
                  Traversal_traits& traits,
                  const std::size_t nb_primitives) const;
+  
+	/**
+   * @brief Range traversal query
+   * @param query the query
+   * @param traits the traversal traits that define the traversal behaviour
+   * @param nb_primitives the number of primitive
+   *
+   * Traversal technique to support range queries. The traits class allows using it for the various
+   * traversal methods we need: listing, counting, detecting range queries.
+   */
+
+  template<class Traversal_traits, class Query>
+    void range_traversal(const Query& query,
+                   Traversal_traits& traits,
+                   const std::size_t nb_primitives) const;
+
+	/**
+   * @brief Report_subtree_primitives
+   * @param traits the traversal traits that define the traversal behaviour
+   *
+   * Traversal technique to support reporting leaves of the subtree. The 
+   * leaves which contain primitives are added to the OutputIterator. 
+   */
+  
+  template<class Traversal_traits>
+      void report_subtree_primitives(const std::size_t nb_primitives, 
+    		  		Traversal_traits& traits) const;
 
 private:
   typedef AABBTraits AABB_traits;
@@ -105,6 +134,9 @@ private:
 private:
   /// node bounding box
   Bounding_box m_bbox;
+  
+  /// number of primitives under subtree
+  std::size_t subtree_primitive_count;
 
   /// children nodes, either pointing towards children (if children are not leaves),
   /// or pointing toward input primitives (if children are leaves).
@@ -129,7 +161,7 @@ AABB_node<Tr>::expand(ConstPrimitiveIterator first,
                       const Tr& traits)
 {
   m_bbox = traits.compute_bbox_object()(first, beyond);
-
+  this->subtree_primitive_count = range;
   // sort primitives along longest axis aabb
   traits.sort_primitives_object()(first, beyond, m_bbox);
 
@@ -193,6 +225,102 @@ AABB_node<Tr>::traversal(const Query& query,
     }
   }
 }
+
+
+template<typename Tr>
+template<class Traversal_traits, class Query>
+void
+AABB_node<Tr>::range_traversal(const Query& query,
+                         Traversal_traits& traits,
+                         const std::size_t nb_primitives) const
+{
+  // Recursive traversal
+  switch(nb_primitives)
+  {
+  case 2:
+    traits.contain(query, left_data());
+    if( traits.go_further() )
+    {
+      traits.contain(query, right_data());
+    }
+    break;
+  case 3:
+    traits.contain(query, left_data());
+    if(traits.go_further() && traits.do_intersect(query, right_child()) )
+    {
+    	if(traits.contain(query, right_child()))
+    		right_child().report_subtree_primitives(2,traits);
+    	else 
+    	{
+    	   	right_child().range_traversal(query, traits, 2);
+    	}
+    }
+    
+    break;
+  default:
+    if( traits.go_further() && traits.do_intersect(query, left_child()) )
+    {
+    	if( traits.contain(query, left_child()) && traits.go_further() )
+    		left_child().report_subtree_primitives(nb_primitives/2,traits);
+    	else if(traits.go_further())
+    		left_child().range_traversal(query, traits, nb_primitives/2);
+    	
+    	if(traits.go_further()  && traits.do_intersect(query, right_child()))
+    	{
+    		if( traits.contain(query, right_child()) && traits.go_further() )
+    			right_child().report_subtree_primitives(nb_primitives-nb_primitives/2,traits);
+    		else if(traits.go_further())
+    			right_child().range_traversal(query, traits, nb_primitives-nb_primitives/2);
+    	} 	
+    }
+    
+    else if(traits.go_further() && traits.do_intersect(query, right_child()))
+	{
+		if( traits.contain(query, right_child()) && traits.go_further())
+			right_child().report_subtree_primitives(nb_primitives-nb_primitives/2,traits);
+		else if(traits.go_further())
+			right_child().range_traversal(query, traits, nb_primitives-nb_primitives/2);
+	}
+    break;
+  }
+}
+
+template<typename Tr>
+template<class Traversal_traits>
+void
+AABB_node<Tr>::report_subtree_primitives(const std::size_t nb_primitives, Traversal_traits &traits) const
+{
+  // Recursive traversal
+  //std::size_t nb_primitives = this->subtree_primitive_count;
+  switch(nb_primitives)
+  {
+  case 2:
+    traits.add_primitive(left_data());
+    if( traits.go_further() )
+    {
+    	traits.add_primitive(right_data());
+    }
+    break;
+  case 3:
+	traits.add_primitive(left_data());
+	if( traits.go_further() )
+	{
+	    right_child().report_subtree_primitives(nb_primitives-nb_primitives/2,traits);
+	}
+    break;
+  default:
+	if( traits.go_further() )
+	{
+		left_child().report_subtree_primitives(nb_primitives/2,traits);
+	}
+	if( traits.go_further() )
+	{
+		right_child().report_subtree_primitives(nb_primitives-nb_primitives/2,traits);
+	}
+	break;
+   }
+}
+
 
 } // end namespace CGAL
 
