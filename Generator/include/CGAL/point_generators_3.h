@@ -328,26 +328,41 @@ class WeightFunctor_tetrahedron_3 {
 			return t.volume();
 		}
 };
-
-template < class P, class C3t3, class Creator = 
+struct FasterMemoryExpensiveTag {};
+struct SlowerMemoryEfficientTag {};
+template<class RandomGeneratorPolicy>
+struct RandomGeneratorPolicySelector {
+	int value;
+	RandomGeneratorPolicySelector() {
+		value = 0;
+	}
+};
+template<>
+struct RandomGeneratorPolicySelector<FasterMemoryExpensiveTag> {
+	int value;
+	RandomGeneratorPolicySelector() {
+		value = 1;
+	}
+};
+template < class P, class C3t3, class RandomGeneratorPolicy, class Creator = 
 Creator_uniform_3<typename Kernel_traits<P>::Kernel::RT,P> >
 class Random_points_in_mesh_3 : public Random_generator_base<P> {
 	CGAL::internal::Finite_support_distribution<CGAL::internal::Weighted_random_generator<Random_points_in_tetrahedron_3<P>
-		>, 1<<20 > _fsp_distrib;
+		> > _fsp_distrib;
 	Random *_rand;
 	void generate_point();
 public:
 	CGAL::Timer t;
 
 	typedef P result_type;
-	typedef Random_points_in_mesh_3<P, C3t3> This;
+	typedef Random_points_in_mesh_3<P, C3t3, RandomGeneratorPolicy> This;
 	typedef typename Kernel_traits<P>::Kernel::Tetrahedron_3 Tetrahedron_3;
 	typedef CGAL::Random_points_in_tetrahedron_3<P> PointGen;
 	typedef CGAL::internal::Weighted_random_generator<PointGen>
 		GeneratorWithWeight;
 	typedef
 		CGAL::internal::Finite_support_distribution<CGAL::internal::Weighted_random_generator<Random_points_in_tetrahedron_3<P>
-		>, 1<<20 > FspDistrib;
+		> > FspDistrib;
 	typedef typename C3t3::Triangulation Tr;
 	Random_points_in_mesh_3() {}
 	Random_points_in_mesh_3( const This& x,Random& rnd = default_random)
@@ -381,9 +396,14 @@ public:
 			}
 		}
 
+		int N = 1;
+		RandomGeneratorPolicySelector<RandomGeneratorPolicy> select;
+		if (select.value) {
+			N = 1<<10;
+		}
 		_fsp_distrib =
-			CGAL::internal::Finite_support_distribution<GeneratorWithWeight,1<<20>
-			(containing_structure, i);
+			CGAL::internal::Finite_support_distribution<GeneratorWithWeight>
+			(containing_structure, i, N);
 		generate_point();
 
 		t.stop();
@@ -393,26 +413,23 @@ public:
 		delete[] containing_structure;
 	}
 	This operator=(This x) {
-		std::cout << "Copy-constructor of Random_points_in_mesh_3\n";
+		//TODO: _fsp_distrib = x._fsp_distrib;
 		_fsp_distrib = FspDistrib(x._fsp_distrib);
 		_rand = x._rand;
 		return *this;
 	}
 	This& operator++() {
-		std::cout << "operator++()\n";
 		generate_point();
 		return *this;
 	}
-	This* operator++(int) {
-		std::cout << "operator++(int)\n";
-//		This tmp = *this;
-		++(*this);
-		return this-sizeof(This);
+	const This& operator++(int) {
+		generate_point();
+		return *this;
 	}
 };
 
-template<class P, class C3t3, class Creator >
-void Random_points_in_mesh_3<P, C3t3, Creator>::generate_point() {
+template<class P, class C3t3, class RandomGeneratorPolicy, class Creator >
+void Random_points_in_mesh_3<P, C3t3, RandomGeneratorPolicy, Creator>::generate_point() {
 	P ret = _fsp_distrib.generate(*_rand);
 	this->d_item = ret;
 }
