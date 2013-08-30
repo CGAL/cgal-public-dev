@@ -374,20 +374,22 @@ public:
 		Tr tr = c3t3.triangulation();
 		GeneratorWithWeight* containing_structure;
 		containing_structure = new GeneratorWithWeight[Nr_cells_in_cplx];
-		typename Tr::Finite_cells_iterator iter = tr.finite_cells_begin();
+		typename C3t3::Cells_in_complex_iterator iter =
+			c3t3.cells_in_complex_begin();
 		int i = 0;
-		for (; iter != tr.finite_cells_end(); ++iter) {
-			if (c3t3.is_in_complex(iter)) {
-				Tetrahedron_3 aux = tr.tetrahedron(iter);
-				double weight = weightElem(aux);
-				PointGen randGen(aux);
-				containing_structure[i] = GeneratorWithWeight (randGen, weight);
-				i++;
-			}
+		for (; iter != c3t3.cells_in_complex_end(); ++iter) {
+			Tetrahedron_3 aux(iter->vertex(0)->point(),
+					iter->vertex(1)->point(),
+					iter->vertex(2)->point(),
+					iter->vertex(3)->point());
+
+			double weight = weightElem(aux);
+			PointGen randGen(aux);
+			containing_structure[i] = GeneratorWithWeight (randGen, weight);
+			i++;
 		}
 		int N = 1;
-		PolicySelector select;
-		if (select.value) {
+		if (PolicySelector::value) {
 			N = 1<<10;
 		}
 		_fsp_distrib =
@@ -472,8 +474,7 @@ public:
 			}
 		}
 		int N = 1;
-		PolicySelector select;
-		if (select.value) {
+		if (PolicySelector::value) {
 			N = 1<<10;
 		}
 		_fsp_distrib =
