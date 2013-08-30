@@ -43,7 +43,7 @@ public:
 };
 
 template<typename K>
-class Get_primitive_vertice_count<K, typename K::Bbox_2>:public Get_primitive_vertice_count_base
+class Get_primitive_vertice_count<K, typename K::Iso_rectangle_2>:public Get_primitive_vertice_count_base
 {
 public:
    Get_primitive_vertice_count():Get_primitive_vertice_count_base(4){}
@@ -68,6 +68,20 @@ class Get_primitive_vertice_count<K, typename K::Iso_cuboid_3>:public Get_primit
 {
 public:
    Get_primitive_vertice_count():Get_primitive_vertice_count_base(8){}
+};
+
+template<typename K>
+class Get_primitive_vertice_count<K, typename K::Point_3>:public Get_primitive_vertice_count_base
+{
+public:
+   Get_primitive_vertice_count():Get_primitive_vertice_count_base(1){}
+};
+
+template<typename K>
+class Get_primitive_vertice_count<K, typename K::Point_2>:public Get_primitive_vertice_count_base
+{
+public:
+   Get_primitive_vertice_count():Get_primitive_vertice_count_base(1){}
 };
 
 }
