@@ -146,6 +146,50 @@ The following example illustrates different ways to construct a
 bivariate polynomial:
 \cgalExample{Polynomial/construction.cpp}
 
+\section PolynomialParser Polynomial parser
+
+The purpose of a polynomial parser is to provide an alternative way to construct  `Polynomial<Coeff>` from an input given in a human-readable format. By default, the class `Polynomial<Coeff>` provides an `operator >>` to read polynomials from the input stream in the ASCII format:
+
+\f[P[8(0,P[8(0,P[8(0,2)(2,-16)(4,80)(6,-128)(8,64)])(2,P[0(0,-16)])(4,P[0(0,80)])\\
+\quad {}(6,P[0(0,-128)])(8,P[0(0,64)])])(2,P[0(0,P[0(0,-16)])])(4,P[0(0,P[0(0,80)])])\\
+\quad {}(6,P[0(0,P[0(0,-128)])])(8,P[0(0,P[0(0,64)])])].\f]
+
+Though, such a representation is quite compact, it is not intuitive and lacks readability.
+For example, the above expression is equivalent to the following trivariate polynomial
+in a human-readable format:
+\f[64z^8 + (-128)z^6 + 80z^4 + (-16)z^2 + (64y^8 + (-128)y^6 + 80y^4 + (-16)y^2 + \\
+\quad {}(64x^8 + (-128)x^6 + 80x^4 + (-16)x^2 + 2)).\f]
+
+Apparently, parsing polynomials in the latter format has many advantages.
+The parser can handle polynomials in any number of indeterminates (variables) and 
+can parse any algebraic expression (with arbitrary number of parantheses) 
+which involves addition, subtraction, multiplication,
+and rasing to the (positive) integer power operations. It also supports an equality operator (`=`) with the meaning that the expression: 
+\f[ f(x,y,\dots)=g(x,y,\dots)\f] 
+where \f$f\f$ and \f$g\f$ are arbitraty multivariate polynomials, will be parsed as: 
+\f[ f(x,y,\dots)-g(x,y,\dots).\f]
+For instance, the following expressions are valid: 
+
+\f[((y-1)^4 - x*y^3)^5 + (x + z)^2 - (2123234523*x^2 - 2*y*y*x + 3^{10}*x*132123)^3,\\
+\quad {}(y + x - z + w - 3)^3 = x + y - 123/12312 + 1.00001*z*x^2.\f]
+
+Note that, the multiplication symbol (`*`) is optional and can be omitted in the above expressions. 
+
+The parser is configured via the so-called `parser policy` provided as a template parameter. There are three parser policies available by default:
+
+<UL>
+<LI>`Default_parser_policy`: no type conversions are performed. In other words, coefficients of the type `Innermost_coefficient_type` of the target polynomial are read directly from the input stream.
+<LI>`Mixed_rational_parser_policy`: extends `Default_parser_policy`, and allows mixing coefficients of integer and rational number types in a single expression.
+<LI>`Mixed_floating_point_parser_policy`: extends `Mixed_rational_parser_policy`, and allows mixing the coefficients of integer, rational and floating-point number types in a single expression.
+</UL>
+For additional information on parser policies, see the corresponding reference pages.
+
+\cgalExample{Polynomial/default_parser_policy.cpp}
+
+\cgalExample{Polynomial/mixed_rational_parser_policy.cpp}
+
+\cgalExample{Polynomial/mixed_floating_point_parser_policy.cpp}
+
 \section PolynomialCoefficient Coefficient Access
 
 In order to obtain a certain coefficient the traits class provides 
