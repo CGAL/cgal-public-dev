@@ -332,17 +332,11 @@ struct FasterMemoryExpensiveTag {};
 struct SlowerMemoryEfficientTag {};
 template<class RandomGeneratorPolicy>
 struct RandomGeneratorPolicySelector {
-	int value;
-	RandomGeneratorPolicySelector() {
-		value = 0;
-	}
+	enum {value = 1};
 };
 template<>
-struct RandomGeneratorPolicySelector<FasterMemoryExpensiveTag> {
-	int value;
-	RandomGeneratorPolicySelector() {
-		value = 1;
-	}
+struct RandomGeneratorPolicySelector<SlowerMemoryEfficientTag> {
+	enum {value = 0};
 };
 template < class P, class C3t3, class RandomGeneratorPolicy, class Creator = 
 Creator_uniform_3<typename Kernel_traits<P>::Kernel::RT,P> >
@@ -413,8 +407,7 @@ public:
 		delete[] containing_structure;
 	}
 	This operator=(This x) {
-		//TODO: _fsp_distrib = x._fsp_distrib;
-		_fsp_distrib = FspDistrib(x._fsp_distrib);
+		_fsp_distrib = x._fsp_distrib;
 		_rand = x._rand;
 		return *this;
 	}
