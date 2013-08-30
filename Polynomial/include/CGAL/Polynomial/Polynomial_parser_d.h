@@ -368,7 +368,7 @@ public:
     }
 
     //! \brief functor invokation operator
-    bool operator()(const std::string& in, Polynomial_d& poly) {
+    bool operator()(const std::string& in, Polynomial_d& poly) const {
         
         try {
             // remove white spaces from the string: look for all possible
@@ -415,7 +415,7 @@ protected:
     //! given a string \c cstr of length \c len starting with an open
     //! parentheses returns the place marking the end of the corresponding
     //! closing parentheses
-    std::size_t match_parenth(std::istream& is)
+    std::size_t match_parenth(std::istream& is) const
     {   
         int count = 0;
         std::size_t pos = 0, start = is.tellg(); // save pos of the first '('
@@ -438,7 +438,7 @@ protected:
 
     //! constructs {x/y}^exp and returns the result as bivariate polynomial 
     //! \c res \c var encodes a variable (x or y) 
-    Polynomial_d construct_monomial(int idx, unsigned int exp) {
+    Polynomial_d construct_monomial(int idx, unsigned int exp) const {
         static Polynomial_d one(NT(1));
         if(exp == 0) // just return 1
             return one;
@@ -447,7 +447,7 @@ protected:
         return monom;
     }
 
-    void get_basic_term(std::istringstream& is, Polynomial_d& res)
+    void get_basic_term(std::istringstream& is, Polynomial_d& res) const
     {
         char ch = is.peek();
         int idx = -1;
@@ -512,7 +512,7 @@ protected:
         res = tmp;
     }
     
-    void get_term(std::istringstream& is, Polynomial_d& res)
+    void get_term(std::istringstream& is, Polynomial_d& res) const
     {
         if(is.eof()) {
             res = Polynomial_d(NT(0));
@@ -539,7 +539,7 @@ protected:
         //std::cout << "getterm result: " << res << "\n";
     }
     
-    Polynomial_d get_poly(std::string &s)
+    Polynomial_d get_poly(std::string &s) const
     {
        //std::cout << "getpoly: " << s << "\n";
         std::size_t len = s.length();
