@@ -1,0 +1,8 @@
+#Standard torus:
+BEGIN_CYCLIDE
+a 2
+b 2
+mu 1
+center 00 0 0
+base_plane 1 0 0 0 1 0 0 0 1
+END_CYCLIDE
