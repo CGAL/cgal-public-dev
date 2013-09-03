@@ -51,7 +51,8 @@ class Finite_support_distribution {
 				offsets[i] = new int[_size];
 				aux_array[i] = new double[_size];
 				int k = 0;
-				while (presums[j] < (i+1) * step) {
+				while (presums[j] < (i+1) * step && j < _size &&
+						k < _size) {
 					aux_array[i][k] = presums[j];
 					offsets[i][k] = j;
 					j++;
