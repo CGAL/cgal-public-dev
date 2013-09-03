@@ -165,7 +165,8 @@ public:
     operator Vertex_handle() const { return Base::base(); }
   };
   /// Range of finite vertices
-  typedef boost::iterator_range< Non_dereferencing_iterator<Finite_vertices_iterator> > Finite_vertices_range;
+  typedef boost::iterator_range< Non_dereferencing_iterator<Finite_vertices_iterator> > Finite_vertex_handles_range;
+  typedef boost::iterator_range< Finite_vertices_iterator > Finite_vertices_range;
 
   class Finite_faces_iterator
     : public Filter_iterator<All_faces_iterator, Infinite_tester> 
@@ -440,6 +441,8 @@ public:
   Finite_vertices_iterator finite_vertices_end() const;
   /// Returns the range of all finite vertices in the triangulation
   Finite_vertices_range finite_vertices() const;
+  /// Returns the range of all finite vertex handles in the triangulation
+  Finite_vertex_handles_range finite_vertex_handles() const;
   Finite_edges_iterator finite_edges_begin() const;
   Finite_edges_iterator finite_edges_end() const; 
   Point_iterator points_begin() const;
@@ -3077,6 +3080,14 @@ finite_vertices_end() const
 {
   return CGAL::filter_iterator(all_vertices_end(),
                                Infinite_tester(this)); 
+}
+
+template <class Gt, class Tds >
+typename Triangulation_2<Gt, Tds>::Finite_vertex_handles_range
+Triangulation_2<Gt, Tds>::
+finite_vertex_handles() const
+{
+  return boost::make_iterator_range(finite_vertices_begin(), finite_vertices_end());
 }
 
 template <class Gt, class Tds >

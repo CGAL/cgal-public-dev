@@ -21,13 +21,17 @@ int main(int argc, char *argv[]) {
 		std::cout << p.x() << ", " << p.y() << std::endl;
 	}
 	std::cout << "Using a non-dereferencing iterator for Finite_vertices_iterator:" << std::endl;
-	T::Finite_vertices_range vhs = t.finite_vertices();
+	T::Finite_vertex_handles_range vhs = t.finite_vertex_handles();
 	BOOST_FOREACH(T::Finite_vertices_iterator &vh, vhs) {
 		std::cout << vh->point().x() << ", " << vh->point().y() << std::endl;
 	}
 	std::cout << "Implicit cast to a Vertex_handle:" << std::endl;
-	BOOST_FOREACH(T::Vertex_handle vh, t.finite_vertices()) {
+	BOOST_FOREACH(T::Vertex_handle vh, t.finite_vertex_handles()) {
 		std::cout << vh->point().x() << ", " << vh->point().y() << std::endl;
+	}
+	std::cout << "Iterator over vertices:" << std::endl;
+	BOOST_FOREACH(T::Vertex &v, t.finite_vertices()) {
+		std::cout << v.point().x() << ", " << v.point().y() << std::endl;
 	}
 
 	return 0;
