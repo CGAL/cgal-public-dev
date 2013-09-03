@@ -2486,7 +2486,7 @@ class Non_dereferencing_iterator
         Non_dereferencing_iterator<Iterator>  /// Derived
       , Iterator                              /// Base
       , Iterator                              /// Value
-      , typename Iterator::iterator_category           /// Traversal type
+      , typename Iterator::iterator_category  /// Traversal type
       , Iterator                              /// Reference
     >
 {
