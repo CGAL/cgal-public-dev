@@ -44,6 +44,7 @@
 #include <boost/random/linear_congruential.hpp>
 #include <boost/random/uniform_smallint.hpp>
 #include <boost/random/variate_generator.hpp>
+#include <boost/range.hpp>
 
 #ifndef CGAL_NO_STRUCTURAL_FILTERING
 #include <CGAL/internal/Static_filters/tools.h>
@@ -163,6 +164,8 @@ public:
     Self operator--(int) { Self tmp(*this); --(*this); return tmp; }
     operator Vertex_handle() const { return Base::base(); }
   };
+  /// Range of finite vertices
+  typedef boost::iterator_range< Non_dereferencing_iterator<Finite_vertices_iterator> > Finite_vertices_range;
 
   class Finite_faces_iterator
     : public Filter_iterator<All_faces_iterator, Infinite_tester> 
@@ -199,6 +202,8 @@ public:
                            const Point*,
                            std::ptrdiff_t,
                            std::bidirectional_iterator_tag>  Point_iterator;
+  /// Range of the points stored in the triangulation
+  typedef boost::iterator_range<Point_iterator> Point_range;
 
   typedef Point                value_type; // to have a back_inserter
   typedef const value_type&    const_reference; 
@@ -433,10 +438,14 @@ public:
   Finite_faces_iterator finite_faces_end() const;
   Finite_vertices_iterator finite_vertices_begin() const;
   Finite_vertices_iterator finite_vertices_end() const;
+  /// Returns the range of all finite vertices in the triangulation
+  Finite_vertices_range finite_vertices() const;
   Finite_edges_iterator finite_edges_begin() const;
   Finite_edges_iterator finite_edges_end() const; 
   Point_iterator points_begin() const;
   Point_iterator points_end() const;
+  /// Returns the range of all points in the triangulation
+  Point_range points() const;
 
   All_faces_iterator all_faces_begin() const;
   All_faces_iterator all_faces_end() const;
@@ -3071,6 +3080,14 @@ finite_vertices_end() const
 }
 
 template <class Gt, class Tds >
+typename Triangulation_2<Gt, Tds>::Finite_vertices_range
+Triangulation_2<Gt, Tds>::
+finite_vertices() const
+{
+  return boost::make_iterator_range(finite_vertices_begin(), finite_vertices_end());
+}
+
+template <class Gt, class Tds >
 typename Triangulation_2<Gt, Tds>::Finite_edges_iterator
 Triangulation_2<Gt, Tds>::
 finite_edges_begin() const
@@ -3105,6 +3122,14 @@ Triangulation_2<Gt, Tds>::
 points_end() const
 {
   return Point_iterator(finite_vertices_end());
+}
+
+template <class Gt, class Tds >
+typename Triangulation_2<Gt, Tds>::Point_range
+Triangulation_2<Gt, Tds>::
+points() const
+{
+  return boost::make_iterator_range(points_begin(), points_end());
 }
 
 template <class Gt, class Tds >

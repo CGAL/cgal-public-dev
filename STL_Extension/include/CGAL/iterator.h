@@ -35,6 +35,7 @@
 #include <CGAL/tuple.h>
 #include <boost/variant.hpp>
 #include <boost/optional.hpp>
+#include <boost/iterator_adaptors.hpp>
 
 #include <boost/config.hpp>
 
@@ -2471,6 +2472,52 @@ Dispatch_or_drop_output_iterator<cpp11::tuple<V1,V2,V3,V4,V5,V6,V7>,cpp11::tuple
 dispatch_or_drop_output(O1 out1,O2 out2,O3 out3,O4 out4,O5 out5,O6 out6,O7 out7){
   return Dispatch_or_drop_output_iterator<cpp11::tuple<V1,V2,V3,V4,V5,V6,V7>,cpp11::tuple<O1,O2,O3,O4,O5,O6,O7> >(out1,out2,out3,out4,out5,out6,out7);
 }
+
+/**
+ * An iterator adaptor that modifies an iterator so that
+ * dereferencing returns the original iterator. 
+ * Particularly useful if we want to pass \cgal iterators
+ * to algorithms that expect to dereference the iterator 
+ * to get the desired object.
+ */
+template <typename Iterator>
+class Non_dereferencing_iterator
+  : public boost::iterator_adaptor<
+        Non_dereferencing_iterator<Iterator>  /// Derived
+      , Iterator                              /// Base
+      , Iterator                              /// Value
+      , boost::forward_traversal_tag          /// Traversal type
+      , Iterator                              /// Reference
+    >
+{
+ private:
+    struct enabler {};
+
+ public:    
+    Non_dereferencing_iterator()
+        : Non_dereferencing_iterator::iterator_adaptor_(0) {}
+
+    /**
+     * Construct a non-dereferencing version of a given iterator. 
+     * The given iterator is wrapped in a boost::iterator adaptor     
+     * and the dereference operation is re-defined. 
+     * 
+     * @param  iterator The iterator to be modifed.
+     * @return          The new iterator.
+     */
+    explicit Non_dereferencing_iterator(const Iterator iterator)
+        : Non_dereferencing_iterator::iterator_adaptor_(iterator) {}
+
+ private:
+    friend class boost::iterator_core_access;
+
+    typename Non_dereferencing_iterator::reference
+    dereference() const
+    {
+        return this->base();
+    }
+};
+
 
 #endif
 
