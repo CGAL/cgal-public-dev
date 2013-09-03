@@ -8,6 +8,9 @@
 #include <CGAL/point_generators_3.h>
 #include <vector>
 #include <algorithm>
+#include <cassert>
+
+//#define TEST_VERBOSE
 
 //Probability 1 generator
 template < class P >
@@ -46,6 +49,20 @@ void Probability_1_generator<P>::generate_point() {
 	this->d_item = _i;
 }
 
+bool inside_generation_range(const int lower, const int upper, int gen) {
+	if (gen < lower || gen > upper) {
+		return false;
+	}
+	return true;
+}
+
+bool all_posibilities_covered(int *begin, int size) {
+	for (int i = 0; i < size; i++) {
+		if (!begin[i]) return false;
+	}
+	return true;
+}
+
 //Random generator
 typedef
 CGAL::internal::Weighted_random_generator<Probability_1_generator<int> > GeneratorWithWeight;
@@ -56,31 +73,39 @@ int main()
 	const int MIN_N = 90;
 	const int MAX_N = 100;
 	const int N = rand.get_int(MIN_N, MAX_N);
+#ifdef TEST_VERBOSE
 	std::cout << "N = " << N << std::endl;
+#endif
 	const int MIN_POINTS = 1000;
 	const int MAX_POINTS = 1000000;
 	const int number_points = rand.get_int(MIN_POINTS, MAX_POINTS);
+#ifdef TEST_VERBOSE
 	std::cout << "number_points = " << number_points << std::endl;
-	std::vector<GeneratorWithWeight> containing_structure;
-	containing_structure.reserve(N);
+#endif
+	GeneratorWithWeight *containing_structure = new GeneratorWithWeight[N];
 	for (int i = 0; i < N; i++) {
 		int aux = i;
 		Probability_1_generator<int> randGen( aux );
 		GeneratorWithWeight tmp = GeneratorWithWeight (randGen, (double) 1/N);
-		containing_structure.push_back(tmp);
+		containing_structure[i] = tmp;
 	}
 
 	CGAL::internal::Finite_support_distribution<GeneratorWithWeight
-		> randomGen(containing_structure);
+		> randomGen(containing_structure, N, 1<<10);
 
 	int *ret = (int *) calloc(N, sizeof(int));
 	for (int i = 0; i < number_points; i++) {
 		int index = randomGen.generate(rand);
+		assert(inside_generation_range(0, N, index));
 		ret[index]++;
 	}
+
+#ifdef TEST_VERBOSE
 	for(int i = 0; i < N; i++) {
 		std::cout << ret[i] << std::endl;
 	}
+#endif
+	assert(all_posibilities_covered(ret, N));
 	free(ret);
 	return 0;
 }

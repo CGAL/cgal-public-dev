@@ -469,10 +469,10 @@ public:
 		for (; iter != c2t3.facets_end(); ++iter) {
 			Vertex v[4];
 			int k = 0;
-			for(int i = 0; i < 4; i++)
+			for(int j = 0; j < 4; j++)
 			{
-				if(i == iter->second) continue;
-				v[k] = iter->first->vertex(i); // vertices of the facet
+				if(j == iter->second) continue;
+				v[k] = iter->first->vertex(j); // vertices of the facet
 				k++;
 			}
 			Triangle_3 aux(v[0]->point(), v[1]->point(),

@@ -43,7 +43,6 @@ bool inside_or_close_to_triangle(const Triangle_3& tri,InputIterator begin, Inpu
 }
 
 int main() {
-	//assert(1==0);
 	CGAL::Random rand;
 	Container point_set;
 	const int MIN_TRIANGLES = 1;
