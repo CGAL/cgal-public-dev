@@ -165,8 +165,8 @@ public:
     operator Vertex_handle() const { return Base::base(); }
   };
   /// Range of finite vertices
-  typedef boost::iterator_range< Non_dereferencing_iterator<Finite_vertices_iterator> > Finite_vertex_handles_range;
   typedef boost::iterator_range< Finite_vertices_iterator > Finite_vertices_range;
+  typedef boost::iterator_range< Non_dereferencing_iterator<Finite_vertices_iterator> > Finite_vertex_handles_range;
 
   class Finite_faces_iterator
     : public Filter_iterator<All_faces_iterator, Infinite_tester> 
