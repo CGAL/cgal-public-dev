@@ -1,4 +1,4 @@
-// Copyright (c) 2007,2009,2010,2011,2013 Tel-Aviv University (Israel).
+// Copyright (c) 2007,2009,2010,2011,2013 Max-Planck-Institute Saarbruecken (Germany), Tel-Aviv University (Israel).
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
@@ -33,9 +33,8 @@
 namespace CGAL {
 
 /*! \class Arr_vanilla_construction_helper
- * A helper class for the construction sweep-line visitor, suitable
- * for an Arrangement_on_surface_2 instantiated with a topology-traits class
- * for bounded curves in the plane.
+ * A template helper class for the construction sweep-line visitor, suitable
+ * for an Arrangement_on_surface_2 instantiated with a topology-traits class.
  */
 template <typename Traits_, typename Arrangement_, typename Event_,
           typename Subcurve_>
@@ -151,7 +150,8 @@ public:
     Indices_list& list_ref = (*m_he_ind_map_p)[he];
     list_ref.splice(list_ref.end(), m_subcurves_at_tf);
   }
-};
+
+}; // Arr_vanilla_construction_helper
 
 } //namespace CGAL
 

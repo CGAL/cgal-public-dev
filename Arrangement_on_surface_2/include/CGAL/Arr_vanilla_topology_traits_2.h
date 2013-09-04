@@ -1,4 +1,4 @@
-// Copyright (c) 2006,2007,2008,2009,2010,2011,2012,2013 Max-Planck-Institut für Informatik (Germany), Tel-Aviv University (Israel).
+// Copyright (c) 2006,2007,2008,2009,2010,2011,2012,2013 Max-Planck-Institute Saarbruecken (Germany), Tel-Aviv University (Israel).
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).

@@ -1,4 +1,4 @@
-// Copyright (c) 2007,2009,2010,2011,2013 Tel-Aviv University (Israel).
+// Copyright (c) 2007,2009,2010,2011,2013 Max-Planck-Institute Saarbruecken (Germany), Tel-Aviv University (Israel).
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
@@ -18,7 +18,7 @@
 // Author(s)     : Baruch Zukerman <baruchzu@post.tau.ac.il>
 //                 Ron Wein <wein@post.tau.ac.il>
 //                 Efi Fogel <efif@post.tau.ac.il>
-//
+//                 Eric Berberich <eric.berberich@cgal.org>
 
 #ifndef CGAL_ARR_VANILLA_BATCHED_PL_HELPER_H
 #define CGAL_ARR_VANILLA_BATCHED_PL_HELPER_H
@@ -33,8 +33,7 @@ namespace CGAL {
 
 /*! \class Arr_vanilla_batched_pl_helper
  * A helper class for the batched point-location sweep-line visitor, suitable
- * for an Arrangement_on_surface_2 instantiated with a topology-traits class
- * for bounded curves in the plane.
+ * for an Arrangement_on_surface_2 instantiated with a topology-traits class.
  */
 template <class Traits_, class Arrangement_>
 class Arr_vanilla_batched_pl_helper
@@ -59,7 +58,7 @@ protected:
   const Topology_traits * m_top_traits;
 
   //! The unbounded arrangement face.
-  Face_const_handle m_unb_face;
+  Face_const_handle m_top_face;
 
 public:
   /*! Constructor.
@@ -75,8 +74,7 @@ public:
   /*! A notification issued before the sweep process starts. */
   void before_sweep()
   {
-    // Get the unbounded face.
-    m_unb_face = Face_const_handle(m_top_traits->unbounded_face());
+    m_top_face = Face_const_handle(m_top_traits->reference_face());
   }
 
   /*! A notification invoked after the sweep-line finishes handling the given
@@ -88,7 +86,7 @@ public:
   /*! Get the current top face. */
   Face_const_handle top_face() const
   {
-    return m_unb_face;
+    return m_top_face;
   }
 };
 

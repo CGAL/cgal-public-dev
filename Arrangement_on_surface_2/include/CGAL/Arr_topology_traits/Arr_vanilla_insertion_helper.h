@@ -1,4 +1,4 @@
-// Copyright (c) 2007,2009,2010,2011,2013 Tel-Aviv University (Israel).
+// Copyright (c) 2007,2009,2010,2011,2013 Max-Planck-Institute Saarbruecken (Germany), Tel-Aviv University (Israel).
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
@@ -41,7 +41,7 @@ template <typename Traits_, typename Arrangement_, typename Event_,
           typename Subcurve_>
 class Arr_vanilla_insertion_helper :
   public Arr_vanilla_construction_helper<Traits_, Arrangement_,
-                                           Event_, Subcurve_>
+                                         Event_, Subcurve_>
 {
 public:
   typedef Traits_                                       Traits_2;

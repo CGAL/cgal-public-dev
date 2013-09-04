@@ -1,4 +1,4 @@
-// Copyright (c) 2007,2009,2010,2011,2013 Tel-Aviv University (Israel).
+// Copyright (c) 2007,2009,2010,2011,2013 Max-Planck-Institute Saarbruecken (Germany), Tel-Aviv University (Israel).
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
@@ -19,6 +19,7 @@
 // Author(s)     : Baruch Zukerman <baruchzu@post.tau.ac.il>
 //                 Ron Wein <wein@post.tau.ac.il>
 //                 Efi Fogel <efif@post.tau.ac.il>
+//                 Eric Berberich <eric.berberich@cgal.org>
 
 #ifndef CGAL_ARR_VANILLA_OVERLAY_HELPER_H
 #define CGAL_ARR_VANILLA_OVERLAY_HELPER_H
@@ -75,10 +76,10 @@ protected:
   const Topology_traits_blue* m_blue_top_traits;
 
   //! Red vanilla face
-  Face_handle_red m_red_nf;
+  Face_handle_red m_red_tf;
 
   //! Blue vanilla face
-  Face_handle_blue m_blue_nf;
+  Face_handle_blue m_blue_tf;
 
 public:
   /*! Constructor, given the input red and blue arrangements. */
@@ -94,13 +95,6 @@ public:
   /* A notification issued before the sweep process starts. */
   void before_sweep()
   {
-    // Get the vanilla faces in both arrangements.
-    /* RWRW:
-     * m_red_nf = Face_handle_red(m_red_top_traits->vanilla_face());
-     * m_blue_nf = Face_handle_blue(m_blue_top_traits->vanilla_face());
-     */
-    m_red_nf = Face_handle_red(m_red_top_traits->south_face());
-    m_blue_nf = Face_handle_blue(m_blue_top_traits->south_face());
   }
 
   /*! A notification invoked before the sweep-line starts handling the given
@@ -108,111 +102,14 @@ public:
    */
   void before_handle_event(Event* event)
   {
-    if (event->parameter_space_in_y() != ARR_TOP_BOUNDARY &&
-        event->parameter_space_in_x() != ARR_LEFT_BOUNDARY)
-      return;
-
-    Arr_curve_end ind = ((event->number_of_left_curves() == 0) &&
-                         (event->number_of_right_curves() != 0)) ?
-      ARR_MIN_END : ARR_MAX_END;
-
-    Subcurve_iterator it_red, it_blue, it_end;
-    if (ind == ARR_MIN_END) {
-      it_blue = it_red = event->right_curves_begin();
-      it_end = event->right_curves_end();
-    }
-    else {
-      it_blue = it_red = event->left_curves_begin();
-      it_end = event->left_curves_end();
-    }
-
-    // red arrangement
-    while ((it_red != it_end) && ((*it_red)->color() == Traits_2::BLUE))
-      ++it_red;
-
-    if (it_red != it_end) {
-      const Subcurve* sc_red = *it_red;
-      if (event->parameter_space_in_y() == ARR_TOP_BOUNDARY) {
-        // The curve is incident to the north pole.
-        switch (sc_red->color()) {
-         case Traits_2::RED:
-          m_red_nf = (ind == ARR_MIN_END) ?
-            sc_red->red_halfedge_handle()->twin()->face() :
-            sc_red->red_halfedge_handle()->face();
-          break;
-
-         case Traits_2::RB_OVERLAP:
-          m_red_nf = (ind == ARR_MIN_END) ?
-            sc_red->red_halfedge_handle()->twin()->face() :
-            sc_red->red_halfedge_handle()->face();
-          break;
-
-         case Traits_2::BLUE: break;
-        }
-      }
-      else {
-        // The curve extends to the right from the curve of discontinuity.
-        CGAL_assertion(ind == ARR_MIN_END);
-        switch (sc_red->color()) {
-        case Traits_2::RED:
-          m_red_nf = sc_red->red_halfedge_handle()->twin()->face();
-          break;
-        case Traits_2::RB_OVERLAP:
-          m_red_nf = sc_red->red_halfedge_handle()->twin()->face();
-          break;
-        case Traits_2::BLUE: break;
-        }
-      }
-    }
-
-    // blue arrangement
-    while ((it_blue != it_end) && ((*it_blue)->color() == Traits_2::RED))
-      ++it_blue;
-
-    if (it_blue != it_end) {
-      const Subcurve* sc_blue = *it_blue;
-      if (event->parameter_space_in_y() == ARR_TOP_BOUNDARY) {
-        // The curve is incident to the north pole.
-        switch (sc_blue->color()) {
-         case Traits_2::BLUE:
-          m_blue_nf = (ind == ARR_MIN_END) ?
-            sc_blue->blue_halfedge_handle()->twin()->face() :
-            sc_blue->blue_halfedge_handle()->face();
-          break;
-
-         case Traits_2::RB_OVERLAP:
-          m_blue_nf = (ind == ARR_MIN_END) ?
-            sc_blue->blue_halfedge_handle()->twin()->face() :
-            sc_blue->blue_halfedge_handle()->face();
-          break;
-
-         case Traits_2::RED: break;
-        }
-      }
-      else {
-        // The curve extends to the right from the curve of discontinuity.
-        CGAL_assertion(ind == ARR_MIN_END);
-        switch (sc_blue->color()) {
-         case Traits_2::BLUE:
-          m_blue_nf = sc_blue->blue_halfedge_handle()->twin()->face();
-          break;
-
-         case Traits_2::RB_OVERLAP:
-          m_blue_nf = sc_blue->blue_halfedge_handle()->twin()->face();
-          break;
-
-         case Traits_2::RED: break;
-        }
-      }
-    }
   }
   //@}
 
   /*! Get the current red top face. */
-  Face_handle_red red_top_face() const { return m_red_nf; }
+  Face_handle_red red_top_face() const { return m_red_tf; }
 
   /*! Get the current blue top face. */
-  Face_handle_blue blue_top_face() const { return m_blue_nf; }
+  Face_handle_blue blue_top_face() const { return m_blue_tf; }
 
   /*! Obtain the red topology traits. */
   const Topology_traits_red* red_topology_traits() const
@@ -221,7 +118,8 @@ public:
   /*! Obtain the blue topology traits. */
   const Topology_traits_blue* blue_topology_traits() const
   { return m_blue_top_traits; }
-};
+
+}; // Arr_vanilla_overlay_helper
 
 } //namespace CGAL
 
