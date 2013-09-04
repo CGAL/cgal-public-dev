@@ -22,8 +22,7 @@
 #define CGAL_ARR_VANILLA_TOPOLOGY_TRAITS_2_H
 
 /*! \file
- * The topology traits for great spherical arcs embedded on a sphere for the
- * arrangement package.
+ * A template topology traits for the arrangement package.
  */
 
 #include <CGAL/Arr_enums.h>
@@ -60,8 +59,8 @@ namespace CGAL {
 template <class GeomTraits, class TopTraits>
 class Arrangement_on_surface_2;
 
-/*! This class handles the topology for arrangements of great spherical
- * arcs on the sphere embedded on 2D parametric surdace.
+/*! This class is a template topology traits class for arrangements of curves
+ * embedded on a 2D parametric surface.
  */
 template <class GeomTraits, class T_Dcel = Arr_default_dcel<GeomTraits> >
 class Arr_vanilla_topology_traits_2 {
@@ -487,7 +486,6 @@ public:
   /*! Determine whether the given face is unbounded.
    * \param f The face.
    * \return true if f is unbounded; false otherwise.
-   * All faces on a sphere are bounded:
    */
   bool is_unbounded(const Face* /* f */) const;
 
