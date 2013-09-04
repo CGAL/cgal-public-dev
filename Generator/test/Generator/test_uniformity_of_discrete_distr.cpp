@@ -279,6 +279,32 @@ int main()
 
 		assert(all_posibilities_covered(ret, N));
 		free(ret);
+		
+// Testing the copy-constructor of FSD
+		CGAL::internal::Finite_support_distribution<GeneratorWithWeight
+			> randomGen_copy(randomGen);
+
+		ret = (int *) calloc(N, sizeof(int));
+		for (int i = 0; i < number_points; i++) {
+			int index = randomGen.generate(rand);
+			assert(inside_generation_range(0, N, index));
+			ret[index]++;
+		}
+
+#ifdef TEST_VERBOSE
+		for(int i = 0; i < N; i++) {
+			std::cout << ret[i] << std::endl;
+		}
+#endif
+//		int avg = 0;
+//		for(int i = 0; i < N; i++) {
+//			avg += ret[i];
+//		}
+//		avg = avg / N;
+//		assert(is_uniform(ret, N, avg));
+
+		assert(all_posibilities_covered(ret, N));
+		free(ret);
 	}
 	return 0;
 }

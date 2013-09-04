@@ -19,18 +19,16 @@ typedef CGAL::Random_points_in_tetrahedron_3<Point_3> 		Point_generator;
 template<class InputIterator>
 bool inside_tetrahedron(const Tetrahedron_3& tet,InputIterator begin, InputIterator end) {
     while(begin!=end) {
-		//std::cout<<*begin<<std::endl;
 		if(!tet.bounded_side(*begin) == CGAL::ON_UNBOUNDED_SIDE) {
 			std::cout<<"Point outside: "<<*begin<<std::endl;
 			std::cout<<"Tetrahedron: "<<tet<<std::endl;
-		   
+			return false;
 		}
 		++begin;
     }
     return true;
 }
 
-//initial version. has to be improved
 template<class InputIterator>
 void is_uniform(const Tetrahedron_3& tet, InputIterator begin, InputIterator end, double r) {
 	Vector_3 vecs[4];
