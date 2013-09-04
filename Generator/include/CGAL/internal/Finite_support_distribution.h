@@ -4,6 +4,7 @@
 #include <vector>
 #include <CGAL/Random.h>
 #include <CGAL/Timer.h>
+#include <cstring>
 
 //#define VERBOSE
 CGAL::Timer t;

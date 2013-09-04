@@ -372,7 +372,6 @@ public:
 	: Random_generator_base<P>( 1, rnd),_rand(&rnd) {
 		int Nr_cells_in_cplx = c3t3.number_of_cells_in_complex();
 		WeightFunctor_tetrahedron_3<Tetrahedron_3> weightElem;
-		Tr tr = c3t3.triangulation();
 		GeneratorWithWeight* containing_structure;
 		containing_structure = new GeneratorWithWeight[Nr_cells_in_cplx];
 		typename C3t3::Cells_in_complex_iterator iter =
@@ -427,7 +426,8 @@ class WeightFunctor_triangle_3 {
 			return sqrt(t.squared_area());
 		}
 };
-template < class P, class C2t3, class RandomGeneratorPolicy, class Creator = 
+template < class P, class C2t3, class RandomGeneratorPolicy =
+FasterMemoryExpensiveTag, class Creator = 
 Creator_uniform_3<typename Kernel_traits<P>::Kernel::RT,P> >
 class Random_points_in_surface_mesh_3 : public Random_generator_base<P> {
 	CGAL::internal::Finite_support_distribution<CGAL::internal::Weighted_random_generator<Random_points_in_triangle_3<P>
@@ -460,7 +460,6 @@ public:
 	: Random_generator_base<P>( 1, rnd),_rand(&rnd) {
 		int Nr_facets = c2t3.number_of_facets();
 		WeightFunctor_triangle_3<Triangle_3> weightElem;
-		Tr tr = c2t3.triangulation();
 		GeneratorWithWeight* containing_structure;
 		containing_structure = new GeneratorWithWeight[Nr_facets];
 		typename C2t3::Facet_iterator iter = c2t3.facets_begin();
