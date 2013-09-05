@@ -148,7 +148,7 @@ bivariate polynomial:
 
 \section PolynomialParser Polynomial parser
 
-The purpose of a polynomial parser is to provide an alternative way to construct  `Polynomial<Coeff>` from an input given in a human-readable format. By default, the class `Polynomial<Coeff>` provides an `operator >>` to read polynomials from the input stream in the ASCII format:
+The purpose of `Polynomial_parser_d< Polynomial_d, ParserPolicy >` is to provide an alternative way to construct  `Polynomial<Coeff>` from an input given in a human-readable format. By default, the class `Polynomial<Coeff>` provides an `operator >>` to read polynomials from the input stream in the ASCII format:
 
 \f[P[8(0,P[8(0,P[8(0,2)(2,-16)(4,80)(6,-128)(8,64)])(2,P[0(0,-16)])(4,P[0(0,80)])\\
 \quad {}(6,P[0(0,-128)])(8,P[0(0,64)])])(2,P[0(0,P[0(0,-16)])])(4,P[0(0,P[0(0,80)])])\\
@@ -164,24 +164,29 @@ Apparently, parsing polynomials in the latter format has many advantages.
 The parser can handle polynomials in any number of indeterminates (variables) and 
 can parse any algebraic expression (with arbitrary number of parantheses) 
 which involves addition, subtraction, multiplication,
-and rasing to the (positive) integer power operations. It also supports an equality operator (`=`) with the meaning that the expression: 
+and rasing to a (positive) integer power (`^`) operations. It also supports an equality operator (`=`) with the meaning that the expression of the form: 
 \f[ f(x,y,\dots)=g(x,y,\dots)\f] 
 where \f$f\f$ and \f$g\f$ are arbitraty multivariate polynomials, will be parsed as: 
 \f[ f(x,y,\dots)-g(x,y,\dots).\f]
 For instance, the following expressions are valid: 
 
 \f[((y-1)^4 - x*y^3)^5 + (x + z)^2 - (2123234523*x^2 - 2*y*y*x + 3^{10}*x*132123)^3,\\
-\quad {}(y + x - z + w - 3)^3 = x + y - 123/12312 + 1.00001*z*x^2.\f]
+\quad {}(y + (x - z)^5 + w - 3)^3 = x + y - 123/12312 + 1.00001*z*x^2,\\
+\quad {}87623.28374872*xy^{10}-x*y*8e+8\n\t +1e-11x\r+(y-x)^7.\f]
 
-Note that, the multiplication symbol (`*`) is optional and can be omitted in the above expressions. 
+Note that, the multiplication symbol (`*`) is optional and can be omitted in the above expressions. Besides, the parser can handle expressions with any type of special space characters including `\f`, `\n`, `\r`, `\t`, `\v` as shown in the last example above.
 
-The parser is configured via the so-called `parser policy` provided as a template parameter. There are three parser policies available by default:
+The behaviour of `Polynomial_parser_d< Polynomial_d, ParserPolicy >` is configured via the so-called `ParserPolicy` provided as a template parameter. The purpose of introducing  parser policies is to "detach" the actual parsing algorithm from various coefficient type conversions, validity checks, and variable naming schemes. 
+Three "basic" parser policies are available by default which suppose cover all the most common use-cases of the parser: 
 
 <UL>
-<LI>`Default_parser_policy`: no type conversions are performed. In other words, coefficients of the type `Innermost_coefficient_type` of the target polynomial are read directly from the input stream.
+<LI>`Default_parser_policy`: no type conversions are performed. In other words, coefficients of type `Polynomial_d::Innermost_coefficient_type` of the target polynomial are read directly from the input stream using a corresponding `operator >>`.
 <LI>`Mixed_rational_parser_policy`: extends `Default_parser_policy`, and allows mixing coefficients of integer and rational number types in a single expression.
 <LI>`Mixed_floating_point_parser_policy`: extends `Mixed_rational_parser_policy`, and allows mixing the coefficients of integer, rational and floating-point number types in a single expression.
 </UL>
+`Default_parser_policy` can be viewed as a "base class" for all policies. It implements a minimal interface each custom parser policy must conform with. Besides, due to its generic nature, `Default_parser_policy` can be used to parse polynomials with "exotic" coefficient types (provided that a coefficient type to be parsed has an `operator >>`). `Mixed_rational_parser_policy`
+and `Mixed_floating_point_parser_policy` are built on top of `Default_parser_policy` to enable mixing of coefficients of different types (such as integer and rational or 
+integer, rational and floating-point) within the same expression. 
 For additional information on parser policies, see the corresponding reference pages.
 
 \cgalExample{Polynomial/default_parser_policy.cpp}

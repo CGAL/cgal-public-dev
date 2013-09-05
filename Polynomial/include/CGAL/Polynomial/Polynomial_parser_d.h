@@ -89,7 +89,7 @@ struct Default_parser_policy {
     //! checking for degree overflow: can be used in real-time applications
     //! checks if the total degree \c deg of a monomial lies within given boundaries
     //! and returns \c true in this case
-    virtual bool exponent_check(unsigned deg) const {
+    bool exponent_check(unsigned deg) const {
         static_cast< void > (deg);
         return true;
     }
@@ -98,7 +98,7 @@ struct Default_parser_policy {
     //! 0 corresponds to an innermost variable while d-1 corresponds to an
     //! outermost variable (d is the number of polynomial variables)
     //! if \c ch is not a valid variable name, returns \c false
-    virtual bool check_var_names(char ch, int& idx) const {
+    bool check_var_name(char ch, int& idx) const {
 
         unsigned i;
         ch = tolower(ch);
@@ -109,11 +109,11 @@ struct Default_parser_policy {
         return true;
     }
 
-    virtual Innermost_coefficient_type read_coeff_proxy(std::istream& is, CoefficientTypeID) const {
+    Innermost_coefficient_type read_coeff_proxy(std::istream& is, CoefficientTypeID) const {
         return _read_coeff< Innermost_coefficient_type >(is);
     }
 
-    virtual ~Default_parser_policy() {
+    ~Default_parser_policy() {
     }
     
 protected:
@@ -129,7 +129,9 @@ protected:
     void _set_var_names(const char *str) {
         
         if(str == 0) { //! set default variable names
-            str = "xyzw";
+            //! NOTE: we skip 'e' in the list since it's used to define exponent in
+            //! floating-point numbers
+            str = "xyzwabcdfghijklmnopqrstuv";
         }    
         int n = strlen(str);
         var_names = std::vector< char >(n);
@@ -145,7 +147,13 @@ protected:
 //! This parser policy allows to mix integer and rational coefficients in a
 //! single equation. Appropriate type coercion with the \c Polynomial_d_ coefficient
 //! type must be provided
-template < class Polynomial_d_ >
+template < class Polynomial_d_, 
+    class Integer_ = typename CGAL::Get_arithmetic_kernel< 
+        typename CGAL::Polynomial_traits_d< Polynomial_d_ >::Innermost_coefficient_type >::
+             Arithmetic_kernel::Integer,
+    class Rational_ = typename CGAL::Get_arithmetic_kernel< 
+        typename CGAL::Polynomial_traits_d< Polynomial_d_ >::Innermost_coefficient_type >::
+             Arithmetic_kernel::Rational >
 struct Mixed_rational_parser_policy :
         public Default_parser_policy< Polynomial_d_ > {
 
@@ -156,12 +164,11 @@ struct Mixed_rational_parser_policy :
     //! type of polynomial coefficient
     typedef typename Base::Innermost_coefficient_type Innermost_coefficient_type;
 
-    typedef typename CGAL::Get_arithmetic_kernel< Innermost_coefficient_type >::
-             Arithmetic_kernel AK;
     //! integer number type
-    typedef typename AK::Integer Integer;
+    typedef Integer_ Integer;
     //! rational number type
-    typedef typename AK::Rational Rational;
+    typedef Rational_ Rational;
+    
     //! input coefficient types
     typedef typename Base::CoefficientTypeID CoefficientTypeID;
 
@@ -187,7 +194,7 @@ struct Mixed_rational_parser_policy :
             Base::COEFF_RATIONAL : Base::COEFF_INTEGER);
     }
 
-    virtual Innermost_coefficient_type read_coeff_proxy(std::istream& is, CoefficientTypeID type)
+    Innermost_coefficient_type read_coeff_proxy(std::istream& is, CoefficientTypeID type)
             const {
 
         if(type == Base::COEFF_INTEGER)
@@ -233,7 +240,17 @@ protected:
 //! \c Polynomial_d_ coefficient type must be provided
 //! \c FP_rounding optional parameter can be used to round the floating-point
 //! number to desired precision before returning it to the parser
-template < class Polynomial_d_/*, class FP_rounding = CGAL::Identity<KeyType_>*/ >
+template < class Polynomial_d_,/*, class FP_rounding = CGAL::Identity<KeyType_>*/
+    class Integer_ = typename CGAL::Get_arithmetic_kernel< 
+        typename CGAL::Polynomial_traits_d< Polynomial_d_ >::Innermost_coefficient_type >::
+             Arithmetic_kernel::Integer,
+    class Rational_ = typename CGAL::Get_arithmetic_kernel< 
+        typename CGAL::Polynomial_traits_d< Polynomial_d_ >::Innermost_coefficient_type >::
+             Arithmetic_kernel::Rational,
+    class BigFloat_ = typename CGAL::Bigfloat_interval_traits<
+             typename CGAL::Get_arithmetic_kernel< 
+        typename CGAL::Polynomial_traits_d< Polynomial_d_ >::Innermost_coefficient_type >::
+             Arithmetic_kernel::Bigfloat_interval >::Bound >
 struct Mixed_floating_point_parser_policy :
         public Mixed_rational_parser_policy< Polynomial_d_ > {
 
@@ -241,18 +258,16 @@ struct Mixed_floating_point_parser_policy :
     typedef Polynomial_d_ Polynomial_d;
     //! base class
     typedef Mixed_rational_parser_policy< Polynomial_d > Base;
+
     //! type of polynomial coefficient
     typedef typename Base::Innermost_coefficient_type Innermost_coefficient_type;
-
-    typedef typename CGAL::Get_arithmetic_kernel< Innermost_coefficient_type >::
-             Arithmetic_kernel AK;
     //! integer number type
-    typedef typename AK::Integer Integer;
+    typedef Integer_ Integer;
     //! rational number type
-    typedef typename AK::Rational Rational;
+    typedef Rational_ Rational;
     //! bigfloat number type
-    typedef typename CGAL::Bigfloat_interval_traits<
-            typename AK::Bigfloat_interval >::Bound BigFloat;
+    typedef BigFloat_ BigFloat;
+
     //! input coefficient types
     typedef typename Base::CoefficientTypeID CoefficientTypeID;
 
@@ -318,7 +333,7 @@ struct Mixed_floating_point_parser_policy :
                 Base::COEFF_FLOAT));
     }
 
-    virtual Innermost_coefficient_type read_coeff_proxy(std::istream& is, CoefficientTypeID type)
+    Innermost_coefficient_type read_coeff_proxy(std::istream& is, CoefficientTypeID type)
             const {
 
         if(type == Base::COEFF_INTEGER)
@@ -460,7 +475,7 @@ protected:
             coeff = policy.read_coefficient(is);
             which_case = 0; // number
         
-        } else if(policy.check_var_names(ch, idx) && idx < d) {
+        } else if(policy.check_var_name(ch, idx) && idx < d) {
             which_case = 1;
             /* char var = */ is.get();
             

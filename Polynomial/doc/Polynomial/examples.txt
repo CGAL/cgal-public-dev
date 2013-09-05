@@ -6,4 +6,7 @@
 \example Polynomial/gcd_up_to_constant_factor.cpp
 \example Polynomial/substitute.cpp
 \example Polynomial/subresultants.cpp
+\example Polynomial/default_parser_policy.cpp
+\example Polynomial/mixed_rational_parser_policy.cpp
+\example Polynomial/mixed_floating_point_parser_policy.cpp
 */

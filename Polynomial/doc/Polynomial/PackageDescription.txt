@@ -95,12 +95,16 @@
 - `PolynomialTraits_d::SturmHabichtSequenceWithCofactors`
 - `PolynomialTraits_d::PrincipalSturmHabichtSequence`
 
+- `ParserPolicy`
+
 ## Classes ##
 
 - `CGAL::Polynomial<Coeff>`
 - `CGAL::Polynomial_traits_d<Polynomial_d>`
+- `CGAL::Polynomial_parser_d<Polynomial_d,ParserPolicy>`
 - `CGAL::Exponent_vector`
 - `CGAL::Polynomial_type_generator<T,d>`
+- `CGAL::Default_parser_policy<Polynomial_d>`
 
 ## Functions ##
 
