@@ -291,11 +291,11 @@ iterator over finite vertices.
 */ 
 typedef unspecified_type Finite_vertices_iterator; 
 /*!
-`Range` over finite vertices. The value type is `Vertex`
+This type is a model of `Range` concept, its iterator type is bidirectional and its value type is `Vertex`.
 */ 
 typedef unspecified_type Finite_vertices_range; 
 /*!
-`Range` over finite vertex handles. The value type is `Vertex_handle`
+This type is a model of `Range` concept, its iterator type is bidirectional and its value type is `Vertex_handle`.
 */ 
 typedef unspecified_type Finite_vertex_handles_range; 
 
