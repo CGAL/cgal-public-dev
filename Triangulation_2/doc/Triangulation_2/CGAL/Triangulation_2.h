@@ -264,38 +264,73 @@ typedef Tds::Face_handle Face_handle;
 iterator over all faces. 
 */ 
 typedef Tds::Face_iterator All_faces_iterator; 
+/*!
+This type is a model of the `Range` concept, its iterator type is bidirectional and its value type is `All_faces_iterator`.
+*/ 
+typedef unspecified_type All_faces_range; 
+/*!
+This type is a model of the `Range` concept, its iterator type is bidirectional and its value type is a reference to `All_faces_iterator`.
+*/ 
+typedef unspecified_type All_face_handles_range; 
 
 /*!
 iterator over all edges.
 */ 
 typedef Tds::Edge_iterator All_edges_iterator; 
+/*!
+This type is a model of the `Range` concept, its iterator type is bidirectional and its value type is `All_edges_iterator`.
+*/ 
+typedef unspecified_type All_edges_range; 
 
 /*!
 iterator over all vertices.
 */ 
 typedef Tds::Vertex_iterator All_vertices_iterator; 
+/*!
+This type is a model of the `Range` concept, its iterator type is bidirectional and its value type is `All_vertices_iterator`.
+*/ 
+typedef unspecified_type All_vertices_range; 
+/*!
+This type is a model of the `Range` concept, its iterator type is bidirectional and its value type is a reference to `All_vertices_iterator`.
+*/ 
+typedef unspecified_type All_vertex_handles_range; 
 
 /*!
 iterator over finite faces. 
 */ 
 typedef unspecified_type Finite_faces_iterator; 
+/*!
+This type is a model of the `Range` concept, its iterator type is bidirectional and its value type is `Finite_faces_iterator`.
+*/ 
+typedef unspecified_type Finite_faces_range; 
+/*!
+This type is a model of the `Range` concept, its iterator type is bidirectional and its value type is a reference to `Finite_faces_iterator`.
+*/ 
+typedef unspecified_type Finite_face_handles_range; 
 
 /*!
 iterator over finite edges. 
 */ 
-typedef unspecified_type Finite_edges_iterator 
-; 
+typedef unspecified_type Finite_edges_iterator; 
+/*!
+This type is a model of the `Range` concept, its iterator type is bidirectional and its value type is `Finite_edges_iterator`.
+*/ 
+typedef unspecified_type Finite_edges_range; 
+/*!
+This type is a model of the `Range` concept, its iterator type is bidirectional and its value type is a reference to `Finite_edges_iterator`.
+*/ 
+typedef unspecified_type Finite_edge_handles_range; 
 
 /*!
 iterator over finite vertices. 
 */ 
 typedef unspecified_type Finite_vertices_iterator; 
 /*!
-This type is a model of `Range` concept, its iterator type is bidirectional and its value type is `Vertex`.
+This type is a model of the `Range` concept, its iterator type is bidirectional and its value type is `Finite_vertices_iterator`.
 */ 
 typedef unspecified_type Finite_vertices_range; 
 /*!
-This type is a model of `Range` concept, its iterator type is bidirectional and its value type is `Vertex_handle`.
+This type is a model of the `Range` concept, its iterator type is bidirectional and its value type is a reference to `Finite_vertices_iterator`.
 */ 
 typedef unspecified_type Finite_vertex_handles_range; 
 
@@ -304,6 +339,10 @@ iterator over the points corresponding the
 finite vertices of the triangulation. 
 */ 
 typedef unspecified_type Point_iterator; 
+/*!
+This type is a model of the `Range` concept, its iterator type is bidirectional and its value type is `Point_iterator`.
+*/ 
+typedef unspecified_type Point_range; 
 
 /*!
 circulator over all faces intersected by a line. 
@@ -851,6 +890,11 @@ Past-the-end iterator
 Finite_edges_iterator finite_edges_end() const; 
 
 /*!
+Returns the range of all finite edges
+*/ 
+Finite_edges_range finite_edges() const; 
+
+/*!
 Starts at an arbitrary finite face 
 */ 
 Finite_faces_iterator finite_faces_begin() const; 
@@ -862,6 +906,15 @@ Finite_faces_iterator finite_faces_end()
 const; 
 
 /*!
+Returns the range of all finite faces
+*/ 
+Finite_faces_range finite_faces() const; 
+/*!
+Returns the range of all finite face handles
+*/ 
+Finite_face_handles_range finite_face_handles() const; 
+
+/*!
 
 */ 
 Point_iterator points_begin() const; 
@@ -870,6 +923,11 @@ Point_iterator points_begin() const;
 Past-the-end iterator 
 */ 
 Point_iterator points_end() const; 
+
+/*!
+Returns the range of all points
+*/ 
+Point_range finite_points() const; 
 
 /// @}
 
@@ -893,6 +951,15 @@ Past-the-end iterator
 All_vertices_iterator all_vertices_end() const; 
 
 /*!
+Returns the range of all vertices
+*/ 
+All_vertices_range finite_vertices() const; 
+/*!
+Returns the range of all vertex handles
+*/ 
+All_vertex_handles_range finite_vertex_handles() const; 
+
+/*!
 Starts at an arbitrary edge 
 */ 
 All_edges_iterator all_edges_begin() const; 
@@ -903,6 +970,11 @@ Past-the-end iterator
 All_edges_iterator all_edges_end() const; 
 
 /*!
+Returns the range of all edges
+*/ 
+All_edges_range finite_edges() const; 
+
+/*!
 Starts at an arbitrary face 
 */ 
 All_faces_iterator all_faces_begin() const; 
@@ -911,6 +983,15 @@ All_faces_iterator all_faces_begin() const;
 Past-the-end iterator 
 */ 
 All_faces_iterator all_faces_end() const; 
+
+/*!
+Returns the range of all faces
+*/ 
+All_faces_range finite_faces() const; 
+/*!
+Returns the range of all face handles
+*/ 
+All_face_handles_range finite_face_handles() const; 
 
 /// @} 
 

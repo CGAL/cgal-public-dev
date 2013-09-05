@@ -114,7 +114,14 @@ public:
   typedef typename Tds::Face_iterator          All_faces_iterator;
   typedef typename Tds::Edge_iterator          All_edges_iterator;
   typedef typename Tds::Vertex_iterator        All_vertices_iterator;
- 
+
+  /// Range of "all" simplices
+  typedef boost::iterator_range< All_faces_iterator >                                All_faces_range;
+  typedef boost::iterator_range< Non_dereferencing_iterator<All_faces_iterator> >    All_face_handles_range;
+  typedef boost::iterator_range< All_edges_iterator >                                All_edges_range;
+  typedef boost::iterator_range< All_vertices_iterator >                             All_vertices_range;
+  typedef boost::iterator_range< Non_dereferencing_iterator<All_vertices_iterator> > All_vertex_handles_range;
+
 
   class Perturbation_order {
       const Self *t;
@@ -182,15 +189,25 @@ public:
     Self operator--(int) { Self tmp(*this); --(*this); return tmp; }
     operator Face_handle() const { return Base::base(); }
   };
+  /// Range of finite faces
+  typedef boost::iterator_range< Finite_faces_iterator > Finite_faces_range;
+  typedef boost::iterator_range< Non_dereferencing_iterator<Finite_faces_iterator> > Finite_face_handles_range;
   
   typedef Filter_iterator<All_edges_iterator, 
                            Infinite_tester>
                                                Finite_edges_iterator;
+  /// Range of finite faces
+  typedef boost::iterator_range< Finite_edges_iterator > Finite_edges_range;
   
   //for backward compatibility
   typedef Finite_faces_iterator                Face_iterator;
+  typedef Finite_faces_range                   Face_range;
+  typedef Finite_face_handles_range            Face_handle_range;
   typedef Finite_edges_iterator                Edge_iterator;
+  typedef Finite_edges_range                   Edge_range;
   typedef Finite_vertices_iterator             Vertex_iterator;
+  typedef Finite_vertices_range                Vertex_range;
+  typedef Finite_vertex_handles_range          Vertex_handle_range;
 
   typedef Triangulation_line_face_circulator_2<Self>  Line_face_circulator;
 
@@ -434,36 +451,46 @@ public:
 	
 #endif // no CGAL_NO_STRUCTURAL_FILTERING
 	
-  //TRAVERSING : ITERATORS AND CIRCULATORS
+  //TRAVERSING : ITERATORS, CIRCULATORS AND RANGES
   Finite_faces_iterator finite_faces_begin() const;
   Finite_faces_iterator finite_faces_end() const;
+  Finite_faces_range finite_faces() const;
+  Finite_face_handles_range finite_face_handles() const;
   Finite_vertices_iterator finite_vertices_begin() const;
   Finite_vertices_iterator finite_vertices_end() const;
-  /// Returns the range of all finite vertices in the triangulation
   Finite_vertices_range finite_vertices() const;
-  /// Returns the range of all finite vertex handles in the triangulation
   Finite_vertex_handles_range finite_vertex_handles() const;
   Finite_edges_iterator finite_edges_begin() const;
   Finite_edges_iterator finite_edges_end() const; 
+  Finite_edges_range finite_edges() const;
   Point_iterator points_begin() const;
   Point_iterator points_end() const;
-  /// Returns the range of all points in the triangulation
   Point_range points() const;
 
   All_faces_iterator all_faces_begin() const;
   All_faces_iterator all_faces_end() const;
+  All_faces_range all_faces() const;
+  All_face_handles_range all_face_handles() const;
   All_vertices_iterator all_vertices_begin() const;
   All_vertices_iterator all_vertices_end() const;
+  All_vertices_range all_vertices() const;
+  All_vertex_handles_range all_vertex_handles() const;
   All_edges_iterator all_edges_begin() const;
   All_edges_iterator all_edges_end() const; 
+  All_edges_range all_edges() const;
 
   //for compatibility with previous versions
   Face_iterator faces_begin() const {return finite_faces_begin();}
   Face_iterator faces_end() const {return finite_faces_end();}
+  Face_range faces() const {return finite_faces();}
+  Face_handle_range face_handles() const {return finite_face_handles();};
   Edge_iterator edges_begin() const {return finite_edges_begin();}
   Edge_iterator edges_end() const {return finite_edges_end();}
+  Edge_range edges() const {return finite_edges();}
   Vertex_iterator vertices_begin() const {return finite_vertices_begin();}
   Vertex_iterator vertices_end() const {return finite_vertices_end();}
+  Vertex_range vertices() const {return finite_vertices();}
+  Vertex_handle_range vertex_handles() const {return finite_vertex_handles();};
 
   Face_circulator incident_faces( Vertex_handle v, 
 				  Face_handle f = Face_handle()) const;
@@ -3062,6 +3089,22 @@ finite_faces_end() const
 }
 
 template <class Gt, class Tds >
+typename Triangulation_2<Gt, Tds>::Finite_faces_range
+Triangulation_2<Gt, Tds>::
+finite_faces() const
+{
+  return boost::make_iterator_range(finite_faces_begin(), finite_faces_end());
+}
+
+template <class Gt, class Tds >
+typename Triangulation_2<Gt, Tds>::Finite_face_handles_range
+Triangulation_2<Gt, Tds>::
+finite_face_handles() const
+{
+  return boost::make_iterator_range(finite_faces_begin(), finite_faces_end());
+}
+
+template <class Gt, class Tds >
 typename Triangulation_2<Gt, Tds>::Finite_vertices_iterator
 Triangulation_2<Gt, Tds>::
 finite_vertices_begin() const
@@ -3083,17 +3126,17 @@ finite_vertices_end() const
 }
 
 template <class Gt, class Tds >
-typename Triangulation_2<Gt, Tds>::Finite_vertex_handles_range
+typename Triangulation_2<Gt, Tds>::Finite_vertices_range
 Triangulation_2<Gt, Tds>::
-finite_vertex_handles() const
+finite_vertices() const
 {
   return boost::make_iterator_range(finite_vertices_begin(), finite_vertices_end());
 }
 
 template <class Gt, class Tds >
-typename Triangulation_2<Gt, Tds>::Finite_vertices_range
+typename Triangulation_2<Gt, Tds>::Finite_vertex_handles_range
 Triangulation_2<Gt, Tds>::
-finite_vertices() const
+finite_vertex_handles() const
 {
   return boost::make_iterator_range(finite_vertices_begin(), finite_vertices_end());
 }
@@ -3117,6 +3160,14 @@ finite_edges_end() const
 {
   return CGAL::filter_iterator(all_edges_end(),
                                infinite_tester() );
+}
+
+template <class Gt, class Tds >
+typename Triangulation_2<Gt, Tds>::Finite_edges_range
+Triangulation_2<Gt, Tds>::
+finite_edges() const
+{
+  return boost::make_iterator_range(finite_edges_begin(), finite_edges_end());
 }
 
 template <class Gt, class Tds >
@@ -3160,6 +3211,22 @@ all_faces_end() const
 }
 
 template <class Gt, class Tds >
+typename Triangulation_2<Gt, Tds>::All_faces_range
+Triangulation_2<Gt, Tds>::
+all_faces() const
+{
+  return boost::make_iterator_range(all_faces_begin(), all_faces_end());
+}
+
+template <class Gt, class Tds >
+typename Triangulation_2<Gt, Tds>::All_face_handles_range
+Triangulation_2<Gt, Tds>::
+all_face_handles() const
+{
+  return boost::make_iterator_range(all_faces_begin(), all_faces_end());
+}
+
+template <class Gt, class Tds >
 typename Triangulation_2<Gt, Tds>::All_vertices_iterator
 Triangulation_2<Gt, Tds>::
 all_vertices_begin() const
@@ -3176,6 +3243,22 @@ all_vertices_end() const
 }
 
 template <class Gt, class Tds >
+typename Triangulation_2<Gt, Tds>::All_vertices_range
+Triangulation_2<Gt, Tds>::
+all_vertices() const
+{
+  return boost::make_iterator_range(all_vertices_begin(), all_vertices_end());
+}
+
+template <class Gt, class Tds >
+typename Triangulation_2<Gt, Tds>::All_vertex_handles_range
+Triangulation_2<Gt, Tds>::
+all_vertex_handles() const
+{
+  return boost::make_iterator_range(all_vertices_begin(), all_vertices_end());
+}
+
+template <class Gt, class Tds >
 typename Triangulation_2<Gt, Tds>::All_edges_iterator
 Triangulation_2<Gt, Tds>::
 all_edges_begin() const
@@ -3189,6 +3272,14 @@ Triangulation_2<Gt, Tds>::
 all_edges_end() const
 {
   return _tds.edges_end();
+}
+
+template <class Gt, class Tds >
+typename Triangulation_2<Gt, Tds>::All_edges_range
+Triangulation_2<Gt, Tds>::
+all_edges() const
+{
+  return boost::make_iterator_range(all_edges_begin(), all_edges_end());
 }
 
 template <class Gt, class Tds >
