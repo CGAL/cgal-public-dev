@@ -290,6 +290,14 @@ typedef unspecified_type Finite_edges_iterator
 iterator over finite vertices. 
 */ 
 typedef unspecified_type Finite_vertices_iterator; 
+/*!
+`Range` over finite vertices. The value type is `Vertex`
+*/ 
+typedef unspecified_type Finite_vertices_range; 
+/*!
+`Range` over finite vertex handles. The value type is `Vertex_handle`
+*/ 
+typedef unspecified_type Finite_vertex_handles_range; 
 
 /*!
 iterator over the points corresponding the 
@@ -822,6 +830,15 @@ Finite_vertices_iterator finite_vertices_begin() const;
 Past-the-end iterator 
 */ 
 Finite_vertices_iterator finite_vertices_end() const; 
+
+/*!
+Returns the range of all finite vertices
+*/ 
+Finite_vertices_range finite_vertices() const; 
+/*!
+Returns the range of all finite vertex handles
+*/ 
+Finite_vertex_handles_range finite_vertex_handles() const; 
 
 /*!
 Starts at an arbitrary finite edge 
