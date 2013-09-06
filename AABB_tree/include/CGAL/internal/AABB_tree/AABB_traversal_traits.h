@@ -365,24 +365,19 @@ class Range_listing_primitive_traits
 public:
   Range_listing_primitive_traits(Output_iterator out_it, const AABBTraits& traits)
     : m_out_it(out_it), m_traits(traits) {}
-  ~Range_listing_primitive_traits(){std::cout<<"Time Inside "<<timer.time()<<std::endl;}
 
   bool go_further() const { return true; }
   
   void add_primitive(const Primitive& primitive)
   {
-	  timer.start();
-	  *m_out_it++ = primitive.id();
-	  timer.stop();
+	  *m_out_it = primitive.id(); ++m_out_it;
   }
 
   void contain(const Query& query, const Primitive& primitive)
   {
     if( m_traits.do_contain_object()(query,primitive) )//need to implement
     {
-    	 timer.start();
-      *m_out_it++ = primitive.id();
-      timer.stop();
+    	*m_out_it = primitive.id(); ++m_out_it;
     }
   }
   
