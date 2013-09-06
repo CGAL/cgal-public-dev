@@ -191,11 +191,11 @@ int main()
 			ret[index]++;
 		}
 
-//#ifdef TEST_VERBOSE
+#ifdef TEST_VERBOSE
 		for(int i = 0; i < N; i++) {
 			std::cout << ret[i] << std::endl;
 		}
-//#endif
+#endif
 		free(ret);
 	}
 

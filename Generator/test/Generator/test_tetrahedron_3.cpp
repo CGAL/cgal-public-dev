@@ -5,9 +5,8 @@
 #include <CGAL/double.h>
 #include <CGAL/Triangle_3.h>
 #include <CGAL/Cartesian.h>
+#include <cassert>
 typedef double RT;
-
-#define VERBOSE
 
 typedef CGAL::Cartesian<RT>					K;
 typedef K::Point_3 						Point_3;
@@ -16,21 +15,39 @@ typedef K::Tetrahedron_3 					Tetrahedron_3;
 typedef std::vector<Point_3> 					Container;
 typedef CGAL::Random_points_in_tetrahedron_3<Point_3> 		Point_generator;
 
+const double EPS = 1e-30;
+
 template<class InputIterator>
-bool inside_tetrahedron(const Tetrahedron_3& tet,InputIterator begin, InputIterator end) {
-    while(begin!=end) {
-		if(!tet.bounded_side(*begin) == CGAL::ON_UNBOUNDED_SIDE) {
-			std::cout<<"Point outside: "<<*begin<<std::endl;
-			std::cout<<"Tetrahedron: "<<tet<<std::endl;
+bool inside_or_close_to_tetrahedron(const Tetrahedron_3& tet,InputIterator begin, InputIterator end) {
+	while(begin!=end) {
+		Tetrahedron_3 OABC = Tetrahedron_3(*begin, tet.vertex(0),
+				tet.vertex(1), tet.vertex(2));
+		Tetrahedron_3 OABD = Tetrahedron_3(*begin, tet.vertex(0),
+				tet.vertex(1), tet.vertex(3));
+		Tetrahedron_3 OBCD = Tetrahedron_3(*begin, tet.vertex(1),
+				tet.vertex(2), tet.vertex(3));
+		Tetrahedron_3 OACD = Tetrahedron_3(*begin, tet.vertex(0),
+				tet.vertex(2), tet.vertex(3));
+		K::FT OABC_volume = OABC.volume();
+		K::FT OABD_volume = OABD.volume();
+		K::FT OBCD_volume = OBCD.volume();
+		K::FT OACD_volume = OACD.volume();
+		K::FT tet_volume = tet.volume();
+		if
+			(fabs(OABC_volume+OABD_volume+OBCD_volume+OACD_volume-tet_volume)>1e-1)
+		{
+			std::cout <<
+				fabs(OABC_volume+OABD_volume+OBCD_volume+OACD_volume-tet_volume)
+				<< "\n";
 			return false;
 		}
-		++begin;
-    }
-    return true;
+		begin++;
+	}
+	return true;
 }
 
 template<class InputIterator>
-void is_uniform(const Tetrahedron_3& tet, InputIterator begin, InputIterator end, double r) {
+bool is_uniform(const Tetrahedron_3& tet, InputIterator begin, InputIterator end, double r) {
 	Vector_3 vecs[4];
 	for(int i = 0; i < 4; ++i) {
 		vecs[i]=tet[i]-CGAL::ORIGIN;
@@ -38,7 +55,7 @@ void is_uniform(const Tetrahedron_3& tet, InputIterator begin, InputIterator end
 	Vector_3 c(CGAL::NULL_VECTOR);
 	for(int i = 0; i < 4; ++i) {
 		c=c+vecs[i];
-	}	
+	}
 	c=c/4.0;
 	Point_3 pts[4];
 	for(int i = 0; i < 4; ++i) {
@@ -60,32 +77,23 @@ void is_uniform(const Tetrahedron_3& tet, InputIterator begin, InputIterator end
 		}
 		++begin,++total;
 	}
-	#ifdef VERBOSE
-	std::cout<<"number of points inside smaller tetrahedron: "<<inside_smaller<<std::endl;
-	std::cout<<"expected number: "<<r*r*r*total<<std::endl;
-	#endif
+	return (inside_smaller == r*r*r*total);
 }
 
 
 int main() {
-    CGAL::Random rand;
-    Container point_set;
-    int number_tetrahedrons;
-#ifdef VERBOSE
-    std::cout<<"Type the number of tetrahedrons: ";
-#endif
-    std::cin>>number_tetrahedrons;
-    int number_points;
-#ifdef VERBOSE
-    std::cout<<"Type the number of points inside each tetrahedron: ";
-#endif 
-    std::cin>>number_points;
-#ifdef VERBOSE
-    std::cout<<"Type the factor: ";//the parameter r in function is_uniform
-#endif 
-    double r;
-    std::cin>>r;
-    for(int i = 0; i < number_tetrahedrons; ++i) {
+	CGAL::Random rand;
+	Container point_set;
+	const int MIN_TETRAHEDRONS = 1;
+	const int MAX_TETRAHEDRONS = 100;
+	const int MIN_POINTS = 1000;
+	const int MAX_POINTS = 1000000;
+	const int number_tetrahedrons = rand.get_int(MIN_TETRAHEDRONS,MAX_TETRAHEDRONS);
+	const int number_points = rand.get_int(MIN_POINTS, MAX_POINTS);
+	std::cout<<"Type the factor: ";//the parameter r in function is_uniform
+	double r;
+	std::cin>>r;
+	for(int i = 0; i < number_tetrahedrons; ++i) {
 		Point_3 pts[4];
 		for(int j = 0; j < 4; ++j) {
 			pts[j]=Point_3(rand.get_double(),rand.get_double(),rand.get_double());
@@ -99,28 +107,22 @@ int main() {
 		point_set.clear();
 		CGAL::cpp11::copy_n( g1, number_points,
 		               std::back_inserter(point_set));
-		if(!inside_tetrahedron(tet,point_set.begin(),point_set.end())) {
-		    std::cout<<"POINT OUTSIDE TETRAHEDRON\n"<<std::endl;
-		}
-		is_uniform(tet,point_set.begin(),point_set.end(),r);
+		assert(inside_or_close_to_tetrahedron(tet,point_set.begin(),point_set.end()));
+		assert(is_uniform(tet,point_set.begin(),point_set.end(),r));
 
 		//Testing the tetrahedron-constructor
 		point_set.clear();
 		CGAL::cpp11::copy_n( g2, number_points,
 		               std::back_inserter(point_set));
-		if(!inside_tetrahedron(tet,point_set.begin(),point_set.end())) {
-		    std::cout<<"POINT OUTSIDE TETRAHEDRON\n"<<std::endl;
-		}
-		is_uniform(tet,point_set.begin(),point_set.end(),r);
+		assert(inside_or_close_to_tetrahedron(tet,point_set.begin(),point_set.end()));
+		assert(is_uniform(tet,point_set.begin(),point_set.end(),r));
 
 		//Testing the copy-constructor
 		point_set.clear();
 		CGAL::cpp11::copy_n( g3, number_points,
 		               std::back_inserter(point_set));
-		if(!inside_tetrahedron(tet,point_set.begin(),point_set.end())) {
-		    std::cout<<"POINT OUTSIDE TETRAHEDRON\n"<<std::endl;
-		}
-		is_uniform(tet,point_set.begin(),point_set.end(),r);
-    }
-    return 0;
+		assert(inside_or_close_to_tetrahedron(tet,point_set.begin(),point_set.end()));
+		assert(is_uniform(tet,point_set.begin(),point_set.end(),r));
+	}
+	return 0;
 }
