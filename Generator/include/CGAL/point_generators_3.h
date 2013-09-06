@@ -32,8 +32,6 @@
 #include <CGAL/internal/Finite_support_distribution.h>
 #include <CGAL/internal/Weighted_random_generator.h>
 
-#include <CGAL/Timer.h>
-
 namespace CGAL {
 
 template < class P, class Creator = 

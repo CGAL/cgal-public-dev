@@ -6,8 +6,6 @@
 #include <CGAL/Timer.h>
 #include <cstring>
 
-CGAL::Timer t;
-
 namespace CGAL { namespace internal {
 template<typename Weighted_random_generator>
 class Finite_support_distribution {
@@ -27,10 +25,6 @@ class Finite_support_distribution {
 		Finite_support_distribution(Container input, int size, int
 				parts) : _size(size),_parts(parts) {
 			CGAL_precondition(_size>0 && _parts>0);
-#ifdef VERBOSE
-			std::cout << "Size = " << _size << std::endl;
-			std::cout << "Parts = " << _parts << std::endl;
-#endif
 			container = new Weighted_random_generator[_size];
 			presums = new double[_size];
 			offsets = new int*[_parts];
@@ -44,9 +38,6 @@ class Finite_support_distribution {
 						container[i].getWeight() + presums[i-1]);
 			}
 			double step = presums[_size-1] / _parts;
-#ifdef VERBOSE
-			std::cout << "Step = " << step << std::endl;
-#endif
 			int j = 0;
 			for (int i = 0; i < _parts; i++) {
 				offsets[i] = new int[_size];
@@ -128,15 +119,8 @@ class Finite_support_distribution {
 
 		result_type generate(CGAL::Random &rand) {
 			double tmp_presum = rand.get_double(0, presums[_size-1]);
-#ifdef VERBOSE
-			std::cout << "Random double: " << tmp_presum << std::endl;
-#endif
 			double step = presums[_size-1] / _parts;
-			int index = tmp_presum / step; // the index of the
-						       // picked array
-#ifdef VERBOSE
-			std::cout<<"Index in the array: "<<index<<std::endl;
-#endif
+			int index = tmp_presum / step;
 			double *SampleIterator = aux_array[index];
 			if (length[index] > 1) {
 				SampleIterator = std::upper_bound<double*,
@@ -144,12 +128,6 @@ class Finite_support_distribution {
 						aux_array[index]+length[index]-1, tmp_presum);
 			}
 			int SampleIndex = SampleIterator - aux_array[index];
-#ifdef VERBOSE
-			std::cout << "Length of picked array " << length[index]
-				<< std::endl;
-			std::cout << "The picked Element is: " << SampleIndex <<
-				std::endl;
-#endif
 			return container[offsets[index][SampleIndex]].getRand();
 		}
 };
