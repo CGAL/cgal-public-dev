@@ -56,13 +56,6 @@ bool inside_generation_range(const int lower, const int upper, int gen) {
 	return true;
 }
 
-bool all_posibilities_covered(int *begin, int size) {
-	for (int i = 0; i < size; i++) {
-		if (!begin[i]) return false;
-	}
-	return true;
-}
-
 bool is_uniform(int *begin, int size, int average) {
 	for(int i = 0; i < size; i++) {
 		if (1.20 * average < begin[i] || 0.80 * average > begin[i])
@@ -118,14 +111,6 @@ int main()
 				std::cout << ret[i] << std::endl;
 			}
 #endif
-	//		int avg = 0;
-	//		for(int i = 0; i < N; i++) {
-	//			avg += ret[i];
-	//		}
-	//		avg = avg / N;
-	//		assert(is_uniform(ret, N, avg));
-
-			assert(all_posibilities_covered(ret, N));
 			free(ret);
 		}
 	}
@@ -169,14 +154,6 @@ int main()
 			std::cout << ret[i] << std::endl;
 		}
 #endif
-//		int avg = 0;
-//		for(int i = 0; i < N; i++) {
-//			avg += ret[i];
-//		}
-//		avg = avg / N;
-//		assert(is_uniform(ret, N, avg));
-
-		assert(all_posibilities_covered(ret, N));
 		free(ret);
 	}
 
@@ -193,7 +170,7 @@ int main()
 #ifdef TEST_VERBOSE
 		std::cout << "number_points = " << number_points << std::endl;
 #endif
-		const int MIN_PARTS = 1;
+		const int MIN_PARTS = cont+1;
 		const int MAX_PARTS = 1<<20;
 		const int parts = rand.get_int(MIN_PARTS, MAX_PARTS);
 		GeneratorWithWeight *containing_structure = new GeneratorWithWeight[N];
@@ -214,19 +191,11 @@ int main()
 			ret[index]++;
 		}
 
-#ifdef TEST_VERBOSE
+//#ifdef TEST_VERBOSE
 		for(int i = 0; i < N; i++) {
 			std::cout << ret[i] << std::endl;
 		}
-#endif
-//		int avg = 0;
-//		for(int i = 0; i < N; i++) {
-//			avg += ret[i];
-//		}
-//		avg = avg / N;
-//		assert(is_uniform(ret, N, avg));
-
-		assert(all_posibilities_covered(ret, N));
+//#endif
 		free(ret);
 	}
 
@@ -270,14 +239,6 @@ int main()
 			std::cout << ret[i] << std::endl;
 		}
 #endif
-//		int avg = 0;
-//		for(int i = 0; i < N; i++) {
-//			avg += ret[i];
-//		}
-//		avg = avg / N;
-//		assert(is_uniform(ret, N, avg));
-
-		assert(all_posibilities_covered(ret, N));
 		free(ret);
 		
 // Testing the copy-constructor of FSD
@@ -296,14 +257,6 @@ int main()
 			std::cout << ret[i] << std::endl;
 		}
 #endif
-//		int avg = 0;
-//		for(int i = 0; i < N; i++) {
-//			avg += ret[i];
-//		}
-//		avg = avg / N;
-//		assert(is_uniform(ret, N, avg));
-
-		assert(all_posibilities_covered(ret, N));
 		free(ret);
 	}
 	return 0;
