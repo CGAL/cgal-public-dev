@@ -1,6 +1,4 @@
 #include <iostream>
-#include <CGAL/point_generators_3.h>
-#include <CGAL/Random.h>
 #include <CGAL/algorithm.h>
 #include <CGAL/double.h>
 #include <CGAL/Triangle_3.h>
@@ -10,19 +8,14 @@
 #include <CGAL/Complex_2_in_triangulation_3.h>
 #include <CGAL/make_surface_mesh.h>
 #include <CGAL/Implicit_surface_3.h>
-
 #include <CGAL/internal/Finite_support_distribution.h>
 #include <CGAL/internal/Weighted_random_generator.h>
 #include <CGAL/point_generators_3.h>
 #include <CGAL/Random.h>
 
 using namespace std;
-
-//TODO:typedef CGAL::Exact_predicates_inexact_constructions_kernel 		K;
-// default triangulation for Surface_mesher
 typedef CGAL::Surface_mesh_default_triangulation_3			 Tr;
 
-// c2t3
 typedef CGAL::Complex_2_in_triangulation_3<Tr>				 C2t3;
 
 typedef Tr::Geom_traits							 GT;
@@ -33,7 +26,6 @@ typedef GT::FT								 FT;
 
 typedef FT (*Function)(Point);
 typedef CGAL::Implicit_surface_3<GT, Function>				 Surface_3;
-//TODO:typedef K::Plane_3 							Plane_3;
 typedef GT::Plane_3 							 Plane_3;
 
 typedef CGAL::FasterMemoryExpensiveTag					 FastPolicy;
@@ -81,19 +73,15 @@ class WeightFunctor_triangle_3 {
 };
 
 int main() {
-	Tr tr;            // 3D-Delaunay triangulation
-	C2t3 c2t3 (tr);   // 2D-complex in 3D-Delaunay triangulation
+	Tr tr;
+	C2t3 c2t3 (tr);
 
-	// defining the surface
-	Surface_3 surface(sphere_function,             // pointer to function
-	      	    Sphere_3(CGAL::ORIGIN, 2.)); // bounding sphere
-	// Note that "2." above is the *squared* radius of the bounding sphere!
+	Surface_3 surface(sphere_function,
+	      	    Sphere_3(CGAL::ORIGIN, 2.));
 
-	// defining meshing criteria
-	CGAL::Surface_mesh_default_criteria_3<Tr> criteria(30.,  // angular bound
-	      					     0.1,  // radius bound
-	      					     0.1); // distance bound
-	// meshing surface
+	CGAL::Surface_mesh_default_criteria_3<Tr> criteria(30.,
+	      					     0.1,
+	      					     0.1);
 	CGAL::make_surface_mesh(c2t3, surface, criteria, CGAL::Non_manifold_tag());
 
 	CGAL::Random rand;
@@ -115,7 +103,7 @@ int main() {
 				for(int j = 0; j < 4; j++)
 				{
 					if(j == iter->second) continue;
-					v[k] = iter->first->vertex(j); // vertices of the facet
+					v[k] = iter->first->vertex(j);
 					k++;
 				}
 				aux[count] = Triangle_3(v[0]->point(), v[1]->point(),
@@ -145,7 +133,7 @@ int main() {
 			for(int j = 0; j < 4; j++)
 			{
 				if(j == iter->second) continue;
-				v[k] = iter->first->vertex(j); // vertices of the facet
+				v[k] = iter->first->vertex(j);
 				k++;
 			}
 			aux[count] = Triangle_3(v[0]->point(), v[1]->point(),
@@ -155,7 +143,6 @@ int main() {
 		assert(inside_or_close_to_surface_mesh_3(points[i],aux,count));
 	}
 
-// Testing the copy-constructor
 	points.clear();
 	points.reserve(number_points);
 	CGAL::Random_points_in_surface_mesh_3<Point, C2t3> g1(g);
@@ -173,7 +160,7 @@ int main() {
 			for(int j = 0; j < 4; j++)
 			{
 				if(j == iter->second) continue;
-				v[k] = iter->first->vertex(j); // vertices of the facet
+				v[k] = iter->first->vertex(j);
 				k++;
 			}
 			aux[count] = Triangle_3(v[0]->point(), v[1]->point(),
@@ -183,7 +170,6 @@ int main() {
 		assert(inside_or_close_to_surface_mesh_3(points[i],aux,count));
 	}
 
-// Testing the constructor that has FSD as argument
 	points.clear();
 	points.reserve(number_points);
 
@@ -199,7 +185,7 @@ int main() {
 		for(int j = 0; j < 4; j++)
 		{
 			if(j == iter->second) continue;
-			v[k] = iter->first->vertex(j); // vertices of the facet
+			v[k] = iter->first->vertex(j);
 			k++;
 		}
 		Triangle_3 aux(v[0]->point(), v[1]->point(),
@@ -209,8 +195,7 @@ int main() {
 		containing_structure[i] = GeneratorWithWeight (randGen, weight);
 		i++;
 	}
-	int N = 1;
-//	int N = 1<<10;
+	int N = 1<<10;
 	CGAL::internal::Finite_support_distribution<GeneratorWithWeight> fsd =
 		CGAL::internal::Finite_support_distribution<GeneratorWithWeight>
 		(containing_structure, i, N);
@@ -230,7 +215,7 @@ int main() {
 			for(int j = 0; j < 4; j++)
 			{
 				if(j == iter->second) continue;
-				v[k] = iter->first->vertex(j); // vertices of the facet
+				v[k] = iter->first->vertex(j);
 				k++;
 			}
 			aux[count] = Triangle_3(v[0]->point(), v[1]->point(),

@@ -19,7 +19,6 @@ const double EPS = 1e-30;
 
 template<class InputIterator>
 bool inside_or_close_to_tetrahedron(const Tetrahedron_3& tet,InputIterator begin, InputIterator end) {
-	std::cout << "BEGIN\n";
 	while(begin!=end) {
 		Tetrahedron_3 OABC = Tetrahedron_3(*begin, tet.vertex(0),
 				tet.vertex(1), tet.vertex(2));
@@ -35,11 +34,8 @@ bool inside_or_close_to_tetrahedron(const Tetrahedron_3& tet,InputIterator begin
 		K::FT OACD_volume = fabs(OACD.volume());
 		K::FT tet_volume = fabs(tet.volume());
 		if
-			(fabs(OABC_volume+OABD_volume+OBCD_volume+OACD_volume-tet_volume)>1e-1)
+			(fabs(OABC_volume+OABD_volume+OBCD_volume+OACD_volume-tet_volume)>1e-15)
 		{
-			std::cout <<
-				fabs(OABC_volume+OABD_volume+OBCD_volume+OACD_volume-tet_volume)
-				<< "\n";
 			return false;
 		}
 		++begin;
@@ -78,7 +74,6 @@ bool is_uniform(const Tetrahedron_3& tet, InputIterator begin, InputIterator end
 		}
 		++begin,++total;
 	}
-	std::cout << inside_smaller << " " << r*r*r*total << '\n';
 	return (inside_smaller - r*r*r*total <= 0.01*total);
 }
 
@@ -92,43 +87,32 @@ int main() {
 	const int MAX_POINTS = 10000;
 	const int number_tetrahedrons = rand.get_int(MIN_TETRAHEDRONS,MAX_TETRAHEDRONS);
 	const int number_points = rand.get_int(MIN_POINTS, MAX_POINTS);
-	std::cout<<"Type the factor: ";//the parameter r in function is_uniform
-	double r;
-	std::cin>>r;
+	double r = 100;
 	for(int i = 0; i < number_tetrahedrons; ++i) {
 		Point_3 pts[4];
 		for(int j = 0; j < 4; ++j) {
 			pts[j]=Point_3(rand.get_double(),rand.get_double(),rand.get_double());
 		}
 		Tetrahedron_3 tet(pts[0],pts[1],pts[2],pts[3]);
-		Point_generator g1( pts[0], pts[1], pts[2], pts[3] ); // constructor that is given points
-		Point_generator g2( tet ); // constructor that is given a tetrahedron
-		Point_generator g3( g1 ); // copy-constructor
+		Point_generator g1( pts[0], pts[1], pts[2], pts[3] );
+		Point_generator g2( tet );
+		Point_generator g3( g1 );
 
-		//Testing the point-constructor
-		std::cout << "A\n";
 		point_set.clear();
 		CGAL::cpp11::copy_n( g1, number_points,
 		               std::back_inserter(point_set));
-		//assert(inside_tetrahedron(tet,point_set.begin(),point_set.end()));
 		assert(inside_or_close_to_tetrahedron(tet,point_set.begin(),point_set.end()));
 		assert(is_uniform(tet,point_set.begin(),point_set.end(),r));
 
-		//Testing the tetrahedron-constructor
-		std::cout << "B\n";
 		point_set.clear();
 		CGAL::cpp11::copy_n( g2, number_points,
 		               std::back_inserter(point_set));
-		//assert(inside_tetrahedron(tet,point_set.begin(),point_set.end()));
 		assert(inside_or_close_to_tetrahedron(tet,point_set.begin(),point_set.end()));
 		assert(is_uniform(tet,point_set.begin(),point_set.end(),r));
 
-		//Testing the copy-constructor
-		std::cout << "C\n";
 		point_set.clear();
 		CGAL::cpp11::copy_n( g3, number_points,
 		               std::back_inserter(point_set));
-		//assert(inside_tetrahedron(tet,point_set.begin(),point_set.end()));
 		assert(inside_or_close_to_tetrahedron(tet,point_set.begin(),point_set.end()));
 		assert(is_uniform(tet,point_set.begin(),point_set.end(),r));
 	}

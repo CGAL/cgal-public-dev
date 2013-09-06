@@ -1,6 +1,4 @@
 #include <iostream>
-#include <CGAL/point_generators_3.h>
-#include <CGAL/Random.h>
 #include <CGAL/algorithm.h>
 #include <CGAL/double.h>
 #include <CGAL/Triangle_3.h>
@@ -20,7 +18,6 @@ using namespace std;
 using namespace CGAL::parameters;
 
 typedef double RT;
-// Domain
 typedef CGAL::Exact_predicates_inexact_constructions_kernel 		K;
 typedef FT_to_point_function_wrapper<K::FT, K::Point_3> 		Function;
 typedef CGAL::Mesh_3::Implicit_vector_to_labeled_function_wrapper<Function, K>
@@ -31,11 +28,9 @@ typedef CGAL::Mesh_3::Labeled_mesh_domain_3<Function_wrapper, K> 	Mesh_domain;
 typedef K::Point_3 							Point;
 typedef K::Plane_3 							Plane_3;
 
-// Triangulation
 typedef CGAL::Mesh_triangulation_3<Mesh_domain>::type 			Tr;
 typedef CGAL::Mesh_complex_3_in_triangulation_3<Tr> 			C3t3;
 
-// Mesh Criteria
 typedef CGAL::Mesh_criteria_3<Tr>			 		Mesh_criteria;
 typedef Mesh_criteria::Facet_criteria    		 		Facet_criteria;
 typedef Mesh_criteria::Cell_criteria     		 		Cell_criteria;
@@ -49,9 +44,24 @@ typedef CGAL::SlowerMemoryEfficientTag 					SlowPolicy;
 typedef CGAL::Random_points_in_tetrahedron_3<Point>			 PointGen;
 typedef CGAL::internal::Weighted_random_generator<PointGen>		 GeneratorWithWeight;
 
-bool inside_mesh_3(Point pt, const Tetrahedron3 *tet, int size) {
+bool inside_or_close_to_mesh_3(Point pt, const Tetrahedron3 *tet, int size) {
 	for (int  i = 0 ; i < size; i++) {
-		if(!(!tet[i].bounded_side(pt) == CGAL::ON_UNBOUNDED_SIDE)) {
+		Tetrahedron3 OABC = Tetrahedron3(pt, tet[i].vertex(0),
+				tet[i].vertex(1), tet[i].vertex(2));
+		Tetrahedron3 OABD = Tetrahedron3(pt, tet[i].vertex(0),
+				tet[i].vertex(1), tet[i].vertex(3));
+		Tetrahedron3 OBCD = Tetrahedron3(pt, tet[i].vertex(1),
+				tet[i].vertex(2), tet[i].vertex(3));
+		Tetrahedron3 OACD = Tetrahedron3(pt, tet[i].vertex(0),
+				tet[i].vertex(2), tet[i].vertex(3));
+		K::FT OABC_volume = fabs(OABC.volume());
+		K::FT OABD_volume = fabs(OABD.volume());
+		K::FT OBCD_volume = fabs(OBCD.volume());
+		K::FT OACD_volume = fabs(OACD.volume());
+		K::FT tet_volume = fabs(tet[i].volume());
+		if
+			(fabs(OABC_volume+OABD_volume+OBCD_volume+OACD_volume-tet_volume)<1e-15)
+		{
 			return true;
 		}
 	}
@@ -67,7 +77,6 @@ class WeightFunctor_tetrahedron_3 {
 };
 
 int main() {
-	// Define functions
 	Function f1(&torus_function);
 	Function f2(&sphere_function<5>);
 	Function f3(&tanglecube_function);
@@ -87,21 +96,12 @@ int main() {
 	//v.push_back(&f7);
 	//v.push_back(&f8);
 
-	// Domain (Warning: Sphere_3 constructor uses square radius !)
 	Mesh_domain domain(v, K::Sphere_3(CGAL::ORIGIN, 5.*5.), 1e-6);
-
-	// Set mesh criteria
-	Facet_criteria facet_criteria(30, 0.2, 0.02); // angle, size, approximation
-	Cell_criteria cell_criteria(2., 0.4); // radius-edge ratio, size
+	Facet_criteria facet_criteria(30, 0.2, 0.02);
+	Cell_criteria cell_criteria(2., 0.4);
 	Mesh_criteria criteria(facet_criteria, cell_criteria);
-
-	// Mesh generation
 	C3t3 c3t3 = CGAL::make_mesh_3<C3t3>(domain, criteria, no_exude(), no_perturb());
-
-	// Perturbation (maximum cpu time: 10s, targeted dihedral angle: default)
 	CGAL::perturb_mesh_3(c3t3, domain, time_limit = 10);
-	
-	// Exudation
 	CGAL::exude_mesh_3(c3t3,12);
 
 	CGAL::Random rand;
@@ -126,7 +126,7 @@ int main() {
 						iter->vertex(3)->point());
 				j++;
 			}
-			assert(inside_mesh_3(points[i], aux, j));
+			assert(inside_or_close_to_mesh_3(points[i], aux, j));
 		}
 	}
 
@@ -151,10 +151,9 @@ int main() {
 					iter->vertex(3)->point());
 			j++;
 		}
-		assert(inside_mesh_3(points[i], aux, j));
+		assert(inside_or_close_to_mesh_3(points[i], aux, j));
 	}
 
-// Testing the copy-constructor
 	points.clear();
 	points.reserve(number_points);
 	CGAL::Random_points_in_mesh_3<Point, C3t3> g1(g);
@@ -174,10 +173,9 @@ int main() {
 					iter->vertex(3)->point());
 			j++;
 		}
-		assert(inside_mesh_3(points[i], aux, j));
+		assert(inside_or_close_to_mesh_3(points[i], aux, j));
 	}
 
-// Testing the constructor that has FSD as argument
 	points.clear();
 	points.reserve(number_points);
 
@@ -199,8 +197,7 @@ int main() {
 		containing_structure[i] = GeneratorWithWeight (randGen, weight);
 		i++;
 	}
-	int N = 1;
-//	int N = 1<<10;
+	int N = 1<<10;
 	CGAL::internal::Finite_support_distribution<GeneratorWithWeight> fsd =
 		CGAL::internal::Finite_support_distribution<GeneratorWithWeight>
 		(containing_structure, i, N);
@@ -222,9 +219,8 @@ int main() {
 					iter->vertex(3)->point());
 			j++;
 		}
-		assert(inside_mesh_3(points[i], aux, j));
+		assert(inside_or_close_to_mesh_3(points[i], aux, j));
 	}
-
 	points.clear();
 	v.clear();
 	return 0;

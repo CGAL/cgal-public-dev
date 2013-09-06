@@ -33,12 +33,6 @@ bool inside_or_close_to_triangle(const Triangle_2& tri,InputIterator begin, Inpu
 	return true;
 }
 
-
-//creates a smaller triangle inside the larger with
-//area tri.area()*r*r. checks if fraction of points
-//inside smaller triangle equals r*r 
-
-//has to be fixed
 template<class InputIterator>
 bool is_uniform(const Triangle_2& tri, InputIterator begin, InputIterator end, double r) {
 	Vector_2 vecs[3];
@@ -69,11 +63,6 @@ bool is_uniform(const Triangle_2& tri, InputIterator begin, InputIterator end, d
 		}
 		++begin,++total;
 	}
-	#ifdef VERBOSE
-	std::cout<<"number of points inside smaller triangle: "<<inside_smaller<<std::endl;
-	std::cout<<"expected number: "<<r*r*total<<std::endl;
-	#endif
-	//this has to be changed
 	return fabs(inside_smaller-r*r*total)<total/100.0;
 }
 
@@ -93,23 +82,20 @@ int main() {
 			pts[j]=Point_2(rand.get_double(),rand.get_double());
 		}
 		Triangle_2 tri(pts[0],pts[1],pts[2]);
-		Point_generator g1( pts[0], pts[1], pts[2] ); // constructor that is given points
-		Point_generator g2( tri ); // constructor that is given a triangle
-		Point_generator g3( g1 ); // copy-constructor
+		Point_generator g1( pts[0], pts[1], pts[2] );
+		Point_generator g2( tri );
+		Point_generator g3( g1 );
 
-		//Testing the point-constructor
 		point_set.clear();
 		CGAL::cpp11::copy_n( g1, number_points,
 		               std::back_inserter(point_set));
 		assert(inside_or_close_to_triangle(tri,point_set.begin(),point_set.end()));
 
-		//Testing the triangle-constructor
 		point_set.clear();
 		CGAL::cpp11::copy_n( g2, number_points,
 		               std::back_inserter(point_set));
 		assert(inside_or_close_to_triangle(tri,point_set.begin(),point_set.end()));
 
-		//Testing the copy-constructor;
 		point_set.clear();
 		CGAL::cpp11::copy_n( g3, number_points,
 		               std::back_inserter(point_set));
