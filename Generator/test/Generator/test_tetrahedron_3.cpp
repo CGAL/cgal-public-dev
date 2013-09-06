@@ -74,20 +74,20 @@ bool is_uniform(const Tetrahedron_3& tet, InputIterator begin, InputIterator end
 		}
 		++begin,++total;
 	}
-	return (inside_smaller - r*r*r*total <= 0.01*total);
+	return abs(inside_smaller - r*r*r*total) <= 0.01*total*r*r*r;
 }
 
 
 int main() {
 	CGAL::Random rand;
 	Container point_set;
+	double r = 100;
 	const int MIN_TETRAHEDRONS = 1;
 	const int MAX_TETRAHEDRONS = 50;
-	const int MIN_POINTS = 1000;
+	const int MIN_POINTS = (int) std::max(1000.0,3000/(r*r*r));
 	const int MAX_POINTS = 10000;
 	const int number_tetrahedrons = rand.get_int(MIN_TETRAHEDRONS,MAX_TETRAHEDRONS);
 	const int number_points = rand.get_int(MIN_POINTS, MAX_POINTS);
-	double r = 100;
 	for(int i = 0; i < number_tetrahedrons; ++i) {
 		Point_3 pts[4];
 		for(int j = 0; j < 4; ++j) {
