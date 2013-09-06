@@ -18,6 +18,17 @@ typedef CGAL::Random_points_in_tetrahedron_3<Point_3> 		Point_generator;
 const double EPS = 1e-30;
 
 template<class InputIterator>
+bool inside_tetrahedron(const Tetrahedron_3& tet,InputIterator begin, InputIterator end) {
+	while(begin!=end) {
+		if(!(!tet.bounded_side(*begin) == CGAL::ON_UNBOUNDED_SIDE)) {
+			return true;
+		}
+		++begin;
+	}
+	return false;
+}
+
+template<class InputIterator>
 bool inside_or_close_to_tetrahedron(const Tetrahedron_3& tet,InputIterator begin, InputIterator end) {
 	while(begin!=end) {
 		Tetrahedron_3 OABC = Tetrahedron_3(*begin, tet.vertex(0),
@@ -107,6 +118,7 @@ int main() {
 		point_set.clear();
 		CGAL::cpp11::copy_n( g1, number_points,
 		               std::back_inserter(point_set));
+		assert(inside_tetrahedron(tet,point_set.begin(),point_set.end()));
 		assert(inside_or_close_to_tetrahedron(tet,point_set.begin(),point_set.end()));
 		assert(is_uniform(tet,point_set.begin(),point_set.end(),r));
 
@@ -114,6 +126,7 @@ int main() {
 		point_set.clear();
 		CGAL::cpp11::copy_n( g2, number_points,
 		               std::back_inserter(point_set));
+		assert(inside_tetrahedron(tet,point_set.begin(),point_set.end()));
 		assert(inside_or_close_to_tetrahedron(tet,point_set.begin(),point_set.end()));
 		assert(is_uniform(tet,point_set.begin(),point_set.end(),r));
 
@@ -121,6 +134,7 @@ int main() {
 		point_set.clear();
 		CGAL::cpp11::copy_n( g3, number_points,
 		               std::back_inserter(point_set));
+		assert(inside_tetrahedron(tet,point_set.begin(),point_set.end()));
 		assert(inside_or_close_to_tetrahedron(tet,point_set.begin(),point_set.end()));
 		assert(is_uniform(tet,point_set.begin(),point_set.end(),r));
 	}
