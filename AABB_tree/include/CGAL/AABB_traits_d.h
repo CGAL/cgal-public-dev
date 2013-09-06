@@ -30,6 +30,7 @@
 #include <CGAL/internal/AABB_tree/Primitive_helper.h>
 #include <boost/optional.hpp>
 #include <boost/bind.hpp>
+#include <CGAL/internal/AABB_tree/AABB_do_contain_traits.h>
 /// \file AABB_traits_d.h
 
 namespace CGAL {
@@ -145,6 +146,10 @@ struct AABB_traits_d <GeomTraits , AABBPrimitive ,2>:public internal::AABB_tree:
   typedef typename GeomTraits::Construct_max_vertex_2 Construct_max_vertex_d;
   typedef typename GeomTraits::Construct_iso_rectangle_2 Construct_iso_box_d;
 
+  
+  typedef Do_contain_test_traits<AT,GeomTraits,typename Primitive::Datum> Do_primitive_contain_test;
+  typedef Do_contain_test_traits<AT,GeomTraits, Iso_box_d> Do_bbox_contain_test;
+
 
   AABB_traits_d(){ };
 
@@ -202,13 +207,36 @@ struct AABB_traits_d <GeomTraits , AABBPrimitive ,2>:public internal::AABB_tree:
        template<typename Query>
        bool operator()(const Query& q, const Primitive& pr) const
        {
-    	 return GeomTraits().do_intersect_2_object()(q, internal::Primitive_helper<AT>::get_datum(pr,m_traits));
+    	 return true;//GeomTraits().do_intersect_2_object()(q, internal::Primitive_helper<AT>::get_datum(pr,m_traits));
        }
      };
 
      Do_intersect do_intersect_object() const {return Do_intersect(*this);}
 
 
+     class Do_contain {
+
+           const AABB_traits_d<GeomTraits,AABBPrimitive,2>& m_traits;
+
+           public:
+             Do_contain(const AABB_traits_d<GeomTraits,AABBPrimitive,2>& traits)
+               :m_traits(traits) {}
+             
+             template<typename Query>
+             bool operator()(const Query& q, const Bounding_box& bbox) const
+             {
+				return Do_bbox_contain_test()(q,(Iso_box_d)bbox);
+             }
+
+             template<typename Query>
+             bool operator()(const Query& q, const Primitive& pr) const
+             {
+				return Do_primitive_contain_test()(q,internal::Primitive_helper<AT>::get_datum(pr,m_traits));
+             }
+           };
+
+    Do_contain do_contain_object() const {return Do_contain(*this);}
+     
      class Intersection {
        const AABB_traits_d<GeomTraits,AABBPrimitive,2>& m_traits;
      public:
@@ -327,12 +355,11 @@ struct AABB_traits_d < GeomTraits , AABBPrimitive ,3>:public internal::AABB_tree
   typedef typename CGAL::Object Object;
   typedef typename GeomTraits::FT FT;
   typedef AABBPrimitive Primitive;
+  typedef typename CGAL::Bbox_3 Bounding_box;
 
   typedef typename std::pair<Object,typename Primitive::Id> Object_and_primitive_id;
 
   typedef AABB_traits_d <GeomTraits, AABBPrimitive,3>  AT;
-
-
 
   typedef typename std::pair<typename GeomTraits::Point_3, typename Primitive::Id> Point_and_primitive_id;
 
@@ -358,9 +385,6 @@ struct AABB_traits_d < GeomTraits , AABBPrimitive ,3>:public internal::AABB_tree
   typedef typename GeomTraits::Iso_cuboid_3 Iso_box_d;
 
 
-  typedef typename CGAL::Bbox_3 Bounding_box;
-
-
   typedef typename GeomTraits::Sphere_3 Sphere_d;
 
   typedef typename GeomTraits::Cartesian_const_iterator_3 Cartesian_const_iterator_d;
@@ -370,6 +394,12 @@ struct AABB_traits_d < GeomTraits , AABBPrimitive ,3>:public internal::AABB_tree
   typedef typename GeomTraits::Construct_max_vertex_3 Construct_max_vertex_d;
   typedef typename GeomTraits::Construct_iso_cuboid_3 Construct_iso_box_d;
 
+  
+  typedef Do_contain_test_traits<AT,GeomTraits,typename Primitive::Datum> Do_primitive_contain_test;
+  typedef Do_contain_test_traits<AT,GeomTraits, Iso_box_d> Do_bbox_contain_test;
+
+  
+  
   AABB_traits_d(){ };
 
   typedef typename GeomTraits::Compute_squared_distance_3 compute_squared_distance;
@@ -434,6 +464,31 @@ struct AABB_traits_d < GeomTraits , AABBPrimitive ,3>:public internal::AABB_tree
        };
 
        Do_intersect do_intersect_object() const {return Do_intersect(*this);}
+
+
+       class Do_contain {
+
+              const AABB_traits_d<GeomTraits,AABBPrimitive,3>& m_traits;
+
+              public:
+                Do_contain(const AABB_traits_d<GeomTraits,AABBPrimitive,3>& traits)
+                  :m_traits(traits) {}
+                
+                template<typename Query>
+                bool operator()(const Query& q, const Bounding_box& bbox) const
+                {
+					return Do_bbox_contain_test()(q,(Iso_box_d)bbox);
+                }
+
+                template<typename Query>
+                bool operator()(const Query& q, const Primitive& pr) const
+                {
+					return Do_primitive_contain_test()(q,internal::Primitive_helper<AT>::get_datum(pr,m_traits));
+                }
+              };
+
+       Do_contain do_contain_object() const {return Do_contain(*this);}
+
 
 
        class Intersection {

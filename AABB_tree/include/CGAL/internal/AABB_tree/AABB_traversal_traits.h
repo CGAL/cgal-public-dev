@@ -23,6 +23,7 @@
 
 #include <CGAL/internal/AABB_tree/AABB_node.h>
 #include <boost/optional.hpp>
+#include <CGAL/Timer.h>
 
 namespace CGAL { 
 
@@ -172,17 +173,20 @@ class Listing_primitive_traits
   typedef typename AABBTraits::Object_and_primitive_id Object_and_primitive_id;
   typedef ::CGAL::AABB_node<AABBTraits> Node;
 
+  CGAL::Timer timer;
 public:
   Listing_primitive_traits(Output_iterator out_it, const AABBTraits& traits)
     : m_out_it(out_it), m_traits(traits) {}
-
+  ~Listing_primitive_traits(){std::cout<<"Time Inside "<<timer.time()<<std::endl;}
   bool go_further() const { return true; }
 
   void intersection(const Query& query, const Primitive& primitive)
   {
     if( m_traits.do_intersect_object()(query, primitive) )
     {
+    	timer.start();
       *m_out_it++ = primitive.id();
+      timer.stop();
     }
   }
 
@@ -356,23 +360,29 @@ class Range_listing_primitive_traits
   typedef typename AABBTraits::Point_and_primitive_id Point_and_primitive_id;
   typedef typename AABBTraits::Object_and_primitive_id Object_and_primitive_id;
   typedef ::CGAL::AABB_node<AABBTraits> Node;
+  CGAL::Timer timer;
 
 public:
   Range_listing_primitive_traits(Output_iterator out_it, const AABBTraits& traits)
     : m_out_it(out_it), m_traits(traits) {}
+  ~Range_listing_primitive_traits(){std::cout<<"Time Inside "<<timer.time()<<std::endl;}
 
   bool go_further() const { return true; }
   
   void add_primitive(const Primitive& primitive)
   {
+	  timer.start();
 	  *m_out_it++ = primitive.id();
+	  timer.stop();
   }
 
   void contain(const Query& query, const Primitive& primitive)
   {
     if( m_traits.do_contain_object()(query,primitive) )//need to implement
     {
+    	 timer.start();
       *m_out_it++ = primitive.id();
+      timer.stop();
     }
   }
   

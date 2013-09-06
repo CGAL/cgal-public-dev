@@ -41,7 +41,7 @@ namespace internal {
       typedef Iterator key_type;
       typedef typename GeomTraits::Point_2 value_type;
       typedef typename cpp11::result_of<
-        typename GeomTraits::Construct_vertex_2(typename GeomTraits::Triangle_3,int)
+        typename GeomTraits::Construct_vertex_2(typename GeomTraits::Triangle_2,int)
       >::type reference;
       typedef boost::readable_property_map_tag category;
 
