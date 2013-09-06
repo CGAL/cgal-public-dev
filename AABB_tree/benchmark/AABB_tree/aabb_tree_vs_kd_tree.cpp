@@ -40,6 +40,8 @@ typedef CGAL::AABB_tree<Traits> Tree;
 //tepedefs point generator
 typedef CGAL::Creator_uniform_2<double,Point>  Creator;
 
+int number_of_points, number_of_queries;
+
 template<typename LIST>
 void test_spatial_search(LIST &lst)
 {
@@ -48,13 +50,13 @@ void test_spatial_search(LIST &lst)
   Tree1 search_tree(lst.begin(),lst.end());
   search_tree.build();
   timer.stop();
-  std::cerr << "building the KD tree took " << timer.time() << " sec." << std::endl;
+  std::cout << "building the KD tree took " << timer.time() << " sec." << std::endl;
   timer.reset();
 
   timer.start();
   std::size_t number_of_points = 0;
 
-  for(int i=0;i<1000;i++)
+  for(int i=0;i<number_of_queries;i++)
     {
       LIST itr;
       Fuzzy_sphere fs(Point_d(0.05*i,0.05*i), 10.0, 0.0);
@@ -67,13 +69,13 @@ void test_spatial_search(LIST &lst)
     }
   timer.stop();
   
-  std::cout << "K-d Total Points Searched: " << number_of_points << std::endl;
-  std::cout << "Searching took " << timer.time() << " sec.\n" ;
+  std::cout << "KD Total Points Searched: " << number_of_points << std::endl;
+  std::cout << "Searching took " << timer.time() << " sec." << std::endl;
   timer.reset();
   timer.start();
   search_tree.clear();
   timer.stop();
-  std::cout << "Clearing took " << timer.time() << " sec.\n\n" ;
+  std::cout << "Clearing took " << timer.time() << " sec.\n" << std::endl;
 }
 
 
@@ -89,15 +91,15 @@ void test_aabb_tree(LIST &lst)
   Tree aabb_tree(lst.begin(), lst.end());
   aabb_tree.build();
   timer.stop();
-  std::cerr << "building the AABB tree took " << timer.time() << " sec." << std::endl;
+  std::cout << "building the AABB tree took " << timer.time() << " sec." << std::endl;
   timer.reset();
 
   timer.start();
 
   unsigned int number_of_range_queries = 0;
   std::size_t number_of_points = 0;
-  CGAL::Timer timer;
-  for(int i=0;i<1000;i++)
+
+  for(int i=0;i<number_of_queries;i++)
     {
       std::vector<typename Primitive::Id> primitives;
       Circle circular_query(Point_d(0.05*i,0.05*i), 10.0*10.0);
@@ -111,12 +113,12 @@ void test_aabb_tree(LIST &lst)
   timer.stop();
   
   std::cout << "AABB Total Points Searched: " << number_of_points << std::endl;
-  std::cout << "Searching took " << timer.time() << " sec.\n" ;
+  std::cout << "Searching took " << timer.time() << " sec." << std::endl;
  timer.reset();
   timer.start();
   aabb_tree.clear();
   timer.stop();
-  std::cout << "Clearing took " << timer.time() << " sec.\n\n" ;
+  std::cout << "Clearing took " << timer.time() << " sec.\n" << std::endl;
 }
 
 
@@ -126,9 +128,9 @@ int main()
 {
    	
   //change the number of points in 10^n
-  int number_of_points;
-  std::cout<<"Enter the number of points to be generated"<<std::endl;
-  std::cin>>number_of_points;
+
+  std::cout << "Enter the number of points and the number of queries" << std::endl;
+  std::cin >> number_of_points >> number_of_queries;
 	
   std::vector<Point> points;
 
@@ -136,11 +138,11 @@ int main()
   try
     {
       CGAL::cpp11::copy_n( g, number_of_points, std::back_inserter(points));
-      std::cout<<"Created "<<number_of_points<<" points"<<std::endl;
+      std::cout << "Created " << number_of_points << " points" << std::endl;
     }
   catch (std::bad_alloc& )
     {
-      std::cerr<<"Can not create "<<number_of_points<<" points"<<std::endl;
+      std::cerr << "Can not create " << number_of_points << " points" << std::endl;
     }
 		
 

@@ -177,7 +177,7 @@ class Listing_primitive_traits
 public:
   Listing_primitive_traits(Output_iterator out_it, const AABBTraits& traits)
     : m_out_it(out_it), m_traits(traits) {}
-  ~Listing_primitive_traits(){std::cout<<"Time Inside "<<timer.time()<<std::endl;}
+  ~Listing_primitive_traits(){/*std::cout<<"Time Inside "<<timer.time()<<std::endl;*/}
   bool go_further() const { return true; }
 
   void intersection(const Query& query, const Primitive& primitive)
@@ -365,7 +365,7 @@ class Range_listing_primitive_traits
 public:
   Range_listing_primitive_traits(Output_iterator out_it, const AABBTraits& traits)
     : m_out_it(out_it), m_traits(traits) {}
-  ~Range_listing_primitive_traits(){std::cout<<"Time Inside "<<timer.time()<<std::endl;}
+  ~Range_listing_primitive_traits(){/*std::cout<<"Time Inside "<<timer.time()<<std::endl;*/}
 
   bool go_further() const { return true; }
   
