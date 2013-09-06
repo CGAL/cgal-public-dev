@@ -50,11 +50,16 @@ void test_spatial_search(vector &lst)
 {
     
 
+	CGAL::Timer timer;    
+	timer.start();
 	Tree1 search_tree(lst.begin(),lst.end());
-	lst.clear();
+	search_tree.build();
+	timer.stop();
+	std::cout << "building the KD tree took " << timer.time() << " sec." << std::endl;
+	timer.reset();
 
-	std::size_t number_of_points = 0;
-	CGAL::Timer timer;
+	 std::size_t number_of_points = 0;
+
 	timer.start();
 	for(int i=0;i<10000;i++)
 	{
@@ -67,11 +72,13 @@ void test_spatial_search(vector &lst)
 	   number_of_points+=itr.size();
 	   itr.clear();
 	}
-	 timer.stop();
-	std::cout << "K-d Total Points Searched: "<< number_of_points<< std::endl;
-	std::cout << "Total Time Taken: " <<	timer.time() << std::endl;
-
-	search_tree.clear();
+	 std::cout << "KD Total Points Searched: " << number_of_points << std::endl;
+  std::cout << "Searching took " << timer.time() << " sec." << std::endl;
+  timer.reset();
+  timer.start();
+  search_tree.clear();
+  timer.stop();
+  std::cout << "Clearing took " << timer.time() << " sec.\n" << std::endl;
 }
 
 
@@ -82,14 +89,17 @@ void test_spatial_search(vector &lst)
 template<typename vector>
 void test_aabb_tree(vector &lst)
 {
+	CGAL::Timer timer;    
+	timer.start();
 	Tree aabb_tree(lst.begin(), lst.end());
 	aabb_tree.build();
+	timer.stop();
+	std::cout << "building the AABB tree took " << timer.time() << " sec." << std::endl;
+	timer.reset();
 
-
-	unsigned int number_of_range_queries = 0;
 	std::size_t number_of_points = 0;
-	CGAL::Timer timer;
-	   timer.start();
+
+	timer.start();
 	for(int i=0;i<10000;i++)
 	{
 	   std::vector<typename Primitive::Id> primitives;
@@ -100,11 +110,13 @@ void test_aabb_tree(vector &lst)
 	   number_of_points+=primitives.size();
 	   primitives.clear();
 	}
-	timer.stop();
-	std::cout << "AABB Total Points Searched: "<< number_of_points<< std::endl;
-	std::cout << "Total Time Taken: " <<	timer.time() << std::endl;
-
+	std::cout << "AABB Total Points Searched: " << number_of_points << std::endl;
+	std::cout << "Searching took " << timer.time() << " sec." << std::endl;
+	timer.reset();
+	timer.start();
 	aabb_tree.clear();
+	timer.stop();
+	std::cout << "Clearing took " << timer.time() << " sec.\n" << std::endl;
 }
 
 
