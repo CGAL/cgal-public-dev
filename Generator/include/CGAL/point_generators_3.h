@@ -412,7 +412,6 @@ public:
 		return *this;
 	}
 };
-
 template<class P, class C3t3, class RandomGeneratorPolicy, class Creator >
 void Random_points_in_mesh_3<P, C3t3, RandomGeneratorPolicy, Creator>::generate_point() {
 	P ret = _fsp_distrib.generate(*_rand);
@@ -471,7 +470,7 @@ public:
 			for(int j = 0; j < 4; j++)
 			{
 				if(j == iter->second) continue;
-				v[k] = iter->first->vertex(j); // vertices of the facet
+				v[k] = iter->first->vertex(j);
 				k++;
 			}
 			Triangle_3 aux(v[0]->point(), v[1]->point(),
@@ -505,7 +504,6 @@ public:
 		return *this;
 	}
 };
-
 template<class P, class C2t3, class RandomGeneratorPolicy, class Creator >
 void Random_points_in_surface_mesh_3<P, C2t3, RandomGeneratorPolicy, Creator>::generate_point() {
 	P ret = _fsp_distrib.generate(*_rand);

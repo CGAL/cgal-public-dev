@@ -533,7 +533,6 @@ public:
 	}
 };
 	
-	
 template<class P, class Creator >
 void Random_points_in_triangle_2<P, Creator>::generate_point() {
 	typedef typename Creator::argument_type T;
@@ -547,8 +546,6 @@ void Random_points_in_triangle_2<P, Creator>::generate_point() {
 	this->d_item = creator(T(to_double(_p.x())*b1+to_double(_q.x())*b2+to_double(_r.x())*b3),
 							T(to_double(_p.y())*b1+to_double(_q.y())*b2+to_double(_r.y())*b3));
 }	
-
-
 } //namespace CGAL
 #endif // CGAL_POINT_GENERATORS_2_H //
 // EOF //

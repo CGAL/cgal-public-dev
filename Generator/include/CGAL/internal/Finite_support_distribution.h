@@ -6,7 +6,6 @@
 #include <CGAL/Timer.h>
 #include <cstring>
 
-//#define VERBOSE
 CGAL::Timer t;
 
 namespace CGAL { namespace internal {
@@ -17,7 +16,7 @@ class Finite_support_distribution {
 		double *presums;
 		int **offsets;
 		double **aux_array;
-		int *length; // the number of elements in offsets[i]
+		int *length;
 		int _size, _parts;
 	public:
 		typedef Weighted_random_generator* Container;
@@ -27,6 +26,7 @@ class Finite_support_distribution {
 			{}
 		Finite_support_distribution(Container input, int size, int
 				parts) : _size(size),_parts(parts) {
+			CGAL_precondition(_size>0 && _parts>0);
 #ifdef VERBOSE
 			std::cout << "Size = " << _size << std::endl;
 			std::cout << "Parts = " << _parts << std::endl;
@@ -156,4 +156,3 @@ class Finite_support_distribution {
 };
 };
 #endif //FINITE_SUPPORT_DISTRIBUTION_H_
-

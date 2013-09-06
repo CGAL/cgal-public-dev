@@ -14,15 +14,16 @@ class Weighted_random_generator {
 		typedef typename PointGeneratorClass::result_type result_type;
 		Weighted_random_generator() {}
 
-		Weighted_random_generator(const Weighted_random_generator<PointGeneratorClass> &x) {
+		Weighted_random_generator(const
+				Weighted_random_generator<PointGeneratorClass>
+				&x) : _weight(x._weight) {
 			this->_rand = PointGeneratorClass(x._rand);
-			this->_weight = x._weight;
 		}
 
 		Weighted_random_generator(const PointGeneratorClass &rand,
-				const double weight) {
+				const double weight) : _weight(weight) {
+			CGAL_precondition(_weight > 0);
 			_rand = PointGeneratorClass(rand);
-			_weight = weight;
 		}
 
 		double getWeight() const {
