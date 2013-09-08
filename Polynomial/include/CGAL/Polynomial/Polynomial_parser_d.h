@@ -82,14 +82,14 @@ struct Default_parser_policy {
     //! reads in the coefficient from the input stream and converts it
     //! to \c Innermost_coefficient_type type using provided type coercion
     //! \c is points to the first digit character of the coefficient
-    Innermost_coefficient_type read_coefficient(std::istream& is) const {
+    virtual Innermost_coefficient_type read_coefficient(std::istream& is) const {
         return read_coeff_proxy(is, COEFF_INTEGER);
     }
 
     //! checking for degree overflow: can be used in real-time applications
     //! checks if the total degree \c deg of a monomial lies within given boundaries
     //! and returns \c true in this case
-    bool exponent_check(unsigned deg) const {
+    virtual bool exponent_check(unsigned deg) const {
         static_cast< void > (deg);
         return true;
     }
@@ -98,7 +98,7 @@ struct Default_parser_policy {
     //! 0 corresponds to an innermost variable while d-1 corresponds to an
     //! outermost variable (d is the number of polynomial variables)
     //! if \c ch is not a valid variable name, returns \c false
-    bool check_var_name(char ch, int& idx) const {
+    virtual bool check_var_name(char ch, int& idx) const {
 
         unsigned i;
         ch = tolower(ch);
@@ -109,11 +109,11 @@ struct Default_parser_policy {
         return true;
     }
 
-    Innermost_coefficient_type read_coeff_proxy(std::istream& is, CoefficientTypeID) const {
+    virtual Innermost_coefficient_type read_coeff_proxy(std::istream& is, CoefficientTypeID) const {
         return _read_coeff< Innermost_coefficient_type >(is);
     }
 
-    ~Default_parser_policy() {
+    virtual ~Default_parser_policy() {
     }
     
 protected:
@@ -182,7 +182,7 @@ struct Mixed_rational_parser_policy :
     //! it to the \c Innermost_coefficient_type type using provided coercion
     //! \c is points to the first digit character of the coefficient
     //! throws \c Parser_exception if error occurred
-    Innermost_coefficient_type read_coefficient(std::istream& is) const {
+    virtual Innermost_coefficient_type read_coefficient(std::istream& is) const {
 
         std::stringstream buf;
 
@@ -194,7 +194,7 @@ struct Mixed_rational_parser_policy :
             Base::COEFF_RATIONAL : Base::COEFF_INTEGER);
     }
 
-    Innermost_coefficient_type read_coeff_proxy(std::istream& is, CoefficientTypeID type)
+    virtual Innermost_coefficient_type read_coeff_proxy(std::istream& is, CoefficientTypeID type)
             const {
 
         if(type == Base::COEFF_INTEGER)
@@ -202,6 +202,8 @@ struct Mixed_rational_parser_policy :
         else 
             return Base::template _read_coeff< Rational >(is);
     }
+    
+    virtual ~Mixed_rational_parser_policy() { }
 
 protected:
     //! protected stuff
@@ -252,12 +254,14 @@ template < class Polynomial_d_,/*, class FP_rounding = CGAL::Identity<KeyType_>*
         typename CGAL::Polynomial_traits_d< Polynomial_d_ >::Innermost_coefficient_type >::
              Arithmetic_kernel::Bigfloat_interval >::Bound >
 struct Mixed_floating_point_parser_policy :
-        public Mixed_rational_parser_policy< Polynomial_d_ > {
+        public Mixed_rational_parser_policy< Polynomial_d_,
+                Integer_, Rational_ > {
 
     //! template argument type
     typedef Polynomial_d_ Polynomial_d;
     //! base class
-    typedef Mixed_rational_parser_policy< Polynomial_d > Base;
+    typedef Mixed_rational_parser_policy< Polynomial_d,
+            Integer_, Rational_ > Base;
 
     //! type of polynomial coefficient
     typedef typename Base::Innermost_coefficient_type Innermost_coefficient_type;
@@ -280,7 +284,7 @@ struct Mixed_floating_point_parser_policy :
     //! in a single equation
     //! \c is points to the first digit character of the coefficient
     //! throws \c Parser_exception if an error occurred
-    Innermost_coefficient_type read_coefficient(std::istream& is) const {
+    virtual Innermost_coefficient_type read_coefficient(std::istream& is) const {
 
         std::stringstream buf;
         bool read_rational; // recognised as rational coeff
@@ -333,7 +337,7 @@ struct Mixed_floating_point_parser_policy :
                 Base::COEFF_FLOAT));
     }
 
-    Innermost_coefficient_type read_coeff_proxy(std::istream& is, CoefficientTypeID type)
+    virtual Innermost_coefficient_type read_coeff_proxy(std::istream& is, CoefficientTypeID type)
             const {
 
         if(type == Base::COEFF_INTEGER)
@@ -343,6 +347,8 @@ struct Mixed_floating_point_parser_policy :
         else // floating-point
             return Base::template _read_coeff< BigFloat >(is);
     }
+    
+    virtual ~Mixed_floating_point_parser_policy() { }
 
 };
 

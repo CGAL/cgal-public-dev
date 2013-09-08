@@ -4,10 +4,10 @@
 #include <CGAL/Polynomial.h>
 #include <CGAL/Polynomial_type_generator.h>
 
-#include <CGAL/CORE_BigRat.h>
+#include <CGAL/Gmpq.h>
 
 int main() {
-   typedef CGAL::Polynomial_type_generator<CORE::BigRat,2>::Type 
+   typedef CGAL::Polynomial_type_generator<CGAL::Gmpq,2>::Type 
       Polynomial_2;
     
       // parse bivariate polynomials with large integer, rational and fp coefficients

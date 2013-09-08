@@ -15,6 +15,8 @@
 // bits to approximate bigfloat coefficients
 #define PARSER_FLOAT_APPROX_BITS 53 
 
+#define __STILL_ALIVE__ printf("line: %d\n", __LINE__);
+
 //! example of custom parser policy to parse polynomials with
 //! integer, rational and bigfloat coefficients (with supported rounding)
 //! and degree check
@@ -32,9 +34,9 @@ struct Custom_parser_policy :
     typedef typename CGAL::Get_arithmetic_kernel< Innermost_coefficient_type >::
              Arithmetic_kernel AK;
     //! integer number type
-    typedef typename AK::Integer Integer;
+    typedef typename Base::Integer Integer;
     //! rational number type
-    typedef typename AK::Rational Rational;
+    typedef typename Base::Rational Rational;
     //! BFI type
     typedef typename AK::Bigfloat_interval BFI;
     //! BigFloat type
@@ -59,7 +61,6 @@ struct Custom_parser_policy :
             return typename FT::Compose()(num, denom);
 
         } else if(type == Base::COEFF_FLOAT) {
-
             double ld;
             is >> CGAL::iformat(ld);
             BigFloat bf(ld);
@@ -70,13 +71,15 @@ struct Custom_parser_policy :
 
             return CGAL::lower(bfi);
 
-        } else
+        } else {
+            
             return Base::read_coeff_proxy(is, type);
+            
+        }
     }
 
     //! checking for degree overflow: can be used in real-time applications
     virtual bool exponent_check(unsigned e) const {
-//         std::cout << "exponent_check: " << e << "\n";
         if(e > PARSER_MAX_POLY_DEGREE)
             return false;
         return true;
@@ -210,14 +213,12 @@ void test_routine() {
 
     typedef CGAL::Polynomial_parser_d<Polynomial_2,
         Custom_parser_policy< Polynomial_2 > > Custom_parser;
-
     // polynomial with invalid coefficients
     pol_str="123.3453x^5*8/000*y^17-5/0*(-111y-x^2)+10/2134234";
 
     if(!Custom_parser() (pol_str,p2)) {
         printf("don't worry: this was intended..\n");
     }
-
     // example polynomial with mixed integer/rational and fp-coefficients
     pol_str="234523.4(x-y)^5-y^17-5/32*(-111y-345.332342345x^2)+10/34234";
 
