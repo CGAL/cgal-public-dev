@@ -45,40 +45,48 @@ typedef CGAL::AABB_tree<Traits> Tree;
 //tepedefs point generator
 typedef CGAL::Creator_uniform_3<double,Point>  Creator;
 
-template<typename vector>
-void test_spatial_search(vector &lst)
-{
-    
 
-	CGAL::Timer timer;    
+template<typename vector>
+void test_spatial_search(vector &lst,vector &centers)
+{
+    CGAL::Timer timer;
 	timer.start();
 	Tree1 search_tree(lst.begin(),lst.end());
 	search_tree.build();
 	timer.stop();
 	std::cout << "building the KD tree took " << timer.time() << " sec." << std::endl;
 	timer.reset();
+	
+	lst.clear();
 
-	 std::size_t number_of_points = 0;
+	std::size_t number_of_points = 0;
+
 
 	timer.start();
-	for(int i=0;i<10000;i++)
+
+	vector::iterator itr = centers.begin();
+	while(itr!=centers.end())
 	{
-	   vector itr;
-	   Fuzzy_sphere fs(Point_d(0.005*i,0.005*i,0.005*i), 5.0, 0.0);
+	   vector primitives;
+	   Fuzzy_sphere fs(*itr, 5.0, 0.0);
 
 	   
-	   search_tree.search(std::back_inserter(itr), fs);
+	   search_tree.search(std::back_inserter(primitives), fs);
 	  
-	   number_of_points+=itr.size();
-	   itr.clear();
+	   number_of_points+=primitives.size();
+	   primitives.clear();
+	   ++itr;
 	}
-	 std::cout << "KD Total Points Searched: " << number_of_points << std::endl;
-  std::cout << "Searching took " << timer.time() << " sec." << std::endl;
-  timer.reset();
-  timer.start();
-  search_tree.clear();
-  timer.stop();
-  std::cout << "Clearing took " << timer.time() << " sec.\n" << std::endl;
+	timer.stop();
+	std::cout << "KD Total Points Searched: " << number_of_points << std::endl;
+	std::cout << "Searching took " << timer.time() << " sec." << std::endl;
+
+	timer.reset();
+	timer.start();
+	search_tree.clear();
+	timer.stop();
+	std::cout << "Clearing took " << timer.time() << " sec.\n" << std::endl;
+
 }
 
 
@@ -87,7 +95,7 @@ void test_spatial_search(vector &lst)
 
 
 template<typename vector>
-void test_aabb_tree(vector &lst)
+void test_aabb_tree(vector &lst,vector &centers)
 {
 	CGAL::Timer timer;    
 	timer.start();
@@ -97,29 +105,34 @@ void test_aabb_tree(vector &lst)
 	std::cout << "building the AABB tree took " << timer.time() << " sec." << std::endl;
 	timer.reset();
 
+ 
 	std::size_t number_of_points = 0;
-
 	timer.start();
-	for(int i=0;i<10000;i++)
+
+	vector::iterator itr = centers.begin();
+
+	while(itr!=centers.end())
 	{
-	   std::vector<typename Primitive::Id> primitives;
-	   Circle circular_query(Point_d(0.005*i,0.005*i,0.005*i), 5.0*5.0);
+		std::vector<typename Primitive::Id> primitives;
+	   Circle circular_query(*itr, 5.0*5.0);
 	
 	   aabb_tree.all_contained_primitives(circular_query,std::back_inserter(primitives));
 	   
 	   number_of_points+=primitives.size();
 	   primitives.clear();
+		++itr;
 	}
-	std::cout << "AABB Total Points Searched: " << number_of_points << std::endl;
-	std::cout << "Searching took " << timer.time() << " sec." << std::endl;
-	timer.reset();
-	timer.start();
-	aabb_tree.clear();
+
 	timer.stop();
-	std::cout << "Clearing took " << timer.time() << " sec.\n" << std::endl;
+  
+  std::cout << "AABB Total Points Searched: " << number_of_points << std::endl;
+  std::cout << "Searching took " << timer.time() << " sec." << std::endl;
+  timer.reset();
+  timer.start();
+  aabb_tree.clear();
+  timer.stop();
+  std::cout << "Clearing took " << timer.time() << " sec.\n" << std::endl;
 }
-
-
 
 
 int main()
@@ -127,39 +140,32 @@ int main()
    	
 	
  
-	//change the number of points in 10^n
-	int number_of_points;
-	std::cout<<"Enter the number of points to be generated"<<std::endl;
-	std::cin>>number_of_points;
+	//the point sets generated are from 10k to 10M.
 	
 	std::vector<Point> points;
+	std::vector<Point> search_centers;
 
 	for(double i=0;i<4;i++)
 	{
-	int number_of_points = 10000*pow(10.0,i);
-	CGAL::Random_points_in_sphere_3<Point,Creator> g( 150.0);
-	try
-	{
-		CGAL::cpp11::copy_n( g, number_of_points, std::back_inserter(points));
-		std::cout<<"Created "<<number_of_points<<" points"<<std::endl;
-	}
-	catch (std::bad_alloc& )
-	{
-		std::cerr<<"Can not create "<<number_of_points<<" points"<<std::endl;
-	}
+		int number_of_points = 10000*pow(10.0,i);
+		CGAL::Random_points_in_sphere_3<Point,Creator> g( 150.0);
+		try
+		{
+			CGAL::cpp11::copy_n( g, number_of_points, std::back_inserter(points));
+			CGAL::cpp11::copy_n( g, 10000, std::back_inserter(search_centers));
+			std::cout<<"Created "<<number_of_points<<" points"<<std::endl;
+		}
+		catch (std::bad_alloc& )
+		{
+			std::cerr<<"Can not create "<<number_of_points<<" points"<<std::endl;
+		}
+
+		test_aabb_tree<std::vector<Point>>(points,search_centers);
+
+		test_spatial_search<std::vector<Point>>(points,search_centers);
 	
-		
-
-
-	//test_spatial_search<std::vector<Point>>(points);
-
-	test_aabb_tree<std::vector<Point>>(points);
-	test_spatial_search<std::vector<Point>>(points);
-
-
-	points.clear();
+		points.clear();
 	}
    	
-	std::cin>>number_of_points;
 	return EXIT_SUCCESS;
 }
