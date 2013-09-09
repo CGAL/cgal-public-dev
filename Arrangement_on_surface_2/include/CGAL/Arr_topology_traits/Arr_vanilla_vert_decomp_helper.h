@@ -1,4 +1,4 @@
-// Copyright (c) 2007,2009,2010,2011,2013 Tel-Aviv University (Israel).
+// Copyright (c) 2007,2009,2010,2011,2013 Max-Planck-Institute Saarbruecken (Germany), Tel-Aviv University (Israel).
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
@@ -17,7 +17,7 @@
 //
 // Author(s)     : Ron Wein <wein@post.tau.ac.il>
 //                 Efi Fogel <efif@post.tau.ac.il>
-//
+//                 Eric Berberich <eric.berberich@cgal.org>
 
 #ifndef CGAL_ARR_VANILLA_VERT_DECOMP_HELPER_H
 #define CGAL_ARR_VANILLA_VERT_DECOMP_HELPER_H
@@ -32,8 +32,7 @@ namespace CGAL {
 
 /*! \class Arr_vanilla_vert_decomp_helper
  * A helper class for the vertical decomposition sweep-line visitor, suitable
- * for an Arrangement_on_surface_2 instantiated with a topology-traits class
- * for bounded curves in the plane.
+ * for an Arrangement_on_surface_2 instantiated with a topology-traits class.
  */
 template <class Traits_, class Arrangement_>
 class Arr_vanilla_vert_decomp_helper
@@ -56,12 +55,6 @@ protected:
   typedef typename Arrangement_2::Topology_traits      Topology_traits;
 
   const Topology_traits  *m_top_traits;        // The topology traits.
-  Vertex_const_handle     m_north_pole;        // The north pole.
-  bool                    m_valid_north_pole;  // Is this a valid vertex.
-  Face_const_handle       m_north_face;        // Current north face.
-  Vertex_const_handle     m_south_pole;        // The south pole.
-  bool                    m_valid_south_pole;  // Is this a valid vertex.
-  Face_const_handle       m_south_face;        // Current south face.
 
 public:
 
@@ -86,18 +79,10 @@ public:
   //@}
 
   /*! Get the current top object. */
-  CGAL::Object top_object () const
-  {
-    return (m_valid_north_pole) ?
-      CGAL::make_object (m_north_pole) : CGAL::make_object (m_north_face);
-  }
+  CGAL::Object top_object () const;
 
   /*! Get the current bottom object. */
-  CGAL::Object bottom_object () const
-  {
-    return (m_valid_south_pole) ?
-      CGAL::make_object(m_south_pole) : CGAL::make_object(m_south_face);
-  }
+  CGAL::Object bottom_object () const;
 };
 
 //-----------------------------------------------------------------------------
@@ -110,19 +95,8 @@ public:
 template <class Tr, class Arr>
 void Arr_vanilla_vert_decomp_helper<Tr, Arr>::before_sweep()
 {
-  // Get the north pole and the face that intially contains it.
-  m_valid_north_pole = (m_top_traits->north_pole() != NULL);
-  if (m_valid_north_pole)
-    m_north_pole = Vertex_const_handle (m_top_traits->north_pole());
-
-  m_north_face = Face_const_handle (m_top_traits->vanilla_face());
-
-  // Get the south pole and the face that intially contains it.
-  m_valid_south_pole = (m_top_traits->south_pole() != NULL);
-  if (m_valid_south_pole)
-    m_south_pole = Vertex_const_handle (m_top_traits->south_pole());
-
-  m_south_face = Face_const_handle (m_top_traits->south_face());
+  CGAL_error();
+  /* dummy implementation */ return;
 }
 
 //-----------------------------------------------------------------------------
@@ -133,42 +107,31 @@ template <class Tr, class Arr>
 void
 Arr_vanilla_vert_decomp_helper<Tr, Arr>::after_handle_event (Event *event)
 {
-  // Ignore events that are not incident to the poles.
-  if (event->parameter_space_in_y() == ARR_INTERIOR)
-    return;
+  CGAL_error();
+  /* dummy implementation */  return;
+}
 
-  // The is exactly one curve incident to an event with boundary conditions.
-  // Obtain this curve and check whether it already exists in the arrangement.
-  CGAL_assertion(((event->number_of_left_curves() == 0) &&
-                  (event->number_of_right_curves() == 1)) ||
-                 ((event->number_of_left_curves() == 1) &&
-                  (event->number_of_right_curves() == 0)));
+//-----------------------------------------------------------------------------
+// Get the current top object.
+///
+template <class Tr, class Arr>
+CGAL::Object
+Arr_vanilla_vert_decomp_helper<Tr, Arr>::top_object () const
+{
+  CGAL_error();
+  /* dummy implementation */ return CGAL::Object();
+}
 
-  const Arr_curve_end   ind =
-    (event->number_of_left_curves() == 0 &&
-     event->number_of_right_curves() == 1) ? ARR_MIN_END : ARR_MAX_END;
-  const X_monotone_curve_2& xc = (ind == ARR_MIN_END) ?
-    (*(event->right_curves_begin()))->last_curve() :
-    (*(event->left_curves_begin()))->last_curve();
+//-----------------------------------------------------------------------------
+// Get the current bottom object.
+///
+template <class Tr, class Arr>
+CGAL::Object
+Arr_vanilla_vert_decomp_helper<Tr, Arr>::bottom_object () const
+{
+  CGAL_error();
+  /* dummy implementation */ return CGAL::Object();
 
-  if (event->parameter_space_in_y() == ARR_TOP_BOUNDARY)
-  {
-    // The event is incident to the north pole: update the north face.
-    if (ind == ARR_MIN_END)
-      m_north_face = xc.halfedge_handle()->twin()->face();
-    else
-      m_north_face = xc.halfedge_handle()->face();
-  }
-  else if (event->parameter_space_in_y() == ARR_BOTTOM_BOUNDARY)
-  {
-    // The event is incident to the south pole: update the south face.
-    if (ind == ARR_MIN_END)
-      m_south_face = xc.halfedge_handle()->face();
-    else
-      m_south_face = xc.halfedge_handle()->twin()->face();
-  }
-
-  return;
 }
 
 } //namespace CGAL
