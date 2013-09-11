@@ -1,13 +1,14 @@
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/Delaunay_triangulation_2.h>
 
+#include <boost/foreach.hpp>
 #include <fstream>
 
 typedef CGAL::Exact_predicates_inexact_constructions_kernel K;
 
 typedef CGAL::Delaunay_triangulation_2<K>  Triangulation;
-typedef Triangulation::Edge_iterator  Edge_iterator;
-typedef Triangulation::Point          Point;
+typedef Triangulation::Edge                Edge;
+typedef Triangulation::Point               Point;
 
 int main( )
 {
@@ -19,9 +20,8 @@ int main( )
 
   int ns = 0;
   int nr = 0;
-  Edge_iterator eit =T.edges_begin();
-  for ( ; eit !=T.edges_end(); ++eit) {
-    CGAL::Object o = T.dual(eit);
+  BOOST_FOREACH(Edge &e, T.edges()) {
+    CGAL::Object o = T.dual(e);
     if (CGAL::object_cast<K::Segment_2>(&o)) {++ns;}
     else if (CGAL::object_cast<K::Ray_2>(&o)) {++nr;}
   }

@@ -2,6 +2,7 @@
 #include <CGAL/Regular_triangulation_2.h>
 #include <CGAL/Regular_triangulation_euclidean_traits_2.h>
 #include <CGAL/Triangulation_vertex_base_with_info_2.h>
+#include <boost/foreach.hpp>
 #include <cassert>
 #include <vector>
 
@@ -33,8 +34,7 @@ int main()
   CGAL_assertion( rt.number_of_vertices() == 6 );
 
   // check that the info was correctly set.
-  Regular::Finite_vertices_iterator vit;
-  for (vit = rt.finite_vertices_begin(); vit != rt.finite_vertices_end(); ++vit)
+  BOOST_FOREACH(Regular::Vertex_handle vit, rt.finite_vertex_handles())
     if( points[ vit->info() ].first != vit->point() ){
       std::cerr << "Error different info" << std::endl;
       exit(EXIT_FAILURE);

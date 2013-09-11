@@ -1,6 +1,7 @@
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/Constrained_Delaunay_triangulation_2.h>
 
+#include <boost/foreach.hpp>
 #include <cassert>
 #include <iostream>
 
@@ -25,10 +26,9 @@ main( )
 
   assert(cdt.is_valid());
   int count = 0;
-  for (CDT::Finite_edges_iterator eit = cdt.finite_edges_begin();
-       eit != cdt.finite_edges_end();
-       ++eit)
-    if (cdt.is_constrained(*eit)) ++count;
+  BOOST_FOREACH(CDT::Edge &e, cdt.finite_edges()) {
+	if (cdt.is_constrained(e)) { ++count; }
+  }
   std::cout << "The number of resulting constrained edges is  ";
   std::cout <<  count << std::endl;
   return 0;

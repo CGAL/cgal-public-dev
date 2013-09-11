@@ -2,6 +2,7 @@
 #include <CGAL/IO/Color.h>
 #include <CGAL/Triangulation_2.h>
 #include <CGAL/Triangulation_face_base_with_info_2.h>
+#include <boost/foreach.hpp>
 
 typedef CGAL::Exact_predicates_inexact_constructions_kernel K;
 
@@ -21,8 +22,9 @@ int main() {
   t.insert(Point(2,0));
   t.insert(Point(2,2));
 
-  Finite_faces_iterator fc = t.finite_faces_begin();
-  for( ; fc != t.finite_faces_end(); ++fc)  fc->info() = CGAL::BLUE;
+  BOOST_FOREACH(Finite_faces_iterator f, t.finite_face_handles()) {
+    f->info() = CGAL::BLUE;
+  }
 
   Point p(0.5,0.5);
   Face_handle fh = t.locate(p);

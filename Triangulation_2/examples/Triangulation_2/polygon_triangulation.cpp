@@ -2,6 +2,7 @@
 #include <CGAL/Constrained_Delaunay_triangulation_2.h>
 #include <CGAL/Triangulation_face_base_with_info_2.h>
 #include <CGAL/Polygon_2.h>
+#include <boost/foreach.hpp>
 #include <iostream>
 
 struct FaceInfo2
@@ -63,7 +64,7 @@ mark_domains(CDT& ct,
 void
 mark_domains(CDT& cdt)
 {
-  for(CDT::All_faces_iterator it = cdt.all_faces_begin(); it != cdt.all_faces_end(); ++it){
+  BOOST_FOREACH(CDT::All_faces_iterator it, cdt.all_face_handles()) {
     it->info().nesting_level = -1;
   }
 
@@ -114,9 +115,7 @@ int main( )
   mark_domains(cdt);
   
   int count=0;
-  for (CDT::Finite_faces_iterator fit=cdt.finite_faces_begin();
-                                  fit!=cdt.finite_faces_end();++fit)
-  {
+  BOOST_FOREACH (CDT::Finite_faces_iterator fit, cdt.finite_face_handles()) {
     if ( fit->info().in_domain() ) ++count;
   }
   
