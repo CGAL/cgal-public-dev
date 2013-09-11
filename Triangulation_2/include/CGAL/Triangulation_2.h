@@ -480,7 +480,7 @@ public:
   Vertex_handles_range        vertex_handles() const { return finite_vertex_handles(); }
   Edges_range                 edges() const          { return finite_edges(); }
   Face_handles_range          face_handles() const   { return finite_face_handles(); }
-  Point_range                 points();
+  Points_range                points() const;
 
   Face_circulator incident_faces( Vertex_handle v, 
 				  Face_handle f = Face_handle()) const;
@@ -3234,7 +3234,7 @@ all_face_handles() const {
 
 template <class Gt, class Tds >
 inline
-typename Triangulation_2<Gt, Tds>::Point_range
+typename Triangulation_2<Gt, Tds>::Points_range
 Triangulation_2<Gt, Tds>::
 points() const {
   return boost::make_iterator_range(points_begin(), points_end());

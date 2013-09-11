@@ -963,7 +963,7 @@ All_face_handles_range all_face_handles() const;
 /*!
 Returns the range of all points
 */ 
-Point_range points() const; 
+Points_range points() const; 
 
 /// @}
 
