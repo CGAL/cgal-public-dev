@@ -347,7 +347,7 @@ typedef unspecified_type Finite_vertex_handles_range;
 /*!
 This type is a model of the `Range` concept, its iterator type is bidirectional and its value type is `Point_iterator`.
 */ 
-typedef unspecified_type Point_range; 
+typedef unspecified_type Points_range; 
 
 /*!
 specifies which case occurs when locating a point in the triangulation. 
@@ -950,7 +950,7 @@ Finite_face_handles_range finite_face_handles() const;
 /*!
 Returns the range of all vertex handles
 */ 
-All_vertices_range all_vertex_handles() const; 
+All_vertex_handles_range all_vertex_handles() const; 
 /*!
 Returns the range of all edges
 */ 
