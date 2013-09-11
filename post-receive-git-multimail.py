@@ -67,9 +67,10 @@ repo:   %(repo_shortname)s
 type:   %(refname_type)s
 ref:    %(short_refname)s
 pusher: %(pusher)s
-pkgs:   %(packages)s
 
 https://scm.cgal.org/gitweb/?p=%(repo_shortname)s.git;a=shortlog;h=%(newrev)s
+
+pkgs:   %(packages)s
 
 """
 
@@ -96,10 +97,10 @@ repo:   %(repo_shortname)s
 type:   %(refname_type)s
 ref:    %(short_refname)s
 pusher: %(pusher)s
-pkgs:   %(packages)s
 
 https://scm.cgal.org/gitweb/?p=%(repo_shortname)s.git;a=commitdiff;h=%(rev)s
 
+pkgs:   %(packages)s
 """
 
 # The template used in summary tables.  It looks best if this uses the
