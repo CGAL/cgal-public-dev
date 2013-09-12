@@ -86,13 +86,16 @@ bool do_intersect_line_2(
         to_double(line->b()), to_double(line->c()));
 }
 
+
+
 template <class R>
-inline bool do_intersect(
-    const Line_2<R> &line,
-    const Bbox_2 &box)
+inline bool do_intersect(const Bbox_2 &box,
+                         const Line_2<R> &t)
 {
-    return do_intersect(box, line);
+  typename R::Iso_rectangle_2 ir(box);
+  return do_intersect(t, ir);
 }
+
 
 } //namespace CGAL
 

@@ -42,14 +42,6 @@ inline bool do_intersect(const Line_2<R> &t,
 }
 
 
-template <class R>
-inline bool do_intersect(const Bbox_2 &box,
-                         const Line_2<R> &t)
-{
-  typename R::Iso_rectangle_2 ir(box);
-  return do_intersect(t, ir);
-}
-
 
 } //namespace CGAL
 
