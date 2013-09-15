@@ -100,6 +100,7 @@ int main() {
 		CGAL::cpp11::copy_n( g3, number_points,
 		               std::back_inserter(point_set));
 		assert(inside_or_close_to_triangle(tri,point_set.begin(),point_set.end()));
+		assert(is_uniform(tri,point_set.begin(),point_set.end(),100));
 	}
    return 0;
 }
