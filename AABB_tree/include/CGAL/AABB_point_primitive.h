@@ -38,9 +38,7 @@ namespace internal {
       //classical typedefs
       typedef Iterator key_type;
       typedef typename GeomTraits::Point_2 value_type;
-      typedef typename cpp11::result_of<
-        typename GeomTraits::Construct_vertex_2(typename GeomTraits::Segment_2,int)
-      >::type reference;
+      typedef typename GeomTraits::Point_2 reference;
       typedef boost::readable_property_map_tag category;
 
       inline friend
@@ -56,9 +54,7 @@ namespace internal {
     //classical typedefs
     typedef Iterator key_type;
     typedef typename GeomTraits::Point_3 value_type;
-    typedef typename cpp11::result_of<
-      typename GeomTraits::Construct_vertex_3(typename GeomTraits::Segment_3,int)
-    >::type reference;
+    typedef typename GeomTraits::Point_3 reference;
     typedef boost::readable_property_map_tag category;
 
     inline friend
