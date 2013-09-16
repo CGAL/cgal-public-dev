@@ -50,21 +50,14 @@ class Do_contain_test_traits<AABBTraits,GeomTraits,typename GeomTraits::Point_2>
 {
 public:
 	Do_contain_test_traits(){
-		number_of_vertices = Get_primitive_vertice_count<GeomTraits,GeomTraits::Point_2>()();
 	}
 
 	template<typename Query>
 	bool operator() (Query &query, typename GeomTraits::Point_2 &object) const
 	{
-		unsigned int count = number_of_vertices;
-		while(count>0)
-		{
-			AABBTraits::Point point = object;
-			if(query.has_on_unbounded_side(point))
-				return false;
-			count--;
-		}
-
+		AABBTraits::Point point = object;
+		if(query.has_on_unbounded_side(point))
+			return false;
 		return true;
 	}
 
@@ -78,33 +71,21 @@ class Do_contain_test_traits<AABBTraits,GeomTraits,typename GeomTraits::Point_3>
 {
 public:
 	Do_contain_test_traits(){
-		number_of_vertices = Get_primitive_vertice_count<GeomTraits,GeomTraits::Point_3>()();
 	}
 
 	template<typename Query>
 	bool operator() (Query &query, typename GeomTraits::Point_3 &object) const
 	{
-		unsigned int count = number_of_vertices;
-		while(count>0)
-		{
-			AABBTraits::Point point = object;
-			if(query.has_on_unbounded_side(point))
-				return false;
-			count--;
-		}
-
+		AABBTraits::Point point = object;
+		if(query.has_on_unbounded_side(point))
+			return false;s
 		return true;
 	}
 
-
-private:
-	unsigned int number_of_vertices;
 };
 
 
 //For sphere and circle
-
-
 template<typename AABBTraits,typename GeomTraits>
 class Do_contain_test_traits<AABBTraits,GeomTraits,typename GeomTraits::Sphere_3>
 {

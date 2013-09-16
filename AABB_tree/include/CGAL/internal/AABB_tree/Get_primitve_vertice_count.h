@@ -70,20 +70,6 @@ public:
    Get_primitive_vertice_count():Get_primitive_vertice_count_base(8){}
 };
 
-template<typename K>
-class Get_primitive_vertice_count<K, typename K::Point_3>:public Get_primitive_vertice_count_base
-{
-public:
-   Get_primitive_vertice_count():Get_primitive_vertice_count_base(1){}
-};
-
-template<typename K>
-class Get_primitive_vertice_count<K, typename K::Point_2>:public Get_primitive_vertice_count_base
-{
-public:
-   Get_primitive_vertice_count():Get_primitive_vertice_count_base(1){}
-};
-
 }
 
 #endif /* GET_PRIMITVE_VERTICE_SIZE_H_ */
