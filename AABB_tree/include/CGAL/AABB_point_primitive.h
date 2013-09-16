@@ -75,8 +75,8 @@ namespace internal {
  *
  * \cgalModels `AABBPrimitive`
  *
- * \tparam GeomTraits is a traits class providing geometric data types and functors. For 2D points: `Point_2`, `point_2`, and `Construct_vertex_2`.
- *         For 3D points: `Point_3`, `point_3`, and `Construct_vertex_3`.
+ * \tparam GeomTraits is a traits class providing geometric data types and functors. For 2D points: `Point_2`.
+ *         For 3D points: `Point_3`.
  * \tparam Iterator is a model of `ForwardIterator` with its value type convertible to `GeomTraits::point_2` or `GeomTraits::point_3`
  * \tparam CacheDatumTag is either `CGAL::Tag_true` or `CGAL::Tag_false`. In the former case,
  *           the datum is stored in the primitive, while in the latter it is
