@@ -394,7 +394,9 @@ private:
   const AABBTraits& m_traits;
 };
 
-
+/**
+ * @class Range_first_primitive_traits
+ */
 template<typename AABBTraits, typename Query>
 class Range_first_primitive_traits
 {
@@ -444,7 +446,9 @@ private:
   const AABBTraits& m_traits;
 };
 
-
+/**
+ * @class Do_contain_traits
+ */
 template<typename AABBTraits, typename Query>
 class Do_contain_traits
 {
