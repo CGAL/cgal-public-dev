@@ -7,7 +7,6 @@
 #include <CGAL/Mesh_3/implicit_to_labeled_function_wrapper.h>
 #include <CGAL/Mesh_3/Labeled_mesh_domain_3.h>
 #include <CGAL/make_mesh_3.h>
-#include "implicit_functions.h"
 
 #include <CGAL/Surface_mesh_default_triangulation_3.h>
 #include <CGAL/Complex_2_in_triangulation_3.h>
@@ -59,6 +58,23 @@ void points_in_tetrahedron_3(int N) {
 	std::cout << "First of the "<<N<<" generated points is: "<<std::endl;
 	std::cout <<point_set[0].x()<<" "<<point_set[0].y()<<" "<<point_set[0].z()<<std::endl;
 }
+
+template <int Sq_radius>
+double sphere_function (double x, double y, double z)
+{
+  double x2=x*x, y2=y*y, z2=z*z;
+  return (x2+y2+z2)/Sq_radius - 1;
+}
+
+template <typename FT, typename Point>
+class FT_to_point_function_wrapper : public std::unary_function<Point, FT>
+{
+  typedef FT (*Implicit_function)(FT, FT, FT);
+  Implicit_function function;
+public:
+  FT_to_point_function_wrapper(Implicit_function f) : function(f) {}
+  FT operator()(Point p) const { return function(p.x(), p.y(), p.z()); }
+};
 
 void points_in_mesh_3(int N)
 {
