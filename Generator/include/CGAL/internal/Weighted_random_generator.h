@@ -17,12 +17,13 @@ class Weighted_random_generator {
 		Weighted_random_generator(const
 				Weighted_random_generator<PointGeneratorClass>
 				&x) : _weight(x._weight) {
+			CGAL_precondition(_weight >= 0);
 			this->_rand = PointGeneratorClass(x._rand);
 		}
 
 		Weighted_random_generator(const PointGeneratorClass &rand,
 				const double weight) : _weight(weight) {
-			CGAL_precondition(_weight > 0);
+			CGAL_precondition(_weight >= 0);
 			_rand = PointGeneratorClass(rand);
 		}
 

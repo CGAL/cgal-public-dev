@@ -38,9 +38,6 @@ typedef Mesh_criteria::Cell_criteria     		 		Cell_criteria;
 typedef Tr::Geom_traits 						GT;
 typedef GT::Tetrahedron_3 						Tetrahedron3;
 
-typedef CGAL::FasterMemoryExpensiveTag 					FastPolicy;
-typedef CGAL::SlowerMemoryEfficientTag 					SlowPolicy;
-
 typedef CGAL::Random_points_in_tetrahedron_3<Point>			 PointGen;
 typedef CGAL::internal::Weighted_random_generator<PointGen>		 GeneratorWithWeight;
 

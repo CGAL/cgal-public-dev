@@ -58,6 +58,7 @@ class Finite_support_distribution {
 
 		Finite_support_distribution(const Finite_support_distribution
 				&in) : _size(in._size), _parts(in._parts) {
+			CGAL_precondition(_size>0 && _parts>0);
 			container = new Weighted_random_generator[_size];
 			presums = new double[_size];
 			offsets = new int*[_parts];
@@ -115,6 +116,10 @@ class Finite_support_distribution {
 						sizeof(in.aux_array[i][0]));
 			}
 			return *this;
+		}
+
+		int getSize() {
+			return _size;
 		}
 
 		result_type generate(CGAL::Random &rand) {

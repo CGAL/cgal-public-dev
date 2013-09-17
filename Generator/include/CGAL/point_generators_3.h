@@ -326,18 +326,7 @@ class WeightFunctor_tetrahedron_3 {
 			return t.volume();
 		}
 };
-struct FasterMemoryExpensiveTag {};
-struct SlowerMemoryEfficientTag {};
-template<class RandomGeneratorPolicy>
-struct RandomGeneratorPolicySelector {
-	enum {value = 1};
-};
-template<>
-struct RandomGeneratorPolicySelector<SlowerMemoryEfficientTag> {
-	enum {value = 0};
-};
-template < class P, class C3t3, class RandomGeneratorPolicy =
-FasterMemoryExpensiveTag, class Creator = 
+template < class P, class C3t3, class Creator = 
 Creator_uniform_3<typename Kernel_traits<P>::Kernel::RT,P> >
 class Random_points_in_mesh_3 : public Random_generator_base<P> {
 	CGAL::internal::Finite_support_distribution<CGAL::internal::Weighted_random_generator<Random_points_in_tetrahedron_3<P>
@@ -346,7 +335,7 @@ class Random_points_in_mesh_3 : public Random_generator_base<P> {
 	void generate_point();
 public:
 	typedef P result_type;
-	typedef Random_points_in_mesh_3<P, C3t3, RandomGeneratorPolicy> This;
+	typedef Random_points_in_mesh_3<P, C3t3> This;
 	typedef typename Kernel_traits<P>::Kernel::Tetrahedron_3 Tetrahedron_3;
 	typedef CGAL::Random_points_in_tetrahedron_3<P> PointGen;
 	typedef CGAL::internal::Weighted_random_generator<PointGen>
@@ -359,15 +348,18 @@ public:
 	Random_points_in_mesh_3( const This& x,Random& rnd = default_random)
 	: Random_generator_base<P>( 1, rnd
 			),_fsp_distrib(x._fsp_distrib),_rand(x._rand) {
+		CGAL_precondition(_fsp_distrib.getSize() != 0);
 		generate_point();
 	}
 	Random_points_in_mesh_3( const FspDistrib& fsp_distrib,Random& rnd = default_random)
 	: Random_generator_base<P>( 1, rnd
 			),_fsp_distrib(fsp_distrib),_rand(&rnd) {
+		CGAL_precondition(_fsp_distrib.getSize() != 0);
 		generate_point();
 	}
 	Random_points_in_mesh_3( const C3t3 c3t3,Random& rnd = default_random)
 	: Random_generator_base<P>( 1, rnd),_rand(&rnd) {
+		CGAL_precondition(c3t3.number_of_cells_in_complex() != 0);
 		int Nr_cells_in_cplx = c3t3.number_of_cells_in_complex();
 		WeightFunctor_tetrahedron_3<Tetrahedron_3> weightElem;
 		GeneratorWithWeight* containing_structure;
@@ -387,9 +379,6 @@ public:
 			i++;
 		}
 		int N = 1;
-		if (RandomGeneratorPolicySelector<RandomGeneratorPolicy>::value) {
-			N = 1<<10;
-		}
 		_fsp_distrib =
 			CGAL::internal::Finite_support_distribution<GeneratorWithWeight>
 			(containing_structure, i, N);
@@ -410,8 +399,8 @@ public:
 		return *this;
 	}
 };
-template<class P, class C3t3, class RandomGeneratorPolicy, class Creator >
-void Random_points_in_mesh_3<P, C3t3, RandomGeneratorPolicy, Creator>::generate_point() {
+template<class P, class C3t3, class Creator >
+void Random_points_in_mesh_3<P, C3t3, Creator>::generate_point() {
 	P ret = _fsp_distrib.generate(*_rand);
 	this->d_item = ret;
 }
@@ -423,17 +412,16 @@ class WeightFunctor_triangle_3 {
 			return sqrt(t.squared_area());
 		}
 };
-template < class P, class C2t3, class RandomGeneratorPolicy =
-FasterMemoryExpensiveTag, class Creator = 
+template < class P, class C2t3, class Creator = 
 Creator_uniform_3<typename Kernel_traits<P>::Kernel::RT,P> >
-class Random_points_in_surface_mesh_3 : public Random_generator_base<P> {
+class Random_points_on_surface_mesh_3 : public Random_generator_base<P> {
 	CGAL::internal::Finite_support_distribution<CGAL::internal::Weighted_random_generator<Random_points_in_triangle_3<P>
 		> > _fsp_distrib;
 	Random *_rand;
 	void generate_point();
 public:
 	typedef P result_type;
-	typedef Random_points_in_surface_mesh_3<P, C2t3, RandomGeneratorPolicy> This;
+	typedef Random_points_on_surface_mesh_3<P, C2t3> This;
 	typedef typename Kernel_traits<P>::Kernel::Triangle_3 Triangle_3;
 	typedef CGAL::Random_points_in_triangle_3<P> PointGen;
 	typedef CGAL::internal::Weighted_random_generator<PointGen>
@@ -442,19 +430,22 @@ public:
 		CGAL::internal::Finite_support_distribution<CGAL::internal::Weighted_random_generator<Random_points_in_triangle_3<P>
 		> > FspDistrib;
 	typedef typename C2t3::Triangulation Tr;
-	Random_points_in_surface_mesh_3() {}
-	Random_points_in_surface_mesh_3( const This& x,Random& rnd = default_random)
+	Random_points_on_surface_mesh_3() {}
+	Random_points_on_surface_mesh_3( const This& x,Random& rnd = default_random)
 	: Random_generator_base<P>( 1, rnd
 			),_fsp_distrib(x._fsp_distrib),_rand(x._rand) {
+		CGAL_precondition(_fsp_distrib.getSize() != 0);
 		generate_point();
 	}
-	Random_points_in_surface_mesh_3( const FspDistrib& fsp_distrib,Random& rnd = default_random)
+	Random_points_on_surface_mesh_3( const FspDistrib& fsp_distrib,Random& rnd = default_random)
 	: Random_generator_base<P>( 1, rnd
 			),_fsp_distrib(fsp_distrib),_rand(&rnd) {
+		CGAL_precondition(_fsp_distrib.getSize() != 0);
 		generate_point();
 	}
-	Random_points_in_surface_mesh_3( const C2t3 c2t3,Random& rnd = default_random)
+	Random_points_on_surface_mesh_3( const C2t3 c2t3,Random& rnd = default_random)
 	: Random_generator_base<P>( 1, rnd),_rand(&rnd) {
+		CGAL_precondition(c2t3.number_of_facets() != 0);
 		int Nr_facets = c2t3.number_of_facets();
 		WeightFunctor_triangle_3<Triangle_3> weightElem;
 		GeneratorWithWeight* containing_structure;
@@ -479,9 +470,6 @@ public:
 			i++;
 		}
 		int N = 1;
-		if (RandomGeneratorPolicySelector<RandomGeneratorPolicy>::value) {
-			N = 1<<10;
-		}
 		_fsp_distrib =
 			CGAL::internal::Finite_support_distribution<GeneratorWithWeight>
 			(containing_structure, i, N);
@@ -502,8 +490,8 @@ public:
 		return *this;
 	}
 };
-template<class P, class C2t3, class RandomGeneratorPolicy, class Creator >
-void Random_points_in_surface_mesh_3<P, C2t3, RandomGeneratorPolicy, Creator>::generate_point() {
+template<class P, class C2t3, class Creator >
+void Random_points_on_surface_mesh_3<P, C2t3, Creator>::generate_point() {
 	P ret = _fsp_distrib.generate(*_rand);
 	this->d_item = ret;
 }

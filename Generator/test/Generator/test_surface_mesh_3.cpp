@@ -28,9 +28,6 @@ typedef FT (*Function)(Point);
 typedef CGAL::Implicit_surface_3<GT, Function>				 Surface_3;
 typedef GT::Plane_3 							 Plane_3;
 
-typedef CGAL::FasterMemoryExpensiveTag					 FastPolicy;
-typedef CGAL::SlowerMemoryEfficientTag					 SlowPolicy;
-	
 typedef CGAL::Random_points_in_triangle_3<Point>			 PointGen;
 typedef CGAL::internal::Weighted_random_generator<PointGen>		 GeneratorWithWeight;
 
@@ -89,7 +86,7 @@ int main() {
 	for (int number_points = 1; number_points < 10; number_points++) {
 		std::vector<Point> points;
 		points.reserve(number_points);
-		CGAL::Random_points_in_surface_mesh_3<Point, C2t3> g(c2t3);
+		CGAL::Random_points_on_surface_mesh_3<Point, C2t3> g(c2t3);
 		Triangle_3 *aux = new Triangle_3[c2t3.number_of_facets()];
 
 		CGAL::cpp11::copy_n(g, number_points, std::back_inserter(points));
@@ -119,7 +116,7 @@ int main() {
 	const int number_points = rand.get_int(MIN_POINTS, MAX_POINTS);
 	std::vector<Point> points;
 	points.reserve(number_points);
-	CGAL::Random_points_in_surface_mesh_3<Point, C2t3> g(c2t3);
+	CGAL::Random_points_on_surface_mesh_3<Point, C2t3> g(c2t3);
 	Triangle_3 *aux = new Triangle_3[c2t3.number_of_facets()];
 
 	CGAL::cpp11::copy_n(g, number_points, std::back_inserter(points));
@@ -145,7 +142,7 @@ int main() {
 
 	points.clear();
 	points.reserve(number_points);
-	CGAL::Random_points_in_surface_mesh_3<Point, C2t3> g1(g);
+	CGAL::Random_points_on_surface_mesh_3<Point, C2t3> g1(g);
 	delete[] aux;
 	aux = new Triangle_3[c2t3.number_of_facets()];
 
@@ -200,7 +197,7 @@ int main() {
 		CGAL::internal::Finite_support_distribution<GeneratorWithWeight>
 		(containing_structure, i, N);
 
-	CGAL::Random_points_in_surface_mesh_3<Point, C2t3> g2(fsd);
+	CGAL::Random_points_on_surface_mesh_3<Point, C2t3> g2(fsd);
 	delete[] aux;
 	aux = new Triangle_3[c2t3.number_of_facets()];
 
