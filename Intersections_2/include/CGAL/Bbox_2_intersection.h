@@ -32,5 +32,6 @@
 #include <CGAL/Segment_2_Bbox_2_intersection.h>
 #include <CGAL/Triangle_2_Bbox_2_intersection.h>
 #include <CGAL/Bbox_2_Circle_2_do_intersect.h>
+#include <CGAL/Iso_rectangle_2_Bbox_2_intersection.h>
 
 #endif // CGAL_BBOX_2_INTERSECTIONS_H

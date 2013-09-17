@@ -48,6 +48,6 @@
 #include <CGAL/internal/Intersections_3/Bbox_3_Plane_3_do_intersect.h>
 #include <CGAL/internal/Intersections_3/Bbox_3_Sphere_3_do_intersect.h>
 #include <CGAL/internal/Intersections_3/Bbox_3_Triangle_3_do_intersect.h>
-
+#include <CGAL/internal/Intersections_3/Bbox_3_Iso_cuboid_3_do_intersection.h>
 
 #endif // CGAL_INTERSECTION_3_H
