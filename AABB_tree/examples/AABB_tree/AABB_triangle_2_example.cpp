@@ -36,10 +36,10 @@ int main()
 	Point i(-1,-2);
 
     std::list<Triangle> triangles;
-    list.push_back(Triangle(a,b,c));
-	list.push_back(Triangle(a,d,e));
-	list.push_back(Triangle(a,f,g));
-	list.push_back(Triangle(a,h,i));
+    triangles.push_back(Triangle(a,b,c));
+    triangles.push_back(Triangle(a,d,e));
+    triangles.push_back(Triangle(a,f,g));
+    triangles.push_back(Triangle(a,h,i));
 
     // constructs 2D AABB tree
     Tree tree(triangles.begin(),triangles.end());
