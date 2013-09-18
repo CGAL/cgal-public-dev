@@ -47,6 +47,8 @@ distributed in a half-open cube. The default `Creator` is
 \sa `CGAL::cpp11::copy_n()`
 \sa `CGAL::Counting_iterator`
 \sa `CGAL::Random_points_in_square_2<Point_2, Creator>`
+\sa `CGAL::Random_points_in_triangle_3<Point_3, Creator>`
+\sa `CGAL::Random_points_in_tetrahedron_3<Point_3, Creator>`
 \sa `CGAL::Random_points_in_sphere_3<Point_3, Creator>`
 \sa `CGAL::Random_points_on_sphere_3<Point_3, Creator>`
 \sa `std::random_shuffle`
@@ -114,6 +116,8 @@ distributed in an open sphere. The default `Creator` is
 \sa `CGAL::cpp11::copy_n()`
 \sa `CGAL::Counting_iterator`
 \sa `CGAL::Random_points_in_disc_2<Point_2, Creator>`
+\sa `CGAL::Random_points_in_triangle_3<Point_3, Creator>`
+\sa `CGAL::Random_points_in_tetrahedron_3<Point_3, Creator>`
 \sa `CGAL::Random_points_in_cube_3<Point_3, Creator>`
 \sa `CGAL::Random_points_on_sphere_3<Point_3, Creator>`
 \sa `std::random_shuffle`
@@ -184,6 +188,8 @@ rounding errors.
 \sa `CGAL::cpp11::copy_n()`
 \sa `CGAL::Counting_iterator`
 \sa `CGAL::Random_points_on_circle_2<Point_2, Creator>`
+\sa `CGAL::Random_points_in_triangle_3<Point_3, Creator>`
+\sa `CGAL::Random_points_in_tetrahedron_3<Point_3, Creator>`
 \sa `CGAL::Random_points_in_cube_3<Point_3, Creator>`
 \sa `CGAL::Random_points_in_sphere_3<Point_3, Creator>`
 \sa `std::random_shuffle`
@@ -235,4 +241,216 @@ default_random);
 /// @}
 
 }; /* end Random_points_on_sphere_3 */
+} /* end namespace CGAL */
+
+namespace CGAL {
+
+/*!
+
+The class `Random_points_in_triangle_3` is an input iterator creating points uniformly
+distributed in a triangle. The default `Creator` is
+`Creator_uniform_3<Kernel_traits<Point_3>::Kernel::RT,Point_3>`.
+
+\cgalModels `InputIterator`
+\cgalModels `PointGenerator`
+
+\sa `CGAL::cpp11::copy_n()`
+\sa `CGAL::Counting_iterator`
+\sa `CGAL::Random_points_in_triangle_2<Point_2, Creator>`
+\sa `CGAL::Random_points_in_tetrahedron_3<Point_3, Creator>`
+\sa `CGAL::Random_points_in_cube_3<Point_3, Creator>`
+\sa `CGAL::Random_points_on_sphere_3<Point_3, Creator>`
+\sa `CGAL::Random_points_in_mesh_3<Point_3, C3t3, Creator>`
+\sa `CGAL::Random_points_on_surface_mesh_3<Point_3, C2t3, Creator>`
+\sa `std::random_shuffle`
+
+*/
+template< typename Point_3, typename Creator >
+class Random_points_in_triangle_3 {
+public:
+
+/// \name Types
+/// @{
+
+/*!
+
+*/
+typedef std::input_iterator_tag iterator_category;
+
+/*!
+
+*/
+typedef Point_3 value_type;
+
+/*!
+
+*/
+typedef std::ptrdiff_t difference_type;
+
+/*!
+
+*/
+typedef const Point_3* pointer;
+
+/*!
+
+*/
+typedef const Point_3& reference;
+
+
+/*!
+`g` is an input iterator creating points of type `Point_3` uniformly
+distributed in the triangle with the vertices \f$ p, q \f$ and \f$ r \f$,
+i.e.\ \f$ |*g| < r\f$ . Two random numbers are needed from
+`rnd` for each point.
+
+*/
+Random_points_in_triangle_3( Point_3& p, Point_3& q, Point_3& r, Random& rnd =
+default_random);
+
+/// @}
+
+}; /* end Random_points_in_triangle_3 */
+} /* end namespace CGAL */
+
+namespace CGAL {
+
+/*!
+
+The class `Random_points_in_tetrahedron_3` is an input iterator creating points uniformly
+distributed in a tetrahedron. The default `Creator` is
+`Creator_uniform_3<Kernel_traits<Point_3>::Kernel::RT,Point_3>`.
+
+\cgalModels `InputIterator`
+\cgalModels `PointGenerator`
+
+\sa `CGAL::cpp11::copy_n()`
+\sa `CGAL::Counting_iterator`
+\sa `CGAL::Random_points_in_triangle_2<Point_3, Creator>`
+\sa `CGAL::Random_points_in_triangle_3<Point_3, Creator>`
+\sa `CGAL::Random_points_in_tetrahedron_3<Point_3, Creator>`
+\sa `CGAL::Random_points_in_cube_3<Point_3, Creator>`
+\sa `CGAL::Random_points_in_sphere_3<Point_3, Creator>`
+\sa `CGAL::Random_points_in_mesh_3<Point_3, C3t3, Creator>`
+\sa `CGAL::Random_points_on_surface_mesh_3<Point_3, C2t3, Creator>`
+\sa `std::random_shuffle`
+
+*/
+template< typename Point_3, typename Creator >
+class Random_points_in_tetrahedron_3 {
+public:
+
+/// \name Types
+/// @{
+
+/*!
+
+*/
+typedef std::input_iterator_tag iterator_category;
+
+/*!
+
+*/
+typedef Point_3 value_type;
+
+/*!
+
+*/
+typedef std::ptrdiff_t difference_type;
+
+/*!
+
+*/
+typedef const Point_3* pointer;
+
+/*!
+
+*/
+typedef const Point_3& reference;
+
+
+/*!
+`g` is an input iterator creating points of type `Point_3` uniformly
+distributed inside a tetrahedron with the vertices \f$ p, q, r \f$ and \f$ s \f$,
+i.e.\ \f$ |*g| == r\f$ . Three random numbers are needed from
+`rnd` for each point.
+
+*/
+Random_points_in_tetrahedron_3( Point_3& p, Point_3& q, Point_3& r, Point_3& s, Random& rnd =
+default_random);
+
+/// @}
+
+}; /* end Random_points_in_tetrahedron_3 */
+} /* end namespace CGAL */
+
+namespace CGAL {
+
+/*!
+
+The class `Random_points_in_mesh_3` is an input iterator creating points uniformly
+distributed inside a 3D mesh, taking into account the weight of each cell. The default `Creator` is
+`Creator_uniform_3<Kernel_traits<Point_3>::Kernel::RT,Point_3>`.
+
+\cgalModels `InputIterator`
+\cgalModels `PointGenerator`
+
+\sa `CGAL::cpp11::copy_n()`
+\sa `CGAL::Counting_iterator`
+\sa `CGAL::Random_points_in_triangle_2<Point_3, Creator>`
+\sa `CGAL::Random_points_in_triangle_3<Point_3, Creator>`
+\sa `CGAL::Random_points_in_tetrahedron_3<Point_3, Creator>`
+\sa `CGAL::Random_points_in_cube_3<Point_3, Creator>`
+\sa `CGAL::Random_points_in_sphere_3<Point_3, Creator>`
+\sa `CGAL::Random_points_on_surface_mesh_3<Point_3, C2t3, Creator>`
+\sa `std::random_shuffle`
+
+*/
+template< typename Point_3, typename C3t3, typename Creator >
+class Random_points_in_mesh_3 {
+public:
+
+/// \name Types
+/// @{
+
+/*!
+
+*/
+typedef std::input_iterator_tag iterator_category;
+
+/*!
+
+*/
+typedef Point_3 value_type;
+
+/*!
+
+*/
+typedef std::ptrdiff_t difference_type;
+
+/*!
+
+*/
+typedef const Point_3* pointer;
+
+/*!
+
+*/
+typedef const Point_3& reference;
+
+
+/*!
+`g` is an input iterator creating points of type `Point_3` uniformly
+distributed (also taking into account the weight of each cell) inside
+a 3D mesh with the MeshComplex_3InTriangulation_3 \f$ C3t3 \f$,
+i.e.\ \f$ |*g| == r\f$ . Three random numbers are needed from
+`rnd` for each point (???????).
+
+*/
+Random_points_in_mesh_3( C3t3& c3t3, Random& rnd =
+default_random);
+
+/// @}
+
+}; /* end Random_points_in_mesh_3 */
 } /* end namespace CGAL */

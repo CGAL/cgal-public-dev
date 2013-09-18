@@ -231,6 +231,28 @@ in an array of strings.
 
 \cgalExample{Generator/name_pairs.cpp}
 
+\section GeneratorExTetra Example Generating points inside a Tetrahedron_3
+
+This example generates 1000 uniformly distributed points inside a tetrahedron.
+See \cgalFigureRef{figurePointGenerator} for the example output.
+
+\cgalExample{Generator/combination_enumerator.cpp}
+
+The output of this example is:
+\verbatim
+Taking 3 distinct integers in the range [10, 15]: {10 11 12} {10 11 13} {10 11 14}
+{10 11 15} {10 12 13} {10 12 14} {10 12 15} {10 13 14} {10 13 15} {10 14 15}
+{11 12 13} {11 12 14} {11 12 15} {11 13 14} {11 13 15} {11 14 15} {12 13 14}
+{12 13 15} {12 14 15} {13 14 15}
+Enumerated 20 combinations.
+\endverbatim
+
+\subsection GeneratorFromArrayStr From an Array of Strings
+The following example generates all pairs of names from a set of names stored
+in an array of strings.
+
+\cgalExample{Generator/name_pairs.cpp}
+
 \section GeneratorDesign Design and Implementation History
 
 Lutz Kettner coded generators in 2D and 3D

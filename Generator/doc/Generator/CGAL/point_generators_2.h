@@ -150,6 +150,7 @@ distributed in an open disc. The default `Creator` is
 \sa `CGAL::Counting_iterator`
 \sa `CGAL::Points_on_segment_2<Point_2>`
 \sa `CGAL::Random_points_in_square_2<Point_2, Creator>`
+\sa `CGAL::Random_points_in_triangle_2<Point_2, Creator>`
 \sa `CGAL::Random_points_on_circle_2<Point_2, Creator>`
 \sa `CGAL::Random_points_on_segment_2<Point_2, Creator>`
 \sa `CGAL::Random_points_on_square_2<Point_2, Creator>`
@@ -217,6 +218,7 @@ distributed in a half-open square. The default `Creator` is
 \sa `CGAL::Counting_iterator`
 \sa `CGAL::Points_on_segment_2<Point_2>`
 \sa `CGAL::Random_points_in_disc_2<Point_2, Creator>`
+\sa `CGAL::Random_points_in_triangle_2<Point_2, Creator>`
 \sa `CGAL::Random_points_on_segment_2<Point_2, Creator>`
 \sa `CGAL::Random_points_on_square_2<Point_2, Creator>`
 \sa `CGAL::Random_points_in_cube_3<Point_3, Creator>`
@@ -289,6 +291,7 @@ rounding errors.
 \sa `CGAL::Points_on_segment_2<Point_2>`
 \sa `CGAL::Random_points_in_disc_2<Point_2, Creator>`
 \sa `CGAL::Random_points_in_square_2<Point_2, Creator>`
+\sa `CGAL::Random_points_in_triangle_2<Point_2, Creator>`
 \sa `CGAL::Random_points_on_segment_2<Point_2, Creator>`
 \sa `CGAL::Random_points_on_square_2<Point_2, Creator>`
 \sa `CGAL::Random_points_on_sphere_3<Point_3, Creator>`
@@ -359,6 +362,7 @@ distributed on a segment. The default `Creator` is
 \sa `CGAL::Points_on_segment_2<Point_2>`
 \sa `CGAL::Random_points_in_disc_2<Point_2, Creator>`
 \sa `CGAL::Random_points_in_square_2<Point_2, Creator>`
+\sa `CGAL::Random_points_in_triangle_2<Point_2, Creator>`
 \sa `CGAL::Random_points_on_circle_2<Point_2, Creator>`
 \sa `CGAL::Random_points_on_square_2<Point_2, Creator>`
 \sa `std::random_shuffle`
@@ -428,6 +432,7 @@ distributed on the boundary of a square. The default `Creator` is
 \sa `CGAL::Points_on_segment_2<Point_2>`
 \sa `CGAL::Random_points_in_disc_2<Point_2, Creator>`
 \sa `CGAL::Random_points_in_square_2<Point_2, Creator>`
+\sa `CGAL::Random_points_in_triangle_2<Point_2, Creator>`
 \sa `CGAL::Random_points_on_circle_2<Point_2, Creator>`
 \sa `CGAL::Random_points_on_segment_2<Point_2, Creator>`
 \sa `std::random_shuffle`
@@ -497,6 +502,7 @@ endpoints are specified upon construction. The points are equally spaced.
 \sa `CGAL::points_on_segment<Point_2>`
 \sa `CGAL::Random_points_in_disc_2<Point_2, Creator>`
 \sa `CGAL::Random_points_in_square_2<Point_2, Creator>`
+\sa `CGAL::Random_points_in_triangle_2<Point_2, Creator>`
 \sa `CGAL::Random_points_on_circle_2<Point_2, Creator>`
 \sa `CGAL::Random_points_on_segment_2<Point_2, Creator>`
 \sa `CGAL::Random_points_on_square_2<Point_2, Creator>`
@@ -575,4 +581,77 @@ const Point_2& target();
 /// @}
 
 }; /* end Points_on_segment_2 */
+} /* end namespace CGAL */
+
+namespace CGAL {
+
+/*!
+
+The class `Random_points_in_triangle_2` is an input iterator creating points uniformly
+distributed inside a triangle. The default `Creator` is
+`Creator_uniform_2<Kernel_traits<Point_2>::Kernel::RT,Point_2>`.
+
+\cgalModels `InputIterator`
+\cgalModels `PointGenerator`
+
+\sa `CGAL::cpp11::copy_n()`
+\sa `CGAL::Counting_iterator`
+\sa `CGAL::Points_on_segment_2<Point_2>`
+\sa `CGAL::Random_points_in_disc_2<Point_2, Creator>`
+\sa `CGAL::Random_points_in_square_2<Point_2, Creator>`
+\sa `CGAL::Random_points_in_triangle_2<Point_2, Creator>`
+\sa `CGAL::Random_points_on_circle_2<Point_2, Creator>`
+\sa `CGAL::Random_points_on_segment_2<Point_2, Creator>`
+\sa `CGAL::Random_points_in_triangle_3<Point_3, Creator>`
+\sa `CGAL::Random_points_in_tetrahedron_3<Point_3, Creator>`
+\sa `std::random_shuffle`
+
+*/
+template< typename Point_2, typename Creator >
+class Random_points_in_triangle_2 {
+public:
+	
+/// \name Types
+/// @{
+
+/*!
+
+*/
+typedef std::input_iterator_tag iterator_category;
+
+/*!
+
+*/
+typedef Point_2 value_type;
+
+/*!
+
+*/
+typedef std::ptrdiff_t difference_type;
+
+/*!
+
+*/
+typedef const Point_2* pointer;
+
+/*!
+
+*/
+typedef const Point_2& reference;
+
+
+
+/*!
+Creates  an input iterator `g` generating points of type `Point_2` uniformly
+distributed inside the triangle with the vertices \f$ p, q \f$ and \f$ r \f$, i.e.\ \f$
+\forall p = *g: p \f$.
+Two random numbers are needed from `rnd` for each point.
+
+*/
+Random_points_in_triangle_2(Point_2& p, Point_2& q, Point_2& r, Random& rnd =
+default_random);
+
+/// @}
+
+}; /* end Random_points_in_triangle_2 */
 } /* end namespace CGAL */
