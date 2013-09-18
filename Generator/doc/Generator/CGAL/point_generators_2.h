@@ -644,7 +644,8 @@ typedef const Point_2& reference;
 /*!
 Creates  an input iterator `g` generating points of type `Point_2` uniformly
 distributed inside the triangle with the vertices \f$ p, q \f$ and \f$ r \f$, i.e.\ \f$
-\forall p = *g: p \f$.
+\forall pt = *g: pt = \alpha * p + \beta * q + \gamma * r \f$, where
+\f$ \alpha, \beta, \gamma \in [0, 1] \f$ and \f$ \alpha + \beta + \gamma = 1 \f$.
 Two random numbers are needed from `rnd` for each point.
 
 */

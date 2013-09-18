@@ -12,4 +12,9 @@
 \example Generator/sphere_d.cpp
 \example Generator/combination_enumerator.cpp
 \example Generator/name_pairs.cpp
+\example Generator/random_points_triangle_2.cpp
+\example Generator/random_points_triangle_3.cpp
+\example Generator/random_points_tetrahedron_3.cpp
+\example Generator/random_points_mesh_3.cpp
+\example Generator/random_points_surface_mesh_3.cpp
 */
