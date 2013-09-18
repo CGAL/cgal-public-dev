@@ -6,15 +6,11 @@ namespace CGAL {
 \anchor Chapter_Fast_Intersection_and_Distance_Computation
 \cgalAutoToc
 
-\authors Pierre Alliez, Jayalath Chamara, Stephane Tayeb, and Camille Wormser
+\authors Pierre Alliez, Chamara Jayalath, Stephane Tayeb, and Camille Wormser
 
 \section aabb_tree_introduction Introduction
 
 The AABB tree component offers a static data structure and algorithms to perform efficient intersection and distance queries against a set of finite 2D/3D geometric objects. The intersection queries can be of any type, provided that the corresponding intersection predicates and constructors are implemented in the traits class. The distance queries are limited to point queries. 
-
-The range queries can be of any type, provided that the corresponding intersection predicates and containment predicates and constructor are implemented in the traits 
-class. Range queries where the primitives fully contained inside the query range include 
-finding all the primitives contained inside a sphere.
 
 Examples of intersection queries include line objects (rays, lines, segments) against sets of triangles, or plane objects (planes, triangles) against sets of segments. An example of a distance query consists of finding the closest point from a point query to a set of triangles. 
 
@@ -78,27 +74,6 @@ before the first the distance computation. This data structure is not generated
 by default because it is used only for distance computations.
 
 
-<b>Range Query.</b> Interface which is designed to support 
-range queries using AABB tree. The range query interface can be 
-used to query for full containment detection of AABB tree primitives
-in a queried range. Note that if the user wishes to find all primitives 
-that are fully and partially contained inside a given range ( Rectangle,
-Sphere, etc. ), it is safe to use the function `AABB_tree::all_intersected_primitives()`.
-
-Tests: 
-
-- Function `AABB_tree::do_contain()` tests if the input primitives are
-contained inside the query. This function is fast as it involves only
-predicates and stops after the first encountered AABB or primitive.
-- Function `AABB_tree::number_of_contained_primitives()` counts all
-fully contained primitives.
-- Function `AABB_tree::all_contained_primitives()` enumerates all contained
-primitives ids.
-- Function `AABB_tree::any_contained_primitive()` returns the first
-encountered primitive ID (if any) which is fully contained inside 
-the range. 
-
-
 \section aabb_tree_initialization Initialization
 
 The AABB tree class supports both 2D and 3D geometric data in a 
@@ -147,30 +122,12 @@ the squared distance from a point query.
 \subsection aabb_tree_example_2 Handling Queried Primitives - 2D Segment AABB Tree
 
 In the following example the AABB primitive wraps a 2D segment as `datum` 
-and an iterator in a vector as `id`. First, from a segment query, 
-we compute the intersection type and intersected primitive and shows how 
-to handle queried primitives. In this example, the Intersection_and_primitive_ID 
-type is defined for segment queries. The first element of the intersection 
-return type contains the intersection result while the second element contains the actual 
-primitive that has been intersected. In this example, the intersection is a 
-point which can be retrieved from the intersection result. If the intersection
-is not know before hand,necessary checks should be taken into account. 
-Second, from a point query we compute the closest point
-and closest primitive, much the same way. This is just an one way to handle
-queried primitive. Refer the function user manual, \ref intersection_grp 
-to check the possible return types of a particular intersection.
+and an iterator in a vector as `id`. The comments inside the example explains
+how the particular queried primitives are handled. 
 
-\include AABB_range_query_3D_example.cpp
-
-
-\subsection aabb_tree_example_3  Tree of Segments, for Range Queries
-
-In the following example, it is illustrated how to use the AABB tree for
-range queries. Here, the range is a 3D rectangular region. As commented in the 
-example, the we first check if range contains at least one primitive, as well as 
-the number of primitives that are fully contained inside the given range. Note that
-this is not the same as all intersected primitives (fully or partially contained)
-as shown in the example.
+If the intersection is not know before hand,
+necessary checks should be taken into account. Refer the function user manual, 
+\ref intersection_grp to check the possible return types of a particular intersection.
 
 \include AABB_handling_queried_primitive_example.cpp
 
@@ -475,7 +432,7 @@ implementing both intersection and distance queries, and for generic
 queries and primitives was developed by Camille Wormser. In 2009,
 Pierre Alliez, St&eacute;phane Tayeb and Camille Wormser made the
 implementation CGAL-compliant, with the help of Laurent Rineau for
-optimizing the tree construction. In 2013 Jayalath Chamara has generalized the data structure to 2D. The authors wish to thank Andreas
+optimizing the tree construction. In 2013 Chamara Jayalath has generalized the data structure to 2D. The authors wish to thank Andreas
 Fabri, Jane Tournois, Mariette Yvinec and Sylvain Lef&egrave;bvre for
 helpful comments and discussions.
 
