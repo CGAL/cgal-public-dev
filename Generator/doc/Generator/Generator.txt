@@ -231,27 +231,70 @@ in an array of strings.
 
 \cgalExample{Generator/name_pairs.cpp}
 
-\section GeneratorExTetra Example Generating points inside a Tetrahedron_3
+\section GeneratorExTri2 Example Generating points inside a Triangle_2
 
-This example generates 1000 uniformly distributed points inside a tetrahedron.
+This example generates N uniformly distributed points inside a bidimensional
+triangle, where N is an integer given as input. At the end, it prints the
+coordinates of the first generated point.
 See \cgalFigureRef{figurePointGenerator} for the example output.
 
-\cgalExample{Generator/combination_enumerator.cpp}
+\cgalExample{Generator/random_points_triangle_2.cpp}
 
-The output of this example is:
-\verbatim
-Taking 3 distinct integers in the range [10, 15]: {10 11 12} {10 11 13} {10 11 14}
-{10 11 15} {10 12 13} {10 12 14} {10 12 15} {10 13 14} {10 13 15} {10 14 15}
-{11 12 13} {11 12 14} {11 12 15} {11 13 14} {11 13 15} {11 14 15} {12 13 14}
-{12 13 15} {12 14 15} {13 14 15}
-Enumerated 20 combinations.
-\endverbatim
+\cgalFigureBegin{figureIntegerPointGenerator,generators_prog2.png}
+Output of example program for point generators.
+\cgalFigureEnd
 
-\subsection GeneratorFromArrayStr From an Array of Strings
-The following example generates all pairs of names from a set of names stored
-in an array of strings.
+\section GeneratorExTri3 Example Generating points inside a Triangle_3
 
-\cgalExample{Generator/name_pairs.cpp}
+This example generates N uniformly distributed points inside a tridimensional
+triangle, where N is an integer given as input. At the end, it prints the
+coordinates of the first generated point.
+See \cgalFigureRef{figurePointGenerator} for the example output.
+
+\cgalExample{Generator/random_points_triangle_3.cpp}
+
+\cgalFigureBegin{figureIntegerPointGenerator,generators_prog2.png}
+Output of example program for point generators.
+\cgalFigureEnd
+
+\section GeneratorExTetra3 Example Generating points inside a Tetrahedron_3
+
+This example generates N uniformly distributed points inside a tetrahedron,
+where N is an integer given as input. At the end, it prints the
+coordinates of the first generated point.
+See \cgalFigureRef{figurePointGenerator} for the example output.
+
+\cgalExample{Generator/random_points_tetrahedron_3.cpp}
+
+\cgalFigureBegin{figureIntegerPointGenerator,generators_prog2.png}
+Output of example program for point generators.
+\cgalFigureEnd
+
+\section GeneratorExMesh3 Example Generating points inside a Mesh_3
+
+This example generates N uniformly distributed points inside a 3D mesh,
+where N is an integer given as input. At the end, it prints the
+coordinates of the first generated point.
+See \cgalFigureRef{figurePointGenerator} for the example output.
+
+\cgalExample{Generator/random_points_mesh_3.cpp}
+
+\cgalFigureBegin{figureIntegerPointGenerator,generators_prog2.png}
+Output of example program for point generators.
+\cgalFigureEnd
+
+\section GeneratorExSurfMesh3 Example Generating points inside a Surface_mesh_3
+
+This example generates N uniformly distributed points inside a surface mesh,
+where N is an integer given as input. At the end, it prints the
+coordinates of the first generated point.
+See \cgalFigureRef{figurePointGenerator} for the example output.
+
+\cgalExample{Generator/random_points_surface_mesh_3.cpp}
+
+\cgalFigureBegin{figureIntegerPointGenerator,generators_prog2.png}
+Output of example program for point generators.
+\cgalFigureEnd
 
 \section GeneratorDesign Design and Implementation History
 
