@@ -244,27 +244,15 @@ See \cgalFigureRef{figurePointGenerator} for the example output.
 Output of example program for point generators.
 \cgalFigureEnd
 
-\section GeneratorExTri3 Example Generating points inside a Triangle_3
-
-This example generates N uniformly distributed points inside a tridimensional
-triangle, where N is an integer given as input. At the end, it prints the
-coordinates of the first generated point.
-See \cgalFigureRef{figurePointGenerator} for the example output.
-
-\cgalExample{Generator/random_points_triangle_3.cpp}
-
-\cgalFigureBegin{figureIntegerPointGenerator,generators_prog2.png}
-Output of example program for point generators.
-\cgalFigureEnd
-
-\section GeneratorExTetra3 Example Generating points inside a Tetrahedron_3
+\section GeneratorExTetra3 Example Generating points inside a Tetrahedron_3 and a Triangle_3
 
 This example generates N uniformly distributed points inside a tetrahedron,
-where N is an integer given as input. At the end, it prints the
-coordinates of the first generated point.
+where N is an integer given as input. Afterwards, it generates N points inside a
+tridimensional triangle. At the end, it prints the coordinates of the first
+generated point.
 See \cgalFigureRef{figurePointGenerator} for the example output.
 
-\cgalExample{Generator/random_points_tetrahedron_3.cpp}
+\cgalExample{Generator/random_points_tetrahedron_and_triangle_3.cpp}
 
 \cgalFigureBegin{figureIntegerPointGenerator,generators_prog2.png}
 Output of example program for point generators.
