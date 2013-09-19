@@ -117,7 +117,7 @@ enum Bounded_side { //Extreme_point_classification {
   * The class `Extreme_points_d` stores the currently computed extreme points and answers extreme point queries. The point set can be
   * enlarged dynamically. Extreme point computations are done lazily (i.e., only when a query has to be answered) and the 
   * result of the last computation is kept. There is also the possibility to classify points relative to the convex hull 
-  * of the current point set (i.e., to tell whether they are inside, outside or an extreme point).
+  * of the current point set (i.e., to tell whether they are inside, outside or an extreme point), as well as deleting points from the input set (if deletion was enabled in the CGAL::Extreme_points_options_d object used in the initialization of this class).
   *
   *
   * \cgalRequires
@@ -142,10 +142,13 @@ class Extreme_points_d {
           typedef typename Hidden_type                            Less_lexicographically;
           ///The number type, which is the ring type of the input points.
           typedef typename Hidden_type                            RT;
+          ///TEST
+          typedef typename unspecified_type                       Homogeneous_begin;
         #else
           typedef typename Traits::Point                          Point;
           typedef typename Traits::Less_lexicographically         Less_lexicographically;
           typedef typename Traits::RT                             RT;
+          typedef typename Traits::Homogeneous_begin              Homogeneous_begin;
         #endif
         std::set<Point,Less_lexicographically> all_points;
 
@@ -205,7 +208,7 @@ class Extreme_points_d {
         }
 
         /// Removes Point p from the input set, if it's allowed
-        /// from the options. It automatically recalculates the 
+        /// by the options. It automatically recalculates the 
         /// extreme points if needed.
         void remove(const Point p) {
           assert(ep_options_.get_deletion()); //are we permitted to delete?
@@ -223,7 +226,7 @@ class Extreme_points_d {
         }
         
         /// Removes a range of points from the input set, if it's allowed
-        /// from the options. It automatically recalculates the 
+        /// by the options. It automatically recalculates the 
         /// extreme points if needed.
         template <typename InputIterator>
         void remove(InputIterator first, InputIterator beyond) {
@@ -251,7 +254,7 @@ class Extreme_points_d {
         
         /// Calculates the extreme points of the current point set. 
         /// The resulting sequence of extreme points is placed starting at position `result` 
-        ///and the past-the-end iterator for the resulting sequence is returned.
+        /// and a past-the-end iterator for the resulting sequence is returned.
         template <class OutputIterator>
         OutputIterator
         extreme_points(OutputIterator  result) {
@@ -294,8 +297,8 @@ namespace internal {
                                       const ET &et_dummy,
                                       const Traits &ep_traits,
                                       const Quadratic_program_options &qp_options) {
-        typedef typename Traits::Homogeneous_begin  Homogeneous_begin;
         
+        typedef typename Traits::Homogeneous_begin Homogeneous_begin;
         // Constraint matrix type: A[j][i] is the i-th homogeneous coordinate
         // of a_j
         typedef boost::transform_iterator <Homogeneous_begin,
@@ -379,7 +382,7 @@ void Extreme_points_d<Traits>::update() {
                 extreme_points_d_simple(new_points.begin(), new_points.end(),
                                                std::back_inserter(extr_points),
                                                Traits(),
-                                               ep_options_.get_qp_options() );
+                                               ep_options_);
                 
                 //ep_options_.set_last_used_algorithm(EP_SIMPLE);
                 break;
@@ -388,7 +391,7 @@ void Extreme_points_d<Traits>::update() {
                 extreme_points_d_dula_helgason(new_points.begin(), new_points.end(),
                                                std::back_inserter(extr_points),
                                                Traits(),
-                                               ep_options_.get_qp_options() );
+                                               ep_options_);
                 //ep_options_.set_last_used_algorithm(EP_DULA_HELGASON);
                 break;
                 
@@ -450,7 +453,7 @@ product
 
 /// \ingroup PkgExtremePointsDGlobal
 /*!
-   The function `extreme_points_d_dula_helgason` computes the extreme points of the given set of input points.
+   The function `CGAL::extreme_points_d_dula_helgason` computes the extreme points of the given set of input points.
    \return computes the extreme points of the point set in the range [`first`,`beyond`). The resulting sequence 
    of extreme points is placed starting at position `result` and the past-the-end iterator for the resulting sequence is returned.
    
@@ -475,10 +478,10 @@ product
 */
 template <class InputIterator, class OutputIterator, class Traits>
 OutputIterator
-extreme_points_d_dula_helgason(InputIterator first, InputIterator beyond,
+extreme_points_d_dula_helgason (InputIterator first, InputIterator beyond,
                     OutputIterator  result, const Traits &ep_traits,
-                    const Quadratic_program_options &qp_options =
-                        Quadratic_program_options() ) {
+                    const Extreme_points_options_d &epd_options = 
+                          Extreme_points_options_d()) {
     typedef typename Traits::Point                      Point;
     typedef typename Traits::Less_lexicographically     Less_lexicographically;
     typedef typename Traits::RT                         RT;
@@ -521,7 +524,7 @@ extreme_points_d_dula_helgason(InputIterator first, InputIterator beyond,
         while (1) {
             QP_Solution s =
                 CGAL::internal::solve_convex_hull_containment_lp(
-                    points[j], f.begin(), f.end(), ET(), ep_traits, qp_options);
+                    points[j], f.begin(), f.end(), ET(), ep_traits, epd_options.get_qp_options());
 
             if (s.is_infeasible()) {
                 // points[j] \notin conv(f)
@@ -575,7 +578,7 @@ extreme_points_d_dula_helgason(InputIterator first, InputIterator beyond,
 
 template <class InputIterator, class OutputIterator>
 OutputIterator
-extreme_points_d_dula_helgason(InputIterator first, InputIterator beyond,
+extreme_points_d_dula_helgason (InputIterator first, InputIterator beyond,
                                OutputIterator  result) {
     typedef std::iterator_traits<InputIterator> ITraits;
     typedef typename ITraits::value_type        Point;
@@ -587,7 +590,7 @@ extreme_points_d_dula_helgason(InputIterator first, InputIterator beyond,
 /*!
    The function `extreme_points_d_simple` computes the extreme points of the given set of input points.
    \return computes the extreme points of the point set in the range [`first`,`beyond`).
-   The resulting sequence of extreme points is placed starting at position `result` and the 
+   The resulting sequence of extreme points is placed starting at position `result` and a 
    past-the-end iterator for the resulting sequence is returned.
   
    The default traits class `Default_traits` is `Extreme_points_traits_d<Point>` where `Point` is `InputIterator::value_type`.
@@ -601,7 +604,7 @@ extreme_points_d_dula_helgason(InputIterator first, InputIterator beyond,
  
    \cgalHeading{Implementation}
   
-   This function implements a straightforward implementation of the extreme points algorithm 
+   This function implements a straightforward extreme points algorithm 
    using linear programming. Every point is tested for being an extreme point by a linear program 
    involving all the other points. The algorithm is described in more detail in \cite h-epmhd-10.
    This algorithm requires \f$O(n * LP_{d+1,n-1})\f$ time where \f$n\f$ is the number of input points, \f$d\f$ the 
@@ -609,7 +612,7 @@ extreme_points_d_dula_helgason(InputIterator first, InputIterator beyond,
    nonnegative variables using \cgal's QP solver package.
   
    \cgalHeading{Example}
-   See the example of `extreme_points_d_dula_helgason` as its interface is exactly the same as the one of `extreme_points_d_simple`:
+   See the example of `CGAL::extreme_points_d_dula_helgason` as its signature is exactly the same as the one of `CGAL::extreme_points_d_simple`:
   
    \ref Extreme_points_d/extreme_points_d_dula_helgason.cpp
 */
@@ -617,8 +620,8 @@ template <class InputIterator, class OutputIterator, class Traits>
 OutputIterator
 extreme_points_d_simple(InputIterator first, InputIterator beyond,
                         OutputIterator  result, const Traits &ep_traits,
-                        const Quadratic_program_options &qp_options =
-                            Quadratic_program_options() ) {
+                        const Extreme_points_options_d &epd_options =
+                              Extreme_points_options_d() ) {
     typedef typename Traits::Point                      Point;
     typedef typename Traits::Less_lexicographically     Less_lexicographically;
     typedef typename Traits::RT                         RT;
@@ -663,7 +666,7 @@ extreme_points_d_simple(InputIterator first, InputIterator beyond,
                                                points.end(),
                                                ET(0),
                                                Traits(),
-                                               qp_options)) {
+                                               epd_options.get_qp_options())) {
             *result++=points[0];
         }
         std::swap(points[i],points[0]); // move test point back
@@ -687,7 +690,7 @@ extreme_points_d_simple(InputIterator first, InputIterator beyond,
 
    \return computes the extreme points of the point set in the range [`first`,`beyond`). 
    The resulting sequence of extreme points is placed starting at position `result` 
-   and the past-the-end iterator for the resulting sequence is returned.
+   and a past-the-end iterator for the resulting sequence is returned.
   
    The default traits class `Default_traits` is `Extreme_points_traits_d<Point>` where `Point` is `InputIterator::value_type`.
 
@@ -699,12 +702,10 @@ extreme_points_d_simple(InputIterator first, InputIterator beyond,
    \sa `CGAL::Extreme_points_d<Traits>`
   
    \cgalHeading{Implementation}
-   At the moment this is just `extreme_points_d_dula_helgason`. However, the idea is that this function chooses 
-   the most appropriate algorithm based on some heuristics.
+   At the moment this calls `CGAL::extreme_points_d_dula_helgason`. 
   
-   Example 
-   --------------
-   See the example of `extreme_points_d_dula_helgason` as its interface is exactly the same as the one of `extreme_points_d`.
+   \cgalHeading{Example}
+   See the example of `CGAL::extreme_points_d_dula_helgason` as its signature is exactly the same as the one of `CGAL::extreme_points_d`.
 
    \ref Extreme_points_d/extreme_points_d_dula_helgason.cpp
 */
@@ -712,9 +713,9 @@ template <class InputIterator, class OutputIterator, class Traits>
 OutputIterator
 extreme_points_d(InputIterator first, InputIterator beyond,
                  OutputIterator  result, const Traits &ep_traits,
-                 const Quadratic_program_options &qp_options =
-                     Quadratic_program_options() ) {
-    return extreme_points_d_dula_helgason(first, beyond, result, ep_traits, qp_options);
+                 const Extreme_points_options_d &epd_options =
+                       Extreme_points_options_d()) {
+    return extreme_points_d_dula_helgason(first, beyond, result, ep_traits, epd_options);
 }
 
 template <class InputIterator, class OutputIterator>

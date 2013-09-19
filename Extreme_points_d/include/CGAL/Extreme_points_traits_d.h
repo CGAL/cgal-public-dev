@@ -39,16 +39,14 @@ namespace CGAL {
 /// \ingroup PkgExtremePointsDTraits
 /*! 
    The class `Extreme_points_traits_d` serves as a traits class for the class `Extreme_points_d<Traits>` 
-   and for the functions `extreme_points_d`, `extreme_points_d_dula_helgason` and `extreme_points_d_simple`.
+   and for the functions `CGAL::extreme_points_d`, `CGAL::extreme_points_d_dula_helgason` and `CGAL::extreme_points_d_simple`.
    This is the default traits class for these two functions.
-
-   Note that this class is implemented by template specialization, so it can be used only with specific types 
-   of `Point` (see Requirements).
 
    \cgalModels ExtremePointsTraits_d
 
    \cgalRequires
    This class requires that `Point` is one of `CGAL::Point_2<Kernel>`, `CGAL::Point_3<Kernel>` and `CGAL::Point_d<Kernel>`.
+   For other points, user must provide the traits class.
 
    \sa `CGAL::extreme_points_d_dula_helgason`
    \sa `CGAL::extreme_points_d_simple`

@@ -10,13 +10,24 @@ typedef CGAL::Cartesian_d<double>               Kernel_d;
 typedef Kernel_d::Point_d                       Point_d;
 typedef CGAL::Extreme_points_traits_d<Point_d>  EP_Traits_d;
 
+void print_points(CGAL::Extreme_points_d<EP_Traits_d> ep) {
+  std::vector<Point_d> extreme_points;
+  ep.extreme_points(std::back_inserter(extreme_points));
+  for (std::vector<Point_d>::iterator it=extreme_points.begin();
+       it!=extreme_points.end();
+       it++) {
+      std::cout<<*it<<std::endl;
+  }
+}
+
 int main() {
     const int D = 5;       // dimension
-    const int N = 100;     // number of points for every batch
-    const int BATCHES = 3; // number of batches
+    const int N = 10;     // number of points for every batch
+    const int BATCHES = 1; // number of batches
     
     CGAL::Extreme_points_options_d op;
     op.set_deletion(true);
+    op.set_anti_cycling(true);
     CGAL::Extreme_points_d<EP_Traits_d> ep(D,op);
     
     // Generator for D-dimensional points with coordinates
@@ -39,13 +50,7 @@ int main() {
         
         // compute the extreme points
         std::cout<<"\nExtreme points of the current set: "<<std::endl;
-        std::vector<Point_d> extreme_points;
-        ep.extreme_points(std::back_inserter(extreme_points));
-        for (std::vector<Point_d>::iterator it=extreme_points.begin();
-             it!=extreme_points.end();
-             it++) {
-            std::cout<<*it<<std::endl;
-        }
+        print_points(ep);
         
         // we can use classify to see whether
         // some specific point was extreme
@@ -84,6 +89,8 @@ int main() {
 
         //delete a point
         ep.remove(*points.begin());
+        std::cout<<"\nExtreme points of the current set after deletion: "<<std::endl;
+        print_points(ep);
     }
     
     return 0;

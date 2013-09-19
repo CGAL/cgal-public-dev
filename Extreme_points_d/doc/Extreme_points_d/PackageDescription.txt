@@ -28,7 +28,6 @@
 \cgalPkgSince{1.0}
 \cgalPkgDependsOn{\ref PkgQPSolver}
 \cgalPkgBib{blabla}
-\cgalPkgLicense{\ref licensesGPL "GPL"}
 \cgalPkgShortInfoEnd
 \cgalPkgDescriptionEnd
 

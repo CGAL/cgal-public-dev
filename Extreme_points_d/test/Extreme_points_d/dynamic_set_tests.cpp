@@ -53,7 +53,7 @@ void test(EP_d ep, EP_d ep2) {
         ep.extreme_points(std::back_inserter(extreme_points));
         
         std::vector<Point_d> extreme_points_ref;
-        extreme_points_d_dula_helgason(points.begin(), points.begin() + ((i+1)*k),std::back_inserter(extreme_points_ref));
+        extreme_points_d_dula_helgason(points.begin(), points.begin() + ((i+1)*k), std::back_inserter(extreme_points_ref));
         
         std::cout<<"First "<<(i+1)*k<<" points:"<<std::endl;
         std::cout<<"Dynamic class found "<<extreme_points.size()<<" extreme points"<<std::endl;
@@ -143,7 +143,9 @@ int main(int argc, char **argv) {
     
     // testing options
     CGAL::Extreme_points_options_d options;
-    
+    options.set_anti_cycling(true);    
+    assert(CGAL::QP_BLAND==options.get_qp_options().get_pricing_strategy());
+
     std::cout;
     std::cout<<"Testing with EP_CHOOSE_APPROPRIATE"<<std::endl;
     std::cout<<"----------------------------------"<<std::endl;

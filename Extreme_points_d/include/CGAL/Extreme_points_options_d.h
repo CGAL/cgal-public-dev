@@ -34,7 +34,7 @@ enum Extreme_point_algorithm_d {
     /// This is the straightforward algorithm `Extreme_points_d_simple`.\ If most of the input points are extreme points, 
     /// this algorithm can be faster than `EP_DULA_HELGASON`.
     EP_SIMPLE,
-    /// This is the output-sensitive algorithm from Dul'a and Helgason \cite dh-pifch-96 `extreme_points_d_dula_helgason`.\
+    /// This is the output-sensitive algorithm from Dul'a and Helgason \cite dh-pifch-96 `CGAL::extreme_points_d_dula_helgason`.\
     /// If a small fraction of the input points are extreme points, this algorithm performs significantly better than `EP_SIMPLE`.
     EP_DULA_HELGASON
 };
@@ -50,8 +50,7 @@ enum Extreme_point_algorithm_d {
 class Extreme_points_options_d {
 private:
     Extreme_point_algorithm_d algo_;
-    bool deletion_;
-    //Extreme_point_algorithm_d last_used_algo_;
+    bool deletion_, anti_cycling_;
     Quadratic_program_options qp_options_;
     
 public:
@@ -89,31 +88,29 @@ public:
         deletion_ = deletion;
     }
     
-    // set/get qp_options
+    // set/get anti-cycling
     // ------------------------
-    /// Future option
+    /// Returns whether or not anti-cycling is activated
+    bool get_anti_cycling() const
+    {
+        return anti_cycling_;
+    }
+    
+    /// Sets whether or not anti-cycling is activated
+    void set_anti_cycling (bool anti_cycling)
+    {
+        anti_cycling_ = anti_cycling;
+        if (anti_cycling_)
+          qp_options_.set_pricing_strategy(CGAL::QP_BLAND);
+    }
+
+    #ifndef DOXYGEN_RUNNING
     Quadratic_program_options get_qp_options() const
     {
         return qp_options_;
     }
-    
-    /// Future option
-    void set_qp_options (Quadratic_program_options qp_options)
-    {
-        qp_options_ = qp_options;
-    }
-/*
-    Extreme_point_algorithm_d get_last_used_algorithm() const
-    {
-        return last_used_algo_;
-    }
-    
-    /// Sets the algorithm used for extreme point computations to `algo`. For more information see `Extreme_point_algorithm_d`.
-    void set_last_used_algorithm (Extreme_point_algorithm_d algo)
-    {
-        last_used_algo_ = algo;
-    }
-*/
+    #endif
+
 };
 /// @}
 
