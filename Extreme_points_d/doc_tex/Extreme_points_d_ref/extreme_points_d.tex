@@ -1,0 +1,59 @@
+% +------------------------------------------------------------------------+
+% | Reference manual page: extreme_points_d.tex
+% +------------------------------------------------------------------------+
+% | 14.9.2010   Christian Helbling
+% | Package: Extreme_points_d
+% |
+% \RCSdef{\RCSextremepointsdRev}{$Id: $}
+% \RCSdefDate{\RCSextremepointsdDate}{$Date: $}
+% |
+\ccRefPageBegin
+%%RefPage: end of header, begin of main body
+% +------------------------------------------------------------------------+
+
+
+\begin{ccRefFunction}{extreme_points_d}  %% add template arg's if necessary
+
+%% \ccHtmlCrossLink{}     %% add further rules for cross referencing links
+%% \ccHtmlIndexC[function]{} %% add further index entries
+
+\ccDefinition
+
+The function \ccRefName\ computes the extreme points of the given set of input points.
+
+\ccInclude{CGAL/Extreme_points_d.h}
+
+\ccFunction{template <class InputIterator, class OutputIterator, class ExtremePointsTraits_d>
+OutputIterator
+extreme_points_d(InputIterator first, InputIterator beyond, OutputIterator result, ExtremePointsTraits_d ep_traits = Default_traits);}
+{computes the extreme points of the point set in the range [\ccc{first},\ccc{beyond}). The resulting sequence of extreme points is placed starting at position \ccc{result}, and the past-the-end iterator for the resulting sequence is returned.
+}
+
+The default traits class \ccc{Default_traits} is \ccc{Extreme_points_traits_d<Point>} where \ccc{Point} is \ccc{InputIterator::value_type}
+
+\ccHeading{Requirements}
+
+\ccc{InputIterator::value_type} and \ccc{OutputIterator::value_type} are equivalent to \ccc{ExtremePointsTraits_d::Point}.
+
+\ccSeeAlso
+
+\ccRefIdfierPage{CGAL::extreme_points_d_simple}\\
+\ccRefIdfierPage{CGAL::extreme_points_d_dula_helgason}\\
+\ccRefIdfierPage{CGAL::Extreme_points_d<Traits>}
+
+\ccImplementation
+At the moment this is just \ccc{extreme_points_d_dula_helgason}. However, the idea is that this function chooses the most appropriate algorithm based on some heuristics.
+
+\ccExample
+See the example of \ccc{extreme_points_d_dula_helgason} as its interface is exactly the same as the one of \ccRefName:
+
+\ccReferToExampleCode{Extreme_points_d/extreme_points_d_dula_helgason.cpp}
+
+\end{ccRefFunction}
+
+% +------------------------------------------------------------------------+
+%%RefPage: end of main body, begin of footer
+\ccRefPageEnd
+% EOF
+% +------------------------------------------------------------------------+
+

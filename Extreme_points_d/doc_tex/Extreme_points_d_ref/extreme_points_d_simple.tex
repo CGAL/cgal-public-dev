@@ -1,0 +1,61 @@
+% +------------------------------------------------------------------------+
+% | Reference manual page: extreme_points_d_simple.tex
+% +------------------------------------------------------------------------+
+% | 14.9.2010   Christian Helbling
+% | Package: Extreme_points_d
+% |
+% \RCSdef{\RCSextremepointsdsimpleRev}{$Id: $}
+% \RCSdefDate{\RCSextremepointsdsimpleDate}{$Date: $}
+% |
+\ccRefPageBegin
+%%RefPage: end of header, begin of main body
+% +------------------------------------------------------------------------+
+
+
+\begin{ccRefFunction}{extreme_points_d_simple}  %% add template arg's if necessary
+
+%% \ccHtmlCrossLink{}     %% add further rules for cross referencing links
+%% \ccHtmlIndexC[function]{} %% add further index entries
+
+\ccDefinition
+
+The function \ccRefName\ computes the extreme points of the given set of input points.
+
+\ccInclude{CGAL/Extreme_points_d.h}
+
+\ccFunction{template <class InputIterator, class OutputIterator, class ExtremePointsTraits_d>
+OutputIterator
+extreme_points_d_simple(InputIterator first, InputIterator beyond, OutputIterator result, ExtremePointsTraits_d ep_traits = Default_traits);}
+{computes the extreme points of the point set in the range [\ccc{first},\ccc{beyond}). The resulting sequence of extreme points is placed starting at position \ccc{result}, and the past-the-end iterator for the resulting sequence is returned.
+}
+
+The default traits class \ccc{Default_traits} is \ccc{Extreme_points_traits_d<Point>} where \ccc{Point} is \ccc{InputIterator::value_type}
+
+\ccRequirements
+
+\ccc{InputIterator::value_type} and \ccc{OutputIterator::value_type} are equivalent to \ccc{ExtremePointsTraits_d::Point}.
+
+\ccSeeAlso
+
+\ccRefIdfierPage{CGAL::Extreme_points_d<Traits>}\\
+\ccRefIdfierPage{CGAL::extreme_points_d_dula_helgason}\\
+\ccRefIdfierPage{CGAL::extreme_points_d}
+
+\ccImplementation
+This function implements a straightforward implementation of the extreme points algorithm using linear programming. Every point is tested for being an extreme point by a linear program involving all the other points. The algorithm is described in more detail in \cite{cgal:h-epmhd-10}.
+
+This algorithm requires $O(n * LP_{d+1,n-1})$ time where $n$ is the number of input points, $d$ the dimension and $LP_{a,b}$ the runtime for solving a linear program with $a$ equality constraints and $b$ nonnegative variables using \cgal's QP solver package.
+
+\ccExample
+See the example of \ccc{extreme_points_d_dula_helgason} as its interface is exactly the same as the one of \ccRefName:
+
+\ccReferToExampleCode{Extreme_points_d/extreme_points_d_dula_helgason.cpp}
+
+\end{ccRefFunction}
+
+% +------------------------------------------------------------------------+
+%%RefPage: end of main body, begin of footer
+\ccRefPageEnd
+% EOF
+% +------------------------------------------------------------------------+
+

@@ -1,0 +1,22 @@
+\begin{ccRefConcept}{ExtremePointsTraits_d}
+
+\ccDefinition
+Requirements of the traits class to be used with the functions \ccc{extreme_points_d}, \ccc{extreme_points_d_dula_helgason}, \ccc{extreme_points_d_simple} and the class \ccc{Extreme_points_d}.
+
+\ccTypes
+\ccNestedType{Point}{The point type on which the extreme point algorithm operates}
+\ccGlue
+\ccNestedType{RT}{The \ccc{RingNumberType} used for the homogeneous coordinates of the input points}
+\ccGlue
+\ccNestedType{Less_lexicographically}{Binary predicate object type comparing \ccc{Point}s
+        lexicographically.  Must provide
+        \ccc{bool operator()(Point p, Point q)} where \ccc{true}
+        is returned iff $p$ is lexicographically smaller than $q$.}
+\ccGlue
+\ccNestedType{Homogeneous_begin}{Function object type that provides \ccc{RandomAccessIterator operator()(Point &p)}, which returns a random access iterator over the homogeneous coordinates of $p$ pointing to the zeroth homogeneous coordinate $h_0$ of $p$. The value type of this random access iterator (i.e. the type of the homogeneous coordinates) must be \ccc{RT}.}
+\ccHasModels
+\ccRefIdfierPage{CGAL::Extreme_points_traits_d<Point>}
+
+%\ccSeeAlso
+
+\end{ccRefConcept}

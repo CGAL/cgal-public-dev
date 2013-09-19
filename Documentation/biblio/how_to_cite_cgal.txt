@@ -38,13 +38,18 @@ If you want to refer to %CGAL manual, please cite the appropriate
 <!-- This document was automatically generated with bibtex2html 1.97
      (see http://www.lri.fr/~filliatr/bibtex2html/),
      with the following command:
+<<<<<<< HEAD
      /usr/bin/bibtex2html -nodoc manual-4.3.bib  -->
+=======
+     /usr/bin/bibtex2html -nodoc cgal_manual.bib  -->
+>>>>>>> Extreme_points_d-Bernd-old
 
 
 <table>
 
 <tr valign="top">
 <td align="right" class="bibtexnumber">
+<<<<<<< HEAD
 [<a name="cgal:eb-13b">1</a>]
 </td>
 <td class="bibtexitem">
@@ -53,6 +58,16 @@ The %CGAL Project.
  %CGAL Editorial Board, 4.3 edition, 2013.
 [&nbsp;<a href="how_to_cite.html#cgal:eb-13b">bib</a>&nbsp;| 
 <a href="http://doc.cgal.org/4.3/Manual/packages.html">.html</a>&nbsp;]
+=======
+[<a name="cgal:afh-pdecm-02">1</a>]
+</td>
+<td class="bibtexitem">
+P.&nbsp;K. Agarwal, E.&nbsp;Flato, and D.&nbsp;Halperin.
+ Polygon decomposition for efficient construction of Minkowski sums.
+ <em>Computational Geometry: Theory and Applications</em>, 21:39-61,
+  2002.
+[&nbsp;<a href="how_to_cite.html#cgal:afh-pdecm-02">bib</a>&nbsp;]
+>>>>>>> Extreme_points_d-Bernd-old
 
 </td>
 </tr>
@@ -60,6 +75,7 @@ The %CGAL Project.
 
 <tr valign="top">
 <td align="right" class="bibtexnumber">
+<<<<<<< HEAD
 [<a name="cgal:h-af-13b">2</a>]
 </td>
 <td class="bibtexitem">
@@ -69,6 +85,16 @@ Michael Hemmer.
   4.3 edition, 2013.
 [&nbsp;<a href="how_to_cite.html#cgal:h-af-13b">bib</a>&nbsp;| 
 <a href="http://doc.cgal.org/4.3/Manual/packages.html#PkgAlgebraicFoundationsSummary">http</a>&nbsp;]
+=======
+[<a name="cgal:a-cclga-94">2</a>]
+</td>
+<td class="bibtexitem">
+F.&nbsp;Avnaim.
+ <em>C<tt>++</tt>GAL: A C<tt>++</tt> Library for Geometric
+  Algorithms</em>.
+ INRIA Sophia-Antipolis, 1994.
+[&nbsp;<a href="how_to_cite.html#cgal:a-cclga-94">bib</a>&nbsp;]
+>>>>>>> Extreme_points_d-Bernd-old
 
 </td>
 </tr>
@@ -76,6 +102,7 @@ Michael Hemmer.
 
 <tr valign="top">
 <td align="right" class="bibtexnumber">
+<<<<<<< HEAD
 [<a name="cgal:bht-ak-13b">3</a>]
 </td>
 <td class="bibtexitem">
@@ -86,6 +113,16 @@ Eric Berberich, Michael Hemmer, Michael Kerber, Sylvain Lazard, Luis
   4.3 edition, 2013.
 [&nbsp;<a href="how_to_cite.html#cgal:bht-ak-13b">bib</a>&nbsp;| 
 <a href="http://doc.cgal.org/4.3/Manual/packages.html#PkgAlgebraicKerneldSummary">http</a>&nbsp;]
+=======
+[<a name="cgal:a-cgs-97">3</a>]
+</td>
+<td class="bibtexitem">
+N.&nbsp;Amenta.
+ Computational geometry software.
+ In <em>Handbook of Discrete and Computational Geometry</em>, pages
+  951-960. CRC Press, 1997.
+[&nbsp;<a href="how_to_cite.html#cgal:a-cgs-97">bib</a>&nbsp;]
+>>>>>>> Extreme_points_d-Bernd-old
 
 </td>
 </tr>
@@ -93,6 +130,7 @@ Eric Berberich, Michael Hemmer, Michael Kerber, Sylvain Lazard, Luis
 
 <tr valign="top">
 <td align="right" class="bibtexnumber">
+<<<<<<< HEAD
 [<a name="cgal:hhkps-nt-13b">4</a>]
 </td>
 <td class="bibtexitem">
@@ -102,6 +140,15 @@ Michael Hemmer, Susan Hert, Lutz Kettner, Sylvain Pion, and Stefan Schirra.
   4.3 edition, 2013.
 [&nbsp;<a href="how_to_cite.html#cgal:hhkps-nt-13b">bib</a>&nbsp;| 
 <a href="http://doc.cgal.org/4.3/Manual/packages.html#PkgNumberTypesSummary">http</a>&nbsp;]
+=======
+[<a name="cgal:a-gps-98">4</a>]
+</td>
+<td class="bibtexitem">
+Matthew&nbsp;H. Austern.
+ <em>Generic Programming and the STL</em>.
+ Addison-Wesley, 1998.
+[&nbsp;<a href="how_to_cite.html#cgal:a-gps-98">bib</a>&nbsp;]
+>>>>>>> Extreme_points_d-Bernd-old
 
 </td>
 </tr>
@@ -109,6 +156,7 @@ Michael Hemmer, Susan Hert, Lutz Kettner, Sylvain Pion, and Stefan Schirra.
 
 <tr valign="top">
 <td align="right" class="bibtexnumber">
+<<<<<<< HEAD
 [<a name="cgal:h-p-13b">5</a>]
 </td>
 <td class="bibtexitem">
@@ -118,6 +166,16 @@ Michael Hemmer.
   4.3 edition, 2013.
 [&nbsp;<a href="how_to_cite.html#cgal:h-p-13b">bib</a>&nbsp;| 
 <a href="http://doc.cgal.org/4.3/Manual/packages.html#PkgPolynomialSummary">http</a>&nbsp;]
+=======
+[<a name="cgal:a-mcdgp-01">5</a>]
+</td>
+<td class="bibtexitem">
+Andrei Alexandrescu.
+ <em>Modern C++ Design: Generic Programming and Design Patterns
+  Applied</em>.
+ Addison-Wesley, 2001.
+[&nbsp;<a href="how_to_cite.html#cgal:a-mcdgp-01">bib</a>&nbsp;]
+>>>>>>> Extreme_points_d-Bernd-old
 
 </td>
 </tr>
@@ -125,6 +183,7 @@ Michael Hemmer.
 
 <tr valign="top">
 <td align="right" class="bibtexnumber">
+<<<<<<< HEAD
 [<a name="cgal:h-ma-13b">6</a>]
 </td>
 <td class="bibtexitem">
@@ -134,6 +193,16 @@ Michael Hemmer.
   4.3 edition, 2013.
 [&nbsp;<a href="how_to_cite.html#cgal:h-ma-13b">bib</a>&nbsp;| 
 <a href="http://doc.cgal.org/4.3/Manual/packages.html#PkgModularArithmeticSummary">http</a>&nbsp;]
+=======
+[<a name="cgal:a-nqimr-67">6</a>]
+</td>
+<td class="bibtexitem">
+Arthur Appel.
+ The notion of quantitive invisibility and the machine rendering of
+  solids.
+ In <em>Proc. ACM National Conf.</em>, pages 387-393, 1967.
+[&nbsp;<a href="how_to_cite.html#cgal:a-nqimr-67">bib</a>&nbsp;]
+>>>>>>> Extreme_points_d-Bernd-old
 
 </td>
 </tr>
@@ -141,6 +210,7 @@ Michael Hemmer.
 
 <tr valign="top">
 <td align="right" class="bibtexnumber">
+<<<<<<< HEAD
 [<a name="cgal:bfghhkps-lgk23-13b">7</a>]
 </td>
 <td class="bibtexitem">
@@ -151,6 +221,17 @@ Herv&eacute; Br&ouml;nnimann, Andreas Fabri, Geert-Jan Giezeman, Susan Hert,
   4.3 edition, 2013.
 [&nbsp;<a href="how_to_cite.html#cgal:bfghhkps-lgk23-13b">bib</a>&nbsp;| 
 <a href="http://doc.cgal.org/4.3/Manual/packages.html#PkgKernel23Summary">http</a>&nbsp;]
+=======
+[<a name="cgal:acyd-vtm-05">7</a>]
+</td>
+<td class="bibtexitem">
+Pierre Alliez, David Cohen-Steiner, Mariette Yvinec, and Mathieu Desbrun.
+ Variational tetrahedral meshing.
+ <em>ACM Transactions on Graphics</em>, 24:617-625, 2005.
+ SIGGRAPH '2005 Conference Proceedings.
+[&nbsp;<a href="how_to_cite.html#cgal:acyd-vtm-05">bib</a>&nbsp;| 
+<a href="http://hal.inria.fr/inria-00226418">http</a>&nbsp;]
+>>>>>>> Extreme_points_d-Bernd-old
 
 </td>
 </tr>
@@ -158,6 +239,7 @@ Herv&eacute; Br&ouml;nnimann, Andreas Fabri, Geert-Jan Giezeman, Susan Hert,
 
 <tr valign="top">
 <td align="right" class="bibtexnumber">
+<<<<<<< HEAD
 [<a name="cgal:s-gkd-13b">8</a>]
 </td>
 <td class="bibtexitem">
@@ -167,6 +249,16 @@ Michael Seel.
   4.3 edition, 2013.
 [&nbsp;<a href="how_to_cite.html#cgal:s-gkd-13b">bib</a>&nbsp;| 
 <a href="http://doc.cgal.org/4.3/Manual/packages.html#PkgKernelDSummary">http</a>&nbsp;]
+=======
+[<a name="cgal:ansi-is14882-98">8</a>]
+</td>
+<td class="bibtexitem">
+International standard ISO/IEC 14882: Programming languages - C<tt>++</tt>.
+ American National Standards Institute, 11 West 42nd Street, New York
+  10036, 1998.
+[&nbsp;<a href="how_to_cite.html#cgal:ansi-is14882-98">bib</a>&nbsp;| 
+<a href="\path|http://webstore.ansi.org/|">www:</a>&nbsp;]
+>>>>>>> Extreme_points_d-Bernd-old
 
 </td>
 </tr>
@@ -174,6 +266,7 @@ Michael Seel.
 
 <tr valign="top">
 <td align="right" class="bibtexnumber">
+<<<<<<< HEAD
 [<a name="cgal:cpt-cgk2-13b">9</a>]
 </td>
 <td class="bibtexitem">
@@ -183,6 +276,16 @@ Pedro Machado&nbsp;Manh aes&nbsp;de Castro, Sylvain Pion, and Monique Teillaud.
   4.3 edition, 2013.
 [&nbsp;<a href="how_to_cite.html#cgal:cpt-cgk2-13b">bib</a>&nbsp;| 
 <a href="http://doc.cgal.org/4.3/Manual/packages.html#PkgCircularKernel2Summary">http</a>&nbsp;]
+=======
+[<a name="cgal:b-digph-01">9</a>]
+</td>
+<td class="bibtexitem">
+Herv&eacute; Br&ouml;nnimann.
+ Designing and implementing a general purpose halfedge data structure.
+ In <em>Proc. 5th International Workshop on Algorithm Engineering
+  (WAE)</em>, pages 51-66. Springer LNCS 2141, 2001.
+[&nbsp;<a href="how_to_cite.html#cgal:b-digph-01">bib</a>&nbsp;]
+>>>>>>> Extreme_points_d-Bernd-old
 
 </td>
 </tr>
@@ -190,6 +293,7 @@ Pedro Machado&nbsp;Manh aes&nbsp;de Castro, Sylvain Pion, and Monique Teillaud.
 
 <tr valign="top">
 <td align="right" class="bibtexnumber">
+<<<<<<< HEAD
 [<a name="cgal:cclt-sgk3-13b">10</a>]
 </td>
 <td class="bibtexitem">
@@ -200,6 +304,16 @@ Pedro Machado&nbsp;Manh aes&nbsp;de Castro, Fr&eacute;d&eacute;ric Cazals, S&eac
   4.3 edition, 2013.
 [&nbsp;<a href="how_to_cite.html#cgal:cclt-sgk3-13b">bib</a>&nbsp;| 
 <a href="http://doc.cgal.org/4.3/Manual/packages.html#PkgSphericalKernel3Summary">http</a>&nbsp;]
+=======
+[<a name="cgal:bbp-iayed-01">10</a>]
+</td>
+<td class="bibtexitem">
+H.&nbsp;Br&ouml;nnimann, C.&nbsp;Burnikel, and S.&nbsp;Pion.
+ Interval arithmetic yields efficient dynamic filters for
+  computational geometry.
+ <em>Discrete Applied Mathematics</em>, 109:25-47, 2001.
+[&nbsp;<a href="how_to_cite.html#cgal:bbp-iayed-01">bib</a>&nbsp;]
+>>>>>>> Extreme_points_d-Bernd-old
 
 </td>
 </tr>
@@ -207,6 +321,7 @@ Pedro Machado&nbsp;Manh aes&nbsp;de Castro, Fr&eacute;d&eacute;ric Cazals, S&eac
 
 <tr valign="top">
 <td align="right" class="bibtexnumber">
+<<<<<<< HEAD
 [<a name="cgal:hs-chep2-13b">11</a>]
 </td>
 <td class="bibtexitem">
@@ -216,6 +331,16 @@ Susan Hert and Stefan Schirra.
   4.3 edition, 2013.
 [&nbsp;<a href="how_to_cite.html#cgal:hs-chep2-13b">bib</a>&nbsp;| 
 <a href="http://doc.cgal.org/4.3/Manual/packages.html#PkgConvexHull2Summary">http</a>&nbsp;]
+=======
+[<a name="cgal:bdpty-tc-02">11</a>]
+</td>
+<td class="bibtexitem">
+Jean-Daniel Boissonnat, Olivier Devillers, Sylvain Pion, Monique Teillaud, and
+  Mariette Yvinec.
+ Triangulations in %CGAL.
+ <em>Comput. Geom. Theory Appl.</em>, 22:5-19, 2002.
+[&nbsp;<a href="how_to_cite.html#cgal:bdpty-tc-02">bib</a>&nbsp;]
+>>>>>>> Extreme_points_d-Bernd-old
 
 </td>
 </tr>
@@ -223,6 +348,7 @@ Susan Hert and Stefan Schirra.
 
 <tr valign="top">
 <td align="right" class="bibtexnumber">
+<<<<<<< HEAD
 [<a name="cgal:hs-ch3-13b">12</a>]
 </td>
 <td class="bibtexitem">
@@ -232,6 +358,51 @@ Susan Hert and Stefan Schirra.
   4.3 edition, 2013.
 [&nbsp;<a href="how_to_cite.html#cgal:hs-ch3-13b">bib</a>&nbsp;| 
 <a href="http://doc.cgal.org/4.3/Manual/packages.html#PkgConvexHull3Summary">http</a>&nbsp;]
+=======
+[<a name="cgal:behhms-cbcab-02">12</a>]
+</td>
+<td class="bibtexitem">
+Eric Berberich, Arno Eigenwillig, Michael Hemmer, Susan Hert, Kurt Mehlhorn,
+  and Elmar Sch&ouml;mer.
+ A computational basis for conic arcs and boolean operations on conic
+  polygons.
+ In Rolf M&ouml;hring and Rajeev Raman, editors, <em>Algorithms - ESA
+  2002: 10th Annual European Symposium</em>, volume 2461 of <em>Lecture Notes in
+  Computer Science</em>, pages 174-186, Rome, Italy, September 2002. Springer.
+[&nbsp;<a href="how_to_cite.html#cgal:behhms-cbcab-02">bib</a>&nbsp;]
+<blockquote><font size="-1">
+We give an exact geometry kernel for conic arcs, algorithms
+                  for exact computation with low-degree algebraic
+                  numbers, and an algorithm for computing the
+                  arrangement of conic arcs that immediately leads to
+                  a realization of regularized boolean operations on
+                  conic polygons. A conic polygon, or polygon for
+                  short, is anything that can be obtained from linear
+                  or conic halfspaces (= the set of points where a
+                  linear or quadratic function is non-negative) by
+                  regularized boolean operations. The algorithm and
+                  its implementation are complete (they can handle all
+                  cases), exact (they give the mathematically correct
+                  result), and efficient (they can handle inputs with
+                  several hundred primitives).
+</font></blockquote>
+<p>
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgal:bfh-mgedm-95">13</a>]
+</td>
+<td class="bibtexitem">
+Heinzgerd Bendels, Dieter&nbsp;W. Fellner, and Sven Havemann.
+ Modellierung der grundlagen: Erweiterbare datenstrukturen zur
+  modellierung und visualisierung polygonaler welten.
+ In D.&nbsp;W. Fellner, editor, <em>Modeling - Virtual Worlds -
+  Distributed Graphics</em>, pages 149-157, Bad Honnef / Bonn, 27.-28. November
+  1995.
+[&nbsp;<a href="how_to_cite.html#cgal:bfh-mgedm-95">bib</a>&nbsp;]
 
 </td>
 </tr>
@@ -239,6 +410,1708 @@ Susan Hert and Stefan Schirra.
 
 <tr valign="top">
 <td align="right" class="bibtexnumber">
+[<a name="cgal:bgh-dsmd-97">14</a>]
+</td>
+<td class="bibtexitem">
+Julien Basch, Leonidas Guibas, and John Hershberger.
+ Data structures for mobile data.
+ In <em>Proceedings of the 8th Annual ACM-SIAM Symposium on
+  Discrete Algorithms</em>, pages 747-756, 1997.
+[&nbsp;<a href="how_to_cite.html#cgal:bgh-dsmd-97">bib</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgal:bhksw-eceicpmqic-05">15</a>]
+</td>
+<td class="bibtexitem">
+Eric Berberich, Michael Hemmer, Lutz Kettner, Elmar Sch&ouml;mer, and Nicola
+  Wolpert.
+ An exact, complete and efficient implementation for computing planar
+  maps of quadric intersection curves.
+ In <em>Proceedings of 21st Annual Symposium on Computational
+  Geometry (SCG)</em>, pages 99-106, 2005.
+[&nbsp;<a href="how_to_cite.html#cgal:bhksw-eceicpmqic-05">bib</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgal:byb-mgmmi-09">16</a>]
+</td>
+<td class="bibtexitem">
+Dobrina Boltcheva, Mariette Yvinec, and Jean-Daniel Boissonnat.
+ Mesh generation from 3d multi-material images.
+ In <em>Medical Image Computing and Computer-Assisted Intervention</em>,
+  volume 5762 of <em>Lecture Notes in Computer Science</em>, pages 283-290, 2009.
+[&nbsp;<a href="how_to_cite.html#cgal:byb-mgmmi-09">bib</a>&nbsp;| 
+<a href="http://hal.inria.fr/inria-00420228/">http</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgal:-byb-fpdmgmmi-09">17</a>]
+</td>
+<td class="bibtexitem">
+Dobrina Boltcheva, Mariette Yvinec, and Jean-Daniel Boissonnat.
+ Feature preserving delaunay mesh generation from 3d multi- material
+  images.
+ <em>Computer Graphics Forum</em>, 28:1455-14645, 2009.
+ special issue for EUROGRAPHICS Symposium on Geometry Processing.
+[&nbsp;<a href="how_to_cite.html#cgal:-byb-fpdmgmmi-09">bib</a>&nbsp;| 
+<a href="http://hal.inria.fr/inria-00413248">http</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgal:bhkt-risak-07">18</a>]
+</td>
+<td class="bibtexitem">
+Eric Berberich, Michael Hemmer, Menelaos&nbsp;I. Karavelas, and Monique Teillaud.
+ Revision of the interface specification of algebraic kernel.
+ Technical Report ACS-TR-243301-01, INRIA Sophia-Antipolis, Max Planck
+  Institut f&uuml;r Informatik, National University of Athens, 2007.
+[&nbsp;<a href="how_to_cite.html#cgal:bhkt-risak-07">bib</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgal:bn-sec++-94">19</a>]
+</td>
+<td class="bibtexitem">
+J.&nbsp;J. Barton and L.&nbsp;R. Nackman.
+ <em>Scientific and Engineering C<tt>++</tt></em>.
+ Addison-Wesley, Reading, MA, 1997.
+[&nbsp;<a href="how_to_cite.html#cgal:bn-sec++-94">bib</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgal:bo-pgsms-05">20</a>]
+</td>
+<td class="bibtexitem">
+Jean-Daniel Boissonnat and Steve Oudot.
+ Provably good sampling and meshing of surfaces.
+ <em>Graphical Models</em>, 67:405-451, 2005.
+[&nbsp;<a href="how_to_cite.html#cgal:bo-pgsms-05">bib</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgal:bpp-vrml-95">21</a>]
+</td>
+<td class="bibtexitem">
+Gavin Bell, Anthony Parisi, and Mark Pesce.
+ Vrml the virtual reality modeling language: Version 1.0
+  specification.
+ <tt>http://www.vrml.org/</tt>, May 26 1995.
+ Third Draft.
+[&nbsp;<a href="how_to_cite.html#cgal:bpp-vrml-95">bib</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgal:bv-sbc-96">22</a>]
+</td>
+<td class="bibtexitem">
+G.&nbsp;Booch and M.&nbsp;Vilot.
+ Simplifying the booch components.
+ In S.&nbsp;Lippman, editor, <em> Gems</em>, pages 59-89. SIGS
+  publications, 1996.
+[&nbsp;<a href="how_to_cite.html#cgal:bv-sbc-96">bib</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgal::c-mssbo-04">23</a>]
+</td>
+<td class="bibtexitem">
+L.&nbsp;Chen.
+ Mesh Smoothing Schemes based on Optimal Delaunay Triangulations.
+ In <em>Proceedings of 13th International Meshing Roundtable</em>, pages
+  109-120, 2004.
+[&nbsp;<a href="how_to_cite.html#cgal::c-mssbo-04">bib</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgal:c-tpsos-10">24</a>]
+</td>
+<td class="bibtexitem">
+Manuel Caroli.
+ <em>Triangulating Point Sets in Orbit Spaces</em>.
+ Th&egrave;se de doctorat en sciences, Universit&eacute; de Nice-Sophia
+  Antipolis, France, 2010.
+[&nbsp;<a href="how_to_cite.html#cgal:c-tpsos-10">bib</a>&nbsp;| 
+<a href="http://tel.archives-ouvertes.fr/tel-00552215/">http</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgal:cc-rgbss-78">25</a>]
+</td>
+<td class="bibtexitem">
+E.&nbsp;Catmull and J.&nbsp;Clark.
+ Recursively generated B-spline surfaces on arbitrary topological
+  meshes.
+ <em>Computer Aided Design</em>, 10:350-355, 1978.
+[&nbsp;<a href="how_to_cite.html#cgal:cc-rgbss-78">bib</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgal:cdeft-slive-00">26</a>]
+</td>
+<td class="bibtexitem">
+Siu-Wing Cheng, Tamal&nbsp;K. Dey, Herbert Edelsbrunner, Michael&nbsp;A. Facello, and
+  Shang-Hua Teng.
+ Sliver exudation.
+ <em>J. ACM</em>, 47(5):883-904, 2000.
+[&nbsp;<a href="how_to_cite.html#cgal:cdeft-slive-00">bib</a>&nbsp;| 
+<a href="http://doi.acm.org/10.1145/355483.355487">DOI</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgal:cdl-pdma-07">27</a>]
+</td>
+<td class="bibtexitem">
+S.-W. Cheng, T.&nbsp;K. Dey, and J.&nbsp;A. Levine.
+ A practical delaunay meshing algorithm for a large class of domains.
+ In <em>Meshing Roundtable</em>, pages 477-494, 2007.
+[&nbsp;<a href="how_to_cite.html#cgal:cdl-pdma-07">bib</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgal:cdr-drpsc-07">28</a>]
+</td>
+<td class="bibtexitem">
+Siu-Wing Cheng, Tamal&nbsp;K. Dey, and Edgar&nbsp;A. Ramos.
+ Delaunay refinement for piecewise smooth complexes.
+ In <em>SODA</em>, pages 1096-1105, Philadelphia, PA, USA, 2007.
+[&nbsp;<a href="how_to_cite.html#cgal:cdr-drpsc-07">bib</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgal:cl-vmbcm-96">29</a>]
+</td>
+<td class="bibtexitem">
+Brian Curless and Marc Levoy.
+ A volumetric method for building complex models from range images.
+ In <em>Computer Graphics (Proc. SIGGRAPH '96)</em>, volume&nbsp;30, pages
+  303-312, 1996.
+[&nbsp;<a href="how_to_cite.html#cgal:cl-vmbcm-96">bib</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgal:cp-edqpf-05">30</a>]
+</td>
+<td class="bibtexitem">
+F.&nbsp;Cazals and M.&nbsp;Pouget.
+ Estimating differential quantities using polynomial fitting of
+  osculating jets.
+ <em>Computer Aided Geometric Design</em>, 22(2), 2005.
+ Conference version: Symp. on Geometry Processing 2003.
+[&nbsp;<a href="how_to_cite.html#cgal:cp-edqpf-05">bib</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgal:cp-ssulc-05">31</a>]
+</td>
+<td class="bibtexitem">
+F.&nbsp;Cazals and M.&nbsp;Pouget.
+ Smooth surfaces, umbilics, lines of curvatures, foliations, ridges
+  and the medial axis: selected topics.
+ <em>Int. J. of Computational Geometry and Applications</em>,
+  15(5):511-536, 2005.
+[&nbsp;<a href="how_to_cite.html#cgal:cp-ssulc-05">bib</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgal:cp-tdare-05">32</a>]
+</td>
+<td class="bibtexitem">
+F.&nbsp;Cazals and M.&nbsp;Pouget.
+ Topology driven algorithms for ridge extraction on meshes.
+ Technical Report RR-5526, INRIA, 2005.
+[&nbsp;<a href="how_to_cite.html#cgal:cp-tdare-05">bib</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgal:csm-rdtnc-03">33</a>]
+</td>
+<td class="bibtexitem">
+D.&nbsp;Cohen-Steiner and J.-M. Morvan.
+ Restricted delaunay triangulations and normal cycle.
+ In <em>ACM Symposium on Computational Geometry</em>, 2003.
+[&nbsp;<a href="how_to_cite.html#cgal:csm-rdtnc-03">bib</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgal:ct-c3pt-09">34</a>]
+</td>
+<td class="bibtexitem">
+Manuel Caroli and Monique Teillaud.
+ Computing 3D periodic triangulations.
+ In <em>Proceedings 17th European Symposium on Algorithms</em>, volume
+  5757 of <em>Lecture Notes in Computer Science</em>, pages 37-48, 2009.
+ Full version available as INRIA Research Report 6823
+  <tt>http://hal.inria.fr/inria-00356871</tt>.
+[&nbsp;<a href="how_to_cite.html#cgal:ct-c3pt-09">bib</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgal:cvmtwabw-se-96">35</a>]
+</td>
+<td class="bibtexitem">
+Jonathan Cohen, Amitabh Varshney, Dinesh Manocha, Greg Turk, Hans Weber, Pankaj
+  Agarwal, Frederick Brooks, and William Wright.
+ Simplification envelopes.
+ In <em>Computer Graphics (Proc. SIGGRAPH '96)</em>, volume&nbsp;30, pages
+  119-128, 1996.
+ Examples and code in
+  <tt>http://www.cs.unc.edu/~geom/envelope.html</tt>.
+[&nbsp;<a href="how_to_cite.html#cgal:cvmtwabw-se-96">bib</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgal:d-ccccg-10">36</a>]
+</td>
+<td class="bibtexitem">
+G.&nbsp;Damiand.
+ <em>Contributions aux Cartes Combinatoires et Cartes
+  G&eacute;n&eacute;ralis&eacute;es : Simplification, Mod&egrave;les, Invariants Topologiques et
+  Applications</em>.
+ Habilitation &agrave; diriger des recherches, Universit&eacute; Lyon 1,
+  Septembre 2010.
+[&nbsp;<a href="how_to_cite.html#cgal:d-ccccg-10">bib</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgal:d-dh-02">37</a>]
+</td>
+<td class="bibtexitem">
+Olivier Devillers.
+ The Delaunay hierarchy.
+ <em>Internat. J. Found. Comput. Sci.</em>, 13:163-180, 2002.
+[&nbsp;<a href="how_to_cite.html#cgal:d-dh-02">bib</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgal:d-grct-03">38</a>]
+</td>
+<td class="bibtexitem">
+Wei Ding.
+ Geometric rounding without changing the topology.
+ Master's thesis, Fachbereich Informatik, Universit&auml;t
+  Saarbr&uuml;cken, Saarbr&uuml;cken, Germany, 2003.
+[&nbsp;<a href="how_to_cite.html#cgal:d-grct-03">bib</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgal:dds-scs-09">39</a>]
+</td>
+<td class="bibtexitem">
+C.&nbsp;Dyken, M&nbsp;Daehlen, and T.&nbsp;Sevaldrud.
+ Simultaneous curve simplification.
+ <em>Journal of Geographical Systems</em>, 0:0-0, 2009.
+[&nbsp;<a href="how_to_cite.html#cgal:dds-scs-09">bib</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgal:dfg-cvtaa-99t">40</a>]
+</td>
+<td class="bibtexitem">
+Q.&nbsp;Du, V.&nbsp;Faber, and M.&nbsp;Gunzburger.
+ Centroidal Voronoi Tessellations: Applications and Algorithms.
+ <em>SIAM review</em>, 41(4):637-676, 1999.
+[&nbsp;<a href="how_to_cite.html#cgal:dfg-cvtaa-99t">bib</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgal:dfmt-amafe-00">41</a>]
+</td>
+<td class="bibtexitem">
+Olivier Devillers, Alexandra Fronville, Bernard Mourrain, and Monique Teillaud.
+ Algebraic methods and arithmetic filtering for exact predicates on
+  circle arcs.
+ In <em>Proc. 16th Annu. ACM Sympos. Comput. Geom.</em>, pages 139-147,
+  2000.
+[&nbsp;<a href="how_to_cite.html#cgal:dfmt-amafe-00">bib</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgal:dfmt-amafe-02">42</a>]
+</td>
+<td class="bibtexitem">
+Olivier Devillers, Alexandra Fronville, Bernard Mourrain, and Monique Teillaud.
+ Algebraic methods and arithmetic filtering for exact predicates on
+  circle arcs.
+ <em>Comput. Geom. Theory Appl.</em>, 22:119-142, 2002.
+[&nbsp;<a href="how_to_cite.html#cgal:dfmt-amafe-02">bib</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgal:dh-pifch-96">43</a>]
+</td>
+<td class="bibtexitem">
+J.&nbsp;H. Dul&aacute; and R.&nbsp;V. Helgason.
+ A new procedure for identifying the frame of the convex hull of a
+  finite collection of points in multidimensional space.
+ <em>European Journal of Operational Research</em>, 92(2):352 - 367,
+  1996.
+[&nbsp;<a href="how_to_cite.html#cgal:dh-pifch-96">bib</a>&nbsp;| 
+<a href="http://dx.doi.org/DOI: 10.1016/0377-2217(94)00366-1">DOI</a>&nbsp;| 
+<a href="http://www.sciencedirect.com/science/article/B6VCT-3VW8NPR-11/2/3cf4525c68d79c055676541418264043">http</a>&nbsp;]
+<blockquote><font size="-1">
+Keywords: Convex hull problem, Frame, Linear programming, Data envelopment analysis, Redundancy
+</font></blockquote>
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgal:dl-cosfa-08">44</a>]
+</td>
+<td class="bibtexitem">
+J.H. Dul&aacute; and F.J. L&oacute;pez.
+ Competing output-sensitive frame algorithms.
+ Draft (2008), available at
+  <a href="http://idisk.mac.com/jdula-Public/WORKINGPAPERS/PolyFrOttmann.pdf">http://idisk.mac.com/jdula-Public/WORKINGPAPERS/PolyFrOttmann.pdf</a>,
+  2008.
+[&nbsp;<a href="how_to_cite.html#cgal:dl-cosfa-08">bib</a>&nbsp;]
+<blockquote><font size="-1">
+Keywords: Extreme points, Convex hull, Linear programming, Computational Geometry, Redundancy identification
+</font></blockquote>
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgal:dma-ipsm-02">45</a>]
+</td>
+<td class="bibtexitem">
+Mathieu Desbrun, Mark Meyer, and Pierre Alliez.
+ Intrinsic parameterizations of surface meshes.
+ <em>Computer Graphics Forum</em>, 21(3):209-218, September
+  2002.
+[&nbsp;<a href="how_to_cite.html#cgal:dma-ipsm-02">bib</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgal:dp-eegpd-03">46</a>]
+</td>
+<td class="bibtexitem">
+Olivier Devillers and Sylvain Pion.
+ Efficient exact geometric predicates for Delaunay triangulations.
+ In <em>Proc. 5th Workshop Algorithm Eng. Exper.</em>, pages 37-44,
+  2003.
+[&nbsp;<a href="how_to_cite.html#cgal:dp-eegpd-03">bib</a>&nbsp;| 
+<a href="http://hal.inria.fr/inria-00344517/">http</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgal:dpt-wt-02">47</a>]
+</td>
+<td class="bibtexitem">
+Olivier Devillers, Sylvain Pion, and Monique Teillaud.
+ Walking in a triangulation.
+ <em>Internat. J. Found. Comput. Sci.</em>, 13:181-199, 2002.
+[&nbsp;<a href="how_to_cite.html#cgal:dpt-wt-02">bib</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgal:dt-pvr3d-03">48</a>]
+</td>
+<td class="bibtexitem">
+Olivier Devillers and Monique Teillaud.
+ Perturbations and vertex removal in a 3D Delaunay triangulation.
+ In <em>Proc. 14th ACM-SIAM Sympos. Discrete Algorithms (SODA)</em>,
+  pages 313-319, 2003.
+[&nbsp;<a href="how_to_cite.html#cgal:dt-pvr3d-03">bib</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgal:dt-pvrdr-06">49</a>]
+</td>
+<td class="bibtexitem">
+Olivier Devillers and Monique Teillaud.
+ Perturbations and vertex removal in Delaunay and regular 3D
+  triangulations.
+ Research Report 5968, INRIA, 2006.
+ <tt>http://hal.inria.fr/inria-00090522</tt>.
+[&nbsp;<a href="how_to_cite.html#cgal:dt-pvrdr-06">bib</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgal:dw-tmgob-02">50</a>]
+</td>
+<td class="bibtexitem">
+Q.&nbsp;Du and D.&nbsp;Wang.
+ Tetrahedral mesh generation and optimization based on centroidal
+  Voronoi tessellations.
+ <em>International Journal for Numerical Methods in Engineering</em>,
+  56:1355-1373, 2002.
+[&nbsp;<a href="how_to_cite.html#cgal:dw-tmgob-02">bib</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgal:e-dssd-99">51</a>]
+</td>
+<td class="bibtexitem">
+H.&nbsp;Edelsbrunner.
+ Deformable smooth surface design.
+ <em>Discrete Comput. Geom.</em>, 21:87-115, 1999.
+[&nbsp;<a href="how_to_cite.html#cgal:e-dssd-99">bib</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgal:eddhls-maam-95">52</a>]
+</td>
+<td class="bibtexitem">
+Matthias Eck, Tony DeRose, Tom Duchamp, Hugues Hoppe, Michael Lounsbery, and
+  Werner Stuetzle.
+ Multiresolution analysis of arbitrary meshes.
+ In <em>Computer Graphics (Proc. SIGGRAPH '95)</em>, volume&nbsp;29, pages
+  173-182, 1995.
+ Examples in <tt>ftp://ftp.cs.washington.edu/pub/graphics</tt>.
+[&nbsp;<a href="how_to_cite.html#cgal:eddhls-maam-95">bib</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgal:ek-sicad-99">53</a>]
+</td>
+<td class="bibtexitem">
+G.&nbsp;Elber and M.-S. Kim, editors.
+ <em>Computer Aided Design</em>, volume&nbsp;31, 1999.
+ Special Issue on Offsets, Sweeps and Minkowski Sums.
+[&nbsp;<a href="how_to_cite.html#cgal:ek-sicad-99">bib</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgal:ekptt-tock-04">54</a>]
+</td>
+<td class="bibtexitem">
+Ioannis&nbsp;Z. Emiris, Athanasios Kakargias, Sylvain Pion, Monique Teillaud, and
+  Elias&nbsp;P. Tsigaridas.
+ Towards an open curved kernel.
+ In <em>Proc. 20th Annu. ACM Sympos. Comput. Geom.</em>, pages 438-446,
+  2004.
+[&nbsp;<a href="how_to_cite.html#cgal:ekptt-tock-04">bib</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgal:f-csapc-03">55</a>]
+</td>
+<td class="bibtexitem">
+Julia Fl&ouml;totto.
+ <em>A coordinate system associated to a point cloud issued from a
+  manifold: definition, properties and applications</em>.
+ Th&egrave;se de doctorat en sciences, Universit&eacute; de Nice-Sophia
+  Antipolis, France, 2003.
+[&nbsp;<a href="how_to_cite.html#cgal:f-csapc-03">bib</a>&nbsp;| 
+<a href="http://www-sop.inria.fr/prisme/personnel/flototto/">http</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgal:f-sec-85">56</a>]
+</td>
+<td class="bibtexitem">
+Richard Fairley.
+ <em>Software Engineering Concepts</em>.
+ McGraw-Hill Series in Software Engineering and Technology.
+  McGraw-Hill, 1985.
+[&nbsp;<a href="how_to_cite.html#cgal:f-sec-85">bib</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgal:fh-oscps-95">57</a>]
+</td>
+<td class="bibtexitem">
+Ulrich Finke and Klaus Hinrichs.
+ Overlaying simply connected planar subdivisions in linear time.
+ In <em>Proc. 11th Annu. ACM Sympos. Comput. Geom.</em>, pages 119-126,
+  1995.
+[&nbsp;<a href="how_to_cite.html#cgal:fh-oscps-95">bib</a>&nbsp;]
+<blockquote><font size="-1">
+Keywords: red-blue segment intersection
+</font></blockquote>
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgal:fh-survey-05">58</a>]
+</td>
+<td class="bibtexitem">
+M.&nbsp;S. Floater and K.&nbsp;Hormann.
+ Surface parameterization: a tutorial and survey.
+ In N.&nbsp;A. Dodgson, M.&nbsp;S. Floater, and M.&nbsp;A. Sabin, editors, <em>
+  Advances in Multiresolution for Geometric Modelling</em>, Mathematics and
+  Visualization, pages 157-186. Springer, Berlin, Heidelberg, 2005.
+[&nbsp;<a href="how_to_cite.html#cgal:fh-survey-05">bib</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgal:f-mvc-03">59</a>]
+</td>
+<td class="bibtexitem">
+Michael Floater.
+ Mean value coordinates.
+ <em>Computer Aided Design</em>, 20(1):19-27, 2003.
+[&nbsp;<a href="how_to_cite.html#cgal:f-mvc-03">bib</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgal:g-frseb-99">60</a>]
+</td>
+<td class="bibtexitem">
+B.&nbsp;G&auml;rtner.
+ Fast and robust smallest enclosing balls.
+ In <em>Proc. 7th annu. European Symposium on Algorithms (ESA)</em>,
+  volume 1643 of <em>Lecture Notes in Computer Science</em>, pages 325-338.
+  Springer-Verlag, 1999.
+[&nbsp;<a href="how_to_cite.html#cgal:g-frseb-99">bib</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgal:g-gmpal-96">61</a>]
+</td>
+<td class="bibtexitem">
+T.&nbsp;Granlund.
+ <em>GNU MP, The GNU Multiple Precision Arithmetic Library,
+  version 2.0.2</em>, June 1996.
+[&nbsp;<a href="how_to_cite.html#cgal:g-gmpal-96">bib</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgal:g-ieva-85">62</a>]
+</td>
+<td class="bibtexitem">
+Ronald&nbsp;N. Goldman.
+ Illicit expressions in vector algebra.
+ <em>ACM Transaction on Graphics</em>, 4(3):223-243, July 1985.
+[&nbsp;<a href="how_to_cite.html#cgal:g-ieva-85">bib</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgal:ghhkm-bosnc-03">63</a>]
+</td>
+<td class="bibtexitem">
+Miguel Granados, Peter Hachenberger, Susan Hert, Lutz Ketter, Kurt Mehlhorn,
+  and Michael Seel.
+ Boolean operations on 3d selective nef complexes data structure,
+  algorithms, and implementation.
+ In Giuseppe Di&nbsp;Battista and Uri Zwick, editors, <em>Algorithms - ESA
+  2003: 11th Annual European Symposium</em>, volume 2832 of <em>Lecture Notes in
+  Computer Science</em>, pages 174-186, Budapest, Hugary, September 2003.
+  Springer.
+[&nbsp;<a href="how_to_cite.html#cgal:ghhkm-bosnc-03">bib</a>&nbsp;]
+<blockquote><font size="-1">
+We describe a data structure for three-dimensional Nef
+                  complexes, algorithms for boolean operations on them,
+                  and our implementation of data structure and algorithms.
+                  Nef polyhedra were introduced by W. Nef in his seminal
+                  1978 book on polyhedra. They are the closure of half-spaces
+                  under boolean operations and can represent non-manifold
+                  situations, open and closed boundaries, and mixed
+                  dimensional complexes. Our focus lies on the generality of
+                  the data structure, the completeness of the algorithms,
+                  and the exactness and efficiency of the implementation.
+                  In particular, all degeneracies are handled.
+</font></blockquote>
+<p>
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgal:ghjv-dpero-95">64</a>]
+</td>
+<td class="bibtexitem">
+E.&nbsp;Gamma, R.&nbsp;Helm, R.&nbsp;Johnson, and J.&nbsp;Vlissides.
+ <em>Design Patterns - Elements of Reusable Object-Oriented
+  Software</em>.
+ Addison-Wesley, 1995.
+[&nbsp;<a href="how_to_cite.html#cgal:ghjv-dpero-95">bib</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgal:gkr-cfhm-04">65</a>]
+</td>
+<td class="bibtexitem">
+Leonidas Guibas, Menelaos Karaveles, and Daniel Russel.
+ A computational framework for handling motion.
+ In <em>Proceedings of the Sixth Workshop on Algorithm Engineering
+  and Experiments</em>, pages 129-141, 2004.
+[&nbsp;<a href="how_to_cite.html#cgal:gkr-cfhm-04">bib</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgal:gs-seeeg-98">66</a>]
+</td>
+<td class="bibtexitem">
+Bernd G&auml;rtner and Sven Sch&ouml;nherr.
+ Smallest enclosing ellipses - an exact and generic implementation in
+  C++.
+ Serie B - Informatik B 98-05, Freie Universit&auml;t Berlin, Germany,
+  April 1998.
+ URL
+  <tt>http://www.inf.fu-berlin.de/inst/pubs/tr-b-98-05.abstract.html</tt>.
+[&nbsp;<a href="how_to_cite.html#cgal:gs-seeeg-98">bib</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgal:gs-seceg-98">67</a>]
+</td>
+<td class="bibtexitem">
+Bernd G&auml;rtner and Sven Sch&ouml;nherr.
+ Smallest enclosing circles - an exact and generic implementation in
+  C++.
+ Serie B - Informatik B 98-04, Freie Universit&auml;t Berlin, Germany,
+  April 1998.
+ URL
+  <tt>http://www.inf.fu-berlin.de/inst/pubs/tr-b-98-04.abstract.html</tt>.
+[&nbsp;<a href="how_to_cite.html#cgal:gs-seceg-98">bib</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgal:gs-seefe-97a">68</a>]
+</td>
+<td class="bibtexitem">
+Bernd G&auml;rtner and Sven Sch&ouml;nherr.
+ Smallest enclosing ellipses - fast and exact.
+ Serie B - Informatik B 97-03, Freie Universit&auml;t Berlin, Germany,
+  June 1997.
+ URL
+  <tt>http://www.inf.fu-berlin.de/inst/pubs/tr-b-97-03.abstract.html</tt>.
+[&nbsp;<a href="how_to_cite.html#cgal:gs-seefe-97a">bib</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgal:gt-dpasr-93">69</a>]
+</td>
+<td class="bibtexitem">
+J.&nbsp;Gregor and M.&nbsp;G. Thomason.
+ Dynamic programming alignment of sequences representing cyclic
+  patterns.
+ <em>IEEE Trans. Pattern Anal. Machine Intell.</em>, 15(2):129-135,
+  1993.
+[&nbsp;<a href="how_to_cite.html#cgal:gt-dpasr-93">bib</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgal:gvw-gsc-98">70</a>]
+</td>
+<td class="bibtexitem">
+Geert-Jan Giezeman, Remco Veltkamp, and Wieger Wesselink.
+ <em>Getting Started with %CGAL</em>, 1998.
+ %CGAL R1.0. <tt>http://www.cs.ruu.nl/CGAL</tt>.
+[&nbsp;<a href="how_to_cite.html#cgal:gvw-gsc-98">bib</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgal:h-a-04">71</a>]
+</td>
+<td class="bibtexitem">
+Dan Halperin.
+ Arrangements.
+ In Jacob&nbsp;E. Goodman and Joseph O'Rourke, editors, <em>Handbook of
+  Discrete and Computational Geometry</em>, chapter&nbsp;24, pages 529-562. Chapman &amp;
+  Hall/CRC, 2nd edition, 2004.
+[&nbsp;<a href="how_to_cite.html#cgal:h-a-04">bib</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgal:h-cln-99">72</a>]
+</td>
+<td class="bibtexitem">
+B.&nbsp;Haible.
+ <em>CLN, The Class Library for Numbers</em>, 1.0.1 edition, June 1999.
+ <tt>http://clisp.cons.org/~haible/packages-cln.html</tt>.
+[&nbsp;<a href="how_to_cite.html#cgal:h-cln-99">bib</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgal:hh-eplca-05">73</a>]
+</td>
+<td class="bibtexitem">
+Idit Haran and Dan Halperin.
+ Efficient point location in cgal arrangements using landmarks, 2005.
+[&nbsp;<a href="how_to_cite.html#cgal:hh-eplca-05">bib</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgal:h-gsmi-89">74</a>]
+</td>
+<td class="bibtexitem">
+Christoph&nbsp;M. Hoffmann.
+ <em>Geometric and Solid Modeling - An Introduction</em>.
+ Morgan Kaufmann, 1989.
+[&nbsp;<a href="how_to_cite.html#cgal:h-gsmi-89">bib</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgal:hgygm-ttdpf-99">75</a>]
+</td>
+<td class="bibtexitem">
+P.&nbsp;W. Hallinan, G.&nbsp;Gordon, A.L. Yuille, P.&nbsp;Giblin, and D.&nbsp;Mumford.
+ <em>Two-and Three-Dimensional Patterns of the Face</em>.
+ A.K.Peters, 1999.
+[&nbsp;<a href="how_to_cite.html#cgal:hgygm-ttdpf-99">bib</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgal:h-pm-96">76</a>]
+</td>
+<td class="bibtexitem">
+Hugues Hoppe.
+ Progressive meshes.
+ In <em>Computer Graphics (Proc. SIGGRAPH '96)</em>, volume&nbsp;30, pages
+  99-108, 1996.
+[&nbsp;<a href="how_to_cite.html#cgal:h-pm-96">bib</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgal:h-epmhd-10">77</a>]
+</td>
+<td class="bibtexitem">
+Christian Helbling.
+ Extreme points in medium and high dimensions.
+ Master's thesis, ETH Zurich, Zurich, Switzerland, 2010.
+[&nbsp;<a href="how_to_cite.html#cgal:h-epmhd-10">bib</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgal:h-slacr-99">78</a>]
+</td>
+<td class="bibtexitem">
+M.&nbsp;Hoffmann.
+ A simple linear algorithm for computing rectangular three-centers.
+ In <em>Proc. 11th Canad. Conf. Comput. Geom.</em>, pages 72-75, 1999.
+[&nbsp;<a href="how_to_cite.html#cgal:h-slacr-99">bib</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgal:h-srup-94">79</a>]
+</td>
+<td class="bibtexitem">
+Hugues Hoppe.
+ <em>Surface reconstruction from unorganized points</em>.
+ PhD thesis, University of Washington, 1994.
+[&nbsp;<a href="how_to_cite.html#cgal:h-srup-94">bib</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgal:hddhjmss-pssr-94">80</a>]
+</td>
+<td class="bibtexitem">
+Hugues Hoppe, Tony DeRose, Tom Duchamp, Mark Halstaed, Hubert Jin, John
+  McDonald, Jean Schweitzer, and Werner Stuetzle.
+ Piecewise smooth surface reconstruction.
+ In <em>Computer Graphics (Proc. SIGGRAPH '94)</em>, volume&nbsp;28, pages
+  295-302, 1994.
+ Examples and code in <tt>ftp://ftp.cs.washington.edu/pub/graphics</tt>.
+[&nbsp;<a href="how_to_cite.html#cgal:hddhjmss-pssr-94">bib</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgal:hddms-mo-93">81</a>]
+</td>
+<td class="bibtexitem">
+Hugues Hoppe, Tony DeRose, Tom Duchamp, John McDonald, and Werner Stuetzle.
+ Mesh optimization.
+ In <em>Computer Graphics (Proc. SIGGRAPH '93)</em>, volume&nbsp;27, pages
+  19-26, 1993.
+ Examples and code in <tt>ftp://ftp.cs.washington.edu/pub/graphics</tt>.
+[&nbsp;<a href="how_to_cite.html#cgal:hddms-mo-93">bib</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgal:hddms-srup-92">82</a>]
+</td>
+<td class="bibtexitem">
+Hugues Hoppe, Tony DeRose, Tom Duchamp, John McDonald, and Werner Stuetzle.
+ Surface reconstruction from unorganized points.
+ In <em>Computer Graphics (Proc. SIGGRAPH '90)</em>, volume&nbsp;26, pages
+  71-77, 1992.
+[&nbsp;<a href="how_to_cite.html#cgal:hddms-srup-92">bib</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgal:hnp-gstds-95">83</a>]
+</td>
+<td class="bibtexitem">
+J.&nbsp;M. Hellerstein, J.&nbsp;F. Naughton, and A.&nbsp;Pfeffer.
+ Generalized search trees for database systems.
+ In Umeshwar Dayal, Peter M.&nbsp;D. Gray, and Shojiro Nishio, editors,
+  <em>VLDB '95: proceedings of the 21st International Conference on Very
+  Large Data Bases, Zurich, Switzerland, Sept. 11-15, 1995</em>, pages 562-573,
+  Los Altos, CA 94022, USA, 1995. Morgan Kaufmann Publishers.
+[&nbsp;<a href="how_to_cite.html#cgal:hnp-gstds-95">bib</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgal:hp-isr-02">84</a>]
+</td>
+<td class="bibtexitem">
+D.&nbsp;Halperin and E.&nbsp;Packer.
+ Iterated snap rounding.
+ <em>Computational Geometry: Theory and Applications</em>,
+  23(2):209-225, 2002.
+[&nbsp;<a href="how_to_cite.html#cgal:hp-isr-02">bib</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgal:hw-vrml2h-96">85</a>]
+</td>
+<td class="bibtexitem">
+Jed Hartman and Josie Wernecke.
+ <em>The VRML 2.0 Handbook: Building Moving Worlds on the Web</em>.
+ Addison-Wesley, 1996.
+[&nbsp;<a href="how_to_cite.html#cgal:hw-vrml2h-96">bib</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgal:ii-pacfa">86</a>]
+</td>
+<td class="bibtexitem">
+H.&nbsp;Imai and M.&nbsp;Iri.
+ Polygonal approximation of a curve - formulation and algorithms.
+ In G.T. Toussaint, editor, <em>Computational Morphology</em>, pages
+  71-86. 1988.
+[&nbsp;<a href="how_to_cite.html#cgal:ii-pacfa">bib</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgal:j-csl-99">87</a>]
+</td>
+<td class="bibtexitem">
+Nicolai&nbsp;M. Josuttis.
+ <em>The C++ Standard Library, A Tutorial and Reference</em>.
+ Addison-Wesley, 1999.
+[&nbsp;<a href="how_to_cite.html#cgal:j-csl-99">bib</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgal:k-dat-96">88</a>]
+</td>
+<td class="bibtexitem">
+T.&nbsp;Keffer.
+ The design and architecture of Tools.h<tt>++</tt>.
+ In S.&nbsp;Lippman, editor, <em>C<tt>++</tt>&nbsp;Gems</em>, pages 43-57. SIGS
+  publications, 1996.
+[&nbsp;<a href="how_to_cite.html#cgal:k-dat-96">bib</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgal:k-reisv-04">89</a>]
+</td>
+<td class="bibtexitem">
+Menelaos&nbsp;I. Karavelas.
+ A robust and efficient implementation for the segment Voronoi
+  diagram.
+ In <em>Proc. Internat. Symp. on Voronoi diagrams in Science and
+  Engineering (VD2004)</em>, pages 51-62, 2004.
+[&nbsp;<a href="how_to_cite.html#cgal:k-reisv-04">bib</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgal:k-rprnm-96">90</a>]
+</td>
+<td class="bibtexitem">
+L.&nbsp;Khachiyan.
+ Rounding of polytopes in the real number model of computation.
+ <em>Mathematics of Operations Research</em>, 21(2):307-320, 1996.
+[&nbsp;<a href="how_to_cite.html#cgal:k-rprnm-96">bib</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgal:l-nmdgp-05">91</a>]
+</td>
+<td class="bibtexitem">
+Bruno Levy.
+ Numerical methods for digital geometry processing.
+ In <em>Israel Korea Bi-National Conference - Invited talk, extended
+  abstract (full paper will be available shortly)</em>, November 2005.
+[&nbsp;<a href="how_to_cite.html#cgal:l-nmdgp-05">bib</a>&nbsp;| 
+<a href="http://www.loria.fr/~levy/php/article.php?pub=../publications/papers/2005/Numerics">http</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgal:l-tmbrc-91">92</a>]
+</td>
+<td class="bibtexitem">
+P.&nbsp;Lienhardt.
+ Topological models for boundary representation: a comparison with
+  n-dimensional generalized maps.
+ <em>Computer-Aided Design</em>, 23(1):59-82, 1991.
+[&nbsp;<a href="how_to_cite.html#cgal:l-tmbrc-91">bib</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgal:lt-fmeps-98">93</a>]
+</td>
+<td class="bibtexitem">
+Peter Lindstrom and Greg Turk.
+ Fast and memory efficient polygonal simplification.
+ In <em>IEEE Visualization</em>, pages 279-286, 1998.
+[&nbsp;<a href="how_to_cite.html#cgal:lt-fmeps-98">bib</a>&nbsp;| 
+<a href="citeseer.ist.psu.edu/lindstrom98fast.html">.html</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgal:lt-ems-99">94</a>]
+</td>
+<td class="bibtexitem">
+P.&nbsp;Lindstrom and G.&nbsp;Turk.
+ Evaluation of memoryless simplification.
+ <em>IEEE Transactions on Visualization and Computer Graphics</em>,
+  5(2):98-115, /1999.
+[&nbsp;<a href="how_to_cite.html#cgal:lt-ems-99">bib</a>&nbsp;| 
+<a href="citeseer.ist.psu.edu/lindstrom99evaluation.html">.html</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgal:k-lp-84">95</a>]
+</td>
+<td class="bibtexitem">
+Donald&nbsp;E. Knuth.
+ Literate programming.
+ <em>The Computer Journal</em>, 27(2):97-111, 1984.
+[&nbsp;<a href="how_to_cite.html#cgal:k-lp-84">bib</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgal:k-s-00">96</a>]
+</td>
+<td class="bibtexitem">
+Leif Kobbelt.
+ sqrt(3)-subdivision.
+ In <em>Computer Graphics (Proc. SIGGRAPH '00)</em>, volume&nbsp;34, pages
+  103-112, 2000.
+[&nbsp;<a href="how_to_cite.html#cgal:k-s-00">bib</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgal:ke-ppawv-02">97</a>]
+</td>
+<td class="bibtexitem">
+Menelaos&nbsp;I. Karavelas and Ioannis&nbsp;Z. Emiris.
+ Predicates for the planar additively weighted Voronoi diagram.
+ Technical Report ECG-TR-122201-01, INRIA Sophia-Antipolis,
+  Sophia-Antipolis, May 2002.
+[&nbsp;<a href="how_to_cite.html#cgal:ke-ppawv-02">bib</a>&nbsp;| 
+<a href="ftp://ftp-sop.inria.fr/prisme/ECG/Reports/Month12/ECG-TR-122201-01.ps.gz">.ps.gz</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgal:ke-rctac-03">98</a>]
+</td>
+<td class="bibtexitem">
+Menelaos&nbsp;I. Karavelas and Ioannis&nbsp;Z. Emiris.
+ Root comparison techniques applied to computing the additively
+  weighted Voronoi diagram.
+ In <em>Proc. 14th ACM-SIAM Sympos. Discrete Algorithms (SODA)</em>,
+  pages 320-329, 2003.
+[&nbsp;<a href="how_to_cite.html#cgal:ke-rctac-03">bib</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgal:kl-cssd-94">99</a>]
+</td>
+<td class="bibtexitem">
+Donald&nbsp;E. Knuth and Silvio Levy.
+ <em>The CWEB System of Structured Documentation</em>, version 3.0
+  edition, 1994.
+[&nbsp;<a href="how_to_cite.html#cgal:kl-cssd-94">bib</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgal:kl-isc++l-96">100</a>]
+</td>
+<td class="bibtexitem">
+K.&nbsp;Kreft and A.&nbsp;Langer.
+ Iterators in the standard  library.
+ <em>C<tt>++</tt>&nbsp;Report</em>, 8(10):27-32, Nov.-Dec. 1996.
+[&nbsp;<a href="how_to_cite.html#cgal:kl-isc++l-96">bib</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgal:km-st-76">101</a>]
+</td>
+<td class="bibtexitem">
+K.&nbsp;Kuratowski and A.&nbsp;Mostowski.
+ <em>Set Theory</em>.
+ North-Holland Publishing Co., 1976.
+[&nbsp;<a href="how_to_cite.html#cgal:km-st-76">bib</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgal:kv-mssct-05">102</a>]
+</td>
+<td class="bibtexitem">
+N.G.H. Kruithof and G.&nbsp;Vegter.
+ Meshing skin surfaces with certified topology.
+ In <em>Proceedings of the nineth International CADGraphics
+  conference</em>, page to appear., 2005.
+[&nbsp;<a href="how_to_cite.html#cgal:kv-mssct-05">bib</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgal:kw-ceapp-97">103</a>]
+</td>
+<td class="bibtexitem">
+Lutz Kettner and Emo Welzl.
+ Contour edge analysis for polyhedron projections.
+ In Wolfgang Strasser, Reinhard Klein, and Rene Rau, editors, <em>
+  Geometric Modeling: Theory and Practice</em>, pages 379-394. Springer Verlag,
+  1997.
+[&nbsp;<a href="how_to_cite.html#cgal:kw-ceapp-97">bib</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgal:kw-dat-96">104</a>]
+</td>
+<td class="bibtexitem">
+Dietmar K&uuml;hl and Karsten Weihe.
+ Data access templates.
+ Konstanzer Schriften in Mathematik und Informatik Nr. 9,
+  Universit&auml;t Konstanz, Germany, May 1996.
+ <tt>http://www.informatik.uni-konstanz.de/Schriften</tt>.
+[&nbsp;<a href="how_to_cite.html#cgal:kw-dat-96">bib</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgal:kw-dat-97">105</a>]
+</td>
+<td class="bibtexitem">
+Dietmar K&uuml;hl and Karsten Weihe.
+ Data access templates.
+ <em>C++ Report</em>, June 1997.
+[&nbsp;<a href="how_to_cite.html#cgal:kw-dat-97">bib</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgal:kw-osepg-98">106</a>]
+</td>
+<td class="bibtexitem">
+Lutz Kettner and Emo Welzl.
+ One sided error predicates in geometric computing.
+ In Kurt Mehlhorn, editor, <em>Proc. 15th IFIP World Computer
+  Congress, Fundamentals - Foundations of Computer Science</em>, pages 13-26.
+  1998.
+[&nbsp;<a href="how_to_cite.html#cgal:kw-osepg-98">bib</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgal:ky-dawvd-02">107</a>]
+</td>
+<td class="bibtexitem">
+Menelaos Karavelas and Mariette Yvinec.
+ Dynamic additively weighted voronoi diagrams in 2d.
+ In <em>Proc. 10th European Symposium on Algorithms</em>, pages 586-598,
+  2002.
+[&nbsp;<a href="how_to_cite.html#cgal:ky-dawvd-02">bib</a>&nbsp;]
+<blockquote><font size="-1">
+Keywords: Voronoi diagram, Appollonius diagram, additively weighted
+Voronoi diagram
+</font></blockquote>
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgal:l-icom-96">108</a>]
+</td>
+<td class="bibtexitem">
+Stanley&nbsp;B. Lippman.
+ <em>Inside the C<tt>++</tt> Object Model</em>.
+ Addison-Wesley, 1996.
+[&nbsp;<a href="how_to_cite.html#cgal:l-icom-96">bib</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgal:ll-cp-98">109</a>]
+</td>
+<td class="bibtexitem">
+Stanley&nbsp;B. Lippman and Josee Lajoie.
+ <em>C++ Primer</em>.
+ Addison-Wesley, 3rd edition, 1998.
+[&nbsp;<a href="how_to_cite.html#cgal:ll-cp-98">bib</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgal:l-lscsd-96">110</a>]
+</td>
+<td class="bibtexitem">
+John Lakos.
+ <em>Large Scale C<tt>++</tt> Software Design</em>.
+ Addison-Wesley, 1996.
+[&nbsp;<a href="how_to_cite.html#cgal:l-lscsd-96">bib</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgal:lprm-lscm-02">111</a>]
+</td>
+<td class="bibtexitem">
+Bruno L&eacute;vy, Sylvain Petitjean, Nicolas Ray, and J&eacute;rome Maillot.
+ Least squares conformal maps for automatic texture atlas generation.
+ In <em>Proceedings of the 29th Conference on Computer Graphics and
+  Interactive Techniques SIGGRAPH</em>, volume 21(3) of <em>ACM Transactions on
+  Graphics</em>, pages 362-371, 2002.
+[&nbsp;<a href="how_to_cite.html#cgal:lprm-lscm-02">bib</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgal:l-vgasa-96">112</a>]
+</td>
+<td class="bibtexitem">
+D.&nbsp;T. Lee.
+ Visualizing geometric algorithms - state of the art.
+ In M.&nbsp;C. Lin and D.&nbsp;Manocha, editors, <em>Applied Computational
+  Geometry (Proc. WACG&nbsp;'96)</em>, volume 1148 of <em>Lecture Notes Comput. Sci.</em>,
+  pages 45-50. Springer-Verlag, 1996.
+[&nbsp;<a href="how_to_cite.html#cgal:l-vgasa-96">bib</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgal:lazard04b">113</a>]
+</td>
+<td class="bibtexitem">
+Sylvain Lazard, Luis Pe&ntilde;aranda, and Sylvain Petitjean.
+ Intersecting quadrics: An efficient and exact implementation.
+ In <em>ACM Symposium on Computational Geometry - SoCG'2004,
+  Brooklyn, NY</em>, Jun 2004.
+[&nbsp;<a href="how_to_cite.html#cgal:lazard04b">bib</a>&nbsp;| 
+<a href="http://www.loria.fr/publications/2004/A04-R-021/A04-R-021.ps">.ps</a>&nbsp;]
+<blockquote><font size="-1">
+We present the first complete, exact and efficient C++ implementation of a method for parameterizing the intersection of two implicit quadrics with integer coefficients of arbitrary size. It is based on the near-optimal algorithm recently introduced by Dupont et al.&nbsp;[?]. Unlike existing implementations, it correctly identifies and parameterizes all the connected components of the intersection in all the possible cases, returning parameterizations with rational functions whenever such parameterizations exist. In addition, the coefficient field of the parameterizations is either minimal or involves one possibly unneeded square root.
+</font></blockquote>
+<p>
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgal:lpt-wea-09">114</a>]
+</td>
+<td class="bibtexitem">
+Sylvain Lazard, Luis Pe&ntilde;aranda, and Elias Tsigaridas.
+ Univariate algebraic kernel and application to arrangements.
+ In Vahrenhold [<a href="#cgal:v-ea-09">170</a>], pages 209-220.
+[&nbsp;<a href="how_to_cite.html#cgal:lpt-wea-09">bib</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgal:m-cst-93">115</a>]
+</td>
+<td class="bibtexitem">
+Robert&nbsp;B. Murray.
+ <em>C<tt>++</tt> Strategies and Tactics</em>.
+ Addison-Wesley, 1993.
+[&nbsp;<a href="how_to_cite.html#cgal:m-cst-93">bib</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgal:m-ec-92">116</a>]
+</td>
+<td class="bibtexitem">
+Scott Meyers.
+ <em>Effective C<tt>++</tt></em>.
+ Addison-Wesley, 1992.
+[&nbsp;<a href="how_to_cite.html#cgal:m-ec-92">bib</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgal:m-ec-97">117</a>]
+</td>
+<td class="bibtexitem">
+Scott Meyers.
+ <em>Effective C++: 50 Specific Ways to Improve Your Programs and
+  Designs</em>.
+ Addison-Wesley, 2nd edition, 1997.
+[&nbsp;<a href="how_to_cite.html#cgal:m-ec-97">bib</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgal:m-mec-96">118</a>]
+</td>
+<td class="bibtexitem">
+Scott Meyers.
+ <em>More Effective C<tt>++</tt></em>.
+ Addison-Wesley, 1996.
+[&nbsp;<a href="how_to_cite.html#cgal:m-mec-96">bib</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgal:m-pppd-96">119</a>]
+</td>
+<td class="bibtexitem">
+Kurt Mehlhorn.
+ Position paper for panel discussion.
+ In M.&nbsp;C. Lin and D.&nbsp;Manocha, editors, <em>Applied Computational
+  Geometry (Proc. WACG&nbsp;'96)</em>, volume 1148 of <em>Lecture Notes Comput. Sci.</em>,
+  pages 51-52. Springer-Verlag, 1996.
+[&nbsp;<a href="how_to_cite.html#cgal:m-pppd-96">bib</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgal:m-tnutt-95">120</a>]
+</td>
+<td class="bibtexitem">
+Nathan&nbsp;C. Myers.
+ Traits: a new and useful template technique.
+ <em>C<tt>++</tt>&nbsp;Report</em>, June 1995.
+[&nbsp;<a href="how_to_cite.html#cgal:m-tnutt-95">bib</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgal:m-wsc-93">121</a>]
+</td>
+<td class="bibtexitem">
+Steve Maguire.
+ <em>Writing Solid Code</em>.
+ Microsoft Press, 1993.
+[&nbsp;<a href="how_to_cite.html#cgal:m-wsc-93">bib</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgal:mad-fpsep-05">122</a>]
+</td>
+<td class="bibtexitem">
+Abdelkrim Mebarki, Pierre Alliez, and Olivier Devillers.
+ Farthest point seeding for efficient placement of streamlines.
+ In <em>Proceeding of IEEE Visualization</em>, 2005.
+[&nbsp;<a href="how_to_cite.html#cgal:mad-fpsep-05">bib</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgal:mdsb-ddgot-02">123</a>]
+</td>
+<td class="bibtexitem">
+M.&nbsp;Meyer, M.&nbsp;Desbrun, P.&nbsp;Schr&ouml;der, and A.&nbsp;H. Barr.
+ Discrete differential-geometry operators for triangulated
+  2-manifolds.
+ In <em>VisMath</em>, 2002.
+[&nbsp;<a href="how_to_cite.html#cgal:mdsb-ddgot-02">bib</a>&nbsp;]
+>>>>>>> Extreme_points_d-Bernd-old
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+<<<<<<< HEAD
 [<a name="cgal:gw-p2-13b">13</a>]
 </td>
 <td class="bibtexitem">
@@ -248,6 +2121,15 @@ Geert-Jan Giezeman and Wieger Wesselink.
   4.3 edition, 2013.
 [&nbsp;<a href="how_to_cite.html#cgal:gw-p2-13b">bib</a>&nbsp;| 
 <a href="http://doc.cgal.org/4.3/Manual/packages.html#PkgPolygon2Summary">http</a>&nbsp;]
+=======
+[<a name="cgal:mg-uulp-06">124</a>]
+</td>
+<td class="bibtexitem">
+J.&nbsp;Matou&scaron;ek and B.&nbsp;G&auml;rtner.
+ <em>Understanding and Using Linear Programming</em>.
+ Springer-Verlag, 2006.
+[&nbsp;<a href="how_to_cite.html#cgal:mg-uulp-06">bib</a>&nbsp;]
+>>>>>>> Extreme_points_d-Bernd-old
 
 </td>
 </tr>
@@ -255,6 +2137,7 @@ Geert-Jan Giezeman and Wieger Wesselink.
 
 <tr valign="top">
 <td align="right" class="bibtexnumber">
+<<<<<<< HEAD
 [<a name="cgal:h-pp2-13b">14</a>]
 </td>
 <td class="bibtexitem">
@@ -264,6 +2147,16 @@ Susan Hert.
   4.3 edition, 2013.
 [&nbsp;<a href="how_to_cite.html#cgal:h-pp2-13b">bib</a>&nbsp;| 
 <a href="http://doc.cgal.org/4.3/Manual/packages.html#PkgPolygonPartitioning2Summary">http</a>&nbsp;]
+=======
+[<a name="cgal:mnsu-lum">125</a>]
+</td>
+<td class="bibtexitem">
+K.&nbsp;Mehlhorn, S.&nbsp;N&auml;her, M.&nbsp;Seel, and C.&nbsp;Uhrig.
+ <em>The LEDA User Manual</em>.
+ Max-Planck-Insitut f&uuml;r Informatik, 66123 Saarbr&uuml;cken, Germany.
+ <tt>http://www.mpi-sb.mpg.de/LEDA/leda.html</tt>.
+[&nbsp;<a href="how_to_cite.html#cgal:mnsu-lum">bib</a>&nbsp;]
+>>>>>>> Extreme_points_d-Bernd-old
 
 </td>
 </tr>
@@ -271,6 +2164,7 @@ Susan Hert.
 
 <tr valign="top">
 <td align="right" class="bibtexnumber">
+<<<<<<< HEAD
 [<a name="cgal:hs-chdt3-13b">15</a>]
 </td>
 <td class="bibtexitem">
@@ -280,6 +2174,16 @@ Susan Hert and Michael Seel.
   4.3 edition, 2013.
 [&nbsp;<a href="how_to_cite.html#cgal:hs-chdt3-13b">bib</a>&nbsp;| 
 <a href="http://doc.cgal.org/4.3/Manual/packages.html#PkgConvexHullDSummary">http</a>&nbsp;]
+=======
+[<a name="cgal:mp-fcafg-05">126</a>]
+</td>
+<td class="bibtexitem">
+Guillaume Melquiond and Sylvain Pion.
+ Formal certification of arithmetic filters for geometric predicates.
+ In <em>Proc. 17th IMACS World Congress on Scientific, Applied
+  Mathematics and Simulation</em>, 2005.
+[&nbsp;<a href="how_to_cite.html#cgal:mp-fcafg-05">bib</a>&nbsp;]
+>>>>>>> Extreme_points_d-Bernd-old
 
 </td>
 </tr>
@@ -287,6 +2191,7 @@ Susan Hert and Michael Seel.
 
 <tr valign="top">
 <td align="right" class="bibtexnumber">
+<<<<<<< HEAD
 [<a name="cgal:k-ps-13b">16</a>]
 </td>
 <td class="bibtexitem">
@@ -296,6 +2201,15 @@ Lutz Kettner.
   4.3 edition, 2013.
 [&nbsp;<a href="how_to_cite.html#cgal:k-ps-13b">bib</a>&nbsp;| 
 <a href="http://doc.cgal.org/4.3/Manual/packages.html#PkgPolyhedronSummary">http</a>&nbsp;]
+=======
+[<a name="cgal:ms-aogl-94">127</a>]
+</td>
+<td class="bibtexitem">
+David&nbsp;R. Musser and Alexander&nbsp;A. Stepanov.
+ Algorithm-oriented generic libraries.
+ <em>Software - Practice and Experience</em>, 24(7):623-642, July 1994.
+[&nbsp;<a href="how_to_cite.html#cgal:ms-aogl-94">bib</a>&nbsp;]
+>>>>>>> Extreme_points_d-Bernd-old
 
 </td>
 </tr>
@@ -303,6 +2217,7 @@ Lutz Kettner.
 
 <tr valign="top">
 <td align="right" class="bibtexnumber">
+<<<<<<< HEAD
 [<a name="cgal:k-hds-13b">17</a>]
 </td>
 <td class="bibtexitem">
@@ -312,6 +2227,16 @@ Lutz Kettner.
   4.3 edition, 2013.
 [&nbsp;<a href="how_to_cite.html#cgal:k-hds-13b">bib</a>&nbsp;| 
 <a href="http://doc.cgal.org/4.3/Manual/packages.html#PkgHDSSummary">http</a>&nbsp;]
+=======
+[<a name="cgal:ms-gp-89">128</a>]
+</td>
+<td class="bibtexitem">
+David&nbsp;R. Musser and Alexander&nbsp;A. Stepanov.
+ Generic programming.
+ In <em>1st Intl. Joint Conf. of ISSAC-88 and AAEC-6</em>, pages
+  13-25. Springer LNCS 358, 1989.
+[&nbsp;<a href="how_to_cite.html#cgal:ms-gp-89">bib</a>&nbsp;]
+>>>>>>> Extreme_points_d-Bernd-old
 
 </td>
 </tr>
@@ -319,6 +2244,7 @@ Lutz Kettner.
 
 <tr valign="top">
 <td align="right" class="bibtexnumber">
+<<<<<<< HEAD
 [<a name="cgal:d-cm-13b">18</a>]
 </td>
 <td class="bibtexitem">
@@ -328,6 +2254,16 @@ Guillaume Damiand.
   4.3 edition, 2013.
 [&nbsp;<a href="how_to_cite.html#cgal:d-cm-13b">bib</a>&nbsp;| 
 <a href="http://doc.cgal.org/4.3/Manual/packages.html#PkgCombinatorialMapsSummary">http</a>&nbsp;]
+=======
+[<a name="cgal:ms-strg-96">129</a>]
+</td>
+<td class="bibtexitem">
+David&nbsp;R. Musser and Atul Saini.
+ <em>STL Tutorial and Reference Guide: C<tt>++</tt>&nbsp;Programming with
+  the Standard Template Library</em>.
+ Addison-Wesley, 1996.
+[&nbsp;<a href="how_to_cite.html#cgal:ms-strg-96">bib</a>&nbsp;]
+>>>>>>> Extreme_points_d-Bernd-old
 
 </td>
 </tr>
@@ -335,6 +2271,7 @@ Guillaume Damiand.
 
 <tr valign="top">
 <td align="right" class="bibtexnumber">
+<<<<<<< HEAD
 [<a name="cgal:d-lcc-13b">19</a>]
 </td>
 <td class="bibtexitem">
@@ -344,6 +2281,15 @@ Guillaume Damiand.
   4.3 edition, 2013.
 [&nbsp;<a href="how_to_cite.html#cgal:d-lcc-13b">bib</a>&nbsp;| 
 <a href="http://doc.cgal.org/4.3/Manual/packages.html#PkgLinearCellComplexSummary">http</a>&nbsp;]
+=======
+[<a name="cgal:mt-mpfr">130</a>]
+</td>
+<td class="bibtexitem">
+MPFR - the multiple precision floating-point reliable library.
+ The MPFR Team.
+ <tt>http://mpfr.org</tt>.
+[&nbsp;<a href="how_to_cite.html#cgal:mt-mpfr">bib</a>&nbsp;]
+>>>>>>> Extreme_points_d-Bernd-old
 
 </td>
 </tr>
@@ -351,6 +2297,7 @@ Guillaume Damiand.
 
 <tr valign="top">
 <td align="right" class="bibtexnumber">
+<<<<<<< HEAD
 [<a name="cgal:fwzh-rbso2-13b">20</a>]
 </td>
 <td class="bibtexitem">
@@ -360,6 +2307,16 @@ Efi Fogel, Ron Wein, Baruch Zukerman, and Dan Halperin.
   4.3 edition, 2013.
 [&nbsp;<a href="how_to_cite.html#cgal:fwzh-rbso2-13b">bib</a>&nbsp;| 
 <a href="http://doc.cgal.org/4.3/Manual/packages.html#PkgBooleanSetOperations2Summary">http</a>&nbsp;]
+=======
+[<a name="cgal:ndw-opgog-93">131</a>]
+</td>
+<td class="bibtexitem">
+Jackie Neider, Tom Davis, and Mason Woo.
+ <em>OpenGL Programming Guide: The Official Guide to Learning OpenGL,
+  Release 1</em>.
+ Addison-Wesley, 1993.
+[&nbsp;<a href="how_to_cite.html#cgal:ndw-opgog-93">bib</a>&nbsp;]
+>>>>>>> Extreme_points_d-Bernd-old
 
 </td>
 </tr>
@@ -367,6 +2324,7 @@ Efi Fogel, Ron Wein, Baruch Zukerman, and Dan Halperin.
 
 <tr valign="top">
 <td align="right" class="bibtexnumber">
+<<<<<<< HEAD
 [<a name="cgal:w-rms2-13b">21</a>]
 </td>
 <td class="bibtexitem">
@@ -376,6 +2334,17 @@ Ron Wein.
   4.3 edition, 2013.
 [&nbsp;<a href="how_to_cite.html#cgal:w-rms2-13b">bib</a>&nbsp;| 
 <a href="http://doc.cgal.org/4.3/Manual/packages.html#PkgMinkowskiSum2Summary">http</a>&nbsp;]
+=======
+[<a name="cgal:o-dcgal-96">132</a>]
+</td>
+<td class="bibtexitem">
+Mark&nbsp;H. Overmars.
+ Designing the computational geometry algorithms library %CGAL.
+ In M.&nbsp;C. Lin and D.&nbsp;Manocha, editors, <em>ACM Workshop on Applied
+  Computational Geometry</em>, Philadelphia, Pennsylvenia, May, 27-28 1996.
+ Lecture Notes in Computer Science 1148.
+[&nbsp;<a href="how_to_cite.html#cgal:o-dcgal-96">bib</a>&nbsp;]
+>>>>>>> Extreme_points_d-Bernd-old
 
 </td>
 </tr>
@@ -383,6 +2352,7 @@ Ron Wein.
 
 <tr valign="top">
 <td align="right" class="bibtexnumber">
+<<<<<<< HEAD
 [<a name="cgal:s-bonp2-13b">22</a>]
 </td>
 <td class="bibtexitem">
@@ -392,6 +2362,16 @@ Michael Seel.
   4.3 edition, 2013.
 [&nbsp;<a href="how_to_cite.html#cgal:s-bonp2-13b">bib</a>&nbsp;| 
 <a href="http://doc.cgal.org/4.3/Manual/packages.html#PkgNef2Summary">http</a>&nbsp;]
+=======
+[<a name="cgal:ory-mvbss-05">133</a>]
+</td>
+<td class="bibtexitem">
+Steve Oudot, Laurent Rineau, and Mariette Yvinec.
+ Meshing volumes bounded by smooth surfaces.
+ In <em>Proc. 14th International Meshing Roundtable</em>, pages 203-219,
+  2005.
+[&nbsp;<a href="how_to_cite.html#cgal:ory-mvbss-05">bib</a>&nbsp;]
+>>>>>>> Extreme_points_d-Bernd-old
 
 </td>
 </tr>
@@ -399,6 +2379,7 @@ Michael Seel.
 
 <tr valign="top">
 <td align="right" class="bibtexnumber">
+<<<<<<< HEAD
 [<a name="cgal:hk-bonpes2-13b">23</a>]
 </td>
 <td class="bibtexitem">
@@ -408,6 +2389,15 @@ Peter Hachenberger and Lutz Kettner.
   4.3 edition, 2013.
 [&nbsp;<a href="how_to_cite.html#cgal:hk-bonpes2-13b">bib</a>&nbsp;| 
 <a href="http://doc.cgal.org/4.3/Manual/packages.html#PkgNefS2Summary">http</a>&nbsp;]
+=======
+[<a name="cgal:p-gd-01">134</a>]
+</td>
+<td class="bibtexitem">
+I.&nbsp;Porteous.
+ <em>Geometric Differentiation (2nd Edition)</em>.
+ Cambridge University Press, 2001.
+[&nbsp;<a href="how_to_cite.html#cgal:p-gd-01">bib</a>&nbsp;]
+>>>>>>> Extreme_points_d-Bernd-old
 
 </td>
 </tr>
@@ -415,6 +2405,7 @@ Peter Hachenberger and Lutz Kettner.
 
 <tr valign="top">
 <td align="right" class="bibtexnumber">
+<<<<<<< HEAD
 [<a name="cgal:hk-bonp3-13b">24</a>]
 </td>
 <td class="bibtexitem">
@@ -424,6 +2415,16 @@ Peter Hachenberger and Lutz Kettner.
   4.3 edition, 2013.
 [&nbsp;<a href="how_to_cite.html#cgal:hk-bonp3-13b">bib</a>&nbsp;| 
 <a href="http://doc.cgal.org/4.3/Manual/packages.html#PkgNef3Summary">http</a>&nbsp;]
+=======
+[<a name="cgal:p-gmgv16-96">135</a>]
+</td>
+<td class="bibtexitem">
+Mark Phillips.
+ <em>Geomview Manual, Version 1.6.1 for Unix Workstations</em>.
+ The Geometry Center, University of Minnesota, 1996.
+ <tt>http://www.geom.umn.edu/software/download/geomview.html</tt>.
+[&nbsp;<a href="how_to_cite.html#cgal:p-gmgv16-96">bib</a>&nbsp;]
+>>>>>>> Extreme_points_d-Bernd-old
 
 </td>
 </tr>
@@ -431,6 +2432,7 @@ Peter Hachenberger and Lutz Kettner.
 
 <tr valign="top">
 <td align="right" class="bibtexnumber">
+<<<<<<< HEAD
 [<a name="cgal:h-emspe-13b">25</a>]
 </td>
 <td class="bibtexitem">
@@ -440,6 +2442,15 @@ Peter Hachenberger.
   4.3 edition, 2013.
 [&nbsp;<a href="how_to_cite.html#cgal:h-emspe-13b">bib</a>&nbsp;| 
 <a href="http://doc.cgal.org/4.3/Manual/packages.html#PkgConvexDecomposition3Summary">http</a>&nbsp;]
+=======
+[<a name="cgal:p-plcbd-93">136</a>]
+</td>
+<td class="bibtexitem">
+B.&nbsp;Piper.
+ Properties of local coordinates based on dirichlet tesselations.
+ <em>Computing Suppl.</em>, 8:227-239, 1993.
+[&nbsp;<a href="how_to_cite.html#cgal:p-plcbd-93">bib</a>&nbsp;]
+>>>>>>> Extreme_points_d-Bernd-old
 
 </td>
 </tr>
@@ -447,6 +2458,7 @@ Peter Hachenberger.
 
 <tr valign="top">
 <td align="right" class="bibtexnumber">
+<<<<<<< HEAD
 [<a name="cgal:h-msp3-13b">26</a>]
 </td>
 <td class="bibtexitem">
@@ -456,6 +2468,15 @@ Peter Hachenberger.
   4.3 edition, 2013.
 [&nbsp;<a href="how_to_cite.html#cgal:h-msp3-13b">bib</a>&nbsp;| 
 <a href="http://doc.cgal.org/4.3/Manual/packages.html#PkgMinkowskiSum3Summary">http</a>&nbsp;]
+=======
+[<a name="cgal:p-smrqt-01">137</a>]
+</td>
+<td class="bibtexitem">
+S.&nbsp;Petitjean.
+ A survey of methods for recovering quadrics in triangle meshes.
+ <em>ACM Computing Surveys</em>, 34(2), 2001.
+[&nbsp;<a href="how_to_cite.html#cgal:p-smrqt-01">bib</a>&nbsp;]
+>>>>>>> Extreme_points_d-Bernd-old
 
 </td>
 </tr>
@@ -463,6 +2484,7 @@ Peter Hachenberger.
 
 <tr valign="top">
 <td align="right" class="bibtexnumber">
+<<<<<<< HEAD
 [<a name="cgal:c-sspo2-13b">27</a>]
 </td>
 <td class="bibtexitem">
@@ -472,6 +2494,19 @@ Fernando Cacciola.
   4.3 edition, 2013.
 [&nbsp;<a href="how_to_cite.html#cgal:c-sspo2-13b">bib</a>&nbsp;| 
 <a href="http://doc.cgal.org/4.3/Manual/packages.html#PkgStraightSkeleton2Summary">http</a>&nbsp;]
+=======
+[<a name="cgal:pabl-cco-07">138</a>]
+</td>
+<td class="bibtexitem">
+M.&nbsp;Poudret, A.&nbsp;Arnould, Y.&nbsp;Bertrand, and P.&nbsp;Lienhardt.
+ Cartes combinatoires ouvertes.
+ Research Notes 2007-1, Laboratoire SIC E.A. 4103, F-86962 Futuroscope
+  Cedex, France, October 2007.
+[&nbsp;<a href="how_to_cite.html#cgal:pabl-cco-07">bib</a>&nbsp;]
+<blockquote><font size="-1">
+Keywords: cartes combinatoires, demi-ar&ecirc;te, ar&ecirc;te radiale
+</font></blockquote>
+>>>>>>> Extreme_points_d-Bernd-old
 
 </td>
 </tr>
@@ -479,6 +2514,7 @@ Fernando Cacciola.
 
 <tr valign="top">
 <td align="right" class="bibtexnumber">
+<<<<<<< HEAD
 [<a name="cgal:wfzh-a2-13b">28</a>]
 </td>
 <td class="bibtexitem">
@@ -489,6 +2525,16 @@ Ron Wein, Eric Berberich, Efi Fogel, Dan Halperin, Michael Hemmer, Oren
   4.3 edition, 2013.
 [&nbsp;<a href="how_to_cite.html#cgal:wfzh-a2-13b">bib</a>&nbsp;| 
 <a href="http://doc.cgal.org/4.3/Manual/packages.html#PkgArrangement2Summary">http</a>&nbsp;]
+=======
+[<a name="cgal:pc-rdp-86">139</a>]
+</td>
+<td class="bibtexitem">
+David&nbsp;L. Parnas and Paul&nbsp;C. Clements.
+ A rational design process: How and why to fake it.
+ <em>IEEE Transactions on Software Engineering</em>, 12(2):251-257,
+  1986.
+[&nbsp;<a href="how_to_cite.html#cgal:pc-rdp-86">bib</a>&nbsp;]
+>>>>>>> Extreme_points_d-Bernd-old
 
 </td>
 </tr>
@@ -496,6 +2542,7 @@ Ron Wein, Eric Berberich, Efi Fogel, Dan Halperin, Michael Hemmer, Oren
 
 <tr valign="top">
 <td align="right" class="bibtexnumber">
+<<<<<<< HEAD
 [<a name="cgal:wfz-ic2-13b">29</a>]
 </td>
 <td class="bibtexitem">
@@ -505,6 +2552,15 @@ Baruch Zukerman, Ron Wein, and Efi Fogel.
   4.3 edition, 2013.
 [&nbsp;<a href="how_to_cite.html#cgal:wfz-ic2-13b">bib</a>&nbsp;| 
 <a href="http://doc.cgal.org/4.3/Manual/packages.html#PkgIntersectionOfCurves2Summary">http</a>&nbsp;]
+=======
+[<a name="cgal:pp-cdmsc-93">140</a>]
+</td>
+<td class="bibtexitem">
+U.&nbsp;Pinkall and K.&nbsp;Polthier.
+ Computing discrete minimal surfaces and their conjugates.
+ <em>Experimental Mathematics</em>, 2(1):15-36, 1993.
+[&nbsp;<a href="how_to_cite.html#cgal:pp-cdmsc-93">bib</a>&nbsp;]
+>>>>>>> Extreme_points_d-Bernd-old
 
 </td>
 </tr>
@@ -512,6 +2568,7 @@ Baruch Zukerman, Ron Wein, and Efi Fogel.
 
 <tr valign="top">
 <td align="right" class="bibtexnumber">
+<<<<<<< HEAD
 [<a name="cgal:p-sr2-13b">30</a>]
 </td>
 <td class="bibtexitem">
@@ -521,6 +2578,15 @@ Eli Packer.
   4.3 edition, 2013.
 [&nbsp;<a href="how_to_cite.html#cgal:p-sr2-13b">bib</a>&nbsp;| 
 <a href="http://doc.cgal.org/4.3/Manual/packages.html#PkgSnapRounding2Summary">http</a>&nbsp;]
+=======
+[<a name="cgal:ptvf-nrcpp-02">141</a>]
+</td>
+<td class="bibtexitem">
+W.&nbsp;Press, S.&nbsp;Teukolsky, W.&nbsp;Vetterling, and B.&nbsp;Flannery.
+ <em>Numerical Recipes in C<tt>++</tt></em>.
+ Cambridge University Press, 2nd edition, 2002.
+[&nbsp;<a href="how_to_cite.html#cgal:ptvf-nrcpp-02">bib</a>&nbsp;]
+>>>>>>> Extreme_points_d-Bernd-old
 
 </td>
 </tr>
@@ -528,6 +2594,7 @@ Eli Packer.
 
 <tr valign="top">
 <td align="right" class="bibtexnumber">
+<<<<<<< HEAD
 [<a name="cgal:w-e2-13b">31</a>]
 </td>
 <td class="bibtexitem">
@@ -537,6 +2604,15 @@ Ron Wein.
   4.3 edition, 2013.
 [&nbsp;<a href="how_to_cite.html#cgal:w-e2-13b">bib</a>&nbsp;| 
 <a href="http://doc.cgal.org/4.3/Manual/packages.html#PkgEnvelope2Summary">http</a>&nbsp;]
+=======
+[<a name="cgal:pv-opadc-94">142</a>]
+</td>
+<td class="bibtexitem">
+J.C. Perez and E.&nbsp;Vidal.
+ Optimum polygonal approximation of digitized curves.
+ <em>Pattern Recognition Letters</em>, (15):743-750, 1994.
+[&nbsp;<a href="how_to_cite.html#cgal:pv-opadc-94">bib</a>&nbsp;]
+>>>>>>> Extreme_points_d-Bernd-old
 
 </td>
 </tr>
@@ -544,6 +2620,7 @@ Ron Wein.
 
 <tr valign="top">
 <td align="right" class="bibtexnumber">
+<<<<<<< HEAD
 [<a name="cgal:mwz-e3-13b">32</a>]
 </td>
 <td class="bibtexitem">
@@ -553,6 +2630,17 @@ Michal Meyerovitch, Ron Wein, and Baruch Zukerman.
   4.3 edition, 2013.
 [&nbsp;<a href="how_to_cite.html#cgal:mwz-e3-13b">bib</a>&nbsp;| 
 <a href="http://doc.cgal.org/4.3/Manual/packages.html#PkgEnvelope3Summary">http</a>&nbsp;]
+=======
+[<a name="cgal:r-lomom-94">143</a>]
+</td>
+<td class="bibtexitem">
+James Rumbaugh.
+ The life of an object model: How the object-model changes during
+  development.
+ <em>Journal of Object-Oriented Programming</em>, 7(1):24-32,
+  March/April 1994.
+[&nbsp;<a href="how_to_cite.html#cgal:r-lomom-94">bib</a>&nbsp;]
+>>>>>>> Extreme_points_d-Bernd-old
 
 </td>
 </tr>
@@ -560,6 +2648,7 @@ Michal Meyerovitch, Ron Wein, and Baruch Zukerman.
 
 <tr valign="top">
 <td align="right" class="bibtexnumber">
+<<<<<<< HEAD
 [<a name="cgal:y-t2-13b">33</a>]
 </td>
 <td class="bibtexitem">
@@ -569,6 +2658,15 @@ Mariette Yvinec.
   4.3 edition, 2013.
 [&nbsp;<a href="how_to_cite.html#cgal:y-t2-13b">bib</a>&nbsp;| 
 <a href="http://doc.cgal.org/4.3/Manual/packages.html#PkgTriangulation2Summary">http</a>&nbsp;]
+=======
+[<a name="cgal:r-mpfi">144</a>]
+</td>
+<td class="bibtexitem">
+MPFI - the multiple precision floating-point interval library.
+ Revol, Nathalie and Rouillier, Fabrice.
+ <tt>http://perso.ens-lyon.fr/nathalie.revol/software.html</tt>.
+[&nbsp;<a href="how_to_cite.html#cgal:r-mpfi">bib</a>&nbsp;]
+>>>>>>> Extreme_points_d-Bernd-old
 
 </td>
 </tr>
@@ -576,6 +2674,7 @@ Mariette Yvinec.
 
 <tr valign="top">
 <td align="right" class="bibtexnumber">
+<<<<<<< HEAD
 [<a name="cgal:py-tds2-13b">34</a>]
 </td>
 <td class="bibtexitem">
@@ -585,6 +2684,15 @@ Sylvain Pion and Mariette Yvinec.
   4.3 edition, 2013.
 [&nbsp;<a href="how_to_cite.html#cgal:py-tds2-13b">bib</a>&nbsp;| 
 <a href="http://doc.cgal.org/4.3/Manual/packages.html#PkgTDS2Summary">http</a>&nbsp;]
+=======
+[<a name="cgal:r-rrstm-80">145</a>]
+</td>
+<td class="bibtexitem">
+Aristides&nbsp;G. Requicha.
+ Representations for rigid solids: Theory, methods, and systems.
+ <em>ACM Computing Surveys</em>, 12(4):437-464, 1980.
+[&nbsp;<a href="how_to_cite.html#cgal:r-rrstm-80">bib</a>&nbsp;]
+>>>>>>> Extreme_points_d-Bernd-old
 
 </td>
 </tr>
@@ -592,6 +2700,7 @@ Sylvain Pion and Mariette Yvinec.
 
 <tr valign="top">
 <td align="right" class="bibtexnumber">
+<<<<<<< HEAD
 [<a name="cgal:pt-t3-13b">35</a>]
 </td>
 <td class="bibtexitem">
@@ -601,6 +2710,15 @@ Sylvain Pion and Monique Teillaud.
   4.3 edition, 2013.
 [&nbsp;<a href="how_to_cite.html#cgal:pt-t3-13b">bib</a>&nbsp;| 
 <a href="http://doc.cgal.org/4.3/Manual/packages.html#PkgTriangulation3Summary">http</a>&nbsp;]
+=======
+[<a name="cgal:r-rs">146</a>]
+</td>
+<td class="bibtexitem">
+RS - A software for real solving of algebraic systems.
+ Rouillier, Fabrice.
+ <tt>http://www.loria.fr/equipes/vegas/rs/</tt>.
+[&nbsp;<a href="how_to_cite.html#cgal:r-rs">bib</a>&nbsp;]
+>>>>>>> Extreme_points_d-Bernd-old
 
 </td>
 </tr>
@@ -608,6 +2726,7 @@ Sylvain Pion and Monique Teillaud.
 
 <tr valign="top">
 <td align="right" class="bibtexnumber">
+<<<<<<< HEAD
 [<a name="cgal:pt-tds3-13b">36</a>]
 </td>
 <td class="bibtexitem">
@@ -617,6 +2736,16 @@ Sylvain Pion and Monique Teillaud.
   4.3 edition, 2013.
 [&nbsp;<a href="how_to_cite.html#cgal:pt-tds3-13b">bib</a>&nbsp;| 
 <a href="http://doc.cgal.org/4.3/Manual/packages.html#PkgTDS3Summary">http</a>&nbsp;]
+=======
+[<a name="cgal:rbpel-oomd-91">147</a>]
+</td>
+<td class="bibtexitem">
+James Rumbaugh, Michael Blaha, William Premerlani, Frederick Eddy, and William
+  Lorenson.
+ <em>Object-Oriented Modeling and Design</em>.
+ Prentice Hall, Englewood Cliffs, NJ, 1991.
+[&nbsp;<a href="how_to_cite.html#cgal:rbpel-oomd-91">bib</a>&nbsp;]
+>>>>>>> Extreme_points_d-Bernd-old
 
 </td>
 </tr>
@@ -624,6 +2753,7 @@ Sylvain Pion and Monique Teillaud.
 
 <tr valign="top">
 <td align="right" class="bibtexnumber">
+<<<<<<< HEAD
 [<a name="cgal:k-pt2-13b">37</a>]
 </td>
 <td class="bibtexitem">
@@ -649,6 +2779,16 @@ Manuel Caroli and Monique Teillaud.
   4.3 edition, 2013.
 [&nbsp;<a href="how_to_cite.html#cgal:ct-pt3-13b">bib</a>&nbsp;| 
 <a href="http://doc.cgal.org/4.3/Manual/packages.html#PkgPeriodic3Triangulation3Summary">http</a>&nbsp;]
+=======
+[<a name="cgal:ry-gsddrm-06">148</a>]
+</td>
+<td class="bibtexitem">
+Laurent Rineau and Mariette Yvinec.
+ A generic software design for Delaunay refinement meshing.
+ <em>Comput. Geom. Theory Appl.</em>, 38:100-110, 2007.
+[&nbsp;<a href="how_to_cite.html#cgal:ry-gsddrm-06">bib</a>&nbsp;| 
+<a href="http://dx.doi.org/10.1016/j.comgeo.2006.11.008">http</a>&nbsp;]
+>>>>>>> Extreme_points_d-Bernd-old
 
 </td>
 </tr>
@@ -656,6 +2796,7 @@ Manuel Caroli and Monique Teillaud.
 
 <tr valign="top">
 <td align="right" class="bibtexnumber">
+<<<<<<< HEAD
 [<a name="cgal:d-as2-13b">39</a>]
 </td>
 <td class="bibtexitem">
@@ -665,6 +2806,16 @@ Tran Kai&nbsp;Frank Da.
   4.3 edition, 2013.
 [&nbsp;<a href="how_to_cite.html#cgal:d-as2-13b">bib</a>&nbsp;| 
 <a href="http://doc.cgal.org/4.3/Manual/packages.html#PkgAlphaShape2Summary">http</a>&nbsp;]
+=======
+[<a name="cgal:rz-jcam-04">149</a>]
+</td>
+<td class="bibtexitem">
+Fabrice Rouillier and Paul Zimmermann.
+ Efficient isolation of polynomial's real roots.
+ <em>Journal of Computational and Applied Mathematics</em>,
+  162(1):33-50, 2004.
+[&nbsp;<a href="how_to_cite.html#cgal:rz-jcam-04">bib</a>&nbsp;]
+>>>>>>> Extreme_points_d-Bernd-old
 
 </td>
 </tr>
@@ -672,6 +2823,7 @@ Tran Kai&nbsp;Frank Da.
 
 <tr valign="top">
 <td align="right" class="bibtexnumber">
+<<<<<<< HEAD
 [<a name="cgal:dy-as3-13b">40</a>]
 </td>
 <td class="bibtexitem">
@@ -681,6 +2833,17 @@ Tran Kai&nbsp;Frank Da and Mariette Yvinec.
   4.3 edition, 2013.
 [&nbsp;<a href="how_to_cite.html#cgal:dy-as3-13b">bib</a>&nbsp;| 
 <a href="http://doc.cgal.org/4.3/Manual/packages.html#PkgAlphaShapes3Summary">http</a>&nbsp;]
+=======
+[<a name="cgal:s-cgehd-98">150</a>]
+</td>
+<td class="bibtexitem">
+Jonathan&nbsp;R. Shewchuk.
+ A condition guaranteeing the existence of higher-dimensional
+  constrained delaunay triangulations.
+ In <em>Proc. 14th Annu. ACM Sympos. Comput. Geom.</em>, pages 76-85,
+  1998.
+[&nbsp;<a href="how_to_cite.html#cgal:s-cgehd-98">bib</a>&nbsp;]
+>>>>>>> Extreme_points_d-Bernd-old
 
 </td>
 </tr>
@@ -688,6 +2851,7 @@ Tran Kai&nbsp;Frank Da and Mariette Yvinec.
 
 <tr valign="top">
 <td align="right" class="bibtexnumber">
+<<<<<<< HEAD
 [<a name="cgal:k-sdg2-13b">41</a>]
 </td>
 <td class="bibtexitem">
@@ -697,6 +2861,15 @@ Menelaos Karavelas.
   4.3 edition, 2013.
 [&nbsp;<a href="how_to_cite.html#cgal:k-sdg2-13b">bib</a>&nbsp;| 
 <a href="http://doc.cgal.org/4.3/Manual/packages.html#PkgSegmentDelaunayGraph2Summary">http</a>&nbsp;]
+=======
+[<a name="cgal:s-cpl-91">151</a>]
+</td>
+<td class="bibtexitem">
+Bjarne Stroustrup.
+ <em>The C<tt>++</tt>&nbsp;Programming Language</em>.
+ Addison-Wesley, 2nd edition, 1991.
+[&nbsp;<a href="how_to_cite.html#cgal:s-cpl-91">bib</a>&nbsp;]
+>>>>>>> Extreme_points_d-Bernd-old
 
 </td>
 </tr>
@@ -704,6 +2877,7 @@ Menelaos Karavelas.
 
 <tr valign="top">
 <td align="right" class="bibtexnumber">
+<<<<<<< HEAD
 [<a name="cgal:ky-ag2-13b">42</a>]
 </td>
 <td class="bibtexitem">
@@ -713,6 +2887,15 @@ Menelaos Karavelas and Mariette Yvinec.
   4.3 edition, 2013.
 [&nbsp;<a href="how_to_cite.html#cgal:ky-ag2-13b">bib</a>&nbsp;| 
 <a href="http://doc.cgal.org/4.3/Manual/packages.html#PkgApolloniusGraph2Summary">http</a>&nbsp;]
+=======
+[<a name="cgal:s-cpl-97">152</a>]
+</td>
+<td class="bibtexitem">
+Bjarne Stroustrup.
+ <em>The C<tt>++</tt>&nbsp;Programming Language</em>.
+ Addison-Wesley, 3rd edition, 1997.
+[&nbsp;<a href="how_to_cite.html#cgal:s-cpl-97">bib</a>&nbsp;]
+>>>>>>> Extreme_points_d-Bernd-old
 
 </td>
 </tr>
@@ -720,6 +2903,7 @@ Menelaos Karavelas and Mariette Yvinec.
 
 <tr valign="top">
 <td align="right" class="bibtexnumber">
+<<<<<<< HEAD
 [<a name="cgal:k-vda2-13b">43</a>]
 </td>
 <td class="bibtexitem">
@@ -729,6 +2913,16 @@ Menelaos Karavelas.
   4.3 edition, 2013.
 [&nbsp;<a href="how_to_cite.html#cgal:k-vda2-13b">bib</a>&nbsp;| 
 <a href="http://doc.cgal.org/4.3/Manual/packages.html#PkgVoronoiDiagramAdaptor2Summary">http</a>&nbsp;]
+=======
+[<a name="cgal:s-dcgal-96">153</a>]
+</td>
+<td class="bibtexitem">
+S.&nbsp;Schirra.
+ Designing a computational geometry algorithms library.
+ Lecture Notes for Advanced School on Algorithmic Foundations of
+  Geographic Information Systems, CISM, Udine, September 16-20 1996.
+[&nbsp;<a href="how_to_cite.html#cgal:s-dcgal-96">bib</a>&nbsp;]
+>>>>>>> Extreme_points_d-Bernd-old
 
 </td>
 </tr>
@@ -736,6 +2930,7 @@ Menelaos Karavelas.
 
 <tr valign="top">
 <td align="right" class="bibtexnumber">
+<<<<<<< HEAD
 [<a name="cgal:r-ctm2-13b">44</a>]
 </td>
 <td class="bibtexitem">
@@ -745,6 +2940,19 @@ Laurent Rineau.
   4.3 edition, 2013.
 [&nbsp;<a href="how_to_cite.html#cgal:r-ctm2-13b">bib</a>&nbsp;| 
 <a href="http://doc.cgal.org/4.3/Manual/packages.html#PkgMesh2Summary">http</a>&nbsp;]
+=======
+[<a name="cgal:s-ixgpe-91a">154</a>]
+</td>
+<td class="bibtexitem">
+Peter Schorn.
+ Implementing the XYZ GeoBench: A programming environment for
+  geometric algorithms.
+ In <em>Computational Geometry - Methods, Algorithms and
+  Applications: Proc. Internat. Workshop Comput. Geom. CG '91</em>, volume 553 of
+  <em>Lecture Notes Comput. Sci.</em>, pages 187-202. Springer-Verlag, 1991.
+ <tt>http://wwwjn.inf.ethz.ch/geobench/XYZGeoBench.html</tt>.
+[&nbsp;<a href="how_to_cite.html#cgal:s-ixgpe-91a">bib</a>&nbsp;]
+>>>>>>> Extreme_points_d-Bernd-old
 
 </td>
 </tr>
@@ -752,6 +2960,7 @@ Laurent Rineau.
 
 <tr valign="top">
 <td align="right" class="bibtexnumber">
+<<<<<<< HEAD
 [<a name="cgal:ry-smg-13b">45</a>]
 </td>
 <td class="bibtexitem">
@@ -761,6 +2970,17 @@ Laurent Rineau and Mariette Yvinec.
   4.3 edition, 2013.
 [&nbsp;<a href="how_to_cite.html#cgal:ry-smg-13b">bib</a>&nbsp;| 
 <a href="http://doc.cgal.org/4.3/Manual/packages.html#PkgSurfaceMesher3Summary">http</a>&nbsp;]
+=======
+[<a name="cgal:s-picpc-98">155</a>]
+</td>
+<td class="bibtexitem">
+Stefan Schirra.
+ Parameterized implementations of classical planar convex hull
+  algorithms and extreme point computations.
+ Research Report MPI-I-98-1-003, Max-Planck-Institut f&uuml;r
+  Informatik, Im Stadtwald, D-66123 Saarbr&uuml;cken, Germany, January 1998.
+[&nbsp;<a href="how_to_cite.html#cgal:s-picpc-98">bib</a>&nbsp;]
+>>>>>>> Extreme_points_d-Bernd-old
 
 </td>
 </tr>
@@ -768,6 +2988,7 @@ Laurent Rineau and Mariette Yvinec.
 
 <tr valign="top">
 <td align="right" class="bibtexnumber">
+<<<<<<< HEAD
 [<a name="cgal:asg-srps-13b">46</a>]
 </td>
 <td class="bibtexitem">
@@ -777,6 +2998,18 @@ Pierre Alliez, Laurent Saboret, and Gael Guennebaud.
   4.3 edition, 2013.
 [&nbsp;<a href="how_to_cite.html#cgal:asg-srps-13b">bib</a>&nbsp;| 
 <a href="http://doc.cgal.org/4.3/Manual/packages.html#PkgSurfaceReconstructionFromPointSetsSummary">http</a>&nbsp;]
+=======
+[<a name="cgal:s-prgc-97">156</a>]
+</td>
+<td class="bibtexitem">
+S.&nbsp;Schirra.
+ Precision and robustness in geometric computations.
+ In Marc van Kreveld, J&uuml;rg Nievergelt, Thomas Roos, and Peter
+  Widmayer, editors, <em>Algorithmic foundations of geographic information
+  systems</em>, volume 1340 of <em>Lecture Notes in Computer Science</em>, pages
+  255-287. Springer-Verlag, Berlin, 1997.
+[&nbsp;<a href="how_to_cite.html#cgal:s-prgc-97">bib</a>&nbsp;]
+>>>>>>> Extreme_points_d-Bernd-old
 
 </td>
 </tr>
@@ -784,6 +3017,7 @@ Pierre Alliez, Laurent Saboret, and Gael Guennebaud.
 
 <tr valign="top">
 <td align="right" class="bibtexnumber">
+<<<<<<< HEAD
 [<a name="cgal:k-ssm3-13b">47</a>]
 </td>
 <td class="bibtexitem">
@@ -793,6 +3027,15 @@ Nico Kruithof.
   4.3 edition, 2013.
 [&nbsp;<a href="how_to_cite.html#cgal:k-ssm3-13b">bib</a>&nbsp;| 
 <a href="http://doc.cgal.org/4.3/Manual/packages.html#PkgSkinSurface3Summary">http</a>&nbsp;]
+=======
+[<a name="cgal:s-zkm-96">157</a>]
+</td>
+<td class="bibtexitem">
+Michael Schutte.
+ Zuf&auml;llige konvexe mengen.
+ Master's thesis, Freie Universit&auml;t Berlin, Germany, 1996.
+[&nbsp;<a href="how_to_cite.html#cgal:s-zkm-96">bib</a>&nbsp;]
+>>>>>>> Extreme_points_d-Bernd-old
 
 </td>
 </tr>
@@ -800,6 +3043,7 @@ Nico Kruithof.
 
 <tr valign="top">
 <td align="right" class="bibtexnumber">
+<<<<<<< HEAD
 [<a name="cgal:rty-m3-13b">48</a>]
 </td>
 <td class="bibtexitem">
@@ -810,6 +3054,15 @@ Pierre Alliez, Laurent Rineau, St&eacute;phane Tayeb, Jane Tournois, and Mariett
   4.3 edition, 2013.
 [&nbsp;<a href="how_to_cite.html#cgal:rty-m3-13b">bib</a>&nbsp;| 
 <a href="http://doc.cgal.org/4.3/Manual/packages.html#PkgMesh_3Summary">http</a>&nbsp;]
+=======
+[<a name="cgal:sgcsi-stlpg-97">158</a>]
+</td>
+<td class="bibtexitem">
+Silicon Graphics Computer Systems, Inc.
+ Standard template library programmer's guide.
+ <tt>http://www.sgi.com/Technology/STL/</tt>, 1997.
+[&nbsp;<a href="how_to_cite.html#cgal:sgcsi-stlpg-97">bib</a>&nbsp;]
+>>>>>>> Extreme_points_d-Bernd-old
 
 </td>
 </tr>
@@ -817,6 +3070,7 @@ Pierre Alliez, Laurent Rineau, St&eacute;phane Tayeb, Jane Tournois, and Mariett
 
 <tr valign="top">
 <td align="right" class="bibtexnumber">
+<<<<<<< HEAD
 [<a name="cgal:s-ssm2-13b">49</a>]
 </td>
 <td class="bibtexitem">
@@ -826,6 +3080,14 @@ Le-Jeng&nbsp;Andy Shiue.
   4.3 edition, 2013.
 [&nbsp;<a href="how_to_cite.html#cgal:s-ssm2-13b">bib</a>&nbsp;| 
 <a href="http://doc.cgal.org/4.3/Manual/packages.html#PkgSurfaceSubdivisionMethods3Summary">http</a>&nbsp;]
+=======
+[<a name="cgal:sl-stl-95">159</a>]
+</td>
+<td class="bibtexitem">
+Alexander Stepanov and Meng Lee.
+ The standard template library, October 1995.
+[&nbsp;<a href="how_to_cite.html#cgal:sl-stl-95">bib</a>&nbsp;]
+>>>>>>> Extreme_points_d-Bernd-old
 
 </td>
 </tr>
@@ -833,6 +3095,7 @@ Le-Jeng&nbsp;Andy Shiue.
 
 <tr valign="top">
 <td align="right" class="bibtexnumber">
+<<<<<<< HEAD
 [<a name="cgal:c-tsms-13b">50</a>]
 </td>
 <td class="bibtexitem">
@@ -842,6 +3105,17 @@ Fernando Cacciola.
   4.3 edition, 2013.
 [&nbsp;<a href="how_to_cite.html#cgal:c-tsms-13b">bib</a>&nbsp;| 
 <a href="http://doc.cgal.org/4.3/Manual/packages.html#PkgSurfaceMeshSimplificationSummary">http</a>&nbsp;]
+=======
+[<a name="cgal:sm-iftml-00">160</a>]
+</td>
+<td class="bibtexitem">
+M.&nbsp;Seel and K.&nbsp;Mehlhorn.
+ Infimaximal frames: A technique for making lines look like segments.
+ Research Report MPI-I-2000-1-005, MPI f&uuml;r Informatik,
+  Saarbr&uuml;cken, Germany, December 2000.
+ <tt>http://www.mpi-sb.mpg.de/~mehlhorn/ftp/InfiFrames.ps</tt>.
+[&nbsp;<a href="how_to_cite.html#cgal:sm-iftml-00">bib</a>&nbsp;]
+>>>>>>> Extreme_points_d-Bernd-old
 
 </td>
 </tr>
@@ -849,6 +3123,7 @@ Fernando Cacciola.
 
 <tr valign="top">
 <td align="right" class="bibtexnumber">
+<<<<<<< HEAD
 [<a name="cgal:sal-pptsm2-13b">51</a>]
 </td>
 <td class="bibtexitem">
@@ -858,6 +3133,16 @@ Laurent Saboret, Pierre Alliez, and Bruno L&eacute;vy.
   4.3 edition, 2013.
 [&nbsp;<a href="how_to_cite.html#cgal:sal-pptsm2-13b">bib</a>&nbsp;| 
 <a href="http://doc.cgal.org/4.3/Manual/packages.html#PkgSurfaceParameterizationSummary">http</a>&nbsp;]
+=======
+[<a name="cgal:sp-mrbee-05">161</a>]
+</td>
+<td class="bibtexitem">
+Le-Jeng Shiue and J&ouml;rg Peters.
+ Mesh refinement based on euler encoding.
+ In <em>Proceedings of the International Conference on Shape Modeling
+  and Applications 2005</em>, pages 343-348, 2005.
+[&nbsp;<a href="how_to_cite.html#cgal:sp-mrbee-05">bib</a>&nbsp;]
+>>>>>>> Extreme_points_d-Bernd-old
 
 </td>
 </tr>
@@ -865,6 +3150,7 @@ Laurent Saboret, Pierre Alliez, and Bruno L&eacute;vy.
 
 <tr valign="top">
 <td align="right" class="bibtexnumber">
+<<<<<<< HEAD
 [<a name="cgal:b-ss2-13b">52</a>]
 </td>
 <td class="bibtexitem">
@@ -874,6 +3160,16 @@ Matthias B&auml;sken.
   4.3 edition, 2013.
 [&nbsp;<a href="how_to_cite.html#cgal:b-ss2-13b">bib</a>&nbsp;| 
 <a href="http://doc.cgal.org/4.3/Manual/packages.html#PkgPointSet2Summary">http</a>&nbsp;]
+=======
+[<a name="cgal:sp-mrlbg-05">162</a>]
+</td>
+<td class="bibtexitem">
+Le-Jeng Shiue and J&ouml;rg Peters.
+ A mesh refinement library based on generic design.
+ In <em>Proceedings of the 43rd ACM Southeast Conference</em>, pages
+  1-104-1-108, 2005.
+[&nbsp;<a href="how_to_cite.html#cgal:sp-mrlbg-05">bib</a>&nbsp;]
+>>>>>>> Extreme_points_d-Bernd-old
 
 </td>
 </tr>
@@ -881,6 +3177,7 @@ Matthias B&auml;sken.
 
 <tr valign="top">
 <td align="right" class="bibtexnumber">
+<<<<<<< HEAD
 [<a name="cgal:n-rstd-13b">53</a>]
 </td>
 <td class="bibtexitem">
@@ -890,6 +3187,15 @@ Gabriele Neyer.
   4.3 edition, 2013.
 [&nbsp;<a href="how_to_cite.html#cgal:n-rstd-13b">bib</a>&nbsp;| 
 <a href="http://doc.cgal.org/4.3/Manual/packages.html#PkgRangeSegmentTreesDSummary">http</a>&nbsp;]
+=======
+[<a name="cgal:sll-bgl-02">163</a>]
+</td>
+<td class="bibtexitem">
+Jeremy&nbsp;G. Siek, Lie-Quan Lee, and Andrew Lumsdaine.
+ <em>Boost Graph Library</em>.
+ Addison-Wesley, 2002.
+[&nbsp;<a href="how_to_cite.html#cgal:sll-bgl-02">bib</a>&nbsp;]
+>>>>>>> Extreme_points_d-Bernd-old
 
 </td>
 </tr>
@@ -897,6 +3203,7 @@ Gabriele Neyer.
 
 <tr valign="top">
 <td align="right" class="bibtexnumber">
+<<<<<<< HEAD
 [<a name="cgal:f-isl-13b">54</a>]
 </td>
 <td class="bibtexitem">
@@ -906,6 +3213,16 @@ Andreas Fabri.
   4.3 edition, 2013.
 [&nbsp;<a href="how_to_cite.html#cgal:f-isl-13b">bib</a>&nbsp;| 
 <a href="http://doc.cgal.org/4.3/Manual/packages.html#PkgIntervalSkipListSummary">http</a>&nbsp;]
+=======
+[<a name="cgal:sry-mvbss-05">164</a>]
+</td>
+<td class="bibtexitem">
+Steve Oudot, Laurent Rineau, and Mariette Yvinec.
+ Meshing volumes bounded by smooth surfaces.
+ In <em>Proc. 14th International Meshing Roundtable</em>, pages 203-219,
+  2005.
+[&nbsp;<a href="how_to_cite.html#cgal:sry-mvbss-05">bib</a>&nbsp;]
+>>>>>>> Extreme_points_d-Bernd-old
 
 </td>
 </tr>
@@ -913,6 +3230,7 @@ Andreas Fabri.
 
 <tr valign="top">
 <td align="right" class="bibtexnumber">
+<<<<<<< HEAD
 [<a name="cgal:tf-ssd-13b">55</a>]
 </td>
 <td class="bibtexitem">
@@ -922,6 +3240,15 @@ Hans Tangelder and Andreas Fabri.
   4.3 edition, 2013.
 [&nbsp;<a href="how_to_cite.html#cgal:tf-ssd-13b">bib</a>&nbsp;| 
 <a href="http://doc.cgal.org/4.3/Manual/packages.html#PkgSpatialSearchingDSummary">http</a>&nbsp;]
+=======
+[<a name="cgal:ss-ablp-91">165</a>]
+</td>
+<td class="bibtexitem">
+Lisa M.&nbsp;C. Smith and Mansur&nbsp;H. Samadzadeh.
+ An annotated bibliography of literate programming.
+ <em>ACM SIGPLAN Notices</em>, 26(1):14-20, January 1991.
+[&nbsp;<a href="how_to_cite.html#cgal:ss-ablp-91">bib</a>&nbsp;]
+>>>>>>> Extreme_points_d-Bernd-old
 
 </td>
 </tr>
@@ -929,6 +3256,7 @@ Hans Tangelder and Andreas Fabri.
 
 <tr valign="top">
 <td align="right" class="bibtexnumber">
+<<<<<<< HEAD
 [<a name="cgal:kmz-isiobd-13b">56</a>]
 </td>
 <td class="bibtexitem">
@@ -938,6 +3266,16 @@ Lutz Kettner, Andreas Meyer, and Afra Zomorodian.
   4.3 edition, 2013.
 [&nbsp;<a href="how_to_cite.html#cgal:kmz-isiobd-13b">bib</a>&nbsp;| 
 <a href="http://doc.cgal.org/4.3/Manual/packages.html#PkgBoxIntersectionDSummary">http</a>&nbsp;]
+=======
+[<a name="cgal:t-om-09">166</a>]
+</td>
+<td class="bibtexitem">
+Jane Tournois.
+ <em>Optimisation de maillages</em>.
+ Th&egrave;se de doctorat en sciences, Universit&eacute; Nice
+  Sophia-Antipolis, Nice, France, 2009.
+[&nbsp;<a href="how_to_cite.html#cgal:t-om-09">bib</a>&nbsp;]
+>>>>>>> Extreme_points_d-Bernd-old
 
 </td>
 </tr>
@@ -945,6 +3283,7 @@ Lutz Kettner, Andreas Meyer, and Afra Zomorodian.
 
 <tr valign="top">
 <td align="right" class="bibtexnumber">
+<<<<<<< HEAD
 [<a name="cgal:fghhs-bv-13b">57</a>]
 </td>
 <td class="bibtexitem">
@@ -955,6 +3294,16 @@ Kaspar Fischer, Bernd G&auml;rtner, Thomas Herrmann, Michael Hoffmann, and Sven
   4.3 edition, 2013.
 [&nbsp;<a href="how_to_cite.html#cgal:fghhs-bv-13b">bib</a>&nbsp;| 
 <a href="http://doc.cgal.org/4.3/Manual/packages.html#PkgBoundingVolumesSummary">http</a>&nbsp;]
+=======
+[<a name="cgal:tpg-rmtiise-99">167</a>]
+</td>
+<td class="bibtexitem">
+G.M. Treece, R.W. Prager, and A.H. Gee.
+ Regularised marching tetrahedra: improved iso-surface extraction.
+ <em>Computers and Graphics</em>, 23(4):583-598, 1999.
+[&nbsp;<a href="how_to_cite.html#cgal:tpg-rmtiise-99">bib</a>&nbsp;| 
+<a href="http://citeseer.ist.psu.edu/treece98regularised.html">.html</a>&nbsp;]
+>>>>>>> Extreme_points_d-Bernd-old
 
 </td>
 </tr>
@@ -962,6 +3311,7 @@ Kaspar Fischer, Bernd G&auml;rtner, Thomas Herrmann, Michael Hoffmann, and Sven
 
 <tr valign="top">
 <td align="right" class="bibtexnumber">
+<<<<<<< HEAD
 [<a name="cgal:fgsw-lqps-13b">58</a>]
 </td>
 <td class="bibtexitem">
@@ -971,6 +3321,16 @@ Kaspar Fischer, Bernd G&auml;rtner, Sven Sch&ouml;nherr, and Frans Wessendorp.
   4.3 edition, 2013.
 [&nbsp;<a href="how_to_cite.html#cgal:fgsw-lqps-13b">bib</a>&nbsp;| 
 <a href="http://doc.cgal.org/4.3/Manual/packages.html#PkgQPSolverSummary">http</a>&nbsp;]
+=======
+[<a name="cgal:tsa-ps3dd-09">168</a>]
+</td>
+<td class="bibtexitem">
+Jane TOURNOIS, Rahul SRINIVASAN, and Pierre ALLIEZ.
+ Perturbing slivers in 3D Delaunay meshes.
+ In <em>Proceedings of the 18th International Meshing Roundtable</em>,
+  october 2009.
+[&nbsp;<a href="how_to_cite.html#cgal:tsa-ps3dd-09">bib</a>&nbsp;]
+>>>>>>> Extreme_points_d-Bernd-old
 
 </td>
 </tr>
@@ -978,6 +3338,7 @@ Kaspar Fischer, Bernd G&auml;rtner, Sven Sch&ouml;nherr, and Frans Wessendorp.
 
 <tr valign="top">
 <td align="right" class="bibtexnumber">
+<<<<<<< HEAD
 [<a name="cgal:hp-ia-13b">59</a>]
 </td>
 <td class="bibtexitem">
@@ -987,6 +3348,18 @@ Michael Hoffmann and Eli Packer.
   4.3 edition, 2013.
 [&nbsp;<a href="how_to_cite.html#cgal:hp-ia-13b">bib</a>&nbsp;| 
 <a href="http://doc.cgal.org/4.3/Manual/packages.html#PkgInscribedAreasSummary">http</a>&nbsp;]
+=======
+[<a name="cgal:twad-iropitmg-09">169</a>]
+</td>
+<td class="bibtexitem">
+Jane Tournois, Camille Wormser, Pierre Alliez, and Mathieu Desbrun.
+ Interleaving Delaunay refinement and optimization for practical
+  isotropic tetrahedron mesh generation.
+ <em>ACM Transactions on Graphics</em>, 28(3):75:1-75:9, 2009.
+ SIGGRAPH '2009 Conference Proceedings.
+[&nbsp;<a href="how_to_cite.html#cgal:twad-iropitmg-09">bib</a>&nbsp;| 
+<a href="http://hal.inria.fr/inria-00359288">http</a>&nbsp;]
+>>>>>>> Extreme_points_d-Bernd-old
 
 </td>
 </tr>
@@ -994,6 +3367,7 @@ Michael Hoffmann and Eli Packer.
 
 <tr valign="top">
 <td align="right" class="bibtexnumber">
+<<<<<<< HEAD
 [<a name="cgal:fghhs-od-13b">60</a>]
 </td>
 <td class="bibtexitem">
@@ -1004,6 +3378,16 @@ Kaspar Fischer, Bernd G&auml;rtner, Thomas Herrmann, Michael Hoffmann, and Sven
   4.3 edition, 2013.
 [&nbsp;<a href="how_to_cite.html#cgal:fghhs-od-13b">bib</a>&nbsp;| 
 <a href="http://doc.cgal.org/4.3/Manual/packages.html#PkgOptimalDistancesSummary">http</a>&nbsp;]
+=======
+[<a name="cgal:v-ea-09">170</a>]
+</td>
+<td class="bibtexitem">
+Jan Vahrenhold, editor.
+ <em>Experimental Algorithms, 8th International Symposium, SEA 2009,
+  Dortmund, Germany, June 4-6, 2009. Proceedings</em>, volume 5526 of <em>Lecture
+  Notes in Computer Science</em>. Springer, 2009.
+[&nbsp;<a href="how_to_cite.html#cgal:v-ea-09">bib</a>&nbsp;]
+>>>>>>> Extreme_points_d-Bernd-old
 
 </td>
 </tr>
@@ -1011,6 +3395,7 @@ Kaspar Fischer, Bernd G&auml;rtner, Thomas Herrmann, Michael Hoffmann, and Sven
 
 <tr valign="top">
 <td align="right" class="bibtexnumber">
+<<<<<<< HEAD
 [<a name="cgal:f-i-13b">61</a>]
 </td>
 <td class="bibtexitem">
@@ -1020,6 +3405,15 @@ Julia Fl&ouml;totto.
   4.3 edition, 2013.
 [&nbsp;<a href="how_to_cite.html#cgal:f-i-13b">bib</a>&nbsp;| 
 <a href="http://doc.cgal.org/4.3/Manual/packages.html#PkgInterpolation2Summary">http</a>&nbsp;]
+=======
+[<a name="cgal:v-et-95">171</a>]
+</td>
+<td class="bibtexitem">
+Todd Veldhuizen.
+ Expressions templates.
+ <em>C<tt>++</tt>&nbsp;Report</em>, pages 26-31, June 1995.
+[&nbsp;<a href="how_to_cite.html#cgal:v-et-95">bib</a>&nbsp;]
+>>>>>>> Extreme_points_d-Bernd-old
 
 </td>
 </tr>
@@ -1027,6 +3421,7 @@ Julia Fl&ouml;totto.
 
 <tr valign="top">
 <td align="right" class="bibtexnumber">
+<<<<<<< HEAD
 [<a name="cgal:ap-pcad-13b">62</a>]
 </td>
 <td class="bibtexitem">
@@ -1036,6 +3431,17 @@ Pierre Alliez, Sylvain Pion, and Ankit Gupta.
   4.3 edition, 2013.
 [&nbsp;<a href="how_to_cite.html#cgal:ap-pcad-13b">bib</a>&nbsp;| 
 <a href="http://doc.cgal.org/4.3/Manual/packages.html#PkgPrincipalComponentAnalysisDSummary">http</a>&nbsp;]
+=======
+[<a name="cgal:v-gpc-97">172</a>]
+</td>
+<td class="bibtexitem">
+R.&nbsp;C. Veltkamp.
+ Generic programming in %CGAL, the computational geometry algorithms
+  library.
+ In <em>Proceedings of the 6th Eurographics Workshop on Programming
+  Paradigms in Graphics</em>, 1997.
+[&nbsp;<a href="how_to_cite.html#cgal:v-gpc-97">bib</a>&nbsp;]
+>>>>>>> Extreme_points_d-Bernd-old
 
 </td>
 </tr>
@@ -1043,6 +3449,7 @@ Pierre Alliez, Sylvain Pion, and Ankit Gupta.
 
 <tr valign="top">
 <td align="right" class="bibtexnumber">
+<<<<<<< HEAD
 [<a name="cgal:m-ps-13b">63</a>]
 </td>
 <td class="bibtexitem">
@@ -1052,6 +3459,15 @@ Abdelkrim Mebarki.
   4.3 edition, 2013.
 [&nbsp;<a href="how_to_cite.html#cgal:m-ps-13b">bib</a>&nbsp;| 
 <a href="http://doc.cgal.org/4.3/Manual/packages.html#PkgPlacementOfStreamlines2Summary">http</a>&nbsp;]
+=======
+[<a name="cgal:v-tm-95">173</a>]
+</td>
+<td class="bibtexitem">
+Todd Veldhuizen.
+ Template metaprograms.
+ <em>C<tt>++</tt>&nbsp;Report</em>, pages 36-43, May 1995.
+[&nbsp;<a href="how_to_cite.html#cgal:v-tm-95">bib</a>&nbsp;]
+>>>>>>> Extreme_points_d-Bernd-old
 
 </td>
 </tr>
@@ -1059,6 +3475,7 @@ Abdelkrim Mebarki.
 
 <tr valign="top">
 <td align="right" class="bibtexnumber">
+<<<<<<< HEAD
 [<a name="cgal:cp-arutsm-13b">64</a>]
 </td>
 <td class="bibtexitem">
@@ -1068,6 +3485,15 @@ Marc Pouget and Fr&eacute;d&eacute;ric Cazals.
   4.3 edition, 2013.
 [&nbsp;<a href="how_to_cite.html#cgal:cp-arutsm-13b">bib</a>&nbsp;| 
 <a href="http://doc.cgal.org/4.3/Manual/packages.html#PkgRidges_3Summary">http</a>&nbsp;]
+=======
+[<a name="cgal:vj-ctcg-03">174</a>]
+</td>
+<td class="bibtexitem">
+David Vandevoorde and Nicolai&nbsp;M. Josuttis.
+ <em>C++ Templates: The Complete Guide</em>.
+ Addison-Wesley, 2003.
+[&nbsp;<a href="how_to_cite.html#cgal:vj-ctcg-03">bib</a>&nbsp;]
+>>>>>>> Extreme_points_d-Bernd-old
 
 </td>
 </tr>
@@ -1075,6 +3501,7 @@ Marc Pouget and Fr&eacute;d&eacute;ric Cazals.
 
 <tr valign="top">
 <td align="right" class="bibtexnumber">
+<<<<<<< HEAD
 [<a name="cgal:pc-eldp-13b">65</a>]
 </td>
 <td class="bibtexitem">
@@ -1085,6 +3512,14 @@ Marc Pouget and Fr&eacute;d&eacute;ric Cazals.
   4.3 edition, 2013.
 [&nbsp;<a href="how_to_cite.html#cgal:pc-eldp-13b">bib</a>&nbsp;| 
 <a href="http://doc.cgal.org/4.3/Manual/packages.html#PkgJet_fitting_3Summary">http</a>&nbsp;]
+=======
+[<a name="cgal:vp-lactm-96">175</a>]
+</td>
+<td class="bibtexitem">
+Todd Veldhuizen and Kumaraswamy Ponnambalam.
+ Linear algebra with C<tt>++</tt> template metaprograms.
+ <em>Dr. Dobb's Journal</em>, August 1996.
+[&nbsp;<a href="how_to_cite.html#cgal:vp-lactm-96">bib</a>&nbsp;]
 
 </td>
 </tr>
@@ -1092,6 +3527,313 @@ Marc Pouget and Fr&eacute;d&eacute;ric Cazals.
 
 <tr valign="top">
 <td align="right" class="bibtexnumber">
+[<a name="cgal:vrmls-96">176</a>]
+</td>
+<td class="bibtexitem">
+The virtual reality modeling language specification: Version 2.0, ISO/IEC
+  CD 14772.
+ <tt>http://www.vrml.org/</tt>, August 4 1996.
+[&nbsp;<a href="how_to_cite.html#cgal:vrmls-96">bib</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgal:w-fum-92">177</a>]
+</td>
+<td class="bibtexitem">
+Ross&nbsp;N. Williams.
+ <em>FunnelWeb User's Manual</em>, V1.0 for FunnelWeb V3.0
+  edition, May 1992.
+[&nbsp;<a href="how_to_cite.html#cgal:w-fum-92">bib</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgal:w-fvt-90">178</a>]
+</td>
+<td class="bibtexitem">
+Bob Wallis.
+ Forms, vectors, and transforms.
+ In Andrew&nbsp;S. Glassner, editor, <em>Graphics Gems</em>, pages 533-538.
+  Academic Press, 1990.
+[&nbsp;<a href="how_to_cite.html#cgal:w-fvt-90">bib</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgal:w-impoo-94">179</a>]
+</td>
+<td class="bibtexitem">
+Josie Wernicke.
+ <em>The Inventor Mentor: Programming Object-Oriented 3D Graphics
+  with Open Inventor, Release 2</em>.
+ Addison-Wesley, 1994.
+[&nbsp;<a href="how_to_cite.html#cgal:w-impoo-94">bib</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgal:ww-smgd-02">180</a>]
+</td>
+<td class="bibtexitem">
+Joe Warren and Henrik Weimer.
+ <em>Subdivision Methods for Geometric Design</em>.
+ Morgan Kaufmann Publishers, New York, 2002.
+[&nbsp;<a href="how_to_cite.html#cgal:ww-smgd-02">bib</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgal:ybs-frdcl-05">181</a>]
+</td>
+<td class="bibtexitem">
+Shin Yoshizawa, Alexander Belyaev, and Hans-Peter Seidel.
+ Fast and robust detection of crest lines on meshes.
+ In <em>SPM '05: Proceedings of the 2005 ACM symposium on Solid and
+  physical modeling</em>, pages 227-232, New York, NY, USA, 2005. ACM Press.
+[&nbsp;<a href="how_to_cite.html#cgal:ybs-frdcl-05">bib</a>&nbsp;| 
+<a href="http://doi.acm.org/10.1145/1060244.1060270">DOI</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgal:ybs-rvlmi-04">182</a>]
+</td>
+<td class="bibtexitem">
+Yutaka Ohtake, Alexander Belyaev, and Hans-Peter Seidel.
+ Ridge-valley lines on meshes via implicit surface fitting.
+ <em>ACM Trans. Graph.</em>, 23(3):609-612, 2004.
+[&nbsp;<a href="how_to_cite.html#cgal:ybs-rvlmi-04">bib</a>&nbsp;| 
+<a href="http://doi.acm.org/10.1145/1015706.1015768">DOI</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgal:ze-fsbi-02">183</a>]
+</td>
+<td class="bibtexitem">
+Afra Zomorodian and Herbert Edelsbrunner.
+ Fast software for box intersection.
+ <em>Int. J. Comput. Geom. Appl.</em>, 12:143-172, 2002.
+[&nbsp;<a href="how_to_cite.html#cgal:ze-fsbi-02">bib</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgal:h-sm-04">184</a>]
+</td>
+<td class="bibtexitem">
+Christoph&nbsp;M. Hoffmann.
+ Solid modeling.
+ In Jacob&nbsp;E. Goodman and Joseph O'Rourke, editors, <em>Handbook of
+  Discrete and Computational Geometry</em>, chapter&nbsp;56, pages 1257-1278. Chapman
+  &amp; Hall/CRC, 2nd edition, 2004.
+[&nbsp;<a href="how_to_cite.html#cgal:h-sm-04">bib</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgal:fo-ss-98">185</a>]
+</td>
+<td class="bibtexitem">
+Petr Felkel and St&#283;p&aacute;n Obdr&#382;&aacute;lek.
+ Straight skeleton implementation.
+ In L&aacute;szl&oacute;&nbsp;Szirmay Kalos, editor, <em>14th Spring
+  Conference on Computer Graphics (SCCG'98)</em>, pages 210-218, 1998.
+[&nbsp;<a href="how_to_cite.html#cgal:fo-ss-98">bib</a>&nbsp;| 
+<a href="citeseer.ist.psu.edu/article/felkel98straight.html">.html</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgal:ee-rrccpp-98">186</a>]
+</td>
+<td class="bibtexitem">
+David Eppstein and Jeff Erickson.
+ Raising roofs, crashing cycles, and playing pool: Applications of a
+  data structure for finding pairwise interactions.
+ In <em>Symposium on Computational Geometry</em>, pages 58-67, 1998.
+[&nbsp;<a href="how_to_cite.html#cgal:ee-rrccpp-98">bib</a>&nbsp;| 
+<a href="citeseer.ist.psu.edu/eppstein98raising.html">.html</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgal:ld-agrm-03">187</a>]
+</td>
+<td class="bibtexitem">
+R.&nbsp;G. Laycock and A.&nbsp;M. Day.
+ Automatically generating roof models from building footprints.
+ In <em>The 11-th International Conference in Central Europe on
+  Computer Graphics, Visualization and Computer Vision'2003. Journal of WSCG -
+  FULL Papers</em>, volume&nbsp;11, 2003.
+[&nbsp;<a href="how_to_cite.html#cgal:ld-agrm-03">bib</a>&nbsp;| 
+<a href="http://wscg.zcu.cz/wscg2003/Papers_2003/G67.pdf">.pdf</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgal:k-vdc-06">188</a>]
+</td>
+<td class="bibtexitem">
+Menelaos&nbsp;I. Karavelas.
+ Voronoi diagrams in cgal.
+ In <em>22nd European Symposium on Computational Geometry</em>, pages
+  229-232, Delphi, Greece, 2006.
+[&nbsp;<a href="how_to_cite.html#cgal:k-vdc-06">bib</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgal:f-ecsca-04">189</a>]
+</td>
+<td class="bibtexitem">
+E.&nbsp;Fogel et&nbsp;al.
+ An empirical comparison of software for constructing arrangements of
+  curved arcs.
+ Technical Report ECG-TR-361200-01, Tel Aviv University, 2004.
+[&nbsp;<a href="how_to_cite.html#cgal:f-ecsca-04">bib</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgal:m-rgece-06">190</a>]
+</td>
+<td class="bibtexitem">
+Michal Meyerovitch.
+ Robust, generic, and efficient constructions of envelopes of surfaces
+  in three-dimensional space.
+ Master's thesis, Tel-Aviv University, Israel, 2006.
+[&nbsp;<a href="how_to_cite.html#cgal:m-rgece-06">bib</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgal:a-esgc-98">191</a>]
+</td>
+<td class="bibtexitem">
+David Abrahams.
+ Exception-safety in generic components.
+ In Jazayeri et&nbsp;al. [<a href="#cgal:jlm-isgp-98">194</a>], pages 69-79.
+[&nbsp;<a href="how_to_cite.html#cgal:a-esgc-98">bib</a>&nbsp;| 
+<a href="http://www.boost.org/more/generic_exception_safety.html">.html</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgal:as-solri-92">192</a>]
+</td>
+<td class="bibtexitem">
+F.&nbsp;Aurenhammer and O.&nbsp;Schwarzkopf.
+ A simple on-line randomized incremental algorithm for computing
+  higher order Voronoi diagrams.
+ <em>Internat. J. Comput. Geom. Appl.</em>, 2:363-381, 1992.
+[&nbsp;<a href="how_to_cite.html#cgal:as-solri-92">bib</a>&nbsp;]
+<blockquote><font size="-1">
+Keywords: Voronoi diagrams, geometric transforms, dynamization
+</font></blockquote>
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgal:fy-okvd-01">193</a>]
+</td>
+<td class="bibtexitem">
+Julia Fl&ouml;totto and Mariette Yvinec.
+ Order-<em>k</em> Voronoi diagrams.
+ In <em>Abstracts 17th European Workshop Comput. Geom.</em>, pages
+  109-112. Freie Universit&auml;t Berlin, 2001.
+[&nbsp;<a href="how_to_cite.html#cgal:fy-okvd-01">bib</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgal:jlm-isgp-98">194</a>]
+</td>
+<td class="bibtexitem">
+Mehdi Jazayeri, R&uuml;diger Loos, and David&nbsp;R. Musser, editors.
+ <em>Generic Programming, International Seminar on Generic
+  Programming, Dagstuhl Castle, Germany, April 27 - May 1, 1998, Selected
+  Papers</em>, volume 1766 of <em>Lecture Notes in Computer Science</em>. Springer,
+  2000.
+[&nbsp;<a href="how_to_cite.html#cgal:jlm-isgp-98">bib</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="Kazhdan06">195</a>]
+</td>
+<td class="bibtexitem">
+Michael Kazhdan, M.&nbsp;Bolitho, and Hugues Hoppe.
+ Poisson Surface Reconstruction.
+ In <em>Symp. on Geometry Processing</em>, pages 61-70, 2006.
+[&nbsp;<a href="how_to_cite.html#Kazhdan06">bib</a>&nbsp;]
+>>>>>>> Extreme_points_d-Bernd-old
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+<<<<<<< HEAD
 [<a name="cgal:ass-psp-13b">66</a>]
 </td>
 <td class="bibtexitem">
@@ -1101,6 +3843,17 @@ Pierre Alliez, Laurent Saboret, and Nader Salman.
   4.3 edition, 2013.
 [&nbsp;<a href="how_to_cite.html#cgal:ass-psp-13b">bib</a>&nbsp;| 
 <a href="http://doc.cgal.org/4.3/Manual/packages.html#PkgPointSetProcessingSummary">http</a>&nbsp;]
+=======
+[<a name="BC02">196</a>]
+</td>
+<td class="bibtexitem">
+Boissonnat and Cazals.
+ Smooth surface reconstruction via natural neighbour interpolation of
+  distance functions.
+ <em>CGTA: Computational Geometry: Theory and Applications</em>, 22,
+  2002.
+[&nbsp;<a href="how_to_cite.html#BC02">bib</a>&nbsp;]
+>>>>>>> Extreme_points_d-Bernd-old
 
 </td>
 </tr>
@@ -1108,6 +3861,7 @@ Pierre Alliez, Laurent Saboret, and Nader Salman.
 
 <tr valign="top">
 <td align="right" class="bibtexnumber">
+<<<<<<< HEAD
 [<a name="cgal:r-kds-13b">67</a>]
 </td>
 <td class="bibtexitem">
@@ -1117,6 +3871,18 @@ Daniel Russel.
   4.3 edition, 2013.
 [&nbsp;<a href="how_to_cite.html#cgal:r-kds-13b">bib</a>&nbsp;| 
 <a href="http://doc.cgal.org/4.3/Manual/packages.html#PkgKdsSummary">http</a>&nbsp;]
+=======
+[<a name="LC87">197</a>]
+</td>
+<td class="bibtexitem">
+William&nbsp;E. Lorensen and Harvey&nbsp;E. Cline.
+ Marching cubes: A high resolution 3d surface construction algorithm.
+ In <em>SIGGRAPH '87: Proceedings of the 14th annual conference on
+  Computer graphics and interactive techniques</em>, pages 163-169, New York, NY,
+  USA, 1987. ACM Press.
+[&nbsp;<a href="how_to_cite.html#LC87">bib</a>&nbsp;| 
+<a href="http://doi.acm.org/10.1145/37401.37422">DOI</a>&nbsp;]
+>>>>>>> Extreme_points_d-Bernd-old
 
 </td>
 </tr>
@@ -1124,6 +3890,7 @@ Daniel Russel.
 
 <tr valign="top">
 <td align="right" class="bibtexnumber">
+<<<<<<< HEAD
 [<a name="cgal:r-kdsf-13b">68</a>]
 </td>
 <td class="bibtexitem">
@@ -1133,6 +3900,20 @@ Daniel Russel.
   4.3 edition, 2013.
 [&nbsp;<a href="how_to_cite.html#cgal:r-kdsf-13b">bib</a>&nbsp;| 
 <a href="http://doc.cgal.org/4.3/Manual/packages.html#PkgKdsFrameworkSummary">http</a>&nbsp;]
+=======
+[<a name="CBC01">198</a>]
+</td>
+<td class="bibtexitem">
+J.&nbsp;C. Carr, R.&nbsp;K. Beatson, J.&nbsp;B. Cherrie, T.&nbsp;J. Mitchell, W.&nbsp;R. Fright, B.&nbsp;C.
+  McCallum, and T.&nbsp;R. Evans.
+ Reconstruction and representation of 3d objects with radial basis
+  functions.
+ In <em>SIGGRAPH '01: Proceedings of the 28th annual conference on
+  Computer graphics and interactive techniques</em>, pages 67-76, New York, NY,
+  USA, 2001. ACM Press.
+[&nbsp;<a href="how_to_cite.html#CBC01">bib</a>&nbsp;| 
+<a href="http://doi.acm.org/10.1145/383259.383266">DOI</a>&nbsp;]
+>>>>>>> Extreme_points_d-Bernd-old
 
 </td>
 </tr>
@@ -1140,6 +3921,7 @@ Daniel Russel.
 
 <tr valign="top">
 <td align="right" class="bibtexnumber">
+<<<<<<< HEAD
 [<a name="cgal:cfw-cbgl-13b">69</a>]
 </td>
 <td class="bibtexitem">
@@ -1149,6 +3931,18 @@ Andreas Fabri, Fernando Cacciola, and Ron Wein.
   4.3 edition, 2013.
 [&nbsp;<a href="how_to_cite.html#cgal:cfw-cbgl-13b">bib</a>&nbsp;| 
 <a href="http://doc.cgal.org/4.3/Manual/packages.html#PkgBGLSummary">http</a>&nbsp;]
+=======
+[<a name="ABK98">199</a>]
+</td>
+<td class="bibtexitem">
+Nina Amenta, Marshall Bern, and Manolis Kamvysselis.
+ A new voronoi-based surface reconstruction algorithm.
+ In <em>SIGGRAPH '98: Proceedings of the 25th annual conference on
+  Computer graphics and interactive techniques</em>, pages 415-421, New York, NY,
+  USA, 1998. ACM Press.
+[&nbsp;<a href="how_to_cite.html#ABK98">bib</a>&nbsp;| 
+<a href="http://doi.acm.org/10.1145/280814.280947">DOI</a>&nbsp;]
+>>>>>>> Extreme_points_d-Bernd-old
 
 </td>
 </tr>
@@ -1156,6 +3950,7 @@ Andreas Fabri, Fernando Cacciola, and Ron Wein.
 
 <tr valign="top">
 <td align="right" class="bibtexnumber">
+<<<<<<< HEAD
 [<a name="cgal:fs-cbpm-13b">70</a>]
 </td>
 <td class="bibtexitem">
@@ -1165,6 +3960,17 @@ Andreas Fabri and Laurent Saboret.
   4.3 edition, 2013.
 [&nbsp;<a href="how_to_cite.html#cgal:fs-cbpm-13b">bib</a>&nbsp;| 
 <a href="http://doc.cgal.org/4.3/Manual/packages.html#PkgProperty_mapSummary">http</a>&nbsp;]
+=======
+[<a name="Guennebaud07">200</a>]
+</td>
+<td class="bibtexitem">
+Ga&euml;l Guennebaud and Markus Gross.
+ Algebraic point set surfaces.
+ In <em>SIGGRAPH '07: ACM SIGGRAPH 2007 papers</em>, page&nbsp;23, New York,
+  NY, USA, 2007. ACM.
+[&nbsp;<a href="how_to_cite.html#Guennebaud07">bib</a>&nbsp;| 
+<a href="http://doi.acm.org/10.1145/1275808.1276406">DOI</a>&nbsp;]
+>>>>>>> Extreme_points_d-Bernd-old
 
 </td>
 </tr>
@@ -1172,6 +3978,7 @@ Andreas Fabri and Laurent Saboret.
 
 <tr valign="top">
 <td align="right" class="bibtexnumber">
+<<<<<<< HEAD
 [<a name="cgal:dd-ss-13b">71</a>]
 </td>
 <td class="bibtexitem">
@@ -1181,6 +3988,18 @@ Christophe Delage and Olivier Devillers.
   4.3 edition, 2013.
 [&nbsp;<a href="how_to_cite.html#cgal:dd-ss-13b">bib</a>&nbsp;| 
 <a href="http://doc.cgal.org/4.3/Manual/packages.html#PkgSpatialSortingSummary">http</a>&nbsp;]
+=======
+[<a name="cclt-dc3sk-08">201</a>]
+</td>
+<td class="bibtexitem">
+Pedro&nbsp;M.M. de&nbsp;Castro, Frederic Cazals, Sebastien Loriot, and Monique Teillaud.
+ Design of the %CGAL 3D Spherical Kernel and application to
+  arrangements of circles on a sphere.
+ <em>Computational Geometry : Theory and Applications</em>, 42(6-7):536
+  - 550, 2009.
+[&nbsp;<a href="how_to_cite.html#cclt-dc3sk-08">bib</a>&nbsp;| 
+<a href="http://dx.doi.org/DOI: 10.1016/j.comgeo.2008.10.003">DOI</a>&nbsp;]
+>>>>>>> Extreme_points_d-Bernd-old
 
 </td>
 </tr>
@@ -1188,6 +4007,7 @@ Christophe Delage and Olivier Devillers.
 
 <tr valign="top">
 <td align="right" class="bibtexnumber">
+<<<<<<< HEAD
 [<a name="cgal:atw-aabb-13b">72</a>]
 </td>
 <td class="bibtexitem">
@@ -1197,6 +4017,15 @@ Pierre Alliez, St&eacute;phane Tayeb, and Camille Wormser.
   4.3 edition, 2013.
 [&nbsp;<a href="how_to_cite.html#cgal:atw-aabb-13b">bib</a>&nbsp;| 
 <a href="http://doc.cgal.org/4.3/Manual/packages.html#PkgAABB_treeSummary">http</a>&nbsp;]
+=======
+[<a name="schwarzkopf1995ede">202</a>]
+</td>
+<td class="bibtexitem">
+O.&nbsp;Schwarzkopf.
+ The extensible drawing editor Ipe.
+ In <em>Proceedings of the eleventh annual symposium on Computational
+  geometry</em>, pages 410-411. ACM New York, NY, USA, 1995.
+[&nbsp;<a href="how_to_cite.html#schwarzkopf1995ede">bib</a>&nbsp;]
 
 </td>
 </tr>
@@ -1204,6 +4033,117 @@ Pierre Alliez, St&eacute;phane Tayeb, and Camille Wormser.
 
 <tr valign="top">
 <td align="right" class="bibtexnumber">
+[<a name="ipe:man-09">203</a>]
+</td>
+<td class="bibtexitem">
+Otfried Cheong.
+ <em>IPE manual and library documentation</em>, 6.0pre32 edition, 2009.
+[&nbsp;<a href="how_to_cite.html#ipe:man-09">bib</a>&nbsp;| 
+<a href="http://tclab.kaist.ac.kr/ipe/">http</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgal:t-ocdl-05">204</a>]
+</td>
+<td class="bibtexitem">
+P.&nbsp;Terdiman.
+ OPCODE 3D Collision Detection library, 2005.
+ http://www.codercorner.com/Opcode.htm.
+[&nbsp;<a href="how_to_cite.html#cgal:t-ocdl-05">bib</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="msri52:liu-snoeyink-05">205</a>]
+</td>
+<td class="bibtexitem">
+Yuanxin Liu and Jack Snoeyink.
+ A comparison of five implementations of 3D delaunay tessellation.
+ In J&aacute;nos&nbsp;Pach Jacob E.&nbsp;Goodman and Emo Welzl, editors, <em>
+  Combinatorial and Computational Geometry</em>, pages 439-458. MSRI Publications,
+  2005.
+[&nbsp;<a href="how_to_cite.html#msri52:liu-snoeyink-05">bib</a>&nbsp;| 
+<a href="http://www.msri.org/communications/books/Book52/files/23liu.pdf">.pdf</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="cgta-kmpsy-08">206</a>]
+</td>
+<td class="bibtexitem">
+Lutz Kettner, Kurt Mehlhorn, Sylvain Pion, Stefan Schirra, and Chee Yap.
+ Classroom examples of robustness problems in geometric computations.
+ <em>Computational Geometry: Theory and Applications</em>, 40(1):61-78,
+  may 2008.
+[&nbsp;<a href="how_to_cite.html#cgta-kmpsy-08">bib</a>&nbsp;| 
+<a href="http://dx.doi.org/10.1016/j.comgeo.2007.06.003">DOI</a>&nbsp;| 
+<a href="http://hal.inria.fr/inria-00344310/">http</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="e-dpssdt-02">207</a>]
+</td>
+<td class="bibtexitem">
+Jeff Erickson.
+ Dense point sets have sparse Delaunay triangulations.
+ In <em>Proc. 13th ACM-SIAM Sympos. Discrete Algorithms (SODA)</em>,
+  pages 125-134, 2002.
+[&nbsp;<a href="how_to_cite.html#e-dpssdt-02">bib</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="geometrica-5986i">208</a>]
+</td>
+<td class="bibtexitem">
+Nina Amenta, Dominique Attali, and Olivier Devillers.
+ Complexity of Delaunay triangulation for points on
+  lower-dimensional polyhedra.
+ In <em>Proc. 18th ACM-SIAM Sympos. Discrete Algorithms</em>, pages
+  1106-1113, 2007.
+[&nbsp;<a href="how_to_cite.html#geometrica-5986i">bib</a>&nbsp;| 
+<a href="http://hal.inria.fr/inria-00182835/">http</a>&nbsp;]
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+[<a name="prisme-4453a">209</a>]
+</td>
+<td class="bibtexitem">
+Dominique Attali and Jean-Daniel Boissonnat.
+ Complexity of the Delaunay triangulation of points on polyhedral
+  surfaces.
+ <em>Discrete and Computational Geometry</em>, 30(3):437-452, 2003.
+[&nbsp;<a href="how_to_cite.html#prisme-4453a">bib</a>&nbsp;]
+>>>>>>> Extreme_points_d-Bernd-old
+
+</td>
+</tr>
+
+
+<tr valign="top">
+<td align="right" class="bibtexnumber">
+<<<<<<< HEAD
 [<a name="cgal:h-msms-13b">73</a>]
 </td>
 <td class="bibtexitem">
@@ -1213,6 +4153,17 @@ Michael Hoffmann.
   4.3 edition, 2013.
 [&nbsp;<a href="how_to_cite.html#cgal:h-msms-13b">bib</a>&nbsp;| 
 <a href="http://doc.cgal.org/4.3/Manual/packages.html#PkgMatrixSearchSummary">http</a>&nbsp;]
+=======
+[<a name="prisme-abl-03">210</a>]
+</td>
+<td class="bibtexitem">
+Dominique Attali, Jean-Daniel Boissonnat, and Andr&eacute; Lieutier.
+ Complexity of the Delaunay triangulation of points on surfaces: The
+  smooth case.
+ In <em>Proc. 19th Annual Symposium on Computational Geometry</em>, pages
+  237-246, 2003.
+[&nbsp;<a href="how_to_cite.html#prisme-abl-03">bib</a>&nbsp;]
+>>>>>>> Extreme_points_d-Bernd-old
 
 </td>
 </tr>
@@ -1220,6 +4171,7 @@ Michael Hoffmann.
 
 <tr valign="top">
 <td align="right" class="bibtexnumber">
+<<<<<<< HEAD
 [<a name="cgal:hkpw-se-13b">74</a>]
 </td>
 <td class="bibtexitem">
@@ -1229,6 +4181,17 @@ Michael Hoffmann, Lutz Kettner, Sylvain Pion, and Ron Wein.
   4.3 edition, 2013.
 [&nbsp;<a href="how_to_cite.html#cgal:hkpw-se-13b">bib</a>&nbsp;| 
 <a href="http://doc.cgal.org/4.3/Manual/packages.html#PkgStlExtensionSummary">http</a>&nbsp;]
+=======
+[<a name="eigenwillig-phd-08">211</a>]
+</td>
+<td class="bibtexitem">
+Arno Eigenwillig.
+ <em>Real Root Isolation for Exactand Approximate Polynomials Using
+  Descartes ' Rule of Signs</em>.
+ PhD thesis, Universit&auml;t des Saarlandes, Saarbr&uuml;cken, Germany,
+  2008.
+[&nbsp;<a href="how_to_cite.html#eigenwillig-phd-08">bib</a>&nbsp;]
+>>>>>>> Extreme_points_d-Bernd-old
 
 </td>
 </tr>
@@ -1236,6 +4199,7 @@ Michael Hoffmann, Lutz Kettner, Sylvain Pion, and Ron Wein.
 
 <tr valign="top">
 <td align="right" class="bibtexnumber">
+<<<<<<< HEAD
 [<a name="cgal:dksy-hc-13b">75</a>]
 </td>
 <td class="bibtexitem">
@@ -1245,6 +4209,16 @@ Olivier Devillers, Lutz Kettner, Michael Seel, and Mariette Yvinec.
   4.3 edition, 2013.
 [&nbsp;<a href="how_to_cite.html#cgal:dksy-hc-13b">bib</a>&nbsp;| 
 <a href="http://doc.cgal.org/4.3/Manual/packages.html#PkgHandlesAndCirculatorsSummary">http</a>&nbsp;]
+=======
+[<a name="abbott-qir-06">212</a>]
+</td>
+<td class="bibtexitem">
+J.&nbsp;Abbott.
+ Quadratic interval refinement for real roots.
+ Poster presented at the 2006 Int. Symp. on Symb. and Alg. Comp.   (ISSAC 2006).
+[&nbsp;<a href="how_to_cite.html#abbott-qir-06">bib</a>&nbsp;| 
+<a href="http://www.dima.unige.it/~abbott/">http</a>&nbsp;]
+>>>>>>> Extreme_points_d-Bernd-old
 
 </td>
 </tr>
@@ -1252,6 +4226,7 @@ Olivier Devillers, Lutz Kettner, Michael Seel, and Mariette Yvinec.
 
 <tr valign="top">
 <td align="right" class="bibtexnumber">
+<<<<<<< HEAD
 [<a name="cgal:dhhk-gog-13b">76</a>]
 </td>
 <td class="bibtexitem">
@@ -1262,6 +4237,17 @@ Olivier Devillers, Susan Hert, Michael Hoffmann, Lutz Kettner, and Sven
   4.3 edition, 2013.
 [&nbsp;<a href="how_to_cite.html#cgal:dhhk-gog-13b">bib</a>&nbsp;| 
 <a href="http://doc.cgal.org/4.3/Manual/packages.html#PkgGeneratorsSummary">http</a>&nbsp;]
+=======
+[<a name="ek-exact-08">213</a>]
+</td>
+<td class="bibtexitem">
+Arno Eigenwillig and Michael Kerber.
+ Exact and efficient 2d-arrangements of arbitrary algebraic curves.
+ In <em>Proceedings of the Nineteenth Annual ACM-SIAM Symposium on
+  Discrete Algorithms (SODA08)</em>, 2008.
+ 122-131.
+[&nbsp;<a href="how_to_cite.html#ek-exact-08">bib</a>&nbsp;]
+>>>>>>> Extreme_points_d-Bernd-old
 
 </td>
 </tr>
@@ -1269,6 +4255,7 @@ Olivier Devillers, Susan Hert, Michael Hoffmann, Lutz Kettner, and Sven
 
 <tr valign="top">
 <td align="right" class="bibtexnumber">
+<<<<<<< HEAD
 [<a name="cgal:kps-pthum-13b">77</a>]
 </td>
 <td class="bibtexitem">
@@ -1278,6 +4265,17 @@ Lutz Kettner, Sylvain Pion, and Michael Seel.
   4.3 edition, 2013.
 [&nbsp;<a href="how_to_cite.html#cgal:kps-pthum-13b">bib</a>&nbsp;| 
 <a href="http://doc.cgal.org/4.3/Manual/packages.html#PkgProfilingToolsSummary">http</a>&nbsp;]
+=======
+[<a name="ekw-fast-07">214</a>]
+</td>
+<td class="bibtexitem">
+Arno Eigenwillig, Michael Kerber, and Nicola Wolpert.
+ Fast and exact geometric analysis of real algebraic plane curves.
+ In Christopher&nbsp;W. Brown, editor, <em>Proocedings of the 2007
+  International Symposium on Symbolic and Algebraic Computation (ISSAC 2007)</em>,
+  pages 151-158, 2007.
+[&nbsp;<a href="how_to_cite.html#ekw-fast-07">bib</a>&nbsp;]
+>>>>>>> Extreme_points_d-Bernd-old
 
 </td>
 </tr>
@@ -1285,6 +4283,7 @@ Lutz Kettner, Sylvain Pion, and Michael Seel.
 
 <tr valign="top">
 <td align="right" class="bibtexnumber">
+<<<<<<< HEAD
 [<a name="cgal:fgk-ios-13b">78</a>]
 </td>
 <td class="bibtexitem">
@@ -1294,6 +4293,16 @@ Andreas Fabri, Geert-Jan Giezeman, and Lutz Kettner.
   4.3 edition, 2013.
 [&nbsp;<a href="how_to_cite.html#cgal:fgk-ios-13b">bib</a>&nbsp;| 
 <a href="http://doc.cgal.org/4.3/Manual/packages.html#PkgIOstreamsSummary">http</a>&nbsp;]
+=======
+[<a name="kerber-phd-09">215</a>]
+</td>
+<td class="bibtexitem">
+Michael Kerber.
+ <em>Geometric Algorithms for Algebraic Curves and Surfaces</em>.
+ PhD thesis, Universit&auml;t des Saarlandes, Saarbr&uuml;cken, Germany,
+  2009.
+[&nbsp;<a href="how_to_cite.html#kerber-phd-09">bib</a>&nbsp;]
+>>>>>>> Extreme_points_d-Bernd-old
 
 </td>
 </tr>
@@ -1301,6 +4310,7 @@ Andreas Fabri, Geert-Jan Giezeman, and Lutz Kettner.
 
 <tr valign="top">
 <td align="right" class="bibtexnumber">
+<<<<<<< HEAD
 [<a name="cgal:fp-gv-13b">79</a>]
 </td>
 <td class="bibtexitem">
@@ -1310,6 +4320,18 @@ Andreas Fabri and Sylvain Pion.
   4.3 edition, 2013.
 [&nbsp;<a href="how_to_cite.html#cgal:fp-gv-13b">bib</a>&nbsp;| 
 <a href="http://doc.cgal.org/4.3/Manual/packages.html#PkgGeomviewSummary">http</a>&nbsp;]
+=======
+[<a name="grlr-sturm-habicht-98">216</a>]
+</td>
+<td class="bibtexitem">
+L.&nbsp;Gonzalez-Vega, T.&nbsp;Recio, H.&nbsp;Lombardi, and M.-F. Roy.
+ Sturm-habicht sequences, determinants and real roots of univariate
+  polynomials.
+ In B.F. Caviness and J.R. Johnson, editors, <em>Quantifier
+  Elimination and Cylindrical Algebraic Decomposition</em>, Texts and Monographs in
+  Symbolic Computation, pages 300-316. Springer, 1998.
+[&nbsp;<a href="how_to_cite.html#grlr-sturm-habicht-98">bib</a>&nbsp;]
+>>>>>>> Extreme_points_d-Bernd-old
 
 </td>
 </tr>
@@ -1317,6 +4339,7 @@ Andreas Fabri and Sylvain Pion.
 
 <tr valign="top">
 <td align="right" class="bibtexnumber">
+<<<<<<< HEAD
 [<a name="cgal:fr-cqgvf-13b">80</a>]
 </td>
 <td class="bibtexitem">
@@ -1326,6 +4349,17 @@ Andreas Fabri and Laurent Rineau.
   4.3 edition, 2013.
 [&nbsp;<a href="how_to_cite.html#cgal:fr-cqgvf-13b">bib</a>&nbsp;| 
 <a href="http://doc.cgal.org/4.3/Manual/packages.html#PkgGraphicsViewSummary">http</a>&nbsp;]
+=======
+[<a name="dh-pifch-96">217</a>]
+</td>
+<td class="bibtexitem">
+J.H. Dul&aacute; and R.V. Helgason.
+ A new procedure for identifying the frame of the convex hull of a
+  finite collection of points in multidimensional space.
+ <em>European Journal of Operational Research</em>, 92(2):352 - 367,
+  1996.
+[&nbsp;<a href="how_to_cite.html#dh-pifch-96">bib</a>&nbsp;]
+>>>>>>> Extreme_points_d-Bernd-old
 
 </td>
 </tr>
@@ -1333,6 +4367,7 @@ Andreas Fabri and Laurent Rineau.
 
 <tr valign="top">
 <td align="right" class="bibtexnumber">
+<<<<<<< HEAD
 [<a name="cgal:lp-gi-13b">81</a>]
 </td>
 <td class="bibtexitem">
@@ -1342,6 +4377,15 @@ S&eacute;bastien Loriot and Sylvain Pion.
   4.3 edition, 2013.
 [&nbsp;<a href="how_to_cite.html#cgal:lp-gi-13b">bib</a>&nbsp;| 
 <a href="http://doc.cgal.org/4.3/Manual/packages.html#PkgCGALIpeletsSummary">http</a>&nbsp;]
+=======
+[<a name="dl-cosfa-08">218</a>]
+</td>
+<td class="bibtexitem">
+JH&nbsp;Dul&aacute;1and&nbsp;FJ L&oacute;pez.
+ Competing output-sensitive frame algorithms.
+ 2008.
+[&nbsp;<a href="how_to_cite.html#dl-cosfa-08">bib</a>&nbsp;]
+>>>>>>> Extreme_points_d-Bernd-old
 
 </td>
 </tr>
