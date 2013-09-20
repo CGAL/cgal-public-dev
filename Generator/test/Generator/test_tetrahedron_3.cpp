@@ -115,6 +115,11 @@ int main() {
 		               std::back_inserter(point_set));
 		assert(inside_or_close_to_tetrahedron(tet,point_set.begin(),point_set.end()));
 		assert(is_uniform(tet,point_set.begin(),point_set.end(),r));
+
+		point_set.clear();
+		points_in_tetrahedron_3(pts[0],pts[1],pts[2],pts[3],number_points, point_set);
+		assert(inside_or_close_to_tetrahedron(tet,point_set.begin(),point_set.end()));
+		assert(is_uniform(tet,point_set.begin(),point_set.end(),r));
 	}
 	return 0;
 }
