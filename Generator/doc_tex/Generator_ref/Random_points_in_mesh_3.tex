@@ -1,0 +1,59 @@
+\begin{ccRefClass}{Random_points_in_mesh_3<Point_3, C3t3, Creator>}
+
+\ccDefinition
+
+The class \ccRefName\ is an input iterator creating points uniformly
+distributed inside a surface mesh, taking into account the weight of each facet.
+The default \ccc{Creator} is \ccc{Creator_uniform_3<Kernel_traits<P>::Kernel::RT,P>}.
+
+\ccIsModel
+InputIterator \\
+\ccRefConceptPage{PointGenerator}
+
+\ccInclude{CGAL/point_generators_3.h}
+
+\ccTypes
+
+\ccThree{typedef std::input_iterator_tagxxx}{xxxiterator_category;}{}
+\ccTypedef{typedef std::input_iterator_tag iterator_category;}{}
+\ccGlue
+\ccTypedef{typedef Point_3                 value_type;}{}
+\ccGlue
+\ccTypedef{typedef std::ptrdiff_t          difference_type;}{}
+\ccGlue
+\ccTypedef{typedef const Point_3*          pointer;}{}
+\ccGlue
+\ccTypedef{typedef const Point_3&          reference;}{}
+
+\ccOperations
+
+\ccCreationVariable{g}
+\ccConstructor{Random_points_in_surface_mesh_3(C2t3& c2t3, Random& rnd = default_random);}{%
+  $g$ is an input iterator creating points of type \ccc{Point_3} uniformly
+  distributed (also taking into account the weight of each facet) inside a surface
+  mesh with the MeshComplex_2InTriangulation_3 $ c3t3 $,
+  i.e.\ ~$ \forall pt = *g: pt = \alpha * p + \beta * q + \gamma * r + \delta * s$~,
+  where ~$ \alpha, \beta, \gamma, \delta \in [0, 1] $~ and
+  ~$ \alpha + \beta + \gamma + \delta = 1 $~, with \f$ p, q, r, s $~ being the
+  vertices of a cell in c3t3.
+  Three random numbers in total are needed from \ccc{rnd} for each point. More
+  precisely, one random number is generated for picking a facet and then
+  Random_points_in_triangle_3::generate_points() is called, which in turn
+  needs two numbers from `rnd` for each point.
+} 
+
+\ccSeeAlso
+
+\ccRefIdfierPage{CGAL::cpp11::copy_n} \\
+\ccRefIdfierPage{CGAL::Counting_iterator} \\
+\ccRefIdfierPage{CGAL::Random_points_in_triangle_2<Point_2, Creator>} \\
+\ccRefIdfierPage{CGAL::Random_points_in_triangle_3<Point_3, Creator>} \\
+\ccRefIdfierPage{CGAL::Random_points_in_square_2<Point_2, Creator>} \\
+\ccRefIdfierPage{CGAL::Random_points_in_sphere_3<Point_3, Creator>} \\
+\ccRefIdfierPage{CGAL::Random_points_on_sphere_3<Point_3, Creator>}\\
+\ccRefIdfierPage{CGAL::Random_points_in_tetrahedron_3<Point_3, Creator>} \\
+\ccRefIdfierPage{CGAL::Random_points_in_mesh_3<Point_3, C3t3, Creator>} \\
+\ccc{std::random_shuffle} 
+
+
+\end{ccRefClass}
