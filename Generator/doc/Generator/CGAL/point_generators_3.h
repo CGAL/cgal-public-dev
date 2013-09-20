@@ -469,7 +469,8 @@ where \f$ \alpha, \beta, \gamma, \delta \in [0, 1] \f$ and
 \f$ \alpha + \beta + \gamma + \delta = 1 \f$, with \f$ p, q, r, s \f$ being the
 vertices of a cell in c3t3.
 One random number is needed from `rnd` for each point for picking a cell and
-then Random_points_in_tetrahedron_3 is called.
+then Random_points_in_tetrahedron_3::generate_points() is called, which, in
+turn, needs three numbers from `rnd` for each point.
 
 */
 Random_points_in_mesh_3( C3t3& c3t3, Random& rnd =
@@ -544,7 +545,8 @@ where \f$ \alpha, \beta, \gamma \in [0, 1] \f$ and
 \f$ \alpha + \beta + \gamma = 1 \f$, with \f$ p, q, r \f$ being the
 vertices of a facet in c2t3.
 One random number is needed from `rnd` for each point for picking a facet and
-then Random_points_in_triangle_3 is called.
+then Random_points_in_triangle_3::generate_points() is called, which in turn
+needs two numbers from `rnd` for each point.
 
 */
 Random_points_on_surface_mesh_3( C2t3& c2t3, Random& rnd =
