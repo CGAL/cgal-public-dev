@@ -319,15 +319,6 @@ void Random_points_in_tetrahedron_3<P, Creator>::generate_point() {
 	this->d_item = creator(ret[0],ret[1],ret[2]);
 }
 
-template<class P, class OutputIterator>
-OutputIterator
-points_in_tetrahedron_3(const P& p, const P& q, const P& r, const P& s,
-		int n, OutputIterator o) {
-	Random_points_in_tetrahedron_3<P> g(p, q, r, s);
-	CGAL::cpp11::copy_n(g, n, std::back_inserter(o));
-	return o;
-}
-
 template<typename Tetrahedron_3>
 class WeightFunctor_tetrahedron_3 {
 	public:
