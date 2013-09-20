@@ -241,7 +241,7 @@ See \cgalFigureRef{figurePointGenerator} for the example output.
 \cgalExample{Generator/random_points_triangle_2.cpp}
 
 \cgalFigureBegin{figureIntegerPointGenerator,generators_prog2.png}
-Output of example program for point generators.
+Output of example program for point generators, for N = 5000 generated points.
 \cgalFigureEnd
 
 \section GeneratorExTetra3 Example Generating points inside a Tetrahedron_3 and a Triangle_3
@@ -255,7 +255,7 @@ See \cgalFigureRef{figurePointGenerator} for the example output.
 \cgalExample{Generator/random_points_tetrahedron_and_triangle_3.cpp}
 
 \cgalFigureBegin{figureIntegerPointGenerator,generators_prog2.png}
-Output of example program for point generators, for N = 5000 generated points.
+Output of example program for point generators, for tetrahedron and for N = .
 \cgalFigureEnd
 
 \section GeneratorExMesh3 Example Generating points inside a Mesh_3
@@ -268,7 +268,7 @@ See \cgalFigureRef{figurePointGenerator} for the example output.
 \cgalExample{Generator/random_points_mesh_3.cpp}
 
 \cgalFigureBegin{figureIntegerPointGenerator,generators_prog2.png}
-Output of example program for point generators, for tetrahedron and for N = .
+Output of example program for point generators.
 \cgalFigureEnd
 
 \section GeneratorExSurfMesh3 Example Generating points inside a Surface_mesh_3
