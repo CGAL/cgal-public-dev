@@ -2,12 +2,19 @@
 #ifndef files_Arr_cmap_dcel_h
 #define files_Arr_cmap_dcel_h
 /*! \file
- * The definition of the Arr_cmap_dcel<Traits, CMap> class.
+ * The definition of the DCEL class based on Combinatorial_map_with_holes.
  */
 
-#include <CGAL/N_step_adaptor_derived.h>
 #include <CGAL/Combinatorial_map_with_holes.h>
+#include <CGAL/Linear_cell_complex.h>
+#include <CGAL/N_step_adaptor_derived.h>
+#include <CGAL/Cell_attribute_with_point.h>
+#include <CGAL/Cell_attribute.h>
+#include <CGAL/Arr_enums.h>
+#include <CGAL/Dart.h>
+#include <CGAL/Compact_container.h>
 #include <list>
+#include <iostream>
 
 namespace CGAL {
 /*! \class
@@ -16,145 +23,103 @@ namespace CGAL {
  * defines the Point_2 and X_monotone_curve_2 types.
  */
 
-//Forward declaration
-template <class Traits_, class CMap> class Arr_cmap_vertex;
-template <class Traits_, class CMap> class Arr_cmap_halfedge;
-template <class Traits_, class CMap> class Arr_cmap_face;
-template <class Traits_, class CMap> class Arr_cmap_outer_ccb;
-template <class Traits_, class CMap> class Arr_cmap_inner_ccb;
-template <class Traits_, class CMap> class Arr_cmap_isolated_vertex;
-template <class Traits_, class Cmap> class Arr_cmap_dcel;
+/* Forward declarations. */
+template <int d, class Refs> class Arr_cmap_halfedge;
+template <class LCC,class Refs> class Arr_cmap_vertex;
+template <unsigned int d_, class Traits_, class Items_, class Alloc_>
+    class Arr_cmap_dcel;
+template <unsigned int d_, class Refs> class Arr_cmap_outer_ccb;
+template <unsigned int d_, class Refs> class Arr_cmap_inner_ccb;
+template <unsigned int d_, class Refs> class Arr_cmap_isolated_vertex;
 
-/*! \class
- * The arrangement DCEL vertex class.
- */
-template <class Traits_, class CMap>
-class Arr_cmap_vertex
+/* The min items for the Arr_cmap_dcel class. */
+struct Arr_cmap_min_items
+{
+  /// Dart_wrapper defines the type of darts used, and enabled attributes.
+  template < class Refs>
+  struct Dart_wrapper
+  {
+    typedef CGAL::Arr_cmap_halfedge< 2, Refs > Dart;
+    typedef CGAL::Cell_attribute<Refs, typename Refs::X_monotove_curve>
+                                                                  Edge_attrib;
+    typedef CGAL::cpp11::tuple<typename Refs::Vertex, Edge_attrib> Attributes;
+  };
+};
+
+template <class LCC, class Refs>
+class Arr_cmap_vertex : public Cell_attribute_with_point<LCC>
 {
 public:
 
-  typedef Traits_                                   Traits;
-  typedef typename Traits::Point_2                  Point;
-  typedef typename CMap::Dart_handle                Dart_handle;
-
-public:
-
-  typedef Arr_cmap_vertex<Traits, CMap>             Vertex;
-  typedef Arr_cmap_halfedge<Traits, CMap>           Halfedge;
-  //typedef Arr_cmap_face<Traits, CMap>               Face;
-  typedef Arr_cmap_isolated_vertex<Traits, CMap>    Isolated_vertex;
-  typedef Arr_cmap_dcel<Traits, CMap>               Dcel;
-
-public:
-
-  //Dcel* dcel;
-  Dart_handle dh;
+  typedef Cell_attribute_with_point<LCC>           Base;
+  typedef typename Base::Point                     Point;
+  typedef typename Refs::Dart_handle               Dart_handle;
+  typedef typename Refs::Dart_const_handle         Dart_const_handle;
+  typedef typename Refs::Isolated_vertex           Isolated_vertex;
 
 private:
 
-  Point           *pt;     //The point associated with the vertex.
-  Halfedge        *inc;    //The incident halfedge.
-  Isolated_vertex *civ;    //The isolated vertex information.
-  char            pss[2];  //The x and y parameter spaces
-                           //(condensed in two bytes).
+  char pss[2];
+  bool is_not_null;
+  Isolated_vertex* iso;
 
 public:
 
-  //default constructor
+  /* default constructor */
   Arr_cmap_vertex () :
-    pt(NULL),
-    inc(NULL),
-    civ(NULL)
-    //dcel(NULL)
+    is_not_null(false),
+    iso(NULL)
   {
     pss[0] = pss[1] = static_cast<char> (CGAL::ARR_INTERIOR);
-    dh = CMap::null_dart_handle;
   }
 
   /*! Destructor. */
-  virtual ~Arr_cmap_vertex () {}
+  virtual ~Arr_cmap_vertex() {}
 
-  /*! Check if the vertex is isolated. */
-  bool is_isolated () const
+  bool has_null_point () const
   {
-    return (dh == CMap::null_dart_handle);
-  }
-
-  /*! Get an incident halfedge (const version). */
-  const Halfedge* halfedge() const
-  {
-    CGAL_precondition(! is_isolated());
-    return this->inc;
-  }
-
-  /*! Get an incident halfedge (non-const version). */
-  Halfedge* halfedge()
-  {
-    CGAL_precondition(! is_isolated());
-    return this->inc;
-  }
-
-  /*! Get the isolated vertex information (non-const version). */
-  Isolated_vertex* isolated_vertex()
-  {
-    CGAL_precondition(is_isolated());
-    return this->civ;
-  }
-
-  /*! Get the isolated vertex information (const version). */
-  const Isolated_vertex* isolated_vertex() const
-  {
-    CGAL_precondition(is_isolated());
-    return this->civ;
-  }
-
-  /*! Set the isolated vertex information. */
-  void set_isolated_vertex(Isolated_vertex* iv)
-  {
-    civ = iv;
-  }
-
-  /*! Get the point (const version). */
-  const Point& point() const
-  {
-    CGAL_assertion (pt != NULL);
-    return (*pt);
-  }
-
-  /*! Get the point (non-const version). */
-  Point& point()
-  {
-    CGAL_assertion (pt != NULL);
-    return (*pt);
+    return (!is_not_null);
   }
 
   /*! Set the point (may be a NULL point). */
   void set_point (Point *p)
   {
-    pt = p;
+    this->mpoint = (*p);
   }
 
-  /*! Check if the point pointer is NULL. */
-  bool has_null_point () const
+  bool is_isolated () const
   {
-    return (pt == NULL);
+    if (this->dart() == NULL)
+      return true;
+    else
+      return false;
   }
 
-  /*! Set an incident halfedge (for non-isolated vertices). */
-  void set_halfedge(Halfedge* e)
+  Dart_handle halfedge ()
   {
-    this->inc = e;
-    dh = e->dh;
+    CGAL_precondition (! is_isolated());
+    return this->dart();
+  }
+
+  Dart_const_handle halfedge () const
+  {
+    CGAL_precondition (! is_isolated());
+    return this->dart();
+  }
+
+  void set_halfedge (Dart_handle dh)
+  {
+    this->set_dart(dh);
   }
 
   /*! Get the boundary type in x. */
-  Arr_parameter_space parameter_space_in_x() const
+  Arr_parameter_space parameter_space_in_x () const
   {
     return (Arr_parameter_space (pss[0]));
   }
 
   /*! Get the boundary type in y. */
-  Arr_parameter_space parameter_space_in_y() const
+  Arr_parameter_space parameter_space_in_y () const
   {
     return (Arr_parameter_space (pss[1]));
   }
@@ -168,130 +133,150 @@ public:
   }
 
   /*! Assign from another vertex. */
-  virtual void assign (const Arr_cmap_vertex<Traits, CMap>& v)
+  virtual void assign (const Arr_cmap_vertex<LCC, Refs>& v)
   {
-    pt = v.pt;
+    is_not_null = v.is_not_null;
+    this->mpoint = v.point();
     pss[0] = v.pss[0];
     pss[1] = v.pss[1];
   }
+
+  /*! Get the isolated vertex information (const version). */
+  const Isolated_vertex* isolated_vertex () const
+  {
+    CGAL_precondition (is_isolated());
+    return iso;
+  }
+
+  /*! Get the isolated vertex information (non-const version). */
+  Isolated_vertex* isolated_vertex ()
+  {
+    CGAL_precondition (is_isolated());
+    return iso;
+  }
+
+  /*! Set the isolated vertex information. */
+  void set_isolated_vertex (Isolated_vertex* iv)
+  {
+    iso = iv;
+  }
 };
 
-/*! \class
- * The arrangement DCEL halfedge class.
- */
-template <class Traits_, class CMap>
-class Arr_cmap_halfedge
+template <int d, class Refs>
+class Arr_cmap_halfedge: public Dart<d, Refs>
 {
 public:
 
-  typedef Traits_                                    Traits;
-  typedef typename Traits::X_monotone_curve_2        X_monotone_curve;
-  typedef typename CMap::Dart_handle                 Dart_handle;
+  typedef Dart<d, Refs>                                    Base;
+  typedef Arr_cmap_halfedge<d, Refs>                       Halfedge;
+  typedef typename Refs::LCC                               LCC;
+  typedef Arr_cmap_vertex<LCC, Refs>                       Vertex;
+  typedef typename Refs::template Attribute_handle<0>::type
+                                                           Vertex_handle;
+  typedef typename Refs::template Attribute_const_handle<0>::type
+                                                           Vertex_const_handle;
+  typedef typename Refs::Dart_handle                       Dart_handle;
+  typedef typename Refs::Dart_const_handle                 Dart_const_handle;
+  typedef typename Refs::X_monotove_curve                  X_monotone_curve;
 
-public:
-
-  typedef Arr_cmap_vertex<Traits, CMap>              Vertex;
-  typedef Arr_cmap_halfedge<Traits, CMap>            Halfedge;
-  typedef Arr_cmap_face<Traits, CMap>                Face;
-  typedef Arr_cmap_hole<CMap>                        Inner_ccb;
-  typedef Arr_cmap_outer_ccb<Traits, CMap>           Outer_ccb;
-  typedef Arr_cmap_dcel<Traits, CMap>                Dcel;
-
-public:
-
-  Dcel* dcel;         // The corresponding DCEL class
-  Dart_handle dh;     // The correspoinding Dart_handle
+  typedef typename Refs::Outer_ccb                         Outer_ccb;
+  typedef typename Refs::Inner_ccb                         Inner_ccb;
 
 private:
 
-  X_monotone_curve *xv;  // The associated x-monotone curve.
-  Halfedge *oppo;        // The opposite halfedge.
-  Halfedge *pre;         // The previous halfedge in the component boundary.
-  Halfedge *nex;         // The next halfedge in the component boundary.
-  Vertex *v;             // The incident vertex (the target of the halfedge).
   bool left_to_right;    // Determine the direction of the halfedge
   bool on_inner_ccb;     // Determine whether it is on inner ccb
+  bool is_not_null;
   Outer_ccb  *outer;
   Inner_ccb *inner;
-    
+
 public:
 
-  /*! Default constructor */
-  Arr_cmap_halfedge() :
-    xv(NULL),
-    v(NULL),
-    oppo(NULL),
-    pre(NULL),
-    nex(NULL),
-    dcel(NULL)
+  bool has_null_curve () const
   {
-    dh = CMap::null_dart_handle;
-  }
-
-  /*! Destructor. */
-  virtual ~Arr_cmap_halfedge()
-  {}
-
-  /*! Get the opposite halfedge (non-const version). */
-  Halfedge* opposite()
-  {
-    return this->oppo;
-  }
-
-  /*! Get the opposite halfedge (const version). */
-  const Halfedge* opposite() const
-  {
-    return this->oppo;
-  }
-
-  /*! Get the previous halfedge along the chain (non-const version). */
-  Halfedge* prev()
-  {
-    return this->pre;
-  }
-
-  /*! Get the previous halfedge along the chain (const version). */
-  const Halfedge* prev() const
-  {
-    return this->pre;
-  }
-
-  /*! Get the next halfedge along the chain (non-const version). */
-  Halfedge* next()
-  {
-    return this->nex;
-  }
-
-  /*! Get the next halfedge along the chain (const version). */
-  const Halfedge* next() const
-  {
-    return this->nex;
-  }
-
-  /*! Get the x-monotone curve (non-const version). */
-  X_monotone_curve& curve()
-  {
-    CGAL_precondition(xv != NULL);
-    return (*xv);
+    return (!is_not_null);
   }
 
   /*! Get the x-monotone curve (const version). */
   const X_monotone_curve& curve() const
   {
-    CGAL_precondition(xv != NULL);
-    return (*xv);
+    CGAL_precondition (!is_not_null);
+    return (this->template attribute<1>()->info());
   }
 
-  /*! Check if the curve pointer is NULL. */
-  bool has_null_curve() const
+  /*! Get the x-monotone curve (non-const version). */
+  X_monotone_curve& curve ()
   {
-    return (xv == NULL);
+    CGAL_precondition (!is_not_null);
+    return (this->template attribute<1>()->info());
+  }
+
+  /*! Set the x-monotone curve. */
+  void set_curve (X_monotone_curve* c)
+  {
+    this->template attribute<1>()->info() = (*c);
+    is_not_null = true;
+  }
+
+  /*! Get the previous halfedge along the chain (const version). */
+  Dart_const_handle prev () const
+  {
+    CGAL_assertion(!is_free(0));
+    return this->beta(0);
+  }
+
+  /*! Get the previous halfedge along the chain (non-const version). */
+  Dart_handle prev ()
+  {
+    CGAL_assertion(!is_free(0));
+    return this->beta(0);
+  }
+
+  /*! Get the next halfedge along the chain (const version). */
+  Dart_const_handle next () const
+  {
+    CGAL_assertion(!is_free(1));
+    return this->beta(1);
+  }
+
+  /*! Get the next halfedge along the chain (non-const version). */
+  Dart_handle next ()
+  {
+    CGAL_assertion(!is_free(1));
+    return this->beta(1);
   }
 
   /*! Sets the opposite halfedge. */
-  void set_opposite(Halfedge* opp)
+  void set_opposite (Dart_handle dh)
   {
-    this->oppo = opp;
+    this->template basic_link_beta<2>(dh);
+  }
+
+  /*! Set the previous halfedge along the chain. */
+  void set_prev (Dart_handle dh)
+  {
+    this->template basic_link_beta<0>(dh);
+  }
+
+  /*! Set the next halfedge along the chain. */
+  void set_next (Dart_handle dh)
+  {
+    this->template basic_link_beta<1>(dh);
+  }
+
+  Vertex_handle vertex ()
+  {
+    return this->template attribute<0>();
+  }
+
+  Vertex_const_handle vertex () const
+  {
+    return this->template attribute<0>();
+  }
+
+  void set_vertex(Vertex* v)
+  {
+    this->template attribute<0>()->info() = (*v);
   }
 
   /*! Get the direction of the halfedge. */
@@ -304,72 +289,34 @@ public:
   }
 
   /*! Set the direction of the edge (and of its opposite halfedge). */
-  void set_direction() const
+  void set_direction(Arr_halfedge_direction dir)
   {
     if (dir == ARR_LEFT_TO_RIGHT)
     {
       left_to_right = true;
-      oppo.left_to_right = false;
+      this->beta(2)->left_to_right = false;
     }
     else
     {
       left_to_right = false;
-      oppo.left_to_right = true;
+      this->beta(2)->left_to_right = true;
     }
   }
 
-  /*! Set the previous halfedge along the chain. */
-  void set_prev(Halfedge* prev)
-  {
-    this->pre = prev;
-    prev->nex = this;
-    dcel->cm.template link_beta<1>(prev->dh, dh);
-  }
-
-  /*! Set the next halfedge along the chain. */
-  void set_next(Halfedge* next)
-  {
-    this->nex = next;
-    next->pre = this;
-    dcel->cm.template link_beta<1>(dh, nex->dh);
-  }
-
-  /*! Set the target vertex. */
-  void set_vertex(Vertex* v)
-  {
-    this->v = v;
-    v->dh = dh;
-  }
-
-  /*! Set the x-monotone curve. */
-  void set_curve(X_monotone_curve* c)
-  {
-    xv = c;
-    oppo->xv = c;
-  }
-
   /*! Assign from another halfedge. */
-  virtual void assign(const Arr_cmap_halfedge<Traits, CMap>& he)
+  virtual void assign (const Arr_cmap_halfedge<d, Refs>& he)
   {
-    xv = he.xv;
-  }
-
-  /*! Get the target vertex (const version). */
-  const Vertex* vertex () const
-  {
-    return (this->v);
-  }
-
-  /*! Get the target vertex (non-const version). */
-  Vertex* vertex () const
-  {
-    return (this->v);
+    is_not_null = he.is_not_null;
+    if (is_not_null)
+    {
+      this->template attribute<1>()->info() = he.template attribute<1>->info();
+    }
   }
 
   /*! Check whether the halfedge lies on the boundary of an inner CCB. */
   bool is_on_inner_ccb () const
   {
-    return (on_inner_ccb);
+    return on_inner_ccb;
   }
 
   /*!
@@ -379,7 +326,7 @@ public:
   const Outer_ccb* outer_ccb () const
   {
     CGAL_precondition (! is_on_inner_ccb());
-    return this->outer;
+    return outer;
   }
 
   /*!
@@ -389,13 +336,13 @@ public:
   Outer_ccb* outer_ccb ()
   {
     CGAL_precondition (! is_on_inner_ccb());
-    return this->outer;
+    return outer;
   }
 
   /*! Set the incident outer CCB. */
   void set_outer_ccb (Outer_ccb *oc)
   {
-    this->outer = oc;
+    outer = oc;
     on_inner_ccb = false;
   }
 
@@ -406,7 +353,7 @@ public:
   const Inner_ccb* inner_ccb () const
   {
     CGAL_precondition (is_on_inner_ccb());
-    return this->inner;
+    return inner;
   }
 
   /*!
@@ -416,551 +363,629 @@ public:
   Inner_ccb* inner_ccb ()
   {
     CGAL_precondition (is_on_inner_ccb());
-    return this->inner;
+    return inner;
   }
 
   /*! Set the incident inner CCB. */
   void set_inner_ccb (Inner_ccb *ic)
   {
-    this->inner = ic;
+    inner = ic;
     on_inner_ccb = true;
   }
 };
 
-/*! \class
- * The arrangement DCEL face class.
- */
-template <class Traits_, class CMap>
-class Arr_cmap_face
-{
-public:
-
-  typedef Traits_                        Traits;
-  typedef typename CMap::Dart_handle     Dart_handle;
-
-public:
-
-  typedef Arr_cmap_vertex<Traits, CMap>              Vertex;
-  typedef Arr_cmap_halfedge<Traits, CMap>            Halfedge;
-  typedef Arr_cmap_face<Traits, CMap>                Face;
-  typedef Arr_cmap_inner_ccb<Traits, CMap>           Inner_ccb;
-  typedef Arr_cmap_outer_ccb<Traits, CMap>           Outer_ccb;
-  typedef Arr_cmap_isolated_vertex<Traits, CMap>     Isolated_vertex;
-  typedef Arr_cmap_dcel<Traits, CMap>                Dcel;
-
-public:
-
-  typedef std::list<Outer_ccb>                Outer_ccbs_container;
-  typedef Outer_ccbs_container::iterator      Outer_ccb_iterator;
-  typedef Outer_ccbs_container::const_iterator
-                                              Outer_ccb_const_iterator;
-
-  typedef std::list<Inner_ccb>                Inner_ccbs_container;
-  typedef Inner_ccbs_container::iterator      Inner_ccb_iterator;
-  typedef Inner_ccbs_container::const_iterator
-                                              Inner_ccb_const_iterator;
-
-  typedef std::list<Isolated_vertex>          Isolated_vertex_container;
-  typedef Isolated_vertex_container::iterator
-                                              Isolated_vertex_iterator;
-  typedef Isolated_vertex_container::const_iterator
-                                              Isolated_vertex_const_iterator;
-
-public:
-
-  typedef CMap::Face           F;
-  
-  Dcel                         *dcel;
-  F                            f;
-  Inner_ccbs_container         inner_ccbs;
-  Outer_ccbs_container         outer_ccbs;
-  Isolated_vertices_container  iso_verts;
-
-    int flag;
-public:
-
-  /*! Default constructor. */
-  Arr_cmap_face() :
-    dcel(NULL),
-    f(NULL)
-  {
-    flag = 0;
-  }
-    
-  /*! Destructor. */
-  virtual ~Arr_cmap_face()
-  {}
-
-  bool is_unbounded()
-  {
-    return (f.dart_list.front() == CMap::null_dart_handle);
-  }
-
-  void set_unbounded(bool flag)
-  {
-    
-  }
-
-
-
-
-
-  /*! Get the number of outer CCBs the face has. */
-  size_t number_of_outer_ccbs () const
-  {
-    return outer_ccbs.size();
-  }
-
-  /*! Get an iterator for the first outer CCB of the face. */
-  Outer_ccb_iterator outer_ccbs_begin()
-  {
-    return outer_ccbs.begin();
-  }
-
-  /*! Get a past-the-end iterator for the outer CCBs inside the face. */
-  Outer_ccb_iterator outer_ccbs_end()
-  {
-    return outer_ccbs.end();
-  }
-
-  /*! Get an const iterator for the first outer CCB inside the face. */
-  Outer_ccb_const_iterator outer_ccbs_begin() const
-  {
-    return outer_ccbs.begin();
-  }
-
-  /*! Get a const past-the-end iterator for the outer CCBs inside the face. */
-  Outer_ccb_const_iterator outer_ccbs_end() const
-  {
-    return outer_ccbs.end();
-  }
-
-  /*! Add an outer CCB to the face. */
-  void add_outer_ccb (Outer_ccb *oc, Halfedge *h)
-  {
-    oc->set_iterator(h);
-    f.add_boundary(h->dh);
-    outer_ccbs.push_back(*oc);
-  }
-
-  /*! Erase an outer CCB of the face. */
-  void erase_outer_ccb (Outer_ccb *oc)
-  {
-    outer_ccbs.remove(*oc);
-    f.erase_boundary();
-    //oc->dh = CMap::null_dart_handle;
-  }
-
-
-
-
-
-
-
-
-  /*! Get the number of inner CCBs the face has. */
-  size_t number_of_inner_ccbs() const
-  {
-    return Inner_ccbs.size();
-  }
-
-  /*! Get an iterator for the first inner CCB of the face. */
-  Inner_ccb_iterator inner_ccbs_begin()
-  {
-    return Inner_ccbs.begin();
-  }
-
-  /*! Get an const iterator for the first inner CCB inside the face. */
-  Inner_ccb_const_iterator inner_ccbs_begin() const
-  {
-    return Inner_ccbs.begin();
-  }
-
-  /*! Get a past-the-end iterator for the inner CCBs inside the face. */
-  Inner_ccb_iterator inner_ccbs_end()
-  {
-    return Inner_ccbs.end();
-  }
-
-  /*! Get a const past-the-end iterator for the inner CCBs inside the face. */
-  Inner_ccb_const_iterator inner_ccbs_end() const
-  {
-    return Inner_ccbs.end();
-  }
-
-  /*! Add an inner CCB to the face. */
-  void add_inner_ccb (Inner_ccb *ic, Halfedge *h)
-  {
-    ic->set_iterator(h);
-    f.add_hole(h->dh);
-    inner_ccbs.push_back(*ic);
-  }
-
-  /*! Erase an inner CCB of the face. */
-  void erase_inner_ccb (Inner_ccb *ic)
-  {
-    inner_ccbs.remove(*ic);
-    f.erase_hole(ic->dh);
-  }
-
-  // Backward compatibility:
-  size_t number_of_holes () const { return number_of_inner_ccbs(); }
-  Hole_iterator holes_begin() { return inner_ccbs_begin(); }
-  Hole_iterator holes_end() { return inner_ccbs_end(); }
-  Hole_const_iterator holes_begin() const { return inner_ccbs_begin(); }
-  Hole_const_iterator holes_end() const { return inner_ccbs_end(); }
-
-
-
-
-
-  /*! Get the number of isloated vertices inside the face. */
-  size_t number_of_isolated_vertices() const
-  {
-    return Isolated_vertices.size();
-  }
-
-  /*! Get an iterator for the first isloated vertex inside the face. */
-  Isolated_vertex_iterator isolated_vertices_begin()
-  {
-    return isolated_vertices.begin();
-  }
-
-  /*! Get an const iterator for the first isloated vertex inside the face. */
-  Isolated_const_vertex_iterator isolated_vertices_begin() const
-  {
-    return isolated_vertices.begin();
-  }
-
-  /*! Get a past-the-end iterator for the isloated vertices inside the face. */
-  Isolated_vertex_iterator isolated_vertices_end()
-  {
-    return isolated_vertices.end();
-  }
-
-  /*! Get a const past-the-end iterator for the isloated vertices inside the
-   * face. */
-  Isolated_const_vertex_iterator isolated_vertices_end() const
-  {
-    return isolated_vertices.end();
-  }
-
-  /*! Add an isloated vertex inside the face. */
-  void add_isolated_vertex (Isolated_vertex *iv, Vertex* v)
-  {
-    iv->set_iterator(v);
-    iso_verts.push_back(*iv);
-  }
-
-  /*! Erase an isloated vertex from the face. */
-  void erase_isolated_vertex (Isolated_vertex *iv)
-  {
-    iso_verts.remove(*iv);
-  }
-};
-
-/*! \class
- * Representation of an inner CCB.
- */
-template <class Traits_, class CMap>
-class Arr_cmap_inner_ccb
-{
-public:
-
-  typedef Traits_ Traits;
-  typedef typename CMap::Dart_handle Dart_handle;
-
-public:
-
-  typedef Arr_cmap_face<Traits, CMap>          Face;
-  typedef Arr_cmap_halfedge<Traits, CMap>      Halfedge;
-  typedef typename Face::Inner_ccb_iterator    Inner_ccb_iterator;
-
-private:
-
-  Face                *fa;   // The face the contains the CCB in its interior.
-  Inner_ccb_iterator  hit;   // The inner CCB identifier.
-  Dart_handle         dh;
-
-public:
-
-  /*default constructor*/
-  Arr_cmap_hole() :
-    fa(NULL)
-  {}
-
-  /*! Get a halfedge along the component (const version). */
-  const Halfedge* halfedge () const
-  {
-    return (*hit);
-  }
-
-  /*! Get a halfedge along the component (non-const version). */
-  Halfedge* halfedge ()
-  {
-    return (*hit);
-  }
-
-  /*! Set a representative halfedge for the component. */
-  void set_halfedge (Halfedge *he)
-  {
-    *hit = he;
-    dh = he->dh;
-    return;
-  }
-
-  /*! Get the incident face (non-const version). */
-  Face* face()
-  {
-    return fa;
-  }
-
-  /*! Get the incident face (const version). */
-  const Face face() const
-  {
-    return fa;
-  }
-
-  /*! Get the iterator (non-const version). */
-  Inner_ccb_iterator iterator()
-  {
-    return hit;
-  }
-
-  /*! Get the iterator (const version). */
-  Inner_ccb_iterator iterator () const
-  {
-    return hit;
-  }
-
-  /*! Set the incident face. */
-  void set_face(Face* f)
-  {
-    fa = f;
-  }
-
-  /*! Set the inner CCB iterator. */
-  void set_iterator (Inner_ccb_iterator it)
-  {
-    hit = it;
-    //dh = it->dh;
-  }
-};
-
-/*! \class
- * Representation of an isolated vertex.
- */
-template <class Traits_, class CMap>
-class Arr_cmap_isolated_vertex
-{
-public:
-    typedef Traits_ Traits;
-
-public:
-  typedef Arr_cmap_isolated_vertex<Traits, CMap>    Self;
-  typedef Arr_cmap_face<Traits, CMap>               Face;
-  typedef typename Face::Isolated_vertex_iterator   Isolated_vertex_iterator;
-
-private:
-  Face                      *f;      // The containing face.
-  Isolated_vertex_iterator  ivit;    // The isolated vertex identifier.
-
-
-public:
-  /*! Default constructor. */
-  Arr_cmap_isolated_vertex ():
-    f(NULL)
-  {}
-
-  /*! Get the containing face (const version). */
-  const Face* face () const
-  {
-    return (f);
-  }
-
-  /*! Get the containing face (non-const version). */
-  Face* face ()
-  {
-    return (f);
-  }
-
-  /*! Set the incident face, the one that contains the isolated vertex. */
-  void set_face (Face* fa)
-  {
-    f = fa;
-  }
-
-  /*! Get the isolated vertex iterator (const version). */
-  Isolated_vertex_iterator iterator () const
-  {
-    //CGAL_assertion(iter_is_not_singular);
-    return (ivit);
-  }
-
-  /*! Get the isolated vertex iterator (non-const version). */
-  Isolated_vertex_iterator iterator ()
-  {
-    //CGAL_assertion(iter_is_not_singular);
-    return (ivit);
-  }
-
-  /*! Set the isolated vertex iterator. */
-  void set_iterator (Isolated_vertex_iterator iv)
-  {
-    ivit = iv;
-    //iter_is_not_singular = true;
-    //return;
-  }
-};
-
-/*! \class
- * Representation of an outer CCB.
- */
-template <class Traits_, class CMap>
+template <unsigned int d_, class Refs>
 class Arr_cmap_outer_ccb
 {
 public:
 
-  typedef Traits_ Traits;
-
-public:
-
-  typedef Arr_cmap_outer_ccb<Traits, CMap>     Self;
-  typedef Arr_cmap_halfedge<Traits,CMap>       Halfedge;
-  typedef Arr_cmap_face<Traits, CMap>          Face;
-  typedef typename Face::Outer_ccb_iterator    Outer_ccb_iterator;
+  typedef typename Refs::Face                        Face;
+  typedef typename Face::Outer_ccb_iterator          Outer_ccb_iterator;
+  typedef typename Refs::Face_iterator               Face_iterator;
+  typedef typename Refs::Dart_handle                 Dart_handle;
+  typedef typename Refs::Dart_const_handle           Dart_const_handle;
 
 private:
 
-  Face               *f;    // The face the contains the CCB in its interior.
-  Outer_ccb_iterator oit;   // The outer CCB identifier.
-  Dart_handle        dh;
+  Face_iterator           fit;
+  Outer_ccb_iterator      iter;
+  bool                    iter_is_not_singular;
 
 public:
 
-  /*default constructor*/
-  Arr_cmap_outer_ccb () {};
+  /* default constructor */
+  Arr_cmap_outer_ccb () :
+    iter_is_not_singular(false)
+  {}
 
-  /*! Get a halfedge along the component (non-const version). */
-  Halfedge* halfedge()
+  /*! Copy constructor. */
+  Arr_cmap_outer_ccb (const Arr_cmap_outer_ccb& other )
+    : iter_is_not_singular(other.iter_is_not_singular)
   {
-    return *oit;
+    fit = other.fit;
+    if(other.iter_is_not_singular)
+    {
+      iter = other.iter;
+    }
   }
 
   /*! Get a halfedge along the component (const version). */
-  const Halfedge* halfedge() const
+  Dart_handle halfedge () const
   {
-    return *oit;
+    return (iter);
+  }
+
+  /*! Get a halfedge along the component (non-const version). */
+  Dart_handle halfedge ()
+  {
+    return (iter);
   }
 
   /*! Set a representative halfedge for the component. */
-  void set_halfedge (Halfedge *he)
+  void set_halfedge (Dart_handle he)
   {
-    *oit = he;
-    dh = he->dh;
-  }
-
-  /*! Get the incident face (non-const version). */
-  Face* face ()
-  {
-    return f;
+    iter = he;
+    return;
   }
 
   /*! Get the incident face (const version). */
-  const Face* face () const
+  Face_iterator face () const
   {
-    return f;
+    return (fit);
+  }
+
+  /*! Get the incident face (non-const version). */
+  Face_iterator face ()
+  {
+    return (fit);
   }
 
   /*! Set the incident face. */
-  void set_face(Face* fa)
+  void set_face (Face_iterator f)
   {
-    f = fa;
+    fit = f;
+    return;
   }
 
   /*! Get the iterator (const version). */
   Outer_ccb_iterator iterator () const
   {
-    return oit;
+    CGAL_assertion(iter_is_not_singular);
+    return (iter);
   }
 
   /*! Get the iterator (non-const version). */
   Outer_ccb_iterator iterator ()
   {
-    //CGAL_assertion(iter_is_not_singular);
-    return (oit);
+    CGAL_assertion(iter_is_not_singular);
+    return (iter);
   }
 
   /*! Set the outer CCB iterator. */
   void set_iterator (Outer_ccb_iterator it)
   {
-    oit = it;
+    iter = it;
+    iter_is_not_singular = true;
+    return;
   }
 };
 
-template <class Traits_, class CMap>
-class Arr_cmap_dcel
+template <unsigned int d_, class Refs>
+class Arr_cmap_inner_ccb
 {
 public:
 
-  typedef Traits_                                    Traits;
-  typedef Arr_cmap_dcel<Traits, CMap>                Self;
-  typedef Arr_cmap_vertex<Traits, CMap>              Vertex;
-  typedef Arr_cmap_halfedge<Traits, CMap>            Halfedge;
-  typedef Arr_cmap_face<Traits, CMap>                Face;
-  typedef Arr_cmap_inner_ccb<Traits, CMap>           Inner_ccb;
-  typedef Arr_cmap_outer_ccb<Traits, CMap>           Outer_ccb;
-  typedef Arr_cmap_isolated_vertex<Traits, CMap>     Isolated_vertex;
-  typedef typename CMap::Dart_handle                 Dart_handle;
-
-  typedef Inner_ccb                                  Hole;
+  typedef typename Refs::Face                        Face;
+  typedef typename Face::Inner_ccb_iterator          Inner_ccb_iterator;
+  typedef typename Refs::Face_iterator               Face_iterator;
+  typedef typename Refs::Face_const_iterator         Face_const_iterator;
+  typedef typename Refs::Dart_handle                 Dart_handle;
+  typedef typename Refs::Dart_const_handle           Dart_const_handle;
+    
+private:
+    
+  Face_iterator           fit;
+  Inner_ccb_iterator      iter;
+  bool                    iter_is_not_singular;
 
 public:
 
-  CMap cm;
+  /* default constructor */
+  Arr_cmap_inner_ccb () :
+    iter_is_not_singular(false)
+  {}
+
+  /*! Copy constructor. */
+  Arr_cmap_inner_ccb (const Arr_cmap_inner_ccb& other )
+    : iter_is_not_singular(other.iter_is_not_singular)
+  {
+    fit = other.fit;
+    if(other.iter_is_not_singular)
+    {
+      iter = other.iter;
+    }
+  }
+
+  /*! Get a halfedge along the component (const version). */
+  Dart_handle halfedge () const
+  {
+    return (iter);
+  }
+
+  /*! Get a halfedge along the component (non-const version). */
+  Dart_handle halfedge ()
+  {
+    return (iter);
+  }
+
+  /*! Set a representative halfedge for the component. */
+  void set_halfedge (Dart_handle he)
+  {
+    iter = he;
+    return;
+  }
+
+  /*! Get the incident face (const version). */
+  Face_iterator face () const
+  {
+    return (fit);
+  }
+
+  /*! Get the incident face (non-const version). */
+  Face_iterator face ()
+  {
+    return (fit);
+  }
+
+  /*! Set the incident face. */
+  void set_face (Face_iterator f)
+  {
+    fit = f;
+    return;
+  }
+
+  /*! Get the iterator (const version). */
+  Inner_ccb_iterator iterator () const
+  {
+    CGAL_assertion(iter_is_not_singular);
+    return (iter);
+  }
+
+  /*! Get the iterator (non-const version). */
+  Inner_ccb_iterator iterator ()
+  {
+    CGAL_assertion(iter_is_not_singular);
+    return (iter);
+  }
+
+  /*! Set the outer CCB iterator. */
+  void set_iterator (Inner_ccb_iterator it)
+  {
+    iter = it;
+    iter_is_not_singular = true;
+    return;
+  }
+};
+
+template <unsigned int d_, class Refs>
+class Arr_cmap_isolated_vertex
+{
+public:
+
+  typedef typename Refs::Face                        Face;
+  typedef typename Face::Isolated_vertex_iterator
+                                                     Isolated_vertex_iterator;
+  typedef typename Refs::Face_iterator               Face_iterator;
+
+private:
+
+  Face_iterator              fit;
+  Isolated_vertex_iterator   iv_it;
+  bool                       iter_is_not_singular;
+
+public:
+
+  /* default constructor */
+  Arr_cmap_isolated_vertex () :
+    iter_is_not_singular(false)
+  {}
+
+  /*! Copy constructor. */
+  Arr_cmap_isolated_vertex (const Arr_cmap_isolated_vertex& other )
+    : iter_is_not_singular(other.iter_is_not_singular)
+  {
+    fit = other.fit;
+    if(other.iter_is_not_singular)
+    {
+      iv_it = other.iv_it;
+    }
+  }
+
+  /*! Get the containing face (const version). */
+  Face_iterator face () const
+  {
+    return (fit);
+  }
+
+  /*! Get the containing face (non-const version). */
+  Face_iterator face ()
+  {
+    return (fit);
+  }
+
+  /*! Set the incident face, the one that contains the isolated vertex. */
+  void set_face (Face_iterator f)
+  {
+    fit = f;
+    return;
+  }
+
+  /*! Get the isolated vertex iterator (const version). */
+  Isolated_vertex_iterator iterator () const
+  {
+    CGAL_assertion(iter_is_not_singular);
+    return (iv_it);
+  }
+
+  /*! Get the isolated vertex iterator (non-const version). */
+  Isolated_vertex_iterator iterator ()
+  {
+    CGAL_assertion(iter_is_not_singular);
+    return (iv_it);
+  }
+
+  /*! Set the isolated vertex iterator. */
+  void set_iterator (Isolated_vertex_iterator iv)
+  {
+    iv_it = iv;
+    iter_is_not_singular = true;
+    return;
+  }
+};
+
+template <unsigned int d_, class Traits_,
+          class Items_=Arr_cmap_min_items,
+          class Alloc_=CGAL_ALLOCATOR(int)>
+class Arr_cmap_dcel: public Combinatorial_map_with_holes<d_, Items_, Alloc_>
+{
+public:
+
+  typedef Traits_                                            Traits;
+  typedef Items_                                             Items;
+  typedef Alloc_                                             Alloc;
+
+  typedef typename Traits::X_monotone_curve_2                X_monotone_curve;
+  typedef typename Traits::Kernel                            Kernel;
+
+  typedef Combinatorial_map_with_holes<d_, Items, Alloc>     Base;
+  typedef Arr_cmap_dcel<d_, Traits, Items, Alloc>            Refs;
+
+  typedef Linear_cell_complex_traits<2, Kernel>              LCC_Traits;
+  typedef Linear_cell_complex<2, 2, LCC_Traits>              LCC;
+  typedef typename LCC::Point                                Point;
+
+  typedef Arr_cmap_vertex<LCC, Refs>                         Vertex;
+  typedef Arr_cmap_halfedge<d_, Refs>                        Halfedge;
+  typedef Arr_cmap_outer_ccb<d_, Refs>                       Outer_ccb;
+  typedef Arr_cmap_inner_ccb<d_, Refs>                       Inner_ccb;
+  typedef Arr_cmap_isolated_vertex<d_, Refs>                 Isolated_vertex;
+
+  typedef Inner_ccb                                          Hole;
+
+  typedef typename Base::Dart_handle                         Dart_handle;
+  typedef typename Base::Dart_const_handle                   Dart_const_handle;
+
+ // typedef typename Base::Dart_container                      Dart_container;
+  typedef typename Items::template Dart_wrapper<Refs>        Dart_wrapper;
+  typedef typename Dart_wrapper::Dart                        Dart;
+  typedef typename Alloc::template rebind<Dart>::other       Dart_allocator;
+  typedef Compact_container<Dart,Dart_allocator>             Dart_container;
+
+  typedef typename Base::Face_iterator                       Face_iterator;
+  typedef typename Base::Face_const_iterator                 Face_const_iterator;
+  typedef CGAL::N_step_adaptor_derived<Dart_handle, 2>       Edge_iterator;
+  typedef CGAL::N_step_adaptor_derived<Dart_const_handle, 2> Edge_const_iterator;
+
+  typedef typename Dart_container::size_type                 Size;
+  typedef typename Dart_container::size_type                 size_type;
+  typedef typename Dart_container::difference_type           difference_type;
+  typedef typename Dart_container::difference_type           Difference;
+
+  typedef typename Refs::template Attribute_range<0>::type   Vertex_list;
+  typedef typename Vertex_list::iterator                     Vertex_iterator;
+  typedef typename Vertex_list::const_iterator          Vertex_const_iterator;
+  typedef typename Refs::template Attribute_handle<0>::type  Vertex_handle;
+
+  typedef Compact_container<Outer_ccb>                       Outer_ccb_list;
+  typedef typename Outer_ccb_list::iterator                  Out_ccb_iterator;
+  typedef typename Outer_ccb_list::const_iterator            Out_ccb_const_iterator;
+
+  typedef Compact_container<Inner_ccb>                       Inner_ccb_list;
+  typedef typename Inner_ccb_list::iterator                  Inn_ccb_iterator;
+  typedef typename Inner_ccb_list::const_iterator            Inn_ccb_const_iterator;
+
+  typedef Compact_container<Isolated_vertex>                 Iso_vert_list;
+  typedef typename Iso_vert_list::iterator                   Iso_vert_iterator;
+  typedef typename Iso_vert_list::const_iterator             Iso_vert_const_iterator;
 
 protected:
 
-  typedef std::list<Vertex>              Vertex_list;
-  typedef std::list<Halfedge>            Halfedge_list;
-  typedef std::list<Face>                Face_list;
-  typedef std::list<Hole>                Inner_ccb_list;
-  typedef std::list<Outer_ccb>           Outer_ccb_list;
-  typedef std::list<Isolated_Vertex>     Iso_vert_list;
+  //Vertex_list                 vertices;      // The vertices container.
+  Outer_ccb_list              out_ccbs;      // The outer CCBs.
+  Inner_ccb_list              in_ccbs;       // The inner CCBs.
+  Iso_vert_list               iso_verts;     // The isolated vertices.
 
 public:
 
-  typedef Halfedge_list::size_type Size;
+  class Face: public Base::Face
+  {
+  public:
+
+    typedef Dart_container                       Outer_ccbs_container;
+    typedef typename Outer_ccbs_container::iterator
+                                                 Outer_ccb_iterator;
+    typedef typename Outer_ccbs_container::const_iterator
+                                                 Outer_ccb_const_iterator;
+
+    typedef Dart_container                       Inner_ccbs_container;
+    typedef typename Inner_ccbs_container::iterator
+                                                 Inner_ccb_iterator;
+    typedef typename Inner_ccbs_container::const_iterator
+                                                 Inner_ccb_const_iterator;
+
+    typedef Vertex_list                          Isolated_vertices_container;
+    typedef typename Isolated_vertices_container::iterator
+                                                 Isolated_vertex_iterator;
+    typedef typename Isolated_vertices_container::cons_iterator
+                                                 Isolated_vertex_const_iterator;
+
+  protected:
+
+    enum
+    {
+      IS_UNBOUNDED = 1,
+      IS_FICTITIOUS = 2
+    };
+
+    int                            flags;      // Face flags.
+    Outer_ccbs_container           outer_ccbs; // The outer CCBs of the faces.
+    Inner_ccbs_container           inner_ccbs; // The inner CCBs of the face.
+    Isolated_vertices_container    iso_verts;  // The isolated vertices inside
+                                               // the face.
+
+  public:
+
+    /*default constructor*/
+    Face() :
+      flags(0)
+    {}
+
+    /*! Check if the face is unbounded. */
+    bool is_unbounded () const
+    {
+      return ((flags & IS_UNBOUNDED) != 0);
+    }
+
+    /*! Set the face as bounded or unbounded. */
+    void set_unbounded (bool unbounded)
+    {
+      flags = (unbounded) ? (flags | IS_UNBOUNDED) : (flags & ~IS_UNBOUNDED);
+    }
+
+    /*! Check if the face is fictitious. */
+    bool is_fictitious () const
+    {
+      return ((flags & IS_FICTITIOUS) != 0);
+    }
+
+    /*! Set the face as fictitious or valid. */
+    void set_fictitious (bool fictitious)
+    {
+      flags = (fictitious) ? (flags | IS_FICTITIOUS) : (flags & ~IS_FICTITIOUS);
+    }
+
+    /*! Assign from another face. */
+    virtual void assign (const Face& f)
+    {
+      flags = f.flags;
+    }
+
+  public:
+
+    typedef Arr_cmap_vertex<LCC, Refs>              Vertex;
+    typedef Arr_cmap_halfedge<d_, Refs>             Halfedge;
+    typedef Arr_cmap_outer_ccb<d_, Refs>            Outer_ccb;
+    typedef Arr_cmap_inner_ccb<d_, Refs>            Inner_ccb;
+    typedef Arr_cmap_isolated_vertex<d_, Refs>      Isolated_vertex;
+
+    typedef Inner_ccb                               Hole;
+
+    /*! Get the number of outer CCBs the face has. */
+    size_t number_of_outer_ccbs () const
+    {
+      return (this->outer_ccbs.size());
+    }
+
+    /*! Get an iterator for the first outer CCB of the face. */
+    Outer_ccb_iterator outer_ccbs_begin()
+    {
+      return (this->outer_ccbs.begin());
+    }
+
+    /*! Get a past-the-end iterator for the outer CCBs inside the face. */
+    Outer_ccb_iterator outer_ccbs_end()
+    {
+      return (this->outer_ccbs.end());
+    }
+
+    /*! Get an const iterator for the first outer CCB inside the face. */
+    Outer_ccb_const_iterator outer_ccbs_begin() const
+    {
+      return (this->outer_ccbs.begin());
+    }
+
+    /*! Get a const past-the-end iterator for the outer CCBs inside the face. */
+    Outer_ccb_const_iterator outer_ccbs_end() const
+    {
+      return (this->outer_ccbs.end());
+    }
+      
+    /*! Add an outer CCB to the face. */
+    void add_outer_ccb (Outer_ccb *oc, Dart_handle h)
+    {
+      Dart temp = *h;
+      oc->set_iterator (this->outer_ccbs.insert (temp));
+      return;
+    }
+
+    /*! Erase an outer CCB of the face. */
+    void erase_outer_ccb (Outer_ccb *oc)
+    {
+      this->outer_ccbs.erase (oc->iterator());
+    }
+
+    typedef Inner_ccb_iterator                        Hole_iterator;
+    typedef Inner_ccb_const_iterator                  Hole_const_iterator;
+
+    /*! Get the number of inner CCBs the face has. */
+    size_t number_of_inner_ccbs () const
+    {
+      return (this->inner_ccbs.size());
+    }
+
+    /*! Get an iterator for the first inner CCB of the face. */
+    Inner_ccb_iterator inner_ccbs_begin()
+    {
+      return (this->inner_ccbs.begin());
+    }
+
+    /*! Get a past-the-end iterator for the inner CCBs inside the face. */
+    Inner_ccb_iterator inner_ccbs_end()
+    {
+      return (this->inner_ccbs.end());
+    }
+
+    /*! Get an const iterator for the first inner CCB inside the face. */
+    Inner_ccb_const_iterator inner_ccbs_begin() const
+    {
+      return (this->inner_ccbs.begin());
+    }
+
+    /*! Get a const past-the-end iterator for the inner CCBs inside the face. */
+    Inner_ccb_const_iterator inner_ccbs_end() const
+    {
+      return (this->inner_ccbs.end());
+    }
+
+    /*! Add an inner CCB to the face. */
+    void add_inner_ccb (Inner_ccb *ic, Dart_handle h)
+    {
+      Dart temp = *h;
+      ic->set_iterator (this->inner_ccbs.insert (temp));
+      return;
+    }
+
+    /*! Erase an inner CCB of the face. */
+    void erase_inner_ccb (Inner_ccb *ic)
+    {
+      this->inner_ccbs.erase (ic->iterator());
+    }
+
+    // Backward compatibility:
+    size_t number_of_holes () const { return number_of_inner_ccbs(); }
+    Hole_iterator holes_begin() { return inner_ccbs_begin(); }
+    Hole_iterator holes_end() { return inner_ccbs_end(); }
+    Hole_const_iterator holes_begin() const { return inner_ccbs_begin(); }
+    Hole_const_iterator holes_end() const { return inner_ccbs_end(); }
+
+    /*! Get the number of isloated vertices inside the face. */
+    size_t number_of_isolated_vertices() const
+    {
+      return (this->iso_verts.size());
+    }
+
+    /*! Get an iterator for the first isloated vertex inside the face. */
+    Isolated_vertex_iterator isolated_vertices_begin()
+    {
+      return (this->iso_verts.begin());
+    }
+
+    /*! Get a past-the-end iterator for the isloated vertices inside the face. */
+    Isolated_vertex_iterator isolated_vertices_end()
+    {
+      return (this->iso_verts.end());
+    }
+
+    /*! Get an const iterator for the first isloated vertex inside the face. */
+    Isolated_vertex_const_iterator isolated_vertices_begin() const
+    {
+      return (this->iso_verts.begin());
+    }
+
+    /*! Get a const past-the-end iterator for the isloated vertices inside the
+     * face. */
+    Isolated_vertex_const_iterator isolated_vertices_end() const
+    {
+      return (this->iso_verts.end());
+    }
+
+    /*! Add an isloated vertex inside the face. */
+    void add_isolated_vertex (Isolated_vertex *iv, Vertex_iterator v)
+    {
+        
+      iv->set_iterator (this->iso_verts.insert (*v));
+      return;
+    }
+
+    /*! Erase an isloated vertex from the face. */
+    void erase_isolated_vertex (Isolated_vertex *iv)
+    {
+      this->iso_verts.erase (iv->iterator());
+      return;
+    }
+  };
+
+public:
+
+  //Vertex allocator
+  typedef typename Alloc::template rebind<Vertex>        Vertex_alloc_rebind;
+  typedef typename Vertex_alloc_rebind::other            Vertex_allocator;
+
+  // Face allocator.
+  typedef typename Alloc::template rebind<Face>          Face_alloc_rebind;
+  typedef typename Face_alloc_rebind::other              Face_allocator;
+
+  // Outer CCB allocator.
+  typedef typename Alloc::template rebind<Outer_ccb>     Out_ccb_alloc_rebind;
+  typedef typename Out_ccb_alloc_rebind::other           Outer_ccb_allocator;
+
+  // Inner CCB allocator.
+  typedef typename Alloc::template rebind<Inner_ccb>     In_ccb_alloc_rebind;
+  typedef typename In_ccb_alloc_rebind::other            Inner_ccb_allocator;
+
+  // Isolated vertex allocator.
+  typedef typename Alloc::template rebind<Isolated_vertex>
+                                                         Iso_vert_alloc_rebind;
+  typedef typename Iso_vert_alloc_rebind::other          Iso_vert_allocator;
 
 protected:
 
-  Vertex_list         vertices;     // The vertices container.
-  Halfedge_list       halfedges;    // The halfedges container.
-  Face_list           faces;        // The faces container.
-  Outer_ccb_list      out_ccbs;     // The outer CCBs.
-  Inner_ccb_list      in_ccbs;      // The inner CCBs.
-  Iso_vert_list       iso_verts;    // The isolated vertices.
+  Outer_ccb_allocator out_ccb_alloc;        // An allocator for outer CCBs.
+  Inner_ccb_allocator in_ccb_alloc;         // An allocator for inner CCBs.
+  Iso_vert_allocator  iso_vert_alloc;       // Allocator for isolated vertices.
 
-public:
+private:
 
-  // Definitions of iterators.
-  typedef typename Vertex_list::iterator               Vertex_iterator;
-  typedef typename Halfedge_list::iterator             Halfedge_iterator;
-  typedef typename Face_list::iterator                 Face_iterator;
-  typedef CGAL::N_step_adaptor_derived<Halfedge_iterator, 2>
-                                                      Edge_iterator;
+  // Copy constructor - not supported.
+  Arr_cmap_dcel (const Refs&);
 
-  // Definitions of const iterators.
-  typedef typename Vertex_list::const_iterator        Vertex_const_iterator;
-  typedef typename Halfedge_list::const_iterator      Halfedge_const_iterator;
-  typedef typename Face_list::const_iterator          Face_const_iterator;
-  typedef CGAL::N_step_adaptor_derived<Halfedge_const_iterator, 2>
-                                                      Edge_const_iterator;
+  // Assignment operator - not supported.
+  Refs& operator = (const Refs&);
 
 public:
 
   /*! Default constructor. */
-  Arr_cmap_dcel()
+  Arr_cmap_dcel ()
   {}
 
   /*! Destructor. */
@@ -972,241 +997,163 @@ public:
   /*! Get the number of DCEL vertices. */
   Size size_of_vertices () const
   {
-    return (vertices.size());
+    return this->template number_of_attributes<0>();
   }
 
   /*! Get the number of DCEL halfedges (twice the number of edges). */
   Size size_of_halfedges () const
   {
-    return (halfedges.size());
+    return this->number_of_darts();
   }
 
   /*! Get the number of DCEL faces. */
   Size size_of_faces() const
   {
-    return (faces.size());
+    return this->facets.size();
   }
 
   /*! Get the number of outer CCBs. */
   Size size_of_outer_ccbs() const
   {
-    return (out_ccbs.size());
+    return out_ccbs.size();
   }
 
   /*! Get the number of inner CCBs. */
   Size size_of_inner_ccbs() const
   {
-    return (in_ccbs.size());
+    return in_ccbs.size();
   }
 
   /*! Get the number of isolated vertices. */
   Size size_of_isolated_vertices () const
   {
-    return (iso_verts.size());
+    return iso_verts.size();
   }
 
-  Vertex_iterator   vertices_begin()  { return vertices.begin(); }
-  Vertex_iterator   vertices_end()    { return vertices.end(); }
-  Halfedge_iterator halfedges_begin() { return halfedges.begin();}
-  Halfedge_iterator halfedges_end()   { return halfedges.end(); }
-  Face_iterator     faces_begin()     { return faces.begin(); }
-  Face_iterator     faces_end()       { return faces.end(); }
-  Edge_iterator     edges_begin()     { return halfedges.begin(); }
-  Edge_iterator     edges_end()       { return halfedges.end(); }
-    
-  Vertex_const_iterator   vertices_begin() const { return vertices.begin(); }
-  Vertex_const_iterator   vertices_end() const { return vertices.end(); }
-  Halfedge_const_iterator halfedges_begin() const { return halfedges.begin(); }
-  Halfedge_const_iterator halfedges_end() const { return halfedges.end(); }
-  Face_const_iterator     faces_begin() const { return faces.begin(); }
-  Face_const_iterator     faces_end() const { return faces.end(); }
-  Edge_const_iterator     edges_begin() const { return halfedges.begin(); }
-  Edge_const_iterator     edges_end() const { return halfedges.end(); }
+public:
+
+  Vertex_iterator   vertices_begin()
+  { return this->template attribute<0>().begin(); }
+  Vertex_iterator   vertices_begin()
+  { return this->template attribute<0>().end() }
+  Face_iterator     faces_begin()         { return this->facets.begin(); }
+  Face_iterator     faces_end()           { return this->facets.end(); }
+  Dart_handle       halfedges_begin()     { return this->first_dart(); }
+  Dart_handle       halfedges_end()       { return this->mdart.end(); }
+  Edge_iterator     edges_begin()         { return this->first_dart(); }
+  Edge_iterator     edges_end()           { return this->mdart.end(); }
+
+
+  Vertex_const_iterator vertices_begin() const
+  { return this->template attribute<0>().begin(); }
+  Vertex_const_iterator vertices_end() const
+  { return this->template attribute<0>().end() }
+  Dart_const_handle     halfedges_begin() const { return this->first_dart(); }
+  Dart_const_handle     halfedges_end() const { return this->mdart.end(); }
+  Face_const_iterator   faces_begin() const { return this->facets.begin(); }
+  Face_const_iterator   faces_end() const { return this->facets.end(); }
+  Edge_const_iterator   edges_begin() const { return this->first_dart(); }
+  Edge_const_iterator   edges_end() const { return this->mdart.end(); }
+
+public:
 
   /*! Create a new vertex. */
-  Vertex* new_vertex()
+  Vertex_handle new_vertex()
   {
-    Vertex* v;
-    //v->dcel = this;
-    vertices.push_back(*v);
-    return v;
+    Vertex_handle vh = this->template create_attribute<0>();
+    return vh;
   }
 
   /*! Create a new pair of opposite halfedges. */
-  Halfedge* new_edge()
+  Dart_handle new_edge()
   {
-    Halfedge* he1;
-    Halfedge* he2;
-    he1->dcel = this;
-    he2->dcel = this;
+    Dart_handle h1 = this->create_dart();
+    Dart_handle h2 = this->create_dart();
+/*
+    this->template set_attribute<0>(h1, this->template create_attribute<0>());
+    this->template set_attribute<0>(h2, this->template create_attribute<0>());
+*/
+    this->template set_attribute<1>(h1, this->template create_attribute<1>());
+    this->template set_attribute<1>(h2, this->template create_attribute<1>());
 
-    he1->dh = cm.create_dart();
-    he2->dh = cm.create_dart();
-
-    he1->set_opposite(he2);
-    he2->set_opposite(he1);
-    
-    cm.template link_beta<2>(he1->dh, he2->dh);
-    halfedges.push_back(*he1);
-    halfedges.push_back(*he2);
-
-    return he1;
+    h1->set_opposite(h2);
+    h2->set_opposite(h1);
+    return h1;
   }
 
   /*! Create a new face. */
-  Face* new_face()
+  Face_iterator new_face()
   {
-    Face *face;
-    face->dcel = this;
-    face->f = cm.create_face();
-    faces.push_back(*face);
-    return face;
+    Face_iterator fit = this->create_face();
+    return fit;
   }
 
-  /*! Create a new outer CCB. */
   Outer_ccb* new_outer_ccb ()
   {
-    Outer_ccb *oc;
-    out_ccbs.push_back(*oc);
-    return oc;
+    Outer_ccb  *oc = out_ccb_alloc.allocate (1);
+    out_ccb_alloc.construct (oc, Outer_ccb());
+    oc = &*out_ccbs.insert (*oc);
+    return (oc);
   }
 
   /*! Create a new inner CCB. */
   Inner_ccb* new_inner_ccb ()
   {
-    Inner_ccb *ic;
-    in_ccbs.push_back(*ic);
-    return ic;
+    Inner_ccb  *ic = in_ccb_alloc.allocate (1);
+    in_ccb_alloc.construct (ic, Inner_ccb());
+    ic = &*in_ccbs.insert (*ic);
+    return (ic);
   }
 
   /*! Create a new isolated vertex. */
   Isolated_vertex* new_isolated_vertex ()
   {
-    Isolated_vertex *iv;
-    iso_verts.push_back(*iv);
-    return iv;
-  }
-
-  /*! Delete an existing vertex. */
-  void delete_vertex (Vertex *v)
-  {
-    vertices.remove (*v);
+    Isolated_vertex  *iv = iso_vert_alloc.allocate (1);
     
+    iso_vert_alloc.construct (iv, Isolated_vertex());
+    iv = &*iso_verts.insert (*iv);
+    return (iv);
   }
 
-  /*! Delete an existing pair of opposite halfedges. */
-  void delete_edge (Halfedge *h)
+  void delete_vertex (Vertex_handle v)
   {
-    Halfedge *h_opp = h->opposite();
-    delete_halfedge(*h);
-    delete_halfedge(*h_opp);
-    
+    this->template erase_attribute<0>(v);
   }
 
-  /*! Delete an existing face. */
-  void delete_face(Face *f)
+  void delete_edge (Dart_handle dh)
   {
-    faces.remove (*f);
-    
+    Dart_handle dh2 = dh->beta(2);
+    this->erase_dart(dh);
+    this->erase_dart(dh2);
   }
 
-  /*! Delete an existing outer CCB. */
-  void delete_outer_ccb (Outer_ccb *oc)
+  void delete_face(Face_iterator f)
   {
-    out_ccbs.remove (*oc);
-    
+    this->delete_face(f);
   }
 
-  /*! Delete an existing inner CCB. */
-  void delete_inner_ccb (Inner_ccb *ic)
+  void delete_outer_ccb (Outer_ccb_iterator oc)
   {
-    in_ccbs.remove (*ic);
-    
+    out_ccbs.erase (oc);
   }
 
-  void delete_halfedge (Halfedge *h)
+  void delete_inner_ccb (Inner_ccb_iterator ic)
   {
-    halfedges.remove(*h);
-    
+    in_ccbs.erase (ic);
   }
 
-  /*! Delete an existing isolated vertex. */
-  void delete_isolated_vertex (Isolated_vertex *iv)
+  void delete_isolated_vertex (Isolated_vertex_iterator iv)
   {
-    iso_verts.remove(*iv);
-    
+    iso_verts.erase (iv);
   }
 
-  /*! Delete all DCEL features. */
   void delete_all()
   {
-    // Free all vertices.
-    Vertex_iterator    vit = vertices.begin(), v_curr;
-
-    while (vit != vertices.end())
-    {
-      v_curr = vit;
-      ++vit;
-      delete_vertex (&(*v_curr));
-    }
-
-    // Free all halfedges.
-    Halfedge_iterator  hit = halfedges.begin(), h_curr;
-
-    while (hit != halfedges.end())
-    {
-      h_curr = hit;
-      ++hit;
-      delete_halfedge (&(*h_curr));
-    }
-      
-    // Free all faces.
-    Face_iterator      fit = faces.begin(), f_curr;
-
-    while (fit != faces.end())
-    {
-      f_curr = fit;
-      ++fit;
-      delete_face (&(*f_curr));
-    }
-
-    // Free all outer CCBs.
-    typename Outer_ccb_list::iterator   ocit = out_ccbs.begin(), oc_curr;
-
-    while (ocit != out_ccbs.end())
-    {
-      oc_curr = ocit;
-      ++ocit;
-      delete_outer_ccb (&(*oc_curr));
-    }
-
-    // Free all inner CCBs.
-    typename Inner_ccb_list::iterator   icit = in_ccbs.begin(), ic_curr;
-
-    while (icit != in_ccbs.end())
-    {
-      ic_curr = icit;
-      ++icit;
-      delete_inner_ccb (&(*ic_curr));
-    }
-
-    // Free all isolated vertices.
-    typename Iso_vert_list::iterator   ivit = iso_verts.begin(), iv_curr;
-
-    while (ivit != iso_verts.end())
-    {
-      iv_curr = ivit;
-      ++ivit;
-      delete_isolated_vertex (&(*iv_curr));
-    }
-  }
-
-  /*!
-   * Assign our DCEL the contents of another DCEL.
-   */
-  void assign (const Self& dcel)
-  {
-    
+    out_ccbs.clear();
+    in_ccbs.clear();
+    iso_verts.clear();
+    this->facets.clear();
+    this->clear();
   }
 };
 
