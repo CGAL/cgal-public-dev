@@ -85,16 +85,23 @@ public:
     { return vp; }
 
   private:
+
     void * vp;
 
   };
 
 public:
     
-    typedef Compact_container<Face>                      Face_container;
-    typedef typename Face_container::iterator            Face_handle;
-    typedef typename Face_container::const_iterator      Face_const_handle;
-    typedef typename Face_container::size_type           size_type;
+  typedef Compact_container<Face>                      Face_container;
+  typedef typename Face_container::iterator            Face_iterator;
+  typedef typename Face_container::const_iterator      Face_const_iterator;
+  typedef typename Face_container::size_type           size_type;
+
+  typedef typename Alloc::template rebind<Face>        Face_alloc_rebind;
+  typedef typename Face_alloc_rebind::other            Face_allocator;
+
+  Face_allocator   face_alloc;;
+
 
 public:
 
@@ -103,12 +110,13 @@ public:
 public:
 
   /* Define an instance of Face, and return this Face object */
-  Face_handle create_face() {
-    Face fa;
-    return facets.template emplace<Face>(fa);
+  Face_iterator create_face() {
+    Face *fa = face_alloc.allocate (1);
+    face_alloc.construct (fa, Face());
+    return facets.insert(*fa);
   }
 
-  void delete_face(Face_handle fit)
+  void delete_face(Face_iterator fit)
   {
     facets.erase(fit);
   }
