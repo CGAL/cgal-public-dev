@@ -17,24 +17,29 @@
 
 /*!
 \addtogroup PkgExtremePointsD
+
 \cgalPkgDescriptionBegin{dD Extreme Points,PkgExtremePointsDSummary}
-\cgalPkgPicture{epd.png}
+\cgalPkgPicture{convex_hull_d-teaser.png}
+
 \cgalPkgSummaryBegin
-\cgalPkgAuthor{Christian Helbling, Bernd Gärtner, Alexandros Konstantinakis-Karmis}
+\cgalPkgAuthors{Christian Helbling, Bernd Gärtner and Alexandros Konstantinakis Karmis}
 \cgalPkgDesc{This package computes the extreme points of a given d-dimensional point set.}
 \cgalPkgManuals{Chapter_dD_Extreme_Points,PkgExtremePointsD}
 \cgalPkgSummaryEnd
+
 \cgalPkgShortInfoBegin
-\cgalPkgSince{1.0}
+\cgalPkgSince{10.0}
+\cgalPkgBib{Cgal:hs-chdt3}
 \cgalPkgDependsOn{\ref PkgQPSolver}
-\cgalPkgBib{blabla}
+\cgalPkgLicense{\ref licensesGPL "GPL"}
 \cgalPkgShortInfoEnd
+
 \cgalPkgDescriptionEnd
 
 \cgalClassifedRefPages
 
 ## Concepts ##
-- `CGAL::ExtremePointsTraits_d`
+- `ExtremePointsTraits_d`
 
 ## Classes ##
 - `CGAL::Extreme_points_d`
@@ -53,4 +58,3 @@
 - `CGAL::extreme_points_d_simple`
 
 */
-

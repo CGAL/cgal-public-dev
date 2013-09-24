@@ -31,11 +31,11 @@ enum Extreme_point_algorithm_d {
     /// This is the default value of the algorithm in `Extreme_points_options_d`, and it lets the implementation 
     /// choose the algorithm that it thinks is most appropriate for the current situation.
     EP_CHOOSE_APPROPRIATE,
-    /// This is the straightforward algorithm `Extreme_points_d_simple`.\ If most of the input points are extreme points, 
+    /// This is the straightforward algorithm `CGAL::extreme_points_d_simple`.\ If most of the input points are extreme points, 
     /// this algorithm can be faster than `EP_DULA_HELGASON`.
     EP_SIMPLE,
-    /// This is the output-sensitive algorithm from Dul'a and Helgason \cite dh-pifch-96 `CGAL::extreme_points_d_dula_helgason`.\
-    /// If a small fraction of the input points are extreme points, this algorithm performs significantly better than `EP_SIMPLE`.
+    /// This is the output-sensitive algorithm from Dulá and Helgason implemented in `CGAL::extreme_points_d_dula_helgason`.\ If a 
+    /// small fraction of the input points are extreme points, this algorithm performs significantly better than `EP_SIMPLE`.
     EP_DULA_HELGASON
 };
 

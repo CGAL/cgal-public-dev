@@ -13,7 +13,6 @@ h1 {
 
 \section PartAlgebraicFoundations Arithmetic and Algebra
 
-\package_listing{Extreme_points_d}
 \package_listing{Algebraic_foundations}
 \package_listing{Number_types}
 \package_listing{Modular_arithmetic}
@@ -37,6 +36,7 @@ h1 {
 \package_listing{Convex_hull_2}
 \package_listing{Convex_hull_3}
 \package_listing{Convex_hull_d}
+\package_listing{Extreme_points_d}
 
 \section PartPolygons Polygons
 

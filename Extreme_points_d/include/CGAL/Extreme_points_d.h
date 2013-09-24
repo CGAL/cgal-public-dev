@@ -82,6 +82,7 @@ namespace internal {
     };
 } // namespace internal
 
+#ifndef DOXYGEN_RUNNING
 template <class InputIterator, class OutputIterator>
 OutputIterator
 extreme_points_d_dula_helgason(InputIterator first, InputIterator beyond,
@@ -91,6 +92,7 @@ template <class InputIterator, class OutputIterator>
 OutputIterator
 extreme_points_d_simple(InputIterator first, InputIterator beyond,
                                 OutputIterator  result);
+#endif
 
 /// \ingroup PkgExtremePointsDEnum
 /** Enum to classify a query point in relation to the convex hull of some point set. 
@@ -142,8 +144,8 @@ class Extreme_points_d {
           typedef typename Hidden_type                            Less_lexicographically;
           ///The number type, which is the ring type of the input points.
           typedef typename Hidden_type                            RT;
-          ///TEST
-          typedef typename unspecified_type                       Homogeneous_begin;
+          ///The iterator to the zeroth homogeneous coordinate \f$ h_0\f$ of \f$ p\f$.
+          typedef typename Hidden_type                            Homogeneous_begin;
         #else
           typedef typename Traits::Point                          Point;
           typedef typename Traits::Less_lexicographically         Less_lexicographically;
@@ -467,7 +469,7 @@ product
    \sa `CGAL::extreme_points_d`
   
    \cgalHeading{Implementation}
-   This function implements the extreme points algorithm from Dul'a and Helgason \cite dh-pifch-96 
+   This function implements the extreme points algorithm from Dulá and Helgason \cite dh-pifch-96 
    as also described in \cite dl-cosfa-12 and \cite h-epmhd-10.
    This algorithm requires \f$ O(d n m + n * LP_{d+1,m})\f$ time in the worst case where \f$n\f$ is the number of input 
    points, \f$ m\f$ the number of extreme points, \f$ d\f$ the dimension and \f$ LP_{a,b}\f$ the runtime for solving a linear 
@@ -576,6 +578,7 @@ extreme_points_d_dula_helgason (InputIterator first, InputIterator beyond,
     return result;
 }
 
+#ifndef DOXYGEN_RUNNING
 template <class InputIterator, class OutputIterator>
 OutputIterator
 extreme_points_d_dula_helgason (InputIterator first, InputIterator beyond,
@@ -585,6 +588,7 @@ extreme_points_d_dula_helgason (InputIterator first, InputIterator beyond,
     typedef Extreme_points_traits_d<Point>      Traits;
     return extreme_points_d_dula_helgason(first, beyond, result, Traits());
 }
+#endif
 
 /// \ingroup PkgExtremePointsDGlobal
 /*!
@@ -674,6 +678,7 @@ extreme_points_d_simple(InputIterator first, InputIterator beyond,
     return result;
 }
 
+#ifndef DOXYGEN_RUNNING
 template <class InputIterator, class OutputIterator>
 OutputIterator
 extreme_points_d_simple(InputIterator first, InputIterator beyond,
@@ -683,6 +688,7 @@ extreme_points_d_simple(InputIterator first, InputIterator beyond,
     typedef Extreme_points_traits_d<Point>      Traits;
     return extreme_points_d_simple(first, beyond, result, Traits());
 }
+#endif
 
 /// \ingroup PkgExtremePointsDGlobal
 /*! 

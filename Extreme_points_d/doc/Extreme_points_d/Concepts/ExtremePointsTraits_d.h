@@ -2,7 +2,7 @@
 \ingroup PkgExtremePointsDConcepts
 \cgalConcept
 
-Requirements of the traits class to be used with the functions `extreme_points_d`, `extreme_points_d_dula_helgason`, `extreme_points_d_simple` and the class `Extreme_points_d`.
+Requirements of the traits class to be used with the functions `CGAL::extreme_points_d`, `CGAL::extreme_points_d_dula_helgason`, `CGAL::extreme_points_d_simple` and the class `CGAL::Extreme_points_d`.
 
 \cgalHasModel `CGAL::Extreme_points_traits_d<Point>`
 

@@ -1,5 +1,4 @@
 /*!
 \example Extreme_points_d/Extreme_points_d.cpp
 \example Extreme_points_d/extreme_points_d_dula_helgason.cpp
-
 */
