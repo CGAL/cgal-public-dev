@@ -19,7 +19,7 @@
 \addtogroup PkgExtremePointsD
 
 \cgalPkgDescriptionBegin{dD Extreme Points,PkgExtremePointsDSummary}
-\cgalPkgPicture{convex_hull_d-teaser.png}
+\cgalPkgPicture{epd.png}
 
 \cgalPkgSummaryBegin
 \cgalPkgAuthors{Christian Helbling, Bernd Gärtner and Alexandros Konstantinakis Karmis}
@@ -28,8 +28,8 @@
 \cgalPkgSummaryEnd
 
 \cgalPkgShortInfoBegin
-\cgalPkgSince{10.0}
-\cgalPkgBib{Cgal:hs-chdt3}
+\cgalPkgSince{}
+\cgalPkgBib{}
 \cgalPkgDependsOn{\ref PkgQPSolver}
 \cgalPkgLicense{\ref licensesGPL "GPL"}
 \cgalPkgShortInfoEnd
