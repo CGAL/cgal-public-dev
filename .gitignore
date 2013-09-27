@@ -145,6 +145,13 @@ Circular_kernel_3/test/Circular_kernel_3/test_Spherical_kernel_with_core
 Documentation/log/*.*
 Documentation/output
 Documentation/tags/*.*
+Distance_3/include
+Extreme_points_d/test/Extreme_points_d/CMake*
+Extreme_points_d/test/Extreme_points_d/Makefile
+Extreme_points_d/test/Extreme_points_d/ProgramOutput*
+Extreme_points_d/test/Extreme_points_d/cgal_test_with_cmake
+Extreme_points_d/test/Extreme_points_d/cmake*
+Extreme_points_d/test/Extreme_points_d/error.txt
 Generator/examples/Generator/CMakeLists.txt
 Generator/examples/Generator/ball_d
 Generator/examples/Generator/cgal_test_with_cmake

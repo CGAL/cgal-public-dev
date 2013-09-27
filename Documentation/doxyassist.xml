@@ -1214,6 +1214,23 @@ namespace for the XML file to be processed properly.  -->
       </project>
 
       <project>
+        <name>dD Extreme Points</name>
+        <input>../Extreme_points_d/doc</input>
+        <input>../Extreme_points_d/include</input>
+        <doxygen>
+          <string name="STRIP_FROM_PATH">../Extreme_points_d/include</string>
+          <string name="STRIP_FROM_INC_PATH">../Extreme_points_d/include</string>
+          <string name="GENERATE_TAGFILE">./tags/Extreme_points_d.tag</string>
+          <string name="IMAGE_PATH">../Extreme_points_d/doc/Extreme_points_d/fig</string>
+          <string name="EXAMPLE_PATH">../Extreme_points_d/examples</string>
+          <list name="TAGFILES" append="true">
+            <item>./tags/QP_solver.tag=../../CGAL.CGAL.Linear-and-Quadratic-Programming-Solver/html</item>
+            <item>./tags/Number_types.tag=../../CGAL.CGAL.Number-Types/html</item>
+          </list>
+        </doxygen>
+      </project>
+
+      <project>
         <name>2D Triangulation</name>
         <input>../Triangulation_2/doc/Triangulation_2</input>
         <doxygen>
@@ -1497,6 +1514,7 @@ namespace for the XML file to be processed properly.  -->
           <item>../Arrangement_on_surface_2/doc/Arrangement_on_surface_2/fig</item>
           <item>../Boolean_set_operations_2/doc/Boolean_set_operations_2/fig</item>
           <item>../Triangulation_2/doc/TDS_2/fig</item>
+          <item>../Extreme_points_d/doc/Extreme_points_d/fig</item>
           <item>../Triangulation_2/doc/Triangulation_2/fig</item>
           <item>../Triangulation_3/doc/TDS_3/fig</item>
           <item>../Triangulation_3/doc/Triangulation_3/fig</item>
@@ -1577,6 +1595,7 @@ namespace for the XML file to be processed properly.  -->
           <item>./tags/Arrangement_on_surface_2.tag=../../CGAL.CGAL.2D-Arrangements/html</item>
           <item>./tags/Boolean_set_operations_2.tag=../../CGAL.CGAL.2D-Regularized-Boolean-Set-Operations/html</item>
           <item>./tags/TDS_2.tag=../../CGAL.CGAL.2D-Triangulation-Data-Structure/html</item>
+          <item>./tags/Extreme_points_d.tag=../../CGAL.CGAL.dD-Extreme-Points/html</item>
           <item>./tags/Triangulation_2.tag=../../CGAL.CGAL.2D-Triangulation/html</item>
           <item>./tags/Periodic_2_triangulation_2.tag=../../CGAL.CGAL.2D-Periodic-Triangulations/html</item>
           <item>./tags/TDS_3.tag=../../CGAL.CGAL.3D-Triangulation-Data-Structure/html</item>

@@ -1,0 +1,2 @@
+Module for computing the extreme points of a d dimensional point set.
+

@@ -36,6 +36,7 @@ h1 {
 \package_listing{Convex_hull_2}
 \package_listing{Convex_hull_3}
 \package_listing{Convex_hull_d}
+\package_listing{Extreme_points_d}
 
 \section PartPolygons Polygons
 

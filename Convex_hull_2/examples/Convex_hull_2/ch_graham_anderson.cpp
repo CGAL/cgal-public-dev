@@ -39,6 +39,6 @@ int main()
   std::istream_iterator< Point_2 >  in_start( std::cin );
   std::istream_iterator< Point_2 >  in_end;
   std::ostream_iterator< Point_2 >  out( std::cout, "\n" );
-  ch_graham_anderson(in_start, in_end, out, K());
+  //ch_graham_anderson(in_start, in_end, out, K());
   return 0;
 }
