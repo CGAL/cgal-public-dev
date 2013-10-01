@@ -28,8 +28,8 @@
 \cgalPkgSummaryEnd
 
 \cgalPkgShortInfoBegin
-\cgalPkgSince{}
-\cgalPkgBib{}
+\cgalPkgSince{99.0}
+\cgalPkgBib{99.0}
 \cgalPkgDependsOn{\ref PkgQPSolver}
 \cgalPkgLicense{\ref licensesGPL "GPL"}
 \cgalPkgShortInfoEnd
