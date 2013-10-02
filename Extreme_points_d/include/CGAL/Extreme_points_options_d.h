@@ -56,9 +56,11 @@ private:
 public:
     // default constructor
     /// Constructs an instance of `Extreme_points_options_d`. If `algo` is specified it is set as the chosen extreme point algorithm.
-    Extreme_points_options_d(Extreme_point_algorithm_d algo = EP_CHOOSE_APPROPRIATE, bool deletion=false, 
-                Quadratic_program_options qp_options = Quadratic_program_options())
-      : algo_(algo), deletion_(deletion), qp_options_(qp_options) {}
+    Extreme_points_options_d(Extreme_point_algorithm_d algo = EP_CHOOSE_APPROPRIATE, bool deletion=false, bool anti_cycling=false)
+      : algo_(algo), deletion_(deletion), anti_cycling_(anti_cycling)
+    {
+        qp_options_ = Quadratic_program_options();
+    }
     
     // set/get algorithm
     // ------------------------
