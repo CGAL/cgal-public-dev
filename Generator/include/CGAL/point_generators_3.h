@@ -285,6 +285,7 @@ public:
 		_q = x._q;
 		_r = x._r;
 		_s = x._s;
+		Random_generator_base<P>::operator==(x);
 		return *this;
 	}
 	This& operator++() {
