@@ -48,6 +48,10 @@ public:
     typedef Generator_base<T>      This;
 
     Generator_base() {}
+
+    // copy-constructor
+    Generator_base( const This& x) : d_item(x.d_item), d_range(x.d_range) {}
+
     Generator_base( double range) : d_range( range) {}
     Generator_base( const T& item, double range)
         : d_item(item), d_range(range) {}
@@ -71,6 +75,10 @@ public:
     Random_generator_base() : _rnd( default_random) {}
     Random_generator_base( double range, Random& rnd)
         : Generator_base<T>( range), _rnd( rnd) {}
+
+    // copy-constructor
+    Random_generator_base( const This& x ) : _rnd( x._rnd), Generator_base<T>(x) {}
+
     Random_generator_base( const T& item, double range, Random& rnd)
         : Generator_base<T>( item, range), _rnd( rnd) {}
     bool operator==( const This& rb) const {
