@@ -285,7 +285,7 @@ public:
 		_q = x._q;
 		_r = x._r;
 		_s = x._s;
-		Random_generator_base<P>::operator==(x);
+		Random_generator_base<P>::operator=(x);
 		return *this;
 	}
 	This& operator++() {
@@ -424,7 +424,7 @@ public:
 	typedef P result_type;
 	typedef Random_points_on_surface_mesh_3<P, C2t3> This;
 	typedef typename Kernel_traits<P>::Kernel::Triangle_3 Triangle_3;
-	typedef CGAL::Random_points_in_triangle_3<P> PointGen;
+	typedef CGAL::Random_points_in_triangle_3<P> PointGen; 
 	typedef CGAL::internal::Weighted_random_generator<PointGen>
 		GeneratorWithWeight;
 	typedef

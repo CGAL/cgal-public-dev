@@ -59,6 +59,12 @@ public:
     bool operator==( const This& base) const {
         return ( d_item == base.d_item);
     }
+
+    This operator=( const This& x) {
+	This ret(x);
+	return ret;
+    }
+
     bool operator!=( const This& base) const { return ! operator==(base);}
     double    range()      const { return d_range; }
     reference operator*()  const { return d_item; }
@@ -81,6 +87,12 @@ public:
 
     Random_generator_base( const T& item, double range, Random& rnd)
         : Generator_base<T>( item, range), _rnd( rnd) {}
+
+    This operator=( const This& x) {
+	This ret(x);
+	return ret;
+    }
+
     bool operator==( const This& rb) const {
         return ( _rnd == rb._rnd && Generator_base<T>::operator==(rb));
     }
