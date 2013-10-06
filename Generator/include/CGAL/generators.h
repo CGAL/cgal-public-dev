@@ -60,8 +60,10 @@ public:
         return ( d_item == base.d_item);
     }
 
-    This operator=( const This& x) {
-	This ret(x);
+    This& operator=( const This& x) {
+	This ret;
+	ret.d_item = x.d_item;
+	ret.d_range = x.d_range;
 	return ret;
     }
 
@@ -88,7 +90,7 @@ public:
     Random_generator_base( const T& item, double range, Random& rnd)
         : Generator_base<T>( item, range), _rnd( rnd) {}
 
-    This operator=( const This& x) {
+    This& operator=( const This& x) {
 	This ret(x);
 	return ret;
     }

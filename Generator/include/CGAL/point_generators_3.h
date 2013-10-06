@@ -280,7 +280,7 @@ public:
 	: Random_generator_base<P>( 1, rnd),_p(tetrahedron[0]),_q(tetrahedron[1]),_r(tetrahedron[2]),_s(tetrahedron[3]) {
 		generate_point();
 	}
-	This operator=(This x) {
+	This& operator=(This x) {
 		_p = x._p;
 		_q = x._q;
 		_r = x._r;
@@ -389,6 +389,7 @@ public:
 	This operator=(This x) {
 		_fsp_distrib = x._fsp_distrib;
 		_rand = x._rand;
+		Random_generator_base<P>::operator=(x);
 		return *this;
 	}
 	This& operator++() {
@@ -480,6 +481,7 @@ public:
 	This operator=(This x) {
 		_fsp_distrib = x._fsp_distrib;
 		_rand = x._rand;
+		Random_generator_base<P>::operator=(x);
 		return *this;
 	}
 	This& operator++() {
