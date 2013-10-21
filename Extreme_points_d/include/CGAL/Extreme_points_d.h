@@ -215,15 +215,16 @@ class Extreme_points_d {
         void remove(const Point p) {
           assert(ep_options_.get_deletion()); //are we permitted to delete?
           typename std::set<Point,Less_lexicographically>::iterator it = all_points.find(p);
-          assert(it != all_points.end()); //is it an input point?
-          Bounded_side del_point = classify(p,true); //is it on the boundary or is it internal?
-          all_points.erase(it); //delete the point from all_points
-          if (del_point == CGAL::ON_BOUNDARY) { //if it's an extreme point then we have to recalculate
-            new_points.clear();
-            extr_points.clear();
-            //this should have no duplicates, maybe we can tell that to update so as not to uniquify it again
-            new_points.insert(new_points.begin(), all_points.begin(), all_points.end());
-            update();
+          if (it != all_points.end()) { //is it an input point?
+            Bounded_side del_point = classify(p,true); //is it on the boundary or is it internal?
+            all_points.erase(it); //delete the point from all_points
+            if (del_point == CGAL::ON_BOUNDARY) { //if it's an extreme point then we have to recalculate
+              new_points.clear();
+              extr_points.clear();
+              //this should have no duplicates, maybe we can tell that to update so as not to uniquify it again
+              new_points.insert(new_points.begin(), all_points.begin(), all_points.end());
+              update();
+            }
           }
         }
         

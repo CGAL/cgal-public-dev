@@ -16,27 +16,27 @@ typedef Kernel_d::Point_d Point_d;
 
 template <class InputStream, class OutputIterator>
 void read_input(InputStream &in, OutputIterator out, int &n, int &d) {
-	// read *.con file
-	std::string s;
-	do {
-		getline(in,s);
-	} while (s[0]=='%'); // skipping comments
-	std::stringstream ss(s);
-	ss>>d>>n;
-	
-	std::vector<Point_d> points(n);
-	for (int i=0;i<n;++i) {
-		std::vector<double> p(d);
-		for (int j=0;j<d;++j)
-			in>>p[j];
-		*out++=Point_d(d,p.begin(),p.end());
-	}
+    // read *.con file
+    std::string s;
+    do {
+        getline(in,s);
+    } while (s[0]=='%'); // skipping comments
+    std::stringstream ss(s);
+    ss>>d>>n;
+    
+    std::vector<Point_d> points(n);
+    for (int i=0;i<n;++i) {
+        std::vector<double> p(d);
+        for (int j=0;j<d;++j)
+            in>>p[j];
+        *out++=Point_d(d,p.begin(),p.end());
+    }
 }
 
 int main(int argc, char **argv) {
-	std::ifstream fin("./data/05by02500at01.con");
-	std::vector<Point_d> points;
-	int n,d,p=1;
+    std::ifstream fin("./data/05by02500at01.con");
+    std::vector<Point_d> points;
+    int n,d,p=1;
     
     read_input(fin,std::back_inserter(points),n,d);
     std::cout<<"input read"<<std::endl;
@@ -45,7 +45,7 @@ int main(int argc, char **argv) {
     extreme_points_d_dula_helgason(points.begin(), points.end(),std::back_inserter(extreme_points));
 	
     std::cout<<"extreme_points_dula_helgason found "<<extreme_points.size()<<" extreme points"<<std::endl;
-	assert(extreme_points.size()==n*p/100);
+    assert(extreme_points.size()==n*p/100);
 	
     std::vector<Point_d> extreme_points2;
     extreme_points_d_simple(points.begin(), points.end(),std::back_inserter(extreme_points2));
@@ -63,8 +63,8 @@ int main(int argc, char **argv) {
     sort(extreme_points2.begin(),extreme_points2.end(), Kernel_d::Less_lexicographically_d());
     sort(extreme_points3.begin(),extreme_points3.end(), Kernel_d::Less_lexicographically_d());
     
-	// check that the different implementations produce the same output
-	assert(std::equal(extreme_points.begin(),extreme_points.end(),extreme_points2.begin()));
+    // check that the different implementations produce the same output
+    assert(std::equal(extreme_points.begin(),extreme_points.end(),extreme_points2.begin()));
     assert(std::equal(extreme_points.begin(),extreme_points.end(),extreme_points3.begin()));
     
     std::cout<<"Checking behaviour of duplicated points.. "<<std::flush;
@@ -94,6 +94,6 @@ int main(int argc, char **argv) {
     
     std::cout<<"OK"<<std::endl;
     
-	std::cout<<"Finished successfully!"<<std::endl;
-	return 0;
+    std::cout<<"Finished successfully!"<<std::endl;
+    return 0;
 }

@@ -19,7 +19,6 @@
 
 typedef CGAL::Cartesian<double>                 Kernel;
 typedef Kernel::Point_2                         Point_2;
-// typedef CGAL::Point_2<Kernel>                   Point_2;
 typedef CGAL::Extreme_points_traits_d<Point_2>  EP_Traits_2;
 typedef Kernel::Less_xy_2                       Less_lexicographically;
 
@@ -42,7 +41,8 @@ void test1() {
     CGAL::extreme_points_d_dula_helgason(points.begin(), points.end(), std::back_inserter(extreme_points));
 	
     std::cout<<"found "<<extreme_points.size()<<" extreme points"<<std::endl;
-	
+
+    //compare with the other three functions
     std::vector<Point_2> extreme_points2;
     CGAL::extreme_points_d_simple(points.begin(), points.end(), std::back_inserter(extreme_points2));
 

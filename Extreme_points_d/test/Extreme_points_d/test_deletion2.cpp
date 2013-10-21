@@ -51,11 +51,11 @@ void test1() {
     ep.extreme_points(std::back_inserter(extreme_points));
     end = clock();
     std::cout << "Test1 - extreme ~ points - SIMPLE " << (end-start)/CLOCKS_PER_SEC << std::endl;
-    std::cout << "CV size: " << extreme_points.size() << std::endl;
-    //std::cout << ep.all_points.size() << std::endl;
+    std::cout << "Number of Extreme points: " << extreme_points.size() << std::endl;
 
     t1=end-start;
 
+    //ADD 5 NEW POINTS, 4 OF THEM ARE PART OF THE NEW CH
     points.push_back(Point_2(-1000.,-1000.));
     points.push_back(Point_2(1000.,1000.));
     points.push_back(Point_2(-1000.,1000.));
@@ -63,45 +63,37 @@ void test1() {
     points.push_back(Point_2(1.,1.));
     extreme_points.clear();
 
-    //5 NEW POINTS, 4 OF THEM CONSIST THE NEW CV
-    //2000 POINTS ON A CIRCLE'S CIRCUMFERENCE
     start = clock();
     ep.insert(points.begin(),points.end());
     ep.extreme_points(std::back_inserter(extreme_points));
     end = clock();
-    std::cout << "Test2 - extreme << points - SIMPLE " << (end-start)/CLOCKS_PER_SEC << std::endl;
+    std::cout << "Test1 - extreme << points - SIMPLE " << (end-start)/CLOCKS_PER_SEC << std::endl;
     std::cout << "CV size: " << extreme_points.size() << std::endl;
-    assert(extreme_points.size() == 4);
-    //for (int i=0; i<extreme_points.size(); i++)
-    //  std::cout << extreme_points[i] << std::endl;
+    assert(extreme_points.size() == 4); //TEST
  
-    //REMOVE A POINT FROM THE CV
-    //5 NEW POINTS, 4 OF THEM CONSIST THE NEW CV
-    //2000 POINTS ON A CIRCLE'S CIRCUMFERENCE
+    //REMOVE A POINT FROM THE CH
     ep.remove(Point_2(-1000.,-1000.));
     extreme_points.clear();
     ep.extreme_points(std::back_inserter(extreme_points));
     std::cout << "Test2 - extreme << points - SIMPLE " << (end-start)/CLOCKS_PER_SEC << std::endl;
-    std::cout << "CV size: " << extreme_points.size() << std::endl;
-    assert(extreme_points.size() > 4);
-    //for (int i=0; i<extreme_points.size(); i++)
-    //  std::cout << extreme_points[i] << std::endl;
+    std::cout << "Number of Extreme points: " << extreme_points.size() << std::endl;
+    assert(extreme_points.size() > 4); //TEST
     
-    //REMOVE EXTERNAL POINT
+    //REMOVE POINT THAT DOESN'T EXIST
     ep.remove(Point_2(-10000.,-10000.));
     extreme_points.clear();
     ep.extreme_points(std::back_inserter(extreme_points));
     std::cout << "Test3 - extreme << points - SIMPLE " << (end-start)/CLOCKS_PER_SEC << std::endl;
-    std::cout << "CV size: " << extreme_points.size() << std::endl;
+    std::cout << "Number of Extreme points: " << extreme_points.size() << std::endl;
  
     //REMOVE INTERNAL
     ep.remove(Point_2(1.,1.));
     extreme_points.clear();
     ep.extreme_points(std::back_inserter(extreme_points));
     std::cout << "Test4 - extreme << points - SIMPLE " << (end-start)/CLOCKS_PER_SEC << std::endl;
-    std::cout << "CV size: " << extreme_points.size() << std::endl;
+    std::cout << "Number of Extreme points: " << extreme_points.size() << std::endl;
  
-    std::cout<<"test1 finished successfully!"<<std::endl;
+    std::cout<<"test finished successfully!"<<std::endl;
 }
 
 int main(int argc, char **argv) {

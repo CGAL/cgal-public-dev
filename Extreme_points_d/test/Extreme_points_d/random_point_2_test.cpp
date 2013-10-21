@@ -35,7 +35,6 @@ void test1() {
    
     CGAL::Random_points_on_circle_2<Point_2> rnd(100.);
     for (int i=0; i<2000; ++i) {
-      //std::cout << *rnd << std::endl;
       points.push_back(*rnd);
       rnd++;
     }
@@ -114,8 +113,6 @@ void test1() {
     
     assert(t3>t4);
  
-//    assert(op.get_last_used_algorithm() == NULL);
-
     std::cout<<"test1 finished successfully!"<<std::endl;
 }
 

@@ -17,7 +17,6 @@
 
 #include <CGAL/Convex_hull_d.h>
 
-
 #include <CGAL/point_generators_d.h>
 
 #include <time.h>
@@ -28,6 +27,8 @@ typedef CGAL::Cartesian_d<double>               Kernel;
 typedef Kernel::Point_d                         Point_d;
 typedef CGAL::Extreme_points_traits_d<Point_d>  EP_Traits_d;
 typedef Kernel::Less_lexicographically_d        Less_lexicographically_d;
+
+//Testing deletion with moment curve points
 
 void test(int d, int n) {
   srand (time(NULL));
@@ -51,6 +52,7 @@ void test(int d, int n) {
   ep.insert(points.begin(),points.end());
   ep.extreme_points(std::back_inserter(extreme_points));
 
+  //this should hold because points are on moment curve
   assert(extreme_points.size() == points.size());
   for (int i=0; i<extreme_points.size(); i++) {
     assert(points.find(extreme_points[i]) != points.end());
@@ -58,6 +60,7 @@ void test(int d, int n) {
 
   std::set<Point_d, Less_lexicographically_d>::iterator it,itt;
   while (points.size() != 0) {
+    std::cout << "blah\n" << std::endl;
     it=points.begin();
     itt=points.begin();
     itt++; itt++;
@@ -72,6 +75,8 @@ void test(int d, int n) {
       assert(points.find(extreme_points[i]) != points.end());
     }
   }
+
+  std::cout<<"test finished successfully!"<<std::endl;
 }
 
 int main(int argc, char **argv) {
