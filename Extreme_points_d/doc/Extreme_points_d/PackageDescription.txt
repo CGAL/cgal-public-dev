@@ -1,0 +1,60 @@
+/// \defgroup PkgExtremePointsD dD Extreme Points Reference
+
+/// \defgroup PkgExtremePointsDConcepts Concepts
+/// \ingroup PkgExtremePointsD
+
+/// \defgroup PkgExtremePointsDTraits Traits Classes
+/// \ingroup PkgExtremePointsD
+
+/// \defgroup PkgExtremePointsDClasses Classes
+/// \ingroup PkgExtremePointsD
+
+/// \defgroup PkgExtremePointsDGlobal Global Functions
+/// \ingroup PkgExtremePointsD
+
+/// \defgroup PkgExtremePointsDEnum Enum
+/// \ingroup PkgExtremePointsD
+
+/*!
+\addtogroup PkgExtremePointsD
+
+\cgalPkgDescriptionBegin{dD Extreme Points,PkgExtremePointsDSummary}
+\cgalPkgPicture{epd.png}
+
+\cgalPkgSummaryBegin
+\cgalPkgAuthors{Christian Helbling, Bernd Gärtner and Alexandros Konstantinakis Karmis}
+\cgalPkgDesc{This package computes the extreme points of a given d-dimensional point set.}
+\cgalPkgManuals{Chapter_dD_Extreme_Points,PkgExtremePointsD}
+\cgalPkgSummaryEnd
+
+\cgalPkgShortInfoBegin
+\cgalPkgSince{99.0}
+\cgalPkgBib{99.0}
+\cgalPkgDependsOn{\ref PkgQPSolver}
+\cgalPkgLicense{\ref licensesGPL "GPL"}
+\cgalPkgShortInfoEnd
+
+\cgalPkgDescriptionEnd
+
+\cgalClassifedRefPages
+
+## Concepts ##
+- `ExtremePointsTraits_d`
+
+## Classes ##
+- `CGAL::Extreme_points_d`
+- `CGAL::Extreme_points_options_d`
+
+## Traits Classes ##
+- `CGAL::Extreme_points_traits_d`
+
+## Enum ##
+- `CGAL::Extreme_point_algorithm_d`
+- `CGAL::Bounded_side`
+
+## Global Functions ##
+- `CGAL::extreme_points_d`
+- `CGAL::extreme_points_d_dula_helgason`
+- `CGAL::extreme_points_d_simple`
+
+*/

@@ -1,0 +1,84 @@
+% +------------------------------------------------------------------------+
+% | Reference manual page: Extreme_points_d.tex
+% +------------------------------------------------------------------------+
+% | 14.9.2010   Christian Helbling
+% | Package: Extreme_points_d
+% |
+% \RCSdef{\RCSExtremepointsdRev}{$Id: $}
+% \RCSdefDate{\RCSExtremepointsdDate}{$Date: $}
+% |
+\ccRefPageBegin
+%%RefPage: end of header, begin of main body
+% +------------------------------------------------------------------------+
+
+
+\begin{ccRefClass}{Extreme_points_d<Traits>}  %% add template arg's if necessary
+
+%% \ccHtmlCrossLink{}     %% add further rules for cross referencing links
+%% \ccHtmlIndexC[class]{} %% add further index entries
+
+\ccDefinition
+  
+The class \ccRefName\ holds a set of d dimensional points and answers extreme point queries. The point set can be 
+enlarged dynamically. Extreme point computations are done lazily (i.e. only when a query has to be answered) and the result of the last computation is kept. There is also the possibility to classify points relative to the convex hull of the current point set (i.e. to tell whether they are inside, outside or an extreme point). 
+
+\ccInclude{CGAL/Extreme_points_d.h}
+
+% \ccIsModel
+% 
+% Concept
+
+\ccTypes
+
+The following types come directly from the traits class given as the template argument which must be a model of the concept \ccc{ExtremePointsTraits_d}.
+
+\ccNestedType{Point}{The type of the input points.}
+\ccNestedType{Less_lexicographically}{The lexicographic compare functor for \ccc{Point}.}
+\ccNestedType{RT}{The number type, which is the ring type of the input points.}
+
+<<<<<<< HEAD
+\ccCreation %TODO
+\ccCreationVariable{ep}  %TODO
+=======
+\ccCreation
+\ccCreationVariable{ep}  %% choose variable name
+>>>>>>> 083c99a7011158ef80f4df95610a836bc65e27bd
+
+\ccConstructor{Extreme_points_d(int d, Extreme_points_options_d ep_options =
+                                Extreme_points_options_d());}{Constructor for extreme points computations in \ccc{d} dimensions. The optional argument \ccc{ep_options} can be used to set some options (see \ccc{Extreme_points_options_d}).}
+
+\ccOperations
+
+\ccMethod{int dimension();}{Returns the dimension of the points}
+\ccMethod{void clear();}{Clears the point set}
+\ccMethod{void insert(const Point p);}{Adds the point \ccc{p} to the point set}
+\ccMethod{template <typename InputIterator>
+void insert(InputIterator first, InputIterator beyond);}{Adds all the points from the range [\ccc{first},\ccc{beyond}) to the point set}
+\ccMethod{template <class OutputIterator>
+OutputIterator get_extreme_points(OutputIterator result);}{Calculates the extreme points of the current point set. The resulting sequence of extreme points is placed starting at position \ccc{result}, and the past-the-end iterator for the resulting sequence is returned.}
+\ccMethod{enum Extreme_point_classification classify(Point p, bool is_input_point=false);}{Classifies point \ccc{p} relative to the convex hull of the current point set. If \ccc{p} is an input point the argument \ccc{is_input_point} may be set to true which speeds up the query.
+\ccPrecond \ccc{p} is an input point or \ccc{is_input_point==false}.
+}
+
+<<<<<<< HEAD
+\ccRequirements %TODO from here to bottom
+=======
+\ccRequirements
+>>>>>>> 083c99a7011158ef80f4df95610a836bc65e27bd
+
+\ccc{Traits} is a model of the concept \ccc{ExtremePointsTraits_d}.
+
+\ccSeeAlso
+
+\ccRefIdfierPage{CGAL::extreme_points_d}\\
+\ccRefIdfierPage{CGAL::extreme_points_d_dula_helgason}\\
+\ccRefIdfierPage{CGAL::extreme_points_d_simple}
+
+\end{ccRefClass}
+
+% +------------------------------------------------------------------------+
+%%RefPage: end of main body, begin of footer
+\ccRefPageEnd
+% EOF
+% +------------------------------------------------------------------------+
+
