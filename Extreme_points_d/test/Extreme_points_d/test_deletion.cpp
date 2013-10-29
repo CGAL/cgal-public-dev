@@ -1,24 +1,9 @@
-#include <getopt.h>
-#include <vector>
-#include <fstream>
-#include <string>
-#include <iterator>
-#include <iostream>
-#include <algorithm>
-#include <cassert>
-
-#include <CGAL/config.h>
-#include <CGAL/basic.h>
 #include <CGAL/Extreme_points_d.h>
 #include <CGAL/Extreme_points_options_d.h>
 #include <CGAL/Extreme_points_traits_d.h>
-#include <CGAL/Exact_predicates_exact_constructions_kernel.h>
 #include <CGAL/Cartesian_d.h>
-
 #include <CGAL/Convex_hull_d.h>
-
 #include <CGAL/point_generators_d.h>
-
 #include <time.h>
 #include <algorithm>
 #include <math.h>
@@ -52,7 +37,7 @@ void test(int d, int n) {
   ep.insert(points.begin(),points.end());
   ep.extreme_points(std::back_inserter(extreme_points));
 
-  //this should hold because points are on moment curve
+  //this should hold because points are on a moment curve
   assert(extreme_points.size() == points.size());
   for (int i=0; i<extreme_points.size(); i++) {
     assert(points.find(extreme_points[i]) != points.end());

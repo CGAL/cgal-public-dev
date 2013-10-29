@@ -1,14 +1,3 @@
-#include <vector>
-#include <fstream>
-#include <string>
-#include <iterator>
-#include <iostream>
-#include <algorithm>
-#include <cassert>
-#include <set>
-
-#include <CGAL/config.h>
-#include <CGAL/Timer.h>
 #include <CGAL/Cartesian_d.h>
 #include <CGAL/Extreme_points_d.h>
 #include <CGAL/Extreme_points_traits_d.h>
@@ -131,8 +120,8 @@ void test(EP_d ep, EP_d ep2) {
 }
 
 int main(int argc, char **argv) {
-	std::ifstream fin("./data/05by02500at01.con");
-	read_input(fin,std::back_inserter(points),n,d);
+    std::ifstream fin("./data/05by02500at01.con");
+    read_input(fin,std::back_inserter(points),n,d);
 
     std::cout;
     std::cout<<"Testing with default options"<<std::endl;
@@ -169,8 +158,10 @@ int main(int argc, char **argv) {
     ep=EP_d(d,options);
     ep2=EP_d(d,options);
     test(ep,ep2);
-    
-    
-	std::cout<<"Finished successfully!"<<std::endl;
-	return 0;
+
+    ep.clear();
+    ep2.clear();    
+
+    std::cout<<"Finished successfully!"<<std::endl;
+    return 0;
 }

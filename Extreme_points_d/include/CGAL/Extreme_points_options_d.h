@@ -84,7 +84,7 @@ public:
         return deletion_;
     }
     
-    /// Sets whether or not deletion is permitted
+    /// Setting this option to true allows you to delete points after insertion, however the performance is lower.
     void set_deletion (bool deletion)
     {
         deletion_ = deletion;
@@ -99,6 +99,8 @@ public:
     }
     
     /// Sets whether or not anti-cycling is activated
+    /// Setting this option to true ensures that no cycles are produced by the Linear Solver, however the performance is lower.
+    /// It is recommended to set it to true.
     void set_anti_cycling (bool anti_cycling)
     {
         anti_cycling_ = anti_cycling;

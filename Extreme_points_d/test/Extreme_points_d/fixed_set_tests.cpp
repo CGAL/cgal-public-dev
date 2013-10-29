@@ -1,13 +1,3 @@
-#include <vector>
-#include <fstream>
-#include <string>
-#include <iterator>
-#include <iostream>
-#include <algorithm>
-#include <cassert>
-
-#include <CGAL/config.h>
-#include <CGAL/Timer.h>
 #include <CGAL/Cartesian_d.h>
 #include <CGAL/Extreme_points_d.h>
 

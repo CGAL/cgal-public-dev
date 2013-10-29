@@ -1,32 +1,19 @@
-#include <getopt.h>
-#include <vector>
-#include <fstream>
-#include <string>
-#include <iterator>
-#include <iostream>
-#include <algorithm>
-#include <cassert>
-
-#include <CGAL/config.h>
-#include <CGAL/basic.h>
 #include <CGAL/Extreme_points_d.h>
 #include <CGAL/Extreme_points_options_d.h>
 #include <CGAL/Extreme_points_traits_d.h>
 #include <CGAL/Point_2.h>
-#include <CGAL/Exact_predicates_exact_constructions_kernel.h>
 #include <CGAL/Cartesian.h>
-
 #include <CGAL/convex_hull_2.h>
 #include <CGAL/point_generators_2.h>
-
 #include <time.h>
-
 #include <CGAL/convex_hull_2.h>
 
 typedef CGAL::Cartesian<double>                 Kernel;
 typedef Kernel::Point_2                         Point_2;
 typedef CGAL::Extreme_points_traits_d<Point_2>  EP_Traits_2;
 typedef Kernel::Less_xy_2                       Less_lexicographically;
+
+//Testing deletion with points on a circle
 
 void test1() {
     std::vector<Point_2> points;

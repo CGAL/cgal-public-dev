@@ -1,8 +1,4 @@
 #include <CGAL/point_generators_d.h>
-#include <CGAL/algorithm.h>
-#include <vector>
-#include <iterator>
-#include <iostream>
 #include <CGAL/Cartesian_d.h>
 #include <CGAL/Extreme_points_d.h>
 

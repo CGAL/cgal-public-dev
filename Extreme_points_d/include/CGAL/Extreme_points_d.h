@@ -187,7 +187,7 @@ class Extreme_points_d {
         /// Clears the point set       
         void clear() {
             new_points.clear();
-            extreme_points.clear();
+            extr_points.clear();
             all_points.clear();
         }
 

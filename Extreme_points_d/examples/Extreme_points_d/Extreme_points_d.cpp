@@ -2,9 +2,6 @@
 #include <CGAL/point_generators_d.h>
 #include <CGAL/Extreme_points_d.h>
 #include <CGAL/Extreme_points_traits_d.h>
-#include <vector>
-#include <iostream>
-#include <cassert>
 
 typedef CGAL::Cartesian_d<double>     Kernel_d;
 typedef Kernel_d::Point_d       Point_d;
@@ -26,7 +23,9 @@ int main() {
   const int BATCHES = 1; // number of batches
   
   CGAL::Extreme_points_options_d op;
+  // Allows deletion of points after insertion.
   op.set_deletion(true);
+  // Ensure termination in all cases at the price of worse performance.
   op.set_anti_cycling(true);
   CGAL::Extreme_points_d<EP_Traits_d> ep(D,op);
   

@@ -1,6 +1,3 @@
-#include <vector>
-#include <iterator>
-#include <iostream>
 #include <CGAL/Extreme_points_d.h>
 #include <CGAL/Extreme_points_options_d.h>
 #include <CGAL/Extreme_points_traits_d.h>
@@ -11,8 +8,8 @@
 #include <time.h>
 
 /* Compares Convex_Hull_d and Extreme_points_d for different dimensions and numbers of points.
-   Points are random on a moment curve.
-*/
+   Points are random on a moment curve.*/
+
 
 typedef CGAL::Cartesian_d<double>               Kernel;
 typedef Kernel::Point_d                         Point_d;

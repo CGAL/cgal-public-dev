@@ -1,21 +1,7 @@
-#include <getopt.h>
-#include <vector>
-#include <fstream>
-#include <string>
-#include <iterator>
-#include <iostream>
-#include <algorithm>
-#include <cassert>
-
-#include <CGAL/config.h>
-#include <CGAL/basic.h>
 #include <CGAL/Extreme_points_d.h>
 #include <CGAL/Extreme_points_traits_d.h>
-#include <CGAL/Exact_predicates_exact_constructions_kernel.h>
 #include <CGAL/Cartesian_d.h>
-
 #include <CGAL/Convex_hull_d.h>
-
 #include <CGAL/Random.h>
 
 int d = 4;

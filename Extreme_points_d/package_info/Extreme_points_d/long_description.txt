@@ -1,0 +1,1 @@
+This component implements two algorithms (a simple one and one that is output-sensitive) that compute the extreme points for a d dimensional point set.

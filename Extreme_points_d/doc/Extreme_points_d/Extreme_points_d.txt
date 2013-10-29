@@ -1,0 +1,92 @@
+namespace CGAL {
+/*!
+
+\mainpage User Manual 
+\anchor Chapter_dD_Extreme_Points
+
+\cgalAutoToc
+\authors Christian Helbling, Bernd Gärtner, Alexandros Konstantinakis-Karmis
+
+\section Section_dD_Extreme_Points_Introduction Introduction
+
+This package solves the problem of finding all the extreme points of an input set. This is useful for many applications like data envelopment analysis, finding redundant constraints in linear programs and identifying outliers in multivariate statistical data.
+
+An <b>extreme point</b> is defined as follows: 
+A subset \f$S \subseteq \mathbf{R}^d\f$ is convex if for any two points \f$p\f$ and \f$q\f$ in the set the line segment with endpoints \f$p\f$ and \f$q\f$
+is contained in \f$S\f$. The convex hull of a set \f$S\f$ is the smallest convex set containing \f$S\f$. The convex hull of a finite set of points 
+\f$A \subseteq \mathbf{R}^d\f$ is a convex polytope with vertices in \f$A\f$. Then a point in \f$A\f$ is an <b>extreme point</b> (with respect to \f$A\f$) iff it is a vertex of the convex hull of \f$A\f$. This also means that a point in \f$A\f$ is an extreme point iff it is not contained in the convex hull of all the other points in \f$A\f$.
+
+The standard way of finding the extreme points is to compute the convex hull. This approach is optimal for dimensions \f$2\f$ or \f$3\f$ where efficient \f$O(n \log n)\f$ algorithms exist to compute the convex hull, but it does not scale to higher dimensions. In contrast, the problem of computing the extreme points is polynomial-time solvable.
+
+In terms of performance, the Convex Hull package is faster for low dimensions such as 2D and 3D and depending on input, up to \f$ d=5 \f$. For higher dimensions, this package is faster. Note that our implementation doesn't scale well with dimension due to the use of exact types in the Linear Solver. In practice we expect this package to compute the extreme points in an acceptable amount of time for dimensions up to \f$ 15 \f$. The following example is a benchmark that compares the performance of the two packages using random points on a moment curve for various dimensions.
+\cgalExample{Extreme_points_d/benchmark_moment_curve.cpp}
+
+We will first describe the two different algorithms that compute the extreme points of a given input point set.
+Then we will describe the two different ways to compute extreme points of arbitrary dimensional point sets, either with a static algorithm or with the dynamic class `Extreme_points_d<Traits>`.
+
+\section Section_dD_Extreme_Points_Algorithms The algorithms
+A fundamental operation of the two extreme point algorithms implemented
+in this package is to test whether some \f$ d \f$ - dimensional point 
+\f$ p \f$ is a convex combination of the points \f$ \mathcal{A} = \{a_1, a_2, \ldots, a_m\} \f$. This test is carried out by solving the following linear
+program with \f$ d+1 \f$ equality constraints, \f$ n \f$ non-negative variables
+and with a constant objective function.
+
+<center>
+\f$ \sum\limits_{i=1}^m a_i x_i = p \f$
+
+\f$ \sum\limits_{i=1}^m x_i = 1 \f$
+
+\f$ x \geq 0 \f$
+</center>
+
+For the rest of the documentation this type of linear program is going to 
+be referred to with the expression \f$ LP(\mathcal{A},p) \f$. The solution
+to this problem is computed by the Linear Programming Solver in \cgal.
+
+\subsection Subsection_1 The Simple algorithm
+
+Let \f$\mathcal{P} = \{ p_1, \ldots, p_n \} \f$ be the set of input points. A point pi in P is extreme
+exactly if it cannot be expressed as a convex combination of the other points.
+This can be decided easily by the linear program \f$ LP(\mathcal{P} \setminus \{ p_i \}, p_i) \f$.
+
+The Simple algorithm classifies all points using this method. This involves
+solving \f$ n \f$ linear programs with \f$ n - 1 \f$ nonnegative variables and 
+\f$ d + 1 \f$ equality constraints each.
+
+\subsection Subsection_2 The Dulá - Helgason algorithm
+
+The algorithm is similar to the Simple algorithm in that it uses the same
+linear programs to check convex combinations. However th number of linear programs
+with \f$ n - 1 \f$ variables is only the number of extreme points, making this algorithm output-sensitive.
+
+\section Section_dD_Extreme_Points_Static Static extreme points computations
+The function `extreme_points_d_simple` computes the extreme points of a d-dimensional point set using the Simple algorithm.
+The function `extreme_points_d_dula_helgason` provides an implementation of the Dulá - Helgason output-sensitive algorithm \cite dh-pifch-96, which is better for point sets with low extreme point density (low ratio of extreme points to total input points).
+
+\subsection Subsection_3 Example
+The following program computes the extreme points of a set of 500 random points chosen from a 10-dimensional iso box uniformly at random. The same results could be achieved by substituting the function `CGAL::extreme_points_d_dula_helgason` by `CGAL::extreme_points_d_simple`.
+
+Note that although `double` is used here as the field number type for the Kernel doesn't mean that the algorithm will not be exact. Internally an appropriate exact number type (either `CGAL::Gmpzf` or `CGAL::MP_Float`) is used for intermediate results. 
+
+\cgalExample{Extreme_points_d/extreme_points_d_dula_helgason.cpp}
+
+\section Section_dD_Extreme_Points_Computations Extreme points computations for a dynamically increasing point set
+For extreme point queries on a growing point set the class `Extreme_points_d<Traits>` can be used. This class maintains a set of points in an arbitrary (but fixed) dimension. Extreme point computations are done lazily (i.e., only on extreme point queries) and the result of the last extreme point computation is kept and used in the next computation.
+
+The class can also classify query points in relation to the convex hull of the current point set. Such a query point is either one of the extreme points, some other point inside the convex hull or completely outside the convex hull (which means it would be an extreme point when added to the point set).
+
+\subsection Subsection_4 Example
+The following program demonstrates the usage of `Extreme_points_d<Traits>`. The use of options is demonstrated first, then randomly chosen points are added to the current point set in multiple batches. In between, the extreme points of the current set are calculated and some classification queries are made. Lastly, a point is deleted and the new set of extreme points is printed for comparison.
+
+\cgalExample{Extreme_points_d/Extreme_points_d.cpp}
+
+\section Section_dD_Extreme_Points_Demo Demo
+
+This package comes with an interactive demo of `Extreme_points_d<Traits>`. For simplicity and for better interaction and imagination the demo operates only with 2-dimensional points.
+
+\cgalFigureBegin{figextremepointsd,extreme_points_demo.png}
+Demo of Extreme_points_d<Traits> in 2 dimensions
+\cgalFigureEnd
+
+*/ 
+} /* namespace CGAL */
