@@ -1,12 +1,9 @@
 #include <CGAL/Extreme_points_d.h>
 #include <CGAL/Extreme_points_options_d.h>
 #include <CGAL/Extreme_points_traits_d.h>
-#include <CGAL/Point_2.h>
 #include <CGAL/Cartesian.h>
 #include <CGAL/convex_hull_2.h>
 #include <CGAL/point_generators_2.h>
-#include <time.h>
-#include <CGAL/convex_hull_2.h>
 
 typedef CGAL::Cartesian<double>                 Kernel;
 typedef Kernel::Point_2                         Point_2;
@@ -20,7 +17,6 @@ void test1() {
     std::vector<Point_2> extreme_points;
     clock_t start, end,t1,t2,t3,t4;
    
-
     CGAL::Random_points_on_circle_2<Point_2> rnd(100.);
     for (int i=0; i<2000; ++i) {
       points.push_back(*rnd);

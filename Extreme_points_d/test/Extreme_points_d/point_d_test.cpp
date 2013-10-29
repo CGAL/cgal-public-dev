@@ -2,7 +2,6 @@
 #include <CGAL/Extreme_points_traits_d.h>
 #include <CGAL/Cartesian_d.h>
 #include <CGAL/Convex_hull_d.h>
-#include <CGAL/Random.h>
 
 int d = 4;
 

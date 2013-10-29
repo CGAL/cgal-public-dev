@@ -3,10 +3,6 @@
 #include <CGAL/Extreme_points_traits_d.h>
 #include <CGAL/Cartesian_d.h>
 #include <CGAL/Convex_hull_d.h>
-#include <CGAL/point_generators_d.h>
-#include <time.h>
-#include <algorithm>
-#include <math.h>
 
 typedef CGAL::Cartesian_d<double>               Kernel;
 typedef Kernel::Point_d                         Point_d;

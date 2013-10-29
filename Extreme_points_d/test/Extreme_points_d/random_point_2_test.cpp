@@ -5,8 +5,6 @@
 #include <CGAL/Cartesian.h>
 #include <CGAL/convex_hull_2.h>
 #include <CGAL/point_generators_2.h>
-#include <time.h>
-#include <CGAL/convex_hull_2.h>
 
 typedef CGAL::Cartesian<double>                 Kernel;
 typedef Kernel::Point_2                         Point_2;

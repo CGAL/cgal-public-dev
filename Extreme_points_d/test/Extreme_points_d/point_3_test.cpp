@@ -1,6 +1,5 @@
 #include <CGAL/Extreme_points_d.h>
 #include <CGAL/Extreme_points_traits_d.h>
-#include <CGAL/Point_3.h>
 #include <CGAL/Cartesian.h>
 #include <CGAL/convex_hull_3.h>
 #include <CGAL/Polyhedron_3.h>

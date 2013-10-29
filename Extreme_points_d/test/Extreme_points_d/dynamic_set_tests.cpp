@@ -1,4 +1,3 @@
-#include <CGAL/Cartesian_d.h>
 #include <CGAL/Extreme_points_d.h>
 #include <CGAL/Extreme_points_traits_d.h>
 #include <CGAL/Extreme_points_options_d.h>
