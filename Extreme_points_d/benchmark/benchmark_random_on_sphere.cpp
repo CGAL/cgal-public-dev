@@ -55,12 +55,12 @@ void test(int d, int n, double ratio) {
 }
 
 int main(int argc, char **argv) {
-  for (int d=2; d<10; d++) {
+  for (int d=2; d<8; d++) {
     for (int n=100; n<200; n+=100) {
       test(d,n,1.0);
       test(d,n,0.5);
       test(d,n,0.1);
     }
   }
-    return 0;
+  return 0;
 }
