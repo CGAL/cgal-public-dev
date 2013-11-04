@@ -28,6 +28,8 @@ public:
   typedef AlgebraicKernel_d_1_								Algebraic_kernel_d_1;
 
   typedef typename Algebraic_kernel_d_1::Coefficient					Coefficient;
+
+  // TODO Maybe just use the Coefficient type for Integer later
   typedef typename Get_arithmetic_kernel<Coefficient>::Arithmetic_kernel::Integer	Integer;
 
   typedef typename Algebraic_kernel_d_1::Polynomial_1					Polynomial_1;
@@ -36,8 +38,8 @@ public:
   typedef typename CGAL::Polynomial_traits_d<Polynomial_1>				Polynomial_traits_1;
 
 
-
   typedef _Bezier_cache<Algebraic_kernel_d_1>                	Self;
+
   /// \name Type definitions for the vertical tangency-point mapping.
   //@{
   typedef size_t                                     		Curve_id;
@@ -70,8 +72,7 @@ public:
   typedef std::pair<Curve_id, Curve_id>              		   Curve_pair;
   typedef std::pair<Algebraic_real_1, Algebraic_real_1>            Parameter_pair;
   typedef std::list<Intersection_point_2>            		   Intersection_list;
-  typedef
-    typename Intersection_list::const_iterator       		   Intersection_iter;
+  typedef typename Intersection_list::const_iterator		   Intersection_iter;
 
 private:
 
@@ -123,11 +124,10 @@ private:
       prm_it (it),
       x (_x),
       y (_y),
-
-      app_x (_x.to_double()),
-      app_y (_y.to_double())
-      //app_x (CGAL::to_double(_x)),
-      //app_y (CGAL::to_double(_y))
+      //app_x (_x.to_double()),
+      //app_y (_y.to_double())
+      app_x (CGAL::to_double(_x)),
+      app_y (CGAL::to_double(_y))
     {}
 
     /*! Get the parameter value. */
@@ -163,9 +163,9 @@ private:
     }
   };
 
-  // Data members:
 
-  Algebraic_kernel_d_1	algebraic_kernel_d_1;
+  // Data members:
+  static Algebraic_kernel_d_1	algebraic_kernel_d_1;
   // Nt_traits         	nt_traits;        /*! Number-type traits. */
 
   Vert_tang_map     	vert_tang_map;    /*! Maps curves to their vertical
@@ -276,6 +276,8 @@ private:
    * \param bp2 The second bivariate polynomial.
    * \return The resultant polynomial (a polynomial in x).
    */
+
+  // TODO May be substituted with CGAL::Polynomial_traits_1::Resultant
   Polynomial_1 _compute_resultant (const std::vector<Polynomial_1>& bp1,
                                  const std::vector<Polynomial_1>& bp2) const;
 };
@@ -302,14 +304,31 @@ _Bezier_cache<AlgebraicKernel_d_1_>::get_vertical_tangencies
   // such that X'(t) = 0, and store them in the cache.
   Vertical_tangency_list&  vert_tang_list = vert_tang_map[id];
 
-  typedef typename Polynomial_traits_1::Differentiate	differentiate;
-  const Polynomial_1&        polyX_der = differentiate (polyX);
+
+  typename Polynomial_traits_1::Differentiate	differentiate;
+  const Polynomial_1&		polyX_der = differentiate (polyX);
   //const Polynomial_1&        polyX_der = nt_traits.derive (polyX);
   
   typename Algebraic_kernel_d_1::Solve_1 solve_1 = algebraic_kernel_d_1.solve_1_object();
 
-  solve_1 (polyX_der, std::back_inserter(vert_tang_list));
+  /* The solve_1 returns a list of std::pair
+   * of type Parameter_pair. However, we need only 
+   * the roots without the mults.
+   */
+  typename std::list<Parameter_pair> root_pair;
+  solve_1 (polyX_der, std::back_inserter(root_pair));
   //nt_traits.compute_polynomial_roots (polyX_der, 0, 1, std::back_inserter(vert_tang_list));
+
+
+  // Copy the roots back
+  typename std::list<Parameter_pair>::iterator rpit = root_pair.begin();
+  typename std::back_insert_iterator<Vertical_tangency_list> oit = std::back_inserter(vert_tang_list);
+
+  while(rpit != root_pair.end())
+  {
+	*oit++ = rpit->first;
+	rpit++;
+  }
 
   return (vert_tang_list);
 }
@@ -363,7 +382,6 @@ _Bezier_cache<AlgebraicKernel_d_1_>::get_intersections
     // Note that we make sure that both parameter pairs are in the range [0, 1]
     // (if not, the self-intersection point is imaginary).
 
-// TODO Check for the construct_polynomial function, maybe use AlgebraicKernel_d_1 computepolynomial_1
     typename Parameter_list::iterator  s_it;
     typename Parameter_list::iterator  t_it;
 
@@ -386,9 +404,11 @@ _Bezier_cache<AlgebraicKernel_d_1_>::get_intersections
       if (compare_1 (*s_it, one) == LARGER)
         break;
 
-      typedef typename Polynomial_traits_1::Evaluate	evaluate;
-      const Algebraic_real_1&  x = evaluate (polyX_1, *s_it);
-      const Algebraic_real_1&  y = evaluate (polyY_1, *s_it);
+      typename Polynomial_traits_1::Evaluate	evaluate;
+
+      // Evaluate returns the Polynomial_traits_1::Coefficient
+      const Algebraic_real_1&  x = construct_algebraic_real_1( evaluate (polyX_1, CGAL::to_double(*s_it)) );
+      const Algebraic_real_1&  y = construct_algebraic_real_1( evaluate (polyY_1, CGAL::to_double(*s_it)) );
       //const Algebraic_real_1&  x = nt_traits.evaluate_at (polyX_1, *s_it);
       //const Algebraic_real_1&  y = nt_traits.evaluate_at (polyY_1, *s_it);
 
@@ -402,11 +422,15 @@ _Bezier_cache<AlgebraicKernel_d_1_>::get_intersections
         //                   x) == EQUAL &&
         //    CGAL::compare (nt_traits.evaluate_at (polyY_1, *t_it),
         //                   y) == EQUAL)
-        if (compare_1 (evaluate (polyX_1, *t_it), x) == EQUAL &&
-            compare_1 (evaluate (polyY_1, *t_it), y) == EQUAL)
+
+	const Algebraic_real_1& tempX = construct_algebraic_real_1( evaluate (polyX_1, CGAL::to_double(*t_it)) );
+	const Algebraic_real_1& tempY = construct_algebraic_real_1( evaluate (polyY_1, CGAL::to_double(*t_it)) );
+
+        if (compare_1 (tempX, x) == EQUAL &&
+            compare_1 (tempY, y) == EQUAL)
         {
           info.first.push_back (Intersection_point_2 (*s_it, *t_it,
-                                                      x / denX, y / denY));
+                                                      CGAL::to_double(x) / CGAL::to_double(denX), CGAL::to_double(y) / CGAL::to_double(denY)));
         }
       }
     }
@@ -458,8 +482,8 @@ _Bezier_cache<AlgebraicKernel_d_1_>::get_intersections
 
   for (s_it = s_vals.begin(); s_it != s_vals.end(); ++s_it)
   {
-    const Algebraic_real_1&  x = evaluate (polyX_1, *s_it) / denX_1;
-    const Algebraic_real_1&  y = evaluate (polyY_1, *s_it) / denY_1;
+    const Algebraic_real_1&  x = CGAL::to_double(evaluate (polyX_1, CGAL::to_double(*s_it))) / CGAL::to_double(denX_1);
+    const Algebraic_real_1&  y = CGAL::to_double(evaluate (polyY_1, CGAL::to_double(*s_it))) / CGAL::to_double(denY_1);
     //const Algebraic_real_1&  x = nt_traits.evaluate_at (polyX_1, *s_it) / denX_1;
     //const Algebraic_real_1&  y = nt_traits.evaluate_at (polyY_1, *s_it) / denY_1;
 
@@ -477,15 +501,15 @@ _Bezier_cache<AlgebraicKernel_d_1_>::get_intersections
 
   for (t_it = t_vals.begin(); t_it != t_vals.end(); ++t_it)
   {
-    const Algebraic_real_1&  x = evaluate (polyX_2, *t_it) / denX_2;
-    const Algebraic_real_1&  y = evaluate (polyY_2, *t_it) / denY_2;
+    const Algebraic_real_1&  x = CGAL::to_double(evaluate (polyX_2, CGAL::to_double(*t_it))) / CGAL::to_double(denX_2);
+    const Algebraic_real_1&  y = CGAL::to_double(evaluate (polyY_2, CGAL::to_double(*t_it))) / CGAL::to_double(denY_2);
     //const Algebraic_real_1&  x = nt_traits.evaluate_at (polyX_2, *t_it) / denX_2;
     //const Algebraic_real_1&  y = nt_traits.evaluate_at (polyY_2, *t_it) / denY_2;
 
     pts2.push_back (My_point_2 (t_it, x, y));
   }
 
-  typedef typename Polynomial_traits_1::Degree	degree;
+  typename Polynomial_traits_1::Degree	degree;
   // Go over the points in the pts1 list.
   const bool                x2_simpler = degree(polyX_2) < degree(polyX_1);
   const bool                y2_simpler = degree(polyY_2) < degree(polyY_1);
@@ -537,8 +561,8 @@ _Bezier_cache<AlgebraicKernel_d_1_>::get_intersections
     // a pait for *pit1 or when we are left with a single point.
     bool                    found = false;
 
-    const Algebraic_real_1& s = construct_algebraic_real_1 (pit1->parameter());
-    //const Algebraic_real_1& s = pit1->parameter();
+    // Returns an Algebraic_real_1
+    const Algebraic_real_1& s = pit1->parameter();
 
     Algebraic_real_1        t;
 
@@ -550,7 +574,7 @@ _Bezier_cache<AlgebraicKernel_d_1_>::get_intersections
       {
         // Obtain the parameter value, and try to simplify the representation
         // of the intersection point.
-        t = construct_algebraic_real_1 (pit2->parameter());
+        t = pit2->parameter();
 
         if (x2_simpler)
           pit1->x = pit2->x;
@@ -570,7 +594,7 @@ _Bezier_cache<AlgebraicKernel_d_1_>::get_intersections
 
       // Obtain the parameter value, and try to simplify the representation
       // of the intersection point.
-      t = construct_algebraic_real_1 (pit2->parameter());
+      t = pit2->parameter();
 
       if (x2_simpler)
         pit1->x = pit2->x;
@@ -582,8 +606,7 @@ _Bezier_cache<AlgebraicKernel_d_1_>::get_intersections
     }
 
 
-// TODO Can have some function to compute the sign instead of CGAL::
-    // Check that  s- and t-values both lie in the legal range of [0,1].
+    // Check that s- and t-values both lie in the legal range of [0,1].
     CGAL_assertion(CGAL::sign (s) != NEGATIVE && compare_1 (s, one) != LARGER &&
                    CGAL::sign (t) != NEGATIVE && compare_1 (t, one) != LARGER);
     //CGAL_assertion(CGAL::sign (s) != NEGATIVE && CGAL::compare (s, one) != LARGER &&
@@ -653,10 +676,10 @@ bool _Bezier_cache<Algebraic_kernel_d_1>::_intersection_params
 
   // Define types for the various functions required of the polynomials
   //typedef Polynomial_1::Construct_polynomial	construct_polynomial;
-  typedef typename Algebraic_kernel_d_1::Compute_polynomial_1	construct_polynomial;
-  typedef typename Polynomial_traits_1::Degree			degree;
-  typedef typename Polynomial_traits_1::Scale			scale;
-  typedef typename Polynomial_traits_1::Get_coefficients	get_coefficients;
+  typename Polynomial_traits_1::Construct_polynomial	construct_polynomial;
+  typename Polynomial_traits_1::Degree			degree;
+  typename Polynomial_traits_1::Scale			scale;
+  typename Polynomial_traits_1::Get_coefficient		get_coefficient;
 
 
   // Construct the bivariate polynomial that corresponds to Equation I.
@@ -671,14 +694,14 @@ bool _Bezier_cache<Algebraic_kernel_d_1>::_intersection_params
   for (k = degX_2; k >= 0; k--)
   {
     coeff = get_coefficient (polyX_2, k) * normX_1;
-    coeffsX_st[k] = construct_polynomial (&coeff);
+    coeffsX_st[k] = construct_polynomial (coeff);
     //coeff = nt_traits.get_coefficient (polyX_2, k) * normX_1;
     //coeffsX_st[k] = nt_traits.construct_polynomial (&coeff, 0);
   }
   coeffsX_st[0] = coeffsX_st[0] - scale (polyX_1, normX_2);
   //coeffsX_st[0] = coeffsX_st[0] - nt_traits.scale (polyX_1, normX_2);
 
-//TODO CHANGE
+
   // Consruct the bivariate polynomial that corresponds to Equation II.
   const int                degY_2 = degree (polyY_2);
   //const int                degY_2 = nt_traits.degree (polyY_2);
@@ -687,7 +710,7 @@ bool _Bezier_cache<Algebraic_kernel_d_1>::_intersection_params
   for (k = degY_2; k >= 0; k--)
   {
     coeff = get_coefficient (polyY_2, k) * normY_1;
-    coeffsY_st[k] = construct_polynomial (&coeff);
+    coeffsY_st[k] = construct_polynomial (coeff);
     //coeff = nt_traits.get_coefficient (polyY_2, k) * normY_1;
     //coeffsY_st[k] = nt_traits.construct_polynomial (&coeff, 0);
   }
@@ -709,7 +732,27 @@ bool _Bezier_cache<Algebraic_kernel_d_1>::_intersection_params
   // not overlap. The roots we are interested in must be in the interval [0,1].
   typename Algebraic_kernel_d_1::Solve_1 solve_1 = algebraic_kernel_d_1.solve_1_object();
 
-  solve_1 (res, std::back_inserter(s_vals));
+
+  /* The solve_1 returns a list of std::pair
+   * of type Parameter_pair. However, we need only 
+   * the roots without the mults.
+   */
+  typename std::list<Parameter_pair> root_pair;
+  solve_1 (res, std::back_inserter(root_pair));
+  //nt_traits.compute_polynomial_roots (polyX_der, 0, 1, std::back_inserter(vert_tang_list));
+
+
+  // Copy the roots back
+  typename std::list<Parameter_pair>::iterator rpit = root_pair.begin();
+  typename std::back_insert_iterator<Parameter_list> oit = std::back_inserter(s_vals);
+
+  while(rpit != root_pair.end())
+  {
+	*oit++ = rpit->first;
+	rpit++;
+  }
+
+  //solve_1 (res, std::back_inserter(s_vals));
   //nt_traits.compute_polynomial_roots (res,0,1,std::back_inserter (s_vals));
   return (false);
 
@@ -743,9 +786,9 @@ void _Bezier_cache<Algebraic_kernel_d_1_>::_self_intersection_params
   // which is in turn a polynomial it s.
 
   // Types for the polynomial functions
-  typedef typename Algebraic_kernel_d_1::Compute_polynomial_1	construct_polynomial;
-  typedef typename Polynomial_traits_1::Degree			degree;
-  typedef typename Polynomial_traits_1::Get_coefficients	get_coefficients;
+  typename Polynomial_traits_1::Construct_polynomial	construct_polynomial;
+  typename Polynomial_traits_1::Degree			degree;
+  typename Polynomial_traits_1::Get_coefficient		get_coefficient;
 
 
   const int                degX = degree (polyX);
@@ -757,7 +800,6 @@ void _Bezier_cache<Algebraic_kernel_d_1_>::_self_intersection_params
 
   coeffs = new Integer [degX];
 
-// TODO CHANGE
   for (i = 0; i < degX; i++)
   {
     for (k = i + 1; k < degX; k++)
@@ -765,7 +807,7 @@ void _Bezier_cache<Algebraic_kernel_d_1_>::_self_intersection_params
       //coeffs[k - i - 1] = nt_traits.get_coefficient (polyX, k);
 
     //coeffsX_st[i] = nt_traits.construct_polynomial (coeffs, degX - i - 1);
-    coeffsX_st[i] = construct_polynomial (coeffs, degX - i - 1);
+    coeffsX_st[i] = construct_polynomial (coeffs, coeffs + degX - i - 1);
   }
 
   delete[] coeffs;
@@ -786,7 +828,7 @@ void _Bezier_cache<Algebraic_kernel_d_1_>::_self_intersection_params
       coeffs[k - i - 1] = get_coefficient (polyY, k);
       //coeffs[k - i - 1] = nt_traits.get_coefficient (polyY, k);
 
-    coeffsY_st[i] = construct_polynomial (coeffs, degY - i - 1);
+    coeffsY_st[i] = construct_polynomial (coeffs, coeffs + degY - i - 1);
     //coeffsY_st[i] = nt_traits.construct_polynomial (coeffs, degY - i - 1);
   }
 
@@ -804,7 +846,26 @@ void _Bezier_cache<Algebraic_kernel_d_1_>::_self_intersection_params
   //Algebraic_kernel_d_1		ak;
   typename Algebraic_kernel_d_1::Solve_1 solve_1 = algebraic_kernel_d_1.solve_1_object();
 
-  solve_1 (res, std::back_inserter(s_vals));
+
+  /* The solve_1 returns a list of std::pair
+   * of type Parameter_pair. However, we need only 
+   * the roots without the mults.
+   */
+  typename std::list<Parameter_pair> root_pair;
+  solve_1 (res, std::back_inserter(root_pair));
+
+
+  // Copy the roots back
+  typename std::list<Parameter_pair>::iterator rpit = root_pair.begin();
+  typename std::back_insert_iterator<Parameter_list> oit = std::back_inserter(s_vals);
+
+  while(rpit != root_pair.end())
+  {
+	*oit++ = rpit->first;
+	rpit++;
+  }
+
+  //solve_1 (res, std::back_inserter(s_vals));
   //nt_traits.compute_polynomial_roots (res, std::back_inserter (s_vals));
   return;
 }
@@ -812,6 +873,7 @@ void _Bezier_cache<Algebraic_kernel_d_1_>::_self_intersection_params
 // ---------------------------------------------------------------------------
 // Compute the resultant of two bivariate polynomials.
 //
+// TODO Replace by Polynomial_traits_1::Resultant
 template<class Algebraic_kernel_d_1_>
 typename _Bezier_cache<Algebraic_kernel_d_1_>::Polynomial_1
 _Bezier_cache<Algebraic_kernel_d_1_>::_compute_resultant
@@ -826,10 +888,10 @@ _Bezier_cache<Algebraic_kernel_d_1_>::_compute_resultant
   const int        dim = m + n;
   const Integer    zero = 0;
 
-  typedef typename Algebraic_kernel_d_1::Compute_polynomial_1	construct_polynomial;
-  typedef typename Polynomial_traits_1::Degree			degree;
+  typename Algebraic_kernel_d_1::Compute_polynomial_1	construct_polynomial;
+  typename Polynomial_traits_1::Degree			degree;
 
-  const Polynomial_1 zero_poly = construct_polynomial (&zero);
+  const Polynomial_1 zero_poly = construct_polynomial (CGAL::to_double(zero));
   //const Polynomial_1 zero_poly = nt_traits.construct_polynomial (&zero, 0);
   int              i, j, k;
 
@@ -946,7 +1008,7 @@ _Bezier_cache<Algebraic_kernel_d_1_>::_compute_resultant
   // divided by the normalizing factor.
   const Integer    sgn (sign_fact);
 
-  Polynomial_1       det_factor = construct_polynomial (&sgn);
+  Polynomial_1       det_factor = construct_polynomial (CGAL::to_double(sgn));
   //Polynomial_1       det_factor = nt_traits.construct_polynomial (&sgn, 0);
 
   Polynomial_1       diag_prod = mat[dim - 1][dim - 1];
@@ -981,8 +1043,8 @@ _Bezier_cache<Algebraic_kernel_d_1_>::_compute_resultant
   // and obtain the determinant (note that we should have no remainder).
   Polynomial_1       det, rem;
 
-  typedef typename Polynomial_traits_1::PseudoDivisionQuotient		get_quotient;
-  typedef typename Polynomial_traits_1::PseudoDivisionRemainder		get_remainder;
+  typename Polynomial_traits_1::Pseudo_division_quotient	get_quotient;
+  typename Polynomial_traits_1::Pseudo_division_remainder	get_remainder;
 
   det = get_quotient(diag_prod, det_factor);
   rem = get_remainder(diag_prod, det_factor);
