@@ -277,7 +277,6 @@ private:
    * \return The resultant polynomial (a polynomial in x).
    */
 
-  // TODO May be substituted with CGAL::Polynomial_traits_1::Resultant
   Polynomial_1 _compute_resultant (const std::vector<Polynomial_1>& bp1,
                                  const std::vector<Polynomial_1>& bp2) const;
 };
@@ -406,6 +405,7 @@ _Bezier_cache<AlgebraicKernel_d_1_>::get_intersections
 
       typename Polynomial_traits_1::Evaluate	evaluate;
 
+// TODO Eliminate the CGAL::to_double for the "evaluate" function and the division later
       // Evaluate returns the Polynomial_traits_1::Coefficient
       const Algebraic_real_1&  x = construct_algebraic_real_1( evaluate (polyX_1, CGAL::to_double(*s_it)) );
       const Algebraic_real_1&  y = construct_algebraic_real_1( evaluate (polyY_1, CGAL::to_double(*s_it)) );
@@ -429,8 +429,8 @@ _Bezier_cache<AlgebraicKernel_d_1_>::get_intersections
         if (compare_1 (tempX, x) == EQUAL &&
             compare_1 (tempY, y) == EQUAL)
         {
-          info.first.push_back (Intersection_point_2 (*s_it, *t_it,
-                                                      CGAL::to_double(x) / CGAL::to_double(denX), CGAL::to_double(y) / CGAL::to_double(denY)));
+          info.first.push_back (Intersection_point_2 (*s_it, *t_it, CGAL::to_double(x) / CGAL::to_double(denX), 
+								CGAL::to_double(y) / CGAL::to_double(denY)));
         }
       }
     }
@@ -482,6 +482,7 @@ _Bezier_cache<AlgebraicKernel_d_1_>::get_intersections
 
   for (s_it = s_vals.begin(); s_it != s_vals.end(); ++s_it)
   {
+//TODO Need to remove the calls to CGAL::to_double
     const Algebraic_real_1&  x = CGAL::to_double(evaluate (polyX_1, CGAL::to_double(*s_it))) / CGAL::to_double(denX_1);
     const Algebraic_real_1&  y = CGAL::to_double(evaluate (polyY_1, CGAL::to_double(*s_it))) / CGAL::to_double(denY_1);
     //const Algebraic_real_1&  x = nt_traits.evaluate_at (polyX_1, *s_it) / denX_1;
@@ -501,6 +502,7 @@ _Bezier_cache<AlgebraicKernel_d_1_>::get_intersections
 
   for (t_it = t_vals.begin(); t_it != t_vals.end(); ++t_it)
   {
+//CHANGED
     const Algebraic_real_1&  x = CGAL::to_double(evaluate (polyX_2, CGAL::to_double(*t_it))) / CGAL::to_double(denX_2);
     const Algebraic_real_1&  y = CGAL::to_double(evaluate (polyY_2, CGAL::to_double(*t_it))) / CGAL::to_double(denY_2);
     //const Algebraic_real_1&  x = nt_traits.evaluate_at (polyX_2, *t_it) / denX_2;
@@ -544,7 +546,7 @@ _Bezier_cache<AlgebraicKernel_d_1_>::get_intersections
 
     for (k = 0, pit2 = pts2_ptr->begin(); pit2 != pts2_ptr->end(); k++, ++pit2)
     {
-      // Compute the approximate distance between the teo current points.
+      // Compute the approximate distance between the two current points.
       dx = pit1->app_x - pit2->app_x;
       dy = pit1->app_y - pit2->app_y;
 
@@ -558,7 +560,7 @@ _Bezier_cache<AlgebraicKernel_d_1_>::get_intersections
     // Go over the vector entries, starting from the most distant from *pit1
     // to the closest and eliminate pairs of points (we expect that
     // eliminating the distant points is done easily). We stop when we find
-    // a pait for *pit1 or when we are left with a single point.
+    // a pair for *pit1 or when we are left with a single point.
     bool                    found = false;
 
     // Returns an Algebraic_real_1
@@ -702,7 +704,7 @@ bool _Bezier_cache<Algebraic_kernel_d_1>::_intersection_params
   //coeffsX_st[0] = coeffsX_st[0] - nt_traits.scale (polyX_1, normX_2);
 
 
-  // Consruct the bivariate polynomial that corresponds to Equation II.
+  // Construct the bivariate polynomial that corresponds to Equation II.
   const int                degY_2 = degree (polyY_2);
   //const int                degY_2 = nt_traits.degree (polyY_2);
   std::vector<Polynomial_1>  coeffsY_st (degY_2 < 0 ? 1 : (degY_2 + 1));
@@ -724,7 +726,7 @@ bool _Bezier_cache<Algebraic_kernel_d_1>::_intersection_params
   //if (nt_traits.degree (res) < 0)
   if (degree (res) < 0)
   {
-    // If the resultant is identiaclly zero, then the two curves overlap.
+    // If the resultant is identically zero, then the two curves overlap.
     return (true);
   }
 
@@ -780,7 +782,7 @@ void _Bezier_cache<Algebraic_kernel_d_1_>::_self_intersection_params
   Integer                 *coeffs;
   int                      i, k;
 
-  // Consruct the bivariate polynomial that corresponds to Equation I.
+  // Construct the bivariate polynomial that corresponds to Equation I.
   // Note that we represent a bivariate polynomial as a vector of univariate
   // polynomials, whose i'th entry corresponds to the coefficient of t^i,
   // which is in turn a polynomial it s.
@@ -812,7 +814,7 @@ void _Bezier_cache<Algebraic_kernel_d_1_>::_self_intersection_params
 
   delete[] coeffs;
 
-  // Consruct the bivariate polynomial that corresponds to Equation II.
+  // Construct the bivariate polynomial that corresponds to Equation II.
   const int                degY = degree (polyY);
   //const int                degY = nt_traits.degree (polyY);
 
@@ -873,187 +875,28 @@ void _Bezier_cache<Algebraic_kernel_d_1_>::_self_intersection_params
 // ---------------------------------------------------------------------------
 // Compute the resultant of two bivariate polynomials.
 //
-// TODO Replace by Polynomial_traits_1::Resultant
 template<class Algebraic_kernel_d_1_>
 typename _Bezier_cache<Algebraic_kernel_d_1_>::Polynomial_1
 _Bezier_cache<Algebraic_kernel_d_1_>::_compute_resultant
         (const std::vector<Polynomial_1>& bp1,
          const std::vector<Polynomial_1>& bp2) const
 {
-  // Create the Sylvester matrix of polynomial coefficients. Also prepare
-  // the exp_fact vector, that represents the normalization factor (see
-  // below).
-  const int        m = bp1.size() - 1;
-  const int        n = bp2.size() - 1;
-  const int        dim = m + n;
-  const Integer    zero = 0;
 
-  typename Algebraic_kernel_d_1::Compute_polynomial_1	construct_polynomial;
-  typename Polynomial_traits_1::Degree			degree;
-
-  const Polynomial_1 zero_poly = construct_polynomial (CGAL::to_double(zero));
-  //const Polynomial_1 zero_poly = nt_traits.construct_polynomial (&zero, 0);
-  int              i, j, k;
-
-  std::vector<std::vector<Polynomial_1> >  mat (dim);
-  std::vector <int>                      exp_fact (dim);
-  
-  for (i = 0; i < dim; i++)
-  {
-    mat[i].resize (dim);
-    exp_fact[i] = 0;
-    
-    for (j = 0; j < dim; j++)
-      mat[i][j] = zero_poly;
-  }
-  
-  // Initialize it with copies of the two bivariate polynomials.
-  for (i = 0; i < n; i++)
-    for (j = m; j >= 0; j--)
-      mat[i][i + j] = bp1[j];
-  
-  for (i = 0; i < m; i++)
-    for (j = n; j >= 0; j--)
-      mat[n + i][i + j] = bp2[j];
-  
-  // Perform Gaussian elimination on the Sylvester matrix. The goal is to
-  // reach an upper-triangular matrix, whose diagonal elements are mat[0][0]
-  // to mat[dim-1][dim-1], such that the determinant of the original matrix
-  // is given by:
+/*
+  // Create the a bivariate polynomial from the input vector polynomials 
+  // and subsequently the Sylvester matrix of polynomial coefficients. We 
+  // compute the resultant from the Polynomial_traits_d::Resultant
   //
-  //              dim-1
-  //             *******
-  //              *   *  mat[i][i]
-  //              *   *
-  //               i=0
-  //      ---------------------------------
-  //         dim-1
-  //        *******            exp_fact[i]
-  //         *   *  (mat[i][i])
-  //         *   *
-  //          i=0
-  //
-  bool             found_row;
-  Polynomial_1     value;
-  int              sign_fact = 1;
+*/
 
-  for (i = 0; i < dim; i++)
-  {
-    // Check if the current diagonal value is a zero polynomial.
-    //if (nt_traits.degree (mat[i][i]) < 0)
-    if (degree (mat[i][i]) < 0)
-    {
-      // If the current diagonal value is a zero polynomial, try to replace
-      // the current i'th row with a row with a higher index k, such that
-      // mat[k][i] is not a zero polynomial.
-      
-      found_row = false;
-      for (k = i + 1; k < dim; k++)
-      {
-        //if (nt_traits.degree (mat[k][i]) >= 0)
-        if (degree (mat[k][i]) >= 0)
-        {
-          found_row = true;
-          break;
-        }
-      }
-      
-      if (found_row)
-      {
-        // Swap the i'th and the k'th rows (note that we start from the i'th
-        // column, because the first i entries in every row with index i or
-        // higher should be zero by now).
-        for (j = i; j < dim; j++)
-        {
-          value = mat[i][j];
-          mat[i][j] = mat[k][j];
-          mat[k][j] = value;
-        }
-        
-        // Swapping two rows should change the sign of the determinant.
-        // We therefore swap the sign of the normalization factor.
-        sign_fact = -sign_fact;
-      }
-      else
-      {
-        // In case we could not find a non-zero value, the matrix is
-        // singular and its determinant is a zero polynomial.
-        return (mat[i][i]);
-      }
-    }
-    
-    // Zero the whole i'th column of the following rows.
-    for (k = i + 1; k < dim; k++)
-    {
-      //if (nt_traits.degree (mat[k][i]) >= 0)
-      if (degree (mat[k][i]) >= 0)
-      {
-        value = mat[k][i];
-        mat[k][i] = zero_poly;
-        
-        for (j = i + 1; j < dim; j++)
-        {
-          mat[k][j] = mat[k][j] * mat[i][i] - mat[i][j] * value; 
-        }
-        
-        // We multiplied the current row by the i'th diagonal entry, thus
-        // multipling the determinant value by it. We therefore increment
-        // the exponent of mat[i][i] in the normalization factor.
-        exp_fact[i] = exp_fact[i] + 1;
-      }
-    }
-  }
+  typedef typename CGAL::Polynomial_type_generator<Coefficient, 2>::Type 	Polynomial_2;
+  typedef typename CGAL::Polynomial_traits_d<Polynomial_2> 			Polynomial_traits_2;
 
-  // Now the determinant is simply the product of all diagonal items,
-  // divided by the normalizing factor.
-  const Integer    sgn (sign_fact);
+  typename Polynomial_traits_2::Construct_polynomial 				construct_polynomial_2;
+  typename Polynomial_traits_2::Resultant 					resultant;
 
-  Polynomial_1       det_factor = construct_polynomial (CGAL::to_double(sgn));
-  //Polynomial_1       det_factor = nt_traits.construct_polynomial (&sgn, 0);
+  return resultant ( construct_polynomial_2(bp1.begin(), bp1.end()), construct_polynomial_2(bp2.begin(), bp2.end()) );
 
-  Polynomial_1       diag_prod = mat[dim - 1][dim - 1];
-  
-  CGAL_assertion (exp_fact [dim - 1] == 0);
-  for (i = dim - 2; i >= 0; i--)
-  {
-    // Try to avoid unnecessary multiplications by ignoring the current
-    // diagonal item if its exponent in the normalization factor is greater
-    // than 0.
-    if (exp_fact[i] > 0)
-    {
-      exp_fact[i] = exp_fact[i] - 1;
-    }
-    else
-    {
-      diag_prod *= mat[i][i];
-    }
-    
-    for (j = 0; j < exp_fact[i]; j++)
-      det_factor *= mat[i][i];
-  }
-  
-  // In case of a trivial normalization factor, just return the product
-  // of diagonal elements.
-
-  //if (nt_traits.degree(det_factor) == 0)
-  if (degree(det_factor) == 0)
-    return (diag_prod);
-  
-  // Divide the product of diagonal elements by the normalization factor
-  // and obtain the determinant (note that we should have no remainder).
-  Polynomial_1       det, rem;
-
-  typename Polynomial_traits_1::Pseudo_division_quotient	get_quotient;
-  typename Polynomial_traits_1::Pseudo_division_remainder	get_remainder;
-
-  det = get_quotient(diag_prod, det_factor);
-  rem = get_remainder(diag_prod, det_factor);
-  //det = nt_traits.divide (diag_prod, det_factor, rem);
-
-  CGAL_assertion (degree(rem) < 0);
-  //CGAL_assertion (nt_traits.degree(rem) < 0);
-
-  return (det);
 }
 
 } //namespace CGAL
