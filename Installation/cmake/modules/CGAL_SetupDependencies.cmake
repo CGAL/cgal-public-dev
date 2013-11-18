@@ -1,85 +1,69 @@
 include(CGAL_Macros)
 
-message ( STATUS "External libraries supported: ${CGAL_SUPPORTING_3RD_PARTY_LIBRARIES}")
+# This is the place to tell which external libs are supported.
 
-foreach (lib ${CGAL_SUPPORTING_3RD_PARTY_LIBRARIES})
+# TODO This is a list of pairs, the first is the library prefix, the second
+# is the status of the dependency. It can have three possible values:
+# - ALWAYS: this library is always required
+# - ON    : this library is optional but searched for by default
+# - OFF   : this library is optional but searched for by default
+#
+# Remarks: 
+#  Coin is used in KDS, but no FindCoin or FindCOIN exists
+#
+#  There exists FindF2C, FindIPE, FindMKL, but they are only used to
+#  support supporting libs.
+set(CGAL_EXTERNAL_LIBRARIES GMP MPFR Qt3 QT ZLIB OpenGL LEDA MPFI RS RS3
+  OpenNL TAUCS EIGEN3 BLAS LAPACK QGLVIEWER ESBTL COIN3D NTL IPE
+  CACHE INTERNAL "List of supported extenal libraries" FORCE)
 
-  # Part 1: Try to find lib
-
-  set (vlib "${CGAL_EXT_LIB_${lib}_PREFIX}")
-
-  # Check whether lib is essential or WITH_<lib> is given:
-
-  list(FIND CGAL_ESSENTIAL_3RD_PARTY_LIBRARIES "${lib}" POSITION)
-
-  if ("${POSITION}" STRGREATER "-1" OR WITH_${lib})
-
-    # In both cases CGAL_USE_<lib> will be finally set.
-  
-    #message (STATUS "With ${lib} given or essential: pos=${POSITION}")
-
-    if ( CGAL_ENABLE_PRECONFIG )
-      message (STATUS "Preconfiguring library: ${lib} ...")
-    else()
-      message (STATUS "Configuring library: ${lib} ...")
-    endif()
-  
-    find_package( ${lib} )
-   
-    if ( ${vlib}_FOUND ) 
-      if ( CGAL_ENABLE_PRECONFIG )
-        message( STATUS "${lib} has been preconfigured:") 
-        message( STATUS "  Use${lib}-file:      ${${vlib}_USE_FILE}") 
-        message( STATUS "  ${lib} include:      ${${vlib}_INCLUDE_DIR}" )
-        message( STATUS "  ${lib} libraries:    ${${vlib}_LIBRARIES}" )
-        message( STATUS "  ${lib} definitions:  ${${vlib}_DEFINITIONS}" )
-      else() 
-        message( STATUS "${lib} has been configured") 
-        use_lib( ${vlib} ${${vlib}_USE_FILE})
-      endif()
-   
-      # TODO EBEB what about Qt3, Qt4, zlib etc?
-      set ( CGAL_USE_${vlib} TRUE )
-
-
-      # Part 2: Add some lib-specific definitions or obtain version
-   
-      if (${lib} STREQUAL "GMP") 
-        get_dependency_version(GMP)
-      endif()
-
-      if (${lib} STREQUAL "MPFR") 
-        set( MPFR_DEPENDENCY_INCLUDE_DIR ${GMP_INCLUDE_DIR} )
-        set( MPFR_DEPENDENCY_LIBRARIES   ${GMP_LIBRARIES} )
-        get_dependency_version(MPFR)
-      endif()
-
-      if (${lib} STREQUAL "LEDA") 
-        # special case for LEDA - add a flag
-        message( STATUS "$LEDA cxx flags:   ${LEDA_CXX_FLAGS}" )
-        uniquely_add_flags( CMAKE_CXX_FLAGS ${LEDA_CXX_FLAGS} )
-      endif()
-
-    else() 
-   
-      if ("${POSITION}" STRGREATER "-1") # if lib is essential
-        message( FATAL_ERROR "CGAL requires ${lib} to be found" )
-      endif()
-
-    endif()
-
-  endif()
-
-endforeach()
-
-if( (GMP_FOUND AND NOT MPFR_FOUND) OR (NOT GMP_FOUND AND MPFR_FOUND) )
-  message( FATAL_ERROR "CGAL needs for its full functionality both GMP and MPFR.")
+if(NOT WIN32)
+  # GMPXX is not supported on WIN32 machines
+  list(INSERT CGAL_EXTERNAL_LIBRARIES 1 GMPXX)
 endif()
 
-if( NOT GMP_FOUND )
-  set(CGAL_NO_CORE ON)
-  message( STATUS "CGAL_Core needs GMP, cannot be configured.")
-endif( NOT GMP_FOUND )
+foreach(lib ${CGAL_EXTERNAL_LIBRARIES}) 
+  option(WITH_${lib} "Enable support for the external library ${lib}" FALSE)
+
+  if(WITH_${lib})
+    find_package(${lib})
+    if(${vlib}_FOUND)
+      message(STATUS "${lib} has been found:") 
+      message(STATUS "  Use${lib}-file:      ${${vlib}_USE_FILE}") 
+      message(STATUS "  ${lib} include:      ${${vlib}_INCLUDE_DIR}")
+      message(STATUS "  ${lib} libraries:    ${${vlib}_LIBRARIES}")
+      message(STATUS "  ${lib} definitions:  ${${vlib}_DEFINITIONS}")
+    else()
+      # Never allow erroneous configurations. Should we rather use
+      # find_package(... REQUIRED)?
+      message(ERROR "The external library ${lib} has been requested, but could not be found.")
+    endif()
+  endif()
+endforeach()
+
+include(CGAL_TweakFindBoost)
+# In the documentation, we say we require Boost-1.39, but technically we
+# require 1.33.1. Some packages may require more recent versions, though.
+find_package(Boost 1.33.1 REQUIRED thread system)
+message(STATUS "Using BOOST_VERSION = '${Boost_MAJOR_VERSION}.${Boost_MINOR_VERSION}.${Boost_SUBMINOR_VERSION}'")
+
+# Special handling still required.
+#
+# if (${lib} STREQUAL "GMP") 
+#   get_dependency_version(GMP)
+# endif()
+
+# if (${lib} STREQUAL "MPFR") 
+#   set( MPFR_DEPENDENCY_INCLUDE_DIR ${GMP_INCLUDE_DIR} )
+#   set( MPFR_DEPENDENCY_LIBRARIES   ${GMP_LIBRARIES} )
+#   get_dependency_version(MPFR)
+# endif()
+
+# if (${lib} STREQUAL "LEDA") 
+#   # special case for LEDA - add a flag
+#   message( STATUS "$LEDA cxx flags:   ${LEDA_CXX_FLAGS}" )
+#   uniquely_add_flags( CMAKE_CXX_FLAGS ${LEDA_CXX_FLAGS} )
+# endif()
 
 # finally setup Boost
-include(CGAL_SetupBoost)
+
