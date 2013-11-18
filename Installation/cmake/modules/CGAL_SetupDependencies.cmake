@@ -27,12 +27,12 @@ foreach(lib ${CGAL_EXTERNAL_LIBRARIES})
 
   if(WITH_${lib})
     find_package(${lib})
-    if(${vlib}_FOUND)
+    if(${lib}_FOUND)
       message(STATUS "${lib} has been found:") 
-      message(STATUS "  Use${lib}-file:      ${${vlib}_USE_FILE}") 
-      message(STATUS "  ${lib} include:      ${${vlib}_INCLUDE_DIR}")
-      message(STATUS "  ${lib} libraries:    ${${vlib}_LIBRARIES}")
-      message(STATUS "  ${lib} definitions:  ${${vlib}_DEFINITIONS}")
+      message(STATUS "  Use${lib}-file:      ${${lib}_USE_FILE}") 
+      message(STATUS "  ${lib} include:      ${${lib}_INCLUDE_DIR}")
+      message(STATUS "  ${lib} libraries:    ${${lib}_LIBRARIES}")
+      message(STATUS "  ${lib} definitions:  ${${lib}_DEFINITIONS}")
     else()
       # Never allow erroneous configurations. Should we rather use
       # find_package(... REQUIRED)?

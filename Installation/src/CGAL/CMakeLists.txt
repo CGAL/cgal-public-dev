@@ -1,15 +1,20 @@
-message("Configuring libCGAL")
+include(CGAL_library)
 
-use_essential_libs()
+CGAL_define_library(
+  NAME CGAL
+  BUILD_DEFAULT ON
+  REQUIRED_DEPENDENCIES BOOST
+  OPTIONAL_DEPENDENCIES GMP MPFR
+  SOURCES)
 
-include_directories (SYSTEM ${CGAL_3RD_PARTY_INCLUDE_DIRS})
+# use_essential_libs()
 
-add_definitions(${CGAL_3RD_PARTY_DEFINITIONS})
+# include_directories (SYSTEM ${CGAL_3RD_PARTY_INCLUDE_DIRS})
 
-link_directories(${CGAL_3RD_PARTY_LIBRARIES_DIRS})
+# add_definitions(${CGAL_3RD_PARTY_DEFINITIONS})
 
-collect_cgal_library(CGAL "") 
+# link_directories(${CGAL_3RD_PARTY_LIBRARIES_DIRS})
 
-target_link_libraries(CGAL ${CGAL_3RD_PARTY_LIBRARIES})
+# collect_cgal_library(CGAL "") 
 
-message("libCGAL is configured")
+# target_link_libraries(CGAL ${CGAL_3RD_PARTY_LIBRARIES})
