@@ -8,3 +8,4 @@ INPUT                      =  ${CMAKE_SOURCE_DIR}/Extreme_points_d/doc/Extreme_p
 EXTRACT_ALL                =  false
 HIDE_UNDOC_MEMBERS         =  true
 HIDE_UNDOC_CLASSES         =  true
+GENERATE_LATEX=yes

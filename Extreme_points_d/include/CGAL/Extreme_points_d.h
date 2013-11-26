@@ -125,7 +125,7 @@ enum Bounded_side { //Extreme_point_classification {
   * \cgalRequires
   * \tparam Traits is a model of the concept `ExtremePointsTraits_d`.
   *
-  * \sa `CGAL::Extreme_points_d`
+  * \sa `CGAL::extreme_points_d`
   * \sa `CGAL::extreme_points_d_dula_helgason`
   * \sa `CGAL::extreme_points_d_simple`
   *
@@ -203,17 +203,16 @@ class Extreme_points_d {
         void insert(InputIterator first, InputIterator beyond) {
           for (InputIterator it = first; it != beyond; it++)
             insert(*it);
-          //std::cout << ep_options_.get_deletion() << std::endl;
-          if (ep_options_.get_deletion()) {
+          if (ep_options_.deletion()) {
             all_points.insert(first,beyond);
           }
         }
 
-        /// Removes Point p from the input set, if it's allowed
+        /// Removes Point p from the input set, if it is allowed
         /// by the options. It automatically recalculates the 
         /// extreme points if needed.
         void remove(const Point p) {
-          assert(ep_options_.get_deletion()); //are we permitted to delete?
+          assert(ep_options_.deletion()); //are we permitted to delete?
           typename std::set<Point,Less_lexicographically>::iterator it = all_points.find(p);
           if (it != all_points.end()) { //is it an input point?
             Bounded_side del_point = classify(p,true); //is it on the boundary or is it internal?
@@ -228,12 +227,12 @@ class Extreme_points_d {
           }
         }
         
-        /// Removes a range of points from the input set, if it's allowed
+        /// Removes a range of points from the input set, if it is allowed
         /// by the options. It automatically recalculates the 
         /// extreme points if needed.
         template <typename InputIterator>
         void remove(InputIterator first, InputIterator beyond) {
-          assert(ep_options_.get_deletion());
+          assert(ep_options_.deletion());
           typename std::set<Point,Less_lexicographically>::iterator it;
           Bounded_side del_point;
           bool force_update = false;
@@ -354,7 +353,7 @@ void Extreme_points_d<Traits>::update() {
     // only do something if we have new points
     if (!new_points.empty()) {
         // chose which frame-algorithm to run
-        Extreme_point_algorithm_d algo = ep_options_.get_algorithm();
+        Extreme_point_algorithm_d algo = ep_options_.algorithm();
         if (algo==EP_CHOOSE_APPROPRIATE) {
             // our simple heuristic is just the ratio of new points to the old
             // extreme points
@@ -427,7 +426,7 @@ Extreme_points_d<Traits>::classify(Point p, bool is_input_point) {
                                                  extr_points.end(),
                                                  ET(0),
                                                  Traits(),
-                                                 ep_options_.get_qp_options())) {
+                                                 ep_options_.qp_options())) {
         // p is an internal point
         //return INTERNAL_POINT;
         return ON_UNBOUNDED_SIDE;
@@ -527,7 +526,7 @@ extreme_points_d_dula_helgason (InputIterator first, InputIterator beyond,
         while (1) {
             QP_Solution s =
                 CGAL::internal::solve_convex_hull_containment_lp(
-                    points[j], f.begin(), f.end(), ET(), ep_traits, epd_options.get_qp_options());
+                    points[j], f.begin(), f.end(), ET(), ep_traits, epd_options.qp_options());
 
             if (s.is_infeasible()) {
                 // points[j] \notin conv(f)
@@ -671,7 +670,7 @@ extreme_points_d_simple(InputIterator first, InputIterator beyond,
                                                points.end(),
                                                ET(0),
                                                Traits(),
-                                               epd_options.get_qp_options())) {
+                                               epd_options.qp_options())) {
             *result++=points[0];
         }
         std::swap(points[i],points[0]); // move test point back

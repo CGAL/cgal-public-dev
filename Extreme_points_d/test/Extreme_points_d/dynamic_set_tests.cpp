@@ -132,7 +132,7 @@ int main(int argc, char **argv) {
     // testing options
     CGAL::Extreme_points_options_d options;
     options.set_anti_cycling(true);    
-    assert(CGAL::QP_BLAND==options.get_qp_options().get_pricing_strategy());
+    assert(CGAL::QP_BLAND==options.qp_options().get_pricing_strategy());
 
     std::cout;
     std::cout<<"Testing with EP_CHOOSE_APPROPRIATE"<<std::endl;

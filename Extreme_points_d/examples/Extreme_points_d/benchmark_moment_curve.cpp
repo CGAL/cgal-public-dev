@@ -5,7 +5,7 @@
 #include <CGAL/Cartesian_d.h>
 #include <CGAL/Convex_hull_d.h>
 #include <CGAL/point_generators_d.h>
-#include <time.h>
+#include <CGAL/Timer.h>
 
 /* Compares Convex_Hull_d and Extreme_points_d for different dimensions and numbers of points.
    Points are random on a moment curve.*/
@@ -19,8 +19,10 @@ typedef Kernel::Less_lexicographically_d        Less_lexicographically;
 int main(int argc, char **argv) {
   //std::cout.width(30);
   std::cout << "Dim   Points   Faster package" << std::endl;
-  clock_t t1,t2,t3,t4;
-  srand (time(NULL));
+  //timer1 = new CGAL::Timer();
+  //timer2 = new CGAL::Timer();  
+  CGAL::Timer timer1,timer2;
+
   std::vector<Point_d> points;
   std::vector<Point_d> extreme_points,extreme_points_ch;
   std::vector<double> point;
@@ -45,24 +47,25 @@ int main(int argc, char **argv) {
       }
 
       //Extreme_points_d
-      t1 = clock();
+      timer1.start();
       CGAL::Extreme_points_d<EP_Traits_d> ep(d,op);
       ep.insert(points.begin(),points.end());
       ep.extreme_points(std::back_inserter(extreme_points));
-      t2 = clock();
+      timer1.stop();
 
       //Convex_Hull_d
+      timer2.start();
       CGAL::Convex_hull_d<Kernel> chull(d);
       for (int i=0; i<n; ++i)
         chull.insert(points[i]);
       for (CGAL::Convex_hull_d<Kernel>::Vertex_iterator it=chull.vertices_begin(); 
            it!=chull.vertices_end(); ++it)
         extreme_points_ch.push_back(it->point());
-      t3 = clock();
+      timer2.stop();
 
       //Output
       std::cout << "  " << d << "      " << n;
-      if (t2-t1 > t3-t2) {
+      if (timer1.time() > timer2.time()) {
         std::cout << "   Convex_Hull_d" << std::endl;
       } else {
         std::cout << "   Extreme_points_d" << std::endl;

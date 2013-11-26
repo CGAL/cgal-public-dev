@@ -65,7 +65,7 @@ public:
     // set/get algorithm
     // ------------------------
     /// Returns the algorithm used for extreme point computations.
-    Extreme_point_algorithm_d get_algorithm() const
+    Extreme_point_algorithm_d algorithm() const
     {
         return algo_;
     }
@@ -79,7 +79,7 @@ public:
     // set/get deletion
     // ------------------------
     /// Returns whether or not deletion is permitted
-    bool get_deletion() const
+    bool deletion() const
     {
         return deletion_;
     }
@@ -93,7 +93,7 @@ public:
     // set/get anti-cycling
     // ------------------------
     /// Returns whether or not anti-cycling is activated
-    bool get_anti_cycling() const
+    bool anti_cycling() const
     {
         return anti_cycling_;
     }
@@ -109,7 +109,7 @@ public:
     }
 
     #ifndef DOXYGEN_RUNNING
-    Quadratic_program_options get_qp_options() const
+    Quadratic_program_options qp_options() const
     {
         return qp_options_;
     }

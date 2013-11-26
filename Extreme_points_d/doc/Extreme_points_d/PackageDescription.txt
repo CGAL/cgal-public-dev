@@ -22,7 +22,7 @@
 \cgalPkgPicture{epd.png}
 
 \cgalPkgSummaryBegin
-\cgalPkgAuthors{Christian Helbling, Bernd Gärtner and Alexandros Konstantinakis Karmis}
+\cgalPkgAuthors{Christian Helbling, Bernd Gärtner and Alexandros Konstantinakis Karmis.}
 \cgalPkgDesc{This package computes the extreme points of a given d-dimensional point set.}
 \cgalPkgManuals{Chapter_dD_Extreme_Points,PkgExtremePointsD}
 \cgalPkgSummaryEnd

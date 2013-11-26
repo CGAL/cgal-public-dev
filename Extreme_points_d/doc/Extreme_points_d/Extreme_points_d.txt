@@ -18,7 +18,7 @@ is contained in \f$S\f$. The convex hull of a set \f$S\f$ is the smallest convex
 
 The standard way of finding the extreme points is to compute the convex hull. This approach is optimal for dimensions \f$2\f$ or \f$3\f$ where efficient \f$O(n \log n)\f$ algorithms exist to compute the convex hull, but it does not scale to higher dimensions. In contrast, the problem of computing the extreme points is polynomial-time solvable.
 
-In terms of performance, the Convex Hull package is faster for low dimensions such as 2D and 3D and depending on input, up to \f$ d=5 \f$. For higher dimensions, this package is faster. Note that our implementation doesn't scale well with dimension due to the use of exact types in the Linear Solver. In practice we expect this package to compute the extreme points in an acceptable amount of time for dimensions up to \f$ 15 \f$. The following example is a benchmark that compares the performance of the two packages using random points on a moment curve for various dimensions.
+In terms of performance, the Convex Hull package is faster for low dimensions such as 2D and 3D and depending on input, up to \f$ d=5 \f$. For higher dimensions, this package is faster. Note that our implementation does not scale well with dimension due to the use of exact types in the Linear Solver. In practice we expect this package to compute the extreme points in an acceptable amount of time for dimensions up to \f$ 15 \f$. The following example is a benchmark that compares the performance of the two packages using random points on a moment curve for various dimensions.
 \cgalExample{Extreme_points_d/benchmark_moment_curve.cpp}
 
 We will first describe the two different algorithms that compute the extreme points of a given input point set.
@@ -45,7 +45,7 @@ to this problem is computed by the Linear Programming Solver in \cgal.
 
 \subsection Subsection_1 The Simple algorithm
 
-Let \f$\mathcal{P} = \{ p_1, \ldots, p_n \} \f$ be the set of input points. A point pi in P is extreme
+Let \f$\mathcal{P} = \{ p_1, \ldots, p_n \} \f$ be the set of input points. A point p_i in P is extreme
 exactly if it cannot be expressed as a convex combination of the other points.
 This can be decided easily by the linear program \f$ LP(\mathcal{P} \setminus \{ p_i \}, p_i) \f$.
 
@@ -56,17 +56,17 @@ solving \f$ n \f$ linear programs with \f$ n - 1 \f$ nonnegative variables and
 \subsection Subsection_2 The Dulá - Helgason algorithm
 
 The algorithm is similar to the Simple algorithm in that it uses the same
-linear programs to check convex combinations. However th number of linear programs
+linear programs to check convex combinations. However the number of linear programs
 with \f$ n - 1 \f$ variables is only the number of extreme points, making this algorithm output-sensitive.
 
 \section Section_dD_Extreme_Points_Static Static extreme points computations
 The function `extreme_points_d_simple` computes the extreme points of a d-dimensional point set using the Simple algorithm.
-The function `extreme_points_d_dula_helgason` provides an implementation of the Dulá - Helgason output-sensitive algorithm \cite dh-pifch-96, which is better for point sets with low extreme point density (low ratio of extreme points to total input points).
+The function `extreme_points_d_dula_helgason` provides an implementation of the Dulá - Helgason output-sensitive algorithm \cite dh-pifch-96, which is better for point sets with low extreme point density (low ratio of extreme points to total input points). The function `extreme_points_d` currently uses the Dulá - Helgason algorithm, but in the future it will be capable of selecting the best algorithm for the input set.
 
 \subsection Subsection_3 Example
 The following program computes the extreme points of a set of 500 random points chosen from a 10-dimensional iso box uniformly at random. The same results could be achieved by substituting the function `CGAL::extreme_points_d_dula_helgason` by `CGAL::extreme_points_d_simple`.
 
-Note that although `double` is used here as the field number type for the Kernel doesn't mean that the algorithm will not be exact. Internally an appropriate exact number type (either `CGAL::Gmpzf` or `CGAL::MP_Float`) is used for intermediate results. 
+Note that although `double` is used here as the field number type for the Kernel does not mean that the algorithm will not be exact. Internally an appropriate exact number type (either `CGAL::Gmpzf` or `CGAL::MP_Float`) is used for intermediate results. 
 
 \cgalExample{Extreme_points_d/extreme_points_d_dula_helgason.cpp}
 
