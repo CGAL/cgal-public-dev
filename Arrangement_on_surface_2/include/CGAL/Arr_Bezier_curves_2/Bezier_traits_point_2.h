@@ -7,7 +7,7 @@
 
 #include "Bezier_curve_2.h"
 #include "Bezier_traits_cache.h"
-#include <CGAL/Arr_rat_arc/Rational_arc_d_1.h>
+#include <CGAL/Get_arithmetic_kernel.h>
 #include <CGAL/Handle_for.h>
 #include <list>
 #include <ostream>
@@ -46,8 +46,12 @@ public:
   // Defining the Rational datatype 
   //typedef typename Nt_traits::Rational            Rational;
   //typedef typename Nt_traits::Algebraic           Algebraic;
-  typedef typename Algebraic_kernel_d_1::Bound			Rational;
+// TODO Maybe we will use the Bound class in the Bounding Traits
+  typedef typename Algebraic_kernel_d_1::Bound			Bound;
   typedef typename Algebraic_kernel_d_1::Algebraic_real_1	Algebraic_real_1;
+
+  // TODO Check if type is correct to get the Rational type -- we might require it later
+  typedef typename Get_arithmetic_kernel<Algebraic_kernel_d_1::Coefficient>::Arithmetic_kernel::Rational	Rational;
 
 
   // Removing the Alg_point_2 by simple std::pair of Algebraic_real_1
@@ -77,7 +81,7 @@ private:
     unsigned int        _xid;       /*!< Serial number of the originating
                                          x-monotone curve. */
     Bez_point_bound     _bpb;       /*!< Bounding information for the
-                                         point: bouding control polygon,
+                                         point: bounding control polygon,
                                          point type, etc. */
     Algebraic_real_1	*p_t;        /*!< The algebraic parameter for the
                                          point (if available). */
@@ -218,10 +222,14 @@ private:
       // Update the Bez_point_bound by converting t to an interval of doubles
       // and setting _bpb accordingly.
 
-// TODO Replace by Algebraic_kernel_d_1 ApproximateAbsolute or Relative
-// or use the Algebraic_real_d_1 to_interval (preffered)
-      Nt_traits                         nt_traits;
-      const std::pair<double, double>&  t_bnd = nt_traits.double_interval (t);
+      //Nt_traits                         nt_traits;
+      // Conversion to pair of doubles is not required as bounding traits is Rational type
+      //const std::pair<double, double>&  t_bnd = nt_traits.double_interval (t);
+
+      typename Algebraic_kernel_d_1	alg_kernel_d_1;
+      Algebraic_kernel_d_1::Approximate_absolute_1	approx_1 = alg_kernel_d_1.approximate_absolute_1_object();
+      // TODO Might need to change the precision of the approximation
+      typename const std::pair<Bound, Bound> 		t_bnd	 = approx_1 (t, 53);
 
       _bpb.t_min = t_bnd.first;
       _bpb.t_max = t_bnd.second;
@@ -280,9 +288,11 @@ private:
   typedef typename Orig_list::iterator            Orig_iter;
 
   Algebraic_real_1	*p_alg_x;   /*! The exact x-coordinate (if known). */
-  Rational		*p_rat_x;   /*! The x-coordinate, in case it is rational. */
+  Bound			*p_rat_x;   /*! The x-coordinate, in case it is rational. */
+  //Rational		*p_rat_x;   /*! The x-coordinate, in case it is rational. */
   Algebraic_real_1	*p_alg_y;   /*! The exact y-coordinate (if known). */
-  Rational		*p_rat_y;   /*! The y-coordinate, in case it is rational. */
+  Bound			*p_rat_y;   /*! The y-coordinate, in case it is rational. */
+  //Rational		*p_rat_y;   /*! The y-coordinate, in case it is rational. */
   Orig_list		_origs;     /*! The list of originators. */
   Bez_point_bbox	_bbox;      /*! A bounding box. */
 
@@ -308,11 +318,13 @@ public:
     if (pt.p_alg_x != NULL)
       p_alg_x = new Algebraic_real_1 (*(pt.p_alg_x));
     if (pt.p_rat_x != NULL)
-      p_rat_x = new Rational (*(pt.p_rat_x));
+      p_rat_x = new Bound (*(pt.p_rat_x));
+      //p_rat_x = new Rational (*(pt.p_rat_x));
     if (pt.p_alg_y != NULL)
       p_alg_y = new Algebraic_real_1 (*(pt.p_alg_y));
     if (pt.p_rat_y != NULL)
-      p_rat_y = new Rational (*(pt.p_rat_y));
+      p_rat_y = new Bound (*(pt.p_rat_y));
+      //p_rat_y = new Rational (*(pt.p_rat_y));
   }
 
   /*!
@@ -328,11 +340,16 @@ public:
     p_alg_y = new Algebraic_real_1 (y);
 
     // Initialize the bounding box.
-    Nt_traits                         nt_traits;
-    const std::pair<double, double>&  x_bnd = 
-                                        nt_traits.double_interval (x);
-    const std::pair<double, double>&  y_bnd = 
-                                        nt_traits.double_interval (y);
+    //Nt_traits                         nt_traits;
+    //const std::pair<double, double>&  x_bnd = 
+    //                                    nt_traits.double_interval (x);
+    //const std::pair<double, double>&  y_bnd = 
+    //                                    nt_traits.double_interval (y);
+
+    typename Algebraic_kernel_d_1	alg_kernel_d_1;
+    Algebraic_kernel_d_1::Approximate_absolute_1	approx_1 = alg_kernel_d_1.approximate_absolute_1_object();
+    typename const std::pair<Bound, Bound> 		x_bnd	 = approx_1 (x, 53);
+    typename const std::pair<Bound, Bound> 		y_bnd	 = approx_1 (y, 53);
 
     _bbox.min_x = x_bnd.first;
     _bbox.max_x = x_bnd.second;
@@ -345,10 +362,11 @@ public:
    * \param x The exact x-coordinate.
    * \param y The exact y-coordinate.
    */
-  _Bezier_point_2_rep (const Rational& x, const Rational& y)
+  //_Bezier_point_2_rep (const Rational& x, const Rational& y)
+  _Bezier_point_2_rep (const Bound& x, const Bound& y)
   {
-    p_rat_x = new Rational (x);
-    p_rat_y = new Rational (y);
+    p_rat_x = new Bound (x);
+    p_rat_y = new Bound (y);
 
     // Convert the rational coordinates to algebraic values.
     //Nt_traits                         nt_traits;
@@ -370,14 +388,14 @@ public:
    * Constructor given an originating curve and a rational t0 value.
    * \pre t0 must be between 0 and 1.
    */
-  _Bezier_point_2_rep (const Curve_2& B, const Rational& t0);
+  _Bezier_point_2_rep (const Curve_2& B, const Bound& t0);
 
   /*!
    * Constructor given an x-monotone curve and a rational t0 value.
    * \pre t0 must be between 0 and 1.
    */
   _Bezier_point_2_rep (const Curve_2& B, unsigned int xid,
-                       const Rational& t0);
+                       const Bound& t0);
 
   /*!
    * Constructor given an originating curve and an algebraic t0 value.
@@ -425,11 +443,11 @@ public:
     if (pt.p_alg_x != NULL)
       p_alg_x = new Algebraic_real_1 (*(pt.p_alg_x));
     if (pt.p_rat_x != NULL)
-      p_rat_x = new Rational (*(pt.p_rat_x));
+      p_rat_x = new Bound (*(pt.p_rat_x));
     if (pt.p_alg_y != NULL)
       p_alg_y = new Algebraic_real_1 (*(pt.p_alg_y));
     if (pt.p_rat_y != NULL)
-      p_rat_y = new Rational (*(pt.p_rat_y));
+      p_rat_y = new Bound (*(pt.p_rat_y));
   
     _origs = pt._origs;
     _bbox = pt._bbox;
@@ -525,7 +543,8 @@ public:
 
   typedef typename Bpt_rep::Rat_point_2           Rat_point_2;
   typedef typename Bpt_rep::Alg_point_2           Alg_point_2;
-  typedef typename Bpt_rep::Rational              Rational;
+  typedef typename Bpt_rep::Bound		  Bound;
+  typedef typename Bpt_rep::Rational		  Rational;
   typedef typename Bpt_rep::Algebraic_real_1      Algebraic_real_1;
   typedef typename Bpt_rep::Curve_2               Curve_2;
   typedef typename Bpt_rep::Originator            Originator;
@@ -559,7 +578,7 @@ public:
   /*!
    * Constructor with rational coordinates.
    */
-  _Bezier_point_2 (const Rational& x, const Rational& y) :
+  _Bezier_point_2 (const Bound& x, const Bound& y) :
     Bpt_handle (Bpt_rep (x, y))
   {}
 
@@ -567,7 +586,7 @@ public:
    * Constructor given an originating curve and a rational t0 value.
    * \pre t0 must be between 0 and 1.
    */
-  _Bezier_point_2 (const Curve_2& B, const Rational& t0) :
+  _Bezier_point_2 (const Curve_2& B, const Bound& t0) :
     Bpt_handle (Bpt_rep (B, t0))
   {}
 
@@ -575,7 +594,7 @@ public:
    * Constructor given an x-monotone curve and a rational t0 value.
    * \pre t0 must be between 0 and 1.
    */
-  _Bezier_point_2 (const Curve_2& B, unsigned int xid, const Rational& t0) :
+  _Bezier_point_2 (const Curve_2& B, unsigned int xid, const Bound& t0) :
     Bpt_handle (Bpt_rep (B, xid, t0))
   {}
 
@@ -962,7 +981,7 @@ std::ostream& operator<< (std::ostream& os,
 //
 template <class Algebraic_kernel_d_1, class RatKer, class BndTrt>
 _Bezier_point_2_rep<Algebraic_kernel_d_1, RatKer, BndTrt>::_Bezier_point_2_rep
-        (const Curve_2& B, const Rational& t0)
+        (const Curve_2& B, const Bound& t0)
 {
   // Insert an originator of a rational point.
   // Note that this constructor also takes care of the Bez_bound
@@ -983,10 +1002,10 @@ _Bezier_point_2_rep<Algebraic_kernel_d_1, RatKer, BndTrt>::_Bezier_point_2_rep
   // Evaluate the point coordinates.
   const Rat_point_2&  p = B (t0);
 
-  p_rat_x = new Rational (p.x());
+  p_rat_x = new Bound (p.x());
   //p_alg_x = new Algebraic (nt_traits.convert (*p_rat_x));
   p_alg_x = new Algebraic_real_1 (*p_rat_x);
-  p_rat_y = new Rational (p.y());
+  p_rat_y = new Bound (p.y());
   p_alg_y = new Algebraic_real_1 (*p_rat_y);
 
   // Set the bounding box for this point.
@@ -1001,7 +1020,7 @@ _Bezier_point_2_rep<Algebraic_kernel_d_1, RatKer, BndTrt>::_Bezier_point_2_rep
 //
 template <class Algebraic_kernel_d_1, class RatKer, class BndTrt>
 _Bezier_point_2_rep<Algebraic_kernel_d_1, RatKer, BndTrt>::_Bezier_point_2_rep
-        (const Curve_2& B, unsigned int xid, const Rational& t0)
+        (const Curve_2& B, unsigned int xid, const Bound& t0)
 {
   // Insert an originator of a rational point.
   // Note that this constructor also takes care of the Bez_bound
@@ -1022,9 +1041,9 @@ _Bezier_point_2_rep<Algebraic_kernel_d_1, RatKer, BndTrt>::_Bezier_point_2_rep
   // Evaluate the point coordinates.
   const Rat_point_2&  p = B (t0);
 
-  p_rat_x = new Rational (p.x());
+  p_rat_x = new Bound (p.x());
   p_alg_x = new Algebraic_real_1 (*p_rat_x);
-  p_rat_y = new Rational (p.y());
+  p_rat_y = new Bound (p.y());
   p_alg_y = new Algebraic_real_1 (*p_rat_y);
 
   // Set the bounding box for this point.
@@ -1062,14 +1081,18 @@ _Bezier_point_2_rep<Algebraic_kernel_d_1, RatKer, BndTrt>::_Bezier_point_2_rep
   p_alg_y = new Algebraic_real_1 (p.second);
   
 
-// TODO Call the AbsoluteApproximate call
   // Set the bounding box for this point, by converting x, y to two ranges
   // of doubles.
-  Nt_traits                         nt_traits;
-  const std::pair<double, double>&  x_bnd = 
-                                        nt_traits.double_interval (*p_alg_x);
-  const std::pair<double, double>&  y_bnd = 
-                                        nt_traits.double_interval (*p_alg_y);
+  //Nt_traits                         nt_traits;
+  //const std::pair<double, double>&  x_bnd = 
+  //                                      nt_traits.double_interval (*p_alg_x);
+  //const std::pair<double, double>&  y_bnd = 
+  //                                      nt_traits.double_interval (*p_alg_y);
+
+  typename Algebraic_kernel_d_1	alg_kernel_d_1;
+  Algebraic_kernel_d_1::Approximate_absolute_1	approx_1 = alg_kernel_d_1.approximate_absolute_1_object();
+  typename const std::pair<Bound, Bound> 		x_bnd	 = approx_1 (*p_alg_x, 53);
+  typename const std::pair<Bound, Bound> 		y_bnd	 = approx_1 (*p_alg_y, 53);
 
   _bbox.min_x = x_bnd.first;
   _bbox.max_x = x_bnd.second;
@@ -1102,11 +1125,16 @@ _Bezier_point_2_rep<Algebraic_kernel_d_1, RatKer, BndTrt>::_Bezier_point_2_rep
   
   // Set the bounding box for this point, by converting x, y  to two ranges
   // of doubles.
-  Nt_traits                         nt_traits;
-  const std::pair<double, double>&  x_bnd = 
-                                        nt_traits.double_interval (*p_alg_x);
-  const std::pair<double, double>&  y_bnd = 
-                                        nt_traits.double_interval (*p_alg_y);
+  //Nt_traits                         nt_traits;
+  //const std::pair<double, double>&  x_bnd = 
+  //                                     nt_traits.double_interval (*p_alg_x);
+  //const std::pair<double, double>&  y_bnd = 
+  //                                      nt_traits.double_interval (*p_alg_y);
+
+  typename Algebraic_kernel_d_1	alg_kernel_d_1;
+  Algebraic_kernel_d_1::Approximate_absolute_1	approx_1 = alg_kernel_d_1.approximate_absolute_1_object();
+  typename const std::pair<Bound, Bound> 		x_bnd	 = approx_1 (*p_alg_x, 53);
+  typename const std::pair<Bound, Bound> 		y_bnd	 = approx_1 (*p_alg_y, 53);
 
   _bbox.min_x = x_bnd.first;
   _bbox.max_x = x_bnd.second;
@@ -1151,7 +1179,7 @@ _Bezier_point_2_rep<Algebraic_kernel_d_1, RatKer, BndTrt>::compare_x
       return (LARGER);
 
     // Check if only one of the points is exactly represented.
-    Nt_traits                         nt_traits;
+    //Nt_traits                         nt_traits;
 
     if (is_exact())
     {
@@ -1381,8 +1409,8 @@ _Bezier_point_2_rep<Algebraic_kernel_d_1, RatKer, BndTrt>::vertical_position
 // ---------------------------------------------------------------------------
 // Refine the bounds of the point.
 //
-template <class Algebraic_kernel_d_1, class RatKer, class AlgKer, class NtTrt, class BndTrt>
-bool _Bezier_point_2_rep<Algebraic_kernel_d_1, RatKer, AlgKer, NtTrt, BndTrt>::_refine ()
+template <class Algebraic_kernel_d_1, class RatKer, class BndTrt>
+bool _Bezier_point_2_rep<Algebraic_kernel_d_1, RatKer, BndTrt>::_refine ()
 {
   // Get the first originator and consider the point type.
   Bounding_traits  bound_tr;
@@ -1397,8 +1425,7 @@ bool _Bezier_point_2_rep<Algebraic_kernel_d_1, RatKer, AlgKer, NtTrt, BndTrt>::_
                                                            _bbox);
     typename Bounding_traits::Vertical_tangency_point ref_vpt;
 
-    bound_tr.refine_vertical_tangency_point (vpt,
-                                             ref_vpt);
+    bound_tr.refine_vertical_tangency_point (vpt, ref_vpt);
 
     if (! ref_vpt.bound.can_refine)
     {
@@ -1413,11 +1440,11 @@ bool _Bezier_point_2_rep<Algebraic_kernel_d_1, RatKer, AlgKer, NtTrt, BndTrt>::_
     if (ref_vpt.bound.type == Bez_point_bound::RATIONAL_PT)
     {
       // In this case the point is exactly computed.
-      Nt_traits                         nt_traits;
+      //Nt_traits                         nt_traits;
 
-      p_rat_x = new Rational (ref_vpt.bbox.min_x);
+      p_rat_x = new Bound (ref_vpt.bbox.min_x);
       p_alg_x = new Algebraic_real_1 (*p_rat_x);
-      p_rat_y = new Rational (ref_vpt.bbox.min_y);
+      p_rat_y = new Bound (ref_vpt.bbox.min_y);
       p_alg_y = new Algebraic_real_1 (*p_rat_y);
 
 //TODO Should be changed for the Algebraic_real_1 type
@@ -1465,9 +1492,9 @@ bool _Bezier_point_2_rep<Algebraic_kernel_d_1, RatKer, AlgKer, NtTrt, BndTrt>::_
       // In this case the point is exactly computed.
       Nt_traits                         nt_traits;
 
-      p_rat_x = new Rational (ref_ipt.bbox.min_x);
+      p_rat_x = new Bound (ref_ipt.bbox.min_x);
       p_alg_x = new Algebraic_real_1 (*p_rat_x);
-      p_rat_y = new Rational (ref_ipt.bbox.min_y);
+      p_rat_y = new Bound (ref_ipt.bbox.min_y);
       p_alg_y = new Algebraic_real_1 (*p_rat_y);
 
 
@@ -1493,8 +1520,8 @@ bool _Bezier_point_2_rep<Algebraic_kernel_d_1, RatKer, AlgKer, NtTrt, BndTrt>::_
 // ---------------------------------------------------------------------------
 // Make sure the originator parameters fit the bound box.
 //
-template <class Algebraic_kernel_d_1, class RatKer, class AlgKer, class NtTrt, class BndTrt>
-void _Bezier_point_2_rep<Algebraic_kernel_d_1, RatKer, AlgKer, NtTrt, BndTrt>::_fit_to_bbox ()
+template <class Algebraic_kernel_d_1, class RatKer, class BndTrt>
+void _Bezier_point_2_rep<Algebraic_kernel_d_1, RatKer, BndTrt>::_fit_to_bbox ()
 {
   // Get the bounding box of the point.
   const typename Bounding_traits::NT    x_min = _bbox.min_x;
@@ -1547,19 +1574,20 @@ void _Bezier_point_2_rep<Algebraic_kernel_d_1, RatKer, AlgKer, NtTrt, BndTrt>::_
   return;
 }
 
-// TODO the function where the problem lies-- Check and change
 // ---------------------------------------------------------------------------
 // Compute the point in an exact manner.
 //
-template <class Algebraic_kernel_d_1, class RatKer, class AlgKer, class NtTrt, class BndTrt>
-void _Bezier_point_2_rep<Algebraic_kernel_d_1, RatKer, AlgKer, NtTrt, BndTrt>::_make_exact
-        (Bezier_cache& cache)
+template <class Algebraic_kernel_d_1, class RatKer, class BndTrt>
+void _Bezier_point_2_rep<Algebraic_kernel_d_1, RatKer, BndTrt>::_make_exact (Bezier_cache& cache)
 {                
   if (is_exact())
     return;
 
   // Check if the point is a vertical tangency point of the originator.
-  Nt_traits            nt_traits;
+  //Nt_traits            nt_traits;
+  typename Algebraic_kernel_d_1	alg_kernel_d_1;
+  Algebraic_kernel_d_1::Construct_algebraic_real_1 construct_algebraic_real_1 = alg_kernel_d_1.construct_algebraic_real_1_object();
+  Algebraic_kernel_d_1::Approximate_absolute_1	approx_1 = alg_kernel_d_1.approximate_absolute_1_object();
 
   if (_origs.size() == 1)
   {
@@ -1577,8 +1605,10 @@ void _Bezier_point_2_rep<Algebraic_kernel_d_1, RatKer, AlgKer, NtTrt, BndTrt>::_
     typename Bezier_cache::Vertical_tangency_iter                 vt_it;
 
     // Look for a parameter within the range of the bounding interval.
-    const Algebraic&  t_min = nt_traits.convert (org_it->point_bound().t_min);
-    const Algebraic&  t_max = nt_traits.convert (org_it->point_bound().t_max);
+    const Algebraic_real_1&  t_min = construct_algebraic_real_1( (org_it->point_bound().t_min) );
+    //const Algebraic_real_1&  t_min = nt_traits.convert (org_it->point_bound().t_min);
+    const Algebraic_real_1&  t_max = construct_algebraic_real_1 ( (org_it->point_bound().t_max) );
+    //const Algebraic&  t_max = nt_traits.convert ( (org_it->point_bound().t_max) );
 
     for (vt_it = vt_list.begin(); vt_it != vt_list.end(); ++vt_it)
     {
@@ -1593,15 +1623,20 @@ void _Bezier_point_2_rep<Algebraic_kernel_d_1, RatKer, AlgKer, NtTrt, BndTrt>::_
         // Evaluate the curve at the given parameter value.
         const Alg_point_2&   p = org_it->curve() (*vt_it);
 
-        p_alg_x = new Algebraic (p.x());
-        p_alg_y = new Algebraic (p.y());
+        //p_alg_x = new Algebraic_real_1 (p.x());
+        //p_alg_y = new Algebraic_real_1 (p.y());
+        p_alg_x = new Algebraic_real_1 (p.first);
+        p_alg_y = new Algebraic_real_1 (p.second);
 
         // Update the bounding box.
-        Nt_traits                         nt_traits;
-        const std::pair<double, double>&  x_bnd = 
-                                        nt_traits.double_interval (*p_alg_x);
-        const std::pair<double, double>&  y_bnd = 
-                                        nt_traits.double_interval (*p_alg_y);
+        //Nt_traits                         nt_traits;
+        //const std::pair<double, double>&  x_bnd = 
+        //                                nt_traits.double_interval (*p_alg_x);
+        //const std::pair<double, double>&  y_bnd = 
+        //                                nt_traits.double_interval (*p_alg_y);
+
+	const std::pair<Bound, Bound>& x_bnd = approx_1(*p_alg_x, 53);
+	const std::pair<Bound, Bound>& y_bnd = approx_1(*p_alg_y, 53);
 
         _bbox.min_x = x_bnd.first;
         _bbox.max_x = x_bnd.second;
@@ -1654,10 +1689,14 @@ void _Bezier_point_2_rep<Algebraic_kernel_d_1, RatKer, AlgKer, NtTrt, BndTrt>::_
   CGAL_assertion (! do_ovlp);
                     
   // Look for a parameter pair within the ranges of the bounding intervals.
-  const Algebraic      s_min = nt_traits.convert (orig1.point_bound().t_min);
-  const Algebraic      s_max = nt_traits.convert (orig1.point_bound().t_max);
-  const Algebraic      t_min = nt_traits.convert (orig2.point_bound().t_min);
-  const Algebraic      t_max = nt_traits.convert (orig2.point_bound().t_max);
+  //const Algebraic      s_min = nt_traits.convert (orig1.point_bound().t_min);
+  //const Algebraic      s_max = nt_traits.convert (orig1.point_bound().t_max);
+  //const Algebraic      t_min = nt_traits.convert (orig2.point_bound().t_min);
+  //const Algebraic      t_max = nt_traits.convert (orig2.point_bound().t_max);
+  const Algebraic_real_1      s_min = construct_algebraic_real_1 (orig1.point_bound().t_min);
+  const Algebraic_real_1      s_max = construct_algebraic_real_1 (orig1.point_bound().t_max);
+  const Algebraic_real_1      t_min = construct_algebraic_real_1 (orig2.point_bound().t_min);
+  const Algebraic_real_1      t_max = construct_algebraic_real_1 (orig2.point_bound().t_max);
 
   for (intr_it = intr_list.begin(); intr_it != intr_list.end(); ++intr_it)
   {
@@ -1671,14 +1710,17 @@ void _Bezier_point_2_rep<Algebraic_kernel_d_1, RatKer, AlgKer, NtTrt, BndTrt>::_
       orig2.set_parameter (intr_it->t);
 
       // Set the exact point coordinates.
-      p_alg_x = new Algebraic (intr_it->x);
-      p_alg_y = new Algebraic (intr_it->y);
+      p_alg_x = new Algebraic_real_1 (intr_it->x);
+      p_alg_y = new Algebraic_real_1 (intr_it->y);
 
       // Update the bounding box.
-      const std::pair<double, double>&  x_bnd = 
-                                          nt_traits.double_interval (*p_alg_x);
-      const std::pair<double, double>&  y_bnd = 
-                                          nt_traits.double_interval (*p_alg_y);
+      //const std::pair<double, double>&  x_bnd = 
+      //                                    nt_traits.double_interval (*p_alg_x);
+      //const std::pair<double, double>&  y_bnd = 
+      //                                    nt_traits.double_interval (*p_alg_y);
+
+      const std::pair<Bound, Bound>& x_bnd = approx_1 (*p_alg_x, 53);
+      const std::pair<Bound, Bound>& y_bnd = approx_1 (*p_alg_y, 53);
 
       _bbox.min_x = x_bnd.first;
       _bbox.max_x = x_bnd.second;
