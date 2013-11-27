@@ -22,6 +22,9 @@ if(NOT WIN32)
   list(INSERT CGAL_EXTERNAL_LIBRARIES 1 GMPXX)
 endif()
 
+# Boost is non-negotiable
+set(WITH_Boost ON)
+
 foreach(lib ${CGAL_EXTERNAL_LIBRARIES})
   option(WITH_${lib} "Enable support for the external library ${lib}" FALSE)
 
