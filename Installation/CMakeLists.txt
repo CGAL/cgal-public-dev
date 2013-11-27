@@ -812,65 +812,6 @@ if ( NOT RUNNING_CGAL_AUTO_TEST )
   endif()
 endif()
 
-#--------------------------------------------------------------------------------------------------
-#
-#                                            -= CPack =-
-#
-#--------------------------------------------------------------------------------------------------
-
-#option( WITH_CPACK "Create package generation rules")
-if( WITH_CPACK AND EXISTS "${CMAKE_ROOT}/Modules/CPack.cmake" )
-
-    set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "CGAL - Computational Geometry Algorithms Library")
-    set(CPACK_PACKAGE_VENDOR "CGAL Open Source Project")
-    set(CPACK_PACKAGE_DESCRIPTION_FILE "${CGAL_INSTALLATION_PACKAGE_DIR}/README")
-    set(CPACK_RESOURCE_FILE_LICENSE "${CGAL_INSTALLATION_PACKAGE_DIR}/LICENSE")
-    set(CPACK_PACKAGE_VERSION_MAJOR "${CGAL_MAJOR_VERSION}")
-    set(CPACK_PACKAGE_VERSION_MINOR "${CGAL_MINOR_VERSION}")
-    set(CPACK_PACKAGE_VERSION_PATCH "${CGAL_BUGFIX_VERSION}")
-    set(CPACK_PACKAGE_INSTALL_DIRECTORY "CGAL ${CPACK_PACKAGE_VERSION_MAJOR}.${CPACK_PACKAGE_VERSION_MINOR}")
-    set(CPACK_SOURCE_PACKAGE_FILE_NAME "CGAL-${CGAL_VERSION}")
-    set(CPACK_RESOURCE_FILE_LICENSE "${CGAL_INSTALLATION_PACKAGE_DIR}/LICENSE")
-    
-    if(NOT DEFINED CPACK_SYSTEM_NAME)
-      set(CPACK_SYSTEM_NAME ${CMAKE_SYSTEM_NAME}-${CMAKE_SYSTEM_PROCESSOR})
-    endif()
-    
-    if(${CPACK_SYSTEM_NAME} MATCHES Windows)
-      if(CMAKE_CL_64)
-        set(CPACK_SYSTEM_NAME win64-${CMAKE_SYSTEM_PROCESSOR})
-      else()
-        set(CPACK_SYSTEM_NAME win32-${CMAKE_SYSTEM_PROCESSOR})
-      endif()
-    endif()
-    
-    if(NOT DEFINED CPACK_PACKAGE_FILE_NAME)
-      set(CPACK_PACKAGE_FILE_NAME "${CPACK_SOURCE_PACKAGE_FILE_NAME}-${CPACK_SYSTEM_NAME}")
-    endif()
-    
-    set(CPACK_PACKAGE_EXECUTABLES "CGAL" "CGAL")
-
-    if(WIN32 AND NOT UNIX)
-        set(CPACK_GENERATOR "NSIS")
-        # There is a bug in NSI that does not handle full unix paths properly. Make
-        # sure there is at least one set of four (4) backlasshes.
-        #set(CPACK_PACKAGE_ICON "${CGAL_INSTALLATION_PACKAGE_DIR}\\\\cgal_install.gif")
-        #set(CPACK_NSIS_INSTALLED_ICON_NAME "bin\\\\CGAL.exe")
-        set(CPACK_NSIS_DISPLAY_NAME "${CPACK_PACKAGE_INSTALL_DIRECTORY} Computational Geometry Algorithms Library")
-        set(CPACK_NSIS_HELP_LINK "http:\\\\\\\\www.cgal.org")
-        set(CPACK_NSIS_URL_INFO_ABOUT "http:\\\\\\\\www.cgal.org")
-        set(CPACK_NSIS_CONTACT "info@cgal.org")
-        set(CPACK_NSIS_MODIfY_PATH ON)
-    else()
-        set(CPACK_STRIP_FILES "")
-        set(CPACK_SOURCE_STRIP_FILES "")
-    endif()
-
-    include(CPack)
-    
-endif()
-
-
 if ( CGAL_BRANCH_BUILD )
   option(CGAL_ENABLE_CHECK_HEADERS 
     "Enable the special targets \"check_pkg_headers\", and \"check_pkg_<package>_headers\" for each package"
