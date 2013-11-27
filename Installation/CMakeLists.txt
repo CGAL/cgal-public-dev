@@ -635,10 +635,32 @@ cache_get(CGAL_3RD_PARTY_INCLUDE_DIRS  )
 cache_get(CGAL_3RD_PARTY_LIBRARIES     )
 cache_get(CGAL_3RD_PARTY_LIBRARIES_DIRS) 
 
-add_subdirectory(src)
+set(CGAL_DIR ${CMAKE_BINARY_DIR})
 
-hide_variable(EXECUTABLE_OUTPUT_PATH)
-hide_variable(LIBRARY_OUTPUT_PATH)
+# Output directory of libraries (.so, .dylib, non-static .lib)
+set(CGAL_LIBRARIES_DIR ${CMAKE_BINARY_DIR}/lib)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CGAL_LIBRARIES_DIR})
+# Output directory of static libraries (.a, static .lib)
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CGAL_LIBRARIES_DIR})
+
+# For output directory of DLLs (.dll files)
+set(CGAL_RUNTIME_DIR ${CMAKE_BINARY_DIR}/bin)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CGAL_RUNTIME_DIR})
+
+set(CGAL_CONFIGURED_LIBRARIES)
+
+# has to be added manually as Installation is not a package
+add_subdirectory(src/CGAL CGAL)
+foreach(package ${CGAL_CONFIGURED_PACKAGES}) 
+  file(GLOB CONFIGURED_LIBS_IN_PACKAGE ${package}/src/CGAL_*/CMakeLists.txt)
+  foreach (libconfigfile ${CONFIGURED_LIBS_IN_PACKAGE})
+    string(REPLACE "${package}/src/" "" libconfigfile ${libconfigfile})
+    string(REPLACE "//CMakeLists.txt" "" CGAL_CONFIGURED_LIBRARY_NAME ${libconfigfile})
+    add_subdirectory(${package}/src/${CGAL_CONFIGURED_LIBRARY_NAME} ${CGAL_CONFIGURED_LIBRARY_NAME})
+  endforeach()
+endforeach()
+
+message(STATUS "Configured CGAL libraries: ${CGAL_CONFIGURED_LIBRARIES}")
 
 #
 # Repeat some problems
