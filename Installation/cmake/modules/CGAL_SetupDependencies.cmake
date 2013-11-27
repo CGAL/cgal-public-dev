@@ -22,7 +22,7 @@ if(NOT WIN32)
   list(INSERT CGAL_EXTERNAL_LIBRARIES 1 GMPXX)
 endif()
 
-foreach(lib ${CGAL_EXTERNAL_LIBRARIES}) 
+foreach(lib ${CGAL_EXTERNAL_LIBRARIES})
   option(WITH_${lib} "Enable support for the external library ${lib}" FALSE)
 
   if(WITH_${lib})
@@ -36,16 +36,12 @@ foreach(lib ${CGAL_EXTERNAL_LIBRARIES})
     else()
       # Never allow erroneous configurations. Should we rather use
       # find_package(... REQUIRED)?
-      message(ERROR "The external library ${lib} has been requested, but could not be found.")
+      message(FATAL_ERROR "The external library ${lib} has been requested, but could not be found.")
     endif()
   endif()
 endforeach()
 
 include(CGAL_TweakFindBoost)
-# In the documentation, we say we require Boost-1.39, but technically we
-# require 1.33.1. Some packages may require more recent versions, though.
-find_package(Boost 1.33.1 REQUIRED thread system)
-message(STATUS "Using BOOST_VERSION = '${Boost_MAJOR_VERSION}.${Boost_MINOR_VERSION}.${Boost_SUBMINOR_VERSION}'")
 
 # Special handling still required.
 #
@@ -64,6 +60,3 @@ message(STATUS "Using BOOST_VERSION = '${Boost_MAJOR_VERSION}.${Boost_MINOR_VERS
 #   message( STATUS "$LEDA cxx flags:   ${LEDA_CXX_FLAGS}" )
 #   uniquely_add_flags( CMAKE_CXX_FLAGS ${LEDA_CXX_FLAGS} )
 # endif()
-
-# finally setup Boost
-
