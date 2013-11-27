@@ -1,18 +1,8 @@
-message("Configuring libCGAL_Core")
- 
-use_essential_libs()
+include(CGAL_library)
 
-include_directories (SYSTEM ${CGAL_3RD_PARTY_INCLUDE_DIRS})
-
-add_definitions(${CGAL_3RD_PARTY_DEFINITIONS})
-
-link_directories    ( ${CGAL_LIBRARIES_DIR} ${CGAL_3RD_PARTY_LIBRARIES_DIRS} )
-
-collect_cgal_library(CGAL_Core "")
- 
-target_link_libraries( CGAL_Core ${CGAL_LIBRARY} ${CGAL_3RD_PARTY_LIBRARIES} )
-
-add_dependencies( CGAL_Core CGAL )
-
-message("libCGAL_Core is configured")
-
+CGAL_define_library(
+  NAME CGAL_Core
+  BUILD_DEFAULT ON
+  REQUIRED_DEPENDENCIES CGAL GMP MPFR
+  OPTIONAL_DEPENDENCIES
+  SOURCES BigFloat.cpp CoreAux.cpp CoreDefs.cpp CoreIO.cpp Expr.cpp extLong.cpp GmpIO.cpp Real.cpp)
