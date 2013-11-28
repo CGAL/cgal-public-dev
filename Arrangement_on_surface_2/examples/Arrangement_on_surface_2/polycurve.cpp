@@ -32,7 +32,7 @@ typedef CGAL::Arr_segment_traits_2<Kernel>              Segment_traits_2;
 typedef CGAL::Arr_polycurve_traits_2<Segment_traits_2>    Polycurve_segment_traits_2;
 typedef CGAL::Arrangement_2<Polycurve_segment_traits_2>   Segment_arrangment_2;
 //typedef Polycurve_segment_traits_2::Point_2               Curve_point_2;
-//typedef Curve_traits_2::Curve_2                         Polycurve_2;
+//typedef Curve_traits_2::Curve_2                           Polycurve_2;
 
 
 
@@ -57,10 +57,10 @@ typedef Rat_kernel::Point_2                                               Rat_po
 typedef Rat_kernel::Segment_2                                             Rat_segment_2;
 typedef Rat_kernel::Circle_2                                              Rat_circle_2;
 typedef CGAL::Cartesian<Algebraic>                                        Alg_kernel;
-typedef CGAL::Arr_conic_traits_2<Rat_kernel, Alg_kernel, Nt_traits>       Conic_Traits_2;
-typedef Conic_Traits_2::Point_2                                           Conic_Point_2;
-typedef Conic_Traits_2::Curve_2                                           Conic_arc_2;
-typedef CGAL::Arr_polycurve_traits_2<Conic_Traits_2>                      Polycurve_conic_traits_2;
+typedef CGAL::Arr_conic_traits_2<Rat_kernel, Alg_kernel, Nt_traits>       Conic_traits_2;
+typedef Conic_traits_2::Point_2                                           Conic_point_2;
+typedef Conic_traits_2::Curve_2                                           Conic_arc_2;
+typedef CGAL::Arr_polycurve_traits_2<Conic_traits_2>                      Polycurve_conic_traits_2;
 typedef CGAL::Arrangement_2<Polycurve_conic_traits_2>                     Conic_arrangment_2; 
 
 
