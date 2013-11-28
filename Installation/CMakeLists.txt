@@ -825,9 +825,15 @@ endmacro()
 # This allows programs to locate CGALConfig.cmake
 set(CGAL_DIR ${CMAKE_BINARY_DIR} )
 
+option(WITH_examples "Build the CGAL examples" OFF)
+
+if(WITH_examples)
+  add_custom_target(examples)
+  CGAL_add_all_subdirs(examples)
+endif()
+
 if ( NOT RUNNING_CGAL_AUTO_TEST )
 
-  add_programs(examples examples OFF )
   add_programs(demo     demos    OFF )
   if(IS_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/test")
     add_programs(test     tests    OFF )
