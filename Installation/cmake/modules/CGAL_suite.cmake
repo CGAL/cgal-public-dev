@@ -36,6 +36,9 @@ if(NOT CGAL_SUITE_FILE_INCLUDED)
       # strip the file ending
       string(REGEX REPLACE "\\..*$" "" source_clean ${CGAL_example_SOURCE})
       add_executable(${source_clean} EXCLUDE_FROM_ALL ${source})
+      # the top-level dependency has the same name as the current project
+      add_dependencies(${PROJECT_NAME} ${source_clean})
+
       foreach(required_depend ${CGAL_example_REQUIRED_DEPENDENCIES})
         CGAL_use_library(${required_depend} ${source_clean})
       endforeach()
@@ -56,7 +59,9 @@ if(NOT CGAL_SUITE_FILE_INCLUDED)
     set(multiValueArgs REQUIRED_DEPENDENCIES OPTIONAL_DEPENDENCIES SOURCES)
     cmake_parse_arguments(CGAL_example_suite "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
     project(${CGAL_example_suite_NAME} CXX)
-    
+    add_custom_target(${PROJECT_NAME})
+    add_dependencies(examples ${PROJECT_NAME})
+
     # Check if all required libraries are met. We don't leave this to
     # CGAL_example, so we can emit a better diagnostic.
     CGAL_are_depends_met(${CGAL_example_suite_REQUIRED_DEPENDENCIES})
