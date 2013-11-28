@@ -1,0 +1,6 @@
+include(CGAL_suite)
+CGAL_example_suite(
+  NAME Periodic_2_triangulation_2_examples
+  REQUIRED_DEPENDENCIES CGAL
+  OPTIONAL_DEPENDENCIES
+  SOURCES p2t2_adding_handles.cpp p2t2_colored_vertices.cpp p2t2_covering.cpp p2t2_find_conflicts.cpp p2t2_geometric_access.cpp p2t2_hierarchy.cpp p2t2_info_insert_with_pair_iterator_2.cpp p2t2_info_insert_with_transform_iterator_2.cpp p2t2_info_insert_with_zip_iterator_2.cpp p2t2_large_point_set.cpp p2t2_simple_example.cpp)

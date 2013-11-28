@@ -4,7 +4,6 @@ AABB_tree/demo/AABB_tree/CMakeLists.txt
 AABB_tree/demo/AABB_tree/Makefile
 AABB_tree/examples/AABB_tree/*.kdev*
 AABB_tree/examples/AABB_tree/*_example
-AABB_tree/examples/AABB_tree/CMakeLists.txt
 AABB_tree/examples/AABB_tree/Makefile
 AABB_tree/examples/AABB_tree/cgal_test_with_cmake
 AABB_tree/test/AABB_tree/*.kdev*
@@ -50,7 +49,6 @@ Arithmetic_kernel/test/Arithmetic_kernel/GMP_arithmetic_kernel
 Arithmetic_kernel/test/Arithmetic_kernel/Get_arithmetic_kernel
 Arithmetic_kernel/test/Arithmetic_kernel/LEDA_arithmetic_kernel
 Arrangement_on_surface_2/examples/Arrangement_on_surface_2/Bezier_curves
-Arrangement_on_surface_2/examples/Arrangement_on_surface_2/CMakeLists.txt
 Arrangement_on_surface_2/examples/Arrangement_on_surface_2/aggregated_insertion
 Arrangement_on_surface_2/examples/Arrangement_on_surface_2/algebraic_curves
 Arrangement_on_surface_2/examples/Arrangement_on_surface_2/algebraic_segments
@@ -106,7 +104,6 @@ Arrangement_on_surface_2/examples/Arrangement_on_surface_2/unbounded_rational_fu
 Arrangement_on_surface_2/examples/Arrangement_on_surface_2/vertical_ray_shooting
 Arrangement_on_surface_2/test/Arrangement_on_surface_2/CMakeLists.txt
 Arrangement_on_surface_2/test/Arrangement_on_surface_2/test_point_location.cpp
-BGL/examples/BGL_arrangement_2/CMakeLists.txt
 BGL/examples/BGL_arrangement_2/Makefile
 BGL/examples/BGL_arrangement_2/cgal_test_with_cmake
 BGL/examples/BGL_arrangement_2/dual
@@ -145,7 +142,6 @@ Circular_kernel_3/test/Circular_kernel_3/test_Spherical_kernel_with_core
 Documentation/log/*.*
 Documentation/output
 Documentation/tags/*.*
-Generator/examples/Generator/CMakeLists.txt
 Generator/examples/Generator/ball_d
 Generator/examples/Generator/cgal_test_with_cmake
 Generator/examples/Generator/cube_d
@@ -376,7 +372,6 @@ Mesh_2/doc_tex/Mesh_2_ref/semantic.cache
 Mesh_2/doxygen
 Mesh_2/examples/Mesh_2/*.core
 Mesh_2/examples/Mesh_2/.*.deps
-Mesh_2/examples/Mesh_2/CMakeLists.txt
 Mesh_2/examples/Mesh_2/cgal_test_with_cmake
 Mesh_2/examples/Mesh_2/conform
 Mesh_2/examples/Mesh_2/conforming
@@ -1039,7 +1034,6 @@ Triangulation_2/demo/Triangulation_2/constrained
 Triangulation_2/demo/Triangulation_2/constrained_delaunay_triangulation_2
 Triangulation_2/demo/Triangulation_2/delaunay_triangulation_2
 Triangulation_2/demo/Triangulation_2/regular_triangulation_2
-Triangulation_2/examples/Triangulation_2/CMakeLists.txt
 Triangulation_2/examples/Triangulation_2/cgal_test_with_cmake
 Triangulation_2/examples/Triangulation_2/regular
 Triangulation_2/test/Triangulation_2/CMakeLists.txt
@@ -1066,7 +1060,6 @@ Triangulation_2/test/Triangulation_2/vrml_tds*
 Triangulation_3/benchmark/Triangulation_3/CMakeLists.txt
 Triangulation_3/benchmark/Triangulation_3/cgal_test_with_cmake
 Triangulation_3/benchmark/Triangulation_3/simple
-Triangulation_3/examples/Triangulation_3/CMakeLists.txt
 Triangulation_3/examples/Triangulation_3/adding_handles_3
 Triangulation_3/examples/Triangulation_3/cgal_test_with_cmake
 Triangulation_3/examples/Triangulation_3/color
@@ -1284,14 +1277,12 @@ gmon.*
 /Kernel_23/test/Kernel_23/test_Projection_traits_xy_3_Intersect_2
 /Kernel_23/test/Kernel_23/test_has_filters
 /Kernel_23/test/Kernel_23/test_result_of
-/Principal_component_analysis/examples/Principal_component_analysis/CMakeLists.txt
 /Principal_component_analysis/examples/Principal_component_analysis/barycenter
 /Principal_component_analysis/examples/Principal_component_analysis/bounding_box
 /Principal_component_analysis/examples/Principal_component_analysis/centroid
 /Principal_component_analysis/examples/Principal_component_analysis/cgal_test_with_cmake
 /Principal_component_analysis/examples/Principal_component_analysis/linear_least_squares_fitting_points_2
 /Principal_component_analysis/examples/Principal_component_analysis/linear_least_squares_fitting_triangles_3
-/Polygon/examples/Polygon/CMakeLists.txt
 /Polygon/examples/Polygon/cgal_test_with_cmake
 /Polygon/test/Polygon/CMakeLists.txt
 /Polygon/test/Polygon/cgal_test_with_cmake

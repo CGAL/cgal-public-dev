@@ -1,0 +1,6 @@
+include(CGAL_suite)
+CGAL_example_suite(
+  NAME Spatial_searching_examples
+  REQUIRED_DEPENDENCIES CGAL
+  OPTIONAL_DEPENDENCIES
+  SOURCES circular_query.cpp distance_browsing.cpp fuzzy_range_query.cpp general_neighbor_searching.cpp iso_rectangle_2_query.cpp nearest_neighbor_searching.cpp searching_with_circular_query.cpp searching_with_point_with_info.cpp searching_with_point_with_info_inplace.cpp searching_with_point_with_info_pmap.cpp user_defined_point_and_distance.cpp using_fair_splitting_rule.cpp weighted_Minkowski_distance.cpp)
