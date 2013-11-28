@@ -45,7 +45,7 @@ class Polycurve_2
 public:
   typedef CurveTraits                                   Curve_traits_2;
   typedef typename Curve_traits_2::Point_2              Point_2;
-  typedef typename Curve_traits_2::X_monotone_curve_2   Curve_2;
+  typedef typename Curve_traits_2::X_monotone_curve_2   X_monotone_curve_2;
   typedef typename Curve_traits_2::Curve_2              Curve_2;
 
   typedef typename std::vector<Curve_2>::const_iterator          const_iterator;
@@ -77,7 +77,7 @@ public:
    * \pre the target of the current last curve must be identical to the
    * source of curve
    */
-  void push_back(const Curve & curve)
+  void push_back(const Curve_2 & curve)
   {
     curves.push_back (curve);
   }
