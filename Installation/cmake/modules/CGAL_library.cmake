@@ -45,18 +45,7 @@ if(NOT CGAL_LIBRARY_FILE_INCLUDED)
       set(vlib ${CGAL_${lib}_PREFIX})
 
       if(NOT WITH_${lib})
-        message("${target_name} requires ${lib}, but WITH_${lib} is \"OFF\". Setting WITH_${lib} to ON.")
-        # Force our choice over the cache value.
-        set(WITH_${lib} ON CACHE BOOL "Enable support for the external library ${lib}" FORCE)
-
-        find_package(${lib}) # Handle possible errors further down.
-        if(${vlib}_FOUND)
-          message(STATUS "${lib} has been found:") 
-          message(STATUS "  Use${lib}-file:      ${${vlib}_USE_FILE}") 
-          message(STATUS "  ${lib} include:      ${${vlib}_INCLUDE_DIR}")
-          message(STATUS "  ${lib} libraries:    ${${vlib}_LIBRARIES}")
-          message(STATUS "  ${lib} definitions:  ${${vlib}_DEFINITIONS}")
-        endif()
+        message(FATAL_ERROR "${target_name} requires ${lib}, but WITH_${lib} is \"OFF\".")
       endif()
       
       if(NOT ${vlib}_FOUND)
