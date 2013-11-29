@@ -45,7 +45,7 @@ CGAL_external_library(NAME QT
 CGAL_external_library(NAME ZLIB
   DEFAULT_ENABLED OFF)
 CGAL_external_library(NAME OpenGL
-  DEFAULT_ENABLED OFF
+  DEFAULT_ENABLED ON
   PREFIX OPENGL)
 CGAL_external_library(NAME LEDA
   DEFAULT_ENABLED OFF)
