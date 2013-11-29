@@ -31,10 +31,9 @@ if(NOT CGAL_LIBRARY_FILE_INCLUDED)
         endif()
 
         # We do not handle components of Boost on an individual WITH_ basis.
-        set(lib Boost)
+        set(lib Boost) # strip the component
       elseif(${lib} MATCHES "Boost") # plain Boost
         find_package(Boost QUIET 1.33.1)
-
       elseif(${lib} MATCHES "Qt_")
         
       elseif(${lib} MATCHES "Qt")
@@ -43,29 +42,30 @@ if(NOT CGAL_LIBRARY_FILE_INCLUDED)
         message(FATAL_ERROR "${lib} is not a supported external library.")
       endif()
 
+      set(vlib ${CGAL_${lib}_PREFIX})
+
       if(NOT WITH_${lib})
         message("${target_name} requires ${lib}, but WITH_${lib} is \"OFF\". Setting WITH_${lib} to ON.")
         # Force our choice over the cache value.
         set(WITH_${lib} ON CACHE BOOL "Enable support for the external library ${lib}" FORCE)
 
         find_package(${lib}) # Handle possible errors further down.
-        if(${lib}_FOUND)
+        if(${vlib}_FOUND)
           message(STATUS "${lib} has been found:") 
-          message(STATUS "  Use${lib}-file:      ${${lib}_USE_FILE}") 
-          message(STATUS "  ${lib} include:      ${${lib}_INCLUDE_DIR}")
-          message(STATUS "  ${lib} libraries:    ${${lib}_LIBRARIES}")
-          message(STATUS "  ${lib} definitions:  ${${lib}_DEFINITIONS}")
+          message(STATUS "  Use${lib}-file:      ${${vlib}_USE_FILE}") 
+          message(STATUS "  ${lib} include:      ${${vlib}_INCLUDE_DIR}")
+          message(STATUS "  ${lib} libraries:    ${${vlib}_LIBRARIES}")
+          message(STATUS "  ${lib} definitions:  ${${vlib}_DEFINITIONS}")
         endif()
       endif()
       
-      # external library, we can simply reuse the target. Don't use usefiles.
-      if(NOT ${lib}_FOUND)
+      if(NOT ${vlib}_FOUND)
         message(FATAL_ERROR "Trying to use ${lib} which could not be found.")
       endif()
       
-      target_link_libraries(${target_name} ${${lib}_LIBRARIES})
-      target_include_directories(${target_name} SYSTEM PUBLIC "${${lib}_INCLUDE_DIR}")
-      target_compile_definitions(${target_name} PUBLIC "${${lib}_DEFINITIONS}" PUBLIC "-DCGAL_USE_${lib}")
+      target_link_libraries(${target_name} ${${vlib}_LIBRARIES})
+      target_include_directories(${target_name} SYSTEM PUBLIC "${${vlib}_INCLUDE_DIR}")
+      target_compile_definitions(${target_name} PUBLIC "${${vlib}_DEFINITIONS}" PUBLIC "-DCGAL_USE_${vlib}")
     endif()
   endfunction()
 

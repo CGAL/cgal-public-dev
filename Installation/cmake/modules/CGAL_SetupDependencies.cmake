@@ -1,41 +1,107 @@
 include(CGAL_Macros)
 
-# This is the place to tell which external libs are supported.
+include(CMakeParseArguments)
 
-# TODO This is a list of pairs, the first is the library prefix, the second
-# is the status of the dependency. It can have three possible values:
-# - ALWAYS: this library is always required
-# - ON    : this library is optional but searched for by default
-# - OFF   : this library is optional but searched for by default
-#
-# Remarks: 
-#  Coin is used in KDS, but no FindCoin or FindCOIN exists
-#
-#  There exists FindF2C, FindIPE, FindMKL, but they are only used to
+
+function(CGAL_external_library)
+  set(options NO_OPTION) # no options
+  set(oneValueArgs NAME DEFAULT_ENABLED PREFIX VERSION)
+  set(multiValueArgs) # no multi-value args
+  cmake_parse_arguments(CGAL_external_library "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
+
+  list(APPEND CGAL_EXTERNAL_LIBRARIES ${CGAL_external_library_NAME})
+  set(CGAL_EXTERNAL_LIBRARIES ${CGAL_EXTERNAL_LIBRARIES} PARENT_SCOPE)
+  
+  if(${CGAL_external_library_NO_OPTION})
+    set(WITH_${CGAL_external_library_NAME} ON PARENT_SCOPE)
+  else()
+    option(WITH_${CGAL_external_library_NAME}
+      "Enable support for the external library ${CGAL_external_library_NAME}"
+      ${CGAL_external_library_DEFAULT_ENABLED})
+  endif()
+
+  if("${CGAL_external_library_PREFIX}" STREQUAL "")
+    # The name is the prefix
+    set(CGAL_${CGAL_external_library_NAME}_PREFIX ${CGAL_external_library_NAME} PARENT_SCOPE)
+  else()
+    set(CGAL_${CGAL_external_library_NAME}_PREFIX ${CGAL_external_library_PREFIX} PARENT_SCOPE)
+  endif()
+
+  if(NOT "${CGAL_external_library_VERSION}" STREQUAL "")
+    set(CGAL_${CGAL_external_library_NAME}_VERSION ${CGAL_external_library_VERSION} PARENT_SCOPE)
+  endif()
+endfunction()
+
+set(CGAL_EXTERNAL_LIBRARIES)
+# This is the place to tell which external libs are supported.
+CGAL_external_library(NAME GMP
+  DEFAULT_ENABLED ON)
+CGAL_external_library(NAME MPFR
+  DEFAULT_ENABLED ON)
+CGAL_external_library(NAME Qt3
+  DEFAULT_ENABLED OFF)
+CGAL_external_library(NAME QT
+  DEFAULT_ENABLED OFF)
+CGAL_external_library(NAME ZLIB
+  DEFAULT_ENABLED OFF)
+CGAL_external_library(NAME OpenGL
+  DEFAULT_ENABLED OFF
+  PREFIX OPENGL)
+CGAL_external_library(NAME LEDA
+  DEFAULT_ENABLED OFF)
+CGAL_external_library(NAME MPFI
+  DEFAULT_ENABLED OFF)
+CGAL_external_library(NAME RS
+  DEFAULT_ENABLED OFF)
+CGAL_external_library(NAME RS3
+  DEFAULT_ENABLED OFF)
+CGAL_external_library(NAME OpenNL
+  DEFAULT_ENABLED OFF)
+CGAL_external_library(NAME TAUCS
+  DEFAULT_ENABLED OFF)
+CGAL_external_library(NAME Eigen3
+  DEFAULT_ENABLED OFF
+  PREFIX EIGEN3)
+CGAL_external_library(NAME BLAS
+  DEFAULT_ENABLED OFF)
+CGAL_external_library(NAME LAPACK
+  DEFAULT_ENABLED OFF)
+CGAL_external_library(NAME QGLVIEWER
+  DEFAULT_ENABLED OFF)
+CGAL_external_library(NAME ESBTL
+  DEFAULT_ENABLED OFF)
+CGAL_external_library(NAME Coin3D
+  DEFAULT_ENABLED OFF
+  PREFIX COIN3D)
+CGAL_external_library(NAME NTL
+  DEFAULT_ENABLED OFF)
+CGAL_external_library(NAME IPE
+  DEFAULT_ENABLED OFF)
+# Boost is non-negotiable
+CGAL_external_library(NAME Boost
+  DEFAULT_ENABLED OFF
+  NO_OPTION
+  VERSION 1.33.1)
+#  There exists FindF2C, FindMKL, but they are only used to
 #  support supporting libs.
-set(CGAL_EXTERNAL_LIBRARIES GMP MPFR Qt3 QT ZLIB OpenGL LEDA MPFI RS RS3
-  OpenNL TAUCS EIGEN3 BLAS LAPACK QGLVIEWER ESBTL COIN3D NTL IPE
-  CACHE INTERNAL "List of supported extenal libraries" FORCE)
 
 if(NOT WIN32)
   # GMPXX is not supported on WIN32 machines
-  list(INSERT CGAL_EXTERNAL_LIBRARIES 1 GMPXX)
+  CGAL_external_library(NAME GMPXX
+    DEFAULT_ENABLED OFF)
 endif()
 
-# Boost is non-negotiable
-set(WITH_Boost ON)
-
 foreach(lib ${CGAL_EXTERNAL_LIBRARIES})
-  option(WITH_${lib} "Enable support for the external library ${lib}" FALSE)
+  set(vlib ${CGAL_${lib}_PREFIX})
 
   if(WITH_${lib})
-    find_package(${lib})
-    if(${lib}_FOUND)
+    find_package(${lib} ${CGAL_${lib}_VERSION} QUIET)
+    if(${vlib}_FOUND)
       message(STATUS "${lib} has been found:") 
-      message(STATUS "  Use${lib}-file:      ${${lib}_USE_FILE}") 
-      message(STATUS "  ${lib} include:      ${${lib}_INCLUDE_DIR}")
-      message(STATUS "  ${lib} libraries:    ${${lib}_LIBRARIES}")
-      message(STATUS "  ${lib} definitions:  ${${lib}_DEFINITIONS}")
+      message(STATUS "  Use${lib}-file:      ${${vlib}_USE_FILE}") 
+      message(STATUS "  ${lib} include:      ${${vlib}_INCLUDE_DIR}")
+      message(STATUS "  ${lib} libraries:    ${${vlib}_LIBRARIES}")
+      message(STATUS "  ${lib} definitions:  ${${vlib}_DEFINITIONS}")
     else()
       # Never allow erroneous configurations. Should we rather use
       # find_package(... REQUIRED)?
@@ -43,6 +109,7 @@ foreach(lib ${CGAL_EXTERNAL_LIBRARIES})
     endif()
   endif()
 endforeach()
+unset(vlib)
 
 include(CGAL_TweakFindBoost)
 
