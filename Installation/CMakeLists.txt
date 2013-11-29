@@ -554,24 +554,7 @@ endforeach()
 
 cache_set(CONFIG_CXX_FLAGS ${CMAKE_CXX_FLAGS})
 
-add_config_flag( CGAL_USE_GMP )
-add_config_flag( CGAL_USE_MPFR )
-add_config_flag( CGAL_USE_GMPXX )
-add_config_flag( CGAL_USE_LEDA )
-add_config_flag( CGAL_USE_MPFI )
-add_config_flag( CGAL_USE_RS )
-add_config_flag( CGAL_USE_NTL )
-
 add_config_flag( CGAL_BUILD_SHARED_LIBS )
-
-if (NOT ${WITH_CGAL_Core}) 
-  set(CGAL_USE_CORE FALSE)
-else()
-  set(CGAL_USE_CORE ${CGAL_USE_GMP})
-endif()
-add_config_flag( CGAL_USE_CORE )
-# ^^ there is CGAL_USE_CORE and not CGAL_HAS_CORE, as CORE is considered
-# as external lib and not as CGAL component (EBEB: 24 Jan 2012)
 
 if ( RUNNING_CGAL_AUTO_TEST AND MSVC )
   file( APPEND "${CMAKE_BINARY_DIR}/include/CGAL/compiler_config.h" "#include <CGAL/Testsuite/vc_debug_hook.h>\n\n" )
