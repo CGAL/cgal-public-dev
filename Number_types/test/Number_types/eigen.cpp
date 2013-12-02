@@ -21,7 +21,7 @@
 #include <CGAL/Sqrt_extension.h>
 #include <CGAL/Testsuite/use.h>
 
-#ifdef CGAL_EIGEN3_ENABLED
+#ifdef CGAL_USE_EIGEN3
 #include <Eigen/Dense>
 
 // Just check that it all compiles.

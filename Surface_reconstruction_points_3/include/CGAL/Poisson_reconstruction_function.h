@@ -35,7 +35,7 @@
 #include <CGAL/trace.h>
 #include <CGAL/Reconstruction_triangulation_3.h>
 #include <CGAL/spatial_sort.h>
-#ifdef CGAL_EIGEN3_ENABLED
+#ifdef CGAL_USE_EIGEN3
 #include <CGAL/Eigen_solver_traits.h>
 #else
 #ifdef CGAL_TAUCS_ENABLED
@@ -515,7 +515,7 @@ public:
     input points and negative inside the inferred surface.
 
     \tparam SparseLinearAlgebraTraits_d Symmetric definite positive sparse linear solver.
-    If \ref thirdpartyEigen "Eigen" 3.1 (or greater) is available and `CGAL_EIGEN3_ENABLED`
+    If \ref thirdpartyEigen "Eigen" 3.1 (or greater) is available and `CGAL_USE_EIGEN3`
     is defined, an overload with \link Eigen_solver_traits <tt>Eigen_solver_traits<Eigen::ConjugateGradient<Eigen_sparse_symmetric_matrix<double>::EigenType> ></tt> \endlink
     as default solver is provided.
   
@@ -534,7 +534,7 @@ public:
   }
   
   /// \cond SKIP_IN_MANUAL
-#ifdef CGAL_EIGEN3_ENABLED
+#ifdef CGAL_USE_EIGEN3
   // This variant provides the default sparse linear traits class = Eigen_solver_traits.
   bool compute_implicit_function(bool smoother_hole_filling = false)
   {

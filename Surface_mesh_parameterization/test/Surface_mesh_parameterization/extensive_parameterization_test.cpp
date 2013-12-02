@@ -31,7 +31,7 @@
 #include <CGAL/LSCM_parameterizer_3.h>
 #include <CGAL/Parameterization_mesh_feature_extractor.h>
 #include <CGAL/OpenNL/linear_solver.h>
-#ifdef CGAL_EIGEN3_ENABLED
+#ifdef CGAL_USE_EIGEN3
     #include <CGAL/Eigen_solver_traits.h>
 #endif
 #ifdef CGAL_USE_TAUCS
@@ -474,7 +474,7 @@ int main(int argc, char * argv[])
 
 #endif // CGAL_USE_TAUCS
 
-#ifdef CGAL_EIGEN3_ENABLED
+#ifdef CGAL_USE_EIGEN3
 
         //***************************************
         // Discrete Conformal Map parameterization

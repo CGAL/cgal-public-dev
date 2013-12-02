@@ -20,7 +20,7 @@
 #ifdef CGAL_TAUCS_ENABLED
 #include <CGAL/Taucs_solver_traits.h>
 #endif
-#ifdef CGAL_EIGEN3_ENABLED
+#ifdef CGAL_USE_EIGEN3
 #include <CGAL/Eigen_solver_traits.h>
 #endif
 
@@ -118,7 +118,7 @@ Polyhedron* poisson_reconstruct(const Point_set& points,
     }
     #endif
     
-    #ifdef CGAL_EIGEN3_ENABLED
+    #ifdef CGAL_USE_EIGEN3
     if(solver_name=="Eigen - built-in simplicial LDLt")
     {
       CGAL::Eigen_solver_traits<Eigen::SimplicialCholesky<CGAL::Eigen_sparse_matrix<double>::EigenType> > solver;

@@ -26,7 +26,7 @@
 #include <CGAL/Cartesian_converter.h>
 #include <math.h>
 #include <utility>
-#ifdef CGAL_EIGEN3_ENABLED
+#ifdef CGAL_USE_EIGEN3
 #include <CGAL/Eigen_svd.h>
 #else
 #ifdef CGAL_LAPACK_ENABLED
@@ -44,7 +44,7 @@ unsigned int fact(unsigned int n){
 }
 
 ////////////////////// CLASS Monge_via_jet_fitting ////////////////////////
-#ifdef CGAL_EIGEN3_ENABLED
+#ifdef CGAL_USE_EIGEN3
 template < class DataKernel, class LocalKernel = Simple_cartesian<double>, class SvdTraits = Eigen_svd >
 #else
 #ifdef CGAL_LAPACK_ENABLED

@@ -12,7 +12,7 @@ The results are stored in an instance of the nested class `Monge_form`,
 the particular information returned depending on the degrees specified 
 for the polynomial fitting and for the Monge form. 
 
-If `CGAL_EIGEN3_ENABLED` is defined, `LocalKernel` and `SvdTraits`
+If `CGAL_USE_EIGEN3` is defined, `LocalKernel` and `SvdTraits`
 template parameters have defaults, `Cartesian<double>` and `Eigen_svd` respectively.
 
 \tparam DataKernel provides the geometric classes and tools 

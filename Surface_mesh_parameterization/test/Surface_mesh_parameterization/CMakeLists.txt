@@ -79,7 +79,7 @@ if ( CGAL_FOUND )
     message(STATUS "NOTICE: This directory requires Eigen 3.1 (or greater), and some features will not be available.")
   endif()
 
-  # Executable that can use EIGEN/TAUCS or not, depending on the macro CGAL_EIGEN3_ENABLED/CGAL_USE_TAUCS
+  # Executable that can use EIGEN/TAUCS or not, depending on the macro CGAL_USE_EIGEN3/CGAL_USE_TAUCS
   create_single_source_cgal_program( "extensive_parameterization_test.cpp" )
 
 else()

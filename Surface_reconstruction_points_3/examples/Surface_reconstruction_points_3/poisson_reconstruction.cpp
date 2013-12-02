@@ -124,7 +124,7 @@ int main(int argc, char * argv[])
       std::cerr << "Options:\n";
       std::cerr << "  -sm_radius <float>     Radius upper bound (default=100 * average spacing)\n";
       std::cerr << "  -sm_distance <float>   Distance upper bound (default=0.25 * average spacing)\n";
-      #if defined(CGAL_EIGEN3_ENABLED) && defined(CGAL_TAUCS_ENABLED)
+      #if defined(CGAL_USE_EIGEN3) && defined(CGAL_TAUCS_ENABLED)
       std::cerr << "  -solver eigen|taucs Sparse linear solver (default=eigen)\n";
       #endif
       
@@ -135,7 +135,7 @@ int main(int argc, char * argv[])
     FT sm_angle = 20.0; // Min triangle angle (degrees).
     FT sm_radius = 100; // Max triangle size w.r.t. point set average spacing.
     FT sm_distance = 0.25; // Approximation error w.r.t. point set average spacing.
-    #ifdef CGAL_EIGEN3_ENABLED
+    #ifdef CGAL_USE_EIGEN3
     std::string solver_name = "eigen"; // Sparse linear solver name.
     #else
       #ifdef CGAL_TAUCS_ENABLED
@@ -304,7 +304,7 @@ int main(int argc, char * argv[])
     }
     else
     #endif
-    #ifdef CGAL_EIGEN3_ENABLED
+    #ifdef CGAL_USE_EIGEN3
     {
       if (solver_name == "eigen")
       {

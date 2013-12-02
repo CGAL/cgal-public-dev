@@ -36,7 +36,7 @@ The function \ccc{compute_implicit_function}() must be called after each inserti
 The optional parameter \ccc{smoother_hole_filling} controls if the Delaunay refinement is done for the input points, or for an approximation of the surface obtained from a first pass of the algorithm on a sample of the points.
 Returns false if the linear solver fails.\\
 The sparse solver used for this step is a parameter of the function. We recommend to use the class \ccc{CGAL::Eigen_solver_traits<T>}
-instantiated with the iterative conjugate gradient solver \ccc{Eigen::ConjugateGradient} for \ccc{double} (which is the default when \ccThirdPartyEigen\ is available and \ccc{CGAL_EIGEN3_ENABLED} is defined).
+instantiated with the iterative conjugate gradient solver \ccc{Eigen::ConjugateGradient} for \ccc{double} (which is the default when \ccThirdPartyEigen\ is available and \ccc{CGAL_USE_EIGEN3} is defined).
 }
 
 \ccFunction{FT value(const Point& p) const;}

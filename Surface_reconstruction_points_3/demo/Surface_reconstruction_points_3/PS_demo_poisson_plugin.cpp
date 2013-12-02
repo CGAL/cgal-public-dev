@@ -64,7 +64,7 @@ class PS_demo_poisson_plugin_dialog : public QDialog, private Ui::PoissonDialog
       m_inputSolver->addItem("Taucs");
       #endif
       
-      #ifdef CGAL_EIGEN3_ENABLED
+      #ifdef CGAL_USE_EIGEN3
       m_inputSolver->addItem("Eigen - built-in simplicial LDLt");
       m_inputSolver->addItem("Eigen - built-in CG");
       #endif
