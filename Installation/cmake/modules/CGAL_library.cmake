@@ -53,7 +53,13 @@ if(NOT CGAL_LIBRARY_FILE_INCLUDED)
       endif()
       
       target_link_libraries(${target_name} ${${vlib}_LIBRARIES})
-      target_include_directories(${target_name} SYSTEM PUBLIC "${${vlib}_INCLUDE_DIR}")
+      
+      if(${CMAKE_VERSION} VERSION_LESS 2.8.12)
+        target_include_directories(${target_name} PUBLIC "${${vlib}_INCLUDE_DIR}")
+      else()
+        target_include_directories(${target_name} SYSTEM PUBLIC "${${vlib}_INCLUDE_DIR}")
+      endif()
+
       target_compile_definitions(${target_name} PUBLIC "${${vlib}_DEFINITIONS}" PUBLIC "-DCGAL_USE_${vlib}")
     endif()
   endfunction()
