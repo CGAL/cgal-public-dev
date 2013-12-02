@@ -355,7 +355,11 @@ typedef const void * Nullptr_t;   // Anticipate C++0x's std::nullptr_t
 
 } //namespace CGAL
 
-// Macro backward compatibility.
+// Macro backward compatibility. In some cases CGAL_ENABLED_* macros
+// were used for external libraries. This code provides backward
+// compatibility.
+
+// Eigen3
 #if defined(CGAL_EIGEN3_ENABLED)
 #define CGAL_USE_EIGEN3 1
 #endif
@@ -364,6 +368,7 @@ typedef const void * Nullptr_t;   // Anticipate C++0x's std::nullptr_t
 #define CGAL_EIGEN3_ENABLED 1
 #endif
 
+// TAUCS
 #if defined(CGAL_TAUCS_ENABLED)
 #define CGAL_USE_TAUCS 1
 #endif
@@ -372,5 +377,13 @@ typedef const void * Nullptr_t;   // Anticipate C++0x's std::nullptr_t
 #define CGAL_TAUCS_ENABLED 1
 #endif
 
+// LAPACK
+#if defined(CGAL_LAPACK_ENABLED)
+#define CGAL_USE_LAPACK 1
+#endif
+
+#if defined(CGAL_USE_LAPACK)
+#define CGAL_LAPACK_ENABLED 1
+#endif
 
 #endif // CGAL_CONFIG_H
