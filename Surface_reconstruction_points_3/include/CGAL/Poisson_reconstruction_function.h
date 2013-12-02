@@ -38,7 +38,7 @@
 #ifdef CGAL_USE_EIGEN3
 #include <CGAL/Eigen_solver_traits.h>
 #else
-#ifdef CGAL_TAUCS_ENABLED
+#ifdef CGAL_USE_TAUCS
 #include <CGAL/Taucs_solver_traits.h>
 #endif
 #endif
@@ -542,7 +542,7 @@ public:
     return compute_implicit_function<Solver>(Solver(), smoother_hole_filling);
   }
 #else
-  #ifdef CGAL_TAUCS_ENABLED
+  #ifdef CGAL_USE_TAUCS
   // This variant provides the default sparse linear traits class = Taucs_symmetric_solver_traits.
   bool compute_implicit_function(bool smoother_hole_filling = false)
   {

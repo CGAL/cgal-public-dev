@@ -17,7 +17,7 @@
 #include <CGAL/Poisson_reconstruction_function.h>
 #include <CGAL/compute_average_spacing.h>
 
-#ifdef CGAL_TAUCS_ENABLED
+#ifdef CGAL_USE_TAUCS
 #include <CGAL/Taucs_solver_traits.h>
 #endif
 #ifdef CGAL_USE_EIGEN3
@@ -98,7 +98,7 @@ Polyhedron* poisson_reconstruct(const Point_set& points,
                               );
 
     bool ok = false;
-    #ifdef CGAL_TAUCS_ENABLED
+    #ifdef CGAL_USE_TAUCS
     if(solver_name=="Taucs")
     {
       // Creates sparse linear solver: 

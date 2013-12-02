@@ -60,7 +60,7 @@ class PS_demo_poisson_plugin_dialog : public QDialog, private Ui::PoissonDialog
     {
       setupUi(this);
       
-      #ifdef CGAL_TAUCS_ENABLED
+      #ifdef CGAL_USE_TAUCS
       m_inputSolver->addItem("Taucs");
       #endif
       

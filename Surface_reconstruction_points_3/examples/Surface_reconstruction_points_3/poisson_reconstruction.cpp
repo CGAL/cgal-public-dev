@@ -25,7 +25,7 @@
 #include <CGAL/Point_with_normal_3.h>
 #include <CGAL/IO/read_xyz_points.h>
 #include <CGAL/compute_average_spacing.h>
-#ifdef CGAL_TAUCS_ENABLED
+#ifdef CGAL_USE_TAUCS
 #include <CGAL/Taucs_solver_traits.h>
 #endif
 
@@ -124,7 +124,7 @@ int main(int argc, char * argv[])
       std::cerr << "Options:\n";
       std::cerr << "  -sm_radius <float>     Radius upper bound (default=100 * average spacing)\n";
       std::cerr << "  -sm_distance <float>   Distance upper bound (default=0.25 * average spacing)\n";
-      #if defined(CGAL_USE_EIGEN3) && defined(CGAL_TAUCS_ENABLED)
+      #if defined(CGAL_USE_EIGEN3) && defined(CGAL_USE_TAUCS)
       std::cerr << "  -solver eigen|taucs Sparse linear solver (default=eigen)\n";
       #endif
       
@@ -138,7 +138,7 @@ int main(int argc, char * argv[])
     #ifdef CGAL_USE_EIGEN3
     std::string solver_name = "eigen"; // Sparse linear solver name.
     #else
-      #ifdef CGAL_TAUCS_ENABLED
+      #ifdef CGAL_USE_TAUCS
       std::string solver_name = "taucs"; // Sparse linear solver name.
       #else
       std::string solver_name = "no_solver_available";
@@ -273,7 +273,7 @@ int main(int argc, char * argv[])
                               CGAL::make_normal_of_point_with_normal_pmap(PointList::value_type()),
                               visitor);
 
-    #ifdef CGAL_TAUCS_ENABLED
+    #ifdef CGAL_USE_TAUCS
     if (solver_name == "taucs")
     {
       std::cerr << "Use TAUCS out-of-core Multifrontal Supernodal Cholesky Factorization\n";
