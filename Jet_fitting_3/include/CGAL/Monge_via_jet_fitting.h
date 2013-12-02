@@ -29,7 +29,7 @@
 #ifdef CGAL_USE_EIGEN3
 #include <CGAL/Eigen_svd.h>
 #else
-#ifdef CGAL_LAPACK_ENABLED
+#ifdef CGAL_USE_LAPACK
 #include <CGAL/Lapack/Linear_algebra_lapack.h>
 #endif
 #endif
@@ -47,7 +47,7 @@ unsigned int fact(unsigned int n){
 #ifdef CGAL_USE_EIGEN3
 template < class DataKernel, class LocalKernel = Simple_cartesian<double>, class SvdTraits = Eigen_svd >
 #else
-#ifdef CGAL_LAPACK_ENABLED
+#ifdef CGAL_USE_LAPACK
 template < class DataKernel, class LocalKernel = Simple_cartesian<double>, class SvdTraits = Lapack_svd>  
 #else
 template < class DataKernel, class LocalKernel, class SvdTraits >  
