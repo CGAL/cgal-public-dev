@@ -355,4 +355,13 @@ typedef const void * Nullptr_t;   // Anticipate C++0x's std::nullptr_t
 
 } //namespace CGAL
 
+// Macro backward compatibility.
+#if defined(CGAL_EIGEN3_ENABLED)
+#define CGAL_USE_EIGEN3 1
+#endif
+
+#if defined(CGAL_USE_EIGEN3)
+#define CGAL_EIGEN3_ENABLED 1
+#endif
+
 #endif // CGAL_CONFIG_H
