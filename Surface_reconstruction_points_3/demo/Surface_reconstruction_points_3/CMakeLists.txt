@@ -79,7 +79,7 @@ if(CGAL_Qt4_FOUND AND QT4_FOUND AND OPENGL_FOUND AND QGLVIEWER_FOUND)
 
   if(GLEW_FOUND)
     include_directories ( ${GLEW_INCLUDE_DIR} )
-    add_definitions(-DCGAL_GLEW_ENABLED)
+    add_definitions(-DCGAL_USE_GLEW)
   else(GLEW_FOUND)
     message(STATUS "NOTICE: GLEW library is not found. Splat rendering will not be available.")
   endif(GLEW_FOUND)

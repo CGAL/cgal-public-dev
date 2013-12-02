@@ -12,7 +12,7 @@
 #include <algorithm>
 #include <deque>
 
-#ifdef CGAL_GLEW_ENABLED
+#ifdef CGAL_USE_GLEW
 # include <GL/glew.h>
 #else
 # include <CGAL/gl.h>
@@ -291,7 +291,7 @@ public:
     {
       const UI_point& p = *it;
       ::glNormal3dv(&p.normal().x());
-#ifdef CGAL_GLEW_ENABLED
+#ifdef CGAL_USE_GLEW
       ::glMultiTexCoord1d(GL_TEXTURE2, p.radius());
 #endif
       ::glVertex3dv(&p.x());

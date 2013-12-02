@@ -12,7 +12,7 @@
 #include <algorithm>
 #include <deque>
 
-#ifdef CGAL_GLEW_ENABLED
+#ifdef CGAL_USE_GLEW
 # include <GL/glew.h>
 #else
 # include <CGAL/gl.h>

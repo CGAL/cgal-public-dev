@@ -114,7 +114,7 @@ private:
   typedef QList<Scene_item*> Entries;
   Entries entries;
   int selected_item;
-#ifdef CGAL_GLEW_ENABLED
+#ifdef CGAL_USE_GLEW
   static GlSplat::SplatRenderer* ms_splatting;
   static int ms_splattingCounter;
 public:

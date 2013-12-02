@@ -1,5 +1,5 @@
 
-#ifdef CGAL_GLEW_ENABLED
+#ifdef CGAL_USE_GLEW
 # include "GlSplat/GlSplat.h"
 #endif
 
@@ -25,7 +25,7 @@ namespace {
   }
 }
 
-#ifdef CGAL_GLEW_ENABLED
+#ifdef CGAL_USE_GLEW
 GlSplat::SplatRenderer* Scene::ms_splatting = 0;
 int Scene::ms_splattingCounter = 0;
 GlSplat::SplatRenderer* Scene::splatting()
@@ -39,7 +39,7 @@ Scene::Scene(QObject* parent)
   : QAbstractListModel(parent),
     selected_item(-1)
 {
-#ifdef CGAL_GLEW_ENABLED
+#ifdef CGAL_USE_GLEW
   if(ms_splatting==0)
     ms_splatting  = new GlSplat::SplatRenderer();
   ms_splattingCounter++;
@@ -89,7 +89,7 @@ Scene::~Scene()
   }
   entries.clear();
 
-#ifdef CGAL_GLEW_ENABLED
+#ifdef CGAL_USE_GLEW
   if((--ms_splattingCounter)==0)
     delete ms_splatting;
 #endif
@@ -190,7 +190,7 @@ void Scene::resetSelection(Item_id index)
 
 void Scene::initializeGL()
 {
-#ifdef CGAL_GLEW_ENABLED
+#ifdef CGAL_USE_GLEW
   ms_splatting->init();
 #endif
 }
@@ -302,7 +302,7 @@ Scene::draw_aux(bool with_names)
     }
   }
 
-#ifdef CGAL_GLEW_ENABLED
+#ifdef CGAL_USE_GLEW
   // Splatting
   if(ms_splatting->isSupported())
   {
@@ -505,7 +505,7 @@ Scene::setData(const QModelIndex &index,
     RenderingMode rendering_mode = static_cast<RenderingMode>(value.toInt());
     // Find next supported rendering mode
     while ( !item->supportsRenderingMode(rendering_mode)
-#ifdef CGAL_GLEW_ENABLED
+#ifdef CGAL_USE_GLEW
          || (rendering_mode==Splatting && !Scene::splatting()->isSupported())
 #endif
     )
