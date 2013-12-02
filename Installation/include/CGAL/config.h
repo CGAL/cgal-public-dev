@@ -364,4 +364,13 @@ typedef const void * Nullptr_t;   // Anticipate C++0x's std::nullptr_t
 #define CGAL_EIGEN3_ENABLED 1
 #endif
 
+#if defined(CGAL_TAUCS_ENABLED)
+#define CGAL_USE_TAUCS 1
+#endif
+
+#if defined(CGAL_USE_TAUCS)
+#define CGAL_TAUCS_ENABLED 1
+#endif
+
+
 #endif // CGAL_CONFIG_H
