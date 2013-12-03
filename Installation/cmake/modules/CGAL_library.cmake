@@ -105,7 +105,7 @@ if(NOT CGAL_LIBRARY_FILE_INCLUDED)
 
       # set the CGAL include directories
       target_include_directories(${CGAL_define_library_NAME} PUBLIC ${CGAL_INCLUDE_DIRS})
-      
+
       foreach(required_depend ${CGAL_define_library_REQUIRED_DEPENDENCIES})
         set(BUILD_${CGAL_define_library_NAME}_WITH_${required_depend} TRUE)
         CGAL_use_library(${required_depend} ${CGAL_define_library_NAME})
@@ -126,8 +126,6 @@ if(NOT CGAL_LIBRARY_FILE_INCLUDED)
       export(TARGETS ${CGAL_define_library_NAME}
         APPEND FILE ${CGAL_EXPORT_FILE})
     endif()
-
-    message(STATUS "lib${CGAL_define_library_NAME} is configured")
   endmacro()
 
 endif()
