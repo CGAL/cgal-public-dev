@@ -74,7 +74,7 @@ endif()
 if ( CGAL_DIR )
 
   if( EXISTS "${CGAL_DIR}/CGAL-export.cmake" )
-    include( "${CGAL_DIR}/CGAL-export.cmake" )
+    set( CGAL_EXPORT_FILE "${CGAL_DIR}/CGAL-export.cmake" )
     set( CGAL_FOUND TRUE )
   elseif ( EXISTS "${CGAL_DIR}/CGALConfig.cmake" )
     include( "${CGAL_DIR}/CGALConfig.cmake" )
