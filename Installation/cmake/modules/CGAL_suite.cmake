@@ -9,7 +9,7 @@ if(NOT CGAL_SUITE_FILE_INCLUDED)
     set(FAILED_DEPENDS)
     foreach(required_depend ${DEPENDS})
       if(${required_depend} MATCHES "CGAL")
-        if(NOT BUILD_${required_depend})
+        if(NOT TARGET ${required_depend})
           set(DEPENDS_MET FALSE)
           list(APPEND FAILED_DEPENDS ${required_depend})
         endif()
@@ -39,6 +39,7 @@ if(NOT CGAL_SUITE_FILE_INCLUDED)
     
     if(DEPENDS_MET)
       add_executable(${CGAL_example_TARGET} EXCLUDE_FROM_ALL ${CGAL_example_SOURCE})
+      
       # the top-level dependency has the same name as the current project
       add_dependencies(${PROJECT_NAME} ${CGAL_example_TARGET})
       
@@ -62,7 +63,12 @@ if(NOT CGAL_SUITE_FILE_INCLUDED)
     cmake_parse_arguments(CGAL_example_suite "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
     project(${CGAL_example_suite_NAME} CXX)
     add_custom_target(${PROJECT_NAME})
-    add_dependencies(examples ${PROJECT_NAME})
+
+    if(TARGET examples) # Don't do this if we are a in a stand-alone build.
+      add_dependencies(examples ${PROJECT_NAME})
+    else()
+      set_property(TARGET ${PROJECT_NAME} PROPERTY EXCLUDE_FROM_ALL OFF)
+    endif()
 
     # Check if all required libraries are met. We don't leave this to
     # CGAL_example, so we can emit a better diagnostic.
