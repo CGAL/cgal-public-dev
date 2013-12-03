@@ -600,8 +600,18 @@ message("== Write compiler_config.h (DONE) ==\n")
 
 message("== Generating build files ==")
 
-set(CGAL_LIBRARIES_DIR ${CMAKE_BINARY_DIR}/lib)
+set(CGAL_DIR ${CMAKE_BINARY_DIR})
 
+set(CGAL_LIBRARIES_DIR ${CMAKE_BINARY_DIR}/lib)
+# Output directory of libraries (.so, .dylib, non-static .lib) and static libraries (.a, static .lib)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CGAL_LIBRARIES_DIR})
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CGAL_LIBRARIES_DIR})
+
+# For output directory of DLLs (.dll files)
+set(CGAL_RUNTIME_DIR ${CMAKE_BINARY_DIR}/bin)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CGAL_RUNTIME_DIR})
+
+# Include directories
 set(CGAL_INCLUDE_DIRS ${CMAKE_BINARY_DIR}/include)
 
 foreach (package ${CGAL_CONFIGURED_PACKAGES})
@@ -610,22 +620,13 @@ endforeach()
 
 include_directories (${CGAL_INCLUDE_DIRS})
 
-set(CGAL_DIR ${CMAKE_BINARY_DIR})
-
-# Output directory of libraries (.so, .dylib, non-static .lib)
-set(CGAL_LIBRARIES_DIR ${CMAKE_BINARY_DIR}/lib)
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CGAL_LIBRARIES_DIR})
-# Output directory of static libraries (.a, static .lib)
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CGAL_LIBRARIES_DIR})
-
-# For output directory of DLLs (.dll files)
-set(CGAL_RUNTIME_DIR ${CMAKE_BINARY_DIR}/bin)
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CGAL_RUNTIME_DIR})
-
+# Export file
 set(CGAL_EXPORT_FILE ${CMAKE_BINARY_DIR}/CGAL-export.cmake)
+
+# Configure packages
 set(CGAL_CONFIGURED_LIBRARIES)
 
-# has to be added manually as Installation is not a package
+# This has to be added manually as Installation is not a package.
 add_subdirectory(src/CGAL CGAL)
 
 foreach(package ${CGAL_CONFIGURED_PACKAGES}) 
@@ -639,9 +640,6 @@ endforeach()
 
 message(STATUS "Configured CGAL libraries: ${CGAL_CONFIGURED_LIBRARIES}")
 
-#
-# Repeat some problems
-#
 message("== Generating build files (DONE) ==\n")
 
 if (CGAL_BRANCH_BUILD AND CGAL_REPORT_DUPLICATE_FILES )
