@@ -615,10 +615,10 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CGAL_RUNTIME_DIR})
 set(CGAL_INCLUDE_DIRS ${CMAKE_BINARY_DIR}/include)
 
 foreach (package ${CGAL_CONFIGURED_PACKAGES})
-  set(CGAL_INCLUDE_DIRS ${CGAL_INCLUDE_DIRS} ${package}/include)
+  if(IS_DIRECTORY ${package}/include)
+    list(APPEND CGAL_INCLUDE_DIRS ${package}/include)
+  endif()
 endforeach()
-
-include_directories (${CGAL_INCLUDE_DIRS})
 
 # Export file
 set(CGAL_EXPORT_FILE ${CMAKE_BINARY_DIR}/CGAL-export.cmake)

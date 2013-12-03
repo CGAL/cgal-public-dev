@@ -107,6 +107,9 @@ if(NOT CGAL_LIBRARY_FILE_INCLUDED)
         # rather broken
         add_library(${CGAL_define_library_NAME} ${CGAL_define_library_SOURCES})
       endif()
+
+      # set the CGAL include directories
+      target_include_directories(${CGAL_define_library_NAME} PUBLIC ${CGAL_INCLUDE_DIRS})
       
       foreach(required_depend ${CGAL_define_library_REQUIRED_DEPENDENCIES})
         set(BUILD_${CGAL_define_library_NAME}_WITH_${required_depend} TRUE)
@@ -127,7 +130,6 @@ if(NOT CGAL_LIBRARY_FILE_INCLUDED)
       # export the library target
       export(TARGETS ${CGAL_define_library_NAME}
         APPEND FILE ${CGAL_EXPORT_FILE})
-      
     endif()
 
     message(STATUS "lib${CGAL_define_library_NAME} is configured")
