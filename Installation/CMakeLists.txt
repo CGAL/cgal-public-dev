@@ -630,10 +630,12 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CGAL_LIBRARIES_DIR})
 set(CGAL_RUNTIME_DIR ${CMAKE_BINARY_DIR}/bin)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CGAL_RUNTIME_DIR})
 
+set(CGAL_EXPORT_FILE ${CMAKE_BINARY_DIR}/CGAL-export.cmake)
 set(CGAL_CONFIGURED_LIBRARIES)
 
 # has to be added manually as Installation is not a package
 add_subdirectory(src/CGAL CGAL)
+
 foreach(package ${CGAL_CONFIGURED_PACKAGES}) 
   file(GLOB CONFIGURED_LIBS_IN_PACKAGE ${package}/src/CGAL_*/CMakeLists.txt)
   foreach (libconfigfile ${CONFIGURED_LIBS_IN_PACKAGE})
