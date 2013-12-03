@@ -88,11 +88,6 @@ if(NOT CGAL_LIBRARY_FILE_INCLUDED)
     option(BUILD_${CGAL_define_library_NAME} "Build the ${CGAL_define_library_NAME} library"
       ${CGAL_define_library_BUILD_DEFAULT})
 
-    # CGAL_use_lib defers finding Boost libraries until all components
-    # are collected. We collect the components in this list and then
-    # find them.
-    set(${CGAL_define_library_NAME}_boost_required_libs system thread)
-
     if(BUILD_${CGAL_define_library_NAME})
       # define the target
       list(LENGTH CGAL_define_library_SOURCES CGAL_define_library_source_length)
