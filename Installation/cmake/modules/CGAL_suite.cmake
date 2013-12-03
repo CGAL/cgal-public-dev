@@ -66,19 +66,20 @@ if(NOT CGAL_SUITE_FILE_INCLUDED)
     set(multiValueArgs REQUIRED_DEPENDENCIES OPTIONAL_DEPENDENCIES SOURCES)
     cmake_parse_arguments(CGAL_example_suite "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
     project(${CGAL_example_suite_NAME} CXX)
-    add_custom_target(${PROJECT_NAME})
-
-    if(TARGET examples) # Don't do this if we are a in a stand-alone build.
-      add_dependencies(examples ${PROJECT_NAME})
-    else()
-      set_property(TARGET ${PROJECT_NAME} PROPERTY EXCLUDE_FROM_ALL OFF)
-    endif()
 
     # Check if all required libraries are met. We don't leave this to
     # CGAL_example, so we can emit a better diagnostic.
     CGAL_are_depends_met("${CGAL_example_suite_REQUIRED_DEPENDENCIES}")
 
     if(DEPENDS_MET)
+      add_custom_target(${PROJECT_NAME})
+
+      if(TARGET examples) # Don't do this if we are a in a stand-alone build.
+        add_dependencies(examples ${PROJECT_NAME})
+      else()
+        set_property(TARGET ${PROJECT_NAME} PROPERTY EXCLUDE_FROM_ALL OFF)
+      endif()
+
       foreach(source ${CGAL_example_suite_SOURCES})
         CGAL_example(
           REQUIRED_DEPENDENCIES ${CGAL_example_suite_REQUIRED_DEPENDENCIES}
