@@ -610,14 +610,6 @@ endforeach()
 
 include_directories (${CGAL_INCLUDE_DIRS})
 
-cache_get(CGAL_LIBRARY)
-cache_get(CGAL_3RD_PARTY_PRECONFIGURED )
-
-cache_get(CGAL_3RD_PARTY_DEFINITIONS   )
-cache_get(CGAL_3RD_PARTY_INCLUDE_DIRS  )
-cache_get(CGAL_3RD_PARTY_LIBRARIES     )
-cache_get(CGAL_3RD_PARTY_LIBRARIES_DIRS) 
-
 set(CGAL_DIR ${CMAKE_BINARY_DIR})
 
 # Output directory of libraries (.so, .dylib, non-static .lib)
