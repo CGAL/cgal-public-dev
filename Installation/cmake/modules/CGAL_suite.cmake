@@ -39,6 +39,10 @@ if(NOT CGAL_SUITE_FILE_INCLUDED)
     
     if(DEPENDS_MET)
       add_executable(${CGAL_example_TARGET} EXCLUDE_FROM_ALL ${CGAL_example_SOURCE})
+      # Some examples use local include directories, support those.
+      if(IS_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include)
+        target_include_directories(${CGAL_example_TARGET} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
+      endif()
       
       # the top-level dependency has the same name as the current project
       add_dependencies(${PROJECT_NAME} ${CGAL_example_TARGET})
