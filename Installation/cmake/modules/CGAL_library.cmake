@@ -32,6 +32,7 @@ if(NOT CGAL_LIBRARY_FILE_INCLUDED)
 
         # We do not handle components of Boost on an individual WITH_ basis.
         set(lib Boost) # strip the component
+        set(use_define "BOOST_${boost_component_tmp}")
       elseif(${lib} MATCHES "Boost") # plain Boost
         find_package(Boost QUIET 1.33.1)
       elseif(${lib} MATCHES "Qt_")
@@ -51,6 +52,11 @@ if(NOT CGAL_LIBRARY_FILE_INCLUDED)
       if(NOT ${vlib}_FOUND)
         message(FATAL_ERROR "Trying to use ${lib} which could not be found.")
       endif()
+
+      # if none of the above set use_define, set it here
+      if(NOT DEFINED use_define)
+        set(use_define ${vlib})
+      endif()
       
       target_link_libraries(${target_name} ${${vlib}_LIBRARIES})
       
@@ -59,8 +65,8 @@ if(NOT CGAL_LIBRARY_FILE_INCLUDED)
       else()
         target_include_directories(${target_name} SYSTEM PUBLIC "${${vlib}_INCLUDE_DIR}")
       endif()
-
-      target_compile_definitions(${target_name} PUBLIC "${${vlib}_DEFINITIONS}" PUBLIC "-DCGAL_USE_${vlib}")
+      
+      target_compile_definitions(${target_name} PUBLIC "${${vlib}_DEFINITIONS}" PUBLIC "-DCGAL_USE_${use_define}")
     endif()
   endfunction()
 
