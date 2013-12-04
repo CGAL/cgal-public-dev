@@ -52,7 +52,13 @@ if(NOT CGAL_SUITE_FILE_INCLUDED)
       endforeach()
 
       foreach(optional_depend ${CGAL_example_OPTIONAL_DEPENDENCIES})
-        # CGAL_use_library(required_depend ${source_clean})
+        if(${lib} MATCHES "Boost") # We ignore WITH_ options for Boost.
+          CGAL_use_library(optional_depend ${source_clean})
+        elseif(${lib} MATCHES "CGAL" AND TARGET ${lib}) # We have a target for this internal dependency.
+          CGAL_use_library(optional_depend ${source_clean})
+        elseif(WITH_${lib})
+          CGAL_use_library(optional_depend ${source_clean})
+        endif()
       endforeach()
     else()
       message(STATUS "The example ${CGAL_example_SOURCE} requires ${FAILED_DEPENDS} and is not being build.")
