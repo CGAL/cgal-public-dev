@@ -19,23 +19,7 @@ if(NOT CGAL_LIBRARY_FILE_INCLUDED)
       target_link_libraries(${target_name} ${lib})
     else()
       list(FIND CGAL_EXTERNAL_LIBRARIES ${lib} lib_pos)
-
-      if(${lib} MATCHES "Boost_.*") 
-        # a Boost component, extract the component, try to find 
-        string(REPLACE "Boost_" "" boost_component ${lib})
-        find_package(Boost 1.33.1 QUIET COMPONENTS ${boost_component})
-        string(TOUPPER ${boost_component} boost_component_tmp)
-        if(NOT Boost_${boost_component_tmp}_FOUND)
-          message(FATAL_ERROR 
-            "${lib} requested the Boost component ${boost_component}, but it could not be found.")
-        endif()
-
-        # We do not handle components of Boost on an individual WITH_ basis.
-        set(lib Boost) # strip the component
-        set(use_define "BOOST_${boost_component_tmp}")
-      elseif(${lib} MATCHES "Boost") # plain Boost
-        find_package(Boost QUIET 1.33.1)
-      elseif(${lib} MATCHES "Qt_")
+      if(${lib} MATCHES "Qt_")
         
       elseif(${lib} MATCHES "Qt")
 
@@ -58,7 +42,11 @@ if(NOT CGAL_LIBRARY_FILE_INCLUDED)
         set(use_define ${vlib})
       endif()
       
-      target_link_libraries(${target_name} ${${vlib}_LIBRARIES})
+      if(${lib} MATCHES "Boost_") # a boost component library has to link with singular LIBRARY
+        target_link_libraries(${target_name} ${${vlib}_LIBRARY})
+      else()
+        target_link_libraries(${target_name} ${${vlib}_LIBRARIES})
+      endif()
       
       if(${CMAKE_VERSION} VERSION_LESS 2.8.12)
         target_include_directories(${target_name} PUBLIC "${${vlib}_INCLUDE_DIR}")

@@ -2,7 +2,6 @@ include(CGAL_Macros)
 
 include(CMakeParseArguments)
 
-
 function(CGAL_external_library)
   set(options REQUIRED WARN_MISSING)
   set(oneValueArgs NAME PREFIX VERSION)
@@ -81,7 +80,6 @@ CGAL_external_library(NAME NTL)
 CGAL_external_library(NAME IPE)
 #  There exists FindF2C, FindMKL, but they are only used to
 #  support supporting libs.
-
 if(NOT WIN32)
   # GMPXX is not supported on WIN32 machines
   CGAL_external_library(NAME GMPXX)
@@ -100,7 +98,6 @@ foreach(lib ${CGAL_EXTERNAL_LIBRARIES})
     endif()
 
     if(NOT ${vlib}_FOUND AND ${CGAL_${lib}_REQUIRED})
-      message("${vlib} and ${${vlib}_FOUND} and ${CGAL_${lib}_REQUIRED}")
       message(FATAL_ERROR "${lib} is required to build CGAL but could not be found.
 Do you need to set ${vlib}_DIR?")
     elseif(${vlib}_FOUND)
@@ -125,6 +122,10 @@ Do you need to set ${vlib}_DIR?")
 
   set(CGAL_WITH_${lib} ${CGAL_WITH_${lib}} PARENT_SCOPE)
 endforeach()
+
+# Clean the Boost_LIBRARIES variable from the last find, to prevent a
+# package that just uses Boost to link against this
+unset(Boost_LIBRARIES)
 unset(vlib)
 
 # Special handling still required.
