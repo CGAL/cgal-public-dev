@@ -6,7 +6,7 @@
 #include <iostream>
 int main ()
 {
-  std::cout << "Sorry, this example needs CORE ..." << std::endl; 
+  std::cout << "Sorry, this example needs CORE ..." << std::endl;
   return 0;
 }
 
@@ -21,10 +21,12 @@ int main ()
 #include "arr_print.h"
 
 #include <CGAL/Arr_polyline_traits_2.h>
+
+#include <CGAL/Arr_segment_traits_2.h>
 #include <CGAL/Arr_circle_segment_traits_2.h>
 #include <CGAL/Arr_conic_traits_2.h>
 #include <CGAL/Arr_Bezier_curve_traits_2.h>
-#include <CGAL/Arr_segment_traits_2.h>
+
 #include <CGAL/Arrangement_2.h>
 
 
@@ -36,9 +38,9 @@ typedef CGAL::Cartesian<Number_type>                    Kernel;
 //////////////
 typedef CGAL::Arr_segment_traits_2<Kernel>                Segment_traits_2;
 typedef CGAL::Arr_polyline_traits_2<Segment_traits_2>     Polycurve_segment_traits_2;
-typedef CGAL::Arrangement_2<Polycurve_segment_traits_2>   Segment_arrangment_2;
+typedef CGAL::Arrangement_2<Polycurve_segment_traits_2>   Segment_arrangement_2;
 typedef Polycurve_segment_traits_2::Point_2               Segment_point_2;
-typedef Polycurve_segment_traits_2::Curve_2               Segment_section_2;
+typedef Polycurve_segment_traits_2::Curve_2               Segment_curve_2;
 
 ///////////////
 //circle segment traits
@@ -46,8 +48,8 @@ typedef Polycurve_segment_traits_2::Curve_2               Segment_section_2;
 typedef CGAL::Arr_circle_segment_traits_2<Kernel>       Arc_traits_2;
 typedef CGAL::Arr_polyline_traits_2<Arc_traits_2>       Polycurve_arc_traits_2;
 typedef Arc_traits_2::Point_2                           Arc_point_2;
-typedef Arc_traits_2::Curve_2                           Arc_segment_2;
-typedef CGAL::Arrangement_2<Polycurve_arc_traits_2>     Arc_arrangment_2;
+typedef Arc_traits_2::Curve_2                           Arc_curve_2;
+typedef CGAL::Arrangement_2<Polycurve_arc_traits_2>     Arc_arrangement_2;
 
 ////////////////////
 //conic traits
@@ -64,25 +66,25 @@ typedef CGAL::Arr_conic_traits_2<Rat_kernel, Alg_kernel, Nt_traits>       Conic_
 typedef Conic_traits_2::Point_2                                           Conic_point_2;
 typedef Conic_traits_2::Curve_2                                           Conic_arc_2;
 typedef CGAL::Arr_polyline_traits_2<Conic_traits_2>                       Polycurve_conic_traits_2;
-typedef CGAL::Arrangement_2<Polycurve_conic_traits_2>                     Conic_arrangment_2; 
+typedef CGAL::Arrangement_2<Polycurve_conic_traits_2>                     Conic_arrangement_2;
 
 ///////////////////
 //Bezier Curves
 ///////////////////
 typedef CGAL::Arr_Bezier_curve_traits_2<Rat_kernel, Alg_kernel, Nt_traits>    Bezier_traits_2;
 typedef CGAL::Arr_polyline_traits_2<Bezier_traits_2>                          Polycurve_bezier_traits_2;
-typedef CGAL::Arrangement_2<Polycurve_bezier_traits_2>                        Bezier_arrangment_2;
+typedef CGAL::Arrangement_2<Polycurve_bezier_traits_2>                        Bezier_arrangement_2;
 
-void Make_linear_polycurve (Segment_arrangment_2* Curve_arr)
+void add_linear_polycurves(Segment_arrangement_2& arr)
 {
 
-  Segment_point_2               points1[5];
+  Segment_point_2 points1[5];
   points1[0] = Segment_point_2 (0, 0);
   points1[1] = Segment_point_2 (2, 4);
   points1[2] = Segment_point_2 (3, 0);
   points1[3] = Segment_point_2 (4, 4);
   points1[4] = Segment_point_2 (6, 0);
-  Segment_section_2            pi1 (&points1[0], &points1[5]);
+  Segment_curve_2 pi1 (points1, points1 + 5);
 
   std::list<Segment_point_2>    points2;
   points2.push_back (Segment_point_2 (1, 3));
@@ -95,21 +97,21 @@ void Make_linear_polycurve (Segment_arrangment_2* Curve_arr)
   points2.push_back (Segment_point_2 (6, 2));
   points2.push_back (Segment_point_2 (5, 3));
   points2.push_back (Segment_point_2 (4, 2));
-  Segment_section_2            pi2 (points2.begin(), points2.end());
+  Segment_curve_2 pi2 (points2.begin(), points2.end());
 
   std::vector<Segment_point_2>  points3 (4);
   points3[0] = Segment_point_2 (0, 2);
   points3[1] = Segment_point_2 (1, 2);
   points3[2] = Segment_point_2 (3, 6);
   points3[3] = Segment_point_2 (5, 2);
-  Segment_section_2            pi3 (points3.begin(), points3.end());
-  
-  insert (*Curve_arr, pi1);
-  insert (*Curve_arr, pi2);
-  insert (*Curve_arr, pi3);
+  Segment_curve_2 pi3 (points3.begin(), points3.end());
+
+  CGAL::insert(arr, pi1);
+  CGAL::insert(arr, pi2);
+  CGAL::insert(arr, pi3);
 }
 
-void Make_conic_polycurve(Conic_arrangment_2* Conic_arr)
+void add_conic_polycurves(Conic_arrangement_2& arr)
 {
 
   // Insert a hyperbolic arc, supported by the hyperbola y = 1/x
@@ -121,7 +123,7 @@ void Make_conic_polycurve(Conic_arrangment_2* Conic_arr)
 
   // Insert a parabolic arc that is supported by a parabola y = -x^2
   // (or: x^2 + y = 0) and whose endpoints are (-sqrt(3), -3) ~ (-1.73, -3)
-  // and (sqrt(2), -2) ~ (1.41, -2). Notice that since the x-coordinates 
+  // and (sqrt(2), -2) ~ (1.41, -2). Notice that since the x-coordinates
   // of the endpoints cannot be acccurately represented, we specify them
   // as the intersections of the parabola with the lines y = -3 and y = -2.
   // Note that the arc is clockwise oriented.
@@ -133,32 +135,31 @@ void Make_conic_polycurve(Conic_arrangment_2* Conic_arr)
                  Conic_point_2 (1.41, -2),     // Approximation of the target.
                  0, 0, 0, 0, 1, 2);      // The line: y = -2.
   CGAL_assertion (c2.is_valid());
-  
+
   // Insert the segment (1, 1) -- (0, -3).
   Rat_point_2   ps3 (1, 1);
   Rat_point_2   pt3 (0, -3);
   Conic_arc_2   c3 (Rat_segment_2 (ps3, pt3));
-  
-  // insert (*Conic_arr, c1);
-  // insert (*Conic_arr, c2);
-  // insert (*Conic_arr, c3);
+
+  // CGAL::insert (arr, c1);
+  // CGAL::insert (arr, c2);
+  // CGAL::insert (arr, c3);
 }
 
 int main ()
 {
- 
-  Segment_arrangment_2        Linear_segment_arr;
-  //Arc_arrangment_2          arc_arr;
-  Conic_arrangment_2          Conic_arr;
-  //Bezier_arrangment_2         bezier_arr;
 
-  Make_linear_polycurve ( & Linear_segment_arr );
-  Make_conic_polycurve  ( & Conic_arr);
-  
-  print_arrangement (Linear_segment_arr);
-  //print_arrangement (Conic_arr);
+  Segment_arrangement_2        segment_arr;
+  //Arc_arrangement_2          arc_arr;
+  Conic_arrangement_2          conic_arr;
+  //Bezier_arrangement_2         bezier_arr;
 
-  
+  add_linear_polycurves(segment_arr);
+  add_conic_polycurves  (conic_arr);
+
+  print_arrangement (segment_arr);
+  //print_arrangement (conic_arr);
+
   return 0;
 }
 #endif
