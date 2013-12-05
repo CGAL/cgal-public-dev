@@ -150,15 +150,15 @@ int main ()
 {
 
   Segment_arrangement_2        segment_arr;
-  //Arc_arrangement_2          arc_arr;
+  Arc_arrangement_2            arc_arr;
   Conic_arrangement_2          conic_arr;
-  //Bezier_arrangement_2         bezier_arr;
+  Bezier_arrangement_2         bezier_arr;
 
   add_linear_polycurves(segment_arr);
-  add_conic_polycurves  (conic_arr);
+  add_conic_polycurves(conic_arr);
 
   print_arrangement (segment_arr);
-  //print_arrangement (conic_arr);
+  print_arrangement (conic_arr);
 
   return 0;
 }
