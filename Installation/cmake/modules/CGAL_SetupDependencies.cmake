@@ -4,20 +4,27 @@ include(CMakeParseArguments)
 
 
 function(CGAL_external_library)
-  set(options NO_OPTION) # no options
-  set(oneValueArgs NAME DEFAULT_ENABLED PREFIX VERSION)
+  set(options REQUIRED WARN_MISSING)
+  set(oneValueArgs NAME PREFIX VERSION)
   set(multiValueArgs) # no multi-value args
   cmake_parse_arguments(CGAL_external_library "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
+  option(WITH_${CGAL_external_library_NAME} 
+    "Enable support for the external library ${CGAL_external_library_NAME}" ON)
+
   list(APPEND CGAL_EXTERNAL_LIBRARIES ${CGAL_external_library_NAME})
   set(CGAL_EXTERNAL_LIBRARIES ${CGAL_EXTERNAL_LIBRARIES} PARENT_SCOPE)
-  
-  if(${CGAL_external_library_NO_OPTION})
-    set(WITH_${CGAL_external_library_NAME} ON PARENT_SCOPE)
+
+  if(${CGAL_external_library_REQUIRED})
+    set(CGAL_${CGAL_external_library_NAME}_REQUIRED TRUE PARENT_SCOPE)
   else()
-    option(WITH_${CGAL_external_library_NAME}
-      "Enable support for the external library ${CGAL_external_library_NAME}"
-      ${CGAL_external_library_DEFAULT_ENABLED})
+    set(CGAL_${CGAL_external_library_NAME}_REQUIRED FALSE PARENT_SCOPE)
+  endif()
+
+  if(${CGAL_external_library_WARN_MISSING})
+    set(CGAL_${CGAL_external_library_NAME}_WARN_MISSING TRUE PARENT_SCOPE)
+  else()
+    set(CGAL_${CGAL_external_library_NAME}_WARN_MISSING FALSE PARENT_SCOPE)
   endif()
 
   if("${CGAL_external_library_PREFIX}" STREQUAL "")
@@ -34,84 +41,91 @@ endfunction()
 
 set(CGAL_EXTERNAL_LIBRARIES)
 # This is the place to tell which external libs are supported.
-CGAL_external_library(NAME GMP
-  DEFAULT_ENABLED ON)
-CGAL_external_library(NAME MPFR
-  DEFAULT_ENABLED ON)
-CGAL_external_library(NAME Qt3
-  DEFAULT_ENABLED OFF)
-CGAL_external_library(NAME QT
-  DEFAULT_ENABLED OFF)
-CGAL_external_library(NAME ZLIB
-  DEFAULT_ENABLED OFF)
-CGAL_external_library(NAME OpenGL
-  DEFAULT_ENABLED ON
-  PREFIX OPENGL)
-CGAL_external_library(NAME LEDA
-  DEFAULT_ENABLED OFF)
-CGAL_external_library(NAME MPFI
-  DEFAULT_ENABLED OFF)
-CGAL_external_library(NAME RS
-  DEFAULT_ENABLED OFF)
-CGAL_external_library(NAME RS3
-  DEFAULT_ENABLED OFF)
-CGAL_external_library(NAME OpenNL
-  DEFAULT_ENABLED OFF)
-CGAL_external_library(NAME TAUCS
-  DEFAULT_ENABLED OFF)
-CGAL_external_library(NAME Eigen3
-  DEFAULT_ENABLED OFF
-  PREFIX EIGEN3)
-CGAL_external_library(NAME BLAS
-  DEFAULT_ENABLED OFF)
-CGAL_external_library(NAME LAPACK
-  DEFAULT_ENABLED OFF)
-CGAL_external_library(NAME QGLVIEWER
-  DEFAULT_ENABLED OFF)
-CGAL_external_library(NAME ESBTL
-  DEFAULT_ENABLED OFF)
-CGAL_external_library(NAME Coin3D
-  DEFAULT_ENABLED OFF
-  PREFIX COIN3D)
-CGAL_external_library(NAME NTL
-  DEFAULT_ENABLED OFF)
-CGAL_external_library(NAME IPE
-  DEFAULT_ENABLED OFF)
 # Boost is non-negotiable
 CGAL_external_library(NAME Boost
-  DEFAULT_ENABLED OFF
-  NO_OPTION
+  REQUIRED
   VERSION 1.33.1)
+CGAL_external_library(NAME Boost_system
+  REQUIRED
+  PREFIX Boost_SYSTEM
+  VERSION 1.33.1)
+CGAL_external_library(NAME Boost_thread
+  REQUIRED 
+  PREFIX Boost_THREAD 
+  VERSION 1.33.1)
+CGAL_external_library(NAME Boost_program_options
+  PREFIX Boost_PROGRAM_OPTIONS 
+  VERSION 1.33.1)
+CGAL_external_library(NAME GMP WARN_MISSING)
+CGAL_external_library(NAME MPFR WARN_MISSING)
+CGAL_external_library(NAME Qt3)
+CGAL_external_library(NAME QT)
+CGAL_external_library(NAME ZLIB)
+CGAL_external_library(NAME OpenGL
+  PREFIX OPENGL)
+CGAL_external_library(NAME LEDA)
+CGAL_external_library(NAME MPFI)
+CGAL_external_library(NAME RS)
+CGAL_external_library(NAME RS3)
+CGAL_external_library(NAME OpenNL)
+CGAL_external_library(NAME TAUCS)
+CGAL_external_library(NAME Eigen3
+  PREFIX EIGEN3)
+CGAL_external_library(NAME BLAS)
+CGAL_external_library(NAME LAPACK)
+CGAL_external_library(NAME QGLVIEWER)
+CGAL_external_library(NAME ESBTL)
+CGAL_external_library(NAME Coin3D
+  PREFIX COIN3D)
+CGAL_external_library(NAME NTL)
+CGAL_external_library(NAME IPE)
 #  There exists FindF2C, FindMKL, but they are only used to
 #  support supporting libs.
 
 if(NOT WIN32)
   # GMPXX is not supported on WIN32 machines
-  CGAL_external_library(NAME GMPXX
-    DEFAULT_ENABLED OFF)
+  CGAL_external_library(NAME GMPXX)
 endif()
+
+include(CGAL_TweakFindBoost)
 
 foreach(lib ${CGAL_EXTERNAL_LIBRARIES})
   set(vlib ${CGAL_${lib}_PREFIX})
-
   if(WITH_${lib})
-    find_package(${lib} ${CGAL_${lib}_VERSION} QUIET)
-    if(${vlib}_FOUND)
-      message(STATUS "${lib} has been found:") 
-      message(STATUS "  Use${lib}-file:      ${${vlib}_USE_FILE}") 
-      message(STATUS "  ${lib} include:      ${${vlib}_INCLUDE_DIR}")
-      message(STATUS "  ${lib} libraries:    ${${vlib}_LIBRARIES}")
-      message(STATUS "  ${lib} definitions:  ${${vlib}_DEFINITIONS}")
+    if(${lib} MATCHES "Boost_")
+      string(REPLACE "Boost_" "" component ${lib})
+      find_package(Boost ${CGAL_${lib}_VERSION} QUIET COMPONENTS ${component})
     else()
-      # Never allow erroneous configurations. Should we rather use
-      # find_package(... REQUIRED)?
-      message(FATAL_ERROR "The external library ${lib} has been requested, but could not be found.")
+      find_package(${lib} ${CGAL_${lib}_VERSION} QUIET)
     endif()
+
+    if(NOT ${vlib}_FOUND AND ${CGAL_${lib}_REQUIRED})
+      message("${vlib} and ${${vlib}_FOUND} and ${CGAL_${lib}_REQUIRED}")
+      message(FATAL_ERROR "${lib} is required to build CGAL but could not be found.
+Do you need to set ${vlib}_DIR?")
+    elseif(${vlib}_FOUND)
+      message(STATUS "${lib} has been found.")
+      # Turn off the output-because this is too noisy.
+      # message(STATUS "  Use${lib}-file:      ${${vlib}_USE_FILE}") 
+      # message(STATUS "  ${lib} include:      ${${vlib}_INCLUDE_DIR}")
+      # message(STATUS "  ${lib} libraries:    ${${vlib}_LIBRARIES}")
+      # message(STATUS "  ${lib} definitions:  ${${vlib}_DEFINITIONS}")
+      set(CGAL_WITH_${lib} TRUE)
+    else()
+      set(CGAL_WITH_${lib} FALSE)
+    endif()
+  else()
+    set(CGAL_WITH_${lib} FALSE)
   endif()
+  if(NOT CGAL_WITH_${lib} AND ${CGAL_${lib}_WARN_MISSING})
+    message(WARNING "${lib} not found or disabled, but is highly recommended.")
+  elseif(NOT CGAL_WITH_${lib})
+    message(STATUS "${lib} not found or disabled. This library is not critical for functionality.")
+  endif()
+
+  set(CGAL_WITH_${lib} ${CGAL_WITH_${lib}} PARENT_SCOPE)
 endforeach()
 unset(vlib)
-
-include(CGAL_TweakFindBoost)
 
 # Special handling still required.
 #
