@@ -29,7 +29,7 @@
 
 #include <CGAL/config.h>
 
-#ifdef CGAL_DONT_SUBMIT
+//#ifdef CGAL_DONT_SUBMIT
 
 #include <CGAL/basic.h>
 #include <CGAL/tags.h>
@@ -38,10 +38,10 @@
 
 namespace CGAL {
 
-template <class T_SegmentTraits_2>
+template <class SegmentTraits_2>
 class Arr_polycurve_traits_2 {
 public:
-  typedef T_SegmentTraits_2                          Segment_traits_2;
+  typedef SegmentTraits_2                          Segment_traits_2;
 
   // Tag defintion:
   typedef Tag_true                                   Has_left_category;
@@ -78,8 +78,8 @@ public:
   typedef typename Segment_traits_2::Point_2            Point_2;
   typedef typename Segment_traits_2::Curve_2            Segment_2;
 
-  typedef _Polyline_2<Segment_traits_2>                 Curve_2;
-  typedef _X_monotone_polyline_2<Segment_traits_2>      X_monotone_curve_2;
+  typedef Polycurve_2<Segment_traits_2>                 Curve_2;
+  typedef X_monotone_polycurve_2<Segment_traits_2>      X_monotone_curve_2;
 
   typedef typename Segment_traits_2::Multiplicity       Multiplicity;
 
@@ -118,7 +118,7 @@ public:
 
     /*!
      * Get the left endpoint of the x-monotone curve(segment).
-     * \param cv The polyline curve.
+     * \param cv The polycurve curve.
      * \return The left endpoint.
      */
     const Point_2 operator()(const X_monotone_curve_2 & cv) const
@@ -146,7 +146,7 @@ public:
 
     /*!
      * Get the right endpoint of the x-monotone curve(segment).
-     * \param cv The polylinecurve.
+     * \param cv The polycurve curve.
      * \return The right endpoint.
      */
     const Point_2 operator()(const X_monotone_curve_2 & cv) const
@@ -178,9 +178,9 @@ public:
      */
     bool operator()(const X_monotone_curve_2 & cv) const
     {
-      // An x-monotone polyline can represent a vertical segment only if it
+      // An x-monotone polycurve can represent a vertical segment only if it
       // is comprised of vertical segments. If the first segment is vertical,
-      // all segments are vertical in an x-monotone polyline
+      // all segments are vertical in an x-monotone Polycurve
       return (m_seg_traits->is_vertical_2_object()(cv[0]));
     }
   };
@@ -203,7 +203,7 @@ public:
 
     /*!
      * Return the location of the given point with respect to the input curve.
-     * \param cv The polyline curve.
+     * \param cv the curve.
      * \param p The point.
      * \pre p is in the x-range of cv.
      * \return SMALLER if y(p) < cv(x(p)), i.e. the point is below the curve;
@@ -243,8 +243,8 @@ public:
     /*!
      * Compare the y value of two x-monotone curves immediately to the left
      * of their intersection point.
-     * \param cv1 The first polyline curve.
-     * \param cv2 The second polyline curve.
+     * \param cv1 The first Polycurve curve.
+     * \param cv2 The second polycure curve.
      * \param p The intersection point.
      * \pre The point p lies on both curves, and both of them must be also be
      *      defined(lexicographically) to its left.
@@ -464,7 +464,7 @@ public:
       typename Curve_2::const_iterator       ps = cv.begin();
       typename Curve_2::const_iterator       end = cv.end();
 
-      // Empty polyline:
+      // Empty Polycurve:
       if (ps == end)
         return oi;
 
@@ -472,7 +472,7 @@ public:
       ++pt;
 
       if (pt == end) {
-        // The polyline contains a single isolated point:
+        // The Polycurve contains a single isolated point:
         *oi++ = make_object(*ps);
         return oi;
       }
@@ -503,7 +503,7 @@ public:
           curr_xy_res = compare_xy(*ps, *pt);
 
         if (curr_x_res != x_res || curr_xy_res != xy_res) {
-          // Create a new x-monotone polyline from the range of points
+          // Create a new x-monotone Polycurve from the range of points
           // [x_begin, pt):
           *oi++ = make_object(X_monotone_curve_2(x_begin, pt));
 
@@ -515,7 +515,7 @@ public:
         ++ps; ++pt;
       }
 
-      // Create an x-monotone polyline from the remaining points.
+      // Create an x-monotone Polycurve from the remaining points.
       CGAL_assertion(x_begin != end);
       *oi++ = make_object(X_monotone_curve_2(x_begin, end));
       return oi;
@@ -547,7 +547,7 @@ public:
      * \param c1 Output: The left resulting subcurve(p is its right endpoint).
      * \param c2 Output: The right resulting subcurve(p is its left endpoint).
      * \pre p lies on cv but is not one of its end-points.
-     */
+    */
     void operator()(const X_monotone_curve_2 & cv, const Point_2 & p,
                     X_monotone_curve_2 & c1, X_monotone_curve_2 & c2) const
     {
@@ -561,7 +561,7 @@ public:
       CGAL_precondition(!equal(min_vertex(cv[0]), p));
       CGAL_precondition(!equal(max_vertex(cv[cv.size() - 1]), p));
 
-      // Locate the segment on the polyline cv that contains p.
+      // Locate the segment on the Polycurve cv that contains p.
       unsigned int i = Self::_locate(m_seg_traits, cv, p);
       CGAL_precondition(i != INVALID_INDEX);
 
@@ -678,7 +678,7 @@ public:
         }
       }
 
-      // Check if the the left endpoint lies on the other polyline.
+      // Check if the the left endpoint lies on the other Polycurve.
       bool left_coincides = (left_res == EQUAL);
       bool left_overlap = false;
 
@@ -706,8 +706,8 @@ public:
         right_overlap = false;
         
         if (!right_coincides && !left_coincides) {
-          // Non of the endpoints of the current segment of one polyline
-          // coincides with the curent segment of the other polyline:
+          // Non of the endpoints of the current segment of one Polycurve
+          // coincides with the curent segment of the other Polycurve:
           // Output the intersection if exists.
           oi = intersect(cv1[i1], cv2[i2], oi);
         } else if (right_coincides && left_coincides) {
@@ -732,17 +732,17 @@ public:
             }
           }
         } else if (left_coincides && !right_coincides) {
-          // The left point of the current segment of one polyline
-          // coincides with the current segment of the other polyline.
+          // The left point of the current segment of one Polycurve
+          // coincides with the current segment of the other Polycurve.
           if (left_overlap) {
             // An overlap occured at the previous iteration:
-            // Output the overlapping polyline.
+            // Output the overlapping Polycurve.
             CGAL_assertion(ocv.size() > 0);
             *oi++ = make_object(ocv);
             ocv.clear();
           } else {
-            // The left point of the current segment of one polyline
-            // coincides with the current segment of the other polyline, and
+            // The left point of the current segment of one Polycurve
+            // coincides with the current segment of the other Polycurve, and
             // no overlap occured at the previous iteration:
             // Output the intersection point. The derivative of at least one of
             // the polylines is not defined at this point, so we give it
@@ -777,7 +777,7 @@ public:
       std::cout << "left res: " << left_res << std::endl;
 #endif
       
-      // Output the remaining overlapping polyline, if necessary.
+      // Output the remaining overlapping Polycurve, if necessary.
       if (ocv.size() > 0) {
         *oi++ = make_object(ocv);
       } else if (right_coincides) {
@@ -857,7 +857,7 @@ public:
    */
   class Merge_2 {
   protected:
-    typedef Arr_polycurve_traits_2<Kernel>        Traits;
+    typedef Arr_polycurve_traits_2<Segment_traits_2>        Traits;
 
     /*! The traits (in case it has state) */
     const Traits* m_traits;
@@ -867,7 +867,7 @@ public:
      */
     Merge_2(const Traits* traits) : m_traits(traits) {}
 
-    friend class Arr_polycurve_traits_2<Kernel>;
+    friend class Arr_polycurve_traits_2<Segment_traits_2>;
     
   public:
     /*!
@@ -937,58 +937,59 @@ public:
   };
   
   /*! Get a Merge_2 functor object. */
-  Merge_2 merge_2_object() const { return Merge_2(this); }
-  ///@}
+  Merge_2 merge_2_object() const 
+  { 
+    return Merge_2(this); 
+  }
+
   
-  /// \name Functor definitions for the landmarks point-location strategy.
-  //@{
-  typedef typename Segment_traits_2::Approximate_number_type  
-  Approximate_number_type;
-  typedef typename Segment_traits_2::Approximate_2    Approximate_2;
+  /// name Functor definitions for the landmarks point-location strategy.
+  // typedef typename Segment_traits_2::Approximate_number_type    Approximate_number_type;
+  // typedef typename Segment_traits_2::Approximate_2              Approximate_2;
 
 
-  /*! Get an Approximate_2 functor object. */
-  Approximate_2 approximate_2_object () const
-  {
-    return m_seg_traits.approximate_2_object();
-  }
+//   /*! Get an Approximate_2 functor object. */
+//   Approximate_2 approximate_2_object () const
+//   {
+//     return m_seg_traits.approximate_2_object();
+//   }
 
-  class Construct_x_monotone_curve_2
-  {
-  public:
+//   class Construct_x_monotone_curve_2
+//   {
+//   public:
 
-    /*!
-     * Return an x-monotone curve connecting the two given endpoints.
-     * \param p The first point.
-     * \param q The second point.
-     * \pre p and q must not be the same.
-     * \return A segment connecting p and q.
-     */
-    X_monotone_curve_2 operator() (const Point_2& p,
-                                   const Point_2& q) const
-    {
-      // Construct a polyline containing just two points:
-      Point_2   pts[2];
+//     /*!
+//      * Return an x-monotone curve connecting the two given endpoints.
+//      * \param p The first point.
+//      * \param q The second point.
+//      * \pre p and q must not be the same.
+//      * \return A segment connecting p and q.
+//      */
+//     X_monotone_curve_2 operator() (const Point_2& p,
+//                                    const Point_2& q) const
+//     {
+//       // Construct a Polycurve containing just two points:
+//       Point_2   pts[2];
 
-      pts[0] = p; pts[1] = q;
-      return (X_monotone_curve_2 (pts + 0, pts + 2));
-    }
-  };
+//       pts[0] = p; pts[1] = q;
+//       return (X_monotone_curve_2 (pts + 0, pts + 2));
+//     }
+//   };
 
-  /*! Get a Construct_x_monotone_curve_2 functor object. */
-  Construct_x_monotone_curve_2 construct_x_monotone_curve_2_object () const
-  {
-    return Construct_x_monotone_curve_2();
-  }
-  //@}
+//   /*! Get a Construct_x_monotone_curve_2 functor object. */
+//   Construct_x_monotone_curve_2 construct_x_monotone_curve_2_object () const
+//   {
+//     return Construct_x_monotone_curve_2();
+//   }
+//   //@}
 
 private:
   /*!
-   * Return the index of the segment in the polyline that contains the
+   * Return the index of the segment in the Polycurve that contains the
    * point q in its x-range. The function performs a binary search, so if the
-   * point q is in the x-range of the polyline with n segments, the segment
+   * point q is in the x-range of the Polycurve with n segments, the segment
    * containing it can be located in O(log n) operations.
-   * \param cv The polyline curve.
+   * \param cv The Polycurve curve.
    * \param q The point.
    * \return An index i such that q is in the x-range of cv[i].
    *         If q is not in the x-range of cv, returns INVALID_INDEX.
@@ -1009,7 +1010,7 @@ private:
       typename Segment_traits_2::Compare_xy_2 compare_xy =
         m_seg_traits->compare_xy_2_object();
 
-      // First check whether the polyline curve really contains q in its
+      // First check whether the Polycurve curve really contains q in its
       // xy-range:
 
       Comparison_result res_from = compare_xy(min_vertex(cv[from]), q);    
@@ -1044,7 +1045,7 @@ private:
           else from = mid + 1;
         }
       }
-      // In case (from == to), and we know that the polyline contains the q:
+      // In case (from == to), and we know that the Polycurve contains the q:
       CGAL_assertion(from == to);
       return from;
     }
@@ -1052,7 +1053,7 @@ private:
     typename Segment_traits_2::Compare_x_2 compare_x =
       m_seg_traits->compare_x_2_object();
 
-    // First check whether the polyline curve really contains q in its x-range.
+    // First check whether the Polycurve curve really contains q in its x-range.
     Comparison_result res_from = compare_x(min_vertex(cv[from]), q);    
     if (res_from == EQUAL) return from;
     
@@ -1081,15 +1082,15 @@ private:
       }
     }
 
-    // In case(from == to), and we know that the polyline contains the q:
+    // In case(from == to), and we know that the Polycurve contains the q:
     CGAL_assertion(from == to);
     return from;
   }
 
   /*!
-   * Find the index of the segment in the polyline that is defined to the
+   * Find the index of the segment in the Polycurve that is defined to the
    * left(or to the right) of the point q.
-   * \param cv The polyline curve.
+   * \param cv The Polycurve curve.
    * \param q The point.
    * \param to_right(true) if we wish to locate a segment to the right of q,
    *               (false) if we wish to locate a segment to its right.
@@ -1135,6 +1136,6 @@ private:
 
 } //namespace CGAL
 
-#endif // CGAL_DONT_SUBMIT
+//#endif // CGAL_DONT_SUBMIT
 
 #endif
