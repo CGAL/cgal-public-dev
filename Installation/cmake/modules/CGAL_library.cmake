@@ -3,60 +3,7 @@ if(NOT CGAL_LIBRARY_FILE_INCLUDED)
 
   include(CMakeParseArguments)
   include(CMakeDependentOption)
-
-  function(CGAL_use_library lib target_name)
-    # handle Boost and Qt first, then CGAL internal libraries, then
-    if(${lib} MATCHES "Qt.*")
-      # this is either Qt or Qt_.*
-      if(${lib} MATCHES "Qt_.*")
-        
-      else()
-        find_package()
-      endif()
-    elseif(${lib} MATCHES "CGAL.*")
-      # Handle all CGAL libraries. This takes care of all transitive
-      # dependencies, include directories, and definitions.
-      target_link_libraries(${target_name} ${lib})
-    else()
-      list(FIND CGAL_EXTERNAL_LIBRARIES ${lib} lib_pos)
-      if(${lib} MATCHES "Qt_")
-        
-      elseif(${lib} MATCHES "Qt")
-
-      elseif(lib_pos EQUAL -1)
-        message(FATAL_ERROR "${lib} is not a supported external library.")
-      endif()
-
-      set(vlib ${CGAL_${lib}_PREFIX})
-
-      if(NOT WITH_${lib})
-        message(FATAL_ERROR "${target_name} requires ${lib}, but WITH_${lib} is \"OFF\".")
-      endif()
-      
-      if(NOT ${vlib}_FOUND)
-        message(FATAL_ERROR "Trying to use ${lib} which could not be found.")
-      endif()
-
-      # if none of the above set use_define, set it here
-      if(NOT DEFINED use_define)
-        set(use_define ${vlib})
-      endif()
-      
-      if(${lib} MATCHES "Boost_") # a boost component library has to link with singular LIBRARY
-        target_link_libraries(${target_name} ${${vlib}_LIBRARY})
-      else()
-        target_link_libraries(${target_name} ${${vlib}_LIBRARIES})
-      endif()
-      
-      if(${CMAKE_VERSION} VERSION_LESS 2.8.12)
-        target_include_directories(${target_name} PUBLIC "${${vlib}_INCLUDE_DIR}")
-      else()
-        target_include_directories(${target_name} SYSTEM PUBLIC "${${vlib}_INCLUDE_DIR}")
-      endif()
-      
-      target_compile_definitions(${target_name} PUBLIC "${${vlib}_DEFINITIONS}" PUBLIC "-DCGAL_USE_${use_define}")
-    endif()
-  endfunction()
+  include(CGAL_use_library)
 
   # Define a build target for a library.
   #
@@ -121,5 +68,5 @@ if(NOT CGAL_LIBRARY_FILE_INCLUDED)
         APPEND FILE ${CGAL_EXPORT_FILE})
     endif()
   endmacro()
-
+  
 endif()

@@ -2,7 +2,7 @@ if(NOT CGAL_SUITE_FILE_INCLUDED)
   set(CGAL_SUITE_FILE_INCLUDED 1)
 
   include(CMakeParseArguments)
-  include(CGAL_library)
+  include(CGAL_use_library)
 
   function(CGAL_are_depends_met DEPENDS)
     set(DEPENDS_MET TRUE)
