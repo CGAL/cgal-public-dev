@@ -1,12 +1,36 @@
 #!/bin/bash
-PWD=$(pwd)
+
+# Export a variable that will be used to workaround the hook
+# 'update-prevent-pushes-to-master'.
+IN_CGAL_POST_UPDATE_PUSH_TO_GSOC=y
+export IN_CGAL_POST_UPDATE_PUSH_TO_GSOC
+
+# declare an array
+declare -a branches_to_push
+
+# test if the current repo is /var/git/cgal.git
 if [ "${PWD:9}" = "cgal.git" ];
 then
-  branch=$(git rev-parse --symbolic --abbrev-ref $1)
-  if [ "${branch}" = "master" -o "${branch}" = "hooks-for-client" -o "${branch}" = "hooks-on-server" ];
-  then
-    IN_CGAL_POST_UPDATE_PUSH_TO_GSOC=y
-    export IN_CGAL_POST_UPDATE_PUSH_TO_GSOC
-    git push --quiet gsoc $branch 
+  # for all updated refs...
+  for ref in "$@";
+  do
+      # If the ref does not exist (because the current push just removed
+      # it), then continue the loop.
+      git show-ref --verify --quiet $ref || continue
+
+      # Add the abbreviated branch name to 'branches_to_push' if it is in
+      # the list of branches to push.
+      branch=$(git rev-parse --symbolic --abbrev-ref $ref)
+      case "${branch}" in
+          master|hooks-for-client|hooks-on-server)
+              branches_to_push+=("$branch")
+              ;;
+          *)
+      esac
+  done
+
+  # In the end, do push if there is something in 'branches_to_push'.
+  if [ ${#branches_to_push[@]} -ne 0 ]; then
+      git push --quiet gsoc ${branches_to_push[*]}
   fi
 fi
