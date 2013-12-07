@@ -139,9 +139,9 @@ void Make_conic_polycurve(Conic_arrangment_2* Conic_arr)
   Rat_point_2   pt3 (0, -3);
   Conic_arc_2   c3 (Rat_segment_2 (ps3, pt3));
   
-  // insert (*Conic_arr, c1);
-  // insert (*Conic_arr, c2);
-  // insert (*Conic_arr, c3);
+   insert (*Conic_arr, c1);
+   insert (*Conic_arr, c2);
+   insert (*Conic_arr, c3);
 }
 
 int main ()
