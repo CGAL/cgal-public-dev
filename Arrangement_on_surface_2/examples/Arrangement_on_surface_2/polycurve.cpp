@@ -150,7 +150,10 @@ int main ()
   Segment_arrangment_2        Linear_segment_arr;
   //Arc_arrangment_2          arc_arr;
   Conic_arrangment_2          Conic_arr;
-  //Bezier_arrangment_2         bezier_arr;
+  Bezier_arrangment_2         bezier_arr;
+  std::cout<< "Bezier curves initialized\n\n";
+
+
 
   Make_linear_polycurve ( & Linear_segment_arr );
   Make_conic_polycurve  ( & Conic_arr);
