@@ -1,5 +1,5 @@
-#ifndef CGAL_BEZIER_POINT_2_H
-#define CGAL_BEZIER_POINT_2_H
+#ifndef CGAL_BEZIER_TRAITS_POINT_2_H
+#define CGAL_BEZIER_TRAITS_POINT_2_H
 
 /*! \file
  * Header file for the _Bezier_point_2 class.
