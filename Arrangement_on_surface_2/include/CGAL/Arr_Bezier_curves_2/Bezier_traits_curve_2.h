@@ -1,26 +1,5 @@
-// Copyright (c) 2006,2007,2009,2010,2011 Tel-Aviv University (Israel).
-// All rights reserved.
-//
-// This file is part of CGAL (www.cgal.org).
-// You can redistribute it and/or modify it under the terms of the GNU
-// General Public License as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
-//
-// $URL$
-// $Id$
-// 
-//
-// Author(s)     : Ron Wein     <wein@post.tau.ac.il>
-//                 Iddo Hanniel <iddoh@cs.technion.ac.il>
-
-#ifndef CGAL_BEZIER_CURVE_2_H
-#define CGAL_BEZIER_CURVE_2_H
+#ifndef CGAL_BEZIER_TRAITS_CURVE_2_H
+#define CGAL_BEZIER_TRAITS_CURVE_2_H
 
 /*! \file
  * Header file for the _Bezier_curve_2 class.
@@ -29,6 +8,13 @@
 #include <CGAL/Simple_cartesian.h>
 #include <CGAL/Handle_for.h>
 #include <CGAL/Arr_geometry_traits/de_Casteljau_2.h>
+
+#include <CGAL/Algebraic_kernel_d_1.h>
+#include <CGAL/Polynomial.h>
+#include <CGAL/Get_arithmetic_kernel.h>
+#include <CGAL/Algebraic_kernel_d/Algebraic_real_d_1.h>
+#include <CGAL/Fraction_traits.h>
+
 #include <algorithm>
 #include <deque>
 #include <vector>
@@ -58,31 +44,43 @@ namespace CGAL {
  */
 
 // Forward declaration:
-template <class RatKernel_, class AlgKernel_, class NtTraits_,
-          class BoundingTraits_>
+template <class Algebraic_kernel_d_1_, class RatKernel_, class BoundingTraits_>
 class _Bezier_curve_2;
 
-template <class RatKernel_, class AlgKernel_, class NtTraits_,
-          class BoundingTraits_>
+template <class Algebraic_kernel_d_1_, class RatKernel_, class BoundingTraits_>
 class _Bezier_curve_2_rep
 {
-  friend class _Bezier_curve_2<RatKernel_, AlgKernel_, NtTraits_,
-                               BoundingTraits_>;
+  friend class _Bezier_curve_2<Algebraic_kernel_d_1_, RatKernel_, BoundingTraits_>;
 
 public:
 
   typedef RatKernel_                              Rat_kernel;
-  typedef AlgKernel_                              Alg_kernel;
-  typedef NtTraits_                               Nt_traits;
+  typedef Algebraic_kernel_d_1_			  Algebraic_kernel_d_1;
+//  typedef AlgKernel_                              Alg_kernel;
+//  typedef NtTraits_                               Nt_traits;
   typedef BoundingTraits_                         Bounding_traits;
 
-  typedef typename Rat_kernel::Point_2            Rat_point_2;
-  typedef typename Alg_kernel::Point_2            Alg_point_2;
-  
-  typedef typename Nt_traits::Integer             Integer;
-  typedef typename Nt_traits::Rational            Rational;
-  typedef typename Nt_traits::Algebraic           Algebraic;
-  typedef typename Nt_traits::Polynomial          Polynomial;
+
+  typedef typename Algebraic_kernel_d_1::Bound						Bound;
+  typedef typename Algebraic_kernel_d_1::Algebraic_real_1				Algebraic_real_1;
+  typedef typename Algebraic_kernel_d_1::Coefficient					Coefficient
+
+  //typedef typename Nt_traits::Rational            Rational;
+  typedef typename Get_arithmetic_kernel<Coefficient>::Arithmetic_kernel::Rational	Rational;
+
+  typedef typename Rat_kernel::Point_2            					Rat_point_2;
+  typedef typename std::pair<Algebraic_real_1, Algebraic_real_1>			Alg_point_2;
+  //typedef typename Alg_kernel::Point_2            Alg_point_2;
+
+  // TODO Maybe use the Coefficient type for Integer later
+  typedef typename Get_arithmetic_kernel<Coefficient>::Arithmetic_kernel::Integer	Integer;
+  //typedef typename Nt_traits::Integer             Integer;
+  //typedef typename Nt_traits::Algebraic           Algebraic;
+  //typedef typename Nt_traits::Polynomial          Polynomial;
+  typedef typename Algebraic_kernel_d_1::Polynomial_1					Polynomial_1;
+
+  typedef typename CGAL::Polynomial_traits_d<Polynomial_1>				Polynomial_traits_1;
+
 
 private:
 
@@ -99,12 +97,12 @@ private:
   //@{
  
   // X(t) is given by *p_polyX(t) / _normX:
-  mutable Polynomial        *p_polyX;       // The polynomial for x.
-  mutable Integer           *p_normX;       // Normalizing factor for y.
+  mutable Polynomial_1        *p_polyX;       // The polynomial for x.
+  mutable Integer             *p_normX;       // Normalizing factor for y.
 
   // Y(t) is given by _polyY(t) / _normY:
-  mutable Polynomial        *p_polyY;       // The polynomial for y.
-  mutable Integer           *p_normY;       // Normalizing factor for y.
+  mutable Polynomial_1        *p_polyY;       // The polynomial for y.
+  mutable Integer             *p_normY;       // Normalizing factor for y.
   //@}
 
 public:
@@ -129,9 +127,9 @@ public:
     p_normY(NULL)
   {
     if (other.p_polyX != NULL)
-      p_polyX = new Polynomial(*(other.p_polyX));
+      p_polyX = new Polynomial_1 (*(other.p_polyX));
     if (other.p_polyY != NULL)
-      p_polyY = new Polynomial(*(other.p_polyY));
+      p_polyY = new Polynomial_1 (*(other.p_polyY));
     if (other.p_normX != NULL)
       p_normX = new Integer(*(other.p_normX));
     if (other.p_normY != NULL)
@@ -145,6 +143,8 @@ public:
    * \pre The value-type of the input iterator must be Rat_kernel::Point_2.
    *      It is forbidden to specify two identical consecutive control points.
    */
+
+
   template <class InputIterator>
   _Bezier_curve_2_rep (InputIterator pts_begin, InputIterator pts_end) :
     p_polyX(NULL),
@@ -159,8 +159,7 @@ public:
     double      y_min = 0, y_max = 0;
     int         k;
 
-    CGAL_precondition_msg (pts_size > 1,
-                           "There must be at least 2 control points.");
+    CGAL_precondition_msg (pts_size > 1, "There must be at least 2 control points.");
 
     _ctrl_pts.resize (pts_size);
     
@@ -178,6 +177,7 @@ public:
       _ctrl_pts[k] = *pts_begin;
 
       // Update the bounding box, if necessary.
+      // pts_begin references to Rat_point_2 type
       x = CGAL::to_double (pts_begin->x());
       y = CGAL::to_double (pts_begin->y());
 
@@ -234,7 +234,7 @@ public:
   }
 
   /*! Get the polynomial X(t). */
-  const Polynomial& x_polynomial () const 
+  const Polynomial_1& x_polynomial () const 
   {
     if (p_polyX == NULL)
       _construct_polynomials ();
@@ -252,7 +252,7 @@ public:
   }
 
   /*! Get the polynomial Y(t). */
-  const Polynomial& y_polynomial () const 
+  const Polynomial_1& y_polynomial () const 
   {
     if (p_polyY == NULL)
       _construct_polynomials ();
@@ -285,31 +285,23 @@ private:
 
 };
 
-template <class RatKernel_, class AlgKernel_, class NtTraits_,
-          class BoundingTraits_>
+template <class Algebraic_kernel_d_1_, class RatKernel_, class BoundingTraits_>
 class _Bezier_curve_2 :
-  public Handle_for<_Bezier_curve_2_rep<RatKernel_,
-                                        AlgKernel_,
-                                        NtTraits_,
-                                        BoundingTraits_> >
+  public Handle_for<_Bezier_curve_2_rep<Algebraic_kernel_d_1_, RatKernel_, BoundingTraits_> >
 {
 public:
 
   typedef RatKernel_                              Rat_kernel;
-  typedef AlgKernel_                              Alg_kernel;
-  typedef NtTraits_                               Nt_traits;
+  typedef Algebraic_kernel_d_1_			  Algebraic_kernel_d_1;
+//  typedef AlgKernel_                              Alg_kernel;
+//  typedef NtTraits_                               Nt_traits;
   typedef BoundingTraits_                         Bounding_traits;
-  typedef _Bezier_curve_2<Rat_kernel,
-                          Alg_kernel,
-                          Nt_traits,
-                          Bounding_traits>        Self;
+
+  typedef _Bezier_curve_2<Algebraic_kernel_d_1, Rat_kernel, Bounding_traits>        Self;
 
 private:
 
-  typedef _Bezier_curve_2_rep<Rat_kernel,
-                              Alg_kernel,
-                              Nt_traits,
-                              Bounding_traits>    Bcv_rep;
+  typedef _Bezier_curve_2_rep<Algebraic_kernel_d_1, Rat_kernel, Bounding_traits>    Bcv_rep;
   typedef Handle_for<Bcv_rep>                     Bcv_handle;
 
   typedef typename Bcv_rep::Control_point_vec     Control_pt_vec;
@@ -321,8 +313,10 @@ public:
   
   typedef typename Bcv_rep::Integer               Integer;
   typedef typename Bcv_rep::Rational              Rational;
-  typedef typename Bcv_rep::Algebraic             Algebraic;
-  typedef typename Bcv_rep::Polynomial            Polynomial;
+  typedef typename Bcv_rep::Bound	          Bound;
+  typedef typename Bcv_rep::Algebraic_real_1      Algebraic_real_1;
+  typedef typename Bcv_rep::Polynomial_1          Polynomial_1;
+  typedef typename Bcv_rep::Polynomial_traits_1	  Polynomial_traits_1;
 
   typedef typename Control_pt_vec::const_iterator Control_point_iterator;
 
@@ -377,7 +371,7 @@ public:
   /*!
    * Get the polynomial for the x-coordinates of the curve.
    */
-  const Polynomial& x_polynomial () const
+  const Polynomial_1& x_polynomial () const
   {
     return (this->_rep().x_polynomial());
   }
@@ -393,7 +387,7 @@ public:
   /*!
    * Get the polynomial for the y-coordinates of the curve.
    */
-  const Polynomial& y_polynomial () const 
+  const Polynomial_1& y_polynomial () const 
   {
     return (this->_rep().y_polynomial());
   }
@@ -455,14 +449,15 @@ public:
    * \param t The given t-value.
    * \return The point B(t).
    */
-  Rat_point_2 operator() (const Rational& t) const;
+// TODO Bound data type might not work in this case
+  Rat_point_2 operator() (const Bound& t) const;
   
   /*!
    * Compute a point of the Bezier curve given an algebraic t-value.
    * \param t The given t-value.
    * \return The point B(t).
    */
-  Alg_point_2 operator() (const Algebraic& t) const;
+  Alg_point_2 operator() (const Algebraic_real_1& t) const;
  
   /*!
    * Sample a portion of the curve (for drawing purposes, etc.).
@@ -486,12 +481,12 @@ public:
     std::vector<App_point_2>       app_ctrl_pts (n_pts);
     unsigned int                   k;
 
+    // .x() and .y() called for rational_point type
     for (k = 0; k < n_pts; k++)
     {
       const Rat_point_2&   pt = control_point(k);
 
-      app_ctrl_pts[k] = App_point_2 (CGAL::to_double (pt.x()),
-                                     CGAL::to_double (pt.y()));
+      app_ctrl_pts[k] = App_point_2 (CGAL::to_double (pt.x()), CGAL::to_double (pt.y()));
     }
 
     // Sample the approximated curve.
@@ -520,7 +515,7 @@ public:
    * \return A past-the-end iterator.
    */
   template <class OutputIterator>
-  OutputIterator get_t_at_x (const Rational& x0,
+  OutputIterator get_t_at_x (const Bound& x0,
                              OutputIterator oi) const
   {
     return (_solve_t_values (this->_rep().x_polynomial(), 
@@ -538,7 +533,7 @@ public:
    * \return A past-the-end iterator.
    */
   template <class OutputIterator>
-  OutputIterator get_t_at_y (const Rational& y0,
+  OutputIterator get_t_at_y (const Bound& y0,
                              OutputIterator oi) const
   {
     return (_solve_t_values (this->_rep().y_polynomial(), 
@@ -591,46 +586,80 @@ private:
    * \return A past-the-end iterator.
    */
   template <class OutputIterator>
-  OutputIterator _solve_t_values (const Polynomial& poly,
+  OutputIterator _solve_t_values (const Polynomial_1& poly,
                                   const Integer& norm,
-                                  const Rational& val,
+                                  const Bound& val,
                                   OutputIterator oi) const
   {
     // Construct the polynomial P(t) - val = 0:
-    Nt_traits             nt_traits;
-    const Integer         numer = nt_traits.numerator (val);
-    const Integer         denom = nt_traits.denominator (val);
-    const int             deg = nt_traits.degree (poly);
-    if (deg <=0 ) return oi;
+
+    typename Polynomial_traits_1::Degree		degree;
+    typename Polynomial_traits_1::Get_coefficient	get_coefficient;
+    typename Polynomial_traits_1::Construct_polynomial	construct_polynomial;
+
+
+    // TODO Check if fraction_trait should be on rational type
+
+    typedef CGAL::Fraction_traits<Bound>	FT_bound;
+    typedef FT_bound::Numerator_type		NT;
+    typedef FT_bound::Denominator_type		DT;
+
+    //Nt_traits             nt_traits;
+    // TODO Check the return type for the NULLTAG and conversion
+
+    //NT numer; DT denom;
+    Integer numer, denom;
+    FT_bound::Decompose() (val, numer, denom);
+    //const Integer         numer = nt_traits.numerator (val);
+    //const Integer         denom = nt_traits.denominator (val);
+
+    //const int             deg = nt_traits.degree (poly);
+    const int             deg = degree (poly);
+    if (deg <=0 ) 
+    	return oi;
+
     Integer              *coeffs = new Integer [deg + 1];
     int                   k;
 
     for (k = 1; k <= deg; k++)
     {
-      coeffs[k] = nt_traits.get_coefficient (poly, k) * denom;
+      //coeffs[k] = nt_traits.get_coefficient (poly, k) * denom;
+      coeffs[k] = get_coefficient (poly, k) * denom;
     }
-    coeffs[0] = nt_traits.get_coefficient (poly, 0) * denom -
-                numer * norm;
+    //coeffs[0] = nt_traits.get_coefficient (poly, 0) * denom - numer * norm;
+    coeffs[0] = get_coefficient (poly, 0) * denom - numer * norm;
 
     // Solve the polynomial and obtain the t-values.
-    OutputIterator  end = nt_traits.compute_polynomial_roots
-                            (nt_traits.construct_polynomial (coeffs, deg),
-                             oi);
+    typename Algebraic_kernel_d algebraic_kernel_d_1;
+    typename Algebraic_kernel_d_1::Solve_1 solve_1 = algebraic_kernel_d_1.solve_1_object();
+    typename std::list<Algebraic_real_1, Algebraic_real_1> root_pair;
+
+    solve_1 (construct_polynomial (coeffs, coeffs + deg), std::back_inserter(root_pair));
+
+    typename std::list<Algebraic_real_1, Algebraic_real_1>::iterator rit = root_pair.begin();
+    while(rpit != root_pair.end())
+    {
+    	*oi++ = rpit->first;
+	rpit++;
+    }
+
+    //OutputIterator end = oi;
+
+    //OutputIterator  end = nt_traits.compute_polynomial_roots (nt_traits.construct_polynomial (coeffs, deg), oi);
 
     delete[] coeffs;
-    return (end);
+    return oi;
+    //return (end);
   }
 };
 
 /*!
  * Exporter for Bezier curves.
  */
-template <class Rat_kernel, class Alg_kernel, class Nt_traits, 
-          class Bounding_traits>
+template <class Algebraic_kernel_d_1_, class Rat_kernel, class Bounding_traits>
 std::ostream& 
 operator<< (std::ostream& os, 
-            const _Bezier_curve_2<Rat_kernel, Alg_kernel, Nt_traits,
-                                  Bounding_traits> & bc)
+            const _Bezier_curve_2<Algebraic_kernel_d_1_, Rat_kernel, Bounding_traits> & bc)
 {
   const unsigned int  n = bc.number_of_control_points();
   unsigned int        k;
@@ -645,12 +674,10 @@ operator<< (std::ostream& os,
 /*!
  * Importer for Bezier curves.
  */
-template <class Rat_kernel, class Alg_kernel, class Nt_traits, 
-          class Bounding_traits>
+template <class Algebraic_kernel_d_1_, class Rat_kernel, class Bounding_traits>
 std::istream& 
 operator>> (std::istream& is, 
-            _Bezier_curve_2<Rat_kernel, Alg_kernel, Nt_traits,
-                            Bounding_traits> & bc)
+            _Bezier_curve_2<Algebraic_kernel_d_1_, Rat_kernel, Bounding_traits> & bc)
 {
   // Read the number of control points.
   unsigned int  n;
@@ -665,24 +692,22 @@ operator>> (std::istream& is,
     is >> ctrl_pts[k];
 
   // Set the Bezier curve.
-  bc = _Bezier_curve_2<Rat_kernel, Alg_kernel, Nt_traits,
-                       Bounding_traits> (ctrl_pts.begin(),
-                                         ctrl_pts.end());
+  bc = _Bezier_curve_2<Algebraic_kernel_d_1_, Rat_kernel, Bounding_traits> (ctrl_pts.begin(), ctrl_pts.end());
 
   return (is);
 }
 
+
 // ---------------------------------------------------------------------------
 // Construct the representation of X(t) and Y(t).
 //
-template <class RatKer, class AlgKer, class NtTrt, class BndTrt>
-void _Bezier_curve_2_rep<RatKer, AlgKer, NtTrt,
-                         BndTrt>::_construct_polynomials () const
+template <class Algebraic_kernel_d_1_, class RatKer, class BndTrt>
+void _Bezier_curve_2_rep<Algebraic_kernel_d_1_, RatKer, BndTrt>::_construct_polynomials () const
 {
   const int        n = _ctrl_pts.size() - 1;
-  Rational        *coeffsX = new Rational [n + 1];
-  Rational        *coeffsY = new Rational [n + 1];
-  const Rational   rat_zero = Rational (0);
+  Bound        *coeffsX = new Bound [n + 1];
+  Bound        *coeffsY = new Bound [n + 1];
+  const Bound   rat_zero = Bound (0);
   int              j, k;
   
   CGAL_precondition_msg (n > 0,
@@ -701,7 +726,7 @@ void _Bezier_curve_2_rep<RatKer, AlgKer, NtTrt,
   //                   *****
   //                    k=0
   //
-  Rational               px, py;
+  Bound                  px, py;
   Integer                n_over_k_j;
   bool                   even_exp;
   
@@ -751,12 +776,14 @@ void _Bezier_curve_2_rep<RatKer, AlgKer, NtTrt,
   
   // Convert the rational polynomials to polynomials with rational
   // coefficients (plus normalizing factors).
-  Nt_traits        nt_traits;
-  p_polyX = new Polynomial;
+  //Nt_traits        nt_traits;
+  p_polyX = new Polynomial_1;
   p_normX = new Integer;
-  p_polyY = new Polynomial;
+  p_polyY = new Polynomial_1;
   p_normY = new Integer;
   
+// TODO Check for this kind of polynomial construction
+// TODO Need the new functionality
   nt_traits.construct_polynomial (coeffsX, n,
                                   *p_polyX, *p_normX);
   delete[] coeffsX;
@@ -774,11 +801,9 @@ void _Bezier_curve_2_rep<RatKer, AlgKer, NtTrt,
 // ---------------------------------------------------------------------------
 // Compute the value of n! / (j! k! (n-k-j)!).
 //
-template <class RatKer, class AlgKer, class NtTrt, class BndTrt>
-typename _Bezier_curve_2_rep<RatKer, AlgKer, NtTrt, BndTrt>::Integer
-_Bezier_curve_2_rep<RatKer, AlgKer, NtTrt, BndTrt>::_choose (int n,
-                                                             int j,
-                                                             int k) const
+template <class Algebraic_kernel_d_1_, class RatKer, class BndTrt>
+typename _Bezier_curve_2_rep<Algebraic_kernel_d_1_, RatKer, BndTrt>::Integer
+_Bezier_curve_2_rep<Algebraic_kernel_d_1_, RatKer, BndTrt>::_choose (int n, int j, int k) const
 {
   Integer   reduced_fact = 1;
   Integer   j_fact = 1, k_fact = 1;
@@ -793,16 +818,16 @@ _Bezier_curve_2_rep<RatKer, AlgKer, NtTrt, BndTrt>::_choose (int n,
   for (i = 2; i <= k; i++)
     k_fact *= Integer (i);
 
+  //TODO Check the div functionality
   return (CGAL::div (reduced_fact, (j_fact * k_fact)));
 }
 
 // ---------------------------------------------------------------------------
 // Compute a point on the Bezier curve B(t) given a rational t-value.
 //
-template <class RatKer, class AlgKer, class NtTrt, class BndTrt>
-typename _Bezier_curve_2<RatKer, AlgKer, NtTrt, BndTrt>::Rat_point_2
-_Bezier_curve_2<RatKer, AlgKer, NtTrt, BndTrt>::operator()
-        (const Rational& t) const 
+template <class Algebraic_kernel_d_1_, class RatKer, class BndTrt>
+typename _Bezier_curve_2<Algebraic_kernel_d_1_, RatKer, BndTrt>::Rat_point_2
+_Bezier_curve_2<Algebraic_kernel_d_1_, RatKer, BndTrt>::operator() (const Bound& t) const 
 {
   // Check for extermal t values (either 0 or 1).
   const CGAL::Sign   sign_t = CGAL::sign (t);
@@ -815,7 +840,15 @@ _Bezier_curve_2<RatKer, AlgKer, NtTrt, BndTrt>::operator()
     return (this->_rep()._ctrl_pts[0]);
   }
 
-  Comparison_result  res = CGAL::compare (t, Rational(1));
+
+  typename Algebraic_kernel_d_1 alg_kernel_d_1;
+  typename Algebraic_kernel_d_1::Compare_1 compare_1 = alg_kernel_d_1.compare_1_object();
+  typename Algebraic_kernel_d_1::Construct_algebraic_real_1 construct_algebraic_real_1 = alg_kernel_d_1.construct_algebraic_real_1_object();
+
+
+  const Algebraic_real_1& temp_t = construct_algebraic_real_1 (t);
+  Comparison_result  res = compare(temp_t, 1);
+  //Comparison_result  res = CGAL::compare (t, Rational(1));
 
   CGAL_precondition (res != LARGER);
 
@@ -835,28 +868,37 @@ _Bezier_curve_2<RatKer, AlgKer, NtTrt, BndTrt>::operator()
   }
 
   // Compute the x and y coordinates using the X(t), Y(t) polynomials.
-  Rational           x, y;
-  Nt_traits          nt_traits;
+  Bound           x, y;
+
+  typename Polynomial_traits_1::Evaluate	evaluate;
+
+  //Nt_traits          nt_traits;
     
-  x = nt_traits.evaluate_at (this->_rep().x_polynomial(), t) /
-      Rational (this->_rep().x_norm(), 1);
-  y = nt_traits.evaluate_at (this->_rep().y_polynomial(), t) /
-      Rational (this->_rep().y_norm(), 1);
+  //x = nt_traits.evaluate_at (this->_rep().x_polynomial(), t) / Rational (this->_rep().x_norm(), 1);
+
+  // TODO Construct uses conversion using CGAL::to_double
+  // TODO Same problem as that of Bezier_traits_cache for computation of the exact value of a polynomial
+  x = Bound (CGAL::to_double( evaluate (this->_rep().x_polynomial(), t)) / CGAL::to_double(this->_rep().x_norm()) );
+  //y = nt_traits.evaluate_at (this->_rep().y_polynomial(), t) / Rational (this->_rep().y_norm(), 1);
+  y = Bound (CGAL::to_double( evaluate (this->_rep().y_polynomial(), t)) / CGAL::to_double(this->_rep().y_norm()) );
   
   // Return the point.
+  // TODO Maybe need to convert to Algebraic_real_1
+  // OR Maybe use the Rational_traits and use make_rational(x,y)
   return (Rat_point_2 (x, y));
 }
+
+
 
 // ---------------------------------------------------------------------------
 // Compute a point on the Bezier curve B(t) given an algebraic t-value.
 //
-template <class RatKer, class AlgKer, class NtTrt, class BndTrt>
-typename _Bezier_curve_2<RatKer, AlgKer, NtTrt, BndTrt>::Alg_point_2
-_Bezier_curve_2<RatKer, AlgKer, NtTrt, BndTrt>::operator()
-          (const Algebraic& t) const
+template <class Algebraic_kernel_d_1_, class RatKer, class BndTrt>
+typename _Bezier_curve_2<Algebraic_kernel_d_1_, RatKer, BndTrt>::Alg_point_2
+_Bezier_curve_2<Algebraic_kernel_d_1_, RatKer, BndTrt>::operator() (const Algebraic_real_1& t) const
 {
   // Check for extermal t values (either 0 or 1).
-  Nt_traits          nt_traits;
+  //Nt_traits          nt_traits;
   const CGAL::Sign   sign_t = CGAL::sign (t);
 
   CGAL_precondition (sign_t != NEGATIVE);
@@ -866,11 +908,16 @@ _Bezier_curve_2<RatKer, AlgKer, NtTrt, BndTrt>::operator()
     // If t is 0, simply return the first control point.
     const Rat_point_2&  p_0 = this->_rep()._ctrl_pts[0];
     
-    return (Alg_point_2 (nt_traits.convert (p_0.x()),
-                         nt_traits.convert (p_0.y())));
+    // TODO maybe need to create the Algebraic_real_1 data type using CGAL::to_double
+    //return (Alg_point_2 (nt_traits.convert (p_0.x()), nt_traits.convert (p_0.y())));
+    return (std::make_pair ( p_0.x(), p_0.y() ));
   }
 
-  Comparison_result  res = CGAL::compare (t, Algebraic(1));
+  typename Algebraic_kernel_d_1 alg_kernel_d_1;
+  typename Algebraic_kernel_d_1::Compare_1 compare_1 = alg_kernel_d_1.compare_1_object();
+  typename Algebraic_kernel_d_1::Construct_algebraic_real_1 construct_algebraic_real_1 = alg_kernel_d_1.construct_algebraic_real_1_object();
+  Comparison_result	res = compare_1(t, 1);
+  //Comparison_result  res = CGAL::compare (t, Algebraic(1));
 
   CGAL_precondition (res != LARGER);
 
@@ -880,24 +927,30 @@ _Bezier_curve_2<RatKer, AlgKer, NtTrt, BndTrt>::operator()
     const Rat_point_2&  p_n = 
       this->_rep()._ctrl_pts[this->_rep()._ctrl_pts.size() - 1];
     
-    return (Alg_point_2 (nt_traits.convert (p_n.x()),
-                         nt_traits.convert (p_n.y())));
+    //return (Alg_point_2 (nt_traits.convert (p_n.x()), nt_traits.convert (p_n.y())));
+    return ( std::make_pair( p_n.x(), p_n.y() ) );
   }
 
   // The t-value is between 0 and 1: Compute the x and y coordinates.
-  const Algebraic    x = nt_traits.evaluate_at (this->_rep().x_polynomial(), t)/
-                         nt_traits.convert (this->_rep().x_norm());
-  const Algebraic    y = nt_traits.evaluate_at (this->_rep().y_polynomial(), t)/
-                         nt_traits.convert (this->_rep().y_norm());
 
-  return (Alg_point_2 (x, y));
+
+  // TODO Check for the convert function
+  typename Polynomial_traits_1::Evaluate evaluate;
+  //const Algebraic    x = nt_traits.evaluate_at (this->_rep().x_polynomial(), t)/ nt_traits.convert (this->_rep().x_norm());
+  const Algebraic_real_1    x = construct_algebraic_real_1 ( evaluate (this->_rep().x_polynomial(), CGAL::to_double(t)) / (this->_rep().x_norm()) );
+  //const Algebraic    y = nt_traits.evaluate_at (this->_rep().y_polynomial(), t)/ nt_traits.convert (this->_rep().y_norm());
+  const Algebraic_real_1    y = construct_algebraic_real_1 ( evaluate (this->_rep().y_polynomial(), CGAL::to_double(t)) / (this->_rep().y_norm()) );
+
+  // Return the Alg_point_2 type which is std::pair<Algebraic_real_1, Algebraic_real_1>
+  //return (Alg_point_2 (x, y));
+  return ( std::make_pair (x,y) );
 }
 
 // ---------------------------------------------------------------------------
 // Check if the two curves have the same support.
 //
-template <class RatKer, class AlgKer, class NtTrt, class BndTrt>
-bool _Bezier_curve_2<RatKer, AlgKer, NtTrt, BndTrt>::has_same_support
+template <class Algebraic_kernel_d_1_, class RatKer, class BndTrt>
+bool _Bezier_curve_2<Algebraic_kernel_d_1_, RatKer, BndTrt>::has_same_support
         (const Self& bc) const
 {
   // If one curve is of degree d1 and the other of degree d2, there can be
@@ -916,24 +969,34 @@ bool _Bezier_curve_2<RatKer, AlgKer, NtTrt, BndTrt>::has_same_support
     else if (k == 1)
       p1 = (this->_rep()._ctrl_pts[this->_rep()._ctrl_pts.size() - 1]);
     else
-      p1 = this->operator() (Rational (k, n_samples));
+      p1 = this->operator() (Bound (k, n_samples));
     
     // Get all t-values such that the x-coordinate of B2(t) equals x1,
     // and check if there exists a t-value such that the y-coordinate of
     // b2(t) equals the y-coordinate of p1.
-    std::list<Algebraic>                           t_vals;
-    typename std::list<Algebraic>::const_iterator  t_iter;
-    Nt_traits                             nt_traits;
-    const Algebraic&                      y1 = nt_traits.convert (p1.y());
+    std::list<Algebraic_real_1>                           t_vals;
+    typename std::list<Algebraic_real_1>::const_iterator  t_iter;
+
+    typename Algebraic_kernel_d_1 alg_kernel_d_1;
+    typename Algebraic_kernel_d_1::Construct_algebraic_real_1 construct_algebraic_real_1 = alg_kernel_d_1.construct_algebraic_real_1_object();
+    typename Algebraic_kernel_d_1::Compare_1 compare_1 = alg_kernel_d_1.compare_1_object();
+
+    //Nt_traits                             nt_traits;
+    // TODO Conversion of Rat_point_2 with CGAL::to_double
+    const Algebraic_real_1&               y1 = construct_algebraic_real_1( CGAL::to_double(p1.y()) );
+    //const Algebraic_real_1&               y1 = nt_traits.convert (p1.y());
+
     bool                                  eq_y = false;
     
     bc.get_t_at_x (p1.x(), std::back_inserter(t_vals));
     
     for (t_iter = t_vals.begin(); t_iter != t_vals.end(); ++t_iter)
     {
+
       const Alg_point_2&  p2 = bc (*t_iter);
       
-      if (CGAL::compare (y1, p2.y()) == CGAL::EQUAL)
+      //if (CGAL::compare (y1, p2.y()) == CGAL::EQUAL)
+      if (compare_1 (y1, p2.second) == CGAL::EQUAL)
       {
         eq_y = true;
         break;
