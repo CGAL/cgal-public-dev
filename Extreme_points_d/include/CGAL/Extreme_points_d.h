@@ -41,11 +41,15 @@
 
 #include <set>
 
+#include <CGAL/Lazy_exact_nt.h>
+
 #ifdef CGAL_USE_GMP
 #include <CGAL/Gmpz.h>
 #include <CGAL/Gmpzf.h>
-typedef CGAL::Gmpzf ETF;
+//typedef CGAL::Gmpzf ETF;
 typedef CGAL::Gmpz  ETI;
+typedef CGAL::Lazy_exact_nt<CGAL::Gmpzf> ETF;
+//typedef CGAL::Lazy_exact_nt<CGAL::Gmpz>  ETI;
 #else
 #include <CGAL/MP_Float.h>
 typedef CGAL::MP_Float ETF;
@@ -103,13 +107,13 @@ extreme_points_d_simple(InputIterator first, InputIterator beyond,
 enum Bounded_side { //Extreme_point_classification {
   /// Query point inside the convex hull
   //INTERNAL_POINT=-1, 
-  ON_UNBOUNDED_SIDE,
+  ON_BOUNDED_SIDE,
   /// Query point is an extreme point
   //EXTREME_POINT=0,
   ON_BOUNDARY,
   /// Query point completely outside the convex hull
   //EXTERNAL_POINT=1 };
-  ON_BOUNDED_SIDE };
+  ON_UNBOUNDED_SIDE };
 #endif
 
 /// \ingroup PkgExtremePointsDClasses
@@ -162,6 +166,7 @@ class Extreme_points_d {
         int dim;
         
         Extreme_points_options_d ep_options_;
+        Quadratic_program_options qp_options_;
         
         // points inserted after the last extreme point computation
         std::vector<Point> new_points;
@@ -177,7 +182,11 @@ class Extreme_points_d {
         /// `ep_options` can be used to set some options (see `Extreme_points_options_d`).
         Extreme_points_d(int d, Extreme_points_options_d ep_options = 
                                 Extreme_points_options_d())
-            : dim(d), ep_options_(ep_options) {}
+            : dim(d), ep_options_(ep_options) {
+          qp_options_ = Quadratic_program_options();
+          if (ep_options_.anti_cycling())
+            qp_options_.set_pricing_strategy(CGAL::QP_BLAND);
+        }
 
         /// Returns the dimension of the points
         int dimension() {
@@ -383,8 +392,8 @@ void Extreme_points_d<Traits>::update() {
             case EP_SIMPLE:
                 extreme_points_d_simple(new_points.begin(), new_points.end(),
                                                std::back_inserter(extr_points),
-                                               Traits(),
-                                               ep_options_);
+                                               Traits(), ep_options_.anti_cycling());
+                                               //ep_options_);
                 
                 //ep_options_.set_last_used_algorithm(EP_SIMPLE);
                 break;
@@ -392,8 +401,8 @@ void Extreme_points_d<Traits>::update() {
             default:
                 extreme_points_d_dula_helgason(new_points.begin(), new_points.end(),
                                                std::back_inserter(extr_points),
-                                               Traits(),
-                                               ep_options_);
+                                               Traits(), ep_options_.anti_cycling());
+//                                               ep_options_);
                 //ep_options_.set_last_used_algorithm(EP_DULA_HELGASON);
                 break;
                 
@@ -420,20 +429,20 @@ Extreme_points_d<Traits>::classify(Point p, bool is_input_point) {
         // p is an extreme point
         //return EXTREME_POINT;
         return ON_BOUNDARY;
-    } else if (is_input_point || 
+    } else if (is_input_point ||
                CGAL::internal::is_in_convex_hull(p,
                                                  extr_points.begin(),
                                                  extr_points.end(),
                                                  ET(0),
                                                  Traits(),
-                                                 ep_options_.qp_options())) {
+                                                 qp_options_)) {
         // p is an internal point
         //return INTERNAL_POINT;
-        return ON_UNBOUNDED_SIDE;
+        return ON_BOUNDED_SIDE;
     } else {
         // p is some external point
         //return EXTERNAL_POINT;
-        return ON_BOUNDED_SIDE;
+        return ON_UNBOUNDED_SIDE;
     }
 }
 
@@ -473,7 +482,7 @@ product
    as also described in \cite dl-cosfa-12 and \cite h-epmhd-10.
    This algorithm requires \f$ O(d n m + n * LP_{d+1,m})\f$ time in the worst case where \f$n\f$ is the number of input 
    points, \f$ m\f$ the number of extreme points, \f$ d\f$ the dimension and \f$ LP_{a,b}\f$ the runtime for solving a linear 
-   program with \f$ a\f$ equality constraints and \f$ b\f$ nonnegative variables using \cgal's QP solver package.
+   program with \f$ a\f$ equality constraints and \f$ b\f$ nonnegative variables using the Linear Programming Solver in the Linear and Quadratic Programming Solver in \cgal.
   
    \ref Extreme_points_d/extreme_points_d_dula_helgason.cpp
   
@@ -482,8 +491,9 @@ template <class InputIterator, class OutputIterator, class Traits>
 OutputIterator
 extreme_points_d_dula_helgason (InputIterator first, InputIterator beyond,
                     OutputIterator  result, const Traits &ep_traits,
-                    const Extreme_points_options_d &epd_options = 
-                          Extreme_points_options_d()) {
+                    bool anti_cycling = false) {
+                    //const Extreme_points_options_d &epd_options = 
+                    //      Extreme_points_options_d()) {
     typedef typename Traits::Point                      Point;
     typedef typename Traits::Less_lexicographically     Less_lexicographically;
     typedef typename Traits::RT                         RT;
@@ -519,6 +529,10 @@ extreme_points_d_dula_helgason (InputIterator first, InputIterator beyond,
     *result++=points[0]; // already the first extreme point
     candidate[0]=false;
     
+    Quadratic_program_options qp_opt = Quadratic_program_options();
+    if (anti_cycling)
+      qp_opt.set_pricing_strategy(CGAL::QP_BLAND);
+
     // start at point 1 as we already took point 0
     for (int j=1;j<n;++j) {
         if (!candidate[j])
@@ -526,7 +540,7 @@ extreme_points_d_dula_helgason (InputIterator first, InputIterator beyond,
         while (1) {
             QP_Solution s =
                 CGAL::internal::solve_convex_hull_containment_lp(
-                    points[j], f.begin(), f.end(), ET(), ep_traits, epd_options.qp_options());
+                    points[j], f.begin(), f.end(), ET(), ep_traits, qp_opt);//epd_options.qp_options());
 
             if (s.is_infeasible()) {
                 // points[j] \notin conv(f)
@@ -613,7 +627,7 @@ extreme_points_d_dula_helgason (InputIterator first, InputIterator beyond,
    involving all the other points. The algorithm is described in more detail in \cite h-epmhd-10.
    This algorithm requires \f$O(n * LP_{d+1,n-1})\f$ time where \f$n\f$ is the number of input points, \f$d\f$ the 
    dimension and \f$ LP_{a,b}\f$ the runtime for solving a linear program with \f$a\f$ equality constraints and \f$b\f$ 
-   nonnegative variables using \cgal's QP solver package.
+   nonnegative variables using the Linear Programming Solver in the Linear and Quadratic Programming Solver in \cgal.
   
    \cgalHeading{Example}
    See the example of `CGAL::extreme_points_d_dula_helgason` as its signature is exactly the same as the one of `CGAL::extreme_points_d_simple`:
@@ -624,8 +638,9 @@ template <class InputIterator, class OutputIterator, class Traits>
 OutputIterator
 extreme_points_d_simple(InputIterator first, InputIterator beyond,
                         OutputIterator  result, const Traits &ep_traits,
-                        const Extreme_points_options_d &epd_options =
-                              Extreme_points_options_d() ) {
+                        bool anti_cycling = false) {//,
+                        //const Extreme_points_options_d &epd_options =
+                        //      Extreme_points_options_d() ) {
     typedef typename Traits::Point                      Point;
     typedef typename Traits::Less_lexicographically     Less_lexicographically;
     typedef typename Traits::RT                         RT;
@@ -659,6 +674,10 @@ extreme_points_d_simple(InputIterator first, InputIterator beyond,
     // shuffle again so that the LP-solver runs faster
     std::random_shuffle(points.begin(),points.end());
     
+    Quadratic_program_options qp_opt = Quadratic_program_options();
+    if (anti_cycling)
+      qp_opt.set_pricing_strategy(CGAL::QP_BLAND);
+
     // test all points for being in the convex hull of the others
     // using LP
     for (int i=0;i<n;++i) {
@@ -670,7 +689,8 @@ extreme_points_d_simple(InputIterator first, InputIterator beyond,
                                                points.end(),
                                                ET(0),
                                                Traits(),
-                                               epd_options.qp_options())) {
+                                               //epd_options.qp_options())) {
+                                               qp_opt)) {
             *result++=points[0];
         }
         std::swap(points[i],points[0]); // move test point back
@@ -715,13 +735,13 @@ extreme_points_d_simple(InputIterator first, InputIterator beyond,
 
    \ref Extreme_points_d/extreme_points_d_dula_helgason.cpp
 */
+
 template <class InputIterator, class OutputIterator, class Traits>
 OutputIterator
 extreme_points_d(InputIterator first, InputIterator beyond,
                  OutputIterator  result, const Traits &ep_traits,
-                 const Extreme_points_options_d &epd_options =
-                       Extreme_points_options_d()) {
-    return extreme_points_d_dula_helgason(first, beyond, result, ep_traits, epd_options);
+                 bool anti_cycling = false) {
+    return extreme_points_d_dula_helgason(first, beyond, result, ep_traits, anti_cycling);
 }
 
 template <class InputIterator, class OutputIterator>

@@ -87,20 +87,20 @@ void test1() {
     assert(ep.classify(p8)==CGAL::ON_BOUNDARY);
     assert(ep.classify(p9)==CGAL::ON_BOUNDARY);
     assert(ep.classify(p15)==CGAL::ON_BOUNDARY);
-    assert(ep.classify(p10)==CGAL::ON_UNBOUNDED_SIDE);
-    assert(ep.classify(p11)==CGAL::ON_UNBOUNDED_SIDE);
-    assert(ep.classify(p12)==CGAL::ON_UNBOUNDED_SIDE);
-    assert(ep.classify(p13)==CGAL::ON_UNBOUNDED_SIDE);
-    assert(ep.classify(p14)==CGAL::ON_UNBOUNDED_SIDE);
+    assert(ep.classify(p10)==CGAL::ON_BOUNDED_SIDE);
+    assert(ep.classify(p11)==CGAL::ON_BOUNDED_SIDE);
+    assert(ep.classify(p12)==CGAL::ON_BOUNDED_SIDE);
+    assert(ep.classify(p13)==CGAL::ON_BOUNDED_SIDE);
+    assert(ep.classify(p14)==CGAL::ON_BOUNDED_SIDE);
 
-    assert(ep.classify(Point_3(.1,.1,.1))==CGAL::ON_UNBOUNDED_SIDE);
-    assert(ep.classify(Point_3(1.,0.,.5))==CGAL::ON_UNBOUNDED_SIDE);
-    assert(ep.classify(Point_3(1.,.3,0.))==CGAL::ON_UNBOUNDED_SIDE);
-    assert(ep.classify(Point_3(.1,.1,.1))==CGAL::ON_UNBOUNDED_SIDE);
+    assert(ep.classify(Point_3(.1,.1,.1))==CGAL::ON_BOUNDED_SIDE);
+    assert(ep.classify(Point_3(1.,0.,.5))==CGAL::ON_BOUNDED_SIDE);
+    assert(ep.classify(Point_3(1.,.3,0.))==CGAL::ON_BOUNDED_SIDE);
+    assert(ep.classify(Point_3(.1,.1,.1))==CGAL::ON_BOUNDED_SIDE);
     
-    assert(ep.classify(Point_3(.5,.5,2.1))==CGAL::ON_BOUNDED_SIDE);
-    assert(ep.classify(Point_3(.5,.5,-.1))==CGAL::ON_BOUNDED_SIDE);
-    assert(ep.classify(Point_3(-.5,0.,0.))==CGAL::ON_BOUNDED_SIDE);
+    assert(ep.classify(Point_3(.5,.5,2.1))==CGAL::ON_UNBOUNDED_SIDE);
+    assert(ep.classify(Point_3(.5,.5,-.1))==CGAL::ON_UNBOUNDED_SIDE);
+    assert(ep.classify(Point_3(-.5,0.,0.))==CGAL::ON_UNBOUNDED_SIDE);
     
     std::cout<<"test1 finished successfully!"<<std::endl;
 }

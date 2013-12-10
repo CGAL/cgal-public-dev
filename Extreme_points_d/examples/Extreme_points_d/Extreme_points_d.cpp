@@ -64,7 +64,7 @@ int main() {
     // we can also classify some other random point
     Point_d p = *gen++;
     switch (ep.classify(p)) {
-      case CGAL::ON_UNBOUNDED_SIDE:
+      case CGAL::ON_BOUNDED_SIDE:
         std::cout<<"The point \""<<p<<"\" is inside the "
         <<"convex hull of the current point set "
         <<"(but not an extreme point)."<<std::endl;
@@ -74,7 +74,7 @@ int main() {
         std::cout<<"The point \""<<p<<"\" is an extreme point "
         <<"of the current point set."<<std::endl;
         break;
-      case CGAL::ON_BOUNDED_SIDE:
+      case CGAL::ON_UNBOUNDED_SIDE:
         std::cout<<"The point \""<<p<<"\" is outside the "
         <<"convex hull of the current point set."
         <<std::endl;

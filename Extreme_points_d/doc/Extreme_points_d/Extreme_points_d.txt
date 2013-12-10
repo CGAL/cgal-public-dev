@@ -18,8 +18,46 @@ is contained in \f$S\f$. The convex hull of a set \f$S\f$ is the smallest convex
 
 The standard way of finding the extreme points is to compute the convex hull. This approach is optimal for dimensions \f$2\f$ or \f$3\f$ where efficient \f$O(n \log n)\f$ algorithms exist to compute the convex hull, but it does not scale to higher dimensions. In contrast, the problem of computing the extreme points is polynomial-time solvable.
 
-In terms of performance, the Convex Hull package is faster for low dimensions such as 2D and 3D and depending on input, up to \f$ d=5 \f$. For higher dimensions, this package is faster. Note that our implementation does not scale well with dimension due to the use of exact types in the Linear Solver. In practice we expect this package to compute the extreme points in an acceptable amount of time for dimensions up to \f$ 15 \f$. The following example is a benchmark that compares the performance of the two packages using random points on a moment curve for various dimensions.
+In terms of performance, the Convex Hull package is faster for low dimensions such as 2D and 3D and depending on input, up to \f$ d=5 \f$. For higher dimensions, this package is faster. Note that our implementation does not scale well with dimension due to the use of exact types in the Linear Programming Solver. In practice we expect this package to compute the extreme points in an acceptable amount of time for dimensions up to \f$ 15 \f$. The following example is a benchmark that compares the performance of the two packages using random points on a moment curve for various dimensions.
 \cgalExample{Extreme_points_d/benchmark_moment_curve.cpp}
+
+Running the benchmark yielded the following timings, measured in seconds, for 200 input points.
+
+\cgalFigureAnchor{mink_figpgn_offset}
+<center>
+<table border=1>
+<tr>
+<td>&nbsp;Dimension&nbsp;</td>
+<td>&nbsp;Extreme points d&nbsp;</td>
+<td>&nbsp;Convex Hull d&nbsp;</td>
+</tr>
+<tr align=right>
+<td>2</td>
+<td>0.176</td>
+<td>0.004</td>
+</tr>
+<tr align=right>
+<td>3</td>
+<td>0.716</td>
+<td>0.016</td>
+</tr>
+<tr align=right>
+<td>4</td>
+<td>1.508</td>
+<td>0.508</td>
+</tr>
+<tr align=right>
+<td>5</td>
+<td>2.708</td>
+<td>2.556</td>
+</tr>
+<tr align=right>
+<td>6</td>
+<td>4.72</td>
+<td>45.492</td>
+</tr>
+</table>
+</center>
 
 We will first describe the two different algorithms that compute the extreme points of a given input point set.
 Then we will describe the two different ways to compute extreme points of arbitrary dimensional point sets, either with a static algorithm or with the dynamic class `Extreme_points_d<Traits>`.
@@ -40,8 +78,10 @@ and with a constant objective function.
 </center>
 
 For the rest of the documentation this type of linear program is going to 
-be referred to with the expression \f$ LP(\mathcal{A},p) \f$. The solution
-to this problem is computed by the Linear Programming Solver in \cgal.
+be referred to with the expression \f$ LP(\mathcal{A},p) \f$. We will also
+use the notation \f$ LP_{a,b}\f$ to denote the runtime of a linear program with \f$a\f$ equality 
+constraints and \f$b\f$ nonnegative variables. Note that the complexity this LP is linear to \f$ b \f$.
+The solution to this problem is computed by the Linear Programming Solver in the Linear and Quadratic Programming Solver in \cgal.
 
 \subsection Subsection_1 The Simple algorithm
 
@@ -53,11 +93,16 @@ The Simple algorithm classifies all points using this method. This involves
 solving \f$ n \f$ linear programs with \f$ n - 1 \f$ nonnegative variables and 
 \f$ d + 1 \f$ equality constraints each.
 
+This algorithm requires \f$O(n * LP_{d+1,n-1})\f$ time where \f$n\f$ is the number of input points and \f$d\f$ the dimension.
+
 \subsection Subsection_2 The Dulá - Helgason algorithm
 
 The algorithm is similar to the Simple algorithm in that it uses the same
 linear programs to check convex combinations. However the number of linear programs
 with \f$ n - 1 \f$ variables is only the number of extreme points, making this algorithm output-sensitive.
+
+This algorithm requires \f$ O(d n m + n * LP_{d+1,m})\f$ time in the worst case where \f$n\f$ is the number of input 
+points, \f$ m\f$ the number of extreme points and \f$ d\f$ the dimension.
 
 \section Section_dD_Extreme_Points_Static Static extreme points computations
 The function `extreme_points_d_simple` computes the extreme points of a d-dimensional point set using the Simple algorithm.

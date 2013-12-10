@@ -127,10 +127,10 @@ void test1() {
     assert(ep.classify(Point_d(d,coord16,coord16+d))==CGAL::ON_BOUNDARY);
 
 
-    assert(ep.classify(Point_d(d,coord,coord+d))==CGAL::ON_UNBOUNDED_SIDE);
+    assert(ep.classify(Point_d(d,coord,coord+d))==CGAL::ON_BOUNDED_SIDE);
     for (int i=0; i<d; ++i)
       coord[i]=10.;
-    assert(ep.classify(Point_d(d,coord,coord+d))==CGAL::ON_BOUNDED_SIDE);
+    assert(ep.classify(Point_d(d,coord,coord+d))==CGAL::ON_UNBOUNDED_SIDE);
 
     std::cout<<"test1 finished successfully!"<<std::endl;
 }

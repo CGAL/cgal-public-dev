@@ -51,7 +51,7 @@ class Extreme_points_options_d {
 private:
     Extreme_point_algorithm_d algo_;
     bool deletion_, anti_cycling_;
-    Quadratic_program_options qp_options_;
+//    Quadratic_program_options qp_options_;
     
 public:
     // default constructor
@@ -59,7 +59,7 @@ public:
     Extreme_points_options_d(Extreme_point_algorithm_d algo = EP_CHOOSE_APPROPRIATE, bool deletion=false, bool anti_cycling=false)
       : algo_(algo), deletion_(deletion), anti_cycling_(anti_cycling)
     {
-        qp_options_ = Quadratic_program_options();
+//        qp_options_ = Quadratic_program_options();
     }
     
     // set/get algorithm
@@ -99,20 +99,20 @@ public:
     }
     
     /// Sets whether or not anti-cycling is activated
-    /// Setting this option to true ensures that no cycles are produced by the Linear Solver, however the performance is lower.
+    /// Setting this option to true ensures that no cycles are produced by the Linear Programming Solver in the Linear and Quadratic Programming Solver, however the performance is lower.
     /// It is recommended to set it to true.
     void set_anti_cycling (bool anti_cycling)
     {
         anti_cycling_ = anti_cycling;
-        if (anti_cycling_)
-          qp_options_.set_pricing_strategy(CGAL::QP_BLAND);
+        //if (anti_cycling_)
+        //  qp_options_.set_pricing_strategy(CGAL::QP_BLAND);
     }
 
     #ifndef DOXYGEN_RUNNING
-    Quadratic_program_options qp_options() const
-    {
-        return qp_options_;
-    }
+    //Quadratic_program_options qp_options() const
+    //{
+    //    return qp_options_;
+    //}
     #endif
 
 };

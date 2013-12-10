@@ -10,7 +10,6 @@
 /* Compares Convex_Hull_d and Extreme_points_d for different dimensions and numbers of points.
    Points are random on a moment curve.*/
 
-
 typedef CGAL::Cartesian_d<double>               Kernel;
 typedef Kernel::Point_d                         Point_d;
 typedef CGAL::Extreme_points_traits_d<Point_d>  EP_Traits_d;
@@ -19,8 +18,6 @@ typedef Kernel::Less_lexicographically_d        Less_lexicographically;
 int main(int argc, char **argv) {
   //std::cout.width(30);
   std::cout << "Dim   Points   Faster package" << std::endl;
-  //timer1 = new CGAL::Timer();
-  //timer2 = new CGAL::Timer();  
   CGAL::Timer timer1,timer2;
 
   std::vector<Point_d> points;
