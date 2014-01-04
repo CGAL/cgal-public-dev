@@ -88,7 +88,10 @@ int main(int argc, char* argv[]) {
     Timer_tree_build_iteration.start();
     Timer_tree_build_overall.start();
     
+    //this constructor call of the Kd_tree only initializes the points and does not build the Kd_tree.
     Tree tree(N_Random_points_iterator(rpit,0), N_Random_points_iterator(rpit, (bound*bound) ) );
+    //Builds the kd tree with the random points initialized.
+    tree.build();
     
     Timer_tree_build_iteration.stop();
     Timer_tree_build_overall.stop();
@@ -96,6 +99,7 @@ int main(int argc, char* argv[]) {
     //searching Begins
     Timer_search_iteration.start();
     Timer_search_overall.start();
+
     for(int bounding_box_width=10; bounding_box_width<bound; bounding_box_width+=2)
     {
       // define range query objects
@@ -104,9 +108,10 @@ int main(int argc, char* argv[]) {
       Point_d p(D, pcoord, pcoord+D);
       Point_d q(D, qcoord, qcoord+D);
       
-      //how to delete this object
-      Fuzzy_iso_box fib(p, q, 0.01);
+      //create a fuzzy box
+      Fuzzy_iso_box fib(p, q);
 
+      //Search function of Kd_tree will build the tree if not only built and the perform the search. 
       tree.search(std::back_inserter(result), fib);
 
       if(Verbose)
