@@ -18,7 +18,7 @@ make # build the \cgal libraries
 
 \attention While this example shows an <I>in-source configuration</I>, CMake highly suggests to use <I>out-of-source configuration</I> that are presented in Section \ref seccmakeoutofsource.
 
-Compiling an example shipped with \cgal (e.g for Straight Skeletons in 2D) is similar simple:
+Compiling an example shipped with \cgal (e.g for Straight Skeletons in 2D) is similarly simple:
 
 <PRE>
 cmake -DCGAL_DIR=/path/to/CGAL-\cgalReleaseNumber -DWITH_examples=ON . # configure the examples
@@ -561,7 +561,7 @@ should be launched in an \sc{Ide}, such as Visual Studio or KDevelop3. They will
 above, which you can manually build as with any other solution/project within your \sc{Ide}.
 
 Alternatively, you can build it with the command line version of the
-\sc{Visual Studio Ide}:
+\sc{Visual Studio IDE}:
 
 <PRE>
 
