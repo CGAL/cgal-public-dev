@@ -9,30 +9,30 @@ This document describes how to install \cgal on Windows, Unix-like systems, and 
 
 Ideally, setting up \cgal amounts to:
 
-<PRE>
+~~~~~~~~~~~~~~~~~~~~~
 tar xzf CGAL-\cgalReleaseNumber.tar.gz # unpack the release to `pwd`/CGAL-\cgalReleaseNumber
-cd CGAL-\cgalReleaseNumber # go to \cgal-\cgalReleaseNumber directory
-cmake . # configure \cgal; notice the dot to indicate the current directory.
-make # build the \cgal libraries
-</PRE>
+cd CGAL-\cgalReleaseNumber # go to CGAL-\cgalReleaseNumber directory
+cmake . # configure CGAL; notice the dot to indicate the current directory.
+make # build the CGAL libraries
+~~~~~~~~~~~~~~~~~~~~~
 
 \attention While this example shows an <I>in-source configuration</I>, CMake highly suggests to use <I>out-of-source configuration</I> that are presented in Section \ref seccmakeoutofsource.
 
 Compiling an example shipped with \cgal (e.g for Straight Skeletons in 2D) is similarly simple:
 
-<PRE>
+~~~~~~~~~~~~~~~~~~~~~
 cmake -DCGAL_DIR=/path/to/CGAL-\cgalReleaseNumber -DWITH_examples=ON . # configure the examples
 make Straight_skeleton_2_examples # build the examples, or simply use `make examples` to build the examples of all packages
-</PRE>
+~~~~~~~~~~~~~~~~~~~~~
 
 Compiling an own non-shipped program is also close:
 
-<PRE>
+~~~~~~~~~~~~~~~~~~~~~
 cd `/path/to/program` # go to the directory containing the source
 cgal_create_CMakeLists -s executable # `executable` is the name of tha main source file
 cmake -DCGAL_DIR=/path/to/CGAL-\cgalReleaseNumber . # Notice the dot to indicate the current directory; triggering again an in-source configuration.
 make
-</PRE>
+~~~~~~~~~~~~~~~~~~~~~
 
 where the second line creates a `CMakeLists.txt` file (check
 its options in Section \ref seccreate_cgal_CMakeLists for various details).
@@ -58,15 +58,15 @@ For Windows, an installer is provided.
 
 For instance, use macports in the following way:
 
-<PRE>
+~~~~~~~~~~~~~~~~~~~~~
 sudo port install cgal
-</PRE>
+~~~~~~~~~~~~~~~~~~~~~
 
 or if Qt4 demos are desired
 
-<PRE>
+~~~~~~~~~~~~~~~~~~~~~
 sudo port install cgal +qt4 +universal +demos
-</PRE>
+~~~~~~~~~~~~~~~~~~~~~
 
 The setup is similar for <a href="http://mxcl.github.com/homebrew/"><tt>homebrew</tt></a> .
 
@@ -74,15 +74,15 @@ The setup is similar for <a href="http://mxcl.github.com/homebrew/"><tt>homebrew
 
 For instance in debian/Ubuntu, use apt-get in the following way:
 
-<PRE>
+~~~~~~~~~~~~~~~~~~~~~
 sudo apt-get install libcgal-dev
-</PRE>
+~~~~~~~~~~~~~~~~~~~~~
 
 To get the demos use
 
-<PRE>
+~~~~~~~~~~~~~~~~~~~~~
 sudo apt-get install libcgal-demo
-</PRE>
+~~~~~~~~~~~~~~~~~~~~~
 
 Check the \cgal-FAQ for source repository of newest releases.
 
@@ -108,9 +108,9 @@ After you have downloaded the file `CGAL-\cgalReleaseNumber``.tar.gz` containing
 \cgal sources, you have to unpack it. Under a Unix-like shell, use the
 command:
 
-<PRE>
+~~~~~~~~~~~~~~~~~~~~~
 tar xzf CGAL-\cgalReleaseNumber.tar.gz
-</PRE>
+~~~~~~~~~~~~~~~~~~~~~
 
 In both cases the directory `CGAL-\cgalReleaseNumber` will be created. This directory
 contains the following subdirectories:
@@ -178,17 +178,17 @@ all this information is called <I>configuration</I>.
 The end of the process is marked by the generation of a makefile or a
 Visual \cpp solution and project file that you can use to build \cgal.
 
-\subsection installation_configuring_gui Configuring \cgal with the CMake GUI
+\subsection installation_configuring_gui Configuring CGAL with the CMake GUI
 
 The simplest way to start the configuration is to run the graphical
 user interface of CMake. We recommend to use `cmake-gui`. It
 is available on many platforms as of CMake version 2.6. You must pass as
 argument the root directory of \cgal. For example:
 
-<PRE>
+~~~~~~~~~~~~~~~~~~~~~
 cd CGAL-\cgalReleaseNumber
 cmake-gui . # Notice the dot to indicate the current directory.
-</PRE>
+~~~~~~~~~~~~~~~~~~~~~
 
 After `cmake-gui` opens, press 'Configure'.
 A dialog will pop up and you will have to choose what shall gets generated.
@@ -209,10 +209,10 @@ Alternatively, you can run the command-line tool called
 `cmake`. You pass as argument the root directory of
 \cgal. For example:
 
-<PRE>
+~~~~~~~~~~~~~~~~~~~~~
 cd CGAL-\cgalReleaseNumber
 cmake . # Notice the dot to indicate the current directory.
-</PRE>
+~~~~~~~~~~~~~~~~~~~~~
 
 The very first thing CMake does is to detect the compiler to use. This
 detection is performed by a special CMake module called a
@@ -240,10 +240,10 @@ you choose a particular generator as a mean to choose a specific compiler (becau
 build files). For example, the following generates solution files for
 use in Visual \cpp 11.0 on a 64bit machine:
 
-<PRE>
+~~~~~~~~~~~~~~~~~~~~~
 cd CGAL-\cgalReleaseNumber
 cmake -G"Visual Studio 11 Win64" . # Notice the dot to indicate the current directory.
-</PRE>
+~~~~~~~~~~~~~~~~~~~~~
 
 In other cases, however, the generator doesn't directly identify a
 specific compiler but a chain of tools.
@@ -251,10 +251,10 @@ For example, the `UNIX Makefiles` generator produces `makefiles` that call some 
 command-line compiler, like \gcc. If you need the makefiles to use a different compiler, you need to
 specify the desired compiler in the call to CMake, as in this example:
 
-<PRE>
+~~~~~~~~~~~~~~~~~~~~~
 cd CGAL-\cgalReleaseNumber
 cmake -DCMAKE_CXX_COMPILER:FILEPATH=g++-4.7 . # Notice the dot to indicate the current directory.
-</PRE>
+~~~~~~~~~~~~~~~~~~~~~
 
 CMake maintains configuration parameters in so-called <I>CMake variables</I>, like the `CMAKE_CXX_COMPILER`
 in the example above. These variables <I>are not environment variables</I> but <I>CMake variables</I>. Some of the CMake
@@ -542,7 +542,7 @@ For example, in a \sc{Unix}-like environment the default generator produces
 makefiles. You can use the `make` command-line tool for the
 succeeding build step as follows:
 
-<PRE>
+~~~~~~~~~~~~~~~~~~~~~
 
 cd CGAL-\cgalReleaseNumber
 
@@ -550,7 +550,7 @@ cd CGAL-\cgalReleaseNumber
 
 make
 
-</PRE>
+~~~~~~~~~~~~~~~~~~~~~
 
 The resulting libraries are placed in the subdirectory `lib` under `<CMAKE_BINARY_DIR>`
 (which is `CGAL-\cgalReleaseNumber` in case you run an in-source configuration).
@@ -563,11 +563,11 @@ above, which you can manually build as with any other solution/project within yo
 Alternatively, you can build it with the command line version of the
 \sc{Visual Studio IDE}:
 
-<PRE>
+~~~~~~~~~~~~~~~~~~~~~
 
 devenv CGAL.sln /Build Debug
 
-</PRE>
+~~~~~~~~~~~~~~~~~~~~~
 
 The "Debug" argument is needed because CMake creates solution files for
 all four configurations, and you need to explicitly choose one when building
@@ -594,7 +594,7 @@ None of these targets are included for building by default, so you need to build
 The targets `examples` and `demos` include themselves all the targets
 for examples and demos respectively.
 
-<PRE>
+~~~~~~~~~~~~~~~~~~~~~
 
 # build all examples at once
 make examples
@@ -605,7 +605,7 @@ make demos
 # build only the Straight Skeleton demo
 make Straight_skeleton_2_demo
 
-</PRE>
+~~~~~~~~~~~~~~~~~~~~~
 
 \cgalAdvancedBegin
 When using `UNIX Makefiles` you can find out the
@@ -627,7 +627,7 @@ CMake carries out the installation by producing a build target named <I>install<
 The following example shows a typical session from configuration to
 installation in a \sc{Unix}-like environment:
 
-<PRE>
+~~~~~~~~~~~~~~~~~~~~~
 
 cd CGAL-\cgalReleaseNumber
 
@@ -635,7 +635,7 @@ cmake . # configure
 make # compile
 make install # install
 
-</PRE>
+~~~~~~~~~~~~~~~~~~~~~
 
 If you use a generator that produces IDE files (for Visual Studio for instance) there will be an optional
 `INSTALL` project, which you will be able <I>"to build"</I> to execute the installation step.
@@ -655,12 +655,12 @@ The file `CGALConfig.cmake` is installed by default in
 Below is an example output on a linux machine with g++4.4 installed, using CMake 2.8.5,
 and the following command-line call to `cmake`:
 
-<PRE>
+~~~~~~~~~~~~~~~~~~~~~
 cmake -DWITH_examples=OFF -DWITH_demos=OFF -DCMAKE_BUILD_TYPE=Release
 /path/to/unpacked/CGAL-tarball/
-</PRE>
+~~~~~~~~~~~~~~~~~~~~~
 
-<PRE>
+~~~~~~~~~~~~~~~~~~~~~
 -- The CXX compiler identification is GNU
 -- The C compiler identification is GNU
 -- Check for working CXX compiler: /usr/bin/g++-4.4
@@ -847,7 +847,7 @@ cmake -DWITH_examples=OFF -DWITH_demos=OFF -DCMAKE_BUILD_TYPE=Release
 -- Generating done
 -- Build files have been written to: /home/user/CGAL/4.1/
 
-</PRE>
+~~~~~~~~~~~~~~~~~~~~~
 
 \section seccmakeoutofsource Multiple Variants of Buildfiles (out-of-source configurations)
 
@@ -869,15 +869,15 @@ configuration</I>, as showed in the previous sections.
 You can, for example, generate subdirectories `CGAL-\cgalReleaseNumber``/platforms/debug` and
 `CGAL-\cgalReleaseNumber``/platforms/release` for two configurations, respectively:
 
-<PRE>
+~~~~~~~~~~~~~~~~~~~~~
 mkdir CGAL-\cgalReleaseNumber/platforms/debug
 cd CGAL-\cgalReleaseNumber/platforms/debug
-cmake -DCMAKE_BUILD_TYPE=Debug ../.. # Notice that ../.. denotes the grandparent directory containing the sources of \cgal
+cmake -DCMAKE_BUILD_TYPE=Debug ../.. # Notice that ../.. denotes the grandparent directory containing the sources of CGAL
 
 mkdir CGAL-\cgalReleaseNumber/platforms/release
 cd CGAL-\cgalReleaseNumber/platforms/release
-cmake -DCMAKE_BUILD_TYPE=Release ../.. # Notice that ../.. denotes the grandparent directory containing the sources of \cgal
-</PRE>
+cmake -DCMAKE_BUILD_TYPE=Release ../.. # Notice that ../.. denotes the grandparent directory containing the sources of CGAL
+~~~~~~~~~~~~~~~~~~~~~
 
 \section installation_configuring_using Configuring and Building Programs using CGAL
 
@@ -890,12 +890,12 @@ shell-script that is introduced below.
 
 For a user program `executable.cpp`, the ideal world looks like this:
 
-<PRE>
+~~~~~~~~~~~~~~~~~~~~~
 cd /path/to/program # go to directory containing the main source file
 cgal_create_CMakeLists -s executable # run the script
 cmake -DCGAL_DIR=/path/to/CGAL-\cgalReleaseNumber . # configure
 make
-</PRE>
+~~~~~~~~~~~~~~~~~~~~~
 
 In both examples we specify the `CGAL_DIR`:
 During configuration of the \cgal libraries a file named `CGALConfig.cmake` is generated in \cgal's build directory (in contrast
@@ -984,12 +984,12 @@ toggled right after the flags have been loaded from
 If you use the command line tool you can specify flags <I>directly</I> by setting the
 controlling variable right up front:
 
-<PRE>
+~~~~~~~~~~~~~~~~~~~~~
 cd CGAL-\cgalReleaseNumber
 cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_FLAGS=-g .
 cd `/path/to/program`
 cmake -DCGAL_DIR=CGAL-\cgalReleaseNumber -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS=-O2 -DCGAL_DONT_OVERRIDE_CMAKE_FLAGS=TRUE .
-</PRE>
+~~~~~~~~~~~~~~~~~~~~~
 \cgalAdvancedEnd
 
 \section installation_summary Summary of CGAL's Configuration Variables
