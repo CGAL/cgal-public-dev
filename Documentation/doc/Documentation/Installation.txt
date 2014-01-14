@@ -1382,4 +1382,64 @@ By default CMake generates makefiles for Release mode, with
 optimization flags switched on, and vcproj files for Release
 and Debug modes.
 
+\section usingcgal Using CGAL in your application
+
+This section describes how to set-up several popular build systems to
+use the installed \cgal libraries (either manually or through a
+package manager) in your application. If your build system is not
+included here feel free to share your set-up on the mailing list and
+it will eventually get included here.
+
+\subsection usingwithcmake Using CGAL with CMake
+
+\cgal is build using CMake and provides exported targets for its own
+libraries and set-up functionality for the third party libraries used
+by \cgal.
+
+The following example `CMakeLists.txt` is a simple example how to use the main CGAL library
+
+~~~~~~~~~~~~~~~~~~~~~
+project(My_project_using_CGAL CXX)
+
+find_package(CGAL REQUIRED ) # Error if CGAL is not found
+
+add_executable(my_exe my_source.cpp)
+CGAL_use_library(my_exe CGAL) # Use the main CGAL library with the my_exe target.
+CGAL_use_library(my_exe CGAL_ImageIO) # Use the ImageIO library, error if it hasn't been build.
+                        # You can request the ImageIO component in the find_package call, 
+                        # if you want to make sure this doesn't happen 
+                        # or check with if(TARGET CGAL_ImageIO) ... endif().
+CGAL_use_library(my_exe Eigen3) # Enable Eigen3 in my_exe target.
+
+# CGAL_use_library will set-up link dependencies, the necessary defines, 
+# and make sure the requested dependencies can be found.
+~~~~~~~~~~~~~~~~~~~~~
+
+
+\subsection usingwithmake Using CGAL with Make
+
+This example Makefile assumes that \cgal libraries are installed in
+standard locations on your system. This will be true if you installed
+\cgal with a package manager. It also assumes that you know against
+which libraries \cgal has been linked.
+
+To configure those aspects an additional tool like autoconf is recommended.
+
+~~~~~~~~~~~~~~~~~~~~~
+CGAL_LIBRARIES = -lCGAL -lgmp # We know that CGAL has been linked against GMP.
+BOOST_LIBRARIES = -lboost_system -lboost_thread # The boost dependency..
+CGAL_FLAGS = -frounding-math -DCGAL_USE_GMP # If using gcc frounding-math is required.
+                                            # The define CGAL_USE_GMP enables GMP code in CGAL sheaders.
+
+CXXFLAGS += $(CFLAGS) -Wall -Wextra $(CGAL_FLAGS)
+LDFLAGS  += $(CGAL_LIBRARIES) $(BOOST_LIBRARIES)
+
+my_exe: my_exe.cpp
+	@$(CXX) $(CXXFLAGS) my_exe.cpp -o my_exe $(LDFLAGS)
+~~~~~~~~~~~~~~~~~~~~~
+
+\subsection usingwithvs Using CGAL with Visual Studio
+
+\todo Clicky-bunty.
+
 */
