@@ -1,0 +1,48 @@
+% +------------------------------------------------------------------------+
+% | Reference manual page: Lines_through_segments_traits_3.tex (Lines_through_segments_3)
+% +------------------------------------------------------------------------+
+% | 
+% | Package: LTS (Lines_through_segments_3)
+% | 
+% +------------------------------------------------------------------------+
+
+\ccRefPageBegin
+
+%%RefPage: end of header, begin of main body
+% +------------------------------------------------------------------------+
+
+\begin {ccRefClass} {Lines_through_segments_traits_3<Rational_kernel, Alg_kernel>}
+    
+\ccDefinition 
+
+The class \ccStyle{Lines_through_segments_traits_3<Rational_kernel, Alg_kernel>} is a model of the
+\ccc{LineThroughSegments_3} concept, currently it is the only model supplied with the package.
+This class must be instantiated with 2 exact geometric kernels. The first is a rational kernel, which is used for the input line segments, and the second is an algebraic kernel, which is used for the output objects.
+
+
+\ccTypes
+\ccNestedType{Rational_NT}{The rational number type}
+\ccNestedType{Algebraic_NT}{The algebraic number type}
+\ccNestedType{Rational_kernel}{The rational kernel}
+\ccNestedType{Alg_kernel}{The rational kernel}
+\ccNestedType{Hyperbolic_traits_2}{Models the concept 
+\ccc{through_segments_traits_3::HyperbolicTraits_2}}
+\ccNestedType{Geodesic_traits_2}{Models the concept 
+\ccc{Lines_through_segments_traits_3::GeodesicTraits_2}}
+
+
+\ccInclude{CGAL/Lines_through_segments_traits_3.h}
+ 
+\ccIsModel
+\ccc{LinesThroughSegmentsTraits_3}
+
+\ccSeeAlso
+\ccc{CGAL::Lines_through_segments_output_obj}\\
+\ccc{LinesThroughSegmentsTraits_3}
+
+\end{ccRefClass} % Snap_rounding_2_traits
+% +------------------------------------------------------------------------+
+%%RefPage: end of main body, begin of footer
+\ccRefPageEnd
+% EOF
+% +------------------------------------------------------------------------+

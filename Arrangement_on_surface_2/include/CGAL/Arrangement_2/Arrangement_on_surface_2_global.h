@@ -67,10 +67,10 @@ namespace CGAL {
 //
 template <class GeomTraits, class TopTraits, class PointLocation, 
   class ZoneVisitor>
-void insert (Arrangement_on_surface_2<GeomTraits, TopTraits>& arr, 
-             const typename GeomTraits::Curve_2& c,
-             const PointLocation& pl, ZoneVisitor &visitor, 
-             boost::is_same<int, double>::type)
+void insert(Arrangement_on_surface_2<GeomTraits, TopTraits>& arr, 
+            const typename GeomTraits::Curve_2& c,
+            const PointLocation& pl, ZoneVisitor &visitor, 
+            boost::is_same<int, double>::type)
 {
   typedef Arrangement_on_surface_2<GeomTraits, TopTraits>  Arr;
   typedef ZoneVisitor                                      Zone_visitor;
@@ -197,8 +197,8 @@ void insert(Arrangement_on_surface_2<GeomTraits, TopTraits>& arr,
 // Common interface for the insert of the Curve_2 and X_monotone_curve_2
 template <class GeomTraits, class TopTraits, class Curve, class PointLocation, 
   class ZoneVisitor>
-void insert (Arrangement_on_surface_2<GeomTraits, TopTraits>& arr,
-             const Curve& c, const PointLocation& pl, ZoneVisitor &visitor)
+void insert(Arrangement_on_surface_2<GeomTraits, TopTraits>& arr,
+            const Curve& c, const PointLocation& pl, ZoneVisitor &visitor)
 {
   typedef typename GeomTraits::X_monotone_curve_2       X_monotone_curve_2;
   
@@ -214,14 +214,14 @@ void insert (Arrangement_on_surface_2<GeomTraits, TopTraits>& arr,
 // to point-location). Maybe the proper solution is to use boost::enable_if
 // together with appropriate tag.
 template <class GeomTraits, class TopTraits, class Curve, class PointLocation>
-void insert (Arrangement_on_surface_2<GeomTraits, TopTraits>& arr,
-             const Curve& c, const PointLocation& pl,
-	     typename PointLocation::Point_2*)
+void insert(Arrangement_on_surface_2<GeomTraits, TopTraits>& arr,
+            const Curve& c, const PointLocation& pl,
+            typename PointLocation::Point_2*)
 {
   typedef typename TopTraits::Zone_insertion_visitor       Zone_visitor;
   
   Zone_visitor visitor;
-  insert (arr, c, pl, visitor);
+  insert(arr, c, pl, visitor);
 }
 
 //-----------------------------------------------------------------------------
@@ -238,7 +238,7 @@ void insert(Arrangement_on_surface_2<GeomTraits, TopTraits>& arr,
   // Create a default point-location object and use it to insert the curve.
   typename TopTraits::Default_point_location_strategy    def_pl (arr);
 
-  insert (arr, c, def_pl);
+  insert(arr, c, def_pl);
 }
 
 /*! Insert a range of x-monotone curves into an empty arrangement
@@ -399,9 +399,9 @@ void insert_non_empty(Arrangement_on_surface_2<GeomTraits, TopTraits>& arr,
 // mpl_::bool_< true>)'
 //
 template <class GeomTraits, class TopTraits, class InputIterator>
-void insert (Arrangement_on_surface_2<GeomTraits, TopTraits>& arr,
-             InputIterator begin, InputIterator end,
-             boost::is_same<int, double>::type)
+void insert(Arrangement_on_surface_2<GeomTraits, TopTraits>& arr,
+            InputIterator begin, InputIterator end,
+            boost::is_same<int, double>::type)
 {
   typedef Arrangement_on_surface_2<GeomTraits, TopTraits>   Arr;
   typedef typename GeomTraits::Point_2                      Point_2;
@@ -482,8 +482,8 @@ void insert(Arrangement_on_surface_2<GeomTraits, TopTraits>& arr,
 //-----------------------------------------------------------------------------
 // Common interface for the inserts of the Curve_2 and X_monotone_curve_2
 template <class GeomTraits, class TopTraits, class InputIterator>
-void insert (Arrangement_on_surface_2<GeomTraits,TopTraits>& arr,
-             InputIterator begin, InputIterator end)
+void insert(Arrangement_on_surface_2<GeomTraits,TopTraits>& arr,
+            InputIterator begin, InputIterator end)
 {
   typedef typename GeomTraits::X_monotone_curve_2       X_monotone_curve_2;
   typedef typename std::iterator_traits<InputIterator>::value_type 
@@ -492,7 +492,7 @@ void insert (Arrangement_on_surface_2<GeomTraits,TopTraits>& arr,
   typedef typename boost::is_same<Iterator_value_type,X_monotone_curve_2>::type
     Is_x_monotone;
   
-  return insert (arr, begin, end, Is_x_monotone());
+  return insert(arr, begin, end, Is_x_monotone());
 }
 
 //-----------------------------------------------------------------------------
@@ -502,9 +502,9 @@ void insert (Arrangement_on_surface_2<GeomTraits,TopTraits>& arr,
 // The inserted x-monotone curve may intersect the existing arrangement.
 //
 template <class GeomTraits, class TopTraits>
-void insert (Arrangement_on_surface_2<GeomTraits, TopTraits>& arr,
-             const typename GeomTraits::X_monotone_curve_2& c,
-             const Object& obj)
+void insert(Arrangement_on_surface_2<GeomTraits, TopTraits>& arr,
+            const typename GeomTraits::X_monotone_curve_2& c,
+            const Object& obj)
 {
   typedef Arrangement_on_surface_2<GeomTraits, TopTraits>  Arr;
   typedef typename TopTraits::Zone_insertion_visitor       Zone_visitor;
@@ -536,38 +536,38 @@ void insert (Arrangement_on_surface_2<GeomTraits, TopTraits>& arr,
 // backward compatibility functions.
 /* DEPRECATED use insert() instead */
 template <class GeomTraits, class TopTraits, class PointLocation>
-CGAL_DEPRECATED void insert_x_monotone_curve
-(Arrangement_on_surface_2<GeomTraits, TopTraits>& arr,
- const typename GeomTraits::X_monotone_curve_2& c,
- const PointLocation& pl)
+CGAL_DEPRECATED void
+insert_x_monotone_curve(Arrangement_on_surface_2<GeomTraits, TopTraits>& arr,
+                        const typename GeomTraits::X_monotone_curve_2& c,
+                        const PointLocation& pl)
 {
   insert(arr, c, pl);
 }
 
 /* DEPRECATED use insert() instead */
 template <class GeomTraits, class TopTraits>
-CGAL_DEPRECATED void insert_x_monotone_curve
-(Arrangement_on_surface_2<GeomTraits, TopTraits>& arr,
- const typename GeomTraits::X_monotone_curve_2& c)
+CGAL_DEPRECATED void
+insert_x_monotone_curve(Arrangement_on_surface_2<GeomTraits, TopTraits>& arr,
+                        const typename GeomTraits::X_monotone_curve_2& c)
 {
   insert(arr, c);
 }
 
 /* DEPRECATED use insert() instead */
 template <class GeomTraits, class TopTraits, class InputIterator>
-CGAL_DEPRECATED void insert_x_monotone_curves 
-(Arrangement_on_surface_2<GeomTraits, TopTraits>& arr,
- InputIterator begin, InputIterator end)
+CGAL_DEPRECATED void
+insert_x_monotone_curves(Arrangement_on_surface_2<GeomTraits, TopTraits>& arr,
+                         InputIterator begin, InputIterator end)
 {
   insert(arr, begin, end);
 }
 
 /* DEPRECATED use insert() instead */
 template <class GeomTraits, class TopTraits>
-CGAL_DEPRECATED void insert_x_monotone_curve
-(Arrangement_on_surface_2<GeomTraits, TopTraits>& arr,
- const typename GeomTraits::X_monotone_curve_2& c,
- const Object& obj)
+CGAL_DEPRECATED void
+insert_x_monotone_curve(Arrangement_on_surface_2<GeomTraits, TopTraits>& arr,
+                        const typename GeomTraits::X_monotone_curve_2& c,
+                        const Object& obj)
 {
   insert(arr, c, obj);
 }
@@ -594,8 +594,8 @@ void insert_curve(Arrangement_on_surface_2<GeomTraits, TopTraits>& arr,
 /* DEPRECATED use insert() instead */
 template <class GeomTraits, class TopTraits, class InputIterator>
 CGAL_DEPRECATED
-void insert_curves (Arrangement_on_surface_2<GeomTraits, TopTraits>& arr,
-                    InputIterator begin, InputIterator end)
+void insert_curves(Arrangement_on_surface_2<GeomTraits, TopTraits>& arr,
+                   InputIterator begin, InputIterator end)
 {
   insert(arr, begin, end);
 }
