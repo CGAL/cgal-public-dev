@@ -89,12 +89,12 @@ boost::totally_ordered<Algebraic_z_1<Polynomial_,
                 this->left=b;
                 this->right=b;
                 Gmpq q(b);
-                this->pol=Coefficient(mpq_denref(q.mpq()))*
+                this->pol=Coefficient(Gmpz(mpq_denref(q.mpq())))*
                         Shift()(Polynomial(1),1,0)-
-                        Coefficient(mpq_numref(q.mpq()));
+                        Coefficient(Gmpz(mpq_numref(q.mpq())));
                 zpol=ZCoefficient(mpq_denref(q.mpq()))*
                         ZShift()(ZPolynomial(1),1,0)-
-                        ZCoefficient(mpq_numref(q.mpq()));
+                        ZCoefficient(Gmpz(mpq_numref(q.mpq())));
                 CGAL_assertion(this->left==this->right);
                 CGAL_assertion(this->left==b);
         }
@@ -103,12 +103,12 @@ boost::totally_ordered<Algebraic_z_1<Polynomial_,
                 typedef typename Ptraits::Shift         Shift;
                 typedef typename ZPtraits::Shift        ZShift;
                 CGAL::Gmpq q(t);
-                this->pol=Coefficient(mpq_denref(q.mpq()))*
+                this->pol=Coefficient(Gmpz(mpq_denref(q.mpq())))*
                     Shift()(Polynomial(1),1,0)-
-                        Coefficient(mpq_numref(q.mpq()));
-                zpol=ZCoefficient(mpq_denref(q.mpq()))*
+                        Coefficient(Gmpz(mpq_numref(q.mpq())));
+                zpol=ZCoefficient(Gmpz(mpq_denref(q.mpq())))*
                     ZShift()(ZPolynomial(1),1,0)-
-                        ZCoefficient(mpq_numref(q.mpq()));
+                        ZCoefficient(Gmpz(mpq_numref(q.mpq())));
                 this->left=Bound(t,std::round_toward_neg_infinity);
                 this->right=Bound(t,std::round_toward_infinity);
                 CGAL_assertion(this->left<=t&&this->right>=t);
