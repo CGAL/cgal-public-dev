@@ -53,6 +53,116 @@ Polynomial_converter_1<Polynomial<Gmpq>,Polynomial<Gmpz> >::operator()(
         return Polynomial<Gmpz>(outcoeffs.begin(),outcoeffs.end());
 }
 
+template <>
+Polynomial<Gmpz>
+Polynomial_converter_1<Polynomial<Gmpfr>,Polynomial<Gmpz> >::operator()(
+                const Polynomial<Gmpfr> &p)const{
+        std::vector<Gmpz> outcoeffs;
+        unsigned degree=p.degree();
+        mpfr_exp_t min_e=mpfr_zero_p(p[degree].fr())?
+                          0:
+                          mpfr_get_exp(p[degree].fr());
+        Gmpfr::Precision_type max_prec=p[degree].get_precision();
+        for(unsigned i=0;i<degree;++i){
+                mpfr_exp_t current_e=mpfr_zero_p(p[i].fr())?
+                                     0:
+                                     mpfr_get_exp(p[i].fr());
+                if(min_e>current_e)
+                        min_e=current_e;
+                Gmpfr::Precision_type current_prec=p[i].get_precision();
+                if(max_prec<current_prec)
+                        max_prec=current_prec;
+        }
+        // We have now the maximum and minimum exponents of the
+        // coefficients.
+        if(min_e<0){
+                // Multiply the coefficients by 2^(max_prec-min_e-1). The
+                // precision must be added because we can have a mantissa
+                // of the form .000...01. Other possibility consists in
+                // checking the mantissa and adding the number of trailing
+                // zeroes to min_e.
+                unsigned long mulby2=max_prec-min_e-1;
+                for(unsigned i=0;i<=degree;++i){
+                        Gmpz cz;
+                        Gmpfr czfr(p[i]);
+                        CGAL_assertion_code(int round=)
+                        mpfr_mul_2ui(czfr.fr(),p[i].fr(),mulby2,GMP_RNDD);
+                        CGAL_assertion(!round);
+                        mpfr_get_z(cz.mpz(),czfr.fr(),GMP_RNDD);
+                        CGAL_assertion(!mpfr_cmp_z(czfr.fr(),cz.mpz()));
+                        outcoeffs.push_back(cz);
+                }
+        }else{
+                // Otherwise, we have only integer coefficients. We may
+                // reduce the size of the integer coefficients when min_e>0
+                // by dividing by 2^(min_e), but this would incur in
+                // another copy of the coefficient.
+                for(unsigned i=0;i<=degree;++i){
+                        Gmpz cz;
+                        CGAL_assertion_code(int round=)
+                        mpfr_get_z(cz.mpz(),p[i].fr(),GMP_RNDD);
+                        CGAL_assertion(!round);
+                        outcoeffs.push_back(cz);
+                }
+        }
+        return Polynomial<Gmpz>(outcoeffs.begin(),outcoeffs.end());
+}
+
+template <>
+Polynomial<Gmpz>
+Polynomial_converter_1<Polynomial<Gmpfr>,Polynomial<Gmpz> >::operator()(
+                const Polynomial<Gmpfr> &p)const{
+        std::vector<Gmpz> outcoeffs;
+        unsigned degree=p.degree();
+        mpfr_exp_t min_e=mpfr_zero_p(p[degree].fr())?
+                          0:
+                          mpfr_get_exp(p[degree].fr());
+        Gmpfr::Precision_type max_prec=p[degree].get_precision();
+        for(unsigned i=0;i<degree;++i){
+                mpfr_exp_t current_e=mpfr_zero_p(p[i].fr())?
+                                     0:
+                                     mpfr_get_exp(p[i].fr());
+                if(min_e>current_e)
+                        min_e=current_e;
+                Gmpfr::Precision_type current_prec=p[i].get_precision();
+                if(max_prec<current_prec)
+                        max_prec=current_prec;
+        }
+        // We have now the maximum and minimum exponents of the
+        // coefficients.
+        if(min_e<0){
+                // Multiply the coefficients by 2^(max_prec-min_e-1). The
+                // precision must be added because we can have a mantissa
+                // of the form .000...01. Other possibility consists in
+                // checking the mantissa and adding the number of trailing
+                // zeroes to min_e.
+                unsigned long mulby2=max_prec-min_e-1;
+                for(unsigned i=0;i<=degree;++i){
+                        Gmpz cz;
+                        Gmpfr czfr(p[i]);
+                        CGAL_assertion_code(int round=)
+                        mpfr_mul_2ui(czfr.fr(),p[i].fr(),mulby2,GMP_RNDD);
+                        CGAL_assertion(!round);
+                        mpfr_get_z(cz.mpz(),czfr.fr(),GMP_RNDD);
+                        CGAL_assertion(!mpfr_cmp_z(czfr.fr(),cz.mpz()));
+                        outcoeffs.push_back(cz);
+                }
+        }else{
+                // Otherwise, we have only integer coefficients. We may
+                // reduce the size of the integer coefficients when min_e>0
+                // by dividing by 2^(min_e), but this would incur in
+                // another copy of the coefficient.
+                for(unsigned i=0;i<=degree;++i){
+                        Gmpz cz;
+                        CGAL_assertion_code(int round=)
+                        mpfr_get_z(cz.mpz(),p[i].fr(),GMP_RNDD);
+                        CGAL_assertion(!round);
+                        outcoeffs.push_back(cz);
+                }
+        }
+        return Polynomial<Gmpz>(outcoeffs.begin(),outcoeffs.end());
+}
+
 } // namespace RS_AK1
 } // namespace CGAL
 
