@@ -2,8 +2,18 @@
 
 # --- Command line
 refname="$1"
-oldrev="$2"
-newrev="$3"
+oldrev="$(git rev-parse $2)"
+newrev="$(git rev-parse $3)"
+debug="$4"
+
+if [ -z "$newrev" ] || [ -n "$debug" -a "x$debug" != "x--debug" ]; then
+    if [ -n "$newrev" ]; then
+        echo "The fourth argument is \"$4\"!" >&2
+    fi
+    echo "  Usage:" >&2
+    echo "  $0 <refname> <oldrev> <newrev> [--debug]"  >&2
+    exit 1
+fi
 
 shortref=$(basename "$refname")
 date=$(date +%Y-%m-%d_%H%M%S)
