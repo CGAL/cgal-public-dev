@@ -32,10 +32,24 @@ function reject_push() {
     exit 1
 }
 
-# Special rights for a set of trusted people.
-case "$GIT_USER" in
-    (lrineau|sloriot|eric) exit 0;;
-esac
+function may_reject_push() {
+    # Special rights for a set of trusted people.
+    case "$GIT_USER" in
+        (lrineau|sloriot|eric)
+            echo "You are in the set of TRUSTED user."
+            if [ "$1" != force ]; then
+                echo "That push is EXCEPTIONNALY accepted."
+            else
+                echo "BUT that issue is IMPORTANT."
+                echo "Your push will be REJECTED!"
+                reject_push
+            fi
+            ;;
+        (*)
+            reject_push
+            ;;
+    esac
+}
 
 # If the branch is not master, allow
 if [ "$refname" != refs/heads/master ]; then exit 0; fi
@@ -48,7 +62,7 @@ if [ `basename "${PWD}"` = "cgal-gsoc" ]; then
         echo "    git checkout master"
         echo "    git reset --hard origin/master"
         echo "  to reset your local copy of master to the original one."
-        reject_push
+        may_reject_push
     fi
 fi
 
@@ -58,7 +72,7 @@ if ! [ "$(git merge-base "$oldrev" "$newrev")" = "$oldrev" ]; then
     echo "ERROR:"
     echo "  You cannot push a non fast-forward update to master in CGAL"
     echo "  git repositories!"
-    reject_push
+    may_reject_push
 fi
 
 # Accept minor fixes
@@ -71,13 +85,13 @@ fi
 if ! git rev-parse -q --verify "$newrev^2" > /dev/null; then
     echo "ERROR:"
     echo "  Only merges or trivial fixes can be pushed to master!"
-    reject_push
+    may_reject_push
 fi
 
 if [ $(git log --oneline "$newrev^1..$oldrev" | wc -l) != 0 ]; then
     echo "ERROR:"
     echo "Your merge must have 'origin/master' as its first parent!"
-    reject_push
+    may_reject_push force
 fi
 
 # Accept pushes that are said to be approved by the RM
@@ -106,4 +120,4 @@ echo "    Please also check the following section in the wiki:"
 echo "    http://cgal.org/wiki/Guidelines/Source_Code_Management_GIT#Bug_Fixes"
 echo "  - The only other allowed pushed are modifications to the"
 echo "    Doxygen documentation."
-reject_push
+may_reject_push
