@@ -68,6 +68,18 @@ if git show "$newrev" | grep -Eiq '(minor|trivial) +(bug(-)?)?fix.*master'; then
     fi
 fi
 
+if ! git rev-parse -q --verify "$newrev^2" > /dev/null; then
+    echo "ERROR:"
+    echo "  Only merges or trivial fixes can be pushed to master!"
+    reject_push
+fi
+
+if [ $(git log --oneline "$newrev^1..$oldrev" | wc -l) != 0 ]; then
+    echo "ERROR:"
+    echo "Your merge must have 'origin/master' as its first parent!"
+    reject_push
+fi
+
 # Accept pushes that are said to be approved by the RM
 if git show "$newrev" | grep -iEq 'App?rou?ved by the (RM|Release Manager)'; then
     exit 0
