@@ -20,10 +20,15 @@ date=$(date +%Y-%m-%d_%H%M%S)
 rejected_ref="refs/rejected-push/${shortref}_${date}_${GIT_USER}"
 
 function reject_push() {
-    git update-ref "$rejected_ref" "$newrev"
-    echo "  Please specify the following reference:"
-    echo "    ${rejected_ref}"
-    echo ""
+    if [ -z "$debug" ]; then
+        git update-ref "$rejected_ref" "$newrev"
+        echo ""
+        echo "  Ask for help on the CGAL developers mailing lists to solve"
+        echo "  that issue."
+        echo "  Please specify the following reference:"
+        echo "    ${rejected_ref}"
+        echo ""
+    fi
     exit 1
 }
 
