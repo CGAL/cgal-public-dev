@@ -98,7 +98,7 @@ private:
  
   // X(t) is given by *p_polyX(t) / _normX:
   mutable Polynomial_1        *p_polyX;       // The polynomial for x.
-  mutable Integer             *p_normX;       // Normalizing factor for y.
+  mutable Integer             *p_normX;       // Normalizing factor for x.
 
   // Y(t) is given by _polyY(t) / _normY:
   mutable Polynomial_1        *p_polyY;       // The polynomial for y.
@@ -598,14 +598,13 @@ private:
     typename Polynomial_traits_1::Construct_polynomial	construct_polynomial;
 
 
-    // TODO Check if fraction_trait should be on rational type
+    // TODO Check if fraction_trait should be on rational type --YES
 
     typedef CGAL::Fraction_traits<Bound>	FT_bound;
     typedef FT_bound::Numerator_type		NT;
     typedef FT_bound::Denominator_type		DT;
 
     //Nt_traits             nt_traits;
-    // TODO Check the return type for the NULLTAG and conversion
 
     //NT numer; DT denom;
     Integer numer, denom;

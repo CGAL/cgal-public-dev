@@ -996,7 +996,7 @@ _Bezier_x_monotone_2<Algebraic_kernel_d_1_, RatKer, BndTrt>::point_position
     std::vector <Algebraic_real_1> roots;
     std::pair<double,double> prange = parameter_range();
 
-    // TODO Check the polynomial construction
+    // TODO Check the polynomial construction --> Use solve_1
     nt_traits.compute_polynomial_roots (poly_x,prange.first,prange.second,std::back_inserter(roots));
     
     CGAL_assertion(roots.size()==1); //p is in the range and the curve is x-monotone
