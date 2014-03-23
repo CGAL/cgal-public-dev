@@ -419,7 +419,6 @@ public:
     Lines_through_segments_point_adapt_2<Traits_3, Point, Number_type>(p)
   {
     m_z = p.m_z;
-
   }
 
   template <typename N_x,typename N_y,typename N_z>
@@ -430,13 +429,6 @@ public:
     m_z = z;
     this->m_original_point_created = false;
   }
-
-  Lines_through_segments_point_adapt_3(Self& p) :
-    Lines_through_segments_point_adapt_2<Traits_3, Point, Number_type>(p)
-  {
-    m_z = p.m_z;
-  }
-
 
   Number_type z() const
   {
