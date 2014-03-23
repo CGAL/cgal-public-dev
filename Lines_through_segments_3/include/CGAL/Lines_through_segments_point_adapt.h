@@ -14,7 +14,7 @@
 //
 // $URL: $
 // $Id: $
-// 
+//
 //
 // Author(s)     : Asaf Porat          <asafpor1@post.tau.ac.il>
 
@@ -35,13 +35,13 @@
 
 namespace CGAL {
 
-   
+
 template <typename Traits_3_, typename Point_, typename Number_type_>
 class Lines_through_segments_point_adapt_2
 {
 public:
    typedef Traits_3_ Traits_3;
-   
+
    typedef enum {
       LTS_VERTEX_INTERIOR = 0,
       LTS_VERTEX_X_MINUS_INFINITY = 1,
@@ -57,17 +57,17 @@ private:
 public:
   typedef typename Rational_kernel::FT                  Rational;
   typedef typename Alg_kernel::FT                       Algebraic;
-   
+
 private:
   typedef Lines_through_segments_point_adapt_2          Self;
-  
-  typedef typename Rational_kernel::Segment_3           Rational_segment_3;
-   
 
-      
+  typedef typename Rational_kernel::Segment_3           Rational_segment_3;
+
+
+
   /* Specific typedefs for conic arc traits. */
   typedef CGAL::CORE_algebraic_number_traits            Nt_traits;
-  typedef CGAL::Arr_conic_traits_2<Rational_kernel, Alg_kernel, Nt_traits> 
+  typedef CGAL::Arr_conic_traits_2<Rational_kernel, Alg_kernel, Nt_traits>
   Conic_traits_arr_on_plane_2_;
   typedef CGAL::Arr_consolidated_curve_data_traits_2<Conic_traits_arr_on_plane_2_,const Rational_segment_3*>
   Conic_traits_arr_on_plane_2;
@@ -81,35 +81,35 @@ private:
   typedef CGAL::Arr_rational_function_traits_2<AK1>  Rational_arc_traits_arr_on_plane_2_;
   typedef CGAL::Arr_consolidated_curve_data_traits_2<Rational_arc_traits_arr_on_plane_2_,const Rational_segment_3*>
   Rational_arc_traits_arr_on_plane_2;
-   
+
   typedef typename Rational_kernel::Point_2         Rational_point_2;
 
 protected:
   typedef Number_type_                                  Number_type;
-      
-  
-protected:  
+
+
+protected:
   /* If the point was created with rational representation keep it. */
   Rational m_rat_x;
   Rational m_rat_y;
   bool m_rat_rep_exists;
-         
+
   Number_type m_x;
   Number_type m_y;
   Point_ m_orig_point;
   bool m_original_point_created; /* True if m_orig_point was intialized. */
 
   Point_type m_point_type;
-  
+
 public:
-      
+
   typedef Point_ Point;
   Lines_through_segments_point_adapt_2()
   {
     m_rat_rep_exists = false;
-    m_point_type = LTS_VERTEX_INTERIOR;               
+    m_point_type = LTS_VERTEX_INTERIOR;
   }
-      
+
   Lines_through_segments_point_adapt_2(const typename Rational_arc_traits_arr_on_plane_2::Point_2& p,
                                        const Rational& rat_x,
                                        const Rational& rat_y)
@@ -132,10 +132,10 @@ public:
   {
     m_rat_rep_exists = true;
     m_point_type = LTS_VERTEX_INTERIOR;
-                  
+
     m_rat_x = rat_x;
     m_rat_y = rat_y;
-         
+
     m_orig_point = p;
     m_x = p.x();
     m_y = p.y();
@@ -164,7 +164,7 @@ public:
 
     m_rat_x = 0;
     m_rat_y = 0;
-         
+
     m_orig_point = p;
     m_x = p.x();
     m_y = p.y();
@@ -195,7 +195,7 @@ public:
     m_y = y;
   }
 
-  Lines_through_segments_point_adapt_2(const typename Rational_arc_traits_arr_on_plane_2::Algebraic_real_1& number, 
+  Lines_through_segments_point_adapt_2(const typename Rational_arc_traits_arr_on_plane_2::Algebraic_real_1& number,
                                        Point_type ver_type)
   {
     Lines_through_segments_traits_on_plane_adapt<
@@ -209,7 +209,7 @@ public:
      case LTS_VERTEX_X_MINUS_INFINITY:
       {
        m_y = traits_2_adapt.convert_real_to_algebraic(number);
-               
+
       }
       break;
      case LTS_VERTEX_Y_PLUS_INFINITY:
@@ -223,7 +223,7 @@ public:
     }
   }
 
-      
+
   Lines_through_segments_point_adapt_2(const Rational& x, const Rational& y)
   {
     m_x = x;
@@ -236,33 +236,19 @@ public:
     m_orig_point = Point(x,y);
   }
 
-  Lines_through_segments_point_adapt_2(Self& p) 
-  {
-    m_orig_point = p.m_orig_point;
-    m_x = p.m_x;
-    m_y = p.m_y;
-    m_original_point_created = p.m_original_point_created;
-    m_rat_rep_exists = p.m_rat_rep_exists;
-    m_rat_y = p.m_rat_y;
-    m_rat_x = p.m_rat_x;
-
-    m_point_type = p.m_point_type;
-  }
-
-      
   Number_type x() const
   {
     CGAL_assertion(m_point_type != LTS_VERTEX_X_MINUS_INFINITY &&
                    m_point_type != LTS_VERTEX_X_PLUS_INFINITY);
-         
+
     return m_x;
   }
-      
+
   Point_type type() const
   {
     return m_point_type;
   }
-         
+
   Number_type y() const
   {
     CGAL_assertion(m_point_type != LTS_VERTEX_Y_MINUS_INFINITY &&
@@ -273,14 +259,14 @@ public:
 
   void get_original_point(Point& point) const
   {
-         
+
     CGAL_assertion(m_original_point_created);
     point = m_orig_point;
   }
 
   Rational_point_2 get_rational_point() const
   {
-         
+
     CGAL_assertion(m_rat_rep_exists);
     return Rational_point_2(m_rat_x,m_rat_y);
   }
@@ -324,7 +310,7 @@ private:
     }
     return false;
   }
-         
+
 public:
   bool operator<(const Self& point_2) const
   {
@@ -339,18 +325,18 @@ public:
       {
         if (this->m_x < point_2.m_x)
           return true;
-                 
+
         if (this->m_x == point_2.m_x)
         {
           if (this->m_point_type == LTS_VERTEX_INTERIOR &&
               point_2.m_point_type == LTS_VERTEX_INTERIOR &&
               this->m_y < point_2.m_y)
             return true;
-                    
+
           if (point_2.m_point_type == LTS_VERTEX_Y_PLUS_INFINITY &&
               this->m_point_type != LTS_VERTEX_Y_PLUS_INFINITY)
             return true;
-                    
+
           if (point_2.m_point_type == LTS_VERTEX_INTERIOR &&
               this->m_point_type == LTS_VERTEX_Y_MINUS_INFINITY)
             return true;
@@ -383,14 +369,14 @@ public:
   {
     std::ostringstream o;
     o << "Point (";
-         
+
     if (m_point_type == LTS_VERTEX_X_MINUS_INFINITY)
       o << "MINUS INFINITY";
     else if (m_point_type == LTS_VERTEX_X_PLUS_INFINITY)
       o << "PLUS INFINITY";
     else
       o << this->m_x;
-         
+
     o << ",";
     if (m_point_type == LTS_VERTEX_Y_MINUS_INFINITY)
       o << "MINUS INFINITY";
@@ -398,21 +384,21 @@ public:
       o << "PLUS INFINITY";
     else
       o << this->m_y;
-         
+
     o <<  ")" << std::endl;
     return o.str();
   }
-      
+
 };
 
 template <typename Traits_3_, typename Point, typename Number_type>
-class Lines_through_segments_point_adapt_3 : 
+class Lines_through_segments_point_adapt_3 :
     public Lines_through_segments_point_adapt_2<Traits_3_, Point, Number_type>
 {
 private:
   typedef Lines_through_segments_point_adapt_3                  Self;
   typedef Traits_3_                                             Traits_3;
-  
+
   Number_type m_z;
 
 public:
@@ -428,7 +414,7 @@ public:
     m_z = p.dz();
     this->m_original_point_created = true;
   }
-      
+
   Lines_through_segments_point_adapt_3(const Self& p) :
     Lines_through_segments_point_adapt_2<Traits_3, Point, Number_type>(p)
   {
@@ -451,7 +437,7 @@ public:
     m_z = p.m_z;
   }
 
-      
+
   Number_type z() const
   {
     return this->m_z;
@@ -469,7 +455,7 @@ public:
   {
     return this->m_z;
   }
-      
+
   Point get_original_point() const
   {
     if (this->m_original_point_created)
@@ -486,7 +472,7 @@ public:
       point = Point(this->m_x,this->m_y,this->m_z);
   }
 
-         
+
   std::string to_string() const
   {
     std::ostringstream o;
@@ -498,7 +484,7 @@ public:
     {
       o << Point(this->m_x,this->m_y,this->m_z) << std::endl;
     }
-         
+
     return o.str();
   }
 };
