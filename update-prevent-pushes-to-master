@@ -27,7 +27,9 @@ function reject_push() {
         echo "  that issue."
         echo "  Please specify the following reference:"
         echo "    ${rejected_ref}"
-        echo ""
+        echo "###"
+        echo "###  NOTE: Your push to branch $refname is REJECTED!"
+        echo "###"
     fi
     exit 1
 }
@@ -54,6 +56,7 @@ function may_reject_push() {
 # If the branch is not master, allow
 if [ "$refname" != refs/heads/master ]; then exit 0; fi
 
+# First check for cgal-gsoc: disallow pushes to master.
 if [ `basename "${PWD}"` = "cgal-gsoc" ]; then
     if [ -z "$IN_CGAL_POST_UPDATE_PUSH_TO_GSOC" ]; then
         echo "ERROR:"
@@ -67,6 +70,7 @@ if [ `basename "${PWD}"` = "cgal-gsoc" ]; then
 fi
 
 # Forbid non-fast-forward updates to master
+# That is the first check. Only trusted users can do that.
 if ! [ "$(git merge-base "$oldrev" "$newrev")" = "$oldrev" ]; then
     echo ""
     echo "ERROR:"
@@ -76,34 +80,65 @@ if ! [ "$(git merge-base "$oldrev" "$newrev")" = "$oldrev" ]; then
 fi
 
 # Accept minor fixes
+nb_commits=$(git log --oneline "$oldrev..$newrev" | wc -l)
 if git show "$newrev" | grep -Eiq '(minor|trivial) +(bug(-)?)?fix.*master'; then
-    if [ $(git log --oneline "$oldrev..$newrev" | wc -l) = 1 ]; then
+    if [ "$nb_commits" = 1 ]; then
+        echo "NOTE: push of a trivial fix is accepted in master."
         exit 0
+    else
+        echo "  Minor fixes to master should be restricted to one short commit."
+        echo "  You are pushing ${nb_commits} commits."
+        echo "  Try:"
+        echo "    git pull --rebase"
+        echo "  and re-push."
+        echo "  If your commit is not a trivial fix, then create a branch and"
+        echo "  test it in integration."
     fi
 fi
 
-if ! git rev-parse -q --verify "$newrev^2" > /dev/null; then
-    echo "ERROR:"
-    echo "  Only merges or trivial fixes can be pushed to master!"
-    may_reject_push
-fi
-
+# Reject merges when master is not in the left child of the merge.
 if [ $(git log --oneline "$newrev^1..$oldrev" | wc -l) != 0 ]; then
     echo "ERROR:"
     echo "Your merge must have 'origin/master' as its first parent!"
     may_reject_push force
 fi
 
-# Accept pushes that are said to be approved by the RM
-if git show "$newrev" | grep -iEq 'App?rou?ved by the (RM|Release Manager)'; then
-    exit 0
-fi
-
 # Accept modifications to Maintenance, Documentation, and */doc
 if ! git diff --raw "$oldrev" "$newrev" | grep -vE '\b(Maintenance/|Documentation/|[^/]+/doc/|Installation/changes.html)'; then
+    echo "NOTE: that push is accepted because it is in the set of"
+    echo "exceptions:"
+    echo "  - maintenance files,"
+    echo "  - documentation files,"
+    echo "  - or Installation/changes.html."
     exit 0
 fi
 
+# Accept pushes that are said to be approved by the RM
+if git show "$newrev" | grep -iEq 'App?rou?ved by the (RM|Release Manager)'; then
+    echo "NOTE: Your push is accepted (marked as approved by the RM)."
+    exit 0
+fi
+
+# The following tests if $newrev has a second parent (it would mean that is
+# a merge commit).
+if ! git rev-parse -q --verify "$newrev^2" > /dev/null; then
+    echo "ERROR:"
+    echo "  Only merges or trivial fixes (short and readable single commits)"
+    echo "  can be pushed to master!"
+    if [ $(git log --oneline "$oldrev..$newrev" | wc -l) = 1 ]; then
+        echo ""
+        echo " ADVICE: You are trying to push a single commit.  If that is"
+        echo " a trivial fix, use the following command:"
+        echo "    git commit --amend"
+        echo "  then add \"trivial fix for master\" in the body of the"
+        echo "  commit message, and then re-push."
+        echo "  Otherwise, create a branch and test is in integration."
+        echo ""
+    fi
+    may_reject_push
+fi
+
+# Fallback
 echo ""
 echo "ERROR:"
 echo "  You are not allowed to push the revision"
