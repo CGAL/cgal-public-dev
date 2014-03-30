@@ -9,15 +9,16 @@
 #include <CGAL/Polynomial/Sage/Sage_Connection.h>
 
 #include <CGAL/Polynomial_type_generator.h>
+#include <CGAL/Polynomial_traits_d.h>
 
 #ifndef SAGE_POLYNOMIAL_H
 #define SAGE_POLYNOMIAL_H
 
-
-class Sage_Polynomial {
+template <class T, int d>
+  class Sage_Polynomial : public CGAL::Polynomial_type_generator<T,d> {
 
  private:
-  CGAL::Polynomial_type_generator<int,2>::Type cgal_internal;
+  typename CGAL::Polynomial_type_generator<T,d>::Type cgal_internal;
   std::string sage_internal;
   //size_t sage_address;
   std::string sage_address;
@@ -25,7 +26,7 @@ class Sage_Polynomial {
   bool cgal_update_status;
 
  public:
-  Sage_Polynomial(CGAL::Polynomial_type_generator<int,2>::Type cgal_input) 
+  Sage_Polynomial(typename CGAL::Polynomial_type_generator<T,d>::Type cgal_input) 
     {
       cgal_internal = cgal_input;
       cgal_update_status = true;
@@ -39,15 +40,14 @@ class Sage_Polynomial {
     };
 
 
-
   void convert_to_sage_format()
   {
     //CGAL::set_pretty_mode(std::cout);
     std::ostringstream tmp_os_stream;
     CGAL::set_pretty_mode(tmp_os_stream);
-    tmp_os_stream << cgal_internal;
+    tmp_os_stream << this;
     sage_internal = tmp_os_stream.str();
-    
+    //std::cout << sage_internal << std::endl;
     sage_update_status = true;
   }
 
@@ -64,7 +64,7 @@ class Sage_Polynomial {
       std::string stringForSage = oStringForSage.str();
       std::string dataFromSage = getDataFromSage( stringForSage );
  
-      std::cout << dataFromSage << std::endl;
+      //std::cout << dataFromSage << std::endl;
      
       return dataFromSage; 
     }
