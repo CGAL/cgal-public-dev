@@ -13,7 +13,7 @@
 //
 // $URL: $
 // $Id: $
-// 
+//
 //
 // Author(s)     : Asaf Porat          <asafpor1@post.tau.ac.il>
 
@@ -23,7 +23,7 @@
 /*! \file
 *************************************************************
 * The following class computes all of the lines that crosses 4 segments in 3D.
-* The class is a functor. 
+* The class is a functor.
 *
 * Input:
 *
@@ -56,14 +56,14 @@ public:
   typedef typename Traits_3::Alg_kernel                 Alg_kernel;
   typedef With_segments_                                With_segments;
 
-  typedef CGAL::Arrangement_2< 
+  typedef CGAL::Arrangement_2<
       typename Traits_3::Traits_arr_on_plane_2
     , Lines_through_segments_arr_ext_dcel<
           typename Traits_3::Traits_arr_on_plane_2
         , Segment_3>
     > Arr_on_plane;
 
-  typedef CGAL::Arrangement_on_surface_2< 
+  typedef CGAL::Arrangement_on_surface_2<
       typename Traits_3::Traits_arr_on_sphere_2
     , CGAL::Arr_spherical_topology_traits_2<
           typename Traits_3::Traits_arr_on_sphere_2
@@ -71,7 +71,7 @@ public:
               typename Traits_3::Traits_arr_on_sphere_2
             , Segment_3> >
     > Arr_on_sphere;
-  
+
   /* Output objects */
   typedef typename Rational_kernel::Line_3              Line_3;
 
@@ -88,18 +88,18 @@ public:
     Mapped_x_monotone_curve_2;
   typedef typename Lines_through_segments_mapped_2<Traits_3>::Point_2
                                                         Mapped_point_2;
-  
-  typedef typename Lines_through_segments_mapped_2<Traits_3>::General_polygon_2  
+
+  typedef typename Lines_through_segments_mapped_2<Traits_3>::General_polygon_2
                                                         Mapped_general_polygon_2;
 
   typedef typename Mapped_2::Mapped_transversal         Mapped_transversal;
   typedef typename Through_3::Through_transversal       Through_transversal;
-      
+
    typedef typename Lines_through_segments_output_obj<
       Traits_3, Segment_3>::Transversal                 Transversal;
 
   typedef typename
-  Lines_through_segments_output_obj<Traits_3, Segment_3>::Transversal_with_segments 
+  Lines_through_segments_output_obj<Traits_3, Segment_3>::Transversal_with_segments
   Transversal_with_segments;
 
   typedef typename Rational_kernel::Segment_3           Rational_segment_3;
@@ -128,7 +128,7 @@ public:
    * \param alg_kernel algebraic kernel.
    * \param rational_kernel rational kernel.
    */
-  Lines_through_segments_3(const Alg_kernel& alg_kernel = Alg_kernel(), 
+  Lines_through_segments_3(const Alg_kernel& alg_kernel = Alg_kernel(),
                            const Rational_kernel& rational_kernel = Rational_kernel()) :
     m_rational_kernel(rational_kernel), m_alg_kernel(alg_kernel) {}
 
@@ -137,22 +137,22 @@ public:
    * common lines to an output iterator.
    * A common line is a line that passes through 4 segments in 3 space.
    * In a general case only 0-2 lines will pass through 4 segments.
-   * 
+   *
    * A line equation of general line which intersects with 3 lines L1,L2,L3
    * is represented as an hyperbola at L1,L2 space. Intersection of 2
-   * hyperbolas at this space represent a line which intersect with 4 
+   * hyperbolas at this space represent a line which intersect with 4
    * segments.
-   *  
+   *
    * For each two segments the function gets over the n-2 segments and adds
    * for each, an object to the 2 dimensional arrangement derived by the two
    * segments.
-   * Next, the function get over all the intersection points (vertices) at 
+   * Next, the function get over all the intersection points (vertices) at
    * the arrangement and output a common line for each vertex.
    *
-   * The run time is O(N^3 * logn + k), where K is the output size. 
+   * The run time is O(N^3 * logn + k), where K is the output size.
    * At the best case the function will run only at O(n^3 * logn) - where
    * there aren't any common lines.
-   * 
+   *
    *  L2.t * L1.t * C402 - L2.t * C403 - L1.t * C401 - C400 = 0
    *
    *************************************************************/
@@ -168,24 +168,24 @@ public:
   {
     typedef Lines_through_segments_impl<Traits_3, With_segments>
       Lines_through_segments_impl;
-      
+
     if(begin == end) return;
 
     std::vector<const Rational_segment_3*> segs;
-    std::transform(begin, end, std::back_inserter(segs), 
+    std::transform(begin, end, std::back_inserter(segs),
                    &boost::addressof<Rational_segment_3>);
 
     if (segs.empty()) return;
 
     /* Holds the number of overlapping segments.
-     * If equal to the number of remaining segments, than all of the 
+     * If equal to the number of remaining segments, than all of the
      * remanining segments overlap,
      * and the common line for each four is returned.
      */
-    unsigned int num_of_overlap_segs = 0; 
+    unsigned int num_of_overlap_segs = 0;
     unsigned int S1, S2, S3;
-         
-    for (S1 = 0; (S1+3) != segs.size(); ++S1) 
+
+    for (S1 = 0; (S1+3) != segs.size(); ++S1)
     {
       for (S2 = S1+1; (S2+2) != segs.size(); ++S2)
       {
@@ -198,7 +198,7 @@ public:
         {
           Lines_through_segments_impl line_through_segs_obj(
             segs[S1], segs[S2], &m_alg_kernel, &m_rational_kernel);
-                    
+
           /* For each line add a new curve to the arrangement, the
            * intersection of the hyperbolas represent common lines. */
           for (S3 = S2+1; S3 != segs.size(); ++S3)
@@ -219,10 +219,10 @@ public:
             m_planar_arrangements.push_back(line_through_segs_obj.arrangement_on_plane());
           if(!line_through_segs_obj.arrangement_on_sphere()->is_empty())
             m_spherical_arrangements.push_back(line_through_segs_obj.arrangement_on_sphere());
-          
+
           num_of_overlap_segs = 0;
         }
-        catch(const CGAL::Lines_through_segments_exp_2_lines_overlap& e)
+        catch(const CGAL::Lines_through_segments_exp_2_lines_overlap& /* e */)
         {
           const Rational_segment_3* temp = segs[S2];
           segs[S2] = segs[segs.size() - 1];
