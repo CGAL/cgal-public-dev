@@ -507,6 +507,28 @@ macro( add_config_flag flag )
 endmacro()
  
 include(CGAL_SetupDependencies)
+# Find all external dependencies, if not explicitly turned off.
+foreach(lib ${CGAL_EXTERNAL_LIBRARIES})
+  set(CGAL_WITH_${lib} FALSE)
+  if(WITH_${lib})
+    CGAL_setup_dependency(${lib})
+
+    # Status reporting.
+    if(${CGAL_${lib}_PREFIX}_FOUND)
+      message(STATUS "${lib} has been found.")
+      set(CGAL_WITH_${lib} TRUE)
+    elseif(NOT ${vlib}_FOUND AND ${CGAL_${lib}_REQUIRED})
+      message(FATAL_ERROR "${lib} is required to build CGAL but could not be found.
+Do you need to set ${vlib}_DIR?")
+    elseif(NOT CGAL_WITH_${lib} AND ${CGAL_${lib}_WARN_MISSING})
+      message(WARNING "${lib} not found or disabled, but is highly recommended.")
+    else()
+      message(STATUS "${lib} not found or disabled. This library is not critical for functionality.")
+    endif()
+  else()
+    message(STATUS "${lib} disabled.")
+  endif()
+endforeach()
 
 message("== Detect external libraries (DONE) ==\n")
 

@@ -3,6 +3,16 @@ if( NOT CGAL_MACROS_FILE_INCLUDED )
 
   include("${CGAL_MODULES_DIR}/CGAL_VersionUtils.cmake")
 
+  # If the argument var is a defined variable, redefine it with it's
+  # current value in PARENT_SCOPE. This is useful for propagating a
+  # value out of a function without polluting the scope with otherwise
+  # undefined variables.
+  macro(CGAL_up_if_defined var)
+    if(DEFINED ${var})
+      set(${var} ${${var}} PARENT_SCOPE)
+    endif()
+  endmacro()
+
   # Probably unused. -- Laurent Rineau, 2011/07/21
   macro(assert _arg )
     if ( NOT ${_arg} )

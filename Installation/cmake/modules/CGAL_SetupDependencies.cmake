@@ -1,5 +1,4 @@
 include(CGAL_Macros)
-
 include(CMakeParseArguments)
 
 function(CGAL_external_library)
@@ -87,46 +86,30 @@ endif()
 
 include(CGAL_TweakFindBoost)
 
-foreach(lib ${CGAL_EXTERNAL_LIBRARIES})
+function(CGAL_setup_dependency lib)
   set(vlib ${CGAL_${lib}_PREFIX})
-  if(WITH_${lib})
-    if(${lib} MATCHES "Boost_")
-      string(REPLACE "Boost_" "" component ${lib})
-      find_package(Boost ${CGAL_${lib}_VERSION} QUIET COMPONENTS ${component})
-    else()
-      find_package(${lib} ${CGAL_${lib}_VERSION} QUIET)
-    endif()
-
-    if(NOT ${vlib}_FOUND AND ${CGAL_${lib}_REQUIRED})
-      message(FATAL_ERROR "${lib} is required to build CGAL but could not be found.
-Do you need to set ${vlib}_DIR?")
-    elseif(${vlib}_FOUND)
-      message(STATUS "${lib} has been found.")
-      # Turn off the output-because this is too noisy.
-      # message(STATUS "  Use${lib}-file:      ${${vlib}_USE_FILE}") 
-      # message(STATUS "  ${lib} include:      ${${vlib}_INCLUDE_DIR}")
-      # message(STATUS "  ${lib} libraries:    ${${vlib}_LIBRARIES}")
-      # message(STATUS "  ${lib} definitions:  ${${vlib}_DEFINITIONS}")
-      set(CGAL_WITH_${lib} TRUE)
-    else()
-      set(CGAL_WITH_${lib} FALSE)
-    endif()
+  
+  if(${lib} MATCHES "Boost_")
+    string(REPLACE "Boost_" "" component ${lib})
+    find_package(Boost ${CGAL_${lib}_VERSION} QUIET COMPONENTS ${component})
   else()
-    set(CGAL_WITH_${lib} FALSE)
+    find_package(${lib} ${CGAL_${lib}_VERSION} QUIET)
   endif()
-  if(NOT CGAL_WITH_${lib} AND ${CGAL_${lib}_WARN_MISSING})
-    message(WARNING "${lib} not found or disabled, but is highly recommended.")
-  elseif(NOT CGAL_WITH_${lib})
-    message(STATUS "${lib} not found or disabled. This library is not critical for functionality.")
-  endif()
-
-  set(CGAL_WITH_${lib} ${CGAL_WITH_${lib}} PARENT_SCOPE)
-endforeach()
-
-# Clean the Boost_LIBRARIES variable from the last find, to prevent a
-# package that just uses Boost to link against this
-unset(Boost_LIBRARIES)
-unset(vlib)
+  # Turn off the output-because this is too noisy.
+  # message(STATUS "  Use${lib}-file:      ${${vlib}_USE_FILE}") 
+  # message(STATUS "  ${lib} include:      ${${vlib}_INCLUDE_DIR}")
+  # message(STATUS "  ${lib} libraries:    ${${vlib}_LIBRARIES}")
+  # message(STATUS "  ${lib} definitions:  ${${vlib}_DEFINITIONS}")
+  CGAL_up_if_defined(${vlib}_FOUND)
+  CGAL_up_if_defined(${vlib}_USE_FILE)
+  CGAL_up_if_defined(${vlib}_INCLUDE_DIR)
+  CGAL_up_if_defined(${vlib}_LIBRARIES)
+  CGAL_up_if_defined(${vlib}_DEFINITIONS)
+    
+  # Clean the Boost_LIBRARIES variable from the last find, to prevent a
+  # package that just uses Boost to link against this
+  unset(Boost_LIBRARIES)
+endfunction()
 
 # Special handling still required.
 #
