@@ -57,7 +57,8 @@ CGAL_external_library(NAME Boost_program_options
 CGAL_external_library(NAME GMP WARN_MISSING)
 CGAL_external_library(NAME MPFR WARN_MISSING)
 CGAL_external_library(NAME Qt3)
-CGAL_external_library(NAME QT)
+CGAL_external_library(NAME Qt4
+  PREFIX QT)
 CGAL_external_library(NAME ZLIB)
 CGAL_external_library(NAME OpenGL
   PREFIX OPENGL)
