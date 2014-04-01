@@ -34,7 +34,9 @@ if(NOT CGAL_USE_LIBRARY_FILE_INCLUDED)
         target_include_directories(${target_name} SYSTEM PUBLIC "${${vlib}_INCLUDE_DIR}")
       endif()
       
-      target_compile_definitions(${target_name} PUBLIC "${${vlib}_DEFINITIONS}" PUBLIC "-DCGAL_USE_${use_define}")
+      # Bug: this adds e.g. CGAL_USE_Boost_SYSTEM while we use
+      # CGAL_USE_BOOST_SYSTEM in code. What to fix?
+      target_compile_definitions(${target_name} PUBLIC "${${vlib}_DEFINITIONS}" PUBLIC "-DCGAL_USE_${vlib}")
     elseif(${lib_pos} EQUAL -1)
       message(FATAL_ERROR "CGAL_use_library called with ${lib} which is not a supported library.")
     endif()
