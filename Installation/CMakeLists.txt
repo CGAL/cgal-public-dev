@@ -643,7 +643,7 @@ foreach (package ${CGAL_CONFIGURED_PACKAGES})
 endforeach()
 
 # Export file
-set(CGAL_EXPORT_FILE ${CMAKE_BINARY_DIR}/CGAL-export.cmake)
+set(CGAL_EXPORT_FILE ${CMAKE_BINARY_DIR}/CGAL_export.cmake)
 
 # Configure packages
 set(CGAL_CONFIGURED_LIBRARIES)
@@ -754,6 +754,7 @@ install(PROGRAMS ${scripts} DESTINATION ${CGAL_INSTALL_BIN_DIR})
 install(DIRECTORY ${CGAL_MODULES_REL_DIR}/                DESTINATION ${CGAL_INSTALL_CMAKE_DIR} )
 install(FILES     ${CGAL_MODULES_REL_DIR}/UseCGAL.cmake   DESTINATION ${CGAL_INSTALL_CMAKE_DIR} )
 
+install(EXPORT CGAL_export DESTINATION ${CGAL_INSTALL_CMAKE_DIR})
 
 if ( GMP_IN_AUXILIARY )
   install(DIRECTORY auxiliary/gmp/include/ DESTINATION ${CGAL_INSTALL_INC_DIR} )
