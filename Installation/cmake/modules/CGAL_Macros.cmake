@@ -246,18 +246,6 @@ if( NOT CGAL_MACROS_FILE_INCLUDED )
     endif()
   endfunction()
 
-  macro( create_CGALconfig_files )
-    # CGALConfig.cmake is platform specific so it is generated and stored in the binary folder.
-    configure_file("${CGAL_MODULES_DIR}/CGALConfig_binary.cmake.in"
-      "${CMAKE_BINARY_DIR}/CGALConfig.cmake"
-      @ONLY)
-
-    # There is also a version of CGALConfig.cmake that is prepared in case CGAL in installed in CMAKE_INSTALL_PREFIX.
-    configure_file("${CGAL_MODULES_DIR}/CGALConfig_install.cmake.in"
-      "${CMAKE_BINARY_DIR}/config/CGALConfig.cmake"
-      @ONLY)
-  endmacro()
-
   macro ( fetch_env_var VAR )
     if ( "${${VAR}}" STREQUAL "" )
       set( ${VAR}_env_value "$ENV{${VAR}}" )

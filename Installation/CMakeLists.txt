@@ -721,7 +721,15 @@ foreach(lib ${CGAL_CONFIGURED_LIBRARIES} CGAL) # note the added fake 'CGAL'
   hide_variable(${lib}_LIBRARY_INSTALLED)
 endforeach()
 
-create_CGALconfig_files()
+# CGALConfig.cmake for build tree.
+configure_file("${CGAL_MODULES_DIR}/CGALConfig_binary.cmake.in"
+  "${CMAKE_BINARY_DIR}/CGALConfig.cmake"
+  @ONLY)
+
+# CGALConfig.cmake for install.
+configure_file("${CGAL_MODULES_DIR}/CGALConfig_install.cmake.in"
+  "${CMAKE_BINARY_DIR}/config/CGALConfig.cmake"
+  @ONLY)
 
 #--------------------------------------------------------------------------------------------------
 #
