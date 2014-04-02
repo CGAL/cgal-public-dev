@@ -104,7 +104,7 @@ if [ $(git log --oneline "$newrev^1..$oldrev" | wc -l) != 0 ]; then
 fi
 
 # Accept modifications to Maintenance, Documentation, and */doc
-if ! git diff --raw "$oldrev" "$newrev" | grep -vE '\b(Maintenance/|Documentation/|[^/]+/doc/|Installation/changes.html)'; then
+if ! git diff --raw "$oldrev" "$newrev" | grep -qvE '\b(Maintenance/|Documentation/|[^/]+/doc/|Installation/changes.html)'; then
     echo "NOTE: that push is accepted because it is in the set of"
     echo "exceptions:"
     echo "  - maintenance files,"
