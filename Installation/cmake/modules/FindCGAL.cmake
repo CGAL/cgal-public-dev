@@ -68,19 +68,6 @@ if ( NOT CGAL_DIR )
     # Help the user find it if we cannot.
     DOC "The ${CGAL_DIR_DESCRIPTION}"
   )
-  
-endif()
-
-if ( CGAL_DIR )
-
-  if( EXISTS "${CGAL_DIR}/CGAL-export.cmake" )
-    set( CGAL_EXPORT_FILE "${CGAL_DIR}/CGAL-export.cmake" )
-    set( CGAL_FOUND TRUE )
-  elseif ( EXISTS "${CGAL_DIR}/CGALConfig.cmake" )
-    include( "${CGAL_DIR}/CGALConfig.cmake" )
-    set( CGAL_FOUND TRUE )
-  endif()
-
 endif()
 
 if( NOT CGAL_FOUND)
