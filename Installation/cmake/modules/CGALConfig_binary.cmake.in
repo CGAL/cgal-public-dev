@@ -35,6 +35,23 @@ set(CGAL_LIBRARIES_DIR     "@CGAL_LIBRARIES_DIR@" )
 
 set(CGAL_USE_FILE   "${CGAL_MODULES_DIR}/UseCGAL.cmake" )
 
+include("@CGAL_EXPORT_FILE@")
+include("${CGAL_MODULES_DIR}/CGAL_use_library.cmake")
+include("${CGAL_MODULES_DIR}/CGAL_SetupDependencies.cmake")
+
+set(CGAL_CONFIGURED_LIBRARIES @CGAL_CONFIGURED_LIBRARIES@)
+
+# Backward compatibility definitions.
+foreach(target_name ${CGAL_CONFIGURED_LIBRARIES})
+  if(TARGET ${target_name})
+    # TODO: This does not handle Release/Debug targets correctly yet.
+    get_target_property(${target_name}_LIBRARY ${target_name} IMPORTED_LOCATION_RELEASE)
+    get_target_property(${target_name}_3RD_PARTY_INCLUDE_DIRS ${target_name} INTERFACE_INCLUDE_DIRECTORIES)
+    get_target_property(${target_name}_3RD_PARTY_DEFINITIONS ${target_name} INTERFACE_COMPILE_DEFINITIONS)
+    get_target_property(${target_name}_3RD_PARTY_LIBRARIES ${target_name} IMPORTED_LINK_INTERFACE_LIBRARIES_RELEASE)
+  endif()
+endforeach()
+
 if ( CGAL_FIND_REQUIRED )
   set( CHECK_CGAL_COMPONENT_MSG_ON_ERROR TRUE        )
   set( CHECK_CGAL_COMPONENT_ERROR_TYPE   FATAL_ERROR )
@@ -48,5 +65,3 @@ else()
     set( CHECK_CGAL_COMPONENT_MSG_ON_ERROR FALSE )
   endif()
 endif()
-
-set(CGAL_CONFIGURED_LIBRARIES "@CGAL_CONFIGURED_LIBRARIES@")

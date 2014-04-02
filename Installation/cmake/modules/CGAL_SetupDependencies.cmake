@@ -1,4 +1,4 @@
-include(CGAL_Macros)
+include(${CGAL_MODULES_DIR}/CGAL_Macros.cmake)
 include(CMakeParseArguments)
 
 function(CGAL_external_library)
@@ -85,7 +85,7 @@ if(NOT WIN32)
   CGAL_external_library(NAME GMPXX)
 endif()
 
-include(CGAL_TweakFindBoost)
+include(${CGAL_MODULES_DIR}/CGAL_TweakFindBoost.cmake)
 
 function(CGAL_setup_dependency lib)
   set(vlib ${CGAL_${lib}_PREFIX})
