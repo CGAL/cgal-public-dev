@@ -22,16 +22,22 @@ if(NOT CGAL_USE_LIBRARY_FILE_INCLUDED)
         return()
       endif()
 
-      if(${lib} MATCHES "Boost_") # a boost component library has to link with singular LIBRARY
+      if(${lib} MATCHES "Boost_") # a boost component library has to
+                                  # link with singular LIBRARY and
+                                  # cannot use normal vlib_include_dir
         target_link_libraries(${target_name} ${${vlib}_LIBRARY})
+        if(${CMAKE_VERSION} VERSION_LESS 2.8.12)
+          target_include_directories(${target_name} PUBLIC "${Boost_INCLUDE_DIR}")
+        else()
+          target_include_directories(${target_name} SYSTEM PUBLIC "${Boost_INCLUDE_DIR}")
+        endif()
       else()
         target_link_libraries(${target_name} ${${vlib}_LIBRARIES})
-      endif()
-      
-      if(${CMAKE_VERSION} VERSION_LESS 2.8.12)
-        target_include_directories(${target_name} PUBLIC "${${vlib}_INCLUDE_DIR}")
-      else()
-        target_include_directories(${target_name} SYSTEM PUBLIC "${${vlib}_INCLUDE_DIR}")
+        if(${CMAKE_VERSION} VERSION_LESS 2.8.12)
+          target_include_directories(${target_name} PUBLIC "${${vlib}_INCLUDE_DIR}")
+        else()
+          target_include_directories(${target_name} SYSTEM PUBLIC "${${vlib}_INCLUDE_DIR}")
+        endif()
       endif()
       
       # Bug: this adds e.g. CGAL_USE_Boost_SYSTEM while we use
