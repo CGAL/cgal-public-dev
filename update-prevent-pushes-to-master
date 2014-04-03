@@ -38,12 +38,18 @@ function may_reject_push() {
     # Special rights for a set of trusted people.
     case "$GIT_USER" in
         (lrineau|sloriot|eric)
-            echo "You are in the set of TRUSTED user."
+            echo ""
             if [ "$1" != force ]; then
-                echo "That push is EXCEPTIONNALY accepted."
+                echo "BUT:"
+            fi
+            echo "  You are in the set of TRUSTED user."
+            if [ "$1" != force ]; then
+                echo "  That push is EXCEPTIONNALY accepted."
+                echo ""
             else
-                echo "BUT that issue is IMPORTANT."
-                echo "Your push will be REJECTED!"
+                echo "  BUT that issue is IMPORTANT."
+                echo "  Your push will be REJECTED!"
+                echo ""
                 reject_push
             fi
             ;;
