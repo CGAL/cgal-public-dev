@@ -70,6 +70,13 @@ if ( NOT CGAL_DIR )
   )
 endif()
 
+if(CGAL_DIR)
+  if(EXISTS ${CGAL_DIR}/CGALConfig.cmake)
+    include(${CGAL_DIR}/CGALConfig.cmake)
+    set(CGAL_FOUND TRUE)
+  endif()
+endif()
+
 if( NOT CGAL_FOUND)
   if(CGAL_FIND_REQUIRED)
     MESSAGE(FATAL_ERROR ${CGAL_DIR_MESSAGE})
