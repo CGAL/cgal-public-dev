@@ -44,11 +44,21 @@ set(CGAL_CONFIGURED_LIBRARIES @CGAL_CONFIGURED_LIBRARIES@)
 # Backward compatibility definitions.
 foreach(target_name ${CGAL_CONFIGURED_LIBRARIES})
   if(TARGET ${target_name})
-    # TODO: This does not handle Release/Debug targets correctly yet.
-    get_target_property(${target_name}_LIBRARY ${target_name} IMPORTED_LOCATION_RELEASE)
     get_target_property(${target_name}_3RD_PARTY_INCLUDE_DIRS ${target_name} INTERFACE_INCLUDE_DIRECTORIES)
     get_target_property(${target_name}_3RD_PARTY_DEFINITIONS ${target_name} INTERFACE_COMPILE_DEFINITIONS)
-    get_target_property(${target_name}_3RD_PARTY_LIBRARIES ${target_name} IMPORTED_LINK_INTERFACE_LIBRARIES_RELEASE)
+
+
+    # TODO: This does not handle Release/Debug targets correctly yet.
+    get_target_property(${target_name}_LIBRARY ${target_name} LOCATION)
+    # This is messy, since CMake 2.8.12 introduces many policy
+    # dependent changes. We try out several possibilities...
+    get_target_property(${target_name}_3RD_PARTY_LIBRARIES ${target_name} LINK_INTERFACE_LIBRARIES)
+    if("${${target_name}_3RD_PARTY_LIBRARIES}" STREQUAL "${target_name}_3RD_PARTY_LIBRARIES-NOTFOUND")
+      get_target_property(${target_name}_3RD_PARTY_LIBRARIES ${target_name} IMPORTED_LINK_INTERFACE_LIBRARIES_RELEASE)
+    endif()
+    if("${${target_name}_3RD_PARTY_LIBRARIES}" STREQUAL "${target_name}_3RD_PARTY_LIBRARIES-NOTFOUND")
+      get_target_property(${target_name}_3RD_PARTY_LIBRARIES ${target_name} INTERFACE_LINK_LIBRARIES)
+    endif()
   endif()
 endforeach()
 
