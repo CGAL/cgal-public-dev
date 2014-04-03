@@ -75,3 +75,20 @@ else()
     set( CHECK_CGAL_COMPONENT_MSG_ON_ERROR FALSE )
   endif()
 endif()
+
+foreach(component ${CGAL_FIND_COMPONENTS})
+  if(TARGET ${component})
+    set(${component}_FOUND TRUE)
+  else()
+    set(${component}_FOUND FALSE)
+  endif()
+
+  if(NOT ${component}_FOUND AND CHECK_CGAL_COMPONENT_MSG_ON_ERROR)
+    message(${CHECK_CGAL_COMPONENT_ERROR_TYPE} "${CHECK_CGAL_COMPONENT_ERROR_TITLE} The ${component} library was not configured.")
+  endif()
+endforeach()
+
+# Starting with cmake 2.6.3, CGAL_FIND_COMPONENTS is cleared out when
+# find_package returns. But we need it within UseCGAL.cmake, so we
+# save it aside into another variable
+set(CGAL_REQUESTED_COMPONENTS ${CGAL_FIND_COMPONENTS})
