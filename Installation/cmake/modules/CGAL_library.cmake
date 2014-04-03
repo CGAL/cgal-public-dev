@@ -45,7 +45,8 @@ if(NOT CGAL_LIBRARY_FILE_INCLUDED)
       endif()
 
       # set the CGAL include directories
-      target_include_directories(${CGAL_define_library_NAME} PRIVATE ${CGAL_INCLUDE_DIRS})
+      target_include_directories(${CGAL_define_library_NAME} PUBLIC 
+        "$<BUILD_INTERFACE:${CGAL_INCLUDE_DIRS}>;$<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/${CGAL_INSTALL_INC_DIR}>")
 
       foreach(required_depend ${CGAL_define_library_REQUIRED_DEPENDENCIES})
         set(BUILD_${CGAL_define_library_NAME}_WITH_${required_depend} TRUE)
@@ -67,9 +68,7 @@ if(NOT CGAL_LIBRARY_FILE_INCLUDED)
       export(TARGETS ${CGAL_define_library_NAME}
         APPEND FILE ${CGAL_EXPORT_FILE})
       install(TARGETS ${CGAL_define_library_NAME} EXPORT CGAL_export
-        LIBRARY DESTINATION "${CMAKE_INSTALL_PREFIX}/${CGAL_INSTALL_LIB_DIR}"
-        INCLUDES DESTINATION "${CMAKE_INSTALL_PREFIX}/${CGAL_INSTALL_INC_DIR}"
-        )
+        LIBRARY DESTINATION "${CMAKE_INSTALL_PREFIX}/${CGAL_INSTALL_LIB_DIR}")
     endif()
   endmacro()
   
