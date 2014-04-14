@@ -46,6 +46,7 @@ function may_reject_push() {
             if [ "$1" != force ]; then
                 echo "  That push is EXCEPTIONNALY accepted."
                 echo ""
+                exit 0
             else
                 echo "  BUT that issue is IMPORTANT."
                 echo "  Your push will be REJECTED!"
