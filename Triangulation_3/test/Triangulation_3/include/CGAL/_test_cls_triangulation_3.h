@@ -27,6 +27,8 @@
 #include "_test_cls_iterator.h"
 #include "_test_cls_circulator.h"
 
+#include "_test_collapse.h"
+
 #include <CGAL/Random.h>
 #include <CGAL/Testsuite/use.h>
 #include <CGAL/use.h>
@@ -79,6 +81,17 @@ _test_cls_triangulation_3_input_output(const Triangulation & T,
   assert(Tfromfile_binary.is_valid());
   assert(Tfromfile_binary.dimension() == dim);
   assert(Tfromfile_binary.number_of_vertices() == n);
+}
+
+// TODO: not empty
+template <typename Triangulation>
+void _test_cls_triangulation_3_collapse() {
+  typedef typename Triangulation::Vector                    Vector;
+  typedef typename Triangulation::Point                     Point;
+  typedef typename Triangulation::Edge                      Edge;
+  typedef typename Triangulation::Vertex_handle             Vertex_handle;
+  typedef typename Triangulation::Cell_handle               Cell_handle;
+  typedef typename Triangulation::Locate_type               Locate_type;
 }
 
 template <class Triangulation>
@@ -844,6 +857,11 @@ _test_cls_triangulation_3(const Triangulation &)
     std::cout << nbflips << " flips 2-3" << std::endl;
   }
   
+  // Edge collapse over a random triangulation in a sphere
+  std::cout << "    Testing edge collapse in Triangulation_3:" << std::endl; 
+  _test_collapse<Triangulation>();
+  _test_cls_triangulation_3_collapse<Triangulation>();
+
   // Finite incident_* in dimension 2 test
   std::cout << "    Testing finite_incident_* in dim 2  "<< std::endl;
   Cls* T2[2];

@@ -31,6 +31,7 @@
 #include "_test_cls_iterator.h"
 #include "_test_cls_circulator.h"
 #include "_test_remove_cluster.h"
+#include "_test_collapse.h"
 
 #include <CGAL/Random.h>
 #include <CGAL/Testsuite/use.h>
@@ -705,6 +706,9 @@ _test_cls_delaunay_3(const Triangulation &)
       assert(Tfromfile.number_of_vertices() == 22);
   }
 
+  //#######################################################################
+  std::cout << "    Testing edge collapse in Delaunay_3:" << std::endl; 
+  _test_collapse<Triangulation>();
 
   //#######################################################################
   std::cout << "  list insertion"<< std::endl;
