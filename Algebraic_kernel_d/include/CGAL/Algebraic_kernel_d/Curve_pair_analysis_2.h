@@ -1,26 +1,3 @@
-// Copyright (c) 2006-2009 Max-Planck-Institute Saarbruecken (Germany).
-// All rights reserved.
-//
-// This file is part of CGAL (www.cgal.org); you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 3 of the License,
-// or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
-//
-// $URL$
-// $Id$
-// 
-//
-// Author(s)     : Eric Berberich <eric@mpi-inf.mpg.de>
-//                 Michael Kerber <mkerber@mpi-inf.mpg.de>
-//
-// ============================================================================
-
 
 #ifndef CGAL_ACK_CURVE_PAIR_ANALYSIS_H
 #define CGAL_ACK_CURVE_PAIR_ANALYSIS_H 1
@@ -40,7 +17,8 @@
 #include <CGAL/Algebraic_kernel_d/Shear_transformation.h>
 #include <CGAL/Algebraic_kernel_d/enums.h>
 #include <CGAL/Algebraic_kernel_d/exceptions.h>
-#include <CGAL/Algebraic_kernel_d/Status_line_CPA_1.h>
+//#include <CGAL/Algebraic_kernel_d/Status_line_CPA_1.h>
+#include "Status_line_CPA_1.h"
 
 #if defined(BOOST_MSVC)
 #  pragma warning(push)
@@ -113,137 +91,6 @@ struct Event_indices {
     : fg(fg), ffy(ffy), ggy(ggy) {}
 };
 
-// Representation class for curve pairs
-template < class AlgebraicKernelWithAnalysis_2 >
-class Curve_pair_analysis_2_rep {
-public:
-
-    //! \name public typedefs
-    //! @{
-    typedef AlgebraicKernelWithAnalysis_2 Algebraic_kernel_with_analysis_2;
-
-    typedef Curve_pair_analysis_2_rep<Algebraic_kernel_with_analysis_2> Self;
-
-    typedef Curve_pair_analysis_2<Algebraic_kernel_with_analysis_2> Handle;
-
-    typedef typename Algebraic_kernel_with_analysis_2::Curve_analysis_2 
-        Curve_analysis_2;
-
-    typedef typename Curve_analysis_2::size_type size_type;
-
-    typedef typename Curve_analysis_2::Polynomial_2 Polynomial_2;
-        
-    typedef typename Curve_analysis_2::Algebraic_real_1 Algebraic_real_1;
-        
-    typedef typename Polynomial_2::NT Polynomial_1;
-
-    typedef typename Curve_analysis_2::Bound Bound;
-
-    typedef CGAL::internal::Status_line_CPA_1<Handle> Status_line_CPA_1;
-
-    typedef std::pair<Slice_type,size_type> Slice_element;
-
-    typedef std::vector<Slice_element> Slice_info;
-
-    typedef boost::optional<Slice_info> Lazy_slice_info;
-
-    typedef boost::optional<Bound> Lazy_bound;
-
-    typedef CGAL::internal::Event_indices<size_type> Event_indices;
-
-    struct Intersection_info {
-        typename Curve_analysis_2::Status_line_1 ev;
-        size_type index;
-        size_type mult;
-    };
-
-    typedef std::vector<std::vector<Intersection_info> > 
-        Intersection_info_container;
-        
-    typedef boost::optional<Intersection_info_container> 
-        Lazy_intersection_info_container;
-
-    // For lazy evaluation of Status_line_CPA_1s.
-    typedef boost::optional<Status_line_CPA_1> Lazy_status_line_CPA_1;
-
-    //! @}
-
-    //! \name Constructors
-    //! @{
-    
-    // DefaultConstructible
-    Curve_pair_analysis_2_rep() :
-        c1_(), c2_() {
-    }
-
-    Curve_pair_analysis_2_rep(Algebraic_kernel_with_analysis_2 *kernel,
-                              Curve_analysis_2 c1, Curve_analysis_2 c2,
-                              CGAL::Degeneracy_strategy strategy) :
-        _m_kernel(kernel),
-        c1_(c1), c2_(c2), f(c1.polynomial_2()), g(c2.polynomial_2()),
-        degeneracy_strategy(strategy) {
-    }
-
-    //! @}
-
-private:
-
-    //! \name members
-    //! @{
-
-    Algebraic_kernel_with_analysis_2* _m_kernel;
-    
-    Curve_analysis_2 c1_;
-    Curve_analysis_2 c2_;
-
-    Polynomial_2 f;
-    Polynomial_2 g;
-
-    
-    mutable boost::optional<std::vector<Polynomial_2> > subresultants;
-
-    mutable boost::optional<std::vector<Polynomial_1> > 
-        principal_subresultants;
-    mutable boost::optional<std::vector<Polynomial_1> > 
-        coprincipal_subresultants;
-        
-    mutable boost::optional<Polynomial_1> resultant;
-
-    mutable boost::optional<std::vector<Algebraic_real_1> > resultant_roots;
-    mutable boost::optional<std::vector<Algebraic_real_1> > 
-        event_x_coordinates;
-    mutable boost::optional<std::vector<size_type> > 
-        multiplicities_of_resultant_roots;
-
-    mutable boost::optional<std::vector<Bound> > stripe_values;
-        
-    mutable std::vector< Lazy_status_line_CPA_1 > event_slices;
-
-    mutable boost::optional<std::vector< Lazy_bound > > intermediate_values;
-
-    mutable boost::optional< std::vector< Lazy_status_line_CPA_1 > >
-        intermediate_slices;
-
-    mutable boost::optional<std::vector<Event_indices> > event_indices;
-
-    mutable Lazy_intersection_info_container intersection_info_container;
-
-    typedef typename Curve_analysis_2::Integer Integer;
-
-    CGAL::Degeneracy_strategy degeneracy_strategy;
-
-    mutable CGAL::internal::Shear_controller<Integer> shear_controller;
-
-    //! @}
-
-    //! \name friends
-    //! @{
-    
-    friend class Curve_pair_analysis_2<Algebraic_kernel_with_analysis_2>;
-
-    //!@}
-
-};
 
 } // namespace internal
 
@@ -269,12 +116,9 @@ private:
  * of Arbitrary Algebraic Curves. Proceedings of the Nineteenth Annual 
  * ACM-SIAM Symposium on Discrete Algorithms (SODA 2008), pp. 122-131
  */
+
 template < typename AlgebraicKernelWithAnalysis_2 >
-class Curve_pair_analysis_2 : 
-    public ::CGAL::Handle_with_policy
-        < CGAL::internal::Curve_pair_analysis_2_rep
-              < AlgebraicKernelWithAnalysis_2 > > {
-    
+class Curve_pair_analysis_2 {
 
 public:
 
@@ -282,108 +126,144 @@ public:
     //! @{
 
     //! The algebraic kernel that uses the curve pair analysis
-    typedef AlgebraicKernelWithAnalysis_2 Algebraic_kernel_with_analysis_2;
-
-private:
-    
-    //! Representation class
-    typedef CGAL::internal::Curve_pair_analysis_2_rep
-      < Algebraic_kernel_with_analysis_2 > Rep;
-    
-    //! Base class
-    typedef ::CGAL::Handle_with_policy< Rep >        Base;
+    typedef AlgebraicKernelWithAnalysis_2		Algebraic_kernel_with_analysis_2;
 
 public:
     //! The Curve_pair_analysis_2 itself
-    typedef Curve_pair_analysis_2<Algebraic_kernel_with_analysis_2> Self;
+    typedef Curve_pair_analysis_2<Algebraic_kernel_with_analysis_2> 	Self;
     
     //! The corresponding Curve_analysis_2 class
-    typedef typename Rep::Curve_analysis_2 Curve_analysis_2;
+    typedef typename Algebraic_kernel_with_analysis_2::Curve_analysis_2	Curve_analysis_2;
 
     //! Index type
-    typedef typename Rep::size_type size_type;
+    typedef typename Curve_analysis_2::size_type	size_type;
 
     //! Univariate polynomials
-    typedef typename Rep::Polynomial_1 Polynomial_1;
+    typedef typename Curve_analysis_2::Polynomial_2::NT	Polynomial_1;
 
     //! Bivariate polynomials
-    typedef typename Rep::Polynomial_2 Polynomial_2;
+    typedef typename Curve_analysis_2::Polynomial_2 	Polynomial_2;
 
     //! Type for algebraic numbers (one dimension)
-    typedef typename Rep::Algebraic_real_1 Algebraic_real_1;
+    typedef typename Curve_analysis_2::Algebraic_real_1 Algebraic_real_1;
 
     //! Type for points with algebraic coordinates
-    typedef typename Algebraic_kernel_with_analysis_2::Algebraic_real_2 
-        Algebraic_real_2;
+    typedef typename Algebraic_kernel_with_analysis_2::Algebraic_real_2	Algebraic_real_2;
 
     //! Bound type (for rational numbers)
-    typedef typename Rep::Bound Bound;
+    typedef typename Curve_analysis_2::Bound		Bound;
 
 private:
     // Optional for boundaries
-    typedef typename Rep::Lazy_bound Lazy_bound;
+    typedef typename boost::optional<Bound>		Lazy_bound;
 
     // Object to store information about intersection points 
-    typedef typename Rep::Intersection_info_container 
-        Intersection_info_container;
+    struct Intersection_info {
+        typename Curve_analysis_2::Status_line_1 ev;
+        size_type index;
+        size_type mult;
+    };
 
-    // Its lazy version
-    typedef typename Rep::Lazy_intersection_info_container 
-        Lazy_intersection_info_container;
+    typedef std::vector<std::vector<Intersection_info> >		Intersection_info_container;
+
+    // Its laxy version
+    typedef boost::optional<Intersection_info_container>		Lazy_intersection_info_container;
 
     // Type for indices of events.
-    typedef typename Rep::Event_indices Event_indices;
+    typedef typename CGAL::internal::Event_indices<size_type> 		Event_indices;
 
     // Integer type
-    typedef typename Curve_analysis_2::Integer Integer;
+    typedef typename Curve_analysis_2::Integer		Integer;
 
     // Status line of single curve analysis
-    typedef typename Curve_analysis_2::Status_line_1 Status_line_CA_1;
+    typedef typename Curve_analysis_2::Status_line_1	Status_line_CA_1;
 
     // Coefficient type
-    typedef typename Curve_analysis_2::Coefficient Coefficient;
+    typedef typename Curve_analysis_2::Coefficient 	Coefficient;
     
     // Polynomial traits class
-    typedef CGAL::Polynomial_traits_d<Polynomial_2> Polynomial_traits_2;
+    typedef CGAL::Polynomial_traits_d<Polynomial_2>	Polynomial_traits_2;
 
     // Polynomial traits class
-    typedef CGAL::Polynomial_traits_d<Polynomial_1> Polynomial_traits_1;
+    typedef CGAL::Polynomial_traits_d<Polynomial_1>	Polynomial_traits_1;
   
 public:
     
     //! The event slice object type
-    typedef typename Rep::Status_line_CPA_1 Status_line_CPA_1;
-    
+    typedef typename CGAL::internal::Status_line_CPA_1<Self>		Status_line_CPA_1;
+
+
     /*!
      * Required by the concept. The name is not used internally 
      * to distinguish from one curve status_lines syntactically
      */
-    typedef Status_line_CPA_1 Status_line_1;
+    typedef Status_line_CPA_1 				Status_line_1;
 
 private:
 
     // Lazy version of status lines
-    typedef typename Rep::Lazy_status_line_CPA_1 Lazy_status_line_CPA_1;
+    typedef typename boost::optional<Status_line_CPA_1>	Lazy_status_line_CPA_1;
 
     // Coercion between Bound and Coefficient type
-    typedef CGAL::Coercion_traits<Bound, Coefficient> Coercion;
+    typedef CGAL::Coercion_traits<Bound, Coefficient>	Coercion;
     
     // The common supertype
-    typedef typename Coercion::Type Coercion_type;
+    typedef typename Coercion::Type			Coercion_type;
 
     // Polynomials over that supertype
-    typedef typename CGAL::Polynomial_traits_d<Polynomial_2>
-        ::template Rebind<Coercion_type,1>::Other::Type Poly_coer_1;
+    typedef typename CGAL::Polynomial_traits_d<Polynomial_2>::template Rebind<Coercion_type,1>::Other::Type 	Poly_coer_1;
 
     // Functor to isolate real roots of univariate polynomials
-    typedef typename Algebraic_kernel_with_analysis_2::Solve_1 Solve_1;
+    typedef typename Algebraic_kernel_with_analysis_2::Solve_1		Solve_1;
 
     // Slice info objects
-    typedef typename Rep::Slice_info Slice_info;
+    typedef std::pair<Slice_type, size_type>		Slice_element;
+    typedef typename std::vector<Slice_element>		Slice_info;
 
     // Lazy version
-    typedef typename Rep::Lazy_slice_info Lazy_slice_info;
+    typedef typename boost::optional<Slice_info>	Lazy_slice_info;
 
+private:
+
+    //! \name members
+    //! @{
+
+    Algebraic_kernel_with_analysis_2* _m_kernel;
+    
+    std::weak_ptr<Curve_analysis_2> c1_;
+    std::weak_ptr<Curve_analysis_2> c2_;
+
+    Polynomial_2 f;
+    Polynomial_2 g;
+
+    
+// All classes that have handle should be with weak pointer and the passing should be shared pointer
+    mutable boost::optional<std::vector<Polynomial_2> >		subresultants;
+
+    mutable boost::optional<std::vector<Polynomial_1> >		principal_subresultants;
+    mutable boost::optional<std::vector<Polynomial_1> >		coprincipal_subresultants;
+        
+    mutable boost::optional<Polynomial_1> 			resultant;
+
+    mutable boost::optional<std::vector<Algebraic_real_1> >	resultant_roots;
+    mutable boost::optional<std::vector<Algebraic_real_1> > 	event_x_coordinates;
+    mutable boost::optional<std::vector<size_type> > 		multiplicities_of_resultant_roots;
+
+    mutable boost::optional<std::vector<Bound> > 		stripe_values;
+        
+    mutable std::vector< Lazy_status_line_CPA_1 > 		event_slices;
+
+    mutable boost::optional<std::vector< Lazy_bound > >		intermediate_values;
+
+    mutable boost::optional< std::vector< Lazy_status_line_CPA_1 > >	intermediate_slices;
+
+    mutable boost::optional<std::vector<Event_indices> > 	event_indices;
+
+    //mutable Lazy_intersection_info_container			intersection_info_container;
+
+    CGAL::Degeneracy_strategy 					degeneracy_strategy;
+
+    mutable CGAL::internal::Shear_controller<Integer> 		shear_controller;
     //! @}
 
 private:
@@ -416,6 +296,7 @@ private:
         }
     private:
         
+// TODO Check if weak pointer is required
         const Status_line_CPA_1& status_line;
         
     };
@@ -441,14 +322,18 @@ private:
 public:
 
     //! DefaultConstructible
-    Curve_pair_analysis_2() :
-        Base(Rep()) {
-    };
+    Curve_pair_analysis_2() : c1_(), c2_() {
+    }
+
 
     //! \brief Copy constructor
     Curve_pair_analysis_2(const Self& alg_curve_pair)
-        : Base(static_cast<const Base&>(alg_curve_pair)) 
     {
+	this->_m_kernel = alg_curve_pair._m_kernel
+	this->c1_ = alg_curve_pair.c1_;
+	this->c2_ = alg_curve_pair.c2_;
+	this->f = alg_curve_pair.f;
+	this->g = alg_curve_pair.g;
     }
 
     // Assignable
@@ -476,15 +361,24 @@ public:
      * \c CGAL::SHEAR_ONLY_AT_IRRATIONAL_STRATEGY.
      */
     Curve_pair_analysis_2(Algebraic_kernel_with_analysis_2* kernel,
-                          Curve_analysis_2 c1, 
-                          Curve_analysis_2 c2,
+                          const Curve_analysis_2& c1, 
+                          const Curve_analysis_2& c2,
                           CGAL::Degeneracy_strategy strategy
                               = CGAL_ACK_DEFAULT_DEGENERACY_STRATEGY) 
         throw(CGAL::internal::Zero_resultant_exception<Polynomial_2>,
               CGAL::internal::Non_generic_position_exception)
-        : Base(Rep(kernel,c1, c2, strategy)) 
+        : _m_kernel(kernel), degeneracy_strategy(strategy)
     {
-        
+	c1_ = std::make_shared<Curve_analysis_2>(c1);
+	c2_ = std::make_shared<Curve_analysis_2>(c2);
+	
+	// Getting a shared pointer
+	auto spt_c1 = this->c1_.lock();
+	auto spt_c2 = this->c2_.lock();
+
+	f = spt_c1->polynomial_2();
+	g = spt_c2->polynomial_2();
+    
 #if CGAL_ACK_DEBUG_FLAG
         CGAL::set_pretty_mode(CGAL_ACK_DEBUG_PRINT);
 #endif
@@ -493,12 +387,12 @@ public:
         CGAL_ACK_DEBUG_PRINT << "Check content for squarefreeness.." 
                              << std::flush;
 #endif
-        if(CGAL::degree(this->ptr()->c1_.content())>0 &&
-           CGAL::degree(this->ptr()->c2_.content())>0) {
+        if(CGAL::degree(spt_c1->content())>0 &&
+           CGAL::degree(spt_c2->content())>0) {
             typename Polynomial_traits_1::Gcd_up_to_constant_factor gcd_utcf;
             if(CGAL::degree(gcd_utcf
-                            (this->ptr()->c1_.content(), 
-                             this->ptr()->c2_.content())) >= 1) {
+                            (spt_c1->content(), 
+                             spt_c2->content())) >= 1) {
                 
 #if CGAL_ACK_DEBUG_FLAG
                 CGAL_ACK_DEBUG_PRINT << "Common vertical line discovered" 
@@ -545,27 +439,46 @@ private:
      */
     void compute_intermediate_values_and_slices() const;
 
+
+
+// Overloading the equality operator for the Curve_paor_analysis_2 class
+// Required in CGAL_assertion
+    bool operator== (const Curve_pair_analysis_2& cpa) const
+    {
+    	if(	( *(this->_m_kernel) == *(cpa._m_kernel) ) &&
+		(this->f == cpa.f) && 
+		(this->g == cpa.g) && 
+		( *(this->c1_.lock()) == *((cpa.c1_).lock())) &&
+		( *(this->c2_.lock()) == *((cpa.c2_).lock()))
+	)
+		return true;
+
+	return false;
+    }
+
+
+
 public:
 
     Algebraic_kernel_with_analysis_2* kernel() const {
-        return this->ptr()->_m_kernel;
+        return this->_m_kernel;
     }
 
     //! Returns the resultant of the defing polynomials wrt \c y
-    Polynomial_1 resultant() const {
-        if(! this->ptr()->resultant) {
+    Polynomial_1& resultant() const {
+        if(! this->resultant) {
             compute_resultant();
         }
-        CGAL_assertion(this->ptr()->resultant);
-        return this->ptr()->resultant.get();
+        CGAL_assertion(resultant);
+        return this->resultant.get();
     }
 
     std::vector<Algebraic_real_1>& resultant_roots() const {
-        if(! this->ptr()->resultant_roots) {
+        if(! this->resultant_roots) {
             compute_resultant_roots_with_multiplicities();
         }
-        CGAL_assertion(this->ptr()->resultant_roots);
-        return this->ptr()->resultant_roots.get();
+        CGAL_assertion(this->resultant_roots);
+        return this->resultant_roots.get();
     }
 
     Algebraic_real_1& resultant_roots(size_type i) const {
@@ -575,11 +488,11 @@ public:
     }
 
     std::vector<size_type>& multiplicities_of_resultant_roots() const {
-        if(! this->ptr()->multiplicities_of_resultant_roots) {
+        if(! this->multiplicities_of_resultant_roots) {
             compute_resultant_roots_with_multiplicities();
         }
-        CGAL_assertion(this->ptr()->multiplicities_of_resultant_roots);
-        return this->ptr()->multiplicities_of_resultant_roots.get();
+        CGAL_assertion(this->multiplicities_of_resultant_roots);
+        return this->multiplicities_of_resultant_roots.get();
     }    
     
     size_type multiplicities_of_resultant_roots(size_type i) const {
@@ -590,32 +503,32 @@ public:
     }
 
     std::vector<Bound>& stripe_values() const {
-        if(! this->ptr()->stripe_values) {
-            this->ptr()->stripe_values = std::vector<Bound>();
+        if(! this->stripe_values) {
+            this->stripe_values = std::vector<Bound>();
             find_intermediate_values
 	      (kernel(),
 	       resultant_roots().begin(),
 	       resultant_roots().end(),
-	       std::back_inserter(this->ptr()->stripe_values.get()));
+	       std::back_inserter(this->stripe_values.get()));
         }
-        CGAL_assertion(this->ptr()->stripe_values);
-        return this->ptr()->stripe_values.get();
+        CGAL_assertion(this->stripe_values);
+        return this->stripe_values.get();
     }
 
     std::vector<Algebraic_real_1>& event_x_coordinates() const {
-        if(! this->ptr()->event_x_coordinates) {
+        if(! this->event_x_coordinates) {
             compute_event_x_coordinates_with_event_indices();
         }
-        CGAL_assertion(this->ptr()->event_x_coordinates);
-        return this->ptr()->event_x_coordinates.get();
+        CGAL_assertion(this->event_x_coordinates);
+        return this->event_x_coordinates.get();
     }
 
     std::vector<Event_indices>& event_indices() const {
-        if(! this->ptr()->event_indices) {
+        if(! this->event_indices) {
             compute_event_x_coordinates_with_event_indices();
         }
-        CGAL_assertion(this->ptr()->event_indices);
-        return this->ptr()->event_indices.get();
+        CGAL_assertion(this->event_indices);
+        return this->event_indices.get();
     } 
 
 public:
@@ -639,30 +552,30 @@ public:
 private:
 
     std::vector<Lazy_bound>& intermediate_values() const {
-        if(! this->ptr()->intermediate_values) {
+        if(! this->intermediate_values) {
             compute_intermediate_values_and_slices();
         }
-        CGAL_assertion(this->ptr()->intermediate_values);
-        return this->ptr()->intermediate_values.get();
+        CGAL_assertion(this->intermediate_values);
+        return this->intermediate_values.get();
     }
 
     std::vector<Lazy_status_line_CPA_1>& intermediate_slices() const {
-        if(! this->ptr()->intermediate_slices) {
+        if(! this->intermediate_slices) {
             compute_intermediate_values_and_slices();
         }
-        CGAL_assertion(this->ptr()->intermediate_slices);
-        return this->ptr()->intermediate_slices.get();
+        CGAL_assertion(this->intermediate_slices);
+        return this->intermediate_slices.get();
     }
 
 
 private:
 
     std::vector<Polynomial_2>& subresultants() const {
-        if(! this->ptr()->subresultants) {
+        if(! this->subresultants) {
             compute_subresultants();
         }
-        CGAL_assertion(this->ptr()->subresultants);
-        return this->ptr()->subresultants.get();
+        CGAL_assertion(this->subresultants);
+        return this->subresultants.get();
     }
 
     Polynomial_2& subresultants(size_type i) const {
@@ -672,11 +585,11 @@ private:
     }
 
     std::vector<Polynomial_1>& principal_subresultants() const {
-        if(! this->ptr()->principal_subresultants) {
+        if(! this->principal_subresultants) {
             compute_subresultants();
         }
-        CGAL_assertion(this->ptr()->principal_subresultants);
-        return this->ptr()->principal_subresultants.get();
+        CGAL_assertion(this->principal_subresultants);
+        return this->principal_subresultants.get();
     }
 
     Polynomial_1& principal_subresultants(size_type i) const {
@@ -687,11 +600,11 @@ private:
     }
 
     std::vector<Polynomial_1>& coprincipal_subresultants() const {
-        if(! this->ptr()->coprincipal_subresultants) {
+        if(! this->coprincipal_subresultants) {
             compute_subresultants();
         }
-        CGAL_assertion(this->ptr()->coprincipal_subresultants);
-        return this->ptr()->coprincipal_subresultants.get();
+        CGAL_assertion(this->coprincipal_subresultants);
+        return this->coprincipal_subresultants.get();
     }
 
     Polynomial_1& coprincipal_subresultants(size_type i) const {
@@ -733,63 +646,73 @@ private:
     /*!
      * TODO doc
      */
-    Status_line_CPA_1 create_event_slice(size_type i) 
+// Changed to void return type and internally stores the event_slices
+    //Status_line_CPA_1 create_event_slice(size_type i) 
+    void create_event_slice(size_type i) 
         const {
 #if !CGAL_ACK_NO_ARC_FLIP
         size_type index_in_fg = event_indices(i).fg;
         if(index_in_fg == -1 ) {
-            return create_slice_with_multiplicity_zero_or_one(i);
+            create_slice_with_multiplicity_zero_or_one(i);
+            //return create_slice_with_multiplicity_zero_or_one(i);
         } else {
             size_type mult_of_alpha 
                 = multiplicities_of_resultant_roots(index_in_fg);
             if(mult_of_alpha == 1) {
-                return create_slice_with_multiplicity_zero_or_one(i);
+                create_slice_with_multiplicity_zero_or_one(i);
+                //return create_slice_with_multiplicity_zero_or_one(i);
             } else {
 #endif
-                return create_slice_of_higher_multiplicity(i);
+                create_slice_of_higher_multiplicity(i);
+                //return create_slice_of_higher_multiplicity(i);
 #if !CGAL_ACK_NO_ARC_FLIP
             }
         }
 #endif
     }
 
-    Status_line_CPA_1 create_slice_of_higher_multiplicity(size_type i) 
+// Changed to void
+    void create_slice_of_higher_multiplicity(size_type i) 
         const {
         bool is_resultant_root = event_indices(i).fg >=0;
         if(is_resultant_root &&
-           this->ptr()->intersection_info_container) {
-            return create_event_slice_with_shear(i);
+           this->intersection_info_container) {
+            create_event_slice_with_shear(i);
+            //return create_event_slice_with_shear(i);
         }
         try {
-            Status_line_CPA_1 slice = construct_generic_case(i);
+            construct_generic_case(i);
 
-            return slice;
+            //return slice;
         } catch(CGAL::internal::Non_generic_position_exception ex) {
-            switch(this->ptr()->degeneracy_strategy) {
+            switch(this->degeneracy_strategy) {
             case(CGAL::EXCEPTION_STRATEGY): {
                 throw ex;
                 break;
             }
             case(CGAL::SHEAR_ONLY_AT_IRRATIONAL_STRATEGY): {
                 if(event_x(i).is_rational()) {
-                    return create_event_slice_at_rational(i);
+                    create_event_slice_at_rational(i);
+                    //return create_event_slice_at_rational(i);
                 }
                 // FALL INTO NEXT CASE
             }
             case(CGAL::SHEAR_STRATEGY): {
-                return create_event_slice_with_shear(i);
+                create_event_slice_with_shear(i);
+                //return create_event_slice_with_shear(i);
             }
             }
             
             
             // NEVER HAPPENS
-            return Status_line_CPA_1();
+            //return Status_line_CPA_1();
             
         }
     }
 
 private:
-    Status_line_CPA_1 create_event_slice_at_rational(size_type i) const {
+// Return type to void for internal assignment
+    void create_event_slice_at_rational(size_type i) const {
         
         Algebraic_real_1& x = event_x(i);
 
@@ -808,8 +731,8 @@ private:
         Slice_info slice_info = construct_slice_info(x);
         reduce_number_of_candidates_and_intersections_to
             (m,
-             this->ptr()->c1_.status_line_at_exact_x(x),
-             this->ptr()->c2_.status_line_at_exact_x(x),
+             (this->c1_.lock())->.status_line_at_exact_x(x),
+             (this->c2_.lock())->status_line_at_exact_x(x),
              slice_info);
         for(typename Slice_info::iterator it=slice_info.begin();
             it!=slice_info.end();
@@ -820,7 +743,8 @@ private:
             }
         }
         
-        return create_slice_from_slice_info(i,slice_info,true);
+	// Internally stores the event slice generated
+        this->event_slices[i] = create_slice_from_slice_info(i,slice_info,true);
     }
 
 private:
@@ -828,7 +752,7 @@ private:
     /*!
      * TODO doc
      */
-    Status_line_CPA_1 create_slice_with_multiplicity_zero_or_one(size_type i) 
+    void create_slice_with_multiplicity_zero_or_one(size_type i) 
         const;
        
 private:
@@ -851,7 +775,7 @@ private:
       
 private:
       
-    Status_line_CPA_1 construct_generic_case(size_type i) const 
+    void construct_generic_case(size_type i) const 
         throw(CGAL::internal::Non_generic_position_exception);        
 
 private:
@@ -894,10 +818,10 @@ private:
         CGAL_assertion(alpha==e2.x());
         if(CGAL::internal::zero_test_bivariate
 	   <Algebraic_kernel_with_analysis_2>
-	     (kernel(),alpha,this->ptr()->f,p,q) && 
+	     (kernel(),alpha,this->f,p,q) && 
            CGAL::internal::zero_test_bivariate
 	   <Algebraic_kernel_with_analysis_2>
-	     (kernel(),alpha,this->ptr()->g,p,q)) {
+	     (kernel(),alpha,this->g,p,q)) {
             return true;
         }
         else {
@@ -956,8 +880,13 @@ private:
 public:
 
     //! Returns curve analysis for the cth curve
-    Curve_analysis_2 curve_analysis(bool c) const {
-        return c ? this->ptr()->c2_ : this->ptr()->c1_;
+    shared_ptr<Curve_analysis_2> curve_analysis(bool c) const {
+
+	// Create shared pointer to be returned in this case
+	auto spt_c1 = this->c1_.lock();
+	auto spt_c2 = this->c2_.lock();
+
+        return c ? spt_c2 : spt_c1;
     }
 
     size_type event_of_curve_analysis(size_type i, bool c) const {
@@ -967,10 +896,13 @@ public:
 
     size_type event_of_curve_analysis(size_type i, 
                                       const Curve_analysis_2& c) const {
-        CGAL_assertion(c.id()==curve_analysis(false).id() ||
-                       c.id()==curve_analysis(true).id());
+	auto spt_c1 = this->c1_.lock();  // false
+	CGAL_assertion(c==spt_c1) || (c==(this->c2_.lock()));
+        //CGAL_assertion(c.id()==curve_analysis(false).id() ||
+        //               c.id()==curve_analysis(true).id());
         Event_indices& ev_ind = event_indices(i);
-        return (c.id()==curve_analysis(false).id()) ? ev_ind.ffy : ev_ind.ggy;
+        return (c==spt_c1) ? ev_ind.ffy : ev_ind.ggy;
+        //return (c.id()==curve_analysis(false).id()) ? ev_ind.ffy : ev_ind.ggy;
     }
 
     /*! 
@@ -998,7 +930,7 @@ public:
      * event value, the \c event flag is set to true, otherwise to false
      * and the slice of the interval to which \c x belongs is returned
      */
-    void x_to_index(Algebraic_real_1 x, 
+    void x_to_index(const Algebraic_real_1& x, 
                     size_type& idx, bool& event) const {
         const std::vector<Algebraic_real_1>& sl = event_x_coordinates();
         idx = std::lower_bound(sl.begin(),
@@ -1009,7 +941,7 @@ public:
     }
 
 
-    Status_line_CPA_1 status_line_for_x(Algebraic_real_1 x, 
+    Status_line_CPA_1& status_line_for_x(const Algebraic_real_1& x, 
                                         CGAL::Sign perturb = CGAL::ZERO) 
     const {
         size_type index;
@@ -1028,20 +960,21 @@ public:
     }
         
 
-    Status_line_CPA_1 status_line_at_exact_x(Algebraic_real_1 x) {
+    const Status_line_CPA_1& status_line_at_exact_x(const Algebraic_real_1& x) {
         return status_line_for_x(x);
     }
 
 
 public:
       
+// Event_slices stored internally and create_event_slice made as void
     //! Returns the Status_line_CPA_1 at the <tt>i</tt>th event
     const Status_line_CPA_1& status_line_at_event(size_type i) const {
-        if(! this->ptr()->event_slices[i]) {
-            this->ptr()->event_slices[i] = create_event_slice(i);
+        if(! this->event_slices[i]) {
+            create_event_slice(i);
         }
-        CGAL_assertion(this->ptr()->event_slices[i]);
-        return this->ptr()->event_slices[i].get();
+        CGAL_assertion(this->event_slices[i]);
+        return this->event_slices[i].get();
     }
       
 
@@ -1117,14 +1050,14 @@ private:
     // If a new shear was used, update intersection multiplicities
     void merge_new_intersection_info
     (const Intersection_info_container& new_info_container) const {
-        if(! this->ptr()->intersection_info_container) {
+        if(! this->intersection_info_container) {
             // ok, nothing existed, so take the new intersection info
-            this->ptr()->intersection_info_container
+            this->intersection_info_container
                 = new_info_container;
             return;
         }
         Intersection_info_container& old_info_container
-            = *(this->ptr()->intersection_info_container);
+            = *(this->intersection_info_container);
         size_type n = old_info_container.size();
         CGAL_assertion(n == static_cast<size_type>
                               ( new_info_container.size()));
@@ -1146,18 +1079,19 @@ private:
     void new_shear_for_intersection_info
         (Intersection_info_container& info_container) const;
 
-    Status_line_CPA_1 create_event_slice_with_shear(size_type i) const {
+	// Changed to void for internal assignment
+    void create_event_slice_with_shear(size_type i) const {
         while(true) { // we know that it works at some point
             try {
-                if(! this->ptr()->intersection_info_container) {
+                if(! this->intersection_info_container) {
                     Intersection_info_container info_container;
                     new_shear_for_intersection_info(info_container);
                     merge_new_intersection_info(info_container);
                 }		  
-                Status_line_CPA_1 slice 
-                    = create_event_slice_from_current_intersection_info(i);
+                //Status_line_CPA_1 slice 
+                 create_event_slice_from_current_intersection_info(i);
 
-                return slice;
+                //return slice;
             } catch(CGAL::internal::Non_generic_position_exception /* ex */) {
                 // just try the next one
                 Intersection_info_container info_container;
@@ -1168,8 +1102,8 @@ private:
     }
 
       
-    Status_line_CPA_1 
-        create_event_slice_from_current_intersection_info (size_type i) 
+// Converted to void type
+    void create_event_slice_from_current_intersection_info (size_type i) 
         const throw(CGAL::internal::Non_generic_position_exception);
 
     Bound x_sheared(Bound x, Bound y,Integer sh) const {
@@ -1179,7 +1113,7 @@ private:
     void update_intersection_info(Intersection_info_container& 
                                   info_container,
                                   Self& sh_pair,
-                                  Status_line_CPA_1 slice,
+                                  const Status_line_CPA_1& slice,
                                   size_type i,
                                   size_type j,
                                   Integer s) const;
@@ -1304,8 +1238,8 @@ void Curve_pair_analysis_2<AlgebraicKernelWithAnalysis_2>::compute_resultant()
     bool speed_up = true;
 #else
     bool speed_up = (std::min)
-        (CGAL::degree(curve_analysis(false).polynomial_2(),1),
-         CGAL::degree(curve_analysis(true).polynomial_2(),1)) >= 
+        (CGAL::degree((this->c1_.lock())->polynomial_2(),1),
+         CGAL::degree((this->c2_.lock())->polynomial_2(),1)) >= 
          CGAL_ACK_RESULTANT_FIRST_STRATEGY_DEGREE_THRESHOLD;
 #endif
 #else
@@ -1316,8 +1250,8 @@ void Curve_pair_analysis_2<AlgebraicKernelWithAnalysis_2>::compute_resultant()
         CGAL_ACK_DEBUG_PRINT << "Compute the resultant of f and g..." 
                              << std::flush;
 #endif
-        this->ptr()->resultant 
-            = CGAL::resultant(this->ptr()->f,this->ptr()->g);
+        this->resultant 
+            = CGAL::resultant(this->f,this->g);
     } else {
 #if CGAL_ACK_DEBUG_FLAG
         CGAL_ACK_DEBUG_PRINT << "Compute the subres-seq of f and g..." 
@@ -1325,15 +1259,15 @@ void Curve_pair_analysis_2<AlgebraicKernelWithAnalysis_2>::compute_resultant()
 #endif
         compute_subresultants();
         
-        this->ptr()->resultant 
-            = this->ptr()->principal_subresultants.get()[0];
+        this->resultant 
+            = this->principal_subresultants.get()[0];
     }
     
     
-    if(this->ptr()->resultant.get().is_zero()) {
+    if(this->resultant.get().is_zero()) {
         throw CGAL::internal::Zero_resultant_exception<Polynomial_2>
-            (this->ptr()->f,
-             this->ptr()->g);
+            (this->f,
+             this->g);
         }
 #if CGAL_ACK_DEBUG_FLAG
     CGAL_ACK_DEBUG_PRINT << "done" << std::endl;
@@ -1352,15 +1286,15 @@ compute_resultant_roots_with_multiplicities() const {
                          << std::flush;
 #endif
     Solve_1 solve_1;
-    this->ptr()->resultant_roots = std::vector<Algebraic_real_1>();
-    this->ptr()->multiplicities_of_resultant_roots
+    this->resultant_roots = std::vector<Algebraic_real_1>();
+    this->multiplicities_of_resultant_roots
         = std::vector<size_type>();
     std::vector<std::pair<Algebraic_real_1, size_type> > res_pairs;
     solve_1(resultant(), std::back_inserter(res_pairs));
 
     for(int i=0; i < static_cast<int>(res_pairs.size()); i++ ) {
-        this->ptr()->resultant_roots.get().push_back(res_pairs[i].first);
-        this->ptr()->multiplicities_of_resultant_roots.get()
+        this->resultant_roots.get().push_back(res_pairs[i].first);
+        this->multiplicities_of_resultant_roots.get()
             .push_back(res_pairs[i].second);
     }
     
@@ -1371,13 +1305,13 @@ compute_resultant_roots_with_multiplicities() const {
 #if CGAL_ACK_DEBUG_FLAG
     for(size_type i = 0;
         i<static_cast<size_type>
-            (this->ptr()->resultant_roots.get().size());
+            (this->resultant_roots.get().size());
         i++) {
         CGAL_ACK_DEBUG_PRINT 
             << "Root at " 
-            << CGAL::to_double(this->ptr()->resultant_roots.get()[i])
+            << CGAL::to_double(this->resultant_roots.get()[i])
             << " with multiplicity "
-            << this->ptr()->multiplicities_of_resultant_roots.get()[i]
+            << this->multiplicities_of_resultant_roots.get()[i]
             << std::endl;
     }
 #endif
@@ -1391,7 +1325,10 @@ void Curve_pair_analysis_2<AlgebraicKernelWithAnalysis_2>::
 compute_event_x_coordinates_with_event_indices() const {
     
     Xval_of_status_line_CA_1 xval;
-    const Curve_analysis_2& c1=this->ptr()->c1_, c2=this->ptr()->c2_;
+
+    auto c1 = this->c1_.lock();
+    auto c2 = this->c2_.lock();
+    //const Curve_analysis_2& c1=c1_, c2=c2_;
     
     std::vector<Algebraic_real_1> one_curve_events;
     
@@ -1400,33 +1337,33 @@ compute_event_x_coordinates_with_event_indices() const {
     typename CGAL::Real_embeddable_traits<Algebraic_real_1>::Compare compare;
     
     CGAL::internal::set_union_with_source
-        (::boost::make_transform_iterator(c1.event_begin(),xval),
-         ::boost::make_transform_iterator(c1.event_end(),xval),
-         ::boost::make_transform_iterator(c2.event_begin(),xval),
-         ::boost::make_transform_iterator(c2.event_end(),xval),
+        (::boost::make_transform_iterator(c1->event_begin(),xval),
+         ::boost::make_transform_iterator(c1->event_end(),xval),
+         ::boost::make_transform_iterator(c2->event_begin(),xval),
+         ::boost::make_transform_iterator(c2->event_end(),xval),
          std::back_inserter(one_curve_events),
          std::back_inserter(one_curve_events_type),
          compare);
     
-    this->ptr()->event_x_coordinates = std::vector<Algebraic_real_1>();
+    this->event_x_coordinates = std::vector<Algebraic_real_1>();
     std::vector<CGAL::internal::Three_valued> events_type;
     CGAL::internal::set_union_with_source
         (one_curve_events.begin(),
          one_curve_events.end(),
          resultant_roots().begin(),
          resultant_roots().end(),
-         std::back_inserter(this->ptr()->event_x_coordinates.get()),
+         std::back_inserter(this->event_x_coordinates.get()),
          std::back_inserter(events_type),
          compare);
     std::vector<Algebraic_real_1>& events 
-        = this->ptr()->event_x_coordinates.get();
+        = this->event_x_coordinates.get();
     
     typename std::vector<CGAL::internal::Three_valued>::iterator one_curve_it
         =one_curve_events_type.begin();
     size_type inter_count=0, f_count=0,g_count=0;
-    this->ptr()->event_indices = std::vector<Event_indices>();
+    this->event_indices = std::vector<Event_indices>();
     std::vector<Event_indices>& event_indices
-        = this->ptr()->event_indices.get();
+        = this->event_indices.get();
     for(size_type i=0;i<static_cast<size_type>(events.size());i++) {
 /*
         #if CGAL_ACK_DEBUG_FLAG
@@ -1440,7 +1377,7 @@ compute_event_x_coordinates_with_event_indices() const {
                 CGAL_ACK_DEBUG_PRINT << " one curve event" << std::endl;
 #endif
 */
-            this->ptr()->event_slices.push_back(Lazy_status_line_CPA_1());
+            this->event_slices.push_back(Lazy_status_line_CPA_1());
             switch(*(one_curve_it++)) {
             case(CGAL::internal::ROOT_OF_FIRST_SET): {
                 event_indices.push_back(Event_indices(-1,f_count,-1));
@@ -1467,8 +1404,8 @@ compute_event_x_coordinates_with_event_indices() const {
             CGAL_ACK_DEBUG_PRINT << " two curve event" << std::endl;
 #endif
 */
-            this->ptr()->
-                event_slices.push_back(Lazy_status_line_CPA_1());
+            
+                this->event_slices.push_back(Lazy_status_line_CPA_1());
             
             event_indices.push_back
                 (Event_indices(inter_count,-1,-1));
@@ -1482,7 +1419,7 @@ compute_event_x_coordinates_with_event_indices() const {
                                      << std::endl;
 #endif
 */
-            this->ptr()->event_slices.push_back(Lazy_status_line_CPA_1());
+            this->event_slices.push_back(Lazy_status_line_CPA_1());
             
             
             switch(*(one_curve_it++)) {
@@ -1530,14 +1467,14 @@ compute_intermediate_values_and_slices() const {
 #if CGAL_ACK_DEBUG_FLAG
     CGAL_ACK_DEBUG_PRINT << "Prepare intermediate slices.." << std::flush;
 #endif
-    this->ptr()->intermediate_values=std::vector<Lazy_bound>();
-    this->ptr()->intermediate_slices=std::vector<Lazy_status_line_CPA_1>();
+    this->intermediate_values=std::vector<Lazy_bound>();
+    this->intermediate_slices=std::vector<Lazy_status_line_CPA_1>();
     
     for(size_type i=0;
         i<=static_cast<size_type>(event_x_coordinates().size());
         i++) {
-        this->ptr()->intermediate_values.get().push_back(Lazy_bound());
-        this->ptr()->intermediate_slices.get().push_back
+        this->intermediate_values.get().push_back(Lazy_bound());
+        this->intermediate_slices.get().push_back
             (Lazy_status_line_CPA_1());
     }
     
@@ -1552,63 +1489,63 @@ template<typename AlgebraicKernelWithAnalysis_2>
 void Curve_pair_analysis_2<AlgebraicKernelWithAnalysis_2>::
 compute_subresultants() const {
     typedef std::vector<Polynomial_1> Polynomial_container;
-    this->ptr()->principal_subresultants = Polynomial_container();
-    this->ptr()->coprincipal_subresultants = Polynomial_container();
-    const Polynomial_2& f = this->ptr()->f, g=this->ptr()->g;
-    this->ptr()->subresultants = std::vector<Polynomial_2>();
+    this->principal_subresultants = Polynomial_container();
+    this->coprincipal_subresultants = Polynomial_container();
+    const Polynomial_2& f = this->f, g=this->g;
+    this->subresultants = std::vector<Polynomial_2>();
     if(CGAL::degree(f,1)<CGAL::degree(g,1)) {
 #if CGAL_ACK_USE_BEZOUT_MATRIX_FOR_SUBRESULTANTS 
         CGAL::internal::bezout_polynomial_subresultants
-            (g,f,std::back_inserter(this->ptr()->subresultants.get()));
+            (g,f,std::back_inserter(this->subresultants.get()));
 #else
         typename CGAL::Polynomial_traits_d<Polynomial_2>
             ::Polynomial_subresultants()
-            (g,f,std::back_inserter(this->ptr()->subresultants.get()));
+            (g,f,std::back_inserter(this->subresultants.get()));
 #endif
     } else {
 #if CGAL_ACK_USE_BEZOUT_MATRIX_FOR_SUBRESULTANTS 
         CGAL::internal::bezout_polynomial_subresultants
-            (f,g,std::back_inserter(this->ptr()->subresultants.get()));
+            (f,g,std::back_inserter(this->subresultants.get()));
 #else
         typename CGAL::Polynomial_traits_d<Polynomial_2>
             ::Polynomial_subresultants()
-            (f,g,std::back_inserter(this->ptr()->subresultants.get()));
+            (f,g,std::back_inserter(this->subresultants.get()));
 #endif
     }
     
     std::vector<Polynomial_2>& subresultants 
-        = this->ptr()->subresultants.get();
+        = this->subresultants.get();
     
     size_type n = static_cast<size_type>(subresultants.size());
     
     for(size_type i=0;i<n;i++) {
         if(CGAL::degree(subresultants[i]) < i) {
-            this->ptr()->principal_subresultants->
+            this->principal_subresultants->
                 push_back(Polynomial_1(0));
         }
         else {
-            this->ptr()->principal_subresultants->
+            this->principal_subresultants->
                 push_back(subresultants[i][i]);
         }
     }
     for(size_type i=1;i<n;i++) {
         if(CGAL::degree(subresultants[i]) < i-1) {
-            this->ptr()->coprincipal_subresultants->
+            this->coprincipal_subresultants->
                 push_back(Polynomial_1(0));
         }
         else {
-            this->ptr()->coprincipal_subresultants->
+            this->coprincipal_subresultants->
                 push_back(subresultants[i][i-1]);
         }
     }
     // This must be corrected, if f and g have same degree:
     if(CGAL::degree(f,1) == CGAL::degree(g,1)) {
         if(n>=1) {
-            this->ptr()->principal_subresultants.get()[n-1] 
+            this->principal_subresultants.get()[n-1] 
                 = Polynomial_1(CGAL::leading_coefficient(g));
         }
         if(n>=2) {
-            this->ptr()->coprincipal_subresultants.get()[n-2] 
+            this->coprincipal_subresultants.get()[n-2] 
                 = Polynomial_1(g[CGAL::degree(g,1)-1]);
         }
     }
@@ -1617,16 +1554,17 @@ compute_subresultants() const {
 
 //////////////////// create_slice_with_multiplicity_zero_or_one
 
+// Return type changed to void for internal allocation
 template<typename AlgebraicKernelWithAnalysis_2>
-typename Curve_pair_analysis_2<AlgebraicKernelWithAnalysis_2>
-    ::Status_line_CPA_1 
-Curve_pair_analysis_2<AlgebraicKernelWithAnalysis_2>::
+void Curve_pair_analysis_2<AlgebraicKernelWithAnalysis_2>::
 create_slice_with_multiplicity_zero_or_one(size_type i) const {
     
     const std::vector<Algebraic_real_1>& events 
         = event_x_coordinates();
     Algebraic_real_1 alpha = events[i];
-    const Curve_analysis_2& c1=curve_analysis(false), c2=curve_analysis(true);
+
+    //const Curve_analysis_2& c1=curve_analysis(false), c2=curve_analysis(true);
+    const Curve_analysis_2& c1=*(this->c1_.lock()), c2=*(this->c2_.lock());
     size_type i1,i2;
     bool flag1,flag2;
     c1.x_to_index(alpha,i1,flag1);
@@ -1869,7 +1807,7 @@ create_slice_with_multiplicity_zero_or_one(size_type i) const {
     CGAL_assertion(left_it == left_end && 
                    right_it == right_end);
 
-    return create_slice_from_slice_info(i,slice_info,true);
+    this->event_slices[i] = create_slice_from_slice_info(i,slice_info,true);
 }
 
 //////////////////// create_intermediate_slice_at
@@ -1884,8 +1822,8 @@ create_intermediate_slice_at(int i) const {
 
     std::vector<Algebraic_real_1> p1_roots,p2_roots;
 
-    this->ptr()->c1_.get_roots_at_rational(r,std::back_inserter(p1_roots));
-    this->ptr()->c2_.get_roots_at_rational(r,std::back_inserter(p2_roots));
+    (this->c1_.lock())->get_roots_at_rational(r,std::back_inserter(p1_roots));
+    (this->c2_.lock())->get_roots_at_rational(r,std::back_inserter(p2_roots));
 
     size_type number_of_roots 
         = static_cast<size_type>(p1_roots.size() + p2_roots.size());
@@ -2000,10 +1938,9 @@ construct_slice_info(Algebraic_real_1 alpha) const
   << std::endl;
   #endif
 */      
+    Status_line_CA_1 e1 = (c1_.lock())->status_line_at_exact_x(alpha);
     
-    Status_line_CA_1 e1 = this->ptr()->c1_.status_line_at_exact_x(alpha);
-    
-    Status_line_CA_1 e2 = this->ptr()->c2_.status_line_at_exact_x(alpha);
+    Status_line_CA_1 e2 = (c2_.lock())->status_line_at_exact_x(alpha);
     
     std::vector<std::pair<size_type,size_type> > matchings;
     for(size_type i=0;i<e1.number_of_events();i++) {
@@ -2069,10 +2006,9 @@ construct_slice_info(Algebraic_real_1 alpha) const
 
 //////////////////// construct_generic_case
 
+// Changed to void for internal assignment
 template<typename AlgebraicKernelWithAnalysis_2>
-typename Curve_pair_analysis_2<AlgebraicKernelWithAnalysis_2>
-    ::Status_line_CPA_1 
-Curve_pair_analysis_2<AlgebraicKernelWithAnalysis_2>::
+void Curve_pair_analysis_2<AlgebraicKernelWithAnalysis_2>::
 construct_generic_case(size_type i) const 
     throw(CGAL::internal::Non_generic_position_exception) {
     
@@ -2086,11 +2022,11 @@ construct_generic_case(size_type i) const
     if(index_of_fg>=0) {
         if(kernel()->is_zero_at_1_object() 
              (CGAL::leading_coefficient
-              (this->ptr()->c1_.polynomial_2()),alpha)
+              ((this->c1_.lock())->polynomial_2()),alpha)
            ||
            kernel()->is_zero_at_1_object() 
              (CGAL::leading_coefficient
-              (this->ptr()->c2_.polynomial_2()),alpha)) {
+              ((this->c2_.lock())->polynomial_2()),alpha)) {
             throw CGAL::internal::Non_generic_position_exception();
         }
         size_type k = -1; // not yet computed
@@ -2107,9 +2043,9 @@ construct_generic_case(size_type i) const
             k = degree_of_local_gcd(index_of_fg,alpha);
         }
         Status_line_CA_1 e1 
-            = this->ptr()->c1_.status_line_at_exact_x(alpha);
+            = (this->c1_.lock())->status_line_at_exact_x(alpha);
         Status_line_CA_1 e2 
-            = this->ptr()->c2_.status_line_at_exact_x(alpha);
+            = (this->c2_.lock())->status_line_at_exact_x(alpha);
         slice_info = construct_slice_info(alpha);
         size_type no_candidates=
             reduce_number_of_candidates_and_intersections_to
@@ -2138,14 +2074,14 @@ construct_generic_case(size_type i) const
         }
     } else {
         Status_line_CA_1 e1 
-            = this->ptr()->c1_.status_line_at_exact_x(alpha);
+            = (this->c1_.lock())->status_line_at_exact_x(alpha);
         Status_line_CA_1 e2 
-            = this->ptr()->c2_.status_line_at_exact_x(alpha);
+            = (this->c2_.lock())->status_line_at_exact_x(alpha);
         slice_info = construct_slice_info(alpha);
         reduce_number_of_candidates_and_intersections_to
             (0,e1,e2,slice_info,0);
     }
-    return create_slice_from_slice_info(i,slice_info,true);
+    this->event_slices[i] = create_slice_from_slice_info(i,slice_info,true);
 }
 
 //////////////////// check_candidate_by_arc_pattern
@@ -2348,7 +2284,7 @@ new_shear_for_intersection_info(Intersection_info_container& info_container)
         try {
             info_container.clear();
             info_container.resize(resultant_roots().size());               
-            s = this->ptr()->shear_controller.get_shear_factor();
+            s = this->shear_controller.get_shear_factor();
 #if CGAL_ACK_DEBUG_FLAG
             CGAL_ACK_DEBUG_PRINT << "Try shear factor " << s << std::endl;
             CGAL_ACK_DEBUG_PRINT 
@@ -2356,14 +2292,14 @@ new_shear_for_intersection_info(Intersection_info_container& info_container)
 #endif
             
             Curve_analysis_2 sh1 
-                = this->ptr()->c1_.shear_primitive_part(s);
+                = (this->c1_.lock())->shear_primitive_part(s);
 #if CGAL_ACK_DEBUG_FLAG
             CGAL_ACK_DEBUG_PRINT 
                 << "<<<<<<<<<<< End of transform first curve" << std::endl;
             CGAL_ACK_DEBUG_PRINT << ">>>>>>>>>>> Transform second curve" 
                                  << std::endl;
 #endif
-            Curve_analysis_2 sh2 = this->ptr()->c2_.shear_primitive_part(s);
+            Curve_analysis_2 sh2 = (this->c2_.lock())->shear_primitive_part(s);
 #if CGAL_ACK_DEBUG_FLAG
             CGAL_ACK_DEBUG_PRINT 
                 << "<<<<<<<<<<< End of transform second curve" 
@@ -2397,7 +2333,7 @@ new_shear_for_intersection_info(Intersection_info_container& info_container)
             good_direction_found=true;
         }
         catch(CGAL::internal::Non_generic_position_exception /* ex */) {
-            this->ptr()->shear_controller.report_failure(s);
+            this->shear_controller.report_failure(s);
         }
     }
     
@@ -2410,9 +2346,7 @@ new_shear_for_intersection_info(Intersection_info_container& info_container)
 //////////////////// create_event_slice_from_current_intersection_info
 
 template<typename AlgebraicKernelWithAnalysis_2>
-typename Curve_pair_analysis_2<AlgebraicKernelWithAnalysis_2>
-    ::Status_line_CPA_1 
-Curve_pair_analysis_2<AlgebraicKernelWithAnalysis_2>::
+void Curve_pair_analysis_2<AlgebraicKernelWithAnalysis_2>::
 create_event_slice_from_current_intersection_info (size_type i) 
     const throw(CGAL::internal::Non_generic_position_exception){
 #if CGAL_ACK_DEBUG_FLAG
@@ -2421,7 +2355,7 @@ create_event_slice_from_current_intersection_info (size_type i)
     Event_indices ev_ind = event_indices(i);
     size_type index_of_fg = ev_ind.fg;
     Intersection_info_container& intersection_info_container
-        = *(this->ptr()->intersection_info_container);
+        = *(this->intersection_info_container);
     Algebraic_real_1 alpha = event_x(i);
     CGAL_assertion(index_of_fg <
                    static_cast<size_type>
@@ -2431,9 +2365,9 @@ create_event_slice_from_current_intersection_info (size_type i)
                          << intersection_info_container[index_of_fg].size()
                          << " intersections" << std::endl;
 #endif
-    Status_line_CA_1 e1=this->ptr()->c1_.
+    Status_line_CA_1 e1=(this->c1_.lock())->
         status_line_at_exact_x(resultant_roots(index_of_fg)),
-        e2=this->ptr()->c2_.
+        e2=(this->c2_.lock())->
         status_line_at_exact_x(resultant_roots(index_of_fg));
     Slice_info slice=construct_slice_info(alpha);
     CGAL_assertion_code(size_type no_intersections=)
@@ -2467,7 +2401,7 @@ create_event_slice_from_current_intersection_info (size_type i)
 #if CGAL_ACK_DEBUG_FLAG
     CGAL_ACK_DEBUG_PRINT << "done" << std::endl;
 #endif
-    return create_slice_from_slice_info(i,slice,true);
+    this->event_slices[i] = create_slice_from_slice_info(i,slice,true);
     
 }
 
@@ -2478,7 +2412,7 @@ void Curve_pair_analysis_2<AlgebraicKernelWithAnalysis_2>::
 update_intersection_info(Intersection_info_container& 
                          info_container,
                          Self& sh_pair,
-                         Status_line_CPA_1 slice,
+                         const Status_line_CPA_1& slice,
                          size_type i,
                          size_type j,
                          Integer s) const {
@@ -2486,7 +2420,7 @@ update_intersection_info(Intersection_info_container&
     const Algebraic_real_1& xval = sh_pair.event_x(i);
     CGAL_assertion(Curves_at_event_functor(slice)(j)
                    ==CGAL::internal::INTERSECTION);
-    Status_line_CA_1 ev = sh_pair.ptr()->c1_.status_line_at_exact_x(xval);
+    Status_line_CA_1 ev = sh_pair.ptr()->(c1_.lock())->status_line_at_exact_x(xval);
     // x_coordinate is given by xval
     // y_coordinate by ev[index]
     Intersection_info intersection_info;
