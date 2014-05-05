@@ -17,8 +17,7 @@
 #include <CGAL/Algebraic_kernel_d/Shear_transformation.h>
 #include <CGAL/Algebraic_kernel_d/enums.h>
 #include <CGAL/Algebraic_kernel_d/exceptions.h>
-//#include <CGAL/Algebraic_kernel_d/Status_line_CPA_1.h>
-#include "Status_line_CPA_1.h"
+#include <CGAL/Algebraic_kernel_d/Status_line_CPA_1.h>
 
 #if defined(BOOST_MSVC)
 #  pragma warning(push)
@@ -897,11 +896,11 @@ public:
     size_type event_of_curve_analysis(size_type i, 
                                       const Curve_analysis_2& c) const {
 	auto spt_c1 = this->c1_.lock();  // false
-	CGAL_assertion(c==spt_c1) || (c==(this->c2_.lock()));
+	CGAL_assertion(c==*spt_c1) || (c==*(this->c2_.lock()));
         //CGAL_assertion(c.id()==curve_analysis(false).id() ||
         //               c.id()==curve_analysis(true).id());
         Event_indices& ev_ind = event_indices(i);
-        return (c==spt_c1) ? ev_ind.ffy : ev_ind.ggy;
+        return (c==*spt_c1) ? ev_ind.ffy : ev_ind.ggy;
         //return (c.id()==curve_analysis(false).id()) ? ev_ind.ffy : ev_ind.ggy;
     }
 
