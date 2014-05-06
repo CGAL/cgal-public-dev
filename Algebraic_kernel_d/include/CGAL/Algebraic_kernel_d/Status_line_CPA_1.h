@@ -134,8 +134,8 @@ public:
      * copy constructor
      */
 // Copy constructor implement
-    Status_line_CPA_1(const Self& p) : 
-            Base(static_cast<const Base&>(p)) {  
+    Status_line_CPA_1(const Self& p)
+    {  
 	this->_m_index = p._m_index;
 	this->_m_event = p._m_event;
 	this->_m_intersection = p._m_intersection;
@@ -179,7 +179,25 @@ public:
         _set_interval_arcs(arcs);
     }
 
-// TODO Implement the == operator
+// Overloading the == operator
+	bool operator== (const Status_line_CPA_1& p) const
+	{
+		if(
+		(this->_m_index == p._m_index) && 
+		(this->_m_event == p._m_event) && 
+		(this->_m_intersection == p._m_intersection) && 
+		(*(this->_m_cpa) == *(p._m_cpa) ) && 
+		(this->_m_x == p._m_x) && 
+		(this->_m_arcs == p._m_arcs) &&
+		(this->_m_arcno_to_pos[0] == p._m_arcno_to_pos[0]) &&
+		(this->_m_arcno_to_pos[1] == p._m_arcno_to_pos[1]) &&
+		(this->_m_mults == p._m_mults) )
+
+			return true;
+
+		return false;
+	}
+
 
 // TODO Construction from base rep not possible, copy constructor might be used 
 //protected:            
