@@ -30,6 +30,9 @@
 #include <CGAL/Polynomial/Sage/Sage_Connection.h>
 #include <CGAL/Polynomial/Polynomial_type.h>
 
+#include <cstdio>
+#include <sstream>
+
 //#include <CGAL/Polynomial/Polynomial.h>
 //#include <CGAL/Polynomial_type_generator.h>
 //#include <CGAL/Polynomial_traits_d.h>
@@ -41,66 +44,239 @@
 #define PORT 12345
 
 
-template <class NT_> 
-class Polynomial_sage_rep : public Polynomial_rep< NT_ > {
- private:
-  size_t sage_id;
-  bool dirty;
-  std::string sage_internal;
+namespace CGAL {
 
-public:
+  template < class NT_ > class Polynomial;
+  template < class NT_ > class Polynomial_Sage;
 
-  Polynomial_sage_rep() 
-    {
-      bool dirty = false;
-      Polynomial_rep< NT_ >::Polynomial_rep();
-    }
+  namespace internal {
 
-  Polynomial_sage_rep(size_type n, ...) 
-    {
-      bool dirty = false;
-      Polynomial_rep< NT_ >::Polynomial_rep(size_type n, ...);
-    }
+    template <class NT_> class Polynomial_rep;
+    
+    template <class NT> class Polynomial_sage_rep;
+    
+    template < class NT_ > 
+      class Polynomial_sage_rep: Polynomial_rep<NT_> {
+      typedef NT_ NT;
+      typedef std::vector<NT> Vector;
+      typedef typename Vector::size_type      size_type;
+      typedef typename Vector::iterator       iterator;
+      typedef typename Vector::const_iterator const_iterator;
+      Vector coeff;
+      
+      Polynomial_sage_rep() : coeff() {  bool dirty = false; }
+      Polynomial_sage_rep(Creation_tag, size_type s) : coeff(s,NT(0)) {  bool dirty = false; }
+      Polynomial_sage_rep(size_type n, ...);
+      
+      template <class Forward_iterator>
+	Polynomial_sage_rep(Forward_iterator first, Forward_iterator last) 
+	: coeff(first,last)
+	{}
+      
+      void reduce() {
+	while ( coeff.size()>1 && CGAL::is_zero(coeff.back())) coeff.pop_back();
+      }
+      
+      void simplify_coefficients() {
+	typename Algebraic_structure_traits<NT>::Simplify simplify;
+	for (iterator i = coeff.begin(); i != coeff.end(); i++) {
+	  simplify(*i);
+	}
+      }
+      
+      friend class Polynomial_Sage<NT>;
+      
+    private:
+      size_t sage_id;
+      bool dirty;
+      std::string sage_internal;
+      Polynomial_rep<NT_> polynomial_rep;
+      
+    public:    
+        std::string push_to_sage() 
+	{
+	   bool dirty = true;
 
-
-  ~Polynomial_sage_rep() //destructor
-    {
-
+	  //convert Polynomial_rep to Sage_rep
+	}
+      
+      std::string getDataFromSage(std::string &param)
+	{
+	  SageConnection connectionToSage;
+	  std::string host;
+	  
+	  host = HOST
+	    
+	    //connect to host
+	    connectionToSage.conn(host , PORT);
+	  //send some data
+	  connectionToSage.send_data(param);
+	  
+	  std::ostringstream oStringReceive;
+	  oStringReceive << connectionToSage.receive(1024);
+	  std::string dataoutput = oStringReceive.str();
+	  
+	  sage_id = dataoutput;
+	  
+	  return dataoutput;
+	}
+      
     };
+    
+  }
 
-  std::string push_to_sage() 
-    {
-      //convert Polynomial_rep to Sage_rep
+
+  template < class NT_ >
+    class Polynomial_Sage : public Polynomial< NT_ >, public Handle_with_policy< internal::Polynomial_sage_rep<NT_> > {
+    
+    typedef typename internal::Innermost_coefficient_type<NT_>::Type Innermost_coefficient_type; 
+    
+  public: 
+    typedef NT_ NT; 
+    typedef internal::Polynomial_sage_rep<NT> Rep;
+    typedef Handle_with_policy< Rep > Base;
+    typedef typename Rep::Vector    Vector;
+    typedef typename Rep::size_type size_type;
+    typedef typename Rep::iterator  iterator;
+    typedef typename Rep::const_iterator const_iterator;
+    typedef Polynomial_Sage<NT> Self; 
+    
+  protected:
+    Vector& coeffs() { return this->ptr()->coeff; }
+    const Vector& coeffs() const { return this->ptr()->coeff; }
+    
+  Polynomial_Sage(internal::Creation_tag f, size_type s)
+    : Base(internal::Polynomial_sage_rep<NT>(f,s) )
+      {}
+
+    NT& coeff(unsigned int i) {
+      CGAL_precondition(!this->is_shared() && i<(this->ptr()->coeff.size()));
+      return this->ptr()->coeff[i]; 
     }
+    
+    void reduce() { this->ptr()->reduce(); }
+    
+    void reduce_warn() {
+      CGAL_precondition( this->ptr()->coeff.size() > 0 );
+      if (this->ptr()->coeff.back() == NT(0)) {
+        CGAL_warning_msg(false, "unexpected degree loss (zero divisor?)");
+        this->ptr()->reduce();
+      }
+    }
+
+  private:
+    static Self& get_default_instance(){
+#ifdef CGAL_HAS_THREADS  
+      static boost::thread_specific_ptr< Self > safe_x_ptr;
+      if (safe_x_ptr.get() == NULL) 
+	safe_x_ptr.reset(new Self(0));
+      return *safe_x_ptr.get();  
+#else
+      static Self x = Self(0);
+      return x;
+#endif        
+    }
+
+  public:
+     Polynomial_Sage() : Base(static_cast<const Base&>(get_default_instance())) {}
+
+     template <class T>
+      explicit Polynomial_Sage(const T& a0)
+      : Base(Rep(internal::Creation_tag(), 1))
+      { coeff(0) = NT(a0); reduce(); simplify_coefficients(); } 
+    
+
+  //! construct the constant polynomial a0
+    explicit Polynomial_Sage(const NT& a0)
+      : Base(Rep(1, &a0))
+      { reduce(); simplify_coefficients(); }
+      
+    //! construct the polynomial a0 + a1*x
+    Polynomial_Sage(const NT& a0, const NT& a1)
+      : Base(Rep(2, &a0,&a1))
+      { reduce(); simplify_coefficients(); }
+
+    //! construct the polynomial a0 + a1*x + a2*x^2
+    Polynomial_Sage(const NT& a0,const NT& a1,const NT& a2)
+      : Base(Rep(3, &a0,&a1,&a2))
+      { reduce(); simplify_coefficients(); }
+      
+    //! construct the polynomial a0 + a1*x + ... + a3*x^3
+    Polynomial_Sage(const NT& a0,const NT& a1,const NT& a2, const NT& a3)
+      : Base(Rep(4, &a0,&a1,&a2,&a3))
+      { reduce(); simplify_coefficients(); }
+
+    //! construct the polynomial a0 + a1*x + ... + a4*x^4
+    Polynomial_Sage(const NT& a0,const NT& a1,const NT& a2, const NT& a3,
+        const NT& a4)
+      : Base(Rep(5, &a0,&a1,&a2,&a3,&a4))
+      { reduce(); simplify_coefficients(); }
+      
+    //! construct the polynomial a0 + a1*x + ... + a5*x^5
+    Polynomial_Sage(const NT& a0,const NT& a1,const NT& a2, const NT& a3,
+        const NT& a4, const NT& a5)
+      : Base(Rep(6, &a0,&a1,&a2,&a3,&a4,&a5))
+      { reduce(); simplify_coefficients(); }
+
+    //! construct the polynomial a0 + a1*x + ... + a6*x^6
+    Polynomial_Sage(const NT& a0,const NT& a1,const NT& a2, const NT& a3,
+        const NT& a4, const NT& a5, const NT& a6)
+      : Base(Rep(7, &a0,&a1,&a2,&a3,&a4,&a5,&a6))
+      { reduce(); simplify_coefficients(); }
+
+    //! construct the polynomial a0 + a1*x + ... + a7*x^7
+    Polynomial_Sage(const NT& a0,const NT& a1,const NT& a2, const NT& a3,
+        const NT& a4, const NT& a5, const NT& a6, const NT& a7)
+      : Base(Rep(8, &a0,&a1,&a2,&a3,&a4,&a5,&a6,&a7))
+      { reduce(); simplify_coefficients(); }
+      
+    //! construct the polynomial a0 + a1*x + ... + a8*x^8
+    Polynomial_Sage(const NT& a0,const NT& a1,const NT& a2, const NT& a3,
+        const NT& a4, const NT& a5, const NT& a6, const NT& a7,
+        const NT& a8)
+      : Base(Rep(9, &a0,&a1,&a2,&a3,&a4,&a5,&a6,&a7,&a8))
+      { reduce(); simplify_coefficients(); }
+
+
+
+   template <class Forward_iterator>
+    Polynomial_Sage(Forward_iterator first, Forward_iterator last)
+      : Base(Rep(first,last)) 
+      { reduce(); simplify_coefficients(); }
+
+
+private:
+    // NTX not decomposable
+    template <class NTX, class TAG >
+      CGAL::Sign sign_at_(const NTX& x, TAG) const{
+      CGAL_precondition(degree()>=0);
+      return CGAL::sign(evaluate(x));
+    }
+    // NTX decomposable
+    
+    template <class NTX>
+      CGAL::Sign sign_at_(const NTX& x, CGAL::Tag_true) const{
+      CGAL_precondition(degree()>=0);
+      typedef Fraction_traits<NTX> FT;
+      typedef typename FT::Numerator_type Numerator_type;
+      typedef typename FT::Denominator_type Denominator_type;
+      Numerator_type num;
+      Denominator_type den;
+      typename FT::Decompose decompose;
+      decompose(x,num,den);
+      CGAL_precondition(CGAL::sign(den) == CGAL::POSITIVE);
+
+      typedef Coercion_traits< Numerator_type , Denominator_type > CT;
+      typename CT::Cast cast;
+      return CGAL::sign(evaluate_homogeneous(cast(num),cast(den)));
+    }
+
+  public:
+    void simplify_coefficients() { this->ptr()->simplify_coefficients(); }
+    int degree() const { return static_cast<int>(this->ptr()->coeff.size())-1; } 
+  };
   
-  std::string getDataFromSage(std::string &param)
-    {
-      SageConnection connectionToSage;
-      std::string host;
-      
-      host = HOST
-      
-      //connect to host
-      connectionToSage.conn(host , PORT);
-      //send some data
-      connectionToSage.send_data(param);
-      
-      std::ostringstream oStringReceive;
-      oStringReceive << connectionToSage.receive(1024);
-      std::string dataoutput = oStringReceive.str();
-
-      sage_address = dataoutput;
-      
-      return dataoutput;
-    }
-
-};
- 
-
-template < class NT_ >
-class Sage_polynomial : public Polynomial< NT_, Polynomial_sage_rep< NT_ > > {
- 
-};
-
+  
+}
 
 #endif
