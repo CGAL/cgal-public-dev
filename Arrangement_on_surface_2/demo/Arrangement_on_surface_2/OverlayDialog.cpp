@@ -34,14 +34,18 @@ OverlayDialog::OverlayDialog( ArrangementDemoWindow* parent,
   QDialog( parent, f ),
   ui( new Ui::OverlayDialog )
 {
-  QBrush segColor( QColor( ::Qt::red ) );
-  QBrush polyColor( QColor( ::Qt::darkGreen ) );
-  QBrush conicColor( QColor( ::Qt::blue ) );
+  const QColor Red( ::Qt::red );
+  const QColor DarkGreen( ::Qt::red );
+  const QColor Blue( ::Qt::red );
+
+  QBrush segColor( Red );
+  QBrush polyColor( DarkGreen );
+  QBrush conicColor( Blue );
   this->ui->setupUi( this );
 
   std::vector< QString > labels = parent->getTabLabels( );
   std::vector< CGAL::Object > arrangements = parent->getArrangements( );
-    
+
   for ( unsigned int i = 0; i < labels.size( ); ++i )
   {
     QListWidgetItem* item =
