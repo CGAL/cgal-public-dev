@@ -81,7 +81,7 @@ public:
   void setScene( QGraphicsScene* scene_ );
   virtual void setColor( QColor c );
   void reset( );
-    
+
   void slotModelChanged( );
 
 protected:
@@ -257,7 +257,7 @@ splitEdges(const Point_2& /* clickedPoint */,
 }
 
 template < typename Arr_ >
-void 
+void
 SplitEdgeCallback< Arr_ >::mouseMoveEvent( QGraphicsSceneMouseEvent* event )
 {
   Point_2 clickedPoint = this->snapPoint( event );

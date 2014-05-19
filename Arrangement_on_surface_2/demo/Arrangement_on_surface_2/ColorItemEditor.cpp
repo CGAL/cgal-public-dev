@@ -45,7 +45,7 @@
 #include "ColorItemEditor.h"
 
 ColorItemEditor::ColorItemEditor( QWidget* widget ) : QPushButton( widget )
-{ 
+{
   this->setText( tr("Select a color") );
 }
 

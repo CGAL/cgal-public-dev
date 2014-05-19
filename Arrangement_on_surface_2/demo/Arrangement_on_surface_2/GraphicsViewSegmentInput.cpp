@@ -47,9 +47,9 @@ void
 GraphicsViewSegmentInputBase::mouseMoveEvent(QGraphicsSceneMouseEvent* event)
 { }
 
-void 
+void
 GraphicsViewSegmentInputBase::mousePressEvent(QGraphicsSceneMouseEvent* event)
-{ 
+{
   // std::cout << "GraphicsViewSegmentInputBase::mousePressEvent" << std::endl;
 }
 
@@ -67,7 +67,7 @@ bool GraphicsViewSegmentInputBase::eventFilter( QObject* obj, QEvent* event )
       static_cast< QGraphicsSceneMouseEvent* >( event );
     this->mousePressEvent( mouseEvent );
   }
-  
+
   return QObject::eventFilter( obj, event );
 }
 

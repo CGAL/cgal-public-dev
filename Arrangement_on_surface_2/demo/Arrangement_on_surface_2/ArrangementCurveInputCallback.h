@@ -72,7 +72,7 @@ public:
       CGAL::insert( *( this->arrangement ), box.begin( ), box.end( ) );
     }
 #endif
-    
+
     emit CGAL::Qt::GraphicsViewInput::modelChanged( );
   }
 

@@ -97,14 +97,14 @@ public: // methods
   void insert( const X_monotone_curve_2& curve )
   {
     this->curves.push_back( curve );
-        
+
     this->updateBoundingBox( );
   }
 
   void insert( const Point_2& point )
   {
     this->points.push_back( point );
-        
+
     this->updateBoundingBox( );
   }
 
@@ -206,7 +206,7 @@ protected: // fields
   ArrangementPainterOstream< Traits > painterOstream;
   std::vector< X_monotone_curve_2 > curves;
   std::vector< Point_2 > points;
-  CGAL::Bbox_2 boundingBox;  
+  CGAL::Bbox_2 boundingBox;
   bool boundingBoxInitialized;
 
   QColor m_edgeColor;
@@ -436,7 +436,7 @@ protected: // fields
   ArrangementPainterOstream< Traits > painterOstream;
   std::vector< X_monotone_curve_2 > curves;
   std::vector< Point_2 > points;
-  CGAL::Bbox_2 boundingBox;  
+  CGAL::Bbox_2 boundingBox;
   bool boundingBoxInitialized;
 
   QColor m_edgeColor;
