@@ -220,11 +220,27 @@ protected:
     }
     else
     {
-      // add clicked point to polyline
-      this->points.push_back( clickedPoint );
+      bool addUniquePoint = true;
+      if ( this->points.back( ) == clickedPoint )
+      {
+        addUniquePoint = false;
+      }
+
+      // add clicked point to polyline if it doesn't give degenerate segment
+      if ( addUniquePoint )
+      {
+        this->points.push_back( clickedPoint );
+      }
+      else
+      {
+        if ( this->points.size( ) < 2 )
+        {
+          return;
+        }
+      }
 
       if ( event->button( ) == ::Qt::RightButton )
-      { // finalize polyline input
+      { // remove the polyline guide
         for ( unsigned int i = 0; i < this->polylineGuide.size( ); ++i )
         {
           if ( this->scene != NULL )
@@ -234,6 +250,8 @@ protected:
           delete this->polylineGuide[ i ];
         }
         this->polylineGuide.clear( );
+
+        // insert the polyline and end user input
         Curve_2 res( this->points.begin( ), this->points.end( ) );
         this->points.clear( );
 
@@ -241,17 +259,20 @@ protected:
       }
       else
       { // start the next segment
-        QPointF pt = this->convert( clickedPoint );
-        QGraphicsLineItem* lineItem =
-          new QGraphicsLineItem( pt.x( ), pt.y( ), pt.x( ), pt.y( ) );
-        lineItem->setZValue( 100 );
-        QPen pen = lineItem->pen( );
-        pen.setColor( this->color );
-        lineItem->setPen( pen );
-        this->polylineGuide.push_back( lineItem );
-        if ( this->scene != NULL )
+        if ( addUniquePoint )
         {
-          this->scene->addItem( this->polylineGuide.back( ) );
+          QPointF pt = this->convert( clickedPoint );
+          QGraphicsLineItem* lineItem =
+            new QGraphicsLineItem( pt.x( ), pt.y( ), pt.x( ), pt.y( ) );
+          lineItem->setZValue( 100 );
+          QPen pen = lineItem->pen( );
+          pen.setColor( this->color );
+          lineItem->setPen( pen );
+          this->polylineGuide.push_back( lineItem );
+          if ( this->scene != NULL )
+          {
+            this->scene->addItem( this->polylineGuide.back( ) );
+          }
         }
       }
     }
