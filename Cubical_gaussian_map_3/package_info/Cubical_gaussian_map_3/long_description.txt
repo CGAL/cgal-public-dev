@@ -1,0 +1,13 @@
+This package contains an exact implementation of an efficient data
+structure that we call the Cubical Gaussian Map. The cubical Gaussian
+map, a dual representation of a convex polytope in 3D, consists of six
+planar maps that correspond to the six faces of the unit cube---the
+parallel-axis cube circumscribing the unit sphere.  The implementation
+is mainly based on the Arrangement package of CGAL. The package also
+containes an exact implementation of an efficient algorithm that
+computes the Minkowski sums of convex polyhedra in R3 using the
+cubical Gaussian maop data structure. The implementation is complete
+in the sense that it does not assume general position; namely, it can
+handle degenerate input, and it produces exact results. This method is
+significantly faster than naive approach that computes the convex hull
+of the pairwise sums of vertices of the input two convex polyhedra.
