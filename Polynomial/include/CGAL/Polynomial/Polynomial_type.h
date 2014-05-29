@@ -44,6 +44,7 @@ typename CGAL::internal::Innermost_coefficient_type<T>::Type , 2>::Type
 #include <cstdio>
 #include <sstream>
 #include <CGAL/Polynomial/misc.h>
+#include <CGAL/Polynomial/fwd.h>
 
 #include <CGAL/use.h>
 
@@ -53,13 +54,13 @@ typename CGAL::internal::Innermost_coefficient_type<T>::Type , 2>::Type
 
 namespace CGAL {
 
-template <class NT> class Polynomial;
+template <class NT, class Rep_> class Polynomial;
 template <class NT> class Scalar_factor_traits;
 template <class NT> Polynomial<NT> operator - (const Polynomial<NT>& p);
 
 namespace internal {
 
-template <class NT> class Polynomial_rep;
+  //template <class NT> class Polynomial_rep;
 
 // \brief tag type to distinguish a certain constructor of \c CGAL::Polynomial
 class Creation_tag {};
@@ -196,9 +197,9 @@ Polynomial_rep<NT>::Polynomial_rep(size_type n, ...)
   \b History: This data type has evolved out of \c RPolynomial 
   from Michael Seel's PhD thesis.  */ 
 
-template <class NT_>
+ template <class NT_, class Rep_>
 class Polynomial 
-  : public Handle_with_policy< internal::Polynomial_rep<NT_> >,
+  : public Handle_with_policy< Rep_ >,
     public boost::ordered_field_operators1< Polynomial<NT_> , 
            boost::ordered_field_operators2< Polynomial<NT_> , NT_ ,  
            boost::ordered_field_operators2< Polynomial<NT_> , CGAL_icoeff(NT_),
@@ -210,9 +211,9 @@ public:
   //! \name Typedefs 
   //@{ 
   //! coefficient type of this instance 
-  typedef NT_ NT; 
+  typedef NT_ NT;
   //! representation pointed to by this handle 
-  typedef internal::Polynomial_rep<NT> Rep;
+  typedef Rep_ Rep;
   //! base class  
   typedef Handle_with_policy< Rep > Base;
   //! container used to store coefficient sequence
@@ -1116,8 +1117,8 @@ bool operator > (const Polynomial<NT>& p, const CGAL_icoeff(NT)& num)
 // 1) Euclidean and pseudo-division of polynomials
 // (implementation of static member functions)
 
-template <class NT>
-void Polynomial<NT>::euclidean_division(
+ template <class NT, class Rep_>
+   void Polynomial<NT, Rep_>::euclidean_division(
     const Polynomial<NT>& f, const Polynomial<NT>& g,
     Polynomial<NT>& q, Polynomial<NT>& r)
 {
