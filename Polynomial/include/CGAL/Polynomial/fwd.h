@@ -26,44 +26,44 @@
 
 namespace CGAL{
 
-template <class NT> class Polynomial; 
+template <class NT, class Rep_> class Polynomial; 
 
 namespace internal{
-template <class NT> inline Polynomial<NT> gcd_(const Polynomial<NT>&, const Polynomial<NT>&);
-template <class NT> inline Polynomial<NT> gcd_(const Polynomial<NT>&, const Polynomial<NT>&, Field_tag);
-template <class NT> inline Polynomial<NT> gcd_(const Polynomial<NT>&, const Polynomial<NT>&, Unique_factorization_domain_tag);
+template <class NT, class Rep_> inline Polynomial<NT, Rep_> gcd_(const Polynomial<NT, Rep_>&, const Polynomial<NT, Rep_>&);
+template <class NT, class Rep_> inline Polynomial<NT, Rep_> gcd_(const Polynomial<NT, Rep_>&, const Polynomial<NT, Rep_>&, Field_tag);
+template <class NT, class Rep_> inline Polynomial<NT, Rep_> gcd_(const Polynomial<NT, Rep_>&, const Polynomial<NT, Rep_>&, Unique_factorization_domain_tag);
 
 
-template <class NT> inline NT gcd_utcf_(const NT& /*a*/, const NT& /*b*/){return NT(1);}
-template <class NT> inline Polynomial<NT> gcd_utcf_(const Polynomial<NT>&, const Polynomial<NT>&);
-template <class NT> inline Polynomial<NT> gcd_utcf_UFD( Polynomial<NT> , Polynomial<NT>) ;
-template <class NT> inline Polynomial<NT> gcd_utcf_Integral_domain(Polynomial<NT>, Polynomial<NT>);
-template <class NT> inline Polynomial<NT> gcd_Euclidean_ring(Polynomial<NT>, Polynomial<NT>); 
+template <class NT, class Rep_> inline NT gcd_utcf_(const NT& /*a*/, const NT& /*b*/){return NT(1);}
+template <class NT, class Rep_> inline Polynomial<NT, Rep_> gcd_utcf_(const Polynomial<NT, Rep_>&, const Polynomial<NT, Rep_>&);
+template <class NT, class Rep_> inline Polynomial<NT, Rep_> gcd_utcf_UFD( Polynomial<NT, Rep_> , Polynomial<NT, Rep_>) ;
+template <class NT, class Rep_> inline Polynomial<NT, Rep_> gcd_utcf_Integral_domain(Polynomial<NT, Rep_>, Polynomial<NT, Rep_>);
+template <class NT, class Rep_> inline Polynomial<NT, Rep_> gcd_Euclidean_ring(Polynomial<NT, Rep_>, Polynomial<NT, Rep_>); 
 
-template <class NT> inline Polynomial<NT> modular_gcd_utcf(const Polynomial<NT>&, const Polynomial<NT>&, Integral_domain_tag);
-template <class NT> inline Polynomial<NT> modular_gcd_utcf(const Polynomial<NT>&, const Polynomial<NT>&, Unique_factorization_domain_tag);
+template <class NT, class Rep_> inline Polynomial<NT, Rep_> modular_gcd_utcf(const Polynomial<NT, Rep_>&, const Polynomial<NT, Rep_>&, Integral_domain_tag);
+template <class NT, class Rep_> inline Polynomial<NT, Rep_> modular_gcd_utcf(const Polynomial<NT, Rep_>&, const Polynomial<NT, Rep_>&, Unique_factorization_domain_tag);
 
 // is fraction ? 
-template <class NT> inline Polynomial<NT> gcd_utcf_is_fraction_( const Polynomial<NT>&, const Polynomial<NT>&, ::CGAL::Tag_true); 
-template <class NT> inline Polynomial<NT> gcd_utcf_is_fraction_( const Polynomial<NT>&, const Polynomial<NT>&, ::CGAL::Tag_false);
+template <class NT, class Rep_> inline Polynomial<NT, Rep_> gcd_utcf_is_fraction_( const Polynomial<NT, Rep_>&, const Polynomial<NT, Rep_>&, ::CGAL::Tag_true); 
+template <class NT, class Rep_> inline Polynomial<NT, Rep_> gcd_utcf_is_fraction_( const Polynomial<NT, Rep_>&, const Polynomial<NT, Rep_>&, ::CGAL::Tag_false);
 
 // is type modularizable 
-template <class NT> inline Polynomial<NT> gcd_utcf_modularizable_algebra_( const Polynomial<NT>&, const Polynomial<NT>&, ::CGAL::Tag_false, Integral_domain_tag);
-template <class NT> inline Polynomial<NT> gcd_utcf_modularizable_algebra_( const Polynomial<NT>&, const Polynomial<NT>&, ::CGAL::Tag_false, Unique_factorization_domain_tag);
-template <class NT> inline Polynomial<NT> gcd_utcf_modularizable_algebra_( const Polynomial<NT>&, const Polynomial<NT>&, ::CGAL::Tag_false, Euclidean_ring_tag);
+template <class NT, class Rep_> inline Polynomial<NT, Rep_> gcd_utcf_modularizable_algebra_( const Polynomial<NT, Rep_>&, const Polynomial<NT, Rep_>&, ::CGAL::Tag_false, Integral_domain_tag);
+template <class NT, class Rep_> inline Polynomial<NT, Rep_> gcd_utcf_modularizable_algebra_( const Polynomial<NT, Rep_>&, const Polynomial<NT, Rep_>&, ::CGAL::Tag_false, Unique_factorization_domain_tag);
+template <class NT, class Rep_> inline Polynomial<NT, Rep_> gcd_utcf_modularizable_algebra_( const Polynomial<NT, Rep_>&, const Polynomial<NT, Rep_>&, ::CGAL::Tag_false, Euclidean_ring_tag);
 
-template <class NT> inline Polynomial<NT> gcd_utcf_modularizable_algebra_( const Polynomial<NT>&, const Polynomial<NT>&, ::CGAL::Tag_true, Integral_domain_tag);
-template <class NT> inline Polynomial<NT> gcd_utcf_modularizable_algebra_( const Polynomial<NT>&, const Polynomial<NT>&, ::CGAL::Tag_true, Unique_factorization_domain_tag);
-template <class NT> inline Polynomial<NT> gcd_utcf_modularizable_algebra_( const Polynomial<NT>&, const Polynomial<NT>&, ::CGAL::Tag_true, Euclidean_ring_tag);
+template <class NT, class Rep_> inline Polynomial<NT, Rep_> gcd_utcf_modularizable_algebra_( const Polynomial<NT, Rep_>&, const Polynomial<NT, Rep_>&, ::CGAL::Tag_true, Integral_domain_tag);
+template <class NT, class Rep_> inline Polynomial<NT, Rep_> gcd_utcf_modularizable_algebra_( const Polynomial<NT, Rep_>&, const Polynomial<NT, Rep_>&, ::CGAL::Tag_true, Unique_factorization_domain_tag);
+template <class NT, class Rep_> inline Polynomial<NT, Rep_> gcd_utcf_modularizable_algebra_( const Polynomial<NT, Rep_>&, const Polynomial<NT, Rep_>&, ::CGAL::Tag_true, Euclidean_ring_tag);
 
 
-// template <class NT> inline NT content_utcf(const Polynomial<NT>&);
-template <class NT> inline NT content_utcf_(const Polynomial<NT>&);
+// template <class NT, class Rep_> inline NT content_utcf(const Polynomial<NT, Rep_>&);
+template <class NT, class Rep_> inline NT content_utcf_(const Polynomial<NT, Rep_>&);
 
 template <class NT, class OutputIterator1, class OutputIterator2> 
-inline int filtered_square_free_factorize( Polynomial<NT>, OutputIterator1, OutputIterator2);
+inline int filtered_square_free_factorize( Polynomial<NT, Rep_>, OutputIterator1, OutputIterator2);
 template <class NT,  class OutputIterator1, class OutputIterator2> 
-inline int filtered_square_free_factorize_utcf( const Polynomial<NT>&, OutputIterator1, OutputIterator2);
+inline int filtered_square_free_factorize_utcf( const Polynomial<NT, Rep_>&, OutputIterator1, OutputIterator2);
 
 template <class Coeff,  class OutputIterator1, class OutputIterator2>
 inline int square_free_factorize_utcf(const Polynomial<Coeff>&, OutputIterator1, OutputIterator2);
@@ -75,8 +75,8 @@ inline int square_free_factorize(const Polynomial<Coeff>&, OutputIterator1, Outp
 template <class Coeff,  class OutputIterator1, class OutputIterator2>
 inline int square_free_factorize_for_regular_polynomial(const Polynomial<Coeff>&, OutputIterator1, OutputIterator2);
 
-template <class NT> inline bool may_have_multiple_factor( const Polynomial<NT>&);
-template <class NT> inline bool may_have_common_factor(const Polynomial<NT>&,const Polynomial<NT>&);
+template <class NT, class Rep_> inline bool may_have_multiple_factor( const Polynomial<NT, Rep_>&);
+template <class NT, class Rep_> inline bool may_have_common_factor(const Polynomial<NT, Rep_>&,const Polynomial<NT, Rep_>&);
 
 // eliminates outermost variable
 template <class Coeff> 
@@ -94,8 +94,8 @@ struct Simple_matrix;
 
 template<class NT>
 internal::Simple_matrix<NT> polynomial_subresultant_matrix(
-                                               CGAL::Polynomial<NT> f,
-					       CGAL::Polynomial<NT> g,
+                                               CGAL::Polynomial<NT, Rep_> f,
+					       CGAL::Polynomial<NT, Rep_> g,
 					       int d=0);
 
 template <typename Polynomial_traits_d,typename OutputIterator> inline
