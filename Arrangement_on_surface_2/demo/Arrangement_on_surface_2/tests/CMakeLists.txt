@@ -18,3 +18,6 @@ add_executable( bezier_example bezier_example.cpp
   ${bezier_example_uis}
   ${bezier_example_mocs}
 )
+target_link_libraries( bezier_example
+    ${CGAL_LIBRARIES}
+)
