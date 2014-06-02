@@ -1,30 +1,9 @@
-// Copyright (c) 2006-2009 Max-Planck-Institute Saarbruecken (Germany).
-// All rights reserved.
-//
-// This file is part of CGAL (www.cgal.org); you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 3 of the License,
-// or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
-//
-// $URL$
-// $Id$
-// 
-//
-// Author(s)     : Pavel Emeliyanenko <asm@mpi-sb.mpg.de>
-//
-// ============================================================================
-
 #ifndef CGAL_ALGEBRAIC_CURVE_KERNEL_STATUS_LINE_CA_1_H
 #define CGAL_ALGEBRAIC_CURVE_KERNEL_STATUS_LINE_CA_1_H
 
 #include <CGAL/basic.h>
 #include <CGAL/Handle_with_policy.h>
+#include <memory>
 
 #include <CGAL/Algebraic_kernel_d/Bitstream_descartes.h>
 #include <CGAL/Algebraic_kernel_d/Bitstream_descartes_rndl_tree_traits.h>
@@ -34,12 +13,14 @@ namespace CGAL {
 
 namespace internal {
 
-template < class CurveAnalysis_2, class Rep_ > 
+
+// Removal of Rep class from the template functions
+template < class CurveAnalysis_2> 
 class Status_line_CA_1;
 
-template <class CurveAnalysis_2, class Rep>
+template <class CurveAnalysis_2>
 std::ostream& operator<< (std::ostream&, 
-    const Status_line_CA_1<CurveAnalysis_2, Rep>&);
+    const Status_line_CA_1<CurveAnalysis_2>&);
 
 #if !CGAL_ACK_USE_EXACUS
 template < typename AlgebraicCurveKernel_2 > 
@@ -50,8 +31,28 @@ class Shear_transformation;
 #endif
 
 
-template < class AlgebraicCurveKernel_2 >
-class Status_line_CA_1_rep {
+
+
+//! \brief The class provides information about the intersections of a curve 
+//! with a vertical line at a given finite x-coordinate. 
+//!
+//! Note that a curve can have a vertical line component at this coordinate
+//! and non-vertical components may intersect the vertical line respectively. 
+//! With the help of this class' methods one is able to compute the local 
+//! topology of the curve at the given vertical line. Note that vertical lines 
+//! at x = +/-oo are not allowed, since different events (curve ends going to 
+//! infinity with different non-horizontal asymptotes) would have equal 
+//! y-coordinate (+/-oo), which confuses more than it helps. Note in addition 
+//! that curve ends approaching the vertical asymptote introduce an event 
+//! (depending on whether approaching +oo or -oo - but the event with 
+//! coordinates (x,?oo), resp. (x,+oo), occur only once, if they occur, and 
+//! they imply not to be associated with a instance of \c Algebraic_real_2.
+
+
+
+template <class AlgebraicCurveKernel_2>
+class Status_line_CA_1 {
+
 
 public:
 
@@ -62,7 +63,7 @@ public:
       Curve_analysis_2;
 
     // myself
-    typedef Status_line_CA_1_rep<Algebraic_curve_kernel_2> Self;
+    typedef Status_line_CA_1<Algebraic_curve_kernel_2> Self;
 
     // type of x-coordinate
     typedef typename Curve_analysis_2::Algebraic_real_1
@@ -88,34 +89,6 @@ public:
     // Isolator type
     typedef typename Curve_analysis_2::Bitstream_descartes Bitstream_descartes;
 
-    // constructors
-
-    // default constructor ()
-    Status_line_CA_1_rep() 
-    {   }
-
-    // constructs status line over interval
-    Status_line_CA_1_rep(
-            Algebraic_real_1 x, size_type i,
-            const Curve_analysis_2& ca, size_type n_arcs) :
-            _m_kernel(ca.kernel()),
-            _m_x(x), _m_index(i), _m_ca(ca),/*_m_num_arcs(n_arcs, n_arcs),*/
-            _m_total_arcs(n_arcs), _m_vertical_line(false), _m_event(false),
-            _m_num_arcs_minus_inf(0, 0), _m_num_arcs_plus_inf(0, 0),
-                _m_xy_coords(n_arcs)  {
-    }
-
-    // constructs status line at events
-    Status_line_CA_1_rep(
-        Algebraic_real_1 x, size_type i,
-        const Curve_analysis_2& ca, 
-        size_type , size_type ) :
-      _m_kernel(ca.kernel()),
-             _m_x(x), _m_index(i), _m_ca(ca),
-             /*_m_num_arcs(n_arcs_left, n_arcs_right),*/ _m_total_arcs(0),
-             _m_vertical_line(false), _m_event(true),
-             _m_num_arcs_minus_inf(0, 0), _m_num_arcs_plus_inf(0, 0) {
-    };
 
     //! kernel instance
     // TODO remove kernel?
@@ -129,7 +102,8 @@ public:
     size_type _m_index;
 
     //! underlying curve analysis
-    Curve_analysis_2 _m_ca; 
+    // Use of weak pointer
+    std::weak_ptr<Curve_analysis_2> _m_ca;
     
     //! number of incident arcs to the left and to the right
     //Arc_pair _m_num_arcs;
@@ -152,91 +126,15 @@ public:
     //! number of arcs running up the pole
     Arc_pair _m_num_arcs_plus_inf;
 
-    /*// matchings valid?
-    mutable bool matching_valid_;
-    
-    // match side arcs to event arcs
-    mutable std::vector< int > matching_[2];
-    
-    // total number of arcs
-    int numarcs_at_;
-
-    // arc number of lowest event
-    int lowest_event_;
-
-    // stores multiplicities
-    std::vector< int > multiplicities_;*/
-    
     // stores algebraic real over the vertical line
     mutable std::vector<boost::optional< Algebraic_real_2 > >_m_xy_coords;
 
     // stores the isolator instance
     mutable boost::optional<Bitstream_descartes> isolator;
-    
-     // befriending the handle
-    friend class Status_line_CA_1<Curve_analysis_2, Self>;
-    //friend class Curve_analysis_2;
-    //friend class Event_line_builder<Curve_analysis_2>;
-    //friend class Shear_transformation<Curve_analysis_2>;
 
-};
 
-//! \brief The class provides information about the intersections of a curve 
-//! with a vertical line at a given finite x-coordinate. 
-//!
-//! Note that a curve can have a vertical line component at this coordinate
-//! and non-vertical components may intersect the vertical line respectively. 
-//! With the help of this class' methods one is able to compute the local 
-//! topology of the curve at the given vertical line. Note that vertical lines 
-//! at x = +/-oo are not allowed, since different events (curve ends going to 
-//! infinity with different non-horizontal asymptotes) would have equal 
-//! y-coordinate (+/-oo), which confuses more than it helps. Note in addition 
-//! that curve ends approaching the vertical asymptote introduce an event 
-//! (depending on whether approaching +oo or -oo - but the event with 
-//! coordinates (x,?oo), resp. (x,+oo), occur only once, if they occur, and 
-//! they imply not to be associated with a instance of \c Algebraic_real_2.
-template <class AlgebraicCurveKernel_2, 
-          class Rep_ = internal::Status_line_CA_1_rep<AlgebraicCurveKernel_2> >
-class Status_line_CA_1
-      : public ::CGAL::Handle_with_policy< Rep_ > {
-public:
-    //!@{
-    //!\name typedefs
 
-    //! this instance's first template parameter
-    //! model of AlgebraicKernel_d_2
-    typedef AlgebraicCurveKernel_2 Algebraic_curve_kernel_2;
 
-    typedef typename Algebraic_curve_kernel_2::Curve_analysis_2 Curve_analysis_2;
-    
-    //! this instance's second template parameter
-    typedef Rep_ Rep;
-
-    //! this instance itself
-    typedef Status_line_CA_1<Algebraic_curve_kernel_2, Rep> Self;
-
-    //! type of x-coordinate
-    typedef typename Curve_analysis_2::Algebraic_real_1 Algebraic_real_1; 
-
-    //! type of a curve point
-    typedef typename Curve_analysis_2::Algebraic_real_2 Algebraic_real_2;
-
-    //! an instance of a size type
-    typedef typename Curve_analysis_2::size_type size_type;
-
-    //! encodes number of arcs to the left and to the right
-    typedef std::pair<size_type, size_type> Arc_pair;
-
-    //! container of arcs
-    typedef std::vector<Arc_pair> Arc_container;
-
-    //! Local isolator type
-    typedef typename Rep::Bitstream_descartes Bitstream_descartes;
-    
-     //! the handle superclass
-    typedef ::CGAL::Handle_with_policy< Rep > Base;
-    
-    //!@}
 public:
     //!\name constructors
     //!@{
@@ -244,15 +142,28 @@ public:
     /*!\brief
      * Default constructor
      */
-    Status_line_CA_1() : 
-        Base(Rep()) {   
-    }
+    Status_line_CA_1()
+    {}
 
     /*!\brief
      * copy constructor
      */
-    Status_line_CA_1(const Self& p) : 
-            Base(static_cast<const Base&>(p)) {  
+    Status_line_CA_1(const Self& p)
+    {
+	*(this->_m_kernel) = *(p._m_kernel);
+	this->_m_x = p._m_x;
+	this->_m_index = p._m_index;
+	this->_m_total_arcs = p._m_total_arcs;
+	this->_m_vertical_lines = p._m_vertical_lines;
+	this->_m_event = p._m_event;
+	this->_m_num_arcs_minus_inf = p._m_num_arcs_minus_inf;
+	this->_m_num_arcs_plus_inf = p._m_num_arcs_plus_inf;
+	this->_m_xy_coords = p._m_xy_coords;
+	this->_m_ca = p._m_ca;
+
+// TODO What happens if not present due to boost::optional
+	this->_m_arcs = p._m_arcs;
+	this->isolator = p.isolator;
     }
 
     /*!\brief
@@ -263,11 +174,13 @@ public:
      *
      * \pre specified x-coordinate belongs to \c i-th interval
      */
-    Status_line_CA_1(
-        Algebraic_real_1 x, size_type i, const Curve_analysis_2& ca,
-        size_type n_arcs) :
-        Base(Rep(x, i, ca, n_arcs)) {
-    
+    Status_line_CA_1(const Algebraic_real_1& x, size_type i, const Curve_analysis_2& ca, size_type n_arcs) :
+        _m_kernel(ca.kernel()), _m_x(x), _m_index(i), _m_total_arcs(n_arcs), _m_vertical_lines(false), 
+	_m_event(false), _m_num_arcs_minus_inf(0,0), _m_num_arcs_plus_inf(0,0), _m_xy_coords(n_arcs) 
+	{
+    	// Store shared pointer
+	_m_ca = std::make_shared<Curve_analysis_2> (ca);
+
         CGAL_precondition(n_arcs >= 0);
         CGAL_precondition_code(
             bool is_event;
@@ -276,6 +189,7 @@ public:
             CGAL_precondition(!is_event && idx == i);
         );
     }
+
     
 
     /*!\brief
@@ -291,11 +205,12 @@ public:
      *
      * \pre there is a curve event at specified x-coordinate
      */
+	// Use of constructor delegation
     Status_line_CA_1(Algebraic_real_1 x, 
         size_type i, const Curve_analysis_2& ca,
         size_type n_arcs_left, size_type n_arcs_right, 
         Arc_container arcs, bool has_v_line = false) :
-        Base(Rep(x, i, ca, n_arcs_left, n_arcs_right)) {
+        Status_line_CA_1(x, i, ca, n_arcs_left, n_arcs_right) {
 
         CGAL_precondition(n_arcs_left >= 0 && n_arcs_right >= 0);
         CGAL_precondition_code(
@@ -309,6 +224,22 @@ public:
             _set_v_line();
     }
 
+
+	// Constructor for base part of object
+    Status_line_CA_1(
+        Algebraic_real_1 x, size_type i,
+        const Curve_analysis_2& ca, 
+        size_type , size_type ) :
+      _m_kernel(ca.kernel()),
+             _m_x(x), _m_index(i),
+             /*_m_num_arcs(n_arcs_left, n_arcs_right),*/ _m_total_arcs(0),
+             _m_vertical_line(false), _m_event(true),
+             _m_num_arcs_minus_inf(0, 0), _m_num_arcs_plus_inf(0, 0) {
+	
+    	// Store shared pointer
+	_m_ca = std::make_shared<Curve_analysis_2> (ca);
+    };
+
     /*!\brief
      * constructs a status line at the event with x-coorinate \c x
      *
@@ -317,7 +248,7 @@ public:
     Status_line_CA_1(Algebraic_real_1 x, 
         size_type i, const Curve_analysis_2& ca,
         size_type n_arcs_left, size_type n_arcs_right) :
-        Base(Rep(x, i, ca, n_arcs_left, n_arcs_right)) {
+        Status_line_CA_1(x, i, ca, n_arcs_left, n_arcs_right) {
 
         CGAL_precondition(n_arcs_left >= 0 && n_arcs_right >= 0);
         CGAL_precondition_code(
@@ -327,14 +258,7 @@ public:
             CGAL_precondition(idx == i);
         );
     }
-    
-    /*!\brief
-     * constructs from a given represenation
-     */
-    Status_line_CA_1(Rep rep) : 
-        Base(rep) {  
-    }
-    
+
     //!@}
 public:
     //!\name access functions
@@ -343,22 +267,22 @@ public:
     /*! \brief
      *  returns the x-coordinate of the status line (always a finite value)
      */
-    Algebraic_real_1 x() const {
-        return this->ptr()->_m_x;
+    const Algebraic_real_1& x() const {
+        return this->_m_x;
     }
     
     /*! \brief
      *  returns this status line CurveAnalysis_2 object
      */
-    Curve_analysis_2 curve_analysis_2() const {
-        return this->ptr()->_m_ca;
+    const Curve_analysis_2& curve_analysis_2() const {
+        return *((this->_m_ca).lock());
     }
     
     /*! \brief
      *  returns this status line index (event or interval index)
      */
     size_type index() const {
-        return this->ptr()->_m_index;
+        return this->_m_index;
     }
         
     /*! \brief
@@ -366,7 +290,7 @@ public:
      *  as a component
      */
     bool covers_line() const {
-        return this->ptr()->_m_vertical_line;
+        return this->_m_vertical_line;
     }
 
     /*!\brief
@@ -381,7 +305,7 @@ public:
      *  evaluates to \c true
      */
     bool is_event() const {
-        return this->ptr()->_m_event;
+        return this->_m_event;
     }
 
     /*! \brief 
@@ -400,7 +324,7 @@ public:
      * curve at the given x-coordinate.
      */
     size_type number_of_events() const {
-        return this->ptr()->_m_total_arcs;
+        return this->_m_total_arcs;
     }
 
     /*!\brief
@@ -408,19 +332,19 @@ public:
      *
      * \pre 0 <= j < num_of_events()
      */
-    Algebraic_real_2 algebraic_real_2(size_type j) const
+    const Algebraic_real_2& algebraic_real_2(size_type j) const
     {
         CGAL_precondition(0 <= j&&j < number_of_events());
-        if(!this->ptr()->_m_xy_coords[j])
-	  this->ptr()->_m_xy_coords[j] = Algebraic_real_2(x(), 
-                this->ptr()->_m_ca, j);
-        return *(this->ptr()->_m_xy_coords[j]);
+        if(!this->_m_xy_coords[j])
+	  this->_m_xy_coords[j] = Algebraic_real_2(x(), 
+                *((this->_m_ca).lock()), j);
+        return *(this->_m_xy_coords[j]);
     }
     
     /*!\brief
      * alias for \c get_algebraic_real_2()
      */
-    Algebraic_real_2 xy_coordinate_2(size_type j) const {
+    const Algebraic_real_2& xy_coordinate_2(size_type j) const {
         return algebraic_real_2(j);
     }
 
@@ -432,13 +356,13 @@ public:
      *
      * \pre 0 <= j < num_of_events()
      */
-    Arc_pair number_of_incident_branches(int j) const {
+    const Arc_pair& number_of_incident_branches(int j) const {
     
         CGAL_precondition(0 <= j&&j < number_of_events());
         if(!is_event())
             return Arc_pair(1, 1);
             
-        return (*(this->ptr()->_m_arcs))[j];
+        return (*(this->_m_arcs))[j];
     }
 
     /*! \brief
@@ -447,7 +371,7 @@ public:
      * of the curve is ignored.
      */
     const Arc_pair& number_of_branches_approaching_minus_infinity() const {
-        return this->ptr()->_m_num_arcs_minus_inf;
+        return this->_m_num_arcs_minus_inf;
     }
 
     /*! \brief
@@ -456,11 +380,13 @@ public:
      *  of the curve is ignored.
      */
     const Arc_pair& number_of_branches_approaching_plus_infinity() const {
-        return this->ptr()->_m_num_arcs_plus_inf;
+        return this->_m_num_arcs_plus_inf;
     }
+
 protected:
-    Algebraic_curve_kernel_2* kernel() const {
-        return this->ptr()->_m_kernel;
+// TODO Should this be const or not
+    const Algebraic_curve_kernel_2* kernel() const {
+        return this->_m_kernel;
     }
 
 
@@ -478,24 +404,24 @@ public:
         CGAL_precondition(minus_inf.first >= 0 && minus_inf.second >= 0);
         CGAL_precondition(plus_inf.first >= 0 && plus_inf.second >= 0);
 
-        this->ptr()->_m_num_arcs_minus_inf = minus_inf;
-        this->ptr()->_m_num_arcs_plus_inf = plus_inf;
+        this->_m_num_arcs_minus_inf = minus_inf;
+        this->_m_num_arcs_plus_inf = plus_inf;
 
-        if(!this->ptr()->_m_event)
-            this->ptr()->_m_event = (minus_inf.first + minus_inf.second +
+        if(!this->_m_event)
+            this->_m_event = (minus_inf.first + minus_inf.second +
                 plus_inf.first + plus_inf.second > 0);
     }
 
     void _set_arcs(const Arc_container& arcs) const {
         CGAL_precondition(is_event());
-        this->ptr()->_m_arcs = arcs;
-        this->ptr()->_m_total_arcs = static_cast<int>(arcs.size());
-        this->ptr()->_m_xy_coords.resize(arcs.size());
+        this->_m_arcs = arcs;
+        this->_m_total_arcs = static_cast<int>(arcs.size());
+        this->_m_xy_coords.resize(arcs.size());
     }
 
     void _set_v_line() const {
         CGAL_precondition(is_event());
-        this->ptr()->_m_vertical_line = true;
+        this->_m_vertical_line = true;
     }
 
     //!@}
@@ -504,7 +430,7 @@ public:
 
     void write(std::ostream& os) const {
 
-        os << "status_line [CA@" << this->ptr()->_m_ca.id() << std::flush;
+        os << "status_line [CA@" << (this->_m_ca).lock() << std::flush;
 #if CGAL_ACK_USE_EXACUS
         os << "; x = " << x() << "; #events: " << number_of_events() << "; "
            << std::flush;
@@ -555,18 +481,18 @@ public:
 
     //! Sets the isolator instance
     void set_isolator (const Bitstream_descartes& isolator) const {
-        this->ptr()->isolator = isolator;
+        this->isolator = isolator;
     }
 
     //! Returns the isolator instance
     Bitstream_descartes& isolator() const {
-        CGAL_assertion(this->ptr()->isolator);
-        return this->ptr()->isolator.get();
+        CGAL_assertion(this->isolator);
+        return this->isolator.get();
     }
 
     //! Returns whether an isolator has been given for that status line
     bool has_isolator() const {
-        return this->ptr()->isolator;
+        return this->isolator;
     }
 
     typename Bitstream_descartes::Bound lower_bound(int index) const {
@@ -602,10 +528,10 @@ public:
     
 }; // class Status_line_CA_1
 
-template <class CurveAnalysis_2, class Rep>
+template <class CurveAnalysis_2>
 std::ostream& operator<< (
         std::ostream& os, 
-        const internal::Status_line_CA_1<CurveAnalysis_2, Rep>& line) {
+        const internal::Status_line_CA_1<CurveAnalysis_2>& line) {
         
     line.write(os);
     return os;
