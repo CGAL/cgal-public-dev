@@ -18,6 +18,7 @@
 #include <CGAL/Algebraic_kernel_d/enums.h>
 #include <CGAL/Algebraic_kernel_d/exceptions.h>
 #include <CGAL/Algebraic_kernel_d/Status_line_CPA_1.h>
+#include <memory>
 
 #if defined(BOOST_MSVC)
 #  pragma warning(push)
@@ -91,7 +92,6 @@ struct Event_indices {
 };
 
 
-} // namespace internal
 
 /*!
  * A model for <tt>AlgebraicKernelWithAnalysis_2::CurvePairAnalysis_2</tt>
@@ -295,7 +295,7 @@ private:
         }
     private:
         
-// TODO Check if weak pointer is required
+// TODO Check if weak pointer is required -- member name
         const Status_line_CPA_1& status_line;
         
     };
@@ -328,7 +328,7 @@ public:
     //! \brief Copy constructor
     Curve_pair_analysis_2(const Self& alg_curve_pair)
     {
-	this->_m_kernel = alg_curve_pair._m_kernel
+	this->_m_kernel = alg_curve_pair._m_kernel;
 	this->c1_ = alg_curve_pair.c1_;
 	this->c2_ = alg_curve_pair.c2_;
 	this->f = alg_curve_pair.f;
@@ -730,7 +730,7 @@ private:
         Slice_info slice_info = construct_slice_info(x);
         reduce_number_of_candidates_and_intersections_to
             (m,
-             (this->c1_.lock())->.status_line_at_exact_x(x),
+             (this->c1_.lock())->status_line_at_exact_x(x),
              (this->c2_.lock())->status_line_at_exact_x(x),
              slice_info);
         for(typename Slice_info::iterator it=slice_info.begin();
@@ -879,7 +879,7 @@ private:
 public:
 
     //! Returns curve analysis for the cth curve
-    shared_ptr<Curve_analysis_2> curve_analysis(bool c) const {
+    std::shared_ptr<Curve_analysis_2> curve_analysis(bool c) const {
 
 	// Create shared pointer to be returned in this case
 	auto spt_c1 = this->c1_.lock();
@@ -1109,9 +1109,9 @@ private:
         return x-sh*y;
     }
 
-    void update_intersection_info(Intersection_info_container& 
+    void update_intersection_info(const Intersection_info_container& 
                                   info_container,
-                                  Self& sh_pair,
+                                  const Self& sh_pair,
                                   const Status_line_CPA_1& slice,
                                   size_type i,
                                   size_type j,
@@ -2379,9 +2379,8 @@ create_event_slice_from_current_intersection_info (size_type i)
          -1);
     CGAL_assertion(no_intersections==static_cast<size_type>
                    (intersection_info_container[index_of_fg].size()));
-    typename std::vector<typename Rep::Intersection_info>::iterator 
-        inter_info_it 
-        = intersection_info_container[index_of_fg].begin();
+    typename std::vector<Intersection_info>::iterator 
+        inter_info_it = intersection_info_container[index_of_fg].begin();
     for(size_type j=0;j<static_cast<size_type>(slice.size());j++) {
         if(slice[j].first==CGAL::internal::INTERSECTION) {
             inter_info_it++;
@@ -2408,18 +2407,18 @@ create_event_slice_from_current_intersection_info (size_type i)
 
 template<typename AlgebraicKernelWithAnalysis_2>
 void Curve_pair_analysis_2<AlgebraicKernelWithAnalysis_2>::
-update_intersection_info(Intersection_info_container& 
+update_intersection_info(const Intersection_info_container& 
                          info_container,
-                         Self& sh_pair,
+                         const Self& sh_pair,
                          const Status_line_CPA_1& slice,
                          size_type i,
                          size_type j,
                          Integer s) const {
-    typedef typename Rep::Intersection_info Intersection_info;
+    typedef Intersection_info Intersection_info;
     const Algebraic_real_1& xval = sh_pair.event_x(i);
     CGAL_assertion(Curves_at_event_functor(slice)(j)
                    ==CGAL::internal::INTERSECTION);
-    Status_line_CA_1 ev = sh_pair.ptr()->(c1_.lock())->status_line_at_exact_x(xval);
+    Status_line_CA_1 ev = ((sh_pair.c1_).lock())->status_line_at_exact_x(xval);
     // x_coordinate is given by xval
     // y_coordinate by ev[index]
     Intersection_info intersection_info;
@@ -2581,6 +2580,7 @@ reduce_number_of_candidates_and_intersections_to(size_type n,
     return number_of_intersections+number_of_candidates;
 }      
 
+} // namespace internal
 } //namespace CGAL
 
 
