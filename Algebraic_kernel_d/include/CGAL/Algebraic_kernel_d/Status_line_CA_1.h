@@ -154,7 +154,7 @@ public:
 	this->_m_x = p._m_x;
 	this->_m_index = p._m_index;
 	this->_m_total_arcs = p._m_total_arcs;
-	this->_m_vertical_lines = p._m_vertical_lines;
+	this->_m_vertical_line = p._m_vertical_line;
 	this->_m_event = p._m_event;
 	this->_m_num_arcs_minus_inf = p._m_num_arcs_minus_inf;
 	this->_m_num_arcs_plus_inf = p._m_num_arcs_plus_inf;
@@ -163,7 +163,7 @@ public:
 
 // TODO What happens if not present due to boost::optional
 	this->_m_arcs = p._m_arcs;
-	this->isolator = p.isolator;
+	set_isolator(p.isolator());
     }
 
     /*!\brief
@@ -175,7 +175,7 @@ public:
      * \pre specified x-coordinate belongs to \c i-th interval
      */
     Status_line_CA_1(const Algebraic_real_1& x, size_type i, const Curve_analysis_2& ca, size_type n_arcs) :
-        _m_kernel(ca.kernel()), _m_x(x), _m_index(i), _m_total_arcs(n_arcs), _m_vertical_lines(false), 
+        _m_kernel(ca.kernel()), _m_x(x), _m_index(i), _m_total_arcs(n_arcs), _m_vertical_line(false), 
 	_m_event(false), _m_num_arcs_minus_inf(0,0), _m_num_arcs_plus_inf(0,0), _m_xy_coords(n_arcs) 
 	{
     	// Store shared pointer
@@ -206,12 +206,17 @@ public:
      * \pre there is a curve event at specified x-coordinate
      */
 	// Use of constructor delegation
-    Status_line_CA_1(Algebraic_real_1 x, 
+    Status_line_CA_1(const Algebraic_real_1& x, 
         size_type i, const Curve_analysis_2& ca,
         size_type n_arcs_left, size_type n_arcs_right, 
         Arc_container arcs, bool has_v_line = false) :
-        Status_line_CA_1(x, i, ca, n_arcs_left, n_arcs_right) {
+      _m_kernel(ca.kernel()),
+             _m_x(x), _m_index(i),
+             /*_m_num_arcs(n_arcs_left, n_arcs_right),*/ _m_total_arcs(0),
+             _m_vertical_line(false), _m_event(true),
+             _m_num_arcs_minus_inf(0, 0), _m_num_arcs_plus_inf(0, 0) {
 
+	_m_ca = std::make_shared<Curve_analysis_2> (ca);
         CGAL_precondition(n_arcs_left >= 0 && n_arcs_right >= 0);
         CGAL_precondition_code(
             bool is_event;
@@ -225,31 +230,21 @@ public:
     }
 
 
-	// Constructor for base part of object
-    Status_line_CA_1(
-        Algebraic_real_1 x, size_type i,
-        const Curve_analysis_2& ca, 
-        size_type , size_type ) :
-      _m_kernel(ca.kernel()),
-             _m_x(x), _m_index(i),
-             /*_m_num_arcs(n_arcs_left, n_arcs_right),*/ _m_total_arcs(0),
-             _m_vertical_line(false), _m_event(true),
-             _m_num_arcs_minus_inf(0, 0), _m_num_arcs_plus_inf(0, 0) {
-	
-    	// Store shared pointer
-	_m_ca = std::make_shared<Curve_analysis_2> (ca);
-    };
-
     /*!\brief
      * constructs a status line at the event with x-coorinate \c x
      *
      * arcs and vertical line flag can be set later
      */
-    Status_line_CA_1(Algebraic_real_1 x, 
+    Status_line_CA_1(const Algebraic_real_1* x, 
         size_type i, const Curve_analysis_2& ca,
         size_type n_arcs_left, size_type n_arcs_right) :
-        Status_line_CA_1(x, i, ca, n_arcs_left, n_arcs_right) {
+      _m_kernel(ca.kernel()),
+             _m_x(x), _m_index(i),
+             /*_m_num_arcs(n_arcs_left, n_arcs_right),*/ _m_total_arcs(0),
+             _m_vertical_line(false), _m_event(true),
+             _m_num_arcs_minus_inf(0, 0), _m_num_arcs_plus_inf(0, 0) {
 
+	_m_ca = std::make_shared<Curve_analysis_2> (ca);
         CGAL_precondition(n_arcs_left >= 0 && n_arcs_right >= 0);
         CGAL_precondition_code(
             bool is_event;
