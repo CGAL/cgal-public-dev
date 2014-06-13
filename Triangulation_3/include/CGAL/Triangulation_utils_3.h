@@ -44,17 +44,18 @@ struct Triangulation_utils_base_3
 
 template < class T >
 const char Triangulation_utils_base_3<T>::tab_next_around_edge[4][4] = {
-      {5, 2, 3, 1},
-      {3, 5, 0, 2},
-      {1, 3, 5, 0},
-      {2, 0, 1, 5} };
+    { 5, 2, 3, 1 },
+    { 3, 5, 0, 2 },
+    { 1, 3, 5, 0 },
+    { 2, 0, 1, 5 }
+};
 
 template < class T >
 const int Triangulation_utils_base_3<T>::tab_vertex_triple_index[4][3] = {
- {1, 3, 2},
- {0, 2, 3},
- {0, 3, 1},
- {0, 1, 2}
+    { 1, 3, 2 },
+    { 0, 2, 3 },
+    { 0, 3, 1 },
+    { 0, 1, 2 }
 };
 
 template < class T >
@@ -102,6 +103,11 @@ struct Triangulation_utils_3
     return tab_vertex_triple_index[i][j];
   }
 
+    // Get the index of the previous vertex or facet.
+    static int decrement_index( int li ) {
+        CGAL_triangulation_precondition( li >= 0 && li < 4 );
+        return index_decrement_map[ li ];
+    }
 };
 
 } //namespace CGAL
