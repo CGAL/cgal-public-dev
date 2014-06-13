@@ -579,6 +579,11 @@ protected:
                                                 construct_point(s));
   }
   
+    // Compute whether the orientation of the points of four vertices `a`, `b`, `c`, and `d`.
+    Orientation orientation( Vertex_handle a, Vertex_handle b, Vertex_handle c, Vertex_handle d ) const {
+        return orientation( a->point(), b->point(), c->point(), d->point() );
+    }
+  
     // Compute the orientation of a point compared to the oriented plane supporting a half-facet.
     Orientation orientation( const Facet& f, const Point& p ) const;
 
@@ -611,11 +616,21 @@ protected:
                                                          construct_point(q),
                                                          construct_point(r));
   }
+  
+    // \internal Compute the orientation of four coplanar vertices `a`, `b`, `c`, and `d`.
+    Orientation coplanar_orientation( Vertex_handle va, Vertex_handle vb, Vertex_handle vc, Vertex_handle vd ) const {
+        return geom_traits().coplanar_orientation_3_object()( va->point(), vb->point(), vc->point(), vd->point() );
+    }
 
   bool
   collinear(const Point &p, const Point &q, const Point &r) const
   {
     return coplanar_orientation(p, q, r) == COLLINEAR;
+  }
+
+  
+  bool collinear( Vertex_handle va, Vertex_handle vb, Vertex_handle vc ) const {
+    return collinear( va->point(), vb->point(), vc->point() );
   }
 
 protected:
