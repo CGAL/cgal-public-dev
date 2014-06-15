@@ -1,24 +1,7 @@
-// Copyright (c) 2006-2009 Max-Planck-Institute Saarbruecken (Germany).
-// All rights reserved.
-//
-// This file is part of CGAL (www.cgal.org); you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 3 of the License,
-// or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
-//
-// $URL$
-// $Id$
-// 
-//
-// Author(s)     : Michael Kerber  <mkerber@mpi-inf.mpg.de>
-//
-// ============================================================================
+/*	Sourav Dutta
+	sdutta@mpi-inf.mpg.de
+	2014
+*/
 #ifndef CGAL_BITSTREAM_COEFFICIENT_KERNEL_AT_ALPHA_H
 #define CGAL_BITSTREAM_COEFFICIENT_KERNEL_AT_ALPHA_H 1
 
@@ -32,41 +15,7 @@ namespace CGAL {
 namespace internal {
 
 template < typename AlgebraicKernel_1 >
-class Bitstream_coefficient_kernel_at_alpha;
-
-template < typename AlgebraicKernel_1 >
-class Bitstream_coefficient_kernel_at_alpha_rep {
-
-public:
-
-    typedef AlgebraicKernel_1 Algebraic_kernel_d_1;
-
-    typedef typename Algebraic_kernel_d_1::Polynomial_1 Polynomial_1;
-
-    typedef typename Algebraic_kernel_d_1::Algebraic_real_1 Algebraic_real_1;
-
-    Bitstream_coefficient_kernel_at_alpha_rep() {}
-
-    Bitstream_coefficient_kernel_at_alpha_rep(Algebraic_kernel_d_1* kernel,
-                                              Algebraic_real_1 alpha)
-        : _m_kernel(kernel), _m_alpha(alpha) {}
-
-    friend class Bitstream_coefficient_kernel_at_alpha
-        <Algebraic_kernel_d_1>;
-
-private:
-    Algebraic_kernel_d_1* _m_kernel;
-    Algebraic_real_1 _m_alpha;
-
-    
-};
-
-template < typename AlgebraicKernel_1 >
 class Bitstream_coefficient_kernel_at_alpha
-    : public CGAL::Handle_with_policy
-        < CGAL::internal::Bitstream_coefficient_kernel_at_alpha_rep
-            <AlgebraicKernel_1 > 
-        >
 {
 
 public:
@@ -92,25 +41,26 @@ public:
   
     typedef typename Arithmetic_kernel::Bigfloat_interval Bigfloat_interval;
 
-    typedef CGAL::internal::Bitstream_coefficient_kernel_at_alpha_rep
-            <Algebraic_kernel_d_1>                                      Rep;
-    typedef CGAL::Handle_with_policy<Rep>                               Base;
     typedef Bitstream_coefficient_kernel_at_alpha<Algebraic_kernel_d_1> Self;
 
     //! @}
+private:
+    Algebraic_kernel_d_1* _m_kernel;
+    Algebraic_real_1 _m_alpha;
+
 
 public:
     //! \name Constructors
     // !@{
 
-    Bitstream_coefficient_kernel_at_alpha() : Base(Rep()) {}
+    Bitstream_coefficient_kernel_at_alpha(){}
 
     Bitstream_coefficient_kernel_at_alpha(const Self& traits)
       : Base(static_cast<const Base&>(traits)) {}
 
     Bitstream_coefficient_kernel_at_alpha(Algebraic_kernel_d_1* kernel,
                                           Algebraic_real_1 alpha) 
-      : Base(kernel,alpha) {}
+      : _m_kernel(kernel), _m_alpha(alpha) {}
 
     //@}
 
@@ -119,31 +69,26 @@ public:
 
     struct Is_zero : public std::unary_function<Coefficient,bool> {
         
-        Is_zero(Algebraic_kernel_d_1* kernel,Algebraic_real_1 alpha) 
+        Is_zero(const Algebraic_kernel_d_1* kernel, const Algebraic_real_1& alpha) 
             : _m_kernel(kernel),_m_alpha(alpha) {}
 
-        bool operator() (Coefficient f) const {
-            return _m_kernel->is_zero_at_1_object() (f,_m_alpha);
+        bool operator() (const Coefficient& f) const {
+            return _m_kernel->is_zero_at_1_object() (f, _m_alpha);
         }
-
-    private:
-        Algebraic_kernel_d_1* _m_kernel;
-        Algebraic_real_1 _m_alpha;
-
     };
 
     Is_zero is_zero_object() const {
-        return Is_zero(this->ptr()->_m_kernel,this->ptr()->_m_alpha);
+        return Is_zero(this->_m_kernel,this->_m_alpha);
     }
 
     struct Convert_to_bfi 
         : public std::unary_function<Coefficient,Bigfloat_interval> {
         
-        Convert_to_bfi(Algebraic_kernel_d_1* kernel,
-		       Algebraic_real_1 alpha) 
+        Convert_to_bfi(const Algebraic_kernel_d_1* kernel,
+		       const Algebraic_real_1& alpha) 
 	  : _m_kernel(kernel), _m_alpha(alpha) {}
 
-        Bigfloat_interval operator() (Coefficient f) const {
+        Bigfloat_interval operator() (const Coefficient& f) const {
             typename CGAL::Polynomial_traits_d<Coefficient>
                 ::template Rebind<Bigfloat_interval,1>::Other::Type f_bfi;
             
@@ -195,7 +140,7 @@ public:
         
         typename CGAL::Polynomial_traits_d<Coefficient>
         ::template Rebind<Bigfloat_interval,1>::Other::Type
-        _convert_polynomial_to_bfi(Coefficient f) const {
+        _convert_polynomial_to_bfi(const Coefficient& f) const {
             typename
                 CGAL::Polynomial_traits_d<Coefficient>::Get_coefficient coeff;
             std::vector<Bigfloat_interval> coeffs(CGAL::degree(f)+1);
@@ -214,7 +159,7 @@ public:
     };
 
     Convert_to_bfi convert_to_bfi_object() const {
-      return Convert_to_bfi(this->ptr()->_m_kernel,this->ptr()->_m_alpha);
+      return Convert_to_bfi(this->_m_kernel,this->_m_alpha);
     }
 
     // @}
