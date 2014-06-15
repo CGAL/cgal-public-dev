@@ -1,3 +1,7 @@
+/* 	Sourav Dutta
+	sdutta@mpi-inf.mpg.de
+	2014
+*/
 #ifndef CGAL_ALGEBRAIC_CURVE_KERNEL_STATUS_LINE_CA_1_H
 #define CGAL_ALGEBRAIC_CURVE_KERNEL_STATUS_LINE_CA_1_H
 
@@ -130,7 +134,7 @@ public:
     mutable std::vector<boost::optional< Algebraic_real_2 > >_m_xy_coords;
 
     // stores the isolator instance
-    mutable boost::optional<Bitstream_descartes> isolator;
+    mutable boost::optional<Bitstream_descartes> _m_isolator;
 
 
 
@@ -235,7 +239,7 @@ public:
      *
      * arcs and vertical line flag can be set later
      */
-    Status_line_CA_1(const Algebraic_real_1* x, 
+    Status_line_CA_1(const Algebraic_real_1& x, 
         size_type i, const Curve_analysis_2& ca,
         size_type n_arcs_left, size_type n_arcs_right) :
       _m_kernel(ca.kernel()),
@@ -476,18 +480,18 @@ public:
 
     //! Sets the isolator instance
     void set_isolator (const Bitstream_descartes& isolator) const {
-        this->isolator = isolator;
+        this->_m_isolator = isolator;
     }
 
     //! Returns the isolator instance
     Bitstream_descartes& isolator() const {
-        CGAL_assertion(this->isolator);
+        CGAL_assertion(this->_m_isolator);
         return this->isolator.get();
     }
 
     //! Returns whether an isolator has been given for that status line
     bool has_isolator() const {
-        return this->isolator;
+        return this->_m_isolator;
     }
 
     typename Bitstream_descartes::Bound lower_bound(int index) const {
@@ -532,9 +536,10 @@ std::ostream& operator<< (
     return os;
 }
 
-} // namespace internal
+} // namespace CGAL
 
-} //namespace CGAL
+
+} // namespace internal
 
 #endif // CGAL_ALGEBRAIC_CURVE_KERNEL_STATUS_LINE_CA_1_H
 

@@ -1,26 +1,3 @@
-// Copyright (c) 2006-2009 Max-Planck-Institute Saarbruecken (Germany).
-// All rights reserved.
-//
-// This file is part of CGAL (www.cgal.org); you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 3 of the License,
-// or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
-//
-// $URL$
-// $Id$
-// 
-//
-// Author(s)     : Eric Berberich <eric@mpi-inf.mpg.de>
-//                 Pavel Emeliyanenko <asm@mpi-sb.mpg.de>
-//
-// ============================================================================
-
 #ifndef CGAL_ALGEBRAIC_CURVE_KERNEL_XY_COORDINATE_2_H
 #define CGAL_ALGEBRAIC_CURVE_KERNEL_XY_COORDINATE_2_H
 
@@ -36,67 +13,6 @@ namespace CGAL {
 
 namespace internal {
 
-template < class AlgebraicCurveKernel_2, class Rep_, 
-      class HandlePolicy_ ,
-      class Allocator_>
-        //::boost::fast_pool_allocator<Rep_> >
-class Xy_coordinate_2;
-
-
-template < class AlgebraicCurveKernel_2 >
-class Xy_coordinate_2_rep {
-
-public:
-    // this first template argument
-    typedef AlgebraicCurveKernel_2 Algebraic_curve_kernel_2;
-
-    // myself
-    typedef Xy_coordinate_2_rep<Algebraic_curve_kernel_2> Self;
-
-    typedef typename Algebraic_curve_kernel_2::Curve_analysis_2
-        Curve_analysis_2;
-
-    typedef typename Algebraic_curve_kernel_2::Algebraic_real_1 
-        Algebraic_real_1;
-
-    typedef CGAL::Bbox_2 Bbox_2;
-
-    typedef CGAL::Handle_with_policy<Self>
-        Xy_coordinate_2_inst;
-
-    // constructors
-public:
-    // default constructor ()
-    Xy_coordinate_2_rep() : _m_arcno(-1) {
-    }
-    
-    // standard constructor
-    Xy_coordinate_2_rep(const Algebraic_real_1& x,
-                        const Curve_analysis_2& curve, int arcno) 
-      : _m_kernel(curve.kernel()),_m_x(x), _m_curve(curve), _m_arcno(arcno) {
-    }
-
-    // data
-
-    const Algebraic_curve_kernel_2* _m_kernel;
-
-    // x-coordinate
-    Algebraic_real_1 _m_x;
-    
-    // supporting curve
-    mutable Curve_analysis_2 _m_curve;
-    
-    // arc number on curve
-    mutable int _m_arcno;
-
-    // y-coordinate
-    mutable boost::optional< Algebraic_real_1 > _m_y;
-
-    //! A bounding box for the given point
-    mutable boost::optional< std::pair<double,Bbox_2> > _m_bbox_2_pair;
-
-};
-
 //! \brief class \c Xy_coordinate_2 represents a single root of a system of 
 //! two polynomial equations in two variables that are models 
 //! \c AlgebraicCurveKernel_2::Polynomial_2
@@ -104,12 +20,8 @@ public:
 //! \c Xy_coordinate_2 coordinate is represented by an \c Algebraic_real_1,
 //! a supporting curve and an arcno and is valid only for finite solutions,
 //! i.e., it cannot represent points at infinity 
-template <class AlgebraicCurveKernel_2, 
-          class Rep_ = internal::Xy_coordinate_2_rep<AlgebraicCurveKernel_2>,
-          class HandlePolicy_= CGAL::Handle_policy_union, 
-          class Allocator_ = CGAL_ALLOCATOR(Rep_) >
-class Xy_coordinate_2 : 
-    public ::CGAL::Handle_with_policy<Rep_, HandlePolicy_, Allocator_> 
+template <class AlgebraicCurveKernel_2>
+class Xy_coordinate_2
 {
 public:
     //! \name public typedefs
@@ -118,18 +30,11 @@ public:
     //! this instance's first template parameter
     typedef AlgebraicCurveKernel_2 Algebraic_curve_kernel_2;
     
-    //! this instance's second template parameter
-    typedef Rep_ Rep;
-    
-    //! this instance's third template parameter
-    typedef HandlePolicy_ Handle_policy;
-    
-    //! this instance's fourth template parameter
-    typedef Allocator_ Allocator;
+    //! Type for the bounding box
+    typedef CGAL::Bbox_2 Bbox_2;
 
     //! this instance itself
-    typedef Xy_coordinate_2<Algebraic_curve_kernel_2, Rep, Handle_policy,
-        Allocator> Self;
+    typedef Xy_coordinate_2<Algebraic_curve_kernel_2> Self;
         
     //! an instance of AlgebraicKernel_1
     typedef typename Algebraic_curve_kernel_2::Algebraic_kernel_d_1 
@@ -156,19 +61,35 @@ public:
     typedef typename Algebraic_curve_kernel_2::Curve_analysis_2
                 Curve_analysis_2;
     
-    //! the handle superclass
-    typedef ::CGAL::Handle_with_policy<Rep, Handle_policy, Allocator> Base;
-
     //! type for approximation boundaries
     typedef typename Algebraic_curve_kernel_2::Bound Bound;
 
     //! type for bound intervals
     typedef boost::numeric::interval<Bound> Bound_interval;
 
-    //! Type for the bounding box
-    typedef typename Rep::Bbox_2 Bbox_2;
-    
     //!@}
+
+    // data
+
+    const Algebraic_curve_kernel_2* _m_kernel;
+
+    // x-coordinate
+    Algebraic_real_1 _m_x;
+
+    // supporting curve
+    mutable Curve_analysis_2 _m_curve;
+
+    // arc number on curve
+    mutable int _m_arcno;
+
+    // y-coordinate
+    mutable boost::optional< Algebraic_real_1 > _m_y;
+
+    //! A bounding box for the given point
+    mutable boost::optional< std::pair<double,Bbox_2> > _m_bbox_2_pair;
+
+
+
 private:
     //! \name private methods
     //!@{
@@ -212,15 +133,21 @@ public:
      * A default-constructed point supports no operation other than
      * having \c CGAL::degree(curve()) return \c -1. 
      */
-    Xy_coordinate_2() : 
-        Base(Rep()) { 
-    }
+    Xy_coordinate_2() : _m_arcno(-1)
+    {}
+    
 
     /*!\brief
      * copy constructor
      */
     Xy_coordinate_2(const Self& p) : 
         Base(static_cast<const Base&>(p)) {  
+	*(this->_m_kernel) = *(p._m_kernel);
+	this->_m_x = p._m_x;
+	this->_m_y = p._m_y;
+	this->_m_curve = p._m_curve;
+	this->_m_arcno = p._m_arcno;
+	this->_m_bbox_2_pair = p._m_bbox_2_pair;	
     }
 
     /*!\brief
@@ -228,8 +155,8 @@ public:
      * are also constructed in this way
      */
     Xy_coordinate_2(const Algebraic_real_1& x, const Curve_analysis_2& curve,
-                    int arcno) :
-          Base(Rep(x, curve, arcno)) {
+                    int arcno) : _m_kernel(curve.kernel()), _m_x(x), _m_arcno(arcno)
+        {
             
         CGAL_precondition(arcno >= 0);
         CGAL_precondition_code(
@@ -239,12 +166,6 @@ public:
         CGAL_precondition(arcno >= 0 && arcno < v.number_of_events());
     }
     
-    /*!\brief
-     * constructs a point from a given represenation
-     */
-    Xy_coordinate_2(Rep rep) : 
-        Base(rep) {  
-    }
    
     //!@}
 public:
@@ -255,7 +176,7 @@ public:
      * x-coordinate of the point
      */
     const Algebraic_real_1& x() const { 
-        return this->ptr()->_m_x; 
+        return this->_m_x; 
     }
 
     /*!
@@ -265,7 +186,7 @@ public:
      * for the y-coordinate. It is recommended to use it carefully,
      * and using get_approximation_y() instead whenever approximations suffice.
      */
-    Algebraic_real_1 y() const {
+    const Algebraic_real_1& y() const {
 
         typedef std::vector< Algebraic_real_1 > Roots;
         // EBEB 2012-07-05 deactivated map for y-roots for not being used
@@ -279,7 +200,7 @@ public:
         // EBEB 2012-07-05 deactivated map for y-roots for not being used
         //static Y_root_map y_root_map;
 
-        if (!this->ptr()->_m_y) {
+        if (!this->_m_y) {
             
             Polynomial_2 f = curve().primitive_polynomial_2();
             // This will be the defining polynomial of y
@@ -380,22 +301,22 @@ public:
                 }
             }
             CGAL_assertion(static_cast< int >(candidates.size()) == 1);
-            this->ptr()->_m_y = 
+            this->_m_y = 
                 Algebraic_real_1(
                         (*candidates.begin())->polynomial(), 
                         (*candidates.begin())->low(), 
                         (*candidates.begin())->high()
                 );
         }
-        CGAL_postcondition(this->ptr()->_m_y);
-        return *this->ptr()->_m_y;
+        CGAL_postcondition(this->_m_y);
+        return *this->_m_y;
     }
     
     /*!\brief
      * supporting curve of the point
      */
-    Curve_analysis_2 curve() const {
-        return this->ptr()->_m_curve; 
+    const Curve_analysis_2& curve() const {
+        return this->_m_curve; 
     }
     
     /*!\brief
@@ -403,7 +324,7 @@ public:
      *
      */
     int arcno() const { 
-        return this->ptr()->_m_arcno; 
+        return this->_m_arcno; 
     }
 
     //!@}
@@ -465,7 +386,7 @@ public:
     //! \name 
 
     const Algebraic_curve_kernel_2* kernel() const {
-        return this->ptr()->_m_kernel;
+        return this->_m_kernel;
     }
 
 private:
@@ -555,8 +476,8 @@ public:
         } else 
           cid = (p.first == -1);
         // overwrite data
-        this->ptr()->_m_curve = cpa_2.curve_analysis(cid);
-        this->ptr()->_m_arcno = (cid == 0 ? p.first : p.second);
+        this->_m_curve = cpa_2.curve_analysis(cid);
+        this->_m_arcno = (cid == 0 ? p.first : p.second);
     }
     
     //! befriending output iterator
@@ -567,7 +488,7 @@ public:
     
     //! Returns whether the x-coordinate equals zero
     bool is_x_zero() const {
-      return CGAL::is_zero(this->ptr()->_m_x);
+      return CGAL::is_zero(this->_m_x);
     }
 
     //! Returns whether the y-coordinate equals zero
@@ -586,7 +507,7 @@ public:
 	Polynomial_1 constant_pol =
  	  CGAL::get_coefficient(curve().primitive_polynomial_2(),0);
 	bool zero_is_root_of_local_pol 
-  	  = kernel()->is_zero_at_1_object()(constant_pol,this->ptr()->_m_x);
+  	  = kernel()->is_zero_at_1_object()(constant_pol,this->_m_x);
         // Since we know that y_iv is an _isolating_ interval,
         // we can immediately return
         return zero_is_root_of_local_pol;
@@ -605,7 +526,7 @@ public:
         set_precision (BFI(), 53);
 
 	// rely on double conversion of the x-type
-        double double_x = CGAL::to_double(this->ptr()->_m_x);
+        double double_x = CGAL::to_double(this->_m_x);
         double double_y;
 
 
@@ -680,9 +601,9 @@ public:
 
 }; // class Xy_coordinate_2
 
-template < class AlgebraicCurveKernel_2, class Rep> 
+template < class AlgebraicCurveKernel_2> 
 std::ostream& operator<< (std::ostream& os, 
-    const Xy_coordinate_2<AlgebraicCurveKernel_2, Rep>& pt)
+    const Xy_coordinate_2<AlgebraicCurveKernel_2>& pt)
 {
   switch (::CGAL::get_mode(os)) {
   case ::CGAL::IO::PRETTY: {
@@ -707,21 +628,18 @@ std::ostream& operator<< (std::ostream& os,
   return os;    
 }
 
-template < class AlgebraicCurveKernel_2, class Rep_ > 
+template < class AlgebraicCurveKernel_2> 
 std::istream& operator >> (
     std::istream& is,
-    Xy_coordinate_2< AlgebraicCurveKernel_2, Rep_>& pt) {
+    const Xy_coordinate_2< AlgebraicCurveKernel_2>& pt) {
 
   CGAL_precondition(CGAL::is_ascii(is));
   
   // this instance's first template argument
   typedef AlgebraicCurveKernel_2 Algebraic_curve_kernel_2;
   
-  // this instance's second template argument
-  typedef Rep_ Rep;
-
   // myself
-  typedef Xy_coordinate_2< Algebraic_curve_kernel_2, Rep > Xy_coordinate_2;
+  typedef Xy_coordinate_2< Algebraic_curve_kernel_2> Xy_coordinate_2;
   
   typedef typename Algebraic_curve_kernel_2::Algebraic_real_1 
     Algebraic_real_1;
