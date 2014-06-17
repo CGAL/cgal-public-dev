@@ -15,6 +15,7 @@ include( ${CGAL_USE_FILE} )
 find_package( Qt4 )
 
 if ( CGAL_FOUND AND CGAL_Qt4_FOUND AND QT4_FOUND)
+  add_definitions( -Wno-c++11-extensions )
   include( ${QT_USE_FILE} )
   include_directories( ./ )
   # Arrangement package includes

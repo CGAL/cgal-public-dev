@@ -21,6 +21,7 @@
 #define CGAL_QT_ARRANGEMENT_PAINTER_OSTREAM_H
 
 #include <QRectF>
+#include <QPainterPath>
 #include <vector>
 
 // TODO: should be included in PainterOstream.h
@@ -32,6 +33,7 @@
 #include <CGAL/Arr_conic_traits_2.h>
 #include <CGAL/Arr_linear_traits_2.h>
 #include <CGAL/Arr_algebraic_segment_traits_2.h>
+#include <CGAL/Arr_Bezier_curve_traits_2.h>
 
 #include "Utils.h"
 
@@ -801,6 +803,148 @@ public: // methods
   ArrangementPainterOstream& operator<<( const X_monotone_curve_2& curve )
   {
     this->painterOstream << curve;
+    return *this;
+  }
+
+  ArrangementPainterOstream& operator<<( const Point_2& p )
+  {
+    QPointF qpt = this->convert( p );
+    // clip the point if possible
+    if ( this->clippingRect.isValid( ) &&
+         ! this->clippingRect.contains( qpt ) )
+    {
+      return *this;
+    }
+
+    QPen savePen = this->qp->pen( );
+    this->qp->setBrush( QBrush( savePen.color( ) ) );
+    double radius = savePen.width( ) / 2.0;
+    radius /= this->scale;
+
+    this->qp->drawEllipse( qpt, radius, radius );
+
+    this->qp->setBrush( QBrush( ) );
+    this->qp->setPen( savePen );
+    return *this;
+  }
+
+  template < typename T >
+  ArrangementPainterOstream& operator<<( const T& p )
+  {
+    (*(static_cast< Superclass* >(this)) << p);
+    return *this;
+  }
+};
+
+/**
+Specialization of ArrangementPainterOstream for Bezier curve traits.
+*/
+template < typename RatKernel, class AlgKernel, class NtTraits >
+class ArrangementPainterOstream<CGAL::Arr_Bezier_curve_traits_2<RatKernel, AlgKernel,
+                                                         NtTraits > >:
+  public ArrangementPainterOstreamBase< CGAL::Arr_Bezier_curve_traits_2<
+                                          RatKernel, AlgKernel, NtTraits > >
+{
+public:
+  typedef CGAL::Arr_Bezier_curve_traits_2< RatKernel, AlgKernel, NtTraits >
+    Traits;
+  typedef ArrangementPainterOstreamBase< Traits >       Superclass;
+  typedef typename Superclass::Point_2                  Point_2;
+  typedef typename Superclass::Segment_2                Segment_2;
+  typedef typename Superclass::Ray_2                    Ray_2;
+  typedef typename Superclass::Line_2                   Line_2;
+  typedef typename Superclass::Triangle_2               Triangle_2;
+  typedef typename Superclass::Iso_rectangle_2          Iso_rectangle_2;
+  typedef typename Superclass::Circle_2                 Circle_2;
+  typedef typename Traits::Curve_2                      Curve_2;
+  typedef typename Traits::X_monotone_curve_2           X_monotone_curve_2;
+  typedef typename Traits::Point_2 ArrPointType;
+  typedef typename RatKernel::Point_2 Rat_point_2;
+
+protected:
+  Converter< RatKernel > m_ratConverter;
+
+public:
+  /*! Constructor */
+  ArrangementPainterOstream(QPainter* p, QRectF clippingRectangle = QRectF()):
+    Superclass( p, clippingRectangle ),
+    m_ratConverter( clippingRectangle )
+  { }
+
+  /*! Destructor (virtual) */
+  virtual ~ArrangementPainterOstream() {}
+
+public: // methods
+  ArrangementPainterOstream& operator<<( const Curve_2& curve )
+  {
+    std::vector< QPointF > controlPts;
+    for ( int i = 0; i < curve.number_of_control_points(); ++i )
+    {
+      Rat_point_2 controlPt = curve.control_point( i );
+      QPointF qpt = m_ratConverter( controlPt );
+      controlPts.push_back( qpt );
+    }
+    if (controlPts.size() < 4)
+      return *this;
+    std::cout << "control points: " <<
+      curve.number_of_control_points() << "\n";
+
+    QPainterPath path;
+    path.moveTo(controlPts.at(0));
+    path.cubicTo(controlPts.at(1),
+      controlPts.at(2),
+      controlPts.at(3));
+    this->qp->strokePath(path, this->qp->pen( ) );
+    return *this;
+  }
+
+  ArrangementPainterOstream& operator<<( const X_monotone_curve_2& curve )
+  {
+    //this->painterOstream << curve;
+    // TODO: Draw the actual Bezier curve
+    ArrPointType p1 = curve.source();
+    ArrPointType p2 = curve.target();
+
+    CORE::BigRat x1_min, x1_max, y1_min, y1_max;
+    CORE::BigRat x2_min, x2_max, y2_min, y2_max;
+    p1.get_bbox( x1_min, y1_min, x1_max, y1_max );
+    p2.get_bbox( x2_min, y2_min, x2_max, y2_max );
+
+    Point_2 approx1( (x1_min + x1_max)/2.0,
+      (y1_min + y1_max)/2.0 );
+    Point_2 approx2( (x2_min + x2_max)/2.0,
+      (y2_min + y2_max)/2.0 );
+
+    Segment_2 segment( approx1, approx2 );
+    this->painterOstream << segment;
+    return *this;
+  }
+
+  ArrangementPainterOstream& operator<<( const ArrPointType& pt )
+  {
+    CORE::BigRat x_min, x_max, y_min, y_max;
+    pt.get_bbox( x_min, y_min, x_max, y_max );
+    Point_2 approx( CGAL::to_double((x_min + x_max)/2), CGAL::to_double((y_min + y_max)/2) );
+    //std::cout << "pt("
+    //  << approx.x() << ", "
+    //  << approx.y() << ")\n";
+    QPointF qpt = this->convert( approx );
+    // clip the point if possible
+    if ( this->clippingRect.isValid( ) &&
+         ! this->clippingRect.contains( qpt ) )
+    {
+      return *this;
+    }
+
+    QPen savePen = this->qp->pen( );
+    this->qp->setBrush( QBrush( savePen.color( ) ) );
+    double radius = savePen.width( ) / 2.0;
+    radius /= this->scale;
+
+    this->qp->drawEllipse( qpt, radius, radius );
+
+    this->qp->setBrush( QBrush( ) );
+    this->qp->setPen( savePen );
     return *this;
   }
 

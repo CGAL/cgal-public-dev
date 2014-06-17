@@ -29,6 +29,7 @@
 #include <CGAL/Arr_circular_arc_traits_2.h>
 #include <CGAL/Arr_polyline_traits_2.h>
 #include <CGAL/Arr_algebraic_segment_traits_2.h>
+#include <CGAL/Arr_Bezier_curve_traits_2.h>
 
 #include <QGraphicsScene>
 #include <QPainter>
@@ -48,6 +49,7 @@ class ArrangementGraphicsItemBase :
 {
 public:
   ArrangementGraphicsItemBase( );
+  virtual ~ArrangementGraphicsItemBase( );
 
   const QPen& getVerticesPen( ) const;
   const QPen& getEdgesPen( ) const;
@@ -93,6 +95,7 @@ class ArrangementGraphicsItem : public ArrangementGraphicsItemBase
   typedef typename Arrangement::Ccb_halfedge_circulator Ccb_halfedge_circulator;
 
   typedef typename ArrTraitsAdaptor< Traits >::Kernel   Kernel;
+  typedef typename Traits::Curve_2           Curve_2;
   typedef typename Traits::X_monotone_curve_2           X_monotone_curve_2;
   typedef typename Kernel::Point_2                      Kernel_point_2;
   typedef typename Traits::Point_2                      Point_2;
@@ -106,7 +109,7 @@ public:
   ArrangementGraphicsItem( Arrangement* t_ );
 
   /*! Destructor (virtual) */
-  ~ArrangementGraphicsItem() {}
+  virtual ~ArrangementGraphicsItem();
 
 public:
   void modelChanged( );
@@ -124,6 +127,10 @@ protected:
   template < typename CircularKernel >
   void paint( QPainter* painter,
               CGAL::Arr_circular_arc_traits_2< CircularKernel > traits );
+
+  template < typename RatKernel, typename AlgKernel, typename NtTraits >
+  void paint( QPainter* painter,
+    CGAL::Arr_Bezier_curve_traits_2< RatKernel, AlgKernel, NtTraits > );
 
   // template < typename Coefficient_ >
   // void paint( QPainter* painter,
@@ -814,6 +821,9 @@ protected:
   template < typename Kernel_>
   void updateBoundingBox(CGAL::Arr_linear_traits_2<Kernel_> traits);
 
+  template < typename RatKernel, class AlgKernel, class NtTraits >
+  void updateBoundingBox(CGAL::Arr_Bezier_curve_traits_2<RatKernel, AlgKernel, NtTraits> /* traits */);
+
   // template < typename Coefficient_>
   // void updateBoundingBox(CGAL::Arr_algebraic_segment_traits_2<Coefficient_>
   //                        traits);
@@ -835,6 +845,17 @@ protected:
     }
     this->updateBoundingBox( );
     this->setZValue( 3 );
+  }
+
+  template < typename Arr_, class ArrTraits >
+  ArrangementGraphicsItem< Arr_, ArrTraits >::
+  ~ArrangementGraphicsItem( )
+  {
+    std::cout << "Deleting ArrangementGraphicsItem\n";
+    if ( this->arr )
+    {
+      delete this->arr;
+    }
   }
 
   template < typename Arr_, typename ArrTraits >
@@ -944,6 +965,39 @@ protected:
     }
   }
 
+  template < typename Arr_, typename ArrTraits >
+  template < typename RatKernel, typename AlgKernel, typename NtTraits >
+  void ArrangementGraphicsItem< Arr_, ArrTraits >::
+  paint( QPainter* painter,
+    CGAL::Arr_Bezier_curve_traits_2< RatKernel, AlgKernel, NtTraits > /* traits */ )
+  {
+    this->painterostream = ArrangementPainterOstream< Traits >( painter, this->boundingRect( ) );
+    this->painterostream.setScene( this->scene );
+    painter->setPen( this->verticesPen );
+    for ( Vertex_iterator it = this->arr->vertices_begin( );
+      it != this->arr->vertices_end( ); ++it )
+    {
+      this->painterostream << it->point( );
+    }
+    // TODO: draw segments;
+    typedef Compare_Bezier_curve_2< RatKernel, AlgKernel, NtTraits > Compare_Bezier_curve_2_type;
+    typedef std::set< Curve_2, Compare_Bezier_curve_2_type > Curve_2_set;
+    Curve_2_set bezierCurves;
+    for ( Edge_iterator it = this->arr->edges_begin( );
+          it != this->arr->edges_end( ); ++it )
+    {
+      X_monotone_curve_2 curve = it->curve( );
+      bezierCurves.insert( curve.supporting_curve( ) );
+      //this->painterostream << curve;
+    }
+    std::cout << "bezier curves: " << bezierCurves.size( ) << "\n";
+    for ( typename Curve_2_set::iterator it = bezierCurves.begin( );
+      it != bezierCurves.end( ); ++it )
+    {
+      this->painterostream << *it;
+    }
+  }
+
 #if 0
   template < typename Arr_, typename ArrTraits >
   template < typename Coefficient_ >
@@ -1006,6 +1060,8 @@ protected:
     }
     else
     {
+      // TODO: include/CGAL/Arr_geometry_traits/Bezier_point_2 doesn't have bbox
+      // but it can convert to Rat_point_2, which does? Need to specialize...
       this->bb = this->arr->vertices_begin( )->point( ).bbox( );
       this->bb_initialized = true;
     }
@@ -1065,6 +1121,49 @@ protected:
         this->bb = this->bb + clippedLine.bbox( );
       }
     }
+  }
+
+  template < typename Arr_, typename ArrTraits >
+  template < typename RatKernel, class AlgKernel, class NtTraits >
+  void
+  ArrangementGraphicsItem< Arr_, ArrTraits >::
+  updateBoundingBox(CGAL::Arr_Bezier_curve_traits_2<RatKernel, AlgKernel, NtTraits> /* traits */)
+  {
+    this->prepareGeometryChange( );
+    if ( this->arr->number_of_vertices( ) == 0 )
+    {
+      this->bb = Bbox_2( 0, 0, 0, 0 );
+      this->bb_initialized = false;
+      return;
+    }
+    else
+    {
+      // TODO: include/CGAL/Arr_geometry_traits/Bezier_point_2 doesn't have bbox
+      // but it can convert to Rat_point_2, which does? Need to specialize...
+      //this->bb = this->arr->vertices_begin( )->point( ).bbox( );
+      Construct_bbox_2_for_Bezier_point pt_to_bbox;
+      this->bb = pt_to_bbox(this->arr->vertices_begin( )->point( ));
+      this->bb_initialized = true;
+    }
+
+    for ( Curve_iterator it = this->arr->curves_begin( );
+          it != this->arr->curves_end( );
+          ++it )
+    {
+      if ( this->curveBboxMap.count( it ) == 0 )
+      {
+        this->curveBboxMap[ it ] = it->bbox( );
+      }
+      this->bb = this->bb + this->curveBboxMap[ it ];
+    }
+
+    std::cout << "(" << this->bb.xmin()
+      << ", " << this->bb.ymin()
+      << ") + ("
+      << (this->bb.xmax() - this->bb.xmin())
+      << ", "
+      << (this->bb.ymax() - this->bb.ymin())
+      << ")\n";
   }
 
 #if 0

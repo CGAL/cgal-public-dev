@@ -32,7 +32,7 @@
 */
 
 #include <CGAL/Cartesian.h>
-#include <CGAL/Arr_default_dcel.h>
+//#include <CGAL/Arr_default_dcel.h>
 #include <CGAL/Arr_segment_traits_2.h>
 #include <CGAL/Arr_linear_traits_2.h>
 #include <CGAL/Arr_consolidated_curve_data_traits_2.h>
@@ -50,6 +50,8 @@
 
 #include <CGAL/Arr_observer.h>
 #include <CGAL/Polygon_2.h>
+
+#include "DcelTypes.h"
 
 // Coordinate related typedef - using inexact number type
 typedef float                                           Coord_type;
@@ -75,40 +77,40 @@ typedef CGAL::Polygon_2<Coord_kernel> My_polygon;
 // workaround for VC++
 struct Kernel : public CGAL::Cartesian<NT> {};
 
-class Face_with_color : public CGAL::Arr_face_base
-{
-  QColor    m_color;
-  bool      m_visited;
+//class Face_with_color : public CGAL::Arr_face_base
+//{
+//  QColor    m_color;
+//  bool      m_visited;
+//
+//public:
+//  Face_with_color() : CGAL::Arr_face_base(), m_color(), m_visited(false) { }
+//
+//  QColor color() const { return m_color; }
+//  void set_color(const QColor& c) { m_color = c; }
+//  bool visited() const{ return m_visited; }
+//  void set_visited(bool b) { m_visited = b; }
+//};
 
-public:
-  Face_with_color() : CGAL::Arr_face_base(), m_color(), m_visited(false) { }
-
-  QColor color() const { return m_color; }
-  void set_color(const QColor& c) { m_color = c; }
-  bool visited() const{ return m_visited; }
-  void set_visited(bool b) { m_visited = b; }
-};
-
-template <class Traits>
-class Dcel :
-  public CGAL::Arr_dcel_base<CGAL::Arr_vertex_base<typename Traits::Point_2>,
-                             CGAL::Arr_halfedge_base<
-                               typename Traits::X_monotone_curve_2>,
-                             Face_with_color>
-{
-public:
-   /*! \struct
-   * An auxiliary structure for rebinding the DCEL with a new traits class.
-   */
-  template <typename T>
-  struct rebind
-  {
-    typedef Dcel<T> other;
-  };
-
-  // CREATION
-  Dcel() {}
-};
+//template <class Traits>
+//class Dcel :
+//  public CGAL::Arr_dcel_base<CGAL::Arr_vertex_base<typename Traits::Point_2>,
+//                             CGAL::Arr_halfedge_base<
+//                               typename Traits::X_monotone_curve_2>,
+//                             Face_with_color>
+//{
+//public:
+//   /*! \struct
+//   * An auxiliary structure for rebinding the DCEL with a new traits class.
+//   */
+//  template <typename T>
+//  struct rebind
+//  {
+//    typedef Dcel<T> other;
+//  };
+//
+//  // CREATION
+//  Dcel() {}
+//};
 
 // Segments:
 typedef CGAL::Arr_segment_traits_2<Kernel>              Seg_traits;

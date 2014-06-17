@@ -19,3 +19,27 @@
 
 #include "Utils.h"
 #include "ArrangementTypes.h"
+
+CGAL::Bbox_2
+Construct_bbox_2_for_Bezier_point::
+operator()( Construct_bbox_2_for_Bezier_point::ArrPointType& pt )
+{
+  if ( pt.is_exact() )
+  {
+    std::pair<double, double> x_interval = CGAL::to_interval( pt.x() );
+    std::pair<double, double> y_interval = CGAL::to_interval( pt.y() );
+    CGAL::Bbox_2 res( x_interval.first, y_interval.first,
+      x_interval.second, y_interval.second );
+    return res;
+  }
+  else
+  {
+    CORE::BigRat x_min, x_max, y_min, y_max;
+    pt.get_bbox( x_min, x_max, y_min, y_max );
+    CGAL::Bbox_2 res( CGAL::to_double(x_min),
+      CGAL::to_double(y_min),
+      CGAL::to_double(x_max),
+      CGAL::to_double(y_max) );
+    return res;
+  }
+}

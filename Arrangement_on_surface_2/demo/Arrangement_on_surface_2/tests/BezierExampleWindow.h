@@ -14,14 +14,15 @@ public:
   virtual ~BezierExampleWindow( );
 
   /**
-  Display the arrangement. Passes ownership to the window.
+  Display the arrangement. Passes ownership of the item to the window.
   */
-  void setArrangement( Arrangement_2* arr );
+  void setArrangement(
+    Arrangement_2* item );
 
   /**
   Get a pointer to the arrangement. Don't delete it -- it belongs to us.
   */
-  Arrangement_2* arr( );
+  Arrangement_2* arrangement( );
 
   /**
   Clear the window. Takes ownership of any attached arrangement.
@@ -36,7 +37,10 @@ protected:
 
 protected:
   QGraphicsScene* m_scene;
-  Arrangement_2* m_arr;
+  Arrangement_2* m_arrangement;
+
+  // internal
+  BezierArrangementGraphicsItem* m_arrangementGraphicsItem;
 
   Ui::BezierExampleWindow* ui;
 };

@@ -5,7 +5,8 @@
 BezierExampleWindow::BezierExampleWindow(QWidget* parent):
   CGAL::Qt::DemosMainWindow( parent ),
   m_scene( new QGraphicsScene ),
-  m_arr( NULL ),
+  m_arrangement( NULL ),
+  m_arrangementGraphicsItem( NULL ),
   ui( new Ui::BezierExampleWindow )
 {
   setupUi( );
@@ -13,28 +14,39 @@ BezierExampleWindow::BezierExampleWindow(QWidget* parent):
 
 BezierExampleWindow::~BezierExampleWindow( )
 {
-    if ( m_arr )
-        delete m_arr;
+  if ( m_arrangement )
+    delete m_arrangement;
 }
 
 void BezierExampleWindow::setArrangement( Arrangement_2* arr )
 {
-    m_arr = arr;
+  m_arrangement = arr;
+  if ( m_arrangementGraphicsItem )
+  {
+    // TODO: Remove it from the scene
+    delete m_arrangementGraphicsItem;
+  }
+  m_arrangementGraphicsItem =
+    new BezierArrangementGraphicsItem( m_arrangement );
+
+  // TODO: Add it to the scene
+  m_scene->addItem( m_arrangementGraphicsItem );
 }
 
-Arrangement_2* BezierExampleWindow::arr( )
+Arrangement_2* BezierExampleWindow::arrangement( )
 {
-    return m_arr;
+  return m_arrangement;
 }
 
 void BezierExampleWindow::clear( )
 {
-    m_arr = NULL;
+  // TODO: Remove it from the scene
 }
 
 void BezierExampleWindow::setupUi( )
 {
   ui->setupUi( this );
+  this->addNavigation( ui->graphicsView );
   ui->graphicsView->setScene( m_scene );
   m_scene->addEllipse( 0, 0, 100, 100 );
 }

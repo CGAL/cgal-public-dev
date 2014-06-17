@@ -30,6 +30,7 @@
 #include <CGAL/Arr_conic_traits_2.h>
 #include <CGAL/Arr_circular_arc_traits_2.h>
 #include <CGAL/Arr_algebraic_segment_traits_2.h>
+#include <CGAL/Arr_Bezier_curve_traits_2.h>
 #include <CGAL/Arr_walk_along_line_point_location.h>
 
 #include "ArrangementTypes.h"
@@ -233,6 +234,17 @@ public:
   typedef typename ArrTraits::Algebraic_real_1          CoordinateType;
   typedef CGAL::Cartesian< typename ArrTraits::Bound >  Kernel;
   //typedef typename ArrTraits::CKvA_2                  Kernel;
+};
+
+template < class RatKernel, class AlgKernel, class NtTraits >
+class ArrTraitsAdaptor< CGAL::Arr_Bezier_curve_traits_2< RatKernel, AlgKernel,
+                                                  NtTraits > >
+{
+public:
+  typedef CGAL::Arr_Bezier_curve_traits_2< RatKernel, AlgKernel, NtTraits > ArrTraits;
+  typedef AlgKernel Kernel;
+  typedef typename ArrTraits::Point_2 Point_2;
+  typedef typename Kernel::FT CoordinateType;
 };
 
 template < class ArrTraits >
@@ -1628,5 +1640,58 @@ protected: // member fields
   Point_curve_distance pointCurveDistance;
   Point_location_strategy pointLocationStrategy;
 }; // class Find_nearest_edge
+
+/**
+The built-in point type for the Bezier traits does not extend from a Kernel
+point type, so it doesn't come with a method to return a bbox. This class
+does it for us.
+*/
+class Construct_bbox_2_for_Bezier_point
+{
+public:
+  typedef CGAL::CORE_algebraic_number_traits              Nt_traits;
+  typedef Nt_traits::Rational                             Rational;
+  typedef Nt_traits::Algebraic                            Algebraic;
+  typedef CGAL::Cartesian<Rational>                       Rat_kernel;
+  typedef CGAL::Cartesian<Algebraic>                      Alg_kernel;
+  typedef CGAL::Arr_Bezier_curve_traits_2<Rat_kernel, Alg_kernel, Nt_traits> Bezier_traits;
+  typedef Bezier_traits::Point_2                          ArrPointType;
+
+  // FIXME: pt has method get_bbox; use that instead
+  CGAL::Bbox_2 operator()( ArrPointType& pt );
+
+}; // class Construct_bbox_2
+
+/**
+Compare object needed for creating sets of Bezier curves.
+*/
+template <typename RatKernel, typename AlgKernel, typename NtTraits>
+struct Compare_Bezier_curve_2
+{
+  typedef CGAL::Arr_Bezier_curve_traits_2<RatKernel, AlgKernel, NtTraits>
+    Traits;
+  typedef typename Traits::Curve_2 Curve_2;
+  typedef typename RatKernel::Point_2 Point_2;
+
+  bool operator() (const Curve_2& a, const Curve_2& b)
+  {
+    if (a.number_of_control_points() > b.number_of_control_points())
+      return false;
+
+    if (a.number_of_control_points() < b.number_of_control_points())
+      return true;
+
+    for (int i = 0; i < a.number_of_control_points(); ++i)
+    {
+      Point_2 pa = a.control_point(i);
+      Point_2 pb = b.control_point(i);
+      if (pa < pb)
+        return true;
+      else if (pa > pb)
+        return false;
+    }
+    return false;
+  }
+};
 
 #endif // CGAL_ARRANGEMENTS_DEMO_UTILS_H

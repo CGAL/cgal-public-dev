@@ -37,6 +37,11 @@ ArrangementGraphicsItemBase::ArrangementGraphicsItemBase( ) :
   this->edgesPen.setCosmetic( true );
 }
 
+ArrangementGraphicsItemBase::~ArrangementGraphicsItemBase( )
+{
+
+}
+
 const QPen& ArrangementGraphicsItemBase::getVerticesPen( ) const
 {
   return this->verticesPen;
