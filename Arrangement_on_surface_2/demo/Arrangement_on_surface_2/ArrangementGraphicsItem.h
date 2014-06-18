@@ -988,14 +988,15 @@ protected:
     {
       X_monotone_curve_2 curve = it->curve( );
       bezierCurves.insert( curve.supporting_curve( ) );
-      //this->painterostream << curve;
+      this->painterostream << curve;
     }
+
     std::cout << "bezier curves: " << bezierCurves.size( ) << "\n";
-    for ( typename Curve_2_set::iterator it = bezierCurves.begin( );
-      it != bezierCurves.end( ); ++it )
-    {
-      this->painterostream << *it;
-    }
+    //for ( typename Curve_2_set::iterator it = bezierCurves.begin( );
+    //  it != bezierCurves.end( ); ++it )
+    //{
+    //  this->painterostream << *it;
+    //}
   }
 
 #if 0

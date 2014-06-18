@@ -860,9 +860,13 @@ public:
   typedef typename Traits::X_monotone_curve_2           X_monotone_curve_2;
   typedef typename Traits::Point_2 ArrPointType;
   typedef typename RatKernel::Point_2 Rat_point_2;
+  typedef std::map< Curve_2, double,
+    Compare_Bezier_curve_2< RatKernel, AlgKernel, NtTraits > >
+    Curve_2_double_map;
 
 protected:
   Converter< RatKernel > m_ratConverter;
+  Curve_2_double_map m_sampleFactors;
 
 public:
   /*! Constructor */
@@ -900,23 +904,44 @@ public: // methods
 
   ArrangementPainterOstream& operator<<( const X_monotone_curve_2& curve )
   {
+    Curve_2 supportingCurve = curve.supporting_curve();
+    double P = 2 * (supportingCurve.number_of_control_points() + 1);
+    // TODO: Calculate this number appropriately
+    int N = P;
+    // TODO: calculate and cache alpha for each curve seen
+    // int N = P / 2 * sqrt(alpha / epsilon)
+    // alpha is the max chordal deviation for sampling width 1/P
+    // epsilon is the desired error bound
+    // TODO: Scale the number of samples by the norm of the view matrix
+    std::vector< std::pair<double, double> > samples;
+    supportingCurve.sample(0, 1, N, std::back_inserter( samples ) );
+    for (int i = 0; i < samples.size() - 1; ++i)
+    {
+      QPointF p1( samples[i].first, samples[i].second );
+      QPointF p2( samples[i+1].first, samples[i+1].second );
+      this->qp->drawLine( p1, p2 );
+    }
+
     //this->painterOstream << curve;
     // TODO: Draw the actual Bezier curve
-    ArrPointType p1 = curve.source();
-    ArrPointType p2 = curve.target();
+    //ArrPointType p1 = curve.source();
+    //ArrPointType p2 = curve.target();
 
-    CORE::BigRat x1_min, x1_max, y1_min, y1_max;
-    CORE::BigRat x2_min, x2_max, y2_min, y2_max;
-    p1.get_bbox( x1_min, y1_min, x1_max, y1_max );
-    p2.get_bbox( x2_min, y2_min, x2_max, y2_max );
+    //CORE::BigRat x1_min, x1_max, y1_min, y1_max;
+    //CORE::BigRat x2_min, x2_max, y2_min, y2_max;
+    //p1.get_bbox( x1_min, y1_min, x1_max, y1_max );
+    //p2.get_bbox( x2_min, y2_min, x2_max, y2_max );
 
-    Point_2 approx1( (x1_min + x1_max)/2.0,
-      (y1_min + y1_max)/2.0 );
-    Point_2 approx2( (x2_min + x2_max)/2.0,
-      (y2_min + y2_max)/2.0 );
+    //Point_2 approx1( (x1_min + x1_max)/2.0,
+    //  (y1_min + y1_max)/2.0 );
+    //Point_2 approx2( (x2_min + x2_max)/2.0,
+    //  (y2_min + y2_max)/2.0 );
 
-    Segment_2 segment( approx1, approx2 );
-    this->painterOstream << segment;
+    //Segment_2 segment( approx1, approx2 );
+    //this->painterOstream << segment;
+
+    // Get the supporting curve
+    //
     return *this;
   }
 
