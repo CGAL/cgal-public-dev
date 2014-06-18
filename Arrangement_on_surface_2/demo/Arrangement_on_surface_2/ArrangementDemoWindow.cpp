@@ -76,6 +76,7 @@ ArrangementDemoTabBase* ArrangementDemoWindow::makeTab( TraitsType tt )
   Conic_arr* conic_arr;
   Lin_arr* lin_arr;
   Arc_arr* arc_arr;
+  Bezier_arr* bezier_arr;
   // Alg_seg_arr* alg_seg_arr;
   CGAL::Object arr;
 
@@ -111,6 +112,12 @@ ArrangementDemoTabBase* ArrangementDemoWindow::makeTab( TraitsType tt )
     demoTab = new ArrangementDemoTab< Arc_arr >( arc_arr, 0 );
     arr = CGAL::make_object( arc_arr );
     tabLabel = QString( "%1 - Circular Arc" ).arg( tabLabelCounter++ );
+    break;
+   case BEZIER_TRAITS:
+    bezier_arr = new Bezier_arr;
+    demoTab = new ArrangementDemoTab< Bezier_arr >( bezier_arr, 0 );
+    arr = CGAL::make_object( bezier_arr );
+    tabLabel = QString( "%1 - Bezier" ).arg( tabLabelCounter++ );
     break;
    // case ALGEBRAIC_TRAITS:
    //  alg_seg_arr = new Alg_seg_arr;

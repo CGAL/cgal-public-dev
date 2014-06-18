@@ -37,6 +37,7 @@
 #include <CGAL/Arr_linear_traits_2.h>
 #include <CGAL/Arr_consolidated_curve_data_traits_2.h>
 #include <CGAL/Arr_polyline_traits_2.h>
+#include <CGAL/Arr_Bezier_curve_traits_2.h>
 #include <CGAL/Arr_algebraic_segment_traits_2.h>
 #include <CGAL/Arrangement_with_history_2.h>
 #include <CGAL/Arr_conic_traits_2.h>
@@ -230,6 +231,39 @@ typedef CGAL::Arr_walk_along_line_point_location<Conic_arr>
   Conic_walk_point_location;
 typedef CGAL::Arr_landmarks_point_location<Conic_arr>
  Conic_lanmarks_point_location;
+
+// Bezier curves
+typedef CGAL::Arr_Bezier_curve_traits_2<Rat_kernel, Alg_kernel, Nt_traits>
+  Bezier_traits;
+typedef Bezier_traits::Curve_2                          Arr_bezier_2;
+
+typedef Bezier_traits::X_monotone_curve_2               Arr_xbezier_2;
+typedef Bezier_traits::Point_2                          Arr_bezier_point_2;
+typedef Dcel<Bezier_traits>                             Bezier_dcel;
+typedef CGAL::Arrangement_with_history_2<Bezier_traits, Bezier_dcel>
+                                                        Bezier_arr;
+typedef Bezier_arr::Halfedge_handle                     Bezier_halfedge_handle;
+typedef Bezier_arr::Face_handle                         Bezier_face_handle;
+typedef Bezier_arr::Ccb_halfedge_circulator
+  Bezier_ccb_halfedge_circulator;
+typedef Bezier_arr::Hole_iterator                       Bezier_holes_iterator;
+typedef Bezier_arr::Halfedge                            Bezier_halfedge;
+typedef Bezier_arr::Face_iterator                       Bezier_face_iterator;
+
+typedef std::list<Arr_xbezier_2*>                       Arr_xbezier_list;
+typedef Arr_xconic_list::const_iterator                 Arr_xbezier_const_iter;
+typedef Arr_xconic_list::iterator                       Arr_xbezier_iter;
+
+// point location
+typedef CGAL::Arr_trapezoid_ric_point_location<Bezier_arr>
+  Bezier_trap_point_location;
+typedef CGAL::Arr_simple_point_location<Bezier_arr>
+  Bezier_simple_point_location;
+typedef CGAL::Arr_walk_along_line_point_location<Bezier_arr>
+  Bezier_walk_point_location;
+typedef CGAL::Arr_landmarks_point_location<Bezier_arr>
+ Bezier_lanmarks_point_location;
+
 
 #endif
 
