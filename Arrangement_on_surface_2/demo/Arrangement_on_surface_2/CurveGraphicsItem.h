@@ -25,6 +25,7 @@
 
 #include <CGAL/Qt/Converter.h>
 #include <CGAL/Qt/GraphicsItem.h>
+#include <CGAL/Arr_Bezier_curve_traits_2.h>
 #include <QGraphicsScene>
 
 namespace CGAL {
@@ -174,6 +175,14 @@ public slots:
 protected: // methods
   void updateBoundingBox( )
   {
+    // tag dispatch
+    updateBoundingBox( (Traits*) 0 );
+  }
+
+  // catch-all tag dispatch
+  template < class TTraits >
+  void updateBoundingBox( TTraits* )
+  {
     this->prepareGeometryChange( );
 
     if ( this->curves.size( ) == 0 )
@@ -199,6 +208,12 @@ protected: // methods
       Kernel_point_2 point(CGAL::to_double(pt.x()), CGAL::to_double(pt.y()));
       this->boundingBox = this->boundingBox + point.bbox( );
     }
+  }
+
+  template < class RatKernel, class AlgKernel, class NtTraits >
+  void updateBoundingBox( Arr_Bezier_curve_traits_2< RatKernel, AlgKernel, NtTraits >* )
+  {
+    std::cout << "TODO: void updateBoundingBox( Arr_Bezier_curve_traits_2< RatKernel, AlgKernel, NtTraits >* )\n";
   }
 
 protected: // fields

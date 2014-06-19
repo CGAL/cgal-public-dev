@@ -242,9 +242,39 @@ class ArrTraitsAdaptor< CGAL::Arr_Bezier_curve_traits_2< RatKernel, AlgKernel,
 {
 public:
   typedef CGAL::Arr_Bezier_curve_traits_2< RatKernel, AlgKernel, NtTraits > ArrTraits;
-  typedef AlgKernel Kernel;
-  typedef typename ArrTraits::Point_2 Point_2;
+  typedef RatKernel Kernel;
+  //typedef typename ArrTraits::Point_2 Point_2;
+  typedef typename Kernel::Point_2 Point_2;
   typedef typename Kernel::FT CoordinateType;
+};
+
+template <class ArrTraits>
+class Construct_bbox_for_x_monotone_curve_2
+{
+private:
+  typedef typename ArrTraits::X_monotone_curve_2 X_monotone_curve_2;
+public:
+  CGAL::Bbox_2 operator() (const X_monotone_curve_2& cv)
+  {
+    doIt(cv, (ArrTraits*)0);
+  }
+
+private:
+  template <class ArrTraits_>
+  CGAL::Bbox_2 doIt(const X_monotone_curve_2& cv,
+    ArrTraits_* )
+  {
+    return cv.bbox();
+  }
+
+  template <class RatKernel, class AlgKernel, class NtTraits>
+  CGAL::Bbox_2 doIt(const X_monotone_curve_2& cv,
+    CGAL::Arr_Bezier_curve_traits_2< RatKernel, AlgKernel, NtTraits >* )
+  {
+    // TODO:
+    CGAL::Bbox_2 res(0, 0, 1, 1);
+    return res;
+  }
 };
 
 template < class ArrTraits >
@@ -573,7 +603,8 @@ protected:
     Construct_x_monotone_curve_2 construct_x_monotone_curve_2 =
       traits_.construct_x_monotone_curve_2_object( );
     CoordinateType res( 0 );
-    CGAL::Bbox_2 clipRect = curve.bbox( );
+    //CGAL::Bbox_2 clipRect = curve.bbox( );
+    CGAL::Bbox_2 clipRect = x_monotone_curve_to_bbox( curve );
     Point_2 p1c1( x, CoordinateType( clipRect.ymin( ) - 1 ) ); // clicked point
     // upper bounding box
     Point_2 p2c1( x, CoordinateType( clipRect.ymax( ) + 1 ) );
@@ -628,6 +659,7 @@ protected:
 protected:
   Traits traits;
   Intersect_2 intersectCurves;
+  Construct_bbox_for_x_monotone_curve_2< Traits > x_monotone_curve_to_bbox;
 };
 
 template < class CircularKernel >
@@ -1693,5 +1725,7 @@ struct Compare_Bezier_curve_2
     return false;
   }
 };
+
+
 
 #endif // CGAL_ARRANGEMENTS_DEMO_UTILS_H
