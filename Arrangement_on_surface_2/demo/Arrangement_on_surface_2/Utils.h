@@ -256,7 +256,7 @@ private:
 public:
   CGAL::Bbox_2 operator() (const X_monotone_curve_2& cv)
   {
-    doIt(cv, (ArrTraits*)0);
+    return doIt(cv, (ArrTraits*)0);
   }
 
 private:
@@ -653,7 +653,7 @@ public:
                               const CoordinateType& x )
   {
     typename Traits::Left_side_category category;
-    return this->operator()( curve, x, this->traits, category );
+    return this->operator()( curve, x, (ArrTraits*) 0, category );
   }
 
   double approx( const X_monotone_curve_2& curve, const CoordinateType& x )
@@ -664,13 +664,13 @@ public:
 protected:
   template < class TTraits >
   CoordinateType operator() ( const X_monotone_curve_2& curve,
-                              const CoordinateType& x, TTraits traits_,
+                              const CoordinateType& x, TTraits* /*traits_*/,
                               CGAL::Arr_oblivious_side_tag )
   {
     typedef typename TTraits::Construct_x_monotone_curve_2
       Construct_x_monotone_curve_2;
     Construct_x_monotone_curve_2 construct_x_monotone_curve_2 =
-      traits_.construct_x_monotone_curve_2_object( );
+      this->traits.construct_x_monotone_curve_2_object( );
     CoordinateType res( 0 );
     //CGAL::Bbox_2 clipRect = curve.bbox( );
     CGAL::Bbox_2 clipRect = x_monotone_curve_to_bbox( curve );
@@ -691,6 +691,7 @@ protected:
       Point_2 pt = pair.first;
       res = pt.y( );
     }
+
     return res;
   }
 
@@ -698,7 +699,7 @@ protected:
   CoordinateType operator() ( const X_monotone_curve_2& curve,
                               const CoordinateType& x,
                               // FIXME: Pass by reference or something
-                              CGAL::Arr_Bezier_curve_traits_2< RatKernel, AlgKernel, NtTraits > traits_,
+                              CGAL::Arr_Bezier_curve_traits_2< RatKernel, AlgKernel, NtTraits >* /*traits_*/,
                               CGAL::Arr_oblivious_side_tag )
   {
     //typedef typename TTraits::Construct_x_monotone_curve_2
@@ -731,12 +732,12 @@ protected:
 
   template < class TTraits >
   CoordinateType operator() ( const X_monotone_curve_2& curve,
-                              const CoordinateType& x, TTraits traits_,
+                              const CoordinateType& x, TTraits* /*traits_*/,
                               CGAL::Arr_open_side_tag )
   {
     typename TTraits::Construct_x_monotone_curve_2
       construct_x_monotone_curve_2 =
-      traits_.construct_x_monotone_curve_2_object( );
+      this->traits.construct_x_monotone_curve_2_object( );
     CoordinateType res( 0 );
     // QRectF clipRect = this->viewportRect( );
     Line_2 line = curve.supporting_line( );
