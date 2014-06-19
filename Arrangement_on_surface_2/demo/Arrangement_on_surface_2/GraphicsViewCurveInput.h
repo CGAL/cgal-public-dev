@@ -26,6 +26,7 @@
 #include <CGAL/Arr_conic_traits_2.h>
 #include <CGAL/Arr_linear_traits_2.h>
 #include <CGAL/Arr_circular_arc_traits_2.h>
+#include <CGAL/Arr_Bezier_curve_traits_2.h>
 #include <CGAL/Arr_algebraic_segment_traits_2.h>
 #include <CGAL/Qt/GraphicsViewInput.h>
 #include <CGAL/Qt/Converter.h>
@@ -847,6 +848,99 @@ protected:
   Converter< Kernel > convert;
   std::vector< Point_2 > points;
 }; // class GraphicsViewCurveInput< CGAL::Arr_conic_traits_2< RatKernel, AlgKernel, NtTraits > >
+
+/**
+Specialization of GraphicsViewCurveInput for Arr_segment_traits_2; handles
+user-guided generation of line segment curves.
+*/
+template < typename RatKernel, typename AlgKernel, typename NtTraits >
+class GraphicsViewCurveInput< CGAL::Arr_Bezier_curve_traits_2< RatKernel, AlgKernel, NtTraits > >:
+  public GraphicsViewCurveInputBase
+{
+public:
+  typedef CGAL::Arr_Bezier_curve_traits_2< RatKernel, AlgKernel, NtTraits > Traits;
+  typedef typename Traits::Curve_2 Curve_2;
+  typedef typename RatKernel::Point_2 Point_2;
+  typedef typename RatKernel::Segment_2 Segment_2;
+
+  GraphicsViewCurveInput( QObject* parent ):
+    GraphicsViewCurveInputBase( parent ),
+    second( false )
+  {
+    this->segmentGuide.setZValue( 100 );
+    this->setColor( this->color );
+  }
+
+  void setColor( QColor c )
+  {
+    this->GraphicsViewCurveInputBase::setColor( c );
+
+    QPen pen = this->segmentGuide.pen( );
+    pen.setColor( this->color );
+    this->segmentGuide.setPen( pen );
+  }
+
+protected:
+  void mouseMoveEvent( QGraphicsSceneMouseEvent* event )
+  {
+    if ( this->second )
+    {
+      Point_2 clickedPoint = this->snapPoint( event );
+      Segment_2 segment( this->p1, clickedPoint );
+      QLineF qSegment = this->convert( segment );
+      this->segmentGuide.setLine( qSegment );
+    }
+  }
+
+  void mousePressEvent( QGraphicsSceneMouseEvent* event )
+  {
+    if ( !this->second )
+    {
+      this->second = true;
+      this->p1 = this->snapPoint( event );
+      QPointF pt = this->convert( this->p1 );
+      this->segmentGuide.setLine( pt.x( ), pt.y( ), pt.x( ), pt.y( ) );
+      if ( this->scene != NULL )
+      {
+        this->scene->addItem( &( this->segmentGuide ) );
+      }
+      this->pointsGraphicsItem.insert( pt );
+    }
+    else
+    {
+      this->second = false;
+      this->p2 = this->snapPoint( event );
+      if ( this->scene != NULL )
+      {
+        this->scene->removeItem( &( this->segmentGuide ) );
+      }
+      //if ( traits.compare_xy_2_object()( this->p1, this->p2 ) == CGAL::EQUAL )
+      if ( this->p1 == this->p2 )
+      {
+        return;
+      }
+      this->pointsGraphicsItem.clear( );
+      std::cout << "TODO: generate a Bezier curve\n";
+      // Curve_2 res( this->p1, this->p2 );
+      // emit generate( CGAL::make_object( res ) );
+    }
+  }
+
+  // override this to snap to the points you like
+  virtual Point_2 snapPoint( QGraphicsSceneMouseEvent* event )
+  {
+    Point_2 clickedPoint = this->convert( event->scenePos( ) );
+    return clickedPoint;
+  }
+
+  Traits traits;
+  Converter< RatKernel > convert;
+  Point_2 p1;
+  Point_2 p2;
+  bool second;
+
+  QGraphicsLineItem segmentGuide;
+}; // class GraphicsViewCurveInput< CGAL::Arr_Bezier_curve_traits_2< RatKernel, AlgKernel, NtTraits > >:
 
 #if 0
 template < typename Coefficient_ >
