@@ -37,3 +37,22 @@ void PointSetGraphicsItem::paint( QPainter *painter,
   }
   painter->setBrush( QColor( ) );
 }
+
+void PointSetGraphicsItem::add( QPointF pt )
+{
+  for (int i = 0; i < m_points.size(); ++i)
+  {
+    if (m_points[i] == pt)
+    {
+      return;
+    }
+  }
+  m_points.push_back(pt);
+  prepareGeometryChange();
+}
+
+void PointSetGraphicsItem::clear( )
+{
+  m_points.clear();
+  prepareGeometryChange();
+}

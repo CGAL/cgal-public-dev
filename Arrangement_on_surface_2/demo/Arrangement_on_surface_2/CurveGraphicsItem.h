@@ -214,6 +214,22 @@ protected: // methods
   void updateBoundingBox( Arr_Bezier_curve_traits_2< RatKernel, AlgKernel, NtTraits >* )
   {
     std::cout << "TODO: void updateBoundingBox( Arr_Bezier_curve_traits_2< RatKernel, AlgKernel, NtTraits >* )\n";
+    if ( this->curves.size( ) == 0 )
+    {
+      this->boundingBox = Bbox_2( 0, 0, 0, 0 );
+      this->boundingBoxInitialized = false;
+      return;
+    }
+    else
+    {
+      this->boundingBox = this->curves[ 0 ].supporting_curve( ).bbox( );
+      this->boundingBoxInitialized = true;
+    }
+
+    for ( unsigned int i = 1; i < this->curves.size( ); ++i )
+    {
+      this->boundingBox = this->boundingBox + this->curves[ i ].supporting_curve( ).bbox( );
+    }
   }
 
 protected: // fields

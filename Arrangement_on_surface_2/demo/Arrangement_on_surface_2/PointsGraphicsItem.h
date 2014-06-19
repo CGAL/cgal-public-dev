@@ -33,11 +33,15 @@ class QPen;
 class PointsGraphicsItem: public CGAL::Qt::GraphicsItem
 {
 public:
+  typedef std::vector< QPointF >::iterator Iterator;
+
   PointsGraphicsItem( );
 
   virtual void paint( QPainter* painter,
                       const QStyleOptionGraphicsItem* option, QWidget* widget );
   virtual QRectF boundingRect( ) const;
+
+  bool contains( QPointF pt );
 
   template < class Point >
   void insert( const Point& point )
@@ -50,6 +54,9 @@ public:
   }
 
   void clear( );
+
+  Iterator begin( );
+  Iterator end( );
 
   void setColor( QColor c );
   QColor getColor( ) const;

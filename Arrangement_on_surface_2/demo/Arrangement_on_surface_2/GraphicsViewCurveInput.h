@@ -867,7 +867,7 @@ public:
     GraphicsViewCurveInputBase( parent ),
     second( false )
   {
-    this->segmentGuide.setZValue( 100 );
+    //this->segmentGuide.setZValue( 100 );
     this->setColor( this->color );
   }
 
@@ -875,54 +875,44 @@ public:
   {
     this->GraphicsViewCurveInputBase::setColor( c );
 
-    QPen pen = this->segmentGuide.pen( );
-    pen.setColor( this->color );
-    this->segmentGuide.setPen( pen );
+    //QPen pen = this->segmentGuide.pen( );
+    //pen.setColor( this->color );
+    //this->segmentGuide.setPen( pen );
   }
 
 protected:
   void mouseMoveEvent( QGraphicsSceneMouseEvent* event )
   {
-    if ( this->second )
-    {
-      Point_2 clickedPoint = this->snapPoint( event );
-      Segment_2 segment( this->p1, clickedPoint );
-      QLineF qSegment = this->convert( segment );
-      this->segmentGuide.setLine( qSegment );
-    }
+
   }
 
   void mousePressEvent( QGraphicsSceneMouseEvent* event )
   {
-    if ( !this->second )
+    Point_2 pt = this->snapPoint( event );
+    QPointF qpt = this->convert( pt );
+    // discard point if it already exists
+    if ( this->pointsGraphicsItem.contains( qpt ) )
+      return;
+
+    this->pointsGraphicsItem.insert( pt );
+
+    // TODO: if right-click, then construct curve and clear
+    if ( event->button( ) == ::Qt::RightButton )
     {
-      this->second = true;
-      this->p1 = this->snapPoint( event );
-      QPointF pt = this->convert( this->p1 );
-      this->segmentGuide.setLine( pt.x( ), pt.y( ), pt.x( ), pt.y( ) );
-      if ( this->scene != NULL )
+      // convert input to rational points
+      std::vector< Point_2 > pts;
+      for ( PointsGraphicsItem::Iterator it = this->pointsGraphicsItem.begin( );
+        it != this->pointsGraphicsItem.end( ); ++it )
       {
-        this->scene->addItem( &( this->segmentGuide ) );
-      }
-      this->pointsGraphicsItem.insert( pt );
-    }
-    else
-    {
-      this->second = false;
-      this->p2 = this->snapPoint( event );
-      if ( this->scene != NULL )
-      {
-        this->scene->removeItem( &( this->segmentGuide ) );
-      }
-      //if ( traits.compare_xy_2_object()( this->p1, this->p2 ) == CGAL::EQUAL )
-      if ( this->p1 == this->p2 )
-      {
-        return;
+        Point_2 cgal_pt = this->convert( *it );
+        pts.push_back( cgal_pt );
       }
       this->pointsGraphicsItem.clear( );
-      std::cout << "TODO: generate a Bezier curve\n";
-      // Curve_2 res( this->p1, this->p2 );
-      // emit generate( CGAL::make_object( res ) );
+      std::cout << "TODO: generate a Bezier curve with "
+        << pts.size( )
+        << " control points\n";
+      Curve_2 res( pts.begin( ), pts.end( ) );
+      emit generate( CGAL::make_object( res ) );
     }
   }
 
@@ -935,8 +925,6 @@ protected:
 
   Traits traits;
   Converter< RatKernel > convert;
-  Point_2 p1;
-  Point_2 p2;
   bool second;
 
   QGraphicsLineItem segmentGuide;

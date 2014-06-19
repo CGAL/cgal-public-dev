@@ -15,10 +15,14 @@ qt4_wrap_ui( bezier_example_uis
 qt4_wrap_cpp( bezier_example_mocs
   BezierExampleWindow.h
 )
+qt4_add_resources( bezier_example_resources
+  ../ArrangementDemoWindow.qrc
+)
 add_executable( bezier_example bezier_example.cpp
   ${bezier_example_srcs}
   ${bezier_example_uis}
   ${bezier_example_mocs}
+  ${bezier_example_resources}
   ../Utils.cpp
   ../ArrangementGraphicsItem.cpp
   ../ArrangementDemoGraphicsView.cpp

@@ -72,11 +72,33 @@ QRectF PointsGraphicsItem::boundingRect( ) const
   return res;
 }
 
+bool PointsGraphicsItem::contains( QPointF pt )
+{
+  for ( int i = 0; i < this->points.size( ); ++i )
+  {
+    if ( this->points[ i ] == pt )
+    {
+      return true;
+    }
+  }
+  return false;
+}
+
 void PointsGraphicsItem::clear( )
 {
   this->prepareGeometryChange( );
 
   this->points.clear( );
+}
+
+PointsGraphicsItem::Iterator PointsGraphicsItem::begin( )
+{
+  return this->points.begin( );
+}
+
+PointsGraphicsItem::Iterator PointsGraphicsItem::end( )
+{
+  return this->points.end( );
 }
 
 void PointsGraphicsItem::setColor( QColor c )

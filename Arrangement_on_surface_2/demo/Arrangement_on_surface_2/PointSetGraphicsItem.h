@@ -25,10 +25,14 @@ public:
     setZValue( 5 );
   }
 
+  // QGraphicsItem overrides
   virtual QRectF boundingRect( ) const;
   virtual void paint( QPainter *painter,
     const QStyleOptionGraphicsItem *option,
     QWidget *widget );
+
+  void add( QPointF pt );
+  void clear( );
 };
 
 #endif // POINT_SET_GRAPHICS_ITEM_H
