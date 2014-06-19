@@ -532,6 +532,75 @@ public: // methods
   }
 };
 
+template < class RatKernel, class AlgKernel, class NtTraits >
+class Compute_squared_distance_2< CGAL::Arr_Bezier_curve_traits_2< RatKernel,
+    AlgKernel,
+    NtTraits > > :
+  public Compute_squared_distance_2_base< CGAL::Arr_Bezier_curve_traits_2< RatKernel,
+    AlgKernel,
+    NtTraits > >
+{
+public:
+  typedef RatKernel                                     Kernel;
+  typedef CGAL::Arr_Bezier_curve_traits_2< RatKernel, AlgKernel, NtTraits > Traits;
+  typedef Compute_squared_distance_2_base< Traits >     Superclass;
+  // _Conic_point_2< AlgKernel > : public AlgKernel::Point_2
+  typedef typename Kernel::FT                           FT;
+  typedef typename Kernel::Point_2                      Point_2;
+  typedef typename Kernel::Segment_2                    Segment_2;
+  typedef typename Traits::Curve_2                      Curve_2;
+  typedef typename Traits::X_monotone_curve_2           X_monotone_curve_2;
+
+public: // methods
+  double operator() ( const Point_2& p, const X_monotone_curve_2& c ) const
+  {
+    // TODO: Construct a good polyline approximation of input c
+    // TODO: Take the distance to the closest segment as the point-curve dist
+    //bool first = true;
+    //FT min_dist( 100000000 );
+    //// AlgKernel ker;
+
+    //int n = 100;
+    //if ( this->scene != NULL && this->scene->views( ).size( ) != 0 )
+    //{ // use the scene to approximate the resolution of the curve
+    //  QGraphicsView* view = this->scene->views( ).first( );
+    //  CGAL::Bbox_2 bb = c.bbox( ); // assumes bounded curve
+    //  int xmin = view->mapFromScene( bb.xmin( ), bb.ymin( ) ).x( );
+    //  int xmax = view->mapFromScene( bb.xmax( ), bb.ymin( ) ).x( );
+    //  n = xmax - xmin;
+    //  if ( n < 2 )
+    //  {
+    //    n = 2;
+    //  }
+    //}
+
+    //std::pair<double, double>* app_pts =
+    //  new std::pair< double, double >[ n + 1 ];
+    //std::pair<double, double>* end_pts = c.polyline_approximation(n, app_pts);
+    //std::pair<double, double>* p_curr = app_pts;
+    //std::pair<double, double>* p_next = p_curr + 1;
+    //do
+    //{
+    //  Point_2 p1( p_curr->first, p_curr->second );
+    //  Point_2 p2( p_next->first, p_next->second );
+    //  Segment_2 seg( p1, p2 );
+
+    //  FT dist = CGAL::squared_distance( p, seg );
+    //  if ( first || dist < min_dist )
+    //  {
+    //    first = false;
+    //    min_dist = dist;
+    //  }
+
+    //  p_curr++;
+    //  p_next++;
+    //} while ( p_next != end_pts );
+//
+//    return CGAL::to_double( min_dist );
+    return 0.0;
+  }
+};
+
 template < class Coefficient_ >
 class Compute_squared_distance_2< CGAL::Arr_algebraic_segment_traits_2<
                                     Coefficient_ > > :
@@ -623,6 +692,41 @@ protected:
       res = pt.y( );
     }
     return res;
+  }
+
+  template < class RatKernel, class AlgKernel, class NtTraits >
+  CoordinateType operator() ( const X_monotone_curve_2& curve,
+                              const CoordinateType& x,
+                              // FIXME: Pass by reference or something
+                              CGAL::Arr_Bezier_curve_traits_2< RatKernel, AlgKernel, NtTraits > traits_,
+                              CGAL::Arr_oblivious_side_tag )
+  {
+    //typedef typename TTraits::Construct_x_monotone_curve_2
+    //  Construct_x_monotone_curve_2;
+    //Construct_x_monotone_curve_2 construct_x_monotone_curve_2 =
+    //  traits_.construct_x_monotone_curve_2_object( );
+    //CoordinateType res( 0 );
+    ////CGAL::Bbox_2 clipRect = curve.bbox( );
+    //CGAL::Bbox_2 clipRect = x_monotone_curve_to_bbox( curve );
+    //Point_2 p1c1( x, CoordinateType( clipRect.ymin( ) - 1 ) ); // clicked point
+    //// upper bounding box
+    //Point_2 p2c1( x, CoordinateType( clipRect.ymax( ) + 1 ) );
+
+    //const X_monotone_curve_2 verticalLine =
+    //  construct_x_monotone_curve_2( p1c1, p2c1 );
+    //CGAL::Object o;
+    //CGAL::Oneset_iterator< CGAL::Object > oi( o );
+
+    //this->intersectCurves( curve, verticalLine, oi );
+
+    //IntersectionResult pair;
+    //if ( CGAL::assign( pair, o ) )
+    //{
+    //  Point_2 pt = pair.first;
+    //  res = pt.y( );
+    //}
+    //return res;
+    return 0;
   }
 
   template < class TTraits >
@@ -1005,6 +1109,37 @@ public:
     return res;
   }
 }; // class Construct_x_monotone_subcurve_2 for Arr_conic_traits_2
+
+/*
+ * This specialization for conic traits makes use of X_monotone_curve_2::trim,
+ * which is not necessarily available.
+ */
+template < class RatKernel, class AlgKernel, class NtTraits >
+class Construct_x_monotone_subcurve_2<
+  CGAL::Arr_Bezier_curve_traits_2< RatKernel,
+    AlgKernel,
+    NtTraits > >
+{
+public:
+  typedef CGAL::Arr_Bezier_curve_traits_2< RatKernel, AlgKernel, NtTraits > ArrTraits;
+  typedef typename ArrTraits::X_monotone_curve_2 X_monotone_curve_2;
+  typedef typename ArrTraits::Point_2 Point_2;
+
+  /*
+    Return the subcurve of curve bracketed by pLeft and pRight.
+  */
+  X_monotone_curve_2 operator() ( const X_monotone_curve_2& curve,
+                                  const Point_2& pLeft, const Point_2& pRight )
+  {
+    // TODO: find the points on the curve
+    // TODO: make sure the points are oriented in the direction that the curve
+    // is going
+    // TODO: trim the parameter range of curve
+
+    return curve;
+  }
+}; // class Construct_x_monotone_subcurve_2 for Arr_Bezier_curve_traits_2
+
 
 template < class Kernel_ >
 class Construct_x_monotone_subcurve_2< CGAL::Arr_linear_traits_2< Kernel_ > >
