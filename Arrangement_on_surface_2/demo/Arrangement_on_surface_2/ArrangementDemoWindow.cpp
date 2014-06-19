@@ -881,6 +881,10 @@ void ArrangementDemoWindow::on_actionNewTab_triggered( )
     {
       this->makeTab( CIRCULAR_ARC_TRAITS );
     }
+    else if ( id == BEZIER_TRAITS )
+    {
+      this->makeTab( BEZIER_TRAITS );
+    }
     // else if ( id == ALGEBRAIC_TRAITS )
     // {
     //   this->makeTab( ALGEBRAIC_TRAITS );

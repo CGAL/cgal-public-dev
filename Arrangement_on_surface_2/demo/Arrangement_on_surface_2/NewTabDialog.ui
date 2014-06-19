@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>400</width>
-    <height>215</height>
+    <height>256</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -74,13 +74,13 @@
       </property>
      </widget>
     </item>
-    <!-- <item row="5" column="0"> -->
-    <!--  <widget class="QRadioButton" name="algebraicRadioButton"> -->
-    <!--   <property name="text"> -->
-    <!--    <string>Algebraic</string> -->
-    <!--   </property> -->
-    <!--  </widget> -->
-    <!-- </item> -->
+    <item row="5" column="0">
+     <widget class="QRadioButton" name="bezierRadioButton">
+      <property name="text">
+       <string>Bezier</string>
+      </property>
+     </widget>
+    </item>
    </layout>
   </widget>
  </widget>
