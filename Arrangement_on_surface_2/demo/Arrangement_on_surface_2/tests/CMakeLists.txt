@@ -22,6 +22,7 @@ add_executable( bezier_example bezier_example.cpp
   ../Utils.cpp
   ../ArrangementGraphicsItem.cpp
   ../ArrangementDemoGraphicsView.cpp
+  ../PointSetGraphicsItem.cpp
 )
 target_link_libraries( bezier_example
     ${CGAL_LIBRARIES}

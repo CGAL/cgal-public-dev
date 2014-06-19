@@ -3,6 +3,7 @@
 #include <CGAL/Qt/DemosMainWindow.h>
 #include "ui_BezierExampleWindow.h"
 #include "BezierExampleTypes.h"
+#include "PointSetGraphicsItem.h"
 
 class QGraphicsScene;
 
@@ -28,6 +29,23 @@ public:
   Clear the window. Takes ownership of any attached arrangement.
   */
   void clear( );
+
+  /**
+  Iterators have value-type of std::pair< double, double >
+  */
+  template < class InputIterator >
+  void drawXYPairs( InputIterator begin, InputIterator end )
+  {
+    std::cout << "TODO: draw points\n";
+    std::vector< QPointF > points;
+    for (InputIterator it = begin; it != end; ++it )
+    {
+      points.push_back( QPointF( it->first, it->second ) );
+      ++it;
+    }
+    PointSetGraphicsItem *point_set = new PointSetGraphicsItem( points.begin(), points.end() );
+    m_scene->addItem( point_set );
+  }
 
 public slots:
   void on_actionQuit_triggered( );
