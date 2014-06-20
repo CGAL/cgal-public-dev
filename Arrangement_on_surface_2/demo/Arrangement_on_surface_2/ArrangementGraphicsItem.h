@@ -1054,7 +1054,8 @@ protected:
     {
       this->painterostream << it->point( );
     }
-    // TODO: draw segments;
+
+    painter->setPen( this->edgesPen );
     typedef Compare_Bezier_curve_2< RatKernel, AlgKernel, NtTraits > Compare_Bezier_curve_2_type;
     typedef std::set< Curve_2, Compare_Bezier_curve_2_type > Curve_2_set;
     Curve_2_set bezierCurves;
