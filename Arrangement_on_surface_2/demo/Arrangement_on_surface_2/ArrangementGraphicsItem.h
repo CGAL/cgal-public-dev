@@ -494,6 +494,79 @@ protected:
     }
   }
 
+  template < typename RatKernel, typename AlgKernel, typename NtTraits >
+  void paintFace( Face_handle f, QPainter* painter,
+                  CGAL::Arr_Bezier_curve_traits_2< RatKernel, AlgKernel, NtTraits > )
+  {
+    if (f->is_unbounded())
+    {
+      QRectF rect = this->viewportRect( );
+      QColor color = this->backgroundColor;
+      painter->fillRect( rect, color );
+      return;
+    }
+
+    // Build a polygon outline of this sub-region
+    QVector< QPointF > pts;
+    Ccb_halfedge_circulator cc = f->outer_ccb();
+    do
+    {
+      if (this->antenna(cc))
+        continue;
+
+      // Sample the curve, save samples to a list
+      std::vector< std::pair< double, double > > samples;
+      Halfedge_handle hh = cc;
+      X_monotone_curve_2 xcv = hh->curve( );
+      Curve_2 cv = xcv.supporting_curve( );
+      std::pair< double, double > range = xcv.parameter_range( );
+      cv.sample( range.first, range.second,
+        2 * (cv.number_of_control_points( ) + 1),
+        std::back_inserter( samples ) );
+
+      // The samples are reversed if the halfedge's orientation is different
+      // from the orientation of its underlying x-monotone curve.
+
+      // If the orientation is reversed, then reverse the samples.
+      {
+        std::pair< double, double > pa, pb;
+        pa = hh->source( )->point( ).approximate( );
+        pb = xcv.target( ).approximate( );
+        double dx = pa.first - pb.first;
+        double dy = pa.second - pb.second;
+        double dist = dx*dx + dy*dy;
+        if ( dist > 1e-4 )
+        {
+          std::reverse( samples.begin( ), samples.end( ) );
+        }
+      }
+
+      // Add the samples to the polygon
+      for ( int i = 0; i < samples.size( ); ++i )
+      {
+        pts.push_back( QPointF( samples[i].first, samples[i].second ) );
+      }
+
+    } while (++cc != f->outer_ccb());
+
+    // Paint the polygon
+    QPolygonF pgn( pts );
+
+    // fill the face according to its color
+    QBrush oldBrush = painter->brush( );
+    QColor def_bg_color = this->backgroundColor;
+    if (! f->color().isValid())
+    {
+      painter->setBrush( def_bg_color );
+    }
+    else
+    {
+      painter->setBrush( f->color( ) );
+    }
+    painter->drawPolygon( pgn );
+    painter->setBrush( oldBrush );
+  }
+
   template < typename CircularKernel >
   void paintFace(Face_handle f, QPainter* painter,
                  CGAL::Arr_circular_arc_traits_2<CircularKernel> /* traits */)
@@ -971,6 +1044,8 @@ protected:
   paint( QPainter* painter,
     CGAL::Arr_Bezier_curve_traits_2< RatKernel, AlgKernel, NtTraits > /* traits */ )
   {
+    this->paintFaces( painter );
+
     this->painterostream = ArrangementPainterOstream< Traits >( painter, this->boundingRect( ) );
     this->painterostream.setScene( this->scene );
     painter->setPen( this->verticesPen );
@@ -991,7 +1066,7 @@ protected:
       this->painterostream << curve;
     }
 
-    std::cout << "bezier curves: " << bezierCurves.size( ) << "\n";
+    //std::cout << "bezier curves: " << bezierCurves.size( ) << "\n";
     //for ( typename Curve_2_set::iterator it = bezierCurves.begin( );
     //  it != bezierCurves.end( ); ++it )
     //{
