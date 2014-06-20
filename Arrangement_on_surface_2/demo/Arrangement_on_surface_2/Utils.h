@@ -271,9 +271,8 @@ private:
   CGAL::Bbox_2 doIt(const X_monotone_curve_2& cv,
     CGAL::Arr_Bezier_curve_traits_2< RatKernel, AlgKernel, NtTraits >* )
   {
-    // TODO:
-    CGAL::Bbox_2 res(0, 0, 1, 1);
-    return res;
+    // TODO: Make a tighter bbox
+    return cv.supporting_curve().bbox();
   }
 };
 
@@ -636,6 +635,7 @@ public:
   typedef typename Kernel::Point_2                      Point_2;
   typedef typename Kernel::Line_2                       Line_2;
   typedef typename Traits::X_monotone_curve_2           X_monotone_curve_2;
+  typedef typename Traits::Curve_2                      Curve_2;
   typedef typename Traits::Multiplicity                 Multiplicity;
   typedef typename Traits::Intersect_2                  Intersect_2;
   typedef std::pair< typename Traits::Point_2, Multiplicity >
@@ -706,28 +706,45 @@ protected:
     //  Construct_x_monotone_curve_2;
     //Construct_x_monotone_curve_2 construct_x_monotone_curve_2 =
     //  traits_.construct_x_monotone_curve_2_object( );
-    //CoordinateType res( 0 );
-    ////CGAL::Bbox_2 clipRect = curve.bbox( );
+    typedef typename Traits::Make_x_monotone_2 Make_x_monotone_2;
+    Make_x_monotone_2 make_x_monotone = this->traits.make_x_monotone_2_object( );
+
     //CGAL::Bbox_2 clipRect = x_monotone_curve_to_bbox( curve );
+    CGAL::Bbox_2 clipRect = curve.supporting_curve( ).bbox( );
+
     //Point_2 p1c1( x, CoordinateType( clipRect.ymin( ) - 1 ) ); // clicked point
     //// upper bounding box
     //Point_2 p2c1( x, CoordinateType( clipRect.ymax( ) + 1 ) );
-
     //const X_monotone_curve_2 verticalLine =
     //  construct_x_monotone_curve_2( p1c1, p2c1 );
-    //CGAL::Object o;
-    //CGAL::Oneset_iterator< CGAL::Object > oi( o );
+    std::vector< Point_2 > vp;
+    vp.push_back( Point_2( x, CoordinateType( clipRect.ymin( ) - 1 ) ) );
+    vp.push_back( Point_2( x, CoordinateType( clipRect.ymax( ) + 1 ) ) );
+    Curve_2 probe_line( vp.begin( ), vp.end( ) );
+    std::vector< CGAL::Object > vo;
+    make_x_monotone( probe_line, std::back_inserter( vo ) );
+    assert( vo.size( ) == 1 );
+    X_monotone_curve_2 verticalLine;
+    if ( ! CGAL::assign( verticalLine, vo[0] ) )
+    {
+      assert( 0 );
+    }
 
-    //this->intersectCurves( curve, verticalLine, oi );
+    // compute the intersection of two x-monotone Bezier curve segments
+    CGAL::Object o;
+    CGAL::Oneset_iterator< CGAL::Object > oi( o );
+    this->intersectCurves( curve, verticalLine, oi );
+    IntersectionResult pair;
+    if ( CGAL::assign( pair, o ) )
+    {
+      // approximate the y-coordinate from the Bezier point
+      typename Traits::Point_2 pt = pair.first;
+      std::pair< double, double > approx_pt = pt.approximate( );
+      CoordinateType approx_y( approx_pt.second );
+      return approx_y;
+    }
 
-    //IntersectionResult pair;
-    //if ( CGAL::assign( pair, o ) )
-    //{
-    //  Point_2 pt = pair.first;
-    //  res = pt.y( );
-    //}
-    //return res;
-    return 0;
+    return CoordinateType( 0 );
   }
 
   template < class TTraits >
@@ -1123,8 +1140,38 @@ class Construct_x_monotone_subcurve_2<
 {
 public:
   typedef CGAL::Arr_Bezier_curve_traits_2< RatKernel, AlgKernel, NtTraits > ArrTraits;
+  typedef typename ArrTraits::Curve_2 Curve_2;
   typedef typename ArrTraits::X_monotone_curve_2 X_monotone_curve_2;
   typedef typename ArrTraits::Point_2 Point_2;
+  typedef typename RatKernel::FT Rational;
+  typedef typename AlgKernel::FT Algebraic;
+
+  struct Subcurve
+  {
+    X_monotone_curve_2 m_cv;
+    double m_t1;
+    double m_t2;
+
+    Subcurve( const X_monotone_curve_2& cv, double t1, double t2 ):
+      m_cv( cv )
+    {
+      if ( t1 > t2 )
+      {
+        m_t1 = t2;
+        m_t2 = t1;
+      }
+      else
+      {
+        m_t1 = t1;
+        m_t2 = t2;
+      }
+    }
+  };
+
+protected:
+  ArrTraits m_traits;
+
+public:
 
   /*
     Return the subcurve of curve bracketed by pLeft and pRight.
@@ -1133,12 +1180,115 @@ public:
                                   const Point_2& pLeft, const Point_2& pRight )
   {
     // TODO: find the points on the curve
+    // Use Bezier_curve_2::get_t_at_x to get a list of t's
+    // Use Bezier_x_monotone_curve_2::parameter_range to isolate the right t
+    // Use the Point_2(Curve_2, t) constructor to get the point-on-curve
+    Point_2 p1 = project( curve, pLeft );
+    Point_2 p2 = project( curve, pRight );
+    typename ArrTraits::Equal_2 equal_2 = m_traits.equal_2_object( );
+
     // TODO: make sure the points are oriented in the direction that the curve
     // is going
-    // TODO: trim the parameter range of curve
 
+    // TODO: trim the parameter range of curve
+    // Just construct a new x-monotone curve with the supporting curve and Bezier points
+
+    //if ( equal_2( p1, Point_2( ) ) || equal_2( p2, Point_2( ) ) )
+    //{
+    //  return curve;
+    //}
+    //else
+    //{
+    //  //return X_monotone_curve_2( supporting_curve, curve.xid( ),
+    //  return curve;
+    //}
     return curve;
   }
+
+  Subcurve subcurve( const X_monotone_curve_2& curve,
+                     const Point_2& pLeft, const Point_2& pRight )
+  {
+    double t1 = parameter( curve, pLeft );
+    double t2 = parameter( curve, pRight );
+    if (t1 == -1.0)
+      t1 = 0.0;
+    if (t2 == -1.0)
+      t2 = 1.0;
+    return Subcurve( curve, t1, t2 );
+  }
+
+private:
+  Point_2 project( const X_monotone_curve_2& curve, const Point_2& pt )
+  {
+    Curve_2 supporting_curve = curve.supporting_curve( );
+    std::pair< double, double > approx_left = pt.approximate( );
+    std::pair< double, double > approx_right = pt.approximate( );
+    std::vector< Algebraic > left_ts;
+    supporting_curve.get_t_at_x( approx_left.first, std::back_inserter( left_ts ) );
+    std::pair< double, double > parameter_range = curve.parameter_range( );
+    double tt = -1.0;
+    for ( int i = 0; i < left_ts.size( ); ++i )
+    {
+      double approx_t = CGAL::to_double( left_ts[i] );
+      if (parameter_range.first <= approx_t && approx_t <= parameter_range.second)
+      {
+        tt = approx_t;
+        break;
+      }
+    }
+    if (tt != -1.0)
+    {
+      Point_2 projected_pt(supporting_curve, Rational( tt ));
+      std::pair< double, double > approx_projected_pt = projected_pt.approximate( );
+      std::cout << "pt: "
+        << approx_left.first << " "
+        << approx_left.second << " "
+        << "\n";
+      std::cout << "projected: "
+        << approx_projected_pt.first << " "
+        << approx_projected_pt.second << " "
+        << "\n";
+      return projected_pt;
+    }
+    else
+    {
+      return Point_2( );
+    }
+  }
+
+  /**
+  Project pt onto curve to determine its parameter along the curve's supporting curve.
+
+  \return the parameter, or -1 if failed
+  */
+  double parameter( const X_monotone_curve_2& curve, const Point_2& pt )
+  {
+    Curve_2 supporting_curve = curve.supporting_curve( );
+    std::pair< double, double > approx_pt = pt.approximate( );
+    std::vector< Algebraic > left_ts;
+    supporting_curve.get_t_at_x( approx_pt.first, std::back_inserter( left_ts ) );
+    std::pair< double, double > parameter_range = curve.parameter_range( );
+    double tt = -1.0;
+    for ( int i = 0; i < left_ts.size( ); ++i )
+    {
+      double approx_t = CGAL::to_double( left_ts[i] );
+      if (parameter_range.first - 0.1 <= approx_t && approx_t <= parameter_range.second + 0.1)
+      {
+        tt = approx_t;
+        break;
+      }
+    }
+    if (tt == -1.0)
+    {
+      std::cout << "couldn't find t for "
+        << approx_pt.first
+        << ", "
+        << approx_pt.second
+        << " on the curve\n";
+    }
+    return tt;
+  }
+
 }; // class Construct_x_monotone_subcurve_2 for Arr_Bezier_curve_traits_2
 
 

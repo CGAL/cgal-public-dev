@@ -150,6 +150,10 @@ protected:
   void updateEnvelope(bool lower,
                       CGAL::Arr_circular_arc_traits_2<CircularKernel> traits);
 
+  template < class RatKernel, class AlgKernel, class NtTraits >
+  void updateEnvelope(bool lower,
+    CGAL::Arr_Bezier_curve_traits_2<RatKernel, AlgKernel, NtTraits> traits);
+
   template < typename Coefficient_ >
   void updateEnvelope(bool lower,
                       CGAL::Arr_algebraic_segment_traits_2<Coefficient_>
@@ -347,6 +351,99 @@ updateEnvelope(bool lower,
         this->construct_x_monotone_subcurve_2( e->curve( ),
                                                leftPoint, rightPoint );
       envelopeToUpdate->insert( curve );
+    }
+    v = e->right( );
+
+    // TODO: Draw the point associated with the current vertex.
+    e = v->right( );
+  }
+  envelopeToUpdate->modelChanged( );
+}
+
+template < typename Arr_, typename Traits >
+template < class RatKernel, class AlgKernel, class NtTraits >
+void EnvelopeCallback< Arr_, Traits >::
+updateEnvelope(bool lower,
+  CGAL::Arr_Bezier_curve_traits_2<RatKernel, AlgKernel, NtTraits> traits)
+{
+  CGAL::Qt::CurveGraphicsItem< Traits >* envelopeToUpdate;
+  if ( lower )
+  {
+    envelopeToUpdate = this->lowerEnvelope;
+  }
+  else
+  {
+    envelopeToUpdate = this->upperEnvelope;
+  }
+  envelopeToUpdate->clear( );
+
+  std::list< X_monotone_curve_2 > curves;
+  Edge_iterator eit;
+  for (eit = this->arr->edges_begin( ); eit != this->arr->edges_end( ); ++eit)
+  {
+    curves.push_back( eit->curve( ) );
+  }
+  Diagram_1 diagram;
+  if ( lower )
+  {
+    CGAL::lower_envelope_x_monotone_2(curves.begin(), curves.end(), diagram);
+  }
+  else
+  {
+    CGAL::upper_envelope_x_monotone_2(curves.begin(), curves.end(), diagram);
+  }
+
+  typename Diagram_1::Edge_const_handle e = diagram.leftmost( );
+  typename Diagram_1::Vertex_const_handle v;
+  QRectF clipRect = this->viewportRect( );
+  CGAL::Qt::Converter< Kernel > convert( clipRect );
+  while ( e != diagram.rightmost( ) )
+  {
+    if ( ! e->is_empty( ) )
+    {
+      // The edge is not empty: draw a representative curve.
+      // Note that the we only draw the portion of the curve
+      // that overlaps the x-range defined by the two vertices
+      // that are incident to this edge.
+
+      // TODO: generate a subcurve instead of just making a segment
+
+      Point_2 leftPoint, rightPoint;
+      if ( e->left( ) != NULL )
+      {
+        leftPoint = e->left( )->point( );
+      }
+      else
+      {
+        // std::cout << "handle unbounded curve" << std::endl;
+        v = e->right( );
+        e = v->right( );
+        continue;
+      }
+
+      if ( e->right( ) != NULL )
+      {
+        rightPoint = e->right( )->point( );
+      }
+      else
+      {
+        // std::cout << "pRight is null; should never get here..."
+        //           << std::endl;
+      }
+      //X_monotone_curve_2 curve =
+      //  this->construct_x_monotone_subcurve_2(e->curve(),
+      //                                        leftPoint, rightPoint);
+      typedef typename Construct_x_monotone_subcurve_2< Traits >::Subcurve
+      //typedef typename Construct_x_monotone_subcurve_2< CGAL::Arr_Bezier_curve_traits_2< RatKernel, AlgKernel, NtTraits > >::Subcurve
+        Subcurve;
+      Subcurve subcurve =
+        this->construct_x_monotone_subcurve_2.subcurve(e->curve(),
+          leftPoint, rightPoint);
+
+      //envelopeToUpdate->template insert< RatKernel, AlgKernel, NtTraits >( subcurve );
+      envelopeToUpdate->insert( subcurve );
+      envelopeToUpdate->insert( leftPoint );
+      envelopeToUpdate->insert( rightPoint );
     }
     v = e->right( );
 

@@ -881,6 +881,7 @@ public:
 public: // methods
   ArrangementPainterOstream& operator<<( const Curve_2& curve )
   {
+#if 0 // only works for cubic splines
     std::vector< QPointF > controlPts;
     for ( int i = 0; i < curve.number_of_control_points(); ++i )
     {
@@ -899,12 +900,27 @@ public: // methods
       controlPts.at(2),
       controlPts.at(3));
     this->qp->strokePath(path, this->qp->pen( ) );
+#endif
+    double P = 2 * (curve.number_of_control_points() + 1);
+    // TODO: Calculate this number appropriately
+    int N = P;
+
+    std::vector< std::pair<double, double> > samples;
+    curve.sample(0, 1, N, std::back_inserter( samples ) );
+    for (int i = 0; i < samples.size() - 1; ++i)
+    {
+      QPointF p1( samples[i].first, samples[i].second );
+      QPointF p2( samples[i+1].first, samples[i+1].second );
+      this->qp->drawLine( p1, p2 );
+    }
+
     return *this;
   }
 
   ArrangementPainterOstream& operator<<( const X_monotone_curve_2& curve )
   {
     Curve_2 supportingCurve = curve.supporting_curve();
+    std::pair< double, double > range = curve.parameter_range( );
     double P = 2 * (supportingCurve.number_of_control_points() + 1);
     // TODO: Calculate this number appropriately
     int N = P;
@@ -914,7 +930,7 @@ public: // methods
     // epsilon is the desired error bound
     // TODO: Scale the number of samples by the norm of the view matrix
     std::vector< std::pair<double, double> > samples;
-    supportingCurve.sample(0, 1, N, std::back_inserter( samples ) );
+    supportingCurve.sample(range.first, range.second, N, std::back_inserter( samples ) );
     for (int i = 0; i < samples.size() - 1; ++i)
     {
       QPointF p1( samples[i].first, samples[i].second );
@@ -942,6 +958,36 @@ public: // methods
 
     // Get the supporting curve
     //
+    return *this;
+  }
+
+  ArrangementPainterOstream& operator<<( const
+    typename Construct_x_monotone_subcurve_2< Traits >::Subcurve& subcurve )
+  {
+    X_monotone_curve_2 curve = subcurve.m_cv;
+    Curve_2 supportingCurve = curve.supporting_curve();
+    std::pair< double, double > range;
+    range.first = subcurve.m_t1;
+    range.second = subcurve.m_t2;
+    std::cout << "drawing subcurve "
+      << range.first << " " << range.second << "\n";
+    double P = 2 * (supportingCurve.number_of_control_points() + 1);
+    // TODO: Calculate this number appropriately
+    int N = P;
+    // TODO: calculate and cache alpha for each curve seen
+    // int N = P / 2 * sqrt(alpha / epsilon)
+    // alpha is the max chordal deviation for sampling width 1/P
+    // epsilon is the desired error bound
+    // TODO: Scale the number of samples by the norm of the view matrix
+    std::vector< std::pair<double, double> > samples;
+    supportingCurve.sample(range.first, range.second, N, std::back_inserter( samples ) );
+    for (int i = 0; i < samples.size() - 1; ++i)
+    {
+      QPointF p1( samples[i].first, samples[i].second );
+      QPointF p2( samples[i+1].first, samples[i+1].second );
+      this->qp->drawLine( p1, p2 );
+    }
+
     return *this;
   }
 
