@@ -64,13 +64,13 @@ namespace CGAL {
       typedef typename Vector::const_iterator const_iterator;
       Vector coeff;
       
-      Polynomial_sage_rep() : coeff() {  bool dirty = false; }
-      Polynomial_sage_rep(Creation_tag, size_type s) : coeff(s,NT(0)) {  bool dirty = false; }
+    Polynomial_sage_rep() : coeff(), dirty(false) {   }
+    Polynomial_sage_rep(Creation_tag, size_type s) : coeff(s,NT(0)), dirty(false) { }
       Polynomial_sage_rep(size_type n, ...);
       
       template <class Forward_iterator>
 	Polynomial_sage_rep(Forward_iterator first, Forward_iterator last) 
-	: coeff(first,last)
+	: coeff(first,last), dirty(false)
 	{}
       
       void reduce() {
@@ -90,17 +90,18 @@ namespace CGAL {
       size_t sage_id;
       bool dirty;
       std::string sage_internal;
-      Polynomial_rep<NT_> polynomial_rep;
+      //Polynomial_rep<NT_> polynomial_rep;
       
     public:    
+      //should return void 
         std::string push_to_sage() 
 	{
-	   bool dirty = true;
+	   dirty = true;
 
 	  //convert Polynomial_rep to Sage_rep
 	}
       
-      std::string getDataFromSage(std::string &param)
+      std::string pull_from_sage(std::string &param)
 	{
 	  SageConnection connectionToSage;
 	  std::string host;
@@ -127,7 +128,7 @@ namespace CGAL {
 
 
   template < class NT_ >
-    class Polynomial_Sage : public Polynomial< NT_ >, public Handle_with_policy< internal::Polynomial_sage_rep<NT_> > {
+    class Polynomial_Sage : public Polynomial< NT_, internal::Polynomial_sage_rep<NT_> > {
     
     typedef typename internal::Innermost_coefficient_type<NT_>::Type Innermost_coefficient_type; 
     
@@ -136,13 +137,13 @@ namespace CGAL {
     typedef internal::Polynomial_sage_rep<NT> Rep;
     typedef Handle_with_policy< Rep > Base;
     typedef typename Rep::Vector    Vector;
-    typedef typename Rep::size_type size_type;
+     typedef typename Rep::size_type size_type;
     typedef typename Rep::iterator  iterator;
     typedef typename Rep::const_iterator const_iterator;
     typedef Polynomial_Sage<NT> Self; 
     
   protected:
-    Vector& coeffs() { return this->ptr()->coeff; }
+        Vector& coeffs() { return this->ptr()->coeff; }
     const Vector& coeffs() const { return this->ptr()->coeff; }
     
   Polynomial_Sage(internal::Creation_tag f, size_type s)
@@ -163,7 +164,7 @@ namespace CGAL {
         this->ptr()->reduce();
       }
     }
-
+    
   private:
     static Self& get_default_instance(){
 #ifdef CGAL_HAS_THREADS  
@@ -280,3 +281,15 @@ private:
 }
 
 #endif
+
+// branch build
+// derivation
+// modify polynomial test
+// compile -Wall
+// redefine member function
+// degree, differentiate
+
+
+//branch build
+// modify template arg
+//

@@ -60,39 +60,39 @@ template <class NT, class Rep_> inline Polynomial<NT, Rep_> gcd_utcf_modularizab
 // template <class NT, class Rep_> inline NT content_utcf(const Polynomial<NT, Rep_>&);
 template <class NT, class Rep_> inline NT content_utcf_(const Polynomial<NT, Rep_>&);
 
-template <class NT, class OutputIterator1, class OutputIterator2> 
+template <class NT, class Rep_, class OutputIterator1, class OutputIterator2> 
 inline int filtered_square_free_factorize( Polynomial<NT, Rep_>, OutputIterator1, OutputIterator2);
-template <class NT,  class OutputIterator1, class OutputIterator2> 
+template <class NT,  class Rep_, class OutputIterator1, class OutputIterator2> 
 inline int filtered_square_free_factorize_utcf( const Polynomial<NT, Rep_>&, OutputIterator1, OutputIterator2);
 
-template <class Coeff,  class OutputIterator1, class OutputIterator2>
-inline int square_free_factorize_utcf(const Polynomial<Coeff>&, OutputIterator1, OutputIterator2);
-template <class Coeff,  class OutputIterator1, class OutputIterator2>
-inline int square_free_factorize_utcf_for_regular_polynomial(const Polynomial<Coeff>&, OutputIterator1, OutputIterator2);
+template <class Coeff, class Rep_,  class OutputIterator1, class OutputIterator2>
+  inline int square_free_factorize_utcf(const Polynomial<Coeff,Rep_>&, OutputIterator1, OutputIterator2);
+template <class Coeff, class Rep_,  class OutputIterator1, class OutputIterator2>
+  inline int square_free_factorize_utcf_for_regular_polynomial(const Polynomial<Coeff, Rep_>&, OutputIterator1, OutputIterator2);
 
-template <class Coeff,  class OutputIterator1, class OutputIterator2>
-inline int square_free_factorize(const Polynomial<Coeff>&, OutputIterator1, OutputIterator2);
-template <class Coeff,  class OutputIterator1, class OutputIterator2>
-inline int square_free_factorize_for_regular_polynomial(const Polynomial<Coeff>&, OutputIterator1, OutputIterator2);
+template <class Coeff, class Rep_,  class OutputIterator1, class OutputIterator2>
+  inline int square_free_factorize(const Polynomial<Coeff,Rep_>&, OutputIterator1, OutputIterator2);
+template <class Coeff, class Rep_,  class OutputIterator1, class OutputIterator2>
+  inline int square_free_factorize_for_regular_polynomial(const Polynomial<Coeff,Rep_>&, OutputIterator1, OutputIterator2);
 
 template <class NT, class Rep_> inline bool may_have_multiple_factor( const Polynomial<NT, Rep_>&);
 template <class NT, class Rep_> inline bool may_have_common_factor(const Polynomial<NT, Rep_>&,const Polynomial<NT, Rep_>&);
 
 // eliminates outermost variable
-template <class Coeff> 
+ template <class Coeff, class Rep_> 
 inline Coeff resultant( 
-    const CGAL::Polynomial<Coeff>&, const CGAL::Polynomial<Coeff>&);
+		       const CGAL::Polynomial<Coeff, Rep_>&, const CGAL::Polynomial<Coeff,Rep_>&);
 // eliminates innermost variable 
-template <class Coeff> 
+ template <class Coeff, class Rep_> 
 inline Coeff resultant_( 
-    const CGAL::Polynomial<Coeff>&, const CGAL::Polynomial<Coeff>&);
+			const CGAL::Polynomial<Coeff, Rep_>&, const CGAL::Polynomial<Coeff, Rep_>&);
   
 
 
 template< class Coeff >
 struct Simple_matrix;
 
-template<class NT>
+ template<class NT, class Rep_>
 internal::Simple_matrix<NT> polynomial_subresultant_matrix(
                                                CGAL::Polynomial<NT, Rep_> f,
 					       CGAL::Polynomial<NT, Rep_> g,

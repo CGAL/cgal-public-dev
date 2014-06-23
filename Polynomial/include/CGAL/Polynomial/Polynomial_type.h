@@ -1169,7 +1169,7 @@ void Polynomial<NT, Rep_>::pseudo_division(
     Q = Polynomial<NT, Rep_>(NT(0)); R = A; D = NT(1);
        
     CGAL_USE_TYPE(AST);
-    CGAL_postcondition( !AST::Is_exact::value || Polynomial<NT, Rep_>(D)*A == Q*B + R);
+    CGAL_postcondition( (!AST::Is_exact::value || Polynomial<NT, Rep_>(D)*A == Q*B + R));
     return;
   }
   const NT d = B.lcoeff();
@@ -1196,7 +1196,7 @@ void Polynomial<NT, Rep_>::pseudo_division(
   Q *= q; Q.simplify_coefficients();
   R *= q; R.simplify_coefficients();
 
-  CGAL_postcondition( !AST::Is_exact::value || Polynomial<NT, Rep_>(D)*A == Q*B + R);
+  CGAL_postcondition( (!AST::Is_exact::value || Polynomial<NT, Rep_>(D)*A == Q*B + R));
 }
 
 #else
