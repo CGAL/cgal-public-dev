@@ -553,18 +553,25 @@ protected:
     QPolygonF pgn( pts );
 
     // fill the face according to its color
+    QPen oldPen = painter->pen( );
     QBrush oldBrush = painter->brush( );
+    QPen pen = painter->pen( );
     QColor def_bg_color = this->backgroundColor;
     if (! f->color().isValid())
     {
+      pen.setColor( def_bg_color );
       painter->setBrush( def_bg_color );
+      painter->setPen( pen );
     }
     else
     {
+      pen.setColor( f->color( ) );
       painter->setBrush( f->color( ) );
+      painter->setPen( pen );
     }
     painter->drawPolygon( pgn );
     painter->setBrush( oldBrush );
+    painter->setPen( oldPen );
   }
 
   template < typename CircularKernel >
