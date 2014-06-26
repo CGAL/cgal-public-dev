@@ -505,6 +505,8 @@ void ArrangementDemoWindow::openDatFile( QString filename )
   Seg_arr* seg;
   Pol_arr* pol;
   Conic_arr* conic;
+  Bezier_arr* bez;
+
   // Alg_seg_arr* alg;
 
   // Creates an ofstream object named inputFile
@@ -562,6 +564,7 @@ void ArrangementDemoWindow::openDatFile( QString filename )
 
       Arr_seg_point_2 p1(x0, y0);
       Arr_seg_point_2 p2(x1, y1);
+      std::cout << p1 << " -> " << p2 << "\n";
 
       Arr_seg_2 curve(p1, p2);
 
@@ -569,6 +572,10 @@ void ArrangementDemoWindow::openDatFile( QString filename )
     }
 
     CGAL::insert(*(seg), seg_list.begin(), seg_list.end());
+    std::cout
+      << "   V = " << seg->number_of_vertices()
+      << ",  E = " << seg->number_of_edges()
+      << ",  F = " << seg->number_of_faces() << std::endl;
 
     typedef ArrangementDemoTab< Seg_arr > TabType;
     TabType* tab = static_cast< TabType* >( this->tabs[ index ] );
@@ -590,6 +597,37 @@ void ArrangementDemoWindow::openDatFile( QString filename )
     tab->setArrangement( conic );
   }
 #endif
+  else if ( CGAL::assign( bez, arr ) )
+  {
+    bez->clear( );
+    // Read the curves from the input file.
+    unsigned int               n_curves;
+    std::list<Arr_bezier_2>    curves;
+    Arr_bezier_2               B;
+    unsigned int               k;
+
+    inputFile >> n_curves;
+    for (k = 0; k < n_curves; k++) {
+      // Read the current curve (specified by its control points).
+      inputFile >> B;
+      curves.push_back (B);
+
+      std::cout << "B = {" << B << "}" << std::endl;
+    }
+
+    // Construct the arrangement.
+    insert (*bez, curves.begin(), curves.end());
+
+    // Print the arrangement size.
+    std::cout << "The arrangement size:" << std::endl
+              << "   V = " << bez->number_of_vertices()
+              << ",  E = " << bez->number_of_edges()
+              << ",  F = " << bez->number_of_faces() << std::endl;
+
+    typedef ArrangementDemoTab< Bezier_arr > TabType;
+    TabType* tab = static_cast< TabType* >( this->tabs[ index ] );
+    tab->setArrangement( bez );
+  }
 
   inputFile.close();
 }
