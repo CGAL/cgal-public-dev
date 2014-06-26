@@ -934,7 +934,7 @@ protected:
     std::cout << "Deleting ArrangementGraphicsItem\n";
     if ( this->arr )
     {
-      delete this->arr;
+      //delete this->arr;
     }
   }
 
@@ -1146,7 +1146,10 @@ protected:
     {
       // TODO: include/CGAL/Arr_geometry_traits/Bezier_point_2 doesn't have bbox
       // but it can convert to Rat_point_2, which does? Need to specialize...
-      this->bb = this->arr->vertices_begin( )->point( ).bbox( );
+      Vertex_iterator it = this->arr->vertices_begin( );
+      Point_2 pt = it->point( );
+      this->bb = pt.bbox( );
+      //this->bb = this->arr->vertices_begin( )->point( ).bbox( );
       this->bb_initialized = true;
     }
 
