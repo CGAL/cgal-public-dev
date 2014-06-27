@@ -515,7 +515,7 @@ protected:
         continue;
 
       // Sample the curve, save samples to a list
-      std::vector< std::pair< double, double > > samples;
+      std::list< std::pair< double, double > > samples;
       Halfedge_handle hh = cc;
       X_monotone_curve_2 xcv = hh->curve( );
       Curve_2 cv = xcv.supporting_curve( );
@@ -523,15 +523,22 @@ protected:
       cv.sample( range.first, range.second,
         2 * (cv.number_of_control_points( ) + 1),
         std::back_inserter( samples ) );
+      samples.pop_front( );
+      samples.pop_back( );
+      samples.push_front( xcv.source( ).approximate( ) );
+      samples.push_back( xcv.target( ).approximate( ) );
 
       // The samples are reversed if the halfedge's orientation is different
       // from the orientation of its underlying x-monotone curve.
+
+      // The samples are going in the direction of the underlying curve.
 
       // If the orientation is reversed, then reverse the samples.
       {
         std::pair< double, double > pa, pb;
         pa = hh->source( )->point( ).approximate( );
-        pb = xcv.target( ).approximate( );
+        //pb = xcv.target( ).approximate( );
+        pb = samples.front( );
         double dx = pa.first - pb.first;
         double dy = pa.second - pb.second;
         double dist = dx*dx + dy*dy;
@@ -542,9 +549,12 @@ protected:
       }
 
       // Add the samples to the polygon
-      for ( int i = 0; i < samples.size( ); ++i )
+      //for ( int i = 0; i < samples.size( ); ++i )
+      for ( std::list< std::pair< double, double > >::iterator it = samples.begin( );
+        it != samples.end( ); ++it )
       {
-        pts.push_back( QPointF( samples[i].first, samples[i].second ) );
+        std::pair< double, double >& sample = *it;
+        pts.push_back( QPointF( sample.first, sample.second ) );
       }
 
     } while (++cc != f->outer_ccb());
