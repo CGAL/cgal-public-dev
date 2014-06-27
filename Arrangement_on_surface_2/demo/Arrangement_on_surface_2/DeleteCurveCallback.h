@@ -221,7 +221,8 @@ highlightNearestCurve( QGraphicsSceneMouseEvent* event )
     this->highlightedCurve->insert( this->removableHalfedge->curve( ) );
   }
 
-  emit modelChanged( );
+  //emit modelChanged( );
+  this->highlightedCurve->modelChanged( );
 }
 
 #endif // DELETE_CURVE_CALLBACK_H

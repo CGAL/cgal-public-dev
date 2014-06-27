@@ -551,10 +551,31 @@ public:
   typedef typename Traits::X_monotone_curve_2           X_monotone_curve_2;
 
 public: // methods
-  double operator() ( const Point_2& p, const X_monotone_curve_2& c ) const
+  double operator() ( const Point_2& p, const X_monotone_curve_2& xcv ) const
   {
     // TODO: Construct a good polyline approximation of input c
     // TODO: Take the distance to the closest segment as the point-curve dist
+
+    std::pair< double, double > approxPt;
+    approxPt.first = CGAL::to_double( p.x( ) );
+    approxPt.second = CGAL::to_double( p.y( ) );
+    std::vector< std::pair< double, double > > samples;
+    Curve_2 cv = xcv.supporting_curve( );
+    std::pair< double, double > range = xcv.parameter_range( );
+    cv.sample( range.first, range.second,
+      4,
+      std::back_inserter( samples ) );
+
+    double min_dist = 1e100;
+    for ( int i = 0; i < samples.size( ); ++i )
+    {
+      double dx = ( approxPt.first - samples[i].first );
+      double dy = ( approxPt.second - samples[i].second );
+      double dist = dx*dx + dy*dy;
+      if ( dist < min_dist )
+        min_dist = dist;
+    }
+
     //bool first = true;
     //FT min_dist( 100000000 );
     //// AlgKernel ker;
@@ -596,7 +617,7 @@ public: // methods
     //} while ( p_next != end_pts );
 //
 //    return CGAL::to_double( min_dist );
-    return 0.0;
+    return min_dist;
   }
 };
 

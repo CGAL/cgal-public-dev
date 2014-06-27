@@ -47,6 +47,9 @@ public slots:
 
 protected:
   EnvelopeCallbackBase( QObject* parent );
+
+  bool m_showLower;
+  bool m_showUpper;
 }; // class EnvelopeCallbackBase
 
 /**
@@ -181,8 +184,14 @@ EnvelopeCallback<Arr_, Traits>::EnvelopeCallback(Arrangement* arr_,
 template < typename Arr_, typename Traits >
 void EnvelopeCallback< Arr_, Traits >::slotModelChanged( )
 {
-  this->updateEnvelope( true );
-  this->updateEnvelope( false );
+  if ( m_showLower )
+  {
+    this->updateEnvelope( true );
+  }
+  if ( m_showUpper )
+  {
+    this->updateEnvelope( false );
+  }
 }
 
 template < typename Arr_, typename Traits >
@@ -465,8 +474,10 @@ updateEnvelope(bool /* lower */,
 template < typename Arr_, typename Traits >
 void EnvelopeCallback< Arr_, Traits >::showLowerEnvelope( bool show )
 {
+  m_showLower = show;
   if ( show )
   {
+    this->updateEnvelope( true );
     // std::cout << "Show lower envelope" << std::endl;
     this->scene->addItem( this->lowerEnvelope );
   }
@@ -480,8 +491,10 @@ void EnvelopeCallback< Arr_, Traits >::showLowerEnvelope( bool show )
 template < typename Arr_, typename Traits >
 void EnvelopeCallback< Arr_, Traits >::showUpperEnvelope( bool show )
 {
+  m_showUpper = show;
   if ( show )
   {
+    this->updateEnvelope( false );
     // std::cout << "Show upper envelope" << std::endl;
     this->scene->addItem( this->upperEnvelope );
   }
