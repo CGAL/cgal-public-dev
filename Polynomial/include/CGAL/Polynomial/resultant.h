@@ -69,54 +69,54 @@ namespace CGAL {
 
 namespace internal{
 
-template <class Coeff> 
+  template <class Coeff, class Rep_> 
 inline Coeff resultant_interpolate( 
-    const CGAL::Polynomial<Coeff>&, const CGAL::Polynomial<Coeff>& );
-template <class Coeff> 
+    const CGAL::Polynomial<Coeff, Rep_>&, const CGAL::Polynomial<Coeff, Rep_>& );
+  template <class Coeff, class Rep_> 
 inline Coeff resultant_modularize( 
-    const CGAL::Polynomial<Coeff>&, 
-    const CGAL::Polynomial<Coeff>&, CGAL::Tag_true);
-template <class Coeff> 
+    const CGAL::Polynomial<Coeff, Rep_>&, 
+    const CGAL::Polynomial<Coeff, Rep_>&, CGAL::Tag_true);
+  template <class Coeff, class Rep_> 
 inline Coeff resultant_modularize( 
-    const CGAL::Polynomial<Coeff>&, 
-    const CGAL::Polynomial<Coeff>&, CGAL::Tag_false);
-template <class Coeff> 
+    const CGAL::Polynomial<Coeff, Rep_>&, 
+    const CGAL::Polynomial<Coeff, Rep_>&, CGAL::Tag_false);
+  template <class Coeff, class Rep_> 
 inline Coeff resultant_decompose( 
-    const CGAL::Polynomial<Coeff>&, 
-    const CGAL::Polynomial<Coeff>&, CGAL::Tag_true);
-template <class Coeff> 
+    const CGAL::Polynomial<Coeff, Rep_>&, 
+    const CGAL::Polynomial<Coeff, Rep_>&, CGAL::Tag_true);
+  template <class Coeff, class Rep_> 
 inline Coeff resultant_decompose( 
-    const CGAL::Polynomial<Coeff>&, 
-    const CGAL::Polynomial<Coeff>&, CGAL::Tag_false);
-template <class Coeff> 
+    const CGAL::Polynomial<Coeff, Rep_>&, 
+    const CGAL::Polynomial<Coeff, Rep_>&, CGAL::Tag_false);
+  template <class Coeff, class Rep_> 
 inline Coeff resultant_( 
-    const CGAL::Polynomial<Coeff>&, const CGAL::Polynomial<Coeff>&);
+    const CGAL::Polynomial<Coeff, Rep_>&, const CGAL::Polynomial<Coeff, Rep_>&);
 
-template <class Coeff> 
+  template <class Coeff, class Rep_> 
 inline Coeff resultant_univariate( 
-    const CGAL::Polynomial<Coeff>& A, 
-    const CGAL::Polynomial<Coeff>& B, 
+    const CGAL::Polynomial<Coeff, Rep_>& A, 
+    const CGAL::Polynomial<Coeff, Rep_>& B, 
     CGAL::Integral_domain_without_division_tag){ 
   return hybrid_bezout_subresultant(A,B,0);
 }
-template <class Coeff> 
+  template <class Coeff, class Rep_> 
 inline Coeff resultant_univariate( 
-    const CGAL::Polynomial<Coeff>& A, 
-    const CGAL::Polynomial<Coeff>& B, CGAL::Integral_domain_tag){
+    const CGAL::Polynomial<Coeff, Rep_>& A, 
+    const CGAL::Polynomial<Coeff, Rep_>& B, CGAL::Integral_domain_tag){
   // this seems to help for for large polynomials 
   return prs_resultant_integral_domain(A,B);
 }
-template <class Coeff> 
+  template <class Coeff, class Rep_> 
 inline Coeff resultant_univariate( 
-    const CGAL::Polynomial<Coeff>& A, 
-    const CGAL::Polynomial<Coeff>& B, CGAL::Unique_factorization_domain_tag){
+    const CGAL::Polynomial<Coeff, Rep_>& A, 
+    const CGAL::Polynomial<Coeff, Rep_>& B, CGAL::Unique_factorization_domain_tag){
   return prs_resultant_ufd(A,B);
 }
 
-template <class Coeff> 
+  template <class Coeff, class Rep_> 
 inline Coeff resultant_univariate( 
-    const CGAL::Polynomial<Coeff>& A, 
-    const CGAL::Polynomial<Coeff>& B, CGAL::Field_tag){
+    const CGAL::Polynomial<Coeff, Rep_>& A, 
+    const CGAL::Polynomial<Coeff, Rep_>& B, CGAL::Field_tag){
   return prs_resultant_field(A,B);  
 }
 
@@ -125,25 +125,25 @@ inline Coeff resultant_univariate(
 namespace internal{
 
 
-template <class IC> 
+template <class IC, class Rep_> 
 inline IC 
 resultant_interpolate( 
-    const CGAL::Polynomial<IC>& F, 
-    const CGAL::Polynomial<IC>& G){
+    const CGAL::Polynomial<IC, Rep_>& F, 
+    const CGAL::Polynomial<IC, Rep_>& G){
   CGAL_precondition(CGAL::Polynomial_traits_d<CGAL::Polynomial<IC> >::d == 1);
     typedef CGAL::Algebraic_structure_traits<IC> AST_IC;
     typedef typename AST_IC::Algebraic_category Algebraic_category;
     return internal::resultant_univariate(F,G,Algebraic_category()); 
 }
 
-template <class Coeff_2> 
+  template <class Coeff_2, class Rep_> 
 inline
-CGAL::Polynomial<Coeff_2>  resultant_interpolate(
-        const CGAL::Polynomial<CGAL::Polynomial<Coeff_2> >& F, 
-        const CGAL::Polynomial<CGAL::Polynomial<Coeff_2> >& G){
+CGAL::Polynomial<Coeff_2, Rep_>  resultant_interpolate(
+						       const CGAL::Polynomial<CGAL::Polynomial<Coeff_2, Rep_>, Rep_ >& F, 
+        const CGAL::Polynomial<CGAL::Polynomial<Coeff_2, Rep_>, Rep_ >& G){
     
-    typedef CGAL::Polynomial<Coeff_2> Coeff_1;
-    typedef CGAL::Polynomial<Coeff_1> POLY;
+    typedef CGAL::Polynomial<Coeff_2, Rep_> Coeff_1;
+    typedef CGAL::Polynomial<Coeff_1, Rep_> POLY;
     typedef CGAL::Polynomial_traits_d<POLY> PT;
     typedef typename PT::Innermost_coefficient_type IC; 
 
@@ -229,27 +229,27 @@ CGAL::Polynomial<Coeff_2>  resultant_interpolate(
     return result; 
 }
 
-template <class Coeff> 
+  template <class Coeff, class Rep_> 
 inline
 Coeff resultant_modularize( 
-        const CGAL::Polynomial<Coeff>& F, 
-        const CGAL::Polynomial<Coeff>& G, 
+        const CGAL::Polynomial<Coeff, Rep_>& F, 
+        const CGAL::Polynomial<Coeff, Rep_>& G, 
         CGAL::Tag_false){
     return resultant_interpolate(F,G);
 }
 
-template <class Coeff> 
+  template <class Coeff, class Rep_> 
 inline
 Coeff resultant_modularize( 
-        const CGAL::Polynomial<Coeff>& F, 
-        const CGAL::Polynomial<Coeff>& G, 
+        const CGAL::Polynomial<Coeff, Rep_>& F, 
+        const CGAL::Polynomial<Coeff, Rep_>& G, 
         CGAL::Tag_true){
     
   // Enforce IEEE double precision and to nearest before using modular arithmetic
   CGAL::Protect_FPU_rounding<true> pfr(CGAL_FE_TONEAREST);
   
 
-    typedef Polynomial_traits_d<CGAL::Polynomial<Coeff> > PT;
+    typedef Polynomial_traits_d<CGAL::Polynomial<Coeff, Rep_> > PT;
     typedef typename PT::Polynomial_d Polynomial;
     
     typedef Chinese_remainder_traits<Coeff> CRT;
@@ -333,14 +333,14 @@ Coeff resultant_modularize(
 }
 
 
-template <class Coeff> 
+  template <class Coeff, class Rep_> 
 inline
 Coeff resultant_decompose( 
-    const CGAL::Polynomial<Coeff>& F,
-    const CGAL::Polynomial<Coeff>& G, 
+    const CGAL::Polynomial<Coeff, Rep_>& F,
+    const CGAL::Polynomial<Coeff, Rep_>& G, 
     CGAL::Tag_false){
 #if CGAL_RESULTANT_USE_MODULAR_ARITHMETIC
-  typedef CGAL::Polynomial<Coeff> Polynomial; 
+  typedef CGAL::Polynomial<Coeff, Rep_> Polynomial; 
   typedef typename Modular_traits<Polynomial>::Is_modularizable Is_modularizable; 
   return resultant_modularize(F,G,Is_modularizable());
 #else
@@ -348,14 +348,14 @@ Coeff resultant_decompose(
 #endif
 }
 
-template <class Coeff> 
+  template <class Coeff, class Rep_> 
 inline
 Coeff resultant_decompose( 
-        const CGAL::Polynomial<Coeff>& F, 
-        const CGAL::Polynomial<Coeff>& G, 
+        const CGAL::Polynomial<Coeff, Rep_>& F, 
+        const CGAL::Polynomial<Coeff, Rep_>& G, 
         CGAL::Tag_true){  
     
-    typedef Polynomial<Coeff> POLY;
+    typedef Polynomial<Coeff, Rep_> POLY;
     typedef typename Fraction_traits<POLY>::Numerator_type Numerator;
     typedef typename Fraction_traits<POLY>::Denominator_type Denominator;
     typename Fraction_traits<POLY>::Decompose decompose;
@@ -377,13 +377,13 @@ Coeff resultant_decompose(
 }
 
 
-template <class Coeff> 
+  template <class Coeff, class Rep_> 
 inline
 Coeff resultant_( 
-        const CGAL::Polynomial<Coeff>& F, 
-        const CGAL::Polynomial<Coeff>& G){
+        const CGAL::Polynomial<Coeff, Rep_>& F, 
+        const CGAL::Polynomial<Coeff, Rep_>& G){
 #if CGAL_RESULTANT_USE_DECOMPOSE
-    typedef CGAL::Fraction_traits<Polynomial<Coeff > > FT;
+    typedef CGAL::Fraction_traits<Polynomial<Coeff, Rep_> > FT;
     typedef typename FT::Is_fraction Is_fraction; 
     return resultant_decompose(F,G,Is_fraction());
 #else
@@ -393,15 +393,15 @@ Coeff resultant_(
 
 
 
-template <class Coeff> 
+  template <class Coeff, class Rep_> 
 inline
 Coeff  resultant( 
-        const CGAL::Polynomial<Coeff>& F_, 
-        const CGAL::Polynomial<Coeff>& G_){
+        const CGAL::Polynomial<Coeff, Rep_>& F_, 
+        const CGAL::Polynomial<Coeff, Rep_>& G_){
   // make the variable to be elimnated the innermost one.
-    typedef CGAL::Polynomial_traits_d<CGAL::Polynomial<Coeff> > PT;
-    CGAL::Polynomial<Coeff> F = typename PT::Move()(F_, PT::d-1, 0);
-    CGAL::Polynomial<Coeff> G = typename PT::Move()(G_, PT::d-1, 0);
+    typedef CGAL::Polynomial_traits_d<CGAL::Polynomial<Coeff, Rep_> > PT;
+    CGAL::Polynomial<Coeff, Rep_> F = typename PT::Move()(F_, PT::d-1, 0);
+    CGAL::Polynomial<Coeff, Rep_> G = typename PT::Move()(G_, PT::d-1, 0);
     return internal::resultant_(F,G);
 }
 

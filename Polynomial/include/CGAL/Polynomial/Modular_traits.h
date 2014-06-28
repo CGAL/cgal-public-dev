@@ -40,16 +40,16 @@ namespace CGAL {
  *  CGAL::Modular_traits::Modular_image maps the coefficients of a polynomial
  *  to their Modular_image and returns the resulting polynomial.  
  */
-template< class COEFF >
-class Modular_traits< Polynomial<COEFF> > {
+  template< class COEFF, class Rep_ >
+class Modular_traits< Polynomial<COEFF, Rep_> > {
     
 private:
     typedef Modular_traits<COEFF> Mtr;
 public:
-    typedef Polynomial<COEFF> NT;
+    typedef Polynomial<COEFF, Rep_> NT;
     typedef Modular_traits<NT> Self;
     typedef typename Mtr::Is_modularizable Is_modularizable;
-    typedef Polynomial<typename Mtr::Residue_type> Residue_type;
+    typedef Polynomial<typename Mtr::Residue_type, Rep_> Residue_type;
     
     struct Modular_image{
         Residue_type operator()(const NT& p){ 

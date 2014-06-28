@@ -26,10 +26,10 @@
 
 namespace CGAL {
 
-template <class NT> 
-class Chinese_remainder_traits<Polynomial<NT> >{
+  template <class NT, class Rep_> 
+class Chinese_remainder_traits<Polynomial<NT, Rep_> >{
 public:
-    typedef Polynomial<NT> Type;
+    typedef Polynomial<NT, Rep_> Type;
     typedef Chinese_remainder_traits<NT> CRT_NT;
    
     typedef typename CRT_NT::Scalar_type Scalar_type;
@@ -52,7 +52,7 @@ public:
                 chinese_remainder_nt(m1,m2,m,s,t,u1[i],u2[i],c);
                 coeffs[i] = c;  
             }
-            u = Polynomial<NT>(coeffs.begin(),coeffs.end());
+            u = Polynomial<NT, Rep_>(coeffs.begin(),coeffs.end());
         }
 
         void operator()(

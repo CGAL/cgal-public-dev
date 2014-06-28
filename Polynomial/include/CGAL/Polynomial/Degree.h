@@ -35,25 +35,25 @@ namespace internal{
 template <typename Polynomial > struct Degree;
 
 // Polynomial musst be at least univariate ! 
-template <typename Coeff_ > 
-struct Degree<Polynomial<Coeff_> >
-  : public std::unary_function< Polynomial<Coeff_> , int  >{
+ template <typename Coeff_, class Rep_ > 
+   struct Degree<Polynomial<Coeff_, Rep_> >
+   : public std::unary_function< Polynomial<Coeff_, Rep_> , int  >{
   
 private: 
-  typedef Polynomial<Coeff_> Polynomial_d;
+   typedef Polynomial<Coeff_, Rep_> Polynomial_d;
   
   // for univariate polynomials 
-  template <typename Coeff>
-  int degree(const Polynomial<Coeff>& p, int i) const {
+   template <typename Coeff>
+    int degree(const Polynomial<Coeff, Rep_>& p, int i) const {
     (void) i; 
     CGAL_assertion(i == 0);
     return p.degree();
   }
   
   // for multivariate polynomials
-  template <typename Coeff>
-  int degree(const Polynomial<Polynomial<Coeff> >& p, int i) const {
-    typedef Polynomial<Polynomial<Coeff> > Poly;
+   template <typename Coeff>
+     int degree(const Polynomial<Polynomial<Coeff, Rep_>,Rep_ >& p, int i) const {
+     typedef Polynomial<Polynomial<Coeff, Rep_>, Rep_ > Poly;
     
     if(i == (Dimension<Poly>::value-1))
       return p.degree();

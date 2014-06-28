@@ -48,17 +48,17 @@ void euclidean_division_obstinate(const NT& F1, const NT& F2,
 }
 
 
-template <class NT>
-void euclidean_division_obstinate(const Polynomial<NT>& F1, 
-        const Polynomial<NT>& F2, 
-        Polynomial<NT>& Q, Polynomial<NT>& R){
+ template <class NT, class Rep_>
+void euclidean_division_obstinate(const Polynomial<NT, Rep_>& F1, 
+        const Polynomial<NT, Rep_>& F2, 
+        Polynomial<NT, Rep_>& Q, Polynomial<NT, Rep_>& R){
 
 //    std::cout<<" my_modular_gcd_utils "<<std::endl;
     CGAL_precondition(!F2.is_zero());
     int d1 = F1.degree();
     int d2 = F2.degree();
     if ( d1 < d2 ) {
-        Q = Polynomial<NT>(NT(0)); R = F1;
+        Q = Polynomial<NT, Rep_>(NT(0)); R = F1;
         CGAL_postcondition( !(boost::is_same< typename Algebraic_structure_traits<NT>::Is_exact, 
                         CGAL::Tag_true >::value) ||  F1 == Q*F2 + R); return;
     }
@@ -91,8 +91,8 @@ void euclidean_division_obstinate(const Polynomial<NT>& F1,
         
 
     }
-    Q = Polynomial<NT>(V_Q.rbegin(),V_Q.rend());
-    R = Polynomial<NT>(V_R.begin(),V_R.end());
+    Q = Polynomial<NT, Rep_>(V_Q.rbegin(),V_Q.rend());
+    R = Polynomial<NT, Rep_>(V_R.begin(),V_R.end());
     CGAL_postcondition(F1 == F2*Q + R);
 }
 

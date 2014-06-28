@@ -45,28 +45,28 @@ namespace CGAL {
 
 namespace internal{
 
-template <class NT> Polynomial<NT> 
-gcd_utcf_Integral_domain(Polynomial<NT>,Polynomial<NT>);
+  template <class NT, class Rep_> Polynomial<NT, Rep_> 
+gcd_utcf_Integral_domain(Polynomial<NT, Rep_>,Polynomial<NT, Rep_>);
 
 
-template <class NT> 
-Polynomial< Polynomial<NT> > modular_gcd_utcf_dfai(
-        const Polynomial< Polynomial<NT> >& FF1 ,
-        const Polynomial< Polynomial<NT> >& FF2 ){
+  template <class NT, class Rep_> 
+Polynomial< Polynomial<NT, Rep_>, Rep_> modular_gcd_utcf_dfai(
+        const Polynomial< Polynomial<NT, Rep_>, Rep_ >& FF1 ,
+        const Polynomial< Polynomial<NT, Rep_>, Rep_ >& FF2 ){
     return internal::gcd_utcf_Integral_domain(FF1, FF2);
 }
 
 // algorithm just computes Gs using the denominator for
 // algebraic integers  and checks it using pseudo division.  
-template <class NT> 
-Polynomial<NT> modular_gcd_utcf_dfai(
-        const Polynomial<NT>& FF1_ ,
-        const Polynomial<NT>& FF2_ ){
+  template <class NT, class Rep_> 
+Polynomial<NT, Rep_> modular_gcd_utcf_dfai(
+        const Polynomial<NT, Rep_>& FF1_ ,
+        const Polynomial<NT, Rep_>& FF2_ ){
 
   // Enforce IEEE double precision and to nearest before using modular arithmetic
   CGAL::Protect_FPU_rounding<true> pfr(CGAL_FE_TONEAREST);
 
-    typedef Polynomial<NT> Poly;
+    typedef Polynomial<NT, Rep_> Poly;
     Poly FF1 = FF1_;
     Poly FF2 = FF2_;
 

@@ -50,17 +50,17 @@ struct Coercion_traits_for_polynomial_comp_d
   :public Coercion_traits_for_polynomial_comp_d< B, A , false >{};
 
 // Polynomial<A> has more variables than B 
-template <typename A, typename B >
-struct Coercion_traits_for_polynomial_comp_d< Polynomial<A>, B , false>{
+ template <typename A, typename B , class Rep_>
+   struct Coercion_traits_for_polynomial_comp_d< Polynomial<A, Rep_>, B , false>{
   typedef Coercion_traits<A,B> CT;
 
     typedef CGAL::Tag_true  Are_explicit_interoperable;
     typedef CGAL::Tag_false Are_implicit_interoperable;
 
-    typedef Polynomial<typename CT::Type> Type;
+    typedef Polynomial<typename CT::Type, Rep_> Type;
     struct Cast{                                      
         typedef Type result_type;                               
-        Type operator()(const Polynomial<A>& poly) const {
+      Type operator()(const Polynomial<A, Rep_>& poly) const {
             typename CT::Cast cast;
             return Type(::boost::make_transform_iterator(poly.begin(),cast),
                        ::boost::make_transform_iterator(poly.end()  ,cast));
@@ -78,21 +78,21 @@ struct Coercion_traits_for_polynomial_equal_d
   :public Coercion_traits_for_polynomial_comp_d <A,B, a < b >{};
 
 // number of variables is equal and at least one.
-template <class A,class B, int d>
-struct Coercion_traits_for_polynomial_equal_d<Polynomial<A>, Polynomial<B>, d, d >{
+ template <class A,class B, int d, class Rep_>
+   struct Coercion_traits_for_polynomial_equal_d<Polynomial<A, Rep_>, Polynomial<B, Rep_>, d, d >{
     typedef Coercion_traits<A,B> CT;            
 
     typedef CGAL::Tag_true  Are_explicit_interoperable;
     typedef CGAL::Tag_false Are_implicit_interoperable;
-    typedef Polynomial<typename CT::Type> Type;
+    typedef Polynomial<typename CT::Type, Rep_> Type;
     struct Cast{                                      
         typedef Type result_type;                               
-        Type operator()(const Polynomial<A>& poly) const { 
+        Type operator()(const Polynomial<A, Rep_>& poly) const { 
             typename CT::Cast cast; 
             return Type(::boost::make_transform_iterator(poly.begin(),cast),
                     ::boost::make_transform_iterator(poly.end()  ,cast));
         } 
-        Type operator()(const Polynomial<B>& poly) const {  
+        Type operator()(const Polynomial<B, Rep_>& poly) const {  
             typename CT::Cast cast;  
             return Type(::boost::make_transform_iterator(poly.begin(),cast),
                     ::boost::make_transform_iterator(poly.end()  ,cast));
@@ -108,17 +108,17 @@ struct Coercion_traits_for_polynomial
 
 }// namespace internal 
 
-template <class A,class B>
-struct Coercion_traits_for_level< Polynomial<A> , Polynomial<B>, CTL_POLYNOMIAL >
-  :public internal::Coercion_traits_for_polynomial< Polynomial<A>, Polynomial<B> >
+ template <class A,class B, class Rep_>
+struct Coercion_traits_for_level< Polynomial<A, Rep_> , Polynomial<B, Rep_>, CTL_POLYNOMIAL >
+  :public internal::Coercion_traits_for_polynomial< Polynomial<A, Rep_>, Polynomial<B, Rep_> >
 {};
-template <class A,class B>
-struct Coercion_traits_for_level< Polynomial<A> , B , CTL_POLYNOMIAL >
-  :public internal::Coercion_traits_for_polynomial< Polynomial<A>, B >
+ template <class A,class B, class Rep_>
+struct Coercion_traits_for_level< Polynomial<A, Rep_> , B , CTL_POLYNOMIAL >
+  :public internal::Coercion_traits_for_polynomial< Polynomial<A, Rep_>, B >
 {};
-template <class A,class B>
-struct Coercion_traits_for_level< A , Polynomial<B> , CTL_POLYNOMIAL >
-  :public internal::Coercion_traits_for_polynomial< A , Polynomial<B> >
+template <class A,class B, class Rep_>
+struct Coercion_traits_for_level< A , Polynomial<B, Rep_> , CTL_POLYNOMIAL >
+  :public internal::Coercion_traits_for_polynomial< A , Polynomial<B, Rep_> >
 {};
 
 

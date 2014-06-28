@@ -33,16 +33,16 @@
 namespace CGAL {  
 namespace internal {
 
-template <class NT>
+  template <class NT, class Rep_>
 inline
-Polynomial<NT> gcd_utcf_UFD(
-        Polynomial<NT> p1, Polynomial<NT> p2
+Polynomial<NT, Rep_> gcd_utcf_UFD(
+        Polynomial<NT, Rep_> p1, Polynomial<NT, Rep_> p2
 ) {
     // implemented using the subresultant algorithm for gcd computation
     // see [Cohen, 1993], algorithm 3.3.1
     // handle trivial cases
     if (p1.is_zero()){
-        if (p2.is_zero()) return Polynomial<NT>(NT(1));
+        if (p2.is_zero()) return Polynomial<NT, Rep_>(NT(1));
         else {
             return CGAL::canonicalize(p2);
         }
@@ -51,7 +51,7 @@ Polynomial<NT> gcd_utcf_UFD(
         return CGAL::canonicalize(p1);
     }
     if (p2.degree() > p1.degree()) {
-        Polynomial<NT> p3 = p1; p1 = p2; p2 = p3;
+        Polynomial<NT, Rep_> p3 = p1; p1 = p2; p2 = p3;
     }
 
     // compute gcd of content
@@ -62,15 +62,15 @@ Polynomial<NT> gcd_utcf_UFD(
     p1 /= p1c; p2 /= p2c;
 
     NT dummy;
-    Polynomial<NT> q, r;
+    Polynomial<NT, Rep_> q, r;
 
     NT g = NT(1), h = NT(1);
     for (;;) { 
-        Polynomial<NT>::pseudo_division(p1, p2, q, r, dummy);
+        Polynomial<NT, Rep_>::pseudo_division(p1, p2, q, r, dummy);
         if (r.is_zero()) { break; }
         
         if (r.degree() == 0) { 
-            return CGAL::canonicalize(Polynomial<NT>(gcdcont));
+            return CGAL::canonicalize(Polynomial<NT, Rep_>(gcdcont));
         }
         int delta = p1.degree() - p2.degree();
         p1 = p2;
@@ -88,26 +88,26 @@ Polynomial<NT> gcd_utcf_UFD(
     return CGAL::canonicalize(p2);
 }
 
-template <class NT>
+  template <class NT, class Rep_>
 inline
-Polynomial<NT> gcd_Euclidean_ring(
-        Polynomial<NT> p1, Polynomial<NT> p2
+Polynomial<NT, Rep_> gcd_Euclidean_ring(
+        Polynomial<NT, Rep_> p1, Polynomial<NT, Rep_> p2
 ) {
 //    std::cout<<" gcd_Field"<<std::endl;
     // handle trivial cases
     if (p1.is_zero()){
-        if (p2.is_zero()) return Polynomial<NT>(NT(1));
+        if (p2.is_zero()) return Polynomial<NT, Rep_>(NT(1));
         else return p2 / p2.unit_part();
     }
     if (p2.is_zero())
         return p1 / p1.unit_part();
     if (p2.degree() > p1.degree()) {
-        Polynomial<NT> p3 = p1; p1 = p2; p2 = p3;
+        Polynomial<NT, Rep_> p3 = p1; p1 = p2; p2 = p3;
     }
 
-    Polynomial<NT> q, r;
+    Polynomial<NT, Rep_> q, r;
     while (!p2.is_zero()) { 
-        Polynomial<NT>::euclidean_division(p1, p2, q, r);
+        Polynomial<NT, Rep_>::euclidean_division(p1, p2, q, r);
         p1 = p2; p2 = r;
     }
     p1 /= p1.lcoeff();
@@ -115,13 +115,13 @@ Polynomial<NT> gcd_Euclidean_ring(
     return p1;
 }
 
-template <class NT>
+template <class NT, class Rep_>
 inline
-NT content_utcf_(const Polynomial<NT>& p)
+NT content_utcf_(const Polynomial<NT, Rep_>& p)
 {
     typename Algebraic_structure_traits<NT>::Integral_division idiv;
     typename Algebraic_structure_traits<NT>::Unit_part upart;
-    typedef typename Polynomial<NT>::const_iterator const_iterator;
+    typedef typename Polynomial<NT, Rep_>::const_iterator const_iterator;
 
     const_iterator it = p.begin(), ite = p.end();
     while (*it == NT(0)) it++;
@@ -135,16 +135,16 @@ NT content_utcf_(const Polynomial<NT>& p)
 }
 
 
-template <class NT>
+ template <class NT, class Rep_>
 inline 
-Polynomial<NT> gcd_utcf_Integral_domain( Polynomial<NT> p1, Polynomial<NT> p2){
+Polynomial<NT, Rep_> gcd_utcf_Integral_domain( Polynomial<NT, Rep_> p1, Polynomial<NT, Rep_> p2){
   // std::cout<<" gcd_utcf_Integral_domain"<<std::endl;
-  typedef Polynomial<NT> POLY; 
+  typedef Polynomial<NT, Rep_> POLY; 
   
   // handle trivial cases
     if (p1.is_zero()){
       if (p2.is_zero()){
-            return Polynomial<NT>(NT(1));
+            return Polynomial<NT, Rep_>(NT(1));
         }else{
             return CGAL::canonicalize(p2);
         }
@@ -154,7 +154,7 @@ Polynomial<NT> gcd_utcf_Integral_domain( Polynomial<NT> p1, Polynomial<NT> p2){
     }
 
     if (p2.degree() > p1.degree()) {
-        Polynomial<NT> p3 = p1; p1 = p2; p2 = p3;
+        Polynomial<NT, Rep_> p3 = p1; p1 = p2; p2 = p3;
     }
     
     // remove redundant scalar factors
@@ -174,7 +174,7 @@ Polynomial<NT> gcd_utcf_Integral_domain( Polynomial<NT> p1, Polynomial<NT> p2){
     p2 = integral_division_up_to_constant_factor(p2, POLY(p2c)); 
 
  
-    Polynomial<NT> q, r;
+    Polynomial<NT, Rep_> q, r;
     
     // TODO measure preformance of both methodes with respect to 
     // univariat polynomials on Integeres
@@ -187,7 +187,7 @@ Polynomial<NT> gcd_utcf_Integral_domain( Polynomial<NT> p1, Polynomial<NT> p2){
     // see [Cohen, 1993], algorithm 3.3.1
     NT g = NT(1), h = NT(1), dummy;
     for (;;) { 
-        Polynomial<NT>::pseudo_division(p1, p2, q, r, dummy);
+        Polynomial<NT, Rep_>::pseudo_division(p1, p2, q, r, dummy);
         if (r.is_zero()) { break; }
         if (r.degree() == 0) { return Polynomial<NT>(gcdcont); }
         int delta = p1.degree() - p2.degree();
@@ -203,9 +203,9 @@ Polynomial<NT> gcd_utcf_Integral_domain( Polynomial<NT> p1, Polynomial<NT> p2){
     // (for univariat polynomials with Sqrt_extension coeffs )
     NT dummy;
     for (;;) { 
-        Polynomial<NT>::pseudo_division(p1, p2, q, r, dummy);    
+        Polynomial<NT, Rep_>::pseudo_division(p1, p2, q, r, dummy);    
         if (r.is_zero()) { break; }
-        if (r.degree() == 0) { return Polynomial<NT>(gcdcont); }
+        if (r.degree() == 0) { return Polynomial<NT, Rep_>(gcdcont); }
         p1 = p2;
         p2 = r ;
         p2=CGAL::canonicalize(p2);   
@@ -217,7 +217,7 @@ Polynomial<NT> gcd_utcf_Integral_domain( Polynomial<NT> p1, Polynomial<NT> p2){
     // combine both parts to proper gcd
     p2 *= gcdcont;
 
-    Polynomial<NT> result; 
+    Polynomial<NT, Rep_> result; 
     
     // make poly unique
     result = CGAL::canonicalize(p2);

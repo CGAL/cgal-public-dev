@@ -45,10 +45,10 @@ namespace CGAL {
  *
  *  This currently only works if the scalar type is a model of \c UFDomain.
  */
-template <class Coeff>
-class Scalar_factor_traits< Polynomial<Coeff> > {
+  template <class Coeff, class Rep_>
+class Scalar_factor_traits< Polynomial<Coeff, Rep_> > {
 public:
-    typedef Polynomial<Coeff> NT;
+    typedef Polynomial<Coeff, Rep_> NT;
     typedef typename Scalar_factor_traits<Coeff>::Scalar Scalar;
     class Scalar_factor {
     public:

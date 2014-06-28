@@ -55,7 +55,7 @@ typename CGAL::internal::Innermost_coefficient_type<T>::Type , 2>::Type
 namespace CGAL {
 
 template <class NT, class Rep_> class Polynomial;
-template <class NT, class Rep_> class Scalar_factor_traits;
+template <class NT> class Scalar_factor_traits;
 template <class NT, class Rep_> Polynomial<NT, Rep_> operator - (const Polynomial<NT, Rep_>& p);
 
 namespace internal {
@@ -70,7 +70,7 @@ class Creation_tag {};
 //
 
 // \brief  internal representation class for \c CGAL::Polynomial
-template <class NT_> class Polynomial_rep 
+ template <class NT_, class Rep_> class Polynomial_rep 
 { 
   typedef NT_ NT;
   typedef std::vector<NT> Vector;
@@ -114,7 +114,7 @@ template <class NT_> class Polynomial_rep
 };  // class Polynomial_rep<NT_>
 
 template <class NT, class Rep_>
-Polynomial_rep<NT>::Polynomial_rep(size_type n, ...)
+  Polynomial_rep<NT, Rep_>::Polynomial_rep(size_type n, ...)
   : coeff(n)
 {
   // varargs, hence not inline, otherwise g++-3.1 -O2 makes trouble
@@ -200,10 +200,10 @@ Polynomial_rep<NT>::Polynomial_rep(size_type n, ...)
  template <class NT_, class Rep_>
 class Polynomial 
   : public Handle_with_policy< Rep_ >,
-    public boost::ordered_field_operators1< Polynomial<NT_> , 
-           boost::ordered_field_operators2< Polynomial<NT_> , NT_ ,  
-           boost::ordered_field_operators2< Polynomial<NT_> , CGAL_icoeff(NT_),
-           boost::ordered_field_operators2< Polynomial<NT_> , CGAL_int(NT_)  > > > > 
+  public boost::ordered_field_operators1< Polynomial<NT_, Rep_> , 
+           boost::ordered_field_operators2< Polynomial<NT_, Rep_> , NT_ ,  
+           boost::ordered_field_operators2< Polynomial<NT_, Rep_> , CGAL_icoeff(NT_),
+           boost::ordered_field_operators2< Polynomial<NT_, Rep_> , CGAL_int(NT_)  > > > > 
 {
   typedef typename internal::Innermost_coefficient_type<NT_>::Type Innermost_coefficient_type; 
 public: 
@@ -238,7 +238,7 @@ protected:
   const Vector& coeffs() const { return this->ptr()->coeff; }
   //! create an empty polynomial with s coefficients (degree up to s-1)
   Polynomial(internal::Creation_tag f, size_type s)
-    : Base(internal::Polynomial_rep<NT>(f,s) )
+    : Base(internal::Polynomial_rep<NT, Rep_>(f,s) )
     {}
     //! non-const access to coefficient \c i
     /*! The polynomial's representation must not be shared between
@@ -1380,7 +1380,7 @@ void Polynomial<NT, Rep_>::output_benchmark(std::ostream &os) const {
   Gmr gmr;
   gmr( *this, std::back_inserter( monom_rep ) );
     
-  os << Benchmark_rep< Polynomial< NT > >::get_benchmark_name() << "( ";
+  os << Benchmark_rep< Polynomial< NT, Rep_ > >::get_benchmark_name() << "( ";
     
   for( typename std::vector< Exponents_coeff_pair >::iterator it = monom_rep.begin();
        it != monom_rep.end(); ++it ) {
@@ -1394,12 +1394,12 @@ void Polynomial<NT, Rep_>::output_benchmark(std::ostream &os) const {
 }
 
 // Benchmark_rep specialization 
-template < class NT >
-class Benchmark_rep< CGAL::Polynomial< NT > > {
-  const CGAL::Polynomial< NT >& t;
+template < class NT, class Rep_ >
+class Benchmark_rep< CGAL::Polynomial< NT, Rep_ > > {
+  const CGAL::Polynomial< NT, Rep_ >& t;
 public:
   //! initialize with a const reference to \a t.
-  Benchmark_rep( const CGAL::Polynomial< NT >& tt) : t(tt) {}
+ Benchmark_rep( const CGAL::Polynomial< NT, Rep_ >& tt) : t(tt) {}
   //! perform the output, calls \c operator\<\< by default.
   std::ostream& operator()( std::ostream& out) const { 
     t.output_benchmark( out );
@@ -1408,7 +1408,7 @@ public:
     
   static std::string get_benchmark_name() {
     std::stringstream ss;
-    ss << "Polynomial< " << Polynomial_traits_d< Polynomial< NT > >::d;
+    ss << "Polynomial< " << Polynomial_traits_d< Polynomial< NT, Rep_ > >::d;
         
     std::string coeff_name = Benchmark_rep< NT >::get_benchmark_name();
         
@@ -1463,9 +1463,9 @@ Polynomial<NT, Rep_> Polynomial<NT, Rep_>::input_ascii(std::istream &is) {
   return p;
 }
 
-template <class COEFF>
-struct Needs_parens_as_product<Polynomial<COEFF> >{
-  typedef Polynomial<COEFF> Poly;
+template <class COEFF, class Rep_>
+  struct Needs_parens_as_product<Polynomial<COEFF, Rep_> >{
+  typedef Polynomial<COEFF, Rep_> Poly;
   bool operator()(const Poly& x){ return (x.degree() > 0); }
 };
 

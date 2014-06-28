@@ -47,10 +47,10 @@
 
 #define CGAL_POLYNOMIAL_TRAITS_D_BASE_TYPEDEFS                          \
   private:                                                              \
-  typedef Polynomial_traits_d< Polynomial< Coefficient_type_ > > PT;    \
+  typedef Polynomial_traits_d< Polynomial< Coefficient_type_, Rep_ > > PT;	\
   typedef Polynomial_traits_d< Coefficient_type_ > PTC;                 \
                                                                         \
-  typedef Polynomial<Coefficient_type_>               Polynomial_d;     \
+  typedef Polynomial<Coefficient_type_, Rep_>               Polynomial_d;	\
   typedef Coefficient_type_                          Coefficient_type;  \
                                                                         \
   typedef typename Innermost_coefficient_type<Polynomial_d>::Type       \
@@ -63,7 +63,7 @@
   typedef std::vector< Exponents_coeff_pair > Monom_rep;                \
                                                                         \
   typedef CGAL::Recursive_const_flattening< d-1,                        \
-    typename CGAL::Polynomial<Coefficient_type>::const_iterator >       \
+    typename CGAL::Polynomial<Coefficient_type, Rep_>::const_iterator >	\
   Coefficient_const_flattening;                                         \
                                                                         \
   typedef typename                                                      \
@@ -96,23 +96,23 @@ public:
 };
 
 // Specializations
-template< class Coefficient_type_ >
+ template< class Coefficient_type_, class Rep_ >
 class Polynomial_traits_d_base_icoeff_algebraic_category< 
-            Polynomial< Coefficient_type_ >, Integral_domain_without_division_tag > 
+            Polynomial< Coefficient_type_, Rep_ >, Integral_domain_without_division_tag > 
   : public Polynomial_traits_d_base_icoeff_algebraic_category< 
-                Polynomial< Coefficient_type_ >, Null_tag > {};
+                Polynomial< Coefficient_type_, Rep_ >, Null_tag > {};
 
-template< class Coefficient_type_ >
+ template< class Coefficient_type_, class Rep_ >
 class Polynomial_traits_d_base_icoeff_algebraic_category< 
-       Polynomial< Coefficient_type_ >, Integral_domain_tag >
+       Polynomial< Coefficient_type_, Rep_ >, Integral_domain_tag >
   : public Polynomial_traits_d_base_icoeff_algebraic_category< 
-       Polynomial< Coefficient_type_ >, Integral_domain_without_division_tag > {}; 
+       Polynomial< Coefficient_type_, Rep_ >, Integral_domain_without_division_tag > {}; 
 
-template< class Coefficient_type_ >
+ template< class Coefficient_type_, class Rep_ >
 class Polynomial_traits_d_base_icoeff_algebraic_category< 
-            Polynomial< Coefficient_type_ >, Unique_factorization_domain_tag >
+            Polynomial< Coefficient_type_, Rep_ >, Unique_factorization_domain_tag >
   : public Polynomial_traits_d_base_icoeff_algebraic_category< 
-                Polynomial< Coefficient_type_ >, Integral_domain_tag > {
+                Polynomial< Coefficient_type_, Rep_ >, Integral_domain_tag > {
   CGAL_POLYNOMIAL_TRAITS_D_BASE_TYPEDEFS
     
 public:    
@@ -134,18 +134,18 @@ public:
   };
 }; 
 
-template< class Coefficient_type_ >
+ template< class Coefficient_type_, class Rep_ >
 class Polynomial_traits_d_base_icoeff_algebraic_category< 
-            Polynomial< Coefficient_type_ >, Euclidean_ring_tag >
+            Polynomial< Coefficient_type_, Rep_ >, Euclidean_ring_tag >
   : public Polynomial_traits_d_base_icoeff_algebraic_category< 
-                Polynomial< Coefficient_type_ >, Unique_factorization_domain_tag >
+                Polynomial< Coefficient_type_, Rep_ >, Unique_factorization_domain_tag >
 {}; 
 
-template< class Coefficient_type_ >
+ template< class Coefficient_type_, class Rep_ >
 class Polynomial_traits_d_base_icoeff_algebraic_category< 
-            Polynomial< Coefficient_type_ >, Field_tag >
+            Polynomial< Coefficient_type_, Rep_ >, Field_tag >
   : public Polynomial_traits_d_base_icoeff_algebraic_category< 
-                Polynomial< Coefficient_type_ >, Integral_domain_tag > {
+                Polynomial< Coefficient_type_, Rep_ >, Integral_domain_tag > {
   CGAL_POLYNOMIAL_TRAITS_D_BASE_TYPEDEFS
 
 public:
@@ -162,23 +162,23 @@ public:
   };
 };
 
-template< class Coefficient_type_ >
+ template< class Coefficient_type_, class Rep_ >
 class Polynomial_traits_d_base_icoeff_algebraic_category< 
-            Polynomial< Coefficient_type_ >, Field_with_sqrt_tag >
+  Polynomial< Coefficient_type_, Rep_ >, Field_with_sqrt_tag >
   : public Polynomial_traits_d_base_icoeff_algebraic_category< 
-                Polynomial< Coefficient_type_ >, Field_tag > {}; 
+                Polynomial< Coefficient_type_, Rep_ >, Field_tag > {}; 
 
-template< class Coefficient_type_ >
+ template< class Coefficient_type_, class Rep_ >
 class Polynomial_traits_d_base_icoeff_algebraic_category< 
-            Polynomial< Coefficient_type_ >, Field_with_kth_root_tag >
+            Polynomial< Coefficient_type_, Rep_ >, Field_with_kth_root_tag >
   : public Polynomial_traits_d_base_icoeff_algebraic_category< 
-                Polynomial< Coefficient_type_ >, Field_with_sqrt_tag > {}; 
+                Polynomial< Coefficient_type_, Rep_ >, Field_with_sqrt_tag > {}; 
  
-template< class Coefficient_type_ >
+ template< class Coefficient_type_, class Rep_ >
 class Polynomial_traits_d_base_icoeff_algebraic_category< 
-            Polynomial< Coefficient_type_ >, Field_with_root_of_tag >
+            Polynomial< Coefficient_type_, Rep_ >, Field_with_root_of_tag >
   : public Polynomial_traits_d_base_icoeff_algebraic_category< 
-                Polynomial< Coefficient_type_ >, Field_with_kth_root_tag > {}; 
+                Polynomial< Coefficient_type_, Rep_ >, Field_with_kth_root_tag > {}; 
 
 // Base class for functors depending on the algebraic category of the
 // Polynomial type
@@ -190,23 +190,23 @@ public:
 };
 
 // Specializations
-template< class Coefficient_type_ >
+ template< class Coefficient_type_, class Rep_>
 class Polynomial_traits_d_base_polynomial_algebraic_category<
-            Polynomial< Coefficient_type_ >, Integral_domain_without_division_tag >
+            Polynomial< Coefficient_type_, Rep_ >, Integral_domain_without_division_tag >
   : public Polynomial_traits_d_base_polynomial_algebraic_category<
-                Polynomial< Coefficient_type_ >, Null_tag > {};
+                Polynomial< Coefficient_type_, Rep_ >, Null_tag > {};
 
-template< class Coefficient_type_ >
+ template< class Coefficient_type_, class Rep_ >
 class Polynomial_traits_d_base_polynomial_algebraic_category<
-            Polynomial< Coefficient_type_ >, Integral_domain_tag >
+            Polynomial< Coefficient_type_, Rep_ >, Integral_domain_tag >
   : public Polynomial_traits_d_base_polynomial_algebraic_category<
-          Polynomial< Coefficient_type_ >, Integral_domain_without_division_tag > {};
+          Polynomial< Coefficient_type_, Rep_ >, Integral_domain_without_division_tag > {};
 
-template< class Coefficient_type_ >
+ template< class Coefficient_type_, class Rep_ >
 class Polynomial_traits_d_base_polynomial_algebraic_category<
-            Polynomial< Coefficient_type_ >, Unique_factorization_domain_tag >
+            Polynomial< Coefficient_type_, Rep_ >, Unique_factorization_domain_tag >
   : public Polynomial_traits_d_base_polynomial_algebraic_category<
-                Polynomial< Coefficient_type_ >, Integral_domain_tag > {
+                Polynomial< Coefficient_type_, Rep_ >, Integral_domain_tag > {
   CGAL_POLYNOMIAL_TRAITS_D_BASE_TYPEDEFS
 
 public:
@@ -259,11 +259,11 @@ public:
   };   
 };
 
-template< class Coefficient_type_ >
+template< class Coefficient_type_, class Rep_ >
 class Polynomial_traits_d_base_polynomial_algebraic_category<
-            Polynomial< Coefficient_type_ >, Euclidean_ring_tag >
+            Polynomial< Coefficient_type_, Rep_ >, Euclidean_ring_tag >
   : public Polynomial_traits_d_base_polynomial_algebraic_category<
-                Polynomial< Coefficient_type_ >, Unique_factorization_domain_tag > {};
+                Polynomial< Coefficient_type_, Rep_ >, Unique_factorization_domain_tag > {};
 
 
 // Polynomial_traits_d_base class connecting the two base classes which depend
@@ -424,19 +424,19 @@ public:
 // Now the version for the polynomials with all functors provided by all 
 // polynomials
 template< class Coefficient_type_,
-          class ICoeffAlgebraicCategory, class PolynomialAlgebraicCategory >
-class Polynomial_traits_d_base< Polynomial< Coefficient_type_ >,
+  class ICoeffAlgebraicCategory, class PolynomialAlgebraicCategory, class Rep_ >
+class Polynomial_traits_d_base< Polynomial< Coefficient_type_, Rep_ >,
           ICoeffAlgebraicCategory, PolynomialAlgebraicCategory >
   : public Polynomial_traits_d_base_icoeff_algebraic_category< 
-        Polynomial< Coefficient_type_ >, ICoeffAlgebraicCategory >,
+        Polynomial< Coefficient_type_, Rep_ >, ICoeffAlgebraicCategory >,
     public Polynomial_traits_d_base_polynomial_algebraic_category<
-        Polynomial< Coefficient_type_ >, PolynomialAlgebraicCategory > {      
+        Polynomial< Coefficient_type_, Rep_ >, PolynomialAlgebraicCategory > {      
                  
-  typedef Polynomial_traits_d< Polynomial< Coefficient_type_ > > PT;         
+  typedef Polynomial_traits_d< Polynomial< Coefficient_type_, Rep_ > > PT;         
   typedef Polynomial_traits_d< Coefficient_type_ > PTC;                      
                                                                         
   public:                                                               
-  typedef Polynomial<Coefficient_type_>                  Polynomial_d;       
+  typedef Polynomial<Coefficient_type_, Rep_>                  Polynomial_d;       
   typedef Coefficient_type_                              Coefficient_type;        
           
   typedef typename internal::Innermost_coefficient_type<Polynomial_d>::Type    
@@ -449,7 +449,7 @@ private:
   typedef std::vector< Exponents_coeff_pair > Monom_rep;                
                                                                         
   typedef CGAL::Recursive_const_flattening< d-1,                        
-    typename CGAL::Polynomial<Coefficient_type>::const_iterator >            
+    typename CGAL::Polynomial<Coefficient_type, Rep_>::const_iterator >            
   Coefficient_const_flattening;                                               
                                                                         
   public:                                                               
@@ -661,8 +661,8 @@ public:
       }
     };
     
-    template< class T >
-    class Create_polynomial_from_monom_rep< Polynomial < T > > {
+    template< class T, class R>
+    class Create_polynomial_from_monom_rep< Polynomial < T, R > > {
     public:
       template <class Monom_rep_iterator>
       Polynomial_d operator()( 
@@ -1696,17 +1696,17 @@ typename internal::Innermost_coefficient_type<Polynomial>::Type >::Algebraic_cat
 
 //------------ Rebind ----------- 
 private:
-  template <class T, int d>
+    template <class T, int d, class Rep_>
   struct Gen_polynomial_type{
-    typedef CGAL::Polynomial<typename Gen_polynomial_type<T,d-1>::Type> Type;
+    typedef CGAL::Polynomial<typename Gen_polynomial_type<T,d-1, Rep_>::Type, Rep_> Type;
   };
-  template <class T>
-  struct Gen_polynomial_type<T,0>{ typedef T Type; };
+    template <class T, class Rep_>
+    struct Gen_polynomial_type<T,0, Rep_>{ typedef T Type; };
 
 public:
-  template <class T, int d>
+    template <class T, int d, class Rep_>
   struct Rebind{
-    typedef Polynomial_traits_d<typename Gen_polynomial_type<T,d>::Type> Other;
+    typedef Polynomial_traits_d<typename Gen_polynomial_type<T,d,Rep_>::Type> Other;
   };
 //------------ Rebind ----------- 
 };

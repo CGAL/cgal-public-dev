@@ -38,10 +38,10 @@ class Poly_Ftr_base;
 
 // Use this if the coefficients cannot be decomposed
 // into numerator and denominator
-template <class NT_>
-class Poly_Ftr_base< Polynomial<NT_>, CGAL::Tag_false > {
+ template <class NT_, class Rep_>
+class Poly_Ftr_base< Polynomial<NT_, Rep_>, CGAL::Tag_false > {
 public:
-    typedef Polynomial<NT_> Type;
+    typedef Polynomial<NT_, Rep_> Type;
     typedef CGAL::Tag_false Is_fraction;
     typedef CGAL::Null_tag Numerator;
     typedef CGAL::Null_tag Denominator_type;
@@ -51,14 +51,14 @@ public:
 };
 
 // If they can, use this
-template <class NT_>
-class Poly_Ftr_base< Polynomial<NT_>, CGAL::Tag_true > {
-    typedef Polynomial<NT_> Poly;
+ template <class NT_, class Rep_>
+class Poly_Ftr_base< Polynomial<NT_, Rep_>, CGAL::Tag_true > {
+    typedef Polynomial<NT_, Rep_> Poly;
     typedef NT_ Coefficient_type;
 public:
-    typedef Polynomial<NT_> Type;
+    typedef Polynomial<NT_, Rep_> Type;
     typedef CGAL::Tag_true Is_fraction;
-    typedef Polynomial<typename Fraction_traits<NT_>::Numerator_type>
+    typedef Polynomial<typename Fraction_traits<NT_>::Numerator_type, Rep_>
         Numerator_type;
     typedef typename Fraction_traits<NT_>::Denominator_type Denominator_type;
     typedef typename Fraction_traits<NT_>::Common_factor Common_factor;
@@ -142,9 +142,9 @@ public:
  *
  *  This works for nested polynomials, too.
  */
-template <class NT_>
-class Fraction_traits< Polynomial<NT_> >
-    : public Poly_Ftr_base< Polynomial<NT_>,
+ template <class NT_, class Rep_>
+class Fraction_traits< Polynomial<NT_, Rep_> >
+    : public Poly_Ftr_base< Polynomial<NT_, Rep_>,
                  typename Fraction_traits<NT_>::Is_fraction >
 {
     // nothing new

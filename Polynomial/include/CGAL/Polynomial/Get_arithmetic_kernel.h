@@ -27,8 +27,8 @@
 
 namespace CGAL {
 
-template <class COEFF>
-struct Get_arithmetic_kernel<Polynomial<COEFF> >{
+  template <class COEFF, class Rep_>
+struct Get_arithmetic_kernel<Polynomial<COEFF, Rep_> >{
   typedef Get_arithmetic_kernel<COEFF> GET;
   typedef typename GET::Arithmetic_kernel Arithmetic_kernel;
 };

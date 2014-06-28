@@ -43,20 +43,20 @@
 namespace CGAL {
 
 namespace internal{
-template <class NT> Polynomial<NT> gcd_utcf_UFD(Polynomial<NT>,Polynomial<NT>);
+  template <class NT, class Rep_> Polynomial<NT, Rep_> gcd_utcf_UFD(Polynomial<NT, Rep_>,Polynomial<NT, Rep_>);
 
 
-template <class NT> 
-Polynomial< Polynomial<NT> > modular_gcd_utcf_algorithm_M(
-        const Polynomial< Polynomial<NT> >& FF1 ,
-        const Polynomial< Polynomial<NT> >& FF2 ){
+  template <class NT, class Rep_> 
+Polynomial< Polynomial<NT, Rep_>, Rep_ > modular_gcd_utcf_algorithm_M(
+        const Polynomial< Polynomial<NT, Rep_>, Rep_ >& FF1 ,
+        const Polynomial< Polynomial<NT, Rep_>, Rep_ >& FF2 ){
     return gcd_utcf_UFD(FF1, FF2);
 }
 
-template <class NT> 
-Polynomial<NT> modular_gcd_utcf_algorithm_M(
-        const Polynomial<NT>& FF1 ,
-        const Polynomial<NT>& FF2 ){
+  template <class NT, class Rep_> 
+Polynomial<NT, Rep_> modular_gcd_utcf_algorithm_M(
+        const Polynomial<NT, Rep_>& FF1 ,
+        const Polynomial<NT, Rep_>& FF2 ){
 
   // Enforce IEEE double precision and to nearest before using modular arithmetic
   CGAL::Protect_FPU_rounding<true> pfr(CGAL_FE_TONEAREST);
@@ -65,7 +65,7 @@ Polynomial<NT> modular_gcd_utcf_algorithm_M(
 #ifdef CGAL_MODULAR_GCD_TIMER
     timer_init.start();
 #endif
-    typedef Polynomial<NT> Poly;
+    typedef Polynomial<NT, Rep_> Poly;
 
     // will paly the role of content
     typedef typename CGAL::Scalar_factor_traits<Poly>::Scalar  Scalar;

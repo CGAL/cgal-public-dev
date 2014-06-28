@@ -32,60 +32,60 @@
 namespace CGAL {
 
 namespace internal {
-template< class Polynomial , class TAG> class Real_embeddable_traits_poly_base;
+  template< class Polynomial , class TAG, class Rep_> class Real_embeddable_traits_poly_base;
 
-template< class NT , class TAG> class Real_embeddable_traits_poly_base< Polynomial<NT>, TAG > 
-  : public INTERN_RET::Real_embeddable_traits_base< Polynomial<NT> , CGAL::Tag_false > {};
+  template< class NT , class TAG, class Rep_> class Real_embeddable_traits_poly_base< Polynomial<NT, Rep_>, TAG , Rep_> 
+    : public INTERN_RET::Real_embeddable_traits_base< Polynomial<NT, Rep_> , CGAL::Tag_false > {};
   
 // Real embeddable traits
 // TODO: Polynomials aren't Real_embeddable! But for debugging and testing
 //       reasons, the real embeddable functors are provided.
-template< class NT > class Real_embeddable_traits_poly_base< Polynomial<NT>, CGAL::Tag_true > 
-  : public INTERN_RET::Real_embeddable_traits_base< Polynomial<NT> , CGAL::Tag_false > {
+  template< class NT, class Rep_ > class Real_embeddable_traits_poly_base< Polynomial<NT, Rep_>, CGAL::Tag_true, Rep_ > 
+    : public INTERN_RET::Real_embeddable_traits_base< Polynomial<NT, Rep_> , CGAL::Tag_false > {
 public:
   
     typedef Tag_false Is_real_embeddable;
     
     class Abs {
     public:
-        typedef Polynomial<NT> argument_type;
-        typedef Polynomial<NT> result_type;
-        Polynomial<NT> operator()( const Polynomial<NT>& x ) const {
+        typedef Polynomial<NT, Rep_> argument_type;
+        typedef Polynomial<NT, Rep_> result_type;
+        Polynomial<NT, Rep_> operator()( const Polynomial<NT, Rep_>& x ) const {
             return x.abs(); 
         }
     };
 
     class Sgn {
     public:
-        typedef Polynomial<NT>              argument_type;
+        typedef Polynomial<NT, Rep_>              argument_type;
         typedef CGAL::Sign        result_type;
-        CGAL::Sign operator()( const Polynomial<NT>& x ) const {
+        CGAL::Sign operator()( const Polynomial<NT, Rep_>& x ) const {
             return x.sign();
         }
     };
     
     class Compare {
     public:
-        typedef Polynomial<NT>                    first_argument_type;
-        typedef Polynomial<NT>                    second_argument_type;
+        typedef Polynomial<NT, Rep_>                    first_argument_type;
+        typedef Polynomial<NT, Rep_>                    second_argument_type;
         typedef CGAL::Comparison_result result_type;
         
         CGAL::Comparison_result operator()( 
-                const Polynomial<NT>& x, 
-                const Polynomial<NT>& y ) const {
+                const Polynomial<NT, Rep_>& x, 
+                const Polynomial<NT, Rep_>& y ) const {
             return x.compare(y);
         }
         
-        CGAL_IMPLICIT_INTEROPERABLE_BINARY_OPERATOR_WITH_RT( Polynomial<NT>,
+        CGAL_IMPLICIT_INTEROPERABLE_BINARY_OPERATOR_WITH_RT( Polynomial<NT, Rep_>,
                 CGAL::Comparison_result )
     };
 
     class To_double {
     public:
         typedef typename Real_embeddable_traits<NT>::To_double NT_to_double;
-        typedef Polynomial<typename NT_to_double::result_type> result_type;
-        typedef Polynomial<NT> argument_type;
-        result_type operator()( const Polynomial<NT>& x ) const {
+        typedef Polynomial<typename NT_to_double::result_type, Rep_> result_type;
+        typedef Polynomial<NT, Rep_> argument_type;
+        result_type operator()( const Polynomial<NT, Rep_>& x ) const {
             CGAL_precondition(x.degree() >= 0);
             NT_to_double to_double;
             return result_type(
@@ -97,9 +97,9 @@ public:
     class To_interval {
     public:
         typedef typename Real_embeddable_traits<NT>::To_interval NT_to_interval;
-        typedef Polynomial<typename NT_to_interval::result_type> result_type;
-        typedef Polynomial<NT> argument_type;
-        result_type operator()( const Polynomial<NT>& x ) const {
+        typedef Polynomial<typename NT_to_interval::result_type, Rep_> result_type;
+        typedef Polynomial<NT, Rep_> argument_type;
+        result_type operator()( const Polynomial<NT, Rep_>& x ) const {
             CGAL_precondition( x.degree() >= 0 );
             NT_to_interval to_interval;  
             return result_type(
@@ -110,11 +110,11 @@ public:
 };
 } // namespace internal
 
-template <typename NT>
-class Real_embeddable_traits<Polynomial<NT> > 
+ template <typename NT, class Rep_>
+class Real_embeddable_traits<Polynomial<NT, Rep_> > 
   :public internal::Real_embeddable_traits_poly_base<
-  Polynomial<NT>,
-  typename Real_embeddable_traits<typename internal::Innermost_coefficient_type<NT>::Type>::Is_real_embeddable>
+  Polynomial<NT, Rep_>,
+  typename Real_embeddable_traits<typename internal::Innermost_coefficient_type<NT>::Type>::Is_real_embeddable, Rep_>
 {};
 
 } //namespace CGAL

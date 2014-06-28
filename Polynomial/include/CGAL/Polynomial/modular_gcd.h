@@ -36,17 +36,17 @@
 namespace CGAL {
 namespace internal {
 
-template <class NT> 
-Polynomial<NT> modular_gcd_utcf(
-        const Polynomial<NT>& FF1 ,
-        const Polynomial<NT>& FF2 , Integral_domain_tag){
+  template <class NT, class Rep_> 
+Polynomial<NT, Rep_> modular_gcd_utcf(
+        const Polynomial<NT, Rep_>& FF1 ,
+        const Polynomial<NT, Rep_>& FF2 , Integral_domain_tag){
     return modular_gcd_utcf_dfai(FF1, FF2);
 }
 
-template <class NT> 
-Polynomial<NT> modular_gcd_utcf(
-        const Polynomial<NT>& FF1 ,
-        const Polynomial<NT>& FF2 , Unique_factorization_domain_tag){
+  template <class NT, class Rep_> 
+Polynomial<NT, Rep_> modular_gcd_utcf(
+        const Polynomial<NT, Rep_>& FF1 ,
+        const Polynomial<NT, Rep_>& FF2 , Unique_factorization_domain_tag){
     return modular_gcd_utcf_algorithm_M(FF1, FF2);
 }
 

@@ -63,27 +63,27 @@ inline int square_free_factorize_for_regular_polynomial(const IC&, OutputIterato
     return 0;
 }
 
-template <class Coeff,  class OutputIterator1, class OutputIterator2>
-inline int square_free_factorize(const Polynomial<Coeff>&, OutputIterator1, OutputIterator2);
-template <class Coeff,  class OutputIterator1, class OutputIterator2>
-inline int square_free_factorize_for_regular_polynomial(const Polynomial<Coeff>&, OutputIterator1, OutputIterator2);
-template <class Coeff,  class OutputIterator1, class OutputIterator2>
-inline int square_free_factorize_for_regular_polynomial_(const Polynomial<Coeff>&, OutputIterator1, OutputIterator2, CGAL::Tag_true);
-template <class Coeff,  class OutputIterator1, class OutputIterator2>
-inline int square_free_factorize_for_regular_polynomial_(const Polynomial<Coeff>&, OutputIterator1, OutputIterator2, CGAL::Tag_false);
-template <class Coeff,  class OutputIterator1, class OutputIterator2>
-inline int square_free_factorize_for_regular_polynomial_(const Polynomial<Coeff>&, OutputIterator1, OutputIterator2, Integral_domain_tag);
-template <class Coeff,  class OutputIterator1, class OutputIterator2>
-inline int square_free_factorize_for_regular_polynomial_(const Polynomial<Coeff>&, OutputIterator1, OutputIterator2, Unique_factorization_domain_tag);
+ template <class Coeff, class Rep_,  class OutputIterator1, class OutputIterator2>
+   inline int square_free_factorize(const Polynomial<Coeff, Rep_>&, OutputIterator1, OutputIterator2);
+template <class Coeff, class Rep_,  class OutputIterator1, class OutputIterator2>
+  inline int square_free_factorize_for_regular_polynomial(const Polynomial<Coeff, Rep_>&, OutputIterator1, OutputIterator2);
+template <class Coeff, class Rep_,  class OutputIterator1, class OutputIterator2>
+  inline int square_free_factorize_for_regular_polynomial_(const Polynomial<Coeff, Rep_>&, OutputIterator1, OutputIterator2, CGAL::Tag_true);
+template <class Coeff, class Rep_,  class OutputIterator1, class OutputIterator2>
+  inline int square_free_factorize_for_regular_polynomial_(const Polynomial<Coeff, Rep_>&, OutputIterator1, OutputIterator2, CGAL::Tag_false);
+template <class Coeff, class Rep_,  class OutputIterator1, class OutputIterator2>
+  inline int square_free_factorize_for_regular_polynomial_(const Polynomial<Coeff, Rep_>&, OutputIterator1, OutputIterator2, Integral_domain_tag);
+template <class Coeff, class Rep_,  class OutputIterator1, class OutputIterator2>
+  inline int square_free_factorize_for_regular_polynomial_(const Polynomial<Coeff, Rep_>&, OutputIterator1, OutputIterator2, Unique_factorization_domain_tag);
 
 
 
 
-template <class Coeff,  class OutputIterator1, class OutputIterator2>
+template <class Coeff, class Rep_,  class OutputIterator1, class OutputIterator2>
 inline int square_free_factorize
-(const Polynomial<Coeff>&  poly, OutputIterator1 factors, OutputIterator2 multiplicities)
+  (const Polynomial<Coeff, Rep_>&  poly, OutputIterator1 factors, OutputIterator2 multiplicities)
 {
-    typedef Polynomial<Coeff> POLY;
+  typedef Polynomial<Coeff, Rep_> POLY;
     typedef Polynomial_traits_d< POLY > PT;
     typedef typename PT::Construct_polynomial Construct_polynomial;
     typedef typename PT::Univariate_content_up_to_constant_factor Ucont_utcf;
@@ -118,19 +118,19 @@ inline int square_free_factorize
     return result;                                
 }
 
-template <class Coeff,  class OutputIterator1, class OutputIterator2>
+ template <class Coeff, class Rep_, class OutputIterator1, class OutputIterator2>
 inline int square_free_factorize_for_regular_polynomial
-(const Polynomial<Coeff>&  p, OutputIterator1 factors, OutputIterator2 multiplicities){
-    typedef Polynomial<Coeff> POLY;
+   (const Polynomial<Coeff, Rep_>&  p, OutputIterator1 factors, OutputIterator2 multiplicities){
+   typedef Polynomial<Coeff, Rep_> POLY;
     typedef typename CGAL::Fraction_traits<POLY>::Is_fraction Is_fraction;
     return square_free_factorize_for_regular_polynomial_(p,factors,multiplicities,Is_fraction());
 }
 
-template <class Coeff,  class OutputIterator1, class OutputIterator2>
+template <class Coeff, class Rep_, class OutputIterator1, class OutputIterator2>
 inline int square_free_factorize_for_regular_polynomial_
-(const Polynomial<Coeff>& p, OutputIterator1 factors, OutputIterator2 multiplicities, CGAL::Tag_true){
+  (const Polynomial<Coeff, Rep_>& p, OutputIterator1 factors, OutputIterator2 multiplicities, CGAL::Tag_true){
     
-    typedef Polynomial<Coeff> POLY;
+  typedef Polynomial<Coeff, Rep_> POLY;
     typedef Polynomial_traits_d< POLY > PT;
     typedef Fraction_traits<POLY> FT; 
     
@@ -151,21 +151,21 @@ inline int square_free_factorize_for_regular_polynomial_
     return result; 
 }
 
-template <class Coeff,  class OutputIterator1, class OutputIterator2>
+template <class Coeff, class Rep_, class OutputIterator1, class OutputIterator2>
 inline int square_free_factorize_for_regular_polynomial_
-(const Polynomial<Coeff>& p, OutputIterator1 factors, OutputIterator2 multiplicities, CGAL::Tag_false){
-    typedef Polynomial<Coeff> POLY;
+  (const Polynomial<Coeff, Rep_>& p, OutputIterator1 factors, OutputIterator2 multiplicities, CGAL::Tag_false){
+  typedef Polynomial<Coeff, Rep_> POLY;
     typedef typename Algebraic_structure_traits<POLY>::Algebraic_category Algebraic_category;
     return square_free_factorize_for_regular_polynomial_(p,factors,multiplicities,Algebraic_category());
 }
 
-template <class Coeff,  class OutputIterator1, class OutputIterator2>
+template <class Coeff, class Rep_, class OutputIterator1, class OutputIterator2>
 inline int square_free_factorize_for_regular_polynomial_
-(const Polynomial<Coeff>& p, OutputIterator1 factors, OutputIterator2 multiplicities, Integral_domain_tag){
+  (const Polynomial<Coeff, Rep_>& p, OutputIterator1 factors, OutputIterator2 multiplicities, Integral_domain_tag){
     // Yun's Square-Free Factorization
     // see [Geddes et al, 1992], Algorithm 8.2
 
-    typedef Polynomial<Coeff> POLY;
+  typedef Polynomial<Coeff, Rep_> POLY;
     typedef Polynomial_traits_d<POLY> PT;
     typedef typename PT::Innermost_coefficient_type IC;
     typename PT::Innermost_leading_coefficient ilcoeff;
@@ -237,9 +237,9 @@ inline int square_free_factorize_for_regular_polynomial_
     return n;
 }
 
-template <class Coeff,  class OutputIterator1, class OutputIterator2>
+template <class Coeff, class Rep_, class OutputIterator1, class OutputIterator2>
 inline int square_free_factorize_for_regular_polynomial_
-(const Polynomial<Coeff>& p, OutputIterator1 factors, OutputIterator2 multiplicities, Unique_factorization_domain_tag){
+  (const Polynomial<Coeff, Rep_>& p, OutputIterator1 factors, OutputIterator2 multiplicities, Unique_factorization_domain_tag){
     // Yun's Square-Free Factorization
     // see [Geddes et al, 1992], Algorithm 8.2
     /* 
@@ -257,7 +257,7 @@ inline int square_free_factorize_for_regular_polynomial_
        }
     */
     
-    typedef Polynomial<Coeff> POLY;
+  typedef Polynomial<Coeff, Rep_> POLY;
     typedef Polynomial_traits_d<POLY> PT;
 
     if (typename PT::Total_degree()(p) == 0) return 0;
@@ -298,16 +298,16 @@ inline int square_free_factorize_for_regular_polynomial_
 
 // square-free factorization utcf 
 
-template <class Coeff,  class OutputIterator1, class OutputIterator2>
+template <class Coeff, class Rep_, class OutputIterator1, class OutputIterator2>
 inline int square_free_factorize_utcf
-(const Polynomial<Coeff>&  p, OutputIterator1 factors, OutputIterator2 multiplicities)
+  (const Polynomial<Coeff, Rep_>&  p, OutputIterator1 factors, OutputIterator2 multiplicities)
 {
     return square_free_factorize(p,factors,multiplicities);
 }
 
-template <class Coeff,  class OutputIterator1, class OutputIterator2>
+template <class Coeff, class Rep_, class OutputIterator1, class OutputIterator2>
 inline int square_free_factorize_utcf_for_regular_polynomial
-(const Polynomial<Coeff>&  p, OutputIterator1 factors, OutputIterator2 multiplicities)
+  (const Polynomial<Coeff, Rep_>&  p, OutputIterator1 factors, OutputIterator2 multiplicities)
 {
     return square_free_factorize_for_regular_polynomial(p,factors,multiplicities);
 }
@@ -324,10 +324,10 @@ inline int square_free_factorize_utcf_for_regular_polynomial
  *  
  *  Use this function if the polynomial might be square free. 
  */  
-template <class Coeff, class OutputIterator1, class OutputIterator2> 
+template <class Coeff, class Rep_, class OutputIterator1, class OutputIterator2> 
 inline
 int filtered_square_free_factorize(
-                                       Polynomial<Coeff> p,
+				   Polynomial<Coeff, Rep_> p,
                                        OutputIterator1 factors,
                                        OutputIterator2 multiplicities)
 {
@@ -345,9 +345,9 @@ int filtered_square_free_factorize(
  *  
  *  Use this function if the polynomial might be square free. 
  */  
-template <class Coeff,  class OutputIterator1, class OutputIterator2> 
+template <class Coeff, class Rep_, class OutputIterator1, class OutputIterator2> 
 inline
-int filtered_square_free_factorize_utcf( const Polynomial<Coeff>& p, 
+  int filtered_square_free_factorize_utcf( const Polynomial<Coeff, Rep_>& p, 
                                          OutputIterator1 factors,
                                          OutputIterator2 multiplicities)
 {

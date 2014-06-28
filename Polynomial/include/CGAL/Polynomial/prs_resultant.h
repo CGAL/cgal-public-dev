@@ -39,8 +39,8 @@
 
 namespace CGAL {
 
-template <class NT> inline
-NT prs_resultant_integral_domain(Polynomial<NT> A, Polynomial<NT> B) {
+  template <class NT, class Rep_> inline
+    NT prs_resultant_integral_domain(Polynomial<NT, Rep_> A, Polynomial<NT, Rep_> B) {
     // implemented using the subresultant algorithm for resultant computation
     // see [Cohen, 1993], algorithm 3.3.7
 
@@ -48,13 +48,13 @@ NT prs_resultant_integral_domain(Polynomial<NT> A, Polynomial<NT> B) {
 
     int signflip;
     if (A.degree() < B.degree()) {
-        Polynomial<NT> T = A; A = B; B = T;
+      Polynomial<NT, Rep_> T = A; A = B; B = T;
         signflip = (A.degree() & B.degree() & 1);
     } else {
         signflip = 0;
     }
     
-    typedef CGAL::Scalar_factor_traits<Polynomial<NT> > SFT;
+    typedef CGAL::Scalar_factor_traits<Polynomial<NT, Rep_> > SFT;
     typedef typename SFT::Scalar Scalar; 
     typename SFT::Scalar_factor scalar_factor;
     typename CGAL::Coercion_traits<Scalar, NT>::Cast cast_scalar_nt; 
@@ -63,13 +63,13 @@ NT prs_resultant_integral_domain(Polynomial<NT> A, Polynomial<NT> B) {
     NT g(1), h(1);
     NT t = cast_scalar_nt (CGAL::ipower(a, B.degree()) * CGAL::ipower(b, A.degree()));
 
-    Polynomial<NT> Q, R; NT d;
+    Polynomial<NT, Rep_> Q, R; NT d;
     int delta;
 
     A /= cast_scalar_nt(a); B /= cast_scalar_nt(b);
     do {
         signflip ^= (A.degree() & B.degree() & 1);
-        Polynomial<NT>::pseudo_division(A, B, Q, R, d);
+        Polynomial<NT, Rep_>::pseudo_division(A, B, Q, R, d);
         delta = A.degree() - B.degree();
         CGAL_expensive_assertion_code
           (typedef typename CGAL::Algebraic_structure_traits<NT>::Is_exact
@@ -94,8 +94,8 @@ NT prs_resultant_integral_domain(Polynomial<NT> A, Polynomial<NT> B) {
 
 
 
-template <class NT> inline
-NT prs_resultant_ufd(Polynomial<NT> A, Polynomial<NT> B) {
+  template <class NT, class Rep_> inline
+    NT prs_resultant_ufd(Polynomial<NT, Rep_> A, Polynomial<NT, Rep_> B) {
     // implemented using the subresultant algorithm for resultant computation
     // see [Cohen, 1993], algorithm 3.3.7
 
@@ -103,7 +103,7 @@ NT prs_resultant_ufd(Polynomial<NT> A, Polynomial<NT> B) {
 
     int signflip;
     if (A.degree() < B.degree()) {
-        Polynomial<NT> T = A; A = B; B = T;
+      Polynomial<NT, Rep_> T = A; A = B; B = T;
         signflip = (A.degree() & B.degree() & 1);
     } else {
         signflip = 0;
@@ -111,13 +111,13 @@ NT prs_resultant_ufd(Polynomial<NT> A, Polynomial<NT> B) {
 
     NT a = A.content(), b = B.content();
     NT g(1), h(1), t = CGAL::ipower(a, B.degree()) * CGAL::ipower(b, A.degree());
-    Polynomial<NT> Q, R; NT d;
+    Polynomial<NT, Rep_> Q, R; NT d;
     int delta;
 
     A /= a; B /= b;
     do {
         signflip ^= (A.degree() & B.degree() & 1);
-        Polynomial<NT>::pseudo_division(A, B, Q, R, d);
+        Polynomial<NT, Rep_>::pseudo_division(A, B, Q, R, d);
         delta = A.degree() - B.degree();
         CGAL_expensive_assertion_code
           (typedef typename CGAL::Algebraic_structure_traits<NT>::Is_exact
@@ -140,8 +140,8 @@ NT prs_resultant_ufd(Polynomial<NT> A, Polynomial<NT> B) {
     return h;
 }
 
-template <class NT> inline
-NT prs_resultant_field(Polynomial<NT> A, Polynomial<NT> B) {
+  template <class NT, class Rep_> inline
+    NT prs_resultant_field(Polynomial<NT, Rep_> A, Polynomial<NT, Rep_> B) {
     // implemented using the Euclidean algorithm for resultant computation
     // compare [Cox et al, 1997], p.157
 
@@ -149,17 +149,17 @@ NT prs_resultant_field(Polynomial<NT> A, Polynomial<NT> B) {
 
     int signflip;
     if (A.degree() < B.degree()) {
-        Polynomial<NT> T = A; A = B; B = T;
+      Polynomial<NT, Rep_> T = A; A = B; B = T;
         signflip = (A.degree() & B.degree() & 1);
     } else {
         signflip = 0;
     }
 
     NT res(1);
-    Polynomial<NT> Q, R;
+    Polynomial<NT, Rep_> Q, R;
     while (B.degree() > 0) {
         signflip ^= (A.degree() & B.degree() & 1);
-        Polynomial<NT>::euclidean_division(A, B, Q, R);
+        Polynomial<NT, Rep_>::euclidean_division(A, B, Q, R);
         res *= CGAL::ipower(B.lcoeff(), A.degree() - R.degree());
         A = B;
         B = R;
@@ -171,35 +171,35 @@ NT prs_resultant_field(Polynomial<NT> A, Polynomial<NT> B) {
 }
 
 // definition follows below
-template <class NT> inline
-NT prs_resultant_decompose(Polynomial<NT> A, Polynomial<NT> B);
+  template <class NT, class Rep_> inline
+NT prs_resultant_decompose(Polynomial<NT, Rep_> A, Polynomial<NT, Rep_> B);
 
 namespace INTERN_PRS_RESULTANT {
-    template <class NT> inline
-    NT prs_resultant_(Polynomial<NT> A, Polynomial<NT> B, ::CGAL::Tag_false) {
+    template <class NT, class Rep_> inline
+    NT prs_resultant_(Polynomial<NT, Rep_> A, Polynomial<NT, Rep_> B, ::CGAL::Tag_false) {
         return prs_resultant_field(A, B);
     }
 
-    template <class NT> inline
-    NT prs_resultant_(Polynomial<NT> A, Polynomial<NT> B, ::CGAL::Tag_true) {
+    template <class NT, class Rep_> inline
+    NT prs_resultant_(Polynomial<NT, Rep_> A, Polynomial<NT, Rep_> B, ::CGAL::Tag_true) {
         return prs_resultant_decompose(A, B);
     }
 
-    template <class NT> inline
-    NT prs_resultant_(Polynomial<NT> A, Polynomial<NT> B, Field_tag) {
+    template <class NT, class Rep_> inline
+    NT prs_resultant_(Polynomial<NT, Rep_> A, Polynomial<NT, Rep_> B, Field_tag) {
         typedef typename Fraction_traits<NT>::Is_fraction Is_decomposable;
         return prs_resultant_(A, B, Is_decomposable());     
     }
 
-    template <class NT> inline
-    NT prs_resultant_(Polynomial<NT> A, Polynomial<NT> B, Unique_factorization_domain_tag) {
+    template <class NT, class Rep_> inline
+    NT prs_resultant_(Polynomial<NT, Rep_> A, Polynomial<NT, Rep_> B, Unique_factorization_domain_tag) {
         return prs_resultant_ufd(A, B);
     }
 } // namespace internal
 
-template <class NT> inline
-NT prs_resultant_decompose(Polynomial<NT> A, Polynomial<NT> B){
-    typedef Polynomial<NT> POLY;
+ template <class NT, class Rep_> inline
+NT prs_resultant_decompose(Polynomial<NT, Rep_> A, Polynomial<NT, Rep_> B){
+    typedef Polynomial<NT, Rep_> POLY;
     typedef typename Fraction_traits<POLY>::Numerator_type INTPOLY;
     typedef typename Fraction_traits<POLY>::Denominator_type DENOM;
     typename Fraction_traits<POLY>::Decompose decompose;
@@ -249,8 +249,8 @@ NT prs_resultant_decompose(Polynomial<NT> A, Polynomial<NT> B){
  *  <b>Do not use them directly unless you know what you are doing!</b>
  *
  */
-template <class NT> inline
-NT prs_resultant(Polynomial<NT> A, Polynomial<NT> B) {
+ template <class NT, class Rep_> inline
+NT prs_resultant(Polynomial<NT, Rep_> A, Polynomial<NT, Rep_> B) {
     typedef typename Algebraic_structure_traits<NT>::Algebraic_category
                                                                    Algebraic_category;
     return INTERN_PRS_RESULTANT::prs_resultant_(A, B, Algebraic_category());     

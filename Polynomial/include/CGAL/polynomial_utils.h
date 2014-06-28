@@ -370,23 +370,23 @@ sturm_habicht_sequence_with_cofactors
 
 // TODO: REMOVE function below ?
 
-template<typename NT> inline
-Polynomial<NT> scale_up(const Polynomial<NT>& p, const NT& a)
-{ Polynomial<NT> q(p); q.scale_up(a); return q; }
+ template<typename NT, class Rep_> inline
+   Polynomial<NT, Rep_> scale_up(const Polynomial<NT, Rep_>& p, const NT& a)
+{ Polynomial<NT, Rep_> q(p); q.scale_up(a); return q; }
 
-template<typename NT> inline
-Polynomial<NT> scale_down(const Polynomial<NT>& p, const NT& b)
-{ Polynomial<NT> q(p); q.scale_down(b); return q; }
-
-
-template<typename NT> inline
-Polynomial<NT> translate_by_one(const Polynomial<NT>& p)
-{ Polynomial<NT> q(p); q.translate_by_one(); return q; }
+template<typename NT, class Rep_> inline
+Polynomial<NT, Rep_> scale_down(const Polynomial<NT, Rep_>& p, const NT& b)
+{ Polynomial<NT, Rep_> q(p); q.scale_down(b); return q; }
 
 
-template<typename NT> inline
-Polynomial<NT> reversal(const Polynomial<NT>& p)
-{ Polynomial<NT> q(p); q.reversal(); return q; }
+template<typename NT, class Rep_> inline
+Polynomial<NT, Rep_> translate_by_one(const Polynomial<NT, Rep_>& p)
+{ Polynomial<NT, Rep_> q(p); q.translate_by_one(); return q; }
+
+
+template<typename NT, class Rep_> inline
+Polynomial<NT, Rep_> reversal(const Polynomial<NT, Rep_>& p)
+{ Polynomial<NT, Rep_> q(p); q.reversal(); return q; }
 
 
 } //namespace CGAL

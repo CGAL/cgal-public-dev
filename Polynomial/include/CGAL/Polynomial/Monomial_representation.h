@@ -34,10 +34,10 @@ namespace internal{
 template <typename Polynomial> struct Monomial_representation; 
 
 // Polynomial muss be at least univariate ! 
-template <typename Coeff_ > 
-struct Monomial_representation<Polynomial<Coeff_> >{
+ template <typename Coeff_, class Rep_ > 
+   struct Monomial_representation<Polynomial<Coeff_, Rep_> >{
 private:
-  typedef typename Innermost_coefficient_type<Polynomial<Coeff_> >::Type 
+   typedef typename Innermost_coefficient_type<Polynomial<Coeff_, Rep_> >::Type 
   Innermost_coefficient;
   
   // Polynomial is univariate 
@@ -75,8 +75,8 @@ private:
   
 public:
   template <typename OutputIterator>
-  OutputIterator operator()(const Polynomial<Coeff_>& p, OutputIterator oit) const {
-    typedef Polynomial<Coeff_> Polynomial; 
+    OutputIterator operator()(const Polynomial<Coeff_, Rep_>& p, OutputIterator oit) const {
+    typedef Polynomial<Coeff_, Rep_> Polynomial; 
     typedef CGAL::Boolean_tag<1 == Dimension<Polynomial>::value> Is_univariate;
     CGAL::Exponent_vector ivec((std::vector<int>)(Dimension<Polynomial>::value));
     if(p.is_zero()){

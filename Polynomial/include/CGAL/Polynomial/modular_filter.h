@@ -35,11 +35,11 @@
 namespace CGAL {
 
 namespace internal {
-    template <class NT> inline
+  template <class NT, class Rep_> inline
     bool
     may_have_common_factor_(
-        const Polynomial<NT>& p1,
-        const Polynomial<NT>& p2,
+        const Polynomial<NT, Rep_>& p1,
+        const Polynomial<NT, Rep_>& p2,
         ::CGAL::Tag_true){
       
       // Enforce IEEE double precision and to nearest before using modular arithmetic
@@ -51,7 +51,7 @@ namespace internal {
         if(CGAL::total_degree(p1) == 0){ return p1.is_zero();}
         if(CGAL::total_degree(p2) == 0){ return p2.is_zero();}
         
-        typedef Polynomial<NT>                Polynomial_nt;
+        typedef Polynomial<NT, Rep_>                Polynomial_nt;
         typedef Modular_traits<Polynomial_nt> MT;
         typedef typename MT::Residue_type       Polynomial_mt;
 
@@ -85,9 +85,9 @@ namespace internal {
             return false;                
     }
    
-    template <class NT> inline
-    bool may_have_common_factor_(const Polynomial<NT>& ,
-                                 const Polynomial<NT>& ,
+  template <class NT, class Rep_> inline
+    bool may_have_common_factor_(const Polynomial<NT, Rep_>& ,
+                                 const Polynomial<NT, Rep_>& ,
                                  ::CGAL::Tag_false) {return true;}
     
 /*! \ingroup CGAL_polynomial_utils
@@ -102,16 +102,16 @@ namespace internal {
  *  \c P and \c Q have with a high probability a common factor, if it returns
  *  true. 
  */
-template <class NT> inline 
-bool may_have_common_factor(const Polynomial<NT>& P,
-                            const Polynomial<NT>& Q){
+  template <class NT, class Rep_> inline 
+bool may_have_common_factor(const Polynomial<NT, Rep_>& P,
+                            const Polynomial<NT, Rep_>& Q){
 // TODO: Should this compiler switch be renamed?
 #ifdef CGAL_MODULAR_FILTER_OFF
     return true;
 #endif
 
     CGAL_precondition( Residue::get_current_prime()!=0 );
-    typedef Polynomial<NT> POLY;
+    typedef Polynomial<NT, Rep_> POLY;
     typedef Modular_traits<POLY> Mtr;
     typename Mtr::Is_modularizable is_modularizable;
     return internal::may_have_common_factor_(P,Q,is_modularizable);   
@@ -127,14 +127,14 @@ bool may_have_common_factor(const Polynomial<NT>& P,
  *  If the function return false, then \c P has no multiple root for sure.
  *  \c P has with a high probability a multiple root, if it returns true.
  */
-template <class NT> inline
-bool may_have_multiple_factor_(const Polynomial<NT>& P, CGAL::Tag_true ){
+  template <class NT, class Rep_> inline
+bool may_have_multiple_factor_(const Polynomial<NT, Rep_>& P, CGAL::Tag_true ){
 
   // Enforce IEEE double precision and to nearest before using modular arithmetic
   CGAL::Protect_FPU_rounding<true> pfr(CGAL_FE_TONEAREST);
 
     // Create modular images of p
-    typedef Polynomial<NT>                Polynomial_nt;
+    typedef Polynomial<NT, Rep_>                Polynomial_nt;
     typedef Modular_traits<Polynomial_nt> MT;
     typedef typename MT::Residue_type       Polynomial_mt;
 
@@ -161,19 +161,19 @@ bool may_have_multiple_factor_(const Polynomial<NT>& P, CGAL::Tag_true ){
     return( !is_square_free( m ) ); 
 }
 
-template< class NT > inline
-bool may_have_multiple_factor_( const Polynomial<NT>&, CGAL::Tag_false ) {
+  template< class NT, class Rep_> inline
+bool may_have_multiple_factor_( const Polynomial<NT, Rep_>&, CGAL::Tag_false ) {
     return true;
 }
 
-template< class NT > inline
-bool may_have_multiple_factor( const Polynomial<NT>& P ) {
+  template< class NT, class Rep_> inline
+bool may_have_multiple_factor( const Polynomial<NT, Rep_>& P ) {
   if(CGAL::total_degree(P) <= 1)
         return false;
 
     // Modular filter
     CGAL_precondition( Residue::get_current_prime()!=0 );
-    typedef Polynomial<NT> POLY;
+    typedef Polynomial<NT, Rep_> POLY;
     typedef Modular_traits<POLY> Mtr;
     typename Mtr::Is_modularizable is_modularizable;
     return internal::may_have_multiple_factor_(P, is_modularizable);       

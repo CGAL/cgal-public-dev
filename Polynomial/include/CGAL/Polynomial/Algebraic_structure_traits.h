@@ -36,8 +36,8 @@ namespace CGAL {
 // Extend to a UFDomain as coefficient range
 // Forward declaration for <NiX/polynomial_gcd.h> for NT_traits<Poly...>::Gcd
 namespace internal {
-template <class NT> inline
-Polynomial<NT> gcd_(const Polynomial<NT>&, const Polynomial<NT>&);
+  template <class NT, class Rep_> inline
+  Polynomial<NT, Rep_> gcd_(const Polynomial<NT, Rep_>&, const Polynomial<NT, Rep_>&);
 } // namespace internal
 
 
@@ -342,11 +342,11 @@ class Polynomial_algebraic_structure_traits_base< POLY,
 };
 
 // The actual algebraic structure traits class
-template< class NT > class Algebraic_structure_traits< Polynomial< NT > >
-  : public Polynomial_algebraic_structure_traits_base< Polynomial< NT >,
+ template< class NT, class Rep_ > class Algebraic_structure_traits< Polynomial< NT, Rep_ > >
+  : public Polynomial_algebraic_structure_traits_base< Polynomial< NT, Rep_ >,
          typename Algebraic_structure_traits< NT >::Algebraic_category > {
   public:
-    typedef Polynomial<NT> Algebraic_structure;
+    typedef Polynomial<NT, Rep_> Algebraic_structure;
     typedef typename Algebraic_structure_traits< NT >::Is_exact Is_exact;
 };
 
