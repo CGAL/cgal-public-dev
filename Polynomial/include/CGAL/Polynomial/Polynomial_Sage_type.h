@@ -46,17 +46,17 @@
 
 namespace CGAL {
 
-  template < class NT_ > class Polynomial;
-  template < class NT_ > class Polynomial_Sage;
+  template < class NT_, class Rep_ > class Polynomial;
+  template < class NT_> class Polynomial_Sage;
 
   namespace internal {
 
-    template <class NT_> class Polynomial_rep;
+    template <class NT_, class Rep_> class Polynomial_rep;
     
-    template <class NT> class Polynomial_sage_rep;
+    template <class NT_> class Polynomial_sage_rep;
     
-    template < class NT_ > 
-      class Polynomial_sage_rep: Polynomial_rep<NT_> {
+    template < class NT_> 
+      class Polynomial_sage_rep: Polynomial_rep<NT_, internal::Polynomial_sage_rep<NT_> > {
       typedef NT_ NT;
       typedef std::vector<NT> Vector;
       typedef typename Vector::size_type      size_type;
