@@ -122,7 +122,7 @@ int main( int argc, char* argv[] )
 
   Arrangement_2* arr = LoadArr( filename );
   std::vector< std::pair< double, double > > points;
-  IntersectCurvePairs( *arr, std::back_inserter( points ) );
+  //IntersectCurvePairs( *arr, std::back_inserter( points ) );
 
   BezierExampleWindow window;
   window.setArrangement( arr );

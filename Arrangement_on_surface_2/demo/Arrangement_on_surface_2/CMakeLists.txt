@@ -18,6 +18,10 @@ if ( CGAL_FOUND AND CGAL_Qt4_FOUND AND QT4_FOUND)
   if ( APPLE )
     add_definitions( -Wno-c++11-extensions )
   endif ( APPLE )
+
+  # Uncomment this to enable verbose tracing of the sweep-line algorithm
+  add_definitions(-DCGAL_SL_VERBOSE )
+
   include( ${QT_USE_FILE} )
   include_directories( ./ )
   # Arrangement package includes
