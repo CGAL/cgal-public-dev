@@ -2,6 +2,7 @@
 #define SINGLE_TAB_WINDOW_H
 #include <CGAL/Qt/DemosMainWindow.h>
 #include "BezierDemoTraits.h"
+#include "AlgebraicDemoTraits.h"
 #include "ui_SingleTabWindow.h"
 
 template < class Arr_ >
@@ -12,7 +13,8 @@ class SingleTabWindow : public CGAL::Qt::DemosMainWindow
   Q_OBJECT
 
 public:
-  typedef BezierDemoTraits DemoTraitsType;
+  //typedef BezierDemoTraits DemoTraitsType;
+  typedef AlgebraicDemoTraits DemoTraitsType;
   typedef DemoTraitsType::ArrTraitsType ArrTraitsType;
   typedef DemoTraitsType::ArrangementType ArrangementType;
   typedef ArrTraitsType::Curve_2 Curve_2;

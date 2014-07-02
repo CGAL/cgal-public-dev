@@ -83,6 +83,7 @@ add_executable( bezier_envelope bezier_envelope.cpp )
 #####
 add_library( arr_demo_traits_library SHARED
   BezierDemoTraits.cpp
+  AlgebraicDemoTraits.cpp
 )
 
 set( single_tab_example_srcs

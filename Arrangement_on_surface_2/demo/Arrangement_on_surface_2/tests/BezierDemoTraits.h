@@ -49,7 +49,6 @@ struct BezierDemoTraits
   // exports
   typedef Bezier_traits_2 ArrTraitsType;
   typedef Bezier_arrangement_2 ArrangementType;
-
   static const std::string Name;
 }; // struct BezierDemoTraits
 #endif //BEZIER_DEMO_TRAITS_H
