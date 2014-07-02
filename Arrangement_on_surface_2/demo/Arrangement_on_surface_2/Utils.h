@@ -2033,6 +2033,74 @@ struct Compare_Bezier_curve_2
   }
 };
 
+/**
+Load an arrangement from file.
+*/
+template < class TDemoTraits >
+struct LoadArrFromFile
+{
+  typedef typename TDemoTraits::ArrangementType ArrangementType;
+  typedef typename TDemoTraits::ArrTraitsType ArrTraitsType;
+  typedef typename ArrTraitsType::Curve_2 Curve_2;
+
+  /**
+  Load an arrangement from file.
+
+  \param[in] filename - the file to load the arrangement from
+  \param[out] arr - a pointer to the arrangement structure to populate
+  \return whether the load operation was successful
+  */
+  bool operator()( const std::string& filename,
+    ArrangementType* arr )
+  {
+    return load( filename, arr, (ArrTraitsType*) 0 );
+  }
+
+  template < typename RatKernel, typename AlgKernel, typename NtTraits >
+  bool load( const std::string& filename,
+    ArrangementType* arr,
+    CGAL::Arr_Bezier_curve_traits_2< RatKernel, AlgKernel, NtTraits >* /*unused*/ )
+  {
+    if ( ! arr )
+    {
+      return false;
+    }
+
+    std::ifstream inputFile( filename.c_str( ) );
+    if ( !inputFile.is_open( ) )
+    {
+      return false;
+    }
+
+    // Read the curves from the input file.
+    unsigned int n_curves;
+    std::list<Curve_2> curves;
+    Curve_2 B;
+    unsigned int k;
+
+    inputFile >> n_curves;
+    for (k = 0; k < n_curves; k++) {
+      // Read the current curve (specified by its control points).
+      inputFile >> B;
+      curves.push_back (B);
+
+      std::cout << "B = {" << B << "}" << std::endl;
+    }
+    inputFile.close( );
+
+    // Construct the arrangement.
+    insert (*arr, curves.begin(), curves.end());
+
+    // Print the arrangement size.
+    std::cout << "The arrangement size:" << std::endl
+              << "   V = " << arr->number_of_vertices()
+              << ",  E = " << arr->number_of_edges()
+              << ",  F = " << arr->number_of_faces() << std::endl;
+
+    return true;
+  }
+};
+
 
 
 #endif // CGAL_ARRANGEMENTS_DEMO_UTILS_H
