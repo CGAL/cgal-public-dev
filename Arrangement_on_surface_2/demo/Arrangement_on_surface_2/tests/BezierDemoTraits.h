@@ -15,6 +15,15 @@
 #include "ArrangementDemoTab.h"
 #include "DcelTypes.h"
 
+/**
+Provided types
+-----
+#. ArrTraitsType
+#. ArrangementType
+
+Provided constants
+#. Name - human-readable string naming this traits type
+*/
 struct BezierDemoTraits
 {
   typedef CGAL::CORE_algebraic_number_traits              Nt_traits;
@@ -40,5 +49,7 @@ struct BezierDemoTraits
   // exports
   typedef Bezier_traits_2 ArrTraitsType;
   typedef Bezier_arrangement_2 ArrangementType;
-};
+
+  static const std::string Name;
+}; // struct BezierDemoTraits
 #endif //BEZIER_DEMO_TRAITS_H

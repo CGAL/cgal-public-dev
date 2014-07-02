@@ -27,6 +27,8 @@ if ( CGAL_FOUND AND CGAL_Qt4_FOUND AND QT4_FOUND)
   # Arrangement package includes
   include_directories( BEFORE ../../include )
 
+
+
   qt4_wrap_ui( arrangement_2_uis
     ArrangementDemoWindow.ui
     NewTabDialog.ui
@@ -35,48 +37,82 @@ if ( CGAL_FOUND AND CGAL_Qt4_FOUND AND QT4_FOUND)
   )
   qt4_wrap_cpp( arrangement_2_mocs
     ArrangementDemoWindow.h
+    ArrangementDemoPropertiesDialog.h
     ArrangementDemoTab.h
     Callback.h
-#    NewTabDialog.h
-    OverlayDialog.h
-    ArrangementDemoPropertiesDialog.h
     ColorItemEditor.h
     DeleteCurveModeItemEditor.h
+    OverlayDialog.h
     PropertyValueDelegate.h
-    #PropertyValueDelegate.cpp
   )
   qt4_add_resources( arrangement_2_resources
     ArrangementDemoWindow.qrc
   )
-  add_executable( arrangement_2
-    arrangement_2.cpp
-    ArrangementGraphicsItem.cpp
-    ArrangementDemoWindow.cpp
-    ArrangementDemoTab.cpp
+
+  add_library( arr_demo_library SHARED
     ArrangementDemoGraphicsView.cpp
-    Callback.cpp
-    VerticalRayShootCallback.cpp
-    EnvelopeCallback.cpp
-    SplitEdgeCallback.cpp
-    FillFaceCallback.cpp
-    GraphicsViewSegmentInput.cpp
-    GraphicsViewCurveInput.cpp
-    Utils.cpp
-    NewTabDialog.cpp
-    OverlayDialog.cpp
     ArrangementDemoPropertiesDialog.cpp
+    ArrangementDemoTab.cpp
+    ArrangementDemoWindow.cpp
+    ArrangementGraphicsItem.cpp
+    Callback.cpp
     ColorItemEditor.cpp
-    PropertyValueDelegate.cpp
     DeleteCurveMode.cpp
     DeleteCurveModeItemEditor.cpp
+    EnvelopeCallback.cpp
+    FillFaceCallback.cpp
+    GraphicsViewCurveInput.cpp
+    NewTabDialog.cpp
+    OverlayDialog.cpp
     PointsGraphicsItem.cpp
+    PropertyValueDelegate.cpp
+    SplitEdgeCallback.cpp
+    Utils.cpp
     VerticalRayGraphicsItem.cpp
-   ${arrangement_2_mocs}
-   ${arrangement_2_uis}
-   ${arrangement_2_resources}
+    VerticalRayShootCallback.cpp
+    ${arrangement_2_mocs}
+    ${arrangement_2_uis}
+    ${arrangement_2_resources}
+  )
+
+  target_link_libraries( arr_demo_library
+    ${CGAL_LIBRARIES}
+    ${QT_LIBRARIES}
+  )
+
+  add_executable( arrangement_2
+    arrangement_2.cpp
+
+# provided by arr_demo_library
+#    ArrangementDemoGraphicsView.cpp
+#    ArrangementDemoPropertiesDialog.cpp
+#    ArrangementDemoTab.cpp
+#    ArrangementDemoWindow.cpp
+#    ArrangementGraphicsItem.cpp
+#    Callback.cpp
+#    ColorItemEditor.cpp
+#    DeleteCurveMode.cpp
+#    DeleteCurveModeItemEditor.cpp
+#    EnvelopeCallback.cpp
+#    FillFaceCallback.cpp
+#    GraphicsViewCurveInput.cpp
+#    NewTabDialog.cpp
+#    OverlayDialog.cpp
+#    PointsGraphicsItem.cpp
+#    PropertyValueDelegate.cpp
+#    SplitEdgeCallback.cpp
+#    Utils.cpp
+#    VerticalRayGraphicsItem.cpp
+#    VerticalRayShootCallback.cpp
+#   ${arrangement_2_mocs}
+#   ${arrangement_2_uis}
+#   ${arrangement_2_resources}
+
+#    GraphicsViewSegmentInput.cpp
   )
 
   target_link_libraries( arrangement_2
+    arr_demo_library
     ${CGAL_LIBRARIES}
     ${CGAL_3RD_PARTY_LIBRARIES}
     ${QT_LIBRARIES}
