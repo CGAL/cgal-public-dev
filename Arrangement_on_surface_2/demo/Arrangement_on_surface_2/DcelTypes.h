@@ -1,6 +1,7 @@
 #ifndef DCEL_TYPES_H
 #define DCEL_TYPES_H
 #include <CGAL/Arr_default_dcel.h>
+#include <QColor>
 
 class Face_with_color : public CGAL::Arr_face_base
 {

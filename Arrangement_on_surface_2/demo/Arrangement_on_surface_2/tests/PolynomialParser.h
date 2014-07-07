@@ -11,14 +11,22 @@
 #include <boost/fusion/include/io.hpp>
 #include <boost/bind.hpp>
 #include <boost/spirit/include/phoenix.hpp>
+#include <CGAL/Polynomial.h>
 
-#include "AlgebraicDemoTraits.h"
+/**
+Defines the static function Parse that turns user-input strings into CGAL
+Polynomials.
 
+When using this header, make sure to include this *before* any Qt GUI-related
+headers. This is because the particular Boost libraries used here may
+conflict with the auto-generated symbols generated elsewhere by Qt.
+*/
 template < class TPolynomial >
 class PolynomialParser
 {
   typedef TPolynomial Polynomial_2;
 
+  // Internal struct used for parsing polynomials.
   struct PolynomialTerm
   {
     boost::optional<int> coefficient;
