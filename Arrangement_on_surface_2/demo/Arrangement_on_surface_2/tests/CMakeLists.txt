@@ -6,6 +6,8 @@ include_directories( BEFORE ../../ )
 include_directories( BEFORE ../ )
 message( STATUS ${CMAKE_CURRENT_BINARY_DIR} )
 
+add_executable( test_polynomial_io test_polynomial_io.cpp )
+
 #####
 # Test code for scaffolding the Bezier graphics item.
 #####
