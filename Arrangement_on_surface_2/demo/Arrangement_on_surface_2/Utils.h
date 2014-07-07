@@ -20,6 +20,9 @@
 #ifndef CGAL_ARRANGEMENTS_DEMO_UTILS_H
 #define CGAL_ARRANGEMENTS_DEMO_UTILS_H
 
+#include <QObject>
+#include "PolynomialParser.h"
+
 #include <CGAL/iterator.h>
 #include <CGAL/Qt/Converter.h>
 #include <QGraphicsSceneMouseEvent>
@@ -2099,8 +2102,47 @@ struct LoadArrFromFile
 
     return true;
   }
+
+  template < class Coefficient_ >
+  bool load( const std::string& filename,
+    ArrangementType* arr,
+    CGAL::Arr_algebraic_segment_traits_2< Coefficient_ >* /*unused*/ )
+  {
+    ArrTraitsType traits;
+
+    // parse input polynomials
+    typedef typename ArrTraitsType::Polynomial_2 Polynomial_2;
+    typedef PolynomialParser< Polynomial_2 > ParserType;
+    int count = 0;
+    std::ifstream ifs( filename.c_str( ) );
+    std::vector< Polynomial_2 > polynomials;
+    std::string str;
+    while ( std::getline( ifs, str ) )
+    {
+      Polynomial_2 polynomial;
+      bool ok = ParserType::Parse( str, &polynomial );
+      if ( ok )
+      {
+        polynomials.push_back( polynomial );
+        ++count;
+      }
+    }
+    ifs.close( );
+
+    // make curves from polynomials
+    typename ArrTraitsType::Construct_curve_2 construct_curve =
+      traits.construct_curve_2_object( );
+    std::vector< Curve_2 > curves;
+    for ( int i = 0; i < polynomials.size( ); ++i )
+    {
+      Curve_2 cv = construct_curve( polynomials[i] );
+      curves.push_back( cv );
+    }
+
+    // stuff curves into arrangement
+    CGAL::insert( *arr, curves.begin( ), curves.end( ) );
+
+    return count;
+  }
 };
-
-
-
 #endif // CGAL_ARRANGEMENTS_DEMO_UTILS_H

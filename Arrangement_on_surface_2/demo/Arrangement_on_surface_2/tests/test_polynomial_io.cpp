@@ -96,26 +96,33 @@ int main( int argc, char *argv[] )
     return 0;
   }
 
-  std::vector< Polynomial_2 > polynomials;
-  int count = Load( argv[1], std::back_inserter( polynomials ) );
-  std::cout << count << " polynomials loaded\n";
-  for ( int i = 0; i < polynomials.size( ); ++i )
-  {
-    std::cout << polynomials[i] << "\n";
-  }
+  //std::vector< Polynomial_2 > polynomials;
+  //int count = Load( argv[1], std::back_inserter( polynomials ) );
+  //std::cout << count << " polynomials loaded\n";
 
-  TraitsType::Construct_curve_2 construct_curve =
-    traits.construct_curve_2_object( );
-  std::vector< Curve_2 > curves;
-  for ( int i = 0; i < polynomials.size( ); ++i )
-  {
-    Curve_2 cv = construct_curve( polynomials[i] );
-    curves.push_back( cv );
-  }
+  //for ( int i = 0; i < polynomials.size( ); ++i )
+  //{
+  //  std::cout << polynomials[i] << "\n";
+  //}
+
+  //TraitsType::Construct_curve_2 construct_curve =
+  //  traits.construct_curve_2_object( );
+  //std::vector< Curve_2 > curves;
+  //for ( int i = 0; i < polynomials.size( ); ++i )
+  //{
+  //  Curve_2 cv = construct_curve( polynomials[i] );
+  //  curves.push_back( cv );
+  //}
+
 
   // Set up and print the arrangement.
-  ArrangementType arr( &traits );
-  CGAL::insert( arr, curves.begin( ), curves.end( ) );
+  //ArrangementType arr( &traits );
+  //CGAL::insert( arr, curves.begin( ), curves.end( ) );
+
+  ArrangementType arr;
+  LoadArrFromFile< AlgebraicDemoTraits > loadArrFromFile;
+  loadArrFromFile( argv[1], &arr );
+
   std::cout << "The arrangement size:" << std::endl
     << " V = " << arr.number_of_vertices()
     << ", E = " << arr.number_of_edges()

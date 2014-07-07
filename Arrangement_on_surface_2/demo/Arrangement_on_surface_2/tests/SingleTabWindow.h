@@ -1,5 +1,7 @@
 #ifndef SINGLE_TAB_WINDOW_H
 #define SINGLE_TAB_WINDOW_H
+#include <QObject>
+#include "PolynomialParser.h"
 #include <CGAL/Qt/DemosMainWindow.h>
 #include "BezierDemoTraits.h"
 #include "AlgebraicDemoTraits.h"

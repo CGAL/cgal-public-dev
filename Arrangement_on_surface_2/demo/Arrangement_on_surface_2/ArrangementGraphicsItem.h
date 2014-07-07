@@ -20,6 +20,7 @@
 #ifndef CGAL_QT_ARRANGEMENT_GRAPHICS_ITEM_H
 #define CGAL_QT_ARRANGEMENT_GRAPHICS_ITEM_H
 
+#include <QObject>
 #include <CGAL/Bbox_2.h>
 //#include <CGAL/apply_to_range.h>
 // TODO: should be included in PainterOstream.h

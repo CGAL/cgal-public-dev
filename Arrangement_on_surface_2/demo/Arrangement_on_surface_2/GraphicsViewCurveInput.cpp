@@ -17,6 +17,7 @@
 //
 // Author(s)     : Alex Tsui <alextsui05@gmail.com>
 
+#include <QObject>
 #include "GraphicsViewCurveInput.h"
 
 #include <QGraphicsView>

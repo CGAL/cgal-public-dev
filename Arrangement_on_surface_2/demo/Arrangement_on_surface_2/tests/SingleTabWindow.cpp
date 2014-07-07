@@ -1,3 +1,4 @@
+#include <QObject>
 #include "SingleTabWindow.h"
 #include "Utils.h"
 #include "ArrangementDemoTab.h"

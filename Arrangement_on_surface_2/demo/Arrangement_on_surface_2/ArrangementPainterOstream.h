@@ -20,6 +20,7 @@
 #ifndef CGAL_QT_ARRANGEMENT_PAINTER_OSTREAM_H
 #define CGAL_QT_ARRANGEMENT_PAINTER_OSTREAM_H
 
+#include <QObject>
 #include <QRectF>
 #include <QPainterPath>
 #include <vector>
