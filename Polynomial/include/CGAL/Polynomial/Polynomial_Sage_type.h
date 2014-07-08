@@ -29,7 +29,6 @@
 #include<netdb.h> //hostent
 #include <CGAL/Polynomial/Sage/Sage_Connection.h>
 #include <CGAL/Polynomial/Polynomial_type.h>
-
 #include <cstdio>
 #include <sstream>
 
@@ -57,6 +56,7 @@ namespace CGAL {
     
     template < class NT_> 
       class Polynomial_sage_rep: Polynomial_rep<NT_, internal::Polynomial_sage_rep<NT_> > {
+    public:
       typedef NT_ NT;
       typedef std::vector<NT> Vector;
       typedef typename Vector::size_type      size_type;
@@ -128,8 +128,14 @@ namespace CGAL {
 
 
   template < class NT_ >
-    class Polynomial_Sage : public Polynomial< NT_, internal::Polynomial_sage_rep<NT_> > {
-    
+    class Polynomial_Sage : Polynomial< NT_, internal::Polynomial_sage_rep<NT_> > {
+
+    std::string sage_internal;
+    //size_t sage_address;
+    std::string sage_address;
+    bool sage_update_status;
+    bool cgal_update_status;
+
     typedef typename internal::Innermost_coefficient_type<NT_>::Type Innermost_coefficient_type; 
     
   public: 
@@ -275,6 +281,59 @@ private:
   public:
     void simplify_coefficients() { this->ptr()->simplify_coefficients(); }
     int degree() const { return static_cast<int>(this->ptr()->coeff.size())-1; } 
+
+    void convert_to_sage_format()
+    {
+      //CGAL::set_pretty_mode(std::cout);
+      std::ostringstream tmp_os_stream;
+      CGAL::set_pretty_mode(tmp_os_stream);
+      tmp_os_stream << this;
+      sage_internal = tmp_os_stream.str();
+      //std::cout << sage_internal << std::endl;
+      sage_update_status = true;
+    }
+    
+    std::string push_to_sage() 
+    {
+	convert_to_sage_format();
+	
+	std::ostringstream oStringForSage;
+	//need to implement respect to others 
+	//oStringForSage << "R.<y> = PolynomialRing(ZZ)\nR.<x> = PolynomialRing(ZZ)\nb=(x^2+x+1)\np=hex(id(b))";
+	oStringForSage << "R.<y> = PolynomialRing(ZZ)\nR.<x> = PolynomialRing(ZZ)\nb=(" << sage_internal << ")\np=hex(id(b))";
+	
+	SageConnection p;
+	std::string stringForSage = oStringForSage.str();
+	std::string dataFromSage = getDataFromSage( stringForSage );
+	
+	//std::cout << dataFromSage << std::endl;
+	
+	return dataFromSage; 
+    }
+    
+    std::string getDataFromSage(std::string &param)
+    {
+	SageConnection connectionToSage;
+	std::string host;
+	
+	host = "127.0.1.1";
+	
+	//connect to host
+	connectionToSage.conn(host , 12345);
+	
+	//send some data
+	connectionToSage.send_data(param);
+	
+	std::ostringstream oStringReceive;
+	oStringReceive << connectionToSage.receive(1024);
+	std::string dataoutput = oStringReceive.str();
+	
+	sage_address = dataoutput;
+	
+	return dataoutput;
+    }
+
+
   };
   
   
