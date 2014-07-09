@@ -1,0 +1,18 @@
+# Environment Model
+#   First the number of polygons
+#   Per Polygon: Number of Vertices, followed by coordinates
+3
+4
+50 50
+800 50
+850 550
+50 500
+4
+100 100
+300 100
+400 300
+100 300
+3
+700 200
+700 400
+600 300
