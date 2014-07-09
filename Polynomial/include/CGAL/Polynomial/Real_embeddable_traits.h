@@ -76,8 +76,8 @@ public:
             return x.compare(y);
         }
         
-        CGAL_IMPLICIT_INTEROPERABLE_BINARY_OPERATOR_WITH_RT( Polynomial<NT, Rep_>,
-                CGAL::Comparison_result )
+	typedef Polynomial<NT, Rep_> Polynomial_type;
+	CGAL_IMPLICIT_INTEROPERABLE_BINARY_OPERATOR_WITH_RT( Polynomial_type, CGAL::Comparison_result )
     };
 
     class To_double {
