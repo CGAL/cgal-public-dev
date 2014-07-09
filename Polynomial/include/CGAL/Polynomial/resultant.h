@@ -130,7 +130,7 @@ inline IC
 resultant_interpolate( 
     const CGAL::Polynomial<IC, Rep_>& F, 
     const CGAL::Polynomial<IC, Rep_>& G){
-  CGAL_precondition(CGAL::Polynomial_traits_d<CGAL::Polynomial<IC> >::d == 1);
+    CGAL_precondition((CGAL::Polynomial_traits_d<CGAL::Polynomial<IC, Rep_> >::d == 1));
     typedef CGAL::Algebraic_structure_traits<IC> AST_IC;
     typedef typename AST_IC::Algebraic_category Algebraic_category;
     return internal::resultant_univariate(F,G,Algebraic_category()); 
