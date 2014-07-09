@@ -280,7 +280,12 @@ private:
 
   public:
     void simplify_coefficients() { this->ptr()->simplify_coefficients(); }
-    int degree() const { return static_cast<int>(this->ptr()->coeff.size())-1; } 
+    int degree() const {
+      std::cout << push_to_sage() << std::endl; 
+      std::string sage_degree = push_to_sage();
+      return atoi( sage_degree.c_str() );
+      //return static_cast<int>(this->ptr()->coeff.size())-1;
+     }
 
     void convert_to_sage_format()
     {
