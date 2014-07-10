@@ -29,7 +29,7 @@ ArrangementGraphicsItemBase::ArrangementGraphicsItemBase( ) :
   edgesPen( QPen( ::Qt::blue, 1. ) ),
   visible_edges( true ),
   visible_vertices( true ),
-  scene( NULL ),
+//  scene( NULL ),
   backgroundColor( ::Qt::white )
 {
   this->verticesPen.setCosmetic( true );

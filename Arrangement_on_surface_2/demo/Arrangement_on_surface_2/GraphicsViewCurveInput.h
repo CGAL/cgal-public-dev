@@ -930,7 +930,7 @@ protected:
   QGraphicsLineItem segmentGuide;
 }; // class GraphicsViewCurveInput< CGAL::Arr_Bezier_curve_traits_2< RatKernel, AlgKernel, NtTraits > >:
 
-#if 0
+#if 1
 template < typename Coefficient_ >
 class GraphicsViewCurveInput<CGAL::Arr_algebraic_segment_traits_2<
                                Coefficient_> > :

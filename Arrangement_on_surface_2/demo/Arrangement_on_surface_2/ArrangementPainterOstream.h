@@ -38,7 +38,7 @@
 
 #include "Utils.h"
 
-// #include <CGAL/Curved_kernel_via_analysis_2/Curve_renderer_facade.h>
+#include <CGAL/Curved_kernel_via_analysis_2/Curve_renderer_facade.h>
 
 class QPainter;
 
@@ -1050,7 +1050,7 @@ public: // methods
   }
 };
 
-#if 0
+#if 1
 template < typename Coefficient_ >
 class ArrangementPainterOstream< CGAL::Arr_algebraic_segment_traits_2<
                                    Coefficient_ > >:
@@ -1078,7 +1078,7 @@ public:
 public: // methods
   ArrangementPainterOstream& operator<<( const X_monotone_curve_2& curve )
   {
-    //std::cout << "paint curve stub (alg traits)" << std::endl;
+    std::cout << "paint curve stub (alg traits)" << std::endl;
     typedef Curve_renderer_facade<CKvA_2> Facade;
     typedef std::pair< int, int > Coord_2;
     typedef std::vector< Coord_2 > Coord_vec_2;
@@ -1159,7 +1159,7 @@ public: // methods
   {
     typedef Curve_renderer_facade<CKvA_2> Facade;
     std::pair< int, int > coord;
-    //std::cout << "draw point stub" << std::endl;
+    std::cout << "draw point stub" << std::endl;
 
     this->setupFacade( );
 

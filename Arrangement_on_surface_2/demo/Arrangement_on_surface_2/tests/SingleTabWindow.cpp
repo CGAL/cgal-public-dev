@@ -23,6 +23,11 @@ void SingleTabWindow::load( const std::string& filename )
   load_arr_from_file( filename, m_arr );
 }
 
+void SingleTabWindow::fitInView( const QRectF& rect )
+{
+  m_tab->getView( )->fitInView( rect, ::Qt::KeepAspectRatio );
+}
+
 void SingleTabWindow::setupUi( )
 {
   ui->setupUi( this );

@@ -32,6 +32,7 @@ public:
   virtual ~SingleTabWindow( );
 
   void load( const std::string& filename );
+  void fitInView( const QRectF& rect );
 
 protected:
   void setupUi( );

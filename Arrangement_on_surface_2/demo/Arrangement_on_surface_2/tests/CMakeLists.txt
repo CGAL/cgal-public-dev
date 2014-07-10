@@ -7,6 +7,17 @@ include_directories( BEFORE ../ )
 message( STATUS ${CMAKE_CURRENT_BINARY_DIR} )
 
 add_executable( test_polynomial_io test_polynomial_io.cpp )
+target_link_libraries( test_polynomial_io ${QT_LIBRARIES} )
+
+add_executable( simple_arr_view simple_arr_view.cpp 
+  ../ArrangementGraphicsItem.cpp
+)
+target_link_libraries( simple_arr_view 
+#  arr_demo_library
+  arr_demo_traits_library
+  ${CGAL_LIBRARIES}
+  ${QT_LIBRARIES}
+)
 
 #####
 # Test code for scaffolding the Bezier graphics item.

@@ -74,7 +74,7 @@ protected:
   bool visible_edges;
   bool visible_vertices;
 
-  QGraphicsScene* scene;
+//  QGraphicsScene* scene;
 
   QColor backgroundColor;
 
@@ -133,9 +133,9 @@ protected:
   void paint( QPainter* painter,
     CGAL::Arr_Bezier_curve_traits_2< RatKernel, AlgKernel, NtTraits > );
 
-  // template < typename Coefficient_ >
-  // void paint( QPainter* painter,
-  //             CGAL::Arr_algebraic_segment_traits_2< Coefficient_ > traits );
+  template < typename Coefficient_ >
+  void paint( QPainter* painter,
+              CGAL::Arr_algebraic_segment_traits_2< Coefficient_ > traits );
 
 
   void paintFaces( QPainter* painter )
@@ -915,9 +915,9 @@ protected:
   template < typename RatKernel, class AlgKernel, class NtTraits >
   void updateBoundingBox(CGAL::Arr_Bezier_curve_traits_2<RatKernel, AlgKernel, NtTraits> /* traits */);
 
-  // template < typename Coefficient_>
-  // void updateBoundingBox(CGAL::Arr_algebraic_segment_traits_2<Coefficient_>
-  //                        traits);
+  template < typename Coefficient_>
+  void updateBoundingBox(CGAL::Arr_algebraic_segment_traits_2<Coefficient_>
+                         traits);
 
   Arrangement* arr;
   ArrangementPainterOstream< Traits > painterostream;
@@ -1093,13 +1093,14 @@ protected:
     //}
   }
 
-#if 0
+#if 1
   template < typename Arr_, typename ArrTraits >
   template < typename Coefficient_ >
   void ArrangementGraphicsItem< Arr_, ArrTraits >::
-  paint(QPainter* painter,
+  paint( QPainter* painter,
         CGAL::Arr_algebraic_segment_traits_2< Coefficient_ > /* traits */)
   {
+    std::cout << "paint algebraic\n";
     painter->setPen( this->verticesPen );
     QRectF clipRect = this->boundingRect( );
     if ( std::isinf(clipRect.left( )) ||
@@ -1112,7 +1113,7 @@ protected:
 
     this->painterostream =
       ArrangementPainterOstream< Traits >( painter, clipRect );
-    this->painterostream.setScene( this->scene );
+    this->painterostream.setScene( this->QGraphicsItem::scene( ) );
 
     for ( Vertex_iterator it = this->arr->vertices_begin( );
           it != this->arr->vertices_end( ); ++it )
@@ -1264,7 +1265,7 @@ protected:
       << ")\n";
   }
 
-#if 0
+#if 1
   template < typename Arr_, typename ArrTraits >
   template < typename Coefficient_ >
   void ArrangementGraphicsItem< Arr_, ArrTraits >::
@@ -1301,6 +1302,10 @@ protected:
         this->bb = this->bb + cv.bbox( );
       }
     }
+    std::cout << "algebraic bb\n";
+    std::cout << this->bb.xmin( ) << " " << this->bb.ymin( )
+      << this->bb.xmax( ) << " " << this->bb.ymax( ) << "\n";
+
   }
 #endif
 

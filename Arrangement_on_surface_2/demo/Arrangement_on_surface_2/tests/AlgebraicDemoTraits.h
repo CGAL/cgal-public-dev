@@ -9,6 +9,7 @@
 #include <CGAL/Cartesian.h>
 #include <CGAL/CORE_algebraic_number_traits.h>
 #include <CGAL/Arr_algebraic_segment_traits_2.h>
+#include <CGAL/Curved_kernel_via_analysis_2/Curve_renderer_facade.h>
 #include <CGAL/Arrangement_with_history_2.h>
 #include "ArrangementGraphicsItem.h"
 #include "ArrangementDemoTab.h"
@@ -34,6 +35,8 @@ struct AlgebraicDemoTraits
   typedef CGAL::Qt::ArrangementGraphicsItem< Algebraic_arrangement_2 >
     AlgebraicArrangementGraphicsItem;
   typedef ArrangementDemoTab< Algebraic_arrangement_2 > AlgebraicTab;
+  typedef Algebraic_traits_2::CKvA_2 CKvA_2;
+  typedef CGAL::Curve_renderer_facade<CKvA_2> Curve_renderer_facade;
 
   // exports
   typedef Algebraic_traits_2 ArrTraitsType;
