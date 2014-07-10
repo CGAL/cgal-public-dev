@@ -31,11 +31,20 @@
 namespace CGAL {
 namespace Qt {
 
+class CurveGraphicsItemBase : public GraphicsItem, public IQGraphicsSceneMixin
+{
+public:
+  virtual ~CurveGraphicsItemBase( ) { }
+
+  // override for IQGraphicsSceneMixin
+  virtual QGraphicsScene* getScene( ) const;
+};
+
 /**
    Draws selected curves and vertices of an arrangement.
 */
 template < class ArrTraits >
-class CurveGraphicsItem : public GraphicsItem, public QGraphicsSceneMixin
+class CurveGraphicsItem : public CurveGraphicsItemBase
 {
 public:
   // known curve types

@@ -78,7 +78,9 @@ public:
 
   PointLocationCallback( Arrangement* arr_, QObject* parent_ );
   void reset( );
-  void setScene( QGraphicsScene* scene_ );
+
+  // override QGraphicsSceneMixin::setScene
+  virtual void setScene( QGraphicsScene* scene_ );
 
 protected:
   void mousePressEvent( QGraphicsSceneMouseEvent *event );
@@ -95,7 +97,6 @@ protected:
   CGAL::Object locate( const Kernel_point_2& point,
                        CGAL::Tag_true /*doesNotSupportLandmarks*/ );
 
-  using Callback::scene;
   CGAL::Qt::Converter< Kernel > convert;
   CGAL::Object pointLocationStrategy;
   Arrangement* arr;
@@ -121,11 +122,11 @@ void
 PointLocationCallback< Arr_ >::
 setScene( QGraphicsScene* scene_ )
 {
-  this->scene = scene_;
-  this->highlightedCurves->setScene( scene_ );
-  if ( this->scene )
+  this->QGraphicsSceneMixin::setScene( scene_ );
+
+  if ( this->getScene( ) )
   {
-    this->scene->addItem( this->highlightedCurves );
+    this->getScene( )->addItem( this->highlightedCurves );
   }
 }
 

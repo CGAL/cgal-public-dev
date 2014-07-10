@@ -56,8 +56,9 @@ public:
   typedef typename Kernel::Segment_2                    Segment;
 
   DeleteCurveCallback( Arrangement* arr_, QObject* parent_ );
-  void setScene( QGraphicsScene* scene_ );
-  QGraphicsScene* getScene( ) const;
+
+  virtual void setScene( QGraphicsScene* scene_ );
+
   void reset( );
 
 protected:
@@ -67,7 +68,6 @@ protected:
 
   Compute_squared_distance_2< Traits > squaredDistance;
   CGAL::Qt::Converter< Kernel > convert;
-  QGraphicsScene* scene;
   CGAL::Qt::CurveGraphicsItem< Traits >* highlightedCurve;
   Arrangement* arr;
   Halfedge_handle removableHalfedge;
@@ -78,7 +78,6 @@ template < typename Arr_ >
 DeleteCurveCallback< Arr_ >::
 DeleteCurveCallback( Arrangement* arr_, QObject* parent_ ) :
   CGAL::Qt::Callback( parent_ ),
-  scene( NULL ),
   highlightedCurve( new CGAL::Qt::CurveGraphicsItem< Traits >( ) ),
   arr( arr_ )
 {
@@ -89,18 +88,12 @@ DeleteCurveCallback( Arrangement* arr_, QObject* parent_ ) :
 template < typename Arr_ >
 void DeleteCurveCallback< Arr_ >::setScene( QGraphicsScene* scene_ )
 {
-  this->scene = scene_;
-  this->highlightedCurve->setScene( scene_ );
-  if ( this->scene )
-  {
-    this->scene->addItem( this->highlightedCurve );
-  }
-}
+  this->QGraphicsSceneMixin::setScene( scene_ );
 
-template < typename Arr_ >
-QGraphicsScene* DeleteCurveCallback< Arr_ >::getScene( ) const
-{
-  return this->scene;
+  if ( this->getScene( ) )
+  {
+    this->getScene( )->addItem( this->highlightedCurve );
+  }
 }
 
 template < typename Arr_ >
@@ -179,7 +172,7 @@ highlightNearestCurve( QGraphicsSceneMouseEvent* event )
   }
 #endif
   Find_nearest_edge< Arr_ > findNearestEdge( this->arr );
-  findNearestEdge.setScene( this->scene );
+  findNearestEdge.setScene( this->getScene( ) );
   Halfedge_const_handle nearestEdge = findNearestEdge( p );
   this->removableHalfedge = this->arr->non_const_handle( nearestEdge );
 

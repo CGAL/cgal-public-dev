@@ -112,7 +112,6 @@ public:
       new FillFaceCallback<Arrangement>( this->arrangement, this );
 
     this->scene->addItem( this->arrangementGraphicsItem );
-    this->arrangementGraphicsItem->setScene( this->scene );
     this->curveInputCallback->setScene( this->scene );
     this->deleteCurveCallback->setScene( this->scene );
     this->pointLocationCallback->setScene( this->scene );
@@ -174,7 +173,6 @@ public:
       new FillFaceCallback<Arrangement>( this->arrangement, this );
 
     this->scene->addItem( this->arrangementGraphicsItem );
-    this->arrangementGraphicsItem->setScene( this->scene );
     this->curveInputCallback->setScene( this->scene );
     this->deleteCurveCallback->setScene( this->scene );
     this->pointLocationCallback->setScene( this->scene );

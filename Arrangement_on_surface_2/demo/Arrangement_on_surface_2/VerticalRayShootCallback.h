@@ -50,7 +50,6 @@ public:
 
 protected:
   VerticalRayShootCallbackBase( QObject* parent_ );
-  using Callback::scene;
   bool shootingUp;
 }; // class VerticalRayShootCallbackBase
 
@@ -103,7 +102,8 @@ public:
 
   VerticalRayShootCallback( Arrangement* arr_, QObject* parent_ );
   void reset( );
-  void setScene( QGraphicsScene* scene_ );
+
+  virtual void setScene( QGraphicsScene* scene_ );
 
   void slotModelChanged( );
 
@@ -176,9 +176,9 @@ VerticalRayShootCallback( Arrangement* arr_, QObject* parent_ ):
 template < typename Arr_ >
 void VerticalRayShootCallback< Arr_ >::setScene( QGraphicsScene* scene_ )
 {
-  this->scene = scene_;
-  this->highlightedCurves->setScene( scene_ );
-  if ( this->scene )
+  this->QGraphicsSceneMixin::setScene( scene_ );
+
+  if ( this->getScene( ) )
   {
     this->scene->addItem( this->highlightedCurves );
     this->scene->addItem( this->activeRay );
@@ -234,15 +234,15 @@ highlightPointLocation( QGraphicsSceneMouseEvent* event )
     return;
   }
 
-  QRectF viewportRect = this->viewportRect( );
+  QRectF rect = this->viewportRect( );
   FT y2;
   if ( this->shootingUp )
   { // +y in Qt is towards the bottom
-    y2 = FT( viewportRect.bottom( ) );
+    y2 = FT( rect.bottom( ) );
   }
   else
   {
-    y2 = FT( viewportRect.top( ) );
+    y2 = FT( rect.top( ) );
   }
   Face_const_handle unboundedFace;
   Halfedge_const_handle halfedge;

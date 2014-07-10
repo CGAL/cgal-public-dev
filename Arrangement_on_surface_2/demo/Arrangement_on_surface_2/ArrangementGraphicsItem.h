@@ -46,7 +46,7 @@ namespace CGAL {
 namespace Qt {
 
 class ArrangementGraphicsItemBase :
-    public GraphicsItem, public QGraphicsSceneMixin
+    public GraphicsItem, public IQGraphicsSceneMixin
 {
 public:
   ArrangementGraphicsItemBase( );
@@ -62,6 +62,9 @@ public:
   void setVisibleEdges( const bool b );
   void setBackgroundColor( QColor color );
   // void setScene( QGraphicsScene* scene_ );
+
+  // IQGraphicsSceneMixin overrides
+  virtual QGraphicsScene* getScene( ) const;
 
 protected:
   // QRectF getViewportRect( ) const;
@@ -978,7 +981,7 @@ protected:
     painter->setPen( this->verticesPen );
     this->painterostream =
       ArrangementPainterOstream< Traits >( painter, this->boundingRect( ) );
-    this->painterostream.setScene( this->scene );
+    this->painterostream.setScene( this->scene( ) );
 
     for ( Vertex_iterator it = this->arr->vertices_begin( );
           it != this->arr->vertices_end( ); ++it )
@@ -1007,7 +1010,7 @@ protected:
 
     this->painterostream =
       ArrangementPainterOstream< Traits >( painter, this->boundingRect( ) );
-    this->painterostream.setScene( this->scene );
+    this->painterostream.setScene( this->scene( ) );
 
     for ( Vertex_iterator it = this->arr->vertices_begin( );
           it != this->arr->vertices_end( ); ++it )
@@ -1038,7 +1041,7 @@ protected:
     painter->setPen( this->verticesPen );
     this->painterostream =
       ArrangementPainterOstream< Traits >( painter, this->boundingRect( ) );
-    this->painterostream.setScene( this->scene );
+    this->painterostream.setScene( this->scene( ) );
 
     for ( Vertex_iterator it = this->arr->vertices_begin( );
           it != this->arr->vertices_end( ); ++it )
@@ -1065,7 +1068,7 @@ protected:
     this->paintFaces( painter );
 
     this->painterostream = ArrangementPainterOstream< Traits >( painter, this->boundingRect( ) );
-    this->painterostream.setScene( this->scene );
+    this->painterostream.setScene( this->scene( ) );
     painter->setPen( this->verticesPen );
     for ( Vertex_iterator it = this->arr->vertices_begin( );
       it != this->arr->vertices_end( ); ++it )

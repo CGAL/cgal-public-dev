@@ -89,6 +89,11 @@ void ArrangementGraphicsItemBase::setBackgroundColor( QColor color )
   this->backgroundColor = color;
 }
 
+QGraphicsScene* ArrangementGraphicsItemBase::getScene( ) const
+{
+  return this->QGraphicsItem::scene( );
+}
+
 #if 0
 void ArrangementGraphicsItemBase::setScene( QGraphicsScene* scene_ )
 {

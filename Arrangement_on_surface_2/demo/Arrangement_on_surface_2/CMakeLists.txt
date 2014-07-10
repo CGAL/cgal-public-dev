@@ -57,6 +57,7 @@ if ( CGAL_FOUND AND CGAL_Qt4_FOUND AND QT4_FOUND)
     ArrangementGraphicsItem.cpp
     Callback.cpp
     ColorItemEditor.cpp
+    CurveGraphicsItem.cpp
     DeleteCurveMode.cpp
     DeleteCurveModeItemEditor.cpp
     EnvelopeCallback.cpp

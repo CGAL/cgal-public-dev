@@ -40,28 +40,35 @@
 
 class QGraphicsScene;
 
-class QGraphicsSceneMixin
+/**
+Interface defining some utility methods involving the scene.
+
+Subclasses of QGraphicsItem use this, forwarding getScene to
+QGraphicsItem::scene in order to get access to the various utility methods
+defined here.
+*/
+class IQGraphicsSceneMixin
 {
 public:
-  /*! Costructor */
-  QGraphicsSceneMixin( ) : scene( 0 ) { }
+  virtual ~IQGraphicsSceneMixin( ) { }
 
-  /*! Destructor (virtual) */
-  virtual ~QGraphicsSceneMixin() {}
+  /**
+  Get a pointer to the associated QGraphicsScene.
+  */
+  virtual QGraphicsScene* getScene( ) const = 0;
 
-  virtual void setScene( QGraphicsScene* scene_ ) { this->scene = scene_; }
-
-  virtual QGraphicsScene* getScene( ) const { return this->scene; }
-
-  virtual QRectF viewportRect( ) const
+  /**
+  Get the viewport rectangle in scene-space units.
+  */
+  QRectF viewportRect( ) const
   {
     QRectF res;
-    if ( this->scene == NULL )
+    if ( ! this->getScene( ) )
     {
       return res;
     }
 
-    QList< QGraphicsView* > views = this->scene->views( );
+    QList< QGraphicsView* > views = this->getScene( )->views( );
     if ( views.size( ) == 0 )
     {
       return res;
@@ -85,12 +92,12 @@ public:
   QPoint fromScene( QPointF p, bool* ok = 0 )
   {
     QPoint res;
-    if ( this->scene == NULL )
+    if ( this->getScene( ) == NULL )
     {
       if ( ok ) { *ok = false; }
       return res;
     }
-    QList< QGraphicsView* > views = this->scene->views( );
+    QList< QGraphicsView* > views = this->getScene( )->views( );
     if ( views.size( ) == 0 )
     {
       if ( ok ) { *ok = false; }
@@ -108,12 +115,12 @@ public:
   QPointF toScene( QPoint p, bool* ok = 0 )
   {
     QPointF res;
-    if ( this->scene == NULL )
+    if ( this->getScene( ) == NULL )
     {
       if ( ok ) { *ok = false; }
       return res;
     }
-    QList< QGraphicsView* > views = this->scene->views( );
+    QList< QGraphicsView* > views = this->getScene( )->views( );
     if ( views.size( ) == 0 )
     {
       if ( ok ) { *ok = false; }
@@ -141,6 +148,24 @@ public:
     QPointF pp = this->toScene( p, ok );
     return pp.x( );
   }
+};
+
+/**
+Concrete version of IQGraphicsSceneMixin for classes that don't have a handle
+on the QGraphicsScene.
+*/
+class QGraphicsSceneMixin : public IQGraphicsSceneMixin
+{
+public:
+  /*! Constructor */
+  QGraphicsSceneMixin( ) : scene( 0 ) { }
+
+  /*! Destructor (virtual) */
+  virtual ~QGraphicsSceneMixin() { }
+
+  virtual void setScene( QGraphicsScene* scene_ ) { this->scene = scene_; }
+
+  virtual QGraphicsScene* getScene( ) const { return this->scene; }
 
 protected: // fields
   QGraphicsScene* scene;

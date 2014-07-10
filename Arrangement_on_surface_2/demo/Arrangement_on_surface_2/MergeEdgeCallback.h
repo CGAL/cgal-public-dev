@@ -53,8 +53,7 @@ public:
   typedef typename Kernel::Segment_2                    Segment;
 
   MergeEdgeCallback( Arrangement* arr_, QObject* parent_ );
-  void setScene( QGraphicsScene* scene_ );
-  QGraphicsScene* getScene( ) const;
+  virtual void setScene( QGraphicsScene* scene_ );
   void reset( );
 
 protected:
@@ -66,7 +65,6 @@ protected:
 
   Compute_squared_distance_2< Traits > squaredDistance;
   CGAL::Qt::Converter< Kernel > convert;
-  QGraphicsScene* scene;
   CGAL::Qt::CurveGraphicsItem< Traits >* highlightedCurve;
   CGAL::Qt::CurveGraphicsItem< Traits >* highlightedCurve2;
   Arrangement* arr;
@@ -79,7 +77,6 @@ template < typename Arr_ >
 MergeEdgeCallback< Arr_ >::MergeEdgeCallback( Arrangement* arr_,
                                               QObject* parent_ ) :
   CGAL::Qt::Callback( parent_ ),
-  scene( NULL ),
   highlightedCurve( new CGAL::Qt::CurveGraphicsItem< Traits >( ) ),
   highlightedCurve2( new CGAL::Qt::CurveGraphicsItem< Traits >( ) ),
   arr( arr_ ),
@@ -94,21 +91,21 @@ MergeEdgeCallback< Arr_ >::MergeEdgeCallback( Arrangement* arr_,
 template < typename Arr_ >
 void MergeEdgeCallback< Arr_ >::setScene( QGraphicsScene* scene_ )
 {
-  this->scene = scene_;
-  this->highlightedCurve->setScene( scene_ );
-  this->highlightedCurve2->setScene( scene_ );
-  if ( this->scene )
+  this->QGraphicsSceneMixin::setScene( scene_ );
+
+  QGraphicsScene* scn = this->getScene( );
+  if ( scn )
   {
-    this->scene->addItem( this->highlightedCurve );
-    this->scene->addItem( this->highlightedCurve2 );
+    scn->addItem( this->highlightedCurve );
+    scn->addItem( this->highlightedCurve2 );
   }
 }
 
-template < typename Arr_ >
-QGraphicsScene* MergeEdgeCallback< Arr_ >::getScene( ) const
-{
-  return this->scene;
-}
+//template < typename Arr_ >
+//QGraphicsScene* MergeEdgeCallback< Arr_ >::getScene( ) const
+//{
+//  return this->scene;
+//}
 
 template < typename Arr_ >
 void MergeEdgeCallback< Arr_ >::reset( )
