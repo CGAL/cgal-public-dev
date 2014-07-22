@@ -17,6 +17,7 @@
 // 
 //
 // Author(s)     : Arno Eigenwillig <arno@mpi-inf.mpg.de>
+//		 : Sourav Dutta	<sdutta@mpi-inf.mpg.de>
 //
 // ============================================================================
 
@@ -35,7 +36,7 @@
 
 #include <CGAL/basic.h>
 #include <CGAL/Algebraic_kernel_d/Bitstream_descartes_rndl_tree.h> // TODO remove
-#include <CGAL/Handle_with_policy.h>
+//#include <CGAL/Handle_with_policy.h>
 #include <CGAL/Random.h>
 
 #include <boost/optional.hpp>
@@ -191,7 +192,7 @@ public:
 
     int degree() const { return degree_; }
 
-    void set_traits(Traits& traits) {
+    void set_traits(const Traits& traits) {
         approximator_ = traits.approximator_object();
         lower_bound_log2_abs_ = traits.lower_bound_log2_abs_object();
     }
@@ -368,8 +369,6 @@ class Bitstream_descartes_E08_tree;
 template <class BitstreamDescartesE08TreeTraits>
         struct Bitstream_descartes_E08_node;
 
-        template <class BitstreamDescartesE08TreeTraits>
-        class Bitstream_descartes_E08_tree_rep;
 } // namespace internal
 
 } //namespace CGAL
@@ -444,7 +443,6 @@ public:
   CGAL_BITSTREAM_DESCARTES_E08_TREE_COMMON_TYPEDEFS;
   
   friend class CGAL::internal::Bitstream_descartes_E08_tree<TRAITS>;
-  friend class CGAL::internal::Bitstream_descartes_E08_tree_rep<TRAITS>;
 
 private:
     // "node data" (set individually in subdivision)
@@ -481,21 +479,37 @@ private:
 }; // struct Bitstream_descartes_E08_node
 
 
+
 /*
- * class Bitstream_descartes_E08_tree_rep
+ * class Bitstream_descartes_E08_tree
  */
 
+/*! \ingroup CGAL_Bitstream_descartes_tree
+ *  \brief Subdivision tree of the BitstreamDescartes method (E08 variant)
+ */
 template <class BitstreamDescartesE08TreeTraits>
-class Bitstream_descartes_E08_tree_rep {
+class Bitstream_descartes_E08_tree
+{
 public:
-    typedef Bitstream_descartes_E08_tree_rep Self;
+    typedef Bitstream_descartes_E08_tree Self;
     CGAL_BITSTREAM_DESCARTES_E08_TREE_TYPEDEFS;
 
     class Monomial_basis_tag { };
 
-    friend class CGAL::internal::Bitstream_descartes_E08_tree<TRAITS>;
+    //! node iterator.
+    typedef typename Node_list::iterator       Node_iterator;
+    //! node iterator (for STL compatibility only).
+    typedef typename Node_list::iterator       iterator;
+    //! const node iterator.
+    typedef typename Node_list::const_iterator Node_const_iterator;
+    //! const node iterator (for STL compatibility only).
+    typedef typename Node_list::const_iterator const_iterator;
+
+    //! tag type to distinguish a certain constructor.
+    typedef typename Monomial_basis_tag Monomial_basis_tag;
 
 private:
+
     B_from_p b_from_p_;
     long log_radius_;
     int degree_;
@@ -512,73 +526,27 @@ private:
     long log_splitpoint_den_;
 
 public:
-    Bitstream_descartes_E08_tree_rep() : degree_(-1) { }
-
-    template <class InputIterator>
-    Bitstream_descartes_E08_tree_rep(
-            long log_radius,
-            InputIterator first, InputIterator beyond, Monomial_basis_tag,
-            const TRAITS& traits
-    ) : b_from_p_(first, beyond, log_radius, traits),
-        log_radius_(log_radius),
-        subdiv_tries_(0), subdiv_fails_(0),
-        bisect_tries_(0), bisect_fails_(0),
-        splitpoint_num_(0), log_splitpoint_den_(0)
-    {
-        degree_ = b_from_p_.degree();
-        CGAL_precondition(degree_ >= 0);
-        ceil_log_degree_ = (degree_ > 0) ? Ceil_log2_abs_long()(degree_) : -1;
-        node_list_.push_front(
-                Node(degree_, Integer(-1), Integer(1), -log_radius)
-        );
-        payload_prec_ = 6 * degree_ + 20;
-        tmp1_coeff_.resize(degree_ + 1);
-        tmp2_coeff_.resize(degree_ + 1);
-    }
-}; // class Bitstream_descartes_E08_tree_rep
-
-/*
- * class Bitstream_descartes_E08_tree
- */
-
-/*! \ingroup CGAL_Bitstream_descartes_tree
- *  \brief Subdivision tree of the BitstreamDescartes method (E08 variant)
- */
-template <class BitstreamDescartesE08TreeTraits>
-class Bitstream_descartes_E08_tree
-    : public
-        ::CGAL::Handle_with_policy<
-                 internal::Bitstream_descartes_E08_tree_rep<
-                         BitstreamDescartesE08TreeTraits
-                 >
-         >
-{
-public:
-    typedef Bitstream_descartes_E08_tree Self;
-    CGAL_BITSTREAM_DESCARTES_E08_TREE_TYPEDEFS;
-    typedef internal::Bitstream_descartes_E08_tree_rep<TRAITS> Rep;
-    typedef ::CGAL::Handle_with_policy<Rep> Base;
-
-    //! node iterator.
-    typedef typename Node_list::iterator       Node_iterator;
-    //! node iterator (for STL compatibility only).
-    typedef typename Node_list::iterator       iterator;
-    //! const node iterator.
-    typedef typename Node_list::const_iterator Node_const_iterator;
-    //! const node iterator (for STL compatibility only).
-    typedef typename Node_list::const_iterator const_iterator;
-
-    //! tag type to distinguish a certain constructor.
-    typedef typename Rep::Monomial_basis_tag Monomial_basis_tag;
-
-public:
     //! default constructor (makes <tt>degree() == -1</tt>)
-    Bitstream_descartes_E08_tree() : Base(Rep()) { }
+    Bitstream_descartes_E08_tree() : _degree(-1) { }
 
     //! copy constructor
     Bitstream_descartes_E08_tree(const Self& p)
-        : Base(static_cast<const Base&>(p))
-    { }
+    {
+	this->b_from_p_ = p.b_from_p_;
+	this->log_radius_ = p.log_radius_;
+	this->degree_ = p.radius_;
+	this->ceil_log_degree_ = p.ceil_log_degree_;
+	this->node_list_ = p.node_list_;
+	this->payload_prec_ = p.payload_prec_;
+	this->subdiv_tries_ = p.subdiv_tries_;
+	this->subdiv_fails_ = p.subdiv_fails_;
+	this->bisect_tries_ = p.bisect_tries_;
+	this->bisect_fails_ = p.bisect_fails_;
+	this->tmp1_coeff_ = p.tmp1_coeff_;
+	this->tmp2_coeff_ = p.tmp2_coeff_;
+	this->splitpoint_num_ = p.splitpoint_num_;
+	this->log_splitpoint_den_ = p.splitpoint_den_;
+    }
 
     /*! \brief construct from initial interval and coefficients
      *
@@ -598,36 +566,50 @@ public:
             InputIterator first, InputIterator beyond, Monomial_basis_tag tag,
             const BitstreamDescartesE08TreeTraits& traits
                                         = BitstreamDescartesE08TreeTraits()
-    ) : Base(Rep(log_radius, first, beyond, tag, traits))
+    ) : b_from_p_(first, beyond, log_radius, traits),
+        log_radius_(log_radius),
+        subdiv_tries_(0), subdiv_fails_(0),
+        bisect_tries_(0), bisect_fails_(0),
+        splitpoint_num_(0), log_splitpoint_den_(0)
     {
-        Node_iterator n = this->ptr()->node_list_.begin();
-        if (this->ptr()->degree_ > 0) {
+        degree_ = b_from_p_.degree();
+        CGAL_precondition(degree_ >= 0);
+        ceil_log_degree_ = (degree_ > 0) ? Ceil_log2_abs_long()(degree_) : -1;
+        node_list_.push_front(
+                Node(degree_, Integer(-1), Integer(1), -log_radius)
+        );
+        payload_prec_ = 6 * degree_ + 20;
+        tmp1_coeff_.resize(degree_ + 1);
+        tmp2_coeff_.resize(degree_ + 1);
+
+        Node_iterator n = this->node_list_.begin();
+        if (this->degree_ > 0) {
             bool init_ok = reinit_from_prec(n);
             CGAL_assertion(init_ok); (void)init_ok;
-            if (n->min_var_ == 0) this->ptr()->node_list_.erase(n);
+            if (n->min_var_ == 0) this->node_list_.erase(n);
         } else {
-            this->ptr()->node_list_.erase(n);
+            this->node_list_.erase(n);
         }
     }
 
     //! return degree of polynomial
-    int degree() const { return this->ptr()->degree_; }
+    int degree() const { return this->degree_; }
 
     //! iterator to first node
     Node_iterator begin() {
-        return this->ptr()->node_list_.begin();
+        return this->node_list_.begin();
     }
     //! iterator beyond last node
     Node_iterator end() {
-        return this->ptr()->node_list_.end();
+        return this->node_list_.end();
     }
     //! const iterator to first node
     Node_const_iterator begin() const {
-        return this->ptr()->node_list_.begin();
+        return this->node_list_.begin();
     }
     //! const iterator beyond last node
     Node_const_iterator end() const {
-        return this->ptr()->node_list_.end();
+        return this->node_list_.end();
     }
 
     //! get lower bound of interval at node \c n.
@@ -712,13 +694,13 @@ public:
      */
     void erase(Node_iterator n) {
         CGAL_assertion(is_iterator_valid(n));
-        this->ptr()->node_list_.erase(n);
+        this->node_list_.erase(n);
     }
 
     /*! \brief Replace traits class
      */
     void set_traits(TRAITS& traits) {
-        this->ptr()->b_from_p_.set_traits(traits);
+        this->b_from_p_.set_traits(traits);
     }
 
     /*! \brief Returns a copy of this with its own representation
@@ -740,8 +722,8 @@ protected:
     );
 
     bool is_iterator_valid(Node_const_iterator n) const {
-        Node_const_iterator it  = this->ptr()->node_list_.begin();
-        Node_const_iterator end = this->ptr()->node_list_.end();
+        Node_const_iterator it  = this->node_list_.begin();
+        Node_const_iterator end = this->node_list_.end();
         while (it != end) {
             if (it == n) return true;
             ++it;
@@ -779,27 +761,27 @@ Bitstream_descartes_E08_tree<BitstreamDescartesE08TreeTraits>
 
     n->subdepth_bound_   = 1L << log_subdepth_bound_init_;
     n->subdepth_current_ = 0;
-    n->log_eps_ = this->ptr()->ceil_log_degree_
+    n->log_eps_ = this->ceil_log_degree_
                 + log_subdepth_bound_init_
                 + 1;
     n->log_C_eps_ = n->log_eps_ + 4*this->degree();
 
-    this->ptr()->b_from_p_(
-            this->ptr()->tmp1_coeff_.begin(),
-            this->ptr()->payload_prec_ + 1
+    this->b_from_p_(
+            this->tmp1_coeff_.begin(),
+            this->payload_prec_ + 1
     );
     for (int i = 0; i <= degree(); ++i) { // TODO avoid preceding rshift
-        this->ptr()->tmp1_coeff_[i] <<= (n->log_eps_ - 1);
+        this->tmp1_coeff_[i] <<= (n->log_eps_ - 1);
     }
 
     Integer alpha_num =
-        (Integer(1) << (n->log_bdry_den_ + this->ptr()->log_radius_))
+        (Integer(1) << (n->log_bdry_den_ + this->log_radius_))
         -  n->lower_num_;
-    long log_alpha_den = n->log_bdry_den_ + this->ptr()->log_radius_ + 1;
+    long log_alpha_den = n->log_bdry_den_ + this->log_radius_ + 1;
     if (alpha_num != Integer(1) << log_alpha_den) {
         de_casteljau_generic(
-            this->ptr()->tmp1_coeff_.begin(), this->ptr()->tmp1_coeff_.end(),
-            this->ptr()->tmp2_coeff_.begin(), this->ptr()->tmp1_coeff_.begin(),
+            this->tmp1_coeff_.begin(), this->tmp1_coeff_.end(),
+            this->tmp2_coeff_.begin(), this->tmp1_coeff_.begin(),
             Convex_combinator_approx_Integer_log<Integer>(
                     alpha_num, log_alpha_den
             )
@@ -807,20 +789,20 @@ Bitstream_descartes_E08_tree<BitstreamDescartesE08TreeTraits>
         ++(n->subdepth_current_);
     }
     alpha_num =
-        (Integer(1) << (n->log_bdry_den_ + this->ptr()->log_radius_))
+        (Integer(1) << (n->log_bdry_den_ + this->log_radius_))
         -  n->upper_num_;
     if (alpha_num != Integer(0)) {
         Integer alpha_den =
-            (Integer(1) << (n->log_bdry_den_ + this->ptr()->log_radius_))
+            (Integer(1) << (n->log_bdry_den_ + this->log_radius_))
             - n->lower_num_;
         de_casteljau_generic(
-            this->ptr()->tmp1_coeff_.begin(), this->ptr()->tmp1_coeff_.end(),
-            n->coeff_.begin(), this->ptr()->tmp1_coeff_.begin(),
+            this->tmp1_coeff_.begin(), this->tmp1_coeff_.end(),
+            n->coeff_.begin(), this->tmp1_coeff_.begin(),
             Convex_combinator_approx_fraction<Integer>(alpha_num, alpha_den)
         );
         ++(n->subdepth_current_);
     } else {
-        n->coeff_.swap(this->ptr()->tmp1_coeff_);
+        n->coeff_.swap(this->tmp1_coeff_);
     }
 
     if (Abs_le_pow2()(n->coeff_[degree()], n->log_C_eps_)
@@ -842,13 +824,13 @@ Bitstream_descartes_E08_tree<BitstreamDescartesE08TreeTraits>
         Node_iterator n, Node_iterator& first, Node_iterator& beyond
 ) {
     de_casteljau_generic(n->coeff_.begin(), n->coeff_.end(),
-            this->ptr()->tmp1_coeff_.begin(), this->ptr()->tmp2_coeff_.begin(),
+            this->tmp1_coeff_.begin(), this->tmp2_coeff_.begin(),
             CGAL::internal::Convex_combinator_approx_midpoint<Integer>()
     );
-    this->ptr()->splitpoint_num_     = n->lower_num_ + n->upper_num_;
-    this->ptr()->log_splitpoint_den_ = n->log_bdry_den_ + 1;
+    this->splitpoint_num_     = n->lower_num_ + n->upper_num_;
+    this->log_splitpoint_den_ = n->log_bdry_den_ + 1;
 
-    if (Abs_le_pow2()(this->ptr()->tmp2_coeff_[0], n->log_C_eps_)) {
+    if (Abs_le_pow2()(this->tmp2_coeff_[0], n->log_C_eps_)) {
         return -1;
     } else {
         return replace_by_tmp(n, first, beyond);
@@ -863,16 +845,16 @@ Bitstream_descartes_E08_tree<BitstreamDescartesE08TreeTraits>
         long alpha_num, int log_alpha_den
 ) {
     de_casteljau_generic(n->coeff_.begin(), n->coeff_.end(),
-        this->ptr()->tmp1_coeff_.begin(), this->ptr()->tmp2_coeff_.begin(),
+        this->tmp1_coeff_.begin(), this->tmp2_coeff_.begin(),
         CGAL::internal::Convex_combinator_approx_long_log<Integer>
             (alpha_num, log_alpha_den)
     );
-    this->ptr()->splitpoint_num_ =
+    this->splitpoint_num_ =
         alpha_num * n->lower_num_
             + ((1L << log_alpha_den) - alpha_num) * n->upper_num_;
-    this->ptr()->log_splitpoint_den_ = n->log_bdry_den_ + log_alpha_den;
+    this->log_splitpoint_den_ = n->log_bdry_den_ + log_alpha_den;
 
-    if (Abs_le_pow2()(this->ptr()->tmp2_coeff_[0], n->log_C_eps_)) {
+    if (Abs_le_pow2()(this->tmp2_coeff_[0], n->log_C_eps_)) {
         return -1;
     } else {
         return replace_by_tmp(n, first, beyond);
@@ -890,17 +872,17 @@ Bitstream_descartes_E08_tree<BitstreamDescartesE08TreeTraits>
     ++(n->subdepth_current_);
 
     long delta_log_bdry_den =
-        this->ptr()->log_splitpoint_den_ - n->log_bdry_den_;
+        this->log_splitpoint_den_ - n->log_bdry_den_;
     CGAL_assertion(delta_log_bdry_den >= 0);
 
     int l_min_var, l_max_var, r_min_var, r_max_var;
-    internal::var_eps(this->ptr()->tmp1_coeff_.begin(),
-                                     this->ptr()->tmp1_coeff_.end(),
+    internal::var_eps(this->tmp1_coeff_.begin(),
+                                     this->tmp1_coeff_.end(),
                                      l_min_var, l_max_var, 
                                      Sign_eps_log2(n->log_eps_)
     );
-    internal::var_eps(this->ptr()->tmp2_coeff_.begin(),
-            this->ptr()->tmp2_coeff_.end(),
+    internal::var_eps(this->tmp2_coeff_.begin(),
+            this->tmp2_coeff_.end(),
             r_min_var, r_max_var, Sign_eps_log2(n->log_eps_)
     );
     CGAL_assertion(0 <= l_min_var && l_min_var <= l_max_var);
@@ -914,37 +896,37 @@ Bitstream_descartes_E08_tree<BitstreamDescartesE08TreeTraits>
         if (r_min_var > 0) {
             // create new node for right child
             Node_iterator r = 
-                this->ptr()->node_list_.insert(beyond, Node(degree(),
-                            this->ptr()->splitpoint_num_,        // lower
+                this->node_list_.insert(beyond, Node(degree(),
+                            this->splitpoint_num_,        // lower
                             n->upper_num_ << delta_log_bdry_den, // upper
-                            this->ptr()->log_splitpoint_den_,
+                            this->log_splitpoint_den_,
                             r_min_var, r_max_var
                 ));
-            r->coeff_.swap(this->ptr()->tmp2_coeff_);
+            r->coeff_.swap(this->tmp2_coeff_);
             r->copy_state_from(*n);
             ++children;
         }
         // put left child into n
         n->lower_num_  <<= delta_log_bdry_den;
-        n->upper_num_    = this->ptr()->splitpoint_num_;
-        n->log_bdry_den_ = this->ptr()->log_splitpoint_den_;
+        n->upper_num_    = this->splitpoint_num_;
+        n->log_bdry_den_ = this->log_splitpoint_den_;
         n->min_var_      = l_min_var;
         n->max_var_      = l_max_var;
-        n->coeff_.swap(this->ptr()->tmp1_coeff_);
+        n->coeff_.swap(this->tmp1_coeff_);
         return children;
     } else if (r_min_var > 0) {
         // put right child into n
-        n->lower_num_    = this->ptr()->splitpoint_num_;
+        n->lower_num_    = this->splitpoint_num_;
         n->upper_num_  <<= delta_log_bdry_den;
-        n->log_bdry_den_ = this->ptr()->log_splitpoint_den_;
+        n->log_bdry_den_ = this->log_splitpoint_den_;
         n->min_var_      = r_min_var;
         n->max_var_      = r_max_var;
-        n->coeff_.swap(this->ptr()->tmp2_coeff_);
+        n->coeff_.swap(this->tmp2_coeff_);
         return 1;
     } else /* l_min_var == 0 && r_min_var == 0 */ {
         // delete n
         first = beyond;
-        this->ptr()->node_list_.erase(n);
+        this->node_list_.erase(n);
         return 0;
     }
 } // Bitstream_descartes_E08_tree::replace_by_tmp()
@@ -981,9 +963,9 @@ Bitstream_descartes_E08_tree<BitstreamDescartesE08TreeTraits>
     for (;;) {
         if (true) { // used to be recdepth > 0
             // first try heuristic alpha = 1/2 (failures don't count)
-            ++(this->ptr()->bisect_tries_);
+            ++(this->bisect_tries_);
             ret = subdivide_at_midpoint(n, first, beyond);
-            if (ret >= 0) { return ret; } else { ++(this->ptr()->bisect_fails_); }
+            if (ret >= 0) { return ret; } else { ++(this->bisect_fails_); }
 
             // next try heuristic alpha with small denom (failures don't count)
             log_alpha_den = 4;
@@ -991,27 +973,27 @@ Bitstream_descartes_E08_tree<BitstreamDescartesE08TreeTraits>
             alpha_num = CGAL::default_random.get_int(  // TODO .get_long
                     alpha_den_4, 3*alpha_den_4 + 1
             );
-            ++(this->ptr()->subdiv_tries_);
+            ++(this->subdiv_tries_);
             ret = subdivide_at(n, first, beyond, alpha_num, log_alpha_den);
-            if (ret >= 0) { return ret; } else { --(this->ptr()->subdiv_tries_); }
+            if (ret >= 0) { return ret; } else { --(this->subdiv_tries_); }
 
             // now try alpha properly randomized, counting failure rate
-            log_alpha_den = 4 + this->ptr()->ceil_log_degree_;
+            log_alpha_den = 4 + this->ceil_log_degree_;
             alpha_den_4 = 1L << (log_alpha_den - 2);
             do {
                 alpha_num = CGAL::default_random.get_int(  // TODO .get_long
                         alpha_den_4, 3*alpha_den_4 + 1
                 );
-                ++(this->ptr()->subdiv_tries_);
+                ++(this->subdiv_tries_);
                 ret = subdivide_at(n, first, beyond, alpha_num, log_alpha_den);
                 if (ret >= 0) {
                     return ret;
                 } else {
-                    ++(this->ptr()->subdiv_fails_);
+                    ++(this->subdiv_fails_);
                 }
             } while (
-(this->ptr()->subdiv_fails_ < 2 || 2 * this->ptr()->subdiv_fails_ < this->ptr()->subdiv_tries_)
-&& (this->ptr()->bisect_fails_ < degree())
+(this->subdiv_fails_ < 2 || 2 * this->subdiv_fails_ < this->subdiv_tries_)
+&& (this->bisect_fails_ < degree())
             );
         } // if (true) // used to be recdepth > 0
 
@@ -1026,13 +1008,13 @@ void
 Bitstream_descartes_E08_tree<BitstreamDescartesE08TreeTraits>
 ::global_prec_increase(Node_iterator n)
 {
-    this->ptr()->payload_prec_ *= 2;
+    this->payload_prec_ *= 2;
 
-    this->ptr()->subdiv_tries_ = this->ptr()->subdiv_fails_ = 0;
-    this->ptr()->bisect_tries_ = this->ptr()->bisect_fails_ = 0;
+    this->subdiv_tries_ = this->subdiv_fails_ = 0;
+    this->bisect_tries_ = this->bisect_fails_ = 0;
 
-    Node_iterator it  = this->ptr()->node_list_.begin();
-    Node_iterator end = this->ptr()->node_list_.end();
+    Node_iterator it  = this->node_list_.begin();
+    Node_iterator end = this->node_list_.end();
     while (it != end) {
         if (it != n && it->min_var_ == it->max_var_) {
             it->coeff_update_delayed_ = true;

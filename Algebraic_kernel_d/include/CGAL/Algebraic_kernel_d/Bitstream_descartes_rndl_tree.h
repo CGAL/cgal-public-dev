@@ -17,6 +17,7 @@
 // 
 //
 // Author(s)     : Arno Eigenwillig <arno@mpi-inf.mpg.de>
+//		 : Sourav Dutta	<sdutta@mpi-inf.mpg.de>
 //
 // ============================================================================
 
@@ -458,8 +459,8 @@ namespace internal {
     template <class BitstreamDescartesRndlTreeTraits>
     struct Bitstream_descartes_rndl_node;
 
-    template <class BitstreamDescartesRndlTreeTraits>
-    class Bitstream_descartes_rndl_tree_rep;
+    //template <class BitstreamDescartesRndlTreeTraits>
+    //class Bitstream_descartes_rndl_tree_rep;
 } // namespace internal
 
 /* The template argument supplied as BitstreamDescartesRndlTreeTraits
@@ -528,7 +529,7 @@ public:
     CGAL_BITSTREAM_DESCARTES_RNDL_TREE_COMMON_TYPEDEFS;
 
     friend class internal::Bitstream_descartes_rndl_tree<TRAITS>;
-    friend class internal::Bitstream_descartes_rndl_tree_rep<TRAITS>;
+    //friend class internal::Bitstream_descartes_rndl_tree_rep<TRAITS>;
 
 private:
     // "node data" (set individually in subdivision)
@@ -899,16 +900,12 @@ public:
  */
 template <class BitstreamDescartesRndlTreeTraits>
 class Bitstream_descartes_rndl_tree
-// TODO: Replaced CGAL::Handle by following CGAL::Handle_with_policy, is this correct?
-    : public ::CGAL::Handle_with_policy< Bitstream_descartes_rndl_tree_rep<
-        BitstreamDescartesRndlTreeTraits
-    >, ::CGAL::Handle_policy_no_union >
 {
 public:
     typedef Bitstream_descartes_rndl_tree Self;
-    CGAL_BITSTREAM_DESCARTES_RNDL_TREE_TYPEDEFS;
-    typedef Bitstream_descartes_rndl_tree_rep<TRAITS> Rep;
-    typedef ::CGAL::Handle_with_policy< Rep, ::CGAL::Handle_policy_no_union > Base;
+    CGAL_BITSTREAM_DESCARTES_RNDL_TREE_TYPEDEFS;A
+
+    class Monomial_basis_tag { };
 
     //! node iterator.
     typedef typename Node_list::iterator       Node_iterator;
@@ -920,26 +917,55 @@ public:
     typedef typename Node_list::const_iterator const_iterator;
 
     //! tag type to distinguish a certain constructor.
-    typedef typename Rep::Monomial_basis_tag Monomial_basis_tag;
+    typedef typename Monomial_basis_tag Monomial_basis_tag;
+
+// Members from the Rep class
+private:
+    Coefficient_vector input_monomial_coeff_;
+    int degree_;
+    long ceil_log_degree_;
+    long lbd_log_lcoeff_;
+    Node_list node_list_;
+
+    // temporary data fields for subdivision
+    Integer_vector tmp1_coeff_, tmp2_coeff_;
+    Integer splitpoint_num_;
+    long log_splitpoint_den_;
+
+    // function objects
+    Approximator         approximator_;
+    Lower_bound_log2_abs lower_bound_log2_abs_;
+
 
 public:
     //! default constructor (makes <tt>degree() == -1</tt>)
-    Bitstream_descartes_rndl_tree() : Base(Rep()) { }
+    Bitstream_descartes_rndl_tree() : degree_(-1) { }
 
     //! copy constructor
     Bitstream_descartes_rndl_tree(const Self& p)
-        : Base(static_cast<const Base&>(p))
-    { }
+    {
+	this->input_monomial_coeff_ = p.input_monomial_coeff_;
+	this->degree_ = p.degree_;
+	this->ceil_log_degree_ = p.ceil_log_degree_;
+	this->lbd_log_lcoeff_ = p.lbd_log_lcoeff_;
+	this->tmp1_coeff_ = p.tmp1_coeff_;
+	this->tmp2_coeff_ = p.tmp2_coeff_;
+	this->splitpoint_num_ = p.splitpoint_num_;
+	this->log_splitpoint_den_ = p.log_splitpoint_den_;
+	this->approximator_ = p.approximator_;
+	this->lower_bound_log2_abs_ = p.lower_bound_log2_abs_;
+    }
+
 
     //! Internal function called by constructor. Avoids code duplication
     void init_tree() {
-        Node_iterator n = this->ptr()->node_list_.begin();
-        if (this->ptr()->degree_ > 0) {
+        Node_iterator n = this->node_list_.begin();
+        if (this->degree_ > 0) {
             initial_guess_sep(n);
             while (!reinit_from_sep(n)) next_guess_sep(n);
-            if (n->min_var_ == 0) this->ptr()->node_list_.erase(n);
+            if (n->min_var_ == 0) this->node_list_.erase(n);
         } else {
-            this->ptr()->node_list_.erase(n);
+            this->node_list_.erase(n);
         }
     }
         
@@ -962,9 +988,22 @@ public:
             InputIterator first, InputIterator beyond, Monomial_basis_tag tag,
             const BitstreamDescartesRndlTreeTraits& traits
                                         = BitstreamDescartesRndlTreeTraits()
-    ) : Base(Rep(lower_num, upper_num, log_bdry_den,
-                    first, beyond, tag, traits))
+    ) : input_monomial_coeff_(first, beyond),
+        splitpoint_num_(0), log_splitpoint_den_(0),
+        approximator_(traits.approximator_object()),
+        lower_bound_log2_abs_(traits.lower_bound_log2_abs_object())
     {
+        degree_ = int(input_monomial_coeff_.size() - 1);
+        CGAL_precondition(degree_ >= 0);
+        ceil_log_degree_ = (degree_ > 0) ? Ceil_log2_abs_long()(degree_) : -1;
+        lbd_log_lcoeff_
+            = lower_bound_log2_abs_(input_monomial_coeff_[degree_]);
+        node_list_.push_front(
+                Node(degree_, lower_num, upper_num, log_bdry_den)
+        );
+        tmp1_coeff_.resize(degree_ + 1);
+        tmp2_coeff_.resize(degree_ + 1);
+
         CGAL_precondition(lower_num < upper_num);
         init_tree();
         
@@ -982,31 +1021,43 @@ public:
             InputIterator first, InputIterator beyond, Monomial_basis_tag tag,
             const BitstreamDescartesRndlTreeTraits& traits
                                         = BitstreamDescartesRndlTreeTraits()
-    )
-        : Base(Rep(Integer(-1), Integer(1), -log_bdry_den, 
-                   first, beyond, tag, traits))
+    ) : input_monomial_coeff_(first, beyond),
+        splitpoint_num_(0), log_splitpoint_den_(0),
+        approximator_(traits.approximator_object()),
+        lower_bound_log2_abs_(traits.lower_bound_log2_abs_object())
     {
+        degree_ = int(input_monomial_coeff_.size() - 1);
+        CGAL_precondition(degree_ >= 0);
+        ceil_log_degree_ = (degree_ > 0) ? Ceil_log2_abs_long()(degree_) : -1;
+        lbd_log_lcoeff_
+            = lower_bound_log2_abs_(input_monomial_coeff_[degree_]);
+        node_list_.push_front(
+                Node(degree_, Integer(-1), Integer(1), -log_bdry_den)
+        );
+        tmp1_coeff_.resize(degree_ + 1);
+        tmp2_coeff_.resize(degree_ + 1);
+
         init_tree();
     }
 
     //! return degree of polynomial
-    int degree() const { return this->ptr()->degree_; }
+    int degree() const { return this->degree_; }
 
     //! iterator to first node
     Node_iterator begin() {
-        return this->ptr()->node_list_.begin();
+        return this->node_list_.begin();
     }
     //! iterator beyond last node
     Node_iterator end() {
-        return this->ptr()->node_list_.end();
+        return this->node_list_.end();
     }
     //! const iterator to first node
     Node_const_iterator begin() const {
-        return this->ptr()->node_list_.begin();
+        return this->node_list_.begin();
     }
     //! const iterator beyond last node
     Node_const_iterator end() const {
-        return this->ptr()->node_list_.end();
+        return this->node_list_.end();
     }
 
     //! get lower bound of interval at node \c n.
@@ -1079,23 +1130,24 @@ public:
      *  representation and state).
      */
     void erase(Node_iterator n) {
-        this->ptr()->node_list_.erase(n);
+        this->node_list_.erase(n);
     }
 
     /*! \brief Replace traits class
      */
     void set_traits(TRAITS& traits) {
 
-      this->ptr()->approximator_ 
+      this->approximator_ 
         = traits.approximator_object();
-      this->ptr()->lower_bound_log2_abs_ 
+      this->lower_bound_log2_abs_ 
         = traits.lower_bound_log2_abs_object();
 
     }
 
     /*! \brief Returns a copy of this with its own representation
      */
-    Self make_unique() const {
+// TODO Should it be const&
+    const Self& make_unique() const {
       Self tmp = *this;
       tmp.copy_on_write();
       return tmp;
@@ -1162,21 +1214,21 @@ Bitstream_descartes_rndl_tree<BitstreamDescartesRndlTreeTraits>
         )*82 + 85) / 34;
     if (n->recdepth_ < 6) n->recdepth_ = 6; // TODO find rationale
 
-    n->log_eps_ = this->ptr()->ceil_log_degree_
+    n->log_eps_ = this->ceil_log_degree_
         + Ceil_log2_abs_long()(n->recdepth_);
     n->log_C_eps_ = n->log_eps_ + 4*degree(); // C = 16^n
-    long target_log_lcf = (4 - n->log_sep_)*this->ptr()->degree_
-        + n->log_eps_ + 2*this->ptr()->ceil_log_degree_ + 10;
-    long log_lcf_scale = target_log_lcf - this->ptr()->lbd_log_lcoeff_
-        - (log(caching_factorial<Integer>(this->ptr()->degree_)) - 1);
+    long target_log_lcf = (4 - n->log_sep_)*this->degree_
+        + n->log_eps_ + 2*this->ceil_log_degree_ + 10;
+    long log_lcf_scale = target_log_lcf - this->lbd_log_lcoeff_
+        - (log(caching_factorial<Integer>(this->degree_)) - 1);
 
     polynomial_power_to_bernstein_approx(
-            this->ptr()->input_monomial_coeff_.begin(),
-            this->ptr()->input_monomial_coeff_.end(),
+            this->input_monomial_coeff_.begin(),
+            this->input_monomial_coeff_.end(),
             n->coeff_.begin(),
             n->lower_num_, n->upper_num_, n->log_bdry_den_,
             log_lcf_scale - (n->log_eps_ - 1),
-            this->ptr()->approximator_,
+            this->approximator_,
             Ceil_log2_abs_Integer(), Ceil_log2_abs_long()
     );
     for (int i = 0; i <= degree(); ++i) {
@@ -1195,6 +1247,7 @@ Bitstream_descartes_rndl_tree<BitstreamDescartesRndlTreeTraits>
     }
 } // Bitstream_descartes_rndl_tree::reinit_from_sep()
 
+// Iterators can't be made const as they might be changed in replace_by_tmp function call
 template <class BitstreamDescartesRndlTreeTraits>
 int
 Bitstream_descartes_rndl_tree<BitstreamDescartesRndlTreeTraits>
@@ -1202,13 +1255,13 @@ Bitstream_descartes_rndl_tree<BitstreamDescartesRndlTreeTraits>
         Node_iterator n, Node_iterator& first, Node_iterator& beyond
 ) {
     de_casteljau_generic(n->coeff_.begin(), n->coeff_.end(),
-            this->ptr()->tmp1_coeff_.begin(), this->ptr()->tmp2_coeff_.begin(),
+            this->tmp1_coeff_.begin(), this->tmp2_coeff_.begin(),
             Convex_combinator_approx_midpoint<Integer>()
     );
-    this->ptr()->splitpoint_num_     = n->lower_num_ + n->upper_num_;
-    this->ptr()->log_splitpoint_den_ = n->log_bdry_den_ + 1;
+    this->splitpoint_num_     = n->lower_num_ + n->upper_num_;
+    this->log_splitpoint_den_ = n->log_bdry_den_ + 1;
 
-    if (Abs_le_pow2()(this->ptr()->tmp2_coeff_[0], n->log_C_eps_)) {
+    if (Abs_le_pow2()(this->tmp2_coeff_[0], n->log_C_eps_)) {
         return -1;
     } else {
         return replace_by_tmp(n, first, beyond);
@@ -1223,15 +1276,15 @@ Bitstream_descartes_rndl_tree<BitstreamDescartesRndlTreeTraits>
         long alpha_num, int log_alpha_den
 ) {
     de_casteljau_generic(n->coeff_.begin(), n->coeff_.end(),
-        this->ptr()->tmp1_coeff_.begin(), this->ptr()->tmp2_coeff_.begin(),
+        this->tmp1_coeff_.begin(), this->tmp2_coeff_.begin(),
         Convex_combinator_approx_long_log<Integer>(alpha_num, log_alpha_den)
     );
-    this->ptr()->splitpoint_num_ =
+    this->splitpoint_num_ =
         alpha_num * n->lower_num_
             + ((1L << log_alpha_den) - alpha_num) * n->upper_num_;
-    this->ptr()->log_splitpoint_den_ = n->log_bdry_den_ + log_alpha_den;
+    this->log_splitpoint_den_ = n->log_bdry_den_ + log_alpha_den;
 
-    if (Abs_le_pow2()(this->ptr()->tmp2_coeff_[0], n->log_C_eps_)) {
+    if (Abs_le_pow2()(this->tmp2_coeff_[0], n->log_C_eps_)) {
         return -1;
     } else {
         return replace_by_tmp(n, first, beyond);
@@ -1248,16 +1301,16 @@ Bitstream_descartes_rndl_tree<BitstreamDescartesRndlTreeTraits>
     --(n->recdepth_);
 
     long delta_log_bdry_den =
-        this->ptr()->log_splitpoint_den_ - n->log_bdry_den_;
+        this->log_splitpoint_den_ - n->log_bdry_den_;
     CGAL_assertion(delta_log_bdry_den >= 0);
 
     int l_min_var, l_max_var, r_min_var, r_max_var;
-    var_eps(this->ptr()->tmp1_coeff_.begin(),
-            this->ptr()->tmp1_coeff_.end(),
+    var_eps(this->tmp1_coeff_.begin(),
+            this->tmp1_coeff_.end(),
             l_min_var, l_max_var, Sign_eps_log2(n->log_eps_)
     );
-    var_eps(this->ptr()->tmp2_coeff_.begin(),
-            this->ptr()->tmp2_coeff_.end(),
+    var_eps(this->tmp2_coeff_.begin(),
+            this->tmp2_coeff_.end(),
             r_min_var, r_max_var, Sign_eps_log2(n->log_eps_)
     );
     CGAL_assertion(l_min_var >= 0 && l_max_var >= 0);
@@ -1271,37 +1324,37 @@ Bitstream_descartes_rndl_tree<BitstreamDescartesRndlTreeTraits>
         if (r_min_var > 0) {
             // create new node for right child
             Node_iterator r = 
-                this->ptr()->node_list_.insert(beyond, Node(degree(),
-                            this->ptr()->splitpoint_num_,        // lower
+                this->node_list_.insert(beyond, Node(degree(),
+                            this->splitpoint_num_,        // lower
                             n->upper_num_ << delta_log_bdry_den, // upper
-                            this->ptr()->log_splitpoint_den_,
+                            this->log_splitpoint_den_,
                             r_min_var, r_max_var
                 ));
-            r->coeff_.swap(this->ptr()->tmp2_coeff_);
+            r->coeff_.swap(this->tmp2_coeff_);
             r->copy_state_from(*n);
             ++children;
         }
         // put left child into n
         n->lower_num_  <<= delta_log_bdry_den;
-        n->upper_num_    = this->ptr()->splitpoint_num_;
-        n->log_bdry_den_ = this->ptr()->log_splitpoint_den_;
+        n->upper_num_    = this->splitpoint_num_;
+        n->log_bdry_den_ = this->log_splitpoint_den_;
         n->min_var_      = l_min_var;
         n->max_var_      = l_max_var;
-        n->coeff_.swap(this->ptr()->tmp1_coeff_);
+        n->coeff_.swap(this->tmp1_coeff_);
         return children;
     } else if (r_min_var > 0) {
         // put right child into n
-        n->lower_num_    = this->ptr()->splitpoint_num_;
+        n->lower_num_    = this->splitpoint_num_;
         n->upper_num_  <<= delta_log_bdry_den;
-        n->log_bdry_den_ = this->ptr()->log_splitpoint_den_;
+        n->log_bdry_den_ = this->log_splitpoint_den_;
         n->min_var_      = r_min_var;
         n->max_var_      = r_max_var;
-        n->coeff_.swap(this->ptr()->tmp2_coeff_);
+        n->coeff_.swap(this->tmp2_coeff_);
         return 1;
     } else /* l_min_var == 0 && r_min_var == 0 */ {
         // delete n
         first = beyond;
-        this->ptr()->node_list_.erase(n);
+        this->node_list_.erase(n);
         return 0;
     }
 } // Bitstream_descartes_rndl_tree::replace_by_tmp()
@@ -1335,7 +1388,7 @@ Bitstream_descartes_rndl_tree<BitstreamDescartesRndlTreeTraits>
             if (ret >= 0) { return ret; } else { --(n->subdiv_tries_); }
 
             // now try alpha properly randomized, counting failure rate
-            log_alpha_den = 5 + this->ptr()->ceil_log_degree_;
+            log_alpha_den = 5 + this->ceil_log_degree_;
             alpha_den_4 = 1L << (log_alpha_den - 2);
             do {
                 alpha_num = CGAL::default_random.get_int(  // TODO .get_long
@@ -1377,7 +1430,7 @@ struct Fujiwara_root_bound_queue_entry {
     bool is_certainly_zero;
     bool is_tight;
 
-    bool operator < (Self& rhs) {
+    bool operator < (const Self& rhs) {
         if (is_certainly_zero) return !rhs.is_certainly_zero;
         if (rhs.is_certainly_zero) return false;
         return ub_log2_qi * rhs.n_minus_i < rhs.ub_log2_qi * n_minus_i;

@@ -17,7 +17,7 @@
 // 
 //
 // Author(s)     : Michael Kerber <mkerber@mpi-inf.mpg.de>
-//
+//		 : Sourav Dutta	<sdutta@mpi-inf.mpg.de>
 // ============================================================================
 #ifndef CGAL_ALGEBRAIC_KERNEL_D_BITSTREAM_DESCARTES_RNDL_TREE_TRAITS_H
 #define CGAL_ALGEBRAIC_KERNEL_D_BITSTREAM_DESCARTES_RNDL_TREE_TRAITS_H
@@ -68,41 +68,11 @@ Shiftable shift_integer_by(Shiftable x, long shift){
   return x; 
 }
 
-// forward
-template <typename BitstreamCoefficientKernel> 
-class Bitstream_descartes_rndl_tree_traits;
-
-
-template <class BitstreamCoefficientKernel> 
-class Bitstream_descartes_rndl_tree_traits_rep {
-
-public:
-
-    typedef BitstreamCoefficientKernel Bitstream_coefficient_kernel;
-
-    Bitstream_descartes_rndl_tree_traits_rep
-        (Bitstream_coefficient_kernel kernel)
-	: _m_kernel(kernel)
-    {	
-    } 
-
-    Bitstream_descartes_rndl_tree_traits_rep() {} 
-
-private:
-    
-    Bitstream_coefficient_kernel _m_kernel;
-
-    friend class Bitstream_descartes_rndl_tree_traits
-        <Bitstream_coefficient_kernel>;
-
-}; // end of class Bitstream_descartes_rndl_tree_traits_rep
 
 // A version that relies on a Bitstream_coefficient_kernel model
+// Rep class removed
 template <typename BitstreamCoefficientKernel>
 class Bitstream_descartes_rndl_tree_traits
-    : CGAL::Handle_with_policy
-    <CGAL::internal::Bitstream_descartes_rndl_tree_traits_rep
-        <BitstreamCoefficientKernel> >
 {
 
 public:
@@ -121,10 +91,6 @@ public:
     typedef  Bitstream_descartes_rndl_tree_traits
         < Bitstream_coefficient_kernel > Self;
 
-    typedef CGAL::Handle_with_policy
-        <CGAL::internal::Bitstream_descartes_rndl_tree_traits_rep
-            <Bitstream_coefficient_kernel> >
-        Base;
 
     typedef typename Bitstream_coefficient_kernel::Integer  Integer; 
     typedef typename Bitstream_coefficient_kernel::Bound Bound;
@@ -132,6 +98,9 @@ public:
     //! @}
 
 private:
+
+	Bitstream_coefficient_kernel _m_kernel;  // Base class member added
+
     static const Self& get_default_instance(){
       Bitstream_coefficient_kernel kernel;
       static Self x = Self(kernel);
@@ -144,10 +113,11 @@ public:
     //! @{
 
     Bitstream_descartes_rndl_tree_traits(const Bitstream_coefficient_kernel& kernel)
-      : Base(kernel){} 
+      : _m_kernel(kernel)
  
-    Bitstream_descartes_rndl_tree_traits(const Self& traits = get_default_instance())
-      : Base(static_cast<const Base&>(traits)){}
+    // TODO Need to add something
+    //Bitstream_descartes_rndl_tree_traits(const Self& traits = get_default_instance())
+    //  : Base(static_cast<const Base&>(traits)){}
   
     //! @}
 
@@ -219,7 +189,7 @@ public:
     };
 
     Approximator approximator_object() const {
-        return Approximator(this->ptr()->_m_kernel);
+        return Approximator(this->_m_kernel);
     }
 
 
@@ -282,7 +252,7 @@ public:
     };
     
     Lower_bound_log2_abs lower_bound_log2_abs_object() const {
-	return Lower_bound_log2_abs(this->ptr()->_m_kernel);
+	return Lower_bound_log2_abs(this->_m_kernel);
     }
 
 
@@ -389,7 +359,7 @@ public:
     
     Upper_bound_log2_abs_approximator 
     upper_bound_log2_abs_approximator_object() const {
-	return Upper_bound_log2_abs_approximator(this->ptr()->_m_kernel);
+	return Upper_bound_log2_abs_approximator(this->_m_kernel);
     }
 
 
