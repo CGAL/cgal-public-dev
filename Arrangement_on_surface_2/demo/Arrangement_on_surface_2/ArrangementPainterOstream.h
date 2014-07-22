@@ -101,43 +101,27 @@ public:
     this->convert = Converter< Kernel >( this->clippingRect );
   }
 
-#if 0
-  void setScene( QGraphicsScene* scene_ )
+  void drawPoint( const QPointF& qpt )
   {
-    this->scene = scene_;
+    QPen savePen = this->qp->pen( );
+    this->qp->setBrush( QBrush( savePen.color( ) ) );
+    double radius = savePen.width( ) / 2.0;
+    radius /= this->scale;
 
-    // set the clipping rectangle
-    if ( scene_ == NULL )
-    {
-      return;
-    }
-    this->clippingRect = this->getViewportRect( );
+    this->qp->drawEllipse( qpt, radius, radius );
+
+    this->qp->setBrush( QBrush( ) );
+    this->qp->setPen( savePen );
   }
-#endif
 
 protected: // methods
-#if 0
-  QRectF getViewportRect( ) const
-  {
-    // assumes scene is not null and attached to exactly one view
-    QGraphicsView* view = this->scene->views( ).first( );
-    QPointF p1 = view->mapToScene( 0, 0 );
-    QPointF p2 = view->mapToScene( view->width( ), view->height( ) );
-    QRectF clipRect = QRectF( p1, p2 );
 
-    return clipRect;
-  }
-#endif
-
-protected:
-  // fields
+protected: // fields
   PainterOstream< Kernel > painterOstream;
   QPainter* qp;
   Converter< Kernel > convert;
-  // QGraphicsScene* scene;
   QRectF clippingRect;
   double scale;
-
 }; // class ArrangementPainterOstreamBase
 
 template < typename ArrTraits >
@@ -210,15 +194,7 @@ public: // methods
       return *this;
     }
 
-    QPen savePen = this->qp->pen( );
-    this->qp->setBrush( QBrush( savePen.color( ) ) );
-    double radius = savePen.width( ) / 2.0;
-    radius /= this->scale;
-
-    this->qp->drawEllipse( qpt, radius, radius );
-
-    this->qp->setBrush( QBrush( ) );
-    this->qp->setPen( savePen );
+    this->drawPoint( qpt );
     return *this;
   }
 
@@ -281,15 +257,7 @@ public: // methods
   ArrangementPainterOstream& operator<<( const Point_2& p )
   {
     QPointF qpt = this->convert( p );
-    QPen savePen = this->qp->pen( );
-    this->qp->setBrush( QBrush( savePen.color( ) ) );
-    double radius = savePen.width( ) / 2.0;
-    radius /= this->scale;
-
-    this->qp->drawEllipse( qpt, radius, radius );
-
-    this->qp->setBrush( QBrush( ) );
-    this->qp->setPen( savePen );
+    this->drawPoint( qpt );
     return *this;
   }
 
@@ -483,15 +451,7 @@ public: // methods
   ArrangementPainterOstream& operator<<( const Point_2& p )
   {
     QPointF qpt = this->convert( p );
-    QPen savePen = this->qp->pen( );
-    this->qp->setBrush( QBrush( savePen.color( ) ) );
-    double radius = savePen.width( ) / 2.0;
-    radius /= this->scale;
-
-    this->qp->drawEllipse( qpt, radius, radius );
-
-    this->qp->setBrush( QBrush( ) );
-    this->qp->setPen( savePen );
+    this->drawPoint( qpt );
     return *this;
   }
 
@@ -752,15 +712,7 @@ public: // methods
       return *this;
     }
 
-    QPen savePen = this->qp->pen( );
-    this->qp->setBrush( QBrush( savePen.color( ) ) );
-    double radius = savePen.width( ) / 2.0;
-    radius /= this->scale;
-
-    this->qp->drawEllipse( qpt, radius, radius );
-
-    this->qp->setBrush( QBrush( ) );
-    this->qp->setPen( savePen );
+    this->drawPoint( qpt );
     return *this;
   }
 
@@ -817,15 +769,7 @@ public: // methods
       return *this;
     }
 
-    QPen savePen = this->qp->pen( );
-    this->qp->setBrush( QBrush( savePen.color( ) ) );
-    double radius = savePen.width( ) / 2.0;
-    radius /= this->scale;
-
-    this->qp->drawEllipse( qpt, radius, radius );
-
-    this->qp->setBrush( QBrush( ) );
-    this->qp->setPen( savePen );
+    this->drawPoint( qpt );
     return *this;
   }
 
@@ -1008,15 +952,7 @@ public: // methods
       return *this;
     }
 
-    QPen savePen = this->qp->pen( );
-    this->qp->setBrush( QBrush( savePen.color( ) ) );
-    double radius = savePen.width( ) / 2.0;
-    radius /= this->scale;
-
-    this->qp->drawEllipse( qpt, radius, radius );
-
-    this->qp->setBrush( QBrush( ) );
-    this->qp->setPen( savePen );
+    this->drawPoint( qpt );
     return *this;
   }
 
@@ -1030,15 +966,7 @@ public: // methods
       return *this;
     }
 
-    QPen savePen = this->qp->pen( );
-    this->qp->setBrush( QBrush( savePen.color( ) ) );
-    double radius = savePen.width( ) / 2.0;
-    radius /= this->scale;
-
-    this->qp->drawEllipse( qpt, radius, radius );
-
-    this->qp->setBrush( QBrush( ) );
-    this->qp->setPen( savePen );
+    this->drawPoint( qpt );
     return *this;
   }
 
@@ -1066,57 +994,42 @@ public:
   typedef typename Traits::Point_2                      Point_2;
   typedef typename Traits::X_monotone_curve_2           X_monotone_curve_2;
 
+  typedef Curve_renderer_facade<CKvA_2> Facade;
+  typedef std::pair< int, int > Coord_2;
+  typedef std::vector< Coord_2 > Coord_vec_2;
+
 public:
   /*! Constructor */
   ArrangementPainterOstream(QPainter* p, QRectF clippingRectangle = QRectF()):
-    Superclass( p, clippingRectangle )
+    Superclass( p, clippingRectangle ),
+    m_width( 0 ),
+    m_height( 0 )
   { }
 
   /*! Destructor (virtual) */
   virtual ~ArrangementPainterOstream() {}
 
 public: // methods
+
+  /**
+  Rasterize an algebraic curve.
+  */
   ArrangementPainterOstream& operator<<( const X_monotone_curve_2& curve )
   {
     std::cout << "paint curve stub (alg traits)" << std::endl;
-    typedef Curve_renderer_facade<CKvA_2> Facade;
-    typedef std::pair< int, int > Coord_2;
-    typedef std::vector< Coord_2 > Coord_vec_2;
     this->setupFacade( );
 
-    boost::optional < Coord_2 > p1, p2;
-    std::list<Coord_vec_2> points;
+    std::list< Coord_vec_2 > points;
+    this->rasterize( curve, &points );
 
-    Facade::instance().draw( curve, points, &p1, &p2 );
-    if(points.empty())
-      return *this;
-
-    // QPainter *ppnt = this->qp;
+    // stroke a path from the raster points
     QGraphicsView* view = this->scene->views( ).first( );
-    // int height = view->height();
-    // std::cerr << ws.width() << " and " <<  ws.height() << "\n";
-    typename std::list<Coord_vec_2>::const_iterator lit = points.begin();
-    //ppnt->moveTo((*p1).first, height - (*p1).second);
-    while(lit != points.end()) {
-
+    for ( typename std::list<Coord_vec_2>::const_iterator lit = points.begin();
+      lit != points.end(); ++lit )
+    {
       const Coord_vec_2& vec = *lit;
       typename Coord_vec_2::const_iterator vit = vec.begin();
-      //std::cerr << "(" << vit->first << "; " << vit->second << ")\n";
-      //         if(lit == points.begin() &&*/ vit != vec.end()) {
-      //             ppnt->lineTo(vit->first, height - vit->second);
-      //             vit++;
-      //         }
-#if 0
-      if(vit != vec.end())
-        ppnt->moveTo(vit->first, height - vit->second);
 
-      while(vit != vec.end()) {
-        ppnt->lineTo(vit->first, height - vit->second);
-        vit++;
-        //std::cerr << "(" << vit->e0 << "; " << vit->e1 << "\n";
-      }
-      lit++;
-#endif
       QPainterPath path;
       QPoint coord( vit->first, vit->second );
       QPointF qpt = view->mapToScene( coord );
@@ -1130,71 +1043,29 @@ public: // methods
         vit++;
         coord = QPoint( vit->first, vit->second );
         qpt = view->mapToScene( coord );
-        //std::cout << vit->first << " " << vit->second << std::endl;
       }
       this->qp->drawPath( path );
-
-      lit++;
     }
-    //ppnt->lineTo((*p2).first, height - (*p2).second);
-
-#if 0
-    QPen old_pen = ppnt->pen();
-    ppnt->setPen(QPen(Qt::NoPen)); // avoid drawing outlines
-    // draw with the current brush attributes
-
-    //std::cerr << "endpts1: (" << (*p1).first << "; " << (*p1).second << "\n";
-    //std::cerr << "endpts2: (" << (*p2).first << "; " << (*p2).second << "\n";
-
-    unsigned sz = CGAL_REND_PT_RADIUS;
-    ppnt->drawEllipse((*p1).first - sz, height-(*p1).second - sz, sz*2, sz*2);
-    ppnt->drawEllipse((*p2).first - sz, height-(*p2).second - sz, sz*2, sz*2);
-    ppnt->setPen(old_pen);
-#endif
 
     return *this;
   }
 
+  /**
+  Draw an algebraic point.
+  */
   ArrangementPainterOstream& operator<<( const Point_2& p )
   {
-    typedef Curve_renderer_facade<CKvA_2> Facade;
-    std::pair< int, int > coord;
     std::cout << "draw point stub" << std::endl;
-
     this->setupFacade( );
 
-    if(!Facade::instance().draw(p, coord)) {
-      return *this;
-    }
-    else
+    // draw an ellipse at the point
+    QGraphicsView* view = this->scene->views( ).first( );
+    QPoint coords;
+    if ( this->rasterize( p, &coords ) )
     {
-      //std::cout << coord.first << " " << coord.second << std::endl;
-      QPoint coords( coord.first, coord.second );
-      QGraphicsView* view = this->scene->views( ).first( );
       QPointF qpt = view->mapToScene( coords );
-
-      QPen savePen = this->qp->pen( );
-      this->qp->setBrush( QBrush( savePen.color( ) ) );
-      double radius = savePen.width( ) / 2.0;
-      radius /= this->scale;
-
-      this->qp->drawEllipse( qpt, radius, radius );
-
-      this->qp->setBrush( QBrush( ) );
-      this->qp->setPen( savePen );
-
+      this->drawPoint( qpt );
     }
-#if 0
-
-    QPainter *ppnt = &ws.get_painter();
-    QPen old_pen = ppnt->pen();
-    ppnt->setPen(QPen(Qt::NoPen));
-
-    unsigned sz = CGAL_REND_PT_RADIUS;
-    ppnt->drawEllipse(coord.first - sz, ws.height() - coord.second - sz,
-                      sz*2, sz*2);
-    ppnt->setPen(old_pen);
-#endif
 
     return *this;
   }
@@ -1214,7 +1085,66 @@ protected:
     QRectF viewport = this->viewportRect( );
     CGAL::Bbox_2 bbox = this->convert( viewport ).bbox( );
     Facade::setup(bbox, view->width(), view->height());
+    m_width = view->width();
+    m_height = view->height();
   }
+
+  // reflect across the equator of the viewport
+  void flipY( std::list< Coord_vec_2 >* points )
+  {
+    QGraphicsView* view = this->scene->views( ).first( );
+    QMatrix flipMat( 1, 0, 0, -1, 0, 0 );
+
+    for ( std::list< Coord_vec_2 >::iterator it = points->begin( );
+      it != points->end( ); ++it )
+    {
+      for ( Coord_vec_2::iterator pit = it->begin( );
+        pit != it->end( ); ++pit )
+      {
+        Coord_vec_2& point = *it;
+        Coord_2 before = *pit;
+
+        Coord_2 after( before.first, m_height - before.second );
+        *pit = after;
+      }
+    }
+  }
+
+  // reflect across the equator of the viewport
+  QPoint flipY( const QPoint& pt )
+  {
+    return QPoint( pt.x(), m_height - pt.y() );
+  }
+
+  void rasterize( const X_monotone_curve_2& curve,
+    std::list< Coord_vec_2 >* points )
+  {
+    // rasterize the curve
+    boost::optional < Coord_2 > p1, p2;
+    Facade::instance().draw( curve, *points, &p1, &p2 );
+
+    // raster points are flipped wrt y-axis, so flip them.
+    flipY( points );
+  }
+
+  bool rasterize( const Point_2& point,
+    QPoint* coords )
+  {
+    Coord_2 coord;
+    bool ok = Facade::instance().draw( point, coord );
+    if ( ok )
+    {
+      QPoint tmp( coord.first, coord.second );
+      // raster point is flipped wrt y-axis, so flip it.
+      *coords = flipY( tmp );
+    }
+    return ok;
+  }
+
+protected:
+  int m_width;
+  int m_height;
+
 };
 #endif
 

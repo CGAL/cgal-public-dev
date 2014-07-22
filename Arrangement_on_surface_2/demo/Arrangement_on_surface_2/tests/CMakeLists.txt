@@ -19,6 +19,16 @@ target_link_libraries( simple_arr_view
   ${QT_LIBRARIES}
 )
 
+add_executable( simple_alg_view simple_alg_view.cpp 
+  ../ArrangementGraphicsItem.cpp
+)
+target_link_libraries( simple_alg_view 
+#  arr_demo_library
+  arr_demo_traits_library
+  ${CGAL_LIBRARIES}
+  ${QT_LIBRARIES}
+)
+
 #####
 # Test code for scaffolding the Bezier graphics item.
 #####

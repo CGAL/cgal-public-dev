@@ -1275,7 +1275,7 @@ protected:
   updateBoundingBox(CGAL::Arr_algebraic_segment_traits_2<Coefficient_> traits)
   {
     this->prepareGeometryChange( );
-    if ( this->arr->number_of_vertices( ) == 0 )
+    if ( this->arr->number_of_vertices( ) == 0 && this->arr->number_of_edges( ) == 0 )
     {
       this->bb = Bbox_2( 0, 0, 0, 0 );
       this->bb_initialized = false;
@@ -1292,23 +1292,43 @@ protected:
     }
     typename Traits::Make_x_monotone_2 make_x_monotone_2 =
       traits.make_x_monotone_2_object( );
-    for ( Curve_iterator it = this->arr->curves_begin( );
-          it != this->arr->curves_end( );
-          ++it )
-    {
-      std::vector< CGAL::Object > cvs;
-      make_x_monotone_2( *it, std::back_inserter( cvs ) );
-      for ( unsigned int i = 0 ; i < cvs.size( ); ++i )
-      {
-        X_monotone_curve_2 cv;
-        CGAL::assign( cv, cvs[ i ] );
-        this->bb = this->bb + cv.bbox( );
-      }
-    }
-    std::cout << "algebraic bb\n";
-    std::cout << this->bb.xmin( ) << " " << this->bb.ymin( )
-      << this->bb.xmax( ) << " " << this->bb.ymax( ) << "\n";
+    //for ( Curve_iterator it = this->arr->curves_begin( );
+    //      it != this->arr->curves_end( );
+    //      ++it )
+    //{
+    //  std::vector< CGAL::Object > cvs;
+    //  make_x_monotone_2( *it, std::back_inserter( cvs ) );
+    //  for ( unsigned int i = 0 ; i < cvs.size( ); ++i )
+    //  {
+    //    X_monotone_curve_2 cv;
+    //    CGAL::assign( cv, cvs[ i ] );
+    //    this->bb = this->bb + cv.bbox( );
+    //  }
+    //}
 
+    QRectF clipRect( this->bb.xmin(), this->bb.ymin(),
+      this->bb.xmax() - this->bb.xmin(),
+      this->bb.ymax() - this->bb.ymin() );
+
+    QRectF viewRect = this->viewportRect( );
+    if ( std::isinf(clipRect.left( )) ||
+      std::isinf(clipRect.right( )) ||
+      std::isinf(clipRect.top( )) ||
+      std::isinf(clipRect.bottom( )) )
+    {
+      this->bb = CGAL::Bbox_2( viewRect.left( ),
+        viewRect.bottom( ),
+        viewRect.right( ),
+        viewRect.top( ) );
+    }
+
+    std::cout << "algebraic bb\n";
+    //std::cout << this->bb.xmin( ) << " " << this->bb.ymin( ) << " "
+    //  << this->bb.xmax( ) << " " << this->bb.ymax( ) << "\n";
+    std::cout << viewRect.left( ) << " "
+      << viewRect.bottom( ) << " "
+      << viewRect.right( ) << " "
+      << viewRect.top( ) << "\n";
   }
 #endif
 

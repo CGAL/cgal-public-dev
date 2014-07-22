@@ -21,19 +21,18 @@ QGraphicsView* view;
 QGraphicsScene* scene;
 ArrGraphicsItemType* arrItem;
 
-void SetupUI( )
+void SetupUI( const QRectF& windowRect, double zoom )
 {
-    scene = new QGraphicsScene( -10, -10, 20, 20 );
+    scene = new QGraphicsScene( windowRect.left(),
+        windowRect.bottom(),
+        windowRect.width(),
+        windowRect.height() );
     view = new QGraphicsView;
     view->setScene( scene );
     QMatrix mat( 1, 0, 0, -1, 0, 0 );
     view->setMatrix( mat );
 
-    // does nothing
-    //view->centerOn( -8, -5 );
-    //view->centerOn( box );
-
-    view->scale( 10, 10 );
+    view->scale( zoom, zoom );
 
     QMainWindow* window = new QMainWindow;
     window->resize( 800, 600 );
@@ -47,25 +46,43 @@ void SetupUI( )
 int main( int argc, char *argv[] )
 {
     QApplication app( argc, argv );
+    std::string curveFileName;
+    QRectF windowRect;
 
-    if ( argc < 2 )
+    if ( argc < 7 )
     {
-      std::cout << "Usage: " << argv[0] << " alg-dat-file\n";
+      std::cout << "Usage: " << argv[0] << " [curve_file] [x y w h] [zoom]\n";
       return 1;
     }
 
-    ArrangementType arr;
-    LoadArrFromFile< AlgebraicDemoTraits > loadArr;
-    loadArr( argv[1], &arr );
+    curveFileName = argv[1];
+    windowRect = QRectF( atof( argv[2] ),
+        atof( argv[3] ),
+        atof( argv[4] ),
+        atof( argv[5] ) );
 
-    SetupUI( );
+    double zoom = atof( argv[6] );
+
+    ArrangementType arr;
+
+    // load the curve
+    LoadArrFromFile< AlgebraicDemoTraits > loadArr;
+    loadArr( curveFileName, &arr );
+
+    SetupUI( windowRect, zoom );
 
     arrItem = new ArrGraphicsItemType( &arr );
     scene->addItem( arrItem );
-    arrItem->modelChanged( );
+    //arrItem->modelChanged( );
 
     QGraphicsRectItem* box = new QGraphicsRectItem( 0, 10, 10, 10 ) ;
     scene->addItem( box );
+
+    QGraphicsLineItem* x_axis = new QGraphicsLineItem( 0, -10, 0, 10 );
+    QGraphicsLineItem* y_axis = new QGraphicsLineItem( -10, 0, 10, 0 );
+    scene->addItem( x_axis );
+    scene->addItem( y_axis );
+    arrItem->modelChanged( );
 
     return app.exec( );
 }
