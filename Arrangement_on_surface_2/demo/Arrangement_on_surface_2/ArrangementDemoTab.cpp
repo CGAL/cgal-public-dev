@@ -43,6 +43,11 @@ ArrangementDemoTabBase::~ArrangementDemoTabBase( )
 {
 }
 
+void ArrangementDemoTabBase::setupToolbar( ArrangementDemoWindow* parent )
+{
+
+}
+
 void ArrangementDemoTabBase::setupUi( )
 {
   this->layout->addWidget( this->graphicsView, 0, 0, 1, 1 );

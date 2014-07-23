@@ -28,7 +28,6 @@
 #include "MergeEdgeCallback.h"
 #include "SplitEdgeCallback.h"
 #include "EnvelopeCallback.h"
-#include "ArrangementDemoTab.h"
 
 #include <CGAL/Arr_overlay_2.h>
 #include <CGAL/Arr_default_overlay_traits.h>

@@ -23,6 +23,7 @@
 #include "PropertyValueDelegate.h"
 #include "DeleteCurveMode.h"
 #include "ArrangementDemoGraphicsView.h"
+#include "ArrangementDemoTab.h"
 
 ArrangementDemoPropertiesDialog::
 ArrangementDemoPropertiesDialog( ArrangementDemoWindow* parent_,

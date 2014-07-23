@@ -1029,53 +1029,12 @@ void ArrangementDemoWindow::on_tabWidget_currentChanged( )
 
   CGAL::Object arr;
   if ( this->ui->tabWidget->currentIndex( ) != -1 )
+  {
     arr = this->arrangements[ this->ui->tabWidget->currentIndex( ) ];
 
-  // Seg_arr* seg;
-  // Pol_arr* pol;
-  Conic_arr* conic;
-  Lin_arr* lin;
-  if ( CGAL::assign( conic, arr ) )
-  {
-    this->ui->actionConicSegment->setChecked( true );
-
-    this->ui->actionCurveRay->setVisible( false );
-    this->ui->actionCurveLine->setVisible( false );
-
-    this->ui->actionConicCircle->setVisible( true );
-    this->ui->actionConicEllipse->setVisible( true );
-    this->ui->actionConicThreePoint->setVisible( true );
-    this->ui->actionConicFivePoint->setVisible( true );
-
-    this->conicTypeGroup->setEnabled( true );
-  }
-  else if ( CGAL::assign( lin, arr ) )
-  {
-    this->ui->actionConicSegment->setChecked( true );
-
-    this->ui->actionCurveRay->setVisible( true );
-    this->ui->actionCurveLine->setVisible( true );
-
-    this->ui->actionConicCircle->setVisible( false );
-    this->ui->actionConicEllipse->setVisible( false );
-    this->ui->actionConicThreePoint->setVisible( false );
-    this->ui->actionConicFivePoint->setVisible( false );
-
-    this->conicTypeGroup->setEnabled( true );
-  }
-  else
-  { // segment or polyline
-    this->ui->actionConicSegment->setChecked( true );
-
-    this->ui->actionCurveRay->setVisible( false );
-    this->ui->actionCurveLine->setVisible( false );
-
-    this->ui->actionConicCircle->setVisible( false );
-    this->ui->actionConicEllipse->setVisible( false );
-    this->ui->actionConicThreePoint->setVisible( false );
-    this->ui->actionConicFivePoint->setVisible( false );
-
-    this->conicTypeGroup->setEnabled( true );
+    ArrangementDemoTabBase* tab =
+      this->tabs[ this->ui->tabWidget->currentIndex( ) ];
+    tab->setupToolbar( this );
   }
 }
 

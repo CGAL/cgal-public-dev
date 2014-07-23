@@ -32,8 +32,10 @@
 #include "SplitEdgeCallback.h"
 #include "EnvelopeCallback.h"
 #include "FillFaceCallback.h"
+#include "ArrangementDemoWindow.h"
 
 class QGridLayout;
+class ArrangementDemoWindow;
 
 class ArrangementDemoTabBase : public QWidget
 {
@@ -60,6 +62,13 @@ public:
   virtual EnvelopeCallbackBase* getEnvelopeCallback( ) const;
   virtual FillFaceCallbackBase* getFillFaceCallback( ) const;
 
+  /**
+  Set up the toolbar in an arrangement-specific way when this tab becomes
+  active.
+  */
+  // TODO: Use tag dispatch to handle template-based setup
+  virtual void setupToolbar( ArrangementDemoWindow* parent );
+
 protected:
   virtual void setupUi( );
 
@@ -85,6 +94,7 @@ class ArrangementDemoTab : public ArrangementDemoTabBase
 public:
   typedef ArrangementDemoTabBase Superclass;
   typedef Arr_ Arrangement;
+  typedef typename Arrangement::Geometry_traits_2 TraitsType;
 
   ArrangementDemoTab( Arrangement* arrangement_, QWidget* parent = 0 ):
     Superclass( parent ),
@@ -197,6 +207,61 @@ public:
     //       changes
 
     emit modelChanged( );
+  }
+
+  virtual void setupToolbar( ArrangementDemoWindow* parent )
+  {
+    this->setupToolbar( parent, (TraitsType*) NULL );
+  }
+
+protected: // methods
+  template < class TGeomTraits >
+  void setupToolbar( ArrangementDemoWindow* parent,
+    TGeomTraits* /*unused*/ )
+  {
+    parent->ui->actionConicSegment->setChecked( true );
+
+    parent->ui->actionCurveRay->setVisible( false );
+    parent->ui->actionCurveLine->setVisible( false );
+
+    parent->ui->actionConicCircle->setVisible( false );
+    parent->ui->actionConicEllipse->setVisible( false );
+    parent->ui->actionConicThreePoint->setVisible( false );
+    parent->ui->actionConicFivePoint->setVisible( false );
+
+    parent->conicTypeGroup->setEnabled( true );
+  }
+
+  void setupToolbar( ArrangementDemoWindow* parent,
+    Conic_arr::Geometry_traits_2* /*unused*/ )
+  {
+    parent->ui->actionConicSegment->setChecked( true );
+
+    parent->ui->actionCurveRay->setVisible( false );
+    parent->ui->actionCurveLine->setVisible( false );
+
+    parent->ui->actionConicCircle->setVisible( true );
+    parent->ui->actionConicEllipse->setVisible( true );
+    parent->ui->actionConicThreePoint->setVisible( true );
+    parent->ui->actionConicFivePoint->setVisible( true );
+
+    parent->conicTypeGroup->setEnabled( true );
+  }
+
+  void setupToolbar( ArrangementDemoWindow* parent,
+    Lin_arr::Geometry_traits_2* /*unused*/ )
+  {
+    parent->ui->actionConicSegment->setChecked( true );
+
+    parent->ui->actionCurveRay->setVisible( true );
+    parent->ui->actionCurveLine->setVisible( true );
+
+    parent->ui->actionConicCircle->setVisible( false );
+    parent->ui->actionConicEllipse->setVisible( false );
+    parent->ui->actionConicThreePoint->setVisible( false );
+    parent->ui->actionConicFivePoint->setVisible( false );
+
+    parent->conicTypeGroup->setEnabled( true );
   }
 
 protected:
