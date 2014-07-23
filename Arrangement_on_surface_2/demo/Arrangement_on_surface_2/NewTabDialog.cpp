@@ -40,8 +40,8 @@ NewTabDialog::NewTabDialog( QWidget* parent, Qt::WindowFlags f ) :
                                 ArrangementDemoWindow::CIRCULAR_ARC_TRAITS );
   this->buttonGroup->addButton( this->ui->bezierRadioButton,
                                 ArrangementDemoWindow::BEZIER_TRAITS );
-  // this->buttonGroup->addButton( this->ui->algebraicRadioButton,
-  //                               ArrangementDemoWindow::ALGEBRAIC_TRAITS );
+  this->buttonGroup->addButton( this->ui->algebraicRadioButton,
+                                ArrangementDemoWindow::ALGEBRAIC_TRAITS );
 }
 
 int NewTabDialog::checkedId( ) const

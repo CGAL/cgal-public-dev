@@ -37,6 +37,9 @@
 
 #include <Qt>
 
+#include <boost/variant.hpp>
+#include <boost/variant/static_visitor.hpp>
+
 #include "ui_ArrangementDemoWindow.h"
 
 //#include <QFileDialog>
@@ -47,6 +50,7 @@
 namespace Ui { class ArrangementDemoWindow; }
 
 class QActionGroup;
+class ArrangementDemoTabBase;
 
 class ArrangementDemoWindow : public CGAL::Qt::DemosMainWindow
 {
@@ -62,10 +66,56 @@ class ArrangementDemoWindow : public CGAL::Qt::DemosMainWindow
     CONIC_TRAITS,
     LINEAR_TRAITS,
     CIRCULAR_ARC_TRAITS,
-    BEZIER_TRAITS
-    // ALGEBRAIC_TRAITS
+    BEZIER_TRAITS,
+    ALGEBRAIC_TRAITS
   } TraitsType;
 
+  private:
+  typedef boost::variant< Seg_arr*,
+    Pol_arr*,
+    Conic_arr*,
+    Lin_arr*,
+    Arc_arr*,
+    Bezier_arr*,
+    Alg_seg_arr*
+  > SomeArrPtrType;
+
+  typedef boost::variant< std::pair< Seg_arr*, Seg_arr* >,
+    std::pair< Pol_arr*, Pol_arr* >,
+    std::pair< Conic_arr*, Conic_arr* >,
+    std::pair< Lin_arr*, Lin_arr* >,
+    std::pair< Arc_arr*, Arc_arr* >,
+    std::pair< Bezier_arr*, Bezier_arr* >,
+    std::pair< Alg_seg_arr*, Alg_seg_arr* >
+  > SomePairOfArrPtrType;
+
+  /**
+  Used to make a new overlay tab from a pair of arrangements of matching type.
+
+  Usage
+  -----
+  1. Construct with a reference to ArrangementDemoWindow.
+  2. Apply it to SomePairOfArrPtrType with boost::apply_visitor.
+  */
+  class MakeOverlayVisitor :
+    public boost::static_visitor< >
+  {
+  public:
+    MakeOverlayVisitor( ArrangementDemoWindow& parent );
+
+    void operator()( std::pair< Seg_arr*, Seg_arr* >& pa );
+    void operator()( std::pair< Pol_arr*, Pol_arr* >& pa );
+    void operator()( std::pair< Conic_arr*, Conic_arr* >& pa );
+    void operator()( std::pair< Lin_arr*, Lin_arr* >& pa );
+    void operator()( std::pair< Arc_arr*, Arc_arr* >& pa );
+    void operator()( std::pair< Bezier_arr*, Bezier_arr* >& pa );
+    void operator()( std::pair< Alg_seg_arr*, Alg_seg_arr* >& pa );
+
+    ArrangementDemoWindow& m_parent;
+  };
+  friend class MakeOverlayVisitor;
+
+  public:
   ArrangementDemoWindow(QWidget* parent = 0);
   ~ArrangementDemoWindow();
 
@@ -76,8 +126,14 @@ class ArrangementDemoWindow : public CGAL::Qt::DemosMainWindow
   std::vector< QString > getTabLabels( ) const;
   std::vector< CGAL::Object > getArrangements( ) const;
 
-  template < class ArrType >
-  void makeOverlayTab( ArrType* arr1, ArrType* arr2 );
+  void makeOverlayTab( SomePairOfArrPtrType arrs );
+
+  /**
+  \param[out] arrPair - the selected pair of arrangement pointers
+  \return whether the conversion was successful
+  */
+  static bool ToPairOfArr( const std::vector< CGAL::Object >& arrs,
+    SomePairOfArrPtrType* arrPair );
 
 public slots:
   void updateMode( QAction* a );
@@ -101,7 +157,7 @@ public slots:
 signals:
   void modelChanged( );
 
-protected:
+protected: // fields
   void setupUi( );
   void resetCallbackState( unsigned int tabIndex );
   void removeCallback( unsigned int tabIndex );
@@ -115,34 +171,12 @@ protected:
   std::vector< QAction* > activeModes; // for the current tab; always size 1
   unsigned int lastTabIndex;
 
+public: // expose the UI for convenience
   Ui::ArrangementDemoWindow* ui;
   QActionGroup* modeGroup;
   QActionGroup* envelopeGroup;
   QActionGroup* snapGroup;
   QActionGroup* conicTypeGroup;
 };
-
-template < class ArrType >
-void
-ArrangementDemoWindow::
-makeOverlayTab( ArrType* arr1, ArrType* arr2 )
-{
-  QString tabLabel = QString( "Overlay Tab" );
-
-  ArrangementDemoTabBase* demoTab;
-  ArrType* overlayArr = new ArrType;
-  CGAL::Arr_default_overlay_traits< ArrType > defaultTraits;
-
-  CGAL::overlay( *arr1, *arr2, *overlayArr, defaultTraits );
-
-  demoTab = new ArrangementDemoTab< ArrType >( overlayArr, 0 );
-  this->arrangements.push_back( CGAL::make_object( overlayArr ) );
-  this->tabs.push_back( demoTab );
-
-  QGraphicsView* view = demoTab->getView( );
-  this->addNavigation( view );
-  this->ui->tabWidget->addTab( demoTab, tabLabel );
-  this->lastTabIndex = this->ui->tabWidget->currentIndex( );
-}
 
 #endif // ARRANGEMENT_DEMO_WINDOW_H

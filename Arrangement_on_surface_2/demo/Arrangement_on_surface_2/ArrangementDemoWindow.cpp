@@ -77,7 +77,7 @@ ArrangementDemoTabBase* ArrangementDemoWindow::makeTab( TraitsType tt )
   Lin_arr* lin_arr;
   Arc_arr* arc_arr;
   Bezier_arr* bezier_arr;
-  // Alg_seg_arr* alg_seg_arr;
+  Alg_seg_arr* alg_seg_arr;
   CGAL::Object arr;
 
   switch ( tt )
@@ -119,12 +119,12 @@ ArrangementDemoTabBase* ArrangementDemoWindow::makeTab( TraitsType tt )
     arr = CGAL::make_object( bezier_arr );
     tabLabel = QString( "%1 - Bezier" ).arg( tabLabelCounter++ );
     break;
-   // case ALGEBRAIC_TRAITS:
-   //  alg_seg_arr = new Alg_seg_arr;
-   //  demoTab = new ArrangementDemoTab< Alg_seg_arr >( alg_seg_arr, 0 );
-   //  arr = CGAL::make_object( alg_seg_arr );
-   //  tabLabel = QString( "%1 - Algebraic" ).arg( tabLabelCounter++ );
-   //  break;
+   case ALGEBRAIC_TRAITS:
+    alg_seg_arr = new Alg_seg_arr;
+    demoTab = new ArrangementDemoTab< Alg_seg_arr >( alg_seg_arr, 0 );
+    arr = CGAL::make_object( alg_seg_arr );
+    tabLabel = QString( "%1 - Algebraic" ).arg( tabLabelCounter++ );
+    break;
   }
 
   this->arrangements.push_back( arr );
@@ -179,6 +179,88 @@ std::vector< CGAL::Object > ArrangementDemoWindow::getArrangements( ) const
     res.push_back( this->arrangements[ i ] );
   }
   return res;
+}
+
+bool ArrangementDemoWindow::ToPairOfArr(
+  const std::vector< CGAL::Object >& arrs,
+  SomePairOfArrPtrType* arrPair )
+{
+  if ( arrs.size( ) != 2 )
+  {
+    return false;
+  }
+
+  {
+    typedef Seg_arr MaybeArrType;
+    MaybeArrType *arr1, *arr2;
+    if ( CGAL::assign( arr1, arrs[ 0 ] ) &&
+      CGAL::assign( arr2, arrs[ 1 ] ) )
+    {
+      *arrPair = std::make_pair( arr1, arr2 );
+    }
+  }
+  {
+    typedef Pol_arr MaybeArrType;
+    MaybeArrType *arr1, *arr2;
+    if ( CGAL::assign( arr1, arrs[ 0 ] ) &&
+      CGAL::assign( arr2, arrs[ 1 ] ) )
+    {
+      *arrPair = std::make_pair( arr1, arr2 );
+    }
+  }
+  {
+    typedef Conic_arr MaybeArrType;
+    MaybeArrType *arr1, *arr2;
+    if ( CGAL::assign( arr1, arrs[ 0 ] ) &&
+      CGAL::assign( arr2, arrs[ 1 ] ) )
+    {
+      *arrPair = std::make_pair( arr1, arr2 );
+    }
+  }
+  {
+    typedef Lin_arr MaybeArrType;
+    MaybeArrType *arr1, *arr2;
+    if ( CGAL::assign( arr1, arrs[ 0 ] ) &&
+      CGAL::assign( arr2, arrs[ 1 ] ) )
+    {
+      *arrPair = std::make_pair( arr1, arr2 );
+    }
+  }
+  {
+    typedef Arc_arr MaybeArrType;
+    MaybeArrType *arr1, *arr2;
+    if ( CGAL::assign( arr1, arrs[ 0 ] ) &&
+      CGAL::assign( arr2, arrs[ 1 ] ) )
+    {
+      *arrPair = std::make_pair( arr1, arr2 );
+    }
+  }
+  {
+    typedef Bezier_arr MaybeArrType;
+    MaybeArrType *arr1, *arr2;
+    if ( CGAL::assign( arr1, arrs[ 0 ] ) &&
+      CGAL::assign( arr2, arrs[ 1 ] ) )
+    {
+      *arrPair = std::make_pair( arr1, arr2 );
+    }
+  }
+  {
+    typedef Alg_seg_arr MaybeArrType;
+    MaybeArrType *arr1, *arr2;
+    if ( CGAL::assign( arr1, arrs[ 0 ] ) &&
+      CGAL::assign( arr2, arrs[ 1 ] ) )
+    {
+      *arrPair = std::make_pair( arr1, arr2 );
+    }
+  }
+
+  return true;
+}
+
+void ArrangementDemoWindow::makeOverlayTab( SomePairOfArrPtrType arrs )
+{
+  MakeOverlayVisitor visitor( *this );
+  boost::apply_visitor( visitor, arrs );
 }
 
 void ArrangementDemoWindow::setupUi( )
@@ -923,10 +1005,10 @@ void ArrangementDemoWindow::on_actionNewTab_triggered( )
     {
       this->makeTab( BEZIER_TRAITS );
     }
-    // else if ( id == ALGEBRAIC_TRAITS )
-    // {
-    //   this->makeTab( ALGEBRAIC_TRAITS );
-    // }
+    else if ( id == ALGEBRAIC_TRAITS )
+    {
+      this->makeTab( ALGEBRAIC_TRAITS );
+    }
     else
     {
       std::cout << "Sorry, this trait is not yet supported" << std::endl;
@@ -1003,67 +1085,11 @@ void ArrangementDemoWindow::on_actionOverlay_triggered( )
   if ( overlayDialog->exec( ) == QDialog::Accepted )
   {
     std::vector< CGAL::Object > arrs = overlayDialog->selectedArrangements( );
-    if ( arrs.size( ) == 2 )
+    SomePairOfArrPtrType arrPair;
+    bool ok = this->ToPairOfArr( arrs, &arrPair );
+    if ( ok )
     {
-      Seg_arr* seg_arr;
-      Seg_arr* seg_arr2;
-      Pol_arr* pol_arr;
-      Pol_arr* pol_arr2;
-      Conic_arr* conic_arr;
-      Conic_arr* conic_arr2;
-      Lin_arr* lin_arr;
-      Lin_arr* lin_arr2;
-      Arc_arr* arc_arr;
-      Arc_arr* arc_arr2;
-      // Alg_seg_arr* alg_arr;
-      // Alg_seg_arr* alg_arr2;
-      if ( CGAL::assign( seg_arr, arrs[ 0 ] ) &&
-           CGAL::assign( seg_arr2, arrs[ 1 ] ) )
-      {
-        this->makeOverlayTab( seg_arr, seg_arr2 );
-      }
-      if ( CGAL::assign( pol_arr, arrs[ 0 ] ) &&
-           CGAL::assign( pol_arr2, arrs[ 1 ] ) )
-      {
-        this->makeOverlayTab( pol_arr, pol_arr2 );
-      }
-      if ( CGAL::assign( conic_arr, arrs[ 0 ] ) &&
-           CGAL::assign( conic_arr2, arrs[ 1 ] ) )
-      {
-        this->makeOverlayTab( conic_arr, conic_arr2 );
-      }
-      if ( CGAL::assign( lin_arr, arrs[ 0 ] ) &&
-           CGAL::assign( lin_arr2, arrs[ 1 ] ) )
-      {
-        this->makeOverlayTab( lin_arr, lin_arr2 );
-      }
-      if ( CGAL::assign( arc_arr, arrs[ 0 ] ) &&
-           CGAL::assign( arc_arr2, arrs[ 1 ] ) )
-      {
-        this->makeOverlayTab( arc_arr, arc_arr2 );
-      }
-      // if ( CGAL::assign( alg_arr, arrs[ 0 ] ) &&
-      //      CGAL::assign( alg_arr2, arrs[ 1 ] ) )
-      // {
-      //   this->makeOverlayTab( alg_arr, alg_arr2 );
-      // }
-
-#if 0
-      if ( CGAL::assign( conic_arr, arrs[ 0 ] ) ||
-           CGAL::assign( conic_arr, arrs[ 1 ] ) )
-      {
-        this->makeOverlayTab< Conic_arr >( arrs[ 0 ], arrs[ 1 ] );
-      }
-      else if ( CGAL::assign( pol_arr, arrs[ 0 ] ) ||
-                CGAL::assign( pol_arr, arrs[ 1 ] ) )
-      {
-        this->makeOverlayTab< Pol_arr >( arrs[ 0 ], arrs[ 1 ] );
-      }
-      else
-      {
-        this->makeOverlayTab< Seg_arr >( arrs[ 0 ], arrs[ 1 ] );
-      }
-#endif
+      this->makeOverlayTab( arrPair );
     }
   }
   delete overlayDialog;
@@ -1257,4 +1283,189 @@ void ArrangementDemoWindow::on_actionFillColor_triggered( )
   }
 }
 
+ArrangementDemoWindow::MakeOverlayVisitor::
+MakeOverlayVisitor( ArrangementDemoWindow& parent ):
+  m_parent( parent )
+{ }
 
+void
+ArrangementDemoWindow::MakeOverlayVisitor::
+operator()( std::pair< Seg_arr*, Seg_arr* >& pa )
+{
+  typedef Seg_arr OverlayArrType;
+  OverlayArrType* arr1 = pa.first;
+  OverlayArrType* arr2 = pa.second;
+  QString tabLabel = QString( "Overlay Tab" );
+
+  OverlayArrType* overlayArr = new OverlayArrType;
+  CGAL::Arr_default_overlay_traits< OverlayArrType > defaultTraits;
+
+  CGAL::overlay( *arr1, *arr2, *overlayArr, defaultTraits );
+
+  ArrangementDemoTabBase* demoTab =
+    new ArrangementDemoTab< OverlayArrType >( overlayArr, 0 );
+  this->m_parent.arrangements.push_back( CGAL::make_object( overlayArr ) );
+  this->m_parent.tabs.push_back( demoTab );
+
+  QGraphicsView* view = demoTab->getView( );
+  this->m_parent.addNavigation( view );
+  this->m_parent.ui->tabWidget->addTab( demoTab, tabLabel );
+  this->m_parent.lastTabIndex =
+    this->m_parent.ui->tabWidget->currentIndex( );
+}
+
+void
+ArrangementDemoWindow::MakeOverlayVisitor::
+operator()( std::pair< Pol_arr*, Pol_arr* >& pa )
+{
+  typedef Pol_arr OverlayArrType;
+  OverlayArrType* arr1 = pa.first;
+  OverlayArrType* arr2 = pa.second;
+  QString tabLabel = QString( "Overlay Tab" );
+
+  OverlayArrType* overlayArr = new OverlayArrType;
+  CGAL::Arr_default_overlay_traits< OverlayArrType > defaultTraits;
+
+  CGAL::overlay( *arr1, *arr2, *overlayArr, defaultTraits );
+
+  ArrangementDemoTabBase* demoTab =
+    new ArrangementDemoTab< OverlayArrType >( overlayArr, 0 );
+  this->m_parent.arrangements.push_back( CGAL::make_object( overlayArr ) );
+  this->m_parent.tabs.push_back( demoTab );
+
+  QGraphicsView* view = demoTab->getView( );
+  this->m_parent.addNavigation( view );
+  this->m_parent.ui->tabWidget->addTab( demoTab, tabLabel );
+  this->m_parent.lastTabIndex =
+    this->m_parent.ui->tabWidget->currentIndex( );
+}
+
+void
+ArrangementDemoWindow::MakeOverlayVisitor::
+operator()( std::pair< Conic_arr*, Conic_arr* >& pa )
+{
+  typedef Conic_arr OverlayArrType;
+  OverlayArrType* arr1 = pa.first;
+  OverlayArrType* arr2 = pa.second;
+  QString tabLabel = QString( "Overlay Tab" );
+
+  OverlayArrType* overlayArr = new OverlayArrType;
+  CGAL::Arr_default_overlay_traits< OverlayArrType > defaultTraits;
+
+  CGAL::overlay( *arr1, *arr2, *overlayArr, defaultTraits );
+
+  ArrangementDemoTabBase* demoTab =
+    new ArrangementDemoTab< OverlayArrType >( overlayArr, 0 );
+  this->m_parent.arrangements.push_back( CGAL::make_object( overlayArr ) );
+  this->m_parent.tabs.push_back( demoTab );
+
+  QGraphicsView* view = demoTab->getView( );
+  this->m_parent.addNavigation( view );
+  this->m_parent.ui->tabWidget->addTab( demoTab, tabLabel );
+  this->m_parent.lastTabIndex =
+    this->m_parent.ui->tabWidget->currentIndex( );
+}
+
+void
+ArrangementDemoWindow::MakeOverlayVisitor::
+operator()( std::pair< Lin_arr*, Lin_arr* >& pa )
+{
+  typedef Lin_arr OverlayArrType;
+  OverlayArrType* arr1 = pa.first;
+  OverlayArrType* arr2 = pa.second;
+  QString tabLabel = QString( "Overlay Tab" );
+
+  OverlayArrType* overlayArr = new OverlayArrType;
+  CGAL::Arr_default_overlay_traits< OverlayArrType > defaultTraits;
+
+  CGAL::overlay( *arr1, *arr2, *overlayArr, defaultTraits );
+
+  ArrangementDemoTabBase* demoTab =
+    new ArrangementDemoTab< OverlayArrType >( overlayArr, 0 );
+  this->m_parent.arrangements.push_back( CGAL::make_object( overlayArr ) );
+  this->m_parent.tabs.push_back( demoTab );
+
+  QGraphicsView* view = demoTab->getView( );
+  this->m_parent.addNavigation( view );
+  this->m_parent.ui->tabWidget->addTab( demoTab, tabLabel );
+  this->m_parent.lastTabIndex =
+    this->m_parent.ui->tabWidget->currentIndex( );
+}
+
+void
+ArrangementDemoWindow::MakeOverlayVisitor::
+operator()( std::pair< Arc_arr*, Arc_arr* >& pa )
+{
+  typedef Arc_arr OverlayArrType;
+  OverlayArrType* arr1 = pa.first;
+  OverlayArrType* arr2 = pa.second;
+  QString tabLabel = QString( "Overlay Tab" );
+
+  OverlayArrType* overlayArr = new OverlayArrType;
+  CGAL::Arr_default_overlay_traits< OverlayArrType > defaultTraits;
+
+  CGAL::overlay( *arr1, *arr2, *overlayArr, defaultTraits );
+
+  ArrangementDemoTabBase* demoTab =
+    new ArrangementDemoTab< OverlayArrType >( overlayArr, 0 );
+  this->m_parent.arrangements.push_back( CGAL::make_object( overlayArr ) );
+  this->m_parent.tabs.push_back( demoTab );
+
+  QGraphicsView* view = demoTab->getView( );
+  this->m_parent.addNavigation( view );
+  this->m_parent.ui->tabWidget->addTab( demoTab, tabLabel );
+  this->m_parent.lastTabIndex =
+    this->m_parent.ui->tabWidget->currentIndex( );
+}
+
+void
+ArrangementDemoWindow::MakeOverlayVisitor::
+operator()( std::pair< Bezier_arr*, Bezier_arr* >& pa )
+{
+  typedef Bezier_arr OverlayArrType;
+  OverlayArrType* arr1 = pa.first;
+  OverlayArrType* arr2 = pa.second;
+  QString tabLabel = QString( "Overlay Tab" );
+
+  OverlayArrType* overlayArr = new OverlayArrType;
+  CGAL::Arr_default_overlay_traits< OverlayArrType > defaultTraits;
+
+  CGAL::overlay( *arr1, *arr2, *overlayArr, defaultTraits );
+
+  ArrangementDemoTabBase* demoTab =
+    new ArrangementDemoTab< OverlayArrType >( overlayArr, 0 );
+  this->m_parent.arrangements.push_back( CGAL::make_object( overlayArr ) );
+  this->m_parent.tabs.push_back( demoTab );
+
+  QGraphicsView* view = demoTab->getView( );
+  this->m_parent.addNavigation( view );
+  this->m_parent.ui->tabWidget->addTab( demoTab, tabLabel );
+  this->m_parent.lastTabIndex =
+    this->m_parent.ui->tabWidget->currentIndex( );
+}
+
+void
+ArrangementDemoWindow::MakeOverlayVisitor::
+operator()( std::pair< Alg_seg_arr*, Alg_seg_arr* >& pa )
+{
+  typedef Alg_seg_arr OverlayArrType;
+  OverlayArrType* arr1 = pa.first;
+  OverlayArrType* arr2 = pa.second;
+  QString tabLabel = QString( "Overlay Tab" );
+
+  OverlayArrType* overlayArr = new OverlayArrType;
+  CGAL::Arr_default_overlay_traits< OverlayArrType > defaultTraits;
+
+  CGAL::overlay( *arr1, *arr2, *overlayArr, defaultTraits );
+
+  ArrangementDemoTabBase* demoTab =
+    new ArrangementDemoTab< OverlayArrType >( overlayArr, 0 );
+  this->m_parent.arrangements.push_back( CGAL::make_object( overlayArr ) );
+  this->m_parent.tabs.push_back( demoTab );
+
+  QGraphicsView* view = demoTab->getView( );
+  this->m_parent.addNavigation( view );
+  this->m_parent.ui->tabWidget->addTab( demoTab, tabLabel );
+  this->m_parent.lastTabIndex =
+    this->m_parent.ui->tabWidget->currentIndex( );
+}
