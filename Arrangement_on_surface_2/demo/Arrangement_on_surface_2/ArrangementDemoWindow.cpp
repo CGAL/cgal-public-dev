@@ -181,7 +181,77 @@ std::vector< CGAL::Object > ArrangementDemoWindow::getArrangements( ) const
   return res;
 }
 
-bool ArrangementDemoWindow::ToPairOfArr(
+bool ArrangementDemoWindow::ToArrPtr( const CGAL::Object& obj,
+  SomeArrPtrType* arr )
+{
+  {
+    typedef Seg_arr MaybeArrType;
+    MaybeArrType *arr1;
+    if ( CGAL::assign( arr1, obj ) )
+    {
+      *arr = arr1;
+      return true;
+    }
+  }
+  {
+    typedef Pol_arr MaybeArrType;
+    MaybeArrType *arr1;
+    if ( CGAL::assign( arr1, obj ) )
+    {
+      *arr = arr1;
+      return true;
+    }
+  }
+  {
+    typedef Conic_arr MaybeArrType;
+    MaybeArrType *arr1;
+    if ( CGAL::assign( arr1, obj ) )
+    {
+      *arr = arr1;
+      return true;
+    }
+  }
+  {
+    typedef Lin_arr MaybeArrType;
+    MaybeArrType *arr1;
+    if ( CGAL::assign( arr1, obj ) )
+    {
+      *arr = arr1;
+      return true;
+    }
+  }
+  {
+    typedef Arc_arr MaybeArrType;
+    MaybeArrType *arr1;
+    if ( CGAL::assign( arr1, obj ) )
+    {
+      *arr = arr1;
+      return true;
+    }
+  }
+  {
+    typedef Bezier_arr MaybeArrType;
+    MaybeArrType *arr1;
+    if ( CGAL::assign( arr1, obj ) )
+    {
+      *arr = arr1;
+      return true;
+    }
+  }
+  {
+    typedef Alg_seg_arr MaybeArrType;
+    MaybeArrType *arr1;
+    if ( CGAL::assign( arr1, obj ) )
+    {
+      *arr = arr1;
+      return true;
+    }
+  }
+
+  return false;
+}
+
+bool ArrangementDemoWindow::ToPairOfArrPtr(
   const std::vector< CGAL::Object >& arrs,
   SomePairOfArrPtrType* arrPair )
 {
@@ -584,134 +654,10 @@ void ArrangementDemoWindow::openDatFile( QString filename )
 
   std::ifstream inputFile( filename.toStdString( ).c_str( ) );
   CGAL::Object arr = this->arrangements[ index ];
-  Seg_arr* seg;
-  Pol_arr* pol;
-  Conic_arr* conic;
-  Bezier_arr* bez;
-
-  // Alg_seg_arr* alg;
-
-  // Creates an ofstream object named inputFile
-  if (! inputFile.is_open() ) // Always test file open
-  {
-    std::cerr << "Error opening input file" << std::endl;
-    return;
-  }
-
-  if ( CGAL::assign( pol, arr ) )
-  {
-    pol->clear( );
-
-    std::vector<Arr_pol_point_2> points;
-
-    unsigned int num_polylines;
-    inputFile >> num_polylines;
-    std::list<Arr_pol_2> pol_list;
-
-    unsigned int i;
-    for (i = 0; i < num_polylines; i++)
-    {
-      unsigned int num_segments;
-      inputFile >> num_segments;
-      points.clear();
-      unsigned int j;
-      for (j = 0; j < num_segments; j++)
-      {
-        int ix, iy;
-        inputFile >> ix >> iy;
-        points.push_back (Arr_pol_point_2(NT(ix),NT(iy)));
-      }
-
-      Arr_pol_2 curve (points.begin(), points.end());
-      pol_list.push_back(curve);
-    }
-    CGAL::insert(*pol, pol_list.begin(), pol_list.end());
-
-    typedef ArrangementDemoTab< Pol_arr > TabType;
-    TabType* tab = static_cast< TabType* >( this->tabs[ index ] );
-    tab->setArrangement( pol );
-  }
-  else if ( CGAL::assign( seg, arr ) )
-  {
-    seg->clear( );
-
-    int count;
-    inputFile >> count;
-    int i;
-    std::list<Arr_seg_2> seg_list;
-    for (i = 0; i < count; i++)
-    {
-      NT x0, y0, x1, y1;
-      inputFile >> x0 >> y0 >> x1 >> y1;
-
-      Arr_seg_point_2 p1(x0, y0);
-      Arr_seg_point_2 p2(x1, y1);
-      std::cout << p1 << " -> " << p2 << "\n";
-
-      Arr_seg_2 curve(p1, p2);
-
-      seg_list.push_back(curve);
-    }
-
-    CGAL::insert(*(seg), seg_list.begin(), seg_list.end());
-    std::cout
-      << "   V = " << seg->number_of_vertices()
-      << ",  E = " << seg->number_of_edges()
-      << ",  F = " << seg->number_of_faces() << std::endl;
-
-    typedef ArrangementDemoTab< Seg_arr > TabType;
-    TabType* tab = static_cast< TabType* >( this->tabs[ index ] );
-    tab->setArrangement( seg );
-  }
-#ifdef CGAL_USE_CORE
-  else if ( CGAL::assign( conic, arr ) )
-  {
-    conic->clear( );
-    Conic_reader< Conic_arr::Geometry_traits_2 > reader;
-    std::list<Arr_conic_2> curve_list;
-    CGAL::Bbox_2 bbox;
-    reader.read_data( filename.toStdString().c_str(),
-                      std::back_inserter(curve_list), bbox );
-    CGAL::insert (*conic, curve_list.begin(), curve_list.end());
-
-    typedef ArrangementDemoTab< Conic_arr > TabType;
-    TabType* tab = static_cast< TabType* >( this->tabs[ index ] );
-    tab->setArrangement( conic );
-  }
-#endif
-  else if ( CGAL::assign( bez, arr ) )
-  {
-    bez->clear( );
-    // Read the curves from the input file.
-    unsigned int               n_curves;
-    std::list<Arr_bezier_2>    curves;
-    Arr_bezier_2               B;
-    unsigned int               k;
-
-    inputFile >> n_curves;
-    for (k = 0; k < n_curves; k++) {
-      // Read the current curve (specified by its control points).
-      inputFile >> B;
-      curves.push_back (B);
-
-      std::cout << "B = {" << B << "}" << std::endl;
-    }
-
-    // Construct the arrangement.
-    insert (*bez, curves.begin(), curves.end());
-
-    // Print the arrangement size.
-    std::cout << "The arrangement size:" << std::endl
-              << "   V = " << bez->number_of_vertices()
-              << ",  E = " << bez->number_of_edges()
-              << ",  F = " << bez->number_of_faces() << std::endl;
-
-    typedef ArrangementDemoTab< Bezier_arr > TabType;
-    TabType* tab = static_cast< TabType* >( this->tabs[ index ] );
-    tab->setArrangement( bez );
-  }
-
-  inputFile.close();
+  SomeArrPtrType someArr;
+  this->ToArrPtr( arr, &someArr );
+  OpenDatFileVisitor visitor( *this, filename.toStdString(), index );
+  boost::apply_visitor( visitor, someArr );
 }
 
 void ArrangementDemoWindow::updateEnvelope( QAction* newMode )
@@ -1045,7 +991,7 @@ void ArrangementDemoWindow::on_actionOverlay_triggered( )
   {
     std::vector< CGAL::Object > arrs = overlayDialog->selectedArrangements( );
     SomePairOfArrPtrType arrPair;
-    bool ok = this->ToPairOfArr( arrs, &arrPair );
+    bool ok = this->ToPairOfArrPtr( arrs, &arrPair );
     if ( ok )
     {
       this->makeOverlayTab( arrPair );
@@ -1427,4 +1373,173 @@ operator()( std::pair< Alg_seg_arr*, Alg_seg_arr* >& pa )
   this->m_parent.ui->tabWidget->addTab( demoTab, tabLabel );
   this->m_parent.lastTabIndex =
     this->m_parent.ui->tabWidget->currentIndex( );
+}
+
+ArrangementDemoWindow::OpenDatFileVisitor::
+OpenDatFileVisitor( ArrangementDemoWindow& parent,
+  const std::string& filename,
+  int index ):
+  m_parent( parent ),
+  m_filename( filename ),
+  m_index( index )
+{
+
+}
+
+void
+ArrangementDemoWindow::OpenDatFileVisitor::
+operator()( Seg_arr* arr )
+{
+  std::ifstream inputFile( m_filename.c_str( ) );
+  if ( ! inputFile.is_open( ) )
+    return;
+
+  // read in segments
+  arr->clear( );
+  int count;
+  inputFile >> count;
+  int i;
+  std::list<Arr_seg_2> seg_list;
+  for (i = 0; i < count; i++)
+  {
+    NT x0, y0, x1, y1;
+    inputFile >> x0 >> y0 >> x1 >> y1;
+
+    Arr_seg_point_2 p1(x0, y0);
+    Arr_seg_point_2 p2(x1, y1);
+
+    Arr_seg_2 curve(p1, p2);
+
+    seg_list.push_back(curve);
+  }
+  CGAL::insert(*(arr), seg_list.begin(), seg_list.end());
+
+  // attach arr to tab
+  typedef ArrangementDemoTab< Seg_arr > TabType;
+  TabType* tab = static_cast< TabType* >( m_parent.tabs[ m_index ] );
+  tab->setArrangement( arr );
+}
+
+void
+ArrangementDemoWindow::OpenDatFileVisitor::
+operator()( Pol_arr* arr )
+{
+  std::ifstream inputFile( m_filename.c_str( ) );
+  if ( ! inputFile.is_open( ) )
+    return;
+
+  arr->clear( );
+  std::vector<Arr_pol_point_2> points;
+
+  // read in polylines and insert into arr
+  unsigned int num_polylines;
+  inputFile >> num_polylines;
+  std::list<Arr_pol_2> pol_list;
+  unsigned int i;
+  for (i = 0; i < num_polylines; i++)
+  {
+    unsigned int num_segments;
+    inputFile >> num_segments;
+    points.clear();
+    unsigned int j;
+    for (j = 0; j < num_segments; j++)
+    {
+      int ix, iy;
+      inputFile >> ix >> iy;
+      points.push_back (Arr_pol_point_2(NT(ix),NT(iy)));
+    }
+
+    Arr_pol_2 curve (points.begin(), points.end());
+    pol_list.push_back(curve);
+  }
+  CGAL::insert(*arr, pol_list.begin(), pol_list.end());
+
+  // attach arr to tab
+  typedef ArrangementDemoTab< Pol_arr > TabType;
+  TabType* tab = static_cast< TabType* >( m_parent.tabs[ m_index ] );
+  tab->setArrangement( arr );
+}
+
+void
+ArrangementDemoWindow::OpenDatFileVisitor::
+operator()( Conic_arr* arr )
+{
+  std::ifstream inputFile( m_filename.c_str( ) );
+  if ( ! inputFile.is_open( ) )
+    return;
+
+  arr->clear( );
+  Conic_reader< Conic_arr::Geometry_traits_2 > reader;
+  std::list<Arr_conic_2> curve_list;
+  CGAL::Bbox_2 bbox;
+  reader.read_data( m_filename.c_str(),
+                    std::back_inserter(curve_list), bbox );
+  CGAL::insert (*arr, curve_list.begin(), curve_list.end());
+
+  typedef ArrangementDemoTab< Conic_arr > TabType;
+  TabType* tab = static_cast< TabType* >( m_parent.tabs[ m_index ] );
+  tab->setArrangement( arr );
+}
+
+void
+ArrangementDemoWindow::OpenDatFileVisitor::
+operator()( Lin_arr* arr )
+{
+  std::ifstream inputFile( m_filename.c_str( ) );
+  if ( ! inputFile.is_open( ) )
+    return;
+
+  std::cout << "open dat stub\n";
+}
+
+void
+ArrangementDemoWindow::OpenDatFileVisitor::
+operator()( Arc_arr* arr )
+{
+  std::ifstream inputFile( m_filename.c_str( ) );
+  if ( ! inputFile.is_open( ) )
+    return;
+
+  std::cout << "open dat stub\n";
+}
+
+void
+ArrangementDemoWindow::OpenDatFileVisitor::
+operator()( Bezier_arr* arr )
+{
+  std::ifstream inputFile( m_filename.c_str( ) );
+  if ( ! inputFile.is_open( ) )
+    return;
+
+    arr->clear( );
+    // Read the curves from the input file.
+    unsigned int               n_curves;
+    std::list<Arr_bezier_2>    curves;
+    Arr_bezier_2               B;
+    unsigned int               k;
+
+    inputFile >> n_curves;
+    for (k = 0; k < n_curves; k++) {
+      // Read the current curve (specified by its control points).
+      inputFile >> B;
+      curves.push_back (B);
+    }
+
+    // Construct the arrangement.
+    insert (*arr, curves.begin(), curves.end());
+
+    typedef ArrangementDemoTab< Bezier_arr > TabType;
+    TabType* tab = static_cast< TabType* >( m_parent.tabs[ m_index ] );
+    tab->setArrangement( arr );
+}
+
+void
+ArrangementDemoWindow::OpenDatFileVisitor::
+operator()( Alg_seg_arr* arr )
+{
+  std::ifstream inputFile( m_filename.c_str( ) );
+  if ( ! inputFile.is_open( ) )
+    return;
+
+  std::cout << "open dat stub\n";
 }

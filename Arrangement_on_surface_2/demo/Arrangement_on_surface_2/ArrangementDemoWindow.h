@@ -33,6 +33,7 @@
 #include <CGAL/Arr_default_overlay_traits.h>
 #include <CGAL/Qt/DemosMainWindow.h>
 #include <CGAL/IO/pixmaps/hand.xpm>
+#include <CGAL/Object.h>
 
 #include <Qt>
 
@@ -114,6 +115,30 @@ class ArrangementDemoWindow : public CGAL::Qt::DemosMainWindow
   };
   friend class MakeOverlayVisitor;
 
+  /**
+  Load curves into the currently active tab.
+  */
+  class OpenDatFileVisitor : public boost::static_visitor< >
+  {
+  public:
+    OpenDatFileVisitor( ArrangementDemoWindow& parent,
+      const std::string& filename,
+      int index );
+
+    void operator()( Seg_arr* );
+    void operator()( Pol_arr* );
+    void operator()( Conic_arr* );
+    void operator()( Lin_arr* );
+    void operator()( Arc_arr* );
+    void operator()( Bezier_arr* );
+    void operator()( Alg_seg_arr* );
+
+    ArrangementDemoWindow& m_parent;
+    std::string m_filename;
+    int m_index;
+  };
+  friend class OpenDatFileVisitor;
+
   public:
   ArrangementDemoWindow(QWidget* parent = 0);
   ~ArrangementDemoWindow();
@@ -128,10 +153,17 @@ class ArrangementDemoWindow : public CGAL::Qt::DemosMainWindow
   void makeOverlayTab( SomePairOfArrPtrType arrs );
 
   /**
+  \param[out] arr - \a obj converted to some arrangement ptr type.
+  \return whether the conversion was successful
+  */
+  static bool ToArrPtr( const CGAL::Object& obj,
+    SomeArrPtrType* arr );
+
+  /**
   \param[out] arrPair - the selected pair of arrangement pointers
   \return whether the conversion was successful
   */
-  static bool ToPairOfArr( const std::vector< CGAL::Object >& arrs,
+  static bool ToPairOfArrPtr( const std::vector< CGAL::Object >& arrs,
     SomePairOfArrPtrType* arrPair );
 
 public slots:
