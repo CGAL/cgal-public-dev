@@ -25,6 +25,7 @@
 #include "Conic_reader.h"
 #include "DeleteCurveMode.h"
 #include "ArrangementGraphicsItem.h"
+#include "WindowSizeDialog.h"
 
 #include <QActionGroup>
 #include <QFileDialog>
@@ -379,9 +380,6 @@ void ArrangementDemoWindow::updateMode( QAction* newMode )
   //   static_cast< ArrangementDemoTabBase* >( widget );
   const unsigned int TabIndex = this->ui->tabWidget->currentIndex( );
   if (TabIndex == static_cast<unsigned int>(-1)) return;
-  ArrangementDemoTabBase* activeTab = this->tabs[ TabIndex ];
-  QGraphicsScene* activeScene = activeTab->getScene( );
-  QGraphicsView* activeView = activeTab->getView( );
 
   this->resetCallbackState( TabIndex );
   this->removeCallback( TabIndex );
@@ -390,46 +388,8 @@ void ArrangementDemoWindow::updateMode( QAction* newMode )
   this->activeModes.at( 0 ) = newMode;
 
   // hook up the new active mode
-  if ( newMode == this->ui->actionInsert )
-  {
-    activeScene->installEventFilter( activeTab->getCurveInputCallback( ) );
-  }
-  else if ( newMode == this->ui->actionDrag )
-  {
-    activeView->setDragMode( QGraphicsView::ScrollHandDrag );
-  }
-  else if ( newMode == this->ui->actionDelete )
-  {
-    activeScene->installEventFilter( activeTab->getDeleteCurveCallback( ) );
-  }
-  else if ( newMode == this->ui->actionPointLocation )
-  {
-    activeScene->installEventFilter( activeTab->getPointLocationCallback( ) );
-  }
-  else if ( newMode == this->ui->actionRayShootingUp )
-  {
-    // -y is up for Qt, so we shoot down
-    activeTab->getVerticalRayShootCallback( )->setShootingUp( true );
-    activeScene->installEventFilter( activeTab->getVerticalRayShootCallback());
-  }
-  else if ( newMode == this->ui->actionRayShootingDown )
-  {
-    // the bottom of the viewport for Qt is +y, so we shoot up
-    activeTab->getVerticalRayShootCallback( )->setShootingUp( false );
-    activeScene->installEventFilter( activeTab->getVerticalRayShootCallback());
-  }
-  else if ( newMode == this->ui->actionMerge )
-  {
-    activeScene->installEventFilter( activeTab->getMergeEdgeCallback( ) );
-  }
-  else if ( newMode == this->ui->actionSplit )
-  {
-    activeScene->installEventFilter( activeTab->getSplitEdgeCallback( ) );
-  }
-  else if ( newMode == this->ui->actionFill )
-  {
-    activeScene->installEventFilter( activeTab->getFillFaceCallback( ) );
-  }
+  ArrangementDemoTabBase* activeTab = this->tabs[ TabIndex ];
+  activeTab->updateMode( this, newMode );
   this->updateFillColorSwatch( );
 }
 
@@ -1186,6 +1146,25 @@ void ArrangementDemoWindow::on_actionFillColor_triggered( )
     fillFaceCallback->setColor( selectedColor );
     this->updateFillColorSwatch( );
   }
+}
+
+void ArrangementDemoWindow::on_actionResizeWindow_triggered( )
+{
+  ArrangementDemoTabBase* currentTab = this->getCurrentTab( );
+  if ( !currentTab )
+    return;
+
+  WindowSizeDialog* dialog = new WindowSizeDialog;
+  if ( dialog->exec( ) == QDialog::Accepted )
+  {
+    QRectF windowSize = dialog->size( );
+    if ( ! windowSize.isNull( ) )
+    {
+      QGraphicsView* view = currentTab->getView( );
+      view->fitInView(windowSize, ::Qt::KeepAspectRatio);
+    }
+  }
+  delete dialog;
 }
 
 ArrangementDemoWindow::MakeOverlayVisitor::

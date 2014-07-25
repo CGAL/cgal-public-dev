@@ -48,6 +48,53 @@ void ArrangementDemoTabBase::setupToolbar( ArrangementDemoWindow* parent )
 
 }
 
+void ArrangementDemoTabBase::updateMode( ArrangementDemoWindow* parent,
+  QAction* mode )
+{
+  QGraphicsScene* activeScene = this->getScene( );
+  QGraphicsView* activeView = this->getView( );
+  if ( mode == parent->ui->actionInsert )
+  {
+    activeScene->installEventFilter( this->getCurveInputCallback( ) );
+  }
+  else if ( mode == parent->ui->actionDrag )
+  {
+    activeView->setDragMode( QGraphicsView::ScrollHandDrag );
+  }
+  else if ( mode == parent->ui->actionDelete )
+  {
+    activeScene->installEventFilter( this->getDeleteCurveCallback( ) );
+  }
+  else if ( mode == parent->ui->actionPointLocation )
+  {
+    activeScene->installEventFilter( this->getPointLocationCallback( ) );
+  }
+  else if ( mode == parent->ui->actionRayShootingUp )
+  {
+    // -y is up for Qt, so we shoot down
+    this->getVerticalRayShootCallback( )->setShootingUp( true );
+    activeScene->installEventFilter( this->getVerticalRayShootCallback());
+  }
+  else if ( mode == parent->ui->actionRayShootingDown )
+  {
+    // the bottom of the viewport for Qt is +y, so we shoot up
+    this->getVerticalRayShootCallback( )->setShootingUp( false );
+    activeScene->installEventFilter( this->getVerticalRayShootCallback());
+  }
+  else if ( mode == parent->ui->actionMerge )
+  {
+    activeScene->installEventFilter( this->getMergeEdgeCallback( ) );
+  }
+  else if ( mode == parent->ui->actionSplit )
+  {
+    activeScene->installEventFilter( this->getSplitEdgeCallback( ) );
+  }
+  else if ( mode == parent->ui->actionFill )
+  {
+    activeScene->installEventFilter( this->getFillFaceCallback( ) );
+  }
+}
+
 void ArrangementDemoTabBase::setupUi( )
 {
   this->layout->addWidget( this->graphicsView, 0, 0, 1, 1 );

@@ -1016,7 +1016,6 @@ public: // methods
   */
   ArrangementPainterOstream& operator<<( const X_monotone_curve_2& curve )
   {
-    std::cout << "paint curve stub (alg traits)" << std::endl;
     this->setupFacade( );
 
     std::list< Coord_vec_2 > points;
@@ -1055,7 +1054,6 @@ public: // methods
   */
   ArrangementPainterOstream& operator<<( const Point_2& p )
   {
-    std::cout << "draw point stub" << std::endl;
     this->setupFacade( );
 
     // draw an ellipse at the point

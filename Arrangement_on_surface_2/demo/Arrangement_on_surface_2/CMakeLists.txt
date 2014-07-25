@@ -34,6 +34,8 @@ if ( CGAL_FOUND AND CGAL_Qt4_FOUND AND QT4_FOUND)
     NewTabDialog.ui
     OverlayDialog.ui
     ArrangementDemoPropertiesDialog.ui
+    WindowSizeDialog.ui
+    AlgebraicInputDialog.ui
   )
   qt4_wrap_cpp( arrangement_2_mocs
     ArrangementDemoWindow.h
@@ -50,6 +52,7 @@ if ( CGAL_FOUND AND CGAL_Qt4_FOUND AND QT4_FOUND)
   )
 
   add_library( arr_demo_library SHARED
+    AlgebraicInputDialog.cpp
     ArrangementDemoGraphicsView.cpp
     ArrangementDemoPropertiesDialog.cpp
     ArrangementDemoTab.cpp
@@ -71,6 +74,7 @@ if ( CGAL_FOUND AND CGAL_Qt4_FOUND AND QT4_FOUND)
     Utils.cpp
     VerticalRayGraphicsItem.cpp
     VerticalRayShootCallback.cpp
+    WindowSizeDialog.cpp
     ${arrangement_2_mocs}
     ${arrangement_2_uis}
     ${arrangement_2_resources}

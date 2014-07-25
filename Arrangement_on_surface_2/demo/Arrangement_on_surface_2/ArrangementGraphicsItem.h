@@ -1103,7 +1103,6 @@ protected:
   paint( QPainter* painter,
         CGAL::Arr_algebraic_segment_traits_2< Coefficient_ > /* traits */)
   {
-    std::cout << "paint algebraic\n";
     painter->setPen( this->verticesPen );
     QRectF clipRect = this->boundingRect( );
     if ( std::isinf(clipRect.left( )) ||

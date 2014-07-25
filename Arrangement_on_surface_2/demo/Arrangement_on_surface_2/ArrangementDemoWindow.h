@@ -183,7 +183,7 @@ public slots:
   void on_actionZoomOut_triggered( );
   void on_actionPreferences_triggered( );
   void on_actionFillColor_triggered( );
-
+  void on_actionResizeWindow_triggered( );
 
 signals:
   void modelChanged( );

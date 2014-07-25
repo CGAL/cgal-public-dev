@@ -21,6 +21,7 @@
 #define CGAL_QT_GRAPHICS_VIEW_CURVE_INPUT_H
 
 #include <iostream>
+#include <boost/format.hpp>
 #include <CGAL/Arr_segment_traits_2.h>
 #include <CGAL/Arr_polyline_traits_2.h>
 #include <CGAL/Arr_conic_traits_2.h>
@@ -38,6 +39,8 @@
 #include "Callback.h"
 #include "ISnappable.h"
 #include "PointsGraphicsItem.h"
+#include "AlgebraicInputDialog.h"
+#include "PolynomialParser.h"
 
 namespace CGAL {
 namespace Qt {
@@ -939,8 +942,10 @@ class GraphicsViewCurveInput<CGAL::Arr_algebraic_segment_traits_2<
   typedef Coefficient_                                  Coefficent;
   typedef CGAL::Arr_algebraic_segment_traits_2<Coefficient>
                                                         Traits;
+  typedef Traits::Polynomial_2 Polynomial_2;
   typedef typename ArrTraitsAdaptor<Traits>::Kernel     Kernel;
   typedef Traits::Point_2                               Point_2;
+  typedef Traits::Curve_2                               Curve_2;
   typedef Kernel::Point_2                               Kernel_point_2;
   typedef Kernel::Segment_2                             Segment_2;
 
@@ -953,31 +958,50 @@ public:
 public:
   void mousePressEvent( QGraphicsSceneMouseEvent* event )
   {
-    if ( ! this->second )
+    AlgebraicInputDialog* dialog = new AlgebraicInputDialog;
+    if ( dialog->exec( ) == QDialog::Accepted )
     {
-      this->second = true;
-      this->p1 = this->snapPoint( event );
-      QPointF pt = event->scenePos( );
-      this->segmentGuide.setLine( pt.x( ), pt.y( ), pt.x( ), pt.y( ) );
-      if ( this->scene != NULL )
+      std::cout << "Algebraic traits curve insert stub" << std::endl;
+      std::vector< std::string > inputs;
+      for ( int i = 0; i < 10; ++i )
       {
-        this->scene->addItem( &( this->segmentGuide ) );
+        QString input = dialog->line( i ).trimmed( );
+        if ( input.size( ) )
+          inputs.push_back( input.toStdString( ) );
+      }
+
+      // parse inputs into polynomials
+      typedef PolynomialParser< Polynomial_2 > ParserType;
+      std::vector< Polynomial_2 > polynomials;
+      Polynomial_2 polynomial;
+      for ( int i = 0; i < inputs.size( ); ++i )
+      {
+        bool ok = ParserType::Parse( inputs[i], &polynomial );
+        if ( ok )
+        {
+          polynomials.push_back( polynomial );
+          std::cout << boost::str( boost::format( "parsed: `%1%'\n" )
+            % inputs[ i ] );
+        }
+      }
+
+      // make curves from polynomials
+      Traits traits;
+      Traits::Construct_curve_2 construct_curve =
+        traits.construct_curve_2_object( );
+      std::vector< Curve_2 > curves;
+      for ( int i = 0; i < polynomials.size( ); ++i )
+      {
+        Curve_2 cv = construct_curve( polynomials[i] );
+        curves.push_back( cv );
+      }
+
+      for ( int i = 0; i < curves.size( ); ++i )
+      {
+        emit generate( CGAL::make_object( curves[i] ) );
       }
     }
-    else
-    {
-      this->second = false;
-      Point_2 p2 = this->snapPoint( event );
-      if ( this->scene != NULL )
-      {
-        this->scene->removeItem( &( this->segmentGuide ) );
-      }
-      if ( traits.compare_xy_2_object()( this->p1, p2 ) == CGAL::EQUAL )
-      {
-        return;
-      }
-      // std::cout << "Algebraic traits curve insert stub" << std::endl;
-    }
+    delete dialog;
   }
 
   void mouseMoveEvent( QGraphicsSceneMouseEvent* event )

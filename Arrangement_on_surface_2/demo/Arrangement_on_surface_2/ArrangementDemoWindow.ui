@@ -6,12 +6,12 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>946</width>
+    <width>976</width>
     <height>600</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>MainWindow</string>
+   <string>Arrangement_2 Demo</string>
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QGridLayout" name="gridLayout">
@@ -49,6 +49,7 @@
    <addaction name="separator"/>
    <addaction name="actionZoomIn"/>
    <addaction name="actionZoomOut"/>
+   <addaction name="actionResizeWindow"/>
    <addaction name="separator"/>
    <addaction name="actionSnapMode"/>
    <addaction name="actionGridSnapMode"/>
@@ -69,8 +70,8 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>946</width>
-     <height>23</height>
+     <width>976</width>
+     <height>25</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_File">
@@ -103,6 +104,8 @@
     <property name="title">
      <string>&amp;Edit</string>
     </property>
+    <addaction name="actionResizeWindow"/>
+    <addaction name="separator"/>
     <addaction name="actionSnapMode"/>
     <addaction name="actionGridSnapMode"/>
     <addaction name="separator"/>
@@ -463,6 +466,15 @@
    </property>
    <property name="toolTip">
     <string>Set the fill color</string>
+   </property>
+  </action>
+  <action name="actionResizeWindow">
+   <property name="icon">
+    <iconset resource="ArrangementDemoWindow.qrc">
+     <normaloff>:/icons/layer-resize.png</normaloff>:/icons/layer-resize.png</iconset>
+   </property>
+   <property name="text">
+    <string>Resize window...</string>
    </property>
   </action>
  </widget>

@@ -69,6 +69,15 @@ public:
   // TODO: Use tag dispatch to handle template-based setup
   virtual void setupToolbar( ArrangementDemoWindow* parent );
 
+  /**
+  Set up scene interaction based on \a mode. This can be overloaded if
+  behavior is specific to the type of the underlying arrangement.
+
+  \param[in] parent - the parent widget
+  \param[in] mode - the currently active mode
+  */
+  virtual void updateMode( ArrangementDemoWindow* parent, QAction* mode );
+
 protected:
   virtual void setupUi( );
 
@@ -211,7 +220,15 @@ public:
 
   virtual void setupToolbar( ArrangementDemoWindow* parent )
   {
+    parent->ui->actionDrag->setEnabled( true );
+
     this->setupToolbar( parent, (TraitsType*) NULL );
+  }
+
+  virtual void updateMode( ArrangementDemoWindow* parent,
+    QAction* mode )
+  {
+    this->updateMode( parent, mode, (TraitsType*) NULL );
   }
 
 protected: // methods
@@ -262,6 +279,80 @@ protected: // methods
     parent->ui->actionConicFivePoint->setVisible( false );
 
     parent->conicTypeGroup->setEnabled( true );
+  }
+
+  // TODO: set up algebraic traits style toolbar
+  void setupToolbar( ArrangementDemoWindow* parent,
+    Alg_seg_arr::Geometry_traits_2* /*unused*/ )
+  {
+    parent->ui->actionDrag->setEnabled( false );
+    parent->ui->actionConicSegment->setChecked( false );
+
+    parent->ui->actionCurveRay->setVisible( false );
+    parent->ui->actionCurveLine->setVisible( false );
+
+    parent->ui->actionConicCircle->setVisible( false );
+    parent->ui->actionConicEllipse->setVisible( false );
+    parent->ui->actionConicThreePoint->setVisible( false );
+    parent->ui->actionConicFivePoint->setVisible( false );
+
+    parent->conicTypeGroup->setEnabled( false );
+  }
+
+  template < class TGeomTraits >
+  void updateMode( ArrangementDemoWindow* parent,
+    QAction* mode, TGeomTraits* /*unused*/ )
+  {
+    this->Superclass::updateMode( parent, mode );
+  }
+
+  void updateMode( ArrangementDemoWindow* parent,
+    QAction* mode,
+    Alg_seg_arr::Geometry_traits_2* /*unused*/ )
+  {
+    QGraphicsScene* activeScene = this->getScene( );
+    QGraphicsView* activeView = this->getView( );
+    if ( mode == parent->ui->actionInsert )
+    {
+      activeScene->installEventFilter( this->getCurveInputCallback( ) );
+    }
+    else if ( mode == parent->ui->actionDrag )
+    {
+      std::cout << "alg seg arr window reposition stub\n";
+      // activeView->setDragMode( QGraphicsView::ScrollHandDrag );
+    }
+    else if ( mode == parent->ui->actionDelete )
+    {
+      activeScene->installEventFilter( this->getDeleteCurveCallback( ) );
+    }
+    else if ( mode == parent->ui->actionPointLocation )
+    {
+      activeScene->installEventFilter( this->getPointLocationCallback( ) );
+    }
+    else if ( mode == parent->ui->actionRayShootingUp )
+    {
+      // -y is up for Qt, so we shoot down
+      this->getVerticalRayShootCallback( )->setShootingUp( true );
+      activeScene->installEventFilter( this->getVerticalRayShootCallback());
+    }
+    else if ( mode == parent->ui->actionRayShootingDown )
+    {
+      // the bottom of the viewport for Qt is +y, so we shoot up
+      this->getVerticalRayShootCallback( )->setShootingUp( false );
+      activeScene->installEventFilter( this->getVerticalRayShootCallback());
+    }
+    else if ( mode == parent->ui->actionMerge )
+    {
+      activeScene->installEventFilter( this->getMergeEdgeCallback( ) );
+    }
+    else if ( mode == parent->ui->actionSplit )
+    {
+      activeScene->installEventFilter( this->getSplitEdgeCallback( ) );
+    }
+    else if ( mode == parent->ui->actionFill )
+    {
+      activeScene->installEventFilter( this->getFillFaceCallback( ) );
+    }
   }
 
 protected:
