@@ -26,6 +26,7 @@
 #include "DeleteCurveMode.h"
 #include "ArrangementGraphicsItem.h"
 #include "WindowSizeDialog.h"
+#include "ArrangementDemoTraits.h"
 
 #include <QActionGroup>
 #include <QFileDialog>
@@ -1516,9 +1517,13 @@ void
 ArrangementDemoWindow::OpenDatFileVisitor::
 operator()( Alg_seg_arr* arr )
 {
-  std::ifstream inputFile( m_filename.c_str( ) );
-  if ( ! inputFile.is_open( ) )
-    return;
-
-  std::cout << "open dat stub\n";
+  LoadArrFromFile< AlgebraicDemoTraits > loadArrFromFile;
+  bool ok = loadArrFromFile( m_filename, arr );
+  if ( ! ok )
+  {
+    std::cout << "Error opening " << m_filename << "\n";
+  }
+  typedef ArrangementDemoTab< Alg_seg_arr > TabType;
+  TabType* tab = static_cast< TabType* >( m_parent.tabs[ m_index ] );
+  tab->setArrangement( arr );
 }

@@ -2133,6 +2133,9 @@ struct LoadArrFromFile
     ArrangementType* arr,
     CGAL::Arr_algebraic_segment_traits_2< Coefficient_ >* /*unused*/ )
   {
+    if ( ! arr )
+      return false;
+
     ArrTraitsType traits;
 
     // parse input polynomials
@@ -2140,6 +2143,9 @@ struct LoadArrFromFile
     typedef PolynomialParser< Polynomial_2 > ParserType;
     int count = 0;
     std::ifstream ifs( filename.c_str( ) );
+    if ( ! ifs.is_open( ) )
+      return false;
+
     std::vector< Polynomial_2 > polynomials;
     std::string str;
     while ( std::getline( ifs, str ) )

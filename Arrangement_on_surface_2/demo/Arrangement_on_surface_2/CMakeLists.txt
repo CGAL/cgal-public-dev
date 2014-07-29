@@ -56,6 +56,7 @@ if ( CGAL_FOUND AND CGAL_Qt4_FOUND AND QT4_FOUND)
     ArrangementDemoGraphicsView.cpp
     ArrangementDemoPropertiesDialog.cpp
     ArrangementDemoTab.cpp
+    ArrangementDemoTraits.cpp
     ArrangementDemoWindow.cpp
     ArrangementGraphicsItem.cpp
     Callback.cpp
