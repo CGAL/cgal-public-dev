@@ -1,4 +1,4 @@
-// Copyright (c) 2012  Tel-Aviv University (Israel).
+// Copyright (c) 2012, 2014  Tel-Aviv University (Israel).
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
@@ -29,7 +29,7 @@ VerticalRayGraphicsItem::VerticalRayGraphicsItem( ) :
   m_targetY( 0.0 ),
   m_isInfinite( false ),
   m_color( ::Qt::green ),
-  m_width( 1 )
+  m_width( 0 )
 {}
 
 void VerticalRayGraphicsItem::paint( QPainter* painter,
