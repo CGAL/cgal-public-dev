@@ -27,6 +27,7 @@
 #include <CGAL/Qt/GraphicsItem.h>
 #include <CGAL/Arr_Bezier_curve_traits_2.h>
 #include <QGraphicsScene>
+#include <QRectF>
 
 namespace CGAL {
 namespace Qt {
@@ -100,22 +101,37 @@ public: // methods
 
   virtual QRectF boundingRect( ) const
   {
+    return this->boundingRect( (Traits*) NULL );
+  }
+
+  template < class TTraitsType >
+  QRectF boundingRect( TTraitsType* /*unused*/ ) const
+  {
     QRectF boundingRectangle = this->convert( this->boundingBox );
     return boundingRectangle;
+  }
+
+  template < class Coefficient >
+  QRectF boundingRect(
+    CGAL::Arr_algebraic_segment_traits_2<Coefficient>* /*unused*/ ) const
+  {
+    return this->viewportRect( );
   }
 
   void insert( const X_monotone_curve_2& curve )
   {
     this->curves.push_back( curve );
 
-    this->updateBoundingBox( );
+    //this->updateBoundingBox( );
+    modelChanged( );
   }
 
   void insert( const Point_2& point )
   {
     this->points.push_back( point );
 
-    this->updateBoundingBox( );
+    //this->updateBoundingBox( );
+    modelChanged( );
   }
 
   void clear( )
@@ -241,6 +257,17 @@ protected: // methods
     }
   }
 
+  template < class Coefficient >
+  void updateBoundingBox( CGAL::Arr_algebraic_segment_traits_2<Coefficient>* /*unused*/ )
+  {
+    this->boundingBoxInitialized = true;
+    QRectF viewRect = this->viewportRect( );
+    this->boundingBox = CGAL::Bbox_2( viewRect.left( ),
+      viewRect.bottom( ),
+      viewRect.right( ),
+      viewRect.top( ) );
+  }
+
 protected: // fields
   CGAL::Qt::Converter< Kernel > convert;
   ArrangementPainterOstream< Traits > painterOstream;
@@ -263,7 +290,7 @@ protected: // fields
 */
 template < class Kernel_ >
 class CurveGraphicsItem< CGAL::Arr_linear_traits_2< Kernel_ > > :
-    public GraphicsItem, public QGraphicsSceneMixin
+    public GraphicsItem, public IQGraphicsSceneMixin
 {
 public: // typedefs
   // known curve types
@@ -284,6 +311,11 @@ public: // ctors
     boundingBoxInitialized( false )
   {
     this->setZValue( 4 );
+  }
+
+  virtual QGraphicsScene* getScene( ) const
+  {
+    return this->QGraphicsItem::scene( );
   }
 
 public: // methods
@@ -334,16 +366,6 @@ public: // methods
       return res;
     }
     return this->convert( this->boundingBox );
-  }
-
-  virtual void setScene( QGraphicsScene* scene_ )
-  {
-    this->QGraphicsSceneMixin::setScene( scene_ );
-    if ( this->getScene( ) == NULL )
-    {
-      QRectF clipRect = this->viewportRect( );
-      this->convert = CGAL::Qt::Converter< Kernel >( clipRect );
-    }
   }
 
 public slots:
@@ -491,7 +513,7 @@ protected: // fields
 template < class RatKernel, class AlgKernel, class NtTraits >
 class CurveGraphicsItem< CGAL::Arr_Bezier_curve_traits_2< RatKernel,
   AlgKernel, NtTraits > >
-  : public GraphicsItem, public QGraphicsSceneMixin
+  : public GraphicsItem, public IQGraphicsSceneMixin
 {
 public:
   // known curve types
@@ -517,6 +539,11 @@ public: // ctors
     m_vertexRadius( 3 )
   {
     this->setZValue( 4 );
+  }
+
+  virtual QGraphicsScene* getScene( ) const
+  {
+    return this->QGraphicsItem::scene( );
   }
 
 public: // methods
