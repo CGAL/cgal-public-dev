@@ -2128,6 +2128,16 @@ struct LoadArrFromFile
     return true;
   }
 
+  bool contains( std::ifstream& ifs, char ch )
+  {
+      std::streampos pos = ifs.tellg( );
+      ifs.ignore( std::numeric_limits< std::streamsize >::max( ),
+          ch );
+      bool res = !ifs.eof( );
+      ifs.seekg( pos );
+      return res;
+  }
+
   template < class Coefficient_ >
   bool load( const std::string& filename,
     ArrangementType* arr,
@@ -2138,7 +2148,6 @@ struct LoadArrFromFile
 
     ArrTraitsType traits;
 
-    // parse input polynomials
     typedef typename ArrTraitsType::Polynomial_2 Polynomial_2;
     typedef PolynomialParser< Polynomial_2 > ParserType;
     int count = 0;
@@ -2146,16 +2155,33 @@ struct LoadArrFromFile
     if ( ! ifs.is_open( ) )
       return false;
 
+    // read in polynomials based on data file format
     std::vector< Polynomial_2 > polynomials;
-    std::string str;
-    while ( std::getline( ifs, str ) )
+    if ( !contains( ifs, 'P' ) )
     {
-      Polynomial_2 polynomial;
-      bool ok = ParserType::Parse( str, &polynomial );
-      if ( ok )
+      // parse human input polynomials
+      std::string str;
+      while ( std::getline( ifs, str ) )
       {
+        Polynomial_2 polynomial;
+        bool ok = ParserType::Parse( str, &polynomial );
+        if ( ok )
+        {
+          polynomials.push_back( polynomial );
+          ++count;
+        }
+      }
+    }
+    else
+    {
+      // parse default-formatted polynomials
+      int num_polys;
+      ifs >> num_polys;
+      for (int i = 0; i < num_polys; ++i)
+      {
+        Polynomial_2 polynomial;
+        ifs >> polynomial;
         polynomials.push_back( polynomial );
-        ++count;
       }
     }
     ifs.close( );
@@ -2172,6 +2198,7 @@ struct LoadArrFromFile
 
     // stuff curves into arrangement
     CGAL::insert( *arr, curves.begin( ), curves.end( ) );
+
 
     // Print the arrangement size.
     std::cout << "The arrangement size:" << std::endl

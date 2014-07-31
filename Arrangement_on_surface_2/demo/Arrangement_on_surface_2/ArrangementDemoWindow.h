@@ -139,6 +139,46 @@ class ArrangementDemoWindow : public CGAL::Qt::DemosMainWindow
   };
   friend class OpenDatFileVisitor;
 
+  class SaveArrFileVisitor : public boost::static_visitor< >
+  {
+  public:
+    SaveArrFileVisitor( const std::string& filename );
+    ~SaveArrFileVisitor( );
+
+    void operator()( Seg_arr* arr );
+    void operator()( Pol_arr* arr );
+    void operator()( Conic_arr* arr );
+    void operator()( Lin_arr* arr );
+    void operator()( Arc_arr* arr );
+    void operator()( Bezier_arr* arr );
+    void operator()( Alg_seg_arr* arr );
+
+  protected:
+    std::string m_filename;
+    std::ofstream m_ofs;
+  };
+  friend class SaveArrFileVisitor;
+
+  class SaveDatFileVisitor : public boost::static_visitor< >
+  {
+  public:
+    SaveDatFileVisitor( const std::string& filename );
+    ~SaveDatFileVisitor( );
+
+    void operator()( Seg_arr* arr );
+    void operator()( Pol_arr* arr );
+    void operator()( Conic_arr* arr );
+    void operator()( Lin_arr* arr );
+    void operator()( Arc_arr* arr );
+    void operator()( Bezier_arr* arr );
+    void operator()( Alg_seg_arr* arr );
+
+  protected:
+    std::string m_filename;
+    std::ofstream m_ofs;
+  };
+  friend class SaveDatFileVisitor;
+
   public:
   ArrangementDemoWindow(QWidget* parent = 0);
   ~ArrangementDemoWindow();
@@ -185,6 +225,8 @@ public slots:
   void on_actionFillColor_triggered( );
   void on_actionResizeWindow_triggered( );
 
+  void updateDefaultSuffix( const QString& filter );
+
 signals:
   void modelChanged( );
 
@@ -208,6 +250,10 @@ public: // expose the UI for convenience
   QActionGroup* envelopeGroup;
   QActionGroup* snapGroup;
   QActionGroup* conicTypeGroup;
+
+  static const QString DAT_FILE_NAME_FILTER;
+  static const QString ARR_FILE_NAME_FILTER;
+  static const QString ANY_FILE_NAME_FILTER;
 };
 
 #endif // ARRANGEMENT_DEMO_WINDOW_H

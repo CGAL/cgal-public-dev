@@ -37,6 +37,12 @@
 #include <CGAL/IO/Arr_text_formatter.h>
 #include <CGAL/IO/Arr_with_history_text_formatter.h>
 
+#include <boost/format.hpp>
+
+const QString ArrangementDemoWindow::DAT_FILE_NAME_FILTER = ".dat (*.dat)";
+const QString ArrangementDemoWindow::ARR_FILE_NAME_FILTER = ".arr (*.arr)";
+const QString ArrangementDemoWindow::ANY_FILE_NAME_FILTER = "All files (*.*)";
+
 ArrangementDemoWindow::ArrangementDemoWindow(QWidget* parent) :
   CGAL::Qt::DemosMainWindow( parent ),
   lastTabIndex(static_cast<unsigned int>(-1)),
@@ -743,89 +749,57 @@ void ArrangementDemoWindow::updateConicType( QAction* newType )
 
 void ArrangementDemoWindow::on_actionSaveAs_triggered( )
 {
+  // get arrangement from active tab
   int index = this->ui->tabWidget->currentIndex( );
   if ( index == -1 )
     return;
-  QString filename =
-    QFileDialog::getSaveFileName( this, tr( "Save file" ),
-                                  "", "Arrangement (*.arr)" );
+  CGAL::Object arr = this->arrangements[ index ];
+  SomeArrPtrType someArr;
+  this->ToArrPtr( arr, &someArr );
+
+  // get a filename to save to
+  QString nameFilters = boost::str(
+    boost::format("%1%;;%2%;;%3%")
+      % DAT_FILE_NAME_FILTER.toStdString( )
+      % ARR_FILE_NAME_FILTER.toStdString( )
+      % ANY_FILE_NAME_FILTER.toStdString( )
+    ).c_str( );
+  QFileDialog* fileDialog = new QFileDialog( this, tr("Save arrangement to file"),
+    "", nameFilters );
+  fileDialog->setAcceptMode( QFileDialog::AcceptSave );
+  fileDialog->setDefaultSuffix( "dat" );
+  QObject::connect( fileDialog, SIGNAL( filterSelected( const QString& ) ),
+    this, SLOT( updateDefaultSuffix( const QString& ) ) );
+  if ( ! fileDialog->exec( ) )
+  {
+    delete fileDialog;
+    return;
+  }
+  QStringList selectedNames = fileDialog->selectedFiles( );
+  QString filename = selectedNames.back( );
+  QString nameFilter = fileDialog->selectedNameFilter( );
+  delete fileDialog;
   if ( filename.isNull( ) )
     return;
 
-  std::ofstream ofs( filename.toStdString( ).c_str( ) );
-  CGAL::Object arr = this->arrangements[ index ];
-  Seg_arr* seg;
-  Pol_arr* pol;
-  Conic_arr* conic;
-  if ( CGAL::assign( seg, arr ) )
+  std::cout << "selected name: " << filename.toStdString( ) << "\n";
+  std::cout << "selected name filter: " << nameFilter.toStdString( ) << "\n";
+
+  // save the arrangement to file
+  if ( filename.endsWith( "arr" ) )
   {
-    typedef CGAL::Arr_text_formatter<Seg_arr>           Seg_text_formatter;
-    typedef CGAL::Arr_with_history_text_formatter<Seg_text_formatter>
-      ArrFormatter;
-    ArrFormatter                                        arrFormatter;
-    CGAL::write( *seg, ofs, arrFormatter );
+    SaveArrFileVisitor visitor( filename.toStdString() );
+    boost::apply_visitor( visitor, someArr );
   }
-  else if ( CGAL::assign( pol, arr ) )
+  else if ( filename.endsWith( "dat" ) )
   {
-    typedef CGAL::Arr_text_formatter<Pol_arr>           Pol_text_formatter;
-    typedef CGAL::Arr_with_history_text_formatter<Pol_text_formatter>
-      ArrFormatter;
-    ArrFormatter                                        arrFormatter;
-    CGAL::write( *pol, ofs, arrFormatter );
+    SaveDatFileVisitor visitor( filename.toStdString() );
+    boost::apply_visitor( visitor, someArr );
   }
-  else if ( CGAL::assign( conic, arr ) )
+  else
   {
-#if 0
-    typedef CGAL::Arr_text_formatter<Conic_arr>         Conic_text_formatter;
-    typedef CGAL::Arr_with_history_text_formatter<Conic_text_formatter>
-      ArrFormatter;
-    ArrFormatter                                        arrFormatter;
-    CGAL::write( *conic, ofs, arrFormatter );
-#endif
-    ofs << conic->number_of_curves( ) << std::endl;
-    for ( Conic_arr::Curve_iterator it = conic->curves_begin( );
-          it != conic->curves_end( ); ++it )
-    {
-      if ( it->is_full_conic( ) )
-      {
-        ofs << "F ";
-        ofs << it->r( ) << " ";
-        ofs << it->s( ) << " ";
-        ofs << it->t( ) << " ";
-        ofs << it->u( ) << " ";
-        ofs << it->v( ) << " ";
-        ofs << it->w( ) << " ";
-        ofs << std::endl;
-      }
-      else if ( it->orientation( ) == CGAL::COLLINEAR )
-      {
-        ofs << "S ";
-        ofs << it->source( ) << " ";
-        ofs << it->target( ) << " ";
-        ofs << std::endl;
-      }
-      else
-      {
-        ofs << "A ";
-        ofs << it->r( ) << " ";
-        ofs << it->s( ) << " ";
-        ofs << it->t( ) << " ";
-        ofs << it->u( ) << " ";
-        ofs << it->v( ) << " ";
-        ofs << it->w( ) << " ";
-        if ( it->orientation( ) == CGAL::COUNTERCLOCKWISE )
-          ofs << "1 ";
-        else if ( it->orientation( ) == CGAL::CLOCKWISE )
-          ofs << "-1 ";
-        else
-          ofs << "0 ";
-        ofs << it->source( ) << " ";
-        ofs << it->target( ) << " ";
-        ofs << std::endl;
-      }
-    }
+    std::cout << "Don't know how to handle this file type\n";
   }
-  ofs.close( );
 }
 
 void ArrangementDemoWindow::on_actionOpen_triggered( )
@@ -1168,6 +1142,21 @@ void ArrangementDemoWindow::on_actionResizeWindow_triggered( )
   delete dialog;
 }
 
+void ArrangementDemoWindow::updateDefaultSuffix( const QString& filter )
+{
+  static std::map< QString, QString > filterToSuffix;
+  if ( ! filterToSuffix.size( ) )
+  {
+    filterToSuffix[ DAT_FILE_NAME_FILTER ] = "dat";
+    filterToSuffix[ ARR_FILE_NAME_FILTER ] = "arr";
+    filterToSuffix[ ANY_FILE_NAME_FILTER ] = "dat";
+  }
+  QString suffix = filterToSuffix[ filter ];
+  QFileDialog* fileDialog = qobject_cast< QFileDialog* >( this->sender( ) );
+  fileDialog->setDefaultSuffix( suffix );
+  std::cout << "default suffix changed: " << suffix.toStdString( ) << "\n";
+}
+
 ArrangementDemoWindow::MakeOverlayVisitor::
 MakeOverlayVisitor( ArrangementDemoWindow& parent ):
   m_parent( parent )
@@ -1400,6 +1389,16 @@ operator()( Seg_arr* arr )
   tab->setArrangement( arr );
 }
 
+bool hasImplicitDenominator( std::ifstream& ifs )
+{
+    std::streampos pos = ifs.tellg( );
+    ifs.ignore( std::numeric_limits< std::streamsize >::max( ),
+        '/' );
+    bool res = ifs.eof( );
+    ifs.seekg( pos );
+    return res;
+}
+
 void
 ArrangementDemoWindow::OpenDatFileVisitor::
 operator()( Pol_arr* arr )
@@ -1409,29 +1408,47 @@ operator()( Pol_arr* arr )
     return;
 
   arr->clear( );
+
   std::vector<Arr_pol_point_2> points;
 
   // read in polylines and insert into arr
   unsigned int num_polylines;
   inputFile >> num_polylines;
   std::list<Arr_pol_2> pol_list;
-  unsigned int i;
-  for (i = 0; i < num_polylines; i++)
+
+  // see if the file uses implicit denominator
+  std::string first_polyline;
+  std::getline( inputFile, first_polyline );
+  std::stringstream ss( first_polyline );
+
+  const bool implicitDenominator = hasImplicitDenominator( inputFile );
+
+  // insert curves
+  for (unsigned int i = 0; i < num_polylines; i++)
   {
-    unsigned int num_segments;
+    int num_segments;
     inputFile >> num_segments;
     points.clear();
-    unsigned int j;
-    for (j = 0; j < num_segments; j++)
+    for (unsigned int j = 0; j < num_segments; j++)
     {
-      int ix, iy;
-      inputFile >> ix >> iy;
-      points.push_back (Arr_pol_point_2(NT(ix),NT(iy)));
+      if ( ! implicitDenominator )
+      {
+        int pn, pd, qn, qd;
+        NT pp, pq;
+        inputFile >> pp >> pq;
+        points.push_back(Arr_pol_point_2(pp, pq));
+      }
+      else
+      {
+        int ix, iy;
+        inputFile >> ix >> iy;
+        points.push_back (Arr_pol_point_2(NT(ix),NT(iy)));
+      }
     }
-
     Arr_pol_2 curve (points.begin(), points.end());
     pol_list.push_back(curve);
   }
+
   CGAL::insert(*arr, pol_list.begin(), pol_list.end());
 
   // attach arr to tab
@@ -1526,4 +1543,220 @@ operator()( Alg_seg_arr* arr )
   typedef ArrangementDemoTab< Alg_seg_arr > TabType;
   TabType* tab = static_cast< TabType* >( m_parent.tabs[ m_index ] );
   tab->setArrangement( arr );
+}
+
+
+ArrangementDemoWindow::SaveArrFileVisitor::
+SaveArrFileVisitor( const std::string& filename ):
+  m_ofs( filename.c_str( ) )
+{
+
+}
+
+ArrangementDemoWindow::SaveArrFileVisitor::
+~SaveArrFileVisitor( )
+{
+  m_ofs.close( );
+}
+
+void ArrangementDemoWindow::SaveArrFileVisitor::operator()( Seg_arr* arr )
+{
+  typedef CGAL::Arr_text_formatter<Seg_arr> ArrTextFormatterType;
+  typedef CGAL::Arr_with_history_text_formatter<ArrTextFormatterType>
+    ArrFormatterType;
+  ArrFormatterType arrFormatter;
+  CGAL::write( *arr, m_ofs, arrFormatter );
+}
+
+void ArrangementDemoWindow::SaveArrFileVisitor::operator()( Pol_arr* arr )
+{
+  typedef CGAL::Arr_text_formatter<Pol_arr> ArrTextFormatterType;
+  typedef CGAL::Arr_with_history_text_formatter<ArrTextFormatterType>
+    ArrFormatterType;
+  ArrFormatterType arrFormatter;
+  CGAL::write( *arr, m_ofs, arrFormatter );
+}
+
+void ArrangementDemoWindow::SaveArrFileVisitor::operator()( Conic_arr* arr )
+{
+#if 0 // this doesn't work
+  typedef CGAL::Arr_text_formatter<Conic_arr> ArrTextFormatterType;
+  typedef CGAL::Arr_with_history_text_formatter<ArrTextFormatterType>
+    ArrFormatterType;
+  ArrFormatterType arrFormatter;
+  CGAL::write( *arr, m_ofs, arrFormatter );
+#endif
+  std::cout << "save arr file stub\n";
+}
+
+void ArrangementDemoWindow::SaveArrFileVisitor::operator()( Lin_arr* arr )
+{
+  std::cout << "save arr file stub\n";
+}
+
+void ArrangementDemoWindow::SaveArrFileVisitor::operator()( Arc_arr* arr )
+{
+  std::cout << "save arr file stub\n";
+}
+
+void ArrangementDemoWindow::SaveArrFileVisitor::operator()( Bezier_arr* arr )
+{
+  std::cout << "save arr file stub\n";
+}
+
+void ArrangementDemoWindow::SaveArrFileVisitor::operator()( Alg_seg_arr* arr )
+{
+  std::cout << "save arr file stub\n";
+}
+
+ArrangementDemoWindow::SaveDatFileVisitor::
+SaveDatFileVisitor( const std::string& filename ):
+  m_ofs( filename.c_str( ) )
+{
+
+}
+
+ArrangementDemoWindow::SaveDatFileVisitor::
+~SaveDatFileVisitor( )
+{
+  m_ofs.close( );
+}
+
+void ArrangementDemoWindow::SaveDatFileVisitor::operator()( Seg_arr* arr )
+{
+  typedef Seg_traits::Point_2 Point_2;
+  typedef Seg_traits::Curve_2 Curve_2;
+  m_ofs << arr->number_of_curves( ) << "\n";
+  for ( Seg_arr::Curve_iterator it = arr->curves_begin( );
+        it != arr->curves_end( ); ++it )
+  {
+    Point_2 ps = it->source( );
+    Point_2 pt = it->target( );
+    m_ofs << boost::str( boost::format("%1% %2% %3% %4%\n")
+      % ps.x( )
+      % ps.y( )
+      % pt.x( )
+      % pt.y( ) );
+  }
+}
+
+void ArrangementDemoWindow::SaveDatFileVisitor::operator()( Pol_arr* arr )
+{
+  typedef Pol_traits::Point_2 Point_2;
+  typedef Pol_traits::Curve_2 Curve_2;
+  // print number of polylines
+  m_ofs << arr->number_of_curves( ) << "\n";
+  for ( Pol_arr::Curve_iterator it = arr->curves_begin( );
+    it != arr->curves_end( ); ++it )
+  {
+    // print number of points in this polyline
+    Curve_2& curve = *it;
+    m_ofs << curve.size( ) + 1 << "\n";
+
+    // print each polyline point
+    Point_2 first = curve[0].source();
+    m_ofs << first.x()
+      << " " << first.y();
+    for ( int i = 0; i < curve.size( ); ++i )
+    {
+      Point_2 pt = curve[i].target();
+      m_ofs << "   " << pt.x()
+        << " " << pt.y();
+    }
+    m_ofs << "\n";
+
+//    m_ofs << CGAL_CORE_NUMERATOR( first.x() )
+//      << " " << CGAL_CORE_DENOMINATOR( first.y() );
+//    for ( int i = 0; i < curve.size( ); ++i )
+//    {
+//      Point_2 pt = curve[i].target();
+//      m_ofs << "   " << CGAL_CORE_NUMERATOR( pt.x() )
+//        << " " << CGAL_CORE_DENOMINATOR( pt.y() );
+//    }
+//    m_ofs << "\n";
+  }
+}
+
+void ArrangementDemoWindow::SaveDatFileVisitor::operator()( Conic_arr* arr )
+{
+  m_ofs << arr->number_of_curves( ) << std::endl;
+  for ( Conic_arr::Curve_iterator it = arr->curves_begin( );
+        it != arr->curves_end( ); ++it )
+  {
+    if ( it->is_full_conic( ) )
+    {
+      m_ofs << "F ";
+      m_ofs << it->r( ) << " ";
+      m_ofs << it->s( ) << " ";
+      m_ofs << it->t( ) << " ";
+      m_ofs << it->u( ) << " ";
+      m_ofs << it->v( ) << " ";
+      m_ofs << it->w( ) << " ";
+      m_ofs << std::endl;
+    }
+    else if ( it->orientation( ) == CGAL::COLLINEAR )
+    {
+      m_ofs << "S ";
+      m_ofs << it->source( ) << " ";
+      m_ofs << it->target( ) << " ";
+      m_ofs << std::endl;
+    }
+    else
+    {
+      m_ofs << "A ";
+      m_ofs << it->r( ) << " ";
+      m_ofs << it->s( ) << " ";
+      m_ofs << it->t( ) << " ";
+      m_ofs << it->u( ) << " ";
+      m_ofs << it->v( ) << " ";
+      m_ofs << it->w( ) << " ";
+      if ( it->orientation( ) == CGAL::COUNTERCLOCKWISE )
+        m_ofs << "1 ";
+      else if ( it->orientation( ) == CGAL::CLOCKWISE )
+        m_ofs << "-1 ";
+      else
+        m_ofs << "0 ";
+      m_ofs << it->source( ) << " ";
+      m_ofs << it->target( ) << " ";
+      m_ofs << std::endl;
+    }
+  }
+}
+
+void ArrangementDemoWindow::SaveDatFileVisitor::operator()( Lin_arr* arr )
+{
+  std::cout << "save dat file stub\n";
+}
+
+void ArrangementDemoWindow::SaveDatFileVisitor::operator()( Arc_arr* arr )
+{
+  std::cout << "save dat file stub\n";
+}
+
+void ArrangementDemoWindow::SaveDatFileVisitor::operator()( Bezier_arr* arr )
+{
+  m_ofs << arr->number_of_curves( ) << std::endl;
+  for ( Bezier_arr::Curve_iterator it = arr->curves_begin( );
+        it != arr->curves_end( ); ++it )
+  {
+    m_ofs << it->number_of_control_points( );
+    for (int i = 0; i < it->number_of_control_points( ); ++i )
+    {
+      m_ofs << " " << it->control_point( i );
+    }
+    m_ofs << "\n";
+  }
+}
+
+void ArrangementDemoWindow::SaveDatFileVisitor::operator()( Alg_seg_arr* arr )
+{
+  m_ofs << arr->number_of_curves( ) << std::endl;
+  for ( Alg_seg_arr::Curve_iterator it = arr->curves_begin( );
+        it != arr->curves_end( ); ++it )
+  {
+    if ( it->has_defining_polynomial( ) )
+    {
+      m_ofs << it->polynomial_2( ) << "\n";
+    }
+  }
 }
