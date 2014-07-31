@@ -65,6 +65,7 @@ public:
     };
     
     class Compare {
+	typedef Polynomial<NT, Rep_> Polynomial_type;
     public:
         typedef Polynomial<NT, Rep_>                    first_argument_type;
         typedef Polynomial<NT, Rep_>                    second_argument_type;
@@ -76,7 +77,6 @@ public:
             return x.compare(y);
         }
         
-	typedef Polynomial<NT, Rep_> Polynomial_type;
 	CGAL_IMPLICIT_INTEROPERABLE_BINARY_OPERATOR_WITH_RT( Polynomial_type, CGAL::Comparison_result )
     };
 

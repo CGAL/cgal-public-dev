@@ -66,7 +66,7 @@ namespace CGAL {
       
     Polynomial_sage_rep() : coeff(), dirty(false) {   }
     Polynomial_sage_rep(Creation_tag, size_type s) : coeff(s,NT(0)), dirty(false) { }
-      Polynomial_sage_rep(size_type n, ...);
+    Polynomial_sage_rep(size_type n, ...) {}
       
       template <class Forward_iterator>
 	Polynomial_sage_rep(Forward_iterator first, Forward_iterator last) 
@@ -128,7 +128,7 @@ namespace CGAL {
 
 
   template < class NT_ >
-    class Polynomial_Sage : Polynomial< NT_, internal::Polynomial_sage_rep<NT_> > {
+    class Polynomial_Sage : public Polynomial< NT_, internal::Polynomial_sage_rep<NT_> > {
 
     std::string sage_internal;
     //size_t sage_address;
@@ -141,9 +141,9 @@ namespace CGAL {
   public: 
     typedef NT_ NT; 
     typedef internal::Polynomial_sage_rep<NT> Rep;
-    typedef Handle_with_policy< Rep > Base;
+    typedef Polynomial< NT, internal::Polynomial_sage_rep<NT> > Base;
     typedef typename Rep::Vector    Vector;
-     typedef typename Rep::size_type size_type;
+    typedef typename Rep::size_type size_type;
     typedef typename Rep::iterator  iterator;
     typedef typename Rep::const_iterator const_iterator;
     typedef Polynomial_Sage<NT> Self; 
@@ -195,8 +195,8 @@ namespace CGAL {
 
   //! construct the constant polynomial a0
     explicit Polynomial_Sage(const NT& a0)
-      : Base(Rep(1, &a0))
-      { reduce(); simplify_coefficients(); }
+      : Base(Rep (1, &a0))
+      { }
       
     //! construct the polynomial a0 + a1*x
     Polynomial_Sage(const NT& a0, const NT& a1)

@@ -289,6 +289,10 @@ public:
     //! copy constructor: copy existing polynomial (shares rep)
     Polynomial(const Self& p) : Base(static_cast<const Base&>(p)) {}
         
+ protected:
+    Polynomial(const Rep& rep) : Base(rep) {}
+
+ public:
     //! construct the constant polynomial a0 from any type convertible to NT
     template <class T>
       explicit Polynomial(const T& a0)
