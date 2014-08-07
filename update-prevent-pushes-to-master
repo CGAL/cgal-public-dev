@@ -88,7 +88,7 @@ fi
 
 # Accept minor fixes
 nb_commits=$(git log --oneline "$oldrev..$newrev" | wc -l)
-if git show "$newrev" | grep -Eiq '(minor|trivial) +(bug(-)?)?fix.*master'; then
+if git show "$newrev" | grep -Eiq '(minor|trivial) +(bug(-| +)?)?fix.*master'; then
     if [ "$nb_commits" = 1 ]; then
         echo "NOTE: push of a trivial fix is accepted in master."
         exit 0
