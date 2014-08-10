@@ -6,6 +6,9 @@ include_directories( BEFORE ../../ )
 include_directories( BEFORE ../ )
 message( STATUS ${CMAKE_CURRENT_BINARY_DIR} )
 
+add_executable( test_bezier_traits test_bezier_traits.cpp )
+target_link_libraries( test_bezier_traits ${CGAL_LIBRARIES} )
+
 add_executable( test_polynomial_io test_polynomial_io.cpp )
 target_link_libraries( test_polynomial_io ${QT_LIBRARIES} )
 

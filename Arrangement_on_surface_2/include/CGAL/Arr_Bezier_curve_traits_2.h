@@ -14,8 +14,8 @@
 //
 // $URL$
 // $Id$
-// 
-// 
+//
+//
 // Author(s)     : Ron Wein     <wein@post.tau.ac.il>
 //                 Iddo Hanniel <iddoh@cs.technion.ac.il>
 
@@ -23,7 +23,7 @@
 #define CGAL_ARR_BEZIER_CURVE_TRAITS_2_H
 
 /*! \file
- * Definition of the Arr_Bezier_curve_traits_2 class. 
+ * Definition of the Arr_Bezier_curve_traits_2 class.
  */
 
 #include <CGAL/tags.h>
@@ -40,7 +40,7 @@ namespace CGAL {
  * A traits class for maintaining an arrangement of Bezier curves with
  * rational control points.
  *
- * The class is templated with four parameters: 
+ * The class is templated with four parameters:
  * Rat_kernel A kernel that defines the type of control points.
  * Alg_kernel A geometric kernel, where Alg_kernel::FT is the number type
  *            for the coordinates of arrangement vertices and is used to
@@ -54,7 +54,7 @@ namespace CGAL {
  */
 template <class RatKernel_, class AlgKernel_, class NtTraits_,
           class BoundingTraits_ = Bezier_bounding_rational_traits<RatKernel_> >
-class Arr_Bezier_curve_traits_2 
+class Arr_Bezier_curve_traits_2
 {
 public:
 
@@ -66,14 +66,14 @@ public:
                                     Alg_kernel,
                                     Nt_traits,
                                     Bounding_traits>   Self;
- 
+
   typedef typename Nt_traits::Integer            Integer;
   typedef typename Rat_kernel::FT                Rational;
   typedef typename Alg_kernel::FT                Algebraic;
 
   typedef typename Rat_kernel::Point_2           Rat_point_2;
   typedef typename Alg_kernel::Point_2           Alg_point_2;
-  
+
   // Category tags:
   typedef Tag_true                               Has_left_category;
   typedef Tag_true                               Has_merge_category;
@@ -339,7 +339,7 @@ public:
     Comparison_result operator() (const Point_2& p,
                                   const X_monotone_curve_2& cv) const
     {
-      return (cv.point_position (p, 
+      return (cv.point_position (p,
                                  const_cast<Bezier_cache&> (*p_cache)));
     }
   };
@@ -543,7 +543,7 @@ public:
 
         if (bound.type == Bounding_traits::Bez_point_bound::RATIONAL_PT)
         {
-          CGAL_assertion (CGAL::compare (bound.t_min, bound.t_max) == EQUAL); 
+          CGAL_assertion (CGAL::compare (bound.t_min, bound.t_max) == EQUAL);
           Rational  t0 = bound.t_min;
 
           pt = Point_2 (B, t0);
@@ -726,7 +726,7 @@ public:
 
     /*! The traits (in case it has state) */
     const Traits* m_traits;
-    
+
     /*! Constructor
      * \param traits the traits (in case it has state)
      */
@@ -748,7 +748,7 @@ public:
                      X_monotone_curve_2& c) const
     {
       CGAL_precondition(m_traits->are_mergeable_2_object()(cv2, cv1));
-      
+
       c = cv1.merge (cv2);
       return;
     }
@@ -758,6 +758,95 @@ public:
   Merge_2 merge_2_object () const
   {
     return Merge_2(this);
+  }
+
+  //@}
+
+  /// \name Functor definitions for the landmarks point-location strategy.
+  //@{
+  typedef double Approximate_number_type;
+
+  class Approximate_2
+  {
+  public:
+
+    /*!
+     * Return an approximation of a point coordinate.
+     * \param p The exact point.
+     * \param i The coordinate index (either 0 or 1).
+     * \pre i is either 0 or 1.
+     * \return An approximation of p's x-coordinate (if i == 0), or an
+     *         approximation of p's y-coordinate (if i == 1).
+     */
+    Approximate_number_type operator() (const Point_2& p,
+                                        int i) const
+    {
+      CGAL_precondition (i == 0 || i == 1);
+
+      std::pair<double, double> approx = p.approximate();
+      if (i == 0)
+      {
+        return approx.first;
+      }
+      else
+      {
+        return approx.second;
+      }
+    }
+  };
+
+  /*! Get an Approximate_2 functor object. */
+  Approximate_2 approximate_2_object () const
+  {
+    return Approximate_2();
+  }
+
+  class Construct_x_monotone_curve_2
+  {
+  public:
+    Construct_x_monotone_curve_2( Bezier_cache* cache ):
+      p_cache( cache )
+    { }
+
+    /*!
+     * Return an x-monotone curve connecting the two given endpoints.
+     * \param p The first point.
+     * \param q The second point.
+     * \pre p and q must not be the same.
+     * \return A segment connecting p and q.
+     */
+    X_monotone_curve_2 operator() (const Rat_point_2& p,
+                                   const Rat_point_2& q) const
+    {
+      std::vector< Rat_point_2 > vp;
+      vp.push_back(p);
+      vp.push_back(q);
+      Curve_2 supporting_curve(vp.begin(), vp.end());
+      Point_2 ps(supporting_curve, Rational(0));
+      Point_2 pt(supporting_curve, Rational(1));
+      X_monotone_curve_2 curve(supporting_curve,
+        1, // line segment has only one parameter range
+        ps, // source
+        pt, // target
+        *p_cache);
+      // TODO: test me
+      return curve;
+    }
+
+    X_monotone_curve_2 operator() (const Point_2& p,
+                                   const Point_2& q) const
+    {
+      return (X_monotone_curve_2 (p, q));
+    }
+
+  private:
+    Bezier_cache* p_cache;
+  };
+
+  /*! Get a Construct_x_monotone_curve_2 functor object. */
+  Construct_x_monotone_curve_2 construct_x_monotone_curve_2_object () const
+  {
+    return Construct_x_monotone_curve_2(p_cache);
   }
 
   //@}
