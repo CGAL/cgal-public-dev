@@ -12,6 +12,9 @@ target_link_libraries( test_bezier_traits ${CGAL_LIBRARIES} )
 add_executable( test_polynomial_io test_polynomial_io.cpp )
 target_link_libraries( test_polynomial_io ${QT_LIBRARIES} )
 
+add_executable( test_bezier_approx test_bezier_approx.cpp )
+target_link_libraries( test_bezier_approx ${CGAL_LIBRARIES} )
+
 add_executable( simple_arr_view simple_arr_view.cpp 
   ../ArrangementGraphicsItem.cpp
 )

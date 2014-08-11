@@ -867,13 +867,14 @@ public: // methods
     Curve_2 supportingCurve = curve.supporting_curve();
     std::pair< double, double > range = curve.parameter_range( );
     double P = 2 * (supportingCurve.number_of_control_points() + 1);
-    // TODO: Calculate this number appropriately
     int N = P;
-    // TODO: calculate and cache alpha for each curve seen
-    // int N = P / 2 * sqrt(alpha / epsilon)
-    // alpha is the max chordal deviation for sampling width 1/P
-    // epsilon is the desired error bound
+
     // TODO: Scale the number of samples by the norm of the view matrix
+    double alpha = estimate_alpha( curve );
+    const double Epsilon = 0.01;
+    const int Factor = P / 2 * sqrt( alpha / Epsilon );
+    N = ( Factor > N )? Factor : N;
+
     std::vector< std::pair<double, double> > samples;
     supportingCurve.sample(range.first, range.second, N, std::back_inserter( samples ) );
     for (int i = 0; i < samples.size() - 1; ++i)
@@ -883,27 +884,43 @@ public: // methods
       this->qp->drawLine( p1, p2 );
     }
 
-    //this->painterOstream << curve;
-    // TODO: Draw the actual Bezier curve
-    //ArrPointType p1 = curve.source();
-    //ArrPointType p2 = curve.target();
-
-    //CORE::BigRat x1_min, x1_max, y1_min, y1_max;
-    //CORE::BigRat x2_min, x2_max, y2_min, y2_max;
-    //p1.get_bbox( x1_min, y1_min, x1_max, y1_max );
-    //p2.get_bbox( x2_min, y2_min, x2_max, y2_max );
-
-    //Point_2 approx1( (x1_min + x1_max)/2.0,
-    //  (y1_min + y1_max)/2.0 );
-    //Point_2 approx2( (x2_min + x2_max)/2.0,
-    //  (y2_min + y2_max)/2.0 );
-
-    //Segment_2 segment( approx1, approx2 );
-    //this->painterOstream << segment;
-
-    // Get the supporting curve
-    //
     return *this;
+  }
+
+  double estimate_alpha( const X_monotone_curve_2& curve )
+  {
+    typedef CGAL::Simple_cartesian< double > App_kernel;
+    typedef App_kernel::Point_2 App_point_2;
+    typedef App_kernel::Segment_2 App_segment_2;
+
+    std::vector< std::pair<double, double> > samples;
+    std::pair<double, double> range = curve.parameter_range( );
+    Curve_2 supportingCurve = curve.supporting_curve();
+    int P = 2 * (supportingCurve.number_of_control_points() + 1);
+    supportingCurve.sample(range.first, range.second,
+      2*P + 1, // number of samples
+      std::back_inserter( samples ) );
+
+    std::vector< App_point_2 > query_pts;
+    std::vector< App_segment_2 > segments;
+    double max_error = 0.0;
+    for (int i = 0; i < P; ++i)
+    {
+      App_point_2 p1( samples[2*i].first, samples[2*i].second );
+      App_point_2 p2( samples[2*i+2].first, samples[2*i+2].second );
+      App_segment_2 seg( p1, p2 );
+      segments.push_back( seg );
+    }
+
+    for (int i = 0; i < P; ++i)
+    {
+      App_point_2 query_pt( samples[2*i+1].first, samples[2*i+1].second );
+      double error = CGAL::squared_distance( query_pt, segments[i] );
+      if ( error > max_error )
+        max_error = error;
+    }
+
+    return sqrt(max_error);
   }
 
   ArrangementPainterOstream& operator<<( const
@@ -914,16 +931,15 @@ public: // methods
     std::pair< double, double > range;
     range.first = subcurve.m_t1;
     range.second = subcurve.m_t2;
-    std::cout << "drawing subcurve "
-      << range.first << " " << range.second << "\n";
     double P = 2 * (supportingCurve.number_of_control_points() + 1);
-    // TODO: Calculate this number appropriately
     int N = P;
-    // TODO: calculate and cache alpha for each curve seen
-    // int N = P / 2 * sqrt(alpha / epsilon)
-    // alpha is the max chordal deviation for sampling width 1/P
-    // epsilon is the desired error bound
+
     // TODO: Scale the number of samples by the norm of the view matrix
+    double alpha = estimate_alpha( curve );
+    const double Epsilon = 0.01;
+    const int Factor = P / 2 * sqrt( alpha / Epsilon );
+    N = ( Factor > N )? Factor : N;
+
     std::vector< std::pair<double, double> > samples;
     supportingCurve.sample(range.first, range.second, N, std::back_inserter( samples ) );
     for (int i = 0; i < samples.size() - 1; ++i)
