@@ -945,7 +945,6 @@ protected:
   ArrangementGraphicsItem< Arr_, ArrTraits >::
   ~ArrangementGraphicsItem( )
   {
-    std::cout << "Deleting ArrangementGraphicsItem\n";
     if ( this->arr )
     {
       //delete this->arr;
@@ -1258,13 +1257,13 @@ protected:
       this->bb = this->bb + this->curveBboxMap[ it ];
     }
 
-    std::cout << "(" << this->bb.xmin()
-      << ", " << this->bb.ymin()
-      << ") + ("
-      << (this->bb.xmax() - this->bb.xmin())
-      << ", "
-      << (this->bb.ymax() - this->bb.ymin())
-      << ")\n";
+    //std::cout << "(" << this->bb.xmin()
+    //  << ", " << this->bb.ymin()
+    //  << ") + ("
+    //  << (this->bb.xmax() - this->bb.xmin())
+    //  << ", "
+    //  << (this->bb.ymax() - this->bb.ymin())
+    //  << ")\n";
   }
 
 #if 1
@@ -1321,13 +1320,13 @@ protected:
         viewRect.top( ) );
     }
 
-    std::cout << "algebraic bb\n";
-    //std::cout << this->bb.xmin( ) << " " << this->bb.ymin( ) << " "
-    //  << this->bb.xmax( ) << " " << this->bb.ymax( ) << "\n";
-    std::cout << viewRect.left( ) << " "
-      << viewRect.bottom( ) << " "
-      << viewRect.right( ) << " "
-      << viewRect.top( ) << "\n";
+    //std::cout << "algebraic bb\n";
+    ////std::cout << this->bb.xmin( ) << " " << this->bb.ymin( ) << " "
+    ////  << this->bb.xmax( ) << " " << this->bb.ymax( ) << "\n";
+    //std::cout << viewRect.left( ) << " "
+    //  << viewRect.bottom( ) << " "
+    //  << viewRect.right( ) << " "
+    //  << viewRect.top( ) << "\n";
   }
 #endif
 

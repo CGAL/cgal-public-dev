@@ -911,9 +911,6 @@ protected:
         pts.push_back( cgal_pt );
       }
       this->pointsGraphicsItem.clear( );
-      std::cout << "TODO: generate a Bezier curve with "
-        << pts.size( )
-        << " control points\n";
       Curve_2 res( pts.begin( ), pts.end( ) );
       emit generate( CGAL::make_object( res ) );
     }
@@ -961,7 +958,6 @@ public:
     AlgebraicInputDialog* dialog = new AlgebraicInputDialog;
     if ( dialog->exec( ) == QDialog::Accepted )
     {
-      std::cout << "Algebraic traits curve insert stub" << std::endl;
       std::vector< std::string > inputs;
       for ( int i = 0; i < 10; ++i )
       {
