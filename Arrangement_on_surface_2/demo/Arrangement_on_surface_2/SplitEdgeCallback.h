@@ -96,18 +96,19 @@ protected:
                      CGAL::Arr_circular_arc_traits_2< CircularKernel > traits );
 
   template < class TTraits >
-  void splitEdges( const Point_2& pt, TTraits traits );
+  void splitEdges( const Point_2& pt, TTraits* traits );
+
   template < class CircularKernel >
   void splitEdges( const Point_2& pt,
-                   CGAL::Arr_circular_arc_traits_2< CircularKernel > traits );
+                   CGAL::Arr_circular_arc_traits_2< CircularKernel >* traits );
 
   template < typename RatKernel, typename AlgKernel, typename NtTraits >
   void splitEdges( const Point_2& clickedPoint,
-    CGAL::Arr_Bezier_curve_traits_2< RatKernel, AlgKernel, NtTraits > traits );
+    CGAL::Arr_Bezier_curve_traits_2< RatKernel, AlgKernel, NtTraits >* traits );
 
   template < class Coefficient_ >
   void splitEdges( const Point_2& pt,
-                   CGAL::Arr_algebraic_segment_traits_2<Coefficient_> traits);
+                   CGAL::Arr_algebraic_segment_traits_2<Coefficient_>* traits);
 
   template < class TTraits >
   void updateGuide( const Point_2& pt, TTraits traits );
@@ -192,13 +193,14 @@ void
 SplitEdgeCallback< Arr_ >::mousePressEvent( QGraphicsSceneMouseEvent* event )
 {
   Point_2 clickedPoint = this->snapPoint( event );
-  this->splitEdges( clickedPoint, Traits( ) );
+  //this->splitEdges( clickedPoint, Traits( ) );
+  this->splitEdges( clickedPoint, &this->traits );
 }
 
 template < typename Arr_ >
 template < typename TTraits >
 void SplitEdgeCallback< Arr_ >::
-splitEdges( const Point_2& clickedPoint, TTraits traits )
+splitEdges( const Point_2& clickedPoint, TTraits* /*traits*/ )
 {
   typename TTraits::Construct_x_monotone_curve_2 construct_x_monotone_curve_2 =
     traits.construct_x_monotone_curve_2_object( );
@@ -246,16 +248,57 @@ template < typename Arr_ >
 template < typename RatKernel, typename AlgKernel, typename NtTraits >
 void SplitEdgeCallback< Arr_ >::
 splitEdges( const Point_2& clickedPoint,
-  CGAL::Arr_Bezier_curve_traits_2< RatKernel, AlgKernel, NtTraits > traits )
+  CGAL::Arr_Bezier_curve_traits_2< RatKernel, AlgKernel, NtTraits >* /*traits*/ )
 {
+  typename Traits::Construct_x_monotone_curve_2 construct_x_monotone_curve_2 =
+    this->traits.construct_x_monotone_curve_2_object( );
 
+  if ( ! this->hasFirstPoint )
+  {
+    this->p1 = clickedPoint;
+    this->hasFirstPoint = true;
+  }
+  else
+  {
+    this->p2 = clickedPoint;
+    X_monotone_curve_2 splitCurve =
+      construct_x_monotone_curve_2( this->p1, this->p2 );
+    for ( Halfedge_iterator hei = this->arr->halfedges_begin( );
+          hei != this->arr->halfedges_end( ); ++hei )
+    {
+      X_monotone_curve_2 curve = hei->curve( );
+      CGAL::Object res;
+      CGAL::Oneset_iterator< CGAL::Object > oi( res );
+      this->intersectCurves( splitCurve, curve, oi );
+      std::pair< typename Arrangement::Point_2, Multiplicity > pair;
+      if ( hei == this->arr->halfedges_end( ) )
+        continue;
+      if ( CGAL::assign( pair, res ) )
+      {
+        typename Arrangement::Point_2 splitPoint = pair.first;
+        if ( ( ! hei->source( )->is_at_open_boundary( ) &&
+               this->areEqual( hei->source( )->point( ), splitPoint ) ) ||
+             ( ! hei->target( )->is_at_open_boundary( ) &&
+               this->areEqual( hei->target( )->point( ), splitPoint ) ) )
+        {
+          continue;
+        }
+
+        this->arr->split_edge( hei, splitPoint );
+      }
+    }
+
+    this->reset( );
+  }
+
+  emit modelChanged( );
 }
 
 template < typename Arr_ >
 template < typename CircularKernel >
 void SplitEdgeCallback< Arr_ >::
 splitEdges(const Point_2& /* clickedPoint */,
-           CGAL::Arr_circular_arc_traits_2< CircularKernel > /* traits */)
+           CGAL::Arr_circular_arc_traits_2< CircularKernel >* /* traits */)
 {
   // std::cout << "Circular arc split edges stub" << std::endl;
 }
@@ -264,7 +307,7 @@ template < typename Arr_ >
 template < typename Coefficient_ >
 void SplitEdgeCallback< Arr_ >::
 splitEdges(const Point_2& /* clickedPoint */,
-           CGAL::Arr_algebraic_segment_traits_2< Coefficient_ > /* traits */)
+           CGAL::Arr_algebraic_segment_traits_2< Coefficient_ >* /* traits */)
 {
   // std::cout << "Algebraic segment split edges stub" << std::endl;
 }

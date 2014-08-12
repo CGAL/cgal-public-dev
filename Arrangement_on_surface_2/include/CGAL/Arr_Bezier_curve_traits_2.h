@@ -829,7 +829,6 @@ public:
         ps, // source
         pt, // target
         *p_cache);
-      // TODO: test me
       return curve;
     }
 
