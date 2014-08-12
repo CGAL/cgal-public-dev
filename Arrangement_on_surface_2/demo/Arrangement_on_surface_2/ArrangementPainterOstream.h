@@ -956,6 +956,11 @@ public: // methods
   {
     CORE::BigRat x_min, x_max, y_min, y_max;
     pt.get_bbox( x_min, y_min, x_max, y_max );
+    while (pt.refine());
+    //QRectF bbox( QPointF( CGAL::to_double( x_min ), CGAL::to_double( y_min ) ),
+    //  QPointF( CGAL::to_double( x_max ), CGAL::to_double( y_max ) ) );
+    //this->qp->drawRect( bbox );
+
     Point_2 approx( CGAL::to_double((x_min + x_max)/2), CGAL::to_double((y_min + y_max)/2) );
     //std::cout << "pt("
     //  << approx.x() << ", "
