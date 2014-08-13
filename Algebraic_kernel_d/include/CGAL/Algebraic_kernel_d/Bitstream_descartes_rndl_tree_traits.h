@@ -114,9 +114,11 @@ public:
 
     Bitstream_descartes_rndl_tree_traits(const Bitstream_coefficient_kernel& kernel)
       : _m_kernel(kernel)
+	{}
  
     // TODO Need to add something
-    //Bitstream_descartes_rndl_tree_traits(const Self& traits = get_default_instance())
+    Bitstream_descartes_rndl_tree_traits(const Self& traits = get_default_instance()) : _m_kernel(traits._m_kernel)
+	{}
     //  : Base(static_cast<const Base&>(traits)){}
   
     //! @}
