@@ -55,8 +55,9 @@ public:
 
     Bitstream_coefficient_kernel_at_alpha(){}
 
-    Bitstream_coefficient_kernel_at_alpha(const Self& traits)
-      : Base(static_cast<const Base&>(traits)) {}
+// TODO Copy constructor
+ Bitstream_coefficient_kernel_at_alpha(const Self& traits) : _m_kernel(traits._m_kernel), _m_alpha(traits._m_alpha) {}
+//      : Base(static_cast<const Base&>(traits)) {}
 
     Bitstream_coefficient_kernel_at_alpha(Algebraic_kernel_d_1* kernel,
                                           Algebraic_real_1 alpha) 
@@ -69,12 +70,16 @@ public:
 
     struct Is_zero : public std::unary_function<Coefficient,bool> {
         
-        Is_zero(const Algebraic_kernel_d_1* kernel, const Algebraic_real_1& alpha) 
+        Is_zero(Algebraic_kernel_d_1* kernel, Algebraic_real_1& alpha) 
             : _m_kernel(kernel),_m_alpha(alpha) {}
 
         bool operator() (const Coefficient& f) const {
             return _m_kernel->is_zero_at_1_object() (f, _m_alpha);
         }
+private:
+    Algebraic_kernel_d_1* _m_kernel;
+    Algebraic_real_1 _m_alpha;
+
     };
 
     Is_zero is_zero_object() const {
@@ -84,7 +89,7 @@ public:
     struct Convert_to_bfi 
         : public std::unary_function<Coefficient,Bigfloat_interval> {
         
-        Convert_to_bfi(const Algebraic_kernel_d_1* kernel,
+        Convert_to_bfi(Algebraic_kernel_d_1* kernel,
 		       const Algebraic_real_1& alpha) 
 	  : _m_kernel(kernel), _m_alpha(alpha) {}
 
