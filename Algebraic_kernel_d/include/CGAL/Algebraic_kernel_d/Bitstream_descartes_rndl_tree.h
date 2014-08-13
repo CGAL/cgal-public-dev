@@ -903,7 +903,7 @@ class Bitstream_descartes_rndl_tree
 {
 public:
     typedef Bitstream_descartes_rndl_tree Self;
-    CGAL_BITSTREAM_DESCARTES_RNDL_TREE_TYPEDEFS;A
+    CGAL_BITSTREAM_DESCARTES_RNDL_TREE_TYPEDEFS;
 
     class Monomial_basis_tag { };
 
@@ -917,7 +917,7 @@ public:
     typedef typename Node_list::const_iterator const_iterator;
 
     //! tag type to distinguish a certain constructor.
-    typedef typename Monomial_basis_tag Monomial_basis_tag;
+    typedef Monomial_basis_tag Monomial_basis_tag;
 
 // Members from the Rep class
 private:
@@ -1144,12 +1144,12 @@ public:
 
     }
 
+
     /*! \brief Returns a copy of this with its own representation
      */
-// TODO Should it be const&
-    const Self& make_unique() const {
+    Self make_unique() const {
       Self tmp = *this;
-      tmp.copy_on_write();
+//      tmp.copy_on_write();
       return tmp;
     }
 
