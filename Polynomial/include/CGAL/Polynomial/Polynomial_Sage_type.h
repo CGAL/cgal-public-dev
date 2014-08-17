@@ -287,6 +287,11 @@ private:
       //return static_cast<int>(this->ptr()->coeff.size())-1;
      }
 
+    int degree_dummy() const {
+      return 20;
+     }
+
+
     void convert_to_sage_format()
     {
       //CGAL::set_pretty_mode(std::cout);
