@@ -78,7 +78,7 @@ class Creation_tag {};
   typedef typename Vector::iterator       iterator;
   typedef typename Vector::const_iterator const_iterator;
   Vector coeff;
-
+ public:
   Polynomial_rep() : coeff() {}
   Polynomial_rep(Creation_tag, size_type s) : coeff(s,NT(0)) {}
 
