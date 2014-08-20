@@ -140,9 +140,8 @@ public:
     /*!\brief
      * copy constructor
      */
-    Xy_coordinate_2(const Self& p) : 
-        Base(static_cast<const Base&>(p)) {  
-	*(this->_m_kernel) = *(p._m_kernel);
+    Xy_coordinate_2(const Self& p) {  
+	(this->_m_kernel) = (p._m_kernel);
 	this->_m_x = p._m_x;
 	this->_m_y = p._m_y;
 	this->_m_curve = p._m_curve;

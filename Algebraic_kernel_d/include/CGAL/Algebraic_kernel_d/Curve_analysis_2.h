@@ -57,6 +57,8 @@ template<typename AlgebraicKernelWithAnalysis_2>
 class Curve_analysis_2;
 
 
+namespace internal{
+
 template<typename Comparable,bool has_template_typedefs> 
   struct Is_derived_from_Handle_with_policy {
     typedef boost::false_type Tag;
@@ -117,6 +119,7 @@ template<typename Comparable> struct Compare_for_vert_line_map
 
 };
 
+} // namespace internal
 
 /*!
  * \brief Analysis for algebraic curves of arbitrary degree. 
@@ -199,6 +202,7 @@ private:
 
     typedef internal::Event_line_builder<Algebraic_kernel_with_analysis_2>
         Event_line_builder;
+
 
 
     // Internal information struct about x-coordinates
@@ -426,7 +430,7 @@ public:
      */
     explicit Curve_analysis_2(Algebraic_kernel_with_analysis_2 *kernel,
                               const Polynomial_2& poly,
-                              CGAL::Degeneracy_strategy strategy
+                              const CGAL::Degeneracy_strategy strategy
                                   = CGAL_ACK_DEFAULT_DEGENERACY_STRATEGY) 
         throw(internal::Zero_resultant_exception<Polynomial_2>)
 	: _m_kernel(kernel), _m_f(poly), _m_degeneracy_strategy(strategy)
@@ -437,7 +441,7 @@ public:
     //! \brief Copy constructor
     Curve_analysis_2(const Self& alg_curve)
     {
-	*(this->_m_kernel) = *(alg_curve._m_kernel);
+	(this->_m_kernel) = (alg_curve._m_kernel);
 	this->_m_f = alg_curve._m_f;
 	this->_m_degeneracy_strategy = alg_curve._m_degeneracy_strategy;
 	this->_m_intermediate_cache = alg_curve._m_intermediate_cache;
@@ -449,7 +453,7 @@ public:
 	this->_m_content = alg_curve._m_content;
 	this->_m_bad_shears = alg_curve._m_bad_shears;
 	this->_m_sheared_curves = alg_curve._m_sheared_curves;
-	this->_m_has_vertical_components = alg_curve._m_has_vertical_components;
+	//this->_m_has_vertical_components = alg_curve._m_has_vertical_components;
 	this->_m_intermediate_values = alg_curve._m_intermediate_values;
 	this->_m_vert_line_at_rational_map = alg_curve._m_vert_line_at_rational_map;
 	this->_m_vert_line_map = alg_curve._m_vert_line_map;
@@ -541,7 +545,8 @@ public:
     void set_f(Polynomial_2 f) {
         CGAL_precondition(! has_defining_polynomial());
         if((! this->_m_f) || f!=this->_m_f.get()) {
-            this->copy_on_write();
+		// Works with Handle only
+            //this->copy_on_write();
             this->_m_f=f;
         }
     }
@@ -635,7 +640,7 @@ public:
         }
 #endif
         CGAL_precondition(has_defining_polynomial());
-        typename Val_functor xval;
+        Val_functor xval;
         i = std::lower_bound(
                 ::boost::make_transform_iterator(event_coordinates().begin(), 
                                                  xval),
@@ -668,9 +673,7 @@ public:
 
 	// event_coordinate is internally stored by function
             create_status_line_at_event(i);
-            this->_m_vert_line_map[event_coordinates()[i].val] 
-                = event_coordinates()[i].stack;
-            //event_coordinates()[i].stack = event_line;
+            event_coordinates()[i].stack = this->_m_vert_line_map[event_coordinates()[i].val];
         }
         CGAL_postcondition(event_coordinates()[i].stack.get().is_event());
         return event_coordinates()[i].stack.get();
@@ -825,7 +828,7 @@ private:
             CGAL_ACK_DEBUG_PRINT << "done" << std::endl;
 #endif
 
-            event_coordinates()[i].stack = ev_line;
+	    _m_vert_line_map[event_coordinates()[index].val] = ev_line;
 
         } catch(CGAL::internal::Non_generic_position_exception /* exc */) {
             switch(this->_m_degeneracy_strategy) {
@@ -853,7 +856,8 @@ private:
             }
         }
         // !!! Never reached
-        event_coordinates()[i].stack = Status_line_1();
+	_m_vert_line_map[event_coordinates()[index].val] = Status_line_1();
+        //event_coordinates()[index].stack = Status_line_1();
     }
 
 private:
@@ -889,10 +893,10 @@ private:
                 shear_transformation.report_sheared_disc_roots
                     (boost::make_transform_iterator(
                              event_coordinates().begin(),
-                             typename Val_functor()),
+                             Val_functor()),
                      boost::make_transform_iterator(
                              event_coordinates().end(),
-                             typename Val_functor()) 
+                             Val_functor()) 
                     );
               
                 // Store the sheared curve for later use
@@ -912,7 +916,7 @@ private:
             }
         }
         
-        event_coordinates()[i].stack =  status_line_at_event(index);
+        event_coordinates()[index].stack =  status_line_at_event(index);
     }
 
 public:
@@ -925,7 +929,7 @@ public:
      * interval of the curve. If called multiple times for the same <tt>i</tt>,
      * the same status line is returned.
      */
-    const Status_line_1& status_line_of_interval(size_type i) const
+    const Status_line_1 status_line_of_interval(size_type i) const
     {
         CGAL_precondition(i >= 0 && i <= number_of_status_lines_with_event());
       
@@ -961,7 +965,7 @@ public:
      * on whether \c perturb is set to \c CGAL::NEGATIVE or \c CGAL::POSITIVE.
      * If \c x is not an event, \c perturb has no effect. 
      */ 
-    const Status_line_1& status_line_for_x(const Algebraic_real_1& x,
+    const Status_line_1 status_line_for_x(const Algebraic_real_1& x,
                                     CGAL::Sign perturb = CGAL::ZERO) const
     {
 #if CGAL_ACK_USE_SPECIAL_TREATMENT_FOR_CONIX
@@ -1023,11 +1027,12 @@ private:
         status_line.set_isolator(bitstream_descartes);
         
         CGAL_assertion(! status_line.is_event());
-        this->_m_vert_line_map[ar] = cvl;
+        this->_m_vert_line_map[ar] = status_line;
 
         if(ar.is_rational()) {
             this->_m_vert_line_at_rational_map[ar.rational()] = status_line;
     }
+}
 
 private:
 
@@ -1147,7 +1152,7 @@ public:
     }
 
 // TODO Probably todo without const as might be set or updated somewhere else
-    const Algebraic_kernel_with_analysis_2* kernel() const {
+     Algebraic_kernel_with_analysis_2* kernel() const {
         return this->_m_kernel;
     }
 
@@ -1215,7 +1220,7 @@ public:
      * \brief Returns the <tt>i</tt>th principal Sturm-Habicht coefficient
      * of the primitive part of the defining polynomial
      */
-    const Polynomial_1& principal_sturm_habicht_of_primitive(size_type i) const
+    const Polynomial_1 principal_sturm_habicht_of_primitive(size_type i) const
         throw(internal::Zero_resultant_exception<Polynomial_2>) {
         CGAL_assertion(i>=0 && 
                     i < static_cast<size_type>
@@ -1334,7 +1339,7 @@ private:
     //! Returns the resultant of the primitive part of f and its y-derivative
 	// Return type cannot be constant as it is set in another function
 	// Since the function call also happens as l-value, the function cannot be made void
-    Polynomial_1& resultant_of_primitive_and_derivative_y() const
+    const Polynomial_1& resultant_of_primitive_and_derivative_y() const
         throw(internal::Zero_resultant_exception<Polynomial_2>) {
         if(! this->_m_resultant_of_primitive_and_derivative_y) {
             compute_resultant_of_primitive_and_derivative_y();
@@ -1345,7 +1350,7 @@ private:
 private:
 
     //! Returns the resultant of the primitive part of f with its x-derivative
-    Polynomial_1& resultant_of_primitive_and_derivative_x() const
+    const Polynomial_1& resultant_of_primitive_and_derivative_x() const
         throw(internal::Zero_resultant_exception<Polynomial_2>) {
         if(! this->_m_resultant_of_primitive_and_derivative_x) {
             compute_resultant_of_primitive_and_derivative_x();
@@ -2145,9 +2150,9 @@ private:
     //! \name friends
     //! @{
 
-    // friend function for id-based hashing
+    // friend function for id-based hashing -- Returning memory location in absence of handle
     friend std::size_t hash_value(const Self& x) {
-        return static_cast<std::size_t>(x.id());
+        return static_cast<std::size_t>(reinterpret_cast<uintptr_t>(&x));
     }
 
     // another friend
@@ -2283,8 +2288,7 @@ std::istream& operator>> (
   
   return is;
 }
-  
-};
+
 
 } //namespace CGAL
 

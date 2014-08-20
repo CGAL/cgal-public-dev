@@ -27,6 +27,8 @@
 
 namespace CGAL {
 
+namespace internal{
+
 template<class AlgebraicReal_1>
 class Distinct_compare {
 
@@ -89,7 +91,7 @@ struct Event_indices {
     : fg(fg), ffy(ffy), ggy(ggy) {}
 };
 
-
+}
 
 /*!
  * A model for <tt>AlgebraicKernelWithAnalysis_2::CurvePairAnalysis_2</tt>
@@ -120,7 +122,7 @@ class Curve_pair_analysis_2 {
 public:
 
     //! \name typedefs
-    //! @{
+    //! @
 
     //! The algebraic kernel that uses the curve pair analysis
     typedef AlgebraicKernelWithAnalysis_2		Algebraic_kernel_with_analysis_2;
@@ -166,8 +168,13 @@ private:
     // Its laxy version
     typedef boost::optional<Intersection_info_container>		Lazy_intersection_info_container;
 
+    mutable Lazy_intersection_info_container intersection_info_container;
+
     // Type for indices of events.
     typedef typename CGAL::internal::Event_indices<size_type> 		Event_indices;
+
+    // Type for Slice_element
+    typedef typename CGAL::internal::Slice_type			Slice_type;
 
     // Integer type
     typedef typename Curve_analysis_2::Integer		Integer;
@@ -364,7 +371,7 @@ public:
                               = CGAL_ACK_DEFAULT_DEGENERACY_STRATEGY) 
         throw(CGAL::internal::Zero_resultant_exception<Polynomial_2>,
               CGAL::internal::Non_generic_position_exception)
-        : _m_kernel(kernel), degeneracy_strategy(strategy)
+        : _m_kernel(kernel), _m_degeneracy_strategy(strategy)
     {
 	_m_c1_ = std::make_shared<Curve_analysis_2>(c1);
 	_m_c2_ = std::make_shared<Curve_analysis_2>(c2);
@@ -373,8 +380,8 @@ public:
 	auto spt_c1 = this->_m_c1_.lock();
 	auto spt_c2 = this->_m_c2_.lock();
 
-	f = spt_c1->polynomial_2();
-	g = spt_c2->polynomial_2();
+	_m_f = spt_c1->polynomial_2();
+	_m_g = spt_c2->polynomial_2();
     
 #if CGAL_ACK_DEBUG_FLAG
         CGAL::set_pretty_mode(CGAL_ACK_DEBUG_PRINT);
@@ -728,8 +735,8 @@ private:
         Slice_info slice_info = construct_slice_info(x);
         reduce_number_of_candidates_and_intersections_to
             (m,
-             (this->_m_c1_.lock())->status_line_at_exact_x(x),
-             (this->_m_c2_.lock())->status_line_at_exact_x(x),
+             const_cast<Status_line_CA_1&>((this->_m_c1_.lock())->status_line_at_exact_x(x)),
+             const_cast<Status_line_CA_1&>((this->_m_c2_.lock())->status_line_at_exact_x(x)),
              slice_info);
         for(typename Slice_info::iterator it=slice_info.begin();
             it!=slice_info.end();
@@ -1107,7 +1114,7 @@ private:
         return x-sh*y;
     }
 
-    void update_intersection_info(const Intersection_info_container& 
+    void update_intersection_info(Intersection_info_container& 
                                   info_container,
                                   const Self& sh_pair,
                                   const Status_line_CPA_1& slice,
@@ -2405,7 +2412,7 @@ create_event_slice_from_current_intersection_info (size_type i)
 
 template<typename AlgebraicKernelWithAnalysis_2>
 void Curve_pair_analysis_2<AlgebraicKernelWithAnalysis_2>::
-update_intersection_info(const Intersection_info_container& 
+update_intersection_info(Intersection_info_container& 
                          info_container,
                          const Self& sh_pair,
                          const Status_line_CPA_1& slice,
@@ -2577,6 +2584,7 @@ reduce_number_of_candidates_and_intersections_to(size_type n,
     }
     return number_of_intersections+number_of_candidates;
 }      
+
 
 } //namespace CGAL
 

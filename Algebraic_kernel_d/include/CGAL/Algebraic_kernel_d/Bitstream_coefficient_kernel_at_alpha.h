@@ -70,7 +70,7 @@ public:
 
     struct Is_zero : public std::unary_function<Coefficient,bool> {
         
-        Is_zero(Algebraic_kernel_d_1* kernel, Algebraic_real_1& alpha) 
+        Is_zero(Algebraic_kernel_d_1* kernel, const Algebraic_real_1& alpha) 
             : _m_kernel(kernel),_m_alpha(alpha) {}
 
         bool operator() (const Coefficient& f) const {

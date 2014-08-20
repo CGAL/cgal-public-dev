@@ -506,7 +506,7 @@ public:
     typedef typename Node_list::const_iterator const_iterator;
 
     //! tag type to distinguish a certain constructor.
-    typedef typename Monomial_basis_tag Monomial_basis_tag;
+    typedef Monomial_basis_tag Monomial_basis_tag;
 
 private:
 
@@ -527,14 +527,14 @@ private:
 
 public:
     //! default constructor (makes <tt>degree() == -1</tt>)
-    Bitstream_descartes_E08_tree() : _degree(-1) { }
+    Bitstream_descartes_E08_tree() : degree_(-1) { }
 
     //! copy constructor
     Bitstream_descartes_E08_tree(const Self& p)
     {
 	this->b_from_p_ = p.b_from_p_;
 	this->log_radius_ = p.log_radius_;
-	this->degree_ = p.radius_;
+	this->degree_ = p.degree_;
 	this->ceil_log_degree_ = p.ceil_log_degree_;
 	this->node_list_ = p.node_list_;
 	this->payload_prec_ = p.payload_prec_;
@@ -545,7 +545,7 @@ public:
 	this->tmp1_coeff_ = p.tmp1_coeff_;
 	this->tmp2_coeff_ = p.tmp2_coeff_;
 	this->splitpoint_num_ = p.splitpoint_num_;
-	this->log_splitpoint_den_ = p.splitpoint_den_;
+	this->log_splitpoint_den_ = p.log_splitpoint_den_;
     }
 
     /*! \brief construct from initial interval and coefficients

@@ -154,7 +154,7 @@ public:
      */
     Status_line_CA_1(const Self& p)
     {
-	*(this->_m_kernel) = *(p._m_kernel);
+	(this->_m_kernel) = (p._m_kernel);
 	this->_m_x = p._m_x;
 	this->_m_index = p._m_index;
 	this->_m_total_arcs = p._m_total_arcs;
@@ -355,7 +355,7 @@ public:
      *
      * \pre 0 <= j < num_of_events()
      */
-    const Arc_pair& number_of_incident_branches(int j) const {
+    const Arc_pair number_of_incident_branches(int j) const {
     
         CGAL_precondition(0 <= j&&j < number_of_events());
         if(!is_event())
@@ -486,7 +486,7 @@ public:
     //! Returns the isolator instance
     Bitstream_descartes& isolator() const {
         CGAL_assertion(this->_m_isolator);
-        return this->isolator.get();
+        return this->isolator();
     }
 
     //! Returns whether an isolator has been given for that status line
