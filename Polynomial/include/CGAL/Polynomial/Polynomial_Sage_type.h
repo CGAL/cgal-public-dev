@@ -39,7 +39,7 @@
 #ifndef POLYNOMIAL_SAGE_TYPE_H
 #define POLYNOMIAL_SAGE_TYPE_H
 
-#define HOST "127.0.1.1";
+#define HOST "127.0.1.1"
 #define PORT 12345
 
 
@@ -49,11 +49,9 @@ namespace CGAL {
   template < class NT_> class Polynomial_Sage;
 
   namespace internal {
-
     template <class NT_, class Rep_> class Polynomial_rep;
-    
     template <class NT_> class Polynomial_sage_rep;
-    
+ 
     template < class NT_> 
       class Polynomial_sage_rep: Polynomial_rep<NT_, internal::Polynomial_sage_rep<NT_> > {
     public:
@@ -86,44 +84,10 @@ namespace CGAL {
       
       friend class Polynomial_Sage<NT>;
       
-    private:
-      size_t sage_id;
+  private:
       bool dirty;
-      std::string sage_internal;
-      //Polynomial_rep<NT_> polynomial_rep;
-      
-    public:    
-      //should return void 
-        std::string push_to_sage() 
-	{
-	   dirty = true;
 
-	  //convert Polynomial_rep to Sage_rep
-	}
-      
-      std::string pull_from_sage(std::string &param)
-	{
-	  SageConnection connectionToSage;
-	  std::string host;
-	  
-	  host = HOST
-	    
-	    //connect to host
-	    connectionToSage.conn(host , PORT);
-	  //send some data
-	  connectionToSage.send_data(param);
-	  
-	  std::ostringstream oStringReceive;
-	  oStringReceive << connectionToSage.receive(1024);
-	  std::string dataoutput = oStringReceive.str();
-	  
-	  sage_id = dataoutput;
-	  
-	  return dataoutput;
-	}
-      
-    };
-    
+    };    
   }
 
 
@@ -287,8 +251,10 @@ private:
       //return static_cast<int>(this->ptr()->coeff.size())-1;
      }
 
-    int degree_dummy() const {
-      return 20;
+    int degree_dummy() {
+      int a = atoi(push_to_sage().c_str());
+      //std::cout << a << std::endl;
+      return a;
      }
 
 
@@ -305,14 +271,15 @@ private:
     
     std::string push_to_sage() 
     {
-	convert_to_sage_format();
-	
+      //convert_to_sage_format();	
 	std::ostringstream oStringForSage;
+
 	//need to implement respect to others 
-	//oStringForSage << "R.<y> = PolynomialRing(ZZ)\nR.<x> = PolynomialRing(ZZ)\nb=(x^2+x+1)\np=hex(id(b))";
-	oStringForSage << "R.<y> = PolynomialRing(ZZ)\nR.<x> = PolynomialRing(ZZ)\nb=(" << sage_internal << ")\np=hex(id(b))";
+	//oStringForSage << "R.<y> = PolynomialRing(ZZ)\nR.<x> = PolynomialRing(ZZ)\nb=(" << sage_internal << ")\np=hex(id(b))";
+
+	oStringForSage << "R.<y> = PolynomialRing(ZZ)\np=( 5*y^2 ).degree()";
 	
-	SageConnection p;
+	//SageConnection p;
 	std::string stringForSage = oStringForSage.str();
 	std::string dataFromSage = getDataFromSage( stringForSage );
 	
@@ -325,11 +292,9 @@ private:
     {
 	SageConnection connectionToSage;
 	std::string host;
-	
-	host = "127.0.1.1";
-	
+
 	//connect to host
-	connectionToSage.conn(host , 12345);
+	connectionToSage.conn(HOST , PORT);
 	
 	//send some data
 	connectionToSage.send_data(param);
@@ -337,12 +302,10 @@ private:
 	std::ostringstream oStringReceive;
 	oStringReceive << connectionToSage.receive(1024);
 	std::string dataoutput = oStringReceive.str();
-	
-	sage_address = dataoutput;
-	
+
+	sage_address = dataoutput;	
 	return dataoutput;
     }
-
 
   };
   
