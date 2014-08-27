@@ -48,6 +48,19 @@ namespace CGAL {
   template < class NT_, class Rep_ > class Polynomial;
   template < class NT_> class Polynomial_Sage;
 
+
+
+
+  /*template <class NT>
+std::istream& operator >> (std::istream& is, Polynomial_Sage<NT>& p) {
+  operator >>(is, Polynomial<NT, internal::Polynomial_sage_rep<NT> >& p);
+  return is;
+  }*/
+
+
+
+
+
   namespace internal {
     template <class NT_, class Rep_> class Polynomial_rep;
     template <class NT_> class Polynomial_sage_rep;

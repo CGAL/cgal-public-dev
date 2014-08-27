@@ -1317,7 +1317,7 @@ std::istream& operator >> (std::istream& is, Polynomial<NT, Rep_>& p) {
 }
 
 
-template <class NT, class Rep_> inline
+template <class NT> inline
 void print_maple_monomial(std::ostream& os, const NT& coeff,
     const char *var, int expn)
 {
