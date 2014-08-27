@@ -13,7 +13,7 @@
 //
 // $URL$
 // $Id$
-// 
+//
 //
 // Author(s)     : Efi Fogel          <efif@post.tau.ac.il>
 
@@ -61,7 +61,7 @@
 
 namespace CGAL {
 
-/*! An initializer of a Polyhedral Cubical Gaussian Map 
+/*! An initializer of a Polyhedral Cubical Gaussian Map
  */
 template <class PolyhedralCgm,
           class Polyhedron = Polyhedral_cgm_polyhedron_3<PolyhedralCgm>,
@@ -71,7 +71,7 @@ class Polyhedral_cgm_initializer :
 {
 private:
   // Base type:
-  typedef CGAL::Cgm_initializer<typename PolyhedralCgm::Base> 
+  typedef CGAL::Cgm_initializer<typename PolyhedralCgm::Base>
                                                         Cgm_initializer;
   typedef typename Cgm_initializer::FT                  FT;
   typedef typename Cgm_initializer::RT                  RT;
@@ -79,7 +79,7 @@ private:
   typedef typename Cgm_initializer::Point_3             Point_3;
   typedef typename Cgm_initializer::Arr                 Arr;
   typedef typename Cgm_initializer::Projected_normal    Projected_normal;
-  
+
   // Arrangement types:
   typedef typename Cgm_initializer::Arr_vertex_handle   Arr_vertex_handle;
   typedef typename Cgm_initializer::Arr_halfedge_handle Arr_halfedge_handle;
@@ -94,11 +94,11 @@ private:
     Arr_ccb_halfedge_circulator;
 
   typedef unsigned int*                                 Coord_index_iter;
-  
+
   // Polyhedron types:
   typedef typename Polyhedron::Vertex_const_handle
     Polyhedron_vertex_const_handle;
-  
+
   typedef typename Polyhedron::Halfedge_const_handle
     Polyhedron_halfedge_const_handle;
 
@@ -113,7 +113,7 @@ private:
       const Point_3& x = h->vertex()->point();
       const Point_3& y = h->next()->vertex()->point();
       const Point_3& z = h->next()->next()->vertex()->point();
-#endif 
+#endif
       Vector_3 normal =
         CGAL::cross_product(h->next()->vertex()->point() -
                             h->vertex()->point(),
@@ -139,7 +139,7 @@ private:
 
     /*! Constructor */
     Point_adder(Builder& B) : m_B(B) {}
-      
+
     Polyhedron_vertex_handle operator()(PointIterator_3 pi)
     {
       typedef typename HDS::Vertex      Vertex;
@@ -160,11 +160,11 @@ private:
 
     /*! Constructor */
     Point_adder(Builder& B) : m_B(B) {}
-      
+
     Polyhedron_vertex_handle operator()(Point_3* pi)
     { return m_B.add_vertex(*pi); }
   };
-  
+
   /*! */
   template <class PointIterator_3>
   class Build_surface : public Modifier_base<typename Polyhedron::HalfedgeDS>
@@ -184,7 +184,7 @@ private:
 
     /*! The end iterator of the points */
     const PointIterator_3& m_points_end;
-    
+
     /*! The number of points */
     size_type m_num_points;
 
@@ -193,13 +193,13 @@ private:
 
     /*! The end iterator of the indices */
     const Coord_index_iter& m_indices_end;
-    
+
     /*! The number of facest */
     size_type m_num_facets;
 
     /*! The type of the facets. */
     size_type m_num_vertices_per_facet;
-    
+
     /*! The index of the marked vertex */
     unsigned int m_marked_vertex_index;
 
@@ -208,7 +208,7 @@ private:
 
     /*! The index of the marked face */
     unsigned int m_marked_facet_index;
-    
+
   public:
     /*! Constructor */
     Build_surface(const PointIterator_3& points_begin,
@@ -225,7 +225,7 @@ private:
       m_num_vertices_per_facet(num_vertices_per_facet),
       m_marked_vertex_index(0),
       m_marked_edge_index(0),
-      m_marked_facet_index(0)      
+      m_marked_facet_index(0)
     {}
 
     /*! Destructor */
@@ -254,7 +254,7 @@ private:
         if (counter == m_marked_vertex_index) vh->set_marked(true);
         ++counter;
       }
-      
+
       // Add the facets:
       counter = 0;
       switch (m_num_vertices_per_facet) {
@@ -268,13 +268,13 @@ private:
            while (index != -1) {
              B.add_vertex_to_facet(index);
              index = *ii++;
-           } 
+           }
            B.end_facet();
            ++counter;
          }
         }
         break;
-        
+
        case 3:
         // Unfold for to improve preformance:
         for (Coord_index_iter ii = m_indices_begin; ii != m_indices_end;
@@ -309,7 +309,7 @@ private:
 
   /*! A visitor class */
   Visitor* m_visitor;
-  
+
   /*! The index of the marked vertex */
   unsigned int m_marked_vertex_index;
 
@@ -327,7 +327,7 @@ private:
 
   /*! */
   Polyhedron_halfedge_const_handle m_halfedge;
-    
+
   /*! Handle the introduction of a new boundary edge */
   virtual void handle_new_boundary_edge(Arr_halfedge_handle edge)
   {
@@ -361,10 +361,10 @@ private:
       m_visitor->update_dual_halfedge(m_halfedge, edge);
       m_visitor->update_dual_halfedge(m_halfedge, edge->twin());
     }
-  }  
+  }
 
   /*! Update the polyhedron */
-  template <class PointIterator_3>  
+  template <class PointIterator_3>
   void update_polyhedron(Polyhedron& polyhedron,
                          const PointIterator_3& points_begin,
                          const PointIterator_3& points_end,
@@ -405,7 +405,7 @@ private:
 
       // If there are more than 1 face excluding the unbounded face, continue
       if (arr.number_of_faces() != 2) continue;
-    
+
       Arr_face_iterator fi = arr.faces_begin();
       ++fi;               // skip the unbounded face
       // If the point of the face is set already, continue
@@ -418,7 +418,7 @@ private:
           ++hec;
           continue;
         }
-        Arr_face_handle adjacent_face = find_adjacent_face(hec);
+        Arr_face_handle adjacent_face = this->find_adjacent_face(hec);
         fi->set_point(adjacent_face->point());
         if (m_visitor) m_visitor->update_dual_vertex(adjacent_face, fi);
         break;
@@ -490,7 +490,7 @@ private:
     //! \todo eliminate this call!!!
     // Process the edges:
     this->process_edges();
-  
+
     // Update the point of the vertex-less cubic faces:
     update_point();
   }
@@ -504,7 +504,7 @@ public:
     m_marked_edge_index(0),
     m_marked_facet_index(0)
   {}
-    
+
   /*! Destructor */
   virtual ~Polyhedral_cgm_initializer() {}
 
@@ -531,7 +531,7 @@ public:
 
     compute_projections(polyhedron);
   }
-  
+
   /*! Initialize a cubical Gaussian map */
   template <class PointIterator_3>
   void operator()(const PointIterator_3& points_begin,
@@ -544,7 +544,7 @@ public:
                   Visitor* visitor = NULL)
   {
     m_visitor = visitor;
- 
+
     Polyhedron polyhedron;
     update_polyhedron(polyhedron, points_begin, points_end, num_points,
                       indices_begin, indices_end, num_facets,
@@ -590,7 +590,7 @@ template <class T_Kernel,
 class Polyhedral_cgm : public Cubical_gaussian_map_3<T_Kernel,T_Dcel> {
 private:
   typedef Polyhedral_cgm<T_Kernel, T_Dcel>              Self;
-  
+
 public:
   // For some reason MSVC barfs on the friend statement below. Therefore,
   // we declare the Base to be public to overcome the problem.
@@ -601,10 +601,10 @@ public:
   template <class Polyhedron, class Visitor>
   friend class Polyhedral_cgm_initializer<Self, Polyhedron, Visitor>;
 #endif
-  
+
   // Arrangement traits and types:
   typedef typename Base::Arr_traits                     Arr_traits;
-  
+
 #ifndef CGAL_CFG_NO_TMPL_IN_TMPL_PARAM
   typedef T_Dcel<Arr_traits>                            Dcel;
 #else
@@ -643,7 +643,7 @@ public:
     Arr_halfedge_around_vertex_const_circulator;
   typedef typename Base::Arr_vertex                     Arr_vertex;
   typedef typename Arr_vertex::Vertex_location          Vertex_location;
-  
+
   typedef typename Base::Kernel                         Kernel;
   typedef typename Kernel::FT                           FT;
   typedef typename Kernel::Point_3                      Point_3;
@@ -657,20 +657,20 @@ public:
   typedef typename Arr_traits::X_monotone_curve_2       X_monotone_curve_2;
 
   typedef CGAL::Polyhedral_cgm_overlay<Self>            Polyhedral_cgm_overlay;
-  
+
 private:
   /*! The gravity center */
   Point_3 m_center;
-  
+
   /*! Indicated whether the center has been calculated */
   bool m_dirty_center;
-  
+
   /*! */
   class Face_nop_op {
   public:
     void operator()(Arr_face_handle fh) { }
   };
-  
+
   /*! \brief calculates the center of the polyhedron */
   void calculate_center()
   {
@@ -702,7 +702,7 @@ private:
 
     m_dirty_center = false;
   }
-  
+
   /*! Reset the "visited" flag. In fact we overload the "is_set" flag, and
    * use as the "visited" flag. This function must be called before the
    * recursive function process_boundary_faces() is invoked.
@@ -718,21 +718,21 @@ private:
       }
     }
   }
-  
+
 public:
   /*! Parameter-less Constructor */
   Polyhedral_cgm() : m_dirty_center(true)
   {
     // The m_corner_vertices are set to NULL by their default constructor
   }
-  
+
   /*! Copy Constructor */
   Polyhedral_cgm(const Polyhedral_cgm& cgm)
   {
     // Not implemented yet!
     CGAL_assertion(0);
   }
-  
+
   /*! Destructor */
   virtual ~Polyhedral_cgm() { clear(); }
 
@@ -743,7 +743,7 @@ public:
     m_dirty_center = true;
     Base::clear();
   }
-  
+
   /*! Processe all planar faces that are mapped to by a single polytope vertex
    */
   template <class Op>
@@ -757,7 +757,7 @@ public:
       // Process only artificial halfedges:
       if (!hec->is_real()) {
         // Find the planar face in the adjacent cube face:
-        Arr_face_handle face = find_adjacent_face(hec);
+        Arr_face_handle face = this->find_adjacent_face(hec);
         if (!face->get_is_set()) {
           process_boundary_faces(face, op);
         }
@@ -765,10 +765,10 @@ public:
       hec++;
     } while(hec != hec_begin);
   }
-  
+
   /*! Compute the minkowski sum of a range of objects of type Polyhedral_cgm
    */
-  template <class CgmIterator>  
+  template <class CgmIterator>
   void minkowski_sum(CgmIterator begin, CgmIterator end)
   {
     Polyhedral_cgm* cgm1 = *begin++;
@@ -787,13 +787,13 @@ public:
 
     // Initialize the corners:
     this->init_corners();
-  
+
     // Process the corners:
     this->process_corners();
 
     // Process the edges:
     this->process_edges();
-  
+
 #if 0
     /* Is there a collision?
      * \todo this doeasn't belong here
@@ -801,7 +801,7 @@ public:
     CGAL::Oriented_side side = oriented_side(CGAL::ORIGIN);
     std::cout << ((side == CGAL::ON_ORIENTED_BOUNDARY) ? "On boundary" :
                   ((side == CGAL::ON_POSITIVE_SIDE) ? "Outside" : "Inside"))
-              << std::endl;  
+              << std::endl;
 
     Projected_normal dual;
     side = oriented_side(CGAL::ORIGIN, dual, false);
@@ -809,10 +809,10 @@ public:
                   ((side == CGAL::ON_POSITIVE_SIDE) ? "Outside" : "Inside"))
               << std::endl;
 #endif
-    
+
     // print_stat();
   }
-  
+
   /*! Compute the overlay of the respective 6 face pairs of 2 Polyhedral_cgm
    * objects.
    * \param cgm1 the first Polyhedral_cgm object
@@ -834,14 +834,14 @@ public:
       for (hi = arr2.halfedges_begin(); hi != arr2.halfedges_end(); ++hi)
         std::cout << hi->curve() << std::endl;
 #endif
-      
+
       // Compute the overlay:
       Polyhedral_cgm_overlay cgm_overlay;
       cgm_overlay.set_face_id(i);
       CGAL::overlay(arr1, arr2, arr, cgm_overlay);
     }
   }
-  
+
   /*! \brief computes the orientation of a point relative to the polyhedron */
   CGAL::Oriented_side oriented_side(const Point_3& p)
   {
@@ -897,9 +897,9 @@ public:
       (id < 3) ? Point_2(proj_p[k], proj_p[j]) : Point_2(proj_p[j], proj_p[k]);
 
     // Find the vertex that is a mapping of a facet and is near the planar
-    // point: 
+    // point:
     Vertex_handle vh = find_nearest_real_vertex(id, planar_p);
-  
+
     unsigned int deg = degree(vh);
     Arr_halfedge_around_vertex_const_circulator hecs[deg];
 
@@ -916,7 +916,7 @@ public:
       <Arr::Halfedge_around_vertex_const_circulator*> collector(hecs);
       process_boundary_halfedges(vh, collector);
     }
-  
+
     Kernel::Ray_3 ray(m_center, p);
     const Plane_3& plane = vh->get_plane();
     Kernel kernel;
@@ -938,7 +938,7 @@ public:
     std::cout << "Unknown" << std::endl;
     return CGAL::ON_ORIENTED_BOUNDARY;
   }
-  
+
   /*! \brief returns the degree of a given vertex */
   unsigned int degree(Arr_vertex_const_handle vh)
   {
@@ -953,7 +953,7 @@ public:
     } while (hec != begin_hec);
     return counter;
   }
-  
+
   /*! Obtain the number of (primal) vertices */
   unsigned int number_of_vertices()
   {
@@ -981,7 +981,7 @@ public:
   {
     unsigned int number_of_halfedges = 0;
     unsigned int num_real_edges = 0;
-  
+
     for (unsigned int i = 0; i < Base::NUM_FACES; i++) {
       const Arr& pm = this->m_arrangements[i];
       // Traverse all halfedge:
@@ -1007,7 +1007,7 @@ public:
         ++hec;
       } while (hec != begin_hec);
       CGAL_assertion(hec->face()->is_unbounded());
-      
+
       // Traverse the most outer boundary of the connected component:
       begin_hec = hec;
       do {
@@ -1015,7 +1015,7 @@ public:
         hec = hec->next();
       } while (hec != begin_hec);
     }
-  
+
     return number_of_halfedges / 2 - num_real_edges / 2;
   }
 
@@ -1052,7 +1052,7 @@ public:
   {
 #if 1
     Base::print_stat();
-    
+
     unsigned int faces_num = number_of_facets();
     unsigned int edges_num = number_of_edges();
     unsigned int vertices_num = number_of_vertices();
