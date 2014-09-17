@@ -247,16 +247,24 @@ public:
     Do_intersect(const AABB_traits<GeomTraits,AABBPrimitive>& traits)
       :m_traits(traits) {}
 
-    template<typename Query>
-    bool operator()(const Query& q, const Bounding_box& bbox) const
+    bool operator()(const Bounding_box& bbox1, const Bounding_box& bbox2) const
     {
-      return CGAL::do_intersect(q, bbox);
+      return do_overlap(bbox1, bbox2);
     }
 
-    template<typename Query>
-    bool operator()(const Query& q, const Primitive& pr) const
+    bool operator()(const Primitive& pr, const Bounding_box& bbox) const
     {
-      return GeomTraits().do_intersect_3_object()(q, internal::Primitive_helper<AT>::get_datum(pr,m_traits));
+      return GeomTraits().do_intersect_3_object()(internal::Primitive_helper<AT>::get_datum(pr,m_traits), bbox);
+    }
+
+    bool operator()(const Bounding_box &bbox, const Primitive &pr) const
+    {
+      return do_overlap(bbox, pr.datum().bbox());
+    }
+
+    bool operator()(const Primitive& pr1, const Primitive& pr2) const
+    {
+      return GeomTraits().do_intersect_3_object()(internal::Primitive_helper<AT>::get_datum(pr1,m_traits), internal::Primitive_helper<AT>::get_datum(pr2,m_traits));
     }
   };
 

@@ -198,6 +198,55 @@ private:
 
 
 /**
+ * @class Listing_primitive_joined_traits
+ */
+template<typename AABBTraits, typename Output_iterator>
+class Listing_primitive_joined_traits
+{
+  typedef typename AABBTraits::FT FT;
+  typedef typename AABBTraits::Point_3 Point;
+  typedef typename AABBTraits::Primitive Primitive;
+  typedef typename AABBTraits::Bounding_box Bounding_box;
+  typedef typename AABBTraits::Primitive::Id Primitive_id;
+  typedef typename AABBTraits::Point_and_primitive_id Point_and_primitive_id;
+  typedef typename AABBTraits::Object_and_primitive_id Object_and_primitive_id;
+  typedef ::CGAL::AABB_node<AABBTraits> Node;
+
+public:
+  Listing_primitive_joined_traits(Output_iterator out_it, const AABBTraits& traits)
+    : m_out_it(out_it), m_traits(traits) {}
+
+  bool go_further() const { return true; }
+
+  void intersection(const Primitive& query, const Primitive& primitive)
+  {
+    if( m_traits.do_intersect_object()(query, primitive) )
+    {
+      *m_out_it++ = primitive.id();
+    }
+  }
+
+  bool do_intersect(const Node &node_1, const Node &node_2) const
+  {
+    return m_traits.do_intersect_object()(node_1.bbox(), node_2.bbox());
+  }
+
+  bool do_intersect(const Node &node_1, const Primitive &primitive2) const
+  {
+    return m_traits.do_intersect_object()(node_1.bbox(), primitive2);
+  }
+
+  bool do_intersect(const Primitive &primitive1, const Node &node_2) const
+  {
+    return m_traits.do_intersect_object()(primitive1, node_2.bbox());
+  }
+
+private:
+  Output_iterator m_out_it;
+  const AABBTraits& m_traits;
+};
+
+/**
  * @class First_primitive_traits
  */
 template<typename AABBTraits, typename Query>
@@ -290,81 +339,46 @@ private:
 template<typename AABBTraits>
 class Do_intersect_joined_traits
 {
-  typedef typename AABBTraits::Point_3 Point;
   typedef typename AABBTraits::Primitive Primitive;
   typedef AABB_node<AABBTraits> Node;
 
 public:
 
-  Do_intersect_joined_traits(const Point &point) : m_is_found(false)
-  {
-    m_traits_ptr = new AABBTraits(point);
-  }
+  Do_intersect_joined_traits(const AABBTraits& traits)
+    : m_is_found(false), m_traits(traits)
+  {}
 
   bool go_further() const { return !m_is_found; }
 
-  void intersection(const Primitive &primitive1, const Primitive &primitive2, bool first_stationary)
+  void intersection(const Primitive &primitive1, const Primitive &primitive2)
   {
-    if (first_stationary)
+    if (m_traits.do_intersect_object()(primitive1, primitive2))
     {
-      if (m_traits_ptr->do_intersect_object()(primitive1, primitive2))
-      {
-        m_is_found = true;
-      }
-    }
-    else
-    {
-      if (m_traits_ptr->do_intersect_object()(primitive2, primitive1))
-      {
-        m_is_found = true;
-      }
+      m_is_found = true;
     }
   }
 
-  bool do_intersect(const Node &node_1, const Node &node_2, bool first_stationary) const
+  bool do_intersect(const Node &node_1, const Node &node_2) const
   {
-    if (first_stationary)
-    {
-      return m_traits_ptr->do_intersect_object()(node_1.bbox(), node_2.bbox());
-    }
-    else
-    {
-      return m_traits_ptr->do_intersect_object()(node_2.bbox(), node_1.bbox());
-    }
+    return m_traits.do_intersect_object()(node_1.bbox(), node_2.bbox());
   }
 
-  bool do_intersect(const Node &node_1, const Primitive &primitive2, bool first_stationary) const
+  bool do_intersect(const Node &node_1, const Primitive &primitive2) const
   {
-    if (first_stationary)
-    {
-      return m_traits_ptr->do_intersect_object()(node_1.bbox(), primitive2);
-    }
-    else
-    {
-      return m_traits_ptr->do_intersect_object()(primitive2, node_1.bbox());
-    }
+    return m_traits.do_intersect_object()(node_1.bbox(), primitive2);
   }
 
-  bool do_intersect(const Primitive &primitive1, const Node &node_2, bool first_stationary) const
+  bool do_intersect(const Primitive &primitive1, const Node &node_2) const
   {
-    if (first_stationary)
-    {
-      return m_traits_ptr->do_intersect_object()(primitive1, node_2.bbox());
-    }
-    else
-    {
-      return m_traits_ptr->do_intersect_object()(node_2.bbox(), primitive1);
-    }
+    return m_traits.do_intersect_object()(primitive1, node_2.bbox());
   }
 
   bool is_intersection_found() const { return m_is_found; }
 
-  ~Do_intersect_joined_traits() { delete m_traits_ptr; }
-
 private:
 
   bool m_is_found;
-  AABBTraits *m_traits_ptr;
+  const AABBTraits& m_traits;
 };
 
 

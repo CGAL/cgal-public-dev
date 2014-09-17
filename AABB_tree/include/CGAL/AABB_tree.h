@@ -337,11 +337,9 @@ public:
 		bool do_intersect(const Query& query) const;
 
     /// Returns `true`, iff at least one pair of primitives in the
-    /// two trees intersect. The `other` tree is translated by
-    /// `translation` before this is tested. The traits class `AABBTraits`
+    /// two trees intersect. The traits class `AABBTraits`
     /// needs to define `do_intersect` predicates for the tree's primitive.
-    bool do_intersect(const AABB_tree &other,
-                      const Point &translation) const;
+    bool do_intersect(const AABB_tree &other) const;
 
     /// Returns the number of primitives intersected by the
     /// query. \tparam Query must be a type for which
@@ -349,6 +347,9 @@ public:
     /// in the traits class `AABBTraits`.
 		template<typename Query>
 		size_type number_of_intersected_primitives(const Query& query) const;
+
+    /// TODO: doc
+		size_type number_of_intersected_primitives(const AABB_tree &other) const;
 
     /// Outputs to the iterator the list of all intersected primitives
     /// ids. This function does not compute the intersection points
@@ -584,8 +585,7 @@ public:
         root_node()->template traversal<Traversal_traits>(*(other_tree.root_node()),
                                                           traits,
                                                           m_primitives.size(),
-                                                          other_tree.m_primitives.size(),
-                                                          true);
+                                                          other_tree.m_primitives.size());
       }
       else // at least tree has less than 2 primitives
       {
@@ -1108,12 +1108,12 @@ public:
 	}
 
   template<typename Tr>
-  bool AABB_tree<Tr>::do_intersect(const AABB_tree &other,
-    const Point &translation) const
+  bool AABB_tree<Tr>::do_intersect(const AABB_tree &other) const
   {
     using namespace CGAL::internal::AABB_tree;
     typedef typename AABB_tree<Tr>::AABB_traits AABBTraits;
-    Do_intersect_joined_traits<AABBTraits> traversal_traits(translation);
+    const AABBTraits traits;
+    Do_intersect_joined_traits<AABBTraits> traversal_traits(traits);
     this->traversal(other, traversal_traits);
     return traversal_traits.is_intersection_found();
   }
@@ -1134,6 +1134,23 @@ public:
 		Listing_primitive_traits<AABBTraits, 
       Query, Counting_iterator> traversal_traits(out,m_traits);
 		this->traversal(query, traversal_traits);
+		return counter;
+	}
+
+  template<typename Tr>
+	typename AABB_tree<Tr>::size_type
+		AABB_tree<Tr>::number_of_intersected_primitives(const AABB_tree &other) const
+	{
+    using namespace CGAL::internal::AABB_tree;
+    using CGAL::internal::AABB_tree::Counting_output_iterator;
+    typedef typename AABB_tree<Tr>::AABB_traits AABBTraits;
+    typedef Counting_output_iterator<Primitive_id, size_type> Counting_iterator;
+
+    size_type counter = 0;
+    Counting_iterator out(&counter);
+
+		Listing_primitive_joined_traits<AABBTraits, Counting_iterator> traversal_traits(out,m_traits);
+		this->traversal(other, traversal_traits);
 		return counter;
 	}
 
