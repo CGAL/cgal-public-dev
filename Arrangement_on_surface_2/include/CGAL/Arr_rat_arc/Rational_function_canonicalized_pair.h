@@ -206,11 +206,6 @@ public:
     //std::cout << "_is_above.size()            " << _is_above.size() <<std::endl;
     //std::cout << " _event_roots.size() + 1    " <<  _event_roots.size() + 1 << std::endl;
     CGAL_postcondition(_is_above.size() == _event_roots.size() + 1);
-    //check for validity using explicit computation
-    CGAL_postcondition_code(std::vector<bool> tmp_is_above =
-                            compute_is_above_explicitly();
-                            );
-    CGAL_postcondition(_is_above == tmp_is_above);   
   }
 
   Comparison_result compare_f_g_at(const Algebraic_real_1& x,
@@ -315,14 +310,14 @@ public:
   }
 
 private:
-  bool get_is_above_near_minus_infinity()
+  bool get_is_above_near_minus_infinity() const 
   {
     bool r = _get_is_above_near_minus_infinity();
     CGAL_postcondition(r == __get_is_above_near_minus_infinity());
     return r; 
   }
 
-  bool _get_is_above_near_minus_infinity()
+  bool _get_is_above_near_minus_infinity() const 
   {
     int f_deg = CGAL::degree(_f.numer()) - CGAL::degree(_f.denom());
     int g_deg = CGAL::degree(_g.numer()) - CGAL::degree(_g.denom());
@@ -341,7 +336,7 @@ private:
           (sign == CGAL::POSITIVE) ? false   :
           (_f.sign_near_minus_infinity() == CGAL::POSITIVE);  // _g == zero;
       }
-            
+    
     //both have the same degree difference, 
     //check who's leading coeeficient ratio is larger
     Coefficient lead_coeff_ratio =
@@ -360,7 +355,7 @@ private:
     return __get_is_above_near_minus_infinity();
   }
 
-  bool __get_is_above_near_minus_infinity()
+  bool __get_is_above_near_minus_infinity() const 
   {
     Bound b;
     if (_event_roots.empty())
@@ -372,7 +367,7 @@ private:
     return is_above_at(b);
   }
 
-  bool is_above_at(const Bound& b)
+  bool is_above_at(const Bound& b) const 
   {
     //return true if f is above g at b which means return (sign  == positive) of :
     //
@@ -393,35 +388,34 @@ private:
 
     return (s == CGAL::POSITIVE);
   }
-  std::vector<bool> compute_is_above_explicitly()
-  {
-    std::vector<bool> tmp_is_above;
-    if (_event_roots.size()== 0)
-    {
-      Bound b = 1; //all bound are legal, choose 1 for simplicity
-      tmp_is_above.push_back(is_above_at(b));  
-      return tmp_is_above;
-    }
-  
-    tmp_is_above.reserve(_event_roots.size()+1);  
-    //left boundary
-    Bound b  = (_ak_ptr->approximate_relative_1_object()
-      (_event_roots.front(),0)).first - 1;  //lower bound of first root
-    tmp_is_above.push_back(is_above_at(b));  
-  
-    //mid intervals
-    typename Algebraic_vector::size_type i;
-    for (i = 0; i < _event_roots.size()-1; ++i)
-    {
-      b = _ak_ptr->bound_between_1_object()(_event_roots[i],_event_roots[i+1]);
-      tmp_is_above.push_back(is_above_at(b));      
-    }
 
-    //right boundary
-    b = (_ak_ptr->approximate_relative_1_object()(_event_roots.back(), 0)).second + 1;  //lower bound of last root
-    tmp_is_above.push_back(is_above_at(b));
-    return tmp_is_above;
-  }
+
+//   std::vector<bool> compute_is_above_explicitly()
+//   {
+//     std::vector<bool> tmp_is_above;
+//     if (_event_roots.size()== 0)
+//     {
+//       Bound b = 1; //all bound are legal, choose 1 for simplicity
+//       tmp_is_above.push_back(is_above_at(b));  
+//       return tmp_is_above;
+//     }
+//     tmp_is_above.reserve(_event_roots.size()+1);  
+//     //left boundary
+//     Bound b  = (_ak_ptr->approximate_relative_1_object()
+//       (_event_roots.front(),0)).first - 1;  //lower bound of first root
+//     tmp_is_above.push_back(is_above_at(b));  
+//     //mid intervals
+//     typename Algebraic_vector::size_type i;
+//     for (i = 0; i < _event_roots.size()-1; ++i)
+//     {
+//       b = _ak_ptr->bound_between_1_object()(_event_roots[i],_event_roots[i+1]);
+//       tmp_is_above.push_back(is_above_at(b));      
+//     }
+//     //right boundary
+//     b = (_ak_ptr->approximate_relative_1_object()(_event_roots.back(), 0)).second + 1;  //lower bound of last root
+//     tmp_is_above.push_back(is_above_at(b));
+//     return tmp_is_above;
+//   }
    
 private:   
   Rational_function _f,_g;
