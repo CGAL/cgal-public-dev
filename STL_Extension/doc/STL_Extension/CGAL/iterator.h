@@ -919,8 +919,69 @@ T& operator[]( size_type n);
 
 /// @}
 
-
-
 }; /* end Random_access_value_adaptor */
+
+
+/*!
+  \ingroup STLIterators
+
+  An iterator wrapper that modifies an iterator so that
+  dereferencing returns the original iterator. 
+ 
+  This wrapper is intended to be used to provide an iterator with a value
+  type that is convertible to a \cgal handle type. In particular,
+  to allow a user to provide \cgal itertators to `std` algorithms that
+  operate on a \cgal handle type. 
+  
+  \note The adapted iterator identifies itself as a `forward_traversal`
+  iterator, disregarding the input iterator type.
+ 
+  @tparam Iterator The type of the iterator to provide a wrapper for.
+*/
+
+template <typename Iterator>
+class No_deref_iterator
+  : public boost::iterator_adaptor<
+        No_deref_iterator<Iterator>      // Derived
+      , Iterator                       // Base
+      , Iterator                       // Value
+      , boost::forward_traversal_tag   // Traversal type
+      , Iterator                       // Reference
+    >
+{
+ private:
+    struct enabler {};
+
+ public:
+    /// Default constructor.
+    /// \pre Only valid if template iterator is default constructible.
+    No_deref_iterator()
+        : No_deref_iterator::iterator_adaptor_(0) {}
+
+    /// Wrap the templated iterator type in the new iterator class to create
+    /// an iterator that returns the original iterator when de-referenced.
+    explicit No_deref_iterator(const Iterator it)
+        : No_deref_iterator::iterator_adaptor_(it) {}
+
+ private:
+    friend class boost::iterator_core_access;
+
+    typename No_deref_iterator::reference
+    dereference()
+    const
+    {
+        return this->base();
+    }
+};
+
+/// \ingroup STLIterators
+/// Use type deduction to create a non-dereferencing iterator from a normal
+/// iterator.
+template<typename T>
+inline No_deref_iterator<T> make_no_deref_iterator(T const& iterator){
+    return No_deref_iterator<T>(iterator);
+}
+
+
 
 } /* end namespace CGAL */

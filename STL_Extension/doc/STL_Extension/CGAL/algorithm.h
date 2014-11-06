@@ -188,3 +188,216 @@ OutputIterator copy_n(InputIterator first, Size count, OutputIterator result);
 } /* namespace cpp11 */
 } /* namespace CGAL */
 
+algorithm.h
+
+
+namespace CGAL {
+
+/*!
+
+\ingroup STLAlgos
+
+@name Statistics Functions
+\brief A collection functions to simplify the process of computing properties
+of geometric objects in \cgal.
+
+The following functions are provided to operate on iterators and unary
+functions. Each function may be applied the iterator to produce a value. When
+required, return types of the unary functions are computed using
+`CGAL::cpp11::result_of`. 
+
+\cgalAdvancedBegin
+These functions have been specifically designed to operate on \cgal containers
+and iterators, which often give iterators that can be implicitly converted to a
+handle type. For example, `Triangulation_2::Finite_vertices_iterator` has a
+value type of `Triangulation_2::Vertex`. The handle for a given iterator is thus
+seen as equivalent to the iterator itself. This may cause problems if a user
+wishes to use algorithms in the STL, since in general STL algorithms dereference
+iterators before applying functions to them. In order to deal with this
+technicality, the implementation of the functions in this group will attempt
+to match the value type of the iterator to the argument type of the input
+function, dereferencing only when necessary. in C++11, this can be done
+automatically using type meta-functions. Earlier versions of C++ can be 
+used by using function objects which expose the types `argument_type` and 
+`result_type` for the unary function arguments.
+
+Users wishing to use other STL algorithms not found below should consider using
+the `CGAL::Non_deref_iterator` wrapper class to wrap the
+iterators being iterated over.
+
+\cgalAdvancedEnd
+
+*/
+
+/*!
+  \ingroup STLAlgos
+  Compute the mean of values computed by a unary function over the iterator
+  range. 
+
+  To make it easier to use this function on \cgal iterator ranges,
+  this function will not de-reference the iterators when calling the given
+  unary function under the following conditions:
+  1) in C++11: if `UnaryFunction` can not be called on
+     `InputIterator::value_type`, but can be called on `InputIterator`.
+  2) in C++03 if `UnaryFunction::argument_type` exists and is not convertible
+     from `InputIterator::value_type`. The result type of the unary function
+     must be computable by `CGAL::cpp11::result_of`.
+
+  \param  begin  Start of iterator range.
+  \param  end    End of iterator range.
+  \param  f      A unary function taking either the value type of the input
+                 iterator, or the iterator itself.
+  \return The mean value over all the values computed by the given function,
+          with double accuracy.
+*/
+
+template <typename InputIterator, typename UnaryFunction>
+double mean_result(InputIterator begin, InputIterator end, UnaryFunction f);
+
+/*!
+  \ingroup STLAlgos
+  Compute the mean of values computed by a unary function over the iterator
+  range. 
+
+  To make it easier to use this function on \cgal iterator ranges,
+  this function will not de-reference the iterators when calling the given
+  unary function under the following conditions:
+  1) in C++11: if `UnaryFunction` can not be called on
+     `InputIterator::value_type`, but can be called on `InputIterator`.
+  2) in C++03 if `UnaryFunction::argument_type` exists and is not convertible
+     from `InputIterator::value_type`. The result type of the unary function
+     must be computable by `CGAL::cpp11::result_of`.
+
+  \param  begin  Start of iterator range.
+  \param  end    End of iterator range.
+  \param  f      A unary function taking either the value type of the input
+                 iterator, or the iterator itself.
+  \return The mean value over all the values computed by the given function,
+          with double accuracy.
+*/
+
+template <typename InputIterator, typename UnaryFunction>
+double mean_result(InputIterator begin, InputIterator end, UnaryFunction f);
+
+/*!
+  Compute the max given an iterator range.
+
+  To make it easier to use this function on \cgal iterator ranges,
+  this function will not de-reference the iterators when calling the given
+  unary function under the following conditions:
+  1) in C++11: if `UnaryFunction` can not be called on
+     `InputIterator::value_type`, but can be called on `InputIterator`.
+  2) in C++03 if `UnaryFunction::argument_type` exists and is not convertible
+     from `InputIterator::value_type`. The result type of the unary function
+     must be computable by `CGAL::cpp11::result_of`.
+
+  \param begin  Start of iterator range.
+  \param end    End of iterator range.
+  \param f      A unary function taking either the value type of the input
+                iterator, or the iterator itself.
+  \return The maximum value computed over the input range.
+*/
+
+template <typename InputIterator, typename UnaryFunction>
+#ifdef DOXYGEN_RUNNING
+unspecified_type
+#else
+typename internal::get_result_type<UnaryFunction, InputIterator>::type
+#endif
+    max_result(InputIterator begin, InputIterator end, UnaryFunction f);
+
+/*!
+  \ingroup STLAlgos
+  Compute the minimum value of a function over an iterator range.
+
+  To make it easier to use this function on \cgal iterator ranges,
+  this function will not de-reference the iterators when calling the given
+  unary function under the following conditions:
+  1) in C++11: if `UnaryFunction` can not be called on
+     `InputIterator::value_type`, but can be called on `InputIterator`.
+  2) in C++03 if `UnaryFunction::argument_type` exists and is not convertible
+     from `InputIterator::value_type`. The result type of the unary function
+     must be computable by `CGAL::cpp11::result_of`.
+
+  \param begin  Start of iterator range.
+  \param end    End of iterator range.
+  \param f      A unary function taking either the value type of the input
+                iterator, or the iterator itself.
+  \return The minimum value computed over the input range.
+*/
+
+template <typename InputIterator, typename UnaryFunction>
+#ifdef DOXYGEN_RUNNING
+unspecified_type
+#else
+typename internal::get_result_type<UnaryFunction, InputIterator>::type
+#endif
+    min_result(InputIterator begin, InputIterator end, UnaryFunction f);
+
+/*!
+  \ingroup STLAlgos
+  Count all values computed using the input function within a given interval.
+
+  To make it easier to use this function on \cgal iterator ranges,
+  this function will not de-reference the iterators when calling the given
+  unary function under the following conditions:
+  1) in C++11: if `UnaryFunction` can not be called on
+     `InputIterator::value_type`, but can be called on `InputIterator`.
+  2) in C++03 if `UnaryFunction::argument_type` exists and is not convertible
+     from `InputIterator::value_type`. The result type of the unary function
+     must be computable by `CGAL::cpp11::result_of`.
+
+  \param begin  Start of iterator range.
+  \param end    End of iterator range.
+  \param f      Unary function.
+  \param min    Smallest property value allowed in the range.
+  \param max    Largest property value allowed in the range.
+  \tparam Limit A type which is comparable with `InputIterator::value_type`.
+
+  \return Number of values computed by `f` falling in the given range.
+ */
+
+template <typename InputIterator, typename UnaryFunction, typename Limit>
+typename std::iterator_traits<InputIterator>::difference_type
+    count_result_in_interval(InputIterator begin,
+                             InputIterator end,
+                             UnaryFunction f,
+                             Limit min,
+                             Limit max);
+
+/*!
+  \ingroup STLAlgos
+  Compute the Pearson product-moment correlation between the outputs of two
+  given unary functions applied to iterator ranges.
+
+  To make it easier to use this function on \cgal iterator ranges,
+  this function will not de-reference the iterators when calling the given
+  unary function under the following conditions:
+  1) in C++11: if `UnaryFunction` can not be called on
+     `InputIterator::value_type`, but can be called on `InputIterator`.
+  2) in C++03 if `UnaryFunction::argument_type` exists and is not convertible
+     from `InputIterator::value_type`. The result type of the unary function
+     must be computable by `CGAL::cpp11::result_of`.
+
+  \param begin  Start of iterator range.
+  \param end    End of iterator range.
+  \param f1     First function, to generate first set of values.
+  \param f2     Second function, to generate first set of values.
+  \return
+  The Pearson product-moment correlation between the values generated by `f1`
+  and `f2`.
+
+*/
+
+template <typename InputIterator,
+          typename UnaryFunction1,
+          typename UnaryFunction2>
+double pearson(InputIterator begin,
+               InputIterator end,
+               UnaryFunction1 f1,
+               UnaryFunction2 f2);
+
+
+} // namespace CGAL
+
+
