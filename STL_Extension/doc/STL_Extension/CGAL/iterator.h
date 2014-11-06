@@ -941,6 +941,7 @@ T& operator[]( size_type n);
 
 template <typename Iterator>
 class No_deref_iterator
+#ifndef DOXYGEN_RUNNING
   : public boost::iterator_adaptor<
         No_deref_iterator<Iterator>      // Derived
       , Iterator                       // Base
@@ -948,6 +949,7 @@ class No_deref_iterator
       , boost::forward_traversal_tag   // Traversal type
       , Iterator                       // Reference
     >
+#endif
 {
  private:
     struct enabler {};
@@ -964,8 +966,10 @@ class No_deref_iterator
         : No_deref_iterator::iterator_adaptor_(it) {}
 
  private:
+    #ifndef DOXYGEN_RUNNING
     friend class boost::iterator_core_access;
-
+    #endif
+ 
     typename No_deref_iterator::reference
     dereference()
     const

@@ -46,9 +46,10 @@ namespace Triangulation_2
   no argument.
 
   @tparam Triangulation_2 The Triangulation type.
+  @tparam Tag either `CGAL::Properties::Finite_test_tag` or `CGAL::Properties::No_finite_test_tag`.
 */
 
-template <typename Triangulation_2, typename tag = Finite_test_tag>
+template <typename Triangulation_2, typename Tag = Finite_test_tag>
 class Length
 {
  public:
@@ -78,9 +79,10 @@ class Length
   requires no argument.
 
   @tparam Triangulation_2 The Triangulation type.
+  @tparam Tag either `CGAL::Properties::Finite_test_tag` or `CGAL::Properties::No_finite_test_tag`.
 */
 
-template <typename Triangulation_2, typename tag = Finite_test_tag>
+template <typename Triangulation_2, typename Tag = Finite_test_tag>
 class Neighbor_area
 {
  public:
@@ -113,9 +115,10 @@ class Neighbor_area
   which case the constructor requires no argument.
 
   @tparam Triangulation_2 The Triangulation type.
+  @tparam Tag either `CGAL::Properties::Finite_test_tag` or `CGAL::Properties::No_finite_test_tag`.
 */
 
-template <typename Triangulation_2, typename finite_test_tag = Finite_test_tag>
+template <typename Triangulation_2, typename Tag = Finite_test_tag>
 class Dual_length
 {
  public:
@@ -143,11 +146,11 @@ class Dual_length
   @param  tr_2  The Triangulation_2 to be associated with the
           functor.
   @tparam Triangulation_2 The Triangulation_2 type.
+  @tparam Tag either `CGAL::Properties::Finite_test_tag` or `CGAL::Properties::No_finite_test_tag`.
 */
-
-template <typename Triangulation_2, typename tag>
-Length<Triangulation_2, tag> make_length(const Triangulation_2& tr_2,
-                                                 tag);
+template <typename Triangulation_2, typename Tag>
+Length<Triangulation_2, Tag> make_length(const Triangulation_2& tr_2,
+                                                 Tag);
 template <typename Triangulation_2>
 Length<Triangulation_2, Finite_test_tag> make_length(
     const Triangulation_2& tr_2);
@@ -160,12 +163,12 @@ Length<Triangulation_2, Finite_test_tag> make_length(
   @param  tr_2            The Triangulation_2 to be associated with the
                        functor.
   @tparam Triangulation_2 The Triangulation_2 type.
+  @tparam Tag either `CGAL::Properties::Finite_test_tag` or `CGAL::Properties::No_finite_test_tag`.
 */
-
-template <typename Triangulation_2, typename tag>
-Neighbor_area<Triangulation_2, tag> make_neighbor_area(
+template <typename Triangulation_2, typename Tag>
+Neighbor_area<Triangulation_2, Tag> make_neighbor_area(
     const Triangulation_2& tr_2,
-    tag);
+    Tag);
 
 template <typename Triangulation_2>
 Neighbor_area<Triangulation_2, Finite_test_tag> make_neighbor_area(
@@ -178,11 +181,12 @@ Neighbor_area<Triangulation_2, Finite_test_tag> make_neighbor_area(
   @param  tr_2            The Triangulation_2 to be associated with the
                           functor.
   @tparam Triangulation_2 The Triangulation_2 type.
+  @tparam Tag either `CGAL::Properties::Finite_test_tag` or `CGAL::Properties::No_finite_test_tag`.
 */
-template <typename Triangulation_2, typename tag>
-Dual_length<Triangulation_2, tag> make_dual_length(
+template <typename Triangulation_2, typename Tag>
+Dual_length<Triangulation_2, Tag> make_dual_length(
     const Triangulation_2& tr_2,
-    tag);
+    Tag);
 
 template <typename Triangulation_2>
 Dual_length<Triangulation_2, CGAL::Properties::Finite_test_tag>
@@ -203,7 +207,7 @@ Dual_length<Triangulation_2, CGAL::Properties::Finite_test_tag>
 
 // forward-declare to break circular dependences.
 
-template <typename T, typename U>
+template <typename T, typename Tag>
 class Area;
 
 /******************************************************************************/
