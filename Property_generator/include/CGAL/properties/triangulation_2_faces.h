@@ -61,7 +61,8 @@ class Area
     \pre The Vertex_handle provided to the operator must be associated with
     the `Triangulation_2` provided on construction.
   */
-  double operator()(typename Triangulation_2::Face_handle) const;
+  typename Triangulation_2::Traits::FT 
+    operator()(typename Triangulation_2::Face_handle) const;
 };
 
 /******************************************************************************/
@@ -92,7 +93,8 @@ class Aspect_ratio
     \pre The Vertex_handle provided to the operator must be associated with
     the `Triangulation_2` provided on construction.
   */
-  double operator()(typename Triangulation_2::Face_handle) const;
+  typename Triangulation_2::Traits::FT 
+    operator()(typename Triangulation_2::Face_handle) const;
 };
 
 /******************************************************************************/
@@ -123,7 +125,8 @@ class Circumradius
     \pre The Vertex_handle provided to the operator must be associated with
     the `Triangulation_2` provided on construction.
   */
-  double operator()(typename Triangulation_2::Face_handle) const;
+  typename Triangulation_2::Traits::FT 
+    operator()(typename Triangulation_2::Face_handle) const;
 };
 
 /******************************************************************************/
@@ -154,7 +157,8 @@ class Angle
 
     \pre The index provided must be either 0, 1 or 2.
   */
-  double operator()(typename Triangulation_2::Face_handle, unsigned) const;
+  typename Triangulation_2::Traits::FT
+    operator()(typename Triangulation_2::Face_handle, unsigned) const;
 };
 
 /******************************************************************************/
@@ -186,7 +190,8 @@ class Min_angle
     \pre The Vertex_handle provided to the operator must be associated with
     the `Triangulation_2` provided on construction.
   */
-  double operator()(typename Triangulation_2::Face_handle) const;
+  typename Triangulation_2::Traits::FT
+    operator()(typename Triangulation_2::Face_handle) const;
 };
 
 /******************************************************************************/
@@ -218,7 +223,8 @@ class Max_angle
     \pre The Vertex_handle provided to the operator must be associated with
     the `Triangulation_2` provided on construction.
   */
-  double operator()(typename Triangulation_2::Face_handle) const;
+  typename Triangulation_2::Traits::FT
+    operator()(typename Triangulation_2::Face_handle) const;
 };
 
 /******************************************************************************/
@@ -249,7 +255,8 @@ class Min_edge_length
     \pre The Vertex_handle provided to the operator must be associated with
     the `Triangulation_2` provided on construction.
   */
-  double operator()(typename Triangulation_2::Face_handle) const;
+  typename Triangulation_2::Traits::FT
+    operator()(typename Triangulation_2::Face_handle) const;
 };
 
 /******************************************************************************/
@@ -282,7 +289,8 @@ class Max_edge_length
     \pre The Vertex_handle provided to the operator must be associated with
     the `Triangulation_2` provided on construction.
   */
-  double operator()(typename Triangulation_2::Face_handle) const;
+  typename Triangulation_2::Traits::FT
+    operator()(typename Triangulation_2::Face_handle) const;
 };
 
 /******************************************************************************/
@@ -444,7 +452,7 @@ class Area<Triangulation_2, Finite_test_tag>
   const Triangulation_2& tr;
 
  public:
-  typedef double result_type;
+  typedef typename Triangulation_2::Traits::FT;
   typedef typename Triangulation_2::Face_handle argument_type;
 
   Area(const Triangulation_2& tr) : tr(tr)
@@ -469,7 +477,7 @@ template <typename Triangulation_2>
 class Area<Triangulation_2, No_finite_test_tag>
 {
  public:
-  typedef double result_type;
+  typedef typename Triangulation_2::Traits::FT;
   typedef typename Triangulation_2::Face_handle argument_type;
 
   double operator()(typename Triangulation_2::Face_handle f) const
@@ -508,7 +516,7 @@ class Circumradius<Triangulation_2, Finite_test_tag>
   const Triangulation_2& tr;
 
  public:
-  typedef double result_type;
+  typedef typename Triangulation_2::Traits::FT;
   typedef typename Triangulation_2::Face_handle argument_type;
 
   Circumradius(const Triangulation_2& tr) : tr(tr)
@@ -531,7 +539,7 @@ template <typename Triangulation_2>
 class Circumradius<Triangulation_2, No_finite_test_tag>
 {
  public:
-  typedef double result_type;
+  typedef typename Triangulation_2::Traits::FT;
   typedef typename Triangulation_2::Face_handle argument_type;
 
   double operator()(typename Triangulation_2::Face_handle f) const
@@ -577,7 +585,7 @@ class Aspect_ratio<Triangulation_2, Finite_test_tag>
   const Triangulation_2& tr;
 
  public:
-  typedef double result_type;
+  typedef typename Triangulation_2::Traits::FT  result_type;
   typedef typename Triangulation_2::Face_handle argument_type;
 
   Aspect_ratio(const Triangulation_2& tr) : tr(tr)
@@ -600,7 +608,7 @@ template <typename Triangulation_2>
 class Aspect_ratio<Triangulation_2, No_finite_test_tag>
 {
  public:
-  typedef double result_type;
+  typedef typename Triangulation_2::Traits::FT;
   typedef typename Triangulation_2::Face_handle argument_type;
 
   double operator()(typename Triangulation_2::Face_handle f) const
@@ -647,7 +655,7 @@ class Angle<Triangulation_2, Finite_test_tag>
   typedef typename Triangulation_2::Face_handle Face_handle_;
 
  public:
-  typedef double result_type;
+  typedef typename Triangulation_2::Traits::FT;
   typedef typename Triangulation_2::Face_handle argument_type;
 
   Angle(const Triangulation_2& tr) : tr(tr)
@@ -678,7 +686,7 @@ template <typename Triangulation_2>
 class Angle<Triangulation_2, No_finite_test_tag>
 {
  public:
-  typedef double result_type;
+  typedef typename Triangulation_2::Traits::FT;
   typedef typename Triangulation_2::Face_handle argument_type;
 
   double operator()(typename Triangulation_2::Face_handle f, unsigned i) const
@@ -696,7 +704,7 @@ namespace
 template <typename Triangulation_2, typename finite_test_tag>
 static inline double min_angle_internal(
     const typename Triangulation_2::Face_handle& f,
-    const angle<Triangulation_2, finite_test_tag>& angle_functor)
+    const Angle<Triangulation_2, finite_test_tag>& angle_functor)
 {
   double min = std::numeric_limits<double>::infinity();
   for (unsigned short i = 0; i < 3; ++i)
@@ -720,10 +728,10 @@ class Min_angle<Triangulation_2, Finite_test_tag>
   Angle<Triangulation_2> angle_functor;
 
  public:
-  typedef double result_type;
+  typedef typename Triangulation_2::Traits::FT;
   typedef typename Triangulation_2::Face_handle argument_type;
 
-  min_angle(const Triangulation_2& tr) : tr(tr), angle_functor(tr)
+  Min_angle(const Triangulation_2& tr) : tr(tr), angle_functor(tr)
   {
   }
 
@@ -750,7 +758,7 @@ class Min_angle<Triangulation_2, No_finite_test_tag>
   Angle<Triangulation_2, No_finite_test_tag> angle_functor;
 
  public:
-  typedef double result_type;
+  typedef typename Triangulation_2::Traits::FT;
   typedef typename Triangulation_2::Face_handle argument_type;
 
   double operator()(typename Triangulation_2::Face_handle f) const
@@ -792,7 +800,7 @@ class Max_angle<Triangulation_2, Finite_test_tag>
   Angle<Triangulation_2, Finite_test_tag> angle_functor;
 
  public:
-  typedef double result_type;
+  typedef typename Triangulation_2::Traits::FT;
   typedef typename Triangulation_2::Face_handle argument_type;
 
   Max_angle(const Triangulation_2& tr) : tr(tr), angle_functor(tr)
@@ -817,7 +825,7 @@ class Max_angle<Triangulation_2, No_finite_test_tag>
   Angle<Triangulation_2, No_finite_test_tag> angle_functor;
 
  public:
-  typedef double result_type;
+  typedef typename Triangulation_2::Traits::FT;
   typedef typename Triangulation_2::Face_handle argument_type;
 
   double operator()(typename Triangulation_2::Face_handle f) const
@@ -837,7 +845,7 @@ namespace
 template <typename Triangulation_2, typename finite_test_tag>
 static inline double min_edge_length_internal(
     const typename Triangulation_2::Face_handle& f,
-    const length<Triangulation_2, finite_test_tag>& length_functor)
+    const Length<Triangulation_2, finite_test_tag>& length_functor)
 {
   double min = std::numeric_limits<double>::infinity();
 
@@ -861,10 +869,10 @@ class Min_edge_length<Triangulation_2, Finite_test_tag>
   Length<Triangulation_2, Finite_test_tag> length_functor;
 
  public:
-  typedef double result_type;
+  typedef typename Triangulation_2::Traits::FT;
   typedef typename Triangulation_2::Face_handle argument_type;
 
-  min_edge_length(const Triangulation_2& tr) : tr(tr), length_functor(tr)
+  Min_edge_length(const Triangulation_2& tr) : tr(tr), length_functor(tr)
   {
   }
 
@@ -884,7 +892,7 @@ class Min_edge_length<Triangulation_2, No_finite_test_tag>
   Length<Triangulation_2, No_finite_test_tag> length_functor;
 
  public:
-  typedef double result_type;
+  typedef typename Triangulation_2::Traits::FT;
   typedef typename Triangulation_2::Face_handle argument_type;
 
   double operator()(typename Triangulation_2::Face_handle f) const
@@ -926,10 +934,10 @@ class Max_edge_length<Triangulation_2, Finite_test_tag>
   Length<Triangulation_2, Finite_test_tag> length_functor;
 
  public:
-  typedef double result_type;
+  typedef typename Triangulation_2::Traits::FT;
   typedef typename Triangulation_2::Face_handle argument_type;
 
-  max_edge_length(const Triangulation_2& tr) : tr(tr), length_functor(tr)
+  Max_edge_length(const Triangulation_2& tr) : tr(tr), length_functor(tr)
   {
   }
 
@@ -949,7 +957,7 @@ class Max_edge_length<Triangulation_2, No_finite_test_tag>
   Length<Triangulation_2, No_finite_test_tag> length_functor;
 
  public:
-  typedef double result_type;
+  typedef typename Triangulation_2::Traits::FT;
   typedef typename Triangulation_2::Face_handle argument_type;
 
   double operator()(typename Triangulation_2::Face_handle f) const
@@ -1000,21 +1008,21 @@ Circumradius<Triangulation_2, CGAL::Properties::Finite_test_tag>
 
 /******************************************************************************/
 
-template <typename Triangulation_2, typename finite_test_tag>
-Aspect_ratio<Triangulation_2, finite_test_tag> make_aspect_ratio(
+template <typename Triangulation_2>
+Aspect_ratio<Triangulation_2, CGAL::Properties::No_finite_test_tag> make_aspect_ratio(
     const Triangulation_2& tr_2,
-    finite_test_tag)
+    CGAL::Properties::No_finite_test_tag)
 {
-  return Aspect_ratio<Triangulation_2, finite_test_tag>(tr_2);
+  return Aspect_ratio<Triangulation_2, CGAL::Properties::No_finite_test_tag>();
 }
 
 /******************************************************************************/
 
 template <typename Triangulation_2>
-Aspect_ratio<Triangulation_2, CGAL::Properties::Finite_test_tag>
+Aspect_ratio<Triangulation_2>
     make_aspect_ratio(const Triangulation_2& tr_2)
 {
-  return Aspect_ratio<Triangulation_2, CGAL::Properties::Finite_test_tag>(tr_2);
+  return Aspect_ratio<Triangulation_2>(tr_2);
 }
 
 /******************************************************************************/

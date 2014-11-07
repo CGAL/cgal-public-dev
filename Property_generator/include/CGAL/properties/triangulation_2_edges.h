@@ -62,7 +62,8 @@ class Length
     \pre The Vertex_handle provided to the operator must be associated with
     the `Triangulation_2` provided on construction.
   */
-  double operator()(typename Triangulation_2::Edge) const;
+  typename Triangulation_2::Traits::FT
+    operator()(typename Triangulation_2::Edge) const;
 };
 
 /******************************************************************************/
@@ -95,7 +96,8 @@ class Neighbor_area
     \pre The Vertex_handle provided to the operator must be associated with
     the `Triangulation_2` provided on construction.
   */
-  double operator()(typename Triangulation_2::Edge) const;
+  typename Triangulation_2::Traits::FT 
+    operator()(typename Triangulation_2::Edge) const;
 };
 
 /******************************************************************************/
@@ -131,7 +133,8 @@ class Dual_length
     \pre The Vertex_handle provided to the operator must be associated with
     the `Triangulation_2` provided on construction.
   */
-  double operator()(typename Triangulation_2::Edge) const;
+  typename Triangulation_2::Traits::FT 
+    operator()(typename Triangulation_2::Edge) const;
 };
 
 /******************************************************************************/
@@ -222,7 +225,7 @@ class Length<Triangulation_2, Finite_test_tag>
   const Triangulation_2& tr;
 
  public:
-  typedef double result_type;
+  typedef typename Triangulation_2::Traits::FT result_type;
 
   Length(const Triangulation_2& tr) : tr(tr) {};
 
@@ -255,7 +258,7 @@ class Length<Triangulation_2, No_finite_test_tag>
   typedef typename Triangulation_2::Vertex_handle Vertex_handle_;
 
 public:
-  typedef double result_type;
+  typedef typename Triangulation_2::Traits::FT result_type;
 
   double operator()(typename Triangulation_2::Edge e) const
   {
@@ -284,7 +287,7 @@ class Neighbor_area<Triangulation_2, Finite_test_tag>
   Area<Triangulation_2, Finite_test_tag> area_functor;
 
  public:
-  typedef double result_type;
+  typedef typename Triangulation_2::Traits::FT result_type;
 
   Neighbor_area(const Triangulation_2& tr) : tr(tr), area_functor(tr)
   {
@@ -313,7 +316,7 @@ class Neighbor_area<Triangulation_2, No_finite_test_tag>
   Area<Triangulation_2, No_finite_test_tag> area_functor;
 
  public:
-  typedef double result_type;
+  typedef typename Triangulation_2::Traits::FT result_type;
 
   double operator()(typename Triangulation_2::Edge e) const
   {
@@ -366,7 +369,7 @@ class Dual_length<Triangulation_2, Finite_test_tag>
   const Triangulation_2& tr;
 
  public:
-  typedef double result_type;
+  typedef typename Triangulation_2::Traits::FT result_type;
 
   Dual_length(const Triangulation_2& tr) : tr(tr) {};
 
@@ -391,7 +394,7 @@ class Dual_length<Triangulation_2, No_finite_test_tag>
   typedef typename Triangulation_2::Face_handle Face_handle_;
 
 public:
-  typedef double result_type;
+  typedef typename Triangulation_2::Traits::FT result_type;
 
   double operator()(typename Triangulation_2::Edge e) const
   {
@@ -427,7 +430,7 @@ Neighbor_area<Triangulation_2, finite_test_tag> make_neighbor_area(
     const Triangulation_2& tr_2,
     finite_test_tag)
 {
-  return neighbor_area<Triangulation_2, finite_test_tag>(tr_2);
+  return Neighbor_area<Triangulation_2, finite_test_tag>(tr_2);
 }
 
 /******************************************************************************/
@@ -436,7 +439,7 @@ template <typename Triangulation_2>
 Neighbor_area<Triangulation_2, CGAL::Properties::Finite_test_tag>
     make_neighbor_area(const Triangulation_2& tr_2)
 {
-  return neighbor_area<Triangulation_2, CGAL::Properties::Finite_test_tag>(
+  return Neighbor_area<Triangulation_2, CGAL::Properties::Finite_test_tag>(
       tr_2);
 }
 
@@ -447,7 +450,7 @@ Dual_length<Triangulation_2, finite_test_tag> make_dual_length(
     const Triangulation_2& tr_2,
     finite_test_tag)
 {
-  return dual_length<Triangulation_2, finite_test_tag>(tr_2);
+  return Dual_length<Triangulation_2, finite_test_tag>(tr_2);
 }
 
 /******************************************************************************/
@@ -456,7 +459,7 @@ template <typename Triangulation_2>
 Dual_length<Triangulation_2, CGAL::Properties::Finite_test_tag>
     make_dual_length(const Triangulation_2& tr_2)
 {
-  return dual_length<Triangulation_2, CGAL::Properties::Finite_test_tag>(tr_2);
+  return Dual_length<Triangulation_2, CGAL::Properties::Finite_test_tag>(tr_2);
 }
 
 /******************************************************************************/

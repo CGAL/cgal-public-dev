@@ -91,7 +91,8 @@ class Dual_area
     \pre The Vertex_handle provided to the operator must be associated with
     the `Triangulation_2` provided on construction.
   */
-  double operator()(typename Triangulation_2::Vertex_handle) const;
+  typename Triangulation_2::Traits::FT
+    operator()(typename Triangulation_2::Vertex_handle) const;
 };
 
 /******************************************************************************/
@@ -124,7 +125,8 @@ class Star_area
     \pre The Vertex_handle provided to the operator must be associated with
     the `Triangulation_2` provided on construction.
   */
-  double operator()(typename Triangulation_2::Vertex_handle) const;
+  typename Triangulation_2::Traits::FT
+    operator()(typename Triangulation_2::Vertex_handle) const;
 };
 
 /******************************************************************************/
@@ -155,7 +157,8 @@ public:
     \pre The Vertex_handle provided to the operator must be associated with the
     `Triangulation_2` provided on construction.
   */
-  double operator()(typename Triangulation_2::Vertex_handle) const;
+  typename Triangulation_2::Traits::FT
+    operator()(typename Triangulation_2::Vertex_handle) const;
 };
 
 /******************************************************************************/
@@ -181,7 +184,8 @@ class Max_star_angle
   Max_star_angle(Triangulation_2 const&);
 
   /// Operator to compute maximum star angle.
-  double operator()(typename Triangulation_2::Vertex_handle) const;
+  typename Triangulation_2::Traits::FT
+    operator()(typename Triangulation_2::Vertex_handle) const;
 };
 
 /******************************************************************************/
@@ -212,7 +216,8 @@ class Min_star_angle
     \pre The Vertex_handle provided to the operator must be associated with
     the `Triangulation_2` provided on construction.
   */
-  double operator()(typename Triangulation_2::Vertex_handle) const;
+  typename Triangulation_2::Traits::FT
+    operator()(typename Triangulation_2::Vertex_handle) const;
 };
 
 /******************************************************************************/
@@ -358,7 +363,7 @@ class angle;
 // implementation for primary template.
 
 template <typename Tr_2>
-Degree<Tr_2>::degree()
+Degree<Tr_2>::Degree()
 {
 }
 
@@ -382,7 +387,7 @@ class Dual_area<Triangulation_2, Finite_test_tag>
   const Triangulation_2& tr;
 
  public:
-  typedef double result_type;
+  typedef typename Triangulation_2::Traits::FT result_type;
 
   Dual_area(const Triangulation_2& tr) : tr(tr)
   {
@@ -416,7 +421,7 @@ class Dual_area<Triangulation_2, No_finite_test_tag>
   const Triangulation_2& tr;
 
  public:
-  typedef double result_type;
+  typedef typename Triangulation_2::Traits::FT result_type;
 
   // We need a reference to the triangulation to compute this property.
   Dual_area(const Triangulation_2& tr) : tr(tr)
@@ -452,7 +457,7 @@ class Star_area<Triangulation_2, Finite_test_tag>
   area<Triangulation_2, Finite_test_tag> area_functor;
 
  public:
-  typedef double result_type;
+  typedef typename Triangulation_2::Traits::FT result_type;
 
   Star_area(const Triangulation_2& tr) : tr(tr), area_functor(tr)
   {
@@ -484,7 +489,7 @@ class Star_area<Triangulation_2, No_finite_test_tag>
   Area<Triangulation_2, No_finite_test_tag> area_functor;
 
  public:
-  typedef double result_type;
+  typedef typename Triangulation_2::Traits::FT result_type;
 
   typedef typename Triangulation_2::Face_circulator Face_circulator;
   Star_area(const Triangulation_2& tr) : tr(tr)
@@ -517,10 +522,10 @@ class Link_length<Triangulation_2, Finite_test_tag>
   typedef typename Triangulation_2::Face_circulator Face_circulator;
 
   const Triangulation_2& tr;
-  length<Triangulation_2> length_functor;
+  Length<Triangulation_2> length_functor;
 
  public:
-  typedef double result_type;
+  typedef typename Triangulation_2::Traits::FT result_type;
 
   Link_length(const Triangulation_2& tr) : tr(tr), length_functor(tr)
   {
@@ -552,7 +557,7 @@ class Link_length<Triangulation_2, No_finite_test_tag>
   Length<Triangulation_2, No_finite_test_tag> Length_functor;
 
  public:
-  typedef double result_type;
+  typedef typename Triangulation_2::Traits::FT result_type;
 
   Link_length(const Triangulation_2& tr) : tr(tr)
   {
@@ -585,9 +590,9 @@ class Max_star_angle<Triangulation_2, Finite_test_tag>
   Angle<Triangulation_2, Finite_test_tag> angle_functor;
 
  public:
-  typedef double result_type;
+  typedef typename Triangulation_2::Traits::FT result_type;
 
-  max_star_angle(const Triangulation_2& tr) : tr(tr), angle_functor(tr)
+  Max_star_angle(const Triangulation_2& tr) : tr(tr), angle_functor(tr)
   {
   }
 
@@ -620,7 +625,7 @@ class Max_star_angle<Triangulation_2, No_finite_test_tag>
   Angle<Triangulation_2, No_finite_test_tag> angle_functor;
 
  public:
-  typedef double result_type;
+  typedef typename Triangulation_2::Traits::FT result_type;
 
   Max_star_angle(const Triangulation_2& tr) : tr(tr)
   {
@@ -655,7 +660,7 @@ class Min_star_angle<Triangulation_2, Finite_test_tag>
   angle<Triangulation_2, Finite_test_tag> angle_functor;
 
  public:
-  typedef double result_type;
+  typedef typename Triangulation_2::Traits::FT result_type;
 
   Min_star_angle(const Triangulation_2& tr) : tr(tr), angle_functor(tr)
   {
@@ -689,7 +694,7 @@ class Min_star_angle<Triangulation_2, No_finite_test_tag>
   Angle<Triangulation_2, No_finite_test_tag> angle_functor;
 
  public:
-  typedef double result_type;
+  typedef typename Triangulation_2::Traits::FT result_type;
 
   typedef typename Triangulation_2::Face_circulator Face_circulator;
   Min_star_angle(const Triangulation_2& tr) : tr(tr)
