@@ -29,8 +29,11 @@
 
 #include <CGAL/basic.h>
 #include <CGAL/config.h>
+#include <CGAL/metafunctions.h> // For statistics functions.
+#include <CGAL/iterator.h>      // No_deref_iterator
 #include <algorithm>
 #include <iosfwd>
+#include <cmath>
 
 #ifdef CGAL_CFG_NO_CPP0X_NEXT_PREV
 #  include <boost/next_prior.hpp>
@@ -360,6 +363,174 @@ output_range(std::ostream& os,
         while (++it != beyond) os << sep << pre << oformat(*it) << post;
     }
     return os;
+}
+
+namespace internal // Used for statistics algorithms
+{
+
+template <typename Function, typename Iterator>
+typename boost::enable_if< 
+  boost::mpl::not_< do_dereference<Function,Iterator> >, 
+  Iterator
+>::type
+conditional_dereference(Iterator i)
+{
+  return i;
+}
+
+template <typename Function, typename Iterator>
+typename boost::enable_if< 
+  do_dereference<Function,Iterator>, 
+  typename std::iterator_traits<Iterator>::value_type
+>::type
+conditional_dereference(Iterator i)
+{
+  return *i;
+}
+
+}  // anonymous namespace.
+
+template <typename Iterator, typename Function>
+double mean_result(Iterator begin, Iterator end, Function f)
+{
+  typename std::iterator_traits<Iterator>::difference_type count = 0;
+  double sum = 0.;
+
+  for (; begin != end; ++begin, ++count)
+    sum += f( internal::conditional_dereference<Function>(begin) );
+
+  return sum / double(count);
+}
+
+template <typename Iterator, typename Function>
+#ifdef DOXYGEN_RUNNING
+unspecified_type
+#else
+typename internal::get_result_type<Function, Iterator>::type
+#endif
+    max_result(Iterator begin, Iterator end, Function f)
+{
+  typedef typename internal::get_result_type<Function, Iterator>::type
+      result_type;
+
+  // Set max to value of first element.
+  result_type max = f( internal::conditional_dereference<Function>(begin) );
+
+  for (++begin; begin != end; ++begin)
+  {
+    result_type value = f( internal::conditional_dereference<Function>(begin) );
+    if (value > max)
+      max = value;
+  }
+
+  return max;
+}
+
+template <typename Iterator, typename Function>
+#ifdef DOXYGEN_RUNNING
+unspecified_type
+#else
+typename internal::get_result_type<Function, Iterator>::type
+#endif
+    min_result(Iterator begin, Iterator end, Function f)
+{
+  typedef typename internal::get_result_type<Function, Iterator>::type
+      result_type;
+
+  // Set max to value of first element.
+  result_type min = f(internal::conditional_dereference<Function>(begin));
+
+  // Can we optimise-out the first function call?
+  for (++begin; begin != end; ++begin)
+  {
+    result_type value = f(internal::conditional_dereference<Function>(begin));
+    if (value < min)
+      min = value;
+  }
+
+  return min;
+}
+
+template <typename Iterator, typename Function, typename Limit>
+typename std::iterator_traits<Function>::difference_type
+    count_result_in_interval(Iterator begin,
+                             Iterator end,
+                             Function f,
+                             Limit min,
+                             Limit max)
+{
+  typedef typename internal::get_result_type<Function, Iterator>::type
+      result_type;
+  typename std::iterator_traits<Iterator>::difference_type count = 0;
+
+  for (; begin != end; ++begin)
+  {
+    result_type value = f(internal::conditional_dereference<Function>(begin));
+    if (min <= value && value <= max)
+      ++count;
+  }
+  return count;
+}
+
+template <typename Iterator,
+          typename Function_1,
+          typename Function_2>
+double pearson(Iterator begin,
+               Iterator end,
+               Function_1 f1,
+               Function_2 f2)
+{
+  typedef typename internal::get_result_type<Function_1, Iterator>::type
+      result_type_1;
+  typedef typename internal::get_result_type<Function_2, Iterator>::type
+      result_type_2;
+
+  std::vector<result_type_1> v_1;
+  std::vector<result_type_2> v_2;
+
+  // Compute values over all of the statistics we want.
+  std::transform(
+    CGAL::make_no_deref_iterator(begin), 
+    CGAL::make_no_deref_iterator(end), 
+    std::back_inserter(v_1),
+    f1
+  );
+
+  // We know how long v_1 should be now.
+  v_2.reserve(v_1.size());
+
+  std::transform(
+    CGAL::make_no_deref_iterator(begin), 
+    CGAL::make_no_deref_iterator(end), 
+    std::back_inserter(v_2), 
+    f2
+  );
+
+  typename std::vector<result_type_1>::size_type n = v_1.size();
+  double mean_1 = 0.;
+  double mean_2 = 0.;
+  double numerator = 0.;
+  double denominator_1 = 0.;
+  double denominator_2 = 0.;
+
+  // Compute means
+  for (unsigned i = 0; i != n; ++i)
+  {
+    mean_1 += v_1[i];
+    mean_2 += v_2[i];
+  }
+
+  mean_1 = mean_1 / n;
+  mean_2 = mean_2 / n;
+
+  for (int i = 0; i < n; i++)
+  {
+    numerator += (v_1[i] - mean_1) * (v_2[i] - mean_2);
+    denominator_1 += std::pow((v_1[i] - mean_1), 2);
+    denominator_2 += std::pow((v_2[i] - mean_2), 2);
+  }
+
+  return numerator / (std::sqrt(denominator_1) * std::sqrt(denominator_2));
 }
 
 } //namespace CGAL
