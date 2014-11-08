@@ -91,8 +91,8 @@ class Dual_area
     \pre The Vertex_handle provided to the operator must be associated with
     the `Triangulation_2` provided on construction.
   */
-  typename Triangulation_2::Traits::FT
-    operator()(typename Triangulation_2::Vertex_handle) const;
+  typename Triangulation_2::Traits::FT operator()(
+      typename Triangulation_2::Vertex_handle) const;
 };
 
 /******************************************************************************/
@@ -125,8 +125,8 @@ class Star_area
     \pre The Vertex_handle provided to the operator must be associated with
     the `Triangulation_2` provided on construction.
   */
-  typename Triangulation_2::Traits::FT
-    operator()(typename Triangulation_2::Vertex_handle) const;
+  typename Triangulation_2::Traits::FT operator()(
+      typename Triangulation_2::Vertex_handle) const;
 };
 
 /******************************************************************************/
@@ -147,7 +147,7 @@ class Star_area
 template <typename Triangulation_2, typename tag = Finite_test_tag>
 class Link_length
 {
-public:
+ public:
   /// Constructor.
   Link_length(Triangulation_2 const&);
 
@@ -157,8 +157,8 @@ public:
     \pre The Vertex_handle provided to the operator must be associated with the
     `Triangulation_2` provided on construction.
   */
-  typename Triangulation_2::Traits::FT
-    operator()(typename Triangulation_2::Vertex_handle) const;
+  typename Triangulation_2::Traits::FT operator()(
+      typename Triangulation_2::Vertex_handle) const;
 };
 
 /******************************************************************************/
@@ -184,8 +184,8 @@ class Max_star_angle
   Max_star_angle(Triangulation_2 const&);
 
   /// Operator to compute maximum star angle.
-  typename Triangulation_2::Traits::FT
-    operator()(typename Triangulation_2::Vertex_handle) const;
+  typename Triangulation_2::Traits::FT operator()(
+      typename Triangulation_2::Vertex_handle) const;
 };
 
 /******************************************************************************/
@@ -216,8 +216,8 @@ class Min_star_angle
     \pre The Vertex_handle provided to the operator must be associated with
     the `Triangulation_2` provided on construction.
   */
-  typename Triangulation_2::Traits::FT
-    operator()(typename Triangulation_2::Vertex_handle) const;
+  typename Triangulation_2::Traits::FT operator()(
+      typename Triangulation_2::Vertex_handle) const;
 };
 
 /******************************************************************************/
@@ -278,9 +278,8 @@ Max_star_angle<Triangulation_2, Finite_test_tag> make_max_star_angle(
 */
 
 template <typename Triangulation_2, typename tag>
-Link_length<Triangulation_2, tag> make_link_length(
-    const Triangulation_2& tr_2,
-    tag);
+Link_length<Triangulation_2, tag> make_link_length(const Triangulation_2& tr_2,
+                                                   tag);
 
 // Default implementation when no tag is provided.
 template <typename Triangulation_2>
@@ -300,7 +299,7 @@ Link_length<Triangulation_2, Finite_test_tag> make_link_length(
 
 template <typename Triangulation_2, typename tag>
 Star_area<Triangulation_2, tag> make_star_area(const Triangulation_2& tr_2,
-                                                       tag);
+                                               tag);
 
 template <typename Triangulation_2>
 Star_area<Triangulation_2, Finite_test_tag> make_star_area(
@@ -584,9 +583,9 @@ class Max_star_angle<Triangulation_2, Finite_test_tag>
 {
   typedef typename Triangulation_2::Vertex_handle Vertex_handle_;
   typedef typename Triangulation_2::Face_circulator Face_circulator_;
-  
+
   const Triangulation_2& tr;
-  
+
   Angle<Triangulation_2, Finite_test_tag> angle_functor;
 
  public:

@@ -46,7 +46,8 @@ namespace Triangulation_2
   no argument.
 
   @tparam Triangulation_2 The Triangulation type.
-  @tparam Tag either `CGAL::Properties::Finite_test_tag` or `CGAL::Properties::No_finite_test_tag`.
+  @tparam Tag either `CGAL::Properties::Finite_test_tag` or
+  `CGAL::Properties::No_finite_test_tag`.
 */
 
 template <typename Triangulation_2, typename Tag = Finite_test_tag>
@@ -62,8 +63,8 @@ class Length
     \pre The Vertex_handle provided to the operator must be associated with
     the `Triangulation_2` provided on construction.
   */
-  typename Triangulation_2::Traits::FT
-    operator()(typename Triangulation_2::Edge) const;
+  typename Triangulation_2::Traits::FT operator()(
+      typename Triangulation_2::Edge) const;
 };
 
 /******************************************************************************/
@@ -80,7 +81,8 @@ class Length
   requires no argument.
 
   @tparam Triangulation_2 The Triangulation type.
-  @tparam Tag either `CGAL::Properties::Finite_test_tag` or `CGAL::Properties::No_finite_test_tag`.
+  @tparam Tag either `CGAL::Properties::Finite_test_tag` or
+  `CGAL::Properties::No_finite_test_tag`.
 */
 
 template <typename Triangulation_2, typename Tag = Finite_test_tag>
@@ -96,8 +98,8 @@ class Neighbor_area
     \pre The Vertex_handle provided to the operator must be associated with
     the `Triangulation_2` provided on construction.
   */
-  typename Triangulation_2::Traits::FT 
-    operator()(typename Triangulation_2::Edge) const;
+  typename Triangulation_2::Traits::FT operator()(
+      typename Triangulation_2::Edge) const;
 };
 
 /******************************************************************************/
@@ -117,7 +119,8 @@ class Neighbor_area
   which case the constructor requires no argument.
 
   @tparam Triangulation_2 The Triangulation type.
-  @tparam Tag either `CGAL::Properties::Finite_test_tag` or `CGAL::Properties::No_finite_test_tag`.
+  @tparam Tag either `CGAL::Properties::Finite_test_tag` or
+  `CGAL::Properties::No_finite_test_tag`.
 */
 
 template <typename Triangulation_2, typename Tag = Finite_test_tag>
@@ -133,8 +136,8 @@ class Dual_length
     \pre The Vertex_handle provided to the operator must be associated with
     the `Triangulation_2` provided on construction.
   */
-  typename Triangulation_2::Traits::FT 
-    operator()(typename Triangulation_2::Edge) const;
+  typename Triangulation_2::Traits::FT operator()(
+      typename Triangulation_2::Edge) const;
 };
 
 /******************************************************************************/
@@ -149,11 +152,11 @@ class Dual_length
   @param  tr_2  The Triangulation_2 to be associated with the
           functor.
   @tparam Triangulation_2 The Triangulation_2 type.
-  @tparam Tag either `CGAL::Properties::Finite_test_tag` or `CGAL::Properties::No_finite_test_tag`.
+  @tparam Tag either `CGAL::Properties::Finite_test_tag` or
+  `CGAL::Properties::No_finite_test_tag`.
 */
 template <typename Triangulation_2, typename Tag>
-Length<Triangulation_2, Tag> make_length(const Triangulation_2& tr_2,
-                                                 Tag);
+Length<Triangulation_2, Tag> make_length(const Triangulation_2& tr_2, Tag);
 template <typename Triangulation_2>
 Length<Triangulation_2, Finite_test_tag> make_length(
     const Triangulation_2& tr_2);
@@ -166,7 +169,8 @@ Length<Triangulation_2, Finite_test_tag> make_length(
   @param  tr_2            The Triangulation_2 to be associated with the
                        functor.
   @tparam Triangulation_2 The Triangulation_2 type.
-  @tparam Tag either `CGAL::Properties::Finite_test_tag` or `CGAL::Properties::No_finite_test_tag`.
+  @tparam Tag either `CGAL::Properties::Finite_test_tag` or
+  `CGAL::Properties::No_finite_test_tag`.
 */
 template <typename Triangulation_2, typename Tag>
 Neighbor_area<Triangulation_2, Tag> make_neighbor_area(
@@ -184,12 +188,12 @@ Neighbor_area<Triangulation_2, Finite_test_tag> make_neighbor_area(
   @param  tr_2            The Triangulation_2 to be associated with the
                           functor.
   @tparam Triangulation_2 The Triangulation_2 type.
-  @tparam Tag either `CGAL::Properties::Finite_test_tag` or `CGAL::Properties::No_finite_test_tag`.
+  @tparam Tag either `CGAL::Properties::Finite_test_tag` or
+  `CGAL::Properties::No_finite_test_tag`.
 */
 template <typename Triangulation_2, typename Tag>
-Dual_length<Triangulation_2, Tag> make_dual_length(
-    const Triangulation_2& tr_2,
-    Tag);
+Dual_length<Triangulation_2, Tag> make_dual_length(const Triangulation_2& tr_2,
+                                                   Tag);
 
 template <typename Triangulation_2>
 Dual_length<Triangulation_2, CGAL::Properties::Finite_test_tag>
@@ -257,7 +261,7 @@ class Length<Triangulation_2, No_finite_test_tag>
   typedef typename Triangulation_2::Face_handle Face_handle_;
   typedef typename Triangulation_2::Vertex_handle Vertex_handle_;
 
-public:
+ public:
   typedef typename Triangulation_2::Traits::FT result_type;
 
   double operator()(typename Triangulation_2::Edge e) const
@@ -312,7 +316,7 @@ template <typename Triangulation_2>
 class Neighbor_area<Triangulation_2, No_finite_test_tag>
 {
   typedef typename Triangulation_2::Face_handle Face_handle_;
-  
+
   Area<Triangulation_2, No_finite_test_tag> area_functor;
 
  public:
@@ -393,7 +397,7 @@ class Dual_length<Triangulation_2, No_finite_test_tag>
 {
   typedef typename Triangulation_2::Face_handle Face_handle_;
 
-public:
+ public:
   typedef typename Triangulation_2::Traits::FT result_type;
 
   double operator()(typename Triangulation_2::Edge e) const

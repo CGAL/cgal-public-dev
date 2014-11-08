@@ -45,7 +45,8 @@ namespace Triangulation_2
   In this case, the constructor no longer takes any arguments.
 
   @tparam Triangulation_2 The Triangulation type.
-  @tparam Tag either `CGAL::Properties::Finite_test_tag` or `CGAL::Properties::No_finite_test_tag`.
+  @tparam Tag either `CGAL::Properties::Finite_test_tag` or
+  `CGAL::Properties::No_finite_test_tag`.
 */
 
 template <typename Triangulation_2, typename Tag = Finite_test_tag>
@@ -61,8 +62,8 @@ class Area
     \pre The Vertex_handle provided to the operator must be associated with
     the `Triangulation_2` provided on construction.
   */
-  typename Triangulation_2::Traits::FT 
-    operator()(typename Triangulation_2::Face_handle) const;
+  typename Triangulation_2::Traits::FT operator()(
+      typename Triangulation_2::Face_handle) const;
 };
 
 /******************************************************************************/
@@ -78,7 +79,8 @@ class Area
   In this case, the constructor no longer takes any arguments.
 
   @tparam Triangulation_2 The Triangulation type.
-  @tparam Tag either `CGAL::Properties::Finite_test_tag` or `CGAL::Properties::No_finite_test_tag`.
+  @tparam Tag either `CGAL::Properties::Finite_test_tag` or
+  `CGAL::Properties::No_finite_test_tag`.
 */
 template <typename Triangulation_2, typename Tag = Finite_test_tag>
 class Aspect_ratio
@@ -93,8 +95,8 @@ class Aspect_ratio
     \pre The Vertex_handle provided to the operator must be associated with
     the `Triangulation_2` provided on construction.
   */
-  typename Triangulation_2::Traits::FT 
-    operator()(typename Triangulation_2::Face_handle) const;
+  typename Triangulation_2::Traits::FT operator()(
+      typename Triangulation_2::Face_handle) const;
 };
 
 /******************************************************************************/
@@ -110,7 +112,8 @@ class Aspect_ratio
   In this case, the constructor no longer takes any arguments.
 
   @tparam Triangulation_2 The Triangulation type.
-  @tparam Tag either `CGAL::Properties::Finite_test_tag` or `CGAL::Properties::No_finite_test_tag`.
+  @tparam Tag either `CGAL::Properties::Finite_test_tag` or
+  `CGAL::Properties::No_finite_test_tag`.
 */
 template <typename Triangulation_2, typename Tag = Finite_test_tag>
 class Circumradius
@@ -125,8 +128,8 @@ class Circumradius
     \pre The Vertex_handle provided to the operator must be associated with
     the `Triangulation_2` provided on construction.
   */
-  typename Triangulation_2::Traits::FT 
-    operator()(typename Triangulation_2::Face_handle) const;
+  typename Triangulation_2::Traits::FT operator()(
+      typename Triangulation_2::Face_handle) const;
 };
 
 /******************************************************************************/
@@ -139,7 +142,8 @@ class Circumradius
   In this case, the constructor no longer takes any arguments.
 
   @tparam Triangulation_2 The Triangulation type.
-  @tparam Tag either `CGAL::Properties::Finite_test_tag` or `CGAL::Properties::No_finite_test_tag`.
+  @tparam Tag either `CGAL::Properties::Finite_test_tag` or
+  `CGAL::Properties::No_finite_test_tag`.
 */
 
 template <typename Triangulation_2, typename Tag = Finite_test_tag>
@@ -157,8 +161,9 @@ class Angle
 
     \pre The index provided must be either 0, 1 or 2.
   */
-  typename Triangulation_2::Traits::FT
-    operator()(typename Triangulation_2::Face_handle, unsigned) const;
+  typename Triangulation_2::Traits::FT operator()(
+      typename Triangulation_2::Face_handle,
+      unsigned) const;
 };
 
 /******************************************************************************/
@@ -174,7 +179,8 @@ class Angle
   In this case, the constructor no longer takes any arguments.
 
   @tparam Triangulation_2 The Triangulation type.
-  @tparam Tag either `CGAL::Properties::Finite_test_tag` or `CGAL::Properties::No_finite_test_tag`.
+  @tparam Tag either `CGAL::Properties::Finite_test_tag` or
+  `CGAL::Properties::No_finite_test_tag`.
 */
 
 template <typename Triangulation_2, typename Tag = Finite_test_tag>
@@ -190,8 +196,8 @@ class Min_angle
     \pre The Vertex_handle provided to the operator must be associated with
     the `Triangulation_2` provided on construction.
   */
-  typename Triangulation_2::Traits::FT
-    operator()(typename Triangulation_2::Face_handle) const;
+  typename Triangulation_2::Traits::FT operator()(
+      typename Triangulation_2::Face_handle) const;
 };
 
 /******************************************************************************/
@@ -207,7 +213,8 @@ class Min_angle
   In this case, the constructor no longer takes any arguments.
 
   @tparam Triangulation_2 The Triangulation type.
-  @tparam Tag either `CGAL::Properties::Finite_test_tag` or `CGAL::Properties::No_finite_test_tag`.
+  @tparam Tag either `CGAL::Properties::Finite_test_tag` or
+  `CGAL::Properties::No_finite_test_tag`.
 */
 
 template <typename Triangulation_2, typename Tag = Finite_test_tag>
@@ -223,8 +230,8 @@ class Max_angle
     \pre The Vertex_handle provided to the operator must be associated with
     the `Triangulation_2` provided on construction.
   */
-  typename Triangulation_2::Traits::FT
-    operator()(typename Triangulation_2::Face_handle) const;
+  typename Triangulation_2::Traits::FT operator()(
+      typename Triangulation_2::Face_handle) const;
 };
 
 /******************************************************************************/
@@ -240,7 +247,8 @@ class Max_angle
   In this case, the constructor no longer takes any arguments.
 
   @tparam Triangulation_2 The Triangulation type.
-  @tparam Tag either `CGAL::Properties::Finite_test_tag` or `CGAL::Properties::No_finite_test_tag`.
+  @tparam Tag either `CGAL::Properties::Finite_test_tag` or
+  `CGAL::Properties::No_finite_test_tag`.
 */
 template <typename Triangulation_2, typename Tag = Finite_test_tag>
 class Min_edge_length
@@ -255,8 +263,8 @@ class Min_edge_length
     \pre The Vertex_handle provided to the operator must be associated with
     the `Triangulation_2` provided on construction.
   */
-  typename Triangulation_2::Traits::FT
-    operator()(typename Triangulation_2::Face_handle) const;
+  typename Triangulation_2::Traits::FT operator()(
+      typename Triangulation_2::Face_handle) const;
 };
 
 /******************************************************************************/
@@ -273,7 +281,8 @@ class Min_edge_length
   In this case, the constructor no longer takes any arguments.
 
   @tparam Triangulation_2 The Triangulation type.
-  @tparam Tag either `CGAL::Properties::Finite_test_tag` or `CGAL::Properties::No_finite_test_tag`.
+  @tparam Tag either `CGAL::Properties::Finite_test_tag` or
+  `CGAL::Properties::No_finite_test_tag`.
 */
 
 template <typename Triangulation_2, typename Tag = Finite_test_tag>
@@ -289,8 +298,8 @@ class Max_edge_length
     \pre The Vertex_handle provided to the operator must be associated with
     the `Triangulation_2` provided on construction.
   */
-  typename Triangulation_2::Traits::FT
-    operator()(typename Triangulation_2::Face_handle) const;
+  typename Triangulation_2::Traits::FT operator()(
+      typename Triangulation_2::Face_handle) const;
 };
 
 /******************************************************************************/
@@ -304,15 +313,15 @@ class Max_edge_length
   handles.
 
   @tparam Triangulation_2 The Triangulation_2 type.
-  @tparam Tag either `CGAL::Properties::Finite_test_tag` or `CGAL::Properties::No_finite_test_tag`.
+  @tparam Tag either `CGAL::Properties::Finite_test_tag` or
+  `CGAL::Properties::No_finite_test_tag`.
 */
 
 template <typename Triangulation_2, typename Tag>
 Area<Triangulation_2, Tag> make_area(const Triangulation_2&, Tag);
 
 template <typename Triangulation_2>
-Area<Triangulation_2, No_finite_test_tag> make_area(
-    const Triangulation_2&);
+Area<Triangulation_2, No_finite_test_tag> make_area(const Triangulation_2&);
 
 /******************************************************************************/
 
@@ -321,13 +330,13 @@ Area<Triangulation_2, No_finite_test_tag> make_area(
   Face handles.
 
   @tparam Triangulation_2 The Triangulation_2 type.
-  @tparam Tag either `CGAL::Properties::Finite_test_tag` or `CGAL::Properties::No_finite_test_tag`.
+  @tparam Tag either `CGAL::Properties::Finite_test_tag` or
+  `CGAL::Properties::No_finite_test_tag`.
 */
 
 template <typename Triangulation_2, typename Tag>
-Circumradius<Triangulation_2, Tag> make_circumradius(
-    const Triangulation_2&,
-    Tag);
+Circumradius<Triangulation_2, Tag> make_circumradius(const Triangulation_2&,
+                                                     Tag);
 
 template <typename Triangulation_2>
 Circumradius<Triangulation_2, Finite_test_tag> make_circumradius(
@@ -340,13 +349,13 @@ Circumradius<Triangulation_2, Finite_test_tag> make_circumradius(
   Face handles.
 
   @tparam Triangulation_2 The Triangulation_2 type.
-  @tparam Tag either `CGAL::Properties::Finite_test_tag` or `CGAL::Properties::No_finite_test_tag`.
+  @tparam Tag either `CGAL::Properties::Finite_test_tag` or
+  `CGAL::Properties::No_finite_test_tag`.
 */
 
 template <typename Triangulation_2, typename Tag>
-Aspect_ratio<Triangulation_2, Tag> make_aspect_ratio(
-    const Triangulation_2&,
-    Tag);
+Aspect_ratio<Triangulation_2, Tag> make_aspect_ratio(const Triangulation_2&,
+                                                     Tag);
 
 template <typename Triangulation_2, typename Tag>
 Aspect_ratio<Triangulation_2, Finite_test_tag> make_aspect_ratio(
@@ -359,7 +368,8 @@ Aspect_ratio<Triangulation_2, Finite_test_tag> make_aspect_ratio(
   Face handles.
 
   @tparam Triangulation_2 The Triangulation_2 type.
-  @tparam Tag either `CGAL::Properties::Finite_test_tag` or `CGAL::Properties::No_finite_test_tag`.
+  @tparam Tag either `CGAL::Properties::Finite_test_tag` or
+  `CGAL::Properties::No_finite_test_tag`.
 */
 
 template <typename Triangulation_2, typename Tag>
@@ -378,7 +388,8 @@ Min_edge_length<Triangulation_2, Finite_test_tag> make_min_edge_length(
   Face handles.
 
   @tparam Triangulation_2 The Triangulation_2 type.
-  @tparam Tag either `CGAL::Properties::Finite_test_tag` or `CGAL::Properties::No_finite_test_tag`.
+  @tparam Tag either `CGAL::Properties::Finite_test_tag` or
+  `CGAL::Properties::No_finite_test_tag`.
 */
 
 template <typename Triangulation_2, typename Tag>
@@ -397,12 +408,12 @@ Max_edge_length<Triangulation_2, Finite_test_tag> make_max_edge_length(
   handles.
 
   @tparam Triangulation_2 The Triangulation_2 type.
-  @tparam Tag either `CGAL::Properties::Finite_test_tag` or `CGAL::Properties::No_finite_test_tag`.
+  @tparam Tag either `CGAL::Properties::Finite_test_tag` or
+  `CGAL::Properties::No_finite_test_tag`.
 */
 
 template <typename Triangulation_2, typename Tag>
-Min_angle<Triangulation_2, Tag> make_min_angle(const Triangulation_2&,
-                                                       Tag);
+Min_angle<Triangulation_2, Tag> make_min_angle(const Triangulation_2&, Tag);
 
 template <typename Triangulation_2>
 Min_angle<Triangulation_2, Finite_test_tag> make_min_angle(
@@ -415,12 +426,12 @@ Min_angle<Triangulation_2, Finite_test_tag> make_min_angle(
   handles.
 
   @tparam Triangulation_2 The Triangulation_2 type.
-  @tparam Tag either `CGAL::Properties::Finite_test_tag` or `CGAL::Properties::No_finite_test_tag`.
+  @tparam Tag either `CGAL::Properties::Finite_test_tag` or
+  `CGAL::Properties::No_finite_test_tag`.
 */
 
 template <typename Triangulation_2, typename Tag>
-Max_angle<Triangulation_2, Tag> make_max_angle(const Triangulation_2&,
-                                                       Tag);
+Max_angle<Triangulation_2, Tag> make_max_angle(const Triangulation_2&, Tag);
 
 template <typename Triangulation_2>
 Max_angle<Triangulation_2, Finite_test_tag> make_max_angle(
@@ -585,7 +596,7 @@ class Aspect_ratio<Triangulation_2, Finite_test_tag>
   const Triangulation_2& tr;
 
  public:
-  typedef typename Triangulation_2::Traits::FT  result_type;
+  typedef typename Triangulation_2::Traits::FT result_type;
   typedef typename Triangulation_2::Face_handle argument_type;
 
   Aspect_ratio(const Triangulation_2& tr) : tr(tr)
@@ -971,9 +982,8 @@ class Max_edge_length<Triangulation_2, No_finite_test_tag>
 /******************************************************************************/
 
 template <typename Triangulation_2, typename finite_test_tag>
-Area<Triangulation_2, finite_test_tag> make_area(
-    const Triangulation_2& tr_2,
-    finite_test_tag)
+Area<Triangulation_2, finite_test_tag> make_area(const Triangulation_2& tr_2,
+                                                 finite_test_tag)
 {
   return Area<Triangulation_2, finite_test_tag>(tr_2);
 }
@@ -1009,9 +1019,9 @@ Circumradius<Triangulation_2, CGAL::Properties::Finite_test_tag>
 /******************************************************************************/
 
 template <typename Triangulation_2>
-Aspect_ratio<Triangulation_2, CGAL::Properties::No_finite_test_tag> make_aspect_ratio(
-    const Triangulation_2& tr_2,
-    CGAL::Properties::No_finite_test_tag)
+Aspect_ratio<Triangulation_2, CGAL::Properties::No_finite_test_tag>
+    make_aspect_ratio(const Triangulation_2& tr_2,
+                      CGAL::Properties::No_finite_test_tag)
 {
   return Aspect_ratio<Triangulation_2, CGAL::Properties::No_finite_test_tag>();
 }
@@ -1019,8 +1029,7 @@ Aspect_ratio<Triangulation_2, CGAL::Properties::No_finite_test_tag> make_aspect_
 /******************************************************************************/
 
 template <typename Triangulation_2>
-Aspect_ratio<Triangulation_2>
-    make_aspect_ratio(const Triangulation_2& tr_2)
+Aspect_ratio<Triangulation_2> make_aspect_ratio(const Triangulation_2& tr_2)
 {
   return Aspect_ratio<Triangulation_2>(tr_2);
 }
@@ -1078,8 +1087,8 @@ Min_angle<Triangulation_2, finite_test_tag> make_min_angle(
 /******************************************************************************/
 
 template <typename Triangulation_2>
-Min_angle<Triangulation_2, CGAL::Properties::Finite_test_tag>
-    make_min_angle(const Triangulation_2& tr_2)
+Min_angle<Triangulation_2, CGAL::Properties::Finite_test_tag> make_min_angle(
+    const Triangulation_2& tr_2)
 {
   return Min_angle<Triangulation_2, CGAL::Properties::Finite_test_tag>(tr_2);
 }
@@ -1097,8 +1106,8 @@ Max_angle<Triangulation_2, finite_test_tag> make_max_angle(
 /******************************************************************************/
 
 template <typename Triangulation_2>
-Max_angle<Triangulation_2, CGAL::Properties::Finite_test_tag>
-    make_max_angle(const Triangulation_2& tr_2)
+Max_angle<Triangulation_2, CGAL::Properties::Finite_test_tag> make_max_angle(
+    const Triangulation_2& tr_2)
 {
   return Max_angle<Triangulation_2, CGAL::Properties::Finite_test_tag>(tr_2);
 }
