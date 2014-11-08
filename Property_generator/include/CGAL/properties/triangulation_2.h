@@ -25,12 +25,12 @@ triangulations.
 
 The function objects in this namespace are provided to compute common properties
 of 2D triangulations. In general, they are intended for statistics purposes, and
-so the values computed are guaranteed only up to double accuracy.
+so the values computed are computed using double approximations when required.
 
 By default, the implementations have been written to deal sensibly with input
 that may contain infinite vertices. Thus, by default they will perform infinite
 tests which may be unnecesary if the user can guarantee that the input is
-finite. Tags are provided to disbale these tests if required.
+finite. Tags are provided to disbale these tests if required. 
 
 @}
 

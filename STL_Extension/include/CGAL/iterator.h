@@ -2479,6 +2479,44 @@ dispatch_or_drop_output(O1 out1,O2 out2,O3 out3,O4 out4,O5 out5,O6 out6,O7 out7)
 
 #endif
 
+template <typename Iterator>
+class No_deref_iterator
+#ifndef DOXYGEN_RUNNING
+  : public boost::iterator_adaptor<
+        No_deref_iterator<Iterator>      // Derived
+      , Iterator                       // Base
+      , Iterator                       // Value
+      , boost::forward_traversal_tag   // Traversal type
+      , Iterator                       // Reference
+    >
+#endif
+{
+ private:
+    struct enabler {};
+
+ public:
+    No_deref_iterator()
+        : No_deref_iterator::iterator_adaptor_(0) {}
+
+    explicit No_deref_iterator(const Iterator it)
+        : No_deref_iterator::iterator_adaptor_(it) {}
+
+ private:
+    friend class boost::iterator_core_access;
+ 
+    typename No_deref_iterator::reference
+    dereference()
+    const
+    {
+        return this->base();
+    }
+};
+
+template<typename T>
+inline No_deref_iterator<T> make_no_deref_iterator(T const& iterator){
+    return No_deref_iterator<T>(iterator);
+}
+
 } //namespace CGAL
 
 #if defined(BOOST_MSVC)

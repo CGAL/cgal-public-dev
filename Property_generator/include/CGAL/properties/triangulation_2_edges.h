@@ -37,11 +37,14 @@ namespace Triangulation_2
 /******************************************************************************/
 
 /*!
-  Function object to compute the length of a `Triangulation_2` `Edge`.
+  Function object to compute the approximate length of an edge to double
+  accuracy.
 
   By default the function object checks that the supporting vertices of the edge
-  are both finite, returning `std::numeric_limits<double>::infinity()`
-  otherwise. This cehcking may be disabled by providing the tag
+  are both finite, returning
+  `Triangulation_2::Geom_traits::FT(std::numeric_limits<double>::infinity())`
+  when the edge is infinite (and so this expression must be valid.) This
+  checking can be disabled by supplying the tag
   `CGAL::Properties::No_finite_test_tag`, in which case the constructor requires
   no argument.
 
@@ -63,22 +66,24 @@ class Length
     \pre The Vertex_handle provided to the operator must be associated with
     the `Triangulation_2` provided on construction.
   */
-  typename Triangulation_2::Traits::FT operator()(
+  typename Triangulation_2::Geom_traits::FT operator()(
       typename Triangulation_2::Edge) const;
 };
 
 /******************************************************************************/
 
 /*!
-  Function object to compute the neighbor area of a `Triangulation_2` `Edge`.
-
+  Function object to compute the neighbor area of an edge.
   We define the neighbor area to be the sum of the areas of the two triangular
   faces incident to the given edge.
 
-  By default the function object checks that the adjacent faces are both finite,
-  returning infinity if not. This checking can be disabled by supplying the tag
-  `CGAL::Properties::No_finite_test_tag`, in which case the constructor
-  requires no argument.
+  By default the function object checks that the adjacent faces are
+  are both finite, returning
+  `Triangulation_2::Geom_traits::FT(std::numeric_limits<double>::infinity())`
+  if not (and so this expression must be valid.) This
+  checking can be disabled by supplying the tag
+  `CGAL::Properties::No_finite_test_tag`, in which case the constructor requires
+  no argument.
 
   @tparam Triangulation_2 The Triangulation type.
   @tparam Tag either `CGAL::Properties::Finite_test_tag` or
@@ -98,25 +103,28 @@ class Neighbor_area
     \pre The Vertex_handle provided to the operator must be associated with
     the `Triangulation_2` provided on construction.
   */
-  typename Triangulation_2::Traits::FT operator()(
+  typename Triangulation_2::Geom_traits::FT operator()(
       typename Triangulation_2::Edge) const;
 };
 
 /******************************************************************************/
 
 /*!
-  Function object to compute the dual length of a Triangulation_2 Edge.
-
-  We define the dual length to be the length of the line segment between
-  the circumcenters of the two triangular faces adjacent to this edge.
+  Function object to compute the approximate dual length of an edge, to double
+  accuracy. We define the dual length to be the length of the line segment
+  between the circumcenters of the two triangular faces adjacent to this edge.
 
   \note
   Iterating over finite edges in a Triangulation_2 will always result in
   infinite dual edges.
 
-  By default the functor checks for finiteness, but this checking can be
-  disabled by supplying the tag `CGAL::Properties::No_finite_test_tag`, in
-  which case the constructor requires no argument.
+  By default the function object checks for finiteness of the adjacent faces,
+  returning
+  `Triangulation_2::Geom_traits::FT(std::numeric_limits<double>::infinity())`
+  when one of them is infinite (and so this expression must be valid.) This
+  checking can be disabled by supplying the tag
+  `CGAL::Properties::No_finite_test_tag`, in which case the constructor requires
+  no argument.
 
   @tparam Triangulation_2 The Triangulation type.
   @tparam Tag either `CGAL::Properties::Finite_test_tag` or
@@ -136,7 +144,7 @@ class Dual_length
     \pre The Vertex_handle provided to the operator must be associated with
     the `Triangulation_2` provided on construction.
   */
-  typename Triangulation_2::Traits::FT operator()(
+  typename Triangulation_2::Geom_traits::FT operator()(
       typename Triangulation_2::Edge) const;
 };
 
@@ -147,7 +155,8 @@ class Dual_length
 /******************************************************************************/
 
 /*!
-  Construct a functor to compute edge lengths.
+  Construct a functor to compute edge lengths. The tag is optional and defaults
+  to `Finite_test_tag`.
 
   @param  tr_2  The Triangulation_2 to be associated with the
           functor.
@@ -164,7 +173,8 @@ Length<Triangulation_2, Finite_test_tag> make_length(
 /******************************************************************************/
 
 /*!
-  Construct a functor to compute the neighbor area of an edge.
+  Construct a functor to compute the neighbor area of an edge. The tag is
+  optional and defaults to `Finite_test_tag`.
 
   @param  tr_2            The Triangulation_2 to be associated with the
                        functor.
@@ -229,7 +239,7 @@ class Length<Triangulation_2, Finite_test_tag>
   const Triangulation_2& tr;
 
  public:
-  typedef typename Triangulation_2::Traits::FT result_type;
+  typedef typename Triangulation_2::Geom_traits::FT result_type;
 
   Length(const Triangulation_2& tr) : tr(tr) {};
 
@@ -248,7 +258,7 @@ class Length<Triangulation_2, Finite_test_tag>
     if (tr.is_infinite(v2))
       return std::numeric_limits<double>::infinity();
 
-    return std::sqrt((v1->point() - v2->point()).squared_length());
+    return std::sqrt(to_double((v1->point() - v2->point()).squared_length()));
   }
 };
 
@@ -262,18 +272,19 @@ class Length<Triangulation_2, No_finite_test_tag>
   typedef typename Triangulation_2::Vertex_handle Vertex_handle_;
 
  public:
-  typedef typename Triangulation_2::Traits::FT result_type;
+  typedef typename Triangulation_2::Geom_traits::FT result_type;
 
-  double operator()(typename Triangulation_2::Edge e) const
+  result_type operator()(typename Triangulation_2::Edge e) const
   {
     return operator()(e.first, e.second);
   }
-  double operator()(Face_handle_ f, unsigned short i) const
+
+  result_type operator()(Face_handle_ f, unsigned short i) const
   {
 
     Vertex_handle_ v1 = f->vertex(f->cw(i));
     Vertex_handle_ v2 = f->vertex(f->ccw(i));
-    return std::sqrt((v1->point() - v2->point()).squared_length());
+    return std::sqrt(to_double((v1->point() - v2->point()).squared_length()));
   }
 };
 
@@ -291,7 +302,7 @@ class Neighbor_area<Triangulation_2, Finite_test_tag>
   Area<Triangulation_2, Finite_test_tag> area_functor;
 
  public:
-  typedef typename Triangulation_2::Traits::FT result_type;
+  typedef typename Triangulation_2::Geom_traits::FT result_type;
 
   Neighbor_area(const Triangulation_2& tr) : tr(tr), area_functor(tr)
   {
@@ -320,13 +331,13 @@ class Neighbor_area<Triangulation_2, No_finite_test_tag>
   Area<Triangulation_2, No_finite_test_tag> area_functor;
 
  public:
-  typedef typename Triangulation_2::Traits::FT result_type;
+  typedef typename Triangulation_2::Geom_traits::FT result_type;
 
-  double operator()(typename Triangulation_2::Edge e) const
+  result_type operator()(typename Triangulation_2::Edge e) const
   {
     return operator()(e.first, e.second);
   }
-  double operator()(Face_handle_ f, unsigned short i) const
+  result_type operator()(Face_handle_ f, unsigned short i) const
   {
     // NOTE: code is duplicated above.
     return area_functor(f) + area_functor(f->neighbor(i));
@@ -341,7 +352,7 @@ namespace
 // Internal funtion to compute circumradius.
 // We take two faces, as it makes the code slightly more efficient.
 template <typename Triangulation_2>
-static inline double dual_length_internal(
+static inline typename Triangulation_2::Geom_traits::FT dual_length_internal(
     const typename Triangulation_2::Face_handle& f1,
     const typename Triangulation_2::Face_handle& f2)
 {
@@ -373,7 +384,7 @@ class Dual_length<Triangulation_2, Finite_test_tag>
   const Triangulation_2& tr;
 
  public:
-  typedef typename Triangulation_2::Traits::FT result_type;
+  typedef typename Triangulation_2::Geom_traits::FT result_type;
 
   Dual_length(const Triangulation_2& tr) : tr(tr) {};
 
@@ -398,9 +409,9 @@ class Dual_length<Triangulation_2, No_finite_test_tag>
   typedef typename Triangulation_2::Face_handle Face_handle_;
 
  public:
-  typedef typename Triangulation_2::Traits::FT result_type;
+  typedef typename Triangulation_2::Geom_traits::FT result_type;
 
-  double operator()(typename Triangulation_2::Edge e) const
+  result_type operator()(typename Triangulation_2::Edge e) const
   {
     Face_handle_ f1 = e.first;
     Face_handle_ f2 = f1->neighbor(e.second);

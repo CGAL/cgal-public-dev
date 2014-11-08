@@ -8,6 +8,7 @@
 #include <CGAL/properties/tags.h>
 #include <CGAL/Polygon_2.h>
 #include <CGAL/properties/triangulation_2_faces.h>  // For face area and angles.
+#include <CGAL/number_utils.h>
 
 /******************************************************************************/
 
@@ -68,12 +69,11 @@ class Degree
   connecting up the circumcentres of the triangular faces adjacent to this
   vertex. This area coincides with the area of the Voronoi cell. If the
   `CGAL::Properties::No_finite_test` tag is not provided, the return value will
-  be `std::numeric_limits<double>::infinity()` if one of the neighboring faces
-  is infinite.
+  be `Kernel::FT(std::numeric_limits<double>::infinity())` (and so this
+  expression must be valid) if one of the neighboring faces is infinite.
 
-  If it is known that the result will always be finite, the
-  `CGAL::Properties::No_finite_test_tag` may be provided to disable tests. In
-  this case the function object may be constructed without an argument.
+  The `CGAL::Properties::No_finite_test_tag` may be provided to disable tests.
+  In this case the function object may be constructed without an argument.
 
   @tparam Triangulation_2 The Triangulation type.
 */
@@ -91,7 +91,7 @@ class Dual_area
     \pre The Vertex_handle provided to the operator must be associated with
     the `Triangulation_2` provided on construction.
   */
-  typename Triangulation_2::Traits::FT operator()(
+  typename Triangulation_2::Geom_traits::FT operator()(
       typename Triangulation_2::Vertex_handle) const;
 };
 
@@ -101,7 +101,9 @@ class Dual_area
   Function object to compute the star area of a vertex.
 
   We define the star area to be the sum of the areas of the triangular faces
-  that contain this vertex, or infinity if one of the vertices is infinite.
+  that contain this vertex,
+  `Kernel::FT(std::numeric_limits<double>::infinity())` (and so this expression
+  must be valid) if one of the neighboring faces is infinite.
 
   By default the function object checks for finite vertices, but this checking
   can be removed by supplying the tag `CGAL::Properties::No_finite_test` tag.
@@ -125,20 +127,21 @@ class Star_area
     \pre The Vertex_handle provided to the operator must be associated with
     the `Triangulation_2` provided on construction.
   */
-  typename Triangulation_2::Traits::FT operator()(
+  typename Triangulation_2::Geom_traits::FT operator()(
       typename Triangulation_2::Vertex_handle) const;
 };
 
 /******************************************************************************/
 
 /*!
-  Function object to compute the link length of a `Triangulation_2` vertex.
+  Function object to compute an approximation to the link length of a
+  `Triangulation_2` vertex to double accuracy.
 
   We define the link length to be the sum of the lengths of the edges not
-  incident to the input vertex, but on a triangular face containing it.
-
-  By default the function object checks for finite vertices, however this
-  checking may be removed by supplying the tag
+  incident to the input vertex, but on a triangular face containing it,
+  or `Kernel::FT(std::numeric_limits<double>::infinity())` (and so this
+  expression must be valid) if one of the neighboring edges is infinite.
+  This checking for infinite faces may be disabled by supplying the
   `CGAL::Properties::No_finite_test` tag.
 
   @tparam Triangulation_2 The Triangulation type.
@@ -157,20 +160,21 @@ class Link_length
     \pre The Vertex_handle provided to the operator must be associated with the
     `Triangulation_2` provided on construction.
   */
-  typename Triangulation_2::Traits::FT operator()(
+  typename Triangulation_2::Geom_traits::FT operator()(
       typename Triangulation_2::Vertex_handle) const;
 };
 
 /******************************************************************************/
 
 /*!
-  Function object to compute the maximum star angle of a vertex.
+  Function object to compute the approximate maximum star angle of a vertex
+  to double accuracy.
 
   We define the maximum star angle to be the largest angle between two adjacent
   edges exiting this vertex.
 
-  By default the functor checks that no incident vertices are infinite, to give
-  sensible answers in these edge cases. This checking can be disabled by
+  By default the function object checks that no incident vertices are infinite,
+  to give sensible answers in these edge cases. This checking can be disabled by
   supplying the tag `CGAL::Properties::No_finite_test` tag.
 
   @tparam Triangulation_2 The Triangulation type.
@@ -184,14 +188,15 @@ class Max_star_angle
   Max_star_angle(Triangulation_2 const&);
 
   /// Operator to compute maximum star angle.
-  typename Triangulation_2::Traits::FT operator()(
+  typename Triangulation_2::Geom_traits::FT operator()(
       typename Triangulation_2::Vertex_handle) const;
 };
 
 /******************************************************************************/
 
 /*!
-  Function object to compute the minimum star angle of this vertex.
+  Function object to compute the approximate minimum star angle of this vertex
+  to double accuracy
 
   We define the minimum star angle to be the smallest angle between two adjacent
   edges exiting this vertex.
@@ -216,7 +221,7 @@ class Min_star_angle
     \pre The Vertex_handle provided to the operator must be associated with
     the `Triangulation_2` provided on construction.
   */
-  typename Triangulation_2::Traits::FT operator()(
+  typename Triangulation_2::Geom_traits::FT operator()(
       typename Triangulation_2::Vertex_handle) const;
 };
 
@@ -228,7 +233,7 @@ class Min_star_angle
 
 /*!
   Construct a functor to compute the min_star_angle for Triangulation_2
-  Vertex handles.
+  Vertex handles.  The tag is optional and defaults to `Finite_test_tag`.
 
   @param  tr_2            The Triangulation_2 to be associated with the
                           functor.
@@ -249,7 +254,7 @@ Min_star_angle<Triangulation_2, Finite_test_tag> make_min_star_angle(
 
 /*!
   Construct a functor to compute the max_star_angle for Triangulation_2
-  Vertex handles.
+  Vertex handles.  The tag is optional and defaults to `Finite_test_tag`.
 
   @param  tr_2            The Triangulation_2 to be associated with the
                          functor.
@@ -270,7 +275,7 @@ Max_star_angle<Triangulation_2, Finite_test_tag> make_max_star_angle(
 
 /*!
   Construct a functor to compute the link_length for Triangulation_2 Vertex
-  handles.
+  handles.  The tag is optional and defaults to `Finite_test_tag`.
 
   @param  tr_2            The Triangulation_2 to be associated with the
                          functor.
@@ -290,7 +295,7 @@ Link_length<Triangulation_2, Finite_test_tag> make_link_length(
 
 /*!
   Construct a functor to compute the star_area for Triangulation_2 Vertex
-  handles.
+  handles.  The tag is optional and defaults to `Finite_test_tag`.
 
   @param  tr_2            The Triangulation_2 to be associated with the
                          functor.
@@ -309,7 +314,7 @@ Star_area<Triangulation_2, Finite_test_tag> make_star_area(
 
 /*!
   Construct a functor to compute the dual_area for Triangulation_2 Vertex
-  handles.
+  handles.  The tag is optional and defaults to `Finite_test_tag`.
 
   @param  tr_2 The Triangulation_2 to be associated with the functor.
   @tparam Triangulation_2 The Triangulation_2 type.
@@ -386,7 +391,7 @@ class Dual_area<Triangulation_2, Finite_test_tag>
   const Triangulation_2& tr;
 
  public:
-  typedef typename Triangulation_2::Traits::FT result_type;
+  typedef typename Triangulation_2::Geom_traits::FT result_type;
 
   Dual_area(const Triangulation_2& tr) : tr(tr)
   {
@@ -407,7 +412,7 @@ class Dual_area<Triangulation_2, Finite_test_tag>
       while (++f != done);
     }
 
-    return fabs(p.area());
+    return abs(p.area());
   }
 };
 
@@ -420,7 +425,7 @@ class Dual_area<Triangulation_2, No_finite_test_tag>
   const Triangulation_2& tr;
 
  public:
-  typedef typename Triangulation_2::Traits::FT result_type;
+  typedef typename Triangulation_2::Geom_traits::FT result_type;
 
   // We need a reference to the triangulation to compute this property.
   Dual_area(const Triangulation_2& tr) : tr(tr)
@@ -428,7 +433,7 @@ class Dual_area<Triangulation_2, No_finite_test_tag>
   }
 
   // NOTE: Code duplicated above.
-  double operator()(typename Triangulation_2::Vertex_handle v) const
+  result_type operator()(typename Triangulation_2::Vertex_handle v) const
   {
     Polygon_2<typename Triangulation_2::Geom_traits> p;
     Face_circulator c = tr.incident_faces(v), done(c);
@@ -439,7 +444,7 @@ class Dual_area<Triangulation_2, No_finite_test_tag>
       while (++c != done);
     }
 
-    return fabs(p.area());
+    return abs(p.area());
   }
 };
 
@@ -456,7 +461,7 @@ class Star_area<Triangulation_2, Finite_test_tag>
   area<Triangulation_2, Finite_test_tag> area_functor;
 
  public:
-  typedef typename Triangulation_2::Traits::FT result_type;
+  typedef typename Triangulation_2::Geom_traits::FT result_type;
 
   Star_area(const Triangulation_2& tr) : tr(tr), area_functor(tr)
   {
@@ -465,7 +470,7 @@ class Star_area<Triangulation_2, Finite_test_tag>
   result_type operator()(Vertex_handle v) const
   {
     // NOTE: Code duplicated below.
-    double area = 0.;
+    result_type area = 0.;
     Face_circulator f = tr.incident_faces(v), done(f);
     if (f != 0)
     {
@@ -488,7 +493,7 @@ class Star_area<Triangulation_2, No_finite_test_tag>
   Area<Triangulation_2, No_finite_test_tag> area_functor;
 
  public:
-  typedef typename Triangulation_2::Traits::FT result_type;
+  typedef typename Triangulation_2::Geom_traits::FT result_type;
 
   typedef typename Triangulation_2::Face_circulator Face_circulator;
   Star_area(const Triangulation_2& tr) : tr(tr)
@@ -498,7 +503,7 @@ class Star_area<Triangulation_2, No_finite_test_tag>
   double operator()(typename Triangulation_2::Vertex_handle v) const
   {
     // NOTE: Code duplicated above.
-    double area = 0.;
+    result_type area = 0.;
     Face_circulator f = tr.incident_faces(v), done(f);
     if (f != 0)
     {
@@ -524,7 +529,7 @@ class Link_length<Triangulation_2, Finite_test_tag>
   Length<Triangulation_2> length_functor;
 
  public:
-  typedef typename Triangulation_2::Traits::FT result_type;
+  typedef typename Triangulation_2::Geom_traits::FT result_type;
 
   Link_length(const Triangulation_2& tr) : tr(tr), length_functor(tr)
   {
@@ -533,7 +538,7 @@ class Link_length<Triangulation_2, Finite_test_tag>
   result_type operator()(Vertex_handle v) const
   {
     // NOTE: Code duplicated below.
-    double length = 0.;
+    result_type length = 0.;
     Face_circulator f = tr.incident_faces(v), done(f);
     if (f != 0)
     {
@@ -556,15 +561,15 @@ class Link_length<Triangulation_2, No_finite_test_tag>
   Length<Triangulation_2, No_finite_test_tag> Length_functor;
 
  public:
-  typedef typename Triangulation_2::Traits::FT result_type;
+  typedef typename Triangulation_2::Geom_traits::FT result_type;
 
   Link_length(const Triangulation_2& tr) : tr(tr)
   {
   }
-  double operator()(typename Triangulation_2::Vertex_handle v) const
+  result_type operator()(typename Triangulation_2::Vertex_handle v) const
   {
     // NOTE: Code duplicated above.
-    double length = 0.;
+    result_type length = 0.;
     Face_circulator_ f = tr.incident_faces(v), done(f);
     if (f != 0)
     {
@@ -589,7 +594,7 @@ class Max_star_angle<Triangulation_2, Finite_test_tag>
   Angle<Triangulation_2, Finite_test_tag> angle_functor;
 
  public:
-  typedef typename Triangulation_2::Traits::FT result_type;
+  typedef typename Triangulation_2::Geom_traits::FT result_type;
 
   Max_star_angle(const Triangulation_2& tr) : tr(tr), angle_functor(tr)
   {
@@ -598,13 +603,13 @@ class Max_star_angle<Triangulation_2, Finite_test_tag>
   result_type operator()(Vertex_handle_ v) const
   {
     // NOTE: Code duplicated below.
-    double max = 0.;
+    result_type max = 0.;
     Face_circulator_ f = tr.incident_faces(v), done(f);
     if (f != 0)
     {
       do
       {
-        double value = angle_functor(f, f->index(v));
+        result_type value = angle_functor(f, f->index(v));
         if (value > max)
           max = value;
       } while (++f != done);
@@ -624,7 +629,7 @@ class Max_star_angle<Triangulation_2, No_finite_test_tag>
   Angle<Triangulation_2, No_finite_test_tag> angle_functor;
 
  public:
-  typedef typename Triangulation_2::Traits::FT result_type;
+  typedef typename Triangulation_2::Geom_traits::FT result_type;
 
   Max_star_angle(const Triangulation_2& tr) : tr(tr)
   {
@@ -633,13 +638,13 @@ class Max_star_angle<Triangulation_2, No_finite_test_tag>
   double operator()(typename Triangulation_2::Vertex_handle v) const
   {
     // NOTE: Code duplicated above.
-    double max = 0.;
+    result_type max = 0.;
     Face_circulator_ f = tr.incident_faces(v), done(f);
     if (f != 0)
     {
       do
       {
-        double value = angle_functor(f, f->index(v));
+        result_type value = angle_functor(f, f->index(v));
         if (value > max)
           max = value;
       } while (++f != done);
@@ -659,7 +664,7 @@ class Min_star_angle<Triangulation_2, Finite_test_tag>
   angle<Triangulation_2, Finite_test_tag> angle_functor;
 
  public:
-  typedef typename Triangulation_2::Traits::FT result_type;
+  typedef typename Triangulation_2::Geom_traits::FT result_type;
 
   Min_star_angle(const Triangulation_2& tr) : tr(tr), angle_functor(tr)
   {
@@ -668,13 +673,13 @@ class Min_star_angle<Triangulation_2, Finite_test_tag>
   result_type operator()(Vertex_handle_ v) const
   {
     // NOTE: Code duplicated below.
-    double min = std::numeric_limits<double>::infinity();
+    result_type min = std::numeric_limits<double>::infinity();
     Face_circulator_ f = tr.incident_faces(v), done(f);
     if (f != 0)
     {
       do
       {
-        double value = angle_functor(f, f->index(v));
+        result_type value = angle_functor(f, f->index(v));
         if (value < min)
           min = value;
       } while (++f != done);
@@ -693,22 +698,22 @@ class Min_star_angle<Triangulation_2, No_finite_test_tag>
   Angle<Triangulation_2, No_finite_test_tag> angle_functor;
 
  public:
-  typedef typename Triangulation_2::Traits::FT result_type;
+  typedef typename Triangulation_2::Geom_traits::FT result_type;
 
   typedef typename Triangulation_2::Face_circulator Face_circulator;
   Min_star_angle(const Triangulation_2& tr) : tr(tr)
   {
   }
-  double operator()(typename Triangulation_2::Vertex_handle v) const
+  result_type operator()(typename Triangulation_2::Vertex_handle v) const
   {
     // NOTE: Code duplicated above.
-    double min = std::numeric_limits<double>::infinity();
+    result_type min = std::numeric_limits<double>::infinity();
     Face_circulator f = tr.incident_faces(v), done(f);
     if (f != 0)
     {
       do
       {
-        double value = angle_functor(f, f->index(v));
+        result_type value = angle_functor(f, f->index(v));
         if (value < min)
           min = value;
       } while (++f != done);
