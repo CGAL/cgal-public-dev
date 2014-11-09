@@ -30,7 +30,7 @@ so the values computed are computed using double approximations when required.
 By default, the implementations have been written to deal sensibly with input
 that may contain infinite vertices. Thus, by default they will perform infinite
 tests which may be unnecesary if the user can guarantee that the input is
-finite. Tags are provided to disbale these tests if required. 
+finite. Tags are provided to disable these tests if required. 
 
 @}
 

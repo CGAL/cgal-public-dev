@@ -122,6 +122,10 @@ class Aspect_ratio
   `CGAL::Properties::No_finite_test_tag`. In this case, the constructor no
   longer takes any arguments.
 
+  `Triangulation_2::Geom_traits::FT` must be a model of `RealEmbeddable`.
+  If needed `CGAL::to_double()` will be called to use STL functions taking a `double`
+  as input (such as `std::sqrt`, trigonometric functions, ...).
+
   @tparam Triangulation_2 The Triangulation type.
   @tparam Tag either `CGAL::Properties::Finite_test_tag` or
   `CGAL::Properties::No_finite_test_tag`.
@@ -146,12 +150,16 @@ class Circumradius
 /******************************************************************************/
 
 /*!
-  Function object to compute the approximate angle within a Triangulation_2 face
+  Function object to compute the approximate angle in degree within a Triangulation_2 face
   to double accuracy.
 
   By default this function object checks for infinite vertices but this checking
   can be disabled by supplying the tag `CGAL::Properties::No_finite_test_tag`.
   In this case, the constructor no longer takes any arguments.
+
+  `Triangulation_2::Geom_traits::FT` must be a model of `RealEmbeddable`.
+  If needed `CGAL::to_double()` will be called to use STL functions taking a `double`
+  as input (such as `std::sqrt`, trigonometric functions, ...).
 
   @tparam Triangulation_2 The Triangulation type.
   @tparam Tag either `CGAL::Properties::Finite_test_tag` or
@@ -166,7 +174,7 @@ class Angle
   Angle(Triangulation_2 const&);
 
   /*!
-    Operator to compute the angle.
+    Operator to compute the angle in degree.
 
     \pre The Vertex_handle provided to the operator must be associated with
     the `Triangulation_2` provided on construction.
@@ -181,13 +189,17 @@ class Angle
 /******************************************************************************/
 
 /*!
-  Function object to compute an approximation to the minimum angle of a
+  Function object to compute an approximation to the minimum angle in degree of a
   Triangulation_2 face. Returns the minimum internal angle of the input face, or
   zero if one of the vertices is at infinity.
 
   By default the function object checks for finite vertices, but this checking
   can be removed by supplying the Tag `CGAL::Properties::No_finite_test_tag`.
   In this case, the constructor no longer takes any arguments.
+
+  `Triangulation_2::Geom_traits::FT` must be a model of `RealEmbeddable`.
+  If needed `CGAL::to_double()` will be called to use STL functions taking a `double`
+  as input (such as `std::sqrt`, trigonometric functions, ...).
 
   @tparam Triangulation_2 The Triangulation type.
   @tparam Tag either `CGAL::Properties::Finite_test_tag` or
@@ -202,7 +214,7 @@ class Min_angle
   Min_angle(Triangulation_2 const&);
 
   /*!
-    Operator to compute the minimum angle.
+    Operator to compute the minimum angle in degree.
 
     \pre The Vertex_handle provided to the operator must be associated with
     the `Triangulation_2` provided on construction.
@@ -214,13 +226,17 @@ class Min_angle
 /******************************************************************************/
 
 /*!
-  Function object to compute an approximation to the maximum angle of a
+  Function object to compute an approximation to the maximum angle in degree of a
   Triangulation_2 face using double accuracy. Returns the maximum internal angle
   of the input face, or zero if one of the vertices is at infinity.
 
   By default the function object checks for finite vertices, but this checking
   can be removed by supplying the Tag `CGAL::Properties::No_finite_test_tag`.
   In this case, the constructor no longer takes any arguments.
+
+  `Triangulation_2::Geom_traits::FT` must be a model of `RealEmbeddable`.
+  If needed `CGAL::to_double()` will be called to use STL functions taking a `double`
+  as input (such as `std::sqrt`, trigonometric functions, ...).
 
   @tparam Triangulation_2 The Triangulation type.
   @tparam Tag either `CGAL::Properties::Finite_test_tag` or
@@ -235,7 +251,7 @@ class Max_angle
   Max_angle(Triangulation_2 const&);
 
   /*!
-    Operator to compute the maximum angle.
+    Operator to compute the maximum angle in degree.
 
     \pre The Vertex_handle provided to the operator must be associated with
     the `Triangulation_2` provided on construction.
@@ -256,6 +272,10 @@ class Max_angle
   By default this function object checks for infinite vertices. This checking
   can be disabled by supplying the tag `CGAL::Properties::No_finite_test_tag`.
   In this case, the constructor no longer takes any arguments.
+
+  `Triangulation_2::Geom_traits::FT` must be a model of `RealEmbeddable`.
+  If needed `CGAL::to_double()` will be called to use STL functions taking a `double`
+  as input (such as `std::sqrt`, trigonometric functions, ...).
 
   @tparam Triangulation_2 The Triangulation type.
   @tparam Tag either `CGAL::Properties::Finite_test_tag` or
@@ -294,6 +314,10 @@ class Min_edge_length
   checking can be disabled by supplying the tag
   `CGAL::Properties::No_finite_test_tag`. In this case, the constructor no
   longer takes any arguments.
+
+  `Triangulation_2::Geom_traits::FT` must be a model of `RealEmbeddable`.
+  If needed `CGAL::to_double()` will be called to use STL functions taking a `double`
+  as input (such as `std::sqrt`, trigonometric functions, ...).
 
   @tparam Triangulation_2 The Triangulation type.
   @tparam Tag either `CGAL::Properties::Finite_test_tag` or

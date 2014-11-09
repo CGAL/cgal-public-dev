@@ -144,6 +144,10 @@ class Star_area
   This checking for infinite faces may be disabled by supplying the
   `CGAL::Properties::No_finite_test` tag.
 
+  `Triangulation_2::Geom_traits::FT` must be a model of `RealEmbeddable`.
+  If needed `CGAL::to_double()` will be called to use STL functions taking a `double`
+  as input (such as `std::sqrt`, trigonometric functions, ...).
+
   @tparam Triangulation_2 The Triangulation type.
 */
 
@@ -167,7 +171,7 @@ class Link_length
 /******************************************************************************/
 
 /*!
-  Function object to compute the approximate maximum star angle of a vertex
+  Function object to compute the approximate maximum star angle in degree of a vertex
   to double accuracy.
 
   We define the maximum star angle to be the largest angle between two adjacent
@@ -176,6 +180,10 @@ class Link_length
   By default the function object checks that no incident vertices are infinite,
   to give sensible answers in these edge cases. This checking can be disabled by
   supplying the tag `CGAL::Properties::No_finite_test` tag.
+
+  `Triangulation_2::Geom_traits::FT` must be a model of `RealEmbeddable`.
+  If needed `CGAL::to_double()` will be called to use STL functions taking a `double`
+  as input (such as `std::sqrt`, trigonometric functions, ...).
 
   @tparam Triangulation_2 The Triangulation type.
 */
@@ -187,7 +195,7 @@ class Max_star_angle
   /// Constructor.
   Max_star_angle(Triangulation_2 const&);
 
-  /// Operator to compute maximum star angle.
+  /// Operator to compute maximum star angle in degree.
   typename Triangulation_2::Geom_traits::FT operator()(
       typename Triangulation_2::Vertex_handle) const;
 };
@@ -195,7 +203,7 @@ class Max_star_angle
 /******************************************************************************/
 
 /*!
-  Function object to compute the approximate minimum star angle of this vertex
+  Function object to compute the approximate minimum star angle in degree of this vertex
   to double accuracy
 
   We define the minimum star angle to be the smallest angle between two adjacent
@@ -204,6 +212,10 @@ class Max_star_angle
   By default the functor checks that no incident vertices are infinite, to give
   sensible answers in these edge cases. This checking can be disabled by
   supplying the tag `CGAL::Properties::No_finite_test` tag.
+
+  `Triangulation_2::Geom_traits::FT` must be a model of `RealEmbeddable`.
+  If needed `CGAL::to_double()` will be called to use STL functions taking a `double`
+  as input (such as `std::sqrt`, trigonometric functions, ...).
 
   @tparam Triangulation_2 The Triangulation type.
 */
@@ -216,7 +228,7 @@ class Min_star_angle
   Min_star_angle(Triangulation_2 const&);
 
   /*!
-    Operator to compute minimum star angle.
+    Operator to compute minimum star angle in degree.
 
     \pre The Vertex_handle provided to the operator must be associated with
     the `Triangulation_2` provided on construction.

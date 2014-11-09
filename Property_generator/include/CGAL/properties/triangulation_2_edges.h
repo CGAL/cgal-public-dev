@@ -48,6 +48,10 @@ namespace Triangulation_2
   `CGAL::Properties::No_finite_test_tag`, in which case the constructor requires
   no argument.
 
+  `Triangulation_2::Geom_traits::FT` must be a model of `RealEmbeddable`.
+  If needed `CGAL::to_double()` will be called to use STL functions taking a `double`
+  as input (such as `std::sqrt`, trigonometric functions, ...).
+
   @tparam Triangulation_2 The Triangulation type.
   @tparam Tag either `CGAL::Properties::Finite_test_tag` or
   `CGAL::Properties::No_finite_test_tag`.
@@ -125,6 +129,10 @@ class Neighbor_area
   checking can be disabled by supplying the tag
   `CGAL::Properties::No_finite_test_tag`, in which case the constructor requires
   no argument.
+
+  `Triangulation_2::Geom_traits::FT` must be a model of `RealEmbeddable`.
+  If needed `CGAL::to_double()` will be called to use STL functions taking a `double`
+  as input (such as `std::sqrt`, trigonometric functions, ...).
 
   @tparam Triangulation_2 The Triangulation type.
   @tparam Tag either `CGAL::Properties::Finite_test_tag` or

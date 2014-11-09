@@ -62,6 +62,11 @@ objects in \cgal.}
 - `CGAL::Properties::Triangulation_2::Min_edge_length`
 - `CGAL::Properties::Triangulation_2::Max_edge_length`
 
+### Edges ###
+- `CGAL::Properties::Triangulation_2::Length`
+- `CGAL::Properties::Triangulation_2::Neighbor_area`
+- `CGAL::Properties::Triangulation_2::Dual_length`
+
 ### Vertices ###
 - `CGAL::Properties::Triangulation_2::Degree`
 - `CGAL::Properties::Triangulation_2::Dual_area`
@@ -70,10 +75,6 @@ objects in \cgal.}
 - `CGAL::Properties::Triangulation_2::Max_star_angle`
 - `CGAL::Properties::Triangulation_2::Min_star_angle`
 
-### Edges ###
-- `CGAL::Properties::Triangulation_2::Length`
-- `CGAL::Properties::Triangulation_2::Neighbor_area`
-- `CGAL::Properties::Triangulation_2::Dual_length`
 
 
 \todo
