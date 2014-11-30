@@ -1,7 +1,6 @@
-# based on a script created by cgal_create_cmake_script
-# TODO: currently, everything depends on CORE, it would be nice to break
-# that dependency so as to test all the number types not depending on CORE
-# when it is not installed
+# Created by the script cgal_create_cmake_script
+# This is the CMake script for compiling a CGAL application.
+
 
 project( Number_types_test )
 
@@ -12,7 +11,7 @@ else()
   cmake_policy(VERSION 2.6)
 endif()
 
-find_package( CGAL QUIET COMPONENTS Core )
+find_package(CGAL QUIET COMPONENTS Core )
 
 if ( CGAL_FOUND )
 
@@ -20,11 +19,12 @@ if ( CGAL_FOUND )
   include( CGAL_CreateSingleSourceCGALProgram )
   include( CGAL_VersionUtils )
   find_package( MPFI )
-
+  
   include_directories( BEFORE ../../include include )
   include_directories( BEFORE ../../../Arithmetic_kernel/include)
 
   create_single_source_cgal_program( "bench_interval.cpp" )
+  create_single_source_cgal_program( "Coercion_traits.cpp" )
   create_single_source_cgal_program( "constant.cpp" )
   create_single_source_cgal_program( "CORE_BigFloat.cpp" )
   create_single_source_cgal_program( "CORE_BigInt.cpp" )
@@ -65,6 +65,7 @@ if ( CGAL_FOUND )
   create_single_source_cgal_program( "NT_checker.cpp" )
   create_single_source_cgal_program( "Quotient.cpp" )
   create_single_source_cgal_program( "quotient_io.cpp" )
+  create_single_source_cgal_program( "Quotient_new.cpp" )
   create_single_source_cgal_program( "root_of_2.cpp" )
   create_single_source_cgal_program( "Root_of_traits.cpp" )
   create_single_source_cgal_program( "rounding_modes.cpp" )
@@ -76,18 +77,17 @@ if ( CGAL_FOUND )
   create_single_source_cgal_program( "to_interval_test.cpp" )
   create_single_source_cgal_program( "unsigned.cpp" )
   create_single_source_cgal_program( "utilities.cpp" )
+
   if( MPFI_FOUND )
     include( ${MPFI_USE_FILE} )
   endif( MPFI_FOUND )
   # all the programs below will be linked against MPFI in case it is present
   create_single_source_cgal_program( "Gmpfi.cpp" )
   create_single_source_cgal_program( "Gmpfr_bug.cpp" )
-  create_single_source_cgal_program( "Quotient_new.cpp" )
   create_single_source_cgal_program( "test_nt_Coercion_traits.cpp" )
 
 else( CGAL_FOUND )
+  message(STATUS 
+    "This program requires the CGAL library, and will not be compiled.")
+endif()
 
-  message(STATUS
-    "These tests require the CGAL library and will not be compiled.")
-
-endif( CGAL_FOUND )
