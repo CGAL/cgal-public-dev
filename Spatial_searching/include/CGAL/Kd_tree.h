@@ -24,6 +24,7 @@
 #include <CGAL/basic.h>
 #include <CGAL/assertions.h>
 #include <vector>
+#include <CGAL/Block_list.h>
 
 #include <CGAL/algorithm.h>
 #include <CGAL/Kd_tree_node.h>
@@ -35,6 +36,8 @@
 #ifdef CGAL_HAS_THREADS
 #include <boost/thread/mutex.hpp>
 #endif
+
+#define LIST_BLOCK_SIZE 256
 
 namespace CGAL {
 
@@ -100,8 +103,8 @@ public:
 private:
   SearchTraits traits_;
   Splitter split;
-  std::deque<Internal_node> internal_nodes;
-  std::deque<Leaf_node> leaf_nodes;
+  std::vector<Internal_node> internal_nodes;
+  std::vector<Leaf_node> leaf_nodes;
 
   Node_handle tree_root;
 
@@ -131,7 +134,7 @@ private:
   // the allocation of the nodes.
 
   // The leaf node
-  Node_handle
+  size_t
   create_leaf_node(Point_container& c)
   {
     Leaf_node node(true , static_cast<unsigned int>(c.size()));
@@ -139,22 +142,20 @@ private:
     node.data = pts.begin() + tmp;
 
     leaf_nodes.push_back(node);
-    Leaf_node_handle nh = &leaf_nodes.back();
-
    
-    return nh;
+    return leaf_nodes.size() - 1;
   }
 
 
   // The internal node
 
-  Node_handle
+  size_t
   create_internal_node(Point_container& c, const Tag_true&)
   {
     return create_internal_node_use_extension(c);
   }
 
-  Node_handle
+  size_t
   create_internal_node(Point_container& c, const Tag_false&)
   {
     return create_internal_node(c);
@@ -166,7 +167,7 @@ private:
   //       moved to a the class Kd_tree_node.
   //       It is not proper yet, but the goal was to see if there is
   //       a potential performance gain through the Compact_container
-  Node_handle
+  size_t
   create_internal_node_use_extension(Point_container& c)
   {
     Internal_node node(false);
@@ -191,26 +192,25 @@ private:
     CGAL_assertion(node.cutting_value() <= node.high_val);
 
     if (c_low.size() > split.bucket_size()){
-      node.lower_ch = create_internal_node_use_extension(c_low);
+      node.lower_ch = reinterpret_cast<Internal_node_handle>(create_internal_node_use_extension(c_low));
     }else{
-      node.lower_ch = create_leaf_node(c_low);
+      node.lower_ch = reinterpret_cast<Leaf_node_handle>(create_leaf_node(c_low));
     }
     if (c.size() > split.bucket_size()){
-      node.upper_ch = create_internal_node_use_extension(c);
+      node.upper_ch = reinterpret_cast<Internal_node_handle>(create_internal_node_use_extension(c));
     }else{
-      node.upper_ch = create_leaf_node(c);
+      node.upper_ch = reinterpret_cast<Leaf_node_handle>(create_leaf_node(c));
     }
 
     internal_nodes.push_back(node);
-    Internal_node_handle nh = &internal_nodes.back();
 
-    return nh;
+    return internal_nodes.size() - 1;
   }
 
 
   // Note also that I duplicated the code to get rid if the if's for
   // the boolean use_extension which was constant over the construction
-  Node_handle
+  size_t
   create_internal_node(Point_container& c)
   {
     Internal_node node(false);
@@ -232,9 +232,9 @@ private:
     }
 
     internal_nodes.push_back(node);
-    Internal_node_handle nh = &internal_nodes.back();
+    //Internal_node_handle nh = &internal_nodes.back();
 
-    return nh;
+    return internal_nodes.size() - 1;
   }
 
 
@@ -270,10 +270,11 @@ public:
     }
     Point_container c(dim, data.begin(), data.end(),traits_);
     bbox = new Kd_tree_rectangle<FT,D>(c.bounding_box());
+    size_t tree_root_index;
     if (c.size() <= split.bucket_size()){
-      tree_root = create_leaf_node(c);
+      tree_root_index = create_leaf_node(c);
     }else {
-      tree_root = create_internal_node(c, UseExtendedNode());
+      tree_root_index = create_internal_node(c, UseExtendedNode());
     }
 
     //Reorder vector for spatial locality
@@ -282,9 +283,9 @@ public:
     for (std::size_t i = 0; i < pts.size(); ++i){
       ptstmp[i] = *data[i];
     }
-    for(std::size_t i = 0; i < leaf_nodes.size(); ++i){
-      int tmp = leaf_nodes[i].begin() - pts.begin();
-      leaf_nodes[i].data = ptstmp.begin() + tmp;
+    for(std::vector<Leaf_node>::iterator it = leaf_nodes.begin(); it != leaf_nodes.end(); it++){
+      int tmp = (*it).begin() - pts.begin();
+      (*it).data = ptstmp.begin() + tmp;
     }
     pts.swap(ptstmp);
 

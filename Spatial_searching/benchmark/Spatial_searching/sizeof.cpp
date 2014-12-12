@@ -1,5 +1,6 @@
 #include <iostream>
 #include <boost/cstdint.hpp>
+#include <boost/container/deque.hpp>
 
 
 struct Node {

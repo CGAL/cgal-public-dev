@@ -4,6 +4,7 @@
 #include <CGAL/array.h>
 #include <CGAL/Block_list.h>
 #include <CGAL/Timer.h>
+#include <boost/container/deque.hpp>
 
 struct X {
   double a,b,c,d,e,f,g,h,i,j,k,l;
@@ -17,7 +18,7 @@ int main()
   t.start();
 #if 0
 
-  CGAL::Block_list<X, 256> de;
+  boost::container::deque<X> de;
 #elif 1
   std::deque<X> de;
 #else
@@ -25,7 +26,7 @@ int main()
   de.reserve(100000000);
 #endif
 
-  for(int i=0; i < 100000000; i++){
+  for(int i=0; i < 10000000; i++){
     de.push_back(X());
   }
   t.stop();
