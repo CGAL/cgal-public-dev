@@ -134,7 +134,7 @@ private:
   // the allocation of the nodes.
 
   // The leaf node
-  size_t
+  ptrdiff_t
   create_leaf_node(Point_container& c)
   {
     Leaf_node node(true , static_cast<unsigned int>(c.size()));
@@ -143,19 +143,19 @@ private:
 
     leaf_nodes.push_back(node);
    
-    return leaf_nodes.size() - 1;
+    return -(leaf_nodes.size() );
   }
 
 
   // The internal node
 
-  size_t
+  ptrdiff_t
   create_internal_node(Point_container& c, const Tag_true&)
   {
     return create_internal_node_use_extension(c);
   }
 
-  size_t
+  ptrdiff_t
   create_internal_node(Point_container& c, const Tag_false&)
   {
     return create_internal_node(c);
@@ -167,7 +167,7 @@ private:
   //       moved to a the class Kd_tree_node.
   //       It is not proper yet, but the goal was to see if there is
   //       a potential performance gain through the Compact_container
-  size_t
+  ptrdiff_t
   create_internal_node_use_extension(Point_container& c)
   {
     Internal_node node(false);
@@ -204,13 +204,13 @@ private:
 
     internal_nodes.push_back(node);
 
-    return internal_nodes.size() - 1;
+    return internal_nodes.size() ;
   }
 
 
   // Note also that I duplicated the code to get rid if the if's for
   // the boolean use_extension which was constant over the construction
-  size_t
+  ptrdiff_t
   create_internal_node(Point_container& c)
   {
     Internal_node node(false);
@@ -234,7 +234,7 @@ private:
     internal_nodes.push_back(node);
     //Internal_node_handle nh = &internal_nodes.back();
 
-    return internal_nodes.size() - 1;
+    return internal_nodes.size();
   }
 
 
@@ -264,18 +264,42 @@ public:
     typename SearchTraits::Construct_cartesian_const_iterator_d ccci=traits_.construct_cartesian_const_iterator_d_object();
     int dim = static_cast<int>(std::distance(ccci(p), ccci(p,0)));
 
+    leaf_nodes.reserve(pts.size() / split.bucket_size());
+    internal_nodes.reserve(pts.size() / split.bucket_size());
     data.reserve(pts.size());
     for(unsigned int i = 0; i < pts.size(); i++){
       data.push_back(&pts[i]);
     }
+
     Point_container c(dim, data.begin(), data.end(),traits_);
     bbox = new Kd_tree_rectangle<FT,D>(c.bounding_box());
     size_t tree_root_index;
     if (c.size() <= split.bucket_size()){
       tree_root_index = create_leaf_node(c);
+      tree_root = static_cast<Node_handle>(&leaf_nodes[-tree_root_index -1]);
     }else {
       tree_root_index = create_internal_node(c, UseExtendedNode());
+      tree_root = static_cast<Node_handle>(&internal_nodes[tree_root_index -1]);
     }
+
+    for(std::vector<Internal_node>::iterator it = internal_nodes.begin(); it != internal_nodes.end(); it++){
+      ptrdiff_t low  = reinterpret_cast<ptrdiff_t>(it->lower_ch);
+      if(low < 0){
+        it->lower_ch = static_cast<Node_handle>(&leaf_nodes[(-low) - 1]);
+      }
+      else{
+        it->lower_ch = static_cast<Node_handle>(&internal_nodes[low - 1]);
+      }
+      ptrdiff_t high  = reinterpret_cast<ptrdiff_t>(it->upper_ch);
+      if(high < 0){
+        it->upper_ch = static_cast<Node_handle>(&leaf_nodes[(-high) - 1]);
+      }
+      else{
+        it->upper_ch = static_cast<Node_handle>(&internal_nodes[high - 1]);
+      }
+
+    }
+
 
     //Reorder vector for spatial locality
     std::vector<Point_d> ptstmp;
