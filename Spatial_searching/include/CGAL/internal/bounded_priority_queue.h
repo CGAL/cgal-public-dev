@@ -127,6 +127,15 @@ public:
     return res;
   }
 
+  //For orthogonal search with sphere
+  template<class FT>
+  void substract_radius(FT radius){
+    std::vector<value_type>::iterator end = m_data.begin() + m_count;
+    for(std::vector<value_type>::iterator it = m_data.begin(); it != end;it++){
+      it->second -= radius;
+    }
+  }
+
   void sort()
   {
 std::sort(m_data.begin(), boost::next(m_data.begin(),m_count), m_comp);
