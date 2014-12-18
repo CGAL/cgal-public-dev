@@ -234,6 +234,9 @@ namespace CGAL {
 
     typedef typename internal::Euclidean_distance_base<SearchTraits>::Dimension D;
 
+     // default constructor
+    Euclidean_distance(const SearchTraits& traits_=SearchTraits()):traits(traits_) {}
+
   inline FT transformed_distance(const typename SearchTraits::Iso_box_d& q, const Point_d& p) const {
 		FT distance = FT(0);
 		typename SearchTraits::Construct_cartesian_const_iterator_d construct_it=
