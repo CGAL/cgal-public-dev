@@ -465,21 +465,20 @@ private:
       typename Base::Node_const_handle bestChild, otherChild;
       FT new_off;
       FT val = *(qmax_it + new_cut_dim);
-      FT valhigh = *(qmin_it + new_cut_dim) - node->high_value();
       FT vallow =  *(qmin_it + new_cut_dim) - node->low_value();
       FT diff1 = val - node->high_value();
       FT diff2 = val - node->low_value();
-      if ( (diff1 + diff2 >= FT(0.0)) ) 
+      if ( (diff1 + diff2 < FT(0.0)) ) 
       {
-          new_off= (diff2 < vallow ? diff2 : vallow);
+          new_off= vallow;
+          if(new_off < FT(0.0))
+            new_off=0;
           bestChild = node->upper();
           otherChild = node->lower();
       }
       else // compute new distance
       {
-          new_off = (diff1 < valhigh ? diff1 : valhigh);
-          if(new_off < FT(0.0))
-            new_off=0;
+          new_off = diff1;
           bestChild = node->lower();
           otherChild = node->upper();             
       }
