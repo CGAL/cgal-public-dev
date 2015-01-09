@@ -2,7 +2,7 @@
 #define CGAL_PROPERTY_TAGS
 
 namespace CGAL {
-namespace Properties {
+//namespace Properties {
 
 /******************************************************************************/
 /*!
@@ -37,7 +37,7 @@ struct Finite_test_tag {};
 
 /******************************************************************************/
 
-} // namespace Properties
+//} // namespace Properties
 } // namespace CGAL
 
 #endif

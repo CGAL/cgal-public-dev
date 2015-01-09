@@ -45,7 +45,7 @@ namespace Triangulation_2
   `Triangulation_2::Geom_traits::FT(std::numeric_limits<double>::infinity())`
   when the edge is infinite (and so this expression must be valid.) This
   checking can be disabled by supplying the tag
-  `CGAL::Properties::No_finite_test_tag`, in which case the constructor requires
+  `CGAL::No_finite_test_tag`, in which case the constructor requires
   no argument.
 
   `Triangulation_2::Geom_traits::FT` must be a model of `RealEmbeddable`.
@@ -53,8 +53,8 @@ namespace Triangulation_2
   as input (such as `std::sqrt`, trigonometric functions, ...).
 
   @tparam Triangulation_2 The Triangulation type.
-  @tparam Tag either `CGAL::Properties::Finite_test_tag` or
-  `CGAL::Properties::No_finite_test_tag`.
+  @tparam Tag either `CGAL::Finite_test_tag` or
+  `CGAL::No_finite_test_tag`.
 */
 
 template <typename Triangulation_2, typename Tag = Finite_test_tag>
@@ -86,12 +86,12 @@ class Length
   `Triangulation_2::Geom_traits::FT(std::numeric_limits<double>::infinity())`
   if not (and so this expression must be valid.) This
   checking can be disabled by supplying the tag
-  `CGAL::Properties::No_finite_test_tag`, in which case the constructor requires
+  `CGAL::No_finite_test_tag`, in which case the constructor requires
   no argument.
 
   @tparam Triangulation_2 The Triangulation type.
-  @tparam Tag either `CGAL::Properties::Finite_test_tag` or
-  `CGAL::Properties::No_finite_test_tag`.
+  @tparam Tag either `CGAL::Finite_test_tag` or
+  `CGAL::No_finite_test_tag`.
 */
 
 template <typename Triangulation_2, typename Tag = Finite_test_tag>
@@ -127,7 +127,7 @@ class Neighbor_area
   `Triangulation_2::Geom_traits::FT(std::numeric_limits<double>::infinity())`
   when one of them is infinite (and so this expression must be valid.) This
   checking can be disabled by supplying the tag
-  `CGAL::Properties::No_finite_test_tag`, in which case the constructor requires
+  `CGAL::No_finite_test_tag`, in which case the constructor requires
   no argument.
 
   `Triangulation_2::Geom_traits::FT` must be a model of `RealEmbeddable`.
@@ -135,8 +135,8 @@ class Neighbor_area
   as input (such as `std::sqrt`, trigonometric functions, ...).
 
   @tparam Triangulation_2 The Triangulation type.
-  @tparam Tag either `CGAL::Properties::Finite_test_tag` or
-  `CGAL::Properties::No_finite_test_tag`.
+  @tparam Tag either `CGAL::Finite_test_tag` or
+  `CGAL::No_finite_test_tag`.
 */
 
 template <typename Triangulation_2, typename Tag = Finite_test_tag>
@@ -169,8 +169,8 @@ class Dual_length
   @param  tr_2  The Triangulation_2 to be associated with the
           functor.
   @tparam Triangulation_2 The Triangulation_2 type.
-  @tparam Tag either `CGAL::Properties::Finite_test_tag` or
-  `CGAL::Properties::No_finite_test_tag`.
+  @tparam Tag either `CGAL::Finite_test_tag` or
+  `CGAL::No_finite_test_tag`.
 */
 template <typename Triangulation_2, typename Tag>
 Length<Triangulation_2, Tag> make_length(const Triangulation_2& tr_2, Tag);
@@ -187,8 +187,8 @@ Length<Triangulation_2, Finite_test_tag> make_length(
   @param  tr_2            The Triangulation_2 to be associated with the
                        functor.
   @tparam Triangulation_2 The Triangulation_2 type.
-  @tparam Tag either `CGAL::Properties::Finite_test_tag` or
-  `CGAL::Properties::No_finite_test_tag`.
+  @tparam Tag either `CGAL::Finite_test_tag` or
+  `CGAL::No_finite_test_tag`.
 */
 template <typename Triangulation_2, typename Tag>
 Neighbor_area<Triangulation_2, Tag> make_neighbor_area(
@@ -206,15 +206,15 @@ Neighbor_area<Triangulation_2, Finite_test_tag> make_neighbor_area(
   @param  tr_2            The Triangulation_2 to be associated with the
                           functor.
   @tparam Triangulation_2 The Triangulation_2 type.
-  @tparam Tag either `CGAL::Properties::Finite_test_tag` or
-  `CGAL::Properties::No_finite_test_tag`.
+  @tparam Tag either `CGAL::Finite_test_tag` or
+  `CGAL::No_finite_test_tag`.
 */
 template <typename Triangulation_2, typename Tag>
 Dual_length<Triangulation_2, Tag> make_dual_length(const Triangulation_2& tr_2,
                                                    Tag);
 
 template <typename Triangulation_2>
-Dual_length<Triangulation_2, CGAL::Properties::Finite_test_tag>
+Dual_length<Triangulation_2, CGAL::Finite_test_tag>
     make_dual_length(const Triangulation_2& tr_2);
 
 /******************************************************************************/
@@ -258,15 +258,13 @@ class Length<Triangulation_2, Finite_test_tag>
 
   result_type operator()(Face_handle_ f, unsigned short i) const
   {
-    const Vertex_handle_& v1 = f->vertex(f->cw(i));
-    const Vertex_handle_& v2 = f->vertex(f->ccw(i));
+    Vertex_handle_ v1 = f->vertex(f->cw(i));
+    Vertex_handle_ v2 = f->vertex(f->ccw(i));
 
-    if (tr.is_infinite(v1))
-      return std::numeric_limits<double>::infinity();
-    if (tr.is_infinite(v2))
+    if ( tr.is_infinite(v1) || tr.is_infinite(v2) )
       return std::numeric_limits<double>::infinity();
 
-    return std::sqrt(to_double((v1->point() - v2->point()).squared_length()));
+    return sqrt( ( v1->point() - v2->point() ).squared_length() );
   }
 };
 
@@ -292,7 +290,8 @@ class Length<Triangulation_2, No_finite_test_tag>
 
     Vertex_handle_ v1 = f->vertex(f->cw(i));
     Vertex_handle_ v2 = f->vertex(f->ccw(i));
-    return std::sqrt(to_double((v1->point() - v2->point()).squared_length()));
+
+    return sqrt( ( v1->point() - v2->point() ).squared_length() );
   }
 };
 
@@ -324,6 +323,11 @@ class Neighbor_area<Triangulation_2, Finite_test_tag>
   result_type operator()(Face_handle_ f, int i) const
   {
     // NOTE: code is duplicated below.
+
+    // By convention.
+    if (tr.dimension() < 2)
+      return 0;
+
     return area_functor(f) + area_functor(f->neighbor(i));
   }
 };
@@ -336,10 +340,17 @@ class Neighbor_area<Triangulation_2, No_finite_test_tag>
 {
   typedef typename Triangulation_2::Face_handle Face_handle_;
 
+  const Triangulation_2& tr;
+
+  // Functor to compute face areas.
   Area<Triangulation_2, No_finite_test_tag> area_functor;
 
  public:
   typedef typename Triangulation_2::Geom_traits::FT result_type;
+
+  Neighbor_area(const Triangulation_2& tr) : tr(tr)
+  {
+  }
 
   result_type operator()(typename Triangulation_2::Edge e) const
   {
@@ -348,6 +359,11 @@ class Neighbor_area<Triangulation_2, No_finite_test_tag>
   result_type operator()(Face_handle_ f, unsigned short i) const
   {
     // NOTE: code is duplicated above.
+    
+    // By convention.
+    if (tr.dimension() < 2)
+      return 0;
+
     return area_functor(f) + area_functor(f->neighbor(i));
   }
 };
@@ -398,6 +414,10 @@ class Dual_length<Triangulation_2, Finite_test_tag>
 
   result_type operator()(Edge_ e) const
   {
+     if (tr.dimension() < 2)
+      return 0;
+
+
     Face_handle_ f1 = e.first;
     Face_handle_ f2 = f1->neighbor(e.second);
 
@@ -416,11 +436,19 @@ class Dual_length<Triangulation_2, No_finite_test_tag>
 {
   typedef typename Triangulation_2::Face_handle Face_handle_;
 
+  // Allow us to keep a reference to the triangulation.
+  const Triangulation_2& tr;
+
  public:
   typedef typename Triangulation_2::Geom_traits::FT result_type;
 
+  Dual_length(const Triangulation_2& tr) : tr(tr) {};
+
   result_type operator()(typename Triangulation_2::Edge e) const
   {
+    if (tr.dimension() < 2)
+      return 0;
+
     Face_handle_ f1 = e.first;
     Face_handle_ f2 = f1->neighbor(e.second);
     return dual_length_internal<Triangulation_2>(f1, f2);
@@ -440,10 +468,20 @@ Length<Triangulation_2, finite_test_tag> make_length(
 /******************************************************************************/
 
 template <typename Triangulation_2>
-Length<Triangulation_2, CGAL::Properties::Finite_test_tag> make_length(
+Length<Triangulation_2, CGAL::No_finite_test_tag> make_length(
+    const Triangulation_2& tr_2,
+    CGAL::No_finite_test_tag)
+{
+  return Length<Triangulation_2, CGAL::No_finite_test_tag>();
+}
+
+/******************************************************************************/
+
+template <typename Triangulation_2>
+Length<Triangulation_2, CGAL::Finite_test_tag> make_length(
     const Triangulation_2& tr_2)
 {
-  return Length<Triangulation_2, CGAL::Properties::Finite_test_tag>(tr_2);
+  return Length<Triangulation_2, CGAL::Finite_test_tag>(tr_2);
 }
 
 /******************************************************************************/
@@ -459,10 +497,10 @@ Neighbor_area<Triangulation_2, finite_test_tag> make_neighbor_area(
 /******************************************************************************/
 
 template <typename Triangulation_2>
-Neighbor_area<Triangulation_2, CGAL::Properties::Finite_test_tag>
+Neighbor_area<Triangulation_2, CGAL::Finite_test_tag>
     make_neighbor_area(const Triangulation_2& tr_2)
 {
-  return Neighbor_area<Triangulation_2, CGAL::Properties::Finite_test_tag>(
+  return Neighbor_area<Triangulation_2, CGAL::Finite_test_tag>(
       tr_2);
 }
 
@@ -479,10 +517,10 @@ Dual_length<Triangulation_2, finite_test_tag> make_dual_length(
 /******************************************************************************/
 
 template <typename Triangulation_2>
-Dual_length<Triangulation_2, CGAL::Properties::Finite_test_tag>
+Dual_length<Triangulation_2, CGAL::Finite_test_tag>
     make_dual_length(const Triangulation_2& tr_2)
 {
-  return Dual_length<Triangulation_2, CGAL::Properties::Finite_test_tag>(tr_2);
+  return Dual_length<Triangulation_2, CGAL::Finite_test_tag>(tr_2);
 }
 
 /******************************************************************************/

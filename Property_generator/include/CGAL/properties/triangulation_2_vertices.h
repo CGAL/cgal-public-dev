@@ -68,11 +68,11 @@ class Degree
   We define the dual area to be the area of the convex polygon formed by
   connecting up the circumcentres of the triangular faces adjacent to this
   vertex. This area coincides with the area of the Voronoi cell. If the
-  `CGAL::Properties::No_finite_test` tag is not provided, the return value will
+  `CGAL::No_finite_test` tag is not provided, the return value will
   be `Kernel::FT(std::numeric_limits<double>::infinity())` (and so this
   expression must be valid) if one of the neighboring faces is infinite.
 
-  The `CGAL::Properties::No_finite_test_tag` may be provided to disable tests.
+  The `CGAL::No_finite_test_tag` may be provided to disable tests.
   In this case the function object may be constructed without an argument.
 
   @tparam Triangulation_2 The Triangulation type.
@@ -106,7 +106,7 @@ class Dual_area
   must be valid) if one of the neighboring faces is infinite.
 
   By default the function object checks for finite vertices, but this checking
-  can be removed by supplying the tag `CGAL::Properties::No_finite_test` tag.
+  can be removed by supplying the tag `CGAL::No_finite_test` tag.
 
   \pre The Vertex_handle provided to the operator must be associated with the
   `Triangulation_2` provided on construction.
@@ -142,7 +142,7 @@ class Star_area
   or `Kernel::FT(std::numeric_limits<double>::infinity())` (and so this
   expression must be valid) if one of the neighboring edges is infinite.
   This checking for infinite faces may be disabled by supplying the
-  `CGAL::Properties::No_finite_test` tag.
+  `CGAL::No_finite_test` tag.
 
   `Triangulation_2::Geom_traits::FT` must be a model of `RealEmbeddable`.
   If needed `CGAL::to_double()` will be called to use STL functions taking a `double`
@@ -179,7 +179,7 @@ class Link_length
 
   By default the function object checks that no incident vertices are infinite,
   to give sensible answers in these edge cases. This checking can be disabled by
-  supplying the tag `CGAL::Properties::No_finite_test` tag.
+  supplying the tag `CGAL::No_finite_test` tag.
 
   `Triangulation_2::Geom_traits::FT` must be a model of `RealEmbeddable`.
   If needed `CGAL::to_double()` will be called to use STL functions taking a `double`
@@ -211,7 +211,7 @@ class Max_star_angle
 
   By default the functor checks that no incident vertices are infinite, to give
   sensible answers in these edge cases. This checking can be disabled by
-  supplying the tag `CGAL::Properties::No_finite_test` tag.
+  supplying the tag `CGAL::No_finite_test` tag.
 
   `Triangulation_2::Geom_traits::FT` must be a model of `RealEmbeddable`.
   If needed `CGAL::to_double()` will be called to use STL functions taking a `double`
@@ -412,19 +412,30 @@ class Dual_area<Triangulation_2, Finite_test_tag>
   // NOTE: Code duplicated below.
   result_type operator()(Vertex_handle v) const
   {
+    // The dual area of the infinite vertex is infinite.
+    if (tr.is_infinite(v))
+      return std::numeric_limits<double>::infinity();
+
     Polygon_2<Gt> p;
 
     Face_circulator f = tr.incident_faces(v), done(f);
+    
+    // A vertex with no neighbours has infinite dual area. 
     if (f != 0)
-    {
-      if (tr.is_infinite(f))
-        return std::numeric_limits<double>::infinity();
+    {      
       do
+      {      
+        if (tr.is_infinite(f))
+          return std::numeric_limits<double>::infinity();
         p.push_back(tr.circumcenter(f));
+      }
       while (++f != done);
+    } else {
+      return std::numeric_limits<double>::infinity();
     }
 
-    return abs(p.area());
+
+    return fabs(p.area());
   }
 };
 
@@ -448,15 +459,15 @@ class Dual_area<Triangulation_2, No_finite_test_tag>
   result_type operator()(typename Triangulation_2::Vertex_handle v) const
   {
     Polygon_2<typename Triangulation_2::Geom_traits> p;
-    Face_circulator c = tr.incident_faces(v), done(c);
-    if (c != 0)
+    Face_circulator f = tr.incident_faces(v), done(f);
+    if (f != 0)
     {
       do
-        p.push_back(tr.circumcenter(c));
-      while (++c != done);
+        p.push_back(tr.circumcenter(f));
+      while (++f != done);
     }
 
-    return abs(p.area());
+    return fabs(p.area());
   }
 };
 
@@ -470,7 +481,7 @@ class Star_area<Triangulation_2, Finite_test_tag>
   typedef typename Triangulation_2::Face_circulator Face_circulator;
 
   const Triangulation_2& tr;
-  area<Triangulation_2, Finite_test_tag> area_functor;
+  Area<Triangulation_2, Finite_test_tag> area_functor;
 
  public:
   typedef typename Triangulation_2::Geom_traits::FT result_type;
@@ -490,6 +501,9 @@ class Star_area<Triangulation_2, Finite_test_tag>
       {
         area += area_functor(f);
       } while (++f != done);
+    } else {
+      // We say a point with no adjacent faces has infinite star area.
+      return std::numeric_limits<double>::infinity();
     }
     return area;
   }
@@ -554,8 +568,9 @@ class Link_length<Triangulation_2, Finite_test_tag>
     Face_circulator f = tr.incident_faces(v), done(f);
     if (f != 0)
     {
-      do
-        length += Length_functor(f, f->index(v));
+      do{
+        length += length_functor(f, f->index(v));
+      }
       while (++f != done);
     }
     return length;
@@ -626,6 +641,10 @@ class Max_star_angle<Triangulation_2, Finite_test_tag>
           max = value;
       } while (++f != done);
     }
+    else
+    {      
+      return CGAL_PI;
+    }
     return max;
   }
 };
@@ -661,6 +680,10 @@ class Max_star_angle<Triangulation_2, No_finite_test_tag>
           max = value;
       } while (++f != done);
     }
+    else
+    {
+      return CGAL_PI;
+    }
     return max;
   }
 };
@@ -673,7 +696,7 @@ class Min_star_angle<Triangulation_2, Finite_test_tag>
   typedef typename Triangulation_2::Vertex_handle Vertex_handle_;
   typedef typename Triangulation_2::Face_circulator Face_circulator_;
   const Triangulation_2& tr;
-  angle<Triangulation_2, Finite_test_tag> angle_functor;
+  Angle<Triangulation_2, Finite_test_tag> angle_functor;
 
  public:
   typedef typename Triangulation_2::Geom_traits::FT result_type;
@@ -685,13 +708,14 @@ class Min_star_angle<Triangulation_2, Finite_test_tag>
   result_type operator()(Vertex_handle_ v) const
   {
     // NOTE: Code duplicated below.
-    result_type min = std::numeric_limits<double>::infinity();
+    result_type min = CGAL_PI;
     Face_circulator_ f = tr.incident_faces(v), done(f);
     if (f != 0)
     {
       do
       {
         result_type value = angle_functor(f, f->index(v));
+        std::cout << "a " << value << std::endl;
         if (value < min)
           min = value;
       } while (++f != done);
@@ -719,17 +743,19 @@ class Min_star_angle<Triangulation_2, No_finite_test_tag>
   result_type operator()(typename Triangulation_2::Vertex_handle v) const
   {
     // NOTE: Code duplicated above.
-    result_type min = std::numeric_limits<double>::infinity();
+    result_type min = CGAL_PI;
     Face_circulator f = tr.incident_faces(v), done(f);
     if (f != 0)
     {
       do
       {
         result_type value = angle_functor(f, f->index(v));
+
         if (value < min)
           min = value;
       } while (++f != done);
     }
+
     return min;
   }
 };
@@ -834,7 +860,7 @@ Dual_area<Triangulation_2, Finite_test_tag> make_dual_area(
 template <typename Triangulation_2>
 Degree<Triangulation_2> make_degree(const Triangulation_2& tr_2)
 {
-  return Degree<Triangulation_2>(tr_2);
+  return Degree<Triangulation_2>();
 }
 
 /******************************************************************************/
