@@ -941,48 +941,21 @@ T& operator[]( size_type n);
 
 template <typename Iterator>
 class No_deref_iterator
-#ifndef DOXYGEN_RUNNING
-  : public boost::iterator_adaptor<
-        No_deref_iterator<Iterator>      // Derived
-      , Iterator                       // Base
-      , Iterator                       // Value
-      , boost::forward_traversal_tag   // Traversal type
-      , Iterator                       // Reference
-    >
-#endif
 {
- private:
-    struct enabler {};
-
  public:
     /// Default constructor.
-    /// \pre Only valid if template iterator is default constructible.
-    No_deref_iterator()
-        : No_deref_iterator::iterator_adaptor_(0) {}
+    No_deref_iterator();
 
     /// Wrap the templated iterator type in the new iterator class to create
     /// an iterator that returns the original iterator when de-referenced.
-    explicit No_deref_iterator(const Iterator it)
-        : No_deref_iterator::iterator_adaptor_(it) {}
-
- private:
-    #ifndef DOXYGEN_RUNNING
-    friend class boost::iterator_core_access;
-    #endif
- 
-    typename No_deref_iterator::reference
-    dereference()
-    const
-    {
-        return this->base();
-    }
+    explicit No_deref_iterator(Iterator it);
 };
 
 /// \ingroup STLIterators
 /// Use type deduction to create a non-dereferencing iterator from a normal
 /// iterator.
-template<typename T>
-inline No_deref_iterator<T> make_no_deref_iterator(T const& iterator){
+template<typename Iterator>
+inline No_deref_iterator<T> make_no_deref_iterator(Iterator it){
     return No_deref_iterator<T>(iterator);
 }
 
