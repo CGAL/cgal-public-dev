@@ -192,10 +192,10 @@ void run_tests_epec() {
 
   std::cout << "Testing 'Neighbor_area'" << std::endl;
 
-  Neighbor_area<Delaunay, CGAL::No_finite_test_tag> neighbor_area_1(dt_2);
+  Neighbor_area<Delaunay, CGAL::No_finite_test_tag> neighbor_area_2(dt_2);
   Neighbor_area<Delaunay, CGAL::No_finite_test_tag> neighbor_area_5(dt_5);
 
-  assert(exact_eq<FT>(neighbor_area_1(e_1), 0));
+  assert(exact_eq<FT>(neighbor_area_2(e_1), 0));
   assert(exact_eq<FT>(neighbor_area_5(e_5_2), 1.25));
   assert(exact_eq<FT>(neighbor_area_5(e_5_2), 1.25));
 
