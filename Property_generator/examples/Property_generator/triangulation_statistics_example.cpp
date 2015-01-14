@@ -1,20 +1,13 @@
-/*
-    An example to show the generation of various statistics of a randomly
-    generated Delaunay triangulation.
-*/
-
 #include <vector>
 #include <iomanip>
 #include <iostream>
-#include <CGAL/property_generator_algorithms.h>
+#include <iterator>
+#include <CGAL/iterator.h>
+#include <CGAL/algorithm.h>
+#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/point_generators_2.h>
 #include <CGAL/Delaunay_triangulation_2.h>
-#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/properties/triangulation_2.h>
-
-
-// #include <CGAL/properties/meta_functions.h>
-
 
 typedef CGAL::Exact_predicates_inexact_constructions_kernel  Kernel;
 typedef Kernel::Point_2                                      Point;
@@ -22,17 +15,12 @@ typedef CGAL::Delaunay_triangulation_2<Kernel>               Delaunay;
 typedef CGAL::Creator_uniform_2<double, Point>               Creator;
 
 // Alias the namespaces to save typing.
-namespace Properties    = CGAL::Properties::Triangulation_2;
-
-int foo(Delaunay::Face_handle)
-{
-    return 1;
-}
+namespace Properties = CGAL::Properties::Triangulation_2;
 
 int main()
 {
     // Number of points to generate.
-    unsigned           n = 1<<20;
+    unsigned           n = 1<<10;
     Delaunay           dt;
     std::vector<Point> points;
 
@@ -41,9 +29,11 @@ int main()
     CGAL::cpp11::copy_n(g, n, std::back_inserter(points));
     dt.insert(points.begin(), points.end());
 
-    // Store iterator range as temporaries for convenience.
-    Delaunay::Finite_faces_iterator begin = dt.finite_faces_begin();
-    Delaunay::Finite_faces_iterator end   = dt.finite_faces_end();
+    // The property functions take handle types, so we wrap the iterators.
+    CGAL::No_deref_iterator<Delaunay::Finite_faces_iterator> begin, end;
+
+    begin = CGAL::make_no_deref_iterator(dt.finite_faces_begin());
+    end   = CGAL::make_no_deref_iterator(dt.finite_faces_end());
 
     // Initialise the functors that we shall use.
     Properties::Area<Delaunay>         area(dt);
@@ -51,46 +41,34 @@ int main()
     Properties::Aspect_ratio<Delaunay> aspect_ratio(dt);
     Properties::Max_angle<Delaunay>    max_angle(dt);
 
+    // Display some statistics about the triangulation.
+    std::cout
+        << "-- Information about the triangulation --" 
+        << std::endl << std::left << std::setw(50)
+        
+        << "Mean face area"
+        << CGAL::mean_result(begin, end, area)
+        << std::endl << std::left << std::setw(50)
 
-    std::vector<Delaunay::Face_handle> temp;
-    CGAL::max_result(temp.begin(), temp.end(), foo);
-    CGAL::max_result(begin, end, foo);
+        << "Largest face area"
+        << CGAL::max_result(begin, end, area)
+        << std::endl << std::left << std::setw(50)
 
-    // std::cout <<
-    //     // int (CGAL::internal::do_dereference<decltype(aspect_ratio), std::vector<Delaunay::Face_handle>::iterator>::value)
-    //     int (CGAL::internal::is_callable_with<decltype(aspect_ratio), decltype(begin)>::value )
-    //     // int( CGAL::internal::is_callable_with)
-    //     << std::endl;
+        << "Mean circumradius"
+        << CGAL::mean_result(begin, end, circumradius)
+        << std::endl << std::left << std::setw(50)
 
+        << "Maximum aspect ratio"
+        << CGAL::max_result(begin, end, aspect_ratio)
+        << std::endl << std::left << std::setw(50)
 
-    
-    // // Display some statistics about the triangulation.
-    // std::cout
-    //     << "-- Information about the triangulation --"
+        << "Correlation between area and aspect ratio"
+        << CGAL::pearson(begin, end, area, aspect_ratio)
+        << std::endl << std::left << std::setw(50)
 
-    //     << "Mean face area"
-    //     << STL_extension::mean_result(begin, end, area)
-    //     << std::endl << std::left << std::setw(50)
-
-    //     << "Largest face area"
-    //     << STL_extension::max_result(begin, end, area)
-    //     << std::endl << std::left << std::setw(50)
-
-    //     << "Mean circumradius"
-    //     << STL_extension::mean_result(begin, end, circumradius)
-    //     << std::endl << std::left << std::setw(50)
-
-    //     << "Maximum aspect ratio"
-    //     << STL_extension::max_result(begin, end, aspect_ratio)
-    //     << std::endl << std::left << std::setw(50)
-
-    //     << "Correlation between area and aspect ratio"
-    //     << STL_extension::pearson(begin, end, area, aspect_ratio)
-    //     << std::endl << std::left << std::setw(50)
-
-    //     << "Number of angles larger than 100 degrees"
-    //     <<  STL_extension::count_result_in_interval(begin, end, max_angle, 100,360)
-    // << std::endl;
+        << "Number of angles larger than three"
+        <<  CGAL::count_result_in_interval(begin, end, max_angle, 3,4)
+        << std::endl;
 }
 
 

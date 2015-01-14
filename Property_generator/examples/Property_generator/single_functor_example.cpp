@@ -1,7 +1,9 @@
 #include <iostream>
-#include <CGAL/Delaunay_triangulation_2.h>
-#include <CGAL/point_generators_2.h>
+#include <iterator>
+#include <CGAL/algorithm.h>
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
+#include <CGAL/point_generators_2.h>
+#include <CGAL/Delaunay_triangulation_2.h>
 #include <CGAL/properties/triangulation_2.h>
 
 typedef CGAL::Exact_predicates_inexact_constructions_kernel Kernel;
@@ -23,7 +25,7 @@ int main()
     Properties::Aspect_ratio<Delaunay> aspect_ratio(dt);
 
     // A face from the triangulation.
-    Face_handle face = dt.finite_faces_begin();
+    Delaunay::Face_handle face = dt.finite_faces_begin();
     
     // Compute and display the aspect ratio of a face.
     std::cout << aspect_ratio(face) << std::endl;
