@@ -42,15 +42,12 @@ namespace Triangulation_2
 
   By default the function object checks that the supporting vertices of the edge
   are both finite, returning
-  `Triangulation_2::Geom_traits::FT(std::numeric_limits<double>::infinity())`
-  when the edge is infinite (and so this expression must be valid.) This
-  checking can be disabled by supplying the tag
-  `CGAL::No_finite_test_tag`, in which case the constructor requires
-  no argument.
-
-  `Triangulation_2::Geom_traits::FT` must be a model of `RealEmbeddable`.
-  If needed `CGAL::to_double()` will be called to use STL functions taking a `double`
-  as input (such as `std::sqrt`, trigonometric functions, ...).
+  `Geom_traits::FT(std::numeric_limits<double>::infinity())` when the edge is
+  infinite. Thus the result in this case may result in undefined behaviour if
+  `Geom_traits::FT` does not support infinities. This checking can be disabled
+  by supplying the tag `CGAL::No_finite_test_tag`, in which case the constructor
+  requires no argument. If needed `CGAL::to_double()` will be called to use STL
+  functions taking a `double` as input.
 
   @tparam Triangulation_2 The Triangulation type.
   @tparam Tag either `CGAL::Finite_test_tag` or
@@ -61,17 +58,32 @@ template <typename Triangulation_2, typename Tag = Finite_test_tag>
 class Length
 {
  public:
+
+  /// Result type of function object.
+  #ifdef DOXYGEN_RUNNING
+    typedef Geom_traits::FT result_type;
+  #else
+    typedef typename Triangulation_2::Geom_traits::FT result_type;
+  #endif
+
+  /// Argument type of function object.
+  #ifdef DOXYGEN_RUNNING
+    typedef Edge argument_type;
+  #else
+    typedef typename Triangulation_2::Edge argument_type;
+  #endif
+
+
   /// Constructor.
   Length(Triangulation_2 const&);
 
   /*!
     Operator to compute the edge length.
 
-    \pre The Vertex_handle provided to the operator must be associated with
+    \pre The `Edge` provided to the operator must be associated with
     the `Triangulation_2` provided on construction.
   */
-  typename Triangulation_2::Geom_traits::FT operator()(
-      typename Triangulation_2::Edge) const;
+  result_type operator()(argument_type) const;
 };
 
 /******************************************************************************/
@@ -81,13 +93,13 @@ class Length
   We define the neighbor area to be the sum of the areas of the two triangular
   faces incident to the given edge.
 
-  By default the function object checks that the adjacent faces are
-  are both finite, returning
-  `Triangulation_2::Geom_traits::FT(std::numeric_limits<double>::infinity())`
-  if not (and so this expression must be valid.) This
-  checking can be disabled by supplying the tag
-  `CGAL::No_finite_test_tag`, in which case the constructor requires
-  no argument.
+  By default the function object checks that the neighboring faces of the edge
+  are finite, returning
+  `Geom_traits::FT(std::numeric_limits<double>::infinity())` when one is
+  infinite. Thus the result in this case may result in undefined behaviour if
+  `Geom_traits::FT` does not support infinities. This checking can be disabled
+  by supplying the tag `CGAL::No_finite_test_tag`. If needed `CGAL::to_double()`
+  will be called to use STL functions taking a `double` as input.
 
   @tparam Triangulation_2 The Triangulation type.
   @tparam Tag either `CGAL::Finite_test_tag` or
@@ -98,17 +110,31 @@ template <typename Triangulation_2, typename Tag = Finite_test_tag>
 class Neighbor_area
 {
  public:
+
+  /// Result type of function object.
+  #ifdef DOXYGEN_RUNNING
+    typedef Geom_traits::FT result_type;
+  #else
+    typedef typename Triangulation_2::Geom_traits::FT result_type;
+  #endif
+
+  /// Argument type of function object.
+  #ifdef DOXYGEN_RUNNING
+    typedef Edge argument_type;
+  #else
+    typedef typename Triangulation_2::Edge argument_type;
+  #endif
+
   /// Constructor.
   Neighbor_area(Triangulation_2 const&);
 
   /*!
     Operator to compute neighbor area.
 
-    \pre The Vertex_handle provided to the operator must be associated with
+    \pre The `Edge` provided to the operator must be associated with
     the `Triangulation_2` provided on construction.
   */
-  typename Triangulation_2::Geom_traits::FT operator()(
-      typename Triangulation_2::Edge) const;
+  result_type operator()(argument_type) const;
 };
 
 /******************************************************************************/
@@ -116,23 +142,20 @@ class Neighbor_area
 /*!
   Function object to compute the approximate dual length of an edge, to double
   accuracy. We define the dual length to be the length of the line segment
-  between the circumcenters of the two triangular faces adjacent to this edge.
+  between the circumcenters of the two triangular faces adjacent to the given
+  edge, or zero when the triangulation is degenerate.
 
   \note
   Iterating over finite edges in a Triangulation_2 will always result in
   infinite dual edges.
 
-  By default the function object checks for finiteness of the adjacent faces,
-  returning
-  `Triangulation_2::Geom_traits::FT(std::numeric_limits<double>::infinity())`
-  when one of them is infinite (and so this expression must be valid.) This
-  checking can be disabled by supplying the tag
-  `CGAL::No_finite_test_tag`, in which case the constructor requires
-  no argument.
-
-  `Triangulation_2::Geom_traits::FT` must be a model of `RealEmbeddable`.
-  If needed `CGAL::to_double()` will be called to use STL functions taking a `double`
-  as input (such as `std::sqrt`, trigonometric functions, ...).
+  By default the function object checks for infinite vertices, returning
+  `Geom_traits::FT(std::numeric_limits<double>::infinity())` when the dual
+  length is infinite. Thus the result in this case may result in undefined
+  behaviour if `Geom_traits::FT` does not support infinities. This checking can
+  be disabled by supplying the tag `CGAL::No_finite_test_tag`. If needed
+  `CGAL::to_double()` will be called to use STL functions taking a `double` as
+  input.
 
   @tparam Triangulation_2 The Triangulation type.
   @tparam Tag either `CGAL::Finite_test_tag` or
@@ -143,17 +166,31 @@ template <typename Triangulation_2, typename Tag = Finite_test_tag>
 class Dual_length
 {
  public:
+
+  /// Result type of function object.
+  #ifdef DOXYGEN_RUNNING
+    typedef Geom_traits::FT result_type;
+  #else
+    typedef typename Triangulation_2::Geom_traits::FT result_type;
+  #endif
+
+  /// Argument type of function object.
+  #ifdef DOXYGEN_RUNNING
+    typedef Edge argument_type;
+  #else
+    typedef typename Triangulation_2::Edge argument_type;
+  #endif
+
   /// Constructor.
   Dual_length(Triangulation_2 const&);
 
   /*!
     Operator to compute dual length.
 
-    \pre The Vertex_handle provided to the operator must be associated with
+    \pre The `Edge` provided to the operator must be associated with
     the `Triangulation_2` provided on construction.
   */
-  typename Triangulation_2::Geom_traits::FT operator()(
-      typename Triangulation_2::Edge) const;
+  result_type operator()(argument_type) const;
 };
 
 /******************************************************************************/
@@ -264,7 +301,7 @@ class Length<Triangulation_2, Finite_test_tag>
     if ( tr.is_infinite(v1) || tr.is_infinite(v2) )
       return std::numeric_limits<double>::infinity();
 
-    return sqrt( ( v1->point() - v2->point() ).squared_length() );
+    return sqrt(to_double((v1->point() - v2->point()).squared_length()));
   }
 };
 
@@ -291,7 +328,7 @@ class Length<Triangulation_2, No_finite_test_tag>
     Vertex_handle_ v1 = f->vertex(f->cw(i));
     Vertex_handle_ v2 = f->vertex(f->ccw(i));
 
-    return sqrt( ( v1->point() - v2->point() ).squared_length() );
+    return sqrt(to_double((v1->point() - v2->point()).squared_length()));
   }
 };
 
@@ -392,7 +429,7 @@ static inline typename Triangulation_2::Geom_traits::FT dual_length_internal(
 
   const Point& c1 = circumcenter(p1, p2, p3);
   const Point& c2 = circumcenter(q1, q2, q3);
-  return std::sqrt((c1 - c2).squared_length());
+  return std::sqrt(to_double((c1 - c2).squared_length()));
 }
 }
 

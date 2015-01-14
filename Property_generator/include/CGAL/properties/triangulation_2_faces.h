@@ -5,7 +5,6 @@
 
 #include <cmath>
 #include <limits>
-#include <boost/math/constants/constants.hpp>
 #include <CGAL/properties/triangulation_2_edges.h>  // For edge lengths.
 #include <CGAL/properties/tags.h>
 #include <CGAL/assertions.h>
@@ -41,10 +40,11 @@ namespace Triangulation_2
 /*!
   Function object to compute the area of a face in a `Triangulation_2`.
 
-  By default this function object checks for infinite vertices, returning
-  `Triangulation_2::Geom_traits::FT(std::numeric_limits<double>::infinity())`
-  when the face is infinite (and so this expression must be valid.) This
-  checking can be disabled by supplying the tag
+  By default this function object checks for infinite faces, returning
+  `Geom_traits::FT(std::numeric_limits<double>::infinity())`
+  when the face is infinite. Thus the result in this case may result
+  in undefined behaviour if `Geom_traits::FT` does not support infinities.
+  The infinity checking can be disabled by supplying the tag
   `CGAL::No_finite_test_tag`. In this case, the constructor no
   longer takes any arguments.
 
@@ -57,17 +57,31 @@ template <typename Triangulation_2, typename Tag = Finite_test_tag>
 class Area
 {
  public:
+
+  /// Result type of function object.
+  #ifdef DOXYGEN_RUNNING
+    typedef Geom_traits::FT result_type;
+  #else
+    typedef typename Triangulation_2::Geom_traits::FT result_type;
+  #endif
+
+  /// Argument type of function object.
+  #ifdef DOXYGEN_RUNNING
+    typedef Face_handle argument_type;
+  #else
+    typedef typename Triangulation_2::Face_handle argument_type;
+  #endif
+
   /// Constructor.
   Area(Triangulation_2 const&);
 
   /*!
     Operator to compute the area.
 
-    \pre The Vertex_handle provided to the operator must be associated with
+    \pre The `Face_handle` provided to the operator must be associated with
     the `Triangulation_2` provided on construction.
   */
-  typename Triangulation_2::Geom_traits::FT operator()(
-      typename Triangulation_2::Face_handle) const;
+  result_type operator()(argument_type) const;
 };
 
 /******************************************************************************/
@@ -79,10 +93,11 @@ class Area
   We define the aspect ratio to be longest edge length of the face divided by
   the length of the shortest edge length of the face.
 
-  By default this function object checks for infinite vertices, returning
-  `Triangulation_2::Geom_traits::FT(std::numeric_limits<double>::infinity())`
-  when the ratio is infinite (and so this expression must be valid.) This
-  checking can be disabled by supplying the tag
+  By default this function object checks for infinite faces, returning
+  `Geom_traits::FT(std::numeric_limits<double>::infinity())`
+  when the face is infinite. Thus the result in this case may result
+  in undefined behaviour if `Geom_traits::FT` does not support infinities.
+  The infinity checking can be disabled by supplying the tag
   `CGAL::No_finite_test_tag`. In this case, the constructor no
   longer takes any arguments.
 
@@ -94,17 +109,31 @@ template <typename Triangulation_2, typename Tag = Finite_test_tag>
 class Aspect_ratio
 {
  public:
+
+  /// Result type of function object.
+  #ifdef DOXYGEN_RUNNING
+    typedef Geom_traits::FT result_type;
+  #else
+    typedef typename Triangulation_2::Geom_traits::FT result_type;
+  #endif
+
+  /// Argument type of function object.
+  #ifdef DOXYGEN_RUNNING
+    typedef Face_handle argument_type;
+  #else
+    typedef typename Triangulation_2::Face_handle argument_type;
+  #endif
+
   /// Constructor.
   Aspect_ratio(Triangulation_2 const&);
 
   /*!
     Operator to compute the aspect ratio.
 
-    \pre The Vertex_handle provided to the operator must be associated with
+    \pre The `Face_handle` provided to the operator must be associated with
     the `Triangulation_2` provided on construction.
   */
-  typename Triangulation_2::Geom_traits::FT operator()(
-      typename Triangulation_2::Face_handle) const;
+  result_type operator()(argument_type) const;
 };
 
 /******************************************************************************/
@@ -116,16 +145,13 @@ class Aspect_ratio
   We define the circumradius of a face to be the circumradius of the
   associated circumcircle of the triangle defined by the face.
 
-  By default this function object checks for infinite vertices, returning
-  `Triangulation_2::Geom_traits::FT(std::numeric_limits<double>::infinity())`
-  when the face is infinite (and so this expression must be valid.) This
-  checking can be disabled by supplying the tag
-  `CGAL::No_finite_test_tag`. In this case, the constructor no
-  longer takes any arguments.
-
-  `Triangulation_2::Geom_traits::FT` must be a model of `RealEmbeddable`.
-  If needed `CGAL::to_double()` will be called to use STL functions taking a `double`
-  as input (such as `std::sqrt`, trigonometric functions, ...).
+  By default this function object checks for infinite faces, returning
+  `Geom_traits::FT(std::numeric_limits<double>::infinity())` when the face is
+  infinite. Thus the result in this case may result in undefined behaviour if
+  `Geom_traits::FT` does not support infinities. The infinity checking can be
+  disabled by supplying the tag `CGAL::No_finite_test_tag`. In this case, the
+  constructor no longer takes any arguments. If needed `CGAL::to_double()` will
+  be called to use STL functions taking a `double` as input.
 
   @tparam Triangulation_2 The Triangulation type.
   @tparam Tag either `CGAL::Finite_test_tag` or
@@ -135,32 +161,43 @@ template <typename Triangulation_2, typename Tag = Finite_test_tag>
 class Circumradius
 {
  public:
+
+  /// Result type of function object.
+  #ifdef DOXYGEN_RUNNING
+    typedef Geom_traits::FT result_type;
+  #else
+    typedef typename Triangulation_2::Geom_traits::FT result_type;
+  #endif
+
+  /// Argument type of function object.
+  #ifdef DOXYGEN_RUNNING
+    typedef Face_handle argument_type;
+  #else
+    typedef typename Triangulation_2::Face_handle argument_type;
+  #endif
+
   /// Constructor.
   Circumradius(Triangulation_2 const&);
 
   /*!
     Operator to compute the circumradius.
 
-    \pre The Vertex_handle provided to the operator must be associated with
+    \pre The `Face_handle` provided to the operator must be associated with
     the `Triangulation_2` provided on construction.
   */
-  typename Triangulation_2::Geom_traits::FT operator()(
-      typename Triangulation_2::Face_handle) const;
+  result_type operator()(argument_type) const;
 };
 
 /******************************************************************************/
 
 /*!
-  Function object to compute the approximate angle in degree within a Triangulation_2 face
-  to double accuracy.
+  Function object to compute the approximate angle in radians of a
+  Triangulation_2 face to double accuracy.
 
   By default this function object checks for infinite vertices but this checking
-  can be disabled by supplying the tag `CGAL::No_finite_test_tag`.
-  In this case, the constructor no longer takes any arguments.
-
-  `Triangulation_2::Geom_traits::FT` must be a model of `RealEmbeddable`.
-  If needed `CGAL::to_double()` will be called to use STL functions taking a `double`
-  as input (such as `std::sqrt`, trigonometric functions, ...).
+  can be disabled by supplying the tag `CGAL::No_finite_test_tag`. In this case,
+  the constructor no longer takes any arguments. If needed `CGAL::to_double()`
+  will be called to use STL functions taking a `double` as input.
 
   @tparam Triangulation_2 The Triangulation type.
   @tparam Tag either `CGAL::Finite_test_tag` or
@@ -171,36 +208,45 @@ template <typename Triangulation_2, typename Tag = Finite_test_tag>
 class Angle
 {
  public:
+
+  /// Result type of function object.
+  #ifdef DOXYGEN_RUNNING
+    typedef Geom_traits::FT result_type;
+  #else
+    typedef typename Triangulation_2::Geom_traits::FT result_type;
+  #endif
+
+  /// Argument type of function object.
+  #ifdef DOXYGEN_RUNNING
+    typedef Face_handle argument_type;
+  #else
+    typedef typename Triangulation_2::Face_handle argument_type;
+  #endif
+
   /// Constructor.
   Angle(Triangulation_2 const&);
 
   /*!
-    Operator to compute the angle in degree.
+    Operator to compute an angle of a face in radians.
 
-    \pre The Vertex_handle provided to the operator must be associated with
+    \pre The `Face_handle` provided to the operator must be associated with
     the `Triangulation_2` provided on construction.
 
     \pre The index provided must be either 0, 1 or 2.
   */
-  typename Triangulation_2::Geom_traits::FT operator()(
-      typename Triangulation_2::Face_handle,
-      unsigned) const;
+  result_type operator()(argument_type, unsigned) const;
 };
 
 /******************************************************************************/
 
 /*!
-  Function object to compute an approximation to the minimum angle in degree of a
-  Triangulation_2 face. Returns the minimum internal angle of the input face, or
-  zero if one of the vertices is at infinity.
+  Function object to compute an approximation to the minimum angle in radians of
+  a Triangulation_2 face. Returns the minimum internal angle of the input face.
 
-  By default the function object checks for finite vertices, but this checking
-  can be removed by supplying the Tag `CGAL::No_finite_test_tag`.
-  In this case, the constructor no longer takes any arguments.
-
-  `Triangulation_2::Geom_traits::FT` must be a model of `RealEmbeddable`.
-  If needed `CGAL::to_double()` will be called to use STL functions taking a `double`
-  as input (such as `std::sqrt`, trigonometric functions, ...).
+  By default this function object checks for infinite vertices but this checking
+  can be disabled by supplying the tag `CGAL::No_finite_test_tag`. In this case,
+  the constructor no longer takes any arguments. If needed `CGAL::to_double()`
+  will be called to use STL functions taking a `double` as input.
 
   @tparam Triangulation_2 The Triangulation type.
   @tparam Tag either `CGAL::Finite_test_tag` or
@@ -211,33 +257,44 @@ template <typename Triangulation_2, typename Tag = Finite_test_tag>
 class Min_angle
 {
  public:
+
+  /// Result type of function object.
+  #ifdef DOXYGEN_RUNNING
+    typedef Geom_traits::FT result_type;
+  #else
+    typedef typename Triangulation_2::Geom_traits::FT result_type;
+  #endif
+
+  /// Argument type of function object.
+  #ifdef DOXYGEN_RUNNING
+    typedef Face_handle argument_type;
+  #else
+    typedef typename Triangulation_2::Face_handle argument_type;
+  #endif
+
   /// Constructor.
   Min_angle(Triangulation_2 const&);
 
   /*!
-    Operator to compute the minimum angle in degree.
+    Operator to compute the minimum angle of a face in radians.
 
-    \pre The Vertex_handle provided to the operator must be associated with
+    \pre The `Face_handle` provided to the operator must be associated with
     the `Triangulation_2` provided on construction.
   */
-  typename Triangulation_2::Geom_traits::FT operator()(
-      typename Triangulation_2::Face_handle) const;
+  result_type operator()(argument_type) const;
 };
 
 /******************************************************************************/
 
 /*!
-  Function object to compute an approximation to the maximum angle in degree of a
-  Triangulation_2 face using double accuracy. Returns the maximum internal angle
-  of the input face, or zero if one of the vertices is at infinity.
+  Function object to compute an approximation to the maximum angle in radians of
+  a Triangulation_2 face using double accuracy. Returns the maximum internal
+  angle of the input face, or zero if one of the vertices is at infinity.
 
-  By default the function object checks for finite vertices, but this checking
-  can be removed by supplying the Tag `CGAL::No_finite_test_tag`.
-  In this case, the constructor no longer takes any arguments.
-
-  `Triangulation_2::Geom_traits::FT` must be a model of `RealEmbeddable`.
-  If needed `CGAL::to_double()` will be called to use STL functions taking a `double`
-  as input (such as `std::sqrt`, trigonometric functions, ...).
+  By default this function object checks for infinite vertices but this checking
+  can be disabled by supplying the tag `CGAL::No_finite_test_tag`. In this case,
+  the constructor no longer takes any arguments. If needed `CGAL::to_double()`
+  will be called to use STL functions taking a `double` as input.
 
   @tparam Triangulation_2 The Triangulation type.
   @tparam Tag either `CGAL::Finite_test_tag` or
@@ -248,17 +305,31 @@ template <typename Triangulation_2, typename Tag = Finite_test_tag>
 class Max_angle
 {
  public:
+
+  /// Result type of function object.
+  #ifdef DOXYGEN_RUNNING
+    typedef Geom_traits::FT result_type;
+  #else
+    typedef typename Triangulation_2::Geom_traits::FT result_type;
+  #endif
+
+  /// Argument type of function object.
+  #ifdef DOXYGEN_RUNNING
+    typedef Face_handle argument_type;
+  #else
+    typedef typename Triangulation_2::Face_handle argument_type;
+  #endif
+
   /// Constructor.
   Max_angle(Triangulation_2 const&);
 
   /*!
-    Operator to compute the maximum angle in degree.
+    Operator to compute the maximum angle of a face in radians.
 
-    \pre The Vertex_handle provided to the operator must be associated with
+    \pre The `Face_handle` provided to the operator must be associated with
     the `Triangulation_2` provided on construction.
   */
-  typename Triangulation_2::Geom_traits::FT operator()(
-      typename Triangulation_2::Face_handle) const;
+  result_type operator()(argument_type) const;
 };
 
 /******************************************************************************/
@@ -270,13 +341,13 @@ class Max_angle
   We define the minimum edge length as the length of the shortest edge
   contained within the input face.
 
-  By default this function object checks for infinite vertices. This checking
-  can be disabled by supplying the tag `CGAL::No_finite_test_tag`.
-  In this case, the constructor no longer takes any arguments.
-
-  `Triangulation_2::Geom_traits::FT` must be a model of `RealEmbeddable`.
-  If needed `CGAL::to_double()` will be called to use STL functions taking a `double`
-  as input (such as `std::sqrt`, trigonometric functions, ...).
+  By default this function object checks for infinite edges, returning
+  `Geom_traits::FT(std::numeric_limits<double>::infinity())` if the edge is
+  infinite. Thus undefined behaviour may result if
+  `Geom_traits::FT` does not support infinities. This checking can be disabled
+  by supplying the tag `CGAL::No_finite_test_tag`. In this case, the constructor
+  no longer takes any arguments. If needed `CGAL::to_double()` will be called to
+  use STL functions taking a `double` as input.
 
   @tparam Triangulation_2 The Triangulation type.
   @tparam Tag either `CGAL::Finite_test_tag` or
@@ -286,17 +357,31 @@ template <typename Triangulation_2, typename Tag = Finite_test_tag>
 class Min_edge_length
 {
  public:
+
+  /// Result type of function object.
+  #ifdef DOXYGEN_RUNNING
+    typedef Geom_traits::FT result_type;
+  #else
+    typedef typename Triangulation_2::Geom_traits::FT result_type;
+  #endif
+
+  /// Argument type of function object.
+  #ifdef DOXYGEN_RUNNING
+    typedef Face_handle argument_type;
+  #else
+    typedef typename Triangulation_2::Face_handle argument_type;
+  #endif
+
   /// Constructor.
   Min_edge_length(Triangulation_2 const&);
 
   /*!
     Operator to compute the minimum edge length.
 
-    \pre The Vertex_handle provided to the operator must be associated with
+    \pre The `Face_handle` provided to the operator must be associated with
     the `Triangulation_2` provided on construction.
   */
-  typename Triangulation_2::Geom_traits::FT operator()(
-      typename Triangulation_2::Face_handle) const;
+  result_type operator()(argument_type) const;
 };
 
 /******************************************************************************/
@@ -309,16 +394,13 @@ class Min_edge_length
   edge contained within this face, or infinity if one of the vertices
   on this face is infinite.
 
-  By default this function object checks for infinite vertices, returning
-  `Triangulation_2::Geom_traits::FT(std::numeric_limits<double>::infinity())`
-  when the length infinite (and so this expression must be valid.) This
-  checking can be disabled by supplying the tag
-  `CGAL::No_finite_test_tag`. In this case, the constructor no
-  longer takes any arguments.
-
-  `Triangulation_2::Geom_traits::FT` must be a model of `RealEmbeddable`.
-  If needed `CGAL::to_double()` will be called to use STL functions taking a `double`
-  as input (such as `std::sqrt`, trigonometric functions, ...).
+  By default this function object checks for infinite edges, returning
+  `Geom_traits::FT(std::numeric_limits<double>::infinity())` if the edge is
+  infinite. Thus undefined behaviour may result if
+  `Geom_traits::FT` does not support infinities. This checking can be disabled
+  by supplying the tag `CGAL::No_finite_test_tag`. In this case, the constructor
+  no longer takes any arguments. If needed `CGAL::to_double()` will be called to
+  use STL functions taking a `double` as input.
 
   @tparam Triangulation_2 The Triangulation type.
   @tparam Tag either `CGAL::Finite_test_tag` or
@@ -329,17 +411,31 @@ template <typename Triangulation_2, typename Tag = Finite_test_tag>
 class Max_edge_length
 {
  public:
+
+  /// Result type of function object.
+  #ifdef DOXYGEN_RUNNING
+    typedef Geom_traits::FT result_type;
+  #else
+    typedef typename Triangulation_2::Geom_traits::FT result_type;
+  #endif
+
+  /// Argument type of function object.
+  #ifdef DOXYGEN_RUNNING
+    typedef Face_handle argument_type;
+  #else
+    typedef typename Triangulation_2::Face_handle argument_type;
+  #endif
+
   /// Constructor.
   Max_edge_length(Triangulation_2 const&);
 
   /*!
     Operator to compute the maximum edge length.
 
-    \pre The Vertex_handle provided to the operator must be associated with
+    \pre The `Face_handle` provided to the operator must be associated with
     the `Triangulation_2` provided on construction.
   */
-  typename Triangulation_2::Geom_traits::FT operator()(
-      typename Triangulation_2::Face_handle) const;
+  result_type operator()(argument_type) const;
 };
 
 /******************************************************************************/
@@ -349,7 +445,7 @@ class Max_edge_length
 /******************************************************************************/
 
 /*!
-  Construct a function object to compute the area for Triangulation_2 Face
+  Construct a function object to compute the area for Triangulation_2 face
   handles.  The tag is optional and defaults to `Finite_test_tag`.
 
   @tparam Triangulation_2 The Triangulation_2 type.
@@ -367,7 +463,7 @@ Area<Triangulation_2, Finite_test_tag> make_area(const Triangulation_2&);
 
 /*!
   Construct a function object to compute the circumradius for Triangulation_2
-  Face handles.
+  face handles.
 
   @tparam Triangulation_2 The Triangulation_2 type.
   @tparam Tag either `CGAL::Finite_test_tag` or
@@ -386,7 +482,7 @@ Circumradius<Triangulation_2, Finite_test_tag> make_circumradius(
 
 /*!
   Construct a function object to compute the aspect_ratio for Triangulation_2
-  Face handles. The tag is optional and defaults to `Finite_test_tag`.
+  face handles. The tag is optional and defaults to `Finite_test_tag`.
 
   @tparam Triangulation_2 The Triangulation_2 type.
   @tparam Tag either `CGAL::Finite_test_tag` or
@@ -412,8 +508,9 @@ Aspect_ratio<Triangulation_2, Finite_test_tag> make_aspect_ratio(
 /******************************************************************************/
 
 /*!
-  Construct a function object to compute the min_edge_length for Triangulation_2
-  Face handles. The tag is optional and defaults to `Finite_test_tag`.
+  Construct a function object to compute the minimum edge length for
+  Triangulation_2 face handles. The tag is optional and defaults to
+  `Finite_test_tag`.
 
   @tparam Triangulation_2 The Triangulation_2 type.
   @tparam Tag either `CGAL::Finite_test_tag` or
@@ -432,8 +529,9 @@ Min_edge_length<Triangulation_2, Finite_test_tag> make_min_edge_length(
 /******************************************************************************/
 
 /*!
-  Construct a function object to compute the max_edge_length for Triangulation_2
-  Face handles. The tag is optional and defaults to `Finite_test_tag`.
+  Construct a function object to compute the maximum edge length for
+  Triangulation_2 face handles. The tag is optional and defaults to
+  `Finite_test_tag`.
 
   @tparam Triangulation_2 The Triangulation_2 type.
   @tparam Tag either `CGAL::Finite_test_tag` or
@@ -452,8 +550,8 @@ Max_edge_length<Triangulation_2, Finite_test_tag> make_max_edge_length(
 /******************************************************************************/
 
 /*!
-  Construct a function object to compute the min_angle for Triangulation_2 Face
-  handles. The tag is optional and defaults to `Finite_test_tag`.
+  Construct a function object to compute the minimum angle for Triangulation_2
+  face handles. The tag is optional and defaults to `Finite_test_tag`.
 
   @tparam Triangulation_2 The Triangulation_2 type.
   @tparam Tag either `CGAL::Finite_test_tag` or
@@ -470,8 +568,8 @@ Min_angle<Triangulation_2, Finite_test_tag> make_min_angle(
 /******************************************************************************/
 
 /*!
-  Construct a function object to compute the max_angle for Triangulation_2 Face
-  handles. The tag is optional and defaults to `Finite_test_tag`.
+  Construct a function object to compute the maximum angle for Triangulation_2
+  face handles. The tag is optional and defaults to `Finite_test_tag`.
 
   @tparam Triangulation_2 The Triangulation_2 type.
   @tparam Tag either `CGAL::Finite_test_tag` or
@@ -621,15 +719,20 @@ static inline typename Triangulation_2::Geom_traits::FT aspect_ratio_internal(
   typedef typename Triangulation_2::Geom_traits::FT FT;
   typedef typename Triangulation_2::Geom_traits::Point_2 Point_2;
   
-  FT min = std::numeric_limits<double>::infinity();
-  FT max = 0.;
+  FT min, max;
 
-  for (unsigned short i = 0; i < 3; ++i)
+  Point_2 p1 = f->vertex(0)->point();
+  Point_2 p2 = f->vertex(1)->point();
+
+  max = min = (p1 - p2).squared_length();
+   
+  for (unsigned short i = 1; i != 3; ++i)
   {
-    const Point_2& p1 = f->vertex(i)->point();
-    const Point_2& p2 = f->vertex((i + 1) % 3)->point();
+    p1 = f->vertex(i)->point();
+    p2 = f->vertex((i + 1) % 3)->point();
 
     FT value = (p1 - p2).squared_length();
+
     if (value < min)
       min = value;
     if (value > max)
@@ -688,7 +791,7 @@ namespace
 // Internal funtion to compute angle.
 template <typename Triangulation_2>
 static inline typename Triangulation_2::Geom_traits::FT angle_internal(
-    const typename Triangulation_2::Face_handle& f,
+    typename Triangulation_2::Face_handle f,
     unsigned i)
 {
   typedef typename Triangulation_2::Geom_traits::Point_2 Point;
@@ -736,7 +839,7 @@ class Angle<Triangulation_2, Finite_test_tag>
       if (tr.is_infinite(f->vertex(i)))
         return 0;
       else
-        return boost::math::constants::pi<double>();
+        return CGAL_PI;
     }
     return angle_internal<Triangulation_2>(f, i);
   }
@@ -770,8 +873,7 @@ static inline typename Triangulation_2::Geom_traits::FT min_angle_internal(
     const typename Triangulation_2::Face_handle& f,
     const Angle<Triangulation_2, finite_test_tag>& angle_functor)
 {
-  typename Triangulation_2::Geom_traits::FT min =
-      std::numeric_limits<double>::infinity();
+  typename Triangulation_2::Geom_traits::FT min = 2*CGAL_PI;
   for (unsigned short i = 0; i < 3; ++i)
   {
     typename Triangulation_2::Geom_traits::FT value = angle_functor(f, i);
@@ -802,7 +904,7 @@ class Min_angle<Triangulation_2, Finite_test_tag>
 
   result_type operator()(typename Triangulation_2::Face_handle f) const
   {
-    result_type min = std::numeric_limits<double>::infinity();
+    result_type min = 2*CGAL_PI;
     for (unsigned short i = 0; i < 3; ++i)
     {
       result_type value = angle_functor(f, i);
@@ -913,10 +1015,9 @@ static inline typename Triangulation_2::Geom_traits::FT
         const typename Triangulation_2::Face_handle& f,
         const Length<Triangulation_2, finite_test_tag>& length_functor)
 {
-  typename Triangulation_2::Geom_traits::FT min =
-      std::numeric_limits<double>::infinity();
+  typename Triangulation_2::Geom_traits::FT min = length_functor(f, 0);
 
-  for (unsigned short i = 0; i < 3; ++i)
+  for (unsigned short i = 1; i < 3; ++i)
   {
     typename Triangulation_2::Geom_traits::FT value = length_functor(f, i);
     if (value < min)
@@ -1028,7 +1129,7 @@ class Max_edge_length<Triangulation_2, No_finite_test_tag>
   typedef typename Triangulation_2::Geom_traits::FT result_type;
   typedef typename Triangulation_2::Face_handle argument_type;
 
-  double operator()(typename Triangulation_2::Face_handle f) const
+  result_type operator()(typename Triangulation_2::Face_handle f) const
   {
     // return aspect_ratio_internal(f);
     return max_edge_length_internal<Triangulation_2, No_finite_test_tag>(
