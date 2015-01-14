@@ -2498,7 +2498,7 @@ class No_deref_iterator
     No_deref_iterator()
         : No_deref_iterator::iterator_adaptor_() {}
 
-    explicit No_deref_iterator(const Iterator it)
+    explicit No_deref_iterator(Iterator it)
         : No_deref_iterator::iterator_adaptor_(it) {}
 
  private:
