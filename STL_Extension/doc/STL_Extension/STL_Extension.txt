@@ -164,11 +164,8 @@ library.
 To facilitate the use of the property function objects provided in the property
 generator package, we provide a collection of utility algorithms for computing
 basic statistics over iterator ranges. Since \cgal iterators are often
-implicitly converted to handles, and most of the property functions require the
-handle types (before dereferencing), these functions have been written to try
-and discover whether or not de-referencing is necesary by looking at the
-argument types. We note that it is also possible to use the
-`CGAL::No_deref_iterator` wrapper when iteration over handles is required.
+implicitly converted to handles, we provide the `CGAL::No_deref_iterator`
+wrapper class for when iteration over handles is required.
 
 \section secchecks Checks
 
