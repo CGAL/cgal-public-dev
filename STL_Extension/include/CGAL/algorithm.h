@@ -29,9 +29,10 @@
 
 #include <CGAL/basic.h>
 #include <CGAL/config.h>
-#include <CGAL/metafunctions.h> // For statistics functions.
-#include <CGAL/iterator.h>      // No_deref_iterator
+#include <CGAL/iterator.h>
+#include <CGAL/result_of.h>
 #include <algorithm>
+#include <iterator>
 #include <iosfwd>
 #include <cmath>
 
@@ -52,7 +53,7 @@ namespace cpp11 {
   // described in $24.4.4 and forward it to boost prior
   template<typename BidirectionalIterator>
   BidirectionalIterator prev( BidirectionalIterator x, 
-			      typename std::iterator_traits<BidirectionalIterator>::difference_type n = 1)
+            typename std::iterator_traits<BidirectionalIterator>::difference_type n = 1)
   {
     return boost::prior(x, n);
   }
@@ -365,31 +366,6 @@ output_range(std::ostream& os,
     return os;
 }
 
-namespace internal // Used for statistics algorithms
-{
-
-template <typename Function, typename Iterator>
-typename boost::enable_if< 
-  boost::mpl::not_< do_dereference<Function,Iterator> >, 
-  Iterator
->::type
-conditional_dereference(Iterator i)
-{
-  return i;
-}
-
-template <typename Function, typename Iterator>
-typename boost::enable_if< 
-  do_dereference<Function,Iterator>, 
-  typename std::iterator_traits<Iterator>::value_type
->::type
-conditional_dereference(Iterator i)
-{
-  return *i;
-}
-
-}  // anonymous namespace.
-
 template <typename Iterator, typename Function>
 double mean_result(Iterator begin, Iterator end, Function f)
 {
@@ -397,28 +373,26 @@ double mean_result(Iterator begin, Iterator end, Function f)
   double sum = 0.;
 
   for (; begin != end; ++begin, ++count)
-    sum += f( internal::conditional_dereference<Function>(begin) );
+    sum += to_double(f( *begin ));
 
   return sum / double(count);
 }
 
 template <typename Iterator, typename Function>
-#ifdef DOXYGEN_RUNNING
-unspecified_type
-#else
-typename internal::get_result_type<Function, Iterator>::type
-#endif
-    max_result(Iterator begin, Iterator end, Function f)
+typename cpp11::result_of<
+    Function(typename std::iterator_traits<Iterator>::value_type)
+>::type
+max_result(Iterator begin, Iterator end, Function f)
 {
-  typedef typename internal::get_result_type<Function, Iterator>::type
-      result_type;
+  typedef typename cpp11::result_of<Function(
+      typename std::iterator_traits<Iterator>::value_type)>::type result_type;
 
   // Set max to value of first element.
-  result_type max = f( internal::conditional_dereference<Function>(begin) );
+  result_type max = f(*begin);
 
   for (++begin; begin != end; ++begin)
   {
-    result_type value = f( internal::conditional_dereference<Function>(begin) );
+    result_type value = f(*begin);
     if (value > max)
       max = value;
   }
@@ -427,23 +401,21 @@ typename internal::get_result_type<Function, Iterator>::type
 }
 
 template <typename Iterator, typename Function>
-#ifdef DOXYGEN_RUNNING
-unspecified_type
-#else
-typename internal::get_result_type<Function, Iterator>::type
-#endif
-    min_result(Iterator begin, Iterator end, Function f)
+typename cpp11::result_of<
+    Function(typename std::iterator_traits<Iterator>::value_type)
+>::type
+min_result(Iterator begin, Iterator end, Function f)
 {
-  typedef typename internal::get_result_type<Function, Iterator>::type
-      result_type;
+  typedef typename cpp11::result_of<Function(
+      typename std::iterator_traits<Iterator>::value_type)>::type result_type;
 
   // Set max to value of first element.
-  result_type min = f(internal::conditional_dereference<Function>(begin));
+  result_type min = f(*begin);
 
   // Can we optimise-out the first function call?
   for (++begin; begin != end; ++begin)
   {
-    result_type value = f(internal::conditional_dereference<Function>(begin));
+    result_type value = f(*begin);
     if (value < min)
       min = value;
   }
@@ -452,21 +424,21 @@ typename internal::get_result_type<Function, Iterator>::type
 }
 
 template <typename Iterator, typename Function, typename Limit>
-typename std::iterator_traits<Function>::difference_type
+typename std::iterator_traits<Iterator>::difference_type
     count_result_in_interval(Iterator begin,
                              Iterator end,
                              Function f,
                              Limit min,
                              Limit max)
 {
-  typedef typename internal::get_result_type<Function, Iterator>::type
-      result_type;
+  typedef typename cpp11::result_of<Function(
+      typename std::iterator_traits<Iterator>::value_type)>::type result_type;
   typename std::iterator_traits<Iterator>::difference_type count = 0;
 
   for (; begin != end; ++begin)
   {
-    result_type value = f(internal::conditional_dereference<Function>(begin));
-    if (min <= value && value <= max)
+    result_type value = f(*begin);
+    if (min <= value && value < max)
       ++count;
   }
   return count;
@@ -480,33 +452,19 @@ double pearson(Iterator begin,
                Function_1 f1,
                Function_2 f2)
 {
-  typedef typename internal::get_result_type<Function_1, Iterator>::type
-      result_type_1;
-  typedef typename internal::get_result_type<Function_2, Iterator>::type
-      result_type_2;
 
-  std::vector<result_type_1> v_1;
-  std::vector<result_type_2> v_2;
+  std::vector<double> v_1;
+  std::vector<double> v_2;
 
   // Compute values over all of the statistics we want.
-  std::transform(
-    CGAL::make_no_deref_iterator(begin), 
-    CGAL::make_no_deref_iterator(end), 
-    std::back_inserter(v_1),
-    f1
-  );
+  for (; begin != end; ++begin)
+  {
+    v_1.push_back( to_double( f1(*begin) ) );
+    v_2.push_back( to_double( f2(*begin) ) );
+  }
 
-  // We know how long v_1 should be now.
-  v_2.reserve(v_1.size());
+  typename std::vector<double>::size_type n = v_1.size();
 
-  std::transform(
-    CGAL::make_no_deref_iterator(begin), 
-    CGAL::make_no_deref_iterator(end), 
-    std::back_inserter(v_2), 
-    f2
-  );
-
-  typename std::vector<result_type_1>::size_type n = v_1.size();
   double mean_1 = 0.;
   double mean_2 = 0.;
   double numerator = 0.;
@@ -514,14 +472,14 @@ double pearson(Iterator begin,
   double denominator_2 = 0.;
 
   // Compute means
-  for (unsigned i = 0; i != n; ++i)
+  for (std::vector<double>::size_type i = 0; i != n; ++i)
   {
     mean_1 += v_1[i];
     mean_2 += v_2[i];
   }
 
-  mean_1 = mean_1 / n;
-  mean_2 = mean_2 / n;
+  mean_1 = mean_1 / double(n);
+  mean_2 = mean_2 / double(n);
 
   for (int i = 0; i < n; i++)
   {
@@ -530,7 +488,7 @@ double pearson(Iterator begin,
     denominator_2 += std::pow((v_2[i] - mean_2), 2);
   }
 
-  return numerator / (std::sqrt(denominator_1) * std::sqrt(denominator_2));
+  return numerator / std::sqrt(denominator_1 * denominator_2);
 }
 
 } //namespace CGAL

@@ -35,7 +35,7 @@
 #include <CGAL/tuple.h>
 #include <boost/variant.hpp>
 #include <boost/optional.hpp>
-
+#include <boost/iterator/iterator_adaptor.hpp>
 #include <boost/config.hpp>
 
 #if defined(BOOST_MSVC)
@@ -2483,7 +2483,7 @@ template <typename Iterator>
 class No_deref_iterator
 #ifndef DOXYGEN_RUNNING
   : public boost::iterator_adaptor<
-        No_deref_iterator<Iterator>      // Derived
+        No_deref_iterator<Iterator>    // Derived
       , Iterator                       // Base
       , Iterator                       // Value
       , boost::forward_traversal_tag   // Traversal type
@@ -2496,7 +2496,7 @@ class No_deref_iterator
 
  public:
     No_deref_iterator()
-        : No_deref_iterator::iterator_adaptor_(0) {}
+        : No_deref_iterator::iterator_adaptor_() {}
 
     explicit No_deref_iterator(const Iterator it)
         : No_deref_iterator::iterator_adaptor_(it) {}
@@ -2513,7 +2513,7 @@ class No_deref_iterator
 };
 
 template<typename T>
-inline No_deref_iterator<T> make_no_deref_iterator(T const& iterator){
+inline No_deref_iterator<T> make_no_deref_iterator(T iterator){
     return No_deref_iterator<T>(iterator);
 }
 
