@@ -21,7 +21,7 @@
 \cgalPkgPicture{property_generator.png}
  
 \cgalPkgSummaryBegin
-\cgalPkgAuthors{Ross Hemsley, Olivier Devillers}
+\cgalPkgAuthors{Ross Hemsley and Olivier Devillers}
 \cgalPkgDesc{
 Property generator is a package to simplify the computation and iteration over
 properties of geometric objects. It provides a set of function objects
@@ -31,14 +31,13 @@ objects in \cgal.}
 \cgalPkgSummaryEnd
  
 \cgalPkgShortInfoBegin
-\cgalPkgSince{4.4}
-\cgalPkgBib{cgal:y-t2}
-\cgalPkgLicense{\ref licensesGPL "GPL"}
+\cgalPkgSince{4.6}
+\cgalPkgBib{cgal:hd-pg}
+\cgalPkgLicense{\ref licensesLGPL "LGPL"}
 \cgalPkgDemo{Delaunay Visualiser, delaunay_visualiser.zip}
 \cgalPkgShortInfoEnd
  
 \cgalPkgDescriptionEnd
-
 
 \cgalClassifedRefPages
 
@@ -47,8 +46,8 @@ objects in \cgal.}
 - \link Triangulation_2_properties `CGAL::Properties::Triangulation_2` \endlink
 
 ## Tag Classes ##
-- `CGAL::Properties::No_finite_test_tag`
-- `CGAL::Properties::Finite_test_tag`
+- `CGAL::No_finite_test_tag`
+- `CGAL::Finite_test_tag`
 
 ## Triangulation_2 Properties ##
 
@@ -74,26 +73,6 @@ objects in \cgal.}
 - `CGAL::Properties::Triangulation_2::Link_length`
 - `CGAL::Properties::Triangulation_2::Max_star_angle`
 - `CGAL::Properties::Triangulation_2::Min_star_angle`
-
-
-
-\todo
-    Doxygen: clicking on a namespace in the navigation list
-    doesn't correctly update the treeview. (Seems to be a bug in hacks.js?)
-
-\todo
-    Sort out license.
-
-\todo
-    Sort out bibliogrpahy.
-
-\todo
-    Sort out demo.
-
-\todo Check that no special functionality is required with other kernels-
-      for example to_double().
-
-\todo Create UnaryFunction concept.
 
 @}
 
