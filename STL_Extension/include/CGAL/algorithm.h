@@ -29,8 +29,12 @@
 
 #include <CGAL/basic.h>
 #include <CGAL/config.h>
+#include <CGAL/iterator.h>
+#include <CGAL/result_of.h>
 #include <algorithm>
+#include <iterator>
 #include <iosfwd>
+#include <cmath>
 
 #ifdef CGAL_CFG_NO_CPP0X_NEXT_PREV
 #  include <boost/next_prior.hpp>
@@ -49,7 +53,7 @@ namespace cpp11 {
   // described in $24.4.4 and forward it to boost prior
   template<typename BidirectionalIterator>
   BidirectionalIterator prev( BidirectionalIterator x, 
-			      typename std::iterator_traits<BidirectionalIterator>::difference_type n = 1)
+            typename std::iterator_traits<BidirectionalIterator>::difference_type n = 1)
   {
     return boost::prior(x, n);
   }
@@ -429,6 +433,131 @@ void nth_element(RandomAccessIterator left,
     else 
       left = new_pivot_it + 1;
   } // end while(true)
+}
+
+template <typename Iterator, typename Function>
+double mean_result(Iterator begin, Iterator end, Function f)
+{
+  typename std::iterator_traits<Iterator>::difference_type count = 0;
+  double sum = 0.;
+
+  for (; begin != end; ++begin, ++count)
+    sum += to_double(f( *begin ));
+
+  return sum / double(count);
+}
+
+template <typename Iterator, typename Function>
+typename cpp11::result_of<
+    Function(typename std::iterator_traits<Iterator>::value_type)
+>::type
+max_result(Iterator begin, Iterator end, Function f)
+{
+  typedef typename cpp11::result_of<Function(
+      typename std::iterator_traits<Iterator>::value_type)>::type result_type;
+
+  // Set max to value of first element.
+  result_type max = f(*begin);
+
+  for (++begin; begin != end; ++begin)
+  {
+    result_type value = f(*begin);
+    if (value > max)
+      max = value;
+  }
+
+  return max;
+}
+
+template <typename Iterator, typename Function>
+typename cpp11::result_of<
+    Function(typename std::iterator_traits<Iterator>::value_type)
+>::type
+min_result(Iterator begin, Iterator end, Function f)
+{
+  typedef typename cpp11::result_of<Function(
+      typename std::iterator_traits<Iterator>::value_type)>::type result_type;
+
+  // Set max to value of first element.
+  result_type min = f(*begin);
+
+  // Can we optimise-out the first function call?
+  for (++begin; begin != end; ++begin)
+  {
+    result_type value = f(*begin);
+    if (value < min)
+      min = value;
+  }
+
+  return min;
+}
+
+template <typename Iterator, typename Function, typename Limit>
+typename std::iterator_traits<Iterator>::difference_type
+    count_result_in_interval(Iterator begin,
+                             Iterator end,
+                             Function f,
+                             Limit min,
+                             Limit max)
+{
+  typedef typename cpp11::result_of<Function(
+      typename std::iterator_traits<Iterator>::value_type)>::type result_type;
+  typename std::iterator_traits<Iterator>::difference_type count = 0;
+
+  for (; begin != end; ++begin)
+  {
+    result_type value = f(*begin);
+    if (min <= value && value < max)
+      ++count;
+  }
+  return count;
+}
+
+template <typename Iterator,
+          typename Function_1,
+          typename Function_2>
+double pearson(Iterator begin,
+               Iterator end,
+               Function_1 f1,
+               Function_2 f2)
+{
+
+  std::vector<double> v_1;
+  std::vector<double> v_2;
+
+  // Compute values over all of the statistics we want.
+  for (; begin != end; ++begin)
+  {
+    v_1.push_back( to_double( f1(*begin) ) );
+    v_2.push_back( to_double( f2(*begin) ) );
+  }
+
+  typename std::vector<double>::size_type n = v_1.size();
+
+  double mean_1 = 0.;
+  double mean_2 = 0.;
+  double numerator = 0.;
+  double denominator_1 = 0.;
+  double denominator_2 = 0.;
+
+  // Compute means
+  for (std::vector<double>::size_type i = 0; i != n; ++i)
+  {
+    mean_1 += v_1[i];
+    mean_2 += v_2[i];
+  }
+
+  mean_1 = mean_1 / double(n);
+  mean_2 = mean_2 / double(n);
+
+  for (int i = 0; i < n; i++)
+  {
+    numerator += (v_1[i] - mean_1) * (v_2[i] - mean_2);
+    denominator_1 += std::pow((v_1[i] - mean_1), 2);
+    denominator_2 += std::pow((v_2[i] - mean_2), 2);
+  }
+
+  return numerator / std::sqrt(denominator_1 * denominator_2);
 }
 
 } //namespace CGAL

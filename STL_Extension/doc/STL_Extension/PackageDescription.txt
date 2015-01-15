@@ -49,6 +49,13 @@
 - `CGAL::predecessor`
 - `CGAL::successor`
 
+## Statistics Algorithms ##
+- `CGAL::mean_result`
+- `CGAL::min_result`
+- `CGAL::max_result`
+- `CGAL::count_result_in_interval`
+- `CGAL::pearson`
+
 ## Iterators and Iterator/Circulator Adaptors ##
 - `CGAL::Dispatch_output_iterator<V,O>`
 - `CGAL::Dispatch_or_drop_output_iterator<V,O>`
@@ -62,6 +69,8 @@
 - `CGAL::Inverse_index<IC>`
 - `CGAL::Random_access_adaptor<IC>`
 - `CGAL::Random_access_value_adaptor<IC,T>`
+- `CGAL::No_deref_iterator`
+- `CGAL::make_no_deref_iterator`
 
 ## Ranges ##
 - `CGAL::Iterator_range`

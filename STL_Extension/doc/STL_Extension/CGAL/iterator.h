@@ -919,8 +919,46 @@ T& operator[]( size_type n);
 
 /// @}
 
-
-
 }; /* end Random_access_value_adaptor */
+
+
+/*!
+  \ingroup STLIterators
+
+  An iterator wrapper that modifies an iterator so that
+  dereferencing returns the original iterator. 
+ 
+  This wrapper is intended to be used to provide an iterator with a value
+  type that is convertible to a \cgal handle type. In particular,
+  to allow a user to provide \cgal itertators to `std` algorithms that
+  operate on a \cgal handle type. 
+  
+  \note The adapted iterator identifies itself as a `forward_traversal`
+  iterator, disregarding the input iterator type.
+ 
+  @tparam Iterator The type of the iterator to provide a wrapper for.
+*/
+
+template <typename Iterator>
+class No_deref_iterator
+{
+ public:
+    /// Default constructor.
+    No_deref_iterator();
+
+    /// Wrap the templated iterator type in the new iterator class to create
+    /// an iterator that returns the original iterator when de-referenced.
+    explicit No_deref_iterator(Iterator it);
+};
+
+/// \ingroup STLIterators
+/// Use type deduction to create a non-dereferencing iterator from a normal
+/// iterator.
+template<typename Iterator>
+inline No_deref_iterator<T> make_no_deref_iterator(Iterator it){
+    return No_deref_iterator<T>(iterator);
+}
+
+
 
 } /* end namespace CGAL */
