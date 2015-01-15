@@ -856,3 +856,13 @@
 , url = "http://doc.cgal.org/${CGAL_CREATED_VERSION_NUM}/Manual/packages.html#PkgSurfaceSegmentationSummary"
 , year =        ${CGAL_BUILD_YEAR4}
 }
+
+@incollection{cgal:hd-pg-${CGAL_RELEASE_YEAR_ID}
+, author =  "Ross Hemsley and Olivier Devillers"
+, title =   "Property Generator"
+, publisher =  "{CGAL Editorial Board}"
+, edition =     "{${CGAL_CREATED_VERSION_NUM}}"
+, booktitle =   "{CGAL} User and Reference Manual"
+, url = "http://doc.cgal.org/${CGAL_CREATED_VERSION_NUM}/Manual/packages.html#PkgPropertyGeneratorySummary"
+, year =        ${CGAL_BUILD_YEAR4}
+}
