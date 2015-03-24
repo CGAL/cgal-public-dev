@@ -47,6 +47,9 @@
 #include <boost/preprocessor/repetition/enum_binary_params.hpp>
 #include <boost/preprocessor/repetition/enum.hpp>
 
+#ifdef CGAL_USE_LAZY_WITH_MUTEX
+#include <boost/thread.hpp>
+#endif
 
 namespace CGAL {
 
@@ -223,6 +226,9 @@ public:
 
   mutable AT at;
   mutable ET *et;
+  #ifdef CGAL_USE_LAZY_WITH_MUTEX
+  mutable boost::mutex update_exact_lock;
+  #endif
 
   Lazy_rep ()
     : at(), et(NULL){}
@@ -245,15 +251,31 @@ public:
 
   const ET & exact() const
   {
+    #ifdef CGAL_USE_LAZY_WITH_MUTEX
+    if (et==NULL)
+    {
+      boost::lock_guard<boost::mutex> lock(update_exact_lock);
+      if(et==NULL) update_exact();
+    }
+    #else
     if (et==NULL)
       update_exact();
+    #endif
     return *et;
   }
 
   ET & exact()
   {
+    #ifdef CGAL_USE_LAZY_WITH_MUTEX
+    if (et==NULL)
+    {
+      boost::lock_guard<boost::mutex> lock(update_exact_lock);
+      if(et==NULL) update_exact();
+    }
+    #else
     if (et==NULL)
       update_exact();
+    #endif
     return *et;
   }
 
