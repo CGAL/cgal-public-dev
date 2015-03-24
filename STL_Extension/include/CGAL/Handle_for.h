@@ -40,6 +40,9 @@
 #ifdef CGAL_USE_BOOST_ATOMIC
 #include <boost/atomic.hpp>
 #endif
+#ifdef CGAL_USE_BOOST_ATOMIC_COUNTER
+#include <boost/detail/atomic_count.hpp>
+#endif
 
 namespace CGAL {
 
@@ -51,6 +54,8 @@ class Handle_for
         T t;
         #ifdef CGAL_USE_BOOST_ATOMIC
         boost::atomic<unsigned int> count;
+        #elif CGAL_USE_BOOST_ATOMIC_COUNTER
+        boost::detail::atomic_count count;
         #else
         unsigned int count;
         #endif
@@ -72,14 +77,22 @@ public:
       : ptr_(allocator.allocate(1))
     {
         new (&(ptr_->t)) element_type(); // we get the warning here 
+        #ifdef CGAL_USE_BOOST_ATOMIC_COUNTER
+        new (&(ptr_->count)) boost::detail::atomic_count(1);
+        #else
         ptr_->count = 1;
+        #endif
     }
 
     Handle_for(const element_type& t)
       : ptr_(allocator.allocate(1))
     {
         new (&(ptr_->t)) element_type(t);
+        #ifdef CGAL_USE_BOOST_ATOMIC_COUNTER
+        new (&(ptr_->count)) boost::detail::atomic_count(1);
+        #else
         ptr_->count = 1;
+        #endif
     }
 
 #ifndef CGAL_CFG_NO_CPP0X_RVALUE_REFERENCE
@@ -87,7 +100,11 @@ public:
       : ptr_(allocator.allocate(1))
     {
         new (&(ptr_->t)) element_type(std::move(t));
+        #ifdef CGAL_USE_BOOST_ATOMIC_COUNTER
+        new (&(ptr_->count)) boost::detail::atomic_count(1);
+        #else
         ptr_->count = 1;
+        #endif
     }
 #endif
 
@@ -108,7 +125,11 @@ public:
       : ptr_(allocator.allocate(1))
     {
         new (&(ptr_->t)) element_type(std::forward<T1>(t1), std::forward<T2>(t2), std::forward<Args>(args)...);
+        #ifdef CGAL_USE_BOOST_ATOMIC_COUNTER
+        new (&(ptr_->count)) boost::detail::atomic_count(1);
+        #else
         ptr_->count = 1;
+        #endif
     }
 #else
     template < typename T1, typename T2 >
@@ -116,7 +137,11 @@ public:
       : ptr_(allocator.allocate(1))
     {
         new (&(ptr_->t)) element_type(t1, t2);
+        #ifdef CGAL_USE_BOOST_ATOMIC_COUNTER
+        new (&(ptr_->count)) boost::detail::atomic_count(1);
+        #else
         ptr_->count = 1;
+        #endif
     }
 
     template < typename T1, typename T2, typename T3 >
@@ -124,7 +149,11 @@ public:
       : ptr_(allocator.allocate(1))
     {
         new (&(ptr_->t)) element_type(t1, t2, t3);
+        #ifdef CGAL_USE_BOOST_ATOMIC_COUNTER
+        new (&(ptr_->count)) boost::detail::atomic_count(1);
+        #else
         ptr_->count = 1;
+        #endif
     }
 
     template < typename T1, typename T2, typename T3, typename T4 >
@@ -132,7 +161,11 @@ public:
       : ptr_(allocator.allocate(1))
     {
         new (&(ptr_->t)) element_type(t1, t2, t3, t4);
+        #ifdef CGAL_USE_BOOST_ATOMIC_COUNTER
+        new (&(ptr_->count)) boost::detail::atomic_count(1);
+        #else
         ptr_->count = 1;
+        #endif
     }
 #endif // CGAL_CFG_NO_CPP0X_VARIADIC_TEMPLATES
 
