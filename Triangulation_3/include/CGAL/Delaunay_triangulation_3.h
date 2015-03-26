@@ -102,7 +102,7 @@ public:
   // types for dual:
   typedef typename Gt::Line_3        Line;
   typedef typename Gt::Ray_3         Ray;
-  //typedef typename Gt::Plane_3       Plane;
+  typedef typename Gt::Plane_3       Plane;
   typedef typename Gt::Object_3      Object;
 
   typedef typename Tr_Base::Cell_handle   Cell_handle;
@@ -193,6 +193,12 @@ protected:
   construct_ray(const Point &p, const Line &l) const
   {
       return geom_traits().construct_ray_3_object()(p, l);
+  }
+
+  Plane
+  construct_bisector(const Point &p, const Point &q) const
+  {
+      return geom_traits().construct_bisector_3_object()(p, q);
   }
 
   Object
@@ -733,7 +739,18 @@ public:
 
   Object dual(Cell_handle c, int i) const;
 
+  template < class NefPolyhedron_3 >
+  NefPolyhedron_3 dual(Vertex_handle v) const;
+
+  Line dual_support(const Facet & f) const
+  { return dual_support( f.first, f.second ); }
+
   Line dual_support(Cell_handle c, int i) const;
+
+  Plane dual_support(const Edge & e) const
+  { return dual_support( e.first, e.second, e.third); }
+
+  Plane dual_support(Cell_handle c, int i, int j) const;
 
   bool is_valid(bool verbose = false, int level = 0) const;
 
@@ -1768,6 +1785,34 @@ dual(Cell_handle c, int i) const
   return construct_object(construct_ray( dual(n), l));
 }
 
+template < class Gt, class Tds, class Lds >
+template < class NefPolyhedron_3 >
+NefPolyhedron_3
+Delaunay_triangulation_3<Gt,Tds,Default,Lds>::
+dual(Vertex_handle v) const
+{
+  CGAL_triangulation_precondition( dimension() > 0 );
+  CGAL_triangulation_precondition( !is_infinite(v) );
+
+  std::vector<Edge> edges;
+  this->finite_incident_edges(v, std::back_inserter(edges));
+  CGAL_assertion(!edges.empty());
+
+  NefPolyhedron_3 N(NefPolyhedron_3::COMPLETE);
+  for(typename std::vector<Edge>::iterator eit = edges.begin(), end = edges.end(); eit != end; ++eit) {
+    Cell_handle c= eit->first;
+    int i = eit->second;
+    int j = eit->third;
+    // direction of the constructing plane should be the same as the direction
+    // of the vector {v, v_incident}
+    if(c->vertex(i) != v)
+      std::swap(i,j);
+
+    N *= NefPolyhedron_3(dual_support(c, i, j));
+  }
+
+  return N;
+}
 
 
 template < class Gt, class Tds, class Lds >
@@ -1788,6 +1833,18 @@ dual_support(Cell_handle c, int i) const
   return construct_equidistant_line( c->vertex((i+1)&3)->point(),
                                      c->vertex((i+2)&3)->point(),
                                      c->vertex((i+3)&3)->point() );
+}
+
+template < class Gt, class Tds, class Lds >
+typename Delaunay_triangulation_3<Gt,Tds,Default,Lds>::Plane
+Delaunay_triangulation_3<Gt,Tds,Default,Lds>::
+dual_support(Cell_handle c, int i, int j) const
+{
+  CGAL_triangulation_precondition( dimension() > 0 );
+  CGAL_triangulation_precondition( !is_infinite(c, i, j) );
+
+  return construct_bisector( c->vertex(j)->point(),
+                             c->vertex(i)->point() );
 }
 
 
