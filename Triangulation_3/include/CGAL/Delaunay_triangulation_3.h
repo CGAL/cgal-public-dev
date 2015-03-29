@@ -34,6 +34,9 @@
 #include <utility>
 #include <vector>
 
+#include <CGAL/Polyhedron_3.h>
+#include <CGAL/Polyhedron_incremental_builder_3.h>
+
 #include <CGAL/Triangulation_3.h>
 #include <CGAL/iterator.h>
 #include <CGAL/Location_policy.h>
@@ -47,6 +50,7 @@
 
 #include <boost/tuple/tuple.hpp>
 #include <boost/iterator/zip_iterator.hpp>
+#include <boost/function_output_iterator.hpp>
 #include <boost/mpl/and.hpp>
 #endif //CGAL_TRIANGULATION_3_DONT_INSERT_RANGE_OF_POINTS_WITH_INFO
 
@@ -739,8 +743,18 @@ public:
 
   Object dual(Cell_handle c, int i) const;
 
-  template < class NefPolyhedron_3 >
-  NefPolyhedron_3 dual(Vertex_handle v) const;
+private:
+  struct Incremental_value_map_inserter
+  {
+    Incremental_value_map_inserter(std::map<Cell_handle, size_t>& m) : map(&m) {}
+    void operator()(const Cell_handle& c) {
+      map->insert(std::make_pair(c, map->size()));
+    }
+    std::map<Cell_handle, size_t>* map;
+  };
+
+public:
+  CGAL::Polyhedron_3<Gt> dual(Vertex_handle v) const;
 
   Line dual_support(const Facet & f) const
   { return dual_support( f.first, f.second ); }
@@ -1786,32 +1800,52 @@ dual(Cell_handle c, int i) const
 }
 
 template < class Gt, class Tds, class Lds >
-template < class NefPolyhedron_3 >
-NefPolyhedron_3
+CGAL::Polyhedron_3<Gt>
 Delaunay_triangulation_3<Gt,Tds,Default,Lds>::
 dual(Vertex_handle v) const
 {
-  CGAL_triangulation_precondition( dimension() > 0 );
-  CGAL_triangulation_precondition( !is_infinite(v) );
+  CGAL_triangulation_precondition( v != Vertex_handle());
+  CGAL_triangulation_precondition( !is_infinite(v));
+  CGAL_triangulation_precondition( dimension() == 3);
+  CGAL_triangulation_expensive_precondition( tds().is_vertex(v) );
 
-  std::vector<Edge> edges;
-  this->finite_incident_edges(v, std::back_inserter(edges));
-  CGAL_assertion(!edges.empty());
+  typedef std::map<Cell_handle, size_t> Cell_id_map;
+  Cell_id_map cell_ids;
+  this->incident_cells(v,
+    boost::make_function_output_iterator(Incremental_value_map_inserter(cell_ids)));
 
-  NefPolyhedron_3 N(NefPolyhedron_3::COMPLETE);
-  for(typename std::vector<Edge>::iterator eit = edges.begin(), end = edges.end(); eit != end; ++eit) {
-    Cell_handle c= eit->first;
-    int i = eit->second;
-    int j = eit->third;
-    // direction of the constructing plane should be the same as the direction
-    // of the vector {v, v_incident}
-    if(c->vertex(i) != v)
-      std::swap(i,j);
-
-    N *= NefPolyhedron_3(dual_support(c, i, j));
+  std::vector<Point> points(cell_ids.size());
+  for(typename Cell_id_map::iterator cit = cell_ids.begin(), end = cell_ids.end(); cit != end; ++cit) {
+    // Vertex does not belong to the hull of the triangulation
+    CGAL_triangulation_precondition(!cit->first->has_vertex(infinite_vertex()));
+    points[cit->second] = dual(cit->first);
   }
 
-  return N;
+  std::vector<Edge> edges;
+  this->incident_edges(v, std::back_inserter(edges));
+
+  CGAL::Polyhedron_3<Gt> result;
+  CGAL::Polyhedron_incremental_builder_3<typename CGAL::Polyhedron_3<Gt>::HalfedgeDS> builder(result.hds(), true);
+  builder.begin_surface(cell_ids.size(), edges.size(), 3 * cell_ids.size());
+  for(typename std::vector<Point>::iterator pit = points.begin(), pend = points.end(); pit != pend; ++pit) {
+    builder.add_vertex(*pit);
+  }
+
+  for(typename std::vector<Edge>::iterator eit = edges.begin(), eend = edges.end(); eit != eend; ++eit) {
+    Cell_circulator ccir = this->incident_cells(*eit);
+    Cell_circulator cend = ccir;
+    builder.begin_facet();
+    do {
+      builder.add_vertex_to_facet(cell_ids[ccir]);
+      ++ccir;
+    } while ( ccir != cend );
+    builder.end_facet();
+  }
+  builder.end_surface();
+  CGAL_expensive_postcondition(result.is_valid());
+  CGAL_postcondition(result.is_closed());
+
+  return result;
 }
 
 
