@@ -49,6 +49,7 @@
 #include <CGAL/internal/info_check.h>
 
 #include <boost/tuple/tuple.hpp>
+#include <boost/bind.hpp>
 #include <boost/iterator/zip_iterator.hpp>
 #include <boost/function_output_iterator.hpp>
 #include <boost/mpl/and.hpp>
@@ -742,16 +743,6 @@ public:
   { return dual( f.first, f.second ); }
 
   Object dual(Cell_handle c, int i) const;
-
-private:
-  struct Incremental_value_map_inserter
-  {
-    Incremental_value_map_inserter(std::map<Cell_handle, size_t>& m) : map(&m) {}
-    void operator()(const Cell_handle& c) {
-      map->insert(std::make_pair(c, map->size()));
-    }
-    std::map<Cell_handle, size_t>* map;
-  };
 
 public:
   CGAL::Polyhedron_3<Gt> dual(Vertex_handle v) const;
@@ -1811,8 +1802,14 @@ dual(Vertex_handle v) const
 
   typedef std::map<Cell_handle, size_t> Cell_id_map;
   Cell_id_map cell_ids;
-  this->incident_cells(v,
-    boost::make_function_output_iterator(Incremental_value_map_inserter(cell_ids)));
+  {
+  typedef std::pair<typename Cell_id_map::iterator, bool> Iter_bool_pair;
+  typedef typename Cell_id_map::value_type Value_type;
+  this->incident_cells(v, boost::make_function_output_iterator(
+    boost::bind(static_cast<Iter_bool_pair(Cell_id_map::*)(const Value_type&)>(&Cell_id_map::insert), &cell_ids,
+      boost::bind(std::make_pair<Cell_handle, size_t>, _1,  boost::bind(&Cell_id_map::size, &cell_ids)))
+  ));
+  }
 
   std::vector<Point> points(cell_ids.size());
   for(typename Cell_id_map::iterator cit = cell_ids.begin(), end = cell_ids.end(); cit != end; ++cit) {
