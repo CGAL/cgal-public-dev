@@ -1820,9 +1820,12 @@ dual(Vertex_handle v, Bbox bbox) const
   for(typename Cell_id_map::iterator cit = cell_ids.begin(), end = cell_ids.end(); cit != end; ++cit) {
     Cell_handle cell = cit->first;
     int inf_v_id;
-    if(!hull_facet_found && cell->has_vertex(infinite_vertex(), inf_v_id)) {
-      hull_facet_found = true;
-      first_hull_facet = mirror_facet(std::make_pair(cell, inf_v_id));
+    if(cell->has_vertex(infinite_vertex(), inf_v_id)) {
+      if(!hull_facet_found) {
+        hull_facet_found = true;
+        first_hull_facet = mirror_facet(std::make_pair(cell, inf_v_id));
+      }
+      continue;
     }
     points[cit->second] = dual(cell);
   }
@@ -1875,7 +1878,7 @@ dual(Vertex_handle v, Bbox bbox) const
       // Ccw neighbor of hull_facet (wrt v) in the same cell.
       Facet adj_facet = std::make_pair(hull_facet.first, ccw_id);
       Facet adj_cell_facet = mirror_facet(adj_facet);
-      if(adj_cell_facet.first->has_vertex(infinite_vertex())) {
+      if(is_infinite(adj_cell_facet.first)) {
         hull_facet = adj_facet;
       } else {
         op_id = adj_cell_facet.second;
@@ -1923,6 +1926,7 @@ dual(Vertex_handle v, Bbox bbox) const
     }
   }
 
+  // TODO: postconditions do not work.
   CGAL_triangulation_expensive_postcondition(result.is_valid());
   CGAL_triangulation_postcondition(result.is_closed());
 
