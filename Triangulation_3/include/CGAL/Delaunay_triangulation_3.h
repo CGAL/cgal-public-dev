@@ -25,6 +25,7 @@
 #define CGAL_DELAUNAY_TRIANGULATION_3_H
 
 #include <CGAL/basic.h>
+#include <CGAL/Kernel/global_functions_3.h> // TODO: need it for normal(), should be removed
 
 #ifdef CGAL_CONCURRENT_TRIANGULATION_3_PROFILING
 # define CGAL_PROFILE
@@ -155,6 +156,7 @@ public:
   using Tr_Base::next_around_edge;
   using Tr_Base::vertex_triple_index;
   using Tr_Base::mirror_vertex;
+  using Tr_Base::mirror_facet;
   using Tr_Base::coplanar;
   using Tr_Base::coplanar_orientation;
   using Tr_Base::orientation;
@@ -1812,12 +1814,21 @@ dual(Vertex_handle v) const
   }
 
   std::vector<Point> points(cell_ids.size());
+  // A first found facet which is incident to v and which belongs to the hull.
+  // of the triangulation, if any.
+  Facet first_hull_facet;
+  bool hull_facet_found = false;
   for(typename Cell_id_map::iterator cit = cell_ids.begin(), end = cell_ids.end(); cit != end; ++cit) {
-    // Vertex does not belong to the hull of the triangulation
-    CGAL_triangulation_precondition(!cit->first->has_vertex(infinite_vertex()));
-    points[cit->second] = dual(cit->first);
+    Cell_handle cell = cit->first;
+    int inf_v_id;
+    if(!hull_facet_found && cell->has_vertex(infinite_vertex(), inf_v_id)) {
+      hull_facet_found = true;
+      first_hull_facet = mirror_facet(std::make_pair(cell, inf_v_id));
+    }
+    points[cit->second] = dual(cell);
   }
 
+  // First part: add to the resulting polyhedron finite facets.
   std::vector<Edge> edges;
   this->incident_edges(v, std::back_inserter(edges));
 
@@ -1839,8 +1850,72 @@ dual(Vertex_handle v) const
     builder.end_facet();
   }
   builder.end_surface();
-  CGAL_expensive_postcondition(result.is_valid());
-  CGAL_postcondition(result.is_closed());
+
+  // Second part: add to the resulting polyhedron infinite facets, trimmed by the bounding box.
+  if(hull_facet_found){
+    // Facets of the triangulation, which are incident to v and which belong to the hull.
+    // Adjacency of two successive facets is kept in array.
+    std::vector<Facet> hull_facets;
+    hull_facets.reserve(8);
+    Facet hull_facet = first_hull_facet;
+    do {
+      hull_facets.push_back(hull_facet);
+      int v_id;
+      this->has_vertex(hull_facet, v, v_id);
+      // TODO: replace to a new function int ccw(Face f, int i) ?
+      int op_id = hull_facet.second;
+      bool op_is_pair = (op_id % 2 == 0);
+      // Ccw neighbor of v in hull_facet.
+      int ccw_id = op_is_pair ? (v_id + 1) % 4 : (v_id - 1) % 4;
+      if(ccw_id == op_id) {
+        if(op_is_pair)
+          ccw_id = (ccw_id + 1) % 4;
+        else
+          ccw_id = (ccw_id - 1) % 4;
+      }
+      // Ccw neighbor of hull_facet (wrt v) in the same cell.
+      Facet adj_facet = std::make_pair(hull_facet.first, ccw_id);
+      Facet adj_cell_facet = mirror_facet(adj_facet);
+      if(adj_cell_facet.first->has_vertex(infinite_vertex())) {
+        hull_facet = adj_facet;
+      } else {
+        op_id = adj_cell_facet.second;
+        // Id of v in the adjacent cell.
+        this->has_vertex(adj_cell_facet, v, v_id);
+        op_is_pair = (op_id % 2 == 0);
+        // Opposite vector of a new hull facet which belongs to the ajacent
+        // cell. Is a ccw neighbor of v in adj_cell_facet.
+        ccw_id = op_is_pair ? (v_id + 1) % 4 : (v_id - 1) % 4;
+        if(ccw_id == op_id) {
+          if(op_is_pair)
+            ccw_id = (ccw_id + 1) % 4;
+          else
+            ccw_id = (ccw_id - 1) % 4;
+        }
+        hull_facet = std::make_pair(adj_cell_facet.first, ccw_id);
+      }
+    } while(hull_facet != first_hull_facet);
+    CGAL_triangulation_assertion(hull_facets.size() > 2);
+
+    // Infinite edges of infinite facets of the resulting cell.
+    std::vector<Ray> rays;
+    rays.reserve(hull_facets.size());
+    for(typename std::vector<Facet>::const_iterator hf = hull_facets.begin(),
+        hf_end = hull_facets.end(); hf != hf_end; ++hf) {
+      Cell_handle hull_cell = hf->first;
+      int op_id = hf->second;
+      const Point& p1 = hull_cell->vertex((op_id + 1) % 4)->point();
+      const Point& p2 = hull_cell->vertex((op_id + 2) % 4)->point();
+      const Point& p3 = hull_cell->vertex((op_id + 3) % 4)->point();
+      const typename Gt::Vector_3 n = (op_id % 2 == 0)
+        ? CGAL::normal(p1, p2, p3)
+        : CGAL::normal(p1, p3, p2);
+      rays.push_back(Ray(points[cell_ids[hull_cell]], n));
+    }
+  }
+
+  CGAL_triangulation_expensive_postcondition(result.is_valid());
+  CGAL_triangulation_postcondition(result.is_closed());
 
   return result;
 }
