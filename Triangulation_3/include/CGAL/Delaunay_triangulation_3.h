@@ -35,9 +35,6 @@
 #include <utility>
 #include <vector>
 
-#include <CGAL/Polyhedron_3.h>
-#include <CGAL/Polyhedron_incremental_builder_3.h>
-
 #include <CGAL/Triangulation_3.h>
 #include <CGAL/iterator.h>
 #include <CGAL/Location_policy.h>
@@ -747,7 +744,8 @@ public:
   Object dual(Cell_handle c, int i) const;
 
 public:
-  CGAL::Polyhedron_3<Gt> dual(Vertex_handle v) const;
+  template < class Polyhedron, class Polyhedron_incremental_builder, class Bbox >
+  Polyhedron dual(Vertex_handle v, Bbox bbox = Bbox(0., 0., 0., 0., 0., 0.)) const;
 
   Line dual_support(const Facet & f) const
   { return dual_support( f.first, f.second ); }
@@ -1793,9 +1791,10 @@ dual(Cell_handle c, int i) const
 }
 
 template < class Gt, class Tds, class Lds >
-CGAL::Polyhedron_3<Gt>
+template < class Polyhedron, class Polyhedron_incremental_builder, class Bbox >
+Polyhedron
 Delaunay_triangulation_3<Gt,Tds,Default,Lds>::
-dual(Vertex_handle v) const
+dual(Vertex_handle v, Bbox bbox) const
 {
   CGAL_triangulation_precondition( v != Vertex_handle());
   CGAL_triangulation_precondition( !is_infinite(v));
@@ -1832,8 +1831,8 @@ dual(Vertex_handle v) const
   std::vector<Edge> edges;
   this->incident_edges(v, std::back_inserter(edges));
 
-  CGAL::Polyhedron_3<Gt> result;
-  CGAL::Polyhedron_incremental_builder_3<typename CGAL::Polyhedron_3<Gt>::HalfedgeDS> builder(result.hds(), true);
+  Polyhedron result;
+  Polyhedron_incremental_builder builder(result.hds(), true);
   builder.begin_surface(cell_ids.size(), edges.size(), 3 * cell_ids.size());
   for(typename std::vector<Point>::iterator pit = points.begin(), pend = points.end(); pit != pend; ++pit) {
     builder.add_vertex(*pit);
@@ -1910,7 +1909,17 @@ dual(Vertex_handle v) const
       const typename Gt::Vector_3 n = (op_id % 2 == 0)
         ? CGAL::normal(p1, p2, p3)
         : CGAL::normal(p1, p3, p2);
-      rays.push_back(Ray(points[cell_ids[hull_cell]], n));
+      // A finite point of an infinite facet is the source of a ray.
+      const Point& p = points[cell_ids[hull_cell]];
+      CGAL_triangulation_precondition(
+        bbox.xmin() < p.x()
+        && bbox.ymin() < p.y()
+        && bbox.zmin() < p.z()
+        && bbox.xmax() > p.x()
+        && bbox.ymax() > p.y()
+        && bbox.zmax() > p.z()
+      );
+      rays.push_back(Ray(p, n));
     }
   }
 
