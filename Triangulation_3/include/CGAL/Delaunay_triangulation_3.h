@@ -1855,17 +1855,41 @@ dual(Vertex_handle v, Bbox bbox) const
 
   // Second part: add to the resulting polyhedron infinite facets, trimmed by the bounding box.
   if(hull_facet_found){
+    // Infinite edges of infinite facets of the resulting cell.
+    std::vector<Ray> rays;
+    rays.reserve(8);
     // Facets of the triangulation, which are incident to v and which belong to the hull.
-    // Adjacency of two successive facets is kept in array.
-    std::vector<Facet> hull_facets;
-    hull_facets.reserve(8);
+    // Adjacency of two successive facets is kept.
     Facet hull_facet = first_hull_facet;
     do {
-      hull_facets.push_back(hull_facet);
+      Cell_handle hull_cell = hull_facet.first;
+      // Vector opposite to the hull facet.
+      int op_id = hull_facet.second;
+      {
+        // Calculate the current ray.
+        const Point& p1 = hull_cell->vertex((op_id + 1) % 4)->point();
+        const Point& p2 = hull_cell->vertex((op_id + 2) % 4)->point();
+        const Point& p3 = hull_cell->vertex((op_id + 3) % 4)->point();
+        // Direction of a ray is the positive normal of corresponding hull facet.
+        const typename Gt::Vector_3 n = (op_id % 2 == 0)
+          ? CGAL::normal(p1, p2, p3)
+          : CGAL::normal(p1, p3, p2);
+        // A finite point of an infinite facet is the source of a ray.
+        const Point& p = points[cell_ids[hull_cell]];
+        CGAL_triangulation_precondition(
+          bbox.xmin() < p.x()
+          && bbox.ymin() < p.y()
+          && bbox.zmin() < p.z()
+          && bbox.xmax() > p.x()
+          && bbox.ymax() > p.y()
+          && bbox.zmax() > p.z()
+        );
+        rays.push_back(Ray(p, n));
+      }
+
       int v_id;
       this->has_vertex(hull_facet, v, v_id);
       // TODO: replace to a new function int ccw(Face f, int i) ?
-      int op_id = hull_facet.second;
       bool op_is_pair = (op_id % 2 == 0);
       // Ccw neighbor of v in hull_facet.
       int ccw_id = op_is_pair ? (v_id + 1) % 4 : (v_id - 1) % 4;
@@ -1876,7 +1900,7 @@ dual(Vertex_handle v, Bbox bbox) const
           ccw_id = (ccw_id - 1) % 4;
       }
       // Ccw neighbor of hull_facet (wrt v) in the same cell.
-      Facet adj_facet = std::make_pair(hull_facet.first, ccw_id);
+      Facet adj_facet = std::make_pair(hull_cell, ccw_id);
       Facet adj_cell_facet = mirror_facet(adj_facet);
       if(is_infinite(adj_cell_facet.first)) {
         hull_facet = adj_facet;
@@ -1897,33 +1921,7 @@ dual(Vertex_handle v, Bbox bbox) const
         hull_facet = std::make_pair(adj_cell_facet.first, ccw_id);
       }
     } while(hull_facet != first_hull_facet);
-    CGAL_triangulation_assertion(hull_facets.size() > 2);
-
-    // Infinite edges of infinite facets of the resulting cell.
-    std::vector<Ray> rays;
-    rays.reserve(hull_facets.size());
-    for(typename std::vector<Facet>::const_iterator hf = hull_facets.begin(),
-        hf_end = hull_facets.end(); hf != hf_end; ++hf) {
-      Cell_handle hull_cell = hf->first;
-      int op_id = hf->second;
-      const Point& p1 = hull_cell->vertex((op_id + 1) % 4)->point();
-      const Point& p2 = hull_cell->vertex((op_id + 2) % 4)->point();
-      const Point& p3 = hull_cell->vertex((op_id + 3) % 4)->point();
-      const typename Gt::Vector_3 n = (op_id % 2 == 0)
-        ? CGAL::normal(p1, p2, p3)
-        : CGAL::normal(p1, p3, p2);
-      // A finite point of an infinite facet is the source of a ray.
-      const Point& p = points[cell_ids[hull_cell]];
-      CGAL_triangulation_precondition(
-        bbox.xmin() < p.x()
-        && bbox.ymin() < p.y()
-        && bbox.zmin() < p.z()
-        && bbox.xmax() > p.x()
-        && bbox.ymax() > p.y()
-        && bbox.zmax() > p.z()
-      );
-      rays.push_back(Ray(p, n));
-    }
+    CGAL_triangulation_assertion(rays.size() > 2);
   }
 
   // TODO: postconditions do not work.
