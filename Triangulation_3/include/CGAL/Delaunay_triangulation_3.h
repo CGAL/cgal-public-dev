@@ -25,7 +25,6 @@
 #define CGAL_DELAUNAY_TRIANGULATION_3_H
 
 #include <CGAL/basic.h>
-#include <CGAL/Kernel/global_functions_3.h> // TODO: need it for normal(), should be removed
 
 #ifdef CGAL_CONCURRENT_TRIANGULATION_3_PROFILING
 # define CGAL_PROFILE
@@ -1870,10 +1869,6 @@ dual(Vertex_handle v, Bbox bbox) const
         const Point& p1 = hull_cell->vertex((op_id + 1) % 4)->point();
         const Point& p2 = hull_cell->vertex((op_id + 2) % 4)->point();
         const Point& p3 = hull_cell->vertex((op_id + 3) % 4)->point();
-        // Direction of a ray is the positive normal of corresponding hull facet.
-        const typename Gt::Vector_3 n = (op_id % 2 == 0)
-          ? CGAL::normal(p1, p2, p3)
-          : CGAL::normal(p1, p3, p2);
         // A finite point of an infinite facet is the source of a ray.
         const Point& p = points[cell_ids[hull_cell]];
         CGAL_triangulation_precondition(
@@ -1884,7 +1879,11 @@ dual(Vertex_handle v, Bbox bbox) const
           && bbox.ymax() > p.y()
           && bbox.zmax() > p.z()
         );
-        rays.push_back(Ray(p, n));
+        // A plane constructed from the hull facet keep its orientation.
+        const Plane hf_pline = (op_id % 2 == 0)
+          ? Plane(p1, p2, p3)
+          : Plane(p1, p3, p2);
+        rays.push_back(Ray(p, hf_pline.orthogonal_direction()));
       }
 
       int v_id;
