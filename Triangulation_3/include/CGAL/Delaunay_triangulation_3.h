@@ -1852,7 +1852,7 @@ dual(Vertex_handle v, Bbox bbox) const
   }
   builder.end_surface();
 
-  // Second part: add to the resulting polyhedron infinite facets, trimmed by the bounding box.
+  // Second part: add to the resulting polyhedron the infinite facets, trimmed by the bounding box.
   if(hull_facet_found){
     // Infinite edges of infinite facets of the resulting cell.
     std::vector<Ray> rays;
@@ -1908,7 +1908,7 @@ dual(Vertex_handle v, Bbox bbox) const
         // Id of v in the adjacent cell.
         this->has_vertex(adj_cell_facet, v, v_id);
         op_is_pair = (op_id % 2 == 0);
-        // Opposite vector of a new hull facet which belongs to the ajacent
+        // Opposite vector of a new hull facet which belongs to the adjacent
         // cell. Is a ccw neighbor of v in adj_cell_facet.
         ccw_id = op_is_pair ? (v_id + 1) % 4 : (v_id - 1) % 4;
         if(ccw_id == op_id) {
@@ -1921,6 +1921,68 @@ dual(Vertex_handle v, Bbox bbox) const
       }
     } while(hull_facet != first_hull_facet);
     CGAL_triangulation_assertion(rays.size() > 2);
+
+    // Find the intersections of bbox with the plane sectors between each two
+    // successive rays.
+    typedef typename Gt::FT Cartesian;
+
+    Cartesian bbox_limits[3][2] = {
+      {bbox.xmin(), bbox.xmax()},
+      {bbox.ymin(), bbox.ymax()},
+      {bbox.zmin(), bbox.zmax()}
+    };
+
+    enum Position {
+      MIN = 0,
+      MAX // 1
+    };
+
+    // Side of bbox.
+    struct Bbox_side {
+      // Const coordinate.
+      int const_coord;
+      // Side position.
+      Position pos;
+      Bbox_side(int cc, Position p): const_coord(cc), pos(p) {}
+    };
+
+    // Edge of a side of bbox.
+    struct Bbox_side_edge {
+      // Const coordinate of the edge (one of two variable coordinates of its side).
+      int const_coord;
+      // Edge position by the const coordinate.
+      Position pos;
+      Bbox_side_edge(int cc, Position p): const_coord(cc), pos(p) {}
+    };
+    // Point on a side edge of bbox.
+    struct Point_on_side_edge {
+      // Side edge
+      Bbox_side_edge edge;
+      // Point coordinate on the edge (wrt the edge variable coordinate).
+      Cartesian coord;
+      Point_on_side_edge(const Bbox_side_edge& e, Cartesian c): edge(e), coord(c) {}
+    };
+
+    // Corner of a side of bbox.
+    struct Bbox_side_corner {
+      // Corner position by the first variable side coordinate.
+      Position pos_first;
+      // Corner position by the second variable side coordinate.
+      Position pos_second;
+      Bbox_side_corner(Position p1, Position p2): pos_first(p1), pos_second(p2) {}
+    };
+
+    struct Point_on_side {
+      // Side of bbox
+      Bbox_side side;
+      // Point representation: side interior Point, or Point_on_side_edge,
+      // or Bbox_side_corner.
+      Object point;
+      Point_on_side(const Bbox_side& s, const Object& p): side(s), point(p) {}
+      Point to_cartesian() const {
+        //TODO
+      }
+    };
   }
 
   // TODO: postconditions do not work.
