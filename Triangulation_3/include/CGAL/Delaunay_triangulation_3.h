@@ -1805,10 +1805,12 @@ dual(Vertex_handle v, Bbox bbox) const
   {
   typedef std::pair<typename Cell_id_map::iterator, bool> Iter_bool_pair;
   typedef typename Cell_id_map::value_type Value_type;
+  typedef Iter_bool_pair(Cell_id_map::*Insert)(const Value_type&);
   this->incident_cells(v, boost::make_function_output_iterator(
-    boost::bind(static_cast<Iter_bool_pair(Cell_id_map::*)(const Value_type&)>(&Cell_id_map::insert), &cell_ids,
-      boost::bind(std::make_pair<Cell_handle, size_t>, _1,  boost::bind(&Cell_id_map::size, &cell_ids)))
-  ));
+    boost::bind(static_cast<Insert>(&Cell_id_map::insert), &cell_ids,
+      // Const references are needed for C++11 compability.
+      boost::bind(&std::make_pair<const Cell_handle&, const size_t&>,
+        _1, boost::bind(&Cell_id_map::size, &cell_ids)))));
   }
 
   std::vector<Point> points(cell_ids.size());
@@ -1939,26 +1941,36 @@ dual(Vertex_handle v, Bbox bbox) const
 
     // Side of bbox.
     struct Bbox_side {
-      // Const coordinate.
-      int const_coord;
+      // Const coordinate id of the side.
+      int const_i;
       // Side position.
       Position pos;
-      Bbox_side(int cc, Position p): const_coord(cc), pos(p) {}
+      Bbox_side(int ci, Position p): const_i(ci), pos(p) {}
+    };
+
+    // 2D interior point of a side of bbox.
+    struct Bbox_side_point {
+      // First (side) coordinate of the point.
+      Cartesian c1;
+      // Second (side) coordinate of the point.
+      Cartesian c2;
+      Bbox_side_point(const Cartesian& c1, const Cartesian& c2): c1(c1), c2(c2) {}
     };
 
     // Edge of a side of bbox.
     struct Bbox_side_edge {
-      // Const coordinate of the edge (one of two variable coordinates of its side).
-      int const_coord;
-      // Edge position by the const coordinate.
+      // Const coordinate id of the edge (one of two variable coordinate ids of
+      // its side).
+      int const_i;
+      // Edge position w.r.t. the const coordinate.
       Position pos;
-      Bbox_side_edge(int cc, Position p): const_coord(cc), pos(p) {}
+      Bbox_side_edge(int ci, Position p): const_i(ci), pos(p) {}
     };
     // Point on a side edge of bbox.
     struct Point_on_side_edge {
       // Side edge
       Bbox_side_edge edge;
-      // Point coordinate on the edge (wrt the edge variable coordinate).
+      // Point coordinate on the edge (w.r.t. the edge variable coordinate).
       Cartesian coord;
       Point_on_side_edge(const Bbox_side_edge& e, Cartesian c): edge(e), coord(c) {}
     };
@@ -1966,22 +1978,85 @@ dual(Vertex_handle v, Bbox bbox) const
     // Corner of a side of bbox.
     struct Bbox_side_corner {
       // Corner position by the first variable side coordinate.
-      Position pos_first;
+      Position pos1;
       // Corner position by the second variable side coordinate.
-      Position pos_second;
-      Bbox_side_corner(Position p1, Position p2): pos_first(p1), pos_second(p2) {}
+      Position pos2;
+      Bbox_side_corner(Position p1, Position p2): pos1(p1), pos2(p2) {}
     };
 
     struct Point_on_side {
       // Side of bbox
       Bbox_side side;
-      // Point representation: side interior Point, or Point_on_side_edge,
-      // or Bbox_side_corner.
+      // One of point representations: side interior Bbox_side_point,
+      // Point_on_side_edge, or Bbox_side_corner.
       Object point;
       Point_on_side(const Bbox_side& s, const Object& p): side(s), point(p) {}
-      Point to_cartesian() const {
-        //TODO
+    };
+
+    // Get two coordinate ids by the third one. The first id is less than the
+    // second one, they both distinct from the input third id.
+    // TODO: it seems that it is not possible to make closure without lambdas,
+    // so it should reolace all these local functions.
+    auto get_ohter_cooords = [](int i3) {
+      return std::make_pair((i3 + 1) % 3, (i3 + 2) % 3);
+    };
+
+    // Return a point on an input side.
+    auto point_on_side = [bbox_limits, get_ohter_cooords](const Bbox_side& side,
+        const Cartesian& c1, const Cartesian& c2) {
+      int i1, i2;
+      boost::tie(i1, i2) = get_ohter_cooords(side.const_i);
+      if(c1 < bbox_limits[i1][0] || c1 > bbox_limits[i1][1]
+          || c2 < bbox_limits[i2][0] || c2 > bbox_limits[i2][1]) {
+      // Outside, return no point.
+        return Point_on_side(side, Object());
       }
+      if(c1 == bbox_limits[i1][0] || c1 == bbox_limits[i1][1]) {
+      // On the first coordinate border.
+        Position pos = c1 == bbox_limits[i1][0] ? Position::MIN : Position::MAX;
+        if(c2 == bbox_limits[i2][0] || c2 == bbox_limits[i2][1]) {
+        // On a corner.
+          Position pos2 = c2 == bbox_limits[i2][0] ? Position::MIN : Position::MAX;
+          return Point_on_side(side, make_object(
+            Bbox_side_corner(pos, pos2)));
+        }
+        return Point_on_side(side, make_object(
+          Point_on_side_edge(Bbox_side_edge(i1, pos), c2)));
+      }
+      if(c2 == bbox_limits[i2][0] || c2 == bbox_limits[i2][1]) {
+      // On the second coordinate border.
+        Position pos = c2 == bbox_limits[i2][0] ? Position::MIN : Position::MAX;
+        return Point_on_side(side, make_object(
+          Point_on_side_edge(Bbox_side_edge(i2, pos), c1)));
+      }
+      // In the interior.
+      return Point_on_side(side, make_object(Bbox_side_point(c1, c2)));
+    };
+
+    // Find an intersection point of an input ray with bbox. The intersection
+    // should exist and it should be a point.
+    auto intersection_point
+        = [bbox_limits, get_ohter_cooords, point_on_side](const Ray& ray) {
+      // TODO: add Direction to traits?
+      const typename Gt::Direction_3& d = ray.direction();
+      const Point& s = ray.source();
+      for(int i3 = 0; i3 < 3; ++i3) {
+        if(d.delta(i3) != 0) {
+        // The ray intersects the plane of one of two parallel sides.
+          Position pos = d.delta(i3) < 0 ? Position::MIN : Position::MAX;
+          int i1, i2;
+          // Side variable coordinate ids.
+          boost::tie(i1, i2) = get_ohter_cooords(i3);
+          // Coordinates of the intersection point.
+          Cartesian c3 = bbox_limits[i3][pos];
+          Cartesian cos = (c3 - s.cartesian(i3)) / d.delta(i3);
+          Cartesian c1 = s.cartesian(i1) + d.delta(i1) * cos;
+          Cartesian c2 = s.cartesian(i2) + d.delta(i2) * cos;
+          Point_on_side result = point_on_side(Bbox_side(i3, pos), c1, c2);
+          if(!result.point.empty()) {return result;}
+        }
+      }
+      CGAL_triangulation_assertion(false);
     };
   }
 
