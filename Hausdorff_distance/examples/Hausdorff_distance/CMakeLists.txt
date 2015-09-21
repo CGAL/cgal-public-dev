@@ -31,6 +31,13 @@ if ( NOT Boost_FOUND )
 
 endif()
 
+find_package( TBB )
+
+  if( TBB_FOUND )
+    include(${TBB_USE_FILE})
+    list(APPEND CGAL_3RD_PARTY_LIBRARIES ${TBB_LIBRARIES})
+  endif()
+
 # include for local directory
 
 # include for local package
