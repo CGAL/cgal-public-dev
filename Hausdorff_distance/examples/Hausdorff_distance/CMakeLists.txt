@@ -53,4 +53,6 @@ create_single_source_cgal_program( "hd_points_2.cpp" )
 
 create_single_source_cgal_program( "generate.cpp" )
 
+create_single_source_cgal_program( "norway.cpp" )
+
 

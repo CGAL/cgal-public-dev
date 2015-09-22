@@ -4,6 +4,8 @@
 #include <CGAL/Orthogonal_k_neighbor_search.h>
 #include <CGAL/Search_traits_2.h>
 #include <CGAL/Timer.h>
+#include <CGAL/hilbert_sort.h>
+
 #include <boost/foreach.hpp>
 
 #include <tbb/parallel_reduce.h>
@@ -110,7 +112,7 @@ double Hausdorff_distance_2(const PointRange& A, const PointRange& B)
   {
     tbb::parallel_for(tbb::blocked_range<size_t>(0,B.size()),HD::Apply(treeA, B, dist));
     HD::Max m;
-    tbb::parallel_reduce( tbb::blocked_range<double*>( &(dist[0]), &(dist[B.size()])), m);
+    tbb::parallel_reduce( tbb::blocked_range<double*>( &(dist[0]), &(dist[A.size()])), m);
     res = (std::max)(res, m.value);
   }
 #endif
@@ -120,7 +122,71 @@ double Hausdorff_distance_2(const PointRange& A, const PointRange& B)
   std::cerr << "query time: " << tq.time() << " sec." << std::endl; 
   return sqrt(res);
 }
+
+  /*
+p = first point of P
+while(not at end of P)
+  q = find closest point(p, T)
+  D = dist(p,q);
+  do {
+    p = next point of P
+    pair<point,bool> pa = circular_range_query(p,D,T)
+    if (range empty) {
+      break;  //the outer loop will compute a larger D
+    }
+    // D is still the maximum, so continue inner loop
+  }
+
+   */
+
+
+template <typename PointRange>
+double Hausdorff_distance_hs_2(const PointRange& A, const PointRange& B)
+{
+  typedef CGAL::Simple_cartesian<double> K;
+  typedef K::Point_2 Point_2;
+  typedef CGAL::Search_traits_2<K> TreeTraits;
+  typedef CGAL::Orthogonal_k_neighbor_search<TreeTraits> Neighbor_search;
+  typedef Neighbor_search::Tree Tree;
+  std::vector<Point_2> AQ(A.begin(),A.end());
   
+  hilbert_sort(AQ.begin(),AQ.end());
+
+  Tree treeB(B.begin(), B.end());
+  treeB.build();
+  
+  double res = 0;
+  Point_2 q(0,0);
+
+  for(int i=0; i < AQ.size(); i++){
+    const Point_2& a = AQ[i];
+    if((i==0) || (squared_distance(a,q) > res)){
+      Neighbor_search search(treeB, a, 1);
+      q = search.begin()->first;
+      double sd = search.begin()->second;
+      res = (std::max)(sd, res);
+    }
+  }
+
+  std::vector<Point_2> BQ(B.begin(),B.end());
+  
+  hilbert_sort(BQ.begin(),BQ.end());
+
+  Tree treeA(A.begin(), A.end());
+  treeB.build();
+  
+
+  for(int i=0; i < BQ.size(); i++){
+    const Point_2& a = BQ[i];
+    if((i==0) || (squared_distance(a,q) > res)){
+      Neighbor_search search(treeA, a, 1);
+      q = search.begin()->first;
+      double sd = search.begin()->second;
+      res = (std::max)(sd, res);
+    }
+  }
+  return sqrt(res);
+ }
 } // namespace CGAL
 
 
