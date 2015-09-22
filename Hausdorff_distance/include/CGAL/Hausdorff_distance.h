@@ -110,7 +110,7 @@ double Hausdorff_distance_2(const PointRange& A, const PointRange& B)
   {
     tbb::parallel_for(tbb::blocked_range<size_t>(0,B.size()),HD::Apply(treeA, B, dist));
     HD::Max m;
-    tbb::parallel_reduce( tbb::blocked_range<double*>( &(dist[0]), &(dist[A.size()])), m);
+    tbb::parallel_reduce( tbb::blocked_range<double*>( &(dist[0]), &(dist[B.size()])), m);
     res = (std::max)(res, m.value);
   }
 #endif
