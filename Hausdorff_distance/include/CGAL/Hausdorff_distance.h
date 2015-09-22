@@ -3,6 +3,7 @@
 
 #include <CGAL/Orthogonal_k_neighbor_search.h>
 #include <CGAL/Search_traits_2.h>
+#include <CGAL/Fuzzy_sphere.h>
 #include <CGAL/Timer.h>
 #include <CGAL/hilbert_sort.h>
 
@@ -79,7 +80,7 @@ double Hausdorff_distance_2(const PointRange& A, const PointRange& B)
 
   tq.start();
   double res = 0;
-#if 0  
+#if 0
   BOOST_FOREACH(const Point_2& a, A){
     Neighbor_search search(treeB, a, 1);
     double sd = search.begin()->second;
@@ -102,7 +103,7 @@ double Hausdorff_distance_2(const PointRange& A, const PointRange& B)
   tb.stop();
 
   tq.start();
-#if 0  
+#if 0
   BOOST_FOREACH(const Point_2& b, B){
     Neighbor_search search(treeA, b, 1);
     double sd = search.begin()->second;
@@ -138,6 +139,75 @@ while(not at end of P)
   }
 
    */
+
+
+template <typename PointRange>
+double Hausdorff_distance_rq_2(const PointRange& A, const PointRange& B)
+{
+  typedef CGAL::Simple_cartesian<double> K;
+  typedef K::Point_2 Point_2;
+  typedef CGAL::Search_traits_2<K> TreeTraits;
+  typedef CGAL::Fuzzy_sphere<TreeTraits> Fuzzy_circle;
+  typedef CGAL::Orthogonal_k_neighbor_search<TreeTraits> Neighbor_search;
+  typedef Neighbor_search::Tree Tree;
+
+  Tree treeB(B.begin(), B.end());
+  treeB.build();
+
+ Tree treeA(A.begin(), A.end());
+  treeA.build();
+
+  double res = 0;
+  typename PointRange::const_iterator b = A.begin(), e = A.end();
+  Point_2 a = *b; 
+  while(b != e){
+    Neighbor_search search(treeB, a, 1);
+    Point_2 q = search.begin()->first;
+    double sd = search.begin()->second;
+    res = (std::max)(res,sd);
+    while(true){
+      ++b;
+      if(b != e){
+        a = *b;
+        Fuzzy_circle circ(a,sqrt(res));
+        std::list<Point_2> result;
+        treeB.search(std::back_inserter( result ),circ);
+        if(result.empty()){
+          break;
+        }
+      } else {
+        break;
+      }
+    }
+  }
+
+{
+  typename PointRange::const_iterator b = B.begin(), e = B.end();
+  Point_2 a = *b; 
+  while(b != e){
+    Neighbor_search search(treeA, a, 1);
+    Point_2 q = search.begin()->first;
+    double sd = search.begin()->second;
+    res = (std::max)(res,sd);
+    while(true){
+      ++b;
+      if(b != e){
+        a = *b;
+        Fuzzy_circle circ(a,sqrt(res));
+        std::list<Point_2> result;
+        treeB.search(std::back_inserter( result ),circ);
+        if(result.empty()){
+          break;
+        }
+      } else {
+        break;
+      }
+    }
+  }
+}
+  return sqrt(res);
+ }
+
 
 
 template <typename PointRange>
