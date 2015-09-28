@@ -2917,6 +2917,20 @@ template <typename GeomTraits, typename TopTraits, typename Curve>
 bool do_intersect(Arrangement_on_surface_2<GeomTraits, TopTraits>& arr,
                   const Curve& c);
 
+/*!
+ * Changes the position of the vertex `vh` and update the topology
+ * of `arr` if needed.
+ * \param arr The arrangement.
+ * \param vh the vertex which position should be updated.
+ * \param p the new position.
+ * \return True if the topology of the arrangement has been updated.
+ */
+template <typename GeomTraits, typename TopTraits>
+bool move_vertex(Arrangement_on_surface_2<GeomTraits, TopTraits>& arr,
+                 typename Arrangement_on_surface_2<GeomTraits, TopTraits>::Vertex_handle vh,
+                 const typename GeomTraits::Point_2& p);
+
+
 } //namespace CGAL
 
 // The function definitions can be found under:

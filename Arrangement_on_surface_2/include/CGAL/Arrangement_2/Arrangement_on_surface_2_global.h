@@ -1589,6 +1589,13 @@ bool do_intersect (Arrangement_on_surface_2<GeomTraits, TopTraits>& arr,
   return do_intersect (arr, c, def_pl);
 }
 
+template <typename GeomTraits, typename TopTraits>
+bool move_vertex(Arrangement_on_surface_2<GeomTraits, TopTraits>& arr,
+                 typename Arrangement_on_surface_2<GeomTraits, TopTraits>::Vertex_handle vh,
+                 const typename GeomTraits::Point_2& p)
+{
+  return false;
+}
 
 } //namespace CGAL
 
