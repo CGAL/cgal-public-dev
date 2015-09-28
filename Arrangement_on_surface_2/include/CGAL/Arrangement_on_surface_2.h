@@ -2919,16 +2919,21 @@ bool do_intersect(Arrangement_on_surface_2<GeomTraits, TopTraits>& arr,
 
 /*!
  * Changes the position of the vertex `vh` and update the topology
- * of `arr` if needed.
+ * of `arr` if needed. If `change_in_topology` is `false` then `vh`
+ * is returned.
  * \param arr The arrangement.
  * \param vh the vertex which position should be updated.
  * \param p the new position.
- * \return True if the topology of the arrangement has been updated.
+ * \param change_in_topology indicates the dcel is not equivalent to the old one
+ * \return the handle of the vertex moved.
+ * \todo Document constructible from 2 vertices
  */
 template <typename GeomTraits, typename TopTraits>
-bool move_vertex(Arrangement_on_surface_2<GeomTraits, TopTraits>& arr,
-                 typename Arrangement_on_surface_2<GeomTraits, TopTraits>::Vertex_handle vh,
-                 const typename GeomTraits::Point_2& p);
+typename Arrangement_on_surface_2<GeomTraits, TopTraits>::Vertex_handle
+move_vertex(Arrangement_on_surface_2<GeomTraits, TopTraits>& arr,
+            typename Arrangement_on_surface_2<GeomTraits, TopTraits>::Vertex_handle vh,
+            const typename GeomTraits::Point_2& p,
+            bool& change_in_topology);
 
 
 } //namespace CGAL

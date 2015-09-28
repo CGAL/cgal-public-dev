@@ -60,9 +60,11 @@ int main()
 
   time.start();
   int nb_topo_change=0;
-  BOOST_FOREACH(Arrangement_2::Vertex_handle vh, vertices)
-    if (move_vertex(arr, vh, *ptgen++))
-      ++nb_topo_change;
+  BOOST_FOREACH(Arrangement_2::Vertex_handle vh, vertices){
+    bool change_in_topology=false;
+    move_vertex(arr, vh, *ptgen++, change_in_topology);
+    if (change_in_topology) ++nb_topo_change;
+  }
   time.stop();
   std::cout << "arr.number_of_vertices() after random moves " << arr.number_of_vertices() << " - nb of topological change " << nb_topo_change << "\n";
   std::cout << "Time for random moves of vertices " << time.time() << "s" << std::endl;
@@ -74,8 +76,9 @@ int main()
     double xmove=CGAL::default_random.uniform_01<double>()/10000;
     double ymove=CGAL::default_random.uniform_01<double>()/10000;
     Point_2 new_pt(vh->point().x()+xmove, vh->point().y()+ymove);
-    if (move_vertex(arr, vh, new_pt))
-      ++nb_topo_change;
+    bool change_in_topology=false;
+    move_vertex(arr, vh, new_pt, change_in_topology);
+    if (change_in_topology) ++nb_topo_change;
   }
   time.stop();
   std::cout << "arr.number_of_vertices() after small moves " << arr.number_of_vertices() << " - nb of topological change " << nb_topo_change << "\n";

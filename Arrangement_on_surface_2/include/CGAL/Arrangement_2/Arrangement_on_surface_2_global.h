@@ -32,6 +32,7 @@
 
 #include <CGAL/Arrangement_on_surface_2.h>
 #include <CGAL/Arr_accessor.h>
+#include <CGAL/Arr_point_location_result.h>
 #include <CGAL/Basic_sweep_line_2.h>
 #include <CGAL/Sweep_line_2.h>
 #include <CGAL/Arrangement_zone_2.h>
@@ -46,6 +47,7 @@
 #include <CGAL/IO/Arr_iostream.h>
 
 #include <boost/type_traits.hpp>
+#include <boost/foreach.hpp>
 
 #include <list>
 
@@ -1590,11 +1592,94 @@ bool do_intersect (Arrangement_on_surface_2<GeomTraits, TopTraits>& arr,
 }
 
 template <typename GeomTraits, typename TopTraits>
-bool move_vertex(Arrangement_on_surface_2<GeomTraits, TopTraits>& arr,
-                 typename Arrangement_on_surface_2<GeomTraits, TopTraits>::Vertex_handle vh,
-                 const typename GeomTraits::Point_2& p)
+typename Arrangement_on_surface_2<GeomTraits, TopTraits>::Vertex_handle
+move_vertex(Arrangement_on_surface_2<GeomTraits, TopTraits>& arr,
+            typename Arrangement_on_surface_2<GeomTraits, TopTraits>::Vertex_handle vh,
+            const typename GeomTraits::Point_2& p,
+            bool& change_in_topology)
 {
-  return false;
+  change_in_topology=false;
+  if ( arr.geometry_traits()->equal_2_object()(vh->point(),p) ) return vh;
+
+  typedef Arrangement_on_surface_2<GeomTraits, TopTraits> Aos_2;
+  typedef typename Aos_2::Halfedge_handle Halfedge_handle;
+  typedef typename Aos_2::Halfedge_const_handle Halfedge_const_handle;
+  typedef typename Aos_2::Halfedge_handle Halfedge_handle;
+  typedef typename Aos_2::Vertex_const_handle Vertex_const_handle;
+  typedef typename Aos_2::Vertex_handle Vertex_handle;
+  typedef typename Aos_2::Face_const_handle Face_const_handle;
+  typedef typename Aos_2::X_monotone_curve_2 X_monotone_curve_2;
+
+  typename GeomTraits::Construct_x_monotone_curve_2 construct_curve =
+      arr.geometry_traits()->construct_x_monotone_curve_2_object();
+
+  // #1 collect the list of incident curves and adjacent vertices
+  std::vector<Halfedge_handle> incident_edges;
+  std::vector<Vertex_handle> adjacent_vertices;
+  typename Aos_2::Halfedge_around_vertex_circulator circ = vh->incident_halfedges(), hstart=circ;
+  if (!vh->is_isolated())
+  {
+    do{
+      incident_edges.push_back(circ);
+      adjacent_vertices.push_back(Halfedge_handle(circ)->source());
+      ++circ;
+    }
+    while(circ!=hstart);
+  }
+
+  // #2 remove those curves from the arrangement but keep the neighbor vertices
+  // but keep possibly isolated vertices
+  BOOST_FOREACH(Halfedge_handle h, incident_edges)
+    arr.remove_edge(h, false, false);
+
+  // #3 locate the face containing the new vertex
+  // Create a default point-location object and use it to insert the curve.
+  typedef typename TopTraits::Default_point_location_strategy    Point_location;
+  Point_location def_pl (arr);
+  typename CGAL::Arr_point_location_result<Aos_2>::Type obj = def_pl.locate(p);
+
+  CGAL_assertion( vh->is_isolated() );
+  Face_const_handle previous_f = vh->face();
+
+  CGAL::Arr_accessor<Aos_2> accessor(arr);
+  Face_const_handle* f_ptr = boost::get<Face_const_handle>(&obj);
+  if ( f_ptr ){
+    Face_const_handle f=*f_ptr;
+    change_in_topology=f!=previous_f;
+    accessor.move_isolated_vertex(arr.non_const_handle(previous_f),
+                                  arr.non_const_handle(f), vh);
+  }
+  else{
+    Halfedge_const_handle* e_ptr = boost::get<Halfedge_const_handle>(&obj);
+    if ( e_ptr )
+    {
+      Halfedge_const_handle e=*e_ptr;
+      change_in_topology=true;
+      arr.remove_isolated_vertex(vh);
+      X_monotone_curve_2 cv1=construct_curve(e->source()->point(), p);
+      X_monotone_curve_2 cv2=construct_curve(p, e->target()->point());
+      vh=arr.split_edge(arr.non_const_handle(e), cv1, cv2)->target();
+    }
+    else{
+      Vertex_const_handle* v_ptr = boost::get<Vertex_const_handle>(&obj);
+      CGAL_assertion( v_ptr );
+      Vertex_const_handle v=*v_ptr;
+      change_in_topology=true;
+      arr.remove_isolated_vertex(vh);
+      vh=arr.non_const_handle(v);
+    }
+  }
+
+  // #4 insert curves using pair of vertex_handle
+  BOOST_FOREACH(Vertex_handle other, adjacent_vertices){
+    /// \todo implement me
+    //~ insert_at_vertices(arr, construct_curve(other->point(), p), other, vh);
+    insert(arr, construct_curve(other->point(), p) );
+    /// \todo restore me
+    //~ change_in_topology |= (h->source()==other && h->target()==vh);
+  }
+
+  return vh;
 }
 
 } //namespace CGAL
