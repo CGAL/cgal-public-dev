@@ -66,10 +66,14 @@ compute_roots_of_2(const NT &a_, const NT &b_, const NT &c_, OutputIterator oit)
 {
   typedef typename Root_of_traits<NT>::Root_of_1 Root_of_1;
   typedef typename Root_of_traits<NT>::Root_of_2 Root_of_2;
+
+  static const Root_of_1 pone = Root_of_1(1);
+  static const Root_of_1 mone = Root_of_1(-1);
+    
   typename CGAL::Coercion_traits<Root_of_1,NT>::Cast cast; 
   Root_of_1 a(cast(a_)), b(cast(b_)), c(cast(c_));
     
-  if ( a != 0 ) {
+  if ( !CGAL::is_zero(a)) {
     Root_of_1 a0_  (-b/(2*a));
     Root_of_1 root_(CGAL_NTS square(a0_) - c/a);
     switch(CGAL::sign(root_)){
@@ -77,8 +81,8 @@ compute_roots_of_2(const NT &a_, const NT &b_, const NT &c_, OutputIterator oit)
     case CGAL::ZERO: *oit++ = Root_of_2(a0_);  return oit;
     default:
       // two roots 
-      *oit++ = make_root_of_2(a0_,Root_of_1(-1),root_);
-      *oit++ = make_root_of_2(a0_,Root_of_1( 1),root_);
+      *oit++ = make_root_of_2(a0_,mone,root_);
+      *oit++ = make_root_of_2(a0_,pone,root_);
       return oit; 
     }
   }

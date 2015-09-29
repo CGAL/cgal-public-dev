@@ -112,6 +112,11 @@ public:
 private:
   void initialize()
   {
+    if(CGAL::sign(CGAL::leading_coefficient(denom())) == NEGATIVE){
+      _numer = -_numer;
+      _denom = -_denom;
+    }
+
     CGAL_precondition(_ak_ptr != NULL);
     CGAL_precondition(CGAL::is_zero(_denom) == false);
     if (CGAL::is_zero(_numer))

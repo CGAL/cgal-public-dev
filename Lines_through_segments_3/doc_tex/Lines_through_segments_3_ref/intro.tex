@@ -1,0 +1,54 @@
+% +------------------------------------------------------------------------+
+% | CGAL Reference Manual:  main.tex
+% +------------------------------------------------------------------------+
+% | Lines through semgments 3
+% |
+% | 12.09.2010   Asaf Porat
+% | 
+\RCSdef{\linesThroughSegmentsRev}{$Id: intro.tex 38298 2007-04-18 14:20:12Z ameyer $}
+\RCSdefDate{\linesThroughSegmentsDate}{$Date: 2007-04-18 17:20:12 +0300 (Wed, 18 Apr 2007) $}
+% +------------------------------------------------------------------------+
+
+\ccRefChapter{Lines Through Segments 3\label{chapterLTSRef}}
+\ccChapterRelease{\linesThroughSegmentsRev. \ \linesThroughSegmentsDate}
+\ccChapterAuthor{Asaf Porat, Efi Fogel}
+
+Given n line segments in 3D Euclidean space, the class \ccc{Lines_through_segments_3} finds all tangent lines to 4 of the n line segments.
+
+\begin{ccRefFunction}{Lines_through_segments_3}
+
+\ccDefinition
+
+The class \ccc{Lines_through_segments_3} finds all lines tangent to four line segments taken from a set of n line segments in 3D Euclidean space.\newline
+The class uses the Arrangement on surface package and is templated by the concept \ccc{LinesThroughSegmentsTraits_3}.\newline
+The number of tangent lines to four arbitrary line segments in 3D Euclidean space is zero to four including or infinite, hence each element at the output container can be either line, curve on a plane arrangement, arc on sphere arrangement, a polygon on plane arrangement, an intersection point of four concurrent lines or a line segment common to four overlapping line segments.\newline
+
+\ccInclude{CGAL/Lines_through_segments_3.h}
+
+\ccGlobalFunction{
+    template <typename Input_iterator, typename Insert_iterator>
+    CGAL::Lines_through_segments_3(Input_iterator segments_start,
+                                   Input_iterator segments_end,
+                                   Insert_iterator insert_iterator,
+                                   const Alg_kernel &alg_kernel,
+                                   const Rational_kernel &rational_kernel);}
+
+The first two parameters denote the first and after-the-last iterators
+of the input segments.  The third parameter is a reference to a container of the output objects. 
+
+The elements of the output container are elements of the class \ccc{CGAL::Lines_through_segments_output_obj}.\newline
+The forth and fifth parameters are used for the kernel operations.
+
+\ccTypes
+\ccNestedType{Traits_3}{The traits class. This class must fulfill the requirements on
+\ccc{LinesThroughSegmentsTraits_3}.}
+
+
+\ccSeeAlso
+\ccc{CGAL::Lines_through_segments_traits_3<Rational_kernel, Alg_kernel>}\\
+\ccc{CGAL::Lines_through_segments_output_obj}\\
+\ccc{LinesThroughSegmentsTraits_3}
+
+\end{ccRefFunction}
+
+% EOF
