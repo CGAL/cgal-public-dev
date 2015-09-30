@@ -499,7 +499,7 @@ public:
   {}
 
   /*! Notification after an inner CCB is moved from one face to another.
-   * When all the CCBs in one face are moved to another the callback
+   * When all the inner CCBs in one face are moved to another the callback
    * that notifies on the move of all inner CCBs is called instead of
    * a sequence of calls to this function.
    * \param h A circulator representing the boundary of the component.
@@ -535,6 +535,9 @@ public:
   {}
 
   /*! Notification before an isolated vertex is moved from one face to another.
+   * When all the isolated vertices in one face are moved to another the
+   * callback that notifies on the move of all isolated vertices is called
+   * instead of a sequence of calls to this function.
    * \param from_f A handle to the face currently containing the vertex.
    * \param to_f A handle to the face that should contain the vertex.
    * \param v The isolated vertex.

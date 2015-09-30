@@ -457,9 +457,10 @@ virtual void after_move_outer_ccb (Ccb_halfedge_circulator h);
 
 /*!
 issued just before the inner ccb `h` is moved from the face `from_f` to
-the face `to_f`. This can happen when the face `from_f` containing the
-inner ccb is about to merge with the face `to_f` due to the removal of
-an edge.
+the face `to_f`. This can happen when the face `to_f` containing the
+inner ccb has just been split from `from_f`. When all the inner CCBs
+in one face are moved to another the callback that notifies on the move
+of all inner CCBs is called instead of a sequence of calls to this function.
 */
 virtual void before_move_inner_ccb (Face_handle from_f,
 Face_handle to_f,
@@ -500,9 +501,11 @@ virtual void after_move_all_inner_ccbs(Face_handle /* to_f */,
 
 /*!
 issued just before the isolated vertex `v` is moved from the face `from_f`
-to the face `to_f`. This can happen when the face `from_f` containing the
-isolated vertex is about to merge with the face `to_f` due to the removal
-of an edge.
+to the face `to_f`. This can happen if the face `to_f` containing the
+isolated vertex  has just been split from `from_f`. When all the isolated
+vertices in one face are moved to another the callback that notifies on
+the move of all isolated vertices is called instead of a sequence of calls
+to this function.
 */
 virtual void before_move_isolated_vertex (Face_handle from_f,
 Face_handle to_f,
