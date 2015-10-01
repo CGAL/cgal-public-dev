@@ -479,24 +479,18 @@ an edge. When all inner CCBs are moved from one face to another this
 notification is called instead of a sequence of calls that notify on
 each of the moves of the individual inner CCB.
 \param from_f A handle to the face currently containing the inner CCBs.
-\param begin The begin iterator of the inner CCBs.
-\param end The past-the-end iterator of the inner CCBs.
 \param to_f A handle to the face that should contain the inner CCBs.
 */
 virtual void before_move_all_inner_ccbs(Face_handle /* from_f */,
-                                        Inner_ccb_iterator /* begin */,
-                                        Inner_ccb_iterator /* end */,
                                         Face_handle /* to_f */);
 
 /*!
 issued immediately after all inner ccbs in one face have been moved to
 the face `to_f`.
-\param to_f A handle to the face that should contain the inner CCBs.
 \param begin The begin iterator of the inner CCBs.
 \param end The past-the-end iterator of the inner CCBs.
 */
-virtual void after_move_all_inner_ccbs(Face_handle /* to_f */,
-                                       Inner_ccb_iterator /* begin */,
+virtual void after_move_all_inner_ccbs(Inner_ccb_iterator /* begin */,
                                        Inner_ccb_iterator /* end */);
 
 /*!
@@ -526,26 +520,20 @@ this notification is called instead of a sequence of calls that notify
 on each of the moves of the individual isolated vertex.
 \param from_f A handle to the face currently containing the
        isolated vertices.
-\param begin The begin iterator of the isolated vertices to move.
-\param end The past-the-end iterator of the isolated vertices to move.
 \param to_f A handle to the face that should contain the isolated vertices.
 */
 virtual void
 before_move_all_isolated_vertices(Face_handle /* from_f */,
-                                  Isolated_vertex_iterator /* begin */,
-                                  Isolated_vertex_iterator /* end */,
                                   Face_handle /* to_f */);
 
 /*!
 issued immediately after all the isolated vertices of a face have been
 moved to the face `to_f`.
-\param to_f A handle to the face that contains the isolated vertices.
 \param begin The begin iterator of the isolated vertices.
 \param end The past-the-end iterator of the isolated vertices.
 */
 virtual void
-after_move_all_isolated_vertices(Face_handle /* to_f */,
-                                 Isolated_vertex_iterator /* begin */,
+after_move_all_isolated_vertices(Isolated_vertex_iterator /* begin */,
                                  Isolated_vertex_iterator /* end */);
 
 /*!
