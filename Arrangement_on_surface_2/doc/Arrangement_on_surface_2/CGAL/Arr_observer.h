@@ -68,6 +68,17 @@ In particular, holes are represented by a circulator for their outer CCB.
 */
 typedef typename Arrangement_2::Ccb_halfedge_circulator Ccb_halfedge_circulator;
 
+/*!
+an iterator for traversing all the inner CCBs (holes) inside a face.
+*/
+typedef typename Arrangement_2::Inner_ccb_iterator Inner_ccb_iterator;
+
+/*!
+an iterator for traversing all the isolated vertices contained in the interior
+of a face.
+*/
+typedef typename Arrangement_2::Isolated_vertex_iterator Isolated_vertex_iterator;
+
 /// @}
 
 /// \name Creation
@@ -478,8 +489,8 @@ inner ccbs is about to merge with the face `to_f` due to the removal of
 an edge. When all inner CCBs are moved from one face to another this
 notification is called instead of a sequence of calls that notify on
 each of the moves of the individual inner CCB.
-\param from_f A handle to the face currently containing the inner CCBs.
-\param to_f A handle to the face that should contain the inner CCBs.
+\param from_f A handle to the face the inner CCBs are moved from.
+\param to_f A handle to the face the inner CCBs are moved to.
 */
 virtual void before_move_all_inner_ccbs(Face_handle /* from_f */,
                                         Face_handle /* to_f */);
@@ -518,9 +529,8 @@ isolated vertices is about to merge with the face `to_f` due to the removal
 of an edge. When all isolated vertices are moved from one face to another
 this notification is called instead of a sequence of calls that notify
 on each of the moves of the individual isolated vertex.
-\param from_f A handle to the face currently containing the
-       isolated vertices.
-\param to_f A handle to the face that should contain the isolated vertices.
+\param from_f A handle to the face the isolated vertices are moved from.
+\param to_f A handle to the face the isolated vertices are moved to.
 */
 virtual void
 before_move_all_isolated_vertices(Face_handle /* from_f */,

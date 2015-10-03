@@ -2606,6 +2606,32 @@ protected:
       (*iter)->after_move_inner_ccb(h);
   }
 
+  /*! Notify all observers before all inner CCBs are moved from one face to
+   * another.
+   * \param from_f A handle to the face the inner CCBs are moved from.
+   * \param to_f A handle to the face the inner CCBs are moved to.
+   */
+  void _notify_before_move_all_inner_ccbs(Face_handle from_f,
+                                          Face_handle to_f)
+  {
+    Observers_iterator iter;
+    for (iter = m_observers.begin(); iter != m_observers.end(); ++iter)
+      (*iter)->before_move_all_inner_ccbs(from_f, to_f);
+  }
+
+  /*! Notify all observers after all inner CCBs are moved from one face to
+   * another.
+   * \param begin The begin iterator of the inner CCBs.
+   * \param end The past-the-end iterator of the inner CCBs.
+   */
+  void _notify_after_move_all_inner_ccbs(Inner_ccb_iterator begin,
+                                         Inner_ccb_iterator end)
+  {
+    Observers_iterator iter;
+    for (iter = m_observers.begin(); iter != m_observers.end(); ++iter)
+      (*iter)->after_move_all_inner_ccbs(begin, end);
+  }
+
   void _notify_before_move_isolated_vertex(Face_handle from_f,
                                            Face_handle to_f,
                                            Vertex_handle v)
@@ -2623,6 +2649,32 @@ protected:
     Observers_rev_iterator end = m_observers.rend();
     for (iter = m_observers.rbegin(); iter != end; ++iter)
       (*iter)->after_move_isolated_vertex(v);
+  }
+
+  /*! Notify all observers before all isolated vertices are moved from one face
+   * to another.
+   * \param from_f A handle to the face the isolated vertices are moved from.
+   * \param to_f A handle to the face the isolated vertices are moved to.
+   */
+  void _notify_before_move_all_isolated_vertices(Face_handle from_f,
+                                                 Face_handle to_f)
+  {
+    Observers_iterator iter;
+    for (iter = m_observers.begin(); iter != m_observers.end(); ++iter)
+      (*iter)->before_move_all_isolated_vertices(from_f, to_f);
+  }
+
+  /*! Notify all observers after all isolated vertices are moved from one face to
+   * another.
+   * \param begin The begin iterator of the isolated vertices.
+   * \param end The past-the-end iterator of the isolated vertices.
+   */
+  void _notify_after_move_all_isolated_vertices(Isolated_vertex_iterator begin,
+                                                Isolated_vertex_iterator end)
+  {
+    Observers_iterator iter;
+    for (iter = m_observers.begin(); iter != m_observers.end(); ++iter)
+      (*iter)->after_move_all_isolated_vertices(begin, end);
   }
 
   void _notify_before_remove_vertex(Vertex_handle v)

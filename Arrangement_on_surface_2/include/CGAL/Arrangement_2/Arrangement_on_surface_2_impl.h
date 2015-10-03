@@ -2012,23 +2012,31 @@ template <typename GeomTraits, typename TopTraits>
 void Arrangement_on_surface_2<GeomTraits, TopTraits>::
 _move_all_inner_ccb(DFace* from_face, DFace* to_face)
 {
-  // Comment EFEF 2015-09-28: The following loop and the loop at the end of this
-  // function should be replaced with a pair of notifiers, respectively,
-  // function_notify_before_move_all_inner_ccb();
-  // function_notify_after_move_all_inner_ccb();
-  DInner_ccb_iter ic_it = from_face->inner_ccbs_begin();
-  while (ic_it != from_face->inner_ccbs_end()) {
-    DHalfedge* he = *ic_it++;
-    Ccb_halfedge_circulator circ = (Halfedge_handle(he))->ccb();
-    _notify_before_move_inner_ccb(Face_handle(from_face), Face_handle(to_face),
-                                  circ);
-  }
-  ic_it = to_face->splice_inner_ccbs(*from_face);
-  while (ic_it != to_face->inner_ccbs_end()) {
-    DHalfedge* he = *ic_it++;
-    Ccb_halfedge_circulator circ = (Halfedge_handle(he))->ccb();
-    _notify_after_move_inner_ccb(circ);
-  }
+  /* In the past a sequence of calls that notified on each of the
+   * moves of the individual inner CCB was issued; see below.
+   * DInner_ccb_iter ic_it = from_face->inner_ccbs_begin();
+   * while (ic_it != from_face->inner_ccbs_end()) {
+   *   DHalfedge* he = *ic_it++;
+   *   Ccb_halfedge_circulator circ = (Halfedge_handle(he))->ccb();
+   *   _notify_before_move_inner_ccb(Face_handle(from_face),
+   *                                 Face_handle(to_face),
+   *                                 circ);
+   * }
+   * The sequence of calls above has been replaced with a single call to a
+   * notifier that notifies about all moves. The same hold for the
+   * notification after the action.
+   */
+  _notify_before_move_all_inner_ccbs(Face_handle(from_face),
+                                     Face_handle(to_face));
+  DInner_ccb_iter begin = to_face->splice_inner_ccbs(*from_face);
+  DInner_ccb_iter end = to_face->inner_ccbs_end();
+  _notify_after_move_all_inner_ccbs(Inner_ccb_iterator(begin),
+                                    Inner_ccb_iterator(end));
+  // while (ic_it != to_face->inner_ccbs_end()) {
+  //   DHalfedge* he = *ic_it++;
+  //   Ccb_halfedge_circulator circ = (Halfedge_handle(he))->ccb();
+  //   _notify_after_move_inner_ccb(circ);
+  // }
 }
 
 //-----------------------------------------------------------------------------
@@ -2102,24 +2110,31 @@ template <typename GeomTraits, typename TopTraits>
 void Arrangement_on_surface_2<GeomTraits, TopTraits>::
 _move_all_isolated_vertices(DFace* from_face, DFace* to_face)
 {
-  // Comment EFEF 2015-09-28: The following loop and the loop at the end of this
-  // function should be replaced with a pair of notifiers, respectively,
-  // function_notify_before_move_all_isolated_vertices();
-  // function_notify_after_move_all_isolated_vertices();
-  DIso_vertex_iter iv_it = from_face->isolated_vertices_begin();
-  while (iv_it != from_face->isolated_vertices_end()) {
-    DVertex* v = &(*iv_it++);
-    Vertex_handle vh(v);
-    _notify_before_move_isolated_vertex(Face_handle(from_face),
-                                        Face_handle(to_face),
-                                        vh);
-  }
-  iv_it = to_face->splice_isolated_vertices(*from_face);
-  while (iv_it != to_face->isolated_vertices_end()) {
-    DVertex* v = &(*iv_it++);
-    Vertex_handle vh(v);
-    _notify_after_move_isolated_vertex(vh);
-  }
+  /* In the past a sequence of calls that notified on each of the
+   * moves of the individual inner CCB was issued; see below.
+   * DIso_vertex_iter iv_it = from_face->isolated_vertices_begin();
+   * while (iv_it != from_face->isolated_vertices_end()) {
+   *   DVertex* v = &(*iv_it++);
+   *   Vertex_handle vh(v);
+   *   _notify_before_move_isolated_vertex(Face_handle(from_face),
+   *                                       Face_handle(to_face),
+   *                                       vh);
+   * }
+   * The sequence of calls above has been replaced with a single call to a
+   * notifier that notifies about all moves. The same hold for the
+   * notification after the action.
+   */
+  _notify_before_move_all_isolated_vertices(Face_handle(from_face),
+                                            Face_handle(to_face));
+  DIso_vertex_iter begin = to_face->splice_isolated_vertices(*from_face);
+  DIso_vertex_iter end = to_face->isolated_vertices_end();
+  _notify_after_move_all_isolated_vertices(Isolated_vertex_iterator(begin),
+                                           Isolated_vertex_iterator(end));
+  // while (iv_it != to_face->isolated_vertices_end()) {
+  //   DVertex* v = &(*iv_it++);
+  //   Vertex_handle vh(v);
+  //   _notify_after_move_isolated_vertex(vh);
+  // }
 }
 
 //-----------------------------------------------------------------------------

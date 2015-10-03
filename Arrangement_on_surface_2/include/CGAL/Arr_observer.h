@@ -45,8 +45,8 @@ public:
   typedef typename Arrangement_2::Ccb_halfedge_circulator
     Ccb_halfedge_circulator;
 
-  typedef typename Dcel::Face::Inner_ccb_iterator          Inner_ccb_iterator;
-  typedef typename Dcel::Face::Isolated_vertex_iterator
+  typedef typename Arrangement_2::Inner_ccb_iterator       Inner_ccb_iterator;
+  typedef typename Arrangement_2::Isolated_vertex_iterator
     Isolated_vertex_iterator;
 
 private:
@@ -471,8 +471,8 @@ public:
   {}
 
   /*! Notification before an outer CCB is moved from one face to another.
-   * \param from_f A handle to the face that currently owns the outer CCB.
-   * \param to_f A handle to the face that should own the outer CCB.
+   * \param from_f A handle to the face the outer CCB is moved from.
+   * \param to_f A handle to the face the outer CCB is moved to.
    * \param h A circulator representing the boundary of the component.
    */
   virtual void before_move_outer_ccb(Face_handle /* from_f */,
@@ -489,8 +489,8 @@ public:
    * When all the CCBs in one face are moved to another the callback
    * that notifies on the move of all inner CCBs is called instead of
    * a sequence of calls to this function.
-   * \param from_f A handle to the face currently containing the inner CCB.
-   * \param to_f A handle to the face that should contain the inner CCB.
+   * \param from_f A handle to the face the inner CCB is moved from.
+   * \param to_f A handle to the face the inner CCB is moved to.
    * \param h A circulator representing the boundary of the component.
    */
   virtual void before_move_inner_ccb(Face_handle /* from_f */,
@@ -510,8 +510,8 @@ public:
    * When all inner CCBs are moved from one face to another this notification
    * is called instead of a sequence of calls that notify on each of the
    * moves of the individual inner CCB.
-   * \param from_f A handle to the face currently containing the inner CCBs.
-   * \param to_f A handle to the face that should contain the inner CCBs.
+   * \param from_f A handle to the face the inner CCBs are moved from.
+   * \param to_f A handle to the face the inner CCBs are moved to.
    */
   virtual void before_move_all_inner_ccbs(Face_handle /* from_f */,
                                           Face_handle /* to_f */)
@@ -532,8 +532,8 @@ public:
    * When all the isolated vertices in one face are moved to another the
    * callback that notifies on the move of all isolated vertices is called
    * instead of a sequence of calls to this function.
-   * \param from_f A handle to the face currently containing the vertex.
-   * \param to_f A handle to the face that should contain the vertex.
+   * \param from_f A handle to the face the vertex is moved from.
+   * \param to_f A handle to the face the vertex is moved to.
    * \param v The isolated vertex.
    */
   virtual void before_move_isolated_vertex(Face_handle /* from_f */,
@@ -550,9 +550,8 @@ public:
    * another. When all isolated vertices are moved from one face to another
    * this notification is called instead of a sequence of calls that notify
    * on each of the moves of the individual isolated vertex.
-   * \param from_f A handle to the face currently containing the
-   *        isolated vertices.
-   * \param to_f A handle to the face that should contain the isolated vertices.
+   * \param from_f A handle to the face the isolated vertices are moved from.
+   * \param to_f A handle to the face that the isolated vertices are moved to.
    */
   virtual void
   before_move_all_isolated_vertices(Face_handle /* from_f */,
@@ -574,8 +573,7 @@ public:
   /*! Notificaion before the removal of a vertex.
    * \param v A handle to the vertex to be deleted.
    */
-  virtual void before_remove_vertex(Vertex_handle /* v */)
-  {}
+  virtual void before_remove_vertex(Vertex_handle /* v */) {}
 
   /*! Notificaion after the removal of a vertex. */
   virtual void after_remove_vertex() {}
