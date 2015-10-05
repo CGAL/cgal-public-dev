@@ -392,7 +392,7 @@ namespace Qt {
           xcvs.push_back(Circular_X_monotone_curve( Point(lxs,lys), Point(fxs,fys)));
 
           Circular_polygon cp(xcvs.begin(), xcvs.end());
-          emit(generate(CGAL::make_object(cp)));
+          Q_EMIT(generate(CGAL::make_object(cp)));
         }  
       }
     }

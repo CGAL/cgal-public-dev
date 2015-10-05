@@ -457,7 +457,7 @@ namespace Qt {
       if ( xcvs.size() > 0 )
       {
         Bezier_polygon bp(xcvs.begin(), xcvs.end());
-        emit(generate(CGAL::make_object( std::make_pair(bp,mBezierPolygonPieces))));
+        Q_EMIT(generate(CGAL::make_object( std::make_pair(bp,mBezierPolygonPieces))));
       }  
     }
     

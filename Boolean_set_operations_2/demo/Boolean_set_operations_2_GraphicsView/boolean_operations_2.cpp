@@ -467,11 +467,11 @@ private:
   void dropEvent(QDropEvent *event);
   void zoomToFit();
   
-protected slots:
+protected Q_SLOTS:
   
   void open( QString filename ) ;
 
-public slots:
+public Q_SLOTS:
   
   void processInput(CGAL::Object o);
   void on_actionNew_triggered() ;
@@ -506,7 +506,7 @@ public slots:
   void on_radioMakeBlueActive_toggled(bool aChecked) { mBlue_active =  aChecked ; }
   void on_radioMakeRedActive_toggled (bool aChecked) { mBlue_active = !aChecked ; }
   
-signals:
+Q_SIGNALS:
 
   void changed();
   
@@ -514,7 +514,7 @@ private:
   
   void modelChanged()
   {
-    emit(changed());
+    Q_EMIT(changed());
   }
   
   bool ask_user_yesno( const char* aTitle, const char* aQuestion )
