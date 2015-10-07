@@ -136,6 +136,8 @@ class Polygon_2 {
     /// 
     typedef Polygon_2_edge_iterator<Traits_P,Container_P>
             Edge_const_iterator;
+  
+  typedef Edge_const_iterator Curve_const_iterator;
 
     /// 
     typedef Polygon_2_const_edge_circulator<Traits_P,Container_P>
@@ -282,6 +284,16 @@ class Polygon_2 {
     /// Returns the corresponding past-the-end iterator.
     Edge_const_iterator edges_end() const
       { return Edge_const_iterator(&d_container, d_container.end()); }
+
+ Edge_const_iterator curves_begin() const
+  {
+    return edges_begin();
+  }
+
+ Edge_const_iterator curves_end() const
+  {
+    return edges_end();
+  }
 
     /// Returns a non-mutable circulator that allows to traverse the
     /// edges of the polygon.

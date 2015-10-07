@@ -21,14 +21,18 @@
 #ifndef CGAL_TYPEDEFS_H
 #define CGAL_TYPEDEFS_H
 
+#include <CGAL/Exact_predicates_exact_constructions_kernel.h>
+
 //
 // Linear polygons
 //
-typedef CGAL::Simple_cartesian<double>            Linear_kernel ;
-typedef CGAL::Polygon_2<Linear_kernel>            Linear_polygon;
-typedef CGAL::Polygon_with_holes_2<Linear_kernel> Linear_polygon_with_holes;
+typedef CGAL::Simple_cartesian<double>            SC_linear_kernel ;
+typedef CGAL::Polygon_2<SC_linear_kernel>            SC_linear_polygon;
+typedef CGAL::Polygon_with_holes_2<SC_linear_kernel> SC_linear_polygon_with_holes;
 
-typedef Linear_kernel::Point_2 Linear_point ;
+typedef SC_linear_kernel::Point_2 C_linear_point ;
+
+
 
 //
 // Circlular polygons
@@ -45,6 +49,23 @@ typedef Linear_kernel::Point_2 Linear_point ;
 #endif
 
 typedef CGAL::Lazy_exact_nt<Base_nt> Coord_type;
+
+
+struct Gps_linear_kernel : public CGAL::Cartesian<Coord_type> {};
+
+typedef CGAL::Gps_segment_traits_2<Gps_linear_kernel>        Linear_traits;
+typedef Linear_traits::Curve_2                               Linear_curve;
+typedef Linear_traits::X_monotone_curve_2                    Linear_X_monotone_curve;
+typedef Linear_traits::Point_2                               Linear_point ;
+typedef Linear_traits::Polygon_2                             Linear_polygon;
+typedef CGAL::General_polygon_with_holes_2<Linear_polygon>   Linear_polygon_with_holes;
+typedef CGAL::General_polygon_set_2<Linear_traits>           Linear_polygon_set;
+
+typedef CGAL::Qt::Linear_set_graphics_item<Linear_polygon_set> Linear_GI;
+
+typedef std::vector<Linear_polygon_with_holes>  Linear_region_source_container ;
+
+
 
 
 struct Gps_circular_kernel : public CGAL::Cartesian<Coord_type> {};

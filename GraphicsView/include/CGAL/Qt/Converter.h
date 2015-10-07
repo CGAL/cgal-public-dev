@@ -63,7 +63,7 @@ public:
   typedef typename K::Line_2               CGAL_Line_2;
   typedef typename K::Triangle_2           CGAL_Triangle_2;
   typedef typename K::Iso_rectangle_2      CGAL_Iso_rectangle_2;
-  typedef typename internal::get_Circular_arc_point_2< K >::type
+  typedef typename CGAL::internal::get_Circular_arc_point_2< K >::type
     CGAL_Circular_arc_point_2;
 
 private:
