@@ -1,5 +1,3 @@
-// Point Cloud Registration should equal the project title in Doxyfile.in
-
 /// \defgroup PkgRegistration_3 3D Point Cloud Registration Reference
 /// \defgroup PkgRegistration_3Concepts Concepts
 /// \ingroup PkgRegistration_3
@@ -17,7 +15,7 @@
 \addtogroup PkgRegistration_3
 \todo check generated documentation
 
-\cgalPkgDescriptionBegin{Registration_3,PkgRegistration_3Summary}
+\cgalPkgDescriptionBegin{3D Point Cloud Registration, PkgRegistration_3Summary}
 \cgalPkgPicture{registration_3-small.png}
 
 \cgalPkgSummaryBegin

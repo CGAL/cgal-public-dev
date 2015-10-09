@@ -8,6 +8,7 @@ namespace CGAL {
 \author Nicolas Mellado, Dror Aiger, Niloy Mitra
 
 This chapter describes the ...
+\cgalCite{CGF:CGF12446}
 
 \section secmydefinitions Definitions
 
