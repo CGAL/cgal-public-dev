@@ -1,0 +1,4 @@
+@INCLUDE = ${CGAL_DOC_PACKAGE_DEFAULTS}
+PROJECT_NAME = "CGAL ${CGAL_CREATED_VERSION_NUM} - 3D Point Cloud Registration"
+INPUT        = ${CMAKE_SOURCE_DIR}/Registration_3/doc/Registration_3/ \
+               ${CMAKE_SOURCE_DIR}/Registration_3/include

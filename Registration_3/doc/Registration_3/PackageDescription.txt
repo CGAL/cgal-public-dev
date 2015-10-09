@@ -1,0 +1,39 @@
+// Point Cloud Registration should equal the project title in Doxyfile.in
+
+/// \defgroup PkgRegistration_3 3D Point Cloud Registration Reference
+/// \defgroup PkgRegistration_3Concepts Concepts
+/// \ingroup PkgRegistration_3
+
+/// \defgroup PkgRegistration_3AlgorithmClasses Algorithm Classes
+/// \ingroup PkgRegistration_3
+
+/// \defgroup PkgRegistration_3TraitsClasses Traits Classes
+/// \ingroup PkgRegistration_3
+
+/// \defgroup PkgRegistration_3Miscellaneous Miscellaneous
+/// \ingroup PkgRegistration_3
+
+/*!
+\addtogroup PkgRegistration_3
+\todo check generated documentation
+
+\cgalPkgDescriptionBegin{Registration_3,PkgRegistration_3Summary}
+\cgalPkgPicture{registration_3-small.png}
+
+\cgalPkgSummaryBegin
+\cgalPkgAuthors{Nicolas Mellado, Dror Aiger, and Niloy Mitra}
+\cgalPkgDesc{
+The package provides ... }
+\cgalPkgManuals{Chapter_Registration_3,PkgRegistration_3}
+\cgalPkgSummaryEnd
+
+\cgalPkgShortInfoBegin
+\cgalPkgSince{X.X}
+\cgalPkgDependsOn{\ref PkgDEPENDENCY}
+\cgalPkgBib{cgal:x-x}
+\cgalPkgLicense{\ref licensesGPL "GPL"}
+\cgalPkgShortInfoEnd
+
+\cgalPkgDescriptionEnd
+
+*/
