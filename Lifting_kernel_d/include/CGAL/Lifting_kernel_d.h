@@ -45,19 +45,30 @@ struct Lifting_kernel_d<_K,_P,_FT>::Orientation_d{
         typedef _K                                              Kernel_d;
 
         // This function calls the Orientation_d predicate of the base
-        // kernel. Its interface is described in the Kernel_d manual.
+        // kernel (i.e., it is a non-lifting predicate). Its interface is
+        // described in the Kernel_d manual, it needs d+1 points.
         template <class PointInputIterator>
         CGAL::Orientation
         operator()(PointInputIterator first,PointInputIterator last)const{
                 return Kernel_d().orientation_d_object()(first,last);
         }
 
+        // This is the lifting operator
+        // It needs d+2 points and a lifting coordinate for each
         template <class PointInputIterator,class LiftingInputIterator>
         CGAL::Orientation
-        operator()(PointInputIterator,PointInputIterator,
-                   LiftingInputIterator,LiftingInputIterator)const{
-                // TODO
-                return COLLINEAR;
+        operator()(PointInputIterator pfirst,PointInputIterator plast,
+                   LiftingInputIterator lfirst,LiftingInputIterator llast)const{
+            // TODO
+            int num_of_points = static_cast<int>(std::distance(pfirst,plast));
+						// range contains d+2 points of dimension d
+						CGAL_assertion_msg(pfirst->dimension() + 2 == num_of_points,
+                 "Lifted Orientation_d: needs first->dimension() + 2 many points.");
+            int num_of_lifts = static_cast<int>(std::distance(lfirst,llast));
+            // range contains d+2 liftings one for each point 
+						CGAL_assertion_msg(num_of_points == num_of_lifts,
+                 "Lifted Orientation_d: needs num_of_points as many as  num_of_lifts.");
+            return COLLINEAR;
         }
 };
 
