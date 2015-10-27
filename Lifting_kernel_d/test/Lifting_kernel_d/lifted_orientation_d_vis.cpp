@@ -36,11 +36,5 @@ int main(){
                              lifting.begin(),lifting.end())==
                        CGAL::COLLINEAR);
 
-        // Test Orientation_d predicates with d points.
-        /*points.pop_back();
-        CGAL_assertion(Ori()(points.begin(),points.end())==
-                       CGAL::COLLINEAR);
-         */
-
         return 0;
 }

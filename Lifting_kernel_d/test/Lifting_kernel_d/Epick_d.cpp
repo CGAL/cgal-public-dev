@@ -27,9 +27,18 @@ int main(){
         // Test another Kernel_d functor, called from the lifting kernel.
         CGAL_assertion(K::Midpoint_d()(q,t)==Point(3,-2));
 
+        std::vector<Point> lpoints;
+        lpoints.push_back(p);
+        lpoints.push_back(q);
+        lpoints.push_back(r);
+        lpoints.push_back(s);
+        
+        NT liftarray[] = {16,2,77,29};
+        std::vector<NT> lifting (liftarray,
+                                 liftarray + sizeof(liftarray) / sizeof(NT) );
         // Test the lifted Orientation_d predicate.
-        CGAL_assertion(Ori()(points.begin(),points.end(),
-                             points.begin(),points.end())==
+        CGAL_assertion(Ori()(lpoints.begin(),lpoints.end(),
+                             lifting.begin(),lifting.end())==
                        CGAL::COLLINEAR);
 
         return 0;
