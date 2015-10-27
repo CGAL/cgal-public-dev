@@ -1,10 +1,15 @@
-#include <CGAL/Cartesian_d.h>
+// The lifting kernel is not conceived to work with inexact construction
+// kernels. However, we are interested in testing its interface with
+// Epick_d, so as to make sure that Lifting_kernel_d will work with
+// eventual constructions kernels in the future.
+
+#include <CGAL/Epick_d.h>
 #include <CGAL/Lifting_kernel_d.h>
 #include <CGAL/assertions.h>
 
 int main(){
         typedef double                                          NT;
-        typedef CGAL::Cartesian_d<NT>                           Base;
+        typedef CGAL::Epick_d<CGAL::Dimension_tag<2> >          Base;
         typedef CGAL::Lifting_kernel_d<Base>                    K;
         typedef K::Point_d                                      Point;
         typedef K::Orientation_d                                Ori;
@@ -22,16 +27,10 @@ int main(){
         // Test another Kernel_d functor, called from the lifting kernel.
         CGAL_assertion(K::Midpoint_d()(q,t)==Point(3,-2));
 
-        // Test the lifted Orientation_d predicate with d+1 points.
+        // Test the lifted Orientation_d predicate.
         CGAL_assertion(Ori()(points.begin(),points.end(),
                              points.begin(),points.end())==
                        CGAL::COLLINEAR);
-
-        // Test Orientation_d predicates with d points.
-        /*points.pop_back();
-        CGAL_assertion(Ori()(points.begin(),points.end())==
-                       CGAL::COLLINEAR);
-         */
 
         return 0;
 }

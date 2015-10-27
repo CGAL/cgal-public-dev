@@ -44,6 +44,8 @@ struct Lifting_kernel_d<_K,_P,_FT>::Orientation_d{
 
         typedef _K                                              Kernel_d;
 
+        // This function calls the Orientation_d predicate of the base
+        // kernel. Its interface is described in the Kernel_d manual.
         template <class PointInputIterator>
         CGAL::Orientation
         operator()(PointInputIterator first,PointInputIterator last)const{

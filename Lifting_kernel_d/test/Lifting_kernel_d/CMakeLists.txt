@@ -4,16 +4,20 @@ project( Lifting_kernel_d_test )
 
 cmake_minimum_required(VERSION 2.8.11)
 
-find_package( CGAL QUIET )
+find_package( CGAL QUIET COMPONENTS Eigen3 )
 
 if ( CGAL_FOUND )
-
   include( ${CGAL_USE_FILE} )
   include( CGAL_CreateSingleSourceCGALProgram )
 
   include_directories( BEFORE ../../include include )
 
-  create_single_source_cgal_program( "lifted_orientation_d.cpp" )
+  create_single_source_cgal_program( "Cartesian_d.cpp" )
+  if ( EIGEN3_FOUND )
+    create_single_source_cgal_program( "Epick_d.cpp" )
+  else ( EIGEN3_FOUND )
+    message(STATUS "Some test programs require Eigen3.")
+  endif ( EIGEN3_FOUND )
 
 else( CGAL_FOUND )
 
