@@ -20,23 +20,25 @@
 
 namespace CGAL{
 
-template <class _K,typename _P=typename _K::Point_d,typename _NT=typename _P::NT>
+template <class _K,
+          typename _P=typename _K::Point_d,
+          typename _FT=typename _K::FT>
 class Lifting_kernel_d:
 public _K{
         private:
         typedef _K                                              Kernel_d;
         typedef _P                                              Point_d;
-        typedef _NT                                             NT;
+        typedef _FT                                             FT;
         typedef std::vector<const Point_d&>                     Index;
-        typedef boost::unordered_map<Index,NT>                  Table;
+        typedef boost::unordered_map<Index,FT>                  Table;
         typedef typename Table::iterator                        It;
 
         public:
         struct Orientation_d;
 };
 
-template <class _K,typename _P,typename _NT>
-struct Lifting_kernel_d<_K,_P,_NT>::Orientation_d{
+template <class _K,typename _P,typename _FT>
+struct Lifting_kernel_d<_K,_P,_FT>::Orientation_d{
         template <class PointInputIterator,class LiftingInputIterator>
         CGAL::Orientation
         operator()(PointInputIterator,PointInputIterator,
