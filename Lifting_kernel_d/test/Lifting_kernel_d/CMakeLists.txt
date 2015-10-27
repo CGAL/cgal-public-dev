@@ -14,6 +14,7 @@ if ( CGAL_FOUND )
   include_directories( BEFORE ../../include include )
 
   create_single_source_cgal_program( "lifted_orientation_d.cpp" )
+  create_single_source_cgal_program( "lifted_orientation_d_vis.cpp" )
 
 else( CGAL_FOUND )
 
