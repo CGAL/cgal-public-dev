@@ -27,8 +27,10 @@ class Lifting_kernel_d:
 public _K{
         private:
         typedef _K                                              Kernel_d;
-        typedef _P                                              Point_d;
         typedef _FT                                             FT;
+        public:
+        typedef _P                                              Point_d;
+        private:
         typedef std::vector<const Point_d&>                     Index;
         typedef boost::unordered_map<Index,FT>                  Table;
         typedef typename Table::iterator                        It;
@@ -39,10 +41,19 @@ public _K{
 
 template <class _K,typename _P,typename _FT>
 struct Lifting_kernel_d<_K,_P,_FT>::Orientation_d{
+
+        typedef _K                                              Kernel_d;
+
+        template <class PointInputIterator>
+        CGAL::Orientation
+        operator()(PointInputIterator first,PointInputIterator last)const{
+                return Kernel_d().orientation_d_object()(first,last);
+        }
+
         template <class PointInputIterator,class LiftingInputIterator>
         CGAL::Orientation
         operator()(PointInputIterator,PointInputIterator,
-                   LiftingInputIterator,LiftingInputIterator){
+                   LiftingInputIterator,LiftingInputIterator)const{
                 // TODO
                 return COLLINEAR;
         }
