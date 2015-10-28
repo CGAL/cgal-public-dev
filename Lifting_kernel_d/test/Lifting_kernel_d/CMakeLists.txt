@@ -11,8 +11,10 @@ if ( CGAL_FOUND )
   include( CGAL_CreateSingleSourceCGALProgram )
 
   include_directories( BEFORE ../../include include )
-
-  create_single_source_cgal_program( "lifted_orientation_d_vis.cpp" )
+  include_directories (BEFORE /usr/local/include/eigen3)
+  
+  create_single_source_cgal_program( "Cartesian_d.cpp" )
+  
   if ( EIGEN3_FOUND )
     create_single_source_cgal_program( "Epick_d.cpp" )
   else ( EIGEN3_FOUND )
