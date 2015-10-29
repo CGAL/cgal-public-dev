@@ -85,18 +85,16 @@ struct Lifting_kernel_d<_K,_P,_FT>::Orientation_d{
             typedef Eigen::Matrix<FT,Eigen::Dynamic,Eigen::Dynamic> MT;
             int msize = num_of_points - 1;
             MT m(msize,msize);
-            int j=0, k=0;
+            int j=0;
             for(PointInputIterator pit=pfirst; pit<plast; ++pit){
-              if(k!=idx){
+              if(static_cast<int>(std::distance(pfirst,pit))!=idx){
                 int i=0;
                 for(typename Point_d::Cartesian_const_iterator 
                     cit=pit->cartesian_begin(); cit<pit->cartesian_end(); ++cit){
                   m(i++,j) = *cit;
                 }
-                m(i,j) = 1;
-                ++j;
+                m(i,j++) = 1;
               }  
-              ++k;
             }  
             //std::cout << m << std::endl << std::endl;
             minor = m.determinant();
@@ -107,7 +105,7 @@ struct Lifting_kernel_d<_K,_P,_FT>::Orientation_d{
           //TODO: store minor in hash table and associate it with the set of indices 
           det += ((idx+1)+(num_of_points-1))%2==0 ? minor : -1 * minor;
         }
-        //std::cout << "determinant=" << det << std::endl;
+        std::cout << "determinant=" << det << std::endl;
         return Sgn()(det);
     }
 };
