@@ -66,8 +66,10 @@ struct Lifting_kernel_d<_K,_P,_FT>::Orientation_d{
                LiftingInputIterator lfirst,LiftingInputIterator llast)const{
         
         int num_of_points = static_cast<int>(std::distance(pfirst,plast));
+        int dim = pfirst->dimension();
+        
         // range contains d+2 points of dimension d
-        CGAL_assertion_msg(pfirst->dimension() + 2 == num_of_points,
+        CGAL_assertion_msg(dim + 2 == num_of_points,
           "Lifted Orientation_d: needs first->dimension() + 2 many points.");
         int num_of_lifts = static_cast<int>(std::distance(lfirst,llast));
         // range contains d+2 liftings one for each point 
@@ -105,7 +107,10 @@ struct Lifting_kernel_d<_K,_P,_FT>::Orientation_d{
           //TODO: store minor in hash table and associate it with the set of indices 
           det += ((idx+1)+(num_of_points-1))%2==0 ? minor : -1 * minor;
         }
-        std::cout << "determinant=" << det << std::endl;
+        // To be consistent with original kernel if the dimension of the lifted 
+        // points ie. dim+1 is odd change sign
+        det *= (dim+1)%2==0 ? 1 : -1;
+        //std::cout << "determinant=" << det << std::endl;
         return Sgn()(det);
     }
 };
