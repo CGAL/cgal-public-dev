@@ -46,9 +46,7 @@
 #include <CGAL/internal/info_check.h>
 
 #include <boost/tuple/tuple.hpp>
-#include <boost/bind.hpp>
 #include <boost/iterator/zip_iterator.hpp>
-#include <boost/function_output_iterator.hpp>
 #include <boost/mpl/and.hpp>
 #endif //CGAL_TRIANGULATION_3_DONT_INSERT_RANGE_OF_POINTS_WITH_INFO
 
@@ -61,10 +59,6 @@
 
 #ifdef CGAL_DELAUNAY_3_OLD_REMOVE
 #  error "The old remove() code has been removed.  Please report any issue you may have with the current one."
-#endif
-
-#ifdef CGAL_CONCURRENT_TRIANGULATION_3_ADD_TEMPORARY_POINTS_ON_FAR_SPHERE
-#include <CGAL/point_generators_3.h>
 #endif
 
 namespace CGAL {
@@ -108,7 +102,7 @@ public:
   // types for dual:
   typedef typename Gt::Line_3        Line;
   typedef typename Gt::Ray_3         Ray;
-  typedef typename Gt::Plane_3       Plane;
+  //typedef typename Gt::Plane_3       Plane;
   typedef typename Gt::Object_3      Object;
 
   typedef typename Tr_Base::Cell_handle   Cell_handle;
@@ -156,7 +150,6 @@ public:
   using Tr_Base::next_around_edge;
   using Tr_Base::vertex_triple_index;
   using Tr_Base::mirror_vertex;
-  using Tr_Base::mirror_facet;
   using Tr_Base::coplanar;
   using Tr_Base::coplanar_orientation;
   using Tr_Base::orientation;
@@ -200,12 +193,6 @@ protected:
   construct_ray(const Point &p, const Line &l) const
   {
       return geom_traits().construct_ray_3_object()(p, l);
-  }
-
-  Plane
-  construct_bisector(const Point &p, const Point &q) const
-  {
-      return geom_traits().construct_bisector_3_object()(p, q);
   }
 
   Object
@@ -276,76 +263,6 @@ public:
       insert(first, last);
   }
 
-private:
-  #ifdef CGAL_CONCURRENT_TRIANGULATION_3_ADD_TEMPORARY_POINTS_ON_FAR_SPHERE
-  std::vector<Vertex_handle> 
-  add_temporary_points_on_far_sphere(const size_t num_points)
-  {
-      std::vector<Vertex_handle> far_sphere_vertices;
-
-      const size_t MIN_NUM_POINTS_FOR_FAR_SPHERE_POINTS = 1000000;
-      if (num_points >= MIN_NUM_POINTS_FOR_FAR_SPHERE_POINTS)
-      {
-          // Add temporary vertices on a "far sphere" to reduce contention on
-          // the infinite vertex
-
-          // Get bbox
-          const Bbox_3 &bbox = *this->get_bbox();
-          // Compute radius for far sphere
-          const double& xdelta = bbox.xmax() - bbox.xmin();
-          const double& ydelta = bbox.ymax() - bbox.ymin();
-          const double& zdelta = bbox.zmax() - bbox.zmin();
-          const double radius = 1.3 * 0.5 * std::sqrt(xdelta*xdelta +
-                                                      ydelta*ydelta +
-                                                      zdelta*zdelta);
-          // WARNING - TODO: this code has to be fixed because Vector_3 is not
-          // required by the traits concept
-          const typename Gt::Vector_3 center(
-                  bbox.xmin() + 0.5*xdelta,
-                  bbox.ymin() + 0.5*ydelta,
-                  bbox.zmin() + 0.5*zdelta);
-          Random_points_on_sphere_3<Point> random_point(radius);
-          const int NUM_PSEUDO_INFINITE_VERTICES = static_cast<int>(
-                  tbb::task_scheduler_init::default_num_threads() * 3.5);
-          std::vector<Point> points_on_far_sphere;
-
-          points_on_far_sphere.reserve(NUM_PSEUDO_INFINITE_VERTICES);
-          far_sphere_vertices.reserve(NUM_PSEUDO_INFINITE_VERTICES);
-
-          for (int i = 0 ; i < NUM_PSEUDO_INFINITE_VERTICES ; ++i, ++random_point)
-              points_on_far_sphere.push_back(*random_point + center);
-
-          spatial_sort(points_on_far_sphere.begin(),
-                       points_on_far_sphere.end(),
-                       geom_traits());
-
-          typename std::vector<Point>::const_iterator it_p = points_on_far_sphere.begin();
-          typename std::vector<Point>::const_iterator it_p_end = points_on_far_sphere.end();
-
-          Vertex_handle hint;
-          for ( ; it_p != it_p_end ; ++it_p)
-          {
-              hint = insert(*it_p, hint);
-              far_sphere_vertices.push_back(hint);
-          }
-      }
-
-      return far_sphere_vertices;
-  }
-
-  void remove_temporary_points_on_far_sphere(
-    const std::vector<Vertex_handle> & far_sphere_vertices)
-  {
-      if(!far_sphere_vertices.empty())
-      {
-          // Remove the temporary vertices on far sphere
-          remove(far_sphere_vertices.begin(), far_sphere_vertices.end());
-      }
-  }
-  #endif
-
-public:
-
 #ifndef CGAL_TRIANGULATION_3_DONT_INSERT_RANGE_OF_POINTS_WITH_INFO
   template < class InputIterator >
   std::ptrdiff_t
@@ -378,9 +295,8 @@ public:
       size_t num_points = points.size();
 
       Vertex_handle hint;
-<<<<<<< HEAD
       std::vector<Vertex_handle> far_sphere_vertices;
-
+      
 #ifdef CGAL_CONCURRENT_TRIANGULATION_3_ADD_TEMPORARY_POINTS_ON_FAR_SPHERE
       const size_t MIN_NUM_POINTS_FOR_FAR_SPHERE_POINTS = 1000000;
       if (num_points >= MIN_NUM_POINTS_FOR_FAR_SPHERE_POINTS)
@@ -397,7 +313,7 @@ public:
         const double radius = 1.3 * 0.5 * std::sqrt(xdelta*xdelta +
                                                     ydelta*ydelta +
                                                     zdelta*zdelta);
-        // WARNING - TODO: this code has to be fixed because Vector_3 is not
+        // WARNING - TODO: this code has to be fixed because Vector_3 is not 
         // required by the traits concept
         const typename Gt::Vector_3 center(
           bbox.xmin() + 0.5*xdelta,
@@ -410,8 +326,8 @@ public:
         for (int i = 0 ; i < NUM_PSEUDO_INFINITE_VERTICES ; ++i, ++random_point)
           points_on_far_sphere.push_back(*random_point + center);
 
-        spatial_sort(points_on_far_sphere.begin(),
-                     points_on_far_sphere.end(),
+        spatial_sort(points_on_far_sphere.begin(), 
+                     points_on_far_sphere.end(), 
                      geom_traits());
 
         std::vector<Point>::const_iterator it_p = points_on_far_sphere.begin();
@@ -422,14 +338,8 @@ public:
           far_sphere_vertices.push_back(hint);
         }
       }
-=======
-      
-#ifdef CGAL_CONCURRENT_TRIANGULATION_3_ADD_TEMPORARY_POINTS_ON_FAR_SPHERE
-      std::vector<Vertex_handle> far_sphere_vertices =
-        add_temporary_points_on_far_sphere(num_points);
->>>>>>> master
 #endif // CGAL_CONCURRENT_TRIANGULATION_3_ADD_TEMPORARY_POINTS_ON_FAR_SPHERE
-
+      
       size_t i = 0;
       // Insert "num_points_seq" points sequentially
       // (or more if dim < 3 after that)
@@ -445,9 +355,13 @@ public:
         tbb::blocked_range<size_t>( i, num_points ),
         Insert_point<Self>(*this, points, tls_hint)
       );
-
+      
 #ifdef CGAL_CONCURRENT_TRIANGULATION_3_ADD_TEMPORARY_POINTS_ON_FAR_SPHERE
-      remove_temporary_points_on_far_sphere(far_sphere_vertices);
+      if (num_points >= MIN_NUM_POINTS_FOR_FAR_SPHERE_POINTS)
+      {
+        // Remove the temporary vertices on far sphere
+        remove(far_sphere_vertices.begin(), far_sphere_vertices.end());
+      }
 #endif // CGAL_CONCURRENT_TRIANGULATION_3_ADD_TEMPORARY_POINTS_ON_FAR_SPHERE
     }
     // Sequential
@@ -499,51 +413,13 @@ private:
 
     spatial_sort(indices.begin(),indices.end(),Search_traits(&(points[0]),geom_traits()));
 
-#ifdef CGAL_LINKED_WITH_TBB
-      if(this->is_parallel()){
-
-        size_t num_points = points.size();
-        Vertex_handle hint;
-
-#ifdef CGAL_CONCURRENT_TRIANGULATION_3_ADD_TEMPORARY_POINTS_ON_FAR_SPHERE
-        std::vector<Vertex_handle> far_sphere_vertices =
-          add_temporary_points_on_far_sphere(num_points);
-#endif // CGAL_CONCURRENT_TRIANGULATION_3_ADD_TEMPORARY_POINTS_ON_FAR_SPHERE
-
-        size_t i = 0;
-        // Insert "num_points_seq" points sequentially
-        // (or more if dim < 3 after that)
-        size_t num_points_seq = (std::min)(num_points, (size_t)100);
-        while (dimension() < 3 || i < num_points_seq)
-        {
-          hint = insert(points[indices[i]], hint);
-          if (hint != Vertex_handle()) hint->info() = infos[indices[i]];
-          ++i;
-        }
-
-        tbb::enumerable_thread_specific<Vertex_handle> tls_hint(hint);
-        tbb::parallel_for(
-          tbb::blocked_range<size_t>( i, num_points ),
-          Insert_point_with_info<Self>(*this, points, infos, indices, tls_hint)
-        );
-
-#ifdef CGAL_CONCURRENT_TRIANGULATION_3_ADD_TEMPORARY_POINTS_ON_FAR_SPHERE
-      remove_temporary_points_on_far_sphere(far_sphere_vertices);
-#endif // CGAL_CONCURRENT_TRIANGULATION_3_ADD_TEMPORARY_POINTS_ON_FAR_SPHERE
-
-      }
-      // Sequential
-      else
-#endif
-      {
-          Vertex_handle hint;
-          for (typename std::vector<std::ptrdiff_t>::const_iterator
-                       it = indices.begin(), end = indices.end();
-               it != end; ++it) {
-              hint = insert(points[*it], hint);
-              if (hint != Vertex_handle()) hint->info() = infos[*it];
-          }
-      }
+    Vertex_handle hint;
+    for (typename std::vector<std::ptrdiff_t>::const_iterator
+      it = indices.begin(), end = indices.end();
+      it != end; ++it){
+      hint = insert(points[*it], hint);
+      if (hint!=Vertex_handle()) hint->info()=infos[*it];
+    }
 
     return number_of_vertices() - n;
   }
@@ -857,19 +733,7 @@ public:
 
   Object dual(Cell_handle c, int i) const;
 
-public:
-  template < class Polyhedron, class Polyhedron_incremental_builder, class Bbox >
-  Polyhedron dual(Vertex_handle v, Bbox bbox = Bbox(0., 0., 0., 0., 0., 0.)) const;
-
-  Line dual_support(const Facet & f) const
-  { return dual_support( f.first, f.second ); }
-
   Line dual_support(Cell_handle c, int i) const;
-
-  Plane dual_support(const Edge & e) const
-  { return dual_support( e.first, e.second, e.third); }
-
-  Plane dual_support(Cell_handle c, int i, int j) const;
 
   bool is_valid(bool verbose = false, int level = 0) const;
 
@@ -1055,91 +919,6 @@ protected:
     }
   };
 
-  // Functor for parallel insert_with_info(begin, end) function
-  template <typename DT>
-  class Insert_point_with_info
-  {
-    typedef typename DT::Point                                  Point;
-    typedef typename DT::Vertex_handle                          Vertex_handle;
-    typedef typename DT::Triangulation_data_structure::Vertex::Info Info;
-
-    DT                                                  & m_dt;
-    const std::vector<Point>                            & m_points;
-    const std::vector<Info>                             & m_infos;
-    const std::vector<std::ptrdiff_t>                   & m_indices;
-    tbb::enumerable_thread_specific<Vertex_handle>      & m_tls_hint;
-
-  public:
-    // Constructor
-    Insert_point_with_info(DT & dt,
-                 const std::vector<Point> & points,
-                 const std::vector<Info> & infos,
-                 const std::vector<std::ptrdiff_t> & indices,
-                 tbb::enumerable_thread_specific<Vertex_handle> & tls_hint)
-    : m_dt(dt), m_points(points), m_infos(infos), m_indices(indices), 
-      m_tls_hint(tls_hint)
-    {}
-
-    // Constructor
-    Insert_point_with_info(const Insert_point_with_info &ip)
-      : m_dt(ip.m_dt), m_points(ip.m_points), m_infos(ip.m_infos),
-      m_indices(ip.m_indices), m_tls_hint(ip.m_tls_hint)
-    {}
-
-    // operator()
-    void operator()( const tbb::blocked_range<size_t>& r ) const
-    {
-#ifdef CGAL_CONCURRENT_TRIANGULATION_3_PROFILING
-      static Profile_branch_counter_3 bcounter(
-        "early withdrawals / late withdrawals / successes [Delaunay_tri_3::insert_with_info]");
-#endif
-
-      Vertex_handle &hint = m_tls_hint.local();
-      for( std::size_t i_idx = r.begin() ; i_idx != r.end() ; ++i_idx)
-      {
-        bool success = false;
-        std::ptrdiff_t i_point = m_indices[i_idx];
-        const Point &p = m_points[i_point];
-        while(!success)
-        {
-          if (m_dt.try_lock_vertex(hint) && m_dt.try_lock_point(p))
-          {
-            bool could_lock_zone;
-            Vertex_handle new_hint = m_dt.insert(
-              p, hint, &could_lock_zone);
-
-            m_dt.unlock_all_elements();
-
-            if (could_lock_zone)
-            {
-              hint = new_hint;
-              if (hint!=Vertex_handle()) hint->info()=m_infos[i_point];
-              success = true;
-#ifdef CGAL_CONCURRENT_TRIANGULATION_3_PROFILING
-              ++bcounter;
-#endif
-            }
-#ifdef CGAL_CONCURRENT_TRIANGULATION_3_PROFILING
-            else
-            {
-              bcounter.increment_branch_1(); // THIS is a late withdrawal!
-            }
-#endif
-          }
-          else
-          {
-            m_dt.unlock_all_elements();
-
-#ifdef CGAL_CONCURRENT_TRIANGULATION_3_PROFILING
-            bcounter.increment_branch_2(); // THIS is an early withdrawal!
-#endif
-          }
-        }
-
-      }
-    }
-  };
-
   // Functor for parallel remove(begin, end) function
   template <typename DT>
   class Remove_point
@@ -1155,9 +934,9 @@ protected:
     // Constructor
     Remove_point(DT & dt,
                  const std::vector<Vertex_handle> & vertices,
-                 tbb::concurrent_vector<Vertex_handle> &
+                 tbb::concurrent_vector<Vertex_handle> & 
                    vertices_to_remove_sequentially)
-    : m_dt(dt), m_vertices(vertices),
+    : m_dt(dt), m_vertices(vertices), 
       m_vertices_to_remove_sequentially(vertices_to_remove_sequentially)
     {}
 
@@ -1989,633 +1768,6 @@ dual(Cell_handle c, int i) const
   return construct_object(construct_ray( dual(n), l));
 }
 
-template < class Gt, class Tds, class Lds >
-template < class Polyhedron, class Polyhedron_incremental_builder, class Bbox >
-Polyhedron
-Delaunay_triangulation_3<Gt,Tds,Default,Lds>::
-dual(Vertex_handle v, Bbox bbox) const
-{
-  CGAL_triangulation_precondition( v != Vertex_handle());
-  CGAL_triangulation_precondition( !is_infinite(v));
-  CGAL_triangulation_precondition( dimension() == 3);
-  CGAL_triangulation_expensive_precondition( tds().is_vertex(v) );
-
-  typedef std::map<Cell_handle, size_t> Cell_id_map;
-  // Indices correspond to the incident to v cells and to its dual vertices.
-  Cell_id_map cell_ids;
-  {
-    typedef std::pair<typename Cell_id_map::iterator, bool> Iter_bool_pair;
-    typedef typename Cell_id_map::value_type Value_type;
-    typedef Iter_bool_pair(Cell_id_map::*Insert)(const Value_type&);
-    this->incident_cells(v, boost::make_function_output_iterator(
-      boost::bind(static_cast<Insert>(&Cell_id_map::insert), &cell_ids,
-        // Const references are needed for C++11 compability.
-        boost::bind(&std::make_pair<const Cell_handle&, const size_t&>,
-          _1, boost::bind(&Cell_id_map::size, &cell_ids)))));
-  }
-
-  // Dual vertices of finite cells incident to v.
-  std::vector<Point> points(cell_ids.size());
-  // A first found facet which is incident to v and which belongs to the hull.
-  // of the triangulation, if any.
-  Facet first_hull_facet;
-  bool hull_facet_found = false;
-  for(typename Cell_id_map::iterator cit = cell_ids.begin(), end = cell_ids.end(); cit != end; ++cit) {
-    Cell_handle cell = cit->first;
-    int inf_v_id;
-    if(cell->has_vertex(infinite_vertex(), inf_v_id)) {
-      if(!hull_facet_found) {
-        hull_facet_found = true;
-        first_hull_facet = mirror_facet(std::make_pair(cell, inf_v_id));
-      }
-      continue;
-    }
-    points[cit->second] = dual(cell);
-  }
-
-  // First part: add finite facets to the resulting polyhedron.
-  std::vector<Edge> edges;
-  this->incident_edges(v, std::back_inserter(edges));
-
-  Polyhedron result;
-  Polyhedron_incremental_builder builder(result.hds()/*TODO: TMP*/, true);
-  builder.begin_surface(cell_ids.size(), edges.size(), 3 * cell_ids.size());
-  for(typename std::vector<Point>::iterator pit = points.begin(), pend = points.end(); pit != pend; ++pit) {
-    builder.add_vertex(*pit);
-  }
-
-  for(typename std::vector<Edge>::iterator eit = edges.begin(), eend = edges.end(); eit != eend; ++eit) {
-    Cell_circulator ccir = this->incident_cells(*eit);
-    Cell_circulator cend = ccir;
-    builder.begin_facet();
-    do {
-      builder.add_vertex_to_facet(cell_ids[ccir]);
-      ++ccir;
-    } while ( ccir != cend );
-    builder.end_facet();
-  }
-  builder.end_surface();
-
-  if(!hull_facet_found) {
-  // Dual cell is finite, it does not need to be intersected with the bbox.
-    CGAL_triangulation_expensive_postcondition(result.is_valid());
-    CGAL_triangulation_postcondition(result.is_closed());
-
-    return result;
-  }
-
-  // Second part: add to the resulting polyhedron the infinite facets, trimmed by the bounding box.
-  // Infinite edges of infinite facets of the resulting cell.
-  std::vector<Ray> rays;
-  rays.reserve(8);
-  // Point indices of the ray source points. Need it for the builder.
-  std::vector<size_t> ray_source_builder_ids;
-  ray_source_builder_ids.reserve(8);
-  // Facets of the triangulation, which are incident to v and which belong to the hull.
-  // Adjacency of two successive facets is kept.
-  Facet hull_facet = first_hull_facet;
-  do {
-    Cell_handle hull_cell = hull_facet.first;
-    // Vertex opposite to the hull facet.
-    int op_id = hull_facet.second;
-    {
-      // Compute the current ray.
-      const Point& p1 = hull_cell->vertex((op_id + 1) % 4)->point();
-      const Point& p2 = hull_cell->vertex((op_id + 2) % 4)->point();
-      const Point& p3 = hull_cell->vertex((op_id + 3) % 4)->point();
-      // A dual point of the current finite cell is the source of the ray.
-      size_t p_id = cell_ids[hull_cell];
-      const Point& p = points[p_id];
-      CGAL_triangulation_precondition(
-        bbox.xmin() < p.x()
-        && bbox.ymin() < p.y()
-        && bbox.zmin() < p.z()
-        && bbox.xmax() > p.x()
-        && bbox.ymax() > p.y()
-        && bbox.zmax() > p.z()
-      );
-      // A plane constructed from the hull facet keeps its orientation.
-      const Plane hf_plane = (op_id % 2 == 0)
-        ? Plane(p1, p2, p3)
-        : Plane(p1, p3, p2);
-      rays.push_back(Ray(p, hf_plane.orthogonal_direction()));
-      ray_source_builder_ids.push_back(p_id);
-    }
-
-    int v_id;
-    this->has_vertex(hull_facet, v, v_id);
-    bool op_is_pair = (op_id % 2 == 0);
-    // Ccw neighbor of v in hull_facet.
-    // TODO: replace to a new function int ccw(Face f, int i) ?
-    int ccw_id = op_is_pair ? (v_id + 1) % 4 : (v_id - 1) % 4;
-    if(ccw_id == op_id) {
-      if(op_is_pair)
-        ccw_id = (ccw_id + 1) % 4;
-      else
-        ccw_id = (ccw_id - 1) % 4;
-    }
-    // Ccw hull neighbor facet of the current hull_facet (wrt v).
-    // May belong either to the same hull cell or to the adjacent hull cell.
-    Facet adj_facet = std::make_pair(hull_cell, ccw_id);
-    Facet adj_cell_facet = mirror_facet(adj_facet);
-    if(is_infinite(adj_cell_facet.first)) {
-    // New hull facet belong to the same cell, adjacent cell is infinite.
-      hull_facet = adj_facet;
-    } else {
-    // New hull facet belong to the adjacent cell.
-      op_id = adj_cell_facet.second;
-      // Id of v in the adjacent cell.
-      this->has_vertex(adj_cell_facet, v, v_id);
-      op_is_pair = (op_id % 2 == 0);
-      // Opposite vector of a new hull facet which belongs to the adjacent
-      // cell. Is a ccw neighbor of v in adj_cell_facet.
-      ccw_id = op_is_pair ? (v_id + 1) % 4 : (v_id - 1) % 4;
-      if(ccw_id == op_id) {
-        if(op_is_pair)
-          ccw_id = (ccw_id + 1) % 4;
-        else
-          ccw_id = (ccw_id - 1) % 4;
-      }
-      hull_facet = std::make_pair(adj_cell_facet.first, ccw_id);
-    }
-  } while(hull_facet != first_hull_facet);
-  CGAL_triangulation_assertion(rays.size() > 2);
-  // TODO: make sure that rays are indeed always right-hand oriented.
-  CGAL_triangulation_assertion(orientation(rays[0], rays[1], rays[2]) == POSITIVE);
-
-  typedef typename Gt::FT Cartesian;
-
-  Cartesian bbox_limits[3][2] = {
-    {bbox.xmin(), bbox.xmax()},
-    {bbox.ymin(), bbox.ymax()},
-    {bbox.zmin(), bbox.zmax()}
-  };
-
-  // MIN = {x:left,y:front,z:bottom} < MAX = {x:right/y:back/z:top}.
-  enum Bbox_side {
-      MIN = 0,
-      MAX
-  };
-
-  struct Bbox_facet {
-    // Axis id {x=0, y=1, z=2}.
-    int i;
-    Bbox_side side;
-    Bbox_facet(int i, Bbox_side side) : i(i), side(side) {}
-  };
-
-  // TODO: can be replaced by the number of bbox facets of a point.
-  enum Bbox_location {
-    ON_VERTEX = 1<<0,
-    ON_EDGE = 1<<1,
-    ON_FACET = 1<<2,
-    INSIDE = 1<<3,
-    OUTSIDE = 1<<4
-  };
-  const Bbox_location ON_BOUNDARY = static_cast<Bbox_location>(ON_VERTEX | ON_EDGE | ON_FACET);
-  const Bbox_location ON_FACET_BOUNDARY = static_cast<Bbox_location>(ON_VERTEX | ON_EDGE);
-
-  // Bounding box facets which the point belongs to.
-  std::vector<Bbox_facet> bbox_facets = [&](const Point& p)
-  {
-    std::vector<Bbox_facet> result;
-    for(int i = 0; i < 3; ++i) {
-      for(int j = 0; j < 2; ++j) {
-        if(p.cartesian(i) == bbox_limits[i][j]) {
-          result.push_back(Bbox_facet(i, Bbox_side(j)));
-        }
-      }
-    }
-    CGAL_triangulation_assertion(result.size() <= 3);
-    return result;
-  };
-
-  // Whether the Bbox_facet set vf contains the given facet f.
-  bool contains = [&](const std::vector<Bbox_facet>& vf, const Bbox_facet& f)
-  {
-    if(std::find(vf.begin(), vf.end(), f) != vf.end())
-      return true;
-
-    return false;
-  };
-
-  // Whether two (non-sortable) Bbox_facet sets have a common element.
-  bool do_intersect = [&](const std::vector<Bbox_facet>& lhs, const std::vector<Bbox_facet>& rhs)
-  {
-    // TODO: standard solution O(n*lg(n)) is std::sort(); std::set_intersection();
-    // but it can be less rapide in this particular case.
-    if(lhs.empty() || rhs.empty())
-      return false;
-
-    for(typename std::vector<Bbox_facet>::const_iterator rhs_it = rhs.begin(), rhs_end = rhs.end(); rhs_it != rhs_end; ++rhs_it) {
-      if(contains(lhs, *rhs_it))
-        return true;
-    }
-    return false;
-  };
-
-  // True if the point belong at leaset to one facet from the array, false otherwise.
-  // TODO:Probably non-used.
-  bool on_bbox_facet = [&](const Point& p, const std::vector<Bbox_facet>& vf)
-  {
-    return do_intersect(bbox_facets(p), vf);
-  };
-
-  // TODO: optimize; (?) remove (used only in assertions)
-  Bbox_location bbox_location = [&](const Point& p)
-  {
-    switch(bbox_facets(p).size()) {
-      case 3 : return Bbox_location::ON_VERTEX;
-      case 2 : return Bbox_location::ON_EDGE;
-      case 1 : return Bbox_location::ON_FACET;
-    }
-
-    for(int i = 0; i < 3; ++i) {
-      if(p.cartesian(i) < bbox_limits[i][0]
-          || p.cartesian(i) > bbox_limits[i][1]) {
-        return Bbox_location::OUTSIDE;
-      }
-    }
-    return Bbox_location::INSIDE;
-  };
-
-  // Get two coordinate axis ids by the third one.
-  // The indices should be a permutation of {0, 1, 2}.
-  std::pair<int, int> orthogonal_ids = [](int i)
-  {
-    return std::make_pair((i + 1) % 3, (i + 2) % 3);
-  };
-
-  // Get the third coordinate axis id by the two others.
-  // The indices should be a permutation of {0, 1, 2}.
-  int orthogonal_id = [](int i1, int i2)
-  {
-    return (3 - i1 - i2) % 3;
-  };
-
-  Point point = [](
-    int i1, int i2, int i3,
-    Cartesian c1, Cartesian c2, Cartesian c3)
-  {
-    CGAL_triangulation_precondition(
-      i1 >= 0 && i1 < 3
-      && i2 >= 0 && i2 < 3
-      && i3 >= 0 && i3 < 3
-      && i1 != i2
-      && i1 != i3
-      && i2 != i3
-    );
-    if(i1 < i2) {
-      if(i3 < i1) {
-        std::swap(i1, i3);
-        std::swap(c1, c3);
-      }
-    } else {
-      if(i2 < i3) {
-        std::swap(i1, i2);
-        std::swap(c1, c2);
-      }
-      else {
-        std::swap(i1, i3);
-        std::swap(c1, c3);
-      }
-    }
-    if(i3 < i2) {
-      std::swap(c2, c3);
-    }
-    return Point(c1, c2, c3);
-  };
-
-  // Find an intersection point of the boundig box with an input ray,
-  // which source lies inside the boundig box.
-  Point bbox_intersection = [&](const Ray& ray) {
-    const Point& s = ray.source();
-    CGAL_triangulation_expensive_precondition(bbox_location(s) == Bbox_location::INSIDE);
-    // TODO: add Direction to traits?
-    const typename Gt::Direction_3& d = ray.direction();
-    for(int i3 = 0; i3 < 3; ++i3) {
-      if(d.delta(i3) != 0) {
-      // The ray intersects the plane of one of the two parallel sides.
-        Bbox_side side = d.delta(i3) < 0 ? Bbox_side::MIN : Bbox_side::MAX;
-        int i1, i2;
-        // Side variable coordinate ids.
-        boost::tie(i1, i2) = orthogonal_ids(i3);
-        // Coordinates of the intersection point.
-        Cartesian c3 = bbox_limits[i3][side];
-        Cartesian k = (c3 - s.cartesian(i3)) / d.delta(i3);
-        Cartesian c1 = s.cartesian(i1) + d.delta(i1) * k;
-        Cartesian c2 = s.cartesian(i2) + d.delta(i2) * k;
-        return Point(i1, i2, i3, c1, c2, c3);
-      }
-    }
-    CGAL_triangulation_assertion(false);
-  };
-
-  // Segments of the input bbox facet border.
-  // TODO: make it static (compute one time for all the bbox facets).
-  std::vector<Segment> segments = [&](const Bbox_facet& facet) {
-    int i3 = facet.i;
-    int i1, i2;
-    boost::tie(i1, i2) = orthogonal_ids(i3);
-    Cartesian c3 = bbox_limits[i3][facet.side];
-    Cartesian c1_min = bbox_limits[i1][0];
-    Cartesian c1_max = bbox_limits[i1][1];
-    Cartesian c2_min = bbox_limits[i2][0];
-    Cartesian c2_max = bbox_limits[i2][1];
-    Point p0 = point(i1, i2, i3, c1_min, c2_min, c3);
-    Point p1 = point(i1, i2, i3, c1_max, c2_min, c3);
-    Point p2 = point(i1, i2, i3, c1_max, c2_max, c3);
-    Point p3 = point(i1, i2, i3, c1_min, c2_max, c3);
-    std::vector<Segment> result;
-    result.reserve(4);
-    result.push_back(Segment(p0, p1));
-    result.push_back(Segment(p1, p2));
-    result.push_back(Segment(p2, p3));
-    result.push_back(Segment(p3, p0));
-
-    return result;
-  };
-
-  // Intersection points of a plain with a bbox facet. If the intersection
-  // contains a segment, only its enpoints will be added to the return vector.
-  std::vector<Point> intersection_points = [&](const Plane& plane, const Bbox_facet& facet) {
-    std::vector<Segment> segments = segments(facet);
-    std::vector<Point> result;
-    for(typename std::vector<Segment>::iterator sit = segments.begin(), send = segments.end(); sit != send; ++sit) {
-      typename cpp11::result_of<typename Gt::Intersect_3(Plane, Segment)>::type
-        intersection = intersection(plane, *sit);
-      if (intersection) {
-        if (const Point* p = boost::get<Point>(&*intersection)) {
-          result.push_back(p);
-        } else {
-          const Segment* s = boost::get<Segment>(&*intersection);
-          result.push_back(s.source());
-          result.push_back(s.target());
-          }
-      }
-    }
-    result.erase(std::unique(result.begin(), result.end()), result.end());
-
-    return result;
-  };
-
-  // Find an intersection point of the plain, defined by
-  // (fp, ip_source, fp_target) with the border of the facet f, such that
-  // orientation(ip_source, fp, fp_target) == orientation(ip_source, fp, return).
-  // Otherwise return the point fp.
-  // Preconditions:
-  // ip_source is the inner point of the bounding box,
-  // fp belongs to the facet f of the bounding box,
-  // fp_target belongs to the boundary of the bounding box
-  // fp and fp_target do not share common facets.
-  Point trace_to_facet_border = [&](
-    const Bbox_facet& f,
-    const Point& fp,
-    const Point& ip_source,
-    const Point& fp_target/*, size_t iteration_nb = 0*/
-  ) {
-    CGAL_triangulation_expensive_precondition(on_bbox_facet(fp, std::vector<Bbox_facet>(1, f)));
-    CGAL_triangulation_expensive_precondition(bbox_location(fp_target) & ON_BOUNDARY);
-    CGAL_triangulation_expensive_precondition(bbox_location(ip_source) == Bbox_location::INSIDE);
-
-    CGAL_triangulation_assertion(!collinear(fp, ip_source, fp_target));
-    std::vector<Point> pts = intersection_points(Plane(fp, ip_source, fp_target), f);
-    std::vector<Point>::iterator pend = std::remove(pts, fp);
-    std::vector<Point>::iterator pit = std::find_if(pts.begin(), pend,
-      [&](const Point& p) {orientation(ip_source, fp, fp_target) == orientation(ip_source, fp, p);} );
-    if(pit == pend) {
-      return fp;
-    }
-
-    return *pit;
-  };
-
-  // fb_source and fb_target are the boundary points of the input bounding box
-  // facet f.
-  // Return an array of indices of the bounding box corners which lie on the
-  // boundary of f (strictly) between fb_source and fb_target, implying counter
-  // clockwise orientation when looking from outside of the bounding box.
-  std:vector<size_t> ccw_corners = [&](
-    const Bbox_facet& f,
-    const Point& fb_source,
-    const Point& fb_target
-  ) {
-    #ifndef CGAL_NDEBUG
-    std::vector<Bbox_facet> fb_source_facets = bbox_facets(fb_source);
-    CGAL_triangulation_assertion(contains(fb_source_facets, f) && fb_source_facets.size() > 1);
-    std::vector<Bbox_facet> fb_target_facets = bbox_facets(fb_target);
-    CGAL_triangulation_assertion(contains(fb_target_facets, f) && fb_target_facets.size() > 1);
-    #endif
-
-    // TODO
-  };
-
-  // A piecewise closed line of the infinite cell - bounding box intersection.
-  std::vector<Point> intersection_pts;
-  // Indices of the points of intersection of the rays with the bounding box.
-  // Facets which the intersection points belong to.
-  std::vector<std::vector<Bbox_facet> > intersection_pt_facets;
-  std::vector<size_t> ray_ipt_ids;
-  // Points of the intersection contour which belong to the boundary of the
-  // bounding box facets (corners, edges).
-  std::vector<size_t> fb_pt_ids;
-  Const_circulator_from_container<std::vector<Ray> > ray_c(&rays), ray_end(ray_c);
-  do {
-    // Ray source point (is the dual point), lies inside the bbox.
-    const Point& ip_source = ray_c->source();
-    // Intersection of the ray with the bbox, lies on bbox facet(s).
-    Point fp = bbox_intersection(*ray_c);
-    std::vector<Bbox_facet> fp_facets = bbox_facets(fp);
-
-    // Add fp to the intersection.
-    ray_ipt_ids.push_back(intersection_pts.size());
-    if(fp_facets.size() > 1) {
-    // On the facet boundary.
-      fb_pt_ids.push_back(intersection_pts.size());
-    }
-    intersection_pts.push_back(fp);
-
-    // Intersection with the target ray.
-    const Point& fp_target = bbox_intersection(*boost::next(ray_c));
-    const std::vector<Bbox_facet> fp_target_facets = bbox_facets(fp_target);
-
-    #ifndef CGAL_NDEBUG
-    int nb_facets_between_rays = 0;
-    #endif
-    while(true) {
-    // Trace until achieve a facet of the target facet point.
-      Point fp_next = fp;
-      for(//TODO: remove "typename" when replacing Bbox_facet from this template function
-          typename std::vector<Bbox_facet>::const_iterator fp_facet_it = fp_facets.begin(),
-          fp_facet_end = fp_facets.end(); fp_facet_it != fp_facet_end; ++fp_facet_it) {
-        fp_next = trace_to_facet_border(*fp_facet_it, ip_source, fp, fp_target);
-        if(fp_next != fp) {
-        // successfully traced to the next facet.
-          break;
-        }
-      }
-      CGAL_triangulation_assertion(fp_next != fp);
-
-      fp = fp_next;
-      fp_facets = bbox_facets(fp);
-      CGAL_triangulation_assertion(fp_facets.size() > 1);
-
-      // Facet of the target point achieved.
-      bool target_facet_achieved = do_intersect(fp_facets, fp_target_facets);
-
-      if(!target_facet_achieved || fp != fp_target) {
-      // Add fp to the intersection.
-        fb_pt_ids.push_back(intersection_pts.size());
-        intersection_pts.push_back(fp);
-        intersection_pt_facets.push_back(fp_facets);
-      }
-
-      if(target_facet_achieved)
-        break;
-
-      #ifndef CGAL_NDEBUG
-      ++nb_facets_between_rays;
-      CGAL_triangulation_assertion(nb_facets_between_rays <= 6);
-      #endif
-    }
-  } while(++ray_c != ray_end);
-  // Number of the intersection points.
-  const size_t intersection_pts_nb = intersection_pts.size();
-
-  // Close the infinite facets: {ray_source, ray_intersection, {traced_points}, next_ray_intersection, [next_ray_source]}
-  builder.begin_surface(intersection_pts_nb, rays.size(), 0, Polyhedron_incremental_builder::ABSOLUTE_INDEXING);
-  // Add intersection points to the output polyhedron.
-  for(typename std::vector<Point>::iterator ip_it = intersection_pts.begin(), ip_end = intersection_pts.end(); ip_it != ip_end; ++ip_it) {
-    builder.add_vertex(*ip_it);
-  }
-  // Builder indices of ray sources.
-  Const_circulator_from_container<std::vector<size_t> > ray_source_builder_id_c(&ray_source_builder_ids), ray_source_builder_id_end(ray_source_builder_id_c);
-  Const_circulator_from_container<std::vector<size_t> > ray_ipt_id_c(&ray_ipt_ids);
-  // Builder index of the first intersection point.
-  const size_t builder_ipt_ids_beg = cell_ids.size();
-  do {
-    builder.begin_facet();
-    // Add the ray source point.
-    builder.add_vertex_to_facet(*ray_source_builder_id_c);
-
-    for(size_t ipt_id = *ray_ipt_id_c, ipt_id_end = (*(++ray_ipt_id_c) + 1) % intersection_points_nb;
-      ipt_id != ipt_id_end; ipt_id = (ipt_id + 1) % intersection_points_nb) {
-    // Add the intersection points from an interval [ray_ipt, next_ray_ipt].
-      builder.add_vertex_to_facet(builder_ipt_ids_beg + ipt_id);
-    }
-
-    size_t next_ray_source_builder_id = *boost::next(ray_source_builder_id_c);
-    if(*ray_source_builder_id_c == next_ray_source_builder_id) {
-    // Two successive rays originate from the different dual vertices.
-      // Add the next ray source point.
-      builder.add_vertex_to_facet(next_ray_source_builder_id);
-    }
-
-    builder.end_facet();
-  } while(++ray_source_builder_id_c != ray_source_builder_id_end);
-  builder.end_surface();
-
-  // Construct the polyhedron facets from the bbox facets which have intersection points.
-  if(fb_pt_ids.size() < 2) {
-  // The whole contour is located inside one faces, add it to the polyhedron
-    // TODO
-    CGAL_triangulation_expensive_postcondition(result.is_valid());
-    CGAL_triangulation_postcondition(result.is_closed());
-
-    return result;
-  }
-
-  // All the six bbox facets in a lexicographical order.
-  std::vector<Bbox_facet> bbox_fs;
-  bbox_fs.reserve(6);
-  for(int i = 0; i < 3; ++i) {
-    for(int j = 0; j < 2; ++j) {
-      bbox_fs.push_back(Bbox_facet(i, Bbox_side(j));
-    }
-  }
-
-  // For each bbox facet, the ids of those boundary points, which are the
-  // origins of the corresponding piecewise parts, which belong to this facet:
-  // part = {source_boundary_point, {inner w.r.t. this facet intersection points}, target_boundary_point}
-  // Ids correspond to element the indices of the fb_pt_ids array itself.
-  std::vector<std::vector<size_t> > source_fb_pt_ids;
-  source_fb_pt_ids.reserve(6);
-  Const_circulator_from_container<std::vector<Bbox_facet> > bbox_f_c(&bbox_fs), bbox_f_end(bbox_f_c);
-  Const_circulator_from_container<std::vector<size_t> > fb_pt_id_c(&fb_pt_ids), fb_pt_id_beg(fb_pt_id_c);
-  Const_circulator_from_container<std::vector<std::vector<Bbox_facet> > > ipt_facets_cbeg(&intersection_pt_facets);
-  do {
-  // For each facet
-    // source_fb_pt_ids for the current facet.
-    std::vector<size_t> f_source_fb_pt_ids;
-    do {
-      if(contains(*(ipt_facets_cbeg + *fb_pt_id_c), *bbox_f_c)
-        && contains(*(ipt_facets_cbeg + *fb_pt_id_c + 1), *bbox_f_c)) {
-      // Piecewise part belong to the current facet if its source and the next
-      // by source point belong to it.
-        // Its target point should also belong to the facet.
-        CGAL_triangulation_assertion(contains(*(ipt_facets_cbeg + *boost::next(fb_pt_id_c)), *bbox_f_c));
-        f_source_fb_pt_ids.push_back(circulator_distance(fb_pt_id_beg, fb_pt_id_c);
-      }
-    } while(++fb_pt_id_c != fb_pt_id_beg);
-    source_fb_pt_ids.push_back(f_source_fb_pt_ids);
-  } while(++bbox_f_c != bbox_f_end);
-
-  // Add the facets of the bounding box trimmed by the infinite facets of the
-  // polyhedron to the output polyhedron.
-  builder.begin_surface(/*TODO: verify if it is possible to overestimate*/8, 6, 0, Polyhedron_incremental_builder::ABSOLUTE_INDEXING);
-  // Add the eight boundig box corner points to the output polyhedron.
-  for(int i = 0; i < 8; ++i) {
-    builder.add_vertex(Point(bbox_limits[0][i>>0 & 1], bbox_limits[1][i>>1 & 1], bbox_limits[2][i>>2 & 1]));
-  }
-
-  // Source ids of piecewise parts of the constructing contour of the current facet.
-  Const_circulator_from_container<std::vector<std::vector<size_t> >> source_fb_pt_ids_c(&source_fb_pt_ids);
-  // Builder index of the first bounding box corner.
-  const size_t builder_bbc_ids_beg = cell_ids.size() + intersection_pts_nb;
-  do {
-    if(source_fb_pt_ids_c->empty()) {
-      ++source_fb_pt_ids_c;
-      continue;
-    }
-    builder.begin_facet();
-    // Source ids of the piecewise parts of the current facet.
-    Const_circulator_from_container<std::vector<size_t> > source_fb_pt_id_c(&*(source_fb_pt_ids_c++)), source_fb_pt_id_end(source_fb_pt_id_c);
-    do {
-      size_t source_fb_pt_id = *(fb_pt_id_beg + *source_fb_pt_id_c);
-      size_t target_fb_pt_id = *(fb_pt_id_beg + *source_fb_pt_id_c + 1);
-      size_t next_source_fb_pt_id = *(fb_pt_id_beg + *(++source_fb_pt_id_c));
-
-      for(size_t ipt_id = source_fb_pt_id, ipt_id_end = (target_fb_pt_id + 1) % intersection_points_nb;
-        ipt_id != ipt_id_end; ipt_id = (ipt_id + 1) % intersection_points_nb) {
-      // Add the current piecewise part.
-        builder.add_vertex_to_facet(builder_ipt_ids_beg + ipt_id);
-      }
-
-      // Insert the bounding box corners between the current and next piecewise parts.
-      std::vector<size_t> bbox_corners = ccw_corners(*bbox_f_c, intersection_pts[source_fb_pt_id], intersection_pts[next_source_fb_pt_id]);
-      for(std::vector<size_t>::const_iterator bbox_corner_it = bbox_corners.begin(), bbox_corner_end = bbox_corners.end();
-          bbox_cornes_it != bbox_cornes_end; ++bbox_corner_it) {
-        builder.add_vertex_to_facet(builder_bbc_ids_beg + *bbox_corner_it);
-      }
-    } while(source_fb_pt_id_c != source_fb_pt_id_end);
-    builder.end_facet();
-  } while(++bbox_f_c != bbox_f_end);
-
-  // TODO: Add the residual bbox facets, which do not have intersection points.
-  do {
-    if(!source_fb_pt_ids_c->empty()) {
-      ++source_fb_pt_ids_c;
-      continue;
-    }
-
-  } while();//[++]source_fb_pt_id_c != source_fb_pt_id_end);
-
-  // TODO: postconditions do not work.
-  CGAL_triangulation_expensive_postcondition(result.is_valid());
-  CGAL_triangulation_postcondition(result.is_closed());
-
-  return result;
-}
 
 
 template < class Gt, class Tds, class Lds >
@@ -2636,18 +1788,6 @@ dual_support(Cell_handle c, int i) const
   return construct_equidistant_line( c->vertex((i+1)&3)->point(),
                                      c->vertex((i+2)&3)->point(),
                                      c->vertex((i+3)&3)->point() );
-}
-
-template < class Gt, class Tds, class Lds >
-typename Delaunay_triangulation_3<Gt,Tds,Default,Lds>::Plane
-Delaunay_triangulation_3<Gt,Tds,Default,Lds>::
-dual_support(Cell_handle c, int i, int j) const
-{
-  CGAL_triangulation_precondition( dimension() > 0 );
-  CGAL_triangulation_precondition( !is_infinite(c, i, j) );
-
-  return construct_bisector( c->vertex(j)->point(),
-                             c->vertex(i)->point() );
 }
 
 
