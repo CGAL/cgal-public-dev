@@ -25,7 +25,6 @@
 #include <CGAL/Dimension.h>
 #include <CGAL/Kernel_traits.h>
 #include <vector>
-#include <boost/mpl/has_xxx.hpp>
 
 /* Definition of functors used internally to manage attributes (we need
  * functors as attributes are stored in tuple, thus all the access must be
@@ -65,12 +64,6 @@
  * internal::Test_is_same_attribute_functor<Map1, Map2> to test if two
  *   i-attributes of two darts are isomorphic.
  *
- * internal::Is_attribute_has_non_void_info<Attr> to test if the attribute
- *   Attr is non Void and has an non void Info as inner type
- *
- * internal::Is_attribute_has_point<Attr> to test if the attribute
- *   Attr is non Void and has a Point inner type
- *
  * internal::Reverse_orientation_of_map_functor<CMap> to reverse the
  *   orientation of a whole combinatorial map
  *
@@ -83,6 +76,11 @@
 
 namespace CGAL
 {
+//-----------------------------------------------------------------------------
+template<typename Attr>
+struct Is_attribute_has_non_void_info;
+template<typename Attr>
+struct Is_attribute_has_point;
 // ****************************************************************************
 namespace internal
 {
@@ -188,17 +186,19 @@ struct Test_is_valid_attribute_functor
    * @param amark a mark used to mark darts of the i-cell.
    * @return true iff all the darts of the i-cell link to the same attribute.
    */
+  typedef typename CMap::size_type size_type;
+
   template <unsigned int i>
   static void run(const CMap* amap,
                   typename CMap::Dart_const_handle adart,
-                  std::vector<int>* marks, bool *ares)
+                  std::vector<size_type>* marks, bool *ares)
   {
     CGAL_static_assertion_msg(CMap::Helper::template
                               Dimension_index<i>::value>=0,
                               "Test_is_valid_attribute_functor<i> but "
                               " i-attributes are disabled");
 
-    int amark = (*marks)[i];
+    size_type amark = (*marks)[i];
     if ( amap->is_marked(adart, amark) ) return; // dart already test.
 
     bool valid = true;
@@ -268,10 +268,12 @@ struct Test_is_valid_attribute_functor
 template<typename CMap>
 struct Correct_invalid_attributes_functor
 {
+  typedef typename CMap::size_type size_type;
+
   template <unsigned int i>
   static void run(CMap* amap,
                   typename CMap::Dart_handle adart,
-                  std::vector<int>* marks)
+                  std::vector<size_type>* marks)
   {
     // std::cout << "Correct_invalid_attributes_functor for " << i << "-cell" << std::endl;
     CGAL_static_assertion_msg(CMap::Helper::template
@@ -279,7 +281,7 @@ struct Correct_invalid_attributes_functor
                               "Correct_invalid_attributes_functor<i> but "
                               " i-attributes are disabled");
 
-    int amark = (*marks)[i];
+    size_type amark = (*marks)[i];
     typename CMap::template Attribute_handle<i>::type
         a=amap->template attribute<i>(adart);
 
@@ -329,13 +331,15 @@ struct Correct_invalid_attributes_functor
 template<typename CMap>
 struct Count_cell_functor
 {
+  typedef typename CMap::size_type size_type;
+
   template <unsigned int i>
   static void run( const CMap* amap,
                    typename CMap::Dart_const_handle adart,
-                   std::vector<int>* amarks,
+                   std::vector<size_type>* amarks,
                    std::vector<unsigned int>* ares )
   {
-    if ( (*amarks)[i]!=-1 && !amap->is_marked(adart, (*amarks)[i]) )
+    if ( (*amarks)[i]!=CMap::INVALID_MARK && !amap->is_marked(adart, (*amarks)[i]) )
     {
       ++ (*ares)[i];
       CGAL::mark_cell<CMap,i>(*amap, adart, (*amarks)[i]);
@@ -638,34 +642,6 @@ struct Is_same_attribute_point_functor<Map1, Map2, T1, T2, false, false, i>
   { return true; }
 };
 // ****************************************************************************
-BOOST_MPL_HAS_XXX_TRAIT_NAMED_DEF(Has_point,Point,false)
-
-template<typename Attr, typename Info=typename Attr::Info>
-struct Is_nonvoid_attribute_has_non_void_info
-{
-  static const bool value=true;
-};
-template<typename Attr>
-struct Is_nonvoid_attribute_has_non_void_info<Attr, void>
-{
-  static const bool value=false;
-};
-
-template<typename Attr>
-struct Is_attribute_has_non_void_info
-{
-  static const bool value=Is_nonvoid_attribute_has_non_void_info<Attr>::value;
-};
-template<>
-struct Is_attribute_has_non_void_info<CGAL::Void>
-{
-  static const bool value=false;
-};
-// ****************************************************************************
-template<typename Attr>
-struct Is_attribute_has_point
-{ static const bool value=Has_point<Attr>::value; };
-// ****************************************************************************
 /// Test if the two darts are associated with the same attribute.
 template<typename Map1, typename Map2>
 struct Test_is_same_attribute_functor
@@ -705,7 +681,7 @@ struct Reverse_orientation_of_map_functor
 {
   static void run(CMap *amap)
   {
-    int mark = amap->get_new_mark();
+    typename CMap::size_type mark = amap->get_new_mark();
     CGAL_precondition(amap->is_whole_map_unmarked(mark));
     CGAL_precondition(amap->is_valid());
     for (typename CMap::Dart_range::iterator current_dart=amap->darts().begin(),
@@ -759,7 +735,7 @@ struct Reverse_orientation_of_map_functor<CMap, CGAL::Void>
 {
   static void run(CMap *amap)
   {
-    int mark = amap->get_new_mark();
+    typename CMap::size_type mark = amap->get_new_mark();
     CGAL_precondition(amap->is_whole_map_unmarked(mark));
     CGAL_precondition(amap->is_valid());
     for (typename CMap::Dart_range::iterator current_dart=amap->darts().begin(),
@@ -796,7 +772,7 @@ struct Reverse_orientation_of_connected_component_functor
 {
   static void run(CMap *amap, typename CMap::Dart_handle adart)
   {
-    int mark = amap->get_new_mark();
+    typename CMap::size_type mark = amap->get_new_mark();
     CGAL_precondition(amap->is_whole_map_unmarked(mark));
     for (typename CMap::template Dart_of_cell_range<CMap::dimension+1>::iterator
            current_dart=amap->template darts_of_cell<CMap::dimension+1>(adart).
@@ -855,7 +831,7 @@ struct Reverse_orientation_of_connected_component_functor<CMap, CGAL::Void>
 {
   static void run(CMap *amap, typename CMap::Dart_handle adart)
   {
-    int mark = amap->get_new_mark();
+    typename CMap::size_type mark = amap->get_new_mark();
     CGAL_precondition(amap->is_whole_map_unmarked(mark));
     for (typename CMap::template Dart_of_cell_range<CMap::dimension+1>::iterator
            current_dart=amap->template darts_of_cell<CMap::dimension+1>(adart).

@@ -188,6 +188,10 @@
 #define CGAL_CXX11
 #endif
 
+#if defined(BOOST_NO_CXX11_HDR_FUNCTIONAL) || BOOST_VERSION < 105000
+#define CGAL_CFG_NO_STD_HASH 1
+#endif
+
 //----------------------------------------------------------------------//
 //  auto-link the CGAL library on platforms that support it
 //----------------------------------------------------------------------//
@@ -236,7 +240,16 @@
 // Big endian or little endian machine.
 // ====================================
 
-#if defined (__GLIBC__)
+#if (BOOST_VERSION >= 105500)
+#  include <boost/predef.h>
+#  if BOOST_ENDIAN_BIG_BYTE
+#    define CGAL_BIG_ENDIAN
+#  elif BOOST_ENDIAN_LITTLE_BYTE
+#    define CGAL_LITTLE_ENDIAN
+#  else
+#    error Unknown endianness
+#  endif
+#elif defined (__GLIBC__)
 #  include <endian.h>
 #  if (__BYTE_ORDER == __LITTLE_ENDIAN)
 #    define CGAL_LITTLE_ENDIAN

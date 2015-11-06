@@ -25,11 +25,7 @@
 #ifndef CGAL_OPENGL_TOOLS_H
 #define CGAL_OPENGL_TOOLS_H
 
-#ifdef CGAL_GLEW_ENABLED
-# include <GL/glew.h>
-#else
 # include <CGAL/gl.h>
-#endif
 
 namespace CGAL {
 namespace GL {

@@ -1,8 +1,8 @@
 #ifndef CGAL_VOLUME_PLANE_THREAD_H
 #define CGAL_VOLUME_PLANE_THREAD_H
 
-#include <CGAL/Image_3.h>
 #include "Volume_plane.h"
+#include <CGAL/Image_3.h>
 
 #include "Scene_segmented_image_item.h"
 
@@ -30,7 +30,7 @@ public:
     return item;
   }
 
-signals:
+Q_SIGNALS:
   void finished(Volume_plane_thread*);
 
 protected:
@@ -80,12 +80,12 @@ void X_plane_thread<Word>::run() {
         }
       }
     }
-    item = new Volume_plane<x_tag>(img->ydim(), img->zdim(), img->xdim(), 
+    item = new Volume_plane<x_tag>(static_cast<int>(img->ydim()), static_cast<int>(img->zdim()), static_cast<int>(img->xdim()), 
                                    img->vx(), img->vy(), img->vz(), buffer);
 
     item->setName(name);
     item->moveToThread(QApplication::instance()->thread());
-    emit finished(this);
+    Q_EMIT finished(this);
 }
 
 template<typename Word>
@@ -100,11 +100,11 @@ void Y_plane_thread<Word>::run() {
         }
       }
     }
-    item = new Volume_plane<y_tag>(img->xdim(), img->zdim(), img->ydim(), 
+    item = new Volume_plane<y_tag>(static_cast<int>(img->xdim()), static_cast<int>(img->zdim()), static_cast<int>(img->ydim()), 
                                    img->vx(), img->vy(), img->vz(), buffer);
     item->setName(name);
     item->moveToThread(QApplication::instance()->thread());
-    emit finished(this);
+    Q_EMIT finished(this);
 }
 
 template<typename Word>
@@ -118,11 +118,11 @@ void Z_plane_thread<Word>::run() {
       }
     }
   }
-  item = new Volume_plane<z_tag>(img->xdim(), img->ydim(), img->zdim(), 
+  item = new Volume_plane<z_tag>(static_cast<int>(img->xdim()), static_cast<int>(img->ydim()), static_cast<int>(img->zdim()), 
                                  img->vx(), img->vy(), img->vz(), buffer);
   item->setName(name);
   item->moveToThread(QApplication::instance()->thread());
-  emit finished(this);
+  Q_EMIT finished(this);
 }
 
 #endif /* CGAL_VOLUME_PLANE_THREAD_H */

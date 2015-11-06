@@ -28,8 +28,9 @@
 #include <CGAL/QP_models.h>
 #include <limits>
 #include <CGAL/number_utils.h>
+#include <CGAL/assertions.h>
 
-// Taken from http://www.qhull.org/html/qhalf.htm
+// Description taken from http://www.qhull.org/html/qhalf.htm
 
 // If you do not know an interior point for the halfspaces, use linear programming
 // to find one. Assume, n halfspaces defined by: aj*x1+bj*x2+cj*x3+dj>=0, j=1..n.
@@ -104,15 +105,15 @@ class Interior_polyhedron_3 {
             InputIterator it;
             for(it = begin; it != end; ++it, j++) {
                 const Plane& plane = *it;
-                const FT aj = CGAL::to_double(plane.a());
-                const FT bj = CGAL::to_double(plane.b());
-                const FT cj = CGAL::to_double(plane.c());
-                const FT dj = CGAL::to_double(plane.d());
+                const double aj = CGAL::to_double(plane.a());
+                const double bj = CGAL::to_double(plane.b());
+                const double cj = CGAL::to_double(plane.c());
+                const double dj = CGAL::to_double(plane.d());
 
-                assert(!isinf(aj));
-                assert(!isinf(bj));
-                assert(!isinf(cj));
-                assert(!isinf(dj));
+                CGAL_assertion(!isinf(aj));
+                CGAL_assertion(!isinf(bj));
+                CGAL_assertion(!isinf(cj));
+                CGAL_assertion(!isinf(dj));
 
                 // plane defined the halfspace: aj * x1 + bj * x2 + cj * x3 + dj <= 0
                 // <=> - (aj * x1 + bj * x2 + cj * x3 + dj) >= 0

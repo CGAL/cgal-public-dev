@@ -1514,10 +1514,8 @@ protected:
 
   /// \name Converting handles to pointers (for the arrangement accessor).
   //@{
-
   /*! Access the DCEL (non-const version). */
   inline Dcel& _dcel() { return (m_topol_traits.dcel()); }
-
   /*! Access the DCEL (const version). */
   inline const Dcel& _dcel() const
   { return (m_topol_traits.dcel()); }
@@ -1886,6 +1884,13 @@ protected:
   void _move_inner_ccb(DFace* from_face, DFace* to_face, DHalfedge* he);
 
   /*!
+   * Move all inner CCBs (holes) from one face to another.
+   * \param from_face The face currently containing the components.
+   * \param to_face The face into which we should move the components.
+   */
+  void _move_all_inner_ccb(DFace* from_face, DFace* to_face);
+
+  /*!
    * Insert the given vertex as an isolated vertex inside the given face.
    * \param f The face that should contain the isolated vertex.
    * \param v The isolated vertex.
@@ -1899,6 +1904,13 @@ protected:
    * \param v The isolated vertex.
    */
   void _move_isolated_vertex(DFace* from_face, DFace* to_face, DVertex* v);
+
+  /*!
+   * Move all isolated vertices from one face to another.
+   * \param from_face The face currently containing the isolated vertices.
+   * \param to_face The face into which we should move the isolated vertices.
+   */
+  void _move_all_isolated_vertices(DFace* from_face, DFace* to_face);
 
   /*!
    * Create a new vertex and associate it with the given point.

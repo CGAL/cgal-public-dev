@@ -1,17 +1,18 @@
 #include "Scene_points_with_normal_item.h"
 #include "Polyhedron_type.h"
-#include "Polyhedron_demo_io_plugin_interface.h"
+#include <CGAL/Three/Polyhedron_demo_io_plugin_interface.h>
 
 #include <CGAL/IO/Polyhedron_iostream.h>
 
 #include <fstream>
-
+using namespace CGAL::Three;
 class Polyhedron_demo_off_to_xyz_plugin :
   public QObject,
   public Polyhedron_demo_io_plugin_interface
 {
   Q_OBJECT
-  Q_INTERFACES(Polyhedron_demo_io_plugin_interface)
+  Q_INTERFACES(CGAL::Three::Polyhedron_demo_io_plugin_interface)
+  Q_PLUGIN_METADATA(IID "com.geometryfactory.PolyhedronDemo.IOPluginInterface/1.0")
 
 public:
   QString name() const { return "off_to_xyz_plugin"; }
@@ -55,16 +56,29 @@ Polyhedron_demo_off_to_xyz_plugin::load(QFileInfo fileinfo) {
   return item;
 }
 
-bool Polyhedron_demo_off_to_xyz_plugin::canSave(const Scene_item*)
+bool Polyhedron_demo_off_to_xyz_plugin::canSave(const Scene_item* item)
 {
-  return false;
+  // This plugin supports point sets
+  return qobject_cast<const Scene_points_with_normal_item*>(item);
 }
 
-bool Polyhedron_demo_off_to_xyz_plugin::save(const Scene_item*, QFileInfo)
+bool Polyhedron_demo_off_to_xyz_plugin::save(const Scene_item* item, QFileInfo fileinfo)
 {
-  return false;
+  // Check extension (quietly)
+  std::string extension = fileinfo.suffix().toUtf8().data();
+  if (extension != "off" && extension != "OFF")
+    return false;
+
+  // This plugin supports point sets
+  const Scene_points_with_normal_item* point_set_item =
+    qobject_cast<const Scene_points_with_normal_item*>(item);
+  if(!point_set_item)
+    return false;
+
+  // Save point set as .xyz
+  std::ofstream out(fileinfo.filePath().toUtf8().data());
+  return point_set_item->write_off_point_set(out);
 }
 
-#include <QtPlugin>
-Q_EXPORT_PLUGIN2(Polyhedron_demo_off_to_xyz_plugin, Polyhedron_demo_off_to_xyz_plugin)
+
 #include "Polyhedron_demo_off_to_xyz_plugin.moc"

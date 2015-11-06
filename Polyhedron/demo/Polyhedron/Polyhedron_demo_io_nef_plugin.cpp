@@ -1,14 +1,15 @@
 #include "Scene_nef_polyhedron_item.h"
 
-#include "Polyhedron_demo_io_plugin_interface.h"
+#include <CGAL/Three/Polyhedron_demo_io_plugin_interface.h>
 #include <fstream>
-
+using namespace CGAL::Three;
 class Polyhedron_demo_io_nef_plugin :
   public QObject,
   public Polyhedron_demo_io_plugin_interface
 {
   Q_OBJECT
-  Q_INTERFACES(Polyhedron_demo_io_plugin_interface)
+  Q_INTERFACES(CGAL::Three::Polyhedron_demo_io_plugin_interface)
+  Q_PLUGIN_METADATA(IID "com.geometryfactory.PolyhedronDemo.PluginInterface/1.0")
 
 public:
   QString nameFilters() const;
@@ -73,6 +74,4 @@ bool Polyhedron_demo_io_nef_plugin::save(const Scene_item* item, QFileInfo filei
   return (nef_item && nef_item->save(out));
 }
 
-#include <QtPlugin>
-Q_EXPORT_PLUGIN2(Polyhedron_demo_io_nef_plugin, Polyhedron_demo_io_nef_plugin)
 #include "Polyhedron_demo_io_nef_plugin.moc"

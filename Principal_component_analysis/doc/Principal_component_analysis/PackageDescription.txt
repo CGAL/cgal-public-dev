@@ -27,6 +27,7 @@
 \cgalPkgSummaryEnd
 \cgalPkgShortInfoBegin
 \cgalPkgSince{3.2}
+\cgalPkgDependsOn{\ref PkgSolverSummary} 
 \cgalPkgBib{cgal:ap-pcad}
 \cgalPkgLicense{\ref licensesGPL "GPL"}
 \cgalPkgDemo{Principal Component Analysis,pca.zip,Operations on Polygons,polygon.zip,Operations on Polyhedra,polyhedron_3.zip}
@@ -36,7 +37,7 @@
 \cgalClassifedRefPages
 
 ## Functions ##
-- `CGAL::barycenter()`
+- \link PkgPrincipalComponentAnalysisDbb `CGAL::barycenter()` \endlink
 - `CGAL::bounding_box()`
 - `CGAL::centroid()`
 - `CGAL::linear_least_squares_fitting_2()`

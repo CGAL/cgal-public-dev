@@ -1,7 +1,7 @@
 
 #include "test_Prefix.h"
+#include <boost/range/distance.hpp>
 #include <CGAL/boost/graph/Euler_operations.h>
-
 
 template <typename T>
 void 
@@ -337,7 +337,6 @@ remove_center_vertex_test()
  assert(CGAL::internal::exact_num_vertices(f.m) == nv-1);
  assert(CGAL::internal::exact_num_faces(f.m) == (nf-deg)+1);
  assert(CGAL::internal::exact_num_halfedges(f.m) == nh-(2*deg));
-
 }
 
 template <typename T> 
@@ -349,11 +348,11 @@ join_split_inverse()
 
 template <typename T> 
 void
-satisfies_link_condition()
+does_satisfy_link_condition()
 {
   Surface_fixture_7<T> f;
 
-  assert(CGAL::Euler::satisfies_link_condition(*edges(f.m).first,f.m));
+  assert(CGAL::Euler::does_satisfy_link_condition(*edges(f.m).first,f.m));
 }
 
 
@@ -375,14 +374,18 @@ test_Euler_operations()
   make_hole_test<Graph>();
   remove_center_vertex_test<Graph>();
   join_split_inverse<Graph>();
-  satisfies_link_condition<Graph>();
-  
+  does_satisfy_link_condition<Graph>();
 }
 
 int main()
 {
   test_Euler_operations<Polyhedron>();
   test_Euler_operations<SM>();
+
+#ifdef CGAL_USE_OPENMESH
+  test_Euler_operations<SM>();
+#endif
+
   std::cerr << "done\n";
   return 0;
 }

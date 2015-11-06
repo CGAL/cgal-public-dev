@@ -4,14 +4,8 @@
 
 project( STL_Extension_test )
 
-cmake_minimum_required(VERSION 2.6.2)
-if("${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION}" VERSION_GREATER 2.6)
-  if("${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION}.${CMAKE_PATCH_VERSION}" VERSION_GREATER 2.8.3)
-    cmake_policy(VERSION 2.8.4)
-  else()
-    cmake_policy(VERSION 2.6)
-  endif()
-endif()
+cmake_minimum_required(VERSION 2.8.11)
+
 
 find_package(CGAL QUIET COMPONENTS Core )
 
@@ -33,6 +27,7 @@ if ( CGAL_FOUND )
   create_single_source_cgal_program( "test_Boolean_tag.cpp" )
   create_single_source_cgal_program( "test_Cache.cpp" )
   create_single_source_cgal_program( "test_Compact_container.cpp" )
+  create_single_source_cgal_program( "test_Compact_container_is_used.cpp" )
   create_single_source_cgal_program( "test_complexity_tags.cpp" )
   create_single_source_cgal_program( "test_composition.cpp" )
   create_single_source_cgal_program( "test_Concatenate_iterator.cpp" )

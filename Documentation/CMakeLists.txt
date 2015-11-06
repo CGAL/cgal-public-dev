@@ -35,8 +35,9 @@ function(configure_doxygen_package CGAL_PACKAGE_NAME)
         file(APPEND ${CGAL_DOC_PACKAGE_DEFAULTS} "GENERATE_BUGLIST = NO\n")
       endif()
 
-      file(APPEND ${CGAL_DOC_PACKAGE_DEFAULTS} "IMAGE_PATH = ${CGAL_PACKAGE_DIR}/doc/${CGAL_PACKAGE_NAME}/fig\n")
-      file(APPEND ${CGAL_DOC_PACKAGE_DEFAULTS} "EXAMPLE_PATH = ${CGAL_PACKAGE_DIR}/examples\n")
+      if(EXISTS "${CGAL_PACKAGE_DIR}/examples")
+        file(APPEND ${CGAL_DOC_PACKAGE_DEFAULTS} "EXAMPLE_PATH = ${CGAL_PACKAGE_DIR}/examples\n")
+      endif()
       file(APPEND ${CGAL_DOC_PACKAGE_DEFAULTS} "GENERATE_TAGFILE = ${CGAL_DOC_TAG_GEN_DIR}/${CGAL_PACKAGE_NAME}.tag\n")
       file(APPEND ${CGAL_DOC_PACKAGE_DEFAULTS} "STRIP_FROM_PATH = ${CGAL_PACKAGE_DIR}/doc/${CGAL_PACKAGE_NAME}/\n")
       file(APPEND ${CGAL_DOC_PACKAGE_DEFAULTS} "STRIP_FROM_PATH += ${CGAL_PACKAGE_DIR}/include/\n")
@@ -44,19 +45,42 @@ function(configure_doxygen_package CGAL_PACKAGE_NAME)
       file(APPEND ${CGAL_DOC_PACKAGE_DEFAULTS} "STRIP_FROM_INC_PATH += ${CGAL_PACKAGE_DIR}/include/\n")
       file(APPEND ${CGAL_DOC_PACKAGE_DEFAULTS} "ALIASES += \"cgalPkgDescriptionBegin{2}=\\details \"\n")
       file(APPEND ${CGAL_DOC_PACKAGE_DEFAULTS} "ALIASES += \"cgalPkgManuals{2}=<BR>\"\n")
-      
-      # figure out the dependencies
-      if(EXISTS ${CGAL_PACKAGE_DIR}/doc/${CGAL_PACKAGE_NAME}/dependencies)
-        file(STRINGS ${CGAL_PACKAGE_DIR}/doc/${CGAL_PACKAGE_NAME}/dependencies DEPENDENCIES)
+
+      # IMAGE_PATH is set by default. For Documentation, we generate the extra path using packages.txt
+      set(IMAGE_PATH_VALUES "IMAGE_PATH = ${CGAL_PACKAGE_DIR}/doc/${CGAL_PACKAGE_NAME}/fig")
+      set(DEPENDENCIES "")
+      # figure out the dependencies, using the file `dependencies` or `packages.txt` for Documentation
+      if (${CGAL_PACKAGE_NAME} STREQUAL "Documentation")
+        set(PackageFile ${CGAL_PACKAGE_DIR}/doc/${CGAL_PACKAGE_NAME}/packages.txt)
+        file(READ ${PackageFile} Entries)
+        string(REPLACE "\n" ";" EntriesAsList ${Entries})
+        foreach(Line ${EntriesAsList})
+          if("${Line}" MATCHES "^\\\\package_listing{.+}$")
+            string(REGEX REPLACE "^\\\\package_listing{(.+)}$" "\\1" PKG "${Line}")
+            list(APPEND DEPENDENCIES ${PKG})
+            # update IMAGE_PATH
+            SET(IMG_DIR "${CMAKE_SOURCE_DIR}/${PKG}/doc/${PKG}/fig")
+            if(EXISTS ${IMG_DIR})
+              set(IMAGE_PATH_VALUES "${IMAGE_PATH_VALUES} \\\n             ${IMG_DIR}")
+            endif()
+          endif()
+        endforeach()
+        set(IMAGE_PATH_VALUES ${IMAGE_PATH_VALUES} PARENT_SCOPE)
+        set(DOCUMENTATION_DEPENDENCIES ${DEPENDENCIES} PARENT_SCOPE)
       else()
-        set(DEPENDENCIES "")
+        if(EXISTS ${CGAL_PACKAGE_DIR}/doc/${CGAL_PACKAGE_NAME}/dependencies)
+          file(STRINGS ${CGAL_PACKAGE_DIR}/doc/${CGAL_PACKAGE_NAME}/dependencies DEPENDENCIES)
+        endif()
       endif()
-      
+
       foreach(depend ${DEPENDENCIES})
         file(APPEND ${CGAL_DOC_PACKAGE_DEFAULTS} 
           "TAGFILES += ${CGAL_DOC_TAG_DIR}/${depend}.tag=../${depend}\n")
       endforeach()
       
+      #now write IMAGE_PATH
+      file(APPEND ${CGAL_DOC_PACKAGE_DEFAULTS} "${IMAGE_PATH_VALUES}\n")
+
       configure_file(${CGAL_PACKAGE_DIR}/doc/${CGAL_PACKAGE_NAME}/Doxyfile.in 
         ${CGAL_DOC_DXY_DIR}/${CGAL_PACKAGE_NAME}.dxy)
       
@@ -104,7 +128,7 @@ option(BUILD_DOC "Build the doxygen documentation" OFF)
 if (BUILD_DOC)
 
 find_package(Doxygen)
-find_package(PythonInterp 2.6.8)
+find_package(PythonInterp 2.6.7)
 
 if(DOXYGEN_FOUND)
   # set up the directories and variables
@@ -197,8 +221,7 @@ if(DOXYGEN_FOUND)
   set_target_properties(Documentation_doc PROPERTIES FOLDER Documentation)
 
   # hard-code that doc depends on all packages
-  file(STRINGS ${CMAKE_SOURCE_DIR}/Documentation/doc/Documentation/dependencies DEPENDENCIES)
-  foreach(depend ${DEPENDENCIES})
+  foreach(depend ${DOCUMENTATION_DEPENDENCIES})
     add_dependencies(doc_pre ${depend}_internal_doxygen_run)
     add_dependencies(doc_post ${depend}_copy_doc_tags)
     add_dependencies(${depend}_copy_doc_tags doc_pre)

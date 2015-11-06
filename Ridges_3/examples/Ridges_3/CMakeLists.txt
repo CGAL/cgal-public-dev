@@ -1,12 +1,8 @@
 # This is the CMake script for compiling a CGAL application.
 project( Ridges_3_example )
 
-cmake_minimum_required(VERSION 2.6.2)
-if("${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION}.${CMAKE_PATCH_VERSION}" VERSION_GREATER 2.8.3)
-  cmake_policy(VERSION 2.8.4)
-else()
-  cmake_policy(VERSION 2.6)
-endif()
+cmake_minimum_required(VERSION 2.8.11)
+
 
 find_package(CGAL QUIET )
 
@@ -40,7 +36,8 @@ if ( CGAL_FOUND )
       list(APPEND CGAL_3RD_PARTY_LIBRARIES ${Boost_PROGRAM_OPTIONS_LIBRARY})
    endif()
 
-   create_single_source_cgal_program( Compute_Ridges_Umbilics.cpp PolyhedralSurf.cpp)
+   create_single_source_cgal_program( Compute_Ridges_Umbilics.cpp)
+   create_single_source_cgal_program( Ridges_Umbilics_SM.cpp)
 
   else(EIGEN3_FOUND OR LAPACK_FOUND)
 

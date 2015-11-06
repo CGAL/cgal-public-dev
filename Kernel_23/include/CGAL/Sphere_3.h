@@ -38,7 +38,7 @@ template <class R_>
 class Sphere_3 : public R_::Kernel_base::Sphere_3
 {
   typedef typename R_::FT                    FT;
-// http://www.cgal.org/Members/Manual_test/LAST/Developers_internal_manual/Developers_manual/Chapter_code_format.html#sec:programming_conventions
+// http://doc.cgal.org/latest/Manual/devman_code_format.html#secprogramming_conventions
   typedef typename R_::Point_3               Point_3_;
   typedef typename R_::Circle_3              Circle_3;
   typedef typename R_::Aff_transformation_3  Aff_transformation_3;
@@ -216,7 +216,7 @@ template <class R >
 std::ostream&
 insert(std::ostream& os, const Sphere_3<R>& c,const Cartesian_tag&)
 {
-    switch(os.iword(IO::mode)) {
+    switch(get_mode(os)) {
     case IO::ASCII :
         os << c.center() << ' ' << c.squared_radius() << ' '
            << static_cast<int>(c.orientation());
@@ -248,7 +248,7 @@ template <class R >
 std::ostream&
 insert(std::ostream& os, const Sphere_3<R>& c, const Homogeneous_tag&)
 {
-    switch(os.iword(IO::mode)) {
+    switch(get_mode(os)) {
     case IO::ASCII :
         os << c.center() << ' ' << c.squared_radius() << ' '
            << static_cast<int>(c.orientation());
@@ -291,7 +291,7 @@ extract(std::istream& is, Sphere_3<R>& c, const Cartesian_tag&)
     typename R::Point_3 center;
     typename R::FT squared_radius;
     int o=0;
-    switch(is.iword(IO::mode)) {
+    switch(get_mode(is)) {
     case IO::ASCII :
         is >> center >> squared_radius >> o;
         break;
@@ -318,7 +318,7 @@ extract(std::istream& is, Sphere_3<R>& c, const Homogeneous_tag&)
     typename R::Point_3 center;
     typename R::FT squared_radius;
     int o;
-    switch(is.iword(IO::mode)) {
+    switch(get_mode(is)) {
     case IO::ASCII :
         is >> center >> squared_radius >> o;
         break;

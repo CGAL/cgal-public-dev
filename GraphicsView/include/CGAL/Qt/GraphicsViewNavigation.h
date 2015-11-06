@@ -22,8 +22,9 @@
 #ifndef CGAL_QT_GRAPHICS_VIEW_NAVIGATION_H
 #define CGAL_QT_GRAPHICS_VIEW_NAVIGATION_H
 
-#include <CGAL/auto_link/Qt4.h>
-#include <CGAL/export/Qt4.h>
+#include <CGAL/auto_link/Qt.h>
+#include <CGAL/export/Qt.h>
+
 #include <QObject>
 #include <QPointF>
 #include <QString>
@@ -39,11 +40,11 @@ class QGraphicsRectItem;
 namespace CGAL {
 namespace Qt {
 
-class CGAL_QT4_EXPORT GraphicsViewNavigation: public QObject {
+class CGAL_QT_EXPORT GraphicsViewNavigation: public QObject {
 
   Q_OBJECT
 
-  signals:
+  Q_SIGNALS:
   void mouseCoordinates(QString);
 
 public:
@@ -68,5 +69,9 @@ private:
 
 } // namespace Qt
 } // namespace CGAL
+
+#ifdef CGAL_HEADER_ONLY
+#include <CGAL/Qt/GraphicsViewNavigation_impl.h>
+#endif // CGAL_HEADER_ONLY
 
 #endif // CGAL_QT_GRAPHICS_VIEW_NAVIGATION_H

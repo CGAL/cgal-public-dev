@@ -837,6 +837,11 @@ public:
     convenience, the `Point_iterator` enumerates all points in the polyhedral
     surface in the same order as the `Vertex_iterator`, but with the
     value type `Point`. Similarly, a `Plane_iterator` is provided.
+
+
+    All handles are model of `LessThanComparable` and `Hashable`,
+    that is they can be used as keys in containers such as `std::map`
+    and `boost::unordered_map`. 
   */
   /// @{
 
@@ -966,7 +971,7 @@ public:
   Polyhedron_3(const Traits& traits = Traits()); 
 
   /*!
-    Cosntructor  of a polyhedron with storage reserved 
+    Constructor  of a polyhedron with storage reserved
     for `v` vertices, `h` halfedges, and `f` facets. The 
     reservation sizes are a hint for optimizing storage 
     allocation. 

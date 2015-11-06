@@ -101,19 +101,19 @@ public:
   }
 
   
-  typename cpp11::result_of<typename R::Construct_min_vertex_2( Segment_2)>::type
-  min BOOST_PREVENT_MACRO_SUBSTITUTION () const;
-
-  typename cpp11::result_of<typename R::Construct_max_vertex_2( Segment_2)>::type
+  typename cpp11::result_of<typename R_::Construct_min_vertex_2(Segment_2)>::type
+  min BOOST_PREVENT_MACRO_SUBSTITUTION() const;
+  
+  typename cpp11::result_of<typename R_::Construct_max_vertex_2( Segment_2)>::type
   max BOOST_PREVENT_MACRO_SUBSTITUTION () const;
 
-  typename cpp11::result_of<typename R::Construct_vertex_2( Segment_2, int)>::type
+  typename cpp11::result_of<typename R_::Construct_vertex_2( Segment_2, int)>::type
   vertex(int i) const;
 
-  typename cpp11::result_of<typename R::Construct_vertex_2( Segment_2, int)>::type
+  typename cpp11::result_of<typename R_::Construct_vertex_2( Segment_2, int)>::type
   point(int i) const;
 
-  typename cpp11::result_of<typename R::Construct_vertex_2( Segment_2, int)>::type
+  typename cpp11::result_of<typename R_::Construct_vertex_2( Segment_2, int)>::type
   operator[](int i) const;
 
   bool        is_horizontal() const;
@@ -282,7 +282,7 @@ template < class R >
 std::ostream &
 operator<<(std::ostream &os, const Segment_2<R> &s)
 {
-    switch(os.iword(IO::mode)) {
+    switch(get_mode(os)) {
     case IO::ASCII :
         return os << s.source() << ' ' << s.target();
     case IO::BINARY :

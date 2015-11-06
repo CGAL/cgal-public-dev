@@ -93,7 +93,7 @@ public:
   const Point_3 &   start() const;
   const Point_3 &   source() const
   {
-      return get(base).e0;
+      return get_pointee_or_identity(base).e0;
   }
 
   Direction_3 direction() const;
@@ -173,7 +173,7 @@ template <class R >
 std::ostream&
 insert(std::ostream& os, const Ray_3<R>& r, const Cartesian_tag&)
 {
-    switch(os.iword(IO::mode)) {
+    switch(get_mode(os)) {
     case IO::ASCII :
         return os << r.start() << ' ' << r.direction();
     case IO::BINARY :
@@ -187,7 +187,7 @@ template <class R >
 std::ostream&
 insert(std::ostream& os, const Ray_3<R>& r, const Homogeneous_tag&)
 {
-  switch(os.iword(IO::mode))
+  switch(get_mode(os))
   {
       case IO::ASCII :
           return os << r.start() << ' ' << r.direction();

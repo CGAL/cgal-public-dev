@@ -166,7 +166,7 @@ inline
 std::ostream&
 operator<<(std::ostream &os, const Bbox_2 &b)
 {
-    switch(os.iword(IO::mode)) {
+    switch(get_mode(os)) {
     case IO::ASCII :
         os << b.xmin() << ' ' << b.ymin() << ' '
            << b.xmax() << ' ' << b.ymax();
@@ -177,6 +177,7 @@ operator<<(std::ostream &os, const Bbox_2 &b)
         write(os, b.xmax());
         write(os, b.ymax());
         break;
+    case IO::PRETTY :
     default:
         os << "Bbox_2(" << b.xmin() << ", " << b.ymin() << ", "
                         << b.xmax() << ", " << b.ymax() << ")";
@@ -189,9 +190,12 @@ inline
 std::istream&
 operator>>(std::istream &is, Bbox_2 &b)
 {
-    double xmin, ymin, xmax, ymax;
-
-    switch(is.iword(IO::mode)) {
+    double xmin = (std::numeric_limits<double>::min)();
+    double ymin = (std::numeric_limits<double>::min)();
+    double xmax = (std::numeric_limits<double>::max)();
+    double ymax = (std::numeric_limits<double>::max)();
+    
+    switch(get_mode(is)) {
     case IO::ASCII :
         is >> iformat(xmin) >> iformat(ymin) >> iformat(xmax) >> iformat(ymax);
         break;
@@ -200,6 +204,8 @@ operator>>(std::istream &is, Bbox_2 &b)
         read(is, ymin);
         read(is, xmax);
         read(is, ymax);
+        break;
+    case IO::PRETTY :
         break;
     }
     if (is)

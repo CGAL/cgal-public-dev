@@ -26,6 +26,7 @@
 #define CGAL_MATRIX___H
 
 #include <CGAL/Kernel_d/Vector__.h>
+#include <CGAL/use.h>
 #include <new>
 #include <cstddef>                 // for std::size_t, std::ptrdiff_t
 
@@ -189,6 +190,7 @@ inline void deallocate_mat_space(vector_pointer*& vi, int d)
 
 inline void check_dimensions(const Matrix_<NT_,AL_>& mat) const
 { 
+  CGAL_USE(mat);
   CGAL_assertion_msg((dm_ == mat.dm_ && dn_ == mat.dn_), 
     "Matrix::check_dimensions: incompatible matrix dimensions.") ;
 }
@@ -747,7 +749,7 @@ std::ostream&  operator<<(std::ostream& os, const Matrix_<NT_,AL_>& M)
 
     int d = M.row_dimension();
     int k = M.column_dimension();
-    switch (os.iword(CGAL::IO::mode)) {
+    switch (get_mode(os)) {
     case CGAL::IO::BINARY:
         CGAL::write( os, d);
         CGAL::write( os, k);
@@ -791,7 +793,7 @@ std::istream&  operator>>(std::istream& is, Matrix_<NT_,AL_>& M)
              x_d2,0 ... x_d2,d1-1 */
 
   int cdim, rdim, i;
-  switch(is.iword(CGAL::IO::mode)) {
+  switch(get_mode(is)) {
     case CGAL::IO::BINARY : 
       CGAL::read(is,rdim);
       CGAL::read(is,cdim);

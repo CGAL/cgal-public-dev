@@ -4,19 +4,20 @@
 #include "Polyhedron_type.h"
 #include <CGAL/gocad_io.h>
 #include <CGAL/Timer.h>
-#include "Polyhedron_demo_io_plugin_interface.h"
+#include <CGAL/Three/Polyhedron_demo_io_plugin_interface.h>
 #include <fstream>
 
 #include <QColor>
 
- 
+using namespace CGAL::Three;
 
 class Polyhedron_demo_gocad_plugin :
   public QObject,
   public Polyhedron_demo_io_plugin_interface
 {
   Q_OBJECT
-  Q_INTERFACES(Polyhedron_demo_io_plugin_interface)
+  Q_INTERFACES(CGAL::Three::Polyhedron_demo_io_plugin_interface)
+  Q_PLUGIN_METADATA(IID "com.geometryfactory.PolyhedronDemo.IOPluginInterface/1.0")
 
 public:
   QString nameFilters() const;
@@ -72,7 +73,7 @@ Polyhedron_demo_gocad_plugin::load(QFileInfo fileinfo) {
   if(qcolor.isValid()) 
   {  
     item->setColor(qcolor);
-    item->changed();
+    item->invalidate_buffers();
   }
   
 
@@ -105,6 +106,4 @@ bool Polyhedron_demo_gocad_plugin::save(const Scene_item* item, QFileInfo filein
 
 }
 
-#include <QtPlugin>
-Q_EXPORT_PLUGIN2(Polyhedron_demo_gocad_plugin, Polyhedron_demo_gocad_plugin)
 #include "Polyhedron_demo_gocad_plugin.moc"

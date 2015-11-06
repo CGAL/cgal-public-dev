@@ -4,12 +4,13 @@
 #include <CGAL_demo/Viewer_config.h>
 #include <QGLViewer/qglviewer.h>
 #include <QPoint>
+#include <QOpenGLFunctions_2_1>
 
 // forward declarations
 class QWidget;
 class Scene_draw_interface;
 
-class VIEWER_EXPORT Viewer : public QGLViewer {
+class VIEWER_EXPORT Viewer : public QGLViewer, public QOpenGLFunctions_2_1 {
 
   Q_OBJECT
 
@@ -27,11 +28,11 @@ public:
   void setMask(bool b, double ratio=1);
   bool antiAliasing() const { return antialiasing; }
 
-signals:
+Q_SIGNALS:
   void selected(int);
   void pointSelected(QPoint);
 
-public slots:
+public Q_SLOTS:
   void setAntiAliasing(bool b);
   void setTwoSides(bool b);
 

@@ -2006,6 +2006,32 @@ _move_inner_ccb(DFace* from_face, DFace* to_face, DHalfedge* he)
 }
 
 //-----------------------------------------------------------------------------
+// Move all inner CCBs (holes) from one face to another.
+//
+template <typename GeomTraits, typename TopTraits>
+void Arrangement_on_surface_2<GeomTraits, TopTraits>::
+_move_all_inner_ccb(DFace* from_face, DFace* to_face)
+{
+  // Comment EFEF 2015-09-28: The following loop and the loop at the end of this
+  // function should be replaced with a pair of notifiers, respectively,
+  // function_notify_before_move_all_inner_ccb();
+  // function_notify_after_move_all_inner_ccb();
+  DInner_ccb_iter ic_it = from_face->inner_ccbs_begin();
+  while (ic_it != from_face->inner_ccbs_end()) {
+    DHalfedge* he = *ic_it++;
+    Ccb_halfedge_circulator circ = (Halfedge_handle(he))->ccb();
+    _notify_before_move_inner_ccb(Face_handle(from_face), Face_handle(to_face),
+                                  circ);
+  }
+  ic_it = to_face->splice_inner_ccbs(*from_face);
+  while (ic_it != to_face->inner_ccbs_end()) {
+    DHalfedge* he = *ic_it++;
+    Ccb_halfedge_circulator circ = (Halfedge_handle(he))->ccb();
+    _notify_after_move_inner_ccb(circ);
+  }
+}
+
+//-----------------------------------------------------------------------------
 // Insert the given vertex as an isolated vertex inside the given face.
 //
 template <typename GeomTraits, typename TopTraits>
@@ -2067,6 +2093,33 @@ _move_isolated_vertex(DFace* from_face, DFace* to_face, DVertex* v)
 
   // Notify the observers that we have moved the isolated vertex.
   _notify_after_move_isolated_vertex(vh);
+}
+
+//-----------------------------------------------------------------------------
+// Move all isolated vertices from one face to another.
+//
+template <typename GeomTraits, typename TopTraits>
+void Arrangement_on_surface_2<GeomTraits, TopTraits>::
+_move_all_isolated_vertices(DFace* from_face, DFace* to_face)
+{
+  // Comment EFEF 2015-09-28: The following loop and the loop at the end of this
+  // function should be replaced with a pair of notifiers, respectively,
+  // function_notify_before_move_all_isolated_vertices();
+  // function_notify_after_move_all_isolated_vertices();
+  DIso_vertex_iter iv_it = from_face->isolated_vertices_begin();
+  while (iv_it != from_face->isolated_vertices_end()) {
+    DVertex* v = &(*iv_it++);
+    Vertex_handle vh(v);
+    _notify_before_move_isolated_vertex(Face_handle(from_face),
+                                        Face_handle(to_face),
+                                        vh);
+  }
+  iv_it = to_face->splice_isolated_vertices(*from_face);
+  while (iv_it != to_face->isolated_vertices_end()) {
+    DVertex* v = &(*iv_it++);
+    Vertex_handle vh(v);
+    _notify_after_move_isolated_vertex(vh);
+  }
 }
 
 //-----------------------------------------------------------------------------
@@ -4176,10 +4229,19 @@ _remove_edge(DHalfedge* e, bool remove_source, bool remove_target)
   std::pair< CGAL::Sign, CGAL::Sign > signs1(ZERO, ZERO);
   std::pair< CGAL::Sign, CGAL::Sign > signs2(ZERO, ZERO);
 
-  // If the removal of he1 (and its twin halfedge) form an "antenna", there
-  // is neither a need to compute signs and nor swapping of the halfedges
-  if ((he1->next() != he2) && (he2->next() != he1)) {
+  bool swap_he1_he2 = false;
+  if (f1 != f2) {
+    // If f1 != f2, the removal of he1 (and its twin halfedge) will cause
+    // the two incident faces to merge. Thus, swapping is not needed. However,
+    // it is more efficient to retain the face that has a larger number of
+    // inner ccbs.
 
+    // f1 is the face to be kept by default. If f2 has more holes it is more
+    // efficient to kept f2
+    if (f1->number_of_inner_ccbs() < f2->number_of_inner_ccbs())
+      swap_he1_he2 = true;
+  }
+  else {
     // If f1 == f2 (same_face-case), then we consider two loops that occur when
     // he1 and he2 get removed; if f1 != f2, then he1 and he2 seperates the two
     // faces that will be merged upon their removal---here both he1 and he2
@@ -4187,10 +4249,10 @@ _remove_edge(DHalfedge* e, bool remove_source, bool remove_target)
     // determine whether end of loop should be he1->opposite() and
     // he2->opposite(), respectively.
 
-    // If f1 != f2, the removal of he1 (and its twin halfedge) will cause
-    // the two incident faces to merge. Thus, swapping is not needed.
-    bool swap_he1_he2 = false;
-    if (f1 == f2) {
+    // If the removal of he1 (and its twin halfedge) form an "antenna", there
+    // is neither a need to compute signs and nor swapping of the halfedges
+    if ((he1->next() != he2) && (he2->next() != he1)) {
+
       // In this case one of the following can happen: (a) a new hole will be
       // created by the removal of the edge (case 3.2.1 of the removal
       // procedure), or (b) an outer CCB will be split into two (case 3.2.2).
@@ -4324,17 +4386,16 @@ _remove_edge(DHalfedge* e, bool remove_source, bool remove_target)
                        Are_all_sides_oblivious_category()));
       }
     }
-
-    // swapping?
-    if (swap_he1_he2) {
-      // swap all entries
-      std::swap(he1, he2);
-      std::swap(ic1, ic2);
-      std::swap(oc1, oc2);
-      std::swap(f1 , f2);
-      // not needed below here std::swap(local_mins1, local_mins2);
-      std::swap(signs1, signs2);
-    }
+  }
+  // swapping?
+  if (swap_he1_he2) {
+    // swap all entries
+    std::swap(he1, he2);
+    std::swap(ic1, ic2);
+    std::swap(oc1, oc2);
+    std::swap(f1 , f2);
+    // not needed below here std::swap(local_mins1, local_mins2);
+    std::swap(signs1, signs2);
   }
 
 #if CGAL_ARRANGEMENT_ON_SURFACE_INSERT_VERBOSE
@@ -4841,36 +4902,14 @@ _remove_edge(DHalfedge* e, bool remove_source, bool remove_target)
         curr->set_outer_ccb(oc1);
     }
 
-    // Move the holes inside f2 to f1.
-    DInner_ccb_iter ic_it = f2->inner_ccbs_begin();
-    DInner_ccb_iter ic_to_move;
-
-    while (ic_it != f2->inner_ccbs_end()) {
-      // We increment the holes itrator before moving the hole, because
-      // this operation invalidates the iterator.
-      ic_to_move  = ic_it;
-      ++ic_it;
-
-      _move_inner_ccb(f2, f1, *ic_to_move);
-    }
+    _move_all_inner_ccb(f2, f1);        // move all inner CCBs from f2 to f1
 
     // In case he1, which is about to be deleted, is a representative
     // halfedge of outer component of f1, we replace it by its predecessor.
     if (oc1->halfedge() == he1)
       oc1->set_halfedge(prev1);
 
-    // Move the isolated vertices inside f2 to f1.
-    DIso_vertex_iter iv_it = f2->isolated_vertices_begin();
-    DIso_vertex_iter iv_to_move;
-
-    while (iv_it != f2->isolated_vertices_end()) {
-      // We increment the isolated vertices itrator before moving the vertex,
-      // because this operation invalidates the iterator.
-      iv_to_move  = iv_it;
-      ++iv_it;
-
-      _move_isolated_vertex(f2, f1, &(*iv_to_move));
-    }
+    _move_all_isolated_vertices(f2, f1); // move all iso vertices from f2 to f1
 
     // If he1 or he2 are the incident halfedges to their target vertices,
     // we replace them by the appropriate predecessors.
@@ -4973,31 +5012,8 @@ _remove_edge(DHalfedge* e, bool remove_source, bool remove_target)
   for (curr = he2->next(); curr != he2; curr = curr->next())
     curr->set_inner_ccb(ic1);
 
-  // Move the inner CCBs inside f2 to f1.
-  DInner_ccb_iter ic_it = f2->inner_ccbs_begin();
-  DInner_ccb_iter ic_to_move;
-
-  while (ic_it != f2->inner_ccbs_end()) {
-    // We increment the holes itrator before moving the hole, because
-    // this operation invalidates the iterator.
-    ic_to_move  = ic_it;
-    ++ic_it;
-
-    _move_inner_ccb(f2, f1, *ic_to_move);
-  }
-
-  // Move the isolated vertices inside f2 to f1.
-  DIso_vertex_iter iv_it = f2->isolated_vertices_begin();
-  DIso_vertex_iter iv_to_move;
-
-  while (iv_it != f2->isolated_vertices_end()) {
-    // We increment the isolated vertices itrator before moving the vertex,
-    // because this operation invalidates the iterator.
-    iv_to_move  = iv_it;
-    ++iv_it;
-
-    _move_isolated_vertex(f2, f1, &(*iv_to_move));
-  }
+  _move_all_inner_ccb(f2, f1);          // move the inner CCBs from f2 to f1
+  _move_all_isolated_vertices(f2, f1);  // move all iso vertices from f2 to f1
 
   // Notice that f2 will be merged with f1, but its boundary will still be
   // a hole inside this face. In case he1 is a represantative of this hole,

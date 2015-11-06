@@ -61,7 +61,7 @@ private:
 public:
   MainWindow();
 
-public slots:
+public Q_SLOTS:
 
   void on_actionLoadPoints_triggered();
 
@@ -69,13 +69,14 @@ public slots:
 
   void on_actionSavePoints_triggered();
 
-  void on_actionGenerate_triggered();
-
   void on_actionRecenter_triggered();
 
   virtual void open(QString fileName);
 
-signals:
+private:
+  void generate();
+
+Q_SIGNALS:
   void changed();
 };
 
@@ -122,7 +123,7 @@ MainWindow::MainWindow()
 
 /* 
  *  Qt Automatic Connections
- *  http://doc.trolltech.com/4.4/designer-using-a-component.html#automatic-connections
+ *  http://doc.qt.io/qt-5/designer-using-a-ui-file.html#automatic-connections
  * 
  *  setupUi(this) generates connections to the slots named
  *  "on_<action_name>_<signal_name>"
@@ -132,12 +133,12 @@ MainWindow::MainWindow()
 void
 MainWindow::on_actionClear_triggered()
 {
-  emit(changed());
+  Q_EMIT( changed());
 }
 
 
 void
-MainWindow::on_actionGenerate_triggered()
+MainWindow::generate()
 {
   stream_lines = new Stream_lines(*regular_grid, *runge_kutta_integrator, density, ratio, sampling);
 
@@ -155,7 +156,7 @@ MainWindow::on_actionGenerate_triggered()
   scene.addItem(rgi);
 
   on_actionRecenter_triggered();
-  emit(changed());
+  Q_EMIT( changed());
 }
 
 
@@ -200,8 +201,8 @@ MainWindow::open(QString fileName)
   QApplication::restoreOverrideCursor();
   this->addToRecentFiles(fileName);
   //  actionRecenter->trigger();
-  on_actionGenerate_triggered();
-  emit(changed());
+  generate();
+  Q_EMIT( changed());
     
 }
 
@@ -239,9 +240,9 @@ int main(int argc, char **argv)
   app.setOrganizationName("GeometryFactory");
   app.setApplicationName("Stream_lines_2 demo");
 
-  // Import resources from libCGALQt4.
-  // See http://doc.trolltech.com/4.4/qdir.html#Q_INIT_RESOURCE
-  CGAL_QT4_INIT_RESOURCES;
+  // Import resources from libCGAL (Qt5).
+  // See http://doc.qt.io/qt-5/qdir.html#Q_INIT_RESOURCE
+  CGAL_QT_INIT_RESOURCES;
   Q_INIT_RESOURCE(Stream_lines_2);
 
   MainWindow mainWindow;

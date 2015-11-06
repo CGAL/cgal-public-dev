@@ -323,6 +323,10 @@ Returns the number of <I>i</I>-attributes in the combinatorial map.
 template <unsigned int i>
 size_type number_of_attributes() const;
 
+/*! Returns true if dh points to a used dart (i.e.\ valid).
+ */
+bool is_dart_used(Dart_const_handle dh) const;
+
 /*!
 Returns \f$ \beta_j\f$(\f$ \beta_i\f$(`*dh`)).
 Overloads of this member function are defined that take from one to nine integer as arguments.
@@ -500,6 +504,12 @@ A shorcut for \link CombinatorialMap::dart_of_attribute(typename Attribute_const
 */
 template<unsigned int i>
 Dart_const_handle dart(Dart_const_handle adart) const;
+
+/*! Returns true if ah points to a used i-attribute (i.e.\ valid).
+\pre 0\f$ \leq\f$<I>i</I>\f$ \leq\f$\ref CombinatorialMap::dimension "dimension", and <I>i</I>-attributes are non `void`.
+ */
+template<unsigned int i>
+bool is_attribute_used(typename Attribute_const_handle<i>::type ah) const;
 
 /// @}
 
@@ -883,33 +893,33 @@ void reverse_orientation_connected_component(Dart_handle adart);
 
 /*!
 Reserves a new mark. Returns its
-index. Returns -1 if there is no more available free mark.
+index. If there is no more available free mark, throw the exception Exception_no_more_available_mark.
 */
-int get_new_mark() const;
+size_type get_new_mark() const;
 
 /*!
 Returns true iff `m` is a reserved mark of the combinatorial map.
 \pre 0\f$ \leq\f$<I>m</I>\f$ <\f$\ref  CombinatorialMap::NB_MARKS "NB_MARKS".
 */
-bool is_reserved(int m) const;
+bool is_reserved(size_type m) const;
 
 /*!
 Returns true iff `*dh` is marked for `m`.
 \pre \ref CombinatorialMap::is_reserved "is_reserved(m)" and `*dh`\f$ \in\f$`darts()`.
 */
-bool is_marked(Dart_const_handle dh, int m) const;
+bool is_marked(Dart_const_handle dh, size_type m) const;
 
 /*!
 Marks `*dh` for `m`.
 \pre \ref CombinatorialMap::is_reserved "is_reserved(m)" and `*dh`\f$ \in\f$`darts()`.
 */
-void mark(Dart_const_handle dh, int m) const;
+void mark(Dart_const_handle dh, size_type m) const;
 
 /*!
 Unmarks `*dh` for the mark `m`.
 \pre \ref CombinatorialMap::is_reserved "is_reserved(m)" and `*dh`\f$ \in\f$`darts()`.
 */
-void unmark(Dart_const_handle dh, int m) const;
+void unmark(Dart_const_handle dh, size_type m) const;
 
 /*!
 Inverse the mark `m` for all the darts of the combinatorial map.
@@ -917,31 +927,31 @@ All the marked darts become unmarked and all the unmarked darts
 become marked.
 \pre \ref CombinatorialMap::is_reserved "is_reserved(m)".
 */
-void negate_mark(int m) const;
+void negate_mark(size_type m) const;
 
 /*!
 Unmarks all the darts of the combinatorial map for `m`.
 \pre \ref CombinatorialMap::is_reserved "is_reserved(m)".
 */
-void unmark_all(int m) const;
+void unmark_all(size_type m) const;
 
 /*!
 Returns the number of marked darts for `m`.
 \pre \ref CombinatorialMap::is_reserved "is_reserved(m)".
 */
-size_type number_of_marked_darts(int m) const;
+size_type number_of_marked_darts(size_type m) const;
 
 /*!
 Return the number of unmarked darts for `m`.
 \pre \ref CombinatorialMap::is_reserved "is_reserved(m)".
 */
-size_type number_of_unmarked_darts(int m) const;
+size_type number_of_unmarked_darts(size_type m) const;
 
 /*!
 Frees mark `m`.
 \pre \ref CombinatorialMap::is_reserved "is_reserved(m)".
 */
-void free_mark(int m) const;
+void free_mark(size_type m) const;
 
 /// @}
 }; /* end CombinatorialMap */

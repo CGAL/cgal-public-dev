@@ -9,6 +9,7 @@
 #include <QtGui>
 #include <QString>
 #include <QFileDialog>
+#include <QInputDialog>
 #include <QGraphicsLineItem>
 
 // GraphicsView items and event filters (input classes)
@@ -66,8 +67,9 @@ public:
 
     G pg(radius);
     bool ok = false;
+
     const int number_of_points = 
-      QInputDialog::getInteger(this, 
+      QInputDialog::getInt(this, 
                                tr("Number of random points"),
                                tr("Enter number of random points"),
                                100,
@@ -94,10 +96,10 @@ public:
     
     // default cursor
     QApplication::restoreOverrideCursor();
-    emit(changed());
+    Q_EMIT( changed());
   }
 
-public slots:
+public Q_SLOTS:
 
   virtual void open(QString fileName);
   void N_changed(int i);
@@ -110,7 +112,7 @@ public slots:
 
   void clear();
 
-signals:
+Q_SIGNALS:
   void changed();
 };
 
@@ -180,13 +182,13 @@ MainWindow::MainWindow()
 void MainWindow::N_changed(int i)
 {
   nearest_neighbor->setN(i);
-  emit(changed());
+  Q_EMIT( changed());
 }
 
 
 /* 
  *  Qt Automatic Connections
- *  http://doc.trolltech.com/4.4/designer-using-a-component.html#automatic-connections
+ *  http://doc.qt.io/qt-5/designer-using-a-ui-file.html#automatic-connections
  * 
  *  setupUi(this) generates connections to the slots named
  *  "on_<action_name>_<signal_name>"
@@ -198,7 +200,7 @@ void
 MainWindow::on_actionClear_triggered()
 {
   clear();
-  emit(changed());
+  Q_EMIT( changed());
 }
 
 void
@@ -266,7 +268,7 @@ MainWindow::open(QString fileName)
   QApplication::restoreOverrideCursor();
   this->addToRecentFiles(fileName);
   actionRecenter->trigger();
-  emit(changed());
+  Q_EMIT( changed());
     
 }
 
@@ -288,9 +290,9 @@ int main(int argc, char **argv)
   app.setOrganizationName("GeometryFactory");
   app.setApplicationName("Spatial_searching_2 demo");
 
-  // Import resources from libCGALQt4.
-  // See http://doc.trolltech.com/4.4/qdir.html#Q_INIT_RESOURCE
-  CGAL_QT4_INIT_RESOURCES;
+  // Import resources from libCGAL (Qt5).
+  // See http://doc.qt.io/qt-5/qdir.html#Q_INIT_RESOURCE
+  CGAL_QT_INIT_RESOURCES;
   Q_INIT_RESOURCE(Spatial_searching_2);
 
   MainWindow mainWindow;

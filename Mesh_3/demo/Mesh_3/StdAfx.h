@@ -79,7 +79,6 @@
 //#include <boost/parameter/parameters.hpp>
 //#include <boost/parameter/preprocessor.hpp>
 //#include <boost/parameter/value_type.hpp>
-#include <boost/pending/cstddef.hpp>
 #include <boost/preprocessor/arithmetic/dec.hpp>
 #include <boost/preprocessor/arithmetic/inc.hpp>
 #include <boost/preprocessor/arithmetic/sub.hpp>
@@ -340,7 +339,6 @@
 #include <CGAL_demo/Plugin_helper.h>
 #include <ui_Meshing_dialog.h>
 #include <Scene_polyhedron_item.h>
-#include <implicit_functions/Implicit_function_interface.h>
-#include <CGAL_demo/Scene_item_with_display_list.h>*/
+#include <implicit_functions/Implicit_function_interface.h>*/
 
 #endif //STDAFX_H

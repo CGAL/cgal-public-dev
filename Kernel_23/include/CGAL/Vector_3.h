@@ -39,7 +39,7 @@ template <class R_>
 class Vector_3 : public R_::Kernel_base::Vector_3
 {
   typedef typename R_::RT                    RT;
-// http://www.cgal.org/Members/Manual_test/LAST/Developers_internal_manual/Developers_manual/Chapter_code_format.html#sec:programming_conventions
+// http://doc.cgal.org/latest/Manual/devman_code_format.html#secprogramming_conventions
   typedef typename R_::FT                    FT_;
   typedef typename R_::Segment_3             Segment_3;
   typedef typename R_::Ray_3                 Ray_3;
@@ -228,7 +228,7 @@ template <class R >
 std::ostream&
 insert(std::ostream& os, const Vector_3<R>& v, const Cartesian_tag&) 
 {
-  switch(os.iword(IO::mode)) {
+  switch(get_mode(os)) {
     case IO::ASCII :
       return os << v.x() << ' ' << v.y()  << ' ' << v.z();
     case IO::BINARY :
@@ -246,7 +246,7 @@ template <class R >
 std::ostream&
 insert(std::ostream& os, const Vector_3<R>& v, const Homogeneous_tag&)
 {
-  switch(os.iword(IO::mode))
+  switch(get_mode(os))
   {
     case IO::ASCII :
         return os << v.hx() << ' ' << v.hy() << ' ' << v.hz() << ' ' << v.hw();
@@ -277,7 +277,7 @@ std::istream&
 extract(std::istream& is, Vector_3<R>& v, const Cartesian_tag&) 
 {
   typename R::FT x, y, z;
-  switch(is.iword(IO::mode)) {
+  switch(get_mode(is)) {
     case IO::ASCII :
       is >> iformat(x) >> iformat(y) >> iformat(z);
       break;
@@ -301,7 +301,7 @@ std::istream&
 extract(std::istream& is, Vector_3<R>& v, const Homogeneous_tag&) 
 {
   typename R::RT hx, hy, hz, hw;
-  switch(is.iword(IO::mode))
+  switch(get_mode(is))
   {
     case IO::ASCII :
         is >> hx >> hy >> hz >> hw;

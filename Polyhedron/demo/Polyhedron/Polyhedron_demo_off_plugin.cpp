@@ -2,15 +2,21 @@
 #include "Scene_polygon_soup_item.h"
 #include "Polyhedron_type.h"
 
-#include "Polyhedron_demo_io_plugin_interface.h"
+#include <CGAL/Three/Polyhedron_demo_io_plugin_interface.h>
 #include <fstream>
 
+#include <CGAL/IO/File_scanner_OFF.h>
+#include <QMessageBox>
+#include <QApplication>
+
+using namespace CGAL::Three;
 class Polyhedron_demo_off_plugin :
   public QObject,
   public Polyhedron_demo_io_plugin_interface
 {
   Q_OBJECT
-  Q_INTERFACES(Polyhedron_demo_io_plugin_interface)
+  Q_INTERFACES(CGAL::Three::Polyhedron_demo_io_plugin_interface)
+  Q_PLUGIN_METADATA(IID "com.geometryfactory.PolyhedronDemo.IOPluginInterface/1.0")
 
 public:
   QString name() const { return "off_plugin"; }
@@ -36,7 +42,12 @@ Polyhedron_demo_off_plugin::load(QFileInfo fileinfo) {
     std::cerr << "Error! Cannot open file " << (const char*)fileinfo.filePath().toUtf8() << std::endl;
     return NULL;
   }
-    
+
+  // to detect isolated vertices
+  CGAL::File_scanner_OFF scanner( in, false);
+  std::size_t total_nb_of_vertices = scanner.size_of_vertices();
+  in.seekg(0);
+
   // Try to read .off in a polyhedron
   Scene_polyhedron_item* item = new Scene_polyhedron_item();
   item->setName(fileinfo.baseName());
@@ -55,6 +66,16 @@ Polyhedron_demo_off_plugin::load(QFileInfo fileinfo) {
     }
     return soup_item;
   }
+  else
+    if( total_nb_of_vertices!= item->polyhedron()->size_of_vertices())
+    {
+      QApplication::restoreOverrideCursor();
+      item->setNbIsolatedvertices(total_nb_of_vertices - item->polyhedron()->size_of_vertices());
+      QMessageBox::warning((QWidget*)NULL,
+                     tr("Isolated vertices found"),
+                     tr("%1 isolated vertices ignored")
+                     .arg(item->getNbIsolatedvertices()));
+    }
 
   return item;
 }
@@ -83,6 +104,4 @@ bool Polyhedron_demo_off_plugin::save(const Scene_item* item, QFileInfo fileinfo
     (soup_item && soup_item->save(out));
 }
 
-#include <QtPlugin>
-Q_EXPORT_PLUGIN2(Polyhedron_demo_off_plugin, Polyhedron_demo_off_plugin)
 #include "Polyhedron_demo_off_plugin.moc"

@@ -5,19 +5,12 @@
 
 #include <CGAL/property_map.h>
 #include <CGAL/Min_sphere_of_spheres_d.h>
+#include <CGAL/Min_sphere_of_points_d_traits_3.h>
 #include <CGAL/Min_sphere_of_spheres_d_traits_3.h>
-
 #include <UI_point_3.h>
-
 #include <algorithm>
-#include <deque>
-
-#ifdef CGAL_GLEW_ENABLED
-# include <GL/glew.h>
-#else
+#include <vector>
 # include <CGAL/gl.h>
-#endif
-
 
 /// The Point_set_3 class is array of points + normals of type
 /// Point_with_normal_3<Gt> (in fact
@@ -34,13 +27,13 @@
 /// @param Gt       Geometric traits class.
 
 template <class Gt>
-class Point_set_3 : public std::deque<UI_point_3<Gt> >
+class Point_set_3 : public std::vector<UI_point_3<Gt> >
 {
 // Private types
 private:
 
   // Base class
-  typedef std::deque<UI_point_3<Gt> > Base;
+  typedef std::vector<UI_point_3<Gt> > Base;
 
 // Public types
 public:
@@ -67,10 +60,6 @@ public:
   // Its superclass:
   typedef typename UI_point::Point_with_normal Point_with_normal; ///< Position + normal
 
-  // Iterator over Point_3 points
-  typedef typename std::deque<UI_point>::iterator        Point_iterator;
-  typedef typename std::deque<UI_point>::const_iterator  Point_const_iterator;
-
 // Data members
 private:
 
@@ -83,22 +72,41 @@ private:
   mutable Point m_barycenter; // point set's barycenter
   mutable FT m_diameter_standard_deviation; // point set's standard deviation
 
-  std::size_t m_nb_selected_points; // number of selected points
+  iterator m_first_selected; // handle selection
 
   bool m_radii_are_uptodate;
 
+  // Assignment operator not implemented and declared private to make
+  // sure nobody uses the default one without knowing it
+  Point_set_3& operator= (const Point_set_3& other)
+  {
+    return *this;
+  }
+
+  
 // Public methods
 public:
 
   /// Default constructor.
   Point_set_3()
   {
-    m_nb_selected_points = 0;
+    m_first_selected = end();
     m_bounding_box_is_valid = false;
     m_radii_are_uptodate = false;
   }
 
-  // Default copy constructor and operator =() are fine.
+  // copy constructor 
+  Point_set_3 (const Point_set_3& p) : Base (p)
+  {
+    m_bounding_box_is_valid = p.m_bounding_box_is_valid;
+    m_bounding_box = p.m_bounding_box;
+    m_barycenter = p.m_barycenter;
+    m_diameter_standard_deviation = p.m_diameter_standard_deviation;
+
+    m_first_selected = end() - p.nb_selected_points();
+    
+    m_radii_are_uptodate = p.m_radii_are_uptodate;
+  }
 
   // Repeat base class' public methods used below
   /// @cond SKIP_IN_MANUAL
@@ -107,44 +115,66 @@ public:
   using Base::size;
   /// @endcond
 
-  /// Gets the number of selected points.
-  std::size_t nb_selected_points() const { return m_nb_selected_points; }
-
-  /// Mark a point as selected/not selected.
-  void select(UI_point* point, bool is_selected = true)
+  iterator first_selected() { return m_first_selected; }
+  const_iterator first_selected() const { return m_first_selected; }
+  void set_first_selected(iterator it)
   {
-    if (point->is_selected() != is_selected)
-    {
-      point->select(is_selected);
-      m_nb_selected_points += (is_selected ? 1 : -1);
-    }
+    m_first_selected = it;
   }
 
-  /// Mark a range of points as selected/not selected.
-  ///
-  /// @param first Iterator over first point to select/unselect.
-  /// @param beyond Past-the-end iterator.
-  void select(iterator first, iterator beyond,
-              bool is_selected = true)
+  // Test if point is selected
+  bool is_selected(const_iterator it) const
   {
-    for (iterator it = first; it != beyond; it++)
-      it->select(is_selected);
+    return static_cast<std::size_t>(std::distance (it, end())) <= nb_selected_points();
+  }
 
-    m_nb_selected_points = std::count_if(begin(), end(),
-                                         std::mem_fun_ref(&UI_point::is_selected));
+  /// Gets the number of selected points.
+  std::size_t nb_selected_points() const
+  {
+    return std::distance (first_selected(), end());
+  }
+
+  /// Mark a point as selected/not selected.
+  void select(iterator it, bool selected = true)
+  {
+    bool currently = is_selected (it);
+    if (currently && !selected)
+      std::swap (*it, *(m_first_selected ++));
+    else if (!currently && selected)
+      std::swap (*it, *(-- m_first_selected));
+  }
+
+  void select_all()
+  {
+    m_first_selected = begin();
+  }
+  void unselect_all()
+  {
+    m_first_selected = end();
+  }
+
+
+  // Invert selection
+  void invert_selection()
+  {
+    iterator sel = end() - 1;
+    iterator unsel = begin();
+
+    std::size_t nb_selected = nb_selected_points();
+    while (sel != m_first_selected-1 && unsel != m_first_selected)
+      std::swap (*(sel --), *(unsel ++));
+    m_first_selected = begin() + nb_selected;
   }
 
   /// Deletes selected points.
   void delete_selection()
   {
     // Deletes selected points using erase-remove idiom
-    erase(std::remove_if(begin(), end(), std::mem_fun_ref(&UI_point::is_selected)),
-          end());
+    erase (m_first_selected, end ());
 
     // after erase(), use Scott Meyer's "swap trick" to trim excess capacity
     Point_set_3(*this).swap(*this);
-
-    m_nb_selected_points = 0;
+    m_first_selected = end();
     invalidate_bounds();
   }
 
@@ -205,99 +235,9 @@ public:
     m_bounding_box_is_valid = false;
   }
 
-  // Draw points using OpenGL calls.
-  // Preconditions: OpenGL point size and color must be set.
-  void gl_draw_vertices() const
-  {
-    // Draw *non-selected* points
-    if (m_nb_selected_points < size())
-    {
-      ::glBegin(GL_POINTS);
-      for (const_iterator it = begin(); it != end(); it++)
-      {
-        const UI_point& p = *it;
-        if ( ! p.is_selected() )
-          ::glVertex3dv(&p.x());
-      }
-      ::glEnd();
-    }
 
-    // Draw *selected* points
-    if (m_nb_selected_points > 0)
-    {
-      ::glPointSize(4.f);    // selected => bigger
-      ::glColor3ub(255,0,0); // selected => red
-      ::glBegin(GL_POINTS);
-      for (const_iterator it = begin(); it != end(); it++)
-      {
-        const UI_point& p = *it;
-        if (p.is_selected())
-          ::glVertex3dv(&p.x());
-      }
-      ::glEnd();
-    }
-  }
 
-  // Draw normals using OpenGL calls.
-  // Preconditions: OpenGL line width and color must be set.
-  void gl_draw_normals(float scale = 1.0) const // scale applied to normal length
-  {
-    // Draw normals of *non-selected* points
-    if (m_nb_selected_points < size())
-    {
-      // Draw normals
-      ::glBegin(GL_LINES);
-      for (const_iterator it = begin(); it != end(); it++)
-      {
-        const UI_point& p = *it;
-        const Vector& n = p.normal();
-        if (!p.is_selected())
-        {
-          Point q = p + scale * n;
-          ::glVertex3d(p.x(),p.y(),p.z());
-          ::glVertex3d(q.x(),q.y(),q.z());
-        }
-      }
-      ::glEnd();
-    }
 
-    // Draw normals of *selected* points
-    if (m_nb_selected_points > 0)
-    {
-      ::glColor3ub(255,0,0); // selected => red
-      ::glBegin(GL_LINES);
-      for (const_iterator it = begin(); it != end(); it++)
-      {
-        const UI_point& p = *it;
-        const Vector& n = p.normal();
-        if (p.is_selected())
-        {
-          Point q = p + scale * n;
-          ::glVertex3d(p.x(),p.y(),p.z());
-          ::glVertex3d(q.x(),q.y(),q.z());
-        }
-      }
-      ::glEnd();
-    }
-  }
-
-  // Draw oriented points with radius using OpenGL calls.
-  // Preconditions: must be used inbetween calls to GlSplat library
-  void gl_draw_splats() const
-  {
-    // TODO add support for selection
-    ::glBegin(GL_POINTS);
-    for (const_iterator it = begin(); it != end(); it++)
-    {
-      const UI_point& p = *it;
-      ::glNormal3dv(&p.normal().x());
-#ifdef CGAL_GLEW_ENABLED
-      ::glMultiTexCoord1d(GL_TEXTURE2, p.radius());
-#endif
-      ::glVertex3dv(&p.x());
-    }
-    ::glEnd();
-  }
   
   bool are_radii_uptodate() const { return m_radii_are_uptodate; }
   void set_radii_uptodate(bool /*on*/) { m_radii_are_uptodate = false; }
@@ -318,7 +258,7 @@ private:
     xmax = ymax = zmax = -1e38;
     Vector v = CGAL::NULL_VECTOR;
     FT norm = 0;
-    for (Point_const_iterator it = begin(); it != end(); it++)
+    for (const_iterator it = begin(); it != end(); it++)
     {
       const Point& p = *it;
 
@@ -342,17 +282,11 @@ private:
     m_barycenter = CGAL::ORIGIN + v / norm;
 
     // Computes bounding sphere
-    typedef CGAL::Min_sphere_of_spheres_d_traits_3<Gt,FT> Traits;
+    typedef CGAL::Min_sphere_of_points_d_traits_3<Gt,FT> Traits;
     typedef CGAL::Min_sphere_of_spheres_d<Traits> Min_sphere;
-    typedef typename Traits::Sphere Traits_sphere;
-    //
-    // Represents points by a set of spheres with 0 radius
-    std::vector<Traits_sphere> spheres;
-    for (Point_const_iterator it = begin(); it != end(); it++)
-      spheres.push_back(Traits_sphere(*it,0));
-    //
-    // Computes min sphere
-    Min_sphere ms(spheres.begin(),spheres.end());
+
+    Min_sphere ms(begin(),end());
+
     typename Min_sphere::Cartesian_const_iterator coord = ms.center_cartesian_begin();
     FT cx = *coord++;
     FT cy = *coord++;
@@ -362,7 +296,7 @@ private:
     // Computes standard deviation of the distance to barycenter
     typename Geom_traits::Compute_squared_distance_3 sqd;
     FT sq_radius = 0;
-    for (Point_const_iterator it = begin(); it != end(); it++)
+    for (const_iterator it = begin(); it != end(); it++)
         sq_radius += sqd(*it, m_barycenter);
     sq_radius /= FT(size());
     m_diameter_standard_deviation = CGAL::sqrt(sq_radius);

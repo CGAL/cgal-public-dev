@@ -24,6 +24,7 @@
 #include <CGAL/Combinatorial_map_basic_operations.h>
 #include <CGAL/internal/Combinatorial_map_internal_functors.h>
 #include <vector>
+#include <boost/mpl/has_xxx.hpp>
 
 /* Definition of functors used to manage attributes (we need functors as
  * attributes are stored in tuple, thus all the access must be done at
@@ -44,6 +45,13 @@
  *
  * Test_is_valid_attribute_functor<CMap> to test if an attribute is valid
  *    (used with Foreach_enabled_attributes)
+ *
+ * Is_attribute_has_non_void_info<Attr> to test if the attribute
+ *   Attr is non Void and has an non void Info as inner type
+ *
+ * Is_attribute_has_point<Attr> to test if the attribute
+ *   Attr is non Void and has a Point inner type
+ *
  */
 
 namespace CGAL
@@ -57,8 +65,10 @@ namespace CGAL
 template<typename CMap>
 struct Reserve_mark_functor
 {
+  typedef typename CMap::size_type size_type;
+
   template <unsigned int i>
-  static void run(const CMap* amap, std::vector<int>* marks)
+  static void run(const CMap* amap, std::vector<size_type>* marks)
   { (*marks)[i] = amap->get_new_mark(); }
 };
 // ****************************************************************************
@@ -86,7 +96,9 @@ struct Test_is_valid_attribute_functor
   static bool run(const CMap* amap,
                   typename CMap::Dart_const_handle adart)
   {
-    int mark=amap->get_new_mark();
+    typedef typename CMap::size_type size_type;
+
+    size_type mark=amap->get_new_mark();
     bool res = true;
     CGAL::internal::Test_is_valid_attribute_functor<CMap>::
         run<i>(amap, adart, mark, &res);
@@ -126,6 +138,34 @@ struct Set_i_attribute_functor<CMap,i,CGAL::Void>
                    typename CMap::template Attribute_handle<i>::type)
   {}
 };
+// ****************************************************************************
+BOOST_MPL_HAS_XXX_TRAIT_NAMED_DEF(Has_point,Point,false)
+
+template<typename Attr, typename Info=typename Attr::Info>
+struct Is_nonvoid_attribute_has_non_void_info
+{
+  static const bool value=true;
+};
+template<typename Attr>
+struct Is_nonvoid_attribute_has_non_void_info<Attr, void>
+{
+  static const bool value=false;
+};
+
+template<typename Attr>
+struct Is_attribute_has_non_void_info
+{
+  static const bool value=Is_nonvoid_attribute_has_non_void_info<Attr>::value;
+};
+template<>
+struct Is_attribute_has_non_void_info<CGAL::Void>
+{
+  static const bool value=false;
+};
+// ****************************************************************************
+template<typename Attr>
+struct Is_attribute_has_point
+{ static const bool value=Has_point<Attr>::value; };
 // ****************************************************************************
 } // namespace CGAL
 

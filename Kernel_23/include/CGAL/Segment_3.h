@@ -98,13 +98,13 @@ public:
     return target();
   }
  
-  typename cpp11::result_of<typename R::Construct_min_vertex_3(Segment_3)>::type
+  typename cpp11::result_of<typename R_::Construct_min_vertex_3(Segment_3)>::type
   min BOOST_PREVENT_MACRO_SUBSTITUTION () const;
 
-  typename cpp11::result_of<typename R::Construct_max_vertex_3(Segment_3)>::type
+  typename cpp11::result_of<typename R_::Construct_max_vertex_3(Segment_3)>::type
   max BOOST_PREVENT_MACRO_SUBSTITUTION () const;
 
-  typename cpp11::result_of<typename R::Construct_vertex_3(Segment_3, int)>::type
+  typename cpp11::result_of<typename R_::Construct_vertex_3(Segment_3, int)>::type
   vertex(int i) const;
 
   typename cpp11::result_of<typename R::Construct_vertex_3(Segment_3, int)>::type
@@ -198,7 +198,7 @@ template < class R >
 std::ostream &
 operator<<(std::ostream &os, const Segment_3<R> &s)
 {
-    switch(os.iword(IO::mode)) {
+    switch(get_mode(os)) {
     case IO::ASCII :
         return os << s.source() << ' ' << s.target();
     case IO::BINARY :

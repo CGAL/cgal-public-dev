@@ -3,20 +3,21 @@
 #include "Kernel_type.h"
 #include "Polyhedron_type.h"
 
-#include "Polyhedron_demo_io_plugin_interface.h"
+#include <CGAL/Three/Polyhedron_demo_io_plugin_interface.h>
 #include <fstream>
 
 #include <CGAL/IO/Polyhedron_builder_from_STL.h>
-#include <CGAL/polygon_soup_to_polyhedron_3.h>
+#include <CGAL/Polygon_mesh_processing/polygon_soup_to_polygon_mesh.h>
 
 #include <QColor>
-
+using namespace CGAL::Three;
 class Polyhedron_demo_stl_plugin :
   public QObject,
   public Polyhedron_demo_io_plugin_interface
 {
   Q_OBJECT
-  Q_INTERFACES(Polyhedron_demo_io_plugin_interface)
+  Q_INTERFACES(CGAL::Three::Polyhedron_demo_io_plugin_interface)
+  Q_PLUGIN_METADATA(IID "com.geometryfactory.PolyhedronDemo.IOPluginInterface/1.0")
 
 public:
   QString nameFilters() const;
@@ -41,7 +42,7 @@ Scene_item*
 Polyhedron_demo_stl_plugin::load(QFileInfo fileinfo) {
 
   // Open file
-  std::ifstream in(fileinfo.filePath().toUtf8());
+  std::ifstream in(fileinfo.filePath().toUtf8(), std::ios::in | std::ios::binary);
   if(!in) {
     std::cerr << "Error! Cannot open file " << (const char*)fileinfo.filePath().toUtf8() << std::endl;
     return NULL;
@@ -58,7 +59,8 @@ Polyhedron_demo_stl_plugin::load(QFileInfo fileinfo) {
   try{
     // Try building a polyhedron
     Polyhedron P;
-    CGAL::polygon_soup_to_polyhedron_3(P, points, triangles);
+    if (CGAL::Polygon_mesh_processing::is_polygon_soup_a_polygon_mesh(triangles))
+      CGAL::Polygon_mesh_processing::polygon_soup_to_polygon_mesh(points, triangles, P);
     
     if(! P.is_valid() || P.empty()){
       std::cerr << "Error: Invalid polyhedron" << std::endl;
@@ -87,6 +89,4 @@ bool Polyhedron_demo_stl_plugin::save(const Scene_item*, QFileInfo)
   return false;
 }
 
-#include <QtPlugin>
-Q_EXPORT_PLUGIN2(Polyhedron_demo_stl_plugin, Polyhedron_demo_stl_plugin)
 #include "Polyhedron_demo_stl_plugin.moc"

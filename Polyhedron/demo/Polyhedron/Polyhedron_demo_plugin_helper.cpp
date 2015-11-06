@@ -1,4 +1,4 @@
-#include "Polyhedron_demo_plugin_helper.h"
+#include <CGAL/Three/Polyhedron_demo_plugin_helper.h>
 #include <QMainWindow>
 #include <QAction>
 #include <QMetaObject>
@@ -8,6 +8,9 @@
 #include <QSet>
 #include <QDockWidget>
 
+#include "MainWindow.h"
+
+using namespace CGAL::Three;
 QAction*
 Polyhedron_demo_plugin_helper::
 getActionFromMainWindow(QMainWindow* mw,
@@ -27,7 +30,7 @@ Polyhedron_demo_plugin_helper::
 init(QMainWindow* mainWindow, Scene_interface* scene_interface) {
   mw = mainWindow;
   scene = scene_interface;
-  Q_FOREACH(QString actionName, actionsNames())
+  Q_FOREACH(QString actionName,actionsNames())
   {
     actions_map[actionName] = getActionFromMainWindow(mw, actionName);
   }
@@ -55,8 +58,9 @@ void Polyhedron_demo_plugin_helper::autoConnectActions()
       i < metaObject->methodCount();
       ++i)
   {
-    const int pos = QString(metaObject->method(i).signature()).indexOf('(');
-    methodsNames << QString(metaObject->method(i).signature()).left(pos);
+    const int pos = QString(metaObject->method(i).methodSignature()).indexOf('(');
+    methodsNames << QString(metaObject->method(i).methodSignature()).left(pos);
+
     methods << metaObject->method(i);
   }
 
@@ -73,24 +77,26 @@ void Polyhedron_demo_plugin_helper::autoConnectActions()
         
       if(action_method.methodType() == QMetaMethod::Signal)
       {
-        const int pos = QString(action_method.signature()).indexOf('(');
-        QString methodName = QString(action_method.signature()).left(pos);
+        const int pos = QString(action_method.methodSignature()).indexOf('(');
+        QString methodName = QString(action_method.methodSignature()).left(pos);
+
         QString slotName = 
           QString("on_%1_%2").arg(action->objectName()).arg(methodName);
 //         qDebug() << thisObject->tr("Slot %1 (%2)...").arg(slotName).arg(i);
         int index = methodsNames.indexOf(slotName);
-        if(index>=0 && !connected.contains(slotName)) {
-          const bool ok = 
-            QObject::connect(action, 
-                             qPrintable(QString("2%1").arg(action_method.signature())),
+        if(index>=0 && !connected.contains(slotName)) 
+        {
+            const bool ok = QObject::connect(action, 
+                             qPrintable(QString("2%1").arg(QString(action_method.methodSignature()))),
                              thisObject,
-                             qPrintable(QString("1%1").arg(methods[index].signature())));
+                             qPrintable(QString("1%1").arg(QString(methods[index].methodSignature()))));
+
           if(!ok)
           {
             qDebug() << thisObject->tr("Cannot connect method %1.%2 to slot %3!")
               .arg(action->objectName())
-              .arg(action_method.signature())
-              .arg(methods[index].signature());
+              .arg(QString(action_method.methodSignature()))
+              .arg(QString(methods[index].methodSignature()));
           }
           else {
 //             qDebug("  ->Connected!");
@@ -111,12 +117,12 @@ void Polyhedron_demo_plugin_helper::autoConnectActions()
 
 void Polyhedron_demo_plugin_helper::add_dock_widget(QDockWidget* dock_widget) 
 {
-  mw->addDockWidget(Qt::LeftDockWidgetArea, dock_widget);
+  mw->addDockWidget(::Qt::LeftDockWidgetArea, dock_widget);
 
   QList<QDockWidget*> dockWidgets = mw->findChildren<QDockWidget*>();
   int counter = 0;
-  foreach(QDockWidget* dock, dockWidgets) {
-    if( mw->dockWidgetArea(dock) != Qt::LeftDockWidgetArea ||
+  Q_FOREACH(QDockWidget* dock, dockWidgets) {
+    if( mw->dockWidgetArea(dock) != ::Qt::LeftDockWidgetArea ||
         dock == dock_widget ) 
     { continue; }
 

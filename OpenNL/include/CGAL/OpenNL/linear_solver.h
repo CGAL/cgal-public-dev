@@ -49,6 +49,8 @@
 #include <iostream>
 #include <cstdlib>
 
+#include <CGAL/use.h>
+
 namespace OpenNL {
 
 
@@ -267,7 +269,7 @@ public:
             }
         }
         unsigned int n = index ;
-        A_ = new Matrix(n) ;
+        A_ = new Matrix(static_cast<int>(n)) ;
         x_ = new Vector(n) ;
         b_ = new Vector(n) ;
         for(unsigned int i=0; i<n; i++) {
@@ -334,28 +336,28 @@ public:
 
     void end_row() {
         if(least_squares_) {
-            unsigned int nf = af_.size() ;
-            unsigned int nl = al_.size() ;
-            for(unsigned int i=0; i<nf; i++) {
-                for(unsigned int j=0; j<nf; j++) {
+            std::size_t nf = af_.size() ;
+            std::size_t nl = al_.size() ;
+            for(std::size_t i=0; i<nf; i++) {
+                for(std::size_t j=0; j<nf; j++) {
                     A_->add_coef(if_[i], if_[j], af_[i] * af_[j]) ;
                 }
             }
             CoeffType S = - bk_ ;
-            for(unsigned int j=0; j<nl; j++) {
+            for(std::size_t j=0; j<nl; j++) {
                 S += al_[j] * xl_[j] ;
             }
-            for(unsigned int i=0; i<nf; i++) {
+            for(std::size_t i=0; i<nf; i++) {
                 (*b_)[if_[i]] -= af_[i] * S ;
             }
         } else {
-            unsigned int nf = af_.size() ;
-            unsigned int nl = al_.size() ;
-            for(unsigned int i=0; i<nf; i++) {
+            std::size_t nf = af_.size() ;
+            std::size_t nl = al_.size() ;
+            for(std::size_t i=0; i<nf; i++) {
                 A_->add_coef(current_row_, if_[i], af_[i]) ;
             }
             (*b_)[current_row_] = bk_ ;
-            for(unsigned int i=0; i<nl; i++) {
+            for(std::size_t i=0; i<nl; i++) {
                 (*b_)[current_row_] -= al_[i] * xl_[i] ;
             }
         }
@@ -436,6 +438,7 @@ protected:
     }
 
     void check_state(State s) {
+            CGAL_USE(s);
             CGAL_assertion(state_ == s) ;
     }
 

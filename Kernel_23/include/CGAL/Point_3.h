@@ -39,7 +39,6 @@ template <class R_>
 class Point_3 : public R_::Kernel_base::Point_3
 {
   typedef typename R_::RT                    RT;
-  typedef typename R_::FT                    FT;
   typedef typename R_::Vector_3              Vector_3;
   typedef typename R_::Aff_transformation_3  Aff_transformation_3;
 
@@ -195,7 +194,7 @@ template <class R >
 std::ostream&
 insert(std::ostream& os, const Point_3<R>& p,const Cartesian_tag&)
 {
-    switch(os.iword(IO::mode)) {
+    switch(get_mode(os)) {
     case IO::ASCII :
         return os << p.x() << ' ' << p.y() << ' ' << p.z();
     case IO::BINARY :
@@ -213,7 +212,7 @@ template <class R >
 std::ostream&
 insert(std::ostream& os, const Point_3<R>& p,const Homogeneous_tag&)
 {
-  switch(os.iword(IO::mode))
+  switch(get_mode(os))
   {
     case IO::ASCII :
         return os << p.hx() << ' ' << p.hy() << ' ' << p.hz() << ' ' << p.hw();
@@ -244,7 +243,7 @@ std::istream&
 extract(std::istream& is, Point_3<R>& p, const Cartesian_tag&)
 {
     typename R::FT x, y, z;
-    switch(is.iword(IO::mode)) {
+    switch(get_mode(is)) {
     case IO::ASCII :
         is >> iformat(x) >> iformat(y) >> iformat(z);
         break;
@@ -269,7 +268,7 @@ std::istream&
 extract(std::istream& is, Point_3<R>& p, const Homogeneous_tag&)
 {
   typename R::RT hx, hy, hz, hw;
-  switch(is.iword(IO::mode))
+  switch(get_mode(is))
   {
     case IO::ASCII :
         is >> hx >> hy >> hz >> hw;

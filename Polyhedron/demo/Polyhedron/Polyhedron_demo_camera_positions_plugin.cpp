@@ -1,20 +1,23 @@
 #include <QtCore/qglobal.h>
 #include "Messages_interface.h"
-#include "Polyhedron_demo_plugin_interface.h"
-#include "Polyhedron_demo_io_plugin_interface.h"
+#include <CGAL/Three/Polyhedron_demo_plugin_interface.h>
+#include <CGAL/Three/Polyhedron_demo_io_plugin_interface.h>
 
 #include "Camera_positions_list.h"
-#include "Viewer_interface.h"
+#include <CGAL/Three/Viewer_interface.h>
 
 #include <QMainWindow>
-
+using namespace CGAL::Three;
 class Polyhedron_demo_camera_positions_plugin : 
   public QObject,
   public Polyhedron_demo_plugin_interface,
-  public Polyhedron_demo_io_plugin_interface
+  public CGAL::Three::Polyhedron_demo_io_plugin_interface
 {
   Q_OBJECT
-  Q_INTERFACES(Polyhedron_demo_plugin_interface Polyhedron_demo_io_plugin_interface)
+  Q_INTERFACES(CGAL::Three::Polyhedron_demo_plugin_interface CGAL::Three::Polyhedron_demo_io_plugin_interface)
+  Q_PLUGIN_METADATA(IID "com.geometryfactory.PolyhedronDemo.PluginInterface/1.0")
+  Q_PLUGIN_METADATA(IID "com.geometryfactory.PolyhedronDemo.IOPluginInterface/1.0")
+
 public:
   void init(QMainWindow* mainWindow, Scene_interface* scene_interface);
   QList<QAction*> actions() const;
@@ -33,8 +36,10 @@ private:
 
 void Polyhedron_demo_camera_positions_plugin::init(QMainWindow* mainWindow, Scene_interface*)
 {
+
   cpl = new Camera_positions_list(mainWindow);
-  cpl->setViewer(mainWindow->findChild<Viewer_interface*>("viewer"));
+  Viewer_interface* viewer = mainWindow->findChild<Viewer_interface*>("viewer");
+  cpl->setViewer(viewer);
   mainWindow->addDockWidget(Qt::LeftDockWidgetArea, cpl);
 }
 
@@ -43,7 +48,5 @@ Polyhedron_demo_camera_positions_plugin::actions() const
 {
   return QList<QAction*>();
 }
-
-Q_EXPORT_PLUGIN2(Polyhedron_demo_camera_positions_plugin, Polyhedron_demo_camera_positions_plugin)
 
 #include "Polyhedron_demo_camera_positions_plugin.moc"

@@ -19,7 +19,6 @@
 #include <math.h>
 #include <stdlib.h>
 #include <iostream>
-#include <GL/glew.h>
 
 #include "GlSplat.h"
 #include "Shader.h"
@@ -36,6 +35,7 @@ SplatRenderer::SplatRenderer()
   mNormalTextureID = 0;
   mDepthTextureID = 0;
   mIsSupported = false;
+  viewer_is_set = false;
   mRenderBuffer = 0;
   mWorkaroundATI = false;
   mBuggedAtiBlending = false;
@@ -54,7 +54,7 @@ QString SplatRenderer::loadSource(const QString& func,const QString& filename)
   QFile f(":/SplatRenderer/shaders/" + filename);
   if (!f.open(QFile::ReadOnly))
   {
-    std::cerr << "failed to load shader file " << filename.toAscii().data() << "\n";
+    std::cerr << "failed to load shader file " << filename.toLatin1().data() << "\n";
     return res;
   }
   else qDebug("Succesfully loaded shader func '%s' in file '%s'",qPrintable(func),qPrintable(filename));
@@ -98,8 +98,8 @@ void SplatRenderer::configureShaders()
   {
     QString vsrc = shading + defines + mShaderSrcs[k*2+0];
     QString fsrc = shading + defines + mShaderSrcs[k*2+1];
-    if(!mShaders[k].loadSources(mShaderSrcs[k*2+0]!="" ? vsrc.toAscii().data() : 0,
-                                mShaderSrcs[k*2+1]!="" ? fsrc.toAscii().data() : 0/*,
+    if(!mShaders[k].loadSources(mShaderSrcs[k*2+0]!="" ? vsrc.toLatin1().data() : 0,
+                                mShaderSrcs[k*2+1]!="" ? fsrc.toLatin1().data() : 0/*,
                                 Shader::Warnings*/))
       mIsSupported = false;
   }
@@ -110,7 +110,6 @@ void SplatRenderer::init(QGLWidget *qglw)
   mIsSupported = true;
   if(qglw)
     qglw->makeCurrent();
-  glewInit();
 
   const char* rs = (const char*)glGetString(GL_RENDERER);
   QString rendererString("");
@@ -122,10 +121,10 @@ void SplatRenderer::init(QGLWidget *qglw)
 
   if (mWorkaroundATI && mDummyTexId==0)
   {
-    glActiveTexture(GL_TEXTURE0);
-    glGenTextures(1,&mDummyTexId);
-    glBindTexture(GL_TEXTURE_2D, mDummyTexId);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, 4, 4, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, 0);
+    viewer->glActiveTexture(GL_TEXTURE0);
+    viewer->glGenTextures(1,&mDummyTexId);
+    viewer->glBindTexture(GL_TEXTURE_2D, mDummyTexId);
+    viewer->glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, 4, 4, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, 0);
   }
 
   // let's check the GPU capabilities
@@ -136,20 +135,11 @@ void SplatRenderer::init(QGLWidget *qglw)
     mIsSupported = false;
     return;
   }
-  if (GLEW_ARB_texture_float)
-    mSupportedMask |= FLOAT_BUFFER_BIT;
-  else
-    std::cout << "SplatRenderer: warning floating point textures are not supported.\n";
+  mSupportedMask |= FLOAT_BUFFER_BIT;
 
-  if (GLEW_ARB_draw_buffers && (!mBuggedAtiBlending))
-    mSupportedMask |= DEFERRED_SHADING_BIT;
-  else
-    std::cout << "SplatRenderer: warning deferred shading is not supported.\n";
+  mSupportedMask |= DEFERRED_SHADING_BIT;
 
-  if (GLEW_ARB_shadow)
-    mSupportedMask |= OUTPUT_DEPTH_BIT;
-  else
-    std::cerr << "SplatRenderer: warning copy of the depth buffer is not supported.\n";
+  mSupportedMask |= OUTPUT_DEPTH_BIT;
 
   mFlags = mFlags & mSupportedMask;
 
@@ -164,7 +154,7 @@ void SplatRenderer::init(QGLWidget *qglw)
   mCurrentPass = 2;
   mBindedPass = -1;
   mIsInitialized = true;
-  GL_TEST_ERR
+
 }
 
 void SplatRenderer::updateRenderBuffer()
@@ -185,20 +175,25 @@ void SplatRenderer::updateRenderBuffer()
       std::cout << "SplatRenderer: invalid FBO\n";
     }
 
-    GL_TEST_ERR
+
     if (mFlags&DEFERRED_SHADING_BIT)
     {
       // in deferred shading mode we need an additional buffer to accumulate the normals
       if (mNormalTextureID==0)
-        glGenTextures(1,&mNormalTextureID);
-      glBindTexture(GL_TEXTURE_RECTANGLE_ARB, mNormalTextureID);
-      glTexImage2D(GL_TEXTURE_RECTANGLE_ARB, 0, fmt, mCachedVP[2], mCachedVP[3], 0, GL_RGBA, GL_FLOAT, 0);
-      glTexParameteri(GL_TEXTURE_RECTANGLE_ARB, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-      glTexParameteri(GL_TEXTURE_RECTANGLE_ARB, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        viewer->glGenTextures(1,&mNormalTextureID);
+      //glBindTexture(GL_TEXTURE_RECTANGLE_ARB, mNormalTextureID);
+      viewer->glBindTexture(GL_TEXTURE_RECTANGLE, mNormalTextureID);
+      //glTexImage2D(GL_TEXTURE_RECTANGLE_ARB, 0, fmt, mCachedVP[2], mCachedVP[3], 0, GL_RGBA, GL_FLOAT, 0);
+      viewer->glTexImage2D(GL_TEXTURE_RECTANGLE, 0, fmt, mCachedVP[2], mCachedVP[3], 0, GL_RGBA, GL_FLOAT, 0);
+      //glTexParameteri(GL_TEXTURE_RECTANGLE_ARB, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+      viewer->glTexParameteri(GL_TEXTURE_RECTANGLE, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+      //glTexParameteri(GL_TEXTURE_RECTANGLE_ARB, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+      viewer->glTexParameteri(GL_TEXTURE_RECTANGLE, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
       mRenderBuffer->bind();
-      glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT1_EXT, GL_TEXTURE_RECTANGLE_ARB, mNormalTextureID, 0);
+      viewer->glFramebufferTexture2D = (PFNGLFRAMEBUFFERTEXTURE2DEXTPROC)viewer->context()->getProcAddress("glFramebufferTexture2DEXT");
+      viewer->glFramebufferTexture2D(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT1_EXT, GL_TEXTURE_RECTANGLE_ARB, mNormalTextureID, 0);
       mRenderBuffer->release();
-      GL_TEST_ERR
+
     }
 
     if (mFlags&OUTPUT_DEPTH_BIT)
@@ -206,15 +201,19 @@ void SplatRenderer::updateRenderBuffer()
       // to output the depth values to the final depth buffer we need to
       // attach a depth buffer as a texture
       if (mDepthTextureID==0)
-        glGenTextures(1,&mDepthTextureID);
-      glBindTexture(GL_TEXTURE_RECTANGLE_ARB, mDepthTextureID);
-      glTexImage2D(GL_TEXTURE_RECTANGLE_ARB, 0, GL_DEPTH_COMPONENT24_ARB, mCachedVP[2], mCachedVP[3], 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
-      glTexParameteri(GL_TEXTURE_RECTANGLE_ARB, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-      glTexParameteri(GL_TEXTURE_RECTANGLE_ARB, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        viewer->glGenTextures(1,&mDepthTextureID);
+      //glBindTexture(GL_TEXTURE_RECTANGLE_ARB, mDepthTextureID);
+      viewer->glBindTexture(GL_TEXTURE_RECTANGLE, mDepthTextureID);
+      //glTexImage2D(GL_TEXTURE_RECTANGLE_ARB, 0, GL_DEPTH_COMPONENT24_ARB, mCachedVP[2], mCachedVP[3], 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
+      viewer->glTexImage2D(GL_TEXTURE_RECTANGLE, 0, GL_DEPTH_COMPONENT24, mCachedVP[2], mCachedVP[3], 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
+      //glTexParameteri(GL_TEXTURE_RECTANGLE_ARB, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+      viewer->glTexParameteri(GL_TEXTURE_RECTANGLE, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+      //glTexParameteri(GL_TEXTURE_RECTANGLE_ARB, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+      viewer->glTexParameteri(GL_TEXTURE_RECTANGLE, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
       mRenderBuffer->bind();
-      glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT, GL_TEXTURE_RECTANGLE_ARB, mDepthTextureID, 0);
+      viewer->glFramebufferTexture2D(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT, GL_TEXTURE_RECTANGLE_ARB, mDepthTextureID, 0);
       mRenderBuffer->release();
-      GL_TEST_ERR
+
     }
   }
 }
@@ -236,14 +235,14 @@ bool SplatRenderer::beginVisibilityPass()
     return false;
   }
 
-  glPushAttrib(GL_ALL_ATTRIB_BITS);
+  viewer->glPushAttrib(GL_ALL_ATTRIB_BITS);
 
   mCurrentPass = 0;
 
   // grab projection info
-  glGetIntegerv(GL_VIEWPORT, mCachedVP);
-  glGetFloatv(GL_MODELVIEW_MATRIX, mCachedMV);
-  glGetFloatv(GL_PROJECTION_MATRIX, mCachedProj);
+  viewer->glGetIntegerv(GL_VIEWPORT, mCachedVP);
+  viewer->glGetFloatv(GL_MODELVIEW_MATRIX, mCachedMV);
+  viewer->glGetFloatv(GL_PROJECTION_MATRIX, mCachedProj);
 
   updateRenderBuffer();
   if (mCachedFlags != mFlags)
@@ -264,14 +263,16 @@ bool SplatRenderer::beginVisibilityPass()
   mRenderBuffer->bind();
   if (mFlags & DEFERRED_SHADING_BIT)
   {
-    GLenum buf[2] = {GL_COLOR_ATTACHMENT0_EXT,GL_COLOR_ATTACHMENT1_EXT};
-    glDrawBuffersARB(2, buf);
+     //GLenum buf[2] = {GL_COLOR_ATTACHMENT0_EXT,GL_COLOR_ATTACHMENT1_EXT};
+     GLenum buf[2] = {GL_COLOR_ATTACHMENT0,GL_COLOR_ATTACHMENT1};
+     //glDrawBuffersARB(2, buf);
+     viewer->glDrawBuffers(2, buf);
   }
-  glViewport(mCachedVP[0],mCachedVP[1],mCachedVP[2],mCachedVP[3]);
-  glClearColor(0,0,0,0);
-  glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
+  viewer->glViewport(mCachedVP[0],mCachedVP[1],mCachedVP[2],mCachedVP[3]);
+  viewer->glClearColor(0,0,0,0);
+  viewer->glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
   enablePass(mCurrentPass);
-  GL_TEST_ERR;
+  ;
   return true;
 }
 bool SplatRenderer::beginAttributePass()
@@ -290,7 +291,7 @@ bool SplatRenderer::beginAttributePass()
   mCurrentPass = 1;
   mParams.loadTo(mShaders[mCurrentPass]);
   enablePass(mCurrentPass);
-  GL_TEST_ERR;
+  ;
   return true;
 }
 bool SplatRenderer::finalize()
@@ -314,86 +315,88 @@ bool SplatRenderer::finalize()
   mCurrentPass = 2;
 
   if (mFlags&DEFERRED_SHADING_BIT)
-    glDrawBuffer(GL_BACK);
+    viewer->glDrawBuffer(GL_BACK);
 
-  enablePass(mCurrentPass);GL_TEST_ERR
+  enablePass(mCurrentPass);
 
   // switch to normalized 2D rendering mode
-  glMatrixMode(GL_PROJECTION);
-  glPushMatrix();
-  glLoadIdentity();
-  glMatrixMode(GL_MODELVIEW);
-  glPushMatrix();
-  glLoadIdentity();
+  viewer->glMatrixMode(GL_PROJECTION);
+  viewer->glPushMatrix();
+  viewer->glLoadIdentity();
+  viewer->glMatrixMode(GL_MODELVIEW);
+  viewer->glPushMatrix();
+  viewer->glLoadIdentity();
 
 
-  GL_TEST_ERR
-  mShaders[2].setUniform("viewport",float(mCachedVP[0]),float(mCachedVP[1]),float(mCachedVP[2]),float(mCachedVP[3]));GL_TEST_ERR
-  mShaders[2].setUniform("ColorWeight",0); GL_TEST_ERR // this is a texture unit
-  glActiveTexture(GL_TEXTURE0);GL_TEST_ERR
-  glBindTexture(GL_TEXTURE_RECTANGLE_ARB,mRenderBuffer->texture());GL_TEST_ERR
+  mShaders[2].setUniform("viewport",float(mCachedVP[0]),float(mCachedVP[1]),float(mCachedVP[2]),float(mCachedVP[3]));
+  mShaders[2].setUniform("ColorWeight",0);  // this is a texture unit
+  viewer->glActiveTexture(GL_TEXTURE0);
+  //glBindTexture(GL_TEXTURE_RECTANGLE_ARB,mRenderBuffer->texture());
+  viewer->glBindTexture(GL_TEXTURE_RECTANGLE,mRenderBuffer->texture());
 
   if (mFlags&DEFERRED_SHADING_BIT)
   {
-    mShaders[2].setUniform("unproj", mCachedProj[10], mCachedProj[14]);GL_TEST_ERR
-    mShaders[2].setUniform("NormalWeight",1);GL_TEST_ERR // this is a texture unit
-    glActiveTexture(GL_TEXTURE1);GL_TEST_ERR
-    glBindTexture(GL_TEXTURE_RECTANGLE_ARB,mNormalTextureID);GL_TEST_ERR
-    GL_TEST_ERR
+    mShaders[2].setUniform("unproj", mCachedProj[10], mCachedProj[14]);
+    mShaders[2].setUniform("NormalWeight",1); // this is a texture unit
+    viewer->glActiveTexture(GL_TEXTURE1);
+    //glBindTexture(GL_TEXTURE_RECTANGLE_ARB,mNormalTextureID);
+    viewer->glBindTexture(GL_TEXTURE_RECTANGLE,mNormalTextureID);
+
   }
 
   if (mFlags&OUTPUT_DEPTH_BIT)
   {
-    mShaders[2].setUniform("Depth",2);GL_TEST_ERR // this is a texture unit
-    glActiveTexture(GL_TEXTURE2);GL_TEST_ERR
-    glBindTexture(GL_TEXTURE_RECTANGLE_ARB,mDepthTextureID);GL_TEST_ERR
-    GL_TEST_ERR
+    mShaders[2].setUniform("Depth",2); // this is a texture unit
+    viewer->glActiveTexture(GL_TEXTURE2);
+    //glBindTexture(GL_TEXTURE_RECTANGLE_ARB,mDepthTextureID);
+    viewer->glBindTexture(GL_TEXTURE_RECTANGLE,mDepthTextureID);
+
   }
   else
   {
-    glDisable(GL_DEPTH_TEST);
-    glDepthMask(GL_FALSE);
+    viewer->glDisable(GL_DEPTH_TEST);
+    viewer->glDepthMask(GL_FALSE);
   }
 
   // draw a quad covering the whole screen
   float viewVec[] = {1.f/mCachedProj[0], 1.f/mCachedProj[5], -1};
 
-  glBegin(GL_QUADS);
-    glColor3f(1, 0, 0);
-    glTexCoord3f(viewVec[0],viewVec[1],viewVec[2]);
-    glMultiTexCoord2f(GL_TEXTURE1,1.,1.);
-    glVertex3f(1,1,0);
+  viewer->glBegin(GL_QUADS);
+    viewer->glColor3f(1, 0, 0);
+    viewer->glTexCoord3f(viewVec[0],viewVec[1],viewVec[2]);
+    viewer->glMultiTexCoord2f(GL_TEXTURE1,1.,1.);
+    viewer->glVertex3f(1,1,0);
 
-    glColor3f(1, 1, 0);
-    glTexCoord3f(-viewVec[0],viewVec[1],viewVec[2]);
-    glMultiTexCoord2f(GL_TEXTURE1,0.,1.);
-    glVertex3f(-1,1,0);
+    viewer->glColor3f(1, 1, 0);
+    viewer->glTexCoord3f(-viewVec[0],viewVec[1],viewVec[2]);
+    viewer->glMultiTexCoord2f(GL_TEXTURE1,0.,1.);
+    viewer->glVertex3f(-1,1,0);
 
-    glColor3f(0, 1, 1);
-    glTexCoord3f(-viewVec[0],-viewVec[1],viewVec[2]);
-    glMultiTexCoord2f(GL_TEXTURE1,0.,0.);
-    glVertex3f(-1,-1,0);
+    viewer->glColor3f(0, 1, 1);
+    viewer->glTexCoord3f(-viewVec[0],-viewVec[1],viewVec[2]);
+    viewer->glMultiTexCoord2f(GL_TEXTURE1,0.,0.);
+    viewer->glVertex3f(-1,-1,0);
 
-    glColor3f(1, 0, 1);
-    glTexCoord3f(viewVec[0],-viewVec[1],viewVec[2]);
-    glMultiTexCoord2f(GL_TEXTURE1,1.,0.);
-    glVertex3f(1,-1,0);
-  glEnd();
+    viewer->glColor3f(1, 0, 1);
+    viewer->glTexCoord3f(viewVec[0],-viewVec[1],viewVec[2]);
+    viewer->glMultiTexCoord2f(GL_TEXTURE1,1.,0.);
+    viewer->glVertex3f(1,-1,0);
+  viewer->glEnd();
   if (!(mFlags&OUTPUT_DEPTH_BIT))
   {
-      glEnable(GL_DEPTH_TEST);
-      glDepthMask(GL_TRUE);
+      viewer->glEnable(GL_DEPTH_TEST);
+      viewer->glDepthMask(GL_TRUE);
   }
 
   mShaders[mCurrentPass].release();
 
   // restore matrices
-  glMatrixMode(GL_PROJECTION);
-  glPopMatrix();
-  glMatrixMode(GL_MODELVIEW);
-  glPopMatrix();
+  viewer->glMatrixMode(GL_PROJECTION);
+  viewer->glPopMatrix();
+  viewer->glMatrixMode(GL_MODELVIEW);
+  viewer->glPopMatrix();
 
-  glPopAttrib();
+  viewer->glPopAttrib();
   return true;
 }
 
@@ -413,16 +416,16 @@ void SplatRenderer::enablePass(int n)
     // set GL states
     if (n==0)
     {
-      glDisable(GL_LIGHTING);
+      viewer->glDisable(GL_LIGHTING);
 // 			glDisable(GL_POINT_SMOOTH);
-      glEnable(GL_VERTEX_PROGRAM_POINT_SIZE);
+      viewer->glEnable(GL_VERTEX_PROGRAM_POINT_SIZE);
 
-      glAlphaFunc(GL_LESS,1);
-      glColorMask(GL_FALSE,GL_FALSE,GL_FALSE,GL_FALSE);
-      glDepthMask(GL_TRUE);
-      glDisable(GL_BLEND);
-      glEnable(GL_ALPHA_TEST);
-      glEnable(GL_DEPTH_TEST);
+      viewer->glAlphaFunc(GL_LESS,1);
+      viewer->glColorMask(GL_FALSE,GL_FALSE,GL_FALSE,GL_FALSE);
+      viewer->glDepthMask(GL_TRUE);
+      viewer->glDisable(GL_BLEND);
+      viewer->glEnable(GL_ALPHA_TEST);
+      viewer->glEnable(GL_DEPTH_TEST);
 
 // 			glActiveTexture(GL_TEXTURE0);
 // 			glTexEnvf(GL_POINT_SPRITE, GL_COORD_REPLACE, GL_TRUE);
@@ -430,19 +433,19 @@ void SplatRenderer::enablePass(int n)
     }
     if (n==1)
     {
-      glDisable(GL_LIGHTING);
-      glEnable(GL_POINT_SMOOTH);
-      glActiveTexture(GL_TEXTURE0);
-      glEnable(GL_VERTEX_PROGRAM_POINT_SIZE);
+      viewer->glDisable(GL_LIGHTING);
+      viewer->glEnable(GL_POINT_SMOOTH);
+      viewer->glActiveTexture(GL_TEXTURE0);
+      viewer->glEnable(GL_VERTEX_PROGRAM_POINT_SIZE);
 
-      glColorMask(GL_TRUE,GL_TRUE,GL_TRUE,GL_TRUE);
-      glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE, GL_ONE,GL_ONE);
+      viewer->glColorMask(GL_TRUE,GL_TRUE,GL_TRUE,GL_TRUE);
+      viewer->glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE, GL_ONE,GL_ONE);
 // 			//glBlendFuncSeparate(GL_ONE, GL_ZERO, GL_ONE,GL_ZERO);
 // 			glBlendFunc(GL_ONE,GL_ZERO);
-      glDepthMask(GL_FALSE);
-      glEnable(GL_BLEND);
-      glEnable(GL_DEPTH_TEST);
-      glDisable(GL_ALPHA_TEST);
+      viewer->glDepthMask(GL_FALSE);
+      viewer->glEnable(GL_BLEND);
+      viewer->glEnable(GL_DEPTH_TEST);
+      viewer->glDisable(GL_ALPHA_TEST);
 
 // 			glActiveTexture(GL_TEXTURE0);
 
@@ -450,23 +453,23 @@ void SplatRenderer::enablePass(int n)
     if ( (n==0) || (n==1) )
     {
       // enable point sprite rendering mode
-      glActiveTexture(GL_TEXTURE0);
+      viewer->glActiveTexture(GL_TEXTURE0);
       if (mWorkaroundATI)
       {
-        glBindTexture(GL_TEXTURE_2D, mDummyTexId);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, 2, 2, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, 0);
-        glPointParameterf(GL_POINT_SPRITE_COORD_ORIGIN, GL_LOWER_LEFT);
+        viewer->glBindTexture(GL_TEXTURE_2D, mDummyTexId);
+        viewer->glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, 2, 2, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, 0);
+        viewer->glPointParameterf(GL_POINT_SPRITE_COORD_ORIGIN, GL_LOWER_LEFT);
         // hm... ^^^^
       }
-      glTexEnvf(GL_POINT_SPRITE, GL_COORD_REPLACE, GL_TRUE);
-      glEnable(GL_POINT_SPRITE_ARB);
+      viewer->glTexEnvf(GL_POINT_SPRITE, GL_COORD_REPLACE, GL_TRUE);
+      viewer->glEnable(GL_POINT_SPRITE_ARB);
     }
     if (n==2)
     {
-      glColorMask(GL_TRUE,GL_TRUE,GL_TRUE,GL_TRUE);
-      glDepthMask(GL_TRUE);
-      glDisable(GL_LIGHTING);
-      glDisable(GL_BLEND);
+      viewer->glColorMask(GL_TRUE,GL_TRUE,GL_TRUE,GL_TRUE);
+      viewer->glDepthMask(GL_TRUE);
+      viewer->glDisable(GL_LIGHTING);
+      viewer->glDisable(GL_BLEND);
     }
   }
 }
@@ -479,7 +482,7 @@ void SplatRenderer::UniformParameters::update(float* mv, float* proj, GLint* vp)
   radiusScale = scale;
   preComputeRadius = - (std::max)(proj[0]*vp[2], proj[5]*vp[3]);
   depthOffset = 2.0;
-  oneOverEwaRadius = 0.70710678118654;
+  oneOverEwaRadius = 0.70710678118654f;
   halfVp[0] = 0.5*vp[2];
   halfVp[1] = 0.5*vp[3];
   rayCastParameter1[0] = 2./(proj[0]*vp[2]);
@@ -510,5 +513,13 @@ void SplatRenderer::setRadiusScale(float v)
   mParams.radiusScale = v;
 }
 
+void SplatRenderer::setViewer(CGAL::Three::Viewer_interface *v)
+{
+  viewer = v;
+  for(int i=0; i<3; i++)
+    mShaders[i].setViewer(v);
+
+  viewer_is_set = true;
+}
 } // namepsace GlSplat
 

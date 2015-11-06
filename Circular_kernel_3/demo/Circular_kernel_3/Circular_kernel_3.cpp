@@ -8,13 +8,11 @@ int main(int argc, char** argv)
 
   // Instantiate the viewer.
   Viewer viewer;
-
-#if QT_VERSION < 0x040000
-  // Set the viewer as the application main widget.
-  application.setMainWidget(&viewer);
-#else
-  viewer.setWindowTitle("Intersection points of randomly generated circles.");
+  //for Windows
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 3, 0))
+  application.setAttribute(Qt::AA_UseDesktopOpenGL);
 #endif
+  viewer.setWindowTitle("Intersection points of randomly generated circles.");
 
   // Make the viewer window visible on screen.
   viewer.show();

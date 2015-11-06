@@ -108,11 +108,14 @@ class MainWindow : public CGAL::Qt::DemosMainWindow, private Ui::MainWindow
 public:
   MainWindow(QWidget* parent = 0);
 
-public slots:
+public Q_SLOTS:
   // File menu
+  void on_actionSave_triggered();
+  void on_actionLoad_triggered();  
   void on_actionImportOFF_triggered();
   void on_actionAddOFF_triggered();
   void on_actionImport3DTDS_triggered();
+  void on_actionImportMoka_triggered();
   void on_actionCompute_Voronoi_3D_triggered();
   void on_actionClear_triggered();
   
@@ -130,19 +133,25 @@ public slots:
   void on_actionSubdivide_pqq_triggered();
   void on_actionDual_3_triggered();
   void on_actionClose_volume_triggered();
-  void on_actionTriangulate_all_facets_triggered();
   void on_actionSew3_same_facets_triggered();
   void on_actionUnsew3_all_triggered();
+  void on_actionMerge_coplanar_faces_triggered();
   void on_actionMerge_all_volumes_triggered();
   void on_actionRemove_filled_volumes_triggered();
+  void on_actionInsert_center_vertices_triggered();
+  void on_actionTriangulate_all_facets_triggered();
 
   // View menu
   void on_actionExtend_filled_volumes_triggered();
   void on_actionExtend_hidden_volumes_triggered();
 
   // Other slots
+  void load_depend_on_extension(const QString& fileName, bool clear=true);
+  void load(const QString& fileName, bool clear=true);
+  void save(const QString& fileName);
   void load_off(const QString& fileName, bool clear=true);
   void load_3DTDS(const QString& fileName, bool clear=true);
+  void load_moka(const QString& fileName, bool clear=true);
 
   void onSceneChanged();
 
@@ -179,7 +188,7 @@ public slots:
   void onSierpinskiTriangleInc();
   void onSierpinskiTriangleDec();
 
-signals:
+Q_SIGNALS:
   void sceneChanged();
   
 protected:
@@ -187,7 +196,7 @@ protected:
   void on_new_volume(Dart_handle adart);
   void on_delete_volume(Dart_handle adart);
   void init_all_new_volumes();
-  void mark_all_filled_and_visible_volumes(int amark);
+  void mark_all_filled_and_visible_volumes(LCC::size_type amark);
 
   Dart_handle make_iso_cuboid(const Point_3 basepoint, LCC::FT lg);
 
@@ -209,10 +218,10 @@ protected:
   void split_vol_in_twentyseven(Dart_handle dh);
   void process_full_slice(Dart_handle init,
                           std::vector<Dart_handle>& faces,
-                          int markVols);
+                          LCC::size_type markVols);
   void process_inter_slice(Dart_handle init,
                            std::vector<Dart_handle>& faces,
-                           int markVols);
+                           LCC::size_type markVols);
 
   void sierpinski_carpet_copy_attributes_and_embed_vertex(Dart_handle dh,
                                                           LCC::Point& p);

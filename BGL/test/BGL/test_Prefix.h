@@ -7,8 +7,6 @@
 #include <fstream>
 
 #include <CGAL/boost/graph/properties.h>
-#include <boost/assign.hpp>
-#include <boost/mpl/list.hpp>
 
 #include <CGAL/Simple_cartesian.h>
 
@@ -32,6 +30,8 @@ typedef CGAL::Polyhedron_3<Kernel, CGAL::Polyhedron_items_with_id_3> Polyhedron;
 
 typedef Kernel::Point_3  Point_3;
 typedef Kernel::Vector_3 Vector_3;
+typedef Kernel::Triangle_3 Triangle_3;
+typedef Kernel::Iso_cuboid_3 Iso_cuboid_3;
 
 #ifdef CGAL_USE_SURFACE_MESH
 typedef CGAL::Surface_mesh<Point_3> SM;

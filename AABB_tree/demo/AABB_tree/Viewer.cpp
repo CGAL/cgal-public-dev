@@ -1,13 +1,14 @@
 #include "Viewer.h"
 #include "Scene.h"
 #include <QMouseEvent>
+#include <QGLFunctions>
+#include <CGAL/Qt/CreateOpenGLContext.h>
 
 Viewer::Viewer(QWidget* parent)
-  : QGLViewer(parent),
+  : QGLViewer(CGAL::Qt::createOpenGLContext(),parent),
     m_pScene(NULL),
     m_custom_mouse(false)
 {
-  setBackgroundColor(::Qt::white);
 }
 
 void Viewer::setScene(Scene* pScene)
@@ -17,17 +18,20 @@ void Viewer::setScene(Scene* pScene)
 
 void Viewer::draw()
 {
+  glEnable(GL_DEPTH_TEST);
   QGLViewer::draw();
   if(m_pScene != NULL)
   {
-	::glClearColor(1.0f,1.0f,1.0f,0.0f);
-	m_pScene->draw();
+      m_pScene->draw(this);
   }
+
 }
 
 void Viewer::initializeGL()
 {
   QGLViewer::initializeGL();
+  setBackgroundColor(::Qt::white);
+  m_pScene->initGL(this);
 }
 
 void Viewer::mousePressEvent(QMouseEvent* e)
@@ -36,7 +40,7 @@ void Viewer::mousePressEvent(QMouseEvent* e)
   {
     m_pScene->set_fast_distance(true);
     // Refresh distance function
-    m_pScene->cutting_plane();
+    m_pScene->cutting_plane(true);
     m_custom_mouse = true;
   }
   
@@ -48,10 +52,9 @@ void Viewer::mouseReleaseEvent(QMouseEvent* e)
   if ( m_custom_mouse )
   {
     m_pScene->set_fast_distance(false);
-    
     // Recompute distance function
     QApplication::setOverrideCursor(Qt::WaitCursor);
-    m_pScene->cutting_plane();
+    m_pScene->cutting_plane(true);
     QApplication::restoreOverrideCursor();
       
     m_custom_mouse = false;
@@ -59,5 +62,4 @@ void Viewer::mouseReleaseEvent(QMouseEvent* e)
   
   QGLViewer::mouseReleaseEvent(e);
 }
-
 

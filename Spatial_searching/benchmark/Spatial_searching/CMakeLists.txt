@@ -4,20 +4,19 @@
 
 project( Spatial_searching_ )
 
-cmake_minimum_required(VERSION 2.6.2)
-if("${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION}" VERSION_GREATER 2.6)
-  if("${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION}.${CMAKE_PATCH_VERSION}" VERSION_GREATER 2.8.3)
-    cmake_policy(VERSION 2.8.4)
-  else()
-    cmake_policy(VERSION 2.6)
-  endif()
-endif()
+cmake_minimum_required(VERSION 2.8.11)
+
 
 find_package(CGAL QUIET COMPONENTS Core )
 
 if ( CGAL_FOUND )
 
   include( ${CGAL_USE_FILE} )
+          
+find_package(Eigen3 3.1.91) #(requires 3.2.0 or greater)
+if (EIGEN3_FOUND)
+  include( ${EIGEN3_USE_FILE} )
+endif()
 
   include( CGAL_CreateSingleSourceCGALProgram )
 
@@ -35,6 +34,7 @@ create_single_source_cgal_program( "binary.cpp" )
   create_single_source_cgal_program( "Nearest_neighbor_searching_2D_user_defined.cpp" )
   create_single_source_cgal_program( "Split_data.cpp" )
 create_single_source_cgal_program( "nn3cgal.cpp" )
+create_single_source_cgal_program( "nn4cgal.cpp" )
 create_single_source_cgal_program( "nn3nanoflan.cpp" )
 create_single_source_cgal_program( "sizeof.cpp" )
 create_single_source_cgal_program( "deque.cpp" )

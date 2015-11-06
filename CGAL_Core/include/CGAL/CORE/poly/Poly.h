@@ -3,9 +3,9 @@
  * Copyright (c) 1995-2004 Exact Computation Project
  * All rights reserved.
  *
- * This file is part of CORE (http://cs.nyu.edu/exact/core/).
+ * This file is part of CGAL (www.cgal.org).
  * You can redistribute it and/or modify it under the terms of the GNU
- * General Public License as published by the Free Software Foundation,
+ * Lesser General Public License as published by the Free Software Foundation,
  * either version 3 of the License, or (at your option) any later version.
  *
  * Licensees holding a valid commercial license may use this file in
@@ -60,6 +60,7 @@
 #include <CGAL/CORE/BigFloat.h>
 #include <CGAL/CORE/Promote.h>
 #include <vector>
+#include <CGAL/assertions.h>
 
 namespace CORE { 
 using namespace std;
@@ -205,7 +206,8 @@ public:
   /// Polynomial evaluation where the coefficients are approximated first
   /// Returns a BigFloat with error that contains the value
   BigFloat evalApprox(const BigFloat& f, 
-    const extLong& r=defRelPrec, const extLong& a=defAbsPrec) const;
+    const extLong& r=get_static_defRelPrec(), 
+    const extLong& a=get_static_defAbsPrec()) const;
   /// Polynomial evaluation at a BigFloat value.
   /// The returned BigFloat (with error) has the exact sign.  
   /// In particular, if the value is 0, we return 0.
@@ -412,7 +414,7 @@ template < class NT >
 CORE_INLINE
 const NT& Polynomial<NT>::getCoeff(int i) const {
   //if (i > degree) return NULL;
-  assert(i <= degree);
+  CGAL_assertion(i <= degree);
   return coeff[i];
 }
 // set functions

@@ -22,8 +22,8 @@
 #include <CGAL/Simple_cartesian.h>
 #include <CGAL/circulator.h>
 #include <CGAL/Linear_algebraCd.h>
-#include <CGAL/eigen.h>
 #include <CGAL/Cartesian_converter.h>
+#include <CGAL/Default_diagonalize_traits.h>
 #include <math.h>
 #include <utility>
 #ifdef CGAL_EIGEN3_ENABLED
@@ -362,27 +362,30 @@ compute_PCA(InputIterator begin, InputIterator end)
   // assemble covariance matrix as a
   // semi-definite matrix. 
   // Matrix numbering:
-  // 0
-  // 1 2
-  // 3 4 5
-  FT covariance[6] = {xx,xy,yy,xz,yz,zz};
-  FT eigen_values[3];
-  FT eigen_vectors[9];
+  // 0 1 2
+  //   3 4
+  //     5
+  CGAL::cpp11::array<FT, 6> covariance = {{ xx,xy,xz,yy,yz,zz }};
+  CGAL::cpp11::array<FT, 3> eigen_values = {{ 0., 0., 0. }};
+  CGAL::cpp11::array<FT, 9> eigen_vectors = {{ 0., 0., 0. }};
 
   // solve for eigenvalues and eigenvectors.
-  // eigen values are sorted in descending order, 
+  // eigen values are sorted in ascending order, 
   // eigen vectors are sorted in accordance.
-  CGAL::internal::eigen_symmetric<FT>(covariance,3,eigen_vectors,eigen_values);
+  CGAL::Default_diagonalize_traits<FT,3>::diagonalize_selfadjoint_covariance_matrix
+    (covariance, eigen_values, eigen_vectors);
+
   //store in m_pca_basis
   for (int i=0; i<3; i++)
     {
-      m_pca_basis[i].first =  eigen_values[i];
+      m_pca_basis[i].first =  eigen_values[2-i];
     }
-  Vector_3 v1(eigen_vectors[0],eigen_vectors[1],eigen_vectors[2]);
+
+  Vector_3 v1(eigen_vectors[6],eigen_vectors[7],eigen_vectors[8]);
   m_pca_basis[0].second = v1;
   Vector_3 v2(eigen_vectors[3],eigen_vectors[4],eigen_vectors[5]);
   m_pca_basis[1].second = v2;
-  Vector_3 v3(eigen_vectors[6],eigen_vectors[7],eigen_vectors[8]);
+  Vector_3 v3(eigen_vectors[0],eigen_vectors[1],eigen_vectors[2]);
   m_pca_basis[2].second = v3;
   switch_to_direct_orientation(m_pca_basis[0].second,
 			       m_pca_basis[1].second,
@@ -416,6 +419,7 @@ fill_matrix(InputIterator begin, InputIterator end,
   
   //compute and store transformed points
   std::vector<Point_3> pts_in_fitting_basis;
+  pts_in_fitting_basis.reserve(this->nb_input_pts);
   CGAL_For_all(begin,end){
     Point_3 cur_pt = transf_points(D2L_converter(*begin));
     pts_in_fitting_basis.push_back(cur_pt);
@@ -440,11 +444,11 @@ fill_matrix(InputIterator begin, InputIterator end,
     for (std::size_t k=0; k <= d; k++) {
       for (std::size_t i=0; i<=k; i++) {
         M.set(line_count, k*(k+1)/2+i,
-              std::pow(x,static_cast<double>(k-i))
-              * std::pow(y,static_cast<double>(i))
+              std::pow(x,static_cast<int>(k-i))
+              * std::pow(y,static_cast<int>(i))
               /( fact(static_cast<unsigned int>(i)) *
                  fact(static_cast<unsigned int>(k-i))
-                 *std::pow(this->preconditionning,static_cast<double>(k))));
+                 *std::pow(this->preconditionning,static_cast<int>(k))));
       }
     }
     line_count++;
@@ -523,15 +527,17 @@ compute_Monge_basis(const FT* A, Monge_form& monge_form)
   //in the new orthonormal basis (Y,Z) of the tangent plane :
   weingarten = inv *(1/det) * weingarten * change_XuXv2YZ;
   
-  //switch to eigen_symmetric algo for diagonalization of weingarten
-  FT W[3] = {weingarten(0,0), weingarten(1,0), weingarten(1,1)};
-  FT eval[2];
-  FT evec[4];
-  //eval in decreasing order
-  CGAL::internal::eigen_symmetric<FT>(W,2,evec,eval);
+  // diagonalization of weingarten
+  CGAL::cpp11::array<FT,3> W = {{ weingarten(0,0), weingarten(1,0), weingarten(1,1) }};
+  CGAL::cpp11::array<FT,2> eval = {{ 0., 0. }};
+  CGAL::cpp11::array<FT,4> evec = {{ 0., 0., 0., 0. }};
 
-  Vector_3 d_max = evec[0]*Y + evec[1]*Z,
-    d_min = evec[2]*Y + evec[3]*Z;
+  //eval in increasing order
+  CGAL::Default_diagonalize_traits<FT,2>::diagonalize_selfadjoint_covariance_matrix
+    (W, eval, evec);
+
+  Vector_3 d_max = evec[2]*Y + evec[3]*Z,
+    d_min = evec[0]*Y + evec[1]*Z;
 
   switch_to_direct_orientation(d_max, d_min, normal);
   Aff_transformation change_basis (d_max[0], d_max[1], d_max[2], 
@@ -547,8 +553,8 @@ compute_Monge_basis(const FT* A, Monge_form& monge_form)
   monge_form.maximal_principal_direction() = L2D_converter(this->change_world2fitting.inverse()(d_max));
   monge_form.minimal_principal_direction() = L2D_converter(this->change_world2fitting.inverse()(d_min));
   monge_form.normal_direction()  = L2D_converter(this->change_world2fitting.inverse()(normal));
-  monge_form.coefficients()[0] = L2D_NTconverter()(eval[0]);
-  monge_form.coefficients()[1] = L2D_NTconverter()(eval[1]);
+  monge_form.coefficients()[0] = L2D_NTconverter()(eval[1]);
+  monge_form.coefficients()[1] = L2D_NTconverter()(eval[0]);
   }
   //end else
 }
@@ -758,14 +764,8 @@ void Monge_via_jet_fitting<DataKernel, LocalKernel, SvdTraits>::
 switch_to_direct_orientation(Vector_3& v1, const Vector_3& v2,
 			    const Vector_3& v3) 
 {
-  typedef typename CGAL::Linear_algebraCd<FT>::Matrix Matrix;
-  Matrix M(3,3);
-  for (int i=0; i<3; i++) M(i,0) = v1[i];
-  for (int i=0; i<3; i++) M(i,1) = v2[i];
-  for (int i=0; i<3; i++) M(i,2) = v3[i];
-
-  CGAL::Sign orientation = CGAL::Linear_algebraCd<FT>::sign_of_determinant(M);
-  if (orientation == CGAL::NEGATIVE) v1 = -v1;
+  if (CGAL::orientation (v1, v2, v3) == CGAL::NEGATIVE)
+    v1 = -v1;
 }
 
 

@@ -1,8 +1,14 @@
+
+#ifdef _MSC_VER
+#  pragma warning(disable:4244) // conversion with loss of data
+#endif
+
+#include <CGAL/config.h>
 #include "config.h"
 
+#include "Volume_plane.h"
 #include <CGAL/Image_3.h>
 
-#include "Volume_plane.h"
 #include "Volume_plane_thread.h"
 #include "Volume_plane_intersection.h"
 
@@ -13,7 +19,6 @@
 #include <CGAL_demo/Scene_interface.h>
 #include <CGAL_demo/Scene_item.h>
 #include <CGAL_demo/Viewer.h>
-#include "MainWindow.h"
 
 #include <QAction>
 #include <QMenu>
@@ -61,31 +66,34 @@ struct DoubleConverter {
 class PixelReader : public QObject
 {
 Q_OBJECT
-public slots:
+public Q_SLOTS:
   void update(const QPoint& p) {
     getPixel(p);
   }
-signals:
+Q_SIGNALS:
   void x(int);
 
 public:
   void setIC(const IntConverter& x) { ic = x; fc = boost::optional<DoubleConverter>(); }
   void setFC(const DoubleConverter& x) { fc = x; ic = boost::optional<IntConverter>(); }
+  void setViewer(Viewer* viewer) { this->viewer = viewer; }
 
 private:
   boost::optional<IntConverter> ic;
   boost::optional<DoubleConverter> fc;
+  Viewer* viewer;
+
 
   void getPixel(const QPoint& e) {
     float data[3];
     int vp[4];
-    glGetIntegerv(GL_VIEWPORT, vp);
-    glReadPixels(e.x(), vp[3] - e.y(), 1, 1, GL_RGB, GL_FLOAT, data);
+    viewer->glGetIntegerv(GL_VIEWPORT, vp);
+    viewer->glReadPixels(e.x(), vp[3] - e.y(), 1, 1, GL_RGB, GL_FLOAT, data);
 
     if(fc) {
-      emit x( (*fc)(data[0]) );
+      Q_EMIT x( (*fc)(data[0]) );
     } else if(ic) {
-      emit x( (*ic)(data[0]) );
+      Q_EMIT x( (*ic)(data[0]) );
     }
   }
 };
@@ -111,20 +119,25 @@ public:
       scene->itemChanged(id);
     }
 
-    emit realChange(this->value() / scale);
+    Q_EMIT realChange(this->value() / scale);
   }
 
-public slots:
+public Q_SLOTS:
   void updateValue() {
-    float a, b, c;
+#if QGLVIEWER_VERSION >= 0x020600
+    typedef qreal qglviewer_real;
+#else // QGLViewer < 2.6.0
+    typedef float qglviewer_real;
+#endif // QGLViewer < 2.6.0
+    qglviewer_real a, b, c;
     frame->getPosition(a, b, c);
-    float sum1 = a + b + c;
-    float sum2 = v.x + v.y + v.z;
+    float sum1 = float(a + b + c);
+    float sum2 = float(v.x + v.y + v.z);
     sum1 /= sum2;
     setValue(sum1 * scale);
   }
 
-signals:
+Q_SIGNALS:
   void realChange(int);
 
 private:
@@ -144,6 +157,8 @@ class Volume_plane_plugin :
 {
   Q_OBJECT
   Q_INTERFACES(Plugin_interface)
+  Q_PLUGIN_METADATA(IID "com.geometryfactory.PolyhedronDemo.PluginInterface/1.0")
+
 public:
   Volume_plane_plugin() : planeSwitch(NULL), sc(NULL), mw(NULL)
     {
@@ -163,11 +178,9 @@ public:
     connect(planeSwitch, SIGNAL(triggered()), this, SLOT(selectPlanes()));
     
     // evil
-    MainWindow* mwTmp;
-    if( !(mwTmp = dynamic_cast<MainWindow*>(mw)) ) {
-      std::cerr << "Volume_planes_plugin cannot init mousegrabber" << std::endl;
-    }
-    Viewer* v = mwTmp->getViewer();
+    Viewer* v = mw->findChild<Viewer*>("viewer");
+    CGAL_assertion(v != 0);
+    pxr_.setViewer(v);
     connect(v, SIGNAL(pointSelected(QPoint)), &pxr_, SLOT(update(QPoint)));
 
     createOrGetDockLayout();
@@ -177,7 +190,7 @@ public:
     return QList<QAction*>() << planeSwitch;
   }
 
-public slots:
+public Q_SLOTS:
   void selectPlanes() {
     std::vector< Scene_segmented_image_item* > seg_items;
     Scene_segmented_image_item* seg_img = NULL;
@@ -335,7 +348,7 @@ private:
     const Word* begin = (const Word*)img->data();
     const Word* end = (const Word*)img->data() + img->size();
 
-    std::pair<Word, Word> minmax = std::make_pair(*std::min_element(begin, end), *std::max_element(begin, end));
+    std::pair<const Word, const Word> minmax(*std::min_element(begin, end), *std::max_element(begin, end));
 
     Clamp_to_one_zero_range clamper = { minmax };
 
@@ -372,10 +385,5 @@ private:
     DoubleConverter x = { minmax }; pxr_.setFC(x);
   }
 };
-
-
-
-
-Q_EXPORT_PLUGIN2(Volume_plane_plugin, Volume_plane_plugin)
 
 #include "Volume_planes_plugin.moc"

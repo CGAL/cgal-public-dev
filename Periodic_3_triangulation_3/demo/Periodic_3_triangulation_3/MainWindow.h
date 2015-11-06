@@ -6,6 +6,9 @@
 
 #include <QProcess>
 #include <QTextStream>
+#include <QMessageBox>
+
+
 
 class MainWindow : public QMainWindow
 {
@@ -106,7 +109,7 @@ public:
     delete(process);
   }
 
-public slots:
+public Q_SLOTS:
   void help() {
     QString app = QLibraryInfo::location(QLibraryInfo::BinariesPath)
       + QDir::separator();

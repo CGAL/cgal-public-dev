@@ -13,10 +13,15 @@ int main(int argc, char** argv)
   application.setOrganizationDomain("geometryfactory.com");
   application.setOrganizationName("GeometryFactory");
   application.setApplicationName("Alpha Shape Reconstruction");
+  //for Windows
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 3, 0))
+  application.setAttribute(Qt::AA_UseDesktopOpenGL);
+#endif
 
-  // Import resources from libCGALQt4.
-  // See http://doc.trolltech.com/4.4/qdir.html#Q_INIT_RESOURCE
-  CGAL_QT4_INIT_RESOURCES;
+  // Import resources from libCGALQt (Qt5).
+  // See http://doc.qt.io/qt-5/qdir.html#Q_INIT_RESOURCE
+
+  CGAL_QT_INIT_RESOURCES;
   Q_INIT_RESOURCE(Alpha_shape_3);
   
   MainWindow mw;

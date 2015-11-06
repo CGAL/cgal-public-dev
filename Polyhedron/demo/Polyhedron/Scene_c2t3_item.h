@@ -2,14 +2,12 @@
 #define SCENE_C2T3_ITEM_H
 
 #include "Scene_c2t3_item_config.h"
-#include "Scene_item_with_display_list.h"
 #include "C2t3_type.h"
 #include <iostream>
-
+#include "Scene_item.h"
 #include <qgl.h>
 #include <QtCore/qglobal.h>
 #include <CGAL/gl.h>
-#include <CGAL/glu.h>
 
 class SCENE_C2T3_ITEM_EXPORT Scene_c2t3_item : public Scene_item
 {
@@ -78,7 +76,7 @@ public:
   }
 
   void draw() const {
-    ::glBegin(GL_TRIANGLES);
+   /* ::glBegin(GL_TRIANGLES);
     for(C2t3::Facet_iterator
           fit = c2t3().facets_begin(),
           end = c2t3().facets_end();
@@ -91,11 +89,7 @@ public:
       const Tr::Geom_traits::Point_3& pc = cell->vertex((index+3)&3)->point();
       draw_triangle(pa, pb, pc);
     }
-    ::glEnd();
-    
-    GLenum gl_error = ::glGetError();
-    if(gl_error != GL_NO_ERROR)
-      std::cerr << "GL error: " << gluErrorString(gl_error) << std::endl;
+    ::glEnd();*/
   }
 
 private:
@@ -104,7 +98,6 @@ private:
                             const Tr::Point& pc) {
     Tr::Geom_traits::Vector_3 n = cross_product(pb - pa, pc -pa);
     n = n / CGAL::sqrt(n*n);
-
     ::glNormal3d(n.x(),n.y(),n.z());
 
     ::glVertex3d(pa.x(),pa.y(),pa.z());

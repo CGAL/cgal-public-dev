@@ -21,6 +21,8 @@
 // 
 //
 // Author(s)     : Lutz Kettner  <kettner@inf.ethz.ch>
+//                 Pedro Machado Manhaes de Castro  <pmmc@cin.ufpe.br>
+//                 Alexandru Tifrea
 
 #ifndef CGAL_POINT_GENERATORS_2_H
 #define CGAL_POINT_GENERATORS_2_H 1
@@ -36,7 +38,7 @@ class Random_points_in_disc_2 : public Random_generator_base<P>{
     void generate_point();
 public:
     typedef Random_points_in_disc_2<P,Creator> This;
-    Random_points_in_disc_2( double r = 1, Random& rnd = default_random)
+    Random_points_in_disc_2( double r = 1, Random& rnd = CGAL::get_default_random())
         // g is an input iterator creating points of type `P' uniformly
         // distributed in the open disc with radius r, i.e. |`*g'| < r .
         // Two random numbers are needed from `rnd' for each point.
@@ -71,7 +73,7 @@ class Random_points_on_circle_2 : public Random_generator_base<P> {
     void generate_point();
 public:
     typedef Random_points_on_circle_2<P,Creator> This;
-    Random_points_on_circle_2( double r = 1, Random& rnd = default_random)
+    Random_points_on_circle_2( double r = 1, Random& rnd = CGAL::get_default_random())
         // g is an input iterator creating points of type `P' uniformly
         // distributed on the circle with radius r, i.e. |`*g'| == r . A
         // single random number is needed from `rnd' for each point.
@@ -105,7 +107,7 @@ class Random_points_in_square_2 : public Random_generator_base<P> {
     void generate_point();
 public:
     typedef Random_points_in_square_2<P,Creator> This;
-    Random_points_in_square_2( double a = 1, Random& rnd = default_random)
+    Random_points_in_square_2( double a = 1, Random& rnd = CGAL::get_default_random())
         // g is an input iterator creating points of type `P' uniformly
         // distributed in the half-open square with side length a,
         // centered around the origin, i.e. \forall p = `*g': -\frac{a}{2}
@@ -141,7 +143,7 @@ class Random_points_on_square_2 : public Random_generator_base<P> {
     void generate_point();
 public:
     typedef Random_points_on_square_2<P,Creator> This;
-    Random_points_on_square_2( double a = 1, Random& rnd = default_random)
+    Random_points_on_square_2( double a = 1, Random& rnd = CGAL::get_default_random())
         // g is an input iterator creating points of type `P' uniformly
         // distributed on the boundary of the square with side length a,
         // centered around the origin, i.e. \forall p = `*g': one
@@ -194,7 +196,7 @@ class Random_points_in_iso_rectangle_2 : public Random_generator_base<P> {
     void generate_point();
 public:
     typedef Random_points_in_iso_rectangle_2<P,Creator> This;
-    Random_points_in_iso_rectangle_2( const P&p, const P& q, Random& rnd = default_random)
+    Random_points_in_iso_rectangle_2( const P&p, const P& q, Random& rnd = CGAL::get_default_random())
       : Random_generator_base<P>( 1.0 , rnd)
   {
     left = (std::min)(to_double(p.x()), to_double(q.x()));
@@ -238,7 +240,7 @@ public:
     typedef Random_points_on_segment_2<P,Creator> This;
     Random_points_on_segment_2( const P& p = P( -1, 0),
                                 const P& q = P(  1, 0),
-                                Random& rnd = default_random)
+                                Random& rnd = CGAL::get_default_random())
         // g is an input iterator creating points of type `P' uniformly
         // distributed on the segment from p to q except q, i.e. `*g' ==
         // \lambda p + (1-\lambda)\, q where 0 <= \lambda < 1 . A single
@@ -423,7 +425,7 @@ void perturb_points_2( ForwardIterator first,
                        double xeps,
                        double yeps)
 {
-    perturb_points_2( first, last, xeps, yeps, default_random);
+    perturb_points_2( first, last, xeps, yeps, CGAL::get_default_random());
 }
 
 template <class ForwardIterator>
@@ -431,7 +433,7 @@ void perturb_points_2( ForwardIterator first,
                        ForwardIterator last,
                        double xeps)
 {
-    perturb_points_2( first, last, xeps, xeps, default_random);
+    perturb_points_2( first, last, xeps, xeps, CGAL::get_default_random());
 }
 template <class RandomAccessIterator, class OutputIterator, class Creator>
 OutputIterator random_collinear_points_2(
@@ -489,10 +491,56 @@ OutputIterator random_collinear_points_2(
                        OutputIterator first2)
 {
     return  random_collinear_points_2( first, last, n, first2,
-                                       default_random);
+                                       CGAL::get_default_random());
 }
 
-
+template < class P, class Creator = 
+Creator_uniform_2<typename Kernel_traits<P>::Kernel::RT,P> >
+class Random_points_in_triangle_2 : public Random_generator_base<P> {
+	P _p,_q,_r;
+	void generate_point();
+public:
+	typedef P result_type;
+	typedef Random_points_in_triangle_2<P> This;
+	typedef typename Kernel_traits<P>::Kernel::Triangle_2 Triangle_2;
+	Random_points_in_triangle_2() {}
+	Random_points_in_triangle_2( const This& x,Random& rnd = default_random)
+	: Random_generator_base<P>( 1, rnd ),_p(x._p),_q(x._q),_r(x._r) {
+		generate_point();
+	}
+	Random_points_in_triangle_2( const P& p, const P& q, const P& r, Random& rnd = default_random)
+	: Random_generator_base<P>( 1, rnd ),_p(p),_q(q),_r(r) {
+		generate_point();
+	}
+	Random_points_in_triangle_2( const Triangle_2& triangle,Random& rnd = default_random)
+	: Random_generator_base<P>( 1,
+			rnd),_p(triangle[0]),_q(triangle[1]),_r(triangle[2]) {
+		generate_point();
+	}
+	This& operator++() {
+		generate_point();
+		return *this;
+	}
+	This operator++(int) {
+		This tmp = *this;
+		++(*this);
+		return tmp;
+	}
+};
+	
+template<class P, class Creator >
+void Random_points_in_triangle_2<P, Creator>::generate_point() {
+	typedef typename Creator::argument_type T;
+	Creator creator;
+	double a1 = this->_rnd.get_double(0,1);
+	double a2 = this->_rnd.get_double(0,1);
+	if(a1>a2) std::swap(a1,a2);
+	double b1 = a1;
+	double b2 = a2-a1;
+	double b3 = 1.0-a2;
+	this->d_item = creator(T(to_double(_p.x())*b1+to_double(_q.x())*b2+to_double(_r.x())*b3),
+							T(to_double(_p.y())*b1+to_double(_q.y())*b2+to_double(_r.y())*b3));
+}
 
 } //namespace CGAL
 #endif // CGAL_POINT_GENERATORS_2_H //

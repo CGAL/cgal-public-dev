@@ -1,8 +1,8 @@
 #include "Scene_polyhedron_item.h"
 #include "Scene_nef_polyhedron_item.h"
 
-#include "Polyhedron_demo_plugin_interface.h"
-#include "Polyhedron_demo_plugin_helper.h"
+#include <CGAL/Three/Polyhedron_demo_plugin_interface.h>
+#include <CGAL/Three/Polyhedron_demo_plugin_helper.h>
 
 #include <QString>
 #include <QAction>
@@ -11,13 +11,14 @@
 #include <QApplication>
 #include <QTime>
 #include <QMessageBox>
-
+using namespace CGAL::Three;
 class Polyhedron_demo_nef_plugin :
   public QObject,
   public Polyhedron_demo_plugin_helper
 {
   Q_OBJECT
-  Q_INTERFACES(Polyhedron_demo_plugin_interface)
+  Q_INTERFACES(CGAL::Three::Polyhedron_demo_plugin_interface)
+  Q_PLUGIN_METADATA(IID "com.geometryfactory.PolyhedronDemo.PluginInterface/1.0")
 
 public:
   QStringList actionsNames() const {
@@ -28,6 +29,25 @@ public:
                          << "actionDifference"
                          << "actionConvexDecomposition"
                          << "actionMinkowskiSum";
+  }
+
+  void init(QMainWindow* mainWindow,
+            Scene_interface* scene_interface)
+  {
+      mw = mainWindow;
+      scene = scene_interface;
+      actions_map["actionConvexDecomposition"] = getActionFromMainWindow(mw, "actionConvexDecomposition");
+      actions_map["actionConvexDecomposition"]->setProperty("subMenuName",
+                                                            "Convex Decomposition of Polyhedra");
+
+      actions_map["actionToNef"] = getActionFromMainWindow(mw, "actionToNef");
+      actions_map["actionToPoly"] = getActionFromMainWindow(mw, "actionToPoly");
+      actions_map["actionUnion"] = getActionFromMainWindow(mw, "actionUnion");
+      actions_map["actionIntersection"] = getActionFromMainWindow(mw, "actionIntersection");
+      actions_map["actionDifference"] = getActionFromMainWindow(mw, "actionDifference");
+      actions_map["actionMinkowskiSum"] = getActionFromMainWindow(mw, "actionMinkowskiSum");
+      autoConnectActions();
+
   }
 
   bool applicable(QAction*) const {
@@ -65,7 +85,7 @@ private:
   };
   void boolean_operation(const Boolean_operation operation);
 
-public slots:
+public Q_SLOTS:
   void on_actionToNef_triggered();
   void on_actionToPoly_triggered();
   void on_actionUnion_triggered();
@@ -78,7 +98,7 @@ public slots:
 void
 Polyhedron_demo_nef_plugin::on_actionToNef_triggered()
 {
-  const Scene_interface::Item_id index = scene->mainSelectionIndex();
+  const CGAL::Three::Scene_interface::Item_id index = scene->mainSelectionIndex();
   
   Scene_polyhedron_item* item = 
     qobject_cast<Scene_polyhedron_item*>(scene->item(index));
@@ -97,6 +117,7 @@ Polyhedron_demo_nef_plugin::on_actionToNef_triggered()
     new_nef_item->setRenderingMode(item->renderingMode());
     item->setVisible(false);
     scene->itemChanged(index);
+    new_nef_item->invalidate_buffers();
     scene->addItem(new_nef_item);
     std::cerr << "ok (" << time.elapsed() << " ms)" << std::endl;
     QApplication::restoreOverrideCursor();
@@ -107,7 +128,7 @@ Polyhedron_demo_nef_plugin::on_actionToNef_triggered()
 void
 Polyhedron_demo_nef_plugin::on_actionConvexDecomposition_triggered()
 {
-  const Scene_interface::Item_id index = scene->mainSelectionIndex();
+  const CGAL::Three::Scene_interface::Item_id index = scene->mainSelectionIndex();
   
   Scene_polyhedron_item* pitem = 
     qobject_cast<Scene_polyhedron_item*>(scene->item(index));
@@ -151,7 +172,7 @@ Polyhedron_demo_nef_plugin::on_actionConvexDecomposition_triggered()
 void
 Polyhedron_demo_nef_plugin::on_actionToPoly_triggered()
 {
-  const Scene_interface::Item_id index = scene->mainSelectionIndex();
+  const CGAL::Three::Scene_interface::Item_id index = scene->mainSelectionIndex();
   
   Scene_nef_polyhedron_item* item = 
     qobject_cast<Scene_nef_polyhedron_item*>(scene->item(index));
@@ -287,7 +308,5 @@ void Polyhedron_demo_nef_plugin::boolean_operation(const Boolean_operation opera
 
   QApplication::restoreOverrideCursor();
 }
-
-Q_EXPORT_PLUGIN2(Polyhedron_demo_nef_plugin, Polyhedron_demo_nef_plugin)
 
 #include "Polyhedron_demo_nef_plugin.moc"

@@ -105,13 +105,15 @@ else
       cut_plugin \
       demo_framework \
       edit_polyhedron_plugin \
+      features_detection_plugin \
       gocad_plugin \
       inside_out_plugin \
       intersection_plugin \
       io_implicit_function_plugin \
       jet_fitting_plugin \
-      join_polyhedra_plugin \
+      join_and_split_polyhedra_plugin \
       kernel_plugin \
+      mean_curvature_flow_skeleton_plugin \
       mesh_3_plugin \
       mesh_segmentation_plugin \
       mesh_simplification_plugin \
@@ -124,13 +126,18 @@ else
       orient_soup_plugin \
       parameterization_plugin \
       pca_plugin \
+      ply_to_xyz_plugin \
       point_dialog \
       point_inside_polyhedron_plugin \
       point_set_average_spacing_plugin \
+      point_set_bilateral_smoothing_plugin \
       point_set_outliers_removal_plugin \
+      point_set_selection_plugin \
+      point_set_shape_detection_plugin  \
       point_set_simplification_plugin \
       point_set_smoothing_plugin \
-      poisson_plugin \
+      point_set_upsampling_plugin \
+      point_set_wlop_plugin \
       polyhedron_slicer_plugin \
       polyhedron_stitching_plugin \
       polylines_io_plugin \
@@ -147,21 +154,27 @@ else
       scene_polyhedron_item_decorator \
       scene_polyhedron_item_k_ring_selection \
       scene_polyhedron_selection_item \
+      scene_polyhedron_shortest_path_item \
       scene_polyhedron_transform_item \
       scene_polylines_item \
       scene_textured_polyhedron_item \
       selection_io_plugin \
       selection_plugin \
       self_intersection_plugin \
+      shortest_path_plugin \
       stl_plugin \
       subdivision_methods_plugin \
+      surface_reconstruction_plugin \
       transform_polyhedron_plugin \
       triangulate_facets_plugin \
       trivial_plugin \
+      vcm_normal_estimation_plugin \
       xyz_plugin \
       p_klein_function_plugin \
       p_sphere_function_plugin \
       p_tanglecube_function_plugin \
+      shortest_path_plugin \
+      advancing_front_plugin \
       all
   do
       if  ${MAKE_CMD} -f Makefile help | grep "$target" > /dev/null; then 
@@ -177,6 +190,6 @@ fi
 #
 if [ -n "${NEED_CLEAN}" ]; then 
   if ! ( uname | grep -q "CYGWIN" ) ; then
-    ${MAKE_CMD} -fMakefile clean
+    ${MAKE_CMD} -fMakefile clean || true
   fi
 fi

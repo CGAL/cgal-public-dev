@@ -21,7 +21,6 @@
 #define CGAL_COMBINATORIAL_MAP_GROUP_FUNCTORS_H
 
 #include <CGAL/Unique_hash_map.h>
-#include <CGAL/internal/Combinatorial_map_internal_functors.h>
 #include <CGAL/Combinatorial_map_functors.h>
 
 /* Definition of functors used to group/ungroup attributes (we need functors
@@ -522,7 +521,7 @@ void test_split_attribute_functor_one_dart
 ( CMap* amap, typename CMap::Dart_handle adart,
   CGAL::Unique_hash_map<typename CMap::template Attribute_handle<i>::type,
                         unsigned int, typename CMap::Hash_function> &
-  found_attributes, int mark )
+  found_attributes, typename CMap::size_type mark )
 {
   CGAL_assertion( amap!=NULL );
   CGAL_static_assertion_msg(CMap::Helper::template
@@ -580,7 +579,7 @@ struct Test_split_attribute_functor_run
   static void run( CMap* amap,
                    const std::deque<typename CMap::Dart_handle>
                    &modified_darts,
-                   int mark_modified_darts=-1)
+                   typename CMap::size_type mark_modified_darts=CMap::INVALID_MARK)
   {
     CGAL_static_assertion( 1<=i && i<=CMap::dimension );
     CGAL_assertion( i!=j );
@@ -596,7 +595,7 @@ struct Test_split_attribute_functor_run
     CGAL::Unique_hash_map<Attribute_handle_i, unsigned int,
                           typename CMap::Hash_function> found_attributes;
 
-    int mark = amap->get_new_mark(); // to mark incident cells.
+    typename CMap::size_type mark = amap->get_new_mark(); // to mark incident cells.
     typename std::deque<typename CMap::Dart_handle>::const_iterator
         it=modified_darts.begin();
     for ( ; it!=modified_darts.end(); ++it )
@@ -609,7 +608,7 @@ struct Test_split_attribute_functor_run
     amap->negate_mark(mark);
     for ( it=modified_darts.begin(); it!=modified_darts.end(); ++it )
     {
-      if ( mark_modified_darts!=-1 )
+      if ( mark_modified_darts!=CMap::INVALID_MARK )
         amap->unmark(*it, mark_modified_darts);
 
       if ( !amap->is_marked(*it, mark) )
@@ -624,7 +623,7 @@ struct Test_split_attribute_functor_run
                    &modified_darts,
                    const std::deque<typename CMap::Dart_handle>
                    &modified_darts2,
-                   int mark_modified_darts=-1)
+                   typename CMap::size_type mark_modified_darts=CMap::INVALID_MARK)
   {
     CGAL_static_assertion( 1<=i && i<=CMap::dimension );
     CGAL_assertion( i!=j );
@@ -640,7 +639,7 @@ struct Test_split_attribute_functor_run
     CGAL::Unique_hash_map<Attribute_handle_i, unsigned int,
                           typename CMap::Hash_function> found_attributes;
 
-    int mark = amap->get_new_mark(); // to mark incident cells.
+    typename CMap::size_type mark = amap->get_new_mark(); // to mark incident cells.
     typename std::deque<typename CMap::Dart_handle>::const_iterator
         it=modified_darts.begin();
     for ( ; it!=modified_darts.end(); ++it )
@@ -660,7 +659,7 @@ struct Test_split_attribute_functor_run
     amap->negate_mark(mark);
     for ( it=modified_darts.begin(); it!=modified_darts.end(); ++it )
     {
-      if ( mark_modified_darts!=-1 )
+      if ( mark_modified_darts!=CMap::INVALID_MARK )
         amap->unmark(*it, mark_modified_darts);
 
       if ( !amap->is_marked(*it, mark) )
@@ -668,7 +667,7 @@ struct Test_split_attribute_functor_run
     }
     for ( it2=modified_darts2.begin(); it2!=modified_darts2.end(); ++it2 )
     {
-      if ( mark_modified_darts!=-1 )
+      if ( mark_modified_darts!=CMap::INVALID_MARK )
         amap->unmark(*it2, mark_modified_darts);
 
       if ( !amap->is_marked(*it2, mark) )
@@ -686,7 +685,7 @@ struct Test_split_attribute_functor_run<CMap, 0, j, T>
   static void run( CMap* amap,
                    const std::deque<typename CMap::Dart_handle>
                    &modified_darts,
-                   int mark_modified_darts=-1)
+                   typename CMap::size_type mark_modified_darts=CMap::INVALID_MARK)
   {
     CGAL_assertion( j!=0 && j!=1 );
     CGAL_assertion( amap!=NULL );
@@ -702,7 +701,7 @@ struct Test_split_attribute_functor_run<CMap, 0, j, T>
                           typename CMap::Hash_function> found_attributes;
     typename CMap::Dart_handle od=amap->null_handle;
 
-    int mark = amap->get_new_mark(); // to mark incident cells.
+    typename CMap::size_type mark = amap->get_new_mark(); // to mark incident cells.
     typename std::deque<typename CMap::Dart_handle>::const_iterator
         it=modified_darts.begin();
     for ( ; it!=modified_darts.end(); ++it )
@@ -720,7 +719,7 @@ struct Test_split_attribute_functor_run<CMap, 0, j, T>
     amap->negate_mark(mark);
     for ( it=modified_darts.begin(); it!=modified_darts.end(); ++it )
     {
-      if ( mark_modified_darts!=-1 )
+      if ( mark_modified_darts!=CMap::INVALID_MARK )
         amap->unmark(*it, mark_modified_darts);
 
       if ( !amap->is_marked(*it, mark) )
@@ -739,7 +738,7 @@ struct Test_split_attribute_functor_run<CMap, 0, j, T>
                    &modified_darts,
                    const std::deque<typename CMap::Dart_handle>
                    &modified_darts2,
-                   int mark_modified_darts=-1)
+                   typename CMap::size_type mark_modified_darts=CMap::INVALID_MARK)
   {
     CGAL_assertion( j!=0 && j!=1 );
     CGAL_assertion( amap!=NULL );
@@ -755,7 +754,7 @@ struct Test_split_attribute_functor_run<CMap, 0, j, T>
                           typename CMap::Hash_function> found_attributes;
     typename CMap::Dart_handle od=amap->null_handle;
 
-    int mark = amap->get_new_mark(); // to mark incident cells.
+    typename CMap::size_type mark = amap->get_new_mark(); // to mark incident cells.
     typename std::deque<typename CMap::Dart_handle>::const_iterator
         it=modified_darts.begin();
     for ( ; it!=modified_darts.end(); ++it )
@@ -785,7 +784,7 @@ struct Test_split_attribute_functor_run<CMap, 0, j, T>
     amap->negate_mark(mark);
     for ( it=modified_darts.begin(); it!=modified_darts.end(); ++it )
     {
-      if ( mark_modified_darts!=-1 )
+      if ( mark_modified_darts!=CMap::INVALID_MARK )
         amap->unmark(*it, mark_modified_darts);
 
       if ( !amap->is_marked(*it, mark) )
@@ -797,7 +796,7 @@ struct Test_split_attribute_functor_run<CMap, 0, j, T>
     }
     for ( it2=modified_darts2.begin(); it2!=modified_darts2.end(); ++it2 )
     {
-      if ( mark_modified_darts!=-1 )
+      if ( mark_modified_darts!=CMap::INVALID_MARK )
         amap->unmark(*it2, mark_modified_darts);
 
       if ( !amap->is_marked(*it2, mark) )
@@ -820,14 +819,14 @@ template<typename CMap, typename T>
 struct Test_split_attribute_functor_run<CMap, 0, 0, T>
 {
   static void run( CMap*, const std::deque<typename CMap::Dart_handle>&,
-                   int =-1)
+                   typename CMap::size_type =CMap::INVALID_MARK)
   { CGAL_assertion(false); }
   static void run( CMap* amap,
                    const std::deque<typename CMap::Dart_handle>
                    &modified_darts,
                    const std::deque<typename CMap::Dart_handle>
                    &modified_darts2,
-                   int mark_modified_darts=-1)
+                   typename CMap::size_type mark_modified_darts=CMap::INVALID_MARK)
   {
     CGAL_assertion( amap!=NULL );
     CGAL_static_assertion_msg(CMap::Helper::template
@@ -842,7 +841,7 @@ struct Test_split_attribute_functor_run<CMap, 0, 0, T>
                           typename CMap::Hash_function> found_attributes;
     typename CMap::Dart_handle od=amap->null_handle;
 
-    int mark = amap->get_new_mark(); // to mark incident cells.
+    typename CMap::size_type mark = amap->get_new_mark(); // to mark incident cells.
     typename std::deque<typename CMap::Dart_handle>::const_iterator
         it=modified_darts.begin();
     for ( ; it!=modified_darts.end(); ++it )
@@ -864,7 +863,7 @@ struct Test_split_attribute_functor_run<CMap, 0, 0, T>
     amap->negate_mark(mark);
     for ( it=modified_darts.begin(); it!=modified_darts.end(); ++it )
     {
-      if ( mark_modified_darts!=-1 )
+      if ( mark_modified_darts!=CMap::INVALID_MARK )
         amap->unmark(*it, mark_modified_darts);
 
       if ( !amap->is_marked(*it, mark) )
@@ -872,7 +871,7 @@ struct Test_split_attribute_functor_run<CMap, 0, 0, T>
     }
     for ( it2=modified_darts2.begin(); it2!=modified_darts2.end(); ++it2 )
     {
-      if ( mark_modified_darts!=-1 )
+      if ( mark_modified_darts!=CMap::INVALID_MARK )
         amap->unmark(*it2, mark_modified_darts);
 
       od=amap->other_extremity(*it2);
@@ -890,12 +889,12 @@ template<typename CMap, typename T>
 struct Test_split_attribute_functor_run<CMap, 0, 1, T>
 {
   static void run( CMap*, const std::deque<typename CMap::Dart_handle>&,
-                   int =-1)
+                   typename CMap::size_type =CMap::INVALID_MARK)
   { CGAL_assertion(false); }
   static void run( CMap* amap, const std::deque<typename CMap::Dart_handle>&
                    modified_darts,
                    const std::deque<typename CMap::Dart_handle>&
-                   modified_darts2, int mark_modified_darts=-1)
+                   modified_darts2, typename CMap::size_type mark_modified_darts=CMap::INVALID_MARK)
   { CGAL::internal::Test_split_attribute_functor_run<CMap, 0, 0, T>::
         run(amap, modified_darts, modified_darts2, mark_modified_darts); }
 };
@@ -904,10 +903,10 @@ template<typename CMap, unsigned int i, unsigned int j>
 struct Test_split_attribute_functor_run<CMap, i, j, CGAL::Void>
 {
   static void run( CMap*, const std::deque<typename CMap::Dart_handle>&,
-                   int=-1)
+                   typename CMap::size_type=CMap::INVALID_MARK)
   {}
   static void run( CMap*, const std::deque<typename CMap::Dart_handle>&,
-                   const std::deque<typename CMap::Dart_handle>&, int=-1)
+                   const std::deque<typename CMap::Dart_handle>&, typename CMap::size_type=CMap::INVALID_MARK)
   {}
 };
 // Specialization for i=j.
@@ -915,10 +914,10 @@ template<typename CMap, unsigned int i, typename T>
 struct Test_split_attribute_functor_run<CMap, i, i, T>
 {
   static void run( CMap*, const std::deque<typename CMap::Dart_handle>&,
-                   int=-1)
+                   typename CMap::size_type=CMap::INVALID_MARK)
   {}
   static void run( CMap*, const std::deque<typename CMap::Dart_handle>&,
-                   const std::deque<typename CMap::Dart_handle>&, int=-1)
+                   const std::deque<typename CMap::Dart_handle>&, typename CMap::size_type=CMap::INVALID_MARK)
   {}
 };
 // Specialization for i=1 and j=0 (edge attributes are not modified
@@ -927,10 +926,10 @@ template<typename CMap, typename T>
 struct Test_split_attribute_functor_run<CMap, 1, 0, T>
 {
   static void run( CMap*, const std::deque<typename CMap::Dart_handle>&,
-                   int=-1)
+                   typename CMap::size_type=CMap::INVALID_MARK)
   {}
   static void run( CMap*, const std::deque<typename CMap::Dart_handle>&,
-                   const std::deque<typename CMap::Dart_handle>&, int=-1)
+                   const std::deque<typename CMap::Dart_handle>&, typename CMap::size_type=CMap::INVALID_MARK)
   {}
 };
 // ************************************************************************
@@ -949,7 +948,7 @@ struct Test_split_attribute_functor
   static void run( CMap* amap,
                    const std::deque<typename CMap::Dart_handle>
                    &modified_darts,
-                   int mark_modified_darts=-1)
+                   typename CMap::size_type mark_modified_darts=CMap::INVALID_MARK)
   {
     CGAL::internal::Test_split_attribute_functor_run<CMap, i, j>::
         run(amap, modified_darts, mark_modified_darts);
@@ -960,7 +959,7 @@ struct Test_split_attribute_functor
                    &modified_darts,
                    const std::deque<typename CMap::Dart_handle>
                    &modified_darts2,
-                   int mark_modified_darts=-1)
+                   typename CMap::size_type mark_modified_darts=CMap::INVALID_MARK)
   {
     CGAL::internal::Test_split_attribute_functor_run<CMap, i, j>::
         run(amap, modified_darts, modified_darts2, mark_modified_darts);

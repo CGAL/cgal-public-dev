@@ -61,7 +61,7 @@ private:
 public:
   MainWindow();
 
-public slots:
+public Q_SLOTS:
 
   void processInput(CGAL::Object o);
 
@@ -91,7 +91,7 @@ public slots:
 
   virtual void open(QString fileName);
 
-signals:
+Q_SIGNALS:
   void changed();
 };
 
@@ -207,7 +207,7 @@ MainWindow::processInput(CGAL::Object o)
                 p.y()- std::floor(p.y()/dy));
     triang.insert(p);
   }
-  emit(changed());
+  Q_EMIT( changed());
 
   if (was_empty)
     on_actionRecenter_triggered();
@@ -216,7 +216,7 @@ MainWindow::processInput(CGAL::Object o)
 
 /* 
  *  Qt Automatic Connections
- *  http://doc.trolltech.com/4.4/designer-using-a-component.html#automatic-connections
+ *  http://doc.qt.io/qt-5/designer-using-a-ui-file.html#automatic-connections
  * 
  *  setupUi(this) generates connections to the slots named
  *  "on_<action_name>_<signal_name>"
@@ -284,7 +284,7 @@ void
 MainWindow::on_actionClear_triggered()
 {
   triang.clear();
-  emit(changed());
+  Q_EMIT( changed());
 }
 
 
@@ -294,8 +294,9 @@ MainWindow::on_actionInsertRandomPoints_triggered()
   CGAL::Random_points_in_iso_rectangle_2<Point_2> pg((triang.domain().min)(),
                                                      (triang.domain().max)());
   bool ok = false;
+
   const int number_of_points = 
-    QInputDialog::getInteger(this, 
+    QInputDialog::getInt(this, 
                              tr("Number of random points"),
                              tr("Enter number of random points"),
 			     250,
@@ -322,7 +323,7 @@ MainWindow::on_actionInsertRandomPoints_triggered()
   QApplication::restoreOverrideCursor();
 
   on_actionRecenter_triggered();
-  emit(changed());
+  Q_EMIT( changed());
 }
 
 
@@ -330,7 +331,7 @@ void
 MainWindow::on_actionConvertTo9Cover_triggered() {
   if (triang.is_1_cover()) {
     triang.convert_to_9_sheeted_covering();
-    emit(changed());
+    Q_EMIT( changed());
   }
 }
 
@@ -338,7 +339,7 @@ void
 MainWindow::on_actionConvertTo1Cover_triggered() {
   if (!triang.is_1_cover()) {
     triang.convert_to_1_sheeted_covering();
-    emit(changed());
+    Q_EMIT( changed());
   }
 }
 
@@ -373,7 +374,7 @@ MainWindow::open(QString fileName)
   QApplication::restoreOverrideCursor();
   this->addToRecentFiles(fileName);
   actionRecenter->trigger();
-  emit(changed());
+  Q_EMIT( changed());
     
 }
 
@@ -407,27 +408,27 @@ MainWindow::on_actionRecenter_triggered()
 void MainWindow::on_actionNoneSimplicesEmphasized_triggered(bool)
 {
   pt_gi->setEmphasizedSimplices(PTGI::NONE);
-  emit changed();
+  Q_EMIT changed();
 }
 void MainWindow::on_actionUniqueSimplicesEmphasized_triggered(bool)
 {
   pt_gi->setEmphasizedSimplices(PTGI::UNIQUE);
-  emit changed();
+  Q_EMIT changed();
 }
 void MainWindow::on_actionStoredSimplicesEmphasized_triggered(bool)
 {
   pt_gi->setEmphasizedSimplices(PTGI::STORED);
-  emit changed();
+  Q_EMIT changed();
 }
 void MainWindow::on_actionUniqueCoverDomainSimplicesEmphasized_triggered(bool)
 {
   pt_gi->setEmphasizedSimplices(PTGI::UNIQUE_COVER_DOMAIN);
-  emit changed();
+  Q_EMIT changed();
 }
 void MainWindow::on_actionStoredCoverDomainSimplicesEmphasized_triggered(bool)
 {
   pt_gi->setEmphasizedSimplices(PTGI::STORED_COVER_DOMAIN);
-  emit changed();
+  Q_EMIT changed();
 }
 
 
@@ -442,9 +443,9 @@ int main(int argc, char **argv)
   app.setOrganizationName("Nico Kruithof");
   app.setApplicationName("Periodic_2_Delaunay_triangulation_2 demo");
 
-  // Import resources from libCGALQt4.
-  // See http://doc.trolltech.com/4.4/qdir.html#Q_INIT_RESOURCE
-  CGAL_QT4_INIT_RESOURCES;
+  // Import resources from libCGAL (Qt5).
+  // See http://doc.qt.io/qt-5/qdir.html#Q_INIT_RESOURCE
+  CGAL_QT_INIT_RESOURCES;
 
   MainWindow mainWindow;
   mainWindow.show();

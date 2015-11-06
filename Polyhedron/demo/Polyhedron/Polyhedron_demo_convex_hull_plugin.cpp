@@ -10,20 +10,32 @@
 #include "Scene_polyhedron_selection_item.h"
 #include "Polyhedron_type.h"
 
-#include "Polyhedron_demo_plugin_helper.h"
-#include "Polyhedron_demo_plugin_interface.h"
+#include <CGAL/Three/Polyhedron_demo_plugin_helper.h>
+#include <CGAL/Three/Polyhedron_demo_plugin_interface.h>
 
 #include <CGAL/convex_hull_3.h>
 #include <boost/iterator/transform_iterator.hpp>
-
+using namespace CGAL::Three;
 class Polyhedron_demo_convex_hull_plugin : 
   public QObject,
   public Polyhedron_demo_plugin_helper
 {
   Q_OBJECT
-  Q_INTERFACES(Polyhedron_demo_plugin_interface)
-
+  Q_INTERFACES(CGAL::Three::Polyhedron_demo_plugin_interface)
+  Q_PLUGIN_METADATA(IID "com.geometryfactory.PolyhedronDemo.PluginInterface/1.0")
 public:
+    void init(QMainWindow* mainWindow,
+              Scene_interface* scene_interface)
+    {
+        mw = mainWindow;
+        scene = scene_interface;
+        actions_map["actionConvexHull"] = getActionFromMainWindow(mw, "actionConvexHull");
+        actions_map["actionConvexHull"]->setProperty("subMenuName",
+                                                     "3D Convex Hulls");
+        autoConnectActions();
+
+    }
+
   // used by Polyhedron_demo_plugin_helper
   QStringList actionsNames() const {
     return QStringList() << "actionConvexHull";
@@ -37,7 +49,7 @@ public:
       qobject_cast<Scene_polyhedron_selection_item*>(scene->item(scene->mainSelectionIndex()));
   }
 
-public slots:
+public Q_SLOTS:
   void on_actionConvexHull_triggered();
 
 }; // end Polyhedron_demo_convex_hull_plugin
@@ -51,7 +63,7 @@ struct Get_point {
 
 void Polyhedron_demo_convex_hull_plugin::on_actionConvexHull_triggered()
 {
-  const Scene_interface::Item_id index = scene->mainSelectionIndex();
+  const CGAL::Three::Scene_interface::Item_id index = scene->mainSelectionIndex();
   
   Scene_polyhedron_item* poly_item = 
     qobject_cast<Scene_polyhedron_item*>(scene->item(index));
@@ -117,7 +129,5 @@ void Polyhedron_demo_convex_hull_plugin::on_actionConvexHull_triggered()
     QApplication::restoreOverrideCursor();
   }
 }
-
-Q_EXPORT_PLUGIN2(Polyhedron_demo_convex_hull_plugin, Polyhedron_demo_convex_hull_plugin)
 
 #include "Polyhedron_demo_convex_hull_plugin.moc"

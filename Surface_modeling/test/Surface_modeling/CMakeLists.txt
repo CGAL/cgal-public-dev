@@ -4,14 +4,8 @@
 
 project( Surface_modeling_test )
 
-cmake_minimum_required(VERSION 2.6.2)
-if("${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION}" VERSION_GREATER 2.6)
-  if("${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION}.${CMAKE_PATCH_VERSION}" VERSION_GREATER 2.8.3)
-    cmake_policy(VERSION 2.8.4)
-  else()
-    cmake_policy(VERSION 2.6)
-  endif()
-endif()
+cmake_minimum_required(VERSION 2.8.11)
+
 
 find_package(CGAL QUIET COMPONENTS Core )
 
@@ -28,7 +22,6 @@ if ( CGAL_FOUND )
     create_single_source_cgal_program( "Cactus_deformation_session.cpp" )
     create_single_source_cgal_program( "Cactus_performance_test.cpp" )
     create_single_source_cgal_program( "Symmetry_test.cpp" )
-    create_single_source_cgal_program( "Deform_mesh_deprecation_test.cpp" )
 
     find_package( OpenMesh QUIET )
     if ( OpenMesh_FOUND )

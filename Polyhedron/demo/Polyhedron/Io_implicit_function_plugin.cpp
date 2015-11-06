@@ -24,8 +24,8 @@
 
 //#include <CGAL_demo/Plugin_interface.h>
 //#include <CGAL_demo/Plugin_helper.h>
-#include "Polyhedron_demo_plugin_helper.h"
-#include "Polyhedron_demo_io_plugin_interface.h"
+#include <CGAL/Three/Polyhedron_demo_plugin_helper.h>
+#include <CGAL/Three/Polyhedron_demo_io_plugin_interface.h>
 
 #include "implicit_functions/Implicit_function_interface.h"
 #include "Scene_implicit_function_item.h"
@@ -41,14 +41,15 @@
 #include <QMenu>
 #include <QList>
 #include <QLibrary>
-
+using namespace CGAL::Three;
 class Io_implicit_function_plugin :
   public QObject, 
   // public Polyhedron_demo_plugin_interface,
   protected Polyhedron_demo_plugin_helper
 {
   Q_OBJECT
-  Q_INTERFACES(Polyhedron_demo_plugin_interface)
+  Q_INTERFACES(CGAL::Three::Polyhedron_demo_plugin_interface)
+  Q_PLUGIN_METADATA(IID "com.geometryfactory.PolyhedronDemo.PluginInterface/1.0")
 
 public:
   Io_implicit_function_plugin();
@@ -64,14 +65,14 @@ public:
   typedef Polyhedron_demo_plugin_helper Plugin_helper;
   
   using Plugin_helper::init;
-  virtual void init(QMainWindow* mainWindow, Scene_interface* scene_interface);
+  virtual void init(QMainWindow* mainWindow, CGAL::Three::Scene_interface* scene_interface);
   
   QList<QAction*> actions() const
   {
     return QList<QAction*>();
   }
   
-public slots:
+public Q_SLOTS:
   void load_function() const;
   
 private:
@@ -92,8 +93,9 @@ Io_implicit_function_plugin()
 
 void
 Io_implicit_function_plugin::
-init(QMainWindow* mainWindow, Scene_interface* scene_interface)
+init(QMainWindow* mainWindow, CGAL::Three::Scene_interface* scene_interface)
 {
+
   this->scene = scene_interface;
   this->mw = mainWindow;
   
@@ -166,10 +168,10 @@ load_function() const
   item->setName(tr("%1").arg(function->name()));
   item->setRenderingMode(FlatPlusEdges);
 
-  const Scene_interface::Item_id index = scene->mainSelectionIndex();
+  const CGAL::Three::Scene_interface::Item_id index = scene->mainSelectionIndex();
   scene->itemChanged(index);
     
-  Scene_interface::Item_id new_item_id = scene->addItem(item);
+  CGAL::Three::Scene_interface::Item_id new_item_id = scene->addItem(item);
   scene->setSelectedItem(new_item_id);
 }
 
@@ -209,7 +211,4 @@ load_function_plugins()
   }
 }
 
-
-#include <QtPlugin>
-Q_EXPORT_PLUGIN2(Io_implicit_function_plugin, Io_implicit_function_plugin)
 #include "Io_implicit_function_plugin.moc"

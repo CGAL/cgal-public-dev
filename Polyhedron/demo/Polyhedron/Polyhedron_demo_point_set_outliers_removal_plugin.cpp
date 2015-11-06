@@ -1,7 +1,7 @@
 #include "config.h"
 #include "Scene_points_with_normal_item.h"
-#include "Polyhedron_demo_plugin_helper.h"
-#include "Polyhedron_demo_plugin_interface.h"
+#include <CGAL/Three/Polyhedron_demo_plugin_helper.h>
+#include <CGAL/Three/Polyhedron_demo_plugin_interface.h>
 
 #include <CGAL/remove_outliers.h>
 #include <CGAL/Timer.h>
@@ -16,19 +16,20 @@
 #include <QMessageBox>
 
 #include "ui_Polyhedron_demo_point_set_outliers_removal_plugin.h"
-
+using namespace CGAL::Three;
 class Polyhedron_demo_point_set_outliers_removal_plugin :
   public QObject,
   public Polyhedron_demo_plugin_helper
 {
   Q_OBJECT
-  Q_INTERFACES(Polyhedron_demo_plugin_interface)
+  Q_INTERFACES(CGAL::Three::Polyhedron_demo_plugin_interface)
+  Q_PLUGIN_METADATA(IID "com.geometryfactory.PolyhedronDemo.PluginInterface/1.0")
 
 private:
   QAction* actionOutlierRemoval;
 
 public:
-  void init(QMainWindow* mainWindow, Scene_interface* scene_interface) {
+  void init(QMainWindow* mainWindow, CGAL::Three::Scene_interface* scene_interface) {
     actionOutlierRemoval = new QAction(tr("Point set outliers selection"), mainWindow);
     actionOutlierRemoval->setObjectName("actionOutlierRemoval");
 
@@ -44,7 +45,7 @@ public:
     return QList<QAction*>() << actionOutlierRemoval;
   }
 
-public slots:
+public Q_SLOTS:
   void on_actionOutlierRemoval_triggered();
 
 }; // end Polyhedron_demo_point_set_outliers_removal_plugin
@@ -64,7 +65,7 @@ class Point_set_demo_outlier_removal_dialog : public QDialog, private Ui::Outlie
 
 void Polyhedron_demo_point_set_outliers_removal_plugin::on_actionOutlierRemoval_triggered()
 {
-  const Scene_interface::Item_id index = scene->mainSelectionIndex();
+  const CGAL::Three::Scene_interface::Item_id index = scene->mainSelectionIndex();
 
   Scene_points_with_normal_item* item =
     qobject_cast<Scene_points_with_normal_item*>(scene->item(index));
@@ -102,16 +103,14 @@ void Polyhedron_demo_point_set_outliers_removal_plugin::on_actionOutlierRemoval_
                                     << std::endl;
 
     // Selects points to delete
-    points->select(points->begin(), points->end(), false);
-    points->select(first_point_to_remove, points->end(), true);
+    points->set_first_selected (first_point_to_remove);
 
     // Updates scene
+    item->invalidate_buffers();
     scene->itemChanged(index);
 
     QApplication::restoreOverrideCursor();
   }
 }
-
-Q_EXPORT_PLUGIN2(Polyhedron_demo_point_set_outliers_removal_plugin, Polyhedron_demo_point_set_outliers_removal_plugin)
 
 #include "Polyhedron_demo_point_set_outliers_removal_plugin.moc"

@@ -7,6 +7,8 @@
 #include <QPixmap>
 #include <QFont>
 
+#include <CGAL_demo/Viewer.h>
+
 namespace qglviewer {
   class ManipulatedFrame;
 }
@@ -30,18 +32,19 @@ public:
       color_(defaultColor),
       visible_(true),
       rendering_mode(FlatPlusEdges)
-  {};
+  {
+  }
   virtual ~Scene_item();
   virtual Scene_item* clone() const = 0;
 
   // Indicate if rendering mode is supported
   virtual bool supportsRenderingMode(RenderingMode m) const = 0;
   // Flat/Gouraud OpenGL drawing
-  virtual void draw() const = 0;
+  virtual void draw(Viewer *viewer) const = 0;
   // Wireframe OpenGL drawing
-  virtual void draw_edges() const { draw(); }
+  virtual void draw_edges(Viewer *viewer) const { draw(viewer); }
   // Points OpenGL drawing
-  virtual void draw_points() const { draw(); }
+  virtual void draw_points(Viewer *viewer) const { draw(viewer); }
 
   // Functions for displaying meta-data of the item
   virtual QString toolTip() const = 0;
@@ -64,10 +67,11 @@ public:
   virtual RenderingMode renderingMode() const { return rendering_mode; }
   virtual QString renderingModeName() const; // Rendering mode as a human readable string
 
-public slots:
+public Q_SLOTS:
   // Call that once you have finished changing something in the item
   // (either the properties or internal data)
   virtual void changed() {}
+  virtual void contextual_changed() {}
 
   // Setters for the four basic properties
   virtual void setColor(QColor c) { color_ = c; }
@@ -80,7 +84,7 @@ public slots:
 
   virtual void itemAboutToBeDestroyed(Scene_item*);
 
-signals:
+Q_SIGNALS:
   void aboutToBeDestroyed();
 
 protected:

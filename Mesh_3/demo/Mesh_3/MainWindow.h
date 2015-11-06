@@ -33,9 +33,7 @@ public:
   MainWindow(QWidget* parent = 0);
   ~MainWindow();
 
-  Viewer* getViewer() { return viewer; }
-        
-public slots:
+public Q_SLOTS:
   void updateViewerBBox();
   void open(QString filename);
 
@@ -51,7 +49,7 @@ public slots:
   void warning(QString);
   void error(QString);
 
-protected slots:
+protected Q_SLOTS:
   void selectionChanged();
   void updateInfo();
   void updateDisplayInfo();

@@ -108,6 +108,7 @@ def gen_bib_entry(title, authors, bib, anchor):
 
 def gen_txt_entry(title, authors, bib, anchor,k):
   title_r=title.replace("Kernel","%Kernel").replace("Interval","%Interval").replace("Matrix","%Matrix").replace("Kinetic","%Kinetic").replace("CGAL","%CGAL").replace("Range","%Range")
+  authors=authors.replace("CGAL","%CGAL")
   res="<tr valign=\"top\">\n\
 <td align=\"right\" class=\"bibtexnumber\">\n\
 [<a name=\""+bib+"-${CGAL_RELEASE_YEAR_ID}\">"+str(k)+"</a>]\n\
@@ -140,7 +141,7 @@ def protect_upper_case(title):
   return title.replace("dD","{dD}").replace("2D","{2D}").replace("3D","{3D}").replace("CGAL","{CGAL}").replace("Qt","{Qt}").replace("Boost","{Boost}")
 
 def protect_accentuated_letters(authors):
-  res=authors.replace(u"é",r"{\'e}").replace(u"ä",r"{\"a}").replace(u"ö",r"{\"o}").replace(u"ñ",r"{\~n}").replace(u"ã",r"{\~a}").replace(u"ë",r"{\"e}").replace("%","")
+  res=authors.replace(u"é",r"{\'e}").replace(u"è",r"{\`e}").replace(u"É",r"{\'E}").replace(u"ä",r"{\"a}").replace(u"ö",r"{\"o}").replace(u"ñ",r"{\~n}").replace(u"ã",r"{\~a}").replace(u"ë",r"{\"e}").replace("%","")
   try:
     res.encode('ascii')
   except UnicodeEncodeError:
@@ -166,13 +167,7 @@ for line in f:
     match = pattern.match(line)
     if(match):
       pkg = match.group(1)
-      index = pkg.find("/")
-      if(index > 0):
-          top_level = pkg[:index]
-          lower_level = pkg[index+1:]
-          filename=SOURCE_DIR+"/../" + top_level + "/doc/" + lower_level + "/PackageDescription.txt"
-      else:
-          filename=SOURCE_DIR+"/../" + pkg + "/doc/" + pkg + "/PackageDescription.txt"
+      filename=SOURCE_DIR+"/../" + pkg + "/doc/" + pkg + "/PackageDescription.txt"
       pkgdesc = codecs.open(filename, 'r', encoding='utf-8')
       authors=""
       bib=""
@@ -191,9 +186,9 @@ for line in f:
         if match:
           bib=match.group(1)
           continue
-      assert(len(bib)>0)
-      assert(len(authors)>0)
-      assert(len(anchor)>0)
+      assert len(bib)>0, "Did you forget a \cgalPkgBib{} in %r?" % filename
+      assert len(authors)>0, "Did you forget a \cgalPkgAuthors{} in %r?" % filename
+      assert len(anchor)>0, "Did you forget the anchor in \cgalPkgDescriptionBegin{} in %r?" % filename
       result_txt+=gen_txt_entry(title, authors, bib, anchor,k)
       # convert title and author to bibtex format
       title=protect_upper_case(title)

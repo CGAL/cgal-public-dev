@@ -280,40 +280,40 @@ void Volume::set_inverse_normals(const bool b) {
                                // marching cube. See gl_draw_marchingcube()
                                // for an explanation.
 
-  emit changed();
+  Q_EMIT changed();
 }
 
 void Volume::set_two_sides(const bool b) {
   two_sides = b;
-  emit changed();
+  Q_EMIT changed();
 }
 
 void Volume::set_draw_triangles_edges(const bool b) {
   draw_triangles_edges = b;
-  emit changed();
+  Q_EMIT changed();
 }
 
 void Volume::set_draw_triangulation(const bool b) {
   m_draw_triangulation = b;
-  emit changed();
+  Q_EMIT changed();
 }
 
 void Volume::set_triangulation_edges_color() {
   const QColor color = QColorDialog::getColor(m_triangulation_color, mw);
   if (color.isValid()) {
     m_triangulation_color = color;
-    emit changed();
+    Q_EMIT changed();
   }
 }
 
 void Volume::set_use_gouraud(const bool b) {
   use_gouraud = b;
-  emit changed();
+  Q_EMIT changed();
 }
 
 void Volume::set_show_bbox(const bool b) {
   show_bbox = b;
-  emit changed();
+  Q_EMIT changed();
 }
 
 void Volume::only_in()
@@ -329,6 +329,16 @@ void Volume::only_in()
 #include <vtkDICOMImageReader.h>
 #include <vtkImageReader.h>
 #include <vtkImageGaussianSmooth.h>
+#include <vtkDemandDrivenPipeline.h>
+
+Volume::~Volume()
+{
+  if(vtk_reader) vtk_reader->Delete();
+  if(vtk_image) vtk_image->Delete();
+  if(dicom_reader) dicom_reader->Delete();
+  if(executive) executive->Delete();
+  if(smoother) smoother->Delete();
+}
 
 bool Volume::opendir(const QString& dirname) 
 {
@@ -342,15 +352,21 @@ bool Volume::opendir(const QString& dirname)
   }
   else
   {
-    vtkDICOMImageReader* dicom_reader = vtkDICOMImageReader::New();
+    dicom_reader = vtkDICOMImageReader::New();
     dicom_reader->SetDirectoryName(dirname.toUtf8());
-    vtkImageGaussianSmooth* smoother = vtkImageGaussianSmooth::New();
+
+    executive =
+      vtkDemandDrivenPipeline::SafeDownCast(dicom_reader->GetExecutive());
+    if (executive)
+    {
+      executive->SetReleaseDataFlag(0, 0); // where 0 is the port index
+    }
+
+    smoother = vtkImageGaussianSmooth::New();
     smoother->SetStandardDeviations(1., 1., 1.);
     smoother->SetInputConnection(dicom_reader->GetOutputPort());
     smoother->Update();
-    vtkImageData* vtk_image = smoother->GetOutput();
-    dicom_reader->SetReleaseDataFlag(false);
-    vtk_image->SetReleaseDataFlag(false);
+    vtk_image = smoother->GetOutput();
     vtk_image->Print(std::cerr);
     if(!m_image.read_vtk_image_data(vtk_image))
     {
@@ -365,7 +381,8 @@ bool Volume::opendir(const QString& dirname)
       finish_open();
       result = true;
     }
-    dicom_reader->Delete();
+    // if(executive) executive->Delete();
+    // dicom_reader->Delete();
     // smoother->Delete();
   }
   return result;
@@ -391,7 +408,7 @@ bool Volume::open_vtk(const QString& filename)
   }
   else
   {
-    vtkImageReader* vtk_reader = vtkImageReader::New();
+    vtk_reader = vtkImageReader::New();
     vtk_reader->SetFileName(filename.toUtf8());
     vtk_reader->SetDataScalarTypeToUnsignedChar();
     vtk_reader->SetDataExtent(0, 249, 0, 249, 0,  124);
@@ -399,7 +416,7 @@ bool Volume::open_vtk(const QString& filename)
     vtk_reader->SetFileDimensionality(3);
     vtk_reader->Update();
     vtk_reader->Print(std::cerr);
-    vtkImageData* vtk_image = vtk_reader->GetOutput();
+    vtk_image = vtk_reader->GetOutput();
     vtk_image->Print(std::cerr);
     if(!m_image.read_vtk_image_data(vtk_image))
     {
@@ -485,6 +502,10 @@ bool Volume::open_xt(const QString& filename)
 }
 
 #else // CGAL_USE_VTK
+Volume::~Volume()
+{
+}
+
 bool Volume::opendir(const QString&)
 {
   return false;
@@ -594,15 +615,17 @@ void Volume::finish_open()
   values_list->load_values(fileinfo.absoluteFilePath());
   load_image_settings(fileinfo.absoluteFilePath());
   changed_parameters();
-  emit changed();
+  Q_EMIT changed();
 }
 
 void Volume::export_off()
 {
   QFileDialog filedialog(mw, tr("Export surface to file"));
   filedialog.setFileMode(QFileDialog::AnyFile);
-  filedialog.setFilter(tr("OFF files (*.off);;"
-                          "All files (*)"));
+  
+  filedialog.setNameFilter(tr("OFF files (*.off);;"
+                              "All files (*)"));
+  
   filedialog.setAcceptMode(QFileDialog::AcceptSave);
   filedialog.setDefaultSuffix("off");
   if(filedialog.exec())
@@ -630,8 +653,11 @@ void Volume::save_image_to_inr()
 {
   QFileDialog filedialog(mw, tr("Export image to Inrimage format"));
   filedialog.setFileMode(QFileDialog::AnyFile);
-  filedialog.setFilter(tr("Inrimage files (*.inr);;"
-                          "Compressed Inrimage files (*.inr.gz)"));
+  
+  filedialog.setNameFilter(tr("Inrimage files (*.inr);;"
+                              "Compressed Inrimage files (*.inr.gz)"));
+
+
   filedialog.setAcceptMode(QFileDialog::AcceptSave);
   filedialog.setDefaultSuffix("inr.gz");
   if(filedialog.exec())
@@ -771,10 +797,10 @@ void Volume::display_marchin_cube()
 
   m_view_mc = true;
   m_view_surface = false;
-  emit changed();
+  Q_EMIT changed();
   if(!m_surface_mc.empty())
   {
-    emit new_bounding_box(bbox.xmin(),
+    Q_EMIT new_bounding_box(bbox.xmin(),
                           bbox.ymin(),
                           bbox.zmin(),
                           bbox.xmax(),
@@ -984,7 +1010,7 @@ void Volume::display_surface_mesher_result()
 	  {
 	    cit->info() = classify(surface(cit->circumcenter()));
 	  }
-// 	  emit changed();
+// 	  Q_EMIT changed();
 	  qApp->processEvents();
 	  timer.stop();
 	  std::cerr << timer.time() << " secondes)\n";
@@ -1053,10 +1079,10 @@ void Volume::display_surface_mesher_result()
   // toggle visualization
   m_view_mc = false;
   m_view_surface = true;
-  emit changed();
+  Q_EMIT changed();
   if(!m_surface.empty())
   {
-    emit new_bounding_box(bbox.xmin(),
+    Q_EMIT new_bounding_box(bbox.xmin(),
                           bbox.ymin(),
                           bbox.zmin(),
                           bbox.xmax(),
@@ -1424,7 +1450,7 @@ void Volume::changed_parameters()
   c2t3.clear();
   del.clear();
   m_view_mc = m_view_surface = false;
-  emit changed();
+  Q_EMIT changed();
 }
 
 #ifdef CGAL_SURFACE_MESH_DEMO_USE_MARCHING_CUBE
@@ -1518,4 +1544,3 @@ void Volume::labellizedToogled(bool toggled)
   }
 }
 
-#include "volume.moc"

@@ -10,6 +10,8 @@
 #include <QApplication>
 #include <QPointer>
 
+#include <CGAL_demo/Viewer.h>
+
 namespace {
   void CGALglcolor(QColor c)
   {
@@ -32,9 +34,11 @@ Scene::addItem(Scene_item* item)
   connect(this, SIGNAL(itemAboutToBeDestroyed(Scene_item*)),
           item, SLOT(itemAboutToBeDestroyed(Scene_item*)));
 
-  emit updated_bbox();
-  emit updated();
-  QAbstractListModel::reset();
+  QAbstractListModel::beginResetModel();
+  Q_EMIT updated_bbox();
+  Q_EMIT updated();
+  QAbstractListModel::endResetModel();
+
   return entries.size() - 1;
 }
 
@@ -45,13 +49,15 @@ Scene::erase(int index)
     return -1;
 
   Scene_item* item = entries[index];
-  emit itemAboutToBeDestroyed(item);
+
+  QAbstractListModel::beginResetModel();
+  Q_EMIT itemAboutToBeDestroyed(item);
   delete item;
   entries.removeAt(index);
 
   selected_item = -1;
-  emit updated();
-  QAbstractListModel::reset();
+  Q_EMIT updated();
+  QAbstractListModel::endResetModel();
 
   if(--index >= 0)
     return index;
@@ -106,24 +112,19 @@ void Scene::initializeGL()
 {
 }
 
-// workaround for Qt-4.2.
-#if QT_VERSION < 0x040300
-#  define lighter light
-#endif
-
 void 
-Scene::draw()
+Scene::draw(Viewer* viewer)
 {
-  draw_aux(false);
+  draw_aux(false, viewer);
 }
 void 
-Scene::drawWithNames()
+Scene::drawWithNames(Viewer *viewer)
 {
-  draw_aux(true);
+  draw_aux(true,viewer);
 }
 
 void 
-Scene::draw_aux(bool with_names)
+Scene::draw_aux(bool with_names, Viewer *viewer)
 {
   // Flat/Gouraud OpenGL drawing
   for(int index = 0; index < entries.size(); ++index)
@@ -134,22 +135,21 @@ Scene::draw_aux(bool with_names)
     Scene_item& item = *entries[index];
     if(item.visible())
     {
+      item.contextual_changed();
       if(item.renderingMode() == Flat || item.renderingMode() == FlatPlusEdges || item.renderingMode() == Gouraud)
-      {
-	::glEnable(GL_LIGHTING);
-	::glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
+      {  
         ::glPointSize(2.f);
         ::glLineWidth(1.0f);
-	if(index == selected_item)
-	  CGALglcolor(item.color().lighter(120));
-	else
-	  CGALglcolor(item.color());
-	if(item.renderingMode() == Gouraud)
-	  ::glShadeModel(GL_SMOOTH);
-	else
-	  ::glShadeModel(GL_FLAT);
+    if(index == selected_item)
+      CGALglcolor(item.color().lighter(120));
+    else
+      CGALglcolor(item.color());
+    if(item.renderingMode() == Gouraud)
+      ::glShadeModel(GL_SMOOTH);
+    else
+      ::glShadeModel(GL_FLAT);
 
-        item.draw();
+        item.draw(viewer);
       }
     }
     if(with_names) {
@@ -168,16 +168,15 @@ Scene::draw_aux(bool with_names)
     {
       if(item.renderingMode() == FlatPlusEdges || item.renderingMode() == Wireframe)
       {
-        ::glDisable(GL_LIGHTING);
-        ::glPolygonMode(GL_FRONT_AND_BACK,GL_LINE);
+
         ::glPointSize(2.f);
         ::glLineWidth(1.0f);
         if(index == selected_item)
           CGALglcolor(Qt::black);
         else
           CGALglcolor(item.color().lighter(50));
-        
-        item.draw_edges();
+
+        item.draw_edges(viewer);
       }
       if(with_names) {
         ::glPopName();
@@ -196,8 +195,7 @@ Scene::draw_aux(bool with_names)
     {
       if(item.renderingMode() == Points)
       {
-        ::glDisable(GL_LIGHTING);
-        ::glPolygonMode(GL_FRONT_AND_BACK,GL_POINT);
+        ::glEnable(GL_POINT_SMOOTH);
         ::glPointSize(2.f);
         ::glLineWidth(1.0f);
         if(index == selected_item)
@@ -205,7 +203,8 @@ Scene::draw_aux(bool with_names)
         else
           CGALglcolor(item.color().lighter(50));
         
-        item.draw_points();
+        item.draw_points(viewer);
+        ::glDisable(GL_POINT_SMOOTH);
       }
       if(with_names) {
         ::glPopName();
@@ -361,13 +360,13 @@ Scene::setData(const QModelIndex &index,
   case NameColumn:
     item->setName(value.toString());
     item->changed();
-    emit dataChanged(index, index);
+    Q_EMIT dataChanged(index, index);
     return true;
     break;
   case ColorColumn:
     item->setColor(value.value<QColor>());
     item->changed();
-    emit dataChanged(index, index);
+    Q_EMIT dataChanged(index, index);
     return true;
     break;
   case RenderingModeColumn:
@@ -379,14 +378,14 @@ Scene::setData(const QModelIndex &index,
     }
     item->setRenderingMode(rendering_mode);
     item->changed();
-    emit dataChanged(index, index);
+    Q_EMIT dataChanged(index, index);
     return true;
     break;
   }
   case VisibleColumn:
     item->setVisible(value.toBool());
     item->changed();
-    emit dataChanged(index, index);
+    Q_EMIT dataChanged(index, index);
     return true;
   default:
     return false;
@@ -418,14 +417,14 @@ void Scene::itemChanged(Item_id i)
     return;
 
   entries[i]->changed();
-  emit dataChanged(QAbstractItemModel::createIndex(i, 0),
+  Q_EMIT dataChanged(QAbstractItemModel::createIndex(i, 0),
     QAbstractItemModel::createIndex(i, LastColumn));
 }
 
 void Scene::itemChanged(Scene_item* item)
 {
   item->changed();
-  emit dataChanged(QAbstractItemModel::createIndex(0, 0),
+  Q_EMIT dataChanged(QAbstractItemModel::createIndex(0, 0),
     QAbstractItemModel::createIndex(entries.size() - 1, LastColumn));
 }
 
@@ -542,7 +541,7 @@ void Scene::setItemVisible(int index, bool b)
   if( index < 0 || index >= entries.size() )
     return;
   entries[index]->setVisible(b);
-  emit dataChanged(QAbstractItemModel::createIndex(index, VisibleColumn),
+  Q_EMIT dataChanged(QAbstractItemModel::createIndex(index, VisibleColumn),
     QAbstractItemModel::createIndex(index, VisibleColumn));
 }
 
@@ -553,7 +552,7 @@ void Scene::setItemA(int i)
   {
     item_B = -1;
   }
-  emit dataChanged(QAbstractItemModel::createIndex(0, ABColumn),
+  Q_EMIT dataChanged(QAbstractItemModel::createIndex(0, ABColumn),
     QAbstractItemModel::createIndex(entries.size()-1, ABColumn));
 }
 
@@ -564,8 +563,8 @@ void Scene::setItemB(int i)
   {
     item_A = -1;
   }
-  emit updated();
-  emit dataChanged(QAbstractItemModel::createIndex(0, ABColumn),
+  Q_EMIT updated();
+  Q_EMIT dataChanged(QAbstractItemModel::createIndex(0, ABColumn),
     QAbstractItemModel::createIndex(entries.size()-1, ABColumn));
 }
 

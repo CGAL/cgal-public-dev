@@ -22,9 +22,9 @@
 #include "MainWindow.h"
 #include <CGAL/Delaunay_triangulation_3.h>
 #include <QSettings>
-#include "MainWindow.moc"
 #include <CGAL/Timer.h>
 #include <CGAL/ipower.h>
+#include "import_moka.h"
 
 // Function defined in Linear_cell_complex_3_subivision.cpp
 void subdivide_lcc_3 (LCC & m);
@@ -44,7 +44,7 @@ MainWindow::MainWindow (QWidget * parent):CGAL::Qt::DemosMainWindow (parent),
   setupUi (this);
 
   scene.lcc = new LCC;
-
+  
   volumeListDock = new QDockWidget(QString(tr("Volume List")),this);
   volumeListDock->setAllowedAreas(Qt::RightDockWidgetArea |
                                   Qt::LeftDockWidgetArea);
@@ -59,11 +59,13 @@ MainWindow::MainWindow (QWidget * parent):CGAL::Qt::DemosMainWindow (parent),
   labels.append(QString(tr("Hidden")));
   volumeList->setHorizontalHeaderLabels(labels);
   //volumeList->resizeColumnsToContents();
-  volumeList->setFixedWidth(200);
+  volumeList->setFixedWidth(220);
 /*  volumeList->setColumnWidth(0,85);
   volumeList->setColumnWidth(1,35);
   volumeList->setColumnWidth(2,35);*/
-  volumeList->horizontalHeader()->setResizeMode(QHeaderView::Stretch);
+
+  volumeList->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+ 
   volumeList->setSelectionMode(QAbstractItemView::NoSelection);
   //volumeList->setSelectionBehavior(QAbstractItemView::SelectRows);
   volumeListDock->setWidget(volumeList);
@@ -81,7 +83,7 @@ MainWindow::MainWindow (QWidget * parent):CGAL::Qt::DemosMainWindow (parent),
 
   this->addRecentFiles (this->menuFile, this->actionQuit);
   connect (this, SIGNAL (openRecentFile (QString)),
-           this, SLOT (load_off (QString)));
+           this, SLOT (load_depend_on_extension(QString)));
 
   statusMessage = new QLabel
       ("Darts: 0,  Vertices: 0  (Points: 0),  Edges: 0, Facets: 0,"
@@ -162,7 +164,7 @@ void MainWindow::onSceneChanged ()
 {
   QApplication::setOverrideCursor( Qt::WaitCursor );
 
-  int mark = scene.lcc->get_new_mark ();
+  LCC::size_type mark = scene.lcc->get_new_mark ();
   scene.lcc->negate_mark (mark);
 
   std::vector<unsigned int> cells;
@@ -222,6 +224,32 @@ void MainWindow::init_all_new_volumes()
     { on_new_volume(it); }
 }
 
+void MainWindow::on_actionSave_triggered ()
+{
+  QString fileName = QFileDialog::getSaveFileName (this,
+                                                   tr ("Save"),
+                                                   "save.3map",
+                                                   tr ("3-map files (*.3map)"));
+
+  if (!fileName.isEmpty ())
+  {
+     save(fileName);
+  }
+}
+
+void MainWindow::on_actionLoad_triggered ()
+{
+  QString fileName = QFileDialog::getOpenFileName (this,
+                                                   tr ("Load"),
+                                                   "./3map",
+                                                   tr ("3-map files (*.3map)"));
+
+  if (!fileName.isEmpty ())
+  {
+    load(fileName, true);
+  }
+}
+
 void MainWindow::on_actionImportOFF_triggered ()
 {
   QString fileName = QFileDialog::getOpenFileName (this,
@@ -232,6 +260,19 @@ void MainWindow::on_actionImportOFF_triggered ()
   if (!fileName.isEmpty ())
   {
     load_off (fileName, true);
+  }
+}
+
+void MainWindow::on_actionImportMoka_triggered()
+{
+  QString fileName = QFileDialog::getOpenFileName (this,
+                                                   tr ("Import Moka"),
+                                                   "./moka",
+                                                   tr ("Moka files (*.moka)"));
+
+  if (!fileName.isEmpty ())
+  {
+    load_moka(fileName, true);
   }
 }
 
@@ -261,6 +302,84 @@ void MainWindow::on_actionAddOFF_triggered()
   {
     load_off (fileName, false);
   }
+}
+
+void MainWindow::load_depend_on_extension(const QString & fileName, bool clear)
+{
+  QString ext = QFileInfo(fileName).suffix();
+  if ( ext=="3map")
+  {
+    load(fileName, clear);
+  }
+  else if (ext=="off")
+  {
+    load_off(fileName, clear);
+  }
+  else if (ext=="moka")
+  {
+    load_moka(fileName, clear);
+  }
+  else
+  {
+    std::cout<<"Extension not considered."<<std::endl;
+  }
+}
+
+void MainWindow::load(const QString & fileName, bool clear)
+{
+  QApplication::setOverrideCursor (Qt::WaitCursor);
+
+  if (clear) this->clear_all();
+
+#ifdef CGAL_PROFILE_LCC_DEMO
+  CGAL::Timer timer;
+  timer.start();
+#endif
+
+  bool res = load_combinatorial_map(fileName.toStdString().c_str(), *(scene.lcc));
+
+#ifdef CGAL_PROFILE_LCC_DEMO
+  timer.stop();
+  std::cout<<"Time to load 3-map "<<qPrintable(fileName)<<": "
+           <<timer.time()<<" seconds."<<std::endl;
+#endif
+
+  recreate_whole_volume_list();
+
+  this->addToRecentFiles(fileName);
+  QApplication::restoreOverrideCursor ();
+
+  if (res)
+    statusBar ()->showMessage (QString ("3-map loaded ") + fileName,
+                               DELAY_STATUSMSG);
+  else
+    statusBar ()->showMessage (QString ("Problem: 3-map not loaded ") + fileName,
+                               DELAY_STATUSMSG);
+  Q_EMIT (sceneChanged ());
+}
+
+void MainWindow::save(const QString & fileName)
+{
+  QApplication::setOverrideCursor (Qt::WaitCursor);
+
+#ifdef CGAL_PROFILE_LCC_DEMO
+  CGAL::Timer timer;
+  timer.start();
+#endif
+
+  if ( save_combinatorial_map(*(scene.lcc), fileName.toStdString().c_str()) )
+    statusBar ()->showMessage (QString ("3-map saved ") + fileName,
+                               DELAY_STATUSMSG);
+  else
+    statusBar ()->showMessage (QString ("Problem: 3-map not saved ") + fileName,
+                               DELAY_STATUSMSG);
+  QApplication::restoreOverrideCursor ();
+
+#ifdef CGAL_PROFILE_LCC_DEMO
+  timer.stop();
+  std::cout<<"Time to save 3-map "<<qPrintable(fileName)<<": "
+           <<timer.time()<<" seconds."<<std::endl;
+#endif
 }
 
 void MainWindow::load_off (const QString & fileName, bool clear)
@@ -295,7 +414,7 @@ void MainWindow::load_off (const QString & fileName, bool clear)
   else
     statusBar ()->showMessage (QString ("Add off file") + fileName,
                                DELAY_STATUSMSG);
-  emit (sceneChanged ());
+  Q_EMIT (sceneChanged ());
 }
 
 void MainWindow::load_3DTDS (const QString & fileName, bool clear)
@@ -329,7 +448,41 @@ void MainWindow::load_3DTDS (const QString & fileName, bool clear)
   init_all_new_volumes();
 
   QApplication::restoreOverrideCursor ();
-  emit (sceneChanged ());
+  Q_EMIT (sceneChanged ());
+}
+
+void MainWindow::load_moka(const QString & fileName, bool clear)
+{
+  QApplication::setOverrideCursor (Qt::WaitCursor);
+
+  if (clear) this->clear_all();
+
+#ifdef CGAL_PROFILE_LCC_DEMO
+  CGAL::Timer timer;
+  timer.start();
+#endif
+
+  CGAL::import_from_moka < LCC > (*scene.lcc, qPrintable (fileName));
+
+#ifdef CGAL_PROFILE_LCC_DEMO
+  timer.stop();
+  std::cout<<"Time to load off "<<qPrintable(fileName)<<": "
+           <<timer.time()<<" seconds."<<std::endl;
+#endif
+
+  init_all_new_volumes();
+  recreate_whole_volume_list();
+
+  this->addToRecentFiles (fileName);
+  QApplication::restoreOverrideCursor ();
+
+  if (clear)
+    statusBar ()->showMessage (QString ("Load off file") + fileName,
+                               DELAY_STATUSMSG);
+  else
+    statusBar ()->showMessage (QString ("Add off file") + fileName,
+                               DELAY_STATUSMSG);
+  Q_EMIT (sceneChanged ());
 }
 
 Dart_handle MainWindow::make_iso_cuboid(const Point_3 basepoint, LCC::FT lg)
@@ -363,7 +516,7 @@ Dart_handle MainWindow::on_actionCreate_cube_triggered ()
 
   statusBar ()->showMessage (QString ("Cube created"),DELAY_STATUSMSG);
 
-  emit (sceneChanged ());
+  Q_EMIT (sceneChanged ());
 
   return d;
 }
@@ -386,7 +539,7 @@ void MainWindow::on_actionCreate3Cubes_triggered ()
   statusBar ()->showMessage (QString ("3 cubes were created"),
                              DELAY_STATUSMSG);
 
-  emit (sceneChanged ());
+  Q_EMIT (sceneChanged ());
 }
 
 void MainWindow::on_actionCreate2Volumes_triggered ()
@@ -412,7 +565,7 @@ void MainWindow::on_actionCreate2Volumes_triggered ()
   statusBar ()->showMessage (QString ("2 volumes were created"),
                              DELAY_STATUSMSG);
 
-  emit (sceneChanged());
+  Q_EMIT (sceneChanged());
 }
 
 void MainWindow::on_actionCreate_mesh_triggered ()
@@ -449,7 +602,7 @@ void MainWindow::onCreateMeshOk()
   statusBar ()->showMessage (QString ("Mesh created"),DELAY_STATUSMSG);
 
   QApplication::restoreOverrideCursor ();
-  emit (sceneChanged ());
+  Q_EMIT (sceneChanged ());
 }
 
 void MainWindow::on_actionSubdivide_triggered ()
@@ -470,7 +623,7 @@ void MainWindow::on_actionSubdivide_triggered ()
 #endif
 
   QApplication::restoreOverrideCursor ();
-  emit (sceneChanged ());
+  Q_EMIT (sceneChanged ());
   statusBar ()->showMessage (QString ("Objects were subdivided"),
                              DELAY_STATUSMSG);
 }
@@ -493,7 +646,7 @@ void MainWindow::on_actionSubdivide_pqq_triggered ()
 #endif
 
   QApplication::restoreOverrideCursor ();
-  emit (sceneChanged ());
+  Q_EMIT (sceneChanged ());
   statusBar ()->showMessage (QString ("Objects were subdivided"),
                              DELAY_STATUSMSG);
 }
@@ -503,7 +656,7 @@ void MainWindow::on_actionClear_triggered()
 {
   clear_all();
   statusBar ()->showMessage (QString ("Scene cleared"), DELAY_STATUSMSG);
-  emit (sceneChanged ());
+  Q_EMIT (sceneChanged ());
 }
 
 void MainWindow::on_actionCompute_Voronoi_3D_triggered ()
@@ -571,7 +724,7 @@ void MainWindow::on_actionCompute_Voronoi_3D_triggered ()
   // We remove the infinite volume and all its adjacent volumes.
   {
     std::stack<Dart_handle> toremove;
-    int mark_toremove=scene.lcc->get_new_mark();
+    LCC::size_type mark_toremove=scene.lcc->get_new_mark();
     toremove.push(ddh);
     CGAL::mark_cell<LCC,3>(*scene.lcc, ddh, mark_toremove);
     for (LCC::Dart_of_cell_range<3>::iterator
@@ -602,7 +755,7 @@ void MainWindow::on_actionCompute_Voronoi_3D_triggered ()
 
   init_all_new_volumes();
   QApplication::restoreOverrideCursor ();
-  emit (sceneChanged ());
+  Q_EMIT (sceneChanged ());
   statusBar ()->showMessage (QString ("Voronoi 3D of points in ") + fileName,
                              DELAY_STATUSMSG);
 }
@@ -641,7 +794,7 @@ void MainWindow::on_actionDual_3_triggered ()
 
   statusBar ()->showMessage (QString ("Dual_3 computed"), DELAY_STATUSMSG);
   QApplication::restoreOverrideCursor ();
-  emit (sceneChanged ());
+  Q_EMIT (sceneChanged ());
 }
 
 void MainWindow::on_actionClose_volume_triggered()
@@ -658,7 +811,7 @@ void MainWindow::on_actionClose_volume_triggered()
     init_all_new_volumes();
     statusBar ()->showMessage (QString ("All volume(s) closed"),
                                DELAY_STATUSMSG);
-    emit (sceneChanged ());
+    Q_EMIT (sceneChanged ());
   }
   else
     statusBar ()->showMessage
@@ -676,7 +829,7 @@ void MainWindow::on_actionClose_volume_triggered()
 
 void MainWindow::on_actionSew3_same_facets_triggered()
 {
-  int mymark = scene.lcc->get_new_mark();
+  LCC::size_type mymark = scene.lcc->get_new_mark();
   mark_all_filled_and_visible_volumes(mymark);
 
   QApplication::setOverrideCursor (Qt::WaitCursor);
@@ -691,7 +844,7 @@ void MainWindow::on_actionSew3_same_facets_triggered()
     statusBar()->showMessage
         (QString ("Same facets of visible and filled volume(s) are 3-sewn"),
          DELAY_STATUSMSG);
-    emit (sceneChanged ());
+    Q_EMIT (sceneChanged ());
   }
   else
     statusBar()->showMessage (QString ("No facets 3-sewn"), DELAY_STATUSMSG);
@@ -739,7 +892,7 @@ void MainWindow::on_actionUnsew3_all_triggered()
     statusBar()->showMessage
         (QString ("Darts between visible and filled volume(s) are 3-unsewn"),
          DELAY_STATUSMSG);
-    emit (sceneChanged ());
+    Q_EMIT (sceneChanged ());
   }
   else
     statusBar()->showMessage (QString ("No dart 3-unsewn"), DELAY_STATUSMSG);
@@ -775,14 +928,14 @@ void MainWindow::on_actionRemove_filled_volumes_triggered()
 
   recreate_whole_volume_list();
   QApplication::restoreOverrideCursor ();
-  emit(sceneChanged());
+  Q_EMIT( sceneChanged());
 
   statusBar()->showMessage
       (QString::number(count)+QString("Visible and filled volume(s) removed"),
        DELAY_STATUSMSG);
 }
 
-void MainWindow::on_actionTriangulate_all_facets_triggered()
+void MainWindow::on_actionInsert_center_vertices_triggered()
 {
   QApplication::setOverrideCursor (Qt::WaitCursor);
 
@@ -804,15 +957,111 @@ void MainWindow::on_actionTriangulate_all_facets_triggered()
 
 #ifdef CGAL_PROFILE_LCC_DEMO
   timer.stop();
-  std::cout<<"Time to triangulate all filled faces: "
+  std::cout<<"Time to insert center vertices in all filled faces: "
            <<timer.time()<<" seconds."<<std::endl;
 #endif
 
   QApplication::restoreOverrideCursor ();
-  emit (sceneChanged ());
+  Q_EMIT (sceneChanged ());
   statusBar()->showMessage
-      (QString ("Facets of visible and filled volume(s) triangulated"),
+      (QString ("Vertices are inserted in center of facets of visible and filled volume(s)"),
        DELAY_STATUSMSG);
+}
+
+double compute_angle3d(const Vector_3& v1, const Vector_3& v2)
+{
+  double a = CGAL::to_double( (v1*v2) /
+                              ( sqrt(v1.squared_length()) * sqrt(v2.squared_length()) ) ) ;
+
+  if (a < -1.0) return acos(-1.0)/M_PI*180.0;
+  else if (a > 1.0) return acos(1.0)/M_PI*180.0;
+  else return acos(a)/M_PI*180.0;
+}
+
+void MainWindow::on_actionMerge_coplanar_faces_triggered()
+{
+  QApplication::setOverrideCursor (Qt::WaitCursor);
+
+#ifdef CGAL_PROFILE_LCC_DEMO
+  CGAL::Timer timer;
+  timer.start();
+#endif
+
+  scene.lcc->set_update_attributes(false);
+
+  std::vector<Dart_handle> edges;
+  LCC::size_type treated  = scene.lcc->get_new_mark();
+  LCC::size_type treated2 = scene.lcc->get_new_mark();
+
+  for ( LCC::Dart_range::iterator it= scene.lcc->darts().begin(),
+          itend = scene.lcc->darts().end(); it!=itend; ++it )
+  {
+    if (!scene.lcc->is_marked(it, treated) )
+    {
+      if ( CGAL::is_removable<LCC, 1>(*scene.lcc, it) )
+      {
+        LCC::Vector normal1 = CGAL::compute_normal_of_cell_2(*scene.lcc,it);
+        LCC::Vector normal2 = CGAL::compute_normal_of_cell_2(*scene.lcc, scene.lcc->beta<2>(it) );
+        double angle = compute_angle3d(normal1, normal2);
+
+        if ( ((angle<5.0 || angle>355.0) || (angle<185.0 && angle>175.0)) )
+        {
+          edges.push_back(it);
+        }
+      }
+      CGAL::mark_cell<LCC, 1>(*scene.lcc, it, treated);
+    }
+  }
+
+
+  for (std::vector<Dart_handle>::iterator it=edges.begin(),
+         itend=edges.end(); it!=itend; ++it)
+  {
+    CGAL::mark_cell<LCC, 1>(*scene.lcc, *it, treated2);
+
+    if ( scene.lcc->beta<0, 2>(*it)==*it || scene.lcc->beta<1, 2>(*it)==*it)
+    { // To process dangling edges
+
+      Dart_handle actu = *it, prev=NULL;
+      do
+      {
+        if ( scene.lcc->beta<0, 2>(actu)==actu ) prev = scene.lcc->beta<1>(actu);
+        else prev = scene.lcc->beta<0>(actu);
+
+        if (scene.lcc->is_marked(actu, treated2) &&
+            (scene.lcc->beta<0, 2>(actu)!=actu || scene.lcc->beta<1, 2>(actu)!=actu) )
+        {
+          CGAL::remove_cell<LCC, 1>(*scene.lcc, actu);
+          actu = prev;
+        }
+        else
+          actu = NULL;
+      }
+      while (actu!=NULL && (scene.lcc->beta<0, 2>(actu)==actu || scene.lcc->beta<1, 2>(actu)==actu));
+    }
+    else if ( !CGAL::belong_to_same_cell<LCC, 2>(*scene.lcc, *it,
+                                                 scene.lcc->beta<2>(*it)) )
+      CGAL::remove_cell<LCC, 1>(*scene.lcc, *it);
+  }
+
+  assert(scene.lcc->is_whole_map_marked(treated));
+  scene.lcc->free_mark(treated);
+  scene.lcc->free_mark(treated2);
+
+  scene.lcc->set_update_attributes(true);
+
+#ifdef CGAL_PROFILE_LCC_DEMO
+  timer.stop();
+  std::cout<<"Time to merge all coplanar faces: "
+           <<timer.time()<<" seconds."<<std::endl;
+#endif
+
+  recreate_whole_volume_list();
+
+  QApplication::restoreOverrideCursor ();
+  Q_EMIT (sceneChanged ());
+  statusBar()->showMessage
+      (QString ("Coplanar face(s) merged"), DELAY_STATUSMSG);
 }
 
 void MainWindow::on_actionMerge_all_volumes_triggered()
@@ -855,9 +1104,228 @@ void MainWindow::on_actionMerge_all_volumes_triggered()
   recreate_whole_volume_list();
 
   QApplication::restoreOverrideCursor ();
-  emit (sceneChanged ());
+  Q_EMIT (sceneChanged ());
   statusBar()->showMessage
       (QString ("Visible and filled volume(s) merged"), DELAY_STATUSMSG);
+}
+
+bool is_external(CDT::Face_handle fh)
+{
+  return fh->info().is_external;
+}
+
+int number_of_existing_edge(CDT::Face_handle fh)
+{
+  unsigned res=0;
+  for (int i=0; i<3; ++i)
+    if (fh->info().exist_edge[i]) ++res;
+  return res;
+}
+
+int get_free_edge(CDT::Face_handle fh)
+{
+  CGAL_assertion( number_of_existing_edge(fh)==2 );
+  for (int i=0; i<3; ++i)
+    if (!fh->info().exist_edge[i]) return i;
+
+  CGAL_assertion(false);
+  return -1;
+}
+
+void constrained_delaunay_triangulation(LCC &lcc, Dart_handle d1)
+{
+  Vector_3 normal = CGAL::compute_normal_of_cell_2(lcc,d1);
+  P_traits cdt_traits(normal);
+  CDT cdt(cdt_traits);
+
+  //inserting the constraints edge by edge
+  LCC::Dart_of_orbit_range<1>::iterator
+    it(lcc.darts_of_orbit<1>(d1).begin());
+
+  CDT::Vertex_handle previous=LCC::null_handle, first=LCC::null_handle,
+    vh=LCC::null_handle;
+
+   for (LCC::Dart_of_orbit_range<1>::iterator
+          itend(lcc.darts_of_orbit<1>(d1).end()); it!=itend; ++it)
+   {
+     vh = cdt.insert(lcc.point(it));
+     vh->info().dh=it;
+     if( first==NULL )
+     {
+       first=vh;
+     }
+     if( previous!=NULL)
+     {
+       CGAL_assertion( previous !=vh );
+       cdt.insert_constraint(previous,vh);
+     }
+
+     previous=vh;
+   }
+   cdt.insert_constraint(previous,first);
+   CGAL_assertion(cdt.is_valid());
+
+   // sets mark is_external
+   for( CDT::All_faces_iterator fit = cdt.all_faces_begin(),
+          fitend = cdt.all_faces_end(); fit != fitend; ++fit)
+   {
+     fit->info().is_external = true;
+     fit->info().is_process = false;
+     fit->info().exist_edge[0]=false;
+     fit->info().exist_edge[1]=false;
+     fit->info().exist_edge[2]=false;
+   }
+
+   std::queue<CDT::Face_handle> face_queue;
+   CDT::Face_handle face_internal = NULL;
+
+   face_queue.push(cdt.infinite_vertex()->face());
+   while(! face_queue.empty() )
+   {
+     CDT::Face_handle fh = face_queue.front();
+     face_queue.pop();
+     if(!fh->info().is_process)
+     {
+       fh->info().is_process = true;
+       for(int i = 0; i <3; ++i)
+       {
+         if(!cdt.is_constrained(std::make_pair(fh, i)))
+         {
+           face_queue.push(fh->neighbor(i));
+         }
+         else if (face_internal==NULL)
+         {
+           face_internal = fh->neighbor(i);
+         }
+       }
+     }
+   }
+   if ( face_internal!=NULL )
+     face_queue.push(face_internal);
+   
+   while(! face_queue.empty() )
+   {
+     CDT::Face_handle fh = face_queue.front();
+     face_queue.pop();
+     if(!fh->info().is_process)
+     {
+       fh->info().is_process = true;
+       fh->info().is_external = false;
+       for(int i = 0; i <3; ++i)
+       {
+         if(!cdt.is_constrained(std::make_pair(fh, i)))
+         {
+           face_queue.push(fh->neighbor(i));
+         }
+       }
+     }
+   }
+   
+   for( CDT::Finite_edges_iterator eit = cdt.finite_edges_begin(),
+          eitend = cdt.finite_edges_end(); eit != eitend; ++eit)
+   {
+     CDT::Face_handle fh = eit->first;
+     int index = eit->second;
+     CDT::Face_handle opposite_fh = fh->neighbor(index);
+     if(cdt.is_constrained(std::make_pair(fh, index)))
+     {
+       fh->info().exist_edge[index]=true;
+       opposite_fh->info().exist_edge[cdt.mirror_index(fh,index)]=true;
+
+       if ( !fh->info().is_external && number_of_existing_edge(fh)==2 )
+         face_queue.push(fh);
+       if ( !opposite_fh->info().is_external &&
+            number_of_existing_edge(opposite_fh)==2 )
+         face_queue.push(opposite_fh);
+     }
+   }
+
+   while( !face_queue.empty() )
+   {
+     CDT::Face_handle fh = face_queue.front();
+     face_queue.pop();
+     CGAL_assertion( number_of_existing_edge(fh)>=2 ); // i.e. ==2 or ==3
+     CGAL_assertion( !fh->info().is_external );
+
+     if (number_of_existing_edge(fh)==2)
+     {
+       int index = get_free_edge(fh);
+       CDT::Face_handle opposite_fh = fh->neighbor(index);
+
+       CGAL_assertion( !fh->info().exist_edge[index] );
+       CGAL_assertion( !opposite_fh->info().
+                       exist_edge[cdt.mirror_index(fh,index)] );
+       // triangle is (vc, vb, va)
+       const CDT::Vertex_handle va = fh->vertex(cdt. cw(index));
+       const CDT::Vertex_handle vb = fh->vertex(cdt.ccw(index));
+       const CDT::Vertex_handle vc = fh->vertex(index);
+       
+       Dart_handle dd1 = NULL;
+       for (LCC::Dart_of_cell_range<0, 2>::iterator it(lcc.darts_of_cell<0, 2>(va->info().dh).begin());
+            dd1==NULL && it.cont(); ++it)
+       {
+         if (lcc.point(lcc.beta<1>(it))==vc->point())
+           dd1=it;
+       }
+       
+       Dart_handle dd2 = NULL;
+       for (LCC::Dart_of_cell_range<0, 2>::iterator it(lcc.darts_of_cell<0, 2>(vb->info().dh).begin());
+            dd2==NULL && it.cont(); ++it)
+       {
+         if (lcc.point(lcc.beta<0>(it))==vc->point())
+           dd2=it;
+       }
+       
+       //       assert(((lcc.beta<0,0>(dd1)==dd2) || lcc.beta<1,1>(dd1)==dd2));
+       
+       Dart_handle ndart=CGAL::insert_cell_1_in_cell_2(lcc, dd1, dd2);
+       va->info().dh=lcc.beta<2>(ndart);
+
+       fh->info().exist_edge[index]=true;
+       opposite_fh->info().exist_edge[cdt.mirror_index(fh,index)]=true;
+
+       if ( !opposite_fh->info().is_external &&
+            number_of_existing_edge(opposite_fh)==2 )
+         face_queue.push(opposite_fh);
+     }
+   }
+}
+
+void MainWindow::on_actionTriangulate_all_facets_triggered()
+{
+  QApplication::setOverrideCursor (Qt::WaitCursor);
+
+#ifdef CGAL_PROFILE_LCC_DEMO
+  CGAL::Timer timer;
+  timer.start();
+#endif
+
+  std::vector<LCC::Dart_handle> v;
+  for (LCC::One_dart_per_cell_range<2>::iterator
+       it(scene.lcc->one_dart_per_cell<2>().begin()); it.cont(); ++it)
+  {
+    if ( scene.lcc->info<3>(it).is_filled_and_visible() ||
+         (!scene.lcc->is_free<3>(it) &&
+          scene.lcc->info<3>(scene.lcc->beta<3>(it)).is_filled_and_visible()) )
+      v.push_back(it);
+  }
+
+  for (std::vector<LCC::Dart_handle>::iterator itv(v.begin());
+       itv!=v.end(); ++itv)
+    constrained_delaunay_triangulation(*scene.lcc, *itv);
+
+#ifdef CGAL_PROFILE_LCC_DEMO
+  timer.stop();
+  std::cout<<"Time to triangulate all filled faces: "
+           <<timer.time()<<" seconds."<<std::endl;
+#endif
+
+  recreate_whole_volume_list();
+
+  QApplication::restoreOverrideCursor ();
+  Q_EMIT (sceneChanged ());
+  statusBar()->showMessage
+      (QString ("All visible and filled faces were triangulated"), DELAY_STATUSMSG);
 }
 
 bool MainWindow::is_volume_in_list(LCC::Attribute_handle<3>::type ah)
@@ -974,6 +1442,8 @@ void MainWindow::recreate_whole_volume_list()
 
 void MainWindow::onCellChanged(int row, int col)
 {
+  volumeList->disconnect(this);
+
   LCC::Attribute_type<3>::type* ptr=
       reinterpret_cast<LCC::Attribute_type<3>::type*>
       ( volumeList->item(row,3)->data(Qt::UserRole).value<quintptr>() );
@@ -993,7 +1463,8 @@ void MainWindow::onCellChanged(int row, int col)
           (volumeList->item(row,1)->flags()|Qt::ItemIsEnabled);
   }
 
-  emit(sceneChanged());
+  connectVolumeListHandlers();
+  Q_EMIT( sceneChanged());
 }
 
 void MainWindow::onHeaderClicked(int col)
@@ -1056,11 +1527,11 @@ void MainWindow::onHeaderClicked(int col)
     }
 
     connectVolumeListHandlers();
-    emit(sceneChanged());
+    Q_EMIT( sceneChanged());
   }
 }
 
-void MainWindow::mark_all_filled_and_visible_volumes(int amark)
+void MainWindow::mark_all_filled_and_visible_volumes(LCC::size_type amark)
 {
   for (LCC::Attribute_range<3>::type::iterator
        it=scene.lcc->attributes<3>().begin(),
@@ -1079,7 +1550,7 @@ void MainWindow::on_actionExtend_filled_volumes_triggered()
 
   std::vector<LCC::Attribute_handle<3>::type> tofill;
 
-  int mark_volume = scene.lcc->get_new_mark();
+  LCC::size_type mark_volume = scene.lcc->get_new_mark();
   bool already_tofill;
 
   for (LCC::Attribute_range<3>::type::iterator
@@ -1122,7 +1593,7 @@ void MainWindow::on_actionExtend_filled_volumes_triggered()
     }
 
     update_volume_list_all_ckeckstates();
-    emit(sceneChanged());
+    Q_EMIT( sceneChanged());
   }
 
   connectVolumeListHandlers();
@@ -1134,7 +1605,7 @@ void MainWindow::on_actionExtend_hidden_volumes_triggered()
 
   std::vector<LCC::Attribute_handle<3>::type> tohide;
 
-  int mark_volume = scene.lcc->get_new_mark();
+  LCC::size_type mark_volume = scene.lcc->get_new_mark();
   bool already_tohide;
 
   for (LCC::Attribute_range<3>::type::iterator
@@ -1177,7 +1648,7 @@ void MainWindow::on_actionExtend_hidden_volumes_triggered()
     }
 
     update_volume_list_all_ckeckstates();
-    emit(sceneChanged());
+    Q_EMIT( sceneChanged());
   }
 
   connectVolumeListHandlers();
@@ -1214,7 +1685,7 @@ void MainWindow::onMengerCancel()
   update_operations_entries(true);
   statusBar()->showMessage (QString ("Menger sponge creation canceled"),
                             DELAY_STATUSMSG);
-  emit(sceneChanged());
+  Q_EMIT( sceneChanged());
 }
 
 void MainWindow::onMengerOk()
@@ -1254,9 +1725,9 @@ void MainWindow::onMengerInc()
   std::vector<Dart_handle> faces;
   std::size_t nbvolinit = mengerVolumes.size();
 
-  int markEdges = (scene.lcc)->get_new_mark();
-  int markFaces = (scene.lcc)->get_new_mark();
-  int markVols  = (scene.lcc)->get_new_mark();
+  LCC::size_type markEdges = (scene.lcc)->get_new_mark();
+  LCC::size_type markFaces = (scene.lcc)->get_new_mark();
+  LCC::size_type markVols  = (scene.lcc)->get_new_mark();
 
   for(std::vector<Dart_handle>::iterator itvol=mengerVolumes.begin();
         itvol!=mengerVolumes.end(); ++itvol)
@@ -1354,7 +1825,7 @@ void MainWindow::onMengerInc()
                            arg(this->mengerLevel-1).arg(this->mengerLevel),
                            DELAY_STATUSMSG);
 
-  emit(sceneChanged());
+  Q_EMIT( sceneChanged());
 }
 
 void MainWindow::split_edge_in_three(Dart_handle dh)
@@ -1569,7 +2040,7 @@ void MainWindow::split_vol_in_twentyseven(Dart_handle dh)
 
 void MainWindow::process_full_slice(Dart_handle init,
                                   std::vector<Dart_handle>& faces,
-                                  int markVols)
+                                  LCC::size_type markVols)
 {
   Dart_handle d[12];
   d[0]=scene.lcc->beta(init,1,2);
@@ -1600,7 +2071,7 @@ void MainWindow::process_full_slice(Dart_handle init,
 
 void MainWindow::process_inter_slice(Dart_handle init,
                                    std::vector<Dart_handle>& faces,
-                                   int markVols)
+                                   LCC::size_type markVols)
 {
   Dart_handle d[24];
   d[0]=init;
@@ -1660,8 +2131,8 @@ void MainWindow::onMengerDec()
   // thus we can directly "cut" the std::vector to the correct size.
   mengerVolumes.resize(CGAL::ipower(20,mengerLevel));
 
-  int markVols     = (scene.lcc)->get_new_mark();
-  int markVertices = (scene.lcc)->get_new_mark();
+  LCC::size_type markVols     = (scene.lcc)->get_new_mark();
+  LCC::size_type markVertices = (scene.lcc)->get_new_mark();
 
   std::vector<Dart_handle> faces;
   std::vector<Dart_handle> edges;
@@ -1786,7 +2257,7 @@ void MainWindow::onMengerDec()
                            DELAY_STATUSMSG);
 
   QApplication::restoreOverrideCursor ();
-  emit(sceneChanged());
+  Q_EMIT( sceneChanged());
 }
 
 ///////////////////////////////////////////////////////////////////////////////////
@@ -1830,7 +2301,7 @@ void MainWindow::on_actionCreate_Sierpinski_Carpet_triggered ()
 
   statusBar ()->showMessage (QString ("Square created"),DELAY_STATUSMSG);
 
-  emit (sceneChanged ());
+  Q_EMIT (sceneChanged ());
 
   sierpinskiCarpetSurfaces.push_back(d);
   update_operations_entries(false);
@@ -1854,7 +2325,7 @@ void MainWindow::onSierpinskiCarpetCancel()
   sierpinskiCarpetSurfaces.clear();
   update_operations_entries(true);
   QApplication::restoreOverrideCursor ();
-  emit(sceneChanged());
+  Q_EMIT( sceneChanged());
 }
 
 void MainWindow::onSierpinskiCarpetOk()
@@ -1873,64 +2344,6 @@ void MainWindow::onSierpinskiCarpetUpdateAttributes(bool newValue)
 {
   sierpinskiCarpetUpdateAttributes = newValue;
 }
-
-/*void MainWindow::onSierpinskiCarpetNeverUpdateAttributes(bool newValue)
-{
-  if (afterConstructionUpdateAttributes)
-  {
-    dialogsierpinskicarpet.groupBox2->setEnabled(false);
-  }
-
-  neverUpdateAttributes = true;
-  duringConstructionUpdateAttributes = false;
-  afterConstructionUpdateAttributes = false;
-}
-
-void MainWindow::onSierpinskiCarpetDuringConstructionUpdateAttributes(bool newValue)
-{
-  if (afterConstructionUpdateAttributes)
-  {
-    dialogsierpinskicarpet.groupBox2->setEnabled(false);
-  }
-
-  neverUpdateAttributes = false;
-  duringConstructionUpdateAttributes = true;
-  afterConstructionUpdateAttributes = false;
-}
-
-void MainWindow::onSierpinskiCarpetAfterConstructionUpdateAttributes(bool newValue)
-{
-  if (!afterConstructionUpdateAttributes)
-  {
-    dialogsierpinskicarpet.groupBox2->setEnabled(true);
-  }
-
-  neverUpdateAttributes = false;
-  duringConstructionUpdateAttributes = false;
-  afterConstructionUpdateAttributes = true;
-}
-
-void MainWindow::onSierpinskiCarpetUpdateAttributesMethodStdMap(bool newValue)
-{
-  updateAttributesMethodStdMap = true;
-  updateAttributesMethodTraversal = false;
-}
-
-void MainWindow::onSierpinskiCarpetUpdateAttributesMethodTraversal(bool newValue)
-{
-  updateAttributesMethodStdMap = false;
-  updateAttributesMethodTraversal = true;
-}
-
-void MainWindow::onSierpinskiCarpetComputeGeometry(bool newValue)
-{
-  sierpinski_carpet_compute_geometry();
-
-  computeGeometry = false;
-  dialogsierpinskicarpet.computeGeometry->setEnabled(false);
-
-  emit(sceneChanged());
-}*/
 
 void MainWindow::onSierpinskiCarpetInc()
 {
@@ -1955,8 +2368,8 @@ void MainWindow::onSierpinskiCarpetInc()
   std::vector<Dart_handle> edges;
   nbfacesinit = sierpinskiCarpetSurfaces.size();
 
-  int markEdges = (scene.lcc)->get_new_mark();
-  int markFaces = (scene.lcc)->get_new_mark();
+  LCC::size_type markEdges = (scene.lcc)->get_new_mark();
+  LCC::size_type markFaces = (scene.lcc)->get_new_mark();
 
   for(std::vector<Dart_handle>::iterator itfaces=sierpinskiCarpetSurfaces.begin();
         itfaces!=sierpinskiCarpetSurfaces.end(); ++itfaces)
@@ -2061,7 +2474,7 @@ void MainWindow::onSierpinskiCarpetInc()
                            DELAY_STATUSMSG);
 
   QApplication::restoreOverrideCursor ();
-  emit(sceneChanged());
+  Q_EMIT( sceneChanged());
 }
 
 void MainWindow::sierpinski_carpet_update_geometry()
@@ -2079,7 +2492,7 @@ void MainWindow::sierpinski_carpet_update_geometry()
 
   if (updateAttributesMethodTraversal)*/
   {
-    int markVertices = (scene.lcc)->get_new_mark();
+    LCC::size_type markVertices = (scene.lcc)->get_new_mark();
 
     for(std::size_t i = 0; i < nbfacesinit; i++)
     {
@@ -2179,7 +2592,7 @@ void MainWindow::sierpinski_carpet_update_geometry()
 
 void MainWindow::sierpinski_carpet_compute_geometry()
 {
-  int markVertices = (scene.lcc)->get_new_mark();
+  LCC::size_type markVertices = (scene.lcc)->get_new_mark();
 
   for(std::size_t i = 0; i < nbfacesinit; i++)
   {
@@ -2493,8 +2906,8 @@ void MainWindow::onSierpinskiCarpetDec()
   // thus we can directly "cut" the std::vector to the correct size.
   sierpinskiCarpetSurfaces.resize(CGAL::ipower(8,sierpinskiCarpetLevel));
 
-  int markSurfaces = (scene.lcc)->get_new_mark();
-  int markVertices = (scene.lcc)->get_new_mark();
+  LCC::size_type markSurfaces = (scene.lcc)->get_new_mark();
+  LCC::size_type markVertices = (scene.lcc)->get_new_mark();
 
   std::vector<Dart_handle> edges;
   std::vector<Dart_handle> vertices;
@@ -2604,7 +3017,7 @@ void MainWindow::onSierpinskiCarpetDec()
                            arg(this->sierpinskiCarpetLevel+1).
                            arg(this->sierpinskiCarpetLevel),
                            DELAY_STATUSMSG);
-  emit(sceneChanged());
+  Q_EMIT( sceneChanged());
 }
 
 ///////////////////////////////////////////////////////////////////////////////////
@@ -2637,7 +3050,7 @@ void MainWindow::on_actionCreate_Sierpinski_Triangle_triggered ()
 
   statusBar ()->showMessage (QString ("Triangle created"),DELAY_STATUSMSG);
 
-  emit (sceneChanged ());
+  Q_EMIT (sceneChanged ());
 
   sierpinskiTriangleSurfaces.push_back(d);
   update_operations_entries(false);
@@ -2659,7 +3072,7 @@ void MainWindow::onSierpinskiTriangleCancel()
   recreate_whole_volume_list();
   sierpinskiTriangleSurfaces.clear();
   update_operations_entries(true);
-  emit(sceneChanged());
+  Q_EMIT( sceneChanged());
 }
 
 void MainWindow::onSierpinskiTriangleOk()
@@ -2693,8 +3106,8 @@ void MainWindow::onSierpinskiTriangleInc()
   std::vector<Dart_handle> edges;
   nbfacesinit = sierpinskiTriangleSurfaces.size();
 
-  int markEdges = (scene.lcc)->get_new_mark();
-  int markFaces = (scene.lcc)->get_new_mark();
+  LCC::size_type markEdges = (scene.lcc)->get_new_mark();
+  LCC::size_type markFaces = (scene.lcc)->get_new_mark();
 
   for(std::vector<Dart_handle>::iterator itfaces=sierpinskiTriangleSurfaces.begin();
         itfaces!=sierpinskiTriangleSurfaces.end(); ++itfaces)
@@ -2780,7 +3193,7 @@ void MainWindow::onSierpinskiTriangleInc()
                            DELAY_STATUSMSG);
   QApplication::restoreOverrideCursor ();
 
-  emit(sceneChanged());
+  Q_EMIT( sceneChanged());
 }
 
 void MainWindow::sierpinski_triangle_split_edge_in_two(Dart_handle dh)
@@ -2880,8 +3293,8 @@ void MainWindow::onSierpinskiTriangleDec()
   // thus we can directly "cut" the std::vector to the correct size.
   sierpinskiTriangleSurfaces.resize(CGAL::ipower(3,sierpinskiTriangleLevel));
 
-  int markSurfaces = (scene.lcc)->get_new_mark();
-  int markVertices = (scene.lcc)->get_new_mark();
+  LCC::size_type markSurfaces = (scene.lcc)->get_new_mark();
+  LCC::size_type markVertices = (scene.lcc)->get_new_mark();
 
   std::vector<Dart_handle> edges;
   std::vector<Dart_handle> vertices;
@@ -2985,7 +3398,7 @@ void MainWindow::onSierpinskiTriangleDec()
                            DELAY_STATUSMSG);
   QApplication::restoreOverrideCursor ();
 
-  emit(sceneChanged());
+  Q_EMIT( sceneChanged());
 }
 
 #undef DELAY_STATUSMSG

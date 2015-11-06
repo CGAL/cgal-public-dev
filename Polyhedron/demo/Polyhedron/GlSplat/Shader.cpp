@@ -20,6 +20,7 @@
 #include <qfile.h>
 #include <qtextstream.h>
 #include <assert.h>
+#include <QDebug>
 
 namespace GlSplat {
 
@@ -31,10 +32,9 @@ void Shader::define(const char* name, const char* value)
 bool Shader::loadSources(const char* vsrc, const char* fsrc)
 {
     bool allIsOk = true;
+    mProgramID = viewer->glCreateProgram();
 
-    mProgramID = glCreateProgram();
-
-    std::string defineStr = "";
+    std::string defineStr = "#extension GL_ARB_texture_rectangle : enable\n";
     for(DefineMap::iterator it = mDefines.begin() ; it!=mDefines.end() ; ++it)
     {
       defineStr += "#define " + it->first + " " + it->second + "\n";
@@ -42,44 +42,44 @@ bool Shader::loadSources(const char* vsrc, const char* fsrc)
 
     if(vsrc)
     {
-        GLuint shaderID = glCreateShader(GL_VERTEX_SHADER);
+        GLuint shaderID = viewer->glCreateShader(GL_VERTEX_SHADER);
 
         std::string source = defineStr + std::string(vsrc);
         const GLchar * arbSource = source.c_str();
 
-        glShaderSource(shaderID, 1, (const GLchar **)&arbSource, 0);
-        glCompileShader(shaderID);
+        viewer->glShaderSource(shaderID, 1, (const GLchar **)&arbSource, 0);
+        viewer->glCompileShader(shaderID);
 
         int compiled;
-        glGetShaderiv(shaderID,GL_COMPILE_STATUS,&compiled);
+        viewer->glGetShaderiv(shaderID,GL_COMPILE_STATUS,&compiled);
         allIsOk = allIsOk && compiled;
         //printInfoLog(shaderID);
 
-        glAttachShader(mProgramID, shaderID);
+        viewer->glAttachShader(mProgramID, shaderID);
     }
 
     if(fsrc)
     {
-        GLuint shaderID = glCreateShader(GL_FRAGMENT_SHADER);
+        GLuint shaderID = viewer->glCreateShader(GL_FRAGMENT_SHADER);
 
         std::string source = defineStr + std::string(fsrc);
         const GLchar * arbSource = source.c_str();
 
-        glShaderSource(shaderID, 1, (const GLchar **)&arbSource, 0);
-        glCompileShader(shaderID);
+        viewer->glShaderSource(shaderID, 1, (const GLchar **)&arbSource, 0);
+        viewer->glCompileShader(shaderID);
 
         int compiled;
-        glGetShaderiv(shaderID,GL_COMPILE_STATUS,&compiled);
+        viewer->glGetShaderiv(shaderID,GL_COMPILE_STATUS,&compiled);
         allIsOk = allIsOk && compiled;
         //printInfoLog(shaderID);
 
-        glAttachShader(mProgramID, shaderID);
+        viewer->glAttachShader(mProgramID, shaderID);
     }
 
-    glLinkProgram(mProgramID);
+    viewer->glLinkProgram(mProgramID);
 
     int isLinked;
-    glGetProgramiv(mProgramID, GL_LINK_STATUS, &isLinked);
+    viewer->glGetProgramiv(mProgramID, GL_LINK_STATUS, &isLinked);
     allIsOk = allIsOk && isLinked;
     mIsValid = isLinked == GL_TRUE;
     printInfoLog(mProgramID);
@@ -87,34 +87,34 @@ bool Shader::loadSources(const char* vsrc, const char* fsrc)
     return allIsOk;
 }
 //--------------------------------------------------------------------------------
-void Shader::activate(void) const
+void Shader::activate()
 {
     assert(mIsValid);
-    glUseProgram(mProgramID);
+    viewer->glUseProgram(mProgramID);
 }
-void Shader::release(void) const
+void Shader::release(void)
 {
-    glUseProgram(0);
+    viewer->glUseProgram(0);
 }
 //--------------------------------------------------------------------------------
-int Shader::getUniformLocation(const char* name) const
+int Shader::getUniformLocation(const char* name)
 {
     assert(mIsValid);
-    int loc = glGetUniformLocation(mProgramID, name);
+    int loc = viewer->glGetUniformLocation(mProgramID, name);
     return loc;
 }
 //--------------------------------------------------------------------------------
-void Shader::setSamplerUnit(const char* sampler, int unit) const
+void Shader::setSamplerUnit(const char* sampler, int unit)
 {
     activate();
-    glUniform1i(getUniformLocation(sampler), unit);
+    viewer->glUniform1i(getUniformLocation(sampler), unit);
     release();
 }
 //--------------------------------------------------------------------------------
-int Shader::getAttribLocation(const char* name) const
+int Shader::getAttribLocation(const char* name)
 {
     assert(mIsValid);
-    int loc = glGetAttribLocation(mProgramID, name);
+    int loc = viewer->glGetAttribLocation(mProgramID, name);
     return loc;
 }
 //--------------------------------------------------------------------------------
@@ -122,15 +122,19 @@ void Shader::printInfoLog(GLuint objectID)
 {
     int infologLength, charsWritten;
     GLchar *infoLog;
-    glGetProgramiv(objectID,GL_INFO_LOG_LENGTH, &infologLength);
+    viewer->glGetProgramiv(objectID,GL_INFO_LOG_LENGTH, &infologLength);
     if(infologLength > 0)
     {
         infoLog = new GLchar[infologLength];
-        glGetProgramInfoLog(objectID, infologLength, &charsWritten, infoLog);
+        viewer->glGetProgramInfoLog(objectID, infologLength, &charsWritten, infoLog);
         if (charsWritten>0)
           std::cerr << "Shader info : \n" << infoLog << std::endl;
         delete[] infoLog;
     }
 }
 
+void Shader::setViewer(CGAL::Three::Viewer_interface *v)
+{
+    viewer = v;
+}
 } // namepsace GlSplat

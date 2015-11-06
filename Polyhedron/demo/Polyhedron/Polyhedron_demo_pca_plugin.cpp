@@ -1,10 +1,12 @@
 #include <QApplication>
+#include <QAction>
+#include <QMainWindow>
 #include "Scene_polyhedron_item.h"
 #include "Scene_plane_item.h"
 #include "Polyhedron_type.h"
 
-#include "Polyhedron_demo_plugin_helper.h"
-#include "Polyhedron_demo_plugin_interface.h"
+#include <CGAL/Three/Polyhedron_demo_plugin_helper.h>
+#include <CGAL/Three/Polyhedron_demo_plugin_interface.h>
 
 #include <CGAL/centroid.h>
 #include <CGAL/bounding_box.h>
@@ -23,13 +25,14 @@ typedef Kernel::Vector_3 Vector;
 typedef Kernel::Point_3 Point;
 typedef Kernel::FT FT;
 
-
+using namespace CGAL::Three;
 class Polyhedron_demo_pca_plugin : 
   public QObject,
   public Polyhedron_demo_plugin_helper
 {
   Q_OBJECT
-  Q_INTERFACES(Polyhedron_demo_plugin_interface)
+  Q_INTERFACES(CGAL::Three::Polyhedron_demo_plugin_interface)
+  Q_PLUGIN_METADATA(IID "com.geometryfactory.PolyhedronDemo.PluginInterface/1.0")
 
 public:
   // used by Polyhedron_demo_plugin_helper
@@ -38,12 +41,31 @@ public:
                          << "actionFitLine";
   }
 
+  void init(QMainWindow* mainWindow,
+            Scene_interface* scene_interface)
+  {
+      mw = mainWindow;
+      scene = scene_interface;
+      actions_map["actionFitPlane"] = new QAction("Fit Plane", mw);
+      actions_map["actionFitPlane"]->setProperty("subMenuName", "Principal Component Analysis");
+
+      actions_map["actionFitLine"] = new QAction("Fit Line", mw);
+      actions_map["actionFitLine"]->setProperty("subMenuName", "Principal Component Analysis");
+
+      connect(actions_map["actionFitPlane"], SIGNAL(triggered()),
+              this, SLOT(on_actionFitPlane_triggered()));
+      connect(actions_map["actionFitLine"], SIGNAL(triggered()),
+              this, SLOT(on_actionFitLine_triggered()));
+
+  }
+
+
   bool applicable(QAction*) const { 
     return qobject_cast<Scene_polyhedron_item*>(scene->item(scene->mainSelectionIndex()));
   }
 
 
-public slots:
+public Q_SLOTS:
   void on_actionFitPlane_triggered();
   void on_actionFitLine_triggered();
 
@@ -51,7 +73,7 @@ public slots:
 
 void Polyhedron_demo_pca_plugin::on_actionFitPlane_triggered()
 {
-  const Scene_interface::Item_id index = scene->mainSelectionIndex();
+  const CGAL::Three::Scene_interface::Item_id index = scene->mainSelectionIndex();
   
   Scene_polyhedron_item* item = 
     qobject_cast<Scene_polyhedron_item*>(scene->item(index));
@@ -125,7 +147,7 @@ void Polyhedron_demo_pca_plugin::on_actionFitPlane_triggered()
 
 void Polyhedron_demo_pca_plugin::on_actionFitLine_triggered()
 {
-  const Scene_interface::Item_id index = scene->mainSelectionIndex();
+  const CGAL::Three::Scene_interface::Item_id index = scene->mainSelectionIndex();
   
   Scene_polyhedron_item* item = 
     qobject_cast<Scene_polyhedron_item*>(scene->item(index));
@@ -206,7 +228,5 @@ void Polyhedron_demo_pca_plugin::on_actionFitLine_triggered()
     QApplication::restoreOverrideCursor();
   }
 }
-
-Q_EXPORT_PLUGIN2(Polyhedron_demo_pca_plugin, Polyhedron_demo_pca_plugin)
 
 #include "Polyhedron_demo_pca_plugin.moc"

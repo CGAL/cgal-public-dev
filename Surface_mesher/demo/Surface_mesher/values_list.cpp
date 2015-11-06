@@ -80,7 +80,7 @@ void Values_delegate::setModelData(QWidget *editor, QAbstractItemModel *model,
     if(coloreditor)
     {
       model->setData(index, coloreditor->color());
-      emit new_color(index);
+      Q_EMIT new_color(index);
     }
   }
   else if(index.column() == Values_list::Value)
@@ -89,7 +89,7 @@ void Values_delegate::setModelData(QWidget *editor, QAbstractItemModel *model,
     if(lineedit)
     {
       model->setData(index, lineedit->text().toDouble());
-      emit new_value(index);
+      Q_EMIT new_value(index);
     }
   }
   else QItemDelegate::setModelData(editor, model, index);
@@ -106,7 +106,9 @@ Values_list::Values_list(QWidget* parent):
   Q_ASSERT_X(treeWidget, "Values_list constructor", "cannot find widget \"treeWidget\"");
 
   treeWidget->sortByColumn(Value, Qt::AscendingOrder);
-  treeWidget->header()->setClickable(false);
+   
+  treeWidget->header()->setSectionsClickable(false);
+
 
   Values_delegate* values_delegate = new Values_delegate(parent);
 
@@ -223,7 +225,7 @@ void Values_list::on_minusButton_clicked()
     //   treeWidget->invisibleRootItem()->removeChild(item);
     delete item;
   }
-  emit values_changed();
+  Q_EMIT values_changed();
 }
 
 void Values_list::on_plusButton_clicked()
@@ -242,7 +244,7 @@ void Values_list::addValue(const double i)
   QColor color = QColor(colors[color_index]);
   newItem->setData(Color, Qt::DisplayRole, color);
   newItem->setData(Name, Qt::DisplayRole, "");
-  emit values_changed();
+  Q_EMIT values_changed();
 }
 
 void Values_list::update_items_cache() {
@@ -268,4 +270,3 @@ void Values_list::setHeaderTitle(QString title)
   treeWidget->headerItem()->setText(0, title);
 }
 
-#include "values_list.moc"

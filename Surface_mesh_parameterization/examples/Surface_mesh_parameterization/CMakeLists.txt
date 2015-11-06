@@ -3,12 +3,8 @@
 
 project( Surface_mesh_parameterization_example )
 
-cmake_minimum_required(VERSION 2.6.2)
-if("${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION}.${CMAKE_PATCH_VERSION}" VERSION_GREATER 2.8.3)
-  cmake_policy(VERSION 2.8.4)
-else()
-  cmake_policy(VERSION 2.6)
-endif()
+cmake_minimum_required(VERSION 2.8.11)
+
 
 # Require packages new or improved since CGAL 3.4
 include_directories (BEFORE ../../../Installation/include/)
@@ -66,24 +62,24 @@ if ( CGAL_FOUND )
     list(APPEND CGAL_3RD_PARTY_LIBRARIES ${Boost_PROGRAM_OPTIONS_LIBRARY})
  endif()
 
-  # Executables that do *not* require Eigen
+ 
+  find_package(Eigen3 3.1.0) #(requires 3.1.0 or greater)
+ 
+  if (EIGEN3_FOUND)
+    # Executables that require Eigen 3.1
+    include( ${EIGEN3_USE_FILE} ) 
   create_single_source_cgal_program( "Authalic_parameterization.cpp" )
   create_single_source_cgal_program( "Mesh_cutting_parameterization.cpp" )
   create_single_source_cgal_program( "Simple_parameterization.cpp" )
   create_single_source_cgal_program( "Square_border_parameterization.cpp" )
 
-  find_package(Eigen3 3.1.0) #(requires 3.1.0 or greater)
- 
-  if (EIGEN3_FOUND)
-    # Executables that require Eigen 3.1
-    include( ${EIGEN3_USE_FILE} )
     create_single_source_cgal_program( "Complete_parameterization_example.cpp" )
-    create_single_source_cgal_program( "Eigen_parameterization.cpp" )
+
+  create_single_source_cgal_program( "polyhedron_ex_parameterization.cpp" )
+
   else(EIGEN3_FOUND)
     message(STATUS "NOTICE: Some examples require Eigen 3.1 (or greater) and will not be compiled.")  
   endif(EIGEN3_FOUND)
-
-  create_single_source_cgal_program( "polyhedron_ex_parameterization.cpp" )
 
 else()
 

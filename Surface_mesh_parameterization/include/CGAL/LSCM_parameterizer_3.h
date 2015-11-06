@@ -26,6 +26,10 @@
 #include <CGAL/Timer.h>
 #include <CGAL/OpenNL/linear_solver.h>
 
+#ifdef CGAL_EIGEN3_ENABLED
+#include <CGAL/Eigen_solver_traits.h>
+#endif
+
 #include <CGAL/Parameterizer_traits_3.h>
 #include <CGAL/Two_vertices_parameterizer_3.h>
 #include <CGAL/surface_mesh_parameterization_assertions.h>
@@ -43,14 +47,16 @@ namespace CGAL {
 
 /// \ingroup  PkgSurfaceParameterizationMethods
 ///
-/// The class LSCM_parameterizer_3 implements the
+/// The class `LSCM_parameterizer_3` implements the
 /// *Least Squares Conformal Maps (LSCM)* parameterization  \cgalCite{cgal:lprm-lscm-02}.
 ///
 /// This is a conformal parameterization, i.e. it attempts to preserve angles.
 ///
-/// This is a free border parameterization. No need to map the surface's border
+/// This is a free border parameterization. No need to map the border of the surface
 /// onto a convex polygon (only two pinned vertices are needed to ensure a
 /// unique solution), but one-to-one mapping is *not* guaranteed.
+///
+/// Note that his parametrization method has no template parameter for changing the sparse solver.
 ///
 /// \cgalModels `ParameterizerTraits_3`
 ///
@@ -66,11 +72,15 @@ template
 <
     class ParameterizationMesh_3,     ///< 3D surface mesh.
     class BorderParameterizer_3
-                = Two_vertices_parameterizer_3<ParameterizationMesh_3>,
+  = Two_vertices_parameterizer_3<ParameterizationMesh_3>,
                                       ///< Strategy to parameterize the surface border.
                                       ///< The minimum is to parameterize two vertices.
     class SparseLinearAlgebraTraits_d
-                = OpenNL::SymmetricLinearSolverTraits<typename ParameterizationMesh_3::NT>
+#if defined(CGAL_EIGEN3_ENABLED) || defined(DOXYGEN_RUNNING)
+  = Eigen_solver_traits<Eigen::SimplicialLDLT<Eigen_sparse_symmetric_matrix<double>::EigenType> >
+#else
+  = OpenNL::SymmetricLinearSolverTraits<typename ParameterizationMesh_3::NT>
+#endif
                                       ///< Traits class to solve a sparse linear system.
                                       ///< We may use a symmetric definite positive solver because LSCM
                                       ///< solves the system in the least squares sense.
@@ -94,11 +104,11 @@ public:
 
     /// Export BorderParameterizer_3 template parameter.
     typedef BorderParameterizer_3           Border_param;
-    /// Export SparseLinearAlgebraTraits_d template parameter.
+  
+// Private types
+private:  
     typedef SparseLinearAlgebraTraits_d     Sparse_LA;
 
-// Private types
-private:
     // Mesh_Adaptor_3 subtypes:
     typedef typename Adaptor::NT            NT;
     typedef typename Adaptor::Point_2       Point_2;

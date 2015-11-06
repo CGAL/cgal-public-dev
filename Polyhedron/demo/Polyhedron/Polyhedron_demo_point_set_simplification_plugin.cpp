@@ -1,10 +1,11 @@
 #include "config.h"
 #include "Scene_points_with_normal_item.h"
-#include "Polyhedron_demo_plugin_helper.h"
-#include "Polyhedron_demo_plugin_interface.h"
+#include <CGAL/Three/Polyhedron_demo_plugin_helper.h>
+#include <CGAL/Three/Polyhedron_demo_plugin_interface.h>
 
 #include <CGAL/grid_simplify_point_set.h>
 #include <CGAL/random_simplify_point_set.h>
+#include <CGAL/hierarchy_simplify_point_set.h>
 #include <CGAL/compute_average_spacing.h>
 #include <CGAL/Timer.h>
 #include <CGAL/Memory_sizer.h>
@@ -18,16 +19,27 @@
 
 #include "ui_Polyhedron_demo_point_set_simplification_plugin.h"
 
+// Concurrency
+#ifdef CGAL_LINKED_WITH_TBB
+typedef CGAL::Parallel_tag Concurrency_tag;
+#else
+typedef CGAL::Sequential_tag Concurrency_tag;
+#endif
+
+
+using namespace CGAL::Three;
 class Polyhedron_demo_point_set_simplification_plugin :
   public QObject,
   public Polyhedron_demo_plugin_helper
 {
   Q_OBJECT
-  Q_INTERFACES(Polyhedron_demo_plugin_interface)
+  Q_INTERFACES(CGAL::Three::Polyhedron_demo_plugin_interface)
+  Q_PLUGIN_METADATA(IID "com.geometryfactory.PolyhedronDemo.PluginInterface/1.0")
+
   QAction* actionSimplify;
 
 public:
-  void init(QMainWindow* mainWindow, Scene_interface* scene_interface) {
+  void init(QMainWindow* mainWindow, CGAL::Three::Scene_interface* scene_interface) {
     actionSimplify = new QAction(tr("Point set simplification selection"), mainWindow);
     actionSimplify->setObjectName("actionSimplify");
 
@@ -42,8 +54,9 @@ public:
     return QList<QAction*>() << actionSimplify;
   }
 
-public slots:
+public Q_SLOTS:
   void on_actionSimplify_triggered();
+
 
 }; // end Polyhedron_demo_point_set_simplification_plugin
 
@@ -56,14 +69,49 @@ class Point_set_demo_point_set_simplification_dialog : public QDialog, private U
       setupUi(this);
     }
 
-    QString simplificationMethod() const { return m_simplificationMethod->currentText(); }
-    double randomSimplificationPercentage() const { return m_randomSimplificationPercentage->value(); }
-    double gridCellSize() const { return m_gridCellSize->value(); }
+  unsigned int simplificationMethod() const
+  {
+    if (Random->isChecked())
+      return 0;
+    else if (Grid->isChecked())
+      return 1;
+    else
+      return 2;
+  }
+  double randomSimplificationPercentage() const { return m_randomSimplificationPercentage->value(); }
+  double gridCellSize() const { return m_gridCellSize->value(); }
+  unsigned int maximumClusterSize() const { return m_maximumClusterSize->value(); }
+  double maximumSurfaceVariation() const { return m_maximumSurfaceVariation->value(); }
+
+public Q_SLOTS:
+  
+  void on_Random_toggled (bool toggled)
+  {
+    m_randomSimplificationPercentage->setEnabled (toggled);
+    m_gridCellSize->setEnabled (!toggled);
+    m_maximumClusterSize->setEnabled (!toggled);
+    m_maximumSurfaceVariation->setEnabled (!toggled);
+  }
+  void on_Grid_toggled (bool toggled)
+  {
+    m_randomSimplificationPercentage->setEnabled (!toggled);
+    m_gridCellSize->setEnabled (toggled);
+    m_maximumClusterSize->setEnabled (!toggled);
+    m_maximumSurfaceVariation->setEnabled (!toggled);
+  }
+  void on_Hierarchy_toggled (bool toggled)
+  {
+    m_randomSimplificationPercentage->setEnabled (!toggled);
+    m_gridCellSize->setEnabled (!toggled);
+    m_maximumClusterSize->setEnabled (toggled);
+    m_maximumSurfaceVariation->setEnabled (toggled);
+  }
+
 };
 
 void Polyhedron_demo_point_set_simplification_plugin::on_actionSimplify_triggered()
 {
-  const Scene_interface::Item_id index = scene->mainSelectionIndex();
+  const CGAL::Three::Scene_interface::Item_id index = scene->mainSelectionIndex();
 
   Scene_points_with_normal_item* item =
     qobject_cast<Scene_points_with_normal_item*>(scene->item(index));
@@ -87,21 +135,22 @@ void Polyhedron_demo_point_set_simplification_plugin::on_actionSimplify_triggere
     // First point to delete
     Point_set::iterator first_point_to_remove = points->end();
 
-    if (dialog.simplificationMethod() == "Random")
+    unsigned int method = dialog.simplificationMethod ();
+    if (method == 0)
     {
-      std::cerr << "Random point cloud simplification (" << dialog.randomSimplificationPercentage() <<"%)...\n";
+      std::cerr << "Point set random simplification (" << dialog.randomSimplificationPercentage() <<"%)...\n";
 
       // Computes points to remove by random simplification
       first_point_to_remove =
         CGAL::random_simplify_point_set(points->begin(), points->end(),
                                         dialog.randomSimplificationPercentage());
     }
-    else if (dialog.simplificationMethod() == "Grid Clustering")
+    else if (method == 1)
     {
-      std::cerr << "Point cloud simplification by clustering (cell size = " << dialog.gridCellSize() <<" * average spacing)...\n";
+      std::cerr << "Point set grid simplification (cell size = " << dialog.gridCellSize() <<" * average spacing)...\n";
 
       // Computes average spacing
-      double average_spacing = CGAL::compute_average_spacing(
+      double average_spacing = CGAL::compute_average_spacing<Concurrency_tag>(
                                       points->begin(), points->end(),
                                       6 /* knn = 1 ring */);
 
@@ -109,6 +158,17 @@ void Polyhedron_demo_point_set_simplification_plugin::on_actionSimplify_triggere
       first_point_to_remove =
         CGAL::grid_simplify_point_set(points->begin(), points->end(),
                                       dialog.gridCellSize()*average_spacing);
+    }
+    else
+    {
+      std::cerr << "Point set hierarchy simplification (cluster size = " << dialog.maximumClusterSize()
+		<< ", maximum variation = " << dialog.maximumSurfaceVariation() << ")...\n";
+
+      // Computes points to remove by Grid Clustering
+      first_point_to_remove =
+        CGAL::hierarchy_simplify_point_set(points->begin(), points->end(),
+					   dialog.maximumClusterSize(),
+					   dialog.maximumSurfaceVariation());
     }
 
     std::size_t nb_points_to_remove = std::distance(first_point_to_remove, points->end());
@@ -119,10 +179,10 @@ void Polyhedron_demo_point_set_simplification_plugin::on_actionSimplify_triggere
                                     << std::endl;
 
     // Selects points to delete
-    points->select(points->begin(), points->end(), false);
-    points->select(first_point_to_remove, points->end(), true);
+    points->set_first_selected(first_point_to_remove);
 
     // Updates scene
+    item->invalidate_buffers();
     scene->itemChanged(index);
 
     QApplication::restoreOverrideCursor();
@@ -137,7 +197,5 @@ void Polyhedron_demo_point_set_simplification_plugin::on_actionSimplify_triggere
     }
   }
 }
-
-Q_EXPORT_PLUGIN2(Polyhedron_demo_point_set_simplification_plugin, Polyhedron_demo_point_set_simplification_plugin)
 
 #include "Polyhedron_demo_point_set_simplification_plugin.moc"

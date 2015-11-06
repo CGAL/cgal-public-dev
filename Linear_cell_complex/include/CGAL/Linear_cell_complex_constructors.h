@@ -339,7 +339,7 @@ namespace CGAL {
           else if ( it->vertex(1) == atr.infinite_vertex() )
             dart = alcc.beta(res, 1);
           else if ( it->vertex(2) == atr.infinite_vertex() )
-            dart = alcc.beta(res, 2);
+            dart = alcc.beta(res, 1, 1);
           else if ( it->vertex(3) == atr.infinite_vertex() )
             dart = alcc.beta(res, 2, 0);
         }
@@ -577,7 +577,7 @@ namespace CGAL {
                  alcc.vertex_attributes().end());
     writer.write_facet_header();
 
-    int m = alcc.get_new_mark();
+    typename LCC::size_type m = alcc.get_new_mark();
 
     for ( typename LCC::Dart_range::iterator itall = alcc.darts().begin(),
             itallend = alcc.darts().end(); itall!=itallend; ++itall )

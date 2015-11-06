@@ -511,6 +511,12 @@ size_type capacity() const;
 
 /// \name Access Member Functions 
 /// @{ 
+
+/*!
+returns true if the element `pos` is used (i.e.\ valid).
+*/
+bool is_used(const_iterator pos) const;
+
 /*!
 returns true if the element at position `i` in the container is used
 (i.e.\ valid).
@@ -828,4 +834,12 @@ static void * & pointer(T &t);
 
 
 }; /* end Compact_container_traits */
+
+/*!
+returns a hash value for the pointee of `i`. 
+\relates Compact_container
+*/ 
+  template <class T, class A>
+  std::size_t hash_value(const Compact_container<T,A>::iterator i);
+
 } /* end namespace CGAL */

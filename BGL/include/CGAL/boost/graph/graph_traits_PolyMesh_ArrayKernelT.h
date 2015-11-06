@@ -29,6 +29,8 @@
 #include <CGAL/boost/graph/internal/OM_iterator_from_circulator.h>
 #include <CGAL/boost/graph/iterator.h>
 #include <CGAL/Iterator_range.h>
+#include <CGAL/boost/graph/helpers.h>
+#include <CGAL/assertions.h>
 
 #include <OpenMesh/Core/Mesh/PolyMesh_ArrayKernelT.hh>
 
@@ -58,6 +60,11 @@ public:
     } else {
       return false;
     }
+  }
+
+  bool operator<(const OMesh_edge& other) const
+  { 
+    return this->idx() < other.idx();
   }
 
   bool
@@ -349,7 +356,8 @@ halfedge(typename boost::graph_traits<OpenMesh::PolyMesh_ArrayKernelT<K> >::vert
          const OpenMesh::PolyMesh_ArrayKernelT<K>& sm)
 {
   // prev because OpenMesh stores out-going halfedges
-  return sm.prev_halfedge_handle(sm.halfedge_handle(v));
+  // return sm.prev_halfedge_handle(sm.halfedge_handle(v));
+  return sm.opposite_halfedge_handle(sm.halfedge_handle(v));
 }
 
 
@@ -533,7 +541,7 @@ template <typename K>
 void
 clear_vertex(typename boost::graph_traits<OpenMesh::PolyMesh_ArrayKernelT<K> >::vertex_descriptor, 
              OpenMesh::PolyMesh_ArrayKernelT<K>&) {
-  assert(false);
+  CGAL_assert(false);
 }
 
   */
@@ -599,7 +607,7 @@ remove_face(typename boost::graph_traits<OpenMesh::PolyMesh_ArrayKernelT<K> >::f
   sm.request_face_status();
   sm.request_vertex_status();
   sm.request_halfedge_status();
-  set_halfedge(f, typename boost::graph_traits<OpenMesh::PolyMesh_ArrayKernelT<K> >::halfedge_descriptor(), sm);
+  
   set_halfedge(f, typename boost::graph_traits<OpenMesh::PolyMesh_ArrayKernelT<K> >::halfedge_descriptor(), sm);
   sm.status(f).set_deleted(true);
 }
@@ -632,9 +640,9 @@ add_face(InputIterator begin, InputIterator end, OpenMesh::PolyMesh_ArrayKernelT
 }
 
 template<typename K>
-bool is_valid(OpenMesh::PolyMesh_ArrayKernelT<K>& sm, bool verbose = false)
+bool is_valid(OpenMesh::PolyMesh_ArrayKernelT<K>& sm, bool /* verbose */ = false)
 {
-  return true;
+  return CGAL::is_valid_polygon_mesh(sm);
 }
 
 } // namespace OpenMesh

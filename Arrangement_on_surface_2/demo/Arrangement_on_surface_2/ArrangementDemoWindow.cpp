@@ -12,9 +12,6 @@
 // This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
 // WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
-// $URL: $
-// $Id: $
-//
 // Author(s)     : Alex Tsui <alextsui05@gmail.com>
 
 #include "ArrangementDemoWindow.h"
@@ -23,6 +20,7 @@
 #include "ArrangementDemoPropertiesDialog.h"
 #include "ArrangementDemoTab.h"
 #include "Conic_reader.h"
+
 #include "DeleteCurveMode.h"
 #include "ArrangementGraphicsItem.h"
 
@@ -59,13 +57,12 @@ ArrangementDemoWindow::ArrangementDemoWindow(QWidget* parent) :
                     this, SLOT( updateEnvelope( QAction* ) ) );
   QObject::connect( this->snapGroup, SIGNAL( triggered( QAction* ) ),
                     this, SLOT( updateSnapping( QAction* ) ) );
+
   QObject::connect( this->conicTypeGroup, SIGNAL( triggered( QAction* ) ),
                     this, SLOT( updateConicType( QAction* ) ) );
 }
 
-ArrangementDemoWindow::~ArrangementDemoWindow( )
-{
-}
+ArrangementDemoWindow::~ArrangementDemoWindow() {}
 
 ArrangementDemoTabBase* ArrangementDemoWindow::makeTab( TraitsType tt )
 {
@@ -75,7 +72,11 @@ ArrangementDemoTabBase* ArrangementDemoWindow::makeTab( TraitsType tt )
   ArrangementDemoTabBase* demoTab;
   Seg_arr* seg_arr;
   Pol_arr* pol_arr;
+
+#ifdef CGAL_USE_CORE
   Conic_arr* conic_arr;
+#endif
+
   Lin_arr* lin_arr;
   Arc_arr* arc_arr;
   // Alg_seg_arr* alg_seg_arr;
@@ -96,12 +97,16 @@ ArrangementDemoTabBase* ArrangementDemoWindow::makeTab( TraitsType tt )
     arr = CGAL::make_object( pol_arr );
     tabLabel = QString( "%1 - Polyline" ).arg( tabLabelCounter++ );
     break;
+
+#ifdef CGAL_USE_CORE
    case CONIC_TRAITS:
     conic_arr = new Conic_arr;
     demoTab = new ArrangementDemoTab< Conic_arr >( conic_arr, 0 );
     arr = CGAL::make_object( conic_arr );
     tabLabel = QString( "%1 - Conic" ).arg( tabLabelCounter++ );
     break;
+#endif
+
    case LINEAR_TRAITS:
     lin_arr = new Lin_arr;
     demoTab = new ArrangementDemoTab< Lin_arr >( lin_arr, 0 );
@@ -413,7 +418,11 @@ void ArrangementDemoWindow::openArrFile( QString filename )
   CGAL::Object arr = this->arrangements[ index ];
   Seg_arr* seg;
   Pol_arr* pol;
+
+#ifdef CGAL_USE_CORE
   Conic_arr* conic;
+#endif
+
   // Alg_seg_arr* alg;
   if ( CGAL::assign( seg, arr ) )
   {
@@ -441,8 +450,9 @@ void ArrangementDemoWindow::openArrFile( QString filename )
     TabType* tab = static_cast< TabType* >( this->tabs[ index ] );
     tab->setArrangement( pol );
   }
-  else if ( CGAL::assign( conic, arr ) )
-  {
+
+#ifdef CGAL_USE_CORE
+  else if (CGAL::assign(conic, arr)) {
 #if 0
     typedef CGAL::Arr_text_formatter<Conic_arr>         Conic_text_formatter;
     typedef CGAL::Arr_with_history_text_formatter<Conic_text_formatter>
@@ -466,6 +476,8 @@ void ArrangementDemoWindow::openArrFile( QString filename )
     //QMessageBox::information( this, "Oops",
     //  "Reading conic arrangement not supported" );
   }
+#endif
+
   // else if ( CGAL::assign( alg, arr ) )
   // {
   //   typedef CGAL::Arr_text_formatter< Alg_seg_arr >     Seg_text_formatter;
@@ -499,7 +511,11 @@ void ArrangementDemoWindow::openDatFile( QString filename )
   CGAL::Object arr = this->arrangements[ index ];
   Seg_arr* seg;
   Pol_arr* pol;
+
+#ifdef CGAL_USE_CORE
   Conic_arr* conic;
+#endif
+
   // Alg_seg_arr* alg;
 
   // Creates an ofstream object named inputFile
@@ -574,9 +590,9 @@ void ArrangementDemoWindow::openDatFile( QString filename )
     TabType* tab = static_cast< TabType* >( this->tabs[ index ] );
     tab->setArrangement( seg );
   }
+
 #ifdef CGAL_USE_CORE
-  else if ( CGAL::assign( conic, arr ) )
-  {
+  else if (CGAL::assign( conic, arr)) {
     conic->clear( );
     Conic_reader< Conic_arr::Geometry_traits_2 > reader;
     std::list<Arr_conic_2> curve_list;
@@ -652,16 +668,43 @@ void ArrangementDemoWindow::updateConicType( QAction* newType )
     this->tabs[ this->ui->tabWidget->currentIndex( ) ];
   // QGraphicsScene* activeScene = activeTab->getScene( );
   // ArrangementDemoGraphicsView* activeView = activeTab->getView( );
+
+#ifdef CGAL_USE_CORE
   Conic_arr* conic_arr;
-  Lin_arr* lin_arr;
   bool isConicArr =
     CGAL::assign( conic_arr,
                   this->arrangements[ this->ui->tabWidget->currentIndex( ) ] );
+#endif
+
+  Lin_arr* lin_arr;
   bool isLinearArr =
     CGAL::assign( lin_arr,
                   this->arrangements[ this->ui->tabWidget->currentIndex( ) ] );
-  if ( isConicArr )
+
+  if ( isLinearArr )
   {
+    typedef Lin_arr::Geometry_traits_2         Line_geom_traits;
+    typedef CGAL::Qt::GraphicsViewCurveInput<Line_geom_traits>
+      LinearCurveInputCallback;
+    LinearCurveInputCallback* curveInputCallback =
+      ( LinearCurveInputCallback* ) activeTab->getCurveInputCallback( );
+    if ( newType == this->ui->actionConicSegment )
+    {
+      curveInputCallback->setCurveType( LinearCurveInputCallback::SEGMENT );
+    }
+    else if ( newType == this->ui->actionCurveRay )
+  {
+      curveInputCallback->setCurveType( LinearCurveInputCallback::RAY );
+    }
+    else if ( newType == this->ui->actionCurveLine )
+    {
+      curveInputCallback->setCurveType( LinearCurveInputCallback::LINE );
+    }
+    //std::cout << "do nothing" << std::endl;
+  }
+
+#ifdef CGAL_USE_CORE
+  else if (isConicArr) {
     // std::cout << "do something conic arr related" << std::endl;
     typedef Conic_arr::Geometry_traits_2       Conic_geom_traits;
     typedef CGAL::Qt::GraphicsViewCurveInput<Conic_geom_traits>
@@ -691,27 +734,7 @@ void ArrangementDemoWindow::updateConicType( QAction* newType )
                                         CONIC_FIVE_POINT );
     }
   }
-  else if ( isLinearArr )
-  {
-    typedef Lin_arr::Geometry_traits_2         Line_geom_traits;
-    typedef CGAL::Qt::GraphicsViewCurveInput<Line_geom_traits>
-      LinearCurveInputCallback;
-    LinearCurveInputCallback* curveInputCallback =
-      ( LinearCurveInputCallback* ) activeTab->getCurveInputCallback( );
-    if ( newType == this->ui->actionConicSegment )
-    {
-      curveInputCallback->setCurveType( LinearCurveInputCallback::SEGMENT );
-    }
-    else if ( newType == this->ui->actionCurveRay )
-    {
-      curveInputCallback->setCurveType( LinearCurveInputCallback::RAY );
-    }
-    else if ( newType == this->ui->actionCurveLine )
-    {
-      curveInputCallback->setCurveType( LinearCurveInputCallback::LINE );
-    }
-    //std::cout << "do nothing" << std::endl;
-  }
+#endif
 }
 
 void ArrangementDemoWindow::on_actionSaveAs_triggered( )
@@ -729,7 +752,11 @@ void ArrangementDemoWindow::on_actionSaveAs_triggered( )
   CGAL::Object arr = this->arrangements[ index ];
   Seg_arr* seg;
   Pol_arr* pol;
+
+#ifdef CGAL_USE_CORE
   Conic_arr* conic;
+#endif
+
   if ( CGAL::assign( seg, arr ) )
   {
     typedef CGAL::Arr_text_formatter<Seg_arr>           Seg_text_formatter;
@@ -746,8 +773,9 @@ void ArrangementDemoWindow::on_actionSaveAs_triggered( )
     ArrFormatter                                        arrFormatter;
     CGAL::write( *pol, ofs, arrFormatter );
   }
-  else if ( CGAL::assign( conic, arr ) )
-  {
+
+#ifdef CGAL_USE_CORE
+  else if (CGAL::assign(conic, arr)) {
 #if 0
     typedef CGAL::Arr_text_formatter<Conic_arr>         Conic_text_formatter;
     typedef CGAL::Arr_with_history_text_formatter<Conic_text_formatter>
@@ -798,6 +826,8 @@ void ArrangementDemoWindow::on_actionSaveAs_triggered( )
       }
     }
   }
+#endif
+
   ofs.close( );
 }
 
@@ -909,23 +939,13 @@ void ArrangementDemoWindow::on_tabWidget_currentChanged( )
 
   // Seg_arr* seg;
   // Pol_arr* pol;
-  Conic_arr* conic;
   Lin_arr* lin;
-  if ( CGAL::assign( conic, arr ) )
-  {
-    this->ui->actionConicSegment->setChecked( true );
 
-    this->ui->actionCurveRay->setVisible( false );
-    this->ui->actionCurveLine->setVisible( false );
+#ifdef CGAL_USE_CORE
+  Conic_arr* conic;
+#endif
 
-    this->ui->actionConicCircle->setVisible( true );
-    this->ui->actionConicEllipse->setVisible( true );
-    this->ui->actionConicThreePoint->setVisible( true );
-    this->ui->actionConicFivePoint->setVisible( true );
-
-    this->conicTypeGroup->setEnabled( true );
-  }
-  else if ( CGAL::assign( lin, arr ) )
+  if ( CGAL::assign( lin, arr ) )
   {
     this->ui->actionConicSegment->setChecked( true );
 
@@ -939,8 +959,24 @@ void ArrangementDemoWindow::on_tabWidget_currentChanged( )
 
     this->conicTypeGroup->setEnabled( true );
   }
-  else
-  { // segment or polyline
+
+#ifdef CGAL_USE_CORE
+  else if (CGAL::assign( conic, arr)) {
+    this->ui->actionConicSegment->setChecked( true );
+
+    this->ui->actionCurveRay->setVisible( false );
+    this->ui->actionCurveLine->setVisible( false );
+
+    this->ui->actionConicCircle->setVisible( true );
+    this->ui->actionConicEllipse->setVisible( true );
+    this->ui->actionConicThreePoint->setVisible( true );
+    this->ui->actionConicFivePoint->setVisible( true );
+
+    this->conicTypeGroup->setEnabled( true );
+  }
+#endif
+
+  else { // segment or polyline
     this->ui->actionConicSegment->setChecked( true );
 
     this->ui->actionCurveRay->setVisible( false );
@@ -967,8 +1003,12 @@ void ArrangementDemoWindow::on_actionOverlay_triggered( )
       Seg_arr* seg_arr2;
       Pol_arr* pol_arr;
       Pol_arr* pol_arr2;
+
+#ifdef CGAL_USE_CORE
       Conic_arr* conic_arr;
       Conic_arr* conic_arr2;
+#endif
+
       Lin_arr* lin_arr;
       Lin_arr* lin_arr2;
       Arc_arr* arc_arr;
@@ -985,11 +1025,14 @@ void ArrangementDemoWindow::on_actionOverlay_triggered( )
       {
         this->makeOverlayTab( pol_arr, pol_arr2 );
       }
-      if ( CGAL::assign( conic_arr, arrs[ 0 ] ) &&
-           CGAL::assign( conic_arr2, arrs[ 1 ] ) )
+
+#ifdef CGAL_USE_CORE
+      if (CGAL::assign(conic_arr, arrs[0]) && CGAL::assign(conic_arr2, arrs[1]))
       {
         this->makeOverlayTab( conic_arr, conic_arr2 );
       }
+#endif
+
       if ( CGAL::assign( lin_arr, arrs[ 0 ] ) &&
            CGAL::assign( lin_arr2, arrs[ 1 ] ) )
       {
@@ -1140,38 +1183,34 @@ void ArrangementDemoWindow::on_actionPreferences_triggered( )
   if ( dialog->exec( ) == QDialog::Accepted )
   {
     typedef ArrangementDemoPropertiesDialog Dialog;
-    QColor edgeColor =
-      qVariantValue<QColor>(dialog->property(Dialog::EDGE_COLOR_KEY));
-    unsigned int edgeWidth =
-      qVariantValue<unsigned int>(dialog->property(Dialog::EDGE_WIDTH_KEY));
-    QColor vertexColor =
-      qVariantValue<QColor>(dialog->property(Dialog::VERTEX_COLOR_KEY));
-    unsigned int vertexRadius =
-      qVariantValue<unsigned int>(dialog->property(Dialog::VERTEX_RADIUS_KEY));
-    QColor envelopeEdgeColor =
-      qVariantValue<QColor>(dialog->property(Dialog::ENVELOPE_EDGE_COLOR_KEY));
-    unsigned int envelopeEdgeWidth =
-      qVariantValue<unsigned int>(dialog->property(Dialog::
-                                                   ENVELOPE_EDGE_WIDTH_KEY));
-    QColor envelopeVertexColor =
-      qVariantValue<QColor>(dialog->property(Dialog::
-                                             ENVELOPE_VERTEX_COLOR_KEY));
-    unsigned int envelopeVertexRadius =
-      qVariantValue<unsigned int>(dialog->property(Dialog::
-                                                   ENVELOPE_VERTEX_RADIUS_KEY));
-    QColor verticalRayEdgeColor =
-      qVariantValue<QColor>(dialog->property(Dialog::
-                                             VERTICAL_RAY_EDGE_COLOR_KEY));
-    unsigned int verticalRayEdgeWidth =
-      qVariantValue<unsigned int>(dialog->property
-                                  (Dialog::VERTICAL_RAY_EDGE_WIDTH_KEY));
-    DeleteCurveMode mode =
-      qVariantValue<DeleteCurveMode>(dialog->property(Dialog::
-                                                      DELETE_CURVE_MODE_KEY));
-    unsigned int gridSize =
-      qVariantValue<unsigned int>(dialog->property(Dialog::GRID_SIZE_KEY));
-    QColor gridColor =
-      qVariantValue<QColor>(dialog->property(Dialog::GRID_COLOR_KEY));
+
+    QColor edgeColor =  dialog->property(Dialog::EDGE_COLOR_KEY).value<QColor>();
+
+    unsigned int edgeWidth = dialog->property(Dialog::EDGE_WIDTH_KEY).value<unsigned int>();
+
+    QColor vertexColor = dialog->property(Dialog::VERTEX_COLOR_KEY).value<QColor>();
+
+    unsigned int vertexRadius = dialog->property(Dialog::VERTEX_RADIUS_KEY).value<unsigned int>();
+
+    QColor envelopeEdgeColor = dialog->property(Dialog::ENVELOPE_EDGE_COLOR_KEY).value<QColor>();
+
+    unsigned int envelopeEdgeWidth = dialog->property(Dialog::ENVELOPE_EDGE_WIDTH_KEY).value<unsigned int>();
+
+    QColor envelopeVertexColor = dialog->property(Dialog::ENVELOPE_VERTEX_COLOR_KEY).value<QColor>();
+
+    unsigned int envelopeVertexRadius = dialog->property(Dialog::ENVELOPE_VERTEX_RADIUS_KEY).value<unsigned int>();
+
+    QColor verticalRayEdgeColor = dialog->property(Dialog::VERTICAL_RAY_EDGE_COLOR_KEY).value<QColor>();
+
+    unsigned int verticalRayEdgeWidth = dialog->property(Dialog::VERTICAL_RAY_EDGE_WIDTH_KEY).value<unsigned int>();
+
+    DeleteCurveMode mode = dialog->property(Dialog::DELETE_CURVE_MODE_KEY).value<DeleteCurveMode>();
+
+    unsigned int gridSize = dialog->property(Dialog::GRID_SIZE_KEY).value<unsigned int>();
+
+    QColor gridColor = dialog->property(Dialog::GRID_COLOR_KEY).value<QColor>();
+    //end new for Qt5 version !
+
 
     QPen edgesPen(QBrush(edgeColor), edgeWidth);
     QPen verticesPen(QBrush(vertexColor), vertexRadius);

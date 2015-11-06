@@ -108,9 +108,9 @@ template <class NT>  Polynomial<NT>
   operator - (const Polynomial<NT>&, const Polynomial<NT>&);
 template <class NT>  Polynomial<NT>
   operator * (const Polynomial<NT>&, const Polynomial<NT>&);
-template <class NT> inline Polynomial<NT>
+template <class NT> Polynomial<NT>
   operator / (const Polynomial<NT>&, const Polynomial<NT>&);
-template <class NT> inline Polynomial<NT>
+template <class NT> Polynomial<NT>
   operator % (const Polynomial<NT>&, const Polynomial<NT>&);
 
 template<class NT> CGAL::Sign 
@@ -1180,7 +1180,6 @@ template <class NT> bool is_finite
   { return CGAL::is_finite(p[0]); }
 
 template <class NT> 
-inline
 Polynomial<NT> operator - (const Polynomial<NT>& p)
 {
   CGAL_assertion(p.degree()>=0);
@@ -1244,7 +1243,7 @@ Polynomial<NT> operator * (const Polynomial<NT>& p1,
   return p;
 }
 
-template <class NT> inline
+template <class NT>
 Polynomial<NT> operator / (const Polynomial<NT>& p1, 
                            const Polynomial<NT>& p2)
 { 
@@ -1752,7 +1751,7 @@ template <class NT>
 std::ostream& operator << (std::ostream& os, const Polynomial<NT>& p)
 {
   int i;
-  switch( os.iword(CGAL::IO::mode) )
+  switch( get_mode(os) )
   {
     case CGAL::IO::ASCII :
       os << p.degree() << ' ';
@@ -1788,7 +1787,7 @@ std::istream& operator >> (std::istream& is, Polynomial<NT>& p) {
     char ch;
     NT   c;
     bool pretty = false;
-    switch( is.iword(CGAL::IO::mode) ) { 
+    switch( get_mode(is) ) {
     case CGAL::IO::ASCII : 
     case CGAL::IO::PRETTY : 
         is >> ch;
@@ -1973,12 +1972,8 @@ using Nef::gcd;
 
 } //namespace CGAL
 
-
-
-
-
-
-
-
+#ifdef CGAL_HEADER_ONLY
+#include <CGAL/Nef_2/Polynomial_impl.h>
+#endif // CGAL_HEADER_ONLY
 
 #endif  // CGAL_NEF_2_POLYNOMIAL_H

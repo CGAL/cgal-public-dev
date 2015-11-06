@@ -17,6 +17,8 @@
 #include <QInputDialog>
 #include <QDragEnterEvent>
 #include <QDropEvent>
+#include <QMessageBox>
+#include <QGraphicsLineItem>
 
 // GraphicsView items and event filters (input classes)
 #include <CGAL/Qt/GraphicsViewPolylineInput.h>
@@ -77,13 +79,13 @@ private:
         std::cout << "duplicate point: " << p << std::endl; 
       }
     }
-    emit(changed());
+    Q_EMIT( changed());
   }
 
-protected slots:
+protected Q_SLOTS:
  virtual void open(QString);
 
-public slots:
+public Q_SLOTS:
 
   void processInput(CGAL::Object o);
 
@@ -99,12 +101,7 @@ public slots:
 
   void loadEdgConstraints(QString);
 
-  void on_actionSaveConstraints_triggered();
-
-  void saveConstraints(QString);
-
-
-signals:
+Q_SIGNALS:
   void changed();
 };
 
@@ -121,8 +118,8 @@ MainWindow::MainWindow()
   QColor segmentColor(::Qt::blue);
   QColor voronoiColor(::Qt::black);
   segmentColor.setAlpha(150);
-  sdggi->setSegmentPen(segmentColor);
-  sdggi->setVoronoiPen(voronoiColor);
+  sdggi->setSegmentPen(QPen(segmentColor,0));
+  sdggi->setVoronoiPen(QPen(voronoiColor,0));
     
   QObject::connect(this, SIGNAL(changed()),
 		   sdggi, SLOT(modelChanged()));
@@ -204,13 +201,13 @@ MainWindow::processInput(CGAL::Object o)
   }
 
 
-  emit(changed());
+  Q_EMIT( changed());
 }
 
 
 /* 
  *  Qt Automatic Connections
- *  http://doc.trolltech.com/4.4/designer-using-a-component.html#automatic-connections
+ *  http://doc.qt.io/qt-5/designer-using-a-ui-file.html#automatic-connections
  * 
  *  setupUi(this) generates connections to the slots named
  *  "on_<action_name>_<signal_name>"
@@ -231,7 +228,7 @@ void
 MainWindow::on_actionClear_triggered()
 {
   svd.clear();
-  emit(changed());
+  Q_EMIT( changed());
 }
 
 
@@ -283,7 +280,7 @@ MainWindow::loadPolygonConstraints(QString fileName)
   }
   
   
-  emit(changed());
+  Q_EMIT( changed());
   actionRecenter->trigger();
 }
 
@@ -325,7 +322,7 @@ MainWindow::loadEdgConstraints(QString fileName)
   statusBar()->showMessage(QString("Insertion took %1 seconds").arg(tim.time()), 2000);
   // default cursor
   QApplication::restoreOverrideCursor();
-  emit(changed());
+  Q_EMIT( changed());
   actionRecenter->trigger();
 }
 
@@ -336,33 +333,6 @@ MainWindow::on_actionRecenter_triggered()
   this->graphicsView->setSceneRect(sdggi->boundingRect());
   this->graphicsView->fitInView(sdggi->boundingRect(), Qt::KeepAspectRatio);  
 }
-
-
-void
-MainWindow::on_actionSaveConstraints_triggered()
-{
-  QString fileName = QFileDialog::getSaveFileName(this,
-						  tr("Save Constraints"),
-						  ".",
-						  tr("Poly files (*.poly)\n"
-						     "Edge files (*.edg)"));
-  if(! fileName.isEmpty()){
-    saveConstraints(fileName);
-  }
-}
-
-
-void
-MainWindow::saveConstraints(QString /*fileName*/)
-{
-  QMessageBox::warning(this,
-                       tr("saveConstraints"),
-                       tr("Not implemented!"));
-}
-
-
-
-
 
 #include "Segment_voronoi_2.moc"
 #include <CGAL/Qt/resources.h>
@@ -375,9 +345,8 @@ int main(int argc, char **argv)
   app.setOrganizationName("GeometryFactory");
   app.setApplicationName("Segment Voronoi 2 demo");
 
-  // Import resources from libCGALQt4.
-  // See http://doc.trolltech.com/4.4/qdir.html#Q_INIT_RESOURCE
-  CGAL_QT4_INIT_RESOURCES;
+  // Import resources from libCGAL (Qt5).
+  CGAL_QT_INIT_RESOURCES;
 
   MainWindow mainWindow;
   mainWindow.show();

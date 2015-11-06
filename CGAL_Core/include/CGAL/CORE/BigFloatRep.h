@@ -3,9 +3,9 @@
  * Copyright (c) 1995-2004 Exact Computation Project
  * All rights reserved.
  *
- * This file is part of CORE (http://cs.nyu.edu/exact/core/).
+ * This file is part of CGAL (www.cgal.org);
  * You can redistribute it and/or modify it under the terms of the GNU
- * General Public License as published by the Free Software Foundation,
+ * Lesser General Public License as published by the Free Software Foundation,
  * either version 3 of the License, or (at your option) any later version.
  *
  * Licensees holding a valid commercial license may use this file in
@@ -144,11 +144,11 @@ private:
   //  conversion
 
   // toString() Joaquin Grech 31/5/2003
-  std::string toString(long prec=defBigFloatOutputDigits, bool sci=false) const;
+  std::string toString(long prec=get_static_defBigFloatOutputDigits(), bool sci=false) const;
   std::string round(std::string inRep, long& L10, unsigned int width) const;
-  DecimalOutput toDecimal(unsigned int width=defBigFloatOutputDigits,
+  DecimalOutput toDecimal(unsigned int width=get_static_defBigFloatOutputDigits(),
                           bool Scientific=false) const;
-  void fromString(const char *p, const extLong & prec = defBigFloatInputDigits);
+  void fromString(const char *p, const extLong & prec = get_static_defBigFloatInputDigits());
 
   void dump() const;  //inline
   long adjustE(long E, BigInt M, long e) const;

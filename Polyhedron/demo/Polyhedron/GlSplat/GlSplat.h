@@ -104,8 +104,12 @@ class GLSPLAT_EXPORT SplatRenderer
   void enablePass(int n);
 
 public:
+  bool viewer_is_set;
 
   SplatRenderer();
+  ~SplatRenderer()
+  {
+  }
 
   /** Must be called once an OpenGL context has been activated.
     * The main OpenGL context must be enabled, or, if you are using a QGLwiget,
@@ -136,7 +140,17 @@ public:
     */
   void setRadiusScale(float v);
 
+  void setViewer(CGAL::Three::Viewer_interface *v);
+
+  typedef void (APIENTRYP PFNGLFRAMEBUFFERTEXTURE2DEXTPROC) (GLuint target, GLuint attachment, GLuint textarget, GLuint texture, GLint level);
+
+  //!Allows OpenGL 2.1 context to get access to gkFrameBufferTexture2D.
+  PFNGLFRAMEBUFFERTEXTURE2DEXTPROC glFramebufferTexture2D;
+
+private :
+  CGAL::Three::Viewer_interface *viewer;
 };
+
 
 } // namepsace GlSplat
 

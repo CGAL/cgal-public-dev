@@ -1,7 +1,7 @@
 #include "config.h"
 #include "Scene_points_with_normal_item.h"
-#include "Polyhedron_demo_plugin_helper.h"
-#include "Polyhedron_demo_plugin_interface.h"
+#include <CGAL/Three/Polyhedron_demo_plugin_helper.h>
+#include <CGAL/Three/Polyhedron_demo_plugin_interface.h>
 
 #include <CGAL/pca_estimate_normals.h>
 #include <CGAL/jet_estimate_normals.h>
@@ -25,17 +25,27 @@
 #endif
 #endif
 
+// Concurrency
+#ifdef CGAL_LINKED_WITH_TBB
+typedef CGAL::Parallel_tag Concurrency_tag;
+#else
+typedef CGAL::Sequential_tag Concurrency_tag;
+#endif
+using namespace CGAL::Three;
+
 class Polyhedron_demo_normal_estimation_plugin :
   public QObject,
   public Polyhedron_demo_plugin_helper
 {
   Q_OBJECT
-  Q_INTERFACES(Polyhedron_demo_plugin_interface)
+  Q_INTERFACES(CGAL::Three::Polyhedron_demo_plugin_interface)
+  Q_PLUGIN_METADATA(IID "com.geometryfactory.PolyhedronDemo.PluginInterface/1.0")
+
   QAction* actionNormalEstimation;
   QAction* actionNormalInversion;
 
 public:
-  void init(QMainWindow* mainWindow, Scene_interface* scene_interface) {
+  void init(QMainWindow* mainWindow, CGAL::Three::Scene_interface* scene_interface) {
 
     actionNormalEstimation = new QAction(tr("Normal estimation of point set"), mainWindow);
     actionNormalEstimation->setObjectName("actionNormalEstimation");
@@ -50,15 +60,20 @@ public:
     return QList<QAction*>() << actionNormalEstimation << actionNormalInversion;
   }
 
-  bool applicable(QAction*) const {
+  bool applicable(QAction* action) const {
+    Scene_points_with_normal_item* item = qobject_cast<Scene_points_with_normal_item*>(scene->item(scene->mainSelectionIndex()));
+
+    if (action==actionNormalEstimation)
 #if CGAL_DISABLE_NORMAL_ESTIMATION_PLUGIN
     return false;
 #else
-    return qobject_cast<Scene_points_with_normal_item*>(scene->item(scene->mainSelectionIndex()));
+    return item;
 #endif
+    else
+      return item && item->has_normals();
   }
 
-public slots:
+public Q_SLOTS:
   void on_actionNormalEstimation_triggered();
   void on_actionNormalInversion_triggered();
 
@@ -83,7 +98,7 @@ class Point_set_demo_normal_estimation_dialog : public QDialog, private Ui::Norm
 
 void Polyhedron_demo_normal_estimation_plugin::on_actionNormalInversion_triggered()
 {
-  const Scene_interface::Item_id index = scene->mainSelectionIndex();
+  const CGAL::Three::Scene_interface::Item_id index = scene->mainSelectionIndex();
 
   Scene_points_with_normal_item* item =
     qobject_cast<Scene_points_with_normal_item*>(scene->item(index));
@@ -98,13 +113,15 @@ void Polyhedron_demo_normal_estimation_plugin::on_actionNormalInversion_triggere
     for(Point_set::iterator it = points->begin(); it != points->end(); ++it){
       it->normal() = -1 * it->normal();
     }
+    item->invalidate_buffers();
+    scene->itemChanged(item);
   }
 }
 
 void Polyhedron_demo_normal_estimation_plugin::on_actionNormalEstimation_triggered()
 {
 #if !CGAL_DISABLE_NORMAL_ESTIMATION_PLUGIN
-  const Scene_interface::Item_id index = scene->mainSelectionIndex();
+  const CGAL::Three::Scene_interface::Item_id index = scene->mainSelectionIndex();
 
   Scene_points_with_normal_item* item =
     qobject_cast<Scene_points_with_normal_item*>(scene->item(index));
@@ -136,7 +153,7 @@ void Polyhedron_demo_normal_estimation_plugin::on_actionNormalEstimation_trigger
       std::cerr << "Estimates normal direction by PCA (k=" << dialog.directionNbNeighbors() <<")...\n";
 
       // Estimates normals direction.
-      CGAL::pca_estimate_normals(points->begin(), points->end(),
+      CGAL::pca_estimate_normals<Concurrency_tag>(points->begin(), points->end(),
                                 CGAL::make_normal_of_point_with_normal_pmap(Point_set::value_type()),
                                 dialog.directionNbNeighbors());
 
@@ -154,7 +171,7 @@ void Polyhedron_demo_normal_estimation_plugin::on_actionNormalEstimation_trigger
       std::cerr << "Estimates normal direction by Jet Fitting (k=" << dialog.directionNbNeighbors() <<")...\n";
 
       // Estimates normals direction.
-      CGAL::jet_estimate_normals(points->begin(), points->end(),
+      CGAL::jet_estimate_normals<Concurrency_tag>(points->begin(), points->end(),
                                 CGAL::make_normal_of_point_with_normal_pmap(Point_set::value_type()),
                                 dialog.directionNbNeighbors());
 
@@ -194,10 +211,10 @@ void Polyhedron_demo_normal_estimation_plugin::on_actionNormalEstimation_trigger
                                     << std::endl;
 
     // Selects points with an unoriented normal
-    points->select(points->begin(), points->end(), false);
-    points->select(first_unoriented_point, points->end(), true);
+    points->set_first_selected (first_unoriented_point);
 
     // Updates scene
+    item->invalidate_buffers();
     scene->itemChanged(index);
 
     QApplication::restoreOverrideCursor();
@@ -213,7 +230,5 @@ void Polyhedron_demo_normal_estimation_plugin::on_actionNormalEstimation_trigger
   }
 #endif // !CGAL_DISABLE_NORMAL_ESTIMATION_PLUGIN
 }
-
-Q_EXPORT_PLUGIN2(Polyhedron_demo_normal_estimation_plugin, Polyhedron_demo_normal_estimation_plugin)
 
 #include "Polyhedron_demo_normal_estimation_plugin.moc"

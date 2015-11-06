@@ -76,7 +76,7 @@ private:
 public:
   MainWindow();
 
-public slots:
+public Q_SLOTS:
 
   void update();
 
@@ -110,7 +110,7 @@ public slots:
 
   virtual void open(QString fileName);
 
-signals:
+Q_SIGNALS:
   void changed();
 };
 
@@ -344,13 +344,13 @@ MainWindow::processInput(CGAL::Object o)
       }
     }
   }
-  emit(changed());
+  Q_EMIT( changed());
 }
 
 
 /* 
  *  Qt Automatic Connections
- *  http://doc.trolltech.com/4.4/designer-using-a-component.html#automatic-connections
+ *  http://doc.qt.io/qt-5/designer-using-a-ui-file.html#automatic-connections
  * 
  *  setupUi(this) generates connections to the slots named
  *  "on_<action_name>_<signal_name>"
@@ -370,14 +370,14 @@ void
 MainWindow::on_actionShowMinCircle_toggled(bool checked)
 {
   cgi->setVisible(checked);
-  emit (changed());
+  Q_EMIT( changed());
 }
 
 void
 MainWindow::on_actionShowMinEllipse_toggled(bool checked)
 {
   egi->setVisible(checked);
-  emit (changed());
+  Q_EMIT( changed());
 }
 
 
@@ -385,21 +385,21 @@ void
 MainWindow::on_actionShowMinRectangle_toggled(bool checked)
 {
   min_rectangle_gi->setVisible(checked);
-  emit (changed());
+  Q_EMIT( changed());
 }
 
 void
 MainWindow::on_actionShowMinParallelogram_toggled(bool checked)
 {
   min_parallelogram_gi->setVisible(checked);
-  emit (changed());
+  Q_EMIT( changed());
 }
 
 void
 MainWindow::on_actionShowConvexHull_toggled(bool checked)
 {
   convex_hull_gi->setVisible(checked);
-  emit (changed());
+  Q_EMIT( changed());
 }
 
 void
@@ -408,7 +408,7 @@ MainWindow::on_actionShowPCenter_toggled(bool checked)
   for(std::size_t i =0; i < P; i++){
     p_center[i]->setVisible(checked);
   }
-  emit (changed());
+  Q_EMIT( changed());
 }
 
 void
@@ -423,7 +423,7 @@ MainWindow::on_actionClear_triggered()
   for(std::size_t i=0; i < P;i++){
     p_center[i]->hide();
   }
-  emit(changed());
+  Q_EMIT( changed());
 }
 
 
@@ -435,8 +435,9 @@ MainWindow::on_actionInsertRandomPoints_triggered()
   Iso_rectangle_2 isor = convert(rect);
   CGAL::Random_points_in_iso_rectangle_2<Point_2> pg((isor.min)(), (isor.max)());
   bool ok = false;
+
   const int number_of_points = 
-    QInputDialog::getInteger(this, 
+    QInputDialog::getInt(this, 
                              tr("Number of random points"),
                              tr("Enter number of random points"),
 			     100,
@@ -462,7 +463,7 @@ MainWindow::on_actionInsertRandomPoints_triggered()
 
   // default cursor
   QApplication::restoreOverrideCursor();
-  emit(changed());
+  Q_EMIT( changed());
 }
 
 
@@ -497,7 +498,7 @@ MainWindow::open(QString fileName)
   QApplication::restoreOverrideCursor();
   this->addToRecentFiles(fileName);
   actionRecenter->trigger();
-  emit(changed());
+  Q_EMIT( changed());
     
 }
 
@@ -539,9 +540,9 @@ int main(int argc, char **argv)
   app.setOrganizationName("GeometryFactory");
   app.setApplicationName("Bounding_volumes demo");
 
-  // Import resources from libCGALQt4.
-  // See http://doc.trolltech.com/4.4/qdir.html#Q_INIT_RESOURCE
-  CGAL_QT4_INIT_RESOURCES;
+  // Import resources from libCGAL (Qt5).
+  // See http://doc.qt.io/qt-5/qdir.html#Q_INIT_RESOURCE
+  CGAL_QT_INIT_RESOURCES;
 
   MainWindow mainWindow;
   mainWindow.show();

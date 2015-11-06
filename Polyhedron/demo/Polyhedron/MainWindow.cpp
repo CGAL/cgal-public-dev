@@ -29,7 +29,6 @@
 #include <QMap>
 #include <QStandardItemModel>
 #include <QStandardItem>
-
 #include <stdexcept>
 
 #ifdef QT_SCRIPT_LIB
@@ -39,8 +38,8 @@
 #  endif
 #endif
 
-#include "Polyhedron_demo_plugin_interface.h"
-#include "Polyhedron_demo_io_plugin_interface.h"
+#include <CGAL/Three/Polyhedron_demo_plugin_interface.h>
+#include <CGAL/Three/Polyhedron_demo_io_plugin_interface.h>
 
 #include "ui_MainWindow.h"
 #include "ui_Preferences.h"
@@ -123,7 +122,6 @@ MainWindow::MainWindow(QWidget* parent)
 {
   ui = new Ui::MainWindow;
   ui->setupUi(this);
-
   // remove the Load Script menu entry, when the demo has not been compiled with QT_SCRIPT_LIB
 #if !defined(QT_SCRIPT_LIB)
   ui->menuBar->removeAction(ui->actionLoad_Script);
@@ -157,13 +155,12 @@ MainWindow::MainWindow(QWidget* parent)
   sceneView->setItemDelegate(new SceneDelegate(this));
 
   sceneView->header()->setStretchLastSection(false);
-  sceneView->header()->setResizeMode(Scene::NameColumn, QHeaderView::Stretch);
-  sceneView->header()->setResizeMode(Scene::NameColumn, QHeaderView::Stretch);
-  sceneView->header()->setResizeMode(Scene::ColorColumn, QHeaderView::ResizeToContents);
-  sceneView->header()->setResizeMode(Scene::RenderingModeColumn, QHeaderView::Fixed);
-  sceneView->header()->setResizeMode(Scene::ABColumn, QHeaderView::Fixed);
-  sceneView->header()->setResizeMode(Scene::VisibleColumn, QHeaderView::Fixed);
-
+  sceneView->header()->setSectionResizeMode(Scene::NameColumn, QHeaderView::Stretch);
+  sceneView->header()->setSectionResizeMode(Scene::NameColumn, QHeaderView::Stretch);
+  sceneView->header()->setSectionResizeMode(Scene::ColorColumn, QHeaderView::ResizeToContents);
+  sceneView->header()->setSectionResizeMode(Scene::RenderingModeColumn, QHeaderView::Fixed);
+  sceneView->header()->setSectionResizeMode(Scene::ABColumn, QHeaderView::Fixed);
+  sceneView->header()->setSectionResizeMode(Scene::VisibleColumn, QHeaderView::Fixed);
   sceneView->resizeColumnToContents(Scene::ColorColumn);
   sceneView->resizeColumnToContents(Scene::RenderingModeColumn);
   sceneView->resizeColumnToContents(Scene::ABColumn);
@@ -180,7 +177,7 @@ MainWindow::MainWindow(QWidget* parent)
           viewer, SLOT(updateGL()));
 
   connect(scene, SIGNAL(updated()),
-          viewer, SLOT(update()));
+          viewer, SLOT(updateGL()));
 
   connect(scene, SIGNAL(updated()),
           this, SLOT(selectionChanged()));
@@ -190,6 +187,9 @@ MainWindow::MainWindow(QWidget* parent)
 
   connect(scene, SIGNAL(updated_bbox()),
           this, SLOT(updateViewerBBox()));
+
+  connect(scene, SIGNAL(selectionChanged(int)),
+          this, SLOT(selectSceneItem(int)));
 
   connect(sceneView->selectionModel(), 
           SIGNAL(selectionChanged ( const QItemSelection & , const QItemSelection & ) ),
@@ -337,6 +337,18 @@ MainWindow::MainWindow(QWidget* parent)
   connect(ui->menuOperations, SIGNAL(aboutToShow()), this, SLOT(filterOperations()));
 }
 
+//Recursive function that do a pass over a menu and its sub-menus(etc.) and hide them when they are empty
+void filterMenuOperations(QMenu* menu)
+{
+    Q_FOREACH(QAction* action, menu->actions()) {
+        if(QMenu* menu = action->menu()) {
+            filterMenuOperations(menu);
+            action->setVisible(!(menu->isEmpty()));
+        }
+    }
+
+}
+
 void MainWindow::filterOperations()
 {
   Q_FOREACH(const PluginNamePair& p, plugins) {
@@ -345,15 +357,9 @@ void MainWindow::filterOperations()
     }
   }
 
-  // do a pass over all menus in Operations and hide them when they are empty
-  Q_FOREACH(QAction* action, ui->menuOperations->actions()) {
-    if(QMenu* menu = action->menu()) {
-      action->setVisible(!(menu->isEmpty()));
-    }
-  }
+  // do a pass over all menus in Operations and their sub-menus(etc.) and hide them when they are empty
+  filterMenuOperations(ui->menuOperations);
 }
-
-
 #ifdef QT_SCRIPT_LIB
 void MainWindow::evaluate_script(QString script,
                                  const QString& filename,
@@ -407,6 +413,75 @@ bool actionsByName(QAction* x, QAction* y) {
 }
 }
 
+//Recursively creates all subMenus containing an action.
+void MainWindow::setMenus(QString name, QString parentName, QAction* a )
+{
+
+        bool hasSub = false;
+        QString menuName, subMenuName;
+        if (!name.isNull())
+        {
+            //Get the menu and submenu names
+            for(int i=0; i<name.size(); i++)
+            {
+                if(name.at(i)=='/')
+                    hasSub = true;
+            }
+
+            if(!hasSub)
+                menuName= name;
+            else
+            {
+                int i;
+                for(i = 0; name.at(i)!='/'; i++)
+                    menuName.append(name.at(i));
+                i++;
+                for(int j = i; j<name.size(); j++)
+                    subMenuName.append(name.at(j));
+                setMenus(subMenuName, menuName, a);
+            }
+
+            //Create the menu and sub menu
+            QMenu* menu = 0;
+            QMenu* parentMenu = 0;
+            //If the menu already exists, don't create a new one.
+            Q_FOREACH(QAction* action, findChildren<QAction*>()) {
+                if(!action->menu()) continue;
+                QString menuText = action->menu()->title();
+                //If the menu title does not correspond to the name of the menu or submenu we want,
+                //go to the next one.
+                if(menuText != menuName) continue;
+                menu = action->menu();
+            }
+
+            bool hasAction = false;
+            if(menu == 0)
+                menu = new QMenu(menuName, this);
+            else //checks the action is not already in the menu
+                if(a->property("added").toBool())
+                    hasAction = true;
+            if(!hasAction)
+                menu->addAction(a);
+            a->setProperty("added", true);
+            //If the parent menu already exists, don't create a new one.
+            Q_FOREACH(QAction* action, findChildren<QAction*>()) {
+                if(!action->menu()) continue;
+                QString menuText = action->menu()->title();
+                //If the menu title does not correspond to the name of the menu or submenu we want,
+                //go to the next one.
+                if(menuText != parentName) continue;
+                parentMenu = action->menu();
+            }
+
+            if(parentMenu == 0)
+                parentMenu = new QMenu(parentName, this);
+            parentMenu->addMenu(menu);
+            ui->menuOperations->removeAction(a);
+    }
+}
+
+
+
 void MainWindow::loadPlugins()
 {
   Q_FOREACH(QObject *obj, QPluginLoader::staticInstances())
@@ -414,7 +489,6 @@ void MainWindow::loadPlugins()
     initPlugin(obj);
     initIOPlugin(obj);
   }
-
   QList<QDir> plugins_directories;
   plugins_directories << qApp->applicationDirPath();
   QString env_path = qgetenv("POLYHEDRON_DEMO_PLUGINS_PATH");
@@ -461,13 +535,22 @@ void MainWindow::loadPlugins()
     }
   }
 
-  // sort the operations menu by name
-  QList<QAction*> actions = ui->menuOperations->actions();
-  qSort(actions.begin(), actions.end(), actionsByName);
-  ui->menuOperations->clear();
-  ui->menuOperations->addActions(actions);
-}
 
+//Creates sub-Menus for operations.
+  //!TODO : Make it recursive to allow sub-menus of sub-menus.
+  //!The argument should be the menuPath and it should recurse until hasSub stays false.
+   QList<QAction*> as = ui->menuOperations->actions();
+  Q_FOREACH(QAction* a, as)
+{
+              QString menuPath = a->property("subMenuName").toString();
+              setMenus(menuPath, ui->menuOperations->title(), a);
+              // sort the operations menu by name
+              as = ui->menuOperations->actions();
+              qSort(as.begin(), as.end(), actionsByName);
+              ui->menuOperations->clear();
+              ui->menuOperations->addActions(as);
+          }
+      }
 
 bool MainWindow::hasPlugin(const QString& pluginName) const
 {
@@ -480,8 +563,8 @@ bool MainWindow::hasPlugin(const QString& pluginName) const
 bool MainWindow::initPlugin(QObject* obj)
 {
   QObjectList childs = this->children();
-  Polyhedron_demo_plugin_interface* plugin =
-    qobject_cast<Polyhedron_demo_plugin_interface*>(obj);
+  CGAL::Three::Polyhedron_demo_plugin_interface* plugin =
+    qobject_cast<CGAL::Three::Polyhedron_demo_plugin_interface*>(obj);
   if(plugin) {
     // Call plugin's init() method
     obj->setParent(this);
@@ -510,8 +593,8 @@ bool MainWindow::initPlugin(QObject* obj)
 
 bool MainWindow::initIOPlugin(QObject* obj)
 {
-  Polyhedron_demo_io_plugin_interface* plugin =
-    qobject_cast<Polyhedron_demo_io_plugin_interface*>(obj);
+  CGAL::Three::Polyhedron_demo_io_plugin_interface* plugin =
+    qobject_cast<CGAL::Three::Polyhedron_demo_io_plugin_interface*>(obj);
   if(plugin) {
     io_plugins << plugin;
     return true;
@@ -688,7 +771,7 @@ void MainWindow::reload_item() {
     return;
   }
 
-  Polyhedron_demo_io_plugin_interface* fileloader = find_loader(loader_name);
+  CGAL::Three::Polyhedron_demo_io_plugin_interface* fileloader = find_loader(loader_name);
   QFileInfo fileinfo(filename);
 
   Scene_item* new_item = load_item(fileinfo, fileloader);
@@ -697,13 +780,13 @@ void MainWindow::reload_item() {
   new_item->setColor(item->color());
   new_item->setRenderingMode(item->renderingMode());
   new_item->setVisible(item->visible());
-  new_item->changed();
+  new_item->invalidate_buffers();
   scene->replaceItem(item_index, new_item, true);
   item->deleteLater();
 }
 
-Polyhedron_demo_io_plugin_interface* MainWindow::find_loader(const QString& loader_name) const {
-  Q_FOREACH(Polyhedron_demo_io_plugin_interface* io_plugin, 
+CGAL::Three::Polyhedron_demo_io_plugin_interface* MainWindow::find_loader(const QString& loader_name) const {
+  Q_FOREACH(CGAL::Three::Polyhedron_demo_io_plugin_interface* io_plugin,
             io_plugins) {
     if(io_plugin->name() == loader_name) {
       return io_plugin;
@@ -789,7 +872,7 @@ void MainWindow::open(QString filename)
   {
     // collect all io_plugins and offer them to load if the file extension match one name filter
     // also collect all available plugin in case of a no extension match
-    Q_FOREACH(Polyhedron_demo_io_plugin_interface* io_plugin, io_plugins) {
+    Q_FOREACH(CGAL::Three::Polyhedron_demo_io_plugin_interface* io_plugin, io_plugins) {
       if ( !io_plugin->canLoad() ) continue;
       all_items << io_plugin->name();
       if ( file_matches_filter(io_plugin->nameFilters(), filename) )
@@ -847,7 +930,7 @@ bool MainWindow::open(QString filename, QString loader_name) {
 }
 
 
-Scene_item* MainWindow::load_item(QFileInfo fileinfo, Polyhedron_demo_io_plugin_interface* loader) {
+Scene_item* MainWindow::load_item(QFileInfo fileinfo, CGAL::Three::Polyhedron_demo_io_plugin_interface* loader) {
   Scene_item* item = NULL;
   if(!fileinfo.isFile() || !fileinfo.isReadable()) {
     throw std::invalid_argument(QString("File %1 is not a readable file.")
@@ -866,6 +949,7 @@ Scene_item* MainWindow::load_item(QFileInfo fileinfo, Polyhedron_demo_io_plugin_
   item->setProperty("loader_name", loader->name());
   return item;
 }
+
 
 void MainWindow::setFocusToQuickSearch()
 {
@@ -957,7 +1041,7 @@ QList<int> MainWindow::getSelectedSceneItemIndices() const
 
 void MainWindow::selectionChanged()
 {
-  scene->setSelectedItem(getSelectedSceneItemIndex());
+  scene->setSelectedItemIndex(getSelectedSceneItemIndex());
   scene->setSelectedItemsList(getSelectedSceneItemIndices());
   Scene_item* item = scene->item(getSelectedSceneItemIndex());
   if(item != NULL && item->manipulatable()) {
@@ -1021,6 +1105,7 @@ void MainWindow::showSceneContextMenu(int selectedItemIndex,
       menu->setProperty(prop_name, true);
     }
   }
+  menu->addMenu(ui->menuOperations);
   if(menu)
     menu->exec(global_pos);
 }
@@ -1056,6 +1141,15 @@ void MainWindow::updateInfo() {
   if(item) {
     QString item_text = item->toolTip();
     QString item_filename = item->property("source filename").toString();
+    item_text += QString("Bounding box: min (%1,%2,%3), max(%4,%5,%6)")
+            .arg(item->bbox().xmin)
+            .arg(item->bbox().ymin)
+            .arg(item->bbox().zmin)
+            .arg(item->bbox().xmax)
+            .arg(item->bbox().ymax)
+            .arg(item->bbox().zmax);
+    if(item->getNbIsolatedvertices() > 0)
+    item_text += QString("<br />Number of isolated vertices : %1<br />").arg(item->getNbIsolatedvertices());
     if(!item_filename.isEmpty()) {
       item_text += QString("<br /><i>File: %1").arg(item_filename);
     }
@@ -1160,10 +1254,10 @@ void MainWindow::on_actionLoad_triggered()
 
   QStringList extensions;
 
-  typedef QMap<QString, Polyhedron_demo_io_plugin_interface*> FilterPluginMap;
+  typedef QMap<QString, CGAL::Three::Polyhedron_demo_io_plugin_interface*> FilterPluginMap;
   FilterPluginMap filterPluginMap;
   
-  Q_FOREACH(Polyhedron_demo_io_plugin_interface* plugin, io_plugins) {
+  Q_FOREACH(CGAL::Three::Polyhedron_demo_io_plugin_interface* plugin, io_plugins) {
     QStringList split_filters = plugin->nameFilters().split(";;");
     Q_FOREACH(const QString& filter, split_filters) {
       FilterPluginMap::iterator it = filterPluginMap.find(filter);
@@ -1191,7 +1285,7 @@ void MainWindow::on_actionLoad_triggered()
   FilterPluginMap::iterator it = 
     filterPluginMap.find(dialog.selectedNameFilter());
   
-  Polyhedron_demo_io_plugin_interface* selectedPlugin = NULL;
+  CGAL::Three::Polyhedron_demo_io_plugin_interface* selectedPlugin = NULL;
 
   if(it != filterPluginMap.end()) {
     selectedPlugin = it.value();
@@ -1230,9 +1324,9 @@ void MainWindow::on_actionSaveAs_triggered()
   if(!item)
     return;
 
-  QVector<Polyhedron_demo_io_plugin_interface*> canSavePlugins;
+  QVector<CGAL::Three::Polyhedron_demo_io_plugin_interface*> canSavePlugins;
   QStringList filters;
-  Q_FOREACH(Polyhedron_demo_io_plugin_interface* plugin, io_plugins) {
+  Q_FOREACH(CGAL::Three::Polyhedron_demo_io_plugin_interface* plugin, io_plugins) {
     if(plugin->canSave(item)) {
       canSavePlugins << plugin;
       filters += plugin->nameFilters();
@@ -1260,7 +1354,7 @@ void MainWindow::on_actionSaveAs_triggered()
 void MainWindow::save(QString filename, Scene_item* item) {
   QFileInfo fileinfo(filename);
 
-  Q_FOREACH(Polyhedron_demo_io_plugin_interface* plugin, io_plugins) {
+  Q_FOREACH(CGAL::Three::Polyhedron_demo_io_plugin_interface* plugin, io_plugins) {
     if(  plugin->canSave(item) &&
         file_matches_filter(plugin->nameFilters(),filename) )
     {
@@ -1268,6 +1362,11 @@ void MainWindow::save(QString filename, Scene_item* item) {
         break;
     }
   }
+}
+
+void MainWindow::on_actionSaveSnapshot_triggered()
+{
+  viewer->saveSnapshot(false);
 }
 
 bool MainWindow::on_actionErase_triggered()
@@ -1336,7 +1435,7 @@ void MainWindow::on_actionPreferences_triggered()
   }
   
   //add io-plugins
-  Q_FOREACH(Polyhedron_demo_io_plugin_interface* plugin, io_plugins)
+  Q_FOREACH(CGAL::Three::Polyhedron_demo_io_plugin_interface* plugin, io_plugins)
   {
     QStandardItem* item =  new QStandardItem(plugin->name());
     item->setCheckable(true);
@@ -1431,3 +1530,4 @@ void MainWindow::on_actionRecenterScene_triggered()
   updateViewerBBox();
   viewer->camera()->interpolateToFitScene();
 }
+

@@ -4,7 +4,7 @@
 #include <QDockWidget>
 #include <QModelIndex>
 
-class Viewer_interface;
+namespace CGAL{namespace Three{class Viewer_interface;}}
 class QListView;
 class QStandardItemModel;
 
@@ -13,11 +13,11 @@ class Camera_positions_list : public QDockWidget {
 public:  
   Camera_positions_list(QWidget* parent);
 
-  void setViewer(Viewer_interface*);
+  void setViewer(CGAL::Three::Viewer_interface*);
 
-public slots:
+public Q_SLOTS:
   void load(QString filename);
-protected slots:
+protected Q_SLOTS:
   void on_plusButton_pressed();
   void on_minusButton_pressed();
   void on_upButton_pressed();
@@ -25,14 +25,19 @@ protected slots:
   void on_openButton_pressed();
   void on_saveButton_pressed();
   void on_clearButton_pressed();
-
+  void on_frontButton_pressed();
+  void on_backButton_pressed();
+  void on_topButton_pressed();
+  void on_botButton_pressed();
+  void on_leftButton_pressed();
+  void on_rightButton_pressed();
   void activatedRow(QModelIndex index);
 
 protected:
   void addItem(QString, QString);
 
 private:
-  Viewer_interface* m_viewer;
+  CGAL::Three::Viewer_interface* m_viewer;
   int counter;
   QListView* m_listView;
   QStandardItemModel* m_model;

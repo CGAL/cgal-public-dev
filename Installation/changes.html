@@ -59,7 +59,11 @@
 <td width="28%">
 
 <table CELLSPACING=0>
-<tr><td><a href="#release4.6">4.6</a>&nbsp;<td> (March 2015)
+<tr><td><a href="#release4.8">4.8</a>&nbsp;<td> (2016)
+<tr><td><a href="#release4.7">4.7</a>&nbsp;<td> (October 2015)
+<tr><td><a href="#release4.6.2">4.6.2</a>&nbsp;<td> (August 2015)
+<tr><td><a href="#release4.6.1">4.6.1</a>&nbsp;<td> (June 2015)
+<tr><td><a href="#release4.6">4.6</a>&nbsp;<td> (April 2015)
 <tr><td><a href="#release4.5.2">4.5.2</a>&nbsp;<td> (February 2015)
 <tr><td><a href="#release4.5.1">4.5.1</a>&nbsp;<td> (December 2014)
 <tr><td><a href="#release4.5">4.5</a>&nbsp;<td> (October 2014)
@@ -111,12 +115,394 @@ and <code>src/</code> directories).
 </table>
 
 <HR>
+<h2 id="release4.8">Release 4.8 </h2>
+<div>
+  <p>Release date:  </p>
+
+<!-- Installation (and general changes) -->
+
+  <h3>General</h3>
+  <ul>
+    <li>The support for Qt3 is dropped and all demos using it got removed.
+    </li>
+  </ul>
+
+<!-- New packages -->
+<!-- Major and breaking changes -->
+<!-- Arithmetic and Algebra -->
+<!-- Combinatorial Algorithms -->
+<!-- Geometry Kernels -->
+<!-- Convex Hull Algorithms -->
+<!-- Polygons -->
+  <h3>2D Regularized Boolean Set-Operations</h3>
+  <ul>
+    <li>Improve the performance of operations in some settings.
+        <b>Breaking change</b>: This improvement requires changes of the face and halfedge type of the underlying arrangement Dcel.
+        See the concepts `GeneralPolygonSetDcelHalfedge` and  `GeneralPolygonSetDcelFace` for more details.
+        If you use a different simplex types, inheriting your simplices from `CGAL::Gps_face_base` and `CGAL::Gps_halfedge_base`
+        is sufficient to accommodate for the update.
+    </li>
+  </ul>
+<!-- Cell Complexes and Polyhedra -->
+  <h3>3D Boolean Operations on Nef Polyhedra</h3>
+  <ul>
+    <li>Add 3 new constructors: from a point range, from a point, and from a segment.</li>
+  </ul>
+  <h3>Combinatorial Maps</h3>
+  <ul>
+    <li>Change the type of Boolean marks, old type is int, new type is size_type. If no more mark is available, get_new_mark throws an exception, instead of returning -1.</li>
+  </ul>
+<!-- Arrangements -->
+  <h3>2D Arrangements</h3>
+  <ul>
+    <li>Speed up the edge removal in case the incident faces contains many holes.</li>
+  <ul>
+<!-- Triangulations and Delaunay Triangulations -->
+<!-- Voronoi Diagrams -->
+<!-- Mesh Generation -->
+<!-- Surface Reconstruction -->
+<!-- Geometry Processing -->
+  <h3>Surface Mesh Parameterization</h3>
+  <ul>
+    <li><code>LSCM_parameterizer_3</code> now uses by default Eigen
+    instead of OpenNL as a model
+    of <code>SparseLinearAlgebraTraits_d</code>.</li>
+  </ul>
+  <h3>Polygon Mesh Processing</h3>
+  <ul>
+    <li>Add function <code>keep_large_connected_components()</code></li>
+  </ul>
+  <h3>Point Set Processing</h3>
+  <ul>
+    <li> <b>Breaking change:</b> new template
+    parameter <code>Concurrency_tag</code> for the
+    functions <code>compute_average_spacing()</code>, <code>edge_aware_upsample_point_set()</code>,
+    <code>jet_estimate_normals()</code>, <code>jet_smooth_point_set()</code>,
+    and <code>pca_estimate_normals()</code>.
+    To update your code simply add as first template parameter <code>CGAL::Sequential_tag</code>
+    or <code>CGAL::Parallel_tag</code> when calling one of these functions.</li>
+    <li> <code>CGAL::Parallel_tag</code> can no longer be used in
+    Point Set Processing algorithms if TBB is not available.</li>
+    <li>
+    Add a new simplification algorithm based on hierarchical
+    clustering: <code>CGAL::hierarchy_simplify_point_set()</code>. It
+    allows either to uniformly simplify the point set or to
+    automatically adapt the local density of points to the local
+    variation of the input computed by principal component analysis.
+    </li>
+    <li> New IO functions for PLY format (Polygon File
+      Format): <code>CGAL::read_ply_points()</code>,
+      <code>CGAL::read_ply_points_and_normals()</code>, <code>CGAL::write_ply_points()</code>
+    and <code>CGAL::write_ply_points_and_normals()</code>.</li>
+  </ul>
+  <h3>Surface Mesh Parameterization</h3>
+  <ul>
+    <li><code>LSCM_parameterizer_3</code> now uses by default Eigen
+    instead of OpenNL as a model
+    of <code>SparseLinearAlgebraTraits_d</code>.</li>
+  </ul>
+<!-- Spatial Searching and Sorting -->
+  <h3>Spatial Searching</h3>
+  <ul>
+    <li>Add function to find any point in a range query, that is neither all points, nor the closest one.</li>
+  </ul>
+<!-- Geometric Optimization -->
+  <h3>Principal Component Analysis</h3>
+  <ul>
+    <li>
+      Add a template parameter <code>DiagonalizeTraits</code> for
+      functions <code>CGAL::linear_least_squares_fitting_2()</code>
+      and <code>CGAL::linear_least_squares_fitting_3()</code>. This
+      allows to either choose the legacy internal diagonalization code
+      from CGAL or the Eigen implementation (or any class that is a
+      model of <code>DiagonalizeTraits</code>). Variants of the
+      function that automatically deduce the kernel also automatically
+      select the diagonalizer, so the API is mostly preserved.
+    </li>
+  </ul>
+<!-- Interpolation -->
+<!-- Kinetic Data Structures -->
+<!-- Support Library -->
+  <h3>CGAL and Solvers</h3>
+  <ul>
+    <li>
+      This package now includes all CGAL concepts for solvers with
+      models using the third party Eigen library.
+    </li>
+  </ul>
+<!-- Visualization -->
+
+<!-- end of the div for 4.8 -->
+</div>
+
+<h2 id="release4.7">Release 4.7 </h2>
+<div>
+  <p>Release date: October 2015 </p>
+
+  <h3>Installation</h3>
+  <ul>
+    <li>The minimum required version of CMake is now 2.8.11. CMake versions
+      3.1, 3.2, and 3.3 are supported.</li>
+    <li>All Qt4 demos have been updated and now require Qt5 to be
+      compiled. Qt5 version 5.3 or higher is required.  The support for Qt4
+      is dropped. To compile libCGAL_Qt5 and demos, you must set the cmake
+      or environment variable <code>Qt5_DIR</code> to point to the path to
+      the directory containing the file <code>Qt5Config.cmake</code>
+      created by your Qt5 installation.  If you are using the open source
+      edition it should be
+    <code>/path-to/qt-everywhere-opensource-src-&lt;version&gt;/qtbase/lib/cmake/Qt5</code>.
+    </li>
+    <li>The code of the 3D demos now uses modern OpenGL, with shaders,
+    instead of the fixed pipeline API of OpenGL-1.</li>
+    <li>The Microsoft Windows Visual C++ compiler 2015 (VC14) is now
+      supported.  However, since this compiler is not officially supported
+      by Intel TBB 4.4 and Qt 5.5 (the latest versions available at the
+      time of this release), the parallelism features of CGAL and Qt5 demos
+      will not work.
+    </li>
+  </ul>
+
+  <h3>L Infinity Segment Delaunay Graphs (new package)</h3>
+  <ul>
+    <li>
+      The package provides the geometric traits for constructing the
+      segment Delaunay graph in the max-norm (L Infinity).  The traits also
+      contain methods to draw the edges of the dual of the segment Delaunay
+      graph in the max-norm i.e., the segment Voronoi diagram in the
+      max-norm. The algorithm and traits rely on the segment Delaunay graph
+      algorithm and traits under the Euclidean distance. The segment
+      Voronoi diagram in the max-norm has applications in VLSI CAD.
+    </li>
+  </ul>
+
+  <h3>Advancing Front Surface Reconstruction (new package)</h3>
+  <ul>
+    <li>
+      This package provides a greedy algorithm for surface reconstruction
+      from an unorganized point set. Starting from a seed facet, a
+      piecewise linear surface is grown by adding Delaunay triangles one by
+      one. The most plausible triangles are added first, in a way that
+      avoids the appearance of topological singularities.
+    </li>
+  </ul>
+
+  <h3>Triangulated Surface Mesh Shortest Paths (new package)</h3>
+  <ul>
+    <li>
+      The package provides methods for computing shortest path on
+      triangulated surface meshes. Given a set of source points
+      on the surface, this package provides a data structure that
+      can efficiently provides the shortest path from any point on
+      the surface to the sources points.
+      There is no restriction on the genus or the number of connected
+      components of the mesh.
+    </li>
+  </ul>
+
+  <h3>Triangulated Surface Mesh Skeletonization (new package)</h3>
+  <ul>
+    <li>
+      This package provides a (1D) curve skeleton extraction algorithm for
+      a triangulated polygonal mesh without borders based on the mean
+      curvature flow.  The particularity of this skeleton is that it
+      captures the topology of the input.  For each skeleton vertex one can
+      obtain its location and its corresponding vertices from the input
+      mesh.  The code is generic and works with any model of the
+      `FaceListGraph` concept.
+    </li>
+  </ul>
+
+  <h3>3D Point-Set Shape Detection (new package)</h3>
+  <ul>
+    <li>
+      This package implements the efficient RANSAC method for shape
+      detection, contributed by Schnabel et al. From an unstructured point
+      set with unoriented normals, the algorithm detects a set of
+      shapes. Five types of primitive shapes are provided by this package:
+      plane, sphere, cylinder, cone and torus. Detecting other types of
+      shapes is possible by implementing a class derived from a base shape.
+    </li>
+  </ul>
+
+  <h3>2D Visibility (new package)</h3>
+  <ul>
+    <li>This package provides several variants to compute the visibility
+      area of a point within polygonal regions in two dimensions.
+    </li>
+  </ul>
+
+  <h3>Polygon Mesh Processing (new package)</h3>
+  <ul>
+    <li> This package implements a collection of methods and classes for
+      polygon mesh processing, ranging from basic operations on simplices,
+      to complex geometry processing algorithms.  The implementation of
+      this package mainly follows algorithms and references given in Botsch
+      et al.'s book on polygon mesh processing.
+    </li>
+  </ul>
+
+
+  <h3>General</h3>
+  <ul>
+    <li>Support for unordered sets and maps of the stdlib and of boost for
+      handle and index classes.
+    </li>
+  </ul>
+
+  <h3>Approximation of Ridges and Umbilics on Triangulated Surface Meshes</h3>
+  <ul>
+    <li> This package now supports any model of the
+      concept <code>FaceGraph</code>.</li>
+    <li> <b>Breaking change:</b> The package no longer supports models
+      of <code>TriangulatedSurfaceMesh</code> which are not at the same
+      time models of the concept <code>FaceGraph</code>.
+    </li>
+  </ul>
+
+  <h3>dD Geometry Kernel</h3>
+  <ul>
+    <li>
+      Epick_d gains 3 new functors: <code>Construct_circumcenter_d</code>,
+      <code>Compute_squared_radius_d</code>,
+      <code>Side_of_bounded_sphere_d</code>.
+      Those are essential for the computation of alpha-shapes.
+    </li>
+  </ul>
+
+  <h3>2D Arrangements</h3>
+  <ul>
+    <li>Introduced a new traits class, called
+      <code>Arr_polycurve_traits_2&lt;SubcurveTraits&gt;</code>, which
+      handles general piece-wise (polycurve) curves. The pieces do not
+      necessarily have to be linear.</li>
+    <li>Introduced two new concepts called
+      <code>ArrangementApproximateTraits_2</code> and
+      <code>ArrangementConstructXMonotoneCurveTraits_2</code>.
+      <ul>
+	<li>The existing <code>ArrangementLandmarkTraits_2</code> concept,
+	  which has two requirements, now refines the two respective
+	  concepts above.</li>
+	<li>The template parameter of the existing
+	  <code>Arr_polyline_traits_2&lt;SegmentTraits&gt;</code> template
+	  must be substituted with a traits class that is a model of
+	  the <code>ArrangementConstructXMonotoneTraits_2</code> concept
+	  among the other when <code>Arr_polyline_traits_2</code> is
+	  instantiated.
+        </li>
+      </ul>
+    </li>
+  </ul>
+
+  <h3>2D Minkowski Sums</h3>
+  <ul>
+    <li>Added support for polygons with holes and optimized the
+      construction of Minkowski sums.
+      <ul>
+        <li>Introduced an implementation of the "reduced convolution"
+	  method, a variant of the method described in "2D Minkowski Sum of
+	  Polygons Using Reduced Convolution" by Behar and Lien. The new
+	  method supports polygons with holes and in many cases out
+	  pergorms the implementation of the exsisting (full) convolution
+	  method.</li>
+        <li>Introduced two new classes that decompose polygons into convex
+	  pieces (models of the <code>PolygonConvexDecomposition_2</code>
+	  concept) based on vertical decomposition and constrained Delaunay
+	  triangulation, respectively. These new models also support the
+	  convex decomposition of polygons with holes.
+        </li>
+      </ul>
+    </li>
+  </ul>
+
+  <h3>3D Periodic Triangulations</h3>
+  <ul>
+    <li>Rename <code>Periodic_3_triangulation_traits_3</code> to
+      <code>Periodic_3_Delaunay_triangulation_traits_3</code>.
+    </li>
+    <li>Rename the concept <code>Periodic_3TriangulationTraits_3</code> to
+          <code>Periodic_3DelaunayTriangulationTraits_3</code>.
+    </li>
+    <li>Create <code>Periodic_3_triangulation_traits_3</code> and the
+      concept <code>Periodic_3TriangulationTraits_3</code>.
+    </li>
+  </ul>
+
+  <h3>2D Conforming Triangulations and Meshes</h3>
+  <ul>
+    <li>
+      Add an optimization method <code>CGAL::lloyd_optimize_mesh_2()</code>
+      that implements the Lloyd (or Centroidal Voronoi Tesselation)
+      optimization algorithm in a Constrained Delaunay Triangulation.  For
+      optimization, the triangulation data structure on which the mesher
+      relies needs its <code>VertexBase</code> template parameter to be a
+      model of the new concept <code>DelaunayMeshVertexBase_2</code>.
+    </li>
+  </ul>
+
+  <h3>Point Set Processing and Surface Reconstruction from Point Sets</h3>
+  <ul>
+    <li>
+      Add the function <code>CGAL::compute_vcm()</code> for computing the
+      Voronoi Covariance Measure (VCM) of a point set. The output of this
+      function can be used with the
+      function <code>CGAL::vcm_is_on_feature_edge()</code> to determine
+      whether a point is on or close to a feature edge. The former function
+      is also internally used by <code>CGAL::vcm_estimate_normals()</code>
+      to estimate the normals of a point set and it is particularly suited
+      to point sets with noise.
+    </li>
+  </ul>
+
+  <h3>Spatial Sorting</h3>
+  <ul>
+    <li>Add the possibility to sort points on a sphere along
+      a space-filling curve using the functions
+      <code>CGAL::hilbert_sort_on_sphere</code> and
+      <code>CGAL::spatial_sort_on_sphere</code>.</li>
+  </ul>
+
+  <h3>Geometric Object Generators</h3>
+  <ul>
+    <li>Add new random generator of points in a 2D and 3D triangle and in a
+        tetrahedron
+        (<code>CGAL::Random_points_in_triangle_2</code>,
+        <code>CGAL::Random_points_in_triangle_3</code>,
+        <code>CGAL::Random_points_in_tetrahedron_3</code>).
+    </li>
+  </ul>
+
+<!-- end of the div for 4.7 -->
+</div>
+
+<h2 id="release4.6.2">Release 4.6.2 </h2>
+<div>
+  <p>Release date: August 2015 </p>
+
+  <p>This release only fixes bugs. See the list of fixed bugs on Github:</p>
+  <p><a href="https://github.com/CGAL/cgal/issues?q=milestone%3A4.6.2">
+    https://github.com/CGAL/cgal/issues?q=milestone%3A4.6.2
+  </a></p>
+</div>
+
+<h2 id="release4.6.1">Release 4.6.1 </h2>
+<div>
+  <p>Release date: June 2015 </p>
+
+  <p>This release only fixes bugs. See the list of fixed bugs on Github:</p>
+  <p><a href="https://github.com/CGAL/cgal/issues?q=milestone%3A4.6.1+-label%3Ainvalid">
+    https://github.com/CGAL/cgal/issues?q=milestone%3A4.6.1+-label%3Ainvalid
+  </a></p>
+</div>
 
 <h2 id="release4.6">Release 4.6 </h2>
 <div>
-  <p>Release date: March 2015 </p>
+  <p>Release date: April 2015 </p>
 
 <!-- Installation (and general changes) -->
+  <h3>Installation</h3>
+  <ul>
+    <li>The required version of Boost is now 1.48 or higher.</li>
+  </ul>
 <!-- New packages -->
   <h3>2D Polyline Simplification (new package)</h3>
   <ul>
@@ -173,7 +559,7 @@ and <code>src/</code> directories).
   <h3>dD Geometry Kernel</h3>
   <ul>
     <li> It has been reported that the recently introduced <code>Epick_d</code>
-      kernel may not work with Intel C++ Compiler prior to version 15. 
+      kernel may not work with Intel C++ Compiler prior to version 15.
       Documentation has been updated.</li>
   </ul>
 <!-- Convex Hull Algorithms -->
@@ -196,7 +582,7 @@ and <code>src/</code> directories).
   <ul>
     <li>Added <code>correct_invalid_attributes</code>,
       <code>set_automatic_attributes_management</code> and
-      <code>are_attributes_automatically_managed</code> methods in 
+      <code>are_attributes_automatically_managed</code> methods in
       <code>CombinatorialMap</code> concept. This allows high level
       operations to not update non void attributes during massive calls
       of these operations, but only after the end of their executions.
@@ -233,7 +619,7 @@ and <code>src/</code> directories).
   <h3>Spatial Searching</h3>
   <ul>
     <li>
-      Fixed a bug in <code>CGAL::Splitters.h</code> sliding midpoint rule, 
+      Fixed a bug in <code>CGAL::Splitters.h</code> sliding midpoint rule,
       where degenerated point sets (e.g.,points on segment)
       caused the kd-tree to get linear.
     </li>
@@ -246,12 +632,12 @@ and <code>src/</code> directories).
     <li>
       <b>Breaking change:</b> The concept <code>OrthogonalDistance</code> has
       new function overloads for <code>min_distance_to_rectangle</code> and
-      <code>max_distance_to_rectangle</code> with an additional reference 
+      <code>max_distance_to_rectangle</code> with an additional reference
       parameter <code>std::vector</code>.
     </li>
     <li>
-      <b>Breaking change:</b> The order of the points in the iterator range 
-      <code>[tree.begin(),tree.end()]</code> is not the order of 
+      <b>Breaking change:</b> The order of the points in the iterator range
+      <code>[tree.begin(),tree.end()]</code> is not the order of
       insertion of the points into the tree.  This was not guaranteed before
       but might have been observed and exploited by users.
     </li>
@@ -422,6 +808,17 @@ and <code>src/</code> directories).
     <li> Add an experimental parallel version of the Delaunay triangulation
       and the regular triangulation algorithms, which allows parallel
       insertion and removal of point ranges.</li>
+    <li>Add caching of circumcenters to
+      <code>Regular_triangulation_cell_base_3</code>. The cache value is
+      computed when <code>cell->circumcenter()</code>
+      or <code>rt.dual(cell)</code> functions are called.
+    </li>
+  </ul>
+
+  <h3>3D Periodic Triangulations</h3>
+  <ul>
+    <li>Add a method to locate point with inexact predicates.
+    </li>
   </ul>
 
 <!-- Mesh Generation -->
@@ -437,11 +834,6 @@ and <code>src/</code> directories).
       version 3.8.
     <li> Add an experimental parallel version of the 3D mesh refinement and
       mesh optimization methods.
-    </li>
-    <li>Add caching of circumcenters to
-      <code>Regular_triangulation_cell_base_3</code>. The cache value is
-      computed when <code>cell->circumcenter()</code>
-      or <code>rt.dual(cell)</code> functions are called.
     </li>
   </ul>
 
@@ -592,12 +984,6 @@ and <code>src/</code> directories).
         that inserts a range of points and segments, or a range of segments.
         These functions uses the spatial sorting in order to speed
         up the time needed for the insertion.
-    </li>
-  </ul>
-
-  <h3>3D Periodic Triangulations</h3>
-  <ul>
-    <li>Add a method to locate point with inexact predicates.
     </li>
   </ul>
 
@@ -3479,7 +3865,7 @@ An interval skip list is a data strucure for finding all intervals
     <li> Number types:
       <ul>
       <li> number types are now required to provide a function:
-        std::pair&lt;double, double&gt;  to_interval(const NT &amp;).
+        std::pair&lt;double, double&gt;  to_interval(const NT &).
       <li> number types are now required to provide mixed operators with "int".
       <li> CLN support removed.
       <li> faster square() for MP_Float.

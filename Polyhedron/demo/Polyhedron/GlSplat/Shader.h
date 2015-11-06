@@ -16,23 +16,10 @@
 
 #ifndef _GLSPLAT_Shader_h_
 #define _GLSPLAT_Shader_h_
-
-#include <GL/glew.h>
-#include <CGAL/glu.h>
-
-#ifndef NDEBUG
-    #define GL_TEST_ERR\
-        {\
-            GLenum eCode;\
-            if((eCode=glGetError())!=GL_NO_ERROR)\
-                std::cerr << "OpenGL error : " <<  gluErrorString(eCode) << " in " <<  __FILE__ << " : " << __LINE__ << std::endl;\
-        }
-#else
-    #define GL_TEST_ERR
-#endif
-
 #include <string>
 #include <map>
+#include <QOpenGLFunctions_3_3_Core>
+#include <CGAL/Three/Viewer_interface.h>
 
 namespace GlSplat {
 
@@ -59,7 +46,10 @@ public:
     Shader(void)
       : mIsValid(false)
     { }
-
+    ~Shader()
+    {
+    }
+    void setViewer(CGAL::Three::Viewer_interface *);
     /** add a \#define
     */
     void define(const char* name, const char* value);
@@ -75,15 +65,15 @@ public:
 
     /** Enable the shader
     */
-    void activate() const;
+    void activate();
 
     /** Releases the shader
     */
-    void release() const;
+    void release() ;
 
     /** \return the index of the uniform variable \a name
     */
-    int getUniformLocation(const char* name) const;
+    int getUniformLocation(const char* name);
 
     /** Forces a sampler to a given unit
         Example:
@@ -93,7 +83,7 @@ public:
     myShader->setSamplerUnit("mySampler", 2);
         \endcode
     */
-    void setSamplerUnit(const char* samplerName, int textureUnit) const;
+    void setSamplerUnit(const char* samplerName, int textureUnit);
 
     /** \returns the index of the generic attribute \a name
         Tp be used with glVertexAttrib*(...) ou glVertexAttribPointer(...)
@@ -108,38 +98,39 @@ public:
     glEnableVertexAttribArray(tangentAttribID);
         \endcode
     */
-    int getAttribLocation(const char* name) const;
+    int getAttribLocation(const char* name);
 
-    inline void setUniform(const char* name, float a) const
-    { glUniform1f(glGetUniformLocation(mProgramID, name), a); }
+    inline void setUniform(const char* name, float a)
+    { viewer->glUniform1f(viewer->glGetUniformLocation(mProgramID, name), a); }
 
-    inline void setUniform(const char* name, int a) const
-    { glUniform1i(glGetUniformLocation(mProgramID, name), a); }
+    inline void setUniform(const char* name, int a)
+    { viewer->glUniform1i(viewer->glGetUniformLocation(mProgramID, name), a); }
 
-    inline void setUniform2(const char* name, float* a) const
-    { glUniform2fv(glGetUniformLocation(mProgramID, name), 1, a); }
+    inline void setUniform2(const char* name, float* a)
+    { viewer->glUniform2fv(viewer->glGetUniformLocation(mProgramID, name), 1, a); }
 
-    inline void setUniform3(const char* name, float* a) const
-    { glUniform3fv(glGetUniformLocation(mProgramID, name), 1, a); }
+    inline void setUniform3(const char* name, float* a)
+    { viewer->glUniform3fv(viewer->glGetUniformLocation(mProgramID, name), 1, a); }
 
-    inline void setUniform4(const char* name, float* a) const
-    { glUniform4fv(glGetUniformLocation(mProgramID, name), 1, a); }
+    inline void setUniform4(const char* name, float* a)
+    { viewer->glUniform4fv(viewer->glGetUniformLocation(mProgramID, name), 1, a); }
 
-    inline void setUniform(const char* name, float a, float b) const
-    { glUniform2f(glGetUniformLocation(mProgramID, name), a, b); }
+    inline void setUniform(const char* name, float a, float b)
+    { viewer->glUniform2f(viewer->glGetUniformLocation(mProgramID, name), a, b); }
 
-    inline void setUniform(const char* name, float a, float b, float c) const
-    { glUniform3f(glGetUniformLocation(mProgramID, name), a, b, c); }
+    inline void setUniform(const char* name, float a, float b, float c)
+    { viewer->glUniform3f(viewer->glGetUniformLocation(mProgramID, name), a, b, c); }
 
-    inline void setUniform(const char* name, float a, float b, float c, float d) const
-    { glUniform4f(glGetUniformLocation(mProgramID, name), a, b, c, d); }
+    inline void setUniform(const char* name, float a, float b, float c, float d)
+    { viewer->glUniform4f(viewer->glGetUniformLocation(mProgramID, name), a, b, c, d); }
 
+     CGAL::Three::Viewer_interface *viewer;
 protected:
 
     bool mIsValid;
     typedef std::map<std::string,std::string> DefineMap;
     DefineMap mDefines;
-    static void printInfoLog(GLuint objectID);
+    void printInfoLog(GLuint objectID);
     GLuint mProgramID;
 };
 

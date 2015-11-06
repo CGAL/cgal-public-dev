@@ -3,9 +3,9 @@
  * Copyright (c) 1995-2004 Exact Computation Project
  * All rights reserved.
  *
- * This file is part of CORE (http://cs.nyu.edu/exact/core/).
+ * This file is part of CGAL (www.cgal.org).
  * You can redistribute it and/or modify it under the terms of the GNU
- * General Public License as published by the Free Software Foundation,
+ * Lesser General Public License as published by the Free Software Foundation,
  * either version 3 of the License, or (at your option) any later version.
  *
  * Licensees holding a valid commercial license may use this file in
@@ -36,10 +36,15 @@
  * $Id$
  ***************************************************************************/
 
+// We need to include BigFloat.h here because there is a circular dependency
+// between Expr and BigFloat.
+#include <CGAL/CORE/BigFloat.h>
+
 #ifndef _CORE_EXPR_H_
 #define _CORE_EXPR_H_
 
 #include <CGAL/CORE/ExprRep.h>
+#include <CGAL/assertions.h>
 
 namespace CORE { 
 
@@ -78,9 +83,9 @@ public:
     // (i.e., not infinite and not NaN)
     if (! CGAL_CORE_finite(f)) {
       std::cerr << " ERROR : constructed an invalid float! " << std::endl;
-      if (AbortFlag)
+      if (get_static_AbortFlag())
         abort();
-      InvalidFlag = -1;
+      get_static_InvalidFlag() = -1;
     }
     rep = new ConstDoubleRep(f);
   }
@@ -89,9 +94,9 @@ public:
     // (i.e., not infinite and not NaN)
     if (! CGAL_CORE_finite(d)) {
       std::cerr << " ERROR : constructed an invalid double! " << std::endl;
-      if (AbortFlag)
+      if (get_static_AbortFlag())
         abort();
-      InvalidFlag = -2;
+      get_static_InvalidFlag() = -2;
     }
     rep = new ConstDoubleRep(d);
   }
@@ -111,11 +116,11 @@ public:
    * it is generally recommended that the (String) constructor be used in
    * preference to the (double) constructor.
    */
-  Expr(const char *s, const extLong& p = defInputDigits)
+  Expr(const char *s, const extLong& p = get_static_defInputDigits())
       : RCExpr(new ConstRealRep(Real(s, p))) {}
 
   /// constructor for <tt>std::string</tt>
-  Expr(const std::string& s, const extLong& p = defInputDigits)
+  Expr(const std::string& s, const extLong& p = get_static_defInputDigits())
       : RCExpr(new ConstRealRep(Real(s, p))) {}
 
   /// constructor for <tt>Real</tt>
@@ -179,9 +184,9 @@ public:
   Expr& operator/=(const Expr& e) {
     if ((e.rep)->getSign() == 0) {
       std::cerr << " ERROR : division by zero ! " << std::endl;
-      if (AbortFlag)
+      if (get_static_AbortFlag())
         abort();
-      InvalidFlag = -3;
+      get_static_InvalidFlag() = -3;
     }
     *this = new DivRep(rep, e.rep);
     return *this;
@@ -225,12 +230,12 @@ public:
   /// \name String Conversion Functions
   //@{
   /// set value from <tt>const char*</tt>
-  void fromString(const char* s, const extLong& prec = defInputDigits) {
+  void fromString(const char* s, const extLong& prec = get_static_defInputDigits()) {
     *this = Expr(s, prec);
   }
   /// convert to <tt>std::string</tt>
   /** give decimal string representation */
-  std::string toString(long prec=defOutputDigits, bool sci=false) const {
+  std::string toString(long prec=get_static_defOutputDigits(), bool sci=false) const {
     return rep->toString(prec, sci);
   }
   //@}
@@ -282,8 +287,8 @@ public:
   /** Here is the definition of what this means:
        If e is the exact value and ee is the approximate value,
        then  |e - ee| <= 2^{-a} or  |e - ee| <= 2^{-r} |e|. */
-  const Real & approx(const extLong& relPrec = defRelPrec,
-                      const extLong& absPrec = defAbsPrec) const {
+  const Real & approx(const extLong& relPrec = get_static_defRelPrec(),
+                      const extLong& absPrec = get_static_defAbsPrec()) const {
     return rep->getAppValue(relPrec, absPrec);
   }
   //@}
@@ -355,7 +360,7 @@ inline std::ostream& operator<<(std::ostream& o, const Expr& e) {
 /// I/O Stream operator>>
 inline std::istream& operator>>(std::istream& i, Expr& e) {
   Real rVal;
-  i >> rVal; // precision is = defInputDigits
+  i >> rVal; // precision is = get_static_defInputDigits()
   if (i)
     e = rVal;		// only assign when reading is successful.
   return i;
@@ -382,9 +387,9 @@ inline Expr operator*(const Expr& e1, const Expr& e2) {
 inline Expr operator/(const Expr& e1, const Expr& e2) {
   if (e2.sign() == 0) {
     std::cerr << " ERROR : division by zero ! " << std::endl;
-    if (AbortFlag)
+    if (get_static_AbortFlag())
       abort();
-    InvalidFlag = -4;
+    get_static_InvalidFlag() = -4;
   }
   return Expr(new DivRep(e1.Rep(), e2.Rep()));
 }
@@ -485,9 +490,9 @@ inline bool isDivisible(const Expr& e1, const Expr& e2) {
 inline Expr sqrt(const Expr& e) {
   if (e.sign() < 0) {
     std::cerr << " ERROR : sqrt of negative value ! " << std::endl;
-    if (AbortFlag)
+    if (get_static_AbortFlag())
       abort();
-    InvalidFlag = -5;
+    get_static_InvalidFlag() = -5;
   }
   return Expr(new SqrtRep(e.Rep()));
 }
@@ -534,7 +539,7 @@ inline Expr rootOf(const Polynomial<NT>& p, int x, int y) {
  * */
 template <class NT>
 inline Expr radical(const NT& n, int m) {
-  assert(n>=0 && m>=1);
+  CGAL_assertion(n>=0 && m>=1);
   if (n == 0 || n == 1 || m == 1)
     return Expr(n);
   Polynomial<NT> Q(m);
@@ -548,4 +553,9 @@ inline Expr radical(const NT& n, int m) {
 #include <CGAL/CORE/poly/Poly.tcc>
 
 } //namespace CORE
+
+#ifdef CGAL_HEADER_ONLY
+#include <CGAL/CORE/Expr_impl.h>
+#endif // CGAL_HEADER_ONLY
+
 #endif // _CORE_EXPR_H_

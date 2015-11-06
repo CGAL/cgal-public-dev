@@ -22,7 +22,7 @@
 #define CGAL_PROPERTIES_SURFACE_MESH_H
 
 #include <CGAL/assertions.h>
-#include <CGAL/Surface_mesh/Surface_mesh.h>
+#include <CGAL/Surface_mesh.h>
 #include <CGAL/Kernel_traits.h>
 #include <CGAL/squared_distance_3.h>
 
@@ -114,7 +114,7 @@ get(boost::edge_weight_t, const CGAL::Surface_mesh<Point>& sm)
 }
 
 template <typename Point>
-typename CGAL::Kernel_traits<Point>::type::FT
+typename CGAL::SM_edge_weight_pmap<Point>::value_type
 get(boost::edge_weight_t, const CGAL::Surface_mesh<Point>& sm, 
     const typename boost::graph_traits<CGAL::Surface_mesh<Point> >::edge_descriptor& e)
 {

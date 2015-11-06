@@ -13,6 +13,7 @@
 // Qt headers
 #include <QtGui>
 #include <QString>
+#include <QInputDialog>
 #include <QFileDialog>
 #include <QGraphicsLineItem>
 
@@ -65,8 +66,9 @@ private:
 
     G pg(radius);
     bool ok = false;
-    const int number_of_points = 
-      QInputDialog::getInteger(this, 
+
+  const int number_of_points = 
+      QInputDialog::getInt(this, 
                                tr("Number of random points"),
                                tr("Enter number of random points"),
                                100,
@@ -89,13 +91,13 @@ private:
     }
     // default cursor
     QApplication::restoreOverrideCursor();
-    emit(changed());
+    Q_EMIT( changed());
   }
 
 public:
   MainWindow();
 
-public slots:
+public Q_SLOTS:
 
   void on_actionClear_triggered();
 
@@ -109,7 +111,7 @@ public slots:
   void on_actionGeneratePolytopeInDisc_triggered();
   void clear();
 
-signals:
+Q_SIGNALS:
   void changed();
 };
 
@@ -170,7 +172,7 @@ MainWindow::MainWindow()
 
 /* 
  *  Qt Automatic Connections
- *  http://doc.trolltech.com/4.4/designer-using-a-component.html#automatic-connections
+ *  http://doc.qt.io/qt-5/designer-using-a-ui-file.html#automatic-connections
  * 
  *  setupUi(this) generates connections to the slots named
  *  "on_<action_name>_<signal_name>"
@@ -180,7 +182,7 @@ void
 MainWindow::on_actionClear_triggered()
 {
   clear();
-  emit(changed());
+  Q_EMIT( changed());
 }
 
 void
@@ -233,7 +235,7 @@ MainWindow::on_actionGenerateSegments_triggered()
   Seg_iterator g( rpos, rpoc);
   CGAL::cpp11::copy_n( g, 200, std::back_inserter(segments));
   
-  emit(changed());
+  Q_EMIT( changed());
 }
 
 
@@ -263,7 +265,7 @@ MainWindow::on_actionGenerateSegmentFans_triggered()
   Count_iterator t2_end(t2, 50);
   std::copy( t2_begin, t2_end, std::back_inserter(segments));
 
-  emit(changed());
+  Q_EMIT( changed());
 }
 void
 MainWindow::on_actionGeneratePolytopeInDisc_triggered()
@@ -283,7 +285,7 @@ MainWindow::on_actionGeneratePolytopeInDisc_triggered()
     //G pg(radius);
     bool ok = false;
     const int number_of_points =
-    QInputDialog::getInteger(this,
+    QInputDialog::getInt(this,
                              tr("Number of random points in the disc"),
                              tr("Enter number of random points.\nThe polytope will be the convex hull of these points."),
                              100,
@@ -314,7 +316,7 @@ MainWindow::on_actionGeneratePolytopeInDisc_triggered()
     // default cursor
     QApplication::restoreOverrideCursor();
     
-    emit(changed());
+    Q_EMIT( changed());
 }
 
 void
@@ -336,9 +338,9 @@ int main(int argc, char **argv)
   app.setOrganizationName("GeometryFactory");
   app.setApplicationName("Generator_2 demo");
 
-  // Import resources from libCGALQt4.
-  // See http://doc.trolltech.com/4.4/qdir.html#Q_INIT_RESOURCE
-  CGAL_QT4_INIT_RESOURCES;
+  // Import resources from libCGAL (Qt5).
+  // See http://doc.qt.io/qt-5/qdir.html#Q_INIT_RESOURCE
+  CGAL_QT_INIT_RESOURCES;
   Q_INIT_RESOURCE(Generator_2);
 
   MainWindow mainWindow;

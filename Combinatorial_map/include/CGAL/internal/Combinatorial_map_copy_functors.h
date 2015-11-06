@@ -21,11 +21,11 @@
 #define CGAL_COMBINATORIAL_MAP_COPY_FUNCTORS_H
 
 #include <CGAL/internal/Combinatorial_map_utility.h>
-#include <CGAL/internal/Combinatorial_map_internal_functors.h>
+#include <CGAL/Combinatorial_map_functors.h>
 #include <CGAL/Dimension.h>
 #include <CGAL/Kernel_traits.h>
 #include <CGAL/Cartesian_converter.h>
-
+#include <CGAL/use.h>
 /* Definition of functors used internally to copy combinatorial maps attributes
  * (we need functors as attributes are stored in tuple, thus all the access
  *  must be done at compiling time).
@@ -162,10 +162,10 @@ struct Get_convert_attribute_functor<Map1,Map2,i,Converters,false>
 // Call a given functor if both i-attribute have an non void info
 template< typename Map1, typename Map2, unsigned int i,
           typename Converters,
-          bool Withinfo1=CGAL::internal::template
+          bool Withinfo1=CGAL::template
           Is_attribute_has_non_void_info
           <typename Map1::template Attribute_type<i>::type>::value,
-          bool Withinfo2=CGAL::internal::template
+          bool Withinfo2=CGAL::template
           Is_attribute_has_non_void_info
           <typename Map2::template Attribute_type<i>::type>::value >
 struct Call_functor_if_both_attributes_have_info
@@ -199,9 +199,9 @@ struct Call_functor_if_both_attributes_have_info<Map1, Map2, i,
 // general case i!=0 or one attribute without point.
 template< typename Map1, typename Map2, unsigned int i,
           typename Pointconverter,
-          bool Withpoint1=CGAL::internal::template Is_attribute_has_point
+          bool Withpoint1=CGAL::template Is_attribute_has_point
           <typename Map1::template Attribute_type<i>::type>::value,
-          bool Withpoint2=CGAL::internal::template Is_attribute_has_point
+          bool Withpoint2=CGAL::template Is_attribute_has_point
           <typename Map2::template Attribute_type<i>::type>::value >
 struct Call_functor_if_both_attributes_have_point
 {
@@ -288,7 +288,7 @@ struct Copy_attribute_functor_if_nonvoid<Map1, Map2, Converters,
     if ( cmap2->template attribute<0>(dh2)!=Map2::null_handle ) return;
 
     // Create the point if 0-attributes has Point.
-    if ( CGAL::internal::template Is_attribute_has_point
+    if ( CGAL::template Is_attribute_has_point
          <typename Map2::template Attribute_type<0>::type>::value )
       cmap2->template
           set_attribute<0>(dh2, cmap2->template create_attribute<0>());
@@ -346,6 +346,7 @@ struct Default_converter_cmap_attributes
   (const Map1& map1, Map2& map2, typename Map1::Dart_const_handle dh1,
    typename Map2::Dart_handle dh2) const
   {
+    CGAL_USE(dh2);
     CGAL_assertion( map1.template attribute<i>(dh1)!=Map1::null_handle );
     CGAL_assertion( map2.template attribute<i>(dh2)==Map2::null_handle );
     return internal::Create_attribute_if_same_info_cmap
@@ -363,6 +364,7 @@ struct Cast_converter_cmap_attributes
   (const Map1& map1, Map2& map2, typename Map1::Dart_const_handle dh1,
    typename Map2::Dart_handle dh2) const
   {
+    CGAL_USE(dh2);
     CGAL_assertion( map1.template attribute<i>(dh1)!=Map1::null_handle );
     CGAL_assertion( map2.template attribute<i>(dh2)==Map2::null_handle );
     typename Map2::template Attribute_handle<i>::type

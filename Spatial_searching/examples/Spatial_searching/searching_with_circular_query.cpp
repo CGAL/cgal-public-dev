@@ -13,6 +13,7 @@ typedef CGAL::Search_traits_2<K> Traits;
 typedef CGAL::Fuzzy_sphere<Traits> Fuzzy_circle;
 typedef CGAL::Kd_tree<Traits> Tree;
 typedef CGAL::Random Random;
+
 int main() {
 
   const int N=1000;
@@ -29,6 +30,12 @@ int main() {
   Point center(0.2, 0.2);
   Fuzzy_circle exact_range(center, 0.2);
 
+  boost::optional<Point> any = tree.search_any_point(exact_range);
+  if(any){
+    std::cout << *any << " is in the query circle\n";
+  }else{
+    std::cout << "Empty query circle\n";
+  }
   std::list<Point> result;
   tree.search(std::back_inserter( result ), exact_range);
 

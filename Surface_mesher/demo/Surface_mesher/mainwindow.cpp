@@ -14,6 +14,7 @@
 #include <QDoubleSpinBox>
 #include <QLabel>
 #include <QSettings>
+#include <QMimeData>
 
 #include <QGLViewer/vec.h>
 
@@ -103,7 +104,7 @@ void MainWindow::show_only(QString tag)
     {
       err << object->metaObject()->className()
           << " \"" << object->objectName() << "\" only in: ";
-      foreach(QString s, show_only_in)
+      Q_FOREACH(QString s, show_only_in)
         err << s << " ";
       const bool visible = show_only_in.contains(tag);
       err << (visible ? "(enabled)\n" : "(disabled)\n");
@@ -135,6 +136,29 @@ void MainWindow::on_action_Open_triggered()
   }
 }
 
+void MainWindow::on_action_OpenDirectory_triggered()
+{
+  QSettings settings;
+  QString start_dir = settings.value("Open directory",
+                                     QDir::current().dirName()).toString();
+  QString dir =
+    QFileDialog::getExistingDirectory(this,
+                                      tr("Open directory"),
+                                      start_dir,
+                                      QFileDialog::ShowDirsOnly
+                                      | QFileDialog::DontResolveSymlinks);
+
+  if (!dir.isEmpty()) {
+    QFileInfo fileinfo(dir);
+    if (fileinfo.isDir() && fileinfo.isReadable())
+    {
+      settings.setValue("Open directory",
+        fileinfo.absoluteDir().absolutePath());
+      surface_open(dir);
+    }
+  }
+}
+
 void MainWindow::on_action_Quit_triggered()
 {
   this->writeState();
@@ -153,4 +177,3 @@ void MainWindow::on_action_Clone_triggered()
   other->show();
 }
 
-#include "mainwindow.moc"

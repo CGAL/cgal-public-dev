@@ -31,7 +31,7 @@
 #include <algorithm>
 #include <cmath>
 #include <ctime>
-#include <CGAL/Timer.h>
+#include <CGAL/Real_timer.h>
 #include <CGAL/Memory_sizer.h>
 
 #include <boost/version.hpp>
@@ -449,9 +449,9 @@ bilateral_smooth_point_set(
     CGAL_point_set_processing_precondition(n.squared_length() > 1e-10);
     
     pwns.push_back(Pwn(p, n));
-   }
+  }
 
-   unsigned int nb_points = pwns.size();
+  std::size_t nb_points = pwns.size();
 
 #ifdef CGAL_PSP3_VERBOSE
    std::cout << "Initialization and compute max spacing: " << std::endl;
@@ -469,7 +469,7 @@ bilateral_smooth_point_set(
    Tree tree(treeElements.begin(), treeElements.end());
    // Guess spacing
 #ifdef CGAL_PSP3_VERBOSE
-   CGAL::Timer task_timer;
+   CGAL::Real_timer task_timer;
    task_timer.start();
 #endif
    FT guess_neighbor_radius = 0.0; 
@@ -499,7 +499,10 @@ bilateral_smooth_point_set(
    std::vector<Pwns,CGAL_PSP3_DEFAULT_ALLOCATOR<Pwns> > pwns_neighbors;
    pwns_neighbors.resize(nb_points);
  
-#ifdef CGAL_LINKED_WITH_TBB
+#ifndef CGAL_LINKED_WITH_TBB
+  CGAL_static_assertion_msg (!(boost::is_convertible<Concurrency_tag, Parallel_tag>::value),
+			     "Parallel_tag is enabled but TBB is unavailable.");
+#else
    if (boost::is_convertible<Concurrency_tag,Parallel_tag>::value)
    {
      Compute_pwns_neighbors<Kernel, Tree> f(k, tree, pwns, pwns_neighbors);

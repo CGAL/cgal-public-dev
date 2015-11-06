@@ -1,11 +1,10 @@
 #ifndef POINT_SET_ITEM_H
 #define POINT_SET_ITEM_H
-
+#include "Scene_item.h"
 #include "Scene_points_with_normal_item_config.h"
 #include "Polyhedron_type_fwd.h"
 #include "Kernel_type.h"
 #include "Point_set_3.h"
-#include "Scene_item_with_display_list.h"
 
 #include <iostream>
 
@@ -19,7 +18,7 @@ class QAction;
 
 // This class represents a point set in the OpenGL scene
 class SCENE_POINTS_WITH_NORMAL_ITEM_EXPORT Scene_points_with_normal_item
-  : public Scene_item_with_display_list
+  : public Scene_item
 {
   Q_OBJECT
 
@@ -37,6 +36,8 @@ public:
   QMenu* contextMenu();
 
   // IO
+  bool read_ply_point_set(std::istream& in);
+  bool write_ply_point_set(std::ostream& out) const;
   bool read_off_point_set(std::istream& in);
   bool write_off_point_set(std::ostream& out) const;
   bool read_xyz_point_set(std::istream& in);
@@ -45,16 +46,15 @@ public:
   // Function for displaying meta-data of the item
   virtual QString toolTip() const;
 
+  virtual void invalidate_buffers();
+
   // Indicate if rendering mode is supported
   virtual bool supportsRenderingMode(RenderingMode m) const;
-  // Points OpenGL drawing in a display list
-  virtual void direct_draw() const;
-  // Normals OpenGL drawing
-  void draw_normals() const;
-  virtual void draw_edges() const { draw_normals(); }//to tweak scene
 
-  // Splat OpenGL drawing
-  virtual void draw_splats() const;
+  virtual void draw_edges(CGAL::Three::Viewer_interface* viewer) const;
+  virtual void draw_points(CGAL::Three::Viewer_interface*) const;
+
+  virtual void draw_splats(CGAL::Three::Viewer_interface*) const;
   
   // Gets wrapped point set
   Point_set*       point_set();
@@ -73,9 +73,13 @@ public:
   bool has_normals() const;
   void set_has_normals(bool b);
 
-public slots:
+public Q_SLOTS:
   // Delete selection
   virtual void deleteSelection();
+  // Invert selection
+  void invertSelection();
+  // Select all points
+  void selectAll();
   // Reset selection mark
   void resetSelection();
   //Select duplicated points
@@ -88,6 +92,24 @@ private:
   QAction* actionDeleteSelection;
   QAction* actionResetSelection;
   QAction* actionSelectDuplicatedPoints;
+
+
+  mutable std::vector<double> positions_lines;
+  mutable std::vector<double> positions_points;
+  mutable std::vector<double> positions_selected_points;
+  mutable std::vector<double> normals;
+  mutable std::size_t nb_points;
+  mutable std::size_t nb_selected_points;
+  mutable std::size_t nb_lines;
+
+  mutable QOpenGLShaderProgram *program;
+
+  using Scene_item::initialize_buffers;
+  void initialize_buffers(CGAL::Three::Viewer_interface *viewer) const;
+
+  void compute_normals_and_vertices() const;
+
+
 }; // end class Scene_points_with_normal_item
 
 

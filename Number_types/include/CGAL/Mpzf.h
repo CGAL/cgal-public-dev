@@ -54,6 +54,10 @@
 #ifndef mpn_neg
 #define mpn_neg mpn_neg_n
 #endif
+// GMP-4.3.0 is missing mpn_sqr.
+#ifndef mpn_sqr
+#define mpn_sqr(dest,a,n) mpn_mul_n(dest,a,a,n)
+#endif
 // GMP before 5.0 doesn't provide mpn_copyi.
 #ifndef mpn_copyi
 #define mpn_copyi(dst, src, siz) std::copy((src), (src)+(siz), (dst))
@@ -70,6 +74,30 @@
 #ifdef __xlC__
 #include <builtins.h>
 #endif
+
+#include <boost/static_assert.hpp>
+#include <boost/config.hpp>
+#include <boost/detail/workaround.hpp>
+#include <boost/version.hpp>
+
+// Standard way to deal with clang's __has_warning
+// http://clang.llvm.org/docs/LanguageExtensions.html#feature-checking-macros
+#ifndef __has_warning
+#  define __has_warning(x) 0
+#endif
+
+// If Clang has the warning -Wunused-local-typedef, then disable it temporarily.
+#if BOOST_WORKAROUND(BOOST_VERSION, BOOST_TESTED_AT(105800)) && BOOST_CLANG && __has_warning("-Wunused-local-typedef")
+#  define CGAL_CLANG_PUSH_AND_IGNORE_UNUSED_LOCAL_TYPEDEF \
+    _Pragma("clang diagnostic push") \
+    _Pragma("clang diagnostic ignored \"-Wunused-local-typedef\"")
+#  define CGAL_CLANG_POP_DIAGNOSTIC _Pragma("clang diagnostic pop")
+#else
+#  define CGAL_CLANG_PUSH_AND_IGNORE_UNUSED_LOCAL_TYPEDEF
+#  define CGAL_CLANG_POP_DIAGNOSTIC
+#endif
+
+CGAL_CLANG_PUSH_AND_IGNORE_UNUSED_LOCAL_TYPEDEF
 
 #if defined(BOOST_MSVC)
 #  pragma warning(push)
@@ -455,7 +483,7 @@ struct Mpzf {
     }
 #endif
     if(u.s.sig) size=-size;
-    //assert(to_double()==IA_force_to_double(d));
+    //CGAL_assertion(to_double()==IA_force_to_double(d));
   }
 
 #ifdef CGAL_USE_GMPXX
@@ -1122,6 +1150,11 @@ CGAL_DEFINE_COERCION_TRAITS_FROM_TO(mpz_class,Mpzf)
 #if defined(BOOST_MSVC)
 #  pragma warning(pop)
 #endif
+
+CGAL_CLANG_POP_DIAGNOSTIC
+
+#undef CGAL_CLANG_PUSH_AND_IGNORE_UNUSED_LOCAL_TYPEDEF
+#undef CGAL_CLANG_POP_DIAGNOSTIC
 
 #endif // GMP_NUMB_BITS == 64
 #endif // CGAL_MPZF_H

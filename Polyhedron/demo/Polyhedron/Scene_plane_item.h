@@ -1,13 +1,15 @@
 #ifndef SCENE_PLANE_ITEM_H
 #define SCENE_PLANE_ITEM_H
 
+
 #include "Scene_item.h"
-#include "Scene_interface.h"
+#include <CGAL/Three/Scene_interface.h>
 
 #include "Scene_basic_objects_config.h"
 
 #include <QGLViewer/manipulatedFrame.h>
 #include <QGLViewer/qglviewer.h>
+#include <CGAL/Three/Viewer_interface.h>
 
 #include <cmath>
 
@@ -22,13 +24,16 @@ class SCENE_BASIC_OBJECTS_EXPORT Scene_plane_item
 public:
   typedef qglviewer::ManipulatedFrame ManipulatedFrame;
 
-  Scene_plane_item(const Scene_interface* scene_interface) 
-    : scene(scene_interface),
+  Scene_plane_item(const CGAL::Three::Scene_interface* scene_interface)
+      :Scene_item(2,2),
+      scene(scene_interface),
       manipulable(false),
       can_clone(true),
       frame(new ManipulatedFrame())
   {
     setNormal(0., 0., 1.);
+    //Generates an integer which will be used as ID for each buffer
+    invalidate_buffers();
   }
 
   ~Scene_plane_item() {
@@ -89,34 +94,8 @@ public:
   bool supportsRenderingMode(RenderingMode m) const {
     return (m == Wireframe || m == Flat); 
   }
-
-  // Flat OpenGL drawing
-  void draw() const {
-    const double diag = scene_diag();
-    ::glPushMatrix();
-    ::glMultMatrixd(frame->matrix());
-    GLboolean lighting;
-    ::glGetBooleanv(GL_LIGHTING, &lighting);
-    ::glDisable(GL_LIGHTING);
-    ::glBegin(GL_POLYGON);
-    ::glVertex3d(-diag, -diag, 0.);
-    ::glVertex3d(-diag,  diag, 0.);
-    ::glVertex3d( diag,  diag, 0.);
-    ::glVertex3d( diag, -diag, 0.);
-    ::glEnd();
-    if(lighting)
-      ::glEnable(GL_LIGHTING);
-    ::glPopMatrix();
-  };
-
-  // Wireframe OpenGL drawing
-  void draw_edges() const {
-    ::glPushMatrix();
-    ::glMultMatrixd(frame->matrix());
-    QGLViewer::drawGrid((float)scene_diag());
-    ::glPopMatrix();
-  }
-
+  virtual void draw(CGAL::Three::Viewer_interface*) const;
+ virtual void draw_edges(CGAL::Three::Viewer_interface* viewer)const;
   Plane_3 plane() const {
     const qglviewer::Vec& pos = frame->position();
     const qglviewer::Vec& n = 
@@ -136,7 +115,13 @@ private:
     return diag * 0.7;
   }
 
-public slots:
+public Q_SLOTS:
+  virtual void invalidate_buffers()
+  {
+      compute_normals_and_vertices();
+      are_buffers_filled = false;
+  }
+
   void setPosition(float x, float y, float z) {
     frame->setPosition(x, y, z);
   }
@@ -161,10 +146,20 @@ public slots:
     manipulable = b;
   }
 private:
-  const Scene_interface* scene;
+  const CGAL::Three::Scene_interface* scene;
   bool manipulable;
   bool can_clone;
   qglviewer::ManipulatedFrame* frame;
+
+  mutable std::vector<float> positions_lines;
+  mutable std::vector<float> positions_quad;
+  mutable GLint sampler_location;
+  mutable bool smooth_shading;
+  mutable QOpenGLShaderProgram *program;
+
+  using Scene_item::initialize_buffers;
+  void initialize_buffers(CGAL::Three::Viewer_interface*)const;
+  void compute_normals_and_vertices(void);
 };
 
 #endif // SCENE_PLANE_ITEM_H

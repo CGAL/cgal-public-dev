@@ -2,6 +2,20 @@
 #define PREFERENCE_DLG_H
 
 #include <QDialog>
+#include <QColorDialog>
+
+#include <QGridLayout>
+#include <QGroupBox> 
+
+#include <QLabel>
+#include <QLineEdit>
+
+#include <QMessageBox>
+
+#include <QPushButton>
+
+#include <QSpinBox>
+
 
 class QLabel;
 class QSpinBox;
@@ -19,9 +33,9 @@ public:
 private:
   void init(QColor, float, QColor, float, QColor, float, QColor, QColor, QColor, int);
 
-private slots:
-  void okClicked() { hide(); emit( applyChanges() ); }
-  void applyClicked() { emit( applyChanges() ); }
+private Q_SLOTS:
+  void okClicked() { hide(); Q_EMIT( applyChanges() ); }
+  void applyClicked() { Q_EMIT( applyChanges() ); }
 
   void setVertexColor();
   void setVertexSize(const QString&);
@@ -37,7 +51,7 @@ private slots:
   void setEmptySphereColor();
   void setEmptySphereAlpha();
 
-  signals: // Signals do not have access specifier
+  Q_SIGNALS: // Signals do not have access specifier
   void applyChanges();
 
 private:

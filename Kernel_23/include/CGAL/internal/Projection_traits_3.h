@@ -376,12 +376,12 @@ class Circumcenter_center_projected
 public:
   Point_3 operator() (const Point_3& p1,const Point_3& p2) const
   {
-    return embed( circumcenter(project(p1),project(p2)) );
+    return embed( CGAL::circumcenter(project(p1),project(p2)) );
   }
 
   Point_3 operator() (const Point_3& p1,const Point_3& p2,const Point_3& p3) const
   {
-    return embed( circumcenter(project(p1),project(p2),project(p3)) );
+    return embed( CGAL::circumcenter(project(p1),project(p2),project(p3)) );
   }
 };
 
@@ -501,6 +501,7 @@ public:
   typedef typename Rp::Vector_3                               Vector_2;
   typedef typename Rp::Triangle_3                             Triangle_2;
   typedef typename Rp::Line_3                                 Line_2;
+  typedef typename Rp::Ray_3                                  Ray_2;
 
   typedef typename Projector<R,dim>::Less_x_2                 Less_x_2;
   typedef typename Projector<R,dim>::Less_y_2                 Less_y_2;
