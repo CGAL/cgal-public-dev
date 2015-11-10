@@ -11,7 +11,9 @@
 #include <boost/functional/hash.hpp>
 #include <boost/unordered_map.hpp>
 #include <vector>
-
+#ifdef CGAL_HAS_THREADS
+#include <boost/thread/tss.hpp>
+#endif
 #include <Eigen/Eigen>
 
 #ifndef CGAL_HASH_TABLE_SIZE_LIMIT
@@ -39,6 +41,25 @@ public _K{
 
         public:
         struct Orientation_d;
+
+        protected:
+#ifdef CGAL_HAS_THREADS
+        static boost::thread_specific_ptr<Table> _det_table;
+#else
+        static Table* _det_table=NULL;
+#endif
+
+        static Table& get_table(){
+#ifdef CGAL_HAS_THREADS
+                if(_det_table.get()==NULL)
+                        _det_table.reset((void**)(new Table()));
+                return (Table&)(*_det_table);
+#else
+                if(_det_table==NULL)
+                        _det_table=(void*)(new Table());
+                return (Table&)*(Table*)_det_table;
+#endif
+        };
 };
 
 template <class _K,typename _P,typename _FT>
@@ -64,23 +85,25 @@ struct Lifting_kernel_d<_K,_P,_FT>::Orientation_d{
     CGAL::Orientation
     operator()(PointInputIterator pfirst,PointInputIterator plast,
                LiftingInputIterator lfirst,LiftingInputIterator llast)const{
-        
+
         int num_of_points = static_cast<int>(std::distance(pfirst,plast));
         int dim = pfirst->dimension();
-        
+
         // range contains d+2 points of dimension d
         CGAL_assertion_msg(dim + 2 == num_of_points,
           "Lifted Orientation_d: needs first->dimension() + 2 many points.");
-        int num_of_lifts = static_cast<int>(std::distance(lfirst,llast));
-        // range contains d+2 liftings one for each point 
+        CGAL_assertion_code(
+          int num_of_lifts = static_cast<int>(std::distance(lfirst,llast)));
+        // range contains d+2 liftings one for each point
         CGAL_assertion_msg(num_of_points == num_of_lifts,
-          "Lifted Orientation_d: needs num_of_points as many as  num_of_lifts.");
-        
+          "Lifted Orientation_d: needs num_of_points as many as num_of_lifts.");
+
         FT det = 0;
         for(int idx=0; idx<num_of_points; ++idx){
           FT minor;
           if(0){//Check if the matrix is precomputed in the hash table
             //TODO: implement hashtable
+            // minor= value_on_the_hash * (-1)^swaps
           }else{
             //Create eigen matrix and compute the determinant
             //TODO: instead of constructing d+2 can we only construct one?
@@ -91,23 +114,24 @@ struct Lifting_kernel_d<_K,_P,_FT>::Orientation_d{
             for(PointInputIterator pit=pfirst; pit<plast; ++pit){
               if(static_cast<int>(std::distance(pfirst,pit))!=idx){
                 int i=0;
-                for(typename Point_d::Cartesian_const_iterator 
+                for(typename Point_d::Cartesian_const_iterator
                     cit=pit->cartesian_begin(); cit<pit->cartesian_end(); ++cit){
                   m(i++,j) = *cit;
                 }
                 m(i,j++) = 1;
-              }  
-            }  
+              }
+            }
             //std::cout << m << std::endl << std::endl;
             minor = m.determinant();
             //std::cout << minor << std::endl;
           }
           minor *= *(lfirst+idx);
           //std::cout << minor << std::endl;
-          //TODO: store minor in hash table and associate it with the set of indices 
-          det += ((idx+1)+(num_of_points-1))%2==0 ? minor : -1 * minor;
+          // TODO: store minor in hash table and associate it with the set
+          // of indices
+          det += ((idx/*+1*/)+(num_of_points/*-1*/))%2==0 ? minor : -1 * minor;
         }
-        // To be consistent with original kernel if the dimension of the lifted 
+        // To be consistent with original kernel if the dimension of the lifted
         // points ie. dim+1 is odd change sign
         det *= (dim+1)%2==0 ? 1 : -1;
         //std::cout << "determinant=" << det << std::endl;

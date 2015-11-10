@@ -11,7 +11,6 @@ if ( CGAL_FOUND )
   include( CGAL_CreateSingleSourceCGALProgram )
 
   include_directories( BEFORE ../../include include )
-  include_directories (BEFORE /usr/local/include/eigen3)
   
   create_single_source_cgal_program( "Cartesian_d.cpp" )
   
