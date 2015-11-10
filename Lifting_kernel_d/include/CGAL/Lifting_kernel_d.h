@@ -42,14 +42,15 @@ public _K{
         public:
         struct Orientation_d;
 
-        protected:
+        private:
 #ifdef CGAL_HAS_THREADS
-        static boost::thread_specific_ptr<Table> _det_table;
+        boost::thread_specific_ptr<void*> _det_table;
 #else
-        static Table* _det_table=NULL;
+        void* _det_table=NULL;
 #endif
 
-        static Table& get_table(){
+        protected:
+        Table& get_table(){
 #ifdef CGAL_HAS_THREADS
                 if(_det_table.get()==NULL)
                         _det_table.reset((void**)(new Table()));
