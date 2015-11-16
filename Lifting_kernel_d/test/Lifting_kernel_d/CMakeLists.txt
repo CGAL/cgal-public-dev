@@ -12,10 +12,9 @@ if ( CGAL_FOUND )
 
   include_directories( BEFORE ../../include include )
   
-  create_single_source_cgal_program( "Cartesian_d.cpp" )
-  
   if ( EIGEN3_FOUND )
-    create_single_source_cgal_program( "Epick_d.cpp" )
+    create_single_source_cgal_program( "Cartesian_d.cpp" )
+    #create_single_source_cgal_program( "Epick_d.cpp" )
   else ( EIGEN3_FOUND )
     message(STATUS "Some test programs require Eigen3.")
   endif ( EIGEN3_FOUND )

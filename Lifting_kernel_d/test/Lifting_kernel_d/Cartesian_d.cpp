@@ -8,14 +8,15 @@ int main(){
         typedef CGAL::Lifting_kernel_d<Base>                    K;
         typedef K::Point_d                                      Point;
         typedef K::Orientation_d                                Ori;
+        typedef K::Volume_d                                     Vol;
 
         // Standard Kernel
 
-        NT a0[] = {5,-1,16};
+        NT a0[] = {-1,5,16};
         std::vector<NT> b0 (a0, a0 + sizeof(a0) / sizeof(NT) );
-        NT a1[] = {3,-4,2};
+        NT a1[] = {-4,3,2};
         std::vector<NT> b1 (a1, a1 + sizeof(a1) / sizeof(NT) );
-        NT a2[] = {1,2,77};
+        NT a2[] = {2,1,77};
         std::vector<NT> b2 (a2, a2 + sizeof(a2) / sizeof(NT) );
         NT a3[] = {4,2,29};
         std::vector<NT> b3 (a3, a3 + sizeof(a3) / sizeof(NT) );
@@ -46,6 +47,8 @@ int main(){
         Point q2(2,b2.begin(),b2.end()-1);
         Point q3(2,b3.begin(),b3.end()-1);
         
+        // TEST ORIENTATION
+        
 				std::vector<Point> lpoints;
         lpoints.push_back(q0);
         lpoints.push_back(q1);
@@ -55,8 +58,14 @@ int main(){
         NT liftarray[] = {16,2,77,29};
         std::vector<NT> lifting (liftarray, liftarray + sizeof(liftarray) / sizeof(NT) );
         
-        //std::cout << Ori()(lpoints.begin(),lpoints.end(),lifting.begin(),lifting.end()) << "\n";
+        std::cout << "Ori=" << Ori()(lpoints.begin(),lpoints.end(),lifting.begin(),lifting.end()) << "\n";
         
+        // TEST VOLUME
+        
+        std::cout << "Vol=" << Vol()(lpoints.begin(),lpoints.end()-1) << "\n";
+        
+        
+        // COMPARE WITH CARTECIAN_D ORIENTATION
         //IMPORTANT NOTE
         //our code gives the opposite sign than the Kernel_d if dim is odd and the same otherwise, this is because we compute the homogenous det while the original kernel computes the  det of the matrix created after subdividing from all columns (points) the first one 
          
