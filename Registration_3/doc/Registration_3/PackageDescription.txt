@@ -21,7 +21,7 @@
 \cgalPkgSummaryBegin
 \cgalPkgAuthors{Nicolas Mellado, Dror Aiger, and Niloy Mitra}
 \cgalPkgDesc{
-The package provides ... }
+This package provides an implementation of Super4PCS, a global point-based registration technique. Starting from two input point clouds, Super4PCS explores the rigid transformation space in order to align one of the cloud on the other. Using efficient indexing techniques, the approach can compute an approximation of the optimal transformation in a linear time (up to a constant factor) according to the number of samples used for registration. Super4PCS takes as input the number of samples, a rough estimate of the overlap percentage between the clouds, and an epsilon value defining the approximation bound. }
 \cgalPkgManuals{Chapter_Registration_3,PkgRegistration_3}
 \cgalPkgSummaryEnd
 
