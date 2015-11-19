@@ -7,7 +7,7 @@ namespace CGAL {
 \cgalAutoToc
 \author Nicolas Mellado, Dror Aiger, Niloy Mitra
 
-This chapter describes the ...
+This %CGAL package implements a point-based surface registration method which takes as input two unordered point sets and compute a rigid transformation aligned one cloud to the other. We assume that the input points were sampled from the surface of an object or scene, and that the two sets cover overlapping parts of the same geometry. This method can handle noise and outliers usually produced by acquisition techniques (eg. Kinect, photogrammetry). In case of partial matching, the user needs to provide a rough estimate of the overlapping percentage between the two clouds. The approach is descriptor-free and designed to be robust to featureless geometry. 
 \cgalCite{CGF:CGF12446}
 
 \section secmydefinitions Definitions
