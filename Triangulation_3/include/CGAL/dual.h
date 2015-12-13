@@ -35,7 +35,7 @@ namespace CGAL {
 
 template < class Polyhedron_3, class DelaunayTriangulation_3, class PlaneIterator >
 Polyhedron_3
-dual_support(const DelaunayTriangulation_3& t, typename DelaunayTriangulation_3::Vertex_handle v, PlaneIterator planes_begin, PlaneIterator planes_end)
+dual(const DelaunayTriangulation_3& t, typename DelaunayTriangulation_3::Vertex_handle v, PlaneIterator planes_begin, PlaneIterator planes_end)
 {
   typedef typename DelaunayTriangulation_3::Point Point;
   typedef typename DelaunayTriangulation_3::Geom_traits::Plane_3 Plane;
@@ -56,8 +56,9 @@ dual_support(const DelaunayTriangulation_3& t, typename DelaunayTriangulation_3:
     t.finite_incident_edges(v, std::back_inserter(finite_inc_edges));
     CGAL_assertion(!finite_inc_edges.empty());
 
-    if(finite_inc_edges.size() == t.degree(v)) {
-      // Vertex v is not on the convex hull, dual cell is finite.
+    if(finite_inc_edges.size() == t.degree(v) && planes_begin == planes_end) {
+      // Vertex v is NOT on the triangulation convex hull and there are no user-defined boundary planes.
+      // Dual cell can be constructed directly from dual points of the triangulation cells incident to v
       typedef std::map<Cell_handle, size_t> Cell_id_map;
       // Indices correspond to cells incident to v and to its dual vertices.
       Cell_id_map cell_ids;
@@ -103,7 +104,8 @@ dual_support(const DelaunayTriangulation_3& t, typename DelaunayTriangulation_3:
     }
   }
 
-  // Vertex v is on the convex hull, dual cell will be closed with the input planes.
+  // Vertex v is on the convex hull or user-defined boundary planes exist.
+  // Dual cell will be constructed through the intersection of the voronoi dual planes and the input planes.
   std::vector<Vertex_handle> finite_adj_vertices;
   finite_adj_vertices.reserve(16); // TODO: < 16 in average?
   t.finite_adjacent_vertices(v, std::back_inserter(finite_adj_vertices));
@@ -137,7 +139,7 @@ dual(const DelaunayTriangulation_3& t, typename DelaunayTriangulation_3::Vertex_
   bbox_planes.push_back(Plane(0, 0, -1, bbox.zmin()));
   bbox_planes.push_back(Plane(0, 0, 1, -bbox.zmax()));
 
-  return dual_support<Polyhedron_3>(t, v, bbox_planes.begin(), bbox_planes.end());
+  return dual<Polyhedron_3>(t, v, bbox_planes.begin(), bbox_planes.end());
 }
 
 } //namespace CGAL
