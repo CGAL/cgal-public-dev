@@ -254,6 +254,7 @@ private:
         B.end_facet();
         ++counter;
       }
+      B.end_surface();
     }
   };
 
