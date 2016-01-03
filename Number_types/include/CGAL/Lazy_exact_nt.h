@@ -1185,6 +1185,65 @@ CGAL_COERCION_TRAITS_LAZY_EXACT(double)
 CGAL_COERCION_TRAITS_LAZY_EXACT(float)
 #undef CGAL_COERCION_TRAITS_LAZY_EXACT
 
+template <class NT> struct Get_arithmetic_kernel; 
+
+template <class ET1>
+class Coercion_traits< Lazy_exact_nt<ET1>, 
+                       typename Get_arithmetic_kernel<ET1>::Arithmetic_kernel::Bigfloat_interval > 
+{
+  typedef typename Get_arithmetic_kernel<ET1>::Arithmetic_kernel AK;
+  typedef typename AK::Bigfloat_interval Bigfloat_interval;
+  typedef Coercion_traits<ET1,Bigfloat_interval> CT;
+public:
+  typedef Bigfloat_interval Type;
+  typedef Tag_true  Are_explicit_interoperable;
+  typedef Tag_false Are_implicit_interoperable;
+  
+  class Cast{
+  public:
+    typedef Type result_type;
+    Type operator()(const Lazy_exact_nt<ET1>& x) const { return typename CT::Cast()(x.exact());}
+    Type operator()(const Bigfloat_interval& x) const { return x;}
+  };
+};
+
+template <class ET1>
+class Coercion_traits< 
+  typename Get_arithmetic_kernel<ET1>::Arithmetic_kernel::Bigfloat_interval,
+  Lazy_exact_nt<ET1> > 
+  : public Coercion_traits<Lazy_exact_nt<ET1>, 
+                           typename Get_arithmetic_kernel<ET1>::Arithmetic_kernel::Bigfloat_interval>
+{};
+
+
+template <class ET1>
+class Coercion_traits< Lazy_exact_nt<ET1>, 
+                       typename Get_arithmetic_kernel<ET1>::Arithmetic_kernel::Field_with_sqrt > 
+{
+  typedef typename Get_arithmetic_kernel<ET1>::Arithmetic_kernel AK;
+  typedef typename AK::Field_with_sqrt Field_with_sqrt;
+  typedef Coercion_traits<ET1,Field_with_sqrt> CT;
+public:
+  typedef Field_with_sqrt Type;
+  typedef Tag_true  Are_explicit_interoperable;
+  typedef Tag_false Are_implicit_interoperable;
+  
+  class Cast{
+  public:
+    typedef Type result_type;
+    Type operator()(const Lazy_exact_nt<ET1>& x) const { return typename CT::Cast()(x.exact());}
+    Type operator()(const Field_with_sqrt& x) const { return x;}
+  };
+};
+
+template <class ET1>
+class Coercion_traits< 
+typename Get_arithmetic_kernel<ET1>::Arithmetic_kernel::Field_with_sqrt,
+Lazy_exact_nt<ET1> > 
+  :public Coercion_traits<Lazy_exact_nt<ET1>, 
+                          typename Get_arithmetic_kernel<ET1>::Arithmetic_kernel::Field_with_sqrt>
+{};
+
 namespace INTERN_LAZY_EXACT_NT {
 
 template < typename NT, typename TAG  > class Fraction_traits_base;
@@ -1239,8 +1298,9 @@ public:
 
 template < class ET >
 class Fraction_traits< Lazy_exact_nt< ET > >
-    :public INTERN_LAZY_EXACT_NT::Fraction_traits_base<Lazy_exact_nt<ET>,
-            typename Fraction_traits<ET>::Is_fraction>
+    :public INTERN_LAZY_EXACT_NT::Fraction_traits_base<
+  Lazy_exact_nt<ET>,
+  typename Fraction_traits<ET>::Is_fraction>
 {};
 
 template < class ET >
@@ -1414,6 +1474,26 @@ class Modular_traits<Lazy_exact_nt<ET> >
 #undef CGAL_double
 #undef CGAL_int
 #undef CGAL_To_interval
+
+
+template <class ET>
+class Lazy_exact_arithmetic_kernel{
+  typedef typename Get_arithmetic_kernel<ET>::Arithmetic_kernel ET_Arithmetic_kernel;
+  typedef typename ET_Arithmetic_kernel::Integer ET_Integer; 
+  typedef typename ET_Arithmetic_kernel::Rational ET_Rational; 
+public:
+  typedef Lazy_exact_nt<ET_Integer>  Integer; 
+  typedef Lazy_exact_nt<ET_Rational> Rational; 
+  typedef typename ET_Arithmetic_kernel::Bigfloat_interval Bigfloat_interval; 
+  typedef typename ET_Arithmetic_kernel::Field_with_sqrt   Field_with_sqrt; 
+};
+
+// template <class NT> class Get_arithmetic_kernel; 
+
+template<class ET>
+struct Get_arithmetic_kernel<Lazy_exact_nt<ET> > {
+  typedef Lazy_exact_arithmetic_kernel<ET> Arithmetic_kernel;   
+};
 
 } //namespace CGAL
 

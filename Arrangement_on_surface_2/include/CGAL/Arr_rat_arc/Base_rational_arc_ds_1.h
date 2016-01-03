@@ -48,7 +48,7 @@ public:
   typedef typename Algebraic_kernel::Coefficient        Coefficient;
   
   typedef typename Get_arithmetic_kernel<Coefficient>::Arithmetic_kernel
-                                                        Arithmetic_kernel;
+  Arithmetic_kernel;
   typedef typename Arithmetic_kernel::Rational          Rational; 
   typedef typename Arithmetic_kernel::Integer           Integer;
   typedef typename Algebraic_kernel::Algebraic_real_1   Algebraic_real_1;
@@ -68,9 +68,9 @@ public:
   typedef std::vector<std::pair<Algebraic_real_1, Multiplicity> >
                                                         Root_multiplicity_vector;
 
-  CGAL_static_assertion((boost::is_same<Integer,Coefficient>::value));
-  CGAL_static_assertion((boost::is_same<Polynomial_1,
-                       typename FT_poly_rat_1::Numerator_type>::value));
+  //BOOST_STATIC_ASSERT((boost::is_same<Integer,Coefficient>::value));
+  //BOOST_STATIC_ASSERT((boost::is_same<Polynomial_1,
+  //                      typename FT_poly_rat_1::Numerator_type>::value));
 
 public:
    
@@ -84,7 +84,7 @@ public:
     // Get the degree.
     const int    deg = CGAL::degree(poly);
    
-    Integer     coeff;
+    Coefficient coeff;
     CGAL::Sign  sgn;
     int         k;
 

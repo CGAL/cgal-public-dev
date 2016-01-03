@@ -14,7 +14,7 @@
 //
 // $URL$
 // $Id$
-// 
+//
 //
 // Author(s)     : Ron Wein     <wein@post.tau.ac.il>
 //                 Ophir Setter <ophirset@post.tau.ac.il>
@@ -27,13 +27,39 @@
  * and the specialized boost::graph_traits<Dual<Arrangement_2> >class.
  */
 
-// include this to avoid a VC15 warning
 #include <CGAL/boost/graph/named_function_params.h>
 
 #include <CGAL/Arrangement_on_surface_2.h>
 #include <CGAL/Arrangement_2.h>
 
 namespace CGAL {
+
+template <class T, class Enable = void>
+class Dualx {
+  typedef typename T::Geometry_traits_2 Geometry_traits_2;
+  typedef typename T::Topology_traits   Topology_traits;
+};
+
+template <class T>
+class Dualx<T,
+            typename boost::enable_if
+            <boost::is_base_of<Arrangement_on_surface_2<
+                                 typename T::Geometry_traits_2,
+                                 typename T::Topology_traits>,
+                               T> >::type> :
+    public Dualx<typename T::Base>
+{
+public:
+  typedef Dualx<typename T::Base>                        Base;
+
+  /*! Default constructor. */
+  Dualx() : Base() {}
+
+  /*! Constructor from Base. */
+  Dualx(const typename T::Base& arr) : Base(arr) {}
+};
+
+
 
 // Forward declaration.
 template <class Type> class Dual;
@@ -45,7 +71,7 @@ template <class GeomTraits_, class TopTraits_>
 class Dual<Arrangement_on_surface_2<GeomTraits_,TopTraits_> >
 {
 public:
-  
+
   typedef GeomTraits_                          Geometry_traits_2;
   typedef TopTraits_                           Topology_traits;
   typedef CGAL::Arrangement_on_surface_2<Geometry_traits_2, Topology_traits>
@@ -111,7 +137,7 @@ protected:
      * \param start Should we start traversing the edges.
      *              If false, we construct a past-the-end iterator.
      */
-    Face_neighbor_iterator (Face_handle face, 
+    Face_neighbor_iterator (Face_handle face,
                             bool out_edges,
                             bool start) :
       _face (face),
@@ -154,19 +180,19 @@ protected:
         _outer_ccb_iter = _face->outer_ccbs_end();
         _inner_ccb_iter = _face->inner_ccbs_end();
       }
-    }  
+    }
 
     /*! Equality operators. */
     bool operator== (const Self& it) const
     {
       return (this->_equal(it));
     }
-    
+
     bool operator!= (const Self& it) const
     {
       return (! this->_equal(it));
     }
-    
+
     /*! Dereference operators. */
     reference operator* () const
     {
@@ -177,7 +203,7 @@ protected:
     {
       return (&_hh);
     }
-    
+
     /* Increment operators. */
     Self& operator++ ()
     {
@@ -289,7 +315,7 @@ protected:
 
   // Data members:
   mutable Arrangement_on_surface_2    *p_arr;    // The primal arrangement.
-  
+
 public:
 
   typedef Face_neighbor_iterator            Incident_edge_iterator;
@@ -439,7 +465,7 @@ class graph_traits<CGAL::Dual<CGAL::Arrangement_on_surface_2<GeomTraits_,
                                                              TopTraits_> > >
 {
 public:
-  
+
   typedef GeomTraits_                           Geometry_traits_2;
   typedef TopTraits_                            Topology_traits;
   typedef CGAL::Arrangement_on_surface_2<Geometry_traits_2, Topology_traits>
@@ -451,19 +477,19 @@ private:
   typedef typename Dual_arr_2::Vertex_iterator         Vertex_iterator;
   typedef typename Dual_arr_2::Edge_iterator           Edge_iterator;
   typedef typename Dual_arr_2::Incident_edge_iterator  Incident_edge_iterator;
- 
+
   /*! \struct
    * Define the arrangement traversal category, which indicates the arrangement
    * models the BidirectionalGraph concept and the VertexListGraph and
    * EdgeListGraph concepts.
    */
-  struct Dual_arr_traversal_category : 
+  struct Dual_arr_traversal_category :
     public virtual boost::bidirectional_graph_tag,   // This tag refines the
                                                      // incidence_graph_tag.
     public virtual boost::vertex_list_graph_tag,  // Can iterate over vertices.
     public virtual boost::edge_list_graph_tag     // Can iterate over edges.
   {};
-  
+
 public:
 
   // Types required of the Graph concept:
@@ -519,10 +545,10 @@ namespace CGAL {
  * \param Number of halfedges around the boundary of the primal face.
  */
 template <class GeomTraits_, class TopTraits_>
-typename 
+typename
 boost::graph_traits<CGAL::Dual<CGAL::
   Arrangement_on_surface_2<GeomTraits_, TopTraits_> > >::degree_size_type
-out_degree(typename 
+out_degree(typename
            boost::graph_traits<CGAL::Dual<CGAL::
            Arrangement_on_surface_2<GeomTraits_, TopTraits_> > >::
                                                            vertex_descriptor v,
@@ -671,7 +697,7 @@ degree(typename
 // --------------------------------------------------
 
 /*!
- * Get the number of vertices in the given dual arrangement. 
+ * Get the number of vertices in the given dual arrangement.
  * \param darr The dual arrangement.
  * \return Number of faces in the primal arrangement.
  */
@@ -709,7 +735,7 @@ vertices (const CGAL::Dual<CGAL::
 // ------------------------------------------------
 
 /*!
- * Get the number of edges in the given dual arrangement. 
+ * Get the number of edges in the given dual arrangement.
  * \param darr The dual arrangement.
  * \return Number of halfedges in the primal arrangement.
  */
@@ -720,7 +746,7 @@ boost::graph_traits<CGAL::Dual<CGAL::
 num_edges(const CGAL::Dual<CGAL::
             Arrangement_on_surface_2<GeomTraits_, TopTraits_> >& darr)
 {
-  return darr.number_of_edges(); 
+  return darr.number_of_edges();
 }
 
 /*!
