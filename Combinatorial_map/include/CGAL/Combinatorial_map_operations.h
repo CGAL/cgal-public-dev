@@ -270,7 +270,7 @@ namespace CGAL
 
   /** Remove a d-cell, in a d-map (special case).
    *  @param amap the used combinatorial map.
-   *  @param adart a dart of the volume to remove.
+   *  @param adart a dart of the d-cell to remove.
    *  @param update_attributes a boolean to update the enabled attributes
    *         (deprecated, now we use are_attributes_automatically_managed())
    *  @return the number of deleted darts.
@@ -295,7 +295,7 @@ namespace CGAL
         ++res;
       }
 
-      // We unlink all the darts of the volume for beta-d.
+      // We unlink all the darts of the d-cell for beta-d.
       typename std::deque<typename CMap::Dart_handle>::iterator
         it = to_erase.begin();
       for ( it = to_erase.begin(); it != to_erase.end(); ++it )
@@ -562,7 +562,7 @@ namespace CGAL
 
       if ( amap.are_attributes_automatically_managed() )
       {
-        // We group the two (i+1)-cells incident if they exist.
+        // We group the two (i-1)-cells incident if they exist.
         if ( dg1!=amap.null_handle )
           CGAL::internal::Group_attribute_functor_run<CMap,i-1>::
             run(&amap, dg1, dg2);
