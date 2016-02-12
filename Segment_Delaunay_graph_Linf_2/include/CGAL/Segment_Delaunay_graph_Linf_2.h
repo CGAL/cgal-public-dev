@@ -147,20 +147,21 @@ private:
 
   void setup_if_intersecting_pointer_with_tag(Tag_false) {
     Base::insert_point_on_segment_ptr = NULL;
+    Base::insert_exact_point_on_segment_ptr = NULL;
   }
 
   void setup_if_intersecting_pointer_with_tag(Tag_true) {
     Base::insert_point_on_segment_ptr =
       static_cast<typename Base::Insert_on_Type>(
         &Self::insert_point_on_segment);
+    Base::insert_exact_point_on_segment_ptr =
+      static_cast<typename Base::Insert_Exact_on_Type>(
+        &Self::insert_exact_point_on_segment);
   }
 
   void setup_insert_on_pointers_linf(void) {
     Intersections_tag itag;
     setup_if_intersecting_pointer(itag);
-    Base::insert_exact_point_on_segment_ptr =
-      static_cast<typename Base::Insert_Exact_on_Type>(
-        &Self::insert_exact_point_on_segment);
   }
 
 public:
