@@ -339,16 +339,17 @@ private:
 
   void setup_if_intersecting_pointer_with_tag(Tag_false) {
     insert_point_on_segment_ptr = NULL;
+    insert_exact_point_on_segment_ptr = NULL;
   }
 
   void setup_if_intersecting_pointer_with_tag(Tag_true) {
     insert_point_on_segment_ptr = &Self::insert_point_on_segment;
+    insert_exact_point_on_segment_ptr = &Self::insert_exact_point_on_segment;
   }
 
   void setup_insert_on_pointers_l2(void) {
     Intersections_tag itag;
     setup_if_intersecting_pointer(itag);
-    insert_exact_point_on_segment_ptr = &Self::insert_exact_point_on_segment;
   }
 
 public:
