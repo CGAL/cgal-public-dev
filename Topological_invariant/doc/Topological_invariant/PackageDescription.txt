@@ -1,0 +1,44 @@
+/// \defgroup PkgTopologicalInvariant Topological invariant Reference
+
+/// \defgroup PkgTopologicalInvariantConcepts Concepts
+/// \ingroup PkgTopologicalInvariant
+ 
+/// \defgroup PkgTopologicalInvariantClasses Classes
+/// \ingroup PkgTopologicalInvariant
+ 
+/*!
+\addtogroup PkgTopologicalInvariant
+ 
+\cgalPkgDescriptionBegin{Generalized Map,PkgTopologicalInvariantSummary}
+\cgalPkgPicture{logo-gmap.png}
+ 
+\cgalPkgSummaryBegin
+\cgalPkgAuthor{Glesser Jean-Noël}
+\cgalPkgDesc{This package implements a generalized version of combinatorial maps in <I>d</I>-dimension. this package has the same structure as the combinatorial maps package. a generalized map is a data structure allowing to represent orientable or non orientable objects by describing all the cells of the subdivision (for example in 3D vertices, edges, faces, volumes) and all the incidence and adjacency relationships between these cells. Information can be associated to cells thanks to attributes. The package provides basic creations, modification operations, and several iterators allowing to run through some specific part of the object.}
+\cgalPkgManuals{Chapter_Topological_invariant,PkgTopologicalInvariant}
+\cgalPkgSummaryEnd
+
+\cgalPkgShortInfoBegin
+\cgalPkgSince{4.8}
+\cgalPkgBib{cgal:d-gm}
+\cgalPkgLicense{\ref licensesLGPL "LGPL"}
+\cgalPkgShortInfoEnd
+ 
+\cgalPkgDescriptionEnd
+
+\cgalClassifedRefPages
+
+## Concepts ##
+- `Morphism`
+- `GeneralizedHalfedgeGraph`
+- `GraphOnSurface`
+- `Path`
+- `ArcOccurence`
+
+## Classes ##
+- `CGAL::Basic_morphism<Source_generalized_map, Target_generalized_map, Alloc>`
+- `CGAL::Generalized_halfedge_graph<Surface, Alloc>`
+- `CGAL::Graph_on_surface<Surface, Directed, Alloc>`
+- `CGAL::Path<Generalized_surface>`
+- `CGAL::Arc_occurence<Generalized_surface>`
+*/
