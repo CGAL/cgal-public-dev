@@ -30,14 +30,13 @@
 
 ## Concepts ##
 - `Morphism`
-- `GeneralizedHalfedgeGraph`
 - `GraphOnSurface`
 - `Path`
 - `ArcOccurence`
 
 ## Classes ##
+- `CGAL::Topological_surface`
 - `CGAL::Basic_morphism<Source_generalized_map, Target_generalized_map, Alloc>`
-- `CGAL::Generalized_halfedge_graph<Surface, Alloc>`
 - `CGAL::Graph_on_surface<Surface, Directed, Alloc>`
 - `CGAL::Path<Generalized_surface>`
 - `CGAL::Arc_occurence<Generalized_surface>`

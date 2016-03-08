@@ -29,6 +29,18 @@ public:
 	
 	/// return the associated halfedge.
 	halfedge_descriptor halfedge();
+    
+     /// return the left occurrence in the order around the arc. 
+    Arc_occurence left();
+    
+    /// return the right occurrence in the order around the arc. 
+    Arc_occurence right();
+    
+    /// left move of a in the order around the arc. 
+    Arc_occurence move_left();
+    
+    /// right move of a in the order around the arc. 
+    Arc_occurence move_right();
 	
 private:
 	

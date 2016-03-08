@@ -4,11 +4,11 @@
 
 \cgalRefines Boost::Graph
 
-The concept GraphOnSurface is a refinement of the Bgl concept Graph and adds the notion of a graph embedding.
+The concept GraphOnSurface is a refinement of HalfedgeGraph and adds the notion of a graph embedding.
 
 ##Notation##
 <dl>
-<dt>`G`</dt> 	  <dd>A type that is a model of `HalfedgeGraph`.</dd>
+<dt>`G`</dt> 	  <dd>A type that is a model of `GraphOnSurface`.</dd>
 <dt>`g`</dt> 	  <dd>An object of type `G`.</dd>
 <dt>`e`</dt> 	  <dd>An edge descriptor.</dd>
 <dt>`p`</dt>	  <dd>A path</dd>
