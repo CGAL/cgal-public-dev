@@ -9,28 +9,14 @@ public:
 	/// \name Source Type
 	/// @{
 	
-	/*!
-	%Source_generalized_map type, a model of the `GeneralizedMap` concept.
-	*/
-	typedef unspecified_type Source_generalized_map;
-	
-	/*!
-	%Source_dart_handle handle type, equal to `Source_generalized_map::Dart_handle`.
-	*/
-	typedef Source_generalized_map::Dart_handle Source_dart_handle;
+	typedef unspecified_type Source_generalized_graph;
+	typedef unspecified_type Source_halfedge_descriptor;
 	/// @}
 	
 	/// \name Target Type
 	/// @{
-	/*!
-	%Target_generalized_map type, a model of the `GeneralizedMap` concept.
-	*/
-	typedef unspecified_type Target_generalized_map;
-	
-	/*!
-	%Target_dart_handle handle type, equal to `Target_generalized_map::Dart_handle`.
-	*/
-	typedef Target_generalized_map::Dart_handle Target_dart_handle;
+	typedef unspecified_type Target_generalized_graph;
+	typedef unspecified_type Target_halfedge_descriptor;
 	/// @}
 	
 	/// \name Access Member Functions
@@ -39,17 +25,17 @@ public:
 	/*!
 	 * return the morphism of a dart.
 	 */
-	Target_dart_handle operator() (Source_dart_handle source) const;
+	Target_halfedge_descriptor operator() (Source_halfedge_descriptor source) const;
 	
 	/*!
 	 * return the generalized map source.
 	 */
-	Source_generalized_map& source();
+	Source_generalized_graph& source();
 	
 	/*!
 	 * return the generalized map target.
 	 */
-	Target_generalized_map& target();
+	Target_generalized_graph& target();
 	
 	/// @}
 };

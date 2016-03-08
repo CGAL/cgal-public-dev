@@ -6,12 +6,12 @@ namespace CGAL
 	 * 
 	 * `Basic_morphism` define a morphism between to `GeneralizedMap`.
 	 * 
-	 * \tparam Source_generalized_map must be a model of the `GeneralizedMap` concept.
-	 * \tparam Target_generalized_map must be a model of the `GeneralizedMap` concept.
+	 * \tparam Source_generalized_graph must be a model of the `HalfedgeGraph` concept.
+	 * \tparam Target_generalized_graph must be a model of the `HalfedgeGraph` concept.
 	 * \tparam Alloc has to match the standard allocator requirements. The `rebind` mechanism  `Alloc` will be used to create appropriate allocators internally with value type `Dart`.the default value is CGAL_ALLOCATOR(int)` from the `<CGAL/memory.h>` header file.
 	 * 
 	 */
-	template< typename Source_generalized_map , typename Target_generalized_map, typename Alloc >
+	template< typename Source_generalized_graph , typename Target_generalized_graph, typename Alloc >
 	class Basic_morphism{
 	public:
 		/// \name Construction
@@ -20,7 +20,7 @@ namespace CGAL
 		/*!
 		* construct a new morphism with gsource as source and gtarget as target.
 		*/
-		Basic_morphism(Source_generalized_map gsource, Target_generalized_map gtarget);
+		Basic_morphism(Source_generalized_graph gsource, Target_generalized_graph gtarget);
 		
 		/// @}
 		/// \name Access Member Functions
@@ -45,7 +45,7 @@ namespace CGAL
 		/*!
 		* define the morphism \f$ Morphism(source) = target \f$.
 		*/
-		void add(Source_dart_handle source, Target_dart_handle target);
+		void add(Source_halfedge_descriptor source, Target_halfedge_descriptor target);
 		/// @}
 	};
 }
