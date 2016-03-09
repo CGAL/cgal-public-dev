@@ -1,0 +1,91 @@
+
+(Windows Vista)
+nicolas.chenavier@etu.univ-rouen.fr
+
+
+
+Things to add:
+
+In Voronoi:
+
+Select cells with certain properties, and then look at neighbour correlations, within some distance (Euclidean, or graph?)
+
+Other processes to consider:
+Determinantal processes.
+Permenantal processes.
+
+
+Consider Order Types.
+
+
+
+To do list.
+
+* Basic things
+	- Dealing with border effects, use periodicity? Define a 'margin'?
+	- Allow viewing of 3D triangulations?	
+
+* Properties of volume, area, number of faces etc.
+	Implementation ideas:
+	- Draw curves and histograms of associated properties for current triangulation (partially complete).
+	x Require some way to store much larger triangulation without visualising (limit to some hard constant: say 10,000 points at once?)
+	x Perhaps draw triangulation "windows" which can be translated? Is there an efficient way to implement this?
+	  One option is to construct a grid on the points, each cell of which contains 10,000 points, we then display
+	  a window of four adjacent cells and update as necessary.
+	- Need statistics and plotting to be robust to huge triangulations - use data binning, add progress bars for slow calculations?
+	
+	
+* Correlations between neighbors. (Very little known in theory).
+	- Need someway to specify the faces/points of interest before looking at the neighbors
+	  Perhaps this means giving a way to select cells of area greater than some constant, or of high degree. Maybe
+	  we need to have a whole range of adjustible paramers. Is there an easy way to implement this without 
+	  case-by-case tedium?
+	- Use a statistics class to draw results as above.
+	- Perhaps we need to create a seperate "wizard" for coming up with statistics to avoid messyness. Again, can
+      this be done neatly without having to simply 'code the cases'?
+	  
+* Extremes in the Voronoi Tessellation 	
+	- Identify cells that have certain characteristics, and view them. This clearly requires the same 'select properties'
+	  input as neighbor correlation functions. Can we come up with some neat way of relating these two concepts?
+	- View cells that have characteristics above. This will require us to decide where in the triangulation we want to look,
+	  and then to load up a neighbourhood, and then perhaps colour in the cell identified. Will require quite extensive
+	  modifications to the visualisation class. Perhaps building a new Triangulation Graphics Item? Also use same ideas
+	  to create a Voronoi Graphics Item? If done well these could be valuable additions to CGAL.
+	
+
+* Walks and perculation models
+	- Already have visualisation of walks. Possible gets more complicated when considering extremely large triangulations.
+	  We would need to know what part of the walk to draw 'on screen'. Again this seems to be hinting that a good 
+	  drawing toolbox for the triangulation is essential.
+	- We can use the statistics toolbox to easily view statistics of these models, the most complicated thing is likely
+	  going to be drawing them well to the scene.
+	  
+* Other models
+	- This concerns the generation and loading of pointsets. If the rest of the simulator is well designed, this should
+	  not be limited in anyway, and so can be safely ignored until it is required.
+	- Interesting things to do in this respect: Give the user the option to load, save and modify pointsets. 
+	  Perhaps steal Simon's nice toolbox for modifying 3D pointsets!
+	  
+
+* New class: Triangulation_Viewer(?)
+	x Connects a 2D Triangulation to a GraphicsView to allow viewing of massive triangulations.
+	    
+
+
+// Original //
+
+Enfin, concernant le simulateur de triangulation, voici quelques-unes des questions que je vois (dont certaines concernent la thèse de Nicolas) :
+
+- lois typiques : chercher la loi d'une caractéristique particulière (volume, aire, nombre de faces, etc) d'une cellule choisie uniformément. Cela a déjà été beaucoup fait dans la littérature, on peut juste espérer rajouter de la précision en faisant un grand nombre de simulations. Il est clair en tout cas que cela doit être dans les fonctions de base du simulateur.
+
+- corrélations entre voisins : très peu de choses sont connues. Cela pourrait être la forme des voisins d'une grande cellule ou d'une cellule avec beaucoup de sommets.
+
+- extrêmes de mosaïques : identifier la cellule qui optimise une caractéristique donnée (volume, nombre de sommets, rayon inscrit...), regarder sa forme et la valeur de cet optimum. Le fait est qu'il faut beaucoup de cellules pour pouvoir observer les queues de distribution (par exemple du volume maximal) et en déduire la renormalisation et la loi des valeurs extrêmes associée.
+
+- marches et percolation de premier passage : ce n'est pas difficile à simuler mais il n'y a pas trop de résultats mathématiques derrière. Il s'agit d'attribuer un score (ou temps d'attente) aléatoire à chaque germe de la triangulation de Delaunay et compter la somme des scores quand on marche au hasard (ou plus difficile, le score influe sur les probabilités de transition de la marche).
+
+- autre modèle 1, mosaïques itérées : on construit une mosaïque de Voronoi d'intensité lambda, puis par-dessus on rajoute une seconde mosaïque d'intensité mu>lambda et on remplace chaque cellule C de la première mosaïque par la réunion des cellules de la seconde mosaïque dont le germe est dans C. On itère ensuite le procédé avec une suite d'intensités croissante, par exemple géométrique.
+
+- autre modèle 2, mosaïques de Laguerre : ce sont des mosaïques dont la construction est la même que pour Voronoi, à ceci près que la distance au germe est remplacée par la puissance par rapport à une sphère centrée en le germe et de rayon aléatoire. C'est apparemment un modèle plus réaliste pour représenter certains matériaux. La simulation n'est pas évidente. En particulier, si la loi des rayons des sphères n'est pas à support borné, il n'y a aucun résultat d'approximation de la mosaïque par troncature de la loi.
+
+- autre modèle 3, Voronoi engendré par d'autres processus ponctuels : il s'agit de regarder l'influence de la répartition des points sur les grandeurs typiques, les corrélations, les marches au hasard, etc. Des travaux de comparaisons entre processus ponctuels ont débuté (notamment entre les processus déterminantaux, poissononiens et permanentaux) mais il n'y a rien qui dise que l'ordre entre deux processus a des conséquences sur toutes les grandeurs citées au-dessus.
