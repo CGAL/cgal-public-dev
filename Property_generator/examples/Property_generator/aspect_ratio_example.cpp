@@ -20,10 +20,12 @@ int main()
   CGAL::cpp11::copy_n(g, 10000, std::back_inserter(dt));
 
   // Max aspect ratio.
-  std::cout <<  CGAL::max_result(
-                  CGAL::make_no_deref_iterator(dt.finite_faces_begin()),
-                  CGAL::make_no_deref_iterator(dt.finite_faces_end()),
-                  make_aspect_ratio(dt, CGAL::No_finite_test_tag())
-                )
-            << std::endl;
+  double max=0,current;
+  CGAL::Delaunay_triangulation_2<Kernel>::Finite_faces_iterator it;
+  for( it = dt.finite_faces_begin(); it != dt.finite_faces_end(); ++it){
+    current = make_aspect_ratio(dt, CGAL::No_finite_test_tag())(it);
+    if ( current > max) max = current;
+  }      
+
+  std::cout <<  max << std::endl;
 }
