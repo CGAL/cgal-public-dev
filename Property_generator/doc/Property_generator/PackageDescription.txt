@@ -1,0 +1,79 @@
+/*!
+
+\defgroup  PkgProperty_generator Property Generator Reference
+@{
+  \defgroup PkgProperty_generator_properties Properties
+  @{
+    \brief A namespace to group together sets of property functors provided
+    by different packages.
+
+    \defgroup Property_generator_tags Tags
+    @{
+      \brief Tags used to tune the behaviour of functors.
+    @}
+  @}
+@}
+
+\addtogroup PkgProperty_generator
+@{
+ 
+\cgalPkgDescriptionBegin{Property Generator,PkgPropertyGeneratorSummary}
+\cgalPkgPicture{property_generator.png}
+ 
+\cgalPkgSummaryBegin
+\cgalPkgAuthors{Ross Hemsley and Olivier Devillers}
+\cgalPkgDesc{
+Property generator is a package to simplify the computation and iteration over
+properties of geometric objects. It provides a set of function objects
+which may be used to compute commonly used properties of geometric
+objects in \cgal.}
+\cgalPkgManuals{Chapter_Property_generator, PkgProperty_generator}
+\cgalPkgSummaryEnd
+ 
+\cgalPkgShortInfoBegin
+\cgalPkgSince{4.6}
+\cgalPkgBib{cgal:hd-pg}
+\cgalPkgLicense{\ref licensesLGPL "LGPL"}
+\cgalPkgDemo{Delaunay Visualiser, delaunay_visualiser.zip}
+\cgalPkgShortInfoEnd
+ 
+\cgalPkgDescriptionEnd
+
+\cgalClassifedRefPages
+
+## Namespaces ##
+- \link PkgProperty_generator_properties `CGAL::Properties` \endlink
+- \link Triangulation_2_properties `CGAL::Properties::Triangulation_2` \endlink
+
+## Tag Classes ##
+- `CGAL::No_finite_test_tag`
+- `CGAL::Finite_test_tag`
+
+## Triangulation_2 Properties ##
+
+### Faces ###
+- `CGAL::Properties::Triangulation_2::Area`
+- `CGAL::Properties::Triangulation_2::Aspect_ratio`
+- `CGAL::Properties::Triangulation_2::Circumradius`
+- `CGAL::Properties::Triangulation_2::Angle`
+- `CGAL::Properties::Triangulation_2::Min_angle`
+- `CGAL::Properties::Triangulation_2::Max_angle`
+- `CGAL::Properties::Triangulation_2::Min_edge_length`
+- `CGAL::Properties::Triangulation_2::Max_edge_length`
+
+### Edges ###
+- `CGAL::Properties::Triangulation_2::Length`
+- `CGAL::Properties::Triangulation_2::Neighbor_area`
+- `CGAL::Properties::Triangulation_2::Dual_length`
+
+### Vertices ###
+- `CGAL::Properties::Triangulation_2::Degree`
+- `CGAL::Properties::Triangulation_2::Dual_area`
+- `CGAL::Properties::Triangulation_2::Star_area`
+- `CGAL::Properties::Triangulation_2::Link_length`
+- `CGAL::Properties::Triangulation_2::Max_star_angle`
+- `CGAL::Properties::Triangulation_2::Min_star_angle`
+
+@}
+
+*/

@@ -193,6 +193,14 @@ for backward compatibility. Those are documented for completeness and
 implementers. They are not intended to be used by users of the
 library.
 
+\section secstatistics Statistics Algorithms
+
+To facilitate the use of the property function objects provided in the property
+generator package, we provide a collection of utility algorithms for computing
+basic statistics over iterator ranges. Since \cgal iterators are often
+implicitly converted to handles, we provide the `CGAL::No_deref_iterator`
+wrapper class for when iteration over handles is required.
+
 \section secchecks Checks
 
 Much of the \cgal code contains checks.
