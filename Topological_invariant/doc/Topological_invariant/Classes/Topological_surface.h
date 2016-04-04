@@ -38,7 +38,7 @@ public:
     typedef unspecified_type Halfedge_const_handle;
     
     /// @}
-    /// \name Path and embeded graph types
+    /// \name Path and embedded graph types
     /// @{
     
     ///model of Path
@@ -133,7 +133,7 @@ public:
     void flip(Halfedge_handle he);
     
     /// @}
-    /// \name Path and embeded graph
+    /// \name Path and embedded graph
     /// @{
     
     ///range of all Arc_occurence of a halfedge from left to right
@@ -145,10 +145,10 @@ public:
     ///erase a path
     void erase_path(Path_handle);
     
-    ///create a embeded graph
+    ///create a embedded graph
     Graph_handle create_graph();
     
-    ///erase a embeded graph
+    ///erase a embedded graph
     void erase_graph(Graph_handle);
     
     ///@}
