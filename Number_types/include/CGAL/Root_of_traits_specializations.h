@@ -76,6 +76,21 @@ struct Lazy_exact_ro2
     {
         op1 = op2 = op3 = Lazy_exact_nt<ET>();
     }
+#ifdef CGAL_LAZY_KERNEL_DEBUG
+  void
+  print_dag(std::ostream& os, int level) const
+  {
+    os << "SQRT_EXT ";
+    this->print_at_et(os, level);
+    if(this->is_lazy()){
+      msg(os, level, "Sqrt_extension operator:");
+      CGAL::print_dag(op1, os, level+1);
+      CGAL::print_dag(op2, os, level+1);
+      CGAL::print_dag(op3, os, level+1);
+    }
+  }
+#endif
+
 };
 
 template <typename NT >
