@@ -1,0 +1,10 @@
+The package is a general framework for implementing two-dimensional 
+Voronoi diagrams of different classes of sites under various distance
+functions.
+The framework is sufficiently general to support diagrams embedded on
+a family of two-dimensional parametric surfaces in $R^3$.
+The computation of the diagrams is carried out through the
+construction of envelopes of surfaces in 3-space provided by CGAL.
+The computation of the diagrams employs the Envelope_3 package for 
+constructing envelopes of surfaces in 3-space, which implements a 
+divide-and-conquer algorithm.
