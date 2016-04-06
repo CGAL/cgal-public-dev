@@ -4,14 +4,14 @@ namespace CGAL {
 
 \cgalModels `Generalized_map`
 
-\tparam Item
-\tparam GMap model of Generalized_map
+\tparam Item model,of GeneralizedMapItems
 \tparam Allocator has to match the standard allocator requirements.
+\tparam GMap model of Generalized_map
 */
 
 
 
-template<Item, GMap, Allocator>
+template<Item, Allocator, GMap>
 class Topological_surface
 {
 public:
@@ -90,7 +90,10 @@ public:
     Halfedge_handle halfedge(Dart);
     
     /// return the sign of a dart.  
-    bool sign(Dart_handle d);
+    bool signature(Dart_handle d) const;
+    
+    /// return the sign of a dart.  
+    bool signature(Dart_const_handle d) const;
     
     /// return the next Halfedge around the face.
     Halfedge_handle face_next(Halfedge_handle he);
@@ -114,23 +117,11 @@ public:
     /// \name Operation
     /// @{
     
-    /// Contract the edge of he
-    void edge_contraction(Halfedge_handle he);
-    
-    /// Delete the edge of he 
-    void edge_deletion(Halfedge_handle he)
-    
-    /// subdivide the edge of he and return a halfedge in the new create edge.
-    Halfedge_handle edge_sudivision(Halfedge_handle he);
-    
-    /// subdivide the face 
-    Halfedge_handle face_subdivision(Halfedge_handle a, Halfedge_handle b);
-    
-    /// cut the surface with a path
-    void cut(Path_handle path);
-    
     /// flip the vertex of he
     void flip(Halfedge_handle he);
+    
+    ///update all signature
+    void update_signature();
     
     /// @}
     /// \name Path and embedded graph
