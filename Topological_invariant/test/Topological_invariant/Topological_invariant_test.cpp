@@ -3,6 +3,29 @@
 #include <CGAL/exceptions.h>
 #include <cassert>
 
+template<class Map, class Dart_const_handle>
+void printAlpha(const Map& map, Dart_const_handle dh, int i) {
+    if(!map.is_free(dh, i)){
+        Dart_const_handle d = map.alpha(dh, i);
+        std::cout << "\t\talpha "<<i<<" : " << &*d << '\n';
+    }
+}
+
+template<class Map>
+void printMap(const Map& map) {
+    typedef typename Map::Dart_const_handle Dart_const_handle;
+    typedef typename Map::Dart_range Dart_range;
+    typedef typename Dart_range::const_iterator Dart_const_iterator;
+
+    for (Dart_const_iterator it = map.darts().begin(); it != map.darts().end(); ++it) {
+        std::cout << "\tdart " << &*it << " "<< (map.dart_signature(it)?"+":"-") << std::endl;
+        printAlpha(map, it, 0);
+        printAlpha(map, it, 1);
+        printAlpha(map, it, 2);
+        
+    }
+}
+
 void test_make_combinatorial_tetrahedron(){
     CGAL::Topological_surface<> surface;
     
@@ -81,7 +104,7 @@ void test_link_alpha() {
     assert(he_a1 == he_a2);
     assert(he_b1 == he_b2);
 
-    assert(surface.opposite(he_a1) == he_b1);
+    assert(surface.halfedge_opposite(he_a1) == he_b1);
 
     std::cout << "test_link_alpha : OK" << std::endl;
 }
@@ -96,7 +119,7 @@ void testSurfaceNoLink0() {
     Dart_handle a1 = surface.create_dart();
 
     try {
-        assert(surface.opposite(surface.halfedge(a1)) == Halfedge_handle());
+        assert(surface.halfedge_opposite(surface.halfedge(a1)) == Halfedge_handle());
     } catch (CGAL::Precondition_exception& e) {
 
     }
@@ -163,13 +186,64 @@ void testHalfedgeFaceLoop() {
 
     Surface surface;
     
-    surface.make_combinatorial_tetrahedron();
-
-    Halfedge_handle he = surface.halfedge(surface.darts().begin());
+    surface.make_combinatorial_polygon(3);
     
-    assert(surface.halfedge_next(surface.halfedge_next(surface.halfedge_next(he)))==he);
+    
+    assert(surface.is_valid());
+
+    Halfedge_handle first = surface.halfedge(surface.darts().begin());
+    
+    if(surface.dart_signature(surface.dart(first))){
+        first = surface.halfedge_opposite(first);
+    }
+    
+    Halfedge_handle he = first;
+    
+    assert(!surface.dart_signature(surface.dart(he)));
+    
+    assert(surface.halfedge_signature(he));
+    
+    he = surface.halfedge_next(he);
+    
+    assert(!surface.dart_signature(surface.dart(he)));
+    
+    assert(surface.halfedge_signature(he));
+    
+    he = surface.halfedge_next(he);
+    
+    assert(!surface.dart_signature(surface.dart(he)));
+    
+    assert(surface.halfedge_signature(he));
+    
+    he = surface.halfedge_next(he);
+    
+    assert(first==he);
 
     std::cout << "halfedge face loop : OK" << std::endl;
+}
+
+void test_path(){
+    typedef CGAL::Topological_surface<> Surface;
+    typedef Surface::Dart_handle Dart_handle;
+    typedef Surface::Halfedge_handle Halfedge_handle;
+    typedef Surface::Path_handle Path_handle;
+
+    Surface surface;
+    
+    surface.make_combinatorial_tetrahedron();
+    
+    Path_handle path = surface.create_path();
+    
+    Halfedge_handle he = surface.halfedge(surface.darts().begin());
+    
+    path->push_front(he);
+    
+    he = surface.vertex_next(he);
+    
+    path->push_front(he);
+
+    std::cout << "test_path : OK" << std::endl;
+    
 }
 
 int main(){
@@ -182,6 +256,7 @@ int main(){
     testSurfaceNoLink1();
     testSurfaceNoLink2();
     testHalfedgeFaceLoop();
+    test_path();
     
     std::cout<<"Success"<<std::endl;
     return 0;

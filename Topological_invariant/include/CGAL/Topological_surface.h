@@ -73,6 +73,15 @@ namespace CGAL
         };
         typedef const Halfedge_handle Halfedge_const_handle;
         
+        //Path
+        typedef Path<Self>                                          Path_;
+        typedef typename Alloc::template rebind<Path_>::other       Path_allocator;
+        typedef Compact_container<Path_,Path_allocator>             Path_container;
+        typedef typename Path_container::iterator                   Path_handle;
+        typedef typename Path_container::const_iterator             Path_const_handle;
+        
+        typedef typename Path_::Arc_occurence_handle Arc_occurence_handle;
+        
         //Constants
         static const unsigned int dimension = GMap::dimension;
         static const size_type NB_MARKS = GMap::NB_MARKS;
@@ -858,19 +867,21 @@ namespace CGAL
         //additional access    
         Halfedge_handle vertex_next (Halfedge_handle he){
             if(dart_signature(he.dart)){
+                CGAL_precondition(!is_free<2>(he.dart) && !is_free<1>(alpha<2>(he.dart)));
                 return halfedge(alpha<2, 1>(he.dart));
             }else{ 
+                CGAL_precondition(!is_free<1>(he.dart));
                 return halfedge(alpha<1>(he.dart));
             }
         }
         
-        Halfedge_handle opposite (Halfedge_handle he){
+        Halfedge_handle halfedge_opposite (Halfedge_handle he){
             CGAL_precondition(!is_free<0>(he.dart));
             return halfedge(alpha<0>(he.dart));
         }
         
         Dart_handle dart(Halfedge_handle dh){
-            return dh->dart;
+            return dh.dart;
         }
         
         Dart_handle dart(Halfedge_handle dh, bool s){
@@ -886,6 +897,7 @@ namespace CGAL
         }
         
         bool halfedge_signature (Halfedge_handle he){
+            CGAL_precondition(!is_free<0>(he.dart));
             return dart_signature(he.dart) != dart_signature(alpha<0>(he.dart));
         }
         
@@ -894,7 +906,7 @@ namespace CGAL
         }
         
         Halfedge_handle halfedge_next(Halfedge_handle he){
-            return opposite(vertex_next(he));
+            return halfedge_opposite(vertex_next(he));
         }
         
         //addtition modifier
@@ -907,7 +919,7 @@ namespace CGAL
             
             queue.push(start_vertex);
             
-            update_signature_vertex(start_vertex, mark);
+            update_signature_vertex(start_vertex, true, mark);
             
             while(!queue.empty()){
                 Dart_handle current_vertex = queue.front();
@@ -918,8 +930,8 @@ namespace CGAL
                     ++it)
                 {
                     if(!is_marked(alpha<0>(it), mark)){
-                        Dart_handle neighbour = alpha<0, 2>(it);
-                        update_signature_vertex(neighbour, mark);
+                        Dart_handle neighbour = alpha<0>(it);
+                        update_signature_vertex(neighbour, !dart_signature(it), mark);
                         
                         queue.push(neighbour);
                     }               
@@ -930,12 +942,24 @@ namespace CGAL
                 assert(is_marked(it, mark));
             }
         }
+        
+        //Path
+        Path_handle create_path(){
+            Path_handle p = mPaths.insert(Path_());
+            p->mHandle = p;
+            return p;
+        }
+        
+        void erase_path (Path_handle p){
+            mPaths.erase(p);
+        }
 
     private:
         GMap mGMap;
         size_type mSignature;
+        Path_container mPaths;
         
-        void update_signature_vertex(Dart_handle d, size_type mark_index){
+        void update_signature_vertex(Dart_handle d, bool sign, size_type mark_index){
             CGAL_precondition(d!=Dart_handle());
             
             Dart_handle current = d;
@@ -943,7 +967,7 @@ namespace CGAL
             
             do{
                 mark(current, mark_index);
-                setSignature(current, true);
+                setSignature(current, sign);
                 
                 if(is_free<1>(current)){
                     loop2 = true;
@@ -953,7 +977,7 @@ namespace CGAL
                 current = alpha<1>(current);
                 
                 mark(current, mark_index);
-                setSignature(current, false);
+                setSignature(current, !sign);
                 
                 if(is_free<2>(current)){
                     loop2 = true;
@@ -968,7 +992,7 @@ namespace CGAL
                 current = d;
                 do{
                     mark(current, mark_index);
-                    setSignature(current, true);
+                    setSignature(current, sign);
                     
                     if(is_free<2>(current)){
                         return;
@@ -977,7 +1001,7 @@ namespace CGAL
                     current = alpha<2>(current);
                     
                     mark(current, mark_index);
-                    setSignature(current, false);
+                    setSignature(current, !sign);
                     
                     if(is_free<1>(current)){
                         return;
