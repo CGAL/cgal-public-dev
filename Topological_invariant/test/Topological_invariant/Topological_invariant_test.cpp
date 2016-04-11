@@ -116,6 +116,7 @@ void testSurfaceNoLink0() {
 
     Surface surface;
 
+    /*std::cout<<"begin error"<<std::endl;
     Dart_handle a1 = surface.create_dart();
 
     try {
@@ -123,6 +124,7 @@ void testSurfaceNoLink0() {
     } catch (CGAL::Precondition_exception& e) {
 
     }
+    std::cout<<"end error"<<std::endl;*/
 
     std::cout << "No link 0 : OK" << std::endl;
 }

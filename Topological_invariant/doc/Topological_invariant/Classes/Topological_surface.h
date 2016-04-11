@@ -51,7 +51,7 @@ public:
     typedef unspecified_type Arc_occurence_handle;
     
     ///order around a dart
-    typedef unspecified_type Arc_occurence_Order_range;
+    typedef unspecified_type Arc_occurence_order_range;
     
     /// @}
     /// \name Range types
@@ -96,7 +96,7 @@ public:
     bool signature(Dart_const_handle d) const;
     
     /// return the next Halfedge around the face.
-    Halfedge_handle face_next(Halfedge_handle he);
+    Halfedge_handle halfedge_next(Halfedge_handle he);
     
     /// @}
     /// \name Range access
@@ -128,7 +128,7 @@ public:
     /// @{
     
     ///range of all Arc_occurence of a halfedge from left to right
-    Arc_occurence_Order_range Order(Halfedge_handle) ;
+    Arc_occurence_order_range arc_occurence_order(Halfedge_handle he)
     
     /// create a new path
     Path_handle create_path(); 
@@ -141,6 +141,8 @@ public:
     
     ///erase a embedded graph
     void erase_graph(Graph_handle);
+    
+    
     
     ///@}
 }; 

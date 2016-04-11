@@ -8,7 +8,7 @@ namespace CGAL
     template<class Surface_>
     class Path; 
     
-    template<class Surface_, class Path_handle_, class halfedge_handle_>
+    template<class Surface_>
     class Arc_occurence  : public Compact_container_base
     {
         template<class>
@@ -16,12 +16,12 @@ namespace CGAL
         
     public:
         typedef Surface_ Surface;
-        typedef Path_handle_ Path_handle;
-        typedef halfedge_handle_ halfedge_handle;
+        typedef typename Surface::Path_handle Path_handle;
+        typedef typename Surface::Halfedge_handle Halfedge_handle;
+        typedef typename Surface::Arc_occurence_handle Arc_occurence_handle;
         
-        typedef typename Surface::Arc_occurence_handle Arc_occurence_handle;       
         //constructor
-        Arc_occurence(Path_handle path, halfedge_handle halfedge):
+        Arc_occurence(Path_handle path, Halfedge_handle halfedge):
                 mPath(path),
                 mHalfedge(halfedge)
         {
@@ -33,13 +33,15 @@ namespace CGAL
         }
         
         /// return the associated halfedge.
-        halfedge_handle halfedge(){
+        Halfedge_handle halfedge(){
             return mHalfedge;
         }
         
     private:
         Path_handle mPath;
-        halfedge_handle mHalfedge;
+        Halfedge_handle mHalfedge;
+        Arc_occurence_handle left;
+        Arc_occurence_handle right;
     };
 }
 

@@ -5,6 +5,23 @@
 #include <CGAL/Generalized_map_constructors.h>
 #include <CGAL/Path.h>
 #include <queue>
+#include <map>
+#include <list>
+
+/* TODO :
+ * path arc order test
+ * order range
+ * order range test
+ * verif add arc hole
+ * verif path
+ * verif doc 
+ * with point
+ * surface file save
+ * surface file load
+ * path file save
+ * path file load
+ * graph
+ */
 
 namespace CGAL
 {
@@ -28,10 +45,25 @@ namespace CGAL
         //Basic types
         typedef Alloc_ Alloc;
         typedef Items_ Items;
-        
-        typedef Generalized_map<2, Items, Alloc> GMap;
-        
         typedef Topological_surface<Items, Alloc> Self;
+        
+        //GMap
+        struct GMap_item{
+            template < class GMap >
+            struct Dart_wrapper
+            {
+                typedef typename Items::template Dart_wrapper<GMap> Old_wrapper;
+                struct Dart : public Old_wrapper::Dart{
+                    typedef typename Path<Self>::Arc_occurence_handle Arc_occurence_handle;
+                    Arc_occurence_handle  one_arc;
+                };
+                typedef typename Old_wrapper::Attributes Attributes;
+            };
+        };
+        
+        typedef Generalized_map<2, GMap_item, Alloc> GMap;
+        
+        
         
         //GMap types
         typedef typename GMap::Dart Dart;
@@ -68,6 +100,10 @@ namespace CGAL
                 return !(dart==h.dart);
             }
             
+            bool operator<(const Halfedge_handle& right){
+                return (&*dart)<(&*(right.dart));
+            }
+            
             Dart_handle dart;
             Self* surface;
         };
@@ -81,6 +117,51 @@ namespace CGAL
         typedef typename Path_container::const_iterator             Path_const_handle;
         
         typedef typename Path_::Arc_occurence_handle Arc_occurence_handle;
+        
+        /*struct Arc_occurence_order_range
+        {
+            typedef typename Path_order_container::iterator iterator;
+            typedef typename Path_order_container::const_iterator const_iterator;
+            typedef typename Path_order_container::size_type size_type;
+            
+            Arc_occurence_order_range(Self& surface, Halfedge_handle he):
+            mSurface(surface),
+            mEdge(he)
+            {
+                if(empty()){
+                    mEdge = surface.opposite(mEdge);
+                }
+            }
+            
+            const_iterator  begin () const{
+                return mSurface.mPathOrder.lower_bound(mEdge);
+            }
+            
+            const_iterator  end () const{
+                return mSurface.mPathOrder.upper_bound(mEdge);
+            }
+            
+            iterator    begin (){
+                return mSurface.mPathOrder.lower_bound(mEdge);
+            }
+            
+            iterator    end (){
+                return mSurface.mPathOrder.upper_bound(mEdge);
+            }
+            
+            size_type   size () const{
+                return mSurface.mPathOrder.count(mEdge);
+            }
+            
+            bool    empty () const{
+                return mSurface.mPathOrder.count(mEdge)==0;
+            }
+            
+            
+        private:
+            Self& mSurface;
+            Halfedge_handle mEdge;
+        };*/
         
         //Constants
         static const unsigned int dimension = GMap::dimension;
@@ -220,7 +301,7 @@ namespace CGAL
 
         template <unsigned int i>
         size_type number_of_attributes() const{
-            return mGMap.number_of_attributes<i>();
+            return mGMap.template number_of_attributes<i>();
         }
 
         bool is_dart_used(Dart_const_handle dh) const{
@@ -275,34 +356,35 @@ namespace CGAL
 
             template<int B1>
             Dart_handle alpha(Dart_handle ADart)
-            { return mGMap.alpha<B1>(ADart); }
+            { return mGMap.template alpha<B1>(ADart); }
+            
             template<int B1, int B2>
             Dart_handle alpha(Dart_handle ADart)
-            { return mGMap.alpha<B1, B2>(ADart); }
+            { return mGMap.template alpha<B1, B2>(ADart); }
             template<int B1, int B2, int B3>
             Dart_handle alpha(Dart_handle ADart)
-            { return mGMap.alpha<B1, B2, B3>(ADart); }
+            { return mGMap.template alpha<B1, B2, B3>(ADart); }
             template<int B1, int B2, int B3, int B4>
             Dart_handle alpha(Dart_handle ADart)
-            { return mGMap.alpha<B1, B2, B3, B4>(ADart); }
+            { return mGMap.template alpha<B1, B2, B3, B4>(ADart); }
             template<int B1, int B2, int B3, int B4, int B5>
             Dart_handle alpha(Dart_handle ADart)
-            { return mGMap.alpha<B1, B2, B3, B4, B5>(ADart); }
+            { return mGMap.template alpha<B1, B2, B3, B4, B5>(ADart); }
             template<int B1, int B2, int B3, int B4, int B5, int B6>
             Dart_handle alpha(Dart_handle ADart)
-            { return mGMap.alpha<B1, B2, B3, B4, B5, B6>(ADart); }
+            { return mGMap.template alpha<B1, B2, B3, B4, B5, B6>(ADart); }
             template<int B1, int B2, int B3, int B4, int B5, int B6,
                     int B7>
             Dart_handle alpha(Dart_handle ADart)
-            { return mGMap.alpha<B1, B2, B3, B4, B5, B6, B7>(ADart); }
+            { return mGMap.template alpha<B1, B2, B3, B4, B5, B6, B7>(ADart); }
             template<int B1, int B2, int B3, int B4, int B5, int B6,
                     int B7, int B8>
             Dart_handle alpha(Dart_handle ADart)
-            { return mGMap.alpha<B1, B2, B3, B4, B5, B6, B7, B8>(ADart); }
+            { return mGMap.template alpha<B1, B2, B3, B4, B5, B6, B7, B8>(ADart); }
             template<int B1, int B2, int B3, int B4, int B5, int B6,
                     int B7, int B8, int B9>
             Dart_handle alpha(Dart_handle ADart)
-            { return mGMap.alpha<B1, B2, B3, B4, B5, B6, B7, B8, B9>(ADart); }
+            { return mGMap.template alpha<B1, B2, B3, B4, B5, B6, B7, B8, B9>(ADart); }
 
             Dart_const_handle alpha(Dart_const_handle ADart, int B1) const
             { return mGMap.alpha(ADart, B1); }
@@ -331,7 +413,7 @@ namespace CGAL
             
             template<int B1>
             Dart_const_handle alpha(Dart_const_handle ADart) const
-            { return mGMap.alpha<B1>(ADart); }
+            { return mGMap.template alpha<B1>(ADart); }
             template<int B1, int B2>
             Dart_const_handle alpha(Dart_const_handle ADart) const
             { return mGMap.alpha<B1, B2>(ADart); }
@@ -367,7 +449,7 @@ namespace CGAL
 
         template<unsigned int i>
         bool is_free(Dart_const_handle dh) const{
-            return mGMap.is_free<i>(dh);
+            return mGMap.template is_free<i>(dh);
         }
 
         int highest_nonfree_dimension(Dart_const_handle dh) const{
@@ -470,12 +552,12 @@ namespace CGAL
 
         template<unsigned int i>
         typename Attribute_range<i>::type & attributes(){
-            return mGMap.attributes<i>();
+            return mGMap.template attributes<i>();
         }
 
         template<unsigned int i>
         typename Attribute_const_range<i>::type & attributes() const{
-            return mGMap.attributes<i>();
+            return mGMap.template attributes<i>();
         }
         
         template <unsigned int B1>
@@ -653,7 +735,7 @@ namespace CGAL
 
         template<unsigned int i,typename T1>
         typename Attribute_handle<i>::type create_attribute(T1 t1){
-            return mGMap.create_attribute<i, T1>(t1);
+            return mGMap.template create_attribute<i, T1>(t1);
         }
 
         template <unsigned int i>
@@ -711,7 +793,7 @@ namespace CGAL
 
         template <unsigned int i>
         void link_alpha(Dart_handle dh1, Dart_handle dh2){
-            mGMap.link_alpha<i>(dh1, dh2);
+            mGMap.template link_alpha<i>(dh1, dh2);
             if(i!=0){
                 update_signature_vertex(dh1);
             }
@@ -719,7 +801,7 @@ namespace CGAL
 
         template <unsigned int i>
         void unlink_alpha(Dart_handle dh){
-            mGMap.unlink_alpha<i>(dh);
+            mGMap.template unlink_alpha<i>(dh);
         }
 
         void reverse_orientation(){
@@ -735,28 +817,28 @@ namespace CGAL
         boost::function<void(typename Attribute_type< i >::type&,
                             typename Attribute_type< i >::type&)>&
         onsplit_function(){
-            return mGMap.onsplit_function<i>();
+            return mGMap.template onsplit_function<i>();
         }
 
         template<int i>
         const boost::function<void(typename Attribute_type< i >::type&,
                                     typename Attribute_type< i >::type&)>&
         onsplit_function() const{
-            return mGMap.onsplit_function<i>();
+            return mGMap.template onsplit_function<i>();
         }
 
         template<int i>
         boost::function<void(typename Attribute_type< i >::type&,
                             typename Attribute_type< i >::type&)>&
         onmerge_function(){
-            return mGMap.onmerge_function<i>();
+            return mGMap.template onmerge_function<i>();
         }
 
         template<int i>
         const boost::function<void(typename Attribute_type< i >::type&,
                                     typename Attribute_type< i >::type&)>&
         onmerge_function() const{
-            return mGMap.onmerge_function<i>();
+            return mGMap.template onmerge_function<i>();
         }
 
         //Boolean Marks
@@ -838,7 +920,7 @@ namespace CGAL
         
         template<class InputIterator >
         Dart_handle insert_cell_2_in_cell_3 (InputIterator afirst, InputIterator alast){
-            return mGMap.insert_cell_2_in_cell_3<InputIterator>(afirst, alast);
+            return mGMap.template insert_cell_2_in_cell_3<InputIterator>(afirst, alast);
         }
         
         Dart_handle insert_dangling_cell_1_in_cell_2 (Dart_handle dh){
@@ -851,7 +933,7 @@ namespace CGAL
         
         template<class InputIterator >
         bool is_insertable_cell_2_in_cell_3 (InputIterator afirst, InputIterator alast){
-            return mGMap.is_insertable_cell_2_in_cell_3<InputIterator>(afirst, alast);
+            return mGMap.template is_insertable_cell_2_in_cell_3<InputIterator>(afirst, alast);
         }
         
         template<unsigned int i>
@@ -945,7 +1027,7 @@ namespace CGAL
         
         //Path
         Path_handle create_path(){
-            Path_handle p = mPaths.insert(Path_());
+            Path_handle p = mPaths.insert(Path_(*this));
             p->mHandle = p;
             return p;
         }
@@ -953,6 +1035,10 @@ namespace CGAL
         void erase_path (Path_handle p){
             mPaths.erase(p);
         }
+        
+      /*  Arc_occurence_order_range arc_occurence_order(Halfedge_handle he){
+            return Arc_occurence_order_range(*this, he);
+        }*/
 
     private:
         GMap mGMap;
