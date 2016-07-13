@@ -6,14 +6,14 @@
 
 namespace CGAL
 {
-    template<typename Items_, typename Alloc_>
-    class Topological_surface;
+    template<typename, typename>
+    class Basic_surface;
     
     template<class Surface_>
     class Path : public Compact_container_base
     {
         template<class, class>
-        friend class Topological_surface;
+        friend class Basic_surface;
     public:
         // types
         typedef Surface_ Surface;

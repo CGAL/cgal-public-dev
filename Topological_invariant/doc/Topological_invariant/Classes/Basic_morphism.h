@@ -4,10 +4,10 @@ namespace CGAL
 	 * \ingroup PkgTopologicalInvariantClasses
 	 * \cgalModels `::Morphism`
 	 * 
-	 * `Basic_morphism` define a morphism between to `GeneralizedMap`.
+	 * `Basic_morphism` define a morphism between to `Topological_surface`.
 	 * 
-	 * \tparam Source_generalized_graph must be a model of the `HalfedgeGraph` concept.
-	 * \tparam Target_generalized_graph must be a model of the `HalfedgeGraph` concept.
+	 * \tparam Source_surface must be a model of the `Topological_surface` concept.
+	 * \tparam Target_surface must be a model of the `Topological_surface` concept.
 	 * \tparam Alloc has to match the standard allocator requirements. The `rebind` mechanism  `Alloc` will be used to create appropriate allocators internally with value type `Dart`.the default value is CGAL_ALLOCATOR(int)` from the `<CGAL/memory.h>` header file.
 	 * 
 	 */
@@ -45,7 +45,7 @@ namespace CGAL
 		/*!
 		* define the morphism \f$ Morphism(source) = target \f$.
 		*/
-		void add(Source_halfedge_descriptor source, Target_halfedge_descriptor target);
+		void add(Source_halfedge_handle source, Target_halfedge_handle target);
 		/// @}
 	};
 }

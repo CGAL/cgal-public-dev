@@ -24,7 +24,10 @@ public:
 	typedef unspecified_type Arc_occurence_range;
 	
 	/// Range of all Arc_occurence of the path in a revert order.
-	typedef unspecified_type Arc_occurence_revert_range
+	typedef unspecified_type Arc_occurence_revert_range;
+	
+    /// Range of all Arc_occurence link to a dart
+	typedef unspecified_type Edge_order_range;
 	
 	/// @}
 	/// \name Access
@@ -35,6 +38,8 @@ public:
 	
 	/// Return true iff the path is a loop. The source vertex is also the destination vertex. 
 	bool is_loop() const;
+    
+    
 	
 	/// @}
 	/// \name Range 
@@ -45,6 +50,9 @@ public:
 	
 	/// return a range of  all Arc_occurence in the path in a revert order.
 	Arc_occurence_revert_range arc_occurences_revert();
+    
+    /// return a range of all Arc_occurence link to dart d
+    Edge_order_range edge_order_range(Dart_handle d);
 	
 	/// @}
 	/// \name Modifier

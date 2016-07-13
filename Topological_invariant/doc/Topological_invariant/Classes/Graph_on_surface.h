@@ -3,7 +3,7 @@ namespace CGAL {
 /*!
 \ingroup PkgTopologicalInvariantClasses
 
-\cgalModels `GraphOnSurface`
+\cgalModels `MutableGraphOnSurface`
 
 */
 template<class Surface, class Directed, class Alloc>

@@ -1,8 +1,11 @@
 #include <iostream>
 #include <CGAL/Topological_surface.h>
+#include <CGAL/Topological_surface_with_point.h>
 #include <CGAL/exceptions.h>
 #include <cassert>
 
+
+/*
 template<class Map, class Dart_const_handle>
 void printAlpha(const Map& map, Dart_const_handle dh, int i) {
     if(!map.is_free(dh, i)){
@@ -10,7 +13,7 @@ void printAlpha(const Map& map, Dart_const_handle dh, int i) {
         std::cout << "\t\talpha "<<i<<" : " << &*d << '\n';
     }
 }
-
+Basic_surface_items
 template<class Map>
 void printMap(const Map& map) {
     typedef typename Map::Dart_const_handle Dart_const_handle;
@@ -25,7 +28,7 @@ void printMap(const Map& map) {
         
     }
 }
-
+*/
 void test_make_combinatorial_tetrahedron(){
     CGAL::Topological_surface<> surface;
     

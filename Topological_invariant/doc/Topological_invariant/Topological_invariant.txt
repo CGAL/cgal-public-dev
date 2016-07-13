@@ -1,0 +1,129 @@
+namespace CGAL {
+/*!
+
+\mainpage User Manual
+\anchor Chapter_Topological_invariant
+\anchor ChapterTopologicalInvariant
+
+\author Glesser Jean-Noël
+\cgalAutoToc
+
+This package implements the basic literature on topologies. It includes several concept like as topological surfaces, paths and embedded graphs.
+
+\section pres_Surface Surface
+
+An Topological_surface can be used to define oriented or non-oriented surface. This surface can be represented with dart. Topological_surface refines GeneralMap. This surface an also be represented with signed half-edge.
+
+\subsection pres_Surface_signed  signed Half-edge surface
+
+In signed Half-edge surface, it's possible to represent in R3 vertex by a disque and edge by a strip. Edge can be twisted as opposite to half-edge Data Structure (ADD LINK). Each half-edge has a signature. Opposite half-edge has the same signature. if the sign is negative, the Edge is twisted.
+
+TODO comme shema page 54 (nen pas se tronper avec next)
+
+\subsection pres_Surface_GeneralizedMap generalized map
+
+Topological_surface refines GenerallizedMap. In this structure, surface are représentated with dart. each dart is associate with a vertex, a edge and a face. 3 basic opperation is possible with dart :
+- \f$ \alpha_0 \f$ : return a dart with the same face and the same edge but a different vertex
+- \f$ \alpha_1 \f$ : return a dart with the same face and the same vertex but a different edge
+- \f$ \alpha_2 \f$ : return a dart with the same edge and the same vertex but a different face
+
+\cgalFigureBegin{figesurface1,surface1.png}
+Example of a TopologicalSurface. each sign is a dart. TODO
+\cgalFigureEnd
+
+\subsection pres_Surface_two_representation two representation
+
+TODO
+
+\subsection pres_Surface_examples examples
+
+\code{.cpp}
+
+typedef CGAL::Topological_surface<> Surface;
+typedef Surface::Dart_handle Dart_handle;
+typedef Surface::Halfedge_handle Halfedge_handle;
+
+//create a surface
+Surface surface;
+surface.make_combinatorial_tetrahedron();
+
+//get a halfedge
+Halfedge_handle he = surface.halfedge(d);
+
+//rotate around a vertex
+assert(surface.vertex_next(surface.vertex_next(surface.vertex_next(he)))==he);
+
+//opposite halfedge
+Halfedge_handle opposite_he = surface.opposite(halfedge);
+
+//get dart define as the halfedge he with the sign s
+bool s = true;
+Dart_handle d = surface.dart(he, s);
+
+//fipped edge
+if(surface.siganture(he)){
+    std::cout<<"flipped"<<std::endl;
+}else{
+    std::cout<<"not flipped"<<std::endl;
+}
+
+\endcode
+
+\section pres_path  Path 
+
+the paths pass through the edges of the surface. Path is a list of Arc_occurence. One Arc_occurence is link to one edge define by a dart. when several Arc_occurence is link to a edge a order is define.
+
+TODO Shema path
+
+\code{.cpp}
+typedef CGAL::Topological_surface<> Surface;
+typedef Surface::Dart_handle Dart_handle;
+typedef Surface::Path_handle Path_handle;
+typedef Path_handle::Arc_occurence_handle Arc_occurence_handle;
+
+Surface surface;
+
+surface.make_combinatorial_tetrahedron();
+
+//create a path
+Path_handle path1 = surface.create_path();
+
+Dart_handle dart = surface.darts().begin();
+Arc_occurence_handle a = path1->push_front(he);
+he = surface.alpha<0, 1>(he);
+path1->push_front(he);
+
+//create another path
+Path_handle path2 = surface.create_path();
+
+Dart_handle dart = surface.darts().begin();
+Arc_occurence_handle b= path2->push_front(he);
+
+//change order
+if(a.left()!=Arc_occurence_handle()){
+    a.move_left ();
+}else{
+    a.move_right();
+}
+\endcode 
+
+\section pers_graph Embedded graph
+
+Embedded graph refine Boost graph. each arc of the graph has a path. a path of a edge can be get with path(graph, edge). the graph is moddifer with  add_edge(vertex1, vertex2, graph, path), add_vertex(g). 
+
+TODO exemple
+
+\section pres_morphism Morphism
+
+the concept Morphism define a morphism from a Topological_surface source to a Topological_surface target.
+
+Let \f$ M = (A, ρ, ι, s ) \f$ be a map and let \f$ N = (B, σ,  , t) \f$ be a connected map. A morphism \f$ (f , ω) : M → N \f$ is composed of an arc function \f$ f : A → B \f$ and a
+flipping \f$ ω : V (M ) → \{−1, 1\} \f$ satisfying for all arcs \f$ a ∈ A \f$: 
+- \f$ (f (a ))^{−1} = f (a^{ −1 } ) \f$ 
+- \f$ σ(f (a )) =f (ρ^{ω(o(a ))} (a )) \f$
+- \f$t (f (a )) = ω(o(a ))ω(o(a^{−1} ))s (a ) \f$
+
+TODO exemple
+
+*/
+}

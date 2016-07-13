@@ -14,7 +14,8 @@
  
 \cgalPkgSummaryBegin
 \cgalPkgAuthor{Glesser Jean-Noël}
-\cgalPkgDesc{This package implements a generalized version of combinatorial maps in <I>d</I>-dimension. this package has the same structure as the combinatorial maps package. a generalized map is a data structure allowing to represent orientable or non orientable objects by describing all the cells of the subdivision (for example in 3D vertices, edges, faces, volumes) and all the incidence and adjacency relationships between these cells. Information can be associated to cells thanks to attributes. The package provides basic creations, modification operations, and several iterators allowing to run through some specific part of the object.}
+\cgalPkgDesc{This package implements basic algorithms from the
+computational topology literature.}
 \cgalPkgManuals{Chapter_Topological_invariant,PkgTopologicalInvariant}
 \cgalPkgSummaryEnd
 
@@ -31,8 +32,10 @@
 ## Concepts ##
 - `Morphism`
 - `GraphOnSurface`
+- `MutableGraphOnSurface`
 - `Path`
 - `ArcOccurence`
+- `TopologicalSurface`
 
 ## Classes ##
 - `CGAL::Topological_surface`
