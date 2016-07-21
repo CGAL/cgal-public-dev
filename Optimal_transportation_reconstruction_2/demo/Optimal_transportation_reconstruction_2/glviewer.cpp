@@ -62,6 +62,7 @@ void GlViewer::paintGL()
   glTranslated(-m_center_x, -m_center_y, 0.0);
 
   m_scene->render(m_view_points,
+      m_view_tolerance,
       m_view_vertices,
       m_view_edges,
       m_view_ghost_edges,
