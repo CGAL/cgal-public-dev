@@ -35,14 +35,14 @@ protected:
 
   FT m_before_cost;
   FT m_after_cost;
-  std::size_t m_nb_samples;
+  FT m_total_weight;
 
 public:
   Reconstruction_edge_2() 
   : m_edge(Face_handle(), 0),
     m_before_cost(0),
     m_after_cost(0),
-    m_nb_samples(0)
+    m_total_weight(0)
   {}
 
   Reconstruction_edge_2(const Reconstruction_edge_2& pedge) 
@@ -51,14 +51,14 @@ public:
     m_target(pedge.target()),
     m_before_cost(pedge.before()),
     m_after_cost(pedge.after()),
-    m_nb_samples(pedge.number_of_samples())
+    m_total_weight(pedge.total_weight())
   {}
 
-  Reconstruction_edge_2(const Edge& edge, const FT before, const FT after, const std::size_t nb_samples)
+  Reconstruction_edge_2(const Edge& edge, const FT before, const FT after, const FT total_weight)
   : m_edge(edge),
     m_before_cost(before),
     m_after_cost(after),
-    m_nb_samples (nb_samples)
+    m_total_weight (total_weight)
   {
     get_vertices();
   }
@@ -67,7 +67,7 @@ public:
   : m_edge(edge),
     m_before_cost(0),
     m_after_cost(priority),
-    m_nb_samples (0)
+    m_total_weight (0)
   {
     get_vertices(); 
   }
@@ -78,7 +78,7 @@ public:
     m_target(target),
     m_before_cost(0),
     m_after_cost(0),
-    m_nb_samples(0)
+    m_total_weight(0)
   {}
 
   Reconstruction_edge_2& operator= (const Reconstruction_edge_2& pedge)
@@ -88,7 +88,7 @@ public:
     m_target = pedge.target();
     m_before_cost = pedge.before();
     m_after_cost = pedge.after();
-    m_nb_samples = pedge.number_of_samples();
+    m_total_weight = pedge.total_weight();
 
     return *this;
   }
@@ -140,9 +140,9 @@ public:
     return after() - before();
   }
 
-  std::size_t number_of_samples() const
+  FT total_weight() const
   {
-    return m_nb_samples;
+    return m_total_weight;
   }
 
 protected:
