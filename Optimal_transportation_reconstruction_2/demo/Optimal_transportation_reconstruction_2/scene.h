@@ -23,6 +23,7 @@
 #include <vector>
 #include <CGAL/property_map.h>
 #include <CGAL/value_type_traits.h>
+#include <CGAL/compute_average_spacing.h>
 
 class Scene {
 
@@ -77,6 +78,15 @@ public:
 
 
 private:
+
+  struct Point_3_from_sample : public std::unary_function<Sample_, typename K::Point_3>
+  {
+    typename K::Point_3 operator() (const Sample_& sample) const
+    {
+      return K::Point_3 (sample.point().x(), sample.point().y(), 0.);
+    }
+  };
+  
   // data
   std::vector<Sample_> m_samples;
 
@@ -227,7 +237,12 @@ public:
       //      normalize_points();
       return;
     }
-    else if (filename.contains(".xy", Qt::CaseInsensitive)) {
+    if (filename.contains(".xyw", Qt::CaseInsensitive)) {
+      load_xyw_file(filename);
+      //      normalize_points();
+      return;
+    }
+     if (filename.contains(".xy", Qt::CaseInsensitive)) {
       load_xy_file(filename);
       //      normalize_points();
       return;
@@ -277,6 +292,23 @@ public:
     }
     std::cerr << "done (" << nb << " points)" << std::endl;
     ifs.close();
+  }
+
+  void load_xyw_file(const QString& fileName) {
+
+    std::cout << "filename: " << fileName.toUtf8().constData() << std::endl;
+    std::ifstream ifs(qPrintable(fileName));
+    std::cerr << "reading xy with weights...";
+    Point point;
+    FT weight;
+    unsigned int nb = 0;
+    while (ifs >> point >> weight) {
+      add_sample(point, weight);
+      nb++;
+    }
+    std::cerr << "done (" << nb << " points)" << std::endl;
+    ifs.close();
+    compute_average_spacing();
   }
 
   void load_xyz_file(const QString& fileName) {
@@ -349,6 +381,17 @@ public:
   }
 #endif
 
+  void compute_average_spacing()
+  {
+    FT spacing = CGAL::compute_average_spacing<CGAL::Sequential_tag>
+      (boost::make_transform_iterator (m_samples.begin(),
+                                       Point_3_from_sample()),
+       boost::make_transform_iterator (m_samples.end(),
+                                       Point_3_from_sample()),
+       3);
+    std::cerr << "Average spacing = " << spacing << std::endl;
+  }
+  
   void print_vertex(Vertex vertex) {
     std::cout << "vertex " << vertex << std::endl;
   }
@@ -603,9 +646,6 @@ public:
 
   void draw_samples(const float point_size) {
 
-    ::glPointSize(point_size);
-    ::glBegin(GL_POINTS);
-
     std::vector<Sample_>::const_iterator it;
     for (it = m_samples.begin(); it != m_samples.end(); it++) {
       double mass = it->mass();
@@ -613,15 +653,22 @@ public:
       float value = mass;
       float grey = 0.9 * (1.0f - value);
       ::glColor3f(grey, grey, grey);
+      value = (std::max)(value, 1.0f);
+      ::glPointSize(point_size * value);
+      
       const Point& p = it->point();
+      ::glBegin(GL_POINTS);
       ::glVertex2d(p.x(), p.y());
+      ::glEnd();
     }
-    ::glEnd();
+
   }
 
   void draw_tolerance()
   {
     double tol = m_pwsrec->tolerance();
+    if (tol < 0.)
+      return;
     
     const std::size_t resolution = 16;
     ::glColor3f (0.6, 1.0, 0.8);
