@@ -1,5 +1,5 @@
 # cgal-public-dev
-This is the Git repository used by some of the CGAL students. The repository that hosts the `master` branch of CGAL is [`CGAL/cgal`](http://github.com/CGAL/cgal).
+This is the Git repository used to store some on-going work by CGAL developers. The repository that hosts the `master` branch of CGAL is [`CGAL/cgal`](http://github.com/CGAL/cgal).
 
 # Start working
 To start working with this repository, you must also set the a remote repository that contains the `master` branch of CGAL:
