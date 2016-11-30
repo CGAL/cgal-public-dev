@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.2)
+cmake_minimum_required(VERSION 2.8)
 
 project(Boolean_set_operations_2)
 
@@ -50,5 +50,5 @@ qt5_use_modules(Boolean_set_operations_2
     Script
     Svg
 	OpenGL)
-	
+
 #set_target_properties(Boolean_set_operations_2 PROPERTIES LINK_FLAGS "/SUBSYSTEM:WINDOWS /ENTRY:mainCRTStartup")
