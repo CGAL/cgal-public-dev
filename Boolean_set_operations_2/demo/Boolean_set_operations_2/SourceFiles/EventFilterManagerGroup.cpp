@@ -86,9 +86,10 @@ void EventFilterManagerGroup::setCurrentFilterName(const QString name)
 	}
 }
 
-QList<QString>* EventFilterManagerGroup::getFilterNames()
+QList<QString> EventFilterManagerGroup::getFilterNames()
 {
-	return &filtersMap.keys();
+  auto x = filtersMap.keys();
+  return std::move(x);
 }
 
 void EventFilterManagerGroup::clear()
@@ -103,4 +104,3 @@ void EventFilterManagerGroup::clear()
 	objectsMap.clear();
 	filtersMap.clear();
 }
-
