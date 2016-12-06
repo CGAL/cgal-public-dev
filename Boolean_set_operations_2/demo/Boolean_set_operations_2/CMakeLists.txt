@@ -26,16 +26,28 @@ qt5_add_resources(UI_RESOURCES
     ResourceFiles/icons.qrc)
 
 qt5_wrap_ui(UI_HEADERS
-    UiFiles/MainWindow.ui)
+    UiFiles/MainWindow.ui
+	UiFiles/ChoiseDialogPolygon.ui)
 
 add_executable(Boolean_set_operations_2
 	boolean_set_operations_2.cpp
     SourceFiles/MainWindow.cpp
     SourceFiles/EventFilterManager.cpp
     SourceFiles/EventFilterManagerGroup.cpp
+    SourceFiles/PolygonTableModel.cpp
+    SourceFiles/PolygonListItem.cpp
+	SourceFiles/MinkowskiSumCalculator.cpp
+	SourceFiles/ChoiseDialogPolygon.cpp
     HeaderFiles/MainWindow.h
     HeaderFiles/EventFilterManager.h
     HeaderFiles/EventFilterManagerGroup.h
+	HeaderFiles/PolygonTableModel.h
+	HeaderFiles/PolygonListItem.h
+	HeaderFiles/MinkowskiSumCalculator.h
+	HeaderFiles/MinkowskiSumModified.h
+	HeaderFiles/ChoiseDialogPolygon.h
+	HeaderFiles/PolygonItem.h
+	HeaderFiles/Typedefs.h
     ${UI_HEADERS}
     ${UI_RESOURCES})
 

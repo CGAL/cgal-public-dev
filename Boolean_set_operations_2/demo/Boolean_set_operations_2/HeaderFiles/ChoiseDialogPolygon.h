@@ -14,34 +14,34 @@
 //
 // Author(s) : Saar Katz <kats.saar@gmail.com>
 
-#ifndef CGAL_EVENTFILTERMANAGER_H
-#define CGAL_EVENTFILTERMANAGER_H
+#ifndef CGAL_CHOISEDIALOGPOLYGON_H
+#define CGAL_CHOISEDIALOGPOLYGON_H
 
-#include <QWidget>
-#include <QMap>
-#include <QDebug>
+#include <QDialog>
 
-class EventFilterManager : public QObject {
+#include "PolygonTableModel.h"
+
+namespace Ui {
+class ChoiseDialogPolygon;
+}
+
+class ChoiseDialogPolygon : public QDialog
+{
   Q_OBJECT
 
 public:
-  EventFilterManager(QObject* parent = 0);
-  ~EventFilterManager();
+  explicit ChoiseDialogPolygon(PolygonTableModel* options, QWidget* parent = 0);
+  ~ChoiseDialogPolygon();
 
-  void addFilterWidget(const QString name, QObject* filter);
-  QObject* getFilterWidget(const QString name);
-  QObject* removeFilterWidget(const QString name);
-  QString const getCurrentFilterName() const;
-  void setCurrentFilterName(const QString name);
-  QList<QString> getFilterNames();
-  void clear();
-
-protected:
-  bool eventFilter(QObject* target, QEvent* event);
+  PolygonWithHoles* getChoise();
 
 private:
-  QMap<QString, QObject*> m_filterMap;
-  QString m_currentFilter;
+  Ui::ChoiseDialogPolygon* ui;
+  PolygonTableModel* m_options;
+  PolygonWithHoles* m_choise;
+
+private slots:
+  void on_buttonBox_accepted();
 };
 
-#endif // CGAL_EVENTFILTERMANAGER_H
+#endif // CGAL_CHOISEDIALOGPOLYGON_H

@@ -14,34 +14,35 @@
 //
 // Author(s) : Saar Katz <kats.saar@gmail.com>
 
-#ifndef CGAL_EVENTFILTERMANAGER_H
-#define CGAL_EVENTFILTERMANAGER_H
+#ifndef CGAL_POLYGONLISTITEM_H
+#define CGAL_POLYGONLISTITEM_H
 
-#include <QWidget>
-#include <QMap>
-#include <QDebug>
+#include <QColor>
 
-class EventFilterManager : public QObject {
-  Q_OBJECT
+#include "Typedefs.h"
+#include "PolygonItem.h"
 
+class PolygonListItem {
 public:
-  EventFilterManager(QObject* parent = 0);
-  ~EventFilterManager();
+  PolygonListItem(QString name);
+  PolygonListItem(QString name, QColor color, bool visibility, 
+                  PolygonItem* polygonItem);
 
-  void addFilterWidget(const QString name, QObject* filter);
-  QObject* getFilterWidget(const QString name);
-  QObject* removeFilterWidget(const QString name);
-  QString const getCurrentFilterName() const;
-  void setCurrentFilterName(const QString name);
-  QList<QString> getFilterNames();
-  void clear();
+  QString getName();
+  QColor getColor();
+  bool isVisible();
+  PolygonItem* getPolygonItem();
 
-protected:
-  bool eventFilter(QObject* target, QEvent* event);
+  void setName(QString name);
+  void setColor(QColor color);
+  void setVisible(bool visibility);
+  void setPolygonItem(PolygonItem* polygonItem);
 
 private:
-  QMap<QString, QObject*> m_filterMap;
-  QString m_currentFilter;
+	QString m_name;
+	QColor m_color;
+	bool m_visibility;
+	PolygonItem* m_polygonItem;
 };
 
-#endif // CGAL_EVENTFILTERMANAGER_H
+#endif // CGAL_POLYGONLISTITEM_H

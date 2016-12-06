@@ -40,10 +40,10 @@ public:
   void clear();
 
 private:
-  QMap<QString, EventFilterManager*> objectsMap;
-  QMap<QString, QString> filtersMap;
-  QString currentFilter;
-  QString currentWatchedObject;
+  QMap<QString, EventFilterManager*> m_objectsMap;
+  QMap<QString, QString> m_filtersMap;
+  QString m_currentFilter;
+  QString m_currentWatchedObject;
 };
 
-#endif // EVENTFILTERMANAGERGROUP_H
+#endif // CGAL_EVENTFILTERMANAGERGROUP_H

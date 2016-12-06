@@ -1,5 +1,8 @@
 <RCC>
   <qresource prefix="/">
+    <file>icons/self_mink_sum.png</file>
+    <file>icons/arrow-all-directions-512.png</file>
+    <file>icons/import_icon2.png</file>
     <file>icons/pencil.png</file>
   </qresource>
 </RCC>

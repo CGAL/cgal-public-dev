@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1094</width>
+    <width>1029</width>
     <height>752</height>
    </rect>
   </property>
@@ -24,30 +24,7 @@
     <bool>false</bool>
    </property>
    <layout class="QGridLayout" name="gridLayout">
-    <item row="0" column="0">
-     <widget class="QLabel" name="lblScene">
-      <property name="maximumSize">
-       <size>
-        <width>16777215</width>
-        <height>15</height>
-       </size>
-      </property>
-      <property name="text">
-       <string>Scene</string>
-      </property>
-     </widget>
-    </item>
-    <item row="5" column="0" colspan="2">
-     <widget class="QListView" name="ConsoleListView">
-      <property name="maximumSize">
-       <size>
-        <width>16777215</width>
-        <height>200</height>
-       </size>
-      </property>
-     </widget>
-    </item>
-    <item row="1" column="2" rowspan="5">
+    <item row="1" column="1" rowspan="2">
      <widget class="QListView" name="PolygonPartsListView">
       <property name="sizePolicy">
        <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
@@ -63,8 +40,8 @@
       </property>
      </widget>
     </item>
-    <item row="1" column="1" rowspan="3">
-     <widget class="QListWidget" name="PolygonsListWidget">
+    <item row="1" column="0" rowspan="4">
+     <widget class="QTableView" name="PolygonsTableView">
       <property name="sizePolicy">
        <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
         <horstretch>0</horstretch>
@@ -77,22 +54,27 @@
         <height>16777215</height>
        </size>
       </property>
+      <attribute name="horizontalHeaderVisible">
+       <bool>false</bool>
+      </attribute>
+      <attribute name="horizontalHeaderDefaultSectionSize">
+       <number>200</number>
+      </attribute>
+      <attribute name="horizontalHeaderMinimumSectionSize">
+       <number>66</number>
+      </attribute>
+      <attribute name="verticalHeaderVisible">
+       <bool>false</bool>
+      </attribute>
+      <attribute name="verticalHeaderDefaultSectionSize">
+       <number>30</number>
+      </attribute>
+      <attribute name="verticalHeaderMinimumSectionSize">
+       <number>20</number>
+      </attribute>
      </widget>
     </item>
-    <item row="0" column="1">
-     <widget class="QLabel" name="lblPolygons">
-      <property name="maximumSize">
-       <size>
-        <width>16777215</width>
-        <height>50</height>
-       </size>
-      </property>
-      <property name="text">
-       <string>Polygons</string>
-      </property>
-     </widget>
-    </item>
-    <item row="1" column="0" rowspan="3">
+    <item row="1" column="2" rowspan="2" colspan="3">
      <widget class="QGraphicsView" name="SceneGraphicsView">
       <property name="sizePolicy">
        <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
@@ -108,14 +90,50 @@
       </property>
      </widget>
     </item>
-    <item row="0" column="2">
+    <item row="0" column="0">
+     <widget class="QLabel" name="lblPolygons">
+      <property name="maximumSize">
+       <size>
+        <width>16777215</width>
+        <height>50</height>
+       </size>
+      </property>
+      <property name="text">
+       <string>Polygons</string>
+      </property>
+     </widget>
+    </item>
+    <item row="4" column="1" colspan="4">
+     <widget class="QListView" name="ConsoleListView">
+      <property name="maximumSize">
+       <size>
+        <width>16777215</width>
+        <height>200</height>
+       </size>
+      </property>
+     </widget>
+    </item>
+    <item row="0" column="1">
      <widget class="QLabel" name="lblPolygonParts">
       <property name="text">
        <string>Polygon Parts</string>
       </property>
      </widget>
     </item>
-    <item row="4" column="0">
+    <item row="0" column="2">
+     <widget class="QLabel" name="lblScene">
+      <property name="maximumSize">
+       <size>
+        <width>16777215</width>
+        <height>15</height>
+       </size>
+      </property>
+      <property name="text">
+       <string>Scene</string>
+      </property>
+     </widget>
+    </item>
+    <item row="3" column="1">
      <widget class="QLabel" name="lblConsole">
       <property name="maximumSize">
        <size>
@@ -136,7 +154,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1094</width>
+     <width>1029</width>
      <height>31</height>
     </rect>
    </property>
@@ -151,7 +169,12 @@
    <attribute name="toolBarBreak">
     <bool>false</bool>
    </attribute>
+   <addaction name="actionNavigateScene"/>
    <addaction name="actionDrawNewPolygon"/>
+   <addaction name="separator"/>
+   <addaction name="actionImportPolygon"/>
+   <addaction name="separator"/>
+   <addaction name="actionSelfMinkowskiSum"/>
   </widget>
   <action name="actionDrawNewPolygon">
    <property name="checkable">
@@ -166,6 +189,45 @@
    </property>
    <property name="toolTip">
     <string>Draw New Polygon</string>
+   </property>
+  </action>
+  <action name="actionImportPolygon">
+   <property name="icon">
+    <iconset resource="../ResourceFiles/icons.qrc">
+     <normaloff>:/icons/import_icon2.png</normaloff>:/icons/import_icon2.png</iconset>
+   </property>
+   <property name="text">
+    <string>importPolygon</string>
+   </property>
+   <property name="toolTip">
+    <string>Import polygon from file</string>
+   </property>
+  </action>
+  <action name="actionNavigateScene">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="../ResourceFiles/icons.qrc">
+     <normaloff>:/icons/arrow-all-directions-512.png</normaloff>:/icons/arrow-all-directions-512.png</iconset>
+   </property>
+   <property name="text">
+    <string>navigateScene</string>
+   </property>
+   <property name="toolTip">
+    <string>Navigate Scene</string>
+   </property>
+  </action>
+  <action name="actionSelfMinkowskiSum">
+   <property name="icon">
+    <iconset resource="../ResourceFiles/icons.qrc">
+     <normaloff>:/icons/self_mink_sum.png</normaloff>:/icons/self_mink_sum.png</iconset>
+   </property>
+   <property name="text">
+    <string>selfMinkowskiSum</string>
+   </property>
+   <property name="toolTip">
+    <string>Self Minkowski Sum</string>
    </property>
   </action>
  </widget>
