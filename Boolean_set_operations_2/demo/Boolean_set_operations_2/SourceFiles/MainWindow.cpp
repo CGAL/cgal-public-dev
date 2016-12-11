@@ -14,7 +14,7 @@
 //
 // Author(s) : Saar Katz <kats.saar@gmail.com>
 
-#include <fstream>   
+#include <fstream>
 
 #include <QFileDialog>
 
@@ -24,6 +24,9 @@
 #include "Typedefs.h"
 #include "ChoiseDialogPolygon.h"
 #include "MinkowskiSumCalculator.h"
+
+#define CGAL_POLYGON_EDGE_DEFAULT_COLOR "blue"
+#define CGAL_POLYGON_FILL_DEFAULT_COLOR "blue"
 
 MainWindow::MainWindow(QWidget* parent) :
   QMainWindow(parent),
@@ -49,23 +52,31 @@ MainWindow::~MainWindow()
 }
 
 void MainWindow::onAction_ImportPolygon() {
-  QString filename = QFileDialog::getOpenFileName(
+  QFileInfo file = QFileInfo(QFileDialog::getOpenFileName(
     this,
     tr("Import polygon"),
     "./",
-    tr("All types (*.*)"));
-  if (!filename.isEmpty())
+    tr("All types (*.*)")));
+  if (file.exists())
   {
-    PolygonWithHoles* pwh = readPolygon(filename);
-    if (pwh != NULL)
+    QList<PolygonWithHoles*>* pwhList = readPolygonFile(file.filePath());
+    if (pwhList != NULL)
     {
-      PolygonItem* pi = new PolygonItem(pwh);
-      PolygonListItem* pli = new PolygonListItem(tr("Polygon"), *new QColor(212, 175, 55), true, pi);
-      m_polygonList->appendItem(pli);
-      pi->graphics()->setBrush(*new QBrush(*new QColor(212, 175, 55, 127)));
-      pi->graphics()->setEdgesPen(*new QPen(*new QBrush(pli->getColor()), 1));
-      pi->graphics()->setVerticesPen(*new QPen(*new QColor(212, 175, 55, 0)));
-      ui->SceneGraphicsView->scene()->addItem(pi->graphics());
+      int numPolygons = pwhList->count();
+      int i = 1;
+      for (QList<PolygonWithHoles*>::iterator pwh = pwhList->begin(); pwh != pwhList->end(); pwh++) {
+        PolygonItem* pi = new PolygonItem(*pwh);
+        PolygonListItem* pli = new PolygonListItem(
+          numPolygons > 1 ? file.baseName() + "_" + QString::number(i) : file.baseName(),
+          *new QColor(CGAL_POLYGON_EDGE_DEFAULT_COLOR), true, pi);
+        m_polygonList->appendItem(pli);
+        pi->graphics()->setBrush(*new QBrush(
+          *new QColor(CGAL_POLYGON_FILL_DEFAULT_COLOR)));
+        pi->graphics()->setEdgesPen(*new QPen(*new QBrush(pli->getColor()), 1));
+        pi->graphics()->setVerticesPen(*new QPen(Qt::transparent));
+        ui->SceneGraphicsView->scene()->addItem(pi->graphics());
+        i++;
+      }
     }
   }
 }
@@ -158,13 +169,14 @@ void MainWindow::connectActions()
           this, SLOT(onAction_SelfMinkowskiSum()));
 }
 
-PolygonWithHoles* MainWindow::readPolygon(QString aFilename) 
+QList<PolygonWithHoles*>* MainWindow::readPolygonFile(QString aFilename) 
 {
   std::ifstream in_file(qPrintable(aFilename));
 
   if (in_file) {
     unsigned int n_regions;
     in_file >> n_regions;
+    auto polygonList = new QList<PolygonWithHoles*>();
     for (unsigned int r = 0; r < n_regions; ++r) {
       unsigned int n_boundaries;
       in_file >> n_boundaries;
@@ -180,8 +192,9 @@ PolygonWithHoles* MainWindow::readPolygon(QString aFilename)
           holes.push_back(p);
         }
       }
-      return new PolygonWithHoles(outer, holes.begin(), holes.end());
+      polygonList->append(new PolygonWithHoles(outer, holes.begin(), holes.end()));
     }
+    return polygonList;
   }
   return NULL;
 }

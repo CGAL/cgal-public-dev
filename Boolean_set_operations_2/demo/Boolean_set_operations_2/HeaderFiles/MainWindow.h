@@ -50,7 +50,7 @@ private:
   PolygonTableModel* m_polygonList;
   QActionGroup* m_drawNavigateActionGroup;
 
-  PolygonWithHoles* readPolygon(QString aFilename);
+  QList<PolygonWithHoles*>* readPolygonFile(QString aFilename);
 
   void setScene();
   void setEventFilterManagerGroup();
