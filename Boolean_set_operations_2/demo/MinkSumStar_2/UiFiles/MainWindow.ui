@@ -1,0 +1,208 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1029</width>
+    <height>752</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>MainWindow</string>
+  </property>
+  <widget class="QWidget" name="centralWidget">
+   <property name="minimumSize">
+    <size>
+     <width>0</width>
+     <height>0</height>
+    </size>
+   </property>
+   <property name="autoFillBackground">
+    <bool>false</bool>
+   </property>
+   <layout class="QGridLayout" name="gridLayout">
+    <item row="0" column="2">
+     <widget class="QLabel" name="lblScene">
+      <property name="maximumSize">
+       <size>
+        <width>16777215</width>
+        <height>15</height>
+       </size>
+      </property>
+      <property name="text">
+       <string>Scene</string>
+      </property>
+     </widget>
+    </item>
+    <item row="1" column="2" rowspan="2" colspan="2">
+     <widget class="QGraphicsView" name="SceneGraphicsView">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="maximumSize">
+       <size>
+        <width>16777215</width>
+        <height>16777215</height>
+       </size>
+      </property>
+     </widget>
+    </item>
+    <item row="1" column="0" rowspan="2">
+     <widget class="QTextBrowser" name="PolygonInfoTextBrowser">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="maximumSize">
+       <size>
+        <width>250</width>
+        <height>16777215</height>
+       </size>
+      </property>
+     </widget>
+    </item>
+    <item row="0" column="0">
+     <widget class="QLabel" name="lblPolygonParts">
+      <property name="text">
+       <string>Info</string>
+      </property>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QStatusBar" name="statusBar"/>
+  <widget class="QMenuBar" name="menuBar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>1029</width>
+     <height>31</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QToolBar" name="toolBar">
+   <property name="windowTitle">
+    <string>toolBar</string>
+   </property>
+   <attribute name="toolBarArea">
+    <enum>TopToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>false</bool>
+   </attribute>
+   <addaction name="actionNavigateScene"/>
+   <addaction name="actionZoomToFit"/>
+   <addaction name="separator"/>
+   <addaction name="actionImportPolygon"/>
+   <addaction name="separator"/>
+   <addaction name="actionSelfMinkowskiSum"/>
+   <addaction name="separator"/>
+   <addaction name="actionDecrementLayer"/>
+   <addaction name="actionIncrementLayer"/>
+  </widget>
+  <action name="actionDrawNewPolygon">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="../ResourceFiles/icons.qrc">
+     <normaloff>:/icons/pencil.png</normaloff>:/icons/pencil.png</iconset>
+   </property>
+   <property name="text">
+    <string>drawNewPolygon</string>
+   </property>
+   <property name="toolTip">
+    <string>Draw New Polygon</string>
+   </property>
+  </action>
+  <action name="actionImportPolygon">
+   <property name="icon">
+    <iconset resource="../ResourceFiles/icons.qrc">
+     <normaloff>:/icons/import_icon2.png</normaloff>:/icons/import_icon2.png</iconset>
+   </property>
+   <property name="text">
+    <string>importPolygon</string>
+   </property>
+   <property name="toolTip">
+    <string>Import polygon from file</string>
+   </property>
+  </action>
+  <action name="actionNavigateScene">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="../ResourceFiles/icons.qrc">
+     <normaloff>:/icons/arrow-all-directions-512.png</normaloff>:/icons/arrow-all-directions-512.png</iconset>
+   </property>
+   <property name="text">
+    <string>navigateScene</string>
+   </property>
+   <property name="toolTip">
+    <string>Navigate Scene</string>
+   </property>
+  </action>
+  <action name="actionSelfMinkowskiSum">
+   <property name="icon">
+    <iconset resource="../ResourceFiles/icons.qrc">
+     <normaloff>:/icons/self_mink_sum.png</normaloff>:/icons/self_mink_sum.png</iconset>
+   </property>
+   <property name="text">
+    <string>selfMinkowskiSum</string>
+   </property>
+   <property name="toolTip">
+    <string>Run Minkowski Sum*</string>
+   </property>
+  </action>
+  <action name="actionZoomToFit">
+   <property name="icon">
+    <iconset resource="../ResourceFiles/icons.qrc">
+     <normaloff>:/icons/zoomToFit.png</normaloff>:/icons/zoomToFit.png</iconset>
+   </property>
+   <property name="text">
+    <string>zoomToFit</string>
+   </property>
+   <property name="toolTip">
+    <string>Zoom to fit</string>
+   </property>
+  </action>
+  <action name="actionIncrementLayer">
+   <property name="icon">
+    <iconset resource="../ResourceFiles/icons.qrc">
+     <normaloff>:/icons/rightArrow.png</normaloff>:/icons/rightArrow.png</iconset>
+   </property>
+   <property name="text">
+    <string>IncrementLayer</string>
+   </property>
+   <property name="toolTip">
+    <string>Next</string>
+   </property>
+  </action>
+  <action name="actionDecrementLayer">
+   <property name="icon">
+    <iconset resource="../ResourceFiles/icons.qrc">
+     <normaloff>:/icons/leftArrow.png</normaloff>:/icons/leftArrow.png</iconset>
+   </property>
+   <property name="text">
+    <string>DecrementLayer</string>
+   </property>
+   <property name="toolTip">
+    <string>Previous</string>
+   </property>
+  </action>
+ </widget>
+ <layoutdefault spacing="6" margin="11"/>
+ <resources>
+  <include location="../ResourceFiles/icons.qrc"/>
+ </resources>
+ <connections/>
+</ui>
