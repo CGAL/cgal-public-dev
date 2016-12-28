@@ -30,26 +30,26 @@ qt5_wrap_ui(UI_HEADERS
 	UiFiles/ChoiseDialogPolygon.ui)
 
 add_executable(MinkowskiSumStar_demo
-	Boolean_set_operations_2.cpp
-    SourceFiles/MainWindow.cpp
-    SourceFiles/EventFilterManager.cpp
-    SourceFiles/EventFilterManagerGroup.cpp
-    SourceFiles/PolygonTableModel.cpp
-    SourceFiles/PolygonListItem.cpp
-	SourceFiles/MinkowskiSumCalculator.cpp
-	SourceFiles/ChoiseDialogPolygon.cpp
-    HeaderFiles/MainWindow.h
-    HeaderFiles/EventFilterManager.h
-    HeaderFiles/EventFilterManagerGroup.h
-	HeaderFiles/PolygonTableModel.h
-	HeaderFiles/PolygonListItem.h
-	HeaderFiles/MinkowskiSumCalculator.h
-	HeaderFiles/MinkowskiSumModified.h
-	HeaderFiles/ChoiseDialogPolygon.h
-	HeaderFiles/PolygonItem.h
-	HeaderFiles/Typedefs.h
-    ${UI_HEADERS}
-    ${UI_RESOURCES})
+  boolean_set_operations_2.cpp
+  SourceFiles/MainWindow.cpp
+  SourceFiles/EventFilterManager.cpp
+  SourceFiles/EventFilterManagerGroup.cpp
+  SourceFiles/PolygonTableModel.cpp
+  SourceFiles/PolygonListItem.cpp
+  SourceFiles/MinkowskiSumCalculator.cpp
+  SourceFiles/ChoiseDialogPolygon.cpp
+  HeaderFiles/MainWindow.h
+  HeaderFiles/EventFilterManager.h
+  HeaderFiles/EventFilterManagerGroup.h
+  HeaderFiles/PolygonTableModel.h
+  HeaderFiles/PolygonListItem.h
+  HeaderFiles/MinkowskiSumCalculator.h
+  HeaderFiles/MinkowskiSumModified.h
+  HeaderFiles/ChoiseDialogPolygon.h
+  HeaderFiles/PolygonItem.h
+  HeaderFiles/Typedefs.h
+  ${UI_HEADERS}
+  ${UI_RESOURCES})
 
 # Link with Qt libraries
 target_link_libraries(MinkowskiSumStar_demo ${QT_LIBRARIES})
@@ -58,9 +58,9 @@ target_link_libraries(MinkowskiSumStar_demo ${QT_LIBRARIES})
 target_link_libraries(MinkowskiSumStar_demo ${CGAL_LIBRARIES}  ${CGAL_3RD_PARTY_LIBRARIES})
 
 qt5_use_modules(MinkowskiSumStar_demo
-    Widgets
-    Script
-    Svg
-	OpenGL)
+  Widgets
+  Script
+  Svg
+  OpenGL)
 
 #set_target_properties(MinkowskiSumStar_demo PROPERTIES LINK_FLAGS "/SUBSYSTEM:WINDOWS /ENTRY:mainCRTStartup")
