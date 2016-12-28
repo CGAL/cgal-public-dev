@@ -34,7 +34,7 @@ MainWindow::MainWindow(QWidget* parent) :
 {
   ui->setupUi(this);
   setAcceptDrops(true);
- 
+
   qRegisterMetaType<StdPolygonList>("StdPolygonList");
 
   m_polygonList = new PolygonTableModel(this);
@@ -164,7 +164,7 @@ PolygonListItem* MainWindow::createNewPolygon(PolygonWithHoles* polygon,
 PolygonListItem* MainWindow::createNewPolygon(PolygonWithHoles* polygon,
   QString name, QColor fillColor, QColor edgeColor, QColor vertexColor, bool isVisble, int layer)
 {
-  
+
   PolygonListItem* pli = new PolygonListItem(
     name,
     edgeColor,
@@ -256,9 +256,9 @@ void MainWindow::setDrawNavigateActionGroup()
 }
 void MainWindow::connectActions()
 {
-  connect(ui->actionNavigateScene, SIGNAL(toggled(bool)), 
+  connect(ui->actionNavigateScene, SIGNAL(toggled(bool)),
           this, SLOT(onAction_NavigateScene(bool)));
-  //connect(ui->actionDrawNewPolygon, SIGNAL(toggled(bool)), 
+  //connect(ui->actionDrawNewPolygon, SIGNAL(toggled(bool)),
   //        this, SLOT(onAction_DrawNewPolygon(bool)));
   ui->actionNavigateScene->setChecked(true);
 
@@ -278,7 +278,7 @@ void MainWindow::connectActions()
 
 
 
-QList<PolygonWithHoles*>* MainWindow::readPolygonFile(QString aFilename) 
+QList<PolygonWithHoles*>* MainWindow::readPolygonFile(QString aFilename)
 {
   std::ifstream in_file(qPrintable(aFilename));
 
@@ -325,10 +325,10 @@ QRectF* MainWindow::getRectOfPolygons(QList<PolygonGraphicsItem*>* polygons)
     qreal top = CGAL_VIEW_DEFAULT_MARGIN_PRECENT * totalRect->height();
     qreal right = CGAL_VIEW_DEFAULT_MARGIN_PRECENT * totalRect->width();
     qreal bottom = CGAL_VIEW_DEFAULT_MARGIN_PRECENT * totalRect->height();
-    QMarginsF margins = QMarginsF(left, top, right, bottom);
-    *totalRect = totalRect->marginsAdded(margins);
+    // QMarginsF margins = QMarginsF(left, top, right, bottom);
+    // *totalRect = totalRect->marginsAdded(margins);
   }
-  
+
   return new QRectF(*totalRect);
 }
 QList<PolygonGraphicsItem*>* MainWindow::getAllVisiblePolygons() {
