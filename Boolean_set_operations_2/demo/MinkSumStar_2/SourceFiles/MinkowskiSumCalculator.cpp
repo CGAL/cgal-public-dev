@@ -6,6 +6,7 @@
 #include <CGAL/Constrained_Delaunay_triangulation_2.h>
 #include <CGAL/Small_side_angle_bisector_decomposition_2.h>
 #include <CGAL/Arr_vertical_decomposition_2.h>
+#include <CGAL/minkowski_sum_2.h>
 
 #include "MinkowskiSumCalculator.h"
 #include "MinkowskiSumModified.h"
@@ -30,7 +31,7 @@ int MinkowskiSumCalculator::getKValue()
 void MinkowskiSumCalculator::setInput(const StdPolygonList& input)
 {
   input_ = input;
-  
+
   cache_.clear();
 
   //Add to cache
@@ -72,6 +73,7 @@ std::shared_ptr<const MinkowskiSumResult> MinkowskiSumCalculator::getSum(int k)
     currentSum.push_back(scalePolygon(*it, CGAL::Gmpq(initK)));
   }
 
+#if 0
   //Calculate the sum
   for(int i = initK + 1; i <= k; ++i)
   {
@@ -107,6 +109,41 @@ std::shared_ptr<const MinkowskiSumResult> MinkowskiSumCalculator::getSum(int k)
   cache_[k]->print();
 
   return cache_[k];
+#else
+
+  StdPolygonList tmp;
+  for(int i = initK + 1; i <= k; ++i) {
+    cout << "K = " << i << endl;
+    // inputResult, currentSum => currentSum
+    const auto& pgn_with_holes = inputResult->getSum();
+    auto it1 = pgn_with_holes.begin();
+    for (; it1 != pgn_with_holes.end(); ++it1) {
+      for (auto it2 = currentSum.begin(); it2 != currentSum.end(); ++it2) {
+        auto p = CGAL::minkowski_sum_2(*it1, *it2);
+        tmp.push_back(p);
+      }
+    }
+    currentSum = tmp;
+
+    //Scale it and remove collinear points and add to cache
+    StdPolygonList scaledSum;
+    for (auto it = currentSum.begin(); it != currentSum.end(); ++it)
+      scaledSum.push_back
+      (removeCollinearPoints(scalePolygon(*it, CGAL::Gmpq(1, i))));
+
+    cache_[i] = std::make_shared<MinkowskiSumResult>(scaledSum);
+
+    //Print the sum to screen
+    if (i != k)
+      cache_[i]->print();
+  }
+  //Print final result
+  cout << "Final result: " << endl;
+  cache_[k]->print();
+
+  return cache_[k];
+
+#endif
 }
 
 
@@ -272,7 +309,7 @@ PolygonWithHoles MinkowskiSumCalculator::scalePolygon(const PolygonWithHoles& po
     newPolygon.add_hole(newHole);
   }
 
-  return newPolygon;	
+  return newPolygon;
 }
 
 MinkowskiSumResult::MinkowskiSumResult()
@@ -375,4 +412,3 @@ void MinkowSkiSumStarController::handleResults(StdPolygonList* polygon, int k)
     emit(operate());
   }
 }
-
