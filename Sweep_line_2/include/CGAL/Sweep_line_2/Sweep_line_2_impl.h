@@ -752,7 +752,8 @@ _handle_overlap(Event* event, Subcurve* curve, Event_subcurve_iterator iter,
       return;
     }
 
-    if (obj_vec.size()==1)
+    std::size_t obj_vec_size = obj_vec.size();
+    if (obj_vec_size==1)
     {
       //always a curve since an overlap was detected on the right of `event`
       CGAL_assertion( obj_vec.front().is<X_monotone_curve_2>() );
@@ -764,8 +765,9 @@ _handle_overlap(Event* event, Subcurve* curve, Event_subcurve_iterator iter,
       CGAL_SL_PRINT_EOL();
       // elements in obj_vec are sorted using less-xy,
       // look for a curve containing the point of `event`.
-      BOOST_FOREACH(const CGAL::Object& obj, obj_vec)
+      for(std::size_t i=0; i<obj_vec_size; ++i)
       {
+        const CGAL::Object& obj = obj_vec[i];
         // we are not interested by intersection point since a curve overlap was reported
         if ( const X_monotone_curve_2 * xcv_ptr = object_cast<X_monotone_curve_2>(&obj) )
         {
