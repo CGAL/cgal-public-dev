@@ -708,9 +708,6 @@ Basic_sweep_line_2<Tr, Vis, Subcv, Evnt, Alloc>::
 _push_event(const X_monotone_curve_2& cv, Arr_curve_end ind, Attribute type,
             Arr_parameter_space ps_x, Arr_parameter_space ps_y, Subcurve* sc)
 {
-  //cv has no member named 'base'
-  //std::cout << "cv: " << cv.base() << std::endl;
-
   // Look for the curve end in the event queue.
   Event* e;
 
