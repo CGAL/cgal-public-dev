@@ -48,7 +48,6 @@ namespace CGAL {
 // float      single-precision float    4
 // double     double-precision float    8
 
-
 namespace Ply
 {
   /**
@@ -81,7 +80,7 @@ namespace Ply
   cpp11::tuple<PointMap,
                typename Kernel_traits<typename PointMap::value_type>::Kernel::Construct_point_3,
                Property<double>, Property<double>, Property<double> >
-  point_property(PointMap point_map)
+  point_reader(PointMap point_map)
   {
     return cpp11::make_tuple (point_map, typename Kernel_traits<typename PointMap::value_type>::Kernel::Construct_point_3(),
                               Property<double>("x"), Property<double>("y"), Property<double>("z"));
@@ -102,7 +101,7 @@ namespace Ply
   cpp11::tuple<VectorMap,
                typename Kernel_traits<typename VectorMap::value_type>::Kernel::Construct_vector_3,
                Property<double>, Property<double>, Property<double> >
-  normal_property(VectorMap normal_map)
+  normal_reader(VectorMap normal_map)
   {
     return cpp11::make_tuple (normal_map, typename Kernel_traits<typename VectorMap::value_type>::Kernel::Construct_vector_3(),
                               Property<double>("nx"), Property<double>("ny"), Property<double>("nz"));
@@ -449,7 +448,7 @@ namespace internal {
   }
 
   template <class ValueType, class Functor, typename ... T>
-  ValueType call_functor(Functor f, std::tuple<T...>& t)
+  ValueType call_functor(Functor f, cpp11::tuple<T...>& t)
   {
     return call_functor<ValueType>(f, t, typename gens<sizeof...(T)>::type());
   }
@@ -469,10 +468,10 @@ namespace internal {
             typename Constructor,
             typename ... T>
   void process_properties (Ply_reader& reader, OutputValueType& new_element,
-                           std::tuple<PropertyMap, Constructor, Ply::Property<T>...>& current)
+                           cpp11::tuple<PropertyMap, Constructor, Ply::Property<T>...>& current)
   {
     typedef typename PropertyMap::value_type PmapValueType;
-    std::tuple<T...> values;
+    cpp11::tuple<T...> values;
     Filler<sizeof...(T)-1>::fill(reader, values, current);
     PmapValueType new_value = call_functor<PmapValueType>(std::get<1>(current), values);
     put (std::get<0>(current), new_element, new_value);
@@ -485,12 +484,12 @@ namespace internal {
             typename NextPropertyBinder,
             typename ... PropertyMapBinders>
   void process_properties (Ply_reader& reader, OutputValueType& new_element,
-                           std::tuple<PropertyMap, Constructor, Ply::Property<T>...>& current,
+                           cpp11::tuple<PropertyMap, Constructor, Ply::Property<T>...>& current,
                            NextPropertyBinder& next,
                            PropertyMapBinders&& ... properties)
   {
     typedef typename PropertyMap::value_type PmapValueType;
-    std::tuple<T...> values;
+    cpp11::tuple<T...> values;
     Filler<sizeof...(T)-1>::fill(reader, values, current);
     PmapValueType new_value = call_functor<PmapValueType>(std::get<1>(current), values);
     put (std::get<0>(current), new_element, new_value);
@@ -641,8 +640,8 @@ bool read_ply_points_and_normals(std::istream& stream, ///< input stream.
 {
 
   return read_ply_points_with_properties (stream, output,
-                              Ply::point_property (point_pmap),
-                              Ply::normal_property (normal_pmap));
+                              Ply::point_reader (point_pmap),
+                              Ply::normal_reader (normal_pmap));
 }
 
 /// @cond SKIP_IN_MANUAL
@@ -721,7 +720,7 @@ bool read_ply_points(std::istream& stream, ///< input stream.
                      PointPMap point_pmap) ///< property map: value_type of OutputIterator -> Point_3.
 {
   return read_ply_points_with_properties (stream, output,
-                              Ply::point_property (point_pmap));
+                              Ply::point_reader (point_pmap));
 }
 
 /// @cond SKIP_IN_MANUAL
