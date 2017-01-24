@@ -22,6 +22,13 @@ if ( CGAL_FOUND )
     create_single_source_cgal_program( "${cppfile}" )
   endforeach()
 
+  add_executable(aabb_distance_triangle_test-NOKDTREE aabb_distance_triangle_test.cpp)
+  target_compile_definitions(aabb_distance_triangle_test-NOKDTREE PRIVATE -DNO_KDTREE)
+  target_link_libraries(aabb_distance_triangle_test-NOKDTREE CGAL::CGAL)
+  add_test(NAME aabb_distance_triangle_test-NOKDTREE
+    COMMAND aabb_distance_triangle_test-NOKDTREE
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+
 else()
   
     message(STATUS "This program requires the CGAL library, and will not be compiled.")

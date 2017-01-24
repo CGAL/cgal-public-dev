@@ -38,7 +38,9 @@
 template<class K, class Tree, class Polyhedron, Primitive_type Type>
 void test_impl(Tree& tree, Polyhedron& p, const double duration)
 {
+#ifndef NO_KDTREE
   tree.accelerate_distance_queries(p.points_begin(),p.points_end());
+#endif
 
   test_distance_speed<Tree,K>(tree,duration);
   test_all_distance_query_types<Tree,K>(tree);
@@ -47,10 +49,11 @@ void test_impl(Tree& tree, Polyhedron& p, const double duration)
 int main(void)
 {
   std::cout << "AABB distance to triangle tests" << std::endl;
-  const double duration = 0.1;
+  const double duration = 5;
   test_kernels<TRIANGLE>("./data/cube.off",duration);
   test_kernels<TRIANGLE>("./data/pinion.off",duration);
   test_kernels<TRIANGLE>("./data/finger.off",duration);
   test_kernels<TRIANGLE>("./data/coverrear.off",duration);
+  test_kernels<TRIANGLE>("./data/cube-fei-int.off",duration);
   return 0;
 }
