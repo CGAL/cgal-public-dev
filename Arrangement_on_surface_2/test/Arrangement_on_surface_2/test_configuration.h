@@ -44,7 +44,7 @@
 #define GEODESIC_ARC_ON_SPHERE_GEOM_TRAITS 11
 #define RATIONAL_ARC_GEOM_TRAITS           12
 #define ALGEBRAIC_GEOM_TRAITS              13
-#define POLYCURVE_CONIC_GEOM_TRAITS	   	   14
+#define POLYCURVE_CONIC_GEOM_TRAITS        14
 #define POLYCURVE_CIRCULAR_ARC_GEOM_TRAITS 15
 #define POLYCURVE_BEZIER_GEOM_TRAITS       16
 #define FLAT_TORUS_GEOM_TRAITS             17
@@ -55,7 +55,7 @@
 
 // Default value based on dependencies:
 #if (TEST_GEOM_TRAITS == CORE_CONIC_GEOM_TRAITS) || \
- 	(TEST_GEOM_TRAITS == POLYCURVE_CONIC_GEOM_TRAITS)
+  (TEST_GEOM_TRAITS == POLYCURVE_CONIC_GEOM_TRAITS)
   #if !defined(TEST_NT)
   #define TEST_NT CORE_EXPR_NT
   #endif
@@ -86,10 +86,11 @@
 #endif
 
 // Illegal combinations:
-#if (TEST_GEOM_TRAITS == CORE_CONIC_GEOM_TRAITS) || (TEST_GEOM_TRAITS == POLYCURVE_CONIC_GEOM_TRAITS)
-  #if(TEST_NT != CORE_EXPR_NT)
-		#error "Core conic traits implies Core Expr number type!"
-  #endif
+#if (TEST_GEOM_TRAITS == CORE_CONIC_GEOM_TRAITS) || \
+  (TEST_GEOM_TRAITS == POLYCURVE_CONIC_GEOM_TRAITS)
+#if(TEST_NT != CORE_EXPR_NT)
+#error "Core conic traits implies Core Expr number type!"
+#endif
 #endif
 
 #if (TEST_GEOM_TRAITS == BEZIER_GEOM_TRAITS) && (TEST_NT != CORE_EXPR_NT)
@@ -101,7 +102,7 @@
 #error "Geodesic geometry traits implies spherical topology traits"
 #endif
 
-#if ((TEST_GEOM_TRAITS == LINEAR_GEOM_TRAITS) ||      \
+#if ((TEST_GEOM_TRAITS == LINEAR_GEOM_TRAITS) || \
      (TEST_GEOM_TRAITS == RATIONAL_ARC_GEOM_TRAITS)) && \
   (TEST_TOPOL_TRAITS != PLANAR_UNBOUNDED_TOPOL_TRAITS)
 #error "Linear and Rational geometry traits implies planar unbounded topology traits"
