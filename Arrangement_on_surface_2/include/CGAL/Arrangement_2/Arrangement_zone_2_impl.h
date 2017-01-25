@@ -626,6 +626,20 @@ _compute_next_intersection (Halfedge_handle he,
       {
         valid_intersection =
           (m_geom_traits->compare_xy_2_object() (ip->first, left_pt) == LARGER);
+        // ignore the intersection point if it does not belong to the portion of the
+        // curve represented by the halfedge
+        if (valid_intersection)
+        {
+          if ( he->direction() == ARR_RIGHT_TO_LEFT )
+            he=he->twin();
+          CGAL_assertion( he->direction() == ARR_LEFT_TO_RIGHT );
+          if ( !he->source()->is_at_open_boundary() )
+            if ( m_geom_traits->compare_xy_2_object() (ip->first, he->source()->point()) ==SMALLER )
+              valid_intersection = false;
+          if ( !he->target()->is_at_open_boundary() )
+            if ( m_geom_traits->compare_xy_2_object() (ip->first, he->target()->point()) == LARGER )
+              valid_intersection = false;
+        }
       }
     }
     else if (left_on_boundary)
