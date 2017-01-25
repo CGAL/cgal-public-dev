@@ -33,7 +33,8 @@ namespace CGAL {
 namespace internal {
 
     template <class K>
-    bool do_intersect(const typename K::Sphere_3& sphere,
+    typename K::Boolean
+    do_intersect(const typename K::Sphere_3& sphere,
         const CGAL::Bbox_3& bbox,
         const K&)
     {
@@ -43,37 +44,37 @@ namespace internal {
         FT distance = FT(0);
 		Point center = sphere.center();
 
-		if(center.x() < (FT)bbox.xmin())
+		if(possibly(center.x() < (FT)bbox.xmin()))
 		{
 			d = (FT)bbox.xmin() - center.x();
-			distance += d * d;
+			distance += square(d);
 		}
-		else if(center.x() > (FT)bbox.xmax())
+		else if(possibly(center.x() > (FT)bbox.xmax()))
 		{
 			d = center.x() - (FT)bbox.xmax();
-			distance += d * d;
+			distance += square(d);
 		}
 
-		if(center.y() < (FT)bbox.ymin())
+		if(possibly(center.y() < (FT)bbox.ymin()))
 		{
 			d = (FT)bbox.ymin() - center.y();
-			distance += d * d;
+			distance += square(d);
 		}
-		else if(center.y() > (FT)bbox.ymax())
+		else if(possibly(center.y() > (FT)bbox.ymax()))
 		{
 			d = center.y() - (FT)bbox.ymax();
-			distance += d * d;
+			distance += square(d);
 		}
 
-		if(center.z() < (FT)bbox.zmin())
+		if(possibly(center.z() < (FT)bbox.zmin()))
 		{
 			d = (FT)bbox.zmin() - center.z();
-			distance += d * d;
+			distance += square(d);
 		}
-		else if(center.z() > (FT)bbox.zmax())
+		else if(possibly(center.z() > (FT)bbox.zmax()))
 		{
 			d = center.z() - (FT)bbox.zmax();
-			distance += d * d;
+			distance += square(d);
 		}
 
 		// For unknown reason this causes a syntax error on VC2005
@@ -84,12 +85,12 @@ namespace internal {
 		//	if(center[i] < (FT)bbox.min(i))
 		//	{
 		//		d = (FT)bbox.min(i) - center[i];
-		//		distance += d * d;
+		//		distance += square(d);
 		//	}
 		//	else if(center[i] > (FT)bbox.max(i))
 		//	{
 		//		d = center[i] - (FT)bbox.max(i);
-		//		distance += d * d;
+		//		distance += square(d);
 		//	}
 		//}
 
@@ -97,23 +98,26 @@ namespace internal {
     }
 
     template <class K>
-    bool do_intersect(const CGAL::Bbox_3& bbox,
-                      const typename K::Sphere_3& sphere,
-                      const K&)
+    typename K::Boolean
+    do_intersect(const CGAL::Bbox_3& bbox,
+                 const typename K::Sphere_3& sphere,
+                 const K&)
     { return do_intersect(sphere, bbox, K()); }
 
 
 } // namespace internal
 
 template<typename K>
-bool do_intersect(const CGAL::Bbox_3& a,
-                  const Sphere_3<K>& b) {
+typename K::Boolean
+do_intersect(const CGAL::Bbox_3& a,
+             const Sphere_3<K>& b) {
   return K().do_intersect_3_object()(a, b);
 }
 
 template<typename K>
-bool do_intersect(const Sphere_3<K>& a,
-                  const CGAL::Bbox_3& b) {
+typename K::Boolean
+do_intersect(const Sphere_3<K>& a,
+             const CGAL::Bbox_3& b) {
   return K().do_intersect_3_object()(a, b);
 }
 
@@ -121,3 +125,7 @@ bool do_intersect(const Sphere_3<K>& a,
 } //namespace CGAL
 
 #endif  // CGAL_INTERNAL_INTERSECTIONS_3_BBOX_3_SPHERE_3_DO_INTERSECT_H
+
+// Local Variables:
+// tab-width: 4
+// End:

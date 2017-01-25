@@ -1072,7 +1072,9 @@ public:
 	bool AABB_tree<Tr>::accelerate_distance_queries_impl(ConstPointIterator first,
 		ConstPointIterator beyond) const
 	{
+		std::cerr << "Build kd-tree...";
 		m_p_search_tree = new Search_tree(first, beyond);
+		std::cerr << " DONE" << std::endl;
 		if(m_p_search_tree != NULL)
 		{
 			m_search_tree_constructed = true;

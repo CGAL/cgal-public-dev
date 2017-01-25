@@ -70,7 +70,23 @@ struct Select_exact_kernel <CK, Homogeneous_tag>
   typedef Exact_kernel					Exact_kernel_rt;
   typedef C2E						C2E_rt;
 };
-}
+
+BOOST_MPL_HAS_XXX_TRAIT_NAMED_DEF(Kernel_has_approx,  \
+                                  Approximate_kernel, \
+                                  false)
+
+template <typename T, bool has_approx = Kernel_has_approx<T>::value>
+struct Get_approx : public CGAL::Identity<T> {
+  typedef T Approximate_kernel;
+  // If has_approx==false, this functor is the identity.
+};
+
+template <typename T>
+struct Get_approx<T, true> {
+  typedef typename T::Approximate_kernel Approximate_kernel;
+};
+
+} // end namespace Filter
 
 // CK = eventually rebound construction kernel (gets Point_2 from).
 // Exact_kernel = exact kernel called when needed by the filter.

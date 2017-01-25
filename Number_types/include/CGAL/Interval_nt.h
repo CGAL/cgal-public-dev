@@ -54,6 +54,23 @@
 
 namespace CGAL {
 
+namespace Interval {
+BOOST_MPL_HAS_XXX_TRAIT_NAMED_DEF(NT_has_protector,  \
+                                  Protector, \
+                                  false)
+
+template <typename NT, bool has_protector = NT_has_protector<NT>::value>
+struct Get_protector {
+  typedef CGAL::Protect_FPU_rounding<false> type;  
+};
+
+template <typename NT>
+struct Get_protector<NT, true> {
+  typedef typename NT::Protector type;
+};
+
+} // end namespace Interval
+
 template <bool Protected = true>
 class Interval_nt
 {

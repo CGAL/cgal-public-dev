@@ -28,6 +28,8 @@
 #include <CGAL/internal/AABB_tree/Is_ray_intersection_geomtraits.h>
 #include <CGAL/internal/AABB_tree/Primitive_helper.h>
 
+#include <CGAL/Filtered_kernel.h>
+
 #include <boost/optional.hpp>
 #include <boost/bind.hpp>
 
@@ -418,12 +420,25 @@ public:
       typedef typename AT::Primitive Primitive;
   public:
       template <class Solid>
-      CGAL::Comparison_result operator()(const Point& p, const Solid& pr, const Point& bound) const
+      CGAL::Comparison_result operator()(const Point& p, const Solid& pr,
+                                         const Point& bound) const
       {
-          return GeomTraits().do_intersect_3_object()
-          (GeomTraits().construct_sphere_3_object()
-          (p, GeomTraits().compute_squared_distance_3_object()(p, bound)), pr)?
-          CGAL::SMALLER : CGAL::LARGER;
+        typedef typename CGAL::Filter::
+          Get_approx<GeomTraits>::Approximate_kernel Approximate_kernel;
+        CGAL::Cartesian_converter<GeomTraits, Approximate_kernel> c2f;
+        typename Approximate_kernel::Do_intersect_3 do_intersect_approx =
+          Approximate_kernel().do_intersect_3_object();
+        typename GeomTraits::Construct_sphere_3 sphere =
+          GeomTraits().construct_sphere_3_object();
+        typename GeomTraits::Compute_squared_distance_3 sq_distance =
+          GeomTraits().compute_squared_distance_3_object();
+
+        typename Interval::Get_protector<typename Approximate_kernel::FT>::type
+          protector; 
+
+        return possibly
+          (do_intersect_approx(c2f(sphere(p, sq_distance(p, bound))), c2f(pr))
+           ) ? CGAL::SMALLER : CGAL::LARGER;
       }
 
       template <class Solid>
