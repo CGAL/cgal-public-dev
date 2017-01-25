@@ -29,14 +29,14 @@
 
 #include <CGAL/AABB_tree.h>
 #include <CGAL/AABB_traits.h>
+#include <CGAL/AABB_face_graph_triangle_primitive.h>
 #include <CGAL/boost/graph/graph_traits_Polyhedron_3.h>
 #include <CGAL/Polyhedron_3.h>
-
 #include "AABB_test_util.h"
 
-class InputParser{
+class Input_parser{
     public:
-        InputParser (int &argc, char **argv){
+        Input_parser(int &argc, char **argv){
             for (int i=1; i < argc; ++i)
                 this->tokens.push_back(std::string(argv[i]));
         }
@@ -59,9 +59,52 @@ class InputParser{
         std::string empty_string;
 };
 
+template <class Tree, class K>
+void test_distance_speed(Tree& tree,
+                         const double duration,
+                         bool verbose = false)
+{
+    // typedef typename K::FT FT;
+    // typedef typename K::Ray_3 Ray;
+    typedef typename K::Point_3 Point;
+    // typedef typename K::Vector_3 Vector;
+    if(verbose) std::cout.flush();
+
+    CGAL::Timer timer;
+    timer.start();
+    unsigned int nb = 0;
+    while(timer.time() < duration)
+    {
+            // picks a random point in the tree bbox
+            Point query = random_point_in<K>(tree.bbox());
+            Point closest = tree.closest_point(query);
+	    (void) closest;
+            if(verbose) {
+              std::cerr << ".";
+            }
+            nb++;
+    }
+    if(verbose) {
+      std::cerr << std::endl;
+    }
+    double speed = (double)nb / timer.time();
+    std::cout << speed << " distance queries/s" << std::endl;
+    timer.stop();
+}
+
+template<class K, class Tree, class Polyhedron>
+void test_impl(Tree& tree, Polyhedron& p, const double duration,
+               bool verbose, bool kd_tree)
+{
+  if(kd_tree) {
+    tree.accelerate_distance_queries(p.points_begin(), p.points_end());
+  }
+  test_distance_speed<Tree,K>(tree, duration, verbose);
+}
+
 template <class K>
 bool test(const char* filename, const double duration,
-          bool verbose, bool kd_tree)
+          bool verbose = false, bool kd_tree = true)
 {
   typedef CGAL::Polyhedron_3<K> Polyhedron;
   typedef CGAL::AABB_face_graph_triangle_primitive<Polyhedron> Primitive;
@@ -72,60 +115,52 @@ bool test(const char* filename, const double duration,
   ifs >> polyhedron;
   if(!ifs) return false;
   Tree tree(faces(polyhedron).first, faces(polyhedron).second, polyhedron);
-  test_impl(tree, polyhedron, duration, verbose, kd_tree);
+  test_impl<K>(tree, polyhedron, duration, verbose, kd_tree);
   return true;
-}
-
-template<class K, class Tree, class Polyhedron>
-void test_impl(Tree& tree, Polyhedron& p, const double duration,
-               bool verbose, bool kd_tree)
-{
-#ifndef NO_KDTREE
-  tree.accelerate_distance_queries(p.points_begin(),p.points_end());
-#endif
-
-  test_distance_speed<Tree,K>(tree,duration);
-  test_all_distance_query_types<Tree,K>(tree);
-}
-
-template<Primitive_type Primitive>
-void test_kernels(const char *filename,
-                  const double duration)
-{
-    std::cout << std::endl;
-    std::cout << "Polyhedron " << filename << std::endl;
-    std::cout << "============================" << std::endl;
-
-    std::cout << std::endl;
-    std::cout << "Simple cartesian float kernel" << std::endl;
-    test<CGAL::Simple_cartesian<float>,Primitive>(filename,duration);
-
-    std::cout << std::endl;
-    std::cout << "Cartesian float kernel" << std::endl;
-    test<CGAL::Cartesian<float>,Primitive>(filename,duration);
-
-    std::cout << std::endl;
-    std::cout << "Simple cartesian double kernel" << std::endl;
-    test<CGAL::Simple_cartesian<double>,Primitive>(filename,duration);
-
-    std::cout << std::endl;
-    std::cout << "Cartesian double kernel" << std::endl;
-    test<CGAL::Cartesian<double>,Primitive>(filename,duration);
-
-    std::cout << std::endl;
-    std::cout << "Epic kernel" << std::endl;
-    test<CGAL::Exact_predicates_inexact_constructions_kernel,Primitive>(filename,duration);
 }
 
 int main(int argc, char** argv)
 {
   Input_parser input(argc, argv);
 
-  const char* filename = argc > 0 ? argv[1] : "./data/cube.off";
+  const char* filename = argc > 1 ? argv[1] : "./data/cube.off";
   std::cout << "AABB distance to triangle tests" << std::endl;
   double duration = 5;
+  bool verbose = input.cmdOptionExists("-v");
+  bool kd_tree = input.cmdOptionExists("-k");
   std::string duration_str = input.getCmdOption("-d");
-  if(!duration_str.empty()) duration = std::sttod(duration_str);
-  test_kernels<TRIANGLE>("./data/cube-fei-int.off",duration);
+  if(!duration_str.empty()) duration = std::stod(duration_str);
+
+  typedef CGAL::Simple_cartesian<float>                       SCF;
+  typedef CGAL::Cartesian<float>                              CF;
+  typedef CGAL::Simple_cartesian<double>                      SCD;
+  typedef CGAL::Cartesian<double>                             CD;
+  typedef CGAL::Exact_predicates_inexact_constructions_kernel Epick;
+
+  bool at_least_one_kernel=false;
+  if(input.cmdOptionExists("SCF")) {
+    std::cout << "Simple cartesian float kernel" << std::endl;
+    test<CGAL::Simple_cartesian<float>>(filename, duration, verbose, kd_tree);
+    at_least_one_kernel=true;
+  }
+  if(input.cmdOptionExists("CF")) {
+    std::cout << "Cartesian float kernel" << std::endl;
+    test<CGAL::Cartesian<float>>(filename, duration, verbose, kd_tree);
+    at_least_one_kernel=true;
+  }
+  if(input.cmdOptionExists("SCD")) {
+    std::cout << "Simple cartesian double kernel" << std::endl;
+    test<CGAL::Simple_cartesian<double>>(filename, duration, verbose, kd_tree);
+    at_least_one_kernel=true;
+  }
+  if(input.cmdOptionExists("CD")) {
+    std::cout << "Cartesian double kernel" << std::endl;
+    test<CGAL::Cartesian<double>>(filename, duration, verbose, kd_tree);
+    at_least_one_kernel=true;
+  }
+  if(!at_least_one_kernel || input.cmdOptionExists("Epick")) {
+    std::cout << "Epic kernel" << std::endl;
+    test<CGAL::Epick>(filename, duration, verbose, kd_tree);
+  }
   return 0;
 }

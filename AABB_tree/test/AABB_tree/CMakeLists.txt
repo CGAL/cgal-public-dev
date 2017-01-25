@@ -21,6 +21,8 @@ if ( CGAL_FOUND )
   foreach(cppfile ${cppfiles})
     create_single_source_cgal_program( "${cppfile}" )
   endforeach()
+  target_compile_features(aabb_my_distance_triangle_test PRIVATE ${CMAKE_CXX11_COMPILE_FEATURES})
+
 else()
   
     message(STATUS "This program requires the CGAL library, and will not be compiled.")
