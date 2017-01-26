@@ -69,6 +69,7 @@ namespace Ply {
     return cpp11::make_tuple (normal_map, Property<double>("nx"), Property<double>("ny"), Property<double>("nz"));
   }
 
+  /// \cond SKIP_IN_MANUAL
 
 namespace internal {
 
@@ -236,9 +237,39 @@ namespace internal {
     output_properties (stream, it, next, properties...);
   }
 }
-  
-}    
 
+  /// \endcond
+}
+
+
+
+//===================================================================================
+/// \ingroup PkgPointSetProcessing
+/// Saves the [first, beyond) range of points with properties to a
+/// .ply stream. PLY is either ASCII or binary depending on the value
+/// of `CGAL::get_mode(stream)`.
+///
+/// Properties are handled through a variadic list of property
+/// handlers. A property handle can either be:
+///
+///  - A `std::pair<PropertyMap, Ply::Property<T> >` if the user wants
+///  to write a scalar value T as a PLY property (for example, writing
+///  an `int` variable as an `int` PLY property).
+///
+///  - A `CGAL::cpp11::tuple<PropertyMap, Ply::Property<T>...>` if the
+///  user wants to write a complex object as several PLY
+///  properties. In that case, and overload of the stream operator
+///  `std::operator<<()` must be provided for
+///  `PropertyMap::value_type` that handles both ASCII and binary
+///  output (see `CGAL::get_mode()`).
+///
+/// @sa `Ply::point_writer()`
+/// @sa `Ply::normal_writer()`
+///
+/// @tparam ForwardIterator iterator over input points.
+/// @tparam PropertyHandler handlers to recover properties.
+///
+/// @return true on success.
 template < typename ForwardIterator,
            typename ... PropertyHandler>
 bool
@@ -246,7 +277,7 @@ write_ply_points_with_properties(
   std::ostream& stream, ///< output stream.
   ForwardIterator first,  ///< iterator over the first input point.
   ForwardIterator beyond, ///< past-the-end iterator over the input points.
-  PropertyHandler&& ... properties)
+  PropertyHandler&& ... properties) ///< parameter pack of property handlers
 {
   CGAL_point_set_processing_precondition(first != beyond);
 
@@ -279,7 +310,9 @@ write_ply_points_with_properties(
 
 //===================================================================================
 /// \ingroup PkgPointSetProcessing
-/// Saves the [first, beyond) range of points (positions + normals) to a .ply ASCII stream.
+/// Saves the [first, beyond) range of points (positions + normals) to
+/// a .ply stream. PLY is either ASCII or binary depending on the
+/// value of `CGAL::get_mode(stream)`.
 ///
 /// \pre normals must be unit vectors
 ///
@@ -287,8 +320,6 @@ write_ply_points_with_properties(
 /// @tparam PointMap is a model of `ReadablePropertyMap` with  value type `Point_3<Kernel>`.
 ///        It can be omitted if the value type of `ForwardIterator` is convertible to `Point_3<Kernel>`.
 /// @tparam VectorMap is a model of `ReadablePropertyMap` with a value type  `Vector_3<Kernel>`.
-/// @tparam Kernel Geometric traits class.
-///        It can be omitted and deduced automatically from the value type of `PointMap`.
 ///
 /// @return true on success.
 
@@ -304,11 +335,11 @@ write_ply_points_and_normals(
   PointMap point_map, ///< property map: value_type of OutputIterator -> Point_3.
   VectorMap normal_map) ///< property map: value_type of OutputIterator -> Vector_3.
 {
-  return write_ply_points_and_normals(
+  return write_ply_points_with_properties(
     stream,
     first, beyond,
-    point_map,
-    normal_map);
+    Ply::point_writer(point_map),
+    Ply::normal_writer(normal_map));
 }
 
 /// @cond SKIP_IN_MANUAL
@@ -335,13 +366,13 @@ write_ply_points_and_normals(
 
 //===================================================================================
 /// \ingroup PkgPointSetProcessing
-/// Saves the [first, beyond) range of points (positions only) to a .ply ASCII stream.
+/// Saves the [first, beyond) range of points (positions only) to a
+/// .ply stream. PLY is either ASCII or binary depending on the value
+/// of `CGAL::get_mode(stream)`.
 ///
 /// @tparam ForwardIterator iterator over input points.
 /// @tparam PointMap is a model of `ReadablePropertyMap` with a value_type = `Point_3<Kernel>`.
 ///        It can be omitted if the value type of `ForwardIterator` is convertible to `Point_3<Kernel>`.
-/// @tparam Kernel Geometric traits class.
-///        It can be omitted and deduced automatically from the value type of `PointMap`.
 ///
 /// @return true on success.
 
@@ -355,7 +386,7 @@ write_ply_points(
   ForwardIterator beyond, ///< past-the-end input point.
   PointMap point_map) ///< property map: value_type of OutputIterator -> Point_3.
 {
-  return write_ply_points (stream, first, beyond, point_map);
+  return write_ply_points_with_properties (stream, first, beyond, Ply::point_writer(point_map));
 }
 
 /// @cond SKIP_IN_MANUAL
