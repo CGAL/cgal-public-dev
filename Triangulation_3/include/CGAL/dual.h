@@ -121,7 +121,7 @@ dual(const DelaunayTriangulation_3& t, typename DelaunayTriangulation_3::Vertex_
   input_planes = boost::make_iterator_range(planes_begin, planes_end);
   boost::range::joined_range<std::vector<Plane>, boost::iterator_range<PlaneIterator> >
   plane_range =  boost::join(voronoi_planes, input_planes);
-  halfspace_intersection_3(boost::begin(plane_range), boost::end(plane_range), result, boost::make_optional(v->point()));
+  halfspace_intersection_3(boost::begin(plane_range), boost::end(plane_range), result);
 
   return result;
 }
