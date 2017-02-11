@@ -45,9 +45,9 @@ dual(const DelaunayTriangulation_3& t, typename DelaunayTriangulation_3::Vertex_
   typedef typename DelaunayTriangulation_3::Cell_circulator Cell_circulator;
 
   CGAL_triangulation_precondition(v != Vertex_handle());
+  CGAL_triangulation_expensive_precondition(tds().is_vertex(v));
   CGAL_triangulation_precondition(!t.is_infinite(v));
   CGAL_triangulation_precondition(t.dimension() == 3);
-  CGAL_triangulation_expensive_precondition(tds().is_vertex(v));
 
   Polyhedron_3 result;
   {
@@ -98,7 +98,7 @@ dual(const DelaunayTriangulation_3& t, typename DelaunayTriangulation_3::Vertex_
       builder.end_surface();
 
       CGAL_triangulation_expensive_postcondition(result.is_valid());
-      CGAL_triangulation_postcondition(result.is_closed());
+      CGAL_triangulation_expensive_postcondition(result.is_closed());
 
       return result;
     }
