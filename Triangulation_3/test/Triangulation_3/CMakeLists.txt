@@ -37,6 +37,7 @@ if ( CGAL_FOUND )
   create_single_source_cgal_program( "test_simplex_3.cpp" )
   create_single_source_cgal_program( "test_static_filters.cpp" )
   create_single_source_cgal_program( "test_triangulation_3.cpp" )
+  create_single_source_cgal_program( "test_dual.cpp" )
 
 else()
   
