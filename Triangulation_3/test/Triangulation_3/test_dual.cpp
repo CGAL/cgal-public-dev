@@ -156,14 +156,14 @@ triangulation_print_OFF(std::ostream& out, const Triang& triang) {
 
 int main(int argc, char** argv)
 {
-  std::ofstream inner_voronoi_out("inner_voronoi.off");
-  if(!inner_voronoi_out.is_open()) {
+  std::ofstream interior_voronoi_out("interior_voronoi.off");
+  if(!interior_voronoi_out.is_open()) {
     std::cerr << "Can't write to Voronoi cell" << std::endl;
     return 1;
   }
 
-  std::ofstream inner_voronoi_with_bbox_out("inner_voronoi_with_bbox.off");
-  if(!inner_voronoi_with_bbox_out.is_open()) {
+  std::ofstream interior_voronoi_with_bbox_out("interior_voronoi_with_bbox.off");
+  if(!interior_voronoi_with_bbox_out.is_open()) {
     std::cerr << "Can't write to Voronoi cell" << std::endl;
     return 1;
   }
@@ -198,16 +198,15 @@ int main(int argc, char** argv)
   Vertex_handle v6 = T.insert(Point(0.25,0.25,0.25));
   Vertex_handle v7 = T.insert(Point(-0.25,-0.25,-0.25));
 
-  Vertex_handle inner_v = v6;
+  Vertex_handle interior_v = v6;
   Vertex_handle hull_v = v3;
 
   Bbox bbox(-1, -1, -1, 1, 1, 1);
   Polyhedron bbox_poly;
   CGAL::Build_cube<Polyhedron::HalfedgeDS> cube(bbox);
   bbox_poly.delegate(cube);
-  std::vector<Delaunay::Geom_traits::Plane_3> tmp; // TODO:remove after refactoring of dual interface
-  Polyhedron inner_voronoi = CGAL::dual<Polyhedron>(T, inner_v, tmp.begin(), tmp.end());
-  Polyhedron inner_voronoi_with_bbox = CGAL::dual<Polyhedron>(T, inner_v, bbox);
+  Polyhedron interior_voronoi = CGAL::dual<Polyhedron>(T, interior_v);
+  Polyhedron interior_voronoi_with_bbox = CGAL::dual<Polyhedron>(T, interior_v, bbox);
   Polyhedron hull_voronoi = CGAL::dual<Polyhedron>(T, hull_v, bbox);
 
   // Write triangulation
@@ -215,10 +214,10 @@ int main(int argc, char** argv)
   triangulation_out.close();
 
   // Write dual cells
-  CGAL::print_OFF(inner_voronoi_out, inner_voronoi);
-  inner_voronoi_out.close();
-  CGAL::print_OFF(inner_voronoi_with_bbox_out, inner_voronoi_with_bbox);
-  inner_voronoi_with_bbox_out.close();
+  CGAL::print_OFF(interior_voronoi_out, interior_voronoi);
+  interior_voronoi_out.close();
+  CGAL::print_OFF(interior_voronoi_with_bbox_out, interior_voronoi_with_bbox);
+  interior_voronoi_with_bbox_out.close();
   CGAL::print_OFF(hull_voronoi_out, hull_voronoi);
   hull_voronoi_out.close();
 
