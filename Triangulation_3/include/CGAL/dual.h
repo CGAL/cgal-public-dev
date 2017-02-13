@@ -138,6 +138,11 @@ dual(
   Polyhedron_3 result;
   halfspace_intersection_3(boost::begin(all_planes), boost::end(all_planes), result);
 
+  // TODO : should it be included if it's not possible to verify
+  // the corresponding preconditions?
+//   CGAL_triangulation_expensive_postcondition(result.is_valid());
+//   CGAL_triangulation_expensive_postcondition(result.is_closed());
+
   return result;
 }
 
