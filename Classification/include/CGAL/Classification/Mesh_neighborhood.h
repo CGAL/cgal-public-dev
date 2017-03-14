@@ -39,6 +39,7 @@ class Mesh_neighborhood
 {
   typedef typename boost::graph_traits<FaceGraph>::face_descriptor face_descriptor;
   typedef typename boost::graph_traits<FaceGraph>::halfedge_descriptor halfedge_descriptor;
+  typedef typename boost::graph_traits<FaceGraph>::vertex_descriptor vertex_descriptor;
   const FaceGraph& m_mesh;
   
 public:
@@ -68,7 +69,9 @@ public:
   friend class One_ring_neighbor_query;
 
 
-  Mesh_neighborhood (const FaceGraph& mesh) : m_mesh (mesh) { }
+  Mesh_neighborhood (const FaceGraph& mesh) : m_mesh (mesh)
+  {
+  }
 
 
   /// \cond SKIP_IN_MANUAL
@@ -86,11 +89,27 @@ public:
 private:
 
   template <typename OutputIterator>
-  void one_ring_neighbors (const face_descriptor& query, OutputIterator output) const
+  void direct_neighbors (const face_descriptor& query, OutputIterator output) const
   {
     BOOST_FOREACH(halfedge_descriptor hd, halfedges_around_face(halfedge(query, m_mesh), m_mesh))
       {
         *(output ++ ) = face(opposite(hd, m_mesh), m_mesh);
+      }
+  }
+  
+  template <typename OutputIterator>
+  void one_ring_neighbors (const face_descriptor& query, OutputIterator output) const
+  {
+    std::set<face_descriptor> done;
+    BOOST_FOREACH(halfedge_descriptor hd, halfedges_around_face(halfedge(query, m_mesh), m_mesh))
+      {
+        BOOST_FOREACH(face_descriptor fd, faces_around_target(hd, m_mesh))
+          {
+            if (fd == boost::graph_traits<FaceGraph>::null_face())
+              continue;
+            if (done.insert(fd).second)
+              *(output ++) = fd;
+          }
       }
   }
 
