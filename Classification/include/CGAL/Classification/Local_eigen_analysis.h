@@ -195,6 +195,38 @@ public:
     m_mean_range /= input.size();
   }
 
+  template <typename NeighborQuery, typename NeighborMap>
+  Local_eigen_analysis (const PointRange& input,
+                        PointMap point_map,
+                        NeighborMap neighbor_map,
+                        const NeighborQuery& neighbor_query)
+  {
+    m_eigenvalues.resize (input.size());
+    m_sum_eigenvalues.resize (input.size());
+    m_centroids.resize (input.size());
+    m_smallest_eigenvectors.resize (input.size());
+    m_middle_eigenvectors.resize (input.size());
+    m_largest_eigenvectors.resize (input.size());
+    
+    m_mean_range = 0.;
+      
+    for (std::size_t i = 0; i < input.size(); i++)
+      {
+        std::vector<std::size_t> neighbors;
+        neighbor_query (get(neighbor_map, *(input.begin()+i)), std::back_inserter (neighbors));
+
+        std::vector<Point> neighbor_points;
+        for (std::size_t j = 0; j < neighbors.size(); ++ j)
+          neighbor_points.push_back (get(point_map, *(input.begin()+neighbors[j])));
+
+        m_mean_range += CGAL::sqrt (CGAL::squared_distance (get(point_map, *(input.begin() + i)),
+                                                            get(point_map, *(input.begin() + neighbors.back()))));
+        
+        compute (i, get(point_map, *(input.begin()+i)), neighbor_points);
+      }
+    m_mean_range /= input.size();
+  }
+
   /*!
     \brief Returns the estimated unoriented normal vector of the point at position `index`.
   */
