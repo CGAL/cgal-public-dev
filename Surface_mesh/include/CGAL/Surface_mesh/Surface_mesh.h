@@ -548,7 +548,7 @@ private: //------------------------------------------------------ iterator types
 
         std::ptrdiff_t distance_to(const Index_iterator& other) const
         {
-            return other.hnd_ - this->hnd_;
+          return std::ptrdiff_t(other.hnd_) - std::ptrdiff_t(this->hnd_);
         }
         bool equal(const Index_iterator& other) const
         {
