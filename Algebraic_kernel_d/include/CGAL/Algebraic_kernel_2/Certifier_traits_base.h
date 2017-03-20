@@ -222,6 +222,13 @@ protected:
     //! root box for x
     Root_box _m_box_x;
 
+
+public:
+
+  typedef std::vector< std::pair< Polynomial_1, Multiplicity_type > >
+  Squarefree_fact;
+  Squarefree_fact *_m_res_in_x_factors_ptr, *_m_res_in_y_factors_ptr;
+
     //!@}
 
 }; // Certifier_traits_base

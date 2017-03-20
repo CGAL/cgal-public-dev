@@ -166,7 +166,7 @@ public:
   Bi_solve_2_rep(const Polynomial_2& f) :
     _m_achieved(0),
     _m_f(f), _m_g(CGAL::differentiate(f)),
-    _m_second_is_diff(false)
+    _m_second_is_diff(true)
   {}
 
   Bi_solve_2_rep(const Polynomial_2& f, const Polynomial_2& g) :
@@ -724,6 +724,8 @@ public:
         Certifier_traits(this->kernel(),
                          this->ptr()->_m_f, this->ptr()->_m_g, this->ptr()->_m_ft, this->ptr()->_m_gt, 
                          *this->ptr()->_m_res_in_x, *this->ptr()->_m_res_in_y);
+      this->ptr()->_m_certifier_traits->_m_res_in_x_factors_ptr = &(this->ptr()->_m_res_in_x_factors);
+      this->ptr()->_m_certifier_traits->_m_res_in_y_factors_ptr = &(this->ptr()->_m_res_in_y_factors);
     }
     
     return &(*this->ptr()->_m_certifier_traits);

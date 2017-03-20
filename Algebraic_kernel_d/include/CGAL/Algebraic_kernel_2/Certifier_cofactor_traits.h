@@ -261,7 +261,7 @@ protected:
         const Root_box& box) const {
 
     typedef typename IA_real_bfi::Poly_1 Poly_1;
-    long prec = 200, oldp = CGAL::get_precision(BFI());
+    long prec = 64, oldp = CGAL::get_precision(BFI());
 
     // Values: choose 1/4 as dist(x(), real_xmin()) \in (r,sqrt(13)r)
     //         1/4 < 1 < 3.6 = sqrt(13) < 4
@@ -284,8 +284,50 @@ protected:
             CGAL::ipower(BigFloat(0.5), CGAL::degree(res)-mult);
     }
 
-    BFI xf, bfi;
+    BFI xf64, xf, bfi;
     BigFloat bfval;
+
+    typename Root_box::Bound exarg = box.mid() - 2*box.rad();
+    xf64 = CGAL::convert_to_bfi (exarg);
+    bfval = crf;
+    for (typename Base::Squarefree_fact::const_iterator
+           facit = this->_m_res_in_x_factors_ptr->begin();
+         facit != this->_m_res_in_x_factors_ptr->end();
+         ++facit) {
+      if (facit->second == mult) {
+        typename Root_box::Bound ex = CGAL::abs (facit->first.evaluate (exarg));
+        BigFloat bf
+          = BigFloat (ex.numerator(), std::round_toward_neg_infinity, 53)
+          / BigFloat (ex.denominator(), std::round_toward_infinity, 53);
+        // TODO: make sure ipower rounds into the proper direction
+        bfval *= CGAL::ipower (bf, mult);
+      } else {
+        bfi = CGAL::abs (facit->first.evaluate (xf64));
+        while (CGAL::is_zero (CGAL::lower (bfi))) {
+          prec *= 2;
+          CGAL::set_precision(BFI(), prec);
+          // std::cerr << "Required precision " << prec << std::endl;
+          xf = CGAL::convert_to_bfi (exarg);
+          bfi = CGAL::abs (facit->first.evaluate (xf));
+        }
+        CGAL::set_precision(BFI(), 64);
+        bfval *= CGAL::ipower (CGAL::lower (bfi), facit->second);
+      }
+    }
+
+    CGAL::set_precision(BFI(), oldp);
+    return bfval;
+
+    typename Root_box::Bound exact = CGAL::abs (res.evaluate(box.mid() - 2*box.rad()));
+    // std::cerr << "exact " << exact << std::endl;
+    BigFloat bf
+      = BigFloat (exact.numerator(), std::round_toward_neg_infinity, 53)
+      / BigFloat (exact.denominator(), std::round_toward_infinity, 53)
+      * crf;
+    CGAL::set_precision(BFI(), oldp);
+    return bf;
+   
+
     while(1) {
         CGAL::set_precision(BFI(), prec);
 
@@ -293,15 +335,18 @@ protected:
         _m_ia_real.set_polynomial(res, true, false);
 
         Poly_1 poly = _m_ia_real.internal_poly_1();
-        xf = CGAL::convert_to_bfi(box.left());
+        // std::cerr << "Mult " << mult << ", Rad " << box.rad() << std::endl;
+        xf = CGAL::convert_to_bfi(box.left() - box.rad());
         bfi = CGAL::abs(poly.evaluate(xf)) * crf;
 
         bfval = CGAL::lower(bfi) / BigFloat(1); // truncate bfval's mantissa
         if(CGAL::sign(bfval) == 1) {
-            break;
+          // std::cerr << bfi << std::endl;
+          break;
         }
+        // std::cerr << bfi << std::endl;
         prec = prec * 2;
-//         Bisolve_out("increasing prec to: " << prec << "\n");
+        // Bisolve_out("increasing prec to: " << prec << "\n");
     }
     CGAL::set_precision(BFI(), oldp);
     return bfval;
@@ -372,9 +417,9 @@ protected:
             _m_ia_real.eval_range_AF1_1(*fxi, xl, xh, l, h);
             BigFloat t = CGAL::max(CGAL::abs(l), CGAL::abs(h));
             if(fxi == _f.begin())
-                sf_full = t * t; // the sum including constant coeff
+                sf_full = CGAL::square (t); // the sum including constant coeff
             else
-                sf += t * t;  // the sum not including constant coeff
+                sf += CGAL::square (t);  // the sum not including constant coeff
         }
         sf_full += sf;
 
@@ -385,9 +430,9 @@ protected:
             BigFloat t = CGAL::max(CGAL::abs(l), CGAL::abs(h));
 
             if(fxi == _g.begin())
-                sg_full = t * t; // the sum including constant coeff
+                sg_full = CGAL::square (t); // the sum including constant coeff
             else
-                sg += t * t; // the sum not including constant coeff
+                sg += CGAL::square (t); // the sum not including constant coeff
         }
         sg_full += sg;
 
@@ -423,7 +468,7 @@ protected:
         BigFloat co_s_row = sf + BigFloat(1);
         for(i = 1; i < q; i++) {
             BigFloat t = y_exp[i];
-            co_s_row *= (sf_full + t * t);
+            co_s_row *= (sf_full + CGAL::square (t));
         }
 
         if(p > 0)
@@ -433,7 +478,7 @@ protected:
         BigFloat co_t_row = sg + BigFloat(1);
         for(i = 1; i < p; i++) {
             BigFloat t = y_exp[i];
-            co_t_row *= (sg_full + t * t);
+            co_t_row *= (sg_full + CGAL::square (t));
         }
 
         if(q > 0)
