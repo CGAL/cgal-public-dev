@@ -7,6 +7,8 @@
 #include "Messages_interface.h"
 #include "Scene_points_with_normal_item.h"
 #include "Point_set_item_classification.h"
+#include "Scene_surface_mesh_item.h"
+#include "Surface_mesh_item_classification.h"
 #include "Scene_polylines_item.h"
 #include "Scene_polygon_soup_item.h"
 
@@ -91,7 +93,8 @@ class Polyhedron_demo_classification_plugin :
 public:
   bool applicable(QAction*) const { 
       return
-        qobject_cast<Scene_points_with_normal_item*>(scene->item(scene->mainSelectionIndex()));
+        qobject_cast<Scene_points_with_normal_item*>(scene->item(scene->mainSelectionIndex()))
+        || qobject_cast<Scene_surface_mesh_item*>(scene->item(scene->mainSelectionIndex()));
   }
   void print_message(QString message) { messages->information(message); }
   QList<QAction*> actions() const { return QList<QAction*>() << actionClassification; }
@@ -339,6 +342,9 @@ public Q_SLOTS:
     else if (Scene_points_with_normal_item* points_item
              = qobject_cast<Scene_points_with_normal_item*>(scene->item(scene->mainSelectionIndex())))
       return create_from_item(points_item);
+    else if (Scene_surface_mesh_item* mesh_item
+             = qobject_cast<Scene_surface_mesh_item*>(scene->item(scene->mainSelectionIndex())))
+      return create_from_item(mesh_item);
   }
   
 
@@ -351,6 +357,20 @@ public Q_SLOTS:
     Item_classification_base* classif
       = new Point_set_item_classification (points_item);
     item_map.insert (std::make_pair (points_item, classif));
+    QApplication::restoreOverrideCursor();
+    update_plugin_from_item(classif);
+    return classif;
+  }
+
+  Item_classification_base* create_from_item(Scene_surface_mesh_item* mesh_item)
+  {
+    if (item_map.find(mesh_item) != item_map.end())
+      return item_map[mesh_item];
+
+    QApplication::setOverrideCursor(Qt::WaitCursor);
+    Item_classification_base* classif
+      = new Surface_mesh_item_classification (mesh_item);
+    item_map.insert (std::make_pair (mesh_item, classif));
     QApplication::restoreOverrideCursor();
     update_plugin_from_item(classif);
     return classif;
