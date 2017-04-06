@@ -49,13 +49,15 @@ namespace Feature {
     for matrix diagonalization.
   */
 template <typename Geom_traits, typename PointRange, typename PointMap,
-          typename DiagonalizeTraits = CGAL::Default_diagonalize_traits<double,3> >
+          typename DiagonalizeTraits = CGAL::Default_diagonalize_traits<float,3> >
 class Verticality : public Feature_base
 {
   typedef Classification::Local_eigen_analysis<Geom_traits, PointRange,
                                                PointMap, DiagonalizeTraits> Local_eigen_analysis;
-
-  std::vector<double> verticality_feature;
+  
+  const typename Geom_traits::Vector_3 vertical;
+  std::vector<float> verticality_feature;
+  const Local_eigen_analysis* eigen;
   
 public:
   /*!
@@ -64,22 +66,28 @@ public:
     \param input input range.
     \param eigen class with precomputed eigenvectors and eigenvalues.
   */
+#if defined(CGAL_CLASSIFICATION_PRECOMPUTE_FEATURES) || defined(DOXYGEN_RUNNING)
   Verticality (const PointRange& input,
                const Local_eigen_analysis& eigen)
+    : vertical (0., 0., 1.), eigen(NULL)
   {
-    this->set_weight(1.);
-    typename Geom_traits::Vector_3 vertical (0., 0., 1.);
+    this->set_name ("verticality");
 
     for (std::size_t i = 0; i < input.size(); i++)
-      {
-        typename Geom_traits::Vector_3 normal = eigen.normal_vector(i);
-        normal = normal / CGAL::sqrt (normal * normal);
-        verticality_feature.push_back (1. - CGAL::abs(normal * vertical));
-      }
-    
-    this->compute_mean_max (verticality_feature, this->mean, this->max);
-    //    max *= 2;
+    {
+      typename Geom_traits::Vector_3 normal = eigen.normal_vector(i);
+      normal = normal / CGAL::sqrt (normal * normal);
+      verticality_feature.push_back (1. - CGAL::abs(normal * vertical));
+    }
   }
+#else
+  Verticality (const PointRange&,
+               const Local_eigen_analysis& eigen)
+    : vertical (0., 0., 1.), eigen (&eigen)
+  {
+    this->set_name ("verticality");
+  }
+#endif
 
   /*!
     \brief Constructs the feature using provided normals of points.
@@ -93,29 +101,32 @@ public:
   template <typename VectorMap>
   Verticality (const PointRange& input,
                VectorMap normal_map)
+    : vertical (0., 0., 1.), eigen(NULL)
   {
-    this->set_weight(1.);
-    typename Geom_traits::Vector_3 vertical (0., 0., 1.);
-
+    this->set_name ("verticality");
     for (std::size_t i = 0; i < input.size(); i++)
-      {
-        typename Geom_traits::Vector_3 normal = get(normal_map, *(input.begin()+i));
-        normal = normal / CGAL::sqrt (normal * normal);
-        verticality_feature.push_back (1. - std::fabs(normal * vertical));
-      }
-    
-    this->compute_mean_max (verticality_feature, this->mean, this->max);
-    //    max *= 2;
+    {
+      typename Geom_traits::Vector_3 normal = get(normal_map, *(input.begin()+i));
+      normal = normal / CGAL::sqrt (normal * normal);
+      verticality_feature.push_back (1. - std::fabs(normal * vertical));
+    }
   }
 
 
   /// \cond SKIP_IN_MANUAL
-  virtual double value (std::size_t pt_index)
+  virtual float value (std::size_t pt_index)
   {
-    return verticality_feature[pt_index];
+#ifndef CGAL_CLASSIFICATION_PRECOMPUTE_FEATURES
+    if (eigen != NULL)
+    {
+      typename Geom_traits::Vector_3 normal = eigen->normal_vector(pt_index);
+      normal = normal / CGAL::sqrt (normal * normal);
+      return (1. - CGAL::abs(normal * vertical));
+    }
+    else
+#endif
+      return verticality_feature[pt_index];
   }
-
-  virtual std::string name() { return "verticality"; }
   /// \endcond
 };
 

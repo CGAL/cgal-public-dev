@@ -38,6 +38,8 @@ if( TBB_FOUND )
 endif()
 
 
+find_package(OpenCV REQUIRED )
+
 # include for local directory
 include_directories( BEFORE include )
 
@@ -50,7 +52,10 @@ include_directories( BEFORE ../../include )
 
 include( CGAL_CreateSingleSourceCGALProgram )
 
-create_single_source_cgal_program( "example_classifier.cpp" )
-create_single_source_cgal_program( "example_point_set_classifier.cpp" )
+create_single_source_cgal_program( "example_classification.cpp" )
+create_single_source_cgal_program( "example_generation_and_training.cpp" )
 create_single_source_cgal_program( "example_feature.cpp" )
 create_single_source_cgal_program( "example_mesh_classifier.cpp" )
+create_single_source_cgal_program( "example_random_forest.cpp" )
+target_link_libraries( example_random_forest ${OpenCV_LIBS} )
+

@@ -133,8 +133,6 @@ public:
             SLOT(on_smoothing_value_changed(double)));
     connect(ui_widget.subdivisionsSpinBox,  SIGNAL(valueChanged(int)), this,
             SLOT(on_subdivisions_value_changed(int)));
-    connect(ui_widget.save,  SIGNAL(clicked()), this,
-            SLOT(on_save_button_clicked()));
     connect(ui_widget.generate_items,  SIGNAL(clicked()), this,
             SLOT(on_generate_items_button_clicked()));
 
@@ -220,30 +218,30 @@ public Q_SLOTS:
     ui_widget.compute_features->setEnabled(false);
     ui_widget.numberOfScalesSpinBox->setEnabled(false);
     ui_widget.display->setEnabled(false);
+    ui_widget.predicate->setEnabled(false);
     ui_widget.tabWidget->setEnabled(false);
     ui_widget.run->setEnabled(false);
     ui_widget.run_smoothed->setEnabled(false);
     ui_widget.frame->setEnabled(false);
-    ui_widget.save->setEnabled(false);
     ui_widget.generate_items->setEnabled(false);
   }
 
   void enable_computation()
   {
-    ui_widget.load_config->setEnabled(true);
     ui_widget.compute_features->setEnabled(true);
     ui_widget.numberOfScalesSpinBox->setEnabled(true);
     ui_widget.display->setEnabled(true);
+    ui_widget.predicate->setEnabled(true);
   }
 
   void enable_classif()
   {
+    ui_widget.load_config->setEnabled(true);
     ui_widget.save_config->setEnabled(true);
     ui_widget.tabWidget->setEnabled(true);
     ui_widget.run->setEnabled(true);
     ui_widget.run_smoothed->setEnabled(true);
     ui_widget.frame->setEnabled(true);
-    ui_widget.save->setEnabled(true);
     ui_widget.generate_items->setEnabled(true);
   }
 
@@ -284,9 +282,9 @@ public Q_SLOTS:
         class_rows.clear();
 
         // Add labels
-        for (std::size_t i = 0; i < classif->labels().size(); ++ i)
-          add_new_label (ClassRow (dock_widget, classif->labels()[i].first->name().c_str(),
-                                   classif->labels()[i].second));
+        for (std::size_t i = 0; i < classif->number_of_labels(); ++ i)
+          add_new_label (ClassRow (dock_widget, classif->label(i)->name().c_str(),
+                                   classif->label_color(i)));
 
         // Enabled classif if features computed
         if (!(classif->features_computed()))
@@ -345,6 +343,8 @@ public Q_SLOTS:
     else if (Scene_surface_mesh_item* mesh_item
              = qobject_cast<Scene_surface_mesh_item*>(scene->item(scene->mainSelectionIndex())))
       return create_from_item(mesh_item);
+    
+    return NULL;
   }
   
 
@@ -378,7 +378,7 @@ public Q_SLOTS:
 
   void run (Item_classification_base* classif, int method)
   {
-    classif->run (method);
+    classif->run (method, ui_widget.predicate->currentIndex());
   }
 
   void on_compute_features_button_clicked()
@@ -420,7 +420,8 @@ public Q_SLOTS:
     
     QApplication::setOverrideCursor(Qt::WaitCursor);
 
-    classif->save_config (filename.toStdString().c_str());
+    classif->save_config (filename.toStdString().c_str(),
+                          ui_widget.predicate->currentIndex());
     
     QApplication::restoreOverrideCursor();
 
@@ -445,7 +446,8 @@ public Q_SLOTS:
 
     QApplication::setOverrideCursor(Qt::WaitCursor);
 
-    classif->load_config (filename.toStdString().c_str());
+    classif->load_config (filename.toStdString().c_str(),
+                          ui_widget.predicate->currentIndex());
     update_plugin_from_item(classif);
     run (classif, 0);
     
@@ -534,36 +536,6 @@ public Q_SLOTS:
     if(!classif)
       return; 
     classif->subdivisions() = v;
-  }
-
- void on_save_button_clicked()
-  {
-    Scene_points_with_normal_item* points_item =
-      qobject_cast<Scene_points_with_normal_item*>(scene->item(scene->mainSelectionIndex()));
-
-    Item_classification_base* classif
-      = get_classification(points_item);
-    if(!classif)
-      {
-        print_message("Error: there is no point set classification item!");
-        return; 
-      }
-
-    QString filename = QFileDialog::getSaveFileName(mw,
-                                                    tr("Save PLY classified point set"),
-                                                    QString("%1.ply").arg(points_item->name()),
-                                                    "PLY point set (*.ply);;");
-
-    if (filename == QString())
-      return;
-
-    std::ofstream out(filename.toUtf8());
-    
-    QApplication::setOverrideCursor(Qt::WaitCursor);
-    classif->write_output (out);
-    QApplication::restoreOverrideCursor();
-
-    out.close();
   }
 
   void on_generate_items_button_clicked()
@@ -675,7 +647,7 @@ public Q_SLOTS:
         colors.push_back (class_rows[i].color);
       }
     QApplication::setOverrideCursor(Qt::WaitCursor);
-    classif->train();
+    classif->train(ui_widget.predicate->currentIndex());
     QApplication::restoreOverrideCursor();
     update_plugin_from_item(classif);
   }
@@ -818,17 +790,15 @@ public Q_SLOTS:
     if (att == Item_classification_base::Feature_handle())
       return;
 
-    // std::cerr << att->weight()
-    //           << " " << (int)(1001. * 2. * std::atan(att->weight()) / CGAL_PI) << std::endl;
-    ui_widget.feature_weight->setValue ((int)(1001. * 2. * std::atan(att->weight()) / CGAL_PI));
+    ui_widget.feature_weight->setValue ((int)(1001. * 2. * std::atan(classif->weight(att)) / CGAL_PI));
 
-    for (std::size_t i = 0; i < classif->labels().size(); ++ i)
+    for (std::size_t i = 0; i < classif->number_of_labels(); ++ i)
       {
-        CGAL::Classification::Feature::Effect
-          eff = classif->labels()[i].first->feature_effect(att);
-        if (eff == CGAL::Classification::Feature::PENALIZING)
+        CGAL::Classification::Sum_of_weighted_features_predicate::Effect
+          eff = classif->effect (classif->label(i), att);
+        if (eff == CGAL::Classification::Sum_of_weighted_features_predicate::PENALIZING)
           class_rows[i].effect->setCurrentIndex(0);
-        else if (eff == CGAL::Classification::Feature::NEUTRAL)
+        else if (eff == CGAL::Classification::Sum_of_weighted_features_predicate::NEUTRAL)
           class_rows[i].effect->setCurrentIndex(1);
         else
           class_rows[i].effect->setCurrentIndex(2);
@@ -851,11 +821,10 @@ public Q_SLOTS:
     if (att == Item_classification_base::Feature_handle())
       return;
 
-    att->set_weight(std::tan ((CGAL_PI/2.) * v / 1001.));
-    // std::cerr << att->weight() << std::endl;
+    classif->set_weight(att, std::tan ((CGAL_PI/2.) * v / 1001.));
 
     for (std::size_t i = 0; i < class_rows.size(); ++ i)
-      class_rows[i].effect->setEnabled(att->weight() != 0.);
+      class_rows[i].effect->setEnabled(classif->weight(att) != 0.);
   }
 
   void on_effect_changed (int v)
@@ -880,23 +849,19 @@ public Q_SLOTS:
           //          std::cerr << att->id() << " is ";
           if (v == 0)
             {
-              classif->labels()[i].first->set_feature_effect
-                (att, CGAL::Classification::Feature::PENALIZING);
-              //              std::cerr << " penalized for ";
+              classif->set_effect(classif->label(i),
+                                  att, CGAL::Classification::Sum_of_weighted_features_predicate::PENALIZING);
             }
           else if (v == 1)
             {
-              classif->labels()[i].first->set_feature_effect
-                (att, CGAL::Classification::Feature::NEUTRAL);
-              //              std::cerr << " neutral for ";
+              classif->set_effect(classif->label(i),
+                                  att, CGAL::Classification::Sum_of_weighted_features_predicate::NEUTRAL);
             }
           else
             {
-              classif->labels()[i].first->set_feature_effect
-                (att, CGAL::Classification::Feature::FAVORING);
-              //              std::cerr << " favored for ";
+              classif->set_effect(classif->label(i),
+                                  att, CGAL::Classification::Sum_of_weighted_features_predicate::FAVORING);
             }
-          //          std::cerr << classif->labels()[i].first->id() << std::endl;
           break;
         }
   }

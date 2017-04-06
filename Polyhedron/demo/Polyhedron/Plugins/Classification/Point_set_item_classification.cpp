@@ -13,8 +13,7 @@
 
 Point_set_item_classification::Point_set_item_classification(Scene_points_with_normal_item* points)
   : m_points (points),
-    m_psc (NULL),
-    m_trainer (NULL)
+    m_generator (NULL)
 {
   m_nb_scales = 5;
   m_index_color = 1;
@@ -23,33 +22,86 @@ Point_set_item_classification::Point_set_item_classification(Scene_points_with_n
   m_subdivisions = 16;
 
   reset_indices();
-  
-  m_psc = new PSC(*(m_points->point_set()), m_points->point_set()->point_map());
 
   backup_existing_colors_and_add_new();
+  m_training = m_points->point_set()->add_property_map<std::size_t>("training", std::size_t(-1)).first;
+  m_classif = m_points->point_set()->add_property_map<std::size_t>("label", std::size_t(-1)).first;
   
-  m_trainer = new Trainer(*m_psc);
+  Point_set::Property_map<int> ps_labels;
+  bool found;
+  boost::tie (ps_labels, found) = m_points->point_set()->property_map<int>("label");
+  Point_set::Property_map<signed char> ps_labels_c;
+  bool found_c;
+  boost::tie (ps_labels_c, found_c) = m_points->point_set()->property_map<signed char>("label");
+  if (found || found_c)
+  {
+    int max = 0;
+    
+    for (Point_set::const_iterator it = m_points->point_set()->begin();
+         it != m_points->point_set()->first_selected(); ++ it)
+    {
+      int l;
+      if (found) l = ps_labels[*it];
+      else l = int(ps_labels_c[*it] - 1);
+      
+      m_classif[*it] = (std::size_t)l;
+      m_training[*it] = (std::size_t)l;
+      if (l > max)
+      {
+        max = l;
+      }
+    }
 
-  Label_handle ground = m_psc->add_label("ground");
-  Label_handle vegetation = m_psc->add_label("vegetation");
-  Label_handle roof = m_psc->add_label("roof");
-  Label_handle facade = m_psc->add_label("facade");
-  m_labels.push_back (std::make_pair(ground, QColor(245, 180, 0)));
-  m_labels.push_back (std::make_pair(vegetation, QColor(0, 255, 27)));
-  m_labels.push_back (std::make_pair(roof, QColor(255, 0, 170)));
-  m_labels.push_back (std::make_pair(facade, QColor(100, 0, 255)));
+    for (int i = 0; i < max; ++ i)
+    {
+      std::ostringstream oss;
+      oss << "label_" << i;
+      m_labels.add(oss.str().c_str());
+      CGAL::Classification::HSV_Color hsv;
+      hsv[0] = 360. * (i / double(max));
+      hsv[1] = 76.;
+      hsv[2] = 85.;
+      Color rgb = CGAL::Classification::hsv_to_rgb(hsv);
+      m_label_colors.push_back (QColor(rgb[0], rgb[1], rgb[2]));
+    }
 
+    if (found)
+      m_points->point_set()->remove_property_map(ps_labels);
+    else
+      m_points->point_set()->remove_property_map(ps_labels_c);
+  }
+  else
+  {
+    m_labels.add("ground");
+    m_labels.add("vegetation");
+    m_labels.add("roof");
+    m_labels.add("facade");
+  
+    m_label_colors.push_back (QColor(245, 180, 0));
+    m_label_colors.push_back (QColor(0, 255, 27));
+    m_label_colors.push_back (QColor(255, 0, 170));
+    m_label_colors.push_back (QColor(100, 0, 255));
+  }
+  
+
+  m_sowf = new Sum_of_weighted_features (m_labels, m_features);
+  m_random_forest = new Random_forest (m_labels, m_features);
 }
 
 
 Point_set_item_classification::~Point_set_item_classification()
 {
-  if (m_psc != NULL)
-    delete m_psc;
-  if (m_trainer != NULL)
-    delete m_trainer;
+  if (m_sowf != NULL)
+    delete m_sowf;
+  if (m_random_forest != NULL)
+    delete m_random_forest;
+  if (m_generator != NULL)
+    delete m_generator;
   if (m_points != NULL)
-    reset_colors();
+    {
+      reset_colors();
+      m_points->point_set()->remove_property_map(m_training);
+    }
 }
 
 
@@ -105,23 +157,23 @@ void Point_set_item_classification::reset_colors()
 // Write point set to .PLY file
 bool Point_set_item_classification::write_output(std::ostream& stream)
 {
-  if (m_psc->number_of_features() == 0)
+  if (m_features.size() == 0)
     return false;
 
   reset_indices();
   
   stream.precision (std::numeric_limits<double>::digits10 + 2);
 
-  std::vector<Color> colors;
-  for (std::size_t i = 0; i < m_labels.size(); ++ i)
-    {
-      Color c = {{ (unsigned char)(m_labels[i].second.red()),
-                   (unsigned char)(m_labels[i].second.green()),
-                   (unsigned char)(m_labels[i].second.blue()) }};
-      colors.push_back (c);
-    }
+  // std::vector<Color> colors;
+  // for (std::size_t i = 0; i < m_labels.size(); ++ i)
+  //   {
+  //     Color c = {{ (unsigned char)(m_labels[i].second.red()),
+  //                  (unsigned char)(m_labels[i].second.green()),
+  //                  (unsigned char)(m_labels[i].second.blue()) }};
+  //     colors.push_back (c);
+  //   }
   
-  m_psc->write_classification_to_ply (stream);
+  //  m_psc->write_classification_to_ply (stream);
   return true;
 }
 
@@ -159,18 +211,14 @@ void Point_set_item_classification::change_color (int index)
     }
   else if (index_color == 1) // classif
     {
-      std::map<Label_handle, QColor> map_colors;
-      for (std::size_t i = 0; i < m_labels.size(); ++ i)
-        map_colors.insert (m_labels[i]);
-          
       for (Point_set::const_iterator it = m_points->point_set()->begin();
            it != m_points->point_set()->first_selected(); ++ it)
         {
           QColor color (0, 0, 0);
-          Label_handle c = m_psc->label_of(*it);
+          std::size_t c = m_classif[*it];
           
-          if (c != Label_handle())
-            color = map_colors[c];
+          if (c != std::size_t(-1))
+            color = m_label_colors[c];
 
           m_red[*it] = color.red();
           m_green[*it] = color.green();
@@ -179,20 +227,17 @@ void Point_set_item_classification::change_color (int index)
     }
   else if (index_color == 2) // training
     {
-      std::map<Label_handle, QColor> map_colors;
-      for (std::size_t i = 0; i < m_labels.size(); ++ i)
-        map_colors.insert (m_labels[i]);
-          
       for (Point_set::const_iterator it = m_points->point_set()->begin();
            it != m_points->point_set()->first_selected(); ++ it)
         {
           QColor color (0, 0, 0);
-          Label_handle c = m_trainer->training_label_of(*it);
-          Label_handle c2 = m_psc->label_of(*it);
+          std::size_t c = m_training[*it];
+          std::size_t c2 = m_classif[*it];
           
-          if (c != Label_handle())
-            color = map_colors[c];
-          double div = 1;
+          if (c != std::size_t(-1))
+            color = m_label_colors[c];
+          
+          float div = 1;
           if (c != c2)
             div = 2;
           
@@ -203,17 +248,22 @@ void Point_set_item_classification::change_color (int index)
     }
   else
     {
-      Feature_handle att = m_psc->feature(index_color - 3);
-      double weight = att->weight();
-      att->set_weight(att->max);
+      Feature_handle feature = m_features[index_color - 3];
+
+      float max = 0.;
+      for (Point_set::const_iterator it = m_points->point_set()->begin();
+           it != m_points->point_set()->first_selected(); ++ it)
+        if (feature->value(*it) > max)
+          max = feature->value(*it);
+
       for (Point_set::const_iterator it = m_points->point_set()->begin();
            it != m_points->point_set()->first_selected(); ++ it)
         {
-          m_red[*it] = (unsigned char)(ramp.r(att->normalized(*it)) * 255);
-          m_green[*it] = (unsigned char)(ramp.g(att->normalized(*it)) * 255);
-          m_blue[*it] = (unsigned char)(ramp.b(att->normalized(*it)) * 255);
+          float v = std::max (0.f, feature->value(*it) / max);
+          m_red[*it] = (unsigned char)(ramp.r(v) * 255);
+          m_green[*it] = (unsigned char)(ramp.g(v) * 255);
+          m_blue[*it] = (unsigned char)(ramp.b(v) * 255);
         }
-      att->set_weight(weight);
     }
 
   for (Point_set::const_iterator it = m_points->point_set()->first_selected();
@@ -250,13 +300,14 @@ void Point_set_item_classification::reset_indices ()
 void Point_set_item_classification::compute_features ()
 {
   CGAL_assertion (!(m_points->point_set()->empty()));
-  CGAL_assertion (m_psc != NULL);
-  m_psc->clear_features();
+
+  if (m_generator != NULL)
+    delete m_generator;
+
   reset_indices();
   
   std::cerr << "Computing features with " << m_nb_scales << " scale(s)" << std::endl;
-  if (m_psc->number_of_features() != 0)
-    m_psc->clear();
+  m_features.clear();
 
   bool normals = m_points->point_set()->has_normal_map();
   bool colors = (m_color != Point_set::Property_map<Color>());
@@ -265,63 +316,89 @@ void Point_set_item_classification::compute_features ()
   boost::tie (echo_map, echo) = m_points->point_set()->template property_map<boost::uint8_t>("echo");
 
   if (!normals && !colors && !echo)
-    m_psc->generate_features (m_nb_scales);
+    m_generator = new Generator (m_features, *(m_points->point_set()), m_points->point_set()->point_map(), m_nb_scales);
   else if (!normals && !colors && echo)
-    m_psc->generate_features (m_nb_scales, CGAL::Default(), CGAL::Default(), echo_map);
+    m_generator = new Generator (m_features, *(m_points->point_set()), m_points->point_set()->point_map(), m_nb_scales,
+                                 CGAL::Default(), CGAL::Default(), echo_map);
   else if (!normals && colors && !echo)
-    m_psc->generate_features (m_nb_scales, CGAL::Default(), m_color);
+    m_generator = new Generator (m_features, *(m_points->point_set()), m_points->point_set()->point_map(), m_nb_scales,
+                                 CGAL::Default(), m_color);
   else if (!normals && colors && echo)
-    m_psc->generate_features (m_nb_scales, CGAL::Default(), m_color, echo_map);
+    m_generator = new Generator (m_features, *(m_points->point_set()), m_points->point_set()->point_map(), m_nb_scales,
+                                 CGAL::Default(), m_color, echo_map);
   else if (normals && !colors && !echo)
-    m_psc->generate_features (m_nb_scales, m_points->point_set()->normal_map());
+    m_generator = new Generator (m_features, *(m_points->point_set()), m_points->point_set()->point_map(), m_nb_scales,
+                                 m_points->point_set()->normal_map());
   else if (normals && !colors && echo)
-    m_psc->generate_features (m_nb_scales, m_points->point_set()->normal_map(), CGAL::Default(), echo_map);
+    m_generator = new Generator (m_features, *(m_points->point_set()), m_points->point_set()->point_map(), m_nb_scales,
+                                 m_points->point_set()->normal_map(), CGAL::Default(), echo_map);
   else if (normals && colors && !echo)
-    m_psc->generate_features (m_nb_scales, m_points->point_set()->normal_map(), m_color);
+    m_generator = new Generator (m_features, *(m_points->point_set()), m_points->point_set()->point_map(), m_nb_scales,
+                                 m_points->point_set()->normal_map(), m_color);
   else
-    m_psc->generate_features (m_nb_scales, m_points->point_set()->normal_map(), m_color, echo_map);
+    m_generator = new Generator (m_features, *(m_points->point_set()), m_points->point_set()->point_map(), m_nb_scales,
+                                 m_points->point_set()->normal_map(), m_color, echo_map);
 
+  delete m_sowf;
+  m_sowf = new Sum_of_weighted_features (m_labels, m_features);
+  delete m_random_forest;
+  m_random_forest = new Random_forest (m_labels, m_features);
+  std::cerr << "Features = " << m_features.size() << std::endl;
 }
 
 
 
-void Point_set_item_classification::train()
+void Point_set_item_classification::train(int predicate)
 {
-  if (m_psc->number_of_features() == 0)
+  if (m_features.size() == 0)
     {
       std::cerr << "Error: features not computed" << std::endl;
       return;
     }
   reset_indices();
+
+  std::vector<std::size_t> indices (m_points->point_set()->size(), std::size_t(-1));
+
+  for (Point_set::const_iterator it = m_points->point_set()->begin();
+       it != m_points->point_set()->first_selected(); ++ it)
+    indices[*it] = m_training[*it];
+
+  if (predicate == 0)
+    {
+      m_sowf->train<Concurrency_tag>(indices, m_nb_trials);
+      CGAL::Classification::classify<Concurrency_tag> (*(m_points->point_set()),
+                                                       m_labels, *m_sowf,
+                                                       indices);
+    }
+  else
+    {
+      m_random_forest->train (indices);
+      CGAL::Classification::classify<Concurrency_tag> (*(m_points->point_set()),
+                                                       m_labels, *m_random_forest,
+                                                       indices);
+    }
+  for (Point_set::const_iterator it = m_points->point_set()->begin();
+       it != m_points->point_set()->first_selected(); ++ it)
+    m_classif[*it] = indices[*it];
   
-  m_trainer->train(m_nb_trials);
-  m_psc->run();
-  m_psc->info();
   if (m_index_color == 1 || m_index_color == 2)
-    change_color (m_index_color);
+     change_color (m_index_color);
 }
 
-bool Point_set_item_classification::run (int method)
+bool Point_set_item_classification::run (int method, int predicate)
 {
-  if (m_psc->number_of_features() == 0)
+  if (m_features.size() == 0)
     {
       std::cerr << "Error: features not computed" << std::endl;
       return false;
     }
   reset_indices();
 
-  if (method == 0)
-    {
-      m_psc->run();
-      m_psc->info();
-    }
-  else if (method == 1)
-    m_psc->run_with_local_smoothing (m_psc->neighborhood().range_neighbor_query(m_psc->radius_neighbors()));
-  else if (method == 2)
-    m_psc->run_with_graphcut (m_psc->neighborhood().k_neighbor_query(12), m_smoothing, m_subdivisions);
-  
-  if (m_index_color == 1 || m_index_color == 2)
-    change_color (m_index_color);
+  if (predicate == 0)
+    run (method, *m_sowf);
+  else
+    run (method, *m_random_forest);
   
   return true;
 }
+

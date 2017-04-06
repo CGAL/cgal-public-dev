@@ -20,8 +20,6 @@
 #ifndef CGAL_CLASSIFICATION_LABEL_H
 #define CGAL_CLASSIFICATION_LABEL_H
 
-#include <CGAL/Classification/Feature/Effect.h>
-
 #include <boost/shared_ptr.hpp>
 
 namespace CGAL {
@@ -29,7 +27,7 @@ namespace CGAL {
 namespace Classification {
 
 /*!
-\ingroup PkgClassification
+\ingroup PkgClassificationLabel
 
 \brief %Classification label (for example: vegetation, ground, etc.)
 defined as a set of relationships with classification features.
@@ -37,13 +35,9 @@ defined as a set of relationships with classification features.
 */
 class Label
 {
-public:
-  
 private:
-  /// \cond SKIP_IN_MANUAL
+
   std::string m_name;
-  std::map<Feature_handle, Feature::Effect> m_feature_effects;
-  /// \endcond
 
 public:
 
@@ -52,49 +46,12 @@ public:
   */ 
   Label (std::string name) : m_name (name) { }
 
-  /*! 
-    \brief Sets the effect of feature `att` on the classification label.
-  */ 
-  void set_feature_effect (Feature_handle att, Feature::Effect effect)
-  {
-    m_feature_effects[att] = effect;
-  }
-
-  /*!
-    \brief Returns the effect of feature `att` on the classification label.
-   */
-  Feature::Effect feature_effect (Feature_handle att) 
-  {
-    std::map<Feature_handle, Feature::Effect>::iterator
-      search = m_feature_effects.find (att);
-    return (search == m_feature_effects.end () ? Feature::NEUTRAL : search->second);
-  }
-
   const std::string& name() const { return m_name; }
-  
-  /// \cond SKIP_IN_MANUAL
-  void info()
-  {
-    std::cerr << "Feature " << m_name << ": ";
-    for (std::map<Feature_handle, Feature::Effect>::iterator it = m_feature_effects.begin();
-         it != m_feature_effects.end(); ++ it)
-      {
-        if (it->second == Feature::NEUTRAL)
-          continue;
-        
-        std::cerr << it->first;
-        if (it->second == Feature::FAVORING) std::cerr << " (favored), ";
-        else if (it->second == Feature::PENALIZING) std::cerr << " (penalized), ";
-      }
-    std::cerr << std::endl;
-  }
-  /// \endcond
-
 };
 
 #ifdef DOXYGEN_RUNNING
 /*!
-  \ingroup PkgClassification
+  \ingroup PkgClassificationLabel
 
   \brief %Handle to a classification `Label`.
 

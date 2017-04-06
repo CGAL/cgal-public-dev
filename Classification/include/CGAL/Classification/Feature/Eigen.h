@@ -30,8 +30,9 @@ namespace Classification {
 
 namespace Feature {
 
+/// \cond SKIP_IN_MANUAL
 template <typename Geom_traits, typename PointRange, typename PointMap,
-          typename DiagonalizeTraits = CGAL::Default_diagonalize_traits<double,3> >
+          typename DiagonalizeTraits = CGAL::Default_diagonalize_traits<float,3> >
 class Eigen_feature : public Feature_base
 {
 protected:
@@ -39,35 +40,36 @@ protected:
                                                PointMap, DiagonalizeTraits> Local_eigen_analysis;
 
 #ifdef CGAL_CLASSIFICATION_PRECOMPUTE_FEATURES
-  std::vector<double> attrib;
+  std::vector<float> attrib;
 #else
   const Local_eigen_analysis& eigen;
 #endif
   
 public:
   Eigen_feature (const PointRange&,
-                   const Local_eigen_analysis& eigen)
+                 const Local_eigen_analysis& eigen)
 #ifndef CGAL_CLASSIFICATION_PRECOMPUTE_FEATURES
     : eigen (eigen)
 #endif
   {
   }
 
+#ifdef CGAL_CLASSIFICATION_PRECOMPUTE_FEATURES
   virtual void init (const PointRange& input, const Local_eigen_analysis& eigen)
   {
-    this->set_weight(1.);
-#ifndef CGAL_CLASSIFICATION_PRECOMPUTE_FEATURES
-    std::vector<double> attrib;
-#endif
+
     attrib.reserve (input.size());
     for (std::size_t i = 0; i < input.size(); ++ i)
       attrib.push_back (get_value (eigen, i));
-
-    this->compute_mean_max (attrib, mean, this->max);
   }
+#else
+  virtual void init (const PointRange&, const Local_eigen_analysis&)
+  {
+  }
+#endif
   
-  virtual double get_value (const Local_eigen_analysis& eigen, std::size_t i) = 0;
-  virtual double value (std::size_t pt_index)
+  virtual float get_value (const Local_eigen_analysis& eigen, std::size_t i) = 0;
+  virtual float value (std::size_t pt_index)
   {
 #ifdef CGAL_CLASSIFICATION_PRECOMPUTE_FEATURES
     return attrib[pt_index];
@@ -75,9 +77,9 @@ public:
     return get_value(eigen, pt_index);
 #endif
   }
-  virtual std::string name() { return "eigen_feature"; }
 
 };
+/// \endcond
   
   /*!
     \ingroup PkgClassificationFeatures
@@ -99,8 +101,13 @@ public:
     for matrix diagonalization.
   */
 template <typename Geom_traits, typename PointRange, typename PointMap,
-          typename DiagonalizeTraits = CGAL::Default_diagonalize_traits<double,3> >
-class Linearity : public Eigen_feature<Geom_traits, PointRange, PointMap, DiagonalizeTraits>
+          typename DiagonalizeTraits = CGAL::Default_diagonalize_traits<float,3> >
+class Linearity
+#ifdef DOXYGEN_RUNNING
+  : public Feature_base
+#else
+  : public Eigen_feature<Geom_traits, PointRange, PointMap, DiagonalizeTraits>
+#endif
 {
   typedef Classification::Local_eigen_analysis<Geom_traits, PointRange,
                                                PointMap, DiagonalizeTraits> Local_eigen_analysis;
@@ -115,11 +122,12 @@ public:
   Linearity (const PointRange& input,
              const Local_eigen_analysis& eigen) : Base (input, eigen)
   {
+    this->set_name("linearity");
     this->init(input, eigen);
   }
 
   /// \cond SKIP_IN_MANUAL
-  virtual double get_value (const Local_eigen_analysis& eigen, std::size_t i)
+  virtual float get_value (const Local_eigen_analysis& eigen, std::size_t i)
   {
     const typename Local_eigen_analysis::Eigenvalues& ev = eigen.eigenvalue(i);
     if (ev[2] < 1e-15)
@@ -127,7 +135,6 @@ public:
     else
       return ((ev[2] - ev[1]) / ev[2]);
   }
-  virtual std::string name() { return "linearity"; }
   /// \endcond
 };
 
@@ -151,8 +158,13 @@ public:
     for matrix diagonalization.
   */
 template <typename Geom_traits, typename PointRange, typename PointMap,
-          typename DiagonalizeTraits = CGAL::Default_diagonalize_traits<double,3> >
-class Planarity : public Eigen_feature<Geom_traits, PointRange, PointMap, DiagonalizeTraits>
+          typename DiagonalizeTraits = CGAL::Default_diagonalize_traits<float,3> >
+class Planarity
+#ifdef DOXYGEN_RUNNING
+  : public Feature_base
+#else
+  : public Eigen_feature<Geom_traits, PointRange, PointMap, DiagonalizeTraits>
+#endif
 {
   typedef Classification::Local_eigen_analysis<Geom_traits, PointRange,
                                                PointMap, DiagonalizeTraits> Local_eigen_analysis;
@@ -168,10 +180,11 @@ public:
              const Local_eigen_analysis& eigen)
     : Base(input, eigen)
   {
+    this->set_name("planarity");
     this->init(input, eigen);
   }
   /// \cond SKIP_IN_MANUAL
-  virtual double get_value (const Local_eigen_analysis& eigen, std::size_t i)
+  virtual float get_value (const Local_eigen_analysis& eigen, std::size_t i)
   {
     const typename Local_eigen_analysis::Eigenvalues& ev = eigen.eigenvalue(i);
     if (ev[2] < 1e-15)
@@ -179,7 +192,6 @@ public:
     else
       return ((ev[1] - ev[0]) / ev[2]);
   }
-  virtual std::string name() { return "planarity"; }
   /// \endcond
  
 };
@@ -204,8 +216,13 @@ public:
     for matrix diagonalization.
   */
 template <typename Geom_traits, typename PointRange, typename PointMap,
-          typename DiagonalizeTraits = CGAL::Default_diagonalize_traits<double,3> >
-class Sphericity : public Eigen_feature<Geom_traits, PointRange, PointMap, DiagonalizeTraits>
+          typename DiagonalizeTraits = CGAL::Default_diagonalize_traits<float,3> >
+class Sphericity
+#ifdef DOXYGEN_RUNNING
+  : public Feature_base
+#else
+  : public Eigen_feature<Geom_traits, PointRange, PointMap, DiagonalizeTraits>
+#endif
 {
   typedef Classification::Local_eigen_analysis<Geom_traits, PointRange,
                                                PointMap, DiagonalizeTraits> Local_eigen_analysis;
@@ -221,10 +238,11 @@ public:
               const Local_eigen_analysis& eigen)
     : Base(input, eigen)
   {
+    this->set_name("sphericity");
     this->init(input, eigen);
   }
   /// \cond SKIP_IN_MANUAL
-  virtual double get_value (const Local_eigen_analysis& eigen, std::size_t i)
+  virtual float get_value (const Local_eigen_analysis& eigen, std::size_t i)
   {
     const typename Local_eigen_analysis::Eigenvalues& ev = eigen.eigenvalue(i);
     if (ev[2] < 1e-15)
@@ -232,7 +250,6 @@ public:
     else
       return (ev[0] / ev[2]);
   }
-  virtual std::string name() { return "sphericity"; }
   /// \endcond
 };
 
@@ -256,8 +273,13 @@ public:
     for matrix diagonalization.
   */
 template <typename Geom_traits, typename PointRange, typename PointMap,
-          typename DiagonalizeTraits = CGAL::Default_diagonalize_traits<double,3> >
-class Omnivariance : public Eigen_feature<Geom_traits, PointRange, PointMap, DiagonalizeTraits>
+          typename DiagonalizeTraits = CGAL::Default_diagonalize_traits<float,3> >
+class Omnivariance
+#ifdef DOXYGEN_RUNNING
+  : public Feature_base
+#else
+  : public Eigen_feature<Geom_traits, PointRange, PointMap, DiagonalizeTraits>
+#endif
 {
   typedef Classification::Local_eigen_analysis<Geom_traits, PointRange,
                                                PointMap, DiagonalizeTraits> Local_eigen_analysis;
@@ -273,15 +295,15 @@ public:
                 const Local_eigen_analysis& eigen)
     : Base(input, eigen)
   {
+    this->set_name("omnivariance");
     this->init(input, eigen);
   }
   /// \cond SKIP_IN_MANUAL
-  virtual double get_value (const Local_eigen_analysis& eigen, std::size_t i)
+  virtual float get_value (const Local_eigen_analysis& eigen, std::size_t i)
   {
     const typename Local_eigen_analysis::Eigenvalues& ev = eigen.eigenvalue(i);
     return (std::pow (std::fabs(ev[0] * ev[1] * ev[2]), 0.333333333));
   }
-  virtual std::string name() { return "omnivariance"; }
   /// \endcond
 };
 
@@ -305,8 +327,13 @@ public:
     for matrix diagonalization.
   */
 template <typename Geom_traits, typename PointRange, typename PointMap,
-          typename DiagonalizeTraits = CGAL::Default_diagonalize_traits<double,3> >
-class Anisotropy : public Eigen_feature<Geom_traits, PointRange, PointMap, DiagonalizeTraits>
+          typename DiagonalizeTraits = CGAL::Default_diagonalize_traits<float,3> >
+class Anisotropy
+#ifdef DOXYGEN_RUNNING
+  : public Feature_base
+#else
+  : public Eigen_feature<Geom_traits, PointRange, PointMap, DiagonalizeTraits>
+#endif
 {
   typedef Classification::Local_eigen_analysis<Geom_traits, PointRange,
                                                PointMap, DiagonalizeTraits> Local_eigen_analysis;
@@ -322,10 +349,11 @@ public:
               const Local_eigen_analysis& eigen)
     : Base(input, eigen)
   {
+    this->set_name("anisotropy");
     this->init(input, eigen);
   }
   /// \cond SKIP_IN_MANUAL
-  virtual double get_value (const Local_eigen_analysis& eigen, std::size_t i)
+  virtual float get_value (const Local_eigen_analysis& eigen, std::size_t i)
   {
     const typename Local_eigen_analysis::Eigenvalues& ev = eigen.eigenvalue(i);
     if (ev[2] < 1e-15)
@@ -333,7 +361,6 @@ public:
     else
       return ((ev[2] - ev[0]) / ev[2]);
   }
-  virtual std::string name() { return "anisotropy"; }
   /// \endcond
 };
 
@@ -357,8 +384,13 @@ public:
     for matrix diagonalization.
   */
 template <typename Geom_traits, typename PointRange, typename PointMap,
-          typename DiagonalizeTraits = CGAL::Default_diagonalize_traits<double,3> >
-class Eigentropy : public Eigen_feature<Geom_traits, PointRange, PointMap, DiagonalizeTraits>
+          typename DiagonalizeTraits = CGAL::Default_diagonalize_traits<float,3> >
+class Eigentropy
+#ifdef DOXYGEN_RUNNING
+  : public Feature_base
+#else
+  : public Eigen_feature<Geom_traits, PointRange, PointMap, DiagonalizeTraits>
+#endif
 {
   typedef Classification::Local_eigen_analysis<Geom_traits, PointRange,
                                                     PointMap, DiagonalizeTraits> Local_eigen_analysis;
@@ -374,10 +406,11 @@ public:
               const Local_eigen_analysis& eigen)
     : Base(input, eigen)
   {
+    this->set_name("eigentropy");
     this->init(input, eigen);
   }
   /// \cond SKIP_IN_MANUAL
-  virtual double get_value (const Local_eigen_analysis& eigen, std::size_t i)
+  virtual float get_value (const Local_eigen_analysis& eigen, std::size_t i)
   {
     const typename Local_eigen_analysis::Eigenvalues& ev = eigen.eigenvalue(i);
     if (ev[0] < 1e-15
@@ -389,7 +422,6 @@ public:
               - ev[1] * std::log(ev[1])
               - ev[2] * std::log(ev[2]));
   }
-  virtual std::string name() { return "eigentropy"; }
   /// \endcond
 };
 
@@ -414,8 +446,13 @@ public:
     for matrix diagonalization.
   */
 template <typename Geom_traits, typename PointRange, typename PointMap,
-          typename DiagonalizeTraits = CGAL::Default_diagonalize_traits<double,3> >
-class Sum_eigenvalues : public Eigen_feature<Geom_traits, PointRange, PointMap, DiagonalizeTraits>
+          typename DiagonalizeTraits = CGAL::Default_diagonalize_traits<float,3> >
+class Sum_eigenvalues
+#ifdef DOXYGEN_RUNNING
+  : public Feature_base
+#else
+  : public Eigen_feature<Geom_traits, PointRange, PointMap, DiagonalizeTraits>
+#endif
 {
   typedef Classification::Local_eigen_analysis<Geom_traits, PointRange,
                                                PointMap, DiagonalizeTraits> Local_eigen_analysis;
@@ -431,14 +468,14 @@ public:
                    const Local_eigen_analysis& eigen)
     : Base(input, eigen)
   {
+    this->set_name("sum_eigen");
     this->init(input, eigen);
   }
   /// \cond SKIP_IN_MANUAL
-  virtual double get_value (const Local_eigen_analysis& eigen, std::size_t i)
+  virtual float get_value (const Local_eigen_analysis& eigen, std::size_t i)
   {
     return eigen.sum_of_eigenvalues(i);
   }
-  virtual std::string name() { return "sum_eigen"; }
   /// \endcond
 };
 
@@ -463,8 +500,13 @@ public:
     for matrix diagonalization.
   */
 template <typename Geom_traits, typename PointRange, typename PointMap,
-          typename DiagonalizeTraits = CGAL::Default_diagonalize_traits<double,3> >
-class Surface_variation : public Eigen_feature<Geom_traits, PointRange, PointMap, DiagonalizeTraits>
+          typename DiagonalizeTraits = CGAL::Default_diagonalize_traits<float,3> >
+class Surface_variation
+#ifdef DOXYGEN_RUNNING
+  : public Feature_base
+#else
+  : public Eigen_feature<Geom_traits, PointRange, PointMap, DiagonalizeTraits>
+#endif
 {
   typedef Classification::Local_eigen_analysis<Geom_traits, PointRange,
                                                PointMap, DiagonalizeTraits> Local_eigen_analysis;
@@ -480,10 +522,11 @@ public:
                      const Local_eigen_analysis& eigen)
     : Base(input, eigen)
   {
+    this->set_name("surface_variation");
     this->init(input, eigen);
   }
   /// \cond SKIP_IN_MANUAL
-  virtual double get_value (const Local_eigen_analysis& eigen, std::size_t i)
+  virtual float get_value (const Local_eigen_analysis& eigen, std::size_t i)
   {
     const typename Local_eigen_analysis::Eigenvalues& ev = eigen.eigenvalue(i);
     if (ev[0] + ev[1] + ev[2] < 1e-15)
@@ -491,7 +534,6 @@ public:
     else
       return (ev[0] / (ev[0] + ev[1] + ev[2]));
   }
-  virtual std::string name() { return "surface_variation"; }
   /// \endcond
 };
 

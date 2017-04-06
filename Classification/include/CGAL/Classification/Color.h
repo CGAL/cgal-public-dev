@@ -28,14 +28,14 @@ namespace Classification {
   /*!
     \ingroup PkgClassificationColor
 
-    Color described in red/green/blue space. Each component is stored
+    %Color described in red/green/blue space. Each component is stored
     as an unsigned char ranging from 0 (no color) to 255 (
    */  
 typedef CGAL::cpp11::array<unsigned char, 3> RGB_Color;
   /*!
     \ingroup PkgClassificationColor
 
-    Color described in hue/saturation/value space. Each component is stored
+    %Color described in hue/saturation/value space. Each component is stored
     as a double:
 
     - `hue` ranges from 0° to 360° (corresponding to the color tint)
@@ -57,14 +57,14 @@ inline HSV_Color rgb_to_hsv (const RGB_Color& c)
   double H = 0.;
   
   if (delta != 0.)
-    {
-      if (Cmax == r)
-        H = 60. * ((g - b) / delta);
-      else if (Cmax == g)
-        H = 60. * (((b - r) / delta) + 2.);
-      else
-        H = 60. * (((r - g) / delta) + 4.);
-    }
+  {
+    if (Cmax == r)
+      H = 60. * ((g - b) / delta);
+    else if (Cmax == g)
+      H = 60. * (((b - r) / delta) + 2.);
+    else
+      H = 60. * (((r - g) / delta) + 4.);
+  }
   if (H < 0.) H += 360.;
   double S = (Cmax == 0. ? 0. : 100. * (delta / Cmax));
   double V = 100. * Cmax;
@@ -86,35 +86,35 @@ inline RGB_Color hsv_to_rgb (const HSV_Color& c)
   double r = 0, g = 0, b = 0;
   
   if( hh>=0 && hh<1 )
-    {
-      r = C;
-      g = X;
-    }
+  {
+    r = C;
+    g = X;
+  }
   else if( hh>=1 && hh<2 )
-    {
-      r = X;
-      g = C;
-    }
+  {
+    r = X;
+    g = C;
+  }
   else if( hh>=2 && hh<3 )
-    {
-      g = C;
-      b = X;
-    }
+  {
+    g = C;
+    b = X;
+  }
   else if( hh>=3 && hh<4 )
-    {
-      g = X;
-      b = C;
-    }
+  {
+    g = X;
+    b = C;
+  }
   else if( hh>=4 && hh<5 )
-    {
-      r = X;
-      b = C;
-    }
+  {
+    r = X;
+    b = C;
+  }
   else
-    {
-      r = C;
-      b = X;
-    }
+  {
+    r = C;
+    b = X;
+  }
   double m = v-C;
   r += m;
   g += m;

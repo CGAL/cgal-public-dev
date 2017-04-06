@@ -55,7 +55,7 @@ public:
 private:  
   typedef Classification::Image<float> Image_float;
 
-  std::vector<double> echo_scatter;
+  std::vector<float> echo_scatter;
   
 public:
   /*!
@@ -70,10 +70,10 @@ public:
   Echo_scatter (const PointRange& input,
                 EchoMap echo_map,
                 const Grid& grid,
-                const double grid_resolution,
-                double radius_neighbors = 1.)
+                const float grid_resolution,
+                float radius_neighbors = 1.)
   {
-    this->set_weight(1.);
+    this->set_name ("echo_scatter");
     Image_float Scatter(grid.width(), grid.height());
     for (std::size_t j = 0; j < grid.height(); j++)
       for (std::size_t i = 0; i < grid.width(); i++)
@@ -97,18 +97,19 @@ public:
           for(std::size_t k = squareXmin; k <= squareXmax; k++){
             for(std::size_t l = squareYmin; l <= squareYmax; l++){
 									
-              if(CGAL::sqrt(pow((double)k-i,2)+pow((double)l-j,2))<=(double)0.5*radius_neighbors/grid_resolution){
-										
-                if(grid.indices(k,l).size()>0){
+              if(CGAL::sqrt(pow((float)k-i,2)+pow((float)l-j,2))<=(float)0.5*radius_neighbors/grid_resolution){
+                std::vector<std::size_t> indices;
+                grid.indices(k,l,std::back_inserter(indices));
+                if(indices.size()>0){
 									
-                  for(std::size_t t=0; t<grid.indices(k,l).size();t++){
+                  for(std::size_t t=0; t<indices.size();t++){
 												
-                    std::size_t ip = grid.indices(k,l)[t]; 
+                    std::size_t ip = indices[t]; 
                     if(get(echo_map, *(input.begin()+ip)) > 1)
                       NB_echo_sup++;
                   }
 									
-                  NB_echo_total=NB_echo_total+grid.indices(k,l).size();
+                  NB_echo_total=NB_echo_total+indices.size();
 									
                 }
 							
@@ -128,18 +129,15 @@ public:
     for(std::size_t i = 0; i < input.size(); i++){
       std::size_t I= grid.x(i);
       std::size_t J= grid.y(i);
-      echo_scatter.push_back((double)Scatter(I,J));
+      echo_scatter.push_back((float)Scatter(I,J));
     }
-    this->compute_mean_max (echo_scatter, this->mean, this->max);
   }
 
   /// \cond SKIP_IN_MANUAL
-  virtual double value (std::size_t pt_index)
+  virtual float value (std::size_t pt_index)
   {
     return echo_scatter[pt_index];
   }
-
-  virtual std::string name() { return "echo_scatter"; }
   /// \endcond
 };
 
