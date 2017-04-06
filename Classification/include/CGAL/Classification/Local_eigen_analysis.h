@@ -208,8 +208,10 @@ public:
     m_sum_eigenvalues.resize (input.size());
     m_centroids.resize (input.size());
     m_smallest_eigenvectors.resize (input.size());
+#ifdef CGAL_CLASSIFICATION_EIGEN_FULL_STORAGE
     m_middle_eigenvectors.resize (input.size());
     m_largest_eigenvectors.resize (input.size());
+#endif
     
     m_mean_range = 0.;
       

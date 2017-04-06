@@ -4,14 +4,7 @@
 #include <string>
 
 #include <CGAL/Simple_cartesian.h>
-#include <CGAL/Classifier.h>
-#include <CGAL/Classification/Feature_base.h>
-#include <CGAL/Classification/Mesh_neighborhood.h>
-#include <CGAL/Classification/Planimetric_grid.h>
-#include <CGAL/Classification/Feature/Eigen.h>
-#include <CGAL/Classification/Feature/Distance_to_plane.h>
-#include <CGAL/Classification/Feature/Vertical_dispersion.h>
-#include <CGAL/Classification/Feature/Elevation.h>
+#include <CGAL/Classification.h>
 
 #include <CGAL/Surface_mesh/Surface_mesh.h>
 
@@ -28,12 +21,16 @@ typedef typename boost::graph_traits<Mesh>::face_descriptor face_descriptor;
 typedef typename boost::graph_traits<Mesh>::vertex_descriptor vertex_descriptor;
 typedef CGAL::Identity_property_map<face_descriptor> Face_map;
 
-typedef CGAL::Classifier<Face_range, Face_map> Classifier;
+namespace Classif = CGAL::Classification;
 
-typedef CGAL::Classification::Label_handle                                            Label_handle;
-typedef CGAL::Classification::Feature_handle                                          Feature_handle;
+typedef Classif::Sum_of_weighted_features_predicate Classification_predicate;
 
-typedef CGAL::Classification::Mesh_neighborhood<Mesh> Neighborhood;
+typedef Classif::Label_handle                                            Label_handle;
+typedef Classif::Feature_handle                                          Feature_handle;
+typedef Classif::Label_set                                               Label_set;
+typedef Classif::Feature_set                                             Feature_set;
+
+typedef Classif::Mesh_neighborhood<Mesh> Neighborhood;
 
 template <typename FaceGraph, typename Point>
 struct Face_graph_face_to_center_property_map
@@ -53,25 +50,25 @@ struct Face_graph_face_to_center_property_map
   {
     std::vector<Point> points;
     BOOST_FOREACH(vertex_descriptor v, vertices_around_face(halfedge(f, *(map.mesh)), *(map.mesh)))
-      {
-        points.push_back (map.mesh->point(v));
-      }
+    {
+      points.push_back (map.mesh->point(v));
+    }
     return CGAL::centroid (points.begin(), points.end());
   }
 };
 
 typedef Face_graph_face_to_center_property_map<Mesh, Point> Face_center_map;
 
-typedef CGAL::Classification::Planimetric_grid<Kernel, Face_range, Face_center_map>             Planimetric_grid;
-typedef CGAL::Classification::Local_eigen_analysis<Kernel, Face_range, Face_center_map>         Local_eigen_analysis;
+typedef Classif::Planimetric_grid<Kernel, Face_range, Face_center_map>             Planimetric_grid;
+typedef Classif::Local_eigen_analysis<Kernel, Face_range, Face_center_map>         Local_eigen_analysis;
 
-typedef CGAL::Classification::Feature::Distance_to_plane<Kernel, Face_range, Face_center_map>   Distance_to_plane;
-typedef CGAL::Classification::Feature::Linearity<Kernel, Face_range, Face_center_map>           Linearity;
-typedef CGAL::Classification::Feature::Omnivariance<Kernel, Face_range, Face_center_map>        Omnivariance;
-typedef CGAL::Classification::Feature::Planarity<Kernel, Face_range, Face_center_map>           Planarity;
-typedef CGAL::Classification::Feature::Surface_variation<Kernel, Face_range, Face_center_map>   Surface_variation;
-typedef CGAL::Classification::Feature::Elevation<Kernel, Face_range, Face_center_map>           Elevation;
-typedef CGAL::Classification::Feature::Vertical_dispersion<Kernel, Face_range, Face_center_map> Dispersion;
+typedef Classif::Feature::Distance_to_plane<Kernel, Face_range, Face_center_map>   Distance_to_plane;
+typedef Classif::Feature::Linearity<Kernel, Face_range, Face_center_map>           Linearity;
+typedef Classif::Feature::Omnivariance<Kernel, Face_range, Face_center_map>        Omnivariance;
+typedef Classif::Feature::Planarity<Kernel, Face_range, Face_center_map>           Planarity;
+typedef Classif::Feature::Surface_variation<Kernel, Face_range, Face_center_map>   Surface_variation;
+typedef Classif::Feature::Elevation<Kernel, Face_range, Face_center_map>           Elevation;
+typedef Classif::Feature::Vertical_dispersion<Kernel, Face_range, Face_center_map> Dispersion;
 
 
 int main (int argc, char** argv)
@@ -100,103 +97,104 @@ int main (int argc, char** argv)
   Neighborhood neighborhood (mesh);
 
   Local_eigen_analysis eigen (faces, fc_map, Face_map(), neighborhood.one_ring_neighbor_query());
-
-
-  Classifier classifier (faces, Face_map());
   
   std::cerr << "Computing features" << std::endl;
-  Feature_handle d2p = classifier.add_feature<Distance_to_plane> (fc_map, eigen);
-  Feature_handle lin = classifier.add_feature<Linearity> (eigen);
-  Feature_handle omni = classifier.add_feature<Omnivariance> (eigen);
-  Feature_handle plan = classifier.add_feature<Planarity> (eigen);
-  Feature_handle surf = classifier.add_feature<Surface_variation> (eigen);
-  Feature_handle disp = classifier.add_feature<Dispersion> (fc_map, grid,
-                                                            grid_resolution,
-                                                            radius_neighbors);
-  Feature_handle elev = classifier.add_feature<Elevation> (fc_map, grid,
-                                                           grid_resolution,
-                                                           radius_dtm);
+  Feature_set features;
+  Feature_handle d2p = features.add<Distance_to_plane> (faces, fc_map, eigen);
+  Feature_handle lin = features.add<Linearity> (faces, eigen);
+  Feature_handle omni = features.add<Omnivariance> (faces, eigen);
+  Feature_handle plan = features.add<Planarity> (faces, eigen);
+  Feature_handle surf = features.add<Surface_variation> (faces, eigen);
+  Feature_handle disp = features.add<Dispersion> (faces, fc_map, grid,
+                                                  grid_resolution,
+                                                  radius_neighbors);
+  Feature_handle elev = features.add<Elevation> (faces, fc_map, grid,
+                                                 grid_resolution,
+                                                 radius_dtm);
+
+  std::cerr << "Setting up labels" << std::endl;
+  Label_set labels;
+  Label_handle ground = labels.add ("ground");
+  Label_handle vege = labels.add ("vegetation");
+  Label_handle roof = labels.add ("roof");
 
   std::cerr << "Setting weights" << std::endl;
-  d2p->set_weight(6.75e-2);
-  lin->set_weight(1.19);
-  omni->set_weight(1.34e-1);
-  plan->set_weight(7.32e-1);
-  surf->set_weight(1.36e-1);
-  disp->set_weight(5.45e-1);
-  elev->set_weight(1.47e1);
-
+  Classification_predicate predicate (labels, features);
+  predicate.set_weight (d2p, 6.75e-2);
+  predicate.set_weight (lin, 1.19);
+  predicate.set_weight (omni, 1.34e-1);
+  predicate.set_weight (plan, 7.32e-1);
+  predicate.set_weight (surf, 1.36e-1);
+  predicate.set_weight (disp, 5.45e-1);
+  predicate.set_weight (elev, 1.47e1);
   
-  std::cerr << "Setting up labels" << std::endl;
-
-  std::cerr << "Faces = " << faces.size() << std::endl;
-
-  // Create label and define how features affect them
-  Label_handle ground = classifier.add_label ("ground");
-  ground->set_feature_effect (d2p,  CGAL::Classification::Feature::NEUTRAL);
-  ground->set_feature_effect (lin,  CGAL::Classification::Feature::PENALIZING);
-  ground->set_feature_effect (omni, CGAL::Classification::Feature::NEUTRAL);
-  ground->set_feature_effect (plan, CGAL::Classification::Feature::FAVORING);
-  ground->set_feature_effect (surf, CGAL::Classification::Feature::PENALIZING);
-  ground->set_feature_effect (disp, CGAL::Classification::Feature::NEUTRAL);
-  ground->set_feature_effect (elev, CGAL::Classification::Feature::PENALIZING);
-
-  Label_handle vege = classifier.add_label ("vegetation");
-  vege->set_feature_effect (d2p,  CGAL::Classification::Feature::FAVORING);
-  vege->set_feature_effect (lin,  CGAL::Classification::Feature::NEUTRAL);
-  vege->set_feature_effect (omni, CGAL::Classification::Feature::FAVORING);
-  vege->set_feature_effect (plan, CGAL::Classification::Feature::NEUTRAL);
-  vege->set_feature_effect (surf, CGAL::Classification::Feature::NEUTRAL);
-  vege->set_feature_effect (disp, CGAL::Classification::Feature::FAVORING);
-  vege->set_feature_effect (elev, CGAL::Classification::Feature::NEUTRAL);
+  std::cerr << "Setting effects" << std::endl;
+  predicate.set_effect (ground, d2p, Classification_predicate::NEUTRAL);
+  predicate.set_effect (ground, lin,  Classification_predicate::PENALIZING);
+  predicate.set_effect (ground, omni, Classification_predicate::NEUTRAL);
+  predicate.set_effect (ground, plan, Classification_predicate::FAVORING);
+  predicate.set_effect (ground, surf, Classification_predicate::PENALIZING);
+  predicate.set_effect (ground, disp, Classification_predicate::NEUTRAL);
+  predicate.set_effect (ground, elev, Classification_predicate::PENALIZING);
   
-  Label_handle roof = classifier.add_label ("roof");
-  roof->set_feature_effect (d2p,  CGAL::Classification::Feature::NEUTRAL);
-  roof->set_feature_effect (lin,  CGAL::Classification::Feature::PENALIZING);
-  roof->set_feature_effect (omni, CGAL::Classification::Feature::FAVORING);
-  roof->set_feature_effect (plan, CGAL::Classification::Feature::FAVORING);
-  roof->set_feature_effect (surf, CGAL::Classification::Feature::PENALIZING);
-  roof->set_feature_effect (disp, CGAL::Classification::Feature::NEUTRAL);
-  roof->set_feature_effect (elev, CGAL::Classification::Feature::FAVORING);
-  std::cerr << "Faces = " << faces.size() << std::endl;
+  predicate.set_effect (vege, d2p,  Classification_predicate::FAVORING);
+  predicate.set_effect (vege, lin,  Classification_predicate::NEUTRAL);
+  predicate.set_effect (vege, omni, Classification_predicate::FAVORING);
+  predicate.set_effect (vege, plan, Classification_predicate::NEUTRAL);
+  predicate.set_effect (vege, surf, Classification_predicate::NEUTRAL);
+  predicate.set_effect (vege, disp, Classification_predicate::FAVORING);
+  predicate.set_effect (vege, elev, Classification_predicate::NEUTRAL);
 
+  predicate.set_effect (roof, d2p,  Classification_predicate::NEUTRAL);
+  predicate.set_effect (roof, lin,  Classification_predicate::PENALIZING);
+  predicate.set_effect (roof, omni, Classification_predicate::FAVORING);
+  predicate.set_effect (roof, plan, Classification_predicate::FAVORING);
+  predicate.set_effect (roof, surf, Classification_predicate::PENALIZING);
+  predicate.set_effect (roof, disp, Classification_predicate::NEUTRAL);
+  predicate.set_effect (roof, elev, Classification_predicate::FAVORING);
+
+  // Run classification
+  std::cerr << "Classifying" << std::endl;
   
-  std::cerr << "Running with local smoothing" << std::endl;
-  //  classifier.run_with_local_smoothing (neighborhood.one_ring_neighbor_query());
-  classifier.run_with_one_graphcut (neighborhood.one_ring_neighbor_query(), 0.5);
-  //  classifier.run();
+  std::vector<std::size_t> label_indices;
 
+  CGAL::Real_timer t;
+  t.start();
+  Classif::classify_with_local_smoothing<CGAL::Parallel_tag>
+    (faces, Face_map(), labels, predicate,
+     neighborhood.one_ring_neighbor_query(),
+     label_indices);
+  t.stop();
+  std::cerr << "Classification with graphcut performed in " << t.time() << " second(s)" << std::endl;
   
   std::ofstream fout("out.off");
   fout << "COFF" << std::endl
        << mesh.number_of_vertices() << " " << mesh.number_of_faces() << " 0" << std::endl;
   BOOST_FOREACH (vertex_descriptor vd, vertices(mesh))
-    {
-      fout << mesh.point(vd) << std::endl;
-    }
+  {
+    fout << mesh.point(vd) << std::endl;
+  }
   BOOST_FOREACH (face_descriptor fd, mesh.faces())
+  {
+    fout << "3";
+    BOOST_FOREACH(vertex_descriptor vd, vertices_around_face(halfedge(fd, mesh), mesh))
     {
-      fout << "3";
-      BOOST_FOREACH(vertex_descriptor vd, vertices_around_face(halfedge(fd, mesh), mesh))
-      {
-        fout << " " << std::size_t(vd);
-      }
-
-      Label_handle label = classifier.label_of (fd);
-      if (label == ground)
-        fout << " 245 180 0" << std::endl;
-      else if (label == vege)
-        fout << " 0 255 27" << std::endl;
-      else if (label == roof)
-        fout << " 255 0 170" << std::endl;
-      else
-        {
-          fout << " 0 0 0" << std::endl;
-          std::cerr << "Error: unknown classification label" << std::endl;
-        }
+      fout << " " << std::size_t(vd);
     }
 
+    Label_handle label = labels[label_indices[fd]];
+    if (label == ground)
+      fout << " 245 180 0" << std::endl;
+    else if (label == vege)
+      fout << " 0 255 27" << std::endl;
+    else if (label == roof)
+      fout << " 255 0 170" << std::endl;
+    else
+    {
+      fout << " 0 0 0" << std::endl;
+      std::cerr << "Error: unknown classification label" << std::endl;
+    }
+  }
 
-  
   return EXIT_SUCCESS;
 }
