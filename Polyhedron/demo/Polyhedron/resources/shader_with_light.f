@@ -1,11 +1,11 @@
 #version 120
 varying highp vec4 color;
 varying highp vec4 fP; 
-varying highp vec3 fN; 
+varying highp vec3 fN;
 uniform highp vec4 light_pos;  
 uniform highp vec4 light_diff; 
 uniform highp vec4 light_spec; 
-uniform highp vec4 light_amb;  
+uniform highp vec4 light_amb;
 uniform highp float spec_power ; 
 uniform int is_two_side; 
 uniform bool is_selected;

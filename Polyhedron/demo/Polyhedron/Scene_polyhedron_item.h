@@ -24,6 +24,10 @@ class SCENE_POLYHEDRON_ITEM_EXPORT Scene_polyhedron_item
         : public CGAL::Three::Scene_item{
     Q_OBJECT
 public:
+  typedef Polyhedron FaceGraph;
+  typedef boost::property_map<FaceGraph, boost::vertex_index_t>::type Vertex_selection_map;
+  typedef boost::property_map<FaceGraph, boost::face_index_t>::type Face_selection_map;
+
     enum STATS {
       NB_VERTICES = 0,
       NB_CONNECTED_COMPOS,
@@ -79,7 +83,7 @@ public:
     QMenu* contextMenu();
 
     // Indicate if rendering mode is supported
-    virtual bool supportsRenderingMode(RenderingMode m) const { return (m!=PointsPlusNormals && m!=Splatting && m!=ShadedPoints); }
+    virtual bool supportsRenderingMode(RenderingMode m) const;
     // Points/Wireframe/Flat/Gouraud OpenGL drawing in a display list
     void draw() const {}
     virtual void draw(CGAL::Three::Viewer_interface*) const;
@@ -95,9 +99,16 @@ public:
     bool isFinite() const { return true; }
     bool isEmpty() const;
     void compute_bbox() const;
+    
+    Vertex_selection_map vertex_selection_map();
+    Face_selection_map face_selection_map();
+ 
     std::vector<QColor>& color_vector();
     void set_color_vector_read_only(bool on_off);
     bool is_color_vector_read_only();
+
+    void set_patch_id(Polyhedron::Face_handle f,int i) const;
+
     int getNumberOfNullLengthEdges();
     int getNumberOfDegeneratedFaces();
     bool triangulated();
@@ -130,6 +141,7 @@ public Q_SLOTS:
     void show_only_feature_edges(bool);
     void enable_facets_picking(bool);
     void set_erase_next_picked_facet(bool);
+    void set_flat_disabled(bool b);
 
     void select(double orig_x,
                 double orig_y,

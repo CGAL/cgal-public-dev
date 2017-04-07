@@ -29,6 +29,7 @@
 #include <CGAL/Polygon_mesh_processing/orientation.h>
 #include <CGAL/Side_of_triangle_mesh.h>
 #include <CGAL/internal/corefinement/predicates.h>
+#include <CGAL/internal/corefinement/connected_components.h>
 #include <CGAL/internal/corefinement/utils.h>
 #include <CGAL/array.h>
 
@@ -1577,14 +1578,14 @@ private:
     }
   }
 
-  bool is_dangling_edge(const std::pair<Halfedge_const_handle,
-                                        std::pair<int, int> >& info,
+  bool is_dangling_edge(int src_id, int tgt_id,
+                        Halfedge_const_handle hedge,
                         const boost::dynamic_bitset<>& is_node_of_degree_one) const
   {
-    if ( is_node_of_degree_one.test(info.second.first) )
+    if ( is_node_of_degree_one.test(src_id) )
     {
       bool res=true;
-      Halfedge_const_handle h = info.first->opposite(), start=h;
+      Halfedge_const_handle h = hedge->opposite(), start=h;
       do{
         if (h->is_border())
         {
@@ -1595,9 +1596,9 @@ private:
       } while(h!=start);
       if (res) return true;
     }
-    if ( is_node_of_degree_one.test(info.second.second) )
+    if ( is_node_of_degree_one.test(tgt_id) )
     {
-      Halfedge_const_handle h = info.first, start=h;
+      Halfedge_const_handle h = hedge, start=h;
       do{
         if (h->is_border())
           return false;
@@ -1677,11 +1678,6 @@ public:
     {
       vertex_to_node_id[it->first->vertex()]=it->second.second;
       vertex_to_node_id[it->first->opposite()->vertex()]=it->second.first;
-      if (is_dangling_edge(*it, is_node_of_degree_one))
-      {
-        impossible_operation.set();
-        return;
-      }
     }
 
     std::size_t num_facets_P = internal::corefinement::init_facet_indices(*P_ptr, P_facet_id_pmap);
@@ -1842,10 +1838,7 @@ public:
         {
           if ( first_hedge->is_border() != second_hedge->is_border() )
           {
-            //Union allowed everything else is non_manifold
-            impossible_operation.set();
-            impossible_operation.reset(P_UNION_Q);
-
+            //No restriction at this level
             std::size_t patch_id_P =
               P_patch_ids[ get( P_facet_id_pmap, first_hedge->is_border()
                                                  ? first_hedge->opposite()->facet()
@@ -2026,6 +2019,12 @@ public:
               // poly_second - poly_first             = P2Q2
               // poly_first \cap poly_second          = Q1P2
               // opposite( poly_first U poly_second ) = Q2P1
+              if ( is_dangling_edge(indices.first, indices.second, first_hedge, is_node_of_degree_one) ||
+                   is_dangling_edge(indices.first, indices.second, second_hedge, is_node_of_degree_one) )
+              {
+                impossible_operation.set();
+                return;
+              }
               is_patch_inside_Q.set(patch_id_p2);
             }
           }
@@ -2038,6 +2037,12 @@ public:
               // poly_second - poly_first             = Q1P1
               // poly_first \cap poly_second          = P1Q2
               // opposite( poly_first U poly_second ) = P2Q1
+              if ( is_dangling_edge(indices.first, indices.second, first_hedge, is_node_of_degree_one) ||
+                   is_dangling_edge(indices.first, indices.second, second_hedge, is_node_of_degree_one) )
+              {
+                impossible_operation.set();
+                return;
+              }
               is_patch_inside_P.set(patch_id_q2);
               is_patch_inside_Q.set(patch_id_p1);
             }
