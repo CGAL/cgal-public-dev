@@ -56,6 +56,7 @@ create_single_source_cgal_program( "example_classification.cpp" )
 create_single_source_cgal_program( "example_generation_and_training.cpp" )
 create_single_source_cgal_program( "example_feature.cpp" )
 create_single_source_cgal_program( "example_mesh_classifier.cpp" )
+create_single_source_cgal_program( "example_mesh_feature_generator.cpp" )
 create_single_source_cgal_program( "example_random_forest.cpp" )
 target_link_libraries( example_random_forest ${OpenCV_LIBS} )
 
