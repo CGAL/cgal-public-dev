@@ -239,6 +239,11 @@ public:
   typedef boost::unordered_set<face_descriptor, CGAL::Handle_hash_function>      Selection_set_facet;
   typedef boost::unordered_set<edge_descriptor, CGAL::Handle_hash_function>    Selection_set_edge;
 
+  Scene_face_graph_item* polyhedron_item()
+  {
+    return this->poly_item;
+  }
+  
   Vertex_selection_map vertex_selection_map()
   {
     return this->poly_item->vertex_selection_map();
