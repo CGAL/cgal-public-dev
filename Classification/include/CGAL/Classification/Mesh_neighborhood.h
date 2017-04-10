@@ -66,7 +66,31 @@ public:
     /// \endcond
   };
 
+  class N_ring_neighbor_query
+  {
+  public:
+    typedef Mesh_neighborhood::face_descriptor value_type; ///<
+  private:
+    const Mesh_neighborhood& neighborhood;
+    const std::size_t n;
+
+  public:
+
+    N_ring_neighbor_query (const Mesh_neighborhood& neighborhood, const std::size_t n)
+      : neighborhood (neighborhood), n(n) { }
+
+    /// \cond SKIP_IN_MANUAL
+    template <typename OutputIterator>
+    OutputIterator operator() (const value_type& query, OutputIterator output) const
+    {
+      neighborhood.n_ring_neighbors (query, output, n);
+      return output;
+    }
+    /// \endcond
+  };
+
   friend class One_ring_neighbor_query;
+  friend class N_ring_neighbor_query;
 
 
   Mesh_neighborhood (const FaceGraph& mesh) : m_mesh (mesh)
@@ -83,6 +107,11 @@ public:
   One_ring_neighbor_query one_ring_neighbor_query () const
   {
     return One_ring_neighbor_query (*this);
+  }
+
+  N_ring_neighbor_query n_ring_neighbor_query (const std::size_t n) const
+  {
+    return N_ring_neighbor_query (*this, n);
   }
 
 
@@ -111,6 +140,39 @@ private:
               *(output ++) = fd;
           }
       }
+  }
+
+  template <typename OutputIterator>
+  void n_ring_neighbors (const face_descriptor& query, OutputIterator output, const std::size_t n) const
+  {
+    std::set<face_descriptor> done;
+    std::set<face_descriptor> latest_ring;
+    latest_ring.insert(query);
+
+    for (std::size_t i = 0; i < n; ++ i)
+    {
+      std::set<face_descriptor> new_ring;
+      
+      for (typename std::set<face_descriptor>::iterator it = latest_ring.begin();
+           it != latest_ring.end(); ++ it)
+      {
+        face_descriptor current = *it;
+        BOOST_FOREACH(halfedge_descriptor hd, halfedges_around_face(halfedge(current, m_mesh), m_mesh))
+        {
+          BOOST_FOREACH(face_descriptor fd, faces_around_target(hd, m_mesh))
+          {
+            if (fd == boost::graph_traits<FaceGraph>::null_face())
+              continue;
+            if (done.insert(fd).second)
+            {
+              *(output ++) = fd;
+              new_ring.insert(fd);
+            }
+          }
+        }
+      }
+      new_ring.swap(latest_ring);
+    }
   }
 
 };
