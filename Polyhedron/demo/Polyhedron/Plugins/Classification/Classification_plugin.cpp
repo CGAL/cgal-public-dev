@@ -9,6 +9,7 @@
 #include "Point_set_item_classification.h"
 #include "Scene_surface_mesh_item.h"
 #include "Surface_mesh_item_classification.h"
+#include "Scene_polyhedron_selection_item.h"
 #include "Scene_polylines_item.h"
 #include "Scene_polygon_soup_item.h"
 
@@ -195,8 +196,12 @@ public Q_SLOTS:
   { 
     dock_widget->show();
     dock_widget->raise();
-    Scene_points_with_normal_item* points_item = getSelectedItem<Scene_points_with_normal_item>();
-    create_from_item(points_item);
+    if (Scene_points_with_normal_item* points_item
+             = qobject_cast<Scene_points_with_normal_item*>(scene->item(scene->mainSelectionIndex())))
+      create_from_item(points_item);
+    else if (Scene_surface_mesh_item* mesh_item
+             = qobject_cast<Scene_surface_mesh_item*>(scene->item(scene->mainSelectionIndex())))
+      create_from_item(mesh_item);
   }
 
   void item_changed (Scene_item* item)
@@ -332,16 +337,25 @@ public Q_SLOTS:
     
     if (!item)
       return NULL;
+
+    Scene_polyhedron_selection_item* selection_item
+      = qobject_cast<Scene_polyhedron_selection_item*>(item);
+    if (selection_item)
+      item = selection_item->polyhedron_item();
     
     Item_map::iterator it = item_map.find(item);
 
     if (it != item_map.end())
+    {
+      if (selection_item)
+        dynamic_cast<Surface_mesh_item_classification*>(it->second)->set_selection_item(selection_item);
       return it->second;
+    }
     else if (Scene_points_with_normal_item* points_item
-             = qobject_cast<Scene_points_with_normal_item*>(scene->item(scene->mainSelectionIndex())))
+             = qobject_cast<Scene_points_with_normal_item*>(item))
       return create_from_item(points_item);
     else if (Scene_surface_mesh_item* mesh_item
-             = qobject_cast<Scene_surface_mesh_item*>(scene->item(scene->mainSelectionIndex())))
+             = qobject_cast<Scene_surface_mesh_item*>(item))
       return create_from_item(mesh_item);
     
     return NULL;

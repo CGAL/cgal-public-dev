@@ -5,22 +5,22 @@
 #define CGAL_CLASSIFICATION_VERBOSE
 
 #include <CGAL/Three/Scene_item.h>
-#include <CGAL/Classifier.h>
-#include <CGAL/Classification/Trainer.h>
-#include <CGAL/Classification/Feature_base.h>
-#include <CGAL/Classification/Feature/Vertical_dispersion.h>
-#include <CGAL/Classification/Feature/Elevation.h>
-#include <CGAL/Classification/Feature/Verticality.h>
-#include <CGAL/Classification/Feature/Distance_to_plane.h>
-#include <CGAL/Classification/Feature/Hsv.h>
-#include <CGAL/Classification/Feature/Echo_scatter.h>
-#include <CGAL/Classification/Feature/Eigen.h>
 
 #include "Scene_surface_mesh_item.h"
+#include "Scene_polyhedron_selection_item.h"
 #include "Item_classification_base.h"
 #include "Kernel_type.h"
 
+#include <CGAL/Classification.h>
+
+
 #include <iostream>
+
+#ifdef CGAL_LINKED_WITH_TBB
+typedef CGAL::Parallel_tag Concurrency_tag;
+#else
+typedef CGAL::Sequential_tag Concurrency_tag;
+#endif
 
 class Surface_mesh_item_classification : public Item_classification_base
 {
@@ -28,15 +28,14 @@ public:
 
   typedef Scene_surface_mesh_item::SMesh Mesh;
   typedef Scene_surface_mesh_item::Point Point;
+  typedef Scene_polyhedron_selection_item::Selection_set_facet Selection;
   typedef typename Mesh::Face_range Face_range;
   typedef typename boost::graph_traits<Mesh>::face_descriptor face_descriptor;
   typedef typename boost::graph_traits<Mesh>::vertex_descriptor vertex_descriptor;
   typedef CGAL::Identity_property_map<face_descriptor> Face_map;
 
-  typedef CGAL::Classifier<Face_range, Face_map> Classifier;
   typedef CGAL::Classification::Mesh_neighborhood<Mesh> Neighborhood;
-  typedef CGAL::Classification::Label_handle   Label_handle;
-  typedef CGAL::Classification::Feature_handle Feature_handle;
+
   
   template <typename FaceGraph, typename Point>
   struct Face_graph_face_to_center_property_map
@@ -50,6 +49,7 @@ public:
   
     const FaceGraph* mesh;
 
+    Face_graph_face_to_center_property_map () : mesh (NULL) { }
     Face_graph_face_to_center_property_map (const FaceGraph* mesh) : mesh (mesh) { }
 
     friend reference get (const Face_graph_face_to_center_property_map& map, key_type f)
@@ -64,91 +64,140 @@ public:
   };
 
   typedef Face_graph_face_to_center_property_map<Mesh, Point> Face_center_map;
+  typedef CGAL::Classification::Mesh_feature_generator<Kernel, Mesh, Face_center_map>             Generator;
 
-  typedef CGAL::Classification::Planimetric_grid<Kernel, Face_range, Face_center_map>             Planimetric_grid;
-  typedef CGAL::Classification::Local_eigen_analysis<Kernel, Face_range, Face_center_map>         Local_eigen_analysis;
-
-  typedef CGAL::Classification::Feature::Distance_to_plane<Kernel, Face_range, Face_center_map>   Distance_to_plane;
-  typedef CGAL::Classification::Feature::Linearity<Kernel, Face_range, Face_center_map>           Linearity;
-  typedef CGAL::Classification::Feature::Omnivariance<Kernel, Face_range, Face_center_map>        Omnivariance;
-  typedef CGAL::Classification::Feature::Planarity<Kernel, Face_range, Face_center_map>           Planarity;
-  typedef CGAL::Classification::Feature::Surface_variation<Kernel, Face_range, Face_center_map>   Surface_variation;
-  typedef CGAL::Classification::Feature::Elevation<Kernel, Face_range, Face_center_map>           Elevation;
-  typedef CGAL::Classification::Feature::Vertical_dispersion<Kernel, Face_range, Face_center_map> Dispersion;
 
 public:
   
   Surface_mesh_item_classification(Scene_surface_mesh_item* mesh);
   ~Surface_mesh_item_classification();
 
+  void backup_existing_colors_and_add_new();
+
   CGAL::Three::Scene_item* item() { return m_mesh; }
   void erase_item() { m_mesh = NULL; }
 
   void compute_features ();
-  bool features_computed() const { return (m_classif->number_of_features() != 0); }
-  std::size_t number_of_features() const { return m_classif->number_of_features(); }
-  Feature_handle feature(std::size_t i) { return m_classif->feature(i); }
-
-  void add_new_label (const char* name, const QColor& color)
-  {
-    m_labels.push_back (std::make_pair (m_classif->add_label(name),
-                                       color));
-  }
-  void remove_label (const char* name)
-  {
-    for (std::size_t i = 0; i < m_labels.size(); ++ i)
-      if (m_labels[i].first->name() == name)
-        {
-          m_classif->remove_label (m_labels[i].first);
-          m_labels.erase (m_labels.begin() + i);
-          break;
-        }
-  }
   
   void add_selection_to_training_set (const char* name)
   {
-    // TODO
+    std::size_t label = get_label (name);
+    
+    if (m_selection == NULL)
+      return;
+    
+    for (typename Selection::iterator it = m_selection->selected_facets.begin();
+         it != m_selection->selected_facets.end(); ++ it)
+    {
+      m_classif[*it] = label;
+      m_training[*it] = label;
+    }
+    m_selection->clear_all();
+
+    if (m_index_color == 1 || m_index_color == 2)
+      change_color (m_index_color);
   }
   void reset_training_sets()
   {
-    m_trainer->reset_inlier_sets();
+    BOOST_FOREACH(face_descriptor fd, faces(*(m_mesh->polyhedron())))
+      m_training[fd] = std::size_t(-1);
+    if (m_index_color == 1 || m_index_color == 2)
+      change_color (m_index_color);
   }
   void validate_selection ()
   {
-    // TODO
+    if (m_selection == NULL)
+      return;
+    
+    for (typename Selection::iterator it = m_selection->selected_facets.begin();
+         it != m_selection->selected_facets.end(); ++ it)
+      m_training[*it] = m_classif[*it];
+    m_selection->clear_all();
+    
+    if (m_index_color == 1 || m_index_color == 2)
+      change_color (m_index_color);
   }
-  void train();
-  bool run (int method);
+  void train(int predicate);
+  bool run (int method, int predicate);
   
-  void change_color (int index) = 0;
-  void fill_display_combo_box (QComboBox* cb, QComboBox* cb1) const
-  {
-    // TODO
-  }
-  void generate_one_item_per_label(std::vector<CGAL::Three::Scene_item*>& items,
-                                           const char* name) const
+  void change_color (int index);
+  void generate_one_item_per_label(std::vector<CGAL::Three::Scene_item*>&,
+                                   const char*) const
   {
     // TODO
   }
 
-  bool write_output(std::ostream& out) = 0;
-  void save_config(const char* filename)
-  {
-    // TODO
-  }
-  void load_config(const char* filename)
-  {
-    // TODO
-  }
+  bool write_output(std::ostream& out);
 
+  void set_selection_item (Scene_polyhedron_selection_item* selection)
+  {
+    m_selection = selection;
+  }
 
 protected:
 
-  Scene_surface_mesh_item* m_mesh;
+  template <typename Predicate>
+  bool run (int method, const Predicate& predicate)
+  {
+    std::vector<std::size_t> indices;
+    Face_center_map fc_map (m_mesh->polyhedron());
+    
+    if (method == 0)
+      CGAL::Classification::classify<Concurrency_tag> (m_mesh->polyhedron()->faces(),
+                                                       m_labels, predicate,
+                                                       indices);
+    else if (method == 1)
+      CGAL::Classification::classify_with_local_smoothing<Concurrency_tag>
+        (m_mesh->polyhedron()->faces(), Face_map(), m_labels, predicate,
+         m_generator->neighborhood().one_ring_neighbor_query(),
+         indices);
+    // else if (method == 2)
+    //   CGAL::Classification::classify_with_graphcut<Concurrency_tag>
+    //     (*(m_points->point_set()), m_points->point_set()->point_map(),
+    //      m_labels, predicate,
+    //      m_generator->neighborhood().k_neighbor_query(12),
+    //      m_smoothing, m_subdivisions, indices);
 
-  Classifier* m_classif;
-  Trainer* m_trainer;
+    std::vector<std::size_t> ground_truth(num_faces(*(m_mesh->polyhedron())), std::size_t(-1));
+    BOOST_FOREACH(face_descriptor fd, faces(*(m_mesh->polyhedron())))
+    {
+      m_classif[fd] = indices[fd];
+      ground_truth[fd] = m_training[fd];
+    }
   
+    if (m_index_color == 1 || m_index_color == 2)
+      change_color (m_index_color);
+
+    std::cerr << "Precision, recall, F1 scores and IoU:" << std::endl;
+    
+    CGAL::Classification::Evaluation eval (m_labels, ground_truth, indices);
+  
+    for (std::size_t i = 0; i < m_labels.size(); ++ i)
+      {
+        std::cerr << " * " << m_labels[i]->name() << ": "
+                  << eval.precision(m_labels[i]) << " ; "
+                  << eval.recall(m_labels[i]) << " ; "
+                  << eval.f1_score(m_labels[i]) << " ; "
+                  << eval.intersection_over_union(m_labels[i]) << std::endl;
+      }
+
+    std::cerr << "Accuracy = " << eval.accuracy() << std::endl
+              << "Mean F1 score = " << eval.mean_f1_score() << std::endl
+              << "Mean IoU = " << eval.mean_intersection_over_union() << std::endl;
+
+
+    return true;
+  }
+  
+  Scene_surface_mesh_item* m_mesh;
+  Scene_polyhedron_selection_item* m_selection;
+  Mesh::Property_map<face_descriptor, std::size_t> m_training;
+  Mesh::Property_map<face_descriptor, std::size_t> m_classif;
+  Mesh::Property_map<face_descriptor, CGAL::Color> m_color;
+  Mesh::Property_map<face_descriptor, CGAL::Color> m_real_color;
+
+  Generator* m_generator;
+  int m_index_color;
 };
 
 
