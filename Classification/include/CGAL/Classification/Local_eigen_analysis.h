@@ -27,6 +27,7 @@
 #include <CGAL/Orthogonal_k_neighbor_search.h>
 #include <CGAL/Default_diagonalize_traits.h>
 #include <CGAL/centroid.h>
+#include <CGAL/PCA_util.h>
 
 #ifdef CGAL_LINKED_WITH_TBB
 #include <tbb/parallel_for.h>
@@ -95,6 +96,47 @@ private:
           
         m_eigen.compute<typename PointMap::value_type,
                         DiagonalizeTraits> (i, get(m_point_map, *(m_input.begin()+i)), neighbor_points);
+      }
+    }
+
+  };
+
+  template <typename FaceListGraph, typename NeighborQuery, typename DiagonalizeTraits>
+  class Compute_eigen_values_graph
+  {
+    typedef typename boost::graph_traits<FaceListGraph>::face_descriptor face_descriptor;
+    
+    Local_eigen_analysis& m_eigen;
+    const FaceListGraph& m_input;
+    const NeighborQuery& m_neighbor_query;
+    float& m_mean_range;
+    tbb::mutex& m_mutex;
+    
+  public:
+    
+    Compute_eigen_values_graph (Local_eigen_analysis& eigen,
+                                const FaceListGraph& input,
+                                const NeighborQuery& neighbor_query,
+                                float& mean_range,
+                                tbb::mutex& mutex)
+      : m_eigen (eigen), m_input (input),
+        m_neighbor_query (neighbor_query), m_mean_range (mean_range), m_mutex (mutex)
+    { }
+    
+    void operator()(const tbb::blocked_range<std::size_t>& r) const
+    {
+      for (std::size_t i = r.begin(); i != r.end(); ++ i)
+      {
+        face_descriptor fd(i);
+        std::vector<face_descriptor> neighbors;
+        m_neighbor_query (fd, std::back_inserter (neighbors));
+
+        m_mutex.lock();
+        m_mean_range += m_eigen.face_radius(fd, m_input);
+        m_mutex.unlock();
+        
+        m_eigen.compute_triangles<FaceListGraph, DiagonalizeTraits>
+          (m_input, fd, neighbors);
       }
     }
 
@@ -200,39 +242,107 @@ public:
     m_mean_range /= input.size();
   }
 
-  template <typename NeighborQuery, typename NeighborMap>
-  Local_eigen_analysis (const PointRange& input,
-                        PointMap point_map,
-                        NeighborMap neighbor_map,
-                        const NeighborQuery& neighbor_query)
+
+#if defined(DOXYGEN_RUNNING)
+  template <typename FaceListGraph,
+            typename NeighborQuery,
+            typename ConcurrencyTag,
+            typename DiagonalizeTraits = CGAL::Default_diagonalize_traits<float, 3> >
+  Local_eigen_analysis (const FaceListGraph& input,
+                        const NeighborQuery& neighbor_query,
+                        const ConcurrencyTag& = ConcurrencyTag(),
+                        const DiagonalizeTraits& = DiagonalizeTraits())
+  { }
+#endif
+
+  /// \cond SKIP_IN_MANUAL
+  
+  // To remove the ambiguity between this constructor and the point
+  // set based one, we explicitly make one constructor with
+  // CGAL::Sequential_tag and one with CGAL::Parallel_tag (the
+  // parallel version is default if TBB is enable, sequential default
+  // if it is not, exactly what is documented with the fake templated
+  // version).
+  
+  template <typename FaceListGraph,
+            typename NeighborQuery,
+            typename DiagonalizeTraits = CGAL::Default_diagonalize_traits<float, 3> >
+  Local_eigen_analysis (const FaceListGraph& input,
+                        const NeighborQuery& neighbor_query,
+#ifdef CGAL_LINKED_WITH_TBB
+                        const CGAL::Sequential_tag&,
+#else
+                        const CGAL::Sequential_tag& = CGAL::Sequential_tag&,
+#endif
+                        const DiagonalizeTraits& = DiagonalizeTraits())
   {
-    m_eigenvalues.resize (input.size());
-    m_sum_eigenvalues.resize (input.size());
-    m_centroids.resize (input.size());
-    m_smallest_eigenvectors.resize (input.size());
+    typedef typename boost::graph_traits<FaceListGraph>::face_descriptor face_descriptor;
+    typedef typename boost::graph_traits<FaceListGraph>::face_iterator face_iterator;
+    typedef typename CGAL::Iterator_range<face_iterator> Face_range;
+
+    Face_range range (faces(input));
+
+    m_eigenvalues.resize (range.size());
+    m_sum_eigenvalues.resize (range.size());
+    m_centroids.resize (range.size());
+    m_smallest_eigenvectors.resize (range.size());
 #ifdef CGAL_CLASSIFICATION_EIGEN_FULL_STORAGE
-    m_middle_eigenvectors.resize (input.size());
-    m_largest_eigenvectors.resize (input.size());
+    m_middle_eigenvectors.resize (range.size());
+    m_largest_eigenvectors.resize (range.size());
 #endif
     
     m_mean_range = 0.;
       
-    for (std::size_t i = 0; i < input.size(); i++)
-      {
-        std::vector<std::size_t> neighbors;
-        neighbor_query (get(neighbor_map, *(input.begin()+i)), std::back_inserter (neighbors));
+    BOOST_FOREACH(face_descriptor fd, range)
+    {
+      std::vector<face_descriptor> neighbors;
+      neighbor_query (fd, std::back_inserter (neighbors));
 
-        std::vector<Point> neighbor_points;
-        for (std::size_t j = 0; j < neighbors.size(); ++ j)
-          neighbor_points.push_back (get(point_map, *(input.begin()+neighbors[j])));
-
-        m_mean_range += CGAL::sqrt (CGAL::squared_distance (get(point_map, *(input.begin() + i)),
-                                                            get(point_map, *(input.begin() + neighbors.back()))));
+      m_mean_range += face_radius(fd);
         
-        compute (i, get(point_map, *(input.begin()+i)), neighbor_points);
-      }
-    m_mean_range /= input.size();
+      compute_triangles<FaceListGraph, DiagonalizeTraits>
+        (input, fd, neighbors);
+    }
+
+    m_mean_range /= range.size();
   }
+
+#ifdef CGAL_LINKED_WITH_TBB
+  template <typename FaceListGraph,
+            typename NeighborQuery,
+            typename DiagonalizeTraits = CGAL::Default_diagonalize_traits<float, 3> >
+  Local_eigen_analysis (const FaceListGraph& input,
+                        const NeighborQuery& neighbor_query,
+                        const CGAL::Parallel_tag& = CGAL::Parallel_tag(),
+                        const DiagonalizeTraits& = DiagonalizeTraits())
+  {
+    typedef typename boost::graph_traits<FaceListGraph>::face_iterator face_iterator;
+    typedef typename CGAL::Iterator_range<face_iterator> Face_range;
+    
+    Face_range range (faces(input));
+
+    m_eigenvalues.resize (range.size());
+    m_sum_eigenvalues.resize (range.size());
+    m_centroids.resize (range.size());
+    m_smallest_eigenvectors.resize (range.size());
+#ifdef CGAL_CLASSIFICATION_EIGEN_FULL_STORAGE
+    m_middle_eigenvectors.resize (range.size());
+    m_largest_eigenvectors.resize (range.size());
+#endif
+    
+    m_mean_range = 0.;
+
+    tbb::mutex mutex;
+    Compute_eigen_values_graph<FaceListGraph, NeighborQuery, DiagonalizeTraits>
+        f(*this, input, neighbor_query, m_mean_range, mutex);
+
+    tbb::parallel_for(tbb::blocked_range<std::size_t>(0, range.size()), f);
+    m_mean_range /= range.size();
+  }
+#endif
+
+  /// \endcond
+
 
   /*!
     \brief Returns the estimated unoriented normal vector of the point at position `index`.
@@ -277,6 +387,22 @@ public:
   /// \endcond
 
 private:
+
+  template <typename FaceListGraph>
+  float face_radius (typename boost::graph_traits<FaceListGraph>::face_descriptor& fd,
+                     const FaceListGraph& g)
+  {
+    typedef typename boost::graph_traits<FaceListGraph>::halfedge_descriptor halfedge_descriptor;
+    
+    float out = 0.f;
+    BOOST_FOREACH(halfedge_descriptor hd, halfedges_around_face(halfedge(fd, g), g))
+    {
+      out = (std::max)(out,
+                       float(CGAL::squared_distance (get(get (CGAL::vertex_point, g), source(hd,g)),
+                                                     get(get (CGAL::vertex_point, g), target(hd,g)))));
+    }
+    return out;
+  }
 
   template <typename Point, typename DiagonalizeTraits>
   void compute (std::size_t index, const Point& query, std::vector<Point>& neighbor_points)
@@ -331,6 +457,83 @@ private:
 #ifdef CGAL_CLASSIFICATION_EIGEN_FULL_STORAGE
     m_middle_eigenvectors[index] = {{ float(evectors[3]), float(evectors[4]), float(evectors[5]) }};
     m_largest_eigenvectors[index] = {{ float(evectors[6]), float(evectors[7]), float(evectors[8]) }};
+#endif
+  }
+
+  template <typename FaceListGraph, typename DiagonalizeTraits>
+  void compute_triangles (const FaceListGraph& g,
+                          typename boost::graph_traits<FaceListGraph>::face_descriptor& query,
+                          std::vector<typename boost::graph_traits<FaceListGraph>::face_descriptor>& neighbor_faces)
+  {
+    typedef typename boost::property_map<FaceListGraph, boost::vertex_point_t>::type::value_type Point;
+    typedef typename Kernel_traits<Point>::Kernel Kernel;
+    typedef typename Kernel::Triangle_3 Triangle;
+        
+    typedef typename boost::graph_traits<FaceListGraph>::vertex_descriptor vertex_descriptor;
+    typedef typename boost::graph_traits<FaceListGraph>::face_descriptor face_descriptor;
+
+    if (neighbor_faces.size() == 0)
+    {
+      Eigenvalues v = {{ 0.f, 0.f, 0.f }};
+      m_eigenvalues[query] = v;
+
+      std::vector<Point> points;
+      BOOST_FOREACH(vertex_descriptor v, vertices_around_face(halfedge(query, g), g))
+      {
+        points.push_back (get(get (CGAL::vertex_point, g), v));
+      }
+      Point c = CGAL::centroid (points.begin(), points.end());
+
+      m_centroids[query] = {{ float(c.x()), float(c.y()), float(c.z()) }};
+      
+      m_smallest_eigenvectors[query] = {{ 0.f, 0.f, 1.f }};
+#ifdef CGAL_CLASSIFICATION_EIGEN_FULL_STORAGE
+      m_middle_eigenvectors[query] = {{ 0.f, 1.f, 0.f }}; 
+      m_largest_eigenvectors[query] = {{ 1.f, 0.f, 0.f }};
+#endif
+      return;
+    }
+
+    std::vector<Triangle> triangles;
+    triangles.reserve(neighbor_faces.size());
+    for (std::size_t i = 0; i < neighbor_faces.size(); ++ i)
+    {
+      const face_descriptor& fd = neighbor_faces[i];
+      triangles.push_back
+        (Triangle (get(get (CGAL::vertex_point, g), target(halfedge(fd, g), g)),
+                   get(get (CGAL::vertex_point, g), target(next(halfedge(fd, g), g), g)),
+                   get(get (CGAL::vertex_point, g), target(next(next(halfedge(fd, g), g), g), g))));
+    }
+
+    CGAL::cpp11::array<float, 6> covariance = {{ 0.f, 0.f, 0.f, 0.f, 0.f, 0.f }};
+    Point c = CGAL::centroid(triangles.begin(),
+                             triangles.end(), Kernel(), CGAL::Dimension_tag<2>());
+    
+    CGAL::internal::assemble_covariance_matrix_3 (triangles.begin(), triangles.end(), covariance,
+                                                  c, Kernel(), (Triangle*)NULL, CGAL::Dimension_tag<2>(),
+                                                  DiagonalizeTraits());
+      
+    m_centroids[query] = {{ float(c.x()), float(c.y()), float(c.z()) }};
+    
+    CGAL::cpp11::array<float, 3> evalues = {{ 0.f, 0.f, 0.f }};
+    CGAL::cpp11::array<float, 9> evectors = {{ 0.f, 0.f, 0.f,
+                                               0.f, 0.f, 0.f,
+                                               0.f, 0.f, 0.f }};
+
+    DiagonalizeTraits::diagonalize_selfadjoint_covariance_matrix
+      (covariance, evalues, evectors);
+
+    // Normalize
+    float sum = evalues[0] + evalues[1] + evalues[2];
+    if (sum > 0.f)
+      for (std::size_t i = 0; i < 3; ++ i)
+        evalues[i] = evalues[i] / sum;
+    m_sum_eigenvalues[query] = float(sum);
+    m_eigenvalues[query] = {{ float(evalues[0]), float(evalues[1]), float(evalues[2]) }};
+    m_smallest_eigenvectors[query] = {{ float(evectors[0]), float(evectors[1]), float(evectors[2]) }};
+#ifdef CGAL_CLASSIFICATION_EIGEN_FULL_STORAGE
+    m_middle_eigenvectors[query] = {{ float(evectors[3]), float(evectors[4]), float(evectors[5]) }};
+    m_largest_eigenvectors[query] = {{ float(evectors[6]), float(evectors[7]), float(evectors[8]) }};
 #endif
   }
 

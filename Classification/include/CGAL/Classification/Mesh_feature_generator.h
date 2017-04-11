@@ -94,38 +94,29 @@ public:
   <Geom_traits, Face_range, PointMap>                    Planimetric_grid;
   typedef Classification::Mesh_neighborhood
   <FaceListGraph>                                        Neighborhood;
-  typedef Classification::Local_eigen_analysis
-  <Geom_traits, Face_range, Face_map, DiagonalizeTraits> Local_eigen_analysis;
+  typedef Classification::Local_eigen_analysis           Local_eigen_analysis;
 
   /// \cond SKIP_IN_MANUAL
   typedef Classification::Feature_handle                 Feature_handle;
   typedef Classification::Label                          Label;
   typedef Classification::Label_handle                   Label_handle;
   
-  typedef Classification::Feature::Anisotropy
-  <Geom_traits, Face_range, Face_map, DiagonalizeTraits> Anisotropy;
+  typedef Classification::Feature::Anisotropy            Anisotropy;
   typedef Classification::Feature::Distance_to_plane
-  <Geom_traits, Face_range, Face_map, DiagonalizeTraits> Distance_to_plane;
-  typedef Classification::Feature::Eigentropy
-  <Geom_traits, Face_range, Face_map, DiagonalizeTraits> Eigentropy;
+  <Face_range, PointMap>                                 Distance_to_plane;
+  typedef Classification::Feature::Eigentropy            Eigentropy;
   typedef Classification::Feature::Elevation
   <Geom_traits, Face_range, PointMap>                    Elevation;
-  typedef Classification::Feature::Linearity
-  <Geom_traits, Face_range, Face_map, DiagonalizeTraits> Linearity;
-  typedef Classification::Feature::Omnivariance
-  <Geom_traits, Face_range, Face_map, DiagonalizeTraits> Omnivariance;
-  typedef Classification::Feature::Planarity
-  <Geom_traits, Face_range, Face_map, DiagonalizeTraits> Planarity;
-  typedef Classification::Feature::Sphericity
-  <Geom_traits, Face_range, Face_map, DiagonalizeTraits> Sphericity;
-  typedef Classification::Feature::Sum_eigenvalues
-  <Geom_traits, Face_range, Face_map, DiagonalizeTraits> Sum_eigen;
-  typedef Classification::Feature::Surface_variation
-  <Geom_traits, Face_range, Face_map, DiagonalizeTraits> Surface_variation;
+  typedef Classification::Feature::Linearity             Linearity;
+  typedef Classification::Feature::Omnivariance          Omnivariance;
+  typedef Classification::Feature::Planarity             Planarity;
+  typedef Classification::Feature::Sphericity            Sphericity;
+  typedef Classification::Feature::Sum_eigenvalues       Sum_eigen;
+  typedef Classification::Feature::Surface_variation     Surface_variation;
   typedef Classification::Feature::Vertical_dispersion
   <Geom_traits, Face_range, PointMap>                    Dispersion;
   typedef Classification::Feature::Verticality
-  <Geom_traits, Face_range, Face_map, DiagonalizeTraits> Verticality;
+  <Geom_traits>                                          Verticality;
   typedef typename Classification::RGB_Color RGB_Color;
   /// \endcond
     
@@ -156,8 +147,7 @@ private:
       t.reset();
       t.start();
       
-      eigen = new Local_eigen_analysis (range, CGAL::Identity_property_map<face_descriptor>(),
-                                        neighborhood->n_ring_neighbor_query(nb_scale + 1));
+      eigen = new Local_eigen_analysis (input, neighborhood->n_ring_neighbor_query(nb_scale + 1));
       float mrange = eigen->mean_range();
       if (this->voxel_size < 0)
         this->voxel_size = mrange;
@@ -565,7 +555,7 @@ private:
     
     void operator() () const
     {
-      Feature_handle fh = generator->m_features->template add<Feature_type> (generator->m_range, Face_map(),
+      Feature_handle fh = generator->m_features->template add<Feature_type> (generator->m_range, generator->m_point_map,
                                                                              generator->eigen(scale));
       std::ostringstream oss;
       oss << fh->name() << "_" << scale;

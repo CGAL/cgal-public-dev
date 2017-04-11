@@ -60,13 +60,13 @@ struct Face_graph_face_to_center_property_map
 typedef Face_graph_face_to_center_property_map<Mesh, Point> Face_center_map;
 
 typedef Classif::Planimetric_grid<Kernel, Face_range, Face_center_map>             Planimetric_grid;
-typedef Classif::Local_eigen_analysis<Kernel, Face_range, Face_center_map>         Local_eigen_analysis;
+typedef Classif::Local_eigen_analysis                                              Local_eigen_analysis;
 
-typedef Classif::Feature::Distance_to_plane<Kernel, Face_range, Face_center_map>   Distance_to_plane;
-typedef Classif::Feature::Linearity<Kernel, Face_range, Face_center_map>           Linearity;
-typedef Classif::Feature::Omnivariance<Kernel, Face_range, Face_center_map>        Omnivariance;
-typedef Classif::Feature::Planarity<Kernel, Face_range, Face_center_map>           Planarity;
-typedef Classif::Feature::Surface_variation<Kernel, Face_range, Face_center_map>   Surface_variation;
+typedef Classif::Feature::Distance_to_plane<Face_range, Face_center_map>           Distance_to_plane;
+typedef Classif::Feature::Linearity                                                Linearity;
+typedef Classif::Feature::Omnivariance                                             Omnivariance;
+typedef Classif::Feature::Planarity                                                Planarity;
+typedef Classif::Feature::Surface_variation                                        Surface_variation;
 typedef Classif::Feature::Elevation<Kernel, Face_range, Face_center_map>           Elevation;
 typedef Classif::Feature::Vertical_dispersion<Kernel, Face_range, Face_center_map> Dispersion;
 
@@ -96,7 +96,7 @@ int main (int argc, char** argv)
   Planimetric_grid grid (faces, fc_map, bbox, grid_resolution);
   Neighborhood neighborhood (mesh);
 
-  Local_eigen_analysis eigen (faces, fc_map, Face_map(), neighborhood.one_ring_neighbor_query());
+  Local_eigen_analysis eigen (mesh, neighborhood.one_ring_neighbor_query());
   
   std::cerr << "Computing features" << std::endl;
   Feature_set features;
