@@ -23,6 +23,9 @@
 #include <vector>
 
 #include <boost/iterator/counting_iterator.hpp>
+#include <CGAL/boost/graph/selection.h>
+#include <CGAL/unordered.h>
+#include <CGAL/Handle_hash_function.h>
 
 /// \cond SKIP_IN_MANUAL
 
@@ -41,6 +44,31 @@ class Mesh_neighborhood
   typedef typename boost::graph_traits<FaceGraph>::halfedge_descriptor halfedge_descriptor;
   typedef typename boost::graph_traits<FaceGraph>::vertex_descriptor vertex_descriptor;
   const FaceGraph& m_mesh;
+
+  class Is_face_selected
+  {
+  public:
+    typedef face_descriptor key_type;
+    typedef bool value_type;
+    typedef bool reference;
+    typedef boost::read_write_property_map_tag category;
+    typedef typename CGAL::cpp11::unordered_set<face_descriptor, CGAL::Handle_hash_function> Set;
+  private:
+    Set* m_set;
+    
+  public:
+    Is_face_selected(Set* set = NULL) : m_set (set) { }
+
+    inline friend value_type get (const Is_face_selected& pm, const key_type& k)
+    {
+      return (pm.m_set->find(k) != pm.m_set->end());
+    }
+   
+    inline friend void put (const Is_face_selected& pm, const key_type& k, const value_type&)
+    {
+      pm.m_set->insert(k);
+    }
+  };
   
 public:
 
@@ -129,51 +157,20 @@ private:
   template <typename OutputIterator>
   void one_ring_neighbors (const face_descriptor& query, OutputIterator output) const
   {
-    std::set<face_descriptor> done;
-    BOOST_FOREACH(halfedge_descriptor hd, halfedges_around_face(halfedge(query, m_mesh), m_mesh))
-      {
-        BOOST_FOREACH(face_descriptor fd, faces_around_target(hd, m_mesh))
-          {
-            if (fd == boost::graph_traits<FaceGraph>::null_face())
-              continue;
-            if (done.insert(fd).second)
-              *(output ++) = fd;
-          }
-      }
+    return n_ring_neighbors (query, output, 1);
   }
 
   template <typename OutputIterator>
   void n_ring_neighbors (const face_descriptor& query, OutputIterator output, const std::size_t n) const
   {
-    std::set<face_descriptor> done;
-    std::set<face_descriptor> latest_ring;
-    latest_ring.insert(query);
-
-    for (std::size_t i = 0; i < n; ++ i)
-    {
-      std::set<face_descriptor> new_ring;
-      
-      for (typename std::set<face_descriptor>::iterator it = latest_ring.begin();
-           it != latest_ring.end(); ++ it)
-      {
-        face_descriptor current = *it;
-        BOOST_FOREACH(halfedge_descriptor hd, halfedges_around_face(halfedge(current, m_mesh), m_mesh))
-        {
-          BOOST_FOREACH(face_descriptor fd, faces_around_target(hd, m_mesh))
-          {
-            if (fd == boost::graph_traits<FaceGraph>::null_face())
-              continue;
-            if (done.insert(fd).second)
-            {
-              *(output ++) = fd;
-              new_ring.insert(fd);
-            }
-          }
-        }
-      }
-      new_ring.swap(latest_ring);
-    }
+    *(output ++) = query;
+    CGAL::cpp11::array<face_descriptor,1> init = {{ query }};
+    typename Is_face_selected::Set done;
+    done.insert(query);
+    CGAL::expand_face_selection
+      (init, m_mesh, n, Is_face_selected(&done), output);
   }
+
 
 };
   
