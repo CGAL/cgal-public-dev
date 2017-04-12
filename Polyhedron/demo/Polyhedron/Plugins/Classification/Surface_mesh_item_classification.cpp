@@ -70,7 +70,7 @@ void Surface_mesh_item_classification::backup_existing_colors_and_add_new()
       m_mesh->polyhedron()->add_property_map<face_descriptor, CGAL::Color>("f:color", CGAL::Color(128,128,128)).first;
 }
 
-bool Surface_mesh_item_classification::write_output(std::ostream& stream)
+bool Surface_mesh_item_classification::write_output(std::ostream& )
 {
   // TODO
   return true;
@@ -159,7 +159,6 @@ void Surface_mesh_item_classification::compute_features ()
     delete m_generator;
 
   Face_center_map fc_map (m_mesh->polyhedron());
-  Face_range faces = m_mesh->polyhedron()->faces();
   
   m_generator = new Generator (m_features, *(m_mesh->polyhedron()), fc_map, m_nb_scales);
   

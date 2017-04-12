@@ -149,14 +149,14 @@ protected:
     else if (method == 1)
       CGAL::Classification::classify_with_local_smoothing<Concurrency_tag>
         (m_mesh->polyhedron()->faces(), Face_map(), m_labels, predicate,
-         m_generator->neighborhood().one_ring_neighbor_query(),
+         m_generator->neighborhood().n_ring_neighbor_query(2),
          indices);
-    // else if (method == 2)
-    //   CGAL::Classification::classify_with_graphcut<Concurrency_tag>
-    //     (*(m_points->point_set()), m_points->point_set()->point_map(),
-    //      m_labels, predicate,
-    //      m_generator->neighborhood().k_neighbor_query(12),
-    //      m_smoothing, m_subdivisions, indices);
+    else if (method == 2)
+      CGAL::Classification::classify_with_graphcut<Concurrency_tag>
+        (m_mesh->polyhedron()->faces(), Face_map(), fc_map,
+         m_labels, predicate,
+         m_generator->neighborhood().n_ring_neighbor_query(1),
+         m_smoothing, m_subdivisions, indices);
 
     std::vector<std::size_t> ground_truth(num_faces(*(m_mesh->polyhedron())), std::size_t(-1));
     BOOST_FOREACH(face_descriptor fd, faces(*(m_mesh->polyhedron())))
