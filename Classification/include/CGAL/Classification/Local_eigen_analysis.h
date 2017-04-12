@@ -469,7 +469,6 @@ private:
     typedef typename Kernel_traits<Point>::Kernel Kernel;
     typedef typename Kernel::Triangle_3 Triangle;
         
-    typedef typename boost::graph_traits<FaceListGraph>::vertex_descriptor vertex_descriptor;
     typedef typename boost::graph_traits<FaceListGraph>::face_descriptor face_descriptor;
 
     if (neighbor_faces.size() == 0)
@@ -477,12 +476,12 @@ private:
       Eigenvalues v = {{ 0.f, 0.f, 0.f }};
       m_eigenvalues[query] = v;
 
-      std::vector<Point> points;
-      BOOST_FOREACH(vertex_descriptor v, vertices_around_face(halfedge(query, g), g))
-      {
-        points.push_back (get(get (CGAL::vertex_point, g), v));
-      }
-      Point c = CGAL::centroid (points.begin(), points.end());
+      CGAL::cpp11::array<Triangle,1> tr
+        = {{ Triangle (get(get (CGAL::vertex_point, g), target(halfedge(query, g), g)),
+                       get(get (CGAL::vertex_point, g), target(next(halfedge(query, g), g), g)),
+                       get(get (CGAL::vertex_point, g), target(next(next(halfedge(query, g), g), g), g))) }};
+      Point c = CGAL::centroid(tr.begin(),
+                               tr.end(), Kernel(), CGAL::Dimension_tag<2>());
 
       m_centroids[query] = {{ float(c.x()), float(c.y()), float(c.z()) }};
       
