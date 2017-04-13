@@ -29,9 +29,9 @@ public:
   typedef Scene_surface_mesh_item::SMesh Mesh;
   typedef Scene_surface_mesh_item::Point Point;
   typedef Scene_polyhedron_selection_item::Selection_set_facet Selection;
-  typedef typename Mesh::Face_range Face_range;
-  typedef typename boost::graph_traits<Mesh>::face_descriptor face_descriptor;
-  typedef typename boost::graph_traits<Mesh>::vertex_descriptor vertex_descriptor;
+  typedef Mesh::Face_range Face_range;
+  typedef boost::graph_traits<Mesh>::face_descriptor face_descriptor;
+  typedef boost::graph_traits<Mesh>::vertex_descriptor vertex_descriptor;
   typedef CGAL::Identity_property_map<face_descriptor> Face_map;
 
   typedef CGAL::Classification::Mesh_neighborhood<Mesh> Neighborhood;
@@ -86,7 +86,7 @@ public:
     if (m_selection == NULL)
       return;
     
-    for (typename Selection::iterator it = m_selection->selected_facets.begin();
+    for (Selection::iterator it = m_selection->selected_facets.begin();
          it != m_selection->selected_facets.end(); ++ it)
     {
       m_classif[*it] = label;
@@ -109,7 +109,7 @@ public:
     if (m_selection == NULL)
       return;
     
-    for (typename Selection::iterator it = m_selection->selected_facets.begin();
+    for (Selection::iterator it = m_selection->selected_facets.begin();
          it != m_selection->selected_facets.end(); ++ it)
       m_training[*it] = m_classif[*it];
     m_selection->clear_all();
