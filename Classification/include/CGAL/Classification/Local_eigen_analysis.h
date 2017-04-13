@@ -298,7 +298,7 @@ public:
       std::vector<face_descriptor> neighbors;
       neighbor_query (fd, std::back_inserter (neighbors));
 
-      m_mean_range += face_radius(fd);
+      m_mean_range += face_radius(fd, input);
         
       compute_triangles<FaceListGraph, DiagonalizeTraits>
         (input, fd, neighbors);
@@ -310,7 +310,7 @@ public:
 #ifdef CGAL_LINKED_WITH_TBB
   template <typename FaceListGraph,
             typename NeighborQuery,
-            typename DiagonalizeTraits = CGAL::Default_diagonalize_traits<float, 3> >
+            typename DiagonalizeTraits = CGAL::Default_diagonalize_traits<double, 3> >
   Local_eigen_analysis (const FaceListGraph& input,
                         const NeighborQuery& neighbor_query,
                         const CGAL::Parallel_tag& = CGAL::Parallel_tag(),
@@ -504,18 +504,18 @@ private:
                    get(get (CGAL::vertex_point, g), target(next(next(halfedge(fd, g), g), g), g))));
     }
 
-    CGAL::cpp11::array<float, 6> covariance = {{ 0.f, 0.f, 0.f, 0.f, 0.f, 0.f }};
+    CGAL::cpp11::array<double, 6> covariance = {{ 0.f, 0.f, 0.f, 0.f, 0.f, 0.f }};
     Point c = CGAL::centroid(triangles.begin(),
                              triangles.end(), Kernel(), CGAL::Dimension_tag<2>());
-    
+
     CGAL::internal::assemble_covariance_matrix_3 (triangles.begin(), triangles.end(), covariance,
                                                   c, Kernel(), (Triangle*)NULL, CGAL::Dimension_tag<2>(),
                                                   DiagonalizeTraits());
       
     m_centroids[query] = {{ float(c.x()), float(c.y()), float(c.z()) }};
     
-    CGAL::cpp11::array<float, 3> evalues = {{ 0.f, 0.f, 0.f }};
-    CGAL::cpp11::array<float, 9> evectors = {{ 0.f, 0.f, 0.f,
+    CGAL::cpp11::array<double, 3> evalues = {{ 0.f, 0.f, 0.f }};
+    CGAL::cpp11::array<double, 9> evectors = {{ 0.f, 0.f, 0.f,
                                                0.f, 0.f, 0.f,
                                                0.f, 0.f, 0.f }};
 

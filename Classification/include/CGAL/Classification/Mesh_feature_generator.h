@@ -69,7 +69,7 @@ template <typename Geom_traits,
 #else
           typename ConcurrencyTag = CGAL::Sequential_tag,
 #endif
-          typename DiagonalizeTraits = CGAL::Default_diagonalize_traits<float,3> >
+          typename DiagonalizeTraits = CGAL::Default_diagonalize_traits<double,3> >
 class Mesh_feature_generator
 {
   
@@ -147,7 +147,8 @@ private:
       t.reset();
       t.start();
       
-      eigen = new Local_eigen_analysis (input, neighborhood->n_ring_neighbor_query(nb_scale + 1));
+      eigen = new Local_eigen_analysis (input, neighborhood->n_ring_neighbor_query(nb_scale + 1),
+                                        ConcurrencyTag(), DiagonalizeTraits());
       float mrange = eigen->mean_range();
       if (this->voxel_size < 0)
         this->voxel_size = mrange;
