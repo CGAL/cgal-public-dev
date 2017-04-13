@@ -74,7 +74,7 @@ public:
 
     for (std::size_t i = 0; i < input.size(); i++)
     {
-      typename Geom_traits::Vector_3 normal = eigen.normal_vector(i);
+      typename Geom_traits::Vector_3 normal = eigen.normal_vector<Geom_traits>(i);
       normal = normal / CGAL::sqrt (normal * normal);
       verticality_feature.push_back (1. - CGAL::abs(normal * vertical));
     }
