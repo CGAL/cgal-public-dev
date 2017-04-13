@@ -37,7 +37,9 @@ Surface_mesh_item_classification::Surface_mesh_item_classification(Scene_surface
   m_label_colors.push_back (QColor(100, 0, 255));
   
   m_sowf = new Sum_of_weighted_features (m_labels, m_features);
+#ifdef CGAL_LINKED_WITH_OPENCV
   m_random_forest = new Random_forest (m_labels, m_features);
+#endif
 }
 
 
@@ -45,8 +47,10 @@ Surface_mesh_item_classification::~Surface_mesh_item_classification()
 {
   if (m_sowf != NULL)
     delete m_sowf;
+#ifdef CGAL_LINKED_WITH_OPENCV
   if (m_random_forest != NULL)
     delete m_random_forest;
+#endif
   if (m_generator != NULL)
     delete m_generator;
 }
@@ -164,8 +168,10 @@ void Surface_mesh_item_classification::compute_features ()
   
   delete m_sowf;
   m_sowf = new Sum_of_weighted_features (m_labels, m_features);
+#ifdef CGAL_LINKED_WITH_OPENCV
   delete m_random_forest;
   m_random_forest = new Random_forest (m_labels, m_features);
+#endif
   std::cerr << "Features = " << m_features.size() << std::endl;
 }
 
@@ -190,10 +196,12 @@ void Surface_mesh_item_classification::train(int predicate)
   }
   else
   {
+#ifdef CGAL_LINKED_WITH_OPENCV
     m_random_forest->train (indices);
     CGAL::Classification::classify<Concurrency_tag> (m_mesh->polyhedron()->faces(),
                                                      m_labels, *m_random_forest,
                                                      indices);
+#endif
   }
 
   BOOST_FOREACH(face_descriptor fd, faces(*(m_mesh->polyhedron())))
@@ -213,8 +221,10 @@ bool Surface_mesh_item_classification::run (int method, int predicate)
 
   if (predicate == 0)
     run (method, *m_sowf);
+#ifdef CGAL_LINKED_WITH_OPENCV
   else
     run (method, *m_random_forest);
+#endif
   
   return true;
 }
