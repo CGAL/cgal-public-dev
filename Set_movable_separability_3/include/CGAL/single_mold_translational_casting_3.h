@@ -27,8 +27,8 @@
 #include <CGAL/value_type_traits.h>
 #include <CGAL/property_map.h>
 
-#include <CGAL/QP_models.h>
-#include <CGAL/QP_functions.h>
+
+#include "Set_movable_separability_3/coveringset_finder.h"
 
 namespace CGAL {
 
@@ -36,6 +36,11 @@ enum geom_traits_t { geom_traits };
 enum all_default_t { all_default };
 
 namespace Set_movable_separability_3 {
+
+
+
+
+
 
 template<typename Polyhedron, typename NamedParameters>
 class Get_kernel {
@@ -112,17 +117,6 @@ if((p).c()!=0)\
 std::cout<<(p).c()<<'z';\
 std::cout<<'='<<(p).d()<<std::endl;}while(0)
 
-// program and solution types
-typedef CGAL::Linear_program_from_iterators
-<int**,                                                // for A
- int*,                                                 // for b
- CGAL::Const_oneset_iterator<CGAL::Comparison_result>, // for r
- bool*,                                                // for fl
- int*,                                                 // for l
- bool*,                                                // for fu
- int*,                                                 // for u
- int*>                                                 // for c
-Program;
 template <typename Polyhedron,  typename NamedParameters,
           typename OutputIterator>
 OutputIterator
@@ -139,54 +133,18 @@ single_mold_translational_casting_3(const Polyhedron& polyhedron,
   //! \todo consider using CGAL::is_same_or_derived instaed of boost::is_same
   typedef typename boost::is_same<Direction_type, Direction_3>::type
     Is_direction;
+//	typedef typename Kernel::FT                       FT;
+//	for(auto it = polyhedron.planes_begin(); it!=polyhedron.planes_end();it++)
+//	{
+//	    PRINT_PLANE(*it);
+//		//std::cout<<it->a()<<'x'<<((it->b()>0)?"+":"")<<it->b()<<it->c()<<it->d()<<std::endl;
+//
+////		const CGAL::Plane_3<CGAL::Epick> plane = *it;
+////		Polyhedron::PolyhedronTraits_3 b;
+////		int a=b;
+////		std::cout<<*it<<std::endl;
+//	}
 
-	typedef typename Kernel::FT                       FT;
-
-	typedef CGAL::Quadratic_program_solution<FT> Solution;
-	for(auto it = polyhedron.planes_begin(); it!=polyhedron.planes_end();it++)
-	{
-	    PRINT_PLANE(*it);
-		//std::cout<<it->a()<<'x'<<((it->b()>0)?"+":"")<<it->b()<<it->c()<<it->d()<<std::endl;
-
-//		const CGAL::Plane_3<CGAL::Epick> plane = *it;
-//		Polyhedron::PolyhedronTraits_3 b;
-//		int a=b;
-//		std::cout<<*it<<std::endl;
-	}
-	  int  Ax[] = {1, -1 ,0, 0};                        // column for x
-
-			  int  Ay[] = {1, 1 , -1, -1};                        // column for y
-			  int*  A[] = {Ax, Ay};                       // A comes columnwise
-			  int   b[] = {0, 0,-1 , -7 };                         // right-hand side
-/*
- * x+y<=0
- * -x+y<=0
- * -y<=1
- *
- */
-
-			  CGAL::Const_oneset_iterator<CGAL::Comparison_result>
-			        r(    CGAL::SMALLER);                 // constraints are "<="
-			  bool fl[] = {false, false};                   // both x, y are lower-bounded
-			  int   l[] = {0, 0};
-			  bool fu[] = {false, false};                  // only y is upper-bounded
-			  int   u[] = {0, 4};                         // x's u-entry is ignored
-			  int   c[] = {0, -32};
-			  int  c0   = 64;                             // constant term
-			  // now construct the linear program; the first two parameters are
-			  // the number of variables and the number of constraints (rows of A)
-			  Program lp (2, 4, A, b, r, fl, l, fu, u, c, c0);
-			  // solve the program, using ET as the exact type
-			  Solution s = CGAL::solve_linear_program(lp, FT());
-//			  CGAL::Quadratic_program_solution<double> a;
-			  if(s.is_infeasible())
-			    {
-				for(auto it= s.infeasibility_certificate_begin(); it!=s.infeasibility_certificate_end();it++)
-				  {
-				    std::cout<<*it<<std::endl;
-				  }
-			    }
-			 std::cout<< s.is_infeasible()<<std::endl;
   return single_mold_translational_casting_3_impl(polyhedron, np, oi,
                                                   Is_direction());
 }
