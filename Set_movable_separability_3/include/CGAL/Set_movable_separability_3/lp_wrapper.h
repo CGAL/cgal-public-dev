@@ -43,17 +43,17 @@ namespace internal {
     * a1 b1 c1  	 	=> 	a1*x+b1*y <= c1
     * a2 b2 c2  		=> 	a2*x+b2*y <= c2
     */
-    template <typename FT>
-    enum HalfplaneInteractionState halfPlaneInteraction(FT *h1,FT* h2)
+    template <typename Kernel>
+    enum HalfplaneInteractionState halfPlaneInteraction(typename Kernel::Line_2 &h1,typename Kernel::Line_2 &h2)
     {
-	if(h1[0]*h2[1]!=h2[0]*h1[1])
+	if(h1.a()*h2.b()!=h2.a()*h1.b())
 	{
 	   return HalfplaneInteractionState_LinesIntersect;
 	}
-	if(h1[0]!=0)
+	if(h1.a()!=0)
 	{
-	    bool h1xPositive=(h1[0]>0);
-	    bool h2xPositive=(h2[0]>0);
+	    bool h1xPositive=(h1.a()>0);
+	    bool h2xPositive=(h2.a()>0);
 	    if((h1xPositive&&(!h2xPositive))||(h2xPositive&&(!h1xPositive)))
 	    {
 	      return HalfplaneInteractionState_LinesParallel_Intesection_Is_Empty; //HalfplaneInteractionState_LinesParallel_UnionIsAll might be as well, but In our case, the input to this function can't be in this state
@@ -61,14 +61,14 @@ namespace internal {
 	}
 	else
 	{
-	    bool h1yPositive=(h1[1]>0);
-	    bool h2yPositive=(h2[1]>0);
+	    bool h1yPositive=(h1.b()>0);
+	    bool h2yPositive=(h2.b()>0);
 	    if((h1yPositive&&(!h2yPositive))||(h2yPositive&&(!h1yPositive)))
 	      {
 		return HalfplaneInteractionState_LinesParallel_Intesection_Is_Empty; //HalfplaneInteractionState_LinesParallel_UnionIsAll might be as well, but In our case, the input to this function can't be in this state
 	      }
 	}
-	if(h1[2]>h2[0])
+	if(h1.c()>h2.c())
 	   return HalfplaneInteractionState_LinesParallel_SecondContainsFirst;
 	else
 	   return HalfplaneInteractionState_LinesParallel_FisrtContainsSecond;
@@ -78,11 +78,7 @@ namespace internal {
    /*this function solves finds a witnesses of an infeasiblity of the input lp.
    * (pre: this lp is infeasible) and return 3 (or 2) half planes proving its infeasiblity
    * input: halfplanes -  array of halfplanes in format:
-   * a1 b1 c1  	 	=> 	a1*x+b1*y <= c1
-   * a2 b2 c2  		=> 	a2*x+b2*y <= c2
-   * a3 b3 c3   	=> 	a3*x+b3*y <= c3
-   * ....
-   * an bn cn   	=> 	an*x+bn*y <= cn
+   * line_2 , name as int. if the line is (a,b,c) it represents ax+by+c>=0
    *
    * and pointer to an empty array of size 3 uints at least
    *
@@ -91,19 +87,22 @@ namespace internal {
    * the intersection is empty.
    * This do not means that if you get 3 half-planes there can't be two half-planes that could use as witnesses.
    */
-   template <typename FT>
-   uint8_t find3Witnesses(FT halfplanes[][3],unsigned int n, unsigned int * outArray)
+   template <typename Kernel>
+   uint8_t find3Witnesses(const std::vector<std::pair<typename Kernel::Line_2,unsigned int>> halfplanes, unsigned int * outArray)
    {
+     typedef typename Kernel::Line_2 Line_2;
+     typedef typename Kernel::FT FT;
      typedef CGAL::Quadratic_program<FT> Program;
      typedef CGAL::Quadratic_program_solution<FT> Solution;
-     Program lp(CGAL::SMALLER, false,0,false,0);
+     Program lp(CGAL::LARGER, false,0,false,0);
 #define X_LP_INDEX 0
 #define Y_LP_INDEX 1
-     for(int i=0;i<n;++i)
+     for(int i=0;i<halfplanes.size();++i)
      {
-	 lp.set_a(X_LP_INDEX, i, halfplanes[i][X_LP_INDEX]);
-	 lp.set_a(Y_LP_INDEX, i, halfplanes[i][Y_LP_INDEX]);
-	 lp.set_b(i++, halfplanes[i][2]);
+	 //Line_2 format is (a,b,c) => ax+by+c>=0, the format here is ax+by>=c
+	 lp.set_a(X_LP_INDEX, i, halfplanes[i].first.a());
+	 lp.set_a(Y_LP_INDEX, i, halfplanes[i].first.b());
+	 lp.set_b(i++, -halfplanes[i].c());
      }
      Solution s;
      s= CGAL::solve_linear_program(lp, FT());
@@ -132,32 +131,42 @@ namespace internal {
 	 {
 	     for(int j=i+1;j<3;++j)
 	     {
-		 switch (halfPlaneInteraction(halfplanes[i],halfplanes[j]))
+		 switch (halfPlaneInteraction<Kernel>(halfplanes[outArray[i]].first,halfplanes[outArray[j]].first))
 		 {
 
 		   case HalfplaneInteractionState_LinesParallel_FisrtContainsSecond:
 		     //in this case we want to delete the first
 		     outArray[i]=outArray[2];
+		     outArray[0]=halfplanes[outArray[0]].second;
+		     outArray[1]=halfplanes[outArray[1]].second;
 		     return 2;
 		   case HalfplaneInteractionState_LinesParallel_SecondContainsFirst:
 		     //in this case we want to delete the second
 		     outArray[j]=outArray[2];
+		     outArray[0]=halfplanes[outArray[0]].second;
+		     outArray[1]=halfplanes[outArray[1]].second;
 		     return 2;
 		   case HalfplaneInteractionState_LinesParallel_Intesection_Is_Empty:
 		     //in this case we want to delete the third halfplane
 		     outArray[(0+1+2)-i-j]=outArray[2];
+		     outArray[0]=halfplanes[outArray[0]].second;
+		     outArray[1]=halfplanes[outArray[1]].second;
 		     return 2;
 		 }
 	     }
 
 	 }
+	 outArray[0]=halfplanes[outArray[0]].second;
+	 outArray[1]=halfplanes[outArray[1]].second;
+	 outArray[2]=halfplanes[outArray[2]].second;
 	 return 3;
      }
      else if(count<2)
      {
 	 throw std::invalid_argument("The Infeasibility_certificate_iterator returned less then 2 half planes! BUG!");
      }
-
+     outArray[0]=halfplanes[outArray[0]].second;
+     outArray[1]=halfplanes[outArray[1]].second;
      return 2;
    }
 } // end of namespace internal

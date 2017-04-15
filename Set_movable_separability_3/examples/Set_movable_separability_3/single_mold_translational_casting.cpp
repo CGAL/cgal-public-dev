@@ -41,6 +41,8 @@ struct Plane_equation {
 int main(int argc, char* argv[])
 {
   const char* filename = (argc > 1) ? argv[1] : "polyhedron.off";
+  typename CGAL::Exact_predicates_exact_constructions_kernel::Plane_3 pp;
+
 //  CGAL::Lazy_exact_nt<CGAL::Gmpq> c=-1;
 //  typename Kernel::FT ft0=0;
 //  typename Kernel::FT ft1=1;
