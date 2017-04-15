@@ -172,7 +172,7 @@ namespace CGAL {
 	    Line_3 l = boost::get<Line_3>(* intersection(hemispheres[out[0]], hemispheres[out[1]]));
 	    *outDirection= l.point(1);//get some arbitrary point in the intersection
 	    if(outDirection->x()==0 && outDirection->y()==0 && outDirection->z()==0) //if it is the origin, take another point
-	      outDirection=l.point(2);
+	      *outDirection=l.point(2);
 	    return coveringSetSize;
 	  }
 
