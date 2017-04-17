@@ -42,6 +42,7 @@ int main(int argc, char* argv[])
 {
   const char* filename = (argc > 1) ? argv[1] : "polyhedron.off";
   typename CGAL::Exact_predicates_exact_constructions_kernel::Plane_3 pp;
+  typename CGAL::Exact_predicates_exact_constructions_kernel::Line_2 ppp;
 
 //  CGAL::Lazy_exact_nt<CGAL::Gmpq> c=-1;
 //  typename Kernel::FT ft0=0;
