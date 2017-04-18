@@ -75,7 +75,7 @@ public:
   class One_ring_neighbor_query
   {
   public:
-    typedef Mesh_neighborhood::face_descriptor value_type; ///<
+    typedef typename Mesh_neighborhood::face_descriptor value_type; ///<
   private:
     const Mesh_neighborhood& neighborhood;
 
@@ -97,7 +97,7 @@ public:
   class N_ring_neighbor_query
   {
   public:
-    typedef Mesh_neighborhood::face_descriptor value_type; ///<
+    typedef typename Mesh_neighborhood::face_descriptor value_type; ///<
   private:
     const Mesh_neighborhood& neighborhood;
     const std::size_t n;
@@ -168,7 +168,7 @@ private:
     typename Is_face_selected::Set done;
     done.insert(query);
     CGAL::expand_face_selection
-      (init, m_mesh, n, Is_face_selected(&done), output);
+      (init, m_mesh, static_cast<unsigned int>(n), Is_face_selected(&done), output);
   }
 
 
