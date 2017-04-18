@@ -7,7 +7,7 @@ if(EIGEN3_FOUND)
 
 find_package(OpenCV)
   if(OpenCV_FOUND)
-    target_link_libraries(classification_plugin scene_points_with_normal_item scene_polylines_item scene_polygon_soup_item scene_surface_mesh_item scene_surface_mesh_selection_item scene_color_ramp ${ OpenCV_LIBS })
+    target_link_libraries(classification_plugin scene_points_with_normal_item scene_polylines_item scene_polygon_soup_item scene_surface_mesh_item scene_surface_mesh_selection_item scene_color_ramp ${OpenCV_LIBS})
     target_compile_definitions(classification_plugin PUBLIC "-DUSE_SURFACE_MESH -DCGAL_LINKED_WITH_OPENCV")
   else()
     target_link_libraries(classification_plugin scene_points_with_normal_item scene_polylines_item scene_polygon_soup_item scene_surface_mesh_item scene_surface_mesh_selection_item scene_color_ramp)
