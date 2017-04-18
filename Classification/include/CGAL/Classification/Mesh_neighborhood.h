@@ -163,12 +163,15 @@ private:
   template <typename OutputIterator>
   void n_ring_neighbors (const face_descriptor& query, OutputIterator output, const std::size_t n) const
   {
-    *(output ++) = query;
+    *(output ++) = get(get(CGAL::face_index, m_mesh), query);
     CGAL::cpp11::array<face_descriptor,1> init = {{ query }};
     typename Is_face_selected::Set done;
     done.insert(query);
+    std::vector<face_descriptor> desc;
     CGAL::expand_face_selection
-      (init, m_mesh, static_cast<unsigned int>(n), Is_face_selected(&done), output);
+      (init, m_mesh, static_cast<unsigned int>(n), Is_face_selected(&done), std::back_inserter (desc));
+    for (std::size_t i = 0; i < desc.size(); ++ i)
+      *(output ++) = get(get(CGAL::face_index, m_mesh), desc[i]);
   }
 
 
