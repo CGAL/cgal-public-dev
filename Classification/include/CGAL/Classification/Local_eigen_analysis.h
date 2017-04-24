@@ -282,7 +282,7 @@ public:
     typedef typename boost::graph_traits<FaceListGraph>::face_descriptor face_descriptor;
     typedef typename boost::graph_traits<FaceListGraph>::face_iterator face_iterator;
     typedef typename CGAL::Iterator_range<face_iterator> Face_range;
-    typedef typename boost::property_map<FaceListGraph, CGAL::face_index_t>::const_type face_index;
+    typedef typename boost::property_map<FaceListGraph, CGAL::face_index_t>::type::value_type face_index;
     
     Face_range range (faces(input));
 
@@ -303,9 +303,10 @@ public:
       neighbor_query (fd, std::back_inserter (neighbors));
 
       m_mean_range += face_radius(fd, input);
-        
+      
       compute_triangles<FaceListGraph, DiagonalizeTraits>
         (input, fd, neighbors);
+
     }
 
     m_mean_range /= range.size();
