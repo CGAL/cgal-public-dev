@@ -37,6 +37,11 @@ if( TBB_FOUND )
   list(APPEND CGAL_3RD_PARTY_LIBRARIES ${TBB_LIBRARIES})
 endif()
 
+find_package(Eigen3 3.1.0) #(requires 3.1.0 or greater)
+if (EIGEN3_FOUND)
+  include( ${EIGEN3_USE_FILE} )
+endif()
+
 
 find_package(OpenCV REQUIRED )
 
