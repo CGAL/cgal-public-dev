@@ -22,7 +22,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title></dc:title>
+        <dc:title />
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -44,12 +44,12 @@
      fit-margin-right="0"
      fit-margin-bottom="0"
      inkscape:zoom="1.1583382"
-     inkscape:cx="204.54049"
-     inkscape:cy="446.8932"
+     inkscape:cx="176.59227"
+     inkscape:cy="430.87922"
      inkscape:window-x="0"
      inkscape:window-y="25"
      inkscape:window-maximized="1"
-     inkscape:current-layer="svg2" />
+     inkscape:current-layer="Arrière-plan" />
   <defs
      id="defs4" />
   <g
@@ -138,15 +138,15 @@
     <text
        font-size="12.8"
        style="font-style:normal;font-weight:normal;font-size:12.80000019px;font-family:sans-serif;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none"
-       x="158.842"
+       x="154.535"
        y="92.266998"
        id="text39">
       <tspan
-         x="158.842"
+         x="154.535"
          y="92.266998"
          id="tspan41">refined and</tspan>
       <tspan
-         x="158.842"
+         x="154.535"
          y="108.267"
          id="tspan43">combined into</tspan>
     </text>
@@ -208,15 +208,15 @@
     <text
        font-size="12.8"
        style="font-style:normal;font-weight:normal;font-size:12.80000019px;font-family:sans-serif;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none"
-       x="618.224"
+       x="609.61005"
        y="-180.09801"
        id="text65">
       <tspan
-         x="618.224"
+         x="609.61005"
          y="-180.09801"
          id="tspan67">used as</tspan>
       <tspan
-         x="618.224"
+         x="609.61005"
          y="-164.09801"
          id="tspan69">input by</tspan>
     </text>
@@ -315,16 +315,16 @@
     <text
        font-size="12.8"
        style="font-style:normal;font-weight:normal;font-size:12.80000019px;font-family:sans-serif;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none"
-       x="481.03601"
-       y="-162.138"
+       x="475.86761"
+       y="-156.96962"
        id="text105">
       <tspan
-         x="481.03601"
-         y="-162.138"
+         x="475.86761"
+         y="-156.96962"
          id="tspan107">used for</tspan>
       <tspan
-         x="481.03601"
-         y="-146.138"
+         x="475.86761"
+         y="-140.96962"
          id="tspan109">training by</tspan>
     </text>
     <text
@@ -656,17 +656,8 @@
          font-size="12.8"
          style="font-style:normal;font-weight:700;font-size:12.80000019px;font-family:sans-serif;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none"
          x="625.23102"
-         y="-51.611698"
-         id="text231">
-        <tspan
-           x="625.23102"
-           y="-51.611698"
-           id="tspan233">Classification</tspan>
-        <tspan
-           x="625.23102"
-           y="-35.611698"
-           id="tspan235">Predicate</tspan>
-      </text>
+         y="-44.289825"
+         id="text231">Classifier</text>
     </g>
     <g
        id="g237">
@@ -890,15 +881,15 @@
     <text
        font-size="12.8"
        style="font-style:normal;font-weight:normal;font-size:12.80000019px;font-family:sans-serif;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none"
-       x="577.09003"
+       x="571.06024"
        y="100.391"
        id="text317">
       <tspan
-         x="577.09003"
+         x="571.06024"
          y="100.391"
          id="tspan319">applied and</tspan>
       <tspan
-         x="577.09003"
+         x="571.06024"
          y="116.391"
          id="tspan321">regularized by</tspan>
     </text>
