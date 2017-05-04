@@ -17,26 +17,26 @@ typedef Kernel::Iso_cuboid_3 Iso_cuboid_3;
 typedef std::vector<Point> Point_range;
 typedef CGAL::Identity_property_map<Point> Pmap;
 
-namespace Classif = CGAL::Classification;
+namespace Classification = CGAL::Classification;
 
-typedef Classif::Sum_of_weighted_features_predicate Classification_predicate;
+typedef Classification::Sum_of_weighted_features_classifier Classifier;
 
-typedef Classif::Planimetric_grid<Kernel, Point_range, Pmap>             Planimetric_grid;
-typedef Classif::Point_set_neighborhood<Kernel, Point_range, Pmap>       Neighborhood;
-typedef Classif::Local_eigen_analysis                                    Local_eigen_analysis;
+typedef Classification::Planimetric_grid<Kernel, Point_range, Pmap>             Planimetric_grid;
+typedef Classification::Point_set_neighborhood<Kernel, Point_range, Pmap>       Neighborhood;
+typedef Classification::Local_eigen_analysis                                    Local_eigen_analysis;
 
-typedef Classif::Label_handle                                            Label_handle;
-typedef Classif::Feature_handle                                          Feature_handle;
-typedef Classif::Label_set                                               Label_set;
-typedef Classif::Feature_set                                             Feature_set;
+typedef Classification::Label_handle                                            Label_handle;
+typedef Classification::Feature_handle                                          Feature_handle;
+typedef Classification::Label_set                                               Label_set;
+typedef Classification::Feature_set                                             Feature_set;
 
-typedef Classif::Feature::Distance_to_plane<Point_range, Pmap>           Distance_to_plane;
-typedef Classif::Feature::Linearity                                      Linearity;
-typedef Classif::Feature::Omnivariance                                   Omnivariance;
-typedef Classif::Feature::Planarity                                      Planarity;
-typedef Classif::Feature::Surface_variation                              Surface_variation;
-typedef Classif::Feature::Elevation<Kernel, Point_range, Pmap>           Elevation;
-typedef Classif::Feature::Vertical_dispersion<Kernel, Point_range, Pmap> Dispersion;
+typedef Classification::Feature::Distance_to_plane<Point_range, Pmap>           Distance_to_plane;
+typedef Classification::Feature::Linearity                                      Linearity;
+typedef Classification::Feature::Omnivariance                                   Omnivariance;
+typedef Classification::Feature::Planarity                                      Planarity;
+typedef Classification::Feature::Surface_variation                              Surface_variation;
+typedef Classification::Feature::Elevation<Kernel, Point_range, Pmap>           Elevation;
+typedef Classification::Feature::Vertical_dispersion<Kernel, Point_range, Pmap> Dispersion;
 
 
 ///////////////////////////////////////////////////////////////////
@@ -56,9 +56,9 @@ int main (int argc, char** argv)
     return EXIT_FAILURE;
   }
 
-  double grid_resolution = 0.34;
-  double radius_neighbors = 1.7;
-  double radius_dtm = 15.0;
+  float grid_resolution = 0.34;
+  float radius_neighbors = 1.7;
+  float radius_dtm = 15.0;
 
   std::cerr << "Computing useful structures" << std::endl;
 
@@ -76,17 +76,15 @@ int main (int argc, char** argv)
 
   std::cerr << "Computing features" << std::endl;
   Feature_set features;
-  Feature_handle d2p = features.add<Distance_to_plane> (pts, Pmap(), eigen);
-  Feature_handle lin = features.add<Linearity> (pts, eigen);
-  Feature_handle omni = features.add<Omnivariance> (pts, eigen);
-  Feature_handle plan = features.add<Planarity> (pts, eigen);
-  Feature_handle surf = features.add<Surface_variation> (pts, eigen);
-  Feature_handle disp = features.add<Dispersion> (pts, Pmap(), grid,
-                                                  grid_resolution,
-                                                  radius_neighbors);
-  Feature_handle elev = features.add<Elevation> (pts, Pmap(), grid,
-                                                 grid_resolution,
-                                                 radius_dtm);
+  Feature_handle distance_to_plane = features.add<Distance_to_plane> (pts, Pmap(), eigen);
+  Feature_handle linearity = features.add<Linearity> (pts, eigen);
+  Feature_handle omnivariance = features.add<Omnivariance> (pts, eigen);
+  Feature_handle planarity = features.add<Planarity> (pts, eigen);
+  Feature_handle surface_variation = features.add<Surface_variation> (pts, eigen);
+  Feature_handle dispersion = features.add<Dispersion> (pts, Pmap(), grid,
+                                                        radius_neighbors);
+  Feature_handle elevation = features.add<Elevation> (pts, Pmap(), grid,
+                                                      radius_dtm);
 
   //! [Features]
   ///////////////////////////////////////////////////////////////////
@@ -96,7 +94,7 @@ int main (int argc, char** argv)
 
   Label_set labels;
   Label_handle ground = labels.add ("ground");
-  Label_handle vege = labels.add ("vegetation");
+  Label_handle vegetation = labels.add ("vegetation");
   Label_handle roof = labels.add ("roof");
 
   //! [Labels]
@@ -106,39 +104,39 @@ int main (int argc, char** argv)
   //! [Weights]
 
   std::cerr << "Setting weights" << std::endl;
-  Classification_predicate predicate (labels, features);
-  predicate.set_weight (d2p, 6.75e-2);
-  predicate.set_weight (lin, 1.19);
-  predicate.set_weight (omni, 1.34e-1);
-  predicate.set_weight (plan, 7.32e-1);
-  predicate.set_weight (surf, 1.36e-1);
-  predicate.set_weight (disp, 5.45e-1);
-  predicate.set_weight (elev, 1.47e1);
+  Classifier classifier (labels, features);
+  classifier.set_weight (distance_to_plane, 6.75e-2);
+  classifier.set_weight (linearity, 1.19);
+  classifier.set_weight (omnivariance, 1.34e-1);
+  classifier.set_weight (planarity, 7.32e-1);
+  classifier.set_weight (surface_variation, 1.36e-1);
+  classifier.set_weight (dispersion, 5.45e-1);
+  classifier.set_weight (elevation, 1.47e1);
   
   std::cerr << "Setting effects" << std::endl;
-  predicate.set_effect (ground, d2p, Classification_predicate::NEUTRAL);
-  predicate.set_effect (ground, lin,  Classification_predicate::PENALIZING);
-  predicate.set_effect (ground, omni, Classification_predicate::NEUTRAL);
-  predicate.set_effect (ground, plan, Classification_predicate::FAVORING);
-  predicate.set_effect (ground, surf, Classification_predicate::PENALIZING);
-  predicate.set_effect (ground, disp, Classification_predicate::NEUTRAL);
-  predicate.set_effect (ground, elev, Classification_predicate::PENALIZING);
+  classifier.set_effect (ground, distance_to_plane, Classifier::NEUTRAL);
+  classifier.set_effect (ground, linearity,  Classifier::PENALIZING);
+  classifier.set_effect (ground, omnivariance, Classifier::NEUTRAL);
+  classifier.set_effect (ground, planarity, Classifier::FAVORING);
+  classifier.set_effect (ground, surface_variation, Classifier::PENALIZING);
+  classifier.set_effect (ground, dispersion, Classifier::NEUTRAL);
+  classifier.set_effect (ground, elevation, Classifier::PENALIZING);
   
-  predicate.set_effect (vege, d2p,  Classification_predicate::FAVORING);
-  predicate.set_effect (vege, lin,  Classification_predicate::NEUTRAL);
-  predicate.set_effect (vege, omni, Classification_predicate::FAVORING);
-  predicate.set_effect (vege, plan, Classification_predicate::NEUTRAL);
-  predicate.set_effect (vege, surf, Classification_predicate::NEUTRAL);
-  predicate.set_effect (vege, disp, Classification_predicate::FAVORING);
-  predicate.set_effect (vege, elev, Classification_predicate::NEUTRAL);
+  classifier.set_effect (vegetation, distance_to_plane,  Classifier::FAVORING);
+  classifier.set_effect (vegetation, linearity,  Classifier::NEUTRAL);
+  classifier.set_effect (vegetation, omnivariance, Classifier::FAVORING);
+  classifier.set_effect (vegetation, planarity, Classifier::NEUTRAL);
+  classifier.set_effect (vegetation, surface_variation, Classifier::NEUTRAL);
+  classifier.set_effect (vegetation, dispersion, Classifier::FAVORING);
+  classifier.set_effect (vegetation, elevation, Classifier::NEUTRAL);
 
-  predicate.set_effect (roof, d2p,  Classification_predicate::NEUTRAL);
-  predicate.set_effect (roof, lin,  Classification_predicate::PENALIZING);
-  predicate.set_effect (roof, omni, Classification_predicate::FAVORING);
-  predicate.set_effect (roof, plan, Classification_predicate::FAVORING);
-  predicate.set_effect (roof, surf, Classification_predicate::PENALIZING);
-  predicate.set_effect (roof, disp, Classification_predicate::NEUTRAL);
-  predicate.set_effect (roof, elev, Classification_predicate::FAVORING);
+  classifier.set_effect (roof, distance_to_plane,  Classifier::NEUTRAL);
+  classifier.set_effect (roof, linearity,  Classifier::PENALIZING);
+  classifier.set_effect (roof, omnivariance, Classifier::FAVORING);
+  classifier.set_effect (roof, planarity, Classifier::FAVORING);
+  classifier.set_effect (roof, surface_variation, Classifier::PENALIZING);
+  classifier.set_effect (roof, dispersion, Classifier::NEUTRAL);
+  classifier.set_effect (roof, elevation, Classifier::FAVORING);
 
   //! [Weights]
   ///////////////////////////////////////////////////////////////////
@@ -152,7 +150,7 @@ int main (int argc, char** argv)
     
   CGAL::Real_timer t;
   t.start();
-  Classif::classify<CGAL::Parallel_tag> (pts, labels, predicate, label_indices);
+  Classification::classify<CGAL::Parallel_tag> (pts, labels, classifier, label_indices);
   t.stop();
   std::cerr << "Raw classification performed in " << t.time() << " second(s)" << std::endl;
   t.reset();
@@ -162,9 +160,9 @@ int main (int argc, char** argv)
   ///////////////////////////////////////////////////////////////////
   //! [Smoothing]
   t.start();
-  Classif::classify_with_local_smoothing<CGAL::Parallel_tag>
-    (pts, Pmap(), labels, predicate,
-     neighborhood.range_neighbor_query(radius_neighbors),
+  Classification::classify_with_local_smoothing<CGAL::Parallel_tag>
+    (pts, Pmap(), labels, classifier,
+     neighborhood.sphere_neighbor_query(radius_neighbors),
      label_indices);
   t.stop();
   std::cerr << "Classification with local smoothing performed in " << t.time() << " second(s)" << std::endl;
@@ -175,8 +173,8 @@ int main (int argc, char** argv)
   ///////////////////////////////////////////////////////////////////
   //! [Graph_cut]
   t.start();
-  Classif::classify_with_graphcut<CGAL::Sequential_tag>
-    (pts, Pmap(), labels, predicate,
+  Classification::classify_with_graphcut<CGAL::Sequential_tag>
+    (pts, Pmap(), labels, classifier,
      neighborhood.k_neighbor_query(12),
      0.2, 4, label_indices);
   t.stop();
@@ -205,7 +203,7 @@ int main (int argc, char** argv)
     Label_handle label = labels[label_indices[i]];
     if (label == ground)
       f << "245 180 0" << std::endl;
-    else if (label == vege)
+    else if (label == vegetation)
       f << "0 255 27" << std::endl;
     else if (label == roof)
       f << "255 0 170" << std::endl;

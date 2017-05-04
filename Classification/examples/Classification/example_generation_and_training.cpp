@@ -17,16 +17,16 @@ typedef Kernel::Iso_cuboid_3 Iso_cuboid_3;
 typedef std::vector<Point> Point_range;
 typedef CGAL::Identity_property_map<Point> Pmap;
 
-namespace Classif = CGAL::Classification;
+namespace Classification = CGAL::Classification;
 
-typedef Classif::Label_handle                                            Label_handle;
-typedef Classif::Feature_handle                                          Feature_handle;
-typedef Classif::Label_set                                               Label_set;
-typedef Classif::Feature_set                                             Feature_set;
+typedef Classification::Label_handle                                            Label_handle;
+typedef Classification::Feature_handle                                          Feature_handle;
+typedef Classification::Label_set                                               Label_set;
+typedef Classification::Feature_set                                             Feature_set;
 
-typedef Classif::Sum_of_weighted_features_predicate Classification_predicate;
+typedef Classification::Sum_of_weighted_features_classifier Classifier;
 
-typedef Classif::Point_set_feature_generator<Kernel, Point_range, Pmap> Feature_generator;
+typedef Classification::Point_set_feature_generator<Kernel, Point_range, Pmap> Feature_generator;
 
 /*
   This interpreter is used to read a PLY input that contains training
@@ -105,49 +105,49 @@ int main (int argc, char** argv)
   // Add types
   Label_set labels;
   Label_handle ground = labels.add ("ground");
-  Label_handle vege = labels.add ("vegetation");
+  Label_handle vegetation = labels.add ("vegetation");
   Label_handle roof = labels.add ("roof");
   Label_handle facade = labels.add ("facade");
 
-  Classification_predicate predicate (labels, features);
+  Classifier classifier (labels, features);
   
   std::cerr << "Training" << std::endl;
   t.reset();
   t.start();
-  predicate.train<CGAL::Sequential_tag> (ground_truth, 800);
+  classifier.train<CGAL::Sequential_tag> (ground_truth, 800);
   t.stop();
   std::cerr << "Done in " << t.time() << " second(s)" << std::endl;
 
   t.reset();
   t.start();
   std::vector<std::size_t> label_indices;
-  Classif::classify_with_graphcut<CGAL::Sequential_tag>
-    (pts, Pmap(), labels, predicate,
+  Classification::classify_with_graphcut<CGAL::Sequential_tag>
+    (pts, Pmap(), labels, classifier,
      generator.neighborhood().k_neighbor_query(12),
      0.2, 10, label_indices);
   t.stop();
   std::cerr << "Classification with graphcut done in " << t.time() << " second(s)" << std::endl;
 
   std::cerr << "Precision, recall, F1 scores and IoU:" << std::endl;
-  Classif::Evaluation eval (labels, ground_truth, label_indices);
+  Classification::Evaluation evaluation (labels, ground_truth, label_indices);
   
   for (std::size_t i = 0; i < labels.size(); ++ i)
   {
     std::cerr << " * " << labels[i]->name() << ": "
-              << eval.precision(labels[i]) << " ; "
-              << eval.recall(labels[i]) << " ; "
-              << eval.f1_score(labels[i]) << " ; "
-              << eval.intersection_over_union(labels[i]) << std::endl;
+              << evaluation.precision(labels[i]) << " ; "
+              << evaluation.recall(labels[i]) << " ; "
+              << evaluation.f1_score(labels[i]) << " ; "
+              << evaluation.intersection_over_union(labels[i]) << std::endl;
   }
 
-  std::cerr << "Accuracy = " << eval.accuracy() << std::endl
-            << "Mean F1 score = " << eval.mean_f1_score() << std::endl
-            << "Mean IoU = " << eval.mean_intersection_over_union() << std::endl;
+  std::cerr << "Accuracy = " << evaluation.accuracy() << std::endl
+            << "Mean F1 score = " << evaluation.mean_f1_score() << std::endl
+            << "Mean IoU = " << evaluation.mean_intersection_over_union() << std::endl;
   
 
   /// Save the configuration to be able to reload it later
   std::ofstream fconfig ("config.xml");
-  predicate.save_configuration (fconfig);
+  classifier.save_configuration (fconfig);
   fconfig.close();
 
   std::cerr << "All done" << std::endl;

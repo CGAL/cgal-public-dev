@@ -109,14 +109,14 @@ public:
     typedef typename Point_set_neighborhood::Point value_type; ///<
   private:
     const Point_set_neighborhood& neighborhood;
-    std::size_t k;
+    unsigned int k;
   public:
     /*!
       \brief Constructs a K neighbor query object.
       \param neighborhood point set neighborhood object.
       \param k number of neighbors per query.
     */
-    K_neighbor_query (const Point_set_neighborhood& neighborhood, std::size_t k)
+    K_neighbor_query (const Point_set_neighborhood& neighborhood, unsigned int k)
       : neighborhood (neighborhood), k(k) { }
 
     /// \cond SKIP_IN_MANUAL
@@ -136,7 +136,7 @@ public:
 
     \cgalModels CGAL::Classification::NeighborQuery
   */
-  class Range_neighbor_query
+  class Sphere_neighbor_query
   {
   public:
     typedef typename Point_set_neighborhood::Point value_type; ///<
@@ -149,21 +149,21 @@ public:
       \param neighborhood point set neighborhood object.
       \param radius radius of the neighbor query sphere.
     */
-    Range_neighbor_query (const Point_set_neighborhood& neighborhood, float radius)
+    Sphere_neighbor_query (const Point_set_neighborhood& neighborhood, float radius)
       : neighborhood (neighborhood), radius(radius) { }
 
     /// \cond SKIP_IN_MANUAL
     template <typename OutputIterator>
     OutputIterator operator() (const value_type& query, OutputIterator output) const
     {
-      neighborhood.range_neighbors (query, radius, output);
+      neighborhood.sphere_neighbors (query, radius, output);
       return output;
     }
     /// \endcond
   };
 
   friend class K_neighbor_query;
-  friend class Range_neighbor_query;
+  friend class Sphere_neighbor_query;
 
   /// \cond SKIP_IN_MANUAL
   Point_set_neighborhood () : m_tree (NULL) { }
@@ -231,7 +231,7 @@ public:
   /*!
     \brief Returns a neighbor query object with fixed number of neighbors `k`.
   */
-  K_neighbor_query k_neighbor_query (const std::size_t k) const
+  K_neighbor_query k_neighbor_query (const unsigned int k) const
   {
     return K_neighbor_query (*this, k);
   }
@@ -239,15 +239,15 @@ public:
   /*!
     \brief Returns a neighbor query object with fixed radius `radius`.
   */
-  Range_neighbor_query range_neighbor_query (const float radius) const
+  Sphere_neighbor_query sphere_neighbor_query (const float radius) const
   {
-    return Range_neighbor_query (*this, radius);
+    return Sphere_neighbor_query (*this, radius);
   }
 
 private:
 
   template <typename OutputIterator>
-  void range_neighbors (const Point& query, const FT radius_neighbors, OutputIterator output) const
+  void sphere_neighbors (const Point& query, const FT radius_neighbors, OutputIterator output) const
   {
     CGAL_assertion (m_tree != NULL);
     Sphere fs (query, radius_neighbors, 0, m_tree->traits());
@@ -255,10 +255,10 @@ private:
   }
 
   template <typename OutputIterator>
-  void k_neighbors (const Point& query, const std::size_t k, OutputIterator output) const
+  void k_neighbors (const Point& query, const unsigned int k, OutputIterator output) const
   {
     CGAL_assertion (m_tree != NULL);
-    Knn search (*m_tree, query, (unsigned int)k, 0, true, m_distance);
+    Knn search (*m_tree, query, k, 0, true, m_distance);
     for (typename Knn::iterator it = search.begin(); it != search.end(); ++ it)
       *(output ++) = it->first;
   }

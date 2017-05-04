@@ -239,11 +239,12 @@ public:
   /*!
     \brief Generates all possible features from an input range.
 
-    The size of the smallest scale is automatically estimated and the
-    data structures needed (`Neighborhood`, `Planimetric_grid` and
-    `Local_eigen_analysis`) are computed at `nb_scales` recursively
-    larger scales. At each scale, the following features are
-    generated:
+    The size of the smallest scale is automatically estimated using a
+    method equivalent to `CGAL::compute_average_spacing()` using 6
+    neighbors. The data structures needed (`Neighborhood`,
+    `Planimetric_grid` and `Local_eigen_analysis`) are computed at
+    `nb_scales` recursively larger scales. At each scale, the
+    following features are generated:
 
     - `CGAL::Classification::Feature::Anisotropy`
     - `CGAL::Classification::Feature::Distance_to_plane`
@@ -489,7 +490,8 @@ private:
     
     void operator() () const
     {
-      Feature_handle fh = generator->m_features->template add<Hsv> (generator->m_input, color_map, channel, mean, sd);
+      Feature_handle fh = generator->m_features->template add<Hsv> (generator->m_input, color_map,
+                                                                    (typename Hsv::Channel)(channel), mean, sd);
       std::ostringstream oss;
       oss << fh->name() << "_" << scale;
       fh->set_name (oss.str());
@@ -535,7 +537,6 @@ private:
       Feature_handle fh = generator->m_features->template add<Echo_scatter> (generator->m_input,
                                                                              echo_map,
                                                                              generator->grid(scale),
-                                                                             generator->grid_resolution(scale),
                                                                              generator->radius_neighbors(scale));
       std::ostringstream oss;
       oss << fh->name() << "_" << scale;
@@ -685,7 +686,6 @@ private:
       Feature_handle fh = generator->m_features->template add<Feature_type>
         (generator->m_input, point_map,
          generator->grid(scale),
-         generator->grid_resolution(scale),
          generator->radius_neighbors(scale));
       std::ostringstream oss;
       oss << fh->name() << "_" << scale;
@@ -716,7 +716,6 @@ private:
       Feature_handle fh = generator->m_features->template add<Feature_type> (generator->m_input,
                                                                              point_map,
                                                                              generator->grid(scale),
-                                                                             generator->grid_resolution(scale),
                                                                              generator->radius_dtm(scale));
       std::ostringstream oss;
       oss << fh->name() << "_" << scale;

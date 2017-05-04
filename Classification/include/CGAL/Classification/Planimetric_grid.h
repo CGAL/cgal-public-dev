@@ -59,6 +59,7 @@ private:
   typedef Image<bool> Image_bool;
 
   Image_indices m_grid;
+  float m_resolution;
   std::vector<std::size_t> m_x;
   std::vector<std::size_t> m_y;
   Planimetric_grid* m_lower_scale;
@@ -69,7 +70,7 @@ public:
   Planimetric_grid () { }
   /// \endcond
 
-  /*
+  /*!
     \brief Constructs a planimetric grid based on the input range.
 
     \param input input range.
@@ -80,7 +81,8 @@ public:
   Planimetric_grid (const PointRange& input,
                     PointMap point_map,
                     const Iso_cuboid_3& bbox,
-                    const float grid_resolution) : m_lower_scale(NULL)
+                    const float grid_resolution)
+    : m_resolution (grid_resolution), m_lower_scale(NULL)
   {
     std::size_t width = (std::size_t)((bbox.xmax() - bbox.xmin()) / grid_resolution) + 1;
     std::size_t height = (std::size_t)((bbox.ymax() - bbox.ymin()) / grid_resolution) + 1;
@@ -94,17 +96,26 @@ public:
       m_y.push_back ((std::size_t)((p.y() - bbox.ymin()) / grid_resolution));
       m_grid(m_x.back(), m_y.back()).push_back (i);
     }
-    std::cerr << "Grid size = " << width << " " << height << std::endl;
+//    std::cerr << "Grid size = " << width << " " << height << std::endl;
   }
 
   /// \cond SKIP_IN_MANUAL
-  Planimetric_grid (Planimetric_grid* lower_scale) : m_lower_scale (lower_scale)
+  Planimetric_grid (Planimetric_grid* lower_scale)
+    : m_resolution (lower_scale->resolution() * 2), m_lower_scale (lower_scale)
   {
-    std::cerr << "Grid size = " << width() << " " << height() << std::endl;
+//    std::cerr << "Grid size = " << width() << " " << height() << std::endl;
   }
   /// \endcond
 
 
+  /*!
+    \brief Returns the resolution of the grid.
+  */
+  float resolution() const
+  {
+    return m_resolution;
+  }
+  
   /*!
     \brief Returns the number of cells along the X-axis.
   */
@@ -150,7 +161,7 @@ public:
   /*!
     \brief Returns `false` if the cell at position `(x,y)` is empty, `true` otherwise.
   */
-  bool mask(std::size_t x, std::size_t y) const
+  bool has_points(std::size_t x, std::size_t y) const
   {
     if (m_lower_scale == NULL)
     {
@@ -159,10 +170,10 @@ public:
       return (!(m_grid(x,y).empty()));
     }
     else
-      return (m_lower_scale->mask(x*2, y*2)
-              || m_lower_scale->mask(x*2, y*2 + 1)
-              || m_lower_scale->mask(x*2 + 1, y*2 + 1)
-              || m_lower_scale->mask(x*2 + 1, y*2));
+      return (m_lower_scale->has_points(x*2, y*2)
+              || m_lower_scale->has_points(x*2, y*2 + 1)
+              || m_lower_scale->has_points(x*2 + 1, y*2 + 1)
+              || m_lower_scale->has_points(x*2 + 1, y*2));
   }
 
   /*!

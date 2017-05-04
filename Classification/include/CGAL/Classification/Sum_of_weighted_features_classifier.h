@@ -18,8 +18,8 @@
 //
 // Author(s)     : Simon Giraudot, Florent Lafarge
 
-#ifndef CLASSIFICATION_SUM_OF_WEIGHTED_FEATURES_PREDICATE_H
-#define CLASSIFICATION_SUM_OF_WEIGHTED_FEATURES_PREDICATE_H
+#ifndef CLASSIFICATION_SUM_OF_WEIGHTED_FEATURES_CLASSIFIER_H
+#define CLASSIFICATION_SUM_OF_WEIGHTED_FEATURES_CLASSIFIER_H
 
 #include <CGAL/Classification/Feature_set.h>
 #include <CGAL/Classification/Label_set.h>
@@ -57,14 +57,14 @@ namespace CGAL {
 namespace Classification {
 
 /*!
-  \ingroup PkgClassificationPredicates
+  \ingroup PkgClassificationClassifiers
 
-  \brief %Classification predicate based on the sum of weighted
+  \brief %Classification classifier based on the sum of weighted
   features with user-defined effects on labels.
 
-  \cgalModels `CGAL::Classification::Predicate`
+  \cgalModels `CGAL::Classification::Classifier`
 */
-class Sum_of_weighted_features_predicate
+class Sum_of_weighted_features_classifier
 {
 public:
 
@@ -81,7 +81,7 @@ private:
   class Compute_iou
   {
     std::vector<std::size_t>& m_training_set;
-    const Sum_of_weighted_features_predicate& m_predicate;
+    const Sum_of_weighted_features_classifier& m_classifier;
     std::size_t m_label;
     std::vector<std::size_t>& m_true_positives;
     std::vector<std::size_t>& m_false_positives;
@@ -94,7 +94,7 @@ private:
   public:
 
     Compute_iou (std::vector<std::size_t>& training_set,
-                 const Sum_of_weighted_features_predicate& predicate,
+                 const Sum_of_weighted_features_classifier& classifier,
                  std::size_t label,
                  std::vector<std::size_t>& true_positives,
                  std::vector<std::size_t>& false_positives,
@@ -103,7 +103,7 @@ private:
                  std::vector<tbb::mutex>& fp_mutex,
                  std::vector<tbb::mutex>& fn_mutex)
       : m_training_set (training_set)
-      , m_predicate (predicate)
+      , m_classifier (classifier)
       , m_label (label)
       , m_true_positives (true_positives)
       , m_false_positives (false_positives)
@@ -120,7 +120,7 @@ private:
         std::size_t res = 0;
 
         std::vector<float> v;
-        m_predicate (m_training_set[k], v);
+        m_classifier (m_training_set[k], v);
 
         float min = std::numeric_limits<float>::max();
         for(std::size_t l = 0; l < v.size(); ++ l)
@@ -165,14 +165,14 @@ public:
   
 /*!
 
-  \brief Instantiate the predicate using the sets of `labels` and `features`.
+  \brief Instantiate the classifier using the sets of `labels` and `features`.
 
   \note If the label set of the feature set are modified after
   instantiating this object (addition of removal of a label and/or of
-  a feature), another predicate object should be instantiated as the
+  a feature), another classifier object should be instantiated as the
   internal data structures of this one are invalidated.
 */
-  Sum_of_weighted_features_predicate (Label_set& labels,
+  Sum_of_weighted_features_classifier (Label_set& labels,
                                       Feature_set& features)
     : m_labels (labels), m_features (features),
       m_weights (features.size(), 1.),
@@ -296,7 +296,7 @@ public:
   */
   template <typename ConcurrencyTag>  
   float train (const std::vector<std::size_t>& ground_truth,
-               std::size_t nb_tests = 300)
+               unsigned int nb_tests = 300)
   {
     std::vector<std::vector<std::size_t> > training_sets (m_labels.size());
     std::size_t nb_tot = 0;
@@ -487,7 +487,7 @@ public:
   /// \cond SKIP_IN_MANUAL
   template <typename ConcurrencyTag>  
   float train_random (const std::vector<std::size_t>& ground_truth,
-                      std::size_t nb_tests = 300)
+                      unsigned int nb_tests = 300)
   {
     std::vector<std::vector<std::size_t> > training_sets (m_labels.size());
     std::size_t nb_tot = 0;
@@ -582,7 +582,7 @@ public:
 
     CGAL_CLASSIFICATION_CERR << 100. * best_score << "% (found at initialization)" << std::endl;
 
-    for (std::size_t i = 0; i < nb_tests; ++ i)
+    for (std::size_t i = 0; i < std::size_t(nb_tests); ++ i)
     {
       std::size_t nb_used = 0;
       std::size_t j = rand() % feature_train.size();
@@ -961,4 +961,4 @@ private:
 
 }
 
-#endif //  CLASSIFICATION_SUM_OF_WEIGHTED_FEATURES_PREDICATE_H
+#endif //  CLASSIFICATION_SUM_OF_WEIGHTED_FEATURES_CLASSIFIER_H
