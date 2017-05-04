@@ -37,13 +37,13 @@ namespace Classification {
     \ingroup PkgClassificationDataStructures
 
   */
-template <typename FaceGraph>
+template <typename FaceListGraph>
 class Mesh_neighborhood
 {
-  typedef typename boost::graph_traits<FaceGraph>::face_descriptor face_descriptor;
-  typedef typename boost::graph_traits<FaceGraph>::halfedge_descriptor halfedge_descriptor;
-  typedef typename boost::graph_traits<FaceGraph>::vertex_descriptor vertex_descriptor;
-  const FaceGraph& m_mesh;
+  typedef typename boost::graph_traits<FaceListGraph>::face_descriptor face_descriptor;
+  typedef typename boost::graph_traits<FaceListGraph>::halfedge_descriptor halfedge_descriptor;
+  typedef typename boost::graph_traits<FaceListGraph>::vertex_descriptor vertex_descriptor;
+  const FaceListGraph& m_mesh;
 
   class Is_face_selected
   {
@@ -121,7 +121,7 @@ public:
   friend class N_ring_neighbor_query;
 
 
-  Mesh_neighborhood (const FaceGraph& mesh) : m_mesh (mesh)
+  Mesh_neighborhood (const FaceListGraph& mesh) : m_mesh (mesh)
   {
   }
 

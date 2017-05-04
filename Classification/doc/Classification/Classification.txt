@@ -25,7 +25,7 @@ Organization of the package.
 
 This package is designed to be easily extended by users: more specifically, features and labels can be defined by users to handle any data they need to classify.
 
-Currently, \cgal only provides data structures to handle classification of point sets.
+Currently, \cgal provides data structures to handle classification of point sets and of surface meshes.
 
 \section Classification_structures Data Structures
 
@@ -36,7 +36,8 @@ Currently, \cgal only provides data structures to handle classification of point
 \cgal provides the following structures:
 
 - [Point_set_neighborhood](@ref CGAL::Classification::Point_set_neighborhood) stores spatial searching structures and provides adapted queries for points
-- [Local_eigen_analysis](@ref CGAL::Classification::Local_eigen_analysis) precomputes covariance matrices on local neighborhoods of points and stores the associated eigenvectors and eigenvalues
+- [Mesh_neighborhood](@ref CGAL::Classification::Mesh_neighborhood) provides adapted queries for surface meshes
+- [Local_eigen_analysis](@ref CGAL::Classification::Local_eigen_analysis) precomputes covariance matrices on local neighborhoods of items and stores the associated eigenvectors and eigenvalues
 - [Planimetric_grid](@ref CGAL::Classification::Planimetric_grid) is a 2D grid used for digital terrain modeling.
 
 The following code snippet shows how to instantiate such data structures from an input PLY point set (the full example is given at the end of the manual).
@@ -55,7 +56,7 @@ The following code snippet shows how to add labels to the classification object.
 
 Features are defined as scalar fields that associates each input item with a specific value. Note that in order to limit memory consumption, we use the type `float` for these scalar values (as well as for every floating point value in this package). A feature has a name and is identified by a [Feature_handle](@ref CGAL::Classification::Feature_handle).
 
-\cgal provides some predefined features that are relevant for classification of point sets:
+\cgal provides some predefined features that are relevant for classification of point sets and meshes:
 
 - [Distance_to_plane](@ref CGAL::Classification::Feature::Distance_to_plane) measures how far away a point is from a locally estimated plane
 - [Elevation](@ref CGAL::Classification::Feature::Elevation) computes the local distance to an estimation of the ground
@@ -108,6 +109,21 @@ Note that using this class in order to generate features is not mandatory, as fe
 The following snippet shows how to use the feature generator:
 
 \snippet Classification/example_generation_and_training.cpp Generator
+
+\subsection Classification_mesh_feature_generator Mesh Feature Generator
+
+%Classification of meshes is performed on the facets. This case is pretty similar to the point sets case with some notable differences:
+
+- neighborhood is well defined by the mesh connectivity (1-ring of facets, 2-ring, etc.)
+- eigen analysis can be performed on a local surface patch
+- normal vectors are implicitly defined by the support planes of the facets
+
+For features that do not depend on the eigen analysis or on the normal vectors, we simply use the point set features: a local point set is "simulated" by taking the centroids of each facet on the considered local set.
+
+A similar generator to the point set feature generator is provided for the case of surface meshes. It works exactly the same way with the exception that it uses the structures dedicated to meshes.
+
+An [example](\ref Classification_example_mesh_feature_generator) shows
+how to use the mesh feature generator.
 
 \section Classification_classifiers Classifiers
 

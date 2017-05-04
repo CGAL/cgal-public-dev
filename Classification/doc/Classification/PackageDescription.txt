@@ -78,6 +78,8 @@ Features are defined as scalar fields that associates each input item with a spe
 - `CGAL::Classification::Planimetric_grid<Geom_traits, PointRange, PointMap>`
 - `CGAL::Classification::Point_set_feature_generator<Geom_traits, PointRange, PointMap, ConcurrencyTag, DiagonalizeTraits>`
 - `CGAL::Classification::Point_set_neighborhood<Geom_traits, PointRange, PointMap>`
+- `CGAL::Classification::Mesh_feature_generator<Geom_traits, FaceListGraph, PointMap, ConcurrencyTag, DiagonalizeTraits>`
+- `CGAL::Classification::Mesh_neighborhood<FaceListGraph>`
 - `CGAL::Classification::Evaluation`
 
 ## Label ##
