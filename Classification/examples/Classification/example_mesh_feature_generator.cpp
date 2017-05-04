@@ -72,6 +72,9 @@ void run (Mesh& mesh)
 
   typedef Classif::Mesh_feature_generator<Kernel, Mesh, Face_center_map>             Generator;
 
+  CGAL::Real_timer ttot;
+  ttot.start();
+  
   Face_range range (faces(mesh));
   
   std::cerr << " * " << range.size() << " faces" << std::endl;
@@ -81,13 +84,16 @@ void run (Mesh& mesh)
   
   std::cerr << "Computing features" << std::endl;
   Feature_set features;
-  Generator generator (features, mesh, fc_map, 1);
+  Generator generator (features, mesh, fc_map, 5);
 
   std::cerr << "Setting up labels" << std::endl;
   Label_set labels;
   Label_handle ground = labels.add ("ground");
   Label_handle vege = labels.add ("vegetation");
   Label_handle roof = labels.add ("roof");
+
+  ttot.stop();
+  std::cerr << "Features computed in " << ttot.time() << "s" << std::endl;
 
   // Run classification
   std::cerr << "Classifying" << std::endl;
