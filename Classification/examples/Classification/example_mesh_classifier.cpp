@@ -21,16 +21,16 @@ typedef typename boost::graph_traits<Mesh>::face_descriptor face_descriptor;
 typedef typename boost::graph_traits<Mesh>::vertex_descriptor vertex_descriptor;
 typedef CGAL::Identity_property_map<face_descriptor> Face_map;
 
-namespace Classif = CGAL::Classification;
+namespace Classification = CGAL::Classification;
 
-typedef Classif::Sum_of_weighted_features_predicate Classification_predicate;
+typedef Classification::Sum_of_weighted_features_classifier Classifier;
 
-typedef Classif::Label_handle                                            Label_handle;
-typedef Classif::Feature_handle                                          Feature_handle;
-typedef Classif::Label_set                                               Label_set;
-typedef Classif::Feature_set                                             Feature_set;
+typedef Classification::Label_handle                                            Label_handle;
+typedef Classification::Feature_handle                                          Feature_handle;
+typedef Classification::Label_set                                               Label_set;
+typedef Classification::Feature_set                                             Feature_set;
 
-typedef Classif::Mesh_neighborhood<Mesh> Neighborhood;
+typedef Classification::Mesh_neighborhood<Mesh> Neighborhood;
 
 template <typename FaceGraph, typename Point>
 struct Face_graph_face_to_center_property_map
@@ -59,16 +59,16 @@ struct Face_graph_face_to_center_property_map
 
 typedef Face_graph_face_to_center_property_map<Mesh, Point> Face_center_map;
 
-typedef Classif::Planimetric_grid<Kernel, Face_range, Face_center_map>             Planimetric_grid;
-typedef Classif::Local_eigen_analysis                                              Local_eigen_analysis;
+typedef Classification::Planimetric_grid<Kernel, Face_range, Face_center_map>             Planimetric_grid;
+typedef Classification::Local_eigen_analysis                                              Local_eigen_analysis;
 
-typedef Classif::Feature::Distance_to_plane<Face_range, Face_center_map>           Distance_to_plane;
-typedef Classif::Feature::Linearity                                                Linearity;
-typedef Classif::Feature::Omnivariance                                             Omnivariance;
-typedef Classif::Feature::Planarity                                                Planarity;
-typedef Classif::Feature::Surface_variation                                        Surface_variation;
-typedef Classif::Feature::Elevation<Kernel, Face_range, Face_center_map>           Elevation;
-typedef Classif::Feature::Vertical_dispersion<Kernel, Face_range, Face_center_map> Dispersion;
+typedef Classification::Feature::Distance_to_plane<Face_range, Face_center_map>           Distance_to_plane;
+typedef Classification::Feature::Linearity                                                Linearity;
+typedef Classification::Feature::Omnivariance                                             Omnivariance;
+typedef Classification::Feature::Planarity                                                Planarity;
+typedef Classification::Feature::Surface_variation                                        Surface_variation;
+typedef Classification::Feature::Elevation<Kernel, Face_range, Face_center_map>           Elevation;
+typedef Classification::Feature::Vertical_dispersion<Kernel, Face_range, Face_center_map> Dispersion;
 
 
 int main (int argc, char** argv)
@@ -106,10 +106,8 @@ int main (int argc, char** argv)
   Feature_handle plan = features.add<Planarity> (faces, eigen);
   Feature_handle surf = features.add<Surface_variation> (faces, eigen);
   Feature_handle disp = features.add<Dispersion> (faces, fc_map, grid,
-                                                  grid_resolution,
                                                   radius_neighbors);
   Feature_handle elev = features.add<Elevation> (faces, fc_map, grid,
-                                                 grid_resolution,
                                                  radius_dtm);
 
   std::cerr << "Setting up labels" << std::endl;
@@ -119,39 +117,39 @@ int main (int argc, char** argv)
   Label_handle roof = labels.add ("roof");
 
   std::cerr << "Setting weights" << std::endl;
-  Classification_predicate predicate (labels, features);
-  predicate.set_weight (d2p, 6.75e-2);
-  predicate.set_weight (lin, 1.19);
-  predicate.set_weight (omni, 1.34e-1);
-  predicate.set_weight (plan, 7.32e-1);
-  predicate.set_weight (surf, 1.36e-1);
-  predicate.set_weight (disp, 5.45e-1);
-  predicate.set_weight (elev, 1.47e1);
+  Classifier classifier (labels, features);
+  classifier.set_weight (d2p, 6.75e-2);
+  classifier.set_weight (lin, 1.19);
+  classifier.set_weight (omni, 1.34e-1);
+  classifier.set_weight (plan, 7.32e-1);
+  classifier.set_weight (surf, 1.36e-1);
+  classifier.set_weight (disp, 5.45e-1);
+  classifier.set_weight (elev, 1.47e1);
   
   std::cerr << "Setting effects" << std::endl;
-  predicate.set_effect (ground, d2p, Classification_predicate::NEUTRAL);
-  predicate.set_effect (ground, lin,  Classification_predicate::PENALIZING);
-  predicate.set_effect (ground, omni, Classification_predicate::NEUTRAL);
-  predicate.set_effect (ground, plan, Classification_predicate::FAVORING);
-  predicate.set_effect (ground, surf, Classification_predicate::PENALIZING);
-  predicate.set_effect (ground, disp, Classification_predicate::NEUTRAL);
-  predicate.set_effect (ground, elev, Classification_predicate::PENALIZING);
+  classifier.set_effect (ground, d2p, Classifier::NEUTRAL);
+  classifier.set_effect (ground, lin,  Classifier::PENALIZING);
+  classifier.set_effect (ground, omni, Classifier::NEUTRAL);
+  classifier.set_effect (ground, plan, Classifier::FAVORING);
+  classifier.set_effect (ground, surf, Classifier::PENALIZING);
+  classifier.set_effect (ground, disp, Classifier::NEUTRAL);
+  classifier.set_effect (ground, elev, Classifier::PENALIZING);
   
-  predicate.set_effect (vege, d2p,  Classification_predicate::FAVORING);
-  predicate.set_effect (vege, lin,  Classification_predicate::NEUTRAL);
-  predicate.set_effect (vege, omni, Classification_predicate::FAVORING);
-  predicate.set_effect (vege, plan, Classification_predicate::NEUTRAL);
-  predicate.set_effect (vege, surf, Classification_predicate::NEUTRAL);
-  predicate.set_effect (vege, disp, Classification_predicate::FAVORING);
-  predicate.set_effect (vege, elev, Classification_predicate::NEUTRAL);
+  classifier.set_effect (vege, d2p,  Classifier::FAVORING);
+  classifier.set_effect (vege, lin,  Classifier::NEUTRAL);
+  classifier.set_effect (vege, omni, Classifier::FAVORING);
+  classifier.set_effect (vege, plan, Classifier::NEUTRAL);
+  classifier.set_effect (vege, surf, Classifier::NEUTRAL);
+  classifier.set_effect (vege, disp, Classifier::FAVORING);
+  classifier.set_effect (vege, elev, Classifier::NEUTRAL);
 
-  predicate.set_effect (roof, d2p,  Classification_predicate::NEUTRAL);
-  predicate.set_effect (roof, lin,  Classification_predicate::PENALIZING);
-  predicate.set_effect (roof, omni, Classification_predicate::FAVORING);
-  predicate.set_effect (roof, plan, Classification_predicate::FAVORING);
-  predicate.set_effect (roof, surf, Classification_predicate::PENALIZING);
-  predicate.set_effect (roof, disp, Classification_predicate::NEUTRAL);
-  predicate.set_effect (roof, elev, Classification_predicate::FAVORING);
+  classifier.set_effect (roof, d2p,  Classifier::NEUTRAL);
+  classifier.set_effect (roof, lin,  Classifier::PENALIZING);
+  classifier.set_effect (roof, omni, Classifier::FAVORING);
+  classifier.set_effect (roof, plan, Classifier::FAVORING);
+  classifier.set_effect (roof, surf, Classifier::PENALIZING);
+  classifier.set_effect (roof, disp, Classifier::NEUTRAL);
+  classifier.set_effect (roof, elev, Classifier::FAVORING);
 
   // Run classification
   std::cerr << "Classifying" << std::endl;
@@ -160,8 +158,8 @@ int main (int argc, char** argv)
 
   CGAL::Real_timer t;
   t.start();
-  Classif::classify_with_local_smoothing<CGAL::Parallel_tag>
-    (faces, Face_map(), labels, predicate,
+  Classification::classify_with_local_smoothing<CGAL::Parallel_tag>
+    (faces, Face_map(), labels, classifier,
      neighborhood.one_ring_neighbor_query(),
      label_indices);
   t.stop();

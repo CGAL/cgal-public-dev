@@ -175,7 +175,7 @@ void Surface_mesh_item_classification::compute_features ()
   std::cerr << "Features = " << m_features.size() << std::endl;
 }
 
-void Surface_mesh_item_classification::train(int predicate)
+void Surface_mesh_item_classification::train(int classifier)
 {
   if (m_features.size() == 0)
   {
@@ -187,7 +187,7 @@ void Surface_mesh_item_classification::train(int predicate)
   BOOST_FOREACH(face_descriptor fd, faces(*(m_mesh->polyhedron())))
     indices[fd] = m_training[fd];
   
-  if (predicate == 0)
+  if (classifier == 0)
   {
     m_sowf->train<Concurrency_tag>(indices, m_nb_trials);
     CGAL::Classification::classify<Concurrency_tag> (m_mesh->polyhedron()->faces(),
@@ -211,7 +211,7 @@ void Surface_mesh_item_classification::train(int predicate)
      change_color (m_index_color);
 }
 
-bool Surface_mesh_item_classification::run (int method, int predicate)
+bool Surface_mesh_item_classification::run (int method, int classifier)
 {
   if (m_features.size() == 0)
   {
@@ -219,7 +219,7 @@ bool Surface_mesh_item_classification::run (int method, int predicate)
     return false;
   }
 
-  if (predicate == 0)
+  if (classifier == 0)
     run (method, *m_sowf);
 #ifdef CGAL_LINKED_WITH_OPENCV
   else

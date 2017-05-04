@@ -60,17 +60,17 @@ void run (Mesh& mesh)
 
   typedef CGAL::Identity_property_map<face_descriptor> Face_map;
 
-  namespace Classif = CGAL::Classification;
+  namespace Classification = CGAL::Classification;
 
-  typedef Classif::Sum_of_weighted_features_predicate Classification_predicate;
+  typedef Classification::Sum_of_weighted_features_classifier Classifier;
 
-  typedef Classif::Label_handle                                            Label_handle;
-  typedef Classif::Label_set                                               Label_set;
-  typedef Classif::Feature_set                                             Feature_set;
+  typedef Classification::Label_handle                                            Label_handle;
+  typedef Classification::Label_set                                               Label_set;
+  typedef Classification::Feature_set                                             Feature_set;
 
   typedef Face_graph_face_to_center_property_map<Mesh, Point> Face_center_map;
 
-  typedef Classif::Mesh_feature_generator<Kernel, Mesh, Face_center_map>             Generator;
+  typedef Classification::Mesh_feature_generator<Kernel, Mesh, Face_center_map>             Generator;
 
   CGAL::Real_timer ttot;
   ttot.start();
@@ -100,12 +100,12 @@ void run (Mesh& mesh)
   
   std::vector<std::size_t> label_indices;
 
-  Classification_predicate predicate (labels, features);
+  Classifier classifier (labels, features);
   
   CGAL::Real_timer t;
   t.start();
-  Classif::classify_with_local_smoothing<CGAL::Parallel_tag>
-    (range, Face_map(), labels, predicate,
+  Classification::classify_with_local_smoothing<CGAL::Parallel_tag>
+    (range, Face_map(), labels, classifier,
      generator.neighborhood().one_ring_neighbor_query(),
      label_indices);
   t.stop();

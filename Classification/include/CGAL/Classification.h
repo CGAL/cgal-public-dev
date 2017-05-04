@@ -27,10 +27,6 @@
 #include <CGAL/Classification/Random_forest_classifier.h>
 #endif
 
-#ifdef CGAL_LINKED_WITH_OPENCV
-#include <CGAL/Classification/Random_forest_predicate.h>
-#endif
-
 #include <CGAL/Classification/Color.h>
 #include <CGAL/Classification/Evaluation.h>
 #include <CGAL/Classification/Feature_base.h>
