@@ -1,6 +1,7 @@
 #include "config.h"
 #include "Scene_points_with_normal_item.h"
 #include "Scene_polygon_soup_item.h"
+#include "Scene_spheres_item.h"
 #include "Scene_polyhedron_item.h"
 #include <CGAL/Three/Scene_group_item.h>
 
@@ -640,6 +641,15 @@ void Polyhedron_demo_point_set_shape_detection_plugin::on_actionDetect_triggered
                         scene->changeGroup (groups[4], subset_items);
                       }
                     scene->changeGroup(point_item, groups[4]);
+
+                    Scene_spheres_item* spheres = new Scene_spheres_item(groups[4], false);
+                    Kernel::Sphere_3 s 
+                      = Kernel::Sphere_3 (*(dynamic_cast<CGAL::Shape_detection_3::Sphere<Traits> *>
+                                            (shape.get())));
+                    spheres->setName ("Spheres");
+                    spheres->add_sphere (s);
+                    scene->addItem(spheres);
+                    scene->changeGroup(spheres, groups[4]);
                   }
               }
               else
