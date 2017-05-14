@@ -110,7 +110,10 @@ protected:
   {
     if ( this->second )
     {
+      // Obtain mouse position
       Point_2 clickedPoint = this->snapPoint( event );
+
+      // The segment will move with mouse
       Segment_2 segment( this->p1, clickedPoint );
       QLineF qSegment = this->convert( segment );
       this->segmentGuide.setLine( qSegment );
@@ -124,25 +127,35 @@ protected:
       this->second = true;
       this->p1 = this->snapPoint( event );
       QPointF pt = this->convert( this->p1 );
+
+      // Add this->p1 to the scene
       this->segmentGuide.setLine( pt.x( ), pt.y( ), pt.x( ), pt.y( ) );
+
       if ( this->scene != NULL )
       {
+        // Update this->scene
         this->scene->addItem( &( this->segmentGuide ) );
       }
+
+      // store the first point
       this->pointsGraphicsItem.insert( pt );
     }
     else
     {
       this->second = false;
       this->p2 = this->snapPoint( event );
+
       if ( this->scene != NULL )
       {
         this->scene->removeItem( &( this->segmentGuide ) );
       }
+
+      // Only draw a segment between two different points
       if ( traits.compare_xy_2_object()( this->p1, this->p2 ) == CGAL::EQUAL )
       {
         return;
       }
+
       this->pointsGraphicsItem.clear( );
       Curve_2 res( this->p1, this->p2 );
       Q_EMIT generate( CGAL::make_object( res ) );
@@ -205,7 +218,7 @@ protected:
     Construct_polyline construct_poly = poly_tr.construct_curve_2_object();
 
     Point_2 clickedPoint = this->snapPoint( event );
-    if ( this->points.empty( ) )
+    if ( this->points.empty( ) || event->button( ) != ::Qt::RightButton )
     { // first
       // add clicked point to polyline
       this->points.push_back( clickedPoint );
@@ -217,7 +230,9 @@ protected:
       QPen pen = lineItem->pen( );
       pen.setColor( this->color );
       lineItem->setPen( pen );
+
       this->polylineGuide.push_back( lineItem );
+
       if ( this->scene != NULL )
       {
         this->scene->addItem( this->polylineGuide.back( ) );
@@ -238,27 +253,15 @@ protected:
           }
           delete this->polylineGuide[ i ];
         }
+
         this->polylineGuide.clear( );
         Curve_2 res =
           construct_poly( this->points.begin( ), this->points.end( ) );
+
+        // Delete all points
         this->points.clear( );
 
         Q_EMIT generate( CGAL::make_object( res ) );
-      }
-      else
-      { // start the next segment
-        QPointF pt = this->convert( clickedPoint );
-        QGraphicsLineItem* lineItem =
-          new QGraphicsLineItem( pt.x( ), pt.y( ), pt.x( ), pt.y( ) );
-        lineItem->setZValue( 100 );
-        QPen pen = lineItem->pen( );
-        pen.setColor( this->color );
-        lineItem->setPen( pen );
-        this->polylineGuide.push_back( lineItem );
-        if ( this->scene != NULL )
-        {
-          this->scene->addItem( this->polylineGuide.back( ) );
-        }
       }
     }
   }
@@ -357,6 +360,7 @@ protected:
       CGAL::Bbox_2 bb = p1.bbox( ) + p2.bbox( );
       double w = bb.xmax( ) - bb.xmin( );
       double h = bb.ymax( ) - bb.ymin( );
+
       this->ellipseItem->setRect( bb.xmin( ), bb.ymin( ), w, h );
     }
   }
@@ -435,8 +439,8 @@ protected:
         double y2 = CGAL::to_double( this->points[ 1 ].y( ) );
         Curve_2 res = Curve_2( Rat_segment_2( Rat_point_2( x1, y1 ),
                                               Rat_point_2( x2, y2 ) ) );
-        // std::cout << "res is " << ( (res.is_valid( ))? "" : "not ")
-        //           << "valid" << std::endl;
+        std::cout << "res is " << ( (res.is_valid( ))? "" : "not ")
+                  << "valid" << std::endl;
         this->points.clear( );
         this->pointsGraphicsItem.clear( );
 
@@ -491,6 +495,7 @@ protected:
         Rat_FT v = -2*y0*a_sq;
         Rat_FT ww = x0*x0*b_sq + y0*y0*a_sq - a_sq*b_sq;
 
+        // Construct the ellipse as a conic curve
         Curve_2 res = Curve_2( r, s, t, u, v, ww );
         this->points.clear( );
         this->pointsGraphicsItem.clear( );
@@ -506,9 +511,14 @@ protected:
           Rat_point_2 p1 = Rat_point_2( qp1.x( ), qp1.y( ) );
           Rat_point_2 p2 = Rat_point_2( qp2.x( ), qp2.y( ) );
           Rat_point_2 p3 = Rat_point_2( qp3.x( ), qp3.y( ) );
+
           RatKernel ker;
           if ( ! ker.collinear_2_object()( p1, p2, p3 ) )
           {
+            // Curve_2(source, mid, target)
+            // construct an circular arc 
+            // whose endpoints are source 
+            // and target that passes through mid.
             Curve_2 res( p1, p2, p3 );
             Q_EMIT generate( CGAL::make_object( res ) );
           }
@@ -653,7 +663,10 @@ protected: // methods
     {
       Point_2 hoverPoint = this->snapPoint( event );
       if ( p1 == hoverPoint )
+      {
         return;
+      }
+
       QLineF qSegment;
       if ( this->curveType == SEGMENT )
       {
@@ -670,6 +683,7 @@ protected: // methods
         Line_2 line( this->p1, hoverPoint );
         qSegment = this->convert( line );
       }
+
       this->segmentGuide.setLine( qSegment );
     }
   }
@@ -682,6 +696,7 @@ protected: // methods
       this->p1 = this->snapPoint( event );
       QPointF pt = this->convert( this->p1 );
       this->segmentGuide.setLine( pt.x( ), pt.y( ), pt.x( ), pt.y( ) );
+
       if ( this->scene != NULL )
       {
         this->scene->addItem( &( this->segmentGuide ) );
@@ -694,7 +709,9 @@ protected: // methods
 
       // skip if degenerate
       if ( this->p1 == this->p2 )
+      {
         return;
+      }
 
       if ( this->scene != NULL )
       {

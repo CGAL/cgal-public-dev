@@ -419,6 +419,8 @@ protected:
   void paintFace( Face_handle f, QPainter* painter,
                   CGAL::Arr_conic_traits_2< RatKernel, AlgKernel, NtTraits > )
   {
+    std::cout<<"In paintFace Arr_conic_traits_2"<<std::endl;
+    
     if (! f->is_unbounded())  // f is not the unbounded face
     {
       QVector< QPointF > pts; // holds the points of the polygon

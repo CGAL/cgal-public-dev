@@ -45,6 +45,8 @@ ArrangementDemoWindow::ArrangementDemoWindow(QWidget* parent) :
   // set up the demo window
   // ArrangementDemoTabBase* demoTab =
   this->makeTab( SEGMENT_TRAITS );
+
+  // Call inherited functions
   this->setupStatusBar( );
   this->setupOptionsMenu( );
   this->addAboutDemo( ":/help/about.html" );
@@ -693,7 +695,7 @@ void ArrangementDemoWindow::updateConicType( QAction* newType )
       curveInputCallback->setCurveType( LinearCurveInputCallback::SEGMENT );
     }
     else if ( newType == this->ui->actionCurveRay )
-  {
+    {
       curveInputCallback->setCurveType( LinearCurveInputCallback::RAY );
     }
     else if ( newType == this->ui->actionCurveLine )
