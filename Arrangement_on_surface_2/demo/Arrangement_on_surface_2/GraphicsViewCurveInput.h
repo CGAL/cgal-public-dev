@@ -439,8 +439,8 @@ protected:
         double y2 = CGAL::to_double( this->points[ 1 ].y( ) );
         Curve_2 res = Curve_2( Rat_segment_2( Rat_point_2( x1, y1 ),
                                               Rat_point_2( x2, y2 ) ) );
-        std::cout << "res is " << ( (res.is_valid( ))? "" : "not ")
-                  << "valid" << std::endl;
+        // std::cout << "res is " << ( (res.is_valid( ))? "" : "not ")
+        //           << "valid" << std::endl;
         this->points.clear( );
         this->pointsGraphicsItem.clear( );
 

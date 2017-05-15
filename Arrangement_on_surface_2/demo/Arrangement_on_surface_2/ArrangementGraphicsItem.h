@@ -140,6 +140,7 @@ protected:
 
   void paintFaces( QPainter* painter, CGAL::Arr_oblivious_side_tag )
   {
+    // Prepare all faces for painting
     for( Face_iterator fi = this->arr->faces_begin( );
          fi != this->arr->faces_end( ); ++fi )
     {
@@ -147,11 +148,14 @@ protected:
     }
 
     Face_handle unboundedFace = this->arr->unbounded_face( );
+
+    std::cout<<"In paintFaces unboundedFace"<<std::endl;
     this->paintFace( unboundedFace, painter );
   }
 
   void paintFaces( QPainter* painter, CGAL::Arr_open_side_tag )
   {
+    // Prepare all faces for painting
     for( Face_iterator fi = this->arr->faces_begin( );
          fi != this->arr->faces_end( ); ++fi )
     {
@@ -163,6 +167,7 @@ protected:
     }
 
     Face_handle fictitiousFace = this->arr->fictitious_face( );
+    std::cout<<"In paintFaces fictitiousFace"<<std::endl;
     this->paintFace( fictitiousFace, painter );
   }
 
@@ -199,21 +204,29 @@ protected:
       Holes_iterator hit; // holes iterator
       this->paintFace( f, painter, Traits( ) );
       f->set_visited( true );
+
       for ( hit = f->holes_begin(); hit != f->holes_end(); ++hit )
       {
+        // Traverse in clockwise order
         Ccb_halfedge_circulator cc = *hit;
         do {
           Halfedge_handle he = cc;
           Halfedge_handle he2 = he->twin();
           Face_handle inner_face = he2->face();
           if ( this->antenna( he ) )
+          {
             continue;
+          }
 
           // move on to next hole
           if ( ! inner_face->visited( ) )
+          {
             inner_faces++;
+          }
+
           this->visit_ccb_faces( inner_face, painter );
         } while ( ++cc != *hit );
+
         holes++;
       }// for
       // if ( f->is_unbounded( ) )
@@ -266,8 +279,11 @@ protected:
   void paintFace( Face_handle f, QPainter* painter,
                   CGAL::Arr_segment_traits_2< Kernel_ > )
   {
+    std::cout<<"In paintFace Arr_segment_traits_2"<<std::endl;
+
     if (!f->is_unbounded())  // f is not the unbounded face
     {
+      std::cout<<"In paintFace Arr_segment_traits_2 bounded"<<std::endl;
       QVector< QPointF > pts; // holds the points of the polygon
 
       /* running with around the outer of the face and generate from it
@@ -291,6 +307,7 @@ protected:
       {
         color = f->color();
       }
+
       QBrush oldBrush = painter->brush( );
       painter->setBrush( color );
       painter->drawPolygon( pgn );
@@ -298,6 +315,7 @@ protected:
     }
     else
     {
+      std::cout<<"In paintFace Arr_segment_traits_2 unbounded"<<std::endl;
       QRectF rect = this->viewportRect( );
       QColor color = this->backgroundColor;
       painter->fillRect( rect, color );
@@ -308,8 +326,11 @@ protected:
   void paintFace( Face_handle f, QPainter* painter,
                   CGAL::Arr_polyline_traits_2< Kernel_ > )
   {
+    std::cout<<"In paintFace Arr_polyline_traits_2"<<std::endl;
+
     if (!f->is_unbounded())  // f is not the unbounded face
     {
+      std::cout<<"In paintFace Arr_polyline_traits_2 bounded"<<std::endl;
       typedef typename CGAL::Arr_polyline_traits_2<Kernel_> Arr_poly_traits;
       typedef typename Arr_poly_traits::Compare_endpoints_xy_2 Comp_end_pts_2;
       typedef typename Arr_poly_traits::Construct_min_vertex_2 Poly_const_min_v;
@@ -341,50 +362,57 @@ protected:
        */
       Ccb_halfedge_circulator cc = f->outer_ccb();
       do {
-        cv = cc->curve();
+        // The drawing is actually identical to segment
+        double x = CGAL::to_double(cc->source()->point().x());
+        double y = CGAL::to_double(cc->source()->point().y());
+        QPointF coord_source(x , y);
+        pts.push_back(coord_source );
 
-        // Determine the direction of cv (left-to-right or right-to-left)
-        Comparison_result dir = comp_end_pts(cv);
+        // The code below is problematic
+        // cv = cc->curve();
 
-        for (seg_it = cv.subcurves_begin();
-             seg_it != cv.subcurves_end() ; ++seg_it)
-          {
-            if (dir == SMALLER)
-              {
-                // cv is directed from left-to-right
-                // Adding the left-min vertex of the current segment
-                double x = CGAL::to_double((construct_min_v(*seg_it)).x());
-                double y = CGAL::to_double((construct_min_v(*seg_it)).y());
-                QPointF coord_source(x , y);
-                pts.push_back(coord_source );
-              }
-            else
-              {
-                // cv is directed from right-to-left
-                // Adding the right-max vertex of the current segment
-                double x = CGAL::to_double((construct_max_v(*seg_it)).x());
-                double y = CGAL::to_double((construct_max_v(*seg_it)).y());
-                QPointF coord_source(x , y);
-                pts.push_back(coord_source );
-              }
-          }
+        // // Determine the direction of cv (left-to-right or right-to-left)
+        // Comparison_result dir = comp_end_pts(cv);
 
-        if (dir == SMALLER)
-          {
-            // Add the right-most point of cv
-            double x = CGAL::to_double((poly_const_max_v(cv)).x());
-            double y = CGAL::to_double((poly_const_max_v(cv)).y());
-            QPointF coord_source(x , y);
-            pts.push_back(coord_source );
-          }
-        else
-          {
-            // Add the left-most point of cv
-            double x = CGAL::to_double((poly_const_min_v(cv)).x());
-            double y = CGAL::to_double((poly_const_min_v(cv)).y());
-            QPointF coord_source(x , y);
-            pts.push_back(coord_source );
-          }
+        // for (seg_it = cv.subcurves_begin();
+        //      seg_it != cv.subcurves_end() ; ++seg_it)
+        //   {
+        //     if (dir == SMALLER)
+        //       {
+        //         // cv is directed from left-to-right
+        //         // Adding the left-min vertex of the current segment
+        //         double x = CGAL::to_double((construct_min_v(*seg_it)).x());
+        //         double y = CGAL::to_double((construct_min_v(*seg_it)).y());
+        //         QPointF coord_source(x , y);
+        //         pts.push_back(coord_source );
+        //       }
+        //     else
+        //       {
+        //         // cv is directed from right-to-left
+        //         // Adding the right-max vertex of the current segment
+        //         double x = CGAL::to_double((construct_max_v(*seg_it)).x());
+        //         double y = CGAL::to_double((construct_max_v(*seg_it)).y());
+        //         QPointF coord_source(x , y);
+        //         pts.push_back(coord_source );
+        //       }
+        //   }
+
+        // if (dir == SMALLER)
+        //   {
+        //     // Add the right-most point of cv
+        //     double x = CGAL::to_double((poly_const_max_v(cv)).x());
+        //     double y = CGAL::to_double((poly_const_max_v(cv)).y());
+        //     QPointF coord_source(x , y);
+        //     pts.push_back(coord_source );
+        //   }
+        // else
+        //   {
+        //     // Add the left-most point of cv
+        //     double x = CGAL::to_double((poly_const_min_v(cv)).x());
+        //     double y = CGAL::to_double((poly_const_min_v(cv)).y());
+        //     QPointF coord_source(x , y);
+        //     pts.push_back(coord_source );
+        //   }
         //created from the outer boundary of the face
       } while (++cc != f->outer_ccb());
 
@@ -408,6 +436,9 @@ protected:
     }
     else
     {
+      std::cout<<"In paintFace Arr_polyline_traits_2 unbounded"<<std::endl;
+
+      // Draw a infinite bounding box
       QRectF rect = this->viewportRect( );
       QColor color = this->backgroundColor;
       painter->fillRect( rect, color );
@@ -420,9 +451,10 @@ protected:
                   CGAL::Arr_conic_traits_2< RatKernel, AlgKernel, NtTraits > )
   {
     std::cout<<"In paintFace Arr_conic_traits_2"<<std::endl;
-    
+
     if (! f->is_unbounded())  // f is not the unbounded face
     {
+      std::cout<<"In paintFace Arr_conic_traits_2 bounded"<<std::endl;
       QVector< QPointF > pts; // holds the points of the polygon
       /* running with around the outer of the face and generate from it
        * polygon
@@ -431,7 +463,9 @@ protected:
       do
       {
         if (this->antenna(cc))
+        {
           continue;
+        }
 
         Halfedge_handle he = cc;
         X_monotone_curve_2 c = he->curve();
@@ -443,11 +477,16 @@ protected:
 
         QPointF coord_source(sx, sy);
         QPointF coord_target(tx, ty);
+
+        // Transform the point coordinates from general coordinate system to
+        // Qt scene coordinate system
         QPoint coord_source_viewport = this->fromScene( coord_source );
         QPoint coord_target_viewport = this->fromScene( coord_target );
 
         if (c.orientation() == CGAL::COLLINEAR)
+        {
           pts.push_back(coord_source );
+        }
         else
         {
           // If the curve is monotone, than its source and its target has the
@@ -464,20 +503,26 @@ protected:
 
           pts.push_back(coord_source );
 
+          // Draw the curve as pieces of small segments
           const int DRAW_FACTOR = 5;
           if (is_source_left)
           {
-            for (x = x_min + DRAW_FACTOR; x < x_max; x+=DRAW_FACTOR)
+            for ( x = x_min + DRAW_FACTOR; x < x_max; x+=DRAW_FACTOR )
             {
               //= COORD_SCALE)
               curr_x = this->toScene( x );
               Alg_kernel   ker;
               Arr_conic_point_2 curr_p(curr_x, 0);
+
+              // If curr_x > x_max or curr_x < x_min
               if (!(ker.compare_x_2_object()(curr_p, c.left()) !=
                     CGAL::SMALLER &&
                     ker.compare_x_2_object()(curr_p, c.right()) !=
                     CGAL::LARGER))
+              {
                 continue;
+              }
+
               px = c.point_at_x (curr_p);
               curr_y = CGAL::to_double(px.y());
               QPointF curr( curr_x, curr_y );
@@ -486,7 +531,7 @@ protected:
           }
           else
           {
-            for (x = x_max; x > x_min; x-=DRAW_FACTOR)
+            for ( x = x_max; x > x_min; x-=DRAW_FACTOR )
             {
               curr_x = this->toScene( x );
               Alg_kernel   ker;
@@ -495,7 +540,10 @@ protected:
                     CGAL::SMALLER &&
                     ker.compare_x_2_object() (curr_p, c.right()) !=
                     CGAL::LARGER))
+              {
                 continue;
+              }
+
               px = c.point_at_x (curr_p);
               curr_y = CGAL::to_double(px.y());
               QPointF curr( curr_x, curr_y );
@@ -527,6 +575,7 @@ protected:
     }
     else
     {
+      std::cout<<"In paintFace Arr_conic_traits_2 unbounded"<<std::endl;
       QRectF rect = this->viewportRect( );
       QColor color = this->backgroundColor;
       painter->fillRect( rect, color );
@@ -538,22 +587,33 @@ protected:
   void paintFace(Face_handle f, QPainter* painter,
                  CGAL::Arr_circular_arc_traits_2<CircularKernel> /* traits */)
   {
+    std::cout<<"In paintFace Arr_circular_arc_traits_2"<<std::endl;
+
     if ( f->is_unbounded( ) )
     {
+
+      std::cout<<"In paintFace Arr_circular_arc_traits_2 unbounded"<<std::endl;
       QRectF rect = this->viewportRect( );
       QColor color = this->backgroundColor;
       if ( f->color().isValid() )
+      {
         color = f->color();
+      }
       painter->fillRect( rect, color );
       return;
     }
+
+    std::cout<<"In paintFace Arr_circular_arc_traits_2 bounded"<<std::endl;
+
     QPainterPath path;
     bool isFirstArc = true;
     Ccb_halfedge_circulator cc=f->outer_ccb();
     do
     {
       if ( this->antenna( cc ) )
+      {
         continue;
+      }
 
       if ( isFirstArc )
       {
@@ -590,7 +650,9 @@ protected:
         QPointF source( to_double(c.source().x()), to_double(c.source().y()) );
         QPointF target( to_double(c.target().x()), to_double(c.target().y()) );
         if ( ! this->pathTouchingSource( path, c ) )
+        {
           std::swap( source, target );
+        }
 
         QPointF circleCenter( to_double(c.supporting_circle().center().x()),
                               to_double(c.supporting_circle().center().y()) );
@@ -908,9 +970,10 @@ protected:
   void ArrangementGraphicsItem< Arr_, ArrTraits >::
   paint(QPainter* painter, TTraits /* traits */)
   {
+    std::cout<<"In paint ArrTraits"<<std::endl;
     this->paintFaces( painter );
-
     painter->setPen( this->verticesPen );
+
     this->painterostream =
       ArrangementPainterOstream< Traits >( painter, this->boundingRect( ) );
     this->painterostream.setScene( this->scene );
@@ -922,6 +985,7 @@ protected:
       Kernel_point_2 pt( p.x( ), p.y( ) );
       this->painterostream << pt;
     }
+
     painter->setPen( this->edgesPen );
     for ( Edge_iterator it = this->arr->edges_begin( );
           it != this->arr->edges_end( ); ++it )
@@ -936,6 +1000,7 @@ protected:
   void ArrangementGraphicsItem< Arr_, ArrTraits >::
   paint(QPainter* painter, CGAL::Arr_linear_traits_2< Kernel_ > /* traits */)
   {
+    std::cout<<"In paint Arr_linear_traits_2"<<std::endl;
     this->updateBoundingBox( );
     this->paintFaces( painter );
     painter->setPen( this->verticesPen );
@@ -950,6 +1015,7 @@ protected:
       Point_2 pt = it->point( );
       this->painterostream << pt;
     }
+
     painter->setPen( this->edgesPen );
     for ( Edge_iterator it = this->arr->edges_begin( );
           it != this->arr->edges_end( ); ++it )
@@ -965,6 +1031,7 @@ protected:
   paint(QPainter* painter,
         CGAL::Arr_circular_arc_traits_2< CircularKernel > /* traits */)
   {
+    std::cout<<"In paint Arr_circular_arc_traits_2"<<std::endl;
     typedef Kernel_point_2 Non_arc_point_2;
     typedef typename Traits::Point_2 Arc_point_2;
 
@@ -982,6 +1049,7 @@ protected:
       Non_arc_point_2 pt2(CGAL::to_double(pt.x( )), CGAL::to_double(pt.y()) );
       this->painterostream << pt2;
     }
+    
     painter->setPen( this->edgesPen );
     for ( Edge_iterator it = this->arr->edges_begin( );
           it != this->arr->edges_end( ); ++it )

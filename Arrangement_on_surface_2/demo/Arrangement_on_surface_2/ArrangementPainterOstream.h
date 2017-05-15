@@ -354,7 +354,7 @@ public:
 public: // methods
   ArrangementPainterOstream& operator<<( const X_monotone_curve_2& curve )
   {
-    std::cout<< "In ArrangementPainterOstream& operator curve"<<std::endl;
+    // std::cout<< "In ArrangementPainterOstream& operator curve"<<std::endl;
     CGAL::Bbox_2 bb = curve.bbox( );
     QRectF qbb = this->convert( bb );
     // quick cull
@@ -478,7 +478,7 @@ public: // methods
   // cloned from segtraits painter
   ArrangementPainterOstream& operator<<( const Point_2& p )
   {
-    std::cout<< "In ArrangementPainterOstream& operator Point_2"<<std::endl;
+    // std::cout<< "In ArrangementPainterOstream& operator Point_2"<<std::endl;
     QPointF qpt = this->convert( p );
     QPen savePen = this->qp->pen( );
     this->qp->setBrush( QBrush( savePen.color( ) ) );
@@ -495,7 +495,7 @@ public: // methods
   template < typename T >
   ArrangementPainterOstream& operator<<( const T& p )
   {
-    std::cout<< "In ArrangementPainterOstream& operator T"<<std::endl;
+    // std::cout<< "In ArrangementPainterOstream& operator T"<<std::endl;
     (*(static_cast< Superclass* >(this)) << p);
     return *this;
   }
