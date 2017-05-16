@@ -37,7 +37,6 @@
 
 ArrangementDemoWindow::ArrangementDemoWindow(QWidget* parent) :
   CGAL::Qt::DemosMainWindow( parent ),
-  lastTabIndex(static_cast<unsigned int>(-1)),
   ui( new Ui::ArrangementDemoWindow )
 {
   this->setupUi( );
@@ -135,7 +134,6 @@ ArrangementDemoTabBase* ArrangementDemoWindow::makeTab( TraitsType tt )
   QGraphicsView* view = demoTab->getView( );
   this->addNavigation( view );
   this->ui->tabWidget->addTab( demoTab, tabLabel );
-  this->lastTabIndex = this->ui->tabWidget->currentIndex( );
   this->ui->tabWidget->setCurrentWidget( demoTab );
 
   this->resetCallbackState( this->ui->tabWidget->currentIndex( ) );
@@ -927,17 +925,13 @@ void ArrangementDemoWindow::on_actionNewTab_triggered( )
 
 void ArrangementDemoWindow::on_tabWidget_currentChanged( )
 {
-  // std::cout << "Tab changed" << std::endl;
-  // disable the callback for the previously active tab
-  this->resetCallbackState( this->lastTabIndex );
-  this->removeCallback( this->lastTabIndex );
-  this->lastTabIndex = this->ui->tabWidget->currentIndex( );
+  if ( this->ui->tabWidget->currentIndex( ) == -1 )
+  {
+    return;
+  }
 
-  this->updateMode( this->modeGroup->checkedAction( ) );
+  CGAL::Object arr = this->arrangements[ this->ui->tabWidget->currentIndex( ) ];
 
-  CGAL::Object arr;
-  if ( this->ui->tabWidget->currentIndex( ) != -1 )
-    arr = this->arrangements[ this->ui->tabWidget->currentIndex( ) ];
 
   // Seg_arr* seg;
   // Pol_arr* pol;
@@ -1077,7 +1071,9 @@ void ArrangementDemoWindow::on_actionCloseTab_triggered( )
   unsigned int currentTabIndex = this->ui->tabWidget->currentIndex( );
   if (! this->ui->tabWidget->count() ||
       (currentTabIndex == static_cast<unsigned int>(-1)))
+  {
     return;
+  }
 
   // delete the tab
   this->ui->tabWidget->removeTab( currentTabIndex );
@@ -1085,6 +1081,7 @@ void ArrangementDemoWindow::on_actionCloseTab_triggered( )
 
   // delete the arrangement
   this->arrangements.erase( this->arrangements.begin( ) + currentTabIndex );
+
 }
 
 void ArrangementDemoWindow::on_actionPrintConicCurves_triggered( )

@@ -110,7 +110,7 @@ protected:
   std::vector< ArrangementDemoTabBase* > tabs;
   std::vector< CGAL::Object > arrangements;
   std::vector< QAction* > activeModes; // for the current tab; always size 1
-  unsigned int lastTabIndex;
+  // unsigned int lastTabIndex;
 
   Ui::ArrangementDemoWindow* ui;
   QActionGroup* modeGroup;
@@ -139,7 +139,6 @@ makeOverlayTab( ArrType* arr1, ArrType* arr2 )
   QGraphicsView* view = demoTab->getView( );
   this->addNavigation( view );
   this->ui->tabWidget->addTab( demoTab, tabLabel );
-  this->lastTabIndex = this->ui->tabWidget->currentIndex( );
 }
 
 #endif // ARRANGEMENT_DEMO_WINDOW_H

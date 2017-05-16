@@ -178,6 +178,7 @@ public:
 public: // methods
   ArrangementPainterOstream& operator<<( const X_monotone_curve_2& curve )
   {
+    std::cout<<"In operator<< Arr_segment_traits_2 X_monotone_curve_2"<<std::endl;
     const Point_2& p1 = curve.source( );
     const Point_2& p2 = curve.target( );
     Segment_2 seg( p1, p2 );
@@ -196,6 +197,8 @@ public: // methods
 
   ArrangementPainterOstream& operator<<( const Point_2& p )
   {
+    std::cout<<"In operator<< Arr_segment_traits_2 Point_2"<<std::endl;
+
     QPointF qpt = this->convert( p );
     // clip the point if possible
     if ( this->clippingRect.isValid( ) &&
@@ -256,12 +259,18 @@ public:
 public: // methods
   ArrangementPainterOstream& operator<<( const X_monotone_curve_2& curve )
   {
+    std::cout<<"In operator<< Arr_polyline_traits_2 X_monotone_curve_2"<<std::endl;
+
+    int cnt = 0;
     for (typename X_monotone_curve_2::Subcurve_const_iterator it =
            curve.subcurves_begin();
          it != curve.subcurves_end(); ++it)
-      {
+    {
+        cnt++;
         this->painterOstream << *it;
-      }
+    }
+
+    std::cout<<"cnt: "<< cnt<<std::endl;
     // TODO: implement polyline painting
 #if 0
     const Point_2& p1 = curve.source( );
@@ -275,12 +284,15 @@ public: // methods
   // cloned from segtraits painter
   ArrangementPainterOstream& operator<<( const Point_2& p )
   {
+    std::cout<<"In operator<< Arr_polyline_traits_2 Point_2"<<std::endl;
+
     QPointF qpt = this->convert( p );
     QPen savePen = this->qp->pen( );
     this->qp->setBrush( QBrush( savePen.color( ) ) );
     double radius = savePen.width( ) / 2.0;
     radius /= this->scale;
 
+    // Draw a circle as a blue dot
     this->qp->drawEllipse( qpt, radius, radius );
 
     this->qp->setBrush( QBrush( ) );
@@ -355,6 +367,8 @@ public: // methods
   ArrangementPainterOstream& operator<<( const X_monotone_curve_2& curve )
   {
     // std::cout<< "In ArrangementPainterOstream& operator curve"<<std::endl;
+    std::cout<<"In operator<< Arr_conic_traits_2 X_monotone_curve_2"<<std::endl;
+
     CGAL::Bbox_2 bb = curve.bbox( );
     QRectF qbb = this->convert( bb );
     // quick cull
@@ -394,7 +408,9 @@ public: // methods
         X_monotone_curve_2 subcurve = visibleParts[ i ];
         int n;
         if ( this->scene == NULL )
+        {
           n = 100; // TODO: get an adaptive approximation
+        }
         else
         {
           QGraphicsView* view = this->scene->views( ).first( );
@@ -435,7 +451,9 @@ public: // methods
     { // draw the whole curve
       int n;
       if ( this->scene == NULL )
+      {
         n = 100; // TODO: get an adaptive approximation
+      }
       else
       {
         QGraphicsView* view = this->scene->views( ).first( );
@@ -479,6 +497,8 @@ public: // methods
   ArrangementPainterOstream& operator<<( const Point_2& p )
   {
     // std::cout<< "In ArrangementPainterOstream& operator Point_2"<<std::endl;
+    std::cout<<"In operator<< Arr_conic_traits_2 Point_2"<<std::endl;
+
     QPointF qpt = this->convert( p );
     QPen savePen = this->qp->pen( );
     this->qp->setBrush( QBrush( savePen.color( ) ) );
@@ -701,6 +721,8 @@ public:
 public: // methods
   ArrangementPainterOstream& operator<<( const X_monotone_curve_2& curve )
   {
+    std::cout<<"In operator<< Arr_linear_traits_2 X_monotone_curve_2"<<std::endl;
+
     if ( curve.is_segment( ) )
     {
       Segment_2 seg = curve.segment( );
@@ -742,6 +764,9 @@ public: // methods
 
   ArrangementPainterOstream& operator<<( const Point_2& p )
   {
+
+    std::cout<<"In operator<< Arr_linear_traits_2 Point_2"<<std::endl;
+
     QPointF qpt = this->convert( p );
     // clip the point if possible
     if ( this->clippingRect.isValid( ) &&
@@ -801,12 +826,15 @@ public:
 public: // methods
   ArrangementPainterOstream& operator<<( const X_monotone_curve_2& curve )
   {
+    std::cout<<"In operator<< Arr_circular_arc_traits_2 X_monotone_curve_2"<<std::endl;
+
     this->painterOstream << curve;
     return *this;
   }
 
   ArrangementPainterOstream& operator<<( const Point_2& p )
   {
+    std::cout<<"In operator<< Arr_circular_arc_traits_2 Point_2"<<std::endl;
     QPointF qpt = this->convert( p );
     // clip the point if possible
     if ( this->clippingRect.isValid( ) &&
