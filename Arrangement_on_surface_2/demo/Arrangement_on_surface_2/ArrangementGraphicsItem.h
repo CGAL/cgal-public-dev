@@ -120,8 +120,8 @@ protected:
   template < typename TTraits >
   void paint( QPainter* painter, TTraits traits );
 
-  template < typename Kernel_ >
-  void paint( QPainter* painter, CGAL::Arr_linear_traits_2< Kernel_ > traits );
+  // template < typename Kernel_ >
+  // void paint( QPainter* painter, CGAL::Arr_linear_traits_2< Kernel_ > traits );
 
   template < typename CircularKernel >
   void paint( QPainter* painter,
@@ -995,6 +995,7 @@ protected:
     }
   }
 
+#if 0
   template < typename Arr_, typename ArrTraits >
   template < typename Kernel_ >
   void ArrangementGraphicsItem< Arr_, ArrTraits >::
@@ -1024,7 +1025,8 @@ protected:
       this->painterostream << curve;
     }
   }
-
+#endif
+  
   template < typename Arr_, typename ArrTraits >
   template < typename CircularKernel >
   void ArrangementGraphicsItem< Arr_, ArrTraits >::
