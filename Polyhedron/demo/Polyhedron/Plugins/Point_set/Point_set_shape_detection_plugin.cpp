@@ -24,7 +24,7 @@
 #include <CGAL/Delaunay_triangulation_2.h>
 #include <CGAL/Alpha_shape_2.h>
 
-#include <CGAL/structure_point_set.h>
+//#include <CGAL/structure_point_set.h>
 
 #include <QObject>
 #include <QAction>
@@ -304,7 +304,7 @@ private:
           Scene_polyhedron_item* poly_item = new Scene_polyhedron_item;
 
           build_alpha_shape (*(point_item->point_set()), pshape,
-                             poly_item, dialog.cluster_epsilon());
+                             poly_item, dialog.cluster_epsilon(), bb);
           
           poly_item->setColor(point_item->color ());
           poly_item->setName(QString("%1%2_alpha_shape").arg(QString::fromStdString(ss.str()))
@@ -454,10 +454,9 @@ private:
     return centroid + query.x() * base1 + query.y() * base2;
   }
 
-  void build_alpha_shape (Point_set& points, const Point_3& centroid, const Plane_3& plane,
-                          Scene_polyhedron_item* item, double epsilon);
   void build_alpha_shape (Point_set& points, boost::shared_ptr<CGAL::Shape_detection_3::Plane<Traits> > plane,
-                          Scene_polyhedron_item* item, double epsilon);
+                          Scene_polyhedron_item* item, double epsilon,
+                          const Scene_points_with_normal_item::Bbox& bbox);
 
 }; // end Polyhedron_demo_point_set_shape_detection_plugin
 
@@ -532,7 +531,7 @@ void Polyhedron_demo_point_set_shape_detection_plugin::on_actionDetect_triggered
 
 void Polyhedron_demo_point_set_shape_detection_plugin::build_alpha_shape
 (Point_set& points,  boost::shared_ptr<CGAL::Shape_detection_3::Plane<Traits> > plane,
- Scene_polyhedron_item* item, double epsilon)
+ Scene_polyhedron_item* item, double epsilon, const Scene_points_with_normal_item::Bbox& bbox)
 {
   typedef Kernel::Point_2  Point_2;
   typedef CGAL::Alpha_shape_vertex_base_2<Kernel> Vb;
@@ -545,8 +544,10 @@ void Polyhedron_demo_point_set_shape_detection_plugin::build_alpha_shape
   std::vector<Point_2> projections;
   projections.reserve (points.size ());
 
+  Plane_3 pl = Plane_3(*plane);
+
   for (Point_set::const_iterator it = points.begin(); it != points.end(); ++ it)
-    projections.push_back (plane->to_2d (points.point(*it)));
+    projections.push_back (pl.to_2d (points.point(*it)));
 
   Alpha_shape_2 ashape (projections.begin (), projections.end (), epsilon);
   
@@ -557,6 +558,8 @@ void Polyhedron_demo_point_set_shape_detection_plugin::build_alpha_shape
   soup_item->init_polygon_soup(points.size(), ashape.number_of_faces ());
   std::size_t current_index = 0;
 
+  std::vector<Point_3> pts;
+  std::size_t nb_tri = 0;
   for (Alpha_shape_2::Finite_faces_iterator it = ashape.finite_faces_begin ();
        it != ashape.finite_faces_end (); ++ it)
     {
@@ -568,25 +571,19 @@ void Polyhedron_demo_point_set_shape_detection_plugin::build_alpha_shape
           if (map_v2i.find (it->vertex (i)) == map_v2i.end ())
             {
               map_v2i.insert (std::make_pair (it->vertex (i), current_index ++));
-              Point p = plane->to_3d (it->vertex (i)->point ());
+              Point p = pl.to_3d (it->vertex(i)->point());
+              pts.push_back(p);
               soup_item->new_vertex (p.x (), p.y (), p.z ());
             }
         }
       soup_item->new_triangle (map_v2i[it->vertex (0)],
                                map_v2i[it->vertex (1)],
                                map_v2i[it->vertex (2)]);
+      ++ nb_tri;
     }
 
   soup_item->orient();
   soup_item->exportAsPolyhedron (item->polyhedron());
-
-  if (soup_item->isEmpty ())
-    {
-      std::cerr << "POLYGON SOUP EMPTY" << std::endl;
-      for (std::size_t i = 0; i < projections.size (); ++ i)
-        std::cerr << projections[i] << std::endl;
-      
-    }
   
   delete soup_item;
 }
@@ -690,71 +687,6 @@ void Polyhedron_demo_point_set_shape_detection_plugin::on_actionEstimateParamete
                                .arg(std::sqrt(cluster_epsilon[9 * cluster_epsilon.size() / 10]))
                                .arg(std::sqrt(cluster_epsilon.back())));
     }
-}
-
-void Polyhedron_demo_point_set_shape_detection_plugin::build_alpha_shape
-(Point_set& points,  const Point_3& centroid, const Plane_3& plane,
- Scene_polyhedron_item* item, double epsilon)
-{
-  typedef Kernel::Point_2  Point_2;
-  typedef CGAL::Alpha_shape_vertex_base_2<Kernel> Vb;
-  typedef CGAL::Alpha_shape_face_base_2<Kernel>  Fb;
-  typedef CGAL::Triangulation_data_structure_2<Vb,Fb> Tds;
-  typedef CGAL::Delaunay_triangulation_2<Kernel,Tds> Triangulation_2;
-  typedef CGAL::Alpha_shape_2<Triangulation_2>  Alpha_shape_2;
-
-  Vector_3 base1 = plane.base1();
-  Vector_3 base2 = plane.base2();
-  base1 = base1 / std::sqrt(base1 * base1);
-  base2 = base2 / std::sqrt(base2 * base2);
-  
-  std::vector<Point_2> projections;
-  projections.reserve (points.size ());
-
-  for (Point_set::const_iterator it = points.begin(); it != points.end(); ++ it)
-    projections.push_back (to_2d(centroid, base1, base2, points.point(*it)));
-
-  Alpha_shape_2 ashape (projections.begin (), projections.end (), epsilon);
-  
-  std::map<Alpha_shape_2::Vertex_handle, std::size_t> map_v2i;
-
-  Scene_polygon_soup_item *soup_item = new Scene_polygon_soup_item;
-  
-  soup_item->init_polygon_soup(points.size(), ashape.number_of_faces ());
-  std::size_t current_index = 0;
-
-  for (Alpha_shape_2::Finite_faces_iterator it = ashape.finite_faces_begin ();
-       it != ashape.finite_faces_end (); ++ it)
-    {
-      if (ashape.classify (it) != Alpha_shape_2::INTERIOR)
-        continue;
-
-      for (int i = 0; i < 3; ++ i)
-        {
-          if (map_v2i.find (it->vertex (i)) == map_v2i.end ())
-            {
-              map_v2i.insert (std::make_pair (it->vertex (i), current_index ++));
-              Point_3 p = to_3d (centroid, base1, base2, it->vertex (i)->point ());
-              soup_item->new_vertex (p.x (), p.y (), p.z ());
-            }
-        }
-      soup_item->new_triangle (map_v2i[it->vertex (0)],
-                               map_v2i[it->vertex (1)],
-                               map_v2i[it->vertex (2)]);
-    }
-
-  soup_item->orient();
-  soup_item->exportAsPolyhedron (item->polyhedron());
-
-  if (soup_item->isEmpty ())
-    {
-      std::cerr << "POLYGON SOUP EMPTY" << std::endl;
-      for (std::size_t i = 0; i < projections.size (); ++ i)
-        std::cerr << projections[i] << std::endl;
-      
-    }
-  
-  delete soup_item;
 }
 
 #include <QtPlugin>
