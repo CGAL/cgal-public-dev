@@ -1077,6 +1077,12 @@ void ArrangementDemoWindow::on_actionCloseTab_triggered( )
 
   // delete the tab
   this->ui->tabWidget->removeTab( currentTabIndex );
+
+  // release memory
+  ArrangementDemoTabBase *curTab = this->tabs[ currentTabIndex ];
+  delete curTab;
+
+  // remove the tab
   this->tabs.erase( this->tabs.begin( ) + currentTabIndex );
 
   // delete the arrangement
