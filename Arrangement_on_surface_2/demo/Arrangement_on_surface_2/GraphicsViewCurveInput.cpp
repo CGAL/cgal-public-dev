@@ -63,6 +63,10 @@ GraphicsViewCurveInputBase::GraphicsViewCurveInputBase( QObject* parent ) :
 }
 
 void
+GraphicsViewCurveInputBase::keyPressEvent(QKeyEvent* /* event */)
+{ }
+
+void
 GraphicsViewCurveInputBase::mouseMoveEvent(QGraphicsSceneMouseEvent* /* event */)
 { }
 
@@ -85,6 +89,12 @@ bool GraphicsViewCurveInputBase::eventFilter( QObject* obj, QEvent* event )
     QGraphicsSceneMouseEvent* mouseEvent =
       static_cast< QGraphicsSceneMouseEvent* >( event );
     this->mousePressEvent( mouseEvent );
+  }
+  else if ( event->type( ) == QEvent::KeyPress )
+  {
+    QKeyEvent* keyEvent = 
+      static_cast< QKeyEvent* >( event );
+    this->keyPressEvent( keyEvent );
   }
 
   return QObject::eventFilter( obj, event );

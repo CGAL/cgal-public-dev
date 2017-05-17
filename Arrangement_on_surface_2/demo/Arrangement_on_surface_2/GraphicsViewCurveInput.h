@@ -33,6 +33,7 @@
 #include <QEvent>
 #include <QGraphicsLineItem>
 #include <QGraphicsSceneMouseEvent>
+#include <QKeyEvent>
 
 #include "Callback.h"
 #include "ISnappable.h"
@@ -59,6 +60,7 @@ public:
 
 protected:
   GraphicsViewCurveInputBase( QObject* parent );
+  virtual void keyPressEvent( QKeyEvent* event );
   virtual void mouseMoveEvent( QGraphicsSceneMouseEvent* event );
   virtual void mousePressEvent( QGraphicsSceneMouseEvent* event );
   virtual bool eventFilter( QObject* obj, QEvent* event );
@@ -106,6 +108,23 @@ public:
   }
 
 protected:
+
+  void keyPressEvent( QKeyEvent* event )
+  {
+    if ( event->key() != ::Qt::Key_Escape )
+    {
+      return;
+    }
+
+    if ( this->second == true && this->scene != NULL )
+    {
+      this->scene->removeItem( &( this->segmentGuide ) );
+    }
+
+    this->second = false;
+    this->pointsGraphicsItem.clear();
+  }
+
   void mouseMoveEvent( QGraphicsSceneMouseEvent* event )
   {
     if ( this->second )
@@ -199,6 +218,28 @@ public:
   { }
 
 protected:
+
+  void keyPressEvent( QKeyEvent* event )
+  {
+    if ( event->key() != ::Qt::Key_Escape || this->points.empty() )
+    {
+      return;
+    }
+
+    for ( unsigned int i = 0; i < this->polylineGuide.size( ); ++i )
+    {
+      if ( this->scene != NULL )
+      {
+        this->scene->removeItem( this->polylineGuide[ i ] );
+      }
+
+      delete this->polylineGuide[ i ];
+    }
+
+    this->polylineGuide.clear( );
+    this->points.clear();
+  }
+
   void mouseMoveEvent( QGraphicsSceneMouseEvent* event )
   {
     if ( ! this->polylineGuide.empty( ) )
@@ -329,6 +370,47 @@ public:
   }
 
 protected:
+
+  void keyPressEvent( QKeyEvent* event )
+  {
+    if ( event->key() != ::Qt::Key_Escape || this->points.empty() )
+    {
+      return;
+    }
+
+    if ( this->scene != NULL ) 
+    {
+      if ( this->circleItem != NULL )
+      {
+        this->scene->removeItem(this->circleItem);
+      }
+      
+      if ( this->ellipseItem != NULL )
+      {
+        this->scene->removeItem(this->ellipseItem);
+      }
+    }
+
+    delete this->circleItem;
+    this->circleItem = NULL;
+
+    delete this->ellipseItem;
+    this->ellipseItem = NULL;
+
+    for ( unsigned int i = 0; i < this->polylineGuide.size( ); ++i )
+    {
+      if ( this->scene != NULL )
+      {
+        this->scene->removeItem( this->polylineGuide[ i ] );
+      }
+      delete this->polylineGuide[ i ];
+    }
+
+    this->polylineGuide.clear( );
+    this->points.clear( );
+    this->pointsGraphicsItem.clear( );
+  }
+
   void mouseMoveEvent( QGraphicsSceneMouseEvent* event )
   {
     if ( ! this->polylineGuide.empty( ) )
@@ -657,6 +739,24 @@ protected: // methods
     return Superclass::eventFilter( obj, event );
   }
 
+
+  void keyPressEvent( QKeyEvent* event )
+  {
+    std::cout<<"In Arr_linear_traits_2 keyPressEvent"<<std::endl;
+
+    if ( event->key() != ::Qt::Key_Escape )
+    {
+      return;
+    }
+
+    if ( this->second == true && this->scene != NULL )
+    {
+      this->scene->removeItem( &( this->segmentGuide ) );
+    }
+
+    this->second = false;
+  }
+
   void mouseMoveEvent( QGraphicsSceneMouseEvent* event )
   {
     if ( this->second )
@@ -776,6 +876,20 @@ public:
   { }
 
 protected:
+
+  void keyPressEvent( QKeyEvent* event )
+  {
+    std::cout<<"In Arr_circular_arc_traits_2 keyPressEvent"<<std::endl;
+
+    if ( event->key() != ::Qt::Key_Escape )
+    {
+      return;
+    }
+
+    this->points.clear( );
+    this->pointsGraphicsItem.clear( );
+  }
+
   void mouseMoveEvent(QGraphicsSceneMouseEvent* /* event */) {}
 
   void mousePressEvent( QGraphicsSceneMouseEvent* event )
