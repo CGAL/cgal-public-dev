@@ -647,6 +647,7 @@ void ArrangementDemoWindow::updateSnapping( QAction* newMode )
       this->ui->actionGridSnapMode->setEnabled( false );
       activeTab->getCurveInputCallback( )->setSnapToGridEnabled( false );
       activeTab->getSplitEdgeCallback( )->setSnapToGridEnabled( false );
+      activeView->setShowGrid( enabled );
     }
     else
     {
