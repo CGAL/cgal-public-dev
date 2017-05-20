@@ -3,3 +3,4 @@ arrangement_2
 qrc_ArrangementDemoWindow.cpp
 *.tags
 *.tags_sorted_by_file
+Core_Diagnostics

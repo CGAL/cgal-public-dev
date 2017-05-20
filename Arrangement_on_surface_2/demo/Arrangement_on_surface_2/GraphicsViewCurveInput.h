@@ -362,6 +362,43 @@ public:
   void setConicType( ConicType conicType_ )
   {
     this->conicType = conicType_;
+
+    if ( this->points.empty() )
+    {
+      return;
+    }
+
+    if ( this->scene != NULL ) 
+    {
+      if ( this->circleItem != NULL )
+      {
+        this->scene->removeItem(this->circleItem);
+      }
+      
+      if ( this->ellipseItem != NULL )
+      {
+        this->scene->removeItem(this->ellipseItem);
+      }
+    }
+
+    delete this->circleItem;
+    this->circleItem = NULL;
+
+    delete this->ellipseItem;
+    this->ellipseItem = NULL;
+
+    for ( unsigned int i = 0; i < this->polylineGuide.size( ); ++i )
+    {
+      if ( this->scene != NULL )
+      {
+        this->scene->removeItem( this->polylineGuide[ i ] );
+      }
+      delete this->polylineGuide[ i ];
+    }
+
+    this->polylineGuide.clear( );
+    this->points.clear( );
+    this->pointsGraphicsItem.clear( );
   }
 
   ConicType getConicType( ) const
