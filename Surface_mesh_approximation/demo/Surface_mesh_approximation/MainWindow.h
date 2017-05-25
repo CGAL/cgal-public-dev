@@ -25,7 +25,6 @@ public:
 public slots:
   void updateViewerBBox();
   void open(QString filename);
-  void setAddKeyFrameKeyboardModifiers(Qt::KeyboardModifiers);
 
 protected slots:
   // settings
@@ -46,10 +45,7 @@ protected slots:
   void on_actionCopy_snapshot_triggered();
 
   // algorithm menu
-  void on_actionRefine_loop_triggered();
-  void on_actionFit_triangles_triggered();
-  void on_actionFit_edges_triggered();
-  void on_actionFit_vertices_triggered();
+  void on_actionVSA_segmentation_triggered();
 
   // view menu
   void on_actionView_polyhedron_triggered();

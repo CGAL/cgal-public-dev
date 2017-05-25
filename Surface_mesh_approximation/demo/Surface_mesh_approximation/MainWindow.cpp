@@ -43,8 +43,6 @@ MainWindow::MainWindow(QWidget* parent)
   connect(this, SIGNAL(openRecentFile(QString)),
     this, SLOT(open(QString)));
 
-  //this->addAboutDemo(":/cgal/VSA_demo/resources/about.html");
-  // accessible as alias name: http://doc.qt.io/qt-5/resources.html
   this->addAboutDemo(":/cgal/VSA_demo/about.html");
   this->addAboutCGAL();
 
@@ -89,11 +87,6 @@ void MainWindow::open(QString filename)
       m_pViewer->update();
     }
   }
-}
-
-void MainWindow::setAddKeyFrameKeyboardModifiers(::Qt::KeyboardModifiers m)
-{
-  m_pViewer->setAddKeyFrameKeyboardModifiers(m);
 }
 
 void MainWindow::quit()
@@ -174,34 +167,10 @@ void MainWindow::on_actionCopy_snapshot_triggered()
   QApplication::restoreOverrideCursor();
 }
 
-void MainWindow::on_actionRefine_loop_triggered()
+void MainWindow::on_actionVSA_segmentation_triggered()
 {
   QApplication::setOverrideCursor(Qt::WaitCursor);
-  m_pScene->refine_loop();
-  QApplication::restoreOverrideCursor();
-  m_pViewer->update();
-}
-
-void MainWindow::on_actionFit_triangles_triggered()
-{
-  QApplication::setOverrideCursor(Qt::WaitCursor);
-  m_pScene->fit_triangles();
-  m_pViewer->update();
-  QApplication::restoreOverrideCursor();
-}
-
-void MainWindow::on_actionFit_edges_triggered()
-{
-  QApplication::setOverrideCursor(Qt::WaitCursor);
-  m_pScene->fit_edges();
-  m_pViewer->update();
-  QApplication::restoreOverrideCursor();
-}
-
-void MainWindow::on_actionFit_vertices_triggered()
-{
-  QApplication::setOverrideCursor(Qt::WaitCursor);
-  m_pScene->fit_vertices();
+  m_pScene->VSA_segmentation();
   m_pViewer->update();
   QApplication::restoreOverrideCursor();
 }

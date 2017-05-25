@@ -10,51 +10,44 @@
 class Scene
 {
 public:
-  Scene();
-  ~Scene();
-public:
   // types
   typedef CGAL::Bbox_3 Bbox;
 
 public:
+  Scene();
+  ~Scene();
+
   void update_bbox();
   Bbox bbox() { return m_bbox; }
+
+  // file menu
+  int open(QString filename);
+
+  // algorithms
+  void VSA_segmentation();
+
+  // toggle view options
+  void toggle_view_poyhedron() {
+    m_view_polyhedron = !m_view_polyhedron;
+  }
+
+  void draw();
+
+private:
+  Vector normalize(const Vector& v) {
+    return v / std::sqrt(v * v);
+  }
+
+  // rendering
+  void render_polyhedron();
 
 private:
   // member data
   Bbox m_bbox;
-  Line m_line;
-  Plane m_plane;
-  Point m_centroid;
   Polyhedron *m_pPolyhedron;
 
   // view options
   bool m_view_polyhedron;
-
-public:
-  // file menu
-  int open(QString filename);
-
-  Vector normalize(const Vector& v);
-
-  // algorithms
-  void refine_loop();
-  void fit_triangles();
-  void fit_edges();
-  void fit_vertices();
-  
-  // toggle view options
-  void toggle_view_poyhedron();
-
-  // rendering
-  void draw(); 
-  void render_plane();
-  void render_line();
-  void render_centroid();
-  void render_polyhedron();
-
-private:
-
 }; // end class Scene
 
 #endif // SCENE_H

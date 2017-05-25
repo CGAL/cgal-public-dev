@@ -56,17 +56,13 @@
    </widget>
    <widget class="QMenu" name="menuAlgorithms">
     <property name="title">
-     <string>Algorithms</string>
+     <string>&amp;Algorithms</string>
     </property>
-    <addaction name="actionFit_edges"/>
-    <addaction name="actionFit_vertices"/>
-    <addaction name="actionFit_triangles"/>
-    <addaction name="separator"/>
-    <addaction name="actionRefine_loop"/>
+    <addaction name="actionVSA_segmentation"/>
    </widget>
    <widget class="QMenu" name="menuEdit">
     <property name="title">
-     <string>Edit</string>
+     <string>&amp;Edit</string>
     </property>
     <addaction name="actionCopy_snapshot"/>
     <addaction name="actionSave_snapshot"/>
@@ -227,9 +223,9 @@
     <string>Fit vertices</string>
    </property>
   </action>
-  <action name="actionFit_edges">
+  <action name="actionVSA_segmentation">
    <property name="text">
-    <string>Fit edges</string>
+    <string>VSA</string>
    </property>
   </action>
   <action name="actionFit_triangles">
