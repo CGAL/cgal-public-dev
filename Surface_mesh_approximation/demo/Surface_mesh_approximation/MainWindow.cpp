@@ -17,7 +17,7 @@
 
 
 MainWindow::MainWindow(QWidget* parent)
-: CGAL::Qt::DemosMainWindow(parent)
+  : CGAL::Qt::DemosMainWindow(parent)
 {
   ui = new Ui::MainWindow;
   ui->setupUi(this);
@@ -56,24 +56,6 @@ MainWindow::~MainWindow()
   delete ui;
 }
 
-void MainWindow::dragEnterEvent(QDragEnterEvent *event)
-{
-  if (event->mimeData()->hasFormat("text/uri-list"))
-    event->acceptProposedAction();
-}
-
-void MainWindow::dropEvent(QDropEvent *event)
-{
-  Q_FOREACH(QUrl url, event->mimeData()->urls()) {
-    QString filename = url.toLocalFile();
-    if(!filename.isEmpty()) {
-      QTextStream(stderr) << QString("dropEvent(\"%1\")\n").arg(filename);
-      open(filename);
-    }
-  }
-  event->acceptProposedAction();
-}
-
 void MainWindow::updateViewerBBox()
 {
   m_pScene->update_bbox();
@@ -91,29 +73,12 @@ void MainWindow::updateViewerBBox()
   m_pViewer->camera()->showEntireScene();
 }
 
-void MainWindow::on_actionView_polyhedron_triggered()
-{
-  m_pScene->toggle_view_poyhedron();
-  m_pViewer->update();
-}
-
-void MainWindow::on_actionRefine_loop_triggered()
-{
-  QApplication::setOverrideCursor(Qt::WaitCursor);
-  m_pScene->refine_loop();
-  QApplication::restoreOverrideCursor();
-  m_pViewer->update();
-}
-
-
 void MainWindow::open(QString filename)
 {
   QFileInfo fileinfo(filename);
-  if(fileinfo.isFile() && fileinfo.isReadable())
-  {
+  if(fileinfo.isFile() && fileinfo.isReadable()) {
     int index = m_pScene->open(filename);
-    if(index >= 0)
-    {
+    if(index >= 0) {
       QSettings settings;
       settings.setValue("OFF open directory",
         fileinfo.absoluteDir().absolutePath());
@@ -121,9 +86,20 @@ void MainWindow::open(QString filename)
 
       // update bbox
       updateViewerBBox();
-    m_pViewer->update();
+      m_pViewer->update();
     }
   }
+}
+
+void MainWindow::setAddKeyFrameKeyboardModifiers(::Qt::KeyboardModifiers m)
+{
+  m_pViewer->setAddKeyFrameKeyboardModifiers(m);
+}
+
+void MainWindow::quit()
+{
+  writeSettings();
+  close();
 }
 
 void MainWindow::readSettings()
@@ -137,10 +113,22 @@ void MainWindow::writeSettings()
   std::cerr << "Write setting... done.\n";
 }
 
-void MainWindow::quit()
+void MainWindow::dragEnterEvent(QDragEnterEvent *event)
 {
-  writeSettings();
-  close();
+  if (event->mimeData()->hasFormat("text/uri-list"))
+    event->acceptProposedAction();
+}
+
+void MainWindow::dropEvent(QDropEvent *event)
+{
+  Q_FOREACH(QUrl url, event->mimeData()->urls()) {
+    QString filename = url.toLocalFile();
+    if(!filename.isEmpty()) {
+      QTextStream(stderr) << QString("dropEvent(\"%1\")\n").arg(filename);
+      open(filename);
+    }
+  }
+  event->acceptProposedAction();
 }
 
 void MainWindow::closeEvent(QCloseEvent *event)
@@ -167,18 +155,13 @@ void MainWindow::on_actionLoadPolyhedron_triggered()
   }
 }
 
-
-void MainWindow::setAddKeyFrameKeyboardModifiers(::Qt::KeyboardModifiers m)
-{
-  m_pViewer->setAddKeyFrameKeyboardModifiers(m);
-}
-
 void MainWindow::on_actionSave_snapshot_triggered()
 {
   QApplication::setOverrideCursor(Qt::WaitCursor);
   m_pViewer->saveSnapshot(QString("snapshot.png"));
   QApplication::restoreOverrideCursor();
 }
+
 void MainWindow::on_actionCopy_snapshot_triggered()
 {
   // copy snapshot to clipboard
@@ -189,6 +172,14 @@ void MainWindow::on_actionCopy_snapshot_triggered()
   QImage snapshot = m_pViewer->grabFrameBuffer(true);
   qb->setImage(snapshot);
   QApplication::restoreOverrideCursor();
+}
+
+void MainWindow::on_actionRefine_loop_triggered()
+{
+  QApplication::setOverrideCursor(Qt::WaitCursor);
+  m_pScene->refine_loop();
+  QApplication::restoreOverrideCursor();
+  m_pViewer->update();
 }
 
 void MainWindow::on_actionFit_triangles_triggered()
@@ -213,4 +204,10 @@ void MainWindow::on_actionFit_vertices_triggered()
   m_pScene->fit_vertices();
   m_pViewer->update();
   QApplication::restoreOverrideCursor();
+}
+
+void MainWindow::on_actionView_polyhedron_triggered()
+{
+  m_pScene->toggle_view_poyhedron();
+  m_pViewer->update();
 }

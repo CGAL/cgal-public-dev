@@ -17,6 +17,7 @@ class MainWindow :
   public CGAL::Qt::DemosMainWindow
 {
   Q_OBJECT
+
 public:
   MainWindow(QWidget* parent = 0);
   ~MainWindow();
@@ -33,9 +34,9 @@ protected slots:
   void writeSettings();
 
   // drag & drop
+  void dragEnterEvent(QDragEnterEvent *event);
   void dropEvent(QDropEvent *event);
   void closeEvent(QCloseEvent *event);
-  void dragEnterEvent(QDragEnterEvent *event);
 
   // file menu
   void on_actionLoadPolyhedron_triggered();

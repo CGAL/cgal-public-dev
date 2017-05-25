@@ -35,21 +35,21 @@ public:
   // file menu
   int open(QString filename);
 
+  Vector normalize(const Vector& v);
+
+  // algorithms
+  void refine_loop();
+  void fit_triangles();
+  void fit_edges();
+  void fit_vertices();
+  
   // toggle view options
   void toggle_view_poyhedron();
 
-  // algorithms
-  Vector normalize(const Vector& v);
-
-  void refine_loop();
-  void fit_edges();
-  void fit_vertices();
-  void fit_triangles();
-
   // rendering
   void draw(); 
-  void render_line();
   void render_plane();
+  void render_line();
   void render_centroid();
   void render_polyhedron();
 
