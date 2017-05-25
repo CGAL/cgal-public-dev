@@ -39,7 +39,8 @@ private:
   }
 
   // rendering
-  void render_polyhedron();
+  void render_polyhedron_fill();
+  void render_polyhedron_wireframe();
 
 private:
   // member data
