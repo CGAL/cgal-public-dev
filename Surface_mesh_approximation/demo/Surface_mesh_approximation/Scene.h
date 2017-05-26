@@ -24,11 +24,11 @@ public:
   int open(QString filename);
 
   // algorithms
-  void VSA_segmentation();
+  void VSA_segmentation(const std::size_t num_proxies, const std::size_t num_iterations);
 
   // toggle view options
-  void toggle_view_poyhedron() {
-    m_view_polyhedron = !m_view_polyhedron;
+  void toggle_view_wireframe() {
+    m_view_wireframe = !m_view_wireframe;
   }
 
   void draw();
@@ -47,8 +47,11 @@ private:
   Bbox m_bbox;
   Polyhedron *m_pPolyhedron;
 
+  std::vector<std::size_t> m_px_id;
+  std::size_t m_px_num;
+
   // view options
-  bool m_view_polyhedron;
+  bool m_view_wireframe;
 }; // end class Scene
 
 #endif // SCENE_H

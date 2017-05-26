@@ -13,6 +13,8 @@
 
 #include "ui_MainWindow.h"
 
+#include "dialSettings.h"
+
 #include <QMimeData> 
 
 
@@ -169,14 +171,17 @@ void MainWindow::on_actionCopy_snapshot_triggered()
 
 void MainWindow::on_actionVSA_segmentation_triggered()
 {
-  QApplication::setOverrideCursor(Qt::WaitCursor);
-  m_pScene->VSA_segmentation();
-  m_pViewer->update();
-  QApplication::restoreOverrideCursor();
+  SettingsDialog dial;
+  if(dial.exec() == QDialog::Accepted) {
+    QApplication::setOverrideCursor(Qt::WaitCursor);
+    m_pScene->VSA_segmentation(dial.NumSegments->value(), dial.NumIterations->value());
+    m_pViewer->update();
+    QApplication::restoreOverrideCursor();
+  }
 }
 
-void MainWindow::on_actionView_polyhedron_triggered()
+void MainWindow::on_actionView_wireframe_triggered()
 {
-  m_pScene->toggle_view_poyhedron();
+  m_pScene->toggle_view_wireframe();
   m_pViewer->update();
 }

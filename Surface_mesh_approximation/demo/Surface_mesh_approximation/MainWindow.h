@@ -48,7 +48,7 @@ protected slots:
   void on_actionVSA_segmentation_triggered();
 
   // view menu
-  void on_actionView_polyhedron_triggered();
+  void on_actionView_wireframe_triggered();
 
 private:
   Scene* m_pScene;

@@ -20,6 +20,7 @@ typedef Polyhedron::Vertex_iterator Vertex_iterator;
 typedef Polyhedron::Edge_iterator Edge_iterator;
 typedef Polyhedron::Halfedge_iterator Halfedge_iterator;
 typedef Polyhedron::Facet_iterator Facet_iterator;
+typedef Polyhedron::Facet_const_iterator Facet_const_iterator;
 typedef Polyhedron::Halfedge_around_facet_circulator Halfedge_around_facet_circulator;
 
 #endif // PCA_DEMO_TYPES_H

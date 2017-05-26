@@ -34,12 +34,15 @@ if(CGAL_FOUND AND CGAL_Qt5_FOUND AND Qt5_FOUND AND OPENGL_FOUND AND QGLVIEWER_FO
 
   include_directories ( ${QGLVIEWER_INCLUDE_DIR} )
 
-  qt5_wrap_ui( UI_FILES MainWindow.ui )
+  qt5_wrap_ui( UI_FILES MainWindow.ui dialSettings.ui)
 
   include(AddFileDependencies)
 
   qt5_generate_moc( "MainWindow.h" "${CMAKE_CURRENT_BINARY_DIR}/MainWindow_moc.cpp" )
   add_file_dependencies( MainWindow_moc.cpp "${CMAKE_CURRENT_SOURCE_DIR}/MainWindow.h" )
+
+  qt5_generate_moc( "dialSettings.h" "${CMAKE_CURRENT_BINARY_DIR}/dialSettings_moc.cpp" )
+  add_file_dependencies( dialSettings_moc.cpp "${CMAKE_CURRENT_SOURCE_DIR}/dialSettings.h" )
 
   qt5_generate_moc( "Viewer.h" "${CMAKE_CURRENT_BINARY_DIR}/Viewer_moc.cpp" )
   add_file_dependencies( Viewer_moc.cpp "${CMAKE_CURRENT_SOURCE_DIR}/Viewer.h" )
@@ -47,7 +50,8 @@ if(CGAL_FOUND AND CGAL_Qt5_FOUND AND Qt5_FOUND AND OPENGL_FOUND AND QGLVIEWER_FO
   qt5_add_resources ( CGAL_Qt5_RESOURCE_FILES VSA_demo.qrc )
 
   add_file_dependencies( VSA_demo.cpp "${CMAKE_CURRENT_BINARY_DIR}/MainWindow_moc.cpp"
-                                       "${CMAKE_CURRENT_BINARY_DIR}/Viewer_moc.cpp")
+                                       "${CMAKE_CURRENT_BINARY_DIR}/Viewer_moc.cpp"
+                                       "${CMAKE_CURRENT_BINARY_DIR}/dialSettings_moc.cpp")
 
   add_executable  ( VSA_demo VSA_demo.cpp ${UI_FILES} ${CGAL_Qt5_RESOURCE_FILES} ${CGAL_Qt5_MOC_FILES})
   qt5_use_modules(VSA_demo Xml Script OpenGL)
