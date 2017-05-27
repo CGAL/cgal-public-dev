@@ -185,3 +185,9 @@ void MainWindow::on_actionView_wireframe_triggered()
   m_pScene->toggle_view_wireframe();
   m_pViewer->update();
 }
+
+void MainWindow::on_actionView_segboundary_triggered()
+{
+  m_pScene->toggle_view_seg_boundary();
+  m_pViewer->update();
+}

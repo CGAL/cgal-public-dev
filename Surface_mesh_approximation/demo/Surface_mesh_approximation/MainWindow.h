@@ -49,6 +49,7 @@ protected slots:
 
   // view menu
   void on_actionView_wireframe_triggered();
+  void on_actionView_segboundary_triggered();
 
 private:
   Scene* m_pScene;

@@ -1,5 +1,5 @@
-#ifndef PCA_DEMO_TYPES_H
-#define PCA_DEMO_TYPES_H
+#ifndef VSA_DEMO_TYPES_H
+#define VSA_DEMO_TYPES_H
 
 #include <CGAL/Simple_cartesian.h>
 #include <CGAL/Polyhedron_3.h>
@@ -18,9 +18,11 @@ typedef CGAL::Polyhedron_3<Kernel> Polyhedron;
 typedef Polyhedron::Point_iterator Point_iterator;
 typedef Polyhedron::Vertex_iterator Vertex_iterator;
 typedef Polyhedron::Edge_iterator Edge_iterator;
+typedef Polyhedron::Edge_const_iterator Edge_const_iterator;
 typedef Polyhedron::Halfedge_iterator Halfedge_iterator;
 typedef Polyhedron::Facet_iterator Facet_iterator;
 typedef Polyhedron::Facet_const_iterator Facet_const_iterator;
 typedef Polyhedron::Halfedge_around_facet_circulator Halfedge_around_facet_circulator;
+typedef Polyhedron::Halfedge_around_facet_const_circulator Halfedge_around_facet_const_circulator;
 
-#endif // PCA_DEMO_TYPES_H
+#endif // VSA_DEMO_TYPES_H

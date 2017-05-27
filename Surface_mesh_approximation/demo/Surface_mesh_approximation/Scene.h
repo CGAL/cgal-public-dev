@@ -5,6 +5,9 @@
 #include <iostream>
 #include <cmath>
 
+#include <CGAL/boost/graph/graph_traits_Polyhedron_3.h>
+#include <CGAL/property_map.h>
+
 #include "types.h"
 
 class Scene
@@ -31,6 +34,10 @@ public:
     m_view_wireframe = !m_view_wireframe;
   }
 
+  void toggle_view_seg_boundary() {
+    m_view_seg_boundary = !m_view_seg_boundary;
+  }
+
   void draw();
 
 private:
@@ -39,19 +46,25 @@ private:
   }
 
   // rendering
-  void render_polyhedron_fill();
-  void render_polyhedron_wireframe();
+  void render_polyhedron();
+  void render_wireframe();
+  void render_segment_boundary();
 
 private:
   // member data
   Bbox m_bbox;
   Polyhedron *m_pPolyhedron;
 
-  std::vector<std::size_t> m_px_id;
+  typedef std::map<Polyhedron::Facet_const_handle, std::size_t> FacetIdMap;
+  typedef boost::associative_property_map<FacetIdMap> FacetIdPmap;
+  FacetIdMap m_fidx_map;
+  FacetIdPmap m_fidx_pmap; // property-map for segment-idx
+
   std::size_t m_px_num;
 
   // view options
   bool m_view_wireframe;
+  bool m_view_seg_boundary;
 }; // end class Scene
 
 #endif // SCENE_H

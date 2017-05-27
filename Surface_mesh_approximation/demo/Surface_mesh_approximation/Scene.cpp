@@ -12,18 +12,18 @@
 #include <CGAL/IO/Polyhedron_iostream.h>
 #include <CGAL/centroid.h>
 
-#include <CGAL/boost/graph/graph_traits_Polyhedron_3.h>
-#include <CGAL/property_map.h>
 #include <CGAL/internal/Surface_mesh_approximation/VSA_segmentation.h>
 
 #include "ColorCheatSheet.h"
 
-Scene::Scene()
+Scene::Scene() :
+  m_fidx_pmap(m_fidx_map)
 {
   m_pPolyhedron = NULL;
 
   // view options
-  m_view_wireframe = true;
+  m_view_wireframe = false;
+  m_view_seg_boundary = false;
 
   m_px_num = 0;
 }
@@ -87,8 +87,6 @@ int Scene::open(QString filename)
     return -1;
   }
 
-  m_px_id.swap(std::vector<std::size_t>(m_pPolyhedron->size_of_facets(), 0));
-
   QApplication::restoreOverrideCursor();
   return 0;
 }
@@ -100,60 +98,54 @@ void Scene::VSA_segmentation(const std::size_t num_proxies, const std::size_t nu
 
   std::cout << "VSA...";
 
-  // create a property-map for segment-id
-  typedef std::map<Polyhedron::Facet_const_handle, std::size_t> Facet_id_map;
-  Facet_id_map internal_segment_map;
+  m_fidx_map.clear();
   for(Facet_const_iterator fitr = m_pPolyhedron->facets_begin();
     fitr != m_pPolyhedron->facets_end();
     ++fitr) {
-    internal_segment_map.insert(
+    m_fidx_map.insert(
       std::pair<Polyhedron::Facet_const_handle, std::size_t>(fitr, 0));
   }
-  boost::associative_property_map<Facet_id_map> segment_property_map(internal_segment_map);
 
   typedef boost::property_map<Polyhedron, boost::vertex_point_t>::type PointPropertyMap;
   PointPropertyMap ppmap = get(boost::vertex_point, const_cast<Polyhedron &>(*m_pPolyhedron));
 
   CGAL::internal::VSA_segmentation<Polyhedron, Kernel, PointPropertyMap> vsa_seg(*m_pPolyhedron, ppmap, Kernel());
-  vsa_seg.partition(num_proxies, num_iterations, segment_property_map);
-  m_px_num = num_proxies;
+  vsa_seg.partition(num_proxies, num_iterations, m_fidx_pmap);
 
-  // save segmentation id to proxy id vector
-  m_px_id.clear();
-  for (Facet_const_iterator fitr = m_pPolyhedron->facets_begin();
-      fitr != m_pPolyhedron->facets_end();
-      ++fitr) {
-      m_px_id.push_back(segment_property_map[fitr]);
-  }
+  m_px_num = num_proxies;
+  m_view_seg_boundary = true;
 
   std::cout << "done" << std::endl;
 }
 
 void Scene::draw()
 {
-  if(m_view_wireframe) {
-    render_polyhedron_wireframe();
-  }
-  render_polyhedron_fill();
-}
-
-void Scene::render_polyhedron_fill()
-{
-  if(!m_pPolyhedron)
-    return;
-
-  if(m_view_wireframe) {
+  if(m_view_wireframe || m_view_seg_boundary) {
     ::glEnable(GL_POLYGON_OFFSET_FILL);
     ::glPolygonOffset(3.0f, 1.0f);
   }
   ::glEnable(GL_LIGHTING);
+  render_polyhedron();
+
+  if(m_view_wireframe)
+    render_wireframe();
+  
+  if(m_view_seg_boundary)
+    render_segment_boundary();
+}
+
+void Scene::render_polyhedron()
+{
+  if(!m_pPolyhedron)
+    return;
+
   ::glColor3ub(200, 200, 200);
   ::glBegin(GL_TRIANGLES);
   std::size_t fidx = 0;
-  for(Facet_iterator fitr = m_pPolyhedron->facets_begin();
+  for(Facet_const_iterator fitr = m_pPolyhedron->facets_begin();
     fitr != m_pPolyhedron->facets_end();
     ++fitr) {
-    Halfedge_around_facet_circulator he = fitr->facet_begin();
+    Halfedge_around_facet_const_circulator he = fitr->facet_begin();
     const Point &a = he->vertex()->point();
     const Point &b = he->next()->vertex()->point();
     const Point &c = he->prev()->vertex()->point();
@@ -163,7 +155,7 @@ void Scene::render_polyhedron_fill()
     ::glNormal3d(norm.x(), norm.y(), norm.z());
 
     if(m_px_num) {
-      std::size_t cidx = std::floor(static_cast<double>(m_px_id[fidx++]) / static_cast<double>(m_px_num) * 256.0);
+      std::size_t cidx = std::floor(static_cast<double>(m_fidx_pmap[fitr]) / static_cast<double>(m_px_num) * 256.0);
       ::glColor3ub(ColorCheatSheet::r(cidx), ColorCheatSheet::g(cidx), ColorCheatSheet::b(cidx));
     }
 
@@ -174,23 +166,52 @@ void Scene::render_polyhedron_fill()
   ::glEnd();
 }
 
-void Scene::render_polyhedron_wireframe()
+void Scene::render_wireframe()
 {
+  if(!m_pPolyhedron)
+    return;
+  
   // draw black edges
-  if(m_pPolyhedron != NULL)
-  {
-    ::glDisable(GL_LIGHTING);
-    ::glColor3ub(0, 0, 0);
-    ::glLineWidth(1.0f);
-    ::glBegin(GL_LINES);
-    for(Edge_iterator he = m_pPolyhedron->edges_begin();
-        he != m_pPolyhedron->edges_end();
-        he++) {
-      const Point& a = he->vertex()->point();
-      const Point& b = he->opposite()->vertex()->point();
-      ::glVertex3d(a.x(),a.y(),a.z());
-      ::glVertex3d(b.x(),b.y(),b.z());
-    }
-    ::glEnd();
+  ::glDisable(GL_LIGHTING);
+  ::glColor3ub(0, 0, 0);
+  ::glLineWidth(1.0f);
+  ::glBegin(GL_LINES);
+  for(Edge_iterator he = m_pPolyhedron->edges_begin();
+    he != m_pPolyhedron->edges_end();
+    he++) {
+    const Point& a = he->vertex()->point();
+    const Point& b = he->opposite()->vertex()->point();
+    ::glVertex3d(a.x(),a.y(),a.z());
+    ::glVertex3d(b.x(),b.y(),b.z());
   }
+  ::glEnd();
+}
+
+void Scene::render_segment_boundary()
+{
+  if(!m_pPolyhedron || !m_px_num)
+    return;
+
+  ::glDisable(GL_LIGHTING);
+  ::glColor3ub(0, 0, 0);
+  ::glLineWidth(1.0);
+  ::glBegin(GL_LINES);
+  for(Edge_const_iterator eitr = m_pPolyhedron->edges_begin();
+    eitr != m_pPolyhedron->edges_end();
+    ++eitr) {
+    std::size_t segid0 = std::numeric_limits<std::size_t>::max();
+    if(!eitr->is_border())
+      segid0 = m_fidx_pmap[eitr->facet()];
+    std::size_t segid1 = std::numeric_limits<std::size_t>::max();
+    if(!eitr->opposite()->is_border())
+      segid1 = m_fidx_pmap[eitr->opposite()->facet()];
+
+    if(segid0 != segid1) {
+      const Point &p0 = eitr->vertex()->point();
+      const Point &p1 = eitr->opposite()->vertex()->point();
+      ::glVertex3d(p0.x(), p0.y(), p0.z());
+      ::glVertex3d(p1.x(), p1.y(), p1.z());
+    }
+  }
+  ::glEnd();
 }

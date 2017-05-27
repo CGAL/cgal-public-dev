@@ -53,6 +53,7 @@
      <string>&amp;View</string>
     </property>
     <addaction name="actionView_wireframe"/>
+    <addaction name="actionView_segboundary"/>
    </widget>
    <widget class="QMenu" name="menuAlgorithms">
     <property name="title">
@@ -109,6 +110,11 @@
   <action name="actionVSA_segmentation">
    <property name="text">
     <string>VSA</string>
+   </property>
+  </action>
+  <action name="actionView_segboundary">
+   <property name="text">
+    <string>Segment Boundary</string>
    </property>
   </action>
  </widget>
