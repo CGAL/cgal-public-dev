@@ -80,7 +80,7 @@ ArrangementDemoTabBase* ArrangementDemoWindow::makeTab( TraitsType tt )
 
   Lin_arr* lin_arr;
   Arc_arr* arc_arr;
-  // Alg_seg_arr* alg_seg_arr;
+  Alg_seg_arr* alg_seg_arr;
   CGAL::Object arr;
 
   switch ( tt )
@@ -120,12 +120,12 @@ ArrangementDemoTabBase* ArrangementDemoWindow::makeTab( TraitsType tt )
     arr = CGAL::make_object( arc_arr );
     tabLabel = QString( "%1 - Circular Arc" ).arg( tabLabelCounter++ );
     break;
-   // case ALGEBRAIC_TRAITS:
-   //  alg_seg_arr = new Alg_seg_arr;
-   //  demoTab = new ArrangementDemoTab< Alg_seg_arr >( alg_seg_arr, 0 );
-   //  arr = CGAL::make_object( alg_seg_arr );
-   //  tabLabel = QString( "%1 - Algebraic" ).arg( tabLabelCounter++ );
-   //  break;
+   case ALGEBRAIC_TRAITS:
+    alg_seg_arr = new Alg_seg_arr;
+    demoTab = new ArrangementDemoTab< Alg_seg_arr >( alg_seg_arr, 0 );
+    arr = CGAL::make_object( alg_seg_arr );
+    tabLabel = QString( "%1 - Algebraic" ).arg( tabLabelCounter++ );
+    break;
   }
 
   this->arrangements.push_back( arr );
@@ -912,10 +912,10 @@ void ArrangementDemoWindow::on_actionNewTab_triggered( )
     {
       this->makeTab( CIRCULAR_ARC_TRAITS );
     }
-    // else if ( id == ALGEBRAIC_TRAITS )
-    // {
-    //   this->makeTab( ALGEBRAIC_TRAITS );
-    // }
+    else if ( id == ALGEBRAIC_TRAITS )
+    {
+      this->makeTab( ALGEBRAIC_TRAITS );
+    }
     else
     {
       std::cout << "Sorry, this trait is not yet supported" << std::endl;
@@ -973,7 +973,7 @@ void ArrangementDemoWindow::on_tabWidget_currentChanged( )
   }
 #endif
 
-  else { // segment or polyline
+  else { // segment or polyline or algebraic
     this->ui->actionConicSegment->setChecked( true );
 
     this->ui->actionCurveRay->setVisible( false );

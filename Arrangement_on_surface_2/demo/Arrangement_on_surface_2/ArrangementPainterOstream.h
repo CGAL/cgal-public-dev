@@ -32,7 +32,7 @@
 
 #include "Utils.h"
 
-// #include <CGAL/Curved_kernel_via_analysis_2/Curve_renderer_facade.h>
+#include <CGAL/Curved_kernel_via_analysis_2/Curve_renderer_facade.h>
 
 class QPainter;
 
@@ -863,7 +863,7 @@ public: // methods
   }
 };
 
-#if 0
+
 template < typename Coefficient_ >
 class ArrangementPainterOstream< CGAL::Arr_algebraic_segment_traits_2<
                                    Coefficient_ > >:
@@ -1029,7 +1029,7 @@ protected:
     Facade::setup(bbox, view->width(), view->height());
   }
 };
-#endif
+
 
 } // namespace Qt
 } // namespace CGAL

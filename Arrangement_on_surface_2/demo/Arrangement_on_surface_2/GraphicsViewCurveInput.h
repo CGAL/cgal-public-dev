@@ -1001,7 +1001,7 @@ protected:
   std::vector< Point_2 > points;
 }; // class GraphicsViewCurveInput< CGAL::Arr_conic_traits_2< RatKernel, AlgKernel, NtTraits > >
 
-#if 0
+
 template < typename Coefficient_ >
 class GraphicsViewCurveInput<CGAL::Arr_algebraic_segment_traits_2<
                                Coefficient_> > :
@@ -1015,13 +1015,33 @@ class GraphicsViewCurveInput<CGAL::Arr_algebraic_segment_traits_2<
   typedef Kernel::Point_2                               Kernel_point_2;
   typedef Kernel::Segment_2                             Segment_2;
 
+
+  typedef Traits::Curve_2 Curve_2;
+
 public:
   GraphicsViewCurveInput( QObject* parent ):
     GraphicsViewCurveInputBase( parent ),
     second( false )
   { }
 
-public:
+protected:
+
+  void keyPressEvent( QKeyEvent* event )
+  {
+    if ( event->key() != ::Qt::Key_Escape )
+    {
+      return;
+    }
+
+    if ( this->second == true && this->scene != NULL )
+    {
+      this->scene->removeItem( &( this->segmentGuide ) );
+    }
+
+    this->second = false;
+    this->pointsGraphicsItem.clear();
+  }
+
   void mousePressEvent( QGraphicsSceneMouseEvent* event )
   {
     if ( ! this->second )
@@ -1047,7 +1067,8 @@ public:
       {
         return;
       }
-      // std::cout << "Algebraic traits curve insert stub" << std::endl;
+
+      std::cout << "Algebraic traits curve insert stub" << std::endl;
     }
   }
 
@@ -1080,7 +1101,7 @@ protected:
   bool second;
   QGraphicsLineItem segmentGuide;
 };
-#endif
+
 
 } // namespace Qt
 } // namespace CGAL

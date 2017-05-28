@@ -127,9 +127,9 @@ protected:
   void paint( QPainter* painter,
               CGAL::Arr_circular_arc_traits_2< CircularKernel > traits );
 
-  // template < typename Coefficient_ >
-  // void paint( QPainter* painter,
-  //             CGAL::Arr_algebraic_segment_traits_2< Coefficient_ > traits );
+  template < typename Coefficient_ >
+  void paint( QPainter* painter,
+              CGAL::Arr_algebraic_segment_traits_2< Coefficient_ > traits );
 
 
   void paintFaces( QPainter* painter )
@@ -274,6 +274,53 @@ protected:
   void paintFace(Face_handle /* f */, QPainter* /* painter */,
                  Traits /* traits */)
   { }
+
+  template < typename Coefficient_ >
+  void paintFace( Face_handle f, QPainter* painter,
+                  CGAL::Arr_algebraic_segment_traits_2< Coefficient_ > )
+  {
+    std::cout<<"In paintFace Arr_algebraic_segment_traits_2"<<std::endl;
+
+    if (!f->is_unbounded())  // f is not the unbounded face
+    {
+      std::cout<<"In paintFace Arr_algebraic_segment_traits_2 bounded"<<std::endl;
+      QVector< QPointF > pts; // holds the points of the polygon
+
+      /* running with around the outer of the face and generate from it
+       * polygon
+       */
+      Ccb_halfedge_circulator cc=f->outer_ccb();
+      do {
+        double x = CGAL::to_double(cc->source()->point().x());
+        double y = CGAL::to_double(cc->source()->point().y());
+        QPointF coord_source(x , y);
+        pts.push_back(coord_source );
+        //created from the outer boundary of the face
+      } while (++cc != f->outer_ccb());
+
+      // make polygon from the outer ccb of the face 'f'
+      QPolygonF pgn (pts);
+
+      // FIXME: get the bg color
+      QColor color = this->backgroundColor;
+      if ( f->color().isValid() )
+      {
+        color = f->color();
+      }
+
+      QBrush oldBrush = painter->brush( );
+      painter->setBrush( color );
+      painter->drawPolygon( pgn );
+      painter->setBrush( oldBrush );
+    }
+    else
+    {
+      std::cout<<"In paintFace Arr_algebraic_segment_traits_2 unbounded"<<std::endl;
+      QRectF rect = this->viewportRect( );
+      QColor color = this->backgroundColor;
+      painter->fillRect( rect, color );
+    }
+  }
 
   template < typename Kernel_ >
   void paintFace( Face_handle f, QPainter* painter,
@@ -923,9 +970,9 @@ protected:
   template < typename Kernel_>
   void updateBoundingBox(CGAL::Arr_linear_traits_2<Kernel_> traits);
 
-  // template < typename Coefficient_>
-  // void updateBoundingBox(CGAL::Arr_algebraic_segment_traits_2<Coefficient_>
-  //                        traits);
+  template < typename Coefficient_>
+  void updateBoundingBox(CGAL::Arr_algebraic_segment_traits_2<Coefficient_>
+                         traits);
 
   Arrangement* arr;
   ArrangementPainterOstream< Traits > painterostream;
@@ -1061,7 +1108,7 @@ protected:
     }
   }
 
-#if 0
+
   template < typename Arr_, typename ArrTraits >
   template < typename Coefficient_ >
   void ArrangementGraphicsItem< Arr_, ArrTraits >::
@@ -1099,7 +1146,7 @@ protected:
       this->painterostream << curve;
     }
   }
-#endif
+
 
   // We let the bounding box only grow, so that when vertices get removed
   // the maximal bbox gets refreshed in the GraphicsView
@@ -1184,7 +1231,7 @@ protected:
     }
   }
 
-#if 0
+
   template < typename Arr_, typename ArrTraits >
   template < typename Coefficient_ >
   void ArrangementGraphicsItem< Arr_, ArrTraits >::
@@ -1222,7 +1269,7 @@ protected:
       }
     }
   }
-#endif
+
 
   template < typename Arr_, typename ArrTraits >
   void ArrangementGraphicsItem< Arr_, ArrTraits >::modelChanged( )
