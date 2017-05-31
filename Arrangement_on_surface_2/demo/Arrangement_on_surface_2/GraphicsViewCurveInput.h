@@ -1015,7 +1015,7 @@ class GraphicsViewCurveInput<CGAL::Arr_algebraic_segment_traits_2<
   typedef Kernel::Point_2                               Kernel_point_2;
   typedef Kernel::Segment_2                             Segment_2;
 
-
+  typedef Traits::Polynomial_2 Polynomial_2;
   typedef Traits::Curve_2 Curve_2;
 
 public:
@@ -1044,6 +1044,23 @@ protected:
 
   void mousePressEvent( QGraphicsSceneMouseEvent* event )
   {
+
+
+    if ( event->button( ) == ::Qt::RightButton )
+    {
+      Traits alg_seg_tr;
+      Traits::Construct_curve_2 construct_curve = alg_seg_tr.construct_curve_2_object();
+
+      Polynomial_2 x = CGAL::shift(Polynomial_2(1),1,0);
+      Polynomial_2 y = CGAL::shift(Polynomial_2(1),1,1);
+      Polynomial_2 f2 = CGAL::ipower(x,2)+3*CGAL::ipower(y,2)-10;
+
+      Curve_2 cv1 = construct_curve(f2);
+      Q_EMIT generate( CGAL::make_object( cv1 ) );
+      std::cout << "Algebraic traits curve insert stub" << std::endl;
+    }
+
+#if 0
     if ( ! this->second )
     {
       this->second = true;
@@ -1070,6 +1087,7 @@ protected:
 
       std::cout << "Algebraic traits curve insert stub" << std::endl;
     }
+#endif
   }
 
   void mouseMoveEvent( QGraphicsSceneMouseEvent* event )

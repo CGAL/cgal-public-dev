@@ -891,6 +891,7 @@ public:
 public: // methods
   ArrangementPainterOstream& operator<<( const X_monotone_curve_2& curve )
   {
+    std::cout<<"In operator<< Arr_algebraic_segment_traits_2 X_monotone_curve_2"<<std::endl;
     //std::cout << "paint curve stub (alg traits)" << std::endl;
     typedef Curve_renderer_facade<CKvA_2> Facade;
     typedef std::pair< int, int > Coord_2;
@@ -970,17 +971,23 @@ public: // methods
 
   ArrangementPainterOstream& operator<<( const Point_2& p )
   {
+    std::cout<<"In operator<< Arr_algebraic_segment_traits_2 Point_2"<<std::endl;
     typedef Curve_renderer_facade<CKvA_2> Facade;
     std::pair< int, int > coord;
     //std::cout << "draw point stub" << std::endl;
 
-    this->setupFacade( );
+    // this->setupFacade( );
 
-    if(!Facade::instance().draw(p, coord)) {
+    std::cout<<"In operator<< after setupFacade"<<std::endl;
+
+    if(!Facade::instance().draw(p, coord))
+    {
+      std::cout<<"In operator<< in if"<<std::endl;
       return *this;
     }
     else
     {
+      std::cout<<"In operator<< in else"<<std::endl;
       //std::cout << coord.first << " " << coord.second << std::endl;
       QPoint coords( coord.first, coord.second );
       QGraphicsView* view = this->scene->views( ).first( );

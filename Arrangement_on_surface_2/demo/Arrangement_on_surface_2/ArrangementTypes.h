@@ -229,6 +229,8 @@ typedef CGAL::Arr_algebraic_segment_traits_2<Coefficient> Alg_seg_traits;
 typedef Dcel< Alg_seg_traits >                            Alg_seg_dcel;
 typedef CGAL::Arrangement_with_history_2< Alg_seg_traits, Alg_seg_dcel >
                                                           Alg_seg_arr;
+typedef Alg_seg_traits::Point_2                           Alg_seg_point_2;
+
 
 #endif
 

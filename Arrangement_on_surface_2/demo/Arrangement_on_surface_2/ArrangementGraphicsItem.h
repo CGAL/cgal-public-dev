@@ -197,52 +197,57 @@ protected:
 
   void paintFace( Face_handle f, QPainter* painter )
   {
-    if (! f->visited( ) )
+    if ( f->visited( ) )
     {
-      int holes = 0;
-      int inner_faces = 0;
-      Holes_iterator hit; // holes iterator
-      this->paintFace( f, painter, Traits( ) );
-      f->set_visited( true );
-
-      for ( hit = f->holes_begin(); hit != f->holes_end(); ++hit )
-      {
-        // Traverse in clockwise order
-        Ccb_halfedge_circulator cc = *hit;
-        do {
-          Halfedge_handle he = cc;
-          Halfedge_handle he2 = he->twin();
-          Face_handle inner_face = he2->face();
-          if ( this->antenna( he ) )
-          {
-            continue;
-          }
-
-          // move on to next hole
-          if ( ! inner_face->visited( ) )
-          {
-            inner_faces++;
-          }
-
-          this->visit_ccb_faces( inner_face, painter );
-        } while ( ++cc != *hit );
-
-        holes++;
-      }// for
-      // if ( f->is_unbounded( ) )
-      // {
-      //   std::cout << "unbounded face has " << holes << " holes" << std::endl;
-      //   std::cout << "unbounded face has " << inner_faces << " inner faces"
-      //             << std::endl;
-      // }
-      // if ( f->is_fictitious( ) )
-      // {
-      //   std::cout << "fictitious face has " << holes << " holes"
-      //             << std::endl;
-      //   std::cout << "fictitious face has " << inner_faces << " inner faces"
-      //             << std::endl;
-      // }
+      return;
     }
+
+    std::cout<<"In paintFace f->visited( ) == false"<<std::endl;
+
+    int holes = 0;
+    int inner_faces = 0;
+    Holes_iterator hit; // holes iterator
+    this->paintFace( f, painter, Traits( ) );
+    f->set_visited( true );
+
+    for ( hit = f->holes_begin(); hit != f->holes_end(); ++hit )
+    {
+      // Traverse in clockwise order
+      Ccb_halfedge_circulator cc = *hit;
+      do {
+        Halfedge_handle he = cc;
+        Halfedge_handle he2 = he->twin();
+        Face_handle inner_face = he2->face();
+        if ( this->antenna( he ) )
+        {
+          continue;
+        }
+
+        // move on to next hole
+        if ( ! inner_face->visited( ) )
+        {
+          inner_faces++;
+        }
+
+        this->visit_ccb_faces( inner_face, painter );
+      } while ( ++cc != *hit );
+
+      holes++;
+    }// for
+    // if ( f->is_unbounded( ) )
+    // {
+    //   std::cout << "unbounded face has " << holes << " holes" << std::endl;
+    //   std::cout << "unbounded face has " << inner_faces << " inner faces"
+    //             << std::endl;
+    // }
+    // if ( f->is_fictitious( ) )
+    // {
+    //   std::cout << "fictitious face has " << holes << " holes"
+    //             << std::endl;
+    //   std::cout << "fictitious face has " << inner_faces << " inner faces"
+    //             << std::endl;
+    // }
+
   }
 
   void visit_ccb_faces( Face_handle & fh, QPainter* painter )
@@ -273,53 +278,115 @@ protected:
   template < typename Traits >
   void paintFace(Face_handle /* f */, QPainter* /* painter */,
                  Traits /* traits */)
-  { }
+  {
+      std::cout<<"In paintFace Traits"<<std::endl;
+  }
 
   template < typename Coefficient_ >
   void paintFace( Face_handle f, QPainter* painter,
                   CGAL::Arr_algebraic_segment_traits_2< Coefficient_ > )
   {
+    typedef CGAL::Arr_algebraic_segment_traits_2<Coefficient> Traits;
+    typedef typename ArrTraitsAdaptor<Traits>::Kernel     Kernel;
+    typedef Kernel::Point_2                               Kernel_point_2;
+    Arr_construct_point_2< Traits > toArrPoint;
+
+
     std::cout<<"In paintFace Arr_algebraic_segment_traits_2"<<std::endl;
 
-    if (!f->is_unbounded())  // f is not the unbounded face
-    {
-      std::cout<<"In paintFace Arr_algebraic_segment_traits_2 bounded"<<std::endl;
-      QVector< QPointF > pts; // holds the points of the polygon
-
-      /* running with around the outer of the face and generate from it
-       * polygon
-       */
-      Ccb_halfedge_circulator cc=f->outer_ccb();
-      do {
-        double x = CGAL::to_double(cc->source()->point().x());
-        double y = CGAL::to_double(cc->source()->point().y());
-        QPointF coord_source(x , y);
-        pts.push_back(coord_source );
-        //created from the outer boundary of the face
-      } while (++cc != f->outer_ccb());
-
-      // make polygon from the outer ccb of the face 'f'
-      QPolygonF pgn (pts);
-
-      // FIXME: get the bg color
-      QColor color = this->backgroundColor;
-      if ( f->color().isValid() )
-      {
-        color = f->color();
-      }
-
-      QBrush oldBrush = painter->brush( );
-      painter->setBrush( color );
-      painter->drawPolygon( pgn );
-      painter->setBrush( oldBrush );
-    }
-    else
+    if ( f->is_unbounded() )
     {
       std::cout<<"In paintFace Arr_algebraic_segment_traits_2 unbounded"<<std::endl;
       QRectF rect = this->viewportRect( );
       QColor color = this->backgroundColor;
       painter->fillRect( rect, color );
+      std::cout<<"Leaving paintFace Arr_algebraic_segment_traits_2 unbounded"<<std::endl;
+      return;
     }
+
+    std::cout<<"In paintFace Arr_algebraic_segment_traits_2 bounded"<<std::endl;
+    QVector< QPointF > pts; // holds the points of the polygon
+
+    /* running with around the outer of the face and generate from it
+     * polygon
+     */
+    Ccb_halfedge_circulator cc=f->outer_ccb();
+    do {
+      Halfedge_handle he = cc;
+      X_monotone_curve_2 c = he->curve();
+      // Get the co-ordinates of the curve's source and target.
+      double sx = CGAL::to_double(he->source()->point().x()),
+        sy = CGAL::to_double(he->source()->point().y()),
+        tx = CGAL::to_double(he->target()->point().x()),
+        ty = CGAL::to_double(he->target()->point().y());
+
+      QPointF coord_source(sx, sy);
+      QPointF coord_target(tx, ty);
+
+      // Transform the point coordinates from general coordinate system to
+      // Qt scene coordinate system
+      QPoint coord_source_viewport = this->fromScene( coord_source );
+      QPoint coord_target_viewport = this->fromScene( coord_target );
+
+      // If the curve is monotone, than its source and its target has the
+      // extreme x co-ordinates on this curve.
+      bool is_source_left = (sx < tx);
+      int  x_min = is_source_left ? coord_source_viewport.x( ) : coord_target_viewport.x( );
+      int  x_max = is_source_left ? coord_target_viewport.x( ) : coord_source_viewport.x( );
+
+      std::cout<<"x_min\t"<<x_min<<std::endl;
+      std::cout<<"x_max\t"<<x_max<<std::endl;
+      // double curr_x, curr_y;
+
+      // Alg_seg_point_2 px;
+
+      // pts.push_back(coord_source );
+
+      // // Draw the curve as pieces of small segments
+      // const int DRAW_FACTOR = 5;
+      // for ( int x = x_min + DRAW_FACTOR; x < x_max; x+=DRAW_FACTOR )
+      // {
+      //   //= COORD_SCALE)
+      //   curr_x = this->toScene( x );
+      //   Alg_kernel   ker;
+      //   Kernel_point_2 ker_point_2(curr_x, 0);
+      //   Alg_seg_point_2 curr_p = toArrPoint(ker_point_2);
+
+      //   // If curr_x > x_max or curr_x < x_min
+      //   if (!(ker.compare_x_2_object()(curr_p, c.left()) !=
+      //         CGAL::SMALLER &&
+      //         ker.compare_x_2_object()(curr_p, c.right()) !=
+      //         CGAL::LARGER))
+      //   {
+      //     continue;
+      //   }
+
+      //   px = c.point_at_x (curr_p);
+      //   curr_y = CGAL::to_double(px.y());
+      //   QPointF curr( curr_x, curr_y );
+      //   pts.push_back( curr );
+      // }// for
+
+      // pts.push_back(coord_target );
+
+    } while (++cc != f->outer_ccb());
+
+    // make polygon from the outer ccb of the face 'f'
+    QPolygonF pgn (pts);
+
+    // FIXME: get the bg color
+    QColor color = this->backgroundColor;
+    if ( f->color().isValid() )
+    {
+      color = f->color();
+    }
+
+    QBrush oldBrush = painter->brush( );
+    painter->setBrush( color );
+    painter->drawPolygon( pgn );
+    painter->setBrush( oldBrush );
+
+    std::cout<<"Leaving paintFace Arr_algebraic_segment_traits_2 bounded"<<std::endl;
   }
 
   template < typename Kernel_ >
@@ -1018,7 +1085,7 @@ protected:
   paint(QPainter* painter, TTraits /* traits */)
   {
     std::cout<<"In paint ArrTraits"<<std::endl;
-    this->paintFaces( painter );
+    // this->paintFaces( painter );
     painter->setPen( this->verticesPen );
 
     this->painterostream =
@@ -1084,7 +1151,7 @@ protected:
     typedef Kernel_point_2 Non_arc_point_2;
     typedef typename Traits::Point_2 Arc_point_2;
 
-    this->paintFaces( painter );
+    // this->paintFaces( painter );
 
     painter->setPen( this->verticesPen );
     this->painterostream =
@@ -1115,6 +1182,9 @@ protected:
   paint(QPainter* painter,
         CGAL::Arr_algebraic_segment_traits_2< Coefficient_ > /* traits */)
   {
+    // this->paintFaces( painter );
+
+    std::cout<<"In paint Arr_algebraic_segment_traits_2 after paintFaces"<<std::endl;
     painter->setPen( this->verticesPen );
     QRectF clipRect = this->boundingRect( );
     if ( std::isinf(clipRect.left( )) ||
@@ -1125,26 +1195,40 @@ protected:
       clipRect = this->viewportRect( );
     }
 
+    std::cout<<"In paint Arr_algebraic_segment_traits_2 before painterostream"<<std::endl;
     this->painterostream =
       ArrangementPainterOstream< Traits >( painter, clipRect );
     this->painterostream.setScene( this->scene );
 
+    int point_cnt = 0;
     for ( Vertex_iterator it = this->arr->vertices_begin( );
           it != this->arr->vertices_end( ); ++it )
     {
       Point_2 p = it->point( );
+
+      std::pair< double, double > p_x_y = p.to_double();
+      
+      std::cout<<p_x_y.first<<"\t"<<p_x_y.second<<std::endl;
+      point_cnt++;
       //std::pair< double, double > approx = p.to_double( );
       //Kernel_point_2 pt( approx.first, approx.second );
       //this->painterostream << pt;
-      this->painterostream << p;
+      // this->painterostream << p;
     }
+
+    std::cout<<"point_cnt:\t"<<point_cnt<<std::endl;
+
+    int curve_cnt = 0;
     painter->setPen( this->edgesPen );
     for ( Edge_iterator it = this->arr->edges_begin( );
           it != this->arr->edges_end( ); ++it )
     {
       X_monotone_curve_2 curve = it->curve( );
-      this->painterostream << curve;
+      curve_cnt++;
+      // this->painterostream << curve;
     }
+
+    std::cout<<"curve_cnt:\t"<<curve_cnt<<std::endl;
   }
 
 
