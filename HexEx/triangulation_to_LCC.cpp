@@ -13,7 +13,8 @@
 #include<CGAL/Triangulation_3_to_lcc.h>
 // IO
 #include <CGAL/IO/Polyhedron_iostream.h>
-
+#include<cstdlib>
+#include<fstream>
 #include<CGAL/Triangulation_3.h>
 
 // Domain
@@ -42,8 +43,19 @@ typedef CGAL::Linear_cell_complex_for_generalized_map<3,3> LCC_3;
 using namespace CGAL::parameters;
 
 int main(int argc, char*argv[])
-{
-  const char* fname = (argc>1)?argv[1]:"data/elephant.off";
+{  
+  const char* fname;
+  double fa = 25, fs = 0.15, fd = 0.008, crer = 3; 
+  switch(argc){
+    case 1: fname = "data/elephant.off"; break;
+    case 2: fname = argv[1]; break;
+    case 3: fname = argv[1]; fa = atof(argv[2]); break;
+    case 4: fname = argv[1]; fa = atof(argv[2]); fs = atof(argv[3]); break;
+    case 5: fname = argv[1]; fa = atof(argv[2]); fs = atof(argv[3]); fd = atof(argv[4]); break;
+    default: fname = argv[1]; fa = atof(argv[2]); fs = atof(argv[3]); fa = atof(argv[4]); crer = atof(argv[5]); break;
+	
+
+  }
   // Create input polyhedron
   Polyhedron polyhedron;
   std::ifstream input(fname);
@@ -55,8 +67,10 @@ int main(int argc, char*argv[])
   input.close();
   Mesh_domain domain(polyhedron);
   
-  Mesh_criteria criteria(facet_angle=25, facet_size=0.15, facet_distance=0.008,
-                         cell_radius_edge_ratio=3);
+  
+
+  Mesh_criteria criteria(facet_angle=fa, facet_size=fs, facet_distance=fd,
+                         cell_radius_edge_ratio=crer);
   
   // Mesh generation
   C3t3 c3t3 = CGAL::make_mesh_3<C3t3>(domain, criteria, no_perturb(), no_exude());
@@ -74,6 +88,10 @@ int main(int argc, char*argv[])
   LCC_3 lcc;
   C3t3::Triangulation &atr= c3t3.triangulation();
   CGAL::import_from_triangulation_3(lcc, atr);
+  std::ofstream ofile;
+  ofile.open("tri.off");
+  write_off(lcc, ofile);
+  ofile.close();
   lcc.display_characteristics(std::cout);
   std::cout<<std::endl;
 
