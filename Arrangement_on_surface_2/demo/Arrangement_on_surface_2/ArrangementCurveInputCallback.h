@@ -58,10 +58,12 @@ public:
 
   void processInput( CGAL::Object o )
   {
+    std::cout<<"In processInput"<<std::endl;
     Curve_2 curve;
     X_monotone_curve_2 xcurve;
     if ( CGAL::assign( curve, o ) )
     {
+      std::cout<<"In processInput in IF"<<std::endl;
       CGAL::insert( *( this->arrangement ), curve );
     }
 #if 0
@@ -72,7 +74,8 @@ public:
       CGAL::insert( *( this->arrangement ), box.begin( ), box.end( ) );
     }
 #endif
-    
+
+    std::cout<<"In processInput after IF"<<std::endl; 
     Q_EMIT CGAL::Qt::GraphicsViewInput::modelChanged( );
   }
 

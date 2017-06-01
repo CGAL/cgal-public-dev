@@ -876,7 +876,7 @@ public:
                                                         Traits;
   typedef ArrangementPainterOstreamBase< Traits >       Superclass;
   typedef typename Traits::CKvA_2                       CKvA_2;
-  typedef typename Traits::Point_2                      Point_2;
+  typedef typename Superclass::Point_2                  Point_2;
   typedef typename Traits::X_monotone_curve_2           X_monotone_curve_2;
 
 public:
@@ -892,6 +892,7 @@ public: // methods
   ArrangementPainterOstream& operator<<( const X_monotone_curve_2& curve )
   {
     std::cout<<"In operator<< Arr_algebraic_segment_traits_2 X_monotone_curve_2"<<std::endl;
+#if 0
     //std::cout << "paint curve stub (alg traits)" << std::endl;
     typedef Curve_renderer_facade<CKvA_2> Facade;
     typedef std::pair< int, int > Coord_2;
@@ -965,45 +966,98 @@ public: // methods
     ppnt->drawEllipse((*p2).first - sz, height-(*p2).second - sz, sz*2, sz*2);
     ppnt->setPen(old_pen);
 #endif
+#endif
 
+    CGAL::Bbox_2 bb = curve.bbox( );
+
+    // QGraphicsView* view = this->scene->views( ).first( );
+    double xmin, xmax, ymin, ymax;
+    xmin = bb.xmin( );
+    xmax = bb.xmax( );
+    ymin = bb.ymin( );
+    ymax = bb.ymax( );
+    // xmin = view->mapFromScene( bb.xmin( ), bb.ymin( ) ).x( );
+    // xmax = view->mapFromScene( bb.xmax( ), bb.ymin( ) ).x( );
+
+    std::cout<<"xmin\txmax\tymin\tymax"<<std::endl;
+    std::cout<<xmin<<"\t"<<xmax<<"\t"<<ymin<<"\t"<<ymax<<std::endl;
+
+    int n = 100;
+    std::pair<double, double>* app_pts = new std::pair<double, double>[n + 1];
+    std::pair<double, double>* end_pts =
+      this->polyline_approximation(curve, n, app_pts);
+    std::pair<double, double>* p_curr = app_pts;
+    std::pair<double, double>* p_next = p_curr + 1;
+    int count = 0;
+    do
+    {
+      QPointF p1( p_curr->first, p_curr->second );
+      QPointF p2( p_next->first, p_next->second );
+#if 0
+      Segment_2 seg( p1, p2 );
+      this->painterOstream << seg;
+#endif
+      this->qp->drawLine( p1, p2 );
+      p_curr++;
+      p_next++;
+      ++count;
+    }
+    while ( p_next != end_pts );
+
+    std::cout<<"Leaving Arr_algebraic_segment_traits_2 X_monotone_curve_2"<<std::endl;
+    std::cout<<"count\t"<<count<<std::endl;
+
+    delete [] app_pts;
     return *this;
+  }
+
+  std::pair<double, double>* polyline_approximation(const X_monotone_curve_2& curve,
+    const int& num_of_points, 
+    std::pair<double, double>* target_memory)
+  {
+    CGAL::Bbox_2 bb = curve.bbox( );
+    Arr_compute_y_at_x_2<Traits> arr_compute_y_at_x_2;
+
+    int cnt = 0;
+    double xmin = bb.xmin( );
+    double xmax = bb.xmax( );
+
+    double interval = (xmax - xmin)/(num_of_points-1);
+    
+    double x_cur = xmin;
+    while(cnt < num_of_points)
+    {
+
+      double y_cur = arr_compute_y_at_x_2.approx(curve, x_cur);
+      if (y_cur == double(0))
+      {
+        std::cout<<"In polyline_approximation warning"<<std::endl;
+      }
+
+      target_memory[cnt++] = std::pair<double, double>(x_cur, y_cur);
+      x_cur += interval;
+    }
+
+    return target_memory + num_of_points;
   }
 
   ArrangementPainterOstream& operator<<( const Point_2& p )
   {
     std::cout<<"In operator<< Arr_algebraic_segment_traits_2 Point_2"<<std::endl;
-    typedef Curve_renderer_facade<CKvA_2> Facade;
-    std::pair< int, int > coord;
-    //std::cout << "draw point stub" << std::endl;
 
-    // this->setupFacade( );
+    QPointF qpt = this->convert( p );
 
-    std::cout<<"In operator<< after setupFacade"<<std::endl;
+    QPen savePen = this->qp->pen( );
+    this->qp->setBrush( QBrush( savePen.color( ) ) );
+    double radius = savePen.width( ) / 2.0;
+    radius /= this->scale;
 
-    if(!Facade::instance().draw(p, coord))
-    {
-      std::cout<<"In operator<< in if"<<std::endl;
-      return *this;
-    }
-    else
-    {
-      std::cout<<"In operator<< in else"<<std::endl;
-      //std::cout << coord.first << " " << coord.second << std::endl;
-      QPoint coords( coord.first, coord.second );
-      QGraphicsView* view = this->scene->views( ).first( );
-      QPointF qpt = view->mapToScene( coords );
+    this->qp->drawEllipse( qpt, radius, radius );
 
-      QPen savePen = this->qp->pen( );
-      this->qp->setBrush( QBrush( savePen.color( ) ) );
-      double radius = savePen.width( ) / 2.0;
-      radius /= this->scale;
+    this->qp->setBrush( QBrush( ) );
+    this->qp->setPen( savePen );
 
-      this->qp->drawEllipse( qpt, radius, radius );
-
-      this->qp->setBrush( QBrush( ) );
-      this->qp->setPen( savePen );
-
-    }
+    // }
 #if 0
 
     QPainter *ppnt = &ws.get_painter();

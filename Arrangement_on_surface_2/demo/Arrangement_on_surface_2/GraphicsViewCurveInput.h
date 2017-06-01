@@ -1053,9 +1053,17 @@ protected:
 
       Polynomial_2 x = CGAL::shift(Polynomial_2(1),1,0);
       Polynomial_2 y = CGAL::shift(Polynomial_2(1),1,1);
-      Polynomial_2 f2 = CGAL::ipower(x,2)+3*CGAL::ipower(y,2)-10;
+      // Polynomial_2 f4 = CGAL::ipower(x,6)+CGAL::ipower(y,6)-
+      //                 CGAL::ipower(x,3)*CGAL::ipower(y,3)-120000000;
+      // Polynomial_2 f1 = 3*x-5*y+2;
 
-      Curve_2 cv1 = construct_curve(f2);
+      // Polynomial_2 f3 = CGAL::ipower(x,2)+CGAL::ipower(y,2)+x*CGAL::ipower(y,2);
+
+      // Polynomial_2 f2 = CGAL::ipower(x,2)+3*CGAL::ipower(y,2)-2000;
+
+      Polynomial_2 f5 = CGAL::ipower(x,2) - y;
+
+      Curve_2 cv1 = construct_curve(f5);
       Q_EMIT generate( CGAL::make_object( cv1 ) );
       std::cout << "Algebraic traits curve insert stub" << std::endl;
     }

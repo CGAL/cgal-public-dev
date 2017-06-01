@@ -1053,9 +1053,11 @@ protected:
     arr( arr_ ),
     painterostream( 0 )
   {
-    if ( this->arr->number_of_vertices( ) == 0 ) {
+    if ( this->arr->number_of_vertices( ) == 0 )
+    {
       this->hide( );
     }
+
     this->updateBoundingBox( );
     this->setZValue( 3 );
   }
@@ -1207,12 +1209,12 @@ protected:
       Point_2 p = it->point( );
 
       std::pair< double, double > p_x_y = p.to_double();
-      
+
       std::cout<<p_x_y.first<<"\t"<<p_x_y.second<<std::endl;
       point_cnt++;
-      //std::pair< double, double > approx = p.to_double( );
-      //Kernel_point_2 pt( approx.first, approx.second );
-      //this->painterostream << pt;
+      // std::pair< double, double > approx = p.to_double( );
+      Kernel_point_2 pt( p_x_y.first, p_x_y.second );
+      this->painterostream << pt;
       // this->painterostream << p;
     }
 
@@ -1225,7 +1227,7 @@ protected:
     {
       X_monotone_curve_2 curve = it->curve( );
       curve_cnt++;
-      // this->painterostream << curve;
+      this->painterostream << curve;
     }
 
     std::cout<<"curve_cnt:\t"<<curve_cnt<<std::endl;
@@ -1337,27 +1339,53 @@ protected:
       this->bb = CGAL::Bbox_2( 0, 0, 0, 0 );
       this->bb_initialized = true;
     }
+
+    std::cout<<"In updateBoundingBox Arr_algebraic_segment_traits_2 after if"<<std::endl;
+
     typename Traits::Make_x_monotone_2 make_x_monotone_2 =
       traits.make_x_monotone_2_object( );
+
+    std::cout<<"In updateBoundingBox Arr_algebraic_segment_traits_2 after make_x_monotone_2"<<std::endl;
+
+    int curve_cnt = 0;
+
+#if 0
     for ( Curve_iterator it = this->arr->curves_begin( );
           it != this->arr->curves_end( );
           ++it )
     {
+      curve_cnt++;
       std::vector< CGAL::Object > cvs;
       make_x_monotone_2( *it, std::back_inserter( cvs ) );
-      for ( unsigned int i = 0 ; i < cvs.size( ); ++i )
-      {
-        X_monotone_curve_2 cv;
-        CGAL::assign( cv, cvs[ i ] );
-        this->bb = this->bb + cv.bbox( );
-      }
+
+      std::cout<<"cvs.size\t"<<cvs.size()<<std::endl;
+
+      // for ( unsigned int i = 0 ; i < cvs.size( ); ++i )
+      // {
+      //   X_monotone_curve_2 cv;
+      //   CGAL::assign( cv, cvs[ i ] );
+      //   this->bb = this->bb + cv.bbox( );
+      // }
     }
+#endif
+
+    for ( Edge_iterator it = this->arr->edges_begin( );
+          it != this->arr->edges_end( ); ++it )
+    {
+      X_monotone_curve_2 curve = it->curve( );
+      this->bb = this->bb + curve.bbox( );
+      curve_cnt++;
+      // this->painterostream << curve;
+    }
+
+    std::cout<<"curve_cnt\t"<<curve_cnt<<std::endl;
   }
 
 
   template < typename Arr_, typename ArrTraits >
   void ArrangementGraphicsItem< Arr_, ArrTraits >::modelChanged( )
   {
+    std::cout<<"In ArrangementGraphicsItem modelChanged"<<std::endl;
     if ( this->arr->is_empty( ) )
     {
       this->hide( );
@@ -1366,6 +1394,8 @@ protected:
     {
       this->show( );
     }
+
+    std::cout<<"In ArrangementGraphicsItem modelChanged after if"<<std::endl;
     this->updateBoundingBox( );
     this->update( );
   }
