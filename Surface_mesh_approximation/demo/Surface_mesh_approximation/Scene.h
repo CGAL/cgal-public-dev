@@ -28,6 +28,7 @@ public:
 
   // algorithms
   void VSA_segmentation(const std::size_t num_proxies, const std::size_t num_iterations);
+  void VSA_incremental(const std::size_t num_proxies, const std::size_t num_iterations);
 
   // toggle view options
   void toggle_view_wireframe() {

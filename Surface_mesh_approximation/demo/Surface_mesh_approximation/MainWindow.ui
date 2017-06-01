@@ -60,6 +60,7 @@
      <string>&amp;Algorithms</string>
     </property>
     <addaction name="actionVSA_segmentation"/>
+    <addaction name="actionVSA_incremental"/>
    </widget>
    <widget class="QMenu" name="menuEdit">
     <property name="title">
@@ -115,6 +116,11 @@
   <action name="actionView_segboundary">
    <property name="text">
     <string>Segment Boundary</string>
+   </property>
+  </action>
+  <action name="actionVSA_incremental">
+   <property name="text">
+    <string>VSA Incremental</string>
    </property>
   </action>
  </widget>

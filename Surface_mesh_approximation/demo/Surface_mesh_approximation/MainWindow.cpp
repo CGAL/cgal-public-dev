@@ -180,6 +180,17 @@ void MainWindow::on_actionVSA_segmentation_triggered()
   }
 }
 
+void MainWindow::on_actionVSA_incremental_triggered()
+{
+  SettingsDialog dial;
+  if(dial.exec() == QDialog::Accepted) {
+    QApplication::setOverrideCursor(Qt::WaitCursor);
+    m_pScene->VSA_incremental(dial.NumSegments->value(), dial.NumIterations->value());
+    m_pViewer->update();
+    QApplication::restoreOverrideCursor();
+  }
+}
+
 void MainWindow::on_actionView_wireframe_triggered()
 {
   m_pScene->toggle_view_wireframe();
