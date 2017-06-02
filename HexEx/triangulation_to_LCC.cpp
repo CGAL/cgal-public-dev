@@ -17,6 +17,11 @@
 #include<fstream>
 #include<CGAL/Triangulation_3.h>
 
+/* If you want to use a viewer, you can use qglviewer. */
+#ifdef CGAL_LCC_USE_QT
+#include "linear_cell_complex_3_viewer_qt.h"
+#endif
+
 // Domain
 typedef CGAL::Exact_predicates_inexact_constructions_kernel K;
 typedef CGAL::Polyhedron_3<K> Polyhedron;
@@ -41,6 +46,19 @@ typedef CGAL::Linear_cell_complex_for_generalized_map<3,3> LCC_3;
 
 // To avoid verbose function and named parameters call
 using namespace CGAL::parameters;
+
+struct Cell_in_complex
+{
+  Cell_in_complex(const C3t3& ac3t3) : c3t3(ac3t3)
+  {}
+
+  bool operator() (C3t3::Cell_handle c)
+  { return c3t3.is_in_complex(c); }
+  
+protected:
+  C3t3 c3t3;
+};
+
 
 int main(int argc, char*argv[])
 {  
@@ -84,16 +102,21 @@ int main(int argc, char*argv[])
 
 
   // To convert to lcc
-
+  Cell_in_complex cic(c3t3);
+  
   LCC_3 lcc;
   C3t3::Triangulation &atr= c3t3.triangulation();
-  CGAL::import_from_triangulation_3(lcc, atr);
+  CGAL::import_from_triangulation_3(lcc, atr, cic);
   std::ofstream ofile;
   ofile.open("tri.off");
   write_off(lcc, ofile);
   ofile.close();
   lcc.display_characteristics(std::cout);
   std::cout<<std::endl;
+
+#ifdef CGAL_LCC_USE_VIEWER
+  display_lcc(lcc);
+#endif // CGAL_LCC_USE_VIEWER
 
   return 0;
 }

@@ -6,9 +6,15 @@ if(POLICY CMP0043)
   cmake_policy(SET CMP0043 OLD)
 endif()
 
-find_package(CGAL QUIET)
+OPTION(CGAL_USE_LCC_VIEWER "Use LCC viewer." OFF)
 
-
+if (CGAL_USE_LCC_VIEWER)
+  find_package(CGAL COMPONENTS Qt5)
+  include("CMakeLCCViewerQt.inc")
+else (CGAL_USE_LCC_VIEWER)
+  find_package(CGAL QUIET)
+endif (CGAL_USE_LCC_VIEWER)
+  
 if ( CGAL_FOUND )
   include( ${CGAL_USE_FILE} )
 
@@ -18,7 +24,11 @@ if ( CGAL_FOUND )
 
   add_executable(triangulation_to_LCC triangulation_to_LCC.cpp)
   target_link_libraries(triangulation_to_LCC ${CGAL_LIBRARIES} ${CGAL_3RD_PARTY_LIBRARIES}
-                                  ${MAP_VIEWER_LIBRARIES})
+    ${MAP_VIEWER_LIBRARIES})
+
+if (CGAL_USE_LCC_VIEWER)
+  qt5_use_modules(triangulation_to_LCC ${MAP_VIEWER_MODULES})
+endif (CGAL_USE_LCC_VIEWER)
   
 else()
 
