@@ -63,6 +63,7 @@ protected:
 int main(int argc, char*argv[])
 {  
   const char* fname;
+//facet_angle=25, facet_size=0.15, facet_distance=0.008,cell_radius_edge_ratio=3
   double fa = 25, fs = 0.15, fd = 0.008, crer = 3; 
   switch(argc){
     case 1: fname = "data/elephant.off"; break;
@@ -94,7 +95,7 @@ int main(int argc, char*argv[])
   C3t3 c3t3 = CGAL::make_mesh_3<C3t3>(domain, criteria, no_perturb(), no_exude());
 
  // Set tetrahedron size (keep cell_radius_edge_ratio), ignore facets
-  Mesh_criteria new_criteria(cell_radius_edge_ratio=3, cell_size=0.03);
+  Mesh_criteria new_criteria(crer, cell_size=0.03);
 
   // Mesh refinement
   CGAL::refine_mesh_3(c3t3, domain, new_criteria);
