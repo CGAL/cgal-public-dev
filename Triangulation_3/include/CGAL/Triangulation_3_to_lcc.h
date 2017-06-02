@@ -29,6 +29,13 @@
 
 namespace CGAL {
 
+  struct AllCell
+  {
+    template<typename Cell_handle>
+    bool operator() (Cell_handle)
+    { return true; }
+  };
+  
   /** Convert a given Triangulation_3 into a 3D linear cell complex.
    * @param alcc the used linear cell complex.
    * @param atr the Triangulation_3.
@@ -36,9 +43,9 @@ namespace CGAL {
    *        tetrahedron of atr a corresponding dart in alcc. Not used if NULL.
    * @return A dart incident to the infinite vertex.
    */
-  template < class LCC, class Triangulation >
+  template < class LCC, class Triangulation, class CellFunctor=AllCell >
   typename LCC::Dart_handle import_from_triangulation_3
-  (LCC& alcc, const Triangulation &atr,
+  (LCC& alcc, const Triangulation &atr, CellFunctor oracle=CellFunctor(),
    std::map<typename Triangulation::Cell_handle,
             typename LCC::Dart_handle >* avol_to_dart=NULL)
   {
@@ -81,27 +88,24 @@ namespace CGAL {
 
     for (it = atr.cells_begin(); it != atr.cells_end(); ++it)
     {
-      /*     if (it->vertex(0) != atr.infinite_vertex() &&
-             it->vertex(1) != atr.infinite_vertex() &&
-             it->vertex(2) != atr.infinite_vertex() &&
-             it->vertex(3) != atr.infinite_vertex())
-      */
+      if (oracle(it))
+      
       {
         res = alcc.make_tetrahedron(TV[it->vertex(0)],
                                     TV[it->vertex(1)],
                                     TV[it->vertex(2)],
                                     TV[it->vertex(3)]);
 
-        if ( dart==LCC::null_handle )
-        {
-          if ( it->vertex(0) == atr.infinite_vertex() )
-            dart = res;
-          else if ( it->vertex(1) == atr.infinite_vertex() )
-            dart = alcc.next(res);
-          else if ( it->vertex(2) == atr.infinite_vertex() )
-            dart = alcc.previous(res);
-          else if ( it->vertex(3) == atr.infinite_vertex() )
-            dart = alcc.previous(alcc.template opposite<2>(res));
+        if ( it->vertex(0) == atr.infinite_vertex() )
+          dart = res;
+        else if ( it->vertex(1) == atr.infinite_vertex() )
+          dart = alcc.next(res);
+        else if ( it->vertex(2) == atr.infinite_vertex() )
+          dart = alcc.previous(res);
+        else if ( it->vertex(3) == atr.infinite_vertex() )
+          dart = alcc.previous(alcc.template opposite<2>(res));
+        else if ( dart == LCC::null_handle )
+          dart = res;
         }
 
         for (unsigned int i = 0; i < 4; ++i)
