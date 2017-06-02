@@ -91,6 +91,7 @@ public:
     {
       return;
     }
+
     this->clippingRect = this->viewportRect( );
     this->convert = Converter< Kernel >( this->clippingRect );
   }
@@ -882,7 +883,8 @@ public:
 public:
   /*! Constructor */
   ArrangementPainterOstream(QPainter* p, QRectF clippingRectangle = QRectF()):
-    Superclass( p, clippingRectangle )
+    Superclass( p, clippingRectangle ),
+    clipRect(clippingRectangle)
   { }
 
   /*! Destructor (virtual) */
@@ -1019,8 +1021,13 @@ public: // methods
     Arr_compute_y_at_x_2<Traits> arr_compute_y_at_x_2;
 
     int cnt = 0;
-    double xmin = bb.xmin( );
-    double xmax = bb.xmax( );
+
+    double xmin = std::isinf(bb.xmin()) ? this->clipRect.left() : bb.xmin();
+    double xmax = std::isinf(bb.xmax()) ? this->clipRect.right() : bb.xmax();
+
+    std::cout<<"In polyline_approximation\t";
+    std::cout<<xmin<<"\t";
+    std::cout<<xmax<<std::endl;
 
     double interval = (xmax - xmin)/(num_of_points-1);
     
@@ -1029,10 +1036,6 @@ public: // methods
     {
 
       double y_cur = arr_compute_y_at_x_2.approx(curve, x_cur);
-      if (y_cur == double(0))
-      {
-        std::cout<<"In polyline_approximation warning"<<std::endl;
-      }
 
       target_memory[cnt++] = std::pair<double, double>(x_cur, y_cur);
       x_cur += interval;
@@ -1081,6 +1084,8 @@ public: // methods
   }
 
 protected:
+  QRectF clipRect;
+
   void setupFacade( )
   {
     typedef Curve_renderer_facade<CKvA_2> Facade;

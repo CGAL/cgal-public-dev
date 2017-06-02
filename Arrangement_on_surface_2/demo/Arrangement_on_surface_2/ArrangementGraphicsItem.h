@@ -1194,8 +1194,15 @@ protected:
          std::isinf(clipRect.top( )) ||
          std::isinf(clipRect.bottom( )) )
     {
+      std::cout<<"In if isinf == true"<<std::endl;
       clipRect = this->viewportRect( );
     }
+
+    std::cout<<"In paint after if"<<std::endl;
+    std::cout<<clipRect.left()<<"\t";
+    std::cout<<clipRect.right()<<"\t";
+    std::cout<<clipRect.bottom()<<"\t";
+    std::cout<<clipRect.top()<<"\t"<<std::endl;
 
     std::cout<<"In paint Arr_algebraic_segment_traits_2 before painterostream"<<std::endl;
     this->painterostream =
@@ -1328,7 +1335,7 @@ protected:
     {
       this->bb = Bbox_2( 0, 0, 0, 0 );
       this->bb_initialized = false;
-      return;
+      // return;
     }
     else
     {
@@ -1341,7 +1348,7 @@ protected:
     }
 
     std::cout<<"In updateBoundingBox Arr_algebraic_segment_traits_2 after if"<<std::endl;
-
+#if 0
     typename Traits::Make_x_monotone_2 make_x_monotone_2 =
       traits.make_x_monotone_2_object( );
 
@@ -1349,7 +1356,7 @@ protected:
 
     int curve_cnt = 0;
 
-#if 0
+
     for ( Curve_iterator it = this->arr->curves_begin( );
           it != this->arr->curves_end( );
           ++it )
@@ -1368,15 +1375,36 @@ protected:
       // }
     }
 #endif
+    int curve_cnt = 0;
 
     for ( Edge_iterator it = this->arr->edges_begin( );
           it != this->arr->edges_end( ); ++it )
     {
       X_monotone_curve_2 curve = it->curve( );
       this->bb = this->bb + curve.bbox( );
+      std::cout<<"In updateBoundingBox for"<<std::endl;
+      std::cout<<curve.bbox( ).xmin()<<"\t";
+      std::cout<<curve.bbox( ).xmax()<<"\t";
+      std::cout<<curve.bbox( ).ymin()<<"\t";
+      std::cout<<curve.bbox( ).ymax()<<"\t"<<std::endl;
       curve_cnt++;
       // this->painterostream << curve;
     }
+
+    std::cout<<"In updateBoundingBox after for"<<std::endl;
+    std::cout<<this->bb.xmin()<<"\t";
+    std::cout<<this->bb.xmax()<<"\t";
+    std::cout<<this->bb.ymin()<<"\t";
+    std::cout<<this->bb.ymax()<<"\t"<<std::endl;
+
+    // QRectF qBoundingRect = this->boundingRect();
+    // QRectF viewportRect  = this->viewportRect();
+    // double x_min = std::isinf(qBoundingRect.left())? viewportRect.left(): qBoundingRect.left();
+    // double x_max = std::isinf(qBoundingRect.right())? viewportRect.right(): qBoundingRect.right();
+    // double y_min = std::isinf(qBoundingRect.bottom())? viewportRect.bottom(): qBoundingRect.bottom();
+    // double y_max = std::isinf(qBoundingRect.top())? viewportRect.top(): qBoundingRect.top();
+
+    // this->bb = Bbox_2( x_min, y_min, x_max, y_max );
 
     std::cout<<"curve_cnt\t"<<curve_cnt<<std::endl;
   }
