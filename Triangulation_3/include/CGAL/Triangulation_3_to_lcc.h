@@ -138,10 +138,21 @@ namespace CGAL {
         }
         (*mytc)[it] = res;
       }
-    }
+    
     CGAL_assertion(dart!=LCC::null_handle);
     return dart;
   }
+
+  template < class LCC, class Triangulation >
+  typename LCC::Dart_handle import_from_triangulation_3
+  (LCC& alcc, const Triangulation &atr, 
+   std::map<typename Triangulation::Cell_handle,
+            typename LCC::Dart_handle >* avol_to_dart=NULL)
+  {
+    CGAL::AllCell oracle;
+    return import_from_triangulation_3(alcc, atr, oracle, avol_to_dart);
+  }
+
 
 } // namespace CGAL
 
