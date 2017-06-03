@@ -24,6 +24,7 @@ if ( CGAL_FOUND AND CGAL_Qt5_FOUND AND Qt5_FOUND AND CGAL_Core_FOUND)
     NewTabDialog.ui
     OverlayDialog.ui
     ArrangementDemoPropertiesDialog.ui
+    AlgebraicCurveInputDialog.ui
   )
   qt5_wrap_cpp( CGAL_Qt5_MOC_FILES
     ArrangementDemoWindow.h
@@ -32,6 +33,7 @@ if ( CGAL_FOUND AND CGAL_Qt5_FOUND AND Qt5_FOUND AND CGAL_Core_FOUND)
 #    NewTabDialog.h
     OverlayDialog.h
     ArrangementDemoPropertiesDialog.h
+    AlgebraicCurveInputDialog.h
     ColorItemEditor.h
     DeleteCurveModeItemEditor.h
     PropertyValueDelegate.h
@@ -57,6 +59,7 @@ if ( CGAL_FOUND AND CGAL_Qt5_FOUND AND Qt5_FOUND AND CGAL_Core_FOUND)
     NewTabDialog.cpp
     OverlayDialog.cpp
     ArrangementDemoPropertiesDialog.cpp
+    AlgebraicCurveInputDialog.cpp
     ColorItemEditor.cpp
     PropertyValueDelegate.cpp
     DeleteCurveMode.cpp
