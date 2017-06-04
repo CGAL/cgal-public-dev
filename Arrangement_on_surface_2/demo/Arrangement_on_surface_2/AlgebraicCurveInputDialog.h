@@ -3,7 +3,8 @@
 
 #include <QDialog>
 
-namespace Ui {
+namespace Ui 
+{
 class AlgebraicCurveInputDialog;
 }
 
@@ -14,6 +15,7 @@ class AlgebraicCurveInputDialog : public QDialog
 public:
     explicit AlgebraicCurveInputDialog(QWidget *parent = 0);
     ~AlgebraicCurveInputDialog();
+    std::string getLineEditText();
 
 private:
     Ui::AlgebraicCurveInputDialog *ui;

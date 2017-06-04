@@ -12,3 +12,9 @@ AlgebraicCurveInputDialog::~AlgebraicCurveInputDialog()
 {
     delete ui;
 }
+
+std::string AlgebraicCurveInputDialog::getLineEditText()
+{
+    QString lineEditText = ui->lineEdit->text();
+    return lineEditText.toStdString();
+}

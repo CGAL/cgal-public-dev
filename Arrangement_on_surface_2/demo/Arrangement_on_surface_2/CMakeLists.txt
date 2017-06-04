@@ -56,6 +56,7 @@ if ( CGAL_FOUND AND CGAL_Qt5_FOUND AND Qt5_FOUND AND CGAL_Core_FOUND)
     GraphicsViewSegmentInput.cpp
     GraphicsViewCurveInput.cpp
     Utils.cpp
+    AlgebraicCurveExpressionParser.cpp
     NewTabDialog.cpp
     OverlayDialog.cpp
     ArrangementDemoPropertiesDialog.cpp

@@ -38,6 +38,8 @@
 #include "Callback.h"
 #include "ISnappable.h"
 #include "PointsGraphicsItem.h"
+#include "AlgebraicCurveExpressionParser.h"
+#include "AlgebraicCurveInputDialog.h"
 
 namespace CGAL {
 namespace Qt {
@@ -1024,6 +1026,32 @@ public:
     second( false )
   { }
 
+  void addNewAlgebraicCurve(const std::string& poly_expr_)
+  {
+    this->poly_expr = poly_expr_;
+    AlgebraicCurveExpressionParser parser(this->poly_expr);
+    std::vector<struct term> terms;
+    parser.extract_poly_terms(terms);
+
+    Traits::Construct_curve_2 construct_curve
+        = traits.construct_curve_2_object();
+
+    Polynomial_2 polynomial;
+    Polynomial_2 x = CGAL::shift(Polynomial_2(1),1,0);
+    Polynomial_2 y = CGAL::shift(Polynomial_2(1),1,1);
+
+    for (int i=0; i<terms.size(); i++)
+    {
+      polynomial+=terms[i].coefficient 
+                  *CGAL::ipower(x,terms[i].x_exponent)
+                  *CGAL::ipower(y,terms[i].y_exponent);
+    }
+
+    Curve_2 cv = construct_curve(polynomial);
+    Q_EMIT generate( CGAL::make_object( cv ) );
+    std::cout << "New Algebraic curve added" << std::endl;
+  }
+
 protected:
 
   void keyPressEvent( QKeyEvent* event )
@@ -1045,14 +1073,31 @@ protected:
   void mousePressEvent( QGraphicsSceneMouseEvent* event )
   {
 
+#if 0
+    if ( event->button( ) == ::Qt::RightButton )
+    {
+      // AlgebraicCurveExpressionParser parser(this->poly_expr);
+      // std::vector<struct term> terms;
+
+      // parser.Extract_poly_terms(terms);
+
+      AlgebraicCurveInputDialog* newDialog = new AlgebraicCurveInputDialog;
+      if ( newDialog->exec( ) == QDialog::Accepted )
+      {
+        this->poly_expr = newDialog->getLineEditText();
+        std::cout<<"User Input:\t"<<this->poly_expr<<std::endl;
+
+        AlgebraicCurveExpressionParser parser(this->poly_expr);
+        std::vector<struct term> terms;
+
+        parser.Extract_poly_terms(terms);
+      }
+    }
+
 
     if ( event->button( ) == ::Qt::RightButton )
     {
-      Traits alg_seg_tr;
-      Traits::Construct_curve_2 construct_curve = alg_seg_tr.construct_curve_2_object();
 
-      Polynomial_2 x = CGAL::shift(Polynomial_2(1),1,0);
-      Polynomial_2 y = CGAL::shift(Polynomial_2(1),1,1);
       // Polynomial_2 f4 = CGAL::ipower(x,6)+CGAL::ipower(y,6)-
       //                 CGAL::ipower(x,3)*CGAL::ipower(y,3)-120000000;
       // Polynomial_2 f1 = 3*x-5*y+2;
@@ -1070,7 +1115,6 @@ protected:
       std::cout << "Algebraic traits curve insert stub" << std::endl;
     }
 
-#if 0
     if ( ! this->second )
     {
       this->second = true;
@@ -1128,6 +1172,7 @@ protected:
   Point_2 p1;
   bool second;
   QGraphicsLineItem segmentGuide;
+  std::string poly_expr;
 };
 
 

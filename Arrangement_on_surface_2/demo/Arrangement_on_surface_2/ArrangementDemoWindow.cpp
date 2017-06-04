@@ -30,6 +30,8 @@
 #include <QFileDialog>
 #include <QMessageBox>
 #include <QColorDialog>
+#include <QInputDialog>
+#include <QString>
 
 #include <CGAL/IO/Arr_with_history_iostream.h>
 #include <CGAL/IO/Arr_text_formatter.h>
@@ -681,6 +683,11 @@ void ArrangementDemoWindow::updateConicType( QAction* newType )
   bool isLinearArr =
     CGAL::assign( lin_arr,
                   this->arrangements[ this->ui->tabWidget->currentIndex( ) ] );
+  
+  Alg_seg_arr* alg_seg_arr;
+  bool isAlgSegArr =
+    CGAL::assign( alg_seg_arr,
+                  this->arrangements[ this->ui->tabWidget->currentIndex( ) ] );
 
   if ( isLinearArr )
   {
@@ -736,6 +743,22 @@ void ArrangementDemoWindow::updateConicType( QAction* newType )
     }
   }
 #endif
+  if (isAlgSegArr && (newType == this->ui->actionConicSegment))
+  {
+    typedef Alg_seg_arr::Geometry_traits_2       Alg_seg_geom_traits;
+    typedef CGAL::Qt::GraphicsViewCurveInput<Alg_seg_geom_traits>
+      AlgSegCurveInputCallback;
+    AlgSegCurveInputCallback* algCurveInputCallback =
+      ( AlgSegCurveInputCallback* ) activeTab->getCurveInputCallback( );
+    
+    AlgebraicCurveInputDialog* newDialog = new AlgebraicCurveInputDialog;
+    if ( newDialog->exec( ) == QDialog::Accepted )
+    {
+      std::string poly_expr = newDialog->getLineEditText();
+      std::cout<<"User Input:\t"<<poly_expr<<std::endl;
+      algCurveInputCallback->addNewAlgebraicCurve(poly_expr);
+    }
+  }
 }
 
 void ArrangementDemoWindow::on_actionSaveAs_triggered( )
