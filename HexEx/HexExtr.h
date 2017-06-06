@@ -7,7 +7,7 @@
 #include <iostream>
 #include <algorithm>
 #include<vector>
-typedef CGAL::Exact_predicates_inexact_constructions_kernel K; //generalize to any kernel K
+typedef CGAL::Exact_predicates_inexact_constructions_kernel K; 
 typedef CGAL::Cartesian<double>::Vector_3 Vector_3;
 typedef CGAL::Direction_3 Direction;
 typedef CGAL::Linear_cell_complex_for_generalized_map<3> LCC_3;
