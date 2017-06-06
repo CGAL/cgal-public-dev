@@ -112,6 +112,10 @@ void Scene::VSA_segmentation(const std::size_t num_proxies, const std::size_t nu
   CGAL::internal::VSA_segmentation<Polyhedron, Kernel, PointPropertyMap> vsa_seg(*m_pPolyhedron, ppmap, Kernel());
   vsa_seg.partition(num_proxies, num_iterations, m_fidx_pmap);
 
+  // dummy compilation section
+  vsa_seg.extract_mesh(m_fidx_pmap);
+  // dummy compilation section
+
   m_px_num = num_proxies;
   m_view_seg_boundary = true;
 
