@@ -1,0 +1,8 @@
+#include "/home/vasudha/my_cgal_folder/CGAL_Core/src/CGAL_Core/BigFloat.cpp"
+#include "/home/vasudha/my_cgal_folder/CGAL_Core/src/CGAL_Core/CoreAux.cpp"
+#include "/home/vasudha/my_cgal_folder/CGAL_Core/src/CGAL_Core/CoreDefs.cpp"
+#include "/home/vasudha/my_cgal_folder/CGAL_Core/src/CGAL_Core/CoreIO.cpp"
+#include "/home/vasudha/my_cgal_folder/CGAL_Core/src/CGAL_Core/Expr.cpp"
+#include "/home/vasudha/my_cgal_folder/CGAL_Core/src/CGAL_Core/GmpIO.cpp"
+#include "/home/vasudha/my_cgal_folder/CGAL_Core/src/CGAL_Core/Real.cpp"
+#include "/home/vasudha/my_cgal_folder/CGAL_Core/src/CGAL_Core/extLong.cpp"

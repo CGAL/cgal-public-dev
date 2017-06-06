@@ -8,6 +8,8 @@ endif()
 
 OPTION(CGAL_USE_LCC_VIEWER "Use LCC viewer." OFF)
 
+SET ( CMAKE_CXX_FLAGS "-std=c++11" )
+
 if (CGAL_USE_LCC_VIEWER)
   find_package(CGAL COMPONENTS Qt5)
   include("CMakeLCCViewerQt.inc")

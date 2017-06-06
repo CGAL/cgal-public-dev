@@ -1,0 +1,6 @@
+#include "/home/vasudha/my_cgal_folder/GraphicsView/src/CGAL_Qt5/DemosMainWindow.cpp"
+#include "/home/vasudha/my_cgal_folder/GraphicsView/src/CGAL_Qt5/GraphicsViewNavigation.cpp"
+#include "/home/vasudha/my_cgal_folder/GraphicsView/src/CGAL_Qt5/GraphicsViewPolylineInput.cpp"
+#include "/home/vasudha/my_cgal_folder/GraphicsView/src/CGAL_Qt5/debug.cpp"
+#include "/home/vasudha/my_cgal_folder/GraphicsView/src/CGAL_Qt5/resources.cpp"
+#include "/home/vasudha/my_cgal_folder/GraphicsView/src/CGAL_Qt5/utility.cpp"

@@ -101,9 +101,9 @@ int main(int argc, char*argv[])
   CGAL::refine_mesh_3(c3t3, domain, new_criteria);
 
 
-
   // To convert to lcc
   Cell_in_complex cic(c3t3);
+
   
   LCC_3 lcc;
   C3t3::Triangulation &atr= c3t3.triangulation();
@@ -114,6 +114,7 @@ int main(int argc, char*argv[])
   ofile.close();
   lcc.display_characteristics(std::cout);
   std::cout<<std::endl;
+
 
 #ifdef CGAL_LCC_USE_VIEWER
   display_lcc(lcc);
