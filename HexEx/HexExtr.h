@@ -29,20 +29,9 @@ class EachCell{
 
     VertexHandle& vertex();
     const VertexHandle& vertex() const;
-   /* CellHandle& cell();
-    const CellHandle& cell() const;
-*/  
-// The type?
 
-    //EdgeHandle incidentEdgeHandle();
     Dart_handle incidentHandle();
 
-//    HalfFaceHandle incidentHalfFaceHandle();
-//    CellHandle incidentCellHandle();
-
-//What to do about these two?
-
-    //HalfEdgeHandle& halfedge();
     Dart_handle& darthandle();  
 
 };
