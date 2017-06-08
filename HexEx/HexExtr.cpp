@@ -37,14 +37,12 @@ public:
 
 
 
-template<class HexEx> 
-struct extract_transition_function: std::unary_function<HexEx, Half_face_and_transition>{
+Half_face_and_transition extract_transition_function(LCC_3::Dart &d, LCC_3 lcc, std::vector<Transformation> G){ //: lcc(hexex.lcc()), G(hexex.G()){return hfat1;}
 
-  extract_transition_function(HexEx& hexex) : lcc(hexex.lcc()), G(hexex.G()){return hfat1;}
-
-  void operator()(LCC_3::Dart& d){ 
+  //void operator()(LCC_3::Dart& d){
     Dart_handle dh1 = lcc.dart_handle(d);
     Dart_handle dh2 = lcc.alpha(dh1,3);
+    Transformation id(1,0,0,0,1,0,0,0,1,1);
     if(dh2 == NULL){//boundary
 
       return;
@@ -61,7 +59,7 @@ struct extract_transition_function: std::unary_function<HexEx, Half_face_and_tra
           face2.push_back(lcc.point(it));
         }
         if(face1[0] == face2[0] && face1[1] == face2[1] && face1[2] == face2[2]){// transition function is identity.
-          return;
+          return Half_face_and_transition(dh1, id);
         }
         Vector_3 c1 = face1[1] - face1[0];
         Vector_3 d1 = face1[2] - face1[1];
@@ -86,20 +84,20 @@ struct extract_transition_function: std::unary_function<HexEx, Half_face_and_tra
          Transformation final_transform_for_dh1(G[min_trans_index].m(0,0), G[min_trans_index].m(0,1), G[min_trans_index].m(0,2), t[0], G[min_trans_index].m(1,0), G[min_trans_index].m(1,1), G[min_trans_index].m(1,2), t[1], G[min_trans_index].m(2,0), G[min_trans_index].m(2,1), G[min_trans_index].m(2,2), t[2], 1);
       // Transformation final_transform_for_dh2 = final_transform_for_dh1.inverse();
 //Need to store these
-         hfat1 = Half_face_and_transition(dh1, final_transform_for_dh1); //hfat2 = Half_face_and_transition(dh2, final_transition_dh2);
+         Half_face_and_transition hfat1(dh1, final_transform_for_dh1); //hfat2 = Half_face_and_transition(dh2, final_transition_dh2);
 //         all_faces_with_transition.push_back(hfat1); //all_faces_with_transition.push_back(hfat2);
-       
+       return hfat1;
         
       //} 
     }
   }
-
+/*
 private:
   const LCC_3& lcc;
   const std::vector<Transformation> G;
   Half_face_and_transition hfat1;
 };
-/*
+
 template<class T> 
 struct add_points_per_cell: public std::binary_function<T, vector<vector<Point>>> //is this required?
 {
@@ -136,7 +134,10 @@ class HexExtr{
     
       //_faces_with_transitions.push_back(std::for_each(lcc.one_dart_per_cell<2>().begin(), lcc.one_dart_per_cell<2>().end(), extract_transition_function<HexExtr>(*this)));//each face is shared by max. two cells. 
       //lcc.free_mark(m);
-    for(LCC_3::) 
+    for(LCC_3::One_dart_per_cell_range<3>::iterator it = lcc.one_dart_per_cell<3>().begin(), itend = lcc.one_dart_per_cell<3>().end(); it != itend; it++){
+		all_faces_with_transitions.push_back(extract_transition_function(it, lcc, G));
+		
+	} 
     
     }
 
