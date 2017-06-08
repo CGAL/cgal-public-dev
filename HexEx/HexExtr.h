@@ -1,32 +1,43 @@
-#ifndef EACHCELL_H
-#define EACHCELL_H
+#ifndef HEXEXTR_H
+#define HEXEXTR_H
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
-#include<CGAL/Cartesian.h>
+#include <CGAL/Cartesian.h>
 #include <CGAL/Linear_cell_complex_for_generalized_map.h>
+#include <CGAL/Cell_attribute.h>
 #include <CGAL/Aff_transformation_3.h>
 #include <iostream>
 #include <algorithm>
-#include<vector>
+#include <vector>
 typedef CGAL::Exact_predicates_inexact_constructions_kernel K; 
-typedef CGAL::Cartesian<double>::Vector_3 Vector_3;
-typedef CGAL::Direction_3 Direction;
-typedef CGAL::Linear_cell_complex_for_generalized_map<3> LCC_3;
-typedef LCC_3::Dart_handle                                 Dart_handle;
-typedef LCC_3::Point                                       Point;
-typedef LCC_3::Vertex_attribute_handle                     Vertex_attricute_handle;
-typedef CGAL::Aff_transformation_3                         Transformation;
-typedef LCC_3:: size_type				   size_type		
-//define cell handle with a shared ptr 
-//define face handle with a shared ptr
+typedef CGAL::Cartesian<double>::Vector_3                   Vector_3;
+typedef CGAL::Direction_3                                   Direction;
+typedef CGAL::Linear_cell_complex_for_generalized_map<3>    LCC_3;
+typedef LCC_3::Dart_handle                                  Dart_handle;
+typedef LCC_3::Point                                        Point;
+typedef LCC_3::Vertex_attribute_handle                      Vertex_attribute_handle;
+typedef CGAL::Aff_transformation_3                          Transformation;
+typedef LCC_3:: size_type				    size_type		
 
 
 namespace HexEx{
 
+class Half_face_and_transition{
+public:
+  Half_face_and_transition(Dart_handle, Transformation);
+  Dart_handle dart_handle;
+  Transformation min_transformation;  
+};
+
+Half_face_and_transition::Half_face_and_transition(Dart_handle &dh, Transformation &tr){
+ dart_handle = dh;
+ min_transformation = tr;
+}
+
 
 template<class T> 
-struct add_points_per_cell: public std::binary_function<T, ??transition>
+struct extract_transition_function: std::binary_function<T, vector<Half_face_and transition>>
 {
-  void operator()(typename T::Dart& d, &transition??){ 
+  void operator()(typename T::Dart& d, &vector<Half_face_and_transition> all_faces_with_transitions){ 
     Dart_handle dh1 = lcc.dart_handle(d);
     Dart_handle dh2 = lcc.alpha(dh1,3);
     if(dh2 == NULL){//boundary
@@ -69,6 +80,9 @@ struct add_points_per_cell: public std::binary_function<T, ??transition>
        //Adding translation to the transformation matrix.
        Transformation final_transform_for_dh1(G[min_trans_index].m(0,0), G[min_trans_index].m(0,1), G[min_trans_index].m(0,2), t[0], G[min_trans_index].m(1,0), G[min_trans_index].m(1,1), G[min_trans_index].m(1,2), t[1], G[min_trans_index].m(2,0), G[min_trans_index].m(2,1), G[min_trans_index].m(2,2), t[2], 1);
        Transformation final_transform_for_dh2 = final_transform_for_dh1.inverse();
+       Half_face_and_transition hfat1, hfat2;
+       hfat1 = Half_face_and_transition(dh1, final_transition_dh1); hfat2 = Half_face_and_transition(dh2, final_transition_dh2);
+       all_faces_with_transition.push_back(hfat1); all_faces_with_transition.push_back(hfat2);
 //Need to store these
         
       }
@@ -78,7 +92,7 @@ struct add_points_per_cell: public std::binary_function<T, ??transition>
 
 
 template<class T> 
-struct extract_transition_function: public std::binary_function<T, vector<vector<Point>>>
+struct add_points_per_cell: public std::binary_function<T, vector<vector<Point>>> //is this required?
 {
   void operator()(typename T::Dart& d, vector<vector<Point>> &points_in_each_cell){ 
     vector<Point> temp;
@@ -105,15 +119,16 @@ class HexExtr{
         for(int j = 0;j < 6;j++) 
           for(int k = 0;k < 6;k++) 
             if(CGAL::cross_product(directions[i].vector(),directions[j].vector()) == directions[k].vector()) 
-              G.push_back(Transformation(directions[i].dx(),directions[i].dy(),directions[i].dz(),directions[j].dx(),directions[j].dy(),directions[j].dz(),directions[k].dx(),directions[k].dy(),directions[k].dz(),1));
+              G.push_back(Transformation(directions[i].dx(), directions[i].dy(), directions[i].dz(), directions[j].dx(), directions[j].dy(), directions[j].dz(), directions[k].dx(), directions[k].dy(), directions[k].dz(), 1));
 
-      std::for_each(lcc.one_dart_per_cell<3>().begin(),lcc.one_dart_per_cell<3>().end(),add_points_per_cell(lcc, points_in_each_cell));
-      size_type m = lcc.get_new_mark(); 
-      std::for_each(lcc.one_dart_per_cell<2>().begin(), lcc.one_dart_per_cell<2>().end(), extract_transition_function(lcc, transition_functions));//each face is shared by max. two cells. 
+     // std::for_each(lcc.one_dart_per_cell<3>().begin(),lcc.one_dart_per_cell<3>().end(),add_points_per_cell(lcc, points_in_each_cell));
+      size_type m = lcc.get_new_mark(); //to mark if transition function has been calculated.
+    
+      std::for_each(lcc.one_dart_per_cell<2>().begin(), lcc.one_dart_per_cell<2>().end(), extract_transition_function(lcc, all_faces_with_transitions));//each face is shared by max. two cells. 
       lcc.free_mark(m);
     }
 
-
+    vector<Half_face_and_transition> all_faces_with_transitions;
     vector<vector<Point>> points_in_each_cell;
     vector<Direction> directions(6);
     Transformation identity;
