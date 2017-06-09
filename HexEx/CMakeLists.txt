@@ -24,8 +24,8 @@ if ( CGAL_FOUND )
   include_directories(BEFORE ../include)
 
 
-  add_executable(HexExtr HexExtr.cpp)
-  target_link_libraries(HexExtr ${CGAL_LIBRARIES} ${CGAL_3RD_PARTY_LIBRARIES}
+  add_executable(main main.cpp)
+  target_link_libraries(main ${CGAL_LIBRARIES} ${CGAL_3RD_PARTY_LIBRARIES}
     ${MAP_VIEWER_LIBRARIES})
 
 #if (CGAL_USE_LCC_VIEWER)
