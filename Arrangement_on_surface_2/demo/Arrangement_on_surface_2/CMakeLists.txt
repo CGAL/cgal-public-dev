@@ -9,6 +9,7 @@ endif()
 
 find_package(CGAL COMPONENTS Core Qt5 )
 include( ${CGAL_USE_FILE} )
+set(CMAKE_CXX_STANDARD 11)
 
 find_package( Qt5 QUIET COMPONENTS Script Widgets )
 
@@ -18,7 +19,6 @@ if ( CGAL_FOUND AND CGAL_Qt5_FOUND AND Qt5_FOUND AND CGAL_Core_FOUND)
   include_directories( BEFORE ../../include )
 
   add_definitions(-DQT_NO_KEYWORDS)
-  add_definitions("-std=c++11")
 
   qt5_wrap_ui( arrangement_2_uis
     ArrangementDemoWindow.ui
