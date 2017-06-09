@@ -7,7 +7,7 @@
 
 #include <CGAL/boost/graph/graph_traits_Polyhedron_3.h>
 #include <CGAL/property_map.h>
-
+#include <CGAL/internal/Surface_mesh_approximation/VSA_segmentation.h>
 #include "types.h"
 
 class Scene
@@ -15,6 +15,9 @@ class Scene
 public:
   // types
   typedef CGAL::Bbox_3 Bbox;
+  typedef boost::property_map<Polyhedron, boost::vertex_point_t>::type PointPropertyMap;
+  typedef CGAL::internal::VSA_segmentation<Polyhedron, Kernel, PointPropertyMap> VSA;
+  typedef VSA::Anchor Anchor;
 
 public:
   Scene();
@@ -39,6 +42,10 @@ public:
     m_view_seg_boundary = !m_view_seg_boundary;
   }
 
+  void toggle_view_anchors() {
+    m_view_anchors = !m_view_anchors;
+  }
+
   void draw();
 
 private:
@@ -50,6 +57,8 @@ private:
   void render_polyhedron();
   void render_wireframe();
   void render_segment_boundary();
+  void render_anchors();
+  void render_borders();
 
 private:
   // member data
@@ -61,11 +70,15 @@ private:
   FacetIdMap m_fidx_map;
   FacetIdPmap m_fidx_pmap; // property-map for segment-idx
 
+  std::vector<Anchor> m_anchors; // the anchors
+  std::vector<std::vector<std::size_t> > m_bdrs; // anchor borders
+
   std::size_t m_px_num;
 
   // view options
   bool m_view_wireframe;
   bool m_view_seg_boundary;
+  bool m_view_anchors;
 }; // end class Scene
 
 #endif // SCENE_H

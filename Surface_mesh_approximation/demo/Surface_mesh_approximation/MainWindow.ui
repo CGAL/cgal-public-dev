@@ -54,6 +54,7 @@
     </property>
     <addaction name="actionView_wireframe"/>
     <addaction name="actionView_segboundary"/>
+    <addaction name="actionView_anchors"/>
    </widget>
    <widget class="QMenu" name="menuAlgorithms">
     <property name="title">
@@ -121,6 +122,11 @@
   <action name="actionVSA_incremental">
    <property name="text">
     <string>VSA Incremental</string>
+   </property>
+  </action>
+  <action name="actionView_anchors">
+   <property name="text">
+    <string>Anchors</string>
    </property>
   </action>
  </widget>
