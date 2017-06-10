@@ -76,6 +76,23 @@ namespace HexEx{
       //} 
     }
   }
+
+int calculate_cell_type(LCC_3 lcc, Dart_handle dh){
+  std::vector<Point> P;// = lcc.point(dh);
+  for(int i=0;i<3;i++){
+    P.push_back(lcc.point(dh));
+    dh = lcc.alpha(dh, 0, 1);
+  }
+  Vector_3 c1 = P[1] - P[0];
+  Vector_3 c2 = P[2] - P[0];
+  Vector_3 c3 = P[3] - P[0];
+  double det = CGAL::determinant(c1, c2, c3);
+  if(det == 0) return 0; //degenerate
+  else if(det > 0) return 1; //this is alright
+  else return -1; //flipped
+}
+
+
 }
 #endif
 
