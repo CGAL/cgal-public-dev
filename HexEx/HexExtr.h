@@ -33,7 +33,7 @@ class HexExtr{
   public:
     HexExtr();
     HexExtr(std::string infilename): identity(1,0,0,0,1,0,0,0,1,1){
-      input_tet_mesh = load_off_to_LCC(infilename); //tetmesh to lcc
+      load_off_to_LCC(infilename, input_tet_mesh); //tetmesh to lcc
       directions.push_back(Direction(1,0,0));
       directions.push_back(Direction(0,1,0));
       directions.push_back(Direction(0,0,1));
@@ -46,7 +46,8 @@ class HexExtr{
             if(CGAL::cross_product(directions[i].vector(),directions[j].vector()) == directions[k].vector()) 
               G.push_back(Transformation(directions[i].dx(), directions[i].dy(), directions[i].dz(), directions[j].dx(), directions[j].dy(), directions[j].dz(), directions[k].dx(), directions[k].dy(), directions[k].dz(), 1));
 
-      for(LCC_3::One_dart_per_cell_range<3>::iterator it = input_tet_mesh.one_dart_per_cell<3>().begin(), itend = input_tet_mesh.one_dart_per_cell<3>().end(); it != itend; it++){
+      for(LCC_3::One_dart_per_cell_range<3>::iterator it = input_tet_mesh.one_dart_per_cell<3>().begin(),
+            itend = input_tet_mesh.one_dart_per_cell<3>().end(); it != itend; it++){
 		all_faces_with_transitions.push_back(extract_transition_function(*it, input_tet_mesh, G));
       }
 

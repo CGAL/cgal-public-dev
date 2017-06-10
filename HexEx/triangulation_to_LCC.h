@@ -60,7 +60,7 @@ protected:
 };
 
 
-LCC_3 load_off_to_LCC(std::string infilename)
+bool load_off_to_LCC(std::string infilename, LCC_3& lcc)
 {  
   const char* fname;
 //facet_angle=25, facet_size=0.15, facet_distance=0.008,cell_radius_edge_ratio=3
@@ -81,7 +81,7 @@ LCC_3 load_off_to_LCC(std::string infilename)
   input >> polyhedron;
   if(input.fail()){
     std::cerr << "Error: Cannot read file " <<  fname << std::endl;
-    return EXIT_FAILURE;
+    return false;
   }
   input.close();
   Mesh_domain domain(polyhedron);
@@ -105,7 +105,7 @@ LCC_3 load_off_to_LCC(std::string infilename)
   Cell_in_complex cic(c3t3);
 
   
-  LCC_3 lcc;
+  lcc.clear();
   C3t3::Triangulation &atr= c3t3.triangulation();
   CGAL::import_from_triangulation_3(lcc, atr, cic);
   std::ofstream ofile;
@@ -120,5 +120,5 @@ LCC_3 load_off_to_LCC(std::string infilename)
   display_lcc(lcc);
 #endif // CGAL_LCC_USE_VIEWER
 
-  return lcc;
+  return true;
 }
