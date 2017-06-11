@@ -60,7 +60,7 @@ public:
   bool visibleEdges( ) const;
   void setVisibleEdges( const bool b );
   void setBackgroundColor( QColor color );
-  // void setScene( QGraphicsScene* scene_ );
+  void setScene( QGraphicsScene* scene_ );
 
 protected:
   // QRectF getViewportRect( ) const;
@@ -1195,6 +1195,43 @@ protected:
   paint(QPainter* painter,
         CGAL::Arr_algebraic_segment_traits_2< Coefficient_ > /* traits */)
   {
+    painter->setPen( this->verticesPen );
+    QRectF clipRect = this->boundingRect( );
+    if ( std::isinf(clipRect.left( )) ||
+         std::isinf(clipRect.right( )) ||
+         std::isinf(clipRect.top( )) ||
+         std::isinf(clipRect.bottom( )) )
+    {
+      clipRect = this->viewportRect( );
+    }
+    this->painterostream =
+      ArrangementPainterOstream< Traits >( painter, clipRect );
+    this->painterostream.setScene( this->scene );
+    for ( Vertex_iterator it = this->arr->vertices_begin( );
+          it != this->arr->vertices_end( ); ++it )
+    {
+      Point_2 p = it->point( );
+      //std::pair< double, double > approx = p.to_double( );
+      //Kernel_point_2 pt( approx.first, approx.second );
+      //this->painterostream << pt;
+      this->painterostream << p;
+    }
+    painter->setPen( this->edgesPen );
+    for ( Edge_iterator it = this->arr->edges_begin( );
+          it != this->arr->edges_end( ); ++it )
+    {
+      X_monotone_curve_2 curve = it->curve( );
+      this->painterostream << curve;
+    }
+  }
+
+#if 0
+  template < typename Arr_, typename ArrTraits >
+  template < typename Coefficient_ >
+  void ArrangementGraphicsItem< Arr_, ArrTraits >::
+  paint(QPainter* painter,
+        CGAL::Arr_algebraic_segment_traits_2< Coefficient_ > /* traits */)
+  {
     // this->paintFaces( painter );
 
     std::cout<<"In paint Arr_algebraic_segment_traits_2 after paintFaces"<<std::endl;
@@ -1250,7 +1287,7 @@ protected:
 
     std::cout<<"curve_cnt:\t"<<curve_cnt<<std::endl;
   }
-
+#endif
 
   // We let the bounding box only grow, so that when vertices get removed
   // the maximal bbox gets refreshed in the GraphicsView
@@ -1339,7 +1376,65 @@ protected:
     }
   }
 
+  template < typename Arr_, typename ArrTraits >
+  template < typename Coefficient_ >
+  void ArrangementGraphicsItem< Arr_, ArrTraits >::
+  updateBoundingBox(CGAL::Arr_algebraic_segment_traits_2<Coefficient_> traits)
+  {
+    this->prepareGeometryChange( );
+    if ( this->arr->number_of_vertices( ) == 0 )
+    {
+      this->bb = Bbox_2( 0, 0, 0, 0 );
+      this->bb_initialized = false;
+      return;
+    }
+    else
+    {
+      //std::pair< double, double > approx =
+      //  this->arr->vertices_begin( )->point( ).to_double( );
+      //this->bb = CGAL::Bbox_2( approx.first, approx.second,
+      //                         approx.first, approx.second );
+      this->bb = CGAL::Bbox_2( 0, 0, 0, 0 );
+      this->bb_initialized = true;
+    }
+#if 0
+    typename Traits::Make_x_monotone_2 make_x_monotone_2 =
+      traits.make_x_monotone_2_object( );
+    for ( Curve_iterator it = this->arr->curves_begin( );
+          it != this->arr->curves_end( );
+          ++it )
+    {
+      std::vector< CGAL::Object > cvs;
+      make_x_monotone_2( *it, std::back_inserter( cvs ) );
+      for ( unsigned int i = 0 ; i < cvs.size( ); ++i )
+      {
+        X_monotone_curve_2 cv;
+        CGAL::assign( cv, cvs[ i ] );
+        this->bb = this->bb + cv.bbox( );
+      }
+    }
+#endif
 
+    int curve_cnt = 0;
+
+    for ( Edge_iterator it = this->arr->edges_begin( );
+          it != this->arr->edges_end( ); ++it )
+    {
+      X_monotone_curve_2 curve = it->curve( );
+      this->bb = this->bb + curve.bbox( );
+      std::cout<<"In updateBoundingBox for"<<std::endl;
+      std::cout<<curve.bbox( ).xmin()<<"\t";
+      std::cout<<curve.bbox( ).xmax()<<"\t";
+      std::cout<<curve.bbox( ).ymin()<<"\t";
+      std::cout<<curve.bbox( ).ymax()<<"\t"<<std::endl;
+      curve_cnt++;
+
+    }
+
+    std::cout<<"curve_cnt\t"<<curve_cnt<<std::endl;
+  }
+
+#if 0
   template < typename Arr_, typename ArrTraits >
   template < typename Coefficient_ >
   void ArrangementGraphicsItem< Arr_, ArrTraits >::
@@ -1424,7 +1519,7 @@ protected:
 
     std::cout<<"curve_cnt\t"<<curve_cnt<<std::endl;
   }
-
+#endif
 
   template < typename Arr_, typename ArrTraits >
   void ArrangementGraphicsItem< Arr_, ArrTraits >::modelChanged( )

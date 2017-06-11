@@ -89,9 +89,11 @@ public:
     // set the clipping rectangle
     if ( scene_ == NULL )
     {
+      std::cout<<"In setScene: scene_ == NULL\n";
       return;
     }
 
+    // std::cout<<"In setScene: scene_ != NULL\n";
     this->clippingRect = this->viewportRect( );
     this->convert = Converter< Kernel >( this->clippingRect );
   }
@@ -876,7 +878,7 @@ public: // methods
   }
 };
 
-
+#if 0 
 template < typename Coefficient_ >
 class ArrangementPainterOstream< CGAL::Arr_algebraic_segment_traits_2<
                                    Coefficient_ > >:
@@ -1277,7 +1279,167 @@ protected:
   Construct_x_monotone_segment_2 construct_x_monotone_segment_2;
 
 };
+#endif 
 
+template < typename Coefficient_ >
+class ArrangementPainterOstream< CGAL::Arr_algebraic_segment_traits_2<
+                                   Coefficient_ > >:
+  public ArrangementPainterOstreamBase< CGAL::Arr_algebraic_segment_traits_2<
+                                          Coefficient_ > >
+{
+public:
+  typedef Coefficient_                                  Coefficient;
+  typedef typename CGAL::Arr_algebraic_segment_traits_2< Coefficient >
+                                                        Traits;
+  typedef ArrangementPainterOstreamBase< Traits >       Superclass;
+  typedef typename Traits::CKvA_2                       CKvA_2;
+  typedef typename Traits::Point_2                      Point_2;
+  typedef typename Traits::X_monotone_curve_2           X_monotone_curve_2;
+
+public:
+  /*! Constructor */
+  ArrangementPainterOstream(QPainter* p, QRectF clippingRectangle = QRectF()):
+    Superclass( p, clippingRectangle )
+  { }
+  /*! Destructor (virtual) */
+  virtual ~ArrangementPainterOstream() {}
+
+public: // methods
+
+  ArrangementPainterOstream& operator<<( const X_monotone_curve_2& curve )
+  {
+    //std::cout << "paint curve stub (alg traits)" << std::endl;
+
+    std::cout<<"In operator<< Arr_algebraic_segment_traits_2 X_monotone_curve_2"<<std::endl;
+
+    typedef Curve_renderer_facade<CKvA_2> Facade;
+    typedef std::pair< double, double > Coord_2;
+    typedef std::vector< Coord_2 > Coord_vec_2;
+    this->setupFacade( );
+    boost::optional < Coord_2 > p1, p2;
+    std::list<Coord_vec_2> points;
+    Facade::instance().draw( curve, points, &p1, &p2 );
+
+    if(points.empty())
+    {
+      std::cout<<"In operator<<: points.empty() == True\n";
+      return *this;
+    }
+
+    // QPainter *ppnt = this->qp;
+    QGraphicsView* view = this->scene->views( ).first( );
+    // int height = view->height();
+    // std::cerr << ws.width() << " and " <<  ws.height() << "\n";
+    typename std::list<Coord_vec_2>::const_iterator lit = points.begin();
+    //ppnt->moveTo((*p1).first, height - (*p1).second);
+    while(lit != points.end()) {
+      const Coord_vec_2& vec = *lit;
+      typename Coord_vec_2::const_iterator vit = vec.begin();
+      //std::cerr << "(" << vit->first << "; " << vit->second << ")\n";
+      //         if(lit == points.begin() &&*/ vit != vec.end()) {
+      //             ppnt->lineTo(vit->first, height - vit->second);
+      //             vit++;
+      //         }
+#if 0
+      if(vit != vec.end())
+        ppnt->moveTo(vit->first, height - vit->second);
+      while(vit != vec.end()) {
+        ppnt->lineTo(vit->first, height - vit->second);
+        vit++;
+        //std::cerr << "(" << vit->e0 << "; " << vit->e1 << "\n";
+      }
+      lit++;
+#endif
+      QPainterPath path;
+      QPoint coord( vit->first, vit->second );
+      QPointF qpt = view->mapToScene( coord );
+      if ( vit != vec.end() )
+      {
+        path.moveTo( qpt );
+      }
+      while ( vit != vec.end() )
+      {
+        path.lineTo( qpt );
+        vit++;
+        coord = QPoint( vit->first, vit->second );
+        qpt = view->mapToScene( coord );
+        //std::cout << vit->first << " " << vit->second << std::endl;
+      }
+      this->qp->drawPath( path );
+      lit++;
+    }
+    //ppnt->lineTo((*p2).first, height - (*p2).second);
+#if 0
+    QPen old_pen = ppnt->pen();
+    ppnt->setPen(QPen(Qt::NoPen)); // avoid drawing outlines
+    // draw with the current brush attributes
+    //std::cerr << "endpts1: (" << (*p1).first << "; " << (*p1).second << "\n";
+    //std::cerr << "endpts2: (" << (*p2).first << "; " << (*p2).second << "\n";
+    unsigned sz = CGAL_REND_PT_RADIUS;
+    ppnt->drawEllipse((*p1).first - sz, height-(*p1).second - sz, sz*2, sz*2);
+    ppnt->drawEllipse((*p2).first - sz, height-(*p2).second - sz, sz*2, sz*2);
+    ppnt->setPen(old_pen);
+#endif
+    return *this;
+  }
+
+  ArrangementPainterOstream& operator<<( const Point_2& p )
+  {
+    std::cout<<"In operator<< Arr_algebraic_segment_traits_2 Point_2"<<std::endl;
+
+    typedef Curve_renderer_facade<CKvA_2> Facade;
+    std::pair< double, double > coord;
+    //std::cout << "draw point stub" << std::endl;
+    this->setupFacade( );
+
+    if(!Facade::instance().draw(p, coord)) 
+    {
+      std::cout<<"In !Facade::instance().draw(p, coord)\n";
+      return *this;
+    }
+    else
+    {
+      //std::cout << coord.first << " " << coord.second << std::endl;
+      QPoint coords( coord.first, coord.second );
+      QGraphicsView* view = this->scene->views( ).first( );
+      QPointF qpt = view->mapToScene( coords );
+      QPen savePen = this->qp->pen( );
+      this->qp->setBrush( QBrush( savePen.color( ) ) );
+      double radius = savePen.width( ) / 2.0;
+      radius /= this->scale;
+      this->qp->drawEllipse( qpt, radius, radius );
+      this->qp->setBrush( QBrush( ) );
+      this->qp->setPen( savePen );
+    }
+#if 0
+    QPainter *ppnt = &ws.get_painter();
+    QPen old_pen = ppnt->pen();
+    ppnt->setPen(QPen(Qt::NoPen));
+    unsigned sz = CGAL_REND_PT_RADIUS;
+    ppnt->drawEllipse(coord.first - sz, ws.height() - coord.second - sz,
+                      sz*2, sz*2);
+    ppnt->setPen(old_pen);
+#endif
+    return *this;
+  }
+  template < typename T >
+  ArrangementPainterOstream& operator<<( const T& p )
+  {
+    (*(static_cast< Superclass* >(this)) << p);
+    return *this;
+  }
+protected:
+  void setupFacade( )
+  {
+    std::cout<<"In setupFacade\n";
+    typedef Curve_renderer_facade<CKvA_2> Facade;
+    QGraphicsView* view = this->scene->views( ).first( );
+    QRectF viewport = this->viewportRect( );
+    CGAL::Bbox_2 bbox = this->convert( viewport ).bbox( );
+    Facade::setup(bbox, view->width(), view->height());
+    std::cout<<"Leaving setupFacade\n";
+  }
+};
 
 } // namespace Qt
 } // namespace CGAL

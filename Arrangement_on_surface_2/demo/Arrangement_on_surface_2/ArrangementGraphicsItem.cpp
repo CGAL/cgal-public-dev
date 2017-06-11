@@ -84,11 +84,13 @@ void ArrangementGraphicsItemBase::setBackgroundColor( QColor color )
   this->backgroundColor = color;
 }
 
-#if 0
+
 void ArrangementGraphicsItemBase::setScene( QGraphicsScene* scene_ )
 {
   this->scene = scene_;
 }
+
+#if 0
 
 QRectF ArrangementGraphicsItemBase::getViewportRect( ) const
 {
