@@ -1094,6 +1094,11 @@ protected:
       ArrangementPainterOstream< Traits >( painter, this->boundingRect( ) );
     this->painterostream.setScene( this->scene );
 
+    QRectF rect = this->boundingRect( );
+    std::cout<<"Curve boundingRect rect\n";
+    std::cout<<"left, right, bottom, top:\n";
+    std::cout<<rect.left()<<", "<<rect.right()<<", "<<rect.bottom()<<", "<<rect.top()<<std::endl;
+
     for ( Vertex_iterator it = this->arr->vertices_begin( );
           it != this->arr->vertices_end( ); ++it )
     {
@@ -1107,6 +1112,12 @@ protected:
           it != this->arr->edges_end( ); ++it )
     {
       X_monotone_curve_2 curve = it->curve( );
+
+
+      Bbox_2 bbox = curve.bbox();
+      std::cout<<"Curve bounding box\n";
+      std::cout<<"xmin, xmax, ymin, ymax:\n";
+      std::cout<<bbox.xmin()<<", "<<bbox.xmax()<<", "<<bbox.ymin()<<", "<<bbox.ymax()<<std::endl;
       this->painterostream << curve;
     }
   }
@@ -1188,15 +1199,15 @@ protected:
 
     std::cout<<"In paint Arr_algebraic_segment_traits_2 after paintFaces"<<std::endl;
     painter->setPen( this->verticesPen );
-    QRectF clipRect = this->boundingRect( );
-    if ( std::isinf(clipRect.left( )) ||
-         std::isinf(clipRect.right( )) ||
-         std::isinf(clipRect.top( )) ||
-         std::isinf(clipRect.bottom( )) )
-    {
-      std::cout<<"In if isinf == true"<<std::endl;
-      clipRect = this->viewportRect( );
-    }
+    QRectF clipRect = this->viewportRect( );
+    // if ( std::isinf(clipRect.left( )) ||
+    //      std::isinf(clipRect.right( )) ||
+    //      std::isinf(clipRect.top( )) ||
+    //      std::isinf(clipRect.bottom( )) )
+    // {
+    //   std::cout<<"In if isinf == true"<<std::endl;
+    //   clipRect = this->viewportRect( );
+    // }
 
     std::cout<<"In paint after if"<<std::endl;
     std::cout<<clipRect.left()<<"\t";
@@ -1285,9 +1296,13 @@ protected:
   ArrangementGraphicsItem< Arr_, ArrTraits >::
   updateBoundingBox(CGAL::Arr_linear_traits_2< Kernel_ > /* traits */)
   {
+    std::cout<<"In updateBoundingBox Arr_linear_traits_2\n";
     this->prepareGeometryChange( );
     QRectF clipRect = this->viewportRect( );
     this->convert = Converter<Kernel>( clipRect );
+
+    std::cout<<"left, right, bottom, top:\n";
+    std::cout<<clipRect.left()<<", "<<clipRect.right()<<", "<<clipRect.bottom()<<", "<<clipRect.top()<<std::endl;
 
     if ( ! clipRect.isValid( ) /*|| this->arr->number_of_vertices( ) == 0*/ )
     {
@@ -1399,9 +1414,10 @@ protected:
 
     // QRectF qBoundingRect = this->boundingRect();
     // QRectF viewportRect  = this->viewportRect();
-    // double x_min = std::isinf(qBoundingRect.left())? viewportRect.left(): qBoundingRect.left();
+
+    // double x_min = qBoundingRect.left();
     // double x_max = std::isinf(qBoundingRect.right())? viewportRect.right(): qBoundingRect.right();
-    // double y_min = std::isinf(qBoundingRect.bottom())? viewportRect.bottom(): qBoundingRect.bottom();
+    // double y_min = qBoundingRect.bottom();
     // double y_max = std::isinf(qBoundingRect.top())? viewportRect.top(): qBoundingRect.top();
 
     // this->bb = Bbox_2( x_min, y_min, x_max, y_max );

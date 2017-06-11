@@ -462,6 +462,9 @@ public: // methods
         xmin = view->mapFromScene( bb.xmin( ), bb.ymin( ) ).x( );
         xmax = view->mapFromScene( bb.xmax( ), bb.ymin( ) ).x( );
         n = xmax - xmin;
+
+        std::cout<<"xmin\txmax"<<std::endl;
+        std::cout<<xmin<<"\t"<<xmax<<std::endl;
       }
       if ( n == 0 )
       {
@@ -568,12 +571,15 @@ protected: // methods
 
     Point_2 leftEndpt = curve.source( );
     Point_2 rightEndpt = curve.target( );
+
     if ( leftEndpt.x( ) > rightEndpt.x( ) )
     {
       std::swap( leftEndpt, rightEndpt );
     }
+
     QPointF qendpt1 = this->convert( leftEndpt );
     QPointF qendpt2 = this->convert( rightEndpt );
+
     std::list< Point_2 > pointList;
     for ( unsigned int i = 0; i < intersections.size( ); ++i )
     {
@@ -585,12 +591,18 @@ protected: // methods
         pointList.push_back( pt );
       }
     }
+
     bool includeLeftEndpoint = this->clippingRect.contains( qendpt1 );
     bool includeRightEndpoint = this->clippingRect.contains( qendpt2 );
     if ( includeLeftEndpoint )
+    {
       pointList.push_front( leftEndpt );
+    }
+
     if ( includeRightEndpoint )
+    {
       pointList.push_back( rightEndpt );
+    }
 
     Construct_x_monotone_subcurve_2< Traits > construct_x_monotone_subcurve_2;
     std::vector< X_monotone_curve_2 > clippings;
@@ -876,100 +888,299 @@ public:
   typedef typename CGAL::Arr_algebraic_segment_traits_2< Coefficient >
                                                         Traits;
   typedef ArrangementPainterOstreamBase< Traits >       Superclass;
-  typedef typename Traits::CKvA_2                       CKvA_2;
   typedef typename Superclass::Point_2                  Point_2;
   typedef typename Traits::X_monotone_curve_2           X_monotone_curve_2;
+  typedef typename Traits::Curve_2                      Curve_2;
+  typedef typename Traits::Construct_x_monotone_segment_2
+    Construct_x_monotone_segment_2;
+  typedef typename Traits::Point_2                      Intersection_point_2;
+  typedef typename Traits::Intersect_2                  Intersect_2;
+  typedef typename Traits::Multiplicity                 Multiplicity;
 
 public:
   /*! Constructor */
   ArrangementPainterOstream(QPainter* p, QRectF clippingRectangle = QRectF()):
     Superclass( p, clippingRectangle ),
-    clipRect(clippingRectangle)
+    clipRect(clippingRectangle),
+    construct_x_monotone_segment_2(this->
+                                 traits.construct_x_monotone_segment_2_object())
   { }
 
   /*! Destructor (virtual) */
   virtual ~ArrangementPainterOstream() {}
 
+  class Compare_intersection_point_result
+  {
+  public:
+    typedef std::pair< Intersection_point_2, Multiplicity > Result;
+    // returns whether the point1 < point2, using x-coord to compare
+    bool operator()( const Result& o1, const Result& o2 )
+    {
+      Intersection_point_2 p1 = o1.first;
+      Intersection_point_2 p2 = o2.first;
+      return ( p1.x( ) < p2.x( ) );
+    }
+  };
+
+protected:
+  std::vector< Intersection_point_2 > visibleParts( X_monotone_curve_2 curve )
+  {
+    std::cout<<"In visibleParts\n";
+    // see if we intersect the bottom edge of the viewport
+    typename Traits::Construct_x_monotone_segment_2 constructSegment =
+      traits.construct_x_monotone_segment_2_object( );
+    typename Traits::Construct_point_2 constructPoint =
+      traits.construct_point_2_object( );
+
+    Intersect_2 intersect_2 = this->traits.intersect_2_object( );
+
+    Intersection_point_2 bottomLeft = constructPoint(this->clipRect.bottom(), this->clipRect.left());
+    Intersection_point_2 bottomRight = constructPoint(this->clipRect.bottom(), this->clipRect.right());
+    Intersection_point_2 topLeft = constructPoint(this->clipRect.top(), this->clipRect.left());
+    Intersection_point_2 topRight = constructPoint(this->clipRect.top(), this->clipRect.right());
+
+    std::cout<<this->clipRect.bottom()<<'\t'<<this->clipRect.left()<<std::endl;
+    std::cout<<this->clipRect.bottom()<<'\t'<<this->clipRect.right()<<std::endl;
+    std::cout<<this->clipRect.top()<<'\t'<<this->clipRect.left()<<std::endl;
+    std::cout<<this->clipRect.top()<<'\t'<<this->clipRect.right()<<std::endl;
+
+    std::vector< X_monotone_curve_2 > vec;
+
+    constructSegment( bottomLeft, bottomRight, std::back_inserter(vec) );
+    X_monotone_curve_2 bottom = vec[0];
+    vec.clear();
+
+    constructSegment( bottomLeft, topLeft, std::back_inserter(vec) );
+    X_monotone_curve_2 left = vec[0];
+    vec.clear();
+
+    constructSegment( topLeft, topRight, std::back_inserter(vec) );
+    X_monotone_curve_2 top = vec[0];
+    vec.clear();
+
+    constructSegment( topRight, bottomRight, std::back_inserter(vec) );
+    X_monotone_curve_2 right = vec[0];
+    vec.clear();
+
+    std::vector< CGAL::Object > intersections;
+
+    intersect_2( bottom, curve, std::back_inserter( intersections ) );
+    intersect_2( left, curve, std::back_inserter( intersections ) );
+    intersect_2( top, curve, std::back_inserter( intersections ) );
+    intersect_2( right, curve, std::back_inserter( intersections ) );
+
+    this->filterIntersectionPoints( intersections );
+
+    std::cout << "total intersections: " << intersections.size( )
+             << std::endl;
+    //this->printIntersectResult( intersections );
+
+
+
+    std::list< Intersection_point_2 > pointList;
+    for ( unsigned int i = 0; i < intersections.size( ); ++i )
+    {
+      CGAL::Object o = intersections[ i ];
+      std::pair< Intersection_point_2, Multiplicity > pair;
+      if ( CGAL::assign( pair, o ) )
+      {
+        Intersection_point_2 pt = pair.first;
+        pointList.push_back( pt );
+      }
+    }
+
+
+    // std::cout<<"leftEndpt\n";
+    // std::cout<<leftEndpt.x()<<'\t'<<leftEndpt.y()<<std::endl;
+
+    // std::cout<<"rightEndpt\n";
+    // std::cout<<rightEndpt.x()<<'\t'<<rightEndpt.y()<<std::endl;
+    
+    Arr_compute_y_at_x_2<Traits> arr_compute_y_at_x_2;
+    CGAL::Bbox_2 bb = curve.bbox( );
+
+    std::cout<<bb.xmin()<<"\t";
+    std::cout<<bb.xmax()<<"\t";
+    std::cout<<bb.ymin()<<"\t";
+    std::cout<<bb.ymax()<<"\t"<<std::endl;
+
+    if ( !std::isinf(bb.xmin()) )
+    {
+      double left_endpoint_x = bb.xmin();
+      double left_endpoint_y = arr_compute_y_at_x_2.approx(curve, left_endpoint_x);
+
+      std::cout<<"In !std::isinf(bb.xmin():\t"<<left_endpoint_y<<std::endl;
+      Intersection_point_2 left_endpoint = constructPoint(left_endpoint_x, left_endpoint_y);
+      pointList.push_front( left_endpoint );
+    }
+
+    if ( !std::isinf(bb.xmax()) )
+    {
+      double right_endpoint_x = bb.xmax();
+      double right_endpoint_y = arr_compute_y_at_x_2.approx(curve, right_endpoint_x);
+
+      std::cout<<"In !std::isinf(bb.xmax():\t"<<right_endpoint_y<<std::endl;
+
+      Intersection_point_2 right_endpoint = constructPoint(right_endpoint_x, right_endpoint_y);
+      pointList.push_back( right_endpoint );
+    }
+    // if ( leftEndpt.x( ) > rightEndpt.x( ) )
+    // {
+    //   std::swap( leftEndpt, rightEndpt );
+    // }
+
+    // QPointF qendpt1 = this->convert( leftEndpt );
+    // QPointF qendpt2 = this->convert( rightEndpt );
+
+    // bool includeLeftEndpoint = this->clippingRect.contains( qendpt1 );
+    // bool includeRightEndpoint = this->clippingRect.contains( qendpt2 );
+    // if ( includeLeftEndpoint )
+    // {
+    //   pointList.push_front( leftEndpt );
+    // }
+
+    // if ( includeRightEndpoint )
+    // {
+    //   pointList.push_back( rightEndpt );
+    // }
+    std::cout << "total points in pointList: " << pointList.size( )
+             << std::endl;
+
+    // std::vector< X_monotone_curve_2 > clippings;
+    std::vector<Intersection_point_2> seperation_points;
+
+    typename std::list< Intersection_point_2 >::iterator pointListItr = pointList.begin( );
+    for ( ; pointListItr != pointList.end(); pointListItr++ )
+    {
+      std::cout<<"before construct_x_monotone_segment_2:\n";
+      seperation_points.push_back(*pointListItr);
+      // Intersection_point_2 p1 = *pointListItr++;
+      // Intersection_point_2 p2 = *pointListItr++;
+      // X_monotone_curve_2 subcurve =
+      //   construct_x_monotone_subcurve_2( curve, p1, p2 );
+      // clippings.push_back( subcurve );
+      
+      // std::cout<<CGAL::to_double(p1.x())<<"\t"<<CGAL::to_double(p1.y())<<"\n";
+      // std::cout<<CGAL::to_double(p2.x())<<"\t"<<CGAL::to_double(p2.y())<<"\n";
+
+      // this->construct_x_monotone_segment_2(curve.curve(), p1, p2, std::back_inserter(clippings) );
+      std::cout<<"after construct_x_monotone_segment_2:\n"<<std::endl;
+    }
+
+    std::cout<<"Leaving visibleParts\n";
+    return seperation_points;
+  }
+
+  void filterIntersectionPoints( std::vector< CGAL::Object >& res )
+  {
+    std::vector< std::pair< Intersection_point_2, Multiplicity > > tmp;
+
+    // filter out the non-intersection point results
+    for ( unsigned int i = 0; i < res.size( ); ++i )
+    {
+      CGAL::Object obj = res[ i ];
+      std::pair< Intersection_point_2, Multiplicity > pair;
+      if ( CGAL::assign( pair, obj ) )
+      {
+        tmp.push_back( pair );
+      }
+    }
+    res.clear( );
+
+    // sort the intersection points by x-coord
+    Compare_intersection_point_result compare_intersection_point_result;
+    std::sort( tmp.begin( ), tmp.end( ), compare_intersection_point_result );
+
+    // box up the sorted elements
+    for ( unsigned int i = 0; i < tmp.size( ); ++i )
+    {
+      std::pair< Intersection_point_2, Multiplicity > pair = tmp[ i ];
+      CGAL::Object o = CGAL::make_object( pair );
+      res.push_back( o );
+    }
+  }
+
 public: // methods
   ArrangementPainterOstream& operator<<( const X_monotone_curve_2& curve )
   {
     std::cout<<"In operator<< Arr_algebraic_segment_traits_2 X_monotone_curve_2"<<std::endl;
-#if 0
-    //std::cout << "paint curve stub (alg traits)" << std::endl;
-    typedef Curve_renderer_facade<CKvA_2> Facade;
-    typedef std::pair< int, int > Coord_2;
-    typedef std::vector< Coord_2 > Coord_vec_2;
-    this->setupFacade( );
 
-    boost::optional < Coord_2 > p1, p2;
-    std::list<Coord_vec_2> points;
+    Bbox_2 bbox = curve.bbox();
 
-    Facade::instance().draw( curve, points, &p1, &p2 );
-    if(points.empty())
+    std::cout<<bbox.xmin()<<"\t";
+    std::cout<<bbox.xmax()<<"\t";
+    std::cout<<bbox.ymin()<<"\t";
+    std::cout<<bbox.ymax()<<"\t"<<std::endl;
+
+    if (!std::isinf(bbox.xmin()) 
+      && !std::isinf(bbox.xmax())
+      && !std::isinf(bbox.ymin())
+      && !std::isinf(bbox.ymax()))
+    {
+      int n = 100;
+
+      std::pair<double, double>* app_pts =
+        new std::pair<double, double>[n + 1];
+      std::pair<double, double>* end_pts =
+        this->polyline_approximation(curve, bbox.xmin(), bbox.xmax(), n, app_pts);
+      std::pair<double, double>* p_curr = app_pts;
+      std::pair<double, double>* p_next = p_curr + 1;
+      int count = 0;
+      do
+      {
+        QPointF p1( p_curr->first, p_curr->second );
+        QPointF p2( p_next->first, p_next->second );
+
+        this->qp->drawLine( p1, p2 );
+        p_curr++;
+        p_next++;
+        ++count;
+      } while ( p_next != end_pts );
+
+      std::cout<<"count\t"<<count<<std::endl;
+      delete [] app_pts;
+
+      std::cout<<"Leaving Arr_algebraic_segment_traits_2 X_monotone_curve_2"<<std::endl;
       return *this;
-
-    // QPainter *ppnt = this->qp;
-    QGraphicsView* view = this->scene->views( ).first( );
-    // int height = view->height();
-    // std::cerr << ws.width() << " and " <<  ws.height() << "\n";
-    typename std::list<Coord_vec_2>::const_iterator lit = points.begin();
-    //ppnt->moveTo((*p1).first, height - (*p1).second);
-    while(lit != points.end()) {
-
-      const Coord_vec_2& vec = *lit;
-      typename Coord_vec_2::const_iterator vit = vec.begin();
-      //std::cerr << "(" << vit->first << "; " << vit->second << ")\n";
-      //         if(lit == points.begin() &&*/ vit != vec.end()) {
-      //             ppnt->lineTo(vit->first, height - vit->second);
-      //             vit++;
-      //         }
-#if 0
-      if(vit != vec.end())
-        ppnt->moveTo(vit->first, height - vit->second);
-
-      while(vit != vec.end()) {
-        ppnt->lineTo(vit->first, height - vit->second);
-        vit++;
-        //std::cerr << "(" << vit->e0 << "; " << vit->e1 << "\n";
-      }
-      lit++;
-#endif
-      QPainterPath path;
-      QPoint coord( vit->first, vit->second );
-      QPointF qpt = view->mapToScene( coord );
-      if ( vit != vec.end() )
-      {
-        path.moveTo( qpt );
-      }
-      while ( vit != vec.end() )
-      {
-        path.lineTo( qpt );
-        vit++;
-        coord = QPoint( vit->first, vit->second );
-        qpt = view->mapToScene( coord );
-        //std::cout << vit->first << " " << vit->second << std::endl;
-      }
-      this->qp->drawPath( path );
-
-      lit++;
     }
-    //ppnt->lineTo((*p2).first, height - (*p2).second);
 
+    std::cout<<"Bbox_2 has infinite bounding box\n";
+    std::vector< Intersection_point_2 > seperation_points = this->visibleParts(curve);
+    int seperation_points_size = seperation_points.size( );
+
+    for ( unsigned int i = 0; i < seperation_points_size; ++i )
+    {
+      if (i >= seperation_points_size || (i+1) >= seperation_points_size)
+      {
+        break;
+      }
+
+      Intersection_point_2 p1 = seperation_points[i];
+      Intersection_point_2 p2 = seperation_points[i+1];
+      int n = 100;
+
+      std::pair<double, double>* app_pts =
+        new std::pair<double, double>[n + 1];
+      std::pair<double, double>* end_pts =
+        this->polyline_approximation(curve, CGAL::to_double(p1.x()), CGAL::to_double(p2.x()), n, app_pts);
+      std::pair<double, double>* p_curr = app_pts;
+      std::pair<double, double>* p_next = p_curr + 1;
+      int count = 0;
+      do
+      {
+        QPointF p1( p_curr->first, p_curr->second );
+        QPointF p2( p_next->first, p_next->second );
+
+        this->qp->drawLine( p1, p2 );
+        p_curr++;
+        p_next++;
+        ++count;
+      } while ( p_next != end_pts );
+
+      std::cout<<"count\t"<<count<<std::endl;
+      delete [] app_pts;
+    }
 #if 0
-    QPen old_pen = ppnt->pen();
-    ppnt->setPen(QPen(Qt::NoPen)); // avoid drawing outlines
-    // draw with the current brush attributes
-
-    //std::cerr << "endpts1: (" << (*p1).first << "; " << (*p1).second << "\n";
-    //std::cerr << "endpts2: (" << (*p2).first << "; " << (*p2).second << "\n";
-
-    unsigned sz = CGAL_REND_PT_RADIUS;
-    ppnt->drawEllipse((*p1).first - sz, height-(*p1).second - sz, sz*2, sz*2);
-    ppnt->drawEllipse((*p2).first - sz, height-(*p2).second - sz, sz*2, sz*2);
-    ppnt->setPen(old_pen);
-#endif
-#endif
-
     CGAL::Bbox_2 bb = curve.bbox( );
 
     // QGraphicsView* view = this->scene->views( ).first( );
@@ -983,38 +1194,15 @@ public: // methods
 
     std::cout<<"xmin\txmax\tymin\tymax"<<std::endl;
     std::cout<<xmin<<"\t"<<xmax<<"\t"<<ymin<<"\t"<<ymax<<std::endl;
-
-    int n = 100;
-    std::pair<double, double>* app_pts = new std::pair<double, double>[n + 1];
-    std::pair<double, double>* end_pts =
-      this->polyline_approximation(curve, n, app_pts);
-    std::pair<double, double>* p_curr = app_pts;
-    std::pair<double, double>* p_next = p_curr + 1;
-    int count = 0;
-    do
-    {
-      QPointF p1( p_curr->first, p_curr->second );
-      QPointF p2( p_next->first, p_next->second );
-#if 0
-      Segment_2 seg( p1, p2 );
-      this->painterOstream << seg;
 #endif
-      this->qp->drawLine( p1, p2 );
-      p_curr++;
-      p_next++;
-      ++count;
-    }
-    while ( p_next != end_pts );
+
 
     std::cout<<"Leaving Arr_algebraic_segment_traits_2 X_monotone_curve_2"<<std::endl;
-    std::cout<<"count\t"<<count<<std::endl;
-
-    delete [] app_pts;
     return *this;
   }
 
   std::pair<double, double>* polyline_approximation(const X_monotone_curve_2& curve,
-    const int& num_of_points, 
+    double source_x, double target_x, const int& num_of_points, 
     std::pair<double, double>* target_memory)
   {
     CGAL::Bbox_2 bb = curve.bbox( );
@@ -1022,8 +1210,8 @@ public: // methods
 
     int cnt = 0;
 
-    double xmin = std::isinf(bb.xmin()) ? this->clipRect.left() : bb.xmin();
-    double xmax = std::isinf(bb.xmax()) ? this->clipRect.right() : bb.xmax();
+    double xmin = source_x;
+    double xmax = target_x;
 
     std::cout<<"In polyline_approximation\t";
     std::cout<<xmin<<"\t";
@@ -1085,15 +1273,9 @@ public: // methods
 
 protected:
   QRectF clipRect;
+  Traits traits;
+  Construct_x_monotone_segment_2 construct_x_monotone_segment_2;
 
-  void setupFacade( )
-  {
-    typedef Curve_renderer_facade<CKvA_2> Facade;
-    QGraphicsView* view = this->scene->views( ).first( );
-    QRectF viewport = this->viewportRect( );
-    CGAL::Bbox_2 bbox = this->convert( viewport ).bbox( );
-    Facade::setup(bbox, view->width(), view->height());
-  }
 };
 
 
