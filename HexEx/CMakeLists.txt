@@ -28,9 +28,9 @@ if ( CGAL_FOUND )
   target_link_libraries(main ${CGAL_LIBRARIES} ${CGAL_3RD_PARTY_LIBRARIES}
     ${MAP_VIEWER_LIBRARIES})
 
-#if (CGAL_USE_LCC_VIEWER)
- # qt5_use_modules(triangulation_to_LCC ${MAP_VIEWER_MODULES})
-#endif (CGAL_USE_LCC_VIEWER)
+if (CGAL_USE_LCC_VIEWER)
+  qt5_use_modules(main ${MAP_VIEWER_MODULES})
+endif (CGAL_USE_LCC_VIEWER)
   
 else()
 

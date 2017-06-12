@@ -16,17 +16,19 @@ typedef CGAL::Linear_cell_complex_for_generalized_map<3>    LCC_3;
 typedef CGAL::Direction_3<K>                                Direction;
 typedef CGAL::Linear_cell_complex_for_generalized_map<3>    LCC_3;
 typedef LCC_3::Dart_handle                                  Dart_handle;
+typedef LCC_3::Dart_const_handle                            Dart_const_handle;
 typedef LCC_3::Point                                        Point;
 typedef CGAL::Vector_3<K>                                   Vector_3;
-typedef CGAL::Point_3<K>				                            Point_3;
+typedef CGAL::Point_3<K>				    Point_3;
 typedef HexEx::Half_face_and_transition                     Half_face_and_transition;
 
 namespace HexEx{
-  Half_face_and_transition extract_transition_function(LCC_3::Dart &d, LCC_3 lcc, std::vector<Transformation> G){ //: lcc(hexex.lcc()), G(hexex.G()){return hfat1;}
+  Half_face_and_transition extract_transition_function(LCC_3::Dart &d, const LCC_3& lcc,
+                                                       const std::vector<Transformation>& G){ //: lcc(hexex.lcc()), G(hexex.G()){return hfat1;}
 
   //void operator()(LCC_3::Dart& d){
-    Dart_handle dh1 = lcc.dart_handle(d);
-    Dart_handle dh2 = lcc.alpha(dh1,3);
+    Dart_const_handle dh1 = lcc.dart_handle(d);
+    Dart_const_handle dh2 = lcc.alpha(dh1,3);
     Transformation id(1,0,0,0,1,0,0,0,1,1);
     if(dh2 == NULL){//boundary
       Half_face_and_transition hfat(dh1, id);
@@ -35,11 +37,11 @@ namespace HexEx{
     else{    
       //if(!(lcc.is_marked(dh1, m))){	
         std::vector<Point> face1, face2;
-        for (LCC_3::Dart_of_cell_range<2>::iterator it((lcc.darts_of_cell<2>(dh1)).begin()), itend((lcc.darts_of_cell<2>(dh1)).end()); it!=itend; ++it){
+        for (LCC_3::Dart_of_cell_range<2>::const_iterator it((lcc.darts_of_cell<2>(dh1)).begin()), itend((lcc.darts_of_cell<2>(dh1)).end()); it!=itend; ++it){
           //lcc.mark(it, m);
           face1.push_back(lcc.point(it));
         }
-        for (LCC_3::Dart_of_cell_range<2>::iterator it((lcc.darts_of_cell<2>(dh2)).begin()), itend((lcc.darts_of_cell<2>(dh2)).end()); it!=itend; ++it){
+        for (LCC_3::Dart_of_cell_range<2>::const_iterator it((lcc.darts_of_cell<2>(dh2)).begin()), itend((lcc.darts_of_cell<2>(dh2)).end()); it!=itend; ++it){
           //lcc.mark(it, m);
           face2.push_back(lcc.point(it));
         }
@@ -77,7 +79,7 @@ namespace HexEx{
     }
   }
 
-int calculate_cell_type(LCC_3 lcc, Dart_handle dh){
+int calculate_cell_type(const LCC_3& lcc, Dart_const_handle dh){
   std::vector<Point> P;// = lcc.point(dh);
   for(int i=0;i<3;i++){
     P.push_back(lcc.point(dh));
