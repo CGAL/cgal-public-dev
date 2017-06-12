@@ -89,7 +89,6 @@ namespace CGAL {
     for (it = atr.cells_begin(); it != atr.cells_end(); ++it)
     {
       if (oracle(it))
-      
       {
         res = alcc.make_tetrahedron(TV[it->vertex(0)],
                                     TV[it->vertex(1)],
@@ -106,7 +105,6 @@ namespace CGAL {
           dart = alcc.previous(alcc.template opposite<2>(res));
         else if ( dart == LCC::null_handle )
           dart = res;
-        }
 
         for (unsigned int i = 0; i < 4; ++i)
         {
@@ -138,6 +136,7 @@ namespace CGAL {
         }
         (*mytc)[it] = res;
       }
+    }
     
     CGAL_assertion(dart!=LCC::null_handle);
     return dart;

@@ -6,10 +6,17 @@
 //namespace HexEx
 //#endif
 
-int main(){
-  std::cout<<"Enter filename"<<std::endl;
+int main(int argc, char** argv){
   std::string str;
-  std::cin>>str;
+  if (argc==1)
+  {
+    std::cout<<"Enter filename"<<std::endl;
+    std::cin>>str;
+  }
+  else
+  {
+    str=argv[1];
+  }
   HexEx::HexExtr h(str);
   std::cout<<h.directions[0]<<std::endl;
 }
