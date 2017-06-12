@@ -80,7 +80,7 @@ bool load_off_to_LCC(std::string infilename, LCC_3& lcc)
   std::ifstream input(fname);
   input >> polyhedron;
   if(input.fail()){
-    std::cerr << "Error: Cannot read file " <<  fname << std::endl;
+    std::cerr << "Error: Cannot read file " <<fname<< std::endl;
     return false;
   }
   input.close();
@@ -102,9 +102,7 @@ bool load_off_to_LCC(std::string infilename, LCC_3& lcc)
 
 
   // To convert to lcc
-  Cell_in_complex cic(c3t3);
-
-  
+  Cell_in_complex cic(c3t3);  
   lcc.clear();
   C3t3::Triangulation &atr= c3t3.triangulation();
   CGAL::import_from_triangulation_3(lcc, atr, cic);
