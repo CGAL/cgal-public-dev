@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>380</width>
-    <height>165</height>
+    <height>168</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -49,20 +49,33 @@
     </rect>
    </property>
    <property name="text">
-    <string>Enter polynomial with terms in the format of ax^by^c</string>
+    <string>Enter polynomial with terms in the format of ax^by^c,</string>
    </property>
   </widget>
   <widget class="QLabel" name="label_2">
    <property name="geometry">
     <rect>
      <x>20</x>
-     <y>50</y>
+     <y>60</y>
      <width>341</width>
      <height>16</height>
     </rect>
    </property>
    <property name="text">
     <string>Eg., x^2y^8-12, y^2-x</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_3">
+   <property name="geometry">
+    <rect>
+     <x>20</x>
+     <y>40</y>
+     <width>341</width>
+     <height>16</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>a, b, c are integers</string>
    </property>
   </widget>
  </widget>

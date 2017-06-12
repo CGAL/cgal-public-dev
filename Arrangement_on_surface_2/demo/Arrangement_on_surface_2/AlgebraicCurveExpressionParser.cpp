@@ -129,12 +129,14 @@ void AlgebraicCurveExpressionParser::extract_poly_terms(std::vector<struct term>
     boost::tokenizer< boost::char_separator<char> > tokens(this->poly_expr, sep);
     BOOST_FOREACH (const std::string& str, tokens) {
         std::string output = str;
-        output.erase(remove_if(output.begin(), output.end(), isspace), output.end());
-//            std::cout << output << std::endl<< std::endl;
         
+        // Remove all white spaces
+        output.erase(remove_if(output.begin(), output.end(), isspace), output.end());
         struct term term;
+        
         extract_poly_components(output, term);
         print_poly_term(term);
         poly_terms.push_back(term);
+
     }
 }

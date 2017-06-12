@@ -34,6 +34,7 @@
 #include <QGraphicsLineItem>
 #include <QGraphicsSceneMouseEvent>
 #include <QKeyEvent>
+#include <QMessageBox>
 
 #include "Callback.h"
 #include "ISnappable.h"
@@ -1031,7 +1032,23 @@ public:
     this->poly_expr = poly_expr_;
     AlgebraicCurveExpressionParser parser(this->poly_expr);
     std::vector<struct term> terms;
-    parser.extract_poly_terms(terms);
+
+    try {
+
+      parser.extract_poly_terms(terms);
+
+    } catch (std::invalid_argument) {
+
+      QMessageBox msgBox;
+      msgBox.setWindowTitle("Wrong Expression");
+      msgBox.setIcon(QMessageBox::Critical);
+      msgBox.setText(QString::fromStdString(poly_expr_ + " is invalid"));
+      msgBox.setStandardButtons(QMessageBox::Ok);
+
+      msgBox.exec();
+      return;
+    }
+
 
     Traits::Construct_curve_2 construct_curve
         = traits.construct_curve_2_object();
@@ -1042,7 +1059,7 @@ public:
 
     for (int i=0; i<terms.size(); i++)
     {
-      polynomial+=terms[i].coefficient 
+      polynomial += terms[i].coefficient 
                   *CGAL::ipower(x,terms[i].x_exponent)
                   *CGAL::ipower(y,terms[i].y_exponent);
     }
