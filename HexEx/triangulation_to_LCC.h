@@ -62,7 +62,7 @@ protected:
 
 bool load_off_to_LCC(std::string infilename, LCC_3& lcc)
 {  
-  const char* fname;
+  const char* fname = infilename.c_str();
 //facet_angle=25, facet_size=0.15, facet_distance=0.008,cell_radius_edge_ratio=3
   double fa = 25, fs = 0.15, fd = 0.008, crer = 3; 
   /*switch(argc){
