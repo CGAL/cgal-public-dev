@@ -1405,4 +1405,10 @@ protected:
 } // namespace Qt
 } // namespace CGAL
 
+#if CGAL_EXPLICIT_INSTANTIATION == 0
+
+#include "ArrangementPainterOstream.cpp"
+
+#endif
+
 #endif // CGAL_QT_ARRANGEMENT_PAINTER_OSTREAM_H

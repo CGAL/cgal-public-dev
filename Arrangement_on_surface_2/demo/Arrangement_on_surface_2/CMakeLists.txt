@@ -10,6 +10,7 @@ endif()
 find_package(CGAL COMPONENTS Core Qt5 )
 include( ${CGAL_USE_FILE} )
 set(CMAKE_CXX_STANDARD 11)
+set(CGAL_EXPLICIT_INSTANTIATION 1 CACHE BOOL "")
 
 find_package( Qt5 QUIET COMPONENTS Script Widgets )
 
@@ -58,7 +59,7 @@ if ( CGAL_FOUND AND CGAL_Qt5_FOUND AND Qt5_FOUND AND CGAL_Core_FOUND)
     GraphicsViewCurveInput.cpp
     Utils.cpp
     AlgebraicCurveExpressionParser.cpp
-    ArrangementPainterOstream.cpp
+    #ArrangementPainterOstream.cpp
     NewTabDialog.cpp
     OverlayDialog.cpp
     ArrangementDemoPropertiesDialog.cpp
@@ -69,11 +70,16 @@ if ( CGAL_FOUND AND CGAL_Qt5_FOUND AND Qt5_FOUND AND CGAL_Core_FOUND)
     DeleteCurveModeItemEditor.cpp
     PointsGraphicsItem.cpp
     VerticalRayGraphicsItem.cpp
-    ArrangementExplicitInstantiation.cpp
    ${CGAL_Qt5_MOC_FILES}
    ${arrangement_2_uis}
    ${CGAL_Qt5_RESOURCE_FILES}
   )
+
+  if ( CGAL_EXPLICIT_INSTANTIATION )
+    target_sources(arrangement_2 PUBLIC ArrangementExplicitInstantiation.cpp)
+    target_sources(arrangement_2 PUBLIC ArrangementPainterOstream.cpp)
+  endif()
+
   qt5_use_modules(arrangement_2 Widgets Script)
   target_link_libraries( arrangement_2
     ${CGAL_LIBRARIES}
