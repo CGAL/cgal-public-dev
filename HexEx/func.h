@@ -24,7 +24,7 @@ typedef HexEx::Half_face_and_transition                     Half_face_and_transi
 
 namespace HexEx{
   Half_face_and_transition extract_transition_function(LCC_3::Dart &d, const LCC_3& lcc,
-                                                       const std::vector<Transformation>& G){ //: lcc(hexex.lcc()), G(hexex.G()){return hfat1;}
+                                                       const std::vector<Transformation>& G){
 
   //void operator()(LCC_3::Dart& d){
     Dart_const_handle dh1 = lcc.dart_handle(d);

@@ -48,7 +48,7 @@ class HexExtr{
 
       for(LCC_3::One_dart_per_cell_range<3>::iterator it = input_tet_mesh.one_dart_per_cell<3>().begin(),
             itend = input_tet_mesh.one_dart_per_cell<3>().end(); it != itend; it++){
-		all_faces_with_transitions.push_back(extract_transition_function(*it, input_tet_mesh, G));
+		all_faces_with_transitions.push_back(extract_transition_function(*it, input_tet_mesh, G)); //make a set with dart as key so that it's easier to retrieve.
       }
 
 //Sanitization 
