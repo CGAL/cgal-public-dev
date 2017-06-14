@@ -46,7 +46,7 @@ if ( CGAL_FOUND AND CGAL_Qt5_FOUND AND Qt5_FOUND AND CGAL_Core_FOUND)
   )
   add_executable( arrangement_2
     arrangement_2.cpp
-    ArrangementGraphicsItem.cpp
+    #ArrangementGraphicsItem.cpp
     ArrangementDemoWindow.cpp
     ArrangementDemoTab.cpp
     ArrangementDemoGraphicsView.cpp
@@ -59,7 +59,6 @@ if ( CGAL_FOUND AND CGAL_Qt5_FOUND AND Qt5_FOUND AND CGAL_Core_FOUND)
     GraphicsViewCurveInput.cpp
     Utils.cpp
     AlgebraicCurveExpressionParser.cpp
-    #ArrangementPainterOstream.cpp
     NewTabDialog.cpp
     OverlayDialog.cpp
     ArrangementDemoPropertiesDialog.cpp
@@ -76,8 +75,10 @@ if ( CGAL_FOUND AND CGAL_Qt5_FOUND AND Qt5_FOUND AND CGAL_Core_FOUND)
   )
 
   if ( CGAL_EXPLICIT_INSTANTIATION )
-    target_sources(arrangement_2 PUBLIC ArrangementExplicitInstantiation.cpp)
+    target_sources(arrangement_2 PUBLIC ArrangementPainterOstreamExplicitInstantiation.cpp)
+    target_sources(arrangement_2 PUBLIC ArrangementGraphicsItemExplicitInstantiation.cpp)
     target_sources(arrangement_2 PUBLIC ArrangementPainterOstream.cpp)
+    target_sources(arrangement_2 PUBLIC ArrangementGraphicsItem.cpp)
   endif()
 
   qt5_use_modules(arrangement_2 Widgets Script)
