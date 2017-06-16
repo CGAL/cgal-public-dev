@@ -43,9 +43,9 @@ namespace CGAL {
    *        tetrahedron of atr a corresponding dart in alcc. Not used if NULL.
    * @return A dart incident to the infinite vertex.
    */
-  template < class LCC, class Triangulation, class CellFunctor=AllCell >
+  template < class LCC, class Triangulation, class CellFunctor >
   typename LCC::Dart_handle import_from_triangulation_3
-  (LCC& alcc, const Triangulation &atr, CellFunctor oracle=CellFunctor(),
+  (LCC& alcc, const Triangulation &atr, CellFunctor oracle,
    std::map<typename Triangulation::Cell_handle,
             typename LCC::Dart_handle >* avol_to_dart=NULL)
   {
