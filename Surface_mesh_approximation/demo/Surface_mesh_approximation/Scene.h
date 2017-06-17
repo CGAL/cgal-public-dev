@@ -46,6 +46,10 @@ public:
     m_view_anchors = !m_view_anchors;
   }
 
+  void toggle_view_approximation() {
+    m_view_approximation = !m_view_approximation;
+  }
+
   void draw();
 
 private:
@@ -59,6 +63,7 @@ private:
   void render_segment_boundary();
   void render_anchors();
   void render_borders();
+  void render_approximation(const double);
 
 private:
   // member data
@@ -72,6 +77,7 @@ private:
 
   std::vector<Anchor> m_anchors; // the anchors
   std::vector<std::vector<std::size_t> > m_bdrs; // anchor borders
+  std::vector<int> m_tris;
 
   std::size_t m_px_num;
 
@@ -79,6 +85,7 @@ private:
   bool m_view_wireframe;
   bool m_view_seg_boundary;
   bool m_view_anchors;
+  bool m_view_approximation;
 }; // end class Scene
 
 #endif // SCENE_H

@@ -113,7 +113,8 @@ void Scene::VSA_segmentation(const std::size_t num_proxies, const std::size_t nu
   vsa_seg.partition(num_proxies, num_iterations, m_fidx_pmap);
 
   std::cerr << "extract mesh" << std::endl;
-  vsa_seg.extract_mesh(m_fidx_pmap);
+  m_tris.clear();
+  vsa_seg.extract_mesh(m_fidx_pmap, m_tris);
   m_anchors = vsa_seg.collect_anchors();
   m_bdrs = vsa_seg.collect_borders(m_fidx_pmap);
   std::cerr << "#anchors " << m_anchors.size() << std::endl;
@@ -171,6 +172,9 @@ void Scene::draw()
     render_anchors();
     render_borders();
   }
+
+  if (m_view_approximation)
+    render_approximation(1);
 }
 
 void Scene::render_polyhedron()
@@ -291,7 +295,7 @@ void Scene::render_anchors()
 void Scene::render_borders()
 {
   ::glDisable(GL_LIGHTING);
-  ::glLineWidth(1.0f);
+  ::glLineWidth(3.0f);
   ::glColor3ub(255, 0, 0);
   for (std::vector<std::vector<std::size_t> >::iterator bitr = m_bdrs.begin(); bitr != m_bdrs.end(); ++bitr) {
     ::glBegin(GL_LINE_LOOP);
@@ -301,4 +305,35 @@ void Scene::render_borders()
     }
     ::glEnd();
   }
+}
+
+void Scene::render_approximation(const double offset)
+{
+  ::glEnable(GL_LIGHTING);
+  ::glPolygonOffset(3.0, 1.0);
+  ::glLineWidth(1.0f);
+  ::glColor3ub(0, 255, 0);
+  for (std::vector<int>::iterator vitr = m_tris.begin(); vitr != m_tris.end(); vitr += 3) {
+    ::glBegin(GL_LINE_LOOP);
+    const Point &p0 = m_anchors[*vitr].pos;
+    ::glVertex3d(offset + p0.x(), p0.y(), p0.z());
+    const Point &p1 = m_anchors[*(vitr + 1)].pos;
+    ::glVertex3d(offset + p1.x(), p1.y(), p1.z());
+    const Point &p2 = m_anchors[*(vitr + 2)].pos;
+    ::glVertex3d(offset + p2.x(), p2.y(), p2.z());
+    ::glEnd();
+  }
+
+  ::glColor3ub(100, 100, 100);
+  // ::glPolygonMode(GL_FRONT, GL_FILL);
+  ::glBegin(GL_TRIANGLES);
+  for (std::vector<int>::iterator vitr = m_tris.begin(); vitr != m_tris.end(); vitr += 3) {
+    const Point &p0 = m_anchors[*vitr].pos;
+    ::glVertex3d(offset + p0.x(), p0.y(), p0.z());
+    const Point &p1 = m_anchors[*(vitr + 1)].pos;
+    ::glVertex3d(offset + p1.x(), p1.y(), p1.z());
+    const Point &p2 = m_anchors[*(vitr + 2)].pos;
+    ::glVertex3d(offset + p2.x(), p2.y(), p2.z());
+  }
+  ::glEnd();
 }

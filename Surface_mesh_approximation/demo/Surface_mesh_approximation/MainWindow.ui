@@ -55,6 +55,7 @@
     <addaction name="actionView_wireframe"/>
     <addaction name="actionView_segboundary"/>
     <addaction name="actionView_anchors"/>
+    <addaction name="actionView_approximation"/>
    </widget>
    <widget class="QMenu" name="menuAlgorithms">
     <property name="title">
@@ -79,9 +80,6 @@
    <property name="text">
     <string>&amp;Quit</string>
    </property>
-   <property name="shortcut">
-    <string>Ctrl+Q</string>
-   </property>
   </action>
   <action name="actionLoadPolyhedron">
    <property name="text">
@@ -94,9 +92,6 @@
    </property>
    <property name="toolTip">
     <string>Render wireframe</string>
-   </property>
-   <property name="shortcut">
-    <string>Ctrl+W</string>
    </property>
   </action>
   <action name="actionSave_snapshot">
@@ -127,6 +122,11 @@
   <action name="actionView_anchors">
    <property name="text">
     <string>Anchors</string>
+   </property>
+  </action>
+  <action name="actionView_approximation">
+   <property name="text">
+    <string>Approximation</string>
    </property>
   </action>
  </widget>

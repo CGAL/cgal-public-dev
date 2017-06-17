@@ -52,6 +52,7 @@ protected slots:
   void on_actionView_wireframe_triggered();
   void on_actionView_segboundary_triggered();
   void on_actionView_anchors_triggered();
+  void on_actionView_approximation_triggered();
 
 private:
   Scene* m_pScene;

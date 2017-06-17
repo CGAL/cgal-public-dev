@@ -208,3 +208,9 @@ void MainWindow::on_actionView_anchors_triggered()
   m_pScene->toggle_view_anchors();
   m_pViewer->update();
 }
+
+void MainWindow::on_actionView_approximation_triggered()
+{
+  m_pScene->toggle_view_approximation();
+  m_pViewer->update();
+}
