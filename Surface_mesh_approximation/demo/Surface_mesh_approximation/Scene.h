@@ -61,8 +61,8 @@ private:
   void render_polyhedron();
   void render_wireframe();
   void render_segment_boundary();
-  void render_anchors();
-  void render_borders();
+  void render_anchors(const double offset = 0);
+  void render_borders(const double offset = 0);
   void render_approximation(const double);
 
 private:
