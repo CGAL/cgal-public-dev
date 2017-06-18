@@ -312,8 +312,8 @@ void Scene::render_borders(const double offset)
 
 void Scene::render_approximation(const double offset)
 {
-  // ::glEnable(GL_LIGHTING);
-  ::glDisable(GL_LIGHTING);
+  ::glEnable(GL_LIGHTING);
+  // ::glDisable(GL_LIGHTING);
   ::glPolygonOffset(3.0, 1.0);
   ::glLineWidth(1.0f);
   ::glColor3ub(0, 0, 255);
@@ -339,7 +339,7 @@ void Scene::render_approximation(const double offset)
     const Point &p2 = m_anchors[*(vitr + 2)].pos;
     ::glVertex3d(offset + p2.x(), p2.y(), p2.z());
     Vector n = CGAL::unit_normal(p0, p1, p2);
-    // ::glNormal3d(n.x(), n.y(), n.z());
+    ::glNormal3d(n.x(), n.y(), n.z());
   }
   ::glEnd();
 }
