@@ -4,20 +4,23 @@
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/Aff_transformation_3.h>
 #include <CGAL/Vector_3.h>
-
-typedef CGAL::Exact_predicates_inexact_constructions_kernel K; 
-typedef CGAL::Linear_cell_complex_for_generalized_map<3>    LCC_3;
-typedef LCC_3::Dart_handle                                  Dart_handle;
-typedef LCC_3::Dart_const_handle                            Dart_const_handle;
-typedef CGAL::Vector_3<K>                                   Vector_3;
-typedef CGAL::Direction_3<K>                                Direction;
-typedef CGAL::Aff_transformation_3<K>                       Aff_transformation;
-typedef LCC_3::Point                                        Point;
-
+#include"typedefs.h"
+#include"func.h"
 void truncate_precision(LCC_3 &lcc){
-  for(LCC_3::Vertex_attribute_const_range::iterator v=lcc.vertex_attributes().begin(), vend=lcc.vertex_attributes().end(); v!=vend; ++v)
-    std::cout << lcc.point_of_vertex_attribute(v) << "; ";
-  std::cout<<std::endl;
+  double max = std::numeric_limits<double>::min();
+  for(LCC_3::Vertex_attribute_const_range::iterator v=lcc.vertex_attributes().begin(), vend=lcc.vertex_attributes().end(); v!=vend; ++v){
+    Point p = lcc.point_of_vertex_attribute(v);
+    max = std::max(max, std::abs(p[0])); max = std::max(max, std::abs(p[1])); max = std::max(max, std::abs(p[2]));
+    //std::cout << lcc.point_of_vertex_attribute(v) << std::endl;
+    //std::cout << max << std::endl;
+    Dart_handle dh = lcc.create_dart(v);
+     std::cout<<lcc.point(dh)<<std::endl;
+    //(lcc.point(dh))[0] = 1000;
+    std::cout<<lcc.point(dh)<<std::endl<<lcc.point(lcc.alpha(dh,1))<<std::endl<<std::endl;
+  }
+  double delta = std::pow(2, std::ceil(std::log(max)/std::log(2)));
+  std::cout<<"Delta: "<<delta<<std::endl;
+   
 
 
 }
@@ -63,7 +66,7 @@ int calculate_edge_valence(const LCC_3& lcc, Dart_const_handle dh){
       Dart_const_handle dh1= it;
       //Dart_handle dh2 = lcc.alpha(dh1, 2);
       double newangle = findangle(lcc, dh1);
-      if(HexEx::calculate_cell_type(lcc, dh) == -1)
+      if(calculate_cell_type(lcc, dh) == -1)
         angle -= newangle;
       else angle += newangle;
     }
@@ -89,7 +92,7 @@ bool is_face_degenerate(const LCC_3 &lcc, LCC_3::Dart_const_handle dh){
 
 }
 */
-
+/*
 Half_face_and_transition find_HFAT(const LCC_3 &lcc, Dart_handle dh, std::vector<Half_face_and_transition> all_faces_with_transitions){
   for(std::vector<Half_face_and_transition>::iterator it = all_faces_with_transitions.begin(), itend = all_faces_with_transitions.end(); it != itend; it++){
     if(dh == (*it).dart_handle) return (*it);
@@ -110,10 +113,10 @@ Aff_transformation transition(const LCC_3 &lcc, Dart_handle dh, Aff_transformati
 
 
 
-bool is_edge_singular(HexEx::HexExtr& h, Dart_handle dh){
+bool is_edge_singular(HexExtr& h, Dart_handle dh){
   const LCC_3 &lcc = h.input_tet_mesh;
   if(is_edge_on_boundary_face(lcc, dh)){
-    if(HexEx::calculate_cell_type(lcc, dh) == 0){ //degenerate cell 
+    if(calculate_cell_type(lcc, dh) == 0){ //degenerate cell 
       return true;
     }///TODO: check!!!
   Aff_transformation tran(1, 0, 0, 0, 1, 0, 0, 0, 1, 1);
@@ -128,7 +131,7 @@ bool is_edge_singular(HexEx::HexExtr& h, Dart_handle dh){
   return (!(tran.m(0,0)==1 && tran.m(0,1)==0 && tran.m(0,2)==0 && tran.m(0,3)==0 && tran.m(1,0)==0 && tran.m(1,1)==1 && tran.m(1,2)==0 && tran.m(1,3)==0 && tran.m(2,0)==0 && tran.m(2,1)==0 && tran.m(2,2)==1 && tran.m(2,3)==0 && tran.m(3,0)==0 && tran.m(3,1)==0 && tran.m(3,2)==0 && tran.m(3,3)==1));
 }  
    
-/*
+** start comment
     Dart_handle boundary_dart_handle_1 = dh;
     while(!is_edge_on_boundary_face(lcc, boundary_dart_handle_1)){
       Dart_handle current_dart_handle_for_cell = lcc.alpha(boundary_dart_handle_1, 3);
@@ -173,12 +176,12 @@ bool is_edge_singular(HexEx::HexExtr& h, Dart_handle dh){
 
    }
 
-*/
 
 
+** end comment here
 
 }
-
+*/
 
 
 

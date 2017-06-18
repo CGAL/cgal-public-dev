@@ -10,29 +10,19 @@
 #include <CGAL/Linear_cell_complex_for_generalized_map.h>
 #include <cmath>
 #include<cstdlib>
-typedef CGAL::Exact_predicates_inexact_constructions_kernel K; 
-typedef CGAL::Aff_transformation_3<K>                       Transformation;
-typedef CGAL::Linear_cell_complex_for_generalized_map<3>    LCC_3;
-typedef CGAL::Direction_3<K>                                Direction;
-typedef CGAL::Linear_cell_complex_for_generalized_map<3>    LCC_3;
-typedef LCC_3::Dart_handle                                  Dart_handle;
-typedef LCC_3::Dart_const_handle                            Dart_const_handle;
-typedef LCC_3::Point                                        Point;
-typedef CGAL::Vector_3<K>                                   Vector_3;
-typedef CGAL::Point_3<K>				    Point_3;
-typedef HexEx::Half_face_and_transition                     Half_face_and_transition;
+#include"typedefs.h"
 
-namespace HexEx{
-  Half_face_and_transition extract_transition_function(LCC_3::Dart &d, const LCC_3& lcc,
-                                                       const std::vector<Transformation>& G){
+//namespace HexEx{
+Aff_transformation extract_transition_function(Dart_handle dh, const LCC_3& lcc,
+                                                       const std::vector<Aff_transformation>& G){
 
   //void operator()(LCC_3::Dart& d){
-    Dart_const_handle dh1 = lcc.dart_handle(d);
+    Dart_const_handle dh1 = dh;
     Dart_const_handle dh2 = lcc.alpha(dh1,3);
-    Transformation id(1,0,0,0,1,0,0,0,1,1);
+    Aff_transformation id(1,0,0,0,1,0,0,0,1,1);
     if(dh2 == NULL){//boundary
-      Half_face_and_transition hfat(dh1, id);
-      return hfat;
+      //Half_face_and_transition hfat(dh1, id);
+      return id;
     }
     else{    
       //if(!(lcc.is_marked(dh1, m))){	
@@ -46,7 +36,7 @@ namespace HexEx{
           face2.push_back(lcc.point(it));
         }
         if(face1[0] == face2[0] && face1[1] == face2[1] && face1[2] == face2[2]){// transition function is identity.
-          return Half_face_and_transition(dh1, id);
+          return id;
         }
         Vector_3 c1 = face1[1] - face1[0];
         Vector_3 d1 = face1[2] - face1[1];
@@ -68,12 +58,12 @@ namespace HexEx{
          Vector_3 t(std::round((face2[0])[0] - new_point[0]), std::round((face2[0])[1] - new_point[1]), std::round((face2[0])[2] - new_point[2])); //rounding to integer translation
 
        //Adding translation to the transformation matrix.
-         Transformation final_transform_for_dh1(G[min_trans_index].m(0,0), G[min_trans_index].m(0,1), G[min_trans_index].m(0,2), t[0], G[min_trans_index].m(1,0), G[min_trans_index].m(1,1), G[min_trans_index].m(1,2), t[1], G[min_trans_index].m(2,0), G[min_trans_index].m(2,1), G[min_trans_index].m(2,2), t[2], 1);
+         Aff_transformation final_transform_for_dh1(G[min_trans_index].m(0,0), G[min_trans_index].m(0,1), G[min_trans_index].m(0,2), t[0], G[min_trans_index].m(1,0), G[min_trans_index].m(1,1), G[min_trans_index].m(1,2), t[1], G[min_trans_index].m(2,0), G[min_trans_index].m(2,1), G[min_trans_index].m(2,2), t[2], 1);
       // Transformation final_transform_for_dh2 = final_transform_for_dh1.inverse();
 //Need to store these
-         Half_face_and_transition hfat1(dh1, final_transform_for_dh1);// hfat2 = Half_face_and_transition(dh2, final_transition_dh2);
+        // Half_face_and_transition hfat1(dh1, final_transform_for_dh1);// hfat2 = Half_face_and_transition(dh2, final_transition_dh2);
 //         all_faces_with_transition.push_back(hfat1); //all_faces_with_transition.push_back(hfat2);
-       return hfat1;
+       return final_transform_for_dh1;
         
       //} 
     }
@@ -95,6 +85,6 @@ int calculate_cell_type(const LCC_3& lcc, Dart_const_handle dh){
 }
 
 
-}
+//}
 #endif
 
