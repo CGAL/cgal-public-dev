@@ -52,8 +52,10 @@
     <property name="title">
      <string>&amp;View</string>
     </property>
+    <addaction name="actionView_polyhedron"/>
     <addaction name="actionView_wireframe"/>
     <addaction name="actionView_segboundary"/>
+    <addaction name="separator"/>
     <addaction name="actionView_anchors"/>
     <addaction name="actionView_approximation"/>
    </widget>
@@ -127,6 +129,11 @@
   <action name="actionView_approximation">
    <property name="text">
     <string>Approximation</string>
+   </property>
+  </action>
+  <action name="actionView_polyhedron">
+   <property name="text">
+    <string>Polyhedron</string>
    </property>
   </action>
  </widget>

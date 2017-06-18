@@ -34,6 +34,10 @@ public:
   void VSA_incremental(const std::size_t num_proxies, const std::size_t num_iterations);
 
   // toggle view options
+  void toggle_view_polyhedron() {
+    m_view_polyhedron = !m_view_polyhedron;
+  }
+
   void toggle_view_wireframe() {
     m_view_wireframe = !m_view_wireframe;
   }
@@ -61,9 +65,9 @@ private:
   void render_polyhedron();
   void render_wireframe();
   void render_segment_boundary();
-  void render_anchors(const double offset = 0);
-  void render_borders(const double offset = 0);
-  void render_approximation(const double);
+  void render_anchors();
+  void render_borders();
+  void render_approximation();
 
 private:
   // member data
@@ -82,6 +86,7 @@ private:
   std::size_t m_px_num;
 
   // view options
+  bool m_view_polyhedron;
   bool m_view_wireframe;
   bool m_view_seg_boundary;
   bool m_view_anchors;

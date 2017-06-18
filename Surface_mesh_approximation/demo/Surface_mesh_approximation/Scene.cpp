@@ -22,6 +22,7 @@ Scene::Scene() :
   m_pPolyhedron = NULL;
 
   // view options
+  m_view_polyhedron = false;
   m_view_wireframe = false;
   m_view_seg_boundary = false;
   m_view_anchors = false;
@@ -87,6 +88,7 @@ int Scene::open(QString filename)
 
     return -1;
   }
+  m_view_polyhedron = true;
 
   QApplication::restoreOverrideCursor();
   return 0;
@@ -155,12 +157,14 @@ void Scene::VSA_incremental(const std::size_t num_proxies, const std::size_t num
 
 void Scene::draw()
 {
-  if(m_view_wireframe || m_view_seg_boundary) {
-    ::glEnable(GL_POLYGON_OFFSET_FILL);
-    ::glPolygonOffset(3.0f, 1.0f);
+  if (m_view_polyhedron) {
+    if(m_view_wireframe || m_view_seg_boundary) {
+      ::glEnable(GL_POLYGON_OFFSET_FILL);
+      ::glPolygonOffset(3.0f, 1.0f);
+    }
+    ::glEnable(GL_LIGHTING);
+    render_polyhedron();
   }
-  ::glEnable(GL_LIGHTING);
-  render_polyhedron();
 
   if(m_view_wireframe)
     render_wireframe();
@@ -173,11 +177,8 @@ void Scene::draw()
     render_borders();
   }
 
-  if (m_view_approximation) {
-    render_anchors(1.5);
-    render_borders(1.5);
-    render_approximation(1.5);
-  }
+  if (m_view_approximation)
+    render_approximation();
 }
 
 void Scene::render_polyhedron()
@@ -262,7 +263,7 @@ void Scene::render_segment_boundary()
   ::glEnd();
 }
 
-void Scene::render_anchors(const double offset)
+void Scene::render_anchors()
 {
   ::glDisable(GL_LIGHTING);
   ::glColor3ub(0, 0, 0);
@@ -270,7 +271,7 @@ void Scene::render_anchors(const double offset)
   ::glBegin(GL_POINTS);
   for (std::vector<Anchor>::iterator vitr = m_anchors.begin(); vitr != m_anchors.end(); ++vitr) {
     const Point &pt = vitr->pos;
-    ::glVertex3d(pt.x() + offset, pt.y(), pt.z());
+    ::glVertex3d(pt.x(), pt.y(), pt.z());
   }
   ::glEnd();
 
@@ -279,7 +280,7 @@ void Scene::render_anchors(const double offset)
   ::glBegin(GL_POINTS);
   for (std::vector<Anchor>::iterator vitr = m_anchors.begin(); vitr != m_anchors.end(); ++vitr) {
     const Point &pt = vitr->vtx->point();
-    ::glVertex3d(pt.x() + offset, pt.y(), pt.z());
+    ::glVertex3d(pt.x(), pt.y(), pt.z());
   }
   ::glEnd();
 
@@ -288,14 +289,14 @@ void Scene::render_anchors(const double offset)
   ::glBegin(GL_LINES);
   for (std::vector<Anchor>::iterator vitr = m_anchors.begin(); vitr != m_anchors.end(); ++vitr) {
     const Point &ps = vitr->vtx->point();
-    ::glVertex3d(ps.x() + offset, ps.y(), ps.z());
+    ::glVertex3d(ps.x(), ps.y(), ps.z());
     const Point &pt = vitr->pos;
-    ::glVertex3d(pt.x() + offset, pt.y(), pt.z());
+    ::glVertex3d(pt.x(), pt.y(), pt.z());
   }
   ::glEnd();
 }
 
-void Scene::render_borders(const double offset)
+void Scene::render_borders()
 {
   ::glDisable(GL_LIGHTING);
   ::glLineWidth(3.0f);
@@ -304,13 +305,13 @@ void Scene::render_borders(const double offset)
     ::glBegin(GL_LINE_LOOP);
     for (std::vector<std::size_t>::iterator aitr = bitr->begin(); aitr != bitr->end(); ++aitr) {
       const Point &pt = m_anchors[*aitr].pos;
-      ::glVertex3d(pt.x() + offset, pt.y(), pt.z());
+      ::glVertex3d(pt.x(), pt.y(), pt.z());
     }
     ::glEnd();
   }
 }
 
-void Scene::render_approximation(const double offset)
+void Scene::render_approximation()
 {
   ::glEnable(GL_LIGHTING);
   // ::glDisable(GL_LIGHTING);
@@ -320,11 +321,11 @@ void Scene::render_approximation(const double offset)
   for (std::vector<int>::iterator vitr = m_tris.begin(); vitr != m_tris.end(); vitr += 3) {
     ::glBegin(GL_LINE_LOOP);
     const Point &p0 = m_anchors[*vitr].pos;
-    ::glVertex3d(offset + p0.x(), p0.y(), p0.z());
+    ::glVertex3d(p0.x(), p0.y(), p0.z());
     const Point &p1 = m_anchors[*(vitr + 1)].pos;
-    ::glVertex3d(offset + p1.x(), p1.y(), p1.z());
+    ::glVertex3d(p1.x(), p1.y(), p1.z());
     const Point &p2 = m_anchors[*(vitr + 2)].pos;
-    ::glVertex3d(offset + p2.x(), p2.y(), p2.z());
+    ::glVertex3d(p2.x(), p2.y(), p2.z());
     ::glEnd();
   }
 
@@ -333,11 +334,11 @@ void Scene::render_approximation(const double offset)
   ::glBegin(GL_TRIANGLES);
   for (std::vector<int>::iterator vitr = m_tris.begin(); vitr != m_tris.end(); vitr += 3) {
     const Point &p0 = m_anchors[*vitr].pos;
-    ::glVertex3d(offset + p0.x(), p0.y(), p0.z());
+    ::glVertex3d(p0.x(), p0.y(), p0.z());
     const Point &p1 = m_anchors[*(vitr + 1)].pos;
-    ::glVertex3d(offset + p1.x(), p1.y(), p1.z());
+    ::glVertex3d(p1.x(), p1.y(), p1.z());
     const Point &p2 = m_anchors[*(vitr + 2)].pos;
-    ::glVertex3d(offset + p2.x(), p2.y(), p2.z());
+    ::glVertex3d(p2.x(), p2.y(), p2.z());
     Vector n = CGAL::unit_normal(p0, p1, p2);
     ::glNormal3d(n.x(), n.y(), n.z());
   }

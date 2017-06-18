@@ -49,6 +49,7 @@ protected slots:
   void on_actionVSA_incremental_triggered();
 
   // view menu
+  void on_actionView_polyhedron_triggered();
   void on_actionView_wireframe_triggered();
   void on_actionView_segboundary_triggered();
   void on_actionView_anchors_triggered();

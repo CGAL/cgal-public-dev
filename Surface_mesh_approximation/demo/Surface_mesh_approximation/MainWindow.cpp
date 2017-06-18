@@ -191,6 +191,12 @@ void MainWindow::on_actionVSA_incremental_triggered()
   }
 }
 
+void MainWindow::on_actionView_polyhedron_triggered()
+{
+  m_pScene->toggle_view_polyhedron();
+  m_pViewer->update();
+}
+
 void MainWindow::on_actionView_wireframe_triggered()
 {
   m_pScene->toggle_view_wireframe();
