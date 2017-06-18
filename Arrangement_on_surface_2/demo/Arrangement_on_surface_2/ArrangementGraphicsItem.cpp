@@ -83,7 +83,7 @@ void ArrangementGraphicsItem< Arr_, ArrTraits >::
 paint(QPainter* painter, TTraits /* traits */)
 {
   std::cout<<"In paint ArrTraits"<<std::endl;
-  // this->paintFaces( painter );
+
   painter->setPen( this->verticesPen );
 
   this->painterostream =
@@ -108,7 +108,6 @@ paint(QPainter* painter, TTraits /* traits */)
         it != this->arr->edges_end( ); ++it )
   {
     X_monotone_curve_2 curve = it->curve( );
-
 
     Bbox_2 bbox = curve.bbox();
     std::cout<<"Curve bounding box\n";

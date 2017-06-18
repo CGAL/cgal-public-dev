@@ -409,7 +409,9 @@ operator<<( const X_monotone_curve_2& curve )
 
     // QPainter *ppnt = this->qp;
     QGraphicsView* view = this->scene->views( ).first( );
-    // int height = view->height();
+    int height = view->height();
+    int width = view->width();
+
     // std::cerr << ws.width() << " and " <<  ws.height() << "\n";
     typename std::list<Coord_vec_2>::const_iterator lit = points.begin();
     //ppnt->moveTo((*p1).first, height - (*p1).second);
@@ -432,7 +434,7 @@ operator<<( const X_monotone_curve_2& curve )
       lit++;
 #endif
       QPainterPath path;
-      QPoint coord( vit->first, vit->second );
+      QPoint coord( vit->first, height - vit->second );
       QPointF qpt = view->mapToScene( coord );
       if ( vit != vec.end() )
       {
@@ -442,7 +444,7 @@ operator<<( const X_monotone_curve_2& curve )
       {
         path.lineTo( qpt );
         vit++;
-        coord = QPoint( vit->first, vit->second );
+        coord = QPoint( vit->first, height - vit->second );
         qpt = view->mapToScene( coord );
         //std::cout << vit->first << " " << vit->second << std::endl;
       }
@@ -484,8 +486,11 @@ operator<<( const Point_2& p )
     else
     {
       //std::cout << coord.first << " " << coord.second << std::endl;
-      QPoint coords( coord.first, coord.second );
       QGraphicsView* view = this->scene->views( ).first( );
+      int height = view->height();
+      int width = view->width();
+
+      QPoint coords( coord.first, height - coord.second );
       QPointF qpt = view->mapToScene( coords );
       QPen savePen = this->qp->pen( );
       this->qp->setBrush( QBrush( savePen.color( ) ) );
@@ -505,6 +510,19 @@ operator<<( const Point_2& p )
     ppnt->setPen(old_pen);
 #endif
     return *this;
+}
+template < typename Coefficient_ >
+void
+ArrangementPainterOstream< CGAL::Arr_algebraic_segment_traits_2<Coefficient_ > >::
+setupFacade( )
+{
+  std::cout<<"In setupFacade\n";
+  typedef Curve_renderer_facade<CKvA_2> Facade;
+  QGraphicsView* view = this->scene->views( ).first( );
+  QRectF viewport = this->viewportRect( );
+  CGAL::Bbox_2 bbox = this->convert( viewport ).bbox( );
+  Facade::setup(bbox, view->width(), view->height());
+  std::cout<<"Leaving setupFacade\n";
 }
 
 } // namespace Qt

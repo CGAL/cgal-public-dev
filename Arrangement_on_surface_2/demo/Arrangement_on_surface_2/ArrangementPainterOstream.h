@@ -601,16 +601,8 @@ public: // methods
   }
 
 protected:
-  void setupFacade( )
-  {
-    std::cout<<"In setupFacade\n";
-    typedef Curve_renderer_facade<CKvA_2> Facade;
-    QGraphicsView* view = this->scene->views( ).first( );
-    QRectF viewport = this->viewportRect( );
-    CGAL::Bbox_2 bbox = this->convert( viewport ).bbox( );
-    Facade::setup(bbox, view->width(), view->height());
-    std::cout<<"Leaving setupFacade\n";
-  }
+  void setupFacade( );
+  
 };
 
 } // namespace Qt
