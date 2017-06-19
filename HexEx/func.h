@@ -12,29 +12,40 @@
 #include<cstdlib>
 #include"typedefs.h"
 
-//namespace HexEx{
-Aff_transformation extract_transition_function(Dart_handle dh, const LCC_3& lcc,
-                                                       const std::vector<Aff_transformation>& G){
 
-  //void operator()(LCC_3::Dart& d){
-    Dart_const_handle dh1 = dh;
-    Dart_const_handle dh2 = lcc.alpha(dh1,3);
+void print_aff_transformation(Aff_transformation T){
+  for(int i=0; i<4; i++){
+    for(int j = 0; j<4; j++)
+      std::cout<<T.m(i,j)<<" ";
+    std::cout<<std::endl; 
+    }
+  std::cout<<std::endl;
+  return;
+}
+
+//namespace HexEx{
+Aff_transformation extract_transition_function(Dart_handle dh, const LCC_3& lcc, 
+const std::vector<Aff_transformation>& G){
     Aff_transformation id(1,0,0,0,1,0,0,0,1,1);
-    if(dh2 == NULL){//boundary
-      //Half_face_and_transition hfat(dh1, id);
+    if(lcc.is_free(dh, 3)){//boundary
+      //std::cout<<"Boundary!"<<std::endl;
       return id;
     }
     else{    
-      //if(!(lcc.is_marked(dh1, m))){	
-        std::vector<Point> face1, face2;
-        for (LCC_3::Dart_of_cell_range<2>::const_iterator it((lcc.darts_of_cell<2>(dh1)).begin()), itend((lcc.darts_of_cell<2>(dh1)).end()); it!=itend; ++it){
-          //lcc.mark(it, m);
-          face1.push_back(lcc.point(it));
-        }
-        for (LCC_3::Dart_of_cell_range<2>::const_iterator it((lcc.darts_of_cell<2>(dh2)).begin()), itend((lcc.darts_of_cell<2>(dh2)).end()); it!=itend; ++it){
-          //lcc.mark(it, m);
-          face2.push_back(lcc.point(it));
-        }
+
+        Dart_const_handle dh1 = dh;
+        Dart_const_handle dh2 = lcc.alpha(dh1,3,0);
+    	std::vector<Point> face1, face2;
+        int i=0;
+        face1.push_back(lcc.point(dh1));
+        face1.push_back(lcc.point(lcc.alpha(dh1,1,0)));
+        face1.push_back(lcc.point(lcc.alpha(dh1,1,0,1,0)));
+
+        face2.push_back(lcc.point(dh2));
+        face2.push_back(lcc.point(lcc.alpha(dh2,1,0)));
+        face2.push_back(lcc.point(lcc.alpha(dh2,1,0,1,0)));
+ std::cout<<face1[0]<<" "<<face1[1]<<" "<<face1[2]<<std::endl;
+ std::cout<<face2[0]<<" "<<face2[1]<<" "<<face2[2]<<std::endl;
         if(face1[0] == face2[0] && face1[1] == face2[1] && face1[2] == face2[2]){// transition function is identity.
           return id;
         }
@@ -55,17 +66,13 @@ Aff_transformation extract_transition_function(Dart_handle dh, const LCC_3& lcc,
                 }
          }
          Point new_point = G[min_trans_index].transform(face1[0]);
-         Vector_3 t(std::round((face2[0])[0] - new_point[0]), std::round((face2[0])[1] - new_point[1]), std::round((face2[0])[2] - new_point[2])); //rounding to integer translation
-
+        // Vector_3 t(std::round((face2[0])[0] - new_point[0]), std::round((face2[0])[1] - new_point[1]), std::round((face2[0])[2] - new_point[2])); //rounding to integer translation
+          Vector_3 t((face2[0])[0] - new_point[0], (face2[0])[1] - new_point[1], (face2[0])[2] - new_point[2]);
        //Adding translation to the transformation matrix.
          Aff_transformation final_transform_for_dh1(G[min_trans_index].m(0,0), G[min_trans_index].m(0,1), G[min_trans_index].m(0,2), t[0], G[min_trans_index].m(1,0), G[min_trans_index].m(1,1), G[min_trans_index].m(1,2), t[1], G[min_trans_index].m(2,0), G[min_trans_index].m(2,1), G[min_trans_index].m(2,2), t[2], 1);
-      // Transformation final_transform_for_dh2 = final_transform_for_dh1.inverse();
-//Need to store these
-        // Half_face_and_transition hfat1(dh1, final_transform_for_dh1);// hfat2 = Half_face_and_transition(dh2, final_transition_dh2);
-//         all_faces_with_transition.push_back(hfat1); //all_faces_with_transition.push_back(hfat2);
+     
        return final_transform_for_dh1;
-        
-      //} 
+
     }
   }
 

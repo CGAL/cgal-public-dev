@@ -5,17 +5,14 @@
 #include"triangulation_to_LCC.h"
 #include<unordered_map>
 #include"func.h"
-
+#include<vector>
 namespace std{
-
-  template <>
-  struct hash<Face_handle>
-  {
-    std::size_t operator()(const Face_handle& fh) const
-      {return (fh.enumeration)%1000;} 
-    
+  template<>
+  struct hash<Face_handle>{
+    std::size_t operator()(const Face_handle& fh) const{
+      return (fh.enumeration)%1000;
+    } 
   };
-
 }
 
 
@@ -34,12 +31,14 @@ class HexExtr{
         for(int j = 0;j < 6;j++) 
           for(int k = 0;k < 6;k++) 
             if(CGAL::cross_product(directions[i].vector(),directions[j].vector()) == directions[k].vector()) 
-              G.push_back(Aff_transformation(directions[i].dx(), directions[i].dy(), directions[i].dz(), directions[j].dx(), directions[j].dy(), directions[j].dz(), directions[k].dx(), directions[k].dy(), directions[k].dz(), 1));
+              G.push_back(Aff_transformation(directions[i].dx(), directions[j].dx(),  directions[k].dx(),directions[i].dy(), directions[j].dy(), directions[k].dy(), directions[i].dz(), directions[j].dz(), directions[k].dz(), 1));
       int i = 1;
-      for(LCC_3::One_dart_per_cell_range<3>::iterator it = input_tet_mesh.one_dart_per_cell<3>().begin(),
-            itend = input_tet_mesh.one_dart_per_cell<3>().end(); it != itend; it++){
-         Face_handle fh(this->input_tet_mesh, it, i);
+      for(LCC_3::One_dart_per_cell_range<3>::iterator it = input_tet_mesh.one_dart_per_cell<3>().begin(), 
+itend = input_tet_mesh.one_dart_per_cell<3>().end(); it != itend; it++){
+         Face_handle fh(this->input_tet_mesh, it, i); i++;
          Aff_transformation at = extract_transition_function(it, input_tet_mesh, G);
+         std::cout<<i<<std::endl;
+         print_aff_transformation(at);
          faces_with_transitions.emplace(fh, at);
 		
       }
