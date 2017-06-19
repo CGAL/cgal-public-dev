@@ -77,7 +77,7 @@ const std::vector<Aff_transformation>& G){
   }
 
 int calculate_cell_type(const LCC_3& lcc, Dart_const_handle dh){
-  std::vector<Point> P;// = lcc.point(dh);
+  std::vector<Point> P;
   for(int i=0;i<3;i++){
     P.push_back(lcc.point(dh));
     dh = lcc.alpha(dh, 0, 1);

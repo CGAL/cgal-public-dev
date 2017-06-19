@@ -3,7 +3,11 @@
 
 #include"typedefs.h"
 #include<vector>
+#include<unordered_map>
+#include<map>
+//#include"hexextr.h"
 
+//class HexExtr;
 class Vertex_handle{
   public:
       Vertex_handle(LCC_3 &lcc, Dart_handle &dh, int e){
@@ -36,12 +40,15 @@ class Edge_handle{
 
 class Face_handle{
   public:
-    Face_handle(LCC_3& lcc, Dart_handle& dh, int i){
-      //LCC_3 lcc = he.input_tet_mesh;
+    Face_handle(LCC_3 &lcc, Dart_handle& dh, int i, std::map<Dart_handle, Face_handle> &dart_in_face){
+      //LCC_3 lcc = h.input_tet_mesh;
       a_dart = dh;
+      //(h->dart_in_face).emplace(dh, this);
       for(LCC_3::Dart_of_cell_range<3>:: iterator it=lcc.darts_of_cell<3>(dh).begin(), 
 itend=lcc.darts_of_cell<3>(dh).end(); it!=itend; ++it){
+        //Dart_handle d = it;
         incident_darts.push_back(it);
+       // (dart_in_face).emplace(it, this);
       }
       enumeration = i;
     }
@@ -53,6 +60,9 @@ itend=lcc.darts_of_cell<3>(dh).end(); it!=itend; ++it){
       return (enumeration == other.enumeration);
     }
 };
+
+
+
 /*
 class Cell_handle{
 
