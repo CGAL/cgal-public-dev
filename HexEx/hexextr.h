@@ -45,13 +45,15 @@ class HexExtr{
             if(CGAL::cross_product(directions[i].vector(),directions[j].vector()) == directions[k].vector()) 
               G.push_back(Aff_transformation(directions[i].dx(), directions[j].dx(),  directions[k].dx(),directions[i].dy(), directions[j].dy(), directions[k].dy(), directions[i].dz(), directions[j].dz(), directions[k].dz(), 1));
       int i = 1;
-      for(LCC_3::One_dart_per_cell_range<3>::iterator it = input_tet_mesh.one_dart_per_cell<3>().begin(), 
-itend = input_tet_mesh.one_dart_per_cell<3>().end(); it != itend; it++){
-         Face_handle fh( this->input_tet_mesh, it, i, this->dart_in_face); i++;
+      for(LCC_3::One_dart_per_cell_range<2>::iterator it = input_tet_mesh.one_dart_per_cell<2>().begin(), 
+itend = input_tet_mesh.one_dart_per_cell<2>().end(); it != itend; it++){
+         Face_handle fh( this->input_tet_mesh, it, i); i++;
+         dart_in_face.emplace(it, fh);        
          Aff_transformation at = extract_transition_function(it, input_tet_mesh, G);
-         std::cout<<i<<std::endl;
-         print_aff_transformation(at);
+         //std::cout<<i<<std::endl;
+        // print_aff_transformation(at);
          faces_with_transitions.emplace(fh, at);
+         faces.push_back(fh);
 		
       }
 
@@ -60,6 +62,7 @@ itend = input_tet_mesh.one_dart_per_cell<3>().end(); it != itend; it++){
     }
     std::unordered_map<Face_handle, Aff_transformation> faces_with_transitions; //TAKE this as input and make dart_hanld eafce_handle map fromthis info
     std::map<Dart_handle, Face_handle> dart_in_face;
+    std::vector<Face_handle> faces;
     std::vector<Direction> directions;
     Aff_transformation identity;//(1,0,0,0,1,0,0,0,1,1);
     LCC_3 input_tet_mesh;

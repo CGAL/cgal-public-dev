@@ -9,20 +9,35 @@
 #include"func.h"
 #include"handles.h"
 
-void truncate_precision(LCC_3 &lcc){
-  double max = std::numeric_limits<double>::min();
-  for(LCC_3::Vertex_attribute_const_range::iterator v=lcc.vertex_attributes().begin(), vend=lcc.vertex_attributes().end(); v!=vend; ++v){
-    Point p = lcc.point_of_vertex_attribute(v);
-    max = std::max(max, std::abs(p[0])); max = std::max(max, std::abs(p[1])); max = std::max(max, std::abs(p[2]));
-    //std::cout << lcc.point_of_vertex_attribute(v) << std::endl;
-    //std::cout << max << std::endl;
-    Dart_handle dh = lcc.create_dart(v);
-     std::cout<<lcc.point(dh)<<std::endl;
-    //(lcc.point(dh))[0] = 1000;
-    std::cout<<lcc.point(dh)<<std::endl<<lcc.point(lcc.alpha(dh,1))<<std::endl<<std::endl;
+
+void propagate_parameters(LCC_3 &lcc, Parameter p, Vertex_handle v){
+  for(LCC_3::One_dart_per_incident_cell_range<3,0>::iterator c = lcc.one_dart_per_incident_cell<3,0>.begin(), cend = lcc.one_dart_per_incident_cel<3,0>.end(); c!=cend; c++){// for the vertex in each cell
+      //update the parameters
+      Parameter to_prop; // =get_transition_function(c).transform();//parameter transformed to adjacent cell
+      
   }
-  double delta = std::pow(2, std::ceil(std::log(max)/std::log(2)));
-  std::cout<<"Delta: "<<delta<<std::endl;
+}
+
+void truncate_precision(LCC_3 &lcc){
+  
+  for(LCC_3::One_dart_per_incident_cell_range<0,3>::iterator v=lcc.one_dart_per_incident_cell<0,3>.begin(), vend=lcc.one_dart_per_incident_cell<0,3>().end(); v!=vend; ++v){
+    double max = std::numeric_limits<double>::min(); 
+    for(LCC_3::One_dart_per_incident_cell_range<3,0>:::iterator cell = lcc.one_dart_per_incident_cell<3,0>.begin(), cellend = lcc.one_dart_per_incident_cell<3,0>.end(); cell != cellend; cell++){
+      Point p = lcc.point(v); // No, you should look this vertex up in grid map, find the parameters, and use them instead.
+      max = std::max(max, std::abs(p[0])); max = std::max(max, std::abs(p[1])); max = std::max(max, std::abs(p[2]));
+    }
+    double delta = std::pow(2, std::ceil(std::log(max)/std::log(2)));
+    std::cout<<"Delta: "<<delta<<std::endl;
+    
+    for(unsigned int i = 0; i < 3; ++i){
+       int sign = std::signbit(p[i]) ? -1 : 1;
+        volatile double tmp = p[i]+sign*delta;
+        //Now store tmp into parameters // this "sanitizes" the parameters.
+    }
+    // Now we can propagate these parameters
+    //propagate_parameters();  
+  }
+ 
    
 
 
@@ -89,12 +104,14 @@ bool is_face_degenerate(const LCC_3 &lcc, LCC_3::Dart_const_handle dh){
   return CGAL::determinant(p0 - ori,p1 - ori,p2 - ori) == 0;
 
 }
-/*
+
 Face_handle find_face_handle(HexExtr &h, Dart_handle& dh){
-  if((h.dart_in_face).find(dh) != (h.dart_in_face).end()) return h.dart_in_face[dh];
+if((h.dart_in_face).find(dh) != (h.dart_in_face).end()) return  (h.dart_in_face).at(dh); //h.faces[0];
   else{
-    for(std::map<Dart_handle, Face_handle>::iterator it = (h.dart_in_face).begin(), itend = (h.dart_in_face).end(); it!=itend; it++){
-      
+    for(std::vector<Face_handle>::iterator f = (h.faces).begin(), fend = (h.faces).end(); f!=fend; f++){
+      for(std::vector<Dart_handle>::iterator it = (f->incident_darts).begin(), itend = (f->incident_darts).end(); it != itend; it++){
+        if(*it == dh) return (h.dart_in_face).at(f->a_dart);
+      }  
     }
   }
 
@@ -128,7 +145,7 @@ Aff_transformation transition(const LCC_3 &lcc, Dart_handle dh, Aff_transformati
 */
 
 bool is_edge_singular(HexExtr& h, Dart_handle dh){
-  const LCC_3 &lcc = h.input_tet_mesh;
+   LCC_3 &lcc = h.input_tet_mesh;
   if(is_edge_on_boundary_face(lcc, dh)){
     if(calculate_cell_type(lcc, dh) == 0){ //degenerate cell 
       return true;
@@ -140,7 +157,7 @@ bool is_edge_singular(HexExtr& h, Dart_handle dh){
       if(is_face_degenerate(lcc, it)){
         return true;
       }
-      Face_handle fh(h.input_tet_mesh, dh,-1, h.dart_in_face); //find_face_handle(h, it);  //(h.input_tet_mesh, dh,-1, h.dart_in_face);
+      Face_handle fh(h.input_tet_mesh, dh,-1);//= find_face_handle(h, it);
       tran = (h.faces_with_transitions[fh])*tran;  //transition(lcc, dh, tran, h.all_faces_with_transitions);// TODO- DONE?
    }
   return (!(tran.m(0,0)==1 && tran.m(0,1)==0 && tran.m(0,2)==0 && tran.m(0,3)==0 && tran.m(1,0)==0 && tran.m(1,1)==1 && tran.m(1,2)==0 && tran.m(1,3)==0 && tran.m(2,0)==0 && tran.m(2,1)==0 && tran.m(2,2)==1 && tran.m(2,3)==0 && tran.m(3,0)==0 && tran.m(3,1)==0 && tran.m(3,2)==0 && tran.m(3,3)==1));
@@ -196,6 +213,12 @@ bool is_edge_singular(HexExtr& h, Dart_handle dh){
 ** end comment here/
 */
 }
+
+
+sanitize(){
+
+}
+
 
 
 
