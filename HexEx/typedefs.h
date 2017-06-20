@@ -3,6 +3,7 @@
 #include<CGAL/Linear_cell_complex_for_generalized_map.h>
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/Aff_transformation_3.h>
+#include<cassert>
 
 typedef CGAL::Exact_predicates_inexact_constructions_kernel K; 
 typedef CGAL::Linear_cell_complex_for_generalized_map<3>    LCC_3;
