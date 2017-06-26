@@ -143,6 +143,15 @@ ArrangementDemoTabBase* ArrangementDemoWindow::makeTab( TraitsType tt )
   this->updateMode( this->modeGroup->checkedAction( ) );
   this->updateFillColorSwatch( );
 
+  QGraphicsScene *scene = view->scene();
+  QList<QGraphicsItem *>::iterator it = scene->items().begin();
+
+  while (it != scene->items().end())
+  {
+    (*it)->hide();
+    it++;
+  }
+
   return demoTab;
 }
 
