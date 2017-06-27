@@ -28,7 +28,6 @@ Aff_transformation extract_transition_function(Dart_handle dh, const LCC_3& lcc,
 const std::vector<Aff_transformation>& G){
     Aff_transformation id(1,0,0,0,1,0,0,0,1,1);
     if(lcc.is_free(dh, 3)){//boundary
-      //std::cout<<"Boundary!"<<std::endl;
       return id;
     }
     else{    
@@ -67,7 +66,7 @@ const std::vector<Aff_transformation>& G){
          }
          Point new_point = G[min_trans_index].transform(face1[0]);
         // Vector_3 t(std::round((face2[0])[0] - new_point[0]), std::round((face2[0])[1] - new_point[1]), std::round((face2[0])[2] - new_point[2])); //rounding to integer translation
-          Vector_3 t((face2[0])[0] - new_point[0], (face2[0])[1] - new_point[1], (face2[0])[2] - new_point[2]);
+         Vector_3 t((face2[0])[0] - new_point[0], (face2[0])[1] - new_point[1], (face2[0])[2] - new_point[2]);
        //Adding translation to the transformation matrix.
          Aff_transformation final_transform_for_dh1(G[min_trans_index].m(0,0), G[min_trans_index].m(0,1), G[min_trans_index].m(0,2), t[0], G[min_trans_index].m(1,0), G[min_trans_index].m(1,1), G[min_trans_index].m(1,2), t[1], G[min_trans_index].m(2,0), G[min_trans_index].m(2,1), G[min_trans_index].m(2,2), t[2], 1);
      

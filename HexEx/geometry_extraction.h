@@ -2,68 +2,42 @@
 #define GEO_EXTR_H
 #include"typedefs.h"
 #include<vector>
+#include<limits>
 #include"func.h"
 #include"hexextr.h"
 #include"handles.h"
 
 void vertex_extraction(HexExtr &h){
-  //through all vertex handles
-  for(vector<Vertex_handle>::iterator it = (h.vertices).begin(), itend = (h.vertices).end(); it != itend; it++){
-    Vector_3 param;  //using dart_handle find the parameters.
-    if((param[0]-std::round(param[0]) == 0) && (param[1]-std::round(param[1]) == 0) && (param[2]-std::round(param[2]) == 0)){ // this is a h-vertex.
-     
-   }
-  }
-
-  for(vector<Edge_handle>::iterator it = (h.edges).begin(), itend = (h.edges).end(); it != itend; it++){
-    Vector_3 u, v, temp;  //using dart_handle find the parameters of the two end points of the edge.
-    double alpha = 0;
-    while(alpha<=1){
-      //temp1 = u*alpha; temp2 = v*(1-alpha);
-      temp = (u*alpha) + (v*(1-alpha));
-      if((temp[0]-std::round(temp[0]) == 0) && (temp[1]-std::round(temp[1]) == 0) && (temp[2]-std::round(temp[2]) == 0)){ // should it be this exact or do we allow for epsilon?
-      
-      }
-      alpha += 0.0001;// is this okay?
-    }
-     
-  }
- 
-  for(vector<Face_handle>::iterator it = (h.faces).begin(), itend = (h.faces).end(); it != itend; it++){
-    Vector_3 u,v,w, temp;
-    double alpha = 0, beta = 0;
-    while(alpha<=1){
-      while(beta<=1){
-        temp = (u*alpha) + (v*beta) + (w*(1-alpha-beta));
-        if((temp[0]-std::round(temp[0]) == 0) && (temp[1]-std::round(temp[1]) == 0) && (temp[2]-std::round(temp[2]) == 0)){ // should it be this exact or do we allow for epsilon?
-      
-        }
-        beta += 0.001;
-      }
-      alpha += 0.001; 
+  for(LCC_3::One_dart_per_cell<3>::iterator it = ((h.input_tet_mesh).one_dart_per_cell<3>()).begin(), itend = ((h.input_tet_mesh).one_dart_per_cell<3>()).end(); it != itend;it++){
+    double minx = std::numeric_limits<double>::max(), miny = std::numeric_limits<double>::max(), minz = std::numeric_limits<double>::max(); 
+    double maxx = std::numeric_limits<double>::min(), maxy = std::numeric_limits<double>::min(), maxz = std::numeric_limits<double>::min();
+    vector<Point> points;
+    for(LCC_3::One_dart_per_incident_cell_range<0,3>::iterator it1 = (h.input_tet_mesh).one_dart_per_incident_cell<0,3>(it).begin(), it1end = (h.input_tet_mesh).one_dart_per_incident_cell<0,3>(it).end(); it1 != it1end;it1++){
+      Point p = lcc.point(it1);
+      points.push_back(p); //make sure you push the parameterized points.
+      Vector_3 param;// = extract_parameters(p);
+      minx = (param[0]<minx)?param[0]:minx;
+      miny = (param[1]<miny)?param[1]:miny;
+      minz = (param[2]<minz)?param[2]:minz;
+      maxx = (param[0]>maxx)?param[0]:maxx;
+      maxy = (param[1]>maxy)?param[1]:maxy;
+      maxz = (param[2]>maxz)?param[2]:maxz;
     }
 
-  }
-
-  for(vector<Cell_handle>::iterator it = (h.cells).begin(), itend = (h.cells).end(); it != itend; it++){
-    Vector_3 u,v,w,x,temp;
-    double alpha = 0, beta = 0, gamma = 0;
-    while(alpha<=1){
-      while(beta<=1){
-        while(gamma<=1){
-          temp = (u*alpha) + (v*beta) + (w*gamma) + (x*(1-alpha-beta-gamma));
-          if((temp[0]-std::round(temp[0]) == 0) && (temp[1]-std::round(temp[1]) == 0) && (temp[2]-std::round(temp[2]) == 0)){ // should it be this exact or do we allow for epsilon?
-      
+    minx = std::round(minx); miny = std::round(miny); minz = std::round(minz);
+    maxx = std::round(maxx); maxy = std::round(maxy); maxz = std::round(maxz);
+    CGAL::Tetrahedron_3 tet(points[0], points[1], points[2], points[3]);
+   
+    for(double i = minx; i<= maxx; i++){
+      for(double j = miny; j<=maxy; j++){
+        for(double k = minz; k<=maxz; k++){
+          if(tet.has_on_bounded_side(Point_3(i,j,k)) || tet.is_on_boundary(Point_3(i,j,k))){
+           
           }
-          gamma += 0.001;
         }
-        beta += 0.001;
       }
-      alpha += 0.001; 
     }
-
   }
-
-}
+} 
 
 #endif
