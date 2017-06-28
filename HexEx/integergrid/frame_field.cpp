@@ -15,12 +15,20 @@ typedef Svd::Matrix Eigen_matrix;
 using matrix = boost::numeric::ublas::matrix;
 using vect = boost::numeric::ublas::vector;
 
+void sort_vertices(){
+
+}
+
 int find_number_of_boundary_vertices(LCC_3& lcc){
   int count = 0;
   for(LCC_3::One_dart_per_cell_range<0>::iterator it = lcc.one_dart_per_cell<0>().begin(), itend = lcc.one_dart_per_cell<0>().end(); it!= itend; it++){
-    if(is_free(it, 3)) count++;
+    if(lcc.is_free(it, 3)) count++;
   }
   return count;
+}
+
+void closest_frame(){
+
 }
 
 void add_smoothing_terms(HexExtr &h, vector<vector<double>>& A, vector<double>& b){
@@ -28,23 +36,29 @@ void add_smoothing_terms(HexExtr &h, vector<vector<double>>& A, vector<double>& 
 }
 
 void add_local_optim_constraints(HexExtr& h, vector<vector<double>>& a, vector<vector<double>& A, vector<double>& b){
-  Eigen_matrix<double> Ex(9,9), Ey(9,9), Ez(9,9);
+  matrix<double> Ex(9,9), Ey(9,9), Ez(9,9);
   
   for(int i = 0; i<9; i++){
     for(int j = 0; j<9; j++){
       Ex.set(i,j,0);  Ey.set(i,j,0); Ez.set(i,j,0);
     }  
   }
-  Ex.set(0,7, (-1)*sqrt(2)); Ex.set(1,6,(-1)*sqrt(3.5)); Ex.set(2,5, (-1)*sqrt(4.5)); Ex.set(3, 4, (-1)*sqrt(10)); Ex.set(1,8, (-1)*sqrt(2)); Ex.set(2,7, (-1)*sqrt(3.5)); Ex.set(3,6, (-1)*sqrt(4.5)); Ex.set(7,0, sqrt(2)); Ex.set(6,1,sqrt(3.5)); Ex.set(5,2, sqrt(4.5)); Ex.set(4,3,sqrt(10)); Ex.set(8,1, sqrt(2)); Ex.set(7,2, sqrt(3.5)); Ex.set(6,3,sqrt(4.5));
-  Ey.set(0,1,sqrt(2)); Ey.set(1,2, sqrt(3.5)); Ey.set(2,3,sqrt(4.5)); Ey.set(4,5,(-1)*sqrt(10)); Ey.set(5,6,(-1)*sqrt(4.5)); Ey.set(6,7,(-1)*sqrt(3.5)); Ey.set(7,8,(-1)*sqrt(2)); Ey.set(1,0,(-1)*sqrt(2)); Ey.set(2,1, (-1)*sqrt(3.5)); Ey.set(3,2,(-1)*sqrt(4.5)); Ey.set(5,4,sqrt(10)); Ey.set(6,5,sqrt(4.5)); Ey.set(7,6,sqrt(3.5)); Ey.set(8,7,sqrt(2));
-  Ez.set(0,8,4); Ez.set(1,7,3); Ez.set(2,6,2); Ez.set(3,5,1); Ez.set(5,3,-1); Ez.set(6,2,-2); Ez.set(7,1,-3); Ez.set(8,0,-4);
+  Ex(0,7)= (-1)*sqrt(2)); Ex(1,6) = (-1)*sqrt(3.5); Ex(2,5) = (-1)*sqrt(4.5); Ex(3, 4) = (-1)*sqrt(10);
+  Ex(1,8) = (-1)*sqrt(2); Ex(2,7) = (-1)*sqrt(3.5); Ex(3,6) = (-1)*sqrt(4.5); 
+  Ex(7,0) = sqrt(2); Ex(6,1) = sqrt(3.5); Ex(5,2) = sqrt(4.5); Ex(4,3) = sqrt(10)); 
+  Ex(8,1) = sqrt(2); Ex(7,2) = sqrt(3.5); Ex(6,3) = sqrt(4.5);
+  Ey(0,1) = sqrt(2); Ey(1,2) = sqrt(3.5); Ey(2,3) = sqrt(4.5); Ey(4,5) = (-1)*sqrt(10)); 
+  Ey(5,6) = (-1)*sqrt(4.5); Ey(6,7) = (-1)*sqrt(3.5); Ey(7,8) = (-1)*sqrt(2); 
+  Ey(1,0) =(-1)*sqrt(2); Ey(2,1) = (-1)*sqrt(3.5); Ey(3,2) = (-1)*sqrt(4.5); 
+  Ey(5,4) = sqrt(10); Ey(6,5) = sqrt(4.5); Ey(7,6) = sqrt(3.5); Ey(8,7) = sqrt(2);
+  Ez(0,8) = 4; Ez(1,7) = 3; Ez(2,6) = 2; Ez(3,5) = 1; Ez(5,3) = -1; Ez(6,2) = -2; Ez(7,1) = -3; Ez(8,0) = -4;
  
   for(int i = 0; i<nv; i++){
     vect ai(a[i].size());
     for(int j = 0; j<a[i].size();j++) ai[j] = (a[i])[j]; 
-    vect<double> cx = prod(Ex, ai);
-    vect<double> cy = prod(Ey, ai);
-    vect<double> cz = prod(Ez, ai);
+    vect<double> cx = boost::numeric::ublas::prod(Ex, ai);
+    vect<double> cy = boost::numeric::ublas::prod(Ey, ai);
+    vect<double> cz = boost::numeric::ublas::prod(Ez, ai);
     int lambda = 100; //quadratic penalty multiplier
     for(int d = 0; d < 9; d++){
       vector<double> row(9*nv+2*nl+3*nv);
@@ -63,14 +77,14 @@ void add_normal_constraints(HexExtr& h, vector<vector<double>>& A, vector<double
   for(i = 0; i < nl; i++){
     Vector_3 n = estimate_normal(h.input_tet_mesh, vertices[i]);
     find_euler_angles(n);//TODO
-    matrix R = find_rotation_matrix(); //TODO
+    matrix<double> R = find_rotation_matrix(); //TODO
     vect<double> temp(9);
     temp(0) = 1; temp(1) = 0; temp(2) = 0; temp(3) = 0; temp(4) = 0; temp(5) = 0; temp(6) = 0; temp(7) = 0; temp(8) = 0;
-    vect<double> h0 = prod(R, temp);
+    vect<double> h0 = boost::numeric::ublas::prod(R, temp);
     temp(0) = 0; temp(4) = 1;
-    vect<double> h4 = prod(R, temp);
+    vect<double> h4 = boost::numeric::ublas::prod(R, temp);
     temp(4) = 0; temp(8) = 1;
-    vect<double> h8 = prod(R, temp);
+    vect<double> h8 = boost::numeric::ublas::prod(R, temp);
     int lambda = 100; //quadratic penalty multiplier
     for(int d = 0; d < 9; d++){
       vector<double> row(9*nv+2*nl+3*nv);
@@ -79,7 +93,7 @@ void add_normal_constraints(HexExtr& h, vector<vector<double>>& A, vector<double
       row[9*nv + 2*i] = lambda*h0(d);
       row[9*nv + 2*i + 1] = lambda*h8(d);
       A.push_back(row);
-      b.push_back(lambda*sqrt(7.0/12)*h4(d));
+      b.push_back(lambda*sqrt((double)7/12)*h4(d));
     }
   }
 }

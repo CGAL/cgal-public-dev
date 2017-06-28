@@ -56,13 +56,19 @@ itend = input_tet_mesh.one_dart_per_cell<2>().end(); it != itend; it++){
          faces.push_back(fh);
 		
       }
+      int nv = 0;
+      for(LCC_3::One_dart_per_cell_range<0>::iterator it = input_tet_mesh.one_dart_per_cell<0>().begin, itend = input_tet_mesh.one_dart_per_cell<0>().end(); it!=itend; it++){
+        Vertex_handle vh(input_tet_mesh, it, nv, lcc.is_free(it, 3));
+        vertices.push_back(vh);
+      }
 
 //Sanitization 
     
     }
-    std::unordered_map<Face_handle, Aff_transformation> faces_with_transitions; //TAKE this as input and make dart_hanld eafce_handle map fromthis info
+    std::unordered_map<Face_handle, Aff_transformation> faces_with_transitions; //Take this as input and make dart_handle face_handle map fromthis info
     std::map<Dart_handle, Face_handle> dart_in_face;
     std::vector<Face_handle> faces;
+    std::vector<Vertex_handle> vertices;
     std::vector<Direction> directions;
     Aff_transformation identity;//(1,0,0,0,1,0,0,0,1,1);
     LCC_3 input_tet_mesh;

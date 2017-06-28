@@ -10,16 +10,18 @@
 //class HexExtr;
 class Vertex_handle{
   public:
-      Vertex_handle(LCC_3 &lcc, Dart_handle &dh, int e){
+      Vertex_handle(LCC_3 &lcc, Dart_handle &dh, int e, bool f){
       incident_dart = dh;
       current_point = lcc.point(dh);
       next_point = lcc.point(lcc.alpha(dh, 0));
       enumeration = e;
+      boundary = f;
     }
     Dart_handle incident_dart;
     Point current_point;
     Point next_point;
     int enumeration;
+    bool boundary;
 };
 
 class Edge_handle{
