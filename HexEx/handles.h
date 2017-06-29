@@ -59,7 +59,7 @@ itend=lcc.darts_of_cell<3>(dh).end(); it!=itend; ++it){
     }
 };
 
-
+bool comp(Vertex_handle i,Vertex_handle j) { return !(i.boundary == false && j.boundary == true); }
 
 /*
 class Cell_handle{

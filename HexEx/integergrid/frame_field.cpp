@@ -15,8 +15,15 @@ typedef Svd::Matrix Eigen_matrix;
 using matrix = boost::numeric::ublas::matrix;
 using vect = boost::numeric::ublas::vector;
 
-void sort_vertices(){
+find_rotation_matrix(Vector_3 n){
+  double alpha = acos((-1)*n[1]/sqrt(a*a+ b*b)); 
+  double beta = acos(c/sqrt(a*a +b*b+c*c));
+  double gamma = 0;
+}
 
+
+void sort_vertices(vector<Vertex_handle>& vertices){
+  std::sort(vertices.begin(), vertices.end(), comp);
 }
 
 int find_number_of_boundary_vertices(LCC_3& lcc){
@@ -75,9 +82,9 @@ void add_local_optim_constraints(HexExtr& h, vector<vector<double>>& a, vector<v
 
 void add_normal_constraints(HexExtr& h, vector<vector<double>>& A, vector<double>& b){
   for(i = 0; i < nl; i++){
-    Vector_3 n = estimate_normal(h.input_tet_mesh, vertices[i]);
-    find_euler_angles(n);//TODO
-    matrix<double> R = find_rotation_matrix(); //TODO
+    Vector_3 n = CGAL::compute_normal_of_cell_0(h.input_tet_mesh, (vertices[i].incident_dart));
+   // find_euler_angles(n);//TODO
+    matrix<double> R = find_rotation_matrix(n); //TODO
     vect<double> temp(9);
     temp(0) = 1; temp(1) = 0; temp(2) = 0; temp(3) = 0; temp(4) = 0; temp(5) = 0; temp(6) = 0; temp(7) = 0; temp(8) = 0;
     vect<double> h0 = boost::numeric::ublas::prod(R, temp);
@@ -101,17 +108,17 @@ void add_normal_constraints(HexExtr& h, vector<vector<double>>& A, vector<double
 void optimise_frame_field(HexExtr& h, int n){ // n is the number of smoothing iterations
   int nl = find_number_of_boundary_vertices(h.input_tet_mesh);
   int nv = (h.vertices).length(); 
-  //sort_vertices(); //TODO
+  sort_vertices(); //TODO - DONE
   vector<vector<double>> a;
   for(int i = 0; i < n; i++){
     Eigen_matrix<double> A(0, (9*nv + 2*nl + 3*nv));
     vector<vector<double>> A_tobeconverted;
     Eigen_vector<double> b;
     vector<double> b_tobeconverted;
-    add_smoothing_terms(h, A, b);
+    add_smoothing_terms(h, A, b); //TODO
     add_normal_constraints(h, A_tobeconverted, b_tobeconverted);
     if(i>0){
-      add_local_optim_constraints(h, a, A, b);
+      add_local_optim_constraints(h, a, A_tobeconverted, b_tobeconverted);
     }
     if(i == 0) vector<vector<double>> a;
     Eigen_vector X = b;
