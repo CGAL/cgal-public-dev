@@ -149,8 +149,20 @@ ArrangementDemoTabBase* ArrangementDemoWindow::makeTab( TraitsType tt )
   while (it != scene->items().end())
   {
     (*it)->hide();
+    // std::cout<<(*it)->scenePos().x()<<"\t"<<(*it)->scenePos().y();
+
+    // if ((*it)->isVisible())
+    // {
+    //   std::cout<<"\tVisible\n";
+    // }
+    // else
+    // {
+    //   std::cout<<"\tNot Visible\n";
+    // }
     it++;
   }
+
+  std::cout<<std::endl;
 
   return demoTab;
 }

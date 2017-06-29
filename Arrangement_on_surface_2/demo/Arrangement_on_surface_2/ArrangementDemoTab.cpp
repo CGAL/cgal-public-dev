@@ -25,7 +25,8 @@ ArrangementDemoTabBase::ArrangementDemoTabBase( QWidget* parent ) :
   QWidget( parent ),
   graphicsView( new ArrangementDemoGraphicsView( this ) ),
   // scene( new QGraphicsScene( -100, -100, 100, 100 ) ),
-  scene( new QGraphicsScene( 0, 0, 100, 100 ) ),
+  // scene( new QGraphicsScene( 0, 0, 100, 100 ) ),
+  scene( new QGraphicsScene( ) ),
 
   layout( new QGridLayout( this ) ),
   arrangementGraphicsItem( NULL ),
@@ -47,6 +48,7 @@ ArrangementDemoTabBase::~ArrangementDemoTabBase( )
 
 void ArrangementDemoTabBase::setupUi( )
 {
+  this->scene->setSceneRect(0, 0, this->graphicsView->width(), this->graphicsView->height());
   this->layout->addWidget( this->graphicsView, 0, 0 );
   this->graphicsView->setScene( this->scene );
   this->graphicsView->setMouseTracking( true );

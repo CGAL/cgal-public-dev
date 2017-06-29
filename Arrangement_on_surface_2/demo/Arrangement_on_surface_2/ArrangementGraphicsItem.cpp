@@ -278,11 +278,13 @@ template < typename Coefficient_ >
 void ArrangementGraphicsItem< Arr_, ArrTraits >::
 updateBoundingBox(CGAL::Arr_algebraic_segment_traits_2<Coefficient_> traits)
 {
+  std::cout<<"In updateBoundingBox Arr_algebraic_segment_traits_2\n";
   this->prepareGeometryChange( );
   if ( this->arr->number_of_vertices( ) == 0 )
   {
     this->bb = Bbox_2( 0, 0, 0, 0 );
     this->bb_initialized = false;
+    std::cout<<"Leaving updateBoundingBox no vertex\n";
     return;
   }
   else
@@ -324,11 +326,13 @@ updateBoundingBox(CGAL::Arr_algebraic_segment_traits_2<Coefficient_> traits)
     std::cout<<curve.bbox( ).xmax()<<"\t";
     std::cout<<curve.bbox( ).ymin()<<"\t";
     std::cout<<curve.bbox( ).ymax()<<"\t"<<std::endl;
+
     curve_cnt++;
 
   }
 
   std::cout<<"curve_cnt\t"<<curve_cnt<<std::endl;
+  std::cout<<"Leaving updateBoundingBox at the end\n";
 }
 
 template < typename Arr_, typename ArrTraits >

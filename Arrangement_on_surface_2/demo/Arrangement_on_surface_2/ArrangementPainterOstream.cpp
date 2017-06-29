@@ -522,6 +522,11 @@ setupFacade( )
   QRectF viewport = this->viewportRect( );
   CGAL::Bbox_2 bbox = this->convert( viewport ).bbox( );
   Facade::setup(bbox, view->width(), view->height());
+
+  std::cout<<view->width()<<"\t"<<view->height()<<std::endl;
+  std::cout<<bbox.xmin()<<"\t"<<bbox.xmax()<<std::endl;
+  std::cout<<bbox.ymin()<<"\t"<<bbox.ymax()<<std::endl;
+  
   std::cout<<"Leaving setupFacade\n";
 }
 
