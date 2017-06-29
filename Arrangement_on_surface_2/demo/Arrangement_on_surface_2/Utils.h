@@ -1487,15 +1487,149 @@ protected: // member fields
 
 }; // class Find_nearest_edge
 
-#if 0
+
 template < class Arr_, class Coefficient_ >
 class Find_nearest_edge<Arr_, CGAL::Arr_algebraic_segment_traits_2<
                                 Coefficient_> >: public Find_nearest_edge_base
 {
+public: // typedefs
+  typedef Arr_ Arrangement;
+  typedef typename CGAL::Arr_algebraic_segment_traits_2<
+                                Coefficient_>   ArrTraits;
+                                
+  typedef Compute_squared_distance_2< ArrTraits > Point_curve_distance;
+  typedef typename ArrTraits::X_monotone_curve_2 X_monotone_curve_2;
+  typedef CGAL::Arr_walk_along_line_point_location< Arrangement >
+                                                        Point_location_strategy;
+  typedef typename ArrTraitsAdaptor<ArrTraits>::Kernel  Kernel;
+  typedef typename Kernel::Point_2                      Point_2;
+  typedef typename Arrangement::Face_const_handle       Face_const_handle;
+  typedef typename Arrangement::Halfedge_const_handle   Halfedge_const_handle;
+  typedef typename Arrangement::Vertex_const_handle     Vertex_const_handle;
+  typedef typename Arrangement::Ccb_halfedge_const_circulator
+    Ccb_halfedge_const_circulator;
+  typedef typename Point_curve_distance::FT             FT;
+  typedef typename Arrangement::Hole_const_iterator     Hole_const_iterator;
+  typedef typename Arrangement::Halfedge_around_vertex_const_circulator
+    Halfedge_around_vertex_const_circulator;
+
 public:
-  Halfedge_const_handle operator()( const Point_2& queryPt ) { }
-};
-#endif
+  /*! constructor */
+  Find_nearest_edge( Arrangement* arr_ ) :
+    Find_nearest_edge_base( ),
+    arr( arr_ ),
+    pointLocationStrategy( Point_location_strategy( *arr_ ) )
+  { }
+
+  /*! Destructor (virtual) */
+  virtual ~Find_nearest_edge() {}
+
+public: // member methods
+  Halfedge_const_handle operator()( const Point_2& queryPt )
+  {
+    typename ArrTraits::Point_2 pt = this->toArrPoint( queryPt );
+    CGAL::Object pointLocationResult = this->pointLocationStrategy.locate( pt );
+    Face_const_handle face = this->getFace( pointLocationResult );
+    bool first = 1;
+    X_monotone_curve_2 closestCurve;
+    Halfedge_const_handle closestEdge;
+    double minDist( 0 );
+
+    if ( ! face->is_unbounded( ) )
+    { // it is an interior face so it has a ccb
+      Ccb_halfedge_const_circulator cc = face->outer_ccb( );
+      do
+      {
+        X_monotone_curve_2 curve = cc->curve( );
+        double dist = this->pointCurveDistance( queryPt, curve );
+        if ( first || dist < minDist )
+        {
+          first = 0;
+          minDist = dist;
+          closestEdge = cc;
+        }
+      }
+      while ( ++cc != face->outer_ccb( ) );
+    }
+    else
+    {
+      Ccb_halfedge_const_circulator cc = face->outer_ccb( );
+      do
+      {
+        if ( cc->is_fictitious( ) )
+        {
+          continue;
+        }
+
+        X_monotone_curve_2 curve = cc->curve( );
+        double dist = this->pointCurveDistance( queryPt, curve );
+        if ( first || dist < minDist )
+        {
+          first = 0;
+          minDist = dist;
+          closestEdge = cc;
+        }
+      }
+      while ( ++cc != face->outer_ccb( ) );
+    }
+
+    Hole_const_iterator hit;
+    Hole_const_iterator eit = face->holes_end( );
+    // int counter = 0;
+    for ( hit = face->holes_begin( ); hit != eit; ++hit )
+    { // check any holes inside this face
+      Ccb_halfedge_const_circulator cc = *hit;
+      do
+      {
+        X_monotone_curve_2 curve = cc->curve( );
+        double dist = this->pointCurveDistance( queryPt, curve );
+        if ( first || dist < minDist )
+        {
+          first = 0;
+          minDist = dist;
+          closestEdge = cc;
+        }
+        cc++;
+      }
+      while ( cc != *hit );
+    }
+
+    return closestEdge;
+  }
+
+  virtual void setScene( QGraphicsScene* scene_ )
+  {
+    this->pointCurveDistance.setScene( scene_ );
+    Find_nearest_edge_base::setScene( scene_ );
+  }
+
+protected: // member methods
+  Face_const_handle getFace( const CGAL::Object& obj )
+  {
+    Face_const_handle f;
+    if ( CGAL::assign( f, obj ) )
+      return f;
+
+    Halfedge_const_handle he;
+    if (CGAL::assign( he, obj ))
+      return (he->face( ));
+
+    Vertex_const_handle v;
+    CGAL_assertion(CGAL::assign( v, obj ));
+    CGAL::assign( v, obj );
+    if ( v->is_isolated( ) )
+      return v->face( );
+    Halfedge_around_vertex_const_circulator eit = v->incident_halfedges( );
+    return  (eit->face( ));
+  }
+
+protected: // member fields
+  Arrangement* arr;
+  Point_curve_distance pointCurveDistance;
+  Point_location_strategy pointLocationStrategy;
+  Arr_construct_point_2< ArrTraits > toArrPoint;
+
+}; // class Find_nearest_edge
 
 template < class Arr_, class Kernel_ >
 class Find_nearest_edge< Arr_, CGAL::Arr_linear_traits_2< Kernel_ > > :
