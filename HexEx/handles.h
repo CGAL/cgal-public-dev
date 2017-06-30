@@ -26,16 +26,15 @@ class Vertex_handle{
 
 class Edge_handle{
   public:
-    Edge_handle(LCC_3 &lcc, Dart_handle &dh){
+    Edge_handle(LCC_3 &lcc, Dart_handle &dh, Vertex_handle& f, Vertex_handle& t){
       associated_dart = dh;
-      from_point = lcc.point(dh);
-      to_point = lcc.point(lcc.alpha(dh, 0));
-      //next_edge = 
+      from = f;
+      to = t; 
     }
     Dart_handle associated_dart;
-    Point from_point;
-    Point to_point;
-    int enumeration;
+    Vertex_handle from;
+    Vertex_handle to;
+    //int enumeration;
     //Edge_handle next_edge;
 };
 
@@ -59,7 +58,7 @@ itend=lcc.darts_of_cell<3>(dh).end(); it!=itend; ++it){
     }
 };
 
-bool comp(Vertex_handle i,Vertex_handle j) { return !(i.boundary == false && j.boundary == true); }
+bool comp(Vertex_handle i,Vertex_handle j){return !(i.boundary == false && j.boundary == true);}
 
 /*
 class Cell_handle{
