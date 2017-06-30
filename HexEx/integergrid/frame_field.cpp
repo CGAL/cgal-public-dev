@@ -7,6 +7,7 @@
 #include <CGAL/Eigen_vector.h>
 #include <CGAL/Eigen_svd.h>
 #include<cmath>
+#define PI 3.14159265
 typedef CGAL::Eigen_svd Svd;
 #endif
 typedef Svd::FT     FT;
@@ -15,10 +16,59 @@ typedef Svd::Matrix Eigen_matrix;
 using matrix = boost::numeric::ublas::matrix;
 using vect = boost::numeric::ublas::vector;
 
+
+
+
+matrix return_Rz(double gamma){
+  matrix<double> Rz(9,9);
+  for(int i = 0; i<9; i++){
+    for(int j = 0; j<9; j++){
+     Rz.set(i,j,0);
+    }  
+  }
+  Rz(0,0) = cos(4*gamma); Rz(1,1) = cos(3*gamma); Rz(2,2) = cos(2*gamma); Rz(3,3) = cos(gamma); Rz(4,4) = 1; Rz(5,5) = cos(gamma); Rz(6,6) = cos(2*gamma); Rz(7,7) = cos(3*gamma); Rz(8,8) = cos(4*gamma);
+  Rz(0,8) = sin(4*gamma); Rz(1,7) = sin(3*gamma); Rz(2,6) = sin(2*gamma); Rz(3,5) = sin(gamma); Rz(5,3) = -sin(gamma); Rz(6,2) = -sin(2*gamma); Rz(7,1) = -sin(3*gamma); Rz(8,0) = -sin(4*gamma);
+  
+  return Rz;
+}
+
+
+matrix return_Ry(double beta){
+  matrix<double> Ry(9,9);
+  matrix Rx_90(9,9);
+  for(int i = 0; i<9; i++){
+    for(int j = 0; j<9; j++){
+     Rx_90.set(i,j,0);
+    }  
+  }
+  Rx_90(0,5) = sqrt(14.0/16); Rx_90(0,7) = -sqrt(1.0/8); Rx_90(1,1) = -0.75; Rx_90(1,3) = -sqrt(7.0/16); Rx_90(2,5) = sqrt(1.0/8); Rx_90(2,7) = sqrt(7.0/8); Rx_90(3,1) = sqrt(7.0/16); Rx_90(3,3) = 0.75; Rx_90(4,4) = 3.0/8; Rx_90(4,6) = sqrt(5.0/16); Rx_90(4,8) = sqrt(35.0/64); Rx_90(5,0) = -sqrt(7.0/8); Rx_90(5,2) = -sqrt(1.0/8); Rx_90(6,4) = sqrt(5/16); Rx_90(6,6) = 0.5; Rx_90(6,8) = -sqrt(7/16); Rx_90(7,0) = sqrt(1.0/8); Rx_90(7,2) = -sqrt(7.0/8); Rx_90(8,4) = sqrt(35.0/64); Rx_90(8,6) = -sqrt(7.0/16); Rx_90(8,8) = 0.125;
+
+  Ry = boost::numeric::ublas::prod(Rx_90, return_Rz(beta));
+  Ry = boost::numeric::ublas::prod(Ry, boost::numeric::ublas::trans(Rx_90));
+  return Ry;
+}
+
+
+matrix return_Rx(double alpha){
+  matrix<double> Rx(9,9), Ry_90(9,9);
+  Ry_90 = return_Ry(PI/2);
+  Rx = boost::numeric::ublas::prod(boost::numeric::ublas::trans(Ry_90), return_Rz(alpha));
+  Rx = boost::numeric::ublas::prod(Rx, Ry_90);
+  return Rx;
+}
+
+
 find_rotation_matrix(Vector_3 n){
   double alpha = acos((-1)*n[1]/sqrt(a*a+ b*b)); 
   double beta = acos(c/sqrt(a*a +b*b+c*c));
-  double gamma = 0;
+  double gamma = 0; //TODO: need to check this
+  matrix<double> Rz(9,9), Ry(9,9), Rx(9,9);
+  Rz = return_Rz(gamma);
+  Ry = return_Ry(beta);
+  Rx = return_Rx(alpha);
+  Rx = boost::numeric::ublas::prod(Rx, Ry);
+  Rx = boost::numeric::ublas::prod(Rx, Rz);
+  return Rx;
 }
 
 
@@ -83,8 +133,8 @@ void add_local_optim_constraints(HexExtr& h, vector<vector<double>>& a, vector<v
 void add_normal_constraints(HexExtr& h, vector<vector<double>>& A, vector<double>& b){
   for(i = 0; i < nl; i++){
     Vector_3 n = CGAL::compute_normal_of_cell_0(h.input_tet_mesh, (vertices[i].incident_dart));
-   // find_euler_angles(n);//TODO
-    matrix<double> R = find_rotation_matrix(n); //TODO
+    matrix<double> R(9,9);
+    R = find_rotation_matrix(n); //TODO- Done
     vect<double> temp(9);
     temp(0) = 1; temp(1) = 0; temp(2) = 0; temp(3) = 0; temp(4) = 0; temp(5) = 0; temp(6) = 0; temp(7) = 0; temp(8) = 0;
     vect<double> h0 = boost::numeric::ublas::prod(R, temp);
