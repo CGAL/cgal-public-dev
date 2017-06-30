@@ -15,9 +15,27 @@ typedef Svd::Vector Eigen_vector;
 typedef Svd::Matrix Eigen_matrix;
 using matrix = boost::numeric::ublas::matrix;
 using vect = boost::numeric::ublas::vector;
+using boost::numeric::ublas = ublas;
 
+matrix find_Rx(double alpha){
+  matrix<double> Rx(3,3);
+  Rx(0,0) = 1; Rx(0,1) = 0; Rx(0,2) = 0; Rx(1,0) = 0; Rx(1,1) = cos(alpha); Rx(1,2) = -sin(alpha); Rx(2,0) = 0; Rx(2,1) = sin(alpha); Rx(2,2) = cos(alpha);
+  return Rx;
+}
 
-matrix return_Rz(double gamma){
+matrix find_Ry(double alpha){
+  matrix<double> Rx(3,3);
+  Rx(0,0) = cos(alpha); Rx(0,1) = 0; Rx(0,2) = sin(alpha); Rx(1,0) = 0; Rx(1,1) = 1; Rx(1,2) = 0; Rx(2,0) = -sin(alpha); Rx(2,1) = 0; Rx(2,2) = cos(alpha);
+  return Rx;
+}
+
+matrix find_Rz(double alpha){
+  matrix<double> Rx(3,3);
+  Rx(0,0) = cos(alpha); Rx(0,1) = -sin(alpha); Rx(0,2) = 0; Rx(1,0) = sin(alpha); Rx(1,1) = cos(alpha); Rx(1,2) = 0; Rx(2,0) = 0; Rx(2,1) = 0; Rx(2,2) = 1;
+  return Rx;
+}
+
+matrix return_Rbz(double gamma){
   matrix<double> Rz(9,9);
   for(int i = 0; i<9; i++){
     for(int j = 0; j<9; j++){
@@ -31,7 +49,7 @@ matrix return_Rz(double gamma){
 }
 
 
-matrix return_Ry(double beta){
+matrix return_Rby(double beta){
   matrix<double> Ry(9,9);
   matrix Rx_90(9,9);
   for(int i = 0; i<9; i++){
@@ -39,18 +57,18 @@ matrix return_Ry(double beta){
      Rx_90.set(i,j,0);
     }  
   }
-  Rx_90(0,5) = sqrt(14.0/16); Rx_90(0,7) = -sqrt(1.0/8); Rx_90(1,1) = -0.75; Rx_90(1,3) = -sqrt(7.0/16); Rx_90(2,5) = sqrt(1.0/8); Rx_90(2,7) = sqrt(7.0/8); Rx_90(3,1) = sqrt(7.0/16); Rx_90(3,3) = 0.75; Rx_90(4,4) = 3.0/8; Rx_90(4,6) = sqrt(5.0/16); Rx_90(4,8) = sqrt(35.0/64); Rx_90(5,0) = -sqrt(7.0/8); Rx_90(5,2) = -sqrt(1.0/8); Rx_90(6,4) = sqrt(5/16); Rx_90(6,6) = 0.5; Rx_90(6,8) = -sqrt(7/16); Rx_90(7,0) = sqrt(1.0/8); Rx_90(7,2) = -sqrt(7.0/8); Rx_90(8,4) = sqrt(35.0/64); Rx_90(8,6) = -sqrt(7.0/16); Rx_90(8,8) = 0.125;
+  Rx_90(0,5) = sqrt(7.0/8); Rx_90(0,7) = -sqrt(1.0/8); Rx_90(1,1) = -0.75; Rx_90(1,3) = -sqrt(7.0/16); Rx_90(2,5) = sqrt(1.0/8); Rx_90(2,7) = sqrt(7.0/8); Rx_90(3,1) = sqrt(7.0/16); Rx_90(3,3) = 0.75; Rx_90(4,4) = 3.0/8; Rx_90(4,6) = sqrt(5.0/16); Rx_90(4,8) = sqrt(35.0/64); Rx_90(5,0) = -sqrt(7.0/8); Rx_90(5,2) = -sqrt(1.0/8); Rx_90(6,4) = sqrt(5/16); Rx_90(6,6) = 0.5; Rx_90(6,8) = -sqrt(7/16); Rx_90(7,0) = sqrt(1.0/8); Rx_90(7,2) = -sqrt(7.0/8); Rx_90(8,4) = sqrt(35.0/64); Rx_90(8,6) = -sqrt(7.0/16); Rx_90(8,8) = 0.125;
 
-  Ry = boost::numeric::ublas::prec_prod(Rx_90, return_Rz(beta));
+  Ry = boost::numeric::ublas::prec_prod(Rx_90, return_Rbz(beta));
   Ry = boost::numeric::ublas::prec_prod(Ry, boost::numeric::ublas::trans(Rx_90));
   return Ry;
 }
 
 
-matrix return_Rx(double alpha){
+matrix return_Rbx(double alpha){
   matrix<double> Rx(9,9), Ry_90(9,9);
-  Ry_90 = return_Ry(PI/2);
-  Rx = boost::numeric::ublas::prec_prod(boost::numeric::ublas::trans(Ry_90), return_Rz(alpha));
+  Ry_90 = return_Rby(PI/2);
+  Rx = boost::numeric::ublas::prec_prod(boost::numeric::ublas::trans(Ry_90), return_Rbz(alpha));
   Rx = boost::numeric::ublas::prec_prod(Rx, Ry_90);
   return Rx;
 }
@@ -61,9 +79,9 @@ matrix find_rotation_matrix(Vector_3 n){
   double beta = acos(c/sqrt(a*a +b*b+c*c));
   double gamma = 0; //TODO: need to check this
   matrix<double> Rz(9,9), Ry(9,9), Rx(9,9);
-  Rz = return_Rz(gamma);
-  Ry = return_Ry(beta);
-  Rx = return_Rx(alpha);
+  Rz = return_Rbz(gamma);
+  Ry = return_Rby(beta);
+  Rx = return_Rbx(alpha);
   Rx = boost::numeric::ublas::prec_prod(Rx, Ry);
   Rx = boost::numeric::ublas::prec_prod(Rx, Rz);
   return Rx;
@@ -86,8 +104,46 @@ int find_number_of_boundary_vertices(LCC_3& lcc){
   return count;
 }
 
-void closest_frame(){
+void closest_frame(vector<double>& q, vector<double>& frame){
+  vect<double> f(3); f(0) = 0; f(1) = 0; f(2) = 1; //initial values
+  vect<double> a(9); a(0) = 0; a(1) = 0; a(2) = 0; a(3) = 0; a(4) = sqrt(7.0/12); a(5) = 0; a(6) = 0; a(7) = 0; a(8) = sqrt(5.0/12); 
+  vect<double> qq(9); qq(0) = q[0]; qq(1) = q[1]; qq(2) = q[2]; qq(3) = q[3]; qq(4) = q[4]; qq(5) = q[5]; qq(6) = q[6]; qq(7) = q[7]; qq(8) = q[8]; 
+  double s = 0.1; //optimization step size
+  double eps = 0.0001 // step threshold
+  double modulus;
+  for(int i = 0; i < 9; i++) modulus += (q[i]*q[i]);
+  modulus = sqrt(modulus);
+  for(int i = 0; i < 9; i++) q[i]/=modulus;
 
+  matrix<double> Ex(9,9), Ey(9,9), Ez(9,9);
+  
+  for(int i = 0; i<9; i++){
+    for(int j = 0; j<9; j++){
+      Ex.set(i,j,0);  Ey.set(i,j,0); Ez.set(i,j,0);
+    }  
+  }
+  Ex(0,7)= (-1)*sqrt(2)); Ex(1,6) = (-1)*sqrt(3.5); Ex(2,5) = (-1)*sqrt(4.5); Ex(3, 4) = (-1)*sqrt(10);
+  Ex(1,8) = (-1)*sqrt(2); Ex(2,7) = (-1)*sqrt(3.5); Ex(3,6) = (-1)*sqrt(4.5); 
+  Ex(7,0) = sqrt(2); Ex(6,1) = sqrt(3.5); Ex(5,2) = sqrt(4.5); Ex(4,3) = sqrt(10)); 
+  Ex(8,1) = sqrt(2); Ex(7,2) = sqrt(3.5); Ex(6,3) = sqrt(4.5);
+  Ey(0,1) = sqrt(2); Ey(1,2) = sqrt(3.5); Ey(2,3) = sqrt(4.5); Ey(4,5) = (-1)*sqrt(10)); 
+  Ey(5,6) = (-1)*sqrt(4.5); Ey(6,7) = (-1)*sqrt(3.5); Ey(7,8) = (-1)*sqrt(2); 
+  Ey(1,0) =(-1)*sqrt(2); Ey(2,1) = (-1)*sqrt(3.5); Ey(3,2) = (-1)*sqrt(4.5); 
+  Ey(5,4) = sqrt(10); Ey(6,5) = sqrt(4.5); Ey(7,6) = sqrt(3.5); Ey(8,7) = sqrt(2);
+  Ez(0,8) = 4; Ez(1,7) = 3; Ez(2,6) = 2; Ez(3,5) = 1; Ez(5,3) = -1; Ez(6,2) = -2; Ez(7,1) = -3; Ez(8,0) = -4;
+  Vector_3 grad; Matrix Rb(9,9), R(3,3);
+  while(true){
+    grad[0] = ublas::prec_prod(ublas::trans(ublas::prec_prod(ublas::trans(Ex), qq)), a);
+    grad[1] = ublas::prec_prod(ublas::trans(ublas::prec_prod(ublas::trans(Ey), qq)), a);
+    grad[2] = ublas::prec_prod(ublas::trans(ublas::prec_prod(ublas::trans(Ez), qq)), a);
+    if(grad.squared_distance()<=eps) break;
+    Rb = ublas::prec_prod(ublas::prec_prod(return_Rbx(s*g[0]), return_Rby(s*g[1])), return_Rbz(s*g[2]));
+    R = ublas::prec_prod(ublas::prec_prod(find_Rx(s*g[0]), find_Ry(s*g[1])), find_Rz(s*g[2])); 
+    a = ublas::prec_prod(Rb, a);
+    f = ublas::prec_prod(R, f);
+  }
+  frame[0] = f(0); frame[1] = f(1); frame[2] = f(2);
+  q[0] = a(0); q[1] = a(1); q[2] = a(2); q[3] = a(3); q[4] = a(4); q[5] = a(5); q[6] = a(6); q[7] = a(7); q[8] = a(8);
 }
 
 void add_smoothing_terms(HexExtr &h, vector<vector<double>>& A, vector<double>& b){
@@ -193,8 +249,8 @@ void optimise_frame_field(HexExtr& h, int n){ // n is the number of smoothing it
           temp.push_back(X.at(k));
         }
       a.push_back(temp);
-            
-      //closest frame ? //TODO
+      closest_frame(a[j], ((h.vertices)[j]).frame);      
+      //closest frame ? //TODO:DONE
     }
   }
 }

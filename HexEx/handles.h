@@ -16,10 +16,12 @@ class Vertex_handle{
       next_point = lcc.point(lcc.alpha(dh, 0));
       enumeration = e;
       boundary = f;
+      frame(0,0,1);
     }
     Dart_handle incident_dart;
     Point current_point;
     Point next_point;
+    Vector_3 frame;
     int enumeration;
     bool boundary;
 };
