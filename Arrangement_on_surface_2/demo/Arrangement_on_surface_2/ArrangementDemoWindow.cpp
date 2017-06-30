@@ -146,6 +146,9 @@ ArrangementDemoTabBase* ArrangementDemoWindow::makeTab( TraitsType tt )
   QGraphicsScene *scene = view->scene();
   QList<QGraphicsItem *>::iterator it = scene->items().begin();
 
+  // QList<QGraphicsItem *> items = scene->items();
+
+
   while (it != scene->items().end())
   {
     (*it)->hide();

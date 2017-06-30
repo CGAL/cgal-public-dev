@@ -339,6 +339,11 @@ VerticalRayShootCallback< Arr_ >::rayShootUp( const Kernel_point_2& pt )
     std::cerr << "Warning: landmarks point location strategy doesn't support ray shooting" << std::endl;
     return CGAL::Object( );
   }
+  else
+  {
+    std::cout<<"Didn't find the right strategy\n";
+  }
+  
   return pointLocationResult;
 }
 

@@ -36,6 +36,8 @@ void VerticalRayGraphicsItem::paint( QPainter* painter,
                                      const QStyleOptionGraphicsItem* /* option*/,
                                      QWidget* /* widget */ )
 {
+  std::cout<<"In VerticalRayGraphicsItem::paint\n";
+
   QPen rayPen( this->m_color, this->m_width );
   painter->setPen( rayPen );
 
@@ -172,7 +174,7 @@ void VerticalRayGraphicsItem::reset( )
 
 void VerticalRayGraphicsItem::modelChanged( )
 {
-  // std::cout << "ray changed" << std::endl;
+  std::cout << "ray changed" << std::endl;
 
   if ( this->m_source.isNull( ) || // uninitialized
        this->m_source.y( ) == this->m_targetY ) // degenerate
@@ -213,10 +215,13 @@ QRectF VerticalRayGraphicsItem::viewportRect( ) const
 void VerticalRayGraphicsItem::drawArrowhead( QPainter* painter,
                                              double targetY, bool isShootingUp )
 {
+  std::cout<<"In VerticalRayGraphicsItem::drawArrowhead\n";
+
   if ( this->scene( ) == 0 || this->scene( )->views( ).size( ) == 0 )
   {
     return;
   }
+  
   QGraphicsView* view = this->scene( )->views( ).first( );
   QPointF arrowTip( this->m_source.x( ), targetY );
   QPoint pt = view->mapFromScene( arrowTip );

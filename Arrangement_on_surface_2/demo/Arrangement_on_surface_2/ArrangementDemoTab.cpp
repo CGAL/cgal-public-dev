@@ -24,9 +24,9 @@
 ArrangementDemoTabBase::ArrangementDemoTabBase( QWidget* parent ) :
   QWidget( parent ),
   graphicsView( new ArrangementDemoGraphicsView( this ) ),
-  // scene( new QGraphicsScene( -100, -100, 100, 100 ) ),
+  scene( new QGraphicsScene( -100, -100, 100, 100 ) ),
   // scene( new QGraphicsScene( 0, 0, 100, 100 ) ),
-  scene( new QGraphicsScene( ) ),
+  // scene( new QGraphicsScene( ) ),
 
   layout( new QGridLayout( this ) ),
   arrangementGraphicsItem( NULL ),

@@ -463,6 +463,7 @@ operator<<( const X_monotone_curve_2& curve )
     ppnt->drawEllipse((*p2).first - sz, height-(*p2).second - sz, sz*2, sz*2);
     ppnt->setPen(old_pen);
 #endif
+    std::cout<<"Leaving operator<< Arr_algebraic_segment_traits_2 X_monotone_curve_2\n";
     return *this;
 }
 
@@ -509,6 +510,7 @@ operator<<( const Point_2& p )
                       sz*2, sz*2);
     ppnt->setPen(old_pen);
 #endif
+    std::cout<<"Leaving operator<< Arr_algebraic_segment_traits_2 Point_2\n";
     return *this;
 }
 template < typename Coefficient_ >

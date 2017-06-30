@@ -48,15 +48,18 @@ public:
 
   virtual QRectF viewportRect( ) const
   {
+    std::cout<<"In QGraphicsSceneMixin viewportRect\n";
     QRectF res;
     if ( this->scene == NULL )
     {
+      std::cout<<"Return: this->scene == NULL\n";
       return res;
     }
 
     QList< QGraphicsView* > views = this->scene->views( );
     if ( views.size( ) == 0 )
     {
+      std::cout<<"Return: views.size( ) == 0\n";
       return res;
     }
     // assumes the first view is the right one
@@ -71,6 +74,7 @@ public:
 
     res = QRectF( QPointF( xmin, ymin ), QPointF( xmax, ymax ) );
 
+    std::cout<<"Return: OKAY\n";
     return res;
   }
 

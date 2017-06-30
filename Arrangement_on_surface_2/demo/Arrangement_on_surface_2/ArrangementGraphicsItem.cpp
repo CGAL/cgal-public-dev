@@ -156,18 +156,31 @@ void ArrangementGraphicsItem< Arr_, ArrTraits >::
 paint(QPainter* painter,
       CGAL::Arr_algebraic_segment_traits_2< Coefficient_ > /* traits */)
 {
+  std::cout<<"In paint Arr_algebraic_segment_traits_2\n";
   painter->setPen( this->verticesPen );
   QRectF clipRect = this->boundingRect( );
+
+  std::cout<<"left, right, bottom, top:\n";
+  std::cout<<clipRect.left()<<", "<<clipRect.right()<<", "<<clipRect.bottom()<<", "<<clipRect.top()<<std::endl;
+
   if ( std::isinf(clipRect.left( )) ||
        std::isinf(clipRect.right( )) ||
        std::isinf(clipRect.top( )) ||
        std::isinf(clipRect.bottom( )) )
   {
+    std::cout<<"In If with infinite bound\n";
     clipRect = this->viewportRect( );
   }
+
+  std::cout<<"left, right, bottom, top:\n";
+  std::cout<<clipRect.left()<<", "<<clipRect.right()<<", "<<clipRect.bottom()<<", "<<clipRect.top()<<std::endl;
+
   this->painterostream =
     ArrangementPainterOstream< Traits >( painter, clipRect );
   this->painterostream.setScene( this->scene );
+
+  std::cout<<"After initializing painterostream\n";
+
   for ( Vertex_iterator it = this->arr->vertices_begin( );
         it != this->arr->vertices_end( ); ++it )
   {
@@ -177,6 +190,9 @@ paint(QPainter* painter,
     //this->painterostream << pt;
     this->painterostream << p;
   }
+
+  std::cout<<"After done with vertices\n";
+
   painter->setPen( this->edgesPen );
   for ( Edge_iterator it = this->arr->edges_begin( );
         it != this->arr->edges_end( ); ++it )

@@ -117,7 +117,37 @@ public:
   }
 
 protected:
-  // QRectF getViewportRect( ) const;
+  QRectF viewportRect( ) const
+  {
+    std::cout<<"In ArrangementGraphicsItemBase viewportRect\n";
+    QRectF res;
+    if ( this->scene == NULL )
+    {
+      std::cout<<"Return: this->scene == NULL\n";
+      return res;
+    }
+
+    QList< QGraphicsView* > views = this->scene->views( );
+    if ( views.size( ) == 0 )
+    {
+      std::cout<<"Return: views.size( ) == 0\n";
+      return res;
+    }
+    // assumes the first view is the right one
+    QGraphicsView* viewport = views.first( );
+    QPointF p1 = viewport->mapToScene( 0, 0 );
+    QPointF p2 = viewport->mapToScene(viewport->width(), viewport->height());
+
+    double xmin = (std::min)(p1.x(), p2.x());
+    double xmax = (std::max)(p1.x(), p2.x());
+    double ymin = (std::min)(p1.y(), p2.y());
+    double ymax = (std::max)(p1.y(), p2.y());
+
+    res = QRectF( QPointF( xmin, ymin ), QPointF( xmax, ymax ) );
+
+    std::cout<<"Return: OKAY\n";
+    return res;
+  }
 
   CGAL::Bbox_2 bb;
   bool bb_initialized;
