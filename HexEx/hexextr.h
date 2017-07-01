@@ -7,6 +7,7 @@
 #include<map>
 #include"func.h"
 #include<vector>
+#include"frame_field.h"
 
 //class Face_handle;
 
@@ -60,8 +61,8 @@ itend = input_tet_mesh.one_dart_per_cell<2>().end(); it != itend; it++){
       }
 
       int nv = 0;
-      for(LCC_3::One_dart_per_cell_range<0>::iterator it = input_tet_mesh.one_dart_per_cell<0>().begin, itend = input_tet_mesh.one_dart_per_cell<0>().end(); it!=itend; it++){
-        Vertex_handle vh(input_tet_mesh, it, nv, lcc.is_free(it, 3));
+      for(LCC_3::One_dart_per_cell_range<0>::iterator it = input_tet_mesh.one_dart_per_cell<0>().begin(), itend = input_tet_mesh.one_dart_per_cell<0>().end(); it!=itend; it++){
+        Vertex_handle vh(input_tet_mesh, it, nv, input_tet_mesh.is_free(it, 3));
         vertices.push_back(vh);
       }
 
@@ -69,13 +70,14 @@ itend = input_tet_mesh.one_dart_per_cell<2>().end(); it != itend; it++){
       for(LCC_3::One_dart_per_cell_range<1>::iterator it = input_tet_mesh.one_dart_per_cell<1>().begin(), itend = input_tet_mesh.one_dart_per_cell<1>().end(); it != itend; it++){
         Vertex_handle from, to;
         for(std::vector<Vertex_handle>::iterator i = vertices.begin(), iend = vertices.end(); i != iend; i++){
-          if(lcc.point((*i).incident_dart) == lcc.point(it)) from = (*i); //there must be a better way to implement this.
-          if(lcc.point((*i).incident_dart) == lcc.point(lcc.alpha(it, 0))) to = (*i);
+          if(input_tet_mesh.point((*i).incident_dart) == input_tet_mesh.point(it)) from = (*i); //there must be a better way to implement this.
+          if(input_tet_mesh.point((*i).incident_dart) == input_tet_mesh.point(input_tet_mesh.alpha(it, 0))) to = (*i);
         }
         Edge_handle eh(input_tet_mesh, it, from, to); 
         edges.push_back(eh); 
       }     
 
+      optimise_frame_field(input_tet_mesh, vertices, edges, 1);
 
 //Sanitization 
     
