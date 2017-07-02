@@ -12,7 +12,7 @@
 #include <CGAL/IO/Polyhedron_iostream.h>
 #include <CGAL/centroid.h>
 
-#include <CGAL/internal/Surface_mesh_approximation/VSA_segmentation.h>
+#include <CGAL/internal/Surface_mesh_approximation/VSA.h>
 
 #include "ColorCheatSheet.h"
 
@@ -146,7 +146,7 @@ void Scene::VSA_incremental(const std::size_t num_proxies, const std::size_t num
   typedef boost::property_map<Polyhedron, boost::vertex_point_t>::type PointPropertyMap;
   PointPropertyMap ppmap = get(boost::vertex_point, const_cast<Polyhedron &>(*m_pPolyhedron));
 
-  CGAL::internal::VSA_segmentation<Polyhedron, Kernel, PointPropertyMap> vsa_seg(*m_pPolyhedron, ppmap, Kernel());
+  CGAL::internal::VSA<Polyhedron, Kernel, PointPropertyMap> vsa_seg(*m_pPolyhedron, ppmap, Kernel());
   vsa_seg.partition_incre(num_proxies, num_iterations, m_fidx_pmap);
 
   m_px_num = num_proxies;

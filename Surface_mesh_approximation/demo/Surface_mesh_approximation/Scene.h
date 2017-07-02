@@ -7,7 +7,7 @@
 
 #include <CGAL/boost/graph/graph_traits_Polyhedron_3.h>
 #include <CGAL/property_map.h>
-#include <CGAL/internal/Surface_mesh_approximation/VSA_segmentation.h>
+#include <CGAL/internal/Surface_mesh_approximation/VSA.h>
 #include "types.h"
 
 class Scene
@@ -16,7 +16,7 @@ public:
   // types
   typedef CGAL::Bbox_3 Bbox;
   typedef boost::property_map<Polyhedron, boost::vertex_point_t>::type PointPropertyMap;
-  typedef CGAL::internal::VSA_segmentation<Polyhedron, Kernel, PointPropertyMap> VSA;
+  typedef CGAL::internal::VSA<Polyhedron, Kernel, PointPropertyMap> VSA;
   typedef VSA::Anchor Anchor;
 
 public:
