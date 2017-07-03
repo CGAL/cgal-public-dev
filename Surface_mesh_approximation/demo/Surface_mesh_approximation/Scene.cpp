@@ -354,13 +354,13 @@ void Scene::render_approximation()
   ::glBegin(GL_TRIANGLES);
   for (std::vector<int>::iterator vitr = m_tris.begin(); vitr != m_tris.end(); vitr += 3) {
     const Point &p0 = m_anchors[*vitr].pos;
-    ::glVertex3d(p0.x(), p0.y(), p0.z());
     const Point &p1 = m_anchors[*(vitr + 1)].pos;
-    ::glVertex3d(p1.x(), p1.y(), p1.z());
     const Point &p2 = m_anchors[*(vitr + 2)].pos;
-    ::glVertex3d(p2.x(), p2.y(), p2.z());
     Vector n = CGAL::unit_normal(p0, p1, p2);
     ::glNormal3d(n.x(), n.y(), n.z());
+    ::glVertex3d(p0.x(), p0.y(), p0.z());
+    ::glVertex3d(p1.x(), p1.y(), p1.z());
+    ::glVertex3d(p2.x(), p2.y(), p2.z());
   }
   ::glEnd();
 }
