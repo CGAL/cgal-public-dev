@@ -148,24 +148,24 @@ ArrangementDemoTabBase* ArrangementDemoWindow::makeTab( TraitsType tt )
 
   // QList<QGraphicsItem *> items = scene->items();
 
-
-  while (it != scene->items().end())
+  if (tt == ALGEBRAIC_TRAITS)
   {
-    (*it)->hide();
-    // std::cout<<(*it)->scenePos().x()<<"\t"<<(*it)->scenePos().y();
+    while (it != scene->items().end())
+    {
+      (*it)->hide();
+      // std::cout<<(*it)->scenePos().x()<<"\t"<<(*it)->scenePos().y();
 
-    // if ((*it)->isVisible())
-    // {
-    //   std::cout<<"\tVisible\n";
-    // }
-    // else
-    // {
-    //   std::cout<<"\tNot Visible\n";
-    // }
-    it++;
+      // if ((*it)->isVisible())
+      // {
+      //   std::cout<<"\tVisible\n";
+      // }
+      // else
+      // {
+      //   std::cout<<"\tNot Visible\n";
+      // }
+      it++;
+    }
   }
-
-  std::cout<<std::endl;
 
   return demoTab;
 }

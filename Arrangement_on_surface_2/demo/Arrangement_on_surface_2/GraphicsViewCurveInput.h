@@ -53,20 +53,64 @@ public:
      Add our helper graphics items to the scene.
      @override
   */
-  virtual void setScene( QGraphicsScene* scene_ );
+  virtual void setScene( QGraphicsScene* scene_ )
+  {
+    this->QGraphicsSceneMixin::setScene( scene_ );
+    if ( this->scene != NULL )
+    {
+      this->scene->addItem( &this->pointsGraphicsItem );
+    }
+  }
   //virtual QGraphicsScene* getScene( ) const;
 
-  void setSnappingEnabled( bool b );
-  void setSnapToGridEnabled( bool b );
-  virtual void setColor( QColor c );
-  QColor getColor( ) const;
+  void setSnappingEnabled( bool b ){this->snappingEnabled = b;}
+  void setSnapToGridEnabled( bool b ){this->snapToGridEnabled = b;}
+  virtual void setColor( QColor c )
+  {
+    this->color = c;
+    this->pointsGraphicsItem.setColor( this->color );
+  }
+  QColor getColor( ) const {return this->color;}
 
 protected:
-  GraphicsViewCurveInputBase( QObject* parent );
-  virtual void keyPressEvent( QKeyEvent* event );
-  virtual void mouseMoveEvent( QGraphicsSceneMouseEvent* event );
-  virtual void mousePressEvent( QGraphicsSceneMouseEvent* event );
-  virtual bool eventFilter( QObject* obj, QEvent* event );
+  GraphicsViewCurveInputBase( QObject* parent ):
+    GraphicsViewInput( parent ),
+//    scene( NULL ),
+    snappingEnabled( false ),
+    snapToGridEnabled( false ),
+    color( ::Qt::blue )
+  {
+      this->pointsGraphicsItem.setZValue( 100 );
+      this->pointsGraphicsItem.setColor( this->color );
+  }
+
+  virtual void keyPressEvent( QKeyEvent* event ){}
+  virtual void mouseMoveEvent( QGraphicsSceneMouseEvent* event ){}
+  virtual void mousePressEvent( QGraphicsSceneMouseEvent* event ){}
+  
+  virtual bool eventFilter( QObject* obj, QEvent* event )
+  {
+    if ( event->type( ) == QEvent::GraphicsSceneMouseMove )
+    {
+      QGraphicsSceneMouseEvent* mouseEvent =
+        static_cast< QGraphicsSceneMouseEvent* >( event );
+      this->mouseMoveEvent( mouseEvent );
+    }
+    else if ( event->type( ) == QEvent::GraphicsSceneMousePress )
+    {
+      QGraphicsSceneMouseEvent* mouseEvent =
+        static_cast< QGraphicsSceneMouseEvent* >( event );
+      this->mousePressEvent( mouseEvent );
+    }
+    else if ( event->type( ) == QEvent::KeyPress )
+    {
+      QKeyEvent* keyEvent = 
+        static_cast< QKeyEvent* >( event );
+      this->keyPressEvent( keyEvent );
+    }
+
+    return QObject::eventFilter( obj, event );
+  }
 
   PointsGraphicsItem pointsGraphicsItem; // shows user specified curve points
   bool snappingEnabled;
@@ -1023,156 +1067,23 @@ class GraphicsViewCurveInput<CGAL::Arr_algebraic_segment_traits_2<
 
 public:
   GraphicsViewCurveInput( QObject* parent ):
-    GraphicsViewCurveInputBase( parent ),
-    second( false )
+    GraphicsViewCurveInputBase( parent )
   { }
 
-  void addNewAlgebraicCurve(const std::string& poly_expr_)
-  {
-    this->poly_expr = poly_expr_;
-    AlgebraicCurveExpressionParser parser(this->poly_expr);
-    std::vector<struct term> terms;
-
-    try {
-
-      parser.extract_poly_terms(terms);
-
-    } catch (std::invalid_argument) {
-
-      QMessageBox msgBox;
-      msgBox.setWindowTitle("Wrong Expression");
-      msgBox.setIcon(QMessageBox::Critical);
-      msgBox.setText(QString::fromStdString(poly_expr_ + " is invalid"));
-      msgBox.setStandardButtons(QMessageBox::Ok);
-
-      msgBox.exec();
-      return;
-    }
-
-
-    Traits::Construct_curve_2 construct_curve
-        = traits.construct_curve_2_object();
-
-    Polynomial_2 polynomial;
-    Polynomial_2 x = CGAL::shift(Polynomial_2(1),1,0);
-    Polynomial_2 y = CGAL::shift(Polynomial_2(1),1,1);
-
-    for (int i=0; i<terms.size(); i++)
-    {
-      polynomial += terms[i].coefficient 
-                  *CGAL::ipower(x,terms[i].x_exponent)
-                  *CGAL::ipower(y,terms[i].y_exponent);
-    }
-
-    Curve_2 cv = construct_curve(polynomial);
-    Q_EMIT generate( CGAL::make_object( cv ) );
-    std::cout << "New Algebraic curve added" << std::endl;
-  }
+  void addNewAlgebraicCurve(const std::string& poly_expr_);
 
 protected:
 
   void keyPressEvent( QKeyEvent* event )
   {
-    if ( event->key() != ::Qt::Key_Escape )
-    {
-      return;
-    }
-
-    if ( this->second == true && this->scene != NULL )
-    {
-      this->scene->removeItem( &( this->segmentGuide ) );
-    }
-
-    this->second = false;
-    this->pointsGraphicsItem.clear();
   }
 
   void mousePressEvent( QGraphicsSceneMouseEvent* event )
   {
-
-#if 0
-    if ( event->button( ) == ::Qt::RightButton )
-    {
-      // AlgebraicCurveExpressionParser parser(this->poly_expr);
-      // std::vector<struct term> terms;
-
-      // parser.Extract_poly_terms(terms);
-
-      AlgebraicCurveInputDialog* newDialog = new AlgebraicCurveInputDialog;
-      if ( newDialog->exec( ) == QDialog::Accepted )
-      {
-        this->poly_expr = newDialog->getLineEditText();
-        std::cout<<"User Input:\t"<<this->poly_expr<<std::endl;
-
-        AlgebraicCurveExpressionParser parser(this->poly_expr);
-        std::vector<struct term> terms;
-
-        parser.Extract_poly_terms(terms);
-      }
-    }
-
-
-    if ( event->button( ) == ::Qt::RightButton )
-    {
-
-      // Polynomial_2 f4 = CGAL::ipower(x,6)+CGAL::ipower(y,6)-
-      //                 CGAL::ipower(x,3)*CGAL::ipower(y,3)-120000000;
-      // Polynomial_2 f1 = 3*x-5*y+2;
-
-      // Polynomial_2 f3 = CGAL::ipower(x,2)+CGAL::ipower(y,2)+x*CGAL::ipower(y,2);
-
-      // Polynomial_2 f2 = 9*CGAL::ipower(x,2)+16*CGAL::ipower(y,2)-144;
-
-      // Polynomial_2 f5 = CGAL::ipower(x,2) - y;
-
-      Polynomial_2 f6 = CGAL::ipower(y,2) - x;
-
-      Curve_2 cv1 = construct_curve(f6);
-      Q_EMIT generate( CGAL::make_object( cv1 ) );
-      std::cout << "Algebraic traits curve insert stub" << std::endl;
-    }
-
-    if ( ! this->second )
-    {
-      this->second = true;
-      this->p1 = this->snapPoint( event );
-      QPointF pt = event->scenePos( );
-      this->segmentGuide.setLine( pt.x( ), pt.y( ), pt.x( ), pt.y( ) );
-      if ( this->scene != NULL )
-      {
-        this->scene->addItem( &( this->segmentGuide ) );
-      }
-    }
-    else
-    {
-      this->second = false;
-      Point_2 p2 = this->snapPoint( event );
-      if ( this->scene != NULL )
-      {
-        this->scene->removeItem( &( this->segmentGuide ) );
-      }
-      if ( traits.compare_xy_2_object()( this->p1, p2 ) == CGAL::EQUAL )
-      {
-        return;
-      }
-
-      std::cout << "Algebraic traits curve insert stub" << std::endl;
-    }
-#endif
   }
 
   void mouseMoveEvent( QGraphicsSceneMouseEvent* event )
   {
-    if ( this->second )
-    {
-      Kernel_point_2 clickedPoint = this->convert( event->scenePos( ) );
-      std::pair< double, double > pp1 = this->p1.to_double( );
-      QPointF qp1( pp1.first, pp1.second );
-      Kernel_point_2 firstPoint = this->convert( qp1 );
-      Segment_2 segment( firstPoint, clickedPoint );
-      QLineF qSegment = this->convert( segment );
-      this->segmentGuide.setLine( qSegment );
-    }
   }
 
   virtual Point_2 snapPoint( QGraphicsSceneMouseEvent* event )
@@ -1186,8 +1097,6 @@ protected:
   Traits traits;
   Converter< Kernel > convert;
   Arr_construct_point_2< Traits > toArrPoint;
-  Point_2 p1;
-  bool second;
   QGraphicsLineItem segmentGuide;
   std::string poly_expr;
 };
