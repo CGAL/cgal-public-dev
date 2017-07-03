@@ -94,6 +94,26 @@ int Scene::open(QString filename)
   return 0;
 }
 
+void Scene::save_approximation(const std::string &filename)
+{
+  if(m_tris.empty())
+    return;
+
+  std::ofstream ofs(filename);
+  if(!ofs.is_open()) {
+    std::cerr << "Error: open " << filename << " failed." << std::endl;
+    return;
+  }
+
+  ofs << "OFF\n" << m_anchors.size() << ' ' << m_tris.size() / 3 << ' ' << "0\n";
+  for(std::vector<Anchor>::iterator aitr = m_anchors.begin(); aitr != m_anchors.end(); ++aitr)
+    ofs << aitr->pos.x() << ' ' << aitr->pos.y() << ' ' << aitr->pos.z() << ' ' << '\n';
+  for(std::vector<int>::iterator titr = m_tris.begin(); titr != m_tris.end(); titr += 3)
+    ofs << 3 << ' ' << *titr << ' ' << *(titr + 1) << ' ' << *(titr + 2) << '\n';
+  ofs.flush();
+  ofs.close();
+}
+
 void Scene::VSA_segmentation(const std::size_t num_proxies, const std::size_t num_iterations)
 {
   if(!m_pPolyhedron)

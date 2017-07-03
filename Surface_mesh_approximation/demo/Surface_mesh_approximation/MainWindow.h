@@ -39,6 +39,7 @@ protected slots:
 
   // file menu
   void on_actionLoadPolyhedron_triggered();
+  void on_actionSaveApproximation_triggered();
 
   // edit menu
   void on_actionSave_snapshot_triggered();

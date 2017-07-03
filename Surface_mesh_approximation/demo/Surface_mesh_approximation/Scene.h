@@ -28,6 +28,7 @@ public:
 
   // file menu
   int open(QString filename);
+  void save_approximation(const std::string &filename);
 
   // algorithms
   void VSA_segmentation(const std::size_t num_proxies, const std::size_t num_iterations);

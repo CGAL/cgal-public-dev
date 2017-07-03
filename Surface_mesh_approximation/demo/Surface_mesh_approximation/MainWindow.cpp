@@ -150,6 +150,19 @@ void MainWindow::on_actionLoadPolyhedron_triggered()
   }
 }
 
+void MainWindow::on_actionSaveApproximation_triggered()
+{
+  QString file_name = QFileDialog::getSaveFileName(this,
+    tr("Save Approximation Mesh"),
+    ".",
+    tr("OFF (*.off)"));
+  if (file_name.isEmpty())
+    return;
+  QApplication::setOverrideCursor(Qt::WaitCursor);
+  m_pScene->save_approximation(file_name.toStdString());
+  QApplication::restoreOverrideCursor();
+}
+
 void MainWindow::on_actionSave_snapshot_triggered()
 {
   QApplication::setOverrideCursor(Qt::WaitCursor);

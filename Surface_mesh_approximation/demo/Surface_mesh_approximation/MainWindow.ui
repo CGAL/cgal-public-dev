@@ -45,6 +45,7 @@
      <string>&amp;File</string>
     </property>
     <addaction name="actionLoadPolyhedron"/>
+    <addaction name="actionSaveApproximation"/>
     <addaction name="separator"/>
     <addaction name="actionQuit"/>
    </widget>
@@ -85,12 +86,12 @@
   </action>
   <action name="actionLoadPolyhedron">
    <property name="text">
-    <string>Load polyhedron...</string>
+    <string>&amp;Load polyhedron</string>
    </property>
   </action>
   <action name="actionView_wireframe">
    <property name="text">
-    <string>Wireframe</string>
+    <string>&amp;Wireframe</string>
    </property>
    <property name="toolTip">
     <string>Render wireframe</string>
@@ -134,6 +135,11 @@
   <action name="actionView_polyhedron">
    <property name="text">
     <string>Polyhedron</string>
+   </property>
+  </action>
+  <action name="actionSaveApproximation">
+   <property name="text">
+    <string>&amp;Save Approximation</string>
    </property>
   </action>
  </widget>
