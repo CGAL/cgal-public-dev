@@ -36,7 +36,7 @@ void VerticalRayGraphicsItem::paint( QPainter* painter,
                                      const QStyleOptionGraphicsItem* /* option*/,
                                      QWidget* /* widget */ )
 {
-  std::cout<<"In VerticalRayGraphicsItem::paint\n";
+  // std::cout<<"In VerticalRayGraphicsItem::paint\n";
 
   QPen rayPen( this->m_color, this->m_width );
   painter->setPen( rayPen );

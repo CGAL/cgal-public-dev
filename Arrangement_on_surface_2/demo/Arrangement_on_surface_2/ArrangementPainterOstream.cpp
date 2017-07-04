@@ -123,13 +123,18 @@ operator<<( const X_monotone_curve_2& curve )
     CGAL::Bbox_2 bb = curve.bbox( );
     QRectF qbb = this->convert( bb );
     // quick cull
+
+    bool is_horizontal = (qbb.top() == qbb.bottom());
+    bool is_vertical = (qbb.left() == qbb.right());
+
     if ( this->clippingRect.isValid( ) &&
-         ! this->clippingRect.intersects( qbb ) )
+         ! this->clippingRect.intersects( qbb ))
     {
       //std::cout << "quick culled curve" << std::endl;
       return *this;
     }
 
+    std::cout<<"After if\n";
     #if 0
     std::cout << "bottom: ("
               << this->clippingRect.bottomLeft( ).x( )
@@ -145,6 +150,7 @@ operator<<( const X_monotone_curve_2& curve )
 
     if ( this->clippingRect.isValid( ) )
     {
+      std::cout<<"In this->clippingRect.isValid( ) == true\n";
       std::vector< X_monotone_curve_2 > visibleParts;
       if ( this->clippingRect.contains( qbb ) )
       {
@@ -154,6 +160,10 @@ operator<<( const X_monotone_curve_2& curve )
       {
         visibleParts = this->visibleParts( curve );
       }
+
+      std::cout<<"After clippingRect\n";
+      std::cout<<"visibleParts.size = "<<visibleParts.size( );
+      std::cout<<"\n";
       for ( unsigned int i = 0; i < visibleParts.size( ); ++i )
       {
         X_monotone_curve_2 subcurve = visibleParts[ i ];
@@ -200,6 +210,7 @@ operator<<( const X_monotone_curve_2& curve )
     }
     else
     { // draw the whole curve
+      std::cout<<"In draw the whole curve\n";
       int n;
       if ( this->scene == NULL )
       {
@@ -220,10 +231,14 @@ operator<<( const X_monotone_curve_2& curve )
       {
         return *this;
       }
+      std::cout<<"GET N\n";
 
       std::pair<double, double>* app_pts = new std::pair<double, double>[n + 1];
       std::pair<double, double>* end_pts =
         curve.polyline_approximation(n, app_pts);
+
+      std::cout<<"After polyline_approximation\n";
+
       std::pair<double, double>* p_curr = app_pts;
       std::pair<double, double>* p_next = p_curr + 1;
       int count = 0;
@@ -243,7 +258,7 @@ operator<<( const X_monotone_curve_2& curve )
       while ( p_next != end_pts );
       //std::cout << count << " approximation points" << std::endl;
     }
-
+    std::cout<<"return okay\n";
     return *this;
 }
 
@@ -284,7 +299,8 @@ operator<<( const X_monotone_curve_2& curve )
       // skip segments outside our view
       QRectF seg_bb = this->convert( seg.bbox( ) );
       if ( this->clippingRect.isValid( ) &&
-           ! this->clippingRect.intersects( seg_bb ) )
+           ! this->clippingRect.intersects( seg_bb ) 
+           & (!seg.is_horizontal() && !seg.is_vertical()))
       {
         return *this;
       }

@@ -260,10 +260,10 @@ protected:
     for( Face_iterator fi = this->arr->faces_begin( );
          fi != this->arr->faces_end( ); ++fi )
     {
-      // if ( fi->is_fictitious( ) )
-      // {
-      //     std::cout << "setting fictitious face not visited" << std::endl;
-      // }
+      if ( fi->is_fictitious( ) )
+      {
+          std::cout << "setting fictitious face not visited" << std::endl;
+      }
       fi->set_visited( false );
     }
 
@@ -590,6 +590,53 @@ protected:
   template < typename CircularKernel >
   void paintFace(Face_handle f, QPainter* painter,
                  CGAL::Arr_circular_arc_traits_2<CircularKernel> /* traits */);
+
+  template < typename Kernel_ >
+  void paintFace(Face_handle f, QPainter* painter,
+                 CGAL::Arr_linear_traits_2< Kernel_ > /* traits */)
+  {
+    std::cout<<"In paintFace Arr_linear_traits_2"<<std::endl;
+
+    if (!f->is_unbounded())  // f is not the unbounded face
+    {
+      std::cout<<"In paintFace Arr_linear_traits_2 bounded"<<std::endl;
+      QVector< QPointF > pts; // holds the points of the polygon
+
+      /* running with around the outer of the face and generate from it
+       * polygon
+       */
+      Ccb_halfedge_circulator cc=f->outer_ccb();
+      do {
+        double x = CGAL::to_double(cc->source()->point().x());
+        double y = CGAL::to_double(cc->source()->point().y());
+        QPointF coord_source(x , y);
+        pts.push_back(coord_source );
+        //created from the outer boundary of the face
+      } while (++cc != f->outer_ccb());
+
+      // make polygon from the outer ccb of the face 'f'
+      QPolygonF pgn (pts);
+
+      // FIXME: get the bg color
+      QColor color = this->backgroundColor;
+      if ( f->color().isValid() )
+      {
+        color = f->color();
+      }
+
+      QBrush oldBrush = painter->brush( );
+      painter->setBrush( color );
+      painter->drawPolygon( pgn );
+      painter->setBrush( oldBrush );
+    }
+    else
+    {
+      std::cout<<"In paintFace Arr_linear_traits_2 unbounded"<<std::endl;
+      QRectF rect = this->viewportRect( );
+      QColor color = this->backgroundColor;
+      painter->fillRect( rect, color );
+    }
+  }
 
 #if 0
   void drawDiagnosticArc( QPointF c, QPointF s, QPointF t, QPainter* qp )
@@ -1131,6 +1178,8 @@ void
 ArrangementGraphicsItem< Arr_, ArrTraits >::
 paintFace( Face_handle f, QPainter* painter )
 {
+  std::cout<<"In paintFace entry\n";
+
   if ( f->visited( ) )
   {
     return;
