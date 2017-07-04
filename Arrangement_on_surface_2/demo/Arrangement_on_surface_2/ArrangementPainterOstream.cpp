@@ -428,11 +428,14 @@ operator<<( const X_monotone_curve_2& curve )
     int height = view->height();
     int width = view->width();
 
-    // std::cerr << ws.width() << " and " <<  ws.height() << "\n";
+    std::cout << width << " and " <<  height << "\n";
+    std::cout << "points length: " << points.size() << std::endl;
     typename std::list<Coord_vec_2>::const_iterator lit = points.begin();
     //ppnt->moveTo((*p1).first, height - (*p1).second);
     while(lit != points.end()) {
       const Coord_vec_2& vec = *lit;
+      std::cout<<"Coord_vec_2 size: "<< vec.size() <<std::endl;
+
       typename Coord_vec_2::const_iterator vit = vec.begin();
       //std::cerr << "(" << vit->first << "; " << vit->second << ")\n";
       //         if(lit == points.begin() &&*/ vit != vec.end()) {
@@ -452,6 +455,14 @@ operator<<( const X_monotone_curve_2& curve )
       QPainterPath path;
       QPoint coord( vit->first, height - vit->second );
       QPointF qpt = view->mapToScene( coord );
+      std::cout<<" First point in the vec: ";
+      std::cout<<qpt.x() << "\t" << qpt.y()<< std::endl;
+      std::cout<<" Last point in the vec: ";
+      QPoint last_coord( vec[vec.size()-1].first, height - vec[vec.size()-1].second );
+      QPointF last = view->mapToScene( last_coord );
+      std::cout<<" Last point in the vec: ";
+      std::cout<<last.x() << "\t" << last.y()<< std::endl;
+
       if ( vit != vec.end() )
       {
         path.moveTo( qpt );
@@ -462,7 +473,7 @@ operator<<( const X_monotone_curve_2& curve )
         vit++;
         coord = QPoint( vit->first, height - vit->second );
         qpt = view->mapToScene( coord );
-        //std::cout << vit->first << " " << vit->second << std::endl;
+        // std::cout << qpt.x() << "\t" << qpt.y() << std::endl;
       }
       this->qp->drawPath( path );
       lit++;
@@ -534,6 +545,7 @@ void
 ArrangementPainterOstream< CGAL::Arr_algebraic_segment_traits_2<Coefficient_ > >::
 setupFacade( )
 {
+
   std::cout<<"In setupFacade\n";
   typedef Curve_renderer_facade<CKvA_2> Facade;
   QGraphicsView* view = this->scene->views( ).first( );
@@ -541,11 +553,37 @@ setupFacade( )
   CGAL::Bbox_2 bbox = this->convert( viewport ).bbox( );
   Facade::setup(bbox, view->width(), view->height());
 
+  std::cout<<"Viewport\n";
+  std::cout<<viewport.left()<<"\t"<<viewport.right()<<std::endl;
+  std::cout<<viewport.top()<<"\t"<<viewport.bottom()<<std::endl;
+
   std::cout<<view->width()<<"\t"<<view->height()<<std::endl;
+  std::cout<<"BBox\n";
   std::cout<<bbox.xmin()<<"\t"<<bbox.xmax()<<std::endl;
   std::cout<<bbox.ymin()<<"\t"<<bbox.ymax()<<std::endl;
   
   std::cout<<"Leaving setupFacade\n";
+
+
+  // std::cout<<"In setupFacade\n";
+  // typedef Curve_renderer_facade<CKvA_2> Facade;
+
+  // QGraphicsView* view = this->scene->views( ).first( );
+  // QRect viewport = view->viewport()->rect();
+
+  // CGAL::Bbox_2 bbox = this->convert( viewport ).bbox( );
+  // Facade::setup(bbox, viewport.width(), viewport.height());
+
+  // std::cout<<"Viewport\n";
+  // std::cout<<viewport.left()<<"\t"<<viewport.right()<<std::endl;
+  // std::cout<<viewport.top()<<"\t"<<viewport.bottom()<<std::endl;
+
+  // // std::cout<<view->width()<<"\t"<<view->height()<<std::endl;
+  // std::cout<<"BBox\n";
+  // std::cout<<bbox.xmin()<<"\t"<<bbox.xmax()<<std::endl;
+  // std::cout<<bbox.ymin()<<"\t"<<bbox.ymax()<<std::endl;
+  
+  // std::cout<<"Leaving setupFacade\n";
 }
 
 } // namespace Qt

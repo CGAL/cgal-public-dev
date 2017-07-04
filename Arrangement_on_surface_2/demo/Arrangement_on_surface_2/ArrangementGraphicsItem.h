@@ -138,7 +138,7 @@ protected:
     // assumes the first view is the right one
     QGraphicsView* viewport = views.first( );
     QPointF p1 = viewport->mapToScene( 0, 0 );
-    QPointF p2 = viewport->mapToScene(viewport->width(), viewport->height());
+    QPointF p2 = viewport->mapToScene(876, 456);
 
     double xmin = (std::min)(p1.x(), p2.x());
     double xmax = (std::max)(p1.x(), p2.x());
@@ -178,6 +178,7 @@ class ArrangementGraphicsItem : public ArrangementGraphicsItemBase
   typedef typename Arrangement::Halfedge_handle         Halfedge_handle;
   typedef typename Arrangement::Face_handle             Face_handle;
   typedef typename Arrangement::Face_iterator           Face_iterator;
+  typedef typename Arrangement::Unbounded_face_iterator Unbounded_face_iterator;
   typedef typename Arrangement::Hole_iterator           Holes_iterator;
   typedef typename Arrangement::Ccb_halfedge_circulator Ccb_halfedge_circulator;
 
@@ -256,20 +257,48 @@ protected:
 
   void paintFaces( QPainter* painter, CGAL::Arr_open_side_tag )
   {
+
+
+    // Face_handle fictitiousFace = this->arr->fictitious_face( );
+    std::cout<<"In paintFaces fictitiousFace"<<std::endl;
+    std::cout<<"number_of_unbounded_faces: ";
+    std::cout<<this->arr->number_of_unbounded_faces()<<std::endl;
+
     // Prepare all faces for painting
+    int Face_iterator_cnt = 0;
+
     for( Face_iterator fi = this->arr->faces_begin( );
          fi != this->arr->faces_end( ); ++fi )
     {
+
       if ( fi->is_fictitious( ) )
       {
           std::cout << "setting fictitious face not visited" << std::endl;
       }
+      if ( fi->is_unbounded( ) )
+      {
+          std::cout << "setting unbounded face not visited" << std::endl;
+      }
+      Face_iterator_cnt++;
       fi->set_visited( false );
     }
 
-    Face_handle fictitiousFace = this->arr->fictitious_face( );
-    std::cout<<"In paintFaces fictitiousFace"<<std::endl;
-    this->paintFace( fictitiousFace, painter );
+    std::cout<<"First Face_iterator cnt: "<<Face_iterator_cnt <<std::endl;
+    Face_iterator_cnt = 0;
+
+    for( Face_iterator fi = this->arr->faces_begin( );
+         fi != this->arr->faces_end( ); ++fi )
+    {
+      Face_iterator_cnt++;
+      Face_handle f_handle = fi;
+      this->paintFace( f_handle, painter );
+    }
+
+    std::cout<<"Second Face_iterator cnt: "<<Face_iterator_cnt <<std::endl;
+    // Face_handle unboundedFace = this->arr->unbounded_face( );
+    // this->paintFace( unboundedFace, painter );
+    
+    std::cout<<"Leaving paintFaces fictitiousFace"<<std::endl;
   }
 
 #if 0
@@ -579,9 +608,9 @@ protected:
     else
     {
       std::cout<<"In paintFace Arr_conic_traits_2 unbounded"<<std::endl;
-      QRectF rect = this->viewportRect( );
-      QColor color = this->backgroundColor;
-      painter->fillRect( rect, color );
+      // QRectF rect = this->viewportRect( );
+      // QColor color = this->backgroundColor;
+      // painter->fillRect( rect, color );
     }
   }
 
@@ -590,6 +619,14 @@ protected:
   template < typename CircularKernel >
   void paintFace(Face_handle f, QPainter* painter,
                  CGAL::Arr_circular_arc_traits_2<CircularKernel> /* traits */);
+  
+  template < typename Coefficient_ >
+  void paintFace(Face_handle f, QPainter* painter,
+                 CGAL::Arr_algebraic_segment_traits_2<
+                                   Coefficient_ > /* traits */)
+ {
+    std::cout<<"In paintFace Arr_algebraic_segment_traits_2"<<std::endl;
+ }
 
   template < typename Kernel_ >
   void paintFace(Face_handle f, QPainter* painter,
@@ -632,9 +669,9 @@ protected:
     else
     {
       std::cout<<"In paintFace Arr_linear_traits_2 unbounded"<<std::endl;
-      QRectF rect = this->viewportRect( );
-      QColor color = this->backgroundColor;
-      painter->fillRect( rect, color );
+      // QRectF rect = this->viewportRect( );
+      // QColor color = this->backgroundColor;
+      // painter->fillRect( rect, color );
     }
   }
 
@@ -961,6 +998,9 @@ paint(QPainter* painter,
       CGAL::Arr_algebraic_segment_traits_2< Coefficient_ > /* traits */)
 {
   std::cout<<"In paint Arr_algebraic_segment_traits_2\n";
+
+  this->paintFaces( painter );
+
   painter->setPen( this->verticesPen );
   QRectF clipRect = this->boundingRect( );
 
@@ -1193,8 +1233,11 @@ paintFace( Face_handle f, QPainter* painter )
   this->paintFace( f, painter, Traits( ) );
   f->set_visited( true );
 
+  std::cout<< "After this->paintFace( f, painter, Traits( ) )\n";
+
   for ( hit = f->holes_begin(); hit != f->holes_end(); ++hit )
   {
+    std::cout<<"Inside holes_begin loop\n";
     // Traverse in clockwise order
     Ccb_halfedge_circulator cc = *hit;
     do {
@@ -1230,6 +1273,7 @@ paintFace( Face_handle f, QPainter* painter )
   //   std::cout << "fictitious face has " << inner_faces << " inner faces"
   //             << std::endl;
   // }
+  std::cout<<"Leaving paintFace( Face_handle f, QPainter* painter )\n";
 
 }
 
@@ -1316,9 +1360,9 @@ paintFace( Face_handle f, QPainter* painter,
   else
   {
     std::cout<<"In paintFace Arr_segment_traits_2 unbounded"<<std::endl;
-    QRectF rect = this->viewportRect( );
-    QColor color = this->backgroundColor;
-    painter->fillRect( rect, color );
+    // QRectF rect = this->viewportRect( );
+    // QColor color = this->backgroundColor;
+    // painter->fillRect( rect, color );
   }
 }
 
@@ -1442,9 +1486,9 @@ paintFace( Face_handle f, QPainter* painter,
     std::cout<<"In paintFace Arr_polyline_traits_2 unbounded"<<std::endl;
 
     // Draw a infinite bounding box
-    QRectF rect = this->viewportRect( );
-    QColor color = this->backgroundColor;
-    painter->fillRect( rect, color );
+    // QRectF rect = this->viewportRect( );
+    // QColor color = this->backgroundColor;
+    // painter->fillRect( rect, color );
   }
 }
 
@@ -1461,13 +1505,13 @@ paintFace(Face_handle f, QPainter* painter,
   {
 
     std::cout<<"In paintFace Arr_circular_arc_traits_2 unbounded"<<std::endl;
-    QRectF rect = this->viewportRect( );
-    QColor color = this->backgroundColor;
-    if ( f->color().isValid() )
-    {
-      color = f->color();
-    }
-    painter->fillRect( rect, color );
+    // QRectF rect = this->viewportRect( );
+    // QColor color = this->backgroundColor;
+    // if ( f->color().isValid() )
+    // {
+    //   color = f->color();
+    // }
+    // painter->fillRect( rect, color );
     return;
   }
 
