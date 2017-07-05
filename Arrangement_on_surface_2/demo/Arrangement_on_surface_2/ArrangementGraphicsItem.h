@@ -619,13 +619,96 @@ protected:
   template < typename CircularKernel >
   void paintFace(Face_handle f, QPainter* painter,
                  CGAL::Arr_circular_arc_traits_2<CircularKernel> /* traits */);
-  
+
   template < typename Coefficient_ >
   void paintFace(Face_handle f, QPainter* painter,
                  CGAL::Arr_algebraic_segment_traits_2<
                                    Coefficient_ > /* traits */)
  {
     std::cout<<"In paintFace Arr_algebraic_segment_traits_2"<<std::endl;
+    if (f->is_unbounded())
+    {
+      std::cout<<"In paintFace Arr_algebraic_segment_traits_2 unbounded"<<std::endl;
+      return;
+    }
+
+    // Only bounded face is drawn
+
+    std::cout<<"In paintFace Arr_algebraic_segment_traits_2 bounded"<<std::endl;
+    QVector< QPointF > pts; // holds the points of the polygon
+
+    typedef typename CGAL::Arr_algebraic_segment_traits_2< Coefficient_ >
+                                                        Traits;
+    typedef typename Traits::CKvA_2                       CKvA_2;
+    typedef std::pair< double, double > Coord_2;
+    boost::optional < Coord_2 > p1, p2;
+    typedef std::vector< Coord_2 > Coord_vec_2;
+    std::list<Coord_vec_2> points;
+
+    std::cout<<"In setupFacade\n";
+    typedef Curve_renderer_facade<CKvA_2> Facade;
+    QGraphicsView* view = this->scene->views( ).first( );
+    int height = view->height();
+    int width = view->width();
+
+    QRectF viewport = this->viewportRect( );
+    CGAL::Bbox_2 bbox = this->convert( viewport ).bbox( );
+    Facade::setup(bbox, view->width(), view->height());    
+    std::cout<<"Leaving setupFacade\n";
+    /* running with around the outer of the face and generate from it
+     * polygon
+     */
+    Ccb_halfedge_circulator cc=f->outer_ccb();
+    do {
+      double x = CGAL::to_double(cc->source()->point().x());
+      double y = CGAL::to_double(cc->source()->point().y());
+
+      X_monotone_curve_2 curve = cc->curve();
+      Facade::instance().draw( curve, points, &p1, &p2 );
+
+      if(points.empty())
+      {
+        std::cout<<"In paintFace: points.empty() == True\n";
+        continue;
+      }
+
+      const Coord_vec_2& vec = points.front();
+      typename Coord_vec_2::const_iterator vit = vec.begin();
+
+      while ( vit != vec.end() )
+      {
+        QPoint coord( vit->first, height - vit->second );
+        QPointF qpt = view->mapToScene( coord );
+        pts.push_back(qpt );
+        vit++;
+        // std::cout << qpt.x() << "\t" << qpt.y() << std::endl;
+      }
+      
+      points.clear();
+      //created from the outer boundary of the face
+    } while (++cc != f->outer_ccb());
+
+    // make polygon from the outer ccb of the face 'f'
+    QPolygonF pgn (pts);
+
+    // FIXME: get the bg color
+    QColor color = this->backgroundColor;
+    if ( f->color().isValid() )
+    {
+      color = f->color();
+    }
+
+    QBrush oldBrush = painter->brush( );
+    QPen oldPen = painter->pen();
+    painter->setBrush( color );
+    painter->setPen( this->edgesPen );
+
+    painter->drawPolygon( pgn );
+
+    painter->setBrush( oldBrush );
+    painter->setPen( oldPen );
+
+    std::cout<<"Leaving paintFace Arr_algebraic_segment_traits_2 bounded"<<std::endl;
  }
 
   template < typename Kernel_ >
