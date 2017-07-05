@@ -187,7 +187,10 @@ void MainWindow::on_actionVSA_segmentation_triggered()
   SettingsDialog dial;
   if(dial.exec() == QDialog::Accepted) {
     QApplication::setOverrideCursor(Qt::WaitCursor);
-    m_pScene->VSA_segmentation(dial.NumSegments->value(), dial.NumIterations->value());
+    if(dial.InitRandom->isChecked())
+      m_pScene->VSA_segmentation(dial.NumSegments->value(), dial.NumIterations->value());
+    else if(dial.InitHierarchical->isChecked())
+      m_pScene->VSA_hierarchical(dial.NumSegments->value(), dial.NumIterations->value());
     m_pViewer->update();
     QApplication::restoreOverrideCursor();
   }

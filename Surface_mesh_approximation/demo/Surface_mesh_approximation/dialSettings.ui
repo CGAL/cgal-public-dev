@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>266</width>
-    <height>146</height>
+    <height>211</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -17,6 +17,23 @@
    <property name="sizeConstraint">
     <enum>QLayout::SetFixedSize</enum>
    </property>
+   <item>
+    <widget class="QRadioButton" name="InitRandom">
+     <property name="text">
+      <string>Random Initialization</string>
+     </property>
+     <property name="checked">
+      <bool>true</bool>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QRadioButton" name="InitHierarchical">
+     <property name="text">
+      <string>Hierarchical Initialization</string>
+     </property>
+    </widget>
+   </item>
    <item>
     <layout class="QGridLayout" name="gridLayout">
      <item row="1" column="1">

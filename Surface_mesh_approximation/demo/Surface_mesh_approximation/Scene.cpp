@@ -175,6 +175,33 @@ void Scene::VSA_incremental(const std::size_t num_proxies, const std::size_t num
   std::cout << "done" << std::endl;
 }
 
+void Scene::VSA_hierarchical(const std::size_t num_proxies, const std::size_t num_iterations)
+{
+  if(!m_pPolyhedron)
+    return;
+
+  std::cout << "Hierarchical VSA...";
+
+  m_fidx_map.clear();
+  for(Facet_const_iterator fitr = m_pPolyhedron->facets_begin();
+    fitr != m_pPolyhedron->facets_end();
+    ++fitr) {
+    m_fidx_map.insert(
+      std::pair<Polyhedron::Facet_const_handle, std::size_t>(fitr, 0));
+  }
+
+  typedef boost::property_map<Polyhedron, boost::vertex_point_t>::type PointPropertyMap;
+  PointPropertyMap ppmap = get(boost::vertex_point, const_cast<Polyhedron &>(*m_pPolyhedron));
+
+  CGAL::internal::VSA<Polyhedron, Kernel, PointPropertyMap> vsa_seg(*m_pPolyhedron, ppmap, Kernel());
+  vsa_seg.partition_hierarchical(num_proxies, num_iterations, m_fidx_pmap);
+
+  m_px_num = num_proxies;
+  m_view_seg_boundary = true;
+
+  std::cout << "done" << std::endl;
+}
+
 void Scene::draw()
 {
   if (m_view_polyhedron) {
