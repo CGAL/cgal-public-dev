@@ -660,8 +660,14 @@ protected:
      */
     Ccb_halfedge_circulator cc=f->outer_ccb();
     do {
-      double x = CGAL::to_double(cc->source()->point().x());
-      double y = CGAL::to_double(cc->source()->point().y());
+      double src_x = CGAL::to_double(cc->source()->point().x());
+      double src_y = CGAL::to_double(cc->source()->point().y());
+      double tgt_x = CGAL::to_double(cc->target()->point().x());
+      double tgt_y = CGAL::to_double(cc->target()->point().y());
+
+      std::cout<< "In while loop: \n";
+      std::cout<<"source: "<< src_x <<"\t"<<src_y<<std::endl;
+      std::cout<<"target: "<< tgt_x <<"\t"<<tgt_y<<std::endl;
 
       X_monotone_curve_2 curve = cc->curve();
       Facade::instance().draw( curve, points, &p1, &p2 );
@@ -673,17 +679,35 @@ protected:
       }
 
       const Coord_vec_2& vec = points.front();
+      QPointF first = view->mapToScene( QPoint(vec[0].first, height-vec[0].second) );
+      std::cout<<" First point in the vec: ";
+      std::cout<<first.x() << "\t" << first.y()<< std::endl;
+
+      QPointF last = view->mapToScene( QPoint(vec[vec.size()-1].first, height-vec[vec.size()-1].second) );
+      std::cout<<" Last point in the vec: ";
+      std::cout<<last.x() << "\t" << last.y()<< std::endl;
+
       typename Coord_vec_2::const_iterator vit = vec.begin();
 
+      QVector< QPointF > face_curve_points;
       while ( vit != vec.end() )
       {
         QPoint coord( vit->first, height - vit->second );
         QPointF qpt = view->mapToScene( coord );
-        pts.push_back(qpt );
+        if ( src_x < tgt_x )
+        {
+          face_curve_points.push_back( qpt );
+        }
+        else
+        {
+          face_curve_points.push_front( qpt );
+        }
+
         vit++;
         // std::cout << qpt.x() << "\t" << qpt.y() << std::endl;
       }
       
+      pts += face_curve_points;
       points.clear();
       //created from the outer boundary of the face
     } while (++cc != f->outer_ccb());
