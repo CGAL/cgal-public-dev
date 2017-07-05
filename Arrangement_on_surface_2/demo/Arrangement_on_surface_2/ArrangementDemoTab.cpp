@@ -48,17 +48,14 @@ ArrangementDemoTabBase::~ArrangementDemoTabBase( )
 
 void ArrangementDemoTabBase::setupUi( )
 {
-  this->scene->setSceneRect(0, 0, this->graphicsView->width(), this->graphicsView->height());
-  // this->scene->addEllipse(100,100,50,50);
-  // this->scene->addRect(-200,-200, 50, 50);
-  
+  int viewWidth = this->graphicsView->width();
+  int viewHeight = this->graphicsView->height();
+  // int viewWidth = 100;
+  // int viewHeight = 100;
+  this->scene->setSceneRect(0, 0, viewWidth, viewHeight);
   this->layout->addWidget( this->graphicsView, 0, 0 );
   this->graphicsView->setScene( this->scene );
   this->graphicsView->setMouseTracking( true );
-  // this->graphicsView->scale(10000, 10000);
-  // this->graphicsView->scale(1/10000, 1/10000);
-  // this->graphicsView->centerOn(this->graphicsView->sceneRect().center());
-  // this->graphicsView->setResizeAnchor(QGraphicsView::AnchorViewCenter);
 
 }
 

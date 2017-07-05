@@ -150,10 +150,10 @@ protected:
   void updateEnvelope(bool lower,
                       CGAL::Arr_circular_arc_traits_2<CircularKernel> traits);
 
-  template < typename Coefficient_ >
-  void updateEnvelope(bool lower,
-                      CGAL::Arr_algebraic_segment_traits_2<Coefficient_>
-                      traits);
+  // template < typename Coefficient_ >
+  // void updateEnvelope(bool lower,
+  //                     CGAL::Arr_algebraic_segment_traits_2<Coefficient_>
+  //                     traits);
   
   Construct_x_monotone_subcurve_2< Traits > construct_x_monotone_subcurve_2;
   Arrangement* arr;
@@ -177,6 +177,19 @@ EnvelopeCallback<Arr_, Traits>::EnvelopeCallback(Arrangement* arr_,
 template < typename Arr_, typename Traits >
 void EnvelopeCallback< Arr_, Traits >::slotModelChanged( )
 {
+  std::cout<<"In EnvelopeCallback slotModelChanged: "<< this->scene <<std::endl;
+
+  if ( CGAL::Qt::Callback::scene != NULL )
+  {
+    std::cout<<"Scene properly set\n";
+    lowerEnvelope->setScene(CGAL::Qt::Callback::scene);
+    upperEnvelope->setScene(CGAL::Qt::Callback::scene);
+  }
+  else
+  {
+    std::cout<<"Scene not properly set\n";
+  }
+  
   this->updateEnvelope( true );
   this->updateEnvelope( false );
 }
@@ -355,14 +368,14 @@ updateEnvelope(bool lower,
   envelopeToUpdate->modelChanged( );
 }
 
-template < typename Arr_, typename Traits >
-template < typename Coefficient_ >
-void EnvelopeCallback< Arr_, Traits >::
-updateEnvelope(bool /* lower */,
-               CGAL::Arr_algebraic_segment_traits_2<Coefficient_> /* traits */)
-{
-  // std::cout << "alg seg envelope stub" << std::endl;
-}
+// template < typename Arr_, typename Traits >
+// template < typename Coefficient_ >
+// void EnvelopeCallback< Arr_, Traits >::
+// updateEnvelope(bool  lower ,
+//                CGAL::Arr_algebraic_segment_traits_2<Coefficient_> /* traits */)
+// {
+//   // std::cout << "alg seg envelope stub" << std::endl;
+// }
 
 template < typename Arr_, typename Traits >
 void EnvelopeCallback< Arr_, Traits >::showLowerEnvelope( bool show )
