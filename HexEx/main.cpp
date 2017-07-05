@@ -1,7 +1,5 @@
-//#ifndef HEXEXTR_H
-//#define HEXEXTR_H
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
-#include"hexextr.h" //checking?
+#include"hexextr.h" 
 #include<iostream>
 #include<string>
 //#include<CGAL/Aff_transformation_3.h>

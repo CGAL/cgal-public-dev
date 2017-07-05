@@ -1,0 +1,13 @@
+****The calculation of Euler angles for normal constraints****
+
+The z axis needs to be rotated such that it is parallel to the normal at the boundary vertices, so that we satisfy the normal constraints.
+
+Step 1: Calculating the normal n at the vertex: This is done using LCC_3::compute_normal_of_cell_0(), which averages the face normals of all the faces the vertex is incident upon.
+
+Step 2: Calculating angle beta: We take the arc cosine of the dot product of the two vectors, z and n, to obtain the angle beta between them. This is the angle by which z must be rotated, about a certain axis.
+
+Step 3: Finding the axis about which z is rotated: The angle beta is rotated about an axis, which has to be perpendicular to z and n (which is z'). This axis x' is calculated by calculating their cross product. 
+
+Step 4: Calculating angle alpha: Since x' is the new x axis about which the second rotation in z-x'-z' takes place, the angle alpha is calculated by calculating the angle between x and x', using dot product. 
+
+Step 5: Calculating angle gamma: Now that we have a coordinate system with the the z axis perpendicular to the vertex in place, rotation by gamma around z' is unnecessary. So gamma is taken to be zero. 
