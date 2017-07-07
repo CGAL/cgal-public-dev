@@ -1,4 +1,4 @@
-﻿<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <!-- $Id$
      $URL$
 -->
@@ -272,7 +272,20 @@ and <code>src/</code> directories).
       Sqrt3 subdivision can now handle input surfaces with a border.
     </li>
   </ul>
-
+<h3>Point Set Shape Detection</h3>
+<ul>
+  <li>New algorithm: <code>CGAL::Region_growing</code>. This is a
+    deterministic alternative to RANSAC for plane detection.</li>
+  <li><b>Breaking change</b>: the API
+  of <code>CGAL::regularize_planes()</code> is generalized to accept
+  other types of input than the RANSAC output.</li>
+</ul>
+<h3>Point Set Processing</h3>
+<ul>
+  <li><b>Breaking change</b>: the API
+  of <code>CGAL::structure_point_set()</code> is generalized to accept
+  other types of input than the RANSAC output.</li>
+</ul>
 <h3>Triangulated Surface Mesh Parameterization</h3>
 <ul>
   <li>
