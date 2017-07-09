@@ -16,8 +16,6 @@ public:
   // types
   typedef CGAL::Bbox_3 Bbox;
   typedef boost::property_map<Polyhedron, boost::vertex_point_t>::type PointPropertyMap;
-  typedef CGAL::internal::VSA<Polyhedron, Kernel, PointPropertyMap> VSA;
-  typedef VSA::Anchor Anchor;
 
 public:
   Scene();
@@ -81,7 +79,6 @@ private:
   FacetIdMap m_fidx_map;
   FacetIdPmap m_fidx_pmap; // property-map for segment-idx
 
-  std::vector<Anchor> m_anchors; // the anchors
   std::vector<Point> m_anchor_pos;
   std::vector<Polyhedron::Vertex_handle> m_anchor_vtx;
   std::vector<std::vector<std::size_t> > m_bdrs; // anchor borders

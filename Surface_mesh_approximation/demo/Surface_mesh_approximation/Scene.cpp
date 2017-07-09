@@ -106,9 +106,9 @@ void Scene::save_approximation(const std::string &filename)
     return;
   }
 
-  ofs << "OFF\n" << m_anchors.size() << ' ' << m_tris.size() / 3 << ' ' << "0\n";
-  for(std::vector<Anchor>::iterator aitr = m_anchors.begin(); aitr != m_anchors.end(); ++aitr)
-    ofs << aitr->pos.x() << ' ' << aitr->pos.y() << ' ' << aitr->pos.z() << ' ' << '\n';
+  ofs << "OFF\n" << m_anchor_pos.size() << ' ' << m_tris.size() / 3 << ' ' << "0\n";
+  BOOST_FOREACH(const Point &pt, m_anchor_pos)
+    ofs << pt.x() << ' ' << pt.y() << ' ' << pt.z() << ' ' << '\n';
   for(std::vector<int>::iterator titr = m_tris.begin(); titr != m_tris.end(); titr += 3)
     ofs << 3 << ' ' << *titr << ' ' << *(titr + 1) << ' ' << *(titr + 2) << '\n';
   ofs.flush();
@@ -145,14 +145,6 @@ void Scene::VSA_segmentation(const std::size_t num_proxies, const std::size_t nu
     m_anchor_vtx,
     m_bdrs,
     Kernel());
-
-  m_anchors.clear();
-  for(std::size_t i = 0; i < m_anchor_pos.size(); ++i) {
-    m_anchors.push_back(Anchor(m_anchor_vtx[i], m_anchor_pos[i]));
-  }
-  
-  std::cerr << "#anchors " << m_anchors.size() << std::endl;
-  std::cerr << "#borders " << m_bdrs.size() << std::endl;
 
   m_px_num = num_proxies;
   m_view_seg_boundary = true;
@@ -328,8 +320,7 @@ void Scene::render_anchors()
   ::glColor3ub(0, 0, 0);
   ::glPointSize(5.0f);
   ::glBegin(GL_POINTS);
-  for (std::vector<Anchor>::iterator vitr = m_anchors.begin(); vitr != m_anchors.end(); ++vitr) {
-    const Point &pt = vitr->pos;
+  BOOST_FOREACH(const Point &pt, m_anchor_pos) {
     ::glVertex3d(pt.x(), pt.y(), pt.z());
   }
   ::glEnd();
@@ -337,8 +328,8 @@ void Scene::render_anchors()
   ::glColor3ub(255, 255, 255);
   ::glPointSize(5.0f);
   ::glBegin(GL_POINTS);
-  for (std::vector<Anchor>::iterator vitr = m_anchors.begin(); vitr != m_anchors.end(); ++vitr) {
-    const Point &pt = vitr->vtx->point();
+  BOOST_FOREACH(const Polyhedron::Vertex_handle &vtx, m_anchor_vtx) {
+    const Point &pt = vtx->point();
     ::glVertex3d(pt.x(), pt.y(), pt.z());
   }
   ::glEnd();
@@ -346,10 +337,10 @@ void Scene::render_anchors()
   ::glLineWidth(1.0f);
   ::glColor3ub(0, 0, 255);
   ::glBegin(GL_LINES);
-  for (std::vector<Anchor>::iterator vitr = m_anchors.begin(); vitr != m_anchors.end(); ++vitr) {
-    const Point &ps = vitr->vtx->point();
+  for (std::size_t i = 0; i < m_anchor_pos.size(); ++i) {
+    const Point &ps = m_anchor_vtx[i]->point();
     ::glVertex3d(ps.x(), ps.y(), ps.z());
-    const Point &pt = vitr->pos;
+    const Point &pt = m_anchor_pos[i];
     ::glVertex3d(pt.x(), pt.y(), pt.z());
   }
   ::glEnd();
@@ -363,7 +354,7 @@ void Scene::render_borders()
   for (std::vector<std::vector<std::size_t> >::iterator bitr = m_bdrs.begin(); bitr != m_bdrs.end(); ++bitr) {
     ::glBegin(GL_LINE_LOOP);
     for (std::vector<std::size_t>::iterator aitr = bitr->begin(); aitr != bitr->end(); ++aitr) {
-      const Point &pt = m_anchors[*aitr].pos;
+      const Point &pt = m_anchor_pos[*aitr];
       ::glVertex3d(pt.x(), pt.y(), pt.z());
     }
     ::glEnd();
@@ -379,11 +370,11 @@ void Scene::render_approximation()
   ::glColor3ub(0, 0, 255);
   for (std::vector<int>::iterator vitr = m_tris.begin(); vitr != m_tris.end(); vitr += 3) {
     ::glBegin(GL_LINE_LOOP);
-    const Point &p0 = m_anchors[*vitr].pos;
+    const Point &p0 = m_anchor_pos[*vitr];
     ::glVertex3d(p0.x(), p0.y(), p0.z());
-    const Point &p1 = m_anchors[*(vitr + 1)].pos;
+    const Point &p1 = m_anchor_pos[*(vitr + 1)];
     ::glVertex3d(p1.x(), p1.y(), p1.z());
-    const Point &p2 = m_anchors[*(vitr + 2)].pos;
+    const Point &p2 = m_anchor_pos[*(vitr + 2)];
     ::glVertex3d(p2.x(), p2.y(), p2.z());
     ::glEnd();
   }
@@ -392,9 +383,9 @@ void Scene::render_approximation()
   // ::glPolygonMode(GL_FRONT, GL_FILL);
   ::glBegin(GL_TRIANGLES);
   for (std::vector<int>::iterator vitr = m_tris.begin(); vitr != m_tris.end(); vitr += 3) {
-    const Point &p0 = m_anchors[*vitr].pos;
-    const Point &p1 = m_anchors[*(vitr + 1)].pos;
-    const Point &p2 = m_anchors[*(vitr + 2)].pos;
+    const Point &p0 = m_anchor_pos[*vitr];
+    const Point &p1 = m_anchor_pos[*(vitr + 1)];
+    const Point &p2 = m_anchor_pos[*(vitr + 2)];
     Vector n = CGAL::unit_normal(p0, p1, p2);
     ::glNormal3d(n.x(), n.y(), n.z());
     ::glVertex3d(p0.x(), p0.y(), p0.z());
