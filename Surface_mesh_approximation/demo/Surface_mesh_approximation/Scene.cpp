@@ -13,6 +13,7 @@
 #include <CGAL/centroid.h>
 
 #include <CGAL/internal/Surface_mesh_approximation/VSA.h>
+#include <CGAL/vsa_mesh_approximation.h>
 
 #include "ColorCheatSheet.h"
 
@@ -131,14 +132,25 @@ void Scene::VSA_segmentation(const std::size_t num_proxies, const std::size_t nu
 
   PointPropertyMap ppmap = get(boost::vertex_point, const_cast<Polyhedron &>(*m_pPolyhedron));
 
-  VSA vsa_seg(*m_pPolyhedron, ppmap, Kernel());
-  vsa_seg.partition(num_proxies, num_iterations, m_fidx_pmap);
-
-  std::cerr << "extract mesh" << std::endl;
   m_tris.clear();
-  vsa_seg.extract_mesh(m_fidx_pmap, m_tris);
-  m_anchors = vsa_seg.collect_anchors();
-  m_bdrs = vsa_seg.collect_borders(m_fidx_pmap);
+  m_anchor_pos.clear();
+  m_anchor_vtx.clear();
+  CGAL::vsa_mesh_approximation(*m_pPolyhedron,
+    num_proxies,
+    num_iterations,
+    m_fidx_pmap,
+    ppmap,
+    m_tris,
+    m_anchor_pos,
+    m_anchor_vtx,
+    m_bdrs,
+    Kernel());
+
+  m_anchors.clear();
+  for(std::size_t i = 0; i < m_anchor_pos.size(); ++i) {
+    m_anchors.push_back(Anchor(m_anchor_vtx[i], m_anchor_pos[i]));
+  }
+  
   std::cerr << "#anchors " << m_anchors.size() << std::endl;
   std::cerr << "#borders " << m_bdrs.size() << std::endl;
 

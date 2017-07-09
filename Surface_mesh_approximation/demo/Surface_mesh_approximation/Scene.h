@@ -82,6 +82,8 @@ private:
   FacetIdPmap m_fidx_pmap; // property-map for segment-idx
 
   std::vector<Anchor> m_anchors; // the anchors
+  std::vector<Point> m_anchor_pos;
+  std::vector<Polyhedron::Vertex_handle> m_anchor_vtx;
   std::vector<std::vector<std::size_t> > m_bdrs; // anchor borders
   std::vector<int> m_tris;
 
