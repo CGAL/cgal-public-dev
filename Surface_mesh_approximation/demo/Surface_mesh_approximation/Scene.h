@@ -5,10 +5,22 @@
 #include <iostream>
 #include <cmath>
 
+#include <CGAL/Simple_cartesian.h>
+#include <CGAL/Polyhedron_3.h>
 #include <CGAL/boost/graph/graph_traits_Polyhedron_3.h>
 #include <CGAL/property_map.h>
 #include <CGAL/internal/Surface_mesh_approximation/VSA.h>
-#include "types.h"
+
+typedef CGAL::Simple_cartesian<double> Kernel;
+typedef Kernel::FT FT;
+typedef Kernel::Point_3 Point;
+typedef Kernel::Vector_3 Vector;
+
+typedef CGAL::Polyhedron_3<Kernel> Polyhedron;
+typedef Polyhedron::Facet_const_handle Facet_const_handle;
+typedef Polyhedron::Facet_const_iterator Facet_const_iterator;
+typedef Polyhedron::Halfedge_around_facet_const_circulator Halfedge_around_facet_const_circulator;
+typedef Polyhedron::Edge_const_iterator Edge_const_iterator;
 
 class Scene
 {

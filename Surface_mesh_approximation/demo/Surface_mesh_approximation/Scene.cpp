@@ -51,7 +51,7 @@ void Scene::update_bbox()
     return;
   }
 
-  Point_iterator it = m_pPolyhedron->points_begin();
+  Polyhedron::Point_iterator it = m_pPolyhedron->points_begin();
   m_bbox = (*it).bbox();
   for(; it != m_pPolyhedron->points_end();it++)
     m_bbox = m_bbox + (*it).bbox();
@@ -127,7 +127,7 @@ void Scene::VSA_segmentation(const std::size_t num_proxies, const std::size_t nu
     fitr != m_pPolyhedron->facets_end();
     ++fitr) {
     m_fidx_map.insert(
-      std::pair<Polyhedron::Facet_const_handle, std::size_t>(fitr, 0));
+      std::pair<Facet_const_handle, std::size_t>(fitr, 0));
   }
 
   PointPropertyMap ppmap = get(boost::vertex_point, const_cast<Polyhedron &>(*m_pPolyhedron));
@@ -164,7 +164,7 @@ void Scene::VSA_incremental(const std::size_t num_proxies, const std::size_t num
     fitr != m_pPolyhedron->facets_end();
     ++fitr) {
     m_fidx_map.insert(
-      std::pair<Polyhedron::Facet_const_handle, std::size_t>(fitr, 0));
+      std::pair<Facet_const_handle, std::size_t>(fitr, 0));
   }
 
   typedef boost::property_map<Polyhedron, boost::vertex_point_t>::type PointPropertyMap;
@@ -191,7 +191,7 @@ void Scene::VSA_hierarchical(const std::size_t num_proxies, const std::size_t nu
     fitr != m_pPolyhedron->facets_end();
     ++fitr) {
     m_fidx_map.insert(
-      std::pair<Polyhedron::Facet_const_handle, std::size_t>(fitr, 0));
+      std::pair<Facet_const_handle, std::size_t>(fitr, 0));
   }
 
   typedef boost::property_map<Polyhedron, boost::vertex_point_t>::type PointPropertyMap;
@@ -274,7 +274,7 @@ void Scene::render_wireframe()
   ::glColor3ub(0, 0, 0);
   ::glLineWidth(1.0f);
   ::glBegin(GL_LINES);
-  for(Edge_iterator he = m_pPolyhedron->edges_begin();
+  for(Edge_const_iterator he = m_pPolyhedron->edges_begin();
     he != m_pPolyhedron->edges_end();
     he++) {
     const Point& a = he->vertex()->point();
