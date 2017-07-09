@@ -135,7 +135,7 @@ void Scene::VSA_segmentation(const std::size_t num_proxies, const std::size_t nu
   m_tris.clear();
   m_anchor_pos.clear();
   m_anchor_vtx.clear();
-  CGAL::vsa_mesh_approximation(*m_pPolyhedron,
+  CGAL::vsa_mesh_approximation(0, *m_pPolyhedron,
     num_proxies,
     num_iterations,
     m_fidx_pmap,
@@ -170,8 +170,19 @@ void Scene::VSA_incremental(const std::size_t num_proxies, const std::size_t num
   typedef boost::property_map<Polyhedron, boost::vertex_point_t>::type PointPropertyMap;
   PointPropertyMap ppmap = get(boost::vertex_point, const_cast<Polyhedron &>(*m_pPolyhedron));
 
-  CGAL::internal::VSA<Polyhedron, Kernel, PointPropertyMap> vsa_seg(*m_pPolyhedron, ppmap, Kernel());
-  vsa_seg.partition_incre(num_proxies, num_iterations, m_fidx_pmap);
+  m_tris.clear();
+  m_anchor_pos.clear();
+  m_anchor_vtx.clear();
+  CGAL::vsa_mesh_approximation(1, *m_pPolyhedron,
+    num_proxies,
+    num_iterations,
+    m_fidx_pmap,
+    ppmap,
+    m_tris,
+    m_anchor_pos,
+    m_anchor_vtx,
+    m_bdrs,
+    Kernel());
 
   m_px_num = num_proxies;
   m_view_seg_boundary = true;
@@ -197,8 +208,19 @@ void Scene::VSA_hierarchical(const std::size_t num_proxies, const std::size_t nu
   typedef boost::property_map<Polyhedron, boost::vertex_point_t>::type PointPropertyMap;
   PointPropertyMap ppmap = get(boost::vertex_point, const_cast<Polyhedron &>(*m_pPolyhedron));
 
-  CGAL::internal::VSA<Polyhedron, Kernel, PointPropertyMap> vsa_seg(*m_pPolyhedron, ppmap, Kernel());
-  vsa_seg.partition_hierarchical(num_proxies, num_iterations, m_fidx_pmap);
+  m_tris.clear();
+  m_anchor_pos.clear();
+  m_anchor_vtx.clear();
+  CGAL::vsa_mesh_approximation(2, *m_pPolyhedron,
+    num_proxies,
+    num_iterations,
+    m_fidx_pmap,
+    ppmap,
+    m_tris,
+    m_anchor_pos,
+    m_anchor_vtx,
+    m_bdrs,
+    Kernel());
 
   m_px_num = num_proxies;
   m_view_seg_boundary = true;
