@@ -20,7 +20,7 @@
    <item>
     <widget class="QRadioButton" name="InitRandom">
      <property name="text">
-      <string>Random Initialization</string>
+      <string>Random Init</string>
      </property>
      <property name="checked">
       <bool>true</bool>
@@ -28,9 +28,16 @@
     </widget>
    </item>
    <item>
+    <widget class="QRadioButton" name="InitIncremental">
+     <property name="text">
+      <string>Incremental Init</string>
+     </property>
+    </widget>
+   </item>
+   <item>
     <widget class="QRadioButton" name="InitHierarchical">
      <property name="text">
-      <string>Hierarchical Initialization</string>
+      <string>Hierarchical Init</string>
      </property>
     </widget>
    </item>

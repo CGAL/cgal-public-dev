@@ -9,7 +9,6 @@
 #include <CGAL/Polyhedron_3.h>
 #include <CGAL/boost/graph/graph_traits_Polyhedron_3.h>
 #include <CGAL/property_map.h>
-#include <CGAL/internal/Surface_mesh_approximation/VSA.h>
 
 typedef CGAL::Simple_cartesian<double> Kernel;
 typedef Kernel::FT FT;
@@ -21,14 +20,10 @@ typedef Polyhedron::Facet_const_handle Facet_const_handle;
 typedef Polyhedron::Facet_const_iterator Facet_const_iterator;
 typedef Polyhedron::Halfedge_around_facet_const_circulator Halfedge_around_facet_const_circulator;
 typedef Polyhedron::Edge_const_iterator Edge_const_iterator;
+typedef CGAL::Bbox_3 Bbox;
 
 class Scene
 {
-public:
-  // types
-  typedef CGAL::Bbox_3 Bbox;
-  typedef boost::property_map<Polyhedron, boost::vertex_point_t>::type PointPropertyMap;
-
 public:
   Scene();
   ~Scene();
@@ -41,9 +36,7 @@ public:
   void save_approximation(const std::string &filename);
 
   // algorithms
-  void VSA_segmentation(const std::size_t num_proxies, const std::size_t num_iterations);
-  void VSA_incremental(const std::size_t num_proxies, const std::size_t num_iterations);
-  void VSA_hierarchical(const std::size_t num_proxies, const std::size_t num_iterations);
+  void variational_shape_approximation(const int &init, const std::size_t num_proxies, const std::size_t num_iterations);
 
   // toggle view options
   void toggle_view_polyhedron() {

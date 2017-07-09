@@ -64,8 +64,7 @@
     <property name="title">
      <string>&amp;Algorithms</string>
     </property>
-    <addaction name="actionVSA_segmentation"/>
-    <addaction name="actionVSA_incremental"/>
+    <addaction name="actionVSA"/>
    </widget>
    <widget class="QMenu" name="menuEdit">
     <property name="title">
@@ -140,6 +139,11 @@
   <action name="actionSaveApproximation">
    <property name="text">
     <string>&amp;Save Approximation</string>
+   </property>
+  </action>
+  <action name="actionVSA">
+   <property name="text">
+    <string>&amp;VSA</string>
    </property>
   </action>
  </widget>

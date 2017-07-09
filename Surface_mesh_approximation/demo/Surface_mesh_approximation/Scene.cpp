@@ -11,8 +11,6 @@
 #include <CGAL/Timer.h>
 #include <CGAL/IO/Polyhedron_iostream.h>
 #include <CGAL/centroid.h>
-
-#include <CGAL/internal/Surface_mesh_approximation/VSA.h>
 #include <CGAL/vsa_mesh_approximation.h>
 
 #include "ColorCheatSheet.h"
@@ -38,23 +36,15 @@ Scene::~Scene()
 
 void Scene::update_bbox()
 {
-  std::cout << "Compute bbox...";
-  m_bbox = Bbox();
-
   if(m_pPolyhedron == NULL) {
     std::cout << "failed (no polyhedron)." << std::endl;
     return;
   }
+  
+  std::cout << "Compute bbox...";
 
-  if(m_pPolyhedron->empty()) {
-    std::cout << "failed (empty polyhedron)." << std::endl;
-    return;
-  }
-
-  Polyhedron::Point_iterator it = m_pPolyhedron->points_begin();
-  m_bbox = (*it).bbox();
-  for(; it != m_pPolyhedron->points_end();it++)
-    m_bbox = m_bbox + (*it).bbox();
+  m_bbox = CGAL::bbox_3(m_pPolyhedron->points_begin(), m_pPolyhedron->points_end());
+  
   std::cout << "done (" << m_pPolyhedron->size_of_facets()
     << " facets)" << std::endl;
 }
@@ -115,7 +105,10 @@ void Scene::save_approximation(const std::string &filename)
   ofs.close();
 }
 
-void Scene::VSA_segmentation(const std::size_t num_proxies, const std::size_t num_iterations)
+void Scene::variational_shape_approximation(
+  const int &init,
+  const std::size_t num_proxies,
+  const std::size_t num_iterations)
 {
   if(!m_pPolyhedron)
     return;
@@ -130,88 +123,13 @@ void Scene::VSA_segmentation(const std::size_t num_proxies, const std::size_t nu
       std::pair<Facet_const_handle, std::size_t>(fitr, 0));
   }
 
-  PointPropertyMap ppmap = get(boost::vertex_point, const_cast<Polyhedron &>(*m_pPolyhedron));
-
-  m_tris.clear();
-  m_anchor_pos.clear();
-  m_anchor_vtx.clear();
-  CGAL::vsa_mesh_approximation(0, *m_pPolyhedron,
-    num_proxies,
-    num_iterations,
-    m_fidx_pmap,
-    ppmap,
-    m_tris,
-    m_anchor_pos,
-    m_anchor_vtx,
-    m_bdrs,
-    Kernel());
-
-  m_px_num = num_proxies;
-  m_view_seg_boundary = true;
-
-  std::cout << "done" << std::endl;
-}
-
-void Scene::VSA_incremental(const std::size_t num_proxies, const std::size_t num_iterations)
-{
-  if(!m_pPolyhedron)
-    return;
-
-  std::cout << "Incremental VSA...";
-
-  m_fidx_map.clear();
-  for(Facet_const_iterator fitr = m_pPolyhedron->facets_begin();
-    fitr != m_pPolyhedron->facets_end();
-    ++fitr) {
-    m_fidx_map.insert(
-      std::pair<Facet_const_handle, std::size_t>(fitr, 0));
-  }
-
   typedef boost::property_map<Polyhedron, boost::vertex_point_t>::type PointPropertyMap;
   PointPropertyMap ppmap = get(boost::vertex_point, const_cast<Polyhedron &>(*m_pPolyhedron));
 
   m_tris.clear();
   m_anchor_pos.clear();
   m_anchor_vtx.clear();
-  CGAL::vsa_mesh_approximation(1, *m_pPolyhedron,
-    num_proxies,
-    num_iterations,
-    m_fidx_pmap,
-    ppmap,
-    m_tris,
-    m_anchor_pos,
-    m_anchor_vtx,
-    m_bdrs,
-    Kernel());
-
-  m_px_num = num_proxies;
-  m_view_seg_boundary = true;
-
-  std::cout << "done" << std::endl;
-}
-
-void Scene::VSA_hierarchical(const std::size_t num_proxies, const std::size_t num_iterations)
-{
-  if(!m_pPolyhedron)
-    return;
-
-  std::cout << "Hierarchical VSA...";
-
-  m_fidx_map.clear();
-  for(Facet_const_iterator fitr = m_pPolyhedron->facets_begin();
-    fitr != m_pPolyhedron->facets_end();
-    ++fitr) {
-    m_fidx_map.insert(
-      std::pair<Facet_const_handle, std::size_t>(fitr, 0));
-  }
-
-  typedef boost::property_map<Polyhedron, boost::vertex_point_t>::type PointPropertyMap;
-  PointPropertyMap ppmap = get(boost::vertex_point, const_cast<Polyhedron &>(*m_pPolyhedron));
-
-  m_tris.clear();
-  m_anchor_pos.clear();
-  m_anchor_vtx.clear();
-  CGAL::vsa_mesh_approximation(2, *m_pPolyhedron,
+  CGAL::vsa_mesh_approximation(init, *m_pPolyhedron,
     num_proxies,
     num_iterations,
     m_fidx_pmap,

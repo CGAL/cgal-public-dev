@@ -59,7 +59,7 @@ MainWindow::~MainWindow()
 void MainWindow::updateViewerBBox()
 {
   m_pScene->update_bbox();
-  const Scene::Bbox bbox = m_pScene->bbox();
+  const Bbox bbox = m_pScene->bbox();
   const double xmin = bbox.xmin();
   const double ymin = bbox.ymin();
   const double zmin = bbox.zmin();
@@ -182,26 +182,13 @@ void MainWindow::on_actionCopy_snapshot_triggered()
   QApplication::restoreOverrideCursor();
 }
 
-void MainWindow::on_actionVSA_segmentation_triggered()
+void MainWindow::on_actionVSA_triggered()
 {
   SettingsDialog dial;
   if(dial.exec() == QDialog::Accepted) {
     QApplication::setOverrideCursor(Qt::WaitCursor);
-    if(dial.InitRandom->isChecked())
-      m_pScene->VSA_segmentation(dial.NumSegments->value(), dial.NumIterations->value());
-    else if(dial.InitHierarchical->isChecked())
-      m_pScene->VSA_hierarchical(dial.NumSegments->value(), dial.NumIterations->value());
-    m_pViewer->update();
-    QApplication::restoreOverrideCursor();
-  }
-}
-
-void MainWindow::on_actionVSA_incremental_triggered()
-{
-  SettingsDialog dial;
-  if(dial.exec() == QDialog::Accepted) {
-    QApplication::setOverrideCursor(Qt::WaitCursor);
-    m_pScene->VSA_incremental(dial.NumSegments->value(), dial.NumIterations->value());
+    int init = dial.InitRandom->isChecked() ? 0 : (dial.InitIncremental->isChecked() ? 1 : 2);
+    m_pScene->variational_shape_approximation(init, dial.NumSegments->value(), dial.NumIterations->value());
     m_pViewer->update();
     QApplication::restoreOverrideCursor();
   }

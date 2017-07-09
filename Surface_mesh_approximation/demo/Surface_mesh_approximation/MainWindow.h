@@ -46,8 +46,7 @@ protected slots:
   void on_actionCopy_snapshot_triggered();
 
   // algorithm menu
-  void on_actionVSA_segmentation_triggered();
-  void on_actionVSA_incremental_triggered();
+  void on_actionVSA_triggered();
 
   // view menu
   void on_actionView_polyhedron_triggered();
