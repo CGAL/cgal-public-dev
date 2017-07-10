@@ -116,7 +116,9 @@ scene_points_with_normal_item \
 scene_polygon_soup_item \
 scene_polyhedron_item \
 scene_polyhedron_item_decorator \
-scene_polyhedron_item_k_ring_selection \
+scene_polyhedron_and_sm_item_k_ring_selection \
+scene_poly_item_k_ring_selection \
+scene_sm_item_k_ring_selection \
 scene_polyhedron_selection_item \
 scene_polyhedron_shortest_path_item \
 scene_polyhedron_transform_item \
@@ -181,6 +183,7 @@ polyhedron_stitching_plugin \
 polylines_io_plugin \
 p_sphere_function_plugin \
 p_tanglecube_function_plugin \
+random_perturbation_plugin \
 remeshing_plugin \
 repair_polyhedron_plugin \
 selection_io_plugin \
