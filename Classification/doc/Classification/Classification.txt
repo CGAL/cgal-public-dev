@@ -79,7 +79,7 @@ Finally, if the input data set has additional properties, these can also be used
 - [Echo_scatter](@ref CGAL::Classification::Feature::Echo_scatter) uses the number of returns (echo) provided by most LIDAR scanners if available
 - [Hsv](@ref CGAL::Classification::Feature::Hsv) uses input color information if available.
 
-In the following code snippet, a subset of these features are instantiated. Note that all the predefined features can also be automatically generated in multiple scales (see \ref Classification_feature_generator).
+In the following code snippet, a subset of these features are instantiated. Note that all the predefined features can also be automatically generated in multiple scales (see \ref Classification_point_set).
 
 \snippet Classification/example_classification.cpp Features
 
@@ -94,7 +94,9 @@ This feature can then be instantiated from the feature set the same way as the o
 
 \snippet Classification/example_feature.cpp Addition
 
-\subsection Classification_feature_generator Point Set Feature Generator
+\section Classification_input_data Input Data
+
+\subsection Classification_point_set Point Sets
 
 In standard classification of point sets, users commonly want to use all predefined features to get the best result possible. \cgal provides a class [Point_set_feature_generator](@ref CGAL::Classification::Point_set_feature_generator) that performs the following operations:
 
@@ -110,7 +112,7 @@ The following snippet shows how to use the feature generator:
 
 \snippet Classification/example_generation_and_training.cpp Generator
 
-\subsection Classification_mesh_feature_generator Mesh Feature Generator
+\subsection Classification_surface_mesh Surface Meshes
 
 %Classification of meshes is performed on the facets. This case is pretty similar to the point sets case with some notable differences:
 
@@ -381,6 +383,18 @@ The following example:
 The following example shows how to use the classifier [Random_forest_classifier](@ref CGAL::Classification::Random_forest_classifier) using an input training set.
 
 \cgalExample{Classification/example_random_forest.cpp}
+
+\subsection Classification_example_mesh_classification Mesh Classification
+
+TODO
+
+\cgalExample{Classification/example_mesh_classifier.cpp}
+
+\subsection Classification_example_mesh_feature_generator Mesh Feature Generation
+
+TODO
+
+\cgalExample{Classification/example_mesh_feature_generator.cpp}
 
 \section Classification_history History
 
