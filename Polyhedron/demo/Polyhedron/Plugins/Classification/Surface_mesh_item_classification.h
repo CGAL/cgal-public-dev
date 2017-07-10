@@ -26,8 +26,8 @@ class Surface_mesh_item_classification : public Item_classification_base
 {
 public:
 
-  typedef Scene_surface_mesh_item::SMesh Mesh;
-  typedef Scene_surface_mesh_item::Point Point;
+  typedef SMesh Mesh;
+  typedef Kernel::Point_3 Point;
   typedef Scene_polyhedron_selection_item::Selection_set_facet Selection;
   typedef Mesh::Face_range Face_range;
   typedef boost::graph_traits<Mesh>::face_descriptor face_descriptor;
