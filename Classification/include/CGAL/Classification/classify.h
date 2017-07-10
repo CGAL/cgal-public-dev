@@ -429,6 +429,11 @@ namespace internal {
     \tparam ItemMap model of `ReadablePropertyMap` whose key
     type is the value type of the iterator of `ItemRange` and value type
     is the type of item to classify (for example, `CGAL::Point_3`).
+    \tparam PositionMap model of `ReadablePropertyMap` whose key type
+    is the value type of the iterator of `ItemRange` and value type is
+    `CGAL::Point_3`. This is only used to get an estimation of the
+    positions of the items and can be omitted if the value type of
+    `ItemMap` is already `CGAL::Point_3`.
     \tparam NeighborQuery model of `NeighborQuery`.
     \tparam Classifier model of `Classifier`.
 
@@ -451,10 +456,12 @@ namespace internal {
   template <typename ConcurrencyTag,
             typename ItemRange,
             typename ItemMap,
+            typename PositionMap,
             typename NeighborQuery,
             typename Classifier>
   void classify_with_graphcut (const ItemRange& input,
                                const ItemMap item_map,
+                               const PositionMap position_map,
                                const Label_set& labels,
                                const Classifier& classifier,
                                const NeighborQuery& neighbor_query,
@@ -463,8 +470,8 @@ namespace internal {
                                std::vector<std::size_t>& output)
   {
     CGAL::Bbox_3 bbox = CGAL::bbox_3
-      (boost::make_transform_iterator (input.begin(), CGAL::Property_map_to_unary_function<ItemMap>(item_map)),
-       boost::make_transform_iterator (input.end(), CGAL::Property_map_to_unary_function<ItemMap>(item_map)));
+      (boost::make_transform_iterator (input.begin(), CGAL::Property_map_to_unary_function<PositionMap>(position_map)),
+       boost::make_transform_iterator (input.end(), CGAL::Property_map_to_unary_function<PositionMap>(position_map)));
 
     float Dx = bbox.xmax() - bbox.xmin();
     float Dy = bbox.ymax() - bbox.ymin();
@@ -499,7 +506,7 @@ namespace internal {
     
     for (std::size_t s = 0; s < input.size(); ++ s)
     {
-      CGAL::Bbox_3 b = get(item_map, *(input.begin() + s)).bbox();
+      CGAL::Bbox_3 b = get(position_map, *(input.begin() + s)).bbox();
         
       for (std::size_t i = 0; i < bboxes.size(); ++ i)
         if (CGAL::do_overlap (b, bboxes[i]))
@@ -531,6 +538,28 @@ namespace internal {
     }
   }
 
+  /// \cond SKIP_IN_MANUAL
+  template <typename ConcurrencyTag,
+            typename ItemRange,
+            typename ItemMap,
+            typename NeighborQuery,
+            typename ClassificationPredicate>
+  void classify_with_graphcut (const ItemRange& input,
+                               const ItemMap item_map,
+                               const Label_set& labels,
+                               const ClassificationPredicate& predicate,
+                               const NeighborQuery& neighbor_query,
+                               const float strength,
+                               const std::size_t min_number_of_subdivisions,
+                               std::vector<std::size_t>& output)
+  {
+    classify_with_graphcut<ConcurrencyTag>
+      (input, item_map, item_map, labels, predicate, neighbor_query,
+       strength, min_number_of_subdivisions, output);
+  }
+  /// \endcond
+
+  
 
 }
 

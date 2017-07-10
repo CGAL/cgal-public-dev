@@ -37,6 +37,11 @@ if( TBB_FOUND )
   list(APPEND CGAL_3RD_PARTY_LIBRARIES ${TBB_LIBRARIES})
 endif()
 
+find_package(Eigen3 3.1.0) #(requires 3.1.0 or greater)
+if (EIGEN3_FOUND)
+  include( ${EIGEN3_USE_FILE} )
+endif()
+
 
 find_package(OpenCV)
 
@@ -55,6 +60,8 @@ include( CGAL_CreateSingleSourceCGALProgram )
 create_single_source_cgal_program( "example_classification.cpp" )
 create_single_source_cgal_program( "example_generation_and_training.cpp" )
 create_single_source_cgal_program( "example_feature.cpp" )
+create_single_source_cgal_program( "example_mesh_classifier.cpp" )
+create_single_source_cgal_program( "example_mesh_feature_generator.cpp" )
 
 if( OpenCV_FOUND )
   include_directories( ${OpenCV_INCLUDE_DIRS} )
@@ -63,4 +70,3 @@ if( OpenCV_FOUND )
 else()
   message(STATUS "OpenCV not found, random forest example won't be compiled.")
 endif()
-
