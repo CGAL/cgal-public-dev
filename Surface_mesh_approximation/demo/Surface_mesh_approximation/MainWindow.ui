@@ -106,19 +106,9 @@
     <string>Copy snapshot</string>
    </property>
   </action>
-  <action name="actionVSA_segmentation">
-   <property name="text">
-    <string>VSA</string>
-   </property>
-  </action>
   <action name="actionView_segboundary">
    <property name="text">
     <string>Segment Boundary</string>
-   </property>
-  </action>
-  <action name="actionVSA_incremental">
-   <property name="text">
-    <string>VSA Incremental</string>
    </property>
   </action>
   <action name="actionView_anchors">
@@ -144,6 +134,12 @@
   <action name="actionVSA">
    <property name="text">
     <string>&amp;VSA</string>
+   </property>
+   <property name="toolTip">
+    <string>Variational Shape Approximation</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+V</string>
    </property>
   </action>
  </widget>
