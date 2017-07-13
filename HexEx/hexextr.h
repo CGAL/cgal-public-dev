@@ -70,7 +70,7 @@ directions[i].dz(), directions[j].dz(), directions[k].dz(), 1)); //chiral cubica
         for(LCC_3::One_dart_per_incident_cell_range<0,3>::iterator it2 = input_tet_mesh.one_dart_per_incident_cell<0,3>(it).begin(), it3 = parametrized_mesh.one_dart_per_incident_cell<0,3>(it1).begin(), it2end = input_tet_mesh.one_dart_per_incident_cell<0,3>(it).end(); it2 != it2end; it2++, it3++){
           points.push_back(input_tet_mesh.point(it2)); parameters.push_back(parametrized_mesh.point(it3));
         }
-        std::cout<<points.size()<<" "<<parameters.size()<<std::endl;
+        //std::cout<<points.size()<<" "<<parameters.size()<<std::endl;
         Aff_transformation at = get_parametrization_matrix(points[0], points[1], points[2], points[3], parameters[0], parameters[1], parameters[2], parameters[3]);
         Cell_handle ch(it1, points, parameters, at);
         cells.push_back(ch);
