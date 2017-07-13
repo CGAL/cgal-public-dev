@@ -61,6 +61,20 @@ itend=lcc.darts_of_cell<3>(dh).end(); it!=itend; ++it){
     }
 };
 
+class Cell_handle{
+  public:
+    Cell_handle(Dart_handle& dh, std::vector<Point>& p, std::vector<Point>& q, Aff_transformation& at){
+      a_dart = dh;
+      points = p;
+      parameters = q;
+      parametrization_matrix = at;
+    }
+    Dart_handle a_dart;
+    //int enumeration;
+    std::vector<Point> points, parameters;
+    Aff_transformation parametrization_matrix;
+};
+
 bool comp(Vertex_handle i,Vertex_handle j){return !(i.boundary == false && j.boundary == true);}
 
 /*

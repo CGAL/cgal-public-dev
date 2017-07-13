@@ -43,8 +43,8 @@ const std::vector<Aff_transformation>& G){
         face2.push_back(lcc.point(dh2));
         face2.push_back(lcc.point(lcc.alpha(dh2,1,0)));
         face2.push_back(lcc.point(lcc.alpha(dh2,1,0,1,0)));
- std::cout<<face1[0]<<" "<<face1[1]<<" "<<face1[2]<<std::endl;
- std::cout<<face2[0]<<" "<<face2[1]<<" "<<face2[2]<<std::endl;
+// std::cout<<face1[0]<<" "<<face1[1]<<" "<<face1[2]<<std::endl;
+// std::cout<<face2[0]<<" "<<face2[1]<<" "<<face2[2]<<std::endl;
         if(face1[0] == face2[0] && face1[1] == face2[1] && face1[2] == face2[2]){// transition function is identity.
           return id;
         }
@@ -74,6 +74,13 @@ const std::vector<Aff_transformation>& G){
 
    // }
   }
+
+Aff_transformation get_parametrization_matrix(Point p, Point q, Point r, Point s, Point u, Point v, Point w, Point x){
+  Aff_transformation at1(q[0]-p[0], r[0]-p[0],s[0]-p[0], p[0], q[1]-p[1], r[1]-p[1],s[1]-p[1], p[1], q[2]-p[2], r[2]-p[2],s[2]-p[2], p[2], 1);
+  Aff_transformation at2(v[0]-u[0], w[0]-u[0], x[0]-u[0], u[0], v[1]-u[1], w[1]-u[1], x[1]-u[1], u[1], v[2]-u[2], w[2]-u[2], x[2]-u[2], u[2], 1);
+  return (at2*(at1.inverse()));
+}
+
 
 int calculate_cell_type(const LCC_3& lcc, Dart_const_handle dh){
   std::vector<Point> P;

@@ -51,12 +51,29 @@ directions[i].dz(), directions[j].dz(), directions[k].dz(), 1)); //chiral cubica
 //go through all the tets, enumerate darts of a single tet with the same index in info(), so that we can refer to a single tet using that index.
       int i = 0;
       for(LCC_3::One_dart_per_cell_range<3>::iterator it = parametrized_mesh.one_dart_per_cell<3>().begin(), itend = parametrized_mesh.one_dart_per_cell<3>().end(); it != itend; it++){
-
+        
        
         for(LCC_3::Dart_of_cell_range<3>::iterator it1 = parametrized_mesh.darts_of_cell<3>(it).begin(), it1end = parametrized_mesh.darts_of_cell<3>(it).end(); it1 != it1end; it1++){
-          (parametrized_mesh.info(it1)) = i;//TODO: we create a 2D matrix g of Aff_tranformations where g[i,j] gives rise to the transition functions. i, j are the index of the tet that the dart in question belongs to, so as to calculate the transition functions.  
+          (parametrized_mesh.info(it1)) = i;
         }
         i++;
+      }
+      std::vector<std::vector<Aff_transformation>> g;
+      for(int j = 0; j<parametrized_mesh.one_dart_per_cell<3>().size(); j++){
+        std::vector<Aff_transformation> temp(parametrized_mesh.one_dart_per_cell<3>().size());
+        g.push_back(temp);
+      }
+
+      for(LCC_3::One_dart_per_cell_range<3>:: iterator it = input_tet_mesh.one_dart_per_cell<3>().begin(), it1 = parametrized_mesh.one_dart_per_cell<3>().begin(), itend = input_tet_mesh.one_dart_per_cell<3>().end(); it != itend; it++, it1++){
+       // std::cout<<input_tet_mesh.point(it)<<" "<<std::endl<<parametrized_mesh.point(it1)<<std::endl<<std::endl;
+        std::vector<Point> points, parameters;
+        for(LCC_3::One_dart_per_incident_cell_range<0,3>::iterator it2 = input_tet_mesh.one_dart_per_incident_cell<0,3>(it).begin(), it3 = parametrized_mesh.one_dart_per_incident_cell<0,3>(it1).begin(), it2end = input_tet_mesh.one_dart_per_incident_cell<0,3>(it).end(); it2 != it2end; it2++, it3++){
+          points.push_back(input_tet_mesh.point(it2)); parameters.push_back(parametrized_mesh.point(it3));
+        }
+        Aff_transformation at = get_parametrization_matrix(points[0], points[1], points[2], points[3], parameters[0], parameters[1], parameters[2], parameters[3]);
+        Cell_handle ch(it1, points, parameters, at);
+        cells.push_back(ch);
+        
       }
 
       for(LCC_3::One_dart_per_cell_range<2>::iterator it = parametrized_mesh.one_dart_per_cell<2>().begin(), 
@@ -64,8 +81,10 @@ itend = parametrized_mesh.one_dart_per_cell<2>().end(); it != itend; it++){
          Face_handle fh( this->parametrized_mesh, it, i); i++;
          dart_in_face.emplace(it, fh);        
          Aff_transformation at = extract_transition_function(it, parametrized_mesh, G);
+         g[parametrized_mesh.info(it)][parametrized_mesh.info(parametrized_mesh.alpha(it, 3))] = at;
+         g[parametrized_mesh.info(parametrized_mesh.alpha(it, 3))][parametrized_mesh.info(it)] = at.inverse();
          //std::cout<<i<<std::endl;
-         print_aff_transformation(at);
+         //print_aff_transformation(at);
          faces_with_transitions.emplace(fh, at);
          faces.push_back(fh);
 		
@@ -105,12 +124,11 @@ itend = parametrized_mesh.one_dart_per_cell<2>().end(); it != itend; it++){
     std::vector<Face_handle> faces;
     std::vector<Edge_handle> edges;
     std::vector<Vertex_handle> vertices;
+    std::vector<Cell_handle> cells;
     //std::vector<Point> hvertices;
     std::vector<Direction> directions;
-    
     Aff_transformation identity;//(1,0,0,0,1,0,0,0,1,1);
     LCC_3 input_tet_mesh, parametrized_mesh, output_mesh;
-    //Aff_transformation g[][];
     std::vector<Aff_transformation> G; //chiral cubical symmetry group
    
 };
