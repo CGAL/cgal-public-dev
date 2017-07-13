@@ -125,7 +125,7 @@ bool is_edge_singular(HexExtr& h, Dart_handle dh){
   if(is_edge_on_boundary_face(lcc, dh)){
     if(calculate_cell_type(lcc, dh) == 0){ //degenerate cell 
       return true;
-    }///TODO: check!!!
+    }
   }
   Aff_transformation tran(1, 0, 0, 0, 1, 0, 0, 0, 1, 1);
   Aff_transformation identity(1, 0, 0, 0, 1, 0, 0, 0, 1, 1);
@@ -138,5 +138,10 @@ bool is_edge_singular(HexExtr& h, Dart_handle dh){
     tran = (h.faces_with_transitions[fh])*tran;  //transition(lcc, dh, tran, h.all_faces_with_transitions);// TODO- DONE?
   }
   return (!(tran.m(0,0)==1 && tran.m(0,1)==0 && tran.m(0,2)==0 && tran.m(0,3)==0 && tran.m(1,0)==0 && tran.m(1,1)==1 && tran.m(1,2)==0 && tran.m(1,3)==0 && tran.m(2,0)==0 && tran.m(2,1)==0 && tran.m(2,2)==1 && tran.m(2,3)==0 && tran.m(3,0)==0 && tran.m(3,1)==0 && tran.m(3,2)==0 && tran.m(3,3)==1));
+}
+
+void sanitize(){
+
+
 }
 

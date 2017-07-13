@@ -1,7 +1,6 @@
 #include"typedefs.h"
-//#include"hexextr.h"
 #include<boost/numeric/ublas/matrix.hpp> 
-#include<boost/numeric/ublas/vector.hpp> //is this needed?
+#include<boost/numeric/ublas/vector.hpp>
 #include<cmath>
 #define PI 3.14159265
 //#ifdef CGAL_EIGEN3_ENABLED
@@ -15,7 +14,6 @@ typedef Svd::Vector Eigen_vector;
 typedef Svd::Matrix Eigen_matrix;
 using matrix = boost::numeric::ublas::matrix<double>;
 using vect = boost::numeric::ublas::vector<double>;
-//using ublas = boost::numeric::ublas;
 
 matrix find_Rx(double alpha){
   matrix Rx(3,3);
@@ -104,7 +102,7 @@ int find_number_of_boundary_vertices(LCC_3& lcc){
   return count;
 }
 
-void closest_frame(std::vector<double>& q, Vector_3 frame){
+void closest_frame(std::vector<double>& q, Vector_3& frame){
   vect f(3); f(0) = 0; f(1) = 0; f(2) = 1; //initial values
   vect a(9); a(0) = 0; a(1) = 0; a(2) = 0; a(3) = 0; a(4) = sqrt(7.0/12); a(5) = 0; a(6) = 0; a(7) = 0; a(8) = sqrt(5.0/12); 
   vect qq(9); qq(0) = q[0]; qq(1) = q[1]; qq(2) = q[2]; qq(3) = q[3]; qq(4) = q[4]; qq(5) = q[5]; qq(6) = q[6]; qq(7) = q[7]; qq(8) = q[8]; 
@@ -262,8 +260,7 @@ void optimise_frame_field(LCC_3& input_tet_mesh, std::vector<Vertex_handle>& ver
           temp.push_back((X.vector())[k]);
         }
       a.push_back(temp);
-      closest_frame(a[j], (vertices[j]).frame);      
-      //closest frame ? //TODO:DONE
+      closest_frame(a[j], (vertices[j]).frame);//TODO:DONE
     }
   }
 }

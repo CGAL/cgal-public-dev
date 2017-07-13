@@ -56,9 +56,9 @@ const std::vector<Aff_transformation>& G){
         int min_trans_index = 0;  //the min transtion given by G[i]
         for(auto i = 0; i < 24; ++i){
                 Vector_3 transf_c1 = G[i].transform(c1);
-                auto dist1 = CGAL::scalar_product((c2 - transf_c1),(c2 - transf_c1));
+                auto dist1 = CGAL::scalar_product((c2 - transf_c1),(c2 - transf_c1)); //Frobenius norm
                 Vector_3 transf_d1 = G[i].transform(d1);
-                auto dist2 = CGAL::scalar_product((d2 - transf_d1),(d2 - transf_d1));
+                auto dist2 = CGAL::scalar_product((d2 - transf_d1),(d2 - transf_d1)); //Frobenius norm
                 if(dist1 + dist2 < min_dist){
                     min_dist = dist1+dist2;
                     min_trans_index = i;

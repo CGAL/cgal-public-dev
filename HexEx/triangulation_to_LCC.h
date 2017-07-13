@@ -60,59 +60,15 @@ protected:
 };
 
 
-bool load_off_to_LCC(std::string infilename, LCC_3& lcc)
+bool load_off_to_LCC(std::string filename, LCC_3& lcc, LCC_3& lcc2)
 {  
-  const char* fname = infilename.c_str();
-//facet_angle=25, facet_size=0.15, facet_distance=0.008,cell_radius_edge_ratio=3
-  double fa = 25, fs = 0.15, fd = 0.008, crer = 3; 
-  /*switch(argc){
-    case 1: fname = "data/elephant.off"; break;
-    case 2: fname = argv[1]; break;
-    case 3: fname = argv[1]; fa = atof(argv[2]); break;
-    case 4: fname = argv[1]; fa = atof(argv[2]); fs = atof(argv[3]); break;
-    case 5: fname = argv[1]; fa = atof(argv[2]); fs = atof(argv[3]); fd = atof(argv[4]); break;
-    default: fname = argv[1]; fa = atof(argv[2]); fs = atof(argv[3]); fa = atof(argv[4]); crer = atof(argv[5]); break;
-	
-
-  }*/
-  // Create input polyhedron
-  Polyhedron polyhedron;
-  std::ifstream input(fname);
-  input >> polyhedron;
-  if(input.fail()){
-    std::cerr << "Error: Cannot read file " <<fname<< std::endl;
-    return false;
-  }
-  input.close();
-  Mesh_domain domain(polyhedron);
-  
-  
-
-  Mesh_criteria criteria(facet_angle=fa, facet_size=fs, facet_distance=fd,
-                         cell_radius_edge_ratio=crer);
-  
-  // Mesh generation
-  C3t3 c3t3 = CGAL::make_mesh_3<C3t3>(domain, criteria, no_perturb(), no_exude());
-
- // Set tetrahedron size (keep cell_radius_edge_ratio), ignore facets
-  Mesh_criteria new_criteria(crer, cell_size=0.3);
-
-  // Mesh refinement
-  CGAL::refine_mesh_3(c3t3, domain, new_criteria);
-
-
-  // To convert to lcc
-  Cell_in_complex cic(c3t3);  
-  lcc.clear();
-  C3t3::Triangulation &atr= c3t3.triangulation();
-  CGAL::import_from_triangulation_3(lcc, atr, cic);
-  std::ofstream ofile;
-  ofile.open("tri.off");
-  write_off(lcc, ofile);
-  ofile.close();
-  lcc.display_characteristics(std::cout);
-  std::cout<<std::endl;
-
+  std::ifstream ifile1, ifile2;
+  ifile1.open(("mesh/"+filename).c_str());
+  ifile2.open(("mesh/parametrized"+filename).c_str());
+  CGAL::load_off(lcc, ifile1);
+  CGAL::load_off(lcc2, ifile2); 
+  ifile1.close();
+  ifile2.close();
 
 #ifdef CGAL_LCC_USE_VIEWER
   display_lcc(lcc);
