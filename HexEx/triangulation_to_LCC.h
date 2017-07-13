@@ -69,7 +69,7 @@ bool load_off_to_LCC(std::string filename, LCC_3& lcc, LCC_3& lcc2)
   CGAL::load_off(lcc2, ifile2); 
   ifile1.close();
   ifile2.close();
-
+  lcc.display_characteristics(std::cout);
 #ifdef CGAL_LCC_USE_VIEWER
   display_lcc(lcc);
 #endif // CGAL_LCC_USE_VIEWER
