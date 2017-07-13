@@ -6,7 +6,7 @@
 #include<unordered_map>
 #include<map>
 #include"func.h"
-#include"geometry_extraction.h"
+//#include"geometry_extraction.h"
 #include<vector>
 #include"frame_field.h"
 
@@ -51,8 +51,10 @@ directions[i].dz(), directions[j].dz(), directions[k].dz(), 1)); //chiral cubica
 //go through all the tets, enumerate darts of a single tet with the same index in info(), so that we can refer to a single tet using that index.
       int i = 0;
       for(LCC_3::One_dart_per_cell_range<3>::iterator it = parametrized_mesh.one_dart_per_cell<3>().begin(), itend = parametrized_mesh.one_dart_per_cell<3>().end(); it != itend; it++){
+
+       
         for(LCC_3::Dart_of_cell_range<3>::iterator it1 = parametrized_mesh.darts_of_cell<3>(it).begin(), it1end = parametrized_mesh.darts_of_cell<3>(it).end(); it1 != it1end; it1++){
-          (parametrized_mesh.info(it1)) = i; //TODO: based on this we create a 2D matrix g of Aff_tranformations where g[i,j] gives rise to the transition functions. i, j are the index of the tet that the dart in question belongs to, so as to calculate the transition functions.  
+          (parametrized_mesh.info(it1)) = i;//TODO: we create a 2D matrix g of Aff_tranformations where g[i,j] gives rise to the transition functions. i, j are the index of the tet that the dart in question belongs to, so as to calculate the transition functions.  
         }
         i++;
       }
@@ -63,7 +65,7 @@ itend = parametrized_mesh.one_dart_per_cell<2>().end(); it != itend; it++){
          dart_in_face.emplace(it, fh);        
          Aff_transformation at = extract_transition_function(it, parametrized_mesh, G);
          //std::cout<<i<<std::endl;
-        // print_aff_transformation(at);
+         print_aff_transformation(at);
          faces_with_transitions.emplace(fh, at);
          faces.push_back(fh);
 		
@@ -108,6 +110,7 @@ itend = parametrized_mesh.one_dart_per_cell<2>().end(); it != itend; it++){
     
     Aff_transformation identity;//(1,0,0,0,1,0,0,0,1,1);
     LCC_3 input_tet_mesh, parametrized_mesh, output_mesh;
+    //Aff_transformation g[][];
     std::vector<Aff_transformation> G; //chiral cubical symmetry group
    
 };

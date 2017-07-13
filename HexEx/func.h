@@ -27,10 +27,10 @@ void print_aff_transformation(Aff_transformation T){
 Aff_transformation extract_transition_function(Dart_handle dh, const LCC_3& lcc, 
 const std::vector<Aff_transformation>& G){
     Aff_transformation id(1,0,0,0,1,0,0,0,1,1);
-    if(lcc.is_free(dh, 3)){//boundary
+  /*  if(lcc.is_free(dh, 3)){//boundary
       return id;
     }
-    else{    
+    else{*/    
 
         Dart_const_handle dh1 = dh;
         Dart_const_handle dh2 = lcc.alpha(dh1,3,0);
@@ -72,7 +72,7 @@ const std::vector<Aff_transformation>& G){
      
        return final_transform_for_dh1;
 
-    }
+   // }
   }
 
 int calculate_cell_type(const LCC_3& lcc, Dart_const_handle dh){

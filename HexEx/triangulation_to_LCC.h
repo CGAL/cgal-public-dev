@@ -42,7 +42,7 @@ typedef CGAL::Mesh_complex_3_in_triangulation_3<Tr> C3t3;
 typedef CGAL::Mesh_criteria_3<Tr> Mesh_criteria;
 
 //LCC
-typedef CGAL::Linear_cell_complex_for_generalized_map<3,3> LCC_3;
+//typedef CGAL::Linear_cell_complex_for_generalized_map<3,3> LCC_3;
 
 // To avoid verbose function and named parameters call
 using namespace CGAL::parameters;
