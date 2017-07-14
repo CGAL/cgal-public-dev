@@ -982,9 +982,10 @@ void ArrangementDemoWindow::on_tabWidget_currentChanged( )
 
 
   // Seg_arr* seg;
-  // Pol_arr* pol;
-  Lin_arr* lin;
-
+  Pol_arr *pol;
+  Alg_seg_arr *alg_seg;
+  Lin_arr *lin;
+  Arc_arr *arc;
 #ifdef CGAL_USE_CORE
   Conic_arr* conic;
 #endif
@@ -992,6 +993,7 @@ void ArrangementDemoWindow::on_tabWidget_currentChanged( )
   if ( CGAL::assign( lin, arr ) )
   {
     this->ui->actionConicSegment->setChecked( true );
+    this->ui->actionConicSegment->setToolTip("Segment");
 
     this->ui->actionCurveRay->setVisible( true );
     this->ui->actionCurveLine->setVisible( true );
@@ -1007,6 +1009,7 @@ void ArrangementDemoWindow::on_tabWidget_currentChanged( )
 #ifdef CGAL_USE_CORE
   else if (CGAL::assign( conic, arr)) {
     this->ui->actionConicSegment->setChecked( true );
+    this->ui->actionConicSegment->setToolTip("Segment");
 
     this->ui->actionCurveRay->setVisible( false );
     this->ui->actionCurveLine->setVisible( false );
@@ -1022,6 +1025,23 @@ void ArrangementDemoWindow::on_tabWidget_currentChanged( )
 
   else { // segment or polyline or algebraic
     this->ui->actionConicSegment->setChecked( true );
+
+    if ( CGAL::assign( alg_seg, arr ) )
+    {
+      this->ui->actionConicSegment->setToolTip("Curve");
+    }
+    else if ( CGAL::assign( pol, arr ) )
+    {
+      this->ui->actionConicSegment->setToolTip("Polyline");
+    }
+    else if ( CGAL::assign( arc, arr ) )
+    {
+      this->ui->actionConicSegment->setToolTip("Arc");
+    }
+    else
+    {
+      this->ui->actionConicSegment->setToolTip("Segment");
+    }
 
     this->ui->actionCurveRay->setVisible( false );
     this->ui->actionCurveLine->setVisible( false );
