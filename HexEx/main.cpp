@@ -13,7 +13,7 @@ int main(int argc, char** argv){
   std::string str;
   if (argc==1)
   {
-    std::cout<<"Enter filename: (eg: elephant.off)"<<std::endl;
+    std::cout<<"Enter filename: (eg: data/elephant.off)"<<std::endl;
     std::cin>>str;
   }
   else

@@ -60,7 +60,7 @@ protected:
 };
 
 
-bool load_off_to_LCC(std::string filename, LCC_3& lcc, LCC_3& lcc2)
+bool load_off_to_LCC(std::string filename, LCC_3& lcc)
 {/*  //USE THIS
   std::ifstream ifile1, ifile2;
   ifile1.open(("mesh/"+filename).c_str());
@@ -115,12 +115,16 @@ bool load_off_to_LCC(std::string filename, LCC_3& lcc, LCC_3& lcc2)
   C3t3::Triangulation &atr= c3t3.triangulation();
   CGAL::import_from_triangulation_3(lcc, atr, cic);
   std::ofstream ofile;
-  ofile.open("triangulation");
+  ofile.open("tri.off");
+  CGAL::write_off(lcc, ofile);
+  ofile.close();
+  /*ofile.open("triangulation");
   ofile<<lcc; //works
   ofile.close();
   std::ifstream in;
   in.open("triangulation");
-  in>>lcc;
+  //in>>lcc; //doesn't work: segfault - figure out why
+  in.close();*/
   lcc.display_characteristics(std::cout);
   std::cout<<std::endl;
 

@@ -6,13 +6,17 @@
 #include<CGAL/Point_3.h>
 #include<cassert>
 
+typedef struct dartinfo{
+  double cell_no;
+  CGAL::Point_3<CGAL::Exact_predicates_inexact_constructions_kernel> parameters;
+}dart_info;
 
 struct myItem
 {
   template < class GMap >
   struct Dart_wrapper
   {
-    typedef double Dart_info;
+    typedef dart_info Dart_info;
     //typedef CGAL::Cell_attribute<GMap, int> Edge_attrib;
    // typedef CGAL::cpp11::tuple<void,Edge_attrib> Attributes;
     typedef CGAL::Cell_attribute_with_point< GMap, int, CGAL::Tag_true>   Vertex_attribute;

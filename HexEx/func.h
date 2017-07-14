@@ -27,10 +27,10 @@ void print_aff_transformation(Aff_transformation T){
 Aff_transformation extract_transition_function(Dart_handle dh, const LCC_3& lcc, 
 const std::vector<Aff_transformation>& G){
     Aff_transformation id(1,0,0,0,1,0,0,0,1,1);
-  /*  if(lcc.is_free(dh, 3)){//boundary
+    if(lcc.is_free(dh, 3)){//boundary
       return id;
     }
-    else{*/    
+    else{    
 
         Dart_const_handle dh1 = dh;
         Dart_const_handle dh2 = lcc.alpha(dh1,3,0);
@@ -72,7 +72,7 @@ const std::vector<Aff_transformation>& G){
      
        return final_transform_for_dh1;
 
-   // }
+    }
   }
 
 Aff_transformation get_parametrization_matrix(Point p, Point q, Point r, Point s, Point u, Point v, Point w, Point x){
@@ -97,6 +97,15 @@ int calculate_cell_type(const LCC_3& lcc, Dart_const_handle dh){
   else return -1; //flipped
 }
 
+void parametrize(LCC_3& lcc){ //dummy parametrization function
+  for(LCC_3::Dart_range::iterator it = (lcc.darts()).begin(), itend = (lcc.darts()).end(); it != itend; it++){
+    dart_info temp;
+    temp.cell_no = 0;
+    Point_3 point(round(1000*(lcc.point(it))[0]), round(1000*(lcc.point(it))[1]), round(1000*(lcc.point(it))[2]));
+    temp.parameters = point;
+    lcc.info(it) = temp;
+  }
+}
 
 //}
 #endif
