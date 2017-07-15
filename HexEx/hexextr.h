@@ -6,7 +6,7 @@
 #include<unordered_map>
 #include<map>
 #include"func.h"
-//#include"geometry_extraction.h"
+#include"geometry_extraction.h"
 #include"dart_extraction.h"
 #include<vector>
 #include"frame_field.h"
@@ -119,10 +119,12 @@ itend = input_tet_mesh.one_dart_per_cell<2>().end(); it != itend; it++){
 //Sanitization 
    */
 //Extract vertices
-     for(LCC_3::Vertex_attribute_range::iterator v = input_tet_mesh.vertex_attributes().begin(), vend = input_tet_mesh.vertex_attributes().end(); v != vend; v++){
+
+    vertex_extraction(input_tet_mesh, output_mesh, parametrization_matrices);
+   /*  for(LCC_3::Vertex_attribute_range::iterator v = input_tet_mesh.vertex_attributes().begin(), vend = input_tet_mesh.vertex_attributes().end(); v != vend; v++){
        Point p = input_tet_mesh.point_of_vertex_attribute(v);
        output_mesh.create_vertex_attribute(p);
-     }
+     }*/
      //vertex_extraction(input_tet_mesh, output_mesh);
      extract_darts(input_tet_mesh, output_mesh, parametrization_matrices);
     

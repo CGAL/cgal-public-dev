@@ -1,6 +1,9 @@
 #include"typedefs.h"
 #include <CGAL/intersections.h>
 #include<fstream>
+#ifdef CGAL_LCC_USE_QT
+#include "linear_cell_complex_3_viewer_qt.h"
+#endif
 bool does_intersect(Tetrahedron_3 tet, Point_3 p){
  // return (tet.has_on_bounded_side(p));
   if(!(tet.has_on_bounded_side(p)||tet.has_on_boundary(p))) return false;
@@ -43,10 +46,20 @@ itend =((output_mesh).vertex_attributes()).end(); it != itend; it++){ //all the 
         output_mesh.make_hexahedron(p0, p1, p2, p3, p4, p5, p6, p7);
         
       }
-     /* std::ofstream of;
+      
+      /*std::ofstream of;
       of.open("output.off");
       CGAL::write_off(output_mesh, of); 
-      of.close(); */
+      of.close();
+
+#ifdef CGAL_LCC_USE_VIEWER
+  display_lcc(output_mesh);
+#endif // CGAL_LCC_USE_VIEWER*/
     }
   }
+
+std::ofstream of;
+      of.open("output.off");
+      CGAL::write_off(output_mesh, of); 
+      of.close();
 }

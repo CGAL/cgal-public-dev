@@ -103,7 +103,7 @@ bool load_off_to_LCC(std::string filename, LCC_3& lcc)
   C3t3 c3t3 = CGAL::make_mesh_3<C3t3>(domain, criteria, no_perturb(), no_exude());
 
  // Set tetrahedron size (keep cell_radius_edge_ratio), ignore facets
-  Mesh_criteria new_criteria(crer, cell_size=0.3);
+  Mesh_criteria new_criteria(crer, cell_size=1.6); //originally cell_size = 0.3
 
   // Mesh refinement
   CGAL::refine_mesh_3(c3t3, domain, new_criteria);
@@ -130,7 +130,7 @@ bool load_off_to_LCC(std::string filename, LCC_3& lcc)
 
 
 #ifdef CGAL_LCC_USE_VIEWER
-  display_lcc(lcc);
+//  display_lcc(lcc);
 #endif // CGAL_LCC_USE_VIEWER
 
   return true;

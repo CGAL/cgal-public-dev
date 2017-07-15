@@ -101,7 +101,7 @@ void parametrize(LCC_3& lcc){ //dummy parametrization function
   for(LCC_3::Dart_range::iterator it = (lcc.darts()).begin(), itend = (lcc.darts()).end(); it != itend; it++){
     dart_info temp;
     temp.cell_no = 0;
-    Point_3 point(round(1000*(lcc.point(it))[0]), round(1000*(lcc.point(it))[1]), round(1000*(lcc.point(it))[2]));
+    Point_3 point(round(100*(lcc.point(it))[0]), round(100*(lcc.point(it))[1]), round(100*(lcc.point(it))[2]));
     temp.parameters = point;
     lcc.info(it) = temp;
   }
