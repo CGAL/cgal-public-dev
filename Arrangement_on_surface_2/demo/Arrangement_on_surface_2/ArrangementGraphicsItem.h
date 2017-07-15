@@ -779,6 +779,24 @@ protected:
       // QRectF rect = this->viewportRect( );
       // QColor color = this->backgroundColor;
       // painter->fillRect( rect, color );
+#if 0
+      QRectF rect = this->viewportRect( );
+      std::cout<<rect.left()<<'\t';
+      std::cout<<rect.right()<<'\t';
+      std::cout<<rect.top()<<'\t';
+      std::cout<<rect.bottom()<<'\n';
+
+      QColor color = this->backgroundColor;
+      if ( f->color().isValid() )
+      {
+        color = f->color();
+      }
+      QBrush oldBrush = painter->brush( );
+      painter->setBrush( color );
+      painter->drawRect(rect);
+      painter->setBrush( oldBrush );
+#endif
+      std::cout<<"Leaving paintFace Arr_linear_traits_2 unbounded"<<std::endl;
     }
   }
 
@@ -1467,9 +1485,23 @@ paintFace( Face_handle f, QPainter* painter,
   else
   {
     std::cout<<"In paintFace Arr_segment_traits_2 unbounded"<<std::endl;
-    // QRectF rect = this->viewportRect( );
-    // QColor color = this->backgroundColor;
-    // painter->fillRect( rect, color );
+    QRectF rect = this->viewportRect( );
+    std::cout<<rect.left()<<'\t';
+    std::cout<<rect.right()<<'\t';
+    std::cout<<rect.top()<<'\t';
+    std::cout<<rect.bottom()<<'\n';
+
+    QColor color = this->backgroundColor;
+    if ( f->color().isValid() )
+    {
+      color = f->color();
+    }
+    QBrush oldBrush = painter->brush( );
+    painter->setBrush( color );
+    painter->drawRect(rect);
+    painter->setBrush( oldBrush );
+
+    std::cout<<"Leaving paintFace Arr_segment_traits_2 unbounded"<<std::endl;
   }
 }
 

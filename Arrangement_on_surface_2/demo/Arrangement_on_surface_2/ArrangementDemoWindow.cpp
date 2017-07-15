@@ -167,6 +167,7 @@ ArrangementDemoTabBase* ArrangementDemoWindow::makeTab( TraitsType tt )
     }
   }
 
+
   return demoTab;
 }
 

@@ -189,9 +189,12 @@ void EnvelopeCallback< Arr_, Traits >::slotModelChanged( )
   {
     std::cout<<"Scene not properly set\n";
   }
+
+  std::cout<<"In EnvelopeCallback After If\n";
   
   this->updateEnvelope( true );
   this->updateEnvelope( false );
+  std::cout<<"Leaving EnvelopeCallback slotModelChanged\n";
 }
 
 template < typename Arr_, typename Traits >
@@ -205,6 +208,7 @@ template < typename TTraits >
 void EnvelopeCallback< Arr_, Traits >::updateEnvelope(bool lower,
                                                       TTraits /* traits */)
 {
+  std::cout<<"In updateEnvelope\n";
   CGAL::Qt::CurveGraphicsItem< Traits >* envelopeToUpdate;
   if ( lower )
   {
@@ -216,26 +220,36 @@ void EnvelopeCallback< Arr_, Traits >::updateEnvelope(bool lower,
   }
   envelopeToUpdate->clear( );
 
+  std::cout<<"In updateEnvelope after 1st if ( lower )\n";
+
   std::list< X_monotone_curve_2 > curves;
   Edge_iterator eit;
   for (eit = this->arr->edges_begin( ); eit != this->arr->edges_end( ); ++eit)
   {
     curves.push_back( eit->curve( ) );
   }
+
+  std::cout<<"curves size: "<< curves.size()<<std::endl;
+  std::cout<<"In updateEnvelope after for (eit = this->arr->edges_begin( );\n";
   Diagram_1 diagram;
   if ( lower )
   {
+    std::cout<<"In if lower\n";
     CGAL::lower_envelope_x_monotone_2(curves.begin(), curves.end(), diagram);
   }
   else
   {
+    std::cout<<"In if not lower\n";
     CGAL::upper_envelope_x_monotone_2(curves.begin(), curves.end(), diagram);
   }
 
+  std::cout<<"In updateEnvelope after 2nd if ( lower )\n";
   typename Diagram_1::Edge_const_handle e = diagram.leftmost( );
   typename Diagram_1::Vertex_const_handle v;
   QRectF clipRect = this->viewportRect( );
   CGAL::Qt::Converter< Kernel > convert( clipRect );
+
+  std::cout<<"In updateEnvelope after calling this->viewportRect( )\n";
   while ( e != diagram.rightmost( ) )
   {
     if ( ! e->is_empty( ) )
@@ -281,7 +295,11 @@ void EnvelopeCallback< Arr_, Traits >::updateEnvelope(bool lower,
     // TODO: Draw the point associated with the current vertex.
     e = v->right( );
   }
+  std::cout<<"In updateEnvelope after while\n";
+
   envelopeToUpdate->modelChanged( );
+
+  std::cout<<"Leaving updateEnvelope\n";
 }
 
 template < typename Arr_, typename Traits >

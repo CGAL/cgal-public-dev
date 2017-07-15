@@ -52,10 +52,13 @@ void ArrangementDemoTabBase::setupUi( )
   int viewHeight = this->graphicsView->height();
   // int viewWidth = 100;
   // int viewHeight = 100;
-  this->scene->setSceneRect(0, 0, viewWidth, viewHeight);
+  this->scene->setSceneRect(-5, -5, 10, 10);
   this->layout->addWidget( this->graphicsView, 0, 0 );
   this->graphicsView->setScene( this->scene );
   this->graphicsView->setMouseTracking( true );
+
+  this->scene->addRect(-0,-0, 400, 400);
+  this->scene->addEllipse(-200,-200, 400, 400);
 
 }
 
