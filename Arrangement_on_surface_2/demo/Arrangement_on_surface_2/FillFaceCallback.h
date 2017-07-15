@@ -147,9 +147,14 @@ fillFace( QGraphicsSceneMouseEvent* event )
   CGAL::Object pointLocationResult = this->locate( point );
   Face_const_handle face = this->getFace( pointLocationResult );
   Face_handle f = this->arr->non_const_handle( face );
-  if ( this->fillColor.isValid( ) )
+
+  if ( f->color() == ::Qt::white && this->fillColor.isValid() )
   {
     f->set_color( this->fillColor );
+  }
+  else
+  {
+    f->set_color( ::Qt::white );
   }
 }
 

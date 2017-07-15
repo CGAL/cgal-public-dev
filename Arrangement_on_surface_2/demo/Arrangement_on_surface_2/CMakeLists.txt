@@ -47,7 +47,7 @@ if ( CGAL_FOUND AND CGAL_Qt5_FOUND AND Qt5_FOUND AND CGAL_Core_FOUND)
   add_executable( arrangement_2
     arrangement_2.cpp
     #ArrangementGraphicsItem.cpp
-    #ArrangementDemoWindow.cpp
+    ArrangementDemoWindow.cpp
     ArrangementDemoTab.cpp
     ArrangementDemoGraphicsView.cpp
     Callback.cpp
@@ -83,7 +83,7 @@ if ( CGAL_FOUND AND CGAL_Qt5_FOUND AND Qt5_FOUND AND CGAL_Core_FOUND)
     target_sources(arrangement_2 PUBLIC GraphicsViewCurveInput.cpp)    
   endif()
 
-  target_sources(arrangement_2 PUBLIC ArrangementDemoWindow.cpp)
+  #target_sources(arrangement_2 PUBLIC ArrangementDemoWindow.cpp)
 
   qt5_use_modules(arrangement_2 Widgets Script)
   target_link_libraries( arrangement_2
