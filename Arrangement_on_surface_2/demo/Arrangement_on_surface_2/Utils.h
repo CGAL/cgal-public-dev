@@ -969,6 +969,7 @@ public: // typedefs
   typedef Kernel_ Kernel;
   typedef typename Kernel::Point_2 Point_2;
   typedef typename Kernel::Segment_2 Segment_2;
+  typedef typename Kernel::Ray_2 Ray_2;
 
 public: // methods
   // curve can be unbounded. if curve is unbounded to the left,
@@ -976,22 +977,49 @@ public: // methods
   X_monotone_curve_2 operator() ( const X_monotone_curve_2& curve,
                                   const Point_2& pLeft, const Point_2& pRight )
   {
+
+    Segment_2 subsegment;
+
     if ( curve.is_segment( ) )
     {
-      Segment_2 subsegment =
-        this->constructSubsegment( curve.segment( ), pLeft, pRight );
-      return X_monotone_curve_2( subsegment );
+      subsegment = this->constructSubsegment( curve.segment( ), pLeft, pRight );
     }
-    else if ( curve.is_ray( ) )
+    else if (curve.is_ray( ))
     {
+      Ray_2 ray = curve.ray();
+      Point_2 rightP;
+      Point_2 leftP;
 
+      if (ray.source() == pRight)
+      {
+        rightP = pRight;
+      }
+      else
+      {
+        double right_y = arr_compute_y_at_x_2.approx(curve, CGAL::to_double(pRight.x()));
+        rightP = Point_2(CGAL::to_double(pRight.x()), right_y);
+      }
+
+      if (ray.source() == pLeft)
+      {
+        leftP = pLeft;
+      }
+      else
+      {
+        double left_y = arr_compute_y_at_x_2.approx(curve, CGAL::to_double(pLeft.x()));
+        leftP = Point_2(CGAL::to_double(pLeft.x()), left_y);
+      }
+
+      subsegment = Segment_2(leftP, rightP);
     }
-    return curve;
+
+    return X_monotone_curve_2( subsegment );
   }
 
 protected:
   Construct_x_monotone_subcurve_2< CGAL::Arr_segment_traits_2< Kernel_ > >
     constructSubsegment;
+  Arr_compute_y_at_x_2<ArrTraits> arr_compute_y_at_x_2;
 };
 
 template < class Coefficient_ >
