@@ -337,7 +337,9 @@ updateEnvelope( bool lower,
       else
       {
         std::cout<<"In if ( e->left( ) == NULL )\n";
-        std::cout << "Control never reaches here" << std::endl;
+        std::cout << "handle unbounded curve" << std::endl;
+        double leftPoint_y = compute_y_at_x_2.approx(e->curve(), clipRect.left());
+        leftPoint = Point_2(clipRect.left(), leftPoint_y);
       }
       std::cout<<CGAL::to_double(leftPoint.x())<<"\t"<<CGAL::to_double(leftPoint.y())<<std::endl;
 

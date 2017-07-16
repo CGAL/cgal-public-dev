@@ -1012,6 +1012,20 @@ public: // methods
 
       subsegment = Segment_2(leftP, rightP);
     }
+    else if (curve.is_line( ))
+    {
+      double left_y = arr_compute_y_at_x_2.approx(curve, CGAL::to_double(pLeft.x()));
+      double right_y = arr_compute_y_at_x_2.approx(curve, CGAL::to_double(pRight.x()));
+
+      Point_2 leftP(CGAL::to_double(pLeft.x()), left_y);
+      Point_2 rightP(CGAL::to_double(pRight.x()), right_y);
+
+      subsegment = Segment_2(leftP, rightP);
+    }
+    else
+    {
+      return curve;
+    }
 
     return X_monotone_curve_2( subsegment );
   }
