@@ -57,8 +57,8 @@ void ArrangementDemoTabBase::setupUi( )
   this->graphicsView->setScene( this->scene );
   this->graphicsView->setMouseTracking( true );
 
-  this->scene->addRect(-0,-0, 400, 400);
-  this->scene->addEllipse(-200,-200, 400, 400);
+  // this->scene->addRect(-0,-0, 400, 400);
+  // this->scene->addEllipse(-200,-200, 400, 400);
 
 }
 

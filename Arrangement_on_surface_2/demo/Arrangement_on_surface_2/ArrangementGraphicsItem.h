@@ -243,16 +243,37 @@ protected:
   void paintFaces( QPainter* painter, CGAL::Arr_oblivious_side_tag )
   {
     // Prepare all faces for painting
+    std::cout<<"In paintFaces Arr_oblivious_side_tag"<<std::endl;
+    int Face_iterator_cnt = 0;
     for( Face_iterator fi = this->arr->faces_begin( );
          fi != this->arr->faces_end( ); ++fi )
     {
       fi->set_visited( false );
+      if ( fi->is_unbounded( ) )
+      {
+        std::cout << "setting unbounded face not visited" << std::endl;
+      }
+      else
+      {
+        std::cout << "setting bounded face not visited" << std::endl;
+      }
+      Face_iterator_cnt++;
     }
 
-    Face_handle unboundedFace = this->arr->unbounded_face( );
+    std::cout<<"First Face_iterator cnt: "<<Face_iterator_cnt <<std::endl;
+    Face_iterator_cnt = 0;
 
-    std::cout<<"In paintFaces unboundedFace"<<std::endl;
-    this->paintFace( unboundedFace, painter );
+    for( Face_iterator fi = this->arr->faces_begin( );
+         fi != this->arr->faces_end( ); ++fi )
+    {
+      Face_iterator_cnt++;
+      Face_handle f_handle = fi;
+      this->paintFace( f_handle, painter );
+    }
+
+    std::cout<<"Second Face_iterator cnt: "<<Face_iterator_cnt <<std::endl;
+    
+    std::cout<<"Leaving paintFaces Arr_oblivious_side_tag"<<std::endl;
   }
 
   void paintFaces( QPainter* painter, CGAL::Arr_open_side_tag )
@@ -260,7 +281,7 @@ protected:
 
 
     // Face_handle fictitiousFace = this->arr->fictitious_face( );
-    std::cout<<"In paintFaces fictitiousFace"<<std::endl;
+    std::cout<<"In paintFaces Arr_open_side_tag"<<std::endl;
     std::cout<<"number_of_unbounded_faces: ";
     std::cout<<this->arr->number_of_unbounded_faces()<<std::endl;
 
@@ -298,7 +319,7 @@ protected:
     // Face_handle unboundedFace = this->arr->unbounded_face( );
     // this->paintFace( unboundedFace, painter );
     
-    std::cout<<"Leaving paintFaces fictitiousFace"<<std::endl;
+    std::cout<<"Leaving paintFaces Arr_open_side_tag"<<std::endl;
   }
 
 #if 0
@@ -1655,87 +1676,120 @@ paintFace(Face_handle f, QPainter* painter,
   }
 
   std::cout<<"In paintFace Arr_circular_arc_traits_2 bounded"<<std::endl;
-
+  QVector< QPointF > pts;
   QPainterPath path;
   bool isFirstArc = true;
   Ccb_halfedge_circulator cc=f->outer_ccb();
+  int curve_cnt = 0;
+
+  typedef CGAL::Arr_circular_arc_traits_2<CircularKernel> Traits;
+  typedef CircularKernel                                Kernel;
+  typedef typename Kernel::Root_of_2                    Root_of_2;
+
+  Arr_compute_y_at_x_2< Traits > compute_y_at_x_2;
+
   do
   {
-    if ( this->antenna( cc ) )
+    if (this->antenna(cc))
     {
       continue;
     }
+    curve_cnt++;
 
-    if ( isFirstArc )
+    Halfedge_handle he = cc;
+    X_monotone_curve_2 c = he->curve();
+    // Get the co-ordinates of the curve's source and target.
+    double sx = CGAL::to_double(he->source()->point().x()),
+      sy = CGAL::to_double(he->source()->point().y()),
+      tx = CGAL::to_double(he->target()->point().x()),
+      ty = CGAL::to_double(he->target()->point().y());
+
+    QPointF coord_source(sx, sy);
+    QPointF coord_target(tx, ty);
+
+    // Transform the point coordinates from general coordinate system to
+    // Qt scene coordinate system
+    QPoint coord_source_viewport = this->fromScene( coord_source );
+    QPoint coord_target_viewport = this->fromScene( coord_target );
+
+    if (false)
     {
-      isFirstArc = false;
-      X_monotone_curve_2 c = cc->curve( );
-
-      QPointF source( to_double(c.source().x()), to_double(c.source().y()) );
-      QPointF target( to_double(c.target().x()), to_double(c.target().y()) );
-      if ( ! this->isProperOrientation( cc ) )
-      {
-        std::swap( source, target );
-      }
-
-      QPointF circleCenter( to_double(c.supporting_circle().center().x()),
-                            to_double(c.supporting_circle().center().y()) );
-      //this->drawDiagnosticArc( circleCenter, source, target, painter );
-
-      std::swap( source, target );
-      double asource = atan2( -(source - circleCenter).y(),
-                              (source - circleCenter).x() );
-      double atarget = atan2( -(target - circleCenter).y(),
-                              (target - circleCenter).x() );
-      double aspan = atarget - asource;
-      std::swap( source, target );
-
-      path.moveTo( source );
-      path.arcTo( convert(c.supporting_circle().bbox()), asource * 180/M_PI,
-                  aspan * 180/M_PI );
-      path.lineTo( target );
+      pts.push_back(coord_source );
     }
     else
     {
-      X_monotone_curve_2 c = cc->curve( );
-      QPointF source( to_double(c.source().x()), to_double(c.source().y()) );
-      QPointF target( to_double(c.target().x()), to_double(c.target().y()) );
-      if ( ! this->pathTouchingSource( path, c ) )
+      // If the curve is monotone, than its source and its target has the
+      // extreme x co-ordinates on this curve.
+      bool is_source_left = (sx < tx);
+      int  x_min = is_source_left ?
+        coord_source_viewport.x( ) : coord_target_viewport.x( );
+      int  x_max = is_source_left ?
+        coord_target_viewport.x( ) : coord_source_viewport.x( );
+      double curr_x, curr_y;
+      int x;
+
+      pts.push_back(coord_source );
+
+      // Draw the curve as pieces of small segments
+      const int DRAW_FACTOR = 5;
+      if (is_source_left)
       {
-        std::swap( source, target );
+        for ( x = x_min + DRAW_FACTOR; x < x_max; x+=DRAW_FACTOR )
+        {
+          //= COORD_SCALE)
+          curr_x = this->toScene( x );
+
+          // If curr_x > x_max or curr_x < x_min
+          if (curr_x < CGAL::to_double(c.left().x()) || curr_x > CGAL::to_double(c.right().x()))
+          {
+            continue;
+          }
+
+          curr_y = compute_y_at_x_2.approx(c, Root_of_2(curr_x));
+          pts.push_back( QPointF( curr_x, curr_y ) );
+        }// for
       }
+      else
+      {
+        for ( x = x_max; x > x_min; x-=DRAW_FACTOR )
+        {
+          curr_x = this->toScene( x );
+          if (curr_x < CGAL::to_double(c.left().x()) 
+            || curr_x > CGAL::to_double(c.right().x()))
+          {
+            continue;
+          }
 
-      QPointF circleCenter( to_double(c.supporting_circle().center().x()),
-                            to_double(c.supporting_circle().center().y()) );
-      //this->drawDiagnosticArc( circleCenter, source, target, painter );
-
-      std::swap( source, target );
-      double asource = atan2( -(source - circleCenter).y(),
-                              (source - circleCenter).x() );
-      double atarget = atan2( -(target - circleCenter).y(),
-                              (target - circleCenter).x() );
-      double aspan = atarget - asource;
-      std::swap( source, target );
-
-      path.arcTo( convert(c.supporting_circle().bbox()), asource * 180/M_PI,
-                  aspan * 180/M_PI );
-      path.lineTo( target );
+          curr_y = compute_y_at_x_2.approx(c, Root_of_2(curr_x));
+          pts.push_back( QPointF( curr_x, curr_y ) );
+        }// for
+      }// else
+      pts.push_back(coord_target );
     }
+    //created from the outer boundary of the face
   } while (++cc != f->outer_ccb());
 
-  if ( f->color().isValid() )
-  {
-    QPen savePen = painter->pen();
-    QBrush saveBrush = painter->brush();
-    QPen pen = painter->pen();
-    pen.setColor( f->color() );
+  std::cout<<"Curve_cnt: "<<curve_cnt<<std::endl;
+  std::cout<<"pts size: "<<pts.size()<<std::endl;
+ 
+  QPolygonF pgn( pts );
 
-    painter->setPen( pen );
-    painter->setBrush( f->color() );
-    painter->drawPath( path );
-    painter->setPen( savePen );
-    painter->setBrush( saveBrush );
+  // fill the face according to its color (stored at any of her
+  // incidents curves)
+  QBrush oldBrush = painter->brush( );
+  QColor def_bg_color = this->backgroundColor;
+  if (! f->color().isValid())
+  {
+    painter->setBrush( def_bg_color );
   }
+  else
+  {
+    painter->setBrush( f->color( ) );
+  }
+  painter->drawPolygon( pgn );
+  painter->setBrush( oldBrush ); 
+
+  std::cout<<"Leaving paintFace Arr_circular_arc_traits_2 bounded"<<std::endl;
 }
 #if 0
   template < typename Arr_, typename ArrTraits >
