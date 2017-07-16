@@ -303,7 +303,7 @@ updateEnvelope( bool lower,
         // std::cout << "pRight is null; should never get here..."
         //           << std::endl;
         std::cout<<"In if ( e->right( ) == NULL )\n";
-        std::cout << "handle unbounded curve" << std::endl;
+        std::cout << "should never get here" << std::endl;
       }
 
       X_monotone_curve_2 curve =
@@ -319,6 +319,56 @@ updateEnvelope( bool lower,
     e = v->right( );
   }
   std::cout<<"In updateEnvelope after while\n";
+
+  if (e == diagram.rightmost( ))
+  {
+    std::cout<<"In if (e == diagram.rightmost( ))\n";
+
+    if ( ! e->is_empty( ) )
+    {
+      std::cout<<"In if ( ! e->is_empty( ) )\n";
+
+      Point_2 leftPoint, rightPoint;
+      if ( e->left( ) != NULL )
+      {
+        leftPoint = e->left( )->point( );
+        std::cout<<"In if ( e->left( ) != NULL )\n";
+      }
+      else
+      {
+        std::cout<<"In if ( e->left( ) == NULL )\n";
+        std::cout << "Control never reaches here" << std::endl;
+      }
+      std::cout<<CGAL::to_double(leftPoint.x())<<"\t"<<CGAL::to_double(leftPoint.y())<<std::endl;
+
+      if ( e->right( ) != NULL )
+      {
+        rightPoint = e->right( )->point( );
+        std::cout<<"In if ( e->right( ) != NULL )\n";
+      }
+      else
+      {
+        // std::cout << "pRight is null; should never get here..."
+        //           << std::endl;
+        std::cout<<"In if ( e->right( ) == NULL )\n";
+        std::cout << "handle unbounded curve" << std::endl;
+        double rightPoint_y = compute_y_at_x_2.approx(e->curve(), clipRect.right());
+        rightPoint = Point_2(clipRect.right(), rightPoint_y);
+      }
+      
+      std::cout<<CGAL::to_double(rightPoint.x())<<"\t"<<CGAL::to_double(rightPoint.y())<<std::endl;
+
+      X_monotone_curve_2 curve =
+        this->construct_x_monotone_subcurve_2(e->curve(),
+                                              leftPoint, rightPoint);
+      envelopeToUpdate->insert( curve );
+
+    }
+    else
+    {
+      std::cout<<"In if ( e->is_empty() )\n";
+    }
+  }
 
   envelopeToUpdate->modelChanged( );
 
