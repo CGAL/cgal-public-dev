@@ -135,11 +135,12 @@ SplitEdgeCallback< Arr_ >::SplitEdgeCallback( Arrangement* arr_,
   hasFirstPoint( false ),
   intersectCurves( this->traits.intersect_2_object( ) ),
   areEqual( this->traits.equal_2_object( ) ),
-  segmentGuide(new QGraphicsLineItem(-1000, -1000, -1000, -1000))
+  segmentGuide(new QGraphicsLineItem())
 {
   this->segmentGuide->setZValue( 100 );
   QPen pen = this->segmentGuide->pen( );
   pen.setColor( this->color );
+  pen.setCosmetic(true);
   this->segmentGuide->setPen( pen );
   this->snapToVertexStrategy.setArrangement( arr_ );
 
@@ -174,7 +175,7 @@ void SplitEdgeCallback< Arr_ >::reset( )
 {
   std::cout<<"In SplitEdgeCallback reset\n";
   this->hasFirstPoint = false;
-  this->segmentGuide->setLine(-1000, -1000, -1000, -1000);
+  this->segmentGuide->setLine(0,0,0,0);
   Q_EMIT modelChanged( );
   std::cout<<"Leaving SplitEdgeCallback reset\n";
 }

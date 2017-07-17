@@ -143,6 +143,19 @@ ArrangementDemoTabBase* ArrangementDemoWindow::makeTab( TraitsType tt )
   this->updateMode( this->modeGroup->checkedAction( ) );
   this->updateFillColorSwatch( );
 
+  QVector<QGraphicsItem *> items = view->scene()->items().toVector();
+  QGraphicsLineItem line;
+  for (int i = 0; i < items.size(); i++)
+  {
+    if (items[i]->type() == line.type())
+    {
+      QGraphicsLineItem *lineItem = (QGraphicsLineItem *)items[i];
+      QPen pen = lineItem->pen();
+      pen.setCosmetic(true);
+      lineItem->setPen(pen);
+    }
+  }
+
   return demoTab;
 }
 
