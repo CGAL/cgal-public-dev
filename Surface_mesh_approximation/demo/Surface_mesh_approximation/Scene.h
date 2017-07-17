@@ -17,6 +17,7 @@ typedef Kernel::Vector_3 Vector;
 
 typedef CGAL::Polyhedron_3<Kernel> Polyhedron;
 typedef Polyhedron::Facet_const_handle Facet_const_handle;
+typedef Polyhedron::Halfedge_const_handle Halfedge_const_handle;
 typedef Polyhedron::Facet_const_iterator Facet_const_iterator;
 typedef Polyhedron::Halfedge_around_facet_const_circulator Halfedge_around_facet_const_circulator;
 typedef Polyhedron::Edge_const_iterator Edge_const_iterator;

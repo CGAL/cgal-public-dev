@@ -110,6 +110,14 @@ void Scene::variational_shape_approximation(
   const std::size_t num_proxies,
   const std::size_t num_iterations)
 {
+  typedef boost::associative_property_map<std::map<Facet_const_handle, Vector> > FacetNormalMap;
+  typedef boost::associative_property_map<std::map<Facet_const_handle, FT> > FacetAreaMap;
+
+  typedef CGAL::PlaneProxy<Polyhedron, Kernel> PlaneProxy;
+  typedef CGAL::L21Metric<PlaneProxy, Kernel, FacetNormalMap, FacetAreaMap> L21Metric;
+  typedef CGAL::ProxyFitting<PlaneProxy, Kernel, L21Metric, FacetNormalMap, FacetAreaMap> ProxyFitting;
+  typedef CGAL::ApproximationTrait<Kernel, PlaneProxy, L21Metric, ProxyFitting, FacetNormalMap, FacetAreaMap> ApproximationTrait;
+
   if(!m_pPolyhedron)
     return;
 
@@ -117,11 +125,26 @@ void Scene::variational_shape_approximation(
 
   m_fidx_map.clear();
   for(Facet_const_iterator fitr = m_pPolyhedron->facets_begin();
-    fitr != m_pPolyhedron->facets_end();
-    ++fitr) {
-    m_fidx_map.insert(
-      std::pair<Facet_const_handle, std::size_t>(fitr, 0));
+    fitr != m_pPolyhedron->facets_end(); ++fitr) {
+    m_fidx_map.insert(std::pair<Facet_const_handle, std::size_t>(fitr, 0));
   }
+
+  // construct facet normal & area map
+  std::map<Facet_const_handle, Vector> facet_normals;
+  std::map<Facet_const_handle, FT> facet_areas;
+  for(Facet_const_iterator fitr = m_pPolyhedron->facets_begin();
+    fitr != m_pPolyhedron->facets_end(); ++fitr) {
+    const Halfedge_const_handle he = fitr->halfedge();
+    const Point p1 = he->opposite()->vertex()->point();
+    const Point p2 = he->vertex()->point();
+    const Point p3 = he->next()->vertex()->point();
+    Vector normal = CGAL::unit_normal(p1, p2, p3);
+    facet_normals.insert(std::pair<Facet_const_handle, Vector>(fitr, normal));
+    FT area(std::sqrt(CGAL::to_double(CGAL::squared_area(p1, p2, p3))));
+    facet_areas.insert(std::pair<Facet_const_handle, FT>(fitr, area));
+  }
+  FacetNormalMap normal_pmap(facet_normals);
+  FacetAreaMap area_pmap(facet_areas);
 
   typedef boost::property_map<Polyhedron, boost::vertex_point_t>::type PointPropertyMap;
   PointPropertyMap ppmap = get(boost::vertex_point, const_cast<Polyhedron &>(*m_pPolyhedron));
@@ -134,10 +157,12 @@ void Scene::variational_shape_approximation(
     num_iterations,
     m_fidx_pmap,
     ppmap,
+    area_pmap,
     m_tris,
     m_anchor_pos,
     m_anchor_vtx,
     m_bdrs,
+    ApproximationTrait(normal_pmap, area_pmap),
     Kernel());
 
   m_px_num = num_proxies;
