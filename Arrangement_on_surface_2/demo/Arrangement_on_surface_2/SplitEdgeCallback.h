@@ -118,7 +118,7 @@ protected:
   bool hasFirstPoint;
   Point_2 p1;
   Point_2 p2;
-  QGraphicsLineItem segmentGuide;
+  QGraphicsLineItem *segmentGuide;
 
   Intersect_2 intersectCurves;
   Equal_2 areEqual;
@@ -134,13 +134,13 @@ SplitEdgeCallback< Arr_ >::SplitEdgeCallback( Arrangement* arr_,
   arr( arr_ ),
   hasFirstPoint( false ),
   intersectCurves( this->traits.intersect_2_object( ) ),
-  areEqual( this->traits.equal_2_object( ) )
+  areEqual( this->traits.equal_2_object( ) ),
+  segmentGuide(new QGraphicsLineItem(-1000, -1000, -1000, -1000))
 {
-  this->segmentGuide.setZValue( 100 );
-  QPen pen = this->segmentGuide.pen( );
+  this->segmentGuide->setZValue( 100 );
+  QPen pen = this->segmentGuide->pen( );
   pen.setColor( this->color );
-  this->segmentGuide.setPen( pen );
-
+  this->segmentGuide->setPen( pen );
   this->snapToVertexStrategy.setArrangement( arr_ );
 
   QObject::connect( this, SIGNAL( modelChanged( ) ),
@@ -155,7 +155,7 @@ void SplitEdgeCallback< Arr_ >::setScene( QGraphicsScene* scene_ )
   this->snapToGridStrategy.setScene( scene_ );
   if ( this->scene )
   {
-    this->scene->addItem( &( this->segmentGuide ) );
+    this->scene->addItem( this->segmentGuide );
   }
 }
 
@@ -164,23 +164,26 @@ void SplitEdgeCallback< Arr_ >::setColor( QColor c )
 {
   this->color = c;
 
-  QPen pen = this->segmentGuide.pen( );
+  QPen pen = this->segmentGuide->pen( );
   pen.setColor( c );
-  this->segmentGuide.setPen( pen );
+  this->segmentGuide->setPen( pen );
 }
 
 template < typename Arr_ >
 void SplitEdgeCallback< Arr_ >::reset( )
 {
+  std::cout<<"In SplitEdgeCallback reset\n";
   this->hasFirstPoint = false;
-  this->segmentGuide.setLine( 0, 0, 0, 0 );
+  this->setColor(::Qt::white);
+  this->segmentGuide->setLine(-1000, -1000, -1000, -1000);
   Q_EMIT modelChanged( );
+  std::cout<<"Leaving SplitEdgeCallback reset\n";
 }
 
 template < typename Arr_ >
 void SplitEdgeCallback< Arr_ >::slotModelChanged( )
 {
-  this->segmentGuide.update( );
+  this->segmentGuide->update( );
 }
 
 template < typename Arr_ >
@@ -250,10 +253,57 @@ splitEdges(const Point_2& /* clickedPoint */,
 template < typename Arr_ >
 template < typename Coefficient_ >
 void SplitEdgeCallback< Arr_ >::
-splitEdges(const Point_2& /* clickedPoint */,
+splitEdges(const Point_2& clickedPoint,
            CGAL::Arr_algebraic_segment_traits_2< Coefficient_ > /* traits */)
 {
-  // std::cout << "Algebraic segment split edges stub" << std::endl;
+  std::cout << "In splitEdges Arr_algebraic_segment_traits_2" << std::endl;
+
+  typename Traits::Construct_x_monotone_segment_2 constructSegment =
+      traits.construct_x_monotone_segment_2_object( );
+
+  std::vector< X_monotone_curve_2 > curves;
+
+  if ( ! this->hasFirstPoint )
+  {
+    this->p1 = clickedPoint;
+    this->hasFirstPoint = true;
+  }
+  else
+  {
+    this->p2 = clickedPoint;
+    constructSegment( this->p1, this->p2, std::back_inserter( curves ) );
+
+    X_monotone_curve_2 splitCurve = curves[0];
+
+    for ( Halfedge_iterator hei = this->arr->halfedges_begin( );
+          hei != this->arr->halfedges_end( ); ++hei )
+    {
+      X_monotone_curve_2 curve = hei->curve( );
+      CGAL::Object res;
+      CGAL::Oneset_iterator< CGAL::Object > oi( res );
+      this->intersectCurves( splitCurve, curve, oi );
+      std::pair< Point_2, Multiplicity > pair;
+      if ( hei == this->arr->halfedges_end( ) )
+        continue;
+      if ( CGAL::assign( pair, res ) )
+      {
+        Point_2 splitPoint = pair.first;
+        if ( ( ! hei->source( )->is_at_open_boundary( ) &&
+               this->areEqual( hei->source( )->point( ), splitPoint ) ) ||
+             ( ! hei->target( )->is_at_open_boundary( ) &&
+               this->areEqual( hei->target( )->point( ), splitPoint ) ) )
+        {
+          continue;
+        }
+        this->arr->split_edge( hei, splitPoint );
+      }
+    }
+
+    this->reset( );
+  }
+
+  Q_EMIT modelChanged( );
+  std::cout << "Leaving splitEdges Arr_algebraic_segment_traits_2" << std::endl;
 }
 
 template < typename Arr_ >
@@ -278,7 +328,9 @@ void SplitEdgeCallback<Arr_>::updateGuide(const Point_2& clickedPoint,
                                   CGAL::to_double( currentPoint.y( ) ) );
     Segment_2 currentSegment( pt1, pt2 );
     QLineF qSegment = this->convert( currentSegment );
-    this->segmentGuide.setLine( qSegment );
+
+    this->setColor(::Qt::black);
+    this->segmentGuide->setLine( qSegment );
     Q_EMIT modelChanged( );
   }
 }
@@ -298,7 +350,7 @@ updateGuide(const Point_2& clickedPoint,
                                           CGAL::to_double( currentPoint.y( ) ) );
     Segment_2 currentSegment( pt1, pt2 );
     QLineF qSegment = this->convert( currentSegment );
-    this->segmentGuide.setLine( qSegment );
+    this->segmentGuide->setLine( qSegment );
     Q_EMIT modelChanged( );
   }
 }

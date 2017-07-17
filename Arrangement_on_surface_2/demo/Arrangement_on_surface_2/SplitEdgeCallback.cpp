@@ -43,5 +43,5 @@ SplitEdgeCallbackBase::SplitEdgeCallbackBase( QObject* parent ) :
   CGAL::Qt::Callback( parent ),
   snappingEnabled( false ),
   snapToGridEnabled( false ),
-  color( ::Qt::blue )
+  color( ::Qt::white )
 { }

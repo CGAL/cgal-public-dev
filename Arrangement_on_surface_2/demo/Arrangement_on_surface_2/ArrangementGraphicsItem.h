@@ -138,7 +138,7 @@ protected:
     // assumes the first view is the right one
     QGraphicsView* viewport = views.first( );
     QPointF p1 = viewport->mapToScene( 0, 0 );
-    QPointF p2 = viewport->mapToScene(876, 456);
+    QPointF p2 = viewport->mapToScene(viewport->width(), viewport->height());
 
     double xmin = (std::min)(p1.x(), p2.x());
     double xmax = (std::max)(p1.x(), p2.x());
@@ -650,6 +650,25 @@ protected:
     if (f->is_unbounded())
     {
       std::cout<<"In paintFace Arr_algebraic_segment_traits_2 unbounded"<<std::endl;
+      QRectF rect = this->viewportRect( );
+      std::cout<<rect.left()<<'\t';
+      std::cout<<rect.right()<<'\t';
+      std::cout<<rect.top()<<'\t';
+      std::cout<<rect.bottom()<<'\n';
+
+      QColor color = this->backgroundColor;
+      if ( f->color().isValid() )
+      {
+        color = f->color();
+      }
+      QBrush oldBrush = painter->brush( );
+      QPen oldPen = painter->pen( );
+      painter->setBrush( color );
+      oldPen.setCosmetic(true);
+      painter->setPen(oldPen);
+      painter->drawRect(rect);
+      painter->setBrush( oldBrush );
+      std::cout<<"Leaving paintFace Arr_algebraic_segment_traits_2 unbounded"<<std::endl;
       return;
     }
 

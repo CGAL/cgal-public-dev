@@ -143,31 +143,6 @@ ArrangementDemoTabBase* ArrangementDemoWindow::makeTab( TraitsType tt )
   this->updateMode( this->modeGroup->checkedAction( ) );
   this->updateFillColorSwatch( );
 
-  QGraphicsScene *scene = view->scene();
-  QList<QGraphicsItem *>::iterator it = scene->items().begin();
-
-  // QList<QGraphicsItem *> items = scene->items();
-
-  if (tt == ALGEBRAIC_TRAITS)
-  {
-    while (it != scene->items().end())
-    {
-      (*it)->hide();
-      // std::cout<<(*it)->scenePos().x()<<"\t"<<(*it)->scenePos().y();
-
-      // if ((*it)->isVisible())
-      // {
-      //   std::cout<<"\tVisible\n";
-      // }
-      // else
-      // {
-      //   std::cout<<"\tNot Visible\n";
-      // }
-      it++;
-    }
-  }
-
-
   return demoTab;
 }
 
