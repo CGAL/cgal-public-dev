@@ -174,7 +174,6 @@ void SplitEdgeCallback< Arr_ >::reset( )
 {
   std::cout<<"In SplitEdgeCallback reset\n";
   this->hasFirstPoint = false;
-  this->setColor(::Qt::white);
   this->segmentGuide->setLine(-1000, -1000, -1000, -1000);
   Q_EMIT modelChanged( );
   std::cout<<"Leaving SplitEdgeCallback reset\n";
@@ -244,10 +243,57 @@ splitEdges( const Point_2& clickedPoint, TTraits traits )
 template < typename Arr_ >
 template < typename CircularKernel >
 void SplitEdgeCallback< Arr_ >::
-splitEdges(const Point_2& /* clickedPoint */,
+splitEdges(const Point_2& clickedPoint, 
            CGAL::Arr_circular_arc_traits_2< CircularKernel > /* traits */)
 {
-  // std::cout << "Circular arc split edges stub" << std::endl;
+  std::cout << "In splitEdges Arr_circular_arc_traits_2" << std::endl;
+  typedef CircularKernel Kernel;
+  typedef typename Kernel::Point_2 Ker_Point_2;
+  typedef typename Kernel::Line_arc_2 Line_arc_2;
+  typedef typename Kernel::FT FT;
+
+  if ( ! this->hasFirstPoint )
+  {
+    this->p1 = clickedPoint;
+    this->hasFirstPoint = true;
+  }
+  else
+  {
+    this->p2 = clickedPoint;
+    Ker_Point_2 ker_p1((CGAL::to_double(this->p1.x())), CGAL::to_double((this->p1.y())));
+    Ker_Point_2 ker_p2((CGAL::to_double(this->p2.x())), CGAL::to_double((this->p2.y())));
+
+    Line_arc_2 splitCurve( Segment_2( ker_p1, ker_p2 ) );
+
+    for ( Halfedge_iterator hei = this->arr->halfedges_begin( );
+          hei != this->arr->halfedges_end( ); ++hei )
+    {
+      X_monotone_curve_2 curve = hei->curve( );
+      CGAL::Object res;
+      CGAL::Oneset_iterator< CGAL::Object > oi( res );
+      this->intersectCurves( splitCurve, curve, oi );
+      std::pair< Point_2, Multiplicity > pair;
+      if ( hei == this->arr->halfedges_end( ) )
+        continue;
+      if ( CGAL::assign( pair, res ) )
+      {
+        Point_2 splitPoint = pair.first;
+        if ( ( ! hei->source( )->is_at_open_boundary( ) &&
+               this->areEqual( hei->source( )->point( ), splitPoint ) ) ||
+             ( ! hei->target( )->is_at_open_boundary( ) &&
+               this->areEqual( hei->target( )->point( ), splitPoint ) ) )
+        {
+          continue;
+        }
+        this->arr->split_edge( hei, splitPoint );
+      }
+    }
+
+    this->reset( );
+  }
+
+  Q_EMIT modelChanged( );
+  std::cout << "Leaving splitEdges Arr_circular_arc_traits_2" << std::endl;
 }
 
 template < typename Arr_ >
@@ -316,7 +362,8 @@ SplitEdgeCallback< Arr_ >::mouseMoveEvent( QGraphicsSceneMouseEvent* event )
 
 template < typename Arr_ >
 template < typename TTraits >
-void SplitEdgeCallback<Arr_>::updateGuide(const Point_2& clickedPoint,
+void SplitEdgeCallback<Arr_>::
+updateGuide(const Point_2& clickedPoint,
                                           TTraits /* traits */)
 {
   if ( this->hasFirstPoint )
@@ -329,7 +376,6 @@ void SplitEdgeCallback<Arr_>::updateGuide(const Point_2& clickedPoint,
     Segment_2 currentSegment( pt1, pt2 );
     QLineF qSegment = this->convert( currentSegment );
 
-    this->setColor(::Qt::black);
     this->segmentGuide->setLine( qSegment );
     Q_EMIT modelChanged( );
   }
@@ -350,6 +396,7 @@ updateGuide(const Point_2& clickedPoint,
                                           CGAL::to_double( currentPoint.y( ) ) );
     Segment_2 currentSegment( pt1, pt2 );
     QLineF qSegment = this->convert( currentSegment );
+
     this->segmentGuide->setLine( qSegment );
     Q_EMIT modelChanged( );
   }

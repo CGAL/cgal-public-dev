@@ -650,24 +650,24 @@ protected:
     if (f->is_unbounded())
     {
       std::cout<<"In paintFace Arr_algebraic_segment_traits_2 unbounded"<<std::endl;
-      QRectF rect = this->viewportRect( );
-      std::cout<<rect.left()<<'\t';
-      std::cout<<rect.right()<<'\t';
-      std::cout<<rect.top()<<'\t';
-      std::cout<<rect.bottom()<<'\n';
+      // QRectF rect = this->viewportRect( );
+      // std::cout<<rect.left()<<'\t';
+      // std::cout<<rect.right()<<'\t';
+      // std::cout<<rect.top()<<'\t';
+      // std::cout<<rect.bottom()<<'\n';
 
-      QColor color = this->backgroundColor;
-      if ( f->color().isValid() )
-      {
-        color = f->color();
-      }
-      QBrush oldBrush = painter->brush( );
-      QPen oldPen = painter->pen( );
-      painter->setBrush( color );
-      oldPen.setCosmetic(true);
-      painter->setPen(oldPen);
-      painter->drawRect(rect);
-      painter->setBrush( oldBrush );
+      // QColor color = this->backgroundColor;
+      // if ( f->color().isValid() )
+      // {
+      //   color = f->color();
+      // }
+      // QBrush oldBrush = painter->brush( );
+      // QPen oldPen = painter->pen( );
+      // painter->setBrush( color );
+      // oldPen.setCosmetic(true);
+      // painter->setPen(oldPen);
+      // painter->drawRect(rect);
+      // painter->setBrush( oldBrush );
       std::cout<<"Leaving paintFace Arr_algebraic_segment_traits_2 unbounded"<<std::endl;
       return;
     }
