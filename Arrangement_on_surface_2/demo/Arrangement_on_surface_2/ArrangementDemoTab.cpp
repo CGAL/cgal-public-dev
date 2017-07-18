@@ -51,8 +51,11 @@ void ArrangementDemoTabBase::setupUi( )
   // int viewWidth = this->graphicsView->width();
   // int viewHeight = this->graphicsView->height();
 
-  int viewWidth = this->graphicsView->width();
-  int viewHeight = this->graphicsView->height();
+  // int viewWidth = this->graphicsView->width();
+  // int viewHeight = this->graphicsView->height();
+
+  int viewWidth = 1;
+  int viewHeight = 1;
 
   this->scene->setSceneRect(0, 0, viewWidth, viewHeight);
   this->layout->addWidget( this->graphicsView, 0, 0 );
