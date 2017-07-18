@@ -145,9 +145,10 @@ ArrangementDemoTabBase* ArrangementDemoWindow::makeTab( TraitsType tt )
 
   QVector<QGraphicsItem *> items = view->scene()->items().toVector();
   QGraphicsLineItem line;
+  
   for (int i = 0; i < items.size(); i++)
   {
-    if (items[i]->type() == line.type())
+    if (items[i] && items[i]->type() == line.type())
     {
       QGraphicsLineItem *lineItem = (QGraphicsLineItem *)items[i];
       QPen pen = lineItem->pen();
