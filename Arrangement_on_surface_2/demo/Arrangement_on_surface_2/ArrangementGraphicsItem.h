@@ -623,15 +623,37 @@ protected:
       {
         painter->setBrush( f->color( ) );
       }
+
+      QPen pen = painter->pen();
+      pen.setCosmetic(true);
+      painter->setPen(pen);
+
       painter->drawPolygon( pgn );
       painter->setBrush( oldBrush );
     }
     else
     {
       std::cout<<"In paintFace Arr_conic_traits_2 unbounded"<<std::endl;
-      // QRectF rect = this->viewportRect( );
-      // QColor color = this->backgroundColor;
-      // painter->fillRect( rect, color );
+      QRectF rect = this->viewportRect( );
+      std::cout<<rect.left()<<'\t';
+      std::cout<<rect.right()<<'\t';
+      std::cout<<rect.top()<<'\t';
+      std::cout<<rect.bottom()<<'\n';
+
+      QColor color = this->backgroundColor;
+      if ( f->color().isValid() )
+      {
+        color = f->color();
+      }
+      QBrush oldBrush = painter->brush( );
+      QPen pen = painter->pen();
+      pen.setCosmetic(true);
+      painter->setPen(pen);
+      painter->setBrush( color );
+      painter->drawRect(rect);
+      painter->setBrush( oldBrush );
+
+      std::cout<<"Leaving paintFace Arr_conic_traits_2 unbounded"<<std::endl;
     }
   }
 
@@ -1522,6 +1544,9 @@ paintFace( Face_handle f, QPainter* painter,
     }
 
     QBrush oldBrush = painter->brush( );
+    QPen pen = painter->pen();
+    pen.setCosmetic(true);
+    painter->setPen(pen);
     painter->setBrush( color );
     painter->drawPolygon( pgn );
     painter->setBrush( oldBrush );
@@ -1541,6 +1566,9 @@ paintFace( Face_handle f, QPainter* painter,
       color = f->color();
     }
     QBrush oldBrush = painter->brush( );
+    QPen pen = painter->pen();
+    pen.setCosmetic(true);
+    painter->setPen(pen);
     painter->setBrush( color );
     painter->drawRect(rect);
     painter->setBrush( oldBrush );
@@ -1661,17 +1689,36 @@ paintFace( Face_handle f, QPainter* painter,
     {
       painter->setBrush( f->color( ) );
     }
+    QPen pen = painter->pen();
+    pen.setCosmetic(true);
+    painter->setPen(pen);
+
     painter->drawPolygon( pgn );
     painter->setBrush( oldBrush );
   }
   else
   {
     std::cout<<"In paintFace Arr_polyline_traits_2 unbounded"<<std::endl;
+    QRectF rect = this->viewportRect( );
+    std::cout<<rect.left()<<'\t';
+    std::cout<<rect.right()<<'\t';
+    std::cout<<rect.top()<<'\t';
+    std::cout<<rect.bottom()<<'\n';
 
-    // Draw a infinite bounding box
-    // QRectF rect = this->viewportRect( );
-    // QColor color = this->backgroundColor;
-    // painter->fillRect( rect, color );
+    QColor color = this->backgroundColor;
+    if ( f->color().isValid() )
+    {
+      color = f->color();
+    }
+    QBrush oldBrush = painter->brush( );
+    QPen pen = painter->pen();
+    pen.setCosmetic(true);
+    painter->setPen(pen);
+    painter->setBrush( color );
+    painter->drawRect(rect);
+    painter->setBrush( oldBrush );
+
+    std::cout<<"Leaving paintFace Arr_polyline_traits_2 unbounded"<<std::endl;
   }
 }
 
@@ -1688,13 +1735,26 @@ paintFace(Face_handle f, QPainter* painter,
   {
 
     std::cout<<"In paintFace Arr_circular_arc_traits_2 unbounded"<<std::endl;
-    // QRectF rect = this->viewportRect( );
-    // QColor color = this->backgroundColor;
-    // if ( f->color().isValid() )
-    // {
-    //   color = f->color();
-    // }
-    // painter->fillRect( rect, color );
+    QRectF rect = this->viewportRect( );
+    std::cout<<rect.left()<<'\t';
+    std::cout<<rect.right()<<'\t';
+    std::cout<<rect.top()<<'\t';
+    std::cout<<rect.bottom()<<'\n';
+
+    QColor color = this->backgroundColor;
+    if ( f->color().isValid() )
+    {
+      color = f->color();
+    }
+    QBrush oldBrush = painter->brush( );
+    QPen pen = painter->pen();
+    pen.setCosmetic(true);
+    painter->setPen(pen);
+    painter->setBrush( color );
+    painter->drawRect(rect);
+    painter->setBrush( oldBrush );
+
+    std::cout<<"Leaving paintFace Arr_circular_arc_traits_2 unbounded"<<std::endl;
     return;
   }
 
@@ -1809,6 +1869,10 @@ paintFace(Face_handle f, QPainter* painter,
   {
     painter->setBrush( f->color( ) );
   }
+
+  QPen pen = painter->pen();
+  pen.setCosmetic(true);
+  painter->setPen(pen);
   painter->drawPolygon( pgn );
   painter->setBrush( oldBrush ); 
 
