@@ -51,20 +51,13 @@ void ArrangementDemoTabBase::setupUi( )
   // int viewWidth = this->graphicsView->width();
   // int viewHeight = this->graphicsView->height();
 
-  std::cout<< "graphicsView->width: " << this->graphicsView->width() << std::endl;
-  std::cout<< "graphicsView->height: " << this->graphicsView->height() << std::endl;
-
   int viewWidth = this->graphicsView->width();
   int viewHeight = this->graphicsView->height();
-  // this->scene->setSceneRect(-1000, -1000, 2000, 2000);
+
   this->scene->setSceneRect(0, 0, viewWidth, viewHeight);
   this->layout->addWidget( this->graphicsView, 0, 0 );
   this->graphicsView->setScene( this->scene );
   this->graphicsView->setMouseTracking( true );
-  this->graphicsView->centerOn(viewWidth/2, viewHeight/2);
-  // this->graphicsView->setTransformationAnchor(QGraphicsView::AnchorViewCenter);
-
-  // this->scene->addRect(this->scene->sceneRect());
 
 }
 
