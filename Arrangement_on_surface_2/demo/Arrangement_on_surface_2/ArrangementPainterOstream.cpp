@@ -430,6 +430,9 @@ operator<<( const X_monotone_curve_2& curve )
 
     std::cout << width << " and " <<  height << "\n";
     std::cout << "points length: " << points.size() << std::endl;
+    std::cout<< "Scene rect width: " <<this->scene->width() << std::endl;
+    std::cout<< "Scene rect height: "<< this->scene->height() << std::endl;
+
     typename std::list<Coord_vec_2>::const_iterator lit = points.begin();
     //ppnt->moveTo((*p1).first, height - (*p1).second);
     while(lit != points.end()) {
@@ -453,7 +456,10 @@ operator<<( const X_monotone_curve_2& curve )
       lit++;
 #endif
       QPainterPath path;
-      QPoint coord( vit->first, height - vit->second );
+      int sceneRectWidth = this->scene->width();
+      int sceneRectHeight = this->scene->height();
+
+      QPoint coord( vit->first + sceneRectWidth/2, height - vit->second -sceneRectHeight/2 );
       QPointF qpt = view->mapToScene( coord );
       std::cout<<" First point in the vec: ";
       std::cout<<qpt.x() << "\t" << qpt.y()<< std::endl;
@@ -471,7 +477,7 @@ operator<<( const X_monotone_curve_2& curve )
       {
         path.lineTo( qpt );
         vit++;
-        coord = QPoint( vit->first, height - vit->second );
+        coord = QPoint( vit->first + sceneRectWidth/2, height - vit->second -sceneRectHeight/2 );
         qpt = view->mapToScene( coord );
         // std::cout << qpt.x() << "\t" << qpt.y() << std::endl;
       }
@@ -518,7 +524,10 @@ operator<<( const Point_2& p )
       int height = view->height();
       int width = view->width();
 
-      QPoint coords( coord.first, height - coord.second );
+      int sceneRectWidth = this->scene->width();
+      int sceneRectHeight = this->scene->height();
+
+      QPoint coords( coord.first + sceneRectWidth/2, height - coord.second -sceneRectHeight/2);
       QPointF qpt = view->mapToScene( coords );
       QPen savePen = this->qp->pen( );
       this->qp->setBrush( QBrush( savePen.color( ) ) );

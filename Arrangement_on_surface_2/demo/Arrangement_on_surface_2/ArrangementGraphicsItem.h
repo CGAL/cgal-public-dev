@@ -730,9 +730,13 @@ protected:
       typename Coord_vec_2::const_iterator vit = vec.begin();
 
       QVector< QPointF > face_curve_points;
+      
+      int sceneRectWidth = this->scene->width();
+      int sceneRectHeight = this->scene->height();
+
       while ( vit != vec.end() )
       {
-        QPoint coord( vit->first, height - vit->second );
+        QPoint coord( vit->first + sceneRectWidth/2, height - vit->second -sceneRectHeight/2);
         QPointF qpt = view->mapToScene( coord );
         if ( src_x < tgt_x )
         {
