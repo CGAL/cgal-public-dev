@@ -28,6 +28,7 @@
 #include <CGAL/Arr_circular_arc_traits_2.h>
 #include <CGAL/Arr_algebraic_segment_traits_2.h>
 #include <CGAL/Arr_walk_along_line_point_location.h>
+#include <CGAL/Curved_kernel_via_analysis_2/Curve_renderer_facade.h>
 
 #include "ArrangementTypes.h"
 
@@ -502,14 +503,65 @@ public:
   typedef typename ArrTraitsAdaptor<Traits>::Kernel     Kernel;
   typedef typename Kernel::Point_2                      Point_2;
   typedef typename Traits::X_monotone_curve_2           X_monotone_curve_2;
+  typedef typename Traits::CKvA_2                       CKvA_2;
+  typedef std::pair< double, double >                   Coord_2;
+  typedef std::vector< Coord_2 >                        Coord_vec_2;
+  typedef CGAL::Curve_renderer_facade<CKvA_2>           Facade;
+
 
 public:
-  double operator()(const Point_2& /* p */,
-                    const X_monotone_curve_2& /* c */) const
+  double operator()(const Point_2& p,
+                    const X_monotone_curve_2& c) const
   {
-    double res = 0.0;
-    return res;
+    std::list<Coord_vec_2> points;
+    boost::optional < Coord_2 > p1, p2;
+
+    std::cout<<"In setupFacade\n";
+    QGraphicsView* view = this->scene->views( ).first( );
+    int height = view->height();
+    int width = view->width();
+
+    QRectF viewport = this->viewportRect( );
+    CGAL::Bbox_2 bbox = this->convert( viewport ).bbox( );
+    Facade::setup(bbox, view->width(), view->height());    
+    std::cout<<"Leaving setupFacade\n";
+
+    Facade::instance().draw( c, points, &p1, &p2 );
+    if(points.empty())
+    {
+      std::cout<<"In Compute_squared_distance_2 Arr_algebraic_segment_traits_2: points.empty() == True\n";
+      return 0;
+    }
+
+    const Coord_vec_2& vec = points.front();
+    typename Coord_vec_2::const_iterator vit = vec.begin();
+
+    int sceneRectWidth = this->scene->width();
+    int sceneRectHeight = this->scene->height();
+
+    FT minDist(10000000000);
+
+    while ( vit != vec.end() )
+    {
+      QPoint coord( vit->first + sceneRectWidth/2, height - vit->second -sceneRectHeight/2);
+      QPointF qpt = view->mapToScene( coord );
+
+      Point_2 target_point(qpt.x(), qpt.y());
+
+      FT curDist = CGAL::squared_distance( p, target_point );
+      minDist = curDist < minDist ? curDist : minDist;
+      vit++;
+
+      // std::cout << qpt.x() << "\t" << qpt.y() << std::endl;
+    }
+
+    std::cout<<"minDist: " << minDist <<std::endl;
+    std::cout<<"Leaving Compute_squared_distance_2 Arr_algebraic_segment_traits_2\n";
+    return CGAL::to_double(minDist);
   }
+
+protected:
+  CGAL::Qt::Converter< Kernel > convert;
 };
 
 template < class ArrTraits >

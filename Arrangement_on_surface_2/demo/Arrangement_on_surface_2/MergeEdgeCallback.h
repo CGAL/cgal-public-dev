@@ -97,6 +97,8 @@ void MergeEdgeCallback< Arr_ >::setScene( QGraphicsScene* scene_ )
   this->scene = scene_;
   this->highlightedCurve->setScene( scene_ );
   this->highlightedCurve2->setScene( scene_ );
+  this->squaredDistance.setScene( scene_ );
+
   if ( this->scene )
   {
     this->scene->addItem( this->highlightedCurve );
