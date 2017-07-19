@@ -38,6 +38,7 @@ public:
 
   // algorithms
   void variational_shape_approximation(const int &init, const std::size_t num_proxies, const std::size_t num_iterations);
+  void compact_approximation(const int &init, const std::size_t num_proxies, const std::size_t num_iterations);
 
   // toggle view options
   void toggle_view_polyhedron() {

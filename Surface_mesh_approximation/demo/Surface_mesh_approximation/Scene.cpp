@@ -15,6 +15,109 @@
 
 #include "ColorCheatSheet.h"
 
+typedef Polyhedron::Facet_handle Facet_handle;
+typedef boost::associative_property_map<std::map<Facet_const_handle, Vector> > FacetNormalMap;
+typedef boost::associative_property_map<std::map<Facet_const_handle, FT> > FacetAreaMap;
+typedef boost::associative_property_map<std::map<Facet_const_handle, Point> > FacetCenterMap;
+
+// user defined compact metric
+struct PointProxy {
+  Facet_handle seed;
+  Point center;
+  Vector normal;
+};
+
+struct CompactMetric {
+  CompactMetric(const FacetCenterMap &_center_pmap)
+    : center_pmap(_center_pmap) {}
+
+  FT operator()(const Facet_const_handle &f, const PointProxy &px) {
+    return FT(std::sqrt(CGAL::to_double(
+      CGAL::squared_distance(center_pmap[f], px.center))));
+  }
+
+  const FacetCenterMap center_pmap;
+  const FacetAreaMap area_pmap;
+};
+
+struct PointProxyFitting {
+  PointProxyFitting(const FacetCenterMap &_center_pmap,
+    const FacetAreaMap &_area_pmap,
+    const FacetNormalMap &_normal_pmap)
+    : center_pmap(_center_pmap),
+    area_pmap(_area_pmap),
+    normal_pmap(_normal_pmap),
+    error_functor(center_pmap) {}
+
+  template<typename FacetIterator>
+  PointProxy operator()(const FacetIterator beg, const FacetIterator end) {
+    CGAL_assertion(beg != end);
+
+    // fitting normal
+    Vector norm = CGAL::NULL_VECTOR;
+    for (FacetIterator fitr = beg; fitr != end; ++fitr) {
+      norm = norm + normal_pmap[*fitr] * area_pmap[*fitr];
+    }
+    norm = norm / std::sqrt(CGAL::to_double(norm.squared_length()));
+
+    // fitting center
+    Vector center = CGAL::NULL_VECTOR;
+    FT area(0);
+    for (FacetIterator fitr = beg; fitr != end; ++fitr) {
+      center = center + (center_pmap[*fitr] - CGAL::ORIGIN) * area_pmap[*fitr];
+      area += area_pmap[*fitr];
+    }
+    center = center / area;
+
+    // construct proxy
+    PointProxy px;
+    px.normal = norm;
+    px.center = CGAL::ORIGIN + center;
+
+    // update seed
+    px.seed = *beg;
+    FT err_min = error_functor(*beg, px);
+    for (FacetIterator fitr = beg; fitr != end; ++fitr) {
+      FT err = error_functor(*fitr, px);
+      if (err < err_min) {
+        err_min = err;
+        px.seed = *fitr;
+      }
+    }
+
+    return px;
+  }
+
+  const FacetCenterMap center_pmap;
+  const FacetAreaMap area_pmap;
+  const FacetNormalMap normal_pmap;
+  CompactMetric error_functor;
+};
+
+struct ApproxTrait {
+  typedef Kernel GeomTraits;
+  typedef PointProxy Proxy;
+  typedef CompactMetric ErrorMetric;
+  typedef PointProxyFitting ProxyFitting;
+
+  ApproxTrait(const FacetCenterMap _center_pmap,
+    const FacetAreaMap &_area_pmap,
+    const FacetNormalMap &_normal_pmap)
+    : center_pmap(_center_pmap), area_pmap(_area_pmap), normal_pmap(_normal_pmap) {}
+
+  ErrorMetric construct_fit_error_functor() const {
+    return ErrorMetric(center_pmap);
+  }
+
+  ProxyFitting construct_proxy_fitting_functor() const {
+    return ProxyFitting(center_pmap, area_pmap, normal_pmap);
+  }
+
+  const FacetCenterMap center_pmap;
+  const FacetAreaMap area_pmap;
+  const FacetNormalMap normal_pmap;
+};
+
 Scene::Scene() :
   m_fidx_pmap(m_fidx_map)
 {
@@ -163,6 +266,64 @@ void Scene::variational_shape_approximation(
     m_anchor_vtx,
     m_bdrs,
     ApproximationTrait(normal_pmap, area_pmap),
+    Kernel());
+
+  m_px_num = num_proxies;
+  m_view_seg_boundary = true;
+
+  std::cout << "done" << std::endl;
+}
+
+void Scene::compact_approximation(
+  const int &init,
+  const std::size_t num_proxies,
+  const std::size_t num_iterations)
+{
+  if(!m_pPolyhedron)
+    return;
+
+  std::cout << "Compact approximation..." << std::endl;
+
+  m_fidx_map.clear();
+  for(Facet_const_iterator fitr = m_pPolyhedron->facets_begin();
+    fitr != m_pPolyhedron->facets_end(); ++fitr) {
+    m_fidx_map.insert(std::pair<Facet_const_handle, std::size_t>(fitr, 0));
+  }
+
+  // construct facet normal & area map
+  std::map<Facet_const_handle, Vector> facet_normals;
+  std::map<Facet_const_handle, FT> facet_areas;
+  std::map<Facet_const_handle, Point> facet_centers;
+  for(Facet_const_iterator fitr = m_pPolyhedron->facets_begin();
+    fitr != m_pPolyhedron->facets_end(); ++fitr) {
+    const Halfedge_const_handle he = fitr->halfedge();
+    const Point p1 = he->opposite()->vertex()->point();
+    const Point p2 = he->vertex()->point();
+    const Point p3 = he->next()->vertex()->point();
+    Vector normal = CGAL::unit_normal(p1, p2, p3);
+    facet_normals.insert(std::pair<Facet_const_handle, Vector>(fitr, normal));
+    FT area(std::sqrt(CGAL::to_double(CGAL::squared_area(p1, p2, p3))));
+    facet_areas.insert(std::pair<Facet_const_handle, FT>(fitr, area));
+    facet_centers.insert(std::pair<Facet_const_handle, Point>(fitr, CGAL::centroid(p1, p2, p3)));
+  }
+  FacetNormalMap normal_pmap(facet_normals);
+  FacetAreaMap area_pmap(facet_areas);
+  FacetCenterMap center_pmap(facet_centers);
+
+  m_tris.clear();
+  m_anchor_pos.clear();
+  m_anchor_vtx.clear();
+  CGAL::vsa_mesh_approximation(init, *m_pPolyhedron,
+    num_proxies,
+    num_iterations,
+    m_fidx_pmap,
+    get(boost::vertex_point, const_cast<Polyhedron &>(*m_pPolyhedron)),
+    area_pmap,
+    m_tris,
+    m_anchor_pos,
+    m_anchor_vtx,
+    m_bdrs,
+    ApproxTrait(center_pmap, area_pmap, normal_pmap),
     Kernel());
 
   m_px_num = num_proxies;

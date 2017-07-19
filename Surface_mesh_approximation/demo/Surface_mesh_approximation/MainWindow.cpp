@@ -194,6 +194,18 @@ void MainWindow::on_actionVSA_triggered()
   }
 }
 
+void MainWindow::on_actionCompact_triggered()
+{
+  SettingsDialog dial;
+  if(dial.exec() == QDialog::Accepted) {
+    QApplication::setOverrideCursor(Qt::WaitCursor);
+    int init = dial.InitRandom->isChecked() ? 0 : (dial.InitIncremental->isChecked() ? 1 : 2);
+    m_pScene->compact_approximation(init, dial.NumSegments->value(), dial.NumIterations->value());
+    m_pViewer->update();
+    QApplication::restoreOverrideCursor();
+  }
+}
+
 void MainWindow::on_actionView_polyhedron_triggered()
 {
   m_pScene->toggle_view_polyhedron();

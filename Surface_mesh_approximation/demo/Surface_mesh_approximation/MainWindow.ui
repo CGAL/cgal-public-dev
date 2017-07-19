@@ -65,6 +65,7 @@
      <string>&amp;Algorithms</string>
     </property>
     <addaction name="actionVSA"/>
+    <addaction name="actionCompact"/>
    </widget>
    <widget class="QMenu" name="menuEdit">
     <property name="title">
@@ -140,6 +141,11 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+V</string>
+   </property>
+  </action>
+  <action name="actionCompact">
+   <property name="text">
+    <string>&amp;Compact</string>
    </property>
   </action>
  </widget>

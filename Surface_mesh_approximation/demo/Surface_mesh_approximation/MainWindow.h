@@ -47,6 +47,7 @@ protected slots:
 
   // algorithm menu
   void on_actionVSA_triggered();
+  void on_actionCompact_triggered();
 
   // view menu
   void on_actionView_polyhedron_triggered();
