@@ -456,8 +456,8 @@ operator<<( const X_monotone_curve_2& curve )
       lit++;
 #endif
       QPainterPath path;
-      int sceneRectWidth = this->scene->width();
-      int sceneRectHeight = this->scene->height();
+      double sceneRectWidth = this->scene->width();
+      double sceneRectHeight = this->scene->height();
 
       QPoint coord( vit->first + sceneRectWidth/2, height - vit->second -sceneRectHeight/2 );
       QPointF qpt = view->mapToScene( coord );
@@ -524,8 +524,8 @@ operator<<( const Point_2& p )
       int height = view->height();
       int width = view->width();
 
-      int sceneRectWidth = this->scene->width();
-      int sceneRectHeight = this->scene->height();
+      double sceneRectWidth = this->scene->width();
+      double sceneRectHeight = this->scene->height();
 
       QPoint coords( coord.first + sceneRectWidth/2, height - coord.second -sceneRectHeight/2);
       QPointF qpt = view->mapToScene( coords );

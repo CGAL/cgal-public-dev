@@ -536,8 +536,8 @@ public:
     const Coord_vec_2& vec = points.front();
     typename Coord_vec_2::const_iterator vit = vec.begin();
 
-    int sceneRectWidth = this->scene->width();
-    int sceneRectHeight = this->scene->height();
+    double sceneRectWidth = this->scene->width();
+    double sceneRectHeight = this->scene->height();
 
     FT minDist(10000000000);
 
