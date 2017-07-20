@@ -28,6 +28,8 @@
 #include <CGAL/Arr_algebraic_segment_traits_2.h>
 
 #include <QGraphicsScene>
+#include <QApplication>
+
 #include <QPainter>
 //#include <QStyleOption>
 
@@ -39,8 +41,13 @@
 #define _USE_MATH_DEFINES
 #endif
 #include <math.h>
+#include "ui_ArrangementDemoWindow.h"
 
 class QGraphicsScene;
+class QApplication;
+// class ArrangementDemoWindow;
+// using Ui::ArrangementDemoWindow;
+extern Ui::ArrangementDemoWindow* getCurrentDemoWindowUi();
 
 namespace CGAL {
 namespace Qt {
@@ -57,7 +64,8 @@ public:
     visible_edges( true ),
     visible_vertices( true ),
     scene( NULL ),
-    backgroundColor( ::Qt::white )
+    backgroundColor( ::Qt::white ),
+    scalingFactor(1.0)
   {
     this->verticesPen.setCosmetic( true );
     this->verticesPen.setCapStyle( ::Qt::SquareCap );
@@ -162,6 +170,7 @@ protected:
   QGraphicsScene* scene;
 
   QColor backgroundColor;
+  double scalingFactor;
 
 }; // class ArrangementGraphicsItemBase
 
@@ -205,6 +214,14 @@ public:
                      QWidget* widget);
 
 protected:
+
+  template < typename TTraits >
+  void modelChanged(TTraits traits);
+
+  template < typename Coefficient_>
+  void modelChanged(CGAL::Arr_algebraic_segment_traits_2<Coefficient_>
+                         traits);
+
   template < typename TTraits >
   void paint( QPainter* painter, TTraits traits );
 
@@ -753,8 +770,8 @@ protected:
 
       QVector< QPointF > face_curve_points;
       
-      int sceneRectWidth = this->scene->width();
-      int sceneRectHeight = this->scene->height();
+      double sceneRectWidth = this->scene->width();
+      double sceneRectHeight = this->scene->height();
 
       while ( vit != vec.end() )
       {
@@ -1190,26 +1207,57 @@ paint(QPainter* painter,
 {
   std::cout<<"In paint Arr_algebraic_segment_traits_2\n";
 
-  this->paintFaces( painter );
+  // Set up the scale
 
-  painter->setPen( this->verticesPen );
+
   QRectF clipRect = this->boundingRect( );
-
   std::cout<<"left, right, bottom, top:\n";
   std::cout<<clipRect.left()<<", "<<clipRect.right()<<", "<<clipRect.bottom()<<", "<<clipRect.top()<<std::endl;
 
-  if ( std::isinf(clipRect.left( )) ||
-       std::isinf(clipRect.right( )) ||
-       std::isinf(clipRect.top( )) ||
-       std::isinf(clipRect.bottom( )) )
+  QList< QGraphicsView* > views = this->scene->views( );
+  if ( views.size( ) == 0 )
+  {
+    std::cout<<"views.size( ) == 0\n";
+  }
+
+  QGraphicsView* view = views.first( );
+
+  // view->resetMatrix();
+  if ( !std::isinf(clipRect.left( )) &&
+       !std::isinf(clipRect.right( )) &&
+       !std::isinf(clipRect.top( )) &&
+       !std::isinf(clipRect.bottom( )) )
+  {
+    std::cout<<"In If with finite bound\n";
+    // view->resetMatrix();
+    // double viewHeight = view->height();
+#if 0
+    double viewHeight = 456;
+    std::cout<<"viewHeight: "<<viewHeight<<std::endl;
+
+    double boundingRectHeight = clipRect.bottom() - clipRect.top();
+
+    view->scale(1/this->scalingFactor, 1/this->scalingFactor);
+    this->scalingFactor = (0.5 * viewHeight) / boundingRectHeight;
+    view->scale(scalingFactor, scalingFactor);
+#endif
+    std::cout<<"Leaving If with finite bound\n";
+  }
+  else
   {
     std::cout<<"In If with infinite bound\n";
     clipRect = this->viewportRect( );
+    std::cout<<"Leaving If with infinite bound\n"; 
   }
 
   std::cout<<"left, right, bottom, top:\n";
   std::cout<<clipRect.left()<<", "<<clipRect.right()<<", "<<clipRect.bottom()<<", "<<clipRect.top()<<std::endl;
 
+  // paint the faces for the purpose of brushing
+  this->paintFaces( painter );
+
+  // paint the curve itself
+  painter->setPen( this->verticesPen );
   this->painterostream =
     ArrangementPainterOstream< Traits >( painter, clipRect );
   this->painterostream.setScene( this->scene );
@@ -1333,7 +1381,8 @@ updateBoundingBox(CGAL::Arr_algebraic_segment_traits_2<Coefficient_> traits)
   this->prepareGeometryChange( );
   if ( this->arr->number_of_vertices( ) == 0 )
   {
-    this->bb = Bbox_2( 0, 0, 0, 0 );
+    double inf = std::numeric_limits<double>::infinity();
+    this->bb = Bbox_2( -inf, -inf, inf, inf );
     this->bb_initialized = false;
     std::cout<<"Leaving updateBoundingBox no vertex\n";
     return;
@@ -1389,6 +1438,13 @@ updateBoundingBox(CGAL::Arr_algebraic_segment_traits_2<Coefficient_> traits)
 template < typename Arr_, typename ArrTraits >
 void ArrangementGraphicsItem< Arr_, ArrTraits >::modelChanged( )
 {
+  this->modelChanged( ArrTraits() );
+}
+
+template < typename Arr_, typename ArrTraits >
+template < typename TTraits >
+void ArrangementGraphicsItem< Arr_, ArrTraits >::modelChanged(TTraits )
+{
   std::cout<<"In ArrangementGraphicsItem modelChanged"<<std::endl;
   if ( this->arr->is_empty( ) )
   {
@@ -1402,6 +1458,74 @@ void ArrangementGraphicsItem< Arr_, ArrTraits >::modelChanged( )
   std::cout<<"In ArrangementGraphicsItem modelChanged after if"<<std::endl;
   this->updateBoundingBox( );
   this->update( );
+  std::cout<<"Leaving ArrangementGraphicsItem modelChanged"<<std::endl;
+}
+
+template < typename Arr_, typename ArrTraits >
+template < typename Coefficient_ >
+void ArrangementGraphicsItem< Arr_, ArrTraits >::
+modelChanged(CGAL::Arr_algebraic_segment_traits_2<Coefficient_> )
+{
+  std::cout<<"In ArrangementGraphicsItem modelChanged Arr_algebraic_segment_traits_2"<<std::endl;
+  if ( this->arr->is_empty( ) )
+  {
+    this->hide( );
+  }
+  else
+  {
+    this->show( );
+  }
+
+  std::cout<<"In ArrangementGraphicsItem modelChanged Arr_algebraic_segment_traits_2 after if"<<std::endl;
+  this->updateBoundingBox( );
+
+  QRectF clipRect = this->boundingRect( );
+  std::cout<<"left, right, bottom, top:\n";
+  std::cout<<clipRect.left()<<", "<<clipRect.right()<<", "<<clipRect.bottom()<<", "<<clipRect.top()<<std::endl;
+
+  QList< QGraphicsView* > views = this->scene->views( );
+  if ( views.size( ) == 0 )
+  {
+    std::cout<<"views.size( ) == 0\n";
+  }
+
+  QGraphicsView* view = views.first( );
+
+  // view->resetMatrix();
+  if ( !std::isinf(clipRect.left( )) &&
+       !std::isinf(clipRect.right( )) &&
+       !std::isinf(clipRect.top( )) &&
+       !std::isinf(clipRect.bottom( )) )
+  {
+    std::cout<<"In If with finite bound\n";
+    // view->resetMatrix();
+    // double viewHeight = view->height();
+
+    // QList<QWidget*> qWidgetList = QApplication::topLevelWidgets();
+    // extern class ArrangementDemoWindow;
+
+    Ui::ArrangementDemoWindow *ui = ::getCurrentDemoWindowUi();
+          // dynamic_cast<Ui::ArrangementDemoWindow>qWidgetList.first();
+    // ArrangementDemoWindow *myWindw;
+    // std::cout<<Ui::ArrangementDemoWindow::SEGMENT_TRAITS;
+    double viewHeight = 456;
+    std::cout<<"viewHeight: "<<viewHeight<<std::endl;
+
+    if (!ui->actionDelete->isChecked())
+    {
+      std::cout<<"actionDelete not checked"<<std::endl;
+      double boundingRectHeight = clipRect.bottom() - clipRect.top();
+
+      view->scale(1/this->scalingFactor, 1/this->scalingFactor);
+      this->scalingFactor = (0.5 * viewHeight) / boundingRectHeight;
+      view->scale(scalingFactor, scalingFactor);
+    }
+
+    std::cout<<"Leaving If with finite bound\n";
+  }
+
+  this->update( );
+  std::cout<<"Leaving ArrangementGraphicsItem modelChanged Arr_algebraic_segment_traits_2"<<std::endl;
 }
 
 template < typename Arr_, typename ArrTraits >

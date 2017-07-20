@@ -69,12 +69,26 @@ class ArrangementDemoWindow : public CGAL::Qt::DemosMainWindow
   ArrangementDemoTabBase* makeTab( TraitsType tt );
   ArrangementDemoTabBase* getTab( unsigned int tabIndex ) const;
   ArrangementDemoTabBase* getCurrentTab( ) const;
+  Ui::ArrangementDemoWindow *getUi(){ return this->ui; }
+  QAction *getActiveMode(){ return this->activeModes.at(0); } 
 
   std::vector< QString > getTabLabels( ) const;
   std::vector< CGAL::Object > getArrangements( ) const;
 
   template < class ArrType >
   void makeOverlayTab( ArrType* arr1, ArrType* arr2 );
+
+public:
+  static ArrangementDemoWindow* getInstance()
+  {
+    if (instance_ == NULL)
+    {
+        instance_ = new ArrangementDemoWindow;
+    }
+    return instance_;
+  }
+private:
+  static ArrangementDemoWindow* instance_;
 
 public Q_SLOTS:
   void updateMode( QAction* a );

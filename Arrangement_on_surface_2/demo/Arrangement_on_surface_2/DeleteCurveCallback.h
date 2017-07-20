@@ -157,6 +157,7 @@ DeleteCurveCallback< Arr_ >::
 highlightNearestCurve( QGraphicsSceneMouseEvent* event )
 {
   // find the nearest curve to the cursor to be the new highlighted curve
+  std::cout<<"In highlightNearestCurve\n";
   Point p = this->convert( event->scenePos( ) );
   //bool isFirst = true;
   //double minDist = 0.0;
@@ -188,7 +189,7 @@ highlightNearestCurve( QGraphicsSceneMouseEvent* event )
   //if ( isFirst )
   if ( this->removableHalfedge == Halfedge_handle( ) )
   {
-    // std::cout << "no curve found" << std::endl;
+    std::cout << "no curve found" << std::endl;
     return;
   }
 
@@ -221,6 +222,7 @@ highlightNearestCurve( QGraphicsSceneMouseEvent* event )
     this->highlightedCurve->insert( this->removableHalfedge->curve( ) );
   }
 
+  std::cout<<"Leaving highlightNearestCurve\n";
   Q_EMIT modelChanged( );
 }
 

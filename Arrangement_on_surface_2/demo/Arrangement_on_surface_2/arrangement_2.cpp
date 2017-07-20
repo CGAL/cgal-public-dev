@@ -27,8 +27,8 @@ int main( int argc, char* argv[] )
   // Forcing the menu bar to be platform independent 
   // app.setAttribute(Qt::AA_DontUseNativeMenuBar);
 
-  ArrangementDemoWindow demoWindow;
-  demoWindow.show( );
+  ArrangementDemoWindow *demoWindow = ArrangementDemoWindow::getInstance();
+  demoWindow->show( );
 
   return app.exec( );
 }

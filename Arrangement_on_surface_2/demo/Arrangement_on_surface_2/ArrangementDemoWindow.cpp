@@ -37,6 +37,13 @@
 #include <CGAL/IO/Arr_text_formatter.h>
 #include <CGAL/IO/Arr_with_history_text_formatter.h>
 
+ArrangementDemoWindow *ArrangementDemoWindow::instance_ = NULL;
+
+Ui::ArrangementDemoWindow* getCurrentDemoWindowUi()
+{
+  return ArrangementDemoWindow::getInstance()->getUi();
+}
+
 ArrangementDemoWindow::ArrangementDemoWindow(QWidget* parent) :
   CGAL::Qt::DemosMainWindow( parent ),
   ui( new Ui::ArrangementDemoWindow )
