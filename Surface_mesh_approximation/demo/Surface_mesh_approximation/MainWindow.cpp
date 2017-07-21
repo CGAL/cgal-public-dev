@@ -182,19 +182,19 @@ void MainWindow::on_actionCopy_snapshot_triggered()
   QApplication::restoreOverrideCursor();
 }
 
-void MainWindow::on_actionVSA_triggered()
+void MainWindow::on_action_l21_metric_triggered()
 {
   SettingsDialog dial;
   if(dial.exec() == QDialog::Accepted) {
     QApplication::setOverrideCursor(Qt::WaitCursor);
     int init = dial.InitRandom->isChecked() ? 0 : (dial.InitIncremental->isChecked() ? 1 : 2);
-    m_pScene->variational_shape_approximation(init, dial.NumSegments->value(), dial.NumIterations->value());
+    m_pScene->l21_approximation(init, dial.NumSegments->value(), dial.NumIterations->value());
     m_pViewer->update();
     QApplication::restoreOverrideCursor();
   }
 }
 
-void MainWindow::on_actionCompact_triggered()
+void MainWindow::on_action_compact_metric_triggered()
 {
   SettingsDialog dial;
   if(dial.exec() == QDialog::Accepted) {
@@ -206,7 +206,7 @@ void MainWindow::on_actionCompact_triggered()
   }
 }
 
-void MainWindow::on_actionL2_Metric_triggered()
+void MainWindow::on_action_l2_metric_triggered()
 {
   SettingsDialog dial;
   if(dial.exec() == QDialog::Accepted) {

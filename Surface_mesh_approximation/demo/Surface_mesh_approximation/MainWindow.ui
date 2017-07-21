@@ -62,11 +62,11 @@
    </widget>
    <widget class="QMenu" name="menuAlgorithms">
     <property name="title">
-     <string>&amp;Algorithms</string>
+     <string>&amp;Approximation</string>
     </property>
-    <addaction name="actionVSA"/>
-    <addaction name="actionCompact"/>
-    <addaction name="actionL2_Metric"/>
+    <addaction name="action_l21_metric"/>
+    <addaction name="action_l2_metric"/>
+    <addaction name="action_compact_metric"/>
    </widget>
    <widget class="QMenu" name="menuEdit">
     <property name="title">
@@ -133,9 +133,9 @@
     <string>&amp;Save Approximation</string>
    </property>
   </action>
-  <action name="actionVSA">
+  <action name="action_l21_metric">
    <property name="text">
-    <string>&amp;VSA</string>
+    <string>&amp;L21 Metric</string>
    </property>
    <property name="toolTip">
     <string>Variational Shape Approximation</string>
@@ -144,12 +144,12 @@
     <string>Ctrl+V</string>
    </property>
   </action>
-  <action name="actionCompact">
+  <action name="action_compact_metric">
    <property name="text">
     <string>&amp;Compact</string>
    </property>
   </action>
-  <action name="actionL2_Metric">
+  <action name="action_l2_metric">
    <property name="text">
     <string>L2 Metric</string>
    </property>

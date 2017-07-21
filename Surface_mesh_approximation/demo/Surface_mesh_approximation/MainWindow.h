@@ -46,9 +46,9 @@ protected slots:
   void on_actionCopy_snapshot_triggered();
 
   // algorithm menu
-  void on_actionVSA_triggered();
-  void on_actionCompact_triggered();
-  void on_actionL2_Metric_triggered();
+  void on_action_l21_metric_triggered();
+  void on_action_compact_metric_triggered();
+  void on_action_l2_metric_triggered();
 
   // view menu
   void on_actionView_polyhedron_triggered();

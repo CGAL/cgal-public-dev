@@ -208,7 +208,7 @@ void Scene::save_approximation(const std::string &filename)
   ofs.close();
 }
 
-void Scene::variational_shape_approximation(
+void Scene::l21_approximation(
   const int &init,
   const std::size_t num_proxies,
   const std::size_t num_iterations)
@@ -219,7 +219,7 @@ void Scene::variational_shape_approximation(
   typedef CGAL::PlaneProxy<Polyhedron, Kernel> PlaneProxy;
   typedef CGAL::L21Metric<PlaneProxy, Kernel, FacetNormalMap, FacetAreaMap> L21Metric;
   typedef CGAL::ProxyFitting<PlaneProxy, Kernel, L21Metric, FacetNormalMap, FacetAreaMap> ProxyFitting;
-  typedef CGAL::ApproximationTrait<Kernel, PlaneProxy, L21Metric, ProxyFitting, FacetNormalMap, FacetAreaMap> ApproximationTrait;
+  typedef CGAL::L21ApproximationTrait<Kernel, PlaneProxy, L21Metric, ProxyFitting, FacetNormalMap, FacetAreaMap> L21ApproximationTrait;
 
   if(!m_pPolyhedron)
     return;
@@ -265,7 +265,7 @@ void Scene::variational_shape_approximation(
     m_anchor_pos,
     m_anchor_vtx,
     m_bdrs,
-    ApproximationTrait(normal_pmap, area_pmap),
+    L21ApproximationTrait(normal_pmap, area_pmap),
     Kernel());
 
   m_px_num = num_proxies;
