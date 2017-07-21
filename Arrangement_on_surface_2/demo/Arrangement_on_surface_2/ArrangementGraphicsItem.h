@@ -1457,6 +1457,40 @@ void ArrangementGraphicsItem< Arr_, ArrTraits >::modelChanged(TTraits )
 
   std::cout<<"In ArrangementGraphicsItem modelChanged after if"<<std::endl;
   this->updateBoundingBox( );
+
+  QRectF clipRect = this->boundingRect( );
+  std::cout<<"left, right, bottom, top:\n";
+  std::cout<<clipRect.left()<<", "<<clipRect.right()<<", "<<clipRect.bottom()<<", "<<clipRect.top()<<std::endl;
+
+  QList< QGraphicsView* > views = this->scene->views( );
+  if ( views.size( ) == 0 )
+  {
+    std::cout<<"views.size( ) == 0\n";
+  }
+
+  QGraphicsView* view = views.first( );
+
+  // view->resetMatrix();
+  if ( !std::isinf(clipRect.left( )) &&
+       !std::isinf(clipRect.right( )) &&
+       !std::isinf(clipRect.top( )) &&
+       !std::isinf(clipRect.bottom( )) )
+  {
+    std::cout<<"In If with finite bound\n";
+
+    Ui::ArrangementDemoWindow *ui = getCurrentDemoWindowUi();
+
+    if (!ui->actionDelete->isChecked())
+    {
+      std::cout<<"actionDelete not checked"<<std::endl;
+
+      view->scale(1.1, 1.1);
+      view->scale(1/1.1, 1/1.1);
+    }
+
+    std::cout<<"Leaving If with finite bound\n";
+  }
+
   this->update( );
   std::cout<<"Leaving ArrangementGraphicsItem modelChanged"<<std::endl;
 }
@@ -1504,7 +1538,7 @@ modelChanged(CGAL::Arr_algebraic_segment_traits_2<Coefficient_> )
     // QList<QWidget*> qWidgetList = QApplication::topLevelWidgets();
     // extern class ArrangementDemoWindow;
 
-    Ui::ArrangementDemoWindow *ui = ::getCurrentDemoWindowUi();
+    Ui::ArrangementDemoWindow *ui = getCurrentDemoWindowUi();
           // dynamic_cast<Ui::ArrangementDemoWindow>qWidgetList.first();
     // ArrangementDemoWindow *myWindw;
     // std::cout<<Ui::ArrangementDemoWindow::SEGMENT_TRAITS;
@@ -1518,7 +1552,7 @@ modelChanged(CGAL::Arr_algebraic_segment_traits_2<Coefficient_> )
 
       view->scale(1/this->scalingFactor, 1/this->scalingFactor);
       this->scalingFactor = (0.5 * viewHeight) / boundingRectHeight;
-      view->scale(scalingFactor, scalingFactor);
+      view->scale(this->scalingFactor, this->scalingFactor);
     }
 
     std::cout<<"Leaving If with finite bound\n";
