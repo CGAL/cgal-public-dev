@@ -177,10 +177,11 @@ getNearestMergeableCurve( QGraphicsSceneMouseEvent* event )
 {
   // find the nearest curve to the cursor that is adjacent to a curve that
   // can be merged with it
+  std::cout<<"In getNearestMergeableCurve one\n";
   Kernel_point_2 p = this->convert( event->scenePos( ) );
-  double minDist = 0.0;
-  bool noneFound = true;
+  double minDist = std::numeric_limits<double>::max();
   Halfedge_iterator nearestHei;
+  bool found = false;
 
   for ( Halfedge_iterator hei = this->arr->halfedges_begin( );
         hei != this->arr->halfedges_end( );
@@ -202,18 +203,21 @@ getNearestMergeableCurve( QGraphicsSceneMouseEvent* event )
 
     X_monotone_curve_2 curve = hei->curve( );
     double dist = CGAL::to_double( this->squaredDistance( p, curve ) );
-    if ( noneFound || dist < minDist )
+    if ( !found || dist < minDist )
     {
-      noneFound = false;
+      found = true;
       minDist = dist;
       nearestHei = hei;
     }
   }
 
-  if ( noneFound )
+  if ( !found )
   { // then we did not find a mergeable halfedge
+    std::cout<<"Leaving getNearestMergeableCurve one: not found\n";
     return Halfedge_handle( );
   }
+
+  std::cout<<"Leaving getNearestMergeableCurve one: found\n";
   return nearestHei;
 }
 
