@@ -191,6 +191,7 @@ getNearestMergeableCurve( QGraphicsSceneMouseEvent* event )
     Vertex_iterator target = hei->target( );
     if ( source->degree( ) != 2 && target->degree( ) != 2 )
     { // then this halfedge has no mergeable neighbors
+      std::cout<<"In for loop continue: source->degree( ) != 2 && target->degree( ) != 2\n";
       continue;
     }
     Halfedge_handle h1 = hei->prev( );
@@ -198,6 +199,7 @@ getNearestMergeableCurve( QGraphicsSceneMouseEvent* event )
     if ( (! this->arr->are_mergeable( hei, h1 ) ) &&
          (! this->arr->are_mergeable( hei, h2 ) ) )
     {
+      std::cout<<"In for loop continue: not mergeable\n";
       continue;
     }
 
