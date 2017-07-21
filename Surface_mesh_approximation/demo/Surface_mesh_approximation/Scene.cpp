@@ -217,10 +217,10 @@ void Scene::l21_approximation(
   typedef boost::associative_property_map<std::map<Facet_const_handle, Vector> > FacetNormalMap;
   typedef boost::associative_property_map<std::map<Facet_const_handle, FT> > FacetAreaMap;
 
-  typedef CGAL::PlaneProxy<Polyhedron, Kernel> PlaneProxy;
-  typedef CGAL::L21Metric<PlaneProxy, Kernel, FacetNormalMap, FacetAreaMap> L21Metric;
-  typedef CGAL::ProxyFitting<PlaneProxy, Kernel, L21Metric, FacetNormalMap, FacetAreaMap> ProxyFitting;
-  typedef CGAL::L21ApproximationTrait<Kernel, PlaneProxy, L21Metric, ProxyFitting, FacetNormalMap, FacetAreaMap> L21ApproximationTrait;
+  typedef CGAL::PlaneProxy<Polyhedron> PlaneProxy;
+  typedef CGAL::L21Metric<PlaneProxy, FacetNormalMap, FacetAreaMap> L21Metric;
+  typedef CGAL::ProxyFitting<PlaneProxy, L21Metric, FacetNormalMap, FacetAreaMap> ProxyFitting;
+  typedef CGAL::L21ApproximationTrait<PlaneProxy, L21Metric, ProxyFitting, FacetNormalMap, FacetAreaMap> L21ApproximationTrait;
 
   if(!m_pPolyhedron)
     return;
@@ -341,10 +341,10 @@ void Scene::l2_approximation(
   typedef boost::associative_property_map<std::map<Facet_const_handle, FT> > FacetAreaMap;
   typedef boost::property_map<Polyhedron, boost::vertex_point_t>::type VertexPointMap;
 
-  typedef CGAL::PlaneProxy<Polyhedron, Kernel> PlaneProxy;
-  typedef CGAL::L2Metric<PlaneProxy, Kernel, FacetAreaMap, VertexPointMap, Polyhedron> L2Metric;
-  typedef CGAL::PCAPlaneFitting<PlaneProxy, Kernel, L2Metric, Polyhedron, VertexPointMap, FacetAreaMap> PCAPlaneFitting;
-  typedef CGAL::L2ApproximationTrait<Kernel, Polyhedron, PlaneProxy, L2Metric, PCAPlaneFitting, VertexPointMap, FacetAreaMap> L2ApproximationTrait;
+  typedef CGAL::PlaneProxy<Polyhedron> PlaneProxy;
+  typedef CGAL::L2Metric<PlaneProxy, FacetAreaMap, VertexPointMap, Polyhedron> L2Metric;
+  typedef CGAL::PCAPlaneFitting<PlaneProxy, L2Metric, Polyhedron, VertexPointMap, FacetAreaMap> PCAPlaneFitting;
+  typedef CGAL::L2ApproximationTrait<Polyhedron, PlaneProxy, L2Metric, PCAPlaneFitting, VertexPointMap, FacetAreaMap> L2ApproximationTrait;
 
   if(!m_pPolyhedron)
     return;
