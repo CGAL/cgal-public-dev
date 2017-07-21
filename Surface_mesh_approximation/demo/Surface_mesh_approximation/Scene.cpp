@@ -12,6 +12,7 @@
 #include <CGAL/IO/Polyhedron_iostream.h>
 #include <CGAL/centroid.h>
 #include <CGAL/vsa_mesh_approximation.h>
+#include <CGAL/vsa_mesh_approximation_traits.h>
 
 #include "ColorCheatSheet.h"
 
