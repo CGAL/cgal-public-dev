@@ -66,6 +66,7 @@
     </property>
     <addaction name="actionVSA"/>
     <addaction name="actionCompact"/>
+    <addaction name="actionL2_Metric"/>
    </widget>
    <widget class="QMenu" name="menuEdit">
     <property name="title">
@@ -146,6 +147,11 @@
   <action name="actionCompact">
    <property name="text">
     <string>&amp;Compact</string>
+   </property>
+  </action>
+  <action name="actionL2_Metric">
+   <property name="text">
+    <string>L2 Metric</string>
    </property>
   </action>
  </widget>

@@ -332,6 +332,71 @@ void Scene::compact_approximation(
   std::cout << "done" << std::endl;
 }
 
+void Scene::l2_approximation(
+  const int &init,
+  const std::size_t num_proxies,
+  const std::size_t num_iterations)
+{
+  typedef boost::associative_property_map<std::map<Facet_const_handle, FT> > FacetAreaMap;
+  typedef boost::property_map<Polyhedron, boost::vertex_point_t>::type VertexPointMap;
+
+  typedef CGAL::PlaneProxy<Polyhedron, Kernel> PlaneProxy;
+  typedef CGAL::L2Metric<PlaneProxy, Kernel, FacetAreaMap, VertexPointMap, Polyhedron> L2Metric;
+  typedef CGAL::PCAPlaneFitting<PlaneProxy, Kernel, L2Metric, Polyhedron, VertexPointMap, FacetAreaMap> PCAPlaneFitting;
+  typedef CGAL::L2ApproximationTrait<Kernel, Polyhedron, PlaneProxy, L2Metric, PCAPlaneFitting, VertexPointMap, FacetAreaMap> L2ApproximationTrait;
+
+  if(!m_pPolyhedron)
+    return;
+
+  std::cout << "L2 VSA..." << std::endl;
+
+  m_fidx_map.clear();
+  for(Facet_const_iterator fitr = m_pPolyhedron->facets_begin();
+    fitr != m_pPolyhedron->facets_end(); ++fitr) {
+    m_fidx_map.insert(std::pair<Facet_const_handle, std::size_t>(fitr, 0));
+  }
+
+  // construct facet normal & area map
+  std::map<Facet_const_handle, Vector> facet_normals;
+  std::map<Facet_const_handle, FT> facet_areas;
+  for(Facet_const_iterator fitr = m_pPolyhedron->facets_begin();
+    fitr != m_pPolyhedron->facets_end(); ++fitr) {
+    const Halfedge_const_handle he = fitr->halfedge();
+    const Point p1 = he->opposite()->vertex()->point();
+    const Point p2 = he->vertex()->point();
+    const Point p3 = he->next()->vertex()->point();
+    Vector normal = CGAL::unit_normal(p1, p2, p3);
+    facet_normals.insert(std::pair<Facet_const_handle, Vector>(fitr, normal));
+    FT area(std::sqrt(CGAL::to_double(CGAL::squared_area(p1, p2, p3))));
+    facet_areas.insert(std::pair<Facet_const_handle, FT>(fitr, area));
+  }
+  FacetNormalMap normal_pmap(facet_normals);
+  FacetAreaMap area_pmap(facet_areas);
+
+  VertexPointMap ppmap = get(boost::vertex_point, const_cast<Polyhedron &>(*m_pPolyhedron));
+
+  m_tris.clear();
+  m_anchor_pos.clear();
+  m_anchor_vtx.clear();
+  CGAL::vsa_mesh_approximation(init, *m_pPolyhedron,
+    num_proxies,
+    num_iterations,
+    m_fidx_pmap,
+    ppmap,
+    area_pmap,
+    m_tris,
+    m_anchor_pos,
+    m_anchor_vtx,
+    m_bdrs,
+    L2ApproximationTrait(*m_pPolyhedron, ppmap, area_pmap),
+    Kernel());
+
+  m_px_num = num_proxies;
+  m_view_seg_boundary = true;
+
+  std::cout << "done" << std::endl;
+}
+
 void Scene::draw()
 {
   if (m_view_polyhedron) {
