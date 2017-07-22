@@ -351,14 +351,14 @@ void Scene::l2_approximation(
   const std::size_t num_proxies,
   const std::size_t num_iterations)
 {
-  /*
   typedef boost::associative_property_map<std::map<Facet_const_handle, FT> > FacetAreaMap;
   typedef boost::property_map<Polyhedron, boost::vertex_point_t>::type VertexPointMap;
 
   typedef CGAL::PlaneProxy<Polyhedron> PlaneProxy;
   typedef CGAL::L2Metric<PlaneProxy, FacetAreaMap, VertexPointMap, Polyhedron> L2Metric;
-  typedef CGAL::PCAPlaneFitting<PlaneProxy, L2Metric, Polyhedron, VertexPointMap, FacetAreaMap> PCAPlaneFitting;
-  typedef CGAL::L2ApproximationTrait<Polyhedron, PlaneProxy, L2Metric, PCAPlaneFitting, VertexPointMap, FacetAreaMap> L2ApproximationTrait;
+  typedef CGAL::L2ProxyFitting<PlaneProxy, L2Metric, Polyhedron, VertexPointMap, FacetAreaMap> L2ProxyFitting;
+  typedef CGAL::PCAPlaneFitting<Polyhedron, VertexPointMap, FacetAreaMap> PCAPlaneFitting;
+  typedef CGAL::L2ApproximationTrait<Polyhedron, PlaneProxy, L2Metric, L2ProxyFitting, PCAPlaneFitting, VertexPointMap, FacetAreaMap> L2ApproximationTrait;
 
   if(!m_pPolyhedron)
     return;
@@ -410,7 +410,6 @@ void Scene::l2_approximation(
   m_view_seg_boundary = true;
 
   std::cout << "done" << std::endl;
-  */
 }
 
 void Scene::draw()
