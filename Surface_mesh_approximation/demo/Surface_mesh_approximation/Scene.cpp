@@ -20,6 +20,7 @@ typedef Polyhedron::Facet_handle Facet_handle;
 typedef boost::associative_property_map<std::map<Facet_const_handle, Vector> > FacetNormalMap;
 typedef boost::associative_property_map<std::map<Facet_const_handle, FT> > FacetAreaMap;
 typedef boost::associative_property_map<std::map<Facet_const_handle, Point> > FacetCenterMap;
+typedef boost::property_map<Polyhedron, boost::vertex_point_t>::type VertexPointMap;
 
 // user defined compact metric
 struct PointProxy {
@@ -100,11 +101,14 @@ struct ApproxTrait {
   typedef PointProxy Proxy;
   typedef CompactMetric ErrorMetric;
   typedef PointProxyFitting ProxyFitting;
+  typedef CGAL::PlaneFitting<Polyhedron, FacetAreaMap, FacetNormalMap, VertexPointMap> PlaneFitting;
 
-  ApproxTrait(const FacetCenterMap _center_pmap,
+  ApproxTrait(const Polyhedron &_mesh,
+    const VertexPointMap &_point_pmap,
+    const FacetCenterMap &_center_pmap,
     const FacetAreaMap &_area_pmap,
     const FacetNormalMap &_normal_pmap)
-    : center_pmap(_center_pmap), area_pmap(_area_pmap), normal_pmap(_normal_pmap) {}
+    : mesh(_mesh), point_pmap(_point_pmap), center_pmap(_center_pmap), area_pmap(_area_pmap), normal_pmap(_normal_pmap) {}
 
   ErrorMetric construct_fit_error_functor() const {
     return ErrorMetric(center_pmap);
@@ -114,6 +118,12 @@ struct ApproxTrait {
     return ProxyFitting(center_pmap, area_pmap, normal_pmap);
   }
 
+  PlaneFitting construct_plane_fitting_functor() const {
+    return PlaneFitting(mesh, area_pmap, normal_pmap, point_pmap);
+  }
+
+  const Polyhedron &mesh;
+  const VertexPointMap point_pmap;
   const FacetCenterMap center_pmap;
   const FacetAreaMap area_pmap;
   const FacetNormalMap normal_pmap;
@@ -216,11 +226,13 @@ void Scene::l21_approximation(
 {
   typedef boost::associative_property_map<std::map<Facet_const_handle, Vector> > FacetNormalMap;
   typedef boost::associative_property_map<std::map<Facet_const_handle, FT> > FacetAreaMap;
+  typedef boost::property_map<Polyhedron, boost::vertex_point_t>::type VertexPointMap;
 
   typedef CGAL::PlaneProxy<Polyhedron> PlaneProxy;
   typedef CGAL::L21Metric<PlaneProxy, FacetNormalMap, FacetAreaMap> L21Metric;
   typedef CGAL::L21ProxyFitting<PlaneProxy, L21Metric, FacetNormalMap, FacetAreaMap> L21ProxyFitting;
-  typedef CGAL::L21ApproximationTrait<PlaneProxy, L21Metric, L21ProxyFitting, FacetNormalMap, FacetAreaMap> L21ApproximationTrait;
+  typedef CGAL::PlaneFitting<Polyhedron, FacetAreaMap, FacetNormalMap, VertexPointMap> PlaneFitting;
+  typedef CGAL::L21ApproximationTrait<PlaneProxy, Polyhedron, L21Metric, L21ProxyFitting, PlaneFitting, VertexPointMap, FacetNormalMap, FacetAreaMap> L21ApproximationTrait;
 
   if(!m_pPolyhedron)
     return;
@@ -266,7 +278,7 @@ void Scene::l21_approximation(
     m_anchor_pos,
     m_anchor_vtx,
     m_bdrs,
-    L21ApproximationTrait(normal_pmap, area_pmap),
+    L21ApproximationTrait(*m_pPolyhedron, ppmap, normal_pmap, area_pmap),
     Kernel());
 
   m_px_num = num_proxies;
@@ -310,6 +322,7 @@ void Scene::compact_approximation(
   FacetNormalMap normal_pmap(facet_normals);
   FacetAreaMap area_pmap(facet_areas);
   FacetCenterMap center_pmap(facet_centers);
+  VertexPointMap point_pmap = get(boost::vertex_point, const_cast<Polyhedron &>(*m_pPolyhedron));
 
   m_tris.clear();
   m_anchor_pos.clear();
@@ -318,13 +331,13 @@ void Scene::compact_approximation(
     num_proxies,
     num_iterations,
     m_fidx_pmap,
-    get(boost::vertex_point, const_cast<Polyhedron &>(*m_pPolyhedron)),
+    point_pmap,
     area_pmap,
     m_tris,
     m_anchor_pos,
     m_anchor_vtx,
     m_bdrs,
-    ApproxTrait(center_pmap, area_pmap, normal_pmap),
+    ApproxTrait(*m_pPolyhedron, point_pmap, center_pmap, area_pmap, normal_pmap),
     Kernel());
 
   m_px_num = num_proxies;
@@ -338,6 +351,7 @@ void Scene::l2_approximation(
   const std::size_t num_proxies,
   const std::size_t num_iterations)
 {
+  /*
   typedef boost::associative_property_map<std::map<Facet_const_handle, FT> > FacetAreaMap;
   typedef boost::property_map<Polyhedron, boost::vertex_point_t>::type VertexPointMap;
 
@@ -396,6 +410,7 @@ void Scene::l2_approximation(
   m_view_seg_boundary = true;
 
   std::cout << "done" << std::endl;
+  */
 }
 
 void Scene::draw()
