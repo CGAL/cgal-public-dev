@@ -278,8 +278,7 @@ void Scene::l21_approximation(
     m_anchor_pos,
     m_anchor_vtx,
     m_bdrs,
-    L21ApproximationTrait(*m_pPolyhedron, ppmap, normal_pmap, area_pmap),
-    Kernel());
+    L21ApproximationTrait(*m_pPolyhedron, ppmap, normal_pmap, area_pmap));
 
   m_px_num = num_proxies;
   m_view_seg_boundary = true;
@@ -337,8 +336,7 @@ void Scene::compact_approximation(
     m_anchor_pos,
     m_anchor_vtx,
     m_bdrs,
-    ApproxTrait(*m_pPolyhedron, point_pmap, center_pmap, area_pmap, normal_pmap),
-    Kernel());
+    ApproxTrait(*m_pPolyhedron, point_pmap, center_pmap, area_pmap, normal_pmap));
 
   m_px_num = num_proxies;
   m_view_seg_boundary = true;
@@ -403,8 +401,7 @@ void Scene::l2_approximation(
     m_anchor_pos,
     m_anchor_vtx,
     m_bdrs,
-    L2ApproximationTrait(*m_pPolyhedron, ppmap, area_pmap),
-    Kernel());
+    L2ApproximationTrait(*m_pPolyhedron, ppmap, area_pmap));
 
   m_px_num = num_proxies;
   m_view_seg_boundary = true;
