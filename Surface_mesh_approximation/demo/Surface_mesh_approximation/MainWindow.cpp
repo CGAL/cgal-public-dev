@@ -59,7 +59,7 @@ MainWindow::~MainWindow()
 void MainWindow::updateViewerBBox()
 {
   m_pScene->update_bbox();
-  const Bbox bbox = m_pScene->bbox();
+  const Bbox_3 bbox = m_pScene->bbox();
   const double xmin = bbox.xmin();
   const double ymin = bbox.ymin();
   const double zmin = bbox.zmin();

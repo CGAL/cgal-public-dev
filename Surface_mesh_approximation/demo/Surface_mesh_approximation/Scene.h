@@ -12,8 +12,8 @@
 
 typedef CGAL::Simple_cartesian<double> Kernel;
 typedef Kernel::FT FT;
-typedef Kernel::Point_3 Point;
-typedef Kernel::Vector_3 Vector;
+typedef Kernel::Point_3 Point_3;
+typedef Kernel::Vector_3 Vector_3;
 
 typedef CGAL::Polyhedron_3<Kernel> Polyhedron;
 typedef Polyhedron::Facet_const_handle Facet_const_handle;
@@ -21,7 +21,7 @@ typedef Polyhedron::Halfedge_const_handle Halfedge_const_handle;
 typedef Polyhedron::Facet_const_iterator Facet_const_iterator;
 typedef Polyhedron::Halfedge_around_facet_const_circulator Halfedge_around_facet_const_circulator;
 typedef Polyhedron::Edge_const_iterator Edge_const_iterator;
-typedef CGAL::Bbox_3 Bbox;
+typedef CGAL::Bbox_3 Bbox_3;
 
 class Scene
 {
@@ -30,7 +30,7 @@ public:
   ~Scene();
 
   void update_bbox();
-  Bbox bbox() { return m_bbox; }
+  Bbox_3 bbox() { return m_bbox; }
 
   // file menu
   int open(QString filename);
@@ -65,7 +65,7 @@ public:
   void draw();
 
 private:
-  Vector normalize(const Vector& v) {
+  Vector_3 normalize(const Vector_3& v) {
     return v / std::sqrt(v * v);
   }
 
@@ -79,7 +79,7 @@ private:
 
 private:
   // member data
-  Bbox m_bbox;
+  Bbox_3 m_bbox;
   Polyhedron *m_pPolyhedron;
 
   typedef std::map<Polyhedron::Facet_const_handle, std::size_t> FacetIdMap;
@@ -87,7 +87,7 @@ private:
   FacetIdMap m_fidx_map;
   FacetIdPmap m_fidx_pmap; // property-map for segment-idx
 
-  std::vector<Point> m_anchor_pos;
+  std::vector<Point_3> m_anchor_pos;
   std::vector<Polyhedron::Vertex_handle> m_anchor_vtx;
   std::vector<std::vector<std::size_t> > m_bdrs; // anchor borders
   std::vector<int> m_tris;

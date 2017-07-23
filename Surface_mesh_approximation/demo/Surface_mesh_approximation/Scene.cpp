@@ -17,16 +17,16 @@
 #include "ColorCheatSheet.h"
 
 typedef Polyhedron::Facet_handle Facet_handle;
-typedef boost::associative_property_map<std::map<Facet_const_handle, Vector> > FacetNormalMap;
+typedef boost::associative_property_map<std::map<Facet_const_handle, Vector_3> > FacetNormalMap;
 typedef boost::associative_property_map<std::map<Facet_const_handle, FT> > FacetAreaMap;
-typedef boost::associative_property_map<std::map<Facet_const_handle, Point> > FacetCenterMap;
+typedef boost::associative_property_map<std::map<Facet_const_handle, Point_3> > FacetCenterMap;
 typedef boost::property_map<Polyhedron, boost::vertex_point_t>::type VertexPointMap;
 
 // user defined compact metric
 struct PointProxy {
   Facet_handle seed;
-  Point center;
-  Vector normal;
+  Point_3 center;
+  Vector_3 normal;
 };
 
 struct CompactMetric {
@@ -56,14 +56,14 @@ struct PointProxyFitting {
     CGAL_assertion(beg != end);
 
     // fitting normal
-    Vector norm = CGAL::NULL_VECTOR;
+    Vector_3 norm = CGAL::NULL_VECTOR;
     for (FacetIterator fitr = beg; fitr != end; ++fitr) {
       norm = norm + normal_pmap[*fitr] * area_pmap[*fitr];
     }
     norm = norm / std::sqrt(CGAL::to_double(norm.squared_length()));
 
     // fitting center
-    Vector center = CGAL::NULL_VECTOR;
+    Vector_3 center = CGAL::NULL_VECTOR;
     FT area(0);
     for (FacetIterator fitr = beg; fitr != end; ++fitr) {
       center = center + (center_pmap[*fitr] - CGAL::ORIGIN) * area_pmap[*fitr];
@@ -211,7 +211,7 @@ void Scene::save_approximation(const std::string &filename)
   }
 
   ofs << "OFF\n" << m_anchor_pos.size() << ' ' << m_tris.size() / 3 << ' ' << "0\n";
-  BOOST_FOREACH(const Point &pt, m_anchor_pos)
+  BOOST_FOREACH(const Point_3 &pt, m_anchor_pos)
     ofs << pt.x() << ' ' << pt.y() << ' ' << pt.z() << ' ' << '\n';
   for(std::vector<int>::iterator titr = m_tris.begin(); titr != m_tris.end(); titr += 3)
     ofs << 3 << ' ' << *titr << ' ' << *(titr + 1) << ' ' << *(titr + 2) << '\n';
@@ -224,7 +224,7 @@ void Scene::l21_approximation(
   const std::size_t num_proxies,
   const std::size_t num_iterations)
 {
-  typedef boost::associative_property_map<std::map<Facet_const_handle, Vector> > FacetNormalMap;
+  typedef boost::associative_property_map<std::map<Facet_const_handle, Vector_3> > FacetNormalMap;
   typedef boost::associative_property_map<std::map<Facet_const_handle, FT> > FacetAreaMap;
   typedef boost::property_map<Polyhedron, boost::vertex_point_t>::type VertexPointMap;
 
@@ -246,16 +246,16 @@ void Scene::l21_approximation(
   }
 
   // construct facet normal & area map
-  std::map<Facet_const_handle, Vector> facet_normals;
+  std::map<Facet_const_handle, Vector_3> facet_normals;
   std::map<Facet_const_handle, FT> facet_areas;
   for(Facet_const_iterator fitr = m_pPolyhedron->facets_begin();
     fitr != m_pPolyhedron->facets_end(); ++fitr) {
     const Halfedge_const_handle he = fitr->halfedge();
-    const Point p1 = he->opposite()->vertex()->point();
-    const Point p2 = he->vertex()->point();
-    const Point p3 = he->next()->vertex()->point();
-    Vector normal = CGAL::unit_normal(p1, p2, p3);
-    facet_normals.insert(std::pair<Facet_const_handle, Vector>(fitr, normal));
+    const Point_3 p1 = he->opposite()->vertex()->point();
+    const Point_3 p2 = he->vertex()->point();
+    const Point_3 p3 = he->next()->vertex()->point();
+    Vector_3 normal = CGAL::unit_normal(p1, p2, p3);
+    facet_normals.insert(std::pair<Facet_const_handle, Vector_3>(fitr, normal));
     FT area(std::sqrt(CGAL::to_double(CGAL::squared_area(p1, p2, p3))));
     facet_areas.insert(std::pair<Facet_const_handle, FT>(fitr, area));
   }
@@ -304,20 +304,20 @@ void Scene::compact_approximation(
   }
 
   // construct facet normal & area map
-  std::map<Facet_const_handle, Vector> facet_normals;
+  std::map<Facet_const_handle, Vector_3> facet_normals;
   std::map<Facet_const_handle, FT> facet_areas;
-  std::map<Facet_const_handle, Point> facet_centers;
+  std::map<Facet_const_handle, Point_3> facet_centers;
   for(Facet_const_iterator fitr = m_pPolyhedron->facets_begin();
     fitr != m_pPolyhedron->facets_end(); ++fitr) {
     const Halfedge_const_handle he = fitr->halfedge();
-    const Point p1 = he->opposite()->vertex()->point();
-    const Point p2 = he->vertex()->point();
-    const Point p3 = he->next()->vertex()->point();
-    Vector normal = CGAL::unit_normal(p1, p2, p3);
-    facet_normals.insert(std::pair<Facet_const_handle, Vector>(fitr, normal));
+    const Point_3 p1 = he->opposite()->vertex()->point();
+    const Point_3 p2 = he->vertex()->point();
+    const Point_3 p3 = he->next()->vertex()->point();
+    Vector_3 normal = CGAL::unit_normal(p1, p2, p3);
+    facet_normals.insert(std::pair<Facet_const_handle, Vector_3>(fitr, normal));
     FT area(std::sqrt(CGAL::to_double(CGAL::squared_area(p1, p2, p3))));
     facet_areas.insert(std::pair<Facet_const_handle, FT>(fitr, area));
-    facet_centers.insert(std::pair<Facet_const_handle, Point>(fitr, CGAL::centroid(p1, p2, p3)));
+    facet_centers.insert(std::pair<Facet_const_handle, Point_3>(fitr, CGAL::centroid(p1, p2, p3)));
   }
   FacetNormalMap normal_pmap(facet_normals);
   FacetAreaMap area_pmap(facet_areas);
@@ -372,16 +372,16 @@ void Scene::l2_approximation(
   }
 
   // construct facet normal & area map
-  std::map<Facet_const_handle, Vector> facet_normals;
+  std::map<Facet_const_handle, Vector_3> facet_normals;
   std::map<Facet_const_handle, FT> facet_areas;
   for(Facet_const_iterator fitr = m_pPolyhedron->facets_begin();
     fitr != m_pPolyhedron->facets_end(); ++fitr) {
     const Halfedge_const_handle he = fitr->halfedge();
-    const Point p1 = he->opposite()->vertex()->point();
-    const Point p2 = he->vertex()->point();
-    const Point p3 = he->next()->vertex()->point();
-    Vector normal = CGAL::unit_normal(p1, p2, p3);
-    facet_normals.insert(std::pair<Facet_const_handle, Vector>(fitr, normal));
+    const Point_3 p1 = he->opposite()->vertex()->point();
+    const Point_3 p2 = he->vertex()->point();
+    const Point_3 p3 = he->next()->vertex()->point();
+    Vector_3 normal = CGAL::unit_normal(p1, p2, p3);
+    facet_normals.insert(std::pair<Facet_const_handle, Vector_3>(fitr, normal));
     FT area(std::sqrt(CGAL::to_double(CGAL::squared_area(p1, p2, p3))));
     facet_areas.insert(std::pair<Facet_const_handle, FT>(fitr, area));
   }
@@ -450,12 +450,12 @@ void Scene::render_polyhedron()
     fitr != m_pPolyhedron->facets_end();
     ++fitr) {
     Halfedge_around_facet_const_circulator he = fitr->facet_begin();
-    const Point &a = he->vertex()->point();
-    const Point &b = he->next()->vertex()->point();
-    const Point &c = he->prev()->vertex()->point();
+    const Point_3 &a = he->vertex()->point();
+    const Point_3 &b = he->next()->vertex()->point();
+    const Point_3 &c = he->prev()->vertex()->point();
 
-    //Vector norm = CGAL::normal(a, b, c);
-    Vector norm = CGAL::unit_normal(a, b, c);
+    //Vector_3 norm = CGAL::normal(a, b, c);
+    Vector_3 norm = CGAL::unit_normal(a, b, c);
     ::glNormal3d(norm.x(), norm.y(), norm.z());
 
     if(m_px_num) {
@@ -483,8 +483,8 @@ void Scene::render_wireframe()
   for(Edge_const_iterator he = m_pPolyhedron->edges_begin();
     he != m_pPolyhedron->edges_end();
     he++) {
-    const Point& a = he->vertex()->point();
-    const Point& b = he->opposite()->vertex()->point();
+    const Point_3& a = he->vertex()->point();
+    const Point_3& b = he->opposite()->vertex()->point();
     ::glVertex3d(a.x(),a.y(),a.z());
     ::glVertex3d(b.x(),b.y(),b.z());
   }
@@ -511,8 +511,8 @@ void Scene::render_segment_boundary()
       segid1 = m_fidx_pmap[eitr->opposite()->facet()];
 
     if(segid0 != segid1) {
-      const Point &p0 = eitr->vertex()->point();
-      const Point &p1 = eitr->opposite()->vertex()->point();
+      const Point_3 &p0 = eitr->vertex()->point();
+      const Point_3 &p1 = eitr->opposite()->vertex()->point();
       ::glVertex3d(p0.x(), p0.y(), p0.z());
       ::glVertex3d(p1.x(), p1.y(), p1.z());
     }
@@ -526,7 +526,7 @@ void Scene::render_anchors()
   ::glColor3ub(0, 0, 0);
   ::glPointSize(5.0f);
   ::glBegin(GL_POINTS);
-  BOOST_FOREACH(const Point &pt, m_anchor_pos) {
+  BOOST_FOREACH(const Point_3 &pt, m_anchor_pos) {
     ::glVertex3d(pt.x(), pt.y(), pt.z());
   }
   ::glEnd();
@@ -535,7 +535,7 @@ void Scene::render_anchors()
   ::glPointSize(5.0f);
   ::glBegin(GL_POINTS);
   BOOST_FOREACH(const Polyhedron::Vertex_handle &vtx, m_anchor_vtx) {
-    const Point &pt = vtx->point();
+    const Point_3 &pt = vtx->point();
     ::glVertex3d(pt.x(), pt.y(), pt.z());
   }
   ::glEnd();
@@ -544,9 +544,9 @@ void Scene::render_anchors()
   ::glColor3ub(0, 0, 255);
   ::glBegin(GL_LINES);
   for (std::size_t i = 0; i < m_anchor_pos.size(); ++i) {
-    const Point &ps = m_anchor_vtx[i]->point();
+    const Point_3 &ps = m_anchor_vtx[i]->point();
     ::glVertex3d(ps.x(), ps.y(), ps.z());
-    const Point &pt = m_anchor_pos[i];
+    const Point_3 &pt = m_anchor_pos[i];
     ::glVertex3d(pt.x(), pt.y(), pt.z());
   }
   ::glEnd();
@@ -560,7 +560,7 @@ void Scene::render_borders()
   for (std::vector<std::vector<std::size_t> >::iterator bitr = m_bdrs.begin(); bitr != m_bdrs.end(); ++bitr) {
     ::glBegin(GL_LINE_LOOP);
     for (std::vector<std::size_t>::iterator aitr = bitr->begin(); aitr != bitr->end(); ++aitr) {
-      const Point &pt = m_anchor_pos[*aitr];
+      const Point_3 &pt = m_anchor_pos[*aitr];
       ::glVertex3d(pt.x(), pt.y(), pt.z());
     }
     ::glEnd();
@@ -576,11 +576,11 @@ void Scene::render_approximation()
   ::glColor3ub(0, 0, 255);
   for (std::vector<int>::iterator vitr = m_tris.begin(); vitr != m_tris.end(); vitr += 3) {
     ::glBegin(GL_LINE_LOOP);
-    const Point &p0 = m_anchor_pos[*vitr];
+    const Point_3 &p0 = m_anchor_pos[*vitr];
     ::glVertex3d(p0.x(), p0.y(), p0.z());
-    const Point &p1 = m_anchor_pos[*(vitr + 1)];
+    const Point_3 &p1 = m_anchor_pos[*(vitr + 1)];
     ::glVertex3d(p1.x(), p1.y(), p1.z());
-    const Point &p2 = m_anchor_pos[*(vitr + 2)];
+    const Point_3 &p2 = m_anchor_pos[*(vitr + 2)];
     ::glVertex3d(p2.x(), p2.y(), p2.z());
     ::glEnd();
   }
@@ -589,10 +589,10 @@ void Scene::render_approximation()
   // ::glPolygonMode(GL_FRONT, GL_FILL);
   ::glBegin(GL_TRIANGLES);
   for (std::vector<int>::iterator vitr = m_tris.begin(); vitr != m_tris.end(); vitr += 3) {
-    const Point &p0 = m_anchor_pos[*vitr];
-    const Point &p1 = m_anchor_pos[*(vitr + 1)];
-    const Point &p2 = m_anchor_pos[*(vitr + 2)];
-    Vector n = CGAL::unit_normal(p0, p1, p2);
+    const Point_3 &p0 = m_anchor_pos[*vitr];
+    const Point_3 &p1 = m_anchor_pos[*(vitr + 1)];
+    const Point_3 &p2 = m_anchor_pos[*(vitr + 2)];
+    Vector_3 n = CGAL::unit_normal(p0, p1, p2);
     ::glNormal3d(n.x(), n.y(), n.z());
     ::glVertex3d(p0.x(), p0.y(), p0.z());
     ::glVertex3d(p1.x(), p1.y(), p1.z());
