@@ -101,7 +101,6 @@ struct ApproxTrait {
   typedef PointProxy Proxy;
   typedef CompactMetric ErrorMetric;
   typedef PointProxyFitting ProxyFitting;
-  typedef CGAL::PlaneFitting<Polyhedron> PlaneFitting;
 
   ApproxTrait(const Polyhedron &_mesh,
     const VertexPointMap &_point_pmap,
@@ -116,10 +115,6 @@ struct ApproxTrait {
 
   ProxyFitting construct_proxy_fitting_functor() const {
     return ProxyFitting(center_pmap, area_pmap, normal_pmap);
-  }
-
-  PlaneFitting construct_plane_fitting_functor() const {
-    return PlaneFitting(mesh);
   }
 
   const Polyhedron &mesh;
@@ -232,7 +227,7 @@ void Scene::l21_approximation(
   typedef CGAL::L21Metric<PlaneProxy, FacetNormalMap, FacetAreaMap> L21Metric;
   typedef CGAL::L21ProxyFitting<PlaneProxy, L21Metric, FacetNormalMap, FacetAreaMap> L21ProxyFitting;
   typedef CGAL::PlaneFitting<Polyhedron> PlaneFitting;
-  typedef CGAL::L21ApproximationTrait<PlaneProxy, Polyhedron, L21Metric, L21ProxyFitting, PlaneFitting, VertexPointMap, FacetNormalMap, FacetAreaMap> L21ApproximationTrait;
+  typedef CGAL::L21ApproximationTrait<PlaneProxy, Polyhedron, L21Metric, L21ProxyFitting, VertexPointMap, FacetNormalMap, FacetAreaMap> L21ApproximationTrait;
 
   if(!m_pPolyhedron)
     return;
@@ -277,6 +272,7 @@ void Scene::l21_approximation(
     m_anchor_pos,
     m_anchor_vtx,
     m_bdrs,
+    PlaneFitting(*m_pPolyhedron),
     L21ApproximationTrait(*m_pPolyhedron, ppmap, normal_pmap, area_pmap));
 
   m_px_num = num_proxies;
@@ -322,6 +318,7 @@ void Scene::compact_approximation(
   FacetCenterMap center_pmap(facet_centers);
   VertexPointMap point_pmap = get(boost::vertex_point, const_cast<Polyhedron &>(*m_pPolyhedron));
 
+  typedef CGAL::PlaneFitting<Polyhedron> PlaneFitting;
   m_tris.clear();
   m_anchor_pos.clear();
   m_anchor_vtx.clear();
@@ -334,6 +331,7 @@ void Scene::compact_approximation(
     m_anchor_pos,
     m_anchor_vtx,
     m_bdrs,
+    PlaneFitting(*m_pPolyhedron),
     ApproxTrait(*m_pPolyhedron, point_pmap, center_pmap, area_pmap, normal_pmap));
 
   m_px_num = num_proxies;
@@ -354,7 +352,7 @@ void Scene::l2_approximation(
   typedef CGAL::L2Metric<PlaneProxy, FacetAreaMap, VertexPointMap, Polyhedron> L2Metric;
   typedef CGAL::L2ProxyFitting<PlaneProxy, L2Metric, Polyhedron, VertexPointMap, FacetAreaMap> L2ProxyFitting;
   typedef CGAL::PCAPlaneFitting<Polyhedron> PCAPlaneFitting;
-  typedef CGAL::L2ApproximationTrait<Polyhedron, PlaneProxy, L2Metric, L2ProxyFitting, PCAPlaneFitting, VertexPointMap, FacetAreaMap> L2ApproximationTrait;
+  typedef CGAL::L2ApproximationTrait<Polyhedron, PlaneProxy, L2Metric, L2ProxyFitting, VertexPointMap, FacetAreaMap> L2ApproximationTrait;
 
   if(!m_pPolyhedron)
     return;
@@ -398,6 +396,7 @@ void Scene::l2_approximation(
     m_anchor_pos,
     m_anchor_vtx,
     m_bdrs,
+    PCAPlaneFitting(*m_pPolyhedron),
     L2ApproximationTrait(*m_pPolyhedron, ppmap, area_pmap));
 
   m_px_num = num_proxies;
