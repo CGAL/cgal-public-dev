@@ -101,7 +101,7 @@ struct ApproxTrait {
   typedef PointProxy Proxy;
   typedef CompactMetric ErrorMetric;
   typedef PointProxyFitting ProxyFitting;
-  typedef CGAL::PlaneFitting<Polyhedron, FacetAreaMap, FacetNormalMap, VertexPointMap> PlaneFitting;
+  typedef CGAL::PlaneFitting<Polyhedron> PlaneFitting;
 
   ApproxTrait(const Polyhedron &_mesh,
     const VertexPointMap &_point_pmap,
@@ -119,7 +119,7 @@ struct ApproxTrait {
   }
 
   PlaneFitting construct_plane_fitting_functor() const {
-    return PlaneFitting(mesh, area_pmap, normal_pmap, point_pmap);
+    return PlaneFitting(mesh);
   }
 
   const Polyhedron &mesh;
@@ -231,7 +231,7 @@ void Scene::l21_approximation(
   typedef CGAL::PlaneProxy<Polyhedron> PlaneProxy;
   typedef CGAL::L21Metric<PlaneProxy, FacetNormalMap, FacetAreaMap> L21Metric;
   typedef CGAL::L21ProxyFitting<PlaneProxy, L21Metric, FacetNormalMap, FacetAreaMap> L21ProxyFitting;
-  typedef CGAL::PlaneFitting<Polyhedron, FacetAreaMap, FacetNormalMap, VertexPointMap> PlaneFitting;
+  typedef CGAL::PlaneFitting<Polyhedron> PlaneFitting;
   typedef CGAL::L21ApproximationTrait<PlaneProxy, Polyhedron, L21Metric, L21ProxyFitting, PlaneFitting, VertexPointMap, FacetNormalMap, FacetAreaMap> L21ApproximationTrait;
 
   if(!m_pPolyhedron)
