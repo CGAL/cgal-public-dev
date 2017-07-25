@@ -193,7 +193,7 @@ void Scene::l21_approximation(
 
   typedef CGAL::PlaneProxy<Polyhedron> PlaneProxy;
   typedef CGAL::L21Metric<PlaneProxy, FacetNormalMap, FacetAreaMap> L21Metric;
-  typedef CGAL::L21ProxyFitting<PlaneProxy, L21Metric, FacetNormalMap, FacetAreaMap> L21ProxyFitting;
+  typedef CGAL::L21ProxyFitting<PlaneProxy, FacetNormalMap, FacetAreaMap> L21ProxyFitting;
   typedef CGAL::PlaneFitting<Polyhedron> PlaneFitting;
   typedef CGAL::L21ApproximationTrait<PlaneProxy, Polyhedron, L21Metric, L21ProxyFitting, VertexPointMap, FacetNormalMap, FacetAreaMap> L21ApproximationTrait;
 
@@ -314,7 +314,7 @@ void Scene::l2_approximation(
 
   typedef CGAL::PlaneProxy<Polyhedron> PlaneProxy;
   typedef CGAL::L2Metric<PlaneProxy, FacetAreaMap, VertexPointMap, Polyhedron> L2Metric;
-  typedef CGAL::L2ProxyFitting<PlaneProxy, L2Metric, Polyhedron, VertexPointMap, FacetAreaMap> L2ProxyFitting;
+  typedef CGAL::L2ProxyFitting<PlaneProxy, Polyhedron, VertexPointMap, FacetAreaMap> L2ProxyFitting;
   typedef CGAL::PCAPlaneFitting<Polyhedron> PCAPlaneFitting;
   typedef CGAL::L2ApproximationTrait<Polyhedron, PlaneProxy, L2Metric, L2ProxyFitting, VertexPointMap, FacetAreaMap> L2ApproximationTrait;
 
