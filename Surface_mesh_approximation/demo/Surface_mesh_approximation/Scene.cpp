@@ -195,7 +195,7 @@ void Scene::l21_approximation(
   typedef CGAL::L21Metric<PlaneProxy, FacetNormalMap, FacetAreaMap> L21Metric;
   typedef CGAL::L21ProxyFitting<PlaneProxy, FacetNormalMap, FacetAreaMap> L21ProxyFitting;
   typedef CGAL::PlaneFitting<Polyhedron> PlaneFitting;
-  typedef CGAL::L21ApproximationTrait<PlaneProxy, Polyhedron, L21Metric, L21ProxyFitting, VertexPointMap, FacetNormalMap, FacetAreaMap> L21ApproximationTrait;
+  typedef CGAL::L21ApproximationTrait<PlaneProxy, Polyhedron, L21Metric, L21ProxyFitting, FacetNormalMap, FacetAreaMap> L21ApproximationTrait;
 
   if(!m_pPolyhedron)
     return;
@@ -225,8 +225,7 @@ void Scene::l21_approximation(
   FacetNormalMap normal_pmap(facet_normals);
   FacetAreaMap area_pmap(facet_areas);
 
-  typedef boost::property_map<Polyhedron, boost::vertex_point_t>::type PointPropertyMap;
-  PointPropertyMap ppmap = get(boost::vertex_point, const_cast<Polyhedron &>(*m_pPolyhedron));
+  VertexPointMap point_pmap = get(boost::vertex_point, const_cast<Polyhedron &>(*m_pPolyhedron));
 
   m_tris.clear();
   m_anchor_pos.clear();
@@ -235,13 +234,13 @@ void Scene::l21_approximation(
     num_proxies,
     num_iterations,
     m_fidx_pmap,
-    ppmap,
+    point_pmap,
     m_tris,
     m_anchor_pos,
     m_anchor_vtx,
     m_bdrs,
     PlaneFitting(*m_pPolyhedron),
-    L21ApproximationTrait(*m_pPolyhedron, ppmap, normal_pmap, area_pmap));
+    L21ApproximationTrait(*m_pPolyhedron, normal_pmap, area_pmap));
 
   m_px_num = num_proxies;
   m_view_seg_boundary = true;
@@ -346,7 +345,7 @@ void Scene::l2_approximation(
   FacetNormalMap normal_pmap(facet_normals);
   FacetAreaMap area_pmap(facet_areas);
 
-  VertexPointMap ppmap = get(boost::vertex_point, const_cast<Polyhedron &>(*m_pPolyhedron));
+  VertexPointMap point_pmap = get(boost::vertex_point, const_cast<Polyhedron &>(*m_pPolyhedron));
 
   m_tris.clear();
   m_anchor_pos.clear();
@@ -355,13 +354,13 @@ void Scene::l2_approximation(
     num_proxies,
     num_iterations,
     m_fidx_pmap,
-    ppmap,
+    point_pmap,
     m_tris,
     m_anchor_pos,
     m_anchor_vtx,
     m_bdrs,
     PCAPlaneFitting(*m_pPolyhedron),
-    L2ApproximationTrait(*m_pPolyhedron, ppmap, area_pmap));
+    L2ApproximationTrait(*m_pPolyhedron, point_pmap, area_pmap));
 
   m_px_num = num_proxies;
   m_view_seg_boundary = true;
