@@ -353,7 +353,7 @@ void Scene::l2_approximation(
   typedef CGAL::PlaneProxy<Polyhedron> PlaneProxy;
   typedef CGAL::L2Metric<PlaneProxy, FacetAreaMap, VertexPointMap, Polyhedron> L2Metric;
   typedef CGAL::L2ProxyFitting<PlaneProxy, L2Metric, Polyhedron, VertexPointMap, FacetAreaMap> L2ProxyFitting;
-  typedef CGAL::PCAPlaneFitting<Polyhedron, VertexPointMap, FacetAreaMap> PCAPlaneFitting;
+  typedef CGAL::PCAPlaneFitting<Polyhedron> PCAPlaneFitting;
   typedef CGAL::L2ApproximationTrait<Polyhedron, PlaneProxy, L2Metric, L2ProxyFitting, PCAPlaneFitting, VertexPointMap, FacetAreaMap> L2ApproximationTrait;
 
   if(!m_pPolyhedron)
