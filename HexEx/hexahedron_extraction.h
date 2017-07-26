@@ -32,6 +32,7 @@ void extract_hexes(LCC_3& input_tet_mesh, LCC_3& output_mesh, std::vector<Aff_tr
 * We iterate through each volume (in parametric space, stored in dart_info) in the input mesh, and find all the prospective vertices with integer coordinates in parametric space. If unit cubes formed by joining adjacent integer coordinates in the parametric space intersects the tetrahedron, we make a hexahedron (in our output mesh) corresponding to the inverse parametrization of the integer vertices of the cube. 
 */
  
+
 //iterating through each tetrahedron
   for(LCC_3::One_dart_per_cell_range<3>::iterator it = (input_tet_mesh.one_dart_per_cell<3>()).begin(), itend = (input_tet_mesh.one_dart_per_cell<3>()).end(); it != itend; it++){
 
@@ -66,7 +67,8 @@ void extract_hexes(LCC_3& input_tet_mesh, LCC_3& output_mesh, std::vector<Aff_tr
 
 int zflag;
 Dart_handle prev_z;
-Dart_handle connections[(int)(maxx-minx+1)][(int)(maxy-miny+1)][(int)(maxz-minz+1)];
+
+
 /** iterating through the possible integer vertices. 
 * If the integer vertex lies outside the tet, nothing happens.
 * If the integer vertex lies on the boundary of the tet, and if the corresponding cube along positive x, y and z axis intersect with the tet, a hexahedron using inverse parametrization is created.
@@ -86,7 +88,7 @@ Dart_handle connections[(int)(maxx-minx+1)][(int)(maxy-miny+1)][(int)(maxz-minz+
             Point p6(param[0]+1, param[1], param[2]+1); p6 = p6.transform(at_inv);
             Point p7(param[0]+1, param[1]+1, param[2]+1); p7 = p7.transform(at_inv);
             Dart_handle dh = output_mesh.make_hexahedron(p0, p1, p2, p3, p4, p5, p6, p7);
-            connections[i-minx][j-miny][k-minz] = dh;
+           // connections[(int)(i-minx)][(int)(j-miny)][(int)(k-minz)] = dh;
            /* if(zflag == 1){
               output_mesh.sew<2>(output_mesh.alpha(dh, 1, 2), prev_z);
             }

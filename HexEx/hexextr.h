@@ -22,7 +22,12 @@ namespace std{ //TODO: is this needed?
       return (fh.enumeration)%1000;
     } 
   };
-
+  template<>
+  struct hash<Point_3>{
+    std::size_t operator()(const Point_3& p) const{
+      return (p.x()+p.y()+p.z())/p.x();
+    } 
+  };
 }
 
 class HexExtr{
@@ -171,17 +176,12 @@ itend = input_tet_mesh.one_dart_per_cell<2>().end(); it != itend; it++){
 //Extract darts
 //making hexahedrons in the output mesh incorporting vertex extraction and dart extraction in a single step:
      extract_hexes(input_tet_mesh, output_mesh, parametrization_matrices);
-
-    /* for(LCC_3::Vertex_attribute_range::iterator v = input_tet_mesh.vertex_attributes().begin(), vend = input_tet_mesh.vertex_attributes().end(); v != vend; v++){
-       Point p = input_tet_mesh.point_of_vertex_attribute(v);
-       output_mesh.create_vertex_attribute(p);
-     }*/
-
-     //extract_darts(input_tet_mesh, output_mesh, parametrization_matrices);
-    
+   
     }
     std::unordered_map<Face_handle, Aff_transformation> faces_with_transitions; //Take this as input and make dart_handle face_handle map using this
     std::map<Dart_handle, Face_handle> dart_in_face;
+    //Dart_handle ***connections;
+    std::unordered_map<Point_3, Dart_handle> hex_handles;
     std::vector<Face_handle> faces;
     std::vector<Edge_handle> edges;
     std::vector<Vertex_handle> vertices;
