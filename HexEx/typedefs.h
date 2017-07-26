@@ -6,7 +6,7 @@
 #include<CGAL/Point_3.h>
 #include<cassert>
 #include <CGAL/Bbox_3.h>
-
+#define DEBUG 0
 typedef struct dartinfo{
 
 //all the darts corresponding to the same tet will have the same cell_no. This is to make it easier to assign a parametrization matrix, which can be determined from any dart of the tet.

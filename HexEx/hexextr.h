@@ -8,6 +8,7 @@
 #include<map>
 #include"functions.h"
 #include"hexahedron_extraction.h"
+#include"connection_extraction.h"
 #include"sanitization.h"
 //#include"dart_extraction.h"
 #include<vector>
@@ -41,13 +42,13 @@ class HexExtr{
 
 //We would like to directly input parametrized meshes: so I am trying to first export LCC with parameters stored in dart_info using << in the lines 44 - 49, then try taking such a file as an input to our method in lines 51-57. If this works, parametrized_LCC file can be directly used to test.
 
-std::ofstream of;
+/*std::ofstream of;
 of.open("parametrized_LCC");
 if(of.is_open()){
   of<<input_tet_mesh;
   of.close();
 }
-std::cout<<"Checkpoint: parametrization exported to file"<<std::endl;
+if(DEBUG)std::cout<<"Checkpoint: parametrization exported to file"<<std::endl;
 input_tet_mesh.clear();
   in.open("parametrized_LCC");
   if (in.is_open())
@@ -55,10 +56,10 @@ input_tet_mesh.clear();
     in>>input_tet_mesh; //doesn't work: segfault - figure out why
     in.close();
   }
-std::cout<<"Checkpoint: parametrization imported from file"<<std::endl;
+if(DEBUG)std::cout<<"Checkpoint: parametrization imported from file"<<std::endl;
 input_tet_mesh.display_characteristics(std::cout); std::cout<<std::endl;
 
-
+*/
 
 
 
@@ -182,9 +183,18 @@ itend = input_tet_mesh.one_dart_per_cell<2>().end(); it != itend; it++){
 //Extract vertices
 //Extract darts
 //making hexahedrons in the output mesh incorporting vertex extraction and dart extraction in a single step:
-     std::cout<<"before extracting hexes"<<std::endl;
+     if(DEBUG)std::cout<<"before extracting hexes"<<std::endl;
      extract_hexes(input_tet_mesh, output_mesh, parametrization_matrices, hex_handles);
-     std::cout<<"after extracting hexes"<<std::endl;
+     if(DEBUG)std::cout<<"after extracting hexes"<<std::endl;
+
+     extract_connections(output_mesh, hex_handles);
+std::cout<<"*****FINAL OUTPUT MESH*****"<<std::endl;
+output_mesh.display_characteristics(std::cout); std::cout<<std::endl;
+ std::ofstream of;
+  of.open("final_output.off");
+  CGAL::write_off(output_mesh, of); 
+  of.close();
+
     }
    // std::unordered_map<Face_handle, Aff_transformation> faces_with_transitions; //Take this as input and make dart_handle face_handle map using this
    // std::map<Dart_handle, Face_handle> dart_in_face;

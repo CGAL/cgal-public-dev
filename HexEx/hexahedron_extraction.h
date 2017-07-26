@@ -28,7 +28,7 @@ bool yfn(Point_3 i, Point_3 j){ return (i[1]<j[1]); }
 bool zfn(Point_3 i, Point_3 j){ return (i[2]<j[2]); }
 
 
-void extract_hexes(LCC_3& input_tet_mesh, LCC_3& output_mesh, std::vector<Aff_transformation> parametrization_matrices, std::unordered_map<Point_3, Dart_handle> hex_handles){/**
+void extract_hexes(LCC_3& input_tet_mesh, LCC_3& output_mesh, std::vector<Aff_transformation> parametrization_matrices, std::unordered_map<Point_3, Dart_handle>& hex_handles){/**
 * This function combnes the steps geometry extraction and topology extraction from the paper HexEx. 
 * We iterate through each volume (in parametric space, stored in dart_info) in the input mesh, and find all the prospective vertices with integer coordinates in parametric space. If unit cubes formed by joining adjacent integer coordinates in the parametric space intersects the tetrahedron, we make a hexahedron (in our output mesh) corresponding to the inverse parametrization of the integer vertices of the cube. 
 */
@@ -66,15 +66,12 @@ void extract_hexes(LCC_3& input_tet_mesh, LCC_3& output_mesh, std::vector<Aff_tr
 // inverse parametrization of the given tet
     Aff_transformation at_inv = (parametrization_matrices[(input_tet_mesh.info(it)).cell_no]).inverse(); 
 
-int zflag;
-Dart_handle prev_z;
-
 
 /** iterating through the possible integer vertices. 
 * If the integer vertex lies outside the tet, nothing happens.
 * If the integer vertex lies on the boundary of the tet, and if the corresponding cube along positive x, y and z axis intersect with the tet, a hexahedron using inverse parametrization is created.
 * If the integer vertex lies inside the tet, the corresponding cube is sure to intersect with the tet, so a hexahedron using inverse parametrization is created.
-*/ std::cout<<"before triple nested loop"<<std::endl; 
+*/ if(DEBUG) std::cout<<"before triple nested loop"<<std::endl; 
    for(int i = minx; i<= maxx; i++){
       for(int j = miny; j<=maxy; j++){
         for(int k = minz; k<=maxz; k++){ 
@@ -90,7 +87,7 @@ Dart_handle prev_z;
             Point p6(param[0]+1, param[1], param[2]+1); p6 = p6.transform(at_inv);
             Point p7(param[0]+1, param[1]+1, param[2]+1); p7 = p7.transform(at_inv);
             Dart_handle dh = output_mesh.make_hexahedron(p0, p1, p2, p3, p4, p5, p6, p7);
-            //hex_handles.emplace(std::make_pair(p0, dh));
+            if(hex_handles.find(p0) == hex_handles.end()) hex_handles.emplace(std::make_pair(p0, dh));
            // connections[(int)(i-minx)][(int)(j-miny)][(int)(k-minz)] = dh;
            /* if(zflag == 1){
               output_mesh.sew<2>(output_mesh.alpha(dh, 1, 2), prev_z);
@@ -103,7 +100,7 @@ Dart_handle prev_z;
         //zflag = 0;
       }
     }
-   std::cout<<"after triple nested"<<std::endl;
+  if(DEBUG) std::cout<<"after triple nested"<<std::endl;
   }
 
 // output.off is used to visualize the final output_mesh after this step. So LCC is written to output.off file.
