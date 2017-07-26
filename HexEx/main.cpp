@@ -14,7 +14,7 @@ int main(int argc, char** argv){
   std::string str;
   if (argc==1)
   {
-    std::cout<<"Enter filename: (eg: tests/small_points_3)"<<std::endl;
+    std::cout<<"Enter filename: (eg: tests/small_points_3 , tests/cube or tests/2tets)"<<std::endl;
     std::cin>>str;
   }
   else

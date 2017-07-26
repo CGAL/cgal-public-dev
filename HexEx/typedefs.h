@@ -45,4 +45,21 @@ typedef LCC_3::Point                                                           P
 typedef CGAL::Point_3<K>			                               Point_3;
 typedef CGAL::Tetrahedron_3<K>				                       Tetrahedron_3;
 typedef CGAL::Bbox_3                                                           Bbox_3;
+
+namespace std{ //TODO: is this needed? 
+  /*int dart_count = 0;
+  template<>
+  struct hash<Face_handle>{
+    std::size_t operator()(const Face_handle& fh) const{
+      return (fh.enumeration)%1000;
+    } 
+  };*/
+  template<>
+  struct hash<Point_3>{
+    std::size_t operator()(const Point_3& p) const{
+      return (p.x()+p.y()+p.z())/p.x();
+    } 
+  };
+}
+
 #endif

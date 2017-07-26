@@ -1,7 +1,7 @@
 #ifndef HEXEXTR_H
 #define HEXEXTR_H
 #include"typedefs.h"
-#include"handles.h"
+//#include"handles.h"
 #include"triangulation.h"
 //#include"triangulation_to_LCC.h"
 #include<unordered_map>
@@ -14,21 +14,7 @@
 #include"frame_field.h"
 
 
-namespace std{ //TODO: is this needed? 
-  int dart_count = 0;
-  template<>
-  struct hash<Face_handle>{
-    std::size_t operator()(const Face_handle& fh) const{
-      return (fh.enumeration)%1000;
-    } 
-  };
-  template<>
-  struct hash<Point_3>{
-    std::size_t operator()(const Point_3& p) const{
-      return (p.x()+p.y()+p.z())/p.x();
-    } 
-  };
-}
+
 
 class HexExtr{
   public:
@@ -48,10 +34,31 @@ class HexExtr{
     in.close();
   }
  
+//input_tet_mesh.display_characteristics(std::cout); std::cout<<std::endl;
+
+//a parametrization function to test the extraction:
+      dummy_parametrize(input_tet_mesh); 
+
+//We would like to directly input parametrized meshes: so I am trying to first export LCC with parameters stored in dart_info using << in the lines 44 - 49, then try taking such a file as an input to our method in lines 51-57. If this works, parametrized_LCC file can be directly used to test.
+
+std::ofstream of;
+of.open("parametrized_LCC");
+if(of.is_open()){
+  of<<input_tet_mesh;
+  of.close();
+}
+std::cout<<"Checkpoint: parametrization exported to file"<<std::endl;
+input_tet_mesh.clear();
+  in.open("parametrized_LCC");
+  if (in.is_open())
+  {
+    in>>input_tet_mesh; //doesn't work: segfault - figure out why
+    in.close();
+  }
+std::cout<<"Checkpoint: parametrization imported from file"<<std::endl;
 input_tet_mesh.display_characteristics(std::cout); std::cout<<std::endl;
 
-//a paramtrization function to test the extraction:
-      dummy_parametrize(input_tet_mesh); 
+
 
 
 
@@ -117,8 +124,8 @@ directions[i].dz(), directions[j].dz(), directions[k].dz(), 1)); //chiral cubica
         parametrization_matrices[(input_tet_mesh.info(it)).cell_no] = at;
 
 //creating a cell handle. TODO: needed? Try to do away with cell_handle, face_handle, vertex_handle and edge_handle.
-        Cell_handle ch(it, points, parameters, at);
-        cells.push_back(ch);
+       // Cell_handle ch(it, points, parameters, at);
+       // cells.push_back(ch);
         
       }
 
@@ -175,17 +182,18 @@ itend = input_tet_mesh.one_dart_per_cell<2>().end(); it != itend; it++){
 //Extract vertices
 //Extract darts
 //making hexahedrons in the output mesh incorporting vertex extraction and dart extraction in a single step:
-     extract_hexes(input_tet_mesh, output_mesh, parametrization_matrices);
-   
+     std::cout<<"before extracting hexes"<<std::endl;
+     extract_hexes(input_tet_mesh, output_mesh, parametrization_matrices, hex_handles);
+     std::cout<<"after extracting hexes"<<std::endl;
     }
-    std::unordered_map<Face_handle, Aff_transformation> faces_with_transitions; //Take this as input and make dart_handle face_handle map using this
-    std::map<Dart_handle, Face_handle> dart_in_face;
+   // std::unordered_map<Face_handle, Aff_transformation> faces_with_transitions; //Take this as input and make dart_handle face_handle map using this
+   // std::map<Dart_handle, Face_handle> dart_in_face;
     //Dart_handle ***connections;
     std::unordered_map<Point_3, Dart_handle> hex_handles;
-    std::vector<Face_handle> faces;
-    std::vector<Edge_handle> edges;
-    std::vector<Vertex_handle> vertices;
-    std::vector<Cell_handle> cells;
+   // std::vector<Face_handle> faces;
+    //std::vector<Edge_handle> edges;
+    //std::vector<Vertex_handle> vertices;
+    //std::vector<Cell_handle> cells;
     //std::vector<Point> hvertices;
     std::vector<Direction> directions;
     Aff_transformation identity;//(1,0,0,0,1,0,0,0,1,1);
