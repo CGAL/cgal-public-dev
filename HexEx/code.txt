@@ -1,3 +1,48 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:f4fe3abd0636598ea5ed808e8dacc73ef982d9435bef65052968687f21c5f700
-size 3597
+The code so far involves the following files:
+
+****** main.cpp ****** 
+
+* takes the name of the file
+* instantiates HexExtr class for the file
+* records the time taken by the algorithm
+
+
+****** hexextr.h ******
+
+This should be modularised and implemented, but for now the constructor itself calls the functions required to carry out hexahedral meshing.
+This makes it easier to test step by step, for now. 
+
+The main attributes associated are: 
+
+* input_tet_mesh- A linear cell complex of tetrahedral mesh obtained using Triangulation_3 of CGAL, applied on the input file.
+* output_mesh- A linear cell complex of the output hexahedral mesh created.
+* G - contains 24 transformations associated with cubical chiral symmetry. This is used in calculation of transition fucntion and this is calculated during the course of the algorithm, using 6 directions ((1,0,0), (-1,0,0), (0,1,0), (0,-1,0), (0,0,1), (0,0,-1)) in each row of affine transformation such that the determinant is non zero.
+* The other attributes currently might not be required- they were created to be used in frame field design and paramtrization algorithms
+
+****** typedefs.h ******
+This file just contains type definitions to be used in hexahedral extraction
+
+
+****** triangulation_to_LCC.h ******
+* This triangulates a given polyhedral surface mesh into tetrahedral mesh using Triangulation_3 and loads it into input_tet_mesh of the instance of HexExtr created. 
+* It is written to tri.off for visualization.
+
+
+****** functions.h ******
+This file contains the following functions:
+
+* dummy_parametrize - There is no guarantee that this could give good results, but for the sake of tests this might just work. Every dart has an info as dart_info structure defined in typedefs.h. This contains information about the tet it belongs to (cell_no), and the parametric coordinates of the point. This function updates the parametric coordinates.
+* calculate_cell_type - To calculate if a tetrahedron is degenerate- this will be unused mostly, will use Tetrahedron_3::is_degenerate()
+* extract_transition_function -  returns the tranformation g applied to one tet to get to the vertices of the adjacent tet. If the tet is on the boundary, it doesn't have a neighbouring tet: so it returns identity. Or else, it uses the min transtion given by G[i] and translation terms are calcualted and a transition function is returned.
+* print_aff_transformation - This function takes in an affine transformation as input and prints them for debugging
+
+
+****** hexahedron_extraction.h ******
+This file contains the following fucntions:
+
+* does_intersect - If p does not lie on the unbounded side of the tet, this function checks if a prospective unit volume cube in the positive x, y and z directions, with origin at p, would intersect the given tet. If it lies on the unbounded side, we don't consider the volumes tobe intersecting: so the function returns false.
+* xfn, yfn, zfn - Comparison for finding points with  minimum and maximum of x, y and z
+* extract_hexes -  This function combnes the steps geometry extraction and topology extraction from the paper HexEx. We iterate through each volume (in parametric space, stored in dart_info) in the input mesh, and find all the prospective vertices with integer coordinates in parametric space. If unit cubes formed by joining adjacent integer coordinates in the parametric space intersects the tetrahedron, we make a hexahedron (in our output mesh) corresponding to the inverse parametrization of the integer vertices of the cube. Also outputs the output_mesh as output.off for visualization.
+
+
+

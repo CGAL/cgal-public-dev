@@ -1,3 +1,5 @@
-Each folder here is assigned one of the test cases in the folder ../data.
-They contain the triangulation_to_LCC.h code for d number of darts in the triangulation of the corresponidng test case, where d is given by the first 3 digits on the name of the file.
-The header files can replace triangulation_to_LCC.h in the main folder, to implement the tests. 
+*Each folder here is assigned one of the test cases in the folder ../data.
+
+*They contain the triangulation_to_LCC.h code for d number of darts in the triangulation of the corresponidng test case, where d is given by the first 3 digits on the name of the file.
+
+*The header files can replace triangulation_to_LCC.h in the main folder, to implement the tests. 

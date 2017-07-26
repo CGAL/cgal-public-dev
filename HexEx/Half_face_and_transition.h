@@ -1,3 +1,22 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:3aff7e3803b2d79881b81445255408a6585f45c4da761dd3009e97f0ad6180d6
-size 795
+#ifndef HFAT_H
+#define HFAT_H
+#pragma once
+#include<CGAL/Linear_cell_complex_for_generalized_map.h>
+#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
+#include <CGAL/Aff_transformation_3.h>
+#include<cstdlib>
+
+class Half_face_and_transition{
+public:
+  Half_face_and_transition(){};
+  Half_face_and_transition(CGAL::Linear_cell_complex_for_generalized_map<3>::Dart_const_handle dh,
+                           CGAL::Aff_transformation_3<CGAL::Exact_predicates_inexact_constructions_kernel> &tr){
+    dart_handle = dh;
+
+    min_transformation = tr;
+  }
+  CGAL::Linear_cell_complex_for_generalized_map<3>::Dart_const_handle dart_handle;
+  CGAL::Aff_transformation_3<CGAL::Exact_predicates_inexact_constructions_kernel> min_transformation;  
+};
+
+#endif
