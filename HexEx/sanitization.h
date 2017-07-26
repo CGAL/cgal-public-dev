@@ -105,7 +105,7 @@ void truncate_precision(LCC_3& lcc, std::vector<std::vector<Aff_transformation>>
     }
     p =  (lcc.info(v)).parameters;
     double delta = std::pow(2, std::ceil(std::log(max)/std::log(2)));
-    std::cout<<"Delta: "<<delta<<std::endl;
+    //std::cout<<"Delta: "<<delta<<std::endl;
     
     std::vector<double> temp(3);
     for(unsigned int i = 0; i < 3; ++i){

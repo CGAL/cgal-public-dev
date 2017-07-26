@@ -11,7 +11,7 @@
 #include <CGAL/IO/Polyhedron_iostream.h>
 #include<cstdlib>
 //#define USE_MESH 1 // comment to use triangulation_3 instead of Mesh_3
-#define DEBUG 1
+#define DEBUG 0
 #ifdef USE_MESH
 // Mesh_3
 #include <CGAL/Mesh_triangulation_3.h>
@@ -146,31 +146,25 @@ bool load_off_to_LCC(std::string filename, LCC_3& lcc)
   CGAL_assertion(T.is_valid(false));
   CGAL::import_from_triangulation_3(lcc, T);
 #endif
-  if(DEBUG) std::cout<<"Checkpoint 10"<<std::endl;
   //assert(lcc.is_valid());
   //CGAL_assertion(lcc.is_valid());
- if(lcc.is_valid()){ if(DEBUG) std::cout<<"Checkpoint 11 - true"<<std::endl;}
-  else {if(DEBUG) std::cout<<"Checkpoint 11 - false"<<std::endl;}
+if(DEBUG) {
+  if(lcc.is_valid()) std::cout<<"Checkpoint 11 - true"<<std::endl;
+  else std::cout<<"Checkpoint 11 - false"<<std::endl;
+}
 
-if(DEBUG) std::cout<<"Checkpoint 12"<<std::endl;
   std::ofstream ofile;
-  if(DEBUG) std::cout<<"Checkpoint 13"<<std::endl;
   ofile.open("triangulation");
-if(DEBUG) std::cout<<"Checkpoint 14"<<std::endl;
   ofile<<lcc; //works
-if(DEBUG) std::cout<<"Checkpoint 15"<<std::endl;
   ofile.close();
-if(DEBUG) std::cout<<"Checkpoint 16"<<std::endl;
-  std::ifstream in;
-if(DEBUG) std::cout<<"Checkpoint 17"<<std::endl;
+  /*std::ifstream in;
   lcc.clear();
-if(DEBUG) std::cout<<"Checkpoint 18"<<std::endl;
   in.open("triangulation");
   if (in.is_open())
   {
     in>>lcc; //doesn't work: segfault - figure out why
     in.close();
-  }
+  }*/
   std::ofstream outfile;
   outfile.open("test.off");
   CGAL::write_off(lcc, outfile);

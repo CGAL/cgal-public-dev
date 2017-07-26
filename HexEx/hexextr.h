@@ -31,10 +31,24 @@ class HexExtr{
 // Currently,meshing commands are executed when the constructor is called. This will be changes later to incorporate the fucntions as methos of this class.
     HexExtr(std::string infilename): identity(1,0,0,0,1,0,0,0,1,1){
 //input_tet_mesh to lcc
-      load_off_to_LCC(infilename, input_tet_mesh); 
+     // load_off_to_LCC(infilename, input_tet_mesh);
+   
+
+  std::ifstream in;
+  input_tet_mesh.clear();
+  in.open(infilename);
+  if (in.is_open())
+  {
+    in>>input_tet_mesh; //doesn't work: segfault - figure out why
+    in.close();
+  }
+ 
+input_tet_mesh.display_characteristics(std::cout); std::cout<<std::endl;
 
 //a paramtrization function to test the extraction:
       dummy_parametrize(input_tet_mesh); 
+
+
 
 //six directions in 3D to obtain the 24 affine transformations in chiral cubical symmetry group:
       directions.push_back(Direction(1,0,0));
@@ -76,7 +90,7 @@ directions[i].dz(), directions[j].dz(), directions[k].dz(), 1)); //chiral cubica
         g[j] = temp;
       }
 
-// A vector of affine transformations to constain parametrization matrices of each tet indexed by cell_no
+// A vector of affine transformations to contain parametrization matrices of each tet indexed by cell_no
       std::vector<Aff_transformation> parametrization_matrices(cell);  
 
 //iterate through each tet:    
