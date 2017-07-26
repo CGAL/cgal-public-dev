@@ -12,6 +12,19 @@
 #include "linear_cell_complex_3_viewer_qt.h"
 #endif
 
+Aff_transformation* find_tet_parametrization(LCC_3& lcc, Point p, std::vector<Aff_transformation> parametrization_matrices){
+  for(LCC_3::One_dart_per_cell_range<3>::iterator it = lcc.one_dart_per_cell<3>().begin(), itend = lcc.one_dart_per_cell<3>().end(); it != itend; it++){
+    Point_3 point[4]; int i = 0;
+    for(LCC_3::One_dart_per_incident_cell_range<0,3>::iterator it1 = lcc.one_dart_per_incident_cell<0,3>(it).begin(), it1end = lcc.one_dart_per_incident_cell<0,3>(it).end(); it1 != it1end; it1++){
+      point[i] = (lcc.info(it1)).parameters; i++;
+    }
+if(DEBUG) std::cout<<i<<std::endl;
+    Tetrahedron_3 tet(point[0], point[1], point[2], point[3]);
+    if(!tet.is_degenerate()) continue;
+    if(!tet.has_on_unbounded_side(p)) return &(parametrization_matrices[(lcc.info(it)).cell_no]);
+  }
+  return nullptr;
+}
 
 bool does_intersect(Tetrahedron_3 tet, Point_3 p){/**
 * If p does not lie on the unbounded side of the tet, this function checks if a prospective unit volume cube in the positive x, y and z directions, with origin at p, would intersect the given tet. 
@@ -77,27 +90,75 @@ void extract_hexes(LCC_3& input_tet_mesh, LCC_3& output_mesh, std::vector<Aff_tr
         for(int k = minz; k<=maxz; k++){ 
           Point_3 p(i,j,k);
           if(does_intersect(tet, p)){
-            //output_mesh.create_vertex_attribute(p.transform(at_inv));             
+            //output_mesh.create_vertex_attribute(p.transform(at_inv));     
+
+/*
+One way to improve this would be to create a point hash map (like hex_handle), but with parametric integer coords as the key such that it also contains the parametrization matrix, along with dart_handle. Since each vertex is visited max. 8 times by this algorithm (for each hex being created), creating such a structure could possibly improve the speed by ~8 times since repeated computation can be avoided. 
+The paper uses the transition function to find the parametrization matrix of adjacent tet- this could be done too, but we have the parametrization matrix itself readily available in parametrization_matrices.
+*/
+        
             Point p0 = p.transform(at_inv); Point param = p;
-            Point p1(param[0]+1, param[1], param[2]); p1 = p1.transform(at_inv);
-            Point p2(param[0]+1, param[1]+1, param[2]); p2 = p2.transform(at_inv);
-            Point p3(param[0], param[1]+1, param[2]); p3 = p3.transform(at_inv);
-            Point p4(param[0], param[1]+1, param[2]+1); p4 = p4.transform(at_inv);
-            Point p5(param[0], param[1], param[2]+1); p5 = p5.transform(at_inv);
-            Point p6(param[0]+1, param[1], param[2]+1); p6 = p6.transform(at_inv);
-            Point p7(param[0]+1, param[1]+1, param[2]+1); p7 = p7.transform(at_inv);
+            Point p1(param[0]+1, param[1], param[2]); 
+            if(tet.has_on_unbounded_side(p1)){
+              Aff_transformation *at_new = find_tet_parametrization(input_tet_mesh, p1, parametrization_matrices);
+              if(at_new == nullptr) p1 = p1.transform(at_inv);
+              else p1 = p1.transform((*at_new).inverse());
+            } 
+            else p1 = p1.transform(at_inv);
+
+            Point p2(param[0]+1, param[1]+1, param[2]); 
+            if(tet.has_on_unbounded_side(p2)){
+              Aff_transformation *at_new = find_tet_parametrization(input_tet_mesh, p2, parametrization_matrices);
+              if(at_new == nullptr) p2 = p2.transform(at_inv);
+              else p2 = p2.transform((*at_new).inverse());
+            } 
+            else p2 = p2.transform(at_inv);//if(!tet.has_on_unbounded_side(p2)) p2 = p2.transform(at_inv);
+
+            Point p3(param[0], param[1]+1, param[2]); 
+            if(tet.has_on_unbounded_side(p3)){
+              Aff_transformation *at_new = find_tet_parametrization(input_tet_mesh, p3, parametrization_matrices);
+              if(at_new == nullptr) p3 = p3.transform(at_inv);
+              else p3 = p3.transform((*at_new).inverse());
+            } 
+            else p3 = p3.transform(at_inv);
+
+            Point p4(param[0], param[1]+1, param[2]+1); 
+            if(tet.has_on_unbounded_side(p4)){
+              Aff_transformation *at_new = find_tet_parametrization(input_tet_mesh, p4, parametrization_matrices);
+              if(at_new == nullptr) p4 = p4.transform(at_inv);
+              else p4 = p4.transform((*at_new).inverse());
+            } 
+            else p4 = p4.transform(at_inv);
+
+            Point p5(param[0], param[1], param[2]+1);
+            if(tet.has_on_unbounded_side(p5)){
+              Aff_transformation *at_new = find_tet_parametrization(input_tet_mesh, p5, parametrization_matrices);
+              if(at_new == nullptr) p5 = p5.transform(at_inv);
+              else p5 = p5.transform((*at_new).inverse());
+            } 
+            else p5 = p5.transform(at_inv);
+
+            Point p6(param[0]+1, param[1], param[2]+1);
+            if(tet.has_on_unbounded_side(p6)){
+              Aff_transformation *at_new = find_tet_parametrization(input_tet_mesh, p6, parametrization_matrices);
+              if(at_new == nullptr) p6 = p6.transform(at_inv);
+              else p6 = p6.transform((*at_new).inverse());
+            } 
+            else p6 = p6.transform(at_inv);
+
+            Point p7(param[0]+1, param[1]+1, param[2]+1);
+            if(tet.has_on_unbounded_side(p7)){
+              Aff_transformation *at_new = find_tet_parametrization(input_tet_mesh, p7, parametrization_matrices);
+              if(at_new == nullptr) p7 = p7.transform(at_inv);
+              else p7 = p7.transform((*at_new).inverse());
+            } 
+            else p7 = p7.transform(at_inv);
+
             Dart_handle dh = output_mesh.make_hexahedron(p0, p1, p2, p3, p4, p5, p6, p7);
             if(hex_handles.find(p0) == hex_handles.end()) hex_handles.emplace(std::make_pair(p0, dh));
-           // connections[(int)(i-minx)][(int)(j-miny)][(int)(k-minz)] = dh;
-           /* if(zflag == 1){
-              output_mesh.sew<2>(output_mesh.alpha(dh, 1, 2), prev_z);
-            }
-            prev_z = output_mesh.alpha(dh, 0, 1, 2);
-            zflag = 1;*/
+          
           }
-          //else zflag = 0;
         }
-        //zflag = 0;
       }
     }
   if(DEBUG) std::cout<<"after triple nested"<<std::endl;
