@@ -768,19 +768,22 @@ void ArrangementDemoWindow::updateConicType( QAction* newType )
 #endif
   if (isAlgSegArr && (newType == this->ui->actionConicSegment))
   {
-    typedef Alg_seg_arr::Geometry_traits_2       Alg_seg_geom_traits;
-    typedef CGAL::Qt::GraphicsViewCurveInput<Alg_seg_geom_traits>
-      AlgSegCurveInputCallback;
-    AlgSegCurveInputCallback* algCurveInputCallback =
-      ( AlgSegCurveInputCallback* ) activeTab->getCurveInputCallback( );
-    
-    AlgebraicCurveInputDialog* newDialog = new AlgebraicCurveInputDialog;
-    newDialog->getUi()->lineEdit->setFocus();
-    if ( newDialog->exec( ) == QDialog::Accepted )
+    if (this->ui->actionInsert->isChecked())
     {
-      std::string poly_expr = newDialog->getLineEditText();
-      std::cout<<"User Input:\t"<<poly_expr<<std::endl;
-      algCurveInputCallback->addNewAlgebraicCurve(poly_expr);
+      typedef Alg_seg_arr::Geometry_traits_2       Alg_seg_geom_traits;
+      typedef CGAL::Qt::GraphicsViewCurveInput<Alg_seg_geom_traits>
+        AlgSegCurveInputCallback;
+      AlgSegCurveInputCallback* algCurveInputCallback =
+        ( AlgSegCurveInputCallback* ) activeTab->getCurveInputCallback( );
+      
+      AlgebraicCurveInputDialog* newDialog = new AlgebraicCurveInputDialog;
+      newDialog->getUi()->lineEdit->setFocus();
+      if ( newDialog->exec( ) == QDialog::Accepted )
+      {
+        std::string poly_expr = newDialog->getLineEditText();
+        std::cout<<"User Input:\t"<<poly_expr<<std::endl;
+        algCurveInputCallback->addNewAlgebraicCurve(poly_expr);
+      }
     }
   }
 }
