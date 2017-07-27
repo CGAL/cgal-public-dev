@@ -1063,6 +1063,8 @@ void ArrangementDemoWindow::on_tabWidget_currentChanged( )
 
     this->conicTypeGroup->setEnabled( true );
   }
+
+  this->updateFillColorSwatch();
 }
 
 void ArrangementDemoWindow::on_actionOverlay_triggered( )
