@@ -16,6 +16,7 @@ public:
     explicit AlgebraicCurveInputDialog(QWidget *parent = 0);
     ~AlgebraicCurveInputDialog();
     std::string getLineEditText();
+    Ui::AlgebraicCurveInputDialog* getUi(){return this->ui;}
 
 private:
     Ui::AlgebraicCurveInputDialog *ui;

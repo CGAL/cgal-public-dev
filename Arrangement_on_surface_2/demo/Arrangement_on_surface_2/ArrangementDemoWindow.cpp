@@ -37,6 +37,8 @@
 #include <CGAL/IO/Arr_text_formatter.h>
 #include <CGAL/IO/Arr_with_history_text_formatter.h>
 
+#include "ui_AlgebraicCurveInputDialog.h"
+
 ArrangementDemoWindow *ArrangementDemoWindow::instance_ = NULL;
 
 Ui::ArrangementDemoWindow* getCurrentDemoWindowUi()
@@ -773,6 +775,7 @@ void ArrangementDemoWindow::updateConicType( QAction* newType )
       ( AlgSegCurveInputCallback* ) activeTab->getCurveInputCallback( );
     
     AlgebraicCurveInputDialog* newDialog = new AlgebraicCurveInputDialog;
+    newDialog->getUi()->lineEdit->setFocus();
     if ( newDialog->exec( ) == QDialog::Accepted )
     {
       std::string poly_expr = newDialog->getLineEditText();
@@ -786,12 +789,17 @@ void ArrangementDemoWindow::on_actionSaveAs_triggered( )
 {
   int index = this->ui->tabWidget->currentIndex( );
   if ( index == -1 )
+  {
     return;
+  }
+
   QString filename =
     QFileDialog::getSaveFileName( this, tr( "Save file" ),
                                   "", "Arrangement (*.arr)" );
   if ( filename.isNull( ) )
+  {
     return;
+  }
 
   std::ofstream ofs( filename.toStdString( ).c_str( ) );
   CGAL::Object arr = this->arrangements[ index ];
@@ -888,7 +896,9 @@ void ArrangementDemoWindow::on_actionOpen_triggered( )
     QFileDialog::getOpenFileName( this, tr( "Open file" ),
                                   "", "Arrangement files (*.arr *.dat);;All files (*.*)" );
   if ( filename.isNull( ) )
+  {
     return;
+  }
 
   if ( filename.endsWith( ".arr" ) )
   {
