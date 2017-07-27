@@ -778,12 +778,15 @@ void ArrangementDemoWindow::updateConicType( QAction* newType )
       
       AlgebraicCurveInputDialog* newDialog = new AlgebraicCurveInputDialog;
       newDialog->getUi()->lineEdit->setFocus();
+
       if ( newDialog->exec( ) == QDialog::Accepted )
       {
         std::string poly_expr = newDialog->getLineEditText();
         std::cout<<"User Input:\t"<<poly_expr<<std::endl;
         algCurveInputCallback->addNewAlgebraicCurve(poly_expr);
       }
+
+      delete newDialog;
     }
   }
 }
@@ -988,8 +991,10 @@ void ArrangementDemoWindow::on_tabWidget_currentChanged( )
     return;
   }
 
-  CGAL::Object arr = this->arrangements[ this->ui->tabWidget->currentIndex( ) ];
-
+  const unsigned int TabIndex = this->ui->tabWidget->currentIndex( );
+  if (TabIndex == static_cast<unsigned int>(-1)) return;
+  ArrangementDemoTabBase* activeTab = this->tabs[ TabIndex ];
+  CGAL::Object arr = this->arrangements[ TabIndex ];
 
   // Seg_arr* seg;
   Pol_arr *pol;
@@ -1064,7 +1069,8 @@ void ArrangementDemoWindow::on_tabWidget_currentChanged( )
     this->conicTypeGroup->setEnabled( true );
   }
 
-  this->updateFillColorSwatch();
+  this->ui->actionInsert->setChecked(true);
+  this->updateMode(this->ui->actionInsert);
 }
 
 void ArrangementDemoWindow::on_actionOverlay_triggered( )
