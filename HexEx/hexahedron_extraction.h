@@ -12,15 +12,15 @@
 #include "linear_cell_complex_3_viewer_qt.h"
 #endif
 
-Aff_transformation* find_tet_parametrization(LCC_3& lcc, Point p, std::vector<Aff_transformation> parametrization_matrices){
+Aff_transformation* find_tet_parametrization(LCC_3& lcc, Point p, std::vector<Aff_transformation>& parametrization_matrices){
   for(LCC_3::One_dart_per_cell_range<3>::iterator it = lcc.one_dart_per_cell<3>().begin(), itend = lcc.one_dart_per_cell<3>().end(); it != itend; it++){
-    Point_3 point[4]; int i = 0;
+    std::vector<Point_3> point;
     for(LCC_3::One_dart_per_incident_cell_range<0,3>::iterator it1 = lcc.one_dart_per_incident_cell<0,3>(it).begin(), it1end = lcc.one_dart_per_incident_cell<0,3>(it).end(); it1 != it1end; it1++){
-      point[i] = (lcc.info(it1)).parameters; i++;
+      point.push_back((lcc.info(it1)).parameters);
     }
-if(DEBUG) std::cout<<i<<std::endl;
+
     Tetrahedron_3 tet(point[0], point[1], point[2], point[3]);
-    if(!tet.is_degenerate()) continue;
+    if(tet.is_degenerate()) continue;
     if(!tet.has_on_unbounded_side(p)) return &(parametrization_matrices[(lcc.info(it)).cell_no]);
   }
   return nullptr;
@@ -41,7 +41,7 @@ bool yfn(Point_3 i, Point_3 j){ return (i[1]<j[1]); }
 bool zfn(Point_3 i, Point_3 j){ return (i[2]<j[2]); }
 
 
-void extract_hexes(LCC_3& input_tet_mesh, LCC_3& output_mesh, std::vector<Aff_transformation> parametrization_matrices, std::unordered_map<Point_3, Dart_handle>& hex_handles){/**
+void extract_hexes(LCC_3& input_tet_mesh, LCC_3& output_mesh, std::vector<Aff_transformation>& parametrization_matrices, std::unordered_map<Point_3, Dart_handle>& hex_handles, std::unordered_map<Point_3, Point_3>& output_points){/**
 * This function combnes the steps geometry extraction and topology extraction from the paper HexEx. 
 * We iterate through each volume (in parametric space, stored in dart_info) in the input mesh, and find all the prospective vertices with integer coordinates in parametric space. If unit cubes formed by joining adjacent integer coordinates in the parametric space intersects the tetrahedron, we make a hexahedron (in our output mesh) corresponding to the inverse parametrization of the integer vertices of the cube. 
 */
@@ -93,12 +93,116 @@ void extract_hexes(LCC_3& input_tet_mesh, LCC_3& output_mesh, std::vector<Aff_tr
             //output_mesh.create_vertex_attribute(p.transform(at_inv));     
 
 /*
-One way to improve this would be to create a point hash map (like hex_handle), but with parametric integer coords as the key such that it also contains the parametrization matrix, along with dart_handle. Since each vertex is visited max. 8 times by this algorithm (for each hex being created), creating such a structure could possibly improve the speed by ~8 times since repeated computation can be avoided. 
+TODO: One way to improve this would be to create a point hash map (like hex_handle), but with parametric integer coords as the key such that it also contains the parametrization matrix, along with dart_handle. Since each vertex is visited max. 8 times by this algorithm (for each hex being created), creating such a structure could possibly improve the speed by ~8 times since repeated computation can be avoided. 
 The paper uses the transition function to find the parametrization matrix of adjacent tet- this could be done too, but we have the parametrization matrix itself readily available in parametrization_matrices.
-*/
-        
-            Point p0 = p.transform(at_inv); Point param = p;
-            Point p1(param[0]+1, param[1], param[2]); 
+*/          Point p0, param; 
+            if(output_points.find(p) == output_points.end()){
+              p0 = p.transform(at_inv); param = p;
+              output_points.emplace(std::make_pair(p, p0));
+            }
+            else{
+              p0 = output_points[p]; param = p;
+            }
+
+            Point p1(param[0]+1, param[1], param[2]); p = p1;
+            if(output_points.find(p) == output_points.end()){
+              if(tet.has_on_unbounded_side(p)){
+                Aff_transformation *at_new = find_tet_parametrization(input_tet_mesh, p, parametrization_matrices);
+                if(at_new == nullptr) p1 = p.transform(at_inv);
+                else p1 = p.transform((*at_new).inverse());
+              } 
+              else p1 = p.transform(at_inv);
+              output_points.emplace(std::make_pair(p, p1));
+            }
+            else{
+              p1 = output_points[p]; 
+            }
+
+            Point p2(param[0]+1, param[1]+1, param[2]); p = p2;
+            if(output_points.find(p) == output_points.end()){
+              if(tet.has_on_unbounded_side(p)){
+                Aff_transformation *at_new = find_tet_parametrization(input_tet_mesh, p, parametrization_matrices);
+                if(at_new == nullptr) p2 = p.transform(at_inv);
+                else p2 = p.transform((*at_new).inverse());
+              } 
+              else p2 = p.transform(at_inv);
+              output_points.emplace(std::make_pair(p, p2));
+            }
+            else{
+              p2 = output_points[p]; 
+            }
+
+            Point p3(param[0], param[1]+1, param[2]); p = p3;
+            if(output_points.find(p) == output_points.end()){
+              if(tet.has_on_unbounded_side(p)){
+                Aff_transformation *at_new = find_tet_parametrization(input_tet_mesh, p, parametrization_matrices);
+                if(at_new == nullptr) p3 = p.transform(at_inv);
+                else p3 = p.transform((*at_new).inverse());
+              } 
+              else p3 = p.transform(at_inv);
+              output_points.emplace(std::make_pair(p, p3));
+            }
+            else{
+              p3 = output_points[p]; 
+            }
+
+            Point p4(param[0], param[1]+1, param[2]+1); p = p4;
+            if(output_points.find(p) == output_points.end()){
+              if(tet.has_on_unbounded_side(p)){
+                Aff_transformation *at_new = find_tet_parametrization(input_tet_mesh, p, parametrization_matrices);
+                if(at_new == nullptr) p4 = p.transform(at_inv);
+                else p4 = p.transform((*at_new).inverse());
+              } 
+              else p4 = p.transform(at_inv);
+              output_points.emplace(std::make_pair(p, p4));
+            }
+            else{
+              p4 = output_points[p]; 
+            }
+
+            Point p5(param[0], param[1], param[2]+1); p = p5;
+            if(output_points.find(p) == output_points.end()){
+              if(tet.has_on_unbounded_side(p)){
+                Aff_transformation *at_new = find_tet_parametrization(input_tet_mesh, p, parametrization_matrices);
+                if(at_new == nullptr) p5 = p.transform(at_inv);
+                else p5 = p.transform((*at_new).inverse());
+              } 
+              else p5 = p.transform(at_inv);
+              output_points.emplace(std::make_pair(p, p5));
+            }
+            else{
+              p5 = output_points[p]; 
+            }
+
+            Point p6(param[0]+1, param[1], param[2]+1); p = p6;
+            if(output_points.find(p) == output_points.end()){
+              if(tet.has_on_unbounded_side(p)){
+                Aff_transformation *at_new = find_tet_parametrization(input_tet_mesh, p, parametrization_matrices);
+                if(at_new == nullptr) p6 = p.transform(at_inv);
+                else p6 = p.transform((*at_new).inverse());
+              } 
+              else p6 = p.transform(at_inv);
+              output_points.emplace(std::make_pair(p, p6));
+            }
+            else{
+              p6 = output_points[p]; 
+            }
+
+            Point p7(param[0]+1, param[1]+1, param[2]+1); p = p7;
+            if(output_points.find(p) == output_points.end()){
+              if(tet.has_on_unbounded_side(p)){
+                Aff_transformation *at_new = find_tet_parametrization(input_tet_mesh, p, parametrization_matrices);
+                if(at_new == nullptr) p7 = p.transform(at_inv);
+                else p7 = p.transform((*at_new).inverse());
+              } 
+              else p7 = p.transform(at_inv);
+              output_points.emplace(std::make_pair(p, p7));
+            }
+            else{
+              p7 = output_points[p]; 
+            }
+
+/*
             if(tet.has_on_unbounded_side(p1)){
               Aff_transformation *at_new = find_tet_parametrization(input_tet_mesh, p1, parametrization_matrices);
               if(at_new == nullptr) p1 = p1.transform(at_inv);
@@ -153,9 +257,12 @@ The paper uses the transition function to find the parametrization matrix of adj
               else p7 = p7.transform((*at_new).inverse());
             } 
             else p7 = p7.transform(at_inv);
+*/
+           if(hex_handles.find(p0) == hex_handles.end()){ 
+ Dart_handle dh = output_mesh.make_hexahedron(p0, p1, p2, p3, p4, p5, p6, p7);
+hex_handles.emplace(std::make_pair(p0, dh));
 
-            Dart_handle dh = output_mesh.make_hexahedron(p0, p1, p2, p3, p4, p5, p6, p7);
-            if(hex_handles.find(p0) == hex_handles.end()) hex_handles.emplace(std::make_pair(p0, dh));
+}
           
           }
         }
