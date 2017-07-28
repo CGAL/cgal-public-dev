@@ -30,8 +30,14 @@ bool does_intersect(Tetrahedron_3 tet, Point_3 p){/**
 * If p does not lie on the unbounded side of the tet, this function checks if a prospective unit volume cube in the positive x, y and z directions, with origin at p, would intersect the given tet. 
 * If it lies on the unbounded side, we don't consider the volumes tobe intersecting: so the function returns false. 
 */
-  if(tet.is_degenerate()||tet.has_on_unbounded_side(p)) return false;
-  else if(tet.has_on_bounded_side(p)) return true;
+/*if(tet.is_degenerate()||tet.has_on_bounded_side(p)){if(DEBUG) std::cout<<"Doesn't intersect"<<std::endl; return false;}
+  else if(tet.has_on_unbounded_side(p)){if(DEBUG) std::cout<<"Does intersect"<<std::endl; return true;}
+  if(DEBUG) std::cout<<"Boundary point"<<std::endl;
+  return(tet.has_on_unbounded_side(p+Vector_3(1,0,0))||tet.has_on_unbounded_side(p+Vector_3(0,1,0))||tet.has_on_unbounded_side(p+Vector_3(0,0,1))||tet.has_on_unbounded_side(p+Vector_3(1,1,0))||tet.has_on_unbounded_side(p+Vector_3(1,0,1))||tet.has_on_unbounded_side(p+Vector_3(0,1,1))||tet.has_on_unbounded_side(p+Vector_3(1,1,1)));*/
+
+  if(tet.is_degenerate()||tet.has_on_unbounded_side(p)){if(DEBUG) std::cout<<"Doesn't intersect"<<std::endl; return false;}
+  else if(tet.has_on_bounded_side(p)){if(DEBUG) std::cout<<"Does intersect"<<std::endl; return true;}
+  if(DEBUG) std::cout<<"Boundary point"<<std::endl;
   return(tet.has_on_bounded_side(p+Vector_3(1,0,0))||tet.has_on_bounded_side(p+Vector_3(0,1,0))||tet.has_on_bounded_side(p+Vector_3(0,0,1))||tet.has_on_bounded_side(p+Vector_3(1,1,0))||tet.has_on_bounded_side(p+Vector_3(1,0,1))||tet.has_on_bounded_side(p+Vector_3(0,1,1))||tet.has_on_bounded_side(p+Vector_3(1,1,1)));
 }
 
@@ -53,16 +59,21 @@ void extract_hexes(LCC_3& input_tet_mesh, LCC_3& output_mesh, std::vector<Aff_tr
     double minx = std::numeric_limits<double>::max(), miny = std::numeric_limits<double>::max(), minz = std::numeric_limits<double>::max(); 
     double maxx = std::numeric_limits<double>::min(), maxy = std::numeric_limits<double>::min(), maxz = std::numeric_limits<double>::min();
     std::vector<Point_3> params;
-    Dart_handle temp = it;
+   /* Dart_handle temp = it;
     Point_3 param = (input_tet_mesh.info(temp)).parameters; params.push_back(param);
-
-//using alpha pointers to find the vertices of a tet instead of LCC::One_dart_per_unit_cell_range::one_dart_per_incident_cell() because it took significantly less time to compute this way.
-    temp = input_tet_mesh.alpha(it,0); 
+    //if(DEBUG) std::cout<<minx<<" "<<maxx<<std::endl;
+//using beta pointers to find the vertices of a tet instead of LCC::One_dart_per_unit_cell_range::one_dart_per_incident_cell() because it took significantly less time to compute this way.
+    temp = input_tet_mesh.beta(it,0); 
     param = (input_tet_mesh.info(temp)).parameters; params.push_back(param);
-    temp = input_tet_mesh.alpha(it, 0, 1, 0);
+    temp = input_tet_mesh.beta(it, 0, 1, 0);
     param = (input_tet_mesh.info(temp)).parameters; params.push_back(param);
-    temp = input_tet_mesh.alpha(it, 2, 0, 1, 0);
-    param = (input_tet_mesh.info(temp)).parameters; params.push_back(param);
+    temp = input_tet_mesh.beta(it, 2, 0, 1, 0);
+    param = (input_tet_mesh.info(temp)).parameters; params.push_back(param);*/
+int i = 0;
+for(LCC_3::One_dart_per_incident_cell_range<0,3>::iterator it1 = input_tet_mesh.one_dart_per_incident_cell<0,3>(it).begin(), it1end = input_tet_mesh.one_dart_per_incident_cell<0,3>(it).end(); it1 != it1end; it1++){
+  Point param = (input_tet_mesh.info(it1)).parameters; params.push_back(param); i++;
+}
+std::cout<<i<<std::endl;
 
 //making a tetrahedron in the parametrized space
     Tetrahedron_3 tet(params[0], params[1], params[2], params[3]); 
@@ -75,7 +86,7 @@ void extract_hexes(LCC_3& input_tet_mesh, LCC_3& output_mesh, std::vector<Aff_tr
     maxy = round(box.ymax());
     minz = round(box.zmin());
     maxz = round(box.zmax());
-
+    //if(DEBUG) std::cout<<minx<<" "<<maxx<<std::endl;
 // inverse parametrization of the given tet
     Aff_transformation at_inv = (parametrization_matrices[(input_tet_mesh.info(it)).cell_no]).inverse(); 
 
@@ -84,17 +95,17 @@ void extract_hexes(LCC_3& input_tet_mesh, LCC_3& output_mesh, std::vector<Aff_tr
 * If the integer vertex lies outside the tet, nothing happens.
 * If the integer vertex lies on the boundary of the tet, and if the corresponding cube along positive x, y and z axis intersect with the tet, a hexahedron using inverse parametrization is created.
 * If the integer vertex lies inside the tet, the corresponding cube is sure to intersect with the tet, so a hexahedron using inverse parametrization is created.
-*/ if(DEBUG) std::cout<<"before triple nested loop"<<std::endl; 
+*/ //if(DEBUG) std::cout<<"before triple nested loop"<<std::endl; 
    for(int i = minx; i<= maxx; i++){
       for(int j = miny; j<=maxy; j++){
         for(int k = minz; k<=maxz; k++){ 
-          Point_3 p(i,j,k);
-          if(does_intersect(tet, p)){
+          Point_3 p(i,j,k); if(DEBUG) std::cout<<i<<" "<<j<<" "<<k<<std::endl;
+          if(does_intersect(tet, p)){ if(DEBUG) std::cout<<"Yes, intersects!"<<std::endl;
             //output_mesh.create_vertex_attribute(p.transform(at_inv));     
 
 /*
-TODO: One way to improve this would be to create a point hash map (like hex_handle), but with parametric integer coords as the key such that it also contains the parametrization matrix, along with dart_handle. Since each vertex is visited max. 8 times by this algorithm (for each hex being created), creating such a structure could possibly improve the speed by ~8 times since repeated computation can be avoided. 
-The paper uses the transition function to find the parametrization matrix of adjacent tet- this could be done too, but we have the parametrization matrix itself readily available in parametrization_matrices.
+* We create a map between integer grid points and inverse-parametrized points called output_points, to avoid repeated calculations and so that each grid point maps to a unique inverse parametrization (this need not happen due to numerical inefficiencies, leading to overlapping hexes) 
+* The paper uses the transition function to find the parametrization matrix of adjacent tet- this could be done too, but we have the parametrization matrix itself readily available in parametrization_matrices- so we use that to know parametrization in other matrices (not necessarily adjacent)
 */          Point p0, param; 
             if(output_points.find(p) == output_points.end()){
               p0 = p.transform(at_inv); param = p;
@@ -261,17 +272,17 @@ The paper uses the transition function to find the parametrization matrix of adj
            if(hex_handles.find(p0) == hex_handles.end()){ 
  Dart_handle dh = output_mesh.make_hexahedron(p0, p1, p2, p3, p4, p5, p6, p7);
 hex_handles.emplace(std::make_pair(p0, dh));
-
+if(DEBUG) std::cout<<"made hexahedron"<<std::endl;
 }
           
           }
         }
       }
     }
-  if(DEBUG) std::cout<<"after triple nested"<<std::endl;
+  //if(DEBUG) std::cout<<"after triple nested"<<std::endl;
   }
 
-// output.off is used to visualize the final output_mesh after this step. So LCC is written to output.off file.
+// output.off is used to visualize the output_mesh after this step. So LCC is written to output.off file.
   std::ofstream of;
   of.open("output.off");
   CGAL::write_off(output_mesh, of); 

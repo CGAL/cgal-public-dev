@@ -1,6 +1,6 @@
 #ifndef TRIANGULATION_H
 #define TRIANGULATION_H
-#include <CGAL/Linear_cell_complex_for_generalized_map.h>
+#include <CGAL/Linear_cell_complex_for_combinatorial_map.h>
 //#include"typedefs.h"
 //#include <CGAL/Linear_cell_complex_for_combinatorial_map.h>
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
@@ -56,7 +56,7 @@ struct myItem
 */
 typedef CGAL::Exact_predicates_inexact_constructions_kernel                    K; 
 typedef CGAL::Linear_cell_complex_traits<3, K>	                               Traits;
-typedef CGAL::Linear_cell_complex_for_generalized_map<3, 3, Traits, myItem>    LCC_3;
+typedef CGAL::Linear_cell_complex_for_combinatorial_map<3, 3, Traits, myItem>    LCC_3;
 typedef LCC_3::Dart_handle                                                     Dart_handle;
 typedef LCC_3::Dart_const_handle                                               Dart_const_handle;
 

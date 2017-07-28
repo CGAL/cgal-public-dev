@@ -2,7 +2,7 @@
 #define HEXEXTR_H
 #include"typedefs.h"
 //#include"handles.h"
-//#include"triangulation.h"
+#include"triangulation.h"
 
 //#include"triangulation_to_LCC.h"
 #include<unordered_map>
@@ -23,12 +23,12 @@ class HexExtr{
 // Currently,meshing commands are executed when the constructor is called. This will be changes later to incorporate the fucntions as methos of this class.
     HexExtr(std::string infilename): identity(1,0,0,0,1,0,0,0,1,1){
 //input_tet_mesh to lcc
-     // load_off_to_LCC(infilename, input_tet_mesh);
+     load_off_to_LCC(infilename, input_tet_mesh);
    
 if(DEBUG)std::cout<<"beginning"<<std::endl;
   std::ifstream in;
   input_tet_mesh.clear();
-  in.open(infilename);
+  in.open("triangulation");
   if (in.is_open())
   {
     in>>input_tet_mesh; //doesn't work: segfault - figure out why
@@ -136,8 +136,8 @@ itend = input_tet_mesh.one_dart_per_cell<2>().end(); it != itend; it++){
         // Face_handle fh(input_tet_mesh, it, i); i++;
          //dart_in_face.emplace(it, fh);        
         Aff_transformation at = extract_transition_function(it, input_tet_mesh, G);
-        g[(input_tet_mesh.info(it)).cell_no][(input_tet_mesh.info(input_tet_mesh.alpha(it, 3))).cell_no] = at;
-        g[(input_tet_mesh.info(input_tet_mesh.alpha(it, 3))).cell_no][(input_tet_mesh.info(it)).cell_no] = at.inverse();
+        g[(input_tet_mesh.info(it)).cell_no][(input_tet_mesh.info(input_tet_mesh.beta(it, 3))).cell_no] = at;
+        g[(input_tet_mesh.info(input_tet_mesh.beta(it, 3))).cell_no][(input_tet_mesh.info(it)).cell_no] = at.inverse();
          //std::cout<<i<<std::endl;
        // print_aff_transformation(at);
         // faces_with_transitions.emplace(fh, at);
@@ -162,7 +162,7 @@ itend = input_tet_mesh.one_dart_per_cell<2>().end(); it != itend; it++){
         Vertex_handle from, to;
         for(std::vector<Vertex_handle>::iterator i = vertices.begin(), iend = vertices.end(); i != iend; i++){
           if(input_tet_mesh.point((*i).incident_dart) == input_tet_mesh.point(it)) from = (*i); //there must be a better way to implement this.
-          if(input_tet_mesh.point((*i).incident_dart) == input_tet_mesh.point(input_tet_mesh.alpha(it, 0))) to = (*i);
+          if(input_tet_mesh.point((*i).incident_dart) == input_tet_mesh.point(input_tet_mesh.beta(it, 0))) to = (*i);
         }
         Edge_handle eh(input_tet_mesh, it, from, to); 
         edges.push_back(eh); 
@@ -188,8 +188,8 @@ if(DEBUG)std::cout<<"after sanitize"<<std::endl;
      extract_hexes(input_tet_mesh, output_mesh, parametrization_matrices, hex_handles, output_points);
      if(DEBUG)std::cout<<"after extracting hexes"<<std::endl;
 
-     extract_connections(output_mesh, hex_handles, output_points);
-    
+     //extract_connections(output_mesh, hex_handles, output_points);
+     output_mesh.sew3_same_facets();
      std::ofstream of;
      of.open("final_output.off");
      CGAL::write_off(output_mesh, of); 

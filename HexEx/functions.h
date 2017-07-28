@@ -5,9 +5,8 @@
 #include <CGAL/Aff_transformation_3.h>
 #include <CGAL/Vector_3.h>
 #include <CGAL/Point_3.h>
-#include "Half_face_and_transition.h"
-#include <CGAL/Generalized_map.h>
-#include <CGAL/Linear_cell_complex_for_generalized_map.h>
+#include <CGAL/Combinatorial_map.h>
+#include <CGAL/Linear_cell_complex_for_combinatorial_map.h>
 #include <cmath>
 #include<cstdlib>
 #include"typedefs.h"
@@ -33,19 +32,19 @@ const std::vector<Aff_transformation>& G){ //the function returns the tranformat
     else{// Has an adjacent tet sharing a common face    
 
         Dart_const_handle dh1 = dh; 
-        Dart_const_handle dh2 = lcc.alpha(dh1,3); //dart handle corresponding to the same edge but in the adjacent tet
+        Dart_const_handle dh2 = lcc.beta<3>(dh1); //dart handle corresponding to the same edge but in the adjacent tet
     	std::vector<Point> face1, face2; 
         int i=0;
      
 //adding the vertices of face1 (face of the first tet)
         face1.push_back(lcc.point(dh1));
-        face1.push_back(lcc.point(lcc.alpha(dh1,1,0)));
-        face1.push_back(lcc.point(lcc.alpha(dh1,1,0,1,0)));
+        face1.push_back(lcc.point(lcc.beta(dh1,1,0)));
+        face1.push_back(lcc.point(lcc.beta(dh1,1,0,1,0)));
 
 //adding the vertices of face2 (face of the second tet)
         face2.push_back(lcc.point(dh2));
-        face2.push_back(lcc.point(lcc.alpha(dh2,1,0)));
-        face2.push_back(lcc.point(lcc.alpha(dh2,1,0,1,0)));
+        face2.push_back(lcc.point(lcc.beta(dh2,1,0)));
+        face2.push_back(lcc.point(lcc.beta(dh2,1,0,1,0)));
         //std::cout<<face1[0]<<" "<<face1[1]<<" "<<face1[2]<<std::endl;
         //std::cout<<face2[0]<<" "<<face2[1]<<" "<<face2[2]<<std::endl;
         if(face1[0] == face2[0] && face1[1] == face2[1] && face1[2] == face2[2]){// transition function is identity.
@@ -93,7 +92,7 @@ int calculate_cell_type(const LCC_3& lcc, Dart_const_handle dh){
   std::vector<Point> P;
   for(int i=0;i<3;i++){
     P.push_back(lcc.point(dh));
-    dh = lcc.alpha(dh, 0, 1);
+    dh = lcc.beta(dh, 0, 1);
   }
   Vector_3 c1 = P[1] - P[0];
   Vector_3 c2 = P[2] - P[0];
@@ -108,14 +107,24 @@ int calculate_cell_type(const LCC_3& lcc, Dart_const_handle dh){
 void dummy_parametrize(LCC_3& lcc){ /**dummy parametrization function: There is no guarantee that this could give good results, but for the sake of tests this might just work. 
 * Every dart has an info as dart_info structure defined in typedefs.h. This contains information about the tet it belongs to (cell_no), and the parametric coordinates of the point. 
 * This function updates the parametric coordinates. Any other relevant function can be used by changing the line marked with a comment below:*/
+if(DEBUG) std::cout<<"Inside dummy_parameterize"<<std::endl;
   for(LCC_3::Dart_range::iterator it = (lcc.darts()).begin(), itend = (lcc.darts()).end(); it != itend; it++){
+    //if(DEBUG) std::cout<<"Before creating info"<<std::endl;
     dart_info temp;
+    //if(DEBUG) std::cout<<"After creating info"<<std::endl;
     temp.cell_no = 0;
+  //  if(DEBUG) std::cout<<"Accessed info attribute"<<std::endl;
     Point_3 point(round(10*(lcc.point(it))[0]), round(10*(lcc.point(it))[1]), round(10*(lcc.point(it))[2]));// This line can be changed for trying different parametrizations.
+//    if(DEBUG) std::cout<<"Created a point"<<std::endl;
     temp.parameters = point;
+    //  if(DEBUG) std::cout<<"Accessed parameters"<<std::endl;
     temp.singular = false;
+    //if(DEBUG) std::cout<<"Accessed singular"<<std::endl;
     temp.singular_edges = 0;
+//    if(DEBUG) std::cout<<"Before accessing info"<<std::endl;
     lcc.info(it) = temp;
+//std::cout<<lcc.point(it)<<"    "<<(lcc.info(it)).parameters<<std::endl;
+  //  if(DEBUG) std::cout<<"After accessing info"<<std::endl;
   }
 }
 

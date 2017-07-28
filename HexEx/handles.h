@@ -12,7 +12,7 @@ class Vertex_handle{
       Vertex_handle(LCC_3 &lcc, Dart_handle &dh, int e, bool f):frame(0,0,1){
       incident_dart = dh;
       current_point = lcc.point(dh);
-      next_point = lcc.point(lcc.alpha(dh, 0));
+      next_point = lcc.point(lcc.beta(dh, 0));
       enumeration = e;
       boundary = f;
       //frame[0] = 0; frame[1] = 0; frame[2] = 1;

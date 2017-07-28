@@ -1,4 +1,4 @@
-#include<CGAL/Linear_cell_complex_for_generalized_map.h>
+#include<CGAL/Linear_cell_complex_for_combinatorial_map.h>
 #include<cstdlib>
 #include<iostream>
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
@@ -14,7 +14,7 @@ void propagate_parameters(LCC_3 &lcc, Dart_handle& dh, std::vector<std::vector<A
     (lcc.info(f)).parameters = p;
     if(lcc.is_free<2>(f)) continue;
     else{
-      Dart_handle fopp = lcc.alpha(f, 2);
+      Dart_handle fopp = lcc.beta(f, 2);
       //update the parameter 
       (lcc.info(fopp)).parameters = p.transform(g[(lcc.info(f)).cell_no][(lcc.info(fopp)).cell_no]);
     }    
@@ -31,7 +31,7 @@ Aff_transformation get_transition(LCC_3& lcc, Dart_handle& dh, Dart_handle& sing
 fend = lcc.one_dart_per_incident_cell<2,1>(dh).end(); f != fend; f++){
       if(!lcc.is_free<3>(f)){
         if((lcc.info(dh)).cell_no == (lcc.info(singular_edge).cell_no)) return temp;
-        else temp = temp * g[(lcc.info(f)).cell_no][(lcc.info(lcc.alpha(f, 3))).cell_no]; 
+        else temp = temp * g[(lcc.info(f)).cell_no][(lcc.info(lcc.beta(f, 3))).cell_no]; 
       }
     }
     return temp;   
@@ -43,7 +43,7 @@ bool is_singular(LCC_3&lcc, Dart_handle& e, std::vector<std::vector<Aff_transfor
   for(LCC_3::One_dart_per_incident_cell_range<2,1>::iterator f = lcc.one_dart_per_incident_cell<2,1>(e).begin(),
 fend = lcc.one_dart_per_incident_cell<2,1>(e).end(); f != fend; f++){
       if(!lcc.is_free<3>(f)){
-        temp = temp * g[(lcc.info(f)).cell_no][(lcc.info(lcc.alpha(f, 3))).cell_no]; 
+        temp = temp * g[(lcc.info(f)).cell_no][(lcc.info(lcc.beta(f, 3))).cell_no]; 
       }
     }
   return !(temp.m(0,0) == 1 && temp.m(0,1) == 0 && temp.m(0,2) == 0 && temp.m(0,3) == 0
@@ -59,7 +59,7 @@ Dart_handle get_singular_edge(LCC_3& lcc, Dart_handle& v, std::vector<std::vecto
 }
 
 Point_3 get_projected_parameters(LCC_3& lcc, Dart_handle& dh, Dart_handle& singular_edge, std::vector<std::vector<Aff_transformation>>& g){
-  Point_3 from = lcc.point(dh), to = lcc.point(lcc.alpha(dh, 0));
+  Point_3 from = lcc.point(dh), to = lcc.point(lcc.beta(dh, 0));
   Vector_3 dir(from, to);
   Aff_transformation at= get_transition(lcc, dh, singular_edge, g);
   dir = dir.transform(at);
