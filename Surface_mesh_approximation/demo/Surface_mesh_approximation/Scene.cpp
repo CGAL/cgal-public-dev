@@ -29,6 +29,8 @@ struct PointProxy {
 };
 
 struct CompactMetric {
+  typedef PointProxy Proxy;
+
   CompactMetric(const FacetCenterMap &_center_pmap)
     : center_pmap(_center_pmap) {}
 
@@ -41,6 +43,8 @@ struct CompactMetric {
 };
 
 struct PointProxyFitting {
+  typedef PointProxy Proxy;
+  
   PointProxyFitting(const FacetCenterMap &_center_pmap,
     const FacetAreaMap &_area_pmap)
     : center_pmap(_center_pmap),
