@@ -12,9 +12,12 @@ int main(){
   outfile.close();
   Dart_handle dh1 = lcc.beta<1,1,2>(d1);
   Dart_handle dh2 = lcc.beta<2>(d2);
-  //lcc.sew<3>(dh1, dh2);
+ /* lcc.sew<3>(dh1, dh2);
+  outfile.open("dart_sewn.off");
+  CGAL::write_off(lcc, outfile);
+  outfile.close();*/
   lcc.sew3_same_facets();
-  outfile.open("2hexessewn.off");
+  outfile.open("same_facet_sew.off");
   CGAL::write_off(lcc, outfile);
   outfile.close();
   return 0;
