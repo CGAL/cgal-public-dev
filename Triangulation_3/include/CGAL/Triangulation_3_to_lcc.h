@@ -137,6 +137,13 @@ namespace CGAL {
         (*mytc)[it] = res;
       }
     }
+
+    for (typename LCC::Vertex_attribute_range::iterator itv=alcc.vertex_attributes().begin(),
+           itvend=alcc.vertex_attributes().end(); itv!=itvend; ++itv)
+    {
+      if (itv->dart()==LCC::null_handle)
+      { alcc.erase_vertex_attribute(itv); }
+    }
     
     CGAL_assertion(dart!=LCC::null_handle);
     return dart;

@@ -1,12 +1,17 @@
+#define BOOST_PARAMETER_MAX_ARITY 12
+
 #include <CGAL/Linear_cell_complex_for_generalized_map.h>
 #include <CGAL/Linear_cell_complex_for_combinatorial_map.h>
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <iostream>
 #include <CGAL/Triangulation_3_to_lcc.h>
 #include<CGAL/Linear_cell_complex_constructors.h>
-//#define USE_MESH 1 // comment to use triangulation_3 insteat of Mesh_3
-#define DEBUG 1
+
+#define USE_MESH 1 // comment to use triangulation_3 insteat of Mesh_3
+//#define DEBUG 1
+
 #ifdef USE_MESH
+
 // Mesh_3
 #include <CGAL/Mesh_triangulation_3.h>
 #include <CGAL/Mesh_complex_3_in_triangulation_3.h>
@@ -99,14 +104,13 @@ bool load_off_to_LCC(std::string filename, LCC_3& lcc)
   input.close();
   Mesh_domain domain(polyhedron);
 
-  Mesh_criteria criteria(facet_angle=fa, facet_size=fs, facet_distance=fd,
-                         cell_radius_edge_ratio=crer);
+  Mesh_criteria criteria(fa, fs, fd, crer);
   
   // Mesh generation
   C3t3 c3t3 = CGAL::make_mesh_3<C3t3>(domain, criteria, no_perturb(), no_exude());
 
  // Set tetrahedron size (keep cell_radius_edge_ratio), ignore facets
-  Mesh_criteria new_criteria(crer, cell_size=1.6); //originally cell_size = 0.3
+  Mesh_criteria new_criteria(crer, 1.6); //originally cell_size = 0.3
 
   // Mesh refinement
   CGAL::refine_mesh_3(c3t3, domain, new_criteria);
@@ -129,9 +133,11 @@ bool load_off_to_LCC(std::string filename, LCC_3& lcc)
   CGAL_assertion(T.is_valid(false));
   CGAL::import_from_triangulation_3(lcc, T);
 #endif
-  //assert(lcc.is_valid());
-  //CGAL_assertion(lcc.is_valid());
-return lcc.is_valid();
+
+  lcc.display_characteristics(std::cout);
+  std::cout<<"; Number of 0-attributes: "<<lcc.attributes<0>().size()<<std::endl;
+  
+  return lcc.is_valid();
 }
 
 int main(int argc, char** argv)
@@ -147,7 +153,9 @@ int main(int argc, char** argv)
   }
 
   LCC_3 lcc;
-  bool blah = load_off_to_LCC(str, lcc); //tetmesh to lcc
+  bool res = load_off_to_LCC(str, lcc); //tetmesh to lcc
+  std::cout<<"Result of load_off_to_LCC: "<<(res?"OK":"FAILED")<<std::endl;
+  
   /*Dart_handle d1 = lcc.make_tetrahedron(Point(-1, 0, 0), Point(0, 2, 0), 
                                         Point(1, 0, 0), Point(1, 1, 2));
   Dart_handle d2 = lcc.make_tetrahedron(Point(0, 2, -1),
