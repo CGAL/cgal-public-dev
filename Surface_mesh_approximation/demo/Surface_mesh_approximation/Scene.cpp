@@ -173,7 +173,6 @@ void Scene::l21_approximation(
   typedef boost::associative_property_map<std::map<Facet_const_handle, FT> > FacetAreaMap;
   typedef boost::property_map<Polyhedron, boost::vertex_point_t>::type VertexPointMap;
 
-  typedef CGAL::PlaneProxy<Polyhedron> PlaneProxy;
   typedef CGAL::L21Metric<Polyhedron, FacetNormalMap, FacetAreaMap> L21Metric;
   typedef CGAL::L21ProxyFitting<Polyhedron, FacetNormalMap, FacetAreaMap> L21ProxyFitting;
   typedef CGAL::PlaneFitting<Polyhedron> PlaneFitting;
@@ -294,7 +293,6 @@ void Scene::l2_approximation(
   typedef boost::associative_property_map<std::map<Facet_const_handle, FT> > FacetAreaMap;
   typedef boost::property_map<Polyhedron, boost::vertex_point_t>::type VertexPointMap;
 
-  typedef CGAL::PlaneProxy<Polyhedron> PlaneProxy;
   typedef CGAL::L2Metric<Polyhedron, FacetAreaMap, VertexPointMap> L2Metric;
   typedef CGAL::L2ProxyFitting<Polyhedron, VertexPointMap, FacetAreaMap> L2ProxyFitting;
   typedef CGAL::PCAPlaneFitting<Polyhedron> PCAPlaneFitting;
