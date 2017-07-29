@@ -16,12 +16,17 @@ typedef Kernel::Point_3 Point_3;
 typedef Kernel::Vector_3 Vector_3;
 
 typedef CGAL::Polyhedron_3<Kernel> Polyhedron;
-typedef Polyhedron::Facet_const_handle Facet_const_handle;
-typedef Polyhedron::Halfedge_const_handle Halfedge_const_handle;
-typedef Polyhedron::Facet_const_iterator Facet_const_iterator;
-typedef Polyhedron::Halfedge_around_facet_const_circulator Halfedge_around_facet_const_circulator;
-typedef Polyhedron::Edge_const_iterator Edge_const_iterator;
+typedef Polyhedron::Halfedge_handle Halfedge_handle;
+typedef Polyhedron::Edge_iterator Edge_iterator;
+typedef Polyhedron::Facet_handle Facet_handle;
+typedef Polyhedron::Facet_iterator Facet_iterator;
+typedef Polyhedron::Halfedge_around_facet_circulator Halfedge_around_facet_circulator;
 typedef CGAL::Bbox_3 Bbox_3;
+
+typedef boost::associative_property_map<std::map<Facet_handle, Vector_3> > FacetNormalMap;
+typedef boost::associative_property_map<std::map<Facet_handle, FT> > FacetAreaMap;
+typedef boost::associative_property_map<std::map<Facet_handle, Point_3> > FacetCenterMap;
+typedef boost::property_map<Polyhedron, boost::vertex_point_t>::type VertexPointMap;
 
 class Scene
 {
@@ -82,10 +87,18 @@ private:
   Bbox_3 m_bbox;
   Polyhedron *m_pPolyhedron;
 
-  typedef std::map<Polyhedron::Facet_const_handle, std::size_t> FacetIdMap;
-  typedef boost::associative_property_map<FacetIdMap> FacetIdPmap;
-  FacetIdMap m_fidx_map;
-  FacetIdPmap m_fidx_pmap; // property-map for segment-idx
+  // property-map for segment-idx
+  std::map<Facet_handle, std::size_t> m_fidx_map;
+  boost::associative_property_map<std::map<Facet_handle, std::size_t> > m_fidx_pmap;
+
+  // facet property maps
+  std::map<Facet_handle, Vector_3> m_facet_normals;
+  std::map<Facet_handle, Point_3> m_facet_centers;
+  std::map<Facet_handle, FT> m_facet_areas;
+  FacetNormalMap m_normal_pmap;
+  FacetCenterMap m_center_pmap;
+  FacetAreaMap m_area_pmap;
+  VertexPointMap m_point_pmap;
 
   std::vector<Point_3> m_anchor_pos;
   std::vector<Polyhedron::Vertex_handle> m_anchor_vtx;
