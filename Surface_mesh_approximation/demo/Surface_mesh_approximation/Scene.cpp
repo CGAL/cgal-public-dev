@@ -263,7 +263,7 @@ void Scene::l2_approximation(
   const std::size_t num_iterations)
 {
   typedef CGAL::L2Metric<Polyhedron, FacetAreaMap> L2Metric;
-  typedef CGAL::L2ProxyFitting<Polyhedron, FacetAreaMap> L2ProxyFitting;
+  typedef CGAL::L2ProxyFitting<Polyhedron> L2ProxyFitting;
   typedef CGAL::PCAPlaneFitting<Polyhedron> PCAPlaneFitting;
 
   if(!m_pPolyhedron)
