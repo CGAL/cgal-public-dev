@@ -35,12 +35,13 @@ if ( CGAL_FOUND )
     ${MAP_VIEWER_LIBRARIES})
   
   add_executable(test2 test2.cpp)
-  target_link_libraries(main ${CGAL_LIBRARIES} ${CGAL_3RD_PARTY_LIBRARIES}
+  target_link_libraries(test2 ${CGAL_LIBRARIES} ${CGAL_3RD_PARTY_LIBRARIES}
     ${MAP_VIEWER_LIBRARIES})
 
 
 if (CGAL_USE_LCC_VIEWER)
   qt5_use_modules(main ${MAP_VIEWER_MODULES})
+  qt5_use_modules(test2 ${MAP_VIEWER_MODULES})
 endif (CGAL_USE_LCC_VIEWER)
   
 else()
