@@ -174,8 +174,8 @@ void Scene::l21_approximation(
   typedef boost::property_map<Polyhedron, boost::vertex_point_t>::type VertexPointMap;
 
   typedef CGAL::PlaneProxy<Polyhedron> PlaneProxy;
-  typedef CGAL::L21Metric<PlaneProxy, FacetNormalMap, FacetAreaMap> L21Metric;
-  typedef CGAL::L21ProxyFitting<PlaneProxy, FacetNormalMap, FacetAreaMap> L21ProxyFitting;
+  typedef CGAL::L21Metric<Polyhedron, FacetNormalMap, FacetAreaMap> L21Metric;
+  typedef CGAL::L21ProxyFitting<Polyhedron, FacetNormalMap, FacetAreaMap> L21ProxyFitting;
   typedef CGAL::PlaneFitting<Polyhedron> PlaneFitting;
 
   if(!m_pPolyhedron)
@@ -295,8 +295,8 @@ void Scene::l2_approximation(
   typedef boost::property_map<Polyhedron, boost::vertex_point_t>::type VertexPointMap;
 
   typedef CGAL::PlaneProxy<Polyhedron> PlaneProxy;
-  typedef CGAL::L2Metric<PlaneProxy, FacetAreaMap, VertexPointMap, Polyhedron> L2Metric;
-  typedef CGAL::L2ProxyFitting<PlaneProxy, Polyhedron, VertexPointMap, FacetAreaMap> L2ProxyFitting;
+  typedef CGAL::L2Metric<Polyhedron, FacetAreaMap, VertexPointMap> L2Metric;
+  typedef CGAL::L2ProxyFitting<Polyhedron, VertexPointMap, FacetAreaMap> L2ProxyFitting;
   typedef CGAL::PCAPlaneFitting<Polyhedron> PCAPlaneFitting;
 
   if(!m_pPolyhedron)
