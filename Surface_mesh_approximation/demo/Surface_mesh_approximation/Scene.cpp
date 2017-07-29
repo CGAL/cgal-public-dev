@@ -293,8 +293,8 @@ void Scene::l2_approximation(
   typedef boost::associative_property_map<std::map<Facet_const_handle, FT> > FacetAreaMap;
   typedef boost::property_map<Polyhedron, boost::vertex_point_t>::type VertexPointMap;
 
-  typedef CGAL::L2Metric<Polyhedron, FacetAreaMap, VertexPointMap> L2Metric;
-  typedef CGAL::L2ProxyFitting<Polyhedron, VertexPointMap, FacetAreaMap> L2ProxyFitting;
+  typedef CGAL::L2Metric<Polyhedron, FacetAreaMap> L2Metric;
+  typedef CGAL::L2ProxyFitting<Polyhedron, FacetAreaMap> L2ProxyFitting;
   typedef CGAL::PCAPlaneFitting<Polyhedron> PCAPlaneFitting;
 
   if(!m_pPolyhedron)
@@ -340,8 +340,8 @@ void Scene::l2_approximation(
     m_anchor_vtx,
     m_bdrs,
     PCAPlaneFitting(*m_pPolyhedron),
-    L2Metric(*m_pPolyhedron, area_pmap, point_pmap),
-    L2ProxyFitting(*m_pPolyhedron, point_pmap));
+    L2Metric(*m_pPolyhedron, area_pmap),
+    L2ProxyFitting(*m_pPolyhedron));
 
   m_px_num = num_proxies;
   m_view_seg_boundary = true;
