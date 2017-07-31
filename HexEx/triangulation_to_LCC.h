@@ -1,4 +1,5 @@
 #pragma once
+#define BOOST_PARAMETER_MAX_ARITY 12
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 
 #include <CGAL/Mesh_triangulation_3.h>
@@ -105,18 +106,18 @@ bool load_off_to_LCC(std::string filename, LCC_3& lcc)
   CGAL::write_off(lcc, ofile);
   ofile.close();
   //std::ofstream ofile;
-/*  ofile.open("triangulation");
+  ofile.open("triangulation");
 lcc.display_characteristics(std::cout);
   ofile<<lcc; //works
  //lcc.display_characteristics(std::cout);
   ofile.close();
-  std::ifstream in;
+  /*std::ifstream in;
   lcc.clear();
   in.open("triangulation");
  //lcc.display_characteristics(std::cout);
-  if (in.is_open())
+  /*if (in.is_open())
   {    
-    in>>lcc; //TODO: segfault at this step: problem on line 513 in Combinatorial_map_save_load.h : accessing out of bounds.
+    in>>lcc;
     in.close();
   }*/
   lcc.display_characteristics(std::cout);

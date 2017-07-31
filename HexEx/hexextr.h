@@ -1,10 +1,12 @@
 #ifndef HEXEXTR_H
 #define HEXEXTR_H
 #include"typedefs.h"
-//#include"handles.h"
-#include"triangulation.h"
+//#include"triangulation.h"
 
-//#include"triangulation_to_LCC.h"
+//#include"handles.h"
+
+
+#include"triangulation_to_LCC.h"
 #include<unordered_map>
 #include<map>
 #include<CGAL/Linear_cell_complex_constructors.h>
@@ -30,12 +32,12 @@ if(DEBUG)std::cout<<"beginning"<<std::endl;
   input_tet_mesh.clear();
   in.open("triangulation");
   if (in.is_open())
-  {
+  {  //CGAL::write_off(input_tet_mesh, in);
     in>>input_tet_mesh; //doesn't work: segfault - figure out why
     in.close();
   }
  if(DEBUG)std::cout<<"loaded to lcc"<<std::endl;
-//input_tet_mesh.display_characteristics(std::cout); std::cout<<std::endl;
+input_tet_mesh.display_characteristics(std::cout); std::cout<<std::endl;
 
 //a parametrization function to test the extraction:
       dummy_parametrize(input_tet_mesh); 
@@ -188,8 +190,8 @@ if(DEBUG)std::cout<<"after sanitize"<<std::endl;
      extract_hexes(input_tet_mesh, output_mesh, parametrization_matrices, hex_handles, output_points);
      if(DEBUG)std::cout<<"after extracting hexes"<<std::endl;
 
-     //extract_connections(output_mesh, hex_handles, output_points);
-     output_mesh.sew3_same_facets();
+     extract_connections(output_mesh, hex_handles, output_points);
+     //output_mesh.sew3_same_facets();
      std::ofstream of;
      of.open("final_output.off");
      CGAL::write_off(output_mesh, of); 
@@ -198,7 +200,7 @@ if(DEBUG)std::cout<<"after sanitize"<<std::endl;
      else std::cout<<"invalid!"<<std::endl;
      std::cout<<"*****FINAL OUTPUT MESH*****"<<std::endl;
      output_mesh.display_characteristics(std::cout); std::cout<<std::endl;
-
+     std::cout<<output_points.size()<<std::endl;
     }
    // std::unordered_map<Face_handle, Aff_transformation> faces_with_transitions; //Take this as input and make dart_handle face_handle map using this
    // std::map<Dart_handle, Face_handle> dart_in_face;

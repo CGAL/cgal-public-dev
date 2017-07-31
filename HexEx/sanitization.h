@@ -14,7 +14,7 @@ void propagate_parameters(LCC_3 &lcc, Dart_handle& dh, std::vector<std::vector<A
     (lcc.info(f)).parameters = p;
     if(lcc.is_free<2>(f)) continue;
     else{
-      Dart_handle fopp = lcc.beta(f, 2);
+      Dart_handle fopp = lcc.opposite(lcc.beta(f, 2));
       //update the parameter 
       (lcc.info(fopp)).parameters = p.transform(g[(lcc.info(f)).cell_no][(lcc.info(fopp)).cell_no]);
     }    
@@ -59,7 +59,7 @@ Dart_handle get_singular_edge(LCC_3& lcc, Dart_handle& v, std::vector<std::vecto
 }
 
 Point_3 get_projected_parameters(LCC_3& lcc, Dart_handle& dh, Dart_handle& singular_edge, std::vector<std::vector<Aff_transformation>>& g){
-  Point_3 from = lcc.point(dh), to = lcc.point(lcc.beta(dh, 0));
+  Point_3 from = lcc.point(dh), to = lcc.point(lcc.opposite(dh));
   Vector_3 dir(from, to);
   Aff_transformation at= get_transition(lcc, dh, singular_edge, g);
   dir = dir.transform(at);
@@ -106,7 +106,7 @@ void truncate_precision(LCC_3& lcc, std::vector<std::vector<Aff_transformation>>
     p =  (lcc.info(v)).parameters;
     double delta = std::pow(2, std::ceil(std::log(max)/std::log(2)));
     //std::cout<<"Delta: "<<delta<<std::endl;
-    
+  //   double delta = std::pow(2, 10);
     std::vector<double> temp(3);
     for(unsigned int i = 0; i < 3; ++i){
       int sign = std::signbit(p[i]) ? -1 : 1;

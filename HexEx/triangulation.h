@@ -10,7 +10,7 @@
 #include<CGAL/Linear_cell_complex_constructors.h>
 #include <CGAL/IO/Polyhedron_iostream.h>
 #include<cstdlib>
-//#define USE_MESH 1 // comment to use triangulation_3 instead of Mesh_3
+#define USE_MESH 1 // comment to use triangulation_3 instead of Mesh_3
 #define DEBUG 0
 #ifdef USE_MESH
 // Mesh_3

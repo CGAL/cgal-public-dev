@@ -29,8 +29,8 @@ void extract_connections(LCC_3& output_mesh, std::unordered_map<Point_3, Dart_ha
     Dart_handle x_to_be_sewn = hex_handles[output_points[temp]]; //dart to the next hexahedron at [x+1, y,z]
     x_to_be_sewn = output_mesh.beta<2>(x_to_be_sewn); //alpha<2>(x_to_b3_sewn);// dart in hexahedron at [x+1,y,z] corresponding to the shared face/edge/vertex between the two hexahedra 
     //connect_darts(output_mesh, x_dh, x_to_be_sewn);
-    output_mesh.sew<3>(x_dh, x_to_be_sewn);
-
+    //output_mesh.sew<3>(x_dh, x_to_be_sewn);
+    output_mesh.sew<3>(x_to_be_sewn, x_dh);
     //along y:
 
     Point temp2((*it).first.x(), (*it).first.y()+1, (*it).first.z()); // Point temp in integer point (parametrized) domain, which is at [x, y+1, z]
@@ -39,8 +39,8 @@ continue;
     Dart_handle y_dh = output_mesh.beta<2,1,1,2>(dh);//alpha<2, 0, 1, 0, 1, 0, 2>(dh); // dart in hexahedron at [x,y,z] corresponding to the shared face/edge/vertex between the two hexahedra 
     Dart_handle y_to_be_sewn = hex_handles[output_points[temp2]]; //dart to the next hexahedron at [x, y+1,z] - already corresponds to the dart having shared face/edge/vertex with y_dh
     //connect_darts(output_mesh, y_dh, y_to_be_sewn);
-    output_mesh.sew<3>(y_dh, y_to_be_sewn);
-
+    //output_mesh.sew<3>(y_dh, y_to_be_sewn);
+    output_mesh.sew<3>(y_to_be_sewn, y_dh);
     //along z:
    
     Point temp3((*it).first.x(), (*it).first.y(), (*it).first.z()+1); // Point temp in integer point (parametrized) domain, which is at [x, y, z+1]
@@ -50,7 +50,9 @@ continue;
     Dart_handle z_to_be_sewn = hex_handles[output_points[temp3]]; //dart to the next hexahedron at [x, y,z+1]
     z_to_be_sewn = output_mesh.beta<1,1,1,2>(z_to_be_sewn);//beta<1, 2>(z_to_be_sewn); // dart in hexahedron at [x,y,z+1] corresponding to the shared face/edge/vertex between the two hexahedra 
     //connect_darts(output_mesh, z_dh, z_to_be_sewn);
-    output_mesh.sew<3>(z_dh, z_to_be_sewn);
+   // output_mesh.sew<3>(z_dh, z_to_be_sewn);
+ output_mesh.sew<3>(z_to_be_sewn, z_dh);
+
 
    /*TODO- Previous method (not needed?)
     Point_3 px = output_mesh.point(x_dh);

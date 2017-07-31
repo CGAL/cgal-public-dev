@@ -38,13 +38,13 @@ const std::vector<Aff_transformation>& G){ //the function returns the tranformat
      
 //adding the vertices of face1 (face of the first tet)
         face1.push_back(lcc.point(dh1));
-        face1.push_back(lcc.point(lcc.beta(dh1,1,0)));
-        face1.push_back(lcc.point(lcc.beta(dh1,1,0,1,0)));
+        face1.push_back(lcc.point(lcc.beta(dh1,1)));//(lcc.beta(dh1,1,0)));
+        face1.push_back(lcc.point(lcc.beta(dh1,1,1)));//(lcc.beta(dh1,1,0,1,0)));
 
 //adding the vertices of face2 (face of the second tet)
         face2.push_back(lcc.point(dh2));
-        face2.push_back(lcc.point(lcc.beta(dh2,1,0)));
-        face2.push_back(lcc.point(lcc.beta(dh2,1,0,1,0)));
+        face2.push_back(lcc.point(lcc.beta(dh2,1)));
+        face2.push_back(lcc.point(lcc.beta(dh2,1,1)));
         //std::cout<<face1[0]<<" "<<face1[1]<<" "<<face1[2]<<std::endl;
         //std::cout<<face2[0]<<" "<<face2[1]<<" "<<face2[2]<<std::endl;
         if(face1[0] == face2[0] && face1[1] == face2[1] && face1[2] == face2[2]){// transition function is identity.
@@ -114,7 +114,7 @@ if(DEBUG) std::cout<<"Inside dummy_parameterize"<<std::endl;
     //if(DEBUG) std::cout<<"After creating info"<<std::endl;
     temp.cell_no = 0;
   //  if(DEBUG) std::cout<<"Accessed info attribute"<<std::endl;
-    Point_3 point(round(10*(lcc.point(it))[0]), round(10*(lcc.point(it))[1]), round(10*(lcc.point(it))[2]));// This line can be changed for trying different parametrizations.
+    Point_3 point(round(70*(lcc.point(it))[0]), round(70*(lcc.point(it))[1]), round(70*(lcc.point(it))[2]));// This line can be changed for trying different parametrizations.
 //    if(DEBUG) std::cout<<"Created a point"<<std::endl;
     temp.parameters = point;
     //  if(DEBUG) std::cout<<"Accessed parameters"<<std::endl;

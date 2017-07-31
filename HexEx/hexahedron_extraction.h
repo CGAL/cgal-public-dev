@@ -35,10 +35,12 @@ bool does_intersect(Tetrahedron_3 tet, Point_3 p){/**
   if(DEBUG) std::cout<<"Boundary point"<<std::endl;
   return(tet.has_on_unbounded_side(p+Vector_3(1,0,0))||tet.has_on_unbounded_side(p+Vector_3(0,1,0))||tet.has_on_unbounded_side(p+Vector_3(0,0,1))||tet.has_on_unbounded_side(p+Vector_3(1,1,0))||tet.has_on_unbounded_side(p+Vector_3(1,0,1))||tet.has_on_unbounded_side(p+Vector_3(0,1,1))||tet.has_on_unbounded_side(p+Vector_3(1,1,1)));*/
 
-  if(tet.is_degenerate()||tet.has_on_unbounded_side(p)){if(DEBUG) std::cout<<"Doesn't intersect"<<std::endl; return false;}
-  else if(tet.has_on_bounded_side(p)){if(DEBUG) std::cout<<"Does intersect"<<std::endl; return true;}
-  if(DEBUG) std::cout<<"Boundary point"<<std::endl;
-  return(tet.has_on_bounded_side(p+Vector_3(1,0,0))||tet.has_on_bounded_side(p+Vector_3(0,1,0))||tet.has_on_bounded_side(p+Vector_3(0,0,1))||tet.has_on_bounded_side(p+Vector_3(1,1,0))||tet.has_on_bounded_side(p+Vector_3(1,0,1))||tet.has_on_bounded_side(p+Vector_3(0,1,1))||tet.has_on_bounded_side(p+Vector_3(1,1,1)));
+  if(tet.is_degenerate()||tet.has_on_unbounded_side(p)){//if(DEBUG) std::cout<<"Doesn't intersect"<<std::endl; 
+return false;}
+  else// if(tet.has_on_bounded_side(p)){//if(DEBUG) std::cout<<"Does intersect"<<std::endl;
+return true;// }
+ // if(DEBUG) std::cout<<"Boundary point"<<std::endl;
+/*  return(tet.has_on_bounded_side(p+Vector_3(1,0,0))||tet.has_on_bounded_side(p+Vector_3(0,1,0))||tet.has_on_bounded_side(p+Vector_3(0,0,1))||tet.has_on_bounded_side(p+Vector_3(1,1,0))||tet.has_on_bounded_side(p+Vector_3(1,0,1))||tet.has_on_bounded_side(p+Vector_3(0,1,1))||tet.has_on_bounded_side(p+Vector_3(1,1,1)));*/
 }
 
 //Comparison for finding points with  minimum and maximum of x, y and z
@@ -73,12 +75,11 @@ int i = 0;
 for(LCC_3::One_dart_per_incident_cell_range<0,3>::iterator it1 = input_tet_mesh.one_dart_per_incident_cell<0,3>(it).begin(), it1end = input_tet_mesh.one_dart_per_incident_cell<0,3>(it).end(); it1 != it1end; it1++){
   Point param = (input_tet_mesh.info(it1)).parameters; params.push_back(param); i++;
 }
-std::cout<<i<<std::endl;
+//std::cout<<i<<std::endl;
 
 //making a tetrahedron in the parametrized space
     Tetrahedron_3 tet(params[0], params[1], params[2], params[3]); 
-
-//bounding box of the tetrahedron to find the minimum and maximum of x, y, z coordinates
+    //bounding box of the tetrahedron to find the minimum and maximum of x, y, z coordinates
     Bbox_3 box = tet.bbox(); 
     minx = round(box.xmin());
     maxx = round(box.xmax());
@@ -95,7 +96,7 @@ std::cout<<i<<std::endl;
 * If the integer vertex lies outside the tet, nothing happens.
 * If the integer vertex lies on the boundary of the tet, and if the corresponding cube along positive x, y and z axis intersect with the tet, a hexahedron using inverse parametrization is created.
 * If the integer vertex lies inside the tet, the corresponding cube is sure to intersect with the tet, so a hexahedron using inverse parametrization is created.
-*/ //if(DEBUG) std::cout<<"before triple nested loop"<<std::endl; 
+*/ if(DEBUG) std::cout<<"before triple nested loop"<<std::endl; 
    for(int i = minx; i<= maxx; i++){
       for(int j = miny; j<=maxy; j++){
         for(int k = minz; k<=maxz; k++){ 
@@ -213,8 +214,8 @@ std::cout<<i<<std::endl;
               p7 = output_points[p]; 
             }
 
-/*
-            if(tet.has_on_unbounded_side(p1)){
+
+     /*       if(tet.has_on_unbounded_side(p1)){
               Aff_transformation *at_new = find_tet_parametrization(input_tet_mesh, p1, parametrization_matrices);
               if(at_new == nullptr) p1 = p1.transform(at_inv);
               else p1 = p1.transform((*at_new).inverse());
@@ -269,8 +270,11 @@ std::cout<<i<<std::endl;
             } 
             else p7 = p7.transform(at_inv);
 */
+
+
            if(hex_handles.find(p0) == hex_handles.end()){ 
- Dart_handle dh = output_mesh.make_hexahedron(p0, p1, p2, p3, p4, p5, p6, p7);
+ //Dart_handle dh = output_mesh.make_hexahedron(p0, p1, p2, p3, p4, p5, p6, p7);
+Dart_handle dh = output_mesh.make_hexahedron(p0, p3, p2, p1, p6, p5, p4, p7);
 hex_handles.emplace(std::make_pair(p0, dh));
 if(DEBUG) std::cout<<"made hexahedron"<<std::endl;
 }
@@ -279,7 +283,7 @@ if(DEBUG) std::cout<<"made hexahedron"<<std::endl;
         }
       }
     }
-  //if(DEBUG) std::cout<<"after triple nested"<<std::endl;
+  if(DEBUG) std::cout<<"after triple nested"<<std::endl;
   }
 
 // output.off is used to visualize the output_mesh after this step. So LCC is written to output.off file.

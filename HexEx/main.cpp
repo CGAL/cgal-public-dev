@@ -8,13 +8,15 @@
 #include"typedefs.h"
 //namespace HexEx
 //#endif
-
+#ifdef CGAL_LCC_USE_QT
+#include "linear_cell_complex_3_viewer_qt.h"
+#endif
 
 int main(int argc, char** argv){
   std::string str;
   if (argc==1)
   {
-    std::cout<<"Enter filename: (eg: tests/small_points_3 , tests/cube or tests/2tets)"<<std::endl;
+    std::cout<<"Enter filename: (eg: data/elephant.off , data/2tets.off or data/fandisk.off)"<<std::endl;
     std::cin>>str;
   }
   else
@@ -33,6 +35,10 @@ int main(int argc, char** argv){
 
   std::cout << "Program has been running for " << std::chrono::duration_cast<std::chrono::milliseconds>(current_time - start_time).count() << " ms" << std::endl;
   //for(int i = 0; i<24;i++) print_aff_tranformation(h.G[i]);
+  
+#ifdef CGAL_LCC_USE_VIEWER
+  display_lcc(h.output_mesh);
+#endif
 
 }
 
