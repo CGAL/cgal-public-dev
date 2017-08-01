@@ -505,6 +505,12 @@ if( "${CMAKE_CXX_COMPILER}" MATCHES "icl" OR "${CMAKE_CXX_COMPILER}" MATCHES "ic
   endif()
 endif()
 
+if( "\"${CMAKE_CXX_COMPILER_ID}\"" MATCHES "Cray" )
+  message( STATUS "Using Cray compiler, adding -h fp0 for safe float mode" )
+
+  uniquely_add_flags( CGAL_CXX_FLAGS "-h fp0" )
+endif()
+
 
 if ( CMAKE_COMPILER_IS_GNUCXX )
 
