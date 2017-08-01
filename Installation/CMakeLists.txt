@@ -479,14 +479,6 @@ if( MSVC )
     
 endif()
 
-if( "\"${CMAKE_CXX_COMPILER_ID}\"" MATCHES "SunPro" )
-  message( STATUS "Using SunPro compiler, using STLPort 4." )
-  
-  uniquely_add_flags( CGAL_CXX_FLAGS "-features=extensions;-library=stlport4;-D_GNU_SOURCE" )
-  uniquely_add_flags( CGAL_SHARED_LINKER_FLAGS "-library=stlport4" )
-  uniquely_add_flags( CGAL_EXE_LINKER_FLAGS    "-library=stlport4" )
-endif()
-
 if( "${CMAKE_CXX_COMPILER}" MATCHES "icl" OR "${CMAKE_CXX_COMPILER}" MATCHES "icpc")
   message( STATUS "Intel compiler is detected." )
   set( IntelCompiler_FOUND TRUE )
