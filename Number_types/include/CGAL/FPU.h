@@ -116,12 +116,12 @@ extern "C" {
 #  define CGAL_USE_SSE2 1
 #endif
 
+namespace CGAL {
+namespace internal {
 #ifdef CGAL_CFG_DENORMALS_COMPILE_BUG
 double& get_static_minimin(); // Defined in Interval_arithmetic_impl.h
 #endif
 
-namespace CGAL {
-namespace internal {
 #ifdef __INTEL_COMPILER
 const double infinity = std::numeric_limits<double>::infinity();
 #else
