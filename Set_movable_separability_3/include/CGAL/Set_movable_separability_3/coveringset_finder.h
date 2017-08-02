@@ -8,7 +8,7 @@
 #ifndef INCLUDE_CGAL_SET_MOVABLE_SEPARABILITY_3_COVERINGSET_FINDER_H_
 #define INCLUDE_CGAL_SET_MOVABLE_SEPARABILITY_3_COVERINGSET_FINDER_H_
 /*
- * This function goal is to find a "covering-set" of size 6 or less for a polyhedron.
+ * This file's goal is to find a "covering-set" of size 6 or less for a polyhedron.
  * (full definition and motivation can be found in our paper:
  * "On the Separation of a Polyhedron from Its Single-Part Mold" (version of 2017)
  *
@@ -27,7 +27,9 @@
 #include "lp_wrapper.h"
 #include <vector>
 #include <CGAL/intersections.h>
+#include "PlaneProjector.h"
 
+#include "Utils.h"
 namespace CGAL {
   namespace Set_movable_separability_3 {
     namespace internal {
@@ -43,17 +45,13 @@ namespace CGAL {
        * h2: A B C   => A*x+B*y+C*z>0
        * (pre: c>0)
        */
-      template <typename Kernel>
-      enum HemisphereInteractionState hemisphereInteraction(const typename Kernel::Plane_3 &h1, const typename Kernel::Plane_3 &h2)
+      template < typename Direction_3>
+      enum HemisphereInteractionState hemisphereInteraction(const Direction_3 &n1, const Direction_3 &n2)
       {
-	if(h2.c()==0)
-	  return HemisphereInteractionState_Intersect;
-	if(h2.a()*h1.c() == h2.c()*h1.a()  &&  h2.b()*h1.c() == h2.c()*h1.b())
-	  {
-	    if(h2.c()>0)
-	      return Hemisphere_equal;
-	    return Hemisphere_antipodel;
-	  }
+	if(unlikely(n1==n2))
+	  return Hemisphere_equal;
+	if(unlikely(-n1==n2))
+	  return Hemisphere_antipodel;
 	return HemisphereInteractionState_Intersect;
       }
 
@@ -88,34 +86,6 @@ namespace CGAL {
       }
 
       /*
-       * This function projects h to a projTo OR plane parallel to projTo in its negative part (by parameter)
-       * (pre: projTo has a positive z coefficient, both planes pass through the origin and do not merge)
-       *
-       * main Idea: intersect hemisphere h and the plane projTo. project this plane to the xy-plane
-       */
-      template <typename Kernel>
-      inline typename Kernel::Line_2 projectHemisphereToPlaneAndReturnItsComplementary(const typename Kernel::Plane_3 &h,const typename Kernel::Plane_3 &projTo,bool projToNegative)
-      {
-	/*
-	 *
-	 * plane parallel to projTo on its negative side:
-	 *  	Ax+By+Cz=-1 (C>0) => Cz=-(Ax+By+1)
-	 *
-	 *	h: 	ax+by+cz>0	=> 	Cax+Cby+cCz>0
-	 *	__________________________________________________
-	 * (Ca - cA)x + (Cb - cB)y  -  c  >0
-	 *
-	 * but we want its Complementary ,
-	 * so (cA - Ca)x + (cB - Cb)y  +  c
-	 */
-	typedef typename Kernel::Line_2 Line_2;
-	return Line_2(h.c()*projTo.a()-h.a()*projTo.c(),
-		      h.c()*projTo.b()-h.b()*projTo.c(),
-		      ( projTo?(h.c()):0)
-		      );
-
-      }
-      /*
        * pretty much the same as the function below (findCoveringSet)
        * just in 2D.
 
@@ -138,7 +108,7 @@ namespace CGAL {
        * This is not actually true... since the covering-set in only a means to an end (read the motivation above), we will not return
        * halfcircle that we noticed that appears twice - so the return value might not be a covering-set (that doesn't mean that we checked it for any halfplane returned).
        *
-       * notice that it is assumed that the halfcircle are created by hemispherescreated by a polyhedron facets, if not, the code might fail.
+       * notice that it is assumed that the halfcircle are created by hemispheres created by a polyhedron facets, if not, the code might fail.
        * for an instance, all lines must pass through the origin.
 
        */
@@ -164,15 +134,16 @@ namespace CGAL {
 	  FT minRayToInf;
 	  bool maxRayFromMinusInfHasValue=false;
 	  FT maxRayFromMinusInf;
-	  for(int i;i<halfcircle.size();++i)
+	  for(int i=0;i<halfcircle.size();++i)
 	    {
 	      if(i==hi)continue;
 
-	      switch(halfPlaneInteraction(halfcircle[hi].first,halfcircle[i].first))
+	      switch(halfPlaneInteraction<Kernel>(halfcircle[hi].first,halfcircle[i].first))
 	      {
 		case HalfplaneInteractionState_LinesIntersect:
-		  std::pair<FT,bool> ray = projectHalfcircleToline(halfcircle[i],halfcircle[hi]);
-		   if(ray.second)
+		  {
+		  std::pair<FT,bool> ray = projectHalfcircleToline<Kernel>(halfcircle[i].first,halfcircle[hi].first);
+		  if(ray.second)
 		     //bigger than
 		     {
 		       if(!minRayToInfHasValue)
@@ -209,11 +180,14 @@ namespace CGAL {
 			 }
 		     }
 		   break;
+		  }
 		case HalfplaneInteractionState_LinesParallel_FisrtContainsSecond:case HalfplaneInteractionState_LinesParallel_SecondContainsFirst:
 		  //we know that since all line goes throw the origin, both means equal
 		  removeHFromCoveringSet=true;
+
 		  break;
 		case HalfplaneInteractionState_LinesParallel_Intesection_Is_Empty://antipodel
+
 		  out[0]=halfcircle[i].second;
 		  *isOutDirection=true;
 		  if(!removeHFromCoveringSet)
@@ -236,6 +210,16 @@ namespace CGAL {
 
 
       }
+
+      template <typename Kernel>
+      typename Kernel::Direction_3 findDirectionOrthogonalToTwoDirections(typename Kernel::Direction_3 n1, typename Kernel::Direction_3 n2)
+      {
+	typedef typename Kernel::Direction_3 Direction_3;
+	typedef typename Kernel::Point_3 Point;
+	return Direction_3(CGAL::normal(Point(n1.dx(),n1.dy(),n1.dz()),
+			    Point(n2.dx(),n2.dy(),n2.dz()),
+			    Point(0,0,0)));
+      }
       /*
        * input:
        * * hemispheres -  vector of hemisphere in format of planes that it's positive part is the hemisphere
@@ -253,15 +237,17 @@ namespace CGAL {
        * This is not actually true... since the covering-set in only a means to an end (read the motivation above), we will not return
        * hemispheres that we noticed that appears twice - so the return value might not be a covering-set (that doesn't mean that we checked it for any hemisphere returned).
        *
-       * notice that it is assumed that the hemispheres are created by a polyhedron facets, if not, the code might fail.
+       * notice that it is assumed that the hemispheres are created by a polyhedron's facets outer hemispheres, if not, the code might fail.
        * for an instance, all planes must pass through the origin.
        */
       template <typename Kernel>
-      uint8_t findCoveringSet(const std::vector<typename Kernel::Plane_3> hemispheres, unsigned int * out,typename Kernel::Point_3 * outDirection)
-			      //typename Kernel::Direction_3 * outDirection)
+      uint8_t findCoveringSet(const std::vector<typename Kernel::Direction_3> &normals, unsigned int * out,typename Kernel::Direction_3 * outDirection,bool * outDirectionExists)
       {
 	typedef typename Kernel::Line_2 Line_2;
 	typedef typename Kernel::Point_3 Point_3;
+	typedef typename Kernel::Plane_3 Plane_3;
+	typedef typename Kernel::Direction_3 Normal_3;
+
 	/*
 	 * algorithm: this alg is not written in the current version of our paper, so I add it in here.
 	 * (pre: the union of all hemispheres is S^2 - will occur in any polyhedron)
@@ -285,33 +271,27 @@ namespace CGAL {
 	 *    a possible top facet)
 	 * 7. if you must use 3 hemispheres, they must also cover c(h).
 	 */
-	unsigned int hi=0;
-	//just to make the code simpler, we will choose h such that its c is positive - one must exist
-	//otherwise (0,0,1) wasn't in any hemisphere
-	for(;hi<hemispheres.size();++hi)
-	  {
-	    if(hemispheres[hi].c()>0)
-	      break;
-	  }
+
+	*outDirectionExists = false;
+
 	bool removeHFromCoveringSet=false;
 	bool hBarFound=false;
 	bool removeHBarFromCoveringSet;
-	bool hBarIndex;
-
+	unsigned int hBarIndex;
+	PlaneProjector<Kernel,true> proje(normals[0]);
 	std::vector<std::pair<Line_2,unsigned int> > halfplanes;
-	halfplanes.reserve(hemispheres.size() -1);
+	halfplanes.reserve(normals.size() -1);
 
-	for(int i;i<hemispheres.size();++i)
+	for(int i=1;i<normals.size();++i)
 	  {
-	    if(i==hi)continue;
 
-	    switch(hemisphereInteraction(hemispheres[hi],hemispheres[i]))
+	    switch(hemisphereInteraction<Normal_3>(normals[0],normals[i]))
 	    {
 	      case HemisphereInteractionState_Intersect:
 		halfplanes.push_back(
 		    std::make_pair(
-			      projectHemisphereToPlaneAndReturnItsComplementary(hemispheres[i],hemispheres[hi],
-			      !hBarFound ),//if HbarFound we want to find a covering set for c(h), else for -h
+			  proje.projectHemisphereToPlaneAndReturnItsComplementary(normals[i],
+			      hBarFound ),//if HbarFound we want to find a covering set for c(h), else for -h
 			i));
 		break;
 	      case Hemisphere_equal:
@@ -319,12 +299,18 @@ namespace CGAL {
 		break;
 	      case Hemisphere_antipodel:
 		removeHBarFromCoveringSet = hBarFound;//if there is more than one hBar, this cant be a top facet
-		hBarFound=true;
-		hBarIndex=i;
-		for(int j = 0; j!=halfplanes.size();j++)
+		if(hBarFound)
 		  {
-		    halfplanes[j].first=Line_2(halfplanes[j].first.a(),halfplanes[j].first.b(),0);
+		    for(int j = 0; j!=halfplanes.size();++j)
+		    {
+		      halfplanes[j].first=Line_2(halfplanes[j].first.a(),halfplanes[j].first.b(),0);
+		    }
 		  }
+	    hBarFound=true;
+
+		hBarIndex=i;
+
+
 		break;
 	    }
 	  }
@@ -332,46 +318,48 @@ namespace CGAL {
 	    typedef typename Kernel::Line_3 Line_3;
 	if(hBarFound)
 	  {
-	    bool isOutDirection=false;
-	    uint8_t coveringSetSize =findCoveringSet2D(halfplanes,out,outDirection,&isOutDirection);
-	    if(isOutDirection)
+
+	    uint8_t coveringSetSize =findCoveringSet2D<Kernel>(halfplanes,out,outDirectionExists);
+	    if(*outDirectionExists)
 	      //this is only possible if the two lines chosen are the same line to opposite sides.
 	      //in this case, the direction of this line isn't covered
 	      {
-		 Line_3 l = boost::get<Line_3>(* intersection(hemispheres[out[0]], hemispheres[hi]));
-		*outDirection= l.point(1);//get some arbitrary point in the intersection
-		if(outDirection->x()==0 && outDirection->y()==0 && outDirection->z()==0) //if it is the origin, take another point
-		  *outDirection=l.point(2);
+		*outDirection=findDirectionOrthogonalToTwoDirections<Kernel>(normals[out[0]], normals[0]);
 	      }
+
+
 	    if(!removeHFromCoveringSet)
-	      out[coveringSetSize++]=hi;
+	      out[coveringSetSize++]=0;
+
+
 	    if(!removeHBarFromCoveringSet)
+	      {
 	      out[coveringSetSize++]=hBarIndex;
+	      }
+
+
 	    return coveringSetSize;
 
 	  }
-	uint8_t coveringSetSize = find3Witnesses(halfplanes,out);
+	uint8_t coveringSetSize = find3Witnesses<Kernel>(halfplanes,out);
 	if(coveringSetSize==3)
 	  {
 	    if(!removeHFromCoveringSet)
-	      out[coveringSetSize++]=hi;
+	      out[coveringSetSize++]=0;
 	    return coveringSetSize;
 	  }
 	else //coveringSetSize==2
 	  {
 	    if(!removeHFromCoveringSet)
-	      out[coveringSetSize++]=hi;
-
-
-	    Line_3 l = boost::get<Line_3>(* intersection(hemispheres[out[0]], hemispheres[out[1]]));
-	    *outDirection= l.point(1);//get some arbitrary point in the intersection
-	    if(outDirection->x()==0 && outDirection->y()==0 && outDirection->z()==0) //if it is the origin, take another point
-	      *outDirection=l.point(2);
+	      out[coveringSetSize++]=0;
+	    *outDirection=findDirectionOrthogonalToTwoDirections<Kernel>(normals[out[0]], normals[out[1]]);
+	    *outDirectionExists=true;
 	    return coveringSetSize;
 	  }
 
 
       }
+
     } // end of namespace internal
   } // end of namespace Set_movable_separability_3
 } // end of namespace CGAL

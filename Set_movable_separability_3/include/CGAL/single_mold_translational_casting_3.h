@@ -109,13 +109,6 @@ single_mold_translational_casting_3(const Polyhedron& polyhedron,
   return single_mold_translational_casting_3_impl(polyhedron, np, oi,
                                                   Is_direction());
 }
-#define PRINT_PLANE(p) do{ if((p).a()!=0)\
-std::cout<<(p).a()<<'x'<<(((p).b())>0?"+":"");\
-if((p).b()!=0)\
-std::cout<<(p).b()<<'y'<<(((p).c()>0)?"+":"");\
-if((p).c()!=0)\
-std::cout<<(p).c()<<'z';\
-std::cout<<'='<<(p).d()<<std::endl;}while(0)
 
 template <typename Polyhedron,  typename NamedParameters,
           typename OutputIterator>
@@ -130,20 +123,9 @@ single_mold_translational_casting_3(const Polyhedron& polyhedron,
   typedef typename Get_kernel<Polyhedron, NamedParameters>::type Kernel;
   typedef typename Kernel::Direction_3                           Direction_3;
 
-  //! \todo consider using CGAL::is_same_or_derived instaed of boost::is_same
+  //! \todo consider using CGAL::is_same_or_derived instead of boost::is_same
   typedef typename boost::is_same<Direction_type, Direction_3>::type
     Is_direction;
-//	typedef typename Kernel::FT                       FT;
-//	for(auto it = polyhedron.planes_begin(); it!=polyhedron.planes_end();it++)
-//	{
-//	    PRINT_PLANE(*it);
-//		//std::cout<<it->a()<<'x'<<((it->b()>0)?"+":"")<<it->b()<<it->c()<<it->d()<<std::endl;
-//
-////		const CGAL::Plane_3<CGAL::Epick> plane = *it;
-////		Polyhedron::PolyhedronTraits_3 b;
-////		int a=b;
-////		std::cout<<*it<<std::endl;
-//	}
 
   return single_mold_translational_casting_3_impl(polyhedron, np, oi,
                                                   Is_direction());

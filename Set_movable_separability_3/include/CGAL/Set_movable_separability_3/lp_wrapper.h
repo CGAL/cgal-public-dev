@@ -44,7 +44,7 @@ namespace internal {
     * a2 b2 c2  		=> 	a2*x+b2*y <= c2
     */
     template <typename Kernel>
-    enum HalfplaneInteractionState halfPlaneInteraction(typename Kernel::Line_2 &h1,typename Kernel::Line_2 &h2)
+    enum HalfplaneInteractionState halfPlaneInteraction(const typename Kernel::Line_2 &h1,const typename Kernel::Line_2 &h2)
     {
 	if(h1.a()*h2.b()!=h2.a()*h1.b())
 	{
@@ -74,7 +74,40 @@ namespace internal {
 	   return HalfplaneInteractionState_LinesParallel_FisrtContainsSecond;
 
     }
+    template <typename Kernel>
+       std::pair<bool, typename Kernel::Point_2> findPoint(const std::vector<typename Kernel::Line_2> halfplanes)
+       {
+         typedef typename Kernel::Line_2 Line_2;
+         typedef typename Kernel::Point_2 Point_2;
 
+         typedef typename Kernel::FT FT;
+         typedef typename CGAL::Quadratic_program<FT> Program;
+         typedef  typename CGAL::Quadratic_program_solution<FT> Solution;
+         Program lp(CGAL::LARGER, false,0,false,0);
+    #define X_LP_INDEX 0
+    #define Y_LP_INDEX 1
+         for(int i=0;i<halfplanes.size();++i)
+         {
+    	 //Line_2 format is (a,b,c) => ax+by+c>=0, the format here is ax+by>=c
+
+         lp.set_a(X_LP_INDEX, i, halfplanes[i].a());
+    	 lp.set_a(Y_LP_INDEX, i, halfplanes[i].b());
+    	 lp.set_b(i, -halfplanes[i].c());
+
+         }
+         Solution s;
+         s= CGAL::solve_linear_program(lp, FT());
+
+         if(s.is_infeasible())
+         {
+            return std::make_pair(false,Point_2());
+         }
+         typename Solution::Variable_value_iterator it = s.variable_values_begin();
+         FT x = (it)->numerator()/(it)->denominator ();
+         ++it;
+         FT y = (it)->numerator()/(it)->denominator ();
+         return std::make_pair(true,Point_2(x,y));
+       }
    /*this function solves finds a witnesses of an infeasiblity of the input lp.
    * (pre: this lp is infeasible) and return 3 (or 2) half planes proving its infeasiblity
    * input: halfplanes -  array of halfplanes in format:
@@ -97,12 +130,14 @@ namespace internal {
      Program lp(CGAL::LARGER, false,0,false,0);
 #define X_LP_INDEX 0
 #define Y_LP_INDEX 1
+
      for(int i=0;i<halfplanes.size();++i)
      {
 	 //Line_2 format is (a,b,c) => ax+by+c>=0, the format here is ax+by>=c
 	 lp.set_a(X_LP_INDEX, i, halfplanes[i].first.a());
 	 lp.set_a(Y_LP_INDEX, i, halfplanes[i].first.b());
-	 lp.set_b(i++, -halfplanes[i].c());
+	 lp.set_b(i, -halfplanes[i].first.c());
+//	 std::cout<<halfplanes[i].first.a()<<"x+"<<halfplanes[i].first.b()<<"y>="<<-halfplanes[i].first.c()<<std::endl;
      }
      Solution s;
      s= CGAL::solve_linear_program(lp, FT());

@@ -10,12 +10,18 @@
 //#include "../../include/CGAL/Set_movable_separability_3/lp_wrapper.h"
 #include <CGAL/boost/graph/named_function_params.h>
 #include <algorithm>
+#include "../../include/CGAL/Set_movable_separability_3/NormalsDirection.h"
+#include "../../include/CGAL/Set_movable_separability_3/coveringset_finder2.h"
+#include "../../include/CGAL/Set_movable_separability_3/check_upper_facet.h"
+
 //typedef CGAL::Exact_predicates_inexact_constructions_kernel Kernel;
 typedef CGAL::Exact_predicates_exact_constructions_kernel Kernel;
 
 typedef CGAL::Polyhedron_3<Kernel>                          Polyhedron;
 
 typedef Kernel::Direction_3                                 Direction_3;
+typedef Kernel::Point_3                                 Point_3;
+typedef Kernel::Vector_3                                Vector_3;
 
 typedef Polyhedron::Halfedge_handle                         Halfedge_handle;
 typedef Polyhedron::Facet_handle                            Facet_handle;
@@ -38,51 +44,70 @@ struct Plane_equation {
     }
 };
 
+#include "../../include/CGAL/Set_movable_separability_3/Utils.h"
+#include "../../include/CGAL/Set_movable_separability_3/coveringset_finder.h"
+
 int main(int argc, char* argv[])
 {
   const char* filename = (argc > 1) ? argv[1] : "polyhedron.off";
   typename CGAL::Exact_predicates_exact_constructions_kernel::Plane_3 pp;
   typename CGAL::Exact_predicates_exact_constructions_kernel::Line_2 ppp;
 
-//  CGAL::Lazy_exact_nt<CGAL::Gmpq> c=-1;
-//  typename Kernel::FT ft0=0;
-//  typename Kernel::FT ft1=1;
-//  typename Kernel::FT ft2=2;
-//
-//  SMS::internal::LP_Wrapper<Kernel> lp;
-//  lp.addConstraint(ft1,ft1,ft0);
-////  lp.addConstraint(ft2,ftm1,ftm1);
-////  lp.addConstraint(ftm1,ft1,ft0);
-////  for(int i=0;i<100;i++)
-////    {
-////      lp.addConstraint(1,-i,-i+5);
-////
-////    }
-// //lp.solve();
-//  unsigned int out[3];
-//  uint8_t count =lp.find3Witnesses(out);
-//  for(int i=0;i<count;i++)
-//    {
-//      std::cout<<out[i]<<"\t";
-//    }
-//  std::cout<<std::endl;
   std::ifstream input(filename);
   Polyhedron poly;
   if (!input || !(input >> poly) || poly.empty() ) {
-    std::cerr << "Not a valid off file." << std::endl;
+    std::cerr <<filename << " is not a valid off file." << std::endl;
     return -1;
   }
-  CGAL::Exact_predicates_exact_constructions_kernel::Direction_3 d;
+
+  std::vector<Direction_3> polyhedronNormals =  SMS::internal::findDirections<Polyhedron,Kernel>(poly);
+  int outLength=0;
+  unsigned int outIndexs[6];
+
+  Direction_3 outDirection; //2 hemisphere that the intersection of their boundary is a point that wasn't covered
+  bool outDirectionExists;
+
+  outLength = SMS::internal::findCoveringSet<Kernel>(polyhedronNormals,outIndexs,&outDirection,&outDirectionExists);
+//  Kernel::Line_2 l;
+//
+  std::cout<<outLength<<"["<<outIndexs[0]<<","<<outIndexs[1]<<","<<outIndexs[2]<<","<<outIndexs[3]<<","<<outIndexs[4]<<","<<outIndexs[5]<<"]"<<std::endl;
+  while(outLength--)
+    {
+      auto tmp =(SMS::internal::checkUpperFacet<Kernel>(polyhedronNormals,outIndexs[outLength]));
+      std::cout<<outIndexs[outLength]<<" "<<tmp.first;
+      if(tmp.first)
+	 std::cout<<" "<<tmp.second;
+      std::cout<<std::endl;
+    }
+  if(outDirectionExists){
+	std::cout<<"checking point "<<outDirection<<std::endl;
+//	std::cout<<"checking point "<<outDirection.dx()<<outDirection.dy()<<outDirection.dz()<<std::endl;
+
+	std::pair<bool,unsigned int> topFacet = SMS::internal::checkDirection<Kernel>(polyhedronNormals,outDirection);
+
+      if(topFacet.first)
+	std::cout<<"point  A:"<<topFacet.second<<std::endl;
+      topFacet = SMS::internal::checkDirection<Kernel>(polyhedronNormals,-outDirection);
+            if(topFacet.first)
+      	std::cout<<"point -A:"<<topFacet.second<<std::endl;
 
 
-  CGAL::cgal_bgl_named_params<bool, CGAL::all_default_t, boost::no_property>
-    params;
-  std::list<Top_facet> top_facets;
+  }
 
-  std::transform( poly.facets_begin(), poly.facets_end(), poly.planes_begin(),
-                      Plane_equation());
-  SMS::single_mold_translational_casting_3(poly, params,
-                                           std::back_inserter(top_facets));
+  std::cout<<std::endl;
 
+
+
+//  CGAL::cgal_bgl_named_params<bool, CGAL::all_default_t, boost::no_property>
+//    params;
+//  std::list<Top_facet> top_facets;
+
+//  std::transform( poly.facets_begin(), poly.facets_end(), poly.planes_begin(),
+//                      Plane_equation());
+
+//  SMS::single_mold_translational_casting_3(poly, params,
+//                                           std::back_inserter(top_facets));
+  for(int i=0;i<polyhedronNormals.size();++i)
+    std::cout<<i<<" "<<(SMS::internal::checkUpperFacet<Kernel>(polyhedronNormals,i)).first<<std::endl;
   return 0;
 }
