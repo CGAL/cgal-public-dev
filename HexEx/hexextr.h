@@ -14,6 +14,7 @@
 #include"hexahedron_extraction.h"
 #include"connection_extraction.h"
 #include"sanitization.h"
+#include"post_processing.h"
 //#include"dart_extraction.h"
 #include<vector>
 #include"frame_field.h"
@@ -201,6 +202,9 @@ if(DEBUG)std::cout<<"after sanitize"<<std::endl;
      std::cout<<"*****FINAL OUTPUT MESH*****"<<std::endl;
      output_mesh.display_characteristics(std::cout); std::cout<<std::endl;
      std::cout<<output_points.size()<<std::endl;
+     if(post_processing_req(output_mesh)){}
+     else std::cout<<"Done"<<std::endl; //final mesh done
+
     }
    // std::unordered_map<Face_handle, Aff_transformation> faces_with_transitions; //Take this as input and make dart_handle face_handle map using this
    // std::map<Dart_handle, Face_handle> dart_in_face;
