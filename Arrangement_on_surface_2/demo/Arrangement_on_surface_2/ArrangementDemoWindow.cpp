@@ -1068,7 +1068,9 @@ void ArrangementDemoWindow::on_tabWidget_currentChanged( )
 
     this->conicTypeGroup->setEnabled( true );
   }
-
+  
+  activeTab->getVerticalRayShootCallback()->reset();
+  activeTab->getPointLocationCallback()->reset();
   this->ui->actionInsert->setChecked(true);
   this->updateMode(this->ui->actionInsert);
 }

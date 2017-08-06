@@ -29,7 +29,7 @@
 
 #include <QGraphicsScene>
 #include <QApplication>
-
+#include <QKeyEvent>
 #include <QPainter>
 //#include <QStyleOption>
 
@@ -45,8 +45,7 @@
 
 class QGraphicsScene;
 class QApplication;
-// class ArrangementDemoWindow;
-// using Ui::ArrangementDemoWindow;
+
 extern Ui::ArrangementDemoWindow* getCurrentDemoWindowUi();
 
 namespace CGAL {
@@ -199,6 +198,7 @@ class ArrangementGraphicsItem : public ArrangementGraphicsItemBase
 
   typedef ArrangementGraphicsItemBase                   Superclass;
   typedef typename Kernel::Segment_2                    Segment_2;
+  typedef typename Traits::Curve_2                      Curve_2;
 
 public:
   /*! Constructor */
@@ -681,20 +681,94 @@ protected:
                  CGAL::Arr_circular_arc_traits_2<CircularKernel> /* traits */);
 
   template < typename Coefficient_ >
+  X_monotone_curve_2 makeSegment(double x1, double y1, double x2, double y2,
+                        CGAL::Arr_algebraic_segment_traits_2<
+                                   Coefficient_ > /* traits */)
+  {
+    typedef Coefficient_ Coefficient;
+    typedef CGAL::Arr_algebraic_segment_traits_2< Coefficient > Traits;
+    Traits traits;
+
+    typedef typename Traits::X_monotone_curve_2           X_monotone_curve_2;
+    typedef typename Traits::Curve_2           Curve_2;
+
+    typename Traits::Construct_x_monotone_segment_2 constructSegment =
+      traits.construct_x_monotone_segment_2_object( );
+
+    Point_2 p1(x1, y1);
+    Point_2 p2(x2, y2);
+    std::vector< X_monotone_curve_2 > curves;
+
+    constructSegment( p1, p2, std::back_inserter( curves ) );
+    Curve_2 curve = curves[0].curve();
+
+    std::cout<<"In makeSegment, curves size: "<<curves.size()<<std::endl;
+
+    return curves[0];
+  }
+
+  template < typename Coefficient_ >
   void paintFace(Face_handle f, QPainter* painter,
                  CGAL::Arr_algebraic_segment_traits_2<
                                    Coefficient_ > /* traits */)
  {
+    typedef Coefficient_ Coefficient;
+    typedef CGAL::Arr_algebraic_segment_traits_2< Coefficient > Traits;
+    typedef typename Traits::X_monotone_curve_2           X_monotone_curve_2;
+    typedef typename Traits::Polynomial_2           Polynomial_2;
+
+    Traits traits;
+    typename Traits::Construct_curve_2 construct_curve
+      = traits.construct_curve_2_object();
+
     std::cout<<"In paintFace Arr_algebraic_segment_traits_2"<<std::endl;
     if (f->is_unbounded())
     {
-      std::cout<<"In paintFace Arr_algebraic_segment_traits_2 unbounded"<<std::endl;
-      // QRectF rect = this->viewportRect( );
-      // std::cout<<rect.left()<<'\t';
-      // std::cout<<rect.right()<<'\t';
-      // std::cout<<rect.top()<<'\t';
-      // std::cout<<rect.bottom()<<'\n';
 
+      std::cout<<"In paintFace Arr_algebraic_segment_traits_2 unbounded"<<std::endl;
+#if 0
+      QRectF rect = this->viewportRect( );
+      std::cout<<rect.left()<<'\t';
+      std::cout<<rect.right()<<'\t';
+      std::cout<<rect.top()<<'\t';
+      std::cout<<rect.bottom()<<'\n';
+
+      CGAL::Bbox_2 bbox = this->convert( rect ).bbox( );
+
+      Point_2 p1(bbox.xmin(), bbox.ymin());
+      Point_2 p2(bbox.xmax(), bbox.ymax());
+
+      static X_monotone_curve_2 top = makeSegment(bbox.xmin(), bbox.ymin(), bbox.xmax(), bbox.ymin(), Traits());
+      static X_monotone_curve_2 bottom = makeSegment(bbox.xmin(), bbox.ymax(), bbox.xmax(), bbox.ymax(), Traits());
+      static X_monotone_curve_2 left = makeSegment(bbox.xmin(), bbox.ymin(), bbox.xmin(), bbox.ymax(), Traits());
+      static X_monotone_curve_2 right = makeSegment(bbox.xmax(), bbox.ymin(), bbox.xmax(), bbox.ymax(), Traits());
+
+      CGAL::insert(*(this->arr), top.curve());
+      CGAL::insert(*(this->arr), bottom.curve());
+      CGAL::insert(*(this->arr), left.curve());
+      CGAL::insert(*(this->arr), right.curve());
+
+
+
+      static bool firstEntry = true;
+      Polynomial_2 polynomial_1;
+      Polynomial_2 polynomial_2;
+      Polynomial_2 x = CGAL::shift(Polynomial_2(1),1,0);
+      Polynomial_2 y = CGAL::shift(Polynomial_2(1),1,1);
+
+      if ( firstEntry )
+      {
+        firstEntry = false;
+        polynomial_1 = CGAL::ipower(y, 2)-200*x - 2000000;
+        polynomial_2 = CGAL::ipower(y, 2)+200*x - 2000000;
+
+        Curve_2 cv1 = construct_curve(polynomial_1);
+        Curve_2 cv2 = construct_curve(polynomial_2);
+
+        CGAL::insert( *(this->arr), cv1 );
+        CGAL::insert( *(this->arr), cv2 );
+      }
+#endif
       // QColor color = this->backgroundColor;
       // if ( f->color().isValid() )
       // {
@@ -1696,8 +1770,13 @@ paintFace( Face_handle f, QPainter* painter,
 
     // FIXME: get the bg color
     QColor color = this->backgroundColor;
+    if (color == ::Qt::white )
+    {
+      std::cout<<"In paintFace Arr_segment_traits_2 bounded, bg color is white\n";
+    }
     if ( f->color().isValid() )
     {
+      std::cout<<"In paintFace Arr_segment_traits_2 bounded, f->color() is Valid\n";
       color = f->color();
     }
 
