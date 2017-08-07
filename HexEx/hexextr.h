@@ -191,8 +191,8 @@ if(DEBUG)std::cout<<"after sanitize"<<std::endl;
      extract_hexes(input_tet_mesh, output_mesh, parametrization_matrices, hex_handles, output_points);
      if(DEBUG)std::cout<<"after extracting hexes"<<std::endl;
 
-     extract_connections(output_mesh, hex_handles, output_points);
-     //output_mesh.sew3_same_facets();
+     //extract_connections(output_mesh, hex_handles, output_points);
+     output_mesh.sew3_same_facets();
      std::ofstream of;
      of.open("final_output.off");
      CGAL::write_off(output_mesh, of); 
@@ -202,7 +202,7 @@ if(DEBUG)std::cout<<"after sanitize"<<std::endl;
      std::cout<<"*****FINAL OUTPUT MESH*****"<<std::endl;
      output_mesh.display_characteristics(std::cout); std::cout<<std::endl;
      std::cout<<output_points.size()<<std::endl;
-     if(post_processing_req(output_mesh)){}
+     if(post_processing_req(output_mesh, input_tet_mesh)){}
      else std::cout<<"Done"<<std::endl; //final mesh done
 
     }

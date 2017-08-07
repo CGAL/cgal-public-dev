@@ -43,6 +43,22 @@ return true;// }
 /*  return(tet.has_on_bounded_side(p+Vector_3(1,0,0))||tet.has_on_bounded_side(p+Vector_3(0,1,0))||tet.has_on_bounded_side(p+Vector_3(0,0,1))||tet.has_on_bounded_side(p+Vector_3(1,1,0))||tet.has_on_bounded_side(p+Vector_3(1,0,1))||tet.has_on_bounded_side(p+Vector_3(0,1,1))||tet.has_on_bounded_side(p+Vector_3(1,1,1)));*/
 }
 
+
+int calculate_cell_type(LCC_3& lcc, Dart_handle dh){
+  std::vector<Point> P;
+  for(LCC_3::One_dart_per_incident_cell_range<0,3>::iterator it = lcc.one_dart_per_incident_cell<0,3>(dh).begin(), itend = lcc.one_dart_per_incident_cell<0,3>(dh).end(); it != itend; it++){
+    P.push_back(lcc.point(it));
+    //dh = lcc.beta(dh, 0, 1);
+  }
+  Vector_3 c1 = P[1] - P[0];
+  Vector_3 c2 = P[2] - P[0];
+  Vector_3 c3 = P[3] - P[0];
+  double det = CGAL::determinant(c1, c2, c3);
+  if(det == 0) return 0; //degenerate
+  else if(det > 0) return 1; //this is alright
+  else return -1; //flipped
+}
+
 //Comparison for finding points with  minimum and maximum of x, y and z
 bool xfn(Point_3 i, Point_3 j){ return (i[0]<j[0]); }
 bool yfn(Point_3 i, Point_3 j){ return (i[1]<j[1]); }
@@ -76,7 +92,7 @@ for(LCC_3::One_dart_per_incident_cell_range<0,3>::iterator it1 = input_tet_mesh.
   Point param = (input_tet_mesh.info(it1)).parameters; params.push_back(param); i++;
 }
 //std::cout<<i<<std::endl;
-
+    int orientation = calculate_cell_type(input_tet_mesh, it); 
 //making a tetrahedron in the parametrized space
     Tetrahedron_3 tet(params[0], params[1], params[2], params[3]); 
     //bounding box of the tetrahedron to find the minimum and maximum of x, y, z coordinates
@@ -273,8 +289,9 @@ for(LCC_3::One_dart_per_incident_cell_range<0,3>::iterator it1 = input_tet_mesh.
 
 
            if(hex_handles.find(p0) == hex_handles.end()){ 
- //Dart_handle dh = output_mesh.make_hexahedron(p0, p1, p2, p3, p4, p5, p6, p7);
+//Dart_handle dh = output_mesh.make_hexahedron(p0, p1, p2, p3, p4, p5, p6, p7);
 Dart_handle dh = output_mesh.make_hexahedron(p0, p3, p2, p1, p6, p5, p4, p7);
+//(output_mesh.info(dh)).flipped = (orientation == -1)? true : false;
 hex_handles.emplace(std::make_pair(p0, dh));
 if(DEBUG) std::cout<<"made hexahedron"<<std::endl;
 }

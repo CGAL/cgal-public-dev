@@ -11,7 +11,7 @@ typedef struct dartinfo{
 
 //all the darts corresponding to the same tet will have the same cell_no. This is to make it easier to assign a parametrization matrix, which can be determined from any dart of the tet.
   double cell_no;
-
+  bool flipped;
 //a variable to store if the particular dart is singular.
   bool singular;
   int singular_edges;
@@ -35,7 +35,7 @@ struct myItem
 
 typedef CGAL::Exact_predicates_inexact_constructions_kernel                    K; 
 typedef CGAL::Linear_cell_complex_traits<3, K>	                               Traits;
-typedef CGAL::Linear_cell_complex_for_combinatorial_map<3, 3, Traits, myItem>    LCC_3;
+typedef CGAL::Linear_cell_complex_for_combinatorial_map<3, 3, Traits, myItem>  LCC_3;
 typedef LCC_3::Dart_handle                                                     Dart_handle;
 typedef LCC_3::Dart_const_handle                                               Dart_const_handle;
 typedef CGAL::Vector_3<K>                                                      Vector_3;
@@ -61,5 +61,6 @@ namespace std{ //TODO: is this needed?
     } 
   };
 }
+
 
 #endif

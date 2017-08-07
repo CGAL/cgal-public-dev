@@ -36,6 +36,22 @@ bool are_hexes(LCC_3& lcc){
   return true;
 }
 
-bool post_processing_req(LCC_3& lcc){
+
+/*
+int flipped_cells(LCC_3& lcc){
+  int count = 0;
+  for(LCC_3::One_dart_per_cell_range<3>::iterator it = lcc.one_dart_per_cell<3>().begin(), itend =  lcc.one_dart_per_cell<3>().end(); it != itend; it++){
+    if(calculate_cell_type(lcc, it) == -1) count++;
+  }
+  return count;
+}
+*/
+
+void annihilate_darts(LCC_3& output_mesh){
+  
+}
+
+bool post_processing_req(LCC_3& lcc, LCC_3& input_mesh){
+ // std::cout<<"Number of flipped cells: "<<flipped_cells(input_mesh)<<std::endl;
   return(!(are_quads(lcc)&& are_quad_strips(lcc) && are_hexes(lcc)));
 }

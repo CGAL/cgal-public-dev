@@ -87,22 +87,6 @@ Aff_transformation get_parametrization_matrix(Point p, Point q, Point r, Point s
   return (at2*(at1.inverse()));
 }
 
- //This will probably not be required:
-int calculate_cell_type(const LCC_3& lcc, Dart_const_handle dh){
-  std::vector<Point> P;
-  for(int i=0;i<3;i++){
-    P.push_back(lcc.point(dh));
-    dh = lcc.beta(dh, 0, 1);
-  }
-  Vector_3 c1 = P[1] - P[0];
-  Vector_3 c2 = P[2] - P[0];
-  Vector_3 c3 = P[3] - P[0];
-  double det = CGAL::determinant(c1, c2, c3);
-  if(det == 0) return 0; //degenerate
-  else if(det > 0) return 1; //this is alright
-  else return -1; //flipped
-}
-
 
 void dummy_parametrize(LCC_3& lcc){ /**dummy parametrization function: There is no guarantee that this could give good results, but for the sake of tests this might just work. 
 * Every dart has an info as dart_info structure defined in typedefs.h. This contains information about the tet it belongs to (cell_no), and the parametric coordinates of the point. 
