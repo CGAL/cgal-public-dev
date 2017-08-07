@@ -924,9 +924,11 @@ protected:
       {
         color = f->color();
       }
-
+      QPen oldPen = painter->pen( );
+      oldPen.setCosmetic(true);
       QBrush oldBrush = painter->brush( );
       painter->setBrush( color );
+      painter->setPen(oldPen);
       painter->drawPolygon( pgn );
       painter->setBrush( oldBrush );
     }

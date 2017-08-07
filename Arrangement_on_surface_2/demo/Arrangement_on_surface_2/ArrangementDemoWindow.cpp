@@ -443,6 +443,9 @@ void ArrangementDemoWindow::openArrFile( QString filename )
   CGAL::Object arr = this->arrangements[ index ];
   Seg_arr* seg;
   Pol_arr* pol;
+  Lin_arr* lin;
+  Arc_arr* arc;
+  Alg_seg_arr* alg_seg;
 
 #ifdef CGAL_USE_CORE
   Conic_arr* conic;
@@ -475,7 +478,45 @@ void ArrangementDemoWindow::openArrFile( QString filename )
     TabType* tab = static_cast< TabType* >( this->tabs[ index ] );
     tab->setArrangement( pol );
   }
+  else if ( CGAL::assign( lin, arr ) )
+  {
+    typedef CGAL::Arr_text_formatter< Lin_arr >         Lin_text_formatter;
+    typedef CGAL::Arr_with_history_text_formatter<Lin_text_formatter>
+      ArrFormatter;
+    typedef ArrangementDemoTab< Lin_arr >               TabType;
 
+    ArrFormatter arrFormatter;
+    CGAL::read( *lin, ifs, arrFormatter );
+    this->arrangements[ index ] = CGAL::make_object( lin );
+    TabType* tab = static_cast< TabType* >( this->tabs[ index ] );
+    tab->setArrangement( lin );
+  }
+  else if ( CGAL::assign( arc, arr ) )
+  {
+    typedef CGAL::Arr_text_formatter< Arc_arr >         Arc_text_formatter;
+    typedef CGAL::Arr_with_history_text_formatter<Arc_text_formatter>
+      ArrFormatter;
+    typedef ArrangementDemoTab< Arc_arr >               TabType;
+
+    ArrFormatter arrFormatter;
+    CGAL::read( *arc, ifs, arrFormatter );
+    this->arrangements[ index ] = CGAL::make_object( arc );
+    TabType* tab = static_cast< TabType* >( this->tabs[ index ] );
+    tab->setArrangement( arc );
+  }
+  else if ( CGAL::assign( alg_seg, arr ) )
+  {
+    typedef CGAL::Arr_text_formatter< Alg_seg_arr >         Arc_text_formatter;
+    typedef CGAL::Arr_with_history_text_formatter<Arc_text_formatter>
+      ArrFormatter;
+    typedef ArrangementDemoTab< Alg_seg_arr >               TabType;
+
+    ArrFormatter arrFormatter;
+    CGAL::read( *alg_seg, ifs, arrFormatter );
+    this->arrangements[ index ] = CGAL::make_object( alg_seg );
+    TabType* tab = static_cast< TabType* >( this->tabs[ index ] );
+    tab->setArrangement( alg_seg );
+  }
 #ifdef CGAL_USE_CORE
   else if (CGAL::assign(conic, arr)) {
 #if 0
@@ -811,6 +852,9 @@ void ArrangementDemoWindow::on_actionSaveAs_triggered( )
   CGAL::Object arr = this->arrangements[ index ];
   Seg_arr* seg;
   Pol_arr* pol;
+  Lin_arr* lin;
+  Arc_arr* arc;
+  Alg_seg_arr* alg_seg;
 
 #ifdef CGAL_USE_CORE
   Conic_arr* conic;
@@ -832,7 +876,38 @@ void ArrangementDemoWindow::on_actionSaveAs_triggered( )
     ArrFormatter                                        arrFormatter;
     CGAL::write( *pol, ofs, arrFormatter );
   }
-
+  else if ( CGAL::assign( lin, arr ) )
+  {
+    typedef CGAL::Arr_text_formatter<Lin_arr>           Lin_text_formatter;
+    typedef CGAL::Arr_with_history_text_formatter<Lin_text_formatter>
+      ArrFormatter;
+    ArrFormatter                                        arrFormatter;
+    CGAL::write( *lin, ofs, arrFormatter );
+  }  
+  else if ( CGAL::assign( arc, arr ) )
+  {
+    typedef CGAL::Arr_text_formatter<Arc_arr>           Arc_text_formatter;
+    typedef CGAL::Arr_with_history_text_formatter<Arc_text_formatter>
+      ArrFormatter;
+    ArrFormatter                                        arrFormatter;
+    CGAL::write( *arc, ofs, arrFormatter );
+  }
+  else if ( CGAL::assign( arc, arr ) )
+  {
+    typedef CGAL::Arr_text_formatter<Arc_arr>           Arc_text_formatter;
+    typedef CGAL::Arr_with_history_text_formatter<Arc_text_formatter>
+      ArrFormatter;
+    ArrFormatter                                        arrFormatter;
+    CGAL::write( *arc, ofs, arrFormatter );
+  }
+  else if ( CGAL::assign( alg_seg, arr ) )
+  {
+    typedef CGAL::Arr_text_formatter<Alg_seg_arr>           Arc_text_formatter;
+    typedef CGAL::Arr_with_history_text_formatter<Arc_text_formatter>
+      ArrFormatter;
+    ArrFormatter                                        arrFormatter;
+    CGAL::write( *alg_seg, ofs, arrFormatter );
+  }
 #ifdef CGAL_USE_CORE
   else if (CGAL::assign(conic, arr)) {
 #if 0
@@ -900,7 +975,7 @@ void ArrangementDemoWindow::on_actionOpen_triggered( )
   }
   QString filename =
     QFileDialog::getOpenFileName( this, tr( "Open file" ),
-                                  "", "Arrangement files (*.arr *.dat);;All files (*.*)" );
+                                  "", "Arrangement files (*.arr)");
   if ( filename.isNull( ) )
   {
     return;
@@ -922,6 +997,7 @@ void ArrangementDemoWindow::on_actionOpen_triggered( )
   QGraphicsView* view = currentTab->getView( );
   // std::cout << bb.left( ) << " " << bb.bottom( ) << ", " << bb.right( )
   //           << " " << bb.top( ) << std::endl;
+#if 0
   if ( boost::math::isinf(bb.left( )) ||
        boost::math::isinf(bb.right( )) ||
        boost::math::isinf(bb.top( )) ||
@@ -936,9 +1012,28 @@ void ArrangementDemoWindow::on_actionOpen_triggered( )
     view->fitInView( bb, ::Qt::KeepAspectRatio );
     view->setSceneRect( bb );
   }
+#endif
+  double viewWidth = 0.0001;
+  double viewHeight = 0.0001;
+
+  // this->scene->setSceneRect(-viewWidth/2, -viewHeight/2, viewWidth, viewHeight);
+  view->setSceneRect(0, 0, viewWidth, viewHeight);
 #if 0
   view->centerOn( bb.center( ) );
 #endif
+
+  QVector<QGraphicsItem *> items = view->scene()->items().toVector();
+  QGraphicsLineItem line;
+  for (int i = 0; i < items.size(); i++)
+  {
+    if (items[i] && items[i]->type() == line.type())
+    {
+      QGraphicsLineItem *lineItem = (QGraphicsLineItem *)items[i];
+      QPen pen = lineItem->pen();
+      pen.setCosmetic(true);
+      lineItem->setPen(pen);
+    }
+  }
 }
 
 void ArrangementDemoWindow::on_actionQuit_triggered( )
