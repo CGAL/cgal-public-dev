@@ -477,6 +477,7 @@ void ArrangementDemoWindow::openArrFile( QString filename )
     this->arrangements[ index ] = CGAL::make_object( pol );
     TabType* tab = static_cast< TabType* >( this->tabs[ index ] );
     tab->setArrangement( pol );
+
   }
   else if ( CGAL::assign( lin, arr ) )
   {

@@ -1780,6 +1780,16 @@ paintFace( Face_handle f, QPainter* painter,
     {
       std::cout<<"In paintFace Arr_segment_traits_2 bounded, f->color() is Valid\n";
       color = f->color();
+
+      if ( color == ::Qt::white )
+      {
+        std::cout<<"In paintFace Arr_segment_traits_2 bounded, f->color() is white\n";
+      }
+
+      if ( color == ::Qt::black )
+      {
+        std::cout<<"In paintFace Arr_segment_traits_2 bounded, f->color() is black\n";
+      }
     }
 
     QBrush oldBrush = painter->brush( );
