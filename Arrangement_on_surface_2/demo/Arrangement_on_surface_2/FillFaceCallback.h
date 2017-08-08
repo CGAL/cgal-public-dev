@@ -131,6 +131,10 @@ void FillFaceCallback<Arr_>::mousePressEvent(QGraphicsSceneMouseEvent* event)
 {
   this->fillFace( event );
   Q_EMIT modelChanged( );
+
+  QGraphicsView* view = this->scene->views( ).first( );
+  view->scale(1.01, 1.01);
+  view->scale(1/1.01, 1/1.01);
 }
 
 template < class Arr_ >

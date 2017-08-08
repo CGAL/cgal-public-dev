@@ -119,6 +119,7 @@ public: // methods
 public Q_SLOTS:
   void modelChanged( )
   {
+    std::cout<<"In CurveGraphicsItem modelChanged\n";
     if ( this->curves.size( ) == 0 )
     {
       this->hide( );
@@ -128,6 +129,7 @@ public Q_SLOTS:
       this->show( );
     }
     this->updateBoundingBox( );
+    std::cout<<"In CurveGraphicsItem modelChanged after updateBoundingBox\n";
     this->update( );
   }
 

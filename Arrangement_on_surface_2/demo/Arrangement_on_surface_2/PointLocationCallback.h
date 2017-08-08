@@ -144,6 +144,10 @@ PointLocationCallback< Arr_ >::
 mousePressEvent( QGraphicsSceneMouseEvent* event )
 {
   this->highlightPointLocation( event );
+  
+  QGraphicsView* view = this->scene->views( ).first( );
+  view->scale(1.01, 1.01);
+  view->scale(1/1.01, 1/1.01);
 }
 
 template < typename Arr_ >

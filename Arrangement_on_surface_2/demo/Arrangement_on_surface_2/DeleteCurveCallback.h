@@ -142,6 +142,10 @@ DeleteCurveCallback<Arr_>::mousePressEvent(QGraphicsSceneMouseEvent* /* event */
   }
 
   this->reset( );
+
+  QGraphicsView* view = this->scene->views( ).first( );
+  view->scale(1.01, 1.01);
+  view->scale(1/1.01, 1/1.01);
 }
 
 template < typename Arr_ >
