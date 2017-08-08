@@ -30,17 +30,8 @@ bool does_intersect(Tetrahedron_3 tet, Point_3 p){/**
 * If p does not lie on the unbounded side of the tet, this function checks if a prospective unit volume cube in the positive x, y and z directions, with origin at p, would intersect the given tet. 
 * If it lies on the unbounded side, we don't consider the volumes tobe intersecting: so the function returns false. 
 */
-/*if(tet.is_degenerate()||tet.has_on_bounded_side(p)){if(DEBUG) std::cout<<"Doesn't intersect"<<std::endl; return false;}
-  else if(tet.has_on_unbounded_side(p)){if(DEBUG) std::cout<<"Does intersect"<<std::endl; return true;}
-  if(DEBUG) std::cout<<"Boundary point"<<std::endl;
-  return(tet.has_on_unbounded_side(p+Vector_3(1,0,0))||tet.has_on_unbounded_side(p+Vector_3(0,1,0))||tet.has_on_unbounded_side(p+Vector_3(0,0,1))||tet.has_on_unbounded_side(p+Vector_3(1,1,0))||tet.has_on_unbounded_side(p+Vector_3(1,0,1))||tet.has_on_unbounded_side(p+Vector_3(0,1,1))||tet.has_on_unbounded_side(p+Vector_3(1,1,1)));*/
-
-  if(tet.is_degenerate()||tet.has_on_unbounded_side(p)){//if(DEBUG) std::cout<<"Doesn't intersect"<<std::endl; 
-return false;}
-  else// if(tet.has_on_bounded_side(p)){//if(DEBUG) std::cout<<"Does intersect"<<std::endl;
-return true;// }
- // if(DEBUG) std::cout<<"Boundary point"<<std::endl;
-/*  return(tet.has_on_bounded_side(p+Vector_3(1,0,0))||tet.has_on_bounded_side(p+Vector_3(0,1,0))||tet.has_on_bounded_side(p+Vector_3(0,0,1))||tet.has_on_bounded_side(p+Vector_3(1,1,0))||tet.has_on_bounded_side(p+Vector_3(1,0,1))||tet.has_on_bounded_side(p+Vector_3(0,1,1))||tet.has_on_bounded_side(p+Vector_3(1,1,1)));*/
+  if(tet.is_degenerate()||tet.has_on_unbounded_side(p)) return false;
+  else return true;
 }
 
 
@@ -48,14 +39,13 @@ int calculate_cell_type(LCC_3& lcc, Dart_handle dh){
   std::vector<Point> P;
   for(LCC_3::One_dart_per_incident_cell_range<0,3>::iterator it = lcc.one_dart_per_incident_cell<0,3>(dh).begin(), itend = lcc.one_dart_per_incident_cell<0,3>(dh).end(); it != itend; it++){
     P.push_back(lcc.point(it));
-    //dh = lcc.beta(dh, 0, 1);
   }
   Vector_3 c1 = P[1] - P[0];
   Vector_3 c2 = P[2] - P[0];
   Vector_3 c3 = P[3] - P[0];
   double det = CGAL::determinant(c1, c2, c3);
   if(det == 0) return 0; //degenerate
-  else if(det > 0) return 1; //this is alright
+  else if(det > 0) return 1; //proper
   else return -1; //flipped
 }
 
@@ -77,25 +67,17 @@ void extract_hexes(LCC_3& input_tet_mesh, LCC_3& output_mesh, std::vector<Aff_tr
     double minx = std::numeric_limits<double>::max(), miny = std::numeric_limits<double>::max(), minz = std::numeric_limits<double>::max(); 
     double maxx = std::numeric_limits<double>::min(), maxy = std::numeric_limits<double>::min(), maxz = std::numeric_limits<double>::min();
     std::vector<Point_3> params;
-   /* Dart_handle temp = it;
-    Point_3 param = (input_tet_mesh.info(temp)).parameters; params.push_back(param);
-    //if(DEBUG) std::cout<<minx<<" "<<maxx<<std::endl;
-//using beta pointers to find the vertices of a tet instead of LCC::One_dart_per_unit_cell_range::one_dart_per_incident_cell() because it took significantly less time to compute this way.
-    temp = input_tet_mesh.beta(it,0); 
-    param = (input_tet_mesh.info(temp)).parameters; params.push_back(param);
-    temp = input_tet_mesh.beta(it, 0, 1, 0);
-    param = (input_tet_mesh.info(temp)).parameters; params.push_back(param);
-    temp = input_tet_mesh.beta(it, 2, 0, 1, 0);
-    param = (input_tet_mesh.info(temp)).parameters; params.push_back(param);*/
 int i = 0;
 for(LCC_3::One_dart_per_incident_cell_range<0,3>::iterator it1 = input_tet_mesh.one_dart_per_incident_cell<0,3>(it).begin(), it1end = input_tet_mesh.one_dart_per_incident_cell<0,3>(it).end(); it1 != it1end; it1++){
   Point param = (input_tet_mesh.info(it1)).parameters; params.push_back(param); i++;
 }
-//std::cout<<i<<std::endl;
+
     int orientation = calculate_cell_type(input_tet_mesh, it); 
+
 //making a tetrahedron in the parametrized space
     Tetrahedron_3 tet(params[0], params[1], params[2], params[3]); 
-    //bounding box of the tetrahedron to find the minimum and maximum of x, y, z coordinates
+
+//bounding box of the tetrahedron to find the minimum and maximum of x, y, z coordinates
     Bbox_3 box = tet.bbox(); 
     minx = round(box.xmin());
     maxx = round(box.xmax());
@@ -103,7 +85,7 @@ for(LCC_3::One_dart_per_incident_cell_range<0,3>::iterator it1 = input_tet_mesh.
     maxy = round(box.ymax());
     minz = round(box.zmin());
     maxz = round(box.zmax());
-    //if(DEBUG) std::cout<<minx<<" "<<maxx<<std::endl;
+
 // inverse parametrization of the given tet
     Aff_transformation at_inv = (parametrization_matrices[(input_tet_mesh.info(it)).cell_no]).inverse(); 
 
@@ -229,69 +211,13 @@ for(LCC_3::One_dart_per_incident_cell_range<0,3>::iterator it1 = input_tet_mesh.
             else{
               p7 = output_points[p]; 
             }
-
-
-     /*       if(tet.has_on_unbounded_side(p1)){
-              Aff_transformation *at_new = find_tet_parametrization(input_tet_mesh, p1, parametrization_matrices);
-              if(at_new == nullptr) p1 = p1.transform(at_inv);
-              else p1 = p1.transform((*at_new).inverse());
-            } 
-            else p1 = p1.transform(at_inv);
-
-            Point p2(param[0]+1, param[1]+1, param[2]); 
-            if(tet.has_on_unbounded_side(p2)){
-              Aff_transformation *at_new = find_tet_parametrization(input_tet_mesh, p2, parametrization_matrices);
-              if(at_new == nullptr) p2 = p2.transform(at_inv);
-              else p2 = p2.transform((*at_new).inverse());
-            } 
-            else p2 = p2.transform(at_inv);//if(!tet.has_on_unbounded_side(p2)) p2 = p2.transform(at_inv);
-
-            Point p3(param[0], param[1]+1, param[2]); 
-            if(tet.has_on_unbounded_side(p3)){
-              Aff_transformation *at_new = find_tet_parametrization(input_tet_mesh, p3, parametrization_matrices);
-              if(at_new == nullptr) p3 = p3.transform(at_inv);
-              else p3 = p3.transform((*at_new).inverse());
-            } 
-            else p3 = p3.transform(at_inv);
-
-            Point p4(param[0], param[1]+1, param[2]+1); 
-            if(tet.has_on_unbounded_side(p4)){
-              Aff_transformation *at_new = find_tet_parametrization(input_tet_mesh, p4, parametrization_matrices);
-              if(at_new == nullptr) p4 = p4.transform(at_inv);
-              else p4 = p4.transform((*at_new).inverse());
-            } 
-            else p4 = p4.transform(at_inv);
-
-            Point p5(param[0], param[1], param[2]+1);
-            if(tet.has_on_unbounded_side(p5)){
-              Aff_transformation *at_new = find_tet_parametrization(input_tet_mesh, p5, parametrization_matrices);
-              if(at_new == nullptr) p5 = p5.transform(at_inv);
-              else p5 = p5.transform((*at_new).inverse());
-            } 
-            else p5 = p5.transform(at_inv);
-
-            Point p6(param[0]+1, param[1], param[2]+1);
-            if(tet.has_on_unbounded_side(p6)){
-              Aff_transformation *at_new = find_tet_parametrization(input_tet_mesh, p6, parametrization_matrices);
-              if(at_new == nullptr) p6 = p6.transform(at_inv);
-              else p6 = p6.transform((*at_new).inverse());
-            } 
-            else p6 = p6.transform(at_inv);
-
-            Point p7(param[0]+1, param[1]+1, param[2]+1);
-            if(tet.has_on_unbounded_side(p7)){
-              Aff_transformation *at_new = find_tet_parametrization(input_tet_mesh, p7, parametrization_matrices);
-              if(at_new == nullptr) p7 = p7.transform(at_inv);
-              else p7 = p7.transform((*at_new).inverse());
-            } 
-            else p7 = p7.transform(at_inv);
-*/
-
-
-           if(hex_handles.find(p0) == hex_handles.end()){ 
+ 
+            if(hex_handles.find(p0) == hex_handles.end()){ 
 //Dart_handle dh = output_mesh.make_hexahedron(p0, p1, p2, p3, p4, p5, p6, p7);
 Dart_handle dh = output_mesh.make_hexahedron(p0, p3, p2, p1, p6, p5, p4, p7);
-//(output_mesh.info(dh)).flipped = (orientation == -1)? true : false;
+for(LCC_3::Dart_of_cell_range<3>::iterator it5 = output_mesh.darts_of_cell<3>(dh).begin(), it5end = output_mesh.darts_of_cell<3>(dh).end(); it5 != it5end; it5++){
+  (output_mesh.info(it5)).flipped = (orientation == -1)? true : false;
+}
 hex_handles.emplace(std::make_pair(p0, dh));
 if(DEBUG) std::cout<<"made hexahedron"<<std::endl;
 }
@@ -308,6 +234,7 @@ if(DEBUG) std::cout<<"made hexahedron"<<std::endl;
   of.open("output.off");
   CGAL::write_off(output_mesh, of); 
   of.close();
+
 //display the characteristics of the output LCC.
   std::cout<<"***Output mesh***"<<std::endl; output_mesh.display_characteristics(std::cout); std::cout<<std::endl;
 

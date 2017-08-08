@@ -23,7 +23,7 @@
 class HexExtr{
   public:
   
-// Currently,meshing commands are executed when the constructor is called. This will be changes later to incorporate the fucntions as methos of this class.
+// Currently, meshing commands are executed when the constructor is called. This will be changes later to incorporate the fucntions as methos of this class.
     HexExtr(std::string infilename): identity(1,0,0,0,1,0,0,0,1,1){
 //input_tet_mesh to lcc
      load_off_to_LCC(infilename, input_tet_mesh);
@@ -34,7 +34,7 @@ if(DEBUG)std::cout<<"beginning"<<std::endl;
   in.open("triangulation");
   if (in.is_open())
   {  //CGAL::write_off(input_tet_mesh, in);
-    in>>input_tet_mesh; //doesn't work: segfault - figure out why
+    in>>input_tet_mesh;
     in.close();
   }
  if(DEBUG)std::cout<<"loaded to lcc"<<std::endl;
@@ -191,8 +191,8 @@ if(DEBUG)std::cout<<"after sanitize"<<std::endl;
      extract_hexes(input_tet_mesh, output_mesh, parametrization_matrices, hex_handles, output_points);
      if(DEBUG)std::cout<<"after extracting hexes"<<std::endl;
 
-     //extract_connections(output_mesh, hex_handles, output_points);
-     output_mesh.sew3_same_facets();
+     extract_connections(output_mesh, hex_handles, output_points);
+     //output_mesh.sew3_same_facets();
      std::ofstream of;
      of.open("final_output.off");
      CGAL::write_off(output_mesh, of); 
@@ -201,8 +201,10 @@ if(DEBUG)std::cout<<"after sanitize"<<std::endl;
      else std::cout<<"invalid!"<<std::endl;
      std::cout<<"*****FINAL OUTPUT MESH*****"<<std::endl;
      output_mesh.display_characteristics(std::cout); std::cout<<std::endl;
-     std::cout<<output_points.size()<<std::endl;
-     if(post_processing_req(output_mesh, input_tet_mesh)){}
+     //std::cout<<output_points.size()<<std::endl;
+     if(post_processing_req(output_mesh, input_tet_mesh)){
+       post_processing(output_mesh, output_points);
+     }
      else std::cout<<"Done"<<std::endl; //final mesh done
 
     }
