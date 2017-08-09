@@ -42,11 +42,13 @@
 #endif
 #include <math.h>
 #include "ui_ArrangementDemoWindow.h"
+#include "ArrangementDemoGraphicsView.h"
 
 class QGraphicsScene;
 class QApplication;
 
 extern Ui::ArrangementDemoWindow* getCurrentDemoWindowUi();
+extern ArrangementDemoGraphicsView* getCurrentView();
 
 namespace CGAL {
 namespace Qt {
@@ -69,6 +71,7 @@ public:
     this->verticesPen.setCosmetic( true );
     this->verticesPen.setCapStyle( ::Qt::SquareCap );
     this->edgesPen.setCosmetic( true );
+    this->firstEntry = true;
   }
 
   const QPen& getVerticesPen( ) const
@@ -170,6 +173,7 @@ protected:
 
   QColor backgroundColor;
   double scalingFactor;
+  bool firstEntry;
 
 }; // class ArrangementGraphicsItemBase
 
@@ -1238,6 +1242,27 @@ paint(QPainter* painter, TTraits /* traits */)
     std::cout<<bbox.xmin()<<", "<<bbox.xmax()<<", "<<bbox.ymin()<<", "<<bbox.ymax()<<std::endl;
     this->painterostream << curve;
   }
+
+  if ( this->firstEntry )
+  {
+    this->firstEntry = false;
+    QEvent *keyEvent = new QKeyEvent(QEvent::KeyPress, ::Qt::Key_Left, ::Qt::NoModifier);
+    QCoreApplication::postEvent(getCurrentView(), 
+      keyEvent);
+    std::cout<<"After sending left event\n";
+
+    keyEvent = new QKeyEvent(QEvent::KeyPress, ::Qt::Key_Right, ::Qt::NoModifier);
+    QCoreApplication::postEvent(getCurrentView(), keyEvent);
+    std::cout<<"After sending right event\n";
+
+    keyEvent = new QKeyEvent(QEvent::KeyPress, ::Qt::Key_Up, ::Qt::NoModifier);
+    QCoreApplication::postEvent(getCurrentView(), keyEvent);
+    std::cout<<"After sending up event\n";
+
+    keyEvent = new QKeyEvent(QEvent::KeyPress, ::Qt::Key_Down, ::Qt::NoModifier);
+    QCoreApplication::postEvent(getCurrentView(), keyEvent);
+    std::cout<<"After sending down event\n";
+  }
 }
 
 template < typename Arr_, typename ArrTraits >
@@ -1271,6 +1296,27 @@ paint(QPainter* painter,
   {
     X_monotone_curve_2 curve = it->curve( );
     this->painterostream << curve;
+  }
+
+  if ( this->firstEntry )
+  {
+    this->firstEntry = false;
+    QEvent *keyEvent = new QKeyEvent(QEvent::KeyPress, ::Qt::Key_Left, ::Qt::NoModifier);
+    QCoreApplication::postEvent(getCurrentView(), 
+      keyEvent);
+    std::cout<<"After sending left event\n";
+
+    keyEvent = new QKeyEvent(QEvent::KeyPress, ::Qt::Key_Right, ::Qt::NoModifier);
+    QCoreApplication::postEvent(getCurrentView(), keyEvent);
+    std::cout<<"After sending right event\n";
+
+    keyEvent = new QKeyEvent(QEvent::KeyPress, ::Qt::Key_Up, ::Qt::NoModifier);
+    QCoreApplication::postEvent(getCurrentView(), keyEvent);
+    std::cout<<"After sending up event\n";
+
+    keyEvent = new QKeyEvent(QEvent::KeyPress, ::Qt::Key_Down, ::Qt::NoModifier);
+    QCoreApplication::postEvent(getCurrentView(), keyEvent);
+    std::cout<<"After sending down event\n";
   }
 }
 
@@ -1359,6 +1405,27 @@ paint(QPainter* painter,
     X_monotone_curve_2 curve = it->curve( );
     this->painterostream << curve;
   }
+
+  if ( this->firstEntry )
+  {
+    this->firstEntry = false;
+    QEvent *keyEvent = new QKeyEvent(QEvent::KeyPress, ::Qt::Key_Left, ::Qt::NoModifier);
+    QCoreApplication::postEvent(getCurrentView(), 
+      keyEvent);
+    std::cout<<"After sending left event\n";
+
+    keyEvent = new QKeyEvent(QEvent::KeyPress, ::Qt::Key_Right, ::Qt::NoModifier);
+    QCoreApplication::postEvent(getCurrentView(), keyEvent);
+    std::cout<<"After sending right event\n";
+
+    keyEvent = new QKeyEvent(QEvent::KeyPress, ::Qt::Key_Up, ::Qt::NoModifier);
+    QCoreApplication::postEvent(getCurrentView(), keyEvent);
+    std::cout<<"After sending up event\n";
+
+    keyEvent = new QKeyEvent(QEvent::KeyPress, ::Qt::Key_Down, ::Qt::NoModifier);
+    QCoreApplication::postEvent(getCurrentView(), keyEvent);
+    std::cout<<"After sending down event\n";
+  } 
 }
 
 // We let the bounding box only grow, so that when vertices get removed

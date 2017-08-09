@@ -22,6 +22,8 @@
 #include <iostream>
 #include <QVarLengthArray>
 #include <QPen>
+#include <QCoreApplication>
+#include <QKeyEvent>
 
 ArrangementDemoGraphicsView::ArrangementDemoGraphicsView( QWidget* parent ) :
   QGraphicsView( parent ),
@@ -33,6 +35,28 @@ ArrangementDemoGraphicsView::ArrangementDemoGraphicsView( QWidget* parent ) :
   QMatrix m( 1.0, 0.0, 0.0, -1.0, 0.0, 0.0 );
   this->setMatrix( m );
   this->setBackgroundBrush( QBrush( backgroundColor ) );
+}
+
+void ArrangementDemoGraphicsView::keyPressEvent(QKeyEvent* event)
+{
+  std::cout<<"In ArrangementDemoGraphicsView keyPressEvent\n";
+
+  if ( event->key() == ::Qt::Key_Left )
+  {
+    std::cout<<"In ArrangementDemoGraphicsView keyPressEvent Left\n";
+  }
+  if ( event->key() == ::Qt::Key_Right )
+  {
+    std::cout<<"In ArrangementDemoGraphicsView keyPressEvent Right\n";
+  }
+  if ( event->key() == ::Qt::Key_Up )
+  {
+    std::cout<<"In ArrangementDemoGraphicsView keyPressEvent Up\n";
+  }
+  if ( event->key() == ::Qt::Key_Down )
+  {
+    std::cout<<"In ArrangementDemoGraphicsView keyPressEvent Down\n";
+  }
 }
 
 void ArrangementDemoGraphicsView::setShowGrid( bool b )

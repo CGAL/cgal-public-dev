@@ -46,6 +46,11 @@ Ui::ArrangementDemoWindow* getCurrentDemoWindowUi()
   return ArrangementDemoWindow::getInstance()->getUi();
 }
 
+ArrangementDemoGraphicsView* getCurrentView()
+{
+  return ArrangementDemoWindow::getInstance()->getCurrentTab()->getView();
+}
+
 ArrangementDemoWindow::ArrangementDemoWindow(QWidget* parent) :
   CGAL::Qt::DemosMainWindow( parent ),
   ui( new Ui::ArrangementDemoWindow )
