@@ -39,8 +39,6 @@ public:
 
 
 protected:
-  void keyPressEvent(QKeyEvent *event);
-
   void drawForeground( QPainter* painter, const QRectF& rect );
   QRectF getViewportRect( ) const;
 
