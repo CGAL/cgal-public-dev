@@ -1,0 +1,5 @@
+Level of detail
+
+Dmitry Anisimov, Simon Giraudot, Pierre Alliez, Florent Lafarge
+
+Given an urban data set obtained by one of the availbale acquisition systems such Lidar, MVS, and so on, this package allows the users to reconstruct different levels of detail with respect to the CityGML standard.

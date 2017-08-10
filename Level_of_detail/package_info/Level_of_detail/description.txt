@@ -1,0 +1,3 @@
+Level of detail
+
+This CGAL package implements level of detail type of urban reconstruction for a given urban data set obtained by a given acquisition system.
