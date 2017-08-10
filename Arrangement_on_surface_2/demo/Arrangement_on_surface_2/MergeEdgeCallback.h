@@ -162,11 +162,19 @@ void MergeEdgeCallback<Arr_>::mouseMoveEvent(QGraphicsSceneMouseEvent* event)
   }
   else
   {
+    std::cout<<"In MergeEdgeCallback mouseMoveEvent: else\n";
     Halfedge_handle nextHalfedge = 
       this->getNearestMergeableCurve( this->mergeableHalfedge, event );
-    this->highlightedCurve2->clear( );
-    this->highlightedCurve2->insert( nextHalfedge->curve( ) );
-    Q_EMIT modelChanged( );
+
+    if (nextHalfedge != Halfedge_handle())
+    {
+      std::cout<<"In MergeEdgeCallback mouseMoveEvent: after getNearestMergeableCurve\n";
+      this->highlightedCurve2->clear( );
+
+      std::cout<<"In MergeEdgeCallback mouseMoveEvent: before insert\n";
+      this->highlightedCurve2->insert( nextHalfedge->curve( ) );
+      Q_EMIT modelChanged( );
+    } 
   }
 }
 
@@ -230,30 +238,55 @@ getNearestMergeableCurve( Halfedge_handle h, QGraphicsSceneMouseEvent* event )
 {
   // find the nearest curve to the cursor that is adjacent to a curve that
   // can be merged with it
+  std::cout<<"In getNearestMergeableCurve two\n";
   Kernel_point_2 p = this->convert( event->scenePos( ) );
   Halfedge_handle h1 = h->prev( );
   Halfedge_handle h2 = h->next( );
   Vertex_iterator source = h->source( );
   Vertex_iterator target = h->target( );
+
+  std::cout<<"In getNearestMergeableCurve after src tgt\n";
   if ( source->degree( ) != 2 && target->degree( ) != 2 )
   {
+    std::cout<<"Leaving getNearestMergeableCurve two: case 1\n";
     return Halfedge_handle( );
   }
   else if ( source->degree( ) != 2 )
   {
+    std::cout<<"Leaving getNearestMergeableCurve two: case 2\n";
     return h2;
   }
   else if ( target->degree( ) != 2 )
   {
+    std::cout<<"Leaving getNearestMergeableCurve two: case 3\n";
     return h1;
   }
-  else
+  else if (this->arr->are_mergeable(h, h1)
+      && this->arr->are_mergeable(h, h2))
   {
+    std::cout<<"In getNearestMergeableCurve two: case 4\n";
     X_monotone_curve_2 c1 = h1->curve( );
     X_monotone_curve_2 c2 = h2->curve( );
     double d1 = CGAL::to_double( this->squaredDistance( p, c1 ) );
     double d2 = CGAL::to_double( this->squaredDistance( p, c2 ) );
+
+    std::cout<<"Leaving getNearestMergeableCurve two: case 5\n";
     return ( d1 < d2 ) ? h1 : h2;
+  }
+  else if (this->arr->are_mergeable(h, h2))
+  {
+    std::cout<<"Leaving getNearestMergeableCurve two: case 6\n";
+    return h2;
+  }
+  else if (this->arr->are_mergeable(h, h1))
+  {
+    std::cout<<"Leaving getNearestMergeableCurve two: case 7\n";
+    return h1;
+  }
+  else
+  {
+    std::cout<<"Leaving getNearestMergeableCurve two: case 8\n";
+    return Halfedge_handle();
   }
 }
 #endif // MERGE_EDGE_CALLBACK_H
