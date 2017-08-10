@@ -835,41 +835,45 @@ protected:
         continue;
       }
 
-      const Coord_vec_2& vec = points.front();
-      QPointF first = view->mapToScene( QPoint(vec[0].first, height-vec[0].second) );
-      std::cout<<" First point in the vec: ";
-      std::cout<<first.x() << "\t" << first.y()<< std::endl;
-
-      QPointF last = view->mapToScene( QPoint(vec[vec.size()-1].first, height-vec[vec.size()-1].second) );
-      std::cout<<" Last point in the vec: ";
-      std::cout<<last.x() << "\t" << last.y()<< std::endl;
-
-      typename Coord_vec_2::const_iterator vit = vec.begin();
-
       QVector< QPointF > face_curve_points;
-      
-      double sceneRectWidth = this->scene->width();
-      double sceneRectHeight = this->scene->height();
-
-      while ( vit != vec.end() )
+      typename std::list<Coord_vec_2>::const_iterator lit = points.begin();
+      while(lit != points.end()) 
       {
-        QPoint coord( vit->first + sceneRectWidth/2, height - vit->second -sceneRectHeight/2);
-        QPointF qpt = view->mapToScene( coord );
-        if ( src_x < tgt_x )
-        {
-          face_curve_points.push_back( qpt );
-        }
-        else
-        {
-          face_curve_points.push_front( qpt );
-        }
+        const Coord_vec_2& vec = *lit;
+        QPointF first = view->mapToScene( QPoint(vec[0].first, height-vec[0].second) );
+        std::cout<<" First point in the vec: ";
+        std::cout<<first.x() << "\t" << first.y()<< std::endl;
 
-        vit++;
-        // std::cout << qpt.x() << "\t" << qpt.y() << std::endl;
+        QPointF last = view->mapToScene( QPoint(vec[vec.size()-1].first, height-vec[vec.size()-1].second) );
+        std::cout<<" Last point in the vec: ";
+        std::cout<<last.x() << "\t" << last.y()<< std::endl;
+
+        typename Coord_vec_2::const_iterator vit = vec.begin();
+        
+        double sceneRectWidth = this->scene->width();
+        double sceneRectHeight = this->scene->height();
+
+        while ( vit != vec.end() )
+        {
+          QPoint coord( vit->first + sceneRectWidth/2, height - vit->second -sceneRectHeight/2);
+          QPointF qpt = view->mapToScene( coord );
+          if ( src_x < tgt_x )
+          {
+            face_curve_points.push_back( qpt );
+          }
+          else
+          {
+            face_curve_points.push_front( qpt );
+          }
+
+          vit++;
+          // std::cout << qpt.x() << "\t" << qpt.y() << std::endl;
+        }
+        lit++;
       }
-      
       pts += face_curve_points;
       points.clear();
+      face_curve_points.clear();
       //created from the outer boundary of the face
     } while (++cc != f->outer_ccb());
 

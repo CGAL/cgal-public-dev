@@ -463,7 +463,7 @@ operator<<( const X_monotone_curve_2& curve )
       QPointF qpt = view->mapToScene( coord );
       std::cout<<" First point in the vec: ";
       std::cout<<qpt.x() << "\t" << qpt.y()<< std::endl;
-      std::cout<<" Last point in the vec: ";
+
       QPoint last_coord( vec[vec.size()-1].first, height - vec[vec.size()-1].second );
       QPointF last = view->mapToScene( last_coord );
       std::cout<<" Last point in the vec: ";
