@@ -136,6 +136,10 @@ reset( )
 {
   this->highlightedCurves->clear( );
   Q_EMIT modelChanged( );
+
+  QGraphicsView* view = this->scene->views( ).first( );
+  view->scale(1.01, 1.01);
+  view->scale(1/1.01, 1/1.01);
 }
 
 template < typename Arr_ >
