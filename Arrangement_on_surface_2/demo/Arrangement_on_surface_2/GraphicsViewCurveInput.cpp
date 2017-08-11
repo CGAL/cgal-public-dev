@@ -18,6 +18,7 @@
 // Author(s)     : Alex Tsui <alextsui05@gmail.com>
 
 #include "GraphicsViewCurveInput.h"
+#include "AlgebraicCurveExpressionParser.h"
 
 #include <QGraphicsView>
 
@@ -39,7 +40,10 @@ addNewAlgebraicCurve(const std::string& poly_expr_)
 
   try {
 
-    parser.extract_poly_terms(terms);
+    if (!parser.extract_poly_terms(terms))
+    {
+      throw std::invalid_argument("Invalid Expression");
+    }
 
   } catch (std::invalid_argument) {
 

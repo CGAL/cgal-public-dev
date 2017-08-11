@@ -39,7 +39,6 @@
 #include "Callback.h"
 #include "ISnappable.h"
 #include "PointsGraphicsItem.h"
-#include "AlgebraicCurveExpressionParser.h"
 #include "AlgebraicCurveInputDialog.h"
 
 namespace CGAL {

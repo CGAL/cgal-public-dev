@@ -121,22 +121,66 @@ void AlgebraicCurveExpressionParser::extract_poly_components(std::string& poly_e
     extract_poly_exponents(sub_poly_expr, term);
 }
 
-void AlgebraicCurveExpressionParser::extract_poly_terms(std::vector<struct term>& poly_terms)
+bool AlgebraicCurveExpressionParser::extract_poly_terms(std::vector<struct term>& poly_terms)
 {
-    pre_hanlde_poly_expr(this->poly_expr);
-    
-    boost::char_separator<char> sep(",");
-    boost::tokenizer< boost::char_separator<char> > tokens(this->poly_expr, sep);
-    BOOST_FOREACH (const std::string& str, tokens) {
-        std::string output = str;
-        
-        // Remove all white spaces
-        output.erase(remove_if(output.begin(), output.end(), isspace), output.end());
-        struct term term;
-        
-        extract_poly_components(output, term);
-        print_poly_term(term);
-        poly_terms.push_back(term);
-
+    // Remove all white spaces
+    this->poly_expr.erase(remove_if(this->poly_expr.begin(), this->poly_expr.end(), isspace), this->poly_expr.end());
+    if (this->poly_expr.size() == 0)
+    {
+        return false;
     }
+    
+    boost::char_separator<char> equal_sign_sep("=");
+    boost::tokenizer< boost::char_separator<char> > equation_sides(this->poly_expr, equal_sign_sep);
+    
+    std::vector<std::vector<struct term>> sides;
+    
+    BOOST_FOREACH (const std::string& str, equation_sides) {
+
+        std::string equation_side = str;
+        pre_hanlde_poly_expr(equation_side);
+        
+        boost::char_separator<char> sep(",");
+        boost::tokenizer< boost::char_separator<char> > tokens(equation_side, sep);
+        
+        std::vector<struct term> terms_temp;
+        
+        BOOST_FOREACH (const std::string& str, tokens) {
+            std::string output = str;
+            
+            struct term term;
+            
+            extract_poly_components(output, term);
+            terms_temp.push_back(term);
+        }
+        
+        sides.push_back(terms_temp);
+    }
+    
+    if (sides.size() > 2)
+    {
+        return false;
+    }
+
+    std::vector<struct term> left_side = sides[0];
+    std::vector<struct term> right_side;
+    if (sides.size() == 2)
+    {
+        right_side = sides[1];
+    }
+    
+    for(int i=0; i<left_side.size(); i++)
+    {
+        print_poly_term(left_side[i]);
+        poly_terms.push_back(left_side[i]);
+    }
+    
+    for(int i=0; i<right_side.size(); i++)
+    {
+        right_side[i].coefficient = -right_side[i].coefficient;
+        print_poly_term(right_side[i]);
+        poly_terms.push_back(right_side[i]);
+    }
+    
+    return true;
 }

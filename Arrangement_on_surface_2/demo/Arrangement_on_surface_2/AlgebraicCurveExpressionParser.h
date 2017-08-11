@@ -36,7 +36,7 @@ class AlgebraicCurveExpressionParser
 public:
     AlgebraicCurveExpressionParser(std::string& poly_expr);
 
-    void extract_poly_terms(std::vector<struct term>& poly_terms);
+    bool extract_poly_terms(std::vector<struct term>& poly_terms);
     
 private:
     void pre_hanlde_poly_expr( std::string& str );
