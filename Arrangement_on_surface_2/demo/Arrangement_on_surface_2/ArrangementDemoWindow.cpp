@@ -278,7 +278,11 @@ void ArrangementDemoWindow::updateMode( QAction* newMode )
   }
   else if ( newMode == this->ui->actionDelete )
   {
-    activeScene->installEventFilter( activeTab->getDeleteCurveCallback( ) );
+    std::cout<<"In updateMode actionDelete\n";
+    CGAL::Qt::Callback* deleteCurveCallback = activeTab->getDeleteCurveCallback();
+    activeScene->installEventFilter( deleteCurveCallback );
+    deleteCurveCallback->changeDeleteMode();
+    this->ui->actionDelete->setToolTip(QString::fromStdString(deleteCurveCallback->toString()));
   }
   else if ( newMode == this->ui->actionPointLocation )
   {
@@ -327,7 +331,15 @@ void ArrangementDemoWindow::resetCallbackState( unsigned int tabIndex )
   {  }
   else if ( activeMode == this->ui->actionDelete )
   {
-    activeTab->getDeleteCurveCallback( )->reset( );
+    if (this->modeGroup->checkedAction( ) == this->ui->actionDelete)
+    {
+      activeTab->getDeleteCurveCallback()->partialReset();
+    }
+    else
+    {
+      activeTab->getDeleteCurveCallback( )->reset( );
+      this->ui->actionDelete->setToolTip("Delete");
+    }
   }
   else if ( activeMode == this->ui->actionPointLocation )
   {
