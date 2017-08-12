@@ -2,13 +2,8 @@
 
 bool are_quads(LCC_3& lcc){ //are all faces quads?
   for(LCC_3::One_dart_per_cell_range<2>::iterator it = lcc.one_dart_per_cell<2>().begin(), itend = lcc.one_dart_per_cell<2>().end(); it!=itend; it++){
-    /*int i = 0;
-    for(LCC_3::Dart_of_cell_range<2>::iterator it1 = lcc.darts_of_cell<2>(it).begin(), it1end = lcc.darts_of_cell<2>(it).end(), it1 != it1end; it1++){
-      i++;
-    }*/
-    int i = lcc.one_dart_per_incident_cell<0,2>(it).size();
-//std::cout<<i<<std::endl;
-    if(i == 4) continue;
+    int count = lcc.one_dart_per_incident_cell<0,2>(it).size();
+    if(count == 4) continue;
     else return false;
     }
   return true;
@@ -82,7 +77,7 @@ we might not need this since we eliminate degenerate tets in the parametrization
 }
 
 bool post_processing_req(LCC_3& lcc, LCC_3& input_mesh){
- // std::cout<<"Number of flipped cells: "<<flipped_cells(input_mesh)<<std::endl;
+  if(DEBUG) std::cout<<"Number of flipped cells: "<<flipped_cells(input_mesh)<<std::endl;
   return(!(are_quads(lcc)&& are_quad_strips(lcc) && are_hexes(lcc))||flipped_cells(input_mesh)>0);
 }
 

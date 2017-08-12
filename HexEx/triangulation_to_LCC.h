@@ -68,7 +68,7 @@ protected:
 bool load_off_to_LCC(std::string filename, LCC_3& lcc)
 {
   const char* fname = filename.c_str();
-  double fa = 25, fs = 0.15, fd = 0.008, crer = 3; 
+  double fa = 30, fs = 0.15, fd = 0.008, crer = 3; 
 
   // Create input polyhedron
   Polyhedron polyhedron;
@@ -90,7 +90,7 @@ bool load_off_to_LCC(std::string filename, LCC_3& lcc)
   C3t3 c3t3 = CGAL::make_mesh_3<C3t3>(domain, criteria, no_perturb(), no_exude());
 
  // Set tetrahedron size (keep cell_radius_edge_ratio), ignore facets
-  Mesh_criteria new_criteria(crer, cell_size=1.6); //originally cell_size = 0.3
+  Mesh_criteria new_criteria(crer, cell_size=0.3); //originally cell_size = 0.3
 
   // Mesh refinement
   CGAL::refine_mesh_3(c3t3, domain, new_criteria);

@@ -64,9 +64,19 @@ namespace CGAL {
   // </attributes>
 
   // Here T is a Dart_const_handle so we don't need &
-  template<typename T>
-  void write_cmap_dart_node(boost::property_tree::ptree & /*node*/, T)
+ /* template<typename T>
+  void write_cmap_dart_node(boost::property_tree::ptree & /*node*//*, T)
   {}
+*/
+
+ template<typename CMap, typename T>
+  void write_cmap_dart_node(boost::property_tree::ptree & node,CMap& amap, T t)
+  {
+    node.add("v1.x", CGAL::to_double((amap.info(t)).parameters[0]));
+    node.add("v1.y", CGAL::to_double((amap.info(t)).parameters[1]));
+    node.add("v1.z", CGAL::to_double((amap.info(t)).parameters[2]));
+  }
+
 
   template<typename T>
   void write_cmap_attribute_node(boost::property_tree::ptree & /*node*/, const T&)
@@ -333,7 +343,7 @@ namespace CGAL {
 
       // update property node to add a value node (if user defined its own
       // function)
-      write_cmap_dart_node(ndart, it);
+      write_cmap_dart_node(ndart, amap, it);
     }
     
     return pt;
@@ -387,10 +397,15 @@ namespace CGAL {
   }
   
   // Here T is a Dart_handle so no need of &
-  template<typename T>
+  template<typename T, typename CMap>
   void read_cmap_dart_node
-  (const boost::property_tree::ptree::value_type &/*v*/, T /*val*/)
-  {}
+  (const boost::property_tree::ptree::value_type& v, CMap& amap, T& val)
+  {
+    double x=v.second.get<double>("x");
+    double y=v.second.get<double>("y");
+    double z=v.second.get<double>("z");
+    (amap.info(val)).parameters = RPoint_3(x,y,z);
+  }
   template<typename T>
   void read_cmap_attribute_node
   (const boost::property_tree::ptree::value_type &/*v*/, T &/*val*/)
@@ -753,7 +768,7 @@ namespace CGAL {
             }
           }
           else if (v2.first=="v")
-            read_cmap_dart_node(v2,myDarts[currentDartInt]);
+            read_cmap_dart_node(v2,amap,myDarts[currentDartInt]);
         }
       }
       ++currentDartInt;

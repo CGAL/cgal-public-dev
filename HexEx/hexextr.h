@@ -41,8 +41,21 @@ if(DEBUG)std::cout<<"beginning"<<std::endl;
 input_tet_mesh.display_characteristics(std::cout); std::cout<<std::endl;
 
 //a parametrization function to test the extraction:
-      dummy_parametrize(input_tet_mesh); 
+      dummy_parametrize(input_tet_mesh);
+
+std::ofstream out;
+out.open("parametrized");
+out<<input_tet_mesh; 
 if(DEBUG)std::cout<<"parametrized"<<std::endl;
+if(DEBUG)std::cout<<"beginning"<<std::endl;
+  //std::ifstream in;
+  input_tet_mesh.clear();
+  in.open("parametrized");
+  if (in.is_open())
+  {  //CGAL::write_off(input_tet_mesh, in);
+    in>>input_tet_mesh;
+    in.close();
+  }
 //We would like to directly input parametrized meshes: so I am trying to first export LCC with parameters stored in dart_info using << in the lines 44 - 49, then try taking such a file as an input to our method in lines 51-57. If this works, parametrized_LCC file can be directly used to test.
 
 /*std::ofstream of;
