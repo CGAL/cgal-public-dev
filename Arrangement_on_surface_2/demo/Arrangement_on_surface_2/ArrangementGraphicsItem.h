@@ -853,6 +853,7 @@ protected:
         double sceneRectWidth = this->scene->width();
         double sceneRectHeight = this->scene->height();
 
+        bool isPushBack = true;
         while ( vit != vec.end() )
         {
           QPoint coord( vit->first + sceneRectWidth/2, height - vit->second -sceneRectHeight/2);
@@ -860,10 +861,23 @@ protected:
           if ( src_x < tgt_x )
           {
             face_curve_points.push_back( qpt );
+            isPushBack = true;
           }
-          else
+          else if ( src_x > tgt_x )
           {
             face_curve_points.push_front( qpt );
+            isPushBack = false;
+          }
+          else // src_x == tgt_x
+          {
+            if (isPushBack)
+            {
+              face_curve_points.push_back( qpt );
+            }
+            else
+            {
+              face_curve_points.push_front( qpt );
+            }
           }
 
           vit++;

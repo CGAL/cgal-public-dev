@@ -37,6 +37,12 @@ ArrangementDemoGraphicsView::ArrangementDemoGraphicsView( QWidget* parent ) :
   this->setBackgroundBrush( QBrush( backgroundColor ) );
 }
 
+void ArrangementDemoGraphicsView::wheelEvent(QWheelEvent* event)
+{
+  std::cout<<"In ArrangementDemoGraphicsView wheelEvent\n";
+  this->centerOn(0, 0);
+}
+
 void ArrangementDemoGraphicsView::setShowGrid( bool b )
 {
   this->showGrid = b;
