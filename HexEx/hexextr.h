@@ -46,9 +46,11 @@ input_tet_mesh.display_characteristics(std::cout); std::cout<<std::endl;
 std::ofstream out;
 out.open("parametrized");
 out<<input_tet_mesh; 
+out.close();
 if(DEBUG)std::cout<<"parametrized"<<std::endl;
 if(DEBUG)std::cout<<"beginning"<<std::endl;
   //std::ifstream in;
+
   input_tet_mesh.clear();
   in.open("parametrized");
   if (in.is_open())

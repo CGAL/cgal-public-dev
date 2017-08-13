@@ -69,18 +69,22 @@ namespace CGAL {
   {}
 */
 
- template<typename CMap, typename T>
-  void write_cmap_dart_node(boost::property_tree::ptree & node,CMap& amap, T t)
+ template< typename T>
+  void write_cmap_dart_node(boost::property_tree::ptree & node, T& t)
   {
-    node.add("v1.x", CGAL::to_double((amap.info(t)).parameters[0]));
-    node.add("v1.y", CGAL::to_double((amap.info(t)).parameters[1]));
-    node.add("v1.z", CGAL::to_double((amap.info(t)).parameters[2]));
+    node.add("v.x", CGAL::to_double(t.parameters[0]));
+    node.add("v.y", CGAL::to_double(t.parameters[1]));
+    node.add("v.z", CGAL::to_double(t.parameters[2]));
   }
 
 
   template<typename T>
-  void write_cmap_attribute_node(boost::property_tree::ptree & /*node*/, const T&)
-  {}
+  void write_cmap_attribute_node(boost::property_tree::ptree & node, const T& t)
+  {
+    /*node.add("v1.x", CGAL::to_double(t.parameters[0]));
+    node.add("v1.y", CGAL::to_double(t.parameters[1]));
+    node.add("v1.z", CGAL::to_double(t.parameters[2]));*/
+  }
   
   inline
   void write_cmap_attribute_node(boost::property_tree::ptree & node,
@@ -343,7 +347,7 @@ namespace CGAL {
 
       // update property node to add a value node (if user defined its own
       // function)
-      write_cmap_dart_node(ndart, amap, it);
+      write_cmap_dart_node(ndart, amap.template info(it));
     }
     
     return pt;
@@ -397,19 +401,24 @@ namespace CGAL {
   }
   
   // Here T is a Dart_handle so no need of &
-  template<typename T, typename CMap>
+  template<typename T>
   void read_cmap_dart_node
-  (const boost::property_tree::ptree::value_type& v, CMap& amap, T& val)
+  (const boost::property_tree::ptree::value_type& v, T& val)
   {
     double x=v.second.get<double>("x");
     double y=v.second.get<double>("y");
     double z=v.second.get<double>("z");
-    (amap.info(val)).parameters = RPoint_3(x,y,z);
+    val.parameters = RPoint_3(x,y,z);
   }
   template<typename T>
   void read_cmap_attribute_node
-  (const boost::property_tree::ptree::value_type &/*v*/, T &/*val*/)
-  {}
+  (const boost::property_tree::ptree::value_type & v/*v*/, T & t/*val*/)
+  {/*
+    double x=v.second.get<double>("x");
+    double y=v.second.get<double>("y");
+    double z=v.second.get<double>("z");
+    t.parameters = RPoint_3(x,y,z);*/
+  }
   template<> inline
   void read_cmap_attribute_node
   (const boost::property_tree::ptree::value_type &v,char &val)
@@ -767,8 +776,10 @@ namespace CGAL {
                                    index);
             }
           }
-          else if (v2.first=="v")
-            read_cmap_dart_node(v2,amap,myDarts[currentDartInt]);
+          else if (v2.first=="v"){
+//if ((amap.template info(myDarts[currentDartInt]))==NULL)// amap.template set_attribute<i> (myDarts[id_dart_cellule], amap.template create_attribute<i>());continue;
+            read_cmap_dart_node(v2,amap.template info(myDarts[currentDartInt]));
+          }
         }
       }
       ++currentDartInt;
