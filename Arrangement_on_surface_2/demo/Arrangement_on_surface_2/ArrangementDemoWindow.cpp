@@ -1118,6 +1118,9 @@ void ArrangementDemoWindow::on_tabWidget_currentChanged( )
   Conic_arr* conic;
 #endif
 
+  this->ui->actionSnapMode->setDisabled(false);
+  this->ui->actionGridSnapMode->setDisabled(false);
+
   if ( CGAL::assign( lin, arr ) )
   {
     this->ui->actionConicSegment->setChecked( true );
@@ -1157,6 +1160,8 @@ void ArrangementDemoWindow::on_tabWidget_currentChanged( )
     if ( CGAL::assign( alg_seg, arr ) )
     {
       this->ui->actionConicSegment->setToolTip("Curve");
+      this->ui->actionSnapMode->setDisabled(true);
+      this->ui->actionGridSnapMode->setDisabled(true);
     }
     else if ( CGAL::assign( pol, arr ) )
     {

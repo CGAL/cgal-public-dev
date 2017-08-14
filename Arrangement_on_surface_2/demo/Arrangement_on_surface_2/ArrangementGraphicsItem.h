@@ -1427,6 +1427,7 @@ paint(QPainter* painter,
   if ( this->firstEntry )
   {
     this->firstEntry = false;
+#if 0
     QEvent *keyEvent = new QKeyEvent(QEvent::KeyPress, ::Qt::Key_Left, ::Qt::NoModifier);
     QCoreApplication::postEvent(getCurrentView(), 
       keyEvent);
@@ -1443,6 +1444,56 @@ paint(QPainter* painter,
     keyEvent = new QKeyEvent(QEvent::KeyPress, ::Qt::Key_Down, ::Qt::NoModifier);
     QCoreApplication::postEvent(getCurrentView(), keyEvent);
     std::cout<<"After sending down event\n";
+#endif
+    QEvent *keyEvent = NULL;
+
+    for (int i=0; i<80; i++)
+    {
+      keyEvent = new QKeyEvent(QEvent::KeyPress, ::Qt::Key_Left, ::Qt::NoModifier);
+      QCoreApplication::postEvent(getCurrentView(), keyEvent);
+    }
+
+    for (int i=0; i<80; i++)
+    {
+      keyEvent = new QKeyEvent(QEvent::KeyPress, ::Qt::Key_Right, ::Qt::NoModifier);
+      QCoreApplication::postEvent(getCurrentView(), keyEvent);
+    }
+
+    for (int i=0; i<80; i++)
+    {
+      keyEvent = new QKeyEvent(QEvent::KeyPress, ::Qt::Key_Right, ::Qt::NoModifier);
+      QCoreApplication::postEvent(getCurrentView(), keyEvent);
+    }
+
+    for (int i=0; i<76; i++)
+    {
+      keyEvent = new QKeyEvent(QEvent::KeyPress, ::Qt::Key_Left, ::Qt::NoModifier);
+      QCoreApplication::postEvent(getCurrentView(), keyEvent);
+    }
+
+    for (int i=0; i<40; i++)
+    {
+      keyEvent = new QKeyEvent(QEvent::KeyPress, ::Qt::Key_Up, ::Qt::NoModifier);
+      QCoreApplication::postEvent(getCurrentView(), keyEvent);
+    }
+
+    for (int i=0; i<40; i++)
+    {
+      keyEvent = new QKeyEvent(QEvent::KeyPress, ::Qt::Key_Down, ::Qt::NoModifier);
+      QCoreApplication::postEvent(getCurrentView(), keyEvent);
+    }
+
+    for (int i=0; i<40; i++)
+    {
+      keyEvent = new QKeyEvent(QEvent::KeyPress, ::Qt::Key_Down, ::Qt::NoModifier);
+      QCoreApplication::postEvent(getCurrentView(), keyEvent);
+    }
+
+    for (int i=0; i<39; i++)
+    {
+      keyEvent = new QKeyEvent(QEvent::KeyPress, ::Qt::Key_Up, ::Qt::NoModifier);
+      QCoreApplication::postEvent(getCurrentView(), keyEvent);
+    }
   } 
 }
 
