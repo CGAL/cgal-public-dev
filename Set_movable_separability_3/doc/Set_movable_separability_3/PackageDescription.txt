@@ -1,0 +1,62 @@
+/// \defgroup PkgSetMovableSeparability3 3D Movable Separability of Sets Reference
+
+/// \defgroup top_facets_grp Top Facets
+/// These function determine whether a cavity (of a mold in 3-space)
+/// that has the shape of a given polyhedron could be casted in the mold
+/// and then pulled out of the mold without colliding into the mold (but
+/// possibly sliding along the mold surface).
+/// \ingroup PkgSetMovableSeparability3
+
+/// \defgroup is_pullout_direction_grp Is Pullout Direction
+/// These functions determine whether a cavity (of a mold in 3-space)
+/// that has the shape of a given polygon could be casted in the mold
+/// and then pulled out of the mold in a given direction without colliding
+/// into the mold (but possibly sliding along the mold surface).
+/// \ingroup PkgSetMovableSeparability3
+
+/// \defgroup pullout_directions_grp Pullout Directions
+/// These functions determine whether a cavity (of a mold in 3-space)
+/// that has the shape of a given polygon could be casted in the mold
+/// using a given facet as the top facet and then pulled out of the mold
+/// without colliding into the mold (but possibly sliding along the mold
+/// surface). If the polyhedron is <em>castable</em> this way, the function
+/// computes the closed range of pullout directions.
+/// \ingroup PkgSetMovableSeparability3
+
+/// \defgroup PkgSetMovableSeparability3Concepts Concepts
+/// \ingroup PkgSetMovableSeparability3
+
+/*!
+\addtogroup PkgSetMovableSeparability3
+\cgalPkgDescriptionBegin{3D Movable Separability of Sets,PkgSetMovableSeparability3Summary}
+\cgalPkgPicture{casting.jpg}
+\cgalPkgSummaryBegin
+\cgalPkgAuthors{Shahar Shamai, Efi Fogel}
+\cgalPkgDesc{<em>Movable Separability of Sets</em> \cgalCite{t-mss-85} is a
+class of problems that deal with moving sets of objects, such as polyhedra in
+3-space; the challenge is to avoid collisions between the objects
+while considering different kinds of motions and various definitions
+of separation.}
+\cgalPkgManuals{Chapter_SetMovableSeparability3,PkgSetMovableSeparability3}
+\cgalPkgSummaryEnd
+\cgalPkgShortInfoBegin
+\cgalPkgSince{4.12}
+\cgalPkgDependsOn{\ref PkgSolverSummary}
+\cgalPkgBib{cgal:sf-sms3}
+\cgalPkgLicense{\ref licensesGPL "GPL"}
+\cgalPkgShortInfoEnd
+\cgalPkgDescriptionEnd
+
+At this point this package consists of the implementations of various predicates and constructions related to castings of polyhedral objects. In particular, it can be used to determine whether a feasible mold for a polyhedral object does exist. If a mold exists, the package can also be used to compute all possible orientations of the feasible molds and the corresponding motions needed to remove the casted object from the mold.
+
+\cgalClassifedRefPages
+
+## Casting Functions ##
+- `CGAL::Set_movable_separability_3::Single_mold_translational_casting::top_edges()`
+- `CGAL::Set_movable_separability_3::Single_mold_translational_casting::pullout_directions()`
+- `CGAL::Set_movable_separability_3::Single_mold_translational_casting::is_pullout_direction()`
+
+## Casting Concepts ##
+- `CastingTraits_3`
+
+*/

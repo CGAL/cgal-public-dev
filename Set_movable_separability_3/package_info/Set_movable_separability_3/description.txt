@@ -1,1 +1,1 @@
-Various predicates and operations related to catings of objects in space, such as given an object, is there a mold for it from which is can be pulled out.
+Various predicates and operations that solves movable-separability problems of sets in 3-space. At this point only predicates and operations related to catings of 3D objects, such as given a polyhedral object, is there a mold for it from which is can be pulled out.

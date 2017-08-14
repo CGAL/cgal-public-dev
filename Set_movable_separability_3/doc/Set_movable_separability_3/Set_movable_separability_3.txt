@@ -26,7 +26,7 @@ interiors can be taken apart by translation with two hands; that is,
 some proper subset of \f$A\f$ can be translated to infinity without
 colliding with its complement.  In 1993 Snoeyink and
 Stolfi\cgalCite{ss-otcbt-93} disputed the conjection above. They
-actually provided an assembly (see \cgalFigureRef{sms_2_fig_twist})
+actually provided an assembly (see \cgalFigureRef{sms_3_fig_twist})
 that cannot be taken apart with two hands using arbitrary rigid
 motions. The problem of finding a sequence of motions that partitions
 an assembly, as all other problems in the class of <em>Movable
@@ -71,7 +71,7 @@ the polyhedron is <em>castable</em>, the function computes the set of
 top facets of such cavities and the corresponding closed regions of
 pullout directions in 3-space.
 
-\cgalFigureBegin{sms_3_fig_mold,mold.png}
+\cgalFigureBegin{sms_3_fig_mold,object.png,mold.gif}
 Polygons (light grey) in their molds (darker grey) and valid pull-out
 directions.
 \cgalFigureEnd
@@ -96,7 +96,7 @@ guarantees exact constructions as well as exact predicates, e,g,.
 The following example computes the top facets and their pullout
 directions of an input polyhedron read from a file and reports the results.
 
-\cgalExample{Set_movable_separability_3/single_mold_translational_casting.cpp}
+\cgalExample{Set_movable_separability_3/top_facets_single_mold_translational_casting.cpp}
 
 */
 } /* namespace CGAL */

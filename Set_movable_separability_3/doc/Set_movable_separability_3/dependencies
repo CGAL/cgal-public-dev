@@ -2,7 +2,7 @@ Manual
 Kernel_23
 Circulator
 Number_types
-QP_solver
+Solver_interface
 Polyhedron
 BGL
 Surface_mesh
