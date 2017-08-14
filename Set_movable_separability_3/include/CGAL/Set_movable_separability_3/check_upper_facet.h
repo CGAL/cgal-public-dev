@@ -21,28 +21,33 @@
  */
 #include "Utils.h"
 #include "PlaneProjector.h"
+#include "lp_wrapper.h"
 
 namespace CGAL {
   namespace Set_movable_separability_3 {
     namespace internal {
-      template <typename Kernel>
-         std::pair<bool,unsigned int> checkDirection(const std::vector<typename Kernel::Direction_3> &outerNormals,
+      template <typename Kernel,typename UserData>
+         std::pair<bool,unsigned int> checkDirection(
+             const std::vector< std::pair<typename Kernel::Direction_3, UserData>> &outerNormals,
 						  typename Kernel::Direction_3 d)
          {
 	int i;
 	  for(i=0;i<outerNormals.size();++i)
 	    {
-	      if(outerNormals[i].dx()*d.dx()+
-		  outerNormals[i].dy()*d.dy()+
-		  outerNormals[i].dz()*d.dz()> 0)
+	      if(outerNormals[i].first.dx()*d.dx()+
+		  outerNormals[i].first.dy()*d.dy()+
+		  outerNormals[i].first.dz()*d.dz()> 0)
 		{
+
+
 		  for(int j=i+1;j<outerNormals.size();++j)
 		  	    {
-		      if(outerNormals[j].dx()*d.dx()+
-		    		  outerNormals[j].dy()*d.dy()+
-		    		  outerNormals[j].dz()*d.dz()> 0)
+		      if(outerNormals[j].first.dx()*d.dx()+
+		    		  outerNormals[j].first.dy()*d.dy()+
+		    		  outerNormals[j].first.dz()*d.dz()> 0)
 		    		{
-			     			return  std::make_pair(false,UINT32_MAX);
+
+				  return  std::make_pair(false,UINT32_MAX);
 		    		}
 		  	    }
 		  return  std::make_pair(true,i);
@@ -50,17 +55,20 @@ namespace CGAL {
 
 
 	    }
+	  std::cout<<"ERROR"<<std::endl;
+	  return  std::make_pair(false,UINT32_MAX);//shouldn't get here with a valid poly
          }
 
 
-      template <typename Kernel>
-      std::pair<bool,typename Kernel::Direction_3> checkUpperFacet(const std::vector<typename Kernel::Direction_3> &outerNormals,
+      template <typename Kernel, typename UserData>
+      std::pair<bool,typename Kernel::Direction_3> checkUpperFacet(
+	  const   std::vector< std::pair<typename Kernel::Direction_3, UserData>> &outerNormals,
 					unsigned int iTopFacet)
       {
 	typedef typename Kernel::Direction_3 Direction_3;
 
 	typedef typename Kernel::Line_2 Line_2;
-	PlaneProjector<Kernel,false> proj(outerNormals[iTopFacet]);
+	PlaneProjector<Kernel,false> proj(outerNormals[iTopFacet].first);
 
 	  int i;
 	  std::vector<Line_2> halfplanes;
@@ -70,23 +78,23 @@ namespace CGAL {
 	      if(unlikely(i==iTopFacet))
 		continue;
 
-	      std::pair<enum LineState,Line_2> line = proj.projectHemisphereToPlaneAndReturnItsComplementary(outerNormals[i],false);
+	      std::pair<enum LineState,Line_2> line = proj.projectHemisphereToPlaneAndReturnItsComplementary(outerNormals[i].first,false);
 	      if(likely(line.first==LINESTATE_LINE))
 		{
-halfplanes.push_back(line.second);
+		  halfplanes.push_back(line.second);
 		}
-	      if(line.first==LINESTATE_EMPTY)
+	      if(line.first==LINESTATE_SAME_NORAML)
 		return  std::make_pair(false,Direction_3());
 
 
-	      if(line.first==LINESTATE_ALL_PLANE)
+	      if(line.first==LINESTATE_ANTIPODEL_NORMAL)
 		continue;
 
 	    }
 	       std::pair<bool, typename Kernel::Point_2> pulloutDirection =  findPoint<Kernel>(halfplanes);
 	       if(pulloutDirection.first)
 		 {
-			return  std::make_pair(true,proj.point_2ToDirection_3(pulloutDirection.second));//TODO: return real direction
+			return  std::make_pair(true,proj.point_2ToDirection_3(pulloutDirection.second));
 
 		 }
 	       else

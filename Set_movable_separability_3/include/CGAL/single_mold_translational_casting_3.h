@@ -20,6 +20,8 @@
 
 #include <iostream>
 #include <list>
+#include <vector>
+
 #include <boost/type_traits/is_same.hpp>
 
 #include <CGAL/Kernel_traits.h>
@@ -27,8 +29,10 @@
 #include <CGAL/value_type_traits.h>
 #include <CGAL/property_map.h>
 
-
+#include "Set_movable_separability_3/NormalsDirection.h"
+#include "Set_movable_separability_3/check_upper_facet.h"
 #include "Set_movable_separability_3/coveringset_finder.h"
+#include "Set_movable_separability_3/lp_wrapper.h"
 
 namespace CGAL {
 
@@ -69,6 +73,7 @@ single_mold_translational_casting_3_impl(const Polyhedron& polyhedron,
   return oi;
 }
 
+//return single direction for each facet
 template <typename Polyhedron,  typename NamedParameters,
           typename OutputIterator>
 OutputIterator
@@ -76,6 +81,46 @@ single_mold_translational_casting_3_impl(const Polyhedron& polyhedron,
                                          const NamedParameters& np,
                                          OutputIterator oi, boost::true_type)
 {
+  typedef typename Get_kernel<Polyhedron, NamedParameters>::type 		Kernel;
+
+  typedef typename Kernel::Direction_3                                	 	Direction_3;
+
+  std::vector< std::pair<typename Kernel::Direction_3, std::vector<typename Polyhedron::Facet_const_iterator>>>
+  polyhedronNormals =  internal::findDirections<Polyhedron,Kernel>(polyhedron);
+
+
+   int outLength=0;
+   unsigned int outIndexs[6];
+
+   Direction_3 outDirection; //2 hemisphere that the intersection of their boundary is a point that wasn't covered
+   bool outDirectionExists;
+
+   outLength = internal::findCoveringSet<Kernel>(polyhedronNormals,outIndexs,&outDirection,&outDirectionExists);
+   while(outLength--)
+     {
+       std::pair<bool,Direction_3> tmp =(internal::checkUpperFacet<Kernel>(polyhedronNormals,outIndexs[outLength]));
+       if(tmp.first)
+	 {
+	   (*(oi++))=(std::make_pair(polyhedronNormals[outIndexs[outLength]].second,tmp.second));
+	 }
+     }
+   if(outDirectionExists){
+       std::pair<bool,unsigned int> topFacet = internal::checkDirection<Kernel>(polyhedronNormals,outDirection);
+       if(topFacet.first)
+	 {
+	   (*(oi++))=(std::make_pair(polyhedronNormals[topFacet.second].second,outDirection));
+
+	 }
+
+       topFacet = internal::checkDirection<Kernel>(polyhedronNormals,-outDirection);
+       if(topFacet.first)
+	 {
+	   (*(oi++))=(std::make_pair(polyhedronNormals[topFacet.second].second,-outDirection));
+	 }
+
+
+   }
+
   return oi;
 }
 

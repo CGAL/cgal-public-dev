@@ -34,26 +34,8 @@ namespace CGAL {
   namespace Set_movable_separability_3 {
     namespace internal {
 
-      enum HemisphereInteractionState
-      {
-	HemisphereInteractionState_Intersect,
-	Hemisphere_equal,
-	Hemisphere_antipodel
-      };
-      /*
-       * h1: a b c   => a*x+b*y+c*z>0
-       * h2: A B C   => A*x+B*y+C*z>0
-       * (pre: c>0)
-       */
-      template < typename Direction_3>
-      enum HemisphereInteractionState hemisphereInteraction(const Direction_3 &n1, const Direction_3 &n2)
-      {
-	if(unlikely(n1==n2))
-	  return Hemisphere_equal;
-	if(unlikely(-n1==n2))
-	  return Hemisphere_antipodel;
-	return HemisphereInteractionState_Intersect;
-      }
+
+
 
       /*
        * This function projects h to a line parallel to projTo in its negative part
@@ -113,8 +95,8 @@ namespace CGAL {
 
        */
       template <typename Kernel>
-          uint8_t findCoveringSet2D(const std::vector<std::pair<typename Kernel::Line_2,unsigned int>>  halfcircle,
-				    unsigned int * out,bool* isOutDirection)
+      uint8_t findCoveringSet2D(const std::vector<std::pair<typename Kernel::Line_2,unsigned int>>  halfcircle,
+				unsigned int * out,bool* isOutDirection)
       {
 	typedef typename Kernel::Line_2 Line_2;
 	typedef typename Kernel::FT FT;
@@ -128,80 +110,80 @@ namespace CGAL {
 	    if(halfcircle[hi].first.b()>0)
 	      break;
 	  }
-	  bool removeHFromCoveringSet=false;
+	bool removeHFromCoveringSet=false;
 
-	  bool minRayToInfHasValue=false;
-	  FT minRayToInf;
-	  bool maxRayFromMinusInfHasValue=false;
-	  FT maxRayFromMinusInf;
-	  for(int i=0;i<halfcircle.size();++i)
+	bool minRayToInfHasValue=false;
+	FT minRayToInf;
+	bool maxRayFromMinusInfHasValue=false;
+	FT maxRayFromMinusInf;
+	for(int i=0;i<halfcircle.size();++i)
+	  {
+	    if(i==hi)continue;
+
+	    switch(halfPlaneInteraction<Kernel>(halfcircle[hi].first,halfcircle[i].first))
 	    {
-	      if(i==hi)continue;
-
-	      switch(halfPlaneInteraction<Kernel>(halfcircle[hi].first,halfcircle[i].first))
-	      {
-		case HalfplaneInteractionState_LinesIntersect:
-		  {
+	      case HalfplaneInteractionState_LinesIntersect:
+		{
 		  std::pair<FT,bool> ray = projectHalfcircleToline<Kernel>(halfcircle[i].first,halfcircle[hi].first);
 		  if(ray.second)
-		     //bigger than
-		     {
-		       if(!minRayToInfHasValue)
-			 {
-			   minRayToInfHasValue=true;
-			   minRayToInf=ray.first;
-			   out[0]=halfcircle[i].second;
-			 }
-		       else
-			 {
-			     if(minRayToInf>ray.first)
-			       {
-				 minRayToInf=ray.first;
-				 out[0]=halfcircle[i].second;
-			       }
-			 }
-		     }
-		   else
-		     //smaller  than
-		     {
-		       if(!maxRayFromMinusInfHasValue)
-			 {
-			   maxRayFromMinusInfHasValue=true;
-			   maxRayFromMinusInf=ray.first;
-			   out[1]=halfcircle[i].second;
-			 }
-		       else
-			 {
-			   if(maxRayFromMinusInf<ray.first)
-			     {
-			       maxRayFromMinusInf=ray.first;
-			       out[1]=halfcircle[i].second;
-			     }
-			 }
-		     }
-		   break;
-		  }
-		case HalfplaneInteractionState_LinesParallel_FisrtContainsSecond:case HalfplaneInteractionState_LinesParallel_SecondContainsFirst:
-		  //we know that since all line goes throw the origin, both means equal
-		  removeHFromCoveringSet=true;
-
-		  break;
-		case HalfplaneInteractionState_LinesParallel_Intesection_Is_Empty://antipodel
-
-		  out[0]=halfcircle[i].second;
-		  *isOutDirection=true;
-		  if(!removeHFromCoveringSet)
+		    //bigger than
 		    {
-		      out[1]=halfcircle[hi].second;
-		      return 2;
+		      if(!minRayToInfHasValue)
+			{
+			  minRayToInfHasValue=true;
+			  minRayToInf=ray.first;
+			  out[0]=halfcircle[i].second;
+			}
+		      else
+			{
+			  if(minRayToInf>ray.first)
+			    {
+			      minRayToInf=ray.first;
+			      out[0]=halfcircle[i].second;
+			    }
+			}
 		    }
-		  return 1;
+		  else
+		    //smaller  than
+		    {
+		      if(!maxRayFromMinusInfHasValue)
+			{
+			  maxRayFromMinusInfHasValue=true;
+			  maxRayFromMinusInf=ray.first;
+			  out[1]=halfcircle[i].second;
+			}
+		      else
+			{
+			  if(maxRayFromMinusInf<ray.first)
+			    {
+			      maxRayFromMinusInf=ray.first;
+			      out[1]=halfcircle[i].second;
+			    }
+			}
+		    }
 		  break;
-	      }
+		}
+	      case HalfplaneInteractionState_LinesParallel_FisrtContainsSecond:case HalfplaneInteractionState_LinesParallel_SecondContainsFirst:
+		//we know that since all line goes throw the origin, both means equal
+		removeHFromCoveringSet=true;
+
+		break;
+	      case HalfplaneInteractionState_LinesParallel_Intesection_Is_Empty://antipodel
+
+		out[0]=halfcircle[i].second;
+		*isOutDirection=true;
+		if(!removeHFromCoveringSet)
+		  {
+		    out[1]=halfcircle[hi].second;
+		    return 2;
+		  }
+		return 1;
+		break;
 	    }
-	  //assert minRayToInf<maxRayFromMinusInf
-	  *isOutDirection=false;
-	  if(!removeHFromCoveringSet)
+	  }
+	//assert minRayToInf<maxRayFromMinusInf
+	*isOutDirection=false;
+	if(!removeHFromCoveringSet)
 	  {
 	    out[2]=halfcircle[hi].second;
 	    return 3;
@@ -217,8 +199,8 @@ namespace CGAL {
 	typedef typename Kernel::Direction_3 Direction_3;
 	typedef typename Kernel::Point_3 Point;
 	return Direction_3(CGAL::normal(Point(n1.dx(),n1.dy(),n1.dz()),
-			    Point(n2.dx(),n2.dy(),n2.dz()),
-			    Point(0,0,0)));
+					Point(n2.dx(),n2.dy(),n2.dz()),
+					Point(0,0,0)));
       }
       /*
        * input:
@@ -240,8 +222,9 @@ namespace CGAL {
        * notice that it is assumed that the hemispheres are created by a polyhedron's facets outer hemispheres, if not, the code might fail.
        * for an instance, all planes must pass through the origin.
        */
-      template <typename Kernel>
-      uint8_t findCoveringSet(const std::vector<typename Kernel::Direction_3> &normals, unsigned int * out,typename Kernel::Direction_3 * outDirection,bool * outDirectionExists)
+      template <typename Kernel, typename UserData>
+      uint8_t findCoveringSet(const std::vector< std::pair<typename Kernel::Direction_3,UserData> >&normals,
+			      unsigned int * out,typename Kernel::Direction_3 * outDirection,bool * outDirectionExists)
       {
 	typedef typename Kernel::Line_2 Line_2;
 	typedef typename Kernel::Point_3 Point_3;
@@ -278,35 +261,34 @@ namespace CGAL {
 	bool hBarFound=false;
 	bool removeHBarFromCoveringSet;
 	unsigned int hBarIndex;
-	PlaneProjector<Kernel,true> proje(normals[0]);
+	PlaneProjector<Kernel,true> proj(normals[0].first);
 	std::vector<std::pair<Line_2,unsigned int> > halfplanes;
 	halfplanes.reserve(normals.size() -1);
 
 	for(int i=1;i<normals.size();++i)
 	  {
+	    std::pair<enum LineState,typename Kernel::Line_2> line =    proj.projectHemisphereToPlaneAndReturnItsComplementary(normals[i].first,hBarFound ); //if HbarFound we want to find a covering set for c(h), else for -h
 
-	    switch(hemisphereInteraction<Normal_3>(normals[0],normals[i]))
+	    switch(line.first)
 	    {
-	      case HemisphereInteractionState_Intersect:
+	      case LINESTATE_LINE:
 		halfplanes.push_back(
-		    std::make_pair(
-			  proje.projectHemisphereToPlaneAndReturnItsComplementary(normals[i],
-			      hBarFound ),//if HbarFound we want to find a covering set for c(h), else for -h
-			i));
+		    std::make_pair(line.second,
+				   i));
 		break;
-	      case Hemisphere_equal:
+	      case LINESTATE_SAME_NORAML:
 		removeHFromCoveringSet=true;
 		break;
-	      case Hemisphere_antipodel:
+	      case LINESTATE_ANTIPODEL_NORMAL:
 		removeHBarFromCoveringSet = hBarFound;//if there is more than one hBar, this cant be a top facet
 		if(hBarFound)
 		  {
 		    for(int j = 0; j!=halfplanes.size();++j)
-		    {
-		      halfplanes[j].first=Line_2(halfplanes[j].first.a(),halfplanes[j].first.b(),0);
-		    }
+		      {
+			halfplanes[j].first=Line_2(halfplanes[j].first.a(),halfplanes[j].first.b(),0);
+		      }
 		  }
-	    hBarFound=true;
+		hBarFound=true;
 
 		hBarIndex=i;
 
@@ -314,8 +296,8 @@ namespace CGAL {
 		break;
 	    }
 	  }
-	    typedef typename Kernel::Intersect_3 Intersect_3;
-	    typedef typename Kernel::Line_3 Line_3;
+	typedef typename Kernel::Intersect_3 Intersect_3;
+	typedef typename Kernel::Line_3 Line_3;
 	if(hBarFound)
 	  {
 
@@ -324,7 +306,7 @@ namespace CGAL {
 	      //this is only possible if the two lines chosen are the same line to opposite sides.
 	      //in this case, the direction of this line isn't covered
 	      {
-		*outDirection=findDirectionOrthogonalToTwoDirections<Kernel>(normals[out[0]], normals[0]);
+		*outDirection=findDirectionOrthogonalToTwoDirections<Kernel>(normals[out[0]].first, normals[0].first);
 	      }
 
 
@@ -334,7 +316,7 @@ namespace CGAL {
 
 	    if(!removeHBarFromCoveringSet)
 	      {
-	      out[coveringSetSize++]=hBarIndex;
+		out[coveringSetSize++]=hBarIndex;
 	      }
 
 
@@ -352,7 +334,7 @@ namespace CGAL {
 	  {
 	    if(!removeHFromCoveringSet)
 	      out[coveringSetSize++]=0;
-	    *outDirection=findDirectionOrthogonalToTwoDirections<Kernel>(normals[out[0]], normals[out[1]]);
+	    *outDirection=findDirectionOrthogonalToTwoDirections<Kernel>(normals[out[0]].first, normals[out[1]].first);
 	    *outDirectionExists=true;
 	    return coveringSetSize;
 	  }

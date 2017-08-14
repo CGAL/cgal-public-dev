@@ -14,8 +14,8 @@ namespace CGAL {
     namespace internal {
 	enum LineState{
 	  LINESTATE_LINE,
-	  LINESTATE_ALL_PLANE,
-	  LINESTATE_EMPTY
+	  LINESTATE_ANTIPODEL_NORMAL,
+	  LINESTATE_SAME_NORAML
 	};
       template <typename Kernel>
       class PlaneProjectorFather
@@ -124,9 +124,9 @@ namespace CGAL {
       	     */
       	    typedef typename Kernel::Line_2 Line_2;
       	    if(unlikely(normal==m_normalOfMainPlane))
-      	      return std::make_pair(LINESTATE_EMPTY,Line_2());
+      	      return std::make_pair(LINESTATE_SAME_NORAML,Line_2());
       	    if(unlikely(normal==-m_normalOfMainPlane))
-      	      return std::make_pair(LINESTATE_ALL_PLANE,Line_2());
+      	      return std::make_pair(LINESTATE_ANTIPODEL_NORMAL,Line_2());
       	    if(TopFacetCSign>0)//compile time if! how cool
       	      {
       		return std::make_pair(LINESTATE_LINE,(

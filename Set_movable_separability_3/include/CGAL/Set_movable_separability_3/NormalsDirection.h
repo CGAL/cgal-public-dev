@@ -24,18 +24,72 @@
 namespace CGAL {
   namespace Set_movable_separability_3 {
     namespace internal {
-#include<vector>
+#include<map>
 #include <iostream>
+      /*
+       * output:
+       * vector of outer normal , facet (facet is represented by a list of facet for the case that this facet is splited in to coplanar facets)
+       */
+      template<typename Poly,typename Kernel>
+    	void innerMergeCoPlanarFacets(const Poly& poly,
+    			       typename Poly::Facet_const_iterator fit,
+    			       typename Kernel::Direction_3 normal,
+    			        std::map<typename Poly::Facet_const_iterator,typename Kernel::Direction_3>&directions,
+    				std::vector<typename Poly::Facet_const_iterator> & outPutFacetList
+    			      )
+          {
+    	typedef typename Poly::Halfedge_const_handle  Halfedge_const_handle;
+    	outPutFacetList.push_back(fit);
+    	Halfedge_const_handle heCurrent=fit->halfedge();
+    	Halfedge_const_handle heStart=heCurrent;
 
+
+    	do
+    	  {
+    	    typename Poly::Facet_const_iterator neighbor = heCurrent->opposite()->facet();
+    	   typename  std::map<typename Poly::Facet_const_iterator,typename Kernel::Direction_3>::iterator dit= directions.find(neighbor);
+
+    	    if(dit != directions.end() && ((dit->second)==normal))
+    	      {
+    		directions.erase(dit);
+
+    		innerMergeCoPlanarFacets<Poly,Kernel>(poly,neighbor,normal,directions,outPutFacetList);
+    	      }
+    	    heCurrent= heCurrent->next();
+    	  }while (heCurrent!=heStart);
+
+
+          }
+      template<typename Poly,typename Kernel>
+      std::vector< std::pair<typename Kernel::Direction_3, std::vector<typename Poly::Facet_const_iterator> > >
+      mergeCoPlanarFacets(const Poly& poly, std::map<typename Poly::Facet_const_iterator,typename Kernel::Direction_3> &directions)
+      {
+//	      std::cout<<directions.size()<<" VS ";
+	      std::vector< std::pair<typename Kernel::Direction_3, std::vector<typename Poly::Facet_const_iterator>>> normals;
+	      for(typename Poly::Facet_const_iterator fit= poly.facets_begin();fit != poly.facets_end();++fit)
+		{
+		  typename std::map<typename Poly::Facet_const_iterator,typename Kernel::Direction_3>::iterator dit= directions.find(fit);
+
+		  if(dit!=directions.end())
+		    {
+		      std::pair<typename Kernel::Direction_3, std::vector<typename Poly::Facet_const_iterator>> normal;
+		      normal.first=dit->second;
+		      directions.erase(dit);
+		      innerMergeCoPlanarFacets<Poly,Kernel>(poly,fit,dit->second,directions, normal.second);
+		      normals.push_back(normal);
+		    }
+		}
+//	      std::cout<<normals.size()<<std::endl;
+	      return normals;
+      }
 
       template<typename Poly,typename Kernel>
-      std::vector< typename Kernel::Direction_3> findDirections(const Poly& poly)
+      std::vector< std::pair<typename Kernel::Direction_3, std::vector<typename Poly::Facet_const_iterator> > > findDirections(const Poly& poly)
       {
 	typedef typename Poly::Halfedge_const_handle  Halfedge_const_handle;
         typedef typename Kernel::Direction_3 Direction_3;
         typedef typename Kernel::FT FT;
-        std::vector<Direction_3> nd;
-        nd.reserve(poly.size_of_facets());
+        std::map<typename Poly::Facet_const_iterator,Direction_3> nd;
         for(typename Poly::Facet_const_iterator fit= poly.facets_begin();fit != poly.facets_end();++fit)
         {
 
@@ -49,8 +103,6 @@ namespace CGAL {
             Halfedge_const_handle heStart=heCurrent;
             Halfedge_const_handle heBeforeCurrent=heCurrent;
             heCurrent= heCurrent->next();
-
-            int countDbg=1;
             int countEqual=1;
 
             do
@@ -68,6 +120,7 @@ namespace CGAL {
         	    if(allEqual && countEqual==3)
         	      break;
         	}
+        	heBeforeCurrent= heCurrent;
         	heCurrent= heCurrent->next();
             }while (heCurrent!=heStart);
             if(unlikely(allEqual))
@@ -80,24 +133,27 @@ namespace CGAL {
 
 		  do
 		  {
+
 		      if(heCurrent->vertex()->point().x()>max)
 		      {
 			  max=heCurrent->vertex()->point().x();
 			  heBeforeMax=heBeforeCurrent;
 		      }
+		      heBeforeCurrent= heCurrent;
 		      heCurrent= heCurrent->next();
 		  }while (heCurrent!=heStart);
 	    }
 typedef typename Poly::Point Point;
-    	Point a= heBeforeMax->vertex()->point();
-    	Point  b=heBeforeMax->next()->vertex()->point();
-    	Point  c= heBeforeMax->next()->next()->vertex()->point();
+	  Point a= heBeforeMax->vertex()->point();
+	  Point  b=heBeforeMax->next()->vertex()->point();
+    	  Point  c= heBeforeMax->next()->next()->vertex()->point();
 
-    	Direction_3 nor(CGAL::normal(a,b,c));
-//    	std::cout<<"["<<a<< "|"<<b<< "|"<<c<< "] -> "<<nor<<std::endl;
-    	nd.push_back(nor);
+    	  Direction_3 nor(CGAL::normal(a,b,c));
+    	  nd[fit]=nor;
         }
-        return nd;
+
+
+        return mergeCoPlanarFacets<Poly,Kernel>(poly,nd);
       }
     } // end of namespace internal
   } // end of namespace Set_movable_separability_3
