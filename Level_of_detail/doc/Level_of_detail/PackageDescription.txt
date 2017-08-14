@@ -1,1 +1,1 @@
-Doxygen package description.
+Doxy package description.
