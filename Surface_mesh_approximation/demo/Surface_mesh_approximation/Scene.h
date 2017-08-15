@@ -44,8 +44,20 @@ typedef CGAL::VSA_approximation<Polyhedron_3, PCAPlaneFitting, L21Metric, L2Prox
 class Scene
 {
 public:
-  Scene();
-  ~Scene();
+  Scene() :
+    m_pmesh(NULL),
+    m_fidx_pmap(m_fidx_map),
+    m_normal_pmap(m_facet_normals),
+    m_center_pmap(m_facet_centers),
+    m_area_pmap(m_facet_areas),
+    m_vsa_l21(L21Metric(m_normal_pmap, m_area_pmap), L21ProxyFitting(m_normal_pmap, m_area_pmap)),
+    m_px_num(0),
+    m_view_polyhedron(false),
+    m_view_wireframe(false),
+    m_view_seg_boundary(false),
+    m_view_anchors(false) {}
+
+  ~Scene() { delete m_pmesh; }
 
   void update_bbox();
   Bbox_3 bbox() { return m_bbox; }
@@ -112,6 +124,9 @@ private:
   FacetCenterMap m_center_pmap;
   FacetAreaMap m_area_pmap;
   VertexPointMap m_point_pmap;
+
+  // algorithm instance
+  VSAL21 m_vsa_l21;
 
   std::vector<Point_3> m_anchor_pos;
   std::vector<Polyhedron_3::Vertex_handle> m_anchor_vtx;

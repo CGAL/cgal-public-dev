@@ -68,28 +68,6 @@ struct PointProxyFitting {
   const FacetAreaMap area_pmap;
 };
 
-Scene::Scene() :
-  m_fidx_pmap(m_fidx_map),
-  m_normal_pmap(m_facet_normals),
-  m_center_pmap(m_facet_centers),
-  m_area_pmap(m_facet_areas)
-{
-  m_pmesh = NULL;
-
-  // view options
-  m_view_polyhedron = false;
-  m_view_wireframe = false;
-  m_view_seg_boundary = false;
-  m_view_anchors = false;
-
-  m_px_num = 0;
-}
-
-Scene::~Scene()
-{
-  delete m_pmesh;
-}
-
 void Scene::update_bbox()
 {
   if(m_pmesh == NULL) {
@@ -202,31 +180,30 @@ void Scene::l21_approximation(
   m_anchor_pos.clear();
   m_anchor_vtx.clear();
 
-  VSAL21 vsa_l21(L21Metric(m_normal_pmap, m_area_pmap), L21ProxyFitting(m_normal_pmap, m_area_pmap));
-  vsa_l21.set_mesh(*m_pmesh);
+  m_vsa_l21.set_mesh(*m_pmesh);
 
   if (static_cast<VSAL21::Initialization>(init) == VSAL21::IncrementalInit) {
     // for comparision
-    vsa_l21.init_proxies(num_proxies / 2, VSAL21::RandomInit);
+    m_vsa_l21.init_proxies(num_proxies / 2, VSAL21::RandomInit);
     for (std::size_t i = 0; i < num_iterations; ++i)
-      vsa_l21.run_one_step();
-    vsa_l21.add_proxies(VSAL21::IncrementalInit, num_proxies - num_proxies / 2, num_iterations);
+      m_vsa_l21.run_one_step();
+    m_vsa_l21.add_proxies(VSAL21::IncrementalInit, num_proxies - num_proxies / 2, num_iterations);
     for (std::size_t i = 0; i < num_iterations; ++i)
-      vsa_l21.run_one_step();
+      m_vsa_l21.run_one_step();
   }
   else {
-    vsa_l21.init_proxies(num_proxies, static_cast<VSAL21::Initialization>(init));
+    m_vsa_l21.init_proxies(num_proxies, static_cast<VSAL21::Initialization>(init));
     for (std::size_t i = 0; i < num_iterations; ++i)
-      vsa_l21.run_one_step();
+      m_vsa_l21.run_one_step();
   }
 
   Polyhedron_3 out_mesh;
-  vsa_l21.meshing(out_mesh);
-  vsa_l21.get_proxy_map(m_fidx_pmap);
-  m_tris = vsa_l21.get_indexed_triangles();
-  m_anchor_pos = vsa_l21.get_anchor_points();
-  m_anchor_vtx = vsa_l21.get_anchor_vertices();
-  m_bdrs = vsa_l21.get_indexed_boundary_polygons();
+  m_vsa_l21.meshing(out_mesh);
+  m_vsa_l21.get_proxy_map(m_fidx_pmap);
+  m_tris = m_vsa_l21.get_indexed_triangles();
+  m_anchor_pos = m_vsa_l21.get_anchor_points();
+  m_anchor_vtx = m_vsa_l21.get_anchor_vertices();
+  m_bdrs = m_vsa_l21.get_indexed_boundary_polygons();
 
   m_px_num = num_proxies;
   m_view_seg_boundary = true;
