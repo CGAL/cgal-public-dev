@@ -7,26 +7,39 @@
 
 #include <CGAL/Simple_cartesian.h>
 #include <CGAL/Polyhedron_3.h>
+
 #include <CGAL/boost/graph/graph_traits_Polyhedron_3.h>
 #include <CGAL/property_map.h>
+#include <CGAL/vsa_mesh_approximation_traits.h>
+#include <CGAL/VSA_approximation.h>
 
 typedef CGAL::Simple_cartesian<double> Kernel;
 typedef Kernel::FT FT;
 typedef Kernel::Point_3 Point_3;
 typedef Kernel::Vector_3 Vector_3;
 
-typedef CGAL::Polyhedron_3<Kernel> Polyhedron;
-typedef Polyhedron::Halfedge_handle Halfedge_handle;
-typedef Polyhedron::Edge_iterator Edge_iterator;
-typedef Polyhedron::Facet_handle Facet_handle;
-typedef Polyhedron::Facet_iterator Facet_iterator;
-typedef Polyhedron::Halfedge_around_facet_circulator Halfedge_around_facet_circulator;
+typedef CGAL::Polyhedron_3<Kernel> Polyhedron_3;
+typedef Polyhedron_3::Halfedge_handle Halfedge_handle;
+typedef Polyhedron_3::Edge_iterator Edge_iterator;
+typedef Polyhedron_3::Facet_handle Facet_handle;
+typedef Polyhedron_3::Facet_iterator Facet_iterator;
+typedef Polyhedron_3::Halfedge_around_facet_circulator Halfedge_around_facet_circulator;
 typedef CGAL::Bbox_3 Bbox_3;
 
 typedef boost::associative_property_map<std::map<Facet_handle, Vector_3> > FacetNormalMap;
 typedef boost::associative_property_map<std::map<Facet_handle, FT> > FacetAreaMap;
 typedef boost::associative_property_map<std::map<Facet_handle, Point_3> > FacetCenterMap;
-typedef boost::property_map<Polyhedron, boost::vertex_point_t>::type VertexPointMap;
+typedef boost::property_map<Polyhedron_3, boost::vertex_point_t>::type VertexPointMap;
+
+typedef CGAL::PlaneProxy<Polyhedron_3> PlaneProxy;
+typedef CGAL::L21Metric<Polyhedron_3, FacetNormalMap, FacetAreaMap> L21Metric;
+typedef CGAL::L21ProxyFitting<Polyhedron_3, FacetNormalMap, FacetAreaMap> L21ProxyFitting;
+typedef CGAL::VSA_approximation<Polyhedron_3, PlaneProxy, L21Metric, L21ProxyFitting> VSAL21;
+
+typedef CGAL::L2Metric<Polyhedron_3, FacetAreaMap> L2Metric;
+typedef CGAL::L2ProxyFitting<Polyhedron_3> L2ProxyFitting;
+typedef CGAL::PCAPlaneFitting<Polyhedron_3> PCAPlaneFitting;
+typedef CGAL::VSA_approximation<Polyhedron_3, PCAPlaneFitting, L21Metric, L2ProxyFitting> VSAL2;
 
 class Scene
 {
@@ -43,8 +56,8 @@ public:
 
   // algorithms
   void l21_approximation(const int &init, const std::size_t num_proxies, const std::size_t num_iterations);
-  void compact_approximation(const int &init, const std::size_t num_proxies, const std::size_t num_iterations);
   void l2_approximation(const int &init, const std::size_t num_proxies, const std::size_t num_iterations);
+  void compact_approximation(const int &init, const std::size_t num_proxies, const std::size_t num_iterations);
 
   // toggle view options
   void toggle_view_polyhedron() {
@@ -85,7 +98,7 @@ private:
 private:
   // member data
   Bbox_3 m_bbox;
-  Polyhedron *m_pPolyhedron;
+  Polyhedron_3 *m_pmesh;
 
   // property-map for segment-idx
   std::map<Facet_handle, std::size_t> m_fidx_map;
@@ -101,7 +114,7 @@ private:
   VertexPointMap m_point_pmap;
 
   std::vector<Point_3> m_anchor_pos;
-  std::vector<Polyhedron::Vertex_handle> m_anchor_vtx;
+  std::vector<Polyhedron_3::Vertex_handle> m_anchor_vtx;
   std::vector<std::vector<std::size_t> > m_bdrs; // anchor borders
   std::vector<int> m_tris;
 

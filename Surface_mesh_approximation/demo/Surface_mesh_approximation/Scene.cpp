@@ -74,7 +74,7 @@ Scene::Scene() :
   m_center_pmap(m_facet_centers),
   m_area_pmap(m_facet_areas)
 {
-  m_pPolyhedron = NULL;
+  m_pmesh = NULL;
 
   // view options
   m_view_polyhedron = false;
@@ -87,21 +87,21 @@ Scene::Scene() :
 
 Scene::~Scene()
 {
-  delete m_pPolyhedron;
+  delete m_pmesh;
 }
 
 void Scene::update_bbox()
 {
-  if(m_pPolyhedron == NULL) {
+  if(m_pmesh == NULL) {
     std::cout << "failed (no polyhedron)." << std::endl;
     return;
   }
   
   std::cout << "Compute bbox...";
 
-  m_bbox = CGAL::bbox_3(m_pPolyhedron->points_begin(), m_pPolyhedron->points_end());
+  m_bbox = CGAL::bbox_3(m_pmesh->points_begin(), m_pmesh->points_end());
   
-  std::cout << "done (" << m_pPolyhedron->size_of_facets()
+  std::cout << "done (" << m_pmesh->size_of_facets()
     << " facets)" << std::endl;
 }
 
@@ -120,18 +120,18 @@ int Scene::open(QString filename)
     return -1;
   }
 
-  if(m_pPolyhedron != NULL)
-    delete m_pPolyhedron;
+  if(m_pmesh != NULL)
+    delete m_pmesh;
 
   // allocate new polyhedron
-  m_pPolyhedron = new Polyhedron;
-  in >> *m_pPolyhedron;
+  m_pmesh = new Polyhedron_3;
+  in >> *m_pmesh;
   if(!in) {
     std::cerr << "invalid OFF file" << std::endl;
     QApplication::restoreOverrideCursor();
 
-    delete m_pPolyhedron;
-    m_pPolyhedron = NULL;
+    delete m_pmesh;
+    m_pmesh = NULL;
 
     return -1;
   }
@@ -141,8 +141,8 @@ int Scene::open(QString filename)
   m_facet_normals.clear();
   m_facet_centers.clear();
   m_facet_areas.clear();
-  for(Facet_iterator fitr = m_pPolyhedron->facets_begin();
-    fitr != m_pPolyhedron->facets_end(); ++fitr) {
+  for(Facet_iterator fitr = m_pmesh->facets_begin();
+    fitr != m_pmesh->facets_end(); ++fitr) {
     m_fidx_map.insert(std::pair<Facet_handle, std::size_t>(fitr, 0));
 
     const Halfedge_handle he = fitr->halfedge();
@@ -160,7 +160,7 @@ int Scene::open(QString filename)
     m_facet_areas.insert(std::pair<Facet_handle, FT>(fitr, area));
 
   }
-  m_point_pmap = get(boost::vertex_point, const_cast<Polyhedron &>(*m_pPolyhedron));
+  m_point_pmap = get(boost::vertex_point, const_cast<Polyhedron_3 &>(*m_pmesh));
 
   m_view_polyhedron = true;
 
@@ -193,19 +193,33 @@ void Scene::l21_approximation(
   const std::size_t num_proxies,
   const std::size_t num_iterations)
 {
-  typedef CGAL::L21Metric<Polyhedron, FacetNormalMap, FacetAreaMap> L21Metric;
-  typedef CGAL::L21ProxyFitting<Polyhedron, FacetNormalMap, FacetAreaMap> L21ProxyFitting;
-  typedef CGAL::PlaneFitting<Polyhedron> PlaneFitting;
-
-  if(!m_pPolyhedron)
+  if(!m_pmesh)
     return;
 
-  std::cout << "L21 VSA..." << std::endl;
+  std::cout << "L21 VSA class interface ..." << std::endl;
 
   m_tris.clear();
   m_anchor_pos.clear();
   m_anchor_vtx.clear();
-  CGAL::vsa_mesh_approximation(init, *m_pPolyhedron,
+
+  VSAL21 vsa_l21(L21Metric(m_normal_pmap, m_area_pmap), L21ProxyFitting(m_normal_pmap, m_area_pmap));
+  vsa_l21.set_mesh(*m_pmesh);
+  std::cerr << "start to init " << num_proxies << ' ' << init << std::endl;
+  vsa_l21.init_proxies(num_proxies, static_cast<VSAL21::Initialization>(init));
+  std::cerr << "start to run" << std::endl;
+  for (std::size_t i = 0; i < num_iterations; ++i)
+    vsa_l21.run_one_step();
+
+  std::cerr << "start to get" << std::endl;
+  Polyhedron_3 out_mesh;
+  vsa_l21.meshing(out_mesh);
+  vsa_l21.get_proxy_map(m_fidx_pmap);
+  m_tris = vsa_l21.get_indexed_triangles();
+  m_anchor_pos = vsa_l21.get_anchor_points();
+  m_anchor_vtx = vsa_l21.get_anchor_vertices();
+  m_bdrs = vsa_l21.get_indexed_boundary_polygons();
+
+  /*CGAL::vsa_mesh_approximation(init, *m_pmesh,
     num_proxies,
     num_iterations,
     m_fidx_pmap,
@@ -214,9 +228,9 @@ void Scene::l21_approximation(
     m_anchor_pos,
     m_anchor_vtx,
     m_bdrs,
-    PlaneFitting(*m_pPolyhedron),
+    PlaneFitting(*m_pmesh),
     L21Metric(m_normal_pmap, m_area_pmap),
-    L21ProxyFitting(m_normal_pmap, m_area_pmap));
+    L21ProxyFitting(m_normal_pmap, m_area_pmap));*/
 
   m_px_num = num_proxies;
   m_view_seg_boundary = true;
@@ -229,16 +243,16 @@ void Scene::compact_approximation(
   const std::size_t num_proxies,
   const std::size_t num_iterations)
 {
-  if(!m_pPolyhedron)
+  if(!m_pmesh)
     return;
 
   std::cout << "Compact approximation..." << std::endl;
 
-  typedef CGAL::PlaneFitting<Polyhedron> PlaneFitting;
+  typedef CGAL::PlaneFitting<Polyhedron_3> PlaneFitting;
   m_tris.clear();
   m_anchor_pos.clear();
   m_anchor_vtx.clear();
-  CGAL::vsa_mesh_approximation(init, *m_pPolyhedron,
+  CGAL::vsa_mesh_approximation(init, *m_pmesh,
     num_proxies,
     num_iterations,
     m_fidx_pmap,
@@ -247,7 +261,7 @@ void Scene::compact_approximation(
     m_anchor_pos,
     m_anchor_vtx,
     m_bdrs,
-    PlaneFitting(*m_pPolyhedron),
+    PlaneFitting(*m_pmesh),
     CompactMetric(m_center_pmap),
     PointProxyFitting(m_center_pmap, m_area_pmap));
 
@@ -262,11 +276,11 @@ void Scene::l2_approximation(
   const std::size_t num_proxies,
   const std::size_t num_iterations)
 {
-  typedef CGAL::L2Metric<Polyhedron, FacetAreaMap> L2Metric;
-  typedef CGAL::L2ProxyFitting<Polyhedron> L2ProxyFitting;
-  typedef CGAL::PCAPlaneFitting<Polyhedron> PCAPlaneFitting;
+  typedef CGAL::L2Metric<Polyhedron_3, FacetAreaMap> L2Metric;
+  typedef CGAL::L2ProxyFitting<Polyhedron_3> L2ProxyFitting;
+  typedef CGAL::PCAPlaneFitting<Polyhedron_3> PCAPlaneFitting;
 
-  if(!m_pPolyhedron)
+  if(!m_pmesh)
     return;
 
   std::cout << "L2 VSA..." << std::endl;
@@ -274,7 +288,7 @@ void Scene::l2_approximation(
   m_tris.clear();
   m_anchor_pos.clear();
   m_anchor_vtx.clear();
-  CGAL::vsa_mesh_approximation(init, *m_pPolyhedron,
+  CGAL::vsa_mesh_approximation(init, *m_pmesh,
     num_proxies,
     num_iterations,
     m_fidx_pmap,
@@ -283,9 +297,9 @@ void Scene::l2_approximation(
     m_anchor_pos,
     m_anchor_vtx,
     m_bdrs,
-    PCAPlaneFitting(*m_pPolyhedron),
-    L2Metric(*m_pPolyhedron, m_area_pmap),
-    L2ProxyFitting(*m_pPolyhedron));
+    PCAPlaneFitting(*m_pmesh),
+    L2Metric(*m_pmesh, m_area_pmap),
+    L2ProxyFitting(*m_pmesh));
 
   m_px_num = num_proxies;
   m_view_seg_boundary = true;
@@ -321,14 +335,14 @@ void Scene::draw()
 
 void Scene::render_polyhedron()
 {
-  if(!m_pPolyhedron)
+  if(!m_pmesh)
     return;
 
   ::glColor3ub(200, 200, 200);
   ::glBegin(GL_TRIANGLES);
   std::size_t fidx = 0;
-  for(Facet_iterator fitr = m_pPolyhedron->facets_begin();
-    fitr != m_pPolyhedron->facets_end(); ++fitr) {
+  for(Facet_iterator fitr = m_pmesh->facets_begin();
+    fitr != m_pmesh->facets_end(); ++fitr) {
     Halfedge_around_facet_circulator he = fitr->facet_begin();
     const Point_3 &a = he->vertex()->point();
     const Point_3 &b = he->next()->vertex()->point();
@@ -352,7 +366,7 @@ void Scene::render_polyhedron()
 
 void Scene::render_wireframe()
 {
-  if(!m_pPolyhedron)
+  if(!m_pmesh)
     return;
   
   // draw black edges
@@ -360,8 +374,8 @@ void Scene::render_wireframe()
   ::glColor3ub(0, 0, 0);
   ::glLineWidth(1.0f);
   ::glBegin(GL_LINES);
-  for(Edge_iterator he = m_pPolyhedron->edges_begin();
-    he != m_pPolyhedron->edges_end(); he++) {
+  for(Edge_iterator he = m_pmesh->edges_begin();
+    he != m_pmesh->edges_end(); he++) {
     const Point_3& a = he->vertex()->point();
     const Point_3& b = he->opposite()->vertex()->point();
     ::glVertex3d(a.x(),a.y(),a.z());
@@ -372,15 +386,15 @@ void Scene::render_wireframe()
 
 void Scene::render_segment_boundary()
 {
-  if(!m_pPolyhedron || !m_px_num)
+  if(!m_pmesh || !m_px_num)
     return;
 
   ::glDisable(GL_LIGHTING);
   ::glColor3ub(0, 0, 0);
   ::glLineWidth(1.0);
   ::glBegin(GL_LINES);
-  for(Edge_iterator eitr = m_pPolyhedron->edges_begin();
-    eitr != m_pPolyhedron->edges_end(); ++eitr) {
+  for(Edge_iterator eitr = m_pmesh->edges_begin();
+    eitr != m_pmesh->edges_end(); ++eitr) {
     std::size_t segid0 = std::numeric_limits<std::size_t>::max();
     if(!eitr->is_border())
       segid0 = m_fidx_pmap[eitr->facet()];
@@ -412,7 +426,7 @@ void Scene::render_anchors()
   ::glColor3ub(255, 255, 255);
   ::glPointSize(5.0f);
   ::glBegin(GL_POINTS);
-  BOOST_FOREACH(const Polyhedron::Vertex_handle &vtx, m_anchor_vtx) {
+  BOOST_FOREACH(const Polyhedron_3::Vertex_handle &vtx, m_anchor_vtx) {
     const Point_3 &pt = vtx->point();
     ::glVertex3d(pt.x(), pt.y(), pt.z());
   }
