@@ -39,7 +39,7 @@ typedef CGAL::VSA_approximation<Polyhedron_3, PlaneProxy, L21Metric, L21ProxyFit
 typedef CGAL::L2Metric<Polyhedron_3, FacetAreaMap> L2Metric;
 typedef CGAL::L2ProxyFitting<Polyhedron_3> L2ProxyFitting;
 typedef CGAL::PCAPlaneFitting<Polyhedron_3> PCAPlaneFitting;
-typedef CGAL::VSA_approximation<Polyhedron_3, PCAPlaneFitting, L21Metric, L2ProxyFitting> VSAL2;
+typedef CGAL::VSA_approximation<Polyhedron_3, PlaneProxy, L2Metric, L2ProxyFitting> VSAL2;
 
 class Scene
 {
@@ -50,14 +50,28 @@ public:
     m_normal_pmap(m_facet_normals),
     m_center_pmap(m_facet_centers),
     m_area_pmap(m_facet_areas),
-    m_vsa_l21(L21Metric(m_normal_pmap, m_area_pmap), L21ProxyFitting(m_normal_pmap, m_area_pmap)),
+    m_pl21_metric(NULL),
+    m_pl21_proxy_fitting(NULL),
+    m_pl2_metric(NULL),
+    m_pl2_proxy_fitting(NULL),
+    // m_vsa_l21(L21Metric(m_normal_pmap, m_area_pmap), L21ProxyFitting(m_normal_pmap, m_area_pmap)),
     m_px_num(0),
     m_view_polyhedron(false),
     m_view_wireframe(false),
     m_view_seg_boundary(false),
     m_view_anchors(false) {}
 
-  ~Scene() { delete m_pmesh; }
+  ~Scene() {
+    delete m_pmesh;
+    if (m_pl21_metric)
+      delete m_pl21_metric;
+    if (m_pl21_proxy_fitting)
+      delete m_pl21_proxy_fitting;
+    if (m_pl2_metric)
+      delete m_pl2_metric;
+    if (m_pl2_proxy_fitting)
+      delete m_pl2_proxy_fitting;
+  }
 
   void update_bbox();
   Bbox_3 bbox() { return m_bbox; }
@@ -126,7 +140,12 @@ private:
   VertexPointMap m_point_pmap;
 
   // algorithm instance
+  L21Metric *m_pl21_metric;
+  L21ProxyFitting *m_pl21_proxy_fitting;
+  L2Metric *m_pl2_metric;
+  L2ProxyFitting *m_pl2_proxy_fitting;
   VSAL21 m_vsa_l21;
+  VSAL2 m_vsa_l2;
 
   std::vector<Point_3> m_anchor_pos;
   std::vector<Polyhedron_3::Vertex_handle> m_anchor_vtx;

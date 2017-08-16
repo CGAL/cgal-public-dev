@@ -140,6 +140,25 @@ int Scene::open(QString filename)
   }
   m_point_pmap = get(boost::vertex_point, const_cast<Polyhedron_3 &>(*m_pmesh));
 
+  if (m_pl21_metric)
+    delete m_pl21_metric;
+  if (m_pl21_proxy_fitting)
+    delete m_pl21_proxy_fitting;
+  if (m_pl2_metric)
+    delete m_pl2_metric;
+  if (m_pl2_proxy_fitting)
+    delete m_pl2_proxy_fitting;
+
+  m_pl21_metric = new L21Metric(m_normal_pmap, m_area_pmap);
+  m_pl21_proxy_fitting = new L21ProxyFitting(m_normal_pmap, m_area_pmap);
+  m_pl2_metric = new L2Metric(*m_pmesh, m_area_pmap);
+  m_pl2_proxy_fitting = new L2ProxyFitting(*m_pmesh);
+  
+  m_vsa_l21.set_error_metric(*m_pl21_metric);
+  m_vsa_l21.set_proxy_fitting(*m_pl21_proxy_fitting);
+  m_vsa_l2.set_error_metric(*m_pl2_metric);
+  m_vsa_l2.set_proxy_fitting(*m_pl2_proxy_fitting);
+
   m_view_polyhedron = true;
 
   QApplication::restoreOverrideCursor();
@@ -256,23 +275,36 @@ void Scene::l2_approximation(
   if(!m_pmesh)
     return;
 
-  std::cout << "L2 VSA..." << std::endl;
+  std::cout << "L2 VSA class interface..." << std::endl;
 
   m_tris.clear();
   m_anchor_pos.clear();
   m_anchor_vtx.clear();
-  CGAL::vsa_mesh_approximation(init, *m_pmesh,
-    num_proxies,
-    num_iterations,
-    m_fidx_pmap,
-    m_point_pmap,
-    m_tris,
-    m_anchor_pos,
-    m_anchor_vtx,
-    m_bdrs,
-    PCAPlaneFitting(*m_pmesh),
-    L2Metric(*m_pmesh, m_area_pmap),
-    L2ProxyFitting(*m_pmesh));
+
+  m_vsa_l2.set_mesh(*m_pmesh);
+
+  if (static_cast<VSAL2::Initialization>(init) == VSAL2::IncrementalInit) {
+    // for comparision
+    m_vsa_l2.init_proxies(num_proxies / 2, VSAL2::RandomInit);
+    for (std::size_t i = 0; i < num_iterations; ++i)
+      m_vsa_l2.run_one_step();
+    m_vsa_l2.add_proxies(VSAL2::IncrementalInit, num_proxies - num_proxies / 2, num_iterations);
+    for (std::size_t i = 0; i < num_iterations; ++i)
+      m_vsa_l2.run_one_step();
+  }
+  else {
+    m_vsa_l2.init_proxies(num_proxies, static_cast<VSAL2::Initialization>(init));
+    for (std::size_t i = 0; i < num_iterations; ++i)
+      m_vsa_l2.run_one_step();
+  }
+
+  Polyhedron_3 out_mesh;
+  m_vsa_l2.meshing(out_mesh);
+  m_vsa_l2.get_proxy_map(m_fidx_pmap);
+  m_tris = m_vsa_l2.get_indexed_triangles();
+  m_anchor_pos = m_vsa_l2.get_anchor_points();
+  m_anchor_vtx = m_vsa_l2.get_anchor_vertices();
+  m_bdrs = m_vsa_l2.get_indexed_boundary_polygons();
 
   m_px_num = num_proxies;
   m_view_seg_boundary = true;
