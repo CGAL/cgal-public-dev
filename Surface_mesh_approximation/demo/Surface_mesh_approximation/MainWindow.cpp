@@ -218,6 +218,14 @@ void MainWindow::on_action_l2_metric_triggered()
   }
 }
 
+void MainWindow::on_action_Meshing_triggered()
+{
+  QApplication::setOverrideCursor(Qt::WaitCursor);
+  m_pScene->meshing();
+  m_pViewer->update();
+  QApplication::restoreOverrideCursor();
+}
+
 void MainWindow::on_actionView_polyhedron_triggered()
 {
   m_pScene->toggle_view_polyhedron();

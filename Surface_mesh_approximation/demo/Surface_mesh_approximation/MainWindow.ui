@@ -67,6 +67,8 @@
     <addaction name="action_l21_metric"/>
     <addaction name="action_l2_metric"/>
     <addaction name="action_compact_metric"/>
+    <addaction name="separator"/>
+    <addaction name="action_Meshing"/>
    </widget>
    <widget class="QMenu" name="menuEdit">
     <property name="title">
@@ -100,32 +102,32 @@
   </action>
   <action name="actionSave_snapshot">
    <property name="text">
-    <string>Save snapshot</string>
+    <string>&amp;Save snapshot</string>
    </property>
   </action>
   <action name="actionCopy_snapshot">
    <property name="text">
-    <string>Copy snapshot</string>
+    <string>&amp;Copy snapshot</string>
    </property>
   </action>
   <action name="actionView_segboundary">
    <property name="text">
-    <string>Segment Boundary</string>
+    <string>Segment &amp;Boundary</string>
    </property>
   </action>
   <action name="actionView_anchors">
    <property name="text">
-    <string>Anchors</string>
+    <string>&amp;Anchors</string>
    </property>
   </action>
   <action name="actionView_approximation">
    <property name="text">
-    <string>Approximation</string>
+    <string>Appro&amp;ximation</string>
    </property>
   </action>
   <action name="actionView_polyhedron">
    <property name="text">
-    <string>Polyhedron</string>
+    <string>&amp;Polyhedron</string>
    </property>
   </action>
   <action name="actionSaveApproximation">
@@ -135,13 +137,10 @@
   </action>
   <action name="action_l21_metric">
    <property name="text">
-    <string>&amp;L21 Metric</string>
+    <string>L2&amp;1 Metric</string>
    </property>
    <property name="toolTip">
     <string>Variational Shape Approximation</string>
-   </property>
-   <property name="shortcut">
-    <string>Ctrl+V</string>
    </property>
   </action>
   <action name="action_compact_metric">
@@ -151,7 +150,12 @@
   </action>
   <action name="action_l2_metric">
    <property name="text">
-    <string>L2 Metric</string>
+    <string>L&amp;2 Metric</string>
+   </property>
+  </action>
+  <action name="action_Meshing">
+   <property name="text">
+    <string>&amp;Meshing</string>
    </property>
   </action>
  </widget>

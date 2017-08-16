@@ -97,6 +97,8 @@ typedef CGAL::VSA_approximation<Polyhedron_3, PointProxy, CompactMetric, PointPr
 
 class Scene
 {
+  enum Metric { L21, L2, Compact };
+
 public:
   Scene() :
     m_pmesh(NULL),
@@ -143,6 +145,7 @@ public:
   void l21_approximation(const int &init, const std::size_t num_proxies, const std::size_t num_iterations);
   void l2_approximation(const int &init, const std::size_t num_proxies, const std::size_t num_iterations);
   void compact_approximation(const int &init, const std::size_t num_proxies, const std::size_t num_iterations);
+  void meshing();
 
   // toggle view options
   void toggle_view_polyhedron() {
@@ -198,6 +201,7 @@ private:
   FacetAreaMap m_area_pmap;
 
   // algorithm instance
+  Metric m_metric; // current metric
   L21Metric *m_pl21_metric;
   L21ProxyFitting *m_pl21_proxy_fitting;
   VSAL21 m_vsa_l21;

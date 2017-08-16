@@ -165,17 +165,10 @@ void Scene::l21_approximation(
     for (std::size_t i = 0; i < num_iterations; ++i)
       m_vsa_l21.run_one_step();
   }
-
-  Polyhedron_3 out_mesh;
-  m_vsa_l21.meshing(out_mesh);
   m_vsa_l21.get_proxy_map(m_fidx_pmap);
-  m_tris = m_vsa_l21.get_indexed_triangles();
-  m_anchor_pos = m_vsa_l21.get_anchor_points();
-  m_anchor_vtx = m_vsa_l21.get_anchor_vertices();
-  m_bdrs = m_vsa_l21.get_indexed_boundary_polygons();
-
   m_px_num = num_proxies;
   m_view_seg_boundary = true;
+  m_metric = L21;
 
   std::cout << "Done." << std::endl;
 }
@@ -205,17 +198,10 @@ void Scene::l2_approximation(
     for (std::size_t i = 0; i < num_iterations; ++i)
       m_vsa_l2.run_one_step();
   }
-
-  Polyhedron_3 out_mesh;
-  m_vsa_l2.meshing(out_mesh);
   m_vsa_l2.get_proxy_map(m_fidx_pmap);
-  m_tris = m_vsa_l2.get_indexed_triangles();
-  m_anchor_pos = m_vsa_l2.get_anchor_points();
-  m_anchor_vtx = m_vsa_l2.get_anchor_vertices();
-  m_bdrs = m_vsa_l2.get_indexed_boundary_polygons();
-
   m_px_num = num_proxies;
   m_view_seg_boundary = true;
+  m_metric = L2;
 
   std::cout << "Done." << std::endl;
 }
@@ -245,19 +231,42 @@ void Scene::compact_approximation(
     for (std::size_t i = 0; i < num_iterations; ++i)
       m_vsa_compact.run_one_step();
   }
-
-  Polyhedron_3 out_mesh;
-  m_vsa_compact.meshing(out_mesh);
   m_vsa_compact.get_proxy_map(m_fidx_pmap);
-  m_tris = m_vsa_compact.get_indexed_triangles();
-  m_anchor_pos = m_vsa_compact.get_anchor_points();
-  m_anchor_vtx = m_vsa_compact.get_anchor_vertices();
-  m_bdrs = m_vsa_compact.get_indexed_boundary_polygons();
-
   m_px_num = num_proxies;
   m_view_seg_boundary = true;
+  m_metric = Compact;
 
   std::cout << "Done." << std::endl;
+}
+
+void Scene::meshing()
+{
+  Polyhedron_3 out_mesh;
+  switch(m_metric) {
+    case L21:
+      m_vsa_l21.meshing(out_mesh);
+      m_tris = m_vsa_l21.get_indexed_triangles();
+      m_anchor_pos = m_vsa_l21.get_anchor_points();
+      m_anchor_vtx = m_vsa_l21.get_anchor_vertices();
+      m_bdrs = m_vsa_l21.get_indexed_boundary_polygons();
+      break;
+    case L2:
+      m_vsa_l2.meshing(out_mesh);
+      m_tris = m_vsa_l2.get_indexed_triangles();
+      m_anchor_pos = m_vsa_l2.get_anchor_points();
+      m_anchor_vtx = m_vsa_l2.get_anchor_vertices();
+      m_bdrs = m_vsa_l2.get_indexed_boundary_polygons();
+      break;
+    case Compact:
+      m_vsa_compact.meshing(out_mesh);
+      m_tris = m_vsa_compact.get_indexed_triangles();
+      m_anchor_pos = m_vsa_compact.get_anchor_points();
+      m_anchor_vtx = m_vsa_compact.get_anchor_vertices();
+      m_bdrs = m_vsa_compact.get_indexed_boundary_polygons();
+      break;
+    default:
+      std::cerr << "Unknow metric." << std::endl;
+  }
 }
 
 void Scene::draw()

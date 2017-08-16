@@ -49,6 +49,7 @@ protected slots:
   void on_action_l21_metric_triggered();
   void on_action_compact_metric_triggered();
   void on_action_l2_metric_triggered();
+  void on_action_Meshing_triggered();
 
   // view menu
   void on_actionView_polyhedron_triggered();
