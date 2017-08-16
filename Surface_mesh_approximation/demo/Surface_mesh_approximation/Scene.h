@@ -31,15 +31,69 @@ typedef boost::associative_property_map<std::map<Facet_handle, FT> > FacetAreaMa
 typedef boost::associative_property_map<std::map<Facet_handle, Point_3> > FacetCenterMap;
 typedef boost::property_map<Polyhedron_3, boost::vertex_point_t>::type VertexPointMap;
 
+
 typedef CGAL::PlaneProxy<Polyhedron_3> PlaneProxy;
+
 typedef CGAL::L21Metric<Polyhedron_3, FacetNormalMap, FacetAreaMap> L21Metric;
 typedef CGAL::L21ProxyFitting<Polyhedron_3, FacetNormalMap, FacetAreaMap> L21ProxyFitting;
 typedef CGAL::VSA_approximation<Polyhedron_3, PlaneProxy, L21Metric, L21ProxyFitting> VSAL21;
 
 typedef CGAL::L2Metric<Polyhedron_3, FacetAreaMap> L2Metric;
 typedef CGAL::L2ProxyFitting<Polyhedron_3> L2ProxyFitting;
-typedef CGAL::PCAPlaneFitting<Polyhedron_3> PCAPlaneFitting;
 typedef CGAL::VSA_approximation<Polyhedron_3, PlaneProxy, L2Metric, L2ProxyFitting> VSAL2;
+
+// user defined compact metric
+struct PointProxy {
+  Facet_handle seed;
+  Point_3 center;
+};
+
+struct CompactMetric {
+  typedef PointProxy Proxy;
+
+  CompactMetric(const FacetCenterMap &_center_pmap)
+    : center_pmap(_center_pmap) {}
+
+  FT operator()(const Facet_handle &f, const PointProxy &px) const {
+    return FT(std::sqrt(CGAL::to_double(
+      CGAL::squared_distance(center_pmap[f], px.center))));
+  }
+
+  const FacetCenterMap center_pmap;
+};
+
+struct PointProxyFitting {
+  typedef PointProxy Proxy;
+
+  PointProxyFitting(const FacetCenterMap &_center_pmap,
+    const FacetAreaMap &_area_pmap)
+    : center_pmap(_center_pmap),
+    area_pmap(_area_pmap) {}
+
+  template<typename FacetIterator>
+  PointProxy operator()(const FacetIterator beg, const FacetIterator end) const {
+    CGAL_assertion(beg != end);
+
+    // fitting center
+    Vector_3 center = CGAL::NULL_VECTOR;
+    FT area(0);
+    for (FacetIterator fitr = beg; fitr != end; ++fitr) {
+      center = center + (center_pmap[*fitr] - CGAL::ORIGIN) * area_pmap[*fitr];
+      area += area_pmap[*fitr];
+    }
+    center = center / area;
+
+    // construct proxy
+    PointProxy px;
+    px.center = CGAL::ORIGIN + center;
+
+    return px;
+  }
+
+  const FacetCenterMap center_pmap;
+  const FacetAreaMap area_pmap;
+};
+typedef CGAL::VSA_approximation<Polyhedron_3, PointProxy, CompactMetric, PointProxyFitting> VSACompact;
 
 class Scene
 {
@@ -54,7 +108,8 @@ public:
     m_pl21_proxy_fitting(NULL),
     m_pl2_metric(NULL),
     m_pl2_proxy_fitting(NULL),
-    // m_vsa_l21(L21Metric(m_normal_pmap, m_area_pmap), L21ProxyFitting(m_normal_pmap, m_area_pmap)),
+    m_pcompact_metric(NULL),
+    m_pcompact_proxy_fitting(NULL),
     m_px_num(0),
     m_view_polyhedron(false),
     m_view_wireframe(false),
@@ -71,6 +126,10 @@ public:
       delete m_pl2_metric;
     if (m_pl2_proxy_fitting)
       delete m_pl2_proxy_fitting;
+    if (m_pcompact_metric)
+      delete m_pcompact_metric;
+    if (m_pcompact_proxy_fitting)
+      delete m_pcompact_proxy_fitting;
   }
 
   void update_bbox();
@@ -142,10 +201,15 @@ private:
   // algorithm instance
   L21Metric *m_pl21_metric;
   L21ProxyFitting *m_pl21_proxy_fitting;
+  VSAL21 m_vsa_l21;
+
   L2Metric *m_pl2_metric;
   L2ProxyFitting *m_pl2_proxy_fitting;
-  VSAL21 m_vsa_l21;
   VSAL2 m_vsa_l2;
+
+  CompactMetric *m_pcompact_metric;
+  PointProxyFitting *m_pcompact_proxy_fitting;
+  VSACompact m_vsa_compact;
 
   std::vector<Point_3> m_anchor_pos;
   std::vector<Polyhedron_3::Vertex_handle> m_anchor_vtx;

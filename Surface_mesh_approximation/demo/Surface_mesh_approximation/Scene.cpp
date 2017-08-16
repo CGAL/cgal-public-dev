@@ -16,58 +16,6 @@
 
 #include "ColorCheatSheet.h"
 
-// user defined compact metric
-struct PointProxy {
-  Facet_handle seed;
-  Point_3 center;
-};
-
-struct CompactMetric {
-  typedef PointProxy Proxy;
-
-  CompactMetric(const FacetCenterMap &_center_pmap)
-    : center_pmap(_center_pmap) {}
-
-  FT operator()(const Facet_handle &f, const PointProxy &px) const {
-    return FT(std::sqrt(CGAL::to_double(
-      CGAL::squared_distance(center_pmap[f], px.center))));
-  }
-
-  const FacetCenterMap center_pmap;
-};
-
-struct PointProxyFitting {
-  typedef PointProxy Proxy;
-
-  PointProxyFitting(const FacetCenterMap &_center_pmap,
-    const FacetAreaMap &_area_pmap)
-    : center_pmap(_center_pmap),
-    area_pmap(_area_pmap) {}
-
-  template<typename FacetIterator>
-  PointProxy operator()(const FacetIterator beg, const FacetIterator end) const {
-    CGAL_assertion(beg != end);
-
-    // fitting center
-    Vector_3 center = CGAL::NULL_VECTOR;
-    FT area(0);
-    for (FacetIterator fitr = beg; fitr != end; ++fitr) {
-      center = center + (center_pmap[*fitr] - CGAL::ORIGIN) * area_pmap[*fitr];
-      area += area_pmap[*fitr];
-    }
-    center = center / area;
-
-    // construct proxy
-    PointProxy px;
-    px.center = CGAL::ORIGIN + center;
-
-    return px;
-  }
-
-  const FacetCenterMap center_pmap;
-  const FacetAreaMap area_pmap;
-};
-
 void Scene::update_bbox()
 {
   if(m_pmesh == NULL) {
@@ -148,16 +96,24 @@ int Scene::open(QString filename)
     delete m_pl2_metric;
   if (m_pl2_proxy_fitting)
     delete m_pl2_proxy_fitting;
+  if (m_pcompact_metric)
+    delete m_pcompact_metric;
+  if (m_pcompact_proxy_fitting)
+    delete m_pcompact_proxy_fitting;
 
   m_pl21_metric = new L21Metric(m_normal_pmap, m_area_pmap);
   m_pl21_proxy_fitting = new L21ProxyFitting(m_normal_pmap, m_area_pmap);
   m_pl2_metric = new L2Metric(*m_pmesh, m_area_pmap);
   m_pl2_proxy_fitting = new L2ProxyFitting(*m_pmesh);
+  m_pcompact_metric = new CompactMetric(m_center_pmap);
+  m_pcompact_proxy_fitting = new PointProxyFitting(m_center_pmap, m_area_pmap);
   
   m_vsa_l21.set_error_metric(*m_pl21_metric);
   m_vsa_l21.set_proxy_fitting(*m_pl21_proxy_fitting);
   m_vsa_l2.set_error_metric(*m_pl2_metric);
   m_vsa_l2.set_proxy_fitting(*m_pl2_proxy_fitting);
+  m_vsa_compact.set_error_metric(*m_pcompact_metric);
+  m_vsa_compact.set_proxy_fitting(*m_pcompact_proxy_fitting);
 
   m_view_polyhedron = true;
 
@@ -194,11 +150,6 @@ void Scene::l21_approximation(
     return;
 
   std::cout << "L21 VSA class interface ..." << std::endl;
-
-  m_tris.clear();
-  m_anchor_pos.clear();
-  m_anchor_vtx.clear();
-
   m_vsa_l21.set_mesh(*m_pmesh);
 
   if (static_cast<VSAL21::Initialization>(init) == VSAL21::IncrementalInit) {
@@ -238,24 +189,33 @@ void Scene::compact_approximation(
   if(!m_pmesh)
     return;
 
-  std::cout << "Compact approximation..." << std::endl;
+  std::cout << "Compact approximation class interface..." << std::endl;
+  m_vsa_compact.set_mesh(*m_pmesh);
 
-  typedef CGAL::PlaneFitting<Polyhedron_3> PlaneFitting;
-  m_tris.clear();
-  m_anchor_pos.clear();
-  m_anchor_vtx.clear();
-  CGAL::vsa_mesh_approximation(init, *m_pmesh,
-    num_proxies,
-    num_iterations,
-    m_fidx_pmap,
-    m_point_pmap,
-    m_tris,
-    m_anchor_pos,
-    m_anchor_vtx,
-    m_bdrs,
-    PlaneFitting(*m_pmesh),
-    CompactMetric(m_center_pmap),
-    PointProxyFitting(m_center_pmap, m_area_pmap));
+  if (static_cast<VSACompact::Initialization>(init) == VSACompact::IncrementalInit) {
+    // for comparision
+    m_vsa_compact.init_proxies(num_proxies / 2, VSACompact::RandomInit);
+    for (std::size_t i = 0; i < num_iterations; ++i)
+      m_vsa_compact.run_one_step();
+    m_vsa_compact.add_proxies(VSACompact::IncrementalInit, num_proxies - num_proxies / 2, num_iterations);
+    for (std::size_t i = 0; i < num_iterations; ++i)
+      m_vsa_compact.run_one_step();
+  }
+  else {
+    std::cout << "init " << init << std::endl;
+    m_vsa_compact.init_proxies(num_proxies, static_cast<VSACompact::Initialization>(init));
+    std::cout << "run" << std::endl;
+    for (std::size_t i = 0; i < num_iterations; ++i)
+      m_vsa_compact.run_one_step();
+  }
+
+  Polyhedron_3 out_mesh;
+  m_vsa_compact.meshing(out_mesh);
+  m_vsa_compact.get_proxy_map(m_fidx_pmap);
+  m_tris = m_vsa_compact.get_indexed_triangles();
+  m_anchor_pos = m_vsa_compact.get_anchor_points();
+  m_anchor_vtx = m_vsa_compact.get_anchor_vertices();
+  m_bdrs = m_vsa_compact.get_indexed_boundary_polygons();
 
   m_px_num = num_proxies;
   m_view_seg_boundary = true;
@@ -268,19 +228,10 @@ void Scene::l2_approximation(
   const std::size_t num_proxies,
   const std::size_t num_iterations)
 {
-  typedef CGAL::L2Metric<Polyhedron_3, FacetAreaMap> L2Metric;
-  typedef CGAL::L2ProxyFitting<Polyhedron_3> L2ProxyFitting;
-  typedef CGAL::PCAPlaneFitting<Polyhedron_3> PCAPlaneFitting;
-
   if(!m_pmesh)
     return;
 
   std::cout << "L2 VSA class interface..." << std::endl;
-
-  m_tris.clear();
-  m_anchor_pos.clear();
-  m_anchor_vtx.clear();
-
   m_vsa_l2.set_mesh(*m_pmesh);
 
   if (static_cast<VSAL2::Initialization>(init) == VSAL2::IncrementalInit) {
