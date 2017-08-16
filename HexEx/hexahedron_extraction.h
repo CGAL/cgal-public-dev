@@ -31,7 +31,9 @@ bool does_intersect(Tetrahedron_3 tet, Point_3 p){/**
 * If it lies on the unbounded side, we don't consider the volumes tobe intersecting: so the function returns false. 
 */
   if(tet.is_degenerate()||tet.has_on_unbounded_side(p)) return false;
-  else return true;
+  else if(tet.has_on_bounded_side(p)) return true;
+  else if(tet.has_on_boundary(p) && (tet.has_on_bounded_side(Point_3(p[0]+1, p[1], p[2]))||tet.has_on_bounded_side(Point_3(p[0], p[1]+1, p[2]))||tet.has_on_bounded_side(Point_3(p[0], p[1], p[2]+1))||tet.has_on_bounded_side(Point_3(p[0]+1, p[1]+1, p[2]))||tet.has_on_bounded_side(Point_3(p[0]+1, p[1], p[2]+1))||tet.has_on_bounded_side(Point_3(p[0], p[1]+1, p[2]+1))||tet.has_on_bounded_side(Point_3(p[0]+1, p[1]+1, p[2]+1)))) return true;
+  else return false;
 }
 
 
@@ -147,7 +149,7 @@ for(LCC_3::One_dart_per_incident_cell_range<0,3>::iterator it1 = input_tet_mesh.
               if(tet.has_on_unbounded_side(p)){
                 Aff_transformation *at_new = find_tet_parametrization(input_tet_mesh, p, parametrization_matrices);
                 if(at_new == nullptr) p3 = p.transform(at_inv);
-                else p3 = p.transform((*at_new).inverse());
+               else p3 = p.transform((*at_new).inverse());
               } 
               else p3 = p.transform(at_inv);
               output_points.emplace(std::make_pair(p, p3));

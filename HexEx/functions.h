@@ -112,6 +112,14 @@ if(DEBUG) std::cout<<"Inside dummy_parameterize"<<std::endl;
   }
 }
 
+void set_dart_info(LCC_3& lcc){
+  for(LCC_3::Dart_range::iterator it = (lcc.darts()).begin(), itend = (lcc.darts()).end(); it != itend; it++){
+    (lcc.info(it)).cell_no = 0;
+    (lcc.info(it)).singular = false;
+    (lcc.info(it)).singular_edges = 0;
+  }
+}
+
 //}
 #endif
 

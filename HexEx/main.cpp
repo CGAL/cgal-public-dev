@@ -16,7 +16,7 @@ int main(int argc, char** argv){
   std::string str;
   if (argc==1)
   {
-    std::cout<<"Enter filename: (eg: data/elephant.off , data/2tets.off or data/fandisk.off)"<<std::endl;
+    std::cout<<"Enter filename of ANY file in tests/: (eg: 2tets-1 or elephant-1 or fandisk-1)"<<std::endl;
     std::cin>>str;
   }
   else

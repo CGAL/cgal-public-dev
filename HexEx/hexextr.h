@@ -26,10 +26,10 @@ class HexExtr{
 // Currently, meshing commands are executed when the constructor is called. This will be changes later to incorporate the fucntions as methos of this class.
     HexExtr(std::string infilename): identity(1,0,0,0,1,0,0,0,1,1){
 //input_tet_mesh to lcc
-     load_off_to_LCC(infilename, input_tet_mesh);
+    // load_off_to_LCC(infilename, input_tet_mesh);
    
 if(DEBUG)std::cout<<"beginning"<<std::endl;
-  std::ifstream in;
+  /*std::ifstream in;
   input_tet_mesh.clear();
   in.open("triangulation");
   if (in.is_open())
@@ -38,26 +38,34 @@ if(DEBUG)std::cout<<"beginning"<<std::endl;
     in.close();
   }
  if(DEBUG)std::cout<<"loaded to lcc"<<std::endl;
-input_tet_mesh.display_characteristics(std::cout); std::cout<<std::endl;
+input_tet_mesh.display_characteristics(std::cout); std::cout<<std::endl;*/
 
 //a parametrization function to test the extraction:
-      dummy_parametrize(input_tet_mesh);
+     // dummy_parametrize(input_tet_mesh);
 
-std::ofstream out;
+
+/*std::ofstream out;
 out.open("parametrized");
 out<<input_tet_mesh; 
 out.close();
+
 if(DEBUG)std::cout<<"parametrized"<<std::endl;
-if(DEBUG)std::cout<<"beginning"<<std::endl;
-  //std::ifstream in;
+if(DEBUG)std::cout<<"beginning"<<std::endl;*/
+
+  std::ifstream in;
 
   input_tet_mesh.clear();
-  in.open("parametrized");
+  in.open("tests/"+infilename);
   if (in.is_open())
   {  //CGAL::write_off(input_tet_mesh, in);
     in>>input_tet_mesh;
     in.close();
   }
+  else{
+  std::cout<<"no"<<std::endl;
+  }
+
+  set_dart_info(input_tet_mesh);
 //We would like to directly input parametrized meshes: so I am trying to first export LCC with parameters stored in dart_info using << in the lines 44 - 49, then try taking such a file as an input to our method in lines 51-57. If this works, parametrized_LCC file can be directly used to test.
 
 /*std::ofstream of;
