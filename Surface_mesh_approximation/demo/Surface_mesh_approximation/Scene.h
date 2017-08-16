@@ -196,7 +196,6 @@ private:
   FacetNormalMap m_normal_pmap;
   FacetCenterMap m_center_pmap;
   FacetAreaMap m_area_pmap;
-  VertexPointMap m_point_pmap;
 
   // algorithm instance
   L21Metric *m_pl21_metric;

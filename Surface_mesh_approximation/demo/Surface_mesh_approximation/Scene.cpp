@@ -86,7 +86,6 @@ int Scene::open(QString filename)
     m_facet_areas.insert(std::pair<Facet_handle, FT>(fitr, area));
 
   }
-  m_point_pmap = get(boost::vertex_point, const_cast<Polyhedron_3 &>(*m_pmesh));
 
   if (m_pl21_metric)
     delete m_pl21_metric;
@@ -149,7 +148,7 @@ void Scene::l21_approximation(
   if(!m_pmesh)
     return;
 
-  std::cout << "L21 VSA class interface ..." << std::endl;
+  std::cout << "L21 approximation..." << std::endl;
   m_vsa_l21.set_mesh(*m_pmesh);
 
   if (static_cast<VSAL21::Initialization>(init) == VSAL21::IncrementalInit) {
@@ -178,49 +177,7 @@ void Scene::l21_approximation(
   m_px_num = num_proxies;
   m_view_seg_boundary = true;
 
-  std::cout << "done" << std::endl;
-}
-
-void Scene::compact_approximation(
-  const int &init,
-  const std::size_t num_proxies,
-  const std::size_t num_iterations)
-{
-  if(!m_pmesh)
-    return;
-
-  std::cout << "Compact approximation class interface..." << std::endl;
-  m_vsa_compact.set_mesh(*m_pmesh);
-
-  if (static_cast<VSACompact::Initialization>(init) == VSACompact::IncrementalInit) {
-    // for comparision
-    m_vsa_compact.init_proxies(num_proxies / 2, VSACompact::RandomInit);
-    for (std::size_t i = 0; i < num_iterations; ++i)
-      m_vsa_compact.run_one_step();
-    m_vsa_compact.add_proxies(VSACompact::IncrementalInit, num_proxies - num_proxies / 2, num_iterations);
-    for (std::size_t i = 0; i < num_iterations; ++i)
-      m_vsa_compact.run_one_step();
-  }
-  else {
-    std::cout << "init " << init << std::endl;
-    m_vsa_compact.init_proxies(num_proxies, static_cast<VSACompact::Initialization>(init));
-    std::cout << "run" << std::endl;
-    for (std::size_t i = 0; i < num_iterations; ++i)
-      m_vsa_compact.run_one_step();
-  }
-
-  Polyhedron_3 out_mesh;
-  m_vsa_compact.meshing(out_mesh);
-  m_vsa_compact.get_proxy_map(m_fidx_pmap);
-  m_tris = m_vsa_compact.get_indexed_triangles();
-  m_anchor_pos = m_vsa_compact.get_anchor_points();
-  m_anchor_vtx = m_vsa_compact.get_anchor_vertices();
-  m_bdrs = m_vsa_compact.get_indexed_boundary_polygons();
-
-  m_px_num = num_proxies;
-  m_view_seg_boundary = true;
-
-  std::cout << "done" << std::endl;
+  std::cout << "Done." << std::endl;
 }
 
 void Scene::l2_approximation(
@@ -231,7 +188,7 @@ void Scene::l2_approximation(
   if(!m_pmesh)
     return;
 
-  std::cout << "L2 VSA class interface..." << std::endl;
+  std::cout << "L2 approximation..." << std::endl;
   m_vsa_l2.set_mesh(*m_pmesh);
 
   if (static_cast<VSAL2::Initialization>(init) == VSAL2::IncrementalInit) {
@@ -260,7 +217,47 @@ void Scene::l2_approximation(
   m_px_num = num_proxies;
   m_view_seg_boundary = true;
 
-  std::cout << "done" << std::endl;
+  std::cout << "Done." << std::endl;
+}
+
+void Scene::compact_approximation(
+  const int &init,
+  const std::size_t num_proxies,
+  const std::size_t num_iterations)
+{
+  if(!m_pmesh)
+    return;
+
+  std::cout << "Compact approximation..." << std::endl;
+  m_vsa_compact.set_mesh(*m_pmesh);
+
+  if (static_cast<VSACompact::Initialization>(init) == VSACompact::IncrementalInit) {
+    // for comparision
+    m_vsa_compact.init_proxies(num_proxies / 2, VSACompact::RandomInit);
+    for (std::size_t i = 0; i < num_iterations; ++i)
+      m_vsa_compact.run_one_step();
+    m_vsa_compact.add_proxies(VSACompact::IncrementalInit, num_proxies - num_proxies / 2, num_iterations);
+    for (std::size_t i = 0; i < num_iterations; ++i)
+      m_vsa_compact.run_one_step();
+  }
+  else {
+    m_vsa_compact.init_proxies(num_proxies, static_cast<VSACompact::Initialization>(init));
+    for (std::size_t i = 0; i < num_iterations; ++i)
+      m_vsa_compact.run_one_step();
+  }
+
+  Polyhedron_3 out_mesh;
+  m_vsa_compact.meshing(out_mesh);
+  m_vsa_compact.get_proxy_map(m_fidx_pmap);
+  m_tris = m_vsa_compact.get_indexed_triangles();
+  m_anchor_pos = m_vsa_compact.get_anchor_points();
+  m_anchor_vtx = m_vsa_compact.get_anchor_vertices();
+  m_bdrs = m_vsa_compact.get_indexed_boundary_polygons();
+
+  m_px_num = num_proxies;
+  m_view_seg_boundary = true;
+
+  std::cout << "Done." << std::endl;
 }
 
 void Scene::draw()
