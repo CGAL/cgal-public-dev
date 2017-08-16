@@ -8,9 +8,9 @@ set(CMAKE_CXX_STANDARD 11)
 
 if (CGAL_FOUND) 
 
-	include( ${CGAL_USE_FILE} )
+	include(${CGAL_USE_FILE})
 
-	include_directories (BEFORE "../../../../include")
+	include_directories(BEFORE "../../../../include")
 
 	include_directories($ENV{GMOCK_HOME}/googlemock/include $ENV{GMOCK_HOME}/googletest/include)
 

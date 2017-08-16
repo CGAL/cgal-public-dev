@@ -3,4 +3,6 @@
 
 #include <CGAL/Mylog/Mylog.h>
 
+#include <CGAL/Base/Level_of_detail_base.h>
+
 #endif // CGAL_LEVEL_OF_DETAIL_H
