@@ -5,7 +5,7 @@
 #include <CGAL/Simple_cartesian.h>
 #include <CGAL/Point_set_3.h>
 
-// CGAL new includes.
+// New CGAL includes.
 #include <CGAL/Loader/Level_of_detail_loader.h>
 
 using namespace testing;
@@ -20,7 +20,7 @@ public:
 	using Container = CGAL::Point_set_3<Point>;
 	using LodLoader = CGAL::LOD::Level_of_detail_loader<Traits, Container>;
 
-	LodLoader lodloader;
+	LodLoader lodLoader;
 };
 
 TEST_F(LOD_LoaderTest, Compiles) {

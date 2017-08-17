@@ -6,7 +6,7 @@ using namespace testing;
 class MyLogTest: public Test {
 
 public:
-	using Log = CGAL::Mylog;
+	using Log = CGAL::LOD::Mylog;
 	Log log;
 };
 

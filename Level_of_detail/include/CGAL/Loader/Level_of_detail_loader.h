@@ -8,15 +8,16 @@ namespace CGAL {
 
 	namespace LOD {
 
-		template<class Traits, class OutputContainer>
+		template<class KernelTraits, class OutputContainer>
 		class Level_of_detail_loader {
 		
 		public:
+			typedef KernelTraits    Traits;
 			typedef OutputContainer Container;
 
 			Level_of_detail_loader(Traits traits = Traits()) : m_traits(traits) { }
 
-			virtual void load(const std::string &, Container &) const {
+			virtual void get_data(const std::string &, Container &) const {
 
 				// To be implemented later!
 			}

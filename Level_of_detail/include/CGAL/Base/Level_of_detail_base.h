@@ -15,29 +15,28 @@ namespace CGAL {
 		// Facade class that accumulates all necessary objects and operations
 		// related to the level of detail (LOD) reconstruction.
 		template<class LodTraits>
-		class Level_of_detail_base
-		{
+		class Level_of_detail_base {
 
 		public:
 			typedef LodTraits 				   Traits;
 			typedef typename Traits::Kernel    Kernel;
+			typedef typename Traits::Container Container;
 			typedef typename Traits::Loader    Loader;
 			
-			typedef typename Loader::Container Container;
-			using Log = CGAL::Mylog;
+			using Log = CGAL::LOD::Mylog;
 
 			Level_of_detail_base(Traits traits = Traits()) : m_traits(traits) { }
 
 			template<class OutputIterator>
 			void create_lod_0(const std::string &filePath, OutputIterator) const {
 
-				Container point_set;
+				Container input;
 
-				m_loader.load(filePath, point_set);
+				m_loader.get_data(filePath, input);
 
 				Log log;
-				log.out << point_set.number_of_points() << std::endl;
 
+				log.out << input.number_of_points() << std::endl;
 				log.save("num_points");
 			}
 			
