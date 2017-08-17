@@ -30,9 +30,8 @@ TEST_F(LOD_BaseTest, Compiles) {
 	// Empty test.
 }
 
-/*
 TEST_F(LOD_BaseTest, RunsCreateLodZeroFunction) {
 
 	std::vector<Point> result;
 	lodbase.create_lod_0("internallyUnusedFilePath", std::back_inserter(result));
-} */
+}

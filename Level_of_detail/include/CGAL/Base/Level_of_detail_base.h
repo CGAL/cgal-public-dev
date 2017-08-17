@@ -18,10 +18,11 @@ namespace CGAL {
 		class Level_of_detail_base {
 
 		public:
-			typedef LodTraits 				   Traits;
-			typedef typename Traits::Kernel    Kernel;
-			typedef typename Traits::Container Container;
-			typedef typename Traits::Loader    Loader;
+			typedef LodTraits 				      Traits;
+			typedef typename Traits::Kernel       Kernel;
+			typedef typename Traits::Container    Container;
+			typedef typename Traits::Loader       Loader;
+			typedef typename Traits::Preprocessor Preprocessor;
 			
 			using Log = CGAL::LOD::Mylog;
 
@@ -31,18 +32,18 @@ namespace CGAL {
 			void create_lod_0(const std::string &filePath, OutputIterator) const {
 
 				Container input;
-
 				m_loader.get_data(filePath, input);
 
 				Log log;
 
-				log.out << input.number_of_points() << std::endl;
-				log.save("num_points");
+				log.out << "Number of points: " << input.number_of_points() << std::endl;
+				log.save("base");
 			}
 			
 		private:
-			Traits m_traits;
-			Loader m_loader;
+			Traits       m_traits;
+			Loader       m_loader;
+			Preprocessor m_preprocessor;
 		};
 	}
 }

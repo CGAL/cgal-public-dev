@@ -3,6 +3,7 @@
 
 // New CGAL includes.
 #include <CGAL/Loader/Level_of_detail_loader_stub.h>
+#include <CGAL/Preprocessor/Level_of_detail_preprocessor.h>
 
 namespace CGAL {
 
@@ -14,6 +15,7 @@ namespace CGAL {
 			typedef KernelTraits 								   Kernel;
 			typedef OutputContainer 							   Container;
 			typedef Level_of_detail_loader_stub<Kernel, Container> Loader;
+			typedef Level_of_detail_preprocessor<Kernel>           Preprocessor;
 
 		};
 	}
