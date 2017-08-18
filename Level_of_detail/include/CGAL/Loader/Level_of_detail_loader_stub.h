@@ -20,16 +20,21 @@ namespace CGAL {
 		public:
 			typedef KernelTraits 			  Traits;
 			typedef typename Traits::Point_3  Point;
-			typedef typename Traits::Vector_3 Vector;
+			typedef typename Traits::Vector_3 Normal;
 			typedef OutputContainer 		  Container;
 
-			typedef CGAL::cpp11::array<unsigned char, 3> Color;
-			typedef int Label;
-			typedef typename Traits::Plane_3 Plane;
+			typedef unsigned char 				Type;
+			typedef CGAL::cpp11::array<Type, 3> Color;
+			typedef int 						Label;
+			typedef typename Traits::Plane_3 	Plane;
+			typedef int 						Index;
 
 			typedef typename Container:: template Property_map<Color> Color_map;
 			typedef typename Container:: template Property_map<Label> Label_map;
 			typedef typename Container:: template Property_map<Plane> Plane_map;
+			typedef typename Container:: template Property_map<Index> Index_map;
+
+			typedef typename Container::iterator Iter;
 
 			Level_of_detail_loader_stub() : m_mock_data_type(Mock_data_type::BASIC) { }
 
@@ -57,9 +62,9 @@ namespace CGAL {
 				
 				input.clear();
 
-				Point point0, point1, point2, point;
-				Point z(0,0,0);
-				Vector normal;
+				Point  point, zero(0, 0, 0);
+				Plane  plane, default_plane(zero, zero, zero);
+				Normal normal;
 
 				input.add_normal_map();
 
@@ -74,83 +79,80 @@ namespace CGAL {
 				const Label vegetation = 3; 
 
 				bool success = false;
-				Color_map color; Label_map label; Plane_map plane;
+				Color_map colors; Label_map labels; Plane_map planes; Index_map indices;
 
-				boost::tie(color, success) = input. template add_property_map<Color>("color", black);
+				boost::tie(colors, success)  = input. template add_property_map<Color>("color", black);
 				assert(success);
 
-				boost::tie(label, success) = input. template add_property_map<Label>("label", ground);
+				boost::tie(labels, success)  = input. template add_property_map<Label>("label", vegetation);
 				assert(success);
 
-				boost::tie(plane, success) = input. template add_property_map<Plane>("plane", Plane(z, z, z));
+				boost::tie(planes, success)  = input. template add_property_map<Plane>("plane", default_plane);
+				assert(success);
+
+				boost::tie(indices, success) = input. template add_property_map<Index>("index", -1);
 				assert(success);
 
 				// All normals are not oriented!
+				// All normals are not normalized!
 
 				// (Facade 1) Add first vertical facade:
-				normal = Vector(0.0, 0.22, 0.0);
-				point0 =   Point(0.2, 0.0, 0.3); point1 = Point(0.4, 0.0, 0.6); point2 = Point(0.8, 0.0, 0.1);
-
-				typename Container::iterator 
-				it = input.insert(point0, normal); color[*it] = blue; label[*it] = facade; plane[*it] = Plane(point0, point1, point2);
-				it = input.insert(point1, normal); color[*it] = blue; label[*it] = facade; plane[*it] = Plane(point0, point1, point2);
-				it = input.insert(point2, normal); color[*it] = blue; label[*it] = facade; plane[*it] = Plane(point0, point1, point2);
+				normal = Normal(0.0, 0.22, 0.0); plane = Plane(0.0, 0.22, 0.0, 0.0);
+				
+				point = Point(0.2, 0.0, 0.3); Iter it = input.insert(point, normal); colors[*it] = blue; labels[*it] = facade; planes[*it] = plane; indices[*it] = 0;
+				point = Point(0.4, 0.0, 0.6); it = input.insert(point, normal); colors[*it] = blue; labels[*it] = facade; planes[*it] = plane; indices[*it] = 0;
+				point = Point(0.8, 0.0, 0.1); it = input.insert(point, normal); colors[*it] = blue; labels[*it] = facade; planes[*it] = plane; indices[*it] = 0;
 
 				// (Facade 2) Add second vertical facade || to the first one:
-				normal = Vector(0.0, -0.2, 0.0);
-				point0 =   Point(0.3, 1.0, 0.4); point1 = Point(0.7, 1.0, 0.8); point2 = Point(0.5, 1.0, 0.1);
-
-				it = input.insert(point0, normal); color[*it] = blue; label[*it] = facade; plane[*it] = Plane(point0, point1, point2);
-				it = input.insert(point1, normal); color[*it] = blue; label[*it] = facade; plane[*it] = Plane(point0, point1, point2);
-				it = input.insert(point2, normal); color[*it] = blue; label[*it] = facade; plane[*it] = Plane(point0, point1, point2);
+				normal = Normal(0.0, -0.2, 0.0); plane = Plane(0.0, -0.2, 0.0, 0.2);
+				
+				point = Point(0.3, 1.0, 0.4); it = input.insert(point, normal); colors[*it] = blue; labels[*it] = facade; planes[*it] = plane; indices[*it] = 1;
+				point = Point(0.7, 1.0, 0.8); it = input.insert(point, normal); colors[*it] = blue; labels[*it] = facade; planes[*it] = plane; indices[*it] = 1;
+				point = Point(0.5, 1.0, 0.1); it = input.insert(point, normal); colors[*it] = blue; labels[*it] = facade; planes[*it] = plane; indices[*it] = 1;
 
 				// (Facade 3) Add third vertical facade:
-				normal = Vector(-0.16, 0.0, 0.0);
-				point0 =    Point(0.0, 0.1, 0.9); point1 = Point(0.0, 0.6, 0.6); point2 = Point(0.0, 0.9, 0.1); 
-
-				it = input.insert(point0, normal); color[*it] = blue; label[*it] = facade; plane[*it] = Plane(point0, point1, point2);
-				it = input.insert(point1, normal); color[*it] = blue; label[*it] = facade; plane[*it] = Plane(point0, point1, point2);
-				it = input.insert(point2, normal); color[*it] = blue; label[*it] = facade; plane[*it] = Plane(point0, point1, point2);
+				normal = Normal(-0.16, 0.0, 0.0); plane = Plane(-0.16, 0.0, 0.0, 0.0); 
+				  
+				point = Point(0.0, 0.1, 0.9); it = input.insert(point, normal); colors[*it] = blue; labels[*it] = facade; planes[*it] = plane; indices[*it] = 2;
+				point = Point(0.0, 0.6, 0.6); it = input.insert(point, normal); colors[*it] = blue; labels[*it] = facade; planes[*it] = plane; indices[*it] = 2;
+				point = Point(0.0, 0.9, 0.1); it = input.insert(point, normal); colors[*it] = blue; labels[*it] = facade; planes[*it] = plane; indices[*it] = 2;
 
 				// (Facade 4) Add fourth nearly vertical facade (0.05 away from vertical) opposite to the third one:
-				normal = Vector(0.36, 0.0, 0.03);
-				point0 =   Point(1.0 , 0.2, 0.9); point1 = Point(1.05, 0.5, 0.3); point2 = Point(1.0 , 0.8, 0.9); 
-
-				it = input.insert(point0, normal); color[*it] = blue; label[*it] = facade; plane[*it] = Plane(point0, point1, point2);
-				it = input.insert(point1, normal); color[*it] = blue; label[*it] = facade; plane[*it] = Plane(point0, point1, point2);
-				it = input.insert(point2, normal); color[*it] = blue; label[*it] = facade; plane[*it] = Plane(point0, point1, point2);
+				normal = Normal(0.36, 0.0, 0.03); plane = Plane(0.36, 0.0, 0.03, 0.387);
+				  
+				point = Point(1.0 , 0.2, 0.9); it = input.insert(point, normal); colors[*it] = blue; labels[*it] = facade; planes[*it] = plane; indices[*it] = 3;
+				point = Point(1.05, 0.5, 0.3); it = input.insert(point, normal); colors[*it] = blue; labels[*it] = facade; planes[*it] = plane; indices[*it] = 3;
+				point = Point(1.0 , 0.8, 0.9); it = input.insert(point, normal); colors[*it] = blue; labels[*it] = facade; planes[*it] = plane; indices[*it] = 3;
 
 				// (Roof) Add a roof above the four facades defined before.
-				normal = Vector(0.0, 0.0, 0.06);
-				point0 =  Point(0.1, 0.1, 0.99); point1 = Point(0.3, 0.4, 0.99); point2 = Point(0.7, 0.7, 0.99); 
-
-				it = input.insert(point0, normal); color[*it] = red; label[*it] = roof; plane[*it] = Plane(point0, point1, point2);
-				it = input.insert(point1, normal); color[*it] = red; label[*it] = roof; plane[*it] = Plane(point0, point1, point2);
-				it = input.insert(point2, normal); color[*it] = red; label[*it] = roof; plane[*it] = Plane(point0, point1, point2);
+				normal = Normal(0.0, 0.0, 0.06); plane = Plane(0.0, 0.0, 0.06, -0.0594);
+				  
+				point = Point(0.1, 0.1, 0.99); it = input.insert(point, normal); colors[*it] = red; labels[*it] = roof; planes[*it] = plane; indices[*it] = 4;
+				point = Point(0.3, 0.4, 0.99); it = input.insert(point, normal); colors[*it] = red; labels[*it] = roof; planes[*it] = plane; indices[*it] = 4;
+				point = Point(0.7, 0.7, 0.99); it = input.insert(point, normal); colors[*it] = red; labels[*it] = roof; planes[*it] = plane; indices[*it] = 4;
 
 				// (Ground) Add the ground below the building above:
-				normal = Vector(0.0, 0.0, -2.56);
-				point0 =  Point(-0.1, -0.1, 0.0); point1 = Point( 1.5, -0.1, 0.0); point2 = Point( 0.5,  1.5, 0.0); 
-
-				it = input.insert(point0, normal); color[*it] = black; label[*it] = ground; plane[*it] = Plane(point0, point1, point2);
-				it = input.insert(point1, normal); color[*it] = black; label[*it] = ground; plane[*it] = Plane(point0, point1, point2);
-				it = input.insert(point2, normal); color[*it] = black; label[*it] = ground; plane[*it] = Plane(point0, point1, point2);
+				normal = Normal(0.0, 0.0, 2.56); plane = Plane(0.0, 0.0, 2.56, 0.0);
+				
+				point = Point(-0.1, -0.1, 0.0); it = input.insert(point, normal); colors[*it] = black; labels[*it] = ground; planes[*it] = plane; indices[*it] = 5;
+				point = Point( 1.5, -0.1, 0.0); it = input.insert(point, normal); colors[*it] = black; labels[*it] = ground; planes[*it] = plane; indices[*it] = 5;
+				point = Point( 0.5,  1.5, 0.0); it = input.insert(point, normal); colors[*it] = black; labels[*it] = ground; planes[*it] = plane; indices[*it] = 5;
 
 				// (Vegetation) Add vegetation in the top right corner of the ground above:
-				point = Point(1.40, 1.40,  0.0); normal = Vector( 0.004,  0.0,   1.0);
-				it = input.insert(point, normal); color[*it] = green; label[*it] = vegetation; plane[*it] = Plane(z, z, z);
+				point = Point(1.40, 1.40,  0.0); normal = Normal( 0.004,  0.0,   1.0);
+				it = input.insert(point, normal); colors[*it] = green; labels[*it] = vegetation; planes[*it] = default_plane; indices[*it] = -1;
 
-				point = Point(1.45, 1.38, 0.10); normal = Vector(-0.046,  0.02,  0.9);
-				it = input.insert(point, normal); color[*it] = green; label[*it] = vegetation; plane[*it] = Plane(z, z, z);
+				point = Point(1.45, 1.38, 0.10); normal = Normal(-0.046,  0.02,  0.9);
+				it = input.insert(point, normal); colors[*it] = green; labels[*it] = vegetation; planes[*it] = default_plane; indices[*it] = -1;
 
-				point = Point(1.37, 1.42, 0.20); normal = Vector( 0.034, -0.02,  0.8);
-				it = input.insert(point, normal); color[*it] = green; label[*it] = vegetation; plane[*it] = Plane(z, z, z);
+				point = Point(1.37, 1.42, 0.20); normal = Normal( 0.034, -0.02,  0.8);
+				it = input.insert(point, normal); colors[*it] = green; labels[*it] = vegetation; planes[*it] = default_plane; indices[*it] = -1;
 				
-				point = Point(1.43, 1.43, 0.05); normal = Vector(-0.026, -0.03, 0.95);
-				it = input.insert(point, normal); color[*it] = green; label[*it] = vegetation; plane[*it] = Plane(z, z, z);
+				point = Point(1.43, 1.43, 0.05); normal = Normal(-0.026, -0.03, 0.95);
+				it = input.insert(point, normal); colors[*it] = green; labels[*it] = vegetation; planes[*it] = default_plane; indices[*it] = -1;
 
-				point = Point(1.37, 1.37, 0.15); normal = Vector( 0.034,  0.03, 0.85);
-				it = input.insert(point, normal); color[*it] = green; label[*it] = vegetation; plane[*it] = Plane(z, z, z);
+				point = Point(1.37, 1.37, 0.15); normal = Normal( 0.034,  0.03, 0.85);
+				it = input.insert(point, normal); colors[*it] = green; labels[*it] = vegetation; planes[*it] = default_plane; indices[*it] = -1;
 			}
 
 			void get_mock_default(Container &input) const {

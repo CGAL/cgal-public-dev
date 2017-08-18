@@ -1,0 +1,5 @@
+Use predicates to find labels!
+Estimate scale global.
+
+TODO:
+1. Fix #include <Point_set_3> for boost::tie dependency. Change it to the proper boost inclusion!

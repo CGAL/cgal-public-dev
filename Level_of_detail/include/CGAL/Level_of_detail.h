@@ -7,5 +7,6 @@
 #include <CGAL/Base/Level_of_detail_base.h>
 #include <CGAL/Loader/Level_of_detail_loader.h>
 #include <CGAL/Preprocessor/Level_of_detail_preprocessor.h>
+#include <CGAL/Selector/Level_of_detail_selector.h>
 
 #endif // CGAL_LEVEL_OF_DETAIL_H

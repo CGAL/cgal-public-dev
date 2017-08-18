@@ -1,4 +1,7 @@
+// Google test includes.
 #include "gmock/gmock.h"
+
+// New CGAL includes.
 #include <CGAL/Mylog/Mylog.h>
 
 using namespace testing;
