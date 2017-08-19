@@ -11,8 +11,6 @@
 #include <CGAL/Timer.h>
 #include <CGAL/IO/Polyhedron_iostream.h>
 #include <CGAL/centroid.h>
-#include <CGAL/vsa_mesh_approximation.h>
-#include <CGAL/vsa_mesh_approximation_traits.h>
 
 #include "ColorCheatSheet.h"
 
@@ -242,26 +240,29 @@ void Scene::compact_approximation(
 void Scene::meshing()
 {
   Polyhedron_3 out_mesh;
+  m_tris.clear();
+  m_anchor_pos.clear();
+  m_anchor_vtx.clear();
   switch(m_metric) {
     case L21:
       m_vsa_l21.meshing(out_mesh);
-      m_tris = m_vsa_l21.get_indexed_triangles();
-      m_anchor_pos = m_vsa_l21.get_anchor_points();
-      m_anchor_vtx = m_vsa_l21.get_anchor_vertices();
+      m_vsa_l21.get_indexed_triangles(std::back_inserter(m_tris));
+      m_vsa_l21.get_anchor_points(std::back_inserter(m_anchor_pos));
+      m_vsa_l21.get_anchor_vertices(std::back_inserter(m_anchor_vtx));
       m_bdrs = m_vsa_l21.get_indexed_boundary_polygons();
       break;
     case L2:
       m_vsa_l2.meshing(out_mesh);
-      m_tris = m_vsa_l2.get_indexed_triangles();
-      m_anchor_pos = m_vsa_l2.get_anchor_points();
-      m_anchor_vtx = m_vsa_l2.get_anchor_vertices();
+      m_vsa_l2.get_indexed_triangles(std::back_inserter(m_tris));
+      m_vsa_l2.get_anchor_points(std::back_inserter(m_anchor_pos));
+      m_vsa_l2.get_anchor_vertices(std::back_inserter(m_anchor_vtx));
       m_bdrs = m_vsa_l2.get_indexed_boundary_polygons();
       break;
     case Compact:
       m_vsa_compact.meshing(out_mesh);
-      m_tris = m_vsa_compact.get_indexed_triangles();
-      m_anchor_pos = m_vsa_compact.get_anchor_points();
-      m_anchor_vtx = m_vsa_compact.get_anchor_vertices();
+      m_vsa_compact.get_indexed_triangles(std::back_inserter(m_tris));
+      m_vsa_compact.get_anchor_points(std::back_inserter(m_anchor_pos));
+      m_vsa_compact.get_anchor_vertices(std::back_inserter(m_anchor_vtx));
       m_bdrs = m_vsa_compact.get_indexed_boundary_polygons();
       break;
     default:
