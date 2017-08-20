@@ -50,5 +50,6 @@ CGAL_add_named_parameter(random_seed_t, random_seed, random_seed)
 CGAL_add_named_parameter(do_project_t, do_project, do_project)
 CGAL_add_named_parameter(gradient_descent_precision_t, gradient_descent_precision, gradient_descent_precision)
 CGAL_add_named_parameter(use_weights_t, use_weights, use_weights)
+CGAL_add_named_parameter(distance_precision_t, distance_precision, distance_precision)
 //internal
 CGAL_add_named_parameter(weight_calculator_t, weight_calculator, weight_calculator)
