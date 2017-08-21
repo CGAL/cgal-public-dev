@@ -34,11 +34,11 @@ typedef boost::property_map<Polyhedron_3, boost::vertex_point_t>::type VertexPoi
 
 typedef CGAL::PlaneProxy<Polyhedron_3> PlaneProxy;
 
-typedef CGAL::L21Metric<Polyhedron_3, FacetNormalMap, FacetAreaMap> L21Metric;
-typedef CGAL::L21ProxyFitting<Polyhedron_3, FacetNormalMap, FacetAreaMap> L21ProxyFitting;
+typedef CGAL::L21Metric<Polyhedron_3> L21Metric;
+typedef CGAL::L21ProxyFitting<Polyhedron_3> L21ProxyFitting;
 typedef CGAL::VSA_approximation<Polyhedron_3, PlaneProxy, L21Metric, L21ProxyFitting> VSAL21;
 
-typedef CGAL::L2Metric<Polyhedron_3, FacetAreaMap> L2Metric;
+typedef CGAL::L2Metric<Polyhedron_3> L2Metric;
 typedef CGAL::L2ProxyFitting<Polyhedron_3> L2ProxyFitting;
 typedef CGAL::VSA_approximation<Polyhedron_3, PlaneProxy, L2Metric, L2ProxyFitting> VSAL2;
 
@@ -103,7 +103,6 @@ public:
   Scene() :
     m_pmesh(NULL),
     m_fidx_pmap(m_fidx_map),
-    m_normal_pmap(m_facet_normals),
     m_center_pmap(m_facet_centers),
     m_area_pmap(m_facet_areas),
     m_pl21_metric(NULL),
@@ -193,10 +192,8 @@ private:
   boost::associative_property_map<std::map<Facet_handle, std::size_t> > m_fidx_pmap;
 
   // facet property maps
-  std::map<Facet_handle, Vector_3> m_facet_normals;
   std::map<Facet_handle, Point_3> m_facet_centers;
   std::map<Facet_handle, FT> m_facet_areas;
-  FacetNormalMap m_normal_pmap;
   FacetCenterMap m_center_pmap;
   FacetAreaMap m_area_pmap;
 

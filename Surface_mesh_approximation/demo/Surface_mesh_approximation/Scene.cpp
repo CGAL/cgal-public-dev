@@ -62,7 +62,6 @@ int Scene::open(QString filename)
 
   // construct facet property maps
   m_fidx_map.clear();
-  m_facet_normals.clear();
   m_facet_centers.clear();
   m_facet_areas.clear();
   for(Facet_iterator fitr = m_pmesh->facets_begin();
@@ -73,9 +72,6 @@ int Scene::open(QString filename)
     const Point_3 p1 = he->opposite()->vertex()->point();
     const Point_3 p2 = he->vertex()->point();
     const Point_3 p3 = he->next()->vertex()->point();
-
-    Vector_3 normal = CGAL::unit_normal(p1, p2, p3);
-    m_facet_normals.insert(std::pair<Facet_handle, Vector_3>(fitr, normal));
 
     m_facet_centers.insert(std::pair<Facet_handle, Point_3>(fitr,
       CGAL::centroid(p1, p2, p3)));
@@ -98,9 +94,9 @@ int Scene::open(QString filename)
   if (m_pcompact_proxy_fitting)
     delete m_pcompact_proxy_fitting;
 
-  m_pl21_metric = new L21Metric(m_normal_pmap, m_area_pmap);
-  m_pl21_proxy_fitting = new L21ProxyFitting(m_normal_pmap, m_area_pmap);
-  m_pl2_metric = new L2Metric(*m_pmesh, m_area_pmap);
+  m_pl21_metric = new L21Metric(*m_pmesh);
+  m_pl21_proxy_fitting = new L21ProxyFitting(*m_pmesh);
+  m_pl2_metric = new L2Metric(*m_pmesh);
   m_pl2_proxy_fitting = new L2ProxyFitting(*m_pmesh);
   m_pcompact_metric = new CompactMetric(m_center_pmap);
   m_pcompact_proxy_fitting = new PointProxyFitting(m_center_pmap, m_area_pmap);
