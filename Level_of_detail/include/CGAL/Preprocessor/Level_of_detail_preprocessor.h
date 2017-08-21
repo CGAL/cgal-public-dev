@@ -19,16 +19,16 @@ namespace CGAL {
 
 				auto number_of_planes= -1;
 
-				using Index     = int;
-				using Iter      = typename Container::const_iterator;
-				using Index_map = typename Container:: template Property_map<Index>;
+				using Index          = int;
+				using Const_iterator = typename Container::const_iterator;
+				using Index_map      = typename Container:: template Property_map<Index>;
 
 				Index_map indices;
 				boost::tie(indices,  boost::tuples::ignore) = input. template property_map<Index>("index");
 				
-				for (Iter it = input.begin(); it != input.end(); ++it)
+				for (Const_iterator it = input.begin(); it != input.end(); ++it)
 					if (indices[*it] >= 0) 
-						planes[indices[*it]].push_back(static_cast<int>(*it));
+						planes[indices[*it]].push_back(*it);
 
 				number_of_planes = planes.size();
 

@@ -2,4 +2,7 @@ Use predicates to find labels!
 Estimate scale global.
 
 TODO:
-1. Fix #include <Point_set_3> for boost::tie dependency. Change it to the proper boost inclusion!
+1. Fix #include <Point_set_3> for boost::tie dependency. Change it to the proper boost inclusion.
+2. Redo selector class using property maps.
+3. Selector class currently copies the input point cloud, so it may be slow.
+4. For now I use built in conditions inside selection strategy classes. Change it to any custom condition later.

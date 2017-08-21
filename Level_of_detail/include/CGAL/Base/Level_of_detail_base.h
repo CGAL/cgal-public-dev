@@ -24,25 +24,33 @@ namespace CGAL {
 			typedef typename Traits::Container    Container;
 			typedef typename Traits::Loader       Loader;
 			typedef typename Traits::Preprocessor Preprocessor;
-			typedef typename Traits::Selector     Selector;     
+
+			typedef typename Traits::BuildingBoundarySelector BuildingBoundarySelector; // Maybe use a factory here? 
+			typedef typename Traits::BuildingInteriorSelector BuildingInteriorSelector;
+			typedef typename Traits::ClutterSelector 		  ClutterSelector;
+			typedef typename Traits::GroundSelector 		  GroundSelector;
 			
 			// Custom types, should be changed later (or removed).
-			using Log = CGAL::LOD::Mylog;
-			using Planes = std::map<int, std::vector<int> >;
+			using Log     = CGAL::LOD::Mylog;
+			using Index   = typename Container::Index;
+			using Indices = std::vector<Index>;
+			using Planes  = std::map<int, Indices>;
 
 			Level_of_detail_base(Traits traits = Traits()) : m_traits(traits) { } // Do I need to create an instance of these traits here?
 
 			template<class OutputIterator>
-			void create_lod_0(const std::string &filePath, OutputIterator &&) const {
+			void create_lod_0(const std::string &filePath, OutputIterator &&) {
 
 				// (START) Create log.
-				Log log; log.out << "START EXECUTION\n\n";
+				Log log; log.out << "START EXECUTION\n\n\n";
+
 
 				// (1) Read data.
 				Container input;
 				m_loader.get_data(filePath, input);
 
 				log.out << "(1) Data loaded. Number of points: " << input.number_of_points() << std::endl;
+
 
 				// (2) Find a set of planes related to the points. Basically here we emulate RANSAC.
 				// For each plane we store indices of all points contained in this plane.
@@ -52,8 +60,23 @@ namespace CGAL {
 
 				log.out << "(2) Planes found. Number of planes: " << number_of_planes << std::endl;
 
-				// (3) Split data wrt to the labels that define a building.
-				// To be implemented!
+
+				// (3) Split data with respect to 4 different semantic labels.
+				Indices building_boundary, building_interior, clutter, ground;
+
+				m_clutter_selector.select_elements(input,           std::back_inserter(clutter));
+				m_ground_selector.select_elements( input,           std::back_inserter(ground));
+				m_building_boundary_selector.select_elements(input, std::back_inserter(building_boundary));
+				m_building_interior_selector.select_elements(input, std::back_inserter(building_interior));
+
+				log.out << "(3) Clutter found. Number of elements: " 			 << clutter.size() << std::endl;
+				log.out << "(3) Ground found. Number of elements: " 			 << ground.size() << std::endl;
+				log.out << "(3) Building boundaries found. Number of elements: " << building_boundary.size() << std::endl;
+				log.out << "(3) Building interior found. Number of elements: "   << building_interior.size() << std::endl;
+
+
+				// (4) ....
+
 
 				// (END) Save log.
 				log.out << "\n\nFINISH EXECUTION";
@@ -64,7 +87,11 @@ namespace CGAL {
 			Traits       m_traits;
 			Loader       m_loader;
 			Preprocessor m_preprocessor;
-			Selector     m_selector;
+			
+			BuildingBoundarySelector m_building_boundary_selector;
+			BuildingInteriorSelector m_building_interior_selector;
+			ClutterSelector          m_clutter_selector;
+			GroundSelector           m_ground_selector;
 		};
 	}
 }

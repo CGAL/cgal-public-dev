@@ -8,5 +8,6 @@
 #include <CGAL/Loader/Level_of_detail_loader.h>
 #include <CGAL/Preprocessor/Level_of_detail_preprocessor.h>
 #include <CGAL/Selector/Level_of_detail_selector.h>
+#include <CGAL/Selector/Level_of_detail_selection_strategy.h>
 
 #endif // CGAL_LEVEL_OF_DETAIL_H
