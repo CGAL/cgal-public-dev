@@ -1447,49 +1447,49 @@ paint(QPainter* painter,
 #endif
     QEvent *keyEvent = NULL;
 
-    for (int i=0; i<80; i++)
+    for (int i=0; i<160; i++)
+    {
+      keyEvent = new QKeyEvent(QEvent::KeyPress, ::Qt::Key_Left, ::Qt::NoModifier);
+      QCoreApplication::postEvent(getCurrentView(), keyEvent);
+    }
+
+    for (int i=0; i<160; i++)
+    {
+      keyEvent = new QKeyEvent(QEvent::KeyPress, ::Qt::Key_Right, ::Qt::NoModifier);
+      QCoreApplication::postEvent(getCurrentView(), keyEvent);
+    }
+
+    for (int i=0; i<160; i++)
+    {
+      keyEvent = new QKeyEvent(QEvent::KeyPress, ::Qt::Key_Right, ::Qt::NoModifier);
+      QCoreApplication::postEvent(getCurrentView(), keyEvent);
+    }
+
+    for (int i=0; i<151; i++)
     {
       keyEvent = new QKeyEvent(QEvent::KeyPress, ::Qt::Key_Left, ::Qt::NoModifier);
       QCoreApplication::postEvent(getCurrentView(), keyEvent);
     }
 
     for (int i=0; i<80; i++)
-    {
-      keyEvent = new QKeyEvent(QEvent::KeyPress, ::Qt::Key_Right, ::Qt::NoModifier);
-      QCoreApplication::postEvent(getCurrentView(), keyEvent);
-    }
-
-    for (int i=0; i<80; i++)
-    {
-      keyEvent = new QKeyEvent(QEvent::KeyPress, ::Qt::Key_Right, ::Qt::NoModifier);
-      QCoreApplication::postEvent(getCurrentView(), keyEvent);
-    }
-
-    for (int i=0; i<76; i++)
-    {
-      keyEvent = new QKeyEvent(QEvent::KeyPress, ::Qt::Key_Left, ::Qt::NoModifier);
-      QCoreApplication::postEvent(getCurrentView(), keyEvent);
-    }
-
-    for (int i=0; i<40; i++)
     {
       keyEvent = new QKeyEvent(QEvent::KeyPress, ::Qt::Key_Up, ::Qt::NoModifier);
       QCoreApplication::postEvent(getCurrentView(), keyEvent);
     }
 
-    for (int i=0; i<40; i++)
+    for (int i=0; i<80; i++)
     {
       keyEvent = new QKeyEvent(QEvent::KeyPress, ::Qt::Key_Down, ::Qt::NoModifier);
       QCoreApplication::postEvent(getCurrentView(), keyEvent);
     }
 
-    for (int i=0; i<40; i++)
+    for (int i=0; i<80; i++)
     {
       keyEvent = new QKeyEvent(QEvent::KeyPress, ::Qt::Key_Down, ::Qt::NoModifier);
       QCoreApplication::postEvent(getCurrentView(), keyEvent);
     }
 
-    for (int i=0; i<39; i++)
+    for (int i=0; i<77; i++)
     {
       keyEvent = new QKeyEvent(QEvent::KeyPress, ::Qt::Key_Up, ::Qt::NoModifier);
       QCoreApplication::postEvent(getCurrentView(), keyEvent);
