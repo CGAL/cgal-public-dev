@@ -26,17 +26,17 @@ if ( CGAL_FOUND )
   include_directories(BEFORE ../include)
 
 
-  add_executable(main main.cpp)
+  add_executable(main hexextr.cpp post_processing.cpp connection_extraction.cpp hexahedron_extraction.cpp sanitization.cpp preprocessing.cpp main.cpp)
   target_link_libraries(main ${CGAL_LIBRARIES} ${CGAL_3RD_PARTY_LIBRARIES}
     ${MAP_VIEWER_LIBRARIES})
 
-  add_executable(maintest maintest.cpp)
-  target_link_libraries(maintest ${CGAL_LIBRARIES} ${CGAL_3RD_PARTY_LIBRARIES}
-    ${MAP_VIEWER_LIBRARIES})
+ # add_executable(maintest maintest.cpp)
+ # target_link_libraries(maintest ${CGAL_LIBRARIES} ${CGAL_3RD_PARTY_LIBRARIES}
+ #   ${MAP_VIEWER_LIBRARIES})
   
-  add_executable(test2 test2.cpp)
-  target_link_libraries(test2 ${CGAL_LIBRARIES} ${CGAL_3RD_PARTY_LIBRARIES}
-    ${MAP_VIEWER_LIBRARIES})
+ # add_executable(test2 test2.cpp)
+ # target_link_libraries(test2 ${CGAL_LIBRARIES} ${CGAL_3RD_PARTY_LIBRARIES}
+ #   ${MAP_VIEWER_LIBRARIES})
 
 
 if (CGAL_USE_LCC_VIEWER)
