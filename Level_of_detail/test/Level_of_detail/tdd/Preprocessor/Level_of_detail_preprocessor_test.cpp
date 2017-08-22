@@ -21,13 +21,16 @@ public:
 	using Traits          = CGAL::Simple_cartesian<FT>;
 	using Point           = Traits::Point_3;
 	using Container       = CGAL::Point_set_3<Point>;
-	using LodPreprocessor = CGAL::LOD::Level_of_detail_preprocessor<Traits>;
+	using LodPreprocessor = CGAL::LOD::Level_of_detail_preprocessor<Traits, Container>;
 	using Planes          = std::map<int, std::vector<int> >;
 
 	// Here Index is the index of a plane from the input!
 	using Index = int; 
 	using Index_map = Container:: template Property_map<Index>; 
 	using Iter = Container::iterator;
+
+	using Point_index = Container::Index;
+	using Indices = std::vector<Point_index>;
 
 	LodPreprocessor lodPreprocessor;
 
@@ -50,6 +53,16 @@ public:
 		it = input.insert(Point(1, 0, 1)); indices[*it] = 1;
 		it = input.insert(Point(0, 1, 0)); indices[*it] = 0;
 		it = input.insert(Point(2, 0, 0)); indices[*it] = 1;
+	}
+
+	void get_simple_indices(Indices &mapping) const {
+
+		mapping.clear();
+		mapping.resize(3);
+
+		mapping[0] = 1;
+		mapping[1] = 3;
+		mapping[2] = 5;
 	}
 };
 
@@ -101,4 +114,19 @@ TEST_F(LOD_PreprocessorTest, RejectsNegativeIndices) {
 	const auto number_of_planes = lodPreprocessor.get_planes(input, planes);
 
 	ASSERT_THAT(number_of_planes, Eq(0));
+}
+
+TEST_F(LOD_PreprocessorTest, ReturnsOnePlaneUsingGivenIndices) {
+
+	Container input;
+	get_simple_input(input);
+
+	Indices mapping;
+	get_simple_indices(mapping);
+
+	Planes planes;
+	const auto number_of_planes = lodPreprocessor.get_planes(input, mapping, planes);
+
+	ASSERT_THAT(number_of_planes, Eq(1));
+	ASSERT_THAT(static_cast<int>((*planes.begin()).second.size()), Eq(3));
 }

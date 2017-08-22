@@ -4,5 +4,6 @@ Estimate scale global.
 TODO:
 1. Fix #include <Point_set_3> for boost::tie dependency. Change it to the proper boost inclusion.
 2. Redo selector class using property maps.
-3. Selector class currently copies the input point cloud, so it may be slow.
-4. For now I use built in conditions inside selection strategy classes. Change it to any custom condition later.
+3. For now I use built in conditions inside selection strategy classes. Change it to any custom condition later.
+4. When I fit a plane to the ground in the base class, I need to copy all ground points. Change it!
+5. Refactor the preprocessor class.

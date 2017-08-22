@@ -8,31 +8,52 @@ namespace CGAL {
 
 	namespace LOD {
 
-		template<class KernelTraits>
+		template<class KernelTraits, class InputContainer>
 		class Level_of_detail_preprocessor {
 
 		public:
-			typedef KernelTraits Traits;
+			typedef KernelTraits   Traits;
+			typedef InputContainer Container;
 
-			template<class Container, class Planes>
-			auto get_planes(const Container &input, Planes &planes) const {
+			using Index          = int;
+			using Const_iterator = typename Container::const_iterator;
+			using Index_map      = typename Container:: template Property_map<Index>;
 
-				auto number_of_planes= -1;
+			template<class Planes>
+			auto get_planes(const Container &input, Planes &planes) {
 
-				using Index          = int;
-				using Const_iterator = typename Container::const_iterator;
-				using Index_map      = typename Container:: template Property_map<Index>;
-
-				Index_map indices;
-				boost::tie(indices,  boost::tuples::ignore) = input. template property_map<Index>("index");
+				auto number_of_planes = -1;
+				create_indices(input);
 				
 				for (Const_iterator it = input.begin(); it != input.end(); ++it)
-					if (indices[*it] >= 0) 
-						planes[indices[*it]].push_back(*it);
+					if (m_indices[*it] >= 0) 
+						planes[m_indices[*it]].push_back(*it);
 
 				number_of_planes = planes.size();
 
 				return number_of_planes;
+			}
+
+			template<class Indices, class Planes>
+			auto get_planes(const Container &input, const Indices &mapping, Planes &planes) {
+
+				auto number_of_planes = -1;
+				create_indices(input);
+
+				for (size_t i = 0; i < mapping.size(); ++i)
+					if (m_indices[mapping[i]] >= 0)
+						planes[m_indices[mapping[i]]].push_back(mapping[i]);
+
+				number_of_planes = planes.size();
+
+				return number_of_planes;
+			}
+
+		private:
+			Index_map m_indices;
+
+			void create_indices(const Container &input) {
+				boost::tie(m_indices,  boost::tuples::ignore) = input. template property_map<Index>("index");
 			}
 		};
 	}
