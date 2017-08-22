@@ -35,12 +35,13 @@ ArrangementDemoGraphicsView::ArrangementDemoGraphicsView( QWidget* parent ) :
   QMatrix m( 1.0, 0.0, 0.0, -1.0, 0.0, 0.0 );
   this->setMatrix( m );
   this->setBackgroundBrush( QBrush( backgroundColor ) );
+  this->setResizeAnchor(QGraphicsView::AnchorUnderMouse);
 }
 
 void ArrangementDemoGraphicsView::wheelEvent(QWheelEvent* event)
 {
-  std::cout<<"In ArrangementDemoGraphicsView wheelEvent\n";
-  this->centerOn(0, 0);
+  // std::cout<<"In ArrangementDemoGraphicsView wheelEvent\n";
+  // this->centerOn(this->mapToScene(event->pos()));
 }
 
 void ArrangementDemoGraphicsView::setShowGrid( bool b )
