@@ -5,28 +5,40 @@
 
 class HexExtr{
   public:
+
+//defintion in hexextr.cpp
     HexExtr(std::string);
-    Aff_transformation get_parametrization_matrix(Point, Point, Point, Point, Point, Point, Point, Point);
-    Aff_transformation extract_transition_function(Dart_handle, const std::vector<Aff_transformation>&);
     int set_dart_info();
     void load_mesh(std::string);
+    void extract();
+    int calculate_cell_type(LCC_3&, Dart_handle);
+
+// definition in preprocessing.cpp
+    Aff_transformation get_parametrization_matrix(Point, Point, Point, Point, Point, Point, Point, Point);
+    Aff_transformation extract_transition_function(Dart_handle);
     void preprocess();
     void set_chiral_symmetry_aff_transformations();
-    void sanitize(std::vector<std::vector<Aff_transformation>>&);
-    void truncate_precision(std::vector<std::vector<Aff_transformation>>&);
-    void check_singularity(std::vector<std::vector<Aff_transformation>>&);
-    void fix_singularity(Dart_handle&, std::vector<std::vector<Aff_transformation>>&);
-    Point_3 get_projected_parameters(Dart_handle&, Dart_handle&, std::vector<std::vector<Aff_transformation>>&);
-    Dart_handle get_singular_edge(Dart_handle&, std::vector<std::vector<Aff_transformation>>&);
-    bool is_singular(Dart_handle&, std::vector<std::vector<Aff_transformation>>&);
-    Aff_transformation get_transition(Dart_handle&, Dart_handle&, std::vector<std::vector<Aff_transformation>>&);
-    void propagate_parameters(Dart_handle&, std::vector<std::vector<Aff_transformation>>&);
-    void extract_hexes(std::vector<Aff_transformation>&);
-    Aff_transformation* find_tet_parametrization(Point, std::vector<Aff_transformation>&);
+
+//definiton in sanitization.cpp
+    void sanitize();
+    void truncate_precision();
+    void check_singularity();
+    void fix_singularity(Dart_handle&);
+    Point_3 get_projected_parameters(Dart_handle&, Dart_handle&);
+    Dart_handle get_singular_edge(Dart_handle&);
+    bool is_singular(Dart_handle&);
+    Aff_transformation get_transition(Dart_handle&, Dart_handle&);
+    void propagate_parameters(Dart_handle&);
+
+//definition in hexahedron_extraction.cpp
+    void extract_hexes();
+    Aff_transformation* find_tet_parametrization(Point);
     bool does_intersect(Tetrahedron_3, Point_3);
-    int calculate_cell_type(LCC_3&, Dart_handle);
+
+//definition in connection_extraction.cpp
     void extract_connections();
-    void extract();
+
+//definition in post_processing.cpp
     void refine();
     bool post_processing_req();
     void post_processing();
@@ -37,16 +49,30 @@ class HexExtr{
     bool are_quad_strips();
     bool are_quads();
     
-    std::unordered_map<Point_3, Dart_handle> hex_handles;
-    std::unordered_map<Point_3, Point_3> output_points;
-    std::vector<std::vector<Aff_transformation>> g;
-    std::vector<Aff_transformation> parametrization_matrices;
-    std::vector<Direction> directions;
-    Aff_transformation identity;
+// input_tet_mesh holds the initial parametrized tet mesh, and output_mesh holds the hexahedral mesh extracted after running extract() 
     LCC_3 input_tet_mesh, output_mesh;
-    std::vector<Aff_transformation> G; //chiral cubical symmetry group
+
+// contains six orthogonal directions in 3D space given by (1,0,0), (0,1,0), (0,0,1), (-1,0,0), (0,-1,0), (0,0,-1) 
+    std::vector<Direction> directions;
+
+//identity tranformation
+    Aff_transformation identity;
+
+// chiral cubical symmetry group used in calculation of g
+    std::vector<Aff_transformation> G;
+
+// g is a 2D vector of transformations: it gives the transformation to be applied on one tet to convert into adjacent tet.
+    std::vector<std::vector<Aff_transformation>> g;
+
+// Indexed by the unique number assigned to each tet in input_tet_mesh, this gives the transformation to be applied to the vertices of a tet to tranform to parametrized space
+    std::vector<Aff_transformation> parametrization_matrices;
+
+// Keeps track of points in output_mesh from which make_hexahedron() was called (to prevent duplicate hexes)
+    std::unordered_map<Point_3, Dart_handle> hex_handles;
+
+// Keeps track of all points in output_mesh, by mapping the points of hexahedra found in parametrized space to the cartesian space.
+    std::unordered_map<Point_3, Point_3> output_points;
        
 };
-
 
 #endif

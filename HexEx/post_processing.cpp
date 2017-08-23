@@ -1,26 +1,26 @@
 #include"hexextr.h"
 
-void HexExtr::refine(){
+void HexExtr::refine(){ // extract() gives the correct hex mesh most of the time, post_processing() is mostly not even needed since Mesh_3 doesn't output mesh with flipped tets. So we check if post_processing is required, and execute if needed.
   if(post_processing_req()){
     post_processing();
   }
-  else std::cout<<"Done"<<std::endl; //final mesh done
+  return; //final mesh done
 }
 
 bool HexExtr::are_quads(){ //are all faces quads?
   for(LCC_3::One_dart_per_cell_range<2>::iterator it = output_mesh.one_dart_per_cell<2>().begin(), itend = output_mesh.one_dart_per_cell<2>().end(); it!=itend; it++){
-    int count = output_mesh.one_dart_per_incident_cell<0,2>(it).size();
+    int count = output_mesh.one_dart_per_incident_cell<0,2>(it).size(); //counting the number of vertices incident on each face
     if(count == 4) continue;
-    else return false;
+    else return false; //some face has more than/less than 4 vertices
     }
   return true;
 }
 
-bool HexExtr::are_quad_strips(){
+bool HexExtr::are_quad_strips(){ //Checks if only quad strips exist in the mesh - HexEx paper for definition
   for(LCC_3::One_dart_per_cell_range<2>::iterator it = output_mesh.one_dart_per_cell<2>().begin(), itend = output_mesh.one_dart_per_cell<2>().end(); it != itend; it++){
     int i = 0;
     for(LCC_3::One_dart_per_incident_cell_range<1,2>::iterator it1 = output_mesh.one_dart_per_incident_cell<1,2>(it).begin(), it1end = output_mesh.one_dart_per_incident_cell<1,2>(it).end(); it1 != it1end; it1++){
-      if(!output_mesh.is_free<2>(it1)) i++;
+      if(!output_mesh.is_free<2>(it1)) i++; //counting if every edge incident on a face is shared bytwo adjacent faces- this would form a quad strip
     }
     if(i == 4) continue;
     else return false;
@@ -29,7 +29,7 @@ bool HexExtr::are_quad_strips(){
 }
 
 
-bool HexExtr::are_hexes(){
+bool HexExtr::are_hexes(){ //Are all the 3-cells in the output_mesh hexahedral, i.e. have 6 incident faces?
   for(LCC_3::One_dart_per_cell_range<3>::iterator it = output_mesh.one_dart_per_cell<3>().begin(), itend = output_mesh.one_dart_per_cell<3>().end(); it != itend; it++){
     int i = output_mesh.one_dart_per_incident_cell<2,3>(it).size();
     if(i == 6) continue;
@@ -40,7 +40,7 @@ bool HexExtr::are_hexes(){
 
 
 
-int HexExtr::flipped_cells(){
+int HexExtr::flipped_cells(){ //finds the number of flipped tet cells in input_tet_mesh to find if the parametrization was faulty- in which case post-processing is required.
   int count = 0;
   for(LCC_3::One_dart_per_cell_range<3>::iterator it = input_tet_mesh.one_dart_per_cell<3>().begin(), itend =  input_tet_mesh.one_dart_per_cell<3>().end(); it != itend; it++){
     if(calculate_cell_type(input_tet_mesh, it) == -1) count++;
@@ -49,7 +49,8 @@ int HexExtr::flipped_cells(){
 }
 
 
-void HexExtr::annihilate_darts(){
+void HexExtr::annihilate_darts(){ // find dart-antdart pair in different hexes and erase them after adjusting the connections.
+
   for(LCC_3::Dart_range::iterator it = output_mesh.darts().begin(), itend = output_mesh.darts().end(); it != itend; it++){
     Dart_handle dh1 = it, dh2 = (output_mesh.beta<3>(it)); //all the darts of a flipped tet are marked as flipped, so we can find a dart-antidart pair only in different hexes.
     if((output_mesh.info(dh1)).flipped == true){
@@ -83,7 +84,7 @@ we might not need this since we eliminate degenerate tets in the parametrization
   }  
 }
 
-bool HexExtr::post_processing_req(){
+bool HexExtr::post_processing_req(){ //is post-processing required or is the output_mesh already correct?
   if(DEBUG) std::cout<<"Number of flipped cells: "<<flipped_cells()<<std::endl;
   return(!(are_quads()&& are_quad_strips() && are_hexes())||flipped_cells()>0);
 }

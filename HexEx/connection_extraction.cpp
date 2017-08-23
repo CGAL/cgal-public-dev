@@ -18,12 +18,13 @@ void HexExtr::extract_connections(){/*
 
     Dart_handle dh =  hex_handles[p]; // dh is the dart incident to the hex
     
-    /****along x:****/
 
+/****along x:****/
 // Point temp in integer point (parametrized) domain, which is at [x+1, y, z]
     Point temp((*it).first.x()+1, (*it).first.y(), (*it).first.z()); 
 
-// move to the next point, if temp is not a point in the hex mesh (as found through extract_hexes function), or if temp is a point in the hex mesh, but does not have a hexahedron incident to it (a boundary point).
+
+//if temp is not a point in the hex mesh (as found through extract_hexes function), or if temp is a point in the hex mesh, but does not have a hexahedron incident to it (a boundary point), then  move to the next point.
     if(output_points.find(temp) == output_points.end() || hex_handles.find(output_points[temp]) == hex_handles.end()) continue;
 
 // dart in hexahedron at [x,y,z] corresponding to the shared face/edge/vertex between the two hexahedra 
@@ -40,11 +41,11 @@ void HexExtr::extract_connections(){/*
 
 
 /****along y:****/
-
 // Point temp in integer point (parametrized) domain, which is at [x, y+1, z]
     Point temp2((*it).first.x(), (*it).first.y()+1, (*it).first.z());
 
-// move to the next point, if temp is not a point in the hex mesh (as found through extract_hexes function), or if temp is a point in the hex mesh, but does not have a hexahedron incident to it (a boundary point). 
+
+//if temp is not a point in the hex mesh (as found through extract_hexes function), or if temp is a point in the hex mesh, but does not have a hexahedron incident to it (a boundary point), then  move to the next point.
     if(output_points.find(temp2) == output_points.end() || hex_handles.find(output_points[temp2]) == hex_handles.end()) continue;
 
 // dart in hexahedron at [x,y,z] corresponding to the shared face/edge/vertex between the two hexahedra 
@@ -58,11 +59,10 @@ void HexExtr::extract_connections(){/*
     
 
 /****along z:****/
-
 // Point temp in integer point (parametrized) domain, which is at [x, y, z+1]
     Point temp3((*it).first.x(), (*it).first.y(), (*it).first.z()+1);
 
-// move to the next point, if temp is not a point in the hex mesh (as found through extract_hexes function), or if temp is a point in the hex mesh, but does not have a hexahedron incident to it (a boundary point). 
+//if temp is not a point in the hex mesh (as found through extract_hexes function), or if temp is a point in the hex mesh, but does not have a hexahedron incident to it (a boundary point), then  move to the next point.
     if(output_points.find(temp3) == output_points.end() || hex_handles.find(output_points[temp3]) == hex_handles.end()) continue;
 
     Dart_handle z_dh = output_mesh.beta<1,2>(dh);

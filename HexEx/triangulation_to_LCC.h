@@ -106,11 +106,11 @@ bool load_off_to_LCC(std::string filename, LCC_3& lcc)
   CGAL::write_off(lcc, ofile);
   ofile.close();
   //std::ofstream ofile;
-  ofile.open("triangulation");
+/*  ofile.open("triangulation");
 lcc.display_characteristics(std::cout);
   ofile<<lcc; //works
  //lcc.display_characteristics(std::cout);
-  ofile.close();
+  ofile.close();*/
   /*std::ifstream in;
   lcc.clear();
   in.open("triangulation");

@@ -1,7 +1,7 @@
 #include"hexextr.h"
 
-void HexExtr::extract_hexes(std::vector<Aff_transformation>& parametrization_matrices){/**
-* This function combnes the steps geometry extraction and topology extraction from the paper HexEx. 
+void HexExtr::extract_hexes(){/**
+* This function combines the steps geometry extraction and topology extraction from the paper HexEx. 
 * We iterate through each volume (in parametric space, stored in dart_info) in the input mesh, and find all the prospective vertices with integer coordinates in parametric space. If unit cubes formed by joining adjacent integer coordinates in the parametric space intersects the tetrahedron, we make a hexahedron (in our output mesh) corresponding to the inverse parametrization of the integer vertices of the cube. 
 */
  
@@ -40,18 +40,15 @@ for(LCC_3::One_dart_per_incident_cell_range<0,3>::iterator it1 = input_tet_mesh.
 * If the integer vertex lies on the boundary of the tet, and if the corresponding cube along positive x, y and z axis intersect with the tet, a hexahedron using inverse parametrization is created.
 * If the integer vertex lies inside the tet, the corresponding cube is sure to intersect with the tet, so a hexahedron using inverse parametrization is created.
 */
-  if(DEBUG) std::cout<<"before triple nested loop"<<std::endl; 
     for(int i = minx; i<= maxx; i++){
       for(int j = miny; j<=maxy; j++){
         for(int k = minz; k<=maxz; k++){ 
-          Point_3 p(i,j,k); if(DEBUG) std::cout<<i<<" "<<j<<" "<<k<<std::endl;
-          if(does_intersect(tet, p)){ if(DEBUG) std::cout<<"Yes, intersects!"<<std::endl;
-            //output_mesh.create_vertex_attribute(p.transform(at_inv));     
-
-/*
+          Point_3 p(i,j,k);
+          if(does_intersect(tet, p)){ /*
 * We create a map between integer grid points and inverse-parametrized points called output_points, to avoid repeated calculations and so that each grid point maps to a unique inverse parametrization (this need not happen due to numerical inefficiencies, leading to overlapping hexes) 
 * The paper uses the transition function to find the parametrization matrix of adjacent tet- this could be done too, but we have the parametrization matrix itself readily available in parametrization_matrices- so we use that to know parametrization in other matrices (not necessarily adjacent)
-*/          Point p0, param; 
+*/          
+            Point p0, param; 
             if(output_points.find(p) == output_points.end()){
               p0 = p.transform(at_inv); param = p;
               output_points.emplace(std::make_pair(p, p0));
@@ -63,7 +60,7 @@ for(LCC_3::One_dart_per_incident_cell_range<0,3>::iterator it1 = input_tet_mesh.
             Point p1(param[0]+1, param[1], param[2]); p = p1;
             if(output_points.find(p) == output_points.end()){
               if(tet.has_on_unbounded_side(p)){
-                Aff_transformation *at_new = find_tet_parametrization(p, parametrization_matrices);
+                Aff_transformation *at_new = find_tet_parametrization(p);
                 if(at_new == nullptr) p1 = p.transform(at_inv);
                 else p1 = p.transform((*at_new).inverse());
               } 
@@ -77,7 +74,7 @@ for(LCC_3::One_dart_per_incident_cell_range<0,3>::iterator it1 = input_tet_mesh.
             Point p2(param[0]+1, param[1]+1, param[2]); p = p2;
             if(output_points.find(p) == output_points.end()){
               if(tet.has_on_unbounded_side(p)){
-                Aff_transformation *at_new = find_tet_parametrization(p, parametrization_matrices);
+                Aff_transformation *at_new = find_tet_parametrization(p);
                 if(at_new == nullptr) p2 = p.transform(at_inv);
                 else p2 = p.transform((*at_new).inverse());
               } 
@@ -91,7 +88,7 @@ for(LCC_3::One_dart_per_incident_cell_range<0,3>::iterator it1 = input_tet_mesh.
             Point p3(param[0], param[1]+1, param[2]); p = p3;
             if(output_points.find(p) == output_points.end()){
               if(tet.has_on_unbounded_side(p)){
-                Aff_transformation *at_new = find_tet_parametrization(p, parametrization_matrices);
+                Aff_transformation *at_new = find_tet_parametrization(p);
                 if(at_new == nullptr) p3 = p.transform(at_inv);
                else p3 = p.transform((*at_new).inverse());
               } 
@@ -105,7 +102,7 @@ for(LCC_3::One_dart_per_incident_cell_range<0,3>::iterator it1 = input_tet_mesh.
             Point p4(param[0], param[1]+1, param[2]+1); p = p4;
             if(output_points.find(p) == output_points.end()){
               if(tet.has_on_unbounded_side(p)){
-                Aff_transformation *at_new = find_tet_parametrization(p, parametrization_matrices);
+                Aff_transformation *at_new = find_tet_parametrization(p);
                 if(at_new == nullptr) p4 = p.transform(at_inv);
                 else p4 = p.transform((*at_new).inverse());
               } 
@@ -119,7 +116,7 @@ for(LCC_3::One_dart_per_incident_cell_range<0,3>::iterator it1 = input_tet_mesh.
             Point p5(param[0], param[1], param[2]+1); p = p5;
             if(output_points.find(p) == output_points.end()){
               if(tet.has_on_unbounded_side(p)){
-                Aff_transformation *at_new = find_tet_parametrization(p, parametrization_matrices);
+                Aff_transformation *at_new = find_tet_parametrization(p);
                 if(at_new == nullptr) p5 = p.transform(at_inv);
                 else p5 = p.transform((*at_new).inverse());
               } 
@@ -133,7 +130,7 @@ for(LCC_3::One_dart_per_incident_cell_range<0,3>::iterator it1 = input_tet_mesh.
             Point p6(param[0]+1, param[1], param[2]+1); p = p6;
             if(output_points.find(p) == output_points.end()){
               if(tet.has_on_unbounded_side(p)){
-                Aff_transformation *at_new = find_tet_parametrization(p, parametrization_matrices);
+                Aff_transformation *at_new = find_tet_parametrization(p);
                 if(at_new == nullptr) p6 = p.transform(at_inv);
                 else p6 = p.transform((*at_new).inverse());
               } 
@@ -147,7 +144,7 @@ for(LCC_3::One_dart_per_incident_cell_range<0,3>::iterator it1 = input_tet_mesh.
             Point p7(param[0]+1, param[1]+1, param[2]+1); p = p7;
             if(output_points.find(p) == output_points.end()){
               if(tet.has_on_unbounded_side(p)){
-                Aff_transformation *at_new = find_tet_parametrization(p, parametrization_matrices);
+                Aff_transformation *at_new = find_tet_parametrization(p);
                 if(at_new == nullptr) p7 = p.transform(at_inv);
                 else p7 = p.transform((*at_new).inverse());
               } 
@@ -166,34 +163,34 @@ it5end = output_mesh.darts_of_cell<3>(dh).end(); it5 != it5end; it5++){
               (output_mesh.info(it5)).flipped = (orientation == -1)? true : false;
             }
             hex_handles.emplace(std::make_pair(p0, dh));
-            if(DEBUG) std::cout<<"made hexahedron"<<std::endl;
 }
           
           }
         }
       }
     }
-  if(DEBUG) std::cout<<"after triple nested"<<std::endl;
   }
 
-// output.off is used to visualize the output_mesh after this step. So LCC is written to output.off file.
-  std::ofstream of;
-  of.open("output.off");
-  CGAL::write_off(output_mesh, of); 
-  of.close();
 
 //display the characteristics of the output LCC.
   std::cout<<"***Output mesh***"<<std::endl; output_mesh.display_characteristics(std::cout); std::cout<<std::endl;
 
+/*
+// output.off is used to visualize the output_mesh after this step. So LCC is written to output.off file.
+  #ifdef CGAL_LCC_USE_VIEWER
+    display_lcc(output_mesh);
+  #endif // CGAL_LCC_USE_VIEWER
+  std::ofstream of;
+  of.open("output.off");
+  CGAL::write_off(output_mesh, of); 
+  of.close();
+*/
 
-#ifdef CGAL_LCC_USE_VIEWER
-  display_lcc(output_mesh);
-#endif // CGAL_LCC_USE_VIEWER
 } 
 
 
 
-Aff_transformation* HexExtr::find_tet_parametrization(Point p, std::vector<Aff_transformation>& parametrization_matrices){
+Aff_transformation* HexExtr::find_tet_parametrization(Point p){
   for(LCC_3::One_dart_per_cell_range<3>::iterator it = input_tet_mesh.one_dart_per_cell<3>().begin(), itend = input_tet_mesh.one_dart_per_cell<3>().end(); it != itend; it++){
     std::vector<Point_3> point;
     for(LCC_3::One_dart_per_incident_cell_range<0,3>::iterator it1 = input_tet_mesh.one_dart_per_incident_cell<0,3>(it).begin(), it1end = input_tet_mesh.one_dart_per_incident_cell<0,3>(it).end(); it1 != it1end; it1++){

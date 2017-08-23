@@ -1,0 +1,576 @@
+2tets-1
+Loading mesh: 292 ms
+Before extracting: 58 ms
+Sanitizing mesh: 4 ms
+***Output mesh***
+#Darts=110208, #0-cells=36736, #1-cells=55104, #2-cells=27552, #3-cells=4592, #ccs=4592
+Hex-extraction: 32417 ms
+Connection-extraction: 1123 ms
+Valid!
+*****FINAL OUTPUT MESH*****
+#Darts=110208, #0-cells=7099, #1-cells=18423, #2-cells=15950, #3-cells=4592, #ccs=36
+Done
+Program has been running for 34203 ms
+-------------------------------------------------------------------------------------------------------------------------------------
+elephant-1
+Loading mesh: 625 ms
+Before extracting: 555 ms
+Sanitizing mesh: 25 ms
+***Output mesh***
+#Darts=352848, #0-cells=117616, #1-cells=176424, #2-cells=88212, #3-cells=14702, #ccs=14702
+Hex-extraction: 482292 ms
+Connection-extraction: 5043 ms
+Valid!
+*****FINAL OUTPUT MESH*****
+#Darts=352848, #0-cells=24514, #1-cells=61628, #2-cells=52023, #3-cells=14702, #ccs=217
+Done
+Program has been running for 489501 ms
+-------------------------------------------------------------------------------------------------------------------------------------
+fandisk-1
+Loading mesh: 1257 ms
+Before extracting: 1347 ms
+Sanitizing mesh: 54 ms
+***Output mesh***
+#Darts=1094184, #0-cells=364728, #1-cells=547092, #2-cells=273546, #3-cells=45591, #ccs=45591
+Hex-extraction: 1930554 ms
+Connection-extraction: 85594 ms
+Valid!
+*****FINAL OUTPUT MESH*****
+#Darts=1094184, #0-cells=61752, #1-cells=167422, #2-cells=151421, #3-cells=45591, #ccs=174
+Done
+Program has been running for 2022730 ms
+--------------------------------------------------------------------------------------------------------------------------------------
+2tets-2
+Loading mesh: 139 ms
+Before extracting: 38 ms
+Sanitizing mesh: 4 ms
+***Output mesh***
+#Darts=111720, #0-cells=37240, #1-cells=55860, #2-cells=27930, #3-cells=4655, #ccs=4655
+Hex-extraction: 22285 ms
+Connection-extraction: 1106 ms
+Valid!
+*****FINAL OUTPUT MESH*****
+#Darts=111720, #0-cells=6974, #1-cells=18257, #2-cells=15964, #3-cells=4655, #ccs=31
+Done
+Program has been running for 23843 ms
+--------------------------------------------------------------------------------------------------------------------------------------
+2tets-3
+Loading mesh: 110 ms
+Before extracting: 28 ms
+Sanitizing mesh: 5 ms
+***Output mesh***
+#Darts=110184, #0-cells=36728, #1-cells=55092, #2-cells=27546, #3-cells=4591, #ccs=4591
+Hex-extraction: 18521 ms
+Connection-extraction: 1032 ms
+Valid!
+*****FINAL OUTPUT MESH*****
+#Darts=110184, #0-cells=6946, #1-cells=18211, #2-cells=15873, #3-cells=4591, #ccs=23
+Done
+Program has been running for 19967 ms
+--------------------------------------------------------------------------------------------------------------------------------------
+2tets-4
+Loading mesh: 105 ms
+Before extracting: 26 ms
+Sanitizing mesh: 6 ms
+***Output mesh***
+#Darts=110040, #0-cells=36680, #1-cells=55020, #2-cells=27510, #3-cells=4585, #ccs=4585
+Hex-extraction: 19992 ms
+Connection-extraction: 1078 ms
+Valid!
+*****FINAL OUTPUT MESH*****
+#Darts=110040, #0-cells=6960, #1-cells=18210, #2-cells=15862, #3-cells=4585, #ccs=24
+Done
+Program has been running for 21481 ms
+--------------------------------------------------------------------------------------------------------------------------------------
+2tets-5
+Loading mesh: 111 ms
+Before extracting: 33 ms
+Sanitizing mesh: 7 ms
+***Output mesh***
+#Darts=108864, #0-cells=36288, #1-cells=54432, #2-cells=27216, #3-cells=4536, #ccs=4536
+Hex-extraction: 23480 ms
+Connection-extraction: 1207 ms
+Valid!
+*****FINAL OUTPUT MESH*****
+#Darts=108864, #0-cells=6796, #1-cells=17847, #2-cells=15607, #3-cells=4536, #ccs=19
+Done
+Program has been running for 25118 ms
+---------------------------------------------------------------------------------------------------------------------------------------
+2tets-6
+Loading mesh: 109 ms
+Before extracting: 22 ms
+Sanitizing mesh: 3 ms
+***Output mesh***
+#Darts=110760, #0-cells=36920, #1-cells=55380, #2-cells=27690, #3-cells=4615, #ccs=4615
+Hex-extraction: 14890 ms
+Connection-extraction: 1122 ms
+Valid!
+*****FINAL OUTPUT MESH*****
+#Darts=110760, #0-cells=6799, #1-cells=17896, #2-cells=15738, #3-cells=4615, #ccs=27
+Done
+Program has been running for 16398 ms
+----------------------------------------------------------------------------------------------------------------------------------------
+2tets-7
+Loading mesh: 172 ms
+Before extracting: 36 ms
+Sanitizing mesh: 6 ms
+***Output mesh***
+#Darts=109776, #0-cells=36592, #1-cells=54888, #2-cells=27444, #3-cells=4574, #ccs=4574
+Hex-extraction: 14365 ms
+Connection-extraction: 1071 ms
+Valid!
+*****FINAL OUTPUT MESH*****
+#Darts=109776, #0-cells=6792, #1-cells=17852, #2-cells=15655, #3-cells=4574, #ccs=24
+Done
+Program has been running for 15923 ms
+-----------------------------------------------------------------------------------------------------------------------------------------
+2tets-8
+Loading mesh: 121 ms
+Before extracting: 36 ms
+Sanitizing mesh: 4 ms
+***Output mesh***
+#Darts=111336, #0-cells=37112, #1-cells=55668, #2-cells=27834, #3-cells=4639, #ccs=4639
+Hex-extraction: 23361 ms
+Connection-extraction: 1114 ms
+Valid!
+*****FINAL OUTPUT MESH*****
+#Darts=111336, #0-cells=6932, #1-cells=18185, #2-cells=15912, #3-cells=4639, #ccs=23
+Done
+Program has been running for 24960 ms
+-----------------------------------------------------------------------------------------------------------------------------------------
+2tets-9
+Loading mesh: 139 ms
+Before extracting: 35 ms
+Sanitizing mesh: 4 ms
+***Output mesh***
+#Darts=109992, #0-cells=36664, #1-cells=54996, #2-cells=27498, #3-cells=4583, #ccs=4583
+Hex-extraction: 22473 ms
+Connection-extraction: 1053 ms
+Valid!
+*****FINAL OUTPUT MESH*****
+#Darts=109992, #0-cells=6856, #1-cells=17975, #2-cells=15724, #3-cells=4583, #ccs=26
+Done
+Program has been running for 23954 ms
+------------------------------------------------------------------------------------------------------------------------------------------
+2tets-10
+Loading mesh: 109 ms
+Before extracting: 25 ms
+Sanitizing mesh: 8 ms
+***Output mesh***
+#Darts=110736, #0-cells=36912, #1-cells=55368, #2-cells=27684, #3-cells=4614, #ccs=4614
+Hex-extraction: 18726 ms
+Connection-extraction: 1078 ms
+Valid!
+*****FINAL OUTPUT MESH*****
+#Darts=110736, #0-cells=6828, #1-cells=17972, #2-cells=15781, #3-cells=4614, #ccs=27
+Done
+Program has been running for 20239 ms
+------------------------------------------------------------------------------------------------------------------------------------------
+2tets-11
+Loading mesh: 12 ms
+Before extracting: 0 ms
+Sanitizing mesh: 0 ms
+***Output mesh***
+#Darts=1320, #0-cells=440, #1-cells=660, #2-cells=330, #3-cells=55, #ccs=55
+Hex-extraction: 10 ms
+Connection-extraction: 1 ms
+Valid!
+*****FINAL OUTPUT MESH*****
+#Darts=1320, #0-cells=270, #1-cells=487, #2-cells=286, #3-cells=55, #ccs=14
+Done
+Program has been running for 31 ms
+-------------------------------------------------------------------------------------------------------------------------------------------
+2tets-12
+Loading mesh: 34 ms
+Before extracting: 1 ms
+Sanitizing mesh: 0 ms
+***Output mesh***
+#Darts=41688, #0-cells=13896, #1-cells=20844, #2-cells=10422, #3-cells=1737, #ccs=1737
+Hex-extraction: 544 ms
+Connection-extraction: 231 ms
+Valid!
+*****FINAL OUTPUT MESH*****
+#Darts=41688, #0-cells=2928, #1-cells=7402, #2-cells=6219, #3-cells=1737, #ccs=8
+Done
+Program has been running for 918 ms
+-------------------------------------------------------------------------------------------------------------------------------------------
+2tets-13
+Loading mesh: 174 ms
+Before extracting: 52 ms
+Sanitizing mesh: 4 ms
+***Output mesh***
+#Darts=110208, #0-cells=36736, #1-cells=55104, #2-cells=27552, #3-cells=4592, #ccs=4592
+Hex-extraction: 34034 ms
+Connection-extraction: 1061 ms
+Valid!
+*****FINAL OUTPUT MESH*****
+#Darts=110208, #0-cells=7099, #1-cells=18423, #2-cells=15950, #3-cells=4592, #ccs=36
+Done
+Program has been running for 35601 ms
+-------------------------------------------------------------------------------------------------------------------------------------------
+2tets-14
+Loading mesh: 224 ms
+Before extracting: 59 ms
+Sanitizing mesh: 6 ms
+***Output mesh***
+#Darts=110760, #0-cells=36920, #1-cells=55380, #2-cells=27690, #3-cells=4615, #ccs=4615
+Hex-extraction: 34889 ms
+Connection-extraction: 1086 ms
+Valid!
+*****FINAL OUTPUT MESH*****
+#Darts=110760, #0-cells=7086, #1-cells=18431, #2-cells=15994, #3-cells=4615, #ccs=33
+Done
+Program has been running for 36540 ms
+---------------------------------------------------------------------------------------------------------------------------------------
+2tets-15
+Loading mesh: 308 ms
+Before extracting: 72 ms
+Sanitizing mesh: 9 ms
+***Output mesh***
+#Darts=328104, #0-cells=109368, #1-cells=164052, #2-cells=82026, #3-cells=13671, #ccs=13671
+Hex-extraction: 94181 ms
+Connection-extraction: 8873 ms
+Valid!
+*****FINAL OUTPUT MESH*****
+#Darts=328104, #0-cells=17993, #1-cells=49208, #2-cells=44918, #3-cells=13671, #ccs=32
+Done
+Program has been running for 104185 ms
+-----------------------------------------------------------------------------------------------------------------------------------------
+2tets-16
+Loading mesh: 112 ms
+Before extracting: 25 ms
+Sanitizing mesh: 9 ms
+***Output mesh***
+#Darts=317352, #0-cells=105784, #1-cells=158676, #2-cells=79338, #3-cells=13223, #ccs=13223
+Hex-extraction: 41920 ms
+Connection-extraction: 11393 ms
+Valid!
+*****FINAL OUTPUT MESH*****
+#Darts=317352, #0-cells=17307, #1-cells=47396, #2-cells=43341, #3-cells=13223, #ccs=32
+Done
+Program has been running for 54456 ms
+--------------------------------------------------------------------------------------------------------------------------------------
+2tets-17
+Loading mesh: 120 ms
+Before extracting: 42 ms
+Sanitizing mesh: 6 ms
+***Output mesh***
+#Darts=317760, #0-cells=105920, #1-cells=158880, #2-cells=79440, #3-cells=13240, #ccs=13240
+Hex-extraction: 58333 ms
+Connection-extraction: 10565 ms
+Valid!
+*****FINAL OUTPUT MESH*****
+#Darts=317760, #0-cells=17285, #1-cells=47424, #2-cells=43404, #3-cells=13240, #ccs=24
+Done
+Program has been running for 69880 ms
+--------------------------------------------------------------------------------------------------------------------------------------
+2tets-20 
+Loading mesh: 174 ms
+Before extracting: 55 ms
+Sanitizing mesh: 6 ms
+***Output mesh***
+#Darts=1200, #0-cells=400, #1-cells=600, #2-cells=300, #3-cells=50, #ccs=50
+Hex-extraction: 673 ms
+Connection-extraction: 0 ms
+Valid!
+*****FINAL OUTPUT MESH*****
+#Darts=1200, #0-cells=292, #1-cells=490, #2-cells=272, #3-cells=50, #ccs=24
+Done
+Program has been running for 931 ms
+----------------------------------------------------------------------------------------------------------------------------------------
+2tets-21
+Loading mesh: 149 ms
+Before extracting: 52 ms
+Sanitizing mesh: 5 ms
+***Output mesh***
+#Darts=37632, #0-cells=12544, #1-cells=18816, #2-cells=9408, #3-cells=1568, #ccs=1568
+Hex-extraction: 12591 ms
+Connection-extraction: 138 ms
+Valid!
+*****FINAL OUTPUT MESH*****
+#Darts=37632, #0-cells=3054, #1-cells=7376, #2-cells=5924, #3-cells=1568, #ccs=34
+Done
+Program has been running for 13060 ms
+---------------------------------------------------------------------------------------------------------------------------------------
+2tets-22
+Loading mesh: 249 ms
+Before extracting: 51 ms
+Sanitizing mesh: 4 ms
+***Output mesh***
+#Darts=408, #0-cells=136, #1-cells=204, #2-cells=102, #3-cells=17, #ccs=17
+Hex-extraction: 268 ms
+Connection-extraction: 0 ms
+Valid!
+*****FINAL OUTPUT MESH*****
+#Darts=408, #0-cells=128, #1-cells=196, #2-cells=100, #3-cells=17, #ccs=15
+Done
+Program has been running for 599 ms
+---------------------------------------------------------------------------------------------------------------------------------------
+2tets-23
+Loading mesh: 177 ms
+Before extracting: 51 ms
+Sanitizing mesh: 4 ms
+***Output mesh***
+#Darts=15696, #0-cells=5232, #1-cells=7848, #2-cells=3924, #3-cells=654, #ccs=654
+Hex-extraction: 6644 ms
+Connection-extraction: 24 ms
+Valid!
+*****FINAL OUTPUT MESH*****
+#Darts=15696, #0-cells=1745, #1-cells=3794, #2-cells=2735, #3-cells=654, #ccs=37
+Done
+Program has been running for 6973 ms
+-----------------------------------------------------------------------------------------------------------------------------------------
+2tets-24
+Loading mesh: 151 ms
+Before extracting: 56 ms
+Sanitizing mesh: 7 ms
+***Output mesh***
+#Darts=15552, #0-cells=5184, #1-cells=7776, #2-cells=3888, #3-cells=648, #ccs=648
+Hex-extraction: 6600 ms
+Connection-extraction: 35 ms
+Valid!
+*****FINAL OUTPUT MESH*****
+#Darts=15552, #0-cells=1544, #1-cells=3516, #2-cells=2635, #3-cells=648, #ccs=26
+Done
+Program has been running for 6917 ms
+----------------------------------------------------------------------------------------------------------------------------------------
+2tets-25
+Loading mesh: 169 ms
+Before extracting: 58 ms
+Sanitizing mesh: 13 ms
+***Output mesh***
+#Darts=15960, #0-cells=5320, #1-cells=7980, #2-cells=3990, #3-cells=665, #ccs=665
+Hex-extraction: 6893 ms
+Connection-extraction: 23 ms
+Valid!
+*****FINAL OUTPUT MESH*****
+#Darts=15960, #0-cells=1769, #1-cells=3877, #2-cells=2800, #3-cells=665, #ccs=38
+Done
+Program has been running for 7219 ms
+---------------------------------------------------------------------------------------------------------------------------------------
+elephant-16
+Loading mesh: 950 ms
+Before extracting: 433 ms
+Sanitizing mesh: 24 ms
+***Output mesh***
+#Darts=1049184, #0-cells=349728, #1-cells=524592, #2-cells=262296, #3-cells=43716, #ccs=43716
+Hex-extraction: 1043595 ms
+Connection-extraction: 48613 ms
+Valid!
+*****FINAL OUTPUT MESH*****
+#Darts=1049184, #0-cells=61483, #1-cells=163943, #2-cells=146336, #3-cells=43716, #ccs=170
+Done
+Program has been running for 1096022 ms
+--------------------------------------------------------------------------------------------------------------------------------------
+2tets-20
+Loading mesh: 183 ms
+Before extracting: 49 ms
+Sanitizing mesh: 4 ms
+***Output mesh***
+#Darts=1200, #0-cells=400, #1-cells=600, #2-cells=300, #3-cells=50, #ccs=50
+Hex-extraction: 675 ms
+Connection-extraction: 0 ms
+Valid!
+*****FINAL OUTPUT MESH*****
+#Darts=1200, #0-cells=292, #1-cells=490, #2-cells=272, #3-cells=50, #ccs=24
+Done
+Program has been running for 935 ms
+----------------------------------------------------------------------------------------------------------------------------------------
+2tets-21
+Loading mesh: 156 ms
+Before extracting: 49 ms
+Sanitizing mesh: 4 ms
+***Output mesh***
+#Darts=37632, #0-cells=12544, #1-cells=18816, #2-cells=9408, #3-cells=1568, #ccs=1568
+Hex-extraction: 12318 ms
+Connection-extraction: 134 ms
+Valid!
+*****FINAL OUTPUT MESH*****
+#Darts=37632, #0-cells=3054, #1-cells=7376, #2-cells=5924, #3-cells=1568, #ccs=34
+Done
+Program has been running for 12767 ms
+-------------------------------------------------------------------------------------------------------------------------------------
+2tets-22
+Loading mesh: 163 ms
+Before extracting: 49 ms
+Sanitizing mesh: 4 ms
+***Output mesh***
+#Darts=408, #0-cells=136, #1-cells=204, #2-cells=102, #3-cells=17, #ccs=17
+Hex-extraction: 250 ms
+Connection-extraction: 0 ms
+Valid!
+*****FINAL OUTPUT MESH*****
+#Darts=408, #0-cells=128, #1-cells=196, #2-cells=100, #3-cells=17, #ccs=15
+Done
+Program has been running for 488 ms
+-------------------------------------------------------------------------------------------------------------------------------------
+2tets-23
+Loading mesh: 155 ms
+Before extracting: 50 ms
+Sanitizing mesh: 4 ms
+***Output mesh***
+#Darts=15696, #0-cells=5232, #1-cells=7848, #2-cells=3924, #3-cells=654, #ccs=654
+Hex-extraction: 6079 ms
+Connection-extraction: 20 ms
+Valid!
+*****FINAL OUTPUT MESH*****
+#Darts=15696, #0-cells=1745, #1-cells=3794, #2-cells=2735, #3-cells=654, #ccs=37
+Done
+Program has been running for 6366 ms
+------------------------------------------------------------------------------------------------------------------------------------
+2tets-24
+Loading mesh: 154 ms
+Before extracting: 49 ms
+Sanitizing mesh: 4 ms
+***Output mesh***
+#Darts=15552, #0-cells=5184, #1-cells=7776, #2-cells=3888, #3-cells=648, #ccs=648
+Hex-extraction: 6219 ms
+Connection-extraction: 32 ms
+Valid!
+*****FINAL OUTPUT MESH*****
+#Darts=15552, #0-cells=1544, #1-cells=3516, #2-cells=2635, #3-cells=648, #ccs=26
+Done
+Program has been running for 6520 ms
+------------------------------------------------------------------------------------------------------------------------------------
+2tets-25
+Loading mesh: 163 ms
+Before extracting: 51 ms
+Sanitizing mesh: 5 ms
+***Output mesh***
+#Darts=15960, #0-cells=5320, #1-cells=7980, #2-cells=3990, #3-cells=665, #ccs=665
+Hex-extraction: 6514 ms
+Connection-extraction: 23 ms
+Valid!
+*****FINAL OUTPUT MESH*****
+#Darts=15960, #0-cells=1769, #1-cells=3877, #2-cells=2800, #3-cells=665, #ccs=38
+Done
+Program has been running for 6816 ms
+--------------------------------------------------------------------------------------------------------------------------------------
+fandisk-16
+Loading mesh: 517 ms
+Before extracting: 379 ms
+Sanitizing mesh: 22 ms
+***Output mesh***
+#Darts=3345000, #0-cells=1115000, #1-cells=1672500, #2-cells=836250, #3-cells=139375, #ccs=139375
+Hex-extraction: 2490869 ms
+Connection-extraction: 806551 ms
+Valid!
+*****FINAL OUTPUT MESH*****
+#Darts=3345000, #0-cells=166918, #1-cells=470297, #2-cells=442871, #3-cells=139375, #ccs=101
+Done
+Program has been running for 3306603 ms
+-------------------------------------------------------------------------------------------------------------------------------------
+elephant-20
+Loading mesh: 649 ms
+Before extracting: 539 ms
+Sanitizing mesh: 47 ms
+***Output mesh***
+#Darts=3456, #0-cells=1152, #1-cells=1728, #2-cells=864, #3-cells=144, #ccs=144
+Hex-extraction: 8118 ms
+Connection-extraction: 1 ms
+Valid!
+*****FINAL OUTPUT MESH*****
+#Darts=3456, #0-cells=730, #1-cells=1290, #2-cells=751, #3-cells=144, #ccs=47
+Done
+Program has been running for 9624 ms
+--------------------------------------------------------------------------------------------------------------------------------------
+elephant-21
+Loading mesh: 619 ms
+Before extracting: 539 ms
+Sanitizing mesh: 28 ms
+***Output mesh***
+#Darts=117552, #0-cells=39184, #1-cells=58776, #2-cells=29388, #3-cells=4898, #ccs=4898
+Hex-extraction: 182824 ms
+Connection-extraction: 593 ms
+Valid!
+*****FINAL OUTPUT MESH*****
+#Darts=117552, #0-cells=9997, #1-cells=23517, #2-cells=18583, #3-cells=4898, #ccs=176
+Done
+Program has been running for 185089 ms
+------------------------------------------------------------------------------------------------------------------------------------
+elephant-22
+Loading mesh: 651 ms
+Before extracting: 541 ms
+Sanitizing mesh: 34 ms
+***Output mesh***
+#Darts=2040, #0-cells=680, #1-cells=1020, #2-cells=510, #3-cells=85, #ccs=85
+Hex-extraction: 4962 ms
+Connection-extraction: 0 ms
+Valid!
+*****FINAL OUTPUT MESH*****
+#Darts=2040, #0-cells=584, #1-cells=924, #2-cells=486, #3-cells=85, #ccs=61
+Done
+Program has been running for 6370 ms
+------------------------------------------------------------------------------------------------------------------------------------
+elephant-23
+Loading mesh: 627 ms
+Before extracting: 542 ms
+Sanitizing mesh: 33 ms
+vvvv***Output mesh***
+#Darts=50376, #0-cells=16792, #1-cells=25188, #2-cells=12594, #3-cells=2099, #ccs=2099
+Hex-extraction: 90146 ms
+Connection-extraction: 95 ms
+Valid!
+*****FINAL OUTPUT MESH*****
+#Darts=50376, #0-cells=5293, #1-cells=11700, #2-cells=8614, #3-cells=2099, #ccs=132
+Done
+Program has been running for 91733 ms
+-----------------------------------------------------------------------------------------------------------------------------------
+elephant-24 
+Loading mesh: 667 ms
+Before extracting: 537 ms
+Sanitizing mesh: 29 ms
+***Output mesh***
+#Darts=47784, #0-cells=15928, #1-cells=23892, #2-cells=11946, #3-cells=1991, #ccs=1991
+Hex-extraction: 79610 ms
+Connection-extraction: 135 ms
+Valid!
+*****FINAL OUTPUT MESH*****
+#Darts=47784, #0-cells=4759, #1-cells=10818, #2-cells=8118, #3-cells=1991, #ccs=99
+Done
+Program has been running for 81322 ms
+-----------------------------------------------------------------------------------------------------------------------------------
+elephant-25
+Loading mesh: 689 ms
+Before extracting: 548 ms
+Sanitizing mesh: 32 ms
+***Output mesh***
+#Darts=49896, #0-cells=16632, #1-cells=24948, #2-cells=12474, #3-cells=2079, #ccs=2079
+Hex-extraction: 84004 ms
+Connection-extraction: 99 ms
+Valid!
+*****FINAL OUTPUT MESH*****
+#Darts=49896, #0-cells=5217, #1-cells=11540, #2-cells=8511, #3-cells=2079, #ccs=129
+Done
+Program has been running for 85665 ms
+----------------------------------------------------------------------------------------------------------------------------------
+fandisk-20
+Loading mesh: 1036 ms
+Before extracting: 1354 ms
+Sanitizing mesh: 64 ms
+***Output mesh***
+#Darts=11064, #0-cells=3688, #1-cells=5532, #2-cells=2766, #3-cells=461, #ccs=461
+Hex-extraction: 25911 ms
+Connection-extraction: 9 ms
+Valid!
+*****FINAL OUTPUT MESH*****
+#Darts=11064, #0-cells=1840, #1-cells=3504, #2-cells=2210, #3-cells=461, #ccs=87
+Done
+Program has been running for 29236 ms
+----------------------------------------------------------------------------------------------------------------------------------
+
+***** USING TRIANGULATION_3 INSTEAD OF MESH_3 *****
+=====================================================
+
+Enter filename of input file from tests/: (eg: 2tets-1 (or) elephant-1 (or) fandisk-1)
+small_points_3_triangulation_3
+***Output mesh***
+#Darts=142824, #0-cells=47608, #1-cells=71412, #2-cells=35706, #3-cells=5951, #ccs=5951
+Program has been running for 4425 ms
+-----------------------------------------------------------------------------------------------------------------------------------
+Enter filename of input file from tests/: (eg: 2tets-1 (or) elephant-1 (or) fandisk-1)
+2tets-triangulation_3            
+***Output mesh***
+#Darts=78792, #0-cells=26264, #1-cells=39396, #2-cells=19698, #3-cells=3283, #ccs=3283
+Program has been running for 2146 ms
+------------------------------------------------------------------------------------------------------------------------------------
