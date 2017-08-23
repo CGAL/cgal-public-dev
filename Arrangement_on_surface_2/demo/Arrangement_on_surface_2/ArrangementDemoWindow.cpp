@@ -59,7 +59,7 @@ ArrangementDemoWindow::ArrangementDemoWindow(QWidget* parent) :
 
   // set up the demo window
   // ArrangementDemoTabBase* demoTab =
-  this->makeTab( ALGEBRAIC_TRAITS );
+  this->makeTab( SEGMENT_TRAITS );
 
   // Call inherited functions
   this->setupStatusBar( );
