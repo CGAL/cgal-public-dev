@@ -1000,19 +1000,15 @@ paint(QPainter* painter, TTraits /* traits */)
     QEvent *keyEvent = new QKeyEvent(QEvent::KeyPress, ::Qt::Key_Left, ::Qt::NoModifier);
     QCoreApplication::postEvent(getCurrentView(), 
       keyEvent);
-    std::cout<<"After sending left event\n";
 
     keyEvent = new QKeyEvent(QEvent::KeyPress, ::Qt::Key_Right, ::Qt::NoModifier);
     QCoreApplication::postEvent(getCurrentView(), keyEvent);
-    std::cout<<"After sending right event\n";
 
     keyEvent = new QKeyEvent(QEvent::KeyPress, ::Qt::Key_Up, ::Qt::NoModifier);
     QCoreApplication::postEvent(getCurrentView(), keyEvent);
-    std::cout<<"After sending up event\n";
 
     keyEvent = new QKeyEvent(QEvent::KeyPress, ::Qt::Key_Down, ::Qt::NoModifier);
     QCoreApplication::postEvent(getCurrentView(), keyEvent);
-    std::cout<<"After sending down event\n";
   }
 }
 
@@ -1054,19 +1050,15 @@ paint(QPainter* painter,
     QEvent *keyEvent = new QKeyEvent(QEvent::KeyPress, ::Qt::Key_Left, ::Qt::NoModifier);
     QCoreApplication::postEvent(getCurrentView(), 
       keyEvent);
-    std::cout<<"After sending left event\n";
 
     keyEvent = new QKeyEvent(QEvent::KeyPress, ::Qt::Key_Right, ::Qt::NoModifier);
     QCoreApplication::postEvent(getCurrentView(), keyEvent);
-    std::cout<<"After sending right event\n";
 
     keyEvent = new QKeyEvent(QEvent::KeyPress, ::Qt::Key_Up, ::Qt::NoModifier);
     QCoreApplication::postEvent(getCurrentView(), keyEvent);
-    std::cout<<"After sending up event\n";
 
     keyEvent = new QKeyEvent(QEvent::KeyPress, ::Qt::Key_Down, ::Qt::NoModifier);
     QCoreApplication::postEvent(getCurrentView(), keyEvent);
-    std::cout<<"After sending down event\n";
   }
 }
 
@@ -1708,10 +1700,6 @@ paintFace( Face_handle f, QPainter* painter,
   else
   {
     QRectF rect = this->viewportRect( );
-    std::cout<<rect.left()<<'\t';
-    std::cout<<rect.right()<<'\t';
-    std::cout<<rect.top()<<'\t';
-    std::cout<<rect.bottom()<<'\n';
 
     QColor color = this->backgroundColor;
     if ( f->color().isValid() )
@@ -1740,10 +1728,6 @@ paintFace(Face_handle f, QPainter* painter,
   if ( f->is_unbounded( ) )
   {
     QRectF rect = this->viewportRect( );
-    std::cout<<rect.left()<<'\t';
-    std::cout<<rect.right()<<'\t';
-    std::cout<<rect.top()<<'\t';
-    std::cout<<rect.bottom()<<'\n';
 
     QColor color = this->backgroundColor;
     if ( f->color().isValid() )
