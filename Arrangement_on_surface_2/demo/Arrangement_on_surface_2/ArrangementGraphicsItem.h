@@ -131,18 +131,15 @@ protected:
 
   QRectF viewportRect( ) const
   {
-    std::cout<<"In ArrangementGraphicsItemBase viewportRect\n";
     QRectF res;
     if ( this->scene == NULL )
     {
-      std::cout<<"Return: this->scene == NULL\n";
       return res;
     }
 
     QList< QGraphicsView* > views = this->scene->views( );
     if ( views.size( ) == 0 )
     {
-      std::cout<<"Return: views.size( ) == 0\n";
       return res;
     }
     // assumes the first view is the right one
@@ -157,7 +154,6 @@ protected:
 
     res = QRectF( QPointF( xmin, ymin ), QPointF( xmax, ymax ) );
 
-    std::cout<<"Return: OKAY\n";
     return res;
   }
 
@@ -264,24 +260,14 @@ protected:
   void paintFaces( QPainter* painter, CGAL::Arr_oblivious_side_tag )
   {
     // Prepare all faces for painting
-    std::cout<<"In paintFaces Arr_oblivious_side_tag"<<std::endl;
     int Face_iterator_cnt = 0;
     for( Face_iterator fi = this->arr->faces_begin( );
          fi != this->arr->faces_end( ); ++fi )
     {
       fi->set_visited( false );
-      if ( fi->is_unbounded( ) )
-      {
-        std::cout << "setting unbounded face not visited" << std::endl;
-      }
-      else
-      {
-        std::cout << "setting bounded face not visited" << std::endl;
-      }
       Face_iterator_cnt++;
     }
 
-    std::cout<<"First Face_iterator cnt: "<<Face_iterator_cnt <<std::endl;
     Face_iterator_cnt = 0;
 
     for( Face_iterator fi = this->arr->faces_begin( );
@@ -291,41 +277,20 @@ protected:
       Face_handle f_handle = fi;
       this->paintFace( f_handle, painter );
     }
-
-    std::cout<<"Second Face_iterator cnt: "<<Face_iterator_cnt <<std::endl;
-    
-    std::cout<<"Leaving paintFaces Arr_oblivious_side_tag"<<std::endl;
   }
 
   void paintFaces( QPainter* painter, CGAL::Arr_open_side_tag )
   {
-
-
-    // Face_handle fictitiousFace = this->arr->fictitious_face( );
-    std::cout<<"In paintFaces Arr_open_side_tag"<<std::endl;
-    std::cout<<"number_of_unbounded_faces: ";
-    std::cout<<this->arr->number_of_unbounded_faces()<<std::endl;
-
     // Prepare all faces for painting
     int Face_iterator_cnt = 0;
 
     for( Face_iterator fi = this->arr->faces_begin( );
          fi != this->arr->faces_end( ); ++fi )
     {
-
-      if ( fi->is_fictitious( ) )
-      {
-          std::cout << "setting fictitious face not visited" << std::endl;
-      }
-      if ( fi->is_unbounded( ) )
-      {
-          std::cout << "setting unbounded face not visited" << std::endl;
-      }
       Face_iterator_cnt++;
       fi->set_visited( false );
     }
 
-    std::cout<<"First Face_iterator cnt: "<<Face_iterator_cnt <<std::endl;
     Face_iterator_cnt = 0;
 
     for( Face_iterator fi = this->arr->faces_begin( );
@@ -335,12 +300,6 @@ protected:
       Face_handle f_handle = fi;
       this->paintFace( f_handle, painter );
     }
-
-    std::cout<<"Second Face_iterator cnt: "<<Face_iterator_cnt <<std::endl;
-    // Face_handle unboundedFace = this->arr->unbounded_face( );
-    // this->paintFace( unboundedFace, painter );
-    
-    std::cout<<"Leaving paintFaces Arr_open_side_tag"<<std::endl;
   }
 
 #if 0
@@ -398,7 +357,6 @@ protected:
   void paintFace(Face_handle /* f */, QPainter* /* painter */,
                  Traits /* traits */)
   {
-      std::cout<<"In paintFace Traits"<<std::endl;
   }
 
   template < typename Kernel_ >
@@ -416,11 +374,9 @@ protected:
   paintFace( Face_handle f, QPainter* painter,
                   CGAL::Arr_conic_traits_2< RatKernel, AlgKernel, NtTraits > )
   {
-    std::cout<<"In paintFace Arr_conic_traits_2"<<std::endl;
 
     if (! f->is_unbounded())  // f is not the unbounded face
     {
-      std::cout<<"In paintFace Arr_conic_traits_2 bounded"<<std::endl;
       QVector< QPointF > pts; // holds the points of the polygon
       /* running with around the outer of the face and generate from it
        * polygon
@@ -546,12 +502,7 @@ protected:
     }
     else
     {
-      std::cout<<"In paintFace Arr_conic_traits_2 unbounded"<<std::endl;
       QRectF rect = this->viewportRect( );
-      std::cout<<rect.left()<<'\t';
-      std::cout<<rect.right()<<'\t';
-      std::cout<<rect.top()<<'\t';
-      std::cout<<rect.bottom()<<'\n';
 
       QColor color = this->backgroundColor;
       if ( f->color().isValid() )
@@ -566,7 +517,6 @@ protected:
       painter->drawRect(rect);
       painter->setBrush( oldBrush );
 
-      std::cout<<"Leaving paintFace Arr_conic_traits_2 unbounded"<<std::endl;
     }
   }
 
@@ -575,33 +525,6 @@ protected:
   template < typename CircularKernel >
   void paintFace(Face_handle f, QPainter* painter,
                  CGAL::Arr_circular_arc_traits_2<CircularKernel> /* traits */);
-
-  template < typename Coefficient_ >
-  X_monotone_curve_2 makeSegment(double x1, double y1, double x2, double y2,
-                        CGAL::Arr_algebraic_segment_traits_2<
-                                   Coefficient_ > /* traits */)
-  {
-    typedef Coefficient_ Coefficient;
-    typedef CGAL::Arr_algebraic_segment_traits_2< Coefficient > Traits;
-    Traits traits;
-
-    typedef typename Traits::X_monotone_curve_2           X_monotone_curve_2;
-    typedef typename Traits::Curve_2           Curve_2;
-
-    typename Traits::Construct_x_monotone_segment_2 constructSegment =
-      traits.construct_x_monotone_segment_2_object( );
-
-    Point_2 p1(x1, y1);
-    Point_2 p2(x2, y2);
-    std::vector< X_monotone_curve_2 > curves;
-
-    constructSegment( p1, p2, std::back_inserter( curves ) );
-    Curve_2 curve = curves[0].curve();
-
-    std::cout<<"In makeSegment, curves size: "<<curves.size()<<std::endl;
-
-    return curves[0];
-  }
 
   template < typename Coefficient_ >
   void paintFace(Face_handle f, QPainter* painter,
@@ -617,19 +540,12 @@ protected:
     typename Traits::Construct_curve_2 construct_curve
       = traits.construct_curve_2_object();
 
-    std::cout<<"In paintFace Arr_algebraic_segment_traits_2"<<std::endl;
     if (f->is_unbounded())
     {
-
-      std::cout<<"In paintFace Arr_algebraic_segment_traits_2 unbounded"<<std::endl;
-
-      std::cout<<"Leaving paintFace Arr_algebraic_segment_traits_2 unbounded"<<std::endl;
       return;
     }
 
     // Only bounded face is drawn
-
-    std::cout<<"In paintFace Arr_algebraic_segment_traits_2 bounded"<<std::endl;
     QVector< QPointF > pts; // holds the points of the polygon
 
     typedef typename CGAL::Arr_algebraic_segment_traits_2< Coefficient_ >
@@ -640,7 +556,6 @@ protected:
     typedef std::vector< Coord_2 > Coord_vec_2;
     std::list<Coord_vec_2> points;
 
-    std::cout<<"In setupFacade\n";
     typedef Curve_renderer_facade<CKvA_2> Facade;
     QGraphicsView* view = this->scene->views( ).first( );
     int height = view->height();
@@ -649,7 +564,6 @@ protected:
     QRectF viewport = this->viewportRect( );
     CGAL::Bbox_2 bbox = this->convert( viewport ).bbox( );
     Facade::setup(bbox, view->width(), view->height());    
-    std::cout<<"Leaving setupFacade\n";
     /* running with around the outer of the face and generate from it
      * polygon
      */
@@ -660,16 +574,12 @@ protected:
       double tgt_x = CGAL::to_double(cc->target()->point().x());
       double tgt_y = CGAL::to_double(cc->target()->point().y());
 
-      std::cout<< "In while loop: \n";
-      std::cout<<"source: "<< src_x <<"\t"<<src_y<<std::endl;
-      std::cout<<"target: "<< tgt_x <<"\t"<<tgt_y<<std::endl;
 
       X_monotone_curve_2 curve = cc->curve();
       Facade::instance().draw( curve, points, &p1, &p2 );
 
       if(points.empty())
       {
-        std::cout<<"In paintFace: points.empty() == True\n";
         continue;
       }
 
@@ -679,12 +589,8 @@ protected:
       {
         const Coord_vec_2& vec = *lit;
         QPointF first = view->mapToScene( QPoint(vec[0].first, height-vec[0].second) );
-        std::cout<<" First point in the vec: ";
-        std::cout<<first.x() << "\t" << first.y()<< std::endl;
 
         QPointF last = view->mapToScene( QPoint(vec[vec.size()-1].first, height-vec[vec.size()-1].second) );
-        std::cout<<" Last point in the vec: ";
-        std::cout<<last.x() << "\t" << last.y()<< std::endl;
 
         typename Coord_vec_2::const_iterator vit = vec.begin();
         
@@ -749,18 +655,15 @@ protected:
     painter->setBrush( oldBrush );
     painter->setPen( oldPen );
 
-    std::cout<<"Leaving paintFace Arr_algebraic_segment_traits_2 bounded"<<std::endl;
  }
 
   template < typename Kernel_ >
   void paintFace(Face_handle f, QPainter* painter,
                  CGAL::Arr_linear_traits_2< Kernel_ > /* traits */)
   {
-    std::cout<<"In paintFace Arr_linear_traits_2"<<std::endl;
 
     if (!f->is_unbounded())  // f is not the unbounded face
     {
-      std::cout<<"In paintFace Arr_linear_traits_2 bounded"<<std::endl;
       QVector< QPointF > pts; // holds the points of the polygon
 
       /* running with around the outer of the face and generate from it
@@ -794,7 +697,6 @@ protected:
     }
     else
     {
-      std::cout<<"In paintFace Arr_linear_traits_2 unbounded"<<std::endl;
       // QRectF rect = this->viewportRect( );
       // QColor color = this->backgroundColor;
       // painter->fillRect( rect, color );
@@ -815,7 +717,7 @@ protected:
       painter->drawRect(rect);
       painter->setBrush( oldBrush );
 #endif
-      std::cout<<"Leaving paintFace Arr_linear_traits_2 unbounded"<<std::endl;
+
     }
   }
 
@@ -1063,7 +965,6 @@ template < typename TTraits >
 void ArrangementGraphicsItem< Arr_, ArrTraits >::
 paint(QPainter* painter, TTraits /* traits */)
 {
-  std::cout<<"In paint ArrTraits"<<std::endl;
 
   this->paintFaces( painter );
 
@@ -1074,9 +975,6 @@ paint(QPainter* painter, TTraits /* traits */)
   this->painterostream.setScene( this->scene );
 
   QRectF rect = this->boundingRect( );
-  std::cout<<"Curve boundingRect rect\n";
-  std::cout<<"left, right, bottom, top:\n";
-  std::cout<<rect.left()<<", "<<rect.right()<<", "<<rect.bottom()<<", "<<rect.top()<<std::endl;
 
   for ( Vertex_iterator it = this->arr->vertices_begin( );
         it != this->arr->vertices_end( ); ++it )
@@ -1093,9 +991,6 @@ paint(QPainter* painter, TTraits /* traits */)
     X_monotone_curve_2 curve = it->curve( );
 
     Bbox_2 bbox = curve.bbox();
-    std::cout<<"Curve bounding box\n";
-    std::cout<<"xmin, xmax, ymin, ymax:\n";
-    std::cout<<bbox.xmin()<<", "<<bbox.xmax()<<", "<<bbox.ymin()<<", "<<bbox.ymax()<<std::endl;
     this->painterostream << curve;
   }
 
@@ -1127,7 +1022,6 @@ void ArrangementGraphicsItem< Arr_, ArrTraits >::
 paint(QPainter* painter,
       CGAL::Arr_circular_arc_traits_2< CircularKernel > /* traits */)
 {
-  std::cout<<"In paint Arr_circular_arc_traits_2"<<std::endl;
   this->paintFaces( painter );
 
   typedef Kernel_point_2 Non_arc_point_2;
@@ -1183,21 +1077,10 @@ void ArrangementGraphicsItem< Arr_, ArrTraits >::
 paint(QPainter* painter,
       CGAL::Arr_algebraic_segment_traits_2< Coefficient_ > /* traits */)
 {
-  std::cout<<"In paint Arr_algebraic_segment_traits_2\n";
-
-  // Set up the scale
-
 
   QRectF clipRect = this->boundingRect( );
-  std::cout<<"left, right, bottom, top:\n";
-  std::cout<<clipRect.left()<<", "<<clipRect.right()<<", "<<clipRect.bottom()<<", "<<clipRect.top()<<std::endl;
 
   QList< QGraphicsView* > views = this->scene->views( );
-  if ( views.size( ) == 0 )
-  {
-    std::cout<<"views.size( ) == 0\n";
-  }
-
   QGraphicsView* view = views.first( );
 
   // view->resetMatrix();
@@ -1206,7 +1089,7 @@ paint(QPainter* painter,
        !std::isinf(clipRect.top( )) &&
        !std::isinf(clipRect.bottom( )) )
   {
-    std::cout<<"In If with finite bound\n";
+
     // view->resetMatrix();
     // double viewHeight = view->height();
 #if 0
@@ -1219,17 +1102,13 @@ paint(QPainter* painter,
     this->scalingFactor = (0.5 * viewHeight) / boundingRectHeight;
     view->scale(scalingFactor, scalingFactor);
 #endif
-    std::cout<<"Leaving If with finite bound\n";
+
   }
   else
   {
-    std::cout<<"In If with infinite bound\n";
     clipRect = this->viewportRect( );
-    std::cout<<"Leaving If with infinite bound\n"; 
   }
 
-  std::cout<<"left, right, bottom, top:\n";
-  std::cout<<clipRect.left()<<", "<<clipRect.right()<<", "<<clipRect.bottom()<<", "<<clipRect.top()<<std::endl;
 
   // paint the faces for the purpose of brushing
   this->paintFaces( painter );
@@ -1240,7 +1119,6 @@ paint(QPainter* painter,
     ArrangementPainterOstream< Traits >( painter, clipRect );
   this->painterostream.setScene( this->scene );
 
-  std::cout<<"After initializing painterostream\n";
 
   for ( Vertex_iterator it = this->arr->vertices_begin( );
         it != this->arr->vertices_end( ); ++it )
@@ -1252,7 +1130,6 @@ paint(QPainter* painter,
     this->painterostream << p;
   }
 
-  std::cout<<"After done with vertices\n";
 
   painter->setPen( this->edgesPen );
   for ( Edge_iterator it = this->arr->edges_begin( );
@@ -1363,13 +1240,10 @@ void
 ArrangementGraphicsItem< Arr_, ArrTraits >::
 updateBoundingBox(CGAL::Arr_linear_traits_2< Kernel_ > /* traits */)
 {
-  std::cout<<"In updateBoundingBox Arr_linear_traits_2\n";
+
   this->prepareGeometryChange( );
   QRectF clipRect = this->viewportRect( );
   this->convert = Converter<Kernel>( clipRect );
-
-  std::cout<<"left, right, bottom, top:\n";
-  std::cout<<clipRect.left()<<", "<<clipRect.right()<<", "<<clipRect.bottom()<<", "<<clipRect.top()<<std::endl;
 
   if ( ! clipRect.isValid( ) /*|| this->arr->number_of_vertices( ) == 0*/ )
   {
@@ -1411,14 +1285,13 @@ template < typename Coefficient_ >
 void ArrangementGraphicsItem< Arr_, ArrTraits >::
 updateBoundingBox(CGAL::Arr_algebraic_segment_traits_2<Coefficient_> traits)
 {
-  std::cout<<"In updateBoundingBox Arr_algebraic_segment_traits_2\n";
+
   this->prepareGeometryChange( );
   if ( this->arr->number_of_vertices( ) == 0 )
   {
     double inf = std::numeric_limits<double>::infinity();
     this->bb = Bbox_2( -inf, -inf, inf, inf );
     this->bb_initialized = false;
-    std::cout<<"Leaving updateBoundingBox no vertex\n";
     return;
   }
   else
@@ -1455,18 +1328,10 @@ updateBoundingBox(CGAL::Arr_algebraic_segment_traits_2<Coefficient_> traits)
   {
     X_monotone_curve_2 curve = it->curve( );
     this->bb = this->bb + curve.bbox( );
-    std::cout<<"In updateBoundingBox for"<<std::endl;
-    std::cout<<curve.bbox( ).xmin()<<"\t";
-    std::cout<<curve.bbox( ).xmax()<<"\t";
-    std::cout<<curve.bbox( ).ymin()<<"\t";
-    std::cout<<curve.bbox( ).ymax()<<"\t"<<std::endl;
 
     curve_cnt++;
 
   }
-
-  std::cout<<"curve_cnt\t"<<curve_cnt<<std::endl;
-  std::cout<<"Leaving updateBoundingBox at the end\n";
 }
 
 template < typename Arr_, typename ArrTraits >
@@ -1479,7 +1344,7 @@ template < typename Arr_, typename ArrTraits >
 template < typename TTraits >
 void ArrangementGraphicsItem< Arr_, ArrTraits >::modelChanged(TTraits )
 {
-  std::cout<<"In ArrangementGraphicsItem modelChanged"<<std::endl;
+
   if ( this->arr->is_empty( ) )
   {
     this->hide( );
@@ -1489,19 +1354,11 @@ void ArrangementGraphicsItem< Arr_, ArrTraits >::modelChanged(TTraits )
     this->show( );
   }
 
-  std::cout<<"In ArrangementGraphicsItem modelChanged after if"<<std::endl;
   this->updateBoundingBox( );
 
   QRectF clipRect = this->boundingRect( );
-  std::cout<<"left, right, bottom, top:\n";
-  std::cout<<clipRect.left()<<", "<<clipRect.right()<<", "<<clipRect.bottom()<<", "<<clipRect.top()<<std::endl;
 
   QList< QGraphicsView* > views = this->scene->views( );
-  if ( views.size( ) == 0 )
-  {
-    std::cout<<"views.size( ) == 0\n";
-  }
-
   QGraphicsView* view = views.first( );
 
   // view->resetMatrix();
@@ -1510,23 +1367,18 @@ void ArrangementGraphicsItem< Arr_, ArrTraits >::modelChanged(TTraits )
        !std::isinf(clipRect.top( )) &&
        !std::isinf(clipRect.bottom( )) )
   {
-    std::cout<<"In If with finite bound\n";
 
     Ui::ArrangementDemoWindow *ui = getCurrentDemoWindowUi();
 
     if (!ui->actionDelete->isChecked())
     {
-      std::cout<<"actionDelete not checked"<<std::endl;
-
+      // force the update of the scene
       view->scale(1.1, 1.1);
       view->scale(1/1.1, 1/1.1);
     }
-
-    std::cout<<"Leaving If with finite bound\n";
   }
 
   this->update( );
-  std::cout<<"Leaving ArrangementGraphicsItem modelChanged"<<std::endl;
 }
 
 template < typename Arr_, typename ArrTraits >
@@ -1534,7 +1386,6 @@ template < typename Coefficient_ >
 void ArrangementGraphicsItem< Arr_, ArrTraits >::
 modelChanged(CGAL::Arr_algebraic_segment_traits_2<Coefficient_> )
 {
-  std::cout<<"In ArrangementGraphicsItem modelChanged Arr_algebraic_segment_traits_2"<<std::endl;
   if ( this->arr->is_empty( ) )
   {
     this->hide( );
@@ -1544,19 +1395,11 @@ modelChanged(CGAL::Arr_algebraic_segment_traits_2<Coefficient_> )
     this->show( );
   }
 
-  std::cout<<"In ArrangementGraphicsItem modelChanged Arr_algebraic_segment_traits_2 after if"<<std::endl;
   this->updateBoundingBox( );
 
   QRectF clipRect = this->boundingRect( );
-  std::cout<<"left, right, bottom, top:\n";
-  std::cout<<clipRect.left()<<", "<<clipRect.right()<<", "<<clipRect.bottom()<<", "<<clipRect.top()<<std::endl;
 
   QList< QGraphicsView* > views = this->scene->views( );
-  if ( views.size( ) == 0 )
-  {
-    std::cout<<"views.size( ) == 0\n";
-  }
-
   QGraphicsView* view = views.first( );
 
   // view->resetMatrix();
@@ -1565,7 +1408,6 @@ modelChanged(CGAL::Arr_algebraic_segment_traits_2<Coefficient_> )
        !std::isinf(clipRect.top( )) &&
        !std::isinf(clipRect.bottom( )) )
   {
-    std::cout<<"In If with finite bound\n";
     // view->resetMatrix();
     // double viewHeight = view->height();
 
@@ -1577,11 +1419,9 @@ modelChanged(CGAL::Arr_algebraic_segment_traits_2<Coefficient_> )
     // ArrangementDemoWindow *myWindw;
     // std::cout<<Ui::ArrangementDemoWindow::SEGMENT_TRAITS;
     double viewHeight = 456;
-    std::cout<<"viewHeight: "<<viewHeight<<std::endl;
 
     if (!ui->actionDelete->isChecked())
     {
-      std::cout<<"actionDelete not checked"<<std::endl;
       double boundingRectHeight = clipRect.bottom() - clipRect.top();
 
       view->scale(1/this->scalingFactor, 1/this->scalingFactor);
@@ -1589,11 +1429,9 @@ modelChanged(CGAL::Arr_algebraic_segment_traits_2<Coefficient_> )
       view->scale(this->scalingFactor, this->scalingFactor);
     }
 
-    std::cout<<"Leaving If with finite bound\n";
   }
 
   this->update( );
-  std::cout<<"Leaving ArrangementGraphicsItem modelChanged Arr_algebraic_segment_traits_2"<<std::endl;
 }
 
 template < typename Arr_, typename ArrTraits >
@@ -1601,14 +1439,11 @@ void
 ArrangementGraphicsItem< Arr_, ArrTraits >::
 paintFace( Face_handle f, QPainter* painter )
 {
-  std::cout<<"In paintFace entry\n";
 
   if ( f->visited( ) )
   {
     return;
   }
-
-  std::cout<<"In paintFace f->visited( ) == false"<<std::endl;
 
   int holes = 0;
   int inner_faces = 0;
@@ -1616,11 +1451,8 @@ paintFace( Face_handle f, QPainter* painter )
   this->paintFace( f, painter, Traits( ) );
   f->set_visited( true );
 
-  std::cout<< "After this->paintFace( f, painter, Traits( ) )\n";
-
   for ( hit = f->holes_begin(); hit != f->holes_end(); ++hit )
   {
-    std::cout<<"Inside holes_begin loop\n";
     // Traverse in clockwise order
     Ccb_halfedge_circulator cc = *hit;
     do {
@@ -1656,7 +1488,6 @@ paintFace( Face_handle f, QPainter* painter )
   //   std::cout << "fictitious face has " << inner_faces << " inner faces"
   //             << std::endl;
   // }
-  std::cout<<"Leaving paintFace( Face_handle f, QPainter* painter )\n";
 
 }
 
@@ -1706,11 +1537,9 @@ ArrangementGraphicsItem< Arr_, ArrTraits >::
 paintFace( Face_handle f, QPainter* painter,
                 CGAL::Arr_segment_traits_2< Kernel_ > )
 {
-  std::cout<<"In paintFace Arr_segment_traits_2"<<std::endl;
 
   if (!f->is_unbounded())  // f is not the unbounded face
   {
-    std::cout<<"In paintFace Arr_segment_traits_2 bounded"<<std::endl;
     QVector< QPointF > pts; // holds the points of the polygon
 
     /* running with around the outer of the face and generate from it
@@ -1730,26 +1559,6 @@ paintFace( Face_handle f, QPainter* painter,
 
     // FIXME: get the bg color
     QColor color = this->backgroundColor;
-    if (color == ::Qt::white )
-    {
-      std::cout<<"In paintFace Arr_segment_traits_2 bounded, bg color is white\n";
-    }
-    if ( f->color().isValid() )
-    {
-      std::cout<<"In paintFace Arr_segment_traits_2 bounded, f->color() is Valid\n";
-      color = f->color();
-
-      if ( color == ::Qt::white )
-      {
-        std::cout<<"In paintFace Arr_segment_traits_2 bounded, f->color() is white\n";
-      }
-
-      if ( color == ::Qt::black )
-      {
-        std::cout<<"In paintFace Arr_segment_traits_2 bounded, f->color() is black\n";
-      }
-    }
-
     QBrush oldBrush = painter->brush( );
     QPen pen = painter->pen();
     pen.setCosmetic(true);
@@ -1760,12 +1569,7 @@ paintFace( Face_handle f, QPainter* painter,
   }
   else
   {
-    std::cout<<"In paintFace Arr_segment_traits_2 unbounded"<<std::endl;
     QRectF rect = this->viewportRect( );
-    std::cout<<rect.left()<<'\t';
-    std::cout<<rect.right()<<'\t';
-    std::cout<<rect.top()<<'\t';
-    std::cout<<rect.bottom()<<'\n';
 
     QColor color = this->backgroundColor;
     if ( f->color().isValid() )
@@ -1780,7 +1584,6 @@ paintFace( Face_handle f, QPainter* painter,
     painter->drawRect(rect);
     painter->setBrush( oldBrush );
 
-    std::cout<<"Leaving paintFace Arr_segment_traits_2 unbounded"<<std::endl;
   }
 }
 
@@ -1791,11 +1594,10 @@ ArrangementGraphicsItem< Arr_, ArrTraits >::
 paintFace( Face_handle f, QPainter* painter,
                 CGAL::Arr_polyline_traits_2< Kernel_ > )
 {
-  std::cout<<"In paintFace Arr_polyline_traits_2"<<std::endl;
+
 
   if (!f->is_unbounded())  // f is not the unbounded face
   {
-    std::cout<<"In paintFace Arr_polyline_traits_2 bounded"<<std::endl;
     typedef typename CGAL::Arr_polyline_traits_2<Kernel_> Arr_poly_traits;
     typedef typename Arr_poly_traits::Compare_endpoints_xy_2 Comp_end_pts_2;
     typedef typename Arr_poly_traits::Construct_min_vertex_2 Poly_const_min_v;
@@ -1905,7 +1707,6 @@ paintFace( Face_handle f, QPainter* painter,
   }
   else
   {
-    std::cout<<"In paintFace Arr_polyline_traits_2 unbounded"<<std::endl;
     QRectF rect = this->viewportRect( );
     std::cout<<rect.left()<<'\t';
     std::cout<<rect.right()<<'\t';
@@ -1925,7 +1726,6 @@ paintFace( Face_handle f, QPainter* painter,
     painter->drawRect(rect);
     painter->setBrush( oldBrush );
 
-    std::cout<<"Leaving paintFace Arr_polyline_traits_2 unbounded"<<std::endl;
   }
 }
 
@@ -1936,12 +1736,9 @@ ArrangementGraphicsItem< Arr_, ArrTraits >::
 paintFace(Face_handle f, QPainter* painter,
                CGAL::Arr_circular_arc_traits_2<CircularKernel> /* traits */)
 {
-  std::cout<<"In paintFace Arr_circular_arc_traits_2"<<std::endl;
 
   if ( f->is_unbounded( ) )
   {
-
-    std::cout<<"In paintFace Arr_circular_arc_traits_2 unbounded"<<std::endl;
     QRectF rect = this->viewportRect( );
     std::cout<<rect.left()<<'\t';
     std::cout<<rect.right()<<'\t';
@@ -1961,11 +1758,9 @@ paintFace(Face_handle f, QPainter* painter,
     painter->drawRect(rect);
     painter->setBrush( oldBrush );
 
-    std::cout<<"Leaving paintFace Arr_circular_arc_traits_2 unbounded"<<std::endl;
     return;
   }
 
-  std::cout<<"In paintFace Arr_circular_arc_traits_2 bounded"<<std::endl;
   QVector< QPointF > pts;
   QPainterPath path;
   bool isFirstArc = true;
@@ -2058,9 +1853,6 @@ paintFace(Face_handle f, QPainter* painter,
     }
     //created from the outer boundary of the face
   } while (++cc != f->outer_ccb());
-
-  std::cout<<"Curve_cnt: "<<curve_cnt<<std::endl;
-  std::cout<<"pts size: "<<pts.size()<<std::endl;
  
   QPolygonF pgn( pts );
 
@@ -2083,7 +1875,6 @@ paintFace(Face_handle f, QPainter* painter,
   painter->drawPolygon( pgn );
   painter->setBrush( oldBrush ); 
 
-  std::cout<<"Leaving paintFace Arr_circular_arc_traits_2 bounded"<<std::endl;
 }
 
 } // namespace Qt
