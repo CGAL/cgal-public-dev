@@ -182,24 +182,18 @@ EnvelopeCallback<Arr_, Traits>::EnvelopeCallback(Arrangement* arr_,
 template < typename Arr_, typename Traits >
 void EnvelopeCallback< Arr_, Traits >::slotModelChanged( )
 {
-  std::cout<<"In EnvelopeCallback slotModelChanged: "<< this->scene <<std::endl;
-
   if ( CGAL::Qt::Callback::scene != NULL )
   {
-    std::cout<<"Scene properly set\n";
     lowerEnvelope->setScene(CGAL::Qt::Callback::scene);
     upperEnvelope->setScene(CGAL::Qt::Callback::scene);
   }
   else
   {
-    std::cout<<"Scene not properly set\n";
   }
 
-  std::cout<<"In EnvelopeCallback After If\n";
   
   this->updateEnvelope( true );
   this->updateEnvelope( false );
-  std::cout<<"Leaving EnvelopeCallback slotModelChanged\n";
 }
 
 template < typename Arr_, typename Traits >
@@ -214,7 +208,6 @@ void EnvelopeCallback< Arr_, Traits >::
 updateEnvelope( bool lower, 
                     CGAL::Arr_linear_traits_2< Kernel_ > traits )
 {
-  std::cout<<"In updateEnvelope Arr_linear_traits_2\n";
   CGAL::Qt::CurveGraphicsItem< Traits >* envelopeToUpdate;
   if ( lower )
   {
@@ -226,8 +219,6 @@ updateEnvelope( bool lower,
   }
   envelopeToUpdate->clear( );
 
-  std::cout<<"In updateEnvelope after 1st if ( lower )\n";
-
   std::list< X_monotone_curve_2 > curves;
   Edge_iterator eit;
   for (eit = this->arr->edges_begin( ); eit != this->arr->edges_end( ); ++eit)
@@ -235,29 +226,20 @@ updateEnvelope( bool lower,
     curves.push_back( eit->curve( ) );
   }
 
-  std::cout<<"curves size: "<< curves.size()<<std::endl;
-  std::cout<<"In updateEnvelope after for (eit = this->arr->edges_begin( );\n";
   Diagram_1 diagram;
   if ( lower )
   {
-    std::cout<<"In if lower\n";
     CGAL::lower_envelope_x_monotone_2(curves.begin(), curves.end(), diagram);
   }
   else
   {
-    std::cout<<"In if not lower\n";
     CGAL::upper_envelope_x_monotone_2(curves.begin(), curves.end(), diagram);
   }
 
-  std::cout<<"In updateEnvelope after 2nd if ( lower )\n";
   typename Diagram_1::Edge_const_handle e = diagram.leftmost( );
   typename Diagram_1::Vertex_const_handle v;
   QRectF clipRect = this->viewportRect( );
   CGAL::Qt::Converter< Kernel > convert( clipRect );
-
-  std::cout<<"In updateEnvelope after calling this->viewportRect( )\n";
-  std::cout<<"viewportRect left: "<<clipRect.left()<<std::endl;
-  std::cout<<"viewportRect right: "<<clipRect.right()<<std::endl;
 
   typedef CGAL::Arr_linear_traits_2< Kernel_ > Trait;
   Arr_compute_y_at_x_2< Trait > compute_y_at_x_2;
@@ -272,38 +254,29 @@ updateEnvelope( bool lower,
       // that are incident to this edge.
 
       // TODO: generate a subcurve instead of just making a segment
-      std::cout<<"In if ( ! e->is_empty( ) )\n";
 
       Point_2 leftPoint, rightPoint;
       if ( e->left( ) != NULL )
       {
         leftPoint = e->left( )->point( );
-        std::cout<<"In if ( e->left( ) != NULL )\n";
       }
       else
       {
-        std::cout<<"In if ( e->left( ) == NULL )\n";
-        std::cout << "handle unbounded curve" << std::endl;
         // v = e->right( );
         // e = v->right( );
         // continue;
         double leftPoint_y = compute_y_at_x_2.approx(e->curve(), clipRect.left());
         leftPoint = Point_2(clipRect.left(), leftPoint_y);
       }
-      std::cout<<CGAL::to_double(leftPoint.x())<<"\t"<<CGAL::to_double(leftPoint.y())<<std::endl;
 
       if ( e->right( ) != NULL )
       {
         rightPoint = e->right( )->point( );
-        std::cout<<"In if ( e->right( ) != NULL )\n";
-        std::cout<<CGAL::to_double(rightPoint.x())<<"\t"<<CGAL::to_double(rightPoint.y())<<std::endl;
       }
       else
       {
         // std::cout << "pRight is null; should never get here..."
         //           << std::endl;
-        std::cout<<"In if ( e->right( ) == NULL )\n";
-        std::cout << "should never get here" << std::endl;
       }
 
       X_monotone_curve_2 curve =
@@ -318,47 +291,33 @@ updateEnvelope( bool lower,
     // TODO: Draw the point associated with the current vertex.
     e = v->right( );
   }
-  std::cout<<"In updateEnvelope after while\n";
 
   if (e == diagram.rightmost( ))
   {
-    std::cout<<"In if (e == diagram.rightmost( ))\n";
-
     if ( ! e->is_empty( ) )
     {
-      std::cout<<"In if ( ! e->is_empty( ) )\n";
-
       Point_2 leftPoint, rightPoint;
       if ( e->left( ) != NULL )
       {
         leftPoint = e->left( )->point( );
-        std::cout<<"In if ( e->left( ) != NULL )\n";
       }
       else
       {
-        std::cout<<"In if ( e->left( ) == NULL )\n";
-        std::cout << "handle unbounded curve" << std::endl;
         double leftPoint_y = compute_y_at_x_2.approx(e->curve(), clipRect.left());
         leftPoint = Point_2(clipRect.left(), leftPoint_y);
       }
-      std::cout<<CGAL::to_double(leftPoint.x())<<"\t"<<CGAL::to_double(leftPoint.y())<<std::endl;
 
       if ( e->right( ) != NULL )
       {
         rightPoint = e->right( )->point( );
-        std::cout<<"In if ( e->right( ) != NULL )\n";
       }
       else
       {
         // std::cout << "pRight is null; should never get here..."
         //           << std::endl;
-        std::cout<<"In if ( e->right( ) == NULL )\n";
-        std::cout << "handle unbounded curve" << std::endl;
         double rightPoint_y = compute_y_at_x_2.approx(e->curve(), clipRect.right());
         rightPoint = Point_2(clipRect.right(), rightPoint_y);
       }
-      
-      std::cout<<CGAL::to_double(rightPoint.x())<<"\t"<<CGAL::to_double(rightPoint.y())<<std::endl;
 
       X_monotone_curve_2 curve =
         this->construct_x_monotone_subcurve_2(e->curve(),
@@ -368,13 +327,10 @@ updateEnvelope( bool lower,
     }
     else
     {
-      std::cout<<"In if ( e->is_empty() )\n";
     }
   }
 
   envelopeToUpdate->modelChanged( );
-
-  std::cout<<"Leaving updateEnvelope Arr_linear_traits_2\n";
 }
 
 template < typename Arr_, typename Traits >
@@ -382,7 +338,6 @@ template < typename TTraits >
 void EnvelopeCallback< Arr_, Traits >::updateEnvelope(bool lower,
                                                       TTraits /* traits */)
 {
-  std::cout<<"In updateEnvelope\n";
   CGAL::Qt::CurveGraphicsItem< Traits >* envelopeToUpdate;
   if ( lower )
   {
@@ -394,8 +349,6 @@ void EnvelopeCallback< Arr_, Traits >::updateEnvelope(bool lower,
   }
   envelopeToUpdate->clear( );
 
-  std::cout<<"In updateEnvelope after 1st if ( lower )\n";
-
   std::list< X_monotone_curve_2 > curves;
   Edge_iterator eit;
   for (eit = this->arr->edges_begin( ); eit != this->arr->edges_end( ); ++eit)
@@ -403,27 +356,21 @@ void EnvelopeCallback< Arr_, Traits >::updateEnvelope(bool lower,
     curves.push_back( eit->curve( ) );
   }
 
-  std::cout<<"curves size: "<< curves.size()<<std::endl;
-  std::cout<<"In updateEnvelope after for (eit = this->arr->edges_begin( );\n";
   Diagram_1 diagram;
   if ( lower )
   {
-    std::cout<<"In if lower\n";
     CGAL::lower_envelope_x_monotone_2(curves.begin(), curves.end(), diagram);
   }
   else
   {
-    std::cout<<"In if not lower\n";
     CGAL::upper_envelope_x_monotone_2(curves.begin(), curves.end(), diagram);
   }
 
-  std::cout<<"In updateEnvelope after 2nd if ( lower )\n";
   typename Diagram_1::Edge_const_handle e = diagram.leftmost( );
   typename Diagram_1::Vertex_const_handle v;
   QRectF clipRect = this->viewportRect( );
   CGAL::Qt::Converter< Kernel > convert( clipRect );
 
-  std::cout<<"In updateEnvelope after calling this->viewportRect( )\n";
   while ( e != diagram.rightmost( ) )
   {
     if ( ! e->is_empty( ) )
@@ -434,19 +381,14 @@ void EnvelopeCallback< Arr_, Traits >::updateEnvelope(bool lower,
       // that are incident to this edge.
 
       // TODO: generate a subcurve instead of just making a segment
-      std::cout<<"In if ( ! e->is_empty( ) )\n";
 
       Point_2 leftPoint, rightPoint;
       if ( e->left( ) != NULL )
       {
         leftPoint = e->left( )->point( );
-        std::cout<<"In if ( e->left( ) != NULL )\n";
-        std::cout<<CGAL::to_double(leftPoint.x())<<"\t"<<CGAL::to_double(leftPoint.y())<<std::endl;
       }
       else
       {
-        std::cout<<"In if ( e->left( ) == NULL )\n";
-        std::cout << "handle unbounded curve" << std::endl;
         v = e->right( );
         e = v->right( );
         continue;
@@ -455,15 +397,11 @@ void EnvelopeCallback< Arr_, Traits >::updateEnvelope(bool lower,
       if ( e->right( ) != NULL )
       {
         rightPoint = e->right( )->point( );
-        std::cout<<"In if ( e->right( ) != NULL )\n";
-        std::cout<<CGAL::to_double(rightPoint.x())<<"\t"<<CGAL::to_double(rightPoint.y())<<std::endl;
       }
       else
       {
         // std::cout << "pRight is null; should never get here..."
         //           << std::endl;
-        std::cout<<"In if ( e->right( ) == NULL )\n";
-        std::cout << "handle unbounded curve" << std::endl;
       }
 
       X_monotone_curve_2 curve =
@@ -478,11 +416,8 @@ void EnvelopeCallback< Arr_, Traits >::updateEnvelope(bool lower,
     // TODO: Draw the point associated with the current vertex.
     e = v->right( );
   }
-  std::cout<<"In updateEnvelope after while\n";
 
   envelopeToUpdate->modelChanged( );
-
-  std::cout<<"Leaving updateEnvelope\n";
 }
 
 template < typename Arr_, typename Traits >
@@ -492,7 +427,6 @@ updateEnvelope(bool lower,
                 CGAL::Arr_algebraic_segment_traits_2<Coefficient_ > )
 {
   return;
-  std::cout<<"In updateEnvelope Arr_algebraic_segment_traits_2\n";
   CGAL::Qt::CurveGraphicsItem< Traits >* envelopeToUpdate;
   if ( lower )
   {
