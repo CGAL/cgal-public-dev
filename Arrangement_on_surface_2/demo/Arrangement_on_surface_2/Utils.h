@@ -53,7 +53,6 @@ public:
     QRectF res;
     if ( this->scene == NULL )
     {
-      std::cout<<"Return: this->scene == NULL\n";
       return res;
     }
 
@@ -464,7 +463,6 @@ public:
     }
     else
     {
-      std::cout << "Warning: vertical projection failed" << std::endl;
       return 0;
     }
   }
@@ -636,8 +634,6 @@ public: // typedefs
 public: // methods
   double operator() ( const Non_arc_point_2& p, const X_monotone_curve_2& c )
   {
-    std::cout<<"In Compute_squared_distance_2 Arr_circular_arc_traits_2\n";
-
     QVector< QPointF > pts;
     Arr_compute_y_at_x_2< Traits > compute_y_at_x_2;
 
@@ -707,9 +703,6 @@ public: // methods
       FT curDist = CGAL::squared_distance( p, target_point );
       minDist = curDist < minDist ? curDist : minDist;
     }
-
-    std::cout<<"minDist: " << CGAL::to_double( minDist ) <<std::endl;
-    std::cout<<"Leaving Compute_squared_distance_2 Arr_circular_arc_traits_2\n";
     return CGAL::to_double( minDist );
   }
 };
@@ -837,7 +830,6 @@ public:
     std::list<Coord_vec_2> points;
     boost::optional < Coord_2 > p1, p2;
 
-    std::cout<<"In setupFacade\n";
     QGraphicsView* view = this->scene->views( ).first( );
     int height = view->height();
     int width = view->width();
@@ -845,12 +837,10 @@ public:
     QRectF viewport = this->viewportRect( );
     CGAL::Bbox_2 bbox = this->convert( viewport ).bbox( );
     Facade::setup(bbox, view->width(), view->height());    
-    std::cout<<"Leaving setupFacade\n";
 
     Facade::instance().draw( c, points, &p1, &p2 );
     if(points.empty())
     {
-      std::cout<<"In Compute_squared_distance_2 Arr_algebraic_segment_traits_2: points.empty() == True\n";
       return 0;
     }
 
@@ -876,8 +866,6 @@ public:
       // std::cout << qpt.x() << "\t" << qpt.y() << std::endl;
     }
 
-    std::cout<<"minDist: " << minDist <<std::endl;
-    std::cout<<"Leaving Compute_squared_distance_2 Arr_algebraic_segment_traits_2\n";
     return CGAL::to_double(minDist);
   }
 
