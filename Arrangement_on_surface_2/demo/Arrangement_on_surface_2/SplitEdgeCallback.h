@@ -173,11 +173,9 @@ void SplitEdgeCallback< Arr_ >::setColor( QColor c )
 template < typename Arr_ >
 void SplitEdgeCallback< Arr_ >::reset( )
 {
-  std::cout<<"In SplitEdgeCallback reset\n";
   this->hasFirstPoint = false;
   this->segmentGuide->setLine(0,0,0,0);
   Q_EMIT modelChanged( );
-  std::cout<<"Leaving SplitEdgeCallback reset\n";
 }
 
 template < typename Arr_ >
@@ -247,7 +245,6 @@ void SplitEdgeCallback< Arr_ >::
 splitEdges(const Point_2& clickedPoint, 
            CGAL::Arr_circular_arc_traits_2< CircularKernel > /* traits */)
 {
-  std::cout << "In splitEdges Arr_circular_arc_traits_2" << std::endl;
   typedef CircularKernel Kernel;
   typedef typename Kernel::Point_2 Ker_Point_2;
   typedef typename Kernel::Line_arc_2 Line_arc_2;
@@ -294,7 +291,6 @@ splitEdges(const Point_2& clickedPoint,
   }
 
   Q_EMIT modelChanged( );
-  std::cout << "Leaving splitEdges Arr_circular_arc_traits_2" << std::endl;
 }
 
 template < typename Arr_ >
@@ -303,8 +299,6 @@ void SplitEdgeCallback< Arr_ >::
 splitEdges(const Point_2& clickedPoint,
            CGAL::Arr_algebraic_segment_traits_2< Coefficient_ > /* traits */)
 {
-  std::cout << "In splitEdges Arr_algebraic_segment_traits_2" << std::endl;
-
   typename Traits::Construct_x_monotone_segment_2 constructSegment =
       traits.construct_x_monotone_segment_2_object( );
 
@@ -350,7 +344,6 @@ splitEdges(const Point_2& clickedPoint,
   }
 
   Q_EMIT modelChanged( );
-  std::cout << "Leaving splitEdges Arr_algebraic_segment_traits_2" << std::endl;
 }
 
 template < typename Arr_ >
