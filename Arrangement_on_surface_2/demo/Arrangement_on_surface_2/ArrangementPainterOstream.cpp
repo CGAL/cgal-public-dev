@@ -13,7 +13,6 @@ ArrangementPainterOstream<CGAL::Arr_segment_traits_2< Kernel_> >&
 ArrangementPainterOstream<CGAL::Arr_segment_traits_2< Kernel_> > ::
 operator<<( const X_monotone_curve_2& curve )
 {
-    std::cout<<"In operator<< Arr_segment_traits_2 X_monotone_curve_2"<<std::endl;
     const Point_2& p1 = curve.source( );
     const Point_2& p2 = curve.target( );
     Segment_2 seg( p1, p2 );
@@ -36,8 +35,6 @@ ArrangementPainterOstream<CGAL::Arr_segment_traits_2< Kernel_> >&
 ArrangementPainterOstream<CGAL::Arr_segment_traits_2< Kernel_> > ::
 operator<<( const Point_2& p )
 {
-    std::cout<<"In operator<< Arr_segment_traits_2 Point_2"<<std::endl;
-
     QPointF qpt = this->convert( p );
     // clip the point if possible
     if ( this->clippingRect.isValid( ) &&
@@ -65,8 +62,6 @@ ArrangementPainterOstream<CGAL::Arr_polyline_traits_2<SegmentTraits> >&
 ArrangementPainterOstream<CGAL::Arr_polyline_traits_2<SegmentTraits> >::
 operator<<( const X_monotone_curve_2& curve )
 {
-    std::cout<<"In operator<< Arr_polyline_traits_2 X_monotone_curve_2"<<std::endl;
-
     int cnt = 0;
     for (typename X_monotone_curve_2::Subcurve_const_iterator it =
            curve.subcurves_begin();
@@ -76,7 +71,6 @@ operator<<( const X_monotone_curve_2& curve )
         this->painterOstream << *it;
     }
 
-    std::cout<<"cnt: "<< cnt<<std::endl;
     // TODO: implement polyline painting
     #if 0
     const Point_2& p1 = curve.source( );
@@ -92,7 +86,6 @@ ArrangementPainterOstream<CGAL::Arr_polyline_traits_2<SegmentTraits> >&
 ArrangementPainterOstream<CGAL::Arr_polyline_traits_2<SegmentTraits> >::
 operator<<( const Point_2& p )
 {
-    std::cout<<"In operator<< Arr_polyline_traits_2 Point_2"<<std::endl;
 
     QPointF qpt = this->convert( p );
     QPen savePen = this->qp->pen( );
@@ -118,7 +111,6 @@ operator<<( const X_monotone_curve_2& curve )
 
 {
     // std::cout<< "In ArrangementPainterOstream& operator curve"<<std::endl;
-    std::cout<<"In operator<< Arr_conic_traits_2 X_monotone_curve_2"<<std::endl;
 
     CGAL::Bbox_2 bb = curve.bbox( );
     QRectF qbb = this->convert( bb );
@@ -134,7 +126,6 @@ operator<<( const X_monotone_curve_2& curve )
       return *this;
     }
 
-    std::cout<<"After if\n";
     #if 0
     std::cout << "bottom: ("
               << this->clippingRect.bottomLeft( ).x( )
@@ -150,7 +141,6 @@ operator<<( const X_monotone_curve_2& curve )
 
     if ( this->clippingRect.isValid( ) )
     {
-      std::cout<<"In this->clippingRect.isValid( ) == true\n";
       std::vector< X_monotone_curve_2 > visibleParts;
       if ( this->clippingRect.contains( qbb ) )
       {
@@ -161,9 +151,6 @@ operator<<( const X_monotone_curve_2& curve )
         visibleParts = this->visibleParts( curve );
       }
 
-      std::cout<<"After clippingRect\n";
-      std::cout<<"visibleParts.size = "<<visibleParts.size( );
-      std::cout<<"\n";
       for ( unsigned int i = 0; i < visibleParts.size( ); ++i )
       {
         X_monotone_curve_2 subcurve = visibleParts[ i ];
@@ -210,7 +197,6 @@ operator<<( const X_monotone_curve_2& curve )
     }
     else
     { // draw the whole curve
-      std::cout<<"In draw the whole curve\n";
       int n;
       if ( this->scene == NULL )
       {
@@ -223,21 +209,15 @@ operator<<( const X_monotone_curve_2& curve )
         xmin = view->mapFromScene( bb.xmin( ), bb.ymin( ) ).x( );
         xmax = view->mapFromScene( bb.xmax( ), bb.ymin( ) ).x( );
         n = xmax - xmin;
-
-        std::cout<<"xmin\txmax"<<std::endl;
-        std::cout<<xmin<<"\t"<<xmax<<std::endl;
       }
       if ( n == 0 )
       {
         return *this;
       }
-      std::cout<<"GET N\n";
 
       std::pair<double, double>* app_pts = new std::pair<double, double>[n + 1];
       std::pair<double, double>* end_pts =
         curve.polyline_approximation(n, app_pts);
-
-      std::cout<<"After polyline_approximation\n";
 
       std::pair<double, double>* p_curr = app_pts;
       std::pair<double, double>* p_next = p_curr + 1;
@@ -258,7 +238,6 @@ operator<<( const X_monotone_curve_2& curve )
       while ( p_next != end_pts );
       //std::cout << count << " approximation points" << std::endl;
     }
-    std::cout<<"return okay\n";
     return *this;
 }
 
@@ -268,7 +247,6 @@ ArrangementPainterOstream<CGAL::Arr_conic_traits_2<RatKernel, AlgKernel, NtTrait
 operator<<( const Point_2& p )
 {
     // std::cout<< "In ArrangementPainterOstream& operator Point_2"<<std::endl;
-    std::cout<<"In operator<< Arr_conic_traits_2 Point_2"<<std::endl;
 
     QPointF qpt = this->convert( p );
     QPen savePen = this->qp->pen( );
@@ -290,8 +268,6 @@ ArrangementPainterOstream< CGAL::Arr_linear_traits_2< Kernel_ > >&
 ArrangementPainterOstream< CGAL::Arr_linear_traits_2< Kernel_ > >::
 operator<<( const X_monotone_curve_2& curve )
 {
-    std::cout<<"In operator<< Arr_linear_traits_2 X_monotone_curve_2"<<std::endl;
-
     if ( curve.is_segment( ) )
     {
       Segment_2 seg = curve.segment( );
@@ -337,8 +313,6 @@ ArrangementPainterOstream< CGAL::Arr_linear_traits_2< Kernel_ > >&
 ArrangementPainterOstream< CGAL::Arr_linear_traits_2< Kernel_ > >::
 operator<<( const Point_2& p )
 {
-    std::cout<<"In operator<< Arr_linear_traits_2 Point_2"<<std::endl;
-
     QPointF qpt = this->convert( p );
     // clip the point if possible
     if ( this->clippingRect.isValid( ) &&
@@ -366,8 +340,6 @@ ArrangementPainterOstream< CGAL::Arr_circular_arc_traits_2<CircularKernel > >&
 ArrangementPainterOstream< CGAL::Arr_circular_arc_traits_2<CircularKernel > >::
 operator<<( const X_monotone_curve_2& curve )
 {
-    std::cout<<"In operator<< Arr_circular_arc_traits_2 X_monotone_curve_2"<<std::endl;
-
     this->painterOstream << curve;
     return *this;
 }
@@ -377,7 +349,6 @@ ArrangementPainterOstream< CGAL::Arr_circular_arc_traits_2<CircularKernel > >&
 ArrangementPainterOstream< CGAL::Arr_circular_arc_traits_2<CircularKernel > >::
 operator<<( const Point_2& p )
 {
-    std::cout<<"In operator<< Arr_circular_arc_traits_2 Point_2"<<std::endl;
     QPointF qpt = this->convert( p );
     // clip the point if possible
     if ( this->clippingRect.isValid( ) &&
@@ -407,8 +378,6 @@ operator<<( const X_monotone_curve_2& curve )
 {
     //std::cout << "paint curve stub (alg traits)" << std::endl;
 
-    std::cout<<"In operator<< Arr_algebraic_segment_traits_2 X_monotone_curve_2"<<std::endl;
-
     typedef Curve_renderer_facade<CKvA_2> Facade;
     typedef std::pair< double, double > Coord_2;
     typedef std::vector< Coord_2 > Coord_vec_2;
@@ -419,7 +388,6 @@ operator<<( const X_monotone_curve_2& curve )
 
     if(points.empty())
     {
-      std::cout<<"In operator<<: points.empty() == True\n";
       return *this;
     }
 
@@ -428,16 +396,10 @@ operator<<( const X_monotone_curve_2& curve )
     int height = view->height();
     int width = view->width();
 
-    std::cout << width << " and " <<  height << "\n";
-    std::cout << "points length: " << points.size() << std::endl;
-    std::cout<< "Scene rect width: " <<this->scene->width() << std::endl;
-    std::cout<< "Scene rect height: "<< this->scene->height() << std::endl;
-
     typename std::list<Coord_vec_2>::const_iterator lit = points.begin();
     //ppnt->moveTo((*p1).first, height - (*p1).second);
     while(lit != points.end()) {
       const Coord_vec_2& vec = *lit;
-      std::cout<<"Coord_vec_2 size: "<< vec.size() <<std::endl;
 
       typename Coord_vec_2::const_iterator vit = vec.begin();
       //std::cerr << "(" << vit->first << "; " << vit->second << ")\n";
@@ -461,13 +423,9 @@ operator<<( const X_monotone_curve_2& curve )
 
       QPoint coord( vit->first + sceneRectWidth/2, height - vit->second -sceneRectHeight/2 );
       QPointF qpt = view->mapToScene( coord );
-      std::cout<<" First point in the vec: ";
-      std::cout<<qpt.x() << "\t" << qpt.y()<< std::endl;
 
       QPoint last_coord( vec[vec.size()-1].first, height - vec[vec.size()-1].second );
       QPointF last = view->mapToScene( last_coord );
-      std::cout<<" Last point in the vec: ";
-      std::cout<<last.x() << "\t" << last.y()<< std::endl;
 
       if ( vit != vec.end() )
       {
@@ -496,7 +454,6 @@ operator<<( const X_monotone_curve_2& curve )
     ppnt->drawEllipse((*p2).first - sz, height-(*p2).second - sz, sz*2, sz*2);
     ppnt->setPen(old_pen);
 #endif
-    std::cout<<"Leaving operator<< Arr_algebraic_segment_traits_2 X_monotone_curve_2\n";
     return *this;
 }
 
@@ -505,8 +462,6 @@ ArrangementPainterOstream< CGAL::Arr_algebraic_segment_traits_2<Coefficient_ > >
 ArrangementPainterOstream< CGAL::Arr_algebraic_segment_traits_2<Coefficient_ > >::
 operator<<( const Point_2& p )
 {
-    std::cout<<"In operator<< Arr_algebraic_segment_traits_2 Point_2"<<std::endl;
-
     typedef Curve_renderer_facade<CKvA_2> Facade;
     std::pair< double, double > coord;
     //std::cout << "draw point stub" << std::endl;
@@ -514,7 +469,6 @@ operator<<( const Point_2& p )
 
     if(!Facade::instance().draw(p, coord)) 
     {
-      std::cout<<"In !Facade::instance().draw(p, coord)\n";
       return *this;
     }
     else
@@ -546,7 +500,6 @@ operator<<( const Point_2& p )
                       sz*2, sz*2);
     ppnt->setPen(old_pen);
 #endif
-    std::cout<<"Leaving operator<< Arr_algebraic_segment_traits_2 Point_2\n";
     return *this;
 }
 template < typename Coefficient_ >
@@ -555,23 +508,11 @@ ArrangementPainterOstream< CGAL::Arr_algebraic_segment_traits_2<Coefficient_ > >
 setupFacade( )
 {
 
-  std::cout<<"In setupFacade\n";
   typedef Curve_renderer_facade<CKvA_2> Facade;
   QGraphicsView* view = this->scene->views( ).first( );
   QRectF viewport = this->viewportRect( );
   CGAL::Bbox_2 bbox = this->convert( viewport ).bbox( );
   Facade::setup(bbox, view->width(), view->height());
-
-  std::cout<<"Viewport\n";
-  std::cout<<viewport.left()<<"\t"<<viewport.right()<<std::endl;
-  std::cout<<viewport.top()<<"\t"<<viewport.bottom()<<std::endl;
-
-  std::cout<<view->width()<<"\t"<<view->height()<<std::endl;
-  std::cout<<"BBox\n";
-  std::cout<<bbox.xmin()<<"\t"<<bbox.xmax()<<std::endl;
-  std::cout<<bbox.ymin()<<"\t"<<bbox.ymax()<<std::endl;
-  
-  std::cout<<"Leaving setupFacade\n";
 
 
   // std::cout<<"In setupFacade\n";
