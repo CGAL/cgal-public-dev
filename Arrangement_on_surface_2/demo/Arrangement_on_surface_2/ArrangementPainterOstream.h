@@ -89,7 +89,6 @@ public:
     // set the clipping rectangle
     if ( scene_ == NULL )
     {
-      std::cout<<"In setScene: scene_ == NULL\n";
       return;
     }
 
