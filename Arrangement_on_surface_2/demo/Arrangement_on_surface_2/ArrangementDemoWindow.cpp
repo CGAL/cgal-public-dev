@@ -278,7 +278,6 @@ void ArrangementDemoWindow::updateMode( QAction* newMode )
   }
   else if ( newMode == this->ui->actionDelete )
   {
-    std::cout<<"In updateMode actionDelete\n";
     CGAL::Qt::Callback* deleteCurveCallback = activeTab->getDeleteCurveCallback();
     activeScene->installEventFilter( deleteCurveCallback );
     deleteCurveCallback->changeDeleteMode();
@@ -841,7 +840,6 @@ void ArrangementDemoWindow::updateConicType( QAction* newType )
       if ( newDialog->exec( ) == QDialog::Accepted )
       {
         std::string poly_expr = newDialog->getLineEditText();
-        std::cout<<"User Input:\t"<<poly_expr<<std::endl;
         algCurveInputCallback->addNewAlgebraicCurve(poly_expr);
       }
 
