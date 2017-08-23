@@ -1,6 +1,10 @@
 #ifndef CGAL_LEVEL_OF_DETAIL_TRAITS_H
 #define CGAL_LEVEL_OF_DETAIL_TRAITS_H
 
+// STL includes.
+#include <map>
+#include <vector>
+
 // New CGAL includes.
 #include <CGAL/Loader/Level_of_detail_loader_stub.h>
 #include <CGAL/Preprocessor/Level_of_detail_preprocessor.h>
@@ -31,8 +35,11 @@ namespace CGAL {
 			typedef Level_of_detail_selector<Kernel, Building_boundary_strategy> Building_boundary_selector;
 			typedef Level_of_detail_selector<Kernel, Building_interior_strategy> Building_interior_selector;
 
-			typedef Level_of_detail_regularizer<Kernel, Container> Vertical_regularizer;
-			typedef Level_of_detail_projector<Kernel> Ground_projector;
+			typedef std::map<int, std::vector<typename Container::Index> >          Planes;
+			typedef Level_of_detail_vertical_regularizer<Kernel, Container, Planes> Vertical_regularizer;
+			
+			typedef std::map<int, typename Kernel::Point_3>           	   				   Projected;
+			typedef Level_of_detail_simple_projector<Kernel, Container, Planes, Projected> Ground_projector;
 		};
 	}
 }

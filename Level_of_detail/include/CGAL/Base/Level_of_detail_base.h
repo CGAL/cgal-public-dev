@@ -39,13 +39,13 @@ namespace CGAL {
 
 			typedef typename Traits::Vertical_regularizer Vertical_regularizer;
 			typedef typename Traits::Ground_projector     Ground_projector;
+			typedef typename Traits::Projected            Projected_points;
+			typedef typename Traits::Planes               Planes_mapping;
 			
 			// Custom types, should be changed later (or removed).
-			using Log       	   = CGAL::LOD::Mylog;
-			using Index     	   = typename Container::Index;
-			using Indices   	   = std::vector<Index>;
-			using Planes_mapping   = std::map<int, Indices>;
-			using Projected_points = std::vector<Point_2>;
+			using Log     = CGAL::LOD::Mylog;
+			using Index   = typename Container::Index;
+			using Indices = std::vector<Index>;
 
 			Level_of_detail_base(Traits traits = Traits()) : m_traits(traits) { } // Do I need to create an instance of these traits here?
 
@@ -101,19 +101,23 @@ namespace CGAL {
 
 
 				// (6) Make all nearly vertical planes in the building's boundary exactly vertical.
-				const auto number_of_regularized_planes = m_vertical_regularizer.regularize(input, building_boundary_planes);
+				const auto number_of_regularized_planes = m_vertical_regularizer.regularize(building_boundary_planes, input);
 
 				log.out << "(6) Building's nearly vertical planes are regularized. Number of regularized planes: " << number_of_regularized_planes << std::endl;
 
 
 				// (7) Project all vertical building's boundaries onto the ground plane.
-				// Projected_points building_boundary_projected;
-				// m_ground_projector.project(input, building_boundary_planes, ground_plane, building_boundary_projected);
+				Projected_points building_boundary_projected;
+				const auto number_of_projected_points = m_ground_projector.project(input, building_boundary_planes, ground_plane, building_boundary_projected);
+
+				log.out << "(7) All building's boundary points are projected. Number of projected points: " << number_of_projected_points << std::endl;
 
 
 				// (END) Save log.
 				log.out << "\n\nFINISH EXECUTION";
 				log.save("create_lod_0");
+
+				// log.save_ply<Kernel, Container>(input, "regularized", true);
 			}
 			
 		private:

@@ -7,3 +7,4 @@ TODO:
 3. For now I use built in conditions inside selection strategy classes. Change it to any custom condition later.
 4. When I fit a plane to the ground in the base class, I need to copy all ground points. Change it!
 5. Refactor the preprocessor class.
+6. Fix where I use Container::Index and where int.
