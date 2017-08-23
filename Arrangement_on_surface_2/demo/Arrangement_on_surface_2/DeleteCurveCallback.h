@@ -62,14 +62,12 @@ public:
   virtual void partialReset();
   virtual std::string toString()
   {
-    std::cout<<"In DeleteCurveCallback toString\n";
     return ( this->deleteOriginatingCurve ) ?
       "Delete Curve" : "Delete Edge";
   }
 
   virtual void changeDeleteMode()
   {
-    std::cout<<"In DeleteCurveCallback changeDeleteMode\n";
     this->deleteOriginatingCurve = !this->deleteOriginatingCurve;
   }
 
@@ -134,7 +132,6 @@ void DeleteCurveCallback< Arr_ >::reset( )
 template < typename Arr_ >
 void DeleteCurveCallback< Arr_ >::partialReset( )
 {
-  std::cout<<"In partialReset\n";
   this->highlightedCurve->clear( );
   this->removableHalfedge = Halfedge_handle( );
   Q_EMIT modelChanged( );
@@ -189,7 +186,6 @@ DeleteCurveCallback< Arr_ >::
 highlightNearestCurve( QGraphicsSceneMouseEvent* event )
 {
   // find the nearest curve to the cursor to be the new highlighted curve
-  std::cout<<"In highlightNearestCurve\n";
   Point p = this->convert( event->scenePos( ) );
   //bool isFirst = true;
   //double minDist = 0.0;
@@ -221,7 +217,6 @@ highlightNearestCurve( QGraphicsSceneMouseEvent* event )
   //if ( isFirst )
   if ( this->removableHalfedge == Halfedge_handle( ) )
   {
-    std::cout << "no curve found" << std::endl;
     return;
   }
 
@@ -253,7 +248,6 @@ highlightNearestCurve( QGraphicsSceneMouseEvent* event )
     this->highlightedCurve->insert( this->removableHalfedge->curve( ) );
   }
 
-  std::cout<<"Leaving highlightNearestCurve\n";
   Q_EMIT modelChanged( );
 }
 
