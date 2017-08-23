@@ -74,7 +74,6 @@ addNewAlgebraicCurve(const std::string& poly_expr_)
 
   Curve_2 cv = construct_curve(polynomial);
   Q_EMIT generate( CGAL::make_object( cv ) );
-  std::cout << "New Algebraic curve added" << std::endl;
 }
 
 

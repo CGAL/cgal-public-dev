@@ -154,12 +154,10 @@ fillFace( QGraphicsSceneMouseEvent* event )
 
   if ( f->color() == ::Qt::white && this->fillColor.isValid() )
   {
-    std::cout<<"In FillFaceCallback mouseMoveEvent if\n";
     f->set_color( this->fillColor );
   }
   else
   {
-    std::cout<<"In FillFaceCallback mouseMoveEvent else\n";
     f->set_color( ::Qt::white );
   }
 }
@@ -171,14 +169,12 @@ FillFaceCallback< Arr_ >::getFace( const CGAL::Object& obj )
   Face_const_handle f;
   if ( CGAL::assign( f, obj ) )
   {
-    std::cout<<"Leaving getFace In 1st If\n";
     return f;
   }
 
   Halfedge_const_handle he;
   if (CGAL::assign( he, obj ))
   {
-    std::cout<<"Leaving getFace In 2nd If\n";
     return (he->face( ));
   }
 
@@ -187,13 +183,10 @@ FillFaceCallback< Arr_ >::getFace( const CGAL::Object& obj )
   CGAL::assign( v, obj );
   if ( v->is_isolated( ) )
   {
-    std::cout<<"Leaving getFace In 3rd If\n";
     return v->face( );
   }
 
   Halfedge_around_vertex_const_circulator eit = v->incident_halfedges( );
-
-  std::cout<<"Leaving getFace in the end\n";
   return  (eit->face( ));
 }
 

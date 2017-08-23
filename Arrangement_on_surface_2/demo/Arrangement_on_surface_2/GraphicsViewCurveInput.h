@@ -825,7 +825,6 @@ protected: // methods
 
   void keyPressEvent( QKeyEvent* event )
   {
-    std::cout<<"In Arr_linear_traits_2 keyPressEvent"<<std::endl;
 
     if ( event->key() != ::Qt::Key_Escape )
     {
@@ -962,8 +961,6 @@ protected:
 
   void keyPressEvent( QKeyEvent* event )
   {
-    std::cout<<"In Arr_circular_arc_traits_2 keyPressEvent"<<std::endl;
-
     if ( event->key() != ::Qt::Key_Escape )
     {
       return;
