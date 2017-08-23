@@ -171,14 +171,14 @@ bool AlgebraicCurveExpressionParser::extract_poly_terms(std::vector<struct term>
     
     for(int i=0; i<left_side.size(); i++)
     {
-        print_poly_term(left_side[i]);
+        // print_poly_term(left_side[i]);
         poly_terms.push_back(left_side[i]);
     }
     
     for(int i=0; i<right_side.size(); i++)
     {
         right_side[i].coefficient = -right_side[i].coefficient;
-        print_poly_term(right_side[i]);
+        // print_poly_term(right_side[i]);
         poly_terms.push_back(right_side[i]);
     }
     
