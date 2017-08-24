@@ -3,12 +3,15 @@
 #include<boost/numeric/ublas/vector.hpp>
 #include<cmath>
 #define PI 3.14159265
-//#ifdef CGAL_EIGEN3_ENABLED
+#ifdef CGAL_EIGEN3_ENABLED
 #include <CGAL/Eigen_matrix.h>
 #include <CGAL/Eigen_vector.h>
 #include <CGAL/Eigen_svd.h>
 typedef CGAL::Eigen_svd Svd;
-//#endif
+#endif
+/**
+Uses the paper "On Smooth Frame Field Design" by Nicolas Ray and Dmitry Sokolov
+*/
 
 typedef Svd::FT     FT;
 typedef Svd::Vector Eigen_vector;
@@ -207,7 +210,7 @@ void add_normal_constraints(LCC_3& input_tet_mesh, std::vector<Vertex_handle>& v
   for(int i = 0; i < nl; i++){
     Vector_3 n = CGAL::compute_normal_of_cell_0(input_tet_mesh, (vertices[i].incident_dart));
     matrix R(9,9);
-    R = find_rotation_matrix(n); //TODO- Done
+    R = find_rotation_matrix(n);
     vect temp(9);
     temp(0) = 1; temp(1) = 0; temp(2) = 0; temp(3) = 0; temp(4) = 0; temp(5) = 0; temp(6) = 0; temp(7) = 0; temp(8) = 0;
     vect h0 = boost::numeric::ublas::prec_prod(R, temp);
@@ -229,14 +232,17 @@ void add_normal_constraints(LCC_3& input_tet_mesh, std::vector<Vertex_handle>& v
 }
 
 void optimise_frame_field(LCC_3& input_tet_mesh, std::vector<Vertex_handle>& vertices, std::vector<Edge_handle>& edges, int n){ // n is the number of smoothing iterations
+/**
+Implementation of Algorithm 1 in the paper.
+*/
   int nl = find_number_of_boundary_vertices(input_tet_mesh);
   int nv = vertices.size(); 
-  sort_vertices(vertices); //TODO - DONE
+  sort_vertices(vertices);
   std::vector<std::vector<double>> a;
   for(int i = 0; i < n; i++){
     std::vector<std::vector<double>> A_tobeconverted;
     std::vector<double> b_tobeconverted;
-    add_smoothing_terms(edges, A_tobeconverted, b_tobeconverted, nv, nl); //TODO- DONE
+    add_smoothing_terms(edges, A_tobeconverted, b_tobeconverted, nv, nl);
     add_normal_constraints(input_tet_mesh, vertices, A_tobeconverted, b_tobeconverted, nv, nl);
     if(i>0){
       add_local_optim_constraints(a, A_tobeconverted, b_tobeconverted, nv, nl);
@@ -261,7 +267,7 @@ void optimise_frame_field(LCC_3& input_tet_mesh, std::vector<Vertex_handle>& ver
           temp.push_back((X.vector())[k]);
         }
       a.push_back(temp);
-      closest_frame(a[j], (vertices[j]).frame);//TODO:DONE
+      closest_frame(a[j], (vertices[j]).frame);
     }
   }
 }
