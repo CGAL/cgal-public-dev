@@ -19,25 +19,25 @@ typedef Svd::Matrix Eigen_matrix;
 using matrix = boost::numeric::ublas::matrix<double>;
 using vect = boost::numeric::ublas::vector<double>;
 
-matrix find_Rx(double alpha){
+matrix find_Rx(double alpha){ // returns the matrix to rotate about x axis by angle alpha
   matrix Rx(3,3);
   Rx(0,0) = 1; Rx(0,1) = 0; Rx(0,2) = 0; Rx(1,0) = 0; Rx(1,1) = cos(alpha); Rx(1,2) = -sin(alpha); Rx(2,0) = 0; Rx(2,1) = sin(alpha); Rx(2,2) = cos(alpha);
   return Rx;
 }
 
-matrix find_Ry(double alpha){
+matrix find_Ry(double alpha){ // returns the matrix to rotate about y axis by angle beta
   matrix Rx(3,3);
   Rx(0,0) = cos(alpha); Rx(0,1) = 0; Rx(0,2) = sin(alpha); Rx(1,0) = 0; Rx(1,1) = 1; Rx(1,2) = 0; Rx(2,0) = -sin(alpha); Rx(2,1) = 0; Rx(2,2) = cos(alpha);
   return Rx;
 }
 
-matrix find_Rz(double alpha){
+matrix find_Rz(double alpha){ // returns the matrix to rotate about z axis by angle gamma
   matrix Rx(3,3);
   Rx(0,0) = cos(alpha); Rx(0,1) = -sin(alpha); Rx(0,2) = 0; Rx(1,0) = sin(alpha); Rx(1,1) = cos(alpha); Rx(1,2) = 0; Rx(2,0) = 0; Rx(2,1) = 0; Rx(2,2) = 1;
   return Rx;
 }
 
-matrix return_Rbz(double gamma){
+matrix return_Rbz(double gamma){ // returns Wigner D-matrices for rotation about z axis as given in appendix A.1
   matrix Rz(9,9);
   for(int i = 0; i<9; i++){
     for(int j = 0; j<9; j++){
@@ -51,7 +51,7 @@ matrix return_Rbz(double gamma){
 }
 
 
-matrix return_Rby(double beta){
+matrix return_Rby(double beta){ // returns Wigner D-matrices for rotation about y axis as given in appendix A.1
   matrix Ry(9,9);
   matrix Rx_90(9,9);
   for(int i = 0; i<9; i++){
@@ -67,7 +67,7 @@ matrix return_Rby(double beta){
 }
 
 
-matrix return_Rbx(double alpha){
+matrix return_Rbx(double alpha){ // returns Wigner D-matrices for rotation about x axis as given in appendix A.1
   matrix Rx(9,9), Ry_90(9,9);
   Ry_90 = return_Rby(PI/2);
   Rx = boost::numeric::ublas::prec_prod(boost::numeric::ublas::trans(Ry_90), return_Rbz(alpha));
@@ -76,7 +76,7 @@ matrix return_Rbx(double alpha){
 }
 
 
-matrix find_rotation_matrix(Vector_3 n){
+matrix find_rotation_matrix(Vector_3 n){ //calculating the 9x9 rotation matrix using Wigner D-matrices 
   double alpha = acos((-1)*n[1]/n.squared_length()); 
   double beta = acos(n[2]/n.squared_length());
   double gamma = 0; //TODO: need to check this
@@ -90,15 +90,17 @@ matrix find_rotation_matrix(Vector_3 n){
 }
 
 
-void sort_vertices(std::vector<Vertex_handle>& vertices){
+void sort_vertices(std::vector<Vertex_handle>& vertices){ //Sorting such that all the boundary vertices come first
   std::sort(vertices.begin(), vertices.end(), comp);
   int i = 0;
+
+// Allocating enumeration with each vertex for edge to be represented as [i,j] (as in the paper).
   for(std::vector<Vertex_handle>::iterator it  = vertices.begin(), itend = vertices.end(); it!=itend; it++){
     (*it).enumeration = i; i++;
   }
 }
 
-int find_number_of_boundary_vertices(LCC_3& lcc){
+int find_number_of_boundary_vertices(LCC_3& lcc){//finding the number of vertices that are 3-free
   int count = 0;
   for(LCC_3::One_dart_per_cell_range<0>::iterator it = lcc.one_dart_per_cell<0>().begin(), itend = lcc.one_dart_per_cell<0>().end(); it!= itend; it++){
     if(lcc.is_free(it, 3)) count++;
@@ -106,7 +108,10 @@ int find_number_of_boundary_vertices(LCC_3& lcc){
   return count;
 }
 
-void closest_frame(std::vector<double>& q, Vector_3& frame){
+void closest_frame(std::vector<double>& q, Vector_3& frame){/**
+* Implements Algorithm 5
+* calculates the frame and representation vector
+*/
   vect f(3); f(0) = 0; f(1) = 0; f(2) = 1; //initial values
   vect a(9); a(0) = 0; a(1) = 0; a(2) = 0; a(3) = 0; a(4) = sqrt(7.0/12); a(5) = 0; a(6) = 0; a(7) = 0; a(8) = sqrt(5.0/12); 
   vect qq(9); qq(0) = q[0]; qq(1) = q[1]; qq(2) = q[2]; qq(3) = q[3]; qq(4) = q[4]; qq(5) = q[5]; qq(6) = q[6]; qq(7) = q[7]; qq(8) = q[8]; 
@@ -119,11 +124,14 @@ void closest_frame(std::vector<double>& q, Vector_3& frame){
 
   matrix Ex(9,9), Ey(9,9), Ez(9,9);
   
+// initializing Ex, Ey, and Ez to 0
   for(int i = 0; i<9; i++){
     for(int j = 0; j<9; j++){
       Ex(i,j) =0;  Ey(i,j) = 0; Ez(i,j) = 0;
     }  
   }
+
+// assigning values to Ex, Ey and Ez from the appendix
   Ex(0,7)= (-1)*sqrt(2); Ex(1,6) = (-1)*sqrt(3.5); Ex(2,5) = (-1)*sqrt(4.5); Ex(3,4) = (-1)*sqrt(10);
   Ex(1,8) = (-1)*sqrt(2); Ex(2,7) = (-1)*sqrt(3.5); Ex(3,6) = (-1)*sqrt(4.5); 
   Ex(7,0) = sqrt(2); Ex(6,1) = sqrt(3.5); Ex(5,2) = sqrt(4.5); Ex(4,3) = sqrt(10); 
@@ -136,11 +144,16 @@ void closest_frame(std::vector<double>& q, Vector_3& frame){
   //Vector_3 grad; 
   matrix Rb(9,9), R(3,3);
   while(true){
+
+// to calculate the gradient:
    double u = boost::numeric::ublas::inner_prod(qq, boost::numeric::ublas::prec_prod(Ex, a));
    double v = boost::numeric::ublas::inner_prod(qq, boost::numeric::ublas::prec_prod(Ey, a));
    double w = boost::numeric::ublas::inner_prod(qq, boost::numeric::ublas::prec_prod(Ez, a));
    Vector_3 grad(u,v,w);
+
    if(grad.squared_length()<=eps) break;
+
+// Lines 11-14 in the algorithm:
     Rb = boost::numeric::ublas::prec_prod(return_Rbx(s*grad[0]), return_Rby(s*grad[1]));
     Rb = boost::numeric::ublas::prec_prod(Rb, return_Rbz(s*grad[2]));
     R = boost::numeric::ublas::prec_prod(find_Rx(s*grad[0]), find_Ry(s*grad[1]));
@@ -148,17 +161,22 @@ void closest_frame(std::vector<double>& q, Vector_3& frame){
     a = boost::numeric::ublas::prec_prod(Rb, a);
     f = boost::numeric::ublas::prec_prod(R, f);
   }
+
+// We modify the arguments (since they are called by reference)
   Vector_3 temp(f(0), f(1), f(2));
   frame = temp;
   q[0] = a(0); q[1] = a(1); q[2] = a(2); q[3] = a(3); q[4] = a(4); q[5] = a(5); q[6] = a(6); q[7] = a(7); q[8] = a(8);
 }
 
-void add_smoothing_terms(std::vector<Edge_handle>& edges, std::vector<std::vector<double>>& A, std::vector<double>& b, int nv, int nl){
-  for(std::vector<Edge_handle>::iterator it =  edges.begin(), itend = edges.end(); it != itend; it++){
+void add_smoothing_terms(std::vector<Edge_handle>& edges, std::vector<std::vector<double>>& A, std::vector<double>& b, int nv, int nl){/**
+* Implements algorithm 3 of the paper.
+* modifies matrix A and vector b.
+*/
+  for(std::vector<Edge_handle>::iterator it =  edges.begin(), itend = edges.end(); it != itend; it++){ //for each edge given by starting vertex i and ending vertex j
     for(int d = 0; d < 9; d++){
       std::vector<double> row(9*nv+2*nl+3*nv);
       std:m:fill(row.begin(), row.end(), 0);
-      int i = ((*it).from). enumeration, j = ((*it).from). enumeration;
+      int i = ((*it).from).enumeration, j = ((*it).from).enumeration;
       row[9*i+d] = 1;
       row[9*j+d] = -1;
       A.push_back(row);
@@ -168,7 +186,12 @@ void add_smoothing_terms(std::vector<Edge_handle>& edges, std::vector<std::vecto
 }
   
 
-void add_local_optim_constraints(std::vector<std::vector<double>>& a, std::vector<std::vector<double>>& A, std::vector<double>& b, int nv, int nl){
+void add_local_optim_constraints(std::vector<std::vector<double>>& a, std::vector<std::vector<double>>& A, std::vector<double>& b, int nv, int nl){/**
+* Implements Algorithm 4 from the paper.
+* based on the previous solution it modifies A and b.
+*/
+
+//Matrices Ex, Ey, Ez initialised to zero
   matrix Ex(9,9), Ey(9,9), Ez(9,9);
   
   for(int i = 0; i<9; i++){
@@ -176,6 +199,8 @@ void add_local_optim_constraints(std::vector<std::vector<double>>& a, std::vecto
       Ex(i,j) = 0;  Ey(i,j) = 0; Ez(i,j) = 0;
     }  
   }
+
+//Assign values to Ex, Ey and Ez according appendix A.2
   Ex(0,7)= (-1)*sqrt(2); Ex(1,6) = (-1)*sqrt(3.5); Ex(2,5) = (-1)*sqrt(4.5); Ex(3,4) = (-1)*sqrt(10);
   Ex(1,8) = (-1)*sqrt(2); Ex(2,7) = (-1)*sqrt(3.5); Ex(3,6) = (-1)*sqrt(4.5); 
   Ex(7,0) = sqrt(2); Ex(6,1) = sqrt(3.5); Ex(5,2) = sqrt(4.5); Ex(4,3) = sqrt(10); 
@@ -186,14 +211,19 @@ void add_local_optim_constraints(std::vector<std::vector<double>>& a, std::vecto
   Ey(5,4) = sqrt(10); Ey(6,5) = sqrt(4.5); Ey(7,6) = sqrt(3.5); Ey(8,7) = sqrt(2);
   Ez(0,8) = 4; Ez(1,7) = 3; Ez(2,6) = 2; Ez(3,5) = 1; Ez(5,3) = -1; Ez(6,2) = -2; Ez(7,1) = -3; Ez(8,0) = -4;
  
-  for(int i = 0; i<nv; i++){
+  for(int i = 0; i<nv; i++){ //for each vertex
+
+//ai instantiated as vect to be able to use boost for matrix multiplication directly in lines 2-4 of the algorithm in the paper
     vect ai(a[i].size());
-    for(int j = 0; j<a[i].size();j++) ai[j] = (a[i])[j]; 
+    for(int j = 0; j<a[i].size();j++) ai[j] = (a[i])[j];
+
     vect cx = boost::numeric::ublas::prec_prod(Ex, ai);
     vect cy = boost::numeric::ublas::prec_prod(Ey, ai);
     vect cz = boost::numeric::ublas::prec_prod(Ez, ai);
     int lambda = 100; //quadratic penalty multiplier
     for(int d = 0; d < 9; d++){
+
+// creating a vector row to add to A 
       std::vector<double> row(9*nv+2*nl+3*nv);
       std::fill(row.begin(), row.end(), 0);
       row[9*i + d] = lambda;
@@ -206,20 +236,30 @@ void add_local_optim_constraints(std::vector<std::vector<double>>& a, std::vecto
   }
 }
 
-void add_normal_constraints(LCC_3& input_tet_mesh, std::vector<Vertex_handle>& vertices, std::vector<std::vector<double>>& A, std::vector<double>& b, int nv, int nl){
-  for(int i = 0; i < nl; i++){
+void add_normal_constraints(LCC_3& input_tet_mesh, std::vector<Vertex_handle>& vertices, std::vector<std::vector<double>>& A, std::vector<double>& b, int nv, int nl){/**
+* Implements Algorithm 2 from the paper
+//enforcing normal constraints by quadratic penalty
+*/
+  for(int i = 0; i < nl; i++){ //for each boundary vertex:
+
+// estimate the normal n at vertex i:
     Vector_3 n = CGAL::compute_normal_of_cell_0(input_tet_mesh, (vertices[i].incident_dart));
+
+// 9x9 rotation matrix to rotate z axis to n:
     matrix R(9,9);
     R = find_rotation_matrix(n);
     vect temp(9);
     temp(0) = 1; temp(1) = 0; temp(2) = 0; temp(3) = 0; temp(4) = 0; temp(5) = 0; temp(6) = 0; temp(7) = 0; temp(8) = 0;
+
+// finding h0, h4, h8 as given in the paper
     vect h0 = boost::numeric::ublas::prec_prod(R, temp);
     temp(0) = 0; temp(4) = 1;
     vect h4 = boost::numeric::ublas::prec_prod(R, temp);
     temp(4) = 0; temp(8) = 1;
     vect h8 = boost::numeric::ublas::prec_prod(R, temp);
     int lambda = 100; //quadratic penalty multiplier
-    for(int d = 0; d < 9; d++){
+
+    for(int d = 0; d < 9; d++){ //add the normal constraints 
       std::vector<double> row(9*nv+2*nl+3*nv);
       std::fill(row.begin(), row.end(), 0);
       row[9*i + d] = lambda;
@@ -235,19 +275,39 @@ void optimise_frame_field(LCC_3& input_tet_mesh, std::vector<Vertex_handle>& ver
 /**
 Implementation of Algorithm 1 in the paper.
 */
-  int nl = find_number_of_boundary_vertices(input_tet_mesh);
-  int nv = vertices.size(); 
+
+// the boundary vertices have a normal constraint - nl vertices with normal constraint
+  int nl = find_number_of_boundary_vertices(input_tet_mesh); 
+
+// the total number of vertices in the tet mesh
+  int nv = vertices.size();
+
+// all boundary vertices are pushed to the front of the vector
   sort_vertices(vertices);
+
   std::vector<std::vector<double>> a;
-  for(int i = 0; i < n; i++){
+  for(int i = 0; i < n; i++){ //iterates n times - each is a smoothing iteration
+
+//A has 0 rows and (9*nv+2*nl+3*nv) columns
     std::vector<std::vector<double>> A_tobeconverted;
+
+// b is a vector initialised with size zero
     std::vector<double> b_tobeconverted;
+
+// add the smoothing terms to the matrix
     add_smoothing_terms(edges, A_tobeconverted, b_tobeconverted, nv, nl);
+
+//add normal constraints to the matrix
     add_normal_constraints(input_tet_mesh, vertices, A_tobeconverted, b_tobeconverted, nv, nl);
     if(i>0){
+
+// adds optimisations constraints based on previous iteration's results
       add_local_optim_constraints(a, A_tobeconverted, b_tobeconverted, nv, nl);
     }
+
     if(i == 0) std::vector<std::vector<double>> a;
+
+//converting to Eigen vector and Eigen matrix so as to be able to solve the system:
     Eigen_vector b(b_tobeconverted.size());
     for(int j = 0; j<b_tobeconverted.size(); j++){ 
       b.set(j, b_tobeconverted[j]);
@@ -260,13 +320,16 @@ Implementation of Algorithm 1 in the paper.
     }
     Eigen_vector X = b;
     Svd::solve(A, X); //solution gets stored in X
-    a.clear();
-    for(int j = 0;j<nv;j++){
+   // a.clear();
+    for(int j = 0;j<nv;j++){ //for each vertex
       std::vector<double> temp;
+//a[i] = X[9i .. 9i+8]
       for(int k = 9*j; k<(9*j+9);k++){
           temp.push_back((X.vector())[k]);
         }
       a.push_back(temp);
+
+//find the frame and its representation vector
       closest_frame(a[j], (vertices[j]).frame);
     }
   }
