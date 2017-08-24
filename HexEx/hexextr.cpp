@@ -46,23 +46,30 @@ void dummy_parametrize(LCC_3& lcc){ /**dummy parametrization function: There is 
   }
 }
 
-int HexExtr::set_dart_info(){/**
+void HexExtr::set_parametrization(LCC_3& lcc){
+  for(LCC_3::Dart_range::iterator it = (lcc.darts()).begin(), itend = (lcc.darts()).end(); it != itend; it++){
+    Point p(0,0,0);
+    (lcc.info(it)).parameters = p;
+  } 
+}
+
+int HexExtr::set_dart_info(LCC_3& lcc){/**
 * initializing the dart_info assiciated with each dart to certain values, and setting cell_no according to the tet to which the dart handle belongs to.
 */
-  for(LCC_3::Dart_range::iterator it = (input_tet_mesh.darts()).begin(), itend = (input_tet_mesh.darts()).end(); it != itend; it++){
-    (input_tet_mesh.info(it)).cell_no = 0;
-    (input_tet_mesh.info(it)).singular = false;
-    (input_tet_mesh.info(it)).singular_edges = 0;
+  for(LCC_3::Dart_range::iterator it = (lcc.darts()).begin(), itend = (lcc.darts()).end(); it != itend; it++){
+    (lcc.info(it)).cell_no = 0;
+    (lcc.info(it)).singular = false;
+    (lcc.info(it)).singular_edges = 0;
   }
 
   int cell = 0;
 
-//iterate through each tet in the input mesh:
-  for(LCC_3::One_dart_per_cell_range<3>::iterator it = input_tet_mesh.one_dart_per_cell<3>().begin(), itend = input_tet_mesh.one_dart_per_cell<3>().end(); it != itend; it++){ 
+//iterate through each tet in the mesh:
+  for(LCC_3::One_dart_per_cell_range<3>::iterator it = lcc.one_dart_per_cell<3>().begin(), itend = lcc.one_dart_per_cell<3>().end(); it != itend; it++){ 
 
-//iterate through all the darts of each input mesh, to assign a cell_no unique to all darts of each tet. Two darts belonging to different tets will have different cell_no
-    for(LCC_3::Dart_of_cell_range<3>::iterator it1 = input_tet_mesh.darts_of_cell<3>(it).begin(), it1end = input_tet_mesh.darts_of_cell<3>(it).end(); it1 != it1end; it1++){ 
-      (input_tet_mesh.info(it1)).cell_no = cell;
+//iterate through all the darts of each tet, to assign a cell_no unique to all darts of each tet. Two darts belonging to different tets will have different cell_no
+    for(LCC_3::Dart_of_cell_range<3>::iterator it1 = lcc.darts_of_cell<3>(it).begin(), it1end = lcc.darts_of_cell<3>(it).end(); it1 != it1end; it1++){ 
+      (lcc.info(it1)).cell_no = cell;
     }
     cell++;
   }
@@ -76,7 +83,7 @@ void HexExtr::load_mesh(std::string infilename){ /**
   std::ifstream in;
 
   input_tet_mesh.clear();
-  in.open("tests/"+infilename);
+  in.open(infilename);
   if (in.is_open())
   {  
     in>>input_tet_mesh;
@@ -88,7 +95,7 @@ void HexExtr::load_mesh(std::string infilename){ /**
 }
 
 
-void HexExtr::extract(){ //executes the four stages of hex-mesh extraction, other than post processing
+void HexExtr::extract(std::string str){ //executes the four stages of hex-mesh extraction, other than post processing
 
 //Preprocessing
   preprocess();  
@@ -96,14 +103,22 @@ void HexExtr::extract(){ //executes the four stages of hex-mesh extraction, othe
 //Sanitization
   sanitize();
 
-//Topology Extraction: making hexahedrons in the output mesh incorporting vertex extraction and dart extraction in a single step:
+//Topology Extraction: making hexahedrons in the output mesh incorporating vertex extraction and dart extraction in a single step:
   extract_hexes();
 
 //Connection extraction
   extract_connections();
+
+  
     
 }
 
+void HexExtr::save_mesh(std::string str){
+  std::ofstream os;
+  os.open("results/"+str);
+  os<<(output_mesh);
+  os.close();
+}
 
 int HexExtr::calculate_cell_type(LCC_3& lcc, Dart_handle dh){/**
 *This function finds if a tet in the LCC on which dh dart handle is incident is degenerate, or flipped, or proper.

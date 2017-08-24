@@ -8,10 +8,12 @@ class HexExtr{
 
 //defintion in hexextr.cpp
     HexExtr(std::string);
-    int set_dart_info();
+    int set_dart_info(LCC_3&);
     void load_mesh(std::string);
-    void extract();
+    void extract(std::string);
     int calculate_cell_type(LCC_3&, Dart_handle);
+    void set_parametrization(LCC_3&);
+    void save_mesh(std::string);
 
 // definition in preprocessing.cpp
     Aff_transformation get_parametrization_matrix(Point, Point, Point, Point, Point, Point, Point, Point);

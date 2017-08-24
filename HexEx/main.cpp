@@ -24,12 +24,19 @@ int main(int argc, char** argv){
   HexExtr h(str);
 
 //extract the mesh 
-  h.extract();
+  std::cout<<str.substr(6)<<std::endl;
+  
+  h.extract(str.substr(6));
+
 
 //post-processing is done, if required.
   h.refine();
 
+  h.save_mesh(str.substr(6));
+  //h.set_parametrization(h.output_mesh);
 //is the output mesh valid?
+
+
   if((h.output_mesh).is_valid()) std::cout<<"Valid!"<<std::endl;
   else std::cout<<"Invalid!"<<std::endl;
 
@@ -46,6 +53,7 @@ int main(int argc, char** argv){
 
   std::cout<<"*****FINAL OUTPUT MESH*****"<<std::endl;
   (h.output_mesh).display_characteristics(std::cout); std::cout<<std::endl;
+  
 
   
   #ifdef CGAL_LCC_USE_VIEWER
