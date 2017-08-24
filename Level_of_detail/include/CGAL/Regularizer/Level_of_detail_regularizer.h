@@ -6,6 +6,9 @@
 #include <cmath>
 #include <vector>
 
+// STL includes.
+#include <utility>
+
 // Boost includes.
 #include <boost/tuple/tuple.hpp>
 
@@ -20,7 +23,7 @@ namespace CGAL {
 		class Level_of_detail_regularizer {
 
 		public:
-			virtual int regularize(Planes&, InputContainer &) const = 0;
+			virtual std::pair<int, int> regularize(Planes&, InputContainer &, typename KernelTraits::Plane_3 &) const = 0;
 		};
 
 		template<class KernelTraits, class InputContainer, class PlanesContainer>
@@ -51,7 +54,7 @@ namespace CGAL {
 
 			// Here I assume that all points in the plane have the same normals and these normals
 			// are the same as the associated plane's normal.
-			int regularize(Planes &planes, Container &input) const override { 
+			std::pair<int, int> regularize(Planes &planes, Container &input, Plane &ground_plane) const override { 
 
 				auto number_of_regularized_planes = 0;
 
@@ -65,7 +68,7 @@ namespace CGAL {
 					set_plane_normal(input, it, m);
 
 					Normal n;
-					set_ground_normal(n);
+					set_ground_normal(ground_plane, n);
 
 					// Compute rotation angle and rotation axis.
 					FT rad_angle; Vector axis;
@@ -98,7 +101,10 @@ namespace CGAL {
 				}
 
 				if (update_planes) update_rejected_planes(rejected, planes);
-				return number_of_regularized_planes;
+
+				std::pair<int, int> result = std::make_pair(number_of_regularized_planes, static_cast<int>(planes.size()));
+
+				return result;
 			}
 
 		private:
@@ -106,8 +112,11 @@ namespace CGAL {
 				plane_normal = input.normal((*it).second[M_NORMAL_INDEX]);
 			} 
 
-			void set_ground_normal(Normal &ground_normal) const {
-				ground_normal = Normal(0, 0, 1);
+			// Debug this function!
+			void set_ground_normal(const Plane &ground_plane, Normal &ground_normal) const {
+				
+				ground_normal = ground_plane.orthogonal_vector();
+				// ground_normal = Normal(0, 0, 1); // Does it work?
 			}
 
 			Regularization_status check_status(const Normal &m, const Normal &n, FT &rad_angle, Vector &axis) const {
@@ -124,7 +133,7 @@ namespace CGAL {
 				if (deg_angle < FT(1)) return Regularization_status::NOACTION;
 				else if (deg_angle < FT(10)) return Regularization_status::REGULARIZE;
 				
-				return Regularization_status::REJECT;
+				return Regularization_status::NOACTION; // change it back to REJECT - it will maybe work if I use average normal instead of the fixed one above
 			}
 
 			void rotate_plane(const Const_iterator &it, const FT &rad_angle, const Vector &axis, Container &input) const {

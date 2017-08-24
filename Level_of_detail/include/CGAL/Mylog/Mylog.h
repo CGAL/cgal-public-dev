@@ -35,11 +35,9 @@ namespace CGAL {
 				out << token;
 			}
 
-			bool save(const std::string &fileName) const {
+			bool save(const std::string &fileName, const std::string &extension = ".log", const std::string path = "/Users/danisimo/Documents/pipeline/logs/") const {
 
-				const std::string path = "/Users/danisimo/Documents/pipeline/logs/";
-				const std::string finalPath = path + fileName + ".log";
-
+				const std::string finalPath = path + fileName + extension;
 				std::ofstream file(finalPath.c_str(), std::ios_base::out);
 
 				if (!file) {
@@ -97,12 +95,12 @@ namespace CGAL {
 				if (withExtraProperties) {
 
 					out << 
-					"property label\n"  <<
-					"property index\n"  <<
-					"property planea\n" <<
-					"property planeb\n" <<
-					"property planec\n" <<
-					"property planed\n" <<
+					"property int label\n"  <<
+					"property int index\n"  <<
+					"property double planea\n" <<
+					"property double planeb\n" <<
+					"property double planec\n" <<
+					"property double planed\n" <<
 					"end_header\n";
 					
 					boost::tie(labels,  boost::tuples::ignore) = input. template property_map<Label>("label");
@@ -126,7 +124,7 @@ namespace CGAL {
 					
 					out << "\n";
 				}
-				save(fileName);
+				save(fileName, ".ply");
 			}
 
 			std::stringstream out;

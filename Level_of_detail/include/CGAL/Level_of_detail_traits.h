@@ -22,7 +22,7 @@ namespace CGAL {
 
 			typedef KernelTraits 							        Kernel;
 			typedef OutputContainer                                 Container;
-			typedef Level_of_detail_loader_stub<Kernel, Container>  Loader;
+			typedef Level_of_detail_loader<Kernel, Container>       Loader;
 			typedef Level_of_detail_preprocessor<Kernel, Container> Preprocessor;
 
 			typedef Level_of_detail_clutter<Kernel, Container> 			 Clutter_strategy;

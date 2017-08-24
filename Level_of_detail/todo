@@ -8,3 +8,5 @@ TODO:
 4. When I fit a plane to the ground in the base class, I need to copy all ground points. Change it!
 5. Refactor the preprocessor class.
 6. Fix where I use Container::Index and where int.
+7. Update Level_of_detail_loader.h - currently it is fixed temporary implementation.
+8. Instead of the first normal in regularization step, I need to take an average normal.

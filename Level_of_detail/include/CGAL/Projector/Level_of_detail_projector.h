@@ -1,6 +1,9 @@
 #ifndef CGAL_LEVEL_OF_DETAIL_PROJECTOR_H
 #define CGAL_LEVEL_OF_DETAIL_PROJECTOR_H
 
+// STL includes.
+#include <map>
+
 namespace CGAL {
 
 	namespace LOD {
@@ -29,6 +32,8 @@ namespace CGAL {
 			using Const_iterator = typename Planes::const_iterator;
 
 			int project(const Container &input, const Planes &planes, const typename Traits::Plane_3 &ground, Output &projected) override { 
+
+				projected.clear();
 
 				auto number_of_projected_points = 0;
 				for (Const_iterator it = planes.begin(); it != planes.end(); ++it) {
