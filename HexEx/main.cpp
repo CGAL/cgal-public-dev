@@ -32,11 +32,11 @@ int main(int argc, char** argv){
 //post-processing is done, if required.
   h.refine();
 
+//save the mesh
+  h.set_parametrization(h.output_mesh);
   h.save_mesh(str.substr(6));
-  //h.set_parametrization(h.output_mesh);
+
 //is the output mesh valid?
-
-
   if((h.output_mesh).is_valid()) std::cout<<"Valid!"<<std::endl;
   else std::cout<<"Invalid!"<<std::endl;
 

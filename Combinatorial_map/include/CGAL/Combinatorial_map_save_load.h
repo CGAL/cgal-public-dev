@@ -64,10 +64,10 @@ namespace CGAL {
   // </attributes>
 
   // Here T is a Dart_const_handle so we don't need &
- /* template<typename T>
-  void write_cmap_dart_node(boost::property_tree::ptree & /*node*//*, T)
-  {}
-*/
+//  template<typename T>
+ // void write_cmap_dart_node(boost::property_tree::ptree & /*node*/, T)
+ // {}
+
 
  template< typename T>
   void write_cmap_dart_node(boost::property_tree::ptree & node, T& t)
@@ -80,11 +80,7 @@ namespace CGAL {
 
   template<typename T>
   void write_cmap_attribute_node(boost::property_tree::ptree & node, const T& t)
-  {
-    /*node.add("v1.x", CGAL::to_double(t.parameters[0]));
-    node.add("v1.y", CGAL::to_double(t.parameters[1]));
-    node.add("v1.z", CGAL::to_double(t.parameters[2]));*/
-  }
+  {}
   
   inline
   void write_cmap_attribute_node(boost::property_tree::ptree & node,
@@ -347,6 +343,7 @@ namespace CGAL {
 
       // update property node to add a value node (if user defined its own
       // function)
+      //write_cmap_dart_node(ndart, amap.template info(it));
       write_cmap_dart_node(ndart, amap.template info(it));
     }
     
