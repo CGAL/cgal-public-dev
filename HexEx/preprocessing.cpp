@@ -102,7 +102,7 @@ void HexExtr::preprocess(){
   set_chiral_symmetry_aff_transformations();
 
 //initialize dart_info to some values
-  int cell = set_dart_info();
+  int cell = set_dart_info(input_tet_mesh);
 
 // a vector of size of the number of tets in the input mesh, to contain transition matrices of each tet to adjacent tets
   std::vector<std::vector<Aff_transformation>> g1(cell);
