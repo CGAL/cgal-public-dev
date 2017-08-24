@@ -116,8 +116,11 @@ void HexExtr::extract(std::string str){ //executes the four stages of hex-mesh e
 void HexExtr::save_mesh(std::string str){
   std::ofstream os;
   os.open("results/"+str);
-  os<<(output_mesh);
-  os.close();
+  if (os.is_open())
+  {
+    os<<(output_mesh);
+    os.close();
+  }
 }
 
 int HexExtr::calculate_cell_type(LCC_3& lcc, Dart_handle dh){/**
