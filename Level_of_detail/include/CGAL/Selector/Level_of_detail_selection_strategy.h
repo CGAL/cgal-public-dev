@@ -54,7 +54,8 @@ namespace CGAL {
 				return false;
 			}
 
-			/* // Does not work!
+			// Does not work!
+			/*
 			void set_elements(const std::vector<typename Container::Index> &elementIndices, Container &output) override {
 
 				typename Container::iterator it = Base::m_input->begin();

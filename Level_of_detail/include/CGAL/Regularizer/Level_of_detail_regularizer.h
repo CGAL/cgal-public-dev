@@ -116,6 +116,7 @@ namespace CGAL {
 			void set_ground_normal(const Plane &ground_plane, Normal &ground_normal) const {
 				
 				ground_normal = ground_plane.orthogonal_vector();
+				
 				// ground_normal = Normal(0, 0, 1); // Does it work?
 			}
 

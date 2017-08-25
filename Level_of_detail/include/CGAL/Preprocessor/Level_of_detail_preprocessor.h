@@ -32,7 +32,6 @@ namespace CGAL {
 						planes[m_indices[*it]].push_back(*it);
 
 				number_of_planes = planes.size();
-
 				return number_of_planes;
 			}
 
@@ -44,21 +43,9 @@ namespace CGAL {
 
 				planes.clear();
 
-				for (size_t i = 0; i < mapping.size(); ++i) {
-					if (m_indices[mapping[i]] >= 0) {
+				for (size_t i = 0; i < mapping.size(); ++i)
+					if (m_indices[mapping[i]] >= 0)
 						planes[m_indices[mapping[i]]].push_back(mapping[i]);
-						// std::cout << input.point(mapping[i]) << std::endl; // remove
-					}
-				}
-
-				/*
-				size_t sum = 0; size_t count = 0;
-				for (typename Planes::const_iterator it = planes.begin(); it != planes.end(); ++it) {
-					std::cout << (*it).second.size() << std::endl;
-					sum += (*it).second.size();
-					++count;
-				}
-				std::cout << "size: " << sum << " " << count << std::endl; */
 
 				number_of_planes = planes.size();
 				return number_of_planes;

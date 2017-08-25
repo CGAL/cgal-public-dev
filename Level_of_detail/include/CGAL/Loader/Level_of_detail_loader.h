@@ -77,9 +77,6 @@ namespace CGAL {
 					 labels[*it] = l; 
 					 planes[*it] = Plane(aa, bb, cc, dd); 
 					indices[*it] = in;
-
-					// colors[*it] = {{static_cast<Type>(0), static_cast<Type>(0), static_cast<Type>(0)}};
-					// planes[*it] = Plane(0.0, 0.0, 0.0, 0.0);
             	}
             	loader.close();
 			}

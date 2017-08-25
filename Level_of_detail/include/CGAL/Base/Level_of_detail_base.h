@@ -53,7 +53,7 @@ namespace CGAL {
 
 			using Plane_iterator = typename Planes_mapping::const_iterator;
 
-			const std::string default_path = "/Users/danisimo/Documents/pipeline/data/complex_test/";
+			const std::string default_path = "/Users/danisimo/Documents/pipeline/data/basic_test/";
 
 			Level_of_detail_base(Traits traits = Traits()) : m_traits(traits) { } // Do I need to create an instance of these traits here?
 
@@ -136,11 +136,11 @@ namespace CGAL {
 				log.out << "(9) Segments are created. Number of created segments: " << number_of_segments << std::endl;
 
 
-				// (10) Save all found segments as a degenerated obj. Temporary function.
+				// (10) Save all found segments as a degenerated obj and all projected points as an .xyz file.
 				export_segments_as_obj(segments);
 				export_projected_points(building_boundary_projected); 
 
-				log.out << "(10) All segments are saved as a degenerated obj file." << std::endl;
+				log.out << "(10) All data are saved!" << std::endl;
 
 
 				// (END) Save log.
@@ -244,7 +244,8 @@ namespace CGAL {
 				for (size_t i = 0; i < segments.size() * 2; i += 2)
 					log.out << "f " << i + 1 << " " << i + 2 << " " << i + 2 << std::endl;
 
-				log.save("segments", ".obj", default_path);
+				// log.save("segments", ".obj", default_path);
+				log.save("segments", ".obj");
 			}
 
 			void export_projected_points(const Projected_points &projected) const {
@@ -254,7 +255,8 @@ namespace CGAL {
 				for (typename Projected_points::const_iterator it = projected.begin(); it != projected.end(); ++it)
 					log.out << (*it).second << std::endl;
 
-				log.save("projected", ".xyz", default_path);
+				// log.save("projected", ".xyz", default_path);
+				log.save("projected", ".xyz");
 			}
 		};
 	}

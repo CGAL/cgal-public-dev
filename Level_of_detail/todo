@@ -1,7 +1,7 @@
 Use predicates to find labels!
 Estimate scale global.
 
-TODO:
+TODO AND OTHER:
 1. Fix #include <Point_set_3> for boost::tie dependency. Change it to the proper boost inclusion.
 2. Redo selector class using property maps.
 3. For now I use built in conditions inside selection strategy classes. Change it to any custom condition later.
@@ -10,3 +10,9 @@ TODO:
 6. Fix where I use Container::Index and where int.
 7. Update Level_of_detail_loader.h - currently it is fixed temporary implementation.
 8. Instead of the first normal in regularization step, I need to take an average normal.
+9. All buildings with non xy aligned walls are screwed. Why? Also remove lines that do not represent a building's boundary. Maybe first output them in different colours.
+10. Change ground plane to xy plane and all associated 3D points to 2D points.
+11. For LOD I can stick to my own simple data structures. For some packages like 2D structuring I can already mimic CGAL general style. In general, first make it work with simple data structures and then fix API.
+12. It is important to gradually increase the complexity of the input data set and see if our package handles it well.
+13. It is maybe helpful to work building by building and create an oriented bounding box around each building, which can become the building's boundary in the worst case.
+14. Extra cases I should be careful with: not xy aligned buildings, planes that should be rejected, missclassification problems, missing walls.
