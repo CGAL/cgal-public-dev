@@ -46,10 +46,16 @@ int main(int argc, char** argv){
   std::cout << "Program has been running for " << std::chrono::duration_cast<std::chrono::milliseconds>(current_time - start_time).count() << " ms" << std::endl;
 
 // writing to a file
+  
   std::ofstream of;
   of.open("final_output.off");
   CGAL::write_off(h.output_mesh, of); 
   of.close();
+  of.open("input.off");
+  CGAL::write_off(h.input_tet_mesh, of); 
+  of.close();
+
+
 
   std::cout<<"*****FINAL OUTPUT MESH*****"<<std::endl;
   (h.output_mesh).display_characteristics(std::cout); std::cout<<std::endl;

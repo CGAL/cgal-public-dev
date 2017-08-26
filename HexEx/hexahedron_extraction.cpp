@@ -4,8 +4,8 @@ void HexExtr::extract_hexes(){/**
 * This function combines the steps geometry extraction and topology extraction from the paper HexEx. 
 * We iterate through each volume (in parametric space, stored in dart_info) in the input mesh, and find all the prospective vertices with integer coordinates in parametric space. If unit cubes formed by joining adjacent integer coordinates in the parametric space intersects the tetrahedron, we make a hexahedron (in our output mesh) corresponding to the inverse parametrization of the integer vertices of the cube. 
 */
- 
-output_mesh.clear();
+  int num_hex = 0;
+  output_mesh.clear();
 //iterating through each tetrahedron
   for(LCC_3::One_dart_per_cell_range<3>::iterator it = (input_tet_mesh.one_dart_per_cell<3>()).begin(), itend = (input_tet_mesh.one_dart_per_cell<3>()).end(); it != itend; it++){
 
@@ -157,7 +157,7 @@ for(LCC_3::One_dart_per_incident_cell_range<0,3>::iterator it1 = input_tet_mesh.
             }
  
             if(hex_handles.find(p0) == hex_handles.end()){ 
-            Dart_handle dh = output_mesh.make_hexahedron(p0, p1, p2, p3, p4, p5, p6, p7);
+            Dart_handle dh = output_mesh.make_hexahedron(p0, p1, p2, p3, p4, p5, p6, p7); num_hex++;
             for(LCC_3::Dart_of_cell_range<3>::iterator it5 = output_mesh.darts_of_cell<3>(dh).begin(),
 it5end = output_mesh.darts_of_cell<3>(dh).end(); it5 != it5end; it5++){
               (output_mesh.info(it5)).flipped = (orientation == -1)? true : false;
@@ -173,6 +173,7 @@ it5end = output_mesh.darts_of_cell<3>(dh).end(); it5 != it5end; it5++){
 
 
 //display the characteristics of the output LCC.
+  std::cout<<"Number of hexes created: "<<num_hex<<std::endl;
   std::cout<<"***Output mesh***"<<std::endl; output_mesh.display_characteristics(std::cout); std::cout<<std::endl;
 
 /*
@@ -208,8 +209,8 @@ bool HexExtr::does_intersect(Tetrahedron_3 tet, Point_3 p){/**
 * If p does not lie on the unbounded side of the tet, this function checks if a prospective unit volume cube in the positive x, y and z directions, with origin at p, would intersect the given tet. 
 * If it lies on the unbounded side, we don't consider the volumes tobe intersecting: so the function returns false. 
 */
-  if(tet.is_degenerate()||tet.has_on_unbounded_side(p)) return false;
+  if(tet.is_degenerate()) return false;
   else if(tet.has_on_bounded_side(p)) return true;
-  else if(tet.has_on_boundary(p) && (tet.has_on_bounded_side(Point_3(p[0]+1, p[1], p[2]))||tet.has_on_bounded_side(Point_3(p[0], p[1]+1, p[2]))||tet.has_on_bounded_side(Point_3(p[0], p[1], p[2]+1))||tet.has_on_bounded_side(Point_3(p[0]+1, p[1]+1, p[2]))||tet.has_on_bounded_side(Point_3(p[0]+1, p[1], p[2]+1))||tet.has_on_bounded_side(Point_3(p[0], p[1]+1, p[2]+1))||tet.has_on_bounded_side(Point_3(p[0]+1, p[1]+1, p[2]+1)))) return true;
+  else if(tet.has_on_boundary(p)&&(tet.has_on_bounded_side(Point_3(p[0]+1, p[1], p[2]))||tet.has_on_bounded_side(Point_3(p[0], p[1]+1, p[2]))||tet.has_on_bounded_side(Point_3(p[0], p[1], p[2]+1))||tet.has_on_bounded_side(Point_3(p[0]+1, p[1]+1, p[2]))||tet.has_on_bounded_side(Point_3(p[0]+1, p[1], p[2]+1))||tet.has_on_bounded_side(Point_3(p[0], p[1]+1, p[2]+1))||tet.has_on_bounded_side(Point_3(p[0]+1, p[1]+1, p[2]+1)))) return true;
   else return false;
 }

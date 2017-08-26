@@ -12,12 +12,13 @@ void HexExtr::check_singularity(){ /**
 */
   for(LCC_3::One_dart_per_cell_range<1>::iterator e = input_tet_mesh.one_dart_per_cell<1>().begin(), eend = input_tet_mesh.one_dart_per_cell<1>().end(); e != eend; e++){
     if(is_singular(e)){
+      int sing_edge = 1;
       for(LCC_3::Dart_of_cell_range<1>::iterator d = input_tet_mesh.darts_of_cell<1>(e).begin(), dend = input_tet_mesh.darts_of_cell<1>(e).end(); d != dend; d++){
-        if((input_tet_mesh.info(d)).singular == true) (input_tet_mesh.info(d)).singular_edges++;
-        else{
-          (input_tet_mesh.info(d)).singular = true; (input_tet_mesh.info(d)).singular_edges = 1;
-        }
-      }      
+        if((input_tet_mesh.info(d)).singular == true) sing_edge++;
+      }
+      for(LCC_3::Dart_of_cell_range<1>::iterator d = input_tet_mesh.darts_of_cell<1>(e).begin(), dend = input_tet_mesh.darts_of_cell<1>(e).end(); d != dend; d++){
+        (input_tet_mesh.info(d)).singular = true; (input_tet_mesh.info(d)).singular_edges = sing_edge; 
+      }
     } 
   }
 }
@@ -119,7 +120,7 @@ Dart_handle HexExtr::get_singular_edge(Dart_handle& v){//get the edge incident t
 }
 
 Point_3 HexExtr::get_projected_parameters(Dart_handle& dh, Dart_handle& singular_edge){/**
-* given an edge defined by dart handle dh, we find the direction to which it points in dir. We get the transition matrix between dh and singular edge and apply the tranformation */
+* given an edge defined by dart handle dh, we find the direction to which it points in dir. We get the transition matrix between dh and singular edge and apply the transformation */
 
 //finding from and to points of dh 
   Point_3 from = (input_tet_mesh.info(dh)).parameters, to = (input_tet_mesh.info(input_tet_mesh.opposite(dh))).parameters;
