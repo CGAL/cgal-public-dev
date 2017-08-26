@@ -20,7 +20,7 @@
 typedef struct dartinfo{
 
 //all the darts corresponding to the same tet will have the same cell_no. This is to make it easier to assign a parametrization matrix, which can be determined from any dart of the tet.
-  double cell_no;
+  int cell_no;
 
 //True the dart belongs to a flipped tet.
   bool flipped;

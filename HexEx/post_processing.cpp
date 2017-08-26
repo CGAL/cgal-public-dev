@@ -9,7 +9,7 @@ void HexExtr::refine(){ // extract() gives the correct hex mesh most of the time
 
 bool HexExtr::are_quads(){ //are all faces quads?
   for(LCC_3::One_dart_per_cell_range<2>::iterator it = output_mesh.one_dart_per_cell<2>().begin(), itend = output_mesh.one_dart_per_cell<2>().end(); it!=itend; it++){
-    int count = output_mesh.one_dart_per_incident_cell<0,2>(it).size(); //counting the number of vertices incident on each face
+    int count = output_mesh.one_dart_per_incident_cell<1,2>(it).size(); //counting the edges of vertices incident on each face
     if(count == 4) continue;
     else return false; //some face has more than/less than 4 vertices
     }
@@ -85,7 +85,6 @@ we might not need this since we eliminate degenerate tets in the parametrization
 }
 
 bool HexExtr::post_processing_req(){ //is post-processing required or is the output_mesh already correct?
-  if(DEBUG) std::cout<<"Number of flipped cells: "<<flipped_cells()<<std::endl;
   return(!(are_quads()&& are_quad_strips() && are_hexes())||flipped_cells()>0);
 }
 

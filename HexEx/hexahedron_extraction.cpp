@@ -207,7 +207,7 @@ Aff_transformation* HexExtr::find_tet_parametrization(Point p){
 
 bool HexExtr::does_intersect(Tetrahedron_3 tet, Point_3 p){/**
 * If p does not lie on the unbounded side of the tet, this function checks if a prospective unit volume cube in the positive x, y and z directions, with origin at p, would intersect the given tet. 
-* If it lies on the unbounded side, we don't consider the volumes tobe intersecting: so the function returns false. 
+* If it lies on the unbounded side, we don't consider the volumes to be intersecting: so the function returns false. 
 */
   if(tet.is_degenerate()) return false;
   else if(tet.has_on_bounded_side(p)) return true;
