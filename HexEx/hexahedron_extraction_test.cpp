@@ -33,21 +33,21 @@ for(LCC_3::One_dart_per_incident_cell_range<0,3>::iterator it1 = input_tet_mesh.
 
 // inverse parametrization of the given tet
     Aff_transformation at_inv = (parametrization_matrices[(input_tet_mesh.info(it)).cell_no]).inverse(); 
-
+std::cout<<"LIMITS: "<<"x: "<<minx<<" "<<maxx<<" y: "<<miny<<" "<<maxy<<" "<<maxz<<std::endl;
 
 /** iterating through the possible integer vertices. 
 * If the integer vertex lies outside the tet, nothing happens.
 * If the integer vertex lies on the boundary of the tet, and if the corresponding cube along positive x, y and z axis intersect with the tet, a hexahedron using inverse parametrization is created.
 * If the integer vertex lies inside the tet, the corresponding cube is sure to intersect with the tet, so a hexahedron using inverse parametrization is created.
 */
-
-
     
-    for(int i = minx-1; i<= maxx+1; i++){
-      for(int j = miny-1; j<=maxy+1; j++){
-        for(int k = minz-1; k<=maxz+1; k++){ 
+    for(int i = minx; i<= maxx; i++){
+      for(int j = miny; j<=maxy; j++){
+        for(int k = minz; k<=maxz; k++){ 
           Point_3 p(i,j,k);
-          if(does_intersect(tet, p) && (output_points.find(p) == output_points.end()|| hex_handles.find(output_points[p]) == hex_handles.end())){ /*
+          if(does_intersect(tet, p)){ 
+            std::cout<<i<<" "<<j<<" "<<k<<std::endl;
+/*
 * We create a map between integer grid points and inverse-parametrized points called output_points, to avoid repeated calculations and so that each grid point maps to a unique inverse parametrization (this need not happen due to numerical inefficiencies, leading to overlapping hexes) 
 * The paper uses the transition function to find the parametrization matrix of adjacent tet- this could be done too, but we have the parametrization matrix itself readily available in parametrization_matrices- so we use that to know parametrization in other matrices (not necessarily adjacent)
 */          
