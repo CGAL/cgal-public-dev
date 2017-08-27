@@ -106,6 +106,11 @@ void HexExtr::extract(std::string str){ //executes the four stages of hex-mesh e
 //Topology Extraction: making hexahedrons in the output mesh incorporating vertex extraction and dart extraction in a single step:
   extract_hexes();
 
+  std::ofstream of;
+  of.open("output.off");
+  CGAL::write_off(output_mesh, of); 
+  of.close();
+
 //Connection extraction
   extract_connections();
 

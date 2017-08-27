@@ -5,7 +5,7 @@
 
 class HexExtr{
   public:
-
+void save_parametrized_mesh();
 //defintion in hexextr.cpp
     HexExtr(std::string);
     int set_dart_info(LCC_3&);

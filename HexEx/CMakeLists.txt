@@ -28,8 +28,12 @@ if ( CGAL_FOUND )
   add_executable(display-gmap display-gmap.cpp)
   target_link_libraries(display-gmap ${CGAL_LIBRARIES} ${CGAL_3RD_PARTY_LIBRARIES} ${MAP_VIEWER_LIBRARIES})
 
+  add_executable(parametrized_mesh hexextr.cpp post_processing.cpp connection_extraction.cpp hexahedron_extraction.cpp sanitization.cpp preprocessing.cpp output_parametrized_mesh_test.cpp)
+  target_link_libraries(parametrized_mesh ${CGAL_LIBRARIES} ${CGAL_3RD_PARTY_LIBRARIES} ${MAP_VIEWER_LIBRARIES})
+
   add_executable(main hexextr.cpp post_processing.cpp connection_extraction.cpp hexahedron_extraction.cpp sanitization.cpp preprocessing.cpp main.cpp)
-  target_link_libraries(main ${CGAL_LIBRARIES} ${CGAL_3RD_PARTY_LIBRARIES} ${MAP_VIEWER_LIBRARIES})
+  target_link_libraries(main ${CGAL_LIBRARIES} ${CGAL_3RD_PARTY_LIBRARIES} ${MAP_VIEWER_LIBRARIES}) 
+
 
   #add_executable(test3 hexextr.cpp post_processing.cpp connection_extraction.cpp hexahedron_extraction.cpp sanitization.cpp preprocessing.cpp test3.cpp)
   #target_link_libraries(test3 ${CGAL_LIBRARIES} ${CGAL_3RD_PARTY_LIBRARIES} ${MAP_VIEWER_LIBRARIES})

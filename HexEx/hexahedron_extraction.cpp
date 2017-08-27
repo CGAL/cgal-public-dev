@@ -43,9 +43,9 @@ for(LCC_3::One_dart_per_incident_cell_range<0,3>::iterator it1 = input_tet_mesh.
 
 
     
-    for(int i = minx-1; i<= maxx+1; i++){
-      for(int j = miny-1; j<=maxy+1; j++){
-        for(int k = minz-1; k<=maxz+1; k++){ 
+    for(int i = std::floor(minx); i<= std::ceil(maxx); i++){
+      for(int j = std::floor(miny); j<=std::ceil(maxy); j++){
+        for(int k = std::floor(minz); k<=std::ceil(maxz); k++){ 
           Point_3 p(i,j,k);
           if(does_intersect(tet, p) && (output_points.find(p) == output_points.end()|| hex_handles.find(output_points[p]) == hex_handles.end())){ /*
 * We create a map between integer grid points and inverse-parametrized points called output_points, to avoid repeated calculations and so that each grid point maps to a unique inverse parametrization (this need not happen due to numerical inefficiencies, leading to overlapping hexes) 
