@@ -24,12 +24,12 @@ for(LCC_3::One_dart_per_incident_cell_range<0,3>::iterator it1 = input_tet_mesh.
 
 //bounding box of the tetrahedron to find the minimum and maximum of x, y, z coordinates
     Bbox_3 box = tet.bbox(); 
-    minx = round(box.xmin());
-    maxx = round(box.xmax());
-    miny = round(box.ymin());
-    maxy = round(box.ymax());
-    minz = round(box.zmin());
-    maxz = round(box.zmax());
+    minx = std::floor(box.xmin());
+    maxx = std::ceil(box.xmax());
+    miny = std::floor(box.ymin());
+    maxy = std::ceil(box.ymax());
+    minz = std::floor(box.zmin());
+    maxz = std::ceil(box.zmax());
 
 // inverse parametrization of the given tet
     Aff_transformation at_inv = (parametrization_matrices[(input_tet_mesh.info(it)).cell_no]).inverse(); 
@@ -43,9 +43,9 @@ for(LCC_3::One_dart_per_incident_cell_range<0,3>::iterator it1 = input_tet_mesh.
 
 
     
-    for(int i = std::floor(minx); i<= std::ceil(maxx); i++){
-      for(int j = std::floor(miny); j<=std::ceil(maxy); j++){
-        for(int k = std::floor(minz); k<=std::ceil(maxz); k++){ 
+    for(int i = minx; i<= maxx; i++){
+      for(int j = miny; j<=maxy; j++){
+        for(int k = minz; k<=maxz; k++){ 
           Point_3 p(i,j,k);
           if(does_intersect(tet, p) && (output_points.find(p) == output_points.end()|| hex_handles.find(output_points[p]) == hex_handles.end())){ /*
 * We create a map between integer grid points and inverse-parametrized points called output_points, to avoid repeated calculations and so that each grid point maps to a unique inverse parametrization (this need not happen due to numerical inefficiencies, leading to overlapping hexes) 
