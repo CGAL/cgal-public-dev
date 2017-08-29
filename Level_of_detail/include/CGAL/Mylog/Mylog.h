@@ -7,9 +7,11 @@
 #include <fstream>
 #include <iostream>
 
+// Boost includes.
+#include <boost/tuple/tuple.hpp>
+
 // CGAL includes.
 #include <CGAL/array.h>
-#include <CGAL/Point_set_3.h>
 
 namespace CGAL {
 
@@ -111,6 +113,8 @@ namespace CGAL {
 
 				for (Iter it = input.begin(); it != input.end(); ++it) {
 
+					// if (static_cast<int>(*it) % 3 == 0) out << "\n"; // remove if not needed
+
 					out.precision(10);
 
 					out 
@@ -124,7 +128,7 @@ namespace CGAL {
 					
 					out << "\n";
 				}
-				save(fileName, ".ply");
+				save(fileName, ".log");
 			}
 
 			std::stringstream out;

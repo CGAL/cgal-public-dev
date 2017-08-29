@@ -43,14 +43,16 @@ namespace CGAL {
 						const auto index = (*it).second[i];
 						const auto point = input.point(index);	
 
-						// Maybe better to remove z coordinate completely? But it will mean that I only project to XY plane
+						// Maybe better to remove Z coordinate completely? But it will mean that I only project to XY plane
 						// instead of an arbitrary ground plane.
+						// Be careful with projection. May bug!
 						const auto projected_point = ground.projection(point);
-						projected[index] = projected_point;
+						projected[index] = Point_2(projected_point.x(), projected_point.y()); // here I assume that Z coordinate = 0!
 
 						++number_of_projected_points;
 					}
 				}
+				assert(number_of_projected_points == static_cast<int>(projected.size()));
 				return number_of_projected_points;
 			}
 		};

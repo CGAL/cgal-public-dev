@@ -1,18 +1,19 @@
-Use predicates to find labels!
-Estimate scale global.
 
 TODO AND OTHER:
-1. Fix #include <Point_set_3> for boost::tie dependency. Change it to the proper boost inclusion.
-2. Redo selector class using property maps.
-3. For now I use built in conditions inside selection strategy classes. Change it to any custom condition later.
-4. When I fit a plane to the ground in the base class, I need to copy all ground points. Change it!
-5. Refactor the preprocessor class.
-6. Fix where I use Container::Index and where int.
-7. Update Level_of_detail_loader.h - currently it is fixed temporary implementation.
-8. Instead of the first normal in regularization step, I need to take an average normal.
-9. All buildings with non xy aligned walls are screwed. Why? Also remove lines that do not represent a building's boundary. Maybe first output them in different colours.
-10. Change ground plane to xy plane and all associated 3D points to 2D points.
-11. For LOD I can stick to my own simple data structures. For some packages like 2D structuring I can already mimic CGAL general style. In general, first make it work with simple data structures and then fix API.
-12. It is important to gradually increase the complexity of the input data set and see if our package handles it well.
-13. It is maybe helpful to work building by building and create an oriented bounding box around each building, which can become the building's boundary in the worst case.
-14. Extra cases I should be careful with: not xy aligned buildings, planes that should be rejected, missclassification problems, missing walls.
+
+1. Redo selector class using property maps.
+2. For now I use built in conditions inside selection strategy classes. Change it to any custom condition later.
+3. Refactor the preprocessor class.
+4. Update Level_of_detail_loader.h - currently it is fixed temporary implementation.
+5. For LOD I can stick to my own simple data structures. For some packages like 2D structuring I can already mimic CGAL general style. In general, first make it work with simple data structures and then fix API.
+6. It is important to gradually increase the complexity of the input data set and see if our package handles it well.
+7. It is maybe helpful to work building by building and create an oriented bounding box around each building, which can become the building's boundary in the worst case.
+8. Too long walls come from shape detection package if the cluster_epsilon parameter is choosen to be too large.
+9. Some walls are missing due to the precision problems when creating segments (projection of a point onto a line).
+10. Buildings with not xy aligned walls sometimes have wrongly rotated segments because the bounding box solutuon that I use to cut lines into segments does not take into account the rotation of the segment.
+11. I reject all planes that have an angle more than 10 degrees with respect to the closest vertical plane. This allows to solve some of the missclassification problems.
+12. Add a class that will remove artifacts from the given data. E.g. points that become a part of the vertical plane found by RANSAC but in reality belong to another building and/or too far away from the given plane.
+13. Should I enforce the same normals for the regularized plane?
+
+BUGS:
+1. Bug in the CGAL::Line_2 and CGAL::Line_3 projection?

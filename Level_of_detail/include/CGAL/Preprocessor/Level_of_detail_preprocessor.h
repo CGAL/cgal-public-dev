@@ -1,8 +1,8 @@
 #ifndef CGAL_LEVEL_OF_DETAIL_PREPROCESSOR_H
 #define CGAL_LEVEL_OF_DETAIL_PREPROCESSOR_H
 
-// CGAL includes.
-#include <CGAL/Point_set_3.h>
+// Boost includes.
+#include <boost/tuple/tuple.hpp>
 
 namespace CGAL {
 

@@ -54,19 +54,6 @@ namespace CGAL {
 				return false;
 			}
 
-			// Does not work!
-			/*
-			void set_elements(const std::vector<typename Container::Index> &elementIndices, Container &output) override {
-
-				typename Container::iterator it = Base::m_input->begin();
-				for (size_t i = 0; i < elementIndices.size(); ++i, ++it) *it = elementIndices[i];
-
-				Base::m_input->remove(it, Base::m_input->end());
-				Base::m_input->collect_garbage();
-
-				output = Base::m_input;
-			} */
-
 		private:
 			Label_map m_labels;
 		};

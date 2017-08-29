@@ -23,7 +23,7 @@ namespace CGAL {
 		class Level_of_detail_regularizer {
 
 		public:
-			virtual std::pair<int, int> regularize(Planes&, InputContainer &, typename KernelTraits::Plane_3 &) const = 0;
+			virtual int regularize(Planes&, InputContainer &, typename KernelTraits::Plane_3 &) = 0;
 		};
 
 		template<class KernelTraits, class InputContainer, class PlanesContainer>
@@ -31,7 +31,6 @@ namespace CGAL {
 
 		private:
 			enum class Regularization_status { REJECT, REGULARIZE, NOACTION };
-			const static auto M_NORMAL_INDEX = 0;
 
 		public:
 			typedef KernelTraits    Traits;
@@ -52,9 +51,9 @@ namespace CGAL {
 			using Const_iterator = typename Planes::const_iterator;
 			using Plane_map = typename Container:: template Property_map<Plane>;
 
-			// Here I assume that all points in the plane have the same normals and these normals
-			// are the same as the associated plane's normal.
-			std::pair<int, int> regularize(Planes &planes, Container &input, Plane &ground_plane) const override { 
+			// Here as a plane normal I take an average normal among all normals of the points
+			// that belong to the plane.
+			int regularize(Planes &planes, Container &input, Plane &ground_plane) override { 
 
 				auto number_of_regularized_planes = 0;
 
@@ -101,26 +100,26 @@ namespace CGAL {
 				}
 
 				if (update_planes) update_rejected_planes(rejected, planes);
-
-				std::pair<int, int> result = std::make_pair(number_of_regularized_planes, static_cast<int>(planes.size()));
-
-				return result;
+				return number_of_regularized_planes;
 			}
 
 		private:
-			void set_plane_normal(const Container &input, const Const_iterator &it, Normal &plane_normal) const {
-				plane_normal = input.normal((*it).second[M_NORMAL_INDEX]);
-			} 
+			Normal m_average_normal;
 
-			// Debug this function!
-			void set_ground_normal(const Plane &ground_plane, Normal &ground_normal) const {
+			void set_plane_normal(const Container &input, const Const_iterator &it, Normal &plane_normal) {
 				
-				ground_normal = ground_plane.orthogonal_vector();
-				
-				// ground_normal = Normal(0, 0, 1); // Does it work?
+				m_average_normal = Normal(FT(0), FT(0), FT(0));
+				for (size_t i = 0; i < (*it).second.size(); ++i) m_average_normal += input.normal((*it).second[i]);
+				m_average_normal /= static_cast<FT>((*it).second.size());
+
+				plane_normal = m_average_normal;
 			}
 
-			Regularization_status check_status(const Normal &m, const Normal &n, FT &rad_angle, Vector &axis) const {
+			void inline set_ground_normal(const Plane &ground_plane, Normal &ground_normal) {				
+				ground_normal = ground_plane.orthogonal_vector();
+			}
+
+			Regularization_status check_status(const Normal &m, const Normal &n, FT &rad_angle, Vector &axis) {
 
 				const auto cross  = cross_product(m, n);
 				const auto length = CGAL::sqrt(squared_length(cross));
@@ -134,10 +133,10 @@ namespace CGAL {
 				if (deg_angle < FT(1)) return Regularization_status::NOACTION;
 				else if (deg_angle < FT(10)) return Regularization_status::REGULARIZE;
 				
-				return Regularization_status::NOACTION; // change it back to REJECT - it will maybe work if I use average normal instead of the fixed one above
+				return Regularization_status::REJECT;
 			}
 
-			void rotate_plane(const Const_iterator &it, const FT &rad_angle, const Vector &axis, Container &input) const {
+			void rotate_plane(const Const_iterator &it, const FT &rad_angle, const Vector &axis, Container &input) {
 
 				const double angle = static_cast<double>(rad_angle);
 
@@ -149,13 +148,13 @@ namespace CGAL {
 				Plane_map planes;
 				boost::tie(planes, boost::tuples::ignore) = input. template property_map<Plane>("plane");
 				
-				rotate_element(c, s, C, axis, input.normal((*it).second[M_NORMAL_INDEX]));
+				rotate_element(c, s, C, axis, m_average_normal);
 				for (size_t i = 0; i < (*it).second.size(); ++i) {
 					
 					// Update point positions and normals.
 					const auto index = (*it).second[i];
 					rotate_element(c, s, C, axis, input.point(index));
-					input.normal(index) = input.normal((*it).second[M_NORMAL_INDEX]); // Here we enforce the same normals for all points!
+					input.normal(index) = m_average_normal; // Here we enforce the same normals for all points! Should we?
 
 					// Update associated planes. Most-likely can be removed later.
 					planes[index] = Plane(input.point(index), input.normal(index));
@@ -163,7 +162,7 @@ namespace CGAL {
 			}
 
 			template<class Element>
-			void rotate_element(const FT c, const FT s, const FT C, const Vector &axis, Element &e) const {
+			void rotate_element(const FT c, const FT s, const FT C, const Vector &axis, Element &e) {
 
 				const auto x = axis.x();
 				const auto y = axis.y();
@@ -174,7 +173,7 @@ namespace CGAL {
 					  		(z * x * C - y * s) * e.x() + (z * y * C + x * s) * e.y() + (z * z * C + c)     * e.z());
 			}
 
-			void update_rejected_planes(const std::vector<bool> &rejected, Planes &planes) const {
+			void update_rejected_planes(const std::vector<bool> &rejected, Planes &planes) {
 
 				Planes new_planes;
 				assert(planes.size() == rejected.size());

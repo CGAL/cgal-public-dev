@@ -46,7 +46,7 @@ public:
 		assert(success);
 	}
 
-	void create_test_input(Container &input, Planes &indices, Plane_map &planes) const {
+	void create_test_input(Container &input, Planes &indices, Plane_map &planes, Plane &ground) const {
 
 		set_input_properties(input, planes);
 
@@ -55,12 +55,15 @@ public:
 		it = input.insert(Point(0.4, 0.6, 0.22), Normal(0.0, 0.22, 0.0)); planes[*it] = Plane(0.0, 0.22, 0.0, 0.0);
 		it = input.insert(Point(0.8, 0.1, 0.22), Normal(0.0, 0.22, 0.0)); planes[*it] = Plane(0.0, 0.22, 0.0, 0.0);
 
+		// Plane to be regularized!
 		it = input.insert(Point(1.00, 0.2, 0.9), Normal(0.36, 0.0, 0.03)); planes[*it] = Plane(0.36, 0.0, 0.03, 0.387);
 		it = input.insert(Point(1.05, 0.5, 0.3), Normal(0.36, 0.0, 0.03)); planes[*it] = Plane(0.36, 0.0, 0.03, 0.387);
 		it = input.insert(Point(1.00, 0.8, 0.9), Normal(0.36, 0.0, 0.03)); planes[*it] = Plane(0.36, 0.0, 0.03, 0.387);
 
 		indices[0].push_back(0); indices[0].push_back(1); indices[0].push_back(2);
 		indices[1].push_back(3); indices[1].push_back(4); indices[1].push_back(5);
+
+		ground = Plane(0.0, 0.0, 1.0, 0.0);
 	}
 };
 
@@ -71,10 +74,11 @@ TEST_F(LOD_RegularizerTest, Compiles) {
 
 TEST_F(LOD_RegularizerTest, UnregularizedPlaneIsPreserved) {
 
+	Plane ground;
 	Plane_map planes; Planes indices; Container input;
 
-	create_test_input(input, indices, planes);
-	lodRegularizer.regularize(indices, input);
+	create_test_input(input, indices, planes, ground);
+	lodRegularizer.regularize(indices, input, ground);
 	
 	ASSERT_THAT(input.point(0) , Eq(Point(0.2, 0.3, 0.22)));
 	ASSERT_THAT(input.normal(1), Eq(Normal(0.0, 0.22, 0.0)));
@@ -83,20 +87,22 @@ TEST_F(LOD_RegularizerTest, UnregularizedPlaneIsPreserved) {
 
 TEST_F(LOD_RegularizerTest, ReturnsOneRegularizedPlane) {
 
+	Plane ground;
 	Plane_map planes; Planes indices; Container input;
 
-	create_test_input(input, indices, planes);
-	const auto number_of_regularized_planes = lodRegularizer.regularize(indices, input);
+	create_test_input(input, indices, planes, ground);
+	const auto number_of_regularized_planes = lodRegularizer.regularize(indices, input, ground);
 
 	ASSERT_THAT(static_cast<int>(number_of_regularized_planes), Eq(1));
 }
 
 TEST_F(LOD_RegularizerTest, RegularizedPointsHaveEqualNormals) {
 
+	Plane ground;
 	Plane_map planes; Planes indices; Container input;
 
-	create_test_input(input, indices, planes);
-	lodRegularizer.regularize(indices, input);
+	create_test_input(input, indices, planes, ground);
+	lodRegularizer.regularize(indices, input, ground);
 
 	ASSERT_THAT(input.normal(3), Eq(input.normal(4)));
 	ASSERT_THAT(input.normal(4), Eq(input.normal(5)));
@@ -104,10 +110,11 @@ TEST_F(LOD_RegularizerTest, RegularizedPointsHaveEqualNormals) {
 
 TEST_F(LOD_RegularizerTest, RegularizedPointsHaveEqualPlanes) {
 
+	Plane ground;
 	Plane_map planes; Planes indices; Container input;
 
-	create_test_input(input, indices, planes);
-	lodRegularizer.regularize(indices, input);
+	create_test_input(input, indices, planes, ground);
+	lodRegularizer.regularize(indices, input, ground);
 
 	boost::tie(planes, boost::tuples::ignore) = input. template property_map<Plane>("plane");
 
@@ -117,10 +124,11 @@ TEST_F(LOD_RegularizerTest, RegularizedPointsHaveEqualPlanes) {
 
 TEST_F(LOD_RegularizerTest, ChangesPointsNormalsAndPlanesAfterRegularization) {
 
+	Plane ground;
 	Plane_map planes; Planes indices; Container input;
 
-	create_test_input(input, indices, planes);
-	lodRegularizer.regularize(indices, input);
+	create_test_input(input, indices, planes, ground);
+	lodRegularizer.regularize(indices, input, ground);
 	
 	const auto point_diff  = CGAL::squared_distance(input.point(3) , Point(1.07129, 0.2, 0.813846));
 	const auto normal_diff = (input.normal(4) - Normal(0.361248, 0.0, 0.0)).squared_length();
@@ -142,4 +150,20 @@ TEST_F(LOD_RegularizerTest, ChangesPointsNormalsAndPlanesAfterRegularization) {
 	ASSERT_LT(point_diff , eps);
 	ASSERT_LT(normal_diff, eps);
 	ASSERT_LT(plane_diff , eps);
+}
+
+TEST_F(LOD_RegularizerTest, UsesAverageNormalAsPlaneNormal) {
+	
+	Plane ground;
+	Plane_map planes; Planes indices; Container input;
+
+	create_test_input(input, indices, planes, ground);
+	lodRegularizer.regularize(indices, input, ground);
+
+	const auto average_normal = Normal(0.361248, 0.0, 0.0);
+	const auto normal_diff = (input.normal(5) - average_normal).squared_length();
+
+	const auto eps = 1.0e-6;
+
+	ASSERT_LT(normal_diff, eps);
 }

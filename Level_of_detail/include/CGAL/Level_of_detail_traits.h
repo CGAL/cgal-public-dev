@@ -12,6 +12,7 @@
 #include <CGAL/Selector/Level_of_detail_selection_strategy.h>
 #include <CGAL/Regularizer/Level_of_detail_regularizer.h>
 #include <CGAL/Projector/Level_of_detail_projector.h>
+#include <CGAL/Structuring_2/Level_of_detail_structuring_2.h>
 
 namespace CGAL {
 
@@ -35,11 +36,13 @@ namespace CGAL {
 			typedef Level_of_detail_selector<Kernel, Building_boundary_strategy> Building_boundary_selector;
 			typedef Level_of_detail_selector<Kernel, Building_interior_strategy> Building_interior_selector;
 
-			typedef std::map<int, std::vector<typename Container::Index> >          Planes;
+			typedef std::map<int, std::vector<int> >          						Planes;
 			typedef Level_of_detail_vertical_regularizer<Kernel, Container, Planes> Vertical_regularizer;
 			
-			typedef std::map<int, typename Kernel::Point_3>           	   				   Projected;
+			typedef std::map<int, typename Kernel::Point_2>           	   				   Projected;
 			typedef Level_of_detail_simple_projector<Kernel, Container, Planes, Projected> Ground_projector;
+
+			typedef Level_of_detail_structuring_2<Kernel> Structuring_2;
 		};
 	}
 }

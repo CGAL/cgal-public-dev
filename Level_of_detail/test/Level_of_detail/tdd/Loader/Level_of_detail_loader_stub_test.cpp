@@ -80,11 +80,22 @@ TEST_F(LOD_LoaderTestStub, ReturnsBasicMock) {
 
 	getBasicData(input);	
 
-	const auto examplePoint  = Point(0.7, 1.0, 0.8);
+	const auto examplePoint  = Point(0.7   , 1.0, 0.8);
 	const auto exampleNormal = Normal(-0.16, 0.0, 0.0);
 
 	ASSERT_THAT(input.point(4) , Eq(examplePoint));
 	ASSERT_THAT(input.normal(6), Eq(exampleNormal));
+}
+
+TEST_F(LOD_LoaderTestStub, VerifiesPointsAndNormalsOfRotatedBuilding) {
+
+	getBasicData(input);	
+
+	const auto examplePoint  = Point(-0.30487  , -0.24594, 0.3);
+	const auto exampleNormal = Normal(-0.056698, 0.099226, -3.0e-6);
+
+	ASSERT_THAT(input.point(30) , Eq(examplePoint));
+	ASSERT_THAT(input.normal(26), Eq(exampleNormal));
 }
 
 TEST_F(LOD_LoaderTestStub, SavesLogWithBasicMockData) {
