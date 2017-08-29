@@ -14,17 +14,31 @@
 //
 // Author(s)     : Mael Rouxel-Labbé
 
-#ifndef CGAL_DICTIONARY_H
-#define CGAL_DICTIONARY_H
+#ifndef CGAL_POLYLINE_TRACING_DICTIONARY_H
+#define CGAL_POLYLINE_TRACING_DICTIONARY_H
 
 #include <CGAL/assertions.h>
 
+#include <boost/unordered_set.hpp>
+
 #include <limits>
-#include <set>
+#include <map>
+#include <utility>
 
 namespace CGAL {
 
 namespace Polyline_tracing {
+
+template<typename K>
+struct Motorcycle_set_comparer
+{
+  typedef typename K::FT FT;
+
+  bool operator()(const std::pair<int, FT>& lhs,
+                  const std::pair<int, FT>& rhs) const {
+    return lhs.first < rhs.first;
+  }
+};
 
 template<typename K>
 class Dictionary_entry
@@ -36,13 +50,11 @@ public:
   bool is_blocked() const { return blocked; }
   void block() { blocked = true; }
 
-  Dictionary_entry(const Point& p = Point());
+  Dictionary_entry();
   void add_motorcycle(const int i, const FT distance);
-  bool operator<(const Dictionary_entry& e);
 
 private:
-  Point p;
-  std::set<int> motorcycles;
+  boost::unordered_set<int> motorcycles;
   bool blocked;
   int i, j; // ids of the two motorcycles with smallest distance at p
   FT dist_at_i, dist_at_j;
@@ -50,8 +62,8 @@ private:
 
 template<typename K>
 Dictionary_entry<K>::
-Dictionary_entry(const Point& p)
-  : p(p), motorcycles(), blocked(false), i(-1), j(-1),
+Dictionary_entry()
+  : motorcycles(), blocked(false), i(-1), j(-1),
     dist_at_i(std::numeric_limits<FT>::max()),
     dist_at_j(std::numeric_limits<FT>::max())
 { }
@@ -61,11 +73,12 @@ void
 Dictionary_entry<K>::
 add_motorcycle(const int id, const FT distance)
 {
+  // the motorcycle `i` should not already exists in the list of motorcycle
+  // that (might) reach this point
   CGAL_precondition(motorcycles.find(i) == motorcycles.end());
 
   motorcycles.insert(id);
 
-  // what about three intersections @fixme
   if(distance < dist_at_i)
   {
     i = id;
@@ -78,15 +91,8 @@ add_motorcycle(const int id, const FT distance)
   }
 }
 
-template<typename K>
-bool
-Dictionary_entry<K>::
-operator<(const Dictionary_entry<K>& e)
-{
-  return p < e.p;
-}
-
 // -----------------------------------------------------------------------------
+//                           Dictionary class
 
 template<typename K>
 class Dictionary
@@ -96,32 +102,36 @@ public:
   typedef typename K::Point_2                             Point;
 
   typedef Dictionary_entry<K>                             Dictionary_entry;
-  typedef std::set<Dictionary_entry>                      Dictionary_entry_container;
-  typedef Dictionary_entry_container::iterator            DEC_it;
+  typedef std::map<Point, Dictionary_entry>               Dictionary_entry_container;
+  typedef typename Dictionary_entry_container::iterator   DEC_it;
 
   Dictionary() : entries() { }
 
-  void insert(const Point& p, const int i, const FT dist);
+  DEC_it insert(const Point& p, const int i, const FT dist);
 
 private:
   Dictionary_entry_container entries;
 };
 
 template<typename K>
-void
+typename Dictionary<K>::DEC_it
 Dictionary<K>::
 insert(const Point& p, const int i, const FT dist)
 {
-  Dictionary_entry e(p);
+  Dictionary_entry e;
+  std::pair<DEC_it, bool> is_insert_successful = entries.insert(std::make_pair(p, e));
 
-  std::pair<DEC_it, bool> is_insert_successful = entries.insert(e);
+  if(!is_insert_successful.second)
+    std::cerr << "Warning: point " << p << " already exists in the dictionary" << std::endl;
 
   DEC_it it = is_insert_successful.first;
-  it->add_motorcycle(i, dist);
+  it->second.add_motorcycle(i, dist);
+
+  return it;
 }
 
 } // namespace Polyline_tracing
 
 } // namespace CGAL
 
-#endif // CGAL_DICTIONARY_H
+#endif // CGAL_POLYLINE_TRACING_DICTIONARY_H

@@ -14,8 +14,8 @@
 //
 // Author(s)     : Mael Rouxel-Labbé
 
-#ifndef CGAL_TRAITS_H
-#define CGAL_TRAITS_H
+#ifndef CGAL_POLYLINE_TRACING_TRAITS_H
+#define CGAL_POLYLINE_TRACING_TRAITS_H
 
 namespace CGAL {
 
@@ -30,4 +30,4 @@ class Traits
 
 } // namespace CGAL
 
-#endif // CGAL_TRAITS_H
+#endif // CGAL_POLYLINE_TRACING_TRAITS_H

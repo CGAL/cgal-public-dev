@@ -14,8 +14,8 @@
 //
 // Author(s)     : Mael Rouxel-Labbé
 
-#ifndef CGAL_TRACER_H
-#define CGAL_TRACER_H
+#ifndef CGAL_POLYLINE_TRACING_TRACER_H
+#define CGAL_POLYLINE_TRACING_TRACER_H
 
 namespace CGAL {
 
@@ -30,4 +30,4 @@ class Tracer
 
 } // namespace CGAL
 
-#endif // CGAL_TRACER_H
+#endif // CGAL_POLYLINE_TRACING_TRACER_H

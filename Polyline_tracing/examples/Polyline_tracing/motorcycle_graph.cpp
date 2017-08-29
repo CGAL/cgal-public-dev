@@ -9,7 +9,6 @@ int main()
   typedef CGAL::Exact_predicates_inexact_constructions_kernel K;
 
   typedef K::Point_2                                          Point_2;
-  typedef K::Vector_2                                         Vector_2;
 
   std::vector<Point_2> motorcycles;
   std::vector<Point_2> destinations;

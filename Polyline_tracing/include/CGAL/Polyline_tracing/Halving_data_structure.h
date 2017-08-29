@@ -18,8 +18,8 @@ namespace CGAL {
 
 namespace Polyline_tracing {
 
-#ifndef CGAL_HALVING_DATA_STRUCTURE_H
-#define CGAL_HALVING_DATA_STRUCTURE_H
+#ifndef CGAL_POLYLINE_TRACING_HALVING_DATA_STRUCTURE_H
+#define CGAL_POLYLINE_TRACING_HALVING_DATA_STRUCTURE_H
 
 class Halving_data_structure
 {
@@ -31,4 +31,4 @@ class Halving_data_structure
 
 } // namespace CGAL
 
-#endif // CGAL_HALVING_DATA_STRUCTURE_H
+#endif // CGAL_POLYLINE_TRACING_HALVING_DATA_STRUCTURE_H

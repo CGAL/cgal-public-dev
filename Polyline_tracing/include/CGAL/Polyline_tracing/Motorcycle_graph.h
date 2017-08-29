@@ -14,8 +14,8 @@
 //
 // Author(s)     : Mael Rouxel-Labbé
 
-#ifndef CGAL_MOTORCYCLE_GRAPH_H
-#define CGAL_MOTORCYCLE_GRAPH_H
+#ifndef CGAL_POLYLINE_TRACING_MOTORCYCLE_GRAPH_H
+#define CGAL_POLYLINE_TRACING_MOTORCYCLE_GRAPH_H
 
 #include <CGAL/Polyline_tracing/Dictionary.h>
 #include <CGAL/Polyline_tracing/Motorcycle.h>
@@ -38,15 +38,22 @@ public:
   typedef typename K::Point_2                         Point;
 
   typedef Dictionary<K>                               Dictionary;
-  typedef Motorcycle<K>                               Motorcycle;
-  typedef Motorcycle_priority_queue<K>                Motorcycle_PQ;
+  typedef Dictionary_entry<K>                         Dictionary_entry;
+  typedef typename Dictionary::DEC_it                 DEC_it;
 
+  typedef Motorcycle<K>                               Motorcycle;
+  typedef std::vector<Motorcycle>                     Motorcycle_container;
+
+  typedef Motorcycle_priority_queue<K>                Motorcycle_PQ;
+  typedef Motorcycle_priority_queue_entry<K>          Motorcycle_PQE;
+
+  void crash_motorcycle(Motorcycle& m);
   void find_intersections();
 
   template<typename MotorcycleSourcesIterator, typename MotorcycleDestinationsIterator>
   void initialize_motorcycles(MotorcycleSourcesIterator mit, MotorcycleSourcesIterator lastm,
                               MotorcycleDestinationsIterator dit, MotorcycleDestinationsIterator lastd);
-
+  void reach_closest_target(Motorcycle& m);
   void trace_motorcycle();
 
   template<typename MotorcycleSourcesIterator, typename MotorcycleDestinationsIterator>
@@ -54,17 +61,28 @@ public:
                               MotorcycleDestinationsIterator dit, MotorcycleDestinationsIterator lastd);
 
 private:
-  Dictionary target_points;
-  std::vector<Motorcycle> motorcycles;
+  Dictionary points;
+  Motorcycle_container motorcycles;
   Motorcycle_PQ motorcycle_pq;
 };
+// -----------------------------------------------------------------------------
+
+template<typename K>
+void
+Motorcycle_graph<K>::
+crash_motorcycle(Motorcycle& m)
+{
+  m.crash();
+  motorcycle_pq.erase(motorcycle_pq.handle(m));
+}
 
 template<typename K>
 template<typename MotorcycleSourcesIterator, typename MotorcycleDestinationsIterator>
 void
 Motorcycle_graph<K>::
 initialize_motorcycles(MotorcycleSourcesIterator mit, MotorcycleSourcesIterator lastm,
-                       MotorcycleDestinationsIterator dit, MotorcycleDestinationsIterator lastd)
+                       MotorcycleDestinationsIterator dit,
+                       MotorcycleDestinationsIterator CGAL_precondition_code(lastd))
 {
   CGAL_precondition(std::distance(mit, lastm) == std::distance(dit, lastd));
   motorcycles.reserve(std::distance(mit, lastm));
@@ -73,18 +91,50 @@ initialize_motorcycles(MotorcycleSourcesIterator mit, MotorcycleSourcesIterator 
   while(mit != lastm)
   {
     const Point s = *mit++;
+
+    // @tmp if not provided, this must be computed by the tracer
     const Point d = *dit++;
+
+    // @tmp this should be computed by the tracer (to take e.g. speed into account)
     const FT distance = CGAL::squared_distance(s, d);
 
-    Motorcycle m(counter, s, d);
+    // add the points to the dictionary
+    DEC_it source_entry = points.insert(s, counter, 0.);
+    DEC_it destination_entry = points.insert(d, counter, distance);
+
+    // create the motorcycle
+    Motorcycle m(counter, source_entry, destination_entry, distance);
     motorcycles.push_back(m);
-    target_points.insert(m.position(), counter, 0.);
-    target_points.insert(m.destination(), counter, distance);
+
     ++counter;
   }
 
-  // some safety checks
+  // some safety checks (two motorcycles sharing a supporting line, ...) @todo
 
+}
+
+template<typename K>
+void
+Motorcycle_graph<K>::
+find_intersections()
+{
+  // interface with the ray shooting data structure
+}
+
+template<typename K>
+void
+Motorcycle_graph<K>::
+reach_closest_target(Motorcycle& mc)
+{
+  CGAL_assertion(!mc.targets().empty());
+  DEC_it closest_target = mc.closest_target();
+  mc.position() = closest_target;
+
+  // remove the point that we have just reached from the list of targets
+  mc.erase_closest_target();
+
+  // @fixme update the priority queue already ? Probably can wait till new
+  // points have been inserted.
 }
 
 template<typename K>
@@ -92,7 +142,7 @@ void
 Motorcycle_graph<K>::
 trace_motorcycle()
 {
-
+  // interface with the tracer data structure
 }
 
 template<typename K>
@@ -103,28 +153,42 @@ trace_motorcycle_graph(MotorcyclesInputIterator mit, MotorcyclesInputIterator la
                        MotorcycleDestinationsIterator dit, MotorcycleDestinationsIterator lastd)
 {
   initialize_motorcycles(mit, lastm, dit, lastd);
-  target_points.initialize();
-  motorcycle_pq.initialize();
+  motorcycle_pq.initialize(motorcycles);
 
   while(! motorcycle_pq.empty())
   {
     // get the earliest available event
-    motorcycle_pq.top();
+    Motorcycle_PQE pqe = motorcycle_pq.top();
+    Motorcycle& m = pqe.motorcycle();
 
-    // set confirmed
+    // move the motorcycle to the target (new confirmed position)
+    reach_closest_target(m);
 
-    motorcycle_pq.pop();
-
-    // check for crashes
-    if(true)
+    if(m.position() == m.destination()) // reached the destination
     {
+      // check if we have reached a final destination (border) @todo
+      if(true)
+      {
+        crash_motorcycle(m);
+      }
+      else
+      {
+        // check that S_i is empty @todo
+        CGAL_assertion(true);
 
+        // otherwise, compute the new destination
+        trace_motorcycle();
+
+        // set the new tentative point
+      }
     }
-    else
+    else if(m.position()->second.is_blocked() || // impacted an existing polyline
+            false) // @todo reached the point at the same time as another polyline
     {
-      // compute the destination if needed (?)
-      trace_motorcycle();
-
+      crash_motorcycle(m);
+    }
+    else // the motorcycle can continue without issue towards its destination
+    {
       // check for intersections
       find_intersections();
 
@@ -144,4 +208,4 @@ trace_motorcycle_graph(MotorcyclesInputIterator mit, MotorcyclesInputIterator la
 
 } // namespace CGAL
 
-#endif // CGAL_MOTORCYCLE_GRAPH_H
+#endif // CGAL_POLYLINE_TRACING_MOTORCYCLE_GRAPH_H
