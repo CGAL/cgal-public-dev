@@ -14,6 +14,8 @@ TODO AND OTHER:
 11. I reject all planes that have an angle more than 10 degrees with respect to the closest vertical plane. This allows to solve some of the missclassification problems.
 12. Add a class that will remove artifacts from the given data. E.g. points that become a part of the vertical plane found by RANSAC but in reality belong to another building and/or too far away from the given plane.
 13. Should I enforce the same normals for the regularized plane?
+14. Use exporters from Mylog in the base class.
+15. Add all non-planar points obtained by RANSAC in the clutter selection procedure.
 
 BUGS:
 1. Bug in the CGAL::Line_2 and CGAL::Line_3 projection?

@@ -39,9 +39,18 @@ public:
 
 		points.clear(); components.clear(); lines.clear();
 
-		points[0] = Point(0.0, 0.0); points[1] = Point(1.0, 0.0);
-		components[0].push_back(0); components[0].push_back(1);
-		lines.push_back(Line(points[0], points[1]));
+		// First segment.
+		points[0] = Point(0.0, 0.0);    components[0].push_back(0);
+		points[1] = Point(0.2, 0.05);	components[0].push_back(1);
+		points[2] = Point(0.4, -0.025); components[0].push_back(2);
+		points[3] = Point(0.6, 0.025);  components[0].push_back(3);
+		points[4] = Point(0.8, -0.5);   components[0].push_back(4);
+		points[5] = Point(1.0, 0.0);    components[0].push_back(5);
+
+		lines.push_back(Line(points[0], points[5]));
+
+		// Second segment.
+
 
 		lodStructuring = std::make_unique<LodStructuring>(points, components, lines);
 	}
@@ -52,12 +61,10 @@ TEST_F(LOD_StructuringTest, Compiles) {
 	// Empty test.
 }
 
-TEST_F(LOD_StructuringTest, SavesMainLog) {
+TEST_F(LOD_StructuringTest, SavesLogFiles) {
 
 	Segments segments;
 	create_test_input();
 
-	const auto number_of_structured_segments = lodStructuring->structure_point_set(segments);
-
-	ASSERT_THAT(static_cast<int>(number_of_structured_segments), Eq(1));
+	lodStructuring->structure_point_set(segments);
 }

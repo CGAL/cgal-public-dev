@@ -53,6 +53,15 @@ namespace CGAL {
 				return true;
 			}
 
+			template<class Points>
+			void export_points(const std::string &name, Points &points) {
+
+				for (typename Points::const_iterator it = points.begin(); it != points.end(); ++it)
+					out << *it << " " << 0 << std::endl;
+
+				save(name, ".xyz");
+			}
+
 			template<class Traits, class Container>
 			void save_ply(const Container &input, 
 						  const std::string &fileName,
