@@ -19,6 +19,9 @@
 
 #include <CGAL/assertions.h>
 
+#include <boost/bimap.hpp>
+#include <boost/bimap/multiset_of.hpp>
+#include <boost/bimap/set_of.hpp>
 #include <boost/unordered_set.hpp>
 
 #include <limits>
@@ -29,43 +32,49 @@ namespace CGAL {
 
 namespace Polyline_tracing {
 
-template<typename K>
-struct Motorcycle_set_comparer
-{
-  typedef typename K::FT FT;
-
-  bool operator()(const std::pair<int, FT>& lhs,
-                  const std::pair<int, FT>& rhs) const {
-    return lhs.first < rhs.first;
-  }
-};
-
+// Information associated to any point that is involved in the motorcycle graph algorithm
 template<typename K>
 class Dictionary_entry
 {
 public:
-  typedef typename K::FT                                  FT;
-  typedef typename K::Point_2                             Point;
+  typedef typename K::FT                                           FT;
+  typedef typename K::Point_2                                      Point;
+
+  // A container of motorcycles that reach this point. We need to efficiently know:
+  // - if a motorcycle is in the container
+  // - the visiting times (when do they reach this point) to detect simultaneous collisions
+  // Note that we need a multiset for the second container because motorcycles
+  // are unique, but times are not
+  typedef boost::bimap<
+            boost::bimaps::set_of<int>, // set of motorcycles
+            boost::bimaps::multiset_of<FT> > // multi-set of visiting times
+                                                                   Visiting_motorcycles_container;
+  typedef typename Visiting_motorcycles_container::value_type      value_type;
+  typedef typename Visiting_motorcycles_container::size_type       size_type;
+
+  typedef typename Visiting_motorcycles_container::left_iterator         VMC_left_it;
+  typedef typename Visiting_motorcycles_container::left_const_iterator   VMC_left_cit;
+  typedef typename Visiting_motorcycles_container::right_const_iterator  VMC_right_cit;
 
   bool is_blocked() const { return blocked; }
   void block() { blocked = true; }
 
   Dictionary_entry();
-  void add_motorcycle(const int i, const FT distance);
+  void add_motorcycle(const int id, const FT distance);
+  bool has_motorcycle(const int id) const;
+  bool has_simultaneous_collision() const;
+  VMC_left_it find_motorcycle(const int id) const;
+  size_type remove_motorcycle(const int id);
 
 private:
-  boost::unordered_set<int> motorcycles;
+  Visiting_motorcycles_container motorcycles;
   bool blocked;
-  int i, j; // ids of the two motorcycles with smallest distance at p
-  FT dist_at_i, dist_at_j;
 };
 
 template<typename K>
 Dictionary_entry<K>::
 Dictionary_entry()
-  : motorcycles(), blocked(false), i(-1), j(-1),
-    dist_at_i(std::numeric_limits<FT>::max()),
-    dist_at_j(std::numeric_limits<FT>::max())
+  : motorcycles(), blocked(false)
 { }
 
 template<typename K>
@@ -73,22 +82,55 @@ void
 Dictionary_entry<K>::
 add_motorcycle(const int id, const FT distance)
 {
-  // the motorcycle `i` should not already exists in the list of motorcycle
+  // the motorcycle `i` should not already exists in the list of motorcycles
   // that (might) reach this point
-  CGAL_precondition(motorcycles.find(i) == motorcycles.end());
+  CGAL_precondition(motorcycles.left.find(i) == motorcycles.left.end());
+  motorcycles.insert(value_type(id, distance));
+}
 
-  motorcycles.insert(id);
+template<typename K>
+bool
+Dictionary_entry<K>::
+has_motorcycle(const int id) const
+{
+  return (find_motorcycle(id) != motorcycles.left.end());
+}
 
-  if(distance < dist_at_i)
-  {
-    i = id;
-    dist_at_i = distance;
-  }
-  else if(distance < dist_at_j)
-  {
-    j = id;
-    dist_at_j = distance;
-  }
+template<typename K>
+bool
+Dictionary_entry<K>::
+has_simultaneous_collision() const
+{
+  CGAL_precondition(!motorcycles.empty());
+  if(motorcycles.size() == 1)
+    return false;
+
+  // accessing 'right' of the bimap gives ordered distance values
+  // the first and second entries are thus the distances for the two closest
+  // points. If the distances are equal, there is a simultaneous collision.
+  VMC_right_cit first_mc_it = motorcycles.right.begin();
+  VMC_right_cit second_mc_it = ++(motorcycles.right.begin());
+  const FT first_distance = first_mc_it->first;
+  const FT second_distance = second_mc_it->first;
+  CGAL_assertion(first_distance <= second_distance);
+  return (first_distance == second_distance);
+}
+
+template<typename K>
+typename Dictionary_entry<K>::VMC_left_it
+Dictionary_entry<K>::
+find_motorcycle(const int id) const
+{
+  return motorcycles.left.find(id);
+}
+
+template<typename K>
+typename Dictionary_entry<K>::size_type
+Dictionary_entry<K>::
+remove_motorcycle(const int id)
+{
+  CGAL_precondition(find_motorcycle(id) != motorcycles.left.end());
+  return motorcycles.left.erase(id);
 }
 
 // -----------------------------------------------------------------------------

@@ -23,6 +23,8 @@
 
 #include <CGAL/assertions.h>
 
+#include <boost/tuple/tuple.hpp>
+
 #include <algorithm>
 #include <vector>
 
@@ -47,14 +49,14 @@ public:
   typedef Motorcycle_priority_queue<K>                Motorcycle_PQ;
   typedef Motorcycle_priority_queue_entry<K>          Motorcycle_PQE;
 
+  std::pair<DEC_it, FT> compute_motorcycle_next_destination(const Motorcycle& m);
   void crash_motorcycle(Motorcycle& m);
-  void find_intersections();
+  boost::tuple<int, DEC_it, FT> find_collisions(const Motorcycle& m) const;
 
   template<typename MotorcycleSourcesIterator, typename MotorcycleDestinationsIterator>
   void initialize_motorcycles(MotorcycleSourcesIterator mit, MotorcycleSourcesIterator lastm,
                               MotorcycleDestinationsIterator dit, MotorcycleDestinationsIterator lastd);
-  void reach_closest_target(Motorcycle& m);
-  void trace_motorcycle();
+  void drive_to_closest_target(Motorcycle& m);
 
   template<typename MotorcycleSourcesIterator, typename MotorcycleDestinationsIterator>
   void trace_motorcycle_graph(MotorcycleSourcesIterator mit, MotorcycleSourcesIterator lastm,
@@ -73,7 +75,26 @@ Motorcycle_graph<K>::
 crash_motorcycle(Motorcycle& m)
 {
   m.crash();
+
+  // go through the next targets of the motorcycle and remove it from the list
+  // of motorcycles that might reach the target
+  typename Motorcycle::Target_point_container::iterator it = m.targets().begin();
+  typename Motorcycle::Target_point_container::iterator end = m.targets().end();
+  for(; it!=end; ++it)
+  {
+    DEC_it target_point = it->first;
+    target_point->second.remove_motorcycle(m.id());
+  }
+
   motorcycle_pq.erase(motorcycle_pq.handle(m));
+}
+
+template<typename K>
+boost::tuple<int, typename Motorcycle_graph<K>::DEC_it, typename Motorcycle_graph<K>::FT>
+Motorcycle_graph<K>::
+find_collisions(const Motorcycle& /*m*/) const
+{
+  // interface with the ray shooting data structure
 }
 
 template<typename K>
@@ -87,12 +108,12 @@ initialize_motorcycles(MotorcycleSourcesIterator mit, MotorcycleSourcesIterator 
   CGAL_precondition(std::distance(mit, lastm) == std::distance(dit, lastd));
   motorcycles.reserve(std::distance(mit, lastm));
 
-  int counter = 0;
+  int counter = 0; // unique motorcycle ids
   while(mit != lastm)
   {
     const Point s = *mit++;
 
-    // @tmp if not provided, this must be computed by the tracer
+    // @tmp if not provided, this should be computed by the tracer
     const Point d = *dit++;
 
     // @tmp this should be computed by the tracer (to take e.g. speed into account)
@@ -116,31 +137,28 @@ initialize_motorcycles(MotorcycleSourcesIterator mit, MotorcycleSourcesIterator 
 template<typename K>
 void
 Motorcycle_graph<K>::
-find_intersections()
+drive_to_closest_target(Motorcycle& mc)
 {
-  // interface with the ray shooting data structure
-}
-
-template<typename K>
-void
-Motorcycle_graph<K>::
-reach_closest_target(Motorcycle& mc)
-{
+  CGAL_assertion(!mc.is_crashed());
   CGAL_assertion(!mc.targets().empty());
-  DEC_it closest_target = mc.closest_target();
-  mc.position() = closest_target;
 
-  // remove the point that we have just reached from the list of targets
+  DEC_it closest_target = mc.closest_target();
+  closest_target->second.block();
+
+  mc.position() = closest_target;
+  mc.distance() = mc.targets().begin()->second;
+  mc.path().push_back(closest_target);
   mc.erase_closest_target();
 
   // @fixme update the priority queue already ? Probably can wait till new
   // points have been inserted.
+
 }
 
 template<typename K>
-void
+std::pair<typename Motorcycle_graph<K>::DEC_it, typename Motorcycle_graph<K>::FT>
 Motorcycle_graph<K>::
-trace_motorcycle()
+compute_motorcycle_next_destination(const Motorcycle& /*m*/)
 {
   // interface with the tracer data structure
 }
@@ -155,50 +173,75 @@ trace_motorcycle_graph(MotorcyclesInputIterator mit, MotorcyclesInputIterator la
   initialize_motorcycles(mit, lastm, dit, lastd);
   motorcycle_pq.initialize(motorcycles);
 
-  while(! motorcycle_pq.empty())
+  while(!motorcycle_pq.empty())
   {
     // get the earliest available event
     Motorcycle_PQE pqe = motorcycle_pq.top();
-    Motorcycle& m = pqe.motorcycle();
+    Motorcycle& mc = pqe.motorcycle();
 
     // move the motorcycle to the target (new confirmed position)
-    reach_closest_target(m);
+    drive_to_closest_target(mc);
 
-    if(m.position() == m.destination()) // reached the destination
+    if(mc.position() == mc.destination())
     {
-      // check if we have reached a final destination (border) @todo
-      if(true)
+      // the destination should be the last target
+      CGAL_assertion(mc.targets().empty());
+
+      if(mc.is_motorcycle_destination_final())
       {
-        crash_motorcycle(m);
+        crash_motorcycle(mc);
       }
       else
       {
-        // check that S_i is empty @todo
-        CGAL_assertion(true);
-
-        // otherwise, compute the new destination
-        trace_motorcycle();
-
-        // set the new tentative point
+        // the new destination is a pair: point, distance
+        std::pair<DEC_it, FT> new_destination = compute_motorcycle_next_destination(mc);
+        mc.set_new_destination(new_destination.first, new_destination.second);
       }
     }
-    else if(m.position()->second.is_blocked() || // impacted an existing polyline
-            false) // @todo reached the point at the same time as another polyline
+    else if(// this motorcycle has impacted an existing trace
+            mc.has_reached_blocked_point() ||
+            // multiple motorcycles will reach this point at the same time
+            mc.has_reached_simultaneous_collision_point())
     {
-      crash_motorcycle(m);
+      crash_motorcycle(mc);
     }
     else // the motorcycle can continue without issue towards its destination
     {
-      // check for intersections
-      find_intersections();
+      // check if other traces exist between the confirmed point and the next
+      // tentative point
+      boost::tuple<int, DEC_it, FT> res = find_collisions(mc);
+      const int foreign_motorcycle_id = res.get<1>();
+      DEC_it collision_point = res.get<2>();
+      const FT distance_at_collision_point = res.get<3>();
 
-      if(true)
+      if(// there is intersection
+         foreign_motorcycle_id != -1 &&
+         // the impact is closer than the next target
+         distance_at_collision_point <= mc.distance_at_closest_target() &&
+         // the collision is not the next target that would also be on the track
+         (collision_point != mc.closest_target() ||
+          collision_point->has_motorcycle(foreign_motorcycle_id)))
       {
+        if(!collision_point->has_motorcycle(mc.id()))
+        {
+          // Call the halving structure to create a new point
+          DEC_it middle_point; // @todo
+          const FT distance_at_middle_point; // @todo
 
-      }
-      else
-      {
+          // add as targets
+          mc.add_new_target(middle_point, distance_at_middle_point);
+          mc.add_new_target(collision_point, distance_at_collision_point);
 
+          // add to M(p')
+          middle_point->add_motorcycle(mc.id(), distance_at_middle_point);
+          collision_point->add_motorcycle(mc.id(), distance_at_collision_point);
+        }
+
+        // deal with the foreign motorcyle
+        if(true)
+        {
+
+        }
       }
     }
   }
