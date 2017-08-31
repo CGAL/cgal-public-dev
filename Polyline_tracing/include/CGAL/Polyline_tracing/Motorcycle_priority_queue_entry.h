@@ -34,17 +34,17 @@ class Motorcycle_priority_queue_entry
 public:
   typedef typename K::FT                                   FT;
 
-  typedef typename Dictionary<K>::DEC_it                   DEC_it;
   typedef Motorcycle<K>                                    Motorcycle;
 
-  const DEC_it dictionary_entry() const { return m->targets().begin()->first; }
-  FT time() const { return m->targets().begin()->second; }
+  FT time_at_closest_target() const { return m->targets().begin()->second; }
   Motorcycle& motorcycle() { return *m; }
+  const Motorcycle& motorcycle() const { return *m; }
 
   Motorcycle_priority_queue_entry(Motorcycle& mc);
 
   friend bool operator<(const Self& lhs, const Self& rhs) {
-    return lhs.time() < rhs.time();
+    // '>' because we want the priority queue to output the element with smallest time
+    return lhs.time_at_closest_target() > rhs.time_at_closest_target();
   }
 
 private:

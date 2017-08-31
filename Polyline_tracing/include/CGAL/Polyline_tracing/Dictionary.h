@@ -36,6 +36,8 @@ namespace Polyline_tracing {
 template<typename K>
 class Dictionary_entry
 {
+  typedef Dictionary_entry<K>                                      Self;
+
 public:
   typedef typename K::FT                                           FT;
   typedef typename K::Point_2                                      Point;
@@ -56,36 +58,62 @@ public:
   typedef typename Visiting_motorcycles_container::left_const_iterator   VMC_left_cit;
   typedef typename Visiting_motorcycles_container::right_const_iterator  VMC_right_cit;
 
+  const Point& point() const { return p; }
   bool is_blocked() const { return blocked; }
-  void block() { blocked = true; }
+  void block() const { blocked = true; }
+  const Visiting_motorcycles_container& visiting_motorcycles() const { return visiting_mcs; }
 
-  Dictionary_entry();
-  void add_motorcycle(const int id, const FT distance);
+  Dictionary_entry(const Point& p);
+
+  // Most of these functions are not actually 'const' but the members they modify
+  // are mutable. See next comment.
+  void add_motorcycle(const int id, const FT time) const;
   bool has_motorcycle(const int id) const;
   bool has_simultaneous_collision() const;
   VMC_left_it find_motorcycle(const int id) const;
-  size_type remove_motorcycle(const int id);
+  size_type remove_motorcycle(const int id) const;
+
+  friend bool operator<(const Self& lhs, const Self& rhs) {
+    return lhs.point() < rhs.point();
+  }
+
+  // Output
+  friend std::ostream& operator<<(std::ostream& out, const Self& dec) {
+    out << "Point: " << dec.point() << " blocked: " << dec.is_blocked() << std::endl;
+    out << " Visiting motorcycles: " << std::endl;
+    VMC_left_cit vmc_it = dec.visiting_motorcycles().left.begin();
+    VMC_left_cit end = dec.visiting_motorcycles().left.end();
+    for(; vmc_it!=end; ++vmc_it)
+      out << " motorcycle: " << vmc_it->first << " time: " << vmc_it->second << std::endl;
+
+    return out;
+  }
 
 private:
-  Visiting_motorcycles_container motorcycles;
-  bool blocked;
+  const Point p;
+
+  // This class is meant to be an element of a set entry, which is const. However,
+  // The members below must still be modified so they are made mutable.
+  // It is safe because the set is only ordered with 'p', which is never modified.
+  mutable Visiting_motorcycles_container visiting_mcs;
+  mutable bool blocked;
 };
 
 template<typename K>
 Dictionary_entry<K>::
-Dictionary_entry()
-  : motorcycles(), blocked(false)
+Dictionary_entry(const Point& p)
+  : p(p), visiting_mcs(), blocked(false)
 { }
 
 template<typename K>
 void
 Dictionary_entry<K>::
-add_motorcycle(const int id, const FT distance)
+add_motorcycle(const int id, const FT time) const
 {
   // the motorcycle `i` should not already exists in the list of motorcycles
   // that (might) reach this point
-  CGAL_precondition(motorcycles.left.find(i) == motorcycles.left.end());
-  motorcycles.insert(value_type(id, distance));
+  CGAL_precondition(visiting_mcs.left.find(i) == visiting_mcs.left.end());
+  visiting_mcs.insert(value_type(id, time));
 }
 
 template<typename K>
@@ -93,7 +121,7 @@ bool
 Dictionary_entry<K>::
 has_motorcycle(const int id) const
 {
-  return (find_motorcycle(id) != motorcycles.left.end());
+  return (find_motorcycle(id) != visiting_mcs.left.end());
 }
 
 template<typename K>
@@ -101,19 +129,19 @@ bool
 Dictionary_entry<K>::
 has_simultaneous_collision() const
 {
-  CGAL_precondition(!motorcycles.empty());
-  if(motorcycles.size() == 1)
+  CGAL_precondition(!visiting_mcs.empty());
+  if(visiting_mcs.size() == 1)
     return false;
 
-  // accessing 'right' of the bimap gives ordered distance values
-  // the first and second entries are thus the distances for the two closest
-  // points. If the distances are equal, there is a simultaneous collision.
-  VMC_right_cit first_mc_it = motorcycles.right.begin();
-  VMC_right_cit second_mc_it = ++(motorcycles.right.begin());
-  const FT first_distance = first_mc_it->first;
-  const FT second_distance = second_mc_it->first;
-  CGAL_assertion(first_distance <= second_distance);
-  return (first_distance == second_distance);
+  // accessing 'right' of the bimap gives ordered time values
+  // the first and second entries are thus the times for the two closest
+  // points. If the times are equal, there is a simultaneous collision.
+  VMC_right_cit first_mc_it = visiting_mcs.right.begin();
+  VMC_right_cit second_mc_it = ++(visiting_mcs.right.begin());
+  const FT first_time = first_mc_it->first;
+  const FT second_time = second_mc_it->first;
+  CGAL_assertion(first_time <= second_time);
+  return (first_time == second_time);
 }
 
 template<typename K>
@@ -121,16 +149,16 @@ typename Dictionary_entry<K>::VMC_left_it
 Dictionary_entry<K>::
 find_motorcycle(const int id) const
 {
-  return motorcycles.left.find(id);
+  return visiting_mcs.left.find(id);
 }
 
 template<typename K>
 typename Dictionary_entry<K>::size_type
 Dictionary_entry<K>::
-remove_motorcycle(const int id)
+remove_motorcycle(const int id) const
 {
-  CGAL_precondition(find_motorcycle(id) != motorcycles.left.end());
-  return motorcycles.left.erase(id);
+  CGAL_precondition(find_motorcycle(id) != visiting_mcs.left.end());
+  return visiting_mcs.left.erase(id);
 }
 
 // -----------------------------------------------------------------------------
@@ -144,11 +172,14 @@ public:
   typedef typename K::Point_2                             Point;
 
   typedef Dictionary_entry<K>                             Dictionary_entry;
-  typedef std::map<Point, Dictionary_entry>               Dictionary_entry_container;
+  typedef std::set<Dictionary_entry>                      Dictionary_entry_container;
   typedef typename Dictionary_entry_container::iterator   DEC_it;
 
+  // Constructor
   Dictionary() : entries() { }
 
+  // Functions
+  DEC_it insert(const Point& p);
   DEC_it insert(const Point& p, const int i, const FT dist);
 
 private:
@@ -158,16 +189,24 @@ private:
 template<typename K>
 typename Dictionary<K>::DEC_it
 Dictionary<K>::
-insert(const Point& p, const int i, const FT dist)
+insert(const Point& p)
 {
-  Dictionary_entry e;
-  std::pair<DEC_it, bool> is_insert_successful = entries.insert(std::make_pair(p, e));
+  Dictionary_entry e(p);
+  std::pair<DEC_it, bool> is_insert_successful = entries.insert(e);
 
   if(!is_insert_successful.second)
-    std::cerr << "Warning: point " << p << " already exists in the dictionary" << std::endl;
+    std::cerr << "Warning: point (" << p << ") already exists in the dictionary" << std::endl;
 
-  DEC_it it = is_insert_successful.first;
-  it->second.add_motorcycle(i, dist);
+  return is_insert_successful.first;
+}
+
+template<typename K>
+typename Dictionary<K>::DEC_it
+Dictionary<K>::
+insert(const Point& p, const int i, const FT dist)
+{
+  DEC_it it = insert(p);
+  it->add_motorcycle(i, dist);
 
   return it;
 }

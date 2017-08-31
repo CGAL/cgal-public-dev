@@ -41,6 +41,8 @@ struct Target_point_set_comparer
 template<typename K>
 class Motorcycle
 {
+  typedef Motorcycle<K>                                         Self;
+
 public:
   typedef typename K::FT                                        FT;
   typedef typename K::Point_2                                   Point;
@@ -58,12 +60,14 @@ public:
   bool is_crashed() const { return crashed; }
   void crash() { crashed = true; }
 
-  FT& distance() { return dist; }
-  const FT& distance() const { return dist; }
-  DEC_it& position() { return conf; }
-  const DEC_it position() const { return conf; }
+  const DEC_it& source() const { return sour; }
   DEC_it& destination() { return dest; }
   const DEC_it destination() const { return dest; }
+  const FT speed() const { return v; }
+  FT& current_time() { return time; }
+  const FT& current_time() const { return time; }
+  DEC_it& position() { return conf; }
+  const DEC_it position() const { return conf; }
 
   Target_point_container& targets() { return target_points; }
   const Target_point_container& targets() const { return target_points; }
@@ -71,17 +75,34 @@ public:
   const std::list<DEC_it>& path() const { return path_points; }
 
   // Constructor
-  Motorcycle(const int id, const DEC_it p, const DEC_it v, const FT dist_at_d);
+  Motorcycle(const int id, const DEC_it p, const DEC_it v, FT speed,
+             const FT dist_at_s, const FT dist_at_d);
 
   // Functions
-  void add_new_target(const DEC_it target_point, const FT distance_at_target);
+  void add_new_target(const DEC_it target_point, const FT time_at_target);
   const DEC_it closest_target() const;
-  FT distance_at_closest_target() const;
+  FT time_at_closest_target() const;
   void erase_closest_target();
   bool has_reached_blocked_point() const;
   bool has_reached_simultaneous_collision_point() const;
   bool is_motorcycle_destination_final() const;
   void set_new_destination(const DEC_it new_dest, const FT dist);
+
+  // output
+  friend std::ostream& operator<<(std::ostream& out, const Self& mc) {
+    out << "Motorcycle: " << mc.id() << " (crashed? " << mc.is_crashed() << ") "
+        << "going from source: (" << mc.source()->point() << ")"
+        << " to destination: (" << mc.destination()->point() << ")" << std::endl
+        << " currently at position: (" << mc.position()->point() << ")" << std::endl
+        << " with targets: " << std::endl;
+    typename Target_point_container::const_iterator tpc_it = mc.targets().begin();
+    typename Target_point_container::const_iterator end = mc.targets().end();
+    for(; tpc_it!=end; ++tpc_it)
+      out << "\t Point: (" << tpc_it->first->point() << ") time: " << tpc_it->second << std::endl;
+    out << std::endl;
+
+    return out;
+  }
 
   void output_path() const;
 
@@ -91,7 +112,8 @@ private:
 
   const DEC_it sour; // source point
   DEC_it dest; // destination, which might change
-  FT dist; // distance travelled
+  const FT v; // speed of the motorcycle, 'const' for now
+  FT time; // current time at the motorcycle
   DEC_it conf; // last confirmed position
 
   Target_point_container target_points; // tentative targets (ordered)
@@ -102,22 +124,29 @@ private:
 template<typename K>
 Motorcycle<K>::
 Motorcycle(const int id,
-           const DEC_it s, const DEC_it d,
-           const FT dist_at_d)
+           const DEC_it source, const DEC_it destination, const FT speed,
+           const FT dist_at_s, const FT dist_at_d)
   : i(id), crashed(false),
-    sour(s), dest(d), dist(0.), conf(s),
+    sour(source), dest(destination), v(speed), time(dist_at_s), conf(source),
     target_points(Target_point_set_comparer<K>()), path_points()
 {
-  target_points.insert(std::make_pair(sour, 0.));
+  CGAL_assertion(dist_at_s < dist_at_d);
+
+  if(sour->point() == dest->point()) {
+    std::cerr << "Warning: source and destination (" << sour->point() << ") "
+              << "are equal for motorcycle: " << id << std::endl;
+  }
+
+  target_points.insert(std::make_pair(sour, dist_at_s));
   target_points.insert(std::make_pair(dest, dist_at_d));
 }
 
 template<typename K>
 void
 Motorcycle<K>::
-add_new_target(const DEC_it target_point, const FT distance_at_target)
+add_new_target(const DEC_it target_point, const FT time_at_target)
 {
-  target_points.insert(std::make_pair(target_point, distance_at_target));
+  target_points.insert(std::make_pair(target_point, time_at_target));
 }
 
 template<typename K>
@@ -125,17 +154,17 @@ const typename Motorcycle<K>::DEC_it
 Motorcycle<K>::
 closest_target() const
 {
-  CGAL_assertion(!target_points.empty());
+  CGAL_precondition(!target_points.empty());
   return target_points.begin()->first;
 }
 
 template<typename K>
 typename Motorcycle<K>::FT
 Motorcycle<K>::
-distance_at_closest_target() const
+time_at_closest_target() const
 {
-  assert(!target_points.empty());
-  return closest_target()->second;
+  CGAL_precondition(!target_points.empty());
+  return target_points.begin()->second;
 }
 
 template<typename K>
@@ -152,7 +181,7 @@ bool
 Motorcycle<K>::
 has_reached_blocked_point() const
 {
-  return conf->second.is_blocked();
+  return conf->is_blocked();
 }
 
 template<typename K>
@@ -160,7 +189,7 @@ bool
 Motorcycle<K>::
 has_reached_simultaneous_collision_point() const
 {
-  return conf->second.has_simultaneous_collision();
+  return conf->has_simultaneous_collision();
 }
 
 template<typename K>
@@ -174,7 +203,7 @@ is_motorcycle_destination_final() const
 template<typename K>
 void
 Motorcycle<K>::
-set_new_destination(const DEC_it new_dest, const FT new_dist)
+set_new_destination(const DEC_it new_dest, const FT new_time)
 {
   assert(target_points.empty());
 
@@ -183,8 +212,8 @@ set_new_destination(const DEC_it new_dest, const FT new_dist)
   // Putting 'conf' again in the queue means that this will be immediately treated
   // as next point in the queue, allowing to then insert points if necessary
   // between 'conf' and 'new_dest'
-  target_points.insert(std::make_pair(conf, dist));
-  target_points.insert(std::make_pair(dest, new_dist));
+  target_points.insert(std::make_pair(conf, time));
+  target_points.insert(std::make_pair(dest, new_time));
 }
 
 

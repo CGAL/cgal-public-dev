@@ -32,12 +32,14 @@ namespace Polyline_tracing {
 template<typename K>
 class Motorcycle_priority_queue
 {
+  typedef Motorcycle_priority_queue<K>             Self;
+
 public:
   typedef Motorcycle<K>                            Motorcycle;
   typedef std::vector<Motorcycle>                  Motorcycle_container;
 
-  // Picked a fibonacci_heap for now. Would it better to simply use std::priority_queue
-  // and ignore+pop values that are meaningless ?
+  // Picked a fibonacci_heap for now. Would it be better to simply use
+  // std::priority_queue and ignore+pop values that are meaningless ?
   typedef Motorcycle_priority_queue_entry<K>       MPQ_entry;
   typedef boost::heap::fibonacci_heap<MPQ_entry>   MPQ;
   typedef typename MPQ::handle_type                handle_type;
@@ -45,15 +47,29 @@ public:
   bool empty() const { return queue.empty(); }
   const MPQ_entry& top() const { return queue.top(); }
   handle_type handle(const Motorcycle& m) const { return handles[m.id()]; }
-
   handle_type push(const Motorcycle& m) { queue.push(m); }
-  void pop() { return queue.pop(); }
-  void update(handle_type handle) { return queue.update(handle); }
-  void erase(handle_type handle) { return queue.erase(handle); }
+  void update(const Motorcycle& m) { return queue.update(handles[m.id()]); }
+  void erase(const Motorcycle& m) { return queue.erase(handles[m.id()]); }
 
   Motorcycle_priority_queue() : queue(), handles() { }
 
   void initialize(Motorcycle_container& motorcycles);
+
+  // output
+  friend std::ostream& operator<<(std::ostream& out, const Self& mpq) {
+    if(mpq.queue.empty()) {
+      out << "Empty !" << std::endl;
+      return out;
+    }
+
+    typename MPQ::ordered_iterator pq_it = mpq.queue.ordered_begin();
+    typename MPQ::ordered_iterator end = mpq.queue.ordered_end();
+    for(; pq_it!=end; ++pq_it)
+      out << " Motorcycle: " << pq_it->motorcycle().id()
+          << " with time at closest target: " << pq_it->time_at_closest_target() << std::endl;
+
+    return out;
+  }
 
 private:
   MPQ queue;
