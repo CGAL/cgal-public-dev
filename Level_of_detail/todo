@@ -16,6 +16,9 @@ TODO AND OTHER:
 13. Should I enforce the same normals for the regularized plane?
 14. Use exporters from Mylog in the base class.
 15. Add all non-planar points obtained by RANSAC in the clutter selection procedure.
+16. Redo the function for getting corners.
+17. Add unit tests to the structuring module.
+18. Method for adjacency / corners is not robust when wrong planes are detected by the RANSAC. In this case, it may happen that lines that we intersect to get corners produce points which are far away from the real data set.
 
 BUGS:
 1. Bug in the CGAL::Line_2 and CGAL::Line_3 projection?

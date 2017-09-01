@@ -57,7 +57,7 @@ namespace CGAL {
 
 			using Plane_iterator = typename Planes_mapping::const_iterator;
 
-			const std::string default_path = "/Users/danisimo/Documents/pipeline/data/basic_test/";
+			const std::string default_path = "/Users/danisimo/Documents/pipeline/data/complex_test/";
 
 			Level_of_detail_base(Traits traits = Traits()) : m_traits(traits) { } // Do I need to create an instance of these traits here?
 
@@ -126,7 +126,7 @@ namespace CGAL {
 
 				log.out << "(7) All building's boundary points are projected. Number of projected points: " << number_of_projected_points << std::endl;
 
-				export_projected_points("tmp/projected", building_boundary_projected);
+				// export_projected_points("tmp/projected", building_boundary_projected);
 
 
 				// (8) Fit lines to the projected points in 2D.
@@ -142,17 +142,18 @@ namespace CGAL {
 
 				log.out << "(9) Segments are created. Number of created segments: " << number_of_segments << std::endl;
 
-				export_segments_as_obj("tmp/segments", segments);
+				// export_segments_as_obj("tmp/segments", segments);
 
 
 				// (10) Apply 2D structuring algorithm.
 				Segments structured_segments;
 				m_structuring = std::make_unique<Structuring_2>(building_boundary_projected, building_boundary_planes, lines);
+				m_structuring->set_epsilon(0.025);
 				const auto number_of_structured_segments = m_structuring->structure_point_set(structured_segments);
 
 				log.out << "(10) 2D Structuring is applied. Number of structured segments: " << number_of_structured_segments << std::endl;
 
-				export_segments_as_obj("tmp/structured_segments", structured_segments);
+				// export_segments_as_obj("tmp/structured_segments", structured_segments);
 
 
 				// (END) Save log.
