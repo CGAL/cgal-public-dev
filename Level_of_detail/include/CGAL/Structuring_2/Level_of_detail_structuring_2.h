@@ -29,6 +29,29 @@ namespace CGAL {
 		template<class KernelTraits>
 		class Level_of_detail_structuring_2 {
 
+		private:
+			typedef std::pair<int, int> Int_pair;
+
+			class My_pair_equal {
+
+			public:
+				bool operator()(const Int_pair &a, const Int_pair &b) const {
+
+					if ((a.first == b.first  && a.second == b.second) ||
+						(a.first == b.second && a.second == b.first)) return true;
+
+					return false;
+				}
+			};
+
+			class My_pair_hasher {
+				
+			public:
+				size_t operator()(const Int_pair &in) const {
+					return std::hash<int>()(in.first + in.second);
+				}
+			};
+
 		public:
 			typedef KernelTraits Traits;
 
@@ -44,6 +67,8 @@ namespace CGAL {
 
 			typedef typename Connected_components::const_iterator 	 CC_iterator;
 			typedef typename std::unordered_set<int>::const_iterator SS_iterator;
+
+			typedef typename std::unordered_set<Int_pair, My_pair_hasher, My_pair_equal>::const_iterator PP_iterator;
 
         	typedef CGAL::Search_traits_2<Traits>       Search_traits_2;
         	typedef CGAL::Fuzzy_sphere<Search_traits_2> Fuzzy_circle;
@@ -66,14 +91,14 @@ namespace CGAL {
 			typedef typename Traits::Intersect_2 Intersect;
 
 			Level_of_detail_structuring_2(const Points &points, const Connected_components &components, const Lines &lines) :
-			m_points(points), m_cc(components), m_lines(lines), m_tol(FT(1) / FT(10000)), m_big_value(FT(1000000)), m_num_linear(0), m_num_corners(0), m_eps_set(false) { 
+			m_points(points), m_cc(components), m_lines(lines), m_tol(FT(1) / FT(10000)), m_big_value(FT(1000000)), m_eps_set(false) { 
 
 				assert(components.size() == lines.size());
 			}
 
 			// This is a 2D version of the algorithm in the paper:
 			// Surface Reconstruction Through Point Set Structuring, F. Lafarge, P. Alliez.
-			int structure_point_set(Segments &) {
+			int structure_point_set() {
 
 				// (START) Create log.
 				Log log; log.out << "START EXECUTION\n\n\n";
@@ -136,10 +161,16 @@ namespace CGAL {
 				log.out << "(8) Adjacency graph between segments is created. The results are saved in tmp/adjacency" << std::endl;
 
 
-				// (9) Create corners using the adjacency graph above.
+				// (9) Create an undirected graph by removing all repeating adjacencies.
+				create_undirected_graph();
+
+				log.out << "(9) An undirected graph is created. The results are saved in tmp/undirected_graph" << std::endl;
+
+
+				// (10) Create corners using the undirected graph above.
 				create_corners();
 
-				log.out << "(9) Corner points between all adjacent segments are inserted. The results are saved in tmp/structured_points" << std::endl;
+				log.out << "(10) Unique corner points between all adjacent segments are inserted. The final results are saved in tmp/structured_points" << std::endl;
 
 
 				// -------------------------------
@@ -161,14 +192,6 @@ namespace CGAL {
 
 			const Structured_anchors& get_structured_anchors() const {
 				return m_str_anchors;
-			}
-
-			size_t number_of_linear_points() const {
-				return m_num_linear;
-			}
-
-			size_t number_of_corners() const {
-				return m_num_corners;
 			}
 
 			void set_epsilon(const FT value) {
@@ -200,10 +223,11 @@ namespace CGAL {
 			const FT m_tol;
 			const FT m_big_value;
 
-			size_t m_num_linear, m_num_corners;
+			std::vector<size_t> m_num_linear, m_num_corners;
 			bool m_eps_set;
 
 			std::vector<std::unordered_set<int> > m_adjacency;
+			std::unordered_set<Int_pair, My_pair_hasher, My_pair_equal> m_undirected_graph;
 
 			void project() {
 
@@ -344,7 +368,7 @@ namespace CGAL {
 			}
 
 			// Improve this function.
-			// Source is always left sided and target is always right sided. 
+			// Source is always left-sided and target is always right-sided. 
 			// This is used for example in find_occupancy_cell() and create_linear_point() functions.
 			void find_segments() {
 
@@ -575,8 +599,6 @@ namespace CGAL {
 							m_str_anchors[i].push_back(anchor);
 
 							log.out << new_point << " " << 0 << std::endl;
-
-							++m_num_linear;
 						}
 					}
 				}
@@ -585,8 +607,11 @@ namespace CGAL {
 
 			void clear_main_data() {
 
-				m_num_linear  = 0;
-				m_num_corners = 0;
+				m_num_linear.clear();
+				m_num_corners.clear();
+
+				m_num_linear.resize(m_cc.size(), 0);
+				m_num_corners.resize(m_cc.size(), 0);
 
 				m_str_points.clear();
 				m_str_labels.clear();
@@ -615,6 +640,8 @@ namespace CGAL {
 				// Compute middle point of the cell [p1, p2].
 				const Point p1 = Point(b1_1 * source.x() + b2_1 * target.x(), b1_1 * source.y() + b2_1 * target.y());
 				const Point p2 = Point(b1_2 * source.x() + b2_2 * target.x(), b1_2 * source.y() + b2_2 * target.y());
+
+				++m_num_linear[segment_index];
 
 				return Point((p1.x() + p2.x()) / FT(2), (p1.y() + p2.y()) / FT(2));
 			}
@@ -705,29 +732,48 @@ namespace CGAL {
 				m_adjacency[j].insert(i);
 			}
 
-			// Review this function! I need to save index to the source and target and then do cycles
-			// so to get unique corners for all intersected segments.
+			void create_undirected_graph() {
+
+				clear_undirected_graph();
+				assert(m_undirected_graph.empty());
+
+				assert(!m_adjacency.empty());
+				const int number_of_components = static_cast<int>(m_adjacency.size());
+
+				for (int i = 0; i < number_of_components; ++i)
+					for (const int j : m_adjacency[i])
+						m_undirected_graph.insert(std::make_pair(i, j));
+
+				// Log function. Can be removed.
+				Log log;
+
+				for (PP_iterator it = m_undirected_graph.begin(); it != m_undirected_graph.end(); ++it)
+					log.out << (*it).first << " -- " << (*it).second << std::endl;
+
+				log.save("tmp/undirected_graph");
+			}
+
+			void clear_undirected_graph() {
+
+				m_undirected_graph.clear();
+			}
+
 			void create_corners() {
 
 				assert(!m_str_points.empty());
 				assert(!m_str_labels.empty());
-				assert(!m_str_anchors.empty());
 
+				assert(!m_str_anchors.empty());
 				assert(m_str_points.size() == m_cc.size());
 				assert(m_str_points.size() == m_str_labels.size() && m_str_labels.size() == m_str_anchors.size());
 
-				assert(!m_adjacency.empty());
-				assert(m_adjacency.size() == m_cc.size());
-				assert(m_segments.size() == m_lines.size());
+				for (const Int_pair el : m_undirected_graph) {
 
-				for (int i = 0; i < static_cast<int>(m_adjacency.size()); ++i) {
-					for (SS_iterator it = m_adjacency[i].begin(); it != m_adjacency[i].end(); ++it) {
+					const int i = el.first;
+					const int j = el.second;
 
-						const int j = static_cast<int>(*it);
-						const Point corner = intersect_lines(i, j);
-
-						add_corner(i, j, corner);
-					}
+					const Point corner = intersect_lines(i, j);
+					add_corner(i, j, corner);
 				}
 
 				// Log function. Can be removed.
@@ -752,15 +798,44 @@ namespace CGAL {
 
 			void add_corner(const int i, const int j, const Point &corner) {
 
-				m_str_points[i].push_back(corner);
-				m_str_labels[i].push_back(Structured_label::CORNER);
+				if (is_unique(corner)) {
 
-				std::vector<int> anchor(2);
-				anchor[0] = i;
-				anchor[1] = j;
+					std::vector<int> cycle(2);
+					
+					cycle[0] = i;
+					cycle[1] = j;
 
-				m_str_anchors[i].push_back(anchor);
-				++m_num_corners;
+					add_unique_corner(i, corner, cycle);
+				}
+			}
+
+			void add_unique_corner(const int segment_index, const Point &corner, const std::vector<int> &cycle) {
+
+				m_str_points[segment_index].push_back(corner);
+				m_str_labels[segment_index].push_back(Structured_label::CORNER);
+				m_str_anchors[segment_index].push_back(cycle);
+
+				++m_num_corners[segment_index];
+			}
+
+			bool is_unique(const Point &q) const {
+				
+				for (size_t i = 0; i < m_cc.size(); ++i) {
+					assert(m_num_linear[i] <= m_str_points[i].size());
+
+					for (size_t j = m_num_linear[i]; j < m_str_points[i].size(); ++j) {
+
+						const Point &p = m_str_points[i][j];
+						if (points_equal(p, q)) return false;
+					}
+				}
+				return true;
+			}
+
+			bool points_equal(const Point &p, const Point &q) const {
+
+				if (CGAL::abs(p.x() - q.x()) < m_tol && CGAL::abs(p.y() - q.y()) < m_tol) return true;
+				return false;
 			}
 		};
 	}

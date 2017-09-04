@@ -32,6 +32,10 @@ public:
 
 	using LodStructuring = CGAL::LOD::Level_of_detail_structuring_2<Traits>;
 
+	using Structured_points  = std::vector< std::vector<Point> >; 			  
+	using Structured_labels  = std::vector< std::vector<LodStructuring::Structured_label> >;  
+	using Structured_anchors = std::vector< std::vector<std::vector<int> > >;
+
 	std::unique_ptr<LodStructuring> lodStructuring;
 	Points points; Components components; Lines lines;
 
@@ -85,6 +89,12 @@ public:
 
 		lodStructuring = std::make_unique<LodStructuring>(points, components, lines);
 	}
+
+	LOD_StructuringTest() {
+		
+		create_test_input();
+		lodStructuring->structure_point_set();
+	}
 };
 
 TEST_F(LOD_StructuringTest, Compiles) {
@@ -92,10 +102,31 @@ TEST_F(LOD_StructuringTest, Compiles) {
 	// Empty test.
 }
 
-TEST_F(LOD_StructuringTest, SavesLogFiles) {
+TEST_F(LOD_StructuringTest, VerifiesStructuredPoints) {
 
-	Segments segments;
-	create_test_input();
+	const Structured_points &points = lodStructuring->get_structured_points();
 
-	lodStructuring->structure_point_set(segments);
+	ASSERT_THAT(points[0][3], Eq(Point(0.125, 0.0)));
+	ASSERT_THAT(points[2][points[2].size() - 1], Eq(Point(-0.8, 0.8)));
+}
+
+TEST_F(LOD_StructuringTest, VerifiesStructuredLabels) {
+
+	const Structured_labels &labels = lodStructuring->get_structured_labels();
+
+	ASSERT_THAT(labels[4][5], Eq(LodStructuring::Structured_label::LINEAR));
+	ASSERT_THAT(labels[0][labels[0].size() - 1], Eq(LodStructuring::Structured_label::CORNER));
+}
+
+TEST_F(LOD_StructuringTest, VerifiesStructuredAnchors) {
+
+	const Structured_anchors &anchors = lodStructuring->get_structured_anchors();
+
+	ASSERT_THAT(anchors[3][2].size(), Eq(static_cast<size_t>(1)));
+	ASSERT_THAT(anchors[3][2][0], Eq(3));
+
+	ASSERT_THAT(anchors[2][anchors[2].size() - 1].size(), Eq(static_cast<size_t>(2)));
+
+	ASSERT_THAT(anchors[2][anchors[2].size() - 1][0], Eq(2));
+	ASSERT_THAT(anchors[2][anchors[2].size() - 1][1], Eq(3));
 }

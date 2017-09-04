@@ -146,10 +146,9 @@ namespace CGAL {
 
 
 				// (10) Apply 2D structuring algorithm.
-				Segments structured_segments;
 				m_structuring = std::make_unique<Structuring_2>(building_boundary_projected, building_boundary_planes, lines);
 				m_structuring->set_epsilon(0.025);
-				const auto number_of_structured_segments = m_structuring->structure_point_set(structured_segments);
+				const auto number_of_structured_segments = m_structuring->structure_point_set();
 
 				log.out << "(10) 2D Structuring is applied. Number of structured segments: " << number_of_structured_segments << std::endl;
 
