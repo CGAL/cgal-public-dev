@@ -65,7 +65,7 @@ public:
     typename MPQ::ordered_iterator pq_it = mpq.queue.ordered_begin();
     typename MPQ::ordered_iterator end = mpq.queue.ordered_end();
     for(; pq_it!=end; ++pq_it)
-      out << " Motorcycle: " << pq_it->motorcycle().id()
+      out << "  Motorcycle: " << pq_it->motorcycle().id()
           << " with time at closest target: " << pq_it->time_at_closest_target() << std::endl;
 
     return out;
@@ -88,7 +88,7 @@ initialize(Motorcycle_container& motorcycles)
   for(; m_it != last; ++m_it)
   {
     const int motorcycle_id = m_it->id();
-    CGAL_precondition(motorcycle_id >= 0 && motorcycle_id < handles.size());
+    CGAL_precondition(motorcycle_id >= 0 && motorcycle_id < int(handles.size()));
     handles[motorcycle_id] = queue.push(*m_it);
   }
 }

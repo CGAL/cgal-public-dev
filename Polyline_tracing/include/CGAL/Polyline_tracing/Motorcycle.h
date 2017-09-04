@@ -19,8 +19,11 @@
 
 #include <CGAL/Polyline_tracing/Dictionary.h>
 
+#include <fstream>
+#include <iostream>
 #include <list>
 #include <set>
+#include <sstream>
 
 namespace CGAL {
 
@@ -71,8 +74,8 @@ public:
 
   Target_point_container& targets() { return target_points; }
   const Target_point_container& targets() const { return target_points; }
-  std::list<DEC_it>& path() { return path_points; }
-  const std::list<DEC_it>& path() const { return path_points; }
+  std::list<DEC_it>& track() { return track_points; }
+  const std::list<DEC_it>& track() const { return track_points; }
 
   // Constructor
   Motorcycle(const int id, const DEC_it p, const DEC_it v, FT speed,
@@ -93,18 +96,18 @@ public:
     out << "Motorcycle: " << mc.id() << " (crashed? " << mc.is_crashed() << ") "
         << "going from source: (" << mc.source()->point() << ")"
         << " to destination: (" << mc.destination()->point() << ")" << std::endl
-        << " currently at position: (" << mc.position()->point() << ")" << std::endl
-        << " with targets: " << std::endl;
+        << "  currently at position: (" << mc.position()->point() << ")" << std::endl
+        << "  with targets: " << std::endl;
     typename Target_point_container::const_iterator tpc_it = mc.targets().begin();
     typename Target_point_container::const_iterator end = mc.targets().end();
     for(; tpc_it!=end; ++tpc_it)
       out << "\t Point: (" << tpc_it->first->point() << ") time: " << tpc_it->second << std::endl;
-    out << std::endl;
 
     return out;
   }
 
-  void output_path() const;
+  void output_intended_track() const;
+  void output_track() const;
 
 private:
   const int i;
@@ -118,7 +121,7 @@ private:
 
   Target_point_container target_points; // tentative targets (ordered)
 
-  std::list<DEC_it> path_points;
+  std::list<DEC_it> track_points;
 };
 
 template<typename K>
@@ -128,7 +131,7 @@ Motorcycle(const int id,
            const FT dist_at_s, const FT dist_at_d)
   : i(id), crashed(false),
     sour(source), dest(destination), v(speed), time(dist_at_s), conf(source),
-    target_points(Target_point_set_comparer<K>()), path_points()
+    target_points(Target_point_set_comparer<K>()), track_points()
 {
   CGAL_assertion(dist_at_s < dist_at_d);
 
@@ -216,13 +219,46 @@ set_new_destination(const DEC_it new_dest, const FT new_time)
   target_points.insert(std::make_pair(dest, new_time));
 }
 
+template<typename K>
+void
+Motorcycle<K>::
+output_track() const
+{
+  std::ostringstream out_filename;
+  out_filename << "motorcycle_track_" << i << ".off" << std::ends;
+  std::ofstream os(out_filename.str().c_str());
+
+  const std::size_t pn = track_points.size();
+  const std::size_t fn = pn - 1;
+
+  os << "OFF" << '\n';
+  os << pn << " " << fn << " 0" << '\n';
+
+  typename std::list<DEC_it>::const_iterator tit = track_points.begin();
+  typename std::list<DEC_it>::const_iterator end = track_points.end();
+  for(; tit!=end; ++tit)
+    os << (*tit)->point() << " 0" << '\n'; // the '0' is because OFF is a 3D format
+
+  for(std::size_t j=0; j<fn; ++j)
+    os << "3 " << j << " " << j+1 << " " << j << '\n';
+}
 
 template<typename K>
 void
 Motorcycle<K>::
-output_path() const
+output_intended_track() const
 {
+  // must be adapted to surface @todo
 
+  std::ostringstream out_filename;
+  out_filename << "motorcycle_intended_track_" << i << ".off" << std::ends;
+  std::ofstream os(out_filename.str().c_str());
+
+  os << "OFF" << '\n';
+  os << "2 1 0" << '\n';
+  os << sour->point() << " 0" << '\n';
+  os << dest->point() << " 0" << '\n';
+  os << "3 0 1 0" << std::endl;
 }
 
 } // namespace Polyline_tracing

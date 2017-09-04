@@ -79,12 +79,12 @@ public:
 
   // Output
   friend std::ostream& operator<<(std::ostream& out, const Self& dec) {
-    out << "Point: " << dec.point() << " blocked: " << dec.is_blocked() << std::endl;
-    out << " Visiting motorcycles: " << std::endl;
+    out << "Point: (" << dec.point() << ") blocked: " << dec.is_blocked() << std::endl;
+    out << "  Visiting motorcycles: " << std::endl;
     VMC_left_cit vmc_it = dec.visiting_motorcycles().left.begin();
     VMC_left_cit end = dec.visiting_motorcycles().left.end();
     for(; vmc_it!=end; ++vmc_it)
-      out << " motorcycle: " << vmc_it->first << " time: " << vmc_it->second << std::endl;
+      out << "\t motorcycle: " << vmc_it->first << " time: " << vmc_it->second << std::endl;
 
     return out;
   }
@@ -112,7 +112,7 @@ add_motorcycle(const int id, const FT time) const
 {
   // the motorcycle `i` should not already exists in the list of motorcycles
   // that (might) reach this point
-  CGAL_precondition(visiting_mcs.left.find(i) == visiting_mcs.left.end());
+  CGAL_precondition(visiting_mcs.left.find(id) == visiting_mcs.left.end());
   visiting_mcs.insert(value_type(id, time));
 }
 
@@ -175,6 +175,8 @@ public:
   typedef std::set<Dictionary_entry>                      Dictionary_entry_container;
   typedef typename Dictionary_entry_container::iterator   DEC_it;
 
+  const Dictionary_entry_container& all_entries() const { return entries; }
+
   // Constructor
   Dictionary() : entries() { }
 
@@ -195,7 +197,10 @@ insert(const Point& p)
   std::pair<DEC_it, bool> is_insert_successful = entries.insert(e);
 
   if(!is_insert_successful.second)
-    std::cerr << "Warning: point (" << p << ") already exists in the dictionary" << std::endl;
+  {
+    std::cerr << "Warning: point (" << p << ") already exists in the dictionary: "
+              << *(is_insert_successful.first) << std::endl;
+  }
 
   return is_insert_successful.first;
 }
@@ -207,6 +212,8 @@ insert(const Point& p, const int i, const FT dist)
 {
   DEC_it it = insert(p);
   it->add_motorcycle(i, dist);
+
+  std::cout << "(New) point in the dictionary : " << *it << std::endl;
 
   return it;
 }
