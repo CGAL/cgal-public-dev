@@ -13,6 +13,7 @@
 #include <CGAL/Regularizer/Level_of_detail_regularizer.h>
 #include <CGAL/Projector/Level_of_detail_projector.h>
 #include <CGAL/Structuring_2/Level_of_detail_structuring_2.h>
+#include <CGAL/Visibility_2/Level_of_detail_visibility_2.h>
 
 namespace CGAL {
 
@@ -43,6 +44,7 @@ namespace CGAL {
 			typedef Level_of_detail_simple_projector<Kernel, Container, Planes, Projected> Ground_projector;
 
 			typedef Level_of_detail_structuring_2<Kernel> Structuring_2;
+			typedef Level_of_detail_visibility_2<Kernel>  Visibility_2;
 		};
 	}
 }

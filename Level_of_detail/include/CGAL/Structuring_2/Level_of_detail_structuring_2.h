@@ -105,7 +105,7 @@ namespace CGAL {
 				
 				// -----------------------------------------
 
-				const auto number_of_structured_segments = -1;
+				auto number_of_structured_segments = -1;
 
 
 				// (1) Project all points onto the given lines.
@@ -132,6 +132,8 @@ namespace CGAL {
 
 				// (4) Find one unique segment for each set of points.
 				find_segments();
+
+				number_of_structured_segments = m_segments.size();
 
 				log.out << "(4) Segments are extracted for each set of points. The results are saved in tmp/segments" << std::endl;
 
@@ -173,6 +175,10 @@ namespace CGAL {
 				log.out << "(10) Unique corner points between all adjacent segments are inserted. The final results are saved in tmp/structured_points" << std::endl;
 
 
+				// (11) Extra: Create segment end points.
+				create_segment_end_points();
+
+
 				// -------------------------------
 
 				// (END) Save log.
@@ -192,6 +198,10 @@ namespace CGAL {
 
 			const Structured_anchors& get_structured_anchors() const {
 				return m_str_anchors;
+			}
+
+			const Structured_points& get_segment_end_points() const {
+				return m_segment_end_points;
 			}
 
 			void set_epsilon(const FT value) {
@@ -228,6 +238,8 @@ namespace CGAL {
 
 			std::vector<std::unordered_set<int> > m_adjacency;
 			std::unordered_set<Int_pair, My_pair_hasher, My_pair_equal> m_undirected_graph;
+
+			Structured_points m_segment_end_points;
 
 			void project() {
 
@@ -836,6 +848,23 @@ namespace CGAL {
 
 				if (CGAL::abs(p.x() - q.x()) < m_tol && CGAL::abs(p.y() - q.y()) < m_tol) return true;
 				return false;
+			}
+
+			void create_segment_end_points() {
+
+				m_segment_end_points.clear();
+				m_segment_end_points.resize(m_cc.size());
+
+				assert(m_str_points.size() == m_segment_end_points.size());
+
+				for (size_t i = 0; i < m_segment_end_points.size(); ++i) {
+					m_segment_end_points[i].resize(2);
+
+					for (size_t j = 0; j < m_str_points[i].size(); ++j) {
+						m_segment_end_points[i][0] = m_str_points[i][0];
+						m_segment_end_points[i][1] = m_str_points[i][m_str_points[i].size() - 1];
+					}
+				}
 			}
 		};
 	}

@@ -10,6 +10,8 @@
 // CGAL includes.
 #include <CGAL/linear_least_squares_fitting_2.h>
 #include <CGAL/linear_least_squares_fitting_3.h>
+#include <CGAL/Constrained_Delaunay_triangulation_2.h>
+#include <CGAL/Triangulation_conformer_2.h>
 
 // New CGAL includes.
 #include <CGAL/Mylog/Mylog.h>
@@ -47,6 +49,14 @@ namespace CGAL {
 			typedef typename Traits::Planes               Planes_mapping;
 
 			typedef typename Traits::Structuring_2 Structuring_2;
+			typedef typename Traits::Visibility_2  Visibility_2;
+			
+			typedef CGAL::Constrained_Delaunay_triangulation_2<Kernel> CDT;
+			typedef typename CDT::Vertex_handle Vertex_handle;
+
+			using Structured_points  = std::vector< std::vector<Point_2> >; 			  
+			using Structured_labels  = std::vector< std::vector<typename Structuring_2::Structured_label> >;  
+			using Structured_anchors = std::vector< std::vector<std::vector<int> > >;
 			
 			// Custom types, should be changed later (or removed).
 			using Log      = CGAL::LOD::Mylog;
@@ -155,6 +165,24 @@ namespace CGAL {
 				// export_segments_as_obj("tmp/structured_segments", structured_segments);
 
 
+				// (11) Compute constrained Delaunay triangulation of the structured points.
+				// const Structured_points &structured_points = m_structuring->get_segment_end_points();
+				const Structured_points &structured_points = m_structuring->get_structured_points();
+
+				CDT cdt;
+				const auto number_of_faces = compute_cdt(structured_points, cdt);
+
+				log.out << "(11) Constrained Delaunay triangulation of the structured points is applied. Number of faces: " << number_of_faces << std::endl;				
+
+
+				// (12) Compute visibility (0 - outside or 1 - inside) for each triangle in CDT above.
+
+				// to be implemented
+				const auto number_of_traversed_triangles = m_visibility.compute(cdt, input);
+
+				log.out << "(12) Visibility is computed. Number of traversed triangles: " << number_of_traversed_triangles << std::endl;
+
+
 				// (END) Save log.
 				log.out << "\n\nFINISH EXECUTION";
 				log.save("create_lod_0");
@@ -171,8 +199,10 @@ namespace CGAL {
 			Ground_selector            m_ground_selector;
 			Vertical_regularizer	   m_vertical_regularizer;
 			Ground_projector 		   m_ground_projector;
+			Visibility_2 			   m_visibility;
 
 			std::unique_ptr<Structuring_2> m_structuring;
+			
 
 			// Not efficient since I need to copy all ground points.
 			void fit_ground_plane(const Container &input, const Indices &ground_idxs, Plane &ground_plane) const {
@@ -328,6 +358,48 @@ namespace CGAL {
 				
 				if (std::isnan(projected.x()) || std::isnan(projected.y())) return line.projection(p);
 				else return projected;
+			}
+
+			int compute_cdt(const Structured_points &points, CDT &cdt) const {
+
+				auto number_of_faces = -1;
+
+				assert(!points.empty());
+
+				for (size_t i = 0; i < points.size(); ++i) {
+					for (size_t j = 0; j < points[i].size() - 1; ++j) {
+
+						Vertex_handle va = cdt.insert(points[i][j]);
+						Vertex_handle vb = cdt.insert(points[i][j + 1]);
+
+						cdt.insert_constraint(va, vb);
+					}
+				}
+
+				CGAL::make_conforming_Delaunay_2(cdt);
+
+				number_of_faces = cdt.number_of_faces();
+
+				save_cdt(cdt, "tmp/cdt");
+
+				return number_of_faces;
+			}
+
+			void save_cdt(const CDT &cdt, const std::string &filename) const {
+
+				Log log;
+				Unique_hash_map<Vertex_handle, int> V;
+
+				int count = 0;
+				for (typename CDT::Finite_vertices_iterator vit = cdt.finite_vertices_begin(); vit != cdt.finite_vertices_end(); ++vit) {
+					log.out << "v " << (*vit) << " " << 0 << std::endl;
+					V[vit] = count++;
+				}
+
+				for (typename CDT::Finite_faces_iterator fit = cdt.finite_faces_begin(); fit != cdt.finite_faces_end(); ++fit)
+					log.out << "f " << V[(*fit).vertex(0)] + 1 << " " << V[(*fit).vertex(1)] + 1 << " " << V[(*fit).vertex(2)] + 1 << std::endl;
+
+				log.save(filename, ".obj");
 			}
 		};
 	}
