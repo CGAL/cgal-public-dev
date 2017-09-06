@@ -44,7 +44,7 @@ namespace CGAL {
 			typedef Level_of_detail_simple_projector<Kernel, Container, Planes, Projected> Ground_projector;
 
 			typedef Level_of_detail_structuring_2<Kernel> Structuring_2;
-			typedef Level_of_detail_visibility_2<Kernel>  Visibility_2;
+			typedef Level_of_detail_visibility_from_classification_2<Kernel, Container> Visibility_2;
 		};
 	}
 }

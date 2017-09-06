@@ -3,6 +3,7 @@
 
 // STL includes.
 #include <map>
+#include <cassert>
 
 namespace CGAL {
 

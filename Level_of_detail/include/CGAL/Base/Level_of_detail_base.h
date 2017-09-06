@@ -31,6 +31,8 @@ namespace CGAL {
 			typedef typename Traits::Container    Container;
 			typedef typename Traits::Loader       Loader;
 			typedef typename Traits::Preprocessor Preprocessor;
+
+			typedef typename Kernel::FT FT;
 			
 			typedef typename Kernel::Plane_3   Plane;
 			typedef typename Kernel::Point_3   Point_3;
@@ -65,6 +67,7 @@ namespace CGAL {
 			using Lines    = std::vector<Line>;
 			using Segments = std::vector<Segment>;
 
+			using Visibility_result = std::map<int, typename Visibility_2::Visibility_label>;
 			using Plane_iterator = typename Planes_mapping::const_iterator;
 
 			const std::string default_path = "/Users/danisimo/Documents/pipeline/data/complex_test/";
@@ -170,17 +173,16 @@ namespace CGAL {
 				const Structured_points &structured_points = m_structuring->get_structured_points();
 
 				CDT cdt;
-				const auto number_of_faces = compute_cdt(structured_points, cdt);
+				const auto number_of_faces = compute_cdt(structured_points, input, cdt);
 
 				log.out << "(11) Constrained Delaunay triangulation of the structured points is applied. Number of faces: " << number_of_faces << std::endl;				
 
 
 				// (12) Compute visibility (0 - outside or 1 - inside) for each triangle in CDT above.
+				Visibility_result visibility;
+				const auto number_of_traversed_faces = m_visibility.compute(cdt, input, visibility);
 
-				// to be implemented
-				const auto number_of_traversed_triangles = m_visibility.compute(cdt, input);
-
-				log.out << "(12) Visibility is computed. Number of traversed triangles: " << number_of_traversed_triangles << std::endl;
+				log.out << "(12) Visibility is computed. Number of traversed faces: " << number_of_traversed_faces << std::endl;
 
 
 				// (END) Save log.
@@ -360,12 +362,25 @@ namespace CGAL {
 				else return projected;
 			}
 
-			int compute_cdt(const Structured_points &points, CDT &cdt) const {
+			int compute_cdt(const Structured_points &points, const Container &input, CDT &cdt) const {
+
+				std::vector<Point_2> bbox;
+				compute_bounding_box(input, bbox);
 
 				auto number_of_faces = -1;
-
 				assert(!points.empty());
 
+				// Add bounding box.
+				for (size_t i = 0; i< bbox.size(); ++i) {
+					const size_t ip = (i + 1) % bbox.size();
+
+					Vertex_handle va = cdt.insert(bbox[i]);
+					Vertex_handle vb = cdt.insert(bbox[ip]);
+
+					cdt.insert_constraint(va, vb);
+				}
+
+				// Add all structured segments/points.
 				for (size_t i = 0; i < points.size(); ++i) {
 					for (size_t j = 0; j < points[i].size() - 1; ++j) {
 
@@ -383,6 +398,35 @@ namespace CGAL {
 				save_cdt(cdt, "tmp/cdt");
 
 				return number_of_faces;
+			}
+
+			void compute_bounding_box(const Container &input, std::vector<Point_2> &bbox) const {
+
+				bbox.clear();
+				bbox.resize(4);
+
+				const FT big_value = FT(1000000); // change it
+
+				FT minx =  big_value, miny =  big_value;
+				FT maxx = -big_value, maxy = -big_value;
+
+				for (typename Container::const_iterator it = input.begin(); it != input.end(); ++it) {
+					const Point_3 &p = input.point(*it);
+
+					const FT x = p.x();
+					const FT y = p.y();
+
+					minx = CGAL::min(minx, x);
+					miny = CGAL::min(miny, y);
+
+					maxx = CGAL::max(maxx, x);
+					maxy = CGAL::max(maxy, y);
+				}
+
+				bbox[0] = Point_2(minx, miny);
+				bbox[1] = Point_2(maxx, miny);
+				bbox[2] = Point_2(maxx, maxy);
+				bbox[3] = Point_2(minx, maxy);
 			}
 
 			void save_cdt(const CDT &cdt, const std::string &filename) const {

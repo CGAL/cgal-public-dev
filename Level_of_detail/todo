@@ -18,7 +18,7 @@ TODO AND OTHER:
 15. Add all non-planar points obtained by RANSAC in the clutter selection procedure.
 16. Improve the function for getting corners. Use a function to detect all cycles in the undirected graph obtained in the function create_structured_adjacency().
 17. Method for adjacency / corners is not robust when wrong planes are detected by the RANSAC. In this case, it may happen that lines that we intersect to get corners produce points which are far away from the real data set.
-18. Add bounding box for ground plane as constraints to CDT.
+18. Maybe better to pass all indices except for building boundaries to the visibility class instead of the whole input container?
 
 BUGS:
 1. Bug in the CGAL::Line_2 and CGAL::Line_3 projection?
