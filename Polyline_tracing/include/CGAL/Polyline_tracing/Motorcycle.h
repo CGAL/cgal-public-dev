@@ -1,4 +1,4 @@
-// Copyright (c) 2017 GeometryFactory (France).
+﻿// Copyright (c) 2017 GeometryFactory (France).
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
@@ -133,7 +133,7 @@ Motorcycle(const int id,
     sour(source), dest(destination), v(speed), time(dist_at_s), conf(source),
     target_points(Target_point_set_comparer<K>()), track_points()
 {
-  CGAL_assertion(dist_at_s < dist_at_d);
+  CGAL_assertion(dist_at_s <= dist_at_d);
 
   if(sour->point() == dest->point()) {
     std::cerr << "Warning: source and destination (" << sour->point() << ") "
@@ -225,7 +225,7 @@ Motorcycle<K>::
 output_track() const
 {
   std::ostringstream out_filename;
-  out_filename << "motorcycle_track_" << i << ".off" << std::ends;
+  out_filename << "out_motorcycle_track_" << i << ".off" << std::ends;
   std::ofstream os(out_filename.str().c_str());
 
   const std::size_t pn = track_points.size();
@@ -251,7 +251,7 @@ output_intended_track() const
   // must be adapted to surface @todo
 
   std::ostringstream out_filename;
-  out_filename << "motorcycle_intended_track_" << i << ".off" << std::ends;
+  out_filename << "out_motorcycle_intended_track_" << i << ".off" << std::ends;
   std::ofstream os(out_filename.str().c_str());
 
   os << "OFF" << '\n';

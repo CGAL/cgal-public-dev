@@ -112,7 +112,8 @@ add_motorcycle(const int id, const FT time) const
 {
   // the motorcycle `i` should not already exists in the list of motorcycles
   // that (might) reach this point
-  CGAL_precondition(visiting_mcs.left.find(id) == visiting_mcs.left.end());
+  // -- disabled to handle motorcycles with identical source and target
+//  CGAL_precondition(visiting_mcs.left.find(id) == visiting_mcs.left.end());
   visiting_mcs.insert(value_type(id, time));
 }
 
