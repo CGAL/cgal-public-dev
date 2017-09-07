@@ -13,5 +13,6 @@
 #include <CGAL/Projector/Level_of_detail_projector.h>
 #include <CGAL/Structuring_2/Level_of_detail_structuring_2.h>
 #include <CGAL/Visibility_2/Level_of_detail_visibility_2.h>
+#include <CGAL/Lod_0/Level_of_detail_reconstruction_0.h>
 
 #endif // CGAL_LEVEL_OF_DETAIL_H

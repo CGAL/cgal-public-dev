@@ -10,8 +10,7 @@
 #include <boost/tuple/tuple.hpp>
 
 // CGAL includes.
-#include <CGAL/Constrained_Delaunay_triangulation_2.h>
-#include <CGAL/Triangulation_conformer_2.h>
+#include <CGAL/Barycentric_coordinates_2.h>
 
 // New CGAL includes.
 #include <CGAL/Mylog/Mylog.h>
@@ -20,11 +19,12 @@ namespace CGAL{
 
 	namespace LOD {
 
-		template<class KernelTraits, class InputContainer>
+		template<class KernelTraits, class InputContainer, class CDTInput>
 		class Level_of_detail_visibility_2 {
 
 		public:
-			typedef CGAL::Constrained_Delaunay_triangulation_2<KernelTraits> CDT;
+			typedef CDTInput CDT;
+
 			enum class Visibility_label { IN, OUT, UNKNOWN };
 			typedef std::map<int, Visibility_label> Visibility_result;
 
@@ -32,12 +32,12 @@ namespace CGAL{
 		};
 
 		// This class works only with the xy aligned ground plane that is Plane(0, 0, 1, 0).
-		template<class KernelTraits, class InputContainer>
-		class Level_of_detail_visibility_from_classification_2 : public Level_of_detail_visibility_2<KernelTraits, InputContainer> {
+		template<class KernelTraits, class InputContainer, class CDTInput>
+		class Level_of_detail_visibility_from_classification_2 : public Level_of_detail_visibility_2<KernelTraits, InputContainer, CDTInput> {
 
 		public:
 			
-			typedef Level_of_detail_visibility_2<KernelTraits, InputContainer> Base;
+			typedef Level_of_detail_visibility_2<KernelTraits, InputContainer, CDTInput> Base;
 			
 			typedef typename Base::Visibility_label  Visibility_label;
 			typedef typename Base::Visibility_result Visibility_result;
@@ -45,13 +45,17 @@ namespace CGAL{
 			typedef KernelTraits   Kernel;
 			typedef InputContainer Container;
 
+			typedef typename Kernel::FT FT;
+
 			typedef typename Kernel::Point_2 Point_2;
 			typedef typename Kernel::Point_3 Point_3;
 
-			typedef CGAL::Constrained_Delaunay_triangulation_2<Kernel> CDT;
+			typedef typename Base::CDT CDT;
 			
 			typedef typename CDT::Vertex_handle Vertex_handle;
 			typedef typename CDT::Face_handle   Face_handle;
+
+			typedef CGAL::Barycentric_coordinates::Triangle_coordinates_2<Kernel> Triangle_coordinates;
 
 			using Label     = int; 
 			using Label_map = typename Container:: template Property_map<Label>; 
@@ -96,7 +100,8 @@ namespace CGAL{
 					const int face_index = F[fh];
 
 					if (locate_type == CDT::VERTEX ||
-						locate_type == CDT::EDGE) {
+						locate_type == CDT::EDGE /*||
+						on_the_border(cdt, fh, q) */) {
 					
 						set_unknown(face_index, tmp);
 						continue;
@@ -131,7 +136,6 @@ namespace CGAL{
 						break;
 					}
 				}
-
 				postprocess_tmp(tmp, visibility);
 
 				// Remove later.
@@ -152,6 +156,7 @@ namespace CGAL{
 				log.out << "number of traversed faces: " << number_of_traversed_faces << std::endl;
 				log.save("tmp/visibility");
 
+				assert(number_of_traversed_faces == static_cast<int>(cdt.number_of_faces()));
 				return number_of_traversed_faces;
 			}
 
@@ -215,6 +220,22 @@ namespace CGAL{
 					const bool continue_failure = false;
 					assert(continue_failure);
 				}
+			}
+
+			bool on_the_border(const CDT &cdt, const Face_handle fh, const Point_2 &p) const {
+
+				const Point_2 &a = cdt.triangle(fh).vertex(0);
+				const Point_2 &b = cdt.triangle(fh).vertex(1);
+				const Point_2 &c = cdt.triangle(fh).vertex(2);
+
+				Triangle_coordinates tric(a, b, c);
+				std::vector<FT> bc;
+				tric(p, bc);
+
+				const FT tol = 1.0e-6;
+
+				if (bc[0] < tol || bc[1] < tol || bc[2] < tol) return true;
+				return false;
 			}
 		};		
 	}

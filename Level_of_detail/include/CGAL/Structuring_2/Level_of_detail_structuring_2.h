@@ -75,7 +75,7 @@ namespace CGAL {
         	typedef CGAL::Kd_tree<Search_traits_2>      Tree;
 
 			// Remove later or change.
-			enum class Structured_label { LINEAR, CORNER };
+			enum class Structured_label { LINEAR, CORNER, CLUTTER };
 			enum class Occupancy_method { ALL, ONLY_PROJECTED };
 			enum class Adjacency_method { STRUCTURED };
 

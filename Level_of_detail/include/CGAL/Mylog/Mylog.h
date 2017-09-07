@@ -6,12 +6,15 @@
 #include <sstream>
 #include <fstream>
 #include <iostream>
+#include <cmath>
 
 // Boost includes.
 #include <boost/tuple/tuple.hpp>
 
 // CGAL includes.
 #include <CGAL/array.h>
+#include <CGAL/Unique_hash_map.h>
+#include <CGAL/IO/Color.h>
 
 namespace CGAL {
 
@@ -140,7 +143,222 @@ namespace CGAL {
 				save(fileName, ".log");
 			}
 
+			template<class CDT>
+			void save_cdt_obj(const CDT &cdt, const std::string &filename) {
+
+				clear();
+
+				typedef typename CDT::Vertex_handle Vertex_handle;
+				CGAL::Unique_hash_map<Vertex_handle, int> V;
+
+				int count = 0;
+				for (typename CDT::Finite_vertices_iterator vit = cdt.finite_vertices_begin(); vit != cdt.finite_vertices_end(); ++vit) {
+					
+					out << "v " << (*vit) << " " << 0 << std::endl;
+					V[vit] = count++;
+				}
+
+				for (typename CDT::Finite_faces_iterator fit = cdt.finite_faces_begin(); fit != cdt.finite_faces_end(); ++fit)
+					out << "f " << V[(*fit).vertex(0)] + 1 << " " << V[(*fit).vertex(1)] + 1 << " " << V[(*fit).vertex(2)] + 1 << std::endl;
+
+				save(filename, ".obj");
+			}
+
+			template<class CDT, class Visibility, class Container, class Segments>
+			void save_visibility_eps(CDT &cdt, const Visibility &visibility, const Container &input, const Segments &segments, const std::string &fileName = "tmp/visibility") {
+
+				clear();
+
+		        // Compute bounding box.
+		        double minbX, minbY, maxbX, maxbY;
+		        bounding_box(cdt, minbX, minbY, maxbX, maxbY);
+
+		        // Compute scale.
+		        double scale = 1.0;
+		        if (std::sqrt((maxbX - minbX) * (maxbX - minbX) + (maxbY - minbY) * (maxbY - minbY)) < 10.0 && scale == 1.0) scale *= 1000.0;
+
+		        // Set header.
+		        set_header(minbX * scale, minbY * scale, maxbX * scale, maxbY * scale);
+
+		        // Start private namespace.
+		        out << "0 dict begin gsave\n\n";
+
+		        // Save mesh.
+		        draw_mesh(cdt, visibility, scale);
+
+		        // Save points.
+		        draw_points(input, scale);
+
+		        // Save segments.
+		        draw_segments(segments, scale);
+
+		        // Finish private namespace.
+		        out << "grestore end\n\n";
+		        out << "%%EOF\n";
+
+		        save(fileName, ".eps");
+			}
+
+			template<class Segments>
+			void export_segments_as_obj(const std::string &name, const Segments &segments, const std::string &) {
+
+				clear();
+				for (size_t i = 0; i < segments.size(); ++i) {
+
+					out << "v " << segments[i].source() << " " << 0 << std::endl;
+					out << "v " << segments[i].target() << " " << 0 << std::endl;
+					out << "v " << segments[i].target() << " " << 0 << std::endl;
+				}
+
+				for (size_t i = 0; i < segments.size() * 3; i += 3)
+					out << "f " << i + 1 << " " << i + 2 << " " << i + 3 << std::endl;
+
+				// save("segments", ".obj", default_path);
+				save(name, ".obj");
+			}
+
+			template<class Projected_points>
+			void export_projected_points_as_xyz(const std::string &name, const Projected_points &projected, const std::string &) {
+				
+				clear();
+				for (typename Projected_points::const_iterator it = projected.begin(); it != projected.end(); ++it)
+					out << (*it).second << " " << 0 << std::endl;
+
+				// save(name, ".xyz", default_path);
+				save(name, ".xyz");
+			}
+
+			template<class Planes_mapping, class Projected_points>
+			void export_projected_points(const std::string &name, const Planes_mapping &planes, const Projected_points &projected) {
+
+				clear();
+
+				Projected_points tmp_points;
+				auto plane_index = 0;
+
+				using Plane_iterator = typename Planes_mapping::const_iterator;
+
+				for (Plane_iterator it = planes.begin(); it != planes.end(); ++it, ++plane_index) {
+					const auto num_points = (*it).second.size();
+
+					tmp_points.clear();
+					for (size_t i = 0; i < num_points; ++i) {
+						
+						const auto index = (*it).second[i];
+						tmp_points[i] = projected.at(index);
+					}
+
+					export_projected_points(name + "_" + std::to_string(plane_index), tmp_points);
+				}
+			}
+
 			std::stringstream out;
+
+		private:
+			template<class CDT>
+			void bounding_box(const CDT &cdt, double &minbX, double &minbY, double &maxbX, double &maxbY) const {
+
+				const double big_value = 100000.0;
+
+		        minbX =  big_value, minbY =  big_value;
+		        maxbX = -big_value, maxbY = -big_value;
+
+		        for (typename CDT::Finite_vertices_iterator it = cdt.finite_vertices_begin(); it != cdt.finite_vertices_end(); ++it) {
+
+		        	const double x = static_cast<double>((*it).point().x());
+		        	const double y = static_cast<double>((*it).point().y());
+
+		        	minbX = std::min(minbX, x);
+		        	minbY = std::min(minbY, y);
+
+		        	maxbX = std::max(maxbX, x);
+		        	maxbY = std::max(maxbY, y);
+		        }
+			}
+
+			void set_header(const double llx, const double lly, const double urx, const double ury) {
+		        
+		        out << "%!PS-Adobe-3.0 EPSF-3.0\n";
+		        out << "%%BoundingBox: " << llx << " " << lly << " " << urx << " " << ury << "\n";
+		        out << "%%Pages: 1\n";
+		        out << "%%Creator: Dmitry Anisimov, danston@ymail.com\n";
+		        out << "%%EndComments\n";
+		        out << "%%EndProlog\n\n";
+		        out << "%%Page: 1 1\n\n";
+			}
+
+			template<class CDT, class Visibility>
+    		void draw_mesh(const CDT &cdt, const Visibility &visibility, const double scale) {
+
+				int count = 0;
+				for (typename CDT::Finite_faces_iterator fit = cdt.finite_faces_begin(); fit != cdt.finite_faces_end(); ++fit) {
+
+					out << (*(*fit).vertex(0)).point().x() * scale << " " << (*(*fit).vertex(0)).point().y() * scale << " moveto\n";
+					out << (*(*fit).vertex(1)).point().x() * scale << " " << (*(*fit).vertex(1)).point().y() * scale << " lineto\n";
+					out << (*(*fit).vertex(2)).point().x() * scale << " " << (*(*fit).vertex(2)).point().y() * scale << " lineto\n";
+					out << (*(*fit).vertex(0)).point().x() * scale << " " << (*(*fit).vertex(0)).point().y() * scale << " lineto\n";
+
+					out << "closepath\n\n";
+					out << "gsave\n";
+
+					const int visibility_label = static_cast<int>(visibility.at(count++));
+					switch(visibility_label) {
+
+						case 0:
+							out << "0.2 1 0.2 setrgbcolor\n";
+							break;
+
+						case 1:
+							out << "1 0.2 0.2 setrgbcolor\n";
+							break;
+
+						case 2:
+							out << "1 1 1 setrgbcolor\n";
+							break;
+
+						default:
+							out << "1 1 1 setrgbcolor\n";
+							break;
+					}
+					out << "fill\n";
+					out << "grestore\n";
+					out << "0 0 0 setrgbcolor\n";
+					out << "2 setlinewidth\n";
+		        	out << "stroke\n\n";
+				}
+    		}
+
+    		template<class Container>
+    		void draw_points(const Container &input, const double scale) {
+        		for (typename Container::const_iterator it = input.begin(); it != input.end(); ++it) draw_disc(input.point(*it), scale);
+    		}
+
+    		template<class Point>
+    		void draw_disc(const Point &p, const double scale) {
+
+		        out << "0 setgray\n";
+		        out << "0 setlinewidth\n\n";
+		        out << p.x() * scale << " " << p.y() * scale << " " << 20 << " 0 360 arc closepath\n\n";
+		        out << "gsave\n";
+		        out << "0 setgray fill\n";
+		        out << "grestore\n";
+		        out << "stroke\n\n";
+    		}
+
+    		template<class Segments>
+    		void draw_segments(const Segments &segments, const double scale) {
+
+    			if (segments.empty()) return;
+    			for (size_t i = 0; i < segments.size(); ++i) {
+
+    				out << segments[i][0].x() * scale << " " << segments[i][0].y() * scale << " moveto\n";
+    				out << segments[i][1].x() * scale << " " << segments[i][1].y() * scale << " lineto\n";
+    			}
+
+    			out << "0 0 0 setgray\n";
+    			out << "10 setlinewidth\n";
+    			out << "stroke\n\n";
+    		}
 		};
 	}
 }

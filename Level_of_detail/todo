@@ -19,6 +19,9 @@ TODO AND OTHER:
 16. Improve the function for getting corners. Use a function to detect all cycles in the undirected graph obtained in the function create_structured_adjacency().
 17. Method for adjacency / corners is not robust when wrong planes are detected by the RANSAC. In this case, it may happen that lines that we intersect to get corners produce points which are far away from the real data set.
 18. Maybe better to pass all indices except for building boundaries to the visibility class instead of the whole input container?
+19. End points of the segments for sparse data sets create wrong visibility labels. E.g. outside triangles are labels inside, because these end points lie a bit further than end points of strucuted segments, which are shifted by LP/2 inside.
+20. Intersected segments cannot be used as input to CDT so we have to handle this issue in some way.
+21. Add one more label to the input: 1 detected as planar, 0 detected as something else. Then add a selector class to selecte points, which are detected as something else and are facade points that is building boundary. Add these points to the final structured set of points with the label CLUTTER.
 
 BUGS:
 1. Bug in the CGAL::Line_2 and CGAL::Line_3 projection?

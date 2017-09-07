@@ -9,12 +9,14 @@
 #include <CGAL/Constrained_triangulation_face_base_2.h>
 
 // New CGAL includes.
+#include <CGAL/Lod_0/Level_of_detail_reconstruction_0.h>
 #include <CGAL/Visibility_2/Level_of_detail_visibility_2.h>
+
 #include <CGAL/Mylog/Mylog.h>
 
 using namespace testing;
 
-class LOD_VisibilityTest: public Test {
+class LOD_ReconstructionTest: public Test {
 
 public:
 	using FT = double;
@@ -25,9 +27,6 @@ public:
 	using Container = CGAL::Point_set_3<Point_3>;
 	using Iterator  = Container::iterator;
 
-	using Label     = int; 
-	using Label_map = Container:: template Property_map<Label>; 
-
 	using VB = CGAL::Triangulation_vertex_base_2<Traits>;
 	using FB = CGAL::Constrained_triangulation_face_base_2<Traits>;
 
@@ -35,53 +34,30 @@ public:
 	using CDT = CGAL::Constrained_Delaunay_triangulation_2<Traits, TDS>;
 
 	using LodVisibility = CGAL::LOD::Level_of_detail_visibility_from_classification_2<Traits, Container, CDT>;
-
-	using Vertex_handle     = CDT::Vertex_handle;
 	using Visibility_result = std::map<int, LodVisibility::Visibility_label>;
+
+	using Lod_0 = CGAL::LOD::Level_of_detail_reconstruction_0<Traits, CDT, Visibility_result>;
+	using Vertex_handle = CDT::Vertex_handle;
 
 	using Log = CGAL::LOD::Mylog;
 
-	using Segment  = Traits::Segment_2;
-	using Segments = std::vector<Segment>;
+	using Segment = Traits::Segment_2;
+	using Lod_0_result = std::vector<Segment>;
 
-	LodVisibility lodVisibility;
-	CDT cdt; Container input;
+	Lod_0 lod_0;
+	CDT cdt;
 
-	LOD_VisibilityTest() {
+	LOD_ReconstructionTest() {
 		create_data();
 	}
 
 	void create_data() {
 
 		cdt.clear();
-		input.clear();		
-
-		set_basic_input(cdt, input);
+		set_basic_input(cdt);
 	}
 
-	void set_labels_property(Container &input, Label_map &labels) {
-		
-		auto success = false;
-		boost::tie(labels, success)  = input. template add_property_map<Label>("label", -1);
-		assert(success);
-	}
-
-	void set_basic_input(CDT &cdt, Container &input) {
-
-		Label_map labels;
-		set_labels_property(input, labels);
-
-		const Label ground     = 0;
-		const Label facade     = 1;
-		const Label roof       = 2;
-		const Label vegetation = 3; 
-
-		Iterator 
-		it = input.insert(Point_3(0.25, 0.25, 0)); labels[*it] = roof;
-		it = input.insert(Point_3(0.70, 0.70, 0)); labels[*it] = roof;
-		it = input.insert(Point_3(1.30, 0.30, 0)); labels[*it] = ground;
-		it = input.insert(Point_3(1.60, 0.60, 0)); labels[*it] = vegetation;
-		it = input.insert(Point_3(1.00, 0.80, 0)); labels[*it] = facade;
+	void set_basic_input(CDT &cdt) {
 
 		Vertex_handle va = cdt.insert(Point_2(0, 0));
 		Vertex_handle vb = cdt.insert(Point_2(1, 0));
@@ -108,30 +84,7 @@ public:
 	}
 };
 
-TEST_F(LOD_VisibilityTest, Compiles) {
+TEST_F(LOD_ReconstructionTest, Compiles) {
    
 	// Empty test.
-}
-
-TEST_F(LOD_VisibilityTest, SavesVisibility) {
-
-	Visibility_result visibility; Segments segments;
-	lodVisibility.compute(cdt, input, visibility);
-
-	Log log;
-	log.save_visibility_eps(cdt, visibility, input, segments);
-}
-
-TEST_F(LOD_VisibilityTest, VerifiesLabels) {
-
-	Visibility_result visibility;
-	lodVisibility.compute(cdt, input, visibility);
-
-	ASSERT_THAT(visibility.size(), Eq(static_cast<size_t>(4)));
-
-	ASSERT_THAT(visibility[0], Eq(LodVisibility::Visibility_label::IN));
-	ASSERT_THAT(visibility[1], Eq(LodVisibility::Visibility_label::IN));
-
-	ASSERT_THAT(visibility[2], Eq(LodVisibility::Visibility_label::OUT));
-	ASSERT_THAT(visibility[3], Eq(LodVisibility::Visibility_label::OUT));
 }
