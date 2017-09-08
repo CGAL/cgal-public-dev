@@ -26,21 +26,21 @@ namespace CGAL {
 
 namespace Polyline_tracing {
 
-template<typename K>
+template<typename K, typename PolygonMesh>
 class Motorcycle_priority_queue_entry
 {
-  typedef Motorcycle_priority_queue_entry<K>               Self;
+  typedef Motorcycle_priority_queue_entry<K, PolygonMesh>  Self;
 
 public:
   typedef typename K::FT                                   FT;
 
-  typedef Motorcycle<K>                                    Motorcycle;
+  typedef Motorcycle<K, PolygonMesh>                       Motorcycle;
 
   FT time_at_closest_target() const { return m->targets().begin()->second; }
   Motorcycle& motorcycle() { return *m; }
   const Motorcycle& motorcycle() const { return *m; }
 
-  Motorcycle_priority_queue_entry(Motorcycle& mc);
+  Motorcycle_priority_queue_entry(Motorcycle* mc);
 
   friend bool operator<(const Self& lhs, const Self& rhs) {
     // '>' because we want the priority queue to output the element with smallest time
@@ -51,10 +51,10 @@ private:
   Motorcycle* m;
 };
 
-template<typename K>
-Motorcycle_priority_queue_entry<K>::
-Motorcycle_priority_queue_entry(Motorcycle& mc)
-  : m(&mc)
+template<typename K, typename PolygonMesh>
+Motorcycle_priority_queue_entry<K, PolygonMesh>::
+Motorcycle_priority_queue_entry(Motorcycle* mc)
+  : m(mc)
 {
   CGAL_precondition(!m->targets().empty());
 }

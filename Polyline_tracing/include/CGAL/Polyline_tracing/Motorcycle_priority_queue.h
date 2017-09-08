@@ -29,31 +29,31 @@ namespace CGAL {
 
 namespace Polyline_tracing {
 
-template<typename K>
+template<typename K, typename PolygonMesh>
 class Motorcycle_priority_queue
 {
-  typedef Motorcycle_priority_queue<K>             Self;
+  typedef Motorcycle_priority_queue<K, PolygonMesh>         Self;
 
 public:
-  typedef Motorcycle<K>                            Motorcycle;
-  typedef std::vector<Motorcycle>                  Motorcycle_container;
+  typedef Motorcycle<K, PolygonMesh>                        Motorcycle;
+  typedef std::vector<Motorcycle*>                          Motorcycle_container;
 
   // Picked a fibonacci_heap for now. Would it be better to simply use
   // std::priority_queue and ignore+pop values that are meaningless ?
-  typedef Motorcycle_priority_queue_entry<K>       MPQ_entry;
-  typedef boost::heap::fibonacci_heap<MPQ_entry>   MPQ;
-  typedef typename MPQ::handle_type                handle_type;
+  typedef Motorcycle_priority_queue_entry<K, PolygonMesh>   MPQ_entry;
+  typedef boost::heap::fibonacci_heap<MPQ_entry>            MPQ;
+  typedef typename MPQ::handle_type                         handle_type;
 
   bool empty() const { return queue.empty(); }
   const MPQ_entry& top() const { return queue.top(); }
   handle_type handle(const Motorcycle& m) const { return handles[m.id()]; }
-  handle_type push(const Motorcycle& m) { queue.push(m); }
+  handle_type push(const Motorcycle& m) { queue.push(&m); }
   void update(const Motorcycle& m) { return queue.update(handles[m.id()]); }
   void erase(const Motorcycle& m) { return queue.erase(handles[m.id()]); }
 
   Motorcycle_priority_queue() : queue(), handles() { }
 
-  void initialize(Motorcycle_container& motorcycles);
+  void initialize(const Motorcycle_container& motorcycles);
 
   // output
   friend std::ostream& operator<<(std::ostream& out, const Self& mpq) {
@@ -77,18 +77,18 @@ private:
   std::vector<handle_type> handles; // maps motorcycle_ids to their handle in the PQ
 };
 
-template<typename K>
+template<typename K, typename PolygonMesh>
 void
-Motorcycle_priority_queue<K>::
-initialize(Motorcycle_container& motorcycles)
+Motorcycle_priority_queue<K, PolygonMesh>::
+initialize(const Motorcycle_container& motorcycles)
 {
-  typename Motorcycle_container::iterator m_it = motorcycles.begin();
-  typename Motorcycle_container::iterator last = motorcycles.end();
+  typename Motorcycle_container::const_iterator m_it = motorcycles.begin();
+  typename Motorcycle_container::const_iterator last = motorcycles.end();
   handles.resize(std::distance(m_it, last));
 
-  for(; m_it != last; ++m_it)
+  for(; m_it!=last; ++m_it)
   {
-    const int motorcycle_id = m_it->id();
+    const int motorcycle_id = (*m_it)->id();
     CGAL_precondition(motorcycle_id >= 0 && motorcycle_id < int(handles.size()));
     handles[motorcycle_id] = queue.push(*m_it);
   }

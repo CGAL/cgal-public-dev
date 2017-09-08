@@ -42,52 +42,53 @@ namespace CGAL {
 
 namespace Polyline_tracing {
 
-template<typename K>
+template<typename K, typename PolygonMesh>
 class Motorcycle_graph
 {
 public:
-  typedef typename K::FT                              FT;
-  typedef typename K::Point_2                         Point;
-  typedef typename K::Segment_2                       Segment;
-  typedef typename K::Vector_2                        Vector;
-  typedef typename K::Ray_2                           Ray;
+  typedef typename K::FT                                    FT;
+  typedef typename K::Point_2                               Point;
+  typedef typename K::Segment_2                             Segment;
+  typedef typename K::Vector_2                              Vector;
+  typedef typename K::Ray_2                                 Ray;
 
-  typedef Dictionary<K>                               Dictionary;
-  typedef Dictionary_entry<K>                         Dictionary_entry;
-  typedef typename Dictionary::DEC_it                 DEC_it;
+  typedef Dictionary<K>                                     Dictionary;
+  typedef Dictionary_entry<K>                               Dictionary_entry;
+  typedef typename Dictionary::DEC_it                       DEC_it;
 
-  typedef Motorcycle<K>                               Motorcycle;
-  typedef std::vector<Motorcycle>                     Motorcycle_container;
+  typedef Motorcycle<K, PolygonMesh>                        Motorcycle;
+  typedef std::vector<Motorcycle*>                          Motorcycle_container;
 
-  typedef Motorcycle_priority_queue<K>                Motorcycle_PQ;
-  typedef Motorcycle_priority_queue_entry<K>          Motorcycle_PQE;
+  typedef Motorcycle_priority_queue<K, PolygonMesh>         Motorcycle_PQ;
+  typedef Motorcycle_priority_queue_entry<K, PolygonMesh>   Motorcycle_PQE;
 
-  Motorcycle& motorcycle(const int id) { return motorcycles[id]; }
-  const Motorcycle& motorcycle(const int id) const { return motorcycles[id]; }
+  // Access
+  Motorcycle& motorcycle(const int id) { return *(motorcycles[id]); }
+  const Motorcycle& motorcycle(const int id) const { return *(motorcycles[id]); }
 
-  std::pair<DEC_it, FT> compute_halving_point(const Motorcycle& m,
-                                              DEC_it p, const FT p_time,
-                                              DEC_it q, const FT q_time);
-  std::pair<DEC_it, FT> compute_middle_point(DEC_it p, const FT p_time,
-                                             DEC_it q, const FT q_time);
+  // Constructors
+  Motorcycle_graph() { }
+  Motorcycle_graph(const PolygonMesh& mesh);
+
+  // Functions
+  std::pair<DEC_it, FT> compute_halving_point(const Motorcycle& m, DEC_it p, const FT p_time, DEC_it q, const FT q_time);
+  std::pair<DEC_it, FT> compute_middle_point(DEC_it p, const FT p_time, DEC_it q, const FT q_time);
   std::pair<DEC_it, FT> compute_motorcycle_next_destination(const Motorcycle& m) const;
   void crash_motorcycle(Motorcycle& m);
   void crash_motorcycles_with_same_source_and_direction();
   void drive_to_closest_target(Motorcycle& m);
   boost::tuple<DEC_it, FT, int, FT> find_collisions(Motorcycle& m);
 
-  template<typename MotorcycleSourcesIterator, typename MotorcycleDestinationsIterator>
-  void initialize_motorcycles(MotorcycleSourcesIterator mit, MotorcycleSourcesIterator lastm,
-                              MotorcycleDestinationsIterator dit, MotorcycleDestinationsIterator lastd);
+  template<typename MotorcycleContainerIterator>
+  void initialize_motorcycles(MotorcycleContainerIterator mit, MotorcycleContainerIterator last);
 
   // put that in traits @todo
   Point robust_intersection(const Segment& s, const Segment& t) const;
 
-  template<typename MotorcycleSourcesIterator, typename MotorcycleDestinationsIterator>
-  void trace_motorcycle_graph(MotorcycleSourcesIterator mit, MotorcycleSourcesIterator lastm,
-                              MotorcycleDestinationsIterator dit, MotorcycleDestinationsIterator lastd);
+  template<typename MotorcycleContainerIterator>
+  void trace_motorcycle_graph(MotorcycleContainerIterator mit, MotorcycleContainerIterator last);
 
-  // Post-trace checks
+  // Post-tracing checks
   bool is_valid() const;
 
   // Output
@@ -98,12 +99,19 @@ private:
   Dictionary points;
   Motorcycle_container motorcycles;
   Motorcycle_PQ motorcycle_pq;
+  const PolygonMesh& mesh;
 };
 // -----------------------------------------------------------------------------
+template<typename K, typename PolygonMesh>
+Motorcycle_graph<K, PolygonMesh>::
+Motorcycle_graph(const PolygonMesh& mesh)
+  : mesh(mesh)
+{ }
 
-template<typename K>
-std::pair<typename Motorcycle_graph<K>::DEC_it, typename Motorcycle_graph<K>::FT>
-Motorcycle_graph<K>::
+template<typename K, typename PolygonMesh>
+std::pair<typename Motorcycle_graph<K, PolygonMesh>::DEC_it,
+          typename Motorcycle_graph<K, PolygonMesh>::FT>
+Motorcycle_graph<K, PolygonMesh>::
 compute_middle_point(DEC_it p, const FT p_time, DEC_it q, const FT q_time)
 {
   Point r = K().construct_midpoint_2_object()(p->point(), q->point());
@@ -116,9 +124,10 @@ compute_middle_point(DEC_it p, const FT p_time, DEC_it q, const FT q_time)
   return std::make_pair(points.insert(r), time_at_r);
 }
 
-template<typename K>
-std::pair<typename Motorcycle_graph<K>::DEC_it, typename Motorcycle_graph<K>::FT>
-Motorcycle_graph<K>::
+template<typename K, typename PolygonMesh>
+std::pair<typename Motorcycle_graph<K, PolygonMesh>::DEC_it,
+          typename Motorcycle_graph<K, PolygonMesh>::FT>
+Motorcycle_graph<K, PolygonMesh>::
 compute_halving_point(const Motorcycle& m, DEC_it p, const FT p_time,
                                            DEC_it q, const FT q_time)
 {
@@ -136,18 +145,19 @@ compute_halving_point(const Motorcycle& m, DEC_it p, const FT p_time,
 #endif
 }
 
-template<typename K>
-std::pair<typename Motorcycle_graph<K>::DEC_it, typename Motorcycle_graph<K>::FT>
-Motorcycle_graph<K>::
+template<typename K, typename PolygonMesh>
+std::pair<typename Motorcycle_graph<K, PolygonMesh>::DEC_it,
+          typename Motorcycle_graph<K, PolygonMesh>::FT>
+Motorcycle_graph<K, PolygonMesh>::
 compute_motorcycle_next_destination(const Motorcycle& /*m*/) const
 {
   // interface with the tracer data structure @todo
   return std::make_pair(DEC_it(), FT());
 }
 
-template<typename K>
+template<typename K, typename PolygonMesh>
 void
-Motorcycle_graph<K>::
+Motorcycle_graph<K, PolygonMesh>::
 crash_motorcycle(Motorcycle& m)
 {
 #ifdef CGAL_MOTORCYCLE_GRAPH_VERBOSE
@@ -171,9 +181,9 @@ crash_motorcycle(Motorcycle& m)
   motorcycle_pq.erase(m);
 }
 
-template<typename K>
+template<typename K, typename PolygonMesh>
 void
-Motorcycle_graph<K>::
+Motorcycle_graph<K, PolygonMesh>::
 crash_motorcycles_with_same_source_and_direction()
 {
 #ifdef CGAL_MOTORCYCLE_GRAPH_VERBOSE
@@ -183,33 +193,31 @@ crash_motorcycles_with_same_source_and_direction()
   // brute force, for now
   // smarter version is to sort motorcycles by direction (slope),
   // and check for consecutive entries @todo
-  typename Motorcycle_container::iterator mc_it = motorcycles.begin();
-  typename Motorcycle_container::iterator end = motorcycles.end();
-  for(; mc_it!=end; ++mc_it)
+  std::size_t number_of_motorcycles = motorcycles.size();
+  for(std::size_t mc_id = 0; mc_id<number_of_motorcycles; ++mc_id)
   {
-    Motorcycle& mc = *mc_it;
+    Motorcycle& mc = motorcycle(mc_id);
 
     if(mc.source() == mc.destination() || mc.is_crashed())
       continue;
 
-    typename Motorcycle_container::iterator mc_2_it = motorcycles.begin();
-    typename Motorcycle_container::iterator end = motorcycles.end();
-    for(; mc_2_it!=end; ++mc_2_it)
+    for(std::size_t mc_2_id = 0; mc_2_id<number_of_motorcycles; ++mc_2_id)
     {
-      Motorcycle& mc_2 = *mc_2_it;
+      Motorcycle& mc_2 = motorcycle(mc_2_id);
 
       if(mc_2.id() == mc.id() ||
-         mc_2.source() == mc_2.destination() ||
-         mc.source() != mc_2.source())
+         mc_2.source() == mc_2.destination() || // degenerate track does not block anything
+         mc.source() != mc_2.source()) // must have identical sources
         continue;
 
-      // collinear
+      // only aligned tracks block one another
       if(!K().collinear_2_object()(mc.source()->point(), // == mc_2.source()->point()
                                    mc.destination()->point(),
                                    mc_2.destination()->point()))
         continue;
 
-      // same direction
+      // moving away from each other from the same point is allowed
+      // use ordered_along_line? @todo
       if(K().angle_2_object()(mc.source()->point(),
                               mc.destination()->point(),
                               mc_2.source()->point(),
@@ -225,9 +233,9 @@ crash_motorcycles_with_same_source_and_direction()
   }
 }
 
-template<typename K>
+template<typename K, typename PolygonMesh>
 void
-Motorcycle_graph<K>::
+Motorcycle_graph<K, PolygonMesh>::
 drive_to_closest_target(Motorcycle& mc)
 {
   CGAL_assertion(!mc.is_crashed());
@@ -252,10 +260,12 @@ drive_to_closest_target(Motorcycle& mc)
 
 // search for a possible collision with another motorcycle between the current
 // position of mc and the next target
-template<typename K>
-boost::tuple<typename Motorcycle_graph<K>::DEC_it, typename Motorcycle_graph<K>::FT,
-             int, typename Motorcycle_graph<K>::FT>
-Motorcycle_graph<K>::
+template<typename K, typename PolygonMesh>
+boost::tuple<typename Motorcycle_graph<K, PolygonMesh>::DEC_it,
+             typename Motorcycle_graph<K, PolygonMesh>::FT,
+             int,
+             typename Motorcycle_graph<K, PolygonMesh>::FT>
+Motorcycle_graph<K, PolygonMesh>::
 find_collisions(Motorcycle& mc)
 {
 #ifdef CGAL_MOTORCYCLE_GRAPH_VERBOSE
@@ -290,14 +300,13 @@ find_collisions(Motorcycle& mc)
     return boost::make_tuple(closest_collision_point, time_at_closest_collision,
                              foreign_mc_id, foreign_time_at_closest_collision);
 
-  typename Motorcycle_container::iterator mc_it = motorcycles.begin();
-  typename Motorcycle_container::iterator end = motorcycles.end();
-  for(; mc_it!=end; ++mc_it)
+  std::size_t number_of_motorcycles = motorcycles.size();
+  for(std::size_t mc_2_id = 0; mc_2_id<number_of_motorcycles; ++mc_2_id)
   {
-    Motorcycle& mc_2 = *mc_it;
-
-    if(mc.id() == mc_2.id())
+    if(mc.id() == mc_2_id)
       continue;
+
+    Motorcycle& mc_2 = motorcycle(mc_2_id);
 
     FT time_at_collision = 0.;
 
@@ -510,25 +519,25 @@ find_collisions(Motorcycle& mc)
                            foreign_mc_id, foreign_time_at_closest_collision);
 }
 
-template<typename K>
-template<typename MotorcycleSourcesIterator, typename MotorcycleDestinationsIterator>
+template<typename K, typename PolygonMesh>
+template<typename MotorcycleContainerIterator>
 void
-Motorcycle_graph<K>::
-initialize_motorcycles(MotorcycleSourcesIterator mit, MotorcycleSourcesIterator lastm,
-                       MotorcycleDestinationsIterator dit,
-                       MotorcycleDestinationsIterator CGAL_precondition_code(lastd))
+Motorcycle_graph<K, PolygonMesh>::
+initialize_motorcycles(MotorcycleContainerIterator mit, MotorcycleContainerIterator last)
 {
-  CGAL_precondition(std::distance(mit, lastm) == std::distance(dit, lastd));
-  motorcycles.reserve(std::distance(mit, lastm));
+  motorcycles.reserve(std::distance(mit, last));
 
   int counter = 0; // unique motorcycle ids
-  while(mit != lastm)
+  while(mit != last)
   {
-    const Point s = *mit++;
-    const FT speed = 1.; // this should be provided in input @todo
+    Motorcycle& m = *mit++;
+    m.set_id(counter);
 
-    // @tmp if not provided, this should be computed by the tracer
-    const Point d = *dit++;
+    const Point& s = m.initial_source_point();
+    const Point& d = m.initial_destination_point();
+    const FT speed = m.speed();
+    const FT time_at_source = m.current_time();
+    const Vector& dir = m.direction();
 
     if(s == d)
     {
@@ -537,7 +546,6 @@ initialize_motorcycles(MotorcycleSourcesIterator mit, MotorcycleSourcesIterator 
     }
 
     // @tmp this should be computed by the tracer (to take e.g. speed into account)
-    const FT time_at_source = 0.;
     const FT time_at_destination =
       time_at_source + CGAL::sqrt(CGAL::squared_distance(s, d)) / speed;
 
@@ -545,18 +553,26 @@ initialize_motorcycles(MotorcycleSourcesIterator mit, MotorcycleSourcesIterator 
     DEC_it source_entry = points.insert(s, counter, time_at_source);
     DEC_it destination_entry = points.insert(d, counter, time_at_destination);
 
-    // create the motorcycle
-    Motorcycle m(counter, source_entry, destination_entry, speed,
-                 time_at_source, time_at_destination);
-    motorcycles.push_back(m);
+    m.source() = source_entry;
+    m.position() = source_entry;
+    m.destination() = destination_entry;
+
+    // Initialize the motorcycle target queue
+    m.targets().insert(std::make_pair(source_entry, time_at_source));
+    m.targets().insert(std::make_pair(destination_entry, time_at_destination));
+
+    // this is useful to not have empty track when sour=dest but creates duplicates @fixme
+    m.track().push_back(source_entry);
+
+    motorcycles.push_back(&m);
 
     ++counter;
   }
 }
 
-template<typename K>
-typename Motorcycle_graph<K>::Point
-Motorcycle_graph<K>::
+template<typename K, typename PolygonMesh>
+typename Motorcycle_graph<K, PolygonMesh>::Point
+Motorcycle_graph<K, PolygonMesh>::
 robust_intersection(const Segment &s, const Segment &t) const
 {
   // this function should only be called in the case of non collinear segments
@@ -622,14 +638,13 @@ robust_intersection(const Segment &s, const Segment &t) const
   return intersection_point;
 }
 
-template<typename K>
-template<typename MotorcyclesInputIterator, typename MotorcycleDestinationsIterator>
+template<typename K, typename PolygonMesh>
+template<typename MotorcycleContainerIterator>
 void
-Motorcycle_graph<K>::
-trace_motorcycle_graph(MotorcyclesInputIterator mit, MotorcyclesInputIterator lastm,
-                       MotorcycleDestinationsIterator dit, MotorcycleDestinationsIterator lastd)
+Motorcycle_graph<K, PolygonMesh>::
+trace_motorcycle_graph(MotorcycleContainerIterator mit, MotorcycleContainerIterator last)
 {
-  initialize_motorcycles(mit, lastm, dit, lastd);
+  initialize_motorcycles(mit, last);
   motorcycle_pq.initialize(motorcycles);
 #ifdef CGAL_MOTORCYCLE_GRAPH_VERBOSE
   std::cout << "Initial queue: " << std::endl << motorcycle_pq << std::endl;
@@ -731,7 +746,7 @@ trace_motorcycle_graph(MotorcyclesInputIterator mit, MotorcyclesInputIterator la
           // even if the collision point is on the confirmed part of the track
           collision_point->add_motorcycle(foreign_motorcycle_id, foreign_time_at_collision_point);
 
-          Motorcycle& foreign_mc = motorcycles[foreign_motorcycle_id];
+          Motorcycle& foreign_mc = motorcycle(foreign_motorcycle_id);
           if(// the collision point is not on the confirmed track for the foreign mc
              foreign_time_at_collision_point > foreign_mc.current_time())
           {
@@ -779,18 +794,18 @@ trace_motorcycle_graph(MotorcyclesInputIterator mit, MotorcyclesInputIterator la
   }
 }
 
-template<typename K>
+template<typename K, typename PolygonMesh>
 bool
-Motorcycle_graph<K>::
+Motorcycle_graph<K, PolygonMesh>::
 is_valid() const
 {
   // @todo
   return true;
 }
 
-template<typename K>
+template<typename K, typename PolygonMesh>
 void
-Motorcycle_graph<K>::
+Motorcycle_graph<K, PolygonMesh>::
 output_all_dictionary_points() const
 {
   typename Dictionary::Dictionary_entry_container::const_iterator dit = points.all_entries().begin();
@@ -801,9 +816,9 @@ output_all_dictionary_points() const
     os << dit->point() << " 0" << '\n';
 }
 
-template<typename K>
+template<typename K, typename PolygonMesh>
 void
-Motorcycle_graph<K>::
+Motorcycle_graph<K, PolygonMesh>::
 output_motorcycles_sources_and_destinations() const
 {
   // must be adapted to surfaces @todo
@@ -812,8 +827,8 @@ output_motorcycles_sources_and_destinations() const
   std::ofstream osd("out_motorcycles_destinations.xyz");
   for(std::size_t i=0; i<motorcycles.size(); ++i)
   {
-    oss << motorcycles[i].source()->point() << " 0" << '\n';
-    osd << motorcycles[i].destination()->point() << " 0" << '\n';
+    oss << motorcycle(i).source()->point() << " 0" << '\n';
+    osd << motorcycle(i).destination()->point() << " 0" << '\n';
   }
 }
 

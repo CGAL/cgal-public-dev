@@ -5,47 +5,63 @@
 //#define CGAL_MOTORCYCLE_GRAPH_RANDOM_POINTS_ON_SEGMENT
 
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
+#include <CGAL/Surface_mesh.h>
 
+#include <CGAL/Polyline_tracing/Motorcycle.h>
 #include <CGAL/Polyline_tracing/Motorcycle_graph.h>
 
 #include <CGAL/point_generators_2.h>
 #include <CGAL/random_polygon_2.h> // for 'copy_n_unique()'
 
+#include <fstream>
+#include <iostream>
 #include <vector>
+
+typedef CGAL::Exact_predicates_inexact_constructions_kernel      K;
+
+typedef K::Point_2                                               Point_2;
+typedef CGAL::Surface_mesh<Point_2>                              PolygonMesh;
+typedef CGAL::Polyline_tracing::Motorcycle<K, PolygonMesh>       Motorcycle;
+typedef CGAL::Polyline_tracing::Motorcycle_graph<K, PolygonMesh> Motorcycle_graph;
+
+namespace CP = CGAL::parameters;
 
 int main()
 {
   std::cout.precision(17);
   std::cerr.precision(17);
 
-  typedef CGAL::Exact_predicates_inexact_constructions_kernel K;
+  PolygonMesh pm;
+  std::ifstream in("data/square.off");
+  in >> pm;
+  std::cout << pm.number_of_vertices() << " vertices" << std::endl;
+  std::cout << pm.number_of_edges() << " edges" << std::endl;
+  std::cout << pm.number_of_faces() << " faces" << std::endl;
+  CGAL_precondition(pm.is_valid());
 
-  typedef K::Point_2                                          Point_2;
+  std::ofstream out("polygon_mesh.off");
+  out << pm;
 
   bool is_loop_infinite = true;
   while(is_loop_infinite)
   {
-//    is_loop_infinite = false;
+    is_loop_infinite = false;
 
-    std::vector<Point_2> motorcycles;
-    std::vector<Point_2> destinations;
+    std::vector<Motorcycle> motorcycles;
 
 #ifdef CGAL_MOTORCYCLE_GRAPH_USE_MANUAL_POINTS
     // add some motorcycles
-    motorcycles.push_back(Point_2(0,0));
-    motorcycles.push_back(Point_2(0,0));
-    motorcycles.push_back(Point_2(0,0));
-
-    // and their respective destinations
-    destinations.push_back(Point_2(10,0));
-    destinations.push_back(Point_2(5,0));
-    destinations.push_back(Point_2(5,5));
+    motorcycles.push_back(Motorcycle(CP::source = Point_2(0,0),
+                                     CP::destination = Point_2(10,0)));
+    motorcycles.push_back(Motorcycle(CP::source = Point_2(0,5),
+                                     CP::destination = Point_2(7,2)));
 #else // random stuff below
     const int size = 50; // number of random points
+    motorcycles.reserve(size);
 
  #ifdef CGAL_MOTORCYCLE_GRAPH_RANDOM_POINTS_IN_SQUARE
     typedef CGAL::Random_points_in_square_2<Point_2>            Generator;
-    const int side = 10;
+    const int side = 1;
   #if CGAL_MOTORCYCLE_GRAPH_USE_FIXED_SEEDS
     CGAL::Random rand_s(6), rand_d(7);
     std::cerr << "Seeds = " << rand_s.get_seed() << " " << rand_d.get_seed() << std::endl;
@@ -54,8 +70,9 @@ int main()
     Generator gen_s(side), gen_d(side);
   #endif
 
-    CGAL::copy_n_unique(gen_s, size, std::back_inserter(motorcycles));
-    CGAL::copy_n_unique(gen_d, size, std::back_inserter(destinations));
+    for(int i=0; i<size; ++i)
+      motorcycles.push_back(Motorcycle(CP::source = *gen_s++,
+                                       CP::destination = *gen_d++));
 
  #elif defined(CGAL_MOTORCYCLE_GRAPH_RANDOM_POINTS_ON_SEGMENT)
     typedef CGAL::Random_points_on_segment_2<Point_2>            Generator;
@@ -63,18 +80,20 @@ int main()
     Generator gen_s0(s0, t0), gen_d0(s0, t0);
     Generator gen_s1(s1, t1), gen_d1(s1, t1);
 
-    CGAL::copy_n_unique(gen_s0, size, std::back_inserter(motorcycles));
-    CGAL::copy_n_unique(gen_d0, size, std::back_inserter(destinations));
-    CGAL::copy_n_unique(gen_s1, size, std::back_inserter(motorcycles));
-    CGAL::copy_n_unique(gen_d1, size, std::back_inserter(destinations));
+    for(int i=0; i<size; ++i)
+    {
+      motorcycles.push_back(Motorcycle(CP::source = *gen_s0++,
+                                       CP::destination = *gen_d1++));
+      motorcycles.push_back(Motorcycle(CP::source = *gen_s1++,
+                                       CP::destination = *gen_d1++));
+    }
  #endif
 
 #endif // CGAL_MOTORCYCLE_GRAPH_USE_MANUAL_POINTS
 
     // trace the graph
-    CGAL::Polyline_tracing::Motorcycle_graph<K> motorcycle_graph;
-    motorcycle_graph.trace_motorcycle_graph(motorcycles.begin(), motorcycles.end(),
-                                            destinations.begin(), destinations.end());
+    Motorcycle_graph motorcycle_graph(pm);
+    motorcycle_graph.trace_motorcycle_graph(motorcycles.begin(), motorcycles.end());
     CGAL_postcondition(motorcycle_graph.is_valid());
 
     // output

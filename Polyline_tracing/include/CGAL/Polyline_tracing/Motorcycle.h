@@ -19,6 +19,8 @@
 
 #include <CGAL/Polyline_tracing/Dictionary.h>
 
+#include <boost/parameter.hpp>
+
 #include <fstream>
 #include <iostream>
 #include <list>
@@ -26,6 +28,16 @@
 #include <sstream>
 
 namespace CGAL {
+
+namespace parameters {
+
+  BOOST_PARAMETER_NAME( (source, tag) source_ )
+  BOOST_PARAMETER_NAME( (destination, tag) destination_ )
+  BOOST_PARAMETER_NAME( (speed, tag) speed_ )
+  BOOST_PARAMETER_NAME( (direction, tag) direction_ )
+  BOOST_PARAMETER_NAME( (initial_time, tag) initial_time_ )
+
+} // end namespace parameters
 
 namespace Polyline_tracing {
 
@@ -41,10 +53,12 @@ struct Target_point_set_comparer
   }
 };
 
-template<typename K>
-class Motorcycle
+// -----------------------------------------------------------------------------
+
+template<typename K, typename PolygonMesh>
+class Motorcycle_impl
 {
-  typedef Motorcycle<K>                                         Self;
+  typedef Motorcycle_impl<K, PolygonMesh>                       Self;
 
 public:
   typedef typename K::FT                                        FT;
@@ -58,15 +72,28 @@ public:
   typedef std::pair<DEC_it, FT>                                 Target_point;
   typedef std::set<Target_point, Target_point_set_comparer<K> > Target_point_container;
 
+  typedef typename boost::graph_traits<PolygonMesh>::face_descriptor    face_descriptor;
+
   // Access
-  int id() const { return i; }
+  std::size_t id() const { return i; }
+  void set_id(std::size_t id) { i = id; }
   bool is_crashed() const { return crashed; }
   void crash() { crashed = true; }
 
+  const Point& initial_source_point() const { return ini_sour_pt; }
+  const Point& initial_destination_point() const { return ini_dest_pt; }
+
+  DEC_it& source() { return sour; }
   const DEC_it& source() const { return sour; }
   DEC_it& destination() { return dest; }
   const DEC_it destination() const { return dest; }
+
+  face_descriptor& current_face() { return face; }
+  const face_descriptor& current_face() const { return face; }
+
   const FT speed() const { return v; }
+  Vector& direction() { return dir; }
+  const Vector& direction() const { return dir; }
   FT& current_time() { return time; }
   const FT& current_time() const { return time; }
   DEC_it& position() { return conf; }
@@ -78,8 +105,8 @@ public:
   const std::list<DEC_it>& track() const { return track_points; }
 
   // Constructor
-  Motorcycle(const int id, const DEC_it p, const DEC_it v, FT speed,
-             const FT dist_at_s, const FT dist_at_d);
+  template<typename ArgumentPack>
+  Motorcycle_impl(const ArgumentPack& args);
 
   // Functions
   void add_new_target(const DEC_it target_point, const FT time_at_target);
@@ -110,105 +137,131 @@ public:
   void output_track() const;
 
 private:
-  const int i;
+  std::size_t i;
   bool crashed;
 
-  const DEC_it sour; // source point
-  DEC_it dest; // destination, which might change
-  const FT v; // speed of the motorcycle, 'const' for now
-  FT time; // current time at the motorcycle
+  // the very first source and destination points, before insertion in the dictionary
+  const Point ini_sour_pt;
+  const Point ini_dest_pt;
+
+  // below might change when we change faces
+  DEC_it sour; // source point
+  DEC_it dest; // destination
   DEC_it conf; // last confirmed position
 
-  Target_point_container target_points; // tentative targets (ordered)
+  const FT v; // speed of the motorcycle, 'const' for now
+  Vector dir; // direction of the motorcycle, used to compute the destination
+  FT time; // current time at the position of the motorcycle
+
+  face_descriptor face; // current face
+
+  // tentative targets (ordered by increasing distance to 'conf')
+  Target_point_container target_points;
 
   std::list<DEC_it> track_points;
 };
 
-template<typename K>
-Motorcycle<K>::
-Motorcycle(const int id,
-           const DEC_it source, const DEC_it destination, const FT speed,
-           const FT dist_at_s, const FT dist_at_d)
-  : i(id), crashed(false),
-    sour(source), dest(destination), v(speed), time(dist_at_s), conf(source),
-    target_points(Target_point_set_comparer<K>()), track_points()
+template<typename K, typename PolygonMesh>
+class Motorcycle
+  : public Motorcycle_impl<K, PolygonMesh>
 {
-  CGAL_assertion(dist_at_s <= dist_at_d);
+  typedef Motorcycle_impl<K, PolygonMesh>               Base;
 
-  if(sour->point() == dest->point()) {
-    std::cerr << "Warning: source and destination (" << sour->point() << ") "
-              << "are equal for motorcycle: " << id << std::endl;
+public:
+  BOOST_PARAMETER_CONSTRUCTOR(Motorcycle, (Base), parameters::tag,
+                              (required (source_, *))
+                              (optional (destination_, *)
+                                        (speed_, *)
+                                        (direction_, *)
+                                        (initial_time_, *))
+                             )
+};
+
+// -----------------------------------------------------------------------------
+
+template<typename K, typename PolygonMesh>
+template <class ArgumentPack>
+Motorcycle_impl<K, PolygonMesh>::
+Motorcycle_impl(const ArgumentPack& args)
+  : i(-1),
+    crashed(false),
+    ini_sour_pt(args[parameters::source]),
+    ini_dest_pt(args[parameters::destination|Point()]),
+    sour(), dest(), conf(),
+    v(args[parameters::speed|1.]),
+    dir(args[parameters::direction|Vector()]),
+    time(args[parameters::initial_time|0.]),
+    target_points(Target_point_set_comparer<K>()),
+    track_points()
+{
+  if(ini_sour_pt == ini_dest_pt) {
+    std::cerr << "Warning: creating motorcycle with equal source "
+              << "and destination: (" << ini_sour_pt << ") " << std::endl;
   }
-
-  target_points.insert(std::make_pair(sour, dist_at_s));
-  target_points.insert(std::make_pair(dest, dist_at_d));
-
-  // this is useful to not have empty track when sour=dest but creates duplicates @fixme
-  track_points.push_back(sour);
 }
 
-template<typename K>
+template<typename K, typename PolygonMesh>
 void
-Motorcycle<K>::
+Motorcycle_impl<K, PolygonMesh>::
 add_new_target(const DEC_it target_point, const FT time_at_target)
 {
   target_points.insert(std::make_pair(target_point, time_at_target));
 }
 
-template<typename K>
-const typename Motorcycle<K>::DEC_it
-Motorcycle<K>::
+template<typename K, typename PolygonMesh>
+const typename Motorcycle_impl<K, PolygonMesh>::DEC_it
+Motorcycle_impl<K, PolygonMesh>::
 closest_target() const
 {
   CGAL_precondition(!target_points.empty());
   return target_points.begin()->first;
 }
 
-template<typename K>
-typename Motorcycle<K>::FT
-Motorcycle<K>::
+template<typename K, typename PolygonMesh>
+typename Motorcycle_impl<K, PolygonMesh>::FT
+Motorcycle_impl<K, PolygonMesh>::
 time_at_closest_target() const
 {
   CGAL_precondition(!target_points.empty());
   return target_points.begin()->second;
 }
 
-template<typename K>
+template<typename K, typename PolygonMesh>
 void
-Motorcycle<K>::
+Motorcycle_impl<K, PolygonMesh>::
 erase_closest_target()
 {
   CGAL_assertion(!target_points.empty());
   return target_points.erase(target_points.begin());
 }
 
-template<typename K>
+template<typename K, typename PolygonMesh>
 bool
-Motorcycle<K>::
+Motorcycle_impl<K, PolygonMesh>::
 has_reached_blocked_point() const
 {
   return conf->is_blocked();
 }
 
-template<typename K>
+template<typename K, typename PolygonMesh>
 bool
-Motorcycle<K>::
+Motorcycle_impl<K, PolygonMesh>::
 has_reached_simultaneous_collision_point() const
 {
   return conf->has_simultaneous_collision();
 }
 
-template<typename K>
+template<typename K, typename PolygonMesh>
 bool
-Motorcycle<K>::
+Motorcycle_impl<K, PolygonMesh>::
 is_motorcycle_destination_final() const
 {
   return true; // @todo
 }
 
-template<typename K>
+template<typename K, typename PolygonMesh>
 void
-Motorcycle<K>::
+Motorcycle_impl<K, PolygonMesh>::
 set_new_destination(const DEC_it new_dest, const FT new_time)
 {
   assert(target_points.empty());
@@ -222,9 +275,9 @@ set_new_destination(const DEC_it new_dest, const FT new_time)
   target_points.insert(std::make_pair(dest, new_time));
 }
 
-template<typename K>
+template<typename K, typename PolygonMesh>
 void
-Motorcycle<K>::
+Motorcycle_impl<K, PolygonMesh>::
 output_track() const
 {
   std::ostringstream out_filename;
@@ -247,9 +300,9 @@ output_track() const
     os << "3 " << j << " " << j+1 << " " << j << '\n';
 }
 
-template<typename K>
+template<typename K, typename PolygonMesh>
 void
-Motorcycle<K>::
+Motorcycle_impl<K, PolygonMesh>::
 output_intended_track() const
 {
   // must be adapted to surface @todo
