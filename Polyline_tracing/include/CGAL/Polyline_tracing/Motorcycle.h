@@ -142,6 +142,9 @@ Motorcycle(const int id,
 
   target_points.insert(std::make_pair(sour, dist_at_s));
   target_points.insert(std::make_pair(dest, dist_at_d));
+
+  // this is useful to not have empty track when sour=dest but creates duplicates @fixme
+  track_points.push_back(sour);
 }
 
 template<typename K>
@@ -229,6 +232,7 @@ output_track() const
   std::ofstream os(out_filename.str().c_str());
 
   const std::size_t pn = track_points.size();
+  CGAL_assertion(pn != 0);
   const std::size_t fn = pn - 1;
 
   os << "OFF" << '\n';
