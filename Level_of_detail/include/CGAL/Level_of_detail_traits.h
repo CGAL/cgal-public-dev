@@ -7,7 +7,6 @@
 
 // CGAL includes.
 #include <CGAL/Constrained_Delaunay_triangulation_2.h>
-#include <CGAL/Triangulation_conformer_2.h>
 #include <CGAL/Constrained_triangulation_face_base_2.h>
 
 // New CGAL includes.
@@ -59,7 +58,11 @@ namespace CGAL {
 			typedef Level_of_detail_visibility_from_classification_2<Kernel, Container, CDT> Visibility_2;
 
 			typedef std::map<int, typename Visibility_2::Visibility_label> Visibility_result;
-			typedef Level_of_detail_reconstruction_0<Kernel, CDT, Visibility_result> Lod_0;
+			
+			typedef typename Structuring_2::Structured_label    Structured_label;
+			typedef std::vector<std::vector<Structured_label> > Structured_labels;
+			
+			typedef Level_of_detail_reconstruction_0<Kernel, CDT, Visibility_result, Structured_labels> Lod_0;
 		};
 	}
 }

@@ -10,6 +10,7 @@
 // CGAL includes.
 #include <CGAL/linear_least_squares_fitting_2.h>
 #include <CGAL/linear_least_squares_fitting_3.h>
+#include <CGAL/Triangulation_conformer_2.h>
 
 // New CGAL includes.
 #include <CGAL/Mylog/Mylog.h>
@@ -219,8 +220,8 @@ namespace CGAL {
 				// ----------------------------------
 
 				// (13) Apply graph cut.
-				Lod_0_result lod_0_result;
-				m_lod_0.reconstruct(cdt, visibility, lod_0_result);
+				Lod_0_result lod_0_result; Structured_labels str_labels;
+				m_lod_0.reconstruct(cdt, visibility, str_labels, lod_0_result);
 
 				log.out << "(13) Final LOD 0 is reconstructed. This result is saved in lod_0.obj file." << std::endl;
 
