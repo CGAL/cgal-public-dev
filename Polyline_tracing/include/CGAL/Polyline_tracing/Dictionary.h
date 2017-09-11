@@ -17,6 +17,7 @@
 #ifndef CGAL_POLYLINE_TRACING_DICTIONARY_H
 #define CGAL_POLYLINE_TRACING_DICTIONARY_H
 
+#include <CGAL/array.h>
 #include <CGAL/assertions.h>
 
 #include <boost/bimap.hpp>
@@ -33,10 +34,10 @@ namespace CGAL {
 namespace Polyline_tracing {
 
 // Information associated to any point that is involved in the motorcycle graph algorithm
-template<typename K>
+template<typename K, typename PolygonMesh>
 class Dictionary_entry
 {
-  typedef Dictionary_entry<K>                                      Self;
+  typedef Dictionary_entry<K, PolygonMesh>                         Self;
 
 public:
   typedef typename K::FT                                           FT;
@@ -58,11 +59,27 @@ public:
   typedef typename Visiting_motorcycles_container::left_const_iterator   VMC_left_cit;
   typedef typename Visiting_motorcycles_container::right_const_iterator  VMC_right_cit;
 
+  typedef typename boost::graph_traits<PolygonMesh>::face_descriptor     face_descriptor;
+
+  // \brief An ordered pair specifying a location on the surface of the `Triangle_mesh`.
+  // \details If `tm` is the input graph and given the pair (`f`, `bc`)
+  // such that `bc` is `(w0, w1, w2)`, the correspondance with the weights in `bc`
+  // and the vertices of the face `f` is the following:
+  // - `w0 = source(halfedge(f, tm), tm)`
+  // - `w1 = target(halfedge(f, tm), tm)`
+  // - `w2 = target(next(halfedge(f, tm), tm), tm)`
+  typedef typename CGAL::cpp11::array<FT, 3>                       Barycentric_coordinates;
+  typedef std::pair<face_descriptor, Barycentric_coordinates>      Face_location;
+
+  // Access
   const Point& point() const { return p; }
+  void set_location(const Face_location& l) const { loc = l; }
+  const Face_location& location() const { return loc; }
   bool is_blocked() const { return blocked; }
   void block() const { blocked = true; }
   const Visiting_motorcycles_container& visiting_motorcycles() const { return visiting_mcs; }
 
+  // Constructor
   Dictionary_entry(const Point& p);
 
   // Most of these functions are not actually 'const' but the members they modify
@@ -90,7 +107,11 @@ public:
   }
 
 private:
+  // The position of the point
   const Point p;
+
+  // Its location in the mesh
+  mutable Face_location loc;
 
   // This class is meant to be an element of a set entry, which is const. However,
   // The members below must still be modified so they are made mutable.
@@ -99,15 +120,15 @@ private:
   mutable bool blocked;
 };
 
-template<typename K>
-Dictionary_entry<K>::
+template<typename K, typename PolygonMesh>
+Dictionary_entry<K, PolygonMesh>::
 Dictionary_entry(const Point& p)
   : p(p), visiting_mcs(), blocked(false)
 { }
 
-template<typename K>
+template<typename K, typename PolygonMesh>
 void
-Dictionary_entry<K>::
+Dictionary_entry<K, PolygonMesh>::
 add_motorcycle(const int id, const FT time) const
 {
   // the motorcycle `i` should not already exists in the list of motorcycles
@@ -117,17 +138,17 @@ add_motorcycle(const int id, const FT time) const
   visiting_mcs.insert(value_type(id, time));
 }
 
-template<typename K>
+template<typename K, typename PolygonMesh>
 bool
-Dictionary_entry<K>::
+Dictionary_entry<K, PolygonMesh>::
 has_motorcycle(const int id) const
 {
   return (find_motorcycle(id) != visiting_mcs.left.end());
 }
 
-template<typename K>
+template<typename K, typename PolygonMesh>
 bool
-Dictionary_entry<K>::
+Dictionary_entry<K, PolygonMesh>::
 has_simultaneous_collision() const
 {
   CGAL_precondition(!visiting_mcs.empty());
@@ -145,17 +166,17 @@ has_simultaneous_collision() const
   return (first_time == second_time);
 }
 
-template<typename K>
-typename Dictionary_entry<K>::VMC_left_it
-Dictionary_entry<K>::
+template<typename K, typename PolygonMesh>
+typename Dictionary_entry<K, PolygonMesh>::VMC_left_it
+Dictionary_entry<K, PolygonMesh>::
 find_motorcycle(const int id) const
 {
   return visiting_mcs.left.find(id);
 }
 
-template<typename K>
-typename Dictionary_entry<K>::size_type
-Dictionary_entry<K>::
+template<typename K, typename PolygonMesh>
+typename Dictionary_entry<K, PolygonMesh>::size_type
+Dictionary_entry<K, PolygonMesh>::
 remove_motorcycle(const int id) const
 {
   CGAL_precondition(find_motorcycle(id) != visiting_mcs.left.end());
@@ -165,14 +186,15 @@ remove_motorcycle(const int id) const
 // -----------------------------------------------------------------------------
 //                           Dictionary class
 
-template<typename K>
+template<typename K, typename PolygonMesh>
 class Dictionary
 {
 public:
   typedef typename K::FT                                  FT;
   typedef typename K::Point_2                             Point;
 
-  typedef Dictionary_entry<K>                             Dictionary_entry;
+  typedef Dictionary_entry<K, PolygonMesh>                Dictionary_entry;
+  // @todo doesn't need to be an (ordered) set?
   typedef std::set<Dictionary_entry>                      Dictionary_entry_container;
   typedef typename Dictionary_entry_container::iterator   DEC_it;
 
@@ -189,9 +211,9 @@ private:
   Dictionary_entry_container entries;
 };
 
-template<typename K>
-typename Dictionary<K>::DEC_it
-Dictionary<K>::
+template<typename K, typename PolygonMesh>
+typename Dictionary<K, PolygonMesh>::DEC_it
+Dictionary<K, PolygonMesh>::
 insert(const Point& p)
 {
   Dictionary_entry e(p);
@@ -206,9 +228,9 @@ insert(const Point& p)
   return is_insert_successful.first;
 }
 
-template<typename K>
-typename Dictionary<K>::DEC_it
-Dictionary<K>::
+template<typename K, typename PolygonMesh>
+typename Dictionary<K, PolygonMesh>::DEC_it
+Dictionary<K, PolygonMesh>::
 insert(const Point& p, const int i, const FT dist)
 {
   DEC_it it = insert(p);

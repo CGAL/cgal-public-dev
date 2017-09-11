@@ -19,6 +19,7 @@
 
 #include <CGAL/Polyline_tracing/Dictionary.h>
 
+#include <boost/optional.hpp>
 #include <boost/parameter.hpp>
 
 #include <fstream>
@@ -41,11 +42,11 @@ namespace parameters {
 
 namespace Polyline_tracing {
 
-template<typename K>
+template<typename K, typename PolygonMesh>
 struct Target_point_set_comparer
 {
-  typedef typename K::FT                           FT;
-  typedef typename Dictionary<K>::DEC_it           DEC_it;
+  typedef typename K::FT                                    FT;
+  typedef typename Dictionary<K, PolygonMesh>::DEC_it       DEC_it;
 
   bool operator()(const std::pair<DEC_it, FT>& lhs,
                   const std::pair<DEC_it, FT>& rhs) const {
@@ -65,12 +66,14 @@ public:
   typedef typename K::Point_2                                   Point;
   typedef typename K::Vector_2                                  Vector;
 
-  typedef Dictionary<K>                                         Dictionary;
-  typedef Dictionary_entry<K>                                   Dictionary_entry;
+  typedef Dictionary<K, PolygonMesh>                            Dictionary;
+  typedef Dictionary_entry<K, PolygonMesh>                      Dictionary_entry;
   typedef typename Dictionary::DEC_it                           DEC_it;
+  typedef typename Dictionary_entry::Face_location              Face_location;
 
   typedef std::pair<DEC_it, FT>                                 Target_point;
-  typedef std::set<Target_point, Target_point_set_comparer<K> > Target_point_container;
+  typedef std::set<Target_point,
+                   Target_point_set_comparer<K, PolygonMesh> >  Target_point_container;
 
   typedef typename boost::graph_traits<PolygonMesh>::face_descriptor    face_descriptor;
 
@@ -81,19 +84,20 @@ public:
   void crash() { crashed = true; }
 
   const Point& initial_source_point() const { return ini_sour_pt; }
-  const Point& initial_destination_point() const { return ini_dest_pt; }
+  boost::optional<Point>& initial_destination_point() { return ini_dest_pt; }
+  const boost::optional<Point>& initial_destination_point() const { return ini_dest_pt; }
 
   DEC_it& source() { return sour; }
   const DEC_it& source() const { return sour; }
   DEC_it& destination() { return dest; }
   const DEC_it destination() const { return dest; }
 
-  face_descriptor& current_face() { return face; }
-  const face_descriptor& current_face() const { return face; }
+  void set_location(const Face_location& loc) { conf->set_location(loc); }
+  const Face_location& current_location() const { return conf->location(); }
 
-  const FT speed() const { return v; }
-  Vector& direction() { return dir; }
-  const Vector& direction() const { return dir; }
+  const FT speed() const { return spee; }
+  boost::optional<Vector>& direction() { return dir; }
+  const boost::optional<Vector>& direction() const { return dir; }
   FT& current_time() { return time; }
   const FT& current_time() const { return time; }
   DEC_it& position() { return conf; }
@@ -142,15 +146,15 @@ private:
 
   // the very first source and destination points, before insertion in the dictionary
   const Point ini_sour_pt;
-  const Point ini_dest_pt;
+  boost::optional<Point> ini_dest_pt;
 
   // below might change when we change faces
   DEC_it sour; // source point
   DEC_it dest; // destination
   DEC_it conf; // last confirmed position
 
-  const FT v; // speed of the motorcycle, 'const' for now
-  Vector dir; // direction of the motorcycle, used to compute the destination
+  const FT spee; // speed of the motorcycle, 'const' for now
+  boost::optional<Vector> dir; // direction of the motorcycle
   FT time; // current time at the position of the motorcycle
 
   face_descriptor face; // current face
@@ -183,20 +187,30 @@ template<typename K, typename PolygonMesh>
 template <class ArgumentPack>
 Motorcycle_impl<K, PolygonMesh>::
 Motorcycle_impl(const ArgumentPack& args)
-  : i(-1),
+  :
+    i(-1),
     crashed(false),
     ini_sour_pt(args[parameters::source]),
-    ini_dest_pt(args[parameters::destination|Point()]),
+    ini_dest_pt(args[parameters::destination|boost::none]),
     sour(), dest(), conf(),
-    v(args[parameters::speed|1.]),
-    dir(args[parameters::direction|Vector()]),
+    spee(args[parameters::speed|1.]),
+    dir(args[parameters::direction|boost::none]),
     time(args[parameters::initial_time|0.]),
-    target_points(Target_point_set_comparer<K>()),
+    target_points(Target_point_set_comparer<K, PolygonMesh>()),
     track_points()
 {
-  if(ini_sour_pt == ini_dest_pt) {
-    std::cerr << "Warning: creating motorcycle with equal source "
+  CGAL_precondition(speed() > 0.);
+  CGAL_precondition(ini_dest_pt || dir);
+
+  if(ini_dest_pt != boost::none && ini_sour_pt == *ini_dest_pt)
+  {
+    std::cerr << "Warning: Creation of a motorcycle with identical source "
               << "and destination: (" << ini_sour_pt << ") " << std::endl;
+  }
+
+  if(dir != boost::none && *dir == CGAL::NULL_VECTOR)
+  {
+    std::cerr << "Warning: Creation of a motorcycle with null direction" << std::endl;
   }
 }
 
@@ -264,7 +278,7 @@ void
 Motorcycle_impl<K, PolygonMesh>::
 set_new_destination(const DEC_it new_dest, const FT new_time)
 {
-  assert(target_points.empty());
+  CGAL_assertion(target_points.empty());
 
   dest = new_dest;
 

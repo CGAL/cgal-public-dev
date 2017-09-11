@@ -1,8 +1,9 @@
 #define CGAL_MOTORCYCLE_GRAPH_VERBOSE
 
 //#define CGAL_MOTORCYCLE_GRAPH_USE_MANUAL_POINTS
-#define CGAL_MOTORCYCLE_GRAPH_RANDOM_POINTS_IN_SQUARE
 //#define CGAL_MOTORCYCLE_GRAPH_RANDOM_POINTS_ON_SEGMENT
+//#define CGAL_MOTORCYCLE_GRAPH_RANDOM_POINTS_IN_SQUARE
+#define CGAL_MOTORCYCLE_GRAPH_RANDOM_POINTS_IN_TRIANGLE
 
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/Surface_mesh.h>
@@ -20,6 +21,8 @@
 typedef CGAL::Exact_predicates_inexact_constructions_kernel      K;
 
 typedef K::Point_2                                               Point_2;
+typedef K::Vector_2                                              Vector_2;
+
 typedef CGAL::Surface_mesh<Point_2>                              PolygonMesh;
 typedef CGAL::Polyline_tracing::Motorcycle<K, PolygonMesh>       Motorcycle;
 typedef CGAL::Polyline_tracing::Motorcycle_graph<K, PolygonMesh> Motorcycle_graph;
@@ -32,7 +35,7 @@ int main()
   std::cerr.precision(17);
 
   PolygonMesh pm;
-  std::ifstream in("data/square.off");
+  std::ifstream in("data/triangle.off");
   in >> pm;
   std::cout << pm.number_of_vertices() << " vertices" << std::endl;
   std::cout << pm.number_of_edges() << " edges" << std::endl;
@@ -51,12 +54,15 @@ int main()
 
 #ifdef CGAL_MOTORCYCLE_GRAPH_USE_MANUAL_POINTS
     // add some motorcycles
-    motorcycles.push_back(Motorcycle(CP::source = Point_2(0,0),
-                                     CP::destination = Point_2(10,0)));
-    motorcycles.push_back(Motorcycle(CP::source = Point_2(0,5),
-                                     CP::destination = Point_2(7,2)));
+    motorcycles.push_back(Motorcycle(CP::speed = 1.,
+                                     CP::source = Point_2(0, 0),
+                                     CP::destination = Point_2(1, 0),
+                                     CP::initial_time = 0.));
+    motorcycles.push_back(Motorcycle(CP::source = Point_2(-1, 0),
+                                     CP::direction = Vector_2(0, 1),
+                                     CP::speed = 1.));
 #else // random stuff below
-    const int size = 50; // number of random points
+    const int size = 25; // number of random points
     motorcycles.reserve(size);
 
  #ifdef CGAL_MOTORCYCLE_GRAPH_RANDOM_POINTS_IN_SQUARE
@@ -71,9 +77,23 @@ int main()
   #endif
 
     for(int i=0; i<size; ++i)
+    {
       motorcycles.push_back(Motorcycle(CP::source = *gen_s++,
                                        CP::destination = *gen_d++));
-
+      motorcycles.push_back(Motorcycle(CP::source = *gen_s++,
+                                       CP::direction = Vector_2(CGAL::ORIGIN, *gen_d++)));
+    }
+ #elif defined(CGAL_MOTORCYCLE_GRAPH_RANDOM_POINTS_IN_TRIANGLE)
+    typedef CGAL::Random_points_in_triangle_2<Point_2>            Generator;
+    const Point_2 t0(0,0), t1(1,0), t2(0, 1);
+    Generator gen_s(t0, t1, t2), gen_d(t0, t1, t2);
+    for(int i=0; i<size; ++i)
+    {
+      motorcycles.push_back(Motorcycle(CP::source = *gen_s++,
+                                       CP::destination = *gen_d++));
+      motorcycles.push_back(Motorcycle(CP::source = *gen_s++,
+                                       CP::direction = Vector_2(Point_2(1./3.,1./3.), *gen_d++)));
+    }
  #elif defined(CGAL_MOTORCYCLE_GRAPH_RANDOM_POINTS_ON_SEGMENT)
     typedef CGAL::Random_points_on_segment_2<Point_2>            Generator;
     const Point_2 s0(0,0), t0(4,0), s1(CGAL_PI, -0.1), t1(-CGAL::sqrt(3.), std::cos(0.1));

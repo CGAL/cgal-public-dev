@@ -92,6 +92,10 @@ initialize(const Motorcycle_container& motorcycles)
     CGAL_precondition(motorcycle_id >= 0 && motorcycle_id < int(handles.size()));
     handles[motorcycle_id] = queue.push(*m_it);
   }
+
+#ifdef CGAL_MOTORCYCLE_GRAPH_VERBOSE
+  std::cout << "Initial queue: " << std::endl << *this << std::endl;
+#endif
 }
 
 } // namespace Polyline_tracing

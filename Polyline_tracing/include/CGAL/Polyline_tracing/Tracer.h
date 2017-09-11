@@ -21,9 +21,10 @@ namespace CGAL {
 
 namespace Polyline_tracing {
 
+template<typename K, typename PolygonMesh>
 class Tracer
 {
-
+  bool operator()() const { }
 };
 
 } // namespace Polyline_tracing
