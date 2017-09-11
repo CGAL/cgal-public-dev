@@ -72,14 +72,19 @@ namespace CGAL {
 
 				using Type  = unsigned char;
 				using Color = CGAL::cpp11::array<Type, 3>;
+				
 				using Label = int;
-				using Plane = typename Traits::Plane_3;
+				using Types = int;
 				using Index = int;
+
+				// using Plane = typename Traits::Plane_3;
 
 				using Color_map = typename Container:: template Property_map<Color>;
 				using Label_map = typename Container:: template Property_map<Label>;
-				using Plane_map = typename Container:: template Property_map<Plane>;
+				using Types_map = typename Container:: template Property_map<Types>;
 				using Index_map = typename Container:: template Property_map<Index>;
+
+				// using Plane_map = typename Container:: template Property_map<Plane>;
 
 				typedef typename Container::const_iterator Iter;
 
@@ -87,8 +92,10 @@ namespace CGAL {
 
 				Color_map colors;
 				Label_map labels;
-				Plane_map planes;
+				Types_map types;
 				Index_map indices;
+
+				// Plane_map planes;
 
 				out << 
 				"ply\n"                  << 
@@ -109,17 +116,16 @@ namespace CGAL {
 				if (withExtraProperties) {
 
 					out << 
-					"property int label\n"  <<
-					"property int index\n"  <<
-					"property double planea\n" <<
-					"property double planeb\n" <<
-					"property double planec\n" <<
-					"property double planed\n" <<
+					"property int label\n" <<
+					"property int type\n"  <<
+					"property int index\n" <<
 					"end_header\n";
 					
 					boost::tie(labels,  boost::tuples::ignore) = input. template property_map<Label>("label");
+					boost::tie(types ,  boost::tuples::ignore) = input. template property_map<Types>("types");
 					boost::tie(indices, boost::tuples::ignore) = input. template property_map<Index>("index");
-					boost::tie(planes,  boost::tuples::ignore) = input. template property_map<Plane>("plane");
+
+					// boost::tie(planes,  boost::tuples::ignore) = input. template property_map<Plane>("plane");
 				
 				} else out << "end_header\n";
 
@@ -136,7 +142,7 @@ namespace CGAL {
 					<< static_cast<int>(colors[*it][1]) << " " 
 					<< static_cast<int>(colors[*it][2]);
 
-					if (withExtraProperties) out << " " <<  labels[*it] << " " << indices[*it] << " " <<  planes[*it];
+					if (withExtraProperties) out << " " <<  labels[*it] << " " << types[*it] << " " << indices[*it];
 					
 					out << "\n";
 				}
@@ -165,7 +171,7 @@ namespace CGAL {
 			}
 
 			template<class CDT, class Visibility, class Container, class Segments>
-			void save_visibility_eps(CDT &cdt, const Visibility &visibility, const Container &input, const Segments &segments, const std::string &fileName = "tmp/visibility") {
+			void save_visibility_eps(CDT &cdt, const Visibility &visibility, const Container &, const Segments &segments, const std::string &fileName = "tmp/visibility") {
 
 				clear();
 
@@ -187,7 +193,7 @@ namespace CGAL {
 		        draw_mesh(cdt, visibility, scale);
 
 		        // Save points.
-		        draw_points(input, scale);
+		        // draw_points(input, scale);
 
 		        // Save segments.
 		        draw_segments(segments, scale);
@@ -323,7 +329,7 @@ namespace CGAL {
 					out << "fill\n";
 					out << "grestore\n";
 					out << "0 0 0 setrgbcolor\n";
-					out << "2 setlinewidth\n";
+					out << "0.5 setlinewidth\n";
 		        	out << "stroke\n\n";
 				}
     		}
@@ -351,12 +357,14 @@ namespace CGAL {
     			if (segments.empty()) return;
     			for (size_t i = 0; i < segments.size(); ++i) {
 
-    				out << segments[i][0].x() * scale << " " << segments[i][0].y() * scale << " moveto\n";
-    				out << segments[i][1].x() * scale << " " << segments[i][1].y() * scale << " lineto\n";
+    				for (size_t j = 0; j < segments[i].size() - 1; ++j) {
+    					out << segments[i][j].x() * scale     << " " << segments[i][j].y() * scale     << " moveto\n";
+    					out << segments[i][j + 1].x() * scale << " " << segments[i][j + 1].y() * scale << " lineto\n";
+    				}
     			}
 
     			out << "0 0 0 setgray\n";
-    			out << "10 setlinewidth\n";
+    			out << "2 setlinewidth\n";
     			out << "stroke\n\n";
     		}
 		};

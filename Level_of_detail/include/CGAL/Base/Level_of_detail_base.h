@@ -182,7 +182,7 @@ namespace CGAL {
 
 				// (10) Apply 2D structuring algorithm.
 				m_structuring = std::make_unique<Structuring_2>(building_boundary_projected, building_boundary_planes, lines);
-				m_structuring->set_epsilon(0.025);
+				m_structuring->set_epsilon(0.005);
 				const auto number_of_structured_segments = m_structuring->structure_point_set();
 
 				// m_structuring->add_clutter(building_boundary_clutter);
@@ -196,11 +196,11 @@ namespace CGAL {
 
 				// (11) Compute constrained Delaunay triangulation of the structured points.
 
-				const Structured_points &structured_segments = m_structuring->get_segment_end_points();
-				// const Structured_points &structured_points   = m_structuring->get_structured_points();
+				// const Structured_points &structured_points = m_structuring->get_segment_end_points();
+				const Structured_points &structured_points = m_structuring->get_structured_points();
 
 				CDT cdt;
-				const auto number_of_faces = compute_cdt(structured_segments, input, cdt);
+				const auto number_of_faces = compute_cdt(structured_points, input, cdt);
 
 				log.out << "(11) Constrained Delaunay triangulation of the structured points is applied. Number of faces: " << number_of_faces << std::endl;				
 
@@ -214,16 +214,16 @@ namespace CGAL {
 
 				log.out << "(12) Visibility is computed. Number of traversed faces: " << number_of_traversed_faces << std::endl;
 
-				Log eps_saver; eps_saver.save_visibility_eps(cdt, visibility, input, structured_segments);
+				Log eps_saver; eps_saver.save_visibility_eps(cdt, visibility, input, structured_points);
 
 
 				// ----------------------------------
 
 				// (13) Apply graph cut.
-				Lod_0_result lod_0_result; Structured_labels str_labels;
-				m_lod_0.reconstruct(cdt, visibility, str_labels, lod_0_result);
+				// Lod_0_result lod_0_result; Structured_labels str_labels;
+				// m_lod_0.reconstruct(cdt, visibility, str_labels, lod_0_result);
 
-				log.out << "(13) Final LOD 0 is reconstructed. This result is saved in lod_0.obj file." << std::endl;
+				// log.out << "(13) Final LOD 0 is reconstructed. This result is saved in lod_0.obj file." << std::endl;
 
 
 				// ----------------------------------
@@ -356,25 +356,26 @@ namespace CGAL {
 				auto number_of_faces = -1;
 				assert(!points.empty());
 
-				// Add bounding box.
-				for (size_t i = 0; i< bbox.size(); ++i) {
-					const size_t ip = (i + 1) % bbox.size();
+				// Add all structured segments/points.
+				std::vector<std::vector<Vertex_handle> > vhs(points.size());
+				for (size_t i = 0; i < points.size(); ++i) {
 
-					Vertex_handle va = cdt.insert(bbox[i]);
-					Vertex_handle vb = cdt.insert(bbox[ip]);
-
-					cdt.insert_constraint(va, vb);
+					vhs[i].resize(points[i].size());
+					for (size_t j = 0; j < points[i].size(); ++j)
+						vhs[i][j] = cdt.insert(points[i][j]);
 				}
 
-				// Add all structured segments/points.
-				for (size_t i = 0; i < points.size(); ++i) {
-					for (size_t j = 0; j < points[i].size() - 1; ++j) {
+				for (size_t i = 0; i < points.size(); ++i)
+					for (size_t j = 0; j < points[i].size() - 1; ++j)
+						cdt.insert_constraint(vhs[i][j], vhs[i][j + 1]);
 
-						Vertex_handle va = cdt.insert(points[i][j]);
-						Vertex_handle vb = cdt.insert(points[i][j + 1]);
+				// Add bounding box.
+				std::vector<Vertex_handle> bhs(bbox.size());
+				for (size_t i = 0; i < bbox.size(); ++i) bhs[i] = cdt.insert(bbox[i]);
 
-						cdt.insert_constraint(va, vb);
-					}
+				for (size_t i = 0; i < bbox.size(); ++i) {
+					const size_t ip = (i + 1) % bbox.size();
+					cdt.insert_constraint(bhs[i], bhs[ip]);
 				}
 
 				CGAL::make_conforming_Delaunay_2(cdt);

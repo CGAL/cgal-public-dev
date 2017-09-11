@@ -823,10 +823,25 @@ namespace CGAL {
 
 			void add_unique_corner(const int segment_index, const Point &corner, const std::vector<int> &cycle) {
 
-				m_str_points[segment_index].push_back(corner);
-				m_str_labels[segment_index].push_back(Structured_label::CORNER);
-				m_str_anchors[segment_index].push_back(cycle);
+				const Point &source = m_str_points[segment_index][0];
+				const Point &target = m_str_points[segment_index][m_str_points[segment_index].size() - 1];
 
+				const FT dist_s = squared_distance(corner, source);
+				const FT dist_t = squared_distance(corner, target);
+
+				assert(dist_s != dist_t);
+				if (dist_s < dist_t) {
+
+					m_str_points[segment_index].insert(m_str_points[segment_index].begin(), corner);
+					m_str_labels[segment_index].insert(m_str_labels[segment_index].begin(), Structured_label::CORNER);
+					m_str_anchors[segment_index].insert(m_str_anchors[segment_index].begin(), cycle);
+
+				} else {
+
+					m_str_points[segment_index].push_back(corner);
+					m_str_labels[segment_index].push_back(Structured_label::CORNER);
+					m_str_anchors[segment_index].push_back(cycle);
+				}
 				++m_num_corners[segment_index];
 			}
 
@@ -857,14 +872,18 @@ namespace CGAL {
 
 				assert(m_str_points.size() == m_segment_end_points.size());
 
+				Log log;
 				for (size_t i = 0; i < m_segment_end_points.size(); ++i) {
 					m_segment_end_points[i].resize(2);
 
-					for (size_t j = 0; j < m_str_points[i].size(); ++j) {
-						m_segment_end_points[i][0] = m_str_points[i][0];
-						m_segment_end_points[i][1] = m_str_points[i][m_str_points[i].size() - 1];
-					}
+					m_segment_end_points[i][0] = m_str_points[i][0];
+					m_segment_end_points[i][1] = m_str_points[i][m_str_points[i].size() - 1];
+					
+					log.out << m_segment_end_points[i][0] << " " << 0 << std::endl;
+					log.out << m_segment_end_points[i][1] << " " << 0 << std::endl;
 				}
+
+				log.save("tmp/segment_end_points");
 			}
 		};
 	}

@@ -49,7 +49,7 @@ namespace CGAL {
 			typename Traits::Construct_cross_product_vector_3 cross_product;
 
 			using Const_iterator = typename Planes::const_iterator;
-			using Plane_map = typename Container:: template Property_map<Plane>;
+			// using Plane_map = typename Container:: template Property_map<Plane>;
 
 			// Here as a plane normal I take an average normal among all normals of the points
 			// that belong to the plane.
@@ -145,8 +145,8 @@ namespace CGAL {
 
 				const auto C = FT(1) - c;
 
-				Plane_map planes;
-				boost::tie(planes, boost::tuples::ignore) = input. template property_map<Plane>("plane");
+				// Plane_map planes;
+				// boost::tie(planes, boost::tuples::ignore) = input. template property_map<Plane>("plane");
 				
 				rotate_element(c, s, C, axis, m_average_normal);
 				for (size_t i = 0; i < (*it).second.size(); ++i) {
@@ -157,7 +157,7 @@ namespace CGAL {
 					input.normal(index) = m_average_normal; // Here we enforce the same normals for all points! Should we?
 
 					// Update associated planes. Most-likely can be removed later.
-					planes[index] = Plane(input.point(index), input.normal(index));
+					// planes[index] = Plane(input.point(index), input.normal(index));
 				}
 			}
 
