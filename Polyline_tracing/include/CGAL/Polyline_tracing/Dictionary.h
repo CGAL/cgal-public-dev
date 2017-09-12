@@ -1,4 +1,4 @@
-// Copyright (c) 2017 GeometryFactory (France).
+﻿// Copyright (c) 2017 GeometryFactory (France).
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
@@ -24,6 +24,7 @@
 #include <boost/bimap/multiset_of.hpp>
 #include <boost/bimap/set_of.hpp>
 #include <boost/unordered_set.hpp>
+#include <boost/variant.hpp>
 
 #include <limits>
 #include <map>
@@ -32,6 +33,100 @@
 namespace CGAL {
 
 namespace Polyline_tracing {
+
+// @todo put all that stuff in traits
+namespace internal {
+
+// Given a location, returns whether a point is on the border or not.
+template<typename Face_location, typename PolygonMesh>
+bool is_on_face_border(const Face_location& loc, const PolygonMesh& mesh)
+{
+  typedef typename boost::graph_traits<PolygonMesh>::vertex_descriptor   vertex_descriptor;
+  typedef typename boost::graph_traits<PolygonMesh>::halfedge_descriptor halfedge_descriptor;
+  typedef typename boost::graph_traits<PolygonMesh>::face_descriptor     face_descriptor;
+
+  typedef typename Face_location::second_type                            Barycentric_coordinates;
+
+  const face_descriptor fd = loc.first;
+  const Barycentric_coordinates& baryc = loc.second;
+
+  // the first barycentric coordinate corresponds to source(halfedge(fd, mesh), mesh)
+  halfedge_descriptor hd = prev(halfedge(fd, mesh), mesh);
+
+  // check if the point is a vertex
+  for(int i=0; i<3; ++i)
+  {
+    if(baryc[i] == 1.) // coordinate at target(hd, mesh)
+      return CGAL::is_border(target(hd, mesh), mesh);
+    hd = next(hd, mesh);
+  }
+  CGAL_assertion(hd == prev(halfedge(fd, mesh), mesh));
+
+  // check if the point is on an edge
+  for(int i=0; i<3; ++i)
+  {
+    if(baryc[i] == 0) // coordinate at target(hd, mesh)
+      return CGAL::is_border(prev(hd, mesh), mesh);
+    hd = next(hd, mesh);
+  }
+
+  // point is strictly within the face, so it's not on the border
+  return false;
+}
+
+// Given a Face_location (face + barycentric coordinates) and an adjacent face,
+// compute the barycentric coordinates of the point in the other face.
+template<typename Face_location, typename PolygonMesh>
+Face_location compute_barycentric_coordinates(const Face_location& loc,
+                                              const typename boost::graph_traits<PolygonMesh>::face_descriptor new_face,
+                                              const PolygonMesh& mesh)
+{
+  CGAL_precondition(internal::is_on_face_border(loc, mesh));
+
+  CGAL_assertion(false);
+  return Face_location(); // @todo
+}
+
+// Compute the barycentric coordinates of 'p' that belongs in the face 'fd'
+template<typename Point, typename Face_location, typename PolygonMesh>
+Face_location compute_location(const Point& p,
+                               const typename boost::graph_traits<PolygonMesh>::face_descriptor fd,
+                               const PolygonMesh& mesh)
+{
+  CGAL_assertion(false);
+  return Face_location(); // @todo
+}
+
+template<typename Point, typename Face_location, typename PolygonMesh>
+Face_location compute_location(const Point& p, const PolygonMesh& mesh)
+{
+  CGAL_assertion(false);
+  return Face_location(); // @todo
+}
+
+template<typename Face_location, typename PolygonMesh>
+boost::variant<typename boost::graph_traits<PolygonMesh>::vertex_descriptor,
+               typename boost::graph_traits<PolygonMesh>::halfedge_descriptor,
+               typename boost::graph_traits<PolygonMesh>::face_descriptor>
+get_descriptor_from_location(const Face_location& loc, const PolygonMesh& mesh)
+{
+  typedef boost::variant<
+    typename boost::graph_traits<PolygonMesh>::vertex_descriptor,
+    typename boost::graph_traits<PolygonMesh>::halfedge_descriptor,
+    typename boost::graph_traits<PolygonMesh>::face_descriptor>   descriptor_variant;
+
+  CGAL_assertion(false);
+  return descriptor_variant();
+}
+
+template<typename Point, typename Face_location, typename PolygonMesh>
+Point loc_to_point(const Face_location& loc, const PolygonMesh& mesh)
+{
+  CGAL_assertion(false);
+  return Point(); // @todo
+}
+
+} // namespace internal
 
 // Information associated to any point that is involved in the motorcycle graph algorithm
 template<typename K, typename PolygonMesh>
@@ -81,6 +176,7 @@ public:
 
   // Constructor
   Dictionary_entry(const Point& p);
+  Dictionary_entry(const Point& p, const Face_location& loc);
 
   // Most of these functions are not actually 'const' but the members they modify
   // are mutable. See next comment.
@@ -91,6 +187,9 @@ public:
   size_type remove_motorcycle(const int id) const;
 
   friend bool operator<(const Self& lhs, const Self& rhs) {
+    if(lhs.point() == rhs.point())
+      return lhs.location().first < rhs.location().first;
+
     return lhs.point() < rhs.point();
   }
 
@@ -123,7 +222,13 @@ private:
 template<typename K, typename PolygonMesh>
 Dictionary_entry<K, PolygonMesh>::
 Dictionary_entry(const Point& p)
-  : p(p), visiting_mcs(), blocked(false)
+  : p(p), loc(), visiting_mcs(), blocked(false)
+{ }
+
+template<typename K, typename PolygonMesh>
+Dictionary_entry<K, PolygonMesh>::
+Dictionary_entry(const Point& p, const Face_location& loc)
+  : p(p), loc(loc), visiting_mcs(), blocked(false)
 { }
 
 template<typename K, typename PolygonMesh>
@@ -194,7 +299,9 @@ public:
   typedef typename K::Point_2                             Point;
 
   typedef Dictionary_entry<K, PolygonMesh>                Dictionary_entry;
-  // @todo doesn't need to be an (ordered) set?
+  typedef typename Dictionary_entry::Face_location        Face_location;
+
+  // @todo doesn't need to be an (ordered) set? (find out a good hash function...)
   typedef std::set<Dictionary_entry>                      Dictionary_entry_container;
   typedef typename Dictionary_entry_container::iterator   DEC_it;
 
@@ -204,8 +311,9 @@ public:
   Dictionary() : entries() { }
 
   // Functions
-  DEC_it insert(const Point& p);
-  DEC_it insert(const Point& p, const int i, const FT dist);
+  DEC_it insert(const Point& p, const Face_location& loc = Face_location());
+  DEC_it insert(const Point& p, const Face_location& loc, const int i, const FT time);
+  DEC_it insert(const Point& p, const int i, const FT time);
 
 private:
   Dictionary_entry_container entries;
@@ -214,9 +322,9 @@ private:
 template<typename K, typename PolygonMesh>
 typename Dictionary<K, PolygonMesh>::DEC_it
 Dictionary<K, PolygonMesh>::
-insert(const Point& p)
+insert(const Point& p, const Face_location& loc)
 {
-  Dictionary_entry e(p);
+  Dictionary_entry e(p, loc);
   std::pair<DEC_it, bool> is_insert_successful = entries.insert(e);
 
   if(!is_insert_successful.second)
@@ -231,14 +339,22 @@ insert(const Point& p)
 template<typename K, typename PolygonMesh>
 typename Dictionary<K, PolygonMesh>::DEC_it
 Dictionary<K, PolygonMesh>::
-insert(const Point& p, const int i, const FT dist)
+insert(const Point& p, const Face_location& loc, const int i, const FT time)
 {
-  DEC_it it = insert(p);
-  it->add_motorcycle(i, dist);
+  DEC_it it = insert(p, loc);
+  it->add_motorcycle(i, time);
 
   std::cout << "(New) point in the dictionary : " << *it << std::endl;
 
   return it;
+}
+
+template<typename K, typename PolygonMesh>
+typename Dictionary<K, PolygonMesh>::DEC_it
+Dictionary<K, PolygonMesh>::
+insert(const Point& p, const int i, const FT time)
+{
+  return insert(p, Face_location(), i, time);
 }
 
 } // namespace Polyline_tracing

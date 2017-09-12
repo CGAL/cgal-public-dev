@@ -18,6 +18,8 @@
 #define CGAL_POLYLINE_TRACING_MOTORCYCLE_H
 
 #include <CGAL/Polyline_tracing/Dictionary.h>
+#include <CGAL/Polyline_tracing/Uniform_direction_tracer_visitor.h>
+#include <CGAL/Polyline_tracing/Tracer.h>
 
 #include <boost/optional.hpp>
 #include <boost/parameter.hpp>
@@ -60,6 +62,7 @@ template<typename K, typename PolygonMesh>
 class Motorcycle_impl
 {
   typedef Motorcycle_impl<K, PolygonMesh>                       Self;
+  typedef Motorcycle<K, PolygonMesh>                            Derived;
 
 public:
   typedef typename K::FT                                        FT;
@@ -75,7 +78,8 @@ public:
   typedef std::set<Target_point,
                    Target_point_set_comparer<K, PolygonMesh> >  Target_point_container;
 
-  typedef typename boost::graph_traits<PolygonMesh>::face_descriptor    face_descriptor;
+  typedef Uniform_direction_tracer_visitor<K, PolygonMesh>      Tracer_visitor;
+  typedef Tracer<K, PolygonMesh, Tracer_visitor>                Tracer;
 
   // Access
   std::size_t id() const { return i; }
@@ -113,14 +117,17 @@ public:
   Motorcycle_impl(const ArgumentPack& args);
 
   // Functions
-  void add_new_target(const DEC_it target_point, const FT time_at_target);
+  void add_target(const DEC_it target_point, const FT time_at_target);
   const DEC_it closest_target() const;
-  FT time_at_closest_target() const;
+
+  template
+  boost::tuple<DEC_it, DEC_it, FT> compute_next_destination(Dictionary& points, const PolygonMesh& mesh);
   void erase_closest_target();
   bool has_reached_blocked_point() const;
   bool has_reached_simultaneous_collision_point() const;
   bool is_motorcycle_destination_final() const;
   void set_new_destination(const DEC_it new_dest, const FT dist);
+  FT time_at_closest_target() const;
 
   // output
   friend std::ostream& operator<<(std::ostream& out, const Self& mc) {
@@ -141,14 +148,15 @@ public:
   void output_track() const;
 
 private:
+  // ID and status
   std::size_t i;
   bool crashed;
 
-  // the very first source and destination points, before insertion in the dictionary
+  // The very first source and destination points, before insertion in the dictionary
   const Point ini_sour_pt;
   boost::optional<Point> ini_dest_pt;
 
-  // below might change when we change faces
+  // Below might change when we move in the mesh
   DEC_it sour; // source point
   DEC_it dest; // destination
   DEC_it conf; // last confirmed position
@@ -157,10 +165,11 @@ private:
   boost::optional<Vector> dir; // direction of the motorcycle
   FT time; // current time at the position of the motorcycle
 
-  face_descriptor face; // current face
-
-  // tentative targets (ordered by increasing distance to 'conf')
+  // The tentative targets (ordered by increasing distance to 'conf')
   Target_point_container target_points;
+
+  // Tracer (decides what is the next target when we reach the destination)
+  Tracer tracer;
 
   std::list<DEC_it> track_points;
 };
@@ -197,6 +206,7 @@ Motorcycle_impl(const ArgumentPack& args)
     dir(args[parameters::direction|boost::none]),
     time(args[parameters::initial_time|0.]),
     target_points(Target_point_set_comparer<K, PolygonMesh>()),
+    tracer(),
     track_points()
 {
   CGAL_precondition(speed() > 0.);
@@ -217,7 +227,7 @@ Motorcycle_impl(const ArgumentPack& args)
 template<typename K, typename PolygonMesh>
 void
 Motorcycle_impl<K, PolygonMesh>::
-add_new_target(const DEC_it target_point, const FT time_at_target)
+add_target(const DEC_it target_point, const FT time_at_target)
 {
   target_points.insert(std::make_pair(target_point, time_at_target));
 }
@@ -232,12 +242,16 @@ closest_target() const
 }
 
 template<typename K, typename PolygonMesh>
-typename Motorcycle_impl<K, PolygonMesh>::FT
+boost::tuple<typename Motorcycle_impl<K, PolygonMesh>::DEC_it,
+             typename Motorcycle_impl<K, PolygonMesh>::DEC_it,
+             typename K::FT>
 Motorcycle_impl<K, PolygonMesh>::
-time_at_closest_target() const
+compute_next_destination(Dictionary& points, const PolygonMesh& mesh)
 {
-  CGAL_precondition(!target_points.empty());
-  return target_points.begin()->second;
+  // that derived cast is so that tracer visitor can indeed take a Motorcycle
+  // and not a motorcycle_impl. It's safe since we only deal manipulate "full"
+  // motorcycles, but it's kinda ugly @fixme
+  return tracer.trace(static_cast<Derived&>(*this), points, mesh);
 }
 
 template<typename K, typename PolygonMesh>
@@ -270,7 +284,9 @@ bool
 Motorcycle_impl<K, PolygonMesh>::
 is_motorcycle_destination_final() const
 {
-  return true; // @todo
+  // @todo should be a custom value to be input with the destination
+  // or something that the tracer sets up
+  return false;
 }
 
 template<typename K, typename PolygonMesh>
@@ -287,6 +303,15 @@ set_new_destination(const DEC_it new_dest, const FT new_time)
   // between 'conf' and 'new_dest'
   target_points.insert(std::make_pair(conf, time));
   target_points.insert(std::make_pair(dest, new_time));
+}
+
+template<typename K, typename PolygonMesh>
+typename Motorcycle_impl<K, PolygonMesh>::FT
+Motorcycle_impl<K, PolygonMesh>::
+time_at_closest_target() const
+{
+  CGAL_precondition(!target_points.empty());
+  return target_points.begin()->second;
 }
 
 template<typename K, typename PolygonMesh>

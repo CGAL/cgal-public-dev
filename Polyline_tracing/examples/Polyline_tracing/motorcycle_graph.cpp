@@ -35,7 +35,7 @@ int main()
   std::cerr.precision(17);
 
   PolygonMesh pm;
-  std::ifstream in("data/triangle.off");
+  std::ifstream in("data/two_triangles.off");
   in >> pm;
   std::cout << pm.number_of_vertices() << " vertices" << std::endl;
   std::cout << pm.number_of_edges() << " edges" << std::endl;
@@ -62,7 +62,7 @@ int main()
                                      CP::direction = Vector_2(0, 1),
                                      CP::speed = 1.));
 #else // random stuff below
-    const int size = 25; // number of random points
+    const int size = 1; // number of random points
     motorcycles.reserve(size);
 
  #ifdef CGAL_MOTORCYCLE_GRAPH_RANDOM_POINTS_IN_SQUARE
@@ -89,8 +89,8 @@ int main()
     Generator gen_s(t0, t1, t2), gen_d(t0, t1, t2);
     for(int i=0; i<size; ++i)
     {
-      motorcycles.push_back(Motorcycle(CP::source = *gen_s++,
-                                       CP::destination = *gen_d++));
+//      motorcycles.push_back(Motorcycle(CP::source = *gen_s++,
+//                                       CP::destination = *gen_d++));
       motorcycles.push_back(Motorcycle(CP::source = *gen_s++,
                                        CP::direction = Vector_2(Point_2(1./3.,1./3.), *gen_d++)));
     }
@@ -113,7 +113,7 @@ int main()
 
     // trace the graph
     Motorcycle_graph motorcycle_graph(pm);
-    motorcycle_graph.trace_motorcycle_graph(motorcycles.begin(), motorcycles.end());
+    motorcycle_graph.trace_graph(motorcycles.begin(), motorcycles.end());
     CGAL_postcondition(motorcycle_graph.is_valid());
 
     // output
