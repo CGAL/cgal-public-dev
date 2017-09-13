@@ -119,7 +119,7 @@ extern "C" {
 namespace CGAL {
 namespace internal {
 #ifdef CGAL_CFG_DENORMALS_COMPILE_BUG
-double& get_static_minimin(); // Defined in Interval_arithmetic_impl.h
+double get_static_minimin(); // Defined in Interval_arithmetic_impl.h
 #endif
 
 #ifdef __INTEL_COMPILER

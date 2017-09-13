@@ -43,8 +43,8 @@ double init_min_double()
 #ifndef CGAL_HEADER_ONLY
 
 namespace internal {
-  double minimin = init_min_double();
-  double& get_static_minimin()
+  const double minimin = init_min_double();
+  double get_static_minimin()
   {
     return minimin;
   }
@@ -53,9 +53,9 @@ namespace internal {
 #else // CGAL_HEADER_ONLY
 
 namespace internal {
-  inline double& get_static_minimin()
+  inline double get_static_minimin()
   {
-    static double minimin = init_min_double();
+    static const double minimin = init_min_double();
     return minimin;
   }
 }
