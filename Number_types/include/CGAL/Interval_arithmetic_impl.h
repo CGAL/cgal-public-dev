@@ -53,7 +53,7 @@ namespace internal {
 #else // CGAL_HEADER_ONLY
 
 namespace internal {
-  double& get_static_minimin()
+  inline double& get_static_minimin()
   {
     static double minimin = init_min_double();
     return minimin;

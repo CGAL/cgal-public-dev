@@ -517,7 +517,10 @@ inline void force_ieee_double_precision()
 } //namespace CGAL
 
 #ifdef CGAL_HEADER_ONLY
-#include <CGAL/test_FPU_rounding_mode_impl.h>
+#  include <CGAL/test_FPU_rounding_mode_impl.h>
+#  ifdef CGAL_CFG_DENORMALS_COMPILE_BUG
+#    include <CGAL/Interval_arithmetic_impl.h>
+#  endif // CGAL_CFG_DENORMALS_COMPILE_BUG
 #endif // CGAL_HEADER_ONLY
 
 #endif // CGAL_FPU_H
