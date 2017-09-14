@@ -823,6 +823,8 @@ namespace CGAL {
 
 			void add_unique_corner(const int segment_index, const Point &corner, const std::vector<int> &cycle) {
 
+				assert(m_str_points[segment_index].size() > 1);
+
 				const Point &source = m_str_points[segment_index][0];
 				const Point &target = m_str_points[segment_index][m_str_points[segment_index].size() - 1];
 

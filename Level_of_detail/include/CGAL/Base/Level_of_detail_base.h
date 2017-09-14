@@ -72,7 +72,7 @@ namespace CGAL {
 			typedef typename Traits::Lod_0 Lod_0;
 			typedef Segments 			   Lod_0_result;
 
-			const std::string default_path = "/Users/danisimo/Documents/pipeline/data/paris_test/";
+			const std::string default_path = "/Users/danisimo/Documents/pipeline/data/complex_test/";
 
 			Level_of_detail_base(Traits traits = Traits()) : m_traits(traits) { } // Do I need to create an instance of these traits here?
 
@@ -182,14 +182,14 @@ namespace CGAL {
 
 				// (10) Apply 2D structuring algorithm.
 				m_structuring = std::make_unique<Structuring_2>(building_boundary_projected, building_boundary_planes, lines);
-				m_structuring->set_epsilon(4.0);
+				m_structuring->set_epsilon(0.005);
 				const auto number_of_structured_segments = m_structuring->structure_point_set();
 
 				// m_structuring->add_clutter(building_boundary_clutter);
 
 				log.out << "(10) 2D Structuring is applied. Number of structured segments: " << number_of_structured_segments << std::endl;
 
-				// Log segments_exporter_2; segments_esxporter_2.export_segments_as_obj("tmp/structured_segments", structured_segments);
+				// Log segments_exporter_2; segments_esxporter_2.export_segments_as_obj("tmp/structured_segments", structured_segments, default_path);
 
 
 				// ----------------------------------

@@ -101,6 +101,12 @@ namespace CGAL {
 				log.save("lod_0");
 			}
 
+			void max_flow(const CDT &, const Visibility_result &) {
+
+				std::cout << "\nMAX FLOW\n" << std::endl;
+
+			}
+
 		private:
 			FT m_alpha;
 			FT m_beta;

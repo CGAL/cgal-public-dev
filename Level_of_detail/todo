@@ -25,6 +25,3 @@ TODO AND OTHER:
 22. What to do with cells that have no predictions?
 23. Fix data structure so that each point in CDT has access to its associated structuring label. Moreover, check if I insert points twice when creating CDT.
 24. Actiually my reconstruction code should compute the cost function for each surface S in all graph cut iterations.
-
-BUGS:
-1. Bug in the CGAL::Line_2 and CGAL::Line_3 projection?
