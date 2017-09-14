@@ -1,9 +1,10 @@
 #define CGAL_MOTORCYCLE_GRAPH_VERBOSE
+#define CGAL_MOTORCYCLE_GRAPH_OUTPUT
 
-//#define CGAL_MOTORCYCLE_GRAPH_USE_MANUAL_POINTS
+#define CGAL_MOTORCYCLE_GRAPH_USE_MANUAL_POINTS
 //#define CGAL_MOTORCYCLE_GRAPH_RANDOM_POINTS_ON_SEGMENT
 //#define CGAL_MOTORCYCLE_GRAPH_RANDOM_POINTS_IN_SQUARE
-#define CGAL_MOTORCYCLE_GRAPH_RANDOM_POINTS_IN_TRIANGLE
+//#define CGAL_MOTORCYCLE_GRAPH_RANDOM_POINTS_IN_TRIANGLE
 
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/Surface_mesh.h>
@@ -55,12 +56,12 @@ int main()
 #ifdef CGAL_MOTORCYCLE_GRAPH_USE_MANUAL_POINTS
     // add some motorcycles
     motorcycles.push_back(Motorcycle(CP::speed = 1.,
-                                     CP::source = Point_2(0, 0),
-                                     CP::destination = Point_2(1, 0),
+                                     CP::source = Point_2(0.1, 0.),
+                                     CP::direction = Vector_2(1, 1),
                                      CP::initial_time = 0.));
-    motorcycles.push_back(Motorcycle(CP::source = Point_2(-1, 0),
-                                     CP::direction = Vector_2(0, 1),
-                                     CP::speed = 1.));
+//    motorcycles.push_back(Motorcycle(CP::source = Point_2(-1, 0),
+//                                     CP::direction = Vector_2(0, 1),
+//                                     CP::speed = 1.));
 #else // random stuff below
     const int size = 1; // number of random points
     motorcycles.reserve(size);
@@ -116,8 +117,8 @@ int main()
     motorcycle_graph.trace_graph(motorcycles.begin(), motorcycles.end());
     CGAL_postcondition(motorcycle_graph.is_valid());
 
+#ifdef CGAL_MOTORCYCLE_GRAPH_OUTPUT
     // output
-    motorcycle_graph.output_motorcycles_sources_and_destinations();
     motorcycle_graph.output_all_dictionary_points();
     for(std::size_t i=0; i<motorcycles.size(); ++i)
     {
@@ -125,6 +126,7 @@ int main()
       motorcycle_graph.motorcycle(i).output_track();
     }
   }
+#endif
 
   return 0;
 }

@@ -19,114 +19,17 @@
 
 #include <CGAL/array.h>
 #include <CGAL/assertions.h>
+#include <CGAL/Polygon_mesh_processing/locate.h>
 
 #include <boost/bimap.hpp>
 #include <boost/bimap/multiset_of.hpp>
 #include <boost/bimap/set_of.hpp>
-#include <boost/unordered_set.hpp>
-#include <boost/variant.hpp>
 
-#include <limits>
-#include <map>
 #include <utility>
 
 namespace CGAL {
 
 namespace Polyline_tracing {
-
-// @todo put all that stuff in traits
-namespace internal {
-
-// Given a location, returns whether a point is on the border or not.
-template<typename Face_location, typename PolygonMesh>
-bool is_on_face_border(const Face_location& loc, const PolygonMesh& mesh)
-{
-  typedef typename boost::graph_traits<PolygonMesh>::vertex_descriptor   vertex_descriptor;
-  typedef typename boost::graph_traits<PolygonMesh>::halfedge_descriptor halfedge_descriptor;
-  typedef typename boost::graph_traits<PolygonMesh>::face_descriptor     face_descriptor;
-
-  typedef typename Face_location::second_type                            Barycentric_coordinates;
-
-  const face_descriptor fd = loc.first;
-  const Barycentric_coordinates& baryc = loc.second;
-
-  // the first barycentric coordinate corresponds to source(halfedge(fd, mesh), mesh)
-  halfedge_descriptor hd = prev(halfedge(fd, mesh), mesh);
-
-  // check if the point is a vertex
-  for(int i=0; i<3; ++i)
-  {
-    if(baryc[i] == 1.) // coordinate at target(hd, mesh)
-      return CGAL::is_border(target(hd, mesh), mesh);
-    hd = next(hd, mesh);
-  }
-  CGAL_assertion(hd == prev(halfedge(fd, mesh), mesh));
-
-  // check if the point is on an edge
-  for(int i=0; i<3; ++i)
-  {
-    if(baryc[i] == 0) // coordinate at target(hd, mesh)
-      return CGAL::is_border(prev(hd, mesh), mesh);
-    hd = next(hd, mesh);
-  }
-
-  // point is strictly within the face, so it's not on the border
-  return false;
-}
-
-// Given a Face_location (face + barycentric coordinates) and an adjacent face,
-// compute the barycentric coordinates of the point in the other face.
-template<typename Face_location, typename PolygonMesh>
-Face_location compute_barycentric_coordinates(const Face_location& loc,
-                                              const typename boost::graph_traits<PolygonMesh>::face_descriptor new_face,
-                                              const PolygonMesh& mesh)
-{
-  CGAL_precondition(internal::is_on_face_border(loc, mesh));
-
-  CGAL_assertion(false);
-  return Face_location(); // @todo
-}
-
-// Compute the barycentric coordinates of 'p' that belongs in the face 'fd'
-template<typename Point, typename Face_location, typename PolygonMesh>
-Face_location compute_location(const Point& p,
-                               const typename boost::graph_traits<PolygonMesh>::face_descriptor fd,
-                               const PolygonMesh& mesh)
-{
-  CGAL_assertion(false);
-  return Face_location(); // @todo
-}
-
-template<typename Point, typename Face_location, typename PolygonMesh>
-Face_location compute_location(const Point& p, const PolygonMesh& mesh)
-{
-  CGAL_assertion(false);
-  return Face_location(); // @todo
-}
-
-template<typename Face_location, typename PolygonMesh>
-boost::variant<typename boost::graph_traits<PolygonMesh>::vertex_descriptor,
-               typename boost::graph_traits<PolygonMesh>::halfedge_descriptor,
-               typename boost::graph_traits<PolygonMesh>::face_descriptor>
-get_descriptor_from_location(const Face_location& loc, const PolygonMesh& mesh)
-{
-  typedef boost::variant<
-    typename boost::graph_traits<PolygonMesh>::vertex_descriptor,
-    typename boost::graph_traits<PolygonMesh>::halfedge_descriptor,
-    typename boost::graph_traits<PolygonMesh>::face_descriptor>   descriptor_variant;
-
-  CGAL_assertion(false);
-  return descriptor_variant();
-}
-
-template<typename Point, typename Face_location, typename PolygonMesh>
-Point loc_to_point(const Face_location& loc, const PolygonMesh& mesh)
-{
-  CGAL_assertion(false);
-  return Point(); // @todo
-}
-
-} // namespace internal
 
 // Information associated to any point that is involved in the motorcycle graph algorithm
 template<typename K, typename PolygonMesh>
@@ -186,16 +89,17 @@ public:
   VMC_left_it find_motorcycle(const int id) const;
   size_type remove_motorcycle(const int id) const;
 
+  // need to build a set of Dictionary_entry items
   friend bool operator<(const Self& lhs, const Self& rhs) {
-    if(lhs.point() == rhs.point())
-      return lhs.location().first < rhs.location().first;
-
     return lhs.point() < rhs.point();
   }
 
   // Output
   friend std::ostream& operator<<(std::ostream& out, const Self& dec) {
     out << "Point: (" << dec.point() << ") blocked: " << dec.is_blocked() << std::endl;
+    out << "Location -- face: " << dec.location().first << " barycentric coordinates: { "
+        << dec.location().second[0] << "; " << dec.location().second[1]
+        << "; " << dec.location().second[2] << "}" << std::endl;
     out << "  Visiting motorcycles: " << std::endl;
     VMC_left_cit vmc_it = dec.visiting_motorcycles().left.begin();
     VMC_left_cit end = dec.visiting_motorcycles().left.end();
@@ -329,7 +233,7 @@ insert(const Point& p, const Face_location& loc)
 
   if(!is_insert_successful.second)
   {
-    std::cerr << "Warning: point (" << p << ") already exists in the dictionary: "
+    std::cerr << "Warning: point (" << p << ") already exists in the dictionary: " << std::endl
               << *(is_insert_successful.first) << std::endl;
   }
 

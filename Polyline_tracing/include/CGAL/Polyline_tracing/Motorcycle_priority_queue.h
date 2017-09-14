@@ -67,6 +67,7 @@ public:
     for(; pq_it!=end; ++pq_it)
       out << "  Motorcycle: " << pq_it->motorcycle().id()
           << " at time: " << pq_it->motorcycle().current_time()
+          << " with closest target: " << &*(pq_it->motorcycle().closest_target())
           << " with time at closest target: " << pq_it->time_at_closest_target() << std::endl;
 
     return out;

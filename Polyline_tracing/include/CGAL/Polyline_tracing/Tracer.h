@@ -19,6 +19,8 @@
 
 #include <CGAL/Polyline_tracing/Dictionary.h>
 
+#include <CGAL/Polygon_mesh_processing/locate.h>
+
 #include <boost/tuple/tuple.hpp>
 #include <boost/variant.hpp>
 
@@ -46,21 +48,44 @@ public:
                          face_descriptor>                 descriptor_variant;
 
   template<typename Motorcycle>
-  boost::tuple<DEC_it, DEC_it, FT> trace(const Motorcycle& mc, Dictionary& points, const PolygonMesh& mesh);
+  boost::tuple<bool, DEC_it, DEC_it, FT> trace(const Motorcycle& mc,
+                                               Dictionary& points,
+                                               const PolygonMesh& mesh);
 };
 
 // -----------------------------------------------------------------------------
 
 template<typename K, typename PolygonMesh, typename Visitor>
 template<typename Motorcycle>
-boost::tuple<typename Tracer<K, PolygonMesh, Visitor>::DEC_it,
-             typename Tracer<K, PolygonMesh, Visitor>::DEC_it,
-             typename Tracer<K, PolygonMesh, Visitor>::FT>
+boost::tuple<bool, // successfuly computed a next path or not
+             typename Tracer<K, PolygonMesh, Visitor>::DEC_it, // next_source
+             typename Tracer<K, PolygonMesh, Visitor>::DEC_it, // next_destination
+             typename Tracer<K, PolygonMesh, Visitor>::FT> // time_at_next_destination
 Tracer<K, PolygonMesh, Visitor>::
 trace(const Motorcycle& mc, Dictionary& points, const PolygonMesh& mesh)
 {
+#ifdef CGAL_MOTORCYCLE_GRAPH_VERBOSE
+  std::cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*" << std::endl;
+  std::cout << "Computing the next path: " << mc.id() << std::endl;
+  std::cout << "Current location: " << mc.current_location().first << " b: "
+            << mc.current_location().second [0] << " "
+            << mc.current_location().second [1] << " "
+            << mc.current_location().second [2] << std::endl;
+#endif
+
+  // just to get rid of a degenerate case
+  CGAL_precondition(mc.direction()); // direction must be known
+  if(*(mc.direction()) == CGAL::NULL_VECTOR)
+  {
+    std::cerr << "Warning: the motorcycle direction is null and "
+              << "the next destination is thus the current position" << std::endl;
+
+    return boost::make_tuple(true, mc.position(), mc.position(), mc.current_time());
+  }
+
   const Face_location& loc = mc.current_location();
-  descriptor_variant dv = internal::get_descriptor_from_location(loc, mesh);
+  descriptor_variant dv =
+    CGAL::Polygon_mesh_processing::internal::get_descriptor_from_location(loc, mesh);
   return boost::apply_visitor(Visitor(&mc, points, mesh), dv);
 }
 

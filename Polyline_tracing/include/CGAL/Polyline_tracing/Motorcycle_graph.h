@@ -29,6 +29,7 @@
 #include <CGAL/Cartesian_converter.h>
 #include <CGAL/enum.h>
 #include <CGAL/number_utils.h>
+#include <CGAL/Polygon_mesh_processing/locate.h>
 #include <CGAL/result_of.h>
 
 #include <boost/optional.hpp>
@@ -81,6 +82,7 @@ public:
   void add_motorcycles(MotorcycleContainerIterator mit, MotorcycleContainerIterator last);
   std::pair<DEC_it, FT> compute_halving_point(const Motorcycle& mc, DEC_it p, const FT p_time, DEC_it q, const FT q_time);
   std::pair<DEC_it, FT> compute_middle_point(DEC_it p, const FT p_time, DEC_it q, const FT q_time);
+  bool compute_motorcycle_next_path(Motorcycle& mc);
   void crash_motorcycle(Motorcycle& mc);
   void crash_motorcycles_with_same_source_and_direction();
   void drive_to_closest_target(Motorcycle& mc);
@@ -89,10 +91,10 @@ public:
   bool has_motorcycle_reached_final_destination(const Motorcycle& mc) const;
   void initialize_motorcycles();
   void locate_motorcycles(Motorcycle& mc);
+  bool has_motorcycle_reached_crashing_point(const Motorcycle& mc) const;
 
   template<typename MotorcycleContainerIterator>
   void trace_graph(MotorcycleContainerIterator mit, MotorcycleContainerIterator last);
-  void transition_motorcycle_to_next_face(Motorcycle& mc);
 
   // Post-tracing checks
   bool is_valid() const;
@@ -159,6 +161,28 @@ template<typename K, typename PolygonMesh>
 std::pair<typename Motorcycle_graph<K, PolygonMesh>::DEC_it,
           typename Motorcycle_graph<K, PolygonMesh>::FT>
 Motorcycle_graph<K, PolygonMesh>::
+compute_halving_point(const Motorcycle& m, DEC_it p, const FT p_time,
+                                           DEC_it q, const FT q_time)
+{
+#ifdef CGAL_MOTORCYCLE_GRAPH_VERBOSE
+  std::cout << " *** " << std::endl;
+  std::cout << "Computing half on motorcycle track: " << m.id() << std::endl
+            << "  " << *p << std::endl << "  " << *q << std::endl;
+#endif
+  // Assert that both points are in the same face
+  CGAL_precondition(p->location().first == q->location().first);
+
+#ifdef CGAL_MOTORCYCLE_GRAPH_USE_ADVANCED_HALVING
+  // interface with the halving data structure @todo
+#else
+  return compute_middle_point(p, p_time, q, q_time);
+#endif
+}
+
+template<typename K, typename PolygonMesh>
+std::pair<typename Motorcycle_graph<K, PolygonMesh>::DEC_it,
+          typename Motorcycle_graph<K, PolygonMesh>::FT>
+Motorcycle_graph<K, PolygonMesh>::
 compute_middle_point(DEC_it p, const FT p_time, DEC_it q, const FT q_time)
 {
   Point r = K().construct_midpoint_2_object()(p->point(), q->point());
@@ -172,24 +196,36 @@ compute_middle_point(DEC_it p, const FT p_time, DEC_it q, const FT q_time)
 }
 
 template<typename K, typename PolygonMesh>
-std::pair<typename Motorcycle_graph<K, PolygonMesh>::DEC_it,
-          typename Motorcycle_graph<K, PolygonMesh>::FT>
+bool
 Motorcycle_graph<K, PolygonMesh>::
-compute_halving_point(const Motorcycle& m, DEC_it p, const FT p_time,
-                                           DEC_it q, const FT q_time)
+compute_motorcycle_next_path(Motorcycle& mc)
 {
-#ifdef CGAL_MOTORCYCLE_GRAPH_VERBOSE
-  std::cout << " *** " << std::endl;
-  std::cout << "Computing half on motorcycle track: " << m.id() << std::endl
-            << "  " << *p << std::endl << "  " << *q << std::endl;
-#endif
-  // assert that p & q are on the same face @todo
+  boost::tuple<bool, DEC_it, DEC_it, FT> next_path =
+    mc.compute_next_destination(points, mesh);
 
-#ifdef CGAL_MOTORCYCLE_GRAPH_USE_ADVANCED_HALVING
-  // interface with the halving data structure @todo
-#else
-  return compute_middle_point(p, p_time, q, q_time);
-#endif
+  if(!next_path.template get<0>()) // couldn't find a next path
+    return false;
+
+  const DEC_it& next_source = next_path.template get<1>();
+  const DEC_it& next_destination = next_path.template get<2>();
+  const FT time_at_next_destination = next_path.template get<3>();
+
+  mc.source() = next_source;
+  mc.destination() = next_destination;
+  mc.position() = mc.source();
+
+  next_source->add_motorcycle(mc.id(), mc.current_time());
+  next_destination->add_motorcycle(mc.id(), time_at_next_destination);
+
+  mc.add_target(next_source, mc.current_time());
+  mc.add_target(next_destination, time_at_next_destination);
+
+  // If source == destination, block the point to avoid infinitely tracing
+  // null-lengthed segments
+  if(mc.source() == mc.destination())
+    mc.position()->block();
+
+  return true;
 }
 
 template<typename K, typename PolygonMesh>
@@ -224,7 +260,7 @@ Motorcycle_graph<K, PolygonMesh>::
 crash_motorcycles_with_same_source_and_direction()
 {
 #ifdef CGAL_MOTORCYCLE_GRAPH_VERBOSE
-  std::cout << "Detect degenerate motorcycle configurations" << std::endl;
+  std::cout << "Checking for motorcycles with same sources and directions" << std::endl;
 #endif
 
   // brute force, for now
@@ -254,7 +290,7 @@ crash_motorcycles_with_same_source_and_direction()
         continue;
 
       // Moving away from each other from the same point is allowed.
-      // use ordered_along_line? @todo
+      // use two calls to ordered_along_line() instead? @todo
       if(K().angle_2_object()(mc.source()->point(),
                               mc.destination()->point(),
                               mc_2.source()->point(),
@@ -332,15 +368,7 @@ bool
 Motorcycle_graph<K, PolygonMesh>::
 has_motorcycle_reached_final_destination(const Motorcycle& mc) const
 {
-  if(mc.is_motorcycle_destination_final())
-    return true;
-
-  // determine if we've reached the border of the mesh
-  const Face_location& loc = mc.current_location();
-  if(internal::is_on_face_border(loc, mesh))
-    return true;
-
-  return false;
+  return mc.is_motorcycle_destination_final();
 }
 
 // search for a possible collision with another motorcycle between the current
@@ -440,7 +468,7 @@ find_collisions(Motorcycle& mc)
         continue;
 
       // Compute the respective direction of the two motorcycles:
-      // use collinear_are_aligned_along_line ? @todo
+      // use two calls to collinear_are_aligned_along_line() instead of angle ? @todo
       bool is_mc_2_degenerate = (mc_2.source() == mc_2.destination());
       bool are_motorcycles_moving_in_the_same_direction = (is_mc_2_degenerate ||
         K().angle_2_object()(mc.source()->point(), mc.destination()->point(),
@@ -461,7 +489,7 @@ find_collisions(Motorcycle& mc)
         // 'crash_motorcycles_with_same_source_and_direction()'
         CGAL_assertion(is_mc_2_degenerate || mc.source() != mc_2.source());
 
-        // @fixme for surfaces
+        // @todo for surfaces
         time_at_collision = CGAL::sqrt(CGAL::squared_distance(
           mc.source()->point(), mc_2.source()->point())) / mc.speed();
         std::cout << "  mc crashes into mc_2's source at time: " << time_at_collision << std::endl;
@@ -473,7 +501,7 @@ find_collisions(Motorcycle& mc)
           time_at_closest_collision = time_at_collision;
           closest_collision_point = mc_2.source();
           foreign_mc_id = mc_2.id();
-          foreign_time_at_closest_collision = 0; //@fixme surface
+          foreign_time_at_closest_collision = 0; //@todo surface
           continue;
         }
       }
@@ -487,7 +515,7 @@ find_collisions(Motorcycle& mc)
         // If mc_2 has already crashed, then mc crashes into the final position of mc_2
         if(mc_2.is_crashed())
         {
-          // @fixme for surfaces (see notes)
+          // @todo for surfaces (see notes)
           time_at_collision = CGAL::sqrt(CGAL::squared_distance(
             mc.source()->point(), mc_2.position()->point())) / mc.speed();
           std::cout << "  mc crashes into mc_2's final position at: " << time_at_collision << std::endl;
@@ -509,7 +537,7 @@ find_collisions(Motorcycle& mc)
           // at the same time. Not that this point might not be reached by either
           // motorcycle, e.g. if they reach their destination first.
 
-          // @fixme for surfaces (see notes)
+          // @todo for surfaces (see notes)
           time_at_collision = CGAL::sqrt(CGAL::squared_distance(
             mc.source()->point(), mc_2.source()->point())) / (mc.speed() + mc_2.speed());
           std::cout << "  mc and mc_2 would meet at time: " << time_at_collision << std::endl;
@@ -520,11 +548,11 @@ find_collisions(Motorcycle& mc)
             is_closest_collision_point_already_in_dictionary = false;
             time_at_closest_collision = time_at_collision;
             Vector mc_v(mc_tentative_track);
-            closest_collision = // @fixme for surfaces
+            closest_collision = // @todo for surfaces
               mc.source()->point() + time_at_collision * mc.speed() * mc_v / CGAL::sqrt(mc_v.squared_length());
             foreign_mc_id = mc_2.id();
 
-            // @fixme for surfaces
+            // @todo for surfaces
             foreign_time_at_closest_collision = time_at_collision;
             continue;
           }
@@ -577,7 +605,7 @@ find_collisions(Motorcycle& mc)
 
       // Check if the intersection is within the face, ignore otherwise @todo
 
-      // @fixme for surfaces
+      // @todo for surfaces
       time_at_collision =
           CGAL::sqrt(CGAL::squared_distance(mc.source()->point(), collision_point)) / mc.speed();
       std::cout << "  collision at: (" << collision_point << ") at time: " << time_at_collision << std::endl;
@@ -642,10 +670,14 @@ initialize_motorcycles()
     FT time_at_destination;
     if(destination_point == boost::none) // destination was not provided
     {
-      boost::tuple<DEC_it, DEC_it, FT> destination = mc.compute_next_destination(points, mesh);
-      // @fixme, source might have changed... (check source == destination.template get<0>())
-      destination_it = destination.template get<1>();
-      time_at_destination = destination.template get<2>();
+      boost::tuple<bool, DEC_it, DEC_it, FT> destination =
+        mc.compute_next_destination(points, mesh);
+
+      CGAL_assertion(destination.template get<0>()); // must have found a path
+      CGAL_assertion(mc.source() == destination.template get<1>());
+
+      destination_it = destination.template get<2>();
+      time_at_destination = destination.template get<3>();
 
       destination_it->add_motorcycle(mc_id, time_at_destination);
       destination_point = destination_it->point();
@@ -706,6 +738,17 @@ locate_motorcycles(Motorcycle& mc)
 }
 
 template<typename K, typename PolygonMesh>
+bool
+Motorcycle_graph<K, PolygonMesh>::
+has_motorcycle_reached_crashing_point(const Motorcycle& mc) const
+{
+  return // mc has reached the track of a foreign motorcycle
+         (mc.has_reached_blocked_point() ||
+         // multiple motorcycles will reach mc's current position at the same time
+         mc.has_reached_simultaneous_collision_point());
+}
+
+template<typename K, typename PolygonMesh>
 template<typename MotorcycleContainerIterator>
 void
 Motorcycle_graph<K, PolygonMesh>::
@@ -714,6 +757,10 @@ trace_graph(MotorcycleContainerIterator mit, MotorcycleContainerIterator last)
   add_motorcycles(mit, last);
   initialize_motorcycles();
   motorcycle_pq.initialize(motorcycles);
+
+#ifdef CGAL_MOTORCYCLE_GRAPH_OUTPUT
+  output_motorcycles_sources_and_destinations();
+#endif
 
   // this can only happen at the beginning, simpler to get it out the way immediately
   crash_motorcycles_with_same_source_and_direction();
@@ -729,28 +776,55 @@ trace_graph(MotorcycleContainerIterator mit, MotorcycleContainerIterator last)
 
     if(mc.position() == mc.destination())
     {
-      if(has_motorcycle_reached_final_destination(mc))
+      // @todo add the segment source--destination to the map
+      // m[face_descriptor fd] = list_of_motorcycle_segments_in_fd
+
+      if(has_motorcycle_reached_final_destination(mc) ||
+         has_motorcycle_reached_crashing_point(mc))
       {
 #ifdef CGAL_MOTORCYCLE_GRAPH_VERBOSE
-        std::cout << "Reached final destination" << std::endl;
+        std::cout << "Reached motorcycle's final destination or destination is a crashing point: " << std::endl
+                  << " - blocked: " << mc.has_reached_blocked_point() << std::endl
+                   << " - simultaneous collision: " << mc.has_reached_simultaneous_collision_point() << std::endl;
 #endif
         crash_motorcycle(mc);
       }
-      else
+
+      else // not crashing, try to compute the next path
       {
 #ifdef CGAL_MOTORCYCLE_GRAPH_VERBOSE
-        std::cout << "Moving on to the next face" << std::endl;
+        std::cout << "Computing motorcycle's next path" << std::endl;
 #endif
-        transition_motorcycle_to_next_face(mc);
+        if(compute_motorcycle_next_path(mc))
+        {
+          // a new path was found and set up, update the queue and continue
+          motorcycle_pq.update(mc);
+
+          // The purpose of this 'goto' is to avoid blocking the current position
+          // when moving to the next path: the idea is to have the next target
+          // be exactly the point at which we are. This is done to then analyze
+          // the new path for potential collisions, similarly to how the first target
+          // of a new motorcycle is its source.
+          //
+          // Since the next item is exactly the point at which we are, it'll be
+          // first in queue and it is not dangerous to not block that point.
+          // (Note that we could imagine having at the same time multiple motorcycles
+          // whose closest target is their current position, but not blocking here
+          // does not create issues either.)
+          goto next_item;
+        }
+        else
+        {
+          // couldn't find a next path, crash the motorcycle
+          crash_motorcycle(mc);
+        }
       }
     }
-    else if(// only to prevent multiple motorcycles starting from the same source
+    // motorcycle has not reached its destination, but still might be crashing
+    else if(has_motorcycle_reached_crashing_point(mc) &&
+            // only to prevent multiple motorcycles starting from the same source
             // (but with different directions) from blocking each other
-            mc.current_time() != 0. &&
-            // mc has reached the track of a foreign motorcycle
-            (mc.has_reached_blocked_point() ||
-            // multiple motorcycles will reach this point at the same time
-             mc.has_reached_simultaneous_collision_point()))
+            mc.current_time() != 0.)
     {
 #ifdef CGAL_MOTORCYCLE_GRAPH_VERBOSE
       std::cout << "Reached crashing point: " << std::endl
@@ -760,7 +834,8 @@ trace_graph(MotorcycleContainerIterator mit, MotorcycleContainerIterator last)
 
       crash_motorcycle(mc);
     }
-    else // the motorcycle can continue without issue towards its destination
+    // the motorcycle can continue without issue towards its destination
+    else
     {
       // check for potential foreign tracks intersecting the next move of mc
       boost::tuple<DEC_it, FT, int, FT> res = find_collisions(mc);
@@ -842,6 +917,9 @@ trace_graph(MotorcycleContainerIterator mit, MotorcycleContainerIterator last)
             // its confirmed track, and must therefore be blocked
             collision_point->block();
           }
+
+          // The target list of mc was modified and the PQ must be updated
+          motorcycle_pq.update(mc);
         }
 
 #ifdef CGAL_MOTORCYCLE_GRAPH_VERBOSE
@@ -850,39 +928,15 @@ trace_graph(MotorcycleContainerIterator mit, MotorcycleContainerIterator last)
       }
     }
 
-    // The target list of mc was modified and the PQ must be updated
-    if(!mc.is_crashed()) // If mc has crashed, the motorcycle was removed from the PQ
-      motorcycle_pq.update(mc);
-
     // block the newly reached position
     mc.position()->block();
 
+next_item:
 #ifdef CGAL_MOTORCYCLE_GRAPH_VERBOSE
     std::cout << "---" << std::endl;
     std::cout << "Queue after update:" << std::endl << motorcycle_pq << std::endl;
 #endif
   }
-}
-
-template<typename K, typename PolygonMesh>
-void
-Motorcycle_graph<K, PolygonMesh>::
-transition_motorcycle_to_next_face(Motorcycle& mc)
-{
-  CGAL_precondition(mc.targets().empty());
-
-  boost::tuple<DEC_it, DEC_it, FT> next_path =
-    mc.compute_next_destination(points, mesh);
-
-  const DEC_it& next_source = next_path.template get<0>();
-  const DEC_it& next_destination = next_path.template get<1>();
-  const FT time_at_next_destination = next_path.template get<2>();
-
-  next_source->add_motorcycle(mc.id(), mc.current_time());
-  next_destination->add_motorcycle(mc.id(), time_at_next_destination);
-
-  mc.add_target(next_source, mc.current_time());
-  mc.add_target(next_destination, time_at_next_destination);
 }
 
 template<typename K, typename PolygonMesh>

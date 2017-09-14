@@ -21,6 +21,8 @@
 
 #include <CGAL/intersection_2.h>
 
+#include <boost/optional.hpp>
+
 namespace CGAL {
 
 namespace Polyline_tracing {
@@ -28,7 +30,7 @@ namespace Polyline_tracing {
 namespace internal {
 
 template<typename K>
-typename K::Point_2
+boost::optional<typename K::Point_2>
 robust_intersection(const typename K::Ray_2& r, const typename K::Segment_2& s)
 {
   // This function should only be called if there is an intersection between
@@ -40,7 +42,7 @@ robust_intersection(const typename K::Ray_2& r, const typename K::Segment_2& s)
   typedef typename K::Ray_2                                   Ray;
 
   const Point* pp;
-  Point intersection_point;
+  boost::optional<Point> intersection_point;
 
   typedef typename CGAL::cpp11::result_of<
       typename K::Intersect_2(Ray, Segment)>::type Intersection_result;
@@ -84,7 +86,7 @@ robust_intersection(const typename K::Ray_2& r, const typename K::Segment_2& s)
     if(!epp)
     {
       std::cerr << "Warning: intersection is not a point" << std::endl;
-      return r.source(); // ugly tmp hack @fixme
+      return intersection_point;
     }
 
     const Exact_point exact_intersection_point = *epp;

@@ -121,12 +121,12 @@ public:
   const DEC_it closest_target() const;
 
   template
-  boost::tuple<DEC_it, DEC_it, FT> compute_next_destination(Dictionary& points, const PolygonMesh& mesh);
+  boost::tuple<bool, DEC_it, DEC_it, FT> compute_next_destination(Dictionary& points,
+                                                                  const PolygonMesh& mesh);
   void erase_closest_target();
   bool has_reached_blocked_point() const;
   bool has_reached_simultaneous_collision_point() const;
   bool is_motorcycle_destination_final() const;
-  void set_new_destination(const DEC_it new_dest, const FT dist);
   FT time_at_closest_target() const;
 
   // output
@@ -242,12 +242,15 @@ closest_target() const
 }
 
 template<typename K, typename PolygonMesh>
-boost::tuple<typename Motorcycle_impl<K, PolygonMesh>::DEC_it,
-             typename Motorcycle_impl<K, PolygonMesh>::DEC_it,
-             typename K::FT>
+boost::tuple<bool, // successfuly computed a next path or not
+             typename Motorcycle_impl<K, PolygonMesh>::DEC_it, // next source
+             typename Motorcycle_impl<K, PolygonMesh>::DEC_it, // next destination
+             typename K::FT> // time at next destination
 Motorcycle_impl<K, PolygonMesh>::
 compute_next_destination(Dictionary& points, const PolygonMesh& mesh)
 {
+  CGAL_precondition(target_points.empty());
+
   // that derived cast is so that tracer visitor can indeed take a Motorcycle
   // and not a motorcycle_impl. It's safe since we only deal manipulate "full"
   // motorcycles, but it's kinda ugly @fixme
@@ -287,22 +290,6 @@ is_motorcycle_destination_final() const
   // @todo should be a custom value to be input with the destination
   // or something that the tracer sets up
   return false;
-}
-
-template<typename K, typename PolygonMesh>
-void
-Motorcycle_impl<K, PolygonMesh>::
-set_new_destination(const DEC_it new_dest, const FT new_time)
-{
-  CGAL_assertion(target_points.empty());
-
-  dest = new_dest;
-
-  // Putting 'conf' again in the queue means that this will be immediately treated
-  // as next point in the queue, allowing to then insert points if necessary
-  // between 'conf' and 'new_dest'
-  target_points.insert(std::make_pair(conf, time));
-  target_points.insert(std::make_pair(dest, new_time));
 }
 
 template<typename K, typename PolygonMesh>
