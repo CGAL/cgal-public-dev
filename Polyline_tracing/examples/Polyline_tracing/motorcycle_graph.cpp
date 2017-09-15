@@ -43,8 +43,8 @@ int main()
   std::cout << pm.number_of_faces() << " faces" << std::endl;
   CGAL_precondition(pm.is_valid());
 
-  std::ofstream out("polygon_mesh.off");
-  out << pm;
+//  std::ofstream out("polygon_mesh.off");
+//  out << pm;
 
   bool is_loop_infinite = true;
   while(is_loop_infinite)

@@ -58,6 +58,7 @@ struct Target_point_set_comparer
 
 // -----------------------------------------------------------------------------
 
+// Having a "_impl" class is only done because it's needed for BOOST_PARAMETER_CONSTRUCTOR
 template<typename K, typename PolygonMesh>
 class Motorcycle_impl
 {
@@ -96,7 +97,6 @@ public:
   DEC_it& destination() { return dest; }
   const DEC_it destination() const { return dest; }
 
-  void set_location(const Face_location& loc) { conf->set_location(loc); }
   const Face_location& current_location() const { return conf->location(); }
 
   const FT speed() const { return spee; }

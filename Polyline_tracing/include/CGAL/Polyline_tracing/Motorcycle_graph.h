@@ -22,7 +22,11 @@
 #include <CGAL/Polyline_tracing/Motorcycle_priority_queue.h>
 #include <CGAL/Polyline_tracing/Tracer.h>
 #include <CGAL/Polyline_tracing/internal/robust_intersections.h>
+#include <CGAL/Polyline_tracing/internal/VPM_selector.h>
 
+#include <CGAL/AABB_face_graph_triangle_primitive.h>
+#include <CGAL/AABB_traits.h>
+#include <CGAL/AABB_tree.h>
 #include <CGAL/assertions.h>
 #include <CGAL/boost/graph/iterator.h>
 #include <CGAL/Bbox_2.h>
@@ -67,8 +71,8 @@ public:
   typedef Motorcycle_priority_queue<K, PolygonMesh>           Motorcycle_PQ;
   typedef Motorcycle_priority_queue_entry<K, PolygonMesh>     Motorcycle_PQE;
 
-  typedef typename boost::graph_traits<PolygonMesh>::halfedge_descriptor halfedge_descriptor;
-  typedef typename boost::graph_traits<PolygonMesh>::face_descriptor face_descriptor;
+  typedef typename boost::graph_traits<PolygonMesh>::halfedge_descriptor  halfedge_descriptor;
+  typedef typename boost::graph_traits<PolygonMesh>::face_descriptor      face_descriptor;
 
   // Access
   Motorcycle& motorcycle(const std::size_t id) { return *(motorcycles[id]); }
@@ -90,7 +94,6 @@ public:
   void generate_enclosing_face();
   bool has_motorcycle_reached_final_destination(const Motorcycle& mc) const;
   void initialize_motorcycles();
-  void locate_motorcycles(Motorcycle& mc);
   bool has_motorcycle_reached_crashing_point(const Motorcycle& mc) const;
 
   template<typename MotorcycleContainerIterator>
@@ -109,6 +112,8 @@ private:
   Motorcycle_PQ motorcycle_pq;
   PolygonMesh& mesh; // not const in case we need to create it
   bool using_enclosing_bbox;
+
+  //@todo dynamic pmap for face--->motorcycles segments
 };
 
 // -----------------------------------------------------------------------------
@@ -121,7 +126,7 @@ Motorcycle_graph(PolygonMesh& mesh)
     mesh(mesh),
     using_enclosing_bbox(false)
 {
-  if(num_vertices(mesh))
+  if(num_vertices(mesh) == 0)
   {
     std::cerr << " Warning: empty mesh in input" << std::endl;
     using_enclosing_bbox = true;
@@ -185,6 +190,15 @@ std::pair<typename Motorcycle_graph<K, PolygonMesh>::DEC_it,
 Motorcycle_graph<K, PolygonMesh>::
 compute_middle_point(DEC_it p, const FT p_time, DEC_it q, const FT q_time)
 {
+  if(p->location().first != q->location().first)
+  {
+    std::cerr << "Warning: middle point computation with different faces" << std::endl;
+    // asserting because using p.loc().first is too dangerous if r is not guaranteed
+    // to be on p's face
+    CGAL_assertion(false);
+
+  }
+
   Point r = K().construct_midpoint_2_object()(p->point(), q->point());
   const FT time_at_r = 0.5 * (p_time + q_time);
 
@@ -192,7 +206,14 @@ compute_middle_point(DEC_it p, const FT p_time, DEC_it q, const FT q_time)
   std::cout << "  New middle point: (" << r  << ") at time: " << time_at_r << std::endl;
 #endif
 
-  return std::make_pair(points.insert(r), time_at_r);
+  // As long as the faces are equal, the barycenter coordinates, the coordinates
+  // of the middle point can be deduced from the (known) coordinates of 'p' and 'q'
+  // but is it better (accuracy + consistency) ? @todo
+  const Face_location middle_point_location =
+    CGAL::Polygon_mesh_processing::locate(p->location().first, r, mesh);
+
+
+  return std::make_pair(points.insert(middle_point_location, r), time_at_r);
 }
 
 template<typename K, typename PolygonMesh>
@@ -435,8 +456,8 @@ find_collisions(Motorcycle& mc)
               << mc_2_tentative_track.source() << ")--("
               << mc_2_tentative_track.target() << ")" << std::endl;
 
-    // Detect whether the motorcycles share the same supporting line
-    // note that we know that 'mc_tentative_track' is not degenerate
+    // Detect whether the motorcycles share the same supporting line.
+    // Note that we know that 'mc_tentative_track' is not degenerate.
     if(K().collinear_2_object()(mc_tentative_track.source(),
                                 mc_tentative_track.target(),
                                 mc_2.source()->point()) &&
@@ -560,12 +581,14 @@ find_collisions(Motorcycle& mc)
       }
     }
     // --- From here on, the tracks are not collinear ---
-    // Ignore the collision if it is the current position of the motorcycle
+    // Ignore the collision if it is at the current position of the motorcycle
     else if(mc.position()->has_motorcycle(mc_2.id()))
     {
       continue;
     }
     // Check if the closest target of mc is the collision with mc_2
+    //@fixme probably won't work for surfaces (think of a path rotating around
+    // a sphere and coming closer and closer to the source of the motorcycle)
     else if(mc.closest_target()->has_motorcycle(mc_2.id()))
     {
       time_at_collision = mc.time_at_closest_target();
@@ -626,7 +649,13 @@ find_collisions(Motorcycle& mc)
   // Insert the point in the dictionary. The motorcycle info will be added later.
   if(foreign_mc_id != std::size_t(-1) &&
      !is_closest_collision_point_already_in_dictionary)
-    closest_collision_point = points.insert(closest_collision);
+  {
+    const Face_location collision_location =
+      CGAL::Polygon_mesh_processing::locate(mc.current_location().first,
+                                            closest_collision, mesh);
+
+    closest_collision_point = points.insert(collision_location, closest_collision);
+  }
 
   return boost::make_tuple(closest_collision_point, time_at_closest_collision,
                            foreign_mc_id, foreign_time_at_closest_collision);
@@ -641,34 +670,55 @@ initialize_motorcycles()
   std::cout << "Initialize motorcycles" << std::endl;
 #endif
 
+  //@tmp while I find out what to do with the "no mesh provided option"
+  // I guess, generate a bbox, then a triangle that includes the box ? darn pretty...
+  CGAL_assertion(!using_enclosing_bbox);
+
   // if no mesh has been given in input, generate a mesh made of a single quad face
   // that contains all the interesting motorcycle interactions (crashes)
   if(using_enclosing_bbox)
     generate_enclosing_face();
 
+  typedef CGAL::internal::P2_or_P3_to_P3<PolygonMesh>                 P2_or_P3_to_P3;
+  typedef CGAL::P2_to_P3_VPM<PolygonMesh>                             VPM;
+  VPM vpm(mesh);
+
+  typedef CGAL::AABB_face_graph_triangle_primitive<PolygonMesh, VPM>  AABB_face_graph_primitive;
+  typedef CGAL::AABB_traits<K, AABB_face_graph_primitive>             AABB_face_graph_traits;
+  CGAL::AABB_tree<AABB_face_graph_traits> tree;
+
+  CGAL::Polygon_mesh_processing::build_aabb_tree(
+    mesh, tree, CGAL::Polygon_mesh_processing::parameters::vertex_point_map(vpm));
+
   std::size_t number_of_motorcycles = motorcycles.size();
   for(std::size_t mc_id = 0; mc_id<number_of_motorcycles; ++mc_id)
   {
     Motorcycle& mc = motorcycle(mc_id);
-
-    const Point& source_point = mc.initial_source_point();
     const FT speed = mc.speed();
-    const FT time_at_source = mc.current_time();
-    boost::optional<Point>& destination_point = mc.initial_destination_point();
     boost::optional<Vector>& direction = mc.direction();
 
-    // add the source to the dictionary
-    DEC_it source_entry = points.insert(source_point, mc_id, time_at_source);
+    // Add the source to the dictionary
+    const Point& ini_source_point = mc.initial_source_point();
+    const FT time_at_source = mc.current_time();
+
+    // An AABB tree is a 3D structure, so we need to convert the point to a Point_3
+    // Note that if the point is already a Point_3, this doesn't do anything
+    // @todo handle weird point types
+    const typename P2_or_P3_to_P3::Point_3& source_point = P2_or_P3_to_P3()(ini_source_point);
+
+    const Face_location source_location =
+        CGAL::Polygon_mesh_processing::locate(source_point, tree, mesh,
+          CGAL::Polygon_mesh_processing::parameters::vertex_point_map(vpm));
+    DEC_it source_entry = points.insert(source_location, ini_source_point,
+                                        mc_id, time_at_source);
     mc.source() = source_entry;
     mc.position() = source_entry;
 
-    // locate the motorcycles' sources in the input mesh
-    locate_motorcycles(mc);
-
     // add the target to the dictionary
+    boost::optional<Point>& opt_destination_point = mc.initial_destination_point();
     DEC_it destination_it;
     FT time_at_destination;
-    if(destination_point == boost::none) // destination was not provided
+    if(opt_destination_point == boost::none) // destination was not provided
     {
       boost::tuple<bool, DEC_it, DEC_it, FT> destination =
         mc.compute_next_destination(points, mesh);
@@ -680,21 +730,28 @@ initialize_motorcycles()
       time_at_destination = destination.template get<3>();
 
       destination_it->add_motorcycle(mc_id, time_at_destination);
-      destination_point = destination_it->point();
+      opt_destination_point = destination_it->point();
     }
     else // destination is known (but still need to compute the time)
     {
+      const Point& destination_point = *opt_destination_point;
+
+      // source and destination should be on the same face, so we can already
+      // use the overload where a face is provided
+      const Face_location destination_location =
+        CGAL::Polygon_mesh_processing::locate(source_location.first,
+                                              destination_point, mesh);
+
       // @todo this should be computed by the tracer
       time_at_destination = time_at_source
-        + CGAL::sqrt(CGAL::squared_distance(source_point, *destination_point)) / speed;
-      destination_it = points.insert(*destination_point, mc_id, time_at_destination);
+        + CGAL::sqrt(CGAL::squared_distance(ini_source_point, destination_point)) / speed;
+      destination_it = points.insert(destination_location, destination_point,
+                                     mc_id, time_at_destination);
 
       if(direction == boost::none)
-      {
-        mc.direction() = Vector(source_point, *destination_point);
-      }
+        mc.direction() = Vector(ini_source_point, destination_point);
 //    else @todo
-//      check if (destination - source) is (roughly?) collinear with the direction
+//      check that (destination - source) is (roughly?) collinear with the direction
     }
 
     mc.destination() = destination_it;
@@ -703,38 +760,10 @@ initialize_motorcycles()
     mc.targets().insert(std::make_pair(source_entry, time_at_source));
     mc.targets().insert(std::make_pair(destination_it, time_at_destination));
 
-    // this is useful to not have empty track when sour=dest but creates duplicates @fixme
+    // this is useful to not get an empty track when sour=dest
+    // but it creates duplicates @fixme
     mc.track().push_back(source_entry);
   }
-}
-
-template<typename K, typename PolygonMesh>
-void
-Motorcycle_graph<K, PolygonMesh>::
-locate_motorcycles(Motorcycle& mc)
-{
-  // @todo check that no motorcycle has yet moved
-
-  if(using_enclosing_bbox || true) // @tmp
-  {
-    face_descriptor fd = *(faces(mesh).begin());
-    // when using an enclosing quad face, barycentric coordinates are both unused
-    // and meaningless
-    Barycentric_coordinates bc;
-    mc.set_location(std::make_pair(fd, bc));
-  }
-
-  // actual locate @todo
-  face_descriptor fd = *(faces(mesh).begin());
-  FT third = 1./3.;
-  Barycentric_coordinates bc = { {third, third, third} };
-  mc.source()->set_location(std::make_pair(fd, bc));
-
-  // if the destination is already known, locate it too
-  if(mc.initial_destination_point() != boost::none)
-    mc.destination()->set_location(std::make_pair(fd, bc));
-
-  // @todo check that the sources and destinations are on the same face
 }
 
 template<typename K, typename PolygonMesh>
@@ -771,7 +800,7 @@ trace_graph(MotorcycleContainerIterator mit, MotorcycleContainerIterator last)
     Motorcycle_PQE pqe = motorcycle_pq.top();
     Motorcycle& mc = pqe.motorcycle();
 
-    // move the motorcycle to the target (new confirmed position)
+    // move the motorcycle to the target (which becomes the confirmed position)
     drive_to_closest_target(mc);
 
     if(mc.position() == mc.destination())
@@ -789,8 +818,8 @@ trace_graph(MotorcycleContainerIterator mit, MotorcycleContainerIterator last)
 #endif
         crash_motorcycle(mc);
       }
-
-      else // not crashing, try to compute the next path
+      // not crashing, try to compute the next path
+      else
       {
 #ifdef CGAL_MOTORCYCLE_GRAPH_VERBOSE
         std::cout << "Computing motorcycle's next path" << std::endl;
@@ -811,6 +840,8 @@ trace_graph(MotorcycleContainerIterator mit, MotorcycleContainerIterator last)
           // (Note that we could imagine having at the same time multiple motorcycles
           // whose closest target is their current position, but not blocking here
           // does not create issues either.)
+          //
+          // (It might as well be a "break;", but I want to print the priority queue.)
           goto next_item;
         }
         else
@@ -864,7 +895,7 @@ trace_graph(MotorcycleContainerIterator mit, MotorcycleContainerIterator last)
          // the impact is closer than the next target
          time_at_collision_point <= mc.time_at_closest_target() &&
          // the collision is not the next target of 'mc' or the foreign track
-         // does not know that collision point yet
+         // does not know this collision point yet
          (collision_point != mc.closest_target() ||
           !collision_point->has_motorcycle(foreign_motorcycle_id)))
       {

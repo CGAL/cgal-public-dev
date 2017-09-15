@@ -71,15 +71,14 @@ public:
 
   // Access
   const Point& point() const { return p; }
-  void set_location(const Face_location& l) const { loc = l; }
   const Face_location& location() const { return loc; }
   bool is_blocked() const { return blocked; }
   void block() const { blocked = true; }
   const Visiting_motorcycles_container& visiting_motorcycles() const { return visiting_mcs; }
 
   // Constructor
-  Dictionary_entry(const Point& p);
-  Dictionary_entry(const Point& p, const Face_location& loc);
+  Dictionary_entry(const Face_location& loc, const Point& p);
+  Dictionary_entry(const Face_location& loc);
 
   // Most of these functions are not actually 'const' but the members they modify
   // are mutable. See next comment.
@@ -91,7 +90,13 @@ public:
 
   // need to build a set of Dictionary_entry items
   friend bool operator<(const Self& lhs, const Self& rhs) {
-    return lhs.point() < rhs.point();
+    if(lhs.location().first == rhs.location().first)
+    {
+      return std::lexicographical_compare(lhs.location().second.begin(), lhs.location().second.end(),
+                                          rhs.location().second.begin(), rhs.location().second.end());
+    }
+
+    return lhs.location().first < rhs.location().first;
   }
 
   // Output
@@ -110,11 +115,11 @@ public:
   }
 
 private:
-  // The position of the point
-  const Point p;
-
   // Its location in the mesh
-  mutable Face_location loc;
+  const Face_location loc;
+
+  // The position of the point (just for information)
+  const Point p;
 
   // This class is meant to be an element of a set entry, which is const. However,
   // The members below must still be modified so they are made mutable.
@@ -125,14 +130,17 @@ private:
 
 template<typename K, typename PolygonMesh>
 Dictionary_entry<K, PolygonMesh>::
-Dictionary_entry(const Point& p)
-  : p(p), loc(), visiting_mcs(), blocked(false)
-{ }
+Dictionary_entry(const Face_location& loc)
+  : loc(loc), p(), visiting_mcs(), blocked(false)
+{
+  CGAL_assertion(false);
+  // @todo compute p
+}
 
 template<typename K, typename PolygonMesh>
 Dictionary_entry<K, PolygonMesh>::
-Dictionary_entry(const Point& p, const Face_location& loc)
-  : p(p), loc(loc), visiting_mcs(), blocked(false)
+Dictionary_entry(const Face_location& loc, const Point& p)
+  : loc(loc), p(p), visiting_mcs(), blocked(false)
 { }
 
 template<typename K, typename PolygonMesh>
@@ -215,9 +223,10 @@ public:
   Dictionary() : entries() { }
 
   // Functions
-  DEC_it insert(const Point& p, const Face_location& loc = Face_location());
-  DEC_it insert(const Point& p, const Face_location& loc, const int i, const FT time);
-  DEC_it insert(const Point& p, const int i, const FT time);
+  DEC_it insert(const Face_location& loc, const Point& p, const int i, const FT time);
+  DEC_it insert(const Face_location& loc, const int i, const FT time, const PolygonMesh& mesh);
+  DEC_it insert(const Face_location& loc, const Point& p);
+  DEC_it insert(const Face_location& loc, const PolygonMesh& mesh);
 
 private:
   Dictionary_entry_container entries;
@@ -226,9 +235,31 @@ private:
 template<typename K, typename PolygonMesh>
 typename Dictionary<K, PolygonMesh>::DEC_it
 Dictionary<K, PolygonMesh>::
-insert(const Point& p, const Face_location& loc)
+insert(const Face_location& loc, const Point& p, const int i, const FT time)
 {
-  Dictionary_entry e(p, loc);
+  DEC_it it = insert(loc, p);
+  it->add_motorcycle(i, time);
+
+  std::cout << "(New) point in the dictionary : " << *it << std::endl;
+
+  return it;
+}
+
+template<typename K, typename PolygonMesh>
+typename Dictionary<K, PolygonMesh>::DEC_it
+Dictionary<K, PolygonMesh>::
+insert(const Face_location& loc, const int i, const FT time, const PolygonMesh& mesh)
+{
+  Point p = CGAL::Polygon_mesh_processing::internal::loc_to_point(loc, mesh);
+  return insert(loc, p, i, time);
+}
+
+template<typename K, typename PolygonMesh>
+typename Dictionary<K, PolygonMesh>::DEC_it
+Dictionary<K, PolygonMesh>::
+insert(const Face_location& loc, const Point& p)
+{
+  Dictionary_entry e(loc, p);
   std::pair<DEC_it, bool> is_insert_successful = entries.insert(e);
 
   if(!is_insert_successful.second)
@@ -243,26 +274,13 @@ insert(const Point& p, const Face_location& loc)
 template<typename K, typename PolygonMesh>
 typename Dictionary<K, PolygonMesh>::DEC_it
 Dictionary<K, PolygonMesh>::
-insert(const Point& p, const Face_location& loc, const int i, const FT time)
+insert(const Face_location& loc, const PolygonMesh& mesh)
 {
-  DEC_it it = insert(p, loc);
-  it->add_motorcycle(i, time);
-
-  std::cout << "(New) point in the dictionary : " << *it << std::endl;
-
-  return it;
-}
-
-template<typename K, typename PolygonMesh>
-typename Dictionary<K, PolygonMesh>::DEC_it
-Dictionary<K, PolygonMesh>::
-insert(const Point& p, const int i, const FT time)
-{
-  return insert(p, Face_location(), i, time);
+  Point p = CGAL::Polygon_mesh_processing::internal::loc_to_point(loc, mesh);
+  return insert(loc, p);
 }
 
 } // namespace Polyline_tracing
-
 } // namespace CGAL
 
 #endif // CGAL_POLYLINE_TRACING_DICTIONARY_H

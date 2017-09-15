@@ -1,4 +1,4 @@
-// Copyright (c) 2017 GeometryFactory (France).
+﻿// Copyright (c) 2017 GeometryFactory (France).
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
@@ -71,6 +71,7 @@ public:
 
   result_type compute_next_destination(const DEC_it start_point,
                                        const face_descriptor fd) const;
+  void snap_location_to_border(Face_location& loc) const;
 
   result_type operator()(vertex_descriptor vd) const;
   result_type operator()(halfedge_descriptor hd) const;
@@ -104,16 +105,12 @@ compute_next_destination(const DEC_it start_point,
   CGAL_precondition(start_point->location().first == fd);
   CGAL_precondition(num_vertices(mesh) != 0);
 
-  Vector mc_dir = *(mc->direction());
-  mc_dir = Vector(0,1); // @tmp
-
-  typedef CGAL::Halfedge_around_face_circulator<PolygonMesh>  Halfedge_around_facet_circulator;
-
   Point farthest_destination;
   FT time_at_farthest_destination = std::numeric_limits<FT>::min();
-
+  Vector mc_dir = *(mc->direction());
   Ray r(start_point->point(), mc_dir);
 
+  typedef CGAL::Halfedge_around_face_circulator<PolygonMesh>  Halfedge_around_facet_circulator;
   Halfedge_around_facet_circulator hcir_begin(halfedge(fd, mesh), mesh);
   Halfedge_around_facet_circulator hcir = hcir_begin;
   do
@@ -137,7 +134,7 @@ compute_next_destination(const DEC_it start_point,
       FT time_at_new_destination = mc->current_time() +
         CGAL::sqrt(CGAL::squared_distance(start_point->point(), new_destination)) / mc->speed();
 
-      if(time_at_new_destination >= time_at_farthest_destination)
+      if(time_at_new_destination > time_at_farthest_destination)
       {
         farthest_destination = new_destination;
         time_at_farthest_destination = time_at_new_destination;
@@ -155,11 +152,24 @@ compute_next_destination(const DEC_it start_point,
   if(time_at_farthest_destination == mc->current_time())
   {
     std::cerr << "Warning: new destination is the current point" << std::endl;
+
+    // Since we have already dealt with the case of a null direction, if the new
+    // destination is the farthest target, then the direction is pointing outside
+    // of this face. We return false, and the opposite face will be used to compute
+    CGAL_assertion(*(mc->direction()) != CGAL::NULL_VECTOR);
+    return boost::make_tuple(false, DEC_it(), DEC_it(), 0.);
   }
 
-  Face_location loc = CGAL::Polygon_mesh_processing::face_location<
-                        PolygonMesh>(fd, farthest_destination, mesh);
-  DEC_it new_destination_it = points.insert(farthest_destination, loc);
+  Face_location loc = CGAL::Polygon_mesh_processing::locate<PolygonMesh>(
+                        fd, farthest_destination, mesh);
+
+  // A uniform tracer will trace until it reaches a boundary. It is important
+  // that the location of this new destination reflects that it is on the boundary
+  // (that is, one of its barycentric coordinates should be 0). To ensure that
+  // it is the case, it is snapped to the closest halfedge (or even vertex).
+  snap_location_to_border(loc);
+
+  DEC_it new_destination_it = points.insert(loc, farthest_destination);
 
 #ifdef CGAL_MOTORCYCLE_GRAPH_VERBOSE
   std::cout << "new source at " << &*start_point
@@ -174,6 +184,49 @@ compute_next_destination(const DEC_it start_point,
                            start_point,
                            new_destination_it,
                            time_at_farthest_destination);
+}
+
+template<typename K, typename PolygonMesh>
+void
+Uniform_direction_tracer_visitor<K, PolygonMesh>::
+snap_location_to_border(Face_location& loc) const
+{
+  std::cout << "Pre-snapping: "
+            << loc.second[0] << " " << loc.second[1] << " " << loc.second[2] << std::endl;
+  std::cout << "Sum: " << loc.second[0]+loc.second[1]+loc.second[2] << std::endl;
+
+  std::cout << "epsilon: " << std::numeric_limits<FT>::epsilon() << std::endl;
+  std::cout << "min: " << std::numeric_limits<FT>::min() << std::endl;
+
+  FT residue = 0.;
+
+  for(int i=0; i<3; ++i)
+  {
+    if(loc.second[i] <= std::numeric_limits<FT>::epsilon())
+    {
+      residue += loc.second[i];
+      loc.second[i] = 0;
+    }
+    else if((1 - loc.second[i]) <= std::numeric_limits<FT>::min())
+    {
+      residue -= 1 - loc.second[i];
+      loc.second[i] = 1;
+    }
+  }
+
+  // dump the residue
+  for(int i=0; i<3; ++i)
+  {
+    if(loc.second[i] != 0 && loc.second[i] != 1)
+    {
+      loc.second[i] += residue;
+      break;
+    }
+  }
+
+  std::cout << "Post-snapping: "
+            << loc.second[0] << " " << loc.second[1] << " " << loc.second[2] << std::endl;
+  std::cout << "Sum: " << loc.second[0]+loc.second[1]+loc.second[2] << std::endl;
 }
 
 template<typename K, typename PolygonMesh>
@@ -204,7 +257,7 @@ operator()(halfedge_descriptor hd) const
 
   // Exception case: we are computing the first destination. In that case, first
   // try to find a valid destination on face(hd, mesh)
-  if(mc->initial_destination_point() == boost::none)
+  if(mc->initial_destination_point() == boost::none) //@tmp
   {
     face_descriptor fd = face(hd, mesh);
     result_type res = compute_next_destination(mc->position(), fd);
@@ -212,7 +265,7 @@ operator()(halfedge_descriptor hd) const
     // Since direction == NULL_VECTOR has been filtered in Tracer.h, the time
     // can only be null if the direction points to face(opposite(hd, mesh), mesh)
     // and not to face(hd, mesh)
-    if(res.template get<0>() && res.template get<3>() > mc->current_time())
+    if(res.template get<0>() && res.template get<3>() > 0)
       return res;
   }
 
@@ -222,13 +275,14 @@ operator()(halfedge_descriptor hd) const
 
   // compute the position of the motorcycle in the opposite face
   face_descriptor opp_fd = face(opp_hd, mesh);
-  Face_location opp_loc = CGAL::Polygon_mesh_processing::face_location(
+  Face_location opp_loc = CGAL::Polygon_mesh_processing::locate(
                             mc->position()->location(), opp_fd, mesh);
 
-  // Change the location of the source @todo is that necessary... ?
-  mc->position()->set_location(opp_loc);
+  // insert it in the dictionary
+  DEC_it source_in_next_face = points.insert(opp_loc, mc->position()->point());
 
-  result_type next_res = compute_next_destination(mc->position(), opp_fd);
+  result_type next_res = compute_next_destination(source_in_next_face, opp_fd);
+  CGAL_assertion(next_res.template get<0>());
   return next_res;
 }
 
