@@ -66,7 +66,7 @@ trace(const Motorcycle& mc, Dictionary& points, const PolygonMesh& mesh)
 {
 #ifdef CGAL_MOTORCYCLE_GRAPH_VERBOSE
   std::cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*" << std::endl;
-  std::cout << "Computing the next path: " << mc.id() << std::endl;
+  std::cout << "Computing the next path for motorcycle: " << mc.id() << std::endl;
   std::cout << "Current position: " << mc.position()->point() << std::endl
             << "Location: " << mc.current_location().first << " b: "
             << mc.current_location().second [0] << " "

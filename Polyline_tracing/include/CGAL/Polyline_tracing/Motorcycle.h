@@ -52,6 +52,8 @@ struct Target_point_set_comparer
 
   bool operator()(const std::pair<DEC_it, FT>& lhs,
                   const std::pair<DEC_it, FT>& rhs) const {
+    // don't want to insert the same point multiple times
+    CGAL_assertion(lhs.first != rhs.first);
     return lhs.second < rhs.second;
   }
 };
@@ -99,11 +101,16 @@ public:
 
   const Face_location& current_location() const { return conf->location(); }
 
+  bool& is_destination_final() { return is_dest_final; }
+  const bool& is_destination_final() const { return is_dest_final; }
+
   const FT speed() const { return spee; }
   boost::optional<Vector>& direction() { return dir; }
   const boost::optional<Vector>& direction() const { return dir; }
   FT& current_time() { return time; }
   const FT& current_time() const { return time; }
+  FT& time_at_source() { return time_at_sour; }
+  const FT& time_at_source() const { return time_at_sour; }
   DEC_it& position() { return conf; }
   const DEC_it position() const { return conf; }
 
@@ -157,18 +164,22 @@ private:
   boost::optional<Point> ini_dest_pt;
 
   // Below might change when we move in the mesh
-  DEC_it sour; // source point
+  DEC_it sour; // source
   DEC_it dest; // destination
-  DEC_it conf; // last confirmed position
+  DEC_it conf; // current position (last confirmed position)
+
+  // indicates whether we should stop at the destination or try to trace
+  bool is_dest_final;
 
   const FT spee; // speed of the motorcycle, 'const' for now
-  boost::optional<Vector> dir; // direction of the motorcycle
-  FT time; // current time at the position of the motorcycle
+  boost::optional<Vector> dir; // direction
+  FT time; // time at the current position
+  FT time_at_sour; // time at the current source
 
-  // The tentative targets (ordered by increasing distance to 'conf')
+  // The tentative targets, ordered by increasing distance from 'conf'
   Target_point_container target_points;
 
-  // Tracer (decides what is the next target when we reach the destination)
+  // Tracer (computes the next target when we reach the destination)
   Tracer tracer;
 
   std::list<DEC_it> track_points;
@@ -202,14 +213,19 @@ Motorcycle_impl(const ArgumentPack& args)
     ini_sour_pt(args[parameters::source]),
     ini_dest_pt(args[parameters::destination|boost::none]),
     sour(), dest(), conf(),
+    is_dest_final(false),
     spee(args[parameters::speed|1.]),
     dir(args[parameters::direction|boost::none]),
     time(args[parameters::initial_time|0.]),
+    time_at_sour(time),
     target_points(Target_point_set_comparer<K, PolygonMesh>()),
     tracer(),
     track_points()
 {
-  CGAL_precondition(speed() > 0.);
+  // Reject null speed
+  CGAL_precondition(spee > 0.);
+
+  // Either the destination or the direction should be provided
   CGAL_precondition(ini_dest_pt || dir);
 
   if(ini_dest_pt != boost::none && ini_sour_pt == *ini_dest_pt)
@@ -287,9 +303,7 @@ bool
 Motorcycle_impl<K, PolygonMesh>::
 is_motorcycle_destination_final() const
 {
-  // @todo should be a custom value to be input with the destination
-  // or something that the tracer sets up
-  return false;
+  return is_dest_final;
 }
 
 template<typename K, typename PolygonMesh>

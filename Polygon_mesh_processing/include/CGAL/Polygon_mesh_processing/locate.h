@@ -392,6 +392,7 @@ locate(typename boost::graph_traits<TriangleMesh>::face_descriptor f,
   typedef typename CGAL::Kernel_traits<
             typename property_map_value<TriangleMesh,
               CGAL::vertex_point_t>::type>::Kernel                        K;
+  typedef typename K::FT                                                  FT;
 
   // VertexPointMap
   typedef typename GetVertexPointMap<TriangleMesh, NamedParameters>::type VertexPointMap;
@@ -411,7 +412,14 @@ locate(typename boost::graph_traits<TriangleMesh>::face_descriptor f,
   const Point& p1 = get(vpmap, vd1);
   const Point& p2 = get(vpmap, vd2);
 
-  return std::make_pair(f, internal::barycentric_coordinates<K>(p0, p1, p2, query));
+  CGAL::cpp11::array<FT, 3> coords = internal::barycentric_coordinates<K>(p0, p1, p2, query);
+
+  if(coords[0] < 0. || coords[0] > 1. ||
+     coords[1] < 0. || coords[1] > 1. ||
+     coords[2] < 0. || coords[2] > 1.)
+    std::cerr << "Warning: point " << query << " is not in the face " << f << std::endl;
+
+  return std::make_pair(f, coords);
 }
 
 template <typename TriangleMesh>

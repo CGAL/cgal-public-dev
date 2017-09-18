@@ -106,7 +106,7 @@ compute_next_destination(const DEC_it start_point,
   CGAL_precondition(num_vertices(mesh) != 0);
 
   Point farthest_destination;
-  FT time_at_farthest_destination = std::numeric_limits<FT>::min();
+  FT time_at_farthest_destination = mc->current_time(); // minimum value
   Vector mc_dir = *(mc->direction());
   Ray r(start_point->point(), mc_dir);
 
@@ -128,11 +128,13 @@ compute_next_destination(const DEC_it start_point,
         continue;
 
       const Point new_destination = *res;
-      std::cout << "new potential destination: " << new_destination << std::endl;
 
       // compute time at destination
       FT time_at_new_destination = mc->current_time() +
         CGAL::sqrt(CGAL::squared_distance(start_point->point(), new_destination)) / mc->speed();
+
+      std::cout << "new potential destination: " << new_destination
+                << " a time: " << time_at_new_destination << std::endl;
 
       if(time_at_new_destination > time_at_farthest_destination)
       {
@@ -142,9 +144,10 @@ compute_next_destination(const DEC_it start_point,
     }
   } while (hcir != hcir_begin);
 
-  if(time_at_farthest_destination == std::numeric_limits<FT>::min())
+  if(time_at_farthest_destination == mc->current_time())
   {
-    std::cerr << "Warning: motorcycle has no intersection with the border of the next face..." << std::endl;
+    std::cerr << "Warning: motorcycle has no interesting intersection "
+              << "with the border of the face: " << fd << std::endl;
     return boost::make_tuple(false, DEC_it(), DEC_it(), 0.);
   }
 
@@ -239,6 +242,12 @@ operator()(vertex_descriptor /*vd*/) const
 #ifdef CGAL_MOTORCYCLE_GRAPH_VERBOSE
   std::cout << " Uniform tracing from a point on a vertex" << std::endl;
 #endif
+  // careful, reaching a border vertex is not enough to crash, for example:
+  //            in
+  // ------hd------ vd ------hd2 ------
+  //            out
+  // and direction = hd
+
   CGAL_assertion(false); // todo
   return result_type();
 }
@@ -257,7 +266,7 @@ operator()(halfedge_descriptor hd) const
 
   // Exception case: we are computing the first destination. In that case, first
   // try to find a valid destination on face(hd, mesh)
-  if(mc->initial_destination_point() == boost::none) //@tmp
+  if(mc->initial_destination_point() == boost::none)
   {
     face_descriptor fd = face(hd, mesh);
     result_type res = compute_next_destination(mc->position(), fd);
@@ -273,12 +282,12 @@ operator()(halfedge_descriptor hd) const
   if(is_border(opp_hd, mesh))
     return boost::make_tuple(false, DEC_it(), DEC_it(), 0.);
 
-  // compute the position of the motorcycle in the opposite face
+  // Compute the position of the motorcycle in the opposite face
   face_descriptor opp_fd = face(opp_hd, mesh);
   Face_location opp_loc = CGAL::Polygon_mesh_processing::locate(
                             mc->position()->location(), opp_fd, mesh);
 
-  // insert it in the dictionary
+  // Insert the new destination in the dictionary
   DEC_it source_in_next_face = points.insert(opp_loc, mc->position()->point());
 
   result_type next_res = compute_next_destination(source_in_next_face, opp_fd);
