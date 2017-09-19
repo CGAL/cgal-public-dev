@@ -10,8 +10,13 @@
 #include <CGAL/utils_classes.h>
 #include <CGAL/utils.h>
 
+namespace Maxflow {
+	#include <CGAL/internal/auxiliary/graph.h>
+}
+
 // New CGAL includes.
 #include <CGAL/Mylog/Mylog.h>
+#include <CGAL/Visibility_2/Level_of_detail_visibility_2.h>
 
 namespace CGAL {
 
@@ -27,6 +32,7 @@ namespace CGAL {
 			typedef CDTInput     CDT;
 			typedef Visibility   Visibility_result;
 
+			typedef typename Kernel::Point_2 Point;
 			typedef StructuredLabelsInput Structured_labels;
 			typedef typename Kernel::FT FT;
 
@@ -101,10 +107,82 @@ namespace CGAL {
 				log.save("lod_0");
 			}
 
-			void max_flow(const CDT &, const Visibility_result &) {
+			// Source - inside, sink - outside
+			void max_flow(const CDT &cdt, const Visibility_result &visibility) {
 
 				std::cout << "\nMAX FLOW\n" << std::endl;
 
+				typedef Maxflow::Graph Graph;
+
+				const auto numNodes = cdt.number_of_faces();
+
+				Graph::node_id nodes[numNodes];
+				Graph *graph = new Graph();
+
+				assert(visibility.size() == numNodes);
+
+				int i = 0;
+				for (typename Visibility_result::const_iterator it = visibility.begin(); it != visibility.end(); ++it, ++i) {
+					nodes[i] = graph->add_node();
+
+					const int visibility_label = static_cast<int>((*it).second);
+					switch(visibility_label) {
+
+						case 0: // inside
+						graph->add_tweights(nodes[i], m_beta * 1.0, 0.0); // for max flow we add big weights to the correct cells
+						break;
+
+						case 1: // outside
+						graph->add_tweights(nodes[i], 0.0, m_beta * 1.0);
+						break;
+
+						case 2: // unknown
+						graph->add_tweights(nodes[i], m_beta * 0.5, m_beta * 0.5);
+						break;
+
+						default:
+						break;
+					}
+				}
+
+				// const auto first = cdt.finite_edges_begin();
+				// const auto last  = cdt.finite_edges_end();
+
+				// i = 0;
+				// for (typename CDT::Finite_edges_iterator it = first; it != last; ++it, ++i) {
+				// 
+				// 	std::cout << "index: " << i << ": " << cdt.segment(*it) << std::endl;
+				// }
+
+				graph->add_edge(nodes[0] , nodes[7] , 0.0, 0.0); // for min cut we add big weights to the incorrect cells
+				graph->add_edge(nodes[1] , nodes[0] , 0.0, 0.0);
+				graph->add_edge(nodes[2] , nodes[1] , 0.0, 0.0);
+				graph->add_edge(nodes[6] , nodes[1] , 0.0, 0.0);
+				graph->add_edge(nodes[6] , nodes[5] , 0.0, 0.0);
+				graph->add_edge(nodes[3] , nodes[6] , 0.0, 0.0);
+				graph->add_edge(nodes[2] , nodes[11], 0.0, 0.0);
+				graph->add_edge(nodes[11], nodes[13], 0.0, 0.0);
+				graph->add_edge(nodes[7] , nodes[4] , 0.0, 0.0);
+				graph->add_edge(nodes[11], nodes[4] , 0.0, 0.0);
+				graph->add_edge(nodes[4] , nodes[14], 0.0, 0.0);
+				graph->add_edge(nodes[13], nodes[12], 0.0, 0.0);
+				graph->add_edge(nodes[12], nodes[15], 0.0, 0.0);
+				graph->add_edge(nodes[14], nodes[15], 0.0, 0.0);
+				graph->add_edge(nodes[15], nodes[8] , 0.0, 0.0);
+				graph->add_edge(nodes[8] , nodes[9] , 0.0, 0.0);
+				graph->add_edge(nodes[8] , nodes[10], 0.0, 0.0);
+
+				graph->maxflow();
+
+				std::map<int, int> after_cut;
+				for (unsigned long i = 0; i < numNodes; ++i) {
+
+					if (graph->what_segment(nodes[i]) == Graph::SOURCE) after_cut[i] = 0;
+					if (graph->what_segment(nodes[i]) == Graph::SINK) after_cut[i] = 1;
+				}
+
+				Log log;
+				log.save_visibility_eps(cdt, after_cut, "tmp/after_cut");
 			}
 
 		private:

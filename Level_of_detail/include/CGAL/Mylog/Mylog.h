@@ -205,6 +205,36 @@ namespace CGAL {
 		        save(fileName, ".eps");
 			}
 
+
+			template<class CDT, class Visibility>
+			void save_visibility_eps(CDT &cdt, const Visibility &visibility, const std::string &fileName = "tmp/visibility") {
+
+				clear();
+
+		        // Compute bounding box.
+		        double minbX, minbY, maxbX, maxbY;
+		        bounding_box(cdt, minbX, minbY, maxbX, maxbY);
+
+		        // Compute scale.
+		        double scale = 1.0;
+		        if (std::sqrt((maxbX - minbX) * (maxbX - minbX) + (maxbY - minbY) * (maxbY - minbY)) < 10.0 && scale == 1.0) scale *= 1000.0;
+
+		        // Set header.
+		        set_header(minbX * scale, minbY * scale, maxbX * scale, maxbY * scale);
+
+		        // Start private namespace.
+		        out << "0 dict begin gsave\n\n";
+
+		        // Save mesh.
+		        draw_mesh(cdt, visibility, scale);
+
+		        // Finish private namespace.
+		        out << "grestore end\n\n";
+		        out << "%%EOF\n";
+
+		        save(fileName, ".eps");
+			}
+
 			template<class Segments>
 			void export_segments_as_obj(const std::string &name, const Segments &segments, const std::string &) {
 
