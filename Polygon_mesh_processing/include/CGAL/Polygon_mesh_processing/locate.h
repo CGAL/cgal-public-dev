@@ -417,7 +417,10 @@ locate(typename boost::graph_traits<TriangleMesh>::face_descriptor f,
   if(coords[0] < 0. || coords[0] > 1. ||
      coords[1] < 0. || coords[1] > 1. ||
      coords[2] < 0. || coords[2] > 1.)
+  {
     std::cerr << "Warning: point " << query << " is not in the face " << f << std::endl;
+    std::cerr << "Coordinates: " << coords[0] << " " << coords[1] << " " << coords[2] << std::endl;
+  }
 
   return std::make_pair(f, coords);
 }

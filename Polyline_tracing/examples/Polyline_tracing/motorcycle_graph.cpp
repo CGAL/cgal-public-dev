@@ -39,24 +39,42 @@ void motorcycle_club_1(std::vector<Motorcycle>& motorcycles)
                                    CP::speed = 1.));
 }
 
+void motorcycle_club_2(std::vector<Motorcycle>& motorcycles)
+{
+  // add some motorcycles
+  motorcycles.push_back(Motorcycle(CP::source = Point_2(0., 0.),
+                                   CP::destination = Point_2(1.,1.)));
+}
+
 void random_motorcycles_in_triangle(std::vector<Motorcycle>& motorcycles,
                                     const Triangle_2& triangle = Triangle_2(Point_2(0, 0), Point_2(1, 0), Point_2(0, 1)))
 {
   typedef CGAL::Random_points_in_triangle_2<Point_2>            Generator;
 
-  const int size = 10; // number of random points
+  const int size = 5; // number of random points
   motorcycles.reserve(size);
 
   FT third = 1./3.;
   Point_2 bar = CGAL::barycenter(triangle[0], third, triangle[1], third, triangle[2], third);
 
-  Generator gen_s(triangle), gen_d(triangle);
+#if 1//CGAL_MOTORCYCLE_GRAPH_USE_FIXED_SEEDS
+  CGAL::Random rnd(1505815106);
+#else
+  CGAL::Random rnd(CGAL::get_default_random());
+#endif
+  std::ofstream seed_out("seeds.txt");
+  seed_out << rnd.get_seed() << std::endl;
+  Generator gen(triangle, rnd);
+
+  std::cout << "seed: " << rnd.get_seed() << std::endl;
+  std::cout << "triangle: " << triangle << std::endl;
+
   for(int i=0; i<size; ++i)
   {
-    motorcycles.push_back(Motorcycle(CP::source = *gen_s++,
-                                     CP::destination = *gen_d++));
-    motorcycles.push_back(Motorcycle(CP::source = *gen_s++,
-                                     CP::direction = Vector_2(bar, *gen_d++)));
+    const Point_2& s1 = *gen++; const Point_2& d1 = *gen++;
+    const Point_2& s2 = *gen++; const Vector_2 di2(bar, *gen++);
+    motorcycles.push_back(Motorcycle(CP::source = s1, CP::destination = d1));
+    motorcycles.push_back(Motorcycle(CP::source = s2, CP::direction = di2));
   }
 }
 
@@ -87,19 +105,20 @@ void random_motorcycles_in_square(std::vector<Motorcycle>& motorcycles)
   typedef CGAL::Random_points_in_square_2<Point_2>            Generator;
   const int side = 1;
 #if CGAL_MOTORCYCLE_GRAPH_USE_FIXED_SEEDS
-  CGAL::Random rand_s(6), rand_d(7);
-  std::cerr << "Seeds = " << rand_s.get_seed() << " " << rand_d.get_seed() << std::endl;
-  Generator gen_s(side, rand_s), gen_d(side, rand_d);
+  CGAL::Random rnd(6);
 #else
-  Generator gen_s(side), gen_d(side);
+  CGAL::Random rnd(CGAL::get_default_random());
 #endif
+  std::ofstream seed_out("seeds.txt");
+  seed_out << rnd.get_seed() << std::endl;
+  Generator gen(side, rnd);
 
   for(int i=0; i<size; ++i)
   {
-    motorcycles.push_back(Motorcycle(CP::source = *gen_s++,
-                                     CP::destination = *gen_d++));
-    motorcycles.push_back(Motorcycle(CP::source = *gen_s++,
-                                     CP::direction = Vector_2(CGAL::ORIGIN, *gen_d++)));
+    motorcycles.push_back(Motorcycle(CP::source = *gen++,
+                                     CP::destination = *gen++));
+    motorcycles.push_back(Motorcycle(CP::source = *gen++,
+                                     CP::direction = Vector_2(CGAL::ORIGIN, *gen++)));
   }
 }
 
@@ -135,11 +154,14 @@ int main()
 
     std::vector<Motorcycle> motorcycles;
 //    motorcycle_club_1(motorcycles);
+//    motorcycle_club_2(motorcycles);
 //    random_motorcycles_on_segment(motorcycles);
 //    random_motorcycles_in_triangle(motorcycles);
 //    random_motorcycles_in_square(motorcycles);
+
     random_motorcycles_on_face(motorcycles, pm, *(faces(pm).begin()));
     random_motorcycles_on_face(motorcycles, pm, *(++(++(++(++(++faces(pm).begin()))))));
+    random_motorcycles_on_face(motorcycles, pm, *(++(++faces(pm).begin())));
 
     Motorcycle_graph motorcycle_graph(pm);
     motorcycle_graph.trace_graph(motorcycles.begin(), motorcycles.end());

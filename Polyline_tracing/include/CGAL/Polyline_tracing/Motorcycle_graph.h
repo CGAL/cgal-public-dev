@@ -211,6 +211,7 @@ Motorcycle_graph(PolygonMesh& mesh)
   }
   else
   {
+    // Input must be a mesh with triangle faces
     CGAL_precondition(CGAL::is_triangle_mesh(mesh));
   }
 }
@@ -507,6 +508,12 @@ find_collision_with_track(Motorcycle& mc, const Segment& mcs,
   const DEC_it fmc_track_destination = fmc_track.template get<3>();
   const FT time_at_fmc_track_destination = fmc_track.template get<4>();
 
+#ifdef CGAL_MOTORCYCLE_GRAPH_VERBOSE
+  std::cout << "Checking collision with track of motorcycle: " << fmc.id() << std::endl;
+  std::cout << "source: " << fmc_track_source->point() << " at t: " << time_at_fmc_track_source << std::endl;
+  std::cout << "target: " << fmc_track_destination->point() << " at t: " << time_at_fmc_track_destination << std::endl;
+#endif
+
   FT time_at_collision = 0.;
 
   const Segment fmcs = K().construct_segment_2_object()(
@@ -516,6 +523,7 @@ find_collision_with_track(Motorcycle& mc, const Segment& mcs,
   // Ignore the degenerate case of a degenerate fmc track starting at the same source
   if(is_fmcs_degenerate && mcs.source() == fmcs.source())
   {
+    std::cout << "degenerate fmc and mcs.source() == fmcs.source()" << std::endl;
     return;
   }
 
@@ -723,6 +731,10 @@ find_collision_with_complete_track(Motorcycle& mc, const Segment& mcs,
   const std::size_t fmc_id = fmc_track.template get<0>();
   const Motorcycle& fmc = motorcycle(fmc_id);
 
+#ifdef CGAL_MOTORCYCLE_GRAPH_VERBOSE
+std::cout << "Checking for intersection with the complete track of motorcycle " << fmc.id() << std::endl;
+#endif
+
   return find_collision_with_track(mc, mcs, fmc, fmc_track,
                                    false /*the motorcycle is not moving on that track*/,
                                    tc);
@@ -743,11 +755,13 @@ std::cout << "Checking for intersection with the live motorcycle " << fmc.id() <
   if(mc.id() == fmc.id() ||
      mc.current_location().first != fmc.current_location().first || // the motorcycles must be in the same face
      fmc.is_crashed()) // the track of a crashed motorcycle track is complete
+  {
+    std::cout << "ignoring... " << std::endl;
+    std::cout << "ids: " << mc.id() << " " << fmc.id() << std::endl;
+    std::cout << "faces: " << mc.current_location().first << " and " << fmc.current_location().first << std::endl;
+    std::cout << "crashed status: " << fmc.is_crashed() << std::endl;
     return;
-
-  std::cout << "  live fmc: " << fmc.id() << " with tentative track ("
-            << fmc.source()->point() << ")--("
-            << fmc.closest_target()->point() << ")" << std::endl;
+  }
 
   Track fmc_track = boost::make_tuple(fmc.id(),
                                       fmc.source(), fmc.time_at_source(),
@@ -894,6 +908,9 @@ initialize_motorcycles()
     mc.source() = source_entry;
     mc.position() = source_entry;
 
+    // @todo if source or destination is on a border of the mesh, must find
+    // a common face for both...
+
     // add the target to the dictionary
     boost::optional<Point>& opt_destination_point = mc.initial_destination_point();
     DEC_it destination_it;
@@ -938,7 +955,8 @@ initialize_motorcycles()
                         destination_location.second[2] >= 0. &&
                         destination_location.second[2] <= 1.);
 
-      mc.is_destination_final() = true;
+      if(mc.id()%3 == 0)// @tmp
+        mc.is_destination_final() = true;
 
       // @todo this should be computed by the tracer
       time_at_destination = time_at_source +
@@ -1074,6 +1092,10 @@ trace_graph(MotorcycleContainerIterator mit, MotorcycleContainerIterator last)
                 << " - blocked: " << mc.has_reached_blocked_point() << std::endl
                 << " - simultaneous collision: " << mc.has_reached_simultaneous_collision_point() << std::endl;
 #endif
+      // Add the track source -- crash position to the track map
+      add_track_to_map(mc.current_location().first, mc.id(),
+                       mc.source(), mc.time_at_source(),
+                       mc.position(), mc.current_time());
 
       crash_motorcycle(mc);
     }
