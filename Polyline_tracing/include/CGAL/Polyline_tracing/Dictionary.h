@@ -47,7 +47,7 @@ public:
   // Note that we need a multiset for the second container because motorcycles
   // are unique, but times are not
   typedef boost::bimap<
-            boost::bimaps::set_of<int>, // set of motorcycles
+            boost::bimaps::set_of<std::size_t>, // set of motorcycles
             boost::bimaps::multiset_of<FT> > // multi-set of visiting times
                                                                    Visiting_motorcycles_container;
   typedef typename Visiting_motorcycles_container::value_type      value_type;
@@ -82,11 +82,12 @@ public:
 
   // Most of these functions are not actually 'const' but the members they modify
   // are mutable. See next comment.
-  void add_motorcycle(const int id, const FT time) const;
-  bool has_motorcycle(const int id) const;
+  void add_motorcycle(const std::size_t id, const FT time) const;
+  VMC_left_it find_motorcycle(const std::size_t id) const;
+  bool has_motorcycle(const std::size_t id) const;
   bool has_simultaneous_collision() const;
-  VMC_left_it find_motorcycle(const int id) const;
-  size_type remove_motorcycle(const int id) const;
+  std::pair<bool, FT> motorcycle_reaching_time(const std::size_t id) const;
+  size_type remove_motorcycle(const std::size_t id) const;
 
   // need to build a set of Dictionary_entry items
   friend bool operator<(const Self& lhs, const Self& rhs) {
@@ -146,7 +147,7 @@ Dictionary_entry(const Face_location& loc, const Point& p)
 template<typename K, typename PolygonMesh>
 void
 Dictionary_entry<K, PolygonMesh>::
-add_motorcycle(const int id, const FT time) const
+add_motorcycle(const std::size_t id, const FT time) const
 {
   // the motorcycle `i` should not already exists in the list of motorcycles
   // that (might) reach this point
@@ -156,9 +157,17 @@ add_motorcycle(const int id, const FT time) const
 }
 
 template<typename K, typename PolygonMesh>
+typename Dictionary_entry<K, PolygonMesh>::VMC_left_it
+Dictionary_entry<K, PolygonMesh>::
+find_motorcycle(const std::size_t id) const
+{
+  return visiting_mcs.left.find(id);
+}
+
+template<typename K, typename PolygonMesh>
 bool
 Dictionary_entry<K, PolygonMesh>::
-has_motorcycle(const int id) const
+has_motorcycle(const std::size_t id) const
 {
   return (find_motorcycle(id) != visiting_mcs.left.end());
 }
@@ -184,17 +193,22 @@ has_simultaneous_collision() const
 }
 
 template<typename K, typename PolygonMesh>
-typename Dictionary_entry<K, PolygonMesh>::VMC_left_it
+std::pair<bool, typename Dictionary_entry<K, PolygonMesh>::FT>
 Dictionary_entry<K, PolygonMesh>::
-find_motorcycle(const int id) const
+motorcycle_reaching_time(const std::size_t id) const
 {
-  return visiting_mcs.left.find(id);
+  VMC_left_it mit = find_motorcycle(id);
+
+  if(mit == visiting_mcs.left.end())
+    return std::make_pair(false, 0.);
+  else
+    return std::make_pair(true, mit->second);
 }
 
 template<typename K, typename PolygonMesh>
 typename Dictionary_entry<K, PolygonMesh>::size_type
 Dictionary_entry<K, PolygonMesh>::
-remove_motorcycle(const int id) const
+remove_motorcycle(const std::size_t id) const
 {
   CGAL_precondition(find_motorcycle(id) != visiting_mcs.left.end());
   return visiting_mcs.left.erase(id);
@@ -223,8 +237,8 @@ public:
   Dictionary() : entries() { }
 
   // Functions
-  DEC_it insert(const Face_location& loc, const Point& p, const int i, const FT time);
-  DEC_it insert(const Face_location& loc, const int i, const FT time, const PolygonMesh& mesh);
+  DEC_it insert(const Face_location& loc, const Point& p, const std::size_t i, const FT time);
+  DEC_it insert(const Face_location& loc, const std::size_t i, const FT time, const PolygonMesh& mesh);
   DEC_it insert(const Face_location& loc, const Point& p);
   DEC_it insert(const Face_location& loc, const PolygonMesh& mesh);
 
@@ -235,7 +249,7 @@ private:
 template<typename K, typename PolygonMesh>
 typename Dictionary<K, PolygonMesh>::DEC_it
 Dictionary<K, PolygonMesh>::
-insert(const Face_location& loc, const Point& p, const int i, const FT time)
+insert(const Face_location& loc, const Point& p, const std::size_t i, const FT time)
 {
   DEC_it it = insert(loc, p);
   it->add_motorcycle(i, time);
@@ -248,7 +262,7 @@ insert(const Face_location& loc, const Point& p, const int i, const FT time)
 template<typename K, typename PolygonMesh>
 typename Dictionary<K, PolygonMesh>::DEC_it
 Dictionary<K, PolygonMesh>::
-insert(const Face_location& loc, const int i, const FT time, const PolygonMesh& mesh)
+insert(const Face_location& loc, const std::size_t i, const FT time, const PolygonMesh& mesh)
 {
   Point p = CGAL::Polygon_mesh_processing::internal::loc_to_point(loc, mesh);
   return insert(loc, p, i, time);
