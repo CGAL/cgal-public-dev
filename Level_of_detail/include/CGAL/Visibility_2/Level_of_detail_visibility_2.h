@@ -2,108 +2,150 @@
 #define CGAL_LEVEL_OF_DETAIL_VISIBILITY_2_H
 
 // STL includes.
+#include <utility>
 #include <cassert>
-#include <map>
 #include <vector>
+#include <map>
 
 // Boost includes.
 #include <boost/tuple/tuple.hpp>
 
 // CGAL includes.
 #include <CGAL/Barycentric_coordinates_2.h>
+#include <CGAL/Kd_tree.h>
+#include <CGAL/Search_traits_2.h>
+#include <CGAL/Orthogonal_k_neighbor_search.h>
+#include <CGAL/Search_traits_adapter.h>
+#include <CGAL/property_map.h>
 
 // New CGAL includes.
 #include <CGAL/Mylog/Mylog.h>
+#include <CGAL/Level_of_detail_enum.h>
 
-namespace CGAL{
+namespace CGAL {
 
 	namespace LOD {
 
-		template<class KernelTraits, class InputContainer, class CDTInput>
+		template<class KernelTraits, class ContainerInput, class CDTInput>
 		class Level_of_detail_visibility_2 {
 
 		public:
-			typedef CDTInput CDT;
+			typedef KernelTraits 		Kernel;
+			typedef typename Kernel::FT FT;
 
-			enum class Visibility_label { IN, OUT, UNKNOWN };
-			typedef std::map<int, Visibility_label> Visibility_result;
-
-			virtual int compute(const CDT &, const InputContainer &, Visibility_result &) const = 0;
+			typedef ContainerInput Container;
+			typedef CDTInput 	   CDT;
+			
+			virtual int compute(const Container &, CDT &) const = 0;
 		};
 
 		// This class works only with the xy aligned ground plane that is Plane(0, 0, 1, 0).
-		template<class KernelTraits, class InputContainer, class CDTInput>
-		class Level_of_detail_visibility_from_classification_2 : public Level_of_detail_visibility_2<KernelTraits, InputContainer, CDTInput> {
+		template<class KernelTraits, class ContainerInput, class CDTInput>
+		class Level_of_detail_visibility_from_classification_2 : public Level_of_detail_visibility_2<KernelTraits, ContainerInput, CDTInput> {
 
 		public:
-			
-			typedef Level_of_detail_visibility_2<KernelTraits, InputContainer, CDTInput> Base;
-			
-			typedef typename Base::Visibility_label  Visibility_label;
-			typedef typename Base::Visibility_result Visibility_result;
+			typedef Level_of_detail_visibility_2<KernelTraits, ContainerInput, CDTInput> Base;
 
-			typedef KernelTraits   Kernel;
-			typedef InputContainer Container;
-
-			typedef typename Kernel::FT FT;
-
+			typedef typename Base::Kernel 	 Kernel;
+			typedef typename Base::FT     	 FT;
 			typedef typename Kernel::Point_2 Point_2;
-			typedef typename Kernel::Point_3 Point_3;
 
-			typedef typename Base::CDT CDT;
+			typedef typename Base::Container  Container;			
+			typedef typename Base::CDT 		  CDT;
 			
 			typedef typename CDT::Vertex_handle Vertex_handle;
 			typedef typename CDT::Face_handle   Face_handle;
 
 			typedef CGAL::Barycentric_coordinates::Triangle_coordinates_2<Kernel> Triangle_coordinates;
 
-			using Label     = int; 
-			using Label_map = typename Container:: template Property_map<Label>; 
+			typedef int Label;
+			typedef typename std::pair<Point_2, Label> 							Point_with_label;
+			typedef typename CGAL::First_of_pair_property_map<Point_with_label> Point_map;
 
-			using Visibility_tmp = std::map<int, std::vector<Visibility_label> >;
+			typedef CGAL::Search_traits_2<Kernel>                       					  Search_traits_2;
+			typedef CGAL::Search_traits_adapter<Point_with_label, Point_map, Search_traits_2> Search_traits;
+			typedef CGAL::Orthogonal_k_neighbor_search<Search_traits> 						  Neighbor_search;
+			typedef typename Neighbor_search::Tree 											  Tree;
+
+			using Visibility = std::map<Face_handle, std::vector<Visibility_label> >;
 			using Log = CGAL::LOD::Mylog;
 
-			int compute(const CDT &cdt, const Container &input, Visibility_result &visibility) const {
-				
-				Log log;
-				visibility.clear();
+			using Point_iterator = typename Container::const_iterator;
 
-				Visibility_tmp tmp;
-				auto number_of_traversed_faces = -1;
+			Level_of_detail_visibility_from_classification_2() : 
+			m_approach(Visibility_approach::POINT_BASED), 
+			m_method(Visibility_method::CLASSIFICATION), 
+			m_sampler(Visibility_sampler::REGULAR),
+			m_num_samples(1),
+			m_k(6) { }
 
-				Label_map labels;
-				boost::tie(labels, boost::tuples::ignore) = input.template property_map<Label>("label");
+			int compute(const Container &input, CDT &cdt) const {
 
-				const Label ground     = 0;
-				const Label facade     = 1;
-				const Label roof       = 2;
-				const Label vegetation = 3; 
+				for (typename CDT::Finite_faces_iterator fit = cdt.finite_faces_begin(); fit != cdt.finite_faces_end(); ++fit) fit->info().in = 0.5;
 
-				CGAL::Unique_hash_map<Face_handle, int> F;
+				switch(m_approach) {
 
-				int count = 0;
-				for (typename CDT::Finite_faces_iterator fit = cdt.finite_faces_begin(); fit != cdt.finite_faces_end(); ++fit) {
-					F[fit] = count++;
-					visibility[F[fit]] = Visibility_label::UNKNOWN;
+					case Visibility_approach::POINT_BASED:
+					compute_point_based_visibility(input, cdt);
+					break;
+
+					case Visibility_approach::FACE_BASED:
+					compute_face_based_approach(input, cdt);
+					break;
+
+					default:
+					assert("Wrong approach!");
+					break;
 				}
 
-				log.out << "Found faces: " << std::endl;
+				// Remove later.
+				Log log;
+				log.out << "Visibility labels: " << std::endl;
+
+				int count = 0;
+				for (typename CDT::Finite_faces_iterator fit = cdt.finite_faces_begin(); fit != cdt.finite_faces_end(); ++fit, ++count) {
+
+					const FT result = fit->info().in;
+					std::string labelName = "default";
+
+					const FT half = FT(1) / FT(2);
+
+					if (result > half)  labelName = "IN";
+					if (result < half)  labelName = "OUT";
+					if (result == half) labelName = "UNKNOWN";
+
+					log.out << "face index: " << count << " with label: " << labelName << " and visibility: " << result << std::endl;
+				}
+				log.save("tmp/visibility");
+
+				return static_cast<int>(cdt.number_of_faces());
+			}
+
+		private:
+			const Visibility_approach m_approach;
+			const Visibility_method   m_method;
+			const Visibility_sampler  m_sampler;
+
+			const size_t m_num_samples;
+			const size_t m_k; 			// change it to autodetection later!
+
+			void compute_point_based_visibility(const Container &input, CDT &cdt) const {
+
+				Visibility visibility;
 				for (typename Container::const_iterator it = input.begin(); it != input.end(); ++it) {
 
-					const Point_3 &p = input.point(*it);
-					const Point_2 q  = Point_2(p.x(), p.y()); // project p onto xy plane
-					
+					const Point_2 &p = (*it).first;
 					typename CDT::Locate_type locate_type;
+					
 					int locate_index = -1;
-
-					const Face_handle fh = cdt.locate(q, locate_type, locate_index);
-					const int face_index = F[fh];
+					const Face_handle face_handle = cdt.locate(p, locate_type, locate_index);
 
 					if (locate_type == CDT::VERTEX ||
 						locate_type == CDT::EDGE /*||
-						on_the_border(cdt, fh, q) */) {
+						on_the_border(cdt, fh, p) */) {
 					
-						set_unknown(face_index, tmp);
+						// Improve this part of the code if possible!
+						set_unknown(face_handle, visibility);
 						continue;
 					}
 
@@ -112,113 +154,161 @@ namespace CGAL{
 
 					assert(locate_type == CDT::FACE);
 
-					const Label label = labels[*it];
-					switch (label) {
+					switch(m_method) {
 
-						case ground:
-						set_outside(face_index, tmp);
-						break;
+						case Visibility_method::CLASSIFICATION: {
 
-						case facade:
-						set_inside(face_index, tmp);
-						break;
-
-						case roof:
-						set_inside(face_index, tmp);
-						break;
-
-						case vegetation:
-						set_outside(face_index, tmp);
-						break;
+							const Label point_label = (*it).second;
+							estimate_with_classification(face_handle, point_label, visibility);
+							break;
+						}
 
 						default:
-						set_unknown(face_index, tmp);
+						assert("Wrong visibility method!");
 						break;
 					}
 				}
-				postprocess_tmp(tmp, visibility);
+				postprocess(visibility);
+			}
 
-				// Remove later.
-				for (typename Visibility_result::const_iterator it = visibility.begin(); it != visibility.end(); ++it) {
+			void estimate_with_classification(const Face_handle face_handle, const Label point_label, Visibility &visibility) const {
 
-					const int tmpLabel = static_cast<int>((*it).second);
-					std::string labelName = "default";
+				const Label ground     = 0;
+				const Label facade     = 1;
+				const Label roof       = 2;
+				const Label vegetation = 3; 
 
-					if (tmpLabel == 0) labelName = "IN";
-					if (tmpLabel == 1) labelName = "OUT";
-					if (tmpLabel == 2) labelName = "UNKNOWN";
+				switch (point_label) {
 
-					log.out << "face index: " << (*it).first << " with label: " << labelName << std::endl;
+					case ground:
+					set_outside(face_handle, visibility);
+					break;
+
+					case facade:
+					set_unknown(face_handle, visibility);
+					break;
+
+					case roof:
+					set_inside(face_handle, visibility);
+					break;
+
+					case vegetation:
+					set_outside(face_handle, visibility);
+					break;
+
+					default:
+					assert("Classification label is missing!");
+					break;
 				}
-
-				number_of_traversed_faces = static_cast<int>(visibility.size());
-
-				log.out << "number of traversed faces: " << number_of_traversed_faces << std::endl;
-				log.save("tmp/visibility");
-
-				assert(number_of_traversed_faces == static_cast<int>(cdt.number_of_faces()));
-				return number_of_traversed_faces;
 			}
 
-			void set_inside(const int face_index, Visibility_tmp &tmp) const {
-				tmp[face_index].push_back(Visibility_label::IN);
+			void compute_face_based_approach(const Container &input, CDT &) const {
+
+				// Remove it later and use property maps instead.
+				/*
+				std::vector<Point_2> points(input.number_of_points());
+				for (Point_iterator it = input.begin(); it != input.end(); ++it) {
+					
+					const int index = static_cast<int>(*it);
+					const Point_3 &p = input.point(index);
+
+					points[index] = Point_2(p.x(), p.y()); // project onto xy plane
+				} */
+
+				// Create a tree.
+				Tree tree(input.begin(), input.end());
+
+				Point_2 query(FT(0), FT(0));
+				Neighbor_search search(tree, query, m_k);
+
+				// Iterate over all faces.
+				/*
+				std::vector<Point_2> samples(m_num_samples);
+				for (typename CDT::Finite_faces_iterator fit = cdt.finite_faces_begin(); fit != cdt.finite_faces_end(); ++fit) {
+
+					generate_samples(cdt, fit, samples);
+					assert(samples.size() == m_num_samples);
+
+					std::vector<FT> visibility(m_num_samples);
+					compute_visibilities(tree, points);
+				} */
 			}
 
-			void set_outside(const int face_index, Visibility_tmp &tmp) const {
-				tmp[face_index].push_back(Visibility_label::OUT);
+			void generate_samples(std::vector<Point_2> &samples) const {
+				
+				switch(m_sampler) {
+
+					case Visibility_sampler::REGULAR:
+						generate_regular_samples(samples);
+						break;
+
+					case Visibility_sampler::RANDOM:
+						break;
+
+					default:
+						assert("Wrong sampler!");
+						break;
+				}
 			}
 
-			void set_unknown(const int face_index, Visibility_tmp &tmp) const {
-				tmp[face_index].push_back(Visibility_label::UNKNOWN);
+			void generate_regular_samples(const CDT &, const Face_handle &, std::vector<Point_2> &samples) const {
+
+				samples[0] = Point_2(0, 0);
 			}
 
-			void postprocess_tmp(const Visibility_tmp &tmp, Visibility_result &visibility) const {
+			void set_inside(const Face_handle face_handle, Visibility &visibility) const {
+				visibility[face_handle].push_back(Visibility_label::IN);
+			}
 
-				for (typename Visibility_tmp::const_iterator it = tmp.begin(); it != tmp.end(); ++it) {
+			void set_outside(const Face_handle face_handle, Visibility &visibility) const {
+				visibility[face_handle].push_back(Visibility_label::OUT);
+			}
 
-					int in_count      = 0;
-					int out_count     = 0;
-					int unknown_count = 0;
+			void set_unknown(const Face_handle face_handle, Visibility &visibility) const {
+				visibility[face_handle].push_back(Visibility_label::UNKNOWN);
+			}
 
+			void postprocess(Visibility &visibility) const {
+
+				for (typename Visibility::const_iterator it = visibility.begin(); it != visibility.end(); ++it) {
+					
+					FT inside  = FT(0);
+					FT outside = FT(0);
+
+					const FT half = FT(1) / FT(2);
 					for (size_t i = 0; i < (*it).second.size(); ++i) {
+
 						switch ((*it).second[i]) {
 
 							case Visibility_label::IN:
-								++in_count;
+								inside  += FT(1);
 								break;
 
 							case Visibility_label::OUT:
-								++out_count;
+								outside += FT(1);
 								break;
 
-							case Visibility_label::UNKNOWN:
-								++unknown_count;
+							case Visibility_label::UNKNOWN: {
+
+								inside  += half;
+								outside += half;
+
 								break;
+							}
 
 							default:
+								assert("Should never get here!");
 								break;
 						}
 					}
 
-					assert(in_count + out_count + unknown_count != 0);
+					const FT sum = FT(inside + outside); 
+					if (sum == FT(0)) {
 
-					if (in_count >= out_count && in_count >= unknown_count) {
-						visibility[(*it).first] = Visibility_label::IN;
-						continue;
+						(*it).first->info().in = half;
+						continue;	
 					}
-
-					if (out_count >= in_count && out_count >= unknown_count) {
-						visibility[(*it).first] = Visibility_label::OUT;
-						continue;
-					}
-					
-					if (unknown_count >= in_count && unknown_count >= out_count) {
-						visibility[(*it).first] = Visibility_label::UNKNOWN;
-						continue;
-					}
-
-					const bool continue_failure = false;
-					assert(continue_failure);
+					(*it).first->info().in = inside / sum;
 				}
 			}
 

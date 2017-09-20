@@ -206,8 +206,8 @@ namespace CGAL {
 			}
 
 
-			template<class CDT, class Visibility>
-			void save_visibility_eps(CDT &cdt, const Visibility &visibility, const std::string &fileName = "tmp/visibility") {
+			template<class CDT>
+			void save_visibility_eps(CDT &cdt, const std::string &fileName = "tmp/visibility") {
 
 				clear();
 
@@ -226,7 +226,7 @@ namespace CGAL {
 		        out << "0 dict begin gsave\n\n";
 
 		        // Save mesh.
-		        draw_mesh(cdt, visibility, scale);
+		        draw_mesh(cdt, scale);
 
 		        // Finish private namespace.
 		        out << "grestore end\n\n";
@@ -323,10 +323,9 @@ namespace CGAL {
 		        out << "%%Page: 1 1\n\n";
 			}
 
-			template<class CDT, class Visibility>
-    		void draw_mesh(const CDT &cdt, const Visibility &visibility, const double scale) {
+			template<class CDT>
+    		void draw_mesh(const CDT &cdt, const double scale) {
 
-				int count = 0;
 				for (typename CDT::Finite_faces_iterator fit = cdt.finite_faces_begin(); fit != cdt.finite_faces_end(); ++fit) {
 
 					out << (*(*fit).vertex(0)).point().x() * scale << " " << (*(*fit).vertex(0)).point().y() * scale << " moveto\n";
@@ -337,25 +336,13 @@ namespace CGAL {
 					out << "closepath\n\n";
 					out << "gsave\n";
 
-					const int visibility_label = static_cast<int>(visibility.at(count++));
-					switch(visibility_label) {
+					const double visibility = static_cast<double>(fit->info().in);
+					const double half = 0.5;
 
-						case 0:
-							out << "0.2 1 0.2 setrgbcolor\n";
-							break;
+					if (visibility > half) out << "0.2 1 0.2 setrgbcolor\n";	  // INSIDE
+					else if (visibility < half) out << "1 0.2 0.2 setrgbcolor\n"; // OUTSIDE
+					else out << "1 0.8 0 setrgbcolor\n";						  // UNKNOWN
 
-						case 1:
-							out << "1 0.2 0.2 setrgbcolor\n";
-							break;
-
-						case 2:
-							out << "1 1 1 setrgbcolor\n";
-							break;
-
-						default:
-							out << "1 1 1 setrgbcolor\n";
-							break;
-					}
 					out << "fill\n";
 					out << "grestore\n";
 					out << "0 0 0 setrgbcolor\n";
