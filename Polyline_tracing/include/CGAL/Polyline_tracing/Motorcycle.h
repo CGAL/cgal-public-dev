@@ -44,11 +44,11 @@ namespace parameters {
 
 namespace Polyline_tracing {
 
-template<typename K, typename PolygonMesh>
+template<typename K, typename TriangleMesh>
 struct Target_point_set_comparer
 {
   typedef typename K::FT                                    FT;
-  typedef typename Dictionary<K, PolygonMesh>::DEC_it       DEC_it;
+  typedef typename Dictionary<K, TriangleMesh>::DEC_it      DEC_it;
 
   bool operator()(const std::pair<DEC_it, FT>& lhs,
                   const std::pair<DEC_it, FT>& rhs) const {
@@ -61,28 +61,28 @@ struct Target_point_set_comparer
 // -----------------------------------------------------------------------------
 
 // Having a "_impl" class is only done because it's needed for BOOST_PARAMETER_CONSTRUCTOR
-template<typename K, typename PolygonMesh>
+template<typename K, typename TriangleMesh>
 class Motorcycle_impl
 {
-  typedef Motorcycle_impl<K, PolygonMesh>                       Self;
-  typedef Motorcycle<K, PolygonMesh>                            Derived;
+  typedef Motorcycle_impl<K, TriangleMesh>                      Self;
+  typedef Motorcycle<K, TriangleMesh>                           Derived;
 
 public:
   typedef typename K::FT                                        FT;
   typedef typename K::Point_2                                   Point;
   typedef typename K::Vector_2                                  Vector;
 
-  typedef Dictionary<K, PolygonMesh>                            Dictionary;
-  typedef Dictionary_entry<K, PolygonMesh>                      Dictionary_entry;
+  typedef Dictionary<K, TriangleMesh>                           Dictionary;
+  typedef Dictionary_entry<K, TriangleMesh>                     Dictionary_entry;
   typedef typename Dictionary::DEC_it                           DEC_it;
   typedef typename Dictionary_entry::Face_location              Face_location;
 
   typedef std::pair<DEC_it, FT>                                 Target_point;
   typedef std::set<Target_point,
-                   Target_point_set_comparer<K, PolygonMesh> >  Target_point_container;
+                   Target_point_set_comparer<K, TriangleMesh> > Target_point_container;
 
-  typedef Uniform_direction_tracer_visitor<K, PolygonMesh>      Tracer_visitor;
-  typedef Tracer<K, PolygonMesh, Tracer_visitor>                Tracer;
+  typedef Uniform_direction_tracer_visitor<K, TriangleMesh>     Tracer_visitor;
+  typedef Tracer<K, TriangleMesh, Tracer_visitor>               Tracer;
 
   // Access
   std::size_t id() const { return i; }
@@ -101,7 +101,7 @@ public:
 
   const Face_location& current_location() const { return conf->location(); }
 
-  bool& is_destination_final() { return is_dest_final; }
+  void set_destination_finality(bool b) { is_dest_final = b; }
   const bool& is_destination_final() const { return is_dest_final; }
 
   const FT speed() const { return spee; }
@@ -127,9 +127,9 @@ public:
   void add_target(const DEC_it target_point, const FT time_at_target);
   const DEC_it closest_target() const;
 
-  template
-  boost::tuple<bool, DEC_it, DEC_it, FT> compute_next_destination(Dictionary& points,
-                                                                  const PolygonMesh& mesh);
+  boost::tuple<bool, DEC_it, DEC_it, FT, bool>
+  compute_next_destination(Dictionary& points, const TriangleMesh& mesh);
+
   void erase_closest_target();
   bool has_reached_blocked_point() const;
   bool has_reached_simultaneous_collision_point() const;
@@ -185,11 +185,11 @@ private:
   std::list<DEC_it> track_points;
 };
 
-template<typename K, typename PolygonMesh>
+template<typename K, typename TriangleMesh>
 class Motorcycle
-  : public Motorcycle_impl<K, PolygonMesh>
+  : public Motorcycle_impl<K, TriangleMesh>
 {
-  typedef Motorcycle_impl<K, PolygonMesh>               Base;
+  typedef Motorcycle_impl<K, TriangleMesh>               Base;
 
 public:
   BOOST_PARAMETER_CONSTRUCTOR(Motorcycle, (Base), parameters::tag,
@@ -203,9 +203,9 @@ public:
 
 // -----------------------------------------------------------------------------
 
-template<typename K, typename PolygonMesh>
+template<typename K, typename TriangleMesh>
 template <class ArgumentPack>
-Motorcycle_impl<K, PolygonMesh>::
+Motorcycle_impl<K, TriangleMesh>::
 Motorcycle_impl(const ArgumentPack& args)
   :
     i(-1),
@@ -218,7 +218,7 @@ Motorcycle_impl(const ArgumentPack& args)
     dir(args[parameters::direction|boost::none]),
     time(args[parameters::initial_time|0.]),
     time_at_sour(time),
-    target_points(Target_point_set_comparer<K, PolygonMesh>()),
+    target_points(Target_point_set_comparer<K, TriangleMesh>()),
     tracer(),
     track_points()
 {
@@ -240,30 +240,31 @@ Motorcycle_impl(const ArgumentPack& args)
   }
 }
 
-template<typename K, typename PolygonMesh>
+template<typename K, typename TriangleMesh>
 void
-Motorcycle_impl<K, PolygonMesh>::
+Motorcycle_impl<K, TriangleMesh>::
 add_target(const DEC_it target_point, const FT time_at_target)
 {
   target_points.insert(std::make_pair(target_point, time_at_target));
 }
 
-template<typename K, typename PolygonMesh>
-const typename Motorcycle_impl<K, PolygonMesh>::DEC_it
-Motorcycle_impl<K, PolygonMesh>::
+template<typename K, typename TriangleMesh>
+const typename Motorcycle_impl<K, TriangleMesh>::DEC_it
+Motorcycle_impl<K, TriangleMesh>::
 closest_target() const
 {
   CGAL_precondition(!target_points.empty());
   return target_points.begin()->first;
 }
 
-template<typename K, typename PolygonMesh>
+template<typename K, typename TriangleMesh>
 boost::tuple<bool, // successfuly computed a next path or not
-             typename Motorcycle_impl<K, PolygonMesh>::DEC_it, // next source
-             typename Motorcycle_impl<K, PolygonMesh>::DEC_it, // next destination
-             typename K::FT> // time at next destination
-Motorcycle_impl<K, PolygonMesh>::
-compute_next_destination(Dictionary& points, const PolygonMesh& mesh)
+             typename Motorcycle_impl<K, TriangleMesh>::DEC_it, // next source
+             typename Motorcycle_impl<K, TriangleMesh>::DEC_it, // next destination
+             typename K::FT, // time at next destination
+             bool> // whether the destination is final or not
+Motorcycle_impl<K, TriangleMesh>::
+compute_next_destination(Dictionary& points, const TriangleMesh& mesh)
 {
   CGAL_precondition(target_points.empty());
 
@@ -273,51 +274,51 @@ compute_next_destination(Dictionary& points, const PolygonMesh& mesh)
   return tracer.trace(static_cast<Derived&>(*this), points, mesh);
 }
 
-template<typename K, typename PolygonMesh>
+template<typename K, typename TriangleMesh>
 void
-Motorcycle_impl<K, PolygonMesh>::
+Motorcycle_impl<K, TriangleMesh>::
 erase_closest_target()
 {
   CGAL_assertion(!target_points.empty());
   return target_points.erase(target_points.begin());
 }
 
-template<typename K, typename PolygonMesh>
+template<typename K, typename TriangleMesh>
 bool
-Motorcycle_impl<K, PolygonMesh>::
+Motorcycle_impl<K, TriangleMesh>::
 has_reached_blocked_point() const
 {
   return conf->is_blocked();
 }
 
-template<typename K, typename PolygonMesh>
+template<typename K, typename TriangleMesh>
 bool
-Motorcycle_impl<K, PolygonMesh>::
+Motorcycle_impl<K, TriangleMesh>::
 has_reached_simultaneous_collision_point() const
 {
   return conf->has_simultaneous_collision();
 }
 
-template<typename K, typename PolygonMesh>
+template<typename K, typename TriangleMesh>
 bool
-Motorcycle_impl<K, PolygonMesh>::
+Motorcycle_impl<K, TriangleMesh>::
 is_motorcycle_destination_final() const
 {
   return is_dest_final;
 }
 
-template<typename K, typename PolygonMesh>
-typename Motorcycle_impl<K, PolygonMesh>::FT
-Motorcycle_impl<K, PolygonMesh>::
+template<typename K, typename TriangleMesh>
+typename Motorcycle_impl<K, TriangleMesh>::FT
+Motorcycle_impl<K, TriangleMesh>::
 time_at_closest_target() const
 {
   CGAL_precondition(!target_points.empty());
   return target_points.begin()->second;
 }
 
-template<typename K, typename PolygonMesh>
+template<typename K, typename TriangleMesh>
 void
-Motorcycle_impl<K, PolygonMesh>::
+Motorcycle_impl<K, TriangleMesh>::
 output_track() const
 {
   std::ostringstream out_filename;
@@ -340,12 +341,12 @@ output_track() const
     os << "3 " << j << " " << j+1 << " " << j << '\n';
 }
 
-template<typename K, typename PolygonMesh>
+template<typename K, typename TriangleMesh>
 void
-Motorcycle_impl<K, PolygonMesh>::
+Motorcycle_impl<K, TriangleMesh>::
 output_intended_track() const
 {
-  // must be adapted to surface @todo
+  // must be adapted to multiple destinations @todo
 
   std::ostringstream out_filename;
   out_filename << "out_motorcycle_intended_track_" << i << ".off" << std::ends;

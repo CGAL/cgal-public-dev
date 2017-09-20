@@ -58,7 +58,9 @@ robust_intersection(const typename K::Ray_2& r, const typename K::Segment_2& s)
     // try to enforce a point return by switching to exact if it returns a segment
     // @fixme do something clean
     pp = boost::get<Point>(&*res);
-    if(!pp || !s.has_on(*pp)) // another type of sanity check ? @todo
+
+    // another type of sanity check ? @todo
+    if(!pp || !r.has_on(*pp) || !s.has_on(*pp))
       need_to_use_exact = true;
   }
 

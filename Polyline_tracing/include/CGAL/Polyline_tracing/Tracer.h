@@ -48,9 +48,9 @@ public:
                          face_descriptor>                 descriptor_variant;
 
   template<typename Motorcycle>
-  boost::tuple<bool, DEC_it, DEC_it, FT> trace(const Motorcycle& mc,
-                                               Dictionary& points,
-                                               const PolygonMesh& mesh);
+  boost::tuple<bool, DEC_it, DEC_it, FT, bool> trace(const Motorcycle& mc,
+                                                     Dictionary& points,
+                                                     const PolygonMesh& mesh);
 };
 
 // -----------------------------------------------------------------------------
@@ -60,7 +60,8 @@ template<typename Motorcycle>
 boost::tuple<bool, // successfuly computed a next path or not
              typename Tracer<K, PolygonMesh, Visitor>::DEC_it, // next_source
              typename Tracer<K, PolygonMesh, Visitor>::DEC_it, // next_destination
-             typename Tracer<K, PolygonMesh, Visitor>::FT> // time_at_next_destination
+             typename Tracer<K, PolygonMesh, Visitor>::FT, // time_at_next_destination
+             bool> // whether the destination is final or not
 Tracer<K, PolygonMesh, Visitor>::
 trace(const Motorcycle& mc, Dictionary& points, const PolygonMesh& mesh)
 {
@@ -81,7 +82,8 @@ trace(const Motorcycle& mc, Dictionary& points, const PolygonMesh& mesh)
     std::cerr << "Warning: the motorcycle direction is null and "
               << "the next destination is thus the current position" << std::endl;
 
-    return boost::make_tuple(true, mc.position(), mc.position(), mc.current_time());
+    return boost::make_tuple(true, mc.position(), mc.position(),
+                             mc.current_time(), true /*final destination*/);
   }
 
   const Face_location& loc = mc.current_location();

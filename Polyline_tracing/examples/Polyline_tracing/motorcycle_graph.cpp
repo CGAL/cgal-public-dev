@@ -30,7 +30,8 @@ namespace CP = CGAL::parameters;
 
 void motorcycle_club_1(std::vector<Motorcycle>& motorcycles)
 {
-  // This is a basic motorcycle club that likes to use all the options
+  // This is a casual motorcycle club that just likes to use all of its options
+
   motorcycles.push_back(Motorcycle(CP::speed = 1.,
                                    CP::source = Point_2(0.1, 0.1),
                                    CP::direction = Vector_2(1, 0),
@@ -42,29 +43,29 @@ void motorcycle_club_1(std::vector<Motorcycle>& motorcycles)
 
 void motorcycle_club_2(std::vector<Motorcycle>& motorcycles)
 {
-  // A bunch of nasty intersections
+  // This is a motorcycle club with nasty positions and nasty intersections
 
-  // The next should ram into each other (same supporting line, opposite directions)
+  // The next two should ram into each other (same supporting line, opposite directions)
   motorcycles.push_back(Motorcycle(CP::source = Point_2(CGAL_PI/15., CGAL_PI/31.),
                                    CP::destination = Point_2(0.5, 0.2)));
   motorcycles.push_back(Motorcycle(CP::source = Point_2(1. - CGAL_PI/15., 0.2 + CGAL_PI/31.),
                                    CP::destination = Point_2(0.5, 0.2)));
 
-  // This motorcycle should crash at the source of the first motorcycle
+  // This motorcycle should crash at the source of motorcycle #1
   motorcycles.push_back(Motorcycle(CP::source = Point_2(CGAL_PI/30., CGAL_PI/62.),
                                    CP::destination = Point_2(CGAL_PI/7.5, CGAL_PI/15.5)));
 
-  // The next motorcycle starts at the same point as the second, but in another direction
+  // The next motorcycle starts at the same point as motorcycle #2, but in another direction
   motorcycles.push_back(Motorcycle(CP::source = Point_2(1. - CGAL_PI/15., 0.2 + CGAL_PI/31.),
                                    CP::direction = Vector_2(0.5, -0.2)));
 
-  // The following do not have the same supporting lines, but impact each other at the same time
+  // The following do NOT have the same supporting lines, but impact each other at the same time
   motorcycles.push_back(Motorcycle(CP::source = Point_2(CGAL::sqrt(3.)/5., CGAL::sqrt(5.)/5.),
                                    CP::direction = Vector_2(1./3., 1./3.)));
   motorcycles.push_back(Motorcycle(CP::source = Point_2(1. - CGAL::sqrt(3.)/5., CGAL::sqrt(5.)/5.),
                                    CP::direction = Vector_2(-1./3., 1./3.)));
 
-  // Intersects the same point as the last two, but later
+  // Intersects the same point as the last two, but at a later time
   motorcycles.push_back(Motorcycle(CP::source = Point_2(0.5, 0.99),
                                    CP::direction = Vector_2(0., -1.)));
 
@@ -73,8 +74,46 @@ void motorcycle_club_2(std::vector<Motorcycle>& motorcycles)
                                    CP::destination = Point_2(0.95, 0.6)));
   motorcycles.push_back(Motorcycle(CP::source = Point_2(0.9+0.1/3., 0.5),
                                    CP::direction = Vector_2(1., 6.)));
+
+  // The following motorcycles move in the same direction and from the same point
+  // but for numerical reasons they don't see it...
+  motorcycles.push_back(Motorcycle(CP::source = Point_2(0.6, 0.02),
+                                   CP::destination = Point_2(0.6 + 1./4., 0.02 - 1./100.)));
+  motorcycles.push_back(Motorcycle(CP::source = Point_2(0.6, 0.02),
+                                   CP::direction = Vector_2(1., -0.04)));
+
+  // The following motorcycles move in the same direction and from the same point,
+  // but for numerical reasons they don't see it...
+  motorcycles.push_back(Motorcycle(CP::source = Point_2(0.1, 0.02),
+                                   CP::destination = Point_2(0.1 + 1./3., 0.02 - 1./97.)));
+  motorcycles.push_back(Motorcycle(CP::source = Point_2(0.1, 0.02),
+                                   CP::direction = Vector_2(1., -3./97.)));
 }
 
+void motorcycle_club_3(std::vector<Motorcycle>& motorcycles)
+{
+  // This motorcycle club is all about starting from weird locations
+
+  FT eps = std::numeric_limits<FT>::epsilon();
+
+  motorcycles.push_back(Motorcycle(CP::source = Point_2(0., 0.),
+                                   CP::direction = Vector_2(1., 0.5)));
+
+  motorcycles.push_back(Motorcycle(CP::source = Point_2(1., 1./3.),
+                                   CP::direction = Vector_2(0., 1.)));
+
+  motorcycles.push_back(Motorcycle(CP::source = Point_2(1., 1./4.),
+                                   CP::direction = Vector_2(1., 1.)));
+
+  motorcycles.push_back(Motorcycle(CP::source = Point_2(1., 1./5.),
+                                   CP::direction = Vector_2(eps, 1.)));
+
+  motorcycles.push_back(Motorcycle(CP::source = Point_2(1., 1./6.),
+                                   CP::direction = Vector_2(-10 * eps, 1.)));
+
+  motorcycles.push_back(Motorcycle(CP::source = Point_2(1., 0.),
+                                   CP::direction = Vector_2(-1, 1.)));
+}
 
 void random_motorcycles_in_triangle(std::vector<Motorcycle>& motorcycles,
                                     const Triangle_2& triangle,
@@ -178,6 +217,8 @@ int main()
     std::vector<Motorcycle> motorcycles;
 //    motorcycle_club_1(motorcycles);
 //    motorcycle_club_2(motorcycles);
+    motorcycle_club_3(motorcycles);
+
 //    random_motorcycles_on_segment(motorcycles, rnd);
 //    random_motorcycles_in_triangle(motorcycles, rnd);
 //    random_motorcycles_in_square(motorcycles, rnd);

@@ -63,7 +63,12 @@ public:
   typedef typename boost::graph_traits<PolygonMesh>::halfedge_descriptor  halfedge_descriptor;
   typedef typename boost::graph_traits<PolygonMesh>::face_descriptor      face_descriptor;
 
-  typedef boost::tuple<bool, DEC_it, DEC_it, FT>                    result_type;
+  // - bool: whether we have found a destination or not
+  // - DEC_it: the source of the path (might be different from mc.position() if on the border)
+  // - DEC_it: the destination
+  // - FT: the time at the destination
+  // - bool: is the destination final
+  typedef boost::tuple<bool, DEC_it, DEC_it, FT, bool>             result_type;
 
   Uniform_direction_tracer_visitor(const Motorcycle* mc,
                                    Dictionary& points,
@@ -71,7 +76,6 @@ public:
 
   result_type compute_next_destination(const DEC_it start_point,
                                        const face_descriptor fd) const;
-  void snap_location_to_border(Face_location& loc) const;
 
   result_type operator()(vertex_descriptor vd) const;
   result_type operator()(halfedge_descriptor hd) const;
@@ -105,10 +109,16 @@ compute_next_destination(const DEC_it start_point,
   CGAL_precondition(start_point->location().first == fd);
   CGAL_precondition(num_vertices(mesh) != 0);
 
+  // @todo do I really need to look at all the halfedges? why not simply break
+  // as soon as it's a valid destination with time different from current_time?
   Point farthest_destination;
-  FT time_at_farthest_destination = mc->current_time(); // minimum value
+  FT time_at_farthest_destination = mc->current_time(); // minimum allowed time value
   Vector mc_dir = *(mc->direction());
   Ray r(start_point->point(), mc_dir);
+
+  // @todo add named parameters ?
+  typedef typename property_map_selector<PolygonMesh, boost::vertex_point_t>::const_type VertexPointMap;
+  VertexPointMap vpmap = get_const_property_map(vertex_point, mesh);
 
   typedef CGAL::Halfedge_around_face_circulator<PolygonMesh>  Halfedge_around_facet_circulator;
   Halfedge_around_facet_circulator hcir_begin(halfedge(fd, mesh), mesh);
@@ -117,19 +127,21 @@ compute_next_destination(const DEC_it start_point,
   {
     halfedge_descriptor hd = *hcir++;
 
-    // @BGL point
-    Segment s(mesh.point(source(hd, mesh)), mesh.point(target(hd, mesh)));
-    std::cout << "ray; segment r:" << r << " s: " << s << std::endl;
+    Segment s(get(vpmap, source(hd, mesh)), get(vpmap, target(hd, mesh)));
+    std::cout << "ray: " << r << " and segment: " << s << std::endl;
 
     if(K().do_intersect_2_object()(r, s))
     {
+      // returns a point because we ignore the degenerate configuration of the ray
+      // and segment being aligned (the next halfedge will give us an intersection
+      // at a vertex descriptor, which is the point we need)
       boost::optional<Point> res = internal::robust_intersection<K>(r, s);
       if(!res)
         continue;
 
       const Point new_destination = *res;
 
-      // compute time at destination
+      // compute the time at destination
       FT time_at_new_destination = mc->current_time() +
         CGAL::sqrt(CGAL::squared_distance(start_point->point(), new_destination)) / mc->speed();
 
@@ -144,23 +156,17 @@ compute_next_destination(const DEC_it start_point,
     }
   } while (hcir != hcir_begin);
 
+  CGAL_postcondition(time_at_farthest_destination >= mc->current_time());
   if(time_at_farthest_destination == mc->current_time())
   {
     std::cerr << "Warning: motorcycle has no interesting intersection "
               << "with the border of the face: " << fd << std::endl;
-    return boost::make_tuple(false, DEC_it(), DEC_it(), 0.);
-  }
 
-  CGAL_postcondition(time_at_farthest_destination >= mc->current_time());
-  if(time_at_farthest_destination == mc->current_time())
-  {
-    std::cerr << "Warning: new destination is the current point" << std::endl;
-
-    // Since we have already dealt with the case of a null direction, if the new
-    // destination is the farthest target, then the direction is pointing outside
-    // of this face. We return false, and the opposite face will be used to compute
+    // Since we have already dealt with the case of a null direction, if the current
+    // position is the new destination, then the direction is pointing outside
+    // of this face.
     CGAL_assertion(*(mc->direction()) != CGAL::NULL_VECTOR);
-    return boost::make_tuple(false, DEC_it(), DEC_it(), 0.);
+    return boost::make_tuple(false, DEC_it(), DEC_it(), 0., false /*not final*/);
   }
 
   Face_location loc = CGAL::Polygon_mesh_processing::locate<PolygonMesh>(
@@ -170,86 +176,83 @@ compute_next_destination(const DEC_it start_point,
   // that the location of this new destination reflects that it is on the boundary
   // (that is, one of its barycentric coordinates should be 0). To ensure that
   // it is the case, it is snapped to the closest halfedge (or even vertex).
-  snap_location_to_border(loc);
+  CGAL::Polygon_mesh_processing::internal::snap_location_to_border<PolygonMesh>(loc);
 
-  DEC_it new_destination_it = points.insert(loc, farthest_destination);
+  std::pair<DEC_it, bool> destination = points.insert(loc, farthest_destination);
 
 #ifdef CGAL_MOTORCYCLE_GRAPH_VERBOSE
   std::cout << "new source at " << &*start_point
             << " p: " << start_point->point()
             << " time: " << mc->current_time() << std::endl;
-  std::cout << "new destination at : " << &*new_destination_it
-            << " p: " <<new_destination_it->point()
+  std::cout << "new destination at : " << &*destination.first
+            << " p: " << destination.first->point()
             << " time: " << time_at_farthest_destination << std::endl;
 #endif
 
-  return boost::make_tuple(true,
-                           start_point,
-                           new_destination_it,
-                           time_at_farthest_destination);
-}
-
-template<typename K, typename PolygonMesh>
-void
-Uniform_direction_tracer_visitor<K, PolygonMesh>::
-snap_location_to_border(Face_location& loc) const
-{
-  std::cout << "Pre-snapping: "
-            << loc.second[0] << " " << loc.second[1] << " " << loc.second[2] << std::endl;
-  std::cout << "Sum: " << loc.second[0]+loc.second[1]+loc.second[2] << std::endl;
-
-  std::cout << "epsilon: " << std::numeric_limits<FT>::epsilon() << std::endl;
-  std::cout << "min: " << std::numeric_limits<FT>::min() << std::endl;
-
-  FT residue = 0.;
-
-  for(int i=0; i<3; ++i)
-  {
-    if(loc.second[i] <= std::numeric_limits<FT>::epsilon())
-    {
-      residue += loc.second[i];
-      loc.second[i] = 0;
-    }
-    else if((1 - loc.second[i]) <= std::numeric_limits<FT>::min())
-    {
-      residue -= 1 - loc.second[i];
-      loc.second[i] = 1;
-    }
-  }
-
-  // dump the residue
-  for(int i=0; i<3; ++i)
-  {
-    if(loc.second[i] != 0 && loc.second[i] != 1)
-    {
-      loc.second[i] += residue;
-      break;
-    }
-  }
-
-  std::cout << "Post-snapping: "
-            << loc.second[0] << " " << loc.second[1] << " " << loc.second[2] << std::endl;
-  std::cout << "Sum: " << loc.second[0]+loc.second[1]+loc.second[2] << std::endl;
+  return boost::make_tuple(true, start_point, destination.first,
+                           time_at_farthest_destination, false /*not final*/);
 }
 
 template<typename K, typename PolygonMesh>
 typename Uniform_direction_tracer_visitor<K, PolygonMesh>::result_type
 Uniform_direction_tracer_visitor<K, PolygonMesh>::
-operator()(vertex_descriptor /*vd*/) const
+operator()(vertex_descriptor vd) const
 {
   // check which face we should move into, find it, compute.
-  // be careful of null_face
 #ifdef CGAL_MOTORCYCLE_GRAPH_VERBOSE
   std::cout << " Uniform tracing from a point on a vertex" << std::endl;
 #endif
-  // careful, reaching a border vertex is not enough to crash, for example:
-  //            in
-  // ------hd------ vd ------hd2 ------
-  //            out
-  // and direction = hd
 
-  CGAL_assertion(false); // todo
-  return result_type();
+  halfedge_descriptor hd = halfedge(vd, mesh);
+
+  // loop the incident faces of vd
+  typedef CGAL::Face_around_target_circulator<PolygonMesh> face_around_target_circulator;
+  face_around_target_circulator fatc(hd, mesh), done(fatc);
+  do
+  {
+    face_descriptor fd = *fatc;
+    if(fd == boost::graph_traits<PolygonMesh>::null_face())
+    {
+      ++fatc;
+      continue;
+    }
+
+    std::cout << "at face: " << fd << std::endl;
+
+    // Compute the position of the motorcycle in the opposite face
+    Face_location loc_in_fd = CGAL::Polygon_mesh_processing::locate(
+                                mc->position()->location(), fd, mesh);
+
+    // Insert the new point and keep an iterator to it.
+    std::pair<DEC_it, bool> source_in_fd = points.insert(loc_in_fd,
+                                                         mc->position()->point());
+
+    result_type res = compute_next_destination(source_in_fd.first, fd);
+
+    // Since direction == NULL_VECTOR has been filtered in Tracer.h, the time
+    // can only be null if the direction points to face(opposite(hd, mesh), mesh)
+    // and not to face(hd, mesh)
+    if(res.template get<0>() && res.template get<3>() > 0)
+      return res;
+
+    // If 'source_in_fd' is a new point in the dictionary and 'fd' is not the face
+    // in which the destination lies, then clean 'source_in_fd' off from the dictionary.
+    if(source_in_fd.second)
+    {
+      // make sure that indeed no motorcycle uses this point
+      CGAL_assertion(source_in_fd.first->visiting_motorcycles().empty());
+      points.erase(source_in_fd.first);
+    }
+
+    ++fatc;
+  }
+  while(fatc != done);
+
+  // If we couldn't find a destination, then we must be on the border of the mesh
+  // with a direction pointing out. In that case, return the source.
+  CGAL_assertion(is_border(vd, mesh));
+  return boost::make_tuple(true, mc->position(), mc->position(),
+                           mc->current_time(), true /*final destination*/);
 }
 
 template<typename K, typename PolygonMesh>
@@ -279,20 +282,29 @@ operator()(halfedge_descriptor hd) const
   }
 
   halfedge_descriptor opp_hd = opposite(hd, mesh);
+
   if(is_border(opp_hd, mesh))
-    return boost::make_tuple(false, DEC_it(), DEC_it(), 0.);
+  {
+    // Source is on the border of the mesh and the direction is pointing out,
+    // return the source point and mark it as final destination
+    return boost::make_tuple(true, mc->position(), mc->position(),
+                             mc->current_time(), true /*final destination*/);
+  }
 
   // Compute the position of the motorcycle in the opposite face
   face_descriptor opp_fd = face(opp_hd, mesh);
-  Face_location opp_loc = CGAL::Polygon_mesh_processing::locate(
-                            mc->position()->location(), opp_fd, mesh);
+  CGAL_assertion(opp_fd != boost::graph_traits<PolygonMesh>::null_face());
+  Face_location opp_loc = CGAL::Polygon_mesh_processing::locate(mc->position()->location(),
+                                                                opp_fd, mesh);
 
   // Insert the new destination in the dictionary
-  DEC_it source_in_next_face = points.insert(opp_loc, mc->position()->point());
+  std::pair<DEC_it, bool> source_in_next_face = points.insert(opp_loc,
+                                                              mc->position()->point());
 
-  result_type next_res = compute_next_destination(source_in_next_face, opp_fd);
-  CGAL_assertion(next_res.template get<0>());
-  return next_res;
+  result_type opp_res = compute_next_destination(source_in_next_face.first, opp_fd);
+
+  CGAL_assertion(opp_res.template get<0>());
+  return opp_res;
 }
 
 template<typename K, typename PolygonMesh>

@@ -144,6 +144,32 @@ int edge_index_in_face(typename boost::graph_traits<TriangleMesh>::halfedge_desc
   return count;
 }
 
+// return the number of 'next' one has to apply 'hd' to get source(hd, mesh) = vd,
+// starting from hd = halfedge(fd, tm)
+template <typename TriangleMesh>
+int vertex_index_in_face(typename boost::graph_traits<TriangleMesh>::vertex_descriptor vd,
+                         typename boost::graph_traits<TriangleMesh>::face_descriptor fd,
+                         const TriangleMesh& tm)
+{
+  typedef typename boost::graph_traits<TriangleMesh>::halfedge_descriptor halfedge_descriptor;
+
+  halfedge_descriptor start = halfedge(fd, tm);
+  halfedge_descriptor current = start;
+  int count = 0;
+
+  while (source(current, tm) != vd && count < 3)
+  {
+    current = next(current, tm);
+    ++count;
+  }
+
+  // Just to make sure that 'vd' actually is a vertex of the face 'fd'
+  CGAL_postcondition(count < 3);
+
+  return count;
+}
+
+
 template <typename TriangleMesh>
 boost::variant<typename boost::graph_traits<TriangleMesh>::vertex_descriptor,
                typename boost::graph_traits<TriangleMesh>::halfedge_descriptor,
@@ -220,9 +246,170 @@ loc_to_point(const std::pair<typename boost::graph_traits<TriangleMesh>::face_de
   return internal::loc_to_point(loc, tm, parameters::all_default());
 }
 
+template<typename TriangleMesh>
+void snap_coordinates_to_border(CGAL::cpp11::array<
+                                typename CGAL::Kernel_traits<
+                                  typename property_map_value<
+                                    TriangleMesh, CGAL::vertex_point_t>::type>::Kernel::FT, 3>& coords)
+{
+  typedef typename CGAL::Kernel_traits<
+            typename property_map_value<TriangleMesh,
+              CGAL::vertex_point_t>::type>::Kernel                       K;
+  typedef typename K::FT                                                 FT;
+
+  std::cout << "Pre-snapping: "
+            << coords[0] << " " << coords[1] << " " << coords[2] << std::endl;
+  std::cout << "Sum: " << coords[0] + coords[1] + coords[2] << std::endl;
+
+  std::cout << "epsilon: " << std::numeric_limits<FT>::epsilon() << std::endl;
+  std::cout << "min: " << std::numeric_limits<FT>::min() << std::endl;
+
+  FT residue = 0.;
+
+  for(int i=0; i<3; ++i)
+  {
+    if(coords[i] <= std::numeric_limits<FT>::epsilon())
+    {
+      residue += coords[i];
+      coords[i] = 0;
+    }
+    else if((1 - coords[i]) <= std::numeric_limits<FT>::min())
+    {
+      residue -= 1 - coords[i];
+      coords[i] = 1;
+    }
+  }
+
+  // dump the residue into a barycentric value that is neither 0 nor 1
+  for(int i=0; i<3; ++i)
+  {
+    if(coords[i] != 0 && coords[i] != 1)
+    {
+      coords[i] += residue;
+      break;
+    }
+  }
+
+  std::cout << "Post-snapping: "
+            << coords[0] << " " << coords[1] << " " << coords[2] << std::endl;
+  std::cout << "Sum: " << coords[0] + coords[1] + coords[2] << std::endl;
+}
+
+template<typename TriangleMesh>
+void snap_location_to_border(std::pair<typename boost::graph_traits<TriangleMesh>::face_descriptor,
+                                       CGAL::cpp11::array<
+                                         typename CGAL::Kernel_traits<
+                                           typename property_map_value<
+                                             TriangleMesh, CGAL::vertex_point_t>::type>::Kernel::FT, 3> >& loc)
+{
+  return snap_coordinates_to_border<TriangleMesh>(loc.second);
+}
+
 } // namespace internal
 
-// Given a location, returns whether a point is on the border of the mesh or not.
+/// \brief Given a `Face_location`, that is an ordered pair composed of a
+///        `boost::graph_traits<TriangleMesh>::face_descriptor` and an array
+///        of barycentric coordinates, and a second face adjacent to the first,
+///        return the `Face_location` of the point in the second face.
+///
+/// \details If `tm` is the input graph and given the pair (`f`, `bc`)
+///          such that `bc` is `(w0, w1, w2)`, the correspondance with the weights in `bc`
+///          and the vertices of the face `f` is the following:
+///          - `w0 = source(halfedge(f, tm), tm)`
+///          - `w1 = target(halfedge(f, tm), tm)`
+///          - `w2 = target(next(halfedge(f, tm), tm), tm)`
+///
+/// \param loc the first location
+/// \param f the second face, adjacent to loc.first
+/// \param tm the triangle mesh to which `he` belongs
+///
+template <typename TriangleMesh>
+std::pair<typename boost::graph_traits<TriangleMesh>::face_descriptor,
+          CGAL::cpp11::array<
+            typename CGAL::Kernel_traits<
+              typename property_map_value<TriangleMesh,
+                                          CGAL::vertex_point_t>::type>::Kernel::FT, 3> >
+locate(const std::pair<typename boost::graph_traits<TriangleMesh>::face_descriptor,
+                         CGAL::cpp11::array<
+                           typename CGAL::Kernel_traits<
+                             typename property_map_value<TriangleMesh,
+                                                         CGAL::vertex_point_t>::type>::Kernel::FT, 3> >& loc,
+       const typename boost::graph_traits<TriangleMesh>::face_descriptor f,
+       const TriangleMesh& tm)
+{
+  typedef typename boost::graph_traits<TriangleMesh>::vertex_descriptor   vertex_descriptor;
+  typedef typename boost::graph_traits<TriangleMesh>::halfedge_descriptor halfedge_descriptor;
+  typedef typename boost::graph_traits<TriangleMesh>::face_descriptor     face_descriptor;
+
+  typedef boost::variant<vertex_descriptor,
+                         halfedge_descriptor,
+                         face_descriptor>                                descriptor_variant;
+
+  typedef typename CGAL::Kernel_traits<
+            typename property_map_value<TriangleMesh,
+              CGAL::vertex_point_t>::type>::Kernel                       K;
+  typedef typename K::FT                                                 FT;
+
+  typedef std::pair<face_descriptor, CGAL::cpp11::array<FT, 3> >         Face_location;
+
+  Face_location loc_in_f = std::make_pair(f, CGAL::make_array(0.,0.,0.));
+
+  descriptor_variant dv = internal::get_descriptor_from_location(loc, tm);
+
+  // This function is meaningless if the point is not on the border of the face
+  CGAL_precondition(dv.which() != 2);
+
+  if(dv.which() == 0) // we're on a vertex
+  {
+    vertex_descriptor vd = boost::get<vertex_descriptor>(dv);
+    int index_of_vd = internal::vertex_index_in_face(vd, f, tm);
+    loc_in_f.second[index_of_vd] = 1.;
+    // note that the barycentric coordinates were initialized at 0,
+    // so the second and third coordinates are already set up properly
+  }
+  else // dv.which() == 1, we're on a halfedge (and importantly, not on a vertex!)
+  {
+    halfedge_descriptor hd = boost::get<halfedge_descriptor>(dv);
+    halfedge_descriptor opp_hd = opposite(hd, tm);
+    CGAL_assertion(face(hd, tm) == loc.first);
+    CGAL_assertion(face(opp_hd, tm) == f);
+
+    int index_of_hd = internal::edge_index_in_face(hd, tm);
+    int index_of_opp_hd = internal::edge_index_in_face(opp_hd, tm);
+
+    // - Coordinates will be non-null at indices `index_of_hd`
+    //   and `index_of_hd + 1` in loc.first.
+    // - Coordinates will be non-null at indices `index_of_opp_hd`
+    //   and `index_of_opp_hd + 1` in f.
+    // - The halfedges `hd` and `opp_hd` have opposite directions.
+    loc_in_f.second[index_of_opp_hd] = loc.second[(index_of_hd + 1)%3];
+    loc_in_f.second[(index_of_opp_hd + 1)%3] = loc.second[index_of_hd];
+    // note that the barycentric coordinates were initialized at 0,
+    // so the third coordinate is already set up properly
+  }
+
+  std::cout << "Ini loc: " << loc.first << " b: " << loc.second[0] << " " << loc.second[1] << " " << loc.second[2] << std::endl;
+  std::cout << "Out loc: " << loc_in_f.first << " b: " << loc_in_f.second[0] << " " << loc_in_f.second[1] << " " << loc_in_f.second[2] << std::endl;
+
+  CGAL_postcondition(loc_in_f.first == f);
+  return loc_in_f;
+}
+
+/// \brief Given a `Face_location`, that is an ordered pair composed of a
+///        `boost::graph_traits<TriangleMesh>::face_descriptor` and an array
+///        of barycentric coordinates, and a second face adjacent to the first,
+///        returns whether the location is on the border of the mesh or not.
+///
+/// \details If `tm` is the input graph and given the pair (`f`, `bc`)
+///          such that `bc` is `(w0, w1, w2)`, the correspondance with the weights in `bc`
+///          and the vertices of the face `f` is the following:
+///          - `w0 = source(halfedge(f, tm), tm)`
+///          - `w1 = target(halfedge(f, tm), tm)`
+///          - `w2 = target(next(halfedge(f, tm), tm), tm)`
+///
+/// \param loc the location
+/// \param tm the triangle mesh
+///
 template <typename TriangleMesh>
 bool
 is_on_mesh_border(const std::pair<typename boost::graph_traits<TriangleMesh>::face_descriptor,
@@ -420,6 +607,15 @@ locate(typename boost::graph_traits<TriangleMesh>::face_descriptor f,
   {
     std::cerr << "Warning: point " << query << " is not in the face " << f << std::endl;
     std::cerr << "Coordinates: " << coords[0] << " " << coords[1] << " " << coords[2] << std::endl;
+
+    // Try to to snap the coordinates (hoping the problem is just a 10e-17-ish epsilon
+    // pushing the coordinates over the edge
+    internal::snap_coordinates_to_border<TriangleMesh>(coords);
+
+    // assert it now, seems like the face doesn't contain the point...
+    CGAL_postcondition(coords[0] >= 0. && coords[0] <= 1. &&
+                       coords[1] >= 0. && coords[1] <= 1. &&
+                       coords[2] >= 0. && coords[2] <= 1.);
   }
 
   return std::make_pair(f, coords);
@@ -436,91 +632,6 @@ locate(typename boost::graph_traits<TriangleMesh>::face_descriptor f,
        const TriangleMesh& tm)
 {
   return locate(f, query, tm, parameters::all_default());
-}
-
-/// \brief Given a `Face_location`, that is an ordered pair composed of a
-///        `boost::graph_traits<TriangleMesh>::face_descriptor` and an array
-///        of barycentric coordinates, and a second face adjacent to the first,
-///        return the `Face_location` of the point in the second face.
-///
-/// \details If `tm` is the input graph and given the pair (`f`, `bc`)
-///          such that `bc` is `(w0, w1, w2)`, the correspondance with the weights in `bc`
-///          and the vertices of the face `f` is the following:
-///          - `w0 = source(halfedge(f, tm), tm)`
-///          - `w1 = target(halfedge(f, tm), tm)`
-///          - `w2 = target(next(halfedge(f, tm), tm), tm)`
-///
-/// \param loc the first location
-/// \param f the second face, adjacent to loc.first
-/// \param tm the triangle mesh to which `he` belongs
-///
-template <typename TriangleMesh>
-std::pair<typename boost::graph_traits<TriangleMesh>::face_descriptor,
-          CGAL::cpp11::array<
-            typename CGAL::Kernel_traits<
-              typename property_map_value<TriangleMesh,
-                                          CGAL::vertex_point_t>::type>::Kernel::FT, 3> >
-locate(const std::pair<typename boost::graph_traits<TriangleMesh>::face_descriptor,
-                         CGAL::cpp11::array<
-                           typename CGAL::Kernel_traits<
-                             typename property_map_value<TriangleMesh,
-                                                         CGAL::vertex_point_t>::type>::Kernel::FT, 3> >& loc,
-       const typename boost::graph_traits<TriangleMesh>::face_descriptor f,
-       const TriangleMesh& tm)
-{
-  typedef typename boost::graph_traits<TriangleMesh>::vertex_descriptor   vertex_descriptor;
-  typedef typename boost::graph_traits<TriangleMesh>::halfedge_descriptor halfedge_descriptor;
-  typedef typename boost::graph_traits<TriangleMesh>::face_descriptor     face_descriptor;
-
-  typedef boost::variant<vertex_descriptor,
-                         halfedge_descriptor,
-                         face_descriptor>                                descriptor_variant;
-
-  typedef typename CGAL::Kernel_traits<
-            typename property_map_value<TriangleMesh,
-              CGAL::vertex_point_t>::type>::Kernel                       K;
-  typedef typename K::FT                                                 FT;
-
-  typedef std::pair<face_descriptor, CGAL::cpp11::array<FT, 3> >         Face_location;
-
-  Face_location loc_in_f = std::make_pair(f, CGAL::make_array(0.,0.,0.));
-
-  descriptor_variant dv = internal::get_descriptor_from_location(loc, tm);
-
-  // This function is meaningless if the point is on the border of the face
-  CGAL_precondition(dv.which() != 2);
-
-  if(dv.which() == 0) // we're on a vertex
-  {
-    // vertex_descriptor vd = boost::get<vertex_descriptor>(dv);
-    CGAL_assertion(false); // @todo
-  }
-  else // if(dv.which() == 1) // we're on a halfedge (and importantly, not on a vertex!)
-  {
-    halfedge_descriptor hd = boost::get<halfedge_descriptor>(dv);
-    halfedge_descriptor opp_hd = opposite(hd, tm);
-    CGAL_assertion(face(hd, tm) == loc.first);
-    CGAL_assertion(face(opp_hd, tm) == f);
-
-    int index_of_hd = internal::edge_index_in_face(hd, tm);
-    int index_of_opp_hd = internal::edge_index_in_face(opp_hd, tm);
-
-    // - Coordinates will be non-null at indices `index_of_hd`
-    //   and `index_of_hd + 1` in loc.first.
-    // - Coordinates will be non-null at indices `index_of_opp_hd`
-    //   and `index_of_opp_hd + 1` in f.
-    // - The halfedges `hd` and `opp_hd` have opposite directions.
-    loc_in_f.second[index_of_opp_hd] = loc.second[(index_of_hd + 1)%3];
-    loc_in_f.second[(index_of_opp_hd + 1)%3] = loc.second[index_of_hd];
-    // note that the barycentric coordinates were initialized at 0,
-    // so the third coordinate is already set up properly
-  }
-
-  std::cout << "Ini loc: " << loc.first << " b: " << loc.second[0] << " " << loc.second[1] << " " << loc.second[2] << std::endl;
-  std::cout << "Out loc: " << loc_in_f.first << " b: " << loc_in_f.second[0] << " " << loc_in_f.second[1] << " " << loc_in_f.second[2] << std::endl;
-
-  CGAL_postcondition(loc_in_f.first == f);
-  return loc_in_f;
 }
 
 /// @}
