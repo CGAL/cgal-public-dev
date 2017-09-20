@@ -106,10 +106,10 @@ Polyhedron_demo_off_plugin::load_off(QFileInfo fileinfo) {
       item->setNbIsolatedvertices(total_nb_of_vertices - item->polyhedron()->size_of_vertices());
       //needs two restore, it's not a typo
       QApplication::restoreOverrideCursor();
-//      QMessageBox::warning((QWidget*)NULL,
-//                     tr("Isolated vertices found"),
-//                     tr("%1 isolated vertices ignored")
-//                     .arg(item->getNbIsolatedvertices()));
+      QMessageBox::warning((QWidget*)NULL,
+                     tr("Isolated vertices found"),
+                     tr("%1 isolated vertices ignored")
+                     .arg(item->getNbIsolatedvertices()));
     }
 
   //if file > 100 MB, assume it is a very big file and disable flat shading to gain memory.
