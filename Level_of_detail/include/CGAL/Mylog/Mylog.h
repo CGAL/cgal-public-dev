@@ -205,6 +205,34 @@ namespace CGAL {
 		        save(fileName, ".eps");
 			}
 
+			template<class Point>
+			void save_triangle_with_points_eps(const Point &a, const Point &b, const Point &c, const std::vector<Point> &samples, const std::string &fileName = "tmp/triangle") {
+
+				clear();
+
+		        // Compute bounding box.
+		        double minbX, minbY, maxbX, maxbY;
+		        bounding_box(a, b, c, minbX, minbY, maxbX, maxbY);
+
+		        // Compute scale.
+		        double scale = 1.0;
+		        if (std::sqrt((maxbX - minbX) * (maxbX - minbX) + (maxbY - minbY) * (maxbY - minbY)) < 10.0 && scale == 1.0) scale *= 1000.0;
+
+		        // Set header.
+		        set_header(minbX * scale, minbY * scale, maxbX * scale, maxbY * scale);
+
+		        // Start private namespace.
+		        out << "0 dict begin gsave\n\n";
+
+		        // Save mesh.
+		        draw_triangle_with_points(a, b, c, samples, scale);
+
+		        // Finish private namespace.
+		        out << "grestore end\n\n";
+		        out << "%%EOF\n";
+
+		        save(fileName, ".eps");
+			}
 
 			template<class CDT>
 			void save_visibility_eps(CDT &cdt, const std::string &fileName = "tmp/visibility") {
@@ -312,6 +340,24 @@ namespace CGAL {
 		        }
 			}
 
+			template<class Point>
+			void bounding_box(const Point &a, const Point &b, const Point &c, double &minbX, double &minbY, double &maxbX, double &maxbY) const {
+				
+				const double big_value = 100000.0;
+
+		        minbX =  big_value, minbY =  big_value;
+		        maxbX = -big_value, maxbY = -big_value;
+
+		        minbX = std::min(minbX, a.x()); minbY = std::min(minbY, a.y());
+		        maxbX = std::max(maxbX, a.x()); maxbY = std::max(maxbY, a.y());
+
+		        minbX = std::min(minbX, b.x()); minbY = std::min(minbY, b.y());
+		        maxbX = std::max(maxbX, b.x()); maxbY = std::max(maxbY, b.y());
+
+		        minbX = std::min(minbX, c.x()); minbY = std::min(minbY, c.y());
+		        maxbX = std::max(maxbX, c.x()); maxbY = std::max(maxbY, c.y());
+			}
+
 			void set_header(const double llx, const double lly, const double urx, const double ury) {
 		        
 		        out << "%!PS-Adobe-3.0 EPSF-3.0\n";
@@ -351,6 +397,22 @@ namespace CGAL {
 				}
     		}
 
+    		template<class Point>
+    		void draw_triangle_with_points(const Point &a, const Point &b, const Point &c, const std::vector<Point> &samples, const double scale) {
+
+    			out << a.x() * scale << " " << a.y() * scale << " moveto\n";
+    			out << b.x() * scale << " " << b.y() * scale << " lineto\n";
+    			out << c.x() * scale << " " << c.y() * scale << " lineto\n";
+    			out << a.x() * scale << " " << a.y() * scale << " lineto\n";
+
+				out << "closepath\n\n";
+				out << "0 0 0 setrgbcolor\n";
+				out << "2 setlinewidth\n";
+		        out << "stroke\n\n";
+
+				for (size_t i = 0; i < samples.size(); ++i) draw_disc(samples[i], scale);
+    		}
+
     		template<class Container>
     		void draw_points(const Container &input, const double scale) {
         		for (typename Container::const_iterator it = input.begin(); it != input.end(); ++it) draw_disc(input.point(*it), scale);
@@ -361,7 +423,7 @@ namespace CGAL {
 
 		        out << "0 setgray\n";
 		        out << "0 setlinewidth\n\n";
-		        out << p.x() * scale << " " << p.y() * scale << " " << 20 << " 0 360 arc closepath\n\n";
+		        out << p.x() * scale << " " << p.y() * scale << " " << 10 << " 0 360 arc closepath\n\n";
 		        out << "gsave\n";
 		        out << "0 setgray fill\n";
 		        out << "grestore\n";

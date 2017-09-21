@@ -5,6 +5,12 @@ namespace CGAL {
 
 	namespace LOD {
 
+		enum class Structured_label { 
+			LINEAR, 
+			CORNER, 
+			CLUTTER 
+		};
+
 		// Visibility labels.
 		enum class Visibility_label { 
 			IN,  	// inside a triangle
@@ -14,14 +20,22 @@ namespace CGAL {
 
 		// Visibility methods.
 		enum class Visibility_method {
-			CLASSIFICATION,
-			SAMPLING
+			POINT_BASED_CLASSIFICATION,    // this is a repeatable method
+			FACE_BASED_BARYCENTRIC,        // does not work
+			FACE_BASED_NATURAL_NEIGHBOURS, // every time can give different result since it is randomized
+			FACE_BASED_COUNT			   // 
 		};
 
 		// Visibility approaches.
 		enum class Visibility_approach {
-			POINT_BASED,
-			FACE_BASED
+			POINT_BASED, // here we go over all input points
+			FACE_BASED   // here we go over all input faces
+		};
+
+		// Visibility samplers.
+		enum class Visibility_sampler {
+			UNIFORM_0, // a bit faster than UNIFORM_1 but the result is similar
+			UNIFORM_1
 		};
 
 		// Face info class.
@@ -32,10 +46,12 @@ namespace CGAL {
 			FT in = FT(1) / FT(2);
 		};
 
-		// Visibility samplers.
-		enum class Visibility_sampler {
-			REGULAR,
-			RANDOM
+		// Vertex info class.
+		template<typename Label>
+		class My_vertex_info {
+
+		public:
+			Label label;
 		};
 
 	} // LOD

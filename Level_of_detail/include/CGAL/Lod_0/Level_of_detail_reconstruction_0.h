@@ -4,6 +4,7 @@
 // STL includes.
 #include <vector>
 #include <iostream>
+#include <cassert>
 
 // CGAL includes.
 #include <CGAL/number_utils.h>
@@ -16,13 +17,13 @@ namespace Maxflow {
 
 // New CGAL includes.
 #include <CGAL/Mylog/Mylog.h>
-#include <CGAL/Visibility_2/Level_of_detail_visibility_2.h>
+#include <CGAL/Level_of_detail_enum.h>
 
 namespace CGAL {
 
 	namespace LOD {
 
-		template<class KernelTraits, class CDTInput, class Visibility, class StructuredLabelsInput>
+		template<class KernelTraits, class CDTInput>
 		class Level_of_detail_reconstruction_0 {
 
 		public:
@@ -30,15 +31,11 @@ namespace CGAL {
 
 			typedef KernelTraits Kernel;
 			typedef CDTInput     CDT;
-			typedef Visibility   Visibility_result;
 
+			typedef typename Kernel::FT 	 FT;
 			typedef typename Kernel::Point_2 Point;
-			typedef StructuredLabelsInput Structured_labels;
-			typedef typename Kernel::FT FT;
 
-			typedef typename Kernel::Segment_2 Segment;
-			typedef std::vector<Segment> Lod_0_result;
-
+			typedef typename CDT::Finite_faces_iterator Face_iterator;
 			using Log = CGAL::LOD::Mylog;
 
 			Level_of_detail_reconstruction_0() : m_alpha(FT(1)), m_beta(FT(100000)), m_gamma(FT(1000)) { }
@@ -55,7 +52,8 @@ namespace CGAL {
 				m_gamma = gamma;
 			}
 
-			void reconstruct(const CDT &cdt, const Visibility_result &visibility, const Structured_labels &str_labels, Lod_0_result &) {
+			/*
+			void reconstruct(CDT &cdt) {
 
 				Log log;
 				log.out << "Lod 0 reconstruction...\n\n" << std::endl;
@@ -105,44 +103,28 @@ namespace CGAL {
 
 				log.out << "\n\n...FINISHED" << std::endl;
 				log.save("lod_0");
-			}
+			} */
 
 			// Source - inside, sink - outside
-			void max_flow(const CDT &cdt, const Visibility_result &visibility) {
+			void max_flow(CDT &cdt) {
 
 				std::cout << "\nMAX FLOW\n" << std::endl;
 
 				typedef Maxflow::Graph Graph;
-
 				const auto numNodes = cdt.number_of_faces();
 
 				Graph::node_id nodes[numNodes];
 				Graph *graph = new Graph();
 
-				assert(visibility.size() == numNodes);
+				int index = 0;
+				for (Face_iterator fit = cdt.finite_faces_begin(); fit != cdt.finite_faces_end(); ++fit, ++index) {
+					nodes[index] = graph->add_node();
 
-				int i = 0;
-				for (typename Visibility_result::const_iterator it = visibility.begin(); it != visibility.end(); ++it, ++i) {
-					nodes[i] = graph->add_node();
+					const FT in  = fit->info().in;
+					const FT out = FT(1) - in;
 
-					const int visibility_label = static_cast<int>((*it).second);
-					switch(visibility_label) {
-
-						case 0: // inside
-						graph->add_tweights(nodes[i], m_beta * 1.0, 0.0); // for max flow we add big weights to the correct cells
-						break;
-
-						case 1: // outside
-						graph->add_tweights(nodes[i], 0.0, m_beta * 1.0);
-						break;
-
-						case 2: // unknown
-						graph->add_tweights(nodes[i], m_beta * 0.5, m_beta * 0.5);
-						break;
-
-						default:
-						break;
-					}
+					assert(in >= FT(0) && in <= FT(1)); 
+					graph->add_tweights(nodes[index], m_beta * in, m_beta * out);
 				}
 
 				// const auto first = cdt.finite_edges_begin();
@@ -174,15 +156,15 @@ namespace CGAL {
 
 				graph->maxflow();
 
-				std::map<int, int> after_cut;
-				for (unsigned long i = 0; i < numNodes; ++i) {
+				index = 0;
+				for (Face_iterator fit = cdt.finite_faces_begin(); fit != cdt.finite_faces_end(); ++fit, ++index) {
 
-					if (graph->what_segment(nodes[i]) == Graph::SOURCE) after_cut[i] = 0;
-					if (graph->what_segment(nodes[i]) == Graph::SINK) after_cut[i] = 1;
+					if (graph->what_segment(nodes[index]) == Graph::SOURCE) fit->info().in = FT(1);
+					if (graph->what_segment(nodes[index]) == Graph::SINK)   fit->info().in = FT(0);
 				}
 
 				Log log;
-				log.save_visibility_eps(cdt, after_cut, "tmp/after_cut");
+				log.save_visibility_eps(cdt, "tmp/after_cut");
 			}
 
 		private:
@@ -190,6 +172,9 @@ namespace CGAL {
 			FT m_beta;
 			FT m_gamma;
 
+			std::vector<FT> m_a; // edge length weights
+
+			/*
 			std::vector<FT> m_p_in;
 			std::vector<FT> m_p_out;
 			
@@ -198,7 +183,9 @@ namespace CGAL {
 
 			std::vector<Edge_label> m_coherence;
 			std::vector<FT> m_q; // surface quality Q
+			*/
 
+			/*
 			void create_predictions(const Visibility_result &visibility) {
 
 				clear_predicitions();
@@ -260,7 +247,7 @@ namespace CGAL {
 
 			FT compute_prediction() const {
 				return m_beta * FT(1);
-			}
+			} */
 
 			int compute_edge_weights(const CDT &cdt) {
 
@@ -297,6 +284,7 @@ namespace CGAL {
 				m_a.resize(number_of_edges, FT(1));
 			}
 
+			/*
 			// Compute them only for edges that are FF coherent.
 			int compute_circumsphere_weights(const CDT &cdt) {
 
@@ -473,7 +461,7 @@ namespace CGAL {
 
 			void apply_graph_cut(const FT) {
 
-			}
+			} */
 		};
 	}
 }
