@@ -212,9 +212,7 @@ namespace CGAL {
 			void get_mock_default(Container &input) const {
 
 				input.clear();
-
 				const Point new_point = Point(0, 0, 0);
-
 				input.insert(new_point);
 			}
 

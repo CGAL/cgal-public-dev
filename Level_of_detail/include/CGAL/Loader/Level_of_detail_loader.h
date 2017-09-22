@@ -71,15 +71,15 @@ namespace CGAL {
             	for (size_t i = 0; i < 17; ++i) std::getline(loader, tmp);
 
 				FT x, y, z, nx, ny, nz;
-				int r, g, b, l, ty, in;
+				int r, g, b, la, ty, in;
 
             	for (size_t i = 0; i < num_points; ++i) {
 
-            		loader >> x >> y >> z >> nx >> ny >> nz >> r >> g >> b >> l >> ty >> in;
+            		loader >> x >> y >> z >> nx >> ny >> nz >> r >> g >> b >> la >> ty >> in;
 					Iterator it = input.insert(Point(x, y, z), Normal(nx, ny, nz));
 
 					 colors[*it] = {{static_cast<Type>(r), static_cast<Type>(g), static_cast<Type>(b)}};
-					 labels[*it] = l;
+					 labels[*it] = la;
 					  types[*it] = ty; 
 					indices[*it] = in;
             	}

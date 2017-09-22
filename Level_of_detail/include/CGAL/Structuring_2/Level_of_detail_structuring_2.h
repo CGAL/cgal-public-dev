@@ -17,6 +17,7 @@
 
 // New CGAL includes.
 #include <CGAL/Mylog/Mylog.h>
+#include <CGAL/Level_of_detail_enum.h>
 
 // NOTES:
 // 1. Clutter has to be handled separately. See Section 2 Clutter.

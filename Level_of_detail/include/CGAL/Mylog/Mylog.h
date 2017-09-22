@@ -40,6 +40,15 @@ namespace CGAL {
 				out << token;
 			}
 
+			void skip_line() {
+				out << std::endl;
+			}
+
+			template<typename T>
+			void add_index(const T index) {
+				out << "Index: " << index << std::endl;
+			}
+
 			bool save(const std::string &fileName, const std::string &extension = ".log", const std::string path = "/Users/danisimo/Documents/pipeline/logs/") const {
 
 				const std::string finalPath = path + fileName + extension;
