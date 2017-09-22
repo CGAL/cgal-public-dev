@@ -101,7 +101,7 @@ public:
   friend std::ostream& operator<<(std::ostream& out, const Self& dec)
   {
     out << "Point: (" << dec.point() << ") blocked: " << dec.is_blocked() << std::endl;
-    out << "Location -- face: " << dec.location().first << " barycentric coordinates: { "
+    out << "  Location -- face: " << dec.location().first << " barycentric coordinates: { "
         << dec.location().second[0] << "; " << dec.location().second[1]
         << "; " << dec.location().second[2] << "}" << std::endl;
     out << "  Visiting motorcycles: " << std::endl;

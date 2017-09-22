@@ -516,6 +516,7 @@ generate_enclosing_face()
 {
   // generate a bbox that includes all known positions and all crash points
   // 2D only for now @todo
+  CGAL_precondition(Geom_traits::dimension == 2);
   Bbox bbox;
 
   std::size_t number_of_motorcycles = motorcycles.size();
@@ -831,7 +832,7 @@ find_collision_with_live_motorcycle(Motorcycle& mc, const Segment& mcs,
                                     Collision_information& tc)
 {
 #ifdef CGAL_MOTORCYCLE_GRAPH_VERBOSE
-std::cout << "Checking for intersection with the live motorcycle " << fmc.id() << std::endl;
+std::cout << "Checking for intersection with live motorcycle #" << fmc.id() << std::endl;
 #endif
 
   if(mc.id() == fmc.id() ||
@@ -1306,7 +1307,7 @@ trace_graph(MotorcycleContainerIterator mit, MotorcycleContainerIterator last)
         }
 
 #ifdef CGAL_MOTORCYCLE_GRAPH_VERBOSE
-        std::cout << "Post-treatment collision point: "  << *collision_point << std::endl;
+        std::cout << "Post-treatment collision point:" << std::endl << *collision_point << std::endl;
 #endif
       }
 
@@ -1438,7 +1439,12 @@ output_all_dictionary_points() const
   oss << "results_" << gt.dimension << "/dictionary_points.xyz" << std::ends;
   std::ofstream os(oss.str().c_str());
   for(; dit!=end; ++dit)
-    os << dit->point() << " 0" << '\n';
+  {
+    os << dit->point();
+    if(gt.dimension == 2) // The xyz format expects 3D points
+      os << " 0";
+    os << '\n';
+  }
 }
 
 template<typename MotorcycleGraphTraits>
@@ -1446,8 +1452,6 @@ void
 Motorcycle_graph<MotorcycleGraphTraits>::
 output_motorcycles_sources_and_destinations() const
 {
-  // must be adapted to surfaces @todo
-
   std::stringstream oss_sour, oss_dest;
   oss_sour << "results_" << gt.dimension << "/motorcycles_sources.xyz" << std::ends;
   oss_dest << "results_" << gt.dimension << "/motorcycles_destinations.xyz" << std::ends;
@@ -1455,8 +1459,17 @@ output_motorcycles_sources_and_destinations() const
   std::ofstream osd(oss_dest.str().c_str());
   for(std::size_t i=0; i<motorcycles.size(); ++i)
   {
-    oss << motorcycle(i).source()->point() << " 0" << '\n';
-    osd << motorcycle(i).destination()->point() << " 0" << '\n';
+    oss << motorcycle(i).source()->point();
+    osd << motorcycle(i).destination()->point();
+
+    if(gt.dimension == 2) // The xyz format expects 3D points
+    {
+      oss << " 0";
+      osd << " 0";
+    }
+
+    oss << '\n';
+    osd << '\n';
   }
 }
 

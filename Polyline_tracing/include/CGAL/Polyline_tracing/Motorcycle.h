@@ -359,7 +359,13 @@ output_track() const
   typename Track::const_iterator tit = track_points.begin();
   typename Track::const_iterator end = track_points.end();
   for(; tit!=end; ++tit)
-    os << tit->first << " 0" << '\n'; // the '0' is because OFF is a 3D format
+  {
+    os << tit->first;
+
+    if(Geom_traits::dimension == 2) // The xyz format expects 3D points
+      os << " 0";
+    os << '\n';
+  }
 
   for(std::size_t j=0; j<fn; ++j)
     os << "3 " << j << " " << j+1 << " " << j << '\n';
@@ -370,7 +376,7 @@ void
 Motorcycle_impl<MotorcycleGraphTraits>::
 output_intended_track() const
 {
-  // must be adapted to multiple destinations @todo
+  // must be adapted to multiple destinations and 2D/surface @todo
 
   std::ostringstream out_filename;
   out_filename << "results_" << Geom_traits::dimension << "/intended_track_" << i << ".off" << std::ends;
