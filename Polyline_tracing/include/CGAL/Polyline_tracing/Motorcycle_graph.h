@@ -1,4 +1,4 @@
-// Copyright (c) 2017 GeometryFactory (France).
+﻿// Copyright (c) 2017 GeometryFactory (France).
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
@@ -29,7 +29,6 @@
 #include <CGAL/AABB_tree.h>
 #include <CGAL/assertions.h>
 #include <CGAL/boost/graph/iterator.h>
-#include <CGAL/Bbox_2.h>
 #include <CGAL/Cartesian_converter.h>
 #include <CGAL/enum.h>
 #include <CGAL/number_utils.h>
@@ -44,6 +43,7 @@
 #include <fstream>
 #include <iostream>
 #include <limits>
+#include <sstream>
 #include <utility>
 #include <vector>
 
@@ -80,48 +80,61 @@ struct Collision_information
 
 } // namespace internal
 
-template<typename K, typename TriangleMesh>
+template<typename MotorcycleGraphTraits>
 class Motorcycle_graph
 {
-  typedef Motorcycle_graph<K, TriangleMesh>                    Self;
+  typedef Motorcycle_graph<MotorcycleGraphTraits>             Self;
 
   typedef internal::Collision_information<Self>               Collision_information;
+  typedef typename MotorcycleGraphTraits::Kernel              K;
 
 public:
-  typedef typename K::FT                                      FT;
-  typedef typename K::Point_2                                 Point;
-  typedef typename K::Segment_2                               Segment;
-  typedef typename K::Vector_2                                Vector;
-  typedef typename K::Ray_2                                   Ray;
+  typedef MotorcycleGraphTraits                               Geom_traits;
+  typedef typename Geom_traits::Triangle_mesh                 Triangle_mesh;
 
-  typedef Dictionary<K, TriangleMesh>                         Dictionary;
-  typedef Dictionary_entry<K, TriangleMesh>                   Dictionary_entry;
+  typedef typename Geom_traits::FT                            FT;
+  typedef typename Geom_traits::Point_d                       Point;
+  typedef typename Geom_traits::Segment_d                     Segment;
+  typedef typename Geom_traits::Vector_d                      Vector;
+  typedef typename Geom_traits::Ray_d                         Ray;
+
+  typedef typename Geom_traits::Bbox_d                        Bbox;
+
+  typedef Dictionary<Geom_traits>                             Dictionary;
+  typedef Dictionary_entry<Geom_traits>                       Dictionary_entry;
   typedef typename Dictionary::DEC_it                         DEC_it;
-  typedef typename Dictionary_entry::Barycentric_coordinates  Barycentric_coordinates;
-  typedef typename Dictionary_entry::Face_location            Face_location;
 
-  typedef Motorcycle<K, TriangleMesh>                         Motorcycle;
+  typedef typename Geom_traits::Barycentric_coordinates       Barycentric_coordinates;
+  typedef typename Geom_traits::Face_location                 Face_location;
+
+  typedef Motorcycle<Geom_traits>                             Motorcycle;
   typedef std::vector<Motorcycle*>                            Motorcycle_container;
 
-  typedef Motorcycle_priority_queue<K, TriangleMesh>           Motorcycle_PQ;
-  typedef Motorcycle_priority_queue_entry<K, TriangleMesh>     Motorcycle_PQE;
+  typedef typename Motorcycle::Track                          Track;
 
-  typedef typename boost::graph_traits<TriangleMesh>::halfedge_descriptor    halfedge_descriptor;
-  typedef typename boost::graph_traits<TriangleMesh>::face_descriptor        face_descriptor;
+  typedef Motorcycle_priority_queue<Geom_traits>              Motorcycle_PQ;
+  typedef Motorcycle_priority_queue_entry<Geom_traits>        Motorcycle_PQE;
 
-  typedef boost::tuple<std::size_t, DEC_it, FT, DEC_it, FT>   Track;
-  typedef std::list<Track>                                    Track_list;
-  typedef boost::unordered_map<face_descriptor , Track_list>  Track_face_map;
+  typedef typename Geom_traits::halfedge_descriptor           halfedge_descriptor;
+  typedef typename Geom_traits::face_descriptor               face_descriptor;
+
+  typedef boost::tuple<std::size_t, DEC_it, FT, DEC_it, FT>   Track_segment;
+  typedef std::list<Track_segment>                            Track_segment_container;
+  typedef boost::unordered_map<face_descriptor,
+                               Track_segment_container>       Track_face_map;
   typedef typename Track_face_map::iterator                   TFM_iterator;
 
   // Access
   Motorcycle& motorcycle(const std::size_t id) { return *(motorcycles[id]); }
   const Motorcycle& motorcycle(const std::size_t id) const { return *(motorcycles[id]); }
 
+  const Geom_traits& geom_traits() const { return gt; }
+
   // Constructor
-  Motorcycle_graph(TriangleMesh& mesh);
+  Motorcycle_graph(Triangle_mesh& mesh, const Geom_traits& gt = Geom_traits());
 
   // Functions
+  void add_motorcycle(const Motorcycle* mc);
 
   template<typename MotorcycleContainerIterator>
   void add_motorcycles(MotorcycleContainerIterator mit, MotorcycleContainerIterator last);
@@ -132,9 +145,9 @@ public:
   /// \param t the target of the oriented segment
   ///
   /// \return iterator in the tracking map
-  TFM_iterator add_track_to_map(face_descriptor fd, std::size_t id,
-                                DEC_it s, const FT time_at_s,
-                                DEC_it t, const FT time_at_t);
+  TFM_iterator add_track_segment_to_map(face_descriptor fd, std::size_t id,
+                                        DEC_it s, const FT time_at_s,
+                                        DEC_it t, const FT time_at_t);
 
   /// \param p first point
   /// \param p_time time at first point
@@ -142,7 +155,9 @@ public:
   /// \param q_time time at second point
   ///
   /// \return new point and time at the new point
-  std::pair<DEC_it, FT> compute_halving_point(const Motorcycle& mc, DEC_it p, const FT p_time, DEC_it q, const FT q_time);
+  std::pair<DEC_it, FT> compute_halving_point(const Motorcycle& mc,
+                                              DEC_it p, const FT p_time,
+                                              DEC_it q, const FT q_time);
 
   /// \param p first point
   /// \param p_time time at first point
@@ -150,17 +165,19 @@ public:
   /// \param q_time time at second point
   ///
   /// \return new point and time at the new point
-  std::pair<DEC_it, FT> compute_middle_point(DEC_it p, const FT p_time, DEC_it q, const FT q_time);
+  std::pair<DEC_it, FT> compute_middle_point(DEC_it p, const FT p_time,
+                                             DEC_it q, const FT q_time);
+
   bool compute_motorcycle_next_path(Motorcycle& mc);
   void crash_motorcycle(Motorcycle& mc);
   void crash_motorcycles_with_same_source_and_direction();
   void drive_to_closest_target(Motorcycle& mc);
 
-  void find_collision_with_track(Motorcycle& mc, const Segment& mcs,
-                                 const Motorcycle& fmc, const Track& fmc_track,
-                                 bool is_fmc_moving_on_track, Collision_information& tc);
+  void find_collision_with_track_segment(Motorcycle& mc, const Segment& mcs,
+                                         const Motorcycle& fmc, const Track_segment& fmc_track,
+                                         bool is_fmc_moving_on_track, Collision_information& tc);
   void find_collision_with_complete_track(Motorcycle& mc, const Segment& mcs,
-                                          const Track& fmc_track, Collision_information& tc);
+                                          const Track_segment& fmc_track, Collision_information& tc);
   void find_collision_with_live_motorcycle(Motorcycle& mc, const Segment& mcs,
                                            const Motorcycle& fmc, Collision_information& tc);
 
@@ -184,22 +201,26 @@ public:
   void output_motorcycles_sources_and_destinations() const;
 
 private:
+  Geom_traits gt;
+
   Dictionary points; // All the points that will be used throughout the algorithm
   Motorcycle_container motorcycles;
   Motorcycle_PQ motorcycle_pq; // motorcycle priority queue
 
   bool using_enclosing_bbox; // indicates whether a mesh is passed input
-  TriangleMesh& mesh; // not 'const' in case we need to create it
+  Triangle_mesh& mesh; // not 'const' in case we need to create it
 
   // map to keep in memory the completed tracks of the motorcycles for each face
   Track_face_map track_face_map;
 };
 
 // -----------------------------------------------------------------------------
-template<typename K, typename TriangleMesh>
-Motorcycle_graph<K, TriangleMesh>::
-Motorcycle_graph(TriangleMesh& mesh)
-  : points(),
+template<typename MotorcycleGraphTraits>
+Motorcycle_graph<MotorcycleGraphTraits>::
+Motorcycle_graph(Triangle_mesh& mesh, const Geom_traits& gt)
+  :
+    gt(gt),
+    points(),
     motorcycles(),
     motorcycle_pq(),
     using_enclosing_bbox(false),
@@ -224,10 +245,27 @@ Motorcycle_graph(TriangleMesh& mesh)
   CGAL_assertion(!using_enclosing_bbox);
 }
 
-template<typename K, typename TriangleMesh>
+template<typename MotorcycleGraphTraits>
+void
+Motorcycle_graph<MotorcycleGraphTraits>::
+add_motorcycle(const Motorcycle* mc)
+{
+  std::size_t new_id = motorcycles.size();
+  mc->set_id(new_id);
+
+  boost::optional<Point>& destination_point = mc->initial_destination_point();
+  boost::optional<Vector>& direction = mc->direction();
+
+  CGAL_precondition_msg(destination_point != boost::none || direction != boost::none,
+    "A motorcycle must have least a destination or a direction.");
+
+  motorcycles.push_back(mc);
+}
+
+template<typename MotorcycleGraphTraits>
 template<typename MotorcycleContainerIterator>
 void
-Motorcycle_graph<K, TriangleMesh>::
+Motorcycle_graph<MotorcycleGraphTraits>::
 add_motorcycles(MotorcycleContainerIterator mit, MotorcycleContainerIterator last)
 {
   motorcycles.reserve(std::distance(mit, last));
@@ -249,18 +287,18 @@ add_motorcycles(MotorcycleContainerIterator mit, MotorcycleContainerIterator las
   }
 }
 
-template<typename K, typename TriangleMesh>
-typename Motorcycle_graph<K, TriangleMesh>::TFM_iterator
-Motorcycle_graph<K, TriangleMesh>::
-add_track_to_map(face_descriptor fd, std::size_t id,
-                 DEC_it s, const FT time_at_s,
-                 DEC_it t, const FT time_at_t)
+template<typename MotorcycleGraphTraits>
+typename Motorcycle_graph<MotorcycleGraphTraits>::TFM_iterator
+Motorcycle_graph<MotorcycleGraphTraits>::
+add_track_segment_to_map(face_descriptor fd, std::size_t id,
+                         DEC_it s, const FT time_at_s,
+                         DEC_it t, const FT time_at_t)
 {
-  Track tr = boost::make_tuple(id, s, time_at_s, t, time_at_t);
-  Track_list l;
+  Track_segment tr = boost::make_tuple(id, s, time_at_s, t, time_at_t);
+  Track_segment_container l;
   l.push_back(tr);
 
-  std::pair<typename Motorcycle_graph<K, TriangleMesh>::TFM_iterator, bool>
+  std::pair<typename Motorcycle_graph<MotorcycleGraphTraits>::TFM_iterator, bool>
     is_insert_success = track_face_map.insert(std::make_pair(fd, l));
 
   if(!is_insert_success.second)
@@ -269,10 +307,10 @@ add_track_to_map(face_descriptor fd, std::size_t id,
   return is_insert_success.first;
 }
 
-template<typename K, typename TriangleMesh>
-std::pair<typename Motorcycle_graph<K, TriangleMesh>::DEC_it,
-          typename Motorcycle_graph<K, TriangleMesh>::FT>
-Motorcycle_graph<K, TriangleMesh>::
+template<typename MotorcycleGraphTraits>
+std::pair<typename Motorcycle_graph<MotorcycleGraphTraits>::DEC_it,
+          typename Motorcycle_graph<MotorcycleGraphTraits>::FT>
+Motorcycle_graph<MotorcycleGraphTraits>::
 compute_halving_point(const Motorcycle& m, DEC_it p, const FT p_time,
                                            DEC_it q, const FT q_time)
 {
@@ -291,10 +329,10 @@ compute_halving_point(const Motorcycle& m, DEC_it p, const FT p_time,
 #endif
 }
 
-template<typename K, typename TriangleMesh>
-std::pair<typename Motorcycle_graph<K, TriangleMesh>::DEC_it,
-          typename Motorcycle_graph<K, TriangleMesh>::FT>
-Motorcycle_graph<K, TriangleMesh>::
+template<typename MotorcycleGraphTraits>
+std::pair<typename Motorcycle_graph<MotorcycleGraphTraits>::DEC_it,
+          typename Motorcycle_graph<MotorcycleGraphTraits>::FT>
+Motorcycle_graph<MotorcycleGraphTraits>::
 compute_middle_point(DEC_it p, const FT p_time, DEC_it q, const FT q_time)
 {
   if(p->location().first != q->location().first)
@@ -305,7 +343,7 @@ compute_middle_point(DEC_it p, const FT p_time, DEC_it q, const FT q_time)
     CGAL_assertion(false);
   }
 
-  Point r = K().construct_midpoint_2_object()(p->point(), q->point());
+  Point r = gt.construct_midpoint_d_object()(p->point(), q->point());
   const FT time_at_r = 0.5 * (p_time + q_time);
 
 #ifdef CGAL_MOTORCYCLE_GRAPH_VERBOSE
@@ -314,7 +352,7 @@ compute_middle_point(DEC_it p, const FT p_time, DEC_it q, const FT q_time)
 
   // As long as the faces are equal, the barycenter coordinates, the coordinates
   // of the middle point can be deduced from the (known) coordinates of 'p' and 'q'
-  // but is it better (accuracy + consistency) ? @todo
+  // but is it better (accuracy + consistency pov) ? @todo
   const Face_location middle_point_location =
     CGAL::Polygon_mesh_processing::locate(p->location().first, r, mesh);
 
@@ -322,9 +360,9 @@ compute_middle_point(DEC_it p, const FT p_time, DEC_it q, const FT q_time)
   return std::make_pair(entry.first, time_at_r);
 }
 
-template<typename K, typename TriangleMesh>
+template<typename MotorcycleGraphTraits>
 bool
-Motorcycle_graph<K, TriangleMesh>::
+Motorcycle_graph<MotorcycleGraphTraits>::
 compute_motorcycle_next_path(Motorcycle& mc)
 {
   boost::tuple<bool, DEC_it, DEC_it, FT, bool> next_path =
@@ -356,9 +394,9 @@ compute_motorcycle_next_path(Motorcycle& mc)
   return true;
 }
 
-template<typename K, typename TriangleMesh>
+template<typename MotorcycleGraphTraits>
 void
-Motorcycle_graph<K, TriangleMesh>::
+Motorcycle_graph<MotorcycleGraphTraits>::
 crash_motorcycle(Motorcycle& mc)
 {
 #ifdef CGAL_MOTORCYCLE_GRAPH_VERBOSE
@@ -382,9 +420,9 @@ crash_motorcycle(Motorcycle& mc)
   motorcycle_pq.erase(mc);
 }
 
-template<typename K, typename TriangleMesh>
+template<typename MotorcycleGraphTraits>
 void
-Motorcycle_graph<K, TriangleMesh>::
+Motorcycle_graph<MotorcycleGraphTraits>::
 crash_motorcycles_with_same_source_and_direction()
 {
 #ifdef CGAL_MOTORCYCLE_GRAPH_VERBOSE
@@ -419,22 +457,22 @@ crash_motorcycles_with_same_source_and_direction()
 //      std::cout << *(fmc.direction()) << std::endl;
 //      std::cout << v1 / CGAL::sqrt(v1 * v1) << std::endl;
 //      std::cout << v2 / CGAL::sqrt(v2 * v2) << std::endl;
-//      std::cout << "scalar product: " << K().compute_scalar_product_2_object()(v1, v2) << std::endl;
+//      std::cout << "scalar product: " << gt.compute_scalar_product_d_object()(v1, v2) << std::endl;
 
       // only aligned tracks block one another
-      if(!K().collinear_2_object()(mc.source()->point(), // == fmc.source()->point()
-                                   mc.destination()->point(),
-                                   fmc.destination()->point()))
+      if(!gt.collinear_d_object()(mc.source()->point(), // == fmc.source()->point()
+                                  mc.destination()->point(),
+                                  fmc.destination()->point()))
         continue;
 
       std::cout << "collinear" << std::endl;
 
       // Moving away from each other from the same point is allowed.
       // use two calls to ordered_along_line() instead? @todo
-      if(K().angle_2_object()(mc.source()->point(),
-                              mc.destination()->point(),
-                              fmc.source()->point(),
-                              fmc.destination()->point()) == CGAL::ACUTE)
+      if(gt.angle_d_object()(mc.source()->point(),
+                             mc.destination()->point(),
+                             fmc.source()->point(),
+                             fmc.destination()->point()) == CGAL::ACUTE)
       {
         std::cout << "Crashing degenerate motorcycles: "
                   << mc.id() << " and " << fmc.id() << std::endl;
@@ -446,9 +484,9 @@ crash_motorcycles_with_same_source_and_direction()
   }
 }
 
-template<typename K, typename TriangleMesh>
+template<typename MotorcycleGraphTraits>
 void
-Motorcycle_graph<K, TriangleMesh>::
+Motorcycle_graph<MotorcycleGraphTraits>::
 drive_to_closest_target(Motorcycle& mc)
 {
   CGAL_assertion(!mc.is_crashed());
@@ -463,22 +501,22 @@ drive_to_closest_target(Motorcycle& mc)
 
   mc.position() = closest_target;
   mc.current_time() = mc.targets().begin()->second;
-  mc.track().push_back(closest_target);
-  mc.erase_closest_target();
+  mc.track().insert(std::make_pair(closest_target->point(), mc.current_time()));
+  mc.remove_closest_target_from_targets();
 
 #ifdef CGAL_MOTORCYCLE_GRAPH_VERBOSE
   std::cout << "  now at: (" << mc.position()->point() << ")" << std::endl;
 #endif
 }
 
-template<typename K, typename TriangleMesh>
+template<typename MotorcycleGraphTraits>
 void
-Motorcycle_graph<K, TriangleMesh>::
+Motorcycle_graph<MotorcycleGraphTraits>::
 generate_enclosing_face()
 {
   // generate a bbox that includes all known positions and all crash points
   // 2D only for now @todo
-  Bbox_2 bbox;
+  Bbox bbox;
 
   std::size_t number_of_motorcycles = motorcycles.size();
   for(std::size_t mc_id = 0; mc_id<number_of_motorcycles; ++mc_id)
@@ -501,24 +539,25 @@ generate_enclosing_face()
   // Slightly increase the size of the bbox to strictly contain all points
 
   // Manually create the mesh with Euler operations
-
 }
-template<typename K, typename TriangleMesh>
+
+template<typename MotorcycleGraphTraits>
 bool
-Motorcycle_graph<K, TriangleMesh>::
+Motorcycle_graph<MotorcycleGraphTraits>::
 has_motorcycle_reached_final_destination(const Motorcycle& mc) const
 {
   return mc.is_motorcycle_destination_final();
 }
 
-template<typename K, typename TriangleMesh>
+template<typename MotorcycleGraphTraits>
 void
-Motorcycle_graph<K, TriangleMesh>::
-find_collision_with_track(Motorcycle& mc, const Segment& mcs,
-                          const Motorcycle& fmc, const Track& fmc_track,
-                          bool is_fmc_moving_on_track,
-                          // below are out parameters
-                          Collision_information& tc)
+Motorcycle_graph<MotorcycleGraphTraits>::
+find_collision_with_track_segment(Motorcycle& mc, const Segment& mcs,
+                                  const Motorcycle& fmc,
+                                  const Track_segment& fmc_track,
+                                  bool is_fmc_moving_on_track,
+                                  // below are out parameters
+                                  Collision_information& tc)
 {
   CGAL_precondition(mcs.source() != mcs.target());
 
@@ -535,9 +574,9 @@ find_collision_with_track(Motorcycle& mc, const Segment& mcs,
 
   FT time_at_collision = 0.;
 
-  const Segment fmcs = K().construct_segment_2_object()(
+  const Segment fmcs = gt.construct_segment_d_object()(
                          fmc_track_source->point(), fmc_track_destination->point());
-  bool is_fmcs_degenerate = fmcs.is_degenerate();
+  bool is_fmcs_degenerate = fmcs.is_degenerate(); //@fixme is degenerate (traits)
 
   // Ignore the degenerate case of a degenerate fmc track starting at the same source
   if(is_fmcs_degenerate && mcs.source() == fmcs.source())
@@ -548,13 +587,20 @@ find_collision_with_track(Motorcycle& mc, const Segment& mcs,
 
   // Detect whether the motorcycles share the same supporting line.
   // Note that we know that 'mcs' is not degenerate.
-  if(K().collinear_2_object()(mcs.source(), mcs.target(), fmcs.source()) &&
-     K().collinear_2_object()(mcs.source(), mcs.target(), fmcs.target()))
+  if(gt.collinear_d_object()(mcs.source(), mcs.target(), fmcs.source()) &&
+     gt.collinear_d_object()(mcs.source(), mcs.target(), fmcs.target()))
   {
     std::cerr << "  /!\\ Tracks are aligned" << std::endl;
 
     // Check if the tentative tracks actually intersect
-    if(!K().do_intersect_2_object()(mcs, fmcs))
+    if((is_fmcs_degenerate &&
+        !gt.collinear_are_ordered_along_line_d_object()(mcs.source(),
+                                                        fmcs.source(),
+                                                        mcs.target()) &&
+         !gt.collinear_are_ordered_along_line_d_object()(mcs.source(),
+                                                         fmcs.target(),
+                                                         mcs.target())) ||
+      !gt.do_intersect_d_object()(mcs, fmcs))
     {
       // No intersection, try the next motorcycle
       std::cout << "  No intersection" << std::endl;
@@ -571,18 +617,18 @@ find_collision_with_track(Motorcycle& mc, const Segment& mcs,
 
     // We need a ray because fmcs' source can be outside of mc's tentative track
     Ray mcr(mcs.source(), mcs.target());
-    if(!mcr.has_on(fmcs.source()))
+    if(!mcr.has_on(fmcs.source())) //@fixme 'has_on'
       return;
 
     // Compute the respective direction of the two motorcycles:
     // use two calls to collinear_are_aligned_along_line() instead of angle ? @todo
     bool are_motorcycles_moving_in_the_same_direction =
       (is_fmcs_degenerate ||
-       K().angle_2_object()(mcs.source(), mcs.target(), fmcs.source(), fmcs.target()) == CGAL::ACUTE);
+       gt.angle_d_object()(mcs.source(), mcs.target(), fmcs.source(), fmcs.target()) == CGAL::ACUTE);
 
     std::cout << "  is degen: " << is_fmcs_degenerate << std::endl;
-    std::cout << "  angle: " << K().angle_2_object()(mcs.source(), mcs.target(),
-                                                     fmcs.source(), fmcs.target()) << std::endl;
+    std::cout << "  angle: " << gt.angle_d_object()(mcs.source(), mcs.target(),
+                                                    fmcs.source(), fmcs.target()) << std::endl;
     std::cout << "  are motorcycles moving in the same direction: "
               << are_motorcycles_moving_in_the_same_direction << std::endl;
 
@@ -621,7 +667,7 @@ find_collision_with_track(Motorcycle& mc, const Segment& mcs,
       // e.g. if they reach their destination first.
       if(is_fmc_moving_on_track)
       {
-        // @fixme, if speeds are ever allowed to change, the speed of fmc here
+        // @todo, if speeds are ever allowed to change, the speed of fmc here
         // must be changed to the speed on that segment
         time_at_collision = mc.current_time() +
           (CGAL::sqrt(CGAL::squared_distance(mcs.source(), fmcs.source())) -
@@ -711,7 +757,10 @@ find_collision_with_track(Motorcycle& mc, const Segment& mcs,
     }
 
     // --- Nothing is easy, the intersection must be computed ---
-    if(!K().do_intersect_2_object()(mcs, fmcs))
+    if((is_fmcs_degenerate &&
+        !gt.are_ordered_along_line_d_object()(mcs.source(), fmcs.source(), mcs.target()) &&
+        !gt.are_ordered_along_line_d_object()(mcs.source(), fmcs.target(), mcs.target())) ||
+      !gt.do_intersect_d_object()(mcs, fmcs))
     {
       // No intersection, move to the next motorcycle
       std::cout << "  No intersection" << std::endl;
@@ -723,7 +772,11 @@ find_collision_with_track(Motorcycle& mc, const Segment& mcs,
               << mcs.source() << ")--(" << mcs.target() << ") and ("
               << fmcs.source() << ")--(" << fmcs.target() << ")" << std::endl;
 
-    const Point& collision_point = internal::robust_intersection<K>(mcs, fmcs);
+    Point collision_point;
+    if(is_fmcs_degenerate) // the intersection is fmcs itself
+      collision_point = fmcs.source();
+    else
+      collision_point = internal::robust_intersection<Geom_traits>(mcs, fmcs, gt);
 
     time_at_collision = mc.current_time() +
       CGAL::sqrt(CGAL::squared_distance(mcs.source(), collision_point)) / mc.speed();
@@ -749,11 +802,11 @@ find_collision_with_track(Motorcycle& mc, const Segment& mcs,
   }
 }
 
-template<typename K, typename TriangleMesh>
+template<typename MotorcycleGraphTraits>
 void
-Motorcycle_graph<K, TriangleMesh>::
+Motorcycle_graph<MotorcycleGraphTraits>::
 find_collision_with_complete_track(Motorcycle& mc, const Segment& mcs,
-                                   const Track& fmc_track,
+                                   const Track_segment& fmc_track,
                                    // below are out parameters
                                    Collision_information& tc)
 {
@@ -764,14 +817,14 @@ find_collision_with_complete_track(Motorcycle& mc, const Segment& mcs,
 std::cout << "Checking for intersection with the complete track of motorcycle " << fmc.id() << std::endl;
 #endif
 
-  return find_collision_with_track(mc, mcs, fmc, fmc_track,
-                                   false /*the motorcycle is not moving on that track*/,
-                                   tc);
+  return find_collision_with_track_segment(mc, mcs, fmc, fmc_track,
+                                           false /*the motorcycle is not moving on that track*/,
+                                           tc);
 }
 
-template<typename K, typename TriangleMesh>
+template<typename MotorcycleGraphTraits>
 void
-Motorcycle_graph<K, TriangleMesh>::
+Motorcycle_graph<MotorcycleGraphTraits>::
 find_collision_with_live_motorcycle(Motorcycle& mc, const Segment& mcs,
                                     const Motorcycle& fmc,
                                     // below are out parameters
@@ -792,24 +845,24 @@ std::cout << "Checking for intersection with the live motorcycle " << fmc.id() <
     return;
   }
 
-  Track fmc_track = boost::make_tuple(fmc.id(),
-                                      fmc.source(), fmc.time_at_source(),
-                                      fmc.closest_target(),
-                                      fmc.time_at_closest_target());
+  Track_segment fmc_track = boost::make_tuple(fmc.id(),
+                                              fmc.source(), fmc.time_at_source(),
+                                              fmc.closest_target(),
+                                              fmc.time_at_closest_target());
 
-  return find_collision_with_track(mc, mcs, fmc, fmc_track,
-                                   true /*fmc is currently moving on that track*/,
-                                   tc);
+  return find_collision_with_track_segment(mc, mcs, fmc, fmc_track,
+                                           true /*fmc is currently moving on that track*/,
+                                           tc);
 }
 
 // search for a possible collision with another motorcycle between the current
 // position of mc and the next target
-template<typename K, typename TriangleMesh>
-boost::tuple<typename Motorcycle_graph<K, TriangleMesh>::DEC_it,
-             typename Motorcycle_graph<K, TriangleMesh>::FT,
+template<typename MotorcycleGraphTraits>
+boost::tuple<typename Motorcycle_graph<MotorcycleGraphTraits>::DEC_it,
+             typename Motorcycle_graph<MotorcycleGraphTraits>::FT,
              std::size_t,
-             typename Motorcycle_graph<K, TriangleMesh>::FT>
-Motorcycle_graph<K, TriangleMesh>::
+             typename Motorcycle_graph<MotorcycleGraphTraits>::FT>
+Motorcycle_graph<MotorcycleGraphTraits>::
 find_collision(Motorcycle& mc)
 {
 #ifdef CGAL_MOTORCYCLE_GRAPH_VERBOSE
@@ -824,8 +877,8 @@ find_collision(Motorcycle& mc)
   // which describes the best (closest to mc.position()) tentative collision.
   Collision_information tc;
 
-  Segment mc_tentative_track =
-    K().construct_segment_2_object()(mc.position()->point(), mc.closest_target()->point());
+  Segment mc_tentative_track = gt.construct_segment_d_object()(mc.position()->point(),
+                                                               mc.closest_target()->point());
 
   std::cout << "MC tentative track: " << std::endl << *(mc.position()) << std::endl
                                                    << *(mc.closest_target()) << std::endl;
@@ -845,13 +898,13 @@ find_collision(Motorcycle& mc)
   TFM_iterator it = track_face_map.find(mc_face);
   if(it != track_face_map.end())
   {
-    const Track_list& face_tracks = it->second;
+    const Track_segment_container& face_tracks = it->second;
 
-    typename Track_list::const_iterator tl_it = face_tracks.begin();
-    typename Track_list::const_iterator tl_end = face_tracks.end();
+    typename Track_segment_container::const_iterator tl_it = face_tracks.begin();
+    typename Track_segment_container::const_iterator tl_end = face_tracks.end();
     for(; tl_it!=tl_end; ++tl_it)
     {
-      const Track& track = *tl_it;
+      const Track_segment& track = *tl_it;
       find_collision_with_complete_track(mc, mc_tentative_track, track, tc);
     }
   }
@@ -882,9 +935,9 @@ find_collision(Motorcycle& mc)
                            tc.foreign_mc_id, tc.foreign_time_at_closest_collision);
 }
 
-template<typename K, typename TriangleMesh>
+template<typename MotorcycleGraphTraits>
 void
-Motorcycle_graph<K, TriangleMesh>::
+Motorcycle_graph<MotorcycleGraphTraits>::
 initialize_motorcycles()
 {
 #ifdef CGAL_MOTORCYCLE_GRAPH_VERBOSE
@@ -896,12 +949,12 @@ initialize_motorcycles()
   if(using_enclosing_bbox)
     generate_enclosing_face();
 
-  typedef CGAL::internal::P2_or_P3_to_P3<TriangleMesh>                 P2_or_P3_to_P3;
-  typedef CGAL::P2_to_P3_VPM<TriangleMesh>                             VPM;
+  typedef CGAL::internal::P2_or_P3_to_P3<Triangle_mesh>                 P2_or_P3_to_P3;
+  typedef CGAL::P2_to_P3_VPM<Triangle_mesh>                             VPM;
   VPM vpm(mesh);
 
-  typedef CGAL::AABB_face_graph_triangle_primitive<TriangleMesh, VPM>  AABB_face_graph_primitive;
-  typedef CGAL::AABB_traits<K, AABB_face_graph_primitive>             AABB_face_graph_traits;
+  typedef CGAL::AABB_face_graph_triangle_primitive<Triangle_mesh, VPM>  AABB_face_graph_primitive;
+  typedef CGAL::AABB_traits<K, AABB_face_graph_primitive>               AABB_face_graph_traits;
   CGAL::AABB_tree<AABB_face_graph_traits> tree;
 
   CGAL::Polygon_mesh_processing::build_aabb_tree(
@@ -1045,13 +1098,13 @@ initialize_motorcycles()
 
     // this is useful to not get an empty track when sour=dest
     // but it creates duplicates @fixme
-    mc.track().push_back(mc.source());
+    mc.track().insert(std::make_pair(mc.source()->point(), mc.current_time()));
   }
 }
 
-template<typename K, typename TriangleMesh>
+template<typename MotorcycleGraphTraits>
 bool
-Motorcycle_graph<K, TriangleMesh>::
+Motorcycle_graph<MotorcycleGraphTraits>::
 has_motorcycle_reached_crashing_point(const Motorcycle& mc) const
 {
   return  // mc has reached the track of a foreign motorcycle
@@ -1060,10 +1113,10 @@ has_motorcycle_reached_crashing_point(const Motorcycle& mc) const
           mc.has_reached_simultaneous_collision_point());
 }
 
-template<typename K, typename TriangleMesh>
+template<typename MotorcycleGraphTraits>
 template<typename MotorcycleContainerIterator>
 void
-Motorcycle_graph<K, TriangleMesh>::
+Motorcycle_graph<MotorcycleGraphTraits>::
 trace_graph(MotorcycleContainerIterator mit, MotorcycleContainerIterator last)
 {
   add_motorcycles(mit, last);
@@ -1089,9 +1142,9 @@ trace_graph(MotorcycleContainerIterator mit, MotorcycleContainerIterator last)
     if(mc.position() == mc.destination())
     {
       // Add the track source -- destination to the track map
-      add_track_to_map(mc.current_location().first, mc.id(),
-                       mc.source(), mc.time_at_source(),
-                       mc.destination(), mc.current_time());
+      add_track_segment_to_map(mc.current_location().first, mc.id(),
+                               mc.source(), mc.time_at_source(),
+                               mc.destination(), mc.current_time());
 
       if(has_motorcycle_reached_final_destination(mc) ||
          has_motorcycle_reached_crashing_point(mc))
@@ -1149,9 +1202,9 @@ trace_graph(MotorcycleContainerIterator mit, MotorcycleContainerIterator last)
                 << " - simultaneous collision: " << mc.has_reached_simultaneous_collision_point() << std::endl;
 #endif
       // Add the track source -- crash position to the track map
-      add_track_to_map(mc.current_location().first, mc.id(),
-                       mc.source(), mc.time_at_source(),
-                       mc.position(), mc.current_time());
+      add_track_segment_to_map(mc.current_location().first, mc.id(),
+                               mc.source(), mc.time_at_source(),
+                               mc.position(), mc.current_time());
 
       crash_motorcycle(mc);
     }
@@ -1245,6 +1298,10 @@ trace_graph(MotorcycleContainerIterator mit, MotorcycleContainerIterator last)
             // this is a new point for the foreign motorcycle, but it belongs to
             // its confirmed track, and must therefore be blocked
             collision_point->block();
+
+            // Add it to the track of the foreign motorcycle (useful to check
+            // the validity of the final graph)
+            foreign_mc.track().insert(std::make_pair(collision_point->point(), foreign_time_at_collision_point));
           }
         }
 
@@ -1269,42 +1326,133 @@ next_item:
   }
 }
 
-template<typename K, typename TriangleMesh>
+template<typename MotorcycleGraphTraits>
 bool
-Motorcycle_graph<K, TriangleMesh>::
+Motorcycle_graph<MotorcycleGraphTraits>::
 is_valid() const
 {
-  // @todo
-  // check that every point on the track is only:
-  // - one of extremities of the track and in that case it can be anywhere
-  //   on another path
-  // - an extremity of another track
+  // mega brute force validity check
+
+  std::size_t number_of_motorcycles = motorcycles.size();
+  for(std::size_t mc_id = 0; mc_id<number_of_motorcycles; ++mc_id)
+  {
+    const Motorcycle& mc = motorcycle(mc_id);
+    const Track& mc_track = mc.track();
+    CGAL_assertion(mc_track.size() > 0);
+    if(mc_track.size() <= 2)
+      continue;
+
+    typename Track::const_iterator lit = mc_track.begin(),
+                                   end = mc_track.end();
+    Point current = lit->first, next;
+
+    while(++lit != end)
+    {
+      next = lit->first;
+
+      Segment s = gt.construct_segment_d_object()(current, next);
+
+      for(std::size_t fmc_id = 0; fmc_id<number_of_motorcycles; ++fmc_id)
+      {
+        if(fmc_id == mc_id)
+          continue;
+
+        const Motorcycle& fmc = motorcycle(fmc_id);
+        const Track& fmc_track = fmc.track();
+        CGAL_assertion(fmc_track.size() > 0);
+
+        typename Track::const_iterator flit = fmc_track.begin(),
+                                       fend = fmc_track.end();
+        Point fcurrent = flit->first, fnext = fcurrent;
+
+        // degenerate fmc track
+        if(fmc_track.size() == 1)
+        {
+          Segment fs = gt.construct_segment_d_object()(fcurrent, fnext);
+          if(gt.do_intersect_d_object()(s, fs))
+          {
+            std::cout << "Intersection ¤~~~~~~~~~~~~~~~~~¤ " << std::endl;
+            std::cout << "motorcycle: " << mc_id << " track size: " << mc_track.size() << std::endl;
+            std::cout << "with motorcycle: " << fmc_id << " track size: " << fmc_track.size() << std::endl;
+            std::cout << "cu/ne: " << std::endl << current << " ## " << next << std::endl;
+            std::cout << "fcu/fne: " << std::endl << fcurrent << " ## " << fnext << std::endl;
+
+            // Xor
+            CGAL_assertion((current == fcurrent && next != fcurrent) ||
+                           (current != fcurrent && next == fcurrent));
+          }
+        }
+
+        while(++flit != fend)
+        {
+          fnext = flit->first;
+          Segment fs = gt.construct_segment_d_object()(fcurrent, fnext);
+
+          if(gt.do_intersect_d_object()(s, fs))
+          {
+            std::cout << "Intersection ¤~~~~~~~~~~~~~~~~~¤ " << std::endl;
+            std::cout << "motorcycle: " << mc_id << " track size: " << mc_track.size() << std::endl;
+            std::cout << "with motorcycle: " << fmc_id << " track size: " << fmc_track.size() << std::endl;
+            std::cout << "cu/ne: " << std::endl << current << " ## " << next << std::endl;
+            std::cout << "fcu/fne: " << std::endl << fcurrent << " ## " << fnext << std::endl;
+
+            // Xor
+            CGAL_assertion((current == fcurrent && current != fnext &&
+                            next != fcurrent && next != fnext) ||
+                           (current != fcurrent && current == fnext &&
+                            next != fcurrent && next != fnext) ||
+                           (current != fcurrent && current != fnext &&
+                            next == fcurrent && next != fnext) ||
+                           (current != fcurrent && current != fnext &&
+                            next != fcurrent && next == fnext));
+
+            // Any intersection that is not at the source must crash the motorcycle
+            // if the motorcycle reaches the collision point at a later time
+            // than the other motorcycle
+            typename Track::const_iterator flitb = flit;
+            if((next == fcurrent && lit->second >= (--flitb)->second) ||
+                (next == fnext && lit->second >= flit->second))
+            {
+              CGAL_assertion(lit == --(mc.track().end()));
+            }
+          }
+          fcurrent = fnext;
+        }
+      }
+      current = next;
+    }
+  }
 
   return true;
 }
 
-template<typename K, typename TriangleMesh>
+template<typename MotorcycleGraphTraits>
 void
-Motorcycle_graph<K, TriangleMesh>::
+Motorcycle_graph<MotorcycleGraphTraits>::
 output_all_dictionary_points() const
 {
   typename Dictionary::Dictionary_entry_container::const_iterator dit = points.all_entries().begin();
   typename Dictionary::Dictionary_entry_container::const_iterator end = points.all_entries().end();
 
-  std::ofstream os("dictionary_points.xyz");
+  std::stringstream oss;
+  oss << "results_" << gt.dimension << "/dictionary_points.xyz" << std::ends;
+  std::ofstream os(oss.str().c_str());
   for(; dit!=end; ++dit)
     os << dit->point() << " 0" << '\n';
 }
 
-template<typename K, typename TriangleMesh>
+template<typename MotorcycleGraphTraits>
 void
-Motorcycle_graph<K, TriangleMesh>::
+Motorcycle_graph<MotorcycleGraphTraits>::
 output_motorcycles_sources_and_destinations() const
 {
   // must be adapted to surfaces @todo
 
-  std::ofstream oss("out_motorcycles_sources.xyz");
-  std::ofstream osd("out_motorcycles_destinations.xyz");
+  std::stringstream oss_sour, oss_dest;
+  oss_sour << "results_" << gt.dimension << "/motorcycles_sources.xyz" << std::ends;
+  oss_dest << "results_" << gt.dimension << "/motorcycles_destinations.xyz" << std::ends;
+  std::ofstream oss(oss_sour.str().c_str());
+  std::ofstream osd(oss_dest.str().c_str());
   for(std::size_t i=0; i<motorcycles.size(); ++i)
   {
     oss << motorcycle(i).source()->point() << " 0" << '\n';

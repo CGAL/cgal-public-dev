@@ -4,27 +4,30 @@
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/Surface_mesh.h>
 
-#include <CGAL/Polyline_tracing/Motorcycle.h>
 #include <CGAL/Polyline_tracing/Motorcycle_graph.h>
+#include <CGAL/Polyline_tracing/Motorcycle_graph_traits_2.h>
 
 #include <CGAL/Origin.h>
 #include <CGAL/point_generators_2.h>
-#include <CGAL/random_polygon_2.h> // for 'copy_n_unique()'
 
 #include <fstream>
 #include <iostream>
 #include <vector>
 
+namespace PL = CGAL::Polyline_tracing;
+
 typedef CGAL::Exact_predicates_inexact_constructions_kernel      K;
+typedef CGAL::Surface_mesh<K::Point_2>                           PolygonMesh;
+typedef PL::Motorcycle_graph_traits_2<K, PolygonMesh>            MGT;
 
-typedef K::FT                                                    FT;
-typedef K::Point_2                                               Point_2;
-typedef K::Vector_2                                              Vector_2;
-typedef K::Triangle_2                                            Triangle_2;
+typedef MGT::FT                                                  FT;
+typedef MGT::Point_d                                             Point_2;
+typedef MGT::Vector_d                                            Vector_2;
+typedef MGT::Triangle_d                                          Triangle_2;
 
-typedef CGAL::Surface_mesh<Point_2>                              PolygonMesh;
-typedef CGAL::Polyline_tracing::Motorcycle<K, PolygonMesh>       Motorcycle;
-typedef CGAL::Polyline_tracing::Motorcycle_graph<K, PolygonMesh> Motorcycle_graph;
+typedef PL::Motorcycle_graph<MGT>                                Motorcycle_graph;
+typedef Motorcycle_graph::Motorcycle                             Motorcycle;
+
 
 namespace CP = CGAL::parameters;
 
@@ -190,11 +193,11 @@ void random_motorcycles_on_face(std::vector<Motorcycle>& motorcycles,
 
 int main()
 {
-  std::cout.precision(17);
-  std::cerr.precision(17);
+  std::cout.precision(18);
+  std::cerr.precision(18);
 
-#if 1//def CGAL_MOTORCYCLE_GRAPH_USE_FIXED_SEEDS
-  CGAL::Random rnd(1505826388);
+#ifdef CGAL_MOTORCYCLE_GRAPH_USE_FIXED_SEEDS
+  CGAL::Random rnd(1505985597);
 #else
   CGAL::Random rnd(CGAL::get_default_random());
 #endif
@@ -217,7 +220,7 @@ int main()
     std::vector<Motorcycle> motorcycles;
 //    motorcycle_club_1(motorcycles);
 //    motorcycle_club_2(motorcycles);
-    motorcycle_club_3(motorcycles);
+//    motorcycle_club_3(motorcycles);
 
 //    random_motorcycles_on_segment(motorcycles, rnd);
 //    random_motorcycles_in_triangle(motorcycles, rnd);
@@ -229,7 +232,6 @@ int main()
 
     Motorcycle_graph motorcycle_graph(pm);
     motorcycle_graph.trace_graph(motorcycles.begin(), motorcycles.end());
-    CGAL_postcondition(motorcycle_graph.is_valid());
 
 #ifdef CGAL_MOTORCYCLE_GRAPH_OUTPUT
     motorcycle_graph.output_all_dictionary_points();
@@ -238,8 +240,10 @@ int main()
 //    motorcycle_graph.motorcycle(i).output_intended_track();
       motorcycle_graph.motorcycle(i).output_track();
     }
-  }
 #endif
+
+    CGAL_postcondition(motorcycle_graph.is_valid());
+  }
 
   return 0;
 }

@@ -34,45 +34,50 @@ namespace CGAL {
 
 namespace Polyline_tracing {
 
-template<typename K, typename PolygonMesh>
+template<typename MotorcycleGraphTraits>
 class Motorcycle;
 
-template<typename K, typename PolygonMesh>
+template<typename MotorcycleGraphTraits>
 class Uniform_direction_tracer_visitor
   : public boost::static_visitor<
              boost::tuple<bool,
-                          typename Dictionary<K, PolygonMesh>::DEC_it,
-                          typename Dictionary<K, PolygonMesh>::DEC_it,
-                          typename K::FT> >
+                          typename Dictionary<MotorcycleGraphTraits>::DEC_it,
+                          typename Dictionary<MotorcycleGraphTraits>::DEC_it,
+                          typename MotorcycleGraphTraits::FT,
+                          bool> >
 {
 public:
-  typedef typename K::FT                                            FT;
-  typedef typename K::Point_2                                       Point;
-  typedef typename K::Segment_2                                     Segment;
-  typedef typename K::Vector_2                                      Vector;
-  typedef typename K::Ray_2                                         Ray;
+  typedef MotorcycleGraphTraits                               Geom_traits;
+  typedef typename Geom_traits::Triangle_mesh                 Triangle_mesh;
 
-  typedef Dictionary<K, PolygonMesh>                                Dictionary;
-  typedef typename Dictionary::DEC_it                               DEC_it;
-  typedef Dictionary_entry<K, PolygonMesh>                          Dictionary_entry;
-  typedef typename Dictionary_entry::Face_location                  Face_location;
+  typedef typename Geom_traits::FT                            FT;
+  typedef typename Geom_traits::Point_d                       Point;
+  typedef typename Geom_traits::Segment_d                     Segment;
+  typedef typename Geom_traits::Vector_d                      Vector;
+  typedef typename Geom_traits::Ray_d                         Ray;
 
-  typedef Motorcycle<K, PolygonMesh>                                Motorcycle;
+  typedef Dictionary<Geom_traits>                             Dictionary;
+  typedef Dictionary_entry<Geom_traits>                       Dictionary_entry;
+  typedef typename Dictionary::DEC_it                         DEC_it;
 
-  typedef typename boost::graph_traits<PolygonMesh>::vertex_descriptor    vertex_descriptor;
-  typedef typename boost::graph_traits<PolygonMesh>::halfedge_descriptor  halfedge_descriptor;
-  typedef typename boost::graph_traits<PolygonMesh>::face_descriptor      face_descriptor;
+  typedef typename Geom_traits::Face_location                 Face_location;
+
+  typedef Motorcycle<Geom_traits>                             Motorcycle;
+
+  typedef typename Geom_traits::vertex_descriptor             vertex_descriptor;
+  typedef typename Geom_traits::halfedge_descriptor           halfedge_descriptor;
+  typedef typename Geom_traits::face_descriptor               face_descriptor;
 
   // - bool: whether we have found a destination or not
   // - DEC_it: the source of the path (might be different from mc.position() if on the border)
   // - DEC_it: the destination
   // - FT: the time at the destination
   // - bool: is the destination final
-  typedef boost::tuple<bool, DEC_it, DEC_it, FT, bool>             result_type;
+  typedef boost::tuple<bool, DEC_it, DEC_it, FT, bool>        result_type;
 
   Uniform_direction_tracer_visitor(const Motorcycle* mc,
                                    Dictionary& points,
-                                   const PolygonMesh& mesh);
+                                   const Triangle_mesh& mesh);
 
   result_type compute_next_destination(const DEC_it start_point,
                                        const face_descriptor fd) const;
@@ -84,25 +89,25 @@ public:
 private:
   const Motorcycle* mc;
   Dictionary& points;
-  const PolygonMesh& mesh;
+  const Triangle_mesh& mesh;
 };
 
 // -----------------------------------------------------------------------------
 
-template<typename K, typename PolygonMesh>
-Uniform_direction_tracer_visitor<K, PolygonMesh>::
+template<typename MotorcycleGraphTraits>
+Uniform_direction_tracer_visitor<MotorcycleGraphTraits>::
 Uniform_direction_tracer_visitor(const Motorcycle* mc,
                                  Dictionary& points,
-                                 const PolygonMesh& mesh)
+                                 const Triangle_mesh& mesh)
   :
     mc(mc),
     points(points),
     mesh(mesh)
 { }
 
-template<typename K, typename PolygonMesh>
-typename Uniform_direction_tracer_visitor<K, PolygonMesh>::result_type
-Uniform_direction_tracer_visitor<K, PolygonMesh>::
+template<typename MotorcycleGraphTraits>
+typename Uniform_direction_tracer_visitor<MotorcycleGraphTraits>::result_type
+Uniform_direction_tracer_visitor<MotorcycleGraphTraits>::
 compute_next_destination(const DEC_it start_point,
                          const face_descriptor fd) const
 {
@@ -117,10 +122,10 @@ compute_next_destination(const DEC_it start_point,
   Ray r(start_point->point(), mc_dir);
 
   // @todo add named parameters ?
-  typedef typename property_map_selector<PolygonMesh, boost::vertex_point_t>::const_type VertexPointMap;
+  typedef typename property_map_selector<Triangle_mesh, boost::vertex_point_t>::const_type VertexPointMap;
   VertexPointMap vpmap = get_const_property_map(vertex_point, mesh);
 
-  typedef CGAL::Halfedge_around_face_circulator<PolygonMesh>  Halfedge_around_facet_circulator;
+  typedef CGAL::Halfedge_around_face_circulator<Triangle_mesh>  Halfedge_around_facet_circulator;
   Halfedge_around_facet_circulator hcir_begin(halfedge(fd, mesh), mesh);
   Halfedge_around_facet_circulator hcir = hcir_begin;
   do
@@ -130,12 +135,15 @@ compute_next_destination(const DEC_it start_point,
     Segment s(get(vpmap, source(hd, mesh)), get(vpmap, target(hd, mesh)));
     std::cout << "ray: " << r << " and segment: " << s << std::endl;
 
-    if(K().do_intersect_2_object()(r, s))
+    // @fixme default constructing traits
+    if(Geom_traits().do_intersect_2_object()(r, s))
     {
       // returns a point because we ignore the degenerate configuration of the ray
       // and segment being aligned (the next halfedge will give us an intersection
       // at a vertex descriptor, which is the point we need)
-      boost::optional<Point> res = internal::robust_intersection<K>(r, s);
+
+      // @fixme pass an instance of geom_traits
+      boost::optional<Point> res = internal::robust_intersection<Geom_traits>(r, s);
       if(!res)
         continue;
 
@@ -169,14 +177,14 @@ compute_next_destination(const DEC_it start_point,
     return boost::make_tuple(false, DEC_it(), DEC_it(), 0., false /*not final*/);
   }
 
-  Face_location loc = CGAL::Polygon_mesh_processing::locate<PolygonMesh>(
+  Face_location loc = CGAL::Polygon_mesh_processing::locate<Triangle_mesh>(
                         fd, farthest_destination, mesh);
 
   // A uniform tracer will trace until it reaches a boundary. It is important
   // that the location of this new destination reflects that it is on the boundary
   // (that is, one of its barycentric coordinates should be 0). To ensure that
   // it is the case, it is snapped to the closest halfedge (or even vertex).
-  CGAL::Polygon_mesh_processing::internal::snap_location_to_border<PolygonMesh>(loc);
+  CGAL::Polygon_mesh_processing::internal::snap_location_to_border<Triangle_mesh>(loc);
 
   std::pair<DEC_it, bool> destination = points.insert(loc, farthest_destination);
 
@@ -193,25 +201,26 @@ compute_next_destination(const DEC_it start_point,
                            time_at_farthest_destination, false /*not final*/);
 }
 
-template<typename K, typename PolygonMesh>
-typename Uniform_direction_tracer_visitor<K, PolygonMesh>::result_type
-Uniform_direction_tracer_visitor<K, PolygonMesh>::
+template<typename MotorcycleGraphTraits>
+typename Uniform_direction_tracer_visitor<MotorcycleGraphTraits>::result_type
+Uniform_direction_tracer_visitor<MotorcycleGraphTraits>::
 operator()(vertex_descriptor vd) const
 {
   // check which face we should move into, find it, compute.
 #ifdef CGAL_MOTORCYCLE_GRAPH_VERBOSE
-  std::cout << " Uniform tracing from a point on a vertex" << std::endl;
+  std::cout << " Uniform tracing from a point on a vertex";
+  std::cout << " with direction: " << *(mc->direction()) << std::endl;
 #endif
 
   halfedge_descriptor hd = halfedge(vd, mesh);
 
   // loop the incident faces of vd
-  typedef CGAL::Face_around_target_circulator<PolygonMesh> face_around_target_circulator;
+  typedef CGAL::Face_around_target_circulator<Triangle_mesh> face_around_target_circulator;
   face_around_target_circulator fatc(hd, mesh), done(fatc);
   do
   {
     face_descriptor fd = *fatc;
-    if(fd == boost::graph_traits<PolygonMesh>::null_face())
+    if(fd == boost::graph_traits<Triangle_mesh>::null_face())
     {
       ++fatc;
       continue;
@@ -219,9 +228,11 @@ operator()(vertex_descriptor vd) const
 
     std::cout << "at face: " << fd << std::endl;
 
-    // Compute the position of the motorcycle in the opposite face
-    Face_location loc_in_fd = CGAL::Polygon_mesh_processing::locate(
-                                mc->position()->location(), fd, mesh);
+    // Compute the position of the motorcycle in the current face
+    Face_location loc_in_fd = (mc->position()->location().first == fd) ?
+                                mc->position()->location() :
+                                CGAL::Polygon_mesh_processing::locate(
+                                  mc->position()->location(), fd, mesh);
 
     // Insert the new point and keep an iterator to it.
     std::pair<DEC_it, bool> source_in_fd = points.insert(loc_in_fd,
@@ -255,13 +266,14 @@ operator()(vertex_descriptor vd) const
                            mc->current_time(), true /*final destination*/);
 }
 
-template<typename K, typename PolygonMesh>
-typename Uniform_direction_tracer_visitor<K, PolygonMesh>::result_type
-Uniform_direction_tracer_visitor<K, PolygonMesh>::
+template<typename MotorcycleGraphTraits>
+typename Uniform_direction_tracer_visitor<MotorcycleGraphTraits>::result_type
+Uniform_direction_tracer_visitor<MotorcycleGraphTraits>::
 operator()(halfedge_descriptor hd) const
 {
 #ifdef CGAL_MOTORCYCLE_GRAPH_VERBOSE
-  std::cout << " Uniform tracing from a point on an edge" << std::endl;
+  std::cout << " Uniform tracing from a point on an edge";
+  std::cout << " with direction: " << *(mc->direction()) << std::endl;
 #endif
 
   // When we reach the border at the interior of a halfedge, the path continues
@@ -293,7 +305,7 @@ operator()(halfedge_descriptor hd) const
 
   // Compute the position of the motorcycle in the opposite face
   face_descriptor opp_fd = face(opp_hd, mesh);
-  CGAL_assertion(opp_fd != boost::graph_traits<PolygonMesh>::null_face());
+  CGAL_assertion(opp_fd != boost::graph_traits<Triangle_mesh>::null_face());
   Face_location opp_loc = CGAL::Polygon_mesh_processing::locate(mc->position()->location(),
                                                                 opp_fd, mesh);
 
@@ -307,13 +319,14 @@ operator()(halfedge_descriptor hd) const
   return opp_res;
 }
 
-template<typename K, typename PolygonMesh>
-typename Uniform_direction_tracer_visitor<K, PolygonMesh>::result_type
-Uniform_direction_tracer_visitor<K, PolygonMesh>::
+template<typename MotorcycleGraphTraits>
+typename Uniform_direction_tracer_visitor<MotorcycleGraphTraits>::result_type
+Uniform_direction_tracer_visitor<MotorcycleGraphTraits>::
 operator()(face_descriptor fd) const
 {
 #ifdef CGAL_MOTORCYCLE_GRAPH_VERBOSE
-  std::cout << " Uniform tracing from a point in a face" << std::endl;
+  std::cout << " Uniform tracing from a point in a face";
+  std::cout << " with direction: " << *(mc->direction()) << std::endl;
 #endif
 
   return compute_next_destination(mc->position(), fd);

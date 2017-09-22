@@ -26,15 +26,16 @@ namespace CGAL {
 
 namespace Polyline_tracing {
 
-template<typename K, typename PolygonMesh>
+template<typename MotorcycleGraphTraits>
 class Motorcycle_priority_queue_entry
 {
-  typedef Motorcycle_priority_queue_entry<K, PolygonMesh>  Self;
+  typedef Motorcycle_priority_queue_entry<MotorcycleGraphTraits>  Self;
 
 public:
-  typedef typename K::FT                                   FT;
+  typedef MotorcycleGraphTraits                                   Geom_traits;
 
-  typedef Motorcycle<K, PolygonMesh>                       Motorcycle;
+  typedef typename Geom_traits::FT                                FT;
+  typedef Motorcycle<Geom_traits>                                 Motorcycle;
 
   FT time_at_closest_target() const { return m->targets().begin()->second; }
   Motorcycle& motorcycle() { return *m; }
@@ -51,8 +52,8 @@ private:
   Motorcycle* m;
 };
 
-template<typename K, typename PolygonMesh>
-Motorcycle_priority_queue_entry<K, PolygonMesh>::
+template<typename MotorcycleGraphTraits>
+Motorcycle_priority_queue_entry<MotorcycleGraphTraits>::
 Motorcycle_priority_queue_entry(Motorcycle* mc)
   : m(mc)
 {

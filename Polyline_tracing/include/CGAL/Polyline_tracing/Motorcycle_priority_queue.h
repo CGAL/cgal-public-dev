@@ -29,18 +29,20 @@ namespace CGAL {
 
 namespace Polyline_tracing {
 
-template<typename K, typename PolygonMesh>
+template<typename MotorcycleGraphTraits>
 class Motorcycle_priority_queue
 {
-  typedef Motorcycle_priority_queue<K, PolygonMesh>         Self;
+  typedef Motorcycle_priority_queue<MotorcycleGraphTraits>  Self;
 
 public:
-  typedef Motorcycle<K, PolygonMesh>                        Motorcycle;
+  typedef MotorcycleGraphTraits                             Geom_traits;
+
+  typedef Motorcycle<Geom_traits>                           Motorcycle;
   typedef std::vector<Motorcycle*>                          Motorcycle_container;
 
   // Picked a fibonacci_heap for now. Would it be better to simply use
   // std::priority_queue and ignore+pop values that are meaningless ?
-  typedef Motorcycle_priority_queue_entry<K, PolygonMesh>   MPQ_entry;
+  typedef Motorcycle_priority_queue_entry<Geom_traits>      MPQ_entry;
   typedef boost::heap::fibonacci_heap<MPQ_entry>            MPQ;
   typedef typename MPQ::handle_type                         handle_type;
 
@@ -78,9 +80,9 @@ private:
   std::vector<handle_type> handles; // maps motorcycle_ids to their handle in the PQ
 };
 
-template<typename K, typename PolygonMesh>
+template<typename MotorcycleGraphTraits>
 void
-Motorcycle_priority_queue<K, PolygonMesh>::
+Motorcycle_priority_queue<MotorcycleGraphTraits>::
 initialize(const Motorcycle_container& motorcycles)
 {
   typename Motorcycle_container::const_iterator m_it = motorcycles.begin();

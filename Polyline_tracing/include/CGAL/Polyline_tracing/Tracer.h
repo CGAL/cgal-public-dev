@@ -28,42 +28,47 @@ namespace CGAL {
 
 namespace Polyline_tracing {
 
-template<typename K, typename PolygonMesh, typename Visitor>
+template<typename MotorcycleGraphTraits, typename Visitor>
 class Tracer
 {
 public:
-  typedef typename K::FT                                  FT;
+  typedef MotorcycleGraphTraits                               Geom_traits;
+  typedef typename Geom_traits::Triangle_mesh                 Triangle_mesh;
 
-  typedef Dictionary<K, PolygonMesh>                      Dictionary;
-  typedef typename Dictionary::DEC_it                     DEC_it;
-  typedef Dictionary_entry<K, PolygonMesh>                Dictionary_entry;
-  typedef typename Dictionary_entry::Face_location        Face_location;
+  typedef typename Geom_traits::FT                            FT;
 
-  typedef typename boost::graph_traits<PolygonMesh>::vertex_descriptor    vertex_descriptor;
-  typedef typename boost::graph_traits<PolygonMesh>::halfedge_descriptor  halfedge_descriptor;
-  typedef typename boost::graph_traits<PolygonMesh>::face_descriptor      face_descriptor;
+  typedef Dictionary<Geom_traits>                             Dictionary;
+  typedef typename Dictionary::DEC_it                         DEC_it;
+  typedef Dictionary_entry<Geom_traits>                       Dictionary_entry;
+
+  typedef typename Geom_traits::Face_location                 Face_location;
+
+  typedef typename Geom_traits::vertex_descriptor             vertex_descriptor;
+  typedef typename Geom_traits::halfedge_descriptor           halfedge_descriptor;
+  typedef typename Geom_traits::face_descriptor               face_descriptor;
 
   typedef boost::variant<vertex_descriptor,
                          halfedge_descriptor,
                          face_descriptor>                 descriptor_variant;
 
+  // templated by 'Motorcycle' to avoid a circular dependency
   template<typename Motorcycle>
   boost::tuple<bool, DEC_it, DEC_it, FT, bool> trace(const Motorcycle& mc,
                                                      Dictionary& points,
-                                                     const PolygonMesh& mesh);
+                                                     const Triangle_mesh& mesh);
 };
 
 // -----------------------------------------------------------------------------
 
-template<typename K, typename PolygonMesh, typename Visitor>
+template<typename MotorcycleGraphTraits, typename Visitor>
 template<typename Motorcycle>
 boost::tuple<bool, // successfuly computed a next path or not
-             typename Tracer<K, PolygonMesh, Visitor>::DEC_it, // next_source
-             typename Tracer<K, PolygonMesh, Visitor>::DEC_it, // next_destination
-             typename Tracer<K, PolygonMesh, Visitor>::FT, // time_at_next_destination
+             typename Tracer<MotorcycleGraphTraits, Visitor>::DEC_it, // next_source
+             typename Tracer<MotorcycleGraphTraits, Visitor>::DEC_it, // next_destination
+             typename Tracer<MotorcycleGraphTraits, Visitor>::FT, // time_at_next_destination
              bool> // whether the destination is final or not
-Tracer<K, PolygonMesh, Visitor>::
-trace(const Motorcycle& mc, Dictionary& points, const PolygonMesh& mesh)
+Tracer<MotorcycleGraphTraits, Visitor>::
+trace(const Motorcycle& mc, Dictionary& points, const Triangle_mesh& mesh)
 {
 #ifdef CGAL_MOTORCYCLE_GRAPH_VERBOSE
   std::cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*" << std::endl;
