@@ -7,7 +7,10 @@
 
 // CGAL includes.
 #include <CGAL/Constrained_Delaunay_triangulation_2.h>
+#include <CGAL/Triangulation_conformer_2.h>
+#include <CGAL/Triangulation_face_base_with_info_2.h>
 #include <CGAL/Constrained_triangulation_face_base_2.h>
+#include <CGAL/Triangulation_vertex_base_with_info_2.h>
 
 // New CGAL includes.
 #include <CGAL/Loader/Level_of_detail_loader_stub.h>
@@ -19,6 +22,7 @@
 #include <CGAL/Structuring_2/Level_of_detail_structuring_2.h>
 #include <CGAL/Visibility_2/Level_of_detail_visibility_2.h>
 #include <CGAL/Lod_0/Level_of_detail_reconstruction_0.h>
+#include <CGAL/Level_of_detail_enum.h>
 
 namespace CGAL {
 
@@ -27,42 +31,45 @@ namespace CGAL {
 		template<class KernelTraits, class OutputContainer>
 		struct Level_of_detail_traits {
 
-			typedef KernelTraits 							        Kernel;
-			typedef OutputContainer                                 Container;
-			typedef Level_of_detail_loader<Kernel, Container>       Loader;
-			typedef Level_of_detail_preprocessor<Kernel, Container> Preprocessor;
+			typedef KernelTraits 	Kernel;
+			typedef OutputContainer Container_3D;
 
-			typedef Level_of_detail_clutter<Kernel, Container> 			 Clutter_strategy;
-			typedef Level_of_detail_ground<Kernel, Container> 			 Ground_strategy;
-			typedef Level_of_detail_building_boundary<Kernel, Container> Building_boundary_strategy;
-			typedef Level_of_detail_building_interior<Kernel, Container> Building_interior_strategy;
+			typedef Level_of_detail_loader_stub<Kernel, Container_3D>  Loader;
+			typedef Level_of_detail_preprocessor<Kernel, Container_3D> Preprocessor;
+
+			typedef Level_of_detail_clutter<Kernel, Container_3D> 			Clutter_strategy;
+			typedef Level_of_detail_ground<Kernel, Container_3D> 			Ground_strategy;
+			typedef Level_of_detail_building_boundary<Kernel, Container_3D> Building_boundary_strategy;
+			typedef Level_of_detail_building_interior<Kernel, Container_3D> Building_interior_strategy;
 
 			typedef Level_of_detail_selector<Kernel, Clutter_strategy> 		     Clutter_selector;
 			typedef Level_of_detail_selector<Kernel, Ground_strategy> 		     Ground_selector;
 			typedef Level_of_detail_selector<Kernel, Building_boundary_strategy> Building_boundary_selector;
 			typedef Level_of_detail_selector<Kernel, Building_interior_strategy> Building_interior_selector;
 
-			typedef std::map<int, std::vector<int> >          						Planes;
-			typedef Level_of_detail_vertical_regularizer<Kernel, Container, Planes> Vertical_regularizer;
+			typedef std::map<int, std::vector<int> >          				   		   Planes;
+			typedef Level_of_detail_vertical_regularizer<Kernel, Container_3D, Planes> Vertical_regularizer;
 			
-			typedef std::map<int, typename Kernel::Point_2>           	   				   Projected;
-			typedef Level_of_detail_simple_projector<Kernel, Container, Planes, Projected> Ground_projector;
+			typedef std::map<int, typename Kernel::Point_2>           	    				  		 Projected_points;
+			typedef Level_of_detail_simple_projector<Kernel, Container_3D, Planes, Projected_points> Ground_projector;
 
-			typedef CGAL::Triangulation_vertex_base_2<Kernel> 		    VB;
-			typedef CGAL::Constrained_triangulation_face_base_2<Kernel> FB;
+			typedef CGAL::LOD::My_vertex_info<Structured_label>  My_vertex_info; 
+	    	typedef CGAL::LOD::My_face_info<typename Kernel::FT> My_face_info;
 
-			typedef CGAL::Triangulation_data_structure_2<VB, FB>            TDS;
+			typedef CGAL::Triangulation_vertex_base_with_info_2<My_vertex_info, Kernel> VB;
+	 	    typedef CGAL::Triangulation_face_base_with_info_2<My_face_info, Kernel>     FB_with_info;
+			typedef CGAL::Constrained_triangulation_face_base_2<Kernel, FB_with_info>   FB;
+
+			typedef CGAL::Triangulation_data_structure_2<VB, FB> 			TDS;
 			typedef CGAL::Constrained_Delaunay_triangulation_2<Kernel, TDS> CDT;
 
-			typedef Level_of_detail_structuring_2<Kernel>                                    Structuring_2;
-			typedef Level_of_detail_visibility_from_classification_2<Kernel, Container, CDT> Visibility_2;
+			typedef int Label; 
+			typedef std::vector< std::pair<typename Kernel::Point_2, Label> > Container_2D;
 
-			typedef std::map<int, typename Visibility_2::Visibility_label> Visibility_result;
+			typedef Level_of_detail_structuring_2<Kernel>                                    	Structuring_2;
+			typedef Level_of_detail_visibility_from_classification_2<Kernel, Container_2D, CDT> Visibility_2;
 			
-			typedef typename Structuring_2::Structured_label    Structured_label;
-			typedef std::vector<std::vector<Structured_label> > Structured_labels;
-			
-			typedef Level_of_detail_reconstruction_0<Kernel, CDT, Visibility_result, Structured_labels> Lod_0;
+			typedef Level_of_detail_reconstruction_0<Kernel, CDT> Lod_0;
 		};
 	}
 }

@@ -2,10 +2,10 @@
 #define CGAL_LEVEL_OF_DETAIL_BASE_H
 
 // STL includes.
-#include <string>
-#include <iostream>
 #include <map>
 #include <memory>
+#include <string>
+#include <iostream>
 
 // CGAL includes.
 #include <CGAL/linear_least_squares_fitting_2.h>
@@ -13,6 +13,7 @@
 #include <CGAL/Triangulation_conformer_2.h>
 
 // New CGAL includes.
+#include <CGAL/Level_of_detail_enum.h>
 #include <CGAL/Mylog/Mylog.h>
 
 namespace CGAL {
@@ -27,17 +28,19 @@ namespace CGAL {
 		public:
 			typedef LodTraits 				      Traits;
 			typedef typename Traits::Kernel       Kernel;
-			typedef typename Traits::Container    Container;
+
+			typedef typename Traits::Container_2D Container_2D;
+			typedef typename Traits::Container_3D Container_3D;
+
 			typedef typename Traits::Loader       Loader;
 			typedef typename Traits::Preprocessor Preprocessor;
 
-			typedef typename Kernel::FT FT;
-			
-			typedef typename Kernel::Plane_3   Plane;
-			typedef typename Kernel::Point_3   Point_3;
+			typedef typename Kernel::FT 	   FT;
 			typedef typename Kernel::Point_2   Point_2;
-			typedef typename Kernel::Line_2    Line;
-			typedef typename Kernel::Segment_2 Segment;
+			typedef typename Kernel::Point_3   Point_3;
+			typedef typename Kernel::Plane_3   Plane_3;
+			typedef typename Kernel::Line_2    Line_2;
+			typedef typename Kernel::Segment_2 Segment_2;
 
 			typedef typename Traits::Building_boundary_selector Building_boundary_selector; // Maybe use a factory here? 
 			typedef typename Traits::Building_interior_selector Building_interior_selector;
@@ -46,8 +49,10 @@ namespace CGAL {
 
 			typedef typename Traits::Vertical_regularizer Vertical_regularizer;
 			typedef typename Traits::Ground_projector     Ground_projector;
-			typedef typename Traits::Projected            Projected_points;
-			typedef typename Traits::Planes               Planes_mapping;
+			typedef typename Traits::Projected_points     Projected_points;
+			typedef typename Traits::Planes        		  Planes;
+			
+			typedef Planes Boundary_data;
 
 			typedef typename Traits::Structuring_2 Structuring_2;
 			typedef typename Traits::Visibility_2  Visibility_2;
@@ -55,19 +60,25 @@ namespace CGAL {
 			typedef typename Traits::CDT        CDT;
 			typedef typename CDT::Vertex_handle Vertex_handle;
 
+			// Extra.
+			using Plane_iterator = typename Planes::const_iterator;
+
+			using Index   = int;
+			using Indices = std::vector<Index>;
+
+
+
 			using Structured_points  = std::vector< std::vector<Point_2> >; 			  
-			using Structured_labels  = std::vector< std::vector<typename Structuring_2::Structured_label> >;  
+			using Structured_labels  = std::vector< std::vector<Structured_label> >;  
 			using Structured_anchors = std::vector< std::vector<std::vector<int> > >;
 			
 			// Custom types, should be changed later (or removed).
 			using Log      = CGAL::LOD::Mylog;
-			using Index    = int;
-			using Indices  = std::vector<Index>;
-			using Lines    = std::vector<Line>;
-			using Segments = std::vector<Segment>;
 
-			using Visibility_result = typename Traits::Visibility_result;
-			using Plane_iterator = typename Planes_mapping::const_iterator;
+			using Lines    = std::vector<Line_2>;
+			using Segments = std::vector<Segment_2>;
+
+			
 
 			typedef typename Traits::Lod_0 Lod_0;
 			typedef Segments 			   Lod_0_result;
@@ -80,155 +91,199 @@ namespace CGAL {
 			void create_lod_0(const std::string &, OutputIterator &&) {
 
 				// (START) Create log.
+				std::cout << "\nstarting ..." << std::endl;
 				Log log; log.out << "START EXECUTION\n\n\n";
 
 
 				// ----------------------------------
 
 				// (1) Read data.
-				Container input;
+				std::cout << "(1) loading" << std::endl;
+
+				Container_3D input;
 				m_loader.get_data(default_path + "data.ply", input);
 
-				log.out << "(1) Data are loaded. Number of points: " << input.number_of_points() << std::endl;
+				log.out << "(1) Data are loaded. Number of points: " << input.number_of_points() << std::endl << std::endl;
 
 
 				// ----------------------------------
 
 				// (2) Find a set of planes related to the points. Basically here we emulate RANSAC.
 				// For each plane we store indices of all points contained in this plane.
-				Planes_mapping all_planes;
-				auto number_of_planes = m_preprocessor.get_planes(input, all_planes);
+				std::cout << "(2) planes" << std::endl;
+
+				Planes all_planes;
+				const auto number_of_planes = m_preprocessor.get_planes(input, all_planes);
 				assert(number_of_planes >= 0);
 
-				log.out << "(2) Planes are found. Number of planes: " << number_of_planes << std::endl;
+				log.out << "(2) Planes are found. Number of planes: " << number_of_planes << std::endl << std::endl;
 
 
 				// ----------------------------------
 
 				// (3) Split data with respect to 4 different semantic labels.
+				std::cout << "(3) selection" << std::endl;
+
 				Indices building_boundary_idxs, building_interior_idxs, clutter_idxs, ground_idxs;
 
 				m_clutter_selector.select_elements(input, std::back_inserter(clutter_idxs));
 				m_ground_selector.select_elements( input, std::back_inserter(ground_idxs));
+
 				m_building_boundary_selector.select_elements(input, std::back_inserter(building_boundary_idxs));
 				m_building_interior_selector.select_elements(input, std::back_inserter(building_interior_idxs));
 
 				log.out << "(3) Clutter is found. Number of elements: " 			 << clutter_idxs.size() << std::endl;
 				log.out << "(.) Ground is found. Number of elements: " 			     << ground_idxs.size() << std::endl;
 				log.out << "(.) Building boundaries are found. Number of elements: " << building_boundary_idxs.size() << std::endl;
-				log.out << "(3) Building interiors are found. Number of elements: "  << building_interior_idxs.size() << std::endl;
+				log.out << "(3) Building interiors are found. Number of elements: "  << building_interior_idxs.size() << std::endl << std::endl;
 
 
 				// ----------------------------------
 
 				// (4) Create plane from the ground points.
-				Plane ground_plane = Plane(0.0, 0.0, 1.0, 0.0); // use XY plane instead
+				std::cout << "(4) ground plane fitting" << std::endl;
 
-				log.out << "(4) Ground plane is fitted: " << ground_plane << std::endl;
+				Plane_3 ground_plane = Plane_3(0.0, 0.0, 1.0, 0.0); // use XY plane instead
+
+				log.out << "(4) Ground plane is fitted: " << ground_plane << std::endl << std::endl;
 
 
 				// ----------------------------------
 
 				// (5) Map indices from all detected planes to the ones that are a part of the given facades.
-				Planes_mapping building_boundary_planes;
-				number_of_planes = m_preprocessor.get_planes(input, building_boundary_idxs, building_boundary_planes);
+				std::cout << "(5) get boundaries" << std::endl;
 
-				log.out << "(5) Planes for building's boundary are found. Number of planes: " << number_of_planes << std::endl;
+				Boundary_data building_boundaries, boundary_clutter;
+				const auto number_of_boundaries = m_preprocessor.get_boundaries(input, building_boundary_idxs, building_boundaries, boundary_clutter);
+
+				log.out << "(5) Planes for building's boundary are found. Number of planes: " << number_of_boundaries << std::endl;
+				log.out << "(5) Boundary clutter is found. Number of points: " << boundary_clutter.at(0).size() << std::endl << std::endl;
 
 
 				// ----------------------------------
 
 				// (6) Make all nearly vertical planes in the building's boundary exactly vertical.
-				const auto number_of_regularized_planes = m_vertical_regularizer.regularize(building_boundary_planes, input, ground_plane);
+				std::cout << "(6) regularizing" << std::endl;
+
+				const auto number_of_regularized_planes = m_vertical_regularizer.regularize(building_boundaries, input, ground_plane);
 
 				log.out << "(6) Building's nearly vertical planes are regularized. Number of regularized planes: " << number_of_regularized_planes <<
-				", number of rejected planes: " << number_of_planes - building_boundary_planes.size() << std::endl;
+				", number of rejected planes: " << number_of_boundaries - building_boundaries.size() << std::endl << std::endl;
 
-				// Log ply_saver; ply_saver.save_ply<Kernel, Container>(input, "regularized", true);
+				// Log ply_saver; ply_saver.save_ply<Kernel, Container_3D>(input, "regularized", true);
 
 
 				// ----------------------------------
 
 				// (7) Project all vertical building's boundaries onto the ground plane.
-				Projected_points building_boundary_projected;
-				const auto number_of_projected_points = m_ground_projector.project(input, building_boundary_planes, ground_plane, building_boundary_projected);
+				std::cout << "(7) projecting" << std::endl;
 
-				log.out << "(7) All building's boundary points are projected. Number of projected points: " << number_of_projected_points << std::endl;
+				Projected_points building_boundaries_projected; 
+				auto number_of_projected_points = m_ground_projector.project(input, building_boundaries, ground_plane, building_boundaries_projected);
+				log.out << "(7) Building's boundary planar points are projected. Number of projected points: " << number_of_projected_points << std::endl;
 
-				// Log points_exporter; points_exporter.export_projected_points_as_xyz("tmp/projected", building_boundary_projected);
+				Projected_points boundary_clutter_projected;
+				number_of_projected_points = m_ground_projector.project(input, boundary_clutter, ground_plane, boundary_clutter_projected);
+				log.out << "(7) Building's boundary clutter is projected. Number of projected points: " << number_of_projected_points << std::endl << std::endl;
+				
+				// Log points_exporter; points_exporter.export_projected_points_as_xyz("tmp/projected", building_boundaries_projected, default_path);
+
+
+				// (7') Clean projected points by removing all points that lie far away from the center cluster of points.
+				// FINISH IT - SEE INSIDE!
+				std::cout << "(7') cleaning" << std::endl;
+
+				auto number_of_removed_points = m_preprocessor.clean_projected_points(building_boundaries_projected, building_boundaries);
+				log.out << "(7') Building's boundaries are cleaned. Number of removed points: " << number_of_removed_points << std::endl;
+
+				number_of_removed_points = m_preprocessor.clean_projected_points(boundary_clutter_projected, boundary_clutter);
+				log.out << "(7') Building's boundary clutter is cleaned. Number of removed points: " << number_of_removed_points << std::endl << std::endl;
 
 
 				// ----------------------------------
 
 				// (8) Fit lines to the projected points in 2D.
-				Lines lines;
-				const auto number_of_fitted_lines = fit_lines_to_projected_points(building_boundary_projected, building_boundary_planes, lines);
+				std::cout << "(8) line fitting" << std::endl;
 
-				log.out << "(8) Lines are fitted. Number of fitted lines: " << number_of_fitted_lines << std::endl;
+				Lines lines;
+				const auto number_of_fitted_lines = fit_lines_to_projected_points(building_boundaries_projected, building_boundaries, lines);
+
+				log.out << "(8) Lines are fitted. Number of fitted lines: " << number_of_fitted_lines << std::endl << std::endl;
 
 
 				// ----------------------------------
 
 				// (9) Find segments from the given lines.
+				std::cout << "(9) creating segments" << std::endl;
+
 				Segments segments;
-				const auto number_of_segments = create_segments_from_lines(building_boundary_projected, building_boundary_planes, lines, segments);
+				const auto number_of_segments = create_segments_from_lines(building_boundaries_projected, building_boundaries, lines, segments);
 
-				log.out << "(9) Segments are created. Number of created segments: " << number_of_segments << std::endl;
+				log.out << "(9) Segments are created. Number of created segments: " << number_of_segments << std::endl << std::endl;
 
-				// Log segments_exporter_1; segments_exporter_1.export_segments_as_obj("tmp/segments", segments);
+				// Log segments_exporter; segments_exporter.export_segments_as_obj("tmp/segments", segments, default_path);
 
 
 				// ----------------------------------
 
 				// (10) Apply 2D structuring algorithm.
-				m_structuring = std::make_unique<Structuring_2>(building_boundary_projected, building_boundary_planes, lines);
+				// FINISH IT - SEE WHITEBOARD!
+				std::cout << "(10) 2d structuring" << std::endl;
+
+				m_structuring = std::make_unique<Structuring_2>(building_boundaries_projected, building_boundaries, lines);
+				
+				m_structuring->save_log(false);
 				m_structuring->set_epsilon(0.005);
+
 				const auto number_of_structured_segments = m_structuring->structure_point_set();
 
-				// m_structuring->add_clutter(building_boundary_clutter);
-
-				log.out << "(10) 2D Structuring is applied. Number of structured segments: " << number_of_structured_segments << std::endl;
-
-				// Log segments_exporter_2; segments_esxporter_2.export_segments_as_obj("tmp/structured_segments", structured_segments, default_path);
+				log.out << "(10) 2D Structuring is applied. Number of structured segments: " << number_of_structured_segments << std::endl << std::endl;
 
 
 				// ----------------------------------
 
 				// (11) Compute constrained Delaunay triangulation of the structured points.
+				// FINISH IT - REMOVE BOUNDING BOX VERTICES AND ADD CLUTTER! ADD FACE BASE WITH INFO AND VERTEX BASE WITH INFO!
+				std::cout << "(11) Creating CDT" << std::endl;
 
-				// const Structured_points &structured_points = m_structuring->get_segment_end_points();
-				const Structured_points &structured_points = m_structuring->get_structured_points();
+				const Structured_points &structured_points = m_structuring->get_segment_end_points();
+				// const Structured_points &structured_points = m_structuring->get_structured_points();
 
 				CDT cdt;
 				const auto number_of_faces = compute_cdt(structured_points, input, cdt);
 
-				log.out << "(11) Constrained Delaunay triangulation of the structured points is applied. Number of faces: " << number_of_faces << std::endl;				
+				log.out << "(11) Constrained Delaunay triangulation of the structured points is built. Number of faces: " << number_of_faces << std::endl;
 
 
 				// ----------------------------------
 
 				// (12) Compute visibility (0 - outside or 1 - inside) for each triangle in CDT above.
 				// Here we compute P_in and P_out predictions as in Section 3.2 of the Structuring paper.
+				/*
 				Visibility_result visibility;
 				const auto number_of_traversed_faces = m_visibility.compute(cdt, input, visibility);
 
 				log.out << "(12) Visibility is computed. Number of traversed faces: " << number_of_traversed_faces << std::endl;
 
-				Log eps_saver; eps_saver.save_visibility_eps(cdt, visibility, input, structured_points);
+				Log eps_saver; eps_saver.save_visibility_eps(cdt, visibility, input, structured_points); */
 
 
 				// ----------------------------------
 
 				// (13) Apply graph cut.
-				// Lod_0_result lod_0_result; Structured_labels str_labels;
-				// m_lod_0.reconstruct(cdt, visibility, str_labels, lod_0_result);
+				// FIX is_constrained() requirement - SEE INSIDE!
+				/*
+				Lod_0_result lod_0_result; Structured_labels str_labels;
+				m_lod_0.reconstruct(cdt, visibility, str_labels, lod_0_result);
 
-				// log.out << "(13) Final LOD 0 is reconstructed. This result is saved in lod_0.obj file." << std::endl;
+				log.out << "(13) Final LOD 0 is reconstructed. This result is saved in lod_0.obj file." << std::endl; */
 
 
 				// ----------------------------------
 
 				// (END) Save log.
+				std::cout << "... finishing\n" << std::endl;
+
 				log.out << "\n\nFINISH EXECUTION";
 				log.save("create_lod_0");
 			}
@@ -242,6 +297,7 @@ namespace CGAL {
 			Building_interior_selector m_building_interior_selector;
 			Clutter_selector           m_clutter_selector;
 			Ground_selector            m_ground_selector;
+
 			Vertical_regularizer	   m_vertical_regularizer;
 			Ground_projector 		   m_ground_projector;
 			Visibility_2 			   m_visibility;
@@ -251,7 +307,7 @@ namespace CGAL {
 			
 
 			// Not efficient since I need to copy all ground points.
-			void fit_ground_plane(const Container &input, const Indices &ground_idxs, Plane &ground_plane) const {
+			void fit_ground_plane(const Container_3D &input, const Indices &ground_idxs, Plane_3 &ground_plane) const {
 
 				std::vector<Point_3> tmp_ground(ground_idxs.size());
 				for (size_t i = 0; i < ground_idxs.size(); ++i) tmp_ground[i] = input.point(ground_idxs[i]);
@@ -260,7 +316,7 @@ namespace CGAL {
 			}
 
 			// Not efficient since I need to copy all ground points.
-			int fit_lines_to_projected_points(const Projected_points &points, const Planes_mapping &planes, Lines &lines) const {
+			int fit_lines_to_projected_points(const Projected_points &points, const Planes &planes, Lines &lines) const {
 
 				auto number_of_fitted_lines = 0;
 				std::vector<Point_2> tmp_points;
@@ -284,8 +340,8 @@ namespace CGAL {
 				return number_of_fitted_lines;
 			}
 
-			// May have precision problems: e.g. Line = (1 1.0e+24) -- (1 1.0e+24) or nan!
-			int create_segments_from_lines(const Projected_points &points, const Planes_mapping &planes, const Lines &lines, Segments &segments) const {
+			// It may have precision problems: e.g. Line = (1 1.0e+24) -- (1 1.0e+24) or nan!
+			int create_segments_from_lines(const Projected_points &points, const Planes &planes, const Lines &lines, Segments &segments) const {
 
 				segments.clear();
 				segments.resize(lines.size());
@@ -314,7 +370,7 @@ namespace CGAL {
 						miny = CGAL::min(miny, projected.y());
 						maxy = CGAL::max(maxy, projected.y());
 					}
-					segments[number_of_segments] = Segment(Point_2(minx, miny), Point_2(maxx, maxy));
+					segments[number_of_segments] = Segment_2(Point_2(minx, miny), Point_2(maxx, maxy));
 
 					auto v1 = lines[number_of_segments].to_vector();
 					auto v2 = segments[number_of_segments].to_vector();
@@ -326,7 +382,7 @@ namespace CGAL {
 						(v1.x() < 0.0 && v2.x() >= 0.0 && std::fabs(v1.x() - v2.x()) > eps) ||
 						(v2.x() < 0.0 && v1.x() >= 0.0 && std::fabs(v1.x() - v2.x()) > eps)) {
 
-						segments[number_of_segments] = Segment(Point_2(minx, maxy), Point_2(maxx, miny));
+						segments[number_of_segments] = Segment_2(Point_2(minx, maxy), Point_2(maxx, miny));
 					}
 				}
 
@@ -335,7 +391,7 @@ namespace CGAL {
 			}
 
 			// My custom function to handle precision problems when projecting points.
-			Point_2 project(const Line &line, const Point_2 &p) const {
+			Point_2 project(const Line_2 &line, const Point_2 &p) const {
 
 				const auto a = line.point(0);
 				const auto b = line.point(1);
@@ -346,7 +402,7 @@ namespace CGAL {
 				else return projected;
 			}
 
-			int compute_cdt(const Structured_points &points, const Container &input, CDT &cdt) const {
+			int compute_cdt(const Structured_points &points, const Container_3D &input, CDT &cdt) const {
 
 				Log log;
 
@@ -385,7 +441,7 @@ namespace CGAL {
 				return number_of_faces;
 			}
 
-			void compute_bounding_box(const Container &input, std::vector<Point_2> &bbox) const {
+			void compute_bounding_box(const Container_3D &input, std::vector<Point_2> &bbox) const {
 
 				bbox.clear();
 				bbox.resize(4);
@@ -395,7 +451,7 @@ namespace CGAL {
 				FT minx =  big_value, miny =  big_value;
 				FT maxx = -big_value, maxy = -big_value;
 
-				for (typename Container::const_iterator it = input.begin(); it != input.end(); ++it) {
+				for (typename Container_3D::const_iterator it = input.begin(); it != input.end(); ++it) {
 					const Point_3 &p = input.point(*it);
 
 					const FT x = p.x();

@@ -98,6 +98,17 @@ TEST_F(LOD_LoaderTestStub, VerifiesPointsAndNormalsOfRotatedBuilding) {
 	ASSERT_THAT(input.normal(26), Eq(exampleNormal));
 }
 
+TEST_F(LOD_LoaderTestStub, VerifiesBoundaryClutter) {
+
+	getBasicData(input);	
+
+	const auto examplePoint  = Point(-0.82190, -0.18465, 0.7);
+	const auto exampleNormal = Normal(0.082079, -0.093254, 0.00885544);
+
+	ASSERT_THAT(input.point(36) , Eq(examplePoint));
+	ASSERT_THAT(input.normal(37), Eq(exampleNormal));
+}
+
 TEST_F(LOD_LoaderTestStub, SavesLogWithBasicMockData) {
 
 	getBasicData(input);

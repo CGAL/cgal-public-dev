@@ -63,22 +63,24 @@ namespace CGAL {
 				input.insert(newPoint);
 			}
 
-			// For points see the geogebra file ggb/basic.ggb.
+			// For points see the geogebra file ggb/basic.ggb or ggb/basic_v2.ggb.
 			// Here I also use double as my primary scalar type.
 			void get_mock_basic(Container &input) const {
 				
 				input.clear();
 
-				Point  point; // , zero(0, 0, 0);
-				// Plane  plane, default_plane(zero, zero, zero);
+				// Point zero(0, 0, 0);
+				// Plane plane, default_plane(zero, zero, zero);
+
+				Point  point;
 				Normal normal;
 
 				input.add_normal_map();
 
-				const Color red   = {{255, 0, 0}};
-				const Color green = {{0, 255, 0}};
-				const Color blue  = {{0, 0, 255}};
-				const Color black = {{0, 0,   0}};
+				const Color red    = {{255, 0  , 0  }};
+				const Color green  = {{0  , 255, 0  }};
+				const Color blue   = {{0  , 0  , 255}};
+				const Color black  = {{0  , 0  , 0  }};
 
 				const Label ground     = 0;
 				const Label facade     = 1;
@@ -88,13 +90,13 @@ namespace CGAL {
 				bool success = false;
 				Color_map colors; Label_map labels; Types_map types; Index_map indices; // Plane_map planes;
 
-				boost::tie(colors, success)  = input. template add_property_map<Color>("color", black);
+				boost::tie(colors , success) = input. template add_property_map<Color>("color", black);
 				assert(success);
 
-				boost::tie(labels, success)  = input. template add_property_map<Label>("label", -1);
+				boost::tie(labels , success) = input. template add_property_map<Label>("label", -1);
 				assert(success);
 
-				boost::tie(types, success)   = input. template add_property_map<Types>("types", -1);
+				boost::tie(types  , success) = input. template add_property_map<Types>("types", -1);
 				assert(success);
 
 				boost::tie(indices, success) = input. template add_property_map<Index>("index", -1);
@@ -201,7 +203,14 @@ namespace CGAL {
 				point = Point(-0.64175, -0.29111, 0.88); it = input.insert(point, normal); colors[*it] = blue; labels[*it] = facade; types[*it] = 0; /* planes[*it] = plane; */ indices[*it] = 9;
 				point = Point(-1.0    , -0.4    , 0.23); it = input.insert(point, normal); colors[*it] = blue; labels[*it] = facade; types[*it] = 0; /* planes[*it] = plane; */ indices[*it] = 9;
 
-				// (Roof) This one is not horizontal :
+				// (Facade 4 as clutter) Since the Facace 4 above should be rejected, here I add its substitute as a boundary clutter.
+				normal = Normal(0.082079, -0.093254, 0.00885544);
+
+				point = Point(-0.66954, -0.06954, 0.5); it = input.insert(point, normal); colors[*it] = blue; labels[*it] = facade; types[*it] = -1; indices[*it] = -1;
+				point = Point(-0.82190, -0.18465, 0.7); it = input.insert(point, normal); colors[*it] = blue; labels[*it] = facade; types[*it] = -1; indices[*it] = -1;
+				point = Point(-0.90727, -0.30727, 0.2); it = input.insert(point, normal); colors[*it] = blue; labels[*it] = facade; types[*it] = -1; indices[*it] = -1;
+				
+				// (Roof) This one is not horizontal:
 				normal = Normal(0.053372, 0.052358, 0.120235); // plane = Plane(0.443898, 0.435464, 1.0, -0.683335);
 				  
 				point = Point(-0.79882, -0.37218, 1.2); it = input.insert(point, normal); colors[*it] = red; labels[*it] = roof; types[*it] = 0; /* planes[*it] = plane; */ indices[*it] = 10;

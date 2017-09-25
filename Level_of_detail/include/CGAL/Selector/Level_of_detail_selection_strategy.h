@@ -21,6 +21,8 @@ namespace CGAL {
 			virtual void set_input(const Container &input) { m_input = std::make_unique<Container>(input); }
 			virtual bool satisfies_condition(const int) const = 0;
 
+			virtual ~Level_of_detail_selection_strategy() { }
+
 		protected:
 			using Label     = int;
 			using Label_map = typename Container:: template Property_map<Label>;

@@ -258,7 +258,7 @@ namespace CGAL {
 
 			Edge_coherence find_edge_coherence(const CDT &cdt, const Edge_iterator &edge_handle) const {
 
-				if (!cdt.is_constrained(*edge_handle)) return Edge_coherence::INCOHERENT;
+				if (!cdt.is_constrained(*edge_handle)) return Edge_coherence::INCOHERENT; // CHANGE IT! TAKE CLUTTER INTO ACCOUNT: CL--LI MAY BE NOT CONSTRAINED!
 				
 				const Face_handle face = edge_handle->first;
 				const int vertex_index = edge_handle->second;

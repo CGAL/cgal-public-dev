@@ -10,6 +10,7 @@
 #include <CGAL/Simple_cartesian.h>
 
 // New CGAL includes.
+#include <CGAL/Level_of_detail_enum.h>
 #include <CGAL/Structuring_2/Level_of_detail_structuring_2.h>
 
 using namespace testing;
@@ -33,7 +34,7 @@ public:
 	using LodStructuring = CGAL::LOD::Level_of_detail_structuring_2<Traits>;
 
 	using Structured_points  = std::vector< std::vector<Point> >; 			  
-	using Structured_labels  = std::vector< std::vector<LodStructuring::Structured_label> >;  
+	using Structured_labels  = std::vector< std::vector<CGAL::LOD::Structured_label> >;  
 	using Structured_anchors = std::vector< std::vector<std::vector<int> > >;
 
 	std::unique_ptr<LodStructuring> lodStructuring;
@@ -88,6 +89,7 @@ public:
 		lines.push_back(Line(points[19], points[23]));
 
 		lodStructuring = std::make_unique<LodStructuring>(points, components, lines);
+		lodStructuring->save_log(true);
 	}
 
 	LOD_StructuringTest() {
@@ -104,29 +106,29 @@ TEST_F(LOD_StructuringTest, Compiles) {
 
 TEST_F(LOD_StructuringTest, VerifiesStructuredPoints) {
 
-	const Structured_points &points = lodStructuring->get_structured_points();
+	const Structured_points &str_points = lodStructuring->get_structured_points();
 
-	ASSERT_THAT(points[0][3], Eq(Point(0.125, 0.0)));
-	ASSERT_THAT(points[2][points[2].size() - 1], Eq(Point(-0.8, 0.8)));
+	ASSERT_THAT(str_points[0][0], Eq(Point(0.0, 0.0)));
+	ASSERT_THAT(str_points[2][str_points[2].size() - 1], Eq(Point(-0.8, 0.8)));
 }
 
 TEST_F(LOD_StructuringTest, VerifiesStructuredLabels) {
 
-	const Structured_labels &labels = lodStructuring->get_structured_labels();
+	const Structured_labels &str_labels = lodStructuring->get_structured_labels();
 
-	ASSERT_THAT(labels[4][5], Eq(LodStructuring::Structured_label::LINEAR));
-	ASSERT_THAT(labels[0][labels[0].size() - 1], Eq(LodStructuring::Structured_label::CORNER));
+	ASSERT_THAT(str_labels[0][0], Eq(CGAL::LOD::Structured_label::CORNER));
+	ASSERT_THAT(str_labels[0][str_labels[0].size() - 1], Eq(CGAL::LOD::Structured_label::LINEAR));
 }
 
 TEST_F(LOD_StructuringTest, VerifiesStructuredAnchors) {
 
-	const Structured_anchors &anchors = lodStructuring->get_structured_anchors();
+	const Structured_anchors &str_anchors = lodStructuring->get_structured_anchors();
 
-	ASSERT_THAT(anchors[3][2].size(), Eq(static_cast<size_t>(1)));
-	ASSERT_THAT(anchors[3][2][0], Eq(3));
+	ASSERT_THAT(str_anchors[3][2].size(), Eq(static_cast<size_t>(1)));
+	ASSERT_THAT(str_anchors[3][2][0], Eq(3));
 
-	ASSERT_THAT(anchors[2][anchors[2].size() - 1].size(), Eq(static_cast<size_t>(2)));
+	ASSERT_THAT(str_anchors[2][str_anchors[2].size() - 1].size(), Eq(static_cast<size_t>(2)));
 
-	ASSERT_THAT(anchors[2][anchors[2].size() - 1][0], Eq(2));
-	ASSERT_THAT(anchors[2][anchors[2].size() - 1][1], Eq(3));
+	ASSERT_THAT(str_anchors[2][str_anchors[2].size() - 1][0], Eq(2));
+	ASSERT_THAT(str_anchors[2][str_anchors[2].size() - 1][1], Eq(3));
 }

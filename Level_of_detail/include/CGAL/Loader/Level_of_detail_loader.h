@@ -86,6 +86,8 @@ namespace CGAL {
             	loader.close();
 			}
 
+			virtual ~Level_of_detail_loader() { }
+
 		private:
 			Traits m_traits;
 
@@ -94,13 +96,13 @@ namespace CGAL {
 				bool success = false;
 				input.add_normal_map();
 
-				boost::tie(colors, success)  = input. template add_property_map<Color>("color", {{0, 0, 0}});
+				boost::tie(colors , success) = input. template add_property_map<Color>("color", {{0, 0, 0}});
 				assert(success);
 
-				boost::tie(labels, success)  = input. template add_property_map<Label>("label", -1);
+				boost::tie(labels , success) = input. template add_property_map<Label>("label", -1);
 				assert(success);
 
-				boost::tie(types, success)   = input. template add_property_map<Types>("types", -1);
+				boost::tie(types  , success) = input. template add_property_map<Types>("types", -1);
 				assert(success);
 
 				boost::tie(indices, success) = input. template add_property_map<Index>("index", -1);

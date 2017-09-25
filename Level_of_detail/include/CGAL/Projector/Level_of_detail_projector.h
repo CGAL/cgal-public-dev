@@ -14,6 +14,7 @@ namespace CGAL {
 
 		public:
 			virtual int project(const InputContainer &, const PlanesMapping &, const typename KernelTraits::Plane_3 &, OutputContainer &) = 0;
+			virtual ~Level_of_detail_projector() { }
 		};
 
 		template<class KernelTraits, class InputContainer, class PlanesMapping, class OutputContainer>

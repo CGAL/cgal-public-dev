@@ -24,6 +24,7 @@ namespace CGAL {
 
 		public:
 			virtual int regularize(Planes&, InputContainer &, typename KernelTraits::Plane_3 &) = 0;
+			virtual ~Level_of_detail_regularizer() { }
 		};
 
 		template<class KernelTraits, class InputContainer, class PlanesContainer>

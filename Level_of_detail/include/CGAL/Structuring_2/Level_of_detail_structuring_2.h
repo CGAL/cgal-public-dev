@@ -91,9 +91,13 @@ namespace CGAL {
 			typedef typename Traits::Intersect_2 Intersect;
 
 			Level_of_detail_structuring_2(const Points &points, const Connected_components &components, const Lines &lines) :
-			m_points(points), m_cc(components), m_lines(lines), m_tol(FT(1) / FT(10000)), m_big_value(FT(1000000)), m_eps_set(false) { 
+			m_points(points), m_cc(components), m_lines(lines), m_tol(FT(1) / FT(10000)), m_big_value(FT(1000000)), m_eps_set(false), m_save_log(true) { 
 
 				assert(components.size() == lines.size());
+			}
+
+			void save_log(const bool new_state) {
+				m_save_log = new_state;
 			}
 
 			// This is a 2D version of the algorithm in the paper:
@@ -101,7 +105,8 @@ namespace CGAL {
 			int structure_point_set() {
 
 				// (START) Create log.
-				Log log; log.out << "START EXECUTION\n\n\n";
+				Log log;
+				if (m_save_log) log.out << "START EXECUTION\n\n\n";
 				
 				// -----------------------------------------
 
@@ -111,13 +116,13 @@ namespace CGAL {
 				// (1) Project all points onto the given lines.
 				project();
 
-				log.out << "(1) All points are projected onto the given lines. The results are saved in tmp/projected" << std::endl;
+				if (m_save_log) log.out << "(1) All points are projected onto the given lines. The results are saved in tmp/projected" << std::endl;
 
 
 				// (2) Compute min, average, and max distances from all points to the given lines.
 				compute_distances();
 
-				log.out << "(2) Min, avg, and max distances for each set of points are computed. The results are saved in tmp/distances" << std::endl;
+				if (m_save_log) log.out << "(2) Min, avg, and max distances for each set of points are computed. The results are saved in tmp/distances" << std::endl;
 
 
 				// (3) Find epsilon for each set of points.
@@ -125,9 +130,9 @@ namespace CGAL {
 				if (!m_eps_set) {
 					
 					compute_epsilon_values();
-					log.out << "(3) Epsilon values are computed for each component. The results are saved in tmp/epsilons" << std::endl;
+					if (m_save_log) log.out << "(3) Epsilon values are computed for each component. The results are saved in tmp/epsilons" << std::endl;
 
-				} else log.out << "(3) Epsilon values are set manually to one unique value." << std::endl;
+				} else if (m_save_log) log.out << "(3) Epsilon values are set manually to one unique value." << std::endl;
 
 
 				// (4) Find one unique segment for each set of points.
@@ -135,44 +140,44 @@ namespace CGAL {
 
 				number_of_structured_segments = m_segments.size();
 
-				log.out << "(4) Segments are extracted for each set of points. The results are saved in tmp/segments" << std::endl;
+				if (m_save_log) log.out << "(4) Segments are extracted for each set of points. The results are saved in tmp/segments" << std::endl;
 
 
 				// (5) Find side length Lp used in the occupancy grid for each segment.
 				find_lp();
 
-				log.out << "(5) Side lengths are found for each occupancy grid. The results are saved in tmp/lp" << std::endl;
+				if (m_save_log) log.out << "(5) Side lengths are found for each occupancy grid. The results are saved in tmp/lp" << std::endl;
 
 
 				// (6) Fill in the occupancy grid for each segment.
 				fill_in_occupancy_grid(Occupancy_method::ALL);
 
-				log.out << "(6) The occupancy grid is projected and filled. The results are saved in tmp/occupancy" << std::endl;
+				if (m_save_log) log.out << "(6) The occupancy grid is projected and filled. The results are saved in tmp/occupancy" << std::endl;
 
 
 				// (7) Create structured linear points using the occupancy grid above.
 				create_linear_points();
 
-				log.out << "(7) Linear points are created for each segment. The results are saved in tmp/linear_points" << std::endl;
+				if (m_save_log) log.out << "(7) Linear points are created for each segment. The results are saved in tmp/linear_points" << std::endl;
 
 
 				// (8) Create adjacency graph between segments.
 				// Here I use structured segments, maybe better to use raw/unstructured point set?
 				create_adjacency_graph(Adjacency_method::STRUCTURED);
 
-				log.out << "(8) Adjacency graph between segments is created. The results are saved in tmp/adjacency" << std::endl;
+				if (m_save_log) log.out << "(8) Adjacency graph between segments is created. The results are saved in tmp/adjacency" << std::endl;
 
 
 				// (9) Create an undirected graph by removing all repeating adjacencies.
 				create_undirected_graph();
 
-				log.out << "(9) An undirected graph is created. The results are saved in tmp/undirected_graph" << std::endl;
+				if (m_save_log) log.out << "(9) An undirected graph is created. The results are saved in tmp/undirected_graph" << std::endl;
 
 
 				// (10) Create corners using the undirected graph above.
 				create_corners();
 
-				log.out << "(10) Unique corner points between all adjacent segments are inserted. The final results are saved in tmp/structured_points" << std::endl;
+				if (m_save_log) log.out << "(10) Unique corner points between all adjacent segments are inserted. The final results are saved in tmp/structured_points" << std::endl;
 
 
 				// (11) Extra: Create segment end points.
@@ -182,8 +187,10 @@ namespace CGAL {
 				// -------------------------------
 
 				// (END) Save log.
-				log.out << "\n\nFINISH EXECUTION";
-				log.save("structuring_2");
+				if (m_save_log) {
+					log.out << "\n\nFINISH EXECUTION";
+					log.save("structuring_2");
+				}
 
 				return number_of_structured_segments;
 			}
@@ -234,7 +241,9 @@ namespace CGAL {
 			const FT m_big_value;
 
 			std::vector<size_t> m_num_linear, m_num_corners;
+			
 			bool m_eps_set;
+			bool m_save_log;
 
 			std::vector<std::unordered_set<int> > m_adjacency;
 			std::unordered_set<Int_pair, My_pair_hasher, My_pair_equal> m_undirected_graph;
@@ -266,11 +275,11 @@ namespace CGAL {
 						assert(!std::isnan(m_projected.at(index).x()) && !std::isnan(m_projected.at(index).y()));
 						assert(!std::isinf(m_projected.at(index).x()) && !std::isinf(m_projected.at(index).y()));
 
-						log.out << "index: " << index << ", " << m_projected.at(index) << std::endl;
+						if (m_save_log) log.out << "index: " << index << ", " << m_projected.at(index) << std::endl;
 					}
-					log.out << std::endl;
+					if (m_save_log) log.out << std::endl;
 				}
-				log.save("tmp/projected");
+				if (m_save_log) log.save("tmp/projected");
 			}
 
 			void clear_projected() {
@@ -334,11 +343,11 @@ namespace CGAL {
 					assert(m_max_dist[number_of_components] <  m_big_value);
 					assert(m_min_dist[number_of_components] > -m_big_value);
 
-					log.out << "  min: " << m_min_dist[number_of_components] << 
-					           "; avg: " << m_avg_dist[number_of_components] <<
-					           "; max: " << m_max_dist[number_of_components] << std::endl;
+					if (m_save_log) log.out << "  min: " << m_min_dist[number_of_components] << 
+					           				   "; avg: " << m_avg_dist[number_of_components] <<
+					           				   "; max: " << m_max_dist[number_of_components] << std::endl;
 				}
-				log.save("tmp/distances");
+				if (m_save_log) log.save("tmp/distances");
 			}
 
 			void clear_distances() {
@@ -366,10 +375,10 @@ namespace CGAL {
 					if (m_max_dist[i] < m_tol) m_eps[i] = default_eps;
 					else m_eps[i] = m_max_dist[i];
 
-					log.out << "eps: " << m_eps[i] << std::endl;
+					if (m_save_log) log.out << "eps: " << m_eps[i] << std::endl;
 				}
 
-				log.save("tmp/epsilons");
+				if (m_save_log) log.save("tmp/epsilons");
 				m_eps_set = true;
 			}
 
@@ -424,14 +433,14 @@ namespace CGAL {
 
 						m_segments[number_of_segments] = Segment(Point(minx, maxy), Point(maxx, miny));
 
-						log.out << "seg: " << m_segments[number_of_segments].source() << " ----- " << m_segments[number_of_segments].target() << std::endl;
+						if (m_save_log) log.out << "seg: " << m_segments[number_of_segments].source() << " ----- " << m_segments[number_of_segments].target() << std::endl;
 						continue;
 					}
-					log.out << "seg: " << m_segments[number_of_segments].source() << " ----- " << m_segments[number_of_segments].target() << std::endl;
+					if (m_save_log) log.out << "seg: " << m_segments[number_of_segments].source() << " ----- " << m_segments[number_of_segments].target() << std::endl;
 				}
 
 				assert(number_of_segments == m_lines.size());
-				log.save("tmp/segments");
+				if (m_save_log) log.save("tmp/segments");
 			}
 
 			void clear_segments(){
@@ -475,9 +484,9 @@ namespace CGAL {
 					assert(m_lp[i] < upper_bound);
 					assert(std::fabs(seg_length - m_lp[i] * m_times[i]) < m_tol);
 
-					log.out << "lp: " << m_lp[i] << "; times: " << m_times[i] << std::endl;
+					if (m_save_log) log.out << "lp: " << m_lp[i] << "; times: " << m_times[i] << std::endl;
 				}
-				log.save("tmp/lp");
+				if (m_save_log) log.save("tmp/lp");
 			}
 
 			void clear_lp() {
@@ -512,13 +521,15 @@ namespace CGAL {
 
 				// Save log. Can be removed in principle.
 				Log log;
-				for (size_t i = 0; i < m_times.size(); ++i) {
-					for (size_t j = 0; j < static_cast<size_t>(m_times[i]); ++j) {
-						log.out << m_occupancy[i][j] << " ";	
+				if (m_save_log) {
+					for (size_t i = 0; i < m_times.size(); ++i) {
+						for (size_t j = 0; j < static_cast<size_t>(m_times[i]); ++j) {
+							log.out << m_occupancy[i][j] << " ";	
+						}
+						log.out << std::endl;
 					}
-					log.out << std::endl;
+					log.save("tmp/occupancy");
 				}
-				log.save("tmp/occupancy");
 			}
 
 			void clear_occupancy_grid() {
@@ -610,11 +621,11 @@ namespace CGAL {
 							std::vector<int> anchor(1, i);
 							m_str_anchors[i].push_back(anchor);
 
-							log.out << new_point << " " << 0 << std::endl;
+							if (m_save_log) log.out << new_point << " " << 0 << std::endl;
 						}
 					}
 				}
-				log.save("tmp/linear_points");
+				if (m_save_log) log.save("tmp/linear_points");
 			}
 
 			void clear_main_data() {
@@ -673,14 +684,16 @@ namespace CGAL {
 				}
 
 				Log log;
-				for (size_t i = 0; i < m_adjacency.size(); ++i) {
+				if (m_save_log) {
+					for (size_t i = 0; i < m_adjacency.size(); ++i) {
 
-					log.out << "Segment " << i << " adjacent to segments: ";
-					for (const int index: m_adjacency[i]) log.out << index << " ";
-					log.out << std::endl;
+						log.out << "Segment " << i << " adjacent to segments: ";
+						for (const int index: m_adjacency[i]) log.out << index << " ";
+						log.out << std::endl;
+					}
+
+					log.save("tmp/adjacency");
 				}
-
-				log.save("tmp/adjacency");
 			}
 
 			void create_structured_adjacency() {
@@ -759,10 +772,12 @@ namespace CGAL {
 				// Log function. Can be removed.
 				Log log;
 
-				for (PP_iterator it = m_undirected_graph.begin(); it != m_undirected_graph.end(); ++it)
-					log.out << (*it).first << " -- " << (*it).second << std::endl;
+				if (m_save_log) {
+					for (PP_iterator it = m_undirected_graph.begin(); it != m_undirected_graph.end(); ++it)
+						log.out << (*it).first << " -- " << (*it).second << std::endl;
 
-				log.save("tmp/undirected_graph");
+					log.save("tmp/undirected_graph");
+				}
 			}
 
 			void clear_undirected_graph() {
@@ -791,11 +806,13 @@ namespace CGAL {
 				// Log function. Can be removed.
 				Log log;
 
-				for (size_t i = 0; i < m_cc.size(); ++i) 
-					for (size_t j = 0; j < m_str_points[i].size(); ++j)
-						log.out << m_str_points[i][j] << " " << 0 << std::endl;
+				// if (m_save_log) {
+					for (size_t i = 0; i < m_cc.size(); ++i) 
+						for (size_t j = 0; j < m_str_points[i].size(); ++j)
+							log.out << m_str_points[i][j] << " " << 0 << std::endl;
 
-				log.save("tmp/structured_points");
+					log.save("tmp/structured_points");
+				// }
 			}
 
 			Point intersect_lines(const int i, const int j) {
@@ -881,11 +898,11 @@ namespace CGAL {
 					m_segment_end_points[i][0] = m_str_points[i][0];
 					m_segment_end_points[i][1] = m_str_points[i][m_str_points[i].size() - 1];
 					
-					log.out << m_segment_end_points[i][0] << " " << 0 << std::endl;
-					log.out << m_segment_end_points[i][1] << " " << 0 << std::endl;
+					if (m_save_log) log.out << m_segment_end_points[i][0] << " " << 0 << std::endl;
+					if (m_save_log) log.out << m_segment_end_points[i][1] << " " << 0 << std::endl;
 				}
 
-				log.save("tmp/segment_end_points");
+				if (m_save_log) log.save("tmp/segment_end_points");
 			}
 		};
 	}
