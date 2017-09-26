@@ -110,7 +110,16 @@ namespace CGAL {
 			}
 
 			void set_number_of_neighbours(const size_t new_value) {
+				assert(!"This value is valid only for barycentric method, which currently does not work!");
 				m_k = new_value;
+			}
+
+			void set_approach(const Visibility_approach new_approach) {
+				m_approach = new_approach;
+			}
+
+			void set_method(const Visibility_method new_method) {
+				m_method = new_method;
 			}
 
 			int compute(const Container &input, CDT &cdt) const {
@@ -155,10 +164,11 @@ namespace CGAL {
 			}
 
 		private:
-			const Visibility_approach m_approach;
-			const Visibility_method   m_method;
-			const Visibility_sampler  m_sampler;
-			const Radius_type 		  m_radius_type;
+			Visibility_approach m_approach;
+			Visibility_method   m_method;
+
+			const Visibility_sampler m_sampler;
+			const Radius_type 		 m_radius_type;
 
 			size_t m_num_samples;
 			size_t m_k; 		  // change it to autodetection later!
@@ -183,8 +193,11 @@ namespace CGAL {
 						continue;
 					}
 
-					assert(locate_type != CDT::OUTSIDE_CONVEX_HULL);
-					assert(locate_type != CDT::OUTSIDE_AFFINE_HULL);
+					// assert(locate_type != CDT::OUTSIDE_CONVEX_HULL);
+					// assert(locate_type != CDT::OUTSIDE_AFFINE_HULL);
+
+					if (locate_type == CDT::OUTSIDE_CONVEX_HULL ||
+						locate_type == CDT::OUTSIDE_AFFINE_HULL) continue;
 
 					assert(locate_type == CDT::FACE);
 

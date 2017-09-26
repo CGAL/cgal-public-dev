@@ -257,8 +257,6 @@ namespace CGAL {
 			}
 
 			Edge_coherence find_edge_coherence(const CDT &cdt, const Edge_iterator &edge_handle) const {
-
-				if (!cdt.is_constrained(*edge_handle)) return Edge_coherence::INCOHERENT; // CHANGE IT! TAKE CLUTTER INTO ACCOUNT: CL--LI MAY BE NOT CONSTRAINED!
 				
 				const Face_handle face = edge_handle->first;
 				const int vertex_index = edge_handle->second;
@@ -266,12 +264,42 @@ namespace CGAL {
 				const Structured_label label_source = face->vertex(cdt.ccw(vertex_index))->info().label;
 				const Structured_label label_target = face->vertex( cdt.cw(vertex_index))->info().label;
 
-				return find_coherence_in_dictionary(label_source, label_target);
+				Edge_coherence edge_coherence = find_coherence_in_dictionary(label_source, label_target);
+				if (edge_coherence == Edge_coherence::STRUCTURE_COHERENT && !cdt.is_constrained(*edge_handle)) edge_coherence = Edge_coherence::INCOHERENT;
+
+				return edge_coherence;
 			}
 
-			Edge_coherence find_coherence_in_dictionary(const Structured_label label_source, const Structured_label label_target) const {
+			Edge_coherence find_coherence_in_dictionary(Structured_label label_source, Structured_label label_target) const {
+
+				if (!is_valid_label(label_source)) set_invalid_label(label_source); 
+				if (!is_valid_label(label_target)) set_invalid_label(label_target);
 
 				return m_coherence_dict.at(std::make_pair(label_source, label_target));
+			}
+
+			bool is_valid_label(const Structured_label label) const {
+
+				switch (label) {
+
+					case Structured_label::LINEAR:
+						return true;
+
+					case Structured_label::CORNER:
+						return true;
+
+					case Structured_label::CLUTTER:
+						return true;
+
+					default:
+						return false;
+				}
+				return false;
+			}
+
+			void set_invalid_label(Structured_label &label) const {
+
+				label = Structured_label::CLUTTER; // maybe I can be smarter than CLUTTER here and below!
 			}
 
 			FT compute_edge_quality(const Edge_coherence edge_coherence, const CDT &cdt, const Edge_iterator &edge_handle) const {
@@ -293,6 +321,7 @@ namespace CGAL {
 				}
 			}
 
+			// Is it ok if cos_in and/or cos_out are negative?
 			FT compute_free_form_quality(const CDT &cdt, const Edge_iterator &edge_handle) const {
 
 				const auto mirror_edge = cdt.mirror_edge(*edge_handle);
@@ -321,13 +350,23 @@ namespace CGAL {
 				const FT cos_in  = compute_cos_value(a, b, c, edge, false);
 				const FT cos_out = compute_cos_value(a, d, b, edge, true);
 
-				// std::cout << cos_in << " " << cos_out << std::endl;
+				/*
+				std::cout << a << std::endl;
+				std::cout << b << std::endl;
+				std::cout << c << std::endl;
+				std::cout << d << std::endl;
 
-				assert(cos_in  >= FT(0) && cos_in  <= FT(1));
-				assert(cos_out >= FT(0) && cos_out <= FT(1));
+				std::cout << cos_in << " " << cos_out << std::endl; */
+
+				assert(CGAL::abs(cos_in)  >= FT(0) && CGAL::abs(cos_in)  <= FT(1));
+				assert(CGAL::abs(cos_out) >= FT(0) && CGAL::abs(cos_out) <= FT(1));
 
 				const FT min_cos = CGAL::min(cos_in, cos_out);
-				return m_alpha - min_cos;
+				const FT result = m_alpha - min_cos;
+
+				assert(result >= FT(0));
+
+				return result;
 			}
 
 			FT compute_cos_value(const Point_2 &a, const Point_2 &b, const Point_2 &c, const Edge &edge, const bool rotate) const {

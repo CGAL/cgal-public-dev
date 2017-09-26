@@ -170,5 +170,7 @@ TEST_F(LOD_PreprocessorTest, RemovesTwoOutliers) {
 	const auto number_of_outliers = lodPreprocessor.clean_projected_points(projected_boundaries, boundaries);
 
 	ASSERT_THAT(number_of_outliers, Eq(2));
-	ASSERT_THAT(static_cast<int>(boundaries.at(0).size()), Eq(1));
+	
+	ASSERT_THAT(static_cast<int>(boundaries.at(0).size()), Eq(3));
+	ASSERT_THAT(static_cast<int>(boundaries.at(1).size()), Eq(2));
 }

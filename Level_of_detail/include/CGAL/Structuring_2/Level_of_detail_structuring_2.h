@@ -91,13 +91,18 @@ namespace CGAL {
 			typedef typename Traits::Intersect_2 Intersect;
 
 			Level_of_detail_structuring_2(const Points &points, const Connected_components &components, const Lines &lines) :
-			m_points(points), m_cc(components), m_lines(lines), m_tol(FT(1) / FT(10000)), m_big_value(FT(1000000)), m_eps_set(false), m_save_log(true) { 
+			m_points(points), m_cc(components), m_lines(lines), m_tol(FT(1) / FT(10000)), m_big_value(FT(1000000)), 
+			m_eps_set(false), m_save_log(true), m_resample(true) { 
 
 				assert(components.size() == lines.size());
 			}
 
 			void save_log(const bool new_state) {
 				m_save_log = new_state;
+			}
+
+			void resample(const bool new_state) {
+				m_resample = new_state;
 			}
 
 			// This is a 2D version of the algorithm in the paper:
@@ -180,9 +185,18 @@ namespace CGAL {
 				if (m_save_log) log.out << "(10) Unique corner points between all adjacent segments are inserted. The final results are saved in tmp/structured_points" << std::endl;
 
 
-				// (11) Extra: Create segment end points.
-				create_segment_end_points();
+				// (11) Extra: Create segment end points and labels.
+				create_segment_end_points_and_labels();
 
+				if (m_save_log) log.out << "(11) Segment end points and labels are found." << std::endl;
+
+
+				// (12) Resample all points.
+				if (m_resample) {
+
+					resample_points();
+					if (m_save_log) log.out << "(12) All segments are resampled." << std::endl;
+				}
 
 				// -------------------------------
 
@@ -209,6 +223,10 @@ namespace CGAL {
 
 			const Structured_points& get_segment_end_points() const {
 				return m_segment_end_points;
+			}
+
+			const Structured_labels& get_segment_end_labels() const {
+				return m_segment_end_labels;
 			}
 
 			void set_epsilon(const FT value) {
@@ -244,11 +262,13 @@ namespace CGAL {
 			
 			bool m_eps_set;
 			bool m_save_log;
+			bool m_resample;
 
 			std::vector<std::unordered_set<int> > m_adjacency;
 			std::unordered_set<Int_pair, My_pair_hasher, My_pair_equal> m_undirected_graph;
 
 			Structured_points m_segment_end_points;
+			Structured_labels m_segment_end_labels;
 
 			void project() {
 
@@ -827,14 +847,20 @@ namespace CGAL {
 
 			void add_corner(const int i, const int j, const Point &corner) {
 
-				if (is_unique(corner)) {
+				std::vector<int> cycle(2);
 
-					std::vector<int> cycle(2);
-					
+				if (is_unique(corner, i)) {	
 					cycle[0] = i;
 					cycle[1] = j;
 
 					add_unique_corner(i, corner, cycle);
+				}
+
+				if (is_unique(corner, j)) {
+					cycle[0] = j;
+					cycle[1] = i;
+
+					add_unique_corner(j, corner, cycle);
 				}
 			}
 
@@ -851,19 +877,20 @@ namespace CGAL {
 				assert(dist_s != dist_t);
 				if (dist_s < dist_t) {
 
-					m_str_points[segment_index].insert(m_str_points[segment_index].begin(), corner);
-					m_str_labels[segment_index].insert(m_str_labels[segment_index].begin(), Structured_label::CORNER);
+					 m_str_points[segment_index].insert( m_str_points[segment_index].begin(), corner);
+					 m_str_labels[segment_index].insert( m_str_labels[segment_index].begin(), Structured_label::CORNER);
 					m_str_anchors[segment_index].insert(m_str_anchors[segment_index].begin(), cycle);
 
 				} else {
 
-					m_str_points[segment_index].push_back(corner);
-					m_str_labels[segment_index].push_back(Structured_label::CORNER);
+					 m_str_points[segment_index].push_back(corner);
+					 m_str_labels[segment_index].push_back(Structured_label::CORNER);
 					m_str_anchors[segment_index].push_back(cycle);
 				}
 				++m_num_corners[segment_index];
 			}
 
+			// Is it correct to use m_num_linear[i] here instead of m_str_points[i].size()?
 			bool is_unique(const Point &q) const {
 				
 				for (size_t i = 0; i < m_cc.size(); ++i) {
@@ -878,31 +905,111 @@ namespace CGAL {
 				return true;
 			}
 
+			bool is_unique(const Point &q, const int segment_index) const {
+				for (size_t i = 0; i < m_str_points[segment_index].size(); ++i) {
+
+					const Point &p = m_str_points[segment_index][i];
+					if (points_equal(p, q)) return false;
+				}
+				return true;
+			}
+
 			bool points_equal(const Point &p, const Point &q) const {
 
 				if (CGAL::abs(p.x() - q.x()) < m_tol && CGAL::abs(p.y() - q.y()) < m_tol) return true;
 				return false;
 			}
 
-			void create_segment_end_points() {
+			void create_segment_end_points_and_labels() {
 
 				m_segment_end_points.clear();
 				m_segment_end_points.resize(m_cc.size());
 
+				m_segment_end_labels.clear();
+				m_segment_end_labels.resize(m_cc.size());
+
 				assert(m_str_points.size() == m_segment_end_points.size());
+				assert(m_str_labels.size() == m_segment_end_labels.size());
 
 				Log log;
 				for (size_t i = 0; i < m_segment_end_points.size(); ++i) {
+					
 					m_segment_end_points[i].resize(2);
+					m_segment_end_labels[i].resize(2);
 
 					m_segment_end_points[i][0] = m_str_points[i][0];
 					m_segment_end_points[i][1] = m_str_points[i][m_str_points[i].size() - 1];
 					
+					m_segment_end_labels[i][0] = m_str_labels[i][0];
+					m_segment_end_labels[i][1] = m_str_labels[i][m_str_labels[i].size() - 1];
+
 					if (m_save_log) log.out << m_segment_end_points[i][0] << " " << 0 << std::endl;
 					if (m_save_log) log.out << m_segment_end_points[i][1] << " " << 0 << std::endl;
 				}
-
 				if (m_save_log) log.save("tmp/segment_end_points");
+			}
+
+			// It works only with Occupancy_method::ALL!
+			void resample_points() {
+
+				Log log;
+				assert(m_str_points.size() == m_segments.size());
+
+				for (size_t i = 0; i < m_str_points.size(); ++i) {
+
+					const Point &p = m_str_points[i][0];
+					const Point &q = m_str_points[i][m_str_points[i].size() - 1];
+
+					const FT seg_length  = CGAL::sqrt(squared_distance(p, q));
+					const FT upper_bound = CGAL::sqrt(FT(2)) * m_eps[i];
+					const FT initial     = upper_bound / FT(2);
+					const FT times 		 = std::floor(seg_length / initial);
+					
+					resample_segment(i, times, log);
+				}
+				/* if (m_save_log) */ log.save("tmp/resampled_points");
+			}
+
+			void resample_segment(const size_t segment_index, const FT times, Log &log) {
+					
+					const Point p = m_str_points[segment_index][0];
+					const Point q = m_str_points[segment_index][m_str_points[segment_index].size() - 1];
+
+					const Structured_label lp = m_str_labels[segment_index][0];
+					const Structured_label lq = m_str_labels[segment_index][m_str_labels[segment_index].size() - 1];
+
+					const std::vector<int> ap = m_str_anchors[segment_index][0];
+					const std::vector<int> aq = m_str_anchors[segment_index][m_str_anchors[segment_index].size() - 1];
+
+					 m_str_points[segment_index].clear();
+					 m_str_labels[segment_index].clear();
+					m_str_anchors[segment_index].clear();
+
+					  m_str_points[segment_index].push_back(p);
+					 m_str_labels[segment_index].push_back(lp);
+					m_str_anchors[segment_index].push_back(ap);
+
+					/* if (m_save_log) */ log.out << p << " " << 0 << std::endl;
+
+					for (size_t i = 1; i < static_cast<size_t>(times); ++i) {
+
+						const FT b_2 = FT(i) / times;
+						const FT b_1 = FT(1) - b_2;
+						
+						const Point newp = Point(b_1 * p.x() + b_2 * q.x(), b_1 * p.y() + b_2 * q.y());
+
+						  m_str_points[segment_index].push_back(newp);
+						 m_str_labels[segment_index].push_back(Structured_label::LINEAR);
+						m_str_anchors[segment_index].push_back(std::vector<int>(1, segment_index));
+
+						/* if (m_save_log) */ log.out << newp << " " << 0 << std::endl;
+					}
+
+					  m_str_points[segment_index].push_back(q);
+					 m_str_labels[segment_index].push_back(lq);
+					m_str_anchors[segment_index].push_back(aq);
+
+					/* if (m_save_log) */ log.out << q << " " << 0 << std::endl;
 			}
 		};
 	}

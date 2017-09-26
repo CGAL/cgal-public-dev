@@ -16,6 +16,9 @@
 #include <CGAL/Level_of_detail_enum.h>
 #include <CGAL/Mylog/Mylog.h>
 
+// Boost includes.
+#include <boost/tuple/tuple.hpp>
+
 namespace CGAL {
 
 	namespace LOD {
@@ -66,23 +69,21 @@ namespace CGAL {
 			using Index   = int;
 			using Indices = std::vector<Index>;
 
-
-
 			using Structured_points  = std::vector< std::vector<Point_2> >; 			  
 			using Structured_labels  = std::vector< std::vector<Structured_label> >;  
 			using Structured_anchors = std::vector< std::vector<std::vector<int> > >;
 			
-			// Custom types, should be changed later (or removed).
-			using Log      = CGAL::LOD::Mylog;
+			using Log = CGAL::LOD::Mylog;
 
 			using Lines    = std::vector<Line_2>;
 			using Segments = std::vector<Segment_2>;
 
-			
+			using Label     = typename Traits::Label;
+			using Label_map = typename Container_3D:: template Property_map<Label>;
 
 			typedef typename Traits::Lod_0 Lod_0;
-			typedef Segments 			   Lod_0_result;
 
+			// const std::string default_path = "/Users/danisimo/Documents/pipeline/data/basic_test_v3/";
 			const std::string default_path = "/Users/danisimo/Documents/pipeline/data/complex_test/";
 
 			Level_of_detail_base(Traits traits = Traits()) : m_traits(traits) { } // Do I need to create an instance of these traits here?
@@ -104,6 +105,8 @@ namespace CGAL {
 				m_loader.get_data(default_path + "data.ply", input);
 
 				log.out << "(1) Data are loaded. Number of points: " << input.number_of_points() << std::endl << std::endl;
+
+				// Log mock_saver; mock_saver.save_ply<Traits, Container_3D>(input, "basic_mock", true);
 
 
 				// ----------------------------------
@@ -151,7 +154,7 @@ namespace CGAL {
 				// ----------------------------------
 
 				// (5) Map indices from all detected planes to the ones that are a part of the given facades.
-				std::cout << "(5) get boundaries" << std::endl;
+				std::cout << "(5) getting boundaries" << std::endl;
 
 				Boundary_data building_boundaries, boundary_clutter;
 				const auto number_of_boundaries = m_preprocessor.get_boundaries(input, building_boundary_idxs, building_boundaries, boundary_clutter);
@@ -188,10 +191,12 @@ namespace CGAL {
 				
 				// Log points_exporter; points_exporter.export_projected_points_as_xyz("tmp/projected", building_boundaries_projected, default_path);
 
+				
+				// ----------------------------------
 
 				// (7') Clean projected points by removing all points that lie far away from the center cluster of points.
-				// FINISH IT - SEE INSIDE!
 				std::cout << "(7') cleaning" << std::endl;
+				m_preprocessor.set_scale(FT(2));
 
 				auto number_of_removed_points = m_preprocessor.clean_projected_points(building_boundaries_projected, building_boundaries);
 				log.out << "(7') Building's boundaries are cleaned. Number of removed points: " << number_of_removed_points << std::endl;
@@ -227,13 +232,14 @@ namespace CGAL {
 				// ----------------------------------
 
 				// (10) Apply 2D structuring algorithm.
-				// FINISH IT - SEE WHITEBOARD!
 				std::cout << "(10) 2d structuring" << std::endl;
 
 				m_structuring = std::make_unique<Structuring_2>(building_boundaries_projected, building_boundaries, lines);
 				
+				// epsilon: 0.025 basic test; 0.0005 complex test;
+				m_structuring->set_epsilon(0.025);
 				m_structuring->save_log(false);
-				m_structuring->set_epsilon(0.005);
+				m_structuring->resample(true);
 
 				const auto number_of_structured_segments = m_structuring->structure_point_set();
 
@@ -243,40 +249,69 @@ namespace CGAL {
 				// ----------------------------------
 
 				// (11) Compute constrained Delaunay triangulation of the structured points.
-				// FINISH IT - REMOVE BOUNDING BOX VERTICES AND ADD CLUTTER! ADD FACE BASE WITH INFO AND VERTEX BASE WITH INFO!
-				std::cout << "(11) Creating CDT" << std::endl;
+				std::cout << "(11) creating cdt" << std::endl;
 
 				const Structured_points &structured_points = m_structuring->get_segment_end_points();
+				const Structured_labels &structured_labels = m_structuring->get_segment_end_labels();
+
 				// const Structured_points &structured_points = m_structuring->get_structured_points();
+				// const Structured_points &structured_labels = m_structuring->get_structured_labels();
 
-				CDT cdt;
-				const auto number_of_faces = compute_cdt(structured_points, input, cdt);
+				CDT cdt; 
 
-				log.out << "(11) Constrained Delaunay triangulation of the structured points is built. Number of faces: " << number_of_faces << std::endl;
+				// add_clutter: "true" for basic test and "false" for complex test
+				const bool add_clutter = true; 
+				const bool add_bbox    = false;
+
+				const auto number_of_faces = compute_cdt(structured_points, structured_labels, cdt, 
+														 add_clutter, boundary_clutter, boundary_clutter_projected, 
+														 add_bbox, input);
+
+				log.out << "(11) Constrained Delaunay triangulation of the structured points is built. Number of faces: " << number_of_faces << std::endl << std::endl;
+
+				assert(!add_bbox); // visibility and graph cut do not work if bbox vertices are added to CDT!
+
+
+				// ----------------------------------
+
+				// (11') Convert 3D input to 2D input.			
+				std::cout << "(11') converting 3d input into 2d input" << std::endl;
+
+				Container_2D input_2d;
+				const auto number_of_converted_points = get_2d_input(input, input_2d);
+
+				log.out << "(11') 3D input is converted into 2D input. Number of converted points: " << number_of_converted_points << std::endl << std::endl;
 
 
 				// ----------------------------------
 
 				// (12) Compute visibility (0 - outside or 1 - inside) for each triangle in CDT above.
-				// Here we compute P_in and P_out predictions as in Section 3.2 of the Structuring paper.
-				/*
-				Visibility_result visibility;
-				const auto number_of_traversed_faces = m_visibility.compute(cdt, input, visibility);
+				std::cout << "(12) visibility computation" << std::endl;
 
-				log.out << "(12) Visibility is computed. Number of traversed faces: " << number_of_traversed_faces << std::endl;
+				m_visibility.set_approach(Visibility_approach::POINT_BASED);
+				m_visibility.set_method(Visibility_method::POINT_BASED_CLASSIFICATION);
+				m_visibility.set_number_of_samples(200);
 
-				Log eps_saver; eps_saver.save_visibility_eps(cdt, visibility, input, structured_points); */
+				const auto number_of_traversed_faces = m_visibility.compute(input_2d, cdt);
+
+				log.out << "(12) Visibility is computed. Number of traversed faces: " << number_of_traversed_faces << std::endl << std::endl;
+
+				// Log eps_saver; eps_saver.save_visibility_eps(cdt, input, structured_points); // basic test
+				Log eps_saver; eps_saver.save_visibility_eps(cdt); // complex test
 
 
 				// ----------------------------------
 
 				// (13) Apply graph cut.
-				// FIX is_constrained() requirement - SEE INSIDE!
-				/*
-				Lod_0_result lod_0_result; Structured_labels str_labels;
-				m_lod_0.reconstruct(cdt, visibility, str_labels, lod_0_result);
+				std::cout << "(13) applying graph cut" << std::endl;
 
-				log.out << "(13) Final LOD 0 is reconstructed. This result is saved in lod_0.obj file." << std::endl; */
+				m_lod_0.set_alpha_parameter(FT(1));
+				m_lod_0.set_beta_parameter(FT(100000));
+				m_lod_0.set_gamma_parameter(FT(1000));
+
+				m_lod_0.max_flow(cdt);
+
+				log.out << "(13) Final LOD 0 is reconstructed." << std::endl;
 
 
 				// ----------------------------------
@@ -305,7 +340,6 @@ namespace CGAL {
 
 			std::unique_ptr<Structuring_2> m_structuring;
 			
-
 			// Not efficient since I need to copy all ground points.
 			void fit_ground_plane(const Container_3D &input, const Indices &ground_idxs, Plane_3 &ground_plane) const {
 
@@ -402,41 +436,77 @@ namespace CGAL {
 				else return projected;
 			}
 
-			int compute_cdt(const Structured_points &points, const Container_3D &input, CDT &cdt) const {
+			// BE CAREFUL: THIS THING CAN INSERT NEW POINTS!
+			int compute_cdt(const Structured_points &points, const Structured_labels &labels, CDT &cdt, 
+							const bool add_clutter, const Boundary_data &boundary_clutter, const Projected_points &boundary_clutter_projected,
+							const bool add_bbox   , const Container_3D  &input) const {
 
 				Log log;
-
-				std::vector<Point_2> bbox;
-				compute_bounding_box(input, bbox);
-
 				auto number_of_faces = -1;
-				assert(!points.empty());
 
-				// Add all structured segments/points.
+				assert(!points.empty() && !labels.empty());
+				assert(points.size() == labels.size());
+
+
+				// Add all structured segments/points with the corresponding labels.
 				std::vector<std::vector<Vertex_handle> > vhs(points.size());
+
+				// Insert points with labels.
 				for (size_t i = 0; i < points.size(); ++i) {
+					assert(points[i].size() == labels[i].size());
 
 					vhs[i].resize(points[i].size());
-					for (size_t j = 0; j < points[i].size(); ++j)
+					for (size_t j = 0; j < points[i].size(); ++j) {
+
 						vhs[i][j] = cdt.insert(points[i][j]);
+						vhs[i][j]->info().label = labels[i][j];
+					}
 				}
 
+				// Insert constraints.
 				for (size_t i = 0; i < points.size(); ++i)
 					for (size_t j = 0; j < points[i].size() - 1; ++j)
 						cdt.insert_constraint(vhs[i][j], vhs[i][j + 1]);
 
-				// Add bounding box.
-				std::vector<Vertex_handle> bhs(bbox.size());
-				for (size_t i = 0; i < bbox.size(); ++i) bhs[i] = cdt.insert(bbox[i]);
 
-				for (size_t i = 0; i < bbox.size(); ++i) {
-					const size_t ip = (i + 1) % bbox.size();
-					cdt.insert_constraint(bhs[i], bhs[ip]);
+				// Add clutter.
+				if (add_clutter) {
+					for (typename Boundary_data::const_iterator it = boundary_clutter.begin(); it != boundary_clutter.end(); ++it) {
+						const size_t num_clutter_points = (*it).second.size();
+
+						for (size_t i = 0; i < num_clutter_points; ++i) {
+							const auto point_index = (*it).second[i];
+
+							Vertex_handle vh = cdt.insert(boundary_clutter_projected.at(point_index));
+							vh->info().label = Structured_label::CLUTTER;
+						}
+					}
 				}
 
+
+				// Add bounding box.
+				if (add_bbox) {
+					
+					std::vector<Point_2> bbox;
+					compute_bounding_box(input, bbox);
+
+					std::vector<Vertex_handle> bhs(bbox.size());
+
+					for (size_t i = 0; i < bbox.size(); ++i) bhs[i] = cdt.insert(bbox[i]);
+					for (size_t i = 0; i < bbox.size(); ++i) {
+
+						const size_t ip = (i + 1) % bbox.size();
+						cdt.insert_constraint(bhs[i], bhs[ip]);
+					}
+				}
+
+
+				// Create CDT.
 				CGAL::make_conforming_Delaunay_2(cdt);
 				number_of_faces = cdt.number_of_faces();
 
+
+				// Save CDT.
 				log.save_cdt_obj(cdt, "tmp/cdt");
 				return number_of_faces;
 			}
@@ -468,6 +538,30 @@ namespace CGAL {
 				bbox[1] = Point_2(maxx, miny);
 				bbox[2] = Point_2(maxx, maxy);
 				bbox[3] = Point_2(minx, maxy);
+			}
+
+			int get_2d_input(const Container_3D &input_3d, Container_2D &input_2d) const {
+
+				Log log;
+
+				Label_map class_labels;
+				boost::tie(class_labels, boost::tuples::ignore) = input_3d.template property_map<Label>("label");
+
+				input_2d.clear();
+				input_2d.resize(input_3d.number_of_points());
+
+				size_t point_index = 0;
+				for (typename Container_3D::const_iterator it = input_3d.begin(); it != input_3d.end(); ++it, ++point_index) {
+
+					const Point_3 &p = input_3d.point(*it);
+					const Point_2 &q = Point_2(p.x(), p.y());
+
+					input_2d[point_index] = std::make_pair(q, class_labels[*it]);
+					log.out << q << " " << 0 << std::endl;
+				}
+
+				log.save("tmp/input_2d");
+				return point_index;
 			}
 		};
 	}

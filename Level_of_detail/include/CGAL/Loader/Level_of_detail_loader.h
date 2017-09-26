@@ -68,7 +68,9 @@ namespace CGAL {
             	size_t num_points;
             	loader >> tmp >> tmp >> num_points;
 
-            	for (size_t i = 0; i < 17; ++i) std::getline(loader, tmp);
+            	// BE EXTREMELY CAREFUL HERE WHEN CHANGING THE FORMAT OF THE FILE!!! THE VALUE 14 IS HARD CODED
+            	// AND CAN LEAD TO COMPLETELY WRONG RESULTS!
+            	for (size_t i = 0; i < 14; ++i) std::getline(loader, tmp);
 
 				FT x, y, z, nx, ny, nz;
 				int r, g, b, la, ty, in;

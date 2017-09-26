@@ -179,8 +179,8 @@ namespace CGAL {
 				save(filename, ".obj");
 			}
 
-			template<class CDT, class Visibility, class Container, class Segments>
-			void save_visibility_eps(CDT &cdt, const Visibility &visibility, const Container &, const Segments &segments, const std::string &fileName = "tmp/visibility") {
+			template<class CDT, class Container, class Segments>
+			void save_visibility_eps(CDT &cdt, const Container &input, const Segments &segments, const std::string &fileName = "tmp/visibility") {
 
 				clear();
 
@@ -199,10 +199,10 @@ namespace CGAL {
 		        out << "0 dict begin gsave\n\n";
 
 		        // Save mesh.
-		        draw_mesh(cdt, visibility, scale);
+		        draw_mesh(cdt, scale);
 
 		        // Save points.
-		        // draw_points(input, scale);
+		        draw_points(input, scale);
 
 		        // Save segments.
 		        draw_segments(segments, scale);
