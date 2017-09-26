@@ -18,11 +18,12 @@
 #define CGAL_POLYLINE_TRACING_MOTORCYCLE_H
 
 #include <CGAL/Polyline_tracing/Dictionary.h>
-#include <CGAL/Polyline_tracing/Uniform_direction_tracer_visitor.h>
-#include <CGAL/Polyline_tracing/Tracer.h>
+
+#include <CGAL/Polygon_mesh_processing/locate.h>
 
 #include <boost/optional.hpp>
 #include <boost/parameter.hpp>
+#include <boost/variant.hpp>
 
 #include <fstream>
 #include <iostream>
@@ -39,6 +40,7 @@ namespace parameters {
   BOOST_PARAMETER_NAME( (speed, tag) speed_ )
   BOOST_PARAMETER_NAME( (direction, tag) direction_ )
   BOOST_PARAMETER_NAME( (initial_time, tag) initial_time_ )
+  BOOST_PARAMETER_NAME( (tracer, tag) tracer_ )
 
 } // end namespace parameters
 
@@ -77,12 +79,10 @@ struct Track_comparer
 
 // -----------------------------------------------------------------------------
 
-// Having a "_impl" class is only done because it's needed for BOOST_PARAMETER_CONSTRUCTOR
 template<typename MotorcycleGraphTraits>
-class Motorcycle_impl
+class Motorcycle_impl_base
 {
-  typedef Motorcycle_impl<MotorcycleGraphTraits>              Self;
-  typedef Motorcycle<MotorcycleGraphTraits>                   Derived;
+  typedef Motorcycle_impl_base<MotorcycleGraphTraits>         Self;
 
 public:
   typedef MotorcycleGraphTraits                               Geom_traits;
@@ -104,9 +104,6 @@ public:
   typedef std::pair<Point, FT>                                Track_point;
   typedef std::set<Track_point, internal::Track_comparer<Geom_traits> >
                                                               Track;
-
-  typedef Uniform_direction_tracer_visitor<Geom_traits>       Tracer_visitor;
-  typedef Tracer<Geom_traits, Tracer_visitor>                 Tracer;
 
   // Access
   std::size_t id() const { return i; }
@@ -144,15 +141,17 @@ public:
   const Track& track() const { return track_points; }
 
   // Constructor
-  template<typename ArgumentPack>
-  Motorcycle_impl(const ArgumentPack& args);
+  virtual ~Motorcycle_impl_base() { }
+  Motorcycle_impl_base(const Point& source, const boost::optional<Point>& destination,
+                       const FT speed, const boost::optional<Vector>& direction,
+                       const FT initial_time);
 
   // Functions
   void add_target(const DEC_it target_point, const FT time_at_target);
   const DEC_it closest_target() const;
 
-  boost::tuple<bool, DEC_it, DEC_it, FT, bool>
-  compute_next_destination(Dictionary& points, const Triangle_mesh& mesh);
+  virtual boost::tuple<bool, DEC_it, DEC_it, FT, bool>
+  compute_next_destination(Dictionary& points, const Triangle_mesh& mesh) = 0;
 
   void remove_closest_target_from_targets();
   bool has_reached_blocked_point() const;
@@ -178,7 +177,7 @@ public:
   void output_intended_track() const;
   void output_track() const;
 
-private:
+protected:
   // ID and status
   std::size_t i;
   bool crashed;
@@ -203,54 +202,30 @@ private:
   // The tentative targets, ordered by increasing distance from 'conf'
   Target_point_container target_points;
 
-  // Tracer (computes the next target when we reach the destination)
-  Tracer tracer;
-
   Track track_points;
 };
 
 template<typename MotorcycleGraphTraits>
-class Motorcycle
-  : public Motorcycle_impl<MotorcycleGraphTraits>
-{
-  typedef Motorcycle_impl<MotorcycleGraphTraits>               Base;
-
-public:
-  BOOST_PARAMETER_CONSTRUCTOR(Motorcycle, (Base), parameters::tag,
-                              (required (source_, *))
-                              (optional (destination_, *)
-                                        (speed_, *)
-                                        (direction_, *)
-                                        (initial_time_, *))
-                             )
-};
-
-// -----------------------------------------------------------------------------
-
-template<typename MotorcycleGraphTraits>
-template <class ArgumentPack>
-Motorcycle_impl<MotorcycleGraphTraits>::
-Motorcycle_impl(const ArgumentPack& args)
+Motorcycle_impl_base<MotorcycleGraphTraits>::
+Motorcycle_impl_base(const Point& source, const boost::optional<Point>& destination,
+                     const FT speed, const boost::optional<Vector>& direction,
+                     const FT initial_time)
   :
     i(-1),
     crashed(false),
-    ini_sour_pt(args[parameters::source]),
-    ini_dest_pt(args[parameters::destination|boost::none]),
+    ini_sour_pt(source),
+    ini_dest_pt(destination),
     sour(), dest(), conf(),
     is_dest_final(false),
-    spee(args[parameters::speed|1.]),
-    dir(args[parameters::direction|boost::none]),
-    time(args[parameters::initial_time|0.]),
+    spee(speed),
+    dir(direction),
+    time(initial_time),
     time_at_sour(time),
     target_points(internal::Target_point_set_comparer<MotorcycleGraphTraits>()),
-    tracer(),
     track_points(internal::Track_comparer<MotorcycleGraphTraits>())
 {
   // Reject null speed
   CGAL_precondition(spee > 0.);
-
-  // Either the destination or the direction should be provided
-  CGAL_precondition(ini_dest_pt || dir);
 
   if(ini_dest_pt != boost::none && ini_sour_pt == *ini_dest_pt)
   {
@@ -266,15 +241,15 @@ Motorcycle_impl(const ArgumentPack& args)
 
 template<typename MotorcycleGraphTraits>
 void
-Motorcycle_impl<MotorcycleGraphTraits>::
+Motorcycle_impl_base<MotorcycleGraphTraits>::
 add_target(const DEC_it target_point, const FT time_at_target)
 {
   target_points.insert(std::make_pair(target_point, time_at_target));
 }
 
 template<typename MotorcycleGraphTraits>
-const typename Motorcycle_impl<MotorcycleGraphTraits>::DEC_it
-Motorcycle_impl<MotorcycleGraphTraits>::
+const typename Motorcycle_impl_base<MotorcycleGraphTraits>::DEC_it
+Motorcycle_impl_base<MotorcycleGraphTraits>::
 closest_target() const
 {
   CGAL_precondition(!target_points.empty());
@@ -282,25 +257,8 @@ closest_target() const
 }
 
 template<typename MotorcycleGraphTraits>
-boost::tuple<bool, // successfuly computed a next path or not
-             typename Motorcycle_impl<MotorcycleGraphTraits>::DEC_it, // next source
-             typename Motorcycle_impl<MotorcycleGraphTraits>::DEC_it, // next destination
-             typename MotorcycleGraphTraits::FT, // time at next destination
-             bool> // whether the destination is final or not
-Motorcycle_impl<MotorcycleGraphTraits>::
-compute_next_destination(Dictionary& points, const Triangle_mesh& mesh)
-{
-  CGAL_precondition(target_points.empty());
-
-  // that derived cast is so that tracer visitor can indeed take a Motorcycle
-  // and not a motorcycle_impl. It's safe since we only deal manipulate "full"
-  // motorcycles, but it's kinda ugly @fixme
-  return tracer.trace(static_cast<Derived&>(*this), points, mesh);
-}
-
-template<typename MotorcycleGraphTraits>
 void
-Motorcycle_impl<MotorcycleGraphTraits>::
+Motorcycle_impl_base<MotorcycleGraphTraits>::
 remove_closest_target_from_targets()
 {
   CGAL_assertion(!target_points.empty());
@@ -309,7 +267,7 @@ remove_closest_target_from_targets()
 
 template<typename MotorcycleGraphTraits>
 bool
-Motorcycle_impl<MotorcycleGraphTraits>::
+Motorcycle_impl_base<MotorcycleGraphTraits>::
 has_reached_blocked_point() const
 {
   return conf->is_blocked();
@@ -317,7 +275,7 @@ has_reached_blocked_point() const
 
 template<typename MotorcycleGraphTraits>
 bool
-Motorcycle_impl<MotorcycleGraphTraits>::
+Motorcycle_impl_base<MotorcycleGraphTraits>::
 has_reached_simultaneous_collision_point() const
 {
   return conf->has_simultaneous_collision();
@@ -325,15 +283,15 @@ has_reached_simultaneous_collision_point() const
 
 template<typename MotorcycleGraphTraits>
 bool
-Motorcycle_impl<MotorcycleGraphTraits>::
+Motorcycle_impl_base<MotorcycleGraphTraits>::
 is_motorcycle_destination_final() const
 {
   return is_dest_final;
 }
 
 template<typename MotorcycleGraphTraits>
-typename Motorcycle_impl<MotorcycleGraphTraits>::FT
-Motorcycle_impl<MotorcycleGraphTraits>::
+typename Motorcycle_impl_base<MotorcycleGraphTraits>::FT
+Motorcycle_impl_base<MotorcycleGraphTraits>::
 time_at_closest_target() const
 {
   CGAL_precondition(!target_points.empty());
@@ -342,7 +300,7 @@ time_at_closest_target() const
 
 template<typename MotorcycleGraphTraits>
 void
-Motorcycle_impl<MotorcycleGraphTraits>::
+Motorcycle_impl_base<MotorcycleGraphTraits>::
 output_track() const
 {
   std::ostringstream out_filename;
@@ -373,7 +331,7 @@ output_track() const
 
 template<typename MotorcycleGraphTraits>
 void
-Motorcycle_impl<MotorcycleGraphTraits>::
+Motorcycle_impl_base<MotorcycleGraphTraits>::
 output_intended_track() const
 {
   // must be adapted to multiple destinations and 2D/surface @todo
@@ -388,6 +346,129 @@ output_intended_track() const
   os << dest->point() << " 0" << '\n';
   os << "3 0 1 0" << std::endl;
 }
+
+// -----------------------------------------------------------------------------
+
+// Having a "_impl" class is only done because it's needed for BOOST_PARAMETER_CONSTRUCTOR
+template<typename MotorcycleGraphTraits, typename Tracer>
+class Motorcycle;
+
+template<typename MotorcycleGraphTraits, typename Tracer>
+class Motorcycle_impl
+  : public Motorcycle_impl_base<MotorcycleGraphTraits>
+{
+  typedef Motorcycle_impl<MotorcycleGraphTraits, Tracer>            Self;
+  typedef Motorcycle_impl_base<MotorcycleGraphTraits>               Base;
+  typedef Motorcycle<MotorcycleGraphTraits, Tracer>                 Derived;
+
+public:
+  typedef MotorcycleGraphTraits                                     Geom_traits;
+  typedef typename MotorcycleGraphTraits::Triangle_mesh             Triangle_mesh;
+
+  typedef typename Base::FT                                         FT;
+  typedef typename Base::Dictionary                                 Dictionary;
+  typedef typename Base::DEC_it                                     DEC_it;
+  typedef typename Base::Face_location                              Face_location;
+
+  typedef typename Geom_traits::vertex_descriptor                   vertex_descriptor;
+  typedef typename Geom_traits::halfedge_descriptor                 halfedge_descriptor;
+  typedef typename Geom_traits::face_descriptor                     face_descriptor;
+  typedef boost::variant<vertex_descriptor,
+                         halfedge_descriptor,
+                         face_descriptor>                           descriptor_variant;
+
+  // Constructor
+  virtual ~Motorcycle_impl() { }
+
+  template<typename ArgumentPack>
+  Motorcycle_impl(const ArgumentPack& args);
+
+  virtual boost::tuple<bool, DEC_it, DEC_it, FT, bool>
+  compute_next_destination(Dictionary& points, const Triangle_mesh& mesh);
+
+private:
+  // Tracer (computes the next target when we reach the destination)
+  Tracer tracer;
+};
+
+template<typename MotorcycleGraphTraits, typename Tracer>
+template <class ArgumentPack>
+Motorcycle_impl<MotorcycleGraphTraits, Tracer>::
+Motorcycle_impl(const ArgumentPack& args)
+  :
+    Base(args[parameters::source],
+         args[parameters::destination|boost::none],
+         args[parameters::speed|1.],
+         args[parameters::direction|boost::none],
+         args[parameters::initial_time|0.]),
+    tracer(args[parameters::tracer|Tracer()])
+{ }
+
+template<typename MotorcycleGraphTraits, typename Tracer>
+boost::tuple<bool, // successfuly computed a next path or not
+             typename Motorcycle_impl<MotorcycleGraphTraits, Tracer>::DEC_it, // next source
+             typename Motorcycle_impl<MotorcycleGraphTraits, Tracer>::DEC_it, // next destination
+             typename Motorcycle_impl<MotorcycleGraphTraits, Tracer>::FT, // time at next destination
+             bool> // whether the destination is final or not
+Motorcycle_impl<MotorcycleGraphTraits, Tracer>::
+compute_next_destination(Dictionary& points, const Triangle_mesh& mesh)
+{
+  CGAL_precondition(this->target_points.empty());
+
+#ifdef CGAL_MOTORCYCLE_GRAPH_VERBOSE
+  std::cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*" << std::endl;
+  std::cout << "Computing the next path for motorcycle #" << this->i << std::endl;
+  std::cout << "Current position: " << this->conf->point() << std::endl
+            << "Location: " << this->current_location().first << " b: "
+            << this->current_location().second[0] << " "
+            << this->current_location().second[1] << " "
+            << this->current_location().second[2] << std::endl;
+#endif
+
+  const Face_location& loc = this->current_location();
+  descriptor_variant dv =
+    CGAL::Polygon_mesh_processing::internal::get_descriptor_from_location(loc, mesh);
+
+  // that derived cast is so that tracer visitor can indeed take a Motorcycle
+  // and not a motorcycle_impl. It's safe since we only deal manipulate "full"
+  // motorcycles, but it's kinda ugly @fixme
+
+  if(const vertex_descriptor* v = boost::get<vertex_descriptor>(&dv))
+  {
+    return tracer(*v, static_cast<Derived&>(*this), points, mesh);
+  }
+  else if(const halfedge_descriptor* h = boost::get<halfedge_descriptor>(&dv))
+  {
+    return tracer(*h, static_cast<Derived&>(*this), points, mesh);
+  }
+  else
+  {
+    const face_descriptor* f = boost::get<face_descriptor>(&dv);
+    CGAL_assertion(f);
+    return tracer(*f, static_cast<Derived&>(*this), points, mesh);
+  }
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MotorcycleGraphTraits, typename Tracer>
+class Motorcycle
+  : public Motorcycle_impl<MotorcycleGraphTraits, Tracer>
+{
+  typedef Motorcycle_impl<MotorcycleGraphTraits, Tracer>           Base;
+
+public:
+  BOOST_PARAMETER_CONSTRUCTOR(Motorcycle, (Base), parameters::tag,
+                              (required (source_, *))
+                              (optional (destination_, *)
+                                        (speed_, *)
+                                        (direction_, *)
+                                        (initial_time_, *)
+                                        (tracer_, *))
+                             )
+};
+
+// -----------------------------------------------------------------------------
 
 } // namespace Polyline_tracing
 

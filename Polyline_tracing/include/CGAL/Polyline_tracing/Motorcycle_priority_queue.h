@@ -22,6 +22,7 @@
 #include <CGAL/Polyline_tracing/Motorcycle_priority_queue_entry.h>
 
 #include <boost/heap/fibonacci_heap.hpp>
+#include <boost/shared_ptr.hpp>
 
 #include <utility>
 
@@ -37,8 +38,9 @@ class Motorcycle_priority_queue
 public:
   typedef MotorcycleGraphTraits                             Geom_traits;
 
-  typedef Motorcycle<Geom_traits>                           Motorcycle;
-  typedef std::vector<Motorcycle*>                          Motorcycle_container;
+  typedef Motorcycle_impl_base<Geom_traits>                 Motorcycle;
+  typedef boost::shared_ptr<Motorcycle>                     Motorcycle_ptr;
+  typedef std::vector<Motorcycle_ptr>                       Motorcycle_container;
 
   // Picked a fibonacci_heap for now. Would it be better to simply use
   // std::priority_queue and ignore+pop values that are meaningless ?

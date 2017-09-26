@@ -239,6 +239,7 @@ public:
 
   // Functions
   void erase(DEC_it pos);
+  std::pair<DEC_it, bool> insert(const Face_location& loc);
   std::pair<DEC_it, bool> insert(const Face_location& loc, const Point& p);
   std::pair<DEC_it, bool> insert(const Face_location& loc, const Point& p, const std::size_t i, const FT time);
   std::pair<DEC_it, bool> insert(const Face_location& loc, const std::size_t i, const FT time, const Triangle_mesh& mesh);

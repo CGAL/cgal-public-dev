@@ -26,7 +26,6 @@
 #include <CGAL/Polygon_mesh_processing/locate.h>
 
 #include <boost/optional.hpp>
-#include <boost/variant.hpp>
 
 #include <utility>
 
@@ -34,18 +33,14 @@ namespace CGAL {
 
 namespace Polyline_tracing {
 
-template<typename MotorcycleGraphTraits>
+template<typename MotorcycleGraphTraits, typename Tracer_visitor>
 class Motorcycle;
 
 template<typename MotorcycleGraphTraits>
 class Uniform_direction_tracer_visitor
-  : public boost::static_visitor<
-             boost::tuple<bool,
-                          typename Dictionary<MotorcycleGraphTraits>::DEC_it,
-                          typename Dictionary<MotorcycleGraphTraits>::DEC_it,
-                          typename MotorcycleGraphTraits::FT,
-                          bool> >
 {
+  typedef Uniform_direction_tracer_visitor<MotorcycleGraphTraits>     Self;
+
 public:
   typedef MotorcycleGraphTraits                               Geom_traits;
   typedef typename Geom_traits::Triangle_mesh                 Triangle_mesh;
@@ -62,7 +57,7 @@ public:
 
   typedef typename Geom_traits::Face_location                 Face_location;
 
-  typedef Motorcycle<Geom_traits>                             Motorcycle;
+  typedef Motorcycle<Geom_traits, Self>                       Motorcycle;
 
   typedef typename Geom_traits::vertex_descriptor             vertex_descriptor;
   typedef typename Geom_traits::halfedge_descriptor           halfedge_descriptor;
@@ -75,55 +70,71 @@ public:
   // - bool: is the destination final
   typedef boost::tuple<bool, DEC_it, DEC_it, FT, bool>        result_type;
 
-  Uniform_direction_tracer_visitor(const Motorcycle* mc,
-                                   Dictionary& points,
-                                   const Triangle_mesh& mesh);
-
+  // Functions
   result_type compute_next_destination(const DEC_it start_point,
-                                       const face_descriptor fd) const;
+                                       const face_descriptor fd, const Motorcycle& mc,
+                                       Dictionary& points, const Triangle_mesh& mesh) const;
 
-  result_type operator()(vertex_descriptor vd) const;
-  result_type operator()(halfedge_descriptor hd) const;
-  result_type operator()(face_descriptor fd) const;
-
-private:
-  const Motorcycle* mc;
-  Dictionary& points;
-  const Triangle_mesh& mesh;
+  result_type operator()(vertex_descriptor vd, const Motorcycle& mc,
+                         Dictionary& points, const Triangle_mesh& mesh) const;
+  result_type operator()(halfedge_descriptor hd, const Motorcycle& mc,
+                         Dictionary& points, const Triangle_mesh& mesh) const;
+  result_type operator()(face_descriptor fd, const Motorcycle& mc,
+                         Dictionary& points, const Triangle_mesh& mesh) const;
 };
 
 // -----------------------------------------------------------------------------
 
 template<typename MotorcycleGraphTraits>
-Uniform_direction_tracer_visitor<MotorcycleGraphTraits>::
-Uniform_direction_tracer_visitor(const Motorcycle* mc,
-                                 Dictionary& points,
-                                 const Triangle_mesh& mesh)
-  :
-    mc(mc),
-    points(points),
-    mesh(mesh)
-{ }
-
-template<typename MotorcycleGraphTraits>
 typename Uniform_direction_tracer_visitor<MotorcycleGraphTraits>::result_type
 Uniform_direction_tracer_visitor<MotorcycleGraphTraits>::
 compute_next_destination(const DEC_it start_point,
-                         const face_descriptor fd) const
+                         const face_descriptor fd, const Motorcycle& mc,
+                         Dictionary& points, const Triangle_mesh& mesh) const
 {
   CGAL_precondition(start_point->location().first == fd);
   CGAL_precondition(num_vertices(mesh) != 0);
 
-  // @todo do I really need to look at all the halfedges? why not simply break
-  // as soon as it's a valid destination with time different from current_time?
-  Point farthest_destination;
-  FT time_at_farthest_destination = mc->current_time(); // minimum allowed time value
-  Vector mc_dir = *(mc->direction());
-  Ray r(start_point->point(), mc_dir);
-
   // @todo add named parameters ?
   typedef typename property_map_selector<Triangle_mesh, boost::vertex_point_t>::const_type VertexPointMap;
   VertexPointMap vpmap = get_const_property_map(vertex_point, mesh);
+
+  // @todo do I really need to look at all the halfedges? why not simply break
+  // as soon as it's a valid destination with time different from current_time?
+  Point farthest_destination;
+  FT time_at_farthest_destination = mc.current_time(); // minimum allowed time value
+  Vector mc_dir = *(mc.direction());
+
+#ifdef SHENANIGANS_3D
+  halfedge_descriptor fd_hd = halfedge(fd, mesh);
+  const Vector v1(get(vpmap, source(fd_hd, mesh)),
+                  get(vpmap, target(fd_hd, mesh)));
+  const Vector v2(get(vpmap, source(fd_hd, mesh)),
+                  get(vpmap, target(next(fd_hd, mesh), mesh)));
+
+  if(Geom_traits().orientation_3_object()(v1, v2, mc_dir) != CGAL::COPLANAR)
+  {
+    std::cerr << "Not coplanar! " << std::endl;
+
+    const typename Geom_traits::Plane_3 pl(get(vpmap, source(fd_hd, mesh)),
+                                           get(vpmap, target(fd_hd, mesh)),
+                                           get(vpmap, target(next(fd_hd, mesh), mesh)));
+
+    if(!pl.has_on(start_point->point()))
+    {
+      std::cerr << "oh boy..." << std::endl;
+    }
+
+    Vector n = pl.orthogonal_vector();
+    n = n / CGAL::sqrt(n*n);
+    std::cout << "n*n: " << n*n << std::endl;
+
+    FT sp = mc_dir * n;
+    mc_dir = mc_dir - sp * n;
+  }
+#endif
+
+  Ray r(start_point->point(), mc_dir);
 
   typedef CGAL::Halfedge_around_face_circulator<Triangle_mesh>  Halfedge_around_facet_circulator;
   Halfedge_around_facet_circulator hcir_begin(halfedge(fd, mesh), mesh);
@@ -133,7 +144,7 @@ compute_next_destination(const DEC_it start_point,
     halfedge_descriptor hd = *hcir++;
 
     Segment s(get(vpmap, source(hd, mesh)), get(vpmap, target(hd, mesh)));
-    std::cout << "ray: " << r << " and segment: " << s << std::endl;
+    std::cout << "ray: " << r << std::endl << "segment: " << s << std::endl;
 
     // @fixme default constructing traits
     if(Geom_traits().do_intersect_2_object()(r, s))
@@ -150,8 +161,8 @@ compute_next_destination(const DEC_it start_point,
       const Point new_destination = *res;
 
       // compute the time at destination
-      FT time_at_new_destination = mc->current_time() +
-        CGAL::sqrt(CGAL::squared_distance(start_point->point(), new_destination)) / mc->speed();
+      FT time_at_new_destination = mc.current_time() +
+        CGAL::sqrt(CGAL::squared_distance(start_point->point(), new_destination)) / mc.speed();
 
       std::cout << "new potential destination: " << new_destination
                 << " a time: " << time_at_new_destination << std::endl;
@@ -164,8 +175,8 @@ compute_next_destination(const DEC_it start_point,
     }
   } while (hcir != hcir_begin);
 
-  CGAL_postcondition(time_at_farthest_destination >= mc->current_time());
-  if(time_at_farthest_destination == mc->current_time())
+  CGAL_postcondition(time_at_farthest_destination >= mc.current_time());
+  if(time_at_farthest_destination == mc.current_time())
   {
     std::cerr << "Warning: motorcycle has no interesting intersection "
               << "with the border of the face: " << fd << std::endl;
@@ -173,7 +184,7 @@ compute_next_destination(const DEC_it start_point,
     // Since we have already dealt with the case of a null direction, if the current
     // position is the new destination, then the direction is pointing outside
     // of this face.
-    CGAL_assertion(*(mc->direction()) != CGAL::NULL_VECTOR);
+    CGAL_assertion(*(mc.direction()) != CGAL::NULL_VECTOR);
     return boost::make_tuple(false, DEC_it(), DEC_it(), 0., false /*not final*/);
   }
 
@@ -191,7 +202,7 @@ compute_next_destination(const DEC_it start_point,
 #ifdef CGAL_MOTORCYCLE_GRAPH_VERBOSE
   std::cout << "new source at " << &*start_point
             << " p: " << start_point->point()
-            << " time: " << mc->current_time() << std::endl;
+            << " time: " << mc.current_time() << std::endl;
   std::cout << "new destination at : " << &*destination.first
             << " p: " << destination.first->point()
             << " time: " << time_at_farthest_destination << std::endl;
@@ -204,13 +215,25 @@ compute_next_destination(const DEC_it start_point,
 template<typename MotorcycleGraphTraits>
 typename Uniform_direction_tracer_visitor<MotorcycleGraphTraits>::result_type
 Uniform_direction_tracer_visitor<MotorcycleGraphTraits>::
-operator()(vertex_descriptor vd) const
+operator()(vertex_descriptor vd, const Motorcycle& mc,
+           Dictionary& points, const Triangle_mesh& mesh) const
 {
   // check which face we should move into, find it, compute.
 #ifdef CGAL_MOTORCYCLE_GRAPH_VERBOSE
-  std::cout << " Uniform tracing from a point on a vertex";
-  std::cout << " with direction: " << *(mc->direction()) << std::endl;
+  std::cout << " Uniform tracing from a point on the vertex " << vd;
+  std::cout << " with direction: " << *(mc.direction()) << std::endl;
 #endif
+
+  // just to get rid of a degenerate case // @todo factorize this
+  CGAL_precondition(mc.direction()); // direction must be known
+  if(*(mc.direction()) == CGAL::NULL_VECTOR)
+  {
+    std::cerr << "Warning: the motorcycle direction is null and "
+              << "the next destination is thus the current position" << std::endl;
+
+    return boost::make_tuple(true, mc.position(), mc.position(),
+                             mc.current_time(), true /*final destination*/);
+  }
 
   halfedge_descriptor hd = halfedge(vd, mesh);
 
@@ -229,16 +252,16 @@ operator()(vertex_descriptor vd) const
     std::cout << "at face: " << fd << std::endl;
 
     // Compute the position of the motorcycle in the current face
-    Face_location loc_in_fd = (mc->position()->location().first == fd) ?
-                                mc->position()->location() :
+    Face_location loc_in_fd = (mc.position()->location().first == fd) ?
+                                mc.position()->location() :
                                 CGAL::Polygon_mesh_processing::locate(
-                                  mc->position()->location(), fd, mesh);
+                                  mc.position()->location(), fd, mesh);
 
     // Insert the new point and keep an iterator to it.
     std::pair<DEC_it, bool> source_in_fd = points.insert(loc_in_fd,
-                                                         mc->position()->point());
+                                                         mc.position()->point());
 
-    result_type res = compute_next_destination(source_in_fd.first, fd);
+    result_type res = compute_next_destination(source_in_fd.first, fd, mc, points, mesh);
 
     // Since direction == NULL_VECTOR has been filtered in Tracer.h, the time
     // can only be null if the direction points to face(opposite(hd, mesh), mesh)
@@ -262,29 +285,41 @@ operator()(vertex_descriptor vd) const
   // If we couldn't find a destination, then we must be on the border of the mesh
   // with a direction pointing out. In that case, return the source.
   CGAL_assertion(is_border(vd, mesh));
-  return boost::make_tuple(true, mc->position(), mc->position(),
-                           mc->current_time(), true /*final destination*/);
+  return boost::make_tuple(true, mc.position(), mc.position(),
+                           mc.current_time(), true /*final destination*/);
 }
 
 template<typename MotorcycleGraphTraits>
 typename Uniform_direction_tracer_visitor<MotorcycleGraphTraits>::result_type
 Uniform_direction_tracer_visitor<MotorcycleGraphTraits>::
-operator()(halfedge_descriptor hd) const
+operator()(halfedge_descriptor hd, const Motorcycle& mc,
+           Dictionary& points, const Triangle_mesh& mesh) const
 {
 #ifdef CGAL_MOTORCYCLE_GRAPH_VERBOSE
-  std::cout << " Uniform tracing from a point on an edge";
-  std::cout << " with direction: " << *(mc->direction()) << std::endl;
+  std::cout << " Uniform tracing from a point on the halfedge " << hd;
+  std::cout << " with direction: " << *(mc.direction()) << std::endl;
 #endif
+
+  // just to get rid of a degenerate case
+  CGAL_precondition(mc.direction()); // direction must be known
+  if(*(mc.direction()) == CGAL::NULL_VECTOR)
+  {
+    std::cerr << "Warning: the motorcycle direction is null and "
+              << "the next destination is thus the current position" << std::endl;
+
+    return boost::make_tuple(true, mc.position(), mc.position(),
+                             mc.current_time(), true /*final destination*/);
+  }
 
   // When we reach the border at the interior of a halfedge, the path continues
   // on the adjacent face.
 
   // Exception case: we are computing the first destination. In that case, first
   // try to find a valid destination on face(hd, mesh)
-  if(mc->initial_destination_point() == boost::none)
+  if(mc.initial_destination_point() == boost::none)
   {
     face_descriptor fd = face(hd, mesh);
-    result_type res = compute_next_destination(mc->position(), fd);
+    result_type res = compute_next_destination(mc.position(), fd, mc, points, mesh);
 
     // Since direction == NULL_VECTOR has been filtered in Tracer.h, the time
     // can only be null if the direction points to face(opposite(hd, mesh), mesh)
@@ -299,21 +334,21 @@ operator()(halfedge_descriptor hd) const
   {
     // Source is on the border of the mesh and the direction is pointing out,
     // return the source point and mark it as final destination
-    return boost::make_tuple(true, mc->position(), mc->position(),
-                             mc->current_time(), true /*final destination*/);
+    return boost::make_tuple(true, mc.position(), mc.position(),
+                             mc.current_time(), true /*final destination*/);
   }
 
   // Compute the position of the motorcycle in the opposite face
   face_descriptor opp_fd = face(opp_hd, mesh);
   CGAL_assertion(opp_fd != boost::graph_traits<Triangle_mesh>::null_face());
-  Face_location opp_loc = CGAL::Polygon_mesh_processing::locate(mc->position()->location(),
+  Face_location opp_loc = CGAL::Polygon_mesh_processing::locate(mc.position()->location(),
                                                                 opp_fd, mesh);
 
-  // Insert the new destination in the dictionary
+  // Insert the source seen from the opposite face in the dictionary
   std::pair<DEC_it, bool> source_in_next_face = points.insert(opp_loc,
-                                                              mc->position()->point());
+                                                              mc.position()->point());
 
-  result_type opp_res = compute_next_destination(source_in_next_face.first, opp_fd);
+  result_type opp_res = compute_next_destination(source_in_next_face.first, opp_fd, mc, points, mesh);
 
   CGAL_assertion(opp_res.template get<0>());
   return opp_res;
@@ -322,14 +357,26 @@ operator()(halfedge_descriptor hd) const
 template<typename MotorcycleGraphTraits>
 typename Uniform_direction_tracer_visitor<MotorcycleGraphTraits>::result_type
 Uniform_direction_tracer_visitor<MotorcycleGraphTraits>::
-operator()(face_descriptor fd) const
+operator()(face_descriptor fd, const Motorcycle& mc,
+           Dictionary& points, const Triangle_mesh& mesh) const
 {
 #ifdef CGAL_MOTORCYCLE_GRAPH_VERBOSE
-  std::cout << " Uniform tracing from a point in a face";
-  std::cout << " with direction: " << *(mc->direction()) << std::endl;
+  std::cout << " Uniform tracing from a point in the face " << fd;
+  std::cout << " with direction: " << *(mc.direction()) << std::endl;
 #endif
 
-  return compute_next_destination(mc->position(), fd);
+  // just to get rid of a degenerate case
+  CGAL_precondition(mc.direction()); // direction must be known
+  if(*(mc.direction()) == CGAL::NULL_VECTOR)
+  {
+    std::cerr << "Warning: the motorcycle direction is null and "
+              << "the next destination is thus the current position" << std::endl;
+
+    return boost::make_tuple(true, mc.position(), mc.position(),
+                             mc.current_time(), true /*final destination*/);
+  }
+
+  return compute_next_destination(mc.position(), fd, mc, points, mesh);
 }
 
 } // namespace Polyline_tracing

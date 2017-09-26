@@ -20,6 +20,8 @@
 #include <CGAL/Polyline_tracing/Dictionary.h>
 #include <CGAL/Polyline_tracing/Motorcycle.h>
 
+#include <boost/shared_ptr.hpp>
+
 #include <utility>
 
 namespace CGAL {
@@ -35,13 +37,14 @@ public:
   typedef MotorcycleGraphTraits                                   Geom_traits;
 
   typedef typename Geom_traits::FT                                FT;
-  typedef Motorcycle<Geom_traits>                                 Motorcycle;
+  typedef Motorcycle_impl_base<Geom_traits>                       Motorcycle;
+  typedef boost::shared_ptr<Motorcycle>                           Motorcycle_ptr;
 
-  FT time_at_closest_target() const { return m->targets().begin()->second; }
-  Motorcycle& motorcycle() { return *m; }
-  const Motorcycle& motorcycle() const { return *m; }
+  FT time_at_closest_target() const { return mc->time_at_closest_target(); }
+  Motorcycle& motorcycle() { return *mc; }
+  const Motorcycle& motorcycle() const { return *mc; }
 
-  Motorcycle_priority_queue_entry(Motorcycle* mc);
+  Motorcycle_priority_queue_entry(Motorcycle_ptr mc);
 
   friend bool operator<(const Self& lhs, const Self& rhs) {
     // '>' because we want the priority queue to output the element with smallest time
@@ -49,15 +52,15 @@ public:
   }
 
 private:
-  Motorcycle* m;
+  Motorcycle_ptr mc;
 };
 
 template<typename MotorcycleGraphTraits>
 Motorcycle_priority_queue_entry<MotorcycleGraphTraits>::
-Motorcycle_priority_queue_entry(Motorcycle* mc)
-  : m(mc)
+Motorcycle_priority_queue_entry(Motorcycle_ptr mc)
+  : mc(mc)
 {
-  CGAL_precondition(!m->targets().empty());
+  CGAL_precondition(!mc->targets().empty());
 }
 
 } // namespace Polyline_tracing

@@ -36,6 +36,7 @@
 #include <CGAL/result_of.h>
 
 #include <boost/optional.hpp>
+#include <boost/shared_ptr.hpp>
 #include <boost/tuple/tuple.hpp>
 #include <boost/unordered_map.hpp>
 
@@ -107,8 +108,9 @@ public:
   typedef typename Geom_traits::Barycentric_coordinates       Barycentric_coordinates;
   typedef typename Geom_traits::Face_location                 Face_location;
 
-  typedef Motorcycle<Geom_traits>                             Motorcycle;
-  typedef std::vector<Motorcycle*>                            Motorcycle_container;
+  typedef Motorcycle_impl_base<Geom_traits>                   Motorcycle;
+  typedef boost::shared_ptr<Motorcycle>                       Motorcycle_ptr;
+  typedef std::vector<Motorcycle_ptr>                         Motorcycle_container;
 
   typedef typename Motorcycle::Track                          Track;
 
@@ -134,7 +136,8 @@ public:
   Motorcycle_graph(Triangle_mesh& mesh, const Geom_traits& gt = Geom_traits());
 
   // Functions
-  void add_motorcycle(const Motorcycle* mc);
+  void add_motorcycle(Motorcycle_ptr mc);
+  void add_motorcycle(Motorcycle_ptr mc, std::size_t new_id);
 
   template<typename MotorcycleContainerIterator>
   void add_motorcycles(MotorcycleContainerIterator mit, MotorcycleContainerIterator last);
@@ -248,16 +251,23 @@ Motorcycle_graph(Triangle_mesh& mesh, const Geom_traits& gt)
 template<typename MotorcycleGraphTraits>
 void
 Motorcycle_graph<MotorcycleGraphTraits>::
-add_motorcycle(const Motorcycle* mc)
+add_motorcycle(Motorcycle_ptr mc)
 {
-  std::size_t new_id = motorcycles.size();
+  return add_motorcycle(mc, motorcycles.size());
+}
+
+template<typename MotorcycleGraphTraits>
+void
+Motorcycle_graph<MotorcycleGraphTraits>::
+add_motorcycle(Motorcycle_ptr mc, std::size_t new_id)
+{
   mc->set_id(new_id);
 
   boost::optional<Point>& destination_point = mc->initial_destination_point();
   boost::optional<Vector>& direction = mc->direction();
 
-  CGAL_precondition_msg(destination_point != boost::none || direction != boost::none,
-    "A motorcycle must have least a destination or a direction.");
+  if(destination_point == boost::none && direction == boost::none)
+    std::cerr << "Warning: Neither destination nor direction are provided." << std::endl;
 
   motorcycles.push_back(mc);
 }
@@ -268,22 +278,16 @@ void
 Motorcycle_graph<MotorcycleGraphTraits>::
 add_motorcycles(MotorcycleContainerIterator mit, MotorcycleContainerIterator last)
 {
-  motorcycles.reserve(std::distance(mit, last));
+  if(!motorcycles.empty())
+    std::cerr << "Warning: motorcycle container was already not empty when calling add_motorcycles()" << std::endl;
 
-  std::size_t counter = 0; // unique motorcycle ids
+  motorcycles.reserve(motorcycles.size() + std::distance(mit, last));
+
+  std::size_t counter = motorcycles.size(); // unique motorcycle ids
   while(mit != last)
   {
-    Motorcycle& mc = *mit++;
-    mc.set_id(counter);
-
-    boost::optional<Point>& destination_point = mc.initial_destination_point();
-    boost::optional<Vector>& direction = mc.direction();
-
-    CGAL_precondition_msg(destination_point != boost::none || direction != boost::none,
-      "A motorcycle must have least a destination or a direction.");
-
-    motorcycles.push_back(&mc);
-    ++counter;
+    Motorcycle_ptr mc = *mit++;
+    add_motorcycle(mc, counter++);
   }
 }
 
@@ -1019,7 +1023,7 @@ initialize_motorcycles()
         // The source change must only be a change of face descriptor, not of position
         CGAL_assertion(mc.source()->point() == res.template get<1>()->point());
 
-        // if the source point wasn't previously in the dictionary, clean it off
+        // if the source point wasn't previously in the dictionary, it can be cleaned off
         if(source.second)
         {
           // make sure that the only motorcycle visiting that point is 'mc'
@@ -1059,9 +1063,6 @@ initialize_motorcycles()
                         destination_location.second[2] >= 0. &&
                         destination_location.second[2] <= 1.);
 
-      if(mc.id()%3 == 0)// @tmp, for fun, don't always stop at the destination
-        mc.set_destination_finality(true);
-
       // @todo this should be computed by the tracer (?)
       time_at_destination = time_at_source +
         CGAL::sqrt(CGAL::squared_distance(ini_source_point, destination_point)) / speed;
@@ -1070,23 +1071,6 @@ initialize_motorcycles()
                                                                 destination_point,
                                                                 mc_id, time_at_destination);
       destination = destination_entry.first;
-
-      if(direction == boost::none)
-      {
-        mc.direction() = Vector(ini_source_point, destination_point);
-      }
-      else // both the destination and the direction are known
-      {
-        // sanity check: (destination - source) is collinear with the direction
-        Ray r(ini_source_point, *(mc.direction()));
-        if(!r.has_on(destination_point))
-        {
-          std::cerr << "Error: Incompatible destination and direction: " << std::endl
-                    << "- destination: " << destination_point << std::endl
-                    << "- direction: " << *(mc.direction()) << std::endl;
-          CGAL_assertion(false);
-        }
-      }
     }
 
     mc.destination() = destination;
@@ -1100,6 +1084,22 @@ initialize_motorcycles()
     // this is useful to not get an empty track when sour=dest
     // but it creates duplicates @fixme
     mc.track().insert(std::make_pair(mc.source()->point(), mc.current_time()));
+
+    // Fill direction if needed
+    if(direction == boost::none)
+    {
+      mc.direction() = Vector(mc.source()->point(), mc.destination()->point());
+    }
+
+    // sanity check: (destination - source) is collinear with the direction
+    Ray r(mc.source()->point(), *(mc.direction()));
+    if(!r.has_on(mc.destination()->point()))
+    {
+      std::cerr << "Error: Incompatible destination and direction: " << std::endl
+                << "- destination: " << mc.destination()->point() << std::endl
+                << "- direction: " << *(mc.direction()) << std::endl;
+      CGAL_assertion(false);
+    }
   }
 }
 
