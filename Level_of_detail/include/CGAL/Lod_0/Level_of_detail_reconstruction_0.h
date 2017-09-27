@@ -13,6 +13,7 @@
 #include <CGAL/utils_classes.h>
 #include <CGAL/utils.h>
 #include <CGAL/Kernel/global_functions.h>
+#include <CGAL/IO/Color.h>
 
 namespace Maxflow {
 	#include <CGAL/internal/auxiliary/graph.h>
@@ -389,7 +390,20 @@ namespace CGAL {
 
 					if (graph->what_segment(nodes[index]) == Graph::SOURCE) fit->info().in = FT(1);
 					if (graph->what_segment(nodes[index]) == Graph::SINK)   fit->info().in = FT(0);
+
+					fit->info().in_color = get_color(fit->info().in);
 				}
+			}
+
+			CGAL::Color get_color(const FT visibility) const {
+
+				const FT half = FT(1) / FT(2);
+
+				if (visibility > half) return CGAL::Color(51, 255, 51);	     // INSIDE
+				else if (visibility < half) return CGAL::Color(255, 51, 51); // OUTSIDE
+									  
+				assert(!"Cannot be here!");
+				return CGAL::Color(255, 204, 0); // UNKNOWN
 			}
 		};
 	}

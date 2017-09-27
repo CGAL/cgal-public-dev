@@ -6,6 +6,7 @@
 #include <memory>
 #include <string>
 #include <iostream>
+#include <vector>
 
 // CGAL includes.
 #include <CGAL/linear_least_squares_fitting_2.h>
@@ -54,7 +55,11 @@ namespace CGAL {
 			typedef typename Traits::Ground_projector     Ground_projector;
 			typedef typename Traits::Projected_points     Projected_points;
 			typedef typename Traits::Planes        		  Planes;
-			
+
+			typedef typename Traits::Building_splitter 	  Building_splitter;
+			typedef typename Traits::Building_outliner 	  Building_outliner;
+			typedef typename Traits::Building_roof_fitter Building_roof_fitter;
+
 			typedef Planes Boundary_data;
 
 			typedef typename Traits::Structuring_2 Structuring_2;
@@ -62,6 +67,10 @@ namespace CGAL {
 			
 			typedef typename Traits::CDT        CDT;
 			typedef typename CDT::Vertex_handle Vertex_handle;
+			typedef typename CDT::Face_handle   Face_handle;
+
+			typedef typename Traits::Lod_0 Lod_0;
+			typedef typename Traits::Lod_1 Lod_1;
 
 			// Extra.
 			using Plane_iterator = typename Planes::const_iterator;
@@ -81,7 +90,7 @@ namespace CGAL {
 			using Label     = typename Traits::Label;
 			using Label_map = typename Container_3D:: template Property_map<Label>;
 
-			typedef typename Traits::Lod_0 Lod_0;
+			using Buildings = std::map<int, std::vector<Face_handle> >;
 
 			// const std::string default_path = "/Users/danisimo/Documents/pipeline/data/basic_test_v3/";
 			const std::string default_path = "/Users/danisimo/Documents/pipeline/data/complex_test/";
@@ -303,7 +312,7 @@ namespace CGAL {
 				// ----------------------------------
 
 				// (13) Apply graph cut.
-				std::cout << "(13) applying graph cut" << std::endl;
+				std::cout << "(13) applying graph cut - LOD0" << std::endl;
 
 				m_lod_0.set_alpha_parameter(FT(1));
 				m_lod_0.set_beta_parameter(FT(100000));
@@ -311,7 +320,36 @@ namespace CGAL {
 
 				m_lod_0.max_flow(cdt);
 
-				log.out << "(13) Final LOD 0 is reconstructed." << std::endl;
+				log.out << "(13) Final LOD 0 is reconstructed." << std::endl << std::endl;
+				Log ply_cdt; ply_cdt.save_cdt_ply(cdt, "tmp/final_cdt", "in");
+
+
+				// ----------------------------------				
+
+				// (14) From now on we handle each building separately.
+
+
+				// (a) Split all buildings.
+				std::cout << "(14) splitting buildings" << std::endl;
+
+				Buildings buildings;
+				const auto number_of_buildings = m_building_splitter.split(cdt, buildings);
+
+				log.out << "(14 a) All buildings are found. Number of buildings: " << number_of_buildings << std::endl;
+
+
+				// (b) Find building's walls.
+				m_building_outliner.order_walls(cdt, buildings); // to be implemented
+
+
+				// (c) Fit roof height for each building.
+				m_building_roof_fitter.fit_roof_heights(cdt, buildings, input); // to be implemented
+
+
+				// ----------------------------------	
+				
+				// (15) LOD1 reconstruction.
+				m_lod_1.reconstruct(); // to be implemented
 
 
 				// ----------------------------------
@@ -336,7 +374,13 @@ namespace CGAL {
 			Vertical_regularizer	   m_vertical_regularizer;
 			Ground_projector 		   m_ground_projector;
 			Visibility_2 			   m_visibility;
-			Lod_0	                   m_lod_0;
+			
+			Lod_0 m_lod_0;
+			Lod_1 m_lod_1;
+
+			Building_splitter 	 m_building_splitter;
+			Building_outliner 	 m_building_outliner;
+			Building_roof_fitter m_building_roof_fitter;
 
 			std::unique_ptr<Structuring_2> m_structuring;
 			

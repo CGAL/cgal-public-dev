@@ -159,6 +159,49 @@ namespace CGAL {
 			}
 
 			template<class CDT>
+			void save_cdt_ply(const CDT &cdt, const std::string &filename, const std::string &color_type = "in") {
+
+				clear();
+
+				const auto number_of_vertices = cdt.number_of_vertices();
+				const auto number_of_faces    = cdt.number_of_faces();
+
+				out << 
+				"ply\n"               					 << 
+				"format ascii 1.0\n"     				 << 
+				"element vertex "        				 << number_of_vertices << "\n" << 
+				"property double x\n"    				 << 
+				"property double y\n"    				 << 
+				"property double z\n" 					 <<
+				"element face " 						 << number_of_faces << "\n" << 
+				"property list uchar int vertex_index\n" <<
+				"property uchar red\n" 					 <<
+				"property uchar green\n" 				 <<
+				"property uchar blue\n" 				 <<
+				"end_header\n";
+
+				typedef typename CDT::Vertex_handle Vertex_handle;
+				CGAL::Unique_hash_map<Vertex_handle, int> V;
+
+				int count = 0;
+				for (typename CDT::Finite_vertices_iterator vit = cdt.finite_vertices_begin(); vit != cdt.finite_vertices_end(); ++vit) {
+					
+					out << (*vit) << " " << 0 << std::endl;
+					V[vit] = count++;
+				}
+
+				for (typename CDT::Finite_faces_iterator fit = cdt.finite_faces_begin(); fit != cdt.finite_faces_end(); ++fit) {
+					
+					out << "3 " << V[(*fit).vertex(0)] << " " << V[(*fit).vertex(1)] << " " << V[(*fit).vertex(2)] << " ";
+					
+					if (color_type == "in") out << fit->info().in_color << std::endl;
+					if (color_type == "bu") out << fit->info().bu_color << std::endl;
+				}
+
+				save(filename, ".ply");
+			}
+
+			template<class CDT>
 			void save_cdt_obj(const CDT &cdt, const std::string &filename) {
 
 				clear();
@@ -180,7 +223,7 @@ namespace CGAL {
 			}
 
 			template<class CDT, class Container, class Segments>
-			void save_visibility_eps(CDT &cdt, const Container &input, const Segments &segments, const std::string &fileName = "tmp/visibility") {
+			void save_visibility_eps(CDT &cdt, const Container &input, const Segments &segments, const std::string &fileName = "tmp/visibility", const std::string &color_type = "in") {
 
 				clear();
 
@@ -199,7 +242,7 @@ namespace CGAL {
 		        out << "0 dict begin gsave\n\n";
 
 		        // Save mesh.
-		        draw_mesh(cdt, scale);
+		        draw_mesh(cdt, scale, color_type);
 
 		        // Save points.
 		        draw_points(input, scale);
@@ -244,7 +287,7 @@ namespace CGAL {
 			}
 
 			template<class CDT>
-			void save_visibility_eps(CDT &cdt, const std::string &fileName = "tmp/visibility") {
+			void save_visibility_eps(CDT &cdt, const std::string &fileName = "tmp/visibility", const std::string &color_type = "in") {
 
 				clear();
 
@@ -263,7 +306,7 @@ namespace CGAL {
 		        out << "0 dict begin gsave\n\n";
 
 		        // Save mesh.
-		        draw_mesh(cdt, scale);
+		        draw_mesh(cdt, scale, color_type);
 
 		        // Finish private namespace.
 		        out << "grestore end\n\n";
@@ -379,7 +422,7 @@ namespace CGAL {
 			}
 
 			template<class CDT>
-    		void draw_mesh(const CDT &cdt, const double scale) {
+    		void draw_mesh(const CDT &cdt, const double scale, const std::string &color_type) {
 
 				for (typename CDT::Finite_faces_iterator fit = cdt.finite_faces_begin(); fit != cdt.finite_faces_end(); ++fit) {
 
@@ -391,12 +434,24 @@ namespace CGAL {
 					out << "closepath\n\n";
 					out << "gsave\n";
 
+					/*
 					const double visibility = static_cast<double>(fit->info().in);
 					const double half = 0.5;
 
 					if (visibility > half) out << "0.2 1 0.2 setrgbcolor\n";	  // INSIDE
 					else if (visibility < half) out << "1 0.2 0.2 setrgbcolor\n"; // OUTSIDE
-					else out << "1 0.8 0 setrgbcolor\n";						  // UNKNOWN
+					else out << "1 0.8 0 setrgbcolor\n";						  // UNKNOWN */
+
+					CGAL::Color fc;
+
+					if (color_type == "in") fc = fit->info().in_color;
+					if (color_type == "bu") fc = fit->info().bu_color;
+
+					const double r = static_cast<double>(fc.red())   / 255.0;
+					const double g = static_cast<double>(fc.green()) / 255.0;
+					const double b = static_cast<double>(fc.blue())  / 255.0;
+
+					out << r << " " << g << " " << b << " setrgbcolor\n";
 
 					out << "fill\n";
 					out << "grestore\n";

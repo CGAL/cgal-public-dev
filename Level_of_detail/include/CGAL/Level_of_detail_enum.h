@@ -1,6 +1,9 @@
 #ifndef CGAL_LEVEL_OF_DETAIL_ENUM_H
 #define CGAL_LEVEL_OF_DETAIL_ENUM_H
 
+// CGAL includes.
+#include <CGAL/IO/Color.h>
+
 namespace CGAL {
 
 	namespace LOD {
@@ -43,7 +46,11 @@ namespace CGAL {
 		class My_face_info {
 
 		public:
-			FT in = FT(1) / FT(2);
+			FT in = FT(1) / FT(2); 				  			 // visibility label (in - inside) or (out - outside)
+			CGAL::Color in_color = CGAL::Color(255, 204, 0); // visibility color (in < 1/2 - red), (in = 1/2 - yellow), (in > 1/2 - green)
+			
+			int bu = -1; 		   						 // building's index - (0, 1, 2 etc.) where (-1 means not a building)
+			CGAL::Color bu_color = CGAL::Color(0, 0, 0); // building's color - random color is used per building
 		};
 
 		// Vertex info class.

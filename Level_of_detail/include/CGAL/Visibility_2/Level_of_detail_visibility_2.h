@@ -27,6 +27,7 @@
 #include <CGAL/Fuzzy_sphere.h>
 #include <CGAL/constructions_d.h>
 #include <CGAL/utils.h>
+#include <CGAL/IO/Color.h>
 
 // New CGAL includes.
 #include <CGAL/Mylog/Mylog.h>
@@ -125,7 +126,11 @@ namespace CGAL {
 			int compute(const Container &input, CDT &cdt) const {
 
 				const FT half = FT(1) / FT(2);
-				for (Face_iterator fit = cdt.finite_faces_begin(); fit != cdt.finite_faces_end(); ++fit) fit->info().in = half;
+				for (Face_iterator fit = cdt.finite_faces_begin(); fit != cdt.finite_faces_end(); ++fit) {
+					
+					fit->info().in       = half;
+					fit->info().in_color = get_color(fit->info().in);
+				}
 
 				switch(m_approach) {
 
@@ -278,8 +283,21 @@ namespace CGAL {
 				Function_type function_values;
 				set_delunay_and_function_values(input, dt, function_values);
 
-				for (Face_iterator fit = cdt.finite_faces_begin(); fit != cdt.finite_faces_end(); ++fit)
-					fit->info().in = compute_interpolated_value(cdt, fit, dt, function_values);
+				for (Face_iterator fit = cdt.finite_faces_begin(); fit != cdt.finite_faces_end(); ++fit) {
+					
+					fit->info().in       = compute_interpolated_value(cdt, fit, dt, function_values);
+					fit->info().in_color = get_color(fit->info().in);
+				}
+			}
+
+			CGAL::Color get_color(const FT visibility) const {
+
+				const FT half = FT(1) / FT(2);
+
+				if (visibility > half) return CGAL::Color(51, 255, 51);	     // INSIDE
+				else if (visibility < half) return CGAL::Color(255, 51, 51); // OUTSIDE
+									  
+				return CGAL::Color(255, 204, 0); // UNKNOWN
 			}
 
 			void set_delunay_and_function_values(const Container &input, Delaunay_triangulation &dt, Function_type &function_values) const {
@@ -365,7 +383,8 @@ namespace CGAL {
 					Container pwl;
 					tree.search(std::back_inserter(pwl), circle);
 
-					fit->info().in = compute_estimator(pwl);
+					fit->info().in       = compute_estimator(pwl);
+					fit->info().in_color = get_color(fit->info().in);
 				}
 			}
 
@@ -642,10 +661,14 @@ namespace CGAL {
 					const FT sum = FT(inside + outside); 
 					if (sum == FT(0)) {
 
-						(*it).first->info().in = half;
+						(*it).first->info().in       = half;
+						(*it).first->info().in_color = get_color((*it).first->info().in);
+						
 						continue;	
 					}
-					(*it).first->info().in = inside / sum;
+
+					(*it).first->info().in 		 = inside / sum;
+					(*it).first->info().in_color = get_color((*it).first->info().in);
 				}
 			}
 

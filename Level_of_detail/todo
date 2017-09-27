@@ -25,3 +25,7 @@ TODO AND OTHER:
 22. What to do with cells that have no predictions?
 23. Fix data structure so that each point in CDT has access to its associated structuring label. Moreover, check if I insert points twice when creating CDT.
 24. Actiually my reconstruction code should compute the cost function for each surface S in all graph cut iterations.
+
+
+// NEW:
+1. What about creating new semantic data structures such as "Building", "Tree", "Car" and so on?

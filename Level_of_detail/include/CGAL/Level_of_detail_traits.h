@@ -22,6 +22,8 @@
 #include <CGAL/Structuring_2/Level_of_detail_structuring_2.h>
 #include <CGAL/Visibility_2/Level_of_detail_visibility_2.h>
 #include <CGAL/Lod_0/Level_of_detail_reconstruction_0.h>
+#include <CGAL/Lod_1/Level_of_detail_reconstruction_1.h>
+#include <CGAL/Buildings/Level_of_detail_buildings.h>
 #include <CGAL/Level_of_detail_enum.h>
 
 namespace CGAL {
@@ -70,6 +72,12 @@ namespace CGAL {
 			typedef Level_of_detail_visibility_from_classification_2<Kernel, Container_2D, CDT> Visibility_2;
 			
 			typedef Level_of_detail_reconstruction_0<Kernel, CDT> Lod_0;
+			typedef Level_of_detail_reconstruction_1<Kernel>      Lod_1;
+
+			typedef Level_of_detail_building_splitter_2<Kernel, CDT> Building_splitter;
+			typedef Level_of_detail_building_outliner_2<Kernel, CDT> Building_outliner;
+
+			typedef Level_of_detail_building_roof_fitter_2<Kernel, CDT, Container_3D> Building_roof_fitter;
 		};
 	}
 }
