@@ -24,6 +24,8 @@
 #include <boost/bimap.hpp>
 #include <boost/bimap/multiset_of.hpp>
 #include <boost/bimap/set_of.hpp>
+#include <boost/functional/hash.hpp>
+#include <boost/unordered_set.hpp>
 
 #include <utility>
 
@@ -109,6 +111,22 @@ public:
     }
 
     return lhs.location().first < rhs.location().first;
+  }
+
+  friend bool operator==(const Self& lhs, const Self& rhs)
+  {
+    return (lhs.location().first == rhs.location().first &&
+            lhs.location().second == rhs.location().second);
+  }
+
+  friend std::size_t hash_value(const Self& dec)
+  {
+    boost::hash<face_descriptor> face_hasher;
+    std::size_t seed = 0;
+    boost::hash_combine(seed, face_hasher(dec.location().first));
+    boost::hash_combine(seed, boost::hash_range(dec.location().second.begin(),
+                                                dec.location().second.end()));
+    return seed;
   }
 
   // Output
@@ -282,7 +300,7 @@ public:
   typedef typename Dictionary_entry::Face_location        Face_location;
 
   // @todo doesn't need to be an (ordered) set, but must find out a hash function...
-  typedef std::set<Dictionary_entry>                      Dictionary_entry_container;
+  typedef boost::unordered_set<Dictionary_entry>          Dictionary_entry_container;
   typedef typename Dictionary_entry_container::iterator   DEC_it;
 
   // Access
@@ -294,7 +312,7 @@ public:
   // Functions
   std::pair<DEC_it, bool> find(const Dictionary_entry& e) const;
   std::pair<DEC_it, bool> find(const Face_location& loc) const;
-  void erase(DEC_it pos);
+  DEC_it erase(DEC_it pos);
   std::pair<DEC_it, bool> insert(const Face_location& loc, const Point& p);
   std::pair<DEC_it, bool> insert(const Face_location& loc, const Point& p, const std::size_t i, const FT time);
   std::pair<DEC_it, bool> insert(const Face_location& loc, const std::size_t i, const FT time, const Triangle_mesh& mesh);
@@ -323,7 +341,7 @@ find(const Face_location& loc) const
 }
 
 template<typename MotorcycleGraphTraits>
-void
+typename Dictionary<MotorcycleGraphTraits>::DEC_it
 Dictionary<MotorcycleGraphTraits>::
 erase(DEC_it pos)
 {
