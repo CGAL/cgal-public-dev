@@ -8,6 +8,7 @@
 #include <CGAL/Triangulation_face_base_with_info_2.h>
 #include <CGAL/Constrained_triangulation_face_base_2.h>
 #include <CGAL/Triangulation_vertex_base_with_info_2.h>
+#include <CGAL/IO/Color.h>
 
 // New CGAL includes.
 #include <CGAL/Mylog/Mylog.h>

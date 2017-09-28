@@ -65,9 +65,11 @@ namespace CGAL {
 			typedef typename Traits::Structuring_2 Structuring_2;
 			typedef typename Traits::Visibility_2  Visibility_2;
 			
-			typedef typename Traits::CDT        CDT;
-			typedef typename CDT::Vertex_handle Vertex_handle;
-			typedef typename CDT::Face_handle   Face_handle;
+			typedef typename Traits::CDT        		CDT;
+			typedef typename CDT::Vertex_handle 		Vertex_handle;
+			typedef typename CDT::Face_handle   		Face_handle;
+			typedef typename CDT::Finite_edges_iterator Edge_iterator;
+			typedef typename CDT::Finite_faces_iterator Face_iterator;
 
 			typedef typename Traits::Lod_0 Lod_0;
 			typedef typename Traits::Lod_1 Lod_1;
@@ -98,7 +100,7 @@ namespace CGAL {
 			Level_of_detail_base(Traits traits = Traits()) : m_traits(traits) { } // Do I need to create an instance of these traits here?
 
 			template<class OutputIterator>
-			void create_lod_0(const std::string &, OutputIterator &&) {
+			void create_lods(const std::string &, OutputIterator &&) {
 
 				// (START) Create log.
 				std::cout << "\nstarting ..." << std::endl;
@@ -321,7 +323,11 @@ namespace CGAL {
 				m_lod_0.max_flow(cdt);
 
 				log.out << "(13) Final LOD 0 is reconstructed." << std::endl << std::endl;
-				Log ply_cdt; ply_cdt.save_cdt_ply(cdt, "tmp/final_cdt", "in");
+				
+				CDT cdt_with_bbox;
+				add_bbox_to(cdt, input, cdt_with_bbox);
+
+				Log ply_cdt; ply_cdt.save_cdt_ply(cdt_with_bbox, "LOD0_cdt", "in");
 
 
 				// ----------------------------------				
@@ -358,7 +364,7 @@ namespace CGAL {
 				std::cout << "... finishing\n" << std::endl;
 
 				log.out << "\n\nFINISH EXECUTION";
-				log.save("create_lod_0");
+				log.save("create_lods");
 			}
 			
 		private:
@@ -606,6 +612,50 @@ namespace CGAL {
 
 				log.save("tmp/input_2d");
 				return point_index;
+			}
+
+			void add_bbox_to(const CDT &cdt, const Container_3D &input, CDT &cdt_with_bbox) {
+
+				CDT tmp = cdt;
+
+				for (Edge_iterator eit = tmp.finite_edges_begin(); eit != tmp.finite_edges_end(); ++eit)
+					if (is_boundary_edge(tmp, eit)) insert_constraint(tmp, eit);
+
+				cdt_with_bbox = tmp;
+
+				std::vector<Point_2> bbox;
+				compute_bounding_box(input, bbox);
+
+				std::vector<Vertex_handle> bhs(bbox.size());
+
+				for (size_t i = 0; i < bbox.size(); ++i) bhs[i] = cdt_with_bbox.insert(bbox[i]);
+				for (size_t i = 0; i < bbox.size(); ++i) {
+
+					const size_t ip = (i + 1) % bbox.size();
+					cdt_with_bbox.insert_constraint(bhs[i], bhs[ip]);
+				}
+			}
+
+			bool is_boundary_edge(const CDT &cdt, const Edge_iterator &edge_handle) const {
+
+				const int vertex_index = edge_handle->second;
+
+				const Face_handle face_1 = edge_handle->first;
+				const Face_handle face_2 = face_1->neighbor(vertex_index);
+
+				if (cdt.is_infinite(face_1) || cdt.is_infinite(face_2)) return true;
+				return false;
+			}
+
+			void insert_constraint(CDT &cdt, const Edge_iterator &edge_handle) const {
+
+				const Face_handle face = edge_handle->first;
+				const int vertex_index = edge_handle->second;
+
+				const Vertex_handle &source = face->vertex(cdt.ccw(vertex_index));
+				const Vertex_handle &target = face->vertex( cdt.cw(vertex_index));
+
+				cdt.insert_constraint(source, target);
 			}
 		};
 	}

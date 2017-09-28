@@ -37,5 +37,5 @@ TEST_F(LOD_BaseTest, Compiles) {
 TEST_F(LOD_BaseTest, RunsCreateLodZeroFunction) {
 
 	std::vector<Point> result;
-	lodBase.create_lod_0(internallyUnusedFilePath, std::back_inserter(result));
+	lodBase.create_lods(internallyUnusedFilePath, std::back_inserter(result));
 }

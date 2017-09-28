@@ -49,8 +49,8 @@ namespace CGAL {
 			FT in = FT(1) / FT(2); 				  			 // visibility label (in - inside) or (out - outside)
 			CGAL::Color in_color = CGAL::Color(255, 204, 0); // visibility color (in < 1/2 - red), (in = 1/2 - yellow), (in > 1/2 - green)
 			
-			int bu = -1; 		   						 // building's index - (0, 1, 2 etc.) where (-1 means not a building)
-			CGAL::Color bu_color = CGAL::Color(0, 0, 0); // building's color - random color is used per building
+			int bu = -1; 		   						 	   // building's index - (0, 1, 2 etc.) where (-1 means not a building)
+			CGAL::Color bu_color = CGAL::Color(169, 169, 169); // building's color - random color is used per building
 		};
 
 		// Vertex info class.

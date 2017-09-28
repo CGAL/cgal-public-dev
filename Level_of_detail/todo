@@ -29,3 +29,5 @@ TODO AND OTHER:
 
 // NEW:
 1. What about creating new semantic data structures such as "Building", "Tree", "Car" and so on?
+2. Can I make an existing edge constrained? What if I have one building inside another one. How can I detect/correct after the graph cut that interior building's walls should be constrained?
+3. How to get an edge if I know face handle and its neighbouring face handle?
