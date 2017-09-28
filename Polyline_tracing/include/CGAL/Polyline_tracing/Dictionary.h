@@ -88,7 +88,7 @@ public:
   bool has_motorcycle(const std::size_t id, const FT visiting_time) const;
   // check if there is a motorcycle visiting at time between 'min_' and 'max_visiting_time'
   // the last parameter is optional and can be used to grab the visiting time
-  // 'strictly_at_X' to include the interval or not
+  // 'strictly_at_X' to include the boundary of the interval or not
   bool has_motorcycle(const std::size_t id, const FT min_visiting_time,
                       const FT max_visiting_time, FT& visiting_time,
                       const bool strictly_at_min = false,
@@ -299,7 +299,6 @@ public:
   typedef Dictionary_entry<MotorcycleGraphTraits>         Dictionary_entry;
   typedef typename Dictionary_entry::Face_location        Face_location;
 
-  // @todo doesn't need to be an (ordered) set, but must find out a hash function...
   typedef boost::unordered_set<Dictionary_entry>          Dictionary_entry_container;
   typedef typename Dictionary_entry_container::iterator   DEC_it;
 
