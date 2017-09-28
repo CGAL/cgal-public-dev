@@ -270,8 +270,8 @@ has_simultaneous_collision() const
   CGAL_assertion(first_time <= second_time);
 
   // Add a little bit of tolerance @robustness
-  return (std::abs(second_time - first_time) < (std::numeric_limits<FT>::epsilon() *
-                                                std::abs(first_time + second_time)));
+  return (CGAL::abs(second_time - first_time) < (std::numeric_limits<FT>::epsilon() *
+                                                 CGAL::abs(first_time + second_time)));
 }
 
 template<typename MotorcycleGraphTraits>
