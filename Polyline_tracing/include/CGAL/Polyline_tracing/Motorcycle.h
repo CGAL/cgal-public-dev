@@ -54,8 +54,9 @@ struct Target_point_set_comparer
   typedef typename MotorcycleGraphTraits::FT                  FT;
   typedef typename Dictionary<MotorcycleGraphTraits>::DEC_it  DEC_it;
 
-  bool operator()(const std::pair<DEC_it, FT>& lhs, const std::pair<DEC_it, FT>& rhs) const {
-    // don't want to insert the same point multiple times
+  bool operator()(const std::pair<DEC_it, FT>& lhs, const std::pair<DEC_it, FT>& rhs) const
+  {
+    // Don't want to insert the same point multiple times
     CGAL_assertion(lhs.first != rhs.first);
     return lhs.second < rhs.second;
   }
@@ -65,11 +66,17 @@ template<typename MotorcycleGraphTraits>
 struct Track_comparer
 {
   typedef typename MotorcycleGraphTraits::FT                  FT;
-  typedef typename MotorcycleGraphTraits::Point_d             Point;
+  typedef typename Dictionary<MotorcycleGraphTraits>::DEC_it  DEC_it;
 
-  bool operator()(const std::pair<Point, FT>& lhs, const std::pair<Point, FT>& rhs) const {
-    // points at the same time from the source should be equal
-    CGAL_assertion(lhs.second != rhs.second || lhs.first == rhs.first);
+  bool operator()(const std::pair<DEC_it, FT>& lhs, const std::pair<DEC_it, FT>& rhs) const
+  {
+    // Points at the same time from the source should be equal (or almost)
+    if(lhs.second == rhs.second)
+    {
+      CGAL_assertion(
+        CGAL::squared_distance(lhs.first->point(), rhs.first->point()) <
+          std::numeric_limits<FT>::epsilon());
+    }
 
     return lhs.second < rhs.second;
   }
@@ -97,12 +104,11 @@ public:
   typedef typename Dictionary::DEC_it                         DEC_it;
   typedef typename Dictionary_entry::Face_location            Face_location;
 
-  typedef std::pair<DEC_it, FT>                               Target;
-  typedef std::set<Target, internal::Target_point_set_comparer<Geom_traits> >
+  typedef std::pair<DEC_it, FT>                               Track_point;
+  typedef std::set<Track_point, internal::Target_point_set_comparer<Geom_traits> >
                                                               Target_point_container;
 
-  typedef std::pair<Point, FT>                                Track_point;
-  typedef std::set<Track_point, internal::Track_comparer<Geom_traits> >
+  typedef std::multiset<Track_point, internal::Track_comparer<Geom_traits> >
                                                               Track;
 
   // Access
@@ -169,7 +175,7 @@ public:
     typename Target_point_container::const_iterator tpc_it = mc.targets().begin();
     typename Target_point_container::const_iterator end = mc.targets().end();
     for(; tpc_it!=end; ++tpc_it)
-      out << "\t Point: (" << tpc_it->first->point() << ") time: " << tpc_it->second << std::endl;
+      out << "\t " << &*(tpc_it->first) << " Point: (" << tpc_it->first->point() << ") time: " << tpc_it->second << std::endl;
 
     return out;
   }
@@ -306,6 +312,7 @@ output_track() const
   std::ostringstream out_filename;
   out_filename  << "results_" << Geom_traits::dimension << "/track_" << i << ".off" << std::ends;
   std::ofstream os(out_filename.str().c_str());
+  os.precision(17);
 
   const std::size_t pn = track_points.size();
   CGAL_assertion(pn != 0);
@@ -314,11 +321,15 @@ output_track() const
   os << "OFF" << '\n';
   os << pn << " " << fn << " 0" << '\n';
 
+  std::cout << "track of motorcycle " << i << std::endl;
+
   typename Track::const_iterator tit = track_points.begin();
   typename Track::const_iterator end = track_points.end();
   for(; tit!=end; ++tit)
   {
-    os << tit->first;
+    std::cout << *(tit->first) << std::endl;
+
+    os << tit->first->point();
 
     if(Geom_traits::dimension == 2) // The xyz format expects 3D points
       os << " 0";
@@ -429,9 +440,9 @@ compute_next_destination(Dictionary& points, const Triangle_mesh& mesh)
   descriptor_variant dv =
     CGAL::Polygon_mesh_processing::internal::get_descriptor_from_location(loc, mesh);
 
-  // that derived cast is so that tracer visitor can indeed take a Motorcycle
-  // and not a motorcycle_impl. It's safe since we only deal manipulate "full"
-  // motorcycles, but it's kinda ugly @fixme
+  // The derived cast is so that the tracer uses the Motorcycle type and not the
+  // Motorcycle_impl_base type. It is safe since we only manipulate "full" motorcycles,
+  // but it's a bit ugly @fixme
 
   if(const vertex_descriptor* v = boost::get<vertex_descriptor>(&dv))
   {

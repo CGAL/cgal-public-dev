@@ -19,7 +19,9 @@
 #include <iostream>
 #include <vector>
 
+namespace CP = CGAL::parameters;
 namespace PL = CGAL::Polyline_tracing;
+namespace PMP = CGAL::Polygon_mesh_processing;
 
 typedef CGAL::Exact_predicates_inexact_constructions_kernel      K;
 typedef CGAL::Surface_mesh<K::Point_2>                           PolygonMesh;
@@ -31,21 +33,18 @@ typedef MGT::Vector_d                                            Vector_2;
 typedef MGT::Triangle_d                                          Triangle_2;
 typedef MGT::Face_location                                       Face_location;
 
+typedef PL::Motorcycle_graph<MGT>                                Motorcycle_graph;
+
+typedef Motorcycle_graph::Motorcycle                             Motorcycle;
+typedef boost::shared_ptr<Motorcycle>                            Motorcycle_ptr;
+typedef std::vector<Motorcycle_ptr>                              Motorcycle_container;
+
 typedef PL::Uniform_direction_tracer_visitor<MGT>                Uniform_tracer;
 typedef PL::Motorcycle<MGT, Uniform_tracer>                      Motorcycle_U;
 typedef PL::Point_set_tracer_visitor<MGT>                        Point_set_tracer;
 typedef PL::Motorcycle<MGT, Point_set_tracer>                    Motorcycle_PS;
 
-typedef PL::Motorcycle_graph<MGT>                                Motorcycle_graph;
-
-// To handle different motorcycle types
-typedef Motorcycle_graph::Motorcycle                             Motorcycle;
-typedef boost::shared_ptr<Motorcycle>                            Motorcycle_ptr;
-typedef std::vector<Motorcycle_ptr>                              Motorcycle_container;
-
-namespace CP = CGAL::parameters;
-
-void motorcycle_club_1(Motorcycle_container& motorcycles)
+void motorcycle_club_1(Motorcycle_container& motorcycles, const PolygonMesh& /*mesh*/)
 {
   // This is a casual motorcycle club that likes to use all of its available options
 
@@ -59,14 +58,14 @@ void motorcycle_club_1(Motorcycle_container& motorcycles)
 
   Uniform_tracer uft;
   motorcycles.push_back(Motorcycle_ptr(new Motorcycle_U(CP::source = Point_2(0.5, 0.2),
-                                                        CP::direction = Vector_2(-1., -1.),
+                                                        CP::direction = Vector_2(1., 1.),
                                                         CP::tracer = uft)));
 
-  std::vector<Face_location> destinations;
-  Point_set_tracer pst(destinations);
-  motorcycles.push_back(Motorcycle_ptr(new Motorcycle_PS(CP::source = Point_2(0.4, 0.6),
-                                                         CP::direction = Vector_2(0.5, 0.1),
-                                                         CP::tracer = pst)));
+//  std::vector<Face_location> destinations;
+//  destinations.push_back(PMP::locate(Point_2(0.3, 0.6), mesh));
+//  Point_set_tracer pst(destinations);
+//  motorcycles.push_back(Motorcycle_ptr(new Motorcycle_PS(CP::source = Point_2(0.4, 0.6),
+//                                                         CP::tracer = pst)));
 }
 
 void motorcycle_club_2(Motorcycle_container& motorcycles)
@@ -76,15 +75,15 @@ void motorcycle_club_2(Motorcycle_container& motorcycles)
   // The next two should ram into each other (same supporting line, opposite directions)
   motorcycles.push_back(Motorcycle_ptr(new Motorcycle_U(CP::source = Point_2(CGAL_PI/15., CGAL_PI/31.),
                                                         CP::destination = Point_2(0.5, 0.2))));
-  motorcycles.push_back(Motorcycle_ptr(new Motorcycle_U(CP::source = Point_2(1. - CGAL_PI/15., 0.2 + CGAL_PI/31.),
-                                                        CP::destination = Point_2(0.5, 0.2))));
+  motorcycles.push_back(Motorcycle_ptr(new Motorcycle_U(CP::source = Point_2(1. - CGAL_PI/15., 0.4 - CGAL_PI/31.),
+                                                        CP::destination = Point_2(CGAL_PI/15., CGAL_PI/31.))));
 
   // This motorcycle should crash at the source of motorcycle #1
   motorcycles.push_back(Motorcycle_ptr(new Motorcycle_U(CP::source = Point_2(CGAL_PI/30., CGAL_PI/62.),
                                                         CP::destination = Point_2(CGAL_PI/7.5, CGAL_PI/15.5))));
 
   // The next motorcycle starts at the same point as motorcycle #2, but in another direction
-  motorcycles.push_back(Motorcycle_ptr(new Motorcycle_U(CP::source = Point_2(1. - CGAL_PI/15., 0.2 + CGAL_PI/31.),
+  motorcycles.push_back(Motorcycle_ptr(new Motorcycle_U(CP::source = Point_2(1. - CGAL_PI/15., 0.4 - CGAL_PI/31.),
                                                         CP::direction = Vector_2(0.5, -0.2))));
 
   // The following do NOT have the same supporting lines, but impact each other at the same time
@@ -222,7 +221,7 @@ int main()
   std::cerr.precision(18);
 
 #ifdef CGAL_MOTORCYCLE_GRAPH_USE_FIXED_SEEDS
-  CGAL::Random rnd(1505985597);
+  CGAL::Random rnd(1506517484);
 #else
   CGAL::Random rnd(CGAL::get_default_random());
 #endif
@@ -238,10 +237,10 @@ int main()
   bool is_loop_infinite = true;
   while(is_loop_infinite)
   {
-    is_loop_infinite = false;
+    is_loop_infinite = true;
 
     Motorcycle_container motorcycles;
-//    motorcycle_club_1(motorcycles);
+    motorcycle_club_1(motorcycles, pm);
 //    motorcycle_club_2(motorcycles);
 //    motorcycle_club_3(motorcycles);
 
@@ -260,7 +259,7 @@ int main()
     motorcycle_graph.output_all_dictionary_points();
     for(std::size_t i=0; i<motorcycles.size(); ++i)
     {
-      //    motorcycle_graph.motorcycle(i).output_intended_track();
+//    motorcycle_graph.motorcycle(i).output_intended_track();
       motorcycle_graph.motorcycle(i).output_track();
     }
 #endif

@@ -70,6 +70,9 @@ public:
   // - bool: is the destination final
   typedef boost::tuple<bool, DEC_it, DEC_it, FT, bool>        result_type;
 
+  // Constructor
+  Uniform_direction_tracer_visitor(const Geom_traits& gt = Geom_traits()) : gt(gt) { }
+
   // Functions
   result_type compute_next_destination(const DEC_it start_point,
                                        const face_descriptor fd, const Motorcycle& mc,
@@ -81,6 +84,9 @@ public:
                          Dictionary& points, const Triangle_mesh& mesh) const;
   result_type operator()(face_descriptor fd, const Motorcycle& mc,
                          Dictionary& points, const Triangle_mesh& mesh) const;
+
+private:
+  Geom_traits gt;
 };
 
 // -----------------------------------------------------------------------------
@@ -105,35 +111,6 @@ compute_next_destination(const DEC_it start_point,
   FT time_at_farthest_destination = mc.current_time(); // minimum allowed time value
   Vector mc_dir = *(mc.direction());
 
-#ifdef SHENANIGANS_3D
-  halfedge_descriptor fd_hd = halfedge(fd, mesh);
-  const Vector v1(get(vpmap, source(fd_hd, mesh)),
-                  get(vpmap, target(fd_hd, mesh)));
-  const Vector v2(get(vpmap, source(fd_hd, mesh)),
-                  get(vpmap, target(next(fd_hd, mesh), mesh)));
-
-  if(Geom_traits().orientation_3_object()(v1, v2, mc_dir) != CGAL::COPLANAR)
-  {
-    std::cerr << "Not coplanar! " << std::endl;
-
-    const typename Geom_traits::Plane_3 pl(get(vpmap, source(fd_hd, mesh)),
-                                           get(vpmap, target(fd_hd, mesh)),
-                                           get(vpmap, target(next(fd_hd, mesh), mesh)));
-
-    if(!pl.has_on(start_point->point()))
-    {
-      std::cerr << "oh boy..." << std::endl;
-    }
-
-    Vector n = pl.orthogonal_vector();
-    n = n / CGAL::sqrt(n*n);
-    std::cout << "n*n: " << n*n << std::endl;
-
-    FT sp = mc_dir * n;
-    mc_dir = mc_dir - sp * n;
-  }
-#endif
-
   Ray r(start_point->point(), mc_dir);
 
   typedef CGAL::Halfedge_around_face_circulator<Triangle_mesh>  Halfedge_around_facet_circulator;
@@ -146,15 +123,13 @@ compute_next_destination(const DEC_it start_point,
     Segment s(get(vpmap, source(hd, mesh)), get(vpmap, target(hd, mesh)));
     std::cout << "ray: " << r << std::endl << "segment: " << s << std::endl;
 
-    // @fixme default constructing traits
-    if(Geom_traits().do_intersect_2_object()(r, s))
+    if(gt.do_intersect_2_object()(r, s))
     {
       // returns a point because we ignore the degenerate configuration of the ray
       // and segment being aligned (the next halfedge will give us an intersection
       // at a vertex descriptor, which is the point we need)
 
-      // @fixme pass an instance of geom_traits
-      boost::optional<Point> res = internal::robust_intersection<Geom_traits>(r, s);
+      boost::optional<Point> res = internal::robust_intersection<Geom_traits>(r, s, gt);
       if(!res)
         continue;
 
@@ -252,20 +227,26 @@ operator()(vertex_descriptor vd, const Motorcycle& mc,
     std::cout << "at face: " << fd << std::endl;
 
     // Compute the position of the motorcycle in the current face
-    Face_location loc_in_fd = (mc.position()->location().first == fd) ?
-                                mc.position()->location() :
-                                CGAL::Polygon_mesh_processing::locate(
+    std::pair<DEC_it, bool> source_in_fd; // bool indicates whether it's a new point or not
+
+    if(mc.position()->location().first == fd)
+    {
+      source_in_fd = std::make_pair(mc.position(), false);
+    }
+    else
+    {
+      Face_location loc_in_fd = CGAL::Polygon_mesh_processing::locate(
                                   mc.position()->location(), fd, mesh);
 
-    // Insert the new point and keep an iterator to it.
-    std::pair<DEC_it, bool> source_in_fd = points.insert(loc_in_fd,
-                                                         mc.position()->point());
+      // Insert into the dictionary, but keep an iterator to it so that it can
+      // be removed quickly if this point is useless
+      source_in_fd = points.insert(loc_in_fd, mc.position()->point());
+    }
 
     result_type res = compute_next_destination(source_in_fd.first, fd, mc, points, mesh);
 
     // Since direction == NULL_VECTOR has been filtered in Tracer.h, the time
-    // can only be null if the direction points to face(opposite(hd, mesh), mesh)
-    // and not to face(hd, mesh)
+    // can only be null if the direction points outside
     if(res.template get<0>() && res.template get<3>() > 0)
       return res;
 
@@ -273,7 +254,7 @@ operator()(vertex_descriptor vd, const Motorcycle& mc,
     // in which the destination lies, then clean 'source_in_fd' off from the dictionary.
     if(source_in_fd.second)
     {
-      // make sure that indeed no motorcycle uses this point
+      // To make sure that indeed no motorcycle uses this point
       CGAL_assertion(source_in_fd.first->visiting_motorcycles().empty());
       points.erase(source_in_fd.first);
     }
@@ -283,9 +264,9 @@ operator()(vertex_descriptor vd, const Motorcycle& mc,
   while(fatc != done);
 
   // If we couldn't find a destination, then we must be on the border of the mesh
-  // with a direction pointing out. In that case, return the source.
+  // with a direction pointing out.
   CGAL_assertion(is_border(vd, mesh));
-  return boost::make_tuple(true, mc.position(), mc.position(),
+  return boost::make_tuple(false, mc.position(), mc.position(),
                            mc.current_time(), true /*final destination*/);
 }
 
@@ -328,13 +309,13 @@ operator()(halfedge_descriptor hd, const Motorcycle& mc,
       return res;
   }
 
+  // Check the other face incident to hd
   halfedge_descriptor opp_hd = opposite(hd, mesh);
 
   if(is_border(opp_hd, mesh))
   {
     // Source is on the border of the mesh and the direction is pointing out,
-    // return the source point and mark it as final destination
-    return boost::make_tuple(true, mc.position(), mc.position(),
+    return boost::make_tuple(false, mc.position(), mc.position(),
                              mc.current_time(), true /*final destination*/);
   }
 

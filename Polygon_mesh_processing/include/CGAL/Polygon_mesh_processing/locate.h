@@ -323,7 +323,6 @@ void snap_coordinates_to_border(CGAL::cpp11::array<
   std::cout << "Sum: " << coords[0] + coords[1] + coords[2] << std::endl;
 
   std::cout << "epsilon: " << std::numeric_limits<FT>::epsilon() << std::endl;
-  std::cout << "min: " << std::numeric_limits<FT>::min() << std::endl;
 
   FT residue = 0.;
 
@@ -334,7 +333,7 @@ void snap_coordinates_to_border(CGAL::cpp11::array<
       residue += coords[i];
       coords[i] = 0;
     }
-    else if((1 - coords[i]) <= std::numeric_limits<FT>::min())
+    else if((1 - coords[i]) <= std::numeric_limits<FT>::epsilon())
     {
       residue -= 1 - coords[i];
       coords[i] = 1;
@@ -726,7 +725,9 @@ void build_aabb_tree(const TriangleMesh& tm,
 }
 
 template <class AABBTraits, typename TriangleMesh>
-void build_aabb_tree(const TriangleMesh& tm, AABB_tree<AABBTraits>& outTree)
+void build_aabb_tree(const TriangleMesh& tm,
+                     AABB_tree<AABBTraits>& outTree,
+                     const typename AABBTraits::Primitive* /*dummy for sfinae*/ = 0)
 {
   return build_aabb_tree(tm, outTree, parameters::all_default());
 }
@@ -809,6 +810,7 @@ std::pair<typename boost::graph_traits<TriangleMesh>::face_descriptor,
 locate(const typename property_map_value<TriangleMesh, CGAL::vertex_point_t>::type& p,
        const TriangleMesh& tm)
 {
+  // @fixme doesn't work for 2D mesh yet
   AABB_tree<AABB_face_graph_triangle_primitive<TriangleMesh> > tree;
   build_aabb_tree(tm, tree);
   return locate(p, tm, tree, parameters::all_default());

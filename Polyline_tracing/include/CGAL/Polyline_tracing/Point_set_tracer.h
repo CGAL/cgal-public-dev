@@ -108,6 +108,9 @@ operator()(vertex_descriptor vd, const Motorcycle& mc,
 #endif
   CGAL_precondition(!destinations.empty());
 
+  // @todo
+  CGAL_assertion(false);
+
   ++pos;
   if(pos >= destinations.size())
   {
@@ -115,9 +118,6 @@ operator()(vertex_descriptor vd, const Motorcycle& mc,
     return boost::make_tuple(true, mc.position(), mc.position(),
                              mc.current_time(), true /*final destination*/);
   }
-
-  // @todo
-  CGAL_assertion(false);
 
   return boost::make_tuple(true, mc.position(), mc.position(),
                            mc.current_time(), true /*final destination*/);
@@ -162,6 +162,7 @@ operator()(halfedge_descriptor hd, const Motorcycle& mc,
     CGAL::sqrt(CGAL::squared_distance(source_in_next_face.first->point(),
                                       destination_point)) / mc.speed();
 
+  // last destination is marked as final
   bool is_final_destination = (pos == destinations.size() - 1);
 
   return boost::make_tuple(true, source_in_next_face.first, destination.first,
@@ -200,6 +201,7 @@ operator()(face_descriptor fd, const Motorcycle& mc,
   FT time_at_destination = mc.current_time() +
     CGAL::sqrt(CGAL::squared_distance(mc.source()->point(), destination_point)) / mc.speed();
 
+  // last destination is marked as final
   bool is_final_destination = (pos == destinations.size() - 1);
 
   return boost::make_tuple(true, mc.position(), destination.first,
