@@ -19,7 +19,7 @@ if (CGAL_FOUND)
 	set(CMAKE_CXX_FLAGS "${CMAXE_CXX_FLAGS} -pedantic -Wall -Wextra -Weffc++ -Wc++11-extensions -Werror")
 
 	set(sources main.cpp 
-		Level_of_detail_building_splitter_2_test.cpp 
+		Level_of_detail_building_splitter_2_test.cpp
 		Level_of_detail_building_outliner_2_test.cpp
 		Level_of_detail_building_roof_fitter_2_test.cpp)
 

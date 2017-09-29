@@ -92,7 +92,8 @@ namespace CGAL {
 			using Label     = typename Traits::Label;
 			using Label_map = typename Container_3D:: template Property_map<Label>;
 
-			using Buildings = std::map<int, std::vector<Face_handle> >;
+			using Building  = CGAL::LOD::Building<FT, Vertex_handle, Face_handle>;
+			using Buildings = std::map<int, Building>;
 
 			// const std::string default_path = "/Users/danisimo/Documents/pipeline/data/basic_test_v3/";
 			const std::string default_path = "/Users/danisimo/Documents/pipeline/data/complex_test/";
@@ -345,11 +346,11 @@ namespace CGAL {
 
 
 				// (b) Find building's walls.
-				m_building_outliner.order_walls(cdt, buildings); // to be implemented
+				m_building_outliner.find_boundaries(cdt, buildings); // to be implemented
 
 
 				// (c) Fit roof height for each building.
-				m_building_roof_fitter.fit_roof_heights(cdt, buildings, input); // to be implemented
+				m_building_roof_fitter.fit_roof_heights(cdt, input, buildings); // to be implemented
 
 
 				// ----------------------------------	

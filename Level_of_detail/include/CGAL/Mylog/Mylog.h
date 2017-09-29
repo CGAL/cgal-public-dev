@@ -65,6 +65,34 @@ namespace CGAL {
 				return true;
 			}
 
+			template<class CDT, class Buildings>
+			void save_buildings_info(const CDT &cdt, const Buildings &buildings, const std::string &filename) {
+
+				typedef typename CDT::Face_handle 			Face_handle;
+				typedef typename CDT::Finite_faces_iterator Face_iterator;
+				typedef typename Buildings::const_iterator  Building_iterator;
+
+				clear();
+				size_t count = 0;
+
+				CGAL::Unique_hash_map<Face_handle, int> F;
+				for (Face_iterator fit = cdt.finite_faces_begin(); fit != cdt.finite_faces_end(); ++fit) F[fit] = count++;
+
+				count = 0;
+				for (Building_iterator bit = buildings.begin(); bit != buildings.end(); ++bit, ++count) {
+					
+					const std::vector<typename CDT::Face_handle> &faces = (*bit).second.faces;
+					const size_t num_faces = faces.size();
+
+					out << "Building " << count << " with color " << (*bit).second.color << std::endl << "faces: ";
+					for (size_t i = 0; i < num_faces; ++i) out << F[faces[i]] << " ";
+					
+					skip_line();
+					skip_line();
+				}
+				save(filename);
+			}
+
 			template<class Points>
 			void export_points(const std::string &name, Points &points) {
 

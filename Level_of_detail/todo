@@ -31,3 +31,5 @@ TODO AND OTHER:
 1. What about creating new semantic data structures such as "Building", "Tree", "Car" and so on?
 2. Can I make an existing edge constrained? What if I have one building inside another one. How can I detect/correct after the graph cut that interior building's walls should be constrained?
 3. How to get an edge if I know face handle and its neighbouring face handle?
+4. Maybe remove CDT from height fitters?
+5. Face_points_map that I use in the "Height Fitter" can be created in Visibility module if POINT_BASED_APPROACH is chosen. Otherwise, I need to create it in some other separate module - for example in the Preprocessor.

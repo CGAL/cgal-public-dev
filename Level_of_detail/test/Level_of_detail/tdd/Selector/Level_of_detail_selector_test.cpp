@@ -43,7 +43,7 @@ public:
 	void set_labels_property(Container &input, Label_map &labels) {
 		
 		auto success = false;
-		boost::tie(labels, success)  = input. template add_property_map<Label>("label", -1);
+		boost::tie(labels, success) = input. template add_property_map<Label>("label", -1);
 		assert(success);
 	}
 

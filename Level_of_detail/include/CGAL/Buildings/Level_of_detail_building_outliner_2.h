@@ -6,6 +6,9 @@
 #include <vector>
 #include <cassert>
 
+// New CGAL includes.
+#include <CGAL/Level_of_detail_enum.h>
+
 namespace CGAL {
 
 	namespace LOD {
@@ -17,14 +20,18 @@ namespace CGAL {
 			typedef KernelTraits Kernel;
 			typedef CDTInput     CDT;
 
-			typedef typename CDT::Face_handle Face_handle;
+			typedef typename Kernel::FT FT;
+
+			typedef typename CDT::Vertex_handle Vertex_handle;
+			typedef typename CDT::Face_handle   Face_handle;
 
 			// Extra.
-			using Buildings = std::map<int, std::vector<Face_handle> >;
+			using Building  = CGAL::LOD::Building<FT, Vertex_handle, Face_handle>;
+			using Buildings = std::map<int, Building>;
 
 			Level_of_detail_building_outliner_2() { }
 
-			void order_walls(const CDT &, const Buildings &) const {
+			void find_boundaries(const CDT &, Buildings &) const {
 				
 				// to be implemented
 			}

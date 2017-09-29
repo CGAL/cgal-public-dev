@@ -10,9 +10,11 @@
 // CGAL includes.
 #include <CGAL/IO/Color.h>
 #include <CGAL/Random.h>
+#include <CGAL/Unique_hash_map.h>
 
 // New CGAL includes.
 #include <CGAL/Mylog/Mylog.h>
+#include <CGAL/Level_of_detail_enum.h>
 
 namespace CGAL {
 
@@ -34,7 +36,9 @@ namespace CGAL {
 			typedef typename CDT::Edge 					Edge;
 
 			// Extra.
-			using Buildings = std::map<int, std::vector<Face_handle> >;
+			using Building  = CGAL::LOD::Building<FT, Vertex_handle, Face_handle>;
+			using Buildings = std::map<int, Building>;
+
 			using Log = CGAL::LOD::Mylog;
 
 			struct Building_data {
@@ -47,21 +51,31 @@ namespace CGAL {
 			Level_of_detail_building_splitter_2() { }
 
 			int split(CDT &cdt, Buildings &buildings) { 
+				
+				size_t count = 0;
+				CGAL::Unique_hash_map<Face_handle, int> F;
 
-				Building_data bd;
+				Building_data bd; 
 				for (Face_iterator fit = cdt.finite_faces_begin(); fit != cdt.finite_faces_end(); ++fit) {
 				
 					generate_new_building(bd);
 
 					Face_handle fh = static_cast<Face_handle>(fit);
 					flood(cdt, bd, fh, buildings);
+
+					F[fh] = count++;
 				}
 
 				const int number_of_buildings = static_cast<int>(buildings.size());
 				assert(number_of_buildings >= 0);
 
+
+				// Remove later.
 				Log log;
 				log.save_cdt_ply(cdt, "tmp/buildings", "bu");
+
+				log.clear();
+				log.save_buildings_info(cdt, buildings, "tmp/buildings_info");
 
 				return number_of_buildings;
 			}
@@ -127,7 +141,8 @@ namespace CGAL {
 				fh->info().bu 		= bd.index;
 				fh->info().bu_color = bd.color;
 
-				buildings[bd.index].push_back(fh);
+				buildings[bd.index].faces.push_back(fh);
+				buildings[bd.index].color = bd.color;
 			}
 
 			// This function can be improved!

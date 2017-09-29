@@ -47,7 +47,9 @@ public:
 	using Face_iterator = CDT::Finite_faces_iterator;
 
 	using Log = CGAL::LOD::Mylog;
-	using Buildings = std::map<int, std::vector<Face_handle> >;
+
+	using Building  = CGAL::LOD::Building<FT, Vertex_handle, Face_handle>;
+	using Buildings = std::map<int, Building>;
 
 	CDT cdt;
 	LodBuildingSplitter lodBuildingSplitter;
@@ -65,21 +67,21 @@ public:
 	void set_basic_input() {
 
 		// First building.
-		const Vertex_handle va1 = cdt.insert(Point_2(0.0, 0.0));
-		const Vertex_handle vb1 = cdt.insert(Point_2(1.0, 0.0));
-		const Vertex_handle vc1 = cdt.insert(Point_2(1.0, 1.0));
-		const Vertex_handle vd1 = cdt.insert(Point_2(0.0, 1.0));
+		const Vertex_handle va1 = cdt.insert(Point_2(0.0, 0.0)); va1->info().label = Str_label::CORNER;
+		const Vertex_handle vb1 = cdt.insert(Point_2(1.0, 0.0)); vb1->info().label = Str_label::CORNER;
+		const Vertex_handle vc1 = cdt.insert(Point_2(1.0, 1.0)); vc1->info().label = Str_label::CORNER;
+		const Vertex_handle vd1 = cdt.insert(Point_2(0.0, 1.0)); vd1->info().label = Str_label::CORNER;
 
-		cdt.insert_constraint(va1, vb1);
+		cdt.insert_constraint(va1, vb1); 
 		cdt.insert_constraint(vb1, vc1);
 		cdt.insert_constraint(vc1, vd1);
 		cdt.insert_constraint(vd1, va1);
 
 		// Second building.
-		const Vertex_handle vb2 = cdt.insert(Point_2(1.0, 0.0));
-		const Vertex_handle vf2 = cdt.insert(Point_2(2.0, 0.0));
-		const Vertex_handle vg2 = cdt.insert(Point_2(2.0, 0.6));
-		const Vertex_handle ve2 = cdt.insert(Point_2(1.0, 0.6));
+		const Vertex_handle vb2 = cdt.insert(Point_2(1.0, 0.0)); vb2->info().label = Str_label::CORNER;
+		const Vertex_handle vf2 = cdt.insert(Point_2(2.0, 0.0)); vf2->info().label = Str_label::CORNER;
+		const Vertex_handle vg2 = cdt.insert(Point_2(2.0, 0.6)); vg2->info().label = Str_label::CORNER;
+		const Vertex_handle ve2 = cdt.insert(Point_2(1.0, 0.6)); ve2->info().label = Str_label::LINEAR;
 
 		cdt.insert_constraint(vb2, vf2);
 		cdt.insert_constraint(vf2, vg2);
@@ -87,10 +89,10 @@ public:
 		cdt.insert_constraint(ve2, vb2);
 
 		// Third building - exterior.
-		const Vertex_handle vh3 = cdt.insert(Point_2(2.6, 0.0));
-		const Vertex_handle vk3 = cdt.insert(Point_2(4.0, 0.0));
-		const Vertex_handle vj3 = cdt.insert(Point_2(4.0, 1.0));
-		const Vertex_handle vi3 = cdt.insert(Point_2(2.6, 1.0));
+		const Vertex_handle vh3 = cdt.insert(Point_2(2.6, 0.0)); vh3->info().label = Str_label::CORNER;
+		const Vertex_handle vk3 = cdt.insert(Point_2(4.0, 0.0)); vk3->info().label = Str_label::CORNER;
+		const Vertex_handle vj3 = cdt.insert(Point_2(4.0, 1.0)); vj3->info().label = Str_label::CORNER;
+		const Vertex_handle vi3 = cdt.insert(Point_2(2.6, 1.0)); vi3->info().label = Str_label::CORNER;
 
 		cdt.insert_constraint(vh3, vk3);
 		cdt.insert_constraint(vk3, vj3);
@@ -98,10 +100,10 @@ public:
 		cdt.insert_constraint(vi3, vh3);
 
 		// Third building - interior.
-		const Vertex_handle vm3 = cdt.insert(Point_2(3.0, 0.2));
-		const Vertex_handle vn3 = cdt.insert(Point_2(3.8, 0.2));
-		const Vertex_handle vo3 = cdt.insert(Point_2(3.8, 0.8));
-		const Vertex_handle vl3 = cdt.insert(Point_2(3.0, 0.8));
+		const Vertex_handle vm3 = cdt.insert(Point_2(3.0, 0.2)); vm3->info().label = Str_label::CORNER;
+		const Vertex_handle vn3 = cdt.insert(Point_2(3.8, 0.2)); vn3->info().label = Str_label::CORNER;
+		const Vertex_handle vo3 = cdt.insert(Point_2(3.8, 0.8)); vo3->info().label = Str_label::CORNER;
+		const Vertex_handle vl3 = cdt.insert(Point_2(3.0, 0.8)); vl3->info().label = Str_label::CORNER;
 
 		cdt.insert_constraint(vm3, vn3);
 		cdt.insert_constraint(vn3, vo3);

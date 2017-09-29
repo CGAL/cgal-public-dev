@@ -1,6 +1,10 @@
 #ifndef CGAL_LEVEL_OF_DETAIL_ENUM_H
 #define CGAL_LEVEL_OF_DETAIL_ENUM_H
 
+// STL includes.
+#include <map>
+#include <vector>
+
 // CGAL includes.
 #include <CGAL/IO/Color.h>
 
@@ -59,6 +63,19 @@ namespace CGAL {
 
 		public:
 			Label label;
+		};
+
+		// Building structure.
+		template<class FT, class Vertex_handle, class Face_handle>
+		struct Building {
+
+		public:
+			FT height 		  = FT(0); 				  // height of the building
+			CGAL::Color color = CGAL::Color(0, 0, 0); // color of the building
+			
+			std::vector<Vertex_handle> 						   boundary; // boundary vertices of the building ordered counterclockwise
+			std::map<Vertex_handle, std::vector<Face_handle> > wedges;   // all faces adjacent to each boundary vertex above
+			std::vector<Face_handle>   						   faces;	 // all faces that belong to this building
 		};
 
 	} // LOD
