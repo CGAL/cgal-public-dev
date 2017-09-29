@@ -56,12 +56,11 @@ struct Target_point_set_comparer
 
   bool operator()(const std::pair<DEC_it, FT>& lhs, const std::pair<DEC_it, FT>& rhs) const
   {
-    // Don't want to insert the same point multiple times
-    CGAL_assertion(lhs.first != rhs.first);
     return lhs.second < rhs.second;
   }
 };
 
+// Basically the same as above, but with an additional assert
 template<typename MotorcycleGraphTraits>
 struct Track_comparer
 {
@@ -104,9 +103,12 @@ public:
   typedef typename Dictionary::DEC_it                         DEC_it;
   typedef typename Dictionary_entry::Face_location            Face_location;
 
+  // Target points are put in a set sorted by time. It is not a multiset because
+  // same time should be equal to same point.
   typedef std::pair<DEC_it, FT>                               Track_point;
   typedef std::set<Track_point, internal::Target_point_set_comparer<Geom_traits> >
                                                               Target_point_container;
+  typedef typename Target_point_container::iterator           TPC_iterator;
 
   typedef std::multiset<Track_point, internal::Track_comparer<Geom_traits> >
                                                               Track;
@@ -127,6 +129,7 @@ public:
   const DEC_it destination() const { return dest; }
 
   const Face_location& current_location() const { return conf->location(); }
+  const DEC_it closest_target() const;
 
   void set_destination_finality(bool b) { is_dest_final = b; }
   const bool& is_destination_final() const { return is_dest_final; }
@@ -154,20 +157,23 @@ public:
 
   // Functions
   void add_target(const DEC_it target_point, const FT time_at_target);
-  const DEC_it closest_target() const;
 
   virtual boost::tuple<bool, DEC_it, DEC_it, FT, bool>
   compute_next_destination(Dictionary& points, const Triangle_mesh& mesh) = 0;
 
-  void remove_closest_target_from_targets();
+  std::pair<TPC_iterator, bool> has_target(const DEC_it e) const;
+  std::pair<TPC_iterator, bool> has_target_at_time(const FT visiting_time) const;
+  bool has_target_at_time(const DEC_it e, const FT visiting_time) const;
   bool has_reached_blocked_point() const;
   bool has_reached_simultaneous_collision_point() const;
   bool is_motorcycle_destination_final() const;
+  void remove_closest_target_from_targets();
   FT time_at_closest_target() const;
 
-  // output
-  friend std::ostream& operator<<(std::ostream& out, const Self& mc) {
-    out << "Motorcycle: " << mc.id() << " (crashed? " << mc.is_crashed() << ") "
+  // Output
+  friend std::ostream& operator<<(std::ostream& out, const Self& mc)
+  {
+    out << "Motorcycle #" << mc.id() << " (crashed? " << mc.is_crashed() << ") "
         << "going from source: (" << mc.source()->point() << ")"
         << " to destination: (" << mc.destination()->point() << ")" << std::endl
         << "  currently at position: (" << mc.position()->point() << ")" << std::endl
@@ -175,7 +181,14 @@ public:
     typename Target_point_container::const_iterator tpc_it = mc.targets().begin();
     typename Target_point_container::const_iterator end = mc.targets().end();
     for(; tpc_it!=end; ++tpc_it)
-      out << "\t " << &*(tpc_it->first) << " Point: (" << tpc_it->first->point() << ") time: " << tpc_it->second << std::endl;
+    {
+      out << "\t " << &*(tpc_it->first)
+          << " Location face: " << tpc_it->first->location().first
+          << " bc: [" << tpc_it->first->location().second[0] << " "
+                     << tpc_it->first->location().second[1] << " "
+                     << tpc_it->first->location().second[2]
+          << "] Point: (" << tpc_it->first->point() << ") time: " << tpc_it->second << std::endl;
+    }
 
     return out;
   }
@@ -250,6 +263,10 @@ void
 Motorcycle_impl_base<MotorcycleGraphTraits>::
 add_target(const DEC_it target_point, const FT time_at_target)
 {
+  // Don't want to insert the same point twice...
+  CGAL_expensive_precondition(!has_target(target_point).second);
+  // ... or accidentally ignore adding a point
+  CGAL_expensive_precondition(!has_target_at_time(time_at_target).second);
   target_points.insert(std::make_pair(target_point, time_at_target));
 }
 
@@ -269,6 +286,39 @@ remove_closest_target_from_targets()
 {
   CGAL_assertion(!target_points.empty());
   return target_points.erase(target_points.begin());
+}
+
+template<typename MotorcycleGraphTraits>
+std::pair<typename Motorcycle_impl_base<MotorcycleGraphTraits>::TPC_iterator, bool>
+Motorcycle_impl_base<MotorcycleGraphTraits>::
+has_target(const DEC_it e) const
+{
+  // Note that since the set is sorted on the visting time, we have no choice
+  // but to loop linearly thus this runs in O(n)
+  TPC_iterator tpit = target_points.begin(), end = target_points.end();
+  for(; tpit!=end; ++tpit)
+    if(tpit->first == e)
+      return std::make_pair(tpit, true);
+
+  return std::make_pair(end, false);
+}
+
+template<typename MotorcycleGraphTraits>
+std::pair<typename Motorcycle_impl_base<MotorcycleGraphTraits>::TPC_iterator, bool>
+Motorcycle_impl_base<MotorcycleGraphTraits>::
+has_target_at_time(const FT visiting_time) const
+{
+  TPC_iterator res = target_points.find(std::make_pair(DEC_it(), visiting_time));
+  return std::make_pair(res, (res != target_points.end()));
+}
+
+template<typename MotorcycleGraphTraits>
+bool
+Motorcycle_impl_base<MotorcycleGraphTraits>::
+has_target_at_time(const DEC_it e, const FT visiting_time) const
+{
+  TPC_iterator res = target_points.find(std::make_pair(e, visiting_time));
+  return (res != target_points.end() && res->first == e);
 }
 
 template<typename MotorcycleGraphTraits>

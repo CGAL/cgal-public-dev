@@ -177,9 +177,17 @@ compute_next_destination(const DEC_it start_point,
 #ifdef CGAL_MOTORCYCLE_GRAPH_VERBOSE
   std::cout << "new source at " << &*start_point
             << " p: " << start_point->point()
+            << "loc: " << start_point->location().first
+            << " bc: [" << start_point->location().second[0] << " "
+                        << start_point->location().second[1] << " "
+                        << start_point->location().second[2] << "] "
             << " time: " << mc.current_time() << std::endl;
   std::cout << "new destination at : " << &*destination.first
             << " p: " << destination.first->point()
+            << "loc: " << destination.first->location().first
+            << " bc: [" << destination.first->location().second[0] << " "
+                        << destination.first->location().second[1] << " "
+                        << destination.first->location().second[2] << "] "
             << " time: " << time_at_farthest_destination << std::endl;
 #endif
 

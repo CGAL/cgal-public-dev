@@ -1,4 +1,6 @@
-﻿#define CGAL_MOTORCYCLE_GRAPH_VERBOSE
+﻿#define CGAL_CHECK_EXPENSIVE
+
+#define CGAL_MOTORCYCLE_GRAPH_VERBOSE
 #define CGAL_MOTORCYCLE_GRAPH_OUTPUT
 
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>

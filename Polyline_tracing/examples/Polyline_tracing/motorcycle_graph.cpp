@@ -1,4 +1,7 @@
-﻿#define CGAL_MOTORCYCLE_GRAPH_VERBOSE
+﻿#define CGAL_CHECK_EXPENSIVE
+
+#define CGAL_MOTORCYCLE_GRAPH_ROBUSTNESS_CODE
+#define CGAL_MOTORCYCLE_GRAPH_VERBOSE
 #define CGAL_MOTORCYCLE_GRAPH_OUTPUT
 
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
@@ -115,6 +118,12 @@ void motorcycle_club_2(Motorcycle_container& motorcycles)
                                                         CP::destination = Point_2(0.1 + 1./3., 0.02 - 1./97.))));
   motorcycles.push_back(Motorcycle_ptr(new Motorcycle_U(CP::source = Point_2(0.1, 0.02),
                                                         CP::direction = Vector_2(1., -3./97.))));
+
+  // The following motorcycles intersect at an edge
+  motorcycles.push_back(Motorcycle_ptr(new Motorcycle_U(CP::source = Point_2(0.6, 0.4),
+                                                        CP::direction = Vector_2(-1., 1.))));
+  motorcycles.push_back(Motorcycle_ptr(new Motorcycle_U(CP::source = Point_2(0.5, 0.6),
+                                                        CP::direction = Vector_2(0., -1.))));
 }
 
 void motorcycle_club_3(Motorcycle_container& motorcycles)
@@ -221,7 +230,7 @@ int main()
   std::cerr.precision(18);
 
 #ifdef CGAL_MOTORCYCLE_GRAPH_USE_FIXED_SEEDS
-  CGAL::Random rnd(1506517484);
+  CGAL::Random rnd(1506698979);
 #else
   CGAL::Random rnd(CGAL::get_default_random());
 #endif
@@ -240,8 +249,8 @@ int main()
     is_loop_infinite = true;
 
     Motorcycle_container motorcycles;
-    motorcycle_club_1(motorcycles, pm);
-//    motorcycle_club_2(motorcycles);
+//    motorcycle_club_1(motorcycles, pm);
+    motorcycle_club_2(motorcycles);
 //    motorcycle_club_3(motorcycles);
 
 //    random_motorcycles_on_segment(motorcycles, rnd);

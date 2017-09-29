@@ -322,18 +322,20 @@ void snap_coordinates_to_border(CGAL::cpp11::array<
             << coords[0] << " " << coords[1] << " " << coords[2] << std::endl;
   std::cout << "Sum: " << coords[0] + coords[1] + coords[2] << std::endl;
 
-  std::cout << "epsilon: " << std::numeric_limits<FT>::epsilon() << std::endl;
+  FT eps = std::numeric_limits<FT>::epsilon();
+  std::cout << "epsilon: " << eps << std::endl;
 
   FT residue = 0.;
 
   for(int i=0; i<3; ++i)
   {
-    if(coords[i] <= std::numeric_limits<FT>::epsilon())
+    CGAL_precondition(coords[i] >= -eps && coords[i] <= 1 + eps);
+    if(coords[i] <= eps)
     {
       residue += coords[i];
       coords[i] = 0;
     }
-    else if((1 - coords[i]) <= std::numeric_limits<FT>::epsilon())
+    else if((1 - coords[i]) <= eps)
     {
       residue -= 1 - coords[i];
       coords[i] = 1;
@@ -668,7 +670,7 @@ locate(typename boost::graph_traits<TriangleMesh>::face_descriptor f,
     std::cerr << "Warning: point " << query << " is not in the face " << f << std::endl;
     std::cerr << "Coordinates: " << coords[0] << " " << coords[1] << " " << coords[2] << std::endl;
 
-    // Try to to snap the coordinates (hoping the problem is just a 10e-17-ish epsilon
+    // Try to to snap the coordinates (hoping the problem is just a -10e-17ish epsilon
     // pushing the coordinates over the edge
     internal::snap_coordinates_to_border<TriangleMesh>(coords);
 

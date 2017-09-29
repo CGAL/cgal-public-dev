@@ -46,17 +46,19 @@ public:
   typedef typename Geom_traits::FT                                       FT;
   typedef typename Geom_traits::Point_d                                  Point;
 
-  // A container of motorcycles that reach this point. We need to efficiently know:
-  // - if a motorcycle reaches this point
-  // - the ordered visiting times to detect simultaneous collisions
+  // A container of motorcycles that visit this point. We need to efficiently know:
+  // - if a motorcycle visits this point,
+  // - the ordered visiting times to detect simultaneous collisions.
+  //
   // Note that we need multisets:
-  // - for the first container because a motorcycle might reach a point twice
-  //   (e.g. if the trajectory makes it loop around and self-intersects)
-  // - for the second container because arrival times might not be unique.
+  // - for the first container, because a motorcycle might visit a point twice
+  //   (e.g. if the trajectory makes a loop and self-intersects at the point);
+  // - for the second container, because arrival times might not be unique.
   typedef boost::bimap<
             boost::bimaps::multiset_of<std::size_t>, // set of motorcycles
             boost::bimaps::multiset_of<FT> > // multi-set of visiting times
                                                                          Visiting_motorcycles_container;
+  typedef typename Visiting_motorcycles_container::iterator              iterator;
   typedef typename Visiting_motorcycles_container::value_type            value_type;
   typedef typename Visiting_motorcycles_container::size_type             size_type;
 
@@ -80,7 +82,7 @@ public:
 
   // The following function is not actually 'const' but the members it modifies
   // are mutable.
-  void add_motorcycle(const std::size_t id, const FT time) const;
+  std::pair<iterator, bool> add_motorcycle(const std::size_t id, const FT time) const;
 
   // second bool indicates whether we found a motorcycle with id 'id' or not
   std::pair<VMC_left_it, bool> find_motorcycle(const std::size_t id) const;
@@ -140,7 +142,7 @@ public:
     VMC_left_cit vmc_it = dec.visiting_motorcycles().left.begin();
     VMC_left_cit end = dec.visiting_motorcycles().left.end();
     for(; vmc_it!=end; ++vmc_it)
-      out << "\t motorcycle: " << vmc_it->first << " time: " << vmc_it->second << std::endl;
+      out << "\t motorcycle #" << vmc_it->first << " time: " << vmc_it->second << std::endl;
 
     return out;
   }
@@ -166,15 +168,12 @@ Dictionary_entry(const Face_location& loc, const Point& p)
 { }
 
 template<typename MotorcycleGraphTraits>
-void
+std::pair<typename Dictionary_entry<MotorcycleGraphTraits>::iterator, bool>
 Dictionary_entry<MotorcycleGraphTraits>::
 add_motorcycle(const std::size_t id, const FT time) const
 {
-  // the motorcycle `i` should not already exists in the list of motorcycles
-  // that (might) reach this point
-  // -- disabled to handle motorcycles with identical source and target
-//  CGAL_precondition(visiting_mcs.left.find(id) == visiting_mcs.left.end());
-  visiting_mcs.insert(value_type(id, time));
+  std::cout << " Point " << this << " is visited by motorcycle #" << id << " at time: " << time << std::endl;
+  return visiting_mcs.insert(value_type(id, time));
 }
 
 template<typename MotorcycleGraphTraits>
@@ -269,9 +268,14 @@ has_simultaneous_collision() const
   const FT second_time = second_mc_it->first;
   CGAL_assertion(first_time <= second_time);
 
-  // Add a little bit of tolerance @robustness
+#ifdef CGAL_MOTORCYCLE_GRAPH_ROBUSTNESS_CODE
+  // Add a little bit of tolerance
   return (CGAL::abs(second_time - first_time) < (std::numeric_limits<FT>::epsilon() *
                                                  CGAL::abs(first_time + second_time)));
+#else
+  return (second_time == first_time);
+#endif
+
 }
 
 template<typename MotorcycleGraphTraits>
@@ -289,6 +293,8 @@ remove_motorcycle(const std::size_t id) const
 template<typename MotorcycleGraphTraits>
 class Dictionary
 {
+  typedef Dictionary<MotorcycleGraphTraits>               Self;
+
 public:
   typedef MotorcycleGraphTraits                           Geom_traits;
   typedef typename Geom_traits::Triangle_mesh             Triangle_mesh;
@@ -316,6 +322,16 @@ public:
   std::pair<DEC_it, bool> insert(const Face_location& loc, const Point& p, const std::size_t i, const FT time);
   std::pair<DEC_it, bool> insert(const Face_location& loc, const std::size_t i, const FT time, const Triangle_mesh& mesh);
   std::pair<DEC_it, bool> insert(const Face_location& loc, const Triangle_mesh& mesh);
+
+  // Ouput
+  friend std::ostream& operator<<(std::ostream& out, const Self& d)
+  {
+    DEC_it it = d.all_entries().begin(), end = d.all_entries().end();
+    for(; it!=end; ++it)
+      out << &*it << " " << *it << std::endl;
+
+    return out;
+  }
 
 private:
   Dictionary_entry_container entries;
@@ -357,7 +373,14 @@ insert(const Face_location& loc, const Point& p)
 
   if(!is_insert_successful.second)
   {
-    std::cerr << "Warning: point (" << p << ") already exists in the dictionary: " << std::endl
+    std::cerr << "Warning: point already exists in the dictionary: "
+              << &*(is_insert_successful.first) << std::endl
+              << *(is_insert_successful.first) << std::endl;
+  }
+  else
+  {
+    std::cout << "New point in the dictionary: "
+              << &*(is_insert_successful.first) << std::endl
               << *(is_insert_successful.first) << std::endl;
   }
 
@@ -371,8 +394,6 @@ insert(const Face_location& loc, const Point& p, const std::size_t i, const FT t
 {
   std::pair<DEC_it, bool> entry = insert(loc, p);
   entry.first->add_motorcycle(i, time);
-
-  std::cout << "(New) point in the dictionary : " << *(entry.first) << std::endl;
 
   return entry;
 }
