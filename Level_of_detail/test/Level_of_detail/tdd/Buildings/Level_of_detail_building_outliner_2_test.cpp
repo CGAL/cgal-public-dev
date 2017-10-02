@@ -66,6 +66,11 @@ public:
 		bound_0.clear();
 		buildings.clear();
 
+		lodBuildingOutliner.save_info(true);
+		
+		lodBuildingOutliner.set_max_outer_iterations(1000000);
+		lodBuildingOutliner.set_max_inner_iterations(1000);
+
 		set_basic_input();
 	}
 
@@ -139,48 +144,48 @@ public:
 
 		Face_iterator fh = cdt.finite_faces_begin();
 
-		fh->info().bu =  0; fh->info().bu_color = g; buildings[0].faces.push_back(static_cast<Face_handle>(fh)); buildings[0].color = g; ++fh; 
-		fh->info().bu =  0; fh->info().bu_color = g; buildings[0].faces.push_back(static_cast<Face_handle>(fh)); buildings[0].color = g; ++fh;
-		fh->info().bu =  2; fh->info().bu_color = r; buildings[2].faces.push_back(static_cast<Face_handle>(fh)); buildings[2].color = r; ++fh;
-		fh->info().bu =  2; fh->info().bu_color = r; buildings[2].faces.push_back(static_cast<Face_handle>(fh)); buildings[2].color = r; ++fh;
-		fh->info().bu =  2; fh->info().bu_color = r; buildings[2].faces.push_back(static_cast<Face_handle>(fh)); buildings[2].color = r; ++fh;
+		fh->info().in = 1.0; fh->info().bu =  0; fh->info().bu_color = g; buildings[0].faces.push_back(static_cast<Face_handle>(fh)); buildings[0].color = g; ++fh; 
+		fh->info().in = 1.0; fh->info().bu =  0; fh->info().bu_color = g; buildings[0].faces.push_back(static_cast<Face_handle>(fh)); buildings[0].color = g; ++fh;
+		fh->info().in = 1.0; fh->info().bu =  2; fh->info().bu_color = r; buildings[2].faces.push_back(static_cast<Face_handle>(fh)); buildings[2].color = r; ++fh;
+		fh->info().in = 1.0; fh->info().bu =  2; fh->info().bu_color = r; buildings[2].faces.push_back(static_cast<Face_handle>(fh)); buildings[2].color = r; ++fh;
+		fh->info().in = 1.0; fh->info().bu =  2; fh->info().bu_color = r; buildings[2].faces.push_back(static_cast<Face_handle>(fh)); buildings[2].color = r; ++fh;
 
-		fh->info().bu = -1; fh->info().bu_color = grey; ++fh; 														 						   // outside
+		fh->info().in = 0.0; fh->info().bu = -1; fh->info().bu_color = grey; ++fh; 														 						   // outside
 
-		fh->info().bu =  2; fh->info().bu_color = r; buildings[2].faces.push_back(static_cast<Face_handle>(fh)); buildings[2].color = r; ++fh;
-		fh->info().bu =  2; fh->info().bu_color = r; buildings[2].faces.push_back(static_cast<Face_handle>(fh)); buildings[2].color = r; ++fh;
-		fh->info().bu =  2; fh->info().bu_color = r; buildings[2].faces.push_back(static_cast<Face_handle>(fh)); buildings[2].color = r; ++fh;
+		fh->info().in = 1.0; fh->info().bu =  2; fh->info().bu_color = r; buildings[2].faces.push_back(static_cast<Face_handle>(fh)); buildings[2].color = r; ++fh;
+		fh->info().in = 1.0; fh->info().bu =  2; fh->info().bu_color = r; buildings[2].faces.push_back(static_cast<Face_handle>(fh)); buildings[2].color = r; ++fh;
+		fh->info().in = 1.0; fh->info().bu =  2; fh->info().bu_color = r; buildings[2].faces.push_back(static_cast<Face_handle>(fh)); buildings[2].color = r; ++fh;
 
-		fh->info().bu = -1; fh->info().bu_color = grey; ++fh; 														 						   // outside
+		fh->info().in = 0.0; fh->info().bu = -1; fh->info().bu_color = grey; ++fh; 														 						   // outside
 
-		fh->info().bu =  2; fh->info().bu_color = r; buildings[2].faces.push_back(static_cast<Face_handle>(fh)); buildings[2].color = r; ++fh;
+		fh->info().in = 1.0; fh->info().bu =  2; fh->info().bu_color = r; buildings[2].faces.push_back(static_cast<Face_handle>(fh)); buildings[2].color = r; ++fh;
 
-		fh->info().bu = -1; fh->info().bu_color = grey; ++fh; 														 						   // outside
+		fh->info().in = 0.0; fh->info().bu = -1; fh->info().bu_color = grey; ++fh; 														 						   // outside
 
-		fh->info().bu =  1; fh->info().bu_color = b; buildings[1].faces.push_back(static_cast<Face_handle>(fh)); buildings[1].color = b; ++fh;
+		fh->info().in = 1.0; fh->info().bu =  1; fh->info().bu_color = b; buildings[1].faces.push_back(static_cast<Face_handle>(fh)); buildings[1].color = b; ++fh;
 
-		fh->info().bu = -1; fh->info().bu_color = grey; ++fh; 														 						   // outside
+		fh->info().in = 0.0; fh->info().bu = -1; fh->info().bu_color = grey; ++fh; 														 						   // outside
 
-		fh->info().bu =  2; fh->info().bu_color = r; buildings[2].faces.push_back(static_cast<Face_handle>(fh)); buildings[2].color = r; ++fh;
+		fh->info().in = 1.0; fh->info().bu =  2; fh->info().bu_color = r; buildings[2].faces.push_back(static_cast<Face_handle>(fh)); buildings[2].color = r; ++fh;
 
-		fh->info().bu = -1; fh->info().bu_color = grey; ++fh; 														 						   // outside
-		fh->info().bu = -1; fh->info().bu_color = grey; ++fh; 														 						   // outside
+		fh->info().in = 0.0; fh->info().bu = -1; fh->info().bu_color = grey; ++fh; 														 						   // outside
+		fh->info().in = 0.0; fh->info().bu = -1; fh->info().bu_color = grey; ++fh; 														 						   // outside
 
-		fh->info().bu =  2; fh->info().bu_color = r; buildings[2].faces.push_back(static_cast<Face_handle>(fh)); buildings[2].color = r; ++fh;
-		fh->info().bu =  1; fh->info().bu_color = b; buildings[1].faces.push_back(static_cast<Face_handle>(fh)); buildings[1].color = b; ++fh;
-		fh->info().bu =  2; fh->info().bu_color = r; buildings[2].faces.push_back(static_cast<Face_handle>(fh)); buildings[2].color = r; ++fh;
-		fh->info().bu =  2; fh->info().bu_color = r; buildings[2].faces.push_back(static_cast<Face_handle>(fh)); buildings[2].color = r; ++fh;
-		fh->info().bu =  2; fh->info().bu_color = r; buildings[2].faces.push_back(static_cast<Face_handle>(fh)); buildings[2].color = r; ++fh;
-		fh->info().bu =  2; fh->info().bu_color = r; buildings[2].faces.push_back(static_cast<Face_handle>(fh)); buildings[2].color = r; ++fh;
-		fh->info().bu =  2; fh->info().bu_color = r; buildings[2].faces.push_back(static_cast<Face_handle>(fh)); buildings[2].color = r; ++fh;
-		fh->info().bu =  2; fh->info().bu_color = r; buildings[2].faces.push_back(static_cast<Face_handle>(fh)); buildings[2].color = r; ++fh;
-		fh->info().bu =  2; fh->info().bu_color = r; buildings[2].faces.push_back(static_cast<Face_handle>(fh)); buildings[2].color = r; ++fh;
-		fh->info().bu =  1; fh->info().bu_color = b; buildings[1].faces.push_back(static_cast<Face_handle>(fh)); buildings[1].color = b; ++fh;
-		fh->info().bu =  2; fh->info().bu_color = r; buildings[2].faces.push_back(static_cast<Face_handle>(fh)); buildings[2].color = r; ++fh;
+		fh->info().in = 1.0; fh->info().bu =  2; fh->info().bu_color = r; buildings[2].faces.push_back(static_cast<Face_handle>(fh)); buildings[2].color = r; ++fh;
+		fh->info().in = 1.0; fh->info().bu =  1; fh->info().bu_color = b; buildings[1].faces.push_back(static_cast<Face_handle>(fh)); buildings[1].color = b; ++fh;
+		fh->info().in = 1.0; fh->info().bu =  2; fh->info().bu_color = r; buildings[2].faces.push_back(static_cast<Face_handle>(fh)); buildings[2].color = r; ++fh;
+		fh->info().in = 1.0; fh->info().bu =  2; fh->info().bu_color = r; buildings[2].faces.push_back(static_cast<Face_handle>(fh)); buildings[2].color = r; ++fh;
+		fh->info().in = 1.0; fh->info().bu =  2; fh->info().bu_color = r; buildings[2].faces.push_back(static_cast<Face_handle>(fh)); buildings[2].color = r; ++fh;
+		fh->info().in = 1.0; fh->info().bu =  2; fh->info().bu_color = r; buildings[2].faces.push_back(static_cast<Face_handle>(fh)); buildings[2].color = r; ++fh;
+		fh->info().in = 1.0; fh->info().bu =  2; fh->info().bu_color = r; buildings[2].faces.push_back(static_cast<Face_handle>(fh)); buildings[2].color = r; ++fh;
+		fh->info().in = 1.0; fh->info().bu =  2; fh->info().bu_color = r; buildings[2].faces.push_back(static_cast<Face_handle>(fh)); buildings[2].color = r; ++fh;
+		fh->info().in = 1.0; fh->info().bu =  2; fh->info().bu_color = r; buildings[2].faces.push_back(static_cast<Face_handle>(fh)); buildings[2].color = r; ++fh;
+		fh->info().in = 1.0; fh->info().bu =  1; fh->info().bu_color = b; buildings[1].faces.push_back(static_cast<Face_handle>(fh)); buildings[1].color = b; ++fh;
+		fh->info().in = 1.0; fh->info().bu =  2; fh->info().bu_color = r; buildings[2].faces.push_back(static_cast<Face_handle>(fh)); buildings[2].color = r; ++fh;
 
 		// Log log; 
 		// log.save_cdt_ply(cdt, "tmp/cdt_outliner", "bu");
-		// log.save_buildings_info(cdt, buildings, "tmp/buildings_outliner");
+		// log.save_buildings_info(cdt, buildings, "tmp/buildings_outliner_before");
 	}
 };
 
@@ -190,10 +195,15 @@ TEST_F(LOD_BuildingOutlinerTest, Compiles) {
 }
 
 TEST_F(LOD_BuildingOutlinerTest, ReturnsBoundaryOfTheFirstBuilding) {
-   
-	lodBuildingOutliner.find_boundaries(cdt, buildings);
-	Boundary &b = buildings[0].boundary;
 
+	lodBuildingOutliner.find_boundaries(cdt, buildings);
+	
+	Log log;
+	log.save_buildings_info(cdt, buildings, "tmp/buildings_outliner_after");
+
+	ASSERT_THAT(static_cast<int>(buildings.size()), Eq(3));
+
+	Boundary &b = buildings[0].boundary;
 	ASSERT_THAT(b.size(), Eq(bound_0.size()));
 
 	ASSERT_THAT(b[0], Eq(bound_0[0]));

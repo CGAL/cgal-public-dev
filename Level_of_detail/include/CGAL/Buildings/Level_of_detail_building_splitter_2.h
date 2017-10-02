@@ -52,6 +52,8 @@ namespace CGAL {
 
 			int split(CDT &cdt, Buildings &buildings) { 
 				
+				buildings.clear();
+
 				size_t count = 0;
 				CGAL::Unique_hash_map<Face_handle, int> F;
 
@@ -149,13 +151,9 @@ namespace CGAL {
 			bool is_constrained_edge(const CDT &cdt, const Face_handle &fh, const Face_handle &fhn) const {
 
 				const Vertex_handle vh = find_vertex_handle(fh, fhn);
-				const int vertex_index = fh->index(vh);
+				const int vertex_index = fh->index(vh); 			  // should be "i" from the function flood() above!
 
-				Edge edge;
-
-				edge.first  = fh;
-				edge.second = vertex_index; 
-
+				const Edge edge = std::make_pair(fh, vertex_index);
 				return cdt.is_constrained(edge);
 			}
 

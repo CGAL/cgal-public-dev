@@ -68,25 +68,52 @@ namespace CGAL {
 			template<class CDT, class Buildings>
 			void save_buildings_info(const CDT &cdt, const Buildings &buildings, const std::string &filename) {
 
-				typedef typename CDT::Face_handle 			Face_handle;
-				typedef typename CDT::Finite_faces_iterator Face_iterator;
-				typedef typename Buildings::const_iterator  Building_iterator;
+				typedef typename CDT::Vertex_handle 		   Vertex_handle;
+				typedef typename CDT::Face_handle 			   Face_handle;
+				typedef typename CDT::Finite_faces_iterator    Face_iterator;
+				typedef typename CDT::Finite_vertices_iterator Vertex_iterator;
+				typedef typename Buildings::const_iterator     Building_iterator;
 
 				clear();
-				size_t count = 0;
+				
+				CGAL::Unique_hash_map<Vertex_handle, int> V;
+				CGAL::Unique_hash_map<Face_handle, int>   F;
 
-				CGAL::Unique_hash_map<Face_handle, int> F;
+				size_t count = 0;
 				for (Face_iterator fit = cdt.finite_faces_begin(); fit != cdt.finite_faces_end(); ++fit) F[fit] = count++;
+
+				count = 0;
+				for (Vertex_iterator vit = cdt.finite_vertices_begin(); vit != cdt.finite_vertices_end(); ++vit) V[vit] = count++;
 
 				count = 0;
 				for (Building_iterator bit = buildings.begin(); bit != buildings.end(); ++bit, ++count) {
 					
-					const std::vector<typename CDT::Face_handle> &faces = (*bit).second.faces;
+					const std::vector<Face_handle> &faces = (*bit).second.faces;
 					const size_t num_faces = faces.size();
 
-					out << "Building " << count << " with color " << (*bit).second.color << std::endl << "faces: ";
+					const std::vector<Vertex_handle> &boundary = (*bit).second.boundary;
+					const size_t num_vertices = boundary.size();
+
+					out << "Building " << count << 
+					" with color " << (*bit).second.color  << 
+					" and height " << (*bit).second.height << 
+					
+					std::endl << "faces: ";
 					for (size_t i = 0; i < num_faces; ++i) out << F[faces[i]] << " ";
 					
+					skip_line();
+
+					out << "boundary: " << std::endl;
+					for (size_t i = 0; i < num_vertices; ++i) {
+
+						out << V[boundary[i]] << std::endl;
+						out << "with wedges: ";
+
+						const std::vector<Face_handle> &wedges = (*bit).second.wedges.at(boundary[i]);
+						for (size_t j = 0; j < wedges.size(); ++j) out << F[wedges[j]] << " ";
+						out << std::endl;
+					}
+
 					skip_line();
 					skip_line();
 				}
