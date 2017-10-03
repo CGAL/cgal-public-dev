@@ -99,7 +99,7 @@ namespace CGAL {
 				}
 
 				assert(best_face_cost != FT(0));
-				if (m_save_info) log.out << "Start from face: (" << cdt.triangle(result) << ")" << std::endl;
+				if (m_save_info) log.out << "Start from face: ( " << cdt.triangle(result) << " )" << std::endl;
 
 				return result;
 			}
@@ -139,7 +139,7 @@ namespace CGAL {
 				}
 
 				assert(best_vertex_cost != FT(0));
-				if (m_save_info) log.out << "Start from vertex: (" << result->point() << ")" << std::endl;
+				if (m_save_info) log.out << "Start from vertex: ( " << result->point() << " )" << std::endl;
 
 				return result;
 			}
@@ -236,6 +236,11 @@ namespace CGAL {
 				building.boundary.clear();
 				building.wedges.clear();
 
+				// Temporarily, we use only one boundary here!
+				building.boundary.resize(1);
+				building.wedges.resize(1);
+
+
 				Vertex_handle curr_vh = vh;
 				Face_handle   curr_fh = fh;
 
@@ -283,11 +288,11 @@ namespace CGAL {
 			}
 
 			void add_new_boundary_vertex(const Vertex_handle &curr_vh, Building &building) const {
-				building.boundary.push_back(curr_vh);
+				building.boundary[0].push_back(curr_vh);
 			}
 
 			void add_new_wedge_face(const Face_handle &curr_fh, const Vertex_handle &curr_vh, Building &building) const {
-				building.wedges[curr_vh].push_back(curr_fh);
+				building.wedges[0][curr_vh].push_back(curr_fh);
 			}
 
 			Vertex_handle get_next_vertex_handle(const Vertex_handle &curr_vh, const Face_handle &curr_fh) const {

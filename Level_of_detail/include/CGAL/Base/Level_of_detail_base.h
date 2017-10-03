@@ -328,7 +328,7 @@ namespace CGAL {
 				CDT cdt_with_bbox;
 				add_bbox_to(cdt, input, cdt_with_bbox);
 
-				Log ply_cdt; ply_cdt.save_cdt_ply(cdt_with_bbox, "LOD0_cdt", "in");
+				Log ply_cdt; ply_cdt.save_cdt_ply(cdt_with_bbox, "LOD0", "in");
 
 
 				// ----------------------------------				

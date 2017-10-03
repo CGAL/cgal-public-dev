@@ -91,8 +91,8 @@ namespace CGAL {
 					const std::vector<Face_handle> &faces = (*bit).second.faces;
 					const size_t num_faces = faces.size();
 
-					const std::vector<Vertex_handle> &boundary = (*bit).second.boundary;
-					const size_t num_vertices = boundary.size();
+					const std::vector< std::vector<Vertex_handle> > &boundary = (*bit).second.boundary;
+					const size_t num_boundaries = boundary.size();
 
 					out << "Building " << count << 
 					" with color " << (*bit).second.color  << 
@@ -102,16 +102,23 @@ namespace CGAL {
 					for (size_t i = 0; i < num_faces; ++i) out << F[faces[i]] << " ";
 					
 					skip_line();
+					for (size_t k = 0; k < num_boundaries; ++k) {
 
-					out << "boundary: " << std::endl;
-					for (size_t i = 0; i < num_vertices; ++i) {
+						out << "boundary: " << k << std::endl;
+						const size_t num_vertices = boundary[k].size();
 
-						out << V[boundary[i]] << std::endl;
-						out << "with wedges: ";
+						for (size_t i = 0; i < num_vertices; ++i) {
 
-						const std::vector<Face_handle> &wedges = (*bit).second.wedges.at(boundary[i]);
-						for (size_t j = 0; j < wedges.size(); ++j) out << F[wedges[j]] << " ";
-						out << std::endl;
+							out << V[boundary[k][i]] << std::endl;
+
+							if (!(*bit).second.wedges.empty()) {
+								out << "with wedges: ";
+
+								const std::vector<Face_handle> &wedges = (*bit).second.wedges[k].at(boundary[k][i]);
+								for (size_t j = 0; j < wedges.size(); ++j) out << F[wedges[j]] << " ";
+								out << std::endl;
+							}
+						}
 					}
 
 					skip_line();

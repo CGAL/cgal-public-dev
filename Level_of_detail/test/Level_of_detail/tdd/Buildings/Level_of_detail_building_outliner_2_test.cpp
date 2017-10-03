@@ -51,9 +51,9 @@ public:
 	using Building  = CGAL::LOD::Building<FT, Vertex_handle, Face_handle>;
 	using Buildings = std::map<int, Building>;
 
-	using Boundary = std::vector<Vertex_handle>;
+	using Boundary = std::vector< std::vector<Vertex_handle> >;
 
-	CDT cdt; Boundary bound_0; Buildings buildings;
+	CDT cdt; Boundary bound; Buildings buildings;
 	LodBuildingOutliner lodBuildingOutliner;
 
 	LOD_BuildingOutlinerTest() { 
@@ -63,7 +63,7 @@ public:
 	void create_data() {
 
 		cdt.clear();
-		bound_0.clear();
+		bound.clear();
 		buildings.clear();
 
 		lodBuildingOutliner.save_info(true);
@@ -76,14 +76,15 @@ public:
 
 	void set_basic_input() {
 
-		bound_0.resize(4);
+		bound.resize(1);
+		bound[0].resize(4);
 
 
 		// First building.
-		const Vertex_handle va1 = cdt.insert(Point_2(0.0, 0.0)); va1->info().label = Str_label::CORNER; bound_0[0] = va1;
-		const Vertex_handle vb1 = cdt.insert(Point_2(1.0, 0.0)); vb1->info().label = Str_label::CORNER; bound_0[1] = vb1;
-		const Vertex_handle vc1 = cdt.insert(Point_2(1.0, 1.0)); vc1->info().label = Str_label::CORNER; bound_0[2] = vc1;
-		const Vertex_handle vd1 = cdt.insert(Point_2(0.0, 1.0)); vd1->info().label = Str_label::CORNER; bound_0[3] = vd1;
+		const Vertex_handle va1 = cdt.insert(Point_2(0.0, 0.0)); va1->info().label = Str_label::CORNER; bound[0][0] = va1;
+		const Vertex_handle vb1 = cdt.insert(Point_2(1.0, 0.0)); vb1->info().label = Str_label::CORNER; bound[0][1] = vb1;
+		const Vertex_handle vc1 = cdt.insert(Point_2(1.0, 1.0)); vc1->info().label = Str_label::CORNER; bound[0][2] = vc1;
+		const Vertex_handle vd1 = cdt.insert(Point_2(0.0, 1.0)); vd1->info().label = Str_label::CORNER; bound[0][3] = vd1;
 
 		cdt.insert_constraint(va1, vb1); 
 		cdt.insert_constraint(vb1, vc1);
@@ -204,10 +205,10 @@ TEST_F(LOD_BuildingOutlinerTest, ReturnsBoundaryOfTheFirstBuilding) {
 	ASSERT_THAT(static_cast<int>(buildings.size()), Eq(3));
 
 	Boundary &b = buildings[0].boundary;
-	ASSERT_THAT(b.size(), Eq(bound_0.size()));
+	ASSERT_THAT(b[0].size(), Eq(bound[0].size()));
 
-	ASSERT_THAT(b[0], Eq(bound_0[0]));
-	ASSERT_THAT(b[1], Eq(bound_0[1]));
-	ASSERT_THAT(b[2], Eq(bound_0[2]));
-	ASSERT_THAT(b[3], Eq(bound_0[3]));
+	ASSERT_THAT(b[0][0], Eq(bound[0][0]));
+	ASSERT_THAT(b[0][1], Eq(bound[0][1]));
+	ASSERT_THAT(b[0][2], Eq(bound[0][2]));
+	ASSERT_THAT(b[0][3], Eq(bound[0][3]));
 }
