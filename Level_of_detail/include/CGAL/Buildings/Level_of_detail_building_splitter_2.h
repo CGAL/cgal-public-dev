@@ -83,7 +83,7 @@ namespace CGAL {
 			}
 
 		private:
-			Random m_rand;
+			CGAL::Random m_rand;
 
 			void generate_new_building(Building_data &bd) {
 

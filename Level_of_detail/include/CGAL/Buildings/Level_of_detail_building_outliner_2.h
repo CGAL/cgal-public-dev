@@ -233,11 +233,11 @@ namespace CGAL {
 
 			void get_boundary(const CDT &cdt, const Face_handle &fh, const Vertex_handle &vh, Building &building, Log &log) const {
 
-				building.boundary.clear();
+				building.boundaries.clear();
 				building.wedges.clear();
 
 				// Temporarily, we use only one boundary here!
-				building.boundary.resize(1);
+				building.boundaries.resize(1);
 				building.wedges.resize(1);
 
 
@@ -288,7 +288,7 @@ namespace CGAL {
 			}
 
 			void add_new_boundary_vertex(const Vertex_handle &curr_vh, Building &building) const {
-				building.boundary[0].push_back(curr_vh);
+				building.boundaries[0].push_back(curr_vh);
 			}
 
 			void add_new_wedge_face(const Face_handle &curr_fh, const Vertex_handle &curr_vh, Building &building) const {

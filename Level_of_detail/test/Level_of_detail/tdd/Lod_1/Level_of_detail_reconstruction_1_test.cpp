@@ -12,6 +12,7 @@
 #include <CGAL/Triangulation_face_base_with_info_2.h>
 #include <CGAL/Constrained_triangulation_face_base_2.h>
 #include <CGAL/Triangulation_vertex_base_with_info_2.h>
+#include <CGAL/Polyhedron_3.h>
 
 // New CGAL includes.
 #include <CGAL/Mylog/Mylog.h>
@@ -47,12 +48,15 @@ public:
 	using Building  = CGAL::LOD::Building<FT, Vertex_handle, Face_handle>;
 	using Buildings = std::map<int, Building>;
 
-	using Mesh = CDT;
+	using Mesh = CGAL::Polyhedron_3<Traits>;
 
 	using Lod_1 = CGAL::LOD::Level_of_detail_reconstruction_1<Traits, CDT, Buildings, Mesh>;
+	using Mesh_facet_colors = Lod_1::Mesh_facet_colors;
+
 	using Log = CGAL::LOD::Mylog;
 
-	CDT cdt; Buildings buildings; Mesh result; Lod_1 lod_1;
+	CDT cdt; Buildings buildings; Mesh mesh; Mesh_facet_colors mesh_facet_colors;
+	Lod_1 lod_1;
 
 	LOD_ReconstructionTest() { 
 		create_data();
@@ -63,7 +67,6 @@ public:
 		cdt.clear();
 		buildings.clear();
 
-		lod_1.save_as_ply(true);
 		set_basic_input();
 	}
 
@@ -203,45 +206,45 @@ public:
 		buildings[0].color = g; buildings[0].height = 1.0;
 		buildings[1].color = r; buildings[1].height = 0.5;
 		buildings[2].color = b; buildings[2].height = 0.8;
-		buildings[3].color = f; buildings[3].height = 1.5;
-		buildings[4].color = o; buildings[4].height = 1.0;
+		buildings[3].color = f; buildings[3].height = 1.0;
+		buildings[4].color = o; buildings[4].height = 1.5;
 		buildings[5].color = p; buildings[5].height = 0.7;
 
 		// First building.
-		buildings[0].boundary.resize(1);
-		buildings[0].boundary[0].resize(4);
-		buildings[0].boundary[0][0] = va1; buildings[0].boundary[0][1] = vb1; buildings[0].boundary[0][2] = vc1; buildings[0].boundary[0][3] = vd1;
+		buildings[0].boundaries.resize(1);
+		buildings[0].boundaries[0].resize(4);
+		buildings[0].boundaries[0][0] = va1; buildings[0].boundaries[0][1] = vb1; buildings[0].boundaries[0][2] = vc1; buildings[0].boundaries[0][3] = vd1;
 
 		// Second building.
-		buildings[1].boundary.resize(1);
-		buildings[1].boundary[0].resize(4);
-		buildings[1].boundary[0][0] = vb2; buildings[1].boundary[0][1] = ve2; buildings[1].boundary[0][2] = vf2; buildings[1].boundary[0][3] = vg2;
+		buildings[1].boundaries.resize(1);
+		buildings[1].boundaries[0].resize(4);
+		buildings[1].boundaries[0][0] = vb2; buildings[1].boundaries[0][1] = ve2; buildings[1].boundaries[0][2] = vf2; buildings[1].boundaries[0][3] = vg2;
 
 		// Third building.
-		buildings[2].boundary.resize(1);
-		buildings[2].boundary[0].resize(4);
-		buildings[2].boundary[0][0] = vf3; buildings[2].boundary[0][1] = vh3; buildings[2].boundary[0][2] = vi3; buildings[2].boundary[0][3] = vj3;
+		buildings[2].boundaries.resize(1);
+		buildings[2].boundaries[0].resize(4);
+		buildings[2].boundaries[0][0] = vf3; buildings[2].boundaries[0][1] = vh3; buildings[2].boundaries[0][2] = vi3; buildings[2].boundaries[0][3] = vj3;
 
 		// Fourth building - exterior.
-		buildings[3].boundary.resize(1);
-		buildings[3].boundary[0].resize(4);
-		buildings[3].boundary[0][0] = vk4; buildings[3].boundary[0][1] = vl4; buildings[3].boundary[0][2] = vm4; buildings[3].boundary[0][3] = vn4;
+		buildings[3].boundaries.resize(1);
+		buildings[3].boundaries[0].resize(4);
+		buildings[3].boundaries[0][0] = vk4; buildings[3].boundaries[0][1] = vl4; buildings[3].boundaries[0][2] = vm4; buildings[3].boundaries[0][3] = vn4;
 
 		// - interior.
-		buildings[4].boundary.resize(1);
-		buildings[4].boundary[0].resize(4);
-		buildings[4].boundary[0][0] = vo4; buildings[4].boundary[0][1] = vp4; buildings[4].boundary[0][2] = vq4; buildings[4].boundary[0][3] = vr4;
+		buildings[4].boundaries.resize(1);
+		buildings[4].boundaries[0].resize(4);
+		buildings[4].boundaries[0][0] = vo4; buildings[4].boundaries[0][1] = vp4; buildings[4].boundaries[0][2] = vq4; buildings[4].boundaries[0][3] = vr4;
 
 		// Fifth building.
-		buildings[5].boundary.resize(2);
+		buildings[5].boundaries.resize(2);
 
 		// - exterior boundary.
-		buildings[5].boundary[0].resize(4);
-		buildings[5].boundary[0][0] = vs5; buildings[5].boundary[0][1] = vt5; buildings[5].boundary[0][2] = vu5; buildings[5].boundary[0][3] = vv5;		
+		buildings[5].boundaries[0].resize(4);
+		buildings[5].boundaries[0][0] = vs5; buildings[5].boundaries[0][1] = vt5; buildings[5].boundaries[0][2] = vu5; buildings[5].boundaries[0][3] = vv5;		
 
 		// - interior boundary.
-		buildings[5].boundary[1].resize(4);
-		buildings[5].boundary[1][0] = vw5; buildings[5].boundary[1][1] = vz5; buildings[5].boundary[1][2] = va5; buildings[5].boundary[1][3] = vb5;
+		buildings[5].boundaries[1].resize(4);
+		buildings[5].boundaries[1][0] = vw5; buildings[5].boundaries[1][1] = vz5; buildings[5].boundaries[1][2] = va5; buildings[5].boundaries[1][3] = vb5;
 
 
 		// Log log; 
@@ -257,5 +260,11 @@ TEST_F(LOD_ReconstructionTest, Compiles) {
 
 TEST_F(LOD_ReconstructionTest, RunsReconstruction) {
 
-	lod_1.reconstruct(cdt, buildings, result);
+	mesh.clear();
+	mesh_facet_colors.clear();
+
+	lod_1.reconstruct(cdt, buildings, mesh, mesh_facet_colors);
+
+	Log log;
+	log.save_mesh_as_ply(mesh, mesh_facet_colors, "LOD1");
 }

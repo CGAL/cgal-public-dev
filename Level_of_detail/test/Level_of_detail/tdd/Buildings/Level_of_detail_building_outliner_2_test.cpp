@@ -51,9 +51,9 @@ public:
 	using Building  = CGAL::LOD::Building<FT, Vertex_handle, Face_handle>;
 	using Buildings = std::map<int, Building>;
 
-	using Boundary = std::vector< std::vector<Vertex_handle> >;
+	using Boundaries = std::vector< std::vector<Vertex_handle> >;
 
-	CDT cdt; Boundary bound; Buildings buildings;
+	CDT cdt; Boundaries bound; Buildings buildings;
 	LodBuildingOutliner lodBuildingOutliner;
 
 	LOD_BuildingOutlinerTest() { 
@@ -204,7 +204,7 @@ TEST_F(LOD_BuildingOutlinerTest, ReturnsBoundaryOfTheFirstBuilding) {
 
 	ASSERT_THAT(static_cast<int>(buildings.size()), Eq(3));
 
-	Boundary &b = buildings[0].boundary;
+	Boundaries &b = buildings[0].boundaries;
 	ASSERT_THAT(b[0].size(), Eq(bound[0].size()));
 
 	ASSERT_THAT(b[0][0], Eq(bound[0][0]));

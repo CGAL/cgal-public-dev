@@ -73,9 +73,9 @@ namespace CGAL {
 			FT height 		  = FT(0); 				  // height of the building
 			CGAL::Color color = CGAL::Color(0, 0, 0); // color of the building
 			
-			std::vector< std::vector<Vertex_handle> > 		   				  boundary; // boundary vertices of the building ordered counterclockwise (may store multiple boundaries)
-			std::vector< std::map<Vertex_handle, std::vector<Face_handle> > > wedges;   // all faces adjacent to each boundary vertex above - must be unique face handles
-			std::vector<Face_handle>   						   				  faces;	// all faces that belong to this building
+			std::vector< std::vector<Vertex_handle> > 		   				  boundaries; // boundary vertices of the building ordered counterclockwise (may store multiple boundaries)
+			std::vector< std::map<Vertex_handle, std::vector<Face_handle> > > wedges;     // all faces adjacent to each boundary vertex above - must be unique face handles
+			std::vector<Face_handle>   						   				  faces;	  // all faces that belong to this building
 		};
 
 	} // LOD

@@ -65,6 +65,69 @@ namespace CGAL {
 				return true;
 			}
 
+			// Save mesh in a ply format.
+			template<class Mesh, class Facet_colors>
+			void save_mesh_as_ply(const Mesh &mesh, const Facet_colors &mesh_facet_colors, const std::string &filename) {
+
+				clear();
+
+				using Mesh_vertex_iterator = typename Mesh::Vertex_const_iterator;
+				using Mesh_facet_iterator  = typename Mesh::Facet_const_iterator;
+				using Mesh_facet_handle    = typename Mesh::Facet_const_handle;
+
+				using Facet_halfedge_circulator = typename Mesh::Facet::Halfedge_around_facet_const_circulator;
+				using Facet_vertex_handle 		= typename Mesh::Facet::Vertex_const_handle;
+
+
+				// Add ply header.
+				const size_t num_vertices = mesh.size_of_vertices();
+				const size_t num_facets   = mesh.size_of_facets();
+
+				out << 
+				"ply\n"               					   << 
+				"format ascii 1.0\n"     				   << 
+				"element vertex "        				   << num_vertices << "\n" << 
+				"property double x\n"    				   << 
+				"property double y\n"    				   << 
+				"property double z\n" 					   <<
+				"element face " 						   << num_facets << "\n" << 
+				"property list uchar int vertex_indices\n" <<
+				"property uchar red\n" 					   <<
+				"property uchar green\n" 				   <<
+				"property uchar blue\n" 				   <<
+				"end_header\n";
+
+
+				// Add mesh vertices.
+				int count = 0;
+				CGAL::Unique_hash_map<Facet_vertex_handle, int> V;
+
+				for (Mesh_vertex_iterator vit = mesh.vertices_begin(); vit != mesh.vertices_end(); ++vit) {
+					
+					V[static_cast<Facet_vertex_handle>(vit)] = count++;
+					out << vit->point() << std::endl;
+				}
+
+
+				// Add mesh facets.
+				for (Mesh_facet_iterator fit = mesh.facets_begin(); fit != mesh.facets_end(); ++fit) {
+					out << (*fit).facet_degree() << " "; 
+
+					Facet_halfedge_circulator hit = (*fit).facet_begin(), end = (*fit).facet_begin();
+					do {
+
+						out << V[(*hit).vertex()] << " ";
+						++hit;
+
+					} while (hit != end);
+					out << mesh_facet_colors.at(static_cast<Mesh_facet_handle>(fit)) << std::endl;
+				}
+
+
+				// Save file.
+				save(filename, ".ply");
+			}
+
 			template<class CDT, class Buildings>
 			void save_buildings_info(const CDT &cdt, const Buildings &buildings, const std::string &filename) {
 
@@ -91,8 +154,8 @@ namespace CGAL {
 					const std::vector<Face_handle> &faces = (*bit).second.faces;
 					const size_t num_faces = faces.size();
 
-					const std::vector< std::vector<Vertex_handle> > &boundary = (*bit).second.boundary;
-					const size_t num_boundaries = boundary.size();
+					const std::vector< std::vector<Vertex_handle> > &boundaries = (*bit).second.boundaries;
+					const size_t num_boundaries = boundaries.size();
 
 					out << "Building " << count << 
 					" with color " << (*bit).second.color  << 
@@ -105,16 +168,16 @@ namespace CGAL {
 					for (size_t k = 0; k < num_boundaries; ++k) {
 
 						out << "boundary: " << k << std::endl;
-						const size_t num_vertices = boundary[k].size();
+						const size_t num_vertices = boundaries[k].size();
 
 						for (size_t i = 0; i < num_vertices; ++i) {
 
-							out << V[boundary[k][i]] << std::endl;
+							out << V[boundaries[k][i]] << std::endl;
 
 							if (!(*bit).second.wedges.empty()) {
 								out << "with wedges: ";
 
-								const std::vector<Face_handle> &wedges = (*bit).second.wedges[k].at(boundary[k][i]);
+								const std::vector<Face_handle> &wedges = (*bit).second.wedges[k].at(boundaries[k][i]);
 								for (size_t j = 0; j < wedges.size(); ++j) out << F[wedges[j]] << " ";
 								out << std::endl;
 							}
@@ -229,17 +292,17 @@ namespace CGAL {
 				const auto number_of_faces    = cdt.number_of_faces();
 
 				out << 
-				"ply\n"               					 << 
-				"format ascii 1.0\n"     				 << 
-				"element vertex "        				 << number_of_vertices << "\n" << 
-				"property double x\n"    				 << 
-				"property double y\n"    				 << 
-				"property double z\n" 					 <<
-				"element face " 						 << number_of_faces << "\n" << 
-				"property list uchar int vertex_index\n" <<
-				"property uchar red\n" 					 <<
-				"property uchar green\n" 				 <<
-				"property uchar blue\n" 				 <<
+				"ply\n"               					   << 
+				"format ascii 1.0\n"     				   << 
+				"element vertex "        				   << number_of_vertices << "\n" << 
+				"property double x\n"    				   << 
+				"property double y\n"    				   << 
+				"property double z\n" 					   <<
+				"element face " 						   << number_of_faces << "\n" << 
+				"property list uchar int vertex_indices\n" <<
+				"property uchar red\n" 					   <<
+				"property uchar green\n" 				   <<
+				"property uchar blue\n" 				   <<
 				"end_header\n";
 
 				typedef typename CDT::Vertex_handle Vertex_handle;
