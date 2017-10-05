@@ -63,6 +63,7 @@ namespace CGAL {
 
 		public:
 			Label label;
+			CGAL::Color color = CGAL::Color(0, 0, 0);
 		};
 
 		// Building structure.
@@ -83,6 +84,12 @@ namespace CGAL {
 			MIN, // fit data to the minimum height
 			AVG, // fit data to the average height
 			MAX  // fit data to the maximum height
+		};
+
+		// Main test data.
+		enum class Main_test_data_type {
+			BASIC,   // basic data set from the Loader_stub class.
+			COMPLEX	 // sketch up generated simple data set with square buildings
 		};
 
 	} // LOD

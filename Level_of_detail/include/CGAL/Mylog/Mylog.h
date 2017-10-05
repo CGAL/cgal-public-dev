@@ -298,6 +298,9 @@ namespace CGAL {
 				"property double x\n"    				   << 
 				"property double y\n"    				   << 
 				"property double z\n" 					   <<
+				// "property uchar red\n" 				   <<
+				// "property uchar green\n" 			   <<
+				// "property uchar blue\n" 				   <<
 				"element face " 						   << number_of_faces << "\n" << 
 				"property list uchar int vertex_indices\n" <<
 				"property uchar red\n" 					   <<
@@ -311,7 +314,7 @@ namespace CGAL {
 				int count = 0;
 				for (typename CDT::Finite_vertices_iterator vit = cdt.finite_vertices_begin(); vit != cdt.finite_vertices_end(); ++vit) {
 					
-					out << (*vit) << " " << 0 << std::endl;
+					out << (*vit) << " " << 0 /* << " " << vit->info().color */ << std::endl;
 					V[vit] = count++;
 				}
 

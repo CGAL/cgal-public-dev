@@ -37,7 +37,7 @@ namespace CGAL {
 			typedef KernelTraits 	Kernel;
 			typedef OutputContainer Container_3D;
 
-			typedef CGAL::LOD::Level_of_detail_loader_stub<Kernel, Container_3D>  Loader;
+			typedef CGAL::LOD::Level_of_detail_loader<Kernel, Container_3D>  	  Loader;
 			typedef CGAL::LOD::Level_of_detail_preprocessor<Kernel, Container_3D> Preprocessor;
 
 			typedef CGAL::LOD::Level_of_detail_clutter<Kernel, Container_3D> 		   Clutter_strategy;

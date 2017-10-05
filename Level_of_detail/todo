@@ -38,3 +38,5 @@ TODO AND OTHER:
 8. Is it possible to add colors to faces in the Polyhedron_incremental_builder class?
 9. How to create a 2-manifold or watertight mesh from the polygonal soup, which is LOD1 now?
 10. Add classification labels to Level_of_detail_enum.h.
+11. What to do with points that have negative z coordinate? Do we still project on xy zero plane or should we change it? Should I compute height as difference between min and max z coordinates?
+12. Some buildings turn out to be just a triangle that is why some walls of the buildings have different colours.

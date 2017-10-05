@@ -304,12 +304,11 @@ namespace CGAL {
 			}
 
 			bool is_boundary_face(const CDT &cdt, const Face_handle &fh, const Edge &edge) const {
-
+				
 				const FT half = FT(1) / FT(2);
 
-				if (cdt.is_infinite(fh))  return true;
-				if (fh->info().in < half) return true;
-
+				if (cdt.is_infinite(fh))  							  return true;
+				if (fh->info().in < half) 							  return true;
 				if (fh->info().in > half && cdt.is_constrained(edge)) return true;
 
 				assert(fh->info().in != half);

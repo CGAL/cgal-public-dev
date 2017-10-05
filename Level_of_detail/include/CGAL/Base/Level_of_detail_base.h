@@ -30,6 +30,8 @@ namespace CGAL {
 		class Level_of_detail_base {
 
 		public:
+
+			// Main typedefs.
 			typedef LodTraits 				      Traits;
 			typedef typename Traits::Kernel       Kernel;
 
@@ -85,6 +87,7 @@ namespace CGAL {
 			typedef typename Lod_1::Point  Ground_point;
 			typedef typename Lod_1::Ground Ground;
 
+
 			// Extra.
 			using Plane_iterator = typename Planes::const_iterator;
 
@@ -106,17 +109,44 @@ namespace CGAL {
 			using Point_index = typename Container_3D::Index;
 			using Face_points_map = std::map<Face_handle, std::vector<Point_index> >;
 
-			const std::string default_path = "/Users/danisimo/Documents/pipeline/data/basic_test_v3/";
-			// const std::string default_path = "/Users/danisimo/Documents/pipeline/data/complex_test/";
 
-			Level_of_detail_base(Traits traits = Traits()) : m_traits(traits) { } // Do I need to create an instance of these traits here?
+			//////////////
+			// Main class!
+			Level_of_detail_base() :
+			m_default_path("default"),
+			m_preprocessor_scale(-FT(1)) ,
+			m_structuring_epsilon(-FT(1)),
+			m_structuring_log(false),
+			m_structuring_resample(true),
+			m_structuring_get_all_points(false),
+			m_add_cdt_clutter(true),
+			m_add_cdt_bbox(false),
+			m_visibility_save_info(false),
+			m_visibility_approach(Visibility_approach::POINT_BASED),
+			m_visibility_method(Visibility_method::POINT_BASED_CLASSIFICATION),
+			m_visibility_num_samples(0),
+			m_graph_cut_save_info(false),
+			m_graph_cut_alpha(-FT(1)),
+			m_graph_cut_beta(-FT(1)),
+			m_graph_cut_gamma(-FT(1)),
+			m_building_boundaries_save_internal_info(false), 
+			m_building_boundaries_max_inner_iters(0),
+			m_building_boundaries_max_outer_iters(0),
+			m_roof_fitter_type(Roof_fitter_type::MAX), 
+			m_clean_projected_points(true)
+			{ } // Do I need to create an instance of these traits here?
 
-			template<class OutputIterator>
-			void create_lods(const std::string &, OutputIterator &&) {
+
+			/////////////////
+			// Main function!
+			void create_lods() {
 
 				// (START) Create log.
 				std::cout << "\nstarting ..." << std::endl;
 				Log log; log.out << "START EXECUTION\n\n\n";
+
+				set_global_parameters();
+				assert_global_parameters();
 
 
 				// ----------------------------------
@@ -125,7 +155,7 @@ namespace CGAL {
 				std::cout << "(1) loading" << std::endl;
 
 				Container_3D input;
-				m_loader.get_data(default_path + "data.ply", input);
+				m_loader.get_data(m_default_path + "data.ply", input);
 
 				log.out << "(1) Data are loaded. Number of points: " << input.number_of_points() << std::endl << std::endl;
 
@@ -169,8 +199,10 @@ namespace CGAL {
 				// (4) Create plane from the ground points.
 				std::cout << "(4) ground plane fitting" << std::endl;
 
-				Plane_3 ground_plane = Plane_3(0.0, 0.0, 1.0, 0.0); // use XY plane instead
+				Plane_3 ground_fitted_plane;
+				fit_ground_plane(input, ground_idxs, ground_fitted_plane);
 
+				Plane_3 ground_plane = Plane_3(FT(0), FT(0), FT(1), FT(0)); // use XY plane instead
 				log.out << "(4) Ground plane is fitted: " << ground_plane << std::endl << std::endl;
 
 
@@ -212,20 +244,23 @@ namespace CGAL {
 				number_of_projected_points = m_ground_projector.project(input, boundary_clutter, ground_plane, boundary_clutter_projected);
 				log.out << "(7) Building's boundary clutter is projected. Number of projected points: " << number_of_projected_points << std::endl << std::endl;
 				
-				// Log points_exporter; points_exporter.export_projected_points_as_xyz("tmp/projected", building_boundaries_projected, default_path);
+				// Log points_exporter; points_exporter.export_projected_points_as_xyz("tmp/projected", building_boundaries_projected, m_default_path);
 
 				
 				// ----------------------------------
 
 				// (7') Clean projected points by removing all points that lie far away from the center cluster of points.
-				std::cout << "(7') cleaning" << std::endl;
-				m_preprocessor.set_scale(FT(2));
+				if (m_clean_projected_points) {
 
-				auto number_of_removed_points = m_preprocessor.clean_projected_points(building_boundaries_projected, building_boundaries);
-				log.out << "(7') Building's boundaries are cleaned. Number of removed points: " << number_of_removed_points << std::endl;
+					std::cout << "(7') cleaning" << std::endl;
+					m_preprocessor.set_scale(m_preprocessor_scale);
 
-				number_of_removed_points = m_preprocessor.clean_projected_points(boundary_clutter_projected, boundary_clutter);
-				log.out << "(7') Building's boundary clutter is cleaned. Number of removed points: " << number_of_removed_points << std::endl << std::endl;
+					auto number_of_removed_points = m_preprocessor.clean_projected_points(building_boundaries_projected, building_boundaries);
+					log.out << "(7') Building's boundaries are cleaned. Number of removed points: " << number_of_removed_points << std::endl;
+
+					number_of_removed_points = m_preprocessor.clean_projected_points(boundary_clutter_projected, boundary_clutter);
+					log.out << "(7') Building's boundary clutter is cleaned. Number of removed points: " << number_of_removed_points << std::endl << std::endl;
+				}
 
 
 				// ----------------------------------
@@ -249,7 +284,7 @@ namespace CGAL {
 
 				log.out << "(9) Segments are created. Number of created segments: " << number_of_segments << std::endl << std::endl;
 
-				// Log segments_exporter; segments_exporter.export_segments_as_obj("tmp/segments", segments, default_path);
+				Log segments_exporter; segments_exporter.export_segments_as_obj("tmp/segments", segments, m_default_path);
 
 
 				// ----------------------------------
@@ -259,10 +294,9 @@ namespace CGAL {
 
 				m_structuring = std::make_unique<Structuring_2>(building_boundaries_projected, building_boundaries, lines);
 				
-				// epsilon: 0.025 basic test; 0.0005 complex test;
-				m_structuring->set_epsilon(0.025);
-				m_structuring->save_log(false);
-				m_structuring->resample(true);
+				m_structuring->set_epsilon(m_structuring_epsilon);
+				m_structuring->save_log(m_structuring_log);
+				m_structuring->resample(m_structuring_resample);
 
 				const auto number_of_structured_segments = m_structuring->structure_point_set();
 
@@ -274,159 +308,150 @@ namespace CGAL {
 				// (11) Compute constrained Delaunay triangulation of the structured points.
 				std::cout << "(11) creating cdt" << std::endl;
 
-				const Structured_points &structured_points = m_structuring->get_segment_end_points();
-				const Structured_labels &structured_labels = m_structuring->get_segment_end_labels();
-
-				// const Structured_points &structured_points = m_structuring->get_structured_points();
-				// const Structured_points &structured_labels = m_structuring->get_structured_labels();
+				const Structured_points &structured_points = m_structuring_get_all_points ? m_structuring->get_structured_points() : m_structuring->get_segment_end_points();
+				const Structured_labels &structured_labels = m_structuring_get_all_points ? m_structuring->get_structured_labels() : m_structuring->get_segment_end_labels();
 
 				CDT cdt; 
-
-				// add_clutter: "true" for basic test and "false" for complex test
-				const bool add_clutter = true; 
-				const bool add_bbox    = false;
-
 				const auto number_of_faces = compute_cdt(structured_points, structured_labels, cdt, 
-														 add_clutter, boundary_clutter, boundary_clutter_projected, 
-														 add_bbox, input);
+														 m_add_cdt_clutter, boundary_clutter, boundary_clutter_projected, 
+														 m_add_cdt_bbox, input);
 
 				log.out << "(11) Constrained Delaunay triangulation of the structured points is built. Number of faces: " << number_of_faces << std::endl << std::endl;
 
-				assert(!add_bbox); // visibility and graph cut do not work if bbox vertices are added to CDT!
+				assert(!m_add_cdt_bbox); // visibility and graph cut do not work if bbox vertices are added to CDT!
 
 
 				// ----------------------------------
 
-				// (11') Convert 3D input to 2D input.			
-				std::cout << "(11') converting 3d input into 2d input and setting face to points map" << std::endl;
+				// (12) Convert 3D input to 2D input.			
+				std::cout << "(12) converting 3d input into 2d input and setting face to points map" << std::endl;
 
 				Container_2D input_2d; Face_points_map fp_map;
 				const auto number_of_converted_points = get_2d_input_and_face_points_map(cdt, input, input_2d, fp_map);
 
-				log.out << "(11') 3D input is converted into 2D input and face to points map is set. Number of converted points: " << number_of_converted_points << std::endl << std::endl;
+				log.out << "(12) 3D input is converted into 2D input and face to points map is set. Number of converted points: " << number_of_converted_points << std::endl << std::endl;
 
 
 				// ----------------------------------
 
-				// (12) Compute visibility (0 - outside or 1 - inside) for each triangle in CDT above.
-				std::cout << "(12) visibility computation" << std::endl;
+				// (13) Compute visibility (0 - outside or 1 - inside) for each triangle in CDT above.
+				std::cout << "(13) visibility computation" << std::endl;
 
-				m_visibility.save_info(false);
-				m_visibility.set_approach(Visibility_approach::POINT_BASED);
-				m_visibility.set_method(Visibility_method::POINT_BASED_CLASSIFICATION);
-				m_visibility.set_number_of_samples(200);
+				m_visibility.save_info(m_visibility_save_info);
+				m_visibility.set_approach(m_visibility_approach);
+				m_visibility.set_method(m_visibility_method);
+				m_visibility.set_number_of_samples(m_visibility_num_samples);
 
 				const auto number_of_traversed_faces = m_visibility.compute(input_2d, cdt);
-				log.out << "(12) Visibility is computed. Number of traversed faces: " << number_of_traversed_faces << std::endl << std::endl;
+				log.out << "(13) Visibility is computed. Number of traversed faces: " << number_of_traversed_faces << std::endl << std::endl;
 
-				Log eps_saver; eps_saver.save_visibility_eps(cdt, input, structured_points); // basic test
-				// Log eps_saver; eps_saver.save_visibility_eps(cdt); 						 // complex test
-
+				// Log eps_saver_wp; eps_saver_wp.save_visibility_eps(cdt, input, structured_points); // works only with basic test
+				
+				Log eps_saver; eps_saver.save_visibility_eps(cdt);
 				Log ply_vis_saver; ply_vis_saver.save_cdt_ply(cdt, "tmp/visibility", "in");
 
 
 				// ----------------------------------
 
-				// (13) Apply graph cut.
-				std::cout << "(13) applying graph cut" << std::endl;
+				// (14) Apply graph cut.
+				std::cout << "(14) applying graph cut" << std::endl;
 
-				m_lod_0.save_info(false);
-				m_lod_0.set_alpha_parameter(FT(1));
-				m_lod_0.set_beta_parameter(FT(100000));
-				m_lod_0.set_gamma_parameter(FT(1000));
+				m_lod_0.save_info(m_graph_cut_save_info);
+				m_lod_0.set_alpha_parameter(m_graph_cut_alpha);
+				m_lod_0.set_beta_parameter(m_graph_cut_beta);
+				m_lod_0.set_gamma_parameter(m_graph_cut_gamma);
 
 				m_lod_0.max_flow(cdt);
 
-				log.out << "(13) Graph cut is applied." << std::endl << std::endl;
+				log.out << "(14) Graph cut is applied." << std::endl << std::endl;
 				Log ply_cdt_in; ply_cdt_in.save_cdt_ply(cdt, "tmp/after_cut", "in");
 
 
 				// ----------------------------------				
 
-				// (14) From now on we handle each building separately.
+				// (15) From now on we handle each building separately.
 
 
 				// (a) Split all buildings.
-				std::cout << "(14 a) splitting buildings" << std::endl;
+				std::cout << "(15 a) splitting buildings" << std::endl;
 
 				Buildings buildings;
 				const auto number_of_buildings = m_building_splitter.split(cdt, buildings);
 
-				log.out << "(14 a) All buildings are found. Number of buildings: " << number_of_buildings << std::endl;
+				log.out << "(15 a) All buildings are found. Number of buildings: " << number_of_buildings << std::endl;
 
 
 				// ----------------------------------
 
 				// (b) Find building's walls.
-				std::cout << "(14 b) finding boundaries" << std::endl;
+				std::cout << "(15 b) finding boundaries" << std::endl;
 
-				m_building_outliner.save_info(false);
-				m_building_outliner.set_max_inner_iterations(1000);
-				m_building_outliner.set_max_outer_iterations(1000000);
+				m_building_outliner.save_info(m_building_boundaries_save_internal_info);
+				m_building_outliner.set_max_inner_iterations(m_building_boundaries_max_inner_iters);
+				m_building_outliner.set_max_outer_iterations(m_building_boundaries_max_outer_iters);
 				
 				m_building_outliner.find_boundaries(cdt, buildings);
 
-				log.out << "(14 b) All boundaries are found." << std::endl;
+				log.out << "(15 b) All boundaries are found." << std::endl;
 				Log log_bounds; log_bounds.save_buildings_info(cdt, buildings, "tmp/buildings_info_with_boundaries");
+				
+				// log_bounds.clear(); log_bounds.save_cdt_ply(cdt, "tmp/chosen_vertices"); // debugging info
 
 
 				// ----------------------------------
 
 				// (c) Fit roof height for each building.
-				std::cout << "(14 c) fitting roofs" << std::endl;
-
-				const Roof_fitter_type roof_fitter_type = Roof_fitter_type::MAX;
-
-				switch (roof_fitter_type) {
+				std::cout << "(15 c) fitting roofs" << std::endl;
+				switch (m_roof_fitter_type) {
 					
 					case Roof_fitter_type::MIN: 
-						m_building_min_roof_fitter.fit_roof_heights(cdt, input, fp_map, buildings);
+						m_building_min_roof_fitter.fit_roof_heights(cdt, input, fp_map, ground_fitted_plane, buildings);
 						break;
 
 					case Roof_fitter_type::AVG: 
-						m_building_avg_roof_fitter.fit_roof_heights(cdt, input, fp_map, buildings);
+						m_building_avg_roof_fitter.fit_roof_heights(cdt, input, fp_map, ground_fitted_plane, buildings);
 						break;
 
 					case Roof_fitter_type::MAX: 
-						m_building_max_roof_fitter.fit_roof_heights(cdt, input, fp_map, buildings);
-						break;
+						m_building_max_roof_fitter.fit_roof_heights(cdt, input, fp_map, ground_fitted_plane, buildings);
+						break;			
 
 					default:
 						assert(!"Wrong roof fitter type!");
 						break;
 				}
 				
-				log.out << "(14 c) All roofs are fitted." << std::endl << std::endl;
+				log.out << "(15 c) All roofs are fitted." << std::endl << std::endl;
 				Log log_roofs; log_roofs.save_buildings_info(cdt, buildings, "tmp/buildings_info_final");
 
 
 				// ----------------------------------
 
-				// (15) LOD0 reconstruction.
+				// (16) LOD0 reconstruction.
 
 				Ground ground_bbox;
 				compute_ground_bbox(input, ground_bbox);
 
 				assert(!ground_bbox.empty());
-				std::cout << "(15) reconstructing lod0" << std::endl;
+				std::cout << "(16) reconstructing lod0" << std::endl;
 
 				Mesh mesh_0; Mesh_facet_colors mesh_facet_colors_0;
 				m_lod_1.reconstruct_lod0(cdt, buildings, ground_bbox, mesh_0, mesh_facet_colors_0);
 
-				log.out << "(15) Final LOD0 is reconstructed." << std::endl << std::endl;
+				log.out << "(16) Final LOD0 is reconstructed." << std::endl << std::endl;
 				Log lod_0_saver; lod_0_saver.save_mesh_as_ply(mesh_0, mesh_facet_colors_0, "LOD0");
 
 
 				// ----------------------------------	
 				
-				// (16) LOD1 reconstruction.
+				// (17) LOD1 reconstruction.
 				
-				std::cout << "(16) reconstructing lod1" << std::endl;
+				std::cout << "(17) reconstructing lod1" << std::endl;
 
 				Mesh mesh_1; Mesh_facet_colors mesh_facet_colors_1;
 				m_lod_1.reconstruct_lod1(cdt, buildings, ground_bbox, mesh_1, mesh_facet_colors_1);
 
-				log.out << "(16) Final LOD1 is reconstructed." << std::endl;
+				log.out << "(17) Final LOD1 is reconstructed." << std::endl;
 				Log lod_1_saver; lod_1_saver.save_mesh_as_ply(mesh_1, mesh_facet_colors_1, "LOD1");
 
 
@@ -440,7 +465,7 @@ namespace CGAL {
 			}
 			
 		private:
-			Traits       m_traits;
+			// Main components.
 			Loader       m_loader;
 			Preprocessor m_preprocessor;
 			
@@ -449,9 +474,9 @@ namespace CGAL {
 			Clutter_selector           m_clutter_selector;
 			Ground_selector            m_ground_selector;
 
-			Vertical_regularizer	   m_vertical_regularizer;
-			Ground_projector 		   m_ground_projector;
-			Visibility_2 			   m_visibility;
+			Vertical_regularizer m_vertical_regularizer;
+			Ground_projector 	 m_ground_projector;
+			Visibility_2 		 m_visibility;
 			
 			Lod_0 m_lod_0;
 			Lod_1 m_lod_1;
@@ -464,7 +489,138 @@ namespace CGAL {
 			Building_max_roof_fitter m_building_max_roof_fitter;
 
 			std::unique_ptr<Structuring_2> m_structuring;
+
+
+			// Global parameters.
+			std::string m_default_path;
 			
+			FT m_preprocessor_scale;
+			FT m_structuring_epsilon;
+			
+			bool m_structuring_log;
+			bool m_structuring_resample;
+			bool m_structuring_get_all_points;
+
+			bool m_add_cdt_clutter;
+			bool m_add_cdt_bbox;
+
+			bool m_visibility_save_info;
+			Visibility_approach m_visibility_approach;
+			Visibility_method m_visibility_method;
+			size_t m_visibility_num_samples;
+
+			bool m_graph_cut_save_info;
+			FT m_graph_cut_alpha;
+			FT m_graph_cut_beta;
+			FT m_graph_cut_gamma;
+
+			bool m_building_boundaries_save_internal_info;
+			size_t m_building_boundaries_max_inner_iters;
+			size_t m_building_boundaries_max_outer_iters;
+
+			Roof_fitter_type m_roof_fitter_type;
+			bool m_clean_projected_points;
+
+			
+			// Assert default values of all global parameters.
+			void assert_global_parameters() {
+			
+				assert(m_default_path != "default");
+
+				assert(m_preprocessor_scale  != -FT(1));
+				assert(m_structuring_epsilon != -FT(1));
+
+				assert(!m_add_cdt_bbox);
+				assert(m_visibility_num_samples != 0);
+
+				assert(!(m_visibility_approach == Visibility_approach::FACE_BASED && m_visibility_method == Visibility_method::POINT_BASED_CLASSIFICATION));
+				assert(!(m_visibility_approach == Visibility_approach::POINT_BASED && m_visibility_method == Visibility_method::FACE_BASED_COUNT));
+				assert(!(m_visibility_approach == Visibility_approach::POINT_BASED && m_visibility_method == Visibility_method::FACE_BASED_NATURAL_NEIGHBOURS));
+				assert(!(m_visibility_method == Visibility_method::FACE_BASED_BARYCENTRIC));
+
+				assert(m_graph_cut_alpha != -FT(1));
+				assert(m_graph_cut_beta  != -FT(1));
+				assert(m_graph_cut_gamma != -FT(1));
+
+				assert(m_building_boundaries_max_inner_iters != 0);
+				assert(m_building_boundaries_max_outer_iters != 0);
+			}
+
+			// Set all global parameters.
+			void set_global_parameters() {
+
+				// General parameters. Not important!
+				m_add_cdt_bbox = false;
+				
+				m_structuring_log 	   	 				 = false;
+				m_visibility_save_info 					 = false;
+				m_graph_cut_save_info 					 = false;
+				m_building_boundaries_save_internal_info = false;
+
+				m_building_boundaries_max_inner_iters = 1000;
+				m_building_boundaries_max_outer_iters = 1000000;
+
+
+				// More important.
+				m_structuring_resample 	 	 = true;
+				m_structuring_get_all_points = false;
+				m_clean_projected_points 	 = true;
+
+				m_visibility_approach = Visibility_approach::POINT_BASED;
+				m_visibility_method   = Visibility_method::POINT_BASED_CLASSIFICATION;
+				m_roof_fitter_type 	  = Roof_fitter_type::AVG;
+
+
+				// The most important!
+				const Main_test_data_type test_data_type = Main_test_data_type::COMPLEX;
+				switch (test_data_type) {
+
+					case Main_test_data_type::BASIC:
+						set_basic_parameters();
+						break;
+
+					case Main_test_data_type::COMPLEX:
+						set_complex_parameters();
+						break;
+
+					default:
+						assert(!"Wrong test data!");
+						break;
+				}
+			}
+
+			void set_basic_parameters() {
+
+				// To load basic parameters from stub, add stub to the loader class in LOD_traits!
+				// Stub works with these basic parameters. Actually it is the same data set.
+
+				// All main parameters are set below.
+				m_default_path        	 = "/Users/danisimo/Documents/pipeline/data/basic_test/";
+				m_preprocessor_scale  	 = 2.0;
+				m_structuring_epsilon 	 = 0.025;
+				m_add_cdt_clutter     	 = true;
+				m_visibility_num_samples = 200;
+				m_graph_cut_alpha 		 = 1.0;
+				m_graph_cut_beta 		 = 100000.0;
+				m_graph_cut_gamma 		 = 1000.0;
+			}
+
+			void set_complex_parameters() {
+
+				// All main parameters are set below.
+				m_default_path        	 = "/Users/danisimo/Documents/pipeline/data/complex_test/";
+				m_preprocessor_scale  	 = 2.0;
+				m_structuring_epsilon 	 = 0.0005;
+				m_add_cdt_clutter     	 = false;
+				m_visibility_num_samples = 200;
+				m_graph_cut_alpha 		 = 1.0;
+				m_graph_cut_beta 		 = 100000.0;
+				m_graph_cut_gamma 		 = 1000.0;
+			}
+
+
+			// OTHER EXTRA FUNCTIONS!
+
 			// Not efficient since I need to copy all ground points.
 			void fit_ground_plane(const Container_3D &input, const Indices &ground_idxs, Plane_3 &ground_plane) const {
 
@@ -511,7 +667,7 @@ namespace CGAL {
 				for (Plane_iterator it = planes.begin(); it != planes.end(); ++it, ++number_of_segments) {
 
 					const auto num_points = (*it).second.size();
-					const auto big = +100000.0;
+					const auto big = +FT(100000);
 
 					auto minx = big, miny = big;
 					auto maxx = -minx, maxy = -miny;				
@@ -535,11 +691,11 @@ namespace CGAL {
 					auto v2 = segments[number_of_segments].to_vector();
 
 					// Rotate segments if needed.
-					const auto eps = 1.0e-6;
-					if ((v1.y() < 0.0 && v2.y() >= 0.0 && std::fabs(v1.y() - v2.y()) > eps) ||
-						(v2.y() < 0.0 && v1.y() >= 0.0 && std::fabs(v1.y() - v2.y()) > eps) ||
-						(v1.x() < 0.0 && v2.x() >= 0.0 && std::fabs(v1.x() - v2.x()) > eps) ||
-						(v2.x() < 0.0 && v1.x() >= 0.0 && std::fabs(v1.x() - v2.x()) > eps)) {
+					const auto eps = FT(1) / FT(1000000);
+					if ((v1.y() < FT(0) && v2.y() >= FT(0) && std::fabs(v1.y() - v2.y()) > eps) ||
+						(v2.y() < FT(0) && v1.y() >= FT(0) && std::fabs(v1.y() - v2.y()) > eps) ||
+						(v1.x() < FT(0) && v2.x() >= FT(0) && std::fabs(v1.x() - v2.x()) > eps) ||
+						(v2.x() < FT(0) && v1.x() >= FT(0) && std::fabs(v1.x() - v2.x()) > eps)) {
 
 						segments[number_of_segments] = Segment_2(Point_2(minx, maxy), Point_2(maxx, miny));
 					}

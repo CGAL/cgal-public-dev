@@ -29,6 +29,7 @@ public:
 	
 	using Point_2 = Traits::Point_2;
 	using Point_3 = Traits::Point_3;
+	using Plane_3 = Traits::Plane_3;
 
 	using Container = CGAL::Point_set_3<Point_3>;
 	using Str_label = CGAL::LOD::Structured_label;
@@ -68,7 +69,7 @@ public:
 	using Point_index = typename Container::Index;
 	using Face_points_map = std::map<Face_handle, std::vector<Point_index> >;
 
-	CDT cdt; Buildings buildings; Container input; Face_points_map fp_map;
+	CDT cdt; Buildings buildings; Container input; Face_points_map fp_map; Plane_3 ground_fitted_plane;
 	
 	LodBuildingRoofFitterMin lodBuildingRoofFitterMin;
 	LodBuildingRoofFitterAvg lodBuildingRoofFitterAvg;
@@ -241,6 +242,9 @@ public:
 		fh->info().bu =  2; fh->info().bu_color = r; buildings[2].faces.push_back(static_cast<Face_handle>(fh)); buildings[2].color = r; fp_map[static_cast<Face_handle>(fh)].clear(); ++fh;
 
 
+		// Create ground plane.
+		ground_fitted_plane = Plane_3(Point_3(0.0, 0.0, 0.0), Point_3(1.0, 0.0, 0.0), Point_3(0.0, 1.0, 0.0));
+
 		/*
 		Log log; 
 
@@ -276,7 +280,7 @@ TEST_F(LOD_BuildingRoofFitterTest, Compiles) {
 
 TEST_F(LOD_BuildingRoofFitterTest, VerifiesMinHeightsOfThreeBuildings) {
 
-	lodBuildingRoofFitterMin.fit_roof_heights(cdt, input, fp_map, buildings);
+	lodBuildingRoofFitterMin.fit_roof_heights(cdt, input, fp_map, ground_fitted_plane, buildings);
 
 	ASSERT_THAT(buildings[0].height, Eq(1.0));
 	ASSERT_THAT(buildings[1].height, Eq(1.9));
@@ -285,7 +289,7 @@ TEST_F(LOD_BuildingRoofFitterTest, VerifiesMinHeightsOfThreeBuildings) {
 
 TEST_F(LOD_BuildingRoofFitterTest, VerifiesAvgHeightsOfThreeBuildings) {
 
-	lodBuildingRoofFitterAvg.fit_roof_heights(cdt, input, fp_map, buildings);
+	lodBuildingRoofFitterAvg.fit_roof_heights(cdt, input, fp_map, ground_fitted_plane, buildings);
 
 	ASSERT_THAT(buildings[0].height, Eq(1.0));
 	ASSERT_THAT(buildings[1].height, Eq(2.0));
@@ -294,7 +298,7 @@ TEST_F(LOD_BuildingRoofFitterTest, VerifiesAvgHeightsOfThreeBuildings) {
 
 TEST_F(LOD_BuildingRoofFitterTest, VerifiesMaxHeightsOfThreeBuildings) {
 
-	lodBuildingRoofFitterMax.fit_roof_heights(cdt, input, fp_map, buildings);
+	lodBuildingRoofFitterMax.fit_roof_heights(cdt, input, fp_map, ground_fitted_plane, buildings);
 
 	ASSERT_THAT(buildings[0].height, Eq(1.0));
 	ASSERT_THAT(buildings[1].height, Eq(2.1));

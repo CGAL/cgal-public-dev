@@ -26,16 +26,13 @@ public:
 	using LodBase   = CGAL::LOD::Level_of_detail_base<LodTraits>;
 
 	LodBase lodBase;
-	const std::string internallyUnusedFilePath = "internallyUnusedFilePath";
 };
 
 TEST_F(LOD_BaseTest, Compiles) {
-   
+
 	// Empty test.
 }
 
 TEST_F(LOD_BaseTest, RunsCreateLodZeroFunction) {
-
-	std::vector<Point> result;
-	lodBase.create_lods(internallyUnusedFilePath, std::back_inserter(result));
+	lodBase.create_lods();
 }
