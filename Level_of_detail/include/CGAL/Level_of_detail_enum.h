@@ -78,6 +78,13 @@ namespace CGAL {
 			std::vector<Face_handle>   						   				  faces;	  // all faces that belong to this building
 		};
 
+		// Type of the roof fitter.
+		enum class Roof_fitter_type {
+			MIN, // fit data to the minimum height
+			AVG, // fit data to the average height
+			MAX  // fit data to the maximum height
+		};
+
 	} // LOD
 
 } // CGAL

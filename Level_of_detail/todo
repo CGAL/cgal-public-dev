@@ -32,11 +32,9 @@ TODO AND OTHER:
 2. Can I make an existing edge constrained? What if I have one building inside another one. How can I detect/correct after the graph cut that interior building's walls should be constrained?
 3. How to get an edge if I know face handle and its neighbouring face handle?
 4. Maybe remove CDT from height fitters?
-5. Face_points_map that I use in the "Height Fitter" can be created in Visibility module if POINT_BASED_APPROACH is chosen. Otherwise, I need to create it in some other separate module - for example in the Preprocessor.
-6. Add a new outliner algorithm that will work with multiple boundaries - for example one exterior boundary and one interior boundary.
-7. How to get the n-th face iterator: like std::distance(faces.begin(), n)?
-8. How to get indices of the faces, vertices from the iterators when saving them in .ply or any other format?
-9. Is it possible to add colors to faces in the Polyhedron_incremental_builder class?
-10. How to create a 2-manifold or watertight mesh from the polygonal soup, which is LOD1 now?
-11. Should I save LOD0 as polylines instead of triangles similarly to LOD1?
-12. Pass bounding box to LOD1 or add all triangles that are not buildings as ground.
+5. Add a new outliner algorithm that will work with multiple boundaries - for example one exterior boundary and one interior boundary.
+6. How to get the n-th face iterator: like std::distance(faces.begin(), n)?
+7. How to get indices of the faces, vertices from the iterators when saving them in .ply or any other format?
+8. Is it possible to add colors to faces in the Polyhedron_incremental_builder class?
+9. How to create a 2-manifold or watertight mesh from the polygonal soup, which is LOD1 now?
+10. Add classification labels to Level_of_detail_enum.h.

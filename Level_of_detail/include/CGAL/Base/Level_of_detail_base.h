@@ -58,7 +58,10 @@ namespace CGAL {
 
 			typedef typename Traits::Building_splitter 	  Building_splitter;
 			typedef typename Traits::Building_outliner 	  Building_outliner;
-			typedef typename Traits::Building_roof_fitter Building_roof_fitter;
+
+			typedef typename Traits::Building_min_roof_fitter Building_min_roof_fitter;
+			typedef typename Traits::Building_avg_roof_fitter Building_avg_roof_fitter;
+			typedef typename Traits::Building_max_roof_fitter Building_max_roof_fitter;
 
 			typedef Planes Boundary_data;
 
@@ -73,6 +76,14 @@ namespace CGAL {
 
 			typedef typename Traits::Lod_0 Lod_0;
 			typedef typename Traits::Lod_1 Lod_1;
+
+			typedef typename Traits::Mesh 			   Mesh;
+			typedef typename Traits::Mesh_facet_colors Mesh_facet_colors;
+
+			typedef typename Traits::Buildings Buildings;
+
+			typedef typename Lod_1::Point  Ground_point;
+			typedef typename Lod_1::Ground Ground;
 
 			// Extra.
 			using Plane_iterator = typename Planes::const_iterator;
@@ -92,11 +103,11 @@ namespace CGAL {
 			using Label     = typename Traits::Label;
 			using Label_map = typename Container_3D:: template Property_map<Label>;
 
-			using Building  = CGAL::LOD::Building<FT, Vertex_handle, Face_handle>;
-			using Buildings = std::map<int, Building>;
+			using Point_index = typename Container_3D::Index;
+			using Face_points_map = std::map<Face_handle, std::vector<Point_index> >;
 
-			// const std::string default_path = "/Users/danisimo/Documents/pipeline/data/basic_test_v3/";
-			const std::string default_path = "/Users/danisimo/Documents/pipeline/data/complex_test/";
+			const std::string default_path = "/Users/danisimo/Documents/pipeline/data/basic_test_v3/";
+			// const std::string default_path = "/Users/danisimo/Documents/pipeline/data/complex_test/";
 
 			Level_of_detail_base(Traits traits = Traits()) : m_traits(traits) { } // Do I need to create an instance of these traits here?
 
@@ -287,12 +298,12 @@ namespace CGAL {
 				// ----------------------------------
 
 				// (11') Convert 3D input to 2D input.			
-				std::cout << "(11') converting 3d input into 2d input" << std::endl;
+				std::cout << "(11') converting 3d input into 2d input and setting face to points map" << std::endl;
 
-				Container_2D input_2d;
-				const auto number_of_converted_points = get_2d_input(input, input_2d);
+				Container_2D input_2d; Face_points_map fp_map;
+				const auto number_of_converted_points = get_2d_input_and_face_points_map(cdt, input, input_2d, fp_map);
 
-				log.out << "(11') 3D input is converted into 2D input. Number of converted points: " << number_of_converted_points << std::endl << std::endl;
+				log.out << "(11') 3D input is converted into 2D input and face to points map is set. Number of converted points: " << number_of_converted_points << std::endl << std::endl;
 
 
 				// ----------------------------------
@@ -300,35 +311,34 @@ namespace CGAL {
 				// (12) Compute visibility (0 - outside or 1 - inside) for each triangle in CDT above.
 				std::cout << "(12) visibility computation" << std::endl;
 
+				m_visibility.save_info(false);
 				m_visibility.set_approach(Visibility_approach::POINT_BASED);
 				m_visibility.set_method(Visibility_method::POINT_BASED_CLASSIFICATION);
 				m_visibility.set_number_of_samples(200);
 
 				const auto number_of_traversed_faces = m_visibility.compute(input_2d, cdt);
-
 				log.out << "(12) Visibility is computed. Number of traversed faces: " << number_of_traversed_faces << std::endl << std::endl;
 
-				// Log eps_saver; eps_saver.save_visibility_eps(cdt, input, structured_points); // basic test
-				Log eps_saver; eps_saver.save_visibility_eps(cdt); // complex test
+				Log eps_saver; eps_saver.save_visibility_eps(cdt, input, structured_points); // basic test
+				// Log eps_saver; eps_saver.save_visibility_eps(cdt); 						 // complex test
+
+				Log ply_vis_saver; ply_vis_saver.save_cdt_ply(cdt, "tmp/visibility", "in");
 
 
 				// ----------------------------------
 
 				// (13) Apply graph cut.
-				std::cout << "(13) applying graph cut - LOD0" << std::endl;
+				std::cout << "(13) applying graph cut" << std::endl;
 
+				m_lod_0.save_info(false);
 				m_lod_0.set_alpha_parameter(FT(1));
 				m_lod_0.set_beta_parameter(FT(100000));
 				m_lod_0.set_gamma_parameter(FT(1000));
 
 				m_lod_0.max_flow(cdt);
 
-				log.out << "(13) Final LOD 0 is reconstructed." << std::endl << std::endl;
-				
-				CDT cdt_with_bbox;
-				add_bbox_to(cdt, input, cdt_with_bbox);
-
-				Log ply_cdt; ply_cdt.save_cdt_ply(cdt_with_bbox, "LOD0", "in");
+				log.out << "(13) Graph cut is applied." << std::endl << std::endl;
+				Log ply_cdt_in; ply_cdt_in.save_cdt_ply(cdt, "tmp/after_cut", "in");
 
 
 				// ----------------------------------				
@@ -337,7 +347,7 @@ namespace CGAL {
 
 
 				// (a) Split all buildings.
-				std::cout << "(14) splitting buildings" << std::endl;
+				std::cout << "(14 a) splitting buildings" << std::endl;
 
 				Buildings buildings;
 				const auto number_of_buildings = m_building_splitter.split(cdt, buildings);
@@ -345,18 +355,79 @@ namespace CGAL {
 				log.out << "(14 a) All buildings are found. Number of buildings: " << number_of_buildings << std::endl;
 
 
-				// (b) Find building's walls.
-				m_building_outliner.find_boundaries(cdt, buildings); // to be implemented
+				// ----------------------------------
 
+				// (b) Find building's walls.
+				std::cout << "(14 b) finding boundaries" << std::endl;
+
+				m_building_outliner.save_info(false);
+				m_building_outliner.set_max_inner_iterations(1000);
+				m_building_outliner.set_max_outer_iterations(1000000);
+				
+				m_building_outliner.find_boundaries(cdt, buildings);
+
+				log.out << "(14 b) All boundaries are found." << std::endl;
+				Log log_bounds; log_bounds.save_buildings_info(cdt, buildings, "tmp/buildings_info_with_boundaries");
+
+
+				// ----------------------------------
 
 				// (c) Fit roof height for each building.
-				m_building_roof_fitter.fit_roof_heights(cdt, input, buildings); // to be implemented
+				std::cout << "(14 c) fitting roofs" << std::endl;
+
+				const Roof_fitter_type roof_fitter_type = Roof_fitter_type::MAX;
+
+				switch (roof_fitter_type) {
+					
+					case Roof_fitter_type::MIN: 
+						m_building_min_roof_fitter.fit_roof_heights(cdt, input, fp_map, buildings);
+						break;
+
+					case Roof_fitter_type::AVG: 
+						m_building_avg_roof_fitter.fit_roof_heights(cdt, input, fp_map, buildings);
+						break;
+
+					case Roof_fitter_type::MAX: 
+						m_building_max_roof_fitter.fit_roof_heights(cdt, input, fp_map, buildings);
+						break;
+
+					default:
+						assert(!"Wrong roof fitter type!");
+						break;
+				}
+				
+				log.out << "(14 c) All roofs are fitted." << std::endl << std::endl;
+				Log log_roofs; log_roofs.save_buildings_info(cdt, buildings, "tmp/buildings_info_final");
+
+
+				// ----------------------------------
+
+				// (15) LOD0 reconstruction.
+
+				Ground ground_bbox;
+				compute_ground_bbox(input, ground_bbox);
+
+				assert(!ground_bbox.empty());
+				std::cout << "(15) reconstructing lod0" << std::endl;
+
+				Mesh mesh_0; Mesh_facet_colors mesh_facet_colors_0;
+				m_lod_1.reconstruct_lod0(cdt, buildings, ground_bbox, mesh_0, mesh_facet_colors_0);
+
+				log.out << "(15) Final LOD0 is reconstructed." << std::endl << std::endl;
+				Log lod_0_saver; lod_0_saver.save_mesh_as_ply(mesh_0, mesh_facet_colors_0, "LOD0");
 
 
 				// ----------------------------------	
 				
-				// (15) LOD1 reconstruction.
-				m_lod_1.reconstruct(); // to be implemented
+				// (16) LOD1 reconstruction.
+				
+				std::cout << "(16) reconstructing lod1" << std::endl;
+
+				Mesh mesh_1; Mesh_facet_colors mesh_facet_colors_1;
+				m_lod_1.reconstruct_lod1(cdt, buildings, ground_bbox, mesh_1, mesh_facet_colors_1);
+
+				log.out << "(16) Final LOD1 is reconstructed." << std::endl;
+				Log lod_1_saver; lod_1_saver.save_mesh_as_ply(mesh_1, mesh_facet_colors_1, "LOD1");
 
 
 				// ----------------------------------
@@ -385,9 +456,12 @@ namespace CGAL {
 			Lod_0 m_lod_0;
 			Lod_1 m_lod_1;
 
-			Building_splitter 	 m_building_splitter;
-			Building_outliner 	 m_building_outliner;
-			Building_roof_fitter m_building_roof_fitter;
+			Building_splitter m_building_splitter;
+			Building_outliner m_building_outliner;
+			
+			Building_min_roof_fitter m_building_min_roof_fitter;
+			Building_avg_roof_fitter m_building_avg_roof_fitter;
+			Building_max_roof_fitter m_building_max_roof_fitter;
 
 			std::unique_ptr<Structuring_2> m_structuring;
 			
@@ -562,6 +636,21 @@ namespace CGAL {
 				return number_of_faces;
 			}
 
+			void compute_ground_bbox(const Container_3D &input, Ground &ground_bbox) const {
+
+				ground_bbox.clear();
+				ground_bbox.resize(4);
+
+				std::vector<Point_2> bbox;
+				compute_bounding_box(input, bbox);
+
+				assert(bbox.size() == 4);
+				ground_bbox[0] = Ground_point(bbox[0].x(), bbox[0].y(), FT(0));
+				ground_bbox[1] = Ground_point(bbox[1].x(), bbox[1].y(), FT(0));
+				ground_bbox[2] = Ground_point(bbox[2].x(), bbox[2].y(), FT(0));
+				ground_bbox[3] = Ground_point(bbox[3].x(), bbox[3].y(), FT(0));
+			}
+
 			void compute_bounding_box(const Container_3D &input, std::vector<Point_2> &bbox) const {
 
 				bbox.clear();
@@ -591,9 +680,12 @@ namespace CGAL {
 				bbox[3] = Point_2(minx, maxy);
 			}
 
-			int get_2d_input(const Container_3D &input_3d, Container_2D &input_2d) const {
+			int get_2d_input_and_face_points_map(const CDT &cdt, const Container_3D &input_3d, Container_2D &input_2d, Face_points_map &fp_map) const {
 
 				Log log;
+
+				typename CDT::Locate_type locate_type;
+				int locate_index_stub = -1;
 
 				Label_map class_labels;
 				boost::tie(class_labels, boost::tuples::ignore) = input_3d.template property_map<Label>("label");
@@ -604,14 +696,19 @@ namespace CGAL {
 				size_t point_index = 0;
 				for (typename Container_3D::const_iterator it = input_3d.begin(); it != input_3d.end(); ++it, ++point_index) {
 
-					const Point_3 &p = input_3d.point(*it);
+					const Point_index pi = *it;
+
+					const Point_3 &p = input_3d.point(pi);
 					const Point_2 &q = Point_2(p.x(), p.y());
 
-					input_2d[point_index] = std::make_pair(q, class_labels[*it]);
+					input_2d[point_index] = std::make_pair(q, class_labels[pi]);
 					log.out << q << " " << 0 << std::endl;
+
+					const Face_handle face_handle = cdt.locate(q, locate_type, locate_index_stub);
+					if (locate_type == CDT::FACE || locate_type == CDT::EDGE || locate_type == CDT::VERTEX) fp_map[face_handle].push_back(pi);
 				}
 
-				log.save("tmp/input_2d");
+				log.save("tmp/input_2d", ".xyz");
 				return point_index;
 			}
 
@@ -662,4 +759,4 @@ namespace CGAL {
 	}
 }
 
-#endif // CGAL_LEVEL_OF_DETAIL_BASE_H
+#endif // CGAL_LEVEL_OF_DETAIL_BASE_H	

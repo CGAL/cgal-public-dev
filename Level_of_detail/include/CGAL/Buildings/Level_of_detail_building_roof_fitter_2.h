@@ -81,7 +81,8 @@ namespace CGAL {
 
 			void add_face_heights(const Container &input, const Face_points_map &fp_map, const Face_handle &fh) {
 
-				assert(is_valid_face(fp_map, fh));
+				// assert(is_valid_face(fp_map, fh));   // may be slow, if I add all fhs to the fp_map, I do not need to do it at all
+				if (!is_valid_face(fp_map, fh)) return; // if fh is not in the fp_map, it is probably because this fh does not have any associated points
 
 				const size_t num_points = fp_map.at(fh).size();
 				for (size_t i = 0; i < num_points; ++i) {

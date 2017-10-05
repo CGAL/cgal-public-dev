@@ -49,7 +49,7 @@ namespace CGAL {
 			using Nodes_map = std::map<Face_handle, int>;
 			using Log 		= CGAL::LOD::Mylog;
 
-			Level_of_detail_reconstruction_0() : m_alpha(FT(1)), m_beta(FT(100000)), m_gamma(FT(1000)) { 
+			Level_of_detail_reconstruction_0() : m_alpha(FT(1)), m_beta(FT(100000)), m_gamma(FT(1000)), m_save_info(true) { 
 
 				set_coherence_dictionary();
 			}
@@ -64,6 +64,10 @@ namespace CGAL {
 
 			void set_gamma_parameter(const FT gamma) {
 				m_gamma = gamma;
+			}
+
+			void save_info(const bool new_state) {
+				m_save_info = new_state;
 			}
 
 			// Source - inside, sink - outside
@@ -95,6 +99,7 @@ namespace CGAL {
 			FT m_gamma;
 
 			std::map< std::pair<Structured_label, Structured_label>, Edge_coherence> m_coherence_dict;
+			bool m_save_info;
 
 			void set_coherence_dictionary() {
 
@@ -134,11 +139,12 @@ namespace CGAL {
 
 					graph->add_tweights(nodes[index], cost_in, cost_out);
 
-					log.out << "in: " << cost_in << "; out: " << cost_out << std::endl;
-					log.skip_line();
+					if (m_save_info) {
+						log.out << "in: " << cost_in << "; out: " << cost_out << std::endl;
+						log.skip_line();
+					}
 				}
-
-				log.save("tmp/graph_nodes");
+				if (m_save_info) log.save("tmp/graph_nodes");
 			}
 
 			void set_graph_edges(const CDT &cdt, const Node_id nodes[], const Nodes_map &nodes_map, Graph *graph) const {
@@ -153,14 +159,14 @@ namespace CGAL {
 
 
 					// Output current edge.
-					log.add_index(index);
+					if (m_save_info) log.add_index(index);
 					Edge edge = cdt.segment(eit);
-					log.out << "Edge: " << edge << " with: " << std::endl;
+					if (m_save_info) log.out << "Edge: " << edge << " with: " << std::endl;
 
 
 					// Compute edge weight.
 					const FT edge_weight = compute_edge_weight(edge);
-					log.out << "weight = " << edge_weight << std::endl;
+					if (m_save_info) log.out << "weight = " << edge_weight << std::endl;
 
 
 					// Find edge coherence.
@@ -184,21 +190,21 @@ namespace CGAL {
 							assert(!"Wrong edge coherence label!");
 							break;
 					}
-					log.out << "coherence = " << str_coherence << std::endl;
+					if (m_save_info) log.out << "coherence = " << str_coherence << std::endl;
 
 
 					// Compute edge quality.
 					const FT edge_quality = compute_edge_quality(edge_coherence, cdt, eit);
-					log.out << "quality penalizer = " << edge_quality << std::endl;
+					if (m_save_info) log.out << "quality penalizer = " << edge_quality << std::endl;
 
 
 					// Set graph edge.
 					add_graph_edge(eit, nodes, nodes_map, edge_weight, edge_quality, graph, log);
 
 
-					log.skip_line();
+					if (m_save_info) log.skip_line();
  				}
- 				log.save("tmp/graph_edges");
+ 				if (m_save_info) log.save("tmp/graph_edges");
 
  				/* // Test data.
 				graph->add_edge(nodes[0] , nodes[7] , 0.0, 0.0); // for min cut we add big weights to the incorrect cells
@@ -239,7 +245,7 @@ namespace CGAL {
 
 				graph->add_edge(nodes[index_1], nodes[index_2], cost_value, cost_value);
 
-				log.out << "Final edge: " << cost_value << " < === > " << cost_value << std::endl;
+				if (m_save_info) log.out << "Final edge: " << cost_value << " < === > " << cost_value << std::endl;
 			}
 
 			bool is_boundary_edge(const CDT &cdt, const Edge_iterator &edge_handle) const {

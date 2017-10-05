@@ -104,7 +104,7 @@ namespace CGAL {
 			m_sampler(Visibility_sampler::UNIFORM_0),
 			m_radius_type(Radius_type::MIN),
 			m_num_samples(200),
-			m_k(3) { }
+			m_k(3), m_save_info(true) { }
 
 			void set_number_of_samples(const size_t new_value) {
 				m_num_samples = new_value;
@@ -121,6 +121,10 @@ namespace CGAL {
 
 			void set_method(const Visibility_method new_method) {
 				m_method = new_method;
+			}
+
+			void save_info(const bool new_state) {
+				m_save_info = new_state;
 			}
 
 			int compute(const Container &input, CDT &cdt) const {
@@ -148,22 +152,25 @@ namespace CGAL {
 				}
 
 				// Remove later.
-				Log log;
-				log.out << "Visibility labels: " << std::endl;
+				if (m_save_info) {
 
-				int count = 0;
-				for (Face_iterator fit = cdt.finite_faces_begin(); fit != cdt.finite_faces_end(); ++fit, ++count) {
+					Log log;
+					log.out << "Visibility labels: " << std::endl;
 
-					const FT result = fit->info().in;
-					std::string labelName = "default";
+					int count = 0;
+					for (Face_iterator fit = cdt.finite_faces_begin(); fit != cdt.finite_faces_end(); ++fit, ++count) {
 
-					if (result >  half) labelName = "IN";
-					if (result <  half) labelName = "OUT";
-					if (result == half) labelName = "UNKNOWN";
+						const FT result = fit->info().in;
+						std::string labelName = "default";
 
-					log.out << "face index: " << count << " with label: " << labelName << " and visibility: " << result << std::endl;
+						if (result >  half) labelName = "IN";
+						if (result <  half) labelName = "OUT";
+						if (result == half) labelName = "UNKNOWN";
+
+						log.out << "face index: " << count << " with label: " << labelName << " and visibility: " << result << std::endl;
+					}
+					log.save("tmp/visibility");
 				}
-				log.save("tmp/visibility");
 
 				return static_cast<int>(cdt.number_of_faces());
 			}
@@ -177,6 +184,7 @@ namespace CGAL {
 
 			size_t m_num_samples;
 			size_t m_k; 		  // change it to autodetection later!
+			bool m_save_info;
 
 			void compute_point_based_visibility(const Container &input, CDT &cdt) const {
 

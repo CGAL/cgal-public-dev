@@ -11,6 +11,7 @@
 #include <CGAL/Triangulation_face_base_with_info_2.h>
 #include <CGAL/Constrained_triangulation_face_base_2.h>
 #include <CGAL/Triangulation_vertex_base_with_info_2.h>
+#include <CGAL/Polyhedron_3.h>
 
 // New CGAL includes.
 #include <CGAL/Loader/Level_of_detail_loader_stub.h>
@@ -36,24 +37,24 @@ namespace CGAL {
 			typedef KernelTraits 	Kernel;
 			typedef OutputContainer Container_3D;
 
-			typedef Level_of_detail_loader_stub<Kernel, Container_3D>  Loader;
-			typedef Level_of_detail_preprocessor<Kernel, Container_3D> Preprocessor;
+			typedef CGAL::LOD::Level_of_detail_loader_stub<Kernel, Container_3D>  Loader;
+			typedef CGAL::LOD::Level_of_detail_preprocessor<Kernel, Container_3D> Preprocessor;
 
-			typedef Level_of_detail_clutter<Kernel, Container_3D> 			Clutter_strategy;
-			typedef Level_of_detail_ground<Kernel, Container_3D> 			Ground_strategy;
-			typedef Level_of_detail_building_boundary<Kernel, Container_3D> Building_boundary_strategy;
-			typedef Level_of_detail_building_interior<Kernel, Container_3D> Building_interior_strategy;
+			typedef CGAL::LOD::Level_of_detail_clutter<Kernel, Container_3D> 		   Clutter_strategy;
+			typedef CGAL::LOD::Level_of_detail_ground<Kernel, Container_3D> 		   Ground_strategy;
+			typedef CGAL::LOD::Level_of_detail_building_boundary<Kernel, Container_3D> Building_boundary_strategy;
+			typedef CGAL::LOD::Level_of_detail_building_interior<Kernel, Container_3D> Building_interior_strategy;
 
-			typedef Level_of_detail_selector<Kernel, Clutter_strategy> 		     Clutter_selector;
-			typedef Level_of_detail_selector<Kernel, Ground_strategy> 		     Ground_selector;
-			typedef Level_of_detail_selector<Kernel, Building_boundary_strategy> Building_boundary_selector;
-			typedef Level_of_detail_selector<Kernel, Building_interior_strategy> Building_interior_selector;
+			typedef CGAL::LOD::Level_of_detail_selector<Kernel, Clutter_strategy> 		    Clutter_selector;
+			typedef CGAL::LOD::Level_of_detail_selector<Kernel, Ground_strategy> 		    Ground_selector;
+			typedef CGAL::LOD::Level_of_detail_selector<Kernel, Building_boundary_strategy> Building_boundary_selector;
+			typedef CGAL::LOD::Level_of_detail_selector<Kernel, Building_interior_strategy> Building_interior_selector;
 
-			typedef std::map<int, std::vector<int> >          				   		   Planes;
-			typedef Level_of_detail_vertical_regularizer<Kernel, Container_3D, Planes> Vertical_regularizer;
+			typedef std::map<int, std::vector<int> >          				   		   			  Planes;
+			typedef CGAL::LOD::Level_of_detail_vertical_regularizer<Kernel, Container_3D, Planes> Vertical_regularizer;
 			
-			typedef std::map<int, typename Kernel::Point_2>           	    				  		 Projected_points;
-			typedef Level_of_detail_simple_projector<Kernel, Container_3D, Planes, Projected_points> Ground_projector;
+			typedef std::map<int, typename Kernel::Point_2>           	    				  		 			Projected_points;
+			typedef CGAL::LOD::Level_of_detail_simple_projector<Kernel, Container_3D, Planes, Projected_points> Ground_projector;
 
 			typedef CGAL::LOD::My_vertex_info<Structured_label>  My_vertex_info; 
 	    	typedef CGAL::LOD::My_face_info<typename Kernel::FT> My_face_info;
@@ -68,16 +69,29 @@ namespace CGAL {
 			typedef int Label; 
 			typedef std::vector< std::pair<typename Kernel::Point_2, Label> > Container_2D;
 
-			typedef Level_of_detail_structuring_2<Kernel>                                    	Structuring_2;
-			typedef Level_of_detail_visibility_from_classification_2<Kernel, Container_2D, CDT> Visibility_2;
+			typedef CGAL::LOD::Level_of_detail_structuring_2<Kernel>                                       Structuring_2;
+			typedef CGAL::LOD::Level_of_detail_visibility_from_classification_2<Kernel, Container_2D, CDT> Visibility_2;
 			
-			typedef Level_of_detail_reconstruction_0<Kernel, CDT> Lod_0;
-			typedef Level_of_detail_reconstruction_1<Kernel>      Lod_1;
+			typedef CGAL::LOD::Building<typename Kernel::FT, typename CDT::Vertex_handle, typename CDT::Face_handle> Building;
+			typedef std::map<int, Building> Buildings;
 
-			typedef Level_of_detail_building_splitter_2<Kernel, CDT> Building_splitter;
-			typedef Level_of_detail_building_outliner_2<Kernel, CDT> Building_outliner;
+			typedef CGAL::Polyhedron_3<Kernel> Mesh;
 
-			typedef Level_of_detail_building_roof_fitter_2<Kernel, CDT, Container_3D> Building_roof_fitter;
+			typedef CGAL::LOD::Level_of_detail_reconstruction_0<Kernel, CDT> 				  Lod_0;
+			typedef CGAL::LOD::Level_of_detail_reconstruction_1<Kernel, CDT, Buildings, Mesh> Lod_1;
+
+			typedef typename Lod_1::Mesh_facet_colors Mesh_facet_colors;
+
+			typedef CGAL::LOD::Level_of_detail_building_splitter_2<Kernel, CDT> Building_splitter;
+			typedef CGAL::LOD::Level_of_detail_building_outliner_2<Kernel, CDT> Building_outliner;
+
+			typedef CGAL::LOD::Level_of_detail_min_height_fitter<Kernel> Min_height_fitter;
+			typedef CGAL::LOD::Level_of_detail_avg_height_fitter<Kernel> Avg_height_fitter;
+			typedef CGAL::LOD::Level_of_detail_max_height_fitter<Kernel> Max_height_fitter;
+	
+			typedef CGAL::LOD::Level_of_detail_building_roof_fitter_2<Kernel, CDT, Container_3D, Min_height_fitter> Building_min_roof_fitter;
+			typedef CGAL::LOD::Level_of_detail_building_roof_fitter_2<Kernel, CDT, Container_3D, Avg_height_fitter> Building_avg_roof_fitter;
+			typedef CGAL::LOD::Level_of_detail_building_roof_fitter_2<Kernel, CDT, Container_3D, Max_height_fitter> Building_max_roof_fitter;
 		};
 	}
 }

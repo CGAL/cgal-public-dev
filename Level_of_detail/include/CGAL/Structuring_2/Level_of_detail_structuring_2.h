@@ -831,7 +831,7 @@ namespace CGAL {
 						for (size_t j = 0; j < m_str_points[i].size(); ++j)
 							log.out << m_str_points[i][j] << " " << 0 << std::endl;
 
-					log.save("tmp/structured_points");
+					log.save("tmp/structured_points", ".xyz");
 				// }
 			}
 
@@ -967,7 +967,7 @@ namespace CGAL {
 					
 					resample_segment(i, times, log);
 				}
-				/* if (m_save_log) */ log.save("tmp/resampled_points");
+				/* if (m_save_log) */ log.save("tmp/resampled_points", ".xyz");
 			}
 
 			void resample_segment(const size_t segment_index, const FT times, Log &log) {

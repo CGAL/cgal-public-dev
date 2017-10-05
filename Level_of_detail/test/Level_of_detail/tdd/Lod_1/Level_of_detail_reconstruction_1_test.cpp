@@ -55,7 +55,10 @@ public:
 
 	using Log = CGAL::LOD::Mylog;
 
-	CDT cdt; Buildings buildings; Mesh mesh; Mesh_facet_colors mesh_facet_colors;
+	using Ground_point = Lod_1::Point;
+	using Ground = Lod_1::Ground;
+
+	CDT cdt; Buildings buildings; Ground ground; Mesh mesh; Mesh_facet_colors mesh_facet_colors;
 	Lod_1 lod_1;
 
 	LOD_ReconstructionTest() { 
@@ -66,6 +69,7 @@ public:
 
 		cdt.clear();
 		buildings.clear();
+		ground.clear();
 
 		set_basic_input();
 	}
@@ -247,6 +251,15 @@ public:
 		buildings[5].boundaries[1][0] = vw5; buildings[5].boundaries[1][1] = vz5; buildings[5].boundaries[1][2] = va5; buildings[5].boundaries[1][3] = vb5;
 
 
+		// Set ground.
+		ground.resize(4);
+
+		ground[0] = Ground_point(0.0, 0.0, 0.0);
+		ground[1] = Ground_point(5.0, 0.0, 0.0);
+		ground[2] = Ground_point(5.0, 1.0, 0.0);
+		ground[3] = Ground_point(0.0, 1.0, 0.0);
+
+
 		// Log log; 
 		// log.save_cdt_ply(cdt, "tmp/cdt_lod1", "bu");
 		// log.save_buildings_info(cdt, buildings, "tmp/buildings_lod1");
@@ -263,7 +276,7 @@ TEST_F(LOD_ReconstructionTest, RunsReconstruction) {
 	mesh.clear();
 	mesh_facet_colors.clear();
 
-	lod_1.reconstruct(cdt, buildings, mesh, mesh_facet_colors);
+	lod_1.reconstruct_lod1(cdt, buildings, ground, mesh, mesh_facet_colors);
 
 	Log log;
 	log.save_mesh_as_ply(mesh, mesh_facet_colors, "LOD1");
