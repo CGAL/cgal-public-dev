@@ -1,6 +1,7 @@
 
 TODO AND OTHER:
 
+// Iteration 1:
 1. Redo selector class using property maps.
 2. For now I use built in conditions inside selection strategy classes. Change it to any custom condition later.
 3. Refactor the preprocessor class.
@@ -14,20 +15,17 @@ TODO AND OTHER:
 11. I reject all planes that have an angle more than 10 degrees with respect to the closest vertical plane. This allows to solve some of the missclassification problems.
 12. Add a class that will remove artifacts from the given data. E.g. points that become a part of the vertical plane found by RANSAC but in reality belong to another building and/or too far away from the given plane.
 13. Should I enforce the same normals for the regularized plane?
-14. Use exporters from Mylog in the base class.
-15. Add all non-planar points obtained by RANSAC in the clutter selection procedure.
-16. Improve the function for getting corners. Use a function to detect all cycles in the undirected graph obtained in the function create_structured_adjacency().
-17. Method for adjacency / corners is not robust when wrong planes are detected by the RANSAC. In this case, it may happen that lines that we intersect to get corners produce points which are far away from the real data set.
-18. Maybe better to pass all indices except for building boundaries to the visibility class instead of the whole input container?
-19. End points of the segments for sparse data sets create wrong visibility labels. E.g. outside triangles are labels inside, because these end points lie a bit further than end points of strucuted segments, which are shifted by LP/2 inside.
-20. Intersected segments cannot be used as input to CDT so we have to handle this issue in some way.
-21. Add one more label to the input: 1 detected as planar, 0 detected as something else. Then add a selector class to selecte points, which are detected as something else and are facade points that is building boundary. Add these points to the final structured set of points with the label CLUTTER.
-22. What to do with cells that have no predictions?
-23. Fix data structure so that each point in CDT has access to its associated structuring label. Moreover, check if I insert points twice when creating CDT.
-24. Actiually my reconstruction code should compute the cost function for each surface S in all graph cut iterations.
+14. Add all non-planar points obtained by RANSAC in the clutter selection procedure.
+15. Improve the function for getting corners. Use a function to detect all cycles in the undirected graph obtained in the function create_structured_adjacency().
+16. Method for adjacency / corners is not robust when wrong planes are detected by the RANSAC. In this case, it may happen that lines that we intersect to get corners produce points which are far away from the real data set.
+17. Maybe better to pass all indices except for building boundaries to the visibility class instead of the whole input container?
+18. End points of the segments for sparse data sets create wrong visibility labels. E.g. outside triangles are labels inside, because these end points lie a bit further than end points of strucuted segments, which are shifted by LP/2 inside.
+19. Intersected segments cannot be used as input to CDT so we have to handle this issue in some way.
+20. Add one more label to the input: 1 detected as planar, 0 detected as something else. Then add a selector class to selecte points, which are detected as something else and are facade points that is building boundary. Add these points to the final structured set of points with the label CLUTTER.
+21. Actuually my reconstruction code should compute the cost function for each surface S in all graph cut iterations.
 
 
-// NEW:
+// Iteration 2:
 1. What about creating new semantic data structures such as "Building", "Tree", "Car" and so on?
 2. Can I make an existing edge constrained? What if I have one building inside another one. How can I detect/correct after the graph cut that interior building's walls should be constrained?
 3. How to get an edge if I know face handle and its neighbouring face handle?
@@ -38,5 +36,7 @@ TODO AND OTHER:
 8. Is it possible to add colors to faces in the Polyhedron_incremental_builder class?
 9. How to create a 2-manifold or watertight mesh from the polygonal soup, which is LOD1 now?
 10. Add classification labels to Level_of_detail_enum.h.
-11. What to do with points that have negative z coordinate? Do we still project on xy zero plane or should we change it? Should I compute height as difference between min and max z coordinates?
-12. Some buildings turn out to be just a triangle that is why some walls of the buildings have different colours.
+11. Some buildings turn out to be just a triangle that is why some walls of the buildings have different colours.
+
+
+// Iteration 3:

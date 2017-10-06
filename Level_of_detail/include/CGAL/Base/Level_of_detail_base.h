@@ -572,7 +572,7 @@ namespace CGAL {
 
 
 				// The most important!
-				const Main_test_data_type test_data_type = Main_test_data_type::COMPLEX;
+				const Main_test_data_type test_data_type = Main_test_data_type::BASIC;
 				switch (test_data_type) {
 
 					case Main_test_data_type::BASIC:
@@ -597,7 +597,7 @@ namespace CGAL {
 				// All main parameters are set below.
 				m_default_path        	 = "/Users/danisimo/Documents/pipeline/data/basic_test/";
 				m_preprocessor_scale  	 = 2.0;
-				m_structuring_epsilon 	 = 0.025;
+				m_structuring_epsilon 	 = 0.025; // the most important parameter!!!
 				m_add_cdt_clutter     	 = true;
 				m_visibility_num_samples = 200;
 				m_graph_cut_alpha 		 = 1.0;
@@ -610,7 +610,7 @@ namespace CGAL {
 				// All main parameters are set below.
 				m_default_path        	 = "/Users/danisimo/Documents/pipeline/data/complex_test/";
 				m_preprocessor_scale  	 = 2.0;
-				m_structuring_epsilon 	 = 0.0005;
+				m_structuring_epsilon 	 = 0.0005; // the most important parameter!!!
 				m_add_cdt_clutter     	 = false;
 				m_visibility_num_samples = 200;
 				m_graph_cut_alpha 		 = 1.0;

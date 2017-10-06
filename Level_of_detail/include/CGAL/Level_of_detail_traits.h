@@ -37,7 +37,7 @@ namespace CGAL {
 			typedef KernelTraits 	Kernel;
 			typedef OutputContainer Container_3D;
 
-			typedef CGAL::LOD::Level_of_detail_loader<Kernel, Container_3D>  	  Loader;
+			typedef CGAL::LOD::Level_of_detail_loader_stub<Kernel, Container_3D>  Loader;
 			typedef CGAL::LOD::Level_of_detail_preprocessor<Kernel, Container_3D> Preprocessor;
 
 			typedef CGAL::LOD::Level_of_detail_clutter<Kernel, Container_3D> 		   Clutter_strategy;
@@ -63,8 +63,9 @@ namespace CGAL {
 	 	    typedef CGAL::Triangulation_face_base_with_info_2<My_face_info, Kernel>     FB_with_info;
 			typedef CGAL::Constrained_triangulation_face_base_2<Kernel, FB_with_info>   FB;
 
-			typedef CGAL::Triangulation_data_structure_2<VB, FB> 			TDS;
-			typedef CGAL::Constrained_Delaunay_triangulation_2<Kernel, TDS> CDT;
+			typedef CGAL::Exact_predicates_tag                                	 EPT;
+			typedef CGAL::Triangulation_data_structure_2<VB, FB> 			  	 TDS;
+			typedef CGAL::Constrained_Delaunay_triangulation_2<Kernel, TDS, EPT> CDT;
 
 			typedef int Label; 
 			typedef std::vector< std::pair<typename Kernel::Point_2, Label> > Container_2D;

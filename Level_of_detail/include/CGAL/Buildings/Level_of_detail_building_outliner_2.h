@@ -270,7 +270,7 @@ namespace CGAL {
 				do {
 
 					curr_face_neigh = get_next_face_and_edge(curr_fh, curr_vh, edge);
-					if (is_boundary_face(cdt, curr_face_neigh, edge)) {
+					if (is_boundary_face(cdt, curr_fh, curr_face_neigh, edge)) {
 
 						curr_vh = get_next_vertex_handle(curr_vh, curr_fh);
 						if (curr_vh != vh) {
@@ -278,6 +278,14 @@ namespace CGAL {
 							add_new_boundary_vertex(curr_vh, building);
 							add_new_wedge_face(curr_fh, curr_vh, building);
 						}
+
+					} else if (iter == 0) {
+
+						curr_fh = get_last_face(cdt, curr_face_neigh, curr_vh, building);
+						curr_vh = get_next_vertex_handle(curr_vh, curr_fh);
+						
+						add_new_boundary_vertex(curr_vh, building);
+						add_new_wedge_face(curr_fh, curr_vh, building);
 
 					} else curr_fh = get_last_face(cdt, curr_face_neigh, curr_vh, building);
 					
@@ -303,13 +311,17 @@ namespace CGAL {
 				return curr_fh->vertex(next_index);
 			}
 
-			bool is_boundary_face(const CDT &cdt, const Face_handle &fh, const Edge &edge) const {
+			bool is_boundary_face(const CDT &cdt, const Face_handle &fh_prev, const Face_handle &fh, const Edge &edge) const {
 				
 				const FT half = FT(1) / FT(2);
 
-				if (cdt.is_infinite(fh))  							  return true;
-				if (fh->info().in < half) 							  return true;
-				if (fh->info().in > half && cdt.is_constrained(edge)) return true;
+				if (cdt.is_infinite(fh))  				 return true;
+				if (fh->info().in < half) 				 return true;
+				if (fh->info().bu != fh_prev->info().bu) return true;
+				if (fh->info().in > half 	 && 
+					cdt.is_constrained(edge) && 
+					fh->info().bu != fh_prev->info().bu) return true;
+
 
 				assert(fh->info().in != half);
 				return false;
@@ -332,7 +344,7 @@ namespace CGAL {
 					++iter;
 					assert(iter != m_max_inner_iters);
 
-				} while (!is_boundary_face(cdt, curr_fh, edge));
+				} while (!is_boundary_face(cdt, last_fh, curr_fh, edge));
 
 				return last_fh;
 			}
