@@ -921,10 +921,12 @@ locate_in_common_face(typename internal::Locate_types<TriangleMesh>::Face_locati
 
   CGAL_assertion(*fit == *sit);
   face_descriptor common_fd = *fit;
+
   if(first_location.first != common_fd)
-    locate(first_location, common_fd, tm);
+    first_location = locate(first_location, common_fd, tm);
+
   if(second_location.first != common_fd)
-    locate(second_location, common_fd, tm);
+    second_location = locate(second_location, common_fd, tm);
 
   return true;
 }

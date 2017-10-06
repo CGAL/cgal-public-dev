@@ -367,6 +367,8 @@ Motorcycle_graph<MotorcycleGraphTraits>::
 compute_destination(Motorcycle& mc,
                     const boost::optional<Point_or_location>& input_destination)
 {
+  // At the start of this function, mc.source() is already initialized
+
   DEC_it destination;
   FT time_at_source = mc.current_time(), time_at_destination;
 
@@ -429,6 +431,7 @@ compute_destination(Motorcycle& mc,
         // 'source_location' might have changed to find a common face
         if(source_location != mc.source()->location())
         {
+          std::cerr << "Warning: source has changed!" << std::endl;
           const Point input_source_point = mc.source()->point();
 
           // If the source point was only used for the motorcycle 'mc', then
@@ -460,6 +463,24 @@ compute_destination(Motorcycle& mc,
       {
         CGAL::Polygon_mesh_processing::locate_in_common_face(
           source_location, destination_location, mesh_);
+
+        // 'source_location' might have changed to find a common face
+        if(source_location != mc.source()->location())
+        {
+          std::cerr << "Warning: source has changed!" << std::endl;
+          const Point input_source_point = mc.source()->point();
+
+          // If the source point was only used for the motorcycle 'mc', then
+          // it can be safely cleaned off
+          if(mc.source()->visiting_motorcycles().size() == 1)
+            points.erase(mc.source());
+
+          std::pair<DEC_it, bool> new_source = points.insert(source_location,
+                                                             input_source_point,
+                                                             mc.id(), time_at_source);
+          mc.source() = new_source.first;
+          mc.current_position() = new_source.first;
+        }
       }
     }
 
