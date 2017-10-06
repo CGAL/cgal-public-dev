@@ -172,6 +172,7 @@ public:
   const Track& track() const { return track_points; }
 
   // Constructor
+protected:
   virtual ~Motorcycle_impl_base() { }
 
   template<typename Destination_type>
@@ -181,6 +182,7 @@ public:
                        const boost::optional<Vector>& direction,
                        const FT initial_time);
 
+public:
   // Functions
   void add_target(const DEC_it target_point, const FT time_at_target);
 
@@ -457,11 +459,13 @@ public:
                          face_descriptor>                           descriptor_variant;
 
   // Constructor
+protected:
   virtual ~Motorcycle_impl() { }
 
   template<typename ArgumentPack>
   Motorcycle_impl(const ArgumentPack& args);
 
+public:
   virtual boost::tuple<bool, DEC_it, DEC_it, FT, bool>
   compute_next_destination(Dictionary& points, const Triangle_mesh& mesh);
 
