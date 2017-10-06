@@ -21,11 +21,13 @@
 #include <CGAL/Polyline_tracing/Motorcycle.h>
 #include <CGAL/Polyline_tracing/internal/robust_intersections.h>
 
-#include <CGAL/Origin.h>
+#include <CGAL/assertions.h>
 #include <CGAL/boost/graph/helpers.h>
+#include <CGAL/Origin.h>
 #include <CGAL/Polygon_mesh_processing/locate.h>
 
 #include <boost/optional.hpp>
+#include <boost/tuple/tuple.hpp>
 
 #include <utility>
 
@@ -64,7 +66,8 @@ public:
   typedef typename Geom_traits::face_descriptor               face_descriptor;
 
   // - bool: whether we have found a destination or not
-  // - DEC_it: the source of the path (might be different from mc.position() if on the border)
+  // - DEC_it: the source of the path (might be different from mc.current_position()
+  //           if on the border)
   // - DEC_it: the destination
   // - FT: the time at the destination
   // - bool: is the destination final
@@ -208,13 +211,13 @@ operator()(vertex_descriptor vd, const Motorcycle& mc,
 #endif
 
   // just to get rid of a degenerate case // @todo factorize this
-  CGAL_precondition(mc.direction()); // direction must be known
+  CGAL_precondition(bool(mc.direction())); // direction must be known
   if(*(mc.direction()) == CGAL::NULL_VECTOR)
   {
     std::cerr << "Warning: the motorcycle direction is null and "
               << "the next destination is thus the current position" << std::endl;
 
-    return boost::make_tuple(true, mc.position(), mc.position(),
+    return boost::make_tuple(true, mc.current_position(), mc.current_position(),
                              mc.current_time(), true /*final destination*/);
   }
 
@@ -237,18 +240,18 @@ operator()(vertex_descriptor vd, const Motorcycle& mc,
     // Compute the position of the motorcycle in the current face
     std::pair<DEC_it, bool> source_in_fd; // bool indicates whether it's a new point or not
 
-    if(mc.position()->location().first == fd)
+    if(mc.current_position()->location().first == fd)
     {
-      source_in_fd = std::make_pair(mc.position(), false);
+      source_in_fd = std::make_pair(mc.current_position(), false);
     }
     else
     {
       Face_location loc_in_fd = CGAL::Polygon_mesh_processing::locate(
-                                  mc.position()->location(), fd, mesh);
+                                  mc.current_position()->location(), fd, mesh);
 
       // Insert into the dictionary, but keep an iterator to it so that it can
       // be removed quickly if this point is useless
-      source_in_fd = points.insert(loc_in_fd, mc.position()->point());
+      source_in_fd = points.insert(loc_in_fd, mc.current_position()->point());
     }
 
     result_type res = compute_next_destination(source_in_fd.first, fd, mc, points, mesh);
@@ -273,8 +276,8 @@ operator()(vertex_descriptor vd, const Motorcycle& mc,
 
   // If we couldn't find a destination, then we must be on the border of the mesh
   // with a direction pointing out.
-  CGAL_assertion(is_border(vd, mesh));
-  return boost::make_tuple(false, mc.position(), mc.position(),
+  CGAL_assertion(bool(is_border(vd, mesh)));
+  return boost::make_tuple(false, mc.current_position(), mc.current_position(),
                            mc.current_time(), true /*final destination*/);
 }
 
@@ -290,13 +293,13 @@ operator()(halfedge_descriptor hd, const Motorcycle& mc,
 #endif
 
   // just to get rid of a degenerate case
-  CGAL_precondition(mc.direction()); // direction must be known
+  CGAL_precondition(bool(mc.direction())); // direction must be known
   if(*(mc.direction()) == CGAL::NULL_VECTOR)
   {
     std::cerr << "Warning: the motorcycle direction is null and "
               << "the next destination is thus the current position" << std::endl;
 
-    return boost::make_tuple(true, mc.position(), mc.position(),
+    return boost::make_tuple(true, mc.current_position(), mc.current_position(),
                              mc.current_time(), true /*final destination*/);
   }
 
@@ -305,10 +308,10 @@ operator()(halfedge_descriptor hd, const Motorcycle& mc,
 
   // Exception case: we are computing the first destination. In that case, first
   // try to find a valid destination on face(hd, mesh)
-  if(mc.initial_destination_point() == boost::none)
+  if(mc.input_destination() == boost::none)
   {
     face_descriptor fd = face(hd, mesh);
-    result_type res = compute_next_destination(mc.position(), fd, mc, points, mesh);
+    result_type res = compute_next_destination(mc.current_position(), fd, mc, points, mesh);
 
     // Since direction == NULL_VECTOR has been filtered in Tracer.h, the time
     // can only be null if the direction points to face(opposite(hd, mesh), mesh)
@@ -323,19 +326,19 @@ operator()(halfedge_descriptor hd, const Motorcycle& mc,
   if(is_border(opp_hd, mesh))
   {
     // Source is on the border of the mesh and the direction is pointing out,
-    return boost::make_tuple(false, mc.position(), mc.position(),
+    return boost::make_tuple(false, mc.current_position(), mc.current_position(),
                              mc.current_time(), true /*final destination*/);
   }
 
   // Compute the position of the motorcycle in the opposite face
   face_descriptor opp_fd = face(opp_hd, mesh);
   CGAL_assertion(opp_fd != boost::graph_traits<Triangle_mesh>::null_face());
-  Face_location opp_loc = CGAL::Polygon_mesh_processing::locate(mc.position()->location(),
+  Face_location opp_loc = CGAL::Polygon_mesh_processing::locate(mc.current_position()->location(),
                                                                 opp_fd, mesh);
 
   // Insert the source seen from the opposite face in the dictionary
   std::pair<DEC_it, bool> source_in_next_face = points.insert(opp_loc,
-                                                              mc.position()->point());
+                                                              mc.current_position()->point());
 
   result_type opp_res = compute_next_destination(source_in_next_face.first, opp_fd, mc, points, mesh);
 
@@ -355,17 +358,17 @@ operator()(face_descriptor fd, const Motorcycle& mc,
 #endif
 
   // just to get rid of a degenerate case
-  CGAL_precondition(mc.direction()); // direction must be known
+  CGAL_precondition(bool(mc.direction())); // direction must be known
   if(*(mc.direction()) == CGAL::NULL_VECTOR)
   {
     std::cerr << "Warning: the motorcycle direction is null and "
               << "the next destination is thus the current position" << std::endl;
 
-    return boost::make_tuple(true, mc.position(), mc.position(),
+    return boost::make_tuple(true, mc.current_position(), mc.current_position(),
                              mc.current_time(), true /*final destination*/);
   }
 
-  return compute_next_destination(mc.position(), fd, mc, points, mesh);
+  return compute_next_destination(mc.current_position(), fd, mc, points, mesh);
 }
 
 } // namespace Polyline_tracing

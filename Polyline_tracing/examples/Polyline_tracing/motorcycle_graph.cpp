@@ -21,6 +21,7 @@
 #include <fstream>
 #include <iostream>
 #include <vector>
+#include <utility>
 
 namespace CP = CGAL::parameters;
 namespace PL = CGAL::Polyline_tracing;
@@ -44,26 +45,32 @@ typedef std::vector<Motorcycle_ptr>                              Motorcycle_cont
 
 typedef PL::Uniform_direction_tracer_visitor<MGT>                Uniform_tracer;
 typedef PL::Motorcycle<MGT, Uniform_tracer>                      Motorcycle_U;
-typedef PL::Point_set_tracer_visitor<MGT>                        Point_set_tracer;
+typedef PL::Point_set_tracer<MGT>                                Point_set_tracer;
 typedef PL::Motorcycle<MGT, Point_set_tracer>                    Motorcycle_PS;
 
-void motorcycle_club_1(Motorcycle_container& motorcycles, const PolygonMesh& /*mesh*/)
+void motorcycle_club_1(Motorcycle_container& motorcycles, const PolygonMesh& mesh)
 {
   // This is a casual motorcycle club that likes to use all of its available options
-
   motorcycles.push_back(Motorcycle_ptr(new Motorcycle_U(CP::speed = 1.,
                                                         CP::source = Point_2(0.1, 0.1),
                                                         CP::direction = Vector_2(1., 0.),
                                                         CP::initial_time = 0.)));
+
   motorcycles.push_back(Motorcycle_ptr(new  Motorcycle_U(CP::source = Point_2(0.9, 0.9),
                                                          CP::direction = Vector_2(0., -1.),
                                                          CP::speed = 1.)));
 
+  boost::graph_traits<PolygonMesh>::face_descriptor fd = *(faces(mesh).begin());
+  Face_location loc = std::make_pair(fd, CGAL::make_array(0.4, 0.4, 0.2));
+  motorcycles.push_back(Motorcycle_ptr(new  Motorcycle_U(CP::source = loc,
+                                                         CP::direction = Vector_2(1., 1.))));
+
   Uniform_tracer uft;
   motorcycles.push_back(Motorcycle_ptr(new Motorcycle_U(CP::source = Point_2(0.5, 0.2),
-                                                        CP::direction = Vector_2(1., 1.),
+                                                        CP::destination = Point_2(0.95, 0.7),
                                                         CP::tracer = uft)));
 
+  // need a tree or something ! @todo
 //  std::vector<Face_location> destinations;
 //  destinations.push_back(PMP::locate(Point_2(0.3, 0.6), mesh));
 //  Point_set_tracer pst(destinations);
@@ -246,20 +253,20 @@ int main()
   bool is_loop_infinite = true;
   while(is_loop_infinite)
   {
-    is_loop_infinite = true;
+    is_loop_infinite = false;
 
     Motorcycle_container motorcycles;
-//    motorcycle_club_1(motorcycles, pm);
-    motorcycle_club_2(motorcycles);
+    motorcycle_club_1(motorcycles, pm);
+//    motorcycle_club_2(motorcycles);
 //    motorcycle_club_3(motorcycles);
 
 //    random_motorcycles_on_segment(motorcycles, rnd);
 //    random_motorcycles_in_triangle(motorcycles, rnd);
 //    random_motorcycles_in_square(motorcycles, rnd);
 
-    random_motorcycles_on_face(motorcycles, pm, *(faces(pm).begin()), rnd);
-    random_motorcycles_on_face(motorcycles, pm, *(++(++(++(++(++faces(pm).begin()))))), rnd);
-    random_motorcycles_on_face(motorcycles, pm, *(++(++faces(pm).begin())), rnd);
+//    random_motorcycles_on_face(motorcycles, pm, *(faces(pm).begin()), rnd);
+//    random_motorcycles_on_face(motorcycles, pm, *(++(++(++(++(++faces(pm).begin()))))), rnd);
+//    random_motorcycles_on_face(motorcycles, pm, *(++(++faces(pm).begin())), rnd);
 
     Motorcycle_graph motorcycle_graph(pm);
     motorcycle_graph.trace_graph(motorcycles.begin(), motorcycles.end());

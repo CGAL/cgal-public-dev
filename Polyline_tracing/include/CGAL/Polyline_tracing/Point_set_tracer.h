@@ -39,9 +39,9 @@ template<typename MotorcycleGraphTraits, typename Tracer>
 class Motorcycle;
 
 template<typename MotorcycleGraphTraits>
-class Point_set_tracer_visitor
+class Point_set_tracer
 {
-  typedef Point_set_tracer_visitor<MotorcycleGraphTraits>     Self;
+  typedef Point_set_tracer<MotorcycleGraphTraits>            Self;
 
 public:
   typedef MotorcycleGraphTraits                               Geom_traits;
@@ -66,7 +66,8 @@ public:
   typedef typename Geom_traits::face_descriptor               face_descriptor;
 
   // - bool: whether we have found a destination or not
-  // - DEC_it: the source of the path (might be different from mc.position() if on the border)
+  // - DEC_it: the source of the path (might be different from mc.current_position()
+  //           if on the border)
   // - DEC_it: the destination
   // - FT: the time at the destination
   // - bool: is the destination final
@@ -76,8 +77,8 @@ public:
   void set_destinations(const std::vector<Face_location>& dests) { destinations = dests; }
 
   // Constructor
-  Point_set_tracer_visitor() : destinations(), pos(-1) { }
-  Point_set_tracer_visitor(const std::vector<Face_location>& destinations) : destinations(destinations), pos(-1) { }
+  Point_set_tracer() : destinations(), pos(-1) { }
+  Point_set_tracer(const std::vector<Face_location>& destinations) : destinations(destinations), pos(-1) { }
 
   // Functions
   result_type operator()(vertex_descriptor vd, const Motorcycle& mc,
@@ -90,15 +91,15 @@ public:
 private:
   // A vector of destination, with the conditions that two consecutive destinations
   // are on the same face of the mesh
-  std::vector<Face_location> destinations;
+  std::vector<Face_location> destinations; //@todo make it variant of point/face_location
   mutable std::size_t pos;
 };
 
 // -----------------------------------------------------------------------------
 
 template<typename MotorcycleGraphTraits>
-typename Point_set_tracer_visitor<MotorcycleGraphTraits>::result_type
-Point_set_tracer_visitor<MotorcycleGraphTraits>::
+typename Point_set_tracer<MotorcycleGraphTraits>::result_type
+Point_set_tracer<MotorcycleGraphTraits>::
 operator()(vertex_descriptor vd, const Motorcycle& mc,
            Dictionary& /*points*/, const Triangle_mesh& /*mesh*/) const
 {
@@ -115,17 +116,17 @@ operator()(vertex_descriptor vd, const Motorcycle& mc,
   if(pos >= destinations.size())
   {
     std::cerr << "Warning: tried to get a destination but we have already reached all destinations" << std::endl;
-    return boost::make_tuple(true, mc.position(), mc.position(),
+    return boost::make_tuple(true, mc.current_position(), mc.current_position(),
                              mc.current_time(), true /*final destination*/);
   }
 
-  return boost::make_tuple(true, mc.position(), mc.position(),
+  return boost::make_tuple(true, mc.current_position(), mc.current_position(),
                            mc.current_time(), true /*final destination*/);
 }
 
 template<typename MotorcycleGraphTraits>
-typename Point_set_tracer_visitor<MotorcycleGraphTraits>::result_type
-Point_set_tracer_visitor<MotorcycleGraphTraits>::
+typename Point_set_tracer<MotorcycleGraphTraits>::result_type
+Point_set_tracer<MotorcycleGraphTraits>::
 operator()(halfedge_descriptor hd, const Motorcycle& mc,
            Dictionary& points, const Triangle_mesh& mesh) const
 {
@@ -138,7 +139,7 @@ operator()(halfedge_descriptor hd, const Motorcycle& mc,
   if(pos >= destinations.size())
   {
     std::cerr << "Warning: tried to get a destination but we have already reached all destinations" << std::endl;
-    return boost::make_tuple(true, mc.position(), mc.position(),
+    return boost::make_tuple(true, mc.current_position(), mc.current_position(),
                              mc.current_time(), true /*final destination*/);
   }
 
@@ -146,12 +147,12 @@ operator()(halfedge_descriptor hd, const Motorcycle& mc,
   halfedge_descriptor opp_hd = opposite(hd, mesh);
   face_descriptor opp_fd = face(opp_hd, mesh);
   CGAL_assertion(opp_fd != boost::graph_traits<Triangle_mesh>::null_face());
-  Face_location opp_loc = CGAL::Polygon_mesh_processing::locate(mc.position()->location(),
+  Face_location opp_loc = CGAL::Polygon_mesh_processing::locate(mc.current_position()->location(),
                                                                 opp_fd, mesh);
 
   // Insert the source seen from the opposite face in the dictionary
   std::pair<DEC_it, bool> source_in_next_face = points.insert(opp_loc,
-                                                              mc.position()->point());
+                                                              mc.current_position()->point());
 
   // Now deal with the destination
   const Face_location& loc = destinations[pos];
@@ -170,8 +171,8 @@ operator()(halfedge_descriptor hd, const Motorcycle& mc,
 }
 
 template<typename MotorcycleGraphTraits>
-typename Point_set_tracer_visitor<MotorcycleGraphTraits>::result_type
-Point_set_tracer_visitor<MotorcycleGraphTraits>::
+typename Point_set_tracer<MotorcycleGraphTraits>::result_type
+Point_set_tracer<MotorcycleGraphTraits>::
 operator()(face_descriptor fd, const Motorcycle& mc,
            Dictionary& points, const Triangle_mesh& mesh) const
 {
@@ -184,7 +185,7 @@ operator()(face_descriptor fd, const Motorcycle& mc,
   if(pos >= destinations.size())
   {
     std::cerr << "Warning: tried to get a destination but we have already reached all destinations" << std::endl;
-    return boost::make_tuple(true, mc.position(), mc.position(),
+    return boost::make_tuple(true, mc.current_position(), mc.current_position(),
                              mc.current_time(), true /*final destination*/);
   }
 
@@ -204,7 +205,7 @@ operator()(face_descriptor fd, const Motorcycle& mc,
   // last destination is marked as final
   bool is_final_destination = (pos == destinations.size() - 1);
 
-  return boost::make_tuple(true, mc.position(), destination.first,
+  return boost::make_tuple(true, mc.current_position(), destination.first,
                            time_at_destination, is_final_destination);
 }
 

@@ -1,4 +1,4 @@
-﻿// Copyright (c) 2017 GeometryFactory (France).
+// Copyright (c) 2017 GeometryFactory (France).
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
@@ -81,6 +81,24 @@ struct Track_comparer
   }
 };
 
+// Two implicit conversions in a row is impossible, so it must be done manually
+template<typename Motorcycle>
+struct Implicit_conversion_helper
+{
+  typedef typename Motorcycle::Point                               Point;
+  typedef typename Motorcycle::Face_location                       Face_location;
+  typedef typename Motorcycle::Point_or_location                   Point_or_location;
+  typedef typename Motorcycle::Opt_point_or_location               result_type;
+
+  const result_type& operator()(const result_type& n) const { return n; }
+  result_type operator()(const Point& p) const {
+    return result_type(Point_or_location(p));
+  }
+  result_type operator()(const Face_location& l) const {
+    return result_type(Point_or_location(l));
+  }
+};
+
 } // namespace internal
 
 // -----------------------------------------------------------------------------
@@ -103,6 +121,9 @@ public:
   typedef typename Dictionary::DEC_it                         DEC_it;
   typedef typename Dictionary_entry::Face_location            Face_location;
 
+  typedef boost::variant<Point, Face_location>                Point_or_location;
+  typedef boost::optional<Point_or_location>                  Opt_point_or_location;
+
   // Target points are put in a set sorted by time. It is not a multiset because
   // same time should be equal to same point.
   typedef std::pair<DEC_it, FT>                               Track_point;
@@ -119,30 +140,31 @@ public:
   bool is_crashed() const { return crashed; }
   void crash() { crashed = true; }
 
-  const Point& initial_source_point() const { return ini_sour_pt; }
-  boost::optional<Point>& initial_destination_point() { return ini_dest_pt; }
-  const boost::optional<Point>& initial_destination_point() const { return ini_dest_pt; }
+  const Point_or_location& input_source() const { return input_sour; }
+  boost::optional<Point_or_location>& input_destination() { return input_dest; }
+  const boost::optional<Point_or_location>& input_destination() const { return input_dest; }
 
   DEC_it& source() { return sour; }
   const DEC_it& source() const { return sour; }
   DEC_it& destination() { return dest; }
   const DEC_it destination() const { return dest; }
+  FT& time_at_source() { return time_at_sour; }
+  const FT& time_at_source() const { return time_at_sour; }
 
+  DEC_it& current_position() { return conf; }
+  const DEC_it current_position() const { return conf; }
+  FT& current_time() { return time; }
+  const FT& current_time() const { return time; }
   const Face_location& current_location() const { return conf->location(); }
+
+  boost::optional<Vector>& direction() { return dir; }
+  const boost::optional<Vector>& direction() const { return dir; }
   const DEC_it closest_target() const;
 
   void set_destination_finality(bool b) { is_dest_final = b; }
   const bool& is_destination_final() const { return is_dest_final; }
 
   const FT speed() const { return spee; }
-  boost::optional<Vector>& direction() { return dir; }
-  const boost::optional<Vector>& direction() const { return dir; }
-  FT& current_time() { return time; }
-  const FT& current_time() const { return time; }
-  FT& time_at_source() { return time_at_sour; }
-  const FT& time_at_source() const { return time_at_sour; }
-  DEC_it& position() { return conf; }
-  const DEC_it position() const { return conf; }
 
   Target_point_container& targets() { return target_points; }
   const Target_point_container& targets() const { return target_points; }
@@ -151,8 +173,12 @@ public:
 
   // Constructor
   virtual ~Motorcycle_impl_base() { }
-  Motorcycle_impl_base(const Point& source, const boost::optional<Point>& destination,
-                       const FT speed, const boost::optional<Vector>& direction,
+
+  template<typename Destination_type>
+  Motorcycle_impl_base(const Point_or_location& source,
+                       const Destination_type& destination,
+                       const FT speed,
+                       const boost::optional<Vector>& direction,
                        const FT initial_time);
 
   // Functions
@@ -176,7 +202,7 @@ public:
     out << "Motorcycle #" << mc.id() << " (crashed? " << mc.is_crashed() << ") "
         << "going from source: (" << mc.source()->point() << ")"
         << " to destination: (" << mc.destination()->point() << ")" << std::endl
-        << "  currently at position: (" << mc.position()->point() << ")" << std::endl
+        << "  currently at position: (" << mc.current_position()->point() << ")" << std::endl
         << "  with targets: " << std::endl;
     typename Target_point_container::const_iterator tpc_it = mc.targets().begin();
     typename Target_point_container::const_iterator end = mc.targets().end();
@@ -202,8 +228,8 @@ protected:
   bool crashed;
 
   // The very first source and destination points, before insertion in the dictionary
-  const Point ini_sour_pt;
-  boost::optional<Point> ini_dest_pt;
+  const Point_or_location input_sour;
+  boost::optional<Point_or_location> input_dest;
 
   // Below might change when we move in the mesh
   DEC_it sour; // source
@@ -225,15 +251,18 @@ protected:
 };
 
 template<typename MotorcycleGraphTraits>
+template<typename Destination_type>
 Motorcycle_impl_base<MotorcycleGraphTraits>::
-Motorcycle_impl_base(const Point& source, const boost::optional<Point>& destination,
-                     const FT speed, const boost::optional<Vector>& direction,
+Motorcycle_impl_base(const Point_or_location& source,
+                     const Destination_type& destination,
+                     const FT speed,
+                     const boost::optional<Vector>& direction,
                      const FT initial_time)
   :
     i(-1),
     crashed(false),
-    ini_sour_pt(source),
-    ini_dest_pt(destination),
+    input_sour(source),
+    input_dest(internal::Implicit_conversion_helper<Self>()(destination)),
     sour(), dest(), conf(),
     is_dest_final(false),
     spee(speed),
@@ -245,17 +274,6 @@ Motorcycle_impl_base(const Point& source, const boost::optional<Point>& destinat
 {
   // Reject null speed
   CGAL_precondition(spee > 0.);
-
-  if(ini_dest_pt != boost::none && ini_sour_pt == *ini_dest_pt)
-  {
-    std::cerr << "Warning: Creation of a motorcycle with identical source "
-              << "and destination: (" << ini_sour_pt << ") " << std::endl;
-  }
-
-  if(dir != boost::none && *dir == CGAL::NULL_VECTOR)
-  {
-    std::cerr << "Warning: Creation of a motorcycle with null direction" << std::endl;
-  }
 }
 
 template<typename MotorcycleGraphTraits>
@@ -285,7 +303,7 @@ Motorcycle_impl_base<MotorcycleGraphTraits>::
 remove_closest_target_from_targets()
 {
   CGAL_assertion(!target_points.empty());
-  return target_points.erase(target_points.begin());
+  target_points.erase(target_points.begin());
 }
 
 template<typename MotorcycleGraphTraits>
@@ -488,7 +506,7 @@ compute_next_destination(Dictionary& points, const Triangle_mesh& mesh)
 
   const Face_location& loc = this->current_location();
   descriptor_variant dv =
-    CGAL::Polygon_mesh_processing::internal::get_descriptor_from_location(loc, mesh);
+    CGAL::Polygon_mesh_processing::get_descriptor_from_location(loc, mesh);
 
   // The derived cast is so that the tracer uses the Motorcycle type and not the
   // Motorcycle_impl_base type. It is safe since we only manipulate "full" motorcycles,

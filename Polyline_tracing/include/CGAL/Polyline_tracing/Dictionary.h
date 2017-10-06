@@ -403,7 +403,7 @@ std::pair<typename Dictionary<MotorcycleGraphTraits>::DEC_it, bool>
 Dictionary<MotorcycleGraphTraits>::
 insert(const Face_location& loc, const std::size_t i, const FT time, const Triangle_mesh& mesh)
 {
-  Point p = CGAL::Polygon_mesh_processing::internal::loc_to_point(loc, mesh);
+  Point p = CGAL::Polygon_mesh_processing::location_to_point(loc, mesh);
   return insert(loc, p, i, time);
 }
 
@@ -412,7 +412,7 @@ std::pair<typename Dictionary<MotorcycleGraphTraits>::DEC_it, bool>
 Dictionary<MotorcycleGraphTraits>::
 insert(const Face_location& loc, const Triangle_mesh& mesh)
 {
-  Point p = CGAL::Polygon_mesh_processing::internal::loc_to_point(loc, mesh);
+  Point p = CGAL::Polygon_mesh_processing::location_to_point(loc, mesh);
   return insert(loc, p);
 }
 

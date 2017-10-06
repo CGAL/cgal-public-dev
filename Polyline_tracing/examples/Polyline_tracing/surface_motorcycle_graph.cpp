@@ -37,8 +37,8 @@ typedef MGT::halfedge_descriptor                                 halfedge_descri
 
 //typedef PL::Uniform_direction_tracer_visitor<MGT>                Uniform_tracer;
 //typedef PL::Motorcycle<MGT, Uniform_tracer>                      Motorcycle_U;
-typedef PL::Point_set_tracer_visitor<MGT>                        Point_set_tracer;
-typedef PL::Motorcycle<MGT, Point_set_tracer>                    Motorcycle_PS;
+typedef PL::Point_set_tracer<MGT>                                PS_tracer;
+typedef PL::Motorcycle<MGT, PS_tracer>                           PS_Motorcycle;
 
 typedef PL::Motorcycle_graph<MGT>                                Motorcycle_graph;
 
@@ -83,7 +83,7 @@ void random_motorcycle_club(Motorcycle_container& motorcycles,
                                          get(vpmap, target(next(hd, mesh), mesh)), third);
 
     // Generate some targets
-    Point_set_tracer pst;
+    PS_tracer pst;
     std::size_t dest_n = 20;
     std::vector<Face_location> destinations;
     destinations.reserve(dest_n);
@@ -96,7 +96,7 @@ void random_motorcycle_club(Motorcycle_container& motorcycles,
       if(rnd.uniform_int(0,2) == 0)
         exit_hd = next(exit_hd, mesh);
 
-      Face_location loc = PMP::internal::random_location_on_halfedge(exit_hd, mesh, rnd);
+      Face_location loc = PMP::random_location_on_halfedge(exit_hd, mesh, rnd);
 
 //      std::cout << "new destination: " << loc.first
 //                << " bar: " << loc.second[0] << " " << loc.second[1] << " " << loc.second[2] << std::endl;
@@ -107,7 +107,7 @@ void random_motorcycle_club(Motorcycle_container& motorcycles,
     }
     pst.set_destinations(destinations);
 
-    motorcycles.push_back(Motorcycle_ptr(new Motorcycle_PS(CP::source = bar,
+    motorcycles.push_back(Motorcycle_ptr(new PS_Motorcycle(CP::source = bar,
                                                            CP::tracer = pst)));
 
     if(motorcycles.size() >= max_number_of_motorcycles)

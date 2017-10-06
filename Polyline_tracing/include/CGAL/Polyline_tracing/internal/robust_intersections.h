@@ -19,6 +19,7 @@
 
 #include <CGAL/Exact_predicates_exact_constructions_kernel.h>
 
+#include <CGAL/assertions.h>
 #include <CGAL/intersection_2.h>
 #include <CGAL/intersection_3.h>
 
@@ -93,7 +94,6 @@ robust_intersection(const typename Traits::Ray_2& r,
     Exact_segment exact_s = to_exact(s);
 
     Exact_intersection_result exact_res = ek.intersect_2_object()(exact_r, exact_s);
-    CGAL_assertion(exact_res);
 
     const Exact_point* epp = boost::get<Exact_point>(&*exact_res);
     if(!epp)
@@ -170,7 +170,6 @@ robust_intersection(const typename Traits::Segment_2& s,
     CGAL_precondition(ek.do_intersect_2_object()(exact_s, exact_t));
 
     Exact_intersection_result exact_res = ek.intersect_2_object()(exact_s, exact_t);
-    CGAL_assertion(exact_res);
 
     const Exact_point* epp = boost::get<Exact_point>(&*exact_res);
     const Exact_point exact_intersection_point = *epp;

@@ -24,3 +24,6 @@
 * the free functions of this package.
 */
 
+#include <CGAL/Polyline_tracing/Dictionary.h>
+#include <CGAL/Polyline_tracing/Motorcycle.h>
+#include <CGAL/Polyline_tracing/Motorcycle_graph.h>
