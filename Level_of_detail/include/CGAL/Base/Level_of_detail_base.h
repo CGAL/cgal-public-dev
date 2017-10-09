@@ -572,7 +572,7 @@ namespace CGAL {
 
 
 				// The most important!
-				const Main_test_data_type test_data_type = Main_test_data_type::BASIC;
+				const Main_test_data_type test_data_type = Main_test_data_type::PARIS;
 				switch (test_data_type) {
 
 					case Main_test_data_type::BASIC:
@@ -581,6 +581,10 @@ namespace CGAL {
 
 					case Main_test_data_type::COMPLEX:
 						set_complex_parameters();
+						break;
+
+					case Main_test_data_type::PARIS:
+						set_paris_parameters();
 						break;
 
 					default:
@@ -618,6 +622,18 @@ namespace CGAL {
 				m_graph_cut_gamma 		 = 1000.0;
 			}
 
+			void set_paris_parameters() {
+
+				// All main parameters are set below.
+				m_default_path        	 = "/Users/danisimo/Documents/pipeline/data/paris_test/";
+				m_preprocessor_scale  	 = 2.0;
+				m_structuring_epsilon 	 = 0.1; // the most important parameter!!!
+				m_add_cdt_clutter     	 = false;
+				m_visibility_num_samples = 200;
+				m_graph_cut_alpha 		 = 1.0;
+				m_graph_cut_beta 		 = 100000.0;
+				m_graph_cut_gamma 		 = 1000.0;
+			}
 
 			// OTHER EXTRA FUNCTIONS!
 

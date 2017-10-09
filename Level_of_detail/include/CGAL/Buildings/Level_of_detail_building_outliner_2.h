@@ -289,8 +289,12 @@ namespace CGAL {
 
 					} else curr_fh = get_last_face(cdt, curr_face_neigh, curr_vh, building);
 					
-					++iter;
-					assert(iter != m_max_outer_iters);
+					++iter; // assert(iter != m_max_outer_iters);
+					if (iter == m_max_outer_iters) {
+						
+						std::cout << "WARNING: MAX OUTER ITERATIONS IS REACHED!" << std::endl;
+						break;
+					}
 
 				} while (curr_vh != vh);
 			}
@@ -341,8 +345,12 @@ namespace CGAL {
 					add_new_wedge_face(curr_fh, curr_vh, building);
 					curr_fh = get_next_face_and_edge(curr_fh, curr_vh, edge);
 
-					++iter;
-					assert(iter != m_max_inner_iters);
+					++iter; // assert(iter != m_max_inner_iters);
+					if (iter == m_max_inner_iters) {
+
+						std::cout << "WARNING: MAX INNER ITERATIONS IS REACHED!" << std::endl;
+						break;
+					}
 
 				} while (!is_boundary_face(cdt, last_fh, curr_fh, edge));
 

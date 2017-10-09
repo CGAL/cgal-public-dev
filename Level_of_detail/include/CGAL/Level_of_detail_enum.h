@@ -89,7 +89,8 @@ namespace CGAL {
 		// Main test data.
 		enum class Main_test_data_type {
 			BASIC,   // basic data set from the Loader_stub class.
-			COMPLEX	 // sketch up generated simple data set with square buildings
+			COMPLEX, // sketch up generated simple data set with square buildings
+			PARIS    // paris real data set
 		};
 
 	} // LOD

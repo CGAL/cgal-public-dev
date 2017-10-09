@@ -7,6 +7,7 @@
 #include <vector>
 #include <map>
 #include <cmath>
+#include <iostream>
 
 // Boost includes.
 #include <boost/tuple/tuple.hpp>
@@ -256,9 +257,12 @@ namespace CGAL {
 					set_outside(face_handle, visibility);
 					break;
 
-					default:
-					assert(!"Classification label is missing!");
-					break;
+					default: {
+						std::cout << "WARNING! CLASSIFICATION LABEL IS MISSING!" << std::endl; 
+						
+						// assert(!"Classification label is missing!");
+						break;
+					}
 				}
 			}
 
