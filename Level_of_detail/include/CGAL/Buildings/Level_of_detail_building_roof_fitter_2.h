@@ -81,7 +81,10 @@ namespace CGAL {
 				const size_t num_faces = building.faces.size();
 				for (size_t i = 0; i < num_faces; ++i) add_face_heights(input, fp_map, ground, building.faces[i]);
 
-				return m_fitter.get_result();
+				FT resulting_height = FT(0);
+				if (!m_fitter.empty()) resulting_height = m_fitter.get_result();
+
+				return resulting_height;
 			}
 
 			void add_face_heights(const Container &input, const Face_points_map &fp_map, const Plane_3 &ground, const Face_handle &fh) {
@@ -152,6 +155,7 @@ namespace CGAL {
 			virtual void add_height(const FT value) = 0;
 			virtual FT   get_result() = 0;
 			virtual void clear() = 0;
+			virtual bool empty() = 0;
 
 			virtual ~Level_of_detail_height_fitter_base() { }
 		};
@@ -167,7 +171,7 @@ namespace CGAL {
 			typedef typename Base::Kernel Kernel;
 			typedef typename Base::FT     FT;
 
-			Level_of_detail_min_height_fitter() : m_big_value(FT(1000000)), m_min_height(m_big_value) { }
+			Level_of_detail_min_height_fitter() : m_big_value(FT(1000000)), m_min_height(m_big_value), m_num_values(FT(0)) { }
 
 			void add_height(const FT value) override {
 
@@ -177,17 +181,25 @@ namespace CGAL {
 
 			FT get_result() override {
 
+				assert(!empty());
 				assert(m_min_height != m_big_value);
+				
 				return m_min_height;
 			}
 
 			void clear() override {
 				m_min_height = m_big_value;
+				m_num_values = FT(0);
+			}
+
+			bool empty() override {
+				return m_num_values == FT(0);
 			}
 
 		private:
-			FT m_big_value;
+			const FT m_big_value;
 			FT m_min_height;
+			FT m_num_values;
 		};
 
 
@@ -212,14 +224,18 @@ namespace CGAL {
 
 			FT get_result() override {
 
-				assert(m_num_values != FT(0));
+				assert(!empty());
 				return m_sum_height / m_num_values;
 			}
 
 			void clear() override {
 
-				m_sum_height = FT(0);
 				m_num_values = FT(0);
+				m_sum_height = FT(0);
+			}
+
+			bool empty() override {
+				return m_num_values == FT(0);
 			}
 
 		private:
@@ -242,7 +258,8 @@ namespace CGAL {
 			m_big_value(FT(1000000)), 
 			m_min_height( m_big_value),
 			m_max_height(-m_big_value),
-			m_total_height(FT(0)) { }
+			m_total_height(FT(0)),
+			m_num_values(FT(0)) { }
 
 			void add_height(const FT value) override {
 
@@ -253,6 +270,8 @@ namespace CGAL {
 			}
 
 			FT get_result() override {
+
+				assert(!empty());
 
 				assert(m_max_height != -m_big_value);
 				assert(m_min_height !=  m_big_value);
@@ -277,13 +296,19 @@ namespace CGAL {
 				m_min_height   =  m_big_value;
 				m_max_height   = -m_big_value;
 				m_total_height = FT(0);
+				m_num_values   = FT(0);
+			}
+
+			bool empty() override {
+				return m_num_values == FT(0);
 			}
 
 		private:
-			FT m_big_value;
+			const FT m_big_value;
 			FT m_min_height;
 			FT m_max_height;
 			FT m_total_height;
+			FT m_num_values;
 		};
 	}
 }

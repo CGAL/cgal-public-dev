@@ -201,7 +201,7 @@ namespace CGAL {
 					if (locate_type == CDT::VERTEX ||
 						locate_type == CDT::EDGE /*||
 						on_the_border(cdt, fh, p) */) {
-					
+
 						// Improve this part of the code if possible!
 						set_unknown(face_handle, visibility);
 						continue;
@@ -214,7 +214,6 @@ namespace CGAL {
 						locate_type == CDT::OUTSIDE_AFFINE_HULL) continue;
 
 					assert(locate_type == CDT::FACE);
-
 					switch(m_method) {
 
 						case Visibility_method::POINT_BASED_CLASSIFICATION: {
@@ -258,9 +257,10 @@ namespace CGAL {
 					break;
 
 					default: {
-						std::cout << "WARNING! CLASSIFICATION LABEL IS MISSING!" << std::endl; 
-						
+						// std::cout << "WARNING! CLASSIFICATION LABEL IS MISSING!" << std::endl; 
 						// assert(!"Classification label is missing!");
+						
+						set_unknown(face_handle, visibility);
 						break;
 					}
 				}

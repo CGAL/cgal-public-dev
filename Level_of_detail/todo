@@ -40,3 +40,11 @@ TODO AND OTHER:
 
 
 // Iteration 3:
+1. Classification package saves some points with label -1. So it is not guaranteed that all points are classified? Why?
+2. Fix bug or whatever it is in the outliner class such that it does not create any inverted faces as now.
+3. Remove lonely triangles in the buildings finder by creating a set of constrained edges between in and out after the final graph cut. It may also help in fixing 2. above.
+4. The main problem with real data comes from creating corners. In this case, I have to intersect segments or their supporting lines, which creates many points at infinity.
+5. In demo classification, radius label changed its position. Actually sometimes radius label is not saved at all. Sometimes, it is added at the end like in the paris data set, and sometimes after nz as in the p10 data set.
+6. When cliking anywhere away from the classification pop-in window, the focus disappears and we have to start all over again.
+7. p10 data set has the same point twice after running region growing.
+8. Segmentation fault when loading the p10 class_trial.ply and changing points+normals to the next mode in the master/Polyhedron_demo.

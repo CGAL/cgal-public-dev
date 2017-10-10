@@ -52,6 +52,8 @@ namespace CGAL {
 			using Const_iterator = typename Planes::const_iterator;
 			// using Plane_map = typename Container:: template Property_map<Plane>;
 
+			Level_of_detail_vertical_regularizer() : m_max_reg_angle(FT(10)), m_reject_planes(true) { }
+
 			// Here as a plane normal I take an average normal among all normals of the points
 			// that belong to the plane.
 			int regularize(Planes &planes, Container &input, Plane &ground_plane) override { 
@@ -104,8 +106,18 @@ namespace CGAL {
 				return number_of_regularized_planes;
 			}
 
+			void set_max_regularization_angle(const FT max_reg_angle) {
+				m_max_reg_angle = max_reg_angle;
+			}
+
+			void reject_planes(const bool new_state) {
+				m_reject_planes = new_state;
+			}
+
 		private:
 			Normal m_average_normal;
+			FT m_max_reg_angle;
+			bool m_reject_planes;
 
 			void set_plane_normal(const Container &input, const Const_iterator &it, Normal &plane_normal) {
 				
@@ -132,9 +144,9 @@ namespace CGAL {
 				const FT deg_angle = CGAL::abs(rad_angle * FT(180) / FT(M_PI));
 
 				if (deg_angle < FT(1)) return Regularization_status::NOACTION;
-				else if (deg_angle < FT(10)) return Regularization_status::REGULARIZE;
+				else if (deg_angle < m_max_reg_angle) return Regularization_status::REGULARIZE;
 				
-				return Regularization_status::REJECT;
+				return m_reject_planes ? Regularization_status::REJECT : Regularization_status::NOACTION;
 			}
 
 			void rotate_plane(const Const_iterator &it, const FT &rad_angle, const Vector &axis, Container &input) {

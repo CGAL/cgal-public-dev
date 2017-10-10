@@ -292,7 +292,11 @@ namespace CGAL {
 					++iter; // assert(iter != m_max_outer_iters);
 					if (iter == m_max_outer_iters) {
 						
-						std::cout << "WARNING: MAX OUTER ITERATIONS IS REACHED!" << std::endl;
+						std::cerr << "WARNING: MAX OUTER ITERATIONS IS REACHED!" << std::endl;
+						
+						building.boundaries.clear();
+						building.wedges.clear();
+
 						break;
 					}
 
@@ -348,7 +352,7 @@ namespace CGAL {
 					++iter; // assert(iter != m_max_inner_iters);
 					if (iter == m_max_inner_iters) {
 
-						std::cout << "WARNING: MAX INNER ITERATIONS IS REACHED!" << std::endl;
+						std::cerr << "WARNING: MAX INNER ITERATIONS IS REACHED!" << std::endl;
 						break;
 					}
 

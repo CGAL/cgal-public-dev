@@ -133,7 +133,9 @@ namespace CGAL {
 			m_building_boundaries_max_inner_iters(0),
 			m_building_boundaries_max_outer_iters(0),
 			m_roof_fitter_type(Roof_fitter_type::MAX), 
-			m_clean_projected_points(true)
+			m_clean_projected_points(true),
+			m_max_reg_angle(-FT(1)),
+			m_reject_planes(true)
 			{ } // Do I need to create an instance of these traits here?
 
 
@@ -222,6 +224,9 @@ namespace CGAL {
 
 				// (6) Make all nearly vertical planes in the building's boundary exactly vertical.
 				std::cout << "(6) regularizing" << std::endl;
+
+				m_vertical_regularizer.set_max_regularization_angle(m_max_reg_angle);
+				m_vertical_regularizer.reject_planes(m_reject_planes);
 
 				const auto number_of_regularized_planes = m_vertical_regularizer.regularize(building_boundaries, input, ground_plane);
 
@@ -521,6 +526,9 @@ namespace CGAL {
 			Roof_fitter_type m_roof_fitter_type;
 			bool m_clean_projected_points;
 
+			FT m_max_reg_angle;
+			bool m_reject_planes;
+
 			
 			// Assert default values of all global parameters.
 			void assert_global_parameters() {
@@ -544,6 +552,8 @@ namespace CGAL {
 
 				assert(m_building_boundaries_max_inner_iters != 0);
 				assert(m_building_boundaries_max_outer_iters != 0);
+
+				assert(m_max_reg_angle != -FT(1));
 			}
 
 			// Set all global parameters.
@@ -562,9 +572,10 @@ namespace CGAL {
 
 
 				// More important.
+				m_reject_planes 			 = true;
 				m_structuring_resample 	 	 = true;
 				m_structuring_get_all_points = false;
-				m_clean_projected_points 	 = true;
+				m_clean_projected_points 	 = false;
 
 				m_visibility_approach = Visibility_approach::POINT_BASED;
 				m_visibility_method   = Visibility_method::POINT_BASED_CLASSIFICATION;
@@ -572,7 +583,7 @@ namespace CGAL {
 
 
 				// The most important!
-				const Main_test_data_type test_data_type = Main_test_data_type::PARIS;
+				const Main_test_data_type test_data_type = Main_test_data_type::BASIC;
 				switch (test_data_type) {
 
 					case Main_test_data_type::BASIC:
@@ -585,6 +596,10 @@ namespace CGAL {
 
 					case Main_test_data_type::PARIS:
 						set_paris_parameters();
+						break;
+
+					case Main_test_data_type::P10:
+						set_p10_parameters();
 						break;
 
 					default:
@@ -600,6 +615,7 @@ namespace CGAL {
 
 				// All main parameters are set below.
 				m_default_path        	 = "/Users/danisimo/Documents/pipeline/data/basic_test/";
+				m_max_reg_angle          = 10.0;
 				m_preprocessor_scale  	 = 2.0;
 				m_structuring_epsilon 	 = 0.025; // the most important parameter!!!
 				m_add_cdt_clutter     	 = true;
@@ -613,6 +629,7 @@ namespace CGAL {
 
 				// All main parameters are set below.
 				m_default_path        	 = "/Users/danisimo/Documents/pipeline/data/complex_test/";
+				m_max_reg_angle          = 10.0;
 				m_preprocessor_scale  	 = 2.0;
 				m_structuring_epsilon 	 = 0.0005; // the most important parameter!!!
 				m_add_cdt_clutter     	 = false;
@@ -626,6 +643,21 @@ namespace CGAL {
 
 				// All main parameters are set below.
 				m_default_path        	 = "/Users/danisimo/Documents/pipeline/data/paris_test/";
+				m_max_reg_angle          = 10.0;
+				m_preprocessor_scale  	 = 2.0;
+				m_structuring_epsilon 	 = 0.1; // the most important parameter!!!
+				m_add_cdt_clutter     	 = false;
+				m_visibility_num_samples = 200;
+				m_graph_cut_alpha 		 = 1.0;
+				m_graph_cut_beta 		 = 100000.0;
+				m_graph_cut_gamma 		 = 1000.0;
+			}
+
+			void set_p10_parameters() {
+
+				// All main parameters are set below.
+				m_default_path        	 = "/Users/danisimo/Documents/pipeline/data/p10_test/";
+				m_max_reg_angle          = 15.0;
 				m_preprocessor_scale  	 = 2.0;
 				m_structuring_epsilon 	 = 0.1; // the most important parameter!!!
 				m_add_cdt_clutter     	 = false;
