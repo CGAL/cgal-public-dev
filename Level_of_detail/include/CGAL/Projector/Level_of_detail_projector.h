@@ -9,16 +9,8 @@ namespace CGAL {
 
 	namespace LOD {
 
-		template<class KernelTraits, class InputContainer, class PlanesMapping, class OutputContainer>
-		class Level_of_detail_projector {		
-
-		public:
-			virtual int project(const InputContainer &, const PlanesMapping &, const typename KernelTraits::Plane_3 &, OutputContainer &) = 0;
-			virtual ~Level_of_detail_projector() { }
-		};
-
-		template<class KernelTraits, class InputContainer, class PlanesMapping, class OutputContainer>
-		class Level_of_detail_simple_projector : public Level_of_detail_projector<KernelTraits, InputContainer, PlanesMapping, OutputContainer> {
+		template<class KernelTraits, class InputContainer, class OutputContainer>
+		class Level_of_detail_simple_projector {
 
 		public:
 			typedef KernelTraits Traits;
@@ -28,12 +20,12 @@ namespace CGAL {
 			typedef typename Traits::Point_3 Point_3;
 
 			typedef InputContainer  Container;
-			typedef PlanesMapping   Planes;
 			typedef OutputContainer Output;
 
-			using Const_iterator = typename Planes::const_iterator;
+			template<class Planes>
+			int project_with_planes(const Container &input, const Planes &planes, const Plane &ground, Output &projected) const { 
 
-			int project(const Container &input, const Planes &planes, const typename Traits::Plane_3 &ground, Output &projected) override { 
+				using Const_iterator = typename Planes::const_iterator;
 
 				projected.clear();
 
@@ -54,6 +46,30 @@ namespace CGAL {
 						++number_of_projected_points;
 					}
 				}
+				assert(number_of_projected_points == static_cast<int>(projected.size()));
+				return number_of_projected_points;
+			}
+
+			template<class Indices>
+			int project_with_indices(const Container &input, const Indices &indices, const Plane &ground, Output &projected) const { 
+
+				using Const_iterator = typename Indices::const_iterator;
+
+				projected.clear();
+
+				auto number_of_projected_points = 0;
+				for (Const_iterator it = indices.begin(); it != indices.end(); ++it) {
+
+					const auto index = *it;
+					const auto point = input.point(index);	
+
+					// Be careful with projection. May bug!
+					const auto projected_point = ground.projection(point);
+					projected[static_cast<int>(index)] = Point_2(projected_point.x(), projected_point.y()); // here I assume that Z coordinate = 0!
+
+					++number_of_projected_points;
+				}
+				
 				assert(number_of_projected_points == static_cast<int>(projected.size()));
 				return number_of_projected_points;
 			}

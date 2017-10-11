@@ -444,7 +444,7 @@ namespace CGAL {
 			}
 
 			template<class Segments>
-			void export_segments_as_obj(const std::string &name, const Segments &segments, const std::string &) {
+			void export_segments_as_obj(const std::string &name, const Segments &segments, const std::string & /* default_path */) {
 
 				clear();
 				for (size_t i = 0; i < segments.size(); ++i) {
@@ -462,7 +462,7 @@ namespace CGAL {
 			}
 
 			template<class Projected_points>
-			void export_projected_points_as_xyz(const std::string &name, const Projected_points &projected, const std::string &) {
+			void export_projected_points_as_xyz(const std::string &name, const Projected_points &projected, const std::string & /* default_path */) {
 				
 				clear();
 				for (typename Projected_points::const_iterator it = projected.begin(); it != projected.end(); ++it)

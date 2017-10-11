@@ -62,7 +62,7 @@ namespace CGAL {
 		class My_vertex_info {
 
 		public:
-			Label label;
+			Label label = Label::CLUTTER;
 			CGAL::Color color = CGAL::Color(0, 0, 0);
 		};
 

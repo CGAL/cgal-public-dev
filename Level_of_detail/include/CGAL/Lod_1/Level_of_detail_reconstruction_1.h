@@ -61,7 +61,8 @@ namespace CGAL {
     		m_facet_colors(facet_colors), 
     		m_index_counter(0), 
     		m_ground_set(false), 
-    		m_builder_type(Builder_type::LOD1) { }
+    		m_builder_type(Builder_type::LOD1),
+    		m_use_boundaries(true) { }
 
 			void operator()(HDS &hds) {
 
@@ -92,6 +93,10 @@ namespace CGAL {
 				m_ground_set = true;
 			}
 
+			void use_boundaries(const bool new_state) {
+				m_use_boundaries = new_state;
+			}
+
 		private:
 			const Build_type m_build_type;
 			const CDT 		 &m_cdt;
@@ -105,6 +110,7 @@ namespace CGAL {
 			
 			bool m_ground_set;
 			Builder_type m_builder_type;
+			bool m_use_boundaries;
 			
 			void build_lod0(Builder &builder) {
 				assert(m_build_type == Build_type::CDT_AND_BUILDINGS);
@@ -140,11 +146,11 @@ namespace CGAL {
 				switch (m_build_type) {
 
 					case Build_type::TEST:
-						build_test_data(builder);
+						build_test_data_lod1(builder);
 						break;
 
 					case Build_type::CDT_AND_BUILDINGS:
-						build_from_cdt_and_buildings(builder);
+						build_from_cdt_and_buildings_lod1(builder);
 						break;
 
 					default:
@@ -153,7 +159,7 @@ namespace CGAL {
 				}
 			}
 
-			void build_test_data(Builder &builder) {
+			void build_test_data_lod1(Builder &builder) {
 
 				const size_t expected_num_vertices = 16;
 				const size_t expected_num_faces    = 5;
@@ -235,10 +241,10 @@ namespace CGAL {
 				return Color(r, g, b);
 			}
 
-			void build_from_cdt_and_buildings(Builder &builder) {
+			void build_from_cdt_and_buildings_lod1(Builder &builder) {
 
-				const size_t expected_num_vertices = estimate_number_of_vertices();
-				const size_t expected_num_faces    = estimate_number_of_faces();
+				const size_t expected_num_vertices = estimate_number_of_vertices_lod1();
+				const size_t expected_num_faces    = estimate_number_of_faces_lod1();
 
 
 				// Start surface building.
@@ -250,7 +256,7 @@ namespace CGAL {
 				for (Building_iterator bit = m_buildings.begin(); bit != m_buildings.end(); ++bit) {
 				
 					const auto &building = (*bit).second;
-					add_new_building(building, builder);
+					add_new_building_lod1(building, builder);
 				}
 
 
@@ -264,16 +270,6 @@ namespace CGAL {
 			}
 
 			// Improve this function.
-			size_t estimate_number_of_vertices() {
-				return m_buildings.size() * 4 * 2 + 4;
-			}
-
-			// Improve this function.
-			size_t estimate_number_of_faces() {
-				return m_buildings.size() * 6 + 1;
-			}
-
-			// Improve this function.
 			size_t estimate_number_of_vertices_lod0() {
 				return m_buildings.size() * 4 + 4;
 			}
@@ -283,25 +279,14 @@ namespace CGAL {
 				return m_buildings.size() + 1;
 			}
 
-			template<class BuildingTmp>
-			void add_new_building(const BuildingTmp &building, Builder &builder) {
-				
-				const auto &boundaries = building.boundaries;
-				const size_t num_boundaries = boundaries.size();
+			// Improve this function.
+			size_t estimate_number_of_vertices_lod1() {
+				return m_buildings.size() * 4 * 2 + 4;
+			}
 
-				if (num_boundaries == 0) return;
-
-				if (num_boundaries == 1) {
-					
-					add_building_structure_from_one_boundary(building, builder);
-					return;
-				}
-
-				if (num_boundaries > 1) {
-
-					add_building_structure_from_multiple_boundaries(building, builder);
-					return;
-				}
+			// Improve this function.
+			size_t estimate_number_of_faces_lod1() {
+				return m_buildings.size() * 6 + 1;
 			}
 
 			template<class BuildingTmp>
@@ -309,8 +294,6 @@ namespace CGAL {
 				
 				const auto &boundaries = building.boundaries;
 				const size_t num_boundaries = boundaries.size();
-
-				if (num_boundaries == 0) return;
 
 				if (num_boundaries == 1) {
 					
@@ -323,29 +306,83 @@ namespace CGAL {
 					add_building_structure_from_multiple_boundaries_lod0(building, builder);
 					return;
 				}
+
+				if (num_boundaries == 0 && !building.faces.empty() && !m_use_boundaries) {
+
+					add_building_structure_from_one_boundary_lod0(building, builder);
+					return;
+				}
+
+				if (num_boundaries == 0) return;
 			}
 
 			template<class BuildingTmp>
-			void add_building_structure_from_one_boundary(const BuildingTmp &building, Builder &builder) {
+			void add_new_building_lod1(const BuildingTmp &building, Builder &builder) {
+				
+				const auto &boundaries = building.boundaries;
+				const size_t num_boundaries = boundaries.size();
 
-				const Color color = building.color;
-				const FT height   = building.height;
+				if (num_boundaries == 1) {
+					
+					add_building_structure_from_one_boundary_lod1(building, builder);
+					return;
+				}
 
-				const auto &boundary = building.boundaries[0];
+				if (num_boundaries > 1) {
 
-				add_horizontal_boundary(boundary, color, FT(0) , builder); // floor
-				add_horizontal_boundary(boundary, color, height, builder); // roof
+					add_building_structure_from_multiple_boundaries_lod1(building, builder);
+					return;
+				}
 
-				add_walls(boundary, color, FT(0), height, builder); // walls
+				if (num_boundaries == 0 && !building.faces.empty() && !m_use_boundaries) {
+
+					add_building_structure_from_one_boundary_lod1(building, builder);
+					return;
+				}
+
+				if (num_boundaries == 0) return;
 			}
 
 			template<class BuildingTmp>
 			void add_building_structure_from_one_boundary_lod0(const BuildingTmp &building, Builder &builder) {
 
 				const Color color = building.color;
-				const auto &boundary = building.boundaries[0];
+				if (m_use_boundaries) {
 
-				add_horizontal_boundary(boundary, color, FT(0), builder); // floor
+					const auto &boundary = building.boundaries[0];
+					add_horizontal_boundary(boundary, color, FT(0), builder); // floor
+
+				} else {
+
+					const auto &faces = building.faces;
+					add_horizontal_triangulation(faces, color, FT(0), builder); // floor
+				}
+			}
+
+			template<class BuildingTmp>
+			void add_building_structure_from_one_boundary_lod1(const BuildingTmp &building, Builder &builder) {
+
+				const FT height   = building.height;
+				const Color color = building.color;
+
+				if (m_use_boundaries) {
+	
+					const auto &boundary = building.boundaries[0];
+
+					add_horizontal_boundary(boundary, color, FT(0) , builder); // floor
+					add_horizontal_boundary(boundary, color, height, builder); // roof
+
+					add_walls_from_boundary(boundary, color, FT(0), height, builder); // walls
+
+				} else {
+
+					const auto &faces = building.faces;
+
+					add_horizontal_triangulation(faces, color, FT(0) , builder); // floor
+					add_horizontal_triangulation(faces, color, height, builder); // roof
+
+					add_walls_from_triangles(faces, color, FT(0), height, builder); // walls
+				}
 			}
 
 			template<class BoundaryTmp>
@@ -374,7 +411,16 @@ namespace CGAL {
 			}
 
 			template<class BuildingTmp>
-			void add_building_structure_from_multiple_boundaries(const BuildingTmp &building, Builder &builder) {
+			void add_building_structure_from_multiple_boundaries_lod0(const BuildingTmp &building, Builder &builder) {
+
+				const Color color = building.color;
+				const auto &faces = building.faces;
+
+				add_horizontal_triangulation(faces, color, FT(0), builder); // floor
+			}
+
+			template<class BuildingTmp>
+			void add_building_structure_from_multiple_boundaries_lod1(const BuildingTmp &building, Builder &builder) {
 
 				const Color color = building.color;
 				const FT height   = building.height;
@@ -385,21 +431,16 @@ namespace CGAL {
 				add_horizontal_triangulation(faces, color, height, builder); // roof
 
 				// Add walls.
-				const size_t num_boundaries = building.boundaries.size();
-				for (size_t i = 0; i < num_boundaries; ++i) {
+				if (m_use_boundaries) {
 
-					const auto &boundary = building.boundaries[i];
-					add_walls(boundary, color, FT(0), height, builder);		
-				}
-			}
+					const size_t num_boundaries = building.boundaries.size();
+					for (size_t i = 0; i < num_boundaries; ++i) {
 
-			template<class BuildingTmp>
-			void add_building_structure_from_multiple_boundaries_lod0(const BuildingTmp &building, Builder &builder) {
+						const auto &boundary = building.boundaries[i];
+						add_walls_from_boundary(boundary, color, FT(0), height, builder);		
+					}
 
-				const Color color = building.color;
-				const auto &faces = building.faces;
-
-				add_horizontal_triangulation(faces, color, FT(0), builder); // floor
+				} else add_walls_from_triangles(faces, color, FT(0), height, builder);
 			}
 
 			template<class FaceHandlesTmp>
@@ -431,18 +472,33 @@ namespace CGAL {
 			}
 
 			template<class BoundaryTmp>
-			void add_walls(const BoundaryTmp &boundary, const Color &color, const FT height_floor, const FT height_roof, Builder &builder) {
+			void add_walls_from_boundary(const BoundaryTmp &boundary, const Color &color, const FT height_floor, const FT height_roof, Builder &builder) {
 
 				const size_t num_vertices = boundary.size();
 				for (size_t i = 0; i < num_vertices; ++i) {
 
 					const size_t ip = (i + 1) % num_vertices;
-					add_wall(boundary[i], boundary[ip], color, height_floor, height_roof, builder);
+					add_quadrilateral_wall(boundary[i], boundary[ip], color, height_floor, height_roof, builder);
+				}
+			}
+
+			template<class FaceHandlesTmp>
+			void add_walls_from_triangles(const FaceHandlesTmp &fhs, const Color &color, const FT height_floor, const FT height_roof, Builder &builder) {
+
+				const size_t num_face_handles = fhs.size();
+				for (size_t i = 0; i < num_face_handles; ++i) {
+					
+					const auto &fh = fhs[i];
+					for (size_t j = 0; j < 3; ++j) {
+
+						const size_t jp = (j + 1) % 3;
+						add_quadrilateral_wall(fh->vertex(j), fh->vertex(jp), color, height_floor, height_roof, builder);		
+					}
 				}
 			}
 
 			template<class VertexHandleTmp>
-			void add_wall(const VertexHandleTmp &vi, const VertexHandleTmp &vj, const Color &color, const FT height_floor, const FT height_roof, Builder &builder) {
+			void add_quadrilateral_wall(const VertexHandleTmp &vi, const VertexHandleTmp &vj, const Color &color, const FT height_floor, const FT height_roof, Builder &builder) {
 
 				const auto &va = vi->point();
 				const auto &vb = vj->point();
@@ -518,13 +574,20 @@ namespace CGAL {
 			using Point  = typename Mesh_builder::Point;
 			using Ground = typename Mesh_builder::Ground;
 
+			Level_of_detail_reconstruction_1() : m_use_boundaries(true) { }
+
+			void use_boundaries(const bool new_state) {
+				m_use_boundaries = new_state;
+			}
+
 			void reconstruct_lod0(const CDT &cdt, const Buildings &buildings, const Ground &ground, Mesh &mesh, Mesh_facet_colors &mesh_facet_colors) const {
 
 				Mesh_builder mesh_builder(cdt, buildings, mesh_facet_colors);
 				
 				mesh_builder.set_ground(ground);
-				mesh_builder.set_builder_type(Mesh_builder::Builder_type::LOD0);
+				mesh_builder.use_boundaries(m_use_boundaries);
 
+				mesh_builder.set_builder_type(Mesh_builder::Builder_type::LOD0);
 				mesh.delegate(mesh_builder);
 			}
 
@@ -533,10 +596,14 @@ namespace CGAL {
 				Mesh_builder mesh_builder(cdt, buildings, mesh_facet_colors);
 
 				mesh_builder.set_ground(ground);
-				mesh_builder.set_builder_type(Mesh_builder::Builder_type::LOD1);
+				mesh_builder.use_boundaries(m_use_boundaries);
 
+				mesh_builder.set_builder_type(Mesh_builder::Builder_type::LOD1);
 				mesh.delegate(mesh_builder);
 			}
+
+		private:
+			bool m_use_boundaries;
 		};
 	}
 }

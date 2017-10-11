@@ -15,6 +15,7 @@
 #include <CGAL/Selector/Level_of_detail_selection_strategy.h>
 #include <CGAL/Regularizer/Level_of_detail_regularizer.h>
 #include <CGAL/Projector/Level_of_detail_projector.h>
+#include <CGAL/Utils/Level_of_detail_utils.h>
 #include <CGAL/Structuring_2/Level_of_detail_structuring_2.h>
 #include <CGAL/Visibility_2/Level_of_detail_visibility_2.h>
 #include <CGAL/Lod_0/Level_of_detail_reconstruction_0.h>

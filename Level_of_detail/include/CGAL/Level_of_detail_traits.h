@@ -20,6 +20,7 @@
 #include <CGAL/Selector/Level_of_detail_selection_strategy.h>
 #include <CGAL/Regularizer/Level_of_detail_regularizer.h>
 #include <CGAL/Projector/Level_of_detail_projector.h>
+#include <CGAL/Utils/Level_of_detail_utils.h>
 #include <CGAL/Structuring_2/Level_of_detail_structuring_2.h>
 #include <CGAL/Visibility_2/Level_of_detail_visibility_2.h>
 #include <CGAL/Lod_0/Level_of_detail_reconstruction_0.h>
@@ -53,8 +54,8 @@ namespace CGAL {
 			typedef std::map<int, std::vector<int> >          				   		   			  Planes;
 			typedef CGAL::LOD::Level_of_detail_vertical_regularizer<Kernel, Container_3D, Planes> Vertical_regularizer;
 			
-			typedef std::map<int, typename Kernel::Point_2>           	    				  		 			Projected_points;
-			typedef CGAL::LOD::Level_of_detail_simple_projector<Kernel, Container_3D, Planes, Projected_points> Ground_projector;
+			typedef std::map<int, typename Kernel::Point_2>           	    				  		 	Projected_points;
+			typedef CGAL::LOD::Level_of_detail_simple_projector<Kernel, Container_3D, Projected_points> Ground_projector;
 
 			typedef CGAL::LOD::My_vertex_info<Structured_label>  My_vertex_info; 
 	    	typedef CGAL::LOD::My_face_info<typename Kernel::FT> My_face_info;
@@ -67,6 +68,8 @@ namespace CGAL {
 			typedef CGAL::Triangulation_data_structure_2<VB, FB> 			  	 TDS;
 			typedef CGAL::Constrained_Delaunay_triangulation_2<Kernel, TDS, EPT> CDT;
 
+			typedef CGAL::LOD::Level_of_detail_utils<Kernel, Container_3D, CDT> Utils;
+
 			typedef int Label; 
 			typedef std::vector< std::pair<typename Kernel::Point_2, Label> > Container_2D;
 
@@ -78,10 +81,10 @@ namespace CGAL {
 
 			typedef CGAL::Polyhedron_3<Kernel> Mesh;
 
-			typedef CGAL::LOD::Level_of_detail_reconstruction_0<Kernel, CDT> 				  Lod_0;
-			typedef CGAL::LOD::Level_of_detail_reconstruction_1<Kernel, CDT, Buildings, Mesh> Lod_1;
+			typedef CGAL::LOD::Level_of_detail_reconstruction_0<Kernel, CDT> 				  Graph_cut;
+			typedef CGAL::LOD::Level_of_detail_reconstruction_1<Kernel, CDT, Buildings, Mesh> Lods;
 
-			typedef typename Lod_1::Mesh_facet_colors Mesh_facet_colors;
+			typedef typename Lods::Mesh_facet_colors Mesh_facet_colors;
 
 			typedef CGAL::LOD::Level_of_detail_building_splitter_2<Kernel, CDT> Building_splitter;
 			typedef CGAL::LOD::Level_of_detail_building_outliner_2<Kernel, CDT> Building_outliner;

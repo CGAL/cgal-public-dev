@@ -36,6 +36,11 @@ TEST_F(LOD_BaseTest, Compiles) {
 	// Empty test.
 }
 
-TEST_F(LOD_BaseTest, RunsCreateLodZeroFunction) {
-	lodBase.create_lods();
+/*
+TEST_F(LOD_BaseTest, RunsCreateLodsFirstVersionFunction) {
+	lodBase.create_lods_a();
+} */
+
+TEST_F(LOD_BaseTest, RunsCreateLodsSecondVersionFunction) {
+	lodBase.create_lods_b();
 }

@@ -48,3 +48,7 @@ TODO AND OTHER:
 6. When cliking anywhere away from the classification pop-in window, the focus disappears and we have to start all over again.
 7. p10 data set has the same point twice after running region growing.
 8. Segmentation fault when loading the p10 class_trial.ply and changing points+normals to the next mode in the master/Polyhedron_demo.
+9. Move the function compute_bounding_box() to the utils class later.
+10. Outliner algorithm is very sensitive to noise and incorrect input data! Weak link. Second weak link is intersection between structured segments and fitting lines to the input data coming from shape detection.
+11. Might be a bug in the graph cut since after applying it in the short pipeline I have many tiny triangles, which are in and next to them other tiny triangles, which are out?
+12. Short pipeline is easier to set up, requires fewer parameters, much slower to run and its robustness depends directly on the classification result. It is also senstive to the boundaries (wether to compute them or not in the outliner).
