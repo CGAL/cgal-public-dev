@@ -187,7 +187,7 @@ compute_next_destination(const DEC_it start_point,
             << " time: " << mc.current_time() << std::endl;
   std::cout << "new destination at : " << &*destination.first
             << " p: " << destination.first->point()
-            << "loc: " << destination.first->location().first
+            << " loc: " << destination.first->location().first
             << " bc: [" << destination.first->location().second[0] << " "
                         << destination.first->location().second[1] << " "
                         << destination.first->location().second[2] << "] "

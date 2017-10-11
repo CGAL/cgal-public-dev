@@ -158,6 +158,35 @@ void motorcycle_club_3(Motorcycle_container& motorcycles)
                                                         CP::direction = Vector_2(-1, 1.))));
 }
 
+void motorcycle_club_4(Motorcycle_container& motorcycles)
+{
+  // Some configuration that is nastier than it looks
+
+  motorcycles.push_back(Motorcycle_ptr(new Motorcycle_U(CP::source = Point_2(0., 0.1),
+                                                        CP::destination = Point_2(0.4, 4.95))));
+
+  motorcycles.push_back(Motorcycle_ptr(new Motorcycle_U(CP::source = Point_2(0., 4.95),
+                                                        CP::destination = Point_2(0.5, 4.95))));
+
+  motorcycles.push_back(Motorcycle_ptr(new Motorcycle_U(CP::source = Point_2(0.4, 0.08),
+                                                        CP::direction = Vector_2(0, 1.))));
+
+  motorcycles.push_back(Motorcycle_ptr(new Motorcycle_U(CP::source = Point_2(0.25, 0.2),
+                                                        CP::destination = Point_2(0.0, 0.2))));
+
+  motorcycles.push_back(Motorcycle_ptr(new Motorcycle_U(CP::source = Point_2(0.5, 0.15),
+                                                        CP::destination = Point_2(0.3, 0.15))));
+
+//  motorcycles.push_back(Motorcycle_ptr(new Motorcycle_U(CP::source = Point_2(1., 0.),
+//                                                        CP::destination = Point_2(-1, 1.))));
+}
+
+void motorcycle_club_5(Motorcycle_container& motorcycles)
+{
+  // This motorcycle club is all about walking the edge... and the vertices!
+
+}
+
 void random_motorcycles_in_triangle(Motorcycle_container& motorcycles,
                                     const Triangle_2& triangle,
                                     CGAL::Random& rnd)
@@ -237,7 +266,7 @@ int main()
   std::cerr.precision(18);
 
 #ifdef CGAL_MOTORCYCLE_GRAPH_USE_FIXED_SEEDS
-  CGAL::Random rnd(1506698979);
+  CGAL::Random rnd(1507644747);
 #else
   CGAL::Random rnd(CGAL::get_default_random());
 #endif
@@ -256,13 +285,11 @@ int main()
     is_loop_infinite = false;
 
     Motorcycle_container motorcycles;
-    motorcycle_club_1(motorcycles, pm);
-//    motorcycle_club_2(motorcycles);
-//    motorcycle_club_3(motorcycles);
 
-//    random_motorcycles_on_segment(motorcycles, rnd);
-//    random_motorcycles_in_triangle(motorcycles, rnd);
-//    random_motorcycles_in_square(motorcycles, rnd);
+    motorcycle_club_1(motorcycles, pm);
+    motorcycle_club_2(motorcycles);
+//    motorcycle_club_3(motorcycles);
+//    motorcycle_club_4(motorcycles);
 
 //    random_motorcycles_on_face(motorcycles, pm, *(faces(pm).begin()), rnd);
 //    random_motorcycles_on_face(motorcycles, pm, *(++(++(++(++(++faces(pm).begin()))))), rnd);

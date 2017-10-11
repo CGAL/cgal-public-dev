@@ -1,4 +1,4 @@
-﻿// Copyright (c) 2017 GeometryFactory (France).
+// Copyright (c) 2017 GeometryFactory (France).
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
@@ -83,6 +83,7 @@ public:
   // The following function is not actually 'const' but the members it modifies
   // are mutable.
   std::pair<iterator, bool> add_motorcycle(const std::size_t id, const FT time) const;
+  VMC_right_cit earliest_motorcycle() const;
 
   // second bool indicates whether we found a motorcycle with id 'id' or not
   std::pair<VMC_left_it, bool> find_motorcycle(const std::size_t id) const;
@@ -135,7 +136,7 @@ public:
   friend std::ostream& operator<<(std::ostream& out, const Self& dec)
   {
     out << "Point: (" << dec.point() << ") blocked: " << dec.is_blocked() << std::endl;
-    out << "  Location -- face: " << dec.location().first << " barycentric coordinates: { "
+    out << "  Location: " << dec.location().first << " barycentric coordinates: { "
         << dec.location().second[0] << "; " << dec.location().second[1]
         << "; " << dec.location().second[2] << "}" << std::endl;
     out << "  Visiting motorcycles: " << std::endl;
@@ -174,6 +175,17 @@ add_motorcycle(const std::size_t id, const FT time) const
 {
   std::cout << " Point " << this << " is visited by motorcycle #" << id << " at time: " << time << std::endl;
   return visiting_mcs.insert(value_type(id, time));
+}
+
+template<typename MotorcycleGraphTraits>
+typename Dictionary_entry<MotorcycleGraphTraits>::VMC_right_cit
+Dictionary_entry<MotorcycleGraphTraits>::
+earliest_motorcycle() const
+{
+  if(visiting_mcs.empty())
+    std::cerr << "Warning: 'earliest_motorcycle' is returning end()" << std::endl;
+
+  return visiting_mcs.right.begin();
 }
 
 template<typename MotorcycleGraphTraits>
@@ -267,6 +279,10 @@ has_simultaneous_collision() const
   const FT first_time = first_mc_it->first;
   const FT second_time = second_mc_it->first;
   CGAL_assertion(first_time <= second_time);
+
+#ifdef CGAL_MOTORCYCLE_GRAPH_VERBOSE
+  std::cout << "closest motorcycles at times: " << first_time << " and " << second_time << std::endl;
+#endif
 
 #ifdef CGAL_MOTORCYCLE_GRAPH_ROBUSTNESS_CODE
   // Add a little bit of tolerance
@@ -412,6 +428,8 @@ std::pair<typename Dictionary<MotorcycleGraphTraits>::DEC_it, bool>
 Dictionary<MotorcycleGraphTraits>::
 insert(const Face_location& loc, const Triangle_mesh& mesh)
 {
+  // @fixme, send 'mesh' to the point constructor and only build the point
+  // if the insertion is successful
   Point p = CGAL::Polygon_mesh_processing::location_to_point(loc, mesh);
   return insert(loc, p);
 }

@@ -162,7 +162,7 @@ public:
   const DEC_it closest_target() const;
 
   void set_destination_finality(bool b) { is_dest_final = b; }
-  const bool& is_destination_final() const { return is_dest_final; }
+  bool is_destination_final() const { return is_dest_final; }
 
   const FT speed() const { return spee; }
 
@@ -194,7 +194,6 @@ public:
   bool has_target_at_time(const DEC_it e, const FT visiting_time) const;
   bool has_reached_blocked_point() const;
   bool has_reached_simultaneous_collision_point() const;
-  bool is_motorcycle_destination_final() const;
   void remove_closest_target_from_targets();
   FT time_at_closest_target() const;
 
@@ -204,18 +203,20 @@ public:
     out << "Motorcycle #" << mc.id() << " (crashed? " << mc.is_crashed() << ") "
         << "going from source: (" << mc.source()->point() << ")"
         << " to destination: (" << mc.destination()->point() << ")" << std::endl
-        << "  currently at position: (" << mc.current_position()->point() << ")" << std::endl
+        << "  currently at position: (" << mc.current_position()->point() << ")"
+        << "  at time: " << mc.current_time() << std::endl
         << "  with targets: " << std::endl;
     typename Target_point_container::const_iterator tpc_it = mc.targets().begin();
     typename Target_point_container::const_iterator end = mc.targets().end();
     for(; tpc_it!=end; ++tpc_it)
     {
       out << "\t " << &*(tpc_it->first)
-          << " Location face: " << tpc_it->first->location().first
+          << "] P: (" << tpc_it->first->point() << ") T: " << tpc_it->second
+          << " B: " << tpc_it->first->is_blocked()
+          << " L: " << tpc_it->first->location().first
           << " bc: [" << tpc_it->first->location().second[0] << " "
                      << tpc_it->first->location().second[1] << " "
-                     << tpc_it->first->location().second[2]
-          << "] Point: (" << tpc_it->first->point() << ") time: " << tpc_it->second << std::endl;
+                     << tpc_it->first->location().second[2]  << std::endl;
     }
 
     return out;
@@ -355,14 +356,6 @@ Motorcycle_impl_base<MotorcycleGraphTraits>::
 has_reached_simultaneous_collision_point() const
 {
   return conf->has_simultaneous_collision();
-}
-
-template<typename MotorcycleGraphTraits>
-bool
-Motorcycle_impl_base<MotorcycleGraphTraits>::
-is_motorcycle_destination_final() const
-{
-  return is_dest_final;
 }
 
 template<typename MotorcycleGraphTraits>

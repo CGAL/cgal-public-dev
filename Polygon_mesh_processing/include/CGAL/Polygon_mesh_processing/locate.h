@@ -209,6 +209,30 @@ snap_location_to_border(typename Locate_types<TriangleMesh>::Face_location& loc,
   return snap_coordinates_to_border<TriangleMesh>(loc.second, tolerance);
 }
 
+// given two locations, return the highest common location
+#if 0
+template<typename TriangleMesh>
+boost::optional<typename boost::graph_traits<TriangleMesh>::descriptor_variant>
+find_common_entity(typename Locate_types<TriangleMesh>::Face_location& first_loc,
+                   typename Locate_types<TriangleMesh>::Face_location& second_loc,
+                   const TriangleMesh& tm)
+{
+  typedef typename boost::graph_traits<TriangleMesh>::vertex_descriptor    vertex_descriptor;
+  typedef typename boost::graph_traits<TriangleMesh>::halfedge_descriptor  halfedge_descriptor;
+  typedef typename boost::graph_traits<TriangleMesh>::face_descriptor      face_descriptor;
+
+  typedef typename boost::graph_traits<TriangleMesh>::descriptor_variant   descriptor_variant;
+
+  if(first_loc.first != second_loc.first)
+    return;
+
+  descriptor_variant first_dv = get_descriptor_from_location(first_loc, tm);
+  descriptor_variant second_dv = get_descriptor_from_location(second_loc, tm);
+
+  // @ todo
+}
+#endif
+
 } // namespace internal
 
 // Point to barycentric coordinates
@@ -307,6 +331,9 @@ int halfedge_index_in_face(typename boost::graph_traits<TriangleMesh>::halfedge_
 {
   typedef typename boost::graph_traits<TriangleMesh>::halfedge_descriptor halfedge_descriptor;
   typedef typename boost::graph_traits<TriangleMesh>::face_descriptor     face_descriptor;
+
+  CGAL_precondition(he != boost::graph_traits<TriangleMesh>::null_halfedge());
+  CGAL_precondition(!is_border(he, tm));
 
   face_descriptor f = face(he, tm);
   halfedge_descriptor start = halfedge(f, tm);
@@ -413,6 +440,84 @@ location_to_point(const typename internal::Locate_types<TriangleMesh>::Face_loca
                   const TriangleMesh& tm)
 {
   return location_to_point(loc, tm, parameters::all_default());
+}
+
+/// \brief Given a `Face_location`, that is an ordered pair composed of a
+///        `boost::graph_traits<TriangleMesh>::face_descriptor` and an array
+///        of barycentric coordinates, and a second face adjacent to the first,
+///        returns whether the location is on the vertex `vd` or not.
+///
+/// \details If `tm` is the input graph and given the pair (`f`, `bc`)
+///          such that `bc` is `(w0, w1, w2)`, the correspondance with the weights in `bc`
+///          and the vertices of the face `f` is the following:
+///          - `w0 = source(halfedge(f, tm), tm)`
+///          - `w1 = target(halfedge(f, tm), tm)`
+///          - `w2 = target(next(halfedge(f, tm), tm), tm)`
+///
+/// \param loc the location
+/// \param vd the vertex
+/// \param tm the triangle mesh
+///
+template <typename TriangleMesh>
+bool
+is_on_vertex(const typename internal::Locate_types<TriangleMesh>::Face_location& loc,
+             const typename boost::graph_traits<TriangleMesh>::vertex_descriptor vd,
+             const TriangleMesh& tm)
+{
+  typedef typename boost::graph_traits<TriangleMesh>::vertex_descriptor     vertex_descriptor;
+  typedef typename internal::Locate_types<TriangleMesh>::descriptor_variant descriptor_variant;
+
+  descriptor_variant dv = get_descriptor_from_location(loc, tm);
+
+  if(dv.which() == 0)
+  {
+    vertex_descriptor loc_vd = boost::get<vertex_descriptor>(dv);
+    return (vd == loc_vd);
+  }
+
+  return false;
+}
+
+/// \brief Given a `Face_location`, that is an ordered pair composed of a
+///        `boost::graph_traits<TriangleMesh>::face_descriptor` and an array
+///        of barycentric coordinates, and a second face adjacent to the first,
+///        returns whether the location is on the halfedge `hd` or not.
+///
+/// \details If `tm` is the input graph and given the pair (`f`, `bc`)
+///          such that `bc` is `(w0, w1, w2)`, the correspondance with the weights in `bc`
+///          and the vertices of the face `f` is the following:
+///          - `w0 = source(halfedge(f, tm), tm)`
+///          - `w1 = target(halfedge(f, tm), tm)`
+///          - `w2 = target(next(halfedge(f, tm), tm), tm)`
+///
+/// \param loc the location
+/// \param hd the halfedge
+/// \param tm the triangle mesh
+///
+template <typename TriangleMesh>
+bool
+is_on_halfedge(const typename internal::Locate_types<TriangleMesh>::Face_location& loc,
+               const typename boost::graph_traits<TriangleMesh>::halfedge_descriptor hd,
+               const TriangleMesh& tm)
+{
+  typedef typename boost::graph_traits<TriangleMesh>::vertex_descriptor     vertex_descriptor;
+  typedef typename boost::graph_traits<TriangleMesh>::halfedge_descriptor   halfedge_descriptor;
+  typedef typename internal::Locate_types<TriangleMesh>::descriptor_variant descriptor_variant;
+
+  descriptor_variant dv = get_descriptor_from_location(loc, tm);
+
+  if(dv.which() == 0)
+  {
+    vertex_descriptor loc_vd = boost::get<vertex_descriptor>(dv);
+    return (loc_vd == source(hd, tm) || loc_vd == target(hd, tm));
+  }
+  else if(dv.which() == 1)
+  {
+    halfedge_descriptor loc_hd = boost::get<halfedge_descriptor>(dv);
+    return (loc_hd == hd);
+  }
+
+  return false;
 }
 
 /// \brief Given a `Face_location`, that is an ordered pair composed of a
