@@ -40,12 +40,15 @@ public:
 	using TDS = CGAL::Triangulation_data_structure_2<VB, FB>;
 	using CDT = CGAL::Constrained_Delaunay_triangulation_2<Traits, TDS>;
 
-	using LodVisibility = CGAL::LOD::Level_of_detail_visibility_from_classification_2<Traits, Container, CDT>;
+	using LodVisibilityWithClassification = CGAL::LOD::Level_of_detail_visibility_from_classification_2<Traits, Container, CDT>;
+	using LodVisibilityWithRayShooting    = CGAL::LOD::Level_of_detail_visibility_ray_shooting_2<Traits, Container, CDT>;
 
 	using Vertex_handle = CDT::Vertex_handle;
 	using Log = CGAL::LOD::Mylog;
 
-	LodVisibility lodVisibility;
+	LodVisibilityWithClassification lodVisibilityCL;
+	LodVisibilityWithRayShooting    lodVisibilityRS;
+
 	CDT cdt; Container input;
 
 	LOD_VisibilityTest() {
@@ -122,19 +125,27 @@ TEST_F(LOD_VisibilityTest, Compiles) {
 
 TEST_F(LOD_VisibilityTest, SavesVisibility) {
 
-	lodVisibility.compute(input, cdt);
+	lodVisibilityCL.compute(input, cdt);
 
 	Log log;
-	log.save_visibility_eps(cdt);
+	log.save_visibility_eps(cdt, "tmp/visibility_classification");
 }
 
 TEST_F(LOD_VisibilityTest, VerifiesLabels) {
 
-	lodVisibility.compute(input, cdt);
+	lodVisibilityCL.compute(input, cdt);
 
 	auto face = cdt.finite_faces_begin();
 
 	++face; ++face;
 	ASSERT_LT((++face)->info().in, 0.5);
 	ASSERT_THAT((++face)->info().in, Eq(0.5));
+}
+
+TEST_F(LOD_VisibilityTest, WithRayShooting) {
+
+	lodVisibilityRS.compute(input, cdt);
+
+	Log log;
+	log.save_visibility_eps(cdt, "tmp/visibility_ray_shooting");
 }

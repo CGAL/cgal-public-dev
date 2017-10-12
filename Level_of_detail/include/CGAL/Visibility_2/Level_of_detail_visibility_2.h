@@ -48,8 +48,103 @@ namespace CGAL {
 			typedef ContainerInput Container;
 			typedef CDTInput 	   CDT;
 			
+			virtual void save_info(const bool) = 0;
 			virtual int compute(const Container &, CDT &) const = 0;
+
 			virtual ~Level_of_detail_visibility_2() { }
+		};
+
+		// This is the ray shooting based classification algorithm.
+		template<class KernelTraits, class ContainerInput, class CDTInput>
+		class Level_of_detail_visibility_ray_shooting_2 : public Level_of_detail_visibility_2<KernelTraits, ContainerInput, CDTInput> {
+
+		public:
+			// Typedefs.
+			typedef Level_of_detail_visibility_2<KernelTraits, ContainerInput, CDTInput> Base;
+			
+			typedef typename Base::Kernel 	 Kernel;
+			typedef typename Base::FT     	 FT;
+			typedef typename Kernel::Point_2 Point_2;
+
+			typedef typename Base::Container Container;			
+			typedef typename Base::CDT 		 CDT;
+
+			typedef typename CDT::Vertex_handle Vertex_handle;
+			typedef typename CDT::Face_handle   Face_handle;
+
+			// Extra.
+			using Log = CGAL::LOD::Mylog;
+
+
+			Level_of_detail_visibility_ray_shooting_2() : m_save_info(true) { }
+
+			void save_info(const bool new_state) override {
+				m_save_info = new_state;
+			}
+
+			int compute(const Container &, CDT &cdt) const override {
+
+				Log log;
+
+				// (1) Compute bounding box.
+				std::vector<Point_2> bbox;
+				compute_bounding_box(cdt, bbox, log);
+
+				if (m_save_info) log.out << "(1) Bounding box is computed!" << std::endl;
+
+				// (2) ...
+				// to be implemented
+
+				if (m_save_info) log.save("tmp/visibility_ray_shooting");
+
+				return 0;
+			}
+
+		private:
+			bool m_save_info;
+
+			void compute_bounding_box(const CDT &cdt, std::vector<Point_2> &bbox, Log &log) const {
+
+				bbox.clear();
+				bbox.resize(4);
+
+				const FT big_value = FT(1000000); // change it
+
+				FT minx =  big_value, miny =  big_value;
+				FT maxx = -big_value, maxy = -big_value;
+
+				for (typename CDT::Finite_vertices_iterator vit = cdt.finite_vertices_begin(); vit != cdt.finite_vertices_end(); ++vit) {
+					const Point_2 &p = vit->point();
+
+					const FT x = p.x();
+					const FT y = p.y();
+
+					minx = CGAL::min(minx, x);
+					miny = CGAL::min(miny, y);
+
+					maxx = CGAL::max(maxx, x);
+					maxy = CGAL::max(maxy, y);
+				}
+
+				bbox[0] = Point_2(minx, miny);
+				bbox[1] = Point_2(maxx, miny);
+				bbox[2] = Point_2(maxx, maxy);
+				bbox[3] = Point_2(minx, maxy);
+
+				if (m_save_info) {
+					
+					log.out << "Bounding box: ";
+					log.skip_line();
+
+					log.out << bbox[0] << "; ";
+					log.out << bbox[1] << "; ";
+					log.out << bbox[2] << "; ";
+					log.out << bbox[3] << "; ";
+
+					log.skip_line();
+					log.skip_line();
+				}
+			}
 		};
 
 		// This class works only with the xy aligned ground plane that is Plane(0, 0, 1, 0).
@@ -124,11 +219,11 @@ namespace CGAL {
 				m_method = new_method;
 			}
 
-			void save_info(const bool new_state) {
+			void save_info(const bool new_state) override {
 				m_save_info = new_state;
 			}
 
-			int compute(const Container &input, CDT &cdt) const {
+			int compute(const Container &input, CDT &cdt) const override {
 
 				const FT half = FT(1) / FT(2);
 				for (Face_iterator fit = cdt.finite_faces_begin(); fit != cdt.finite_faces_end(); ++fit) {
@@ -170,7 +265,7 @@ namespace CGAL {
 
 						log.out << "face index: " << count << " with label: " << labelName << " and visibility: " << result << std::endl;
 					}
-					log.save("tmp/visibility");
+					log.save("tmp/visibility_classification");
 				}
 
 				return static_cast<int>(cdt.number_of_faces());

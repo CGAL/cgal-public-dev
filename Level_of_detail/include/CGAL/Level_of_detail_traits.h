@@ -75,6 +75,7 @@ namespace CGAL {
 
 			typedef CGAL::LOD::Level_of_detail_structuring_2<Kernel>                                       Structuring_2;
 			typedef CGAL::LOD::Level_of_detail_visibility_from_classification_2<Kernel, Container_2D, CDT> Visibility_2;
+			// typedef CGAL::LOD::Level_of_detail_visibility_ray_shooting_2<Kernel, Container_2D, CDT> 	   Visibility_2; // maybe used later
 			
 			typedef CGAL::LOD::Building<typename Kernel::FT, typename CDT::Vertex_handle, typename CDT::Face_handle> Building;
 			typedef std::map<int, Building> Buildings;

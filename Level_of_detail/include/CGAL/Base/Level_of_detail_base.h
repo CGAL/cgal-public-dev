@@ -103,6 +103,7 @@ namespace CGAL {
 			using Point_index = typename Container_3D::Index;
 			using Face_points_map = std::map<Face_handle, std::vector<Point_index> >;
 
+			enum class Program_version { A, B };
 
 			//////////////
 			// Main class!
@@ -130,12 +131,32 @@ namespace CGAL {
 			m_clean_projected_points(true),
 			m_max_reg_angle(-FT(1)),
 			m_reject_planes(true), 
-			m_use_boundaries(true)
+			m_use_boundaries(true),
+			m_prog_version(Program_version::B)
 			{ } // Do I need to create an instance of these traits here?
 
 
 			//////////////////
 			// Main functions!
+
+			// All versions.
+			void create_lods() {
+
+				switch (m_prog_version) {
+
+					case Program_version::A:
+						create_lods_a();
+						break;
+
+					case Program_version::B:
+						create_lods_b();
+						break;
+
+					default:
+						assert(!"Wrong program version!");
+						break;
+				}
+			}
 
 			// Version a.
 			void create_lods_a() {
@@ -749,6 +770,8 @@ namespace CGAL {
 			bool m_reject_planes;
 			bool m_use_boundaries;
 
+			const Program_version m_prog_version;
+
 			
 			// Assert default values of all global parameters.
 			void assert_global_parameters() {
@@ -795,12 +818,13 @@ namespace CGAL {
 				m_reject_planes 			 = true;
 				m_structuring_resample 	 	 = true;
 				m_structuring_get_all_points = false;
-				m_clean_projected_points 	 = false;
+				m_clean_projected_points 	 = true;
 				
 				m_visibility_approach = Visibility_approach::POINT_BASED;
 				m_visibility_method   = Visibility_method::POINT_BASED_CLASSIFICATION;
 				m_roof_fitter_type 	  = Roof_fitter_type::AVG;
 
+				m_use_boundaries = true; // !!!!! - IMPORTANT!
 
 				// The most important!
 				const Main_test_data_type test_data_type = Main_test_data_type::BASIC;
@@ -843,7 +867,6 @@ namespace CGAL {
 				m_graph_cut_alpha 		 = 1.0;
 				m_graph_cut_beta 		 = 100000.0;
 				m_graph_cut_gamma 		 = 1000.0;
-				m_use_boundaries		 = true;
 			}
 
 			void set_complex_parameters() {
@@ -858,7 +881,6 @@ namespace CGAL {
 				m_graph_cut_alpha 		 = 1.0;
 				m_graph_cut_beta 		 = 100000.0;
 				m_graph_cut_gamma 		 = 1000.0;
-				m_use_boundaries		 = false;
 			}
 
 			void set_paris_parameters() {
@@ -873,7 +895,6 @@ namespace CGAL {
 				m_graph_cut_alpha 		 = 1.0;
 				m_graph_cut_beta 		 = 100000.0;
 				m_graph_cut_gamma 		 = 1000.0;
-				m_use_boundaries		 = false;
 			}
 
 			void set_p10_parameters() {
@@ -888,7 +909,6 @@ namespace CGAL {
 				m_graph_cut_alpha 		 = 1.0;
 				m_graph_cut_beta 		 = 100000.0;
 				m_graph_cut_gamma 		 = 1000.0;
-				m_use_boundaries		 = false;
 			}
 		};
 	}
