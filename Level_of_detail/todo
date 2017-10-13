@@ -11,18 +11,13 @@ TODO AND OTHER:
 7. It is maybe helpful to work building by building and create an oriented bounding box around each building, which can become the building's boundary in the worst case.
 8. Too long walls come from shape detection package if the cluster_epsilon parameter is choosen to be too large.
 9. Some walls are missing due to the precision problems when creating segments (projection of a point onto a line).
-10. Buildings with not xy aligned walls sometimes have wrongly rotated segments because the bounding box solutuon that I use to cut lines into segments does not take into account the rotation of the segment.
-11. I reject all planes that have an angle more than 10 degrees with respect to the closest vertical plane. This allows to solve some of the missclassification problems.
-12. Add a class that will remove artifacts from the given data. E.g. points that become a part of the vertical plane found by RANSAC but in reality belong to another building and/or too far away from the given plane.
-13. Should I enforce the same normals for the regularized plane?
-14. Add all non-planar points obtained by RANSAC in the clutter selection procedure.
-15. Improve the function for getting corners. Use a function to detect all cycles in the undirected graph obtained in the function create_structured_adjacency().
-16. Method for adjacency / corners is not robust when wrong planes are detected by the RANSAC. In this case, it may happen that lines that we intersect to get corners produce points which are far away from the real data set.
-17. Maybe better to pass all indices except for building boundaries to the visibility class instead of the whole input container?
-18. End points of the segments for sparse data sets create wrong visibility labels. E.g. outside triangles are labels inside, because these end points lie a bit further than end points of strucuted segments, which are shifted by LP/2 inside.
-19. Intersected segments cannot be used as input to CDT so we have to handle this issue in some way.
-20. Add one more label to the input: 1 detected as planar, 0 detected as something else. Then add a selector class to selecte points, which are detected as something else and are facade points that is building boundary. Add these points to the final structured set of points with the label CLUTTER.
-21. Actuually my reconstruction code should compute the cost function for each surface S in all graph cut iterations.
+10. I reject all planes that have an angle more than 10 degrees with respect to the closest vertical plane. This allows to solve some of the missclassification problems.
+11. Should I enforce the same normals for the regularized plane?
+12. Improve the function for getting corners. Use a function to detect all cycles in the undirected graph obtained in the function create_structured_adjacency().
+13. Method for adjacency / corners is not robust when wrong planes are detected by the RANSAC. In this case, it may happen that lines that we intersect to get corners produce points which are far away from the real data set.
+14. Maybe better to pass all indices except for building boundaries to the visibility class instead of the whole input container?
+15. Add one more label to the input: 1 detected as planar, 0 detected as something else. Then add a selector class to selecte points, which are detected as something else and are facade points that is building boundary. Add these points to the final structured set of points with the label CLUTTER.
+16. Actuually my reconstruction code should compute the cost function for each surface S in all graph cut iterations.
 
 
 // Iteration 2:
@@ -48,7 +43,6 @@ TODO AND OTHER:
 6. When cliking anywhere away from the classification pop-in window, the focus disappears and we have to start all over again.
 7. p10 data set has the same point twice after running region growing.
 8. Segmentation fault when loading the p10 class_trial.ply and changing points+normals to the next mode in the master/Polyhedron_demo.
-9. Move the function compute_bounding_box() to the utils class later.
-10. Outliner algorithm is very sensitive to noise and incorrect input data! Weak link. Second weak link is intersection between structured segments and fitting lines to the input data coming from shape detection.
-11. Might be a bug in the graph cut since after applying it in the short pipeline I have many tiny triangles, which are in and next to them other tiny triangles, which are out?
-12. Short pipeline is easier to set up, requires fewer parameters, much slower to run and its robustness depends directly on the classification result. It is also senstive to the boundaries (wether to compute them or not in the outliner).
+9. Outliner algorithm is very sensitive to noise and incorrect input data! Weak link. Second weak link is intersection between structured segments and fitting lines to the input data coming from shape detection.
+10. Might be a bug in the graph cut since after applying it in the short pipeline I have many tiny triangles, which are in and next to them other tiny triangles, which are out?
+11. Short pipeline is easier to set up, requires fewer parameters, much slower to run and its robustness depends directly on the classification result. It is also senstive to the boundaries (wether to compute them or not in the outliner).
