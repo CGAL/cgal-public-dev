@@ -1,4 +1,4 @@
-﻿#define CGAL_CHECK_EXPENSIVE
+#define CGAL_CHECK_EXPENSIVE
 
 #define CGAL_MOTORCYCLE_GRAPH_ROBUSTNESS_CODE
 #define CGAL_MOTORCYCLE_GRAPH_VERBOSE
@@ -48,9 +48,14 @@ typedef PL::Motorcycle<MGT, Uniform_tracer>                      Motorcycle_U;
 typedef PL::Point_set_tracer<MGT>                                Point_set_tracer;
 typedef PL::Motorcycle<MGT, Point_set_tracer>                    Motorcycle_PS;
 
+typedef boost::graph_traits<PolygonMesh>::halfedge_descriptor    halfedge_descriptor;
+typedef boost::graph_traits<PolygonMesh>::face_descriptor        face_descriptor;
+
 void motorcycle_club_1(Motorcycle_container& motorcycles, const PolygonMesh& mesh)
 {
-  // This is a casual motorcycle club that likes to use all of its available options
+  // This is a casual motorcycle club that likes to use all of its available options.
+  // should be used used with 'eight_triangles.off'
+
   motorcycles.push_back(Motorcycle_ptr(new Motorcycle_U(CP::speed = 1.,
                                                         CP::source = Point_2(0.1, 0.1),
                                                         CP::direction = Vector_2(1., 0.),
@@ -60,7 +65,7 @@ void motorcycle_club_1(Motorcycle_container& motorcycles, const PolygonMesh& mes
                                                          CP::direction = Vector_2(0., -1.),
                                                          CP::speed = 1.)));
 
-  boost::graph_traits<PolygonMesh>::face_descriptor fd = *(faces(mesh).begin());
+  face_descriptor fd = *(faces(mesh).begin());
   Face_location loc = std::make_pair(fd, CGAL::make_array(0.4, 0.4, 0.2));
   motorcycles.push_back(Motorcycle_ptr(new  Motorcycle_U(CP::source = loc,
                                                          CP::direction = Vector_2(1., 1.))));
@@ -80,7 +85,8 @@ void motorcycle_club_1(Motorcycle_container& motorcycles, const PolygonMesh& mes
 
 void motorcycle_club_2(Motorcycle_container& motorcycles)
 {
-  // This is a motorcycle club with nasty positions and nasty intersections
+  // This is a motorcycle club with nasty positions and nasty intersections.
+  // should be used used with 'eight_triangles.off'
 
   // The next two should ram into each other (same supporting line, opposite directions)
   motorcycles.push_back(Motorcycle_ptr(new Motorcycle_U(CP::source = Point_2(CGAL_PI/15., CGAL_PI/31.),
@@ -135,7 +141,8 @@ void motorcycle_club_2(Motorcycle_container& motorcycles)
 
 void motorcycle_club_3(Motorcycle_container& motorcycles)
 {
-  // This motorcycle club is all about starting from weird locations
+  // This motorcycle club is all about starting from weird locations.
+  // should be used used with 'eight_triangles.off'
 
   FT eps = std::numeric_limits<FT>::epsilon();
 
@@ -161,6 +168,7 @@ void motorcycle_club_3(Motorcycle_container& motorcycles)
 void motorcycle_club_4(Motorcycle_container& motorcycles)
 {
   // Some configuration that is nastier than it looks
+  // should be used used with 'triangle.off'
 
   motorcycles.push_back(Motorcycle_ptr(new Motorcycle_U(CP::source = Point_2(0., 0.1),
                                                         CP::destination = Point_2(0.4, 4.95))));
@@ -183,8 +191,70 @@ void motorcycle_club_4(Motorcycle_container& motorcycles)
 
 void motorcycle_club_5(Motorcycle_container& motorcycles)
 {
-  // This motorcycle club is all about walking the edge... and the vertices!
+  // This motorcycle club is all about walking the edge(s).
+  // should be used used with 'eight_triangles.off'
 
+  face_descriptor fd0 = PolygonMesh::Face_index(0);
+  face_descriptor fd1 = PolygonMesh::Face_index(1);
+
+  // #0 Motorcycle walking an edge
+  Face_location source_loc = std::make_pair(fd0, CGAL::make_array(0.6, 0.4, 0.));
+  motorcycles.push_back(Motorcycle_ptr(new  Motorcycle_U(CP::source = source_loc,
+                                                         CP::direction = Vector_2(1., 1.))));
+
+  // #1 motorcycle walking the same edge as #0 with #1.target = #0.source
+  source_loc = std::make_pair(fd0, CGAL::make_array(0.5, 0.5, 0.));
+  Face_location destination_loc = std::make_pair(fd0, CGAL::make_array(0.6, 0.4, 0.));
+  motorcycles.push_back(Motorcycle_ptr(new  Motorcycle_U(CP::source = source_loc,
+                                                         CP::destination = destination_loc)));
+
+  // #2 starting from inside a face and intersecting on an edge a track on another face
+  source_loc = std::make_pair(fd1, CGAL::make_array(0.3, 0.3, 0.4));
+  destination_loc = std::make_pair(fd1, CGAL::make_array(0., 0.45, 0.55));
+  motorcycles.push_back(Motorcycle_ptr(new  Motorcycle_U(CP::source = source_loc,
+                                                         CP::destination = destination_loc)));
+
+  // #3 starting from inside a face and intersecting on an edge a source on another face
+  source_loc = std::make_pair(fd1, CGAL::make_array(0.3, 0.3, 0.4));
+  destination_loc = std::make_pair(fd1, CGAL::make_array(0., 0.5, 0.5));
+  motorcycles.push_back(Motorcycle_ptr(new  Motorcycle_U(CP::source = source_loc,
+                                                         CP::destination = destination_loc)));
+
+  // #4 starting from inside a face and intersecting on an edge a destination on another face
+  destination_loc = std::make_pair(fd1, CGAL::make_array(0., 0.4, 0.6));
+  motorcycles.push_back(Motorcycle_ptr(new  Motorcycle_U(CP::source = source_loc,
+                                                         CP::destination = destination_loc)));
+
+  // #5 starting from inside a face and intersecting on an vertex a track on another face
+  destination_loc = std::make_pair(fd1, CGAL::make_array(0., 0., 1.));
+  motorcycles.push_back(Motorcycle_ptr(new  Motorcycle_U(CP::source = source_loc,
+                                                         CP::destination = destination_loc)));
+
+  // #6 walking an edge and intersecting motorcycle #0 at the vertex [0,0]
+  face_descriptor fd7 = PolygonMesh::Face_index(7);
+  source_loc = std::make_pair(fd7, CGAL::make_array(0., 0.6, 0.4));
+  destination_loc = std::make_pair(fd7, CGAL::make_array(0., 1., 0.));
+  motorcycles.push_back(Motorcycle_ptr(new  Motorcycle_U(CP::source = source_loc,
+                                                         CP::destination = destination_loc)));
+
+  // #7 and #8 walk the same edge in the same direction but from different faces
+  face_descriptor fd4 = PolygonMesh::Face_index(4);
+  source_loc = std::make_pair(fd4, CGAL::make_array(1., 0., 0.));
+  destination_loc = std::make_pair(fd4, CGAL::make_array(0.9, 0.1, 0.));
+  motorcycles.push_back(Motorcycle_ptr(new  Motorcycle_U(CP::source = source_loc,
+                                                         CP::destination = destination_loc)));
+
+  // #8 and #7 walk the same edge in the same direction but from different faces
+  face_descriptor fd5 = PolygonMesh::Face_index(5);
+  source_loc = std::make_pair(fd5, CGAL::make_array(0., 0.6, 0.4));
+  motorcycles.push_back(Motorcycle_ptr(new  Motorcycle_U(CP::source = source_loc,
+                                                         CP::direction = Vector_2(1., 1.))));
+
+  // #9 starts from the corner [1,-1] and aimes at [0,0]
+  face_descriptor fd2 = PolygonMesh::Face_index(2);
+  source_loc = std::make_pair(fd2, CGAL::make_array(0., 0., 1.));
+  motorcycles.push_back(Motorcycle_ptr(new  Motorcycle_U(CP::source = source_loc,
+                                                         CP::direction = Vector_2(-1., 1.))));
 }
 
 void random_motorcycles_in_triangle(Motorcycle_container& motorcycles,
@@ -265,13 +335,12 @@ int main()
   std::cout.precision(18);
   std::cerr.precision(18);
 
-#ifdef CGAL_MOTORCYCLE_GRAPH_USE_FIXED_SEEDS
-  CGAL::Random rnd(1507644747);
+#if 1//def CGAL_MOTORCYCLE_GRAPH_USE_FIXED_SEEDS
+  CGAL::Random rnd(1508158096);
 #else
   CGAL::Random rnd(CGAL::get_default_random());
 #endif
   std::ofstream seed_out("results_2/seed.txt");
-  seed_out << rnd.get_seed() << std::endl;
 
   // read input mesh
   PolygonMesh pm;
@@ -282,18 +351,21 @@ int main()
   bool is_loop_infinite = true;
   while(is_loop_infinite)
   {
-    is_loop_infinite = false;
+    is_loop_infinite = true;
+
+    seed_out << rnd.get_seed() << std::endl;
 
     Motorcycle_container motorcycles;
 
     motorcycle_club_1(motorcycles, pm);
     motorcycle_club_2(motorcycles);
-//    motorcycle_club_3(motorcycles);
+    motorcycle_club_3(motorcycles);
 //    motorcycle_club_4(motorcycles);
+    motorcycle_club_5(motorcycles);
 
-//    random_motorcycles_on_face(motorcycles, pm, *(faces(pm).begin()), rnd);
-//    random_motorcycles_on_face(motorcycles, pm, *(++(++(++(++(++faces(pm).begin()))))), rnd);
-//    random_motorcycles_on_face(motorcycles, pm, *(++(++faces(pm).begin())), rnd);
+    random_motorcycles_on_face(motorcycles, pm, *(faces(pm).begin()), rnd);
+    random_motorcycles_on_face(motorcycles, pm, *(++(++(++(++(++faces(pm).begin()))))), rnd);
+    random_motorcycles_on_face(motorcycles, pm, *(++(++faces(pm).begin())), rnd);
 
     Motorcycle_graph motorcycle_graph(pm);
     motorcycle_graph.trace_graph(motorcycles.begin(), motorcycles.end());
@@ -308,6 +380,8 @@ int main()
 #endif
 
     CGAL_postcondition(motorcycle_graph.is_valid());
+
+    rnd = CGAL::get_default_random();
   }
 
   return 0;

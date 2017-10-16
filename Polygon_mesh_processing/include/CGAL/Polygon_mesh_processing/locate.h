@@ -152,6 +152,7 @@ incident_faces(const typename internal::Locate_types<TriangleMesh>::Face_locatio
 }
 
 // Snapping coordinates for robustness
+//@todo should this snap to closest border without any tolerance ?
 template<typename TriangleMesh>
 void
 snap_coordinates_to_border(typename Locate_types<TriangleMesh>::Barycentric_coordinates& coords,
@@ -207,6 +208,26 @@ snap_location_to_border(typename Locate_types<TriangleMesh>::Face_location& loc,
                           std::numeric_limits<typename Locate_types<TriangleMesh>::FT>::epsilon())
 {
   return snap_coordinates_to_border<TriangleMesh>(loc.second, tolerance);
+}
+
+template<typename TriangleMesh>
+boost::optional<typename boost::graph_traits<TriangleMesh>::halfedge_descriptor>
+common_halfedge(const typename boost::graph_traits<TriangleMesh>::face_descriptor first_fd,
+                const typename boost::graph_traits<TriangleMesh>::face_descriptor second_fd,
+                const TriangleMesh& tm)
+{
+  typedef typename boost::graph_traits<TriangleMesh>::halfedge_descriptor  halfedge_descriptor;
+
+  halfedge_descriptor hd = halfedge(first_fd, tm);
+  std::size_t count = 0;
+
+  while(count++ < 3)
+  {
+    if(face(opposite(hd, tm), tm) == second_fd)
+      return hd;
+    hd = next(hd, tm);
+  }
+  return boost::none;
 }
 
 // given two locations, return the highest common location
@@ -786,6 +807,7 @@ locate(typename boost::graph_traits<TriangleMesh>::face_descriptor f,
 
     // Try to to snap the coordinates, hoping the problem is just a -10e-17ish epsilon
     // pushing the coordinates over the edge
+    // @tmp keep or not ?
     internal::snap_coordinates_to_border<TriangleMesh>(coords);
   }
 
@@ -816,6 +838,8 @@ locate(typename boost::graph_traits<TriangleMesh>::face_descriptor f,
 /// \param loc the first location
 /// \param f the second face, adjacent to loc.first
 /// \param tm the triangle mesh to which `he` belongs
+///
+/// \pre loc is on a subface common to `loc.first` and `f`
 ///
 template <typename TriangleMesh>
 typename internal::Locate_types<TriangleMesh>::Face_location
@@ -868,8 +892,9 @@ locate(const typename internal::Locate_types<TriangleMesh>::Face_location& loc,
     // so the third coordinate is already set up properly
   }
 
-  std::cout << "Ini loc: " << loc.first << " b: " << loc.second[0] << " " << loc.second[1] << " " << loc.second[2] << std::endl;
-  std::cout << "Out loc: " << loc_in_f.first << " b: " << loc_in_f.second[0] << " " << loc_in_f.second[1] << " " << loc_in_f.second[2] << std::endl;
+  // @todo clean up
+//  std::cout << "Ini loc: " << loc.first << " b: " << loc.second[0] << " " << loc.second[1] << " " << loc.second[2] << std::endl;
+//  std::cout << "Out loc: " << loc_in_f.first << " b: " << loc_in_f.second[0] << " " << loc_in_f.second[1] << " " << loc_in_f.second[2] << std::endl;
 
   CGAL_postcondition(loc_in_f.first == f);
   return loc_in_f;
@@ -877,7 +902,7 @@ locate(const typename internal::Locate_types<TriangleMesh>::Face_location& loc,
 
 // Finding a common face to a location and a point
 // - the first location must be known
-// - the second must be a point in a face incident to get_descriptor_from_location(first_location)
+// - the second must be a point in a face incident to get_descriptor_from_location(known_location)
 template <typename TriangleMesh>
 bool
 locate_in_common_face(const typename internal::Locate_types<TriangleMesh>::Point& query, //@todo namedparameters?
@@ -905,7 +930,7 @@ locate_in_common_face(const typename internal::Locate_types<TriangleMesh>::Point
   if(dv.which() == 0)
   {
     vertex_descriptor vd = boost::get<vertex_descriptor>(dv);
-    std::cout << "known location on a vertex: " << vd << std::endl;
+    std::cout << "known_location on a vertex: " << vd << std::endl;
     halfedge_descriptor hd = halfedge(vd, tm);
 
     BOOST_FOREACH(face_descriptor fd, CGAL::faces_around_target(hd, tm))
@@ -931,7 +956,7 @@ locate_in_common_face(const typename internal::Locate_types<TriangleMesh>::Point
   else if(dv.which() == 1)
   {
     halfedge_descriptor hd = boost::get<halfedge_descriptor>(dv);
-    std::cout << "known location on a halfedge: " << hd << std::endl;
+    std::cout << "known_location on a halfedge: " << hd << std::endl;
     face_descriptor fd = face(hd, tm);
 
     query_location = locate(fd, query, tm);
@@ -949,14 +974,15 @@ locate_in_common_face(const typename internal::Locate_types<TriangleMesh>::Point
   {
     CGAL_assertion(dv.which() == 2);
     face_descriptor fd = boost::get<face_descriptor>(dv);
-    std::cout << "known location on a face: " << fd << std::endl;
+    std::cout << "known_location on a face: " << fd << std::endl;
 
     query_location = locate(fd, query, tm);
-    internal::snap_location_to_border<TriangleMesh>(query_location); // @tmp keep or not ?
+    // @tmp keep or not ?
+    internal::snap_location_to_border<TriangleMesh>(query_location);
     is_query_location_in_face = is_in_face(query_location, tm);
   }
 
-  // if this is not the same face as for 'known_query', change 'known_query'
+  // if this is not the same face as for 'known_query', change 'known_location'
   if(is_query_location_in_face &&
      query_location.first != known_location.first)
   {

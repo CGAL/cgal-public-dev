@@ -64,6 +64,8 @@ public:
 
   typedef typename Visiting_motorcycles_container::left_iterator         VMC_left_it;
   typedef typename Visiting_motorcycles_container::left_const_iterator   VMC_left_cit;
+  typedef typename Visiting_motorcycles_container::left_value_type       VMC_left_value_type;
+
   typedef typename Visiting_motorcycles_container::right_const_iterator  VMC_right_cit;
 
   typedef typename Geom_traits::face_descriptor                          face_descriptor;
@@ -75,23 +77,39 @@ public:
   const Face_location& location() const { return loc; }
   bool is_blocked() const { return blocked; }
   void block() const { blocked = true; }
+  Visiting_motorcycles_container& visiting_motorcycles() { return visiting_mcs; }
   const Visiting_motorcycles_container& visiting_motorcycles() const { return visiting_mcs; }
 
   // Constructor
   Dictionary_entry(const Face_location& loc, const Point& p);
 
-  // The following function is not actually 'const' but the members it modifies
+  // The following functions are not actually 'const' but the members they modify
   // are mutable.
   std::pair<iterator, bool> add_motorcycle(const std::size_t id, const FT time) const;
+  void add_motorcycles(const Visiting_motorcycles_container& foreign_visiting_mcs) const;
+
+  // Returns an iterator to the motorcycle that first visits the point.
   VMC_right_cit earliest_motorcycle() const;
 
-  // second bool indicates whether we found a motorcycle with id 'id' or not
+  // Check if the motorcycle 'id' visits.
   std::pair<VMC_left_it, bool> find_motorcycle(const std::size_t id) const;
-  // check if there is a motorcycle visiting at time 'visiting_time'
+
+  // Check if the motorcycle 'id' visits at time 'visiting_time'.
+  std::pair<VMC_left_it, bool> find_motorcycle(const std::size_t id, const FT visiting_time) const;
+
+  // Check if the motorcycle 'id' visits at time between 'min_' and 'max_visiting_time'.
+  // The last parameter is optional and can be used to grab the visiting time
+  // 'strictly_at_X' to include the boundary of the interval or not.
+  std::pair<VMC_left_it, bool> find_motorcycle(const std::size_t id, const FT min_visiting_time,
+                                               const FT max_visiting_time, FT& visiting_time,
+                                               const bool strictly_at_min = false,
+                                               const bool strictly_at_max = false) const;
+  std::pair<VMC_left_it, bool> find_motorcycle(const std::size_t id, const FT min_visiting_time,
+                                               const FT max_visiting_time, const bool strictly_at_min = false,
+                                               const bool strictly_at_max = false) const;
+
+  // Basically wrappers around "find_motorcycle()"
   bool has_motorcycle(const std::size_t id, const FT visiting_time) const;
-  // check if there is a motorcycle visiting at time between 'min_' and 'max_visiting_time'
-  // the last parameter is optional and can be used to grab the visiting time
-  // 'strictly_at_X' to include the boundary of the interval or not
   bool has_motorcycle(const std::size_t id, const FT min_visiting_time,
                       const FT max_visiting_time, FT& visiting_time,
                       const bool strictly_at_min = false,
@@ -99,16 +117,18 @@ public:
   bool has_motorcycle(const std::size_t id, const FT min_visiting_time,
                       const FT max_visiting_time, const bool strictly_at_min = false,
                       const bool strictly_at_max = false) const;
+
   // check if the two earliest motorcycles meet at the same time
   bool has_simultaneous_collision() const;
   size_type remove_motorcycle(const std::size_t id) const;
 
-  // to build a set<Dictionary_entry>
+  // To build a set<Dictionary_entry> (unused since an unordered_set is now used
+  // but leaving it available).
   friend bool operator<(const Self& lhs, const Self& rhs)
   {
     if(lhs.location().first == rhs.location().first)
     {
-      // lexicographical compare over the barycentric coordinates
+      // If the faces are equal, lexicographically compare the barycentric coordinates
       return std::lexicographical_compare(lhs.location().second.begin(), lhs.location().second.end(),
                                           rhs.location().second.begin(), rhs.location().second.end());
     }
@@ -174,7 +194,30 @@ Dictionary_entry<MotorcycleGraphTraits>::
 add_motorcycle(const std::size_t id, const FT time) const
 {
   std::cout << " Point " << this << " is visited by motorcycle #" << id << " at time: " << time << std::endl;
+  //CGAL_expensive_precondition(!has_motorcycle(id, time));
   return visiting_mcs.insert(value_type(id, time));
+}
+
+template<typename MotorcycleGraphTraits>
+void
+Dictionary_entry<MotorcycleGraphTraits>::
+add_motorcycles(const Visiting_motorcycles_container& foreign_visiting_mcs) const
+{
+  VMC_left_cit vmc_it = foreign_visiting_mcs.left.begin();
+  VMC_left_cit end = foreign_visiting_mcs.left.end();
+  for(; vmc_it!=end; ++vmc_it)
+  {
+    // Although it's a multiset, we don't want to insert redundant information
+    // in the visiting motorcycle container
+    std::pair<VMC_left_it, bool> is_already_in =
+      find_motorcycle(vmc_it->first, vmc_it->second);
+
+    if(!is_already_in.second)
+    {
+      visiting_mcs.left.insert(is_already_in.first,
+                               VMC_left_value_type(vmc_it->first, vmc_it->second));
+    }
+  }
 }
 
 template<typename MotorcycleGraphTraits>
@@ -201,9 +244,9 @@ find_motorcycle(const std::size_t id) const
 }
 
 template<typename MotorcycleGraphTraits>
-bool
+std::pair<typename Dictionary_entry<MotorcycleGraphTraits>::VMC_left_it, bool>
 Dictionary_entry<MotorcycleGraphTraits>::
-has_motorcycle(const std::size_t id, const FT visiting_time) const
+find_motorcycle(const std::size_t id, const FT visiting_time) const
 {
   std::pair<VMC_left_it, bool> mres = find_motorcycle(id);
   VMC_left_it mit = mres.first;
@@ -212,24 +255,24 @@ has_motorcycle(const std::size_t id, const FT visiting_time) const
   while(is_valid_iterator)
   {
     if(mit->second == visiting_time)
-      return true;
+      return std::make_pair(mit, true);
 
     ++mit;
     is_valid_iterator = (mit != visiting_mcs.left.end() && mit->first == id);
   }
 
-  return false;
+  return std::make_pair(visiting_mcs.left.end(), false);
 }
 
 template<typename MotorcycleGraphTraits>
-bool
+std::pair<typename Dictionary_entry<MotorcycleGraphTraits>::VMC_left_it, bool>
 Dictionary_entry<MotorcycleGraphTraits>::
-has_motorcycle(const std::size_t id, const FT min_visiting_time,
-               const FT max_visiting_time, FT& visiting_time,
-               const bool strictly_at_min, const bool strictly_at_max) const
+find_motorcycle(const std::size_t id, const FT min_visiting_time,
+                const FT max_visiting_time, FT& visiting_time,
+                const bool strictly_at_min, const bool strictly_at_max) const
 {
-  std::pair<VMC_left_cit, bool> mres = find_motorcycle(id);
-  VMC_left_cit mit = mres.first;
+  std::pair<VMC_left_it, bool> mres = find_motorcycle(id);
+  VMC_left_it mit = mres.first;
   bool is_valid_iterator = mres.second; // = false if we couldn't find the motorcycle
 
   while(is_valid_iterator) // while still considering the motorcycle 'id'
@@ -241,13 +284,44 @@ has_motorcycle(const std::size_t id, const FT min_visiting_time,
         (!strictly_at_min && visiting_time == min_visiting_time)) &&
        (visiting_time < max_visiting_time ||
         (!strictly_at_max && visiting_time == max_visiting_time)))
-      return true;
+      return std::make_pair(mit, true);
 
     ++mit;
     is_valid_iterator = (mit != visiting_mcs.left.end() && mit->first == id);
   }
 
-  return false;
+  return std::make_pair(visiting_mcs.left.end(), false);
+}
+
+template<typename MotorcycleGraphTraits>
+std::pair<typename Dictionary_entry<MotorcycleGraphTraits>::VMC_left_it, bool>
+Dictionary_entry<MotorcycleGraphTraits>::
+find_motorcycle(const std::size_t id, const FT min_visiting_time,
+               const FT max_visiting_time, const bool strictly_at_min,
+               const bool strictly_at_max) const
+{
+  FT useless;
+  return find_motorcycle(id, min_visiting_time, max_visiting_time, useless,
+                         strictly_at_min, strictly_at_max);
+}
+
+template<typename MotorcycleGraphTraits>
+bool
+Dictionary_entry<MotorcycleGraphTraits>::
+has_motorcycle(const std::size_t id, const FT visiting_time) const
+{
+  return find_motorcycle(id, visiting_time).second;
+}
+
+template<typename MotorcycleGraphTraits>
+bool
+Dictionary_entry<MotorcycleGraphTraits>::
+has_motorcycle(const std::size_t id, const FT min_visiting_time,
+               const FT max_visiting_time, FT& visiting_time,
+               const bool strictly_at_min, const bool strictly_at_max) const
+{
+  return find_motorcycle(id, min_visiting_time, max_visiting_time, visiting_time,
+                         strictly_at_min, strictly_at_max).second;
 }
 
 template<typename MotorcycleGraphTraits>
@@ -258,8 +332,8 @@ has_motorcycle(const std::size_t id, const FT min_visiting_time,
                const bool strictly_at_max) const
 {
   FT useless;
-  return has_motorcycle(id, min_visiting_time, max_visiting_time, useless,
-                        strictly_at_min, strictly_at_max);
+  return find_motorcycle(id, min_visiting_time, max_visiting_time, useless,
+                         strictly_at_min, strictly_at_max).second;
 }
 
 template<typename MotorcycleGraphTraits>

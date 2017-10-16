@@ -19,6 +19,8 @@
 
 #include <CGAL/Bbox_2.h>
 
+#include <CGAL/Polyline_tracing/internal/robust_collinear.h>
+
 #include <boost/graph/graph_traits.hpp>
 
 #include <utility>
@@ -86,6 +88,10 @@ public:
   typedef typename CGAL::cpp11::array<FT, 3>                  Barycentric_coordinates;
   typedef std::pair<face_descriptor, Barycentric_coordinates> Face_location;
 
+  // 2D robust predicate
+  typedef internal::Robust_collinear_are_strictly_ordered_along_line_2<K>
+                                                              Collinear_are_strictly_ordered_along_line_2;
+
   // Predicates types
   typedef typename K::Are_ordered_along_line_2                Are_ordered_along_line_d;
   typedef typename K::Collinear_2                             Collinear_d;
@@ -100,6 +106,11 @@ public:
 
   // Constructor
   Motorcycle_graph_traits_2(const K& k = K()) : Base(k) { }
+
+  // 2D robust predicate
+  Collinear_are_strictly_ordered_along_line_2
+  collinear_are_strictly_ordered_along_line_2_object() const
+  { return Collinear_are_strictly_ordered_along_line_2(static_cast<const Base&>(*this)); }
 
   // Predicates
   Are_ordered_along_line_d

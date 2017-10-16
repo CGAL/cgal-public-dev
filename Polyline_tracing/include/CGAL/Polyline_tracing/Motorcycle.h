@@ -211,12 +211,12 @@ public:
     for(; tpc_it!=end; ++tpc_it)
     {
       out << "\t " << &*(tpc_it->first)
-          << "] P: (" << tpc_it->first->point() << ") T: " << tpc_it->second
+          << " P: (" << tpc_it->first->point() << ") T: " << tpc_it->second
           << " B: " << tpc_it->first->is_blocked()
           << " L: " << tpc_it->first->location().first
           << " bc: [" << tpc_it->first->location().second[0] << " "
                      << tpc_it->first->location().second[1] << " "
-                     << tpc_it->first->location().second[2]  << std::endl;
+                     << tpc_it->first->location().second[2] << "] " << std::endl;
     }
 
     return out;

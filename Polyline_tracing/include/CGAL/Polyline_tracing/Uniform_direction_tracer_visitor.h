@@ -64,6 +64,9 @@ public:
   typedef typename Geom_traits::vertex_descriptor             vertex_descriptor;
   typedef typename Geom_traits::halfedge_descriptor           halfedge_descriptor;
   typedef typename Geom_traits::face_descriptor               face_descriptor;
+  typedef boost::variant<vertex_descriptor,
+                         halfedge_descriptor,
+                         face_descriptor>                     descriptor_variant;
 
   // - bool: whether we have found a destination or not
   // - DEC_it: the source of the path (might be different from mc.current_position()
@@ -97,8 +100,7 @@ private:
 template<typename MotorcycleGraphTraits>
 typename Uniform_direction_tracer_visitor<MotorcycleGraphTraits>::result_type
 Uniform_direction_tracer_visitor<MotorcycleGraphTraits>::
-compute_next_destination(const DEC_it start_point,
-                         const face_descriptor fd, const Motorcycle& mc,
+compute_next_destination(const DEC_it start_point, const face_descriptor fd, const Motorcycle& mc,
                          Dictionary& points, const Triangle_mesh& mesh) const
 {
   CGAL_precondition(start_point->location().first == fd);
@@ -171,16 +173,18 @@ compute_next_destination(const DEC_it start_point,
 
   // A uniform tracer will trace until it reaches a boundary. It is important
   // that the location of this new destination reflects that it is on the boundary
-  // (that is, one of its barycentric coordinates should be 0). To ensure that
-  // it is the case, it is snapped to the closest halfedge (or even vertex).
+  // (that is, one of its barycentric coordinates should be 0).
+  // @todo a proper snap to closer halfedge / vertex. detect when we are walking an
+  // edge, which should yield a target on a vertex (pass the bool in parameter).
   CGAL::Polygon_mesh_processing::internal::snap_location_to_border<Triangle_mesh>(loc);
+  CGAL_postcondition(CGAL::Polygon_mesh_processing::is_on_face_border(loc, mesh));
 
   std::pair<DEC_it, bool> destination = points.insert(loc, farthest_destination);
 
 #ifdef CGAL_MOTORCYCLE_GRAPH_VERBOSE
   std::cout << "new source at " << &*start_point
             << " p: " << start_point->point()
-            << "loc: " << start_point->location().first
+            << " loc: " << start_point->location().first
             << " bc: [" << start_point->location().second[0] << " "
                         << start_point->location().second[1] << " "
                         << start_point->location().second[2] << "] "
@@ -256,9 +260,11 @@ operator()(vertex_descriptor vd, const Motorcycle& mc,
 
     result_type res = compute_next_destination(source_in_fd.first, fd, mc, points, mesh);
 
-    // Since direction == NULL_VECTOR has been filtered in Tracer.h, the time
-    // can only be null if the direction points outside
-    if(res.template get<0>() && res.template get<3>() > 0)
+    // Since direction == NULL_VECTOR has been filtered in Tracer.h, the destination
+    // should not be equal to the source
+    // @todo This check would fail if one is manipulating a mesh with a completely
+    // degenerate face
+    if(res.template get<0>() && res.template get<2>() != source_in_fd.first)
       return res;
 
     // If 'source_in_fd' is a new point in the dictionary and 'fd' is not the face
@@ -291,6 +297,7 @@ operator()(halfedge_descriptor hd, const Motorcycle& mc,
   std::cout << " Uniform tracing from a point on the halfedge " << hd;
   std::cout << " with direction: " << *(mc.direction()) << std::endl;
 #endif
+  namespace PMP = CGAL::Polygon_mesh_processing;
 
   // just to get rid of a degenerate case
   CGAL_precondition(bool(mc.direction())); // direction must be known
@@ -306,17 +313,24 @@ operator()(halfedge_descriptor hd, const Motorcycle& mc,
   // When we reach the border at the interior of a halfedge, the path continues
   // on the adjacent face.
 
-  // Exception case: we are computing the first destination. In that case, first
-  // try to find a valid destination on face(hd, mesh)
-  if(mc.input_destination() == boost::none)
+  // Exception cases:
+  // - We are computing the first destination
+  // - The motorcycle is walking on the halfedge
+  // In those cases, first try to find a valid destination on face(hd, mesh)
+  const Face_location& source_loc = mc.source()->location();
+  bool is_motorcycle_walking_hd = PMP::is_on_halfedge(source_loc, hd, mesh);
+  std::cout << "is_motorcycle_walking_hd :" << is_motorcycle_walking_hd << std::endl;
+
+  if(mc.input_destination() == boost::none || is_motorcycle_walking_hd)
   {
     face_descriptor fd = face(hd, mesh);
     result_type res = compute_next_destination(mc.current_position(), fd, mc, points, mesh);
 
-    // Since direction == NULL_VECTOR has been filtered in Tracer.h, the time
-    // can only be null if the direction points to face(opposite(hd, mesh), mesh)
-    // and not to face(hd, mesh)
-    if(res.template get<0>() && res.template get<3>() > 0)
+    // Since direction == NULL_VECTOR has been filtered in Tracer.h, the destination
+    // should not be equal to the source
+    // @todo This check would fail if one is manipulating a mesh with a completely
+    // degenerate face
+    if(res.template get<0>() && res.template get<2>() != mc.current_position())
       return res;
   }
 
