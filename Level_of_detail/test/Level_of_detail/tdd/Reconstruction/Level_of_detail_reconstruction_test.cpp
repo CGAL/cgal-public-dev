@@ -17,7 +17,7 @@
 // New CGAL includes.
 #include <CGAL/Mylog/Mylog.h>
 #include <CGAL/Level_of_detail_enum.h>
-#include <CGAL/Lod_1/Level_of_detail_reconstruction_1.h>
+#include <CGAL/Reconstruction/Level_of_detail_reconstruction.h>
 
 using namespace testing;
 
@@ -50,16 +50,16 @@ public:
 
 	using Mesh = CGAL::Polyhedron_3<Traits>;
 
-	using Lod_1 = CGAL::LOD::Level_of_detail_reconstruction_1<Traits, CDT, Buildings, Mesh>;
-	using Mesh_facet_colors = Lod_1::Mesh_facet_colors;
+	using Lods = CGAL::LOD::Level_of_detail_reconstruction<Traits, CDT, Buildings, Mesh>;
+	using Mesh_facet_colors = Lods::Mesh_facet_colors;
 
 	using Log = CGAL::LOD::Mylog;
 
-	using Ground_point = Lod_1::Point;
-	using Ground = Lod_1::Ground;
+	using Ground_point = Lods::Point;
+	using Ground = Lods::Ground;
 
 	CDT cdt; Buildings buildings; Ground ground; Mesh mesh; Mesh_facet_colors mesh_facet_colors;
-	Lod_1 lod_1;
+	Lods lods;
 
 	LOD_ReconstructionTest() { 
 		create_data();
@@ -271,12 +271,12 @@ TEST_F(LOD_ReconstructionTest, Compiles) {
 	// Empty test.
 }
 
-TEST_F(LOD_ReconstructionTest, RunsReconstruction) {
+TEST_F(LOD_ReconstructionTest, RunsReconstructionLOD1) {
 
 	mesh.clear();
 	mesh_facet_colors.clear();
 
-	lod_1.reconstruct_lod1(cdt, buildings, ground, mesh, mesh_facet_colors);
+	lods.reconstruct_lod1(cdt, buildings, ground, mesh, mesh_facet_colors);
 
 	Log log;
 	log.save_mesh_as_ply(mesh, mesh_facet_colors, "LOD1");

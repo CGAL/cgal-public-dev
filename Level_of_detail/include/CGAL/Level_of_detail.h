@@ -18,8 +18,8 @@
 #include <CGAL/Utils/Level_of_detail_utils.h>
 #include <CGAL/Structuring_2/Level_of_detail_structuring_2.h>
 #include <CGAL/Visibility_2/Level_of_detail_visibility_2.h>
-#include <CGAL/Lod_0/Level_of_detail_reconstruction_0.h>
-#include <CGAL/Lod_1/Level_of_detail_reconstruction_1.h>
+#include <CGAL/Graphcut/Level_of_detail_graphcut.h>
+#include <CGAL/Reconstruction/Level_of_detail_reconstruction.h>
 #include <CGAL/Buildings/Level_of_detail_buildings.h>
 
 #endif // CGAL_LEVEL_OF_DETAIL_H

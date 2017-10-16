@@ -155,7 +155,9 @@ TEST_F(LOD_PreprocessorTest, ReturnsOnePlaneUsingGivenIndices) {
 	get_simple_indices(mapping);
 
 	Boundary_data boundaries, boundary_clutter;
-	const auto number_of_boundaries = lodPreprocessor.get_boundaries(input, mapping, boundaries, boundary_clutter);
+
+	const bool with_shape_detection = true;
+	const auto number_of_boundaries = lodPreprocessor.get_boundary_points(input, mapping, with_shape_detection, boundaries, boundary_clutter);
 
 	ASSERT_THAT(number_of_boundaries, Eq(1));
 	ASSERT_THAT(static_cast<int>((*boundaries.begin()).second.size()), Eq(3));

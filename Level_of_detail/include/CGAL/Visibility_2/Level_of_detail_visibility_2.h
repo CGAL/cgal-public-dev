@@ -49,6 +49,8 @@ namespace CGAL {
 			typedef CDTInput 	   CDT;
 			
 			virtual void save_info(const bool) = 0;
+			virtual void show_progress(const bool) = 0;
+
 			virtual int compute(const Container &, CDT &) const = 0;
 
 			virtual ~Level_of_detail_visibility_2() { }
@@ -76,10 +78,14 @@ namespace CGAL {
 			using Log = CGAL::LOD::Mylog;
 
 
-			Level_of_detail_visibility_ray_shooting_2() : m_save_info(true) { }
+			Level_of_detail_visibility_ray_shooting_2() : m_save_info(true), m_show_progress(true) { }
 
 			void save_info(const bool new_state) override {
 				m_save_info = new_state;
+			}
+
+			void show_progress(const bool new_state) override {
+				m_show_progress = new_state;
 			}
 
 			int compute(const Container &, CDT &cdt) const override {
@@ -102,6 +108,7 @@ namespace CGAL {
 
 		private:
 			bool m_save_info;
+			bool m_show_progress;
 
 			void compute_bounding_box(const CDT &cdt, std::vector<Point_2> &bbox, Log &log) const {
 
@@ -200,7 +207,7 @@ namespace CGAL {
 			m_sampler(Visibility_sampler::UNIFORM_0),
 			m_radius_type(Radius_type::MIN),
 			m_num_samples(200),
-			m_k(3), m_save_info(true) { }
+			m_k(3), m_save_info(true), m_show_progress(true) { }
 
 			void set_number_of_samples(const size_t new_value) {
 				m_num_samples = new_value;
@@ -221,6 +228,10 @@ namespace CGAL {
 
 			void save_info(const bool new_state) override {
 				m_save_info = new_state;
+			}
+
+			void show_progress(const bool new_state) override {
+				m_show_progress = new_state;
 			}
 
 			int compute(const Container &input, CDT &cdt) const override {
@@ -281,6 +292,7 @@ namespace CGAL {
 			size_t m_num_samples;
 			size_t m_k; 		  // change it to autodetection later!
 			bool m_save_info;
+			bool m_show_progress;
 
 			void compute_point_based_visibility(const Container &input, CDT &cdt) const {
 
@@ -390,10 +402,31 @@ namespace CGAL {
 				Function_type function_values;
 				set_delunay_and_function_values(input, dt, function_values);
 
-				for (Face_iterator fit = cdt.finite_faces_begin(); fit != cdt.finite_faces_end(); ++fit) {
+				const FT num_stages = FT(100);
+				const FT stage = FT(cdt.number_of_faces()) / num_stages;
+
+				if (m_show_progress) {
+
+					std::cout << std::endl;
+					std::cout << "Progress: " << std::endl;
+				}
+
+				FT progress = FT(0);
+				for (Face_iterator fit = cdt.finite_faces_begin(); fit != cdt.finite_faces_end(); ++fit, progress += FT(1)) {
 					
+					if (m_show_progress && static_cast<size_t>(stage) != 0) {
+						if (size_t(progress) % size_t(stage) == 0)
+							std::cout << progress / FT(cdt.number_of_faces()) * FT(100) << "% " << std::endl; 
+					}
+
 					fit->info().in       = compute_interpolated_value(cdt, fit, dt, function_values);
 					fit->info().in_color = get_color(fit->info().in);
+				}
+
+				if (m_show_progress) {
+
+					std::cout << "100%" << std::endl;
+					std::cout << std::endl;
 				}
 			}
 

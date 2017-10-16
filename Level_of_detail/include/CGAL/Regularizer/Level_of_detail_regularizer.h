@@ -23,7 +23,7 @@ namespace CGAL {
 		class Level_of_detail_regularizer {
 
 		public:
-			virtual int regularize(Planes&, InputContainer &, typename KernelTraits::Plane_3 &) = 0;
+			virtual int regularize(Planes&, InputContainer &, const typename KernelTraits::Plane_3 &) = 0;
 			virtual ~Level_of_detail_regularizer() { }
 		};
 
@@ -56,7 +56,7 @@ namespace CGAL {
 
 			// Here as a plane normal I take an average normal among all normals of the points
 			// that belong to the plane.
-			int regularize(Planes &planes, Container &input, Plane &ground_plane) override { 
+			int regularize(Planes &planes, Container &input, const Plane &ground_plane) override { 
 
 				auto number_of_regularized_planes = 0;
 

@@ -23,8 +23,8 @@
 #include <CGAL/Utils/Level_of_detail_utils.h>
 #include <CGAL/Structuring_2/Level_of_detail_structuring_2.h>
 #include <CGAL/Visibility_2/Level_of_detail_visibility_2.h>
-#include <CGAL/Lod_0/Level_of_detail_reconstruction_0.h>
-#include <CGAL/Lod_1/Level_of_detail_reconstruction_1.h>
+#include <CGAL/Graphcut/Level_of_detail_graphcut.h>
+#include <CGAL/Reconstruction/Level_of_detail_reconstruction.h>
 #include <CGAL/Buildings/Level_of_detail_buildings.h>
 #include <CGAL/Level_of_detail_enum.h>
 
@@ -75,15 +75,15 @@ namespace CGAL {
 
 			typedef CGAL::LOD::Level_of_detail_structuring_2<Kernel>                                       Structuring_2;
 			typedef CGAL::LOD::Level_of_detail_visibility_from_classification_2<Kernel, Container_2D, CDT> Visibility_2;
+			typedef CGAL::LOD::Level_of_detail_graphcut<Kernel, CDT> 									   Graph_cut;
+
 			// typedef CGAL::LOD::Level_of_detail_visibility_ray_shooting_2<Kernel, Container_2D, CDT> 	   Visibility_2; // maybe used later
 			
 			typedef CGAL::LOD::Building<typename Kernel::FT, typename CDT::Vertex_handle, typename CDT::Face_handle> Building;
-			typedef std::map<int, Building> Buildings;
+			typedef std::map<int, Building> 																	     Buildings;
 
-			typedef CGAL::Polyhedron_3<Kernel> Mesh;
-
-			typedef CGAL::LOD::Level_of_detail_reconstruction_0<Kernel, CDT> 				  Graph_cut;
-			typedef CGAL::LOD::Level_of_detail_reconstruction_1<Kernel, CDT, Buildings, Mesh> Lods;
+			typedef CGAL::Polyhedron_3<Kernel> 											    Mesh;
+			typedef CGAL::LOD::Level_of_detail_reconstruction<Kernel, CDT, Buildings, Mesh> Lods;
 
 			typedef typename Lods::Mesh_facet_colors Mesh_facet_colors;
 

@@ -13,11 +13,11 @@
 // New CGAL includes.
 #include <CGAL/Mylog/Mylog.h>
 #include <CGAL/Level_of_detail_enum.h>
-#include <CGAL/Lod_0/Level_of_detail_reconstruction_0.h>
+#include <CGAL/Graphcut/Level_of_detail_graphcut.h>
 
 using namespace testing;
 
-class LOD_ReconstructionTest: public Test {
+class LOD_GraphcutTest: public Test {
 
 public:
 	using FT = double;
@@ -40,17 +40,17 @@ public:
 	using TDS = CGAL::Triangulation_data_structure_2<VB, FB>;
 	using CDT = CGAL::Constrained_Delaunay_triangulation_2<Traits, TDS>;
 
-	using Lod_0 = CGAL::LOD::Level_of_detail_reconstruction_0<Traits, CDT>;
+	using Graphcut = CGAL::LOD::Level_of_detail_graphcut<Traits, CDT>;
 
 	using Vertex_handle = CDT::Vertex_handle;
 	using Face_iterator = CDT::Finite_faces_iterator;
 
 	using Log = CGAL::LOD::Mylog;
 
-	Lod_0 lod_0;
+	Graphcut graphcut;
 	CDT cdt;
 
-	LOD_ReconstructionTest() {
+	LOD_GraphcutTest() {
 		create_data();
 	}
 
@@ -120,12 +120,12 @@ public:
 	}
 };
 
-TEST_F(LOD_ReconstructionTest, Compiles) {
+TEST_F(LOD_GraphcutTest, Compiles) {
    
 	// Empty test.
 }
 
-TEST_F(LOD_ReconstructionTest, RunsProgram) {
+TEST_F(LOD_GraphcutTest, RunsProgram) {
 
-	lod_0.max_flow(cdt);
+	graphcut.max_flow(cdt);
 }

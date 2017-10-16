@@ -65,7 +65,7 @@ namespace CGAL {
 			// Later I can adapt boundary_clutter to some other data structure where I also take
 			// into account the type of the clutter: undetected, cylinder, sphere and so on. The type is saved in property_map<Types>.
 			template<class Indices, class Boundary_data>
-			auto get_boundaries(const Container &input, const Indices &mapping, Boundary_data &building_boundaries, Boundary_data &boundary_clutter) {
+			auto get_boundary_points(const Container &input, const Indices &mapping, const bool with_shape_detection, Boundary_data &building_boundaries, Boundary_data &boundary_clutter) {
 
 				auto number_of_boundaries = -1;
 				create_indices(input);
@@ -74,7 +74,7 @@ namespace CGAL {
 				boundary_clutter.clear();
 
 				for (size_t i = 0; i < mapping.size(); ++i) {
-					if (m_indices[mapping[i]] >= 0) building_boundaries[m_indices[mapping[i]]].push_back(mapping[i]);
+					if (m_indices[mapping[i]] >= 0 && with_shape_detection) building_boundaries[m_indices[mapping[i]]].push_back(mapping[i]);
 					else boundary_clutter[0].push_back(mapping[i]);
 				}
 

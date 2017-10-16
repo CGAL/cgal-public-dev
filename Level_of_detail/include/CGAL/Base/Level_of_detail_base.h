@@ -22,7 +22,6 @@ namespace CGAL {
 		class Level_of_detail_base {
 
 		public:
-
 			// Main typedefs.
 			typedef LodTraits 				      Traits;
 			typedef typename Traits::Kernel       Kernel;
@@ -103,7 +102,9 @@ namespace CGAL {
 			using Point_index = typename Container_3D::Index;
 			using Face_points_map = std::map<Face_handle, std::vector<Point_index> >;
 
-			enum class Program_version { A, B };
+			enum class Program_version  { VER0 };
+			enum class Pipeline_version { WITH_SHAPE_DETECTION, WITHOUT_SHAPE_DETECTION };
+
 
 			//////////////
 			// Main class!
@@ -130,9 +131,11 @@ namespace CGAL {
 			m_roof_fitter_type(Roof_fitter_type::MAX), 
 			m_clean_projected_points(true),
 			m_max_reg_angle(-FT(1)),
-			m_reject_planes(true), 
+			m_regularizer_reject_planes(true), 
 			m_use_boundaries(true),
-			m_prog_version(Program_version::B)
+			m_prog_version(Program_version::VER0),
+			m_pipeline_version(Pipeline_version::WITHOUT_SHAPE_DETECTION),
+			m_visibility_show_progress(false)
 			{ } // Do I need to create an instance of these traits here?
 
 
@@ -144,12 +147,8 @@ namespace CGAL {
 
 				switch (m_prog_version) {
 
-					case Program_version::A:
-						create_lods_a();
-						break;
-
-					case Program_version::B:
-						create_lods_b();
+					case Program_version::VER0:
+						create_lods_ver0();
 						break;
 
 					default:
@@ -158,162 +157,190 @@ namespace CGAL {
 				}
 			}
 
-			// Version a.
-			void create_lods_a() {
+		private:
+			void start_execution(
+				Log &log) {
 
-				// (START) Create log.
+				// Create log and set default parameters.
 				std::cout << "\nstarting ..." << std::endl;
-				Log log; log.out << "START EXECUTION\n\n\n";
+				log.out << "START EXECUTION\n\n\n";
 
 				set_global_parameters();
 				assert_global_parameters();
+			}
 
+			void loading_data(
+				Container_3D &input, 
+				Log &log, 
+				const size_t exec_step) {
 
-				// ----------------------------------
+				// Read data.
+				std::cout << "(" << exec_step << ") loading" << std::endl;
 
-				// (1) Read data.
-				std::cout << "(1) loading" << std::endl;
-
-				Container_3D input;
 				m_loader.get_data(m_default_path + ".ply", input);
 
-				log.out << "(1) Data are loaded. Number of points: " << input.number_of_points() << std::endl << std::endl;
+				log.out << "(" << exec_step << ") Data are loaded. Number of points: " << input.number_of_points() << std::endl << std::endl;
 
 				// Log mock_saver; mock_saver.save_ply<Traits, Container_3D>(input, "basic_mock", true);
+			}
 
+			void getting_all_planes(
+				Planes &all_planes, 
+				Log &log, 
+				const Container_3D &input, const size_t exec_step) {
 
-				// ----------------------------------
-
-				// (2) Find a set of planes related to the points. Basically here we emulate RANSAC.
+				// Find a set of planes related to the points. Basically here we emulate RANSAC.
 				// For each plane we store indices of all points contained in this plane.
-				std::cout << "(2) planes" << std::endl;
+				std::cout << "(" << exec_step << ") planes" << std::endl;
 
-				Planes all_planes;
 				const auto number_of_planes = m_preprocessor.get_planes(input, all_planes);
 				assert(number_of_planes >= 0);
 
-				log.out << "(2) Planes are found. Number of planes: " << number_of_planes << std::endl << std::endl;
+				log.out << "(" << exec_step << ") Planes are found. Number of planes: " << number_of_planes << std::endl << std::endl;
+			}
 
+			void applying_selection(
+				Indices &ground_idxs,
+				Indices &building_boundary_idxs, 
+				Log &log, 
+				const Container_3D &input, const size_t exec_step) {
 
-				// ----------------------------------
+				// Split data with respect to 2 different semantic labels.
+				std::cout << "(" << exec_step << ") selection" << std::endl;
 
-				// (3) Split data with respect to 4 different semantic labels.
-				std::cout << "(3) selection" << std::endl;
-
-				Indices building_boundary_idxs, building_interior_idxs, clutter_idxs, ground_idxs;
-
-				m_clutter_selector.select_elements(input, std::back_inserter(clutter_idxs));
-				m_ground_selector.select_elements( input, std::back_inserter(ground_idxs));
-
+				m_ground_selector.select_elements(input, std::back_inserter(ground_idxs));
 				m_building_boundary_selector.select_elements(input, std::back_inserter(building_boundary_idxs));
-				m_building_interior_selector.select_elements(input, std::back_inserter(building_interior_idxs));
 
-				log.out << "(3) Clutter is found. Number of elements: " 			 << clutter_idxs.size() << std::endl;
-				log.out << "(.) Ground is found. Number of elements: " 			     << ground_idxs.size() << std::endl;
-				log.out << "(.) Building boundaries are found. Number of elements: " << building_boundary_idxs.size() << std::endl;
-				log.out << "(3) Building interiors are found. Number of elements: "  << building_interior_idxs.size() << std::endl << std::endl;
+				log.out << "(" << exec_step << " a) Ground is found. Number of elements: " 			   << ground_idxs.size() << std::endl;
+				log.out << "(" << exec_step << " b) Building boundaries are found. Number of elements: " << building_boundary_idxs.size() << std::endl << std::endl;
+			}
 
+			void ground_fitting(
+				Plane_3 &base_ground_plane, 
+				Plane_3 &fitted_ground_plane, 
+				Log &log, 
+				const Indices &ground_idxs, const Container_3D &input, const size_t exec_step) {
 
-				// ----------------------------------
+				// Create plane from the ground points.
+				std::cout << "(" << exec_step << ") ground plane fitting" << std::endl;
 
-				// (4) Create plane from the ground points.
-				std::cout << "(4) ground plane fitting" << std::endl;
+				base_ground_plane = Plane_3(FT(0), FT(0), FT(1), FT(0)); // use XY plane instead
+				m_utils.fit_ground_plane(input, ground_idxs, fitted_ground_plane);
+				
+				log.out << "(" << exec_step << " a) Base ground plane is: "        << base_ground_plane   << std::endl;
+				log.out << "(" << exec_step << " b) Data-fitted ground plane is: " << fitted_ground_plane << std::endl << std::endl;
+			}
 
-				Plane_3 ground_fitted_plane;
-				m_utils.fit_ground_plane(input, ground_idxs, ground_fitted_plane);
+			void getting_boundary_points(
+				Boundary_data &building_boundaries, 
+				Boundary_data &boundary_clutter, 
+				Log &log, 
+				const Indices &building_boundary_idxs, const Container_3D &input, const size_t exec_step) {
 
-				Plane_3 ground_plane = Plane_3(FT(0), FT(0), FT(1), FT(0)); // use XY plane instead
-				log.out << "(4) Ground plane is fitted: " << ground_plane << std::endl << std::endl;
+				// Map indices from all detected planes to the ones that are a part of the given facades.
+				std::cout << "(" << exec_step << ") getting boundaries" << std::endl;
+				
+				bool with_shape_detection = false;
+				if (m_pipeline_version == Pipeline_version::WITH_SHAPE_DETECTION) with_shape_detection = true;
 
+				const auto number_of_boundaries = m_preprocessor.get_boundary_points(input, building_boundary_idxs, with_shape_detection, building_boundaries, boundary_clutter);
 
-				// ----------------------------------
+				log.out << "(" << exec_step << " a) Planes for building's boundary are found. Number of planes: " << number_of_boundaries 		   << std::endl;
+				log.out << "(" << exec_step << " b) Boundary clutter is found. Number of points: " 				  << boundary_clutter.at(0).size() << std::endl << std::endl;
+			}
 
-				// (5) Map indices from all detected planes to the ones that are a part of the given facades.
-				std::cout << "(5) getting boundaries" << std::endl;
+			void regularizing(
+				Boundary_data &building_boundaries, 
+				Container_3D &input,
+				Log &log, 
+				const Plane_3 &base_ground_plane, const size_t exec_step) {
 
-				Boundary_data building_boundaries, boundary_clutter;
-				const auto number_of_boundaries = m_preprocessor.get_boundaries(input, building_boundary_idxs, building_boundaries, boundary_clutter);
-
-				log.out << "(5) Planes for building's boundary are found. Number of planes: " << number_of_boundaries << std::endl;
-				log.out << "(5) Boundary clutter is found. Number of points: " << boundary_clutter.at(0).size() << std::endl << std::endl;
-
-
-				// ----------------------------------
-
-				// (6) Make all nearly vertical planes in the building's boundary exactly vertical.
-				std::cout << "(6) regularizing" << std::endl;
+				// Make all nearly vertical planes in the building's boundary exactly vertical.
+				std::cout << "(" << exec_step << ") regularizing" << std::endl;
 
 				m_vertical_regularizer.set_max_regularization_angle(m_max_reg_angle);
-				m_vertical_regularizer.reject_planes(m_reject_planes);
+				m_vertical_regularizer.reject_planes(m_regularizer_reject_planes);
 
-				const auto number_of_regularized_planes = m_vertical_regularizer.regularize(building_boundaries, input, ground_plane);
+				const auto number_of_boundaries = building_boundaries.size();
+				const auto number_of_regularized_planes = m_vertical_regularizer.regularize(building_boundaries, input, base_ground_plane);
 
-				log.out << "(6) Building's nearly vertical planes are regularized. Number of regularized planes: " << number_of_regularized_planes <<
+				log.out << "(" << exec_step << ") Building's nearly vertical planes are regularized. Number of regularized planes: " << number_of_regularized_planes <<
 				", number of rejected planes: " << number_of_boundaries - building_boundaries.size() << std::endl << std::endl;
 
 				// Log ply_saver; ply_saver.save_ply<Kernel, Container_3D>(input, "regularized", true);
+			}
 
+			void projecting(
+				Projected_points &building_boundaries_projected, 
+				Projected_points &boundary_clutter_projected,
+				Log &log, 
+				const Plane_3 &base_ground_plane, const Boundary_data &building_boundaries, const Boundary_data &boundary_clutter, const Container_3D &input, const size_t exec_step) {
 
-				// ----------------------------------
+				// Project all vertical building's boundaries onto the ground plane.
+				std::cout << "(" << exec_step << ") projecting" << std::endl;
 
-				// (7) Project all vertical building's boundaries onto the ground plane.
-				std::cout << "(7) projecting" << std::endl;
+				auto number_of_projected_points = m_ground_projector.project(input, building_boundaries, base_ground_plane, building_boundaries_projected);
+				log.out << "(" << exec_step << " a) Building's boundary planar points are projected. Number of projected points: " << number_of_projected_points << std::endl;
 
-				Projected_points building_boundaries_projected; 
-				auto number_of_projected_points = m_ground_projector.project_with_planes(input, building_boundaries, ground_plane, building_boundaries_projected);
-				log.out << "(7) Building's boundary planar points are projected. Number of projected points: " << number_of_projected_points << std::endl;
-
-				Projected_points boundary_clutter_projected;
-				number_of_projected_points = m_ground_projector.project_with_planes(input, boundary_clutter, ground_plane, boundary_clutter_projected);
-				log.out << "(7) Building's boundary clutter is projected. Number of projected points: " << number_of_projected_points << std::endl << std::endl;
+				number_of_projected_points = m_ground_projector.project(input, boundary_clutter, base_ground_plane, boundary_clutter_projected);
+				log.out << "(" << exec_step << " b) Building's boundary clutter is projected. Number of projected points: " << number_of_projected_points << std::endl << std::endl;
 				
-				// Log points_exporter; points_exporter.export_projected_points_as_xyz("tmp/projected", building_boundaries_projected, m_default_path);
+				Log points_exporter; 
+				if (!building_boundaries_projected.empty()) points_exporter.export_projected_points_as_xyz("tmp/projected_boundaries", building_boundaries_projected, m_default_path);
 
-				
-				// ----------------------------------
+				points_exporter.clear(); 
+				if (!boundary_clutter_projected.empty()) points_exporter.export_projected_points_as_xyz("tmp/projected_clutter", boundary_clutter_projected, m_default_path);
+			}
 
-				// (7') Clean projected points by removing all points that lie far away from the center cluster of points.
-				if (m_clean_projected_points) {
+			void cleaning_projected_points(
+				Projected_points &building_boundaries_projected, 
+				Boundary_data &building_boundaries, 
+				Log &log, 
+				const size_t exec_step) {
 
-					std::cout << "(7') cleaning" << std::endl;
-					m_preprocessor.set_scale(m_preprocessor_scale);
+				assert(m_clean_projected_points);
 
-					auto number_of_removed_points = m_preprocessor.clean_projected_points(building_boundaries_projected, building_boundaries);
-					log.out << "(7') Building's boundaries are cleaned. Number of removed points: " << number_of_removed_points << std::endl;
+				// Clean projected points by removing all points that lie far away from the center cluster of points.
+				std::cout << "(" << exec_step << ") cleaning" << std::endl;
+				m_preprocessor.set_scale(m_preprocessor_scale);
+					
+				const auto number_of_removed_points = m_preprocessor.clean_projected_points(building_boundaries_projected, building_boundaries);
+				log.out << "(" << exec_step << ") Building's boundaries are cleaned. Number of removed points: " << number_of_removed_points << std::endl;
+			}
 
-					number_of_removed_points = m_preprocessor.clean_projected_points(boundary_clutter_projected, boundary_clutter);
-					log.out << "(7') Building's boundary clutter is cleaned. Number of removed points: " << number_of_removed_points << std::endl << std::endl;
-				}
+			void line_fitting(
+				Lines &lines, 
+				Log &log, 
+				const Boundary_data &building_boundaries, const Projected_points &building_boundaries_projected, const size_t exec_step) {
 
+				// Fit lines to the projected points in 2D.
+				std::cout << "(" << exec_step << ") line fitting" << std::endl;
 
-				// ----------------------------------
-
-				// (8) Fit lines to the projected points in 2D.
-				std::cout << "(8) line fitting" << std::endl;
-
-				Lines lines;
 				const auto number_of_fitted_lines = m_utils.fit_lines_to_projected_points(building_boundaries_projected, building_boundaries, lines);
 
-				log.out << "(8) Lines are fitted. Number of fitted lines: " << number_of_fitted_lines << std::endl << std::endl;
+				log.out << "(" <<  exec_step << ") Lines are fitted. Number of fitted lines: " << number_of_fitted_lines << std::endl << std::endl;
+			}
 
+			void creating_segments(
+				Segments &segments, 
+				Log &log, 
+				const Lines &lines, const Boundary_data &building_boundaries, const Projected_points &building_boundaries_projected, const size_t exec_step) {
 
-				// ----------------------------------
+				// Find segments from the given lines.
+				std::cout << "(" << exec_step << ") creating segments" << std::endl;
 
-				// (9) Find segments from the given lines.
-				std::cout << "(9) creating segments" << std::endl;
-
-				Segments segments;
 				const auto number_of_segments = m_utils.create_segments_from_lines(building_boundaries_projected, building_boundaries, lines, segments);
 
-				log.out << "(9) Segments are created. Number of created segments: " << number_of_segments << std::endl << std::endl;
-
+				log.out << "(" << exec_step << ") Segments are created. Number of created segments: " << number_of_segments << std::endl << std::endl;
 				Log segments_exporter; segments_exporter.export_segments_as_obj("tmp/segments", segments, m_default_path);
+			}
 
+			void applying_2d_structuring(
+				Log &log, 
+				const Lines &lines, const Boundary_data &building_boundaries, const Projected_points &building_boundaries_projected, const size_t exec_step) {
 
-				// ----------------------------------
-
-				// (10) Apply 2D structuring algorithm.
-				std::cout << "(10) 2d structuring" << std::endl;
+				// Apply 2D structuring algorithm.
+				std::cout << "(" << exec_step << ") 2d structuring" << std::endl;
 
 				m_structuring = std::make_unique<Structuring_2>(building_boundaries_projected, building_boundaries, lines);
 				
@@ -323,279 +350,82 @@ namespace CGAL {
 
 				const auto number_of_structured_segments = m_structuring->structure_point_set();
 
-				log.out << "(10) 2D Structuring is applied. Number of structured segments: " << number_of_structured_segments << std::endl << std::endl;
+				log.out << "(" << exec_step << ") 2D Structuring is applied. Number of structured segments: " << number_of_structured_segments << std::endl << std::endl;
+			}
 
+			void creating_cdt(
+				CDT &cdt, 
+				Log &log, 
+				const Boundary_data &boundary_clutter, const Projected_points &boundary_clutter_projected, const Container_3D &input, const size_t exec_step) {
 
-				// ----------------------------------
+				// Compute constrained Delaunay triangulation of the structured points.
+				std::cout << "(" << exec_step << ") creating cdt" << std::endl;
 
-				// (11) Compute constrained Delaunay triangulation of the structured points.
-				std::cout << "(11) creating cdt" << std::endl;
+				auto number_of_faces = -1;
+				if (m_pipeline_version == Pipeline_version::WITH_SHAPE_DETECTION) {
+					
+					const Structured_points &structured_points = m_structuring_get_all_points ? m_structuring->get_structured_points() : m_structuring->get_segment_end_points();
+					const Structured_labels &structured_labels = m_structuring_get_all_points ? m_structuring->get_structured_labels() : m_structuring->get_segment_end_labels();
 
-				const Structured_points &structured_points = m_structuring_get_all_points ? m_structuring->get_structured_points() : m_structuring->get_segment_end_points();
-				const Structured_labels &structured_labels = m_structuring_get_all_points ? m_structuring->get_structured_labels() : m_structuring->get_segment_end_labels();
-
-				CDT cdt; 
-				const auto number_of_faces = m_utils.compute_cdt(structured_points, structured_labels, cdt, 
+					number_of_faces = m_utils.compute_cdt(structured_points, structured_labels, cdt, 
 													 m_add_cdt_clutter, boundary_clutter, boundary_clutter_projected, 
 													 m_add_cdt_bbox, input);
+				} else {
 
-				log.out << "(11) Constrained Delaunay triangulation of the structured points is built. Number of faces: " << number_of_faces << std::endl << std::endl;
+					number_of_faces = m_utils.compute_cdt(Structured_points(), Structured_labels(), cdt, 
+													 m_add_cdt_clutter, boundary_clutter, boundary_clutter_projected, 
+													 m_add_cdt_bbox, input);
+				}
 
+				assert(number_of_faces != -1);
+				log.out << "(" << exec_step << ") Constrained Delaunay triangulation of the structured points is built. Number of faces: " << number_of_faces << std::endl << std::endl;
 				assert(!m_add_cdt_bbox); // visibility and graph cut do not work if bbox vertices are added to CDT!
+			}
 
+			void converting_3d_to_2d(
+				Container_2D &input_2d, 
+				Face_points_map &fp_map,
+				Log &log, 
+				const CDT &cdt, const Container_3D &input, const size_t exec_step) {
 
-				// ----------------------------------
+				// Convert 3D input to 2D input.			
+				std::cout << "(" << exec_step << ") converting 3d input into 2d input and setting face to points map" << std::endl;
 
-				// (12) Convert 3D input to 2D input.			
-				std::cout << "(12) converting 3d input into 2d input and setting face to points map" << std::endl;
-
-				Container_2D input_2d; Face_points_map fp_map;
 				const auto number_of_converted_points = m_utils.get_2d_input_and_face_points_map(cdt, input, input_2d, fp_map);
 
-				log.out << "(12) 3D input is converted into 2D input and face to points map is set. Number of converted points: " << number_of_converted_points << std::endl << std::endl;
+				log.out << "(" << exec_step << ") 3D input is converted into 2D input and face to points map is set. Number of converted points: " << number_of_converted_points << std::endl << std::endl;
+			}
 
+			void computing_visibility(
+				CDT &cdt, 
+				Log &log, 
+				const Container_2D &input_2d, const size_t exec_step) {
 
-				// ----------------------------------
-
-				// (13) Compute visibility (0 - outside or 1 - inside) for each triangle in CDT above.
-				std::cout << "(13) visibility computation" << std::endl;
+				// Compute visibility (0 - outside or 1 - inside) for each triangle in CDT above.
+				std::cout << "(" << exec_step << ") visibility computation" << std::endl;
 
 				m_visibility.save_info(m_visibility_save_info);
 				m_visibility.set_approach(m_visibility_approach);
 				m_visibility.set_method(m_visibility_method);
 				m_visibility.set_number_of_samples(m_visibility_num_samples);
+				m_visibility.show_progress(m_visibility_show_progress);
 
 				const auto number_of_traversed_faces = m_visibility.compute(input_2d, cdt);
-				log.out << "(13) Visibility is computed. Number of traversed faces: " << number_of_traversed_faces << std::endl << std::endl;
+				log.out << "(" << exec_step << ") Visibility is computed. Number of traversed faces: " << number_of_traversed_faces << std::endl << std::endl;
 
 				// Log eps_saver_wp; eps_saver_wp.save_visibility_eps(cdt, input, structured_points); // works only with basic test
 				
 				Log eps_saver; eps_saver.save_visibility_eps(cdt);
 				Log ply_vis_saver; ply_vis_saver.save_cdt_ply(cdt, "tmp/visibility", "in");
-
-
-				// ----------------------------------
-
-				// (14) Apply graph cut.
-				std::cout << "(14) applying graph cut" << std::endl;
-
-				m_graph_cut.save_info(m_graph_cut_save_info);
-				m_graph_cut.set_alpha_parameter(m_graph_cut_alpha);
-				m_graph_cut.set_beta_parameter(m_graph_cut_beta);
-				m_graph_cut.set_gamma_parameter(m_graph_cut_gamma);
-
-				m_graph_cut.max_flow(cdt);
-
-				log.out << "(14) Graph cut is applied." << std::endl << std::endl;
-				Log ply_cdt_in; ply_cdt_in.save_cdt_ply(cdt, "tmp/after_cut", "in");
-
-
-				// ----------------------------------				
-
-				// (15) From now on we handle each building separately.
-
-
-				// (a) Split all buildings.
-				std::cout << "(15 a) splitting buildings" << std::endl;
-
-				Buildings buildings;
-				const auto number_of_buildings = m_building_splitter.split(cdt, buildings);
-
-				log.out << "(15 a) All buildings are found. Number of buildings: " << number_of_buildings << std::endl;
-
-
-				// ----------------------------------
-
-				if (m_use_boundaries) {
-
-					// (b) Find building's walls.
-					std::cout << "(15 b) finding boundaries" << std::endl;
-
-					m_building_outliner.save_info(m_building_boundaries_save_internal_info);
-					m_building_outliner.set_max_inner_iterations(m_building_boundaries_max_inner_iters);
-					m_building_outliner.set_max_outer_iterations(m_building_boundaries_max_outer_iters);
-					
-					m_building_outliner.find_boundaries(cdt, buildings);
-
-					log.out << "(15 b) All boundaries are found." << std::endl;
-					Log log_bounds; log_bounds.save_buildings_info(cdt, buildings, "tmp/buildings_info_with_boundaries");
-					
-					// log_bounds.clear(); log_bounds.save_cdt_ply(cdt, "tmp/chosen_vertices"); // debugging info
-				}
-
-
-				// ----------------------------------
-
-				// (c) Fit roof height for each building.
-				std::cout << "(15 c) fitting roofs" << std::endl;
-				switch (m_roof_fitter_type) {
-					
-					case Roof_fitter_type::MIN: 
-						m_building_min_roof_fitter.fit_roof_heights(cdt, input, fp_map, ground_fitted_plane, buildings);
-						break;
-
-					case Roof_fitter_type::AVG: 
-						m_building_avg_roof_fitter.fit_roof_heights(cdt, input, fp_map, ground_fitted_plane, buildings);
-						break;
-
-					case Roof_fitter_type::MAX: 
-						m_building_max_roof_fitter.fit_roof_heights(cdt, input, fp_map, ground_fitted_plane, buildings);
-						break;			
-
-					default:
-						assert(!"Wrong roof fitter type!");
-						break;
-				}
-				
-				log.out << "(15 c) All roofs are fitted." << std::endl << std::endl;
-				Log log_roofs; log_roofs.save_buildings_info(cdt, buildings, "tmp/buildings_info_final");
-
-
-				// ----------------------------------
-
-				// (16) LOD0 reconstruction.
-
-				m_lods.use_boundaries(m_use_boundaries);
-
-				Ground ground_bbox;
-				m_utils. template compute_ground_bbox<Ground, Ground_point>(input, ground_bbox);
-
-				assert(!ground_bbox.empty());
-				std::cout << "(16) reconstructing lod0" << std::endl;
-
-				Mesh mesh_0; Mesh_facet_colors mesh_facet_colors_0;
-				m_lods.reconstruct_lod0(cdt, buildings, ground_bbox, mesh_0, mesh_facet_colors_0);
-
-				log.out << "(16) Final LOD0 is reconstructed." << std::endl << std::endl;
-				Log lod_0_saver; lod_0_saver.save_mesh_as_ply(mesh_0, mesh_facet_colors_0, "LOD0");
-
-
-				// ----------------------------------	
-				
-				// (17) LOD1 reconstruction.
-				
-				std::cout << "(17) reconstructing lod1" << std::endl;
-
-				Mesh mesh_1; Mesh_facet_colors mesh_facet_colors_1;
-				m_lods.reconstruct_lod1(cdt, buildings, ground_bbox, mesh_1, mesh_facet_colors_1);
-
-				log.out << "(17) Final LOD1 is reconstructed." << std::endl;
-				Log lod_1_saver; lod_1_saver.save_mesh_as_ply(mesh_1, mesh_facet_colors_1, "LOD1");
-
-
-				// ----------------------------------
-
-				// (END) Save log.
-				std::cout << "... finishing\n" << std::endl;
-
-				log.out << "\n\nFINISH EXECUTION";
-				log.save("create_lods_ver_a");
 			}
-			
-			// Version b.
-			void create_lods_b() {
 
-				// (START) Create log.
-				std::cout << "\nstarting ..." << std::endl;
-				Log log; log.out << "START EXECUTION\n\n\n";
+			void applying_graph_cut(
+				CDT &cdt,
+				Log &log, 
+				const size_t exec_step) {
 
-				set_global_parameters();
-				assert_global_parameters();
-
-
-				// ----------------------------------
-
-				// (1) Read data.
-				std::cout << "(1) loading" << std::endl;
-
-				Container_3D input;
-				m_loader.get_data(m_default_path + ".ply", input);
-
-				log.out << "(1) Data are loaded. Number of points: " << input.number_of_points() << std::endl << std::endl;
-
-
-				// ----------------------------------
-
-				// (2) Split data with respect to 4 different semantic labels.
-				std::cout << "(2) selection" << std::endl;
-				Indices ground_idxs, building_boundary_idxs;
-
-				m_ground_selector.select_elements(input, std::back_inserter(ground_idxs));
-				m_building_boundary_selector.select_elements(input, std::back_inserter(building_boundary_idxs));
-
-				log.out << "(2 a) Ground is found. Number of elements: " 			   << ground_idxs.size() << std::endl;
-				log.out << "(2 b) Building boundaries are found. Number of elements: " << building_boundary_idxs.size() << std::endl << std::endl;
-
-
-				// ----------------------------------
-
-				// (3) Create plane from the ground points.
-				std::cout << "(3) ground plane fitting" << std::endl;
-
-				const Plane_3 base_ground_plane = Plane_3(FT(0), FT(0), FT(1), FT(0));
-
-				Plane_3 fitted_ground_plane;
-				m_utils.fit_ground_plane(input, ground_idxs, fitted_ground_plane);
-				
-				log.out << "(3 a) Base ground plane is: " << base_ground_plane << std::endl;
-				log.out << "(3 b) Data-fitted ground plane is: " << fitted_ground_plane << std::endl << std::endl;
-
-
-				// ----------------------------------
-
-				// (4) Project all boundary points onto the ground plane.
-				std::cout << "(4) projecting" << std::endl;
-
-				Projected_points building_boundaries_projected; 
-				auto number_of_projected_points = m_ground_projector.project_with_indices(input, building_boundary_idxs, base_ground_plane, building_boundaries_projected);
-				
-				Log proj_saver; proj_saver.export_projected_points_as_xyz("tmp/projected_boundaries", building_boundaries_projected, m_default_path);
-				log.out << "(4) Building's boundary points are projected. Number of projected points: " << number_of_projected_points << std::endl << std::endl;
-
-
-				// ----------------------------------
-
-				// (5) Compute constrained Delaunay triangulation of the input boundary points.
-				std::cout << "(5) creating cdt" << std::endl;
-
-				CDT cdt; 
-				const auto number_of_faces = m_utils.compute_delaunay(building_boundaries_projected, cdt);
-
-				log.out << "(5) Delaunay triangulation of the input boundary points is built. Number of faces: " << number_of_faces << std::endl << std::endl;
-
-
-				// ----------------------------------
-
-				// (6) Convert 3D input to 2D input.			
-				std::cout << "(6) converting 3d input into 2d input and setting face to points map" << std::endl;
-
-				Container_2D input_2d; Face_points_map fp_map;
-				const auto number_of_converted_points = m_utils.get_2d_input_and_face_points_map(cdt, input, input_2d, fp_map);
-
-				log.out << "(6) 3D input is converted into 2D input and face to points map is set. Number of converted points: " << number_of_converted_points << std::endl << std::endl;
-
-
-				// ----------------------------------
-
-				// (7) Compute visibility (0 - outside or 1 - inside) for each triangle in CDT above.
-				std::cout << "(7) visibility computation" << std::endl;
-
-				m_visibility.save_info(m_visibility_save_info);
-				m_visibility.set_approach(m_visibility_approach);
-				m_visibility.set_method(m_visibility_method);
-				m_visibility.set_number_of_samples(m_visibility_num_samples);
-
-				const auto number_of_traversed_faces = m_visibility.compute(input_2d, cdt);
-				log.out << "(7) Visibility is computed. Number of traversed faces: " << number_of_traversed_faces << std::endl << std::endl;
-				
-				Log eps_saver; eps_saver.save_visibility_eps(cdt);
-				Log ply_vis_saver; ply_vis_saver.save_cdt_ply(cdt, "tmp/visibility", "in");
-
-
-				// ----------------------------------
-
-				// (8) Apply graph cut.
-				std::cout << "(8) applying graph cut" << std::endl;
+				// Apply graph cut.
+				std::cout << "(" << exec_step << ") applying graph cut" << std::endl;
 
 				m_graph_cut.save_info(m_graph_cut_save_info);
 				m_graph_cut.set_alpha_parameter(m_graph_cut_alpha);
@@ -604,46 +434,50 @@ namespace CGAL {
 
 				m_graph_cut.max_flow(cdt);
 
-				log.out << "(8) Graph cut is applied." << std::endl << std::endl;
+				log.out << "(" << exec_step << ") Graph cut is applied." << std::endl << std::endl;
 				Log ply_cdt_in; ply_cdt_in.save_cdt_ply(cdt, "tmp/after_cut", "in");
+			}
 
+			void splitting_buildings(
+				Buildings &buildings, 
+				CDT &cdt,
+				Log &log, 
+				const size_t exec_step) {
 
-				// ----------------------------------				
+				// Split all buildings.
+				std::cout << "(" << exec_step << ") splitting buildings" << std::endl;
 
-				// (9) From now on we handle each building separately.
-
-
-				// (a) Split all buildings.
-				std::cout << "(9 a) splitting buildings" << std::endl;
-
-				Buildings buildings;
 				const auto number_of_buildings = m_building_splitter.split(cdt, buildings);
 
-				log.out << "(9 a) All buildings are found. Number of buildings: " << number_of_buildings << std::endl;
+				log.out << "(" << exec_step << ") All buildings are found. Number of buildings: " << number_of_buildings << std::endl << std::endl;
+			}
 
+			void finding_buildings_boundaries(
+				Buildings &buildings,
+				Log &log, 
+				const CDT &cdt, const size_t exec_step) {
 
-				// ----------------------------------
+				// Find building's walls.
+				std::cout << "(" << exec_step << ") finding boundaries" << std::endl;
 
-				if (m_use_boundaries) {
-
-					// (b) Find building's walls.
-					std::cout << "(9 b) finding boundaries" << std::endl;
-
-					m_building_outliner.save_info(m_building_boundaries_save_internal_info);
-					m_building_outliner.set_max_inner_iterations(m_building_boundaries_max_inner_iters);
-					m_building_outliner.set_max_outer_iterations(m_building_boundaries_max_outer_iters);
+				m_building_outliner.save_info(m_building_boundaries_save_internal_info);
+				m_building_outliner.set_max_inner_iterations(m_building_boundaries_max_inner_iters);
+				m_building_outliner.set_max_outer_iterations(m_building_boundaries_max_outer_iters);
 					
-					m_building_outliner.find_boundaries(cdt, buildings);
+				m_building_outliner.find_boundaries(cdt, buildings);
 
-					log.out << "(9 b) All boundaries are found." << std::endl;
-					Log log_bounds; log_bounds.save_buildings_info(cdt, buildings, "tmp/buildings_info_with_boundaries");
-				}
+				log.out << "(" << exec_step << ") All boundaries are found." << std::endl << std::endl; 
+				Log log_bounds; log_bounds.save_buildings_info(cdt, buildings, "tmp/buildings_info_with_boundaries");
+					
+				// log_bounds.clear(); log_bounds.save_cdt_ply(cdt, "tmp/chosen_vertices"); // debugging info
+			}
 
+			void fitting_roofs(
+				Buildings &buildings,
+				Log &log, 
+				const Plane_3 &fitted_ground_plane, const Face_points_map &fp_map, const Container_3D &input, const CDT &cdt, const size_t exec_step) {
 
-				// ----------------------------------
-
-				// (c) Fit roof height for each building.
-				std::cout << "(9 c) fitting roofs" << std::endl;
+				std::cout << "(" << exec_step << ") fitting roofs" << std::endl;
 				switch (m_roof_fitter_type) {
 					
 					case Roof_fitter_type::MIN: 
@@ -663,49 +497,173 @@ namespace CGAL {
 						break;
 				}
 				
-				log.out << "(9 c) All roofs are fitted." << std::endl << std::endl;
+				log.out << "(" << exec_step << ") All roofs are fitted." << std::endl << std::endl;
 				Log log_roofs; log_roofs.save_buildings_info(cdt, buildings, "tmp/buildings_info_final");
+			}
 
+			void creating_lod0(
+				Ground &ground_bbox, 
+				Log &log, 
+				const CDT &cdt, const Buildings &buildings, const Container_3D &input, const size_t exec_step) {
 
-				// ----------------------------------
-
-				// (10 a) LOD0 reconstruction.
+				// LOD0 reconstruction.
 
 				m_lods.use_boundaries(m_use_boundaries);
-
-				Ground ground_bbox;
 				m_utils. template compute_ground_bbox<Ground, Ground_point>(input, ground_bbox);
 
 				assert(!ground_bbox.empty());
-				std::cout << "(10 a) reconstructing lod0" << std::endl;
+				std::cout << "(" << exec_step << ") reconstructing lod0" << std::endl;
 
 				Mesh mesh_0; Mesh_facet_colors mesh_facet_colors_0;
 				m_lods.reconstruct_lod0(cdt, buildings, ground_bbox, mesh_0, mesh_facet_colors_0);
 
-				log.out << "(10 a) Final LOD0 is reconstructed." << std::endl;
+				log.out << "(" << exec_step << ") Final LOD0 is reconstructed." << std::endl << std::endl;
 				Log lod_0_saver; lod_0_saver.save_mesh_as_ply(mesh_0, mesh_facet_colors_0, "LOD0");
+			}
 
+			void creating_lod1(
+				Log &log, 
+				const CDT &cdt, const Buildings &buildings, const Ground &ground_bbox, const size_t exec_step) {
 
-				// ----------------------------------	
+				// LOD1 reconstruction.
 				
-				// (10 b) LOD1 reconstruction.
-				
-				std::cout << "(10 b) reconstructing lod1" << std::endl;
+				std::cout << "(" << exec_step << ") reconstructing lod1" << std::endl;
 
 				Mesh mesh_1; Mesh_facet_colors mesh_facet_colors_1;
 				m_lods.reconstruct_lod1(cdt, buildings, ground_bbox, mesh_1, mesh_facet_colors_1);
 
-				log.out << "(10 b) Final LOD1 is reconstructed." << std::endl;
+				log.out << "(" << exec_step << ") Final LOD1 is reconstructed." << std::endl;
 				Log lod_1_saver; lod_1_saver.save_mesh_as_ply(mesh_1, mesh_facet_colors_1, "LOD1");
+			}
 
-
-				// ----------------------------------
-
-				// (END) Save log.
+			void finish_execution(
+				Log &log, 
+				const std::string &filename) {
+				
+				// Save log.
 				std::cout << "... finishing\n" << std::endl;
 
 				log.out << "\n\nFINISH EXECUTION";
-				log.save("create_lods_ver_b");
+				log.save(filename);
+			}
+
+		public:
+			// Version 0.
+			void create_lods_ver0() {
+
+				// (--) ----------------------------------
+				Log log; size_t exec_step = 0;
+				start_execution(log);
+
+
+				// (01) ----------------------------------
+				Container_3D input;
+				loading_data(input, log, ++exec_step);
+
+
+				if (m_pipeline_version == Pipeline_version::WITH_SHAPE_DETECTION) {
+					
+					// (02) ---------------------------------- not used
+					Planes all_planes;
+					getting_all_planes(all_planes, log, input, ++exec_step);
+				}
+
+
+				// (03) ----------------------------------
+				Indices ground_idxs, building_boundary_idxs;
+				applying_selection(ground_idxs, building_boundary_idxs, log, input, ++exec_step);
+
+
+				// (04) ----------------------------------
+				Plane_3 base_ground_plane, fitted_ground_plane;
+				ground_fitting(base_ground_plane, fitted_ground_plane, log, ground_idxs, input, ++exec_step);
+
+
+				// (05) ----------------------------------					
+				Boundary_data building_boundaries, boundary_clutter;					
+				getting_boundary_points(building_boundaries, boundary_clutter, log, building_boundary_idxs, input, ++exec_step);
+
+
+				if (m_pipeline_version == Pipeline_version::WITH_SHAPE_DETECTION) {
+
+					// (06) ----------------------------------
+					regularizing(building_boundaries, input, log, base_ground_plane, ++exec_step);
+				}
+
+
+				// (07) ----------------------------------
+				Projected_points building_boundaries_projected, boundary_clutter_projected;
+				projecting(building_boundaries_projected, boundary_clutter_projected, log, base_ground_plane, building_boundaries, boundary_clutter, input, ++exec_step);
+			 	
+
+				if (m_pipeline_version == Pipeline_version::WITH_SHAPE_DETECTION) {
+
+					// (08) ---------------------------------- not necessary in many cases
+					if (m_clean_projected_points) 
+						cleaning_projected_points(building_boundaries_projected, building_boundaries, log, ++exec_step);
+
+
+					// (09) ----------------------------------
+					Lines lines; 
+					line_fitting(lines, log, building_boundaries, building_boundaries_projected, ++exec_step);
+
+
+					// (10) ---------------------------------- not used
+					Segments segments;
+					creating_segments(segments, log, lines, building_boundaries, building_boundaries_projected, ++exec_step);
+
+
+					// (11) ----------------------------------
+					applying_2d_structuring(log, lines, building_boundaries, building_boundaries_projected, ++exec_step);
+				}
+
+
+				// (12) ----------------------------------
+				CDT cdt;
+				if (m_pipeline_version == Pipeline_version::WITHOUT_SHAPE_DETECTION) m_add_cdt_clutter = true;
+				creating_cdt(cdt, log, boundary_clutter, boundary_clutter_projected, input, ++exec_step);
+
+
+				// (13) ----------------------------------
+				Container_2D input_2d; Face_points_map fp_map;
+				converting_3d_to_2d(input_2d, fp_map, log, cdt, input, ++exec_step);
+
+
+				// (14) ----------------------------------
+				computing_visibility(cdt, log, input_2d, ++exec_step);
+
+
+				// (15) ----------------------------------
+				applying_graph_cut(cdt, log, ++exec_step);
+
+				
+				// From now on we handle each building separately.
+
+				// (16) ----------------------------------				
+				Buildings buildings;
+				splitting_buildings(buildings, cdt, log, ++exec_step);
+
+
+				// (17) ----------------------------------				
+				if (m_use_boundaries) 
+					finding_buildings_boundaries(buildings, log, cdt, ++exec_step);
+
+
+				// (18) ----------------------------------
+				fitting_roofs(buildings, log, fitted_ground_plane, fp_map, input, cdt, ++exec_step);
+
+
+				// (19) ----------------------------------
+				Ground ground_bbox;
+				creating_lod0(ground_bbox, log, cdt, buildings, input, ++exec_step);
+
+
+				// (20) ----------------------------------	
+				creating_lod1(log, cdt, buildings, ground_bbox, ++exec_step);
+
+
+				// (--) ----------------------------------
+				finish_execution(log, "create_lods");
 			}
 
 		private:
@@ -767,10 +725,13 @@ namespace CGAL {
 			bool m_clean_projected_points;
 
 			FT m_max_reg_angle;
-			bool m_reject_planes;
+			bool m_regularizer_reject_planes;
 			bool m_use_boundaries;
 
-			const Program_version m_prog_version;
+			const Program_version  m_prog_version;
+			const Pipeline_version m_pipeline_version;
+
+			bool m_visibility_show_progress;
 
 			
 			// Assert default values of all global parameters.
@@ -799,6 +760,7 @@ namespace CGAL {
 				assert(m_max_reg_angle != -FT(1));
 			}
 
+
 			// Set all global parameters.
 			void set_global_parameters() {
 
@@ -813,18 +775,21 @@ namespace CGAL {
 				m_building_boundaries_max_inner_iters = 1000;
 				m_building_boundaries_max_outer_iters = 1000000;
 
+				m_visibility_show_progress = true;
+
 
 				// More important.
-				m_reject_planes 			 = true;
+				m_regularizer_reject_planes  = true;
 				m_structuring_resample 	 	 = true;
 				m_structuring_get_all_points = false;
 				m_clean_projected_points 	 = true;
 				
-				m_visibility_approach = Visibility_approach::POINT_BASED;
-				m_visibility_method   = Visibility_method::POINT_BASED_CLASSIFICATION;
+				m_visibility_approach = Visibility_approach::FACE_BASED;
+				m_visibility_method   = Visibility_method::FACE_BASED_NATURAL_NEIGHBOURS;
 				m_roof_fitter_type 	  = Roof_fitter_type::AVG;
 
-				m_use_boundaries = true; // !!!!! - IMPORTANT!
+				m_use_boundaries = false; // !!!!! - IMPORTANT!
+
 
 				// The most important!
 				const Main_test_data_type test_data_type = Main_test_data_type::BASIC;
@@ -852,6 +817,7 @@ namespace CGAL {
 				}
 			}
 
+
 			void set_basic_parameters() {
 
 				// To load basic parameters from stub, add stub to the loader class in LOD_traits!
@@ -869,6 +835,7 @@ namespace CGAL {
 				m_graph_cut_gamma 		 = 1000.0;
 			}
 
+
 			void set_complex_parameters() {
 
 				// All main parameters are set below.
@@ -882,6 +849,7 @@ namespace CGAL {
 				m_graph_cut_beta 		 = 100000.0;
 				m_graph_cut_gamma 		 = 1000.0;
 			}
+
 
 			void set_paris_parameters() {
 
@@ -897,6 +865,7 @@ namespace CGAL {
 				m_graph_cut_gamma 		 = 1000.0;
 			}
 
+
 			void set_p10_parameters() {
 
 				// All main parameters are set below.
@@ -905,10 +874,41 @@ namespace CGAL {
 				m_preprocessor_scale  	 = 2.0;
 				m_structuring_epsilon 	 = 0.1; // the most important parameter!!!
 				m_add_cdt_clutter     	 = false;
-				m_visibility_num_samples = 200;
+				m_visibility_num_samples = 5;
 				m_graph_cut_alpha 		 = 1.0;
 				m_graph_cut_beta 		 = 100000.0;
 				m_graph_cut_gamma 		 = 1000.0;
+			}
+
+
+			//////////////////////
+			// Not used functions!
+
+			void projecting_without_shape_detection(
+				Projected_points &building_boundaries_projected, 
+				Log &log, 
+				const Plane_3 &base_ground_plane, const Indices &building_boundary_idxs, const Container_3D &input, const size_t exec_step) {
+				
+				// Project all boundary points onto the ground plane.
+				std::cout << "(" << exec_step << ") projecting" << std::endl;
+
+				const auto number_of_projected_points = m_ground_projector.project_with_indices(input, building_boundary_idxs, base_ground_plane, building_boundaries_projected);
+				
+				Log proj_saver; proj_saver.export_projected_points_as_xyz("tmp/projected_boundaries", building_boundaries_projected, m_default_path);
+				log.out << "(" << exec_step << ") Building's boundary points are projected. Number of projected points: " << number_of_projected_points << std::endl << std::endl;
+			}
+
+			void creating_cdt_without_shape_detection(
+				CDT &cdt, 
+				Log &log, 
+				const Projected_points &building_boundaries_projected, const size_t exec_step) {
+
+				// Compute constrained Delaunay triangulation of the input boundary points.
+				std::cout << "(" << exec_step << ") creating cdt" << std::endl;
+ 
+				const auto number_of_faces = m_utils.compute_delaunay(building_boundaries_projected, cdt);
+
+				log.out << "(" << exec_step << ") Delaunay triangulation of the input boundary points is built. Number of faces: " << number_of_faces << std::endl << std::endl;
 			}
 		};
 	}

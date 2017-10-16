@@ -1,4 +1,4 @@
-project(lod1test)
+project(graphcuttest)
 
 cmake_minimum_required(VERSION 2.6)
 
@@ -16,15 +16,15 @@ if (CGAL_FOUND)
 
 	link_directories($ENV{GMOCK_HOME}/googlemock/build $ENV{GMOCK_HOME}/googletest/build)
 
-	set(CMAKE_CXX_FLAGS "${CMAXE_CXX_FLAGS} -pedantic -Wall -Wextra -Weffc++ -Wc++11-extensions -Werror")
+	set(CMAKE_CXX_FLAGS "${CMAXE_CXX_FLAGS} -pedantic -Wall -Wextra -Weffc++ -Wno-vla-extension -Wc++11-extensions -Werror")
 
-	set(sources main.cpp Level_of_detail_reconstruction_1_test.cpp)
+	set(sources main.cpp Level_of_detail_graphcut_test.cpp)
 
-	add_executable(lod1test ${sources})
+	add_executable(graphcuttest ${sources})
 
-	target_link_libraries(lod1test pthread)
-	target_link_libraries(lod1test gmock)
-	target_link_libraries(lod1test gtest)
+	target_link_libraries(graphcuttest pthread)
+	target_link_libraries(graphcuttest gmock)
+	target_link_libraries(graphcuttest gtest)
 
 else()
 

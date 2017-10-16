@@ -36,7 +36,7 @@ TODO AND OTHER:
 
 // Iteration 3:
 1. Classification package saves some points with label -1. So it is not guaranteed that all points are classified? Why?
-2. Fix bug or whatever it is in the outliner class such that it does not create any inverted faces as now.
+2. Fix bug or whatever it is in the outliner class such that it does not create any inverted faces as now - it may be a Meshlab bug.
 3. Remove lonely triangles in the buildings finder by creating a set of constrained edges between in and out after the final graph cut. It may also help in fixing 2. above.
 4. The main problem with real data comes from creating corners. In this case, I have to intersect segments or their supporting lines, which creates many points at infinity.
 5. In demo classification, radius label changed its position. Actually sometimes radius label is not saved at all. Sometimes, it is added at the end like in the paris data set, and sometimes after nz as in the p10 data set.
@@ -46,3 +46,7 @@ TODO AND OTHER:
 9. Outliner algorithm is very sensitive to noise and incorrect input data! Weak link. Second weak link is intersection between structured segments and fitting lines to the input data coming from shape detection.
 10. Might be a bug in the graph cut since after applying it in the short pipeline I have many tiny triangles, which are in and next to them other tiny triangles, which are out?
 11. Short pipeline is easier to set up, requires fewer parameters, much slower to run and its robustness depends directly on the classification result. It is also senstive to the boundaries (wether to compute them or not in the outliner).
+
+
+// Iteration 4:
+1. 

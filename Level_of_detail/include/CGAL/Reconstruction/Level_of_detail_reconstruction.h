@@ -1,5 +1,5 @@
-#ifndef CGAL_LEVEL_OF_DETAIL_RECONSTRUCTION_1_H
-#define CGAL_LEVEL_OF_DETAIL_RECONSTRUCTION_1_H
+#ifndef CGAL_LEVEL_OF_DETAIL_RECONSTRUCTION_H
+#define CGAL_LEVEL_OF_DETAIL_RECONSTRUCTION_H
 
 // STL includes.
 #include <vector>
@@ -556,7 +556,7 @@ namespace CGAL {
 
 		// The main LOD1 reconstruction class.
 		template<class KernelTraits, class CDTInput, class BuildingsInput, class MeshOutput>
-		class Level_of_detail_reconstruction_1 {
+		class Level_of_detail_reconstruction {
 
 		public:
 			typedef KernelTraits   Kernel;
@@ -574,7 +574,7 @@ namespace CGAL {
 			using Point  = typename Mesh_builder::Point;
 			using Ground = typename Mesh_builder::Ground;
 
-			Level_of_detail_reconstruction_1() : m_use_boundaries(true) { }
+			Level_of_detail_reconstruction() : m_use_boundaries(true) { }
 
 			void use_boundaries(const bool new_state) {
 				m_use_boundaries = new_state;
@@ -608,4 +608,4 @@ namespace CGAL {
 	}
 }
 
-#endif // CGAL_LEVEL_OF_DETAIL_RECONSTRUCTION_1_H
+#endif // CGAL_LEVEL_OF_DETAIL_RECONSTRUCTION_H

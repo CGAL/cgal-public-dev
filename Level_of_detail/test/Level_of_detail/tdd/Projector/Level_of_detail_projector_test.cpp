@@ -29,7 +29,7 @@ public:
 	using Planes         = std::map<int, std::vector<int> >;
 	using Container      = CGAL::Point_set_3<Point_3>;
 	using Output		 = std::map<int, Point_2>;
-	using LodProjector   = CGAL::LOD::Level_of_detail_simple_projector<Traits, Container, Planes, Output>;
+	using LodProjector   = CGAL::LOD::Level_of_detail_simple_projector<Traits, Container, Output>;
 
 	using Iterator  = Container::iterator;
 

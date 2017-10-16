@@ -1,4 +1,4 @@
-project(lod0test)
+project(reconstructiontest)
 
 cmake_minimum_required(VERSION 2.6)
 
@@ -16,15 +16,15 @@ if (CGAL_FOUND)
 
 	link_directories($ENV{GMOCK_HOME}/googlemock/build $ENV{GMOCK_HOME}/googletest/build)
 
-	set(CMAKE_CXX_FLAGS "${CMAXE_CXX_FLAGS} -pedantic -Wall -Wextra -Weffc++ -Wno-vla-extension -Wc++11-extensions -Werror")
+	set(CMAKE_CXX_FLAGS "${CMAXE_CXX_FLAGS} -pedantic -Wall -Wextra -Weffc++ -Wc++11-extensions -Werror")
 
-	set(sources main.cpp Level_of_detail_reconstruction_0_test.cpp)
+	set(sources main.cpp Level_of_detail_reconstruction_test.cpp)
 
-	add_executable(lod0test ${sources})
+	add_executable(reconstructiontest ${sources})
 
-	target_link_libraries(lod0test pthread)
-	target_link_libraries(lod0test gmock)
-	target_link_libraries(lod0test gtest)
+	target_link_libraries(reconstructiontest pthread)
+	target_link_libraries(reconstructiontest gmock)
+	target_link_libraries(reconstructiontest gtest)
 
 else()
 

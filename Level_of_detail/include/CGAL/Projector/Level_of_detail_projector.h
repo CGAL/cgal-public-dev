@@ -22,15 +22,15 @@ namespace CGAL {
 			typedef InputContainer  Container;
 			typedef OutputContainer Output;
 
-			template<class Planes>
-			int project_with_planes(const Container &input, const Planes &planes, const Plane &ground, Output &projected) const { 
+			template<class Elements>
+			int project(const Container &input, const Elements &elements, const Plane &ground, Output &projected) const { 
 
-				using Const_iterator = typename Planes::const_iterator;
+				using Const_iterator = typename Elements::const_iterator;
 
 				projected.clear();
 
 				auto number_of_projected_points = 0;
-				for (Const_iterator it = planes.begin(); it != planes.end(); ++it) {
+				for (Const_iterator it = elements.begin(); it != elements.end(); ++it) {
 
 					for (size_t i = 0; i < (*it).second.size(); ++i) {
 

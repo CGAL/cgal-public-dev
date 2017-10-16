@@ -63,9 +63,7 @@ namespace CGAL {
 				Log log;
 				auto number_of_faces = -1;
 
-				assert(!points.empty() && !labels.empty());
 				assert(points.size() == labels.size());
-
 				cdt.clear();
 
 
@@ -314,7 +312,8 @@ namespace CGAL {
 				}
 
 				log_all.save("tmp/input_2d_all", ".xyz");
-				log_in_cdt.save("tmp/input_2d_in_cdt", ".xyz");
+				
+				// log_in_cdt.save("tmp/input_2d_in_cdt", ".xyz");
 				
 				return point_index;
 			}

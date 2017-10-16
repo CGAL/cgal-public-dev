@@ -1,5 +1,5 @@
-#ifndef CGAL_LEVEL_OF_DETAIL_RECONSTRUCTION_0_H
-#define CGAL_LEVEL_OF_DETAIL_RECONSTRUCTION_0_H
+#ifndef CGAL_LEVEL_OF_DETAIL_GRAPHCUT_H
+#define CGAL_LEVEL_OF_DETAIL_GRAPHCUT_H
 
 // STL includes.
 #include <vector>
@@ -28,7 +28,7 @@ namespace CGAL {
 	namespace LOD {
 
 		template<class KernelTraits, class CDTInput>
-		class Level_of_detail_reconstruction_0 {
+		class Level_of_detail_graphcut {
 
 		public:
 			typedef KernelTraits Kernel;
@@ -49,7 +49,7 @@ namespace CGAL {
 			using Nodes_map = std::map<Face_handle, int>;
 			using Log 		= CGAL::LOD::Mylog;
 
-			Level_of_detail_reconstruction_0() : m_alpha(FT(1)), m_beta(FT(100000)), m_gamma(FT(1000)), m_save_info(true) { 
+			Level_of_detail_graphcut() : m_alpha(FT(1)), m_beta(FT(100000)), m_gamma(FT(1000)), m_save_info(true) { 
 
 				set_coherence_dictionary();
 			}
@@ -415,4 +415,4 @@ namespace CGAL {
 	}
 }
 
-#endif // CGAL_LEVEL_OF_DETAIL_RECONSTRUCTION_0_H
+#endif // CGAL_LEVEL_OF_DETAIL_GRAPHCUT_H
