@@ -255,6 +255,17 @@ void motorcycle_club_5(Motorcycle_container& motorcycles)
   source_loc = std::make_pair(fd2, CGAL::make_array(0., 0., 1.));
   motorcycles.push_back(Motorcycle_ptr(new  Motorcycle_U(CP::source = source_loc,
                                                          CP::direction = Vector_2(-1., 1.))));
+
+  // #10 and #11 walk in the same direction, on opposite side of an edge
+  source_loc = std::make_pair(fd0, CGAL::make_array(0.1, 0.9, 0.));
+  motorcycles.push_back(Motorcycle_ptr(new  Motorcycle_U(CP::source = source_loc,
+                                                         CP::direction = Vector_2(1., 1.))));
+
+  // #11 and #10 walk in the same direction, on opposite side of an edge
+  source_loc = std::make_pair(fd1, CGAL::make_array(0., 0.75, 0.25));
+  destination_loc = std::make_pair(fd1, CGAL::make_array(0., 0.8, 0.2));
+  motorcycles.push_back(Motorcycle_ptr(new  Motorcycle_U(CP::source = source_loc,
+                                                         CP::destination = destination_loc)));
 }
 
 void random_motorcycles_in_triangle(Motorcycle_container& motorcycles,

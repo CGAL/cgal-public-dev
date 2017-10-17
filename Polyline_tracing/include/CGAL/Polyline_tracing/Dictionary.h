@@ -193,8 +193,8 @@ std::pair<typename Dictionary_entry<MotorcycleGraphTraits>::iterator, bool>
 Dictionary_entry<MotorcycleGraphTraits>::
 add_motorcycle(const std::size_t id, const FT time) const
 {
-  std::cout << " Point " << this << " is visited by motorcycle #" << id << " at time: " << time << std::endl;
-  //CGAL_expensive_precondition(!has_motorcycle(id, time));
+  std::cout << " > Point " << this << " is visited by motorcycle #" << id << " at time: " << time << std::endl;
+  CGAL_expensive_precondition(!has_motorcycle(id, time));
   return visiting_mcs.insert(value_type(id, time));
 }
 

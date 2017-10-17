@@ -284,6 +284,9 @@ void
 Motorcycle_impl_base<MotorcycleGraphTraits>::
 add_target(const DEC_it target_point, const FT time_at_target)
 {
+  std::cout << " > Adding target: " << &*target_point
+            << " at time: " << time_at_target
+            << " to motorcycle #" << i << std::endl;
   // Don't want to insert the same point twice...
   CGAL_expensive_precondition(!has_target(target_point).second);
   // ... or accidentally ignore adding a point
@@ -324,6 +327,7 @@ has_target(const DEC_it e) const
   return std::make_pair(end, false);
 }
 
+// @todo some type of 'has_target_at_time' with epsilon tolerance ?
 template<typename MotorcycleGraphTraits>
 std::pair<typename Motorcycle_impl_base<MotorcycleGraphTraits>::TPC_iterator, bool>
 Motorcycle_impl_base<MotorcycleGraphTraits>::
