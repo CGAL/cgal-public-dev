@@ -26,6 +26,7 @@
 #include <CGAL/Graphcut/Level_of_detail_graphcut.h>
 #include <CGAL/Reconstruction/Level_of_detail_reconstruction.h>
 #include <CGAL/Buildings/Level_of_detail_buildings.h>
+#include <CGAL/Clutter/Level_of_detail_clutter_processor.h>
 #include <CGAL/Level_of_detail_enum.h>
 
 namespace CGAL {
@@ -68,7 +69,8 @@ namespace CGAL {
 			typedef CGAL::Triangulation_data_structure_2<VB, FB> 			  	 TDS;
 			typedef CGAL::Constrained_Delaunay_triangulation_2<Kernel, TDS, EPT> CDT;
 
-			typedef CGAL::LOD::Level_of_detail_utils<Kernel, Container_3D, CDT> Utils;
+			typedef CGAL::LOD::Level_of_detail_utils<Kernel, Container_3D, CDT> 				   Utils;
+			typedef CGAL::LOD::Level_of_detail_clutter_processor<Kernel, Planes, Projected_points> Clutter_processor;
 
 			typedef int Label; 
 			typedef std::vector< std::pair<typename Kernel::Point_2, Label> > Container_2D;

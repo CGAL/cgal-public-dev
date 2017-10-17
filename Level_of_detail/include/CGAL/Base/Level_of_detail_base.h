@@ -80,6 +80,8 @@ namespace CGAL {
 			typedef typename Lods::Point  Ground_point;
 			typedef typename Lods::Ground Ground;
 
+			typedef typename Traits::Clutter_processor Clutter_processor;
+
 
 			// Extra.
 			using Plane_iterator = typename Planes::const_iterator;
@@ -135,7 +137,10 @@ namespace CGAL {
 			m_use_boundaries(true),
 			m_prog_version(Program_version::VER0),
 			m_pipeline_version(Pipeline_version::WITHOUT_SHAPE_DETECTION),
-			m_visibility_show_progress(false)
+			m_visibility_show_progress(false),
+			m_clutter_knn(0),
+			m_visibility_norm_threshold(-FT(1)),
+			m_clutter_cell_length(-FT(1))
 			{ } // Do I need to create an instance of these traits here?
 
 
@@ -353,6 +358,23 @@ namespace CGAL {
 				log.out << "(" << exec_step << ") 2D Structuring is applied. Number of structured segments: " << number_of_structured_segments << std::endl << std::endl;
 			}
 
+			void processing_clutter(
+				Boundary_data &boundary_clutter, 
+				Projected_points &boundary_clutter_projected, 
+				Log &log, 
+				const size_t exec_step) {
+
+				// Regularize and remove unnecessary points from the clutter.
+				std::cout << "(" << exec_step << ") processing clutter" << std::endl;
+
+				m_clutter_processor.set_number_of_neighbours(m_clutter_knn);
+				m_clutter_processor.set_grid_cell_length(m_clutter_cell_length);
+
+				const auto number_of_removed_points = m_clutter_processor.process(boundary_clutter, boundary_clutter_projected);
+
+				log.out << "(" << exec_step << ") Clutter is processed. Number of removed points: " << number_of_removed_points << std::endl << std::endl;
+			}
+
 			void creating_cdt(
 				CDT &cdt, 
 				Log &log, 
@@ -409,6 +431,7 @@ namespace CGAL {
 				m_visibility.set_method(m_visibility_method);
 				m_visibility.set_number_of_samples(m_visibility_num_samples);
 				m_visibility.show_progress(m_visibility_show_progress);
+				m_visibility.set_norm_threshold(m_visibility_norm_threshold);
 
 				const auto number_of_traversed_faces = m_visibility.compute(input_2d, cdt);
 				log.out << "(" << exec_step << ") Visibility is computed. Number of traversed faces: " << number_of_traversed_faces << std::endl << std::endl;
@@ -619,46 +642,50 @@ namespace CGAL {
 
 
 				// (12) ----------------------------------
+				processing_clutter(boundary_clutter, boundary_clutter_projected, log, ++exec_step);		
+
+
+				// (13) ----------------------------------
 				CDT cdt;
 				if (m_pipeline_version == Pipeline_version::WITHOUT_SHAPE_DETECTION) m_add_cdt_clutter = true;
 				creating_cdt(cdt, log, boundary_clutter, boundary_clutter_projected, input, ++exec_step);
 
 
-				// (13) ----------------------------------
+				// (14) ----------------------------------
 				Container_2D input_2d; Face_points_map fp_map;
 				converting_3d_to_2d(input_2d, fp_map, log, cdt, input, ++exec_step);
 
 
-				// (14) ----------------------------------
+				// (15) ----------------------------------
 				computing_visibility(cdt, log, input_2d, ++exec_step);
 
 
-				// (15) ----------------------------------
+				// (16) ----------------------------------
 				applying_graph_cut(cdt, log, ++exec_step);
 
 				
 				// From now on we handle each building separately.
 
-				// (16) ----------------------------------				
+				// (17) ----------------------------------				
 				Buildings buildings;
 				splitting_buildings(buildings, cdt, log, ++exec_step);
 
 
-				// (17) ----------------------------------				
+				// (18) ----------------------------------				
 				if (m_use_boundaries) 
 					finding_buildings_boundaries(buildings, log, cdt, ++exec_step);
 
 
-				// (18) ----------------------------------
+				// (19) ----------------------------------
 				fitting_roofs(buildings, log, fitted_ground_plane, fp_map, input, cdt, ++exec_step);
 
 
-				// (19) ----------------------------------
+				// (20) ----------------------------------
 				Ground ground_bbox;
 				creating_lod0(ground_bbox, log, cdt, buildings, input, ++exec_step);
 
 
-				// (20) ----------------------------------	
+				// (21) ----------------------------------	
 				creating_lod1(log, cdt, buildings, ground_bbox, ++exec_step);
 
 
@@ -692,6 +719,7 @@ namespace CGAL {
 			Building_max_roof_fitter m_building_max_roof_fitter;
 
 			std::unique_ptr<Structuring_2> m_structuring;
+			Clutter_processor m_clutter_processor;
 
 
 			// Global parameters.
@@ -732,6 +760,9 @@ namespace CGAL {
 			const Pipeline_version m_pipeline_version;
 
 			bool m_visibility_show_progress;
+			size_t m_clutter_knn;
+			FT m_visibility_norm_threshold;
+			FT m_clutter_cell_length;
 
 			
 			// Assert default values of all global parameters.
@@ -758,6 +789,9 @@ namespace CGAL {
 				assert(m_building_boundaries_max_outer_iters != 0);
 
 				assert(m_max_reg_angle != -FT(1));
+				assert(m_clutter_knn > 1);
+				assert(m_visibility_norm_threshold != -FT(1));
+				assert(m_clutter_cell_length != -FT(1));
 			}
 
 
@@ -788,10 +822,12 @@ namespace CGAL {
 				m_visibility_method   = Visibility_method::FACE_BASED_NATURAL_NEIGHBOURS;
 				m_roof_fitter_type 	  = Roof_fitter_type::AVG;
 
-				m_use_boundaries = false; // !!!!! - IMPORTANT!
-
+				m_visibility_norm_threshold = FT(1000);
+				
 
 				// The most important!
+				m_use_boundaries = false;
+
 				const Main_test_data_type test_data_type = Main_test_data_type::BASIC;
 				switch (test_data_type) {
 
@@ -829,10 +865,12 @@ namespace CGAL {
 				m_preprocessor_scale  	 = 2.0;
 				m_structuring_epsilon 	 = 0.025; // the most important parameter!!!
 				m_add_cdt_clutter     	 = true;
-				m_visibility_num_samples = 200;
+				m_visibility_num_samples = 100;
 				m_graph_cut_alpha 		 = 1.0;
 				m_graph_cut_beta 		 = 100000.0;
 				m_graph_cut_gamma 		 = 1000.0;
+				m_clutter_knn 			 = 2;
+				m_clutter_cell_length    = 0.025;
 			}
 
 
@@ -844,10 +882,12 @@ namespace CGAL {
 				m_preprocessor_scale  	 = 2.0;
 				m_structuring_epsilon 	 = 0.0005; // the most important parameter!!!
 				m_add_cdt_clutter     	 = false;
-				m_visibility_num_samples = 200;
+				m_visibility_num_samples = 10;
 				m_graph_cut_alpha 		 = 1.0;
 				m_graph_cut_beta 		 = 100000.0;
 				m_graph_cut_gamma 		 = 1000.0;
+				m_clutter_knn 			 = 6;
+				m_clutter_cell_length    = 0.025;
 			}
 
 
@@ -859,10 +899,12 @@ namespace CGAL {
 				m_preprocessor_scale  	 = 2.0;
 				m_structuring_epsilon 	 = 0.1; // the most important parameter!!!
 				m_add_cdt_clutter     	 = false;
-				m_visibility_num_samples = 200;
+				m_visibility_num_samples = 10;
 				m_graph_cut_alpha 		 = 1.0;
 				m_graph_cut_beta 		 = 100000.0;
 				m_graph_cut_gamma 		 = 1000.0;
+				m_clutter_knn 			 = 6;
+				m_clutter_cell_length    = 0.025;
 			}
 
 
@@ -878,6 +920,8 @@ namespace CGAL {
 				m_graph_cut_alpha 		 = 1.0;
 				m_graph_cut_beta 		 = 100000.0;
 				m_graph_cut_gamma 		 = 1000.0;
+				m_clutter_knn 			 = 12;
+				m_clutter_cell_length    = 0.025;
 			}
 
 

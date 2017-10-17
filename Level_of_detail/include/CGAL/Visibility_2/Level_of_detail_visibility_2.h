@@ -207,7 +207,10 @@ namespace CGAL {
 			m_sampler(Visibility_sampler::UNIFORM_0),
 			m_radius_type(Radius_type::MIN),
 			m_num_samples(200),
-			m_k(3), m_save_info(true), m_show_progress(true) { }
+			m_k(3), 
+			m_save_info(true), 
+			m_show_progress(true),
+			m_norm_threshold(FT(1000)) { }
 
 			void set_number_of_samples(const size_t new_value) {
 				m_num_samples = new_value;
@@ -216,6 +219,10 @@ namespace CGAL {
 			void set_number_of_neighbours(const size_t new_value) {
 				assert(!"This value is valid only for barycentric method, which currently does not work!");
 				m_k = new_value;
+			}
+
+			void set_norm_threshold(const FT new_value) {
+				m_norm_threshold = new_value;
 			}
 
 			void set_approach(const Visibility_approach new_approach) {
@@ -293,6 +300,7 @@ namespace CGAL {
 			size_t m_k; 		  // change it to autodetection later!
 			bool m_save_info;
 			bool m_show_progress;
+			FT m_norm_threshold;
 
 			void compute_point_based_visibility(const Container &input, CDT &cdt) const {
 
@@ -402,28 +410,33 @@ namespace CGAL {
 				Function_type function_values;
 				set_delunay_and_function_values(input, dt, function_values);
 
-				const FT num_stages = FT(100);
-				const FT stage = FT(cdt.number_of_faces()) / num_stages;
+				// Can be removed -->
+				size_t num_stages = 1;
+				size_t stage      = 1;
 
 				if (m_show_progress) {
+
+					num_stages = 100;
+					stage = cdt.number_of_faces() / num_stages;
 
 					std::cout << std::endl;
 					std::cout << "Progress: " << std::endl;
 				}
 
-				FT progress = FT(0);
-				for (Face_iterator fit = cdt.finite_faces_begin(); fit != cdt.finite_faces_end(); ++fit, progress += FT(1)) {
+				size_t progress = 0; // <--
+				for (Face_iterator fit = cdt.finite_faces_begin(); fit != cdt.finite_faces_end(); ++fit, ++progress) {
 					
-					if (m_show_progress && static_cast<size_t>(stage) != 0) {
-						if (size_t(progress) % size_t(stage) == 0)
-							std::cout << progress / FT(cdt.number_of_faces()) * FT(100) << "% " << std::endl; 
+					if (m_show_progress) { // can be removed
+						
+						if (stage != 0 && progress % stage == 0)
+							std::cout << (progress * 100) / cdt.number_of_faces() << "% " << std::endl; 
 					}
 
 					fit->info().in       = compute_interpolated_value(cdt, fit, dt, function_values);
 					fit->info().in_color = get_color(fit->info().in);
 				}
 
-				if (m_show_progress) {
+				if (m_show_progress) { // can be removed
 
 					std::cout << "100%" << std::endl;
 					std::cout << std::endl;
@@ -487,6 +500,8 @@ namespace CGAL {
 				std::vector<Point_2> samples(m_num_samples);
 				generate_samples(cdt, fh, samples);
 
+				// Log log; log.save_triangle_with_points_eps(cdt.triangle(fh).vertex(0), cdt.triangle(fh).vertex(1), cdt.triangle(fh).vertex(2), samples); // debugging info
+
 				const FT half    = FT(1) / FT(2);
 				FT result        = FT(0);
 				size_t full_size = 0;
@@ -496,17 +511,32 @@ namespace CGAL {
 					const Point_2 &query = samples[i];
 					std::vector<std::pair<Point_2, FT> > coords;
 
-					const FT norm = CGAL::natural_neighbor_coordinates_2(dt, query, std::back_inserter(coords)).second;
+					// May bug for some samples, gives division by zero assertion, for basic data set, probably because not enough natural neighbours can be found!
+					const auto triple = CGAL::natural_neighbor_coordinates_2(dt, query, std::back_inserter(coords));
+
+					const bool success = triple.third;
+					const FT norm 	   = triple.second;
+
+					// If a sample point gives an invalid result, skip it.
+					if (!success) 			   continue;
+					if (is_invalid_norm(norm)) continue; 
+
+					assert(norm > FT(0));
 					const FT intp = CGAL::linear_interpolation(coords.begin(), coords.end(), norm, Value_access(function_values));
 
 					full_size += coords.size();
 					result += intp;
 				}
+				assert(samples.size() != 0);
 
 				result /= FT(samples.size());
 				if (full_size == 0) result = half;				
 
 				return result;
+			}
+
+			bool is_invalid_norm(const FT norm) const {
+				return (!std::isfinite(norm) || norm <= FT(0) || norm > m_norm_threshold);
 			}
 
 			void compute_face_based_approach_count(const Container &input, CDT &cdt) const {		

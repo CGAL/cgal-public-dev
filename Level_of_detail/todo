@@ -49,4 +49,4 @@ TODO AND OTHER:
 
 
 // Iteration 4:
-1. 
+1. Natural neighbour function bugs for some sample points and I cannot handle this execption. The bug is due to the insufficient number of points in Delaunay triangulation or because some of its vertices coincide with sample points.
