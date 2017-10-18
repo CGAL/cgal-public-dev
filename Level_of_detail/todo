@@ -50,3 +50,24 @@ TODO AND OTHER:
 
 // Iteration 4:
 1. Natural neighbour function bugs for some sample points and I cannot handle this execption. The bug is due to the insufficient number of points in Delaunay triangulation or because some of its vertices coincide with sample points.
+2. Try affine coordinates instead of natural neighbour coordinates in the visibility module.
+3. Maybe better to use sphere neighbour search instead of knn in thinning?
+4. Natural neighbours approach is very inefficient because we need to build Delaunay triangulation for input data set with thousands of points.
+5. Natural neighbour visibility is not very robust because it depends on random sampling of each triangle.
+6. I think the main problem with graph cut for the pipeline without shape detection comes from the fact that all edges are free-form coherent and are favoured more or less the same.
+7. Parameters for the graph cut:
+
+	a. m_alpha should always be greater or equal 1, though bigger than 1 does not make any difference - so just use 1.
+	b. m_beta should be a big value >= 1, increasing it makes less inside triangles.
+	c. m_gamma is not used in the clutter-based pipeline (without shape detection); for the structuring-based pipeline (with shape detection), just use some big value. Making it bigger or smaller does not change the result.
+
+8. Thin triangles are not good for the point based visibility.
+
+
+// Graph cut:
+For clutter-based cdt all edges are free-form coherent - Yes.
+Remove m_beta from out - Makes all triangles in!
+Use squared length instead of length for edge weights - With squared length the result seems to be cut over the longer edge.
+Change free_form_quality function to the fixed value or improve it - It looks ok, if I want the pure shortest path cut, use 1 instead of this function - at least for some data sets with some parameters, it works.
+I do max flow between faces = graph nodes (favour big values) or min cut over the finite edges = graph edges (favour small values) - Yes.
+Add extra coherence to the free-form coherent edges using for example in and out data - Added tanh adapter to node values.

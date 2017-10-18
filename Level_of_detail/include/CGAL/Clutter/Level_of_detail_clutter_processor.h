@@ -53,24 +53,26 @@ namespace CGAL {
 			using Grid_cell_iterator = Grid_map::const_iterator;
 
 			enum class Fitter_type { LINE };
-			enum class New_point_type { CENTROID };
+			enum class New_point_type { CENTROID, BARYCENTRE };
 
 			Level_of_detail_clutter_processor() : 
 			m_k(3), 
-			m_fitter_type(Fitter_type::LINE), 
 			m_grid_cell_length(FT(1) / FT(100)),
-			m_new_point_type(New_point_type::CENTROID) { }
+			m_fitter_type(Fitter_type::LINE), 
+			m_new_point_type(New_point_type::BARYCENTRE) { }
 
 			void set_number_of_neighbours(const size_t new_value) {
-				m_k = new_value;
-			}
 
-			void set_fitter_type(const Fitter_type new_fitter_type) {
-				m_fitter_type = new_fitter_type;
+				assert(new_value >= 2);
+				m_k = new_value;
 			}
 
 			void set_grid_cell_length(const FT new_cell_length) {
 				m_grid_cell_length = new_cell_length;
+			}
+
+			void set_fitter_type(const Fitter_type new_fitter_type) {
+				m_fitter_type = new_fitter_type;
 			}
 
 			void set_new_point_type(const New_point_type new_point_type) {
@@ -87,6 +89,7 @@ namespace CGAL {
 				return number_of_removed_points;
 			}
 
+			// Required parameters: only m_k - number of natural neighbours; m_fitter_type = LINE in general.
 			int apply_thinning(Boundary_data &boundary_clutter, Projected_points &boundary_clutter_projected) const {
 
 				int number_of_processed_points = 0;
@@ -110,6 +113,8 @@ namespace CGAL {
 				return number_of_processed_points;
 			}
 
+			// This is like a moving least squares local algorithm. Later we can solve a global optimization here.
+			// Required parameters: m_grid_cell_length - length of the cell side in the grid; here you can also use m_new_point_type.
 			int apply_grid_simplify(Boundary_data &boundary_clutter, Projected_points &boundary_clutter_projected) const {
 
 				int number_of_removed_points = 0;
@@ -125,7 +130,7 @@ namespace CGAL {
 				boundary_clutter_projected = cleaned_points;
 
 				assert(number_of_removed_points >= 0);
-				if (number_of_removed_points != 0) set_new_boundary_data(boundary_clutter, boundary_clutter_projected);
+				set_new_boundary_data(boundary_clutter, boundary_clutter_projected);
 
 				Log log; 
 				log.export_projected_points_as_xyz("tmp/grid_simplified", boundary_clutter_projected, "unused path");
@@ -136,8 +141,8 @@ namespace CGAL {
 		// Fields.
 		private:
 			size_t 		   m_k;
-			Fitter_type    m_fitter_type;
 			FT 			   m_grid_cell_length;
+			Fitter_type    m_fitter_type;
 			New_point_type m_new_point_type;
 
 		// Grid simplify.
@@ -189,12 +194,16 @@ namespace CGAL {
 			}
 
 			template<class Grid_cell>
-			void create_new_point(Point_2 &new_point, const Grid_cell &grid_cell, const Projected_points &) const {
+			void create_new_point(Point_2 &new_point, const Grid_cell &grid_cell, const Projected_points &boundary_clutter_projected) const {
 
 				switch (m_new_point_type) {
 
 					case New_point_type::CENTROID:
 						create_new_centroid(new_point, grid_cell);
+						break;
+
+					case New_point_type::BARYCENTRE:
+						create_new_barycentre(new_point, grid_cell, boundary_clutter_projected);
 						break;
 
 					default:
@@ -216,10 +225,35 @@ namespace CGAL {
 				new_point = Point_2(x, y);
 			}
 
+			template<class Grid_cell>
+			void create_new_barycentre(Point_2 &new_point, const Grid_cell &grid_cell, const Projected_points &boundary_clutter_projected) const {
+
+				const std::vector<int> &point_idxs = grid_cell.second;
+				const size_t num_point_idxs = point_idxs.size();
+
+				assert(num_point_idxs != 0);
+
+				FT x = FT(0), y = FT(0);
+				for (size_t i = 0; i < num_point_idxs; ++i) {
+
+					const Point_2 &old_point = boundary_clutter_projected.at(point_idxs[i]);
+
+					x += old_point.x();
+					y += old_point.y();
+				}
+
+				x /= static_cast<FT>(num_point_idxs);
+				y /= static_cast<FT>(num_point_idxs);
+
+				new_point = Point_2(x, y);
+			}
+
 			void set_new_boundary_data(Boundary_data &boundary_clutter, const Projected_points &boundary_clutter_projected) const {
 
+				boundary_clutter.clear();
+
 				Boundary_data new_data;
-				assert(!boundary_clutter.empty() && !boundary_clutter_projected.empty());
+				assert(boundary_clutter.empty() && !boundary_clutter_projected.empty());
 
 				size_t count = 0;
 				std::vector<int> idxs(boundary_clutter_projected.size());
@@ -277,6 +311,8 @@ namespace CGAL {
 
 			void find_nearest_neighbours(std::vector<Point_2> &neighbours, const Tree &tree, const Point_2 &query) const {
 				
+				assert(m_k >= 2);
+
 				neighbours.clear();
 				Neighbor_search search(tree, query, m_k);
 

@@ -80,7 +80,9 @@ namespace CGAL {
 			typedef typename Lods::Point  Ground_point;
 			typedef typename Lods::Ground Ground;
 
-			typedef typename Traits::Clutter_processor Clutter_processor;
+			typedef typename Traits::Clutter_processor 		   Clutter_processor;
+			typedef typename Clutter_processor::Fitter_type    Clutter_fitter_type;
+			typedef typename Clutter_processor::New_point_type Clutter_new_point_type;
 
 
 			// Extra.
@@ -138,9 +140,11 @@ namespace CGAL {
 			m_prog_version(Program_version::VER0),
 			m_pipeline_version(Pipeline_version::WITHOUT_SHAPE_DETECTION),
 			m_visibility_show_progress(false),
-			m_clutter_knn(0),
 			m_visibility_norm_threshold(-FT(1)),
-			m_clutter_cell_length(-FT(1))
+			m_clutter_knn(0),
+			m_clutter_cell_length(-FT(1)),
+			m_clutter_fitter_type(Clutter_fitter_type::LINE),
+			m_clutter_new_point_type(Clutter_new_point_type::BARYCENTRE)
 			{ } // Do I need to create an instance of these traits here?
 
 
@@ -282,14 +286,18 @@ namespace CGAL {
 				const Plane_3 &base_ground_plane, const Boundary_data &building_boundaries, const Boundary_data &boundary_clutter, const Container_3D &input, const size_t exec_step) {
 
 				// Project all vertical building's boundaries onto the ground plane.
-				std::cout << "(" << exec_step << ") projecting" << std::endl;
+				std::cout << "(" << exec_step << ") projecting; ";
 
 				auto number_of_projected_points = m_ground_projector.project(input, building_boundaries, base_ground_plane, building_boundaries_projected);
 				log.out << "(" << exec_step << " a) Building's boundary planar points are projected. Number of projected points: " << number_of_projected_points << std::endl;
 
+				std::cout << "boundaries projected: " << number_of_projected_points << "; ";
+
 				number_of_projected_points = m_ground_projector.project(input, boundary_clutter, base_ground_plane, boundary_clutter_projected);
 				log.out << "(" << exec_step << " b) Building's boundary clutter is projected. Number of projected points: " << number_of_projected_points << std::endl << std::endl;
 				
+				std::cout << "clutter projected: " << number_of_projected_points << std::endl;
+
 				Log points_exporter; 
 				if (!building_boundaries_projected.empty()) points_exporter.export_projected_points_as_xyz("tmp/projected_boundaries", building_boundaries_projected, m_default_path);
 
@@ -365,13 +373,16 @@ namespace CGAL {
 				const size_t exec_step) {
 
 				// Regularize and remove unnecessary points from the clutter.
-				std::cout << "(" << exec_step << ") processing clutter" << std::endl;
+				std::cout << "(" << exec_step << ") processing clutter; ";
 
 				m_clutter_processor.set_number_of_neighbours(m_clutter_knn);
 				m_clutter_processor.set_grid_cell_length(m_clutter_cell_length);
+				m_clutter_processor.set_fitter_type(m_clutter_fitter_type);
+				m_clutter_processor.set_new_point_type(m_clutter_new_point_type);
 
 				const auto number_of_removed_points = m_clutter_processor.process(boundary_clutter, boundary_clutter_projected);
 
+				std::cout << "removed points: " << number_of_removed_points << std::endl;
 				log.out << "(" << exec_step << ") Clutter is processed. Number of removed points: " << number_of_removed_points << std::endl << std::endl;
 			}
 
@@ -760,9 +771,12 @@ namespace CGAL {
 			const Pipeline_version m_pipeline_version;
 
 			bool m_visibility_show_progress;
-			size_t m_clutter_knn;
-			FT m_visibility_norm_threshold;
-			FT m_clutter_cell_length;
+			FT   m_visibility_norm_threshold;
+
+			size_t 				   m_clutter_knn;
+			FT 					   m_clutter_cell_length;
+			Clutter_fitter_type    m_clutter_fitter_type;
+			Clutter_new_point_type m_clutter_new_point_type;
 
 			
 			// Assert default values of all global parameters.
@@ -789,8 +803,9 @@ namespace CGAL {
 				assert(m_building_boundaries_max_outer_iters != 0);
 
 				assert(m_max_reg_angle != -FT(1));
-				assert(m_clutter_knn > 1);
 				assert(m_visibility_norm_threshold != -FT(1));
+				
+				assert(m_clutter_knn > 1);
 				assert(m_clutter_cell_length != -FT(1));
 			}
 
@@ -818,16 +833,17 @@ namespace CGAL {
 				m_structuring_get_all_points = false;
 				m_clean_projected_points 	 = true;
 				
-				m_visibility_approach = Visibility_approach::FACE_BASED;
-				m_visibility_method   = Visibility_method::FACE_BASED_NATURAL_NEIGHBOURS;
+				m_visibility_approach = Visibility_approach::POINT_BASED;
+				m_visibility_method   = Visibility_method::POINT_BASED_CLASSIFICATION;
 				m_roof_fitter_type 	  = Roof_fitter_type::AVG;
 
+				m_preprocessor_scale  	 	= 2.0;
 				m_visibility_norm_threshold = FT(1000);
+				m_clutter_fitter_type 		= Clutter_fitter_type::LINE;	
+				m_clutter_new_point_type    = Clutter_new_point_type::BARYCENTRE; // BARYCENTRE - keeps average position of the removed points, CENTROID - inserts new point in the centre of the grid cell		
 				
 
 				// The most important!
-				m_use_boundaries = false;
-
 				const Main_test_data_type test_data_type = Main_test_data_type::BASIC;
 				switch (test_data_type) {
 
@@ -861,16 +877,17 @@ namespace CGAL {
 
 				// All main parameters are set below.
 				m_default_path        	 = "/Users/danisimo/Documents/pipeline/data/basic_test/data";
-				m_max_reg_angle          = 10.0;
-				m_preprocessor_scale  	 = 2.0;
-				m_structuring_epsilon 	 = 0.025; // the most important parameter!!!
-				m_add_cdt_clutter     	 = true;
-				m_visibility_num_samples = 100;
-				m_graph_cut_alpha 		 = 1.0;
-				m_graph_cut_beta 		 = 100000.0;
-				m_graph_cut_gamma 		 = 1000.0;
-				m_clutter_knn 			 = 2;
-				m_clutter_cell_length    = 0.025;
+				
+				m_max_reg_angle          = 10.0;	 // In average should be 10-20 degrees.
+				m_structuring_epsilon 	 = 0.025; 	 // the most important parameter!!! Depends on the dataset.
+				m_add_cdt_clutter     	 = true;	 // is always true if shape detection is not used
+				m_visibility_num_samples = 100;		 // the more samples, the slower but better quality in visibility
+				m_graph_cut_alpha 		 = 1.0;      // should not change anything but should be bigger or equal to 1
+				m_graph_cut_beta 		 = 100000.0; // smaller value for more inside triangles
+				m_graph_cut_gamma 		 = 1000.0;   // is not used in the pipeline without shape detection (or without structuring), otherwise should be some big value
+				m_clutter_knn 			 = 2;		 // the smaller value, the less thinning is performed
+				m_clutter_cell_length    = 0.025;	 // the bigger value, the more points are removed in the grid simplify
+				m_use_boundaries 		 = true;     // use or not outliner to build walls
 			}
 
 
@@ -878,16 +895,18 @@ namespace CGAL {
 
 				// All main parameters are set below.
 				m_default_path        	 = "/Users/danisimo/Documents/pipeline/data/complex_test/data_region_growing";
+
 				m_max_reg_angle          = 10.0;
-				m_preprocessor_scale  	 = 2.0;
-				m_structuring_epsilon 	 = 0.0005; // the most important parameter!!!
+				m_structuring_epsilon 	 = 0.0005;
 				m_add_cdt_clutter     	 = false;
 				m_visibility_num_samples = 10;
 				m_graph_cut_alpha 		 = 1.0;
-				m_graph_cut_beta 		 = 100000.0;
+				m_graph_cut_beta 		 = 1.0;
 				m_graph_cut_gamma 		 = 1000.0;
-				m_clutter_knn 			 = 6;
-				m_clutter_cell_length    = 0.025;
+				m_clutter_knn 			 = 12;
+				m_clutter_cell_length    = 0.015;
+				m_use_boundaries 		 = true;
+				
 			}
 
 
@@ -895,16 +914,17 @@ namespace CGAL {
 
 				// All main parameters are set below.
 				m_default_path        	 = "/Users/danisimo/Documents/pipeline/data/paris_test/data_region_growing";
+
 				m_max_reg_angle          = 10.0;
-				m_preprocessor_scale  	 = 2.0;
-				m_structuring_epsilon 	 = 0.1; // the most important parameter!!!
+				m_structuring_epsilon 	 = 0.1;
 				m_add_cdt_clutter     	 = false;
 				m_visibility_num_samples = 10;
 				m_graph_cut_alpha 		 = 1.0;
-				m_graph_cut_beta 		 = 100000.0;
+				m_graph_cut_beta 		 = 9.0;
 				m_graph_cut_gamma 		 = 1000.0;
-				m_clutter_knn 			 = 6;
-				m_clutter_cell_length    = 0.025;
+				m_clutter_knn 			 = 12;
+				m_clutter_cell_length    = 5.0;
+				m_use_boundaries 		 = true;
 			}
 
 
@@ -912,16 +932,17 @@ namespace CGAL {
 
 				// All main parameters are set below.
 				m_default_path        	 = "/Users/danisimo/Documents/pipeline/data/p10_test/data_region_growing";
+
 				m_max_reg_angle          = 15.0;
-				m_preprocessor_scale  	 = 2.0;
-				m_structuring_epsilon 	 = 0.1; // the most important parameter!!!
+				m_structuring_epsilon 	 = 0.1;
 				m_add_cdt_clutter     	 = false;
-				m_visibility_num_samples = 5;
+				m_visibility_num_samples = 20;
 				m_graph_cut_alpha 		 = 1.0;
-				m_graph_cut_beta 		 = 100000.0;
+				m_graph_cut_beta 		 = 10.0;
 				m_graph_cut_gamma 		 = 1000.0;
 				m_clutter_knn 			 = 12;
-				m_clutter_cell_length    = 0.025;
+				m_clutter_cell_length    = 4.0;
+				m_use_boundaries 		 = true;
 			}
 
 

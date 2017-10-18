@@ -49,7 +49,14 @@ namespace CGAL {
 			using Nodes_map = std::map<Face_handle, int>;
 			using Log 		= CGAL::LOD::Mylog;
 
-			Level_of_detail_graphcut() : m_alpha(FT(1)), m_beta(FT(100000)), m_gamma(FT(1000)), m_save_info(true) { 
+			enum class Node_value_adapter { NO_ADAPTER, TANH };
+
+			Level_of_detail_graphcut() : 
+			m_alpha(FT(1)), 
+			m_beta(FT(100000)), 
+			m_gamma(FT(1000)), 
+			m_save_info(true),
+			m_node_value_adapter(Node_value_adapter::NO_ADAPTER) { 
 
 				set_coherence_dictionary();
 			}
@@ -101,6 +108,8 @@ namespace CGAL {
 			std::map< std::pair<Structured_label, Structured_label>, Edge_coherence> m_coherence_dict;
 			bool m_save_info;
 
+			const Node_value_adapter m_node_value_adapter;
+
 			void set_coherence_dictionary() {
 
 				m_coherence_dict.clear();
@@ -118,6 +127,7 @@ namespace CGAL {
 				m_coherence_dict[std::make_pair(Structured_label::CORNER , Structured_label::CLUTTER)] = Edge_coherence::INCOHERENT;
 			}
 
+			// Favour bigger cost value!
 			void set_graph_nodes(const CDT &cdt, Node_id nodes[], Nodes_map &nodes_map, Graph *graph) const {
 
 				Log log;
@@ -134,8 +144,8 @@ namespace CGAL {
 
 					assert(in >= FT(0) && in <= FT(1));
 
-					const FT cost_in  = m_beta * in;  // here we add bigger value for the desirable outcome
-					const FT cost_out = m_beta * out; // e.g. if we want in (or SOURCE) then the cost_in with bigger value is favourable
+					const FT cost_in  = get_graph_node_cost(in);  // here we add bigger value for the desirable outcome
+					const FT cost_out = get_graph_node_cost(out); // e.g. if we want in (or SOURCE) then the cost_in with bigger value is favourable
 
 					graph->add_tweights(nodes[index], cost_in, cost_out);
 
@@ -147,6 +157,37 @@ namespace CGAL {
 				if (m_save_info) log.save("tmp/graph_nodes");
 			}
 
+			FT get_graph_node_cost(const FT node_value) const {
+				return get_graph_node_weight() * get_final_node_value(node_value);
+			} 
+
+			FT get_final_node_value(const FT node_value) const {
+
+				switch (m_node_value_adapter) {
+
+					case Node_value_adapter::NO_ADAPTER:
+						return node_value;
+						break;
+
+					case Node_value_adapter::TANH:
+						return tanh_adapter(node_value);
+						break;
+
+					default:
+						assert(!"Wrong node value adapter!");
+						break;
+				}
+			}
+
+			FT tanh_adapter(const FT value) const {
+				return FT(1) / FT(2) + tanh(value * FT(8) - FT(4)) / FT(2);
+			}
+
+			FT get_graph_node_weight() const {
+				return m_beta;
+			}
+
+			// Favour lower cost value!
 			void set_graph_edges(const CDT &cdt, const Node_id nodes[], const Nodes_map &nodes_map, Graph *graph) const {
 
 				Log log;
@@ -238,7 +279,7 @@ namespace CGAL {
 				const Face_handle face_1 = edge_handle->first;
 				const Face_handle face_2 = face_1->neighbor(vertex_index);
 
-				const FT cost_value = edge_weight * edge_quality;
+				const FT cost_value = get_graph_edge_cost(edge_weight, edge_quality);
 
 				const int index_1 = nodes_map.at(face_1);
 				const int index_2 = nodes_map.at(face_2);
@@ -246,6 +287,10 @@ namespace CGAL {
 				graph->add_edge(nodes[index_1], nodes[index_2], cost_value, cost_value);
 
 				if (m_save_info) log.out << "Final edge: " << cost_value << " < === > " << cost_value << std::endl;
+			}
+
+			FT get_graph_edge_cost(const FT edge_weight, const FT edge_quality) const {
+				return edge_weight * edge_quality;
 			}
 
 			bool is_boundary_edge(const CDT &cdt, const Edge_iterator &edge_handle) const {
@@ -299,6 +344,7 @@ namespace CGAL {
 						return true;
 
 					default:
+						assert(!"Wrong vertex label!");
 						return false;
 				}
 				return false;
@@ -405,7 +451,7 @@ namespace CGAL {
 
 				const FT half = FT(1) / FT(2);
 
-				if (visibility > half) return CGAL::Color(51, 255, 51);	     // INSIDE
+				if (visibility > half)      return CGAL::Color(51, 255, 51); // INSIDE
 				else if (visibility < half) return CGAL::Color(255, 51, 51); // OUTSIDE
 									  
 				assert(!"Cannot be here!");

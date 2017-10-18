@@ -445,10 +445,18 @@ namespace CGAL {
 
 			CGAL::Color get_color(const FT visibility) const {
 
-				const FT half = FT(1) / FT(2);
+				const FT half  = FT(1) / FT(2);
+				
+				FT scale_in  = FT(1) - visibility;
+				FT scale_out = visibility;
 
-				if (visibility > half) return CGAL::Color(51, 255, 51);	     // INSIDE
-				else if (visibility < half) return CGAL::Color(255, 51, 51); // OUTSIDE
+				const FT scale_thres = FT(2) / FT(10);
+
+				if (scale_in  < scale_thres) scale_in  = scale_thres;
+				if (scale_out < scale_thres) scale_out = scale_thres;
+
+				if (visibility > half)      return CGAL::Color(51 * scale_in, 255 * scale_in, 51 * scale_in);  	 // INSIDE
+				else if (visibility < half) return CGAL::Color(255 * scale_out, 51 * scale_out, 51 * scale_out); // OUTSIDE
 									  
 				return CGAL::Color(255, 204, 0); // UNKNOWN
 			}

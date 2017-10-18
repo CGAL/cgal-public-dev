@@ -66,6 +66,8 @@ namespace CGAL {
 				assert(points.size() == labels.size());
 				cdt.clear();
 
+				assert(boundary_clutter_projected.size() == boundary_clutter.at(0).size());
+				assert(points.size() + boundary_clutter_projected.size() > 2);
 
 				// Add all structured segments/points with the corresponding labels.
 				std::vector<std::vector<Vertex_handle> > vhs(points.size());
@@ -96,6 +98,7 @@ namespace CGAL {
 						for (size_t i = 0; i < num_clutter_points; ++i) {
 							const auto point_index = (*it).second[i];
 
+							assert(is_valid_key(boundary_clutter_projected, point_index));
 							Vertex_handle vh = cdt.insert(boundary_clutter_projected.at(point_index));
 							vh->info().label = Structured_label::CLUTTER;
 						}
@@ -128,6 +131,11 @@ namespace CGAL {
 				// Save CDT.
 				log.save_cdt_obj(cdt, "tmp/cdt");
 				return number_of_faces;
+			}
+
+			template<class ContainerT, class Key>
+			bool is_valid_key(const ContainerT &ct, const Key &key) const {
+				return ct.count(key);
 			}
 
 			template<class Points>

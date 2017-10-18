@@ -98,18 +98,18 @@ TEST_F(LOD_ClutterProcessorTest, RunsThinning) {
 
 TEST_F(LOD_ClutterProcessorTest, RunsGridSimplify) {
 
-	lodClutterProcessor.set_grid_cell_length(0.05);
+	lodClutterProcessor.set_grid_cell_length(0.1);
 	const auto number_of_removed_points = lodClutterProcessor.apply_grid_simplify(boundary_clutter, boundary_clutter_projected);
 
-	ASSERT_THAT(number_of_removed_points, Eq(10));
+	ASSERT_THAT(number_of_removed_points, Eq(6));
 } */
 
 TEST_F(LOD_ClutterProcessorTest, Runs) {
 
 	lodClutterProcessor.set_number_of_neighbours(3);
-	lodClutterProcessor.set_grid_cell_length(0.05);
+	lodClutterProcessor.set_grid_cell_length(0.1);
 
 	const auto number_of_removed_points = lodClutterProcessor.process(boundary_clutter, boundary_clutter_projected);
 
-	ASSERT_THAT(number_of_removed_points, Eq(2));
+	ASSERT_THAT(number_of_removed_points, Eq(6));
 }
