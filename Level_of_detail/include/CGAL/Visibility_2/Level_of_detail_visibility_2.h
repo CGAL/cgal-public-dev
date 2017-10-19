@@ -51,7 +51,7 @@ namespace CGAL {
 			virtual void save_info(const bool) = 0;
 			virtual void show_progress(const bool) = 0;
 
-			virtual int compute(const Container &, CDT &) const = 0;
+			virtual int compute(const Container &, CDT &) = 0;
 
 			virtual ~Level_of_detail_visibility_2() { }
 		};
@@ -64,21 +64,40 @@ namespace CGAL {
 			// Typedefs.
 			typedef Level_of_detail_visibility_2<KernelTraits, ContainerInput, CDTInput> Base;
 			
-			typedef typename Base::Kernel 	 Kernel;
-			typedef typename Base::FT     	 FT;
-			typedef typename Kernel::Point_2 Point_2;
+			typedef typename Base::Kernel 	   Kernel;
+			typedef typename Base::FT     	   FT;
+			typedef typename Kernel::Point_2   Point_2;
+			typedef typename Kernel::Vector_2  Vector_2;
+			typedef typename Kernel::Ray_2     Ray_2;
+			typedef typename Kernel::Segment_2 Segment_2;
 
 			typedef typename Base::Container Container;			
 			typedef typename Base::CDT 		 CDT;
 
-			typedef typename CDT::Vertex_handle Vertex_handle;
-			typedef typename CDT::Face_handle   Face_handle;
+			typedef typename CDT::Vertex_handle 	   Vertex_handle;
+			typedef typename CDT::Face_handle   	   Face_handle;
+			typedef typename CDT::Line_face_circulator Line_face_circulator;
+
 
 			// Extra.
-			using Log = CGAL::LOD::Mylog;
+			using Log     = CGAL::LOD::Mylog;
+			using Bbox    = std::vector<Point_2>;
+			using Samples = std::vector<Point_2>;
+			using Ray     = Segment_2;
+			using Rays    = std::vector<Ray>;
+
+			using Cdt_vertex_iterator = typename CDT::Finite_vertices_iterator;
+			using Cdt_face_iterator   = typename CDT::Finite_faces_iterator;
+
+			using Sample_iterator = typename Samples::const_iterator;
+			using Ray_iterator    = typename Rays::const_iterator;
 
 
-			Level_of_detail_visibility_ray_shooting_2() : m_save_info(true), m_show_progress(true) { }
+			Level_of_detail_visibility_ray_shooting_2() : 
+			m_save_info(true), 
+			m_show_progress(true),
+			m_num_samples(3),
+			m_num_rays_per_side(2) { }
 
 			void save_info(const bool new_state) override {
 				m_save_info = new_state;
@@ -88,29 +107,45 @@ namespace CGAL {
 				m_show_progress = new_state;
 			}
 
-			int compute(const Container &, CDT &cdt) const override {
+			void set_number_of_samples(const size_t new_value) {
+				m_num_samples = new_value;
+			}
+
+			void set_number_of_rays_per_side(const size_t new_value) {
+				m_num_rays_per_side = new_value;
+			}
+
+			int compute(const Container &, CDT &cdt) override {
 
 				Log log;
 
 				// (1) Compute bounding box.
 				std::vector<Point_2> bbox;
-				compute_bounding_box(cdt, bbox, log);
+				compute_bounding_box(cdt, log, bbox);
 
-				if (m_save_info) log.out << "(1) Bounding box is computed!" << std::endl;
+				if (m_save_info) log.out << "(1) Bounding box is computed!" << std::endl << std::endl;
 
-				// (2) ...
-				// to be implemented
+				// (2) Compute visibility.
+				compute_visibility(cdt, log, bbox);
 
-				if (m_save_info) log.save("tmp/visibility_ray_shooting");
+				if (m_save_info) {
+					
+					log.out << "\n(2) Visibility is computed!" << std::endl;
+					log.save("tmp/visibility_ray_shooting");
+				}
 
-				return 0;
+				return static_cast<int>(cdt.number_of_faces());
 			}
 
 		private:
 			bool m_save_info;
 			bool m_show_progress;
+			size_t m_num_samples;
+			size_t m_num_rays_per_side;
 
-			void compute_bounding_box(const CDT &cdt, std::vector<Point_2> &bbox, Log &log) const {
+			CGAL::Random m_rand;
+
+			void compute_bounding_box(const CDT &cdt, Log &log, Bbox &bbox) {
 
 				bbox.clear();
 				bbox.resize(4);
@@ -133,10 +168,13 @@ namespace CGAL {
 					maxy = CGAL::max(maxy, y);
 				}
 
-				bbox[0] = Point_2(minx, miny);
-				bbox[1] = Point_2(maxx, miny);
-				bbox[2] = Point_2(maxx, maxy);
-				bbox[3] = Point_2(minx, maxy);
+				const FT min_length = CGAL::min(CGAL::abs(maxx - minx), CGAL::abs(maxy - miny));
+				const FT threshold  = min_length / FT(4); 
+
+				bbox[0] = Point_2(minx - threshold, miny - threshold);
+				bbox[1] = Point_2(maxx + threshold, miny - threshold);
+				bbox[2] = Point_2(maxx + threshold, maxy + threshold);
+				bbox[3] = Point_2(minx - threshold, maxy + threshold);
 
 				if (m_save_info) {
 					
@@ -151,6 +189,238 @@ namespace CGAL {
 					log.skip_line();
 					log.skip_line();
 				}
+			}
+
+			void compute_visibility(CDT &cdt, Log &log, const Bbox &bbox) {
+
+				// Can be removed -->
+				size_t num_stages = 1;
+				size_t stage      = 1;
+
+				if (m_show_progress) {
+
+					num_stages = 100;
+					stage = cdt.number_of_faces() / num_stages;
+
+					std::cout << std::endl;
+					std::cout << "Progress: " << std::endl;
+				}
+
+				size_t progress = 0; // <--
+
+				size_t face_index = 0;
+				for (Cdt_face_iterator fit = cdt.finite_faces_begin(); fit != cdt.finite_faces_end(); 
+					++fit, 
+					++face_index, 
+					++progress) {
+
+					if (m_show_progress) { // can be removed
+						
+						if (stage != 0 && progress % stage == 0)
+							std::cout << (progress * 100) / cdt.number_of_faces() << "% " << std::endl; 
+					}
+
+					if (m_save_info) log.out << "\nFace: " << face_index << std::endl;
+
+					const Face_handle fh = static_cast<Face_handle>(fit);
+
+					fh->info().in       = estimate_face_visibility(log, cdt, fh, bbox, face_index);
+					fh->info().in_color = get_color(fh->info().in);
+				}
+
+				if (m_show_progress) { // can be removed
+
+					std::cout << "100%" << std::endl;
+					std::cout << std::endl;
+				}
+			}
+
+			FT estimate_face_visibility(Log &log, const CDT &cdt, const Face_handle &fh, const Bbox &bbox, const size_t /* face_index */ ) {
+
+				// (a) Generate samples.
+				Samples samples(m_num_samples);
+				generate_samples(cdt, fh, samples);
+
+				/* // Debugging.
+				Log saver; saver.save_triangle_with_points_eps(
+					cdt.triangle(fh).vertex(0), 
+					cdt.triangle(fh).vertex(1), 
+					cdt.triangle(fh).vertex(2), samples, "tmp/triangle_" + std::to_string(face_index)); */
+
+				if (m_save_info) log.out << "(a) Samples are generated." << std::endl;
+
+
+				// (b) Handle all samples.
+				const FT face_visibility = estimate_face_visibility_from_samples(log, cdt, fh, bbox, samples);
+				if (m_save_info) log.out << "\n(b) Face visibility is estimated from the given samples: " << face_visibility << std::endl << std::endl;
+
+
+				return face_visibility;
+			}
+
+			FT estimate_face_visibility_from_samples(Log &log, const CDT &cdt, const Face_handle &fh, const Bbox &bbox, const Samples &samples) {
+
+				FT face_visibility = FT(0);
+				for (Sample_iterator sit = samples.begin(); sit != samples.end(); ++sit) {
+
+					if (m_save_info) log.out << "\nNew sample: " << std::endl;
+
+					const Point_2 &sample = *sit;
+					face_visibility += estimate_visibility_from_sample(log, sample, cdt, fh, bbox);
+				}
+
+				return face_visibility / static_cast<FT>(m_num_samples);
+			}
+
+			FT estimate_visibility_from_sample(Log &log, const Point_2 &sample, const CDT &cdt, const Face_handle &fh, const Bbox &bbox) {
+
+				assert(bbox.size() == 4);
+				FT sample_visibility = FT(0);
+
+
+				// Handle bottom side of the bounding box.
+				if (m_save_info) log.out << "\nBottom side: " << std::endl;
+				sample_visibility += get_side_visibility(log, sample, cdt, fh, bbox[0], bbox[1]);
+
+
+				// Handle right side of the bounding box.
+				if (m_save_info) log.out << "\nRight side: "  << std::endl;
+				sample_visibility += get_side_visibility(log, sample, cdt, fh, bbox[1], bbox[2]);
+
+
+				// Handle top side of the bounding box.
+				if (m_save_info) log.out << "\nTop side: "    << std::endl;
+				sample_visibility += get_side_visibility(log, sample, cdt, fh, bbox[2], bbox[3]);
+
+
+				// Handle left side of the bounding box.
+				if (m_save_info) log.out << "\nLeft side: "   << std::endl;
+				sample_visibility += get_side_visibility(log, sample, cdt, fh, bbox[3], bbox[0]);
+
+
+				if (m_save_info) log.out << std::endl;
+				return sample_visibility / static_cast<FT>(4);
+			}
+
+			FT get_side_visibility(Log &log, const Point_2 &sample, const CDT &cdt, const Face_handle &fh, const Point_2 &a, const Point_2 &b) {
+
+				if (m_save_info) log.out << "side: (" << a << ") -- (" << b << ")" << std::endl;
+
+
+				// Generate rays.
+				Rays rays(m_num_rays_per_side);
+				generate_side_rays(sample, a, b, rays);
+
+				if (m_save_info) log.out << "rays are generated" << std::endl;
+
+
+				// Handle all rays.
+				return get_visibility_from_rays(log, rays, cdt, fh) / static_cast<FT>(m_num_rays_per_side);
+			}
+
+			void generate_side_rays(const Point_2 &source, const Point_2 &a, const Point_2 &b, Rays &rays) {
+
+				assert(m_num_rays_per_side > 0);
+				assert(rays.size() == m_num_rays_per_side);
+
+				for (size_t i = 0; i < m_num_rays_per_side; ++i) {
+
+					const FT s = static_cast<FT>(m_rand.uniform_real(0.0, 1.0));
+					const FT t = FT(1) - s;
+
+					const FT x = s * a.x() + t * b.x();
+					const FT y = s * a.y() + t * b.y();
+
+					const Point_2 target = Point_2(x, y);
+
+					rays[i] = Ray(source, target);
+				}
+			}
+
+			FT get_visibility_from_rays(Log &log, const Rays &rays, const CDT &cdt, const Face_handle &fh) {
+
+				if (m_save_info) log.out << std::endl;
+
+				FT rays_visibility = FT(0);
+				for (Ray_iterator rit = rays.begin(); rit != rays.end(); ++rit) {
+					const Ray &ray = *rit;
+
+					if (m_save_info) log.out << "New ray: " << ray;
+					rays_visibility += get_visibility_from_ray(log, ray, cdt, fh);
+				}
+
+				if (m_save_info) log.out << std::endl;
+				return rays_visibility;
+			}
+
+			FT get_visibility_from_ray(Log &log, const Ray &ray, const CDT &cdt, const Face_handle &fh) {
+
+				const Point_2 &p = ray.source();
+				const Point_2 &q = ray.target();
+
+				const Line_face_circulator lfc = cdt.line_walk(p, q);
+
+				assert(lfc != NULL);
+				const FT ray_visibility = traverse_ray_faces(log, lfc, cdt, fh);
+
+				if (m_save_info) log.out << " ray visibility: " << ray_visibility << std::endl;
+				return ray_visibility;
+			}
+
+			FT traverse_ray_faces(Log &log, const Line_face_circulator &lfc, const CDT &cdt, const Face_handle &) {
+
+				if (m_save_info) log.out << std::endl << " first face: " << cdt.triangle(lfc) << std::endl;
+
+				// to be implemented!
+
+				return FT(1) / FT(2);
+			}
+
+			void generate_samples(const CDT &cdt, const Face_handle &fh, Samples &samples) {				
+				generate_samples_uniform_0(cdt, fh, samples);
+			}
+
+			void generate_samples_uniform_0(const CDT &cdt, const Face_handle &fh, Samples &samples) {
+
+				assert(!samples.empty() && samples.size() == m_num_samples);
+
+				const Point_2 &a = cdt.triangle(fh).vertex(0);
+				const Point_2 &b = cdt.triangle(fh).vertex(1);
+				const Point_2 &c = cdt.triangle(fh).vertex(2);
+
+				Vector_2 ab = b - a;
+				Vector_2 ac = c - a;
+
+				for (size_t i = 0; i < m_num_samples; ++i) {
+
+					FT s = static_cast<FT>(m_rand.uniform_real(0.0, 1.0));
+					FT t = static_cast<FT>(m_rand.uniform_real(0.0, 1.0));
+
+					if (s + t > FT(1)) {
+
+						s = FT(1) - s;
+						t = FT(1) - t;
+					}
+					samples[i] = a + s * ab + t * ac;
+				}
+			}
+
+			CGAL::Color get_color(const FT visibility) {
+
+				const FT half  = FT(1) / FT(2);
+				
+				FT scale_in  = FT(1) - visibility;
+				FT scale_out = visibility;
+
+				const FT scale_thres = FT(2) / FT(10);
+
+				if (scale_in  < scale_thres) scale_in  = scale_thres;
+				if (scale_out < scale_thres) scale_out = scale_thres;
+
+				if (visibility > half)      return CGAL::Color(51 * scale_in, 255 * scale_in, 51 * scale_in);  	 // INSIDE
+				else if (visibility < half) return CGAL::Color(255 * scale_out, 51 * scale_out, 51 * scale_out); // OUTSIDE
+									  
+				return CGAL::Color(255, 204, 0); // UNKNOWN
 			}
 		};
 
@@ -241,7 +511,7 @@ namespace CGAL {
 				m_show_progress = new_state;
 			}
 
-			int compute(const Container &input, CDT &cdt) const override {
+			int compute(const Container &input, CDT &cdt) override {
 
 				const FT half = FT(1) / FT(2);
 				for (Face_iterator fit = cdt.finite_faces_begin(); fit != cdt.finite_faces_end(); ++fit) {
@@ -302,7 +572,9 @@ namespace CGAL {
 			bool m_show_progress;
 			FT m_norm_threshold;
 
-			void compute_point_based_visibility(const Container &input, CDT &cdt) const {
+			CGAL::Random m_rand;
+
+			void compute_point_based_visibility(const Container &input, CDT &cdt) {
 
 				Visibility visibility;
 				for (Point_iterator it = input.begin(); it != input.end(); ++it) {
@@ -346,7 +618,7 @@ namespace CGAL {
 				postprocess(visibility);
 			}
 
-			void estimate_with_classification(const Face_handle face_handle, const Label point_label, Visibility &visibility) const {
+			void estimate_with_classification(const Face_handle face_handle, const Label point_label, Visibility &visibility) {
 
 				const Label ground     = 0;
 				const Label facade     = 1;
@@ -381,7 +653,7 @@ namespace CGAL {
 				}
 			}
 
-			void compute_face_based_approach(const Container &input, CDT &cdt) const {
+			void compute_face_based_approach(const Container &input, CDT &cdt) {
 
 				switch(m_method) {
 
@@ -394,6 +666,10 @@ namespace CGAL {
 						compute_face_based_approach_natural_neighbours(input, cdt);
 						break;
 
+					case Visibility_method::FACE_BASED_AFFINE:
+						compute_face_based_approach_affine(input, cdt);
+						break;
+
 					case Visibility_method::FACE_BASED_COUNT:
 						compute_face_based_approach_count(input, cdt);
 						break;
@@ -404,7 +680,13 @@ namespace CGAL {
 				}
 			}
 
-			void compute_face_based_approach_natural_neighbours(const Container &input, CDT &cdt) const {
+			void compute_face_based_approach_affine(const Container &, CDT &) {
+
+				assert(!"This approach is not yet implemented!");
+				// to be implemented!
+			}
+
+			void compute_face_based_approach_natural_neighbours(const Container &input, CDT &cdt) {
 
 				Delaunay_triangulation dt;
 				Function_type function_values;
@@ -443,7 +725,7 @@ namespace CGAL {
 				}
 			}
 
-			CGAL::Color get_color(const FT visibility) const {
+			CGAL::Color get_color(const FT visibility) {
 
 				const FT half  = FT(1) / FT(2);
 				
@@ -461,7 +743,7 @@ namespace CGAL {
 				return CGAL::Color(255, 204, 0); // UNKNOWN
 			}
 
-			void set_delunay_and_function_values(const Container &input, Delaunay_triangulation &dt, Function_type &function_values) const {
+			void set_delunay_and_function_values(const Container &input, Delaunay_triangulation &dt, Function_type &function_values) {
 
 				const Label ground     = 0;
 				const Label facade     = 1;
@@ -503,7 +785,7 @@ namespace CGAL {
 				}
 			}
 
-			FT compute_interpolated_value(const CDT &cdt, const Face_iterator fh, const Delaunay_triangulation &dt, const Function_type &function_values) const {
+			FT compute_interpolated_value(const CDT &cdt, const Face_iterator fh, const Delaunay_triangulation &dt, const Function_type &function_values) {
 
 				std::vector<Point_2> samples(m_num_samples);
 				generate_samples(cdt, fh, samples);
@@ -543,11 +825,11 @@ namespace CGAL {
 				return result;
 			}
 
-			bool is_invalid_norm(const FT norm) const {
+			bool is_invalid_norm(const FT norm) {
 				return (!std::isfinite(norm) || norm <= FT(0) || norm > m_norm_threshold);
 			}
 
-			void compute_face_based_approach_count(const Container &input, CDT &cdt) const {		
+			void compute_face_based_approach_count(const Container &input, CDT &cdt) {		
 
 				Fuzzy_tree tree(input.begin(), input.end());
 				for (Face_iterator fit = cdt.finite_faces_begin(); fit != cdt.finite_faces_end(); ++fit) {
@@ -566,7 +848,7 @@ namespace CGAL {
 				}
 			}
 
-			FT compute_estimator(const Container &pwl) const {
+			FT compute_estimator(const Container &pwl) {
 
 				const Label ground     = 0;
 				const Label facade     = 1;
@@ -617,7 +899,7 @@ namespace CGAL {
 			}
 
 			// Here I can probably improve by taking the outscribed circle.
-			Fuzzy_circle compute_circle(const Point_2 &a, const Point_2 &b, const Point_2 &c) const {
+			Fuzzy_circle compute_circle(const Point_2 &a, const Point_2 &b, const Point_2 &c) {
 
 				const Point_2 centre = compute_circle_centre(a, b, c);
 				const FT radius = compute_circle_radius(a, b, c);
@@ -625,13 +907,13 @@ namespace CGAL {
 				return Fuzzy_circle(centre, radius);
 			}
 
-			Point_2 compute_circle_centre(const Point_2 &a, const Point_2 &b, const Point_2 &c) const {
+			Point_2 compute_circle_centre(const Point_2 &a, const Point_2 &b, const Point_2 &c) {
 
 				const FT third = FT(1) / FT(3);
 				return Point_2(third * a.x() + third * b.x() + third * c.x(), third * a.y() + third * b.y() + third * c.y());
 			}
 
-			FT compute_circle_radius(const Point_2 &a, const Point_2 &b, const Point_2 &c) const {
+			FT compute_circle_radius(const Point_2 &a, const Point_2 &b, const Point_2 &c) {
 
 				FT result = FT(0);
 				switch(m_radius_type) {
@@ -671,7 +953,7 @@ namespace CGAL {
 				return result + threshold;
 			}
 
-			void compute_face_based_approach_barycentric(const Container &input, CDT &cdt) const {
+			void compute_face_based_approach_barycentric(const Container &input, CDT &cdt) {
 
 				// Create a tree.
 				Tree tree(input.begin(), input.end());
@@ -687,7 +969,7 @@ namespace CGAL {
 				}
 			}
 
-			void compute_visibility(const Tree &tree, const std::vector<Point_2> &samples, std::vector<FT> &visibility) const {
+			void compute_visibility(const Tree &tree, const std::vector<Point_2> &samples, std::vector<FT> &visibility) {
 
 				assert(visibility.size() == samples.size());
 				for (size_t i = 0; i < samples.size(); ++i) {
@@ -703,7 +985,7 @@ namespace CGAL {
 			// For the moment it works only with m_k = 3! For the bigger number of nearest neighbours, we need to use triangulation, because
 			// the found nearest neighbours do not necesserary form an oriented polygon!
 			// It can also give negative values.
-			void compute_barycentric_coordinates(const Neighbor_search &search, const Point_2 &query, std::vector<FT> &bc) const {
+			void compute_barycentric_coordinates(const Neighbor_search &search, const Point_2 &query, std::vector<FT> &bc) {
 
 				const size_t num_found_neighbours = static_cast<size_t>(std::distance(search.begin(), search.end()));
 				
@@ -719,7 +1001,7 @@ namespace CGAL {
 				assert(bc.size() == num_found_neighbours);
 			}
 
-			void generate_samples(const CDT &cdt, const Face_iterator fit, std::vector<Point_2> &samples) const {
+			void generate_samples(const CDT &cdt, const Face_iterator fit, std::vector<Point_2> &samples) {
 				
 				switch(m_sampler) {
 
@@ -737,8 +1019,10 @@ namespace CGAL {
 				}
 			}
 
-			void generate_samples_uniform_0(const CDT &cdt, const Face_iterator fh, std::vector<Point_2> &samples) const {
+			void generate_samples_uniform_0(const CDT &cdt, const Face_iterator fh, std::vector<Point_2> &samples) {
 				
+				assert(!samples.empty() && samples.size() == m_num_samples);
+
 				const Point_2 &a = cdt.triangle(fh).vertex(0);
 				const Point_2 &b = cdt.triangle(fh).vertex(1);
 				const Point_2 &c = cdt.triangle(fh).vertex(2);
@@ -746,42 +1030,39 @@ namespace CGAL {
 				Vector_2 ab = b - a;
 				Vector_2 ac = c - a;
 
-				CGAL::Random rand;
-				double s, t;
-
 				for (size_t i = 0; i < m_num_samples; ++i) {
 
-					s = rand.uniform_real(0.0, 1.0);
-					t = rand.uniform_real(0.0, 1.0);
+					FT s = static_cast<FT>(m_rand.uniform_real(0.0, 1.0));
+					FT t = static_cast<FT>(m_rand.uniform_real(0.0, 1.0));
 
-					if (s + t > 1.0) {
-						s = 1.0 - s;
-						t = 1.0 - t;
+					if (s + t > FT(1)) {
+
+						s = FT(1) - s;
+						t = FT(1) - t;
 					}
-					samples[i] = a + static_cast<FT>(s) * ab + static_cast<FT>(t) * ac;
+					samples[i] = a + s * ab + t * ac;
 				}
 
 				// Log log;
 				// log.save_triangle_with_points_eps(a, b, c, samples, "tmp/triangle_0");
 			}
 
-			void generate_samples_uniform_1(const CDT &cdt, const Face_iterator fh, std::vector<Point_2> &samples) const {
+			void generate_samples_uniform_1(const CDT &cdt, const Face_iterator fh, std::vector<Point_2> &samples) {
+
+				assert(!samples.empty() && samples.size() == m_num_samples);
 
 				const Point_2 &a = cdt.triangle(fh).vertex(0);
 				const Point_2 &b = cdt.triangle(fh).vertex(1);
 				const Point_2 &c = cdt.triangle(fh).vertex(2);
 
-				CGAL::Random rand;
-				double s, t, u, v, w;
-
 				for (size_t i = 0; i < m_num_samples; ++i) {
 
-					s = rand.uniform_real(0.0, 1.0);
-					t = rand.uniform_real(0.0, 1.0);
+					FT s = static_cast<FT>(m_rand.uniform_real(0.0, 1.0));
+					FT t = static_cast<FT>(m_rand.uniform_real(0.0, 1.0));
 
-					u =  1.0 - CGAL::sqrt(t);
-					v = (1.0 - s) * CGAL::sqrt(t);
-					w =  s * CGAL::sqrt(t);
+					FT u =  FT(1)      - CGAL::sqrt(t);
+					FT v = (FT(1) - s) * CGAL::sqrt(t);
+					FT w =  		s  * CGAL::sqrt(t);
 
 					samples[i] = Point_2(u * a.x() + v * b.x() + w * c.x(), u * a.y() + v * b.y() + w * c.y());
 				}
@@ -790,19 +1071,19 @@ namespace CGAL {
 				// log.save_triangle_with_points_eps(a, b, c, samples, "tmp/triangle_1");
 			}
 
-			void set_inside(const Face_handle face_handle, Visibility &visibility) const {
+			void set_inside(const Face_handle face_handle, Visibility &visibility) {
 				visibility[face_handle].push_back(Visibility_label::IN);
 			}
 
-			void set_outside(const Face_handle face_handle, Visibility &visibility) const {
+			void set_outside(const Face_handle face_handle, Visibility &visibility) {
 				visibility[face_handle].push_back(Visibility_label::OUT);
 			}
 
-			void set_unknown(const Face_handle face_handle, Visibility &visibility) const {
+			void set_unknown(const Face_handle face_handle, Visibility &visibility) {
 				visibility[face_handle].push_back(Visibility_label::UNKNOWN);
 			}
 
-			void postprocess(Visibility &visibility) const {
+			void postprocess(Visibility &visibility) {
 
 				for (typename Visibility::const_iterator it = visibility.begin(); it != visibility.end(); ++it) {
 					
@@ -850,7 +1131,7 @@ namespace CGAL {
 				}
 			}
 
-			bool on_the_border(const CDT &cdt, const Face_handle fh, const Point_2 &p) const {
+			bool on_the_border(const CDT &cdt, const Face_handle fh, const Point_2 &p) {
 
 				const Point_2 &a = cdt.triangle(fh).vertex(0);
 				const Point_2 &b = cdt.triangle(fh).vertex(1);

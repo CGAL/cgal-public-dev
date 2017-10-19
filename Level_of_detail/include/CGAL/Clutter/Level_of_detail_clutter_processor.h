@@ -175,7 +175,10 @@ namespace CGAL {
 			int get_id_value(const FT value) const {
 
 				assert(m_grid_cell_length > FT(0));
-				return static_cast<int>(value / m_grid_cell_length);
+				const int id = static_cast<int>(value / m_grid_cell_length);
+
+				if (value >= 0) return id;
+				return id - 1;
 			}
 
 			void simplify_clutter_using_grid(Projected_points &cleaned_points, const Grid_map &grid_map, const Projected_points &boundary_clutter_projected) const {

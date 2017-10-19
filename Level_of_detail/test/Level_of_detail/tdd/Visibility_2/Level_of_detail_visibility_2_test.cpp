@@ -92,29 +92,16 @@ public:
 		Vertex_handle vb = cdt.insert(Point_2(1, 0));
 		Vertex_handle vc = cdt.insert(Point_2(0, 1));
 		Vertex_handle vd = cdt.insert(Point_2(1, 1));
-		Vertex_handle ve = cdt.insert(Point_2(2, 0));
-		Vertex_handle vf = cdt.insert(Point_2(2, 1));
-		Vertex_handle vg = cdt.insert(Point_2(3, 0));
+		
+		cdt.insert(Point_2(2, 0));
+		cdt.insert(Point_2(2, 1));
+		cdt.insert(Point_2(3, 0));
 
+		// Building.
 		cdt.insert_constraint(va, vb);
-		cdt.insert_constraint(vb, vc);
-		cdt.insert_constraint(vc, va);
-
 		cdt.insert_constraint(vb, vd);
 		cdt.insert_constraint(vd, vc);
-		cdt.insert_constraint(vc, vb);
-
-		cdt.insert_constraint(vb, ve);
-		cdt.insert_constraint(ve, vd);
-		cdt.insert_constraint(vd, vb);
-
-		cdt.insert_constraint(ve, vf);
-		cdt.insert_constraint(vf, vd);
-		cdt.insert_constraint(vd, ve);		
-
-		cdt.insert_constraint(ve, vg);
-		cdt.insert_constraint(vg, vf);
-		cdt.insert_constraint(vf, ve);		
+		cdt.insert_constraint(vc, va);
 	}
 };
 

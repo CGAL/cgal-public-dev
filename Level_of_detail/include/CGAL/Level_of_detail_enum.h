@@ -30,7 +30,8 @@ namespace CGAL {
 			POINT_BASED_CLASSIFICATION,    // this is a repeatable method
 			FACE_BASED_BARYCENTRIC,        // does not work
 			FACE_BASED_NATURAL_NEIGHBOURS, // every time can give different result since it is randomized
-			FACE_BASED_COUNT			   // 
+			FACE_BASED_AFFINE,			   // use affine coordinates instead of natural neighbours
+			FACE_BASED_COUNT			   // hard to find the proper circle radius
 		};
 
 		// Visibility approaches.

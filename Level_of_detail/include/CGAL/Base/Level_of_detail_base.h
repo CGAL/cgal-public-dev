@@ -833,8 +833,8 @@ namespace CGAL {
 				m_structuring_get_all_points = false;
 				m_clean_projected_points 	 = true;
 				
-				m_visibility_approach = Visibility_approach::POINT_BASED;
-				m_visibility_method   = Visibility_method::POINT_BASED_CLASSIFICATION;
+				m_visibility_approach = Visibility_approach::FACE_BASED;
+				m_visibility_method   = Visibility_method::FACE_BASED_NATURAL_NEIGHBOURS;
 				m_roof_fitter_type 	  = Roof_fitter_type::AVG;
 
 				m_preprocessor_scale  	 	= 2.0;
@@ -844,7 +844,7 @@ namespace CGAL {
 				
 
 				// The most important!
-				const Main_test_data_type test_data_type = Main_test_data_type::BASIC;
+				const Main_test_data_type test_data_type = Main_test_data_type::P10;
 				switch (test_data_type) {
 
 					case Main_test_data_type::BASIC:
@@ -906,7 +906,6 @@ namespace CGAL {
 				m_clutter_knn 			 = 12;
 				m_clutter_cell_length    = 0.015;
 				m_use_boundaries 		 = true;
-				
 			}
 
 

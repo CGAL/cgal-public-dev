@@ -62,6 +62,9 @@ TODO AND OTHER:
 	c. m_gamma is not used in the clutter-based pipeline (without shape detection); for the structuring-based pipeline (with shape detection), just use some big value. Making it bigger or smaller does not change the result.
 
 8. Thin triangles are not good for the point based visibility.
+9. New updated code works much faster.
+10. Is there a better way to get the intersected side of the face in the line walk without traversing all face edges?
+11. Where I can find a paper about bands for ray shooting?
 
 
 // Graph cut:
