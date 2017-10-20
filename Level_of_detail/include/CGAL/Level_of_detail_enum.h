@@ -42,8 +42,9 @@ namespace CGAL {
 
 		// Visibility samplers.
 		enum class Visibility_sampler {
-			UNIFORM_0, // a bit faster than UNIFORM_1 but the result is similar
-			UNIFORM_1
+			RANDOM_UNIFORM_0,   // a bit faster than UNIFORM_1 but the result is similar, randomized
+			RANDOM_UNIFORM_1,   // see above
+			UNIFORM_SUBDIVISION // determenistic sampler based on midpoint subdivision
 		};
 
 		// Face info class.
@@ -51,7 +52,7 @@ namespace CGAL {
 		class My_face_info {
 
 		public:
-			FT in = FT(1) / FT(2); 				  			 // visibility label (in - inside) or (out - outside)
+			FT in = FT(1) / FT(2); 				  			 // visibility label (in - inside) or (out - outside); or alternatively label A - everything that is bigger than 0.5, label B < 0.5
 			CGAL::Color in_color = CGAL::Color(255, 204, 0); // visibility color (in < 1/2 - red), (in = 1/2 - yellow), (in > 1/2 - green)
 			
 			int bu = -1; 		   						 	   // building's index - (0, 1, 2 etc.) where (-1 means not a building)

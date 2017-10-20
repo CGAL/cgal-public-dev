@@ -74,3 +74,7 @@ Use squared length instead of length for edge weights - With squared length the 
 Change free_form_quality function to the fixed value or improve it - It looks ok, if I want the pure shortest path cut, use 1 instead of this function - at least for some data sets with some parameters, it works.
 I do max flow between faces = graph nodes (favour big values) or min cut over the finite edges = graph edges (favour small values) - Yes.
 Add extra coherence to the free-form coherent edges using for example in and out data - Added tanh adapter to node values.
+
+
+// Iteration 5:
+1. 

@@ -131,8 +131,16 @@ TEST_F(LOD_VisibilityTest, VerifiesLabels) {
 
 TEST_F(LOD_VisibilityTest, WithRayShooting) {
 
+	lodVisibilityRS.set_number_of_samples(1);
+	lodVisibilityRS.set_number_of_rays_per_side(100);
+
 	lodVisibilityRS.compute(input, cdt);
 
 	Log log;
 	log.save_visibility_eps(cdt, "tmp/visibility_ray_shooting");
+
+	auto face = cdt.finite_faces_begin();
+
+	ASSERT_GT(face->info().in, 0.5); ++face; ++face; ++face;
+	ASSERT_LT(face->info().in, 0.5);
 }
