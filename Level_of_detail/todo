@@ -77,4 +77,11 @@ Add extra coherence to the free-form coherent edges using for example in and out
 
 
 // Iteration 5:
-1. 
+1. Add after graph cut constrained edges between all in and out. All other constrained edges should be removed. In this case we will get a good LOD0 and LOD1. For LOD2 we save info with previously removed constrained edges and build different types of buildings, which are multilevel. Then we can take each building and work per building, split it into multi levels, add roofs, and so on.
+2. Should we really change simple version of my unordered outliner to the pivoting one?
+3. Should we really change my simple version of the banding in the ray shooting to the complex one of Pierre?
+4. Should we really implement the watertight 2-manifold version of the LOD0 and LOD1?
+
+Points: finish and test visibility; finish and test outliner with lod0-lod1; finish and test all other small tasks - sphere search in thinning, bug in structuring, etc.; test everything and prepare the big Paris data set.
+
+

@@ -42,12 +42,14 @@ public:
 
 	using LodVisibilityWithClassification = CGAL::LOD::Level_of_detail_visibility_from_classification_2<Traits, Container, CDT>;
 	using LodVisibilityWithRayShooting    = CGAL::LOD::Level_of_detail_visibility_ray_shooting_2<Traits, Container, CDT>;
+	using LodVisibilityWithBlend          = CGAL::LOD::Level_of_detail_visibility_blend_2<Traits, Container, CDT>;
 
 	using Vertex_handle = CDT::Vertex_handle;
 	using Log = CGAL::LOD::Mylog;
 
 	LodVisibilityWithClassification lodVisibilityCL;
 	LodVisibilityWithRayShooting    lodVisibilityRS;
+	LodVisibilityWithBlend          lodVisibilityBL;
 
 	CDT cdt; Container input;
 
@@ -80,7 +82,7 @@ public:
 
 		// OUT
 		input.push_back(std::make_pair(Point_2(1.30, 0.30), ground));
-		input.push_back(std::make_pair(Point_2(1.30, 0.10), roof));
+		input.push_back(std::make_pair(Point_2(1.30, 0.10), facade));
 
 		// OUT
 		input.push_back(std::make_pair(Point_2(1.60, 0.60), vegetation));
@@ -110,37 +112,35 @@ TEST_F(LOD_VisibilityTest, Compiles) {
 	// Empty test.
 }
 
-TEST_F(LOD_VisibilityTest, SavesVisibility) {
+TEST_F(LOD_VisibilityTest, WithClassification) {
 
 	lodVisibilityCL.compute(input, cdt);
-
-	Log log;
-	log.save_visibility_eps(cdt, "tmp/visibility_classification");
-}
-
-TEST_F(LOD_VisibilityTest, VerifiesLabels) {
-
-	lodVisibilityCL.compute(input, cdt);
+	Log log; log.save_visibility_eps(cdt, "tmp/visibility_classification");
 
 	auto face = cdt.finite_faces_begin();
 
-	++face; ++face;
-	ASSERT_LT((++face)->info().in, 0.5);
-	ASSERT_THAT((++face)->info().in, Eq(0.5));
+	ASSERT_GT((++face)->info().in, 0.5); ++face;
+	ASSERT_LT((face)->info().in, 0.5);
 }
 
 TEST_F(LOD_VisibilityTest, WithRayShooting) {
 
-	lodVisibilityRS.set_number_of_samples(1);
-	lodVisibilityRS.set_number_of_rays_per_side(100);
-
 	lodVisibilityRS.compute(input, cdt);
-
-	Log log;
-	log.save_visibility_eps(cdt, "tmp/visibility_ray_shooting");
+	Log log; log.save_visibility_eps(cdt, "tmp/visibility_ray_shooting");
 
 	auto face = cdt.finite_faces_begin();
 
-	ASSERT_GT(face->info().in, 0.5); ++face; ++face; ++face;
-	ASSERT_LT(face->info().in, 0.5);
+	ASSERT_GT((++face)->info().in, 0.5); ++face;
+	ASSERT_LT((face)->info().in, 0.5);
+}
+
+TEST_F(LOD_VisibilityTest, WithBlend) {
+
+	lodVisibilityBL.compute(input, cdt);
+	Log log; log.save_visibility_eps(cdt, "tmp/visibility_blend");
+
+	auto face = cdt.finite_faces_begin();
+
+	ASSERT_GT((++face)->info().in, 0.5); ++face;
+	ASSERT_LT((face)->info().in, 0.5);
 }

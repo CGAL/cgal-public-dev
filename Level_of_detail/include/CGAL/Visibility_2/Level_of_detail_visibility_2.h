@@ -33,191 +33,15 @@
 // New CGAL includes.
 #include <CGAL/Mylog/Mylog.h>
 #include <CGAL/Level_of_detail_enum.h>
+#include <CGAL/Utils/Level_of_detail_utils.h>
+
+// Eigen includes.
+#include <eigen3/Eigen/Core>
+#include <eigen3/Eigen/Dense>
 
 namespace CGAL {
 
 	namespace LOD {
-
-		template<class KernelTraits>
-		class Uniform_sample_generator {
-
-		public:
-			typedef KernelTraits  			   Kernel;
-			typedef typename Kernel::FT 	   FT;
-			typedef typename Kernel::Point_2   Point_2;
-			typedef typename Kernel::Vector_2  Vector_2;
-			typedef typename Kernel::Segment_2 Ray;
-
-			Uniform_sample_generator() : m_num_samples(3), m_num_rays(2) { }
-
-			void set_number_of_samples(const size_t new_value) {
-				m_num_samples = new_value;
-			}
-
-			void set_number_of_rays(const size_t new_value) {
-				m_num_rays = new_value;
-			}
-
-			template<class Samples>
-			void create_uniform_subdivision_samples(const Point_2 &a, const Point_2 &b, const Point_2 &c, Samples &samples) {
-
-				assert(m_num_samples < 10); // here m_num_samples means the number of subdivision steps
-
-				samples.clear();
-				size_t flood_count = 0;
-
-				flood_triangles(a, b, c, samples, flood_count);
-			}
-
-			template<class Samples>
-			void create_random_uniform_samples_0(const Point_2 &a, const Point_2 &b, const Point_2 &c, Samples &samples) {
-
-				assert(m_num_samples > 0);
-
-				samples.clear();
-				samples.resize(m_num_samples);
-
-				assert(!samples.empty() && samples.size() == m_num_samples);
-
-				const Vector_2 ab = b - a;
-				const Vector_2 ac = c - a;
-
-				for (size_t i = 0; i < m_num_samples; ++i) {
-
-					FT s = static_cast<FT>(m_rand.uniform_real(0.0, 1.0));
-					FT t = static_cast<FT>(m_rand.uniform_real(0.0, 1.0));
-
-					if (s + t > FT(1)) {
-
-						s = FT(1) - s;
-						t = FT(1) - t;
-					}
-					samples[i] = a + s * ab + t * ac;
-				}
-			}
-
-			template<class Samples>
-			void create_random_uniform_samples_1(const Point_2 &a, const Point_2 &b, const Point_2 &c, Samples &samples) {
-
-				assert(m_num_samples > 0);
-
-				samples.clear();
-				samples.resize(m_num_samples);
-
-				assert(!samples.empty() && samples.size() == m_num_samples);
-
-				for (size_t i = 0; i < m_num_samples; ++i) {
-
-					FT s = static_cast<FT>(m_rand.uniform_real(0.0, 1.0));
-					FT t = static_cast<FT>(m_rand.uniform_real(0.0, 1.0));
-
-					FT u =  FT(1)      - CGAL::sqrt(t);
-					FT v = (FT(1) - s) * CGAL::sqrt(t);
-					FT w =  		s  * CGAL::sqrt(t);
-
-					samples[i] = Point_2(u * a.x() + v * b.x() + w * c.x(), u * a.y() + v * b.y() + w * c.y());
-				}
-			}
-
-			template<class Rays>
-			void create_random_uniform_rays(const Point_2 &source, const Point_2 &a, const Point_2 &b, Rays &rays) {
-
-				assert(m_num_rays > 0);
-
-				rays.clear();
-				rays.resize(m_num_rays);
-
-				for (size_t i = 0; i < m_num_rays; ++i) {
-
-					const FT s = static_cast<FT>(m_rand.uniform_real(0.0, 1.0));
-					const FT t = FT(1) - s;
-
-					const FT x = s * a.x() + t * b.x();
-					const FT y = s * a.y() + t * b.y();
-
-					const Point_2 target = Point_2(x, y);
-					rays[i] = Ray(source, target);
-				}
-			}
-
-			template<class Rays>
-			void create_uniform_rays(const Point_2 &source, const Point_2 &a, const Point_2 &b, Rays &rays) {
-
-				assert(m_num_rays > 0);
-
-				rays.clear();
-				rays.resize(m_num_rays);
-
-				const FT num_rays = static_cast<FT>(m_num_rays + 1);
-
-				size_t count = 0;
-				for (size_t i = 1; i < num_rays; ++i) {
-
-					const FT t = static_cast<FT>(i) / num_rays;
-					const FT s = FT(1) - t;
-
-					const FT x = s * a.x() + t * b.x();
-					const FT y = s * a.y() + t * b.y();
-
-					const Point_2 target = Point_2(x, y);
-
-					assert(count < rays.size());
-					rays[count++] = Ray(source, target);
-				}
-			}
-
-		private:
-			size_t m_num_samples;
-			size_t m_num_rays;
-			
-			CGAL::Random m_rand;
-
-			template<class Samples>
-			void flood_triangles(const Point_2 &a, const Point_2 &b, const Point_2 &c, Samples &samples, size_t flood_count) {
-
-				if (flood_count >= m_num_samples) {
-					
-					// Insert new sample.
-					const FT third = FT(1) / FT(3);
-
-					const FT x = a.x() + b.x() + c.x();
-					const FT y = a.y() + b.y() + c.y();
-
-					const Point_2 new_sample = Point_2(x * third, y * third);
-					samples.push_back(new_sample);
-
-					return;
-				}
-
-				++flood_count;
-
-
-				// Subdivide.
-				std::vector<Point_2> tri(3);
-				tri[0] = a; tri[1] = b; tri[2] = c;
-
-				std::vector<Point_2> mids(3);
-				const FT half = FT(1) / FT(2);
-
-				for (size_t i = 0; i < 3; ++i) {
-					const size_t ip = (i + 1) % 3;					
-
-					const FT x = tri[i].x() + tri[ip].x();
-					const FT y = tri[i].y() + tri[ip].y();
-
-					mids[i] = Point_2(half * x, half * y);
-				}
-
-				for (size_t i = 0; i < 3; ++i) {
-					
-					const size_t im = (i + 2) % 3;
-					flood_triangles(mids[im], tri[i], mids[i], samples, flood_count);
-				}
-
-				flood_triangles(mids[0], mids[1], mids[2], samples, flood_count);
-			}
-		};
-
 
 		template<class KernelTraits, class ContainerInput, class CDTInput>
 		class Level_of_detail_visibility_2 {
@@ -228,13 +52,43 @@ namespace CGAL {
 
 			typedef ContainerInput Container;
 			typedef CDTInput 	   CDT;
+
+			typedef CGAL::Color VColor;
 			
+			// Public functions.
 			virtual void save_info(const bool) = 0;
 			virtual void show_progress(const bool) = 0;
+			virtual void set_approach(const Visibility_approach) = 0;
+			virtual void set_method(const Visibility_method) = 0;
+			virtual void set_number_of_samples(const size_t) = 0;
+			virtual void set_norm_threshold(const FT) = 0;
+			virtual void set_number_of_neighbours(const size_t) = 0;
+			virtual void set_sampler_type(const Visibility_sampler) = 0;
+			virtual void set_number_of_rays_per_side(const size_t) = 0;
+			virtual void set_small_edge_threshold(const FT new_value) = 0;
 
 			virtual int compute(const Container &, CDT &) = 0;
-
 			virtual ~Level_of_detail_visibility_2() { }
+
+		protected:
+			VColor get_color(const FT visibility) {
+
+				assert(visibility >= FT(0) && visibility <= FT(1));
+				const FT half  = FT(1) / FT(2);
+				
+				FT scale_in  = FT(1) - visibility;
+				FT scale_out = visibility;
+
+				const FT scale_thres = FT(2) / FT(10);
+
+				if (scale_in  < scale_thres) scale_in  = scale_thres;
+				if (scale_out < scale_thres) scale_out = scale_thres;
+
+				if (visibility > half)      return VColor(51 * scale_in, 255 * scale_in, 51 * scale_in);  	 // INSIDE
+				else if (visibility < half) return VColor(255 * scale_out, 51 * scale_out, 51 * scale_out); // OUTSIDE
+									  
+				return VColor(255, 204, 0); // UNKNOWN
+			}
 		};
 
 
@@ -278,38 +132,58 @@ namespace CGAL {
 			using Sample_generator = Uniform_sample_generator<Kernel>;
 
 
+			// Constructor.
 			Level_of_detail_visibility_ray_shooting_2() : 
 			m_save_info(true), 
 			m_show_progress(true),
-			m_num_samples(3),
-			m_num_rays_per_side(2),
+			m_num_samples(1),
+			m_num_rays_per_side(100),
 			m_small_edge_thres(FT(0)),
-			m_sampler(Visibility_sampler::UNIFORM_SUBDIVISION) { }
+			m_sampler(Visibility_sampler::BARYCENTRE) { }
 
+
+			// Public functions.
 			void save_info(const bool new_state) override {
 				m_save_info = new_state;
+			}
+
+			void set_approach(const Visibility_approach) override {
+				return;
+			}
+
+			void set_method(const Visibility_method) override {
+				return;
+			}
+
+			void set_number_of_samples(const size_t new_value) override {
+				m_num_samples = new_value;
 			}
 
 			void show_progress(const bool new_state) override {
 				m_show_progress = new_state;
 			}
 
-			void set_number_of_samples(const size_t new_value) {
-				m_num_samples = new_value;
+			void set_norm_threshold(const FT) override {
+				return;
 			}
 
-			void set_number_of_rays_per_side(const size_t new_value) {
+			void set_number_of_neighbours(const size_t) override {
+				return;
+			}
+
+			void set_sampler_type(const Visibility_sampler new_sampler) override {
+				m_sampler = new_sampler;
+			}
+
+			void set_number_of_rays_per_side(const size_t new_value) override {
 				m_num_rays_per_side = new_value;
 			}
 
-			// NOTE: Can be negative!
-			void set_small_edge_thres(const FT new_value) {
+			// NOTE: new_value can be negative, too!
+			void set_small_edge_threshold(const FT new_value) override {
 				m_small_edge_thres = new_value;
 			}
 
-			void set_sampler_type(const Visibility_sampler new_sampler) {
-				m_sampler = new_sampler;
-			}
 
 			int compute(const Container &, CDT &cdt) override {
 
@@ -337,14 +211,14 @@ namespace CGAL {
 			}
 
 		private:
-			bool m_save_info;
-			bool m_show_progress;
+			bool   m_save_info;
+			bool   m_show_progress;
 			size_t m_num_samples;
 			size_t m_num_rays_per_side;
+			FT     m_small_edge_thres;
 
-			FT m_small_edge_thres;
 			Visibility_sampler m_sampler;
-			Sample_generator m_sample_generator;
+			Sample_generator   m_sample_generator;
 
 			void compute_bounding_box(const CDT &cdt, Log &log, Bbox &bbox) {
 
@@ -426,7 +300,7 @@ namespace CGAL {
 					const Face_handle fh = static_cast<Face_handle>(fit);
 
 					fh->info().in       = estimate_face_visibility(log, cdt, fh, bbox, face_index);
-					fh->info().in_color = get_color(fh->info().in);
+					fh->info().in_color = this->get_color(fh->info().in);
 				}
 
 				if (m_show_progress) { // can be removed
@@ -726,15 +600,19 @@ namespace CGAL {
 			}
 
 			void generate_samples(const CDT &cdt, const Face_handle &fh, Samples &samples) {				
-				
-				generate_barycentre(cdt, fh, samples);
-				return;
 
-				// Debugging.
 				switch (m_sampler) {
+
+					case Visibility_sampler::BARYCENTRE:
+						generate_barycentre(cdt, fh, samples);
+						break;
 
 					case Visibility_sampler::RANDOM_UNIFORM_0:
 						generate_samples_random_uniform_0(cdt, fh, samples);
+						break;
+
+					case Visibility_sampler::RANDOM_UNIFORM_1:
+						generate_samples_random_uniform_1(cdt, fh, samples);
 						break;
 
 					case Visibility_sampler::UNIFORM_SUBDIVISION:
@@ -766,6 +644,15 @@ namespace CGAL {
 				m_sample_generator.create_random_uniform_samples_0(a, b, c, samples);
 			}
 
+			void generate_samples_random_uniform_1(const CDT &cdt, const Face_handle &fh, Samples &samples) {
+
+				const Point_2 &a = cdt.triangle(fh).vertex(0);
+				const Point_2 &b = cdt.triangle(fh).vertex(1);
+				const Point_2 &c = cdt.triangle(fh).vertex(2);
+
+				m_sample_generator.create_random_uniform_samples_1(a, b, c, samples);
+			}
+
 			void generate_samples_uniform_subdivision(const CDT &cdt, const Face_handle &fh, Samples &samples) {
 
 				const Point_2 &a = cdt.triangle(fh).vertex(0);
@@ -773,24 +660,6 @@ namespace CGAL {
 				const Point_2 &c = cdt.triangle(fh).vertex(2);
 
 				m_sample_generator.create_uniform_subdivision_samples(a, b, c, samples);
-			}
-
-			CGAL::Color get_color(const FT visibility) {
-
-				const FT half  = FT(1) / FT(2);
-				
-				FT scale_in  = FT(1) - visibility;
-				FT scale_out = visibility;
-
-				const FT scale_thres = FT(2) / FT(10);
-
-				if (scale_in  < scale_thres) scale_in  = scale_thres;
-				if (scale_out < scale_thres) scale_out = scale_thres;
-
-				if (visibility > half)      return CGAL::Color(51 * scale_in, 255 * scale_in, 51 * scale_in);  	 // INSIDE
-				else if (visibility < half) return CGAL::Color(255 * scale_out, 51 * scale_out, 51 * scale_out); // OUTSIDE
-									  
-				return CGAL::Color(255, 204, 0); // UNKNOWN
 			}
 		};
 
@@ -800,6 +669,7 @@ namespace CGAL {
 		class Level_of_detail_visibility_from_classification_2 : public Level_of_detail_visibility_2<KernelTraits, ContainerInput, CDTInput> {
 
 		public:
+			// Typedefs.
 			typedef Level_of_detail_visibility_2<KernelTraits, ContainerInput, CDTInput> Base;
 
 			typedef typename Base::Kernel 	  Kernel;
@@ -834,6 +704,8 @@ namespace CGAL {
 			typedef std::map<Point_2, FT, typename Kernel::Less_xy_2> Function_type;
 			typedef CGAL::Data_access<Function_type> 		 		  Value_access;
 
+
+			// Extra.
 			using Visibility = std::map<Face_handle, std::vector<Visibility_label> >;
 			using Log = CGAL::LOD::Mylog;
 
@@ -845,49 +717,67 @@ namespace CGAL {
 
 			enum class Radius_type { MIN, MAX };
 
+
+			// Eigen typedefs.
+        	typedef Eigen::VectorXd VectorXd;
+        	typedef Eigen::MatrixXd MatrixXd;
+
+
+			// Constructor.
 			Level_of_detail_visibility_from_classification_2() : 
-			m_approach(Visibility_approach::FACE_BASED), 
-			m_method(Visibility_method::FACE_BASED_COUNT),
-			m_sampler(Visibility_sampler::RANDOM_UNIFORM_0),
-			m_radius_type(Radius_type::MIN),
+			m_approach(Visibility_approach::POINT_BASED), 
+			m_method(Visibility_method::POINT_BASED_CLASSIFICATION),
+			m_sampler(Visibility_sampler::UNIFORM_SUBDIVISION),
+			m_radius_type(Radius_type::MAX),
 			m_num_samples(3),
-			m_k(3), 
+			m_k(6), 
 			m_save_info(true), 
 			m_show_progress(true),
-			m_norm_threshold(FT(1000)) { }
+			m_norm_threshold(FT(1000)),
+			m_without_bc(true) { }
 
-			void set_number_of_samples(const size_t new_value) {
-				m_num_samples = new_value;
+
+			// Public functions.
+			void save_info(const bool new_state) override {
+				m_save_info = new_state;
 			}
 
-			void set_number_of_neighbours(const size_t new_value) {
-				assert(!"This value is valid only for barycentric method, which currently does not work!");
-				m_k = new_value;
-			}
-
-			void set_norm_threshold(const FT new_value) {
-				m_norm_threshold = new_value;
-			}
-
-			void set_approach(const Visibility_approach new_approach) {
+			void set_approach(const Visibility_approach new_approach) override {
 				m_approach = new_approach;
 			}
 
-			void set_method(const Visibility_method new_method) {
+			void set_method(const Visibility_method new_method) override {
 				m_method = new_method;
 			}
 
-			void save_info(const bool new_state) override {
-				m_save_info = new_state;
+			void set_number_of_samples(const size_t new_value) override {
+				m_num_samples = new_value;
 			}
 
 			void show_progress(const bool new_state) override {
 				m_show_progress = new_state;
 			}
 
-			void set_sampler_type(const Visibility_sampler new_sampler) {
+			void set_norm_threshold(const FT new_value) override {
+				m_norm_threshold = new_value;
+			}
+
+			void set_number_of_neighbours(const size_t new_value) override {
+				m_k = new_value;
+			}
+
+			void set_sampler_type(const Visibility_sampler new_sampler) override {
 				m_sampler = new_sampler;
 			}
+
+			void set_number_of_rays_per_side(const size_t) override {
+				return;
+			}
+
+			void set_small_edge_threshold(const FT) override {
+				return;
+			}
+
 
 			int compute(const Container &input, CDT &cdt) override {
 
@@ -897,7 +787,7 @@ namespace CGAL {
 				for (Face_iterator fit = cdt.finite_faces_begin(); fit != cdt.finite_faces_end(); ++fit) {
 					
 					fit->info().in       = half;
-					fit->info().in_color = get_color(fit->info().in);
+					fit->info().in_color = this->get_color(fit->info().in);
 				}
 
 				switch(m_approach) {
@@ -946,13 +836,14 @@ namespace CGAL {
 			Visibility_sampler m_sampler;
 			const Radius_type  m_radius_type;
 
-			size_t m_num_samples;
-			size_t m_k; 		  // change it to autodetection later!
-			bool m_save_info;
-			bool m_show_progress;
-			FT m_norm_threshold;
+			size_t    m_num_samples;
+			size_t              m_k; // change it to the autodetection later!
+			bool        m_save_info;
+			bool    m_show_progress;
+			FT     m_norm_threshold;
 
 			Sample_generator m_sample_generator;
+			const bool m_without_bc;
 
 			void compute_point_based_visibility(const Container &input, CDT &cdt) {
 
@@ -1038,7 +929,6 @@ namespace CGAL {
 				switch(m_method) {
 
 					case Visibility_method::FACE_BASED_BARYCENTRIC:
-						assert(!"Barycentric method does not work!");
 						compute_face_based_approach_barycentric(input, cdt);
 						break;
 
@@ -1046,11 +936,8 @@ namespace CGAL {
 						compute_face_based_approach_natural_neighbours(input, cdt);
 						break;
 
-					case Visibility_method::FACE_BASED_AFFINE:
-						compute_face_based_approach_affine(input, cdt);
-						break;
-
 					case Visibility_method::FACE_BASED_COUNT:
+						assert(!"Does not work!");
 						compute_face_based_approach_count(input, cdt);
 						break;
 
@@ -1058,12 +945,6 @@ namespace CGAL {
 						assert(!"Wrong visibility method!");
 						break;
 				}
-			}
-
-			void compute_face_based_approach_affine(const Container &, CDT &) {
-
-				assert(!"This approach is not yet implemented!");
-				// to be implemented!
 			}
 
 			void compute_face_based_approach_natural_neighbours(const Container &input, CDT &cdt) {
@@ -1094,8 +975,8 @@ namespace CGAL {
 							std::cout << (progress * 100) / cdt.number_of_faces() << "% " << std::endl; 
 					}
 
-					fit->info().in       = compute_interpolated_value(cdt, fit, dt, function_values);
-					fit->info().in_color = get_color(fit->info().in);
+					fit->info().in       = compute_interpolated_value_natural_neighbours(cdt, fit, dt, function_values);
+					fit->info().in_color = this->get_color(fit->info().in);
 				}
 
 				if (m_show_progress) { // can be removed
@@ -1103,24 +984,6 @@ namespace CGAL {
 					std::cout << "100%" << std::endl;
 					std::cout << std::endl;
 				}
-			}
-
-			CGAL::Color get_color(const FT visibility) {
-
-				const FT half  = FT(1) / FT(2);
-				
-				FT scale_in  = FT(1) - visibility;
-				FT scale_out = visibility;
-
-				const FT scale_thres = FT(2) / FT(10);
-
-				if (scale_in  < scale_thres) scale_in  = scale_thres;
-				if (scale_out < scale_thres) scale_out = scale_thres;
-
-				if (visibility > half)      return CGAL::Color(51 * scale_in, 255 * scale_in, 51 * scale_in);  	 // INSIDE
-				else if (visibility < half) return CGAL::Color(255 * scale_out, 51 * scale_out, 51 * scale_out); // OUTSIDE
-									  
-				return CGAL::Color(255, 204, 0); // UNKNOWN
 			}
 
 			void set_delunay_and_function_values(const Container &input, Delaunay_triangulation &dt, Function_type &function_values) {
@@ -1165,7 +1028,7 @@ namespace CGAL {
 				}
 			}
 
-			FT compute_interpolated_value(const CDT &cdt, const Face_iterator fh, const Delaunay_triangulation &dt, const Function_type &function_values) {
+			FT compute_interpolated_value_natural_neighbours(const CDT &cdt, const Face_iterator fh, const Delaunay_triangulation &dt, const Function_type &function_values) {
 
 				Samples samples;
 				generate_samples(cdt, fh, samples);
@@ -1224,7 +1087,7 @@ namespace CGAL {
 					tree.search(std::back_inserter(pwl), circle);
 
 					fit->info().in       = compute_estimator(pwl);
-					fit->info().in_color = get_color(fit->info().in);
+					fit->info().in_color = this->get_color(fit->info().in);
 				}
 			}
 
@@ -1243,8 +1106,9 @@ namespace CGAL {
 				if (pwl.empty()) return half;
 				for (size_t i = 0; i < pwl.size(); ++i) {
 
+					// THIS CODE MAY GIVE COUNTERINTUITIVE RESULTS IF LABELS ARE DIFFERENT!
 					const Label label = pwl[i].second;
-					switch(label) {						// THIS CODE MAY GIVE COUNTERINTUITIVE RESULTS IF LABELS ARE DIFFERENT!
+					switch(label) {						
 
 						case ground:
 							outside += FT(1);
@@ -1340,50 +1204,216 @@ namespace CGAL {
 
 				// Iterate over all faces.
 				std::vector<Point_2> samples;
-				std::vector<FT> visibility(samples.size());
 
-				for (Face_iterator fit = cdt.finite_faces_begin(); fit != cdt.finite_faces_end(); ++fit) {
+				size_t num_stages = 1;
+				size_t stage      = 1;
+
+				if (m_show_progress) {
+
+					num_stages = 100;
+					stage = cdt.number_of_faces() / num_stages;
+
+					std::cout << std::endl;
+					std::cout << "Progress: " << std::endl;
+				}
+
+				size_t progress = 0;
+				for (Face_iterator fit = cdt.finite_faces_begin(); fit != cdt.finite_faces_end(); ++fit, ++progress) {
+					
+					if (m_show_progress) {
+						
+						if (stage != 0 && progress % stage == 0)
+							std::cout << (progress * 100) / cdt.number_of_faces() << "% " << std::endl; 
+					}
 
 					generate_samples(cdt, fit, samples);
-					compute_visibility(tree, samples, visibility);
+
+					fit->info().in       = compute_visibility_barycentric(tree, samples);
+					fit->info().in_color = this->get_color(fit->info().in);
+				}
+
+				if (m_show_progress) {
+
+					std::cout << "100%" << std::endl;
+					std::cout << std::endl;
 				}
 			}
 
-			void compute_visibility(const Tree &tree, const std::vector<Point_2> &samples, std::vector<FT> &visibility) {
+			FT compute_visibility_barycentric(const Tree &tree, const std::vector<Point_2> &samples) {
 
-				assert(visibility.size() == samples.size());
+				assert(m_k >= 3);
+				assert(!samples.empty());
+
+				FT result = FT(0);
 				for (size_t i = 0; i < samples.size(); ++i) {
 
-					const Point_2 &p = samples[i];
-					Neighbor_search search(tree, p, m_k);
+					const Point_2 &query = samples[i];
+					Neighbor_search search(tree, query, m_k);
+	
+					const FT intp = interpolate_sample_with_affine_coordinates(search, query);
+					result += intp;
+				}
 
-					std::vector<FT> bc;
-					compute_barycentric_coordinates(search, p, bc);
+				result /= static_cast<FT>(samples.size());				
+				return result;
+			}
+
+			FT interpolate_sample_with_affine_coordinates(const Neighbor_search &search, const Point_2 &query) {
+
+				const size_t num_found_neighbours = static_cast<size_t>(std::distance(search.begin(), search.end()));
+				if (num_found_neighbours == 0) return FT(1) / FT(2);
+				
+				std::vector<Point_2> points(num_found_neighbours);
+				std::vector<FT>      function_values(num_found_neighbours);
+
+				size_t i = 0; 
+				for (typename Neighbor_search::iterator it = search.begin(); it != search.end(); ++it, ++i) {
+					assert(i < points.size());
+
+					points[i]          = it->first.first;
+					function_values[i] = get_function_value(it->first.second);
+				}
+				
+				std::vector<FT> bc;
+				compute_affine_coordinates(points, query, bc);
+
+				return interpolate_with_barycentric_coordinates(function_values, bc);
+			}
+
+			FT get_function_value(const Label label) {
+
+				const Label ground     = 0;
+				const Label facade     = 1;
+				const Label roof       = 2;
+				const Label vegetation = 3; 
+
+				switch(label) {						
+
+					case ground:
+						return FT(0);
+
+					case facade:
+						return FT(1) / FT(2);
+
+					case roof:
+						return FT(1);
+
+					case vegetation:
+						return FT(0);
+
+					default:
+						assert(!"Wrong label!");
+						break;
 				}
 			}
 
-			// For the moment it works only with m_k = 3! For the bigger number of nearest neighbours, we need to use triangulation, because
-			// the found nearest neighbours do not necesserary form an oriented polygon!
-			// It can also give negative values.
-			void compute_barycentric_coordinates(const Neighbor_search &search, const Point_2 &query, std::vector<FT> &bc) {
+			void compute_affine_coordinates(const std::vector<Point_2> &points, const Point_2 &query, std::vector<FT> &bc) {
 
-				const size_t num_found_neighbours = static_cast<size_t>(std::distance(search.begin(), search.end()));
+				bc.clear();
+				if (m_without_bc) return;
+
+				assert(!points.empty());
+				const size_t n = points.size();
+				bc.resize(n, FT(0));
+
+				// Compute the barycentre.
+				Point_2 c;
+				compute_barycentre(points, c);
+
+				// Set the matrices.
+            	MatrixXd V(2, n);
+            	for (size_t i = 0; i < n; ++i) {
+
+                	const FT x = points[i].x() - c.x();
+                	const FT y = points[i].y() - c.y();
+
+                	V(0, i) = x;
+                	V(1, i) = y;
+            	}
+
+            	const MatrixXd Vs  = V.adjoint();
+            	const MatrixXd mat = V * Vs;
+            	const MatrixXd inv = mat.inverse();
+
+            	VectorXd vert(2);
+            	Point_2 diff;
+
+            	const FT num_points = static_cast<FT>(n);
+            	for (size_t i = 0; i < n; ++i) {
+                	
+            		const FT x = query.x() - c.x();
+            		const FT y = query.y() - c.y();
+
+                	vert(0) = V(0, i);
+                	vert(1) = V(1, i);
+
+                	VectorXd res = inv * vert;
+    	            bc[i] = x * res(0) + y * res(1) + FT(1) / num_points;
+	            }
+			}
+
+			void compute_barycentre(const std::vector<Point_2> &points, Point_2 &c) {
+
+				FT x = FT(0); 
+				FT y = FT(0);
+
+				for (size_t i = 0; i < points.size(); ++i) {
+
+					x += points[i].x();
+					y += points[i].y();
+				}
+
+				const FT num_points = static_cast<FT>(points.size());
+
+				x /= num_points;
+				y /= num_points;
+
+				c = Point_2(x, y);
+			}
+
+			FT interpolate_with_barycentric_coordinates(const std::vector<FT> &function_values, const std::vector<FT> &bc) {
+
+				if (bc.empty() && m_without_bc) return apply_averaging(function_values);
+
+				assert(!bc.empty());
+				assert(!function_values.empty());
+				assert(function_values.size() == bc.size());
+
+				FT result = FT(0);
+				for (size_t i = 0; i < function_values.size(); ++i) {
+					
+					assert(function_values[i] >= FT(0) && function_values[i] <= FT(1));
+					result += function_values[i] * bc[i];
+				}
+
+				assert(result >= FT(0) && result <= FT(1));
+				if (result < FT(0) || result > FT(1)) {
 				
-				std::vector<Point_2> points(num_found_neighbours);
-				bc.reserve(num_found_neighbours);
+					// std::cerr << "The value is truncated!" << std::endl;
+					return FT(1) / FT(2);
+				}
+				return result;
+			}
 
-				size_t i = 0;
-				for (typename Neighbor_search::iterator it = search.begin(); it != search.end(); ++it, ++i) points[i] = it->first.first;
+			FT apply_averaging(const std::vector<FT> &function_values) {
 
-				Mean_value_coordinates mean_value_coordinates(points.begin(), points.end());
-				mean_value_coordinates(query, std::back_inserter(bc));
+				const FT half = FT(1) / FT(2);
+				if (function_values.empty()) return half;
 
-				assert(bc.size() == num_found_neighbours);
+				FT result = FT(0);
+				for (size_t i = 0; i < function_values.size(); ++i) result += function_values[i];
+				result /= static_cast<FT>(function_values.size());
+
+				return result;
 			}
 
 			void generate_samples(const CDT &cdt, const Face_iterator fit, std::vector<Point_2> &samples) {
 				
 				switch(m_sampler) {
+
+					case Visibility_sampler::BARYCENTRE:
+						generate_barycentre(cdt, fit, samples);
+						break;
 
 					case Visibility_sampler::RANDOM_UNIFORM_0:
 						generate_samples_random_uniform_0(cdt, fit, samples);
@@ -1401,6 +1431,16 @@ namespace CGAL {
 						assert(!"Wrong sampler!");
 						break;
 				}
+			}
+
+			void generate_barycentre(const CDT &cdt, const Face_iterator &fh, Samples &samples) {
+
+				const Point_2 &a = cdt.triangle(fh).vertex(0);
+				const Point_2 &b = cdt.triangle(fh).vertex(1);
+				const Point_2 &c = cdt.triangle(fh).vertex(2);
+
+				m_sample_generator.set_number_of_samples(0);
+				m_sample_generator.create_uniform_subdivision_samples(a, b, c, samples);
 			}
 
 			void generate_samples_random_uniform_0(const CDT &cdt, const Face_iterator &fh, Samples &samples) {
@@ -1486,13 +1526,13 @@ namespace CGAL {
 					if (sum == FT(0)) {
 
 						(*it).first->info().in       = half;
-						(*it).first->info().in_color = get_color((*it).first->info().in);
+						(*it).first->info().in_color = this->get_color((*it).first->info().in);
 						
 						continue;	
 					}
 
 					(*it).first->info().in 		 = inside / sum;
-					(*it).first->info().in_color = get_color((*it).first->info().in);
+					(*it).first->info().in_color = this->get_color((*it).first->info().in);
 				}
 			}
 
@@ -1511,7 +1551,200 @@ namespace CGAL {
 				if (bc[0] < tol || bc[1] < tol || bc[2] < tol) return true;
 				return false;
 			}
-		};		
+		};	
+
+
+		// This is a visibility class that blends both ray shooting and classification visibility estimation algorithms below.
+		template<class KernelTraits, class ContainerInput, class CDTInput>
+		class Level_of_detail_visibility_blend_2 : public Level_of_detail_visibility_2<KernelTraits, ContainerInput, CDTInput> {
+
+		public:
+			// Typedefs.
+			typedef KernelTraits 		Kernel;
+			typedef typename Kernel::FT FT;
+
+			typedef ContainerInput Container;
+			typedef CDTInput 	   CDT;
+
+			using LOD_classification = Level_of_detail_visibility_from_classification_2<Kernel, Container, CDT>;
+			using LOD_ray_shooting   = Level_of_detail_visibility_ray_shooting_2<Kernel, Container, CDT>;
+
+
+			// Extra.
+			using Face_handle 		  = typename CDT::Face_handle;
+			using Cdt_vertex_iterator = typename CDT::Finite_vertices_iterator;
+			using Cdt_face_iterator   = typename CDT::Finite_faces_iterator;
+
+
+			// Constructor.
+			Level_of_detail_visibility_blend_2() : 
+			m_save_info(true), 
+			m_show_progress(true),
+			m_num_samples(1),
+			m_num_rays_per_side(100),
+			m_k(6),
+			m_norm_threshold(FT(1000)),
+			m_small_edge_thres(FT(0)),
+			m_sampler(Visibility_sampler::BARYCENTRE),
+			m_approach(Visibility_approach::POINT_BASED),
+			m_method(Visibility_method::POINT_BASED_CLASSIFICATION) { }
+
+
+			// Public functions.
+			void save_info(const bool new_state) override {
+				m_save_info = new_state;
+			}
+
+			void show_progress(const bool new_state) override {
+				m_show_progress = new_state;
+			}
+
+			void set_number_of_samples(const size_t new_value) override {
+				m_num_samples = new_value;
+			}
+
+			void set_number_of_rays_per_side(const size_t new_value) override {
+				m_num_rays_per_side = new_value;
+			}
+
+			void set_number_of_neighbours(const size_t new_value) override {
+				m_k = new_value;
+			}
+
+			void set_norm_threshold(const FT new_value) override {
+				m_norm_threshold = new_value;
+			}
+
+			void set_small_edge_threshold(const FT new_value) override {
+				m_small_edge_thres = new_value;
+			}
+
+			void set_sampler_type(const Visibility_sampler new_sampler) override {
+				m_sampler = new_sampler;
+			}
+
+			void set_approach(const Visibility_approach new_approach) override {
+				m_approach = new_approach;
+			}
+
+			void set_method(const Visibility_method new_method) override {
+				m_method = new_method;
+			}
+
+			int compute(const Container &input, CDT &cdt) override {
+
+				set_classification_lod();
+				set_ray_shooting_lod();
+
+				CDT tmp = cdt;
+
+				m_lod_classification.compute(input, tmp);
+				m_lod_ray_shooting.compute(input, cdt);
+
+				update_results(tmp, cdt);
+				return static_cast<int>(cdt.number_of_faces());
+			}
+
+		private:
+			bool m_save_info;
+			bool m_show_progress;
+
+			size_t m_num_samples;
+			size_t m_num_rays_per_side;
+			size_t m_k;
+
+			FT m_norm_threshold;
+			FT m_small_edge_thres;
+
+			Visibility_sampler  m_sampler;
+			Visibility_approach m_approach;
+			Visibility_method   m_method;
+
+			LOD_classification m_lod_classification;
+			LOD_ray_shooting   m_lod_ray_shooting;
+
+			void set_classification_lod() {
+
+				m_lod_classification.save_info(m_save_info);
+				m_lod_classification.show_progress(m_show_progress);
+				m_lod_classification.set_number_of_samples(m_num_samples);
+				m_lod_classification.set_number_of_rays_per_side(m_num_rays_per_side);
+				m_lod_classification.set_number_of_neighbours(m_k);
+				m_lod_classification.set_norm_threshold(m_norm_threshold);
+				m_lod_classification.set_small_edge_threshold(m_small_edge_thres);
+				m_lod_classification.set_sampler_type(m_sampler);
+				m_lod_classification.set_approach(m_approach);
+				m_lod_classification.set_method(m_method);
+			}
+
+			void set_ray_shooting_lod() {
+
+				m_lod_ray_shooting.save_info(m_save_info);
+				m_lod_ray_shooting.show_progress(m_show_progress);
+				m_lod_ray_shooting.set_number_of_samples(m_num_samples);
+				m_lod_ray_shooting.set_number_of_rays_per_side(m_num_rays_per_side);
+				m_lod_ray_shooting.set_number_of_neighbours(m_k);
+				m_lod_ray_shooting.set_norm_threshold(m_norm_threshold);
+				m_lod_ray_shooting.set_small_edge_threshold(m_small_edge_thres);
+				m_lod_ray_shooting.set_sampler_type(m_sampler);
+				m_lod_ray_shooting.set_approach(m_approach);
+				m_lod_ray_shooting.set_method(m_method);
+			}
+
+			void update_results(const CDT &tmp, CDT &cdt) {
+				assert(tmp.number_of_faces() == cdt.number_of_faces());
+
+				Cdt_face_iterator fit_tmp = tmp.finite_faces_begin();
+				for (Cdt_face_iterator fit_cdt = cdt.finite_faces_begin(); fit_cdt != cdt.finite_faces_end(); ++fit_tmp, ++fit_cdt) { 
+
+					const Face_handle fh_tmp = static_cast<Face_handle>(fit_tmp);
+					const Face_handle fh_cdt = static_cast<Face_handle>(fit_cdt);
+					
+					fh_cdt->info().in       = estimate_face_visibility(fh_tmp, fh_cdt);
+					fh_cdt->info().in_color = this->get_color(fh_cdt->info().in);
+				}
+			}
+
+			FT estimate_face_visibility(const Face_handle &fh_tmp, const Face_handle &fh_cdt) {
+
+				const FT half = FT(1) / FT(2);
+
+				const FT in_tmp = fh_tmp->info().in;
+				const FT in_cdt = fh_cdt->info().in;
+
+				if (in_tmp >= half && in_cdt >= half) return (in_tmp + in_cdt) / FT(2);
+				if (in_tmp <= half && in_cdt <= half) return (in_tmp + in_cdt) / FT(2);
+
+				assert(in_tmp != half && in_cdt != half);
+
+				if (in_tmp > half && in_cdt < half) {
+
+					const FT val_tmp = FT(1) - in_tmp;
+					const FT val_cdt = in_cdt;
+
+					return compare_two_vals(val_tmp, val_cdt, in_tmp, in_cdt);
+				}
+
+				if (in_tmp < half && in_cdt > half) {
+					
+					const FT val_tmp = in_tmp;
+					const FT val_cdt = FT(1) - in_cdt;
+
+					return compare_two_vals(val_tmp, val_cdt, in_tmp, in_cdt);
+				}
+
+				assert(!"Cannot be here!");
+				return half;
+			}
+
+			FT compare_two_vals(const FT val_tmp, const FT val_cdt, const FT in_tmp, const FT in_cdt) {
+
+				if (val_tmp > val_cdt) return in_cdt;
+				else if (val_tmp < val_cdt) return in_tmp;
+				
+				return (in_tmp + in_cdt) / FT(2);
+			}
+		};	
 	}
 }
 

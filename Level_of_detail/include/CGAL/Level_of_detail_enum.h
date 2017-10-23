@@ -42,9 +42,10 @@ namespace CGAL {
 
 		// Visibility samplers.
 		enum class Visibility_sampler {
-			RANDOM_UNIFORM_0,   // a bit faster than UNIFORM_1 but the result is similar, randomized
-			RANDOM_UNIFORM_1,   // see above
-			UNIFORM_SUBDIVISION // determenistic sampler based on midpoint subdivision
+			RANDOM_UNIFORM_0,    // a bit faster than UNIFORM_1 but the result is similar, randomized
+			RANDOM_UNIFORM_1,    // see above
+			UNIFORM_SUBDIVISION, // determenistic sampler based on midpoint subdivision
+			BARYCENTRE			 // barycentre of the given triangle
 		};
 
 		// Face info class.

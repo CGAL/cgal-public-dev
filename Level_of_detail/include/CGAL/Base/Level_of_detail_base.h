@@ -144,7 +144,11 @@ namespace CGAL {
 			m_clutter_knn(0),
 			m_clutter_cell_length(-FT(1)),
 			m_clutter_fitter_type(Clutter_fitter_type::LINE),
-			m_clutter_new_point_type(Clutter_new_point_type::BARYCENTRE)
+			m_clutter_new_point_type(Clutter_new_point_type::BARYCENTRE),
+			m_visibility_num_neighbours(0),
+			m_visibility_sampler(Visibility_sampler::RANDOM_UNIFORM_0),
+			m_visibility_rays_per_side(0),
+			m_visibility_small_edge_threshold(FT(0))
 			{ } // Do I need to create an instance of these traits here?
 
 
@@ -443,6 +447,10 @@ namespace CGAL {
 				m_visibility.set_number_of_samples(m_visibility_num_samples);
 				m_visibility.show_progress(m_visibility_show_progress);
 				m_visibility.set_norm_threshold(m_visibility_norm_threshold);
+				m_visibility.set_number_of_neighbours(m_visibility_num_neighbours);
+				m_visibility.set_sampler_type(m_visibility_sampler);
+				m_visibility.set_number_of_rays_per_side(m_visibility_rays_per_side);
+				m_visibility.set_small_edge_threshold(m_visibility_small_edge_threshold);
 
 				const auto number_of_traversed_faces = m_visibility.compute(input_2d, cdt);
 				log.out << "(" << exec_step << ") Visibility is computed. Number of traversed faces: " << number_of_traversed_faces << std::endl << std::endl;
@@ -778,7 +786,12 @@ namespace CGAL {
 			Clutter_fitter_type    m_clutter_fitter_type;
 			Clutter_new_point_type m_clutter_new_point_type;
 
+			size_t m_visibility_num_neighbours;
+			Visibility_sampler m_visibility_sampler;
+			size_t m_visibility_rays_per_side;
+			FT m_visibility_small_edge_threshold;
 			
+
 			// Assert default values of all global parameters.
 			void assert_global_parameters() {
 			
@@ -807,6 +820,9 @@ namespace CGAL {
 				
 				assert(m_clutter_knn > 1);
 				assert(m_clutter_cell_length != -FT(1));
+
+				assert(m_visibility_num_neighbours > 1);
+				assert(m_visibility_rays_per_side > 0);
 			}
 
 
@@ -842,9 +858,14 @@ namespace CGAL {
 				m_clutter_fitter_type 		= Clutter_fitter_type::LINE;	
 				m_clutter_new_point_type    = Clutter_new_point_type::BARYCENTRE; // BARYCENTRE - keeps average position of the removed points, CENTROID - inserts new point in the centre of the grid cell		
 				
+				m_visibility_num_neighbours 	  = 6;
+				m_visibility_sampler 			  = Visibility_sampler::RANDOM_UNIFORM_0;
+				m_visibility_rays_per_side  	  = 10;
+				m_visibility_small_edge_threshold = FT(0);
+
 
 				// The most important!
-				const Main_test_data_type test_data_type = Main_test_data_type::P10;
+				const Main_test_data_type test_data_type = Main_test_data_type::BASIC;
 				switch (test_data_type) {
 
 					case Main_test_data_type::BASIC:
