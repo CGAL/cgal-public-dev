@@ -73,7 +73,7 @@ Remove m_beta from out - Makes all triangles in!
 Use squared length instead of length for edge weights - With squared length the result seems to be cut over the longer edge.
 Change free_form_quality function to the fixed value or improve it - It looks ok, if I want the pure shortest path cut, use 1 instead of this function - at least for some data sets with some parameters, it works.
 I do max flow between faces = graph nodes (favour big values) or min cut over the finite edges = graph edges (favour small values) - Yes.
-Add extra coherence to the free-form coherent edges using for example in and out data - Added tanh adapter to node values.
+Add an extra coherence to the free-form coherent edges using for example in and out data - Added tanh adapter to node values.
 
 
 // Iteration 5:
@@ -81,6 +81,11 @@ Add extra coherence to the free-form coherent edges using for example in and out
 2. Should we really change simple version of my unordered outliner to the pivoting one?
 3. Should we really change my simple version of the banding in the ray shooting to the complex one of Pierre?
 4. Should we really implement the watertight 2-manifold version of the LOD0 and LOD1?
+5. Ray shooting - small edge criteria makes the results worse!
+6. Why the first query point in knn search works so long?
+7. The barycentric method does not work with complex data set, I get the segmentation error in the tree data structure.
+8. Should I compute neighbouring buildings for each building?
+9. Make all edges in the unoriented boundary algorithm unique.
 
 Points: finish and test visibility; finish and test outliner with lod0-lod1; finish and test all other small tasks - sphere search in thinning, bug in structuring, etc.; test everything and prepare the big Paris data set.
 

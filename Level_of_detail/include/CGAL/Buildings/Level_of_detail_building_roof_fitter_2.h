@@ -177,13 +177,14 @@ namespace CGAL {
 
 				assert(value >= FT(0));
 				m_min_height = CGAL::min(m_min_height, value);
+				m_num_values += FT(1);
 			}
 
 			FT get_result() override {
 
 				assert(!empty());
 				assert(m_min_height != m_big_value);
-				
+
 				return m_min_height;
 			}
 
@@ -267,6 +268,8 @@ namespace CGAL {
 
 				m_min_height = CGAL::min(m_min_height, value);
 				m_max_height = CGAL::max(m_max_height, value);
+
+				m_num_values += FT(1);
 			}
 
 			FT get_result() override {

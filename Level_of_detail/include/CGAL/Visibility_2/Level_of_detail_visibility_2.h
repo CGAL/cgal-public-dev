@@ -1065,6 +1065,7 @@ namespace CGAL {
 				result /= FT(samples.size());
 				if (full_size == 0) result = half;				
 
+				if (result > FT(1) && result < FT(1) + FT(1) / FT(1000000)) result = FT(1);
 				return result;
 			}
 
@@ -1243,13 +1244,13 @@ namespace CGAL {
 
 				assert(m_k >= 3);
 				assert(!samples.empty());
-
+ 
 				FT result = FT(0);
 				for (size_t i = 0; i < samples.size(); ++i) {
 
 					const Point_2 &query = samples[i];
 					Neighbor_search search(tree, query, m_k);
-	
+
 					const FT intp = interpolate_sample_with_affine_coordinates(search, query);
 					result += intp;
 				}
@@ -1711,6 +1712,12 @@ namespace CGAL {
 
 				const FT in_tmp = fh_tmp->info().in;
 				const FT in_cdt = fh_cdt->info().in;
+
+				// Simple averaging.
+
+				// return (in_tmp + in_cdt) / FT(2);
+
+				// More complex version.
 
 				if (in_tmp >= half && in_cdt >= half) return (in_tmp + in_cdt) / FT(2);
 				if (in_tmp <= half && in_cdt <= half) return (in_tmp + in_cdt) / FT(2);

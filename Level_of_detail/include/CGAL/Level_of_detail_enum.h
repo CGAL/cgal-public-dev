@@ -4,6 +4,7 @@
 // STL includes.
 #include <map>
 #include <vector>
+#include <unordered_set>
 
 // CGAL includes.
 #include <CGAL/IO/Color.h>
@@ -48,6 +49,12 @@ namespace CGAL {
 			BARYCENTRE			 // barycentre of the given triangle
 		};
 
+		// Type of the building's boudnary.
+		enum class Building_boundary_type {
+			ORIENTED,  // clockwise-oriented boundary
+			UNORIENTED // not oriented boundary, which is the set of segments
+		};
+
 		// Face info class.
 		template<typename FT>
 		class My_face_info {
@@ -80,6 +87,9 @@ namespace CGAL {
 			std::vector< std::vector<Vertex_handle> > 		   				  boundaries; // boundary vertices of the building ordered counterclockwise (may store multiple boundaries)
 			std::vector< std::map<Vertex_handle, std::vector<Face_handle> > > wedges;     // all faces adjacent to each boundary vertex above - must be unique face handles
 			std::vector<Face_handle>   						   				  faces;	  // all faces that belong to this building
+
+			bool is_oriented = false;    		// flag to check if the computed boundary is oriented or not, see Building_boundary_type above
+			std::unordered_set<int> neighbours; // indices of all neighbouring buildings of the given building
 		};
 
 		// Type of the roof fitter.

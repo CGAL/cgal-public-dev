@@ -26,7 +26,7 @@ namespace CGAL {
 
 	namespace LOD {
 
-		// Mesh builder for the LOD1 reconstruction below.
+		// Mesh builder for the reconstruction below.
 		template<class KernelTraits, class HDSInput, class CDTInput, class BuildingsInput, class ColorFacetHandle>
 		class Build_mesh : public Modifier_base<HDSInput> {
 		
@@ -67,7 +67,6 @@ namespace CGAL {
 			void operator()(HDS &hds) {
 
 				Builder builder(hds, false);
-
 				switch (m_builder_type) {
 
 					case Builder_type::LOD0:
@@ -128,7 +127,8 @@ namespace CGAL {
 				for (Building_iterator bit = m_buildings.begin(); bit != m_buildings.end(); ++bit) {
 				
 					const auto &building = (*bit).second;
-					add_new_building_lod0(building, builder);
+					if (building.is_oriented) add_new_building_lod0(building, builder); // default is oriented
+					else add_new_building_lod0_unoriented(building, builder);
 				}
 
 
@@ -256,7 +256,9 @@ namespace CGAL {
 				for (Building_iterator bit = m_buildings.begin(); bit != m_buildings.end(); ++bit) {
 				
 					const auto &building = (*bit).second;
-					add_new_building_lod1(building, builder);
+
+					if (building.is_oriented) add_new_building_lod1(building, builder); // default is oriented
+					else add_new_building_lod1_unoriented(building, builder);
 				}
 
 
@@ -317,13 +319,23 @@ namespace CGAL {
 			}
 
 			template<class BuildingTmp>
+			void add_new_building_lod0_unoriented(const BuildingTmp &building, Builder &builder) {
+				
+				const auto &boundaries = building.boundaries;
+				const size_t num_boundaries = boundaries.size();
+
+				assert(num_boundaries > 0);
+				add_unoriented_building_structure_lod0(building, builder);
+			}
+
+			template<class BuildingTmp>
 			void add_new_building_lod1(const BuildingTmp &building, Builder &builder) {
 				
 				const auto &boundaries = building.boundaries;
 				const size_t num_boundaries = boundaries.size();
 
 				if (num_boundaries == 1) {
-					
+
 					add_building_structure_from_one_boundary_lod1(building, builder);
 					return;
 				}
@@ -344,19 +356,38 @@ namespace CGAL {
 			}
 
 			template<class BuildingTmp>
+			void add_new_building_lod1_unoriented(const BuildingTmp &building, Builder &builder) {
+
+				const auto &boundaries = building.boundaries;
+				const size_t num_boundaries = boundaries.size();
+
+				assert(num_boundaries > 0);
+				add_unoriented_building_structure_lod1(building, builder);
+			}
+
+			template<class BuildingTmp>
 			void add_building_structure_from_one_boundary_lod0(const BuildingTmp &building, Builder &builder) {
 
 				const Color color = building.color;
 				if (m_use_boundaries) {
 
 					const auto &boundary = building.boundaries[0];
-					add_horizontal_boundary(boundary, color, FT(0), builder); // floor
+					add_horizontal_boundary(boundary, color, FT(1) / FT(100000), builder); // floor
 
 				} else {
 
 					const auto &faces = building.faces;
-					add_horizontal_triangulation(faces, color, FT(0), builder); // floor
+					add_horizontal_triangulation(faces, color, FT(1) / FT(100000), builder); // floor
 				}
+			}
+
+			template<class BuildingTmp>
+			void add_unoriented_building_structure_lod0(const BuildingTmp &building, Builder &builder) {
+
+				const Color color = building.color;
+				const auto &faces = building.faces;
+
+				add_horizontal_triangulation(faces, color, FT(1) / FT(100000), builder); // floor
 			}
 
 			template<class BuildingTmp>
@@ -369,20 +400,29 @@ namespace CGAL {
 	
 					const auto &boundary = building.boundaries[0];
 
-					add_horizontal_boundary(boundary, color, FT(0) , builder); // floor
-					add_horizontal_boundary(boundary, color, height, builder); // roof
-
+					add_horizontal_boundary(boundary, color, height, builder); 		  // roof
 					add_walls_from_boundary(boundary, color, FT(0), height, builder); // walls
 
 				} else {
 
 					const auto &faces = building.faces;
 
-					add_horizontal_triangulation(faces, color, FT(0) , builder); // floor
-					add_horizontal_triangulation(faces, color, height, builder); // roof
-
+					add_horizontal_triangulation(faces, color, height, builder);  	// roof
 					add_walls_from_triangles(faces, color, FT(0), height, builder); // walls
 				}
+			}
+
+			template<class BuildingTmp>
+			void add_unoriented_building_structure_lod1(const BuildingTmp &building, Builder &builder) {
+
+				const FT height   = building.height;
+				const Color color = building.color;
+
+				const auto &faces = building.faces;
+				add_horizontal_triangulation(faces, color, height, builder); // roof
+	
+				const auto &boundary = building.boundaries[0];
+				add_walls_from_unoriented_boundary(boundary, color, FT(0), height, builder); // walls
 			}
 
 			template<class BoundaryTmp>
@@ -416,7 +456,7 @@ namespace CGAL {
 				const Color color = building.color;
 				const auto &faces = building.faces;
 
-				add_horizontal_triangulation(faces, color, FT(0), builder); // floor
+				add_horizontal_triangulation(faces, color, FT(1) / FT(100000), builder); // floor
 			}
 
 			template<class BuildingTmp>
@@ -427,7 +467,6 @@ namespace CGAL {
 
 				const auto &faces = building.faces;
 
-				add_horizontal_triangulation(faces, color, FT(0) , builder); // floor
 				add_horizontal_triangulation(faces, color, height, builder); // roof
 
 				// Add walls.
@@ -478,6 +517,19 @@ namespace CGAL {
 				for (size_t i = 0; i < num_vertices; ++i) {
 
 					const size_t ip = (i + 1) % num_vertices;
+					add_quadrilateral_wall(boundary[i], boundary[ip], color, height_floor, height_roof, builder);
+				}
+			}
+
+			template<class BoundaryTmp>
+			void add_walls_from_unoriented_boundary(const BoundaryTmp &boundary, const Color &color, const FT height_floor, const FT height_roof, Builder &builder) {
+				
+				const size_t num_vertices = boundary.size();
+				for (size_t i = 0; i < num_vertices; i += 2) {
+					
+					const size_t ip = i + 1;
+					assert(ip < num_vertices);
+
 					add_quadrilateral_wall(boundary[i], boundary[ip], color, height_floor, height_roof, builder);
 				}
 			}
@@ -554,7 +606,7 @@ namespace CGAL {
 		}; 
 
 
-		// The main LOD1 reconstruction class.
+		// The main reconstruction class.
 		template<class KernelTraits, class CDTInput, class BuildingsInput, class MeshOutput>
 		class Level_of_detail_reconstruction {
 

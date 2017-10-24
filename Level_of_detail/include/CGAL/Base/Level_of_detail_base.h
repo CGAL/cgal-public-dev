@@ -148,7 +148,8 @@ namespace CGAL {
 			m_visibility_num_neighbours(0),
 			m_visibility_sampler(Visibility_sampler::RANDOM_UNIFORM_0),
 			m_visibility_rays_per_side(0),
-			m_visibility_small_edge_threshold(FT(0))
+			m_visibility_small_edge_threshold(FT(0)),
+			m_building_boundary_type(Building_boundary_type::UNORIENTED)
 			{ } // Do I need to create an instance of these traits here?
 
 
@@ -505,6 +506,7 @@ namespace CGAL {
 				m_building_outliner.save_info(m_building_boundaries_save_internal_info);
 				m_building_outliner.set_max_inner_iterations(m_building_boundaries_max_inner_iters);
 				m_building_outliner.set_max_outer_iterations(m_building_boundaries_max_outer_iters);
+				m_building_outliner.set_boundary_type(m_building_boundary_type);
 					
 				m_building_outliner.find_boundaries(cdt, buildings);
 
@@ -790,6 +792,8 @@ namespace CGAL {
 			Visibility_sampler m_visibility_sampler;
 			size_t m_visibility_rays_per_side;
 			FT m_visibility_small_edge_threshold;
+
+			Building_boundary_type m_building_boundary_type;
 			
 
 			// Assert default values of all global parameters.
@@ -803,10 +807,10 @@ namespace CGAL {
 				assert(!m_add_cdt_bbox);
 				assert(m_visibility_num_samples != 0);
 
-				assert(!(m_visibility_approach == Visibility_approach::FACE_BASED && m_visibility_method == Visibility_method::POINT_BASED_CLASSIFICATION));
+				assert(!(m_visibility_approach == Visibility_approach::FACE_BASED  && m_visibility_method == Visibility_method::POINT_BASED_CLASSIFICATION));
 				assert(!(m_visibility_approach == Visibility_approach::POINT_BASED && m_visibility_method == Visibility_method::FACE_BASED_COUNT));
 				assert(!(m_visibility_approach == Visibility_approach::POINT_BASED && m_visibility_method == Visibility_method::FACE_BASED_NATURAL_NEIGHBOURS));
-				assert(!(m_visibility_method == Visibility_method::FACE_BASED_BARYCENTRIC));
+				assert(!(m_visibility_approach == Visibility_approach::POINT_BASED && m_visibility_method == Visibility_method::FACE_BASED_BARYCENTRIC));
 
 				assert(m_graph_cut_alpha != -FT(1));
 				assert(m_graph_cut_beta  != -FT(1));
@@ -840,7 +844,8 @@ namespace CGAL {
 				m_building_boundaries_max_inner_iters = 1000;
 				m_building_boundaries_max_outer_iters = 1000000;
 
-				m_visibility_show_progress = true;
+				m_visibility_show_progress  = true;
+				m_visibility_norm_threshold = FT(1000);
 
 
 				// More important.
@@ -853,16 +858,17 @@ namespace CGAL {
 				m_visibility_method   = Visibility_method::FACE_BASED_NATURAL_NEIGHBOURS;
 				m_roof_fitter_type 	  = Roof_fitter_type::AVG;
 
-				m_preprocessor_scale  	 	= 2.0;
-				m_visibility_norm_threshold = FT(1000);
-				m_clutter_fitter_type 		= Clutter_fitter_type::LINE;	
-				m_clutter_new_point_type    = Clutter_new_point_type::BARYCENTRE; // BARYCENTRE - keeps average position of the removed points, CENTROID - inserts new point in the centre of the grid cell		
+				m_preprocessor_scale  	 = 2.0;
+				m_clutter_fitter_type    = Clutter_fitter_type::LINE;	
+				m_clutter_new_point_type = Clutter_new_point_type::BARYCENTRE; // BARYCENTRE - keeps average position of the removed points, CENTROID - inserts new point in the centre of the grid cell		
 				
 				m_visibility_num_neighbours 	  = 6;
-				m_visibility_sampler 			  = Visibility_sampler::RANDOM_UNIFORM_0;
+				m_visibility_sampler 			  = Visibility_sampler::BARYCENTRE;
 				m_visibility_rays_per_side  	  = 10;
 				m_visibility_small_edge_threshold = FT(0);
 
+				m_building_boundary_type = Building_boundary_type::UNORIENTED;
+				
 
 				// The most important!
 				const Main_test_data_type test_data_type = Main_test_data_type::BASIC;
@@ -902,7 +908,7 @@ namespace CGAL {
 				m_max_reg_angle          = 10.0;	 // In average should be 10-20 degrees.
 				m_structuring_epsilon 	 = 0.025; 	 // the most important parameter!!! Depends on the dataset.
 				m_add_cdt_clutter     	 = true;	 // is always true if shape detection is not used
-				m_visibility_num_samples = 100;		 // the more samples, the slower but better quality in visibility
+				m_visibility_num_samples = 11;		 // the more samples, the slower but better quality in visibility
 				m_graph_cut_alpha 		 = 1.0;      // should not change anything but should be bigger or equal to 1
 				m_graph_cut_beta 		 = 100000.0; // smaller value for more inside triangles
 				m_graph_cut_gamma 		 = 1000.0;   // is not used in the pipeline without shape detection (or without structuring), otherwise should be some big value
@@ -920,7 +926,7 @@ namespace CGAL {
 				m_max_reg_angle          = 10.0;
 				m_structuring_epsilon 	 = 0.0005;
 				m_add_cdt_clutter     	 = false;
-				m_visibility_num_samples = 10;
+				m_visibility_num_samples = 11;
 				m_graph_cut_alpha 		 = 1.0;
 				m_graph_cut_beta 		 = 1.0;
 				m_graph_cut_gamma 		 = 1000.0;
@@ -938,7 +944,7 @@ namespace CGAL {
 				m_max_reg_angle          = 10.0;
 				m_structuring_epsilon 	 = 0.1;
 				m_add_cdt_clutter     	 = false;
-				m_visibility_num_samples = 10;
+				m_visibility_num_samples = 11;
 				m_graph_cut_alpha 		 = 1.0;
 				m_graph_cut_beta 		 = 9.0;
 				m_graph_cut_gamma 		 = 1000.0;

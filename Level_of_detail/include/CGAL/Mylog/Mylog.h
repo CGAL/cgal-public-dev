@@ -7,6 +7,7 @@
 #include <fstream>
 #include <iostream>
 #include <cmath>
+#include <unordered_set>
 
 // Boost includes.
 #include <boost/tuple/tuple.hpp>
@@ -160,6 +161,7 @@ namespace CGAL {
 					out << "Building " << count << 
 					" with color " << (*bit).second.color  << 
 					" and height " << (*bit).second.height << 
+					" and oriented boundary " << (*bit).second.is_oriented << 
 					
 					std::endl << "faces: ";
 					for (size_t i = 0; i < num_faces; ++i) out << F[faces[i]] << " ";
@@ -183,6 +185,15 @@ namespace CGAL {
 							}
 						}
 					}
+
+					out << "neighbours (size = " << (*bit).second.neighbours.size() << "): " ;
+
+					using Neighbouring_buildings = std::unordered_set<int>;
+					using Neighbour_iterator = Neighbouring_buildings::const_iterator;
+
+					for (Neighbour_iterator nit = (*bit).second.neighbours.begin(); nit != (*bit).second.neighbours.end(); ++nit)
+						out << (*nit) << " ";
+					out << std::endl;
 
 					skip_line();
 					skip_line();

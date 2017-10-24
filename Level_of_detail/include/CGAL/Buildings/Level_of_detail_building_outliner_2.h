@@ -34,7 +34,11 @@ namespace CGAL {
 			using Building_iterator = typename Buildings::iterator;
 			using Log = CGAL::LOD::Mylog;
 
-			Level_of_detail_building_outliner_2() : m_save_info(false), m_max_outer_iters(1000000), m_max_inner_iters(1000) { }
+			Level_of_detail_building_outliner_2() : 
+			m_save_info(false), 
+			m_max_outer_iters(1000000), 
+			m_max_inner_iters(1000),
+			m_boundary_type(Building_boundary_type::UNORIENTED) { }
 
 			void save_info(const bool new_state) {
 				m_save_info = new_state;
@@ -46,6 +50,10 @@ namespace CGAL {
 
 			void set_max_inner_iterations(const size_t iters) {
 				m_max_inner_iters = iters;
+			}
+
+			void set_boundary_type(const Building_boundary_type new_type) {
+				m_boundary_type = new_type;
 			}
 
 			void find_boundaries(const CDT &cdt, Buildings &buildings) const {
@@ -69,18 +77,119 @@ namespace CGAL {
 			size_t m_max_outer_iters;
 			size_t m_max_inner_iters;
 
+			Building_boundary_type m_boundary_type;
+
 			// Work with each building separately.
 			void handle_building(const CDT &cdt, Building &building, Log &log) const {
+
+				switch (m_boundary_type) {
+
+					case Building_boundary_type::UNORIENTED:
+						compute_unoriented_boundary(cdt, building);
+						break;
+
+					case Building_boundary_type::ORIENTED:
+						compute_oriented_boundary(cdt, building, log);
+						break;
+
+					default:
+						assert(!"Wrong boundary type!");
+						break;
+				}
+			}
+
+			// Compute boundary, which is the set of unoriented segments.
+			void compute_unoriented_boundary(const CDT &cdt, Building &building) const {
+
+				building.is_oriented = false;
+
+				building.boundaries.clear();
+				building.neighbours.clear();
+
+				building.boundaries.resize(1);
+
+				const size_t num_faces = building.faces.size();
+				assert(num_faces != 0);
+				
+				for (size_t i = 0; i < num_faces; ++i) {
+					
+					const Face_handle &fh = building.faces[i];
+					add_unoriented_edges_from_face(cdt, fh, building);
+				}
+			}
+
+			void add_unoriented_edges_from_face(const CDT &cdt, const Face_handle &fh, Building &building) const {
+
+				Edge edge;
+				for (size_t i = 0; i < 3; ++i) {
+
+					const Face_handle &fhn = fh->neighbor(i);
+					edge = std::make_pair(fh, i);
+
+					if (is_boundary_edge_of_building(cdt, edge, fh, fhn)) {
+
+						add_new_unoriented_edge(i, fh, building);
+						add_new_building_neighbour(fhn, building);
+					}
+				}
+			}
+
+			bool is_boundary_edge_of_building(const CDT &cdt, const Edge &edge, const Face_handle &fh, const Face_handle &fhn) const {
+
+				const bool is_infinite_neighbour = cdt.is_infinite(fhn);
+				if (is_infinite_neighbour) return true;
+
+				const int bu   =  fh->info().bu;
+				const int bu_n = fhn->info().bu;
+
+				if (bu_n >= 0 && bu_n != bu) return true;
+
+				const FT half  = FT(1) / FT(2);
+				const int in_n = fhn->info().in;
+				
+				assert(in_n != half);
+				if (in_n < half) return true;
+
+				const bool is_constrained_edge = cdt.is_constrained(edge);
+				if (is_constrained_edge && in_n > half) return true;
+
+				return false;
+			}
+
+			void add_new_unoriented_edge(const size_t vertex_index, const Face_handle &fh, Building &building) const {
+
+				assert(building.boundaries.size() == 1);
+
+				Vertex_handle va = fh->vertex(fh->ccw(vertex_index));
+				Vertex_handle vb = fh->vertex(fh->cw(vertex_index));
+
+				building.boundaries[0].push_back(va);
+				building.boundaries[0].push_back(vb);
+			}
+
+			void add_new_building_neighbour(const Face_handle &fh_neighbour, Building &building) const {
+
+				const int building_index = fh_neighbour->info().bu;
+				if (building_index < 0) return;
+
+				building.neighbours.insert(building_index);
+			}
+
+			// Compute boundary, which is the oriented polygon.
+			void compute_oriented_boundary(const CDT &cdt, Building &building, Log &log) const {
+
+				building.is_oriented = true;
 
 			 	const Face_handle   fh = find_triangle_to_start_traversal(cdt, building, log);
 			 	const Vertex_handle vh = find_vertex_to_start_traversal(cdt, fh, log);
 
-			 	get_boundary(cdt, fh, vh, building, log);
+			 	get_oriented_boundary(cdt, fh, vh, building, log);
 			}
 
 			// Use statistics to guess the best boundary triangle to start traversal of the boundary.
-			Face_handle find_triangle_to_start_traversal(const CDT &cdt, const Building &building, Log &log) const {
-				
+			Face_handle find_triangle_to_start_traversal(const CDT &cdt, Building &building, Log &log) const {
+				building.neighbours.clear();
+
 				Face_handle result;
 				const size_t num_faces = building.faces.size();
 
@@ -96,12 +205,27 @@ namespace CGAL {
 						best_face_cost = face_cost;
 						result = fh;
 					}
+
+					add_building_neighbours_from_face(cdt, fh, building); // extra function that looks for the current building's neighbouring buildings
 				}
 
 				assert(best_face_cost != FT(0));
 				if (m_save_info) log.out << "Start from face: ( " << cdt.triangle(result) << " )" << std::endl;
 
 				return result;
+			}
+
+			void add_building_neighbours_from_face(const CDT &cdt, const Face_handle &fh, Building &building) const {
+
+				Edge edge;
+				for (size_t i = 0; i < 3; ++i) {
+
+					const Face_handle &fhn = fh->neighbor(i);
+					edge = std::make_pair(fh, i);
+
+					if (is_boundary_edge_of_building(cdt, edge, fh, fhn))
+						add_new_building_neighbour(fhn, building);
+				}
 			}
 
 			FT compute_face_cost(const CDT &cdt, const Face_handle &fh) const {
@@ -231,7 +355,7 @@ namespace CGAL {
 				return edge_cost;
 			}
 
-			void get_boundary(const CDT &cdt, const Face_handle &fh, const Vertex_handle &vh, Building &building, Log &log) const {
+			void get_oriented_boundary(const CDT &cdt, const Face_handle &fh, const Vertex_handle &vh, Building &building, Log &log) const {
 
 				building.boundaries.clear();
 				building.wedges.clear();

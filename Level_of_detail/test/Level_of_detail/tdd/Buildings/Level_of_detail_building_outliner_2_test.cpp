@@ -195,20 +195,58 @@ TEST_F(LOD_BuildingOutlinerTest, Compiles) {
 	// Empty test.
 }
 
-TEST_F(LOD_BuildingOutlinerTest, ReturnsBoundaryOfTheFirstBuilding) {
+TEST_F(LOD_BuildingOutlinerTest, VerifiesOrientedMethod) {
 
+	lodBuildingOutliner.set_boundary_type(CGAL::LOD::Building_boundary_type::ORIENTED);
 	lodBuildingOutliner.find_boundaries(cdt, buildings);
-	
+
+	// Extra.	
 	Log log;
-	log.save_buildings_info(cdt, buildings, "tmp/buildings_outliner_after");
+	log.save_buildings_info(cdt, buildings, "tmp/buildings_oriented_outliner_after");
 
 	ASSERT_THAT(static_cast<int>(buildings.size()), Eq(3));
-
 	Boundaries &b = buildings[0].boundaries;
+
+	// Main.
+	assert(!b.empty());
 	ASSERT_THAT(b[0].size(), Eq(bound[0].size()));
 
 	ASSERT_THAT(b[0][0], Eq(bound[0][0]));
 	ASSERT_THAT(b[0][1], Eq(bound[0][1]));
 	ASSERT_THAT(b[0][2], Eq(bound[0][2]));
 	ASSERT_THAT(b[0][3], Eq(bound[0][3]));
+}
+
+TEST_F(LOD_BuildingOutlinerTest, VerifiesUnorientedMethod) {
+
+	lodBuildingOutliner.save_info(false);
+	lodBuildingOutliner.set_boundary_type(CGAL::LOD::Building_boundary_type::UNORIENTED);
+
+	lodBuildingOutliner.find_boundaries(cdt, buildings);
+	
+	// Extra.
+	Log log;
+	log.save_buildings_info(cdt, buildings, "tmp/buildings_unoriented_outliner_after");
+
+	ASSERT_THAT(static_cast<int>(buildings.size()), Eq(3));
+	Boundaries &b = buildings[0].boundaries;
+
+	// Main.
+	assert(!b.empty());
+	ASSERT_THAT(static_cast<int>(b[0].size()), Eq(8));
+}
+
+TEST_F(LOD_BuildingOutlinerTest, VerifiesBuildingNeighbours) {
+
+	lodBuildingOutliner.save_info(false);
+	lodBuildingOutliner.find_boundaries(cdt, buildings);
+
+	// Extra.
+	ASSERT_THAT(static_cast<int>(buildings.size()), Eq(3));
+
+	// Main.
+	ASSERT_THAT(static_cast<int>(buildings[0].neighbours.size()), Eq(0));
+	
+	ASSERT_THAT(*(buildings[1].neighbours.begin()), Eq(2));
+	ASSERT_THAT(*(buildings[2].neighbours.begin()), Eq(1));
 }

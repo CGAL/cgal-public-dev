@@ -181,17 +181,17 @@ public:
 		fh->info().bu = -1; fh->info().bu_color = grey; ++fh;														   // outside
 		fh->info().bu =  2; fh->info().bu_color = b; buildings[2].faces.push_back(static_cast<Face_handle>(fh)); ++fh;
 		fh->info().bu = -1; fh->info().bu_color = grey; ++fh;														   // outside
-		fh->info().bu =  3; fh->info().bu_color = f; buildings[3].faces.push_back(static_cast<Face_handle>(fh)); ++fh;
+		fh->info().bu =  4; fh->info().bu_color = o; buildings[4].faces.push_back(static_cast<Face_handle>(fh)); ++fh;
 		fh->info().bu = -1; fh->info().bu_color = grey; ++fh;														   // outside
-		fh->info().bu =  4; fh->info().bu_color = o; buildings[4].faces.push_back(static_cast<Face_handle>(fh)); ++fh;
-		fh->info().bu =  4; fh->info().bu_color = o; buildings[4].faces.push_back(static_cast<Face_handle>(fh)); ++fh;
-		fh->info().bu =  4; fh->info().bu_color = o; buildings[4].faces.push_back(static_cast<Face_handle>(fh)); ++fh;
-		fh->info().bu =  4; fh->info().bu_color = o; buildings[4].faces.push_back(static_cast<Face_handle>(fh)); ++fh;
-		fh->info().bu =  4; fh->info().bu_color = o; buildings[4].faces.push_back(static_cast<Face_handle>(fh)); ++fh;
-		fh->info().bu =  4; fh->info().bu_color = o; buildings[4].faces.push_back(static_cast<Face_handle>(fh)); ++fh;
+		fh->info().bu =  3; fh->info().bu_color = f; buildings[3].faces.push_back(static_cast<Face_handle>(fh)); ++fh;
+		fh->info().bu =  3; fh->info().bu_color = f; buildings[3].faces.push_back(static_cast<Face_handle>(fh)); ++fh;
+		fh->info().bu =  3; fh->info().bu_color = f; buildings[3].faces.push_back(static_cast<Face_handle>(fh)); ++fh;
+		fh->info().bu =  3; fh->info().bu_color = f; buildings[3].faces.push_back(static_cast<Face_handle>(fh)); ++fh;
+		fh->info().bu =  3; fh->info().bu_color = f; buildings[3].faces.push_back(static_cast<Face_handle>(fh)); ++fh;
 		fh->info().bu =  3; fh->info().bu_color = f; buildings[3].faces.push_back(static_cast<Face_handle>(fh)); ++fh;
 		fh->info().bu =  4; fh->info().bu_color = o; buildings[4].faces.push_back(static_cast<Face_handle>(fh)); ++fh;
-		fh->info().bu =  4; fh->info().bu_color = o; buildings[4].faces.push_back(static_cast<Face_handle>(fh)); ++fh;
+		fh->info().bu =  3; fh->info().bu_color = f; buildings[3].faces.push_back(static_cast<Face_handle>(fh)); ++fh;
+		fh->info().bu =  3; fh->info().bu_color = f; buildings[3].faces.push_back(static_cast<Face_handle>(fh)); ++fh;
 		fh->info().bu = -1; fh->info().bu_color = grey; ++fh;														   // outside
 		fh->info().bu = -1; fh->info().bu_color = grey; ++fh;														   // outside
 		fh->info().bu = -1; fh->info().bu_color = grey; ++fh;														   // outside
@@ -207,12 +207,12 @@ public:
 
 
 		// Boundaries and other information.
-		buildings[0].color = g; buildings[0].height = 1.0;
-		buildings[1].color = r; buildings[1].height = 0.5;
-		buildings[2].color = b; buildings[2].height = 0.8;
-		buildings[3].color = f; buildings[3].height = 1.0;
-		buildings[4].color = o; buildings[4].height = 1.5;
-		buildings[5].color = p; buildings[5].height = 0.7;
+		buildings[0].color = g; buildings[0].height = 1.0; buildings[0].is_oriented = true;
+		buildings[1].color = r; buildings[1].height = 0.5; buildings[1].is_oriented = true;
+		buildings[2].color = b; buildings[2].height = 0.8; buildings[2].is_oriented = true;
+		buildings[3].color = f; buildings[3].height = 1.0; buildings[3].is_oriented = true;
+		buildings[4].color = o; buildings[4].height = 1.5; buildings[4].is_oriented = true;
+		buildings[5].color = p; buildings[5].height = 0.7; buildings[5].is_oriented = true;
 
 		// First building.
 		buildings[0].boundaries.resize(1);
@@ -259,6 +259,7 @@ public:
 		ground[2] = Ground_point(5.0, 1.0, 0.0);
 		ground[3] = Ground_point(0.0, 1.0, 0.0);
 
+		lods.use_boundaries(true);
 
 		// Log log; 
 		// log.save_cdt_ply(cdt, "tmp/cdt_lod1", "bu");
@@ -269,6 +270,17 @@ public:
 TEST_F(LOD_ReconstructionTest, Compiles) {
    
 	// Empty test.
+}
+
+TEST_F(LOD_ReconstructionTest, RunsReconstructionLOD0) {
+
+	mesh.clear();
+	mesh_facet_colors.clear();
+
+	lods.reconstruct_lod0(cdt, buildings, ground, mesh, mesh_facet_colors);
+
+	Log log;
+	log.save_mesh_as_ply(mesh, mesh_facet_colors, "LOD0");
 }
 
 TEST_F(LOD_ReconstructionTest, RunsReconstructionLOD1) {
