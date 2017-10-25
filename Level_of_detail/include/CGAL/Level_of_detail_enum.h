@@ -88,7 +88,7 @@ namespace CGAL {
 			std::vector< std::map<Vertex_handle, std::vector<Face_handle> > > wedges;     // all faces adjacent to each boundary vertex above - must be unique face handles
 			std::vector<Face_handle>   						   				  faces;	  // all faces that belong to this building
 
-			bool is_oriented = false;    		// flag to check if the computed boundary is oriented or not, see Building_boundary_type above
+			bool is_oriented = true;    		// flag to check if the computed boundary is oriented or not, see Building_boundary_type above
 			std::unordered_set<int> neighbours; // indices of all neighbouring buildings of the given building
 		};
 
@@ -105,6 +105,12 @@ namespace CGAL {
 			COMPLEX, // sketch up generated simple data set with square buildings
 			PARIS,   // paris real data set
 			P10      // p10 data set from the original LOD paper of Yannick
+		};
+
+		// Nearest neighbour search.
+		enum class Neighbour_search_type {
+			KNN,   // use k nearest neighbours
+			CIRCLE // use all points from the circle of the given radius
 		};
 
 	} // LOD

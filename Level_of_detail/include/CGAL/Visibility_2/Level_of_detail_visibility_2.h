@@ -48,12 +48,18 @@ namespace CGAL {
 
 		public:
 			typedef KernelTraits 		Kernel;
-			typedef typename Kernel::FT FT;
+
+			typedef typename Kernel::FT 	  FT;
+			typedef typename Kernel::Point_2  Point_2;
+			typedef typename Kernel::Vector_2 Vector_2;
 
 			typedef ContainerInput Container;
 			typedef CDTInput 	   CDT;
 
-			typedef CGAL::Color VColor;
+			typedef CGAL::Color 			  VColor;
+			typedef typename CDT::Face_handle Face_handle;
+
+			typename Kernel::Compute_scalar_product_2 dot_product;
 			
 			// Public functions.
 			virtual void save_info(const bool) = 0;
@@ -68,7 +74,15 @@ namespace CGAL {
 			virtual void set_small_edge_threshold(const FT new_value) = 0;
 
 			virtual int compute(const Container &, CDT &) = 0;
+
+			Level_of_detail_visibility_2() : m_angle_eps(FT(0)) { }
 			virtual ~Level_of_detail_visibility_2() { }
+
+			void set_angle_eps(const FT new_value) {
+
+				assert(new_value >= FT(0));
+				m_angle_eps = new_value;
+			}
 
 		protected:
 			VColor get_color(const FT visibility) {
@@ -88,6 +102,55 @@ namespace CGAL {
 				else if (visibility < half) return VColor(255 * scale_out, 51 * scale_out, 51 * scale_out); // OUTSIDE
 									  
 				return VColor(255, 204, 0); // UNKNOWN
+			}
+
+			void global_postprocess(CDT &cdt) {
+
+				using Cdt_face_iterator = typename CDT::Finite_faces_iterator;
+				for (Cdt_face_iterator fit = cdt.finite_faces_begin(); fit != cdt.finite_faces_end(); ++fit) {
+					
+					const Face_handle fh = static_cast<Face_handle>(fit);
+					if (!is_valid_face(cdt, fh)) {
+						
+						fh->info().in = FT(0);
+						fh->info().in_color = get_color(fh->info().in);
+					}
+				}
+			}
+
+		private:
+			FT m_angle_eps;
+
+			bool is_valid_face(const CDT &cdt, const Face_handle &fh) {
+
+				const auto &triangle = cdt.triangle(fh);
+				for (size_t i = 0; i < 3; ++i) {
+
+					const size_t im = (i + 2) % 3;
+					const size_t ip = (i + 1) % 3;
+
+					const Point_2 &a = triangle.vertex(im);
+					const Point_2 &b = triangle.vertex(i);
+					const Point_2 &c = triangle.vertex(ip);
+
+					Vector_2 ba = Vector_2(b, a);
+					Vector_2 bc = Vector_2(b, c);
+
+					ba /= CGAL::sqrt(ba.squared_length());
+					bc /= CGAL::sqrt(bc.squared_length());
+
+					const FT prod = dot_product(bc, ba);
+
+					if (CGAL::abs(FT(1) + prod) < m_angle_eps) return false;
+				}
+
+				return true;
+			}
+
+			FT compute_face_area(const CDT &cdt, const Face_handle &fh) {
+
+				const auto &triangle = cdt.triangle(fh);
+				return triangle.area();
 			}
 		};
 
@@ -156,6 +219,7 @@ namespace CGAL {
 			}
 
 			void set_number_of_samples(const size_t new_value) override {
+				assert(new_value >= 0);
 				m_num_samples = new_value;
 			}
 
@@ -176,6 +240,7 @@ namespace CGAL {
 			}
 
 			void set_number_of_rays_per_side(const size_t new_value) override {
+				assert(new_value >= 0);
 				m_num_rays_per_side = new_value;
 			}
 
@@ -207,6 +272,7 @@ namespace CGAL {
 					log.save("tmp/visibility_ray_shooting");
 				}
 
+				this->global_postprocess(cdt);
 				return static_cast<int>(cdt.number_of_faces());
 			}
 
@@ -751,6 +817,7 @@ namespace CGAL {
 			}
 
 			void set_number_of_samples(const size_t new_value) override {
+				assert(new_value >= 0);
 				m_num_samples = new_value;
 			}
 
@@ -759,10 +826,12 @@ namespace CGAL {
 			}
 
 			void set_norm_threshold(const FT new_value) override {
+				assert(new_value >= FT(0));
 				m_norm_threshold = new_value;
 			}
 
 			void set_number_of_neighbours(const size_t new_value) override {
+				assert(new_value >= 0);
 				m_k = new_value;
 			}
 
@@ -826,6 +895,7 @@ namespace CGAL {
 					log.save("tmp/visibility_classification");
 				}
 
+				this->global_postprocess(cdt);
 				return static_cast<int>(cdt.number_of_faces());
 			}
 
@@ -1601,18 +1671,22 @@ namespace CGAL {
 			}
 
 			void set_number_of_samples(const size_t new_value) override {
+				assert(new_value >= 0);
 				m_num_samples = new_value;
 			}
 
 			void set_number_of_rays_per_side(const size_t new_value) override {
+				assert(new_value >= 0);
 				m_num_rays_per_side = new_value;
 			}
 
 			void set_number_of_neighbours(const size_t new_value) override {
+				assert(new_value >= 0);
 				m_k = new_value;
 			}
 
 			void set_norm_threshold(const FT new_value) override {
+				assert(new_value >= FT(0));
 				m_norm_threshold = new_value;
 			}
 
@@ -1643,6 +1717,8 @@ namespace CGAL {
 				m_lod_ray_shooting.compute(input, cdt);
 
 				update_results(tmp, cdt);
+
+				this->global_postprocess(cdt);
 				return static_cast<int>(cdt.number_of_faces());
 			}
 

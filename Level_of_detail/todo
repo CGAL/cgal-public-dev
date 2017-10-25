@@ -84,8 +84,10 @@ Add an extra coherence to the free-form coherent edges using for example in and 
 5. Ray shooting - small edge criteria makes the results worse!
 6. Why the first query point in knn search works so long?
 7. The barycentric method does not work with complex data set, I get the segmentation error in the tree data structure.
-8. Should I compute neighbouring buildings for each building?
+8. Should I assume that building that shares one vertical segment in 3D (or vertex in 2D) with the other building is its neighbour?
 9. Make all edges in the unoriented boundary algorithm unique.
+10. How should we avoid triangles in CDT that have nearly zero area?
+11. The ray shooting should improve the case when we have adjacent buildings or multiple-level buildings.
 
 Points: finish and test visibility; finish and test outliner with lod0-lod1; finish and test all other small tasks - sphere search in thinning, bug in structuring, etc.; test everything and prepare the big Paris data set.
 

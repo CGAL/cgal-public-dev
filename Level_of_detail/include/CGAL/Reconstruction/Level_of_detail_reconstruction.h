@@ -372,12 +372,12 @@ namespace CGAL {
 				if (m_use_boundaries) {
 
 					const auto &boundary = building.boundaries[0];
-					add_horizontal_boundary(boundary, color, FT(1) / FT(100000), builder); // floor
+					add_horizontal_boundary(boundary, color, FT(1) / FT(1000), builder); // floor
 
 				} else {
 
 					const auto &faces = building.faces;
-					add_horizontal_triangulation(faces, color, FT(1) / FT(100000), builder); // floor
+					add_horizontal_triangulation(faces, color, FT(1) / FT(1000), builder); // floor
 				}
 			}
 
@@ -387,7 +387,7 @@ namespace CGAL {
 				const Color color = building.color;
 				const auto &faces = building.faces;
 
-				add_horizontal_triangulation(faces, color, FT(1) / FT(100000), builder); // floor
+				add_horizontal_triangulation(faces, color, FT(1) / FT(1000), builder); // floor
 			}
 
 			template<class BuildingTmp>
@@ -456,7 +456,7 @@ namespace CGAL {
 				const Color color = building.color;
 				const auto &faces = building.faces;
 
-				add_horizontal_triangulation(faces, color, FT(1) / FT(100000), builder); // floor
+				add_horizontal_triangulation(faces, color, FT(1) / FT(1000), builder); // floor
 			}
 
 			template<class BuildingTmp>

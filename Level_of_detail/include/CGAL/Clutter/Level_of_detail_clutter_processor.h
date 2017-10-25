@@ -12,9 +12,11 @@
 #include <CGAL/Search_traits_adapter.h>
 #include <CGAL/Orthogonal_k_neighbor_search.h>
 #include <CGAL/linear_least_squares_fitting_2.h>
+#include <CGAL/Fuzzy_sphere.h>
 
 // New CGAL includes.
 #include <CGAL/Mylog/Mylog.h>
+#include <CGAL/Level_of_detail_enum.h>
 
 namespace CGAL {
 
@@ -38,7 +40,8 @@ namespace CGAL {
 			typedef CGAL::Search_traits_2<Kernel>                       					 Search_traits_2;
 			typedef CGAL::Search_traits_adapter<Projected_point, Point_map, Search_traits_2> Search_traits;
 			typedef CGAL::Orthogonal_k_neighbor_search<Search_traits> 					     Neighbor_search;
-			typedef typename Neighbor_search::Tree 					    					 Tree;
+			typedef CGAL::Fuzzy_sphere<Search_traits>                    					 Fuzzy_circle;
+			typedef CGAL::Kd_tree<Search_traits>					                         Fuzzy_tree;
 
 			typedef typename Boundary_data::const_iterator    Boundary_iterator;
 			typedef typename Projected_points::const_iterator Point_iterator;
@@ -59,7 +62,9 @@ namespace CGAL {
 			m_k(3), 
 			m_grid_cell_length(FT(1) / FT(100)),
 			m_fitter_type(Fitter_type::LINE), 
-			m_new_point_type(New_point_type::BARYCENTRE) { }
+			m_new_point_type(New_point_type::BARYCENTRE),
+			m_neighbour_search_type(Neighbour_search_type::CIRCLE),
+			m_radius(FT(1) / FT(4)) { }
 
 			void set_number_of_neighbours(const size_t new_value) {
 
@@ -68,6 +73,8 @@ namespace CGAL {
 			}
 
 			void set_grid_cell_length(const FT new_cell_length) {
+
+				assert(new_cell_length > FT(0));
 				m_grid_cell_length = new_cell_length;
 			}
 
@@ -77,6 +84,16 @@ namespace CGAL {
 
 			void set_new_point_type(const New_point_type new_point_type) {
 				m_new_point_type = new_point_type;
+			}
+
+			void set_neighbour_search_type(const Neighbour_search_type new_type) {
+				m_neighbour_search_type = new_type;
+			}
+
+			void set_circle_radius(const FT new_value) {
+
+				assert(new_value > FT(0));
+				m_radius = new_value;
 			}
 
 			int process(Boundary_data &boundary_clutter, Projected_points &boundary_clutter_projected) const {
@@ -95,7 +112,7 @@ namespace CGAL {
 				int number_of_processed_points = 0;
 				if (boundary_clutter.empty() || boundary_clutter_projected.empty()) return number_of_processed_points;
 				
-				Tree tree;
+				Fuzzy_tree tree;
 				create_tree(tree, boundary_clutter_projected);
 
 				Projected_points thinned_points;
@@ -140,10 +157,12 @@ namespace CGAL {
 
 		// Fields.
 		private:
-			size_t 		   m_k;
-			FT 			   m_grid_cell_length;
-			Fitter_type    m_fitter_type;
-			New_point_type m_new_point_type;
+			size_t 		   		  m_k;
+			FT 			   		  m_grid_cell_length;
+			Fitter_type    		  m_fitter_type;
+			New_point_type 		  m_new_point_type;
+			Neighbour_search_type m_neighbour_search_type;
+			FT 					  m_radius;
 
 		// Grid simplify.
 		private:
@@ -276,13 +295,13 @@ namespace CGAL {
 
 		// Thinning.
 		private:
-			void create_tree(Tree &tree, const Projected_points &boundary_clutter_projected) const {
+			void create_tree(Fuzzy_tree &tree, const Projected_points &boundary_clutter_projected) const {
 
 				assert(!boundary_clutter_projected.empty());
 				tree.insert(boundary_clutter_projected.begin(), boundary_clutter_projected.end());
 			}
 
-			void thin_all_points(Projected_points &thinned_points, const Tree &tree, const Projected_points &boundary_clutter_projected) const {
+			void thin_all_points(Projected_points &thinned_points, const Fuzzy_tree &tree, const Projected_points &boundary_clutter_projected) const {
 
 				assert(!boundary_clutter_projected.empty());
 				thinned_points.clear();
@@ -294,7 +313,7 @@ namespace CGAL {
 				}
 			}
 
-			void handle_projected_point(Projected_points &thinned_points, const Tree &tree, const Projected_point &projected) const {
+			void handle_projected_point(Projected_points &thinned_points, const Fuzzy_tree &tree, const Projected_point &projected) const {
 
 				std::vector<Point_2> neighbours;
 				const Point_2 &query = projected.second;
@@ -312,14 +331,63 @@ namespace CGAL {
 				}
 			}
 
-			void find_nearest_neighbours(std::vector<Point_2> &neighbours, const Tree &tree, const Point_2 &query) const {
+			void find_nearest_neighbours(std::vector<Point_2> &neighbours, const Fuzzy_tree &tree, const Point_2 &query) const {
 				
+				switch (m_neighbour_search_type) {
+
+					case Neighbour_search_type::KNN:
+						find_nearest_neighbours_with_knn(neighbours, tree, query);
+						break;
+
+					case Neighbour_search_type::CIRCLE:
+						find_nearest_neighbours_with_circle(neighbours, tree, query);
+						break;
+
+					default:
+						assert(!"Wrong neighbour search type!");
+						break;
+				}
+			}
+
+			void find_nearest_neighbours_with_knn(std::vector<Point_2> &neighbours, const Fuzzy_tree &tree, const Point_2 &query) const {
+
 				assert(m_k >= 2);
+				
+				Neighbor_search search(tree, query, m_k);
+				const size_t num_points = static_cast<size_t>(std::distance(search.begin(), search.end()));
 
 				neighbours.clear();
-				Neighbor_search search(tree, query, m_k);
+				neighbours.resize(num_points);
 
-				for (Neighbour_iterator nit = search.begin(); nit != search.end(); ++nit) neighbours.push_back(nit->first.second);
+				size_t count = 0;
+				for (Neighbour_iterator nit = search.begin(); nit != search.end(); ++nit, ++count) neighbours[count] = nit->first.second;
+
+				assert(count == num_points);
+			}
+
+			void find_nearest_neighbours_with_circle(std::vector<Point_2> &neighbours, const Fuzzy_tree &tree, const Point_2 &query) const {
+
+				Fuzzy_circle circle;
+				compute_circle(query, circle);
+
+				Projected_points tmp;
+				tree.search(std::inserter(tmp, tmp.end()), circle);
+
+				const size_t num_points = tmp.size();
+
+				neighbours.clear();
+				neighbours.resize(num_points);
+
+				size_t count = 0;
+				for (Point_iterator pit = tmp.begin(); pit != tmp.end(); ++pit, ++count) neighbours[count] = (*pit).second;
+
+				assert(count == num_points);
+			}
+
+			void compute_circle(const Point_2 &centre, Fuzzy_circle &circle) const {
+
+				assert(m_radius > FT(0));
+				circle = Fuzzy_circle(centre, m_radius);
 			}
 
 			void handle_with_line(Projected_points &thinned_points, const std::vector<Point_2> &neighbours, const Projected_point &projected) const {

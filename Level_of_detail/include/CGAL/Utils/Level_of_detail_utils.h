@@ -249,7 +249,6 @@ namespace CGAL {
 				assert(points.size() == labels.size());
 				cdt.clear();
 
-				assert(boundary_clutter_projected.size() == boundary_clutter.at(0).size());
 				assert(points.size() + boundary_clutter_projected.size() > 2);
 
 				// Add all structured segments/points with the corresponding labels.
@@ -275,6 +274,8 @@ namespace CGAL {
 
 				// Add clutter.
 				if (add_clutter) {
+					assert(boundary_clutter_projected.size() == boundary_clutter.at(0).size());
+
 					for (typename Boundary_data::const_iterator it = boundary_clutter.begin(); it != boundary_clutter.end(); ++it) {
 						const size_t num_clutter_points = (*it).second.size();
 

@@ -819,7 +819,7 @@ namespace CGAL {
 					const int i = el.first;
 					const int j = el.second;
 
-					const Point corner = intersect_lines(i, j);
+					Point corner = intersect_lines(i, j);
 					add_corner(i, j, corner);
 				}
 
@@ -845,7 +845,7 @@ namespace CGAL {
 				return boost::get<Point>(*result);
 			}
 
-			void add_corner(const int i, const int j, const Point &corner) {
+			void add_corner(const int i, const int j, Point &corner) {
 
 				std::vector<int> cycle(2);
 
@@ -853,18 +853,18 @@ namespace CGAL {
 					cycle[0] = i;
 					cycle[1] = j;
 
-					add_unique_corner(i, corner, cycle);
+					add_unique_corner(i, cycle, corner);
 				}
 
 				if (is_unique(corner, j)) {
 					cycle[0] = j;
 					cycle[1] = i;
 
-					add_unique_corner(j, corner, cycle);
+					add_unique_corner(j, cycle, corner);
 				}
 			}
 
-			void add_unique_corner(const int segment_index, const Point &corner, const std::vector<int> &cycle) {
+			void add_unique_corner(const int segment_index, const std::vector<int> &cycle, Point &corner) {
 
 				assert(m_str_points[segment_index].size() > 1);
 
@@ -875,19 +875,51 @@ namespace CGAL {
 				const FT dist_t = squared_distance(corner, target);
 
 				assert(dist_s != dist_t);
-				if (dist_s < dist_t) {
 
-					 m_str_points[segment_index].insert( m_str_points[segment_index].begin(), corner);
-					 m_str_labels[segment_index].insert( m_str_labels[segment_index].begin(), Structured_label::CORNER);
-					m_str_anchors[segment_index].insert(m_str_anchors[segment_index].begin(), cycle);
+				// Choose the closest position for the corner within the given segment.
+				if (dist_s < dist_t) add_begin_corner(segment_index, cycle, source, corner);
+				else add_end_corner(segment_index, cycle, target, corner);
 
-				} else {
-
-					 m_str_points[segment_index].push_back(corner);
-					 m_str_labels[segment_index].push_back(Structured_label::CORNER);
-					m_str_anchors[segment_index].push_back(cycle);
-				}
 				++m_num_corners[segment_index];
+			}
+
+			void add_begin_corner(const int segment_index, const std::vector<int> &cycle, const Point &source, Point &corner) {
+
+				correct_corner(segment_index, source, corner);
+
+				 m_str_points[segment_index].insert( m_str_points[segment_index].begin(), corner);
+				 m_str_labels[segment_index].insert( m_str_labels[segment_index].begin(), Structured_label::CORNER);
+				m_str_anchors[segment_index].insert(m_str_anchors[segment_index].begin(), cycle);
+			}
+
+			void add_end_corner(const int segment_index, const std::vector<int> &cycle, const Point &target, Point &corner) {
+
+				correct_corner(segment_index, target, corner);
+
+				 m_str_points[segment_index].push_back(corner);
+				 m_str_labels[segment_index].push_back(Structured_label::CORNER);
+				m_str_anchors[segment_index].push_back(cycle);
+			}
+
+			// If the given corner is far away from the intersected segments, make it closer.
+			void correct_corner(const int segment_index, const Point &closest_point, Point &corner) {
+
+				assert(segment_index >= 0 && segment_index < static_cast<int>(m_lp.size()));
+				const FT dist = squared_distance(corner, closest_point);
+
+				if (dist > m_lp[segment_index]) {
+
+					const FT b1 = m_lp[segment_index] / dist;
+					const FT b2 = FT(1) - b1;
+
+					assert(b1 >= FT(0) && b1 <= FT(1));
+					assert(b2 >= FT(0) && b2 <= FT(1));
+
+					const FT x = corner.x() * b1 + closest_point.x() * b2;
+					const FT y = corner.y() * b1 + closest_point.y() * b2;
+
+					corner = Point(x, y);
+				}
 			}
 
 			// Is it correct to use m_num_linear[i] here instead of m_str_points[i].size()?

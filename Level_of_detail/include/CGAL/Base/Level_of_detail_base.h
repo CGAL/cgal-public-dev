@@ -149,7 +149,10 @@ namespace CGAL {
 			m_visibility_sampler(Visibility_sampler::RANDOM_UNIFORM_0),
 			m_visibility_rays_per_side(0),
 			m_visibility_small_edge_threshold(FT(0)),
-			m_building_boundary_type(Building_boundary_type::UNORIENTED)
+			m_building_boundary_type(Building_boundary_type::UNORIENTED),
+			m_visibility_angle_eps(-FT(1)),
+			m_thinning_neighbour_search_type(Neighbour_search_type::KNN),
+			m_thinning_circle_radius(-FT(1))
 			{ } // Do I need to create an instance of these traits here?
 
 
@@ -290,6 +293,7 @@ namespace CGAL {
 				Log &log, 
 				const Plane_3 &base_ground_plane, const Boundary_data &building_boundaries, const Boundary_data &boundary_clutter, const Container_3D &input, const size_t exec_step) {
 
+
 				// Project all vertical building's boundaries onto the ground plane.
 				std::cout << "(" << exec_step << ") projecting; ";
 
@@ -298,16 +302,25 @@ namespace CGAL {
 
 				std::cout << "boundaries projected: " << number_of_projected_points << "; ";
 
-				number_of_projected_points = m_ground_projector.project(input, boundary_clutter, base_ground_plane, boundary_clutter_projected);
-				log.out << "(" << exec_step << " b) Building's boundary clutter is projected. Number of projected points: " << number_of_projected_points << std::endl << std::endl;
-				
-				std::cout << "clutter projected: " << number_of_projected_points << std::endl;
-
 				Log points_exporter; 
 				if (!building_boundaries_projected.empty()) points_exporter.export_projected_points_as_xyz("tmp/projected_boundaries", building_boundaries_projected, m_default_path);
 
-				points_exporter.clear(); 
-				if (!boundary_clutter_projected.empty()) points_exporter.export_projected_points_as_xyz("tmp/projected_clutter", boundary_clutter_projected, m_default_path);
+
+				// Clutter.
+				if (m_pipeline_version == Pipeline_version::WITHOUT_SHAPE_DETECTION || 
+				   (m_pipeline_version == Pipeline_version::WITH_SHAPE_DETECTION && m_add_cdt_clutter)) {
+					
+					number_of_projected_points = m_ground_projector.project(input, boundary_clutter, base_ground_plane, boundary_clutter_projected);
+					log.out << "(" << exec_step << " b) Building's boundary clutter is projected. Number of projected points: " << number_of_projected_points << std::endl;
+				
+					std::cout << "clutter projected: " << number_of_projected_points << "; ";
+
+					points_exporter.clear(); 
+					if (!boundary_clutter_projected.empty()) points_exporter.export_projected_points_as_xyz("tmp/projected_clutter", boundary_clutter_projected, m_default_path);
+				}
+
+				log.out << std::endl;
+				std::cout << std::endl;
 			}
 
 			void cleaning_projected_points(
@@ -323,7 +336,7 @@ namespace CGAL {
 				m_preprocessor.set_scale(m_preprocessor_scale);
 					
 				const auto number_of_removed_points = m_preprocessor.clean_projected_points(building_boundaries_projected, building_boundaries);
-				log.out << "(" << exec_step << ") Building's boundaries are cleaned. Number of removed points: " << number_of_removed_points << std::endl;
+				log.out << "(" << exec_step << ") Building's boundaries are cleaned. Number of removed points: " << number_of_removed_points << std::endl << std::endl;
 			}
 
 			void line_fitting(
@@ -384,6 +397,8 @@ namespace CGAL {
 				m_clutter_processor.set_grid_cell_length(m_clutter_cell_length);
 				m_clutter_processor.set_fitter_type(m_clutter_fitter_type);
 				m_clutter_processor.set_new_point_type(m_clutter_new_point_type);
+				m_clutter_processor.set_neighbour_search_type(m_thinning_neighbour_search_type);
+				m_clutter_processor.set_circle_radius(m_thinning_circle_radius);
 
 				const auto number_of_removed_points = m_clutter_processor.process(boundary_clutter, boundary_clutter_projected);
 
@@ -452,6 +467,7 @@ namespace CGAL {
 				m_visibility.set_sampler_type(m_visibility_sampler);
 				m_visibility.set_number_of_rays_per_side(m_visibility_rays_per_side);
 				m_visibility.set_small_edge_threshold(m_visibility_small_edge_threshold);
+				m_visibility.set_angle_eps(m_visibility_angle_eps);
 
 				const auto number_of_traversed_faces = m_visibility.compute(input_2d, cdt);
 				log.out << "(" << exec_step << ") Visibility is computed. Number of traversed faces: " << number_of_traversed_faces << std::endl << std::endl;
@@ -663,7 +679,9 @@ namespace CGAL {
 
 
 				// (12) ----------------------------------
-				processing_clutter(boundary_clutter, boundary_clutter_projected, log, ++exec_step);		
+				if (m_pipeline_version == Pipeline_version::WITHOUT_SHAPE_DETECTION || 
+				   (m_pipeline_version == Pipeline_version::WITH_SHAPE_DETECTION && m_add_cdt_clutter)) 
+					processing_clutter(boundary_clutter, boundary_clutter_projected, log, ++exec_step);		
 
 
 				// (13) ----------------------------------
@@ -693,7 +711,7 @@ namespace CGAL {
 
 
 				// (18) ----------------------------------				
-				if (m_use_boundaries) 
+				if (m_use_boundaries || m_building_boundary_type == Building_boundary_type::UNORIENTED) 
 					finding_buildings_boundaries(buildings, log, cdt, ++exec_step);
 
 
@@ -778,7 +796,8 @@ namespace CGAL {
 			bool m_use_boundaries;
 
 			const Program_version  m_prog_version;
-			const Pipeline_version m_pipeline_version;
+			
+			Pipeline_version m_pipeline_version;
 
 			bool m_visibility_show_progress;
 			FT   m_visibility_norm_threshold;
@@ -794,6 +813,10 @@ namespace CGAL {
 			FT m_visibility_small_edge_threshold;
 
 			Building_boundary_type m_building_boundary_type;
+			FT m_visibility_angle_eps;
+
+			Neighbour_search_type m_thinning_neighbour_search_type;
+			FT 				      m_thinning_circle_radius;
 			
 
 			// Assert default values of all global parameters.
@@ -827,6 +850,9 @@ namespace CGAL {
 
 				assert(m_visibility_num_neighbours > 1);
 				assert(m_visibility_rays_per_side > 0);
+				assert(m_visibility_angle_eps != -FT(1));
+
+				assert(m_thinning_circle_radius != -FT(1));
 			}
 
 
@@ -868,9 +894,15 @@ namespace CGAL {
 				m_visibility_small_edge_threshold = FT(0);
 
 				m_building_boundary_type = Building_boundary_type::UNORIENTED;
+				m_visibility_angle_eps   = FT(1) / FT(10000);
+
+				m_thinning_neighbour_search_type = Neighbour_search_type::KNN;
+				m_thinning_circle_radius 		 = FT(1) / FT(10);
 				
 
 				// The most important!
+				m_pipeline_version = Pipeline_version::WITHOUT_SHAPE_DETECTION;
+
 				const Main_test_data_type test_data_type = Main_test_data_type::BASIC;
 				switch (test_data_type) {
 
@@ -928,7 +960,7 @@ namespace CGAL {
 				m_add_cdt_clutter     	 = false;
 				m_visibility_num_samples = 11;
 				m_graph_cut_alpha 		 = 1.0;
-				m_graph_cut_beta 		 = 1.0;
+				m_graph_cut_beta 		 = 1.0;    // 100000.0 for with_shape_detection
 				m_graph_cut_gamma 		 = 1000.0;
 				m_clutter_knn 			 = 12;
 				m_clutter_cell_length    = 0.015;
@@ -946,7 +978,7 @@ namespace CGAL {
 				m_add_cdt_clutter     	 = false;
 				m_visibility_num_samples = 11;
 				m_graph_cut_alpha 		 = 1.0;
-				m_graph_cut_beta 		 = 9.0;
+				m_graph_cut_beta 		 = 9.0;    // 100000.0 for with_shape_detection
 				m_graph_cut_gamma 		 = 1000.0;
 				m_clutter_knn 			 = 12;
 				m_clutter_cell_length    = 5.0;
