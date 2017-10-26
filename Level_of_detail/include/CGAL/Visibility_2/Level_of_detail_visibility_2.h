@@ -240,7 +240,7 @@ namespace CGAL {
 			}
 
 			void set_number_of_rays_per_side(const size_t new_value) override {
-				assert(new_value >= 0);
+				assert(new_value > 0);
 				m_num_rays_per_side = new_value;
 			}
 
@@ -611,7 +611,7 @@ namespace CGAL {
 				return 0;
 			}
 
-			size_t get_sign_changes_from_two_faces_ajacent_by_edge(const Edge &edge, const Face_handle &next, const CDT &cdt, const FT max_small_edge) {
+			size_t get_sign_changes_from_two_faces_ajacent_by_edge(const Edge &edge, const Face_handle &next, const CDT &cdt, const FT /* max_small_edge */ ) {
 
 				// (1) Structured points.
 
@@ -632,7 +632,7 @@ namespace CGAL {
 
 				// Similar to above, but here we estimate if this edge is good enough
 				// to change the sign or not.
-				if (cdt.is_infinite(next) && is_valid_edge_for_sign_change(edge, cdt, max_small_edge)) return 2;
+				// if (cdt.is_infinite(next) && is_valid_edge_for_sign_change(edge, cdt, max_small_edge)) return 2;
 
 
 				// Infinite boundary face changes the sign.
@@ -640,7 +640,7 @@ namespace CGAL {
 
 
 				// Estimate validity of the edge to change the sign.
-				if (is_valid_edge_for_sign_change(edge, cdt, max_small_edge)) return 1;
+				// if (is_valid_edge_for_sign_change(edge, cdt, max_small_edge)) return 1;
 
 
 				// Otherwise, the sign does not change.
@@ -1058,16 +1058,17 @@ namespace CGAL {
 
 			void set_delunay_and_function_values(const Container &input, Delaunay_triangulation &dt, Function_type &function_values) {
 
-				const Label ground     = 0;
-				const Label facade     = 1;
-				const Label roof       = 2;
-				const Label vegetation = 3; 
+				const Label ground     =  0;
+				const Label facade     =  1;
+				const Label roof       =  2;
+				const Label vegetation =  3; 
+				const Label fix 	   = -1; // remove later!
 
 				const FT half = FT(1) / FT(2);
 				for (size_t i = 0; i < input.size(); ++i) {
 
 					const Point_2 &p  = input[i].first;
-					const Label label = input[i].second;
+					Label label = input[i].second;
 
 					FT inside = half;
 					switch(label) {
@@ -1086,6 +1087,10 @@ namespace CGAL {
 
 						case vegetation:
 						inside = FT(0);
+						break;
+
+						case fix:
+						inside = half;
 						break;
 
 						default:
@@ -1676,7 +1681,7 @@ namespace CGAL {
 			}
 
 			void set_number_of_rays_per_side(const size_t new_value) override {
-				assert(new_value >= 0);
+				assert(new_value > 0);
 				m_num_rays_per_side = new_value;
 			}
 

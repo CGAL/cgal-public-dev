@@ -41,10 +41,14 @@ namespace CGAL {
 			Uniform_sample_generator() : m_num_samples(3), m_num_rays(2) { }
 
 			void set_number_of_samples(const size_t new_value) {
+				
+				assert(new_value >= 0);
 				m_num_samples = new_value;
 			}
 
 			void set_number_of_rays(const size_t new_value) {
+
+				assert(new_value > 0);
 				m_num_rays = new_value;
 			}
 

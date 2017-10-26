@@ -122,10 +122,11 @@ namespace CGAL {
 
 			bool is_valid_point(const Label point_label) {
 
-				const Label ground     = 0;
-				const Label facade     = 1;
-				const Label roof       = 2;
-				const Label vegetation = 3; 
+				const Label ground     =  0;
+				const Label facade     =  1;
+				const Label roof       =  2;
+				const Label vegetation =  3; 
+				const Label fix 	   = -1; // remove later!
 
 				switch (point_label) {
 
@@ -133,6 +134,7 @@ namespace CGAL {
 					case facade: 	 return false;
 					case roof: 		 return true;
 					case vegetation: return false;
+					case fix:		 return false;
 
 					default: assert(!"Wrong label!");
 				}

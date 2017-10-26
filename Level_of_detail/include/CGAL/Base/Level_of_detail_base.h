@@ -871,7 +871,7 @@ namespace CGAL {
 				m_building_boundaries_max_outer_iters = 1000000;
 
 				m_visibility_show_progress  = true;
-				m_visibility_norm_threshold = FT(1000);
+				m_visibility_norm_threshold = 1000.0;
 
 
 				// More important.
@@ -880,29 +880,21 @@ namespace CGAL {
 				m_structuring_get_all_points = false;
 				m_clean_projected_points 	 = true;
 				
-				m_visibility_approach = Visibility_approach::FACE_BASED;
-				m_visibility_method   = Visibility_method::FACE_BASED_NATURAL_NEIGHBOURS;
-				m_roof_fitter_type 	  = Roof_fitter_type::AVG;
+				m_roof_fitter_type = Roof_fitter_type::AVG;
 
 				m_preprocessor_scale  	 = 2.0;
 				m_clutter_fitter_type    = Clutter_fitter_type::LINE;	
 				m_clutter_new_point_type = Clutter_new_point_type::BARYCENTRE; // BARYCENTRE - keeps average position of the removed points, CENTROID - inserts new point in the centre of the grid cell		
 				
 				m_visibility_num_neighbours 	  = 6;
-				m_visibility_sampler 			  = Visibility_sampler::BARYCENTRE;
 				m_visibility_rays_per_side  	  = 10;
-				m_visibility_small_edge_threshold = FT(0);
+				m_visibility_small_edge_threshold = -1000000.0; // not used
 
-				m_building_boundary_type = Building_boundary_type::UNORIENTED;
-				m_visibility_angle_eps   = FT(1) / FT(10000);
+				m_graph_cut_alpha = 1.0;    // should not change anything but should be bigger or equal to 1
+				m_graph_cut_gamma = 1000.0; // is not used in the pipeline without shape detection (or without structuring), otherwise should be some big value
 
-				m_thinning_neighbour_search_type = Neighbour_search_type::KNN;
-				m_thinning_circle_radius 		 = FT(1) / FT(10);
-				
 
 				// The most important!
-				m_pipeline_version = Pipeline_version::WITHOUT_SHAPE_DETECTION;
-
 				const Main_test_data_type test_data_type = Main_test_data_type::BASIC;
 				switch (test_data_type) {
 
@@ -922,6 +914,10 @@ namespace CGAL {
 						set_p10_parameters();
 						break;
 
+					case Main_test_data_type::PARIS_FULL:
+						set_paris_full_parameters();
+						break;
+
 					default:
 						assert(!"Wrong test data!");
 						break;
@@ -936,14 +932,21 @@ namespace CGAL {
 
 				// All main parameters are set below.
 				m_default_path        	 = "/Users/danisimo/Documents/pipeline/data/basic_test/data";
-				
-				m_max_reg_angle          = 10.0;	 // In average should be 10-20 degrees.
+				m_pipeline_version 		 = Pipeline_version::WITH_SHAPE_DETECTION;
+
+				m_visibility_approach 	 		 = Visibility_approach::POINT_BASED;
+				m_visibility_method   	 		 = Visibility_method::POINT_BASED_CLASSIFICATION; // use natural neighbours for without_shape_detection
+				m_visibility_sampler 	 		 = Visibility_sampler::BARYCENTRE;
+				m_thinning_neighbour_search_type = Neighbour_search_type::KNN;
+				m_building_boundary_type 		 = Building_boundary_type::ORIENTED;
+
+				m_thinning_circle_radius = 0.000001; // if zero, is not used; the bigger radius, the longer it works
+				m_visibility_angle_eps   = 0.0; 	 // used for removing thin triangles; if zero, is not used
+				m_max_reg_angle          = 10.0;	 // in average should be 10-20 degrees.
 				m_structuring_epsilon 	 = 0.025; 	 // the most important parameter!!! Depends on the dataset.
 				m_add_cdt_clutter     	 = true;	 // is always true if shape detection is not used
-				m_visibility_num_samples = 11;		 // the more samples, the slower but better quality in visibility
-				m_graph_cut_alpha 		 = 1.0;      // should not change anything but should be bigger or equal to 1
+				m_visibility_num_samples = 1;		 // the more samples, the slower but better quality in visibility
 				m_graph_cut_beta 		 = 100000.0; // smaller value for more inside triangles
-				m_graph_cut_gamma 		 = 1000.0;   // is not used in the pipeline without shape detection (or without structuring), otherwise should be some big value
 				m_clutter_knn 			 = 2;		 // the smaller value, the less thinning is performed
 				m_clutter_cell_length    = 0.025;	 // the bigger value, the more points are removed in the grid simplify
 				m_use_boundaries 		 = true;     // use or not outliner to build walls
@@ -952,16 +955,26 @@ namespace CGAL {
 
 			void set_complex_parameters() {
 
-				// All main parameters are set below.
-				m_default_path        	 = "/Users/danisimo/Documents/pipeline/data/complex_test/data_region_growing";
+				// SWITCH TO RAY SHOOTING HERE!
 
+				// All main parameters are set below.
+				// If using ray shooting here, we need to use with_shape_detection.
+				m_default_path        	 = "/Users/danisimo/Documents/pipeline/data/complex_test/data_region_growing";
+				m_pipeline_version 		 = Pipeline_version::WITH_SHAPE_DETECTION;
+
+				m_visibility_approach 	 		 = Visibility_approach::POINT_BASED;
+				m_visibility_method   	 		 = Visibility_method::POINT_BASED_CLASSIFICATION;
+				m_visibility_sampler 	 		 = Visibility_sampler::UNIFORM_SUBDIVISION;
+				m_thinning_neighbour_search_type = Neighbour_search_type::KNN;
+				m_building_boundary_type 		 = Building_boundary_type::ORIENTED;
+
+				m_thinning_circle_radius = 0.001;
+				m_visibility_angle_eps   = 0.0; 	 
 				m_max_reg_angle          = 10.0;
 				m_structuring_epsilon 	 = 0.0005;
 				m_add_cdt_clutter     	 = false;
-				m_visibility_num_samples = 11;
-				m_graph_cut_alpha 		 = 1.0;
-				m_graph_cut_beta 		 = 1.0;    // 100000.0 for with_shape_detection
-				m_graph_cut_gamma 		 = 1000.0;
+				m_visibility_num_samples = 3;
+				m_graph_cut_beta 		 = 100000.0; // use 1.0 for without_shape_detection
 				m_clutter_knn 			 = 12;
 				m_clutter_cell_length    = 0.015;
 				m_use_boundaries 		 = true;
@@ -972,34 +985,75 @@ namespace CGAL {
 
 				// All main parameters are set below.
 				m_default_path        	 = "/Users/danisimo/Documents/pipeline/data/paris_test/data_region_growing";
+				m_pipeline_version 		 = Pipeline_version::WITHOUT_SHAPE_DETECTION;
 
+				m_visibility_approach 	 		 = Visibility_approach::FACE_BASED;
+				m_visibility_method   	 		 = Visibility_method::FACE_BASED_NATURAL_NEIGHBOURS; // point based for with_shape_detection
+				m_visibility_sampler 	 		 = Visibility_sampler::UNIFORM_SUBDIVISION;
+				m_thinning_neighbour_search_type = Neighbour_search_type::CIRCLE;
+				m_building_boundary_type 		 = Building_boundary_type::ORIENTED;
+
+				m_thinning_circle_radius = 5.0;
+				m_visibility_angle_eps   = 0.001; 
 				m_max_reg_angle          = 10.0;
-				m_structuring_epsilon 	 = 0.1;
-				m_add_cdt_clutter     	 = false;
-				m_visibility_num_samples = 11;
-				m_graph_cut_alpha 		 = 1.0;
-				m_graph_cut_beta 		 = 9.0;    // 100000.0 for with_shape_detection
-				m_graph_cut_gamma 		 = 1000.0;
+				m_structuring_epsilon 	 = 1.5;
+				m_add_cdt_clutter     	 = true;
+				m_visibility_num_samples = 1;
+				m_graph_cut_beta 		 = 35.0; // 15.0 for with_shape_detection
 				m_clutter_knn 			 = 12;
-				m_clutter_cell_length    = 5.0;
+				m_clutter_cell_length    = 10.0;
 				m_use_boundaries 		 = true;
 			}
 
 
 			void set_p10_parameters() {
 
+				// YOU CAN USE HERE RAY SHOOTING FOR WITH_SHAPE_DETECTION!
+
 				// All main parameters are set below.
 				m_default_path        	 = "/Users/danisimo/Documents/pipeline/data/p10_test/data_region_growing";
+				m_pipeline_version 		 = Pipeline_version::WITH_SHAPE_DETECTION;
 
+				m_visibility_approach 	 		 = Visibility_approach::FACE_BASED;
+				m_visibility_method   	 		 = Visibility_method::FACE_BASED_NATURAL_NEIGHBOURS;
+				m_visibility_sampler 	 		 = Visibility_sampler::UNIFORM_SUBDIVISION;
+				m_thinning_neighbour_search_type = Neighbour_search_type::CIRCLE;
+				m_building_boundary_type 		 = Building_boundary_type::ORIENTED;
+
+				m_thinning_circle_radius = 5.0;
+				m_visibility_angle_eps   = 0.0; 
 				m_max_reg_angle          = 15.0;
-				m_structuring_epsilon 	 = 0.1;
+				m_structuring_epsilon 	 = 0.2;
 				m_add_cdt_clutter     	 = false;
-				m_visibility_num_samples = 20;
-				m_graph_cut_alpha 		 = 1.0;
-				m_graph_cut_beta 		 = 10.0;
-				m_graph_cut_gamma 		 = 1000.0;
+				m_visibility_num_samples = 2;
+				m_graph_cut_beta 		 = 100000.0; // 10.0 for without_shape_detection
 				m_clutter_knn 			 = 12;
 				m_clutter_cell_length    = 4.0;
+				m_use_boundaries 		 = true;
+			}
+
+
+			void set_paris_full_parameters() {
+
+				// All main parameters are set below.
+				m_default_path        	 = "/Users/danisimo/Documents/pipeline/data/paris_full_test/data_region_growing";
+				m_pipeline_version 		 = Pipeline_version::WITHOUT_SHAPE_DETECTION;
+
+				m_visibility_approach 	 		 = Visibility_approach::FACE_BASED;
+				m_visibility_method   	 		 = Visibility_method::FACE_BASED_NATURAL_NEIGHBOURS; // point based for with_shape_detection
+				m_visibility_sampler 	 		 = Visibility_sampler::UNIFORM_SUBDIVISION;
+				m_thinning_neighbour_search_type = Neighbour_search_type::CIRCLE;
+				m_building_boundary_type 		 = Building_boundary_type::ORIENTED;
+
+				m_thinning_circle_radius = 5.0;
+				m_visibility_angle_eps   = 0.001; 
+				m_max_reg_angle          = 10.0;
+				m_structuring_epsilon 	 = 1.5;
+				m_add_cdt_clutter     	 = true;
+				m_visibility_num_samples = 1;
+				m_graph_cut_beta 		 = 35.0; // 15.0 for with_shape_detection
+				m_clutter_knn 			 = 12;
+				m_clutter_cell_length    = 10.0;
 				m_use_boundaries 		 = true;
 			}
 
