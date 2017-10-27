@@ -88,9 +88,12 @@ Add an extra coherence to the free-form coherent edges using for example in and 
 9. Make all edges in the unoriented boundary algorithm unique.
 10. How should we avoid triangles in CDT that have nearly zero area?
 11. The ray shooting should improve the case when we have adjacent buildings or multiple-level buildings.
-12. Exporter and estimator for parameters.
+12. Add exporter and estimator for parameters.
 13. For ray shooting without constrained edges, we may need to check for each edge if it is clutter or not and then use really smart criteria to decide if we need to change sign or not, because if we do it wrong, we mess up visibility predicitions for a lot of triangles.
 
 Points: finish and test visibility; finish and test outliner with lod0-lod1; finish and test all other small tasks - sphere search in thinning, bug in structuring, etc.; test everything and prepare the big Paris data set.
 
+
+// Iteration 6:
+1. 
 

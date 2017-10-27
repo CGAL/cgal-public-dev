@@ -931,8 +931,8 @@ namespace CGAL {
 				// Stub works with these basic parameters. Actually it is the same data set.
 
 				// All main parameters are set below.
-				m_default_path        	 = "/Users/danisimo/Documents/pipeline/data/basic_test/data";
-				m_pipeline_version 		 = Pipeline_version::WITH_SHAPE_DETECTION;
+				m_default_path     = "/Users/danisimo/Documents/pipeline/data/basic_test/data";
+				m_pipeline_version = Pipeline_version::WITH_SHAPE_DETECTION;
 
 				m_visibility_approach 	 		 = Visibility_approach::POINT_BASED;
 				m_visibility_method   	 		 = Visibility_method::POINT_BASED_CLASSIFICATION; // use natural neighbours for without_shape_detection
@@ -959,8 +959,8 @@ namespace CGAL {
 
 				// All main parameters are set below.
 				// If using ray shooting here, we need to use with_shape_detection.
-				m_default_path        	 = "/Users/danisimo/Documents/pipeline/data/complex_test/data_region_growing";
-				m_pipeline_version 		 = Pipeline_version::WITH_SHAPE_DETECTION;
+				m_default_path     = "/Users/danisimo/Documents/pipeline/data/complex_test/data_region_growing";
+				m_pipeline_version = Pipeline_version::WITH_SHAPE_DETECTION;
 
 				m_visibility_approach 	 		 = Visibility_approach::POINT_BASED;
 				m_visibility_method   	 		 = Visibility_method::POINT_BASED_CLASSIFICATION;
@@ -984,8 +984,8 @@ namespace CGAL {
 			void set_paris_parameters() {
 
 				// All main parameters are set below.
-				m_default_path        	 = "/Users/danisimo/Documents/pipeline/data/paris_test/data_region_growing";
-				m_pipeline_version 		 = Pipeline_version::WITHOUT_SHAPE_DETECTION;
+				m_default_path     = "/Users/danisimo/Documents/pipeline/data/paris_test/data_region_growing";
+				m_pipeline_version = Pipeline_version::WITHOUT_SHAPE_DETECTION;
 
 				m_visibility_approach 	 		 = Visibility_approach::FACE_BASED;
 				m_visibility_method   	 		 = Visibility_method::FACE_BASED_NATURAL_NEIGHBOURS; // point based for with_shape_detection
@@ -1011,8 +1011,8 @@ namespace CGAL {
 				// YOU CAN USE HERE RAY SHOOTING FOR WITH_SHAPE_DETECTION!
 
 				// All main parameters are set below.
-				m_default_path        	 = "/Users/danisimo/Documents/pipeline/data/p10_test/data_region_growing";
-				m_pipeline_version 		 = Pipeline_version::WITH_SHAPE_DETECTION;
+				m_default_path     = "/Users/danisimo/Documents/pipeline/data/p10_test/data_region_growing";
+				m_pipeline_version = Pipeline_version::WITH_SHAPE_DETECTION;
 
 				m_visibility_approach 	 		 = Visibility_approach::FACE_BASED;
 				m_visibility_method   	 		 = Visibility_method::FACE_BASED_NATURAL_NEIGHBOURS;
@@ -1036,14 +1036,14 @@ namespace CGAL {
 			void set_paris_full_parameters() {
 
 				// All main parameters are set below.
-				m_default_path        	 = "/Users/danisimo/Documents/pipeline/data/paris_full_test/data_region_growing";
-				m_pipeline_version 		 = Pipeline_version::WITHOUT_SHAPE_DETECTION;
+				m_default_path     = "/Users/danisimo/Documents/pipeline/data/paris_full_test/data_region_growing";
+				m_pipeline_version = Pipeline_version::WITHOUT_SHAPE_DETECTION;
 
 				m_visibility_approach 	 		 = Visibility_approach::FACE_BASED;
 				m_visibility_method   	 		 = Visibility_method::FACE_BASED_NATURAL_NEIGHBOURS; // point based for with_shape_detection
 				m_visibility_sampler 	 		 = Visibility_sampler::UNIFORM_SUBDIVISION;
 				m_thinning_neighbour_search_type = Neighbour_search_type::CIRCLE;
-				m_building_boundary_type 		 = Building_boundary_type::ORIENTED;
+				m_building_boundary_type 		 = Building_boundary_type::UNORIENTED;
 
 				m_thinning_circle_radius = 5.0;
 				m_visibility_angle_eps   = 0.001; 
