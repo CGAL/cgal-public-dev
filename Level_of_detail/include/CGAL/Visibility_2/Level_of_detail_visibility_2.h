@@ -72,6 +72,7 @@ namespace CGAL {
 			virtual void set_sampler_type(const Visibility_sampler) = 0;
 			virtual void set_number_of_rays_per_side(const size_t) = 0;
 			virtual void set_small_edge_threshold(const FT new_value) = 0;
+			virtual std::string name() = 0;
 
 			virtual int compute(const Container &, CDT &) = 0;
 
@@ -247,6 +248,10 @@ namespace CGAL {
 			// NOTE: new_value can be negative, too!
 			void set_small_edge_threshold(const FT new_value) override {
 				m_small_edge_thres = new_value;
+			}
+
+			std::string name() override {
+				return "ray shooting";
 			}
 
 
@@ -847,6 +852,10 @@ namespace CGAL {
 				return;
 			}
 
+			std::string name() override {
+				return "classification";
+			}
+
 
 			int compute(const Container &input, CDT &cdt) override {
 
@@ -999,6 +1008,7 @@ namespace CGAL {
 				switch(m_method) {
 
 					case Visibility_method::FACE_BASED_BARYCENTRIC:
+						assert(!"Does not work!");
 						compute_face_based_approach_barycentric(input, cdt);
 						break;
 
@@ -1710,6 +1720,11 @@ namespace CGAL {
 			void set_method(const Visibility_method new_method) override {
 				m_method = new_method;
 			}
+
+			std::string name() override {
+				return "blend";
+			}
+
 
 			int compute(const Container &input, CDT &cdt) override {
 

@@ -13,6 +13,7 @@
 #include <CGAL/Orthogonal_k_neighbor_search.h>
 #include <CGAL/linear_least_squares_fitting_2.h>
 #include <CGAL/Fuzzy_sphere.h>
+#include <CGAL/number_utils.h>
 
 // New CGAL includes.
 #include <CGAL/Mylog/Mylog.h>
@@ -47,6 +48,8 @@ namespace CGAL {
 			typedef typename Projected_points::const_iterator Point_iterator;
 			typedef typename Neighbor_search::iterator  	  Neighbour_iterator;
 
+			typename Kernel::Compute_squared_distance_2 squared_distance;
+
 			// Extra.
 			using Log = CGAL::LOD::Mylog;
 
@@ -56,7 +59,7 @@ namespace CGAL {
 			using Grid_cell_iterator = Grid_map::const_iterator;
 
 			enum class Fitter_type { LINE };
-			enum class New_point_type { CENTROID, BARYCENTRE };
+			enum class New_point_type { CENTROID, BARYCENTRE, CLOSEST };
 
 			Level_of_detail_clutter_processor() : 
 			m_k(3), 
@@ -228,6 +231,10 @@ namespace CGAL {
 						create_new_barycentre(new_point, grid_cell, boundary_clutter_projected);
 						break;
 
+					case New_point_type::CLOSEST:
+						create_new_closest(new_point, grid_cell, boundary_clutter_projected);
+						break;
+
 					default:
 						assert(!"Wrong new point type!");
 						break;
@@ -268,6 +275,35 @@ namespace CGAL {
 				y /= static_cast<FT>(num_point_idxs);
 
 				new_point = Point_2(x, y);
+			}
+
+			template<class Grid_cell>
+			void create_new_closest(Point_2 &new_point, const Grid_cell &grid_cell, const Projected_points &boundary_clutter_projected) const {
+
+				Point_2 barycentre;
+				create_new_barycentre(barycentre, grid_cell, boundary_clutter_projected);
+
+				const std::vector<int> &point_idxs = grid_cell.second;
+				const size_t num_point_idxs = point_idxs.size();
+
+				assert(num_point_idxs != 0);
+				int new_point_index = -1;
+
+				FT min_dist = FT(1000000000);
+				for (size_t i = 0; i < num_point_idxs; ++i) {
+					
+					const Point_2 &old_point = boundary_clutter_projected.at(point_idxs[i]);
+					const FT dist = CGAL::sqrt(squared_distance(old_point, barycentre));
+
+					if (dist < min_dist) {
+						
+						min_dist = dist;
+						new_point_index = i;
+					}
+				}
+
+				assert(new_point_index >= 0 && new_point_index < static_cast<int>(num_point_idxs));
+				new_point = boundary_clutter_projected.at(point_idxs[new_point_index]);
 			}
 
 			void set_new_boundary_data(Boundary_data &boundary_clutter, const Projected_points &boundary_clutter_projected) const {

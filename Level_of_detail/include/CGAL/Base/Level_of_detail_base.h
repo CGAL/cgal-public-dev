@@ -454,6 +454,11 @@ namespace CGAL {
 				Log &log, 
 				const Container_2D &input_2d, const size_t exec_step) {
 
+				if (m_visibility.name() == "ray shooting" && m_pipeline_version == Pipeline_version::WITHOUT_SHAPE_DETECTION)
+					assert(!"Ray shooting requires constrained edges!");
+
+				if (m_visibility.name() == "blend") assert(!"Blend visibility is not worth trying!");
+
 				// Compute visibility (0 - outside or 1 - inside) for each triangle in CDT above.
 				std::cout << "(" << exec_step << ") visibility computation" << std::endl;
 
@@ -882,9 +887,8 @@ namespace CGAL {
 				
 				m_roof_fitter_type = Roof_fitter_type::AVG;
 
-				m_preprocessor_scale  	 = 2.0;
-				m_clutter_fitter_type    = Clutter_fitter_type::LINE;	
-				m_clutter_new_point_type = Clutter_new_point_type::BARYCENTRE; // BARYCENTRE - keeps average position of the removed points, CENTROID - inserts new point in the centre of the grid cell		
+				m_preprocessor_scale  = 2.0;
+				m_clutter_fitter_type = Clutter_fitter_type::LINE;	
 				
 				m_visibility_num_neighbours 	  = 6;
 				m_visibility_rays_per_side  	  = 10;
@@ -895,7 +899,7 @@ namespace CGAL {
 
 
 				// The most important!
-				const Main_test_data_type test_data_type = Main_test_data_type::BASIC;
+				const Main_test_data_type test_data_type = Main_test_data_type::PARIS_ETH;
 				switch (test_data_type) {
 
 					case Main_test_data_type::BASIC:
@@ -916,6 +920,10 @@ namespace CGAL {
 
 					case Main_test_data_type::PARIS_FULL:
 						set_paris_full_parameters();
+						break;
+
+					case Main_test_data_type::PARIS_ETH:
+						set_paris_eth_parameters();
 						break;
 
 					default:
@@ -939,6 +947,7 @@ namespace CGAL {
 				m_visibility_sampler 	 		 = Visibility_sampler::BARYCENTRE;
 				m_thinning_neighbour_search_type = Neighbour_search_type::KNN;
 				m_building_boundary_type 		 = Building_boundary_type::ORIENTED;
+				m_clutter_new_point_type 		 = Clutter_new_point_type::BARYCENTRE; // BARYCENTRE - keeps average position of the removed points, CENTROID - inserts new point in the centre of the grid cell, CLOSEST - to the barycentre	
 
 				m_thinning_circle_radius = 0.000001; // if zero, is not used; the bigger radius, the longer it works
 				m_visibility_angle_eps   = 0.0; 	 // used for removing thin triangles; if zero, is not used
@@ -967,6 +976,7 @@ namespace CGAL {
 				m_visibility_sampler 	 		 = Visibility_sampler::UNIFORM_SUBDIVISION;
 				m_thinning_neighbour_search_type = Neighbour_search_type::KNN;
 				m_building_boundary_type 		 = Building_boundary_type::ORIENTED;
+				m_clutter_new_point_type 		 = Clutter_new_point_type::BARYCENTRE;
 
 				m_thinning_circle_radius = 0.001;
 				m_visibility_angle_eps   = 0.0; 	 
@@ -984,7 +994,7 @@ namespace CGAL {
 			void set_paris_parameters() {
 
 				// All main parameters are set below.
-				m_default_path     = "/Users/danisimo/Documents/pipeline/data/paris_test/data_region_growing";
+				m_default_path     = "/Users/danisimo/Documents/pipeline/data/paris_test/data_region_growing_weighted_sum";
 				m_pipeline_version = Pipeline_version::WITHOUT_SHAPE_DETECTION;
 
 				m_visibility_approach 	 		 = Visibility_approach::FACE_BASED;
@@ -992,6 +1002,7 @@ namespace CGAL {
 				m_visibility_sampler 	 		 = Visibility_sampler::UNIFORM_SUBDIVISION;
 				m_thinning_neighbour_search_type = Neighbour_search_type::CIRCLE;
 				m_building_boundary_type 		 = Building_boundary_type::ORIENTED;
+				m_clutter_new_point_type 		 = Clutter_new_point_type::BARYCENTRE;
 
 				m_thinning_circle_radius = 5.0;
 				m_visibility_angle_eps   = 0.001; 
@@ -1011,7 +1022,7 @@ namespace CGAL {
 				// YOU CAN USE HERE RAY SHOOTING FOR WITH_SHAPE_DETECTION!
 
 				// All main parameters are set below.
-				m_default_path     = "/Users/danisimo/Documents/pipeline/data/p10_test/data_region_growing";
+				m_default_path     = "/Users/danisimo/Documents/pipeline/data/p10_test/data_region_growing_weighted_sum";
 				m_pipeline_version = Pipeline_version::WITH_SHAPE_DETECTION;
 
 				m_visibility_approach 	 		 = Visibility_approach::FACE_BASED;
@@ -1019,6 +1030,7 @@ namespace CGAL {
 				m_visibility_sampler 	 		 = Visibility_sampler::UNIFORM_SUBDIVISION;
 				m_thinning_neighbour_search_type = Neighbour_search_type::CIRCLE;
 				m_building_boundary_type 		 = Building_boundary_type::ORIENTED;
+				m_clutter_new_point_type 		 = Clutter_new_point_type::BARYCENTRE;
 
 				m_thinning_circle_radius = 5.0;
 				m_visibility_angle_eps   = 0.0; 
@@ -1036,7 +1048,7 @@ namespace CGAL {
 			void set_paris_full_parameters() {
 
 				// All main parameters are set below.
-				m_default_path     = "/Users/danisimo/Documents/pipeline/data/paris_full_test/data_region_growing";
+				m_default_path     = "/Users/danisimo/Documents/pipeline/data/paris_full_test/data_region_growing_weighted_sum";
 				m_pipeline_version = Pipeline_version::WITHOUT_SHAPE_DETECTION;
 
 				m_visibility_approach 	 		 = Visibility_approach::FACE_BASED;
@@ -1044,6 +1056,33 @@ namespace CGAL {
 				m_visibility_sampler 	 		 = Visibility_sampler::UNIFORM_SUBDIVISION;
 				m_thinning_neighbour_search_type = Neighbour_search_type::CIRCLE;
 				m_building_boundary_type 		 = Building_boundary_type::UNORIENTED;
+				m_clutter_new_point_type 		 = Clutter_new_point_type::BARYCENTRE;
+
+				m_thinning_circle_radius = 5.0;
+				m_visibility_angle_eps   = 0.001; 
+				m_max_reg_angle          = 10.0;
+				m_structuring_epsilon 	 = 1.5;
+				m_add_cdt_clutter     	 = true;
+				m_visibility_num_samples = 1;
+				m_graph_cut_beta 		 = 35.0; // 15.0 for with_shape_detection
+				m_clutter_knn 			 = 12;
+				m_clutter_cell_length    = 10.0;
+				m_use_boundaries 		 = true;
+			}
+
+
+			void set_paris_eth_parameters() {
+
+				// All main parameters are set below.
+				m_default_path     = "/Users/danisimo/Documents/pipeline/data/paris_test/data_region_growing_eth";
+				m_pipeline_version = Pipeline_version::WITHOUT_SHAPE_DETECTION;
+
+				m_visibility_approach 	 		 = Visibility_approach::FACE_BASED;
+				m_visibility_method   	 		 = Visibility_method::FACE_BASED_NATURAL_NEIGHBOURS; // point based for with_shape_detection
+				m_visibility_sampler 	 		 = Visibility_sampler::UNIFORM_SUBDIVISION;
+				m_thinning_neighbour_search_type = Neighbour_search_type::CIRCLE;
+				m_building_boundary_type 		 = Building_boundary_type::ORIENTED;
+				m_clutter_new_point_type 		 = Clutter_new_point_type::CLOSEST;
 
 				m_thinning_circle_radius = 5.0;
 				m_visibility_angle_eps   = 0.001; 

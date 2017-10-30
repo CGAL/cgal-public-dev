@@ -101,11 +101,12 @@ namespace CGAL {
 
 		// Main test data.
 		enum class Main_test_data_type {
-			BASIC,     // basic data set from the Loader_stub class.
-			COMPLEX,   // sketch up generated simple data set with square buildings
-			PARIS,     // half of the paris real data set
-			P10,       // p10 data set from the original LOD paper of Yannick
-			PARIS_FULL // full paris data set
+			BASIC,      // basic data set from the Loader_stub class.
+			COMPLEX,    // sketch up generated simple data set with square buildings
+			PARIS,      // half of the paris real data set
+			P10,        // p10 data set from the original LOD paper of Yannick
+			PARIS_FULL, // full paris data set
+			PARIS_ETH   // half paris data set classified with ETH random forest
 		};
 
 		// Nearest neighbour search.
