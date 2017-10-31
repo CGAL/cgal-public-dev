@@ -97,4 +97,6 @@ Points: finish and test visibility; finish and test outliner with lod0-lod1; fin
 // Iteration 6:
 1. Create a script that runs tests for all modules like base, buildings, clutter, etc.
 2. After classifying and saving data set, if loading this saved data set without removing the previous one, its colours are changed to the default.
+3. How to add constrained edges after the graph cut and split different neighbouring buildings in the pipeline version without shape detection?
+4. Empty xyz files are not opening.
 

@@ -80,9 +80,9 @@ namespace CGAL {
 			typedef typename Lods::Point  Ground_point;
 			typedef typename Lods::Ground Ground;
 
-			typedef typename Traits::Clutter_processor 		   Clutter_processor;
-			typedef typename Clutter_processor::Fitter_type    Clutter_fitter_type;
-			typedef typename Clutter_processor::New_point_type Clutter_new_point_type;
+			typedef typename Traits::Clutter_processor Clutter_processor;
+			typedef Thinning_fitter_type    		   Clutter_fitter_type;
+			typedef Grid_new_point_type 			   Clutter_new_point_type;
 
 
 			// Extra.
@@ -152,7 +152,8 @@ namespace CGAL {
 			m_building_boundary_type(Building_boundary_type::UNORIENTED),
 			m_visibility_angle_eps(-FT(1)),
 			m_thinning_neighbour_search_type(Neighbour_search_type::KNN),
-			m_thinning_circle_radius(-FT(1))
+			m_thinning_fuzzy_radius(-FT(1)),
+			m_thinning_type(Thinning_type::NAIVE)
 			{ } // Do I need to create an instance of these traits here?
 
 
@@ -398,7 +399,8 @@ namespace CGAL {
 				m_clutter_processor.set_fitter_type(m_clutter_fitter_type);
 				m_clutter_processor.set_new_point_type(m_clutter_new_point_type);
 				m_clutter_processor.set_neighbour_search_type(m_thinning_neighbour_search_type);
-				m_clutter_processor.set_circle_radius(m_thinning_circle_radius);
+				m_clutter_processor.set_fuzzy_radius(m_thinning_fuzzy_radius);
+				m_clutter_processor.set_thinning_type(m_thinning_type);
 
 				const auto number_of_removed_points = m_clutter_processor.process(boundary_clutter, boundary_clutter_projected);
 
@@ -821,7 +823,8 @@ namespace CGAL {
 			FT m_visibility_angle_eps;
 
 			Neighbour_search_type m_thinning_neighbour_search_type;
-			FT 				      m_thinning_circle_radius;
+			FT 				      m_thinning_fuzzy_radius;
+			Thinning_type 		  m_thinning_type;
 			
 
 			// Assert default values of all global parameters.
@@ -857,7 +860,7 @@ namespace CGAL {
 				assert(m_visibility_rays_per_side > 0);
 				assert(m_visibility_angle_eps != -FT(1));
 
-				assert(m_thinning_circle_radius != -FT(1));
+				assert(m_thinning_fuzzy_radius != -FT(1));
 			}
 
 
@@ -948,8 +951,9 @@ namespace CGAL {
 				m_thinning_neighbour_search_type = Neighbour_search_type::KNN;
 				m_building_boundary_type 		 = Building_boundary_type::ORIENTED;
 				m_clutter_new_point_type 		 = Clutter_new_point_type::BARYCENTRE; // BARYCENTRE - keeps average position of the removed points, CENTROID - inserts new point in the centre of the grid cell, CLOSEST - to the barycentre	
+				m_thinning_type 	  			 = Thinning_type::NAIVE;
 
-				m_thinning_circle_radius = 0.000001; // if zero, is not used; the bigger radius, the longer it works
+				m_thinning_fuzzy_radius  = 0.000001; // if zero, is not used; the bigger radius, the longer it works
 				m_visibility_angle_eps   = 0.0; 	 // used for removing thin triangles; if zero, is not used
 				m_max_reg_angle          = 10.0;	 // in average should be 10-20 degrees.
 				m_structuring_epsilon 	 = 0.025; 	 // the most important parameter!!! Depends on the dataset.
@@ -977,8 +981,9 @@ namespace CGAL {
 				m_thinning_neighbour_search_type = Neighbour_search_type::KNN;
 				m_building_boundary_type 		 = Building_boundary_type::ORIENTED;
 				m_clutter_new_point_type 		 = Clutter_new_point_type::BARYCENTRE;
+				m_thinning_type 	  			 = Thinning_type::NAIVE;
 
-				m_thinning_circle_radius = 0.001;
+				m_thinning_fuzzy_radius  = 0.001;
 				m_visibility_angle_eps   = 0.0; 	 
 				m_max_reg_angle          = 10.0;
 				m_structuring_epsilon 	 = 0.0005;
@@ -1003,8 +1008,9 @@ namespace CGAL {
 				m_thinning_neighbour_search_type = Neighbour_search_type::CIRCLE;
 				m_building_boundary_type 		 = Building_boundary_type::ORIENTED;
 				m_clutter_new_point_type 		 = Clutter_new_point_type::BARYCENTRE;
+				m_thinning_type 	  			 = Thinning_type::NAIVE;
 
-				m_thinning_circle_radius = 5.0;
+				m_thinning_fuzzy_radius  = 5.0;
 				m_visibility_angle_eps   = 0.001; 
 				m_max_reg_angle          = 10.0;
 				m_structuring_epsilon 	 = 1.5;
@@ -1031,8 +1037,9 @@ namespace CGAL {
 				m_thinning_neighbour_search_type = Neighbour_search_type::CIRCLE;
 				m_building_boundary_type 		 = Building_boundary_type::ORIENTED;
 				m_clutter_new_point_type 		 = Clutter_new_point_type::BARYCENTRE;
+				m_thinning_type 	  			 = Thinning_type::NAIVE;
 
-				m_thinning_circle_radius = 5.0;
+				m_thinning_fuzzy_radius  = 5.0;
 				m_visibility_angle_eps   = 0.0; 
 				m_max_reg_angle          = 15.0;
 				m_structuring_epsilon 	 = 0.2;
@@ -1057,8 +1064,9 @@ namespace CGAL {
 				m_thinning_neighbour_search_type = Neighbour_search_type::CIRCLE;
 				m_building_boundary_type 		 = Building_boundary_type::UNORIENTED;
 				m_clutter_new_point_type 		 = Clutter_new_point_type::BARYCENTRE;
+				m_thinning_type 	  			 = Thinning_type::NAIVE;
 
-				m_thinning_circle_radius = 5.0;
+				m_thinning_fuzzy_radius  = 5.0;
 				m_visibility_angle_eps   = 0.001; 
 				m_max_reg_angle          = 10.0;
 				m_structuring_epsilon 	 = 1.5;
@@ -1080,11 +1088,12 @@ namespace CGAL {
 				m_visibility_approach 	 		 = Visibility_approach::FACE_BASED;
 				m_visibility_method   	 		 = Visibility_method::FACE_BASED_NATURAL_NEIGHBOURS; // point based for with_shape_detection
 				m_visibility_sampler 	 		 = Visibility_sampler::UNIFORM_SUBDIVISION;
-				m_thinning_neighbour_search_type = Neighbour_search_type::CIRCLE;
+				m_thinning_neighbour_search_type = Neighbour_search_type::SQUARE;
 				m_building_boundary_type 		 = Building_boundary_type::ORIENTED;
 				m_clutter_new_point_type 		 = Clutter_new_point_type::CLOSEST;
+				m_thinning_type 	  			 = Thinning_type::COMPLEX;
 
-				m_thinning_circle_radius = 5.0;
+				m_thinning_fuzzy_radius  = 5.0;
 				m_visibility_angle_eps   = 0.001; 
 				m_max_reg_angle          = 10.0;
 				m_structuring_epsilon 	 = 1.5;

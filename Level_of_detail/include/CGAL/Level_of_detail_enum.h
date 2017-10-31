@@ -111,8 +111,27 @@ namespace CGAL {
 
 		// Nearest neighbour search.
 		enum class Neighbour_search_type {
-			KNN,   // use k nearest neighbours
-			CIRCLE // use all points from the circle of the given radius
+			KNN,    // use k nearest neighbours
+			CIRCLE, // use all points from the circle of the given radius
+			SQUARE  // use all points from the square of the given radius
+		};
+
+		// Fitter type used in thinning.
+		enum class Thinning_fitter_type { 
+			LINE // fit to the line
+		};
+
+		// New point type used in the grid simplify algorithm.
+		enum class Grid_new_point_type { 
+			CENTROID,   // centroid of the cell
+			BARYCENTRE, // barycentre of the given set of samples
+			CLOSEST     // point closest to the barycentre above
+		};
+
+		// Thinning type.
+		enum class Thinning_type {
+			NAIVE,	// naive thinning where we project all points onto a line
+			COMPLEX // a complex version, where we perform many different optimization steps and preserve features
 		};
 
 	} // LOD

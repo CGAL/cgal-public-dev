@@ -23,10 +23,12 @@ namespace CGAL {
 
 	namespace LOD {
 
+		// Grid based simplification.
 		template<class KernelTraits, class BoundaryData, class ProjectedPoints>
-		class Level_of_detail_clutter_processor {
+		class Level_of_detail_grid_simplify {
 
 		public:
+			// Fields.
 			typedef KernelTraits 	Kernel;
 			typedef BoundaryData 	Boundary_data;
 			typedef ProjectedPoints Projected_points;
@@ -50,6 +52,7 @@ namespace CGAL {
 
 			typename Kernel::Compute_squared_distance_2 squared_distance;
 
+
 			// Extra.
 			using Log = CGAL::LOD::Mylog;
 
@@ -58,87 +61,34 @@ namespace CGAL {
 
 			using Grid_cell_iterator = Grid_map::const_iterator;
 
-			enum class Fitter_type { LINE };
-			enum class New_point_type { CENTROID, BARYCENTRE, CLOSEST };
 
-			Level_of_detail_clutter_processor() : 
-			m_k(3), 
+			// Constructor.
+			Level_of_detail_grid_simplify() : 
 			m_grid_cell_length(FT(1) / FT(100)),
-			m_fitter_type(Fitter_type::LINE), 
-			m_new_point_type(New_point_type::BARYCENTRE),
-			m_neighbour_search_type(Neighbour_search_type::CIRCLE),
-			m_radius(FT(1) / FT(4)) { }
+			m_new_point_type(Grid_new_point_type::BARYCENTRE) { }
 
-			void set_number_of_neighbours(const size_t new_value) {
 
-				assert(new_value >= 2);
-				m_k = new_value;
-			}
-
+			// Input functions.		
 			void set_grid_cell_length(const FT new_cell_length) {
 
 				assert(new_cell_length > FT(0));
 				m_grid_cell_length = new_cell_length;
 			}
 
-			void set_fitter_type(const Fitter_type new_fitter_type) {
-				m_fitter_type = new_fitter_type;
-			}
-
-			void set_new_point_type(const New_point_type new_point_type) {
+			void set_new_point_type(const Grid_new_point_type new_point_type) {
 				m_new_point_type = new_point_type;
 			}
 
-			void set_neighbour_search_type(const Neighbour_search_type new_type) {
-				m_neighbour_search_type = new_type;
-			}
 
-			void set_circle_radius(const FT new_value) {
-
-				assert(new_value > FT(0));
-				m_radius = new_value;
-			}
-
+			// Main.
 			int process(Boundary_data &boundary_clutter, Projected_points &boundary_clutter_projected) const {
 
-				auto number_of_removed_points = 0;
-
-				apply_thinning(boundary_clutter, boundary_clutter_projected);
-				number_of_removed_points = apply_grid_simplify(boundary_clutter, boundary_clutter_projected);
-
-				return number_of_removed_points;
-			}
-
-			// Required parameters: only m_k - number of natural neighbours; m_fitter_type = LINE in general.
-			int apply_thinning(Boundary_data &boundary_clutter, Projected_points &boundary_clutter_projected) const {
-
-				int number_of_processed_points = 0;
-				if (boundary_clutter.empty() || boundary_clutter_projected.empty()) return number_of_processed_points;
-				
-				Fuzzy_tree tree;
-				create_tree(tree, boundary_clutter_projected);
-
-				Projected_points thinned_points;
-				thin_all_points(thinned_points, tree, boundary_clutter_projected);
-
-				assert(boundary_clutter_projected.size() == thinned_points.size());
-				boundary_clutter_projected = thinned_points;
-
-				number_of_processed_points = static_cast<int>(thinned_points.size());
-				assert(number_of_processed_points >= 0);
-
-				Log log; 
-				log.export_projected_points_as_xyz("tmp/thinning", boundary_clutter_projected, "unused path");
-
-				return number_of_processed_points;
-			}
-
-			// This is like a moving least squares local algorithm. Later we can solve a global optimization here.
-			// Required parameters: m_grid_cell_length - length of the cell side in the grid; here you can also use m_new_point_type.
-			int apply_grid_simplify(Boundary_data &boundary_clutter, Projected_points &boundary_clutter_projected) const {
-
 				int number_of_removed_points = 0;
-				if (boundary_clutter.empty() || boundary_clutter_projected.empty()) return number_of_removed_points;
+				if (boundary_clutter.empty() || boundary_clutter_projected.empty()) {
+					
+					std::cerr << "WARNING: Empty input!" << std::endl;
+					return number_of_removed_points;
+				}
 
 				Grid_map grid_map;
 				create_grid_map(grid_map, boundary_clutter_projected);
@@ -158,14 +108,12 @@ namespace CGAL {
 				return number_of_removed_points;
 			}
 
+
 		// Fields.
 		private:
-			size_t 		   		  m_k;
-			FT 			   		  m_grid_cell_length;
-			Fitter_type    		  m_fitter_type;
-			New_point_type 		  m_new_point_type;
-			Neighbour_search_type m_neighbour_search_type;
-			FT 					  m_radius;
+			FT 			   		m_grid_cell_length;
+			Grid_new_point_type m_new_point_type;
+
 
 		// Grid simplify.
 		private:
@@ -223,15 +171,15 @@ namespace CGAL {
 
 				switch (m_new_point_type) {
 
-					case New_point_type::CENTROID:
+					case Grid_new_point_type::CENTROID:
 						create_new_centroid(new_point, grid_cell);
 						break;
 
-					case New_point_type::BARYCENTRE:
+					case Grid_new_point_type::BARYCENTRE:
 						create_new_barycentre(new_point, grid_cell, boundary_clutter_projected);
 						break;
 
-					case New_point_type::CLOSEST:
+					case Grid_new_point_type::CLOSEST:
 						create_new_closest(new_point, grid_cell, boundary_clutter_projected);
 						break;
 
@@ -328,9 +276,141 @@ namespace CGAL {
 				new_data[0] = idxs;
 				boundary_clutter = new_data;
 			}
+		};
+
 
 		// Thinning.
+		template<class KernelTraits, class BoundaryData, class ProjectedPoints>
+		class Level_of_detail_thinning {
+
+		public:
+			// Fields.
+			typedef KernelTraits 	Kernel;
+			typedef BoundaryData 	Boundary_data;
+			typedef ProjectedPoints Projected_points;
+
+			typedef typename Kernel::FT 	 FT;
+			typedef typename Kernel::Point_2 Point_2;
+			typedef typename Kernel::Line_2  Line_2;
+
+			typedef std::pair<int, Point_2> 					 				Projected_point;
+			typedef typename CGAL::Second_of_pair_property_map<Projected_point> Point_map;
+
+			typedef CGAL::Search_traits_2<Kernel>                       					 Search_traits_2;
+			typedef CGAL::Search_traits_adapter<Projected_point, Point_map, Search_traits_2> Search_traits;
+			typedef CGAL::Orthogonal_k_neighbor_search<Search_traits> 					     Neighbor_search;
+			typedef CGAL::Fuzzy_sphere<Search_traits>                    					 Fuzzy_circle;
+			typedef CGAL::Kd_tree<Search_traits>					                         Fuzzy_tree;
+
+			typedef typename Boundary_data::const_iterator    Boundary_iterator;
+			typedef typename Projected_points::const_iterator Point_iterator;
+			typedef typename Neighbor_search::iterator  	  Neighbour_iterator;
+
+			typename Kernel::Compute_squared_distance_2 squared_distance;
+
+
+			// Extra.
+			using Log = CGAL::LOD::Mylog;
+
+			using Cell_id  = std::pair<int, int>;
+			using Grid_map = std::map<Cell_id, std::vector<int> >;
+
+			using Grid_cell_iterator = Grid_map::const_iterator;
+
+
+			// Constructor.
+			Level_of_detail_thinning() : 
+			m_k(3), 
+			m_fitter_type(Thinning_fitter_type::LINE), 
+			m_neighbour_search_type(Neighbour_search_type::CIRCLE),
+			m_radius(FT(1) / FT(4)),
+			m_thinning_type(Thinning_type::NAIVE) { }
+
+
+			// Input functions.
+			void set_number_of_neighbours(const size_t new_value) {
+
+				assert(new_value >= 2);
+				m_k = new_value;
+			}
+
+			void set_fuzzy_radius(const FT new_value) {
+
+				assert(new_value > FT(0));
+				m_radius = new_value;
+			}
+
+			void set_thinning_type(const Thinning_type new_type) {
+				m_thinning_type = new_type;
+			}
+
+			void set_neighbour_search_type(const Neighbour_search_type new_type) {
+				m_neighbour_search_type = new_type;
+			}
+
+			void set_fitter_type(const Thinning_fitter_type new_fitter_type) {
+				m_fitter_type = new_fitter_type;
+			}
+
+
+			// Main.
+			int process(Boundary_data &boundary_clutter, Projected_points &boundary_clutter_projected) const {
+
+				switch (m_thinning_type) {
+
+					case Thinning_type::NAIVE:
+						return apply_naive_thinning(boundary_clutter, boundary_clutter_projected);
+						break;
+
+					case Thinning_type::COMPLEX:
+						return apply_complex_thinning(boundary_clutter, boundary_clutter_projected);
+						break;
+
+					default:
+						assert(!"Wrong thinning type!");
+						return -1;
+				}
+			}
+
+
+		// Fields.
 		private:
+			size_t 		   		  m_k;
+			Thinning_fitter_type  m_fitter_type;
+			Neighbour_search_type m_neighbour_search_type;
+			FT 					  m_radius;
+			Thinning_type 		  m_thinning_type;
+
+
+		// Naive thinning.
+		private:
+			int apply_naive_thinning(Boundary_data &boundary_clutter, Projected_points &boundary_clutter_projected) const {
+
+				int number_of_processed_points = 0;
+				if (boundary_clutter.empty() || boundary_clutter_projected.empty()) {
+
+					std::cerr << "WARNING: Empty input!" << std::endl;
+					return number_of_processed_points;
+				}
+				
+				Fuzzy_tree tree;
+				create_tree(tree, boundary_clutter_projected);
+
+				Projected_points thinned_points;
+				thin_all_points(thinned_points, tree, boundary_clutter_projected);
+
+				assert(boundary_clutter_projected.size() == thinned_points.size());
+				boundary_clutter_projected = thinned_points;
+
+				number_of_processed_points = static_cast<int>(thinned_points.size());
+				assert(number_of_processed_points >= 0);
+
+				Log log; 
+				log.export_projected_points_as_xyz("tmp/thinning_naive", boundary_clutter_projected, "unused path");
+
+				return number_of_processed_points;
+			}
+
 			void create_tree(Fuzzy_tree &tree, const Projected_points &boundary_clutter_projected) const {
 
 				assert(!boundary_clutter_projected.empty());
@@ -357,7 +437,7 @@ namespace CGAL {
 
 				switch (m_fitter_type) {
 
-					case Fitter_type::LINE:
+					case Thinning_fitter_type::LINE:
 						handle_with_line(thinned_points, neighbours, projected);
 						break;
 
@@ -377,6 +457,10 @@ namespace CGAL {
 
 					case Neighbour_search_type::CIRCLE:
 						find_nearest_neighbours_with_circle(neighbours, tree, query);
+						break;
+
+					case Neighbour_search_type::SQUARE:
+						find_nearest_neighbours_with_square(neighbours, tree, query);
 						break;
 
 					default:
@@ -420,6 +504,11 @@ namespace CGAL {
 				assert(count == num_points);
 			}
 
+			void find_nearest_neighbours_with_square(std::vector<Point_2> &, const Fuzzy_tree &, const Point_2 &) const {
+
+				// to be implemented!
+			}
+
 			void compute_circle(const Point_2 &centre, Fuzzy_circle &circle) const {
 
 				assert(m_radius > FT(0));
@@ -455,6 +544,153 @@ namespace CGAL {
 				if (std::isnan(projected.x()) || std::isnan(projected.y())) return line.projection(p);
 				else return projected;
 			}
+
+
+		// Complex thinning.
+		private:
+			int apply_complex_thinning(Boundary_data &, Projected_points &) const {
+
+				// to be implemented!
+				return -1;
+			}
+		};		
+
+
+		// Main clutter class.
+		template<class KernelTraits, class BoundaryData, class ProjectedPoints>
+		class Level_of_detail_clutter_processor {
+
+		public:
+			// Fields.
+			typedef KernelTraits 	Kernel;
+			typedef BoundaryData 	Boundary_data;
+			typedef ProjectedPoints Projected_points;
+
+			typedef typename Kernel::FT 	 FT;
+			typedef typename Kernel::Point_2 Point_2;
+			typedef typename Kernel::Line_2  Line_2;
+
+			typedef std::pair<int, Point_2> 					 				Projected_point;
+			typedef typename CGAL::Second_of_pair_property_map<Projected_point> Point_map;
+
+			typedef CGAL::Search_traits_2<Kernel>                       					 Search_traits_2;
+			typedef CGAL::Search_traits_adapter<Projected_point, Point_map, Search_traits_2> Search_traits;
+			typedef CGAL::Orthogonal_k_neighbor_search<Search_traits> 					     Neighbor_search;
+			typedef CGAL::Fuzzy_sphere<Search_traits>                    					 Fuzzy_circle;
+			typedef CGAL::Kd_tree<Search_traits>					                         Fuzzy_tree;
+
+			typedef typename Boundary_data::const_iterator    Boundary_iterator;
+			typedef typename Projected_points::const_iterator Point_iterator;
+			typedef typename Neighbor_search::iterator  	  Neighbour_iterator;
+
+			typename Kernel::Compute_squared_distance_2 squared_distance;
+
+
+			// Extra.
+			using Log = CGAL::LOD::Mylog;
+
+			using Cell_id  = std::pair<int, int>;
+			using Grid_map = std::map<Cell_id, std::vector<int> >;
+
+			using Grid_cell_iterator = Grid_map::const_iterator;
+
+
+			// Constructor.
+			Level_of_detail_clutter_processor() : 
+			m_k(3), 
+			m_grid_cell_length(FT(1) / FT(100)),
+			m_fitter_type(Thinning_fitter_type::LINE), 
+			m_new_point_type(Grid_new_point_type::BARYCENTRE),
+			m_neighbour_search_type(Neighbour_search_type::CIRCLE),
+			m_radius(FT(1) / FT(4)),
+			m_thinning_type(Thinning_type::NAIVE) { }
+
+
+			// Grid simplify.			
+			void set_grid_cell_length(const FT new_cell_length) {
+
+				assert(new_cell_length > FT(0));
+				m_grid_cell_length = new_cell_length;
+			}
+
+			void set_new_point_type(const Grid_new_point_type new_point_type) {
+				m_new_point_type = new_point_type;
+			}
+
+
+			// Thinning.
+			void set_number_of_neighbours(const size_t new_value) {
+
+				assert(new_value >= 2);
+				m_k = new_value;
+			}
+
+			void set_fuzzy_radius(const FT new_value) {
+
+				assert(new_value > FT(0));
+				m_radius = new_value;
+			}
+
+			void set_thinning_type(const Thinning_type new_type) {
+				m_thinning_type = new_type;
+			}
+
+			void set_neighbour_search_type(const Neighbour_search_type new_type) {
+				m_neighbour_search_type = new_type;
+			}
+
+			void set_fitter_type(const Thinning_fitter_type new_fitter_type) {
+				m_fitter_type = new_fitter_type;
+			}
+
+
+			// Main.
+			int process(Boundary_data &boundary_clutter, Projected_points &boundary_clutter_projected) const {
+
+				auto number_of_removed_points = 0;
+
+				apply_thinning(boundary_clutter, boundary_clutter_projected);
+				number_of_removed_points = apply_grid_simplify(boundary_clutter, boundary_clutter_projected);
+
+				return number_of_removed_points;
+			}
+
+			// Required parameters: only m_k - number of natural neighbours; m_fitter_type = LINE in general.
+			int apply_thinning(Boundary_data &boundary_clutter, Projected_points &boundary_clutter_projected) const {
+
+				Level_of_detail_thinning<Kernel, Boundary_data, Projected_points> thinning;
+
+				thinning.set_number_of_neighbours(m_k);
+				thinning.set_fuzzy_radius(m_radius);
+				thinning.set_thinning_type(m_thinning_type);
+				thinning.set_neighbour_search_type(m_neighbour_search_type);
+				thinning.set_fitter_type(m_fitter_type);
+
+				return thinning.process(boundary_clutter, boundary_clutter_projected);
+			}
+
+			// This is like a moving least squares local algorithm. Later we can solve a global optimization here.
+			// Required parameters: m_grid_cell_length - length of the cell side in the grid; here you can also use m_new_point_type.
+			int apply_grid_simplify(Boundary_data &boundary_clutter, Projected_points &boundary_clutter_projected) const {
+
+				Level_of_detail_grid_simplify<Kernel, Boundary_data, Projected_points> grid_simplify;
+
+				grid_simplify.set_grid_cell_length(m_grid_cell_length);
+				grid_simplify.set_new_point_type(m_new_point_type);
+
+				return grid_simplify.process(boundary_clutter, boundary_clutter_projected);
+			}
+
+
+		// Fields.
+		private:
+			size_t 		   		  m_k;
+			FT 			   		  m_grid_cell_length;
+			Thinning_fitter_type  m_fitter_type;
+			Grid_new_point_type   m_new_point_type;
+			Neighbour_search_type m_neighbour_search_type;
+			FT 					  m_radius;
+			Thinning_type 		  m_thinning_type;
 		};
 	}
 }
