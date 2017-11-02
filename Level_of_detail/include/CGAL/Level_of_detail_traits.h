@@ -69,8 +69,8 @@ namespace CGAL {
 			typedef CGAL::Triangulation_data_structure_2<VB, FB> 			  	 TDS;
 			typedef CGAL::Constrained_Delaunay_triangulation_2<Kernel, TDS, EPT> CDT;
 
-			typedef CGAL::LOD::Level_of_detail_utils<Kernel, Container_3D, CDT> 				   Utils;
-			typedef CGAL::LOD::Level_of_detail_clutter_processor<Kernel, Planes, Projected_points> Clutter_processor;
+			typedef CGAL::LOD::Level_of_detail_utils<Kernel, Container_3D, CDT> 				   				 Utils;
+			typedef CGAL::LOD::Level_of_detail_clutter_processor<Kernel, Planes, Projected_points, Container_3D> Clutter_processor;
 
 			typedef int Label; 
 			typedef std::vector< std::pair<typename Kernel::Point_2, Label> > Container_2D;

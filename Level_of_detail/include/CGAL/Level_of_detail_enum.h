@@ -134,6 +134,13 @@ namespace CGAL {
 			COMPLEX // a complex version, where we perform many different optimization steps and preserve features
 		};
 
+		// Thinning scale type.
+		enum class Thinning_scale_type {
+			FIXED,			// fixed manually set scale
+			ADAPTIVE_FIXED, // automatically chosen scale
+			PROGRESSIVE		// scale changes progressively
+		};
+
 	} // LOD
 
 } // CGAL

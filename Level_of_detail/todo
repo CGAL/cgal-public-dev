@@ -99,4 +99,21 @@ Points: finish and test visibility; finish and test outliner with lod0-lod1; fin
 2. After classifying and saving data set, if loading this saved data set without removing the previous one, its colours are changed to the default.
 3. How to add constrained edges after the graph cut and split different neighbouring buildings in the pipeline version without shape detection?
 4. Empty xyz files are not opening.
+5. Fuzzy iso box does not work.
+
+Ideas:
+1. Fixed scale.
+2. Get knn.
+3. Consider standard point distributions (see paper).
+4. Compute average spacing and remove dimension 0.
+5. Compute coverage (or occupancy) and remove uniformly distributed cases of dimension 2.
+6. Try minshift in normal periodic space to get clusters or
+7. Apply spatial clustering using k means without normals (1 -> 5), compute error and decide when to stop based on the ratio (multiply or divide by the number of clusters, radius, etc.), remove unnecessary cases where we have multiple dense clusters.
+8. Apply normal clustering using k means for lines (or points with normals, or vectors) (compute distance between two lines as an angle on the periodic circle) or the unity paper, or the k means++. You can use ideal rate for lines to check. Apply 1 -> 5 and stop when the error does not change. K means error either decreases or stay constant. For line the rate should stay constant.
+9. Use clusters from 8 to fit lines (clusters depend on the chosen scale). When fitting lines you can use error from the fitter function to check the goodness of the fit and such variance of clusters and overall quality. There are two variances - between clusters and inside each cluster between points. When fitting line do not use only points but also normals (average them to find an average normal of the line and use the best point to create a line with this normal or correct the fitted line).
+
+1. You can split buildings using roof information and alpha shapes.
+2. Visualize each cluster and visualize result of the clustering for each set of knn.
+3. Implement all cases with point distributions from the whiteboard.
+4. Use robust pca to find normals for each set of knn locally in 2D without using 3D normals. Or if we have 3D normals use them, otherwise estimate normals locally in 2D.
 

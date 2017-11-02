@@ -389,6 +389,7 @@ namespace CGAL {
 				Boundary_data &boundary_clutter, 
 				Projected_points &boundary_clutter_projected, 
 				Log &log, 
+				const Container_3D &input,
 				const size_t exec_step) {
 
 				// Regularize and remove unnecessary points from the clutter.
@@ -402,7 +403,7 @@ namespace CGAL {
 				m_clutter_processor.set_fuzzy_radius(m_thinning_fuzzy_radius);
 				m_clutter_processor.set_thinning_type(m_thinning_type);
 
-				const auto number_of_removed_points = m_clutter_processor.process(boundary_clutter, boundary_clutter_projected);
+				const auto number_of_removed_points = m_clutter_processor.process(boundary_clutter, boundary_clutter_projected, input);
 
 				std::cout << "removed points: " << number_of_removed_points << std::endl;
 				log.out << "(" << exec_step << ") Clutter is processed. Number of removed points: " << number_of_removed_points << std::endl << std::endl;
@@ -688,7 +689,10 @@ namespace CGAL {
 				// (12) ----------------------------------
 				if (m_pipeline_version == Pipeline_version::WITHOUT_SHAPE_DETECTION || 
 				   (m_pipeline_version == Pipeline_version::WITH_SHAPE_DETECTION && m_add_cdt_clutter)) 
-					processing_clutter(boundary_clutter, boundary_clutter_projected, log, ++exec_step);		
+					processing_clutter(boundary_clutter, boundary_clutter_projected, log, input, ++exec_step);
+
+
+				// exit(1); // remove!
 
 
 				// (13) ----------------------------------
@@ -1079,6 +1083,7 @@ namespace CGAL {
 			}
 
 
+			// WARNING: Do not forget to remove exit() after clutter above!
 			void set_paris_eth_parameters() {
 
 				// All main parameters are set below.
@@ -1088,12 +1093,12 @@ namespace CGAL {
 				m_visibility_approach 	 		 = Visibility_approach::FACE_BASED;
 				m_visibility_method   	 		 = Visibility_method::FACE_BASED_NATURAL_NEIGHBOURS; // point based for with_shape_detection
 				m_visibility_sampler 	 		 = Visibility_sampler::UNIFORM_SUBDIVISION;
-				m_thinning_neighbour_search_type = Neighbour_search_type::SQUARE;
-				m_building_boundary_type 		 = Building_boundary_type::ORIENTED;
+				m_thinning_neighbour_search_type = Neighbour_search_type::CIRCLE;
+				m_building_boundary_type 		 = Building_boundary_type::UNORIENTED;
 				m_clutter_new_point_type 		 = Clutter_new_point_type::CLOSEST;
-				m_thinning_type 	  			 = Thinning_type::COMPLEX;
+				m_thinning_type 	  			 = Thinning_type::NAIVE;
 
-				m_thinning_fuzzy_radius  = 5.0;
+				m_thinning_fuzzy_radius  = 0.00001;
 				m_visibility_angle_eps   = 0.001; 
 				m_max_reg_angle          = 10.0;
 				m_structuring_epsilon 	 = 1.5;
@@ -1101,7 +1106,7 @@ namespace CGAL {
 				m_visibility_num_samples = 1;
 				m_graph_cut_beta 		 = 35.0; // 15.0 for with_shape_detection
 				m_clutter_knn 			 = 12;
-				m_clutter_cell_length    = 10.0;
+				m_clutter_cell_length    = 5.0;
 				m_use_boundaries 		 = true;
 			}
 

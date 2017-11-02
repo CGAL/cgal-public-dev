@@ -483,6 +483,18 @@ namespace CGAL {
 				save(name, ".xyz");
 			}
 
+			template<class Projected_points, class Normals>
+			void export_projected_points_with_normals_as_xyz(const std::string &name, const Projected_points &projected, const Normals &normals, const std::string & /* default_path */) {
+				
+				clear();
+				for (typename Projected_points::const_iterator it = projected.begin(); it != projected.end(); ++it) {
+					out << (*it).second << " " << 0 << " " << normals.at((*it).first) << std::endl;
+				}
+
+				// save(name, ".xyz", default_path);
+				save(name, ".xyz");
+			}
+
 			template<class Planes_mapping, class Projected_points>
 			void export_projected_points(const std::string &name, const Planes_mapping &planes, const Projected_points &projected) {
 

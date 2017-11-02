@@ -8,6 +8,7 @@
 
 // CGAL includes.
 #include <CGAL/Simple_cartesian.h>
+#include <CGAL/Point_set_3.h>
 
 // CGAL new includes.
 #include <CGAL/Mylog/Mylog.h>
@@ -23,13 +24,17 @@ public:
 
 	using Kernel  = CGAL::Simple_cartesian<FT>;
 	using Point_2 = Kernel::Point_2;
+	using Point_3 = Kernel::Point_3;
+	using Normal  = Kernel::Vector_3; 
 
 	using Boundary_data    = std::map<int, std::vector<int> >;
 	using Projected_points = std::map<int, Point_2>;
+	using Container 	   = CGAL::Point_set_3<Point_3>;
 
-	using LodClutterProcessor = CGAL::LOD::Level_of_detail_clutter_processor<Kernel, Boundary_data, Projected_points>;
+	using LodClutterProcessor = CGAL::LOD::Level_of_detail_clutter_processor<Kernel, Boundary_data, Projected_points, Container>;
 	using Log = CGAL::LOD::Mylog;
 
+	Container input_thinning_complex;
 	LodClutterProcessor lodClutterProcessor;
 
 	Boundary_data    bd_thinning_naive, bd_thinning_complex, bd_grid_simplify;
@@ -49,6 +54,8 @@ public:
 		pp_thinning_naive.clear();
 		pp_thinning_complex.clear();
 		pp_grid_simplify.clear();
+
+		input_thinning_complex.clear();
 
 		/* set_thinning_input_naive(); */
 		set_thinning_input_complex();
@@ -91,6 +98,21 @@ public:
 	}
 
 	void set_thinning_input_complex() {
+
+		std::vector<int> idxs(3);
+
+		pp_thinning_complex[0] = Point_2(0.2, 0.0); idxs[0]  =  0;
+		pp_thinning_complex[1] = Point_2(0.4, 0.0); idxs[1]  =  1;
+		pp_thinning_complex[2] = Point_2(0.8, 0.0); idxs[2]  =  2;
+
+		input_thinning_complex.add_normal_map();
+		const Normal normal = Normal(0.0, 0.22, 0.0); 
+
+		input_thinning_complex.insert(Point_3(0.2, 0.0, 0.3), normal);
+		input_thinning_complex.insert(Point_3(0.2, 0.0, 0.3), normal);
+		input_thinning_complex.insert(Point_3(0.2, 0.0, 0.3), normal);
+
+		bd_thinning_complex[0] = idxs;
 
 		Log log; 
 		log.export_projected_points_as_xyz("tmp/thinning_input_complex", pp_thinning_complex, "unused path");
@@ -145,12 +167,12 @@ TEST_F(LOD_ClutterProcessorTest, RunsNaiveThinning) {
 
 TEST_F(LOD_ClutterProcessorTest, RunsComplexThinning) {
 
-	lodClutterProcessor.set_fuzzy_radius(0.0001);
+	lodClutterProcessor.set_fuzzy_radius(0.25);
 	lodClutterProcessor.set_thinning_type(CGAL::LOD::Thinning_type::COMPLEX);
 	lodClutterProcessor.set_fitter_type(CGAL::LOD::Thinning_fitter_type::LINE);
-	lodClutterProcessor.set_neighbour_search_type(CGAL::LOD::Neighbour_search_type::SQUARE);
+	lodClutterProcessor.set_neighbour_search_type(CGAL::LOD::Neighbour_search_type::CIRCLE);
 
-	const auto number_of_processed_points = lodClutterProcessor.apply_thinning(bd_thinning_complex, pp_thinning_complex);
+	const auto number_of_processed_points = lodClutterProcessor.apply_thinning(bd_thinning_complex, pp_thinning_complex, input_thinning_complex);
 	ASSERT_THAT(number_of_processed_points, Eq(-1));
 }
 
