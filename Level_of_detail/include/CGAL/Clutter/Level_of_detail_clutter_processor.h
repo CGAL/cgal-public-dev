@@ -104,7 +104,7 @@ namespace CGAL {
 				set_new_boundary_data(boundary_clutter, boundary_clutter_projected);
 
 				Log log; 
-				log.export_projected_points_as_xyz("tmp/grid_simplified", boundary_clutter_projected, "unused path");
+				log.export_projected_points_as_xyz("tmp/grid_simplify_result", boundary_clutter_projected, "unused path");
 
 				return number_of_removed_points;
 			}
@@ -322,6 +322,8 @@ namespace CGAL {
 
 			using Grid_cell_iterator = Grid_map::const_iterator;
 			using Normals 			 = std::map<int, Normal>;
+			using Corner 			 = std::pair<Point_2, Normal>;
+			using Corners			 = std::vector<Corner>;
 
 
 			// Constructor.
@@ -424,10 +426,10 @@ namespace CGAL {
 				return -1;
 			}
 
-			FT compute_error() const {
+			FT compute_scale_error() const {
 
 				// to be implemented!
-				return FT(-1);
+				return -FT(1);
 			}
 
 
@@ -455,9 +457,9 @@ namespace CGAL {
 				assert(number_of_processed_points >= 0);
 
 				Log log; 
-				log.export_projected_points_as_xyz("tmp/thinning_naive", boundary_clutter_projected, "unused path");
+				log.export_projected_points_as_xyz("tmp/thinning_naive_result", boundary_clutter_projected, "unused path");
 
-				error = compute_error();
+				error = compute_scale_error();
 				return number_of_processed_points;
 			}
 
@@ -475,11 +477,11 @@ namespace CGAL {
 				for (Point_iterator pit = boundary_clutter_projected.begin(); pit != boundary_clutter_projected.end(); ++pit) {
 					
 					const Projected_point &projected = *pit;
-					handle_projected_point(thinned_points, tree, projected);
+					handle_projected_point_naive(thinned_points, tree, projected);
 				}
 			}
 
-			void handle_projected_point(Projected_points &thinned_points, const Fuzzy_tree &tree, const Projected_point &projected) const {
+			void handle_projected_point_naive(Projected_points &thinned_points, const Fuzzy_tree &tree, const Projected_point &projected) const {
 
 				Projected_points nns;
 				const Point_2 &query = projected.second;
@@ -495,7 +497,7 @@ namespace CGAL {
 				switch (m_fitter_type) {
 
 					case Thinning_fitter_type::LINE:
-						handle_with_line(thinned_points, neighbours, projected);
+						handle_with_line_naive(thinned_points, neighbours, projected);
 						break;
 
 					default:
@@ -575,7 +577,7 @@ namespace CGAL {
 				square = Fuzzy_square(p, q);
 			}
 
-			void handle_with_line(Projected_points &thinned_points, const std::vector<Point_2> &neighbours, const Projected_point &projected) const {
+			void handle_with_line_naive(Projected_points &thinned_points, const std::vector<Point_2> &neighbours, const Projected_point &projected) const {
 
 				Line_2 line;
 
@@ -624,25 +626,29 @@ namespace CGAL {
 				get_normals(normals, boundary_clutter_projected, input);
 
 				// Thin all points.
+				Corners corners;
 				Projected_points thinned_points;
-				thin_all_points_with_normals(thinned_points, tree, normals, boundary_clutter_projected);
+
+				thin_all_points_with_normals(thinned_points, corners, tree, normals, boundary_clutter_projected);
 				boundary_clutter_projected = thinned_points;
 
 				// Save log.
 				Log log; 
-				log.export_projected_points_as_xyz("tmp/thinning_complex", boundary_clutter_projected, "unused path");
+				log.export_projected_points_as_xyz("tmp/thinning_complex_result", boundary_clutter_projected, "unused path");
 
-				error = compute_error();
+				error = compute_scale_error();
 				return boundary_clutter_projected.size();
 			}
 
 			void get_normals(Normals &normals, const Projected_points &boundary_clutter_projected, const Container &input) const {
 
+				// Add here new methods to estimate normals later!
+
 				project_normals(normals, boundary_clutter_projected, input);
 				assert(normals.size() == boundary_clutter_projected.size());
 
 				Log log; 
-				log.export_projected_points_with_normals_as_xyz("tmp/thinning_input_with_normals_complex", boundary_clutter_projected, normals, "unused path");
+				log.export_projected_points_with_normals_as_xyz("tmp/complex_with_normals", boundary_clutter_projected, normals, "unused path");
 			}
 
 			void project_normals(Normals &normals, const Projected_points &boundary_clutter_projected, const Container &input) const {
@@ -668,7 +674,8 @@ namespace CGAL {
 				normals[point_index] = projected_normal;
 			}
 
-			void thin_all_points_with_normals(Projected_points &thinned_points, const Fuzzy_tree &tree, const Normals &normals, const Projected_points &boundary_clutter_projected) const {
+			void thin_all_points_with_normals(Projected_points &thinned_points, Corners &corners, 
+				const Fuzzy_tree &tree, const Normals &normals, const Projected_points &boundary_clutter_projected) const {
 
 				assert(!boundary_clutter_projected.empty());
 				thinned_points.clear();
@@ -676,11 +683,12 @@ namespace CGAL {
 				for (Point_iterator pit = boundary_clutter_projected.begin(); pit != boundary_clutter_projected.end(); ++pit) {
 					
 					const Projected_point &projected = *pit;
-					handle_projected_point_with_normals(thinned_points, tree, normals, projected);
+					handle_projected_point_with_normals(thinned_points, corners, tree, normals, projected);
 				}
 			}
 
-			void handle_projected_point_with_normals(Projected_points &thinned_points, const Fuzzy_tree &tree, const Normals &normals, const Projected_point &projected) const {
+			void handle_projected_point_with_normals(Projected_points &thinned_points, Corners &corners,
+			const Fuzzy_tree &tree, const Normals &normals, const Projected_point &projected) const {
 
 				Projected_points neighbours;
 				const Point_2 &query = projected.second;
@@ -689,7 +697,7 @@ namespace CGAL {
 				switch (m_fitter_type) {
 
 					case Thinning_fitter_type::LINE:
-						handle_point_complex(thinned_points, neighbours, normals, projected);
+						handle_with_line_complex(thinned_points, corners, neighbours, normals, projected);
 						break;
 
 					default:
@@ -698,7 +706,8 @@ namespace CGAL {
 				}
 			}
 
-			void handle_point_complex(Projected_points &, const Projected_points &, const Normals &, const Projected_point &) const {
+			void handle_with_line_complex(Projected_points & /* thinned_points */, Corners & /* corners */,
+			const Projected_points & /* neighbours */, const Normals & /* normals */, const Projected_point & /* query */) const {
 
 				// to be implemented!
 			}

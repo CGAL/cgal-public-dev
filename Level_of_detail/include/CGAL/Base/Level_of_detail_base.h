@@ -692,7 +692,7 @@ namespace CGAL {
 					processing_clutter(boundary_clutter, boundary_clutter_projected, log, input, ++exec_step);
 
 
-				// exit(1); // remove!
+				exit(1); // remove!
 
 
 				// (13) ----------------------------------
@@ -1096,7 +1096,7 @@ namespace CGAL {
 				m_thinning_neighbour_search_type = Neighbour_search_type::CIRCLE;
 				m_building_boundary_type 		 = Building_boundary_type::UNORIENTED;
 				m_clutter_new_point_type 		 = Clutter_new_point_type::CLOSEST;
-				m_thinning_type 	  			 = Thinning_type::NAIVE;
+				m_thinning_type 	  			 = Thinning_type::COMPLEX;
 
 				m_thinning_fuzzy_radius  = 0.00001;
 				m_visibility_angle_eps   = 0.001; 

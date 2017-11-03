@@ -117,3 +117,7 @@ Ideas:
 3. Implement all cases with point distributions from the whiteboard.
 4. Use robust pca to find normals for each set of knn locally in 2D without using 3D normals. Or if we have 3D normals use them, otherwise estimate normals locally in 2D.
 
+
+// Iteration 7:
+1. 
+
