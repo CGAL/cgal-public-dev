@@ -31,6 +31,8 @@
 typedef std::pair<int, int>                   Partition_opt_cvx_diagonal;
 typedef std::list<Partition_opt_cvx_diagonal> Partition_opt_cvx_diagonal_list;
 
+namespace CGAL {
+
 inline
 std::ostream& operator<<(std::ostream& os,
                          const Partition_opt_cvx_diagonal_list& d)
@@ -42,5 +44,7 @@ std::ostream& operator<<(std::ostream& os,
    }
    return os;
 }
+
+} // namespace CGAL
 
 #endif // CGAL_PARTITION_OPT_CVX_DIAGONAL_LIST_H
