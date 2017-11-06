@@ -1098,7 +1098,7 @@ namespace CGAL {
 				m_clutter_new_point_type 		 = Clutter_new_point_type::CLOSEST;
 				m_thinning_type 	  			 = Thinning_type::COMPLEX;
 
-				m_thinning_fuzzy_radius  = 0.00001;
+				m_thinning_fuzzy_radius  = 5.0;
 				m_visibility_angle_eps   = 0.001; 
 				m_max_reg_angle          = 10.0;
 				m_structuring_epsilon 	 = 1.5;

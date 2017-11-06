@@ -32,9 +32,12 @@ public:
 	using Container 	   = CGAL::Point_set_3<Point_3>;
 
 	using LodClutterProcessor = CGAL::LOD::Level_of_detail_clutter_processor<Kernel, Boundary_data, Projected_points, Container>;
+	using LodClutterThinning  = CGAL::LOD::Level_of_detail_thinning<Kernel, Boundary_data, Projected_points, Container>;
+	
 	using Log = CGAL::LOD::Mylog;
-
+	
 	LodClutterProcessor lodClutterProcessor;
+	LodClutterThinning  lodClutterThinning;
 
 
 	// Simple data.
@@ -62,9 +65,8 @@ public:
 		pp_thinning_naive.clear();
 		pp_grid_simplify.clear();
 
-		/*
-		set_thinning_naive_input();
-		set_grid_simplify_input(); */
+		/* set_thinning_naive_input(); */
+		/* set_grid_simplify_input();  */
 
 		clear_complex_data();
 		set_complex_input();
@@ -178,18 +180,17 @@ public:
 
 	void create_complex_data() {
 
-		lodClutterProcessor.set_fuzzy_radius(1.0);
-		lodClutterProcessor.set_thinning_type(CGAL::LOD::Thinning_type::COMPLEX);
-		lodClutterProcessor.set_fitter_type(CGAL::LOD::Thinning_fitter_type::LINE);
-		lodClutterProcessor.set_neighbour_search_type(CGAL::LOD::Neighbour_search_type::CIRCLE);
+		lodClutterThinning.set_thinning_type(CGAL::LOD::Thinning_type::COMPLEX);
+		lodClutterThinning.set_fitter_type(CGAL::LOD::Thinning_fitter_type::LINE);
+		lodClutterThinning.set_neighbour_search_type(CGAL::LOD::Neighbour_search_type::CIRCLE);
 
 		in_complex.add_normal_map();
 
 		std::vector<int> idxs;
 		bd_complex[0] = idxs;
 
-		add_complex_data_1();
-		// add_complex_data_2();
+		// add_complex_data_1();
+		add_complex_data_2();
 		// add_complex_data_3();
 		// add_complex_data_4();
 		// add_complex_data_5();
@@ -201,6 +202,8 @@ public:
 
 	// Dense with dim = 0.
 	void add_complex_data_1() {
+
+		lodClutterThinning.set_fuzzy_radius(0.5);
 
 		pp_complex[0] = Point_2(0.50, 0.50); bd_complex[0].push_back(0);
 
@@ -221,6 +224,9 @@ public:
 
 	// Sparse with dim = 2.
 	void add_complex_data_2() {
+
+		lodClutterThinning.set_fuzzy_radius(0.6);
+		lodClutterThinning.set_param_1(3.0);
 
 		pp_complex[0]  = Point_2(1.50, 0.50); bd_complex[0].push_back(0);
 
@@ -398,8 +404,9 @@ public:
 TEST_F(LOD_ClutterProcessorTest, Compiles) {
 
 	// Empty test.
-}
+} */
 
+/*
 TEST_F(LOD_ClutterProcessorTest, RunsNaiveThinning) {
 
 	lodClutterProcessor.set_number_of_neighbours(3);
@@ -409,8 +416,9 @@ TEST_F(LOD_ClutterProcessorTest, RunsNaiveThinning) {
 
 	const auto number_of_processed_points = lodClutterProcessor.apply_thinning(bd_thinning_naive, pp_thinning_naive, in_stub);
 	ASSERT_THAT(number_of_processed_points, Eq(24));
-}
+} */
 
+/*
 TEST_F(LOD_ClutterProcessorTest, RunsGridSimplifyWithCellLengthOne) {
 
 	lodClutterProcessor.set_grid_cell_length(1.0);
@@ -449,6 +457,6 @@ TEST_F(LOD_ClutterProcessorTest, RunsComplexThinningTest) {
 
 TEST_F(LOD_ClutterProcessorTest, RunsComplexThinning) {
 
-	const auto number_of_processed_points = lodClutterProcessor.apply_thinning(bd_complex, pp_complex, in_complex);
+	const auto number_of_processed_points = lodClutterThinning.process(bd_complex, pp_complex, in_complex);
 	ASSERT_THAT(number_of_processed_points, Eq(-1));
 }

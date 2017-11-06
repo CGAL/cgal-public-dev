@@ -8,6 +8,7 @@
 #include <iostream>
 #include <cmath>
 #include <unordered_set>
+#include <vector>
 
 // Boost includes.
 #include <boost/tuple/tuple.hpp>
@@ -470,6 +471,90 @@ namespace CGAL {
 
 				// save("segments", ".obj", default_path);
 				save(name, ".obj");
+			}
+
+			template<class Projected_points>
+			void save_dimensions_as_ply(const std::string &name, const Projected_points &projected, const std::vector<size_t> &dimensions, const std::string & /* default_path */) {
+				
+				clear(); 
+				out << 
+				"ply\n"               	 << 
+				"format ascii 1.0\n"     << 
+				"element vertex "        << projected.size() << "\n" << 
+				"property double x\n"    << 
+				"property double y\n"    << 
+				"property double z\n" 	 <<
+				"property uchar red\n" 	 <<
+				"property uchar green\n" <<
+				"property uchar blue\n"  <<
+				"end_header\n";
+
+				assert(projected.size() == dimensions.size()); 
+				size_t count = 0;
+
+				for (typename Projected_points::const_iterator pit = projected.begin(); pit != projected.end(); ++pit, ++count)
+					out << (*pit).second << " " << 0 << " " << get_dimension_color(dimensions[count]) << std::endl;
+
+				save(name, ".ply");
+			}
+
+			CGAL::Color get_dimension_color(const size_t dimension) {
+				switch (dimension) {
+
+					case 0:
+						return CGAL::Color(255, 0, 0);
+					case 1:
+						return CGAL::Color(0, 255, 0);
+					case 2:
+						return CGAL::Color(0, 0, 255);
+
+					default:
+						return CGAL::Color(105, 105, 105);
+				}
+			}
+
+			template<class Projected_points>
+			void save_num_clusters_as_ply(const std::string &name, const Projected_points &projected, const std::vector<size_t> &num_clusters, const std::string & /* default_path */) {
+				
+				clear(); 
+				out << 
+				"ply\n"               	 << 
+				"format ascii 1.0\n"     << 
+				"element vertex "        << projected.size() << "\n" << 
+				"property double x\n"    << 
+				"property double y\n"    << 
+				"property double z\n" 	 <<
+				"property uchar red\n" 	 <<
+				"property uchar green\n" <<
+				"property uchar blue\n"  <<
+				"end_header\n";
+
+				assert(projected.size() == num_clusters.size());
+				size_t count = 0;
+
+				for (typename Projected_points::const_iterator pit = projected.begin(); pit != projected.end(); ++pit, ++count)
+					out << (*pit).second << " " << 0 << " " << get_cluster_color(num_clusters[count]) << std::endl;
+
+				save(name, ".ply");
+			}
+
+			CGAL::Color get_cluster_color(const size_t num_clusters) {
+				switch (num_clusters) {
+
+					case 1:
+						return CGAL::Color( 30, 144, 255);
+					case 2:
+						return CGAL::Color(220,  20,  60);
+					case 3:
+						return CGAL::Color(128,   0, 128);
+					case 4:
+						return CGAL::Color(128,   0,   0);
+					case 5:
+						return CGAL::Color(  0,   0,   0);
+
+					default:
+						return CGAL::Color(105, 105, 105);
+				}
 			}
 
 			template<class Projected_points>
