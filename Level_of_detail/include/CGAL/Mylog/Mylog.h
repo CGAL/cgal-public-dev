@@ -541,20 +541,78 @@ namespace CGAL {
 			CGAL::Color get_cluster_color(const size_t num_clusters) {
 				switch (num_clusters) {
 
+					case 0:
+						return CGAL::Color(  0, 255,   0); // green
 					case 1:
-						return CGAL::Color( 30, 144, 255);
+						return CGAL::Color( 30, 144, 255); // light blue
 					case 2:
-						return CGAL::Color(220,  20,  60);
+						return CGAL::Color(220,  20,  60); // light red
 					case 3:
-						return CGAL::Color(128,   0, 128);
+						return CGAL::Color(128,   0,   0); // dark red
 					case 4:
-						return CGAL::Color(128,   0,   0);
+						return CGAL::Color(128,   0, 128); // purple
 					case 5:
-						return CGAL::Color(  0,   0,   0);
+						return CGAL::Color(  0,   0,   0); // black
 
 					default:
 						return CGAL::Color(105, 105, 105);
 				}
+			}
+
+			template<class Projected_points>
+			void draw_clusters(const std::string &name, const std::vector<Projected_points> &clusters) {
+
+				size_t total_size = 0;
+				for (size_t i = 0; i < clusters.size(); ++i) total_size += clusters[i].size();
+
+				clear();
+				out << 
+				"ply\n"               	 << 
+				"format ascii 1.0\n"     << 
+				"element vertex "        << total_size << "\n" << 
+				"property double x\n"    << 
+				"property double y\n"    << 
+				"property double z\n" 	 <<
+				"property uchar red\n" 	 <<
+				"property uchar green\n" <<
+				"property uchar blue\n"  <<
+				"end_header\n";
+
+				for (size_t i = 0; i < clusters.size(); ++i) {
+					for (typename Projected_points::const_iterator pit = clusters[i].begin(); pit != clusters[i].end(); ++pit)
+						out << (*pit).second << " " << 0 << " " << get_cluster_color(i) << std::endl;
+				}
+
+				save(name, ".ply");
+			}
+
+			template<class FT, class Point>
+			void plot_2d(const std::string &name, const std::vector<FT> &data) {
+
+				clear();
+
+		        // Compute bounding box.
+		        double minbX, minbY, maxbX, maxbY;
+		        bounding_box(data, minbX, minbY, maxbX, maxbY);
+
+		        // Compute scale.
+		        double scale = 1.0;
+		        if (std::sqrt((maxbX - minbX) * (maxbX - minbX) + (maxbY - minbY) * (maxbY - minbY)) < 10.0 && scale == 1.0) scale *= 1000.0;
+
+		        // Set header.
+		        set_header(minbX * scale, minbY * scale, maxbX * scale, maxbY * scale);
+
+		        // Start private namespace.
+		        out << "0 dict begin gsave\n\n";
+
+		        // Save plot.
+		        draw_plot<FT, Point>(data, scale);
+
+		        // Finish private namespace.
+		        out << "grestore end\n\n";
+		        out << "%%EOF\n";
+
+		        save(name, ".eps");
 			}
 
 			template<class Projected_points>
@@ -607,6 +665,32 @@ namespace CGAL {
 			std::stringstream out;
 
 		private:
+			template<class FT>
+			void bounding_box(const std::vector<FT> &data, double &minbX, double &minbY, double &maxbX, double &maxbY) const {
+
+				const double big_value = 100000.0;
+
+		        minbX =  big_value, minbY =  big_value;
+		        maxbX = -big_value, maxbY = -big_value;
+
+		        for (size_t i = 0; i < data.size(); ++i) {
+
+		        	const double x = static_cast<double>(i);
+		        	const double y = static_cast<double>(data[i]);
+
+		        	minbX = std::min(minbX, x);
+		        	minbY = std::min(minbY, y);
+
+		        	maxbX = std::max(maxbX, x);
+		        	maxbY = std::max(maxbY, y);
+		        }
+
+		        const double add = std::sqrt((maxbY - minbY) * (maxbY - minbY) + (maxbX - minbX) * (maxbX - minbX)) / 10.0;
+		        
+		        minbX -= add; minbY -= add;
+		        maxbX += add; maxbY += add;
+			}
+
 			template<class CDT>
 			void bounding_box(const CDT &cdt, double &minbX, double &minbY, double &maxbX, double &maxbY) const {
 
@@ -745,6 +829,66 @@ namespace CGAL {
     			out << "0 0 0 setgray\n";
     			out << "2 setlinewidth\n";
     			out << "stroke\n\n";
+    		}
+
+    		template<class FT, class Point>
+    		void draw_plot(const std::vector<FT> &data, const double scale) {
+
+    			double x1, y1, x2, y2, miny = 100000000.0;
+    			for (size_t i = 0; i < data.size() - 1; ++i) {
+
+    				x1 = static_cast<double>(i); 
+    				y1 = static_cast<double>(data[i]);
+
+    				x2 = static_cast<double>(i + 1); 
+    				y2 = static_cast<double>(data[i + 1]);
+
+    				out << x1 * scale << " " << y1 * scale << " moveto\n";
+    				out << x2 * scale << " " << y2 * scale << " lineto\n";
+
+    				miny = std::min(miny, y1);
+    				miny = std::min(miny, y2);
+    			}
+
+    			out << "1 0 0 setrgbcolor\n";
+    			out << "10 setlinewidth\n";
+    			out << "stroke\n\n";
+
+    			for (size_t i = 0; i < data.size() - 1; ++i) {
+
+    				x1 = static_cast<double>(i); 
+    				x2 = static_cast<double>(i + 1); 
+
+					out << x1 * scale << " " << miny * scale << " moveto\n";
+    				out << x2 * scale << " " << miny * scale << " lineto\n";  				
+    			}
+
+    			out << "0 0 0 setgray\n";
+    			out << "10 setlinewidth\n";
+    			out << "stroke\n\n";
+
+    			for (size_t i = 0; i < data.size() - 1; ++i) {
+
+    				y1 = static_cast<double>(data[i]); 
+    				y2 = static_cast<double>(data[i + 1]); 
+
+					out << 0.0 * scale << " " << y1 * scale << " moveto\n";
+    				out << 0.0 * scale << " " << y2 * scale << " lineto\n";  				
+    			}
+
+    			out << "0 0 0 setgray\n";
+    			out << "10 setlinewidth\n";
+    			out << "stroke\n\n";
+
+    			FT x, y; Point p;
+    			for (size_t i = 0; i < data.size(); ++i) {
+    				
+    				x = static_cast<FT>(i);
+    				y = static_cast<FT>(data[i]);
+
+    				p = Point(x, y);
+    				draw_disc(p, scale);
+    			}
     		}
 		};
 	}

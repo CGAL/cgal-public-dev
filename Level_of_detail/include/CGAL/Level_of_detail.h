@@ -21,6 +21,8 @@
 #include <CGAL/Graphcut/Level_of_detail_graphcut.h>
 #include <CGAL/Reconstruction/Level_of_detail_reconstruction.h>
 #include <CGAL/Buildings/Level_of_detail_buildings.h>
+#include <CGAL/Clutter/Level_of_detail_grid_simplify.h>
+#include <CGAL/Clutter/Level_of_detail_thinning.h>
 #include <CGAL/Clutter/Level_of_detail_clutter_processor.h>
 
 #endif // CGAL_LEVEL_OF_DETAIL_H

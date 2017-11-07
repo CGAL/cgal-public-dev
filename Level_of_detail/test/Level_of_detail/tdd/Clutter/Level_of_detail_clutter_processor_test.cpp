@@ -180,6 +180,7 @@ public:
 
 	void create_complex_data() {
 
+		lodClutterThinning.set_fuzzy_radius(0.6);
 		lodClutterThinning.set_thinning_type(CGAL::LOD::Thinning_type::COMPLEX);
 		lodClutterThinning.set_fitter_type(CGAL::LOD::Thinning_fitter_type::LINE);
 		lodClutterThinning.set_neighbour_search_type(CGAL::LOD::Neighbour_search_type::CIRCLE);
@@ -190,20 +191,20 @@ public:
 		bd_complex[0] = idxs;
 
 		// add_complex_data_1();
-		add_complex_data_2();
-		// add_complex_data_3();
+		// add_complex_data_2();
+		   add_complex_data_3();
 		// add_complex_data_4();
 		// add_complex_data_5();
 		// add_complex_data_6();
 
-		Log log; 
-		log.export_projected_points_as_xyz("tmp/complex", pp_complex, "unused path");
+		// Log log; 
+		// log.export_projected_points_as_xyz("tmp/complex", pp_complex, "unused path");
 	}
 
 	// Dense with dim = 0.
 	void add_complex_data_1() {
 
-		lodClutterThinning.set_fuzzy_radius(0.5);
+		lodClutterThinning.set_dim_0_max(0.05);
 
 		pp_complex[0] = Point_2(0.50, 0.50); bd_complex[0].push_back(0);
 
@@ -225,8 +226,8 @@ public:
 	// Sparse with dim = 2.
 	void add_complex_data_2() {
 
-		lodClutterThinning.set_fuzzy_radius(0.6);
-		lodClutterThinning.set_param_1(3.0);
+		lodClutterThinning.set_dim_2_sparsity_num_cells(6.0);
+		lodClutterThinning.set_dim_2_sparsity_max(0.25);
 
 		pp_complex[0]  = Point_2(1.50, 0.50); bd_complex[0].push_back(0);
 

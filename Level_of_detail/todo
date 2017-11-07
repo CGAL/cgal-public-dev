@@ -119,5 +119,5 @@ Ideas:
 
 
 // Iteration 7:
-1. 
+1. Can we use an average spacing instead of sparsity test with grid simplify when cheking for dimension 2? It seems to work better.
 
