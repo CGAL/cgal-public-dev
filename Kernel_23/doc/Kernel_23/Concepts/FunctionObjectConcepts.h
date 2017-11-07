@@ -8600,8 +8600,9 @@ public:
   /// @{
 
   /*!
-    returns `true`, iff the three points `p`, `q` 
-    and `r` form a left turn. 
+    returns `true`, iff the three points `p`, `q`, and `r` form a left turn,
+    that is iff `r` lies to the left of the directed line defined by `p` and `q`.
+    Note that if `p`, `q`, and `r` are collinear, `false` is returned.
   */ 
   bool operator()(const Kernel::Point_2&p, 
                   const Kernel::Point_2&q, 
