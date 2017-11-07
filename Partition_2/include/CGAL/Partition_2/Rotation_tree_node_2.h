@@ -143,7 +143,7 @@ private:
    Node_ref _rightmost_child;
 };
 
-#ifdef CGAL_PARTITION_DEBUG
+#ifdef CGAL_PARTITION_DEBUG_TREE
 template <class Traits>
 std::ostream& operator<<(std::ostream& os,
                          const Rotation_tree_node_2<Traits>& node)
@@ -163,7 +163,7 @@ std::ostream& operator<<(std::ostream& os,
          << " " << (*node.rightmost_child()).y();
    return os;
 }
-#endif // CGAL_PARTITION_DEBUG
+#endif // CGAL_PARTITION_DEBUG_TREE
 
 }
 

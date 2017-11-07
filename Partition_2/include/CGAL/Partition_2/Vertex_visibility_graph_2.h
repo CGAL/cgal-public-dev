@@ -60,7 +60,7 @@
 
 #include <CGAL/license/Partition_2.h>
 
-
+#include <CGAL/assertions.h>
 #include <CGAL/Segment_2.h>
 #include <CGAL/Partition_2/Rotation_tree_2.h>
 #include <CGAL/Partition_2/Indirect_less_xy_2.h>
@@ -153,16 +153,22 @@ public:
    {
       Polygon         polygon(first,beyond);
       Tree            tree(polygon.begin(), polygon.end());
-   
+#ifdef CGAL_VISIBILITY_GRAPH_DEBUG
+      std::cout << "Rotation tree:" << std::endl << tree << std::endl;
+#endif
+
       Vertex_map  vertex_map;
       initialize_vertex_map(polygon, vertex_map);
-   
+#ifdef CGAL_VISIBILITY_GRAPH_DEBUG
+      print_vertex_map(vertex_map, polygon);
+#endif
+
       // NOTE:  use the std::list as the basis here because otherwise the basis
       //        is a deque, which is buggy under MSVC++
       std::stack<Tree_iterator, std::list<Tree_iterator> > stack;
       // push on p_0, the rightmost point
-      stack.push(tree.rightmost_point_ref());   
-   
+      stack.push(tree.rightmost_point_ref());
+
       Tree_iterator p, p_r, q;
       Tree_iterator z;
 
@@ -171,24 +177,24 @@ public:
          p = stack.top();
 #ifdef CGAL_VISIBILITY_GRAPH_DEBUG
          if (p != tree.end())
-            std::cout << "p = " << *p << std::endl;
+            std::cout << "stack top: p = " << *p << std::endl;
          else
-            std::cout << "p == NULL" << std::endl;
+            std::cout << "stack top: p == NULL" << std::endl;
 #endif
          stack.pop();
          p_r = tree.right_sibling(p);
 #ifdef CGAL_VISIBILITY_GRAPH_DEBUG
          if (p_r != tree.end())
-            std::cout << "p_r = " << *p_r << std::endl;
+            std::cout << "p (" << *p << ")'s right sibling: p_r = " << *p_r << std::endl;
          else
-            std::cout << "p_r == NULL" << std::endl;
+            std::cout << "p (" << *p << ")'s right sibling: p_r == NULL" << std::endl;
 #endif
          q = tree.parent(p);
 #ifdef CGAL_VISIBILITY_GRAPH_DEBUG
          if (q != tree.end())
-            std::cout << "q = " << *q << std::endl;
+            std::cout << "p (" << *p << ")'s parent: q = " << *q << std::endl;
          else
-            std::cout << "q == NULL" << std::endl;
+            std::cout << "p (" << *p << ")'s parent: q == NULL" << std::endl;
 #endif
          if (!tree.parent_is_p_minus_infinity(p))
          {
@@ -200,17 +206,16 @@ public:
          z = tree.left_sibling(q);
 #ifdef CGAL_VISIBILITY_GRAPH_DEBUG
          if (z != tree.end())
-            std::cout << "z = " << *z << std::endl;
+            std::cout << "q (" << *q << ")'s left sibling: z = " << *z << std::endl;
          else
-            std::cout << "z == NULL" << std::endl;
-         std::cout << "erasing " << *p << " from tree " << std::endl;
+            std::cout << "q (" << *q << ")'s left sibling: z == NULL" << std::endl;
+         std::cout << "erasing " << *p << " from tree" << std::endl;
 #endif
          tree.erase(p);
          if ((z == tree.end()) || !left_turn_to_parent(p,z,tree))
          {
 #ifdef CGAL_VISIBILITY_GRAPH_DEBUG
-            std::cout << "making " << *p << " the left sibling of " << *q
-                      << std::endl;
+            std::cout << "making " << *p << " the left sibling of " << *q << std::endl;
 #endif
             tree.set_left_sibling(p,q);
          }
@@ -225,15 +230,14 @@ public:
             {
                z = tree.rightmost_child(z);
 #ifdef CGAL_VISIBILITY_GRAPH_DEBUG
-               std::cout << "    z = " << *z << std::endl;
+               std::cout << "    rightmost_child: z = " << *z << std::endl;
 #endif
             }
             tree.set_rightmost_child(p,z);
             if (!stack.empty() && z == stack.top())
             {
 #ifdef CGAL_VISIBILITY_GRAPH_DEBUG
-               std::cout << "popping " << *z << " from top of stack "
-                         << std::endl;
+               std::cout << "popping " << *z << " from top of stack " << std::endl;
 #endif
                z = stack.top();
                stack.pop();
@@ -250,11 +254,12 @@ public:
 #endif
             stack.push(p);
          }
-         if (p_r != tree.end()) stack.push(p_r);
+
+         if (p_r != tree.end())
+           stack.push(p_r);
       }
 //      print_edge_set(edges);
    }
-
 
    void clear()
    {
@@ -283,6 +288,9 @@ public:
 
    void insert_edge(const Point_pair& edge)
    {
+#ifdef CGAL_VISIBILITY_GRAPH_DEBUG
+      std::cout << "Insert edge: (" << edge.first << ") -- (" << edge.second << ")" << std::endl;
+#endif
       if (less_xy_2(edge.first,edge.second))
          edges.insert(edge);
       else
@@ -330,12 +338,15 @@ private:
    {
       typedef typename Vertex_map::const_iterator    const_iterator;
 
+      std::cout << "[] Vertex map of size: " << vertex_map.size() << std::endl;
       for (const_iterator it = vertex_map.begin(); it != vertex_map.end();it++)
       {
-         if ((*it).second.second != polygon.end())
-         std::cout << (*it).first << " sees " << *((*it).second.second) 
-                   << std::endl;
+        if ((*it).second.second != polygon.end())
+        {
+          std::cout << (*it).first << " sees " << *((*it).second.second) << '\n';
+        }
       }
+      std::cout << std::endl;
    }
 
    template<class E>
@@ -344,7 +355,7 @@ private:
       typedef typename E::iterator   iterator;
       for (iterator it = edges.begin(); it != edges.end(); it++)
       {
-         std::cout << (*it).first << " " << (*it).second << std::endl;
+         std::cout << "(" << (*it).first << ") -- (" << (*it).second << ")" << std::endl;
       }
    }
 

@@ -91,12 +91,25 @@ Vertex_visibility_graph_2<Traits>::initialize_vertex_map(
    while (!iterator_list.empty())
    {
       event_it = iterator_list.front();
-#ifdef CGAL_VISIBILITY_GRAPH_DEBUG
-      std::cout << "event = " << *event_it << std::endl;
-#endif
-      next_endpt = event_it; next_endpt++;
-      if (next_endpt == polygon.end()) next_endpt = polygon.begin();
+      next_endpt = event_it;
+      next_endpt++;
+      if (next_endpt == polygon.end())
+        next_endpt = polygon.begin();
+
       iterator_list.pop_front();
+
+#ifdef CGAL_VISIBILITY_GRAPH_DEBUG
+      std::cout << "¤ Event: (" << *event_it << ") -- "
+                << "(" << *next_endpt << ")" << std::endl;
+#endif
+
+#ifdef CGAL_VISIBILITY_GRAPH_DEBUG
+      std::cout << "Ordered edges: " << ordered_edges.size() << std::endl;
+      Ordered_edge_set_iterator oeit = ordered_edges.begin();
+      for(; oeit!=ordered_edges.end(); ++oeit)
+        std::cout << "  - source: (" << oeit->first << ") "
+                  << "target: (" << oeit->second << ")" << std::endl;
+#endif
 
       // the first edge that is not less than (below) this edge, so ...
       edge_it = ordered_edges.lower_bound(Point_pair(*event_it,*next_endpt));
@@ -107,22 +120,26 @@ Vertex_visibility_graph_2<Traits>::initialize_vertex_map(
       {
          edge_it--; // ...the first visible edge is the previous edge
 
+#ifdef CGAL_VISIBILITY_GRAPH_DEBUG
+         std::cout << "Edge: (" << edge_it->first << ") -- (" << edge_it->second
+                   << ") is below the event edge" << std::endl;
+#endif
+
          // find the event point in the vertex map
          vm_it = vertex_map.find(*event_it);
 
          // Find the entry for the edge's first endpoint in the vertex map.
          vis_it = vertex_map.find((*edge_it).first);
 #ifdef CGAL_VISIBILITY_GRAPH_DEBUG
-         std::cout << "the potential visibility point is " << (*vis_it).first
-                   << std::endl;
+         std::cout << "the potential visibility point is (" << (*vis_it).first << ")" << std::endl;
 #endif
-         // an edge that ends at this event point cannot be below this
-         // endpoint
+
+         // an edge that ends at this event point cannot be below this endpoint
          if (!is_next_to(polygon, (*vis_it).second.first, event_it))
          {
 #ifdef CGAL_VISIBILITY_GRAPH_DEBUG
-            std::cout << "the edge beginning at  " << *(*vis_it).second.first
-                 << " is visible" << std::endl;
+            std::cout << "#1 the edge beginning at (" << *(*vis_it).second.first
+                      << ") is visible" << std::endl;
 #endif
             // set the visibility iterator for this point to the iterator
             // corresponding to the edge endpoint that is to the left of
@@ -132,10 +149,20 @@ Vertex_visibility_graph_2<Traits>::initialize_vertex_map(
                Polygon_const_iterator next_vtx = (*vis_it).second.first;
                next_vtx++;
                if (next_vtx == polygon.end()) next_vtx = polygon.begin();
+
+#ifdef CGAL_VISIBILITY_GRAPH_DEBUG
+               std::cout << "#1 (" << (*vm_it).first << ") sees (" << *next_vtx << ")" << std::endl;
+#endif
                (*vm_it).second.second = next_vtx;
             }
             else
+            {
+#ifdef CGAL_VISIBILITY_GRAPH_DEBUG
+               std::cout << "#2 (" << (*vm_it).first << ") sees ("
+                         << *((*vis_it).second.first) << ")" << std::endl;
+#endif
                (*vm_it).second.second = (*vis_it).second.first;
+            }
          }
          // skip over the edge that ends at this event point. If there
          // is another edge above this event's edge then it is visible.
@@ -145,7 +172,7 @@ Vertex_visibility_graph_2<Traits>::initialize_vertex_map(
          {
             vis_it = vertex_map.find((*edge_it).first);
 #ifdef CGAL_VISIBILITY_GRAPH_DEBUG
-            std::cout << "the edge beginning at  " << *(*vis_it).second.first
+            std::cout << "#2 the edge beginning at  " << *(*vis_it).second.first
                       << " is visible" << std::endl;
 #endif
             // set the visibility iterator for this point to the iterator
@@ -156,58 +183,70 @@ Vertex_visibility_graph_2<Traits>::initialize_vertex_map(
                 Polygon_const_iterator next_vtx = (*vis_it).second.first;
                 next_vtx++;
                 if (next_vtx == polygon.end()) next_vtx = polygon.begin();
+
+#ifdef CGAL_VISIBILITY_GRAPH_DEBUG
+               std::cout << "#3 (" << (*vm_it).first << ") sees (" << *next_vtx << ")" << std::endl;
+#endif
                 (*vm_it).second.second = next_vtx;
             }
             else
+            {
+#ifdef CGAL_VISIBILITY_GRAPH_DEBUG
+               std::cout << "#4 (" << (*vm_it).first << ") sees ("
+                         << *((*vis_it).second.first) << ")" << std::endl;
+#endif
                 (*vm_it).second.second = (*vis_it).second.first;
+            }
          }
 #ifdef CGAL_VISIBILITY_GRAPH_DEBUG
          else
-            std::cout << "nothing is visible " << std::endl;
+            std::cout << "nothing is visible" << std::endl;
 #endif
       }
 #ifdef CGAL_VISIBILITY_GRAPH_DEBUG
       else
-         std::cout << "nothing is visible " << std::endl;
+         std::cout << "nothing is visible" << std::endl;
 #endif
       prev_endpt = event_it;
       if (prev_endpt == polygon.begin())
          prev_endpt = polygon.end();
       prev_endpt--;
+
       // if the other endpoint of the next edge is to the right of the
       // sweep line, then insert this edge
       if (less_xy_2(*event_it, *next_endpt))
       {
          ordered_edges.insert(Point_pair(*event_it,*next_endpt));
 #ifdef CGAL_VISIBILITY_GRAPH_DEBUG
-             std::cout << "inserting edge from "
-                  << *event_it << " to " << *next_endpt << std::endl;
+             std::cout << "inserting next edge from ("
+                  << *event_it << ") to (" << *next_endpt << ")" << std::endl;
 #endif
       }
       else // other endpoint not to the right, so erase it
       {
          ordered_edges.erase(Point_pair(*event_it,*next_endpt));
 #ifdef CGAL_VISIBILITY_GRAPH_DEBUG
-         std::cout << "erasing edge from "
-                   << *event_it << " to " << *next_endpt << std::endl;
+         std::cout << "erasing next edge from ("
+                   << *event_it << ") to (" << *next_endpt << ")" << std::endl;
 #endif
       }
+
       // if the other endpoint of the previous edge is to the right of the
       // sweep line, insert it
       if (less_xy_2(*event_it, *prev_endpt))
       {
          ordered_edges.insert(Point_pair(*prev_endpt,*event_it));
 #ifdef CGAL_VISIBILITY_GRAPH_DEBUG
-         std::cout << "inserting edge from "
-              << *prev_endpt << " to " << *event_it << std::endl;
+         std::cout << "inserting previous edge from ("
+                   << *prev_endpt << ") to (" << *event_it << ")" << std::endl;
 #endif
        }
        else // other endpoint is not to the right, so erase it
        {
           ordered_edges.erase(Point_pair(*prev_endpt,*event_it));
 #ifdef CGAL_VISIBILITY_GRAPH_DEBUG
-          std::cout << "erasing edge from "
-                    << *prev_endpt << " to " << *event_it << std::endl;
+          std::cout << "erasing previous edge from ("
+                    << *prev_endpt << ") to (" << *event_it << ")" << std::endl;
 #endif
        }
    }
@@ -302,10 +341,11 @@ bool Vertex_visibility_graph_2<Traits>::point_is_visible(
    prev_vis_endpt--;
 
 #ifdef CGAL_VISIBILITY_GRAPH_DEBUG
-     std::cout << "looker is " << (*looker).first << " point to see is "
-          << *point_to_see;
-     std::cout << " visibility points are prev: " << *prev_vis_endpt
-          << " vis: " << *vis_endpt << " next: " << *next_vis_endpt << std::endl;
+     std::cout << "[] point_is_visible():" << std::endl;
+     std::cout << "  looker: (" << (*looker).first << ") point_to_see: ("
+               << *point_to_see << ")" << std::endl;
+     std::cout << "  visibility points are prev: (" << *prev_vis_endpt << ") vis: ("
+               << *vis_endpt << ") next: (" << *next_vis_endpt << ")" << std::endl;
 #endif
 
     // if the point to see is the current visibility point or if the looker
@@ -313,10 +353,9 @@ bool Vertex_visibility_graph_2<Traits>::point_is_visible(
     // to each other since it is known at this point that the edge from
     // the looker to the point to see goes through the interior of the polygon
     if ((*looker).second.second == point_to_see)
-
     {
 #ifdef CGAL_VISIBILITY_GRAPH_DEBUG
-       std::cout << "looker sees point" << std::endl;
+       std::cout << "looker sees point (vis_endpt)" << std::endl;
 #endif
        return true;
     }
@@ -431,7 +470,8 @@ void Vertex_visibility_graph_2<Traits>::update_visibility(
                                                       int are_adjacent)
 {
 #ifdef CGAL_VISIBILITY_GRAPH_DEBUG
-      std::cout << "updating visibility:  " << std::endl;
+      std::cout << "[] Updating visibility with p: ("
+                << p_it->first << ") q: (" << q_it->first << ")" << std::endl;
 #endif
    Polygon_const_iterator prev_q;
    Polygon_const_iterator turn_q;
@@ -453,8 +493,7 @@ void Vertex_visibility_graph_2<Traits>::update_visibility(
       turn_q = prev_q;
 
 #ifdef CGAL_VISIBILITY_GRAPH_DEBUG
-   std::cout << "prev_q = " << *prev_q  << " turn_q = " << *turn_q
-             << std::endl;
+   std::cout << "prev_q: (" << *prev_q  << ") turn_q: (" << *turn_q << ")" << std::endl;
 #endif
 
    if (are_adjacent)
@@ -471,8 +510,7 @@ void Vertex_visibility_graph_2<Traits>::update_visibility(
       {
          (*p_it).second.second = (*q_it).second.first;  // p sees q
 #ifdef CGAL_VISIBILITY_GRAPH_DEBUG
-         std::cout << "adjacent and NOT right turn; p now sees q "
-                   << std::endl;
+         std::cout << "adjacent and NOT right turn; p now sees q" << std::endl;
 #endif
       }
    }
@@ -497,7 +535,7 @@ void Vertex_visibility_graph_2<Traits>::update_visibility(
          (*p_it).second.second = (*q_it).second.first; // p sees q
 #ifdef CGAL_VISIBILITY_GRAPH_DEBUG
          std::cout << "p sees q's segment, q sees nothing and not right to "
-                   << " next point; p sees q " << std::endl;
+                   << "next point; p sees q" << std::endl;
 #endif
       }
       else
@@ -589,7 +627,8 @@ void Vertex_visibility_graph_2<Traits>::update_collinear_visibility(
                                                     const Polygon& polygon)
 {
 #ifdef CGAL_VISIBILITY_GRAPH_DEBUG
-   std::cout << "updating collinear visibility" << std::endl;
+   std::cout << "Updating collinear visibility "
+             << "p: (" << (*p_it).first << ") q: (" << (*q_it).first << ")" << std::endl;
 #endif
    Polygon_const_iterator prev_q;
    if ((*q_it).second.first == polygon.begin())
@@ -603,23 +642,34 @@ void Vertex_visibility_graph_2<Traits>::update_collinear_visibility(
    if (next_q == polygon.end()) next_q = polygon.begin();
 
 #ifdef CGAL_VISIBILITY_GRAPH_DEBUG
-   std::cout << "q's neighbors are: prev " << *prev_q
-             << " q " << (*q_it).first
-             << " next " << *next_q << std::endl;
+   std::cout << "Neighborhood: prev_q " << *prev_q
+             << " q: " << (*q_it).first
+             << " next_q: " << *next_q << std::endl;
 #endif
 
    // if the point before q is above the line containing p and q, make
    // this p's visibility point
    if (left_turn_2((*p_it).first, (*q_it).first, *prev_q))
    {
-      if (point_is_visible(polygon, prev_q, p_it))
+#ifdef CGAL_VISIBILITY_GRAPH_DEBUG
+   std::cout << *prev_q << " is above the line "
+             << "p: (" << (*p_it).first << ") q: (" << (*q_it).first << ")" << std::endl;
+#endif
+
+     if (point_is_visible(polygon, prev_q, p_it))
          (*p_it).second.second = prev_q;
    }
+
    // check the same thing for the point after q and, if it is still visible
    // (even after possibly updating the visibility in the above if) the
    // update again.
    if (left_turn_2((*p_it).first, (*q_it).first, *next_q))
    {
+#ifdef CGAL_VISIBILITY_GRAPH_DEBUG
+   std::cout << *next_q << " is above the line "
+             << "p: (" << (*p_it).first << ") q: (" << (*q_it).first << ")" << std::endl;
+#endif
+
       if (point_is_visible(polygon, next_q, p_it))
          (*p_it).second.second = next_q;
    }
@@ -644,9 +694,9 @@ void Vertex_visibility_graph_2<Traits>::handle(Tree_iterator p,
    CGAL_assertion (p_it != vertex_map.end());
    CGAL_assertion (q_it != vertex_map.end());
 #ifdef CGAL_VISIBILITY_GRAPH_DEBUG
-   std::cout << "p currently sees : ";
+   std::cout << "p (" << *p << ") currently sees: ";
    if ((*p_it).second.second != polygon.end())
-      std::cout << *((*p_it).second.second) << std::endl;
+      std::cout << "(" << *((*p_it).second.second) << ")" << std::endl;
    else
       std::cout << " NADA" << std::endl;
 #endif
@@ -666,7 +716,7 @@ void Vertex_visibility_graph_2<Traits>::handle(Tree_iterator p,
                                                 (*q_it).second.first);
       bool interior_at_q = diagonal_in_interior(polygon, (*q_it).second.first,
                                                 (*p_it).second.first);
-      // line of site is through the interior of the polygon
+      // line of sight is through the interior of the polygon
       if (interior_at_p && interior_at_q)
       {
 #ifdef CGAL_VISIBILITY_GRAPH_DEBUG
@@ -678,10 +728,10 @@ void Vertex_visibility_graph_2<Traits>::handle(Tree_iterator p,
          // obscures the view.
          if ((*p_it).second.second != polygon.end() &&
              are_strictly_ordered_along_line_2((*p_it).first,
-                                             *(*p_it).second.second,
-                                                (*q_it).first))
+                                               *(*p_it).second.second,
+                                               (*q_it).first))
          {
-            update_collinear_visibility(p_it, q_it, polygon);
+           update_collinear_visibility(p_it, q_it, polygon);
          }
          // p current sees nothing or q is visible to p
          else if ((*p_it).second.second == polygon.end() ||
