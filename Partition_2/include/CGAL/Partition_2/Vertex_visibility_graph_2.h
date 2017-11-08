@@ -145,16 +145,18 @@ public:
      assign_2(Traits().assign_2_object())
    {
        build(first, beyond);
+       CGAL_postcondition(is_valid(first, beyond));
    }
 
    // Pre:  ccw order of points; no repeated points
    template <class ForwardIterator>
    void build(ForwardIterator first, ForwardIterator beyond)
    {
-      Polygon         polygon(first,beyond);
-      Tree            tree(polygon.begin(), polygon.end());
+      Polygon polygon(first,beyond);
+      Tree tree(polygon.begin(), polygon.end());
+      CGAL_assertion(tree.is_valid());
 #ifdef CGAL_VISIBILITY_GRAPH_DEBUG
-      std::cout << "Rotation tree:" << std::endl << tree << std::endl;
+      tree.print();
 #endif
 
       Vertex_map  vertex_map;
@@ -172,12 +174,18 @@ public:
       Tree_iterator p, p_r, q;
       Tree_iterator z;
 
+#ifdef CGAL_VISIBILITY_GRAPH_DEBUG
+      int iteration_counter = 0;
+#endif
+
       while (!stack.empty())
       {
          p = stack.top();
 #ifdef CGAL_VISIBILITY_GRAPH_DEBUG
+         std::cout << "******************************************" << std::endl;
+         std::cout << "Stack processing iteration n°:" << iteration_counter++ << std::endl;
          if (p != tree.end())
-            std::cout << "stack top: p = " << *p << std::endl;
+            std::cout << "stack top: p: (" << *p << ")" << std::endl;
          else
             std::cout << "stack top: p == NULL" << std::endl;
 #endif
@@ -206,7 +214,7 @@ public:
          z = tree.left_sibling(q);
 #ifdef CGAL_VISIBILITY_GRAPH_DEBUG
          if (z != tree.end())
-            std::cout << "q (" << *q << ")'s left sibling: z = " << *z << std::endl;
+            std::cout << "q (" << *q << ")'s left sibling: z = (" << *z << ")" << std::endl;
          else
             std::cout << "q (" << *q << ")'s left sibling: z == NULL" << std::endl;
          std::cout << "erasing " << *p << " from tree" << std::endl;
@@ -215,7 +223,7 @@ public:
          if ((z == tree.end()) || !left_turn_to_parent(p,z,tree))
          {
 #ifdef CGAL_VISIBILITY_GRAPH_DEBUG
-            std::cout << "making " << *p << " the left sibling of " << *q << std::endl;
+            std::cout << "making (" << *p << ") the left sibling of (" << *q << ")" << std::endl;
 #endif
             tree.set_left_sibling(p,q);
          }
@@ -230,7 +238,7 @@ public:
             {
                z = tree.rightmost_child(z);
 #ifdef CGAL_VISIBILITY_GRAPH_DEBUG
-               std::cout << "    rightmost_child: z = " << *z << std::endl;
+               std::cout << " rightmost_child: z = " << *z << std::endl;
 #endif
             }
             tree.set_rightmost_child(p,z);
@@ -257,8 +265,18 @@ public:
 
          if (p_r != tree.end())
            stack.push(p_r);
+
+         CGAL_assertion(tree.is_valid());
+#ifdef CGAL_VISIBILITY_GRAPH_DEBUG
+         std::cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << std::endl;
+         std::cout << "Dealt with this stack entry. Tree is now:" << std::endl;
+         tree.print();
+#endif
+
       }
-//      print_edge_set(edges);
+#ifdef CGAL_VISIBILITY_GRAPH_DEBUG
+      print_edge_set(edges);
+#endif
    }
 
    void clear()

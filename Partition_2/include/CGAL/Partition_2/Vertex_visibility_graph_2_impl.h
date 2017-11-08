@@ -687,8 +687,8 @@ void Vertex_visibility_graph_2<Traits>::handle(Tree_iterator p,
                                         Vertex_map& vertex_map)
 {
 #ifdef CGAL_VISIBILITY_GRAPH_DEBUG
-      std::cout << "Handling edge from " << (*p).x() << " " << (*p).y()
-                << " to " << (*q).x() << " " << (*q).y() << std::endl;
+      std::cout << "Handling edge from (" << (*p).x() << " " << (*p).y()
+                << ") to (" << (*q).x() << " " << (*q).y() << ")" << std::endl;
 #endif
    Vertex_map_iterator p_it = vertex_map.find(*p);
    Vertex_map_iterator q_it = vertex_map.find(*q);
@@ -734,7 +734,7 @@ void Vertex_visibility_graph_2<Traits>::handle(Tree_iterator p,
          {
            update_collinear_visibility(p_it, q_it, polygon);
          }
-         // p current sees nothing or q is visible to p
+         // p currently sees nothing or q is visible to p
          else if ((*p_it).second.second == polygon.end() ||
                   point_is_visible(polygon, (*q_it).second.first, p_it))
          {
@@ -756,9 +756,9 @@ void Vertex_visibility_graph_2<Traits>::handle(Tree_iterator p,
       }
    }
 #ifdef CGAL_VISIBILITY_GRAPH_DEBUG
-   std::cout << "p now sees : ";
+   std::cout << "p (" << *((*p_it).second.first) << ") now sees : ";
    if ((*p_it).second.second != polygon.end())
-      std::cout << *((*p_it).second.second) << std::endl;
+      std::cout << "(" << *((*p_it).second.second) << ")" << std::endl;
    else
       std::cout << " NADA" << std::endl;
 #endif
