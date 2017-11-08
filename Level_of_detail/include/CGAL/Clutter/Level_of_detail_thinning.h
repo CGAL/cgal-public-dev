@@ -205,6 +205,7 @@ namespace CGAL {
 						break;
 
 					case Thinning_type::COMPLEX:
+						assert(!"This method is not finished!");
 						return apply_complex_thinning(boundary_clutter, boundary_clutter_projected, stub, input);
 						break;
 
@@ -389,6 +390,8 @@ namespace CGAL {
 
 			void fit_line_to_points(const Projected_points &neighbours, Line_2 &line) const {
 
+				// You can add here a method to fit line based on the centre of mass of the given points + an average normal.
+
 				const size_t num_points = neighbours.size();
 				std::vector<Point_2> points(num_points);
 
@@ -528,6 +531,7 @@ namespace CGAL {
 				}
 			}
 
+			// The data structure "points" also includes the query point!
 			void handle_with_line_complex(Projected_points & thinned_points, Corners &corners, Debug_data &debug_data,
 			const Projected_point &query, const Projected_points &points, const Normals &normals) const {
 
@@ -551,7 +555,7 @@ namespace CGAL {
 						break;
 
 					default:
-						// assert(!"Wrong dimension in thinning!"); // put back later!
+						assert(!"Wrong dimension in thinning!"); // can be commented out, see also below!
 						break;
 				}
 			}
@@ -571,12 +575,11 @@ namespace CGAL {
 					num_clusters = 1;
 				}
 
-				/*
 				if (is_dimension_2(points, clusters)) {
 
 					dimension    = 2;
 					num_clusters = clusters.size() > 0 ? clusters.size() : 1;
-				} */
+				}
 
 				if (is_dimension_1(points, normals, clusters)) {
 
@@ -585,7 +588,7 @@ namespace CGAL {
 				}
 
 				add_debug_data(debug_data, dimension, num_clusters);
-				// assert(dimension != default_dimension); // put back later!
+				assert(dimension != default_dimension); // can be commented out, see also above!
 
 				return dimension;
 			}
@@ -607,7 +610,8 @@ namespace CGAL {
 				clusters.clear();
 
 				// to be implemented!
-				if (has_multiple_spatial_clusters(points, clusters)) return true;
+				// implement clustering based on normals here or use minshift instead!
+				// dimension_0 and dimension_2 checks can be turned off!
 
 				return false;
 			}
@@ -698,19 +702,12 @@ namespace CGAL {
 				std::vector<Kmeans_result> means(m_max_num_clusters);
 				std::vector<FT> 		   errors(m_max_num_clusters);
 
-				// std::cout << "run: " << std::endl;
 				for (size_t i = 1; i <= m_max_num_clusters; ++i) {	
-					
-					if (points.size() < i) return false; // remove later
+					if (points.size() < i) return false;
 
 					run_kmeans(kmeans_data, i, means[i-1]);
 					errors[i-1] = compute_kmeans_error(kmeans_data, means[i-1], i);
-
-					// Debug -->
-					// auto inds = std::get<1>(means[i-1]);
-					// set_kmeans_clusters(clusters, inds, kmeans_map, points, i); // <--
 				}
-				// std::cout << std::endl;
 
 				const size_t num_clusters_found = get_kmeans_number_of_clusters(errors);
 				assert(num_clusters_found > 0 && num_clusters_found <= m_max_num_clusters);
@@ -721,7 +718,6 @@ namespace CGAL {
 				auto indices = std::get<1>(means[cluster_index]);
 				set_kmeans_clusters(clusters, indices, kmeans_map, points, num_clusters_found);
 
-				// exit(0);
 				return true;
 			}
 
@@ -731,11 +727,14 @@ namespace CGAL {
 
 			size_t get_kmeans_number_of_clusters(const std::vector<FT> &errors) const {
 
+				// Plot errors.
 				// const std::string name = "tmp/plots/errors_" + std::to_string(return_global_index());
 				// Log log; log.plot_2d<FT, Point_2>(name, errors);
 
+				// Add other methods here!
+
 				return get_kmeans_number_of_clusters_min_error(errors);
-			}			
+			}
 
 			size_t get_kmeans_number_of_clusters_min_error(const std::vector<FT> &errors) const {
 
@@ -770,9 +769,9 @@ namespace CGAL {
 				FT curr_error = errors[0];
 
 				for (size_t i = 2; i <= num_errors; ++i) {
-					const FT next_error = errors[i - 1];
+					const FT next_error = errors[i-1];
 					
-					if (next_error > curr_error) return i - 1;
+					if (next_error > curr_error) return i-1;
 					else curr_error = next_error;
 				}
 
@@ -781,14 +780,21 @@ namespace CGAL {
 
 			FT compute_kmeans_error(const Kmeans_data &kmeans_data, const Kmeans_result &means, const size_t num_clusters_expected) const {
 
+				// Add other methods here!
+
+				return compute_kmeans_error_elbow(kmeans_data, means, num_clusters_expected);
+			}
+
+			// Here we basically use elbow method.
+			// http://www.sthda.com/english/articles/29-cluster-validation-essentials/96-determining-the-optimal-number-of-clusters-3-must-know-methods/
+			FT compute_kmeans_error_elbow(const Kmeans_data &kmeans_data, const Kmeans_result &means, const size_t num_clusters_expected) const {
+
 				const FT inertia = dkm::means_inertia(kmeans_data, means, num_clusters_expected);
 
 				const FT tmp = static_cast<FT>(num_clusters_expected);
 				const FT error = inertia * tmp;
 
 				assert(error >= FT(0));
-				// std::cout << "error: " << error << std::endl;
-
 				return error;
 			}
 

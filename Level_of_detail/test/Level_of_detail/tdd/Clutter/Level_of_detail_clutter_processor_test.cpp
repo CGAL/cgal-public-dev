@@ -65,11 +65,12 @@ public:
 		pp_thinning_naive.clear();
 		pp_grid_simplify.clear();
 
-		/* set_thinning_naive_input(); */
-		/* set_grid_simplify_input();  */
+		set_thinning_naive_input();
+		set_grid_simplify_input();
 
+		/*
 		clear_complex_data();
-		set_complex_input();
+		set_complex_input(); */
 	}
 
 
@@ -154,7 +155,7 @@ public:
 	void set_complex_input() {
 
 		/* create_complex_test(); */
-		create_complex_data();
+		/* create_complex_data(); */
 	}
 
 	void create_complex_test() {
@@ -190,9 +191,10 @@ public:
 		std::vector<int> idxs;
 		bd_complex[0] = idxs;
 
+		// Uncomment the one you need!
 		// add_complex_data_1();
 		// add_complex_data_2();
-		   add_complex_data_3();
+		// add_complex_data_3();
 		// add_complex_data_4();
 		// add_complex_data_5();
 		// add_complex_data_6();
@@ -201,7 +203,7 @@ public:
 		// log.export_projected_points_as_xyz("tmp/complex", pp_complex, "unused path");
 	}
 
-	// Dense with dim = 0.
+	// Dense with dim = 0. Tested!
 	void add_complex_data_1() {
 
 		lodClutterThinning.set_dim_0_max(0.05);
@@ -223,7 +225,7 @@ public:
 		in_complex.insert(Point_3(0.49, 0.49, 0.0), normal);
 	}
 
-	// Sparse with dim = 2.
+	// Sparse with dim = 2. Tested!
 	void add_complex_data_2() {
 
 		lodClutterThinning.set_dim_2_sparsity_num_cells(6.0);
@@ -260,7 +262,7 @@ public:
 		in_complex.insert(Point_3(1.83, 0.06, 0.0), normal);
 	}
 
-	// Multiple clusters with dim = 2.
+	// Multiple clusters with dim = 2. Tested!
 	void add_complex_data_3() {
 
 		pp_complex[0]  = Point_2(2.50, 0.50); bd_complex[0].push_back(0);
@@ -300,7 +302,7 @@ public:
 		in_complex.insert(Point_3(2.75, 0.85, 0.0), normal);
 	}
 
-	// Line with dim = 1.
+	// Line with dim = 1. Untested!
 	void add_complex_data_4() {
 
 		pp_complex[0]  = Point_2(0.50, 1.50); bd_complex[0].push_back(0);
@@ -332,7 +334,7 @@ public:
 		in_complex.insert(Point_3(0.95, 1.49, 0.0), normal);
 	}
 
-	// Corner with dim = 1.
+	// Corner with dim = 1. Untested!
 	void add_complex_data_5() {
 
 		// Horizontal line.
@@ -391,7 +393,7 @@ public:
 		in_complex.insert(Point_3(1.25, 1.05, 0.0), normal);
 	}
 
-	// Arch with dim = 1.
+	// Arch with dim = 1. Untested!
 	void add_complex_data_6() {
 
 		assert(!"The arch data set is not yet prepared!");
@@ -401,13 +403,12 @@ public:
 
 // Tests.
 
-/* // Simple tests.
+// Simple tests.
 TEST_F(LOD_ClutterProcessorTest, Compiles) {
 
 	// Empty test.
-} */
+}
 
-/*
 TEST_F(LOD_ClutterProcessorTest, RunsNaiveThinning) {
 
 	lodClutterProcessor.set_number_of_neighbours(3);
@@ -417,9 +418,8 @@ TEST_F(LOD_ClutterProcessorTest, RunsNaiveThinning) {
 
 	const auto number_of_processed_points = lodClutterProcessor.apply_thinning(bd_thinning_naive, pp_thinning_naive, in_stub);
 	ASSERT_THAT(number_of_processed_points, Eq(24));
-} */
+}
 
-/*
 TEST_F(LOD_ClutterProcessorTest, RunsGridSimplifyWithCellLengthOne) {
 
 	lodClutterProcessor.set_grid_cell_length(1.0);
@@ -440,7 +440,7 @@ TEST_F(LOD_ClutterProcessorTest, RunsGridSimplifyWithCellLengthHalf) {
 
 	const auto number_of_removed_points = lodClutterProcessor.apply_grid_simplify(bd_grid_simplify, pp_grid_simplify);
 	ASSERT_THAT(number_of_removed_points, Eq(5));
-} */
+}
 
 
 // Complex tests.
@@ -454,10 +454,10 @@ TEST_F(LOD_ClutterProcessorTest, RunsComplexThinningTest) {
 
 	const auto number_of_processed_points = lodClutterProcessor.apply_thinning(bd_complex_test, pp_complex_test, in_complex_test);
 	ASSERT_THAT(number_of_processed_points, Eq(-1));
-} */
+}
 
 TEST_F(LOD_ClutterProcessorTest, RunsComplexThinning) {
 
 	const auto number_of_processed_points = lodClutterThinning.process(bd_complex, pp_complex, in_complex);
 	ASSERT_THAT(number_of_processed_points, Eq(-1));
-}
+} */

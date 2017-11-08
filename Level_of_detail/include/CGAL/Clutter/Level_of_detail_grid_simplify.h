@@ -26,6 +26,10 @@ namespace CGAL {
 
 	namespace LOD {
 
+		// WARNING: DOES NOT WORK IF LATER I NEED TO REUSE ANY DATA FROM THE ORIGINAL INPUT LIKE NORMALS E.G.
+		// ONLY THE CLOSEST NEW POINT METHOD WILL WORK IF REFACTORED PROPERLY.
+		// IN ALL OTHER CASES I INTRODUCE NEW POINTS, WHICH DO NOT EXIST IN THE ORIGINAL INPUT!
+
 		// Grid based simplification.
 		template<class KernelTraits, class BoundaryData, class ProjectedPoints>
 		class Level_of_detail_grid_simplify {
@@ -266,6 +270,8 @@ namespace CGAL {
 				new_point = boundary_clutter_projected.at(point_idxs[new_point_index]);
 			}
 
+			// WARNING: DOES NOT WORK IF LATER I WILL NEED TO ACCESS ANY DATA FROM THE ORIGINAL INPUT THAT I HAD BEFORE
+			// SIMPLIFICATION LIKE NORMALS OF INPUT POINTS E.G. SINCE THIS LOCAL MAPPING IS NOT VALID FOR THE ORIGINAL INPUT ANYMORE.
 			void set_new_boundary_data(Boundary_data &boundary_clutter, const Projected_points &boundary_clutter_projected) const {
 
 				boundary_clutter.clear();

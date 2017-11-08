@@ -24,5 +24,6 @@
 #include <CGAL/Clutter/Level_of_detail_grid_simplify.h>
 #include <CGAL/Clutter/Level_of_detail_thinning.h>
 #include <CGAL/Clutter/Level_of_detail_clutter_processor.h>
+#include <CGAL/Region_growing_2/Level_of_detail_region_growing_2.h>
 
 #endif // CGAL_LEVEL_OF_DETAIL_H

@@ -58,8 +58,9 @@ namespace CGAL {
 
 			typedef Planes Boundary_data;
 
-			typedef typename Traits::Structuring_2 	Structuring_2;
-			typedef typename Traits::Visibility_2  	Visibility_2;
+			typedef typename Traits::Structuring_2 	  Structuring_2;
+			typedef typename Traits::Visibility_2  	  Visibility_2;
+			typedef typename Traits::Region_growing_2 Region_growing_2;
 			
 			typedef typename Traits::Utils Utils;
 			
@@ -324,6 +325,25 @@ namespace CGAL {
 				std::cout << std::endl;
 			}
 
+			void detecting_2d_lines(
+				Boundary_data &boundary_clutter   , Projected_points &boundary_clutter_projected, 
+				Boundary_data &building_boundaries, Projected_points &building_boundaries_projected, 
+				Log &log, 
+				const Container_3D &input,
+				const size_t exec_step) {
+
+				// Detect lines in 2D using region growing.
+				std::cout << "(" << exec_step << ") detecting 2d lines; ";
+
+				const auto number_of_detected_lines = m_region_growing.process(
+					boundary_clutter   , boundary_clutter_projected,
+					building_boundaries, building_boundaries_projected,
+					input);
+
+				std::cout << "detected lines: " << number_of_detected_lines << std::endl;
+				log.out << "(" << exec_step << ") 2D lines are detected. Number of detected lines: " << number_of_detected_lines << std::endl << std::endl;
+			}
+
 			void cleaning_projected_points(
 				Projected_points &building_boundaries_projected, 
 				Boundary_data &building_boundaries, 
@@ -418,7 +438,7 @@ namespace CGAL {
 				std::cout << "(" << exec_step << ") creating cdt" << std::endl;
 
 				auto number_of_faces = -1;
-				if (m_pipeline_version == Pipeline_version::WITH_SHAPE_DETECTION) {
+				if (m_structuring != nullptr && !m_structuring->is_empty()) {
 					
 					const Structured_points &structured_points = m_structuring_get_all_points ? m_structuring->get_structured_points() : m_structuring->get_segment_end_points();
 					const Structured_labels &structured_labels = m_structuring_get_all_points ? m_structuring->get_structured_labels() : m_structuring->get_segment_end_labels();
@@ -664,78 +684,89 @@ namespace CGAL {
 				projecting(building_boundaries_projected, boundary_clutter_projected, log, base_ground_plane, building_boundaries, boundary_clutter, input, ++exec_step);
 			 	
 
+				// (08) ----------------------------------
+				if (m_pipeline_version == Pipeline_version::WITHOUT_SHAPE_DETECTION) {
+
+					detecting_2d_lines(boundary_clutter, boundary_clutter_projected, building_boundaries, building_boundaries_projected, log, input, ++exec_step);
+
+					// Refactor or remove later!
+					// Lines lines; Segments segments;
+
+					// line_fitting(lines, log, building_boundaries, building_boundaries_projected, ++exec_step);
+					// creating_segments(segments, log, lines, building_boundaries, building_boundaries_projected, ++exec_step);
+					// applying_2d_structuring(log, lines, building_boundaries, building_boundaries_projected, ++exec_step);
+				}
+
+
 				if (m_pipeline_version == Pipeline_version::WITH_SHAPE_DETECTION) {
 
-					// (08) ---------------------------------- not necessary in many cases
+					// (09) ---------------------------------- not necessary in many cases
 					if (m_clean_projected_points) 
 						cleaning_projected_points(building_boundaries_projected, building_boundaries, log, ++exec_step);
 
 
-					// (09) ----------------------------------
+					// (10) ----------------------------------
 					Lines lines; 
 					line_fitting(lines, log, building_boundaries, building_boundaries_projected, ++exec_step);
 
 
-					// (10) ---------------------------------- not used
+					// (11) ---------------------------------- not used
 					Segments segments;
 					creating_segments(segments, log, lines, building_boundaries, building_boundaries_projected, ++exec_step);
 
 
-					// (11) ----------------------------------
+					// (12) ----------------------------------
 					applying_2d_structuring(log, lines, building_boundaries, building_boundaries_projected, ++exec_step);
 				}
 
 
-				// (12) ----------------------------------
+				// (13) ----------------------------------
 				if (m_pipeline_version == Pipeline_version::WITHOUT_SHAPE_DETECTION || 
 				   (m_pipeline_version == Pipeline_version::WITH_SHAPE_DETECTION && m_add_cdt_clutter)) 
 					processing_clutter(boundary_clutter, boundary_clutter_projected, log, input, ++exec_step);
 
 
-				exit(1); // remove!
-
-
-				// (13) ----------------------------------
+				// (14) ----------------------------------
 				CDT cdt;
 				if (m_pipeline_version == Pipeline_version::WITHOUT_SHAPE_DETECTION) m_add_cdt_clutter = true;
 				creating_cdt(cdt, log, boundary_clutter, boundary_clutter_projected, input, ++exec_step);
 
 
-				// (14) ----------------------------------
+				// (15) ----------------------------------
 				Container_2D input_2d; Face_points_map fp_map;
 				converting_3d_to_2d(input_2d, fp_map, log, cdt, input, ++exec_step);
 
 
-				// (15) ----------------------------------
+				// (16) ----------------------------------
 				computing_visibility(cdt, log, input_2d, ++exec_step);
 
 
-				// (16) ----------------------------------
+				// (17) ----------------------------------
 				applying_graph_cut(cdt, log, ++exec_step);
 
 				
 				// From now on we handle each building separately.
 
-				// (17) ----------------------------------				
+				// (18) ----------------------------------				
 				Buildings buildings;
 				splitting_buildings(buildings, cdt, log, ++exec_step);
 
 
-				// (18) ----------------------------------				
+				// (19) ----------------------------------				
 				if (m_use_boundaries || m_building_boundary_type == Building_boundary_type::UNORIENTED) 
 					finding_buildings_boundaries(buildings, log, cdt, ++exec_step);
 
 
-				// (19) ----------------------------------
+				// (20) ----------------------------------
 				fitting_roofs(buildings, log, fitted_ground_plane, fp_map, input, cdt, ++exec_step);
 
 
-				// (20) ----------------------------------
+				// (21) ----------------------------------
 				Ground ground_bbox;
 				creating_lod0(ground_bbox, log, cdt, buildings, input, ++exec_step);
 
 
-				// (21) ----------------------------------	
+				// (22) ----------------------------------	
 				creating_lod1(log, cdt, buildings, ground_bbox, ++exec_step);
 
 
@@ -757,6 +788,7 @@ namespace CGAL {
 			Ground_projector 	 m_ground_projector;
 			Visibility_2 		 m_visibility;
 			Utils 		 		 m_utils;
+			Region_growing_2 	 m_region_growing;
 			
 			Graph_cut m_graph_cut;
 			Lods m_lods;
@@ -1083,7 +1115,6 @@ namespace CGAL {
 			}
 
 
-			// WARNING: Do not forget to remove exit() after clutter above!
 			void set_paris_eth_parameters() {
 
 				// All main parameters are set below.
@@ -1096,7 +1127,7 @@ namespace CGAL {
 				m_thinning_neighbour_search_type = Neighbour_search_type::CIRCLE;
 				m_building_boundary_type 		 = Building_boundary_type::UNORIENTED;
 				m_clutter_new_point_type 		 = Clutter_new_point_type::CLOSEST;
-				m_thinning_type 	  			 = Thinning_type::COMPLEX;
+				m_thinning_type 	  			 = Thinning_type::NAIVE;
 
 				m_thinning_fuzzy_radius  = 5.0;
 				m_visibility_angle_eps   = 0.001; 

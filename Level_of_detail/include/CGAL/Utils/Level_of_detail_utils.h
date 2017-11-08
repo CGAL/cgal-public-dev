@@ -277,6 +277,7 @@ namespace CGAL {
 
 
 				// Add clutter.
+				// TODO: Remove dependency on boundary_clutter, because it is not necessary here!
 				if (add_clutter) {
 					assert(boundary_clutter_projected.size() == boundary_clutter.at(0).size());
 
