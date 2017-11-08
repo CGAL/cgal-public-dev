@@ -514,6 +514,7 @@ void Vertex_visibility_graph_2<Traits>::update_visibility(
 #endif
       }
    }
+
    // if not adjacent, the edge was an interior one and so the "next" vertex
    // (the turn vertex) has to be the one that follows q.
    //

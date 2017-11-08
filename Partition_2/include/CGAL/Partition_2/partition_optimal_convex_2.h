@@ -537,6 +537,7 @@ OutputIterator partition_optimal_convex_2(InputIterator first,
 
    Matrix<Partition_opt_cvx_edge> edges(polygon.size(), polygon.size());
    partition_opt_cvx_preprocessing(polygon, edges, traits);
+
 #ifdef CGAL_PARTITION_OPTIMAL_CONVEX_DEBUG
    std::cout << "after preprocessing edges are (done, valid, visible, value): "
              << std::endl;
