@@ -50,10 +50,12 @@ class Rotation_tree_2 : public internal::vector< Rotation_tree_node_2<Traits_> >
 public:
    typedef Traits_                                 Traits;
    typedef Rotation_tree_node_2<Traits>            Node;
-   typedef typename internal::vector<Node>::iterator  Self_iterator;
    typedef typename Traits::Point_2                Point_2;
 
-  using  internal::vector< Rotation_tree_node_2<Traits_> >::push_back;
+  typedef typename internal::vector<Node>::iterator        Self_iterator;
+  typedef typename internal::vector<Node>::const_iterator  Self_const_iterator;
+
+  using internal::vector< Rotation_tree_node_2<Traits_> >::push_back;
 
    // constructor
    template<class ForwardIterator>
@@ -155,6 +157,65 @@ public:
    //        list; it only reorganizes the pointers so this node is not
    //        in the tree structure anymore
    void erase(Self_iterator p);
+
+   void print() const
+   {
+     std::cout << "Rotation tree with " << this->size() << " nodes" << std::endl;
+     for (Self_const_iterator it=this->begin(); it!=this->end(); ++it)
+       it->print();
+     std::cout << std::endl;
+   }
+
+   // Basic and not exhaustive
+   bool is_valid() const
+   {
+     for (Self_const_iterator it=this->begin(); it!=this->end(); ++it)
+     {
+       const Node& n = *it;
+
+       // p_inf is the root
+       bool reached_root = false;
+       Node current_node = n;
+       do
+       {
+         if(!current_node.has_parent())
+           reached_root = true;
+         else
+           current_node = *(current_node.parent());
+       }
+       while(!reached_root);
+
+       if(current_node != *_p_inf)
+         return false;
+
+       // if the node has a parent and no right sibling, it should be
+       // the rightmost child of the parent
+       if(n.has_parent() && !n.has_right_sibling())
+       {
+         const Node& p = *(n.parent());
+         if(*(p.rightmost_child()) != n)
+           return false;
+       }
+
+       // if the node has a left sibling, the left sibling should have a right sibling
+       if(n.has_left_sibling())
+       {
+         const Node& ls = *(n.left_sibling());
+         if(!ls.has_right_sibling() || *(ls.right_sibling()) != n)
+           return false;
+       }
+
+       // if the node has a right sibling, the right sibling should have a left sibling
+       if(n.has_right_sibling())
+       {
+         const Node& ls = *(n.right_sibling());
+         if(!ls.has_left_sibling() || *(ls.left_sibling()) != n)
+           return false;
+       }
+     }
+
+     return true;
+   }
 
 private:
    Self_iterator _p_inf;

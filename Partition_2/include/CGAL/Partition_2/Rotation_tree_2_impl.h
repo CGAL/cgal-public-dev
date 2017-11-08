@@ -128,13 +128,4 @@ void Rotation_tree_2<Traits>::erase(Self_iterator p)
       set_rightmost_child(left_sibling(p),s);
 }
 
-template <class Traits>
-std::ostream& operator<<(std::ostream& os, const Rotation_tree_2<Traits>& tree)
-{
-    typename Rotation_tree_2<Traits>::const_iterator it;
-    for (it = tree.begin(); it != tree.end(); it++)
-         os << *it << " " << std::endl;
-    return os;
-}
-
 }

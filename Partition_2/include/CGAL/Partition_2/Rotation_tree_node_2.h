@@ -136,34 +136,25 @@ public:
       return !_rightmost_child.second;
    }
 
+   void print() const
+   {
+     std::cout << "Node: " << this->x() << " " << this->y() << std::endl;
+     if (has_parent())
+       std::cout << " - parent " << parent()->x() << " " << parent()->y() << std::endl;
+     if (has_left_sibling())
+       std::cout << " - left sibling " << left_sibling()->x() << " " << left_sibling()->y() << std::endl;
+     if (has_right_sibling())
+       std::cout << " - right sibling " << right_sibling()->x() << " " << right_sibling()->y() << std::endl;
+     if (has_children())
+       std::cout << " - rightmost child " << rightmost_child()->x() << " " << rightmost_child()->y() << std::endl;
+   }
+
 private:
    Node_ref _parent;
    Node_ref _left_sibling;
    Node_ref _right_sibling;
    Node_ref _rightmost_child;
 };
-
-#ifdef CGAL_PARTITION_DEBUG_TREE
-template <class Traits>
-std::ostream& operator<<(std::ostream& os,
-                         const Rotation_tree_node_2<Traits>& node)
-{
-   os << node.x() << " " << node.y() << " ";
-   if (node.has_parent())
-      os << "  parent " << (*node.parent()).x() 
-         << " " << (*node.parent()).y() << " ";
-   if (node.has_left_sibling())
-      os << "  left sibling " << (*node.left_sibling()).x() 
-         << " " << (*node.left_sibling()).y() << " ";
-   if (node.has_right_sibling())
-      os << "  right sibling " << (*node.right_sibling()).x() 
-         << " " << (*node.right_sibling()).y() << " ";
-   if (node.has_children())
-      os << "  rightmost child " << (*node.rightmost_child()).x() 
-         << " " << (*node.rightmost_child()).y();
-   return os;
-}
-#endif // CGAL_PARTITION_DEBUG_TREE
 
 }
 
