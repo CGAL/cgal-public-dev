@@ -77,6 +77,7 @@
 #include <set>
 #include <map>
 #include <iostream>
+#include <fstream>
 
 namespace CGAL {
 
