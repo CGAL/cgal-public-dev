@@ -21,34 +21,96 @@
 namespace CGAL {
 
 
-/*
-// ??? need to finish this ???
 template <class Traits>
 template <class ForwardIterator>
 bool
-Vertex_visibility_graph_2<Traits>::is_valid(ForwardIterator first,
-                                     ForwardIterator beyond)
+Vertex_visibility_graph_2<Traits>::
+is_valid(ForwardIterator first, ForwardIterator beyond, const bool verbose) const
 {
-   std::vector<Point_2> vertices(first, beyond);
-   bool edge_there[vertices.size()];
+  const Polygon polygon(first, beyond);
 
-   // for each edge in the graph determine if it is either an edge of the
-   // polygon or, if not, if it intersects the polygon in the interior of the
-   // edge.
-   for (iterator e_it = edges.begin(); e_it != edges.end(); e_it++)
-   {
-      Segment_2 s = construct_segment_2((*e_it).first, (*e_it).second);
-      if (is_an_edge(*e_it))
-         edge_there[edge_num] = true;
-      else if (do_intersect_in_interior(s, first, beyond))
+  // For each edge in the visibility graph, determine if it intersects
+  // the polygon in the interior of the edge.
+  for (iterator e_it = edges.begin(); e_it != edges.end(); e_it++)
+  {
+    Segment_2 s = construct_segment_2((*e_it).first, (*e_it).second);
+    CGAL_assertion(is_an_edge(*e_it));
+    if(do_intersect_in_interior(s, polygon, verbose))
+    {
+      std::cerr << "Visibility graph is not valid" << std::endl;
       return false;
-   }
-   // check if all the edges of the polygon are present
-   //
-   // ??? how do you check if there are missing edges ???
-}
+    }
+  }
 
-*/
+  // Check for missing edges
+  Polygon_const_iterator piit = polygon.begin();
+  while(piit != polygon.end())
+  {
+    const Point_2& pi = *piit;
+    Polygon_const_iterator check_for_end = piit;
+    ++check_for_end;
+    if(check_for_end == polygon.end())
+      break;
+
+    // ij and ji represent the same edge so we can simply consider iterators after 'first'
+    Polygon_const_iterator pjit = piit;
+    ++pjit;
+
+    while(pjit != polygon.end())
+    {
+      const Point_2& pj = *pjit;
+      Point_pair pipj = std::make_pair(pi, pj);
+      bool is_pipj_an_edge = is_an_edge(pipj);
+
+      if(is_pipj_an_edge)
+      {
+        ++pjit;
+        continue;
+      }
+      else
+      {
+        Polygon_const_iterator pip1it = piit;
+        ++pip1it;
+        if(pjit == pip1it) // && !is_pipj_an_edge
+        {
+          std::cerr << "Edge (" << pi << ") -- (" << pj << ") is a polygon edge and "
+                    << "should have been in the visibility graph" << std::endl;
+          std::cerr << "Visibility graph is not valid" << std::endl;
+          return false;
+        }
+      }
+
+      if(!diagonal_in_interior(polygon, piit, pjit) ||
+         !diagonal_in_interior(polygon, pjit, piit))
+      {
+        ++pjit;
+        continue;
+      }
+
+      const Segment_2 s = construct_segment_2(pi, pj);
+      if(!do_intersect_in_interior(s, polygon, false))
+      {
+        std::cerr << "Edge (" << s.source() << ") -- (" << s.target() << ") "
+                  << "should have been in the visibility graph" << std::endl;
+        std::cerr << "Visibility graph is not valid" << std::endl;
+
+        std::ofstream out1("couldhavewouldhaveshouldhave.off");
+        out1 << "2 1 0" << std::endl;
+        out1 << s.source() << " 0 \n";
+        out1 << s.target() << " 0 \n";
+        out1 << "3 0 1 0" << std::endl;
+
+        return false;
+      }
+
+      ++pjit;
+    }
+
+    ++piit;
+  }
+
+  return true;
+}
 
 // want to determine, for each vertex p of the polygon, the line segment
 // immediately below it.  For vertical edges, the segment below is not the
@@ -56,7 +118,7 @@ Vertex_visibility_graph_2<Traits>::is_valid(ForwardIterator first,
 template <class Traits>
 void
 Vertex_visibility_graph_2<Traits>::initialize_vertex_map(
-                              const Polygon& polygon, Vertex_map& vertex_map)
+                              const Polygon& polygon, Vertex_map& vertex_map) const
 {
    typedef typename Vertex_map::value_type           Map_pair;
 
@@ -264,7 +326,7 @@ bool
 Vertex_visibility_graph_2<Traits>::left_turn_to_parent(
                                    Tree_iterator p,
                                    Tree_iterator q,
-                                   Tree& tree)
+                                   Tree& tree) const
 {
    if (tree.parent_is_p_infinity(q))
    {
@@ -290,7 +352,7 @@ bool
 Vertex_visibility_graph_2<Traits>::diagonal_in_interior(
                              const Polygon& polygon,
                              Polygon_const_iterator p,
-                             Polygon_const_iterator q)
+                             Polygon_const_iterator q) const
 {
    Turn_reverser<Point_2, Left_turn_2> right_turn(left_turn_2);
    Polygon_const_iterator before_p;
@@ -326,7 +388,7 @@ template <class Traits>
 bool Vertex_visibility_graph_2<Traits>::point_is_visible(
                                            const Polygon& polygon,
                                            Polygon_const_iterator point_to_see,
-                                           Vertex_map_iterator looker)
+                                           Vertex_map_iterator looker) const
 {
    // Collect pointers to the current visibility segments for the looker
    // (the current visibility point and the two vertices flanking this vertex)
@@ -467,7 +529,7 @@ void Vertex_visibility_graph_2<Traits>::update_visibility(
                                                       Vertex_map_iterator p_it,
                                                       Vertex_map_iterator q_it,
                                                       const Polygon& polygon,
-                                                      int are_adjacent)
+                                                      int are_adjacent) const
 {
 #ifdef CGAL_VISIBILITY_GRAPH_DEBUG
       std::cout << "[] Updating visibility with p: ("
@@ -625,7 +687,7 @@ template <class Traits>
 void Vertex_visibility_graph_2<Traits>::update_collinear_visibility(
                                                     Vertex_map_iterator p_it,
                                                     Vertex_map_iterator q_it,
-                                                    const Polygon& polygon)
+                                                    const Polygon& polygon) const
 {
 #ifdef CGAL_VISIBILITY_GRAPH_DEBUG
    std::cout << "Updating collinear visibility "
