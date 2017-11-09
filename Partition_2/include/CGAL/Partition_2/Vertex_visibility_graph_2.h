@@ -436,6 +436,34 @@ private:
       return (q == next);
    }
 
+#ifdef CGAL_PARTITION_BRUTE_FORCE_FIX
+   // check if 'q' is hidden from 'p' by another vertex
+   bool is_hidden(const Polygon& polygon,
+                  Polygon_const_iterator p,
+                  Polygon_const_iterator q)
+   {
+     // brute force all points
+     Polygon_const_iterator b = polygon.begin();
+     while(b != polygon.end())
+     {
+       if(b == p || b == q)
+       {
+         ++b;
+         continue;
+       }
+
+       if(are_strictly_ordered_along_line_2(*p, *b, *q))
+       {
+         std::cout << *b << " hides " << *q << " from " << *p << std::endl;
+         return true;
+       }
+
+       ++b;
+     }
+     return false;
+   }
+#endif
+
    // returns true if q is the vertex before or after p
    bool are_adjacent(const Polygon& polygon, Polygon_const_iterator p,
                      Polygon_const_iterator q) const

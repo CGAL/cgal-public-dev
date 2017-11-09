@@ -390,6 +390,10 @@ bool Vertex_visibility_graph_2<Traits>::point_is_visible(
                                            Polygon_const_iterator point_to_see,
                                            Vertex_map_iterator looker) const
 {
+#ifdef  CGAL_PARTITION_BRUTE_FORCE_FIX
+  return !do_intersect_in_interior(Segment_2(*point_to_see, looker->first), polygon);
+#endif
+
    // Collect pointers to the current visibility segments for the looker
    // (the current visibility point and the two vertices flanking this vertex)
    Polygon_const_iterator vis_endpt = (*looker).second.second;
@@ -785,6 +789,11 @@ void Vertex_visibility_graph_2<Traits>::handle(Tree_iterator p,
 #ifdef CGAL_VISIBILITY_GRAPH_DEBUG
          std::cout << "both interior" << std::endl;
 #endif
+
+#ifdef CGAL_PARTITION_BRUTE_FORCE_FIX
+         // temporarily fix issues with visibility in collinear vertices (but very brute force)
+         if(is_hidden(polygon, (*p_it).second.first, (*q_it).second.first))
+#else
          // if p sees something and q is visible only through collinear
          // points then update p's visibility if one of the points adjacent
          // to q is above the line unless p's current visibility point
@@ -793,6 +802,7 @@ void Vertex_visibility_graph_2<Traits>::handle(Tree_iterator p,
              are_strictly_ordered_along_line_2((*p_it).first,
                                                *(*p_it).second.second,
                                                (*q_it).first))
+#endif
          {
            update_collinear_visibility(p_it, q_it, polygon);
          }
