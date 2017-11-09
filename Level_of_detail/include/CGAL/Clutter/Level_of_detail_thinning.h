@@ -27,6 +27,7 @@
 #include <CGAL/Mylog/Mylog.h>
 #include <CGAL/Level_of_detail_enum.h>
 #include <CGAL/Clutter/Level_of_detail_grid_simplify.h>
+#include <CGAL/Utils/Level_of_detail_utils.h>
 
 // Extra libs.
 #include <CGAL/Clutter/kmeans/dkm.hpp>
@@ -65,6 +66,8 @@ namespace CGAL {
 			typedef typename Boundary_data::const_iterator    Boundary_iterator;
 			typedef typename Projected_points::const_iterator Point_iterator;
 			typedef typename Neighbor_search::iterator  	  Neighbour_iterator;
+
+			typedef Level_of_detail_utils_simple<Kernel> Simple_utils;
 
 			typename Kernel::Compute_squared_distance_2 squared_distance;
 			typename Kernel::Compute_scalar_product_3   dot_product;
@@ -188,6 +191,8 @@ namespace CGAL {
 			FT 	   m_dim_2_sparsity_num_cells; // number of cells
 			FT 	   m_dim_2_sparsity_max; 	   // total percentage
 			size_t m_max_num_clusters; 		   // max number of clusters
+
+			Simple_utils m_simple_utils;
 
 			void choose_scale_adaptively() const {
 
@@ -404,19 +409,7 @@ namespace CGAL {
 
 			void create_thin_point_with_line(Projected_points &thinned_points, const Projected_point &query, const Line_2 &line) const {
 
-				thinned_points[query.first] = project_onto_line(query.second, line);
-			}
-
-			// My custom function to handle precision problems when projecting points.
-			Point_2 project_onto_line(const Point_2 &p, const Line_2 &line) const {
-
-				const auto a = line.point(0);
-				const auto b = line.point(1);
-
-				const auto projected = a + CGAL::scalar_product(p - a, b - a) / CGAL::scalar_product(b - a, b - a) * (b - a);
-				
-				if (std::isnan(projected.x()) || std::isnan(projected.y())) return line.projection(p);
-				else return projected;
+				thinned_points[query.first] = m_simple_utils.project_onto_line(line, query.second);
 			}
 
 
@@ -461,34 +454,11 @@ namespace CGAL {
 
 				// Add here new methods to estimate normals later!
 
-				project_normals(normals, boundary_clutter_projected, input);
+				m_simple_utils.estimate_normals_from_3d(normals, boundary_clutter_projected, input);
 				assert(normals.size() == boundary_clutter_projected.size());
 
 				Log log; 
 				log.export_projected_points_with_normals_as_xyz("tmp/complex_with_normals", boundary_clutter_projected, normals, "unused path");
-			}
-
-			void project_normals(Normals &normals, const Projected_points &boundary_clutter_projected, const Container &input) const {
-
-				normals.clear();
-				assert(!boundary_clutter_projected.empty() && input.number_of_points() != 0);
-
-				for (Point_iterator pit = boundary_clutter_projected.begin(); pit != boundary_clutter_projected.end(); ++pit) {
-					
-					const Projected_point &projected = *pit;
-					const int point_index = projected.first;
-					
-					project_normal(normals, point_index, input);
-				}
-			}
-
-			void project_normal(Normals &normals, const int point_index, const Container &input) const {
-
-				const Normal plane_normal  = Normal(FT(0), FT(0), FT(1));
-				const Normal &point_normal = input.normal(point_index);
-
-				const Normal projected_normal = point_normal - dot_product(point_normal, plane_normal) * plane_normal;
-				normals[point_index] = projected_normal;
 			}
 
 			void thin_all_points_with_normals(Projected_points &thinned_points, Corners &corners, 
@@ -938,7 +908,7 @@ namespace CGAL {
 			int get_best_cluster_index(const Projected_point &query, const Line_2 &line, 
 				const int cluster_index, const int best_cluster_index, FT &min_dist) const {
 
-				const Point_2 projected = project_onto_line(query.second, line);
+				const Point_2 projected = m_simple_utils.project_onto_line(line, query.second);
 				const FT dist = squared_distance(projected, query.second);
 
 				if (dist < min_dist) {

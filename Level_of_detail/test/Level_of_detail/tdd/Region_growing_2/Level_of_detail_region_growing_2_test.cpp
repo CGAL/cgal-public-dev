@@ -60,6 +60,12 @@ public:
 
 	void set_new_data() {
 
+		lodRegionGrowing.set_epsilon(0.01);
+		lodRegionGrowing.set_cluster_epsilon(0.125);
+		lodRegionGrowing.set_normal_threshold(0.9);
+		lodRegionGrowing.set_minimum_shape_points(10);
+		lodRegionGrowing.save_info(true);
+
 		// Horizontal line.
 		boundary_clutter_projected[0]  = Point_2(1.50, 1.50); boundary_clutter[0].push_back(0); // query point in the centre
 
@@ -125,7 +131,7 @@ TEST_F(LOD_RegionGrowingTest, Compiles) {
 
 TEST_F(LOD_RegionGrowingTest, RunsRegionGrowing) {
 
-	const auto number_of_detected_lines = lodRegionGrowing.process(
+	const auto number_of_detected_lines = lodRegionGrowing.detect(
 		boundary_clutter, boundary_clutter_projected,
 		building_boundaries, building_boundaries_projected,
 		input);

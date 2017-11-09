@@ -211,6 +211,107 @@ namespace CGAL {
 			}
 		};
 
+
+		template<class KernelTraits>
+		class Level_of_detail_utils_simple {
+
+		public:
+			typedef KernelTraits   			  Kernel;
+			typedef typename Kernel::FT 	  FT;
+			typedef typename Kernel::Point_2  Point_2;
+			typedef typename Kernel::Point_3  Point_3;
+			typedef typename Kernel::Vector_3 Vector_3;
+			typedef typename Kernel::Line_2   Line_2;
+
+			typename Kernel::Compute_squared_distance_2 squared_distance;
+			typename Kernel::Compute_scalar_product_3   dot_product;
+
+
+			//////////////////////////////////
+			// Bounding box in 2D.
+			template<class Projected_points>
+			void compute_bounding_box_in_2d(Point_2 &bbmin, Point_2 &bbmax, const Projected_points &points) const {
+
+				using Point_iterator = typename Projected_points::const_iterator;
+				const FT big_value   = FT(1000000000);
+
+				FT minx =  big_value, miny =  big_value;
+				FT maxx = -big_value, maxy = -big_value;
+
+				for (Point_iterator pit = points.begin(); pit != points.end(); ++pit) {
+					const Point_2 &point = (*pit).second;
+
+					minx = CGAL::min(minx, point.x());
+					miny = CGAL::min(miny, point.y());
+
+					maxx = CGAL::max(maxx, point.x());
+					maxy = CGAL::max(maxy, point.y());
+				}
+
+				bbmin = Point_2(minx, miny);
+				bbmax = Point_2(maxx, maxy);
+			}
+
+			FT compute_2d_bounding_box_diagonal(const Point_2 &bbmin, const Point_2 &bbmax) const {
+
+				return static_cast<FT>(CGAL::sqrt(
+          			(bbmax.x() - bbmin.x()) * (bbmax.x() - bbmin.x()) +
+          			(bbmax.y() - bbmin.y()) * (bbmax.y() - bbmin.y())
+          		));
+			}
+
+
+			//////////////////////////////////
+			// Normal estimation.
+
+			template<class Normals, class Projected_points, class Container>
+			void estimate_normals_from_3d(Normals &normals, const Projected_points &points, const Container &input) const {
+
+				using Point_iterator  = typename Projected_points::const_iterator;
+				using Projected_point = std::pair<int, Point_2>;
+
+				normals.clear();
+				assert(!points.empty() && input.number_of_points() != 0);
+
+				for (Point_iterator pit = points.begin(); pit != points.end(); ++pit) {
+					
+					const Projected_point &projected = *pit;
+					const int point_index = projected.first;
+					
+					project_normal(normals, point_index, input);
+				}
+			}
+
+
+			//////////////////////////////////
+			// Projection.
+
+			template<class Normals, class Container>
+			void project_normal(Normals &normals, const int point_index, const Container &input) const {
+
+				typedef Vector_3 Normal;
+
+				const Normal plane_normal  = Normal(FT(0), FT(0), FT(1));
+				const Normal &point_normal = input.normal(point_index);
+
+				const Normal projected_normal = point_normal - dot_product(point_normal, plane_normal) * plane_normal;
+				normals[point_index] = projected_normal;
+			}
+
+			// My custom function to handle precision problems when projecting points.
+			Point_2 project_onto_line(const Line_2 &line, const Point_2 &p) const {
+
+				const auto a = line.point(0);
+				const auto b = line.point(1);
+
+				const auto projected = a + CGAL::scalar_product(p - a, b - a) / CGAL::scalar_product(b - a, b - a) * (b - a);
+				
+				if (std::isnan(projected.x()) || std::isnan(projected.y())) return line.projection(p);
+				else return projected;
+			}
+		};
+
+
 		template<class KernelTraits, class InputContainer, class InputCDT>
 		class Level_of_detail_utils {
 
@@ -230,6 +331,9 @@ namespace CGAL {
 			typedef typename CDT::Face_handle 			Face_handle;
 			typedef typename CDT::Finite_edges_iterator Edge_iterator;
 
+			typedef Level_of_detail_utils_simple<Kernel> Simple_utils;
+
+
 			// Extra.
 			using Label       = int;
 			using Label_map   = typename Input:: template Property_map<Label>;
@@ -238,13 +342,18 @@ namespace CGAL {
 			using Log = CGAL::LOD::Mylog;
 
 
+		private:
+			Simple_utils m_simple_utils;
+
+
+		public:
 			///////////////////////////
 			// Triangulation functions!
 
 			// BE CAREFUL: THIS THING CAN INSERT NEW POINTS!
 			template<class Structured_points, class Structured_labels, class Boundary_data, class Projected_points>
 			int compute_cdt(const Structured_points &points, const Structured_labels &labels, CDT &cdt, 
-							const bool add_clutter, const Boundary_data &boundary_clutter, const Projected_points &boundary_clutter_projected,
+							const bool add_clutter, const Boundary_data &, const Projected_points &boundary_clutter_projected,
 							const bool add_bbox, const Input &input) const {
 
 				Log log;
@@ -277,20 +386,14 @@ namespace CGAL {
 
 
 				// Add clutter.
-				// TODO: Remove dependency on boundary_clutter, because it is not necessary here!
 				if (add_clutter) {
-					assert(boundary_clutter_projected.size() == boundary_clutter.at(0).size());
+					using Point_iterator = typename Projected_points::const_iterator;
 
-					for (typename Boundary_data::const_iterator it = boundary_clutter.begin(); it != boundary_clutter.end(); ++it) {
-						const size_t num_clutter_points = (*it).second.size();
+					for (Point_iterator pit = boundary_clutter_projected.begin(); pit != boundary_clutter_projected.end(); ++pit) {
+						const auto point = (*pit).second;
 
-						for (size_t i = 0; i < num_clutter_points; ++i) {
-							const auto point_index = (*it).second[i];
-
-							assert(is_valid_key(boundary_clutter_projected, point_index));
-							Vertex_handle vh = cdt.insert(boundary_clutter_projected.at(point_index));
-							vh->info().label = Structured_label::CLUTTER;
-						}
+						Vertex_handle vh = cdt.insert(point);
+						vh->info().label = Structured_label::CLUTTER;
 					}
 				}
 
@@ -431,7 +534,7 @@ namespace CGAL {
 				bbox.clear();
 				bbox.resize(4);
 
-				const FT big_value = FT(1000000); // change it
+				const FT big_value = FT(1000000000); // change it
 
 				FT minx =  big_value, miny =  big_value;
 				FT maxx = -big_value, maxy = -big_value;
@@ -601,15 +704,8 @@ namespace CGAL {
 			}
 
 			// My custom function to handle precision problems when projecting points.
-			Point_2 project(const Line_2 &line, const Point_2 &p) const {
-
-				const auto a = line.point(0);
-				const auto b = line.point(1);
-
-				const auto projected = a + CGAL::scalar_product(p - a, b - a) / CGAL::scalar_product(b - a, b - a) * (b - a);
-				
-				if (std::isnan(projected.x()) || std::isnan(projected.y())) return line.projection(p);
-				else return projected;
+			inline Point_2 project(const Line_2 &line, const Point_2 &p) const {
+				return m_simple_utils.project_onto_line(line, p);
 			}
 		};
 	}

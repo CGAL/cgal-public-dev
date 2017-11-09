@@ -154,7 +154,12 @@ namespace CGAL {
 			m_visibility_angle_eps(-FT(1)),
 			m_thinning_neighbour_search_type(Neighbour_search_type::KNN),
 			m_thinning_fuzzy_radius(-FT(1)),
-			m_thinning_type(Thinning_type::NAIVE)
+			m_thinning_type(Thinning_type::NAIVE),
+			m_region_growing_epsilon(-FT(1)),
+			m_region_growing_cluster_epsilon(-FT(1)),
+			m_region_growing_normal_threshold(-FT(1)),
+			m_region_growing_min_points(0),
+			m_with_region_growing(true)
 			{ } // Do I need to create an instance of these traits here?
 
 
@@ -335,7 +340,12 @@ namespace CGAL {
 				// Detect lines in 2D using region growing.
 				std::cout << "(" << exec_step << ") detecting 2d lines; ";
 
-				const auto number_of_detected_lines = m_region_growing.process(
+				m_region_growing.set_epsilon(m_region_growing_epsilon);
+				m_region_growing.set_cluster_epsilon(m_region_growing_cluster_epsilon);
+				m_region_growing.set_normal_threshold(m_region_growing_normal_threshold);
+				m_region_growing.set_minimum_shape_points(m_region_growing_min_points);
+
+				const auto number_of_detected_lines = m_region_growing.detect(
 					boundary_clutter   , boundary_clutter_projected,
 					building_boundaries, building_boundaries_projected,
 					input);
@@ -685,7 +695,7 @@ namespace CGAL {
 			 	
 
 				// (08) ----------------------------------
-				if (m_pipeline_version == Pipeline_version::WITHOUT_SHAPE_DETECTION) {
+				if (m_pipeline_version == Pipeline_version::WITHOUT_SHAPE_DETECTION && m_with_region_growing) {
 
 					detecting_2d_lines(boundary_clutter, boundary_clutter_projected, building_boundaries, building_boundaries_projected, log, input, ++exec_step);
 
@@ -862,6 +872,13 @@ namespace CGAL {
 			FT 				      m_thinning_fuzzy_radius;
 			Thinning_type 		  m_thinning_type;
 			
+			FT 	   m_region_growing_epsilon;
+			FT     m_region_growing_cluster_epsilon;
+			FT 	   m_region_growing_normal_threshold;
+			size_t m_region_growing_min_points;
+
+			bool m_with_region_growing;
+
 
 			// Assert default values of all global parameters.
 			void assert_global_parameters() {
@@ -897,6 +914,11 @@ namespace CGAL {
 				assert(m_visibility_angle_eps != -FT(1));
 
 				assert(m_thinning_fuzzy_radius != -FT(1));
+
+				assert(m_region_growing_epsilon 		 != -FT(1));
+				assert(m_region_growing_cluster_epsilon  != -FT(1));
+				assert(m_region_growing_normal_threshold != -FT(1));
+				assert(m_region_growing_min_points 		 !=     0);
 			}
 
 
@@ -999,6 +1021,12 @@ namespace CGAL {
 				m_clutter_knn 			 = 2;		 // the smaller value, the less thinning is performed
 				m_clutter_cell_length    = 0.025;	 // the bigger value, the more points are removed in the grid simplify
 				m_use_boundaries 		 = true;     // use or not outliner to build walls
+				
+				m_with_region_growing 	 		  = false; // use 2D region growing for structuring clutter
+				m_region_growing_epsilon 		  = 0.0;   // distance to the line
+				m_region_growing_cluster_epsilon  = 0.0;   // distance between neighbouring points
+				m_region_growing_normal_threshold = 0.0;   // difference between the line normal and the point normal
+				m_region_growing_min_points 	  = 0;     // min number of points per shape
 			}
 
 
@@ -1029,6 +1057,12 @@ namespace CGAL {
 				m_clutter_knn 			 = 12;
 				m_clutter_cell_length    = 0.015;
 				m_use_boundaries 		 = true;
+				
+				m_with_region_growing 	 		  = false;
+				m_region_growing_epsilon 		  = 0.0;  
+				m_region_growing_cluster_epsilon  = 0.0;  
+				m_region_growing_normal_threshold = 0.0;  
+				m_region_growing_min_points 	  = 0;    
 			}
 
 
@@ -1056,6 +1090,12 @@ namespace CGAL {
 				m_clutter_knn 			 = 12;
 				m_clutter_cell_length    = 10.0;
 				m_use_boundaries 		 = true;
+				
+				m_with_region_growing 	 		  = false;
+				m_region_growing_epsilon 		  = 0.0;  
+				m_region_growing_cluster_epsilon  = 0.0;  
+				m_region_growing_normal_threshold = 0.0;  
+				m_region_growing_min_points 	  = 0;    
 			}
 
 
@@ -1085,6 +1125,13 @@ namespace CGAL {
 				m_clutter_knn 			 = 12;
 				m_clutter_cell_length    = 4.0;
 				m_use_boundaries 		 = true;
+				
+
+				m_with_region_growing 	 		  = false;
+				m_region_growing_epsilon 		  = 0.0;  
+				m_region_growing_cluster_epsilon  = 0.0;  
+				m_region_growing_normal_threshold = 0.0;  
+				m_region_growing_min_points 	  = 0;    
 			}
 
 
@@ -1112,6 +1159,12 @@ namespace CGAL {
 				m_clutter_knn 			 = 12;
 				m_clutter_cell_length    = 10.0;
 				m_use_boundaries 		 = true;
+				
+				m_with_region_growing 	 		  = false;
+				m_region_growing_epsilon 		  = 0.0;  
+				m_region_growing_cluster_epsilon  = 0.0;  
+				m_region_growing_normal_threshold = 0.0;  
+				m_region_growing_min_points 	  = 0;    
 			}
 
 
@@ -1139,6 +1192,12 @@ namespace CGAL {
 				m_clutter_knn 			 = 12;
 				m_clutter_cell_length    = 5.0;
 				m_use_boundaries 		 = true;
+				
+				m_with_region_growing 	 		  = true;
+				m_region_growing_epsilon 		  = 0.01;  
+				m_region_growing_cluster_epsilon  = 0.2;  
+				m_region_growing_normal_threshold = 0.9;  
+				m_region_growing_min_points 	  = 10;
 			}
 
 

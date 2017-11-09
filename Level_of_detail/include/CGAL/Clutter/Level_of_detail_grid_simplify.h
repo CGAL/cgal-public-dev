@@ -93,7 +93,7 @@ namespace CGAL {
 
 
 			// Main.
-			int process(Boundary_data &boundary_clutter, Projected_points &boundary_clutter_projected) const {
+			int process(Boundary_data &, Projected_points &boundary_clutter_projected) const {
 
 				int number_of_removed_points = 0;
 				if (boundary_clutter_projected.empty()) {
@@ -112,7 +112,8 @@ namespace CGAL {
 				boundary_clutter_projected = cleaned_points;
 
 				assert(number_of_removed_points >= 0);
-				set_new_boundary_data(boundary_clutter, boundary_clutter_projected);
+				
+				// set_new_boundary_data(boundary_clutter, boundary_clutter_projected);
 
 				if (m_save_result) {
 					
@@ -168,6 +169,9 @@ namespace CGAL {
 			}
 
 			void simplify_clutter_using_grid(Projected_points &cleaned_points, const Grid_map &grid_map, const Projected_points &boundary_clutter_projected) const {
+
+				std::cout << "\nWarning: grid simplify, take care when using these simplified points to access any original input data!\n" << std::endl;
+				// change below point_index to the proper index of the closest point!
 
 				assert(cleaned_points.empty());
 				assert(!grid_map.empty() && !boundary_clutter_projected.empty());
