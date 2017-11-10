@@ -51,7 +51,7 @@ namespace CGAL {
 			typedef typename Kernel::FT 	  FT;
 			typedef typename Kernel::Point_2  Point_2;
 			typedef typename Kernel::Line_2   Line_2;
-			typedef typename Kernel::Vector_3 Normal;
+			typedef typename Kernel::Vector_2 Normal;
 
 			typedef std::pair<int, Point_2> 					 				Projected_point;
 			typedef typename CGAL::Second_of_pair_property_map<Projected_point> Point_map;
@@ -454,7 +454,7 @@ namespace CGAL {
 
 				// Add here new methods to estimate normals later!
 
-				m_simple_utils.estimate_normals_from_3d(normals, boundary_clutter_projected, input);
+				m_simple_utils.estimate_2d_normals_from_3d(normals, boundary_clutter_projected, input);
 				assert(normals.size() == boundary_clutter_projected.size());
 
 				Log log; 

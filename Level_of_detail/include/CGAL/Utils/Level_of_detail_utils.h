@@ -220,6 +220,7 @@ namespace CGAL {
 			typedef typename Kernel::FT 	  FT;
 			typedef typename Kernel::Point_2  Point_2;
 			typedef typename Kernel::Point_3  Point_3;
+			typedef typename Kernel::Vector_2 Vector_2;
 			typedef typename Kernel::Vector_3 Vector_3;
 			typedef typename Kernel::Line_2   Line_2;
 
@@ -265,7 +266,7 @@ namespace CGAL {
 			// Normal estimation.
 
 			template<class Normals, class Projected_points, class Container>
-			void estimate_normals_from_3d(Normals &normals, const Projected_points &points, const Container &input) const {
+			void estimate_2d_normals_from_3d(Normals &normals, const Projected_points &points, const Container &input) const {
 
 				using Point_iterator  = typename Projected_points::const_iterator;
 				using Projected_point = std::pair<int, Point_2>;
@@ -295,7 +296,10 @@ namespace CGAL {
 				const Normal &point_normal = input.normal(point_index);
 
 				const Normal projected_normal = point_normal - dot_product(point_normal, plane_normal) * plane_normal;
-				normals[point_index] = projected_normal;
+				assert(projected_normal.z() == FT(0));
+
+				normals[point_index]  = Vector_2(projected_normal.x(), projected_normal.y());
+				normals[point_index] /= CGAL::sqrt(normals[point_index] * normals[point_index]);
 			}
 
 			// My custom function to handle precision problems when projecting points.

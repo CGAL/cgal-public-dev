@@ -17,12 +17,16 @@
 #include <CGAL/array.h>
 #include <CGAL/Unique_hash_map.h>
 #include <CGAL/IO/Color.h>
+#include <CGAL/Random.h>
 
 namespace CGAL {
 
 	namespace LOD {
 
 		class Mylog {
+
+		private:
+			CGAL::Random m_rand;
 
 		public:
 			std::string state() const {
@@ -615,6 +619,61 @@ namespace CGAL {
 		        save(name, ".eps");
 			}
 
+			template<class Boundary_data, class Projected_points>
+			void save_2d_region_growing(const std::string &name, const Boundary_data &boundaries, const Projected_points &boundaries_projected, const Projected_points &clutter) {
+
+				const std::string bounds_name  = name + "_boundaries";
+				const std::string clutter_name = name + "_clutter";
+
+				export_boundaries_as_ply(bounds_name, boundaries, boundaries_projected);
+				export_projected_points_as_xyz(clutter_name, clutter, "stub");
+			}
+
+			template<class Boundary_data, class Projected_points>
+			void export_boundaries_as_ply(const std::string &name, const Boundary_data &boundaries, const Projected_points &boundaries_projected) {
+
+				clear();
+				const size_t total_size = boundaries_projected.size();
+				
+				out << 
+				"ply\n"               	 << 
+				"format ascii 1.0\n"     << 
+				"element vertex "        << total_size << "\n" << 
+				"property double x\n"    << 
+				"property double y\n"    << 
+				"property double z\n" 	 <<
+				"property uchar red\n" 	 <<
+				"property uchar green\n" <<
+				"property uchar blue\n"  <<
+				"end_header\n";
+
+				using Boundary_iterator = typename Boundary_data::const_iterator;
+
+				size_t sum_size = 0;
+				for (Boundary_iterator bit = boundaries.begin(); bit != boundaries.end(); ++bit) {
+					
+					const std::vector<int> &indices = (*bit).second;
+					const CGAL::Color color = generate_random_color();
+
+					for (size_t i = 0; i < indices.size(); ++i) 
+						out << boundaries_projected.at(indices[i]) << " " << 0 << " " << color << std::endl;
+
+					sum_size += indices.size();
+				}
+
+				assert(total_size == sum_size);
+				save(name, ".ply");
+			}
+
+			CGAL::Color generate_random_color() {
+
+				const int r = m_rand.get_int(0, 256);
+				const int g = m_rand.get_int(0, 256);
+				const int b = m_rand.get_int(0, 256);
+
+				return Color(r, g, b);
+			}
+
 			template<class Projected_points>
 			void export_projected_points_as_xyz(const std::string &name, const Projected_points &projected, const std::string & /* default_path */) {
 				
@@ -631,7 +690,7 @@ namespace CGAL {
 				
 				clear();
 				for (typename Projected_points::const_iterator it = projected.begin(); it != projected.end(); ++it) {
-					out << (*it).second << " " << 0 << " " << normals.at((*it).first) << std::endl;
+					out << (*it).second << " " << 0 << " " << normals.at((*it).first) << " " << 0 << std::endl;
 				}
 
 				// save(name, ".xyz", default_path);

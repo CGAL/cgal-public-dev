@@ -60,8 +60,7 @@ public:
 
 	void set_new_data() {
 
-		lodRegionGrowing.set_epsilon(0.01);
-		lodRegionGrowing.set_cluster_epsilon(0.125);
+		lodRegionGrowing.set_epsilon(0.02);
 		lodRegionGrowing.set_normal_threshold(0.9);
 		lodRegionGrowing.set_minimum_shape_points(10);
 		lodRegionGrowing.save_info(true);
@@ -80,7 +79,7 @@ public:
 		boundary_clutter_projected[9]  = Point_2(1.85, 1.51); boundary_clutter[0].push_back(9);
 		boundary_clutter_projected[10] = Point_2(1.95, 1.49); boundary_clutter[0].push_back(10);
 
-		Normal normal = Normal(0.0, 1.0, 0.0);
+		Normal normal = Normal(0.0, 2.0, 0.0);
 
 		input.insert(Point_3(1.50, 1.50, 0.0), normal);
 
@@ -129,12 +128,26 @@ TEST_F(LOD_RegionGrowingTest, Compiles) {
 	// Empty test.
 }
 
-TEST_F(LOD_RegionGrowingTest, RunsRegionGrowing) {
+TEST_F(LOD_RegionGrowingTest, DetectesOneLine) {
+
+	lodRegionGrowing.set_cluster_epsilon(0.15);
 
 	const auto number_of_detected_lines = lodRegionGrowing.detect(
 		boundary_clutter, boundary_clutter_projected,
 		building_boundaries, building_boundaries_projected,
 		input);
 
-	ASSERT_THAT(number_of_detected_lines, Eq(-1));
+	ASSERT_THAT(number_of_detected_lines, Eq(1));
+}
+
+TEST_F(LOD_RegionGrowingTest, DetectesTwoLines) {
+
+	lodRegionGrowing.set_cluster_epsilon(0.2);
+
+	const auto number_of_detected_lines = lodRegionGrowing.detect(
+		boundary_clutter, boundary_clutter_projected,
+		building_boundaries, building_boundaries_projected,
+		input);
+
+	ASSERT_THAT(number_of_detected_lines, Eq(2));
 }

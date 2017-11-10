@@ -6,6 +6,7 @@
 #include <vector>
 #include <cassert>
 #include <cmath>
+#include <unordered_set>
 
 // CGAL includes.
 #include <CGAL/Kd_tree.h>
@@ -15,6 +16,7 @@
 #include <CGAL/linear_least_squares_fitting_2.h>
 #include <CGAL/Fuzzy_sphere.h>
 #include <CGAL/number_utils.h>
+#include <CGAL/squared_distance_2.h>
 
 // New CGAL includes.
 #include <CGAL/Mylog/Mylog.h>
@@ -39,7 +41,7 @@ namespace CGAL {
 			typedef typename Kernel::FT 	  FT;
 			typedef typename Kernel::Point_2  Point_2;
 			typedef typename Kernel::Line_2   Line_2;
-			typedef typename Kernel::Vector_3 Normal;
+			typedef typename Kernel::Vector_2 Normal;
 
 			typedef std::pair<int, Point_2> 					 				Projected_point;
 			typedef typename CGAL::Second_of_pair_property_map<Projected_point> Point_map;
@@ -64,6 +66,8 @@ namespace CGAL {
 			using Log 	  		 = CGAL::LOD::Mylog;
 			using Normals 		 = std::map<int, Normal>;
 			using Sorted_indices = std::vector<int>;
+			using Index_iterator = std::vector<int>::const_iterator;
+			using Set_iterator   = std::unordered_set<int>::const_iterator;
 
 
 			// Constructor.
@@ -149,14 +153,18 @@ namespace CGAL {
 
 				// (5) Enter main loop with all sorted points and start growing local regions.
 				grow_regions(building_boundaries, building_boundaries_projected, boundary_clutter_projected, log,
-					normals, sorted_indices, tree);
+					normals, sorted_indices, tree, input.number_of_points());
 
 
 				// Save log.
 				if (m_save_info) log.save("tmp/region_growing_log");
 
+				log.clear();
+				log.save_2d_region_growing("tmp/region_growing", building_boundaries, building_boundaries_projected, boundary_clutter_projected);
+
 
 				// Return number of detected lines.
+				number_of_detected_lines = building_boundaries.size();
 				return number_of_detected_lines;
 			}
 
@@ -168,6 +176,11 @@ namespace CGAL {
 			bool   m_save_info;
 
 			Simple_utils m_simple_utils;
+
+			std::vector<int> 		m_index_container_former_ring;
+      		std::unordered_set<int> m_index_container_current_ring;
+      		Projected_points 		m_neighbours;
+      		std::vector<Point_2> 	m_local_points;
 
 			class Sort_by_linearity {
 
@@ -302,24 +315,11 @@ namespace CGAL {
 
 				// Add here new methods to estimate normals later!
 
-				m_simple_utils.estimate_normals_from_3d(normals, boundary_clutter_projected, input);
+				m_simple_utils.estimate_2d_normals_from_3d(normals, boundary_clutter_projected, input);
 				assert(normals.size() == boundary_clutter_projected.size());
 
 				Log log; 
 				log.export_projected_points_with_normals_as_xyz("tmp/estimated_normals", boundary_clutter_projected, normals, "unused path");
-			}
-
-			void find_nearest_neighbours(Projected_points &neighbours, const Fuzzy_tree &tree, const Projected_point &query, const Fuzzy_circle &circle) const {
-
-				neighbours.clear();
-				tree.search(std::inserter(neighbours, neighbours.end()), circle);
-				neighbours[query.first] = query.second;
-			}
-
-			void compute_circle(Fuzzy_circle &circle, const Point_2 &centre, const FT radius) const {
-
-				assert(radius > FT(0));
-				circle = Fuzzy_circle(centre, radius);
 			}
 
 			void sort_projected_points(Sorted_indices &sorted_indices, Log &log, const Projected_points &boundary_clutter_projected, const Fuzzy_tree &tree) {
@@ -362,24 +362,297 @@ namespace CGAL {
 				}
 			}
 
-			void grow_regions(Boundary_data &boundaries, Projected_points &boundaries_projected, Projected_points &points, Log &,
-				const Normals &normals, const Sorted_indices &sorted_indices, const Fuzzy_tree &tree) {
+			void grow_regions(Boundary_data &boundaries, Projected_points &boundaries_projected, Projected_points &points, Log &log,
+				const Normals &normals, const Sorted_indices &sorted_indices, const Fuzzy_tree &tree, const size_t num_input_points) {
+
+
+				// Some preconditions.
+				const size_t total_points = points.size();
 
 				assert(boundaries.empty() && boundaries_projected.empty());
-				assert(!points.empty());
+				assert(total_points != 0);
 
-				assert(normals.size() == points.size() && sorted_indices.size() == points.size());
+				assert(normals.size() == total_points && sorted_indices.size() == total_points);
 				assert(tree.size() != 0);
-
-				// int line_index = -1;
 				
-				// const size_t total_points = points.size();
-				// size_t available_points   = total_points;
 
-				// std::vector<int> shape_index(available_points, -1);
-				// std::vector<int> index_container;
-      			// std::vector<int> index_container_former_ring;
-      			// std::set<int>    index_container_current_ring;
+				// Main structures.
+				size_t available_points = total_points;
+
+				std::vector<int> shape_index(num_input_points, -1);
+				std::vector<int> index_container;
+
+				Log internal;
+				if (m_save_info) internal.out << "\nMain loop\n" <<std::endl;
+
+
+				// Main loop.
+				int class_index = -1;
+      			for (size_t i = 0; i < sorted_indices.size(); ++i) {
+      				if (m_save_info) internal.out<< "\nSorted index: " << i << std::endl << std::endl;
+      				
+      				const int point_index = sorted_indices[i];
+      				if (shape_index[point_index] >= 0) continue;
+
+
+      				// Get query point and its normal.
+      				const Point_2 &query_pos = points.at(point_index);
+      				const Normal &query_norm = normals.at(point_index);
+
+
+      				// Get optimal line and its normal.
+      				Line_2 optimal_line; Normal line_normal;
+      				get_line_with_normal(query_pos, query_norm, optimal_line, line_normal);
+
+
+      				// Initialize containers.
+					shape_index[point_index] = ++class_index;
+
+      				index_container.clear();
+        			index_container.push_back(point_index);
+
+
+        			// Propagate region through all neighbouring points.
+        			propagate(shape_index, index_container, optimal_line, line_normal, internal, 
+        				class_index, points, normals, point_index, tree);
+
+
+        			// Update input data.
+      				if (index_container.size() >= m_min_points) {
+
+      					update_input_data(boundaries, boundaries_projected, class_index, index_container, points);
+      					available_points -= index_container.size();
+
+      				} else {
+
+      					--class_index;
+          				shape_index[point_index] = -1;
+
+          				for (Index_iterator it = index_container.begin(); it != index_container.end(); ++it)
+            				shape_index[*it] = -1;
+      				}
+      			}
+
+
+      			// Update all unassigned points.
+      			update_unassigned_points(points, shape_index);
+      			assert(points.size() == available_points);
+
+
+      			// Save internal log.
+				// if (m_save_info) internal.save("tmp/internal_rg");
+
+
+				// Save found shape indices.
+				if (m_save_info) {
+
+					log.out << "Shape indices: ";
+					for (size_t i = 0; i < shape_index.size(); ++i) log.out << shape_index[i] << " ";
+					log.out << std::endl;
+				}
+			}
+
+			void propagate(std::vector<int> &shape_index, std::vector<int> &index_container, Line_2 &optimal_line, Normal &line_normal, Log &log, 
+				const int class_index, const Projected_points &points, const Normals &normals, const int point_index, const Fuzzy_tree &tree) {
+
+
+				// Some preconditions.
+				assert(m_cluster_epsilon > FT(0));
+				assert(index_container.size() == 1);
+				assert(point_index >= 0 && point_index < static_cast<int>(shape_index.size()));
+
+
+				// Initialize containers.
+				m_index_container_former_ring.clear();
+        		m_index_container_former_ring.push_back(point_index);
+
+        		m_index_container_current_ring.clear();
+
+
+        		// Main loop.
+        		if (m_save_info) {
+        			log.out << "Propagation:\n" << std::endl;
+					log.out << "line: " << optimal_line.point(0) << " -- " << optimal_line.point(1) 
+							<< "; norm: " << line_normal << " with neighbours: " << std::endl;
+				}
+
+        		bool propagation = true;
+        		do {
+
+        			propagation = false;
+        			for (Index_iterator fit = m_index_container_former_ring.begin(); fit != m_index_container_former_ring.end(); ++fit) {
+        				const int former_index = (*fit);
+
+        				const Point_2 &former_point = points.at(former_index);
+        				const FT radius = m_cluster_epsilon;
+
+
+        				// Compute circle.
+        				Fuzzy_circle circle;
+        				compute_circle(circle, former_point, radius);
+
+
+        				// Find nearest neighbours.
+        				find_nearest_neighbours(tree, circle);
+
+
+        				// Handle neighbours.
+        				handle_neighbours(propagation, shape_index, log, class_index, optimal_line, line_normal, points, normals);
+        			}
+
+
+        			// Update containers.
+        			update_containers(index_container);
+
+
+        			// Refit the line.
+					if (index_container.size() < 2) continue;
+					refit_the_line(optimal_line, line_normal, index_container, points);
+
+
+        		} while (propagation);
+			}
+
+			void handle_neighbours(bool &propagation, std::vector<int> &shape_index, Log &log,
+				const int class_index, const Line_2 &optimal_line, const Normal &line_normal, const Projected_points &points, const Normals &normals) {
+
+				assert(!m_neighbours.empty());
+				for (Point_iterator nit = m_neighbours.begin(); nit != m_neighbours.end(); ++nit) {
+					const int neighbour_index = (*nit).first;
+
+					assert(neighbour_index >= 0 && neighbour_index < static_cast<int>(shape_index.size()));
+					if (shape_index[neighbour_index] >= 0) continue;
+
+
+					// Get neighbour's position and normal.
+					const Point_2 &neighbour_pos = points.at(neighbour_index);
+					const Normal &neighbour_norm = normals.at(neighbour_index);
+
+
+					// Compute distance to the line and cos.
+					const FT eps = FT(1) / FT(1000000);
+					assert(CGAL::abs(neighbour_norm.squared_length() - FT(1)) < eps && 
+						   CGAL::abs(line_normal.squared_length() - FT(1)) < eps);
+
+					const FT squared_distance = compute_squared_distance_to_the_line(neighbour_pos, optimal_line);
+					const FT cos_angle 		  = CGAL::abs(neighbour_norm * line_normal);
+
+					if (m_save_info) log.out << "\npos: "     << neighbour_pos 
+											 << ", norm: "    << neighbour_norm 
+											 << ", sq dist: " << squared_distance 
+											 << ", cos: "     << cos_angle;
+
+
+					// Check region growing conditions.
+					assert(m_epsilon > FT(0));
+					assert(m_normal_threshold > FT(0) && m_normal_threshold < FT(1));
+
+					if (squared_distance > m_epsilon * m_epsilon || cos_angle < m_normal_threshold) continue;
+					if (m_save_info) log.out << ", passed" << std::endl;
+
+
+					// If all is good, add point to the shape.
+					shape_index[neighbour_index] = class_index;
+              		m_index_container_current_ring.insert(neighbour_index);
+              		propagation = true;
+				}
+			}
+
+			void update_containers(std::vector<int> &index_container) {
+
+				m_index_container_former_ring.clear();
+          		m_index_container_former_ring.resize(m_index_container_current_ring.size());
+
+          		index_container.reserve(index_container.size() + m_index_container_current_ring.size());
+
+          		size_t count = 0;
+          		for (Set_iterator cit = m_index_container_current_ring.begin(); cit != m_index_container_current_ring.end(); ++cit, ++count) {
+	            	
+	            	m_index_container_former_ring[count] = *cit;
+	            	index_container.push_back(*cit);
+	          	}
+
+	          	assert(count == m_index_container_current_ring.size());
+          		m_index_container_current_ring.clear();
+			}
+
+			void refit_the_line(Line_2 &optimal_line, Normal &line_normal, const std::vector<int> &index_container, const Projected_points &points) {
+
+				map_indices_to_local_points(index_container, points);
+
+				Line_2 adjusted_line;
+			    assert(m_local_points.size() >= 2);
+			    CGAL::linear_least_squares_fitting_2(m_local_points.begin(), m_local_points.end(), adjusted_line, CGAL::Dimension_tag<0>());
+
+			    optimal_line = adjusted_line;
+			    get_line_normal(line_normal, optimal_line);
+			}
+
+			void map_indices_to_local_points(const std::vector<int> &index_container, const Projected_points &points) {
+
+			    const size_t num_points = index_container.size();
+			    assert(num_points >= 2);
+
+			    m_local_points.clear();
+			    m_local_points.resize(num_points);
+
+				size_t count = 0;
+			    for (Index_iterator it = index_container.begin(); it != index_container.end(); ++it, ++count)
+					m_local_points[count] = points.at(*it);
+
+				assert(count == num_points);
+			}
+
+			void get_line_with_normal(const Point_2 &p, const Normal &n, Line_2 &line, Normal &line_normal) {
+				
+				line = (Line_2(p, n)).perpendicular(p);
+				line_normal = n / CGAL::sqrt(n * n);
+			}
+
+			FT compute_squared_distance_to_the_line(const Point_2 &p, const Line_2 &line) {
+				return CGAL::squared_distance(p, line);
+			}
+
+			void get_line_normal(Normal &n, const Line_2 &line) {
+				
+				n = (line.perpendicular(line.point(0))).to_vector();
+				n /= CGAL::sqrt(n * n);
+			}
+
+			void find_nearest_neighbours(const Fuzzy_tree &tree, const Fuzzy_circle &circle) {
+
+				m_neighbours.clear();
+				tree.search(std::inserter(m_neighbours, m_neighbours.end()), circle);
+			}
+
+			void compute_circle(Fuzzy_circle &circle, const Point_2 &centre, const FT radius) {
+
+				assert(radius > FT(0));
+				circle = Fuzzy_circle(centre, radius);
+			}
+
+			void update_input_data(Boundary_data &boundaries, Projected_points &boundaries_projected, 
+				const int class_index, const std::vector<int> &index_container, const Projected_points &points) {
+
+				boundaries[class_index] = index_container;
+				for (size_t i = 0; i < index_container.size(); ++i) boundaries_projected[index_container[i]] = points.at(index_container[i]);
+			}
+
+			void update_unassigned_points(Projected_points &points, const std::vector<int> &shape_index) {
+				
+				assert(shape_index.size() >= points.size());
+				Projected_points updated;
+
+				for (Point_iterator pit = points.begin(); pit != points.end(); ++pit) {
+					const int point_index = (*pit).first;
+
+					if (shape_index[point_index] < 0) {
+
+						const Point_2 &point_pos = (*pit).second;
+						updated[point_index] = point_pos;
+					}
+				}
+				points = updated;
 			}
 		};
 	}

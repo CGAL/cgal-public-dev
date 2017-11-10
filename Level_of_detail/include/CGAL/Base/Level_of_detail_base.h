@@ -700,11 +700,11 @@ namespace CGAL {
 					detecting_2d_lines(boundary_clutter, boundary_clutter_projected, building_boundaries, building_boundaries_projected, log, input, ++exec_step);
 
 					// Refactor or remove later!
-					// Lines lines; Segments segments;
+					 Lines lines; Segments segments;
 
-					// line_fitting(lines, log, building_boundaries, building_boundaries_projected, ++exec_step);
-					// creating_segments(segments, log, lines, building_boundaries, building_boundaries_projected, ++exec_step);
-					// applying_2d_structuring(log, lines, building_boundaries, building_boundaries_projected, ++exec_step);
+					line_fitting(lines, log, building_boundaries, building_boundaries_projected, ++exec_step);
+					creating_segments(segments, log, lines, building_boundaries, building_boundaries_projected, ++exec_step);
+					applying_2d_structuring(log, lines, building_boundaries, building_boundaries_projected, ++exec_step);
 				}
 
 
@@ -1190,14 +1190,14 @@ namespace CGAL {
 				m_visibility_num_samples = 1;
 				m_graph_cut_beta 		 = 35.0; // 15.0 for with_shape_detection
 				m_clutter_knn 			 = 12;
-				m_clutter_cell_length    = 5.0;
+				m_clutter_cell_length    = 4.0;
 				m_use_boundaries 		 = true;
 				
 				m_with_region_growing 	 		  = true;
-				m_region_growing_epsilon 		  = 0.01;  
-				m_region_growing_cluster_epsilon  = 0.2;  
+				m_region_growing_epsilon 		  = 1.0;
+				m_region_growing_cluster_epsilon  = 5.0;  
 				m_region_growing_normal_threshold = 0.9;  
-				m_region_growing_min_points 	  = 10;
+				m_region_growing_min_points 	  = 100;
 			}
 
 

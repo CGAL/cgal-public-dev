@@ -170,7 +170,7 @@ namespace CGAL {
 
 			void simplify_clutter_using_grid(Projected_points &cleaned_points, const Grid_map &grid_map, const Projected_points &boundary_clutter_projected) const {
 
-				std::cout << "\nWarning: grid simplify, take care when using these simplified points to access any original input data!\n" << std::endl;
+				std::cout << "\nWarning: grid simplify, take care when using these simplified points to access any original input data!\n";
 				// change below point_index to the proper index of the closest point!
 
 				assert(cleaned_points.empty());
