@@ -225,7 +225,8 @@ namespace CGAL {
 
 			void applying_selection(
 				Indices &ground_idxs,
-				Indices &building_boundary_idxs, 
+				Indices &building_boundary_idxs,
+				Indices &building_interior_idxs, 
 				Log &log, 
 				const Container_3D &input, const size_t exec_step) {
 
@@ -234,6 +235,7 @@ namespace CGAL {
 
 				m_ground_selector.select_elements(input, std::back_inserter(ground_idxs));
 				m_building_boundary_selector.select_elements(input, std::back_inserter(building_boundary_idxs));
+				m_building_interior_selector.select_elements(input, std::back_inserter(building_interior_idxs));
 
 				log.out << "(" << exec_step << " a) Ground is found. Number of elements: " 			   << ground_idxs.size() << std::endl;
 				log.out << "(" << exec_step << " b) Building boundaries are found. Number of elements: " << building_boundary_idxs.size() << std::endl << std::endl;
@@ -259,7 +261,7 @@ namespace CGAL {
 				Boundary_data &building_boundaries, 
 				Boundary_data &boundary_clutter, 
 				Log &log, 
-				const Indices &building_boundary_idxs, const Container_3D &input, const size_t exec_step) {
+				const Indices &building_boundary_idxs, const Indices &building_interior_idxs, const Container_3D &input, const size_t exec_step) {
 
 				// Map indices from all detected planes to the ones that are a part of the given facades.
 				std::cout << "(" << exec_step << ") getting boundaries" << std::endl;
@@ -267,7 +269,8 @@ namespace CGAL {
 				bool with_shape_detection = false;
 				if (m_pipeline_version == Pipeline_version::WITH_SHAPE_DETECTION) with_shape_detection = true;
 
-				const auto number_of_boundaries = m_preprocessor.get_boundary_points(input, building_boundary_idxs, with_shape_detection, building_boundaries, boundary_clutter);
+				const auto number_of_boundaries = 
+				m_preprocessor.get_boundary_points(input, building_boundary_idxs, building_interior_idxs, with_shape_detection, building_boundaries, boundary_clutter);
 
 				log.out << "(" << exec_step << " a) Planes for building's boundary are found. Number of planes: " << number_of_boundaries 		   << std::endl;
 				log.out << "(" << exec_step << " b) Boundary clutter is found. Number of points: " 				  << boundary_clutter.at(0).size() << std::endl << std::endl;
@@ -668,8 +671,9 @@ namespace CGAL {
 
 
 				// (03) ----------------------------------
-				Indices ground_idxs, building_boundary_idxs;
-				applying_selection(ground_idxs, building_boundary_idxs, log, input, ++exec_step);
+				Indices ground_idxs, building_boundary_idxs, building_interior_idxs;
+				applying_selection(ground_idxs, building_boundary_idxs, building_interior_idxs,
+				log, input, ++exec_step);
 
 
 				// (04) ----------------------------------
@@ -679,7 +683,8 @@ namespace CGAL {
 
 				// (05) ----------------------------------					
 				Boundary_data building_boundaries, boundary_clutter;					
-				getting_boundary_points(building_boundaries, boundary_clutter, log, building_boundary_idxs, input, ++exec_step);
+				getting_boundary_points(building_boundaries, boundary_clutter, log, 
+					building_boundary_idxs, building_interior_idxs, input, ++exec_step);
 
 
 				if (m_pipeline_version == Pipeline_version::WITH_SHAPE_DETECTION) {
@@ -738,7 +743,8 @@ namespace CGAL {
 
 				// (14) ----------------------------------
 				CDT cdt;
-				if (m_pipeline_version == Pipeline_version::WITHOUT_SHAPE_DETECTION) m_add_cdt_clutter = true;
+				if (m_pipeline_version == Pipeline_version::WITHOUT_SHAPE_DETECTION && !m_with_region_growing) 
+					m_add_cdt_clutter = true;
 				creating_cdt(cdt, log, boundary_clutter, boundary_clutter_projected, input, ++exec_step);
 
 
@@ -1017,7 +1023,7 @@ namespace CGAL {
 				m_structuring_epsilon 	 = 0.025; 	 // the most important parameter!!! Depends on the dataset.
 				m_add_cdt_clutter     	 = true;	 // is always true if shape detection is not used
 				m_visibility_num_samples = 1;		 // the more samples, the slower but better quality in visibility
-				m_graph_cut_beta 		 = 100000.0; // smaller value for more inside triangles
+				m_graph_cut_beta 		 = 100000.0; // smaller value for less inside triangles
 				m_clutter_knn 			 = 2;		 // the smaller value, the less thinning is performed
 				m_clutter_cell_length    = 0.025;	 // the bigger value, the more points are removed in the grid simplify
 				m_use_boundaries 		 = true;     // use or not outliner to build walls
@@ -1126,7 +1132,6 @@ namespace CGAL {
 				m_clutter_cell_length    = 4.0;
 				m_use_boundaries 		 = true;
 				
-
 				m_with_region_growing 	 		  = false;
 				m_region_growing_epsilon 		  = 0.0;  
 				m_region_growing_cluster_epsilon  = 0.0;  
@@ -1178,7 +1183,7 @@ namespace CGAL {
 				m_visibility_method   	 		 = Visibility_method::FACE_BASED_NATURAL_NEIGHBOURS; // point based for with_shape_detection
 				m_visibility_sampler 	 		 = Visibility_sampler::UNIFORM_SUBDIVISION;
 				m_thinning_neighbour_search_type = Neighbour_search_type::CIRCLE;
-				m_building_boundary_type 		 = Building_boundary_type::UNORIENTED;
+				m_building_boundary_type 		 = Building_boundary_type::ORIENTED;
 				m_clutter_new_point_type 		 = Clutter_new_point_type::CLOSEST;
 				m_thinning_type 	  			 = Thinning_type::NAIVE;
 
@@ -1186,9 +1191,9 @@ namespace CGAL {
 				m_visibility_angle_eps   = 0.001; 
 				m_max_reg_angle          = 10.0;
 				m_structuring_epsilon 	 = 1.5;
-				m_add_cdt_clutter     	 = true;
+				m_add_cdt_clutter     	 = false;
 				m_visibility_num_samples = 1;
-				m_graph_cut_beta 		 = 35.0; // 15.0 for with_shape_detection
+				m_graph_cut_beta 		 = 1000000000.0; // 35.0 with_clutter // 15.0 for with_shape_detection
 				m_clutter_knn 			 = 12;
 				m_clutter_cell_length    = 4.0;
 				m_use_boundaries 		 = true;

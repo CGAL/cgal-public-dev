@@ -411,8 +411,10 @@ namespace CGAL {
 
 				std::cout << cos_in << " " << cos_out << std::endl; */
 
-				assert(CGAL::abs(cos_in)  >= FT(0) && CGAL::abs(cos_in)  <= FT(1));
-				assert(CGAL::abs(cos_out) >= FT(0) && CGAL::abs(cos_out) <= FT(1));
+				const FT eps = FT(1) / FT(1000000000);
+
+				assert(CGAL::abs(cos_in)  >= FT(0) && (FT(1) - CGAL::abs(cos_in))  > -eps);
+				assert(CGAL::abs(cos_out) >= FT(0) && (FT(1) - CGAL::abs(cos_out)) > -eps);
 
 				const FT min_cos = CGAL::min(cos_in, cos_out);
 				const FT result = m_alpha - min_cos;

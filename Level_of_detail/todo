@@ -122,3 +122,4 @@ Ideas:
 1. Can we use an average spacing instead of sparsity test with grid simplify when cheking for dimension 2? It seems to work better.
 2. Fix in the grid simplify the boundary_data setting. Now I assign new indices, which may not correlate with original input. Since now, I use it only locally when creating cdt, it is not important, but if I want to access normals from original data using this mapping, I will introduce wrong data.
 3. Try to make the region growing class constant.
+4. As alternative, you can use free_form_quality function for all edges: free form, incoherent, and structure coherent.

@@ -841,14 +841,14 @@ namespace CGAL {
 				}
 
 				// Log function. Can be removed.
-				Log log;
+				// Log log;
 
 				// if (m_save_log) {
-					for (size_t i = 0; i < m_cc.size(); ++i) 
-						for (size_t j = 0; j < m_str_points[i].size(); ++j)
-							log.out << m_str_points[i][j] << " " << 0 << std::endl;
-
-					log.save("tmp/structured_points", ".xyz");
+				//	for (size_t i = 0; i < m_cc.size(); ++i) 
+				//		for (size_t j = 0; j < m_str_points[i].size(); ++j)
+				//			log.out << m_str_points[i][j] << " " << 0 << std::endl;
+				//	
+				//	log.save("tmp/structured_points", ".xyz");
 				// }
 			}
 

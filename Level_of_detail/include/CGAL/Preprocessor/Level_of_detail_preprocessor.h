@@ -16,6 +16,10 @@
 #include <CGAL/Fuzzy_sphere.h>
 #include <CGAL/Orthogonal_k_neighbor_search.h>
 
+// New CGAL includes.
+#include <CGAL/Mylog/Mylog.h>
+#include <CGAL/Projector/Level_of_detail_projector.h>
+
 namespace CGAL {
 
 	namespace LOD {
@@ -30,6 +34,7 @@ namespace CGAL {
 			typedef typename Traits::FT 	 FT;
 			typedef typename Traits::Point_2 Point_2;
 			typedef typename Traits::Point_3 Point_3;
+			typedef typename Traits::Plane_3 Plane_3;
 
 			typedef CGAL::Search_traits_3<Traits>                     Search_traits;
 			typedef CGAL::Orthogonal_k_neighbor_search<Search_traits> Neighbor_search;
@@ -39,6 +44,7 @@ namespace CGAL {
 			using Index          = int;
 			using Const_iterator = typename Container::const_iterator;
 			using Index_map      = typename Container:: template Property_map<Index>;
+			using Log 			 = CGAL::LOD::Mylog;
 
 			Level_of_detail_preprocessor() : m_scale(FT(1)) { }
 
@@ -65,21 +71,15 @@ namespace CGAL {
 			// Later I can adapt boundary_clutter to some other data structure where I also take
 			// into account the type of the clutter: undetected, cylinder, sphere and so on. The type is saved in property_map<Types>.
 			template<class Indices, class Boundary_data>
-			auto get_boundary_points(const Container &input, const Indices &mapping, const bool with_shape_detection, Boundary_data &building_boundaries, Boundary_data &boundary_clutter) {
+			auto get_boundary_points(
+				const Container &input, const Indices &boundary_mapping, const Indices &interior_mapping, const bool with_shape_detection, 
+				Boundary_data &building_boundaries, Boundary_data &boundary_clutter) {
 
-				auto number_of_boundaries = -1;
+				boundary_clutter.clear();
 				create_indices(input);
 
-				building_boundaries.clear();
-				boundary_clutter.clear();
-
-				for (size_t i = 0; i < mapping.size(); ++i) {
-					if (m_indices[mapping[i]] >= 0 && with_shape_detection) building_boundaries[m_indices[mapping[i]]].push_back(mapping[i]);
-					else boundary_clutter[0].push_back(mapping[i]);
-				}
-
-				number_of_boundaries = building_boundaries.size();
-				return number_of_boundaries;
+				add_interior_boundary_to_clutter(input, interior_mapping, boundary_clutter);
+				return add_boundary_points(boundary_mapping, with_shape_detection, building_boundaries, boundary_clutter);
 			}
 
 			// This is very slow algorithm. Should be improved later.
@@ -142,6 +142,45 @@ namespace CGAL {
 
 			void create_indices(const Container &input) {
 				boost::tie(m_indices,  boost::tuples::ignore) = input. template property_map<Index>("index");
+			}
+
+			template<class Indices, class Boundary_data>
+			auto add_boundary_points(const Indices &mapping, const bool with_shape_detection, Boundary_data &building_boundaries, Boundary_data &boundary_clutter) {
+
+				auto number_of_boundaries = -1;
+				building_boundaries.clear();
+
+				for (size_t i = 0; i < mapping.size(); ++i) {
+					if (m_indices[mapping[i]] >= 0 && with_shape_detection) building_boundaries[m_indices[mapping[i]]].push_back(mapping[i]);
+					else boundary_clutter[0].push_back(mapping[i]);
+				}
+
+				number_of_boundaries = building_boundaries.size();
+				return number_of_boundaries;
+			}
+
+
+			template<class Indices, class Boundary_data>
+			void add_interior_boundary_to_clutter(const Container &input, const Indices &interior_mapping, Boundary_data & /* boundary_clutter */) {
+
+				// Remove later -->
+				typedef std::map<int, Point_2> Projected_points;
+				typedef Level_of_detail_simple_projector<Traits, Container, Projected_points> Ground_projector;
+				
+				Boundary_data building_interior, stub;
+				add_boundary_points(interior_mapping, false, stub, building_interior);
+
+				Plane_3 base_ground_plane(FT(0), FT(0), FT(1), FT(0));
+				Projected_points building_interior_projected;
+				
+				Ground_projector projector; 
+				projector.project(input, building_interior, base_ground_plane, building_interior_projected);
+
+				Log log;
+				log.export_projected_points_as_xyz("tmp/building_interior", building_interior_projected, "stub");
+				// <--
+
+				// to be implemented!
 			}
 		};
 	}

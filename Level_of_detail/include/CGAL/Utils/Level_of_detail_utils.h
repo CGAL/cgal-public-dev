@@ -380,6 +380,8 @@ namespace CGAL {
 
 						vhs[i][j] = cdt.insert(points[i][j]);
 						vhs[i][j]->info().label = labels[i][j];
+
+						assert(labels[i][j] != Structured_label::CLUTTER);
 					}
 				}
 
