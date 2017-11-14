@@ -81,6 +81,9 @@ namespace CGAL {
 			typedef typename Lods::Point  Ground_point;
 			typedef typename Lods::Ground Ground;
 
+			typedef typename Traits::Grid_simplifier Grid_simplifier;
+			typedef typename Traits::Thinning 		 Thinning;
+
 			typedef typename Traits::Clutter_processor Clutter_processor;
 			typedef Thinning_fitter_type    		   Clutter_fitter_type;
 			typedef Grid_new_point_type 			   Clutter_new_point_type;
@@ -159,7 +162,8 @@ namespace CGAL {
 			m_region_growing_cluster_epsilon(-FT(1)),
 			m_region_growing_normal_threshold(-FT(1)),
 			m_region_growing_min_points(0),
-			m_with_region_growing(true)
+			m_with_region_growing(true),
+			m_use_grid_simplifier_first(false)
 			{ } // Do I need to create an instance of these traits here?
 
 
@@ -331,6 +335,46 @@ namespace CGAL {
 
 				log.out << std::endl;
 				std::cout << std::endl;
+			}
+
+			void applying_thinning(
+				Projected_points &boundary_clutter_projected, 
+				Log &log, 
+				const Container_3D &input,
+				const size_t exec_step) {
+
+				// Regularize/thin points in the clutter.
+				std::cout << "(" << exec_step << ") applying thinning; ";
+
+				m_thinnning.set_number_of_neighbours(m_clutter_knn);
+				m_thinnning.set_fitter_type(m_clutter_fitter_type);
+				m_thinnning.set_neighbour_search_type(m_thinning_neighbour_search_type);
+				m_thinnning.set_fuzzy_radius(m_thinning_fuzzy_radius);
+				m_thinnning.set_thinning_type(m_thinning_type);
+
+				Boundary_data stub;
+				const auto number_of_thinned_points = m_thinnning.process(stub, boundary_clutter_projected, input);
+
+				std::cout << "thinned points: " << number_of_thinned_points << std::endl;
+				log.out << "(" << exec_step << ") Projected points are thinned. Number of thinned points: " << number_of_thinned_points << std::endl << std::endl;
+			}
+
+			void applying_grid_simplification(
+				Projected_points &boundary_clutter_projected,
+				Log &log,  
+				const size_t exec_step) {
+
+				// Remove unnecessary points from the clutter.
+				std::cout << "(" << exec_step << ") applying grid simplification; ";
+
+				m_grid_simplifier.set_grid_cell_length(m_clutter_cell_length);
+				m_grid_simplifier.set_new_point_type(m_clutter_new_point_type);
+
+				Boundary_data stub;
+				const auto number_of_removed_points = m_grid_simplifier.process(stub, boundary_clutter_projected);
+
+				std::cout << "removed points: " << number_of_removed_points << std::endl;
+				log.out << "(" << exec_step << ") Projected points are simplified. Number of removed points: " << number_of_removed_points << std::endl << std::endl;
 			}
 
 			void detecting_2d_lines(
@@ -702,10 +746,15 @@ namespace CGAL {
 				// (08) ----------------------------------
 				if (m_pipeline_version == Pipeline_version::WITHOUT_SHAPE_DETECTION && m_with_region_growing) {
 
+					if (m_use_grid_simplifier_first) {
+						
+						assert(m_clutter_new_point_type == Grid_new_point_type::CLOSEST);
+						applying_grid_simplification(boundary_clutter_projected, log, ++exec_step);
+					}
+
 					detecting_2d_lines(boundary_clutter, boundary_clutter_projected, building_boundaries, building_boundaries_projected, log, input, ++exec_step);
 
-					// Refactor or remove later!
-					 Lines lines; Segments segments;
+					Lines lines; Segments segments;
 
 					line_fitting(lines, log, building_boundaries, building_boundaries_projected, ++exec_step);
 					creating_segments(segments, log, lines, building_boundaries, building_boundaries_projected, ++exec_step);
@@ -737,8 +786,11 @@ namespace CGAL {
 
 				// (13) ----------------------------------
 				if (m_pipeline_version == Pipeline_version::WITHOUT_SHAPE_DETECTION || 
-				   (m_pipeline_version == Pipeline_version::WITH_SHAPE_DETECTION && m_add_cdt_clutter)) 
-					processing_clutter(boundary_clutter, boundary_clutter_projected, log, input, ++exec_step);
+				   (m_pipeline_version == Pipeline_version::WITH_SHAPE_DETECTION && m_add_cdt_clutter)) {
+
+					if (!m_use_grid_simplifier_first)
+						processing_clutter(boundary_clutter, boundary_clutter_projected, log, input, ++exec_step);
+				}
 
 
 				// (14) ----------------------------------
@@ -818,6 +870,9 @@ namespace CGAL {
 
 			std::unique_ptr<Structuring_2> m_structuring;
 			Clutter_processor m_clutter_processor;
+			
+			Grid_simplifier m_grid_simplifier;
+			Thinning 		m_thinnning;
 
 
 			// Global parameters.
@@ -884,6 +939,7 @@ namespace CGAL {
 			size_t m_region_growing_min_points;
 
 			bool m_with_region_growing;
+			bool m_use_grid_simplifier_first;
 
 
 			// Assert default values of all global parameters.
@@ -921,10 +977,12 @@ namespace CGAL {
 
 				assert(m_thinning_fuzzy_radius != -FT(1));
 
-				assert(m_region_growing_epsilon 		 != -FT(1));
-				assert(m_region_growing_cluster_epsilon  != -FT(1));
-				assert(m_region_growing_normal_threshold != -FT(1));
-				assert(m_region_growing_min_points 		 !=     0);
+				if (m_with_region_growing) {
+					assert(m_region_growing_epsilon 		 != -FT(1));
+					assert(m_region_growing_cluster_epsilon  != -FT(1));
+					assert(m_region_growing_normal_threshold != -FT(1));
+					assert(m_region_growing_min_points 		 !=     0);
+				}
 			}
 
 
@@ -954,8 +1012,9 @@ namespace CGAL {
 				
 				m_roof_fitter_type = Roof_fitter_type::AVG;
 
-				m_preprocessor_scale  = 2.0;
-				m_clutter_fitter_type = Clutter_fitter_type::LINE;	
+				m_preprocessor_scale  		= 2.0;
+				m_clutter_fitter_type 		= Clutter_fitter_type::LINE;	
+				m_use_grid_simplifier_first = false;
 				
 				m_visibility_num_neighbours 	  = 6;
 				m_visibility_rays_per_side  	  = 10;
@@ -1183,26 +1242,28 @@ namespace CGAL {
 				m_visibility_method   	 		 = Visibility_method::FACE_BASED_NATURAL_NEIGHBOURS; // point based for with_shape_detection
 				m_visibility_sampler 	 		 = Visibility_sampler::UNIFORM_SUBDIVISION;
 				m_thinning_neighbour_search_type = Neighbour_search_type::CIRCLE;
-				m_building_boundary_type 		 = Building_boundary_type::ORIENTED;
+				m_building_boundary_type 		 = Building_boundary_type::UNORIENTED;
 				m_clutter_new_point_type 		 = Clutter_new_point_type::CLOSEST;
 				m_thinning_type 	  			 = Thinning_type::NAIVE;
 
 				m_thinning_fuzzy_radius  = 5.0;
-				m_visibility_angle_eps   = 0.001; 
+				m_visibility_angle_eps   = 0.1; 
 				m_max_reg_angle          = 10.0;
-				m_structuring_epsilon 	 = 1.5;
+				m_structuring_epsilon 	 = 2.3;
 				m_add_cdt_clutter     	 = false;
 				m_visibility_num_samples = 1;
-				m_graph_cut_beta 		 = 1000000000.0; // 35.0 with_clutter // 15.0 for with_shape_detection
+				m_graph_cut_beta 		 = 100000.0; // 35.0 with_clutter // 15.0 for with_shape_detection
 				m_clutter_knn 			 = 12;
-				m_clutter_cell_length    = 4.0;
+				m_clutter_cell_length    = 1.3;
 				m_use_boundaries 		 = true;
-				
-				m_with_region_growing 	 		  = true;
-				m_region_growing_epsilon 		  = 1.0;
-				m_region_growing_cluster_epsilon  = 5.0;  
+
+				m_use_grid_simplifier_first = true;
+				m_with_region_growing 	 	= true;
+
+				m_region_growing_epsilon 		  = 2.5;
+				m_region_growing_cluster_epsilon  = 4.5;  
 				m_region_growing_normal_threshold = 0.9;  
-				m_region_growing_min_points 	  = 100;
+				m_region_growing_min_points 	  = 8;
 			}
 
 

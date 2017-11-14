@@ -112,9 +112,6 @@ namespace CGAL {
 				boundary_clutter_projected = cleaned_points;
 
 				assert(number_of_removed_points >= 0);
-				
-				// set_new_boundary_data(boundary_clutter, boundary_clutter_projected);
-
 				if (m_save_result) {
 					
 					Log log; 
@@ -171,36 +168,34 @@ namespace CGAL {
 			void simplify_clutter_using_grid(Projected_points &cleaned_points, const Grid_map &grid_map, const Projected_points &boundary_clutter_projected) const {
 
 				std::cout << "\nWarning: grid simplify, take care when using these simplified points to access any original input data!\n";
-				// change below point_index to the proper index of the closest point!
 
 				assert(cleaned_points.empty());
 				assert(!grid_map.empty() && !boundary_clutter_projected.empty());
 
-				int point_index = 0; Point_2 new_point;
+				int point_index = 0;
 				for (Grid_cell_iterator git = grid_map.begin(); git != grid_map.end(); ++git, ++point_index) {
 					
 					const auto &grid_cell = *git;
-					create_new_point(new_point, grid_cell, boundary_clutter_projected);
-
-					cleaned_points[point_index] = new_point;
+					create_new_point(cleaned_points, point_index, grid_cell, boundary_clutter_projected);
 				}		
 			}
 
 			template<class Grid_cell>
-			void create_new_point(Point_2 &new_point, const Grid_cell &grid_cell, const Projected_points &boundary_clutter_projected) const {
+			void create_new_point(Projected_points &cleaned_points, 
+				const int glob_point_index, const Grid_cell &grid_cell, const Projected_points &boundary_clutter_projected) const {
 
 				switch (m_new_point_type) {
 
 					case Grid_new_point_type::CENTROID:
-						create_new_centroid(new_point, grid_cell);
+						create_new_centroid(cleaned_points, glob_point_index, grid_cell);
 						break;
 
 					case Grid_new_point_type::BARYCENTRE:
-						create_new_barycentre(new_point, grid_cell, boundary_clutter_projected);
+						create_new_barycentre(cleaned_points, glob_point_index, grid_cell, boundary_clutter_projected);
 						break;
 
 					case Grid_new_point_type::CLOSEST:
-						create_new_closest(new_point, grid_cell, boundary_clutter_projected);
+						create_new_closest(cleaned_points, grid_cell, boundary_clutter_projected);
 						break;
 
 					default:
@@ -210,7 +205,7 @@ namespace CGAL {
 			}
 
 			template<class Grid_cell>
-			void create_new_centroid(Point_2 &new_point, const Grid_cell &grid_cell) const {
+			void create_new_centroid(Projected_points &cleaned_points, const int glob_point_index, const Grid_cell &grid_cell) const {
 
 				const Cell_id &cell_id = grid_cell.first;
 
@@ -219,11 +214,20 @@ namespace CGAL {
 				const FT x = static_cast<FT>(cell_id.first)  * m_grid_cell_length + half_cell_length;
 				const FT y = static_cast<FT>(cell_id.second) * m_grid_cell_length + half_cell_length;
 
-				new_point = Point_2(x, y);
+				cleaned_points[glob_point_index] = Point_2(x, y);
 			}
 
 			template<class Grid_cell>
-			void create_new_barycentre(Point_2 &new_point, const Grid_cell &grid_cell, const Projected_points &boundary_clutter_projected) const {
+			void create_new_barycentre(Projected_points &cleaned_points, const int glob_point_index, const Grid_cell &grid_cell, const Projected_points &boundary_clutter_projected) const {
+
+				Point_2 new_point;
+				create_new_barycentre_point(new_point, grid_cell, boundary_clutter_projected);
+
+				cleaned_points[glob_point_index] = new_point;
+			}
+
+			template<class Grid_cell>
+			void create_new_barycentre_point(Point_2 &new_point, const Grid_cell &grid_cell, const Projected_points &boundary_clutter_projected) const {
 
 				const std::vector<int> &point_idxs = grid_cell.second;
 				const size_t num_point_idxs = point_idxs.size();
@@ -246,10 +250,10 @@ namespace CGAL {
 			}
 
 			template<class Grid_cell>
-			void create_new_closest(Point_2 &new_point, const Grid_cell &grid_cell, const Projected_points &boundary_clutter_projected) const {
+			void create_new_closest(Projected_points &cleaned_points, const Grid_cell &grid_cell, const Projected_points &boundary_clutter_projected) const {
 
 				Point_2 barycentre;
-				create_new_barycentre(barycentre, grid_cell, boundary_clutter_projected);
+				create_new_barycentre_point(barycentre, grid_cell, boundary_clutter_projected);
 
 				const std::vector<int> &point_idxs = grid_cell.second;
 				const size_t num_point_idxs = point_idxs.size();
@@ -271,7 +275,7 @@ namespace CGAL {
 				}
 
 				assert(new_point_index >= 0 && new_point_index < static_cast<int>(num_point_idxs));
-				new_point = boundary_clutter_projected.at(point_idxs[new_point_index]);
+				cleaned_points[point_idxs[new_point_index]] = boundary_clutter_projected.at(point_idxs[new_point_index]);
 			}
 
 			// WARNING: DOES NOT WORK IF LATER I WILL NEED TO ACCESS ANY DATA FROM THE ORIGINAL INPUT THAT I HAD BEFORE

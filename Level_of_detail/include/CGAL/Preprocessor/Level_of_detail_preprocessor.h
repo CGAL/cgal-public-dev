@@ -24,6 +24,46 @@ namespace CGAL {
 
 	namespace LOD {
 
+
+		template<class KernelTraits, class InputContainer, class InputIndices>
+		class Level_of_detail_interior_boundary_extractor {
+		
+		public:
+			typedef KernelTraits   Kernel;
+			typedef InputContainer Container;
+			typedef InputIndices   Indices;
+
+			typedef typename Kernel::FT 	 FT;
+			typedef typename Kernel::Point_2 Point_2;
+			typedef typename Kernel::Point_3 Point_3;
+			typedef typename Kernel::Plane_3 Plane_3;
+
+			using Index            = int;
+			using Const_iterator   = typename Container::const_iterator;
+			using Index_map        = typename Container:: template Property_map<Index>;
+			using Log 			   = CGAL::LOD::Mylog;
+			using Projected_points = std::map<int, Point_2>;
+
+			Level_of_detail_interior_boundary_extractor() { }
+
+			int extract(const Container &input, const Indices &mapping, const Projected_points &projected, Indices &result) {
+
+				int number_of_extracted_points = -1;
+
+				assert(input.number_of_points() != 0);
+				assert(!mapping.empty() && !projected.empty() && result.empty());
+
+				// to be implemented using alpha shapes!
+				// result should be a subset of mapping!
+
+				return number_of_extracted_points;
+			}
+
+		private:
+			// fields...
+		};
+
+
 		template<class KernelTraits, class InputContainer>
 		class Level_of_detail_preprocessor {
 
@@ -40,6 +80,9 @@ namespace CGAL {
 			typedef CGAL::Orthogonal_k_neighbor_search<Search_traits> Neighbor_search;
 			typedef CGAL::Fuzzy_sphere<Search_traits>                 Fuzzy_sphere;
 			typedef typename Neighbor_search::Tree 					  Tree;
+
+			typedef std::map<int, Point_2> 												  Projected_points;
+			typedef Level_of_detail_simple_projector<Traits, Container, Projected_points> Ground_projector;
 
 			using Index          = int;
 			using Const_iterator = typename Container::const_iterator;
@@ -141,7 +184,7 @@ namespace CGAL {
 			FT m_scale;
 
 			void create_indices(const Container &input) {
-				boost::tie(m_indices,  boost::tuples::ignore) = input. template property_map<Index>("index");
+				boost::tie(m_indices, boost::tuples::ignore) = input. template property_map<Index>("index");
 			}
 
 			template<class Indices, class Boundary_data>
@@ -161,26 +204,39 @@ namespace CGAL {
 
 
 			template<class Indices, class Boundary_data>
-			void add_interior_boundary_to_clutter(const Container &input, const Indices &interior_mapping, Boundary_data & /* boundary_clutter */) {
+			void add_interior_boundary_to_clutter(const Container &input, const Indices &interior_mapping, Boundary_data &boundary_clutter) {
 
-				// Remove later -->
-				typedef std::map<int, Point_2> Projected_points;
-				typedef Level_of_detail_simple_projector<Traits, Container, Projected_points> Ground_projector;
+				// (1) Project points onto the ground.
+				Projected_points building_interior_projected;
+				project_points_onto_ground<Indices, Boundary_data>(input, interior_mapping, building_interior_projected);
+
+
+				// (2) Extract boundaries.
+				Level_of_detail_interior_boundary_extractor<Traits, Container, Indices> extractor;
+
+				Indices result;
+				extractor.extract(input, interior_mapping, building_interior_projected, result);
+
+
+				// (3) Add extracted points to the clutter.
+				Boundary_data stub;
+				add_boundary_points(result, false, stub, boundary_clutter);
+			}
+
+			template<class Indices, class Boundary_data>
+			void project_points_onto_ground(const Container &input, const Indices &interior_mapping, Projected_points &building_interior_projected) {
 				
 				Boundary_data building_interior, stub;
 				add_boundary_points(interior_mapping, false, stub, building_interior);
 
 				Plane_3 base_ground_plane(FT(0), FT(0), FT(1), FT(0));
-				Projected_points building_interior_projected;
+				building_interior_projected.clear();
 				
 				Ground_projector projector; 
 				projector.project(input, building_interior, base_ground_plane, building_interior_projected);
 
 				Log log;
 				log.export_projected_points_as_xyz("tmp/building_interior", building_interior_projected, "stub");
-				// <--
-
-				// to be implemented!
 			}
 		};
 	}

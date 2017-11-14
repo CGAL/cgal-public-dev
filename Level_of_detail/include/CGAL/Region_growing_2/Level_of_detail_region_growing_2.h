@@ -306,7 +306,7 @@ namespace CGAL {
 			void estimate_min_points(const size_t total_points) {
 
 				if (m_min_points == 0) m_min_points = total_points / 100;
-				if (m_min_points < 10) m_min_points = 10;
+				if (m_min_points < 2) m_min_points = 2;
 
 				assert(m_min_points <= total_points);
 			}
