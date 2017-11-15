@@ -15,8 +15,8 @@
 // Author(s): Shahar    <shasha94@gmail.com>
 //            Efi Fogel <efif@gmail.com>
 
-#ifndef CGAL_SINGLE_MOLD_TRANSLATIONAL_CASTING_3_H
-#define CGAL_SINGLE_MOLD_TRANSLATIONAL_CASTING_3_H
+#ifndef CGAL_SMS_3_SINGLE_MOLD_TRANSLATIONAL_CASTING_TOP_FACETS_H
+#define CGAL_SMS_3_SINGLE_MOLD_TRANSLATIONAL_CASTING_TOP_Facets_H
 
 #include <iostream>
 #include <list>
@@ -29,10 +29,10 @@
 #include <CGAL/value_type_traits.h>
 #include <CGAL/property_map.h>
 
-#include "Set_movable_separability_3/NormalsDirection.h"
-#include "Set_movable_separability_3/check_upper_facet.h"
-#include "Set_movable_separability_3/coveringset_finder.h"
-#include "Set_movable_separability_3/lp_wrapper.h"
+#include <CGAL/Set_movable_separability_3/NormalsDirection.h>
+#include <CGAL/Set_movable_separability_3/check_upper_facet.h>
+#include <CGAL/Set_movable_separability_3/coveringset_finder.h>
+#include <CGAL/Set_movable_separability_3/lp_wrapper.h>
 
 namespace CGAL {
 
@@ -40,13 +40,9 @@ enum geom_traits_t { geom_traits };
 enum all_default_t { all_default };
 
 namespace Set_movable_separability_3 {
+namespace Single_mold_translational_casting {
 
-
-
-
-
-
-template<typename Polyhedron, typename NamedParameters>
+template <typename Polyhedron, typename NamedParameters>
 class Get_kernel {
   typedef typename boost::property_map<Polyhedron,
                                        boost::vertex_point_t>::const_type
@@ -65,10 +61,9 @@ public:
 
 template <typename Polyhedron,  typename NamedParameters,
           typename OutputIterator>
-OutputIterator
-single_mold_translational_casting_3_impl(const Polyhedron& polyhedron,
-                                         const NamedParameters& np,
-                                         OutputIterator oi, boost::false_type)
+OutputIterator top_facets_impl(const Polyhedron& polyhedron,
+                               const NamedParameters& np,
+                               OutputIterator oi, boost::false_type)
 {
   return oi;
 }
@@ -76,55 +71,57 @@ single_mold_translational_casting_3_impl(const Polyhedron& polyhedron,
 //return single direction for each facet
 template <typename Polyhedron,  typename NamedParameters,
           typename OutputIterator>
-OutputIterator
-single_mold_translational_casting_3_impl(const Polyhedron& polyhedron,
-                                         const NamedParameters& np,
-                                         OutputIterator oi, boost::true_type)
+OutputIterator top_facets_impl(const Polyhedron& polyhedron,
+                               const NamedParameters& np,
+                               OutputIterator oi, boost::true_type)
 {
-  typedef typename Get_kernel<Polyhedron, NamedParameters>::type 		Kernel;
+  typedef typename Get_kernel<Polyhedron, NamedParameters>::type    Kernel;
 
-  typedef typename Kernel::Direction_3                                	 	Direction_3;
+  typedef typename Kernel::Direction_3                         	    Direction_3;
 
   std::vector< std::pair<typename Kernel::Direction_3, std::vector<typename Polyhedron::Facet_const_iterator>>>
   polyhedronNormals =  internal::findDirections<Polyhedron,Kernel>(polyhedron);
 
-
-   int outLength=0;
+  int outLength(0);
    unsigned int outIndexs[6];
 
-   Direction_3 outDirection; //2 hemisphere that the intersection of their boundary is a point that wasn't covered
+   // 2 hemisphere that the intersection of their boundary is a point that
+   // wasn't covered
+   Direction_3 outDirection;
    bool outDirectionExists;
 
-   outLength = internal::findCoveringSet<Kernel>(polyhedronNormals,outIndexs,&outDirection,&outDirectionExists);
-   while(outLength--)
-     {
-       std::pair<bool,Direction_3> tmp =(internal::checkUpperFacet<Kernel>(polyhedronNormals,outIndexs[outLength]));
-       if(tmp.first)
-	 {
-	   (*(oi++))=(std::make_pair(polyhedronNormals[outIndexs[outLength]].second,tmp.second));
-	 }
+   outLength =
+     internal::findCoveringSet<Kernel>(polyhedronNormals, outIndexs,
+                                       &outDirection,&outDirectionExists);
+   while (outLength--) {
+     std::pair<bool, Direction_3> tmp =
+       internal::checkUpperFacet<Kernel>(polyhedronNormals,
+                                         outIndexs[outLength]);
+     if(tmp.first) {
+       *oi++ = std::make_pair(polyhedronNormals[outIndexs[outLength]].second,
+                              tmp.second);
      }
-   if(outDirectionExists){
-       std::pair<bool,unsigned int> topFacet = internal::checkDirection<Kernel>(polyhedronNormals,outDirection);
-       if(topFacet.first)
-	 {
-	   (*(oi++))=(std::make_pair(polyhedronNormals[topFacet.second].second,outDirection));
+   }
+   if (outDirectionExists) {
+     std::pair<bool, unsigned int> topFacet =
+       internal::checkDirection<Kernel>(polyhedronNormals, outDirection);
+     if (topFacet.first) {
+       *oi++ = std::make_pair(polyhedronNormals[topFacet.second].second,
+                              outDirection);
 
-	 }
-
-       topFacet = internal::checkDirection<Kernel>(polyhedronNormals,-outDirection);
-       if(topFacet.first)
-	 {
-	   (*(oi++))=(std::make_pair(polyhedronNormals[topFacet.second].second,-outDirection));
-	 }
-
-
+     }
+     topFacet =
+       internal::checkDirection<Kernel>(polyhedronNormals, -outDirection);
+     if(topFacet.first) {
+       *oi++ = std::make_pair(polyhedronNormals[topFacet.second].second,
+                              -outDirection);
+     }
    }
 
   return oi;
 }
 
-/*! \fn OutputIterator find_single_mold_translational_casting_3(const Polyhedron& polyhedron, OutputIterator oi)
+/*! \fn OutputIterator find_top_facets(const Polyhedron& polyhedron, OutputIterator oi)
  * \param[in] polyhedron the input polyhedron.
  * \param[out] oi the output iterator. Its value type is a pair, where
  *             (i) the first element in the pair identifies a valid top face
@@ -139,10 +136,8 @@ single_mold_translational_casting_3_impl(const Polyhedron& polyhedron,
  */
 template <typename Polyhedron,  typename NamedParameters,
           typename OutputIterator, typename DirectionType>
-OutputIterator
-single_mold_translational_casting_3(const Polyhedron& polyhedron,
-                                    const NamedParameters& np,
-                                    OutputIterator oi)
+OutputIterator top_facets(const Polyhedron& polyhedron,
+                          const NamedParameters& np, OutputIterator oi)
 {
   typedef typename Get_kernel<Polyhedron, NamedParameters>::type Kernel;
   typedef typename Kernel::Direction_3                           Direction_3;
@@ -151,16 +146,13 @@ single_mold_translational_casting_3(const Polyhedron& polyhedron,
   typedef typename boost::is_same<DirectionType, Direction_3>::type
     Is_direction;
 
-  return single_mold_translational_casting_3_impl(polyhedron, np, oi,
-                                                  Is_direction());
+  return top_facets_impl(polyhedron, np, oi, Is_direction());
 }
 
 template <typename Polyhedron,  typename NamedParameters,
           typename OutputIterator>
-OutputIterator
-single_mold_translational_casting_3(const Polyhedron& polyhedron,
-                                    const NamedParameters& np,
-                                    OutputIterator oi)
+OutputIterator top_facets(const Polyhedron& polyhedron,
+                          const NamedParameters& np, OutputIterator oi)
 {
   typedef typename value_type_traits<OutputIterator>::type       Value_type;
   typedef typename Value_type::second_type                       Direction_type;
@@ -172,10 +164,10 @@ single_mold_translational_casting_3(const Polyhedron& polyhedron,
   typedef typename boost::is_same<Direction_type, Direction_3>::type
     Is_direction;
 
-  return single_mold_translational_casting_3_impl(polyhedron, np, oi,
-                                                  Is_direction());
+  return top_facets_impl(polyhedron, np, oi, Is_direction());
 }
 
+} // end of namespace Single_mold_translational_casting
 } // end of namespace Set_movable_separability_3
 } // end of namespace CGAL
 
