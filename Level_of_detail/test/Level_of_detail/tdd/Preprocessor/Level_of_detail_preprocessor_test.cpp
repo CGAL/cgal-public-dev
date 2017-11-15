@@ -37,6 +37,7 @@ public:
 	using Point_index = Container::Index;
 	using Indices = std::vector<Point_index>;
 
+
 	LodPreprocessor lodPreprocessor;
 
 	void set_indices_property(Container &input, Index_map &indices) const {
@@ -45,6 +46,7 @@ public:
 		boost::tie(indices, success)  = input. template add_property_map<Index>("index", -1);
 		assert(success);
 	}
+
 
 	void get_simple_input(Container &input) const {
 
@@ -72,6 +74,49 @@ public:
 		mapping[3] = 6;
 	}
 
+
+	void get_alpha_shapes_input(Container &input) const {
+
+		Index_map indices;
+		set_indices_property(input, indices);
+
+		// Boundary.
+		Iter 
+		it = input.insert(Point_3(0.0, 0.0, 1.0)); indices[*it] = -1;
+		it = input.insert(Point_3(0.5, 0.0, 1.0)); indices[*it] = -1;
+		it = input.insert(Point_3(1.0, 0.0, 1.0)); indices[*it] = -1;
+		it = input.insert(Point_3(1.0, 0.5, 1.0)); indices[*it] = -1;
+		it = input.insert(Point_3(1.0, 1.0, 1.0)); indices[*it] = -1;
+		it = input.insert(Point_3(0.5, 1.0, 1.0)); indices[*it] = -1;
+		it = input.insert(Point_3(0.0, 0.5, 1.0)); indices[*it] = -1;
+		it = input.insert(Point_3(0.0, 1.0, 1.0)); indices[*it] = -1;
+
+		// Interior.
+		it = input.insert(Point_3(0.25, 0.25, 1.0)); indices[*it] = -1;
+		it = input.insert(Point_3(0.50, 0.25, 1.0)); indices[*it] = -1;
+		it = input.insert(Point_3(0.75, 0.25, 1.0)); indices[*it] = -1;
+		it = input.insert(Point_3(0.75, 0.50, 1.0)); indices[*it] = -1;
+		it = input.insert(Point_3(0.75, 0.75, 1.0)); indices[*it] = -1;
+		it = input.insert(Point_3(0.50, 0.75, 1.0)); indices[*it] = -1;
+		it = input.insert(Point_3(0.25, 0.75, 1.0)); indices[*it] = -1;
+		it = input.insert(Point_3(0.25, 0.50, 1.0)); indices[*it] = -1;
+		it = input.insert(Point_3(0.50, 0.50, 1.0)); indices[*it] = -1;
+	}
+
+	void get_alpha_shapes_indices(Indices &mapping) const {
+
+		mapping.clear();
+		mapping.resize(16);
+
+		mapping[0] = 0; mapping[1] = 1; mapping[2] = 2; mapping[3] = 3;
+		mapping[4] = 4; mapping[5] = 5; mapping[6] = 6; mapping[7] = 7;
+
+		mapping[8]  =  8; mapping[9]  =  9; mapping[10] = 10; 
+		mapping[11] = 11; mapping[12] = 12; mapping[13] = 13; 
+		mapping[14] = 14; mapping[15] = 15; /* mapping[16] = 16; */
+	}
+
+
 	void get_projected_points(Projected_points &projected_boundaries, Boundary_data &boundaries) const {
 
 		// First boundary.
@@ -95,6 +140,7 @@ public:
 		boundaries[1].push_back(6);
 	}
 };
+
 
 TEST_F(LOD_PreprocessorTest, Compiles) {
    
@@ -151,13 +197,13 @@ TEST_F(LOD_PreprocessorTest, ReturnsOnePlaneUsingGivenIndices) {
 	Container input;
 	get_simple_input(input);
 
-	Indices mapping;
+	Indices mapping, stub;
 	get_simple_indices(mapping);
 
 	Boundary_data boundaries, boundary_clutter;
 
 	const bool with_shape_detection = true;
-	const auto number_of_boundaries = lodPreprocessor.get_boundary_points(input, mapping, with_shape_detection, boundaries, boundary_clutter);
+	const auto number_of_boundaries = lodPreprocessor.get_boundary_points(input, mapping, stub, with_shape_detection, boundaries, boundary_clutter);
 
 	ASSERT_THAT(number_of_boundaries, Eq(1));
 	ASSERT_THAT(static_cast<int>((*boundaries.begin()).second.size()), Eq(3));
@@ -175,4 +221,47 @@ TEST_F(LOD_PreprocessorTest, RemovesTwoOutliers) {
 	
 	ASSERT_THAT(static_cast<int>(boundaries.at(0).size()), Eq(3));
 	ASSERT_THAT(static_cast<int>(boundaries.at(1).size()), Eq(2));
+}
+
+
+TEST_F(LOD_PreprocessorTest, AppliesAlphaShapesWithTwoBoundaries) {
+
+	Container input;
+	get_alpha_shapes_input(input);
+
+	Indices stub, mapping;
+	get_alpha_shapes_indices(mapping);
+
+	Boundary_data boundaries, boundary_clutter;
+
+	const FT alpha = 0.05;
+	lodPreprocessor.set_alpha(alpha);
+
+	const bool with_shape_detection = false;
+	const auto number_of_boundaries = lodPreprocessor.get_boundary_points(input, stub, mapping, with_shape_detection, boundaries, boundary_clutter);
+
+	ASSERT_THAT(number_of_boundaries, Eq(-1));
+	ASSERT_THAT(static_cast<int>(boundary_clutter.size()), Eq(1));
+	ASSERT_THAT(static_cast<int>(boundary_clutter.at(0).size()), Eq(16));
+}
+
+TEST_F(LOD_PreprocessorTest, AppliesAlphaShapesWithOneBoundary) {
+
+	Container input;
+	get_alpha_shapes_input(input);
+
+	Indices stub, mapping;
+	get_alpha_shapes_indices(mapping);
+
+	Boundary_data boundaries, boundary_clutter;
+
+	const FT alpha = 1.5;
+	lodPreprocessor.set_alpha(alpha);
+
+	const bool with_shape_detection = false;
+	const auto number_of_boundaries = lodPreprocessor.get_boundary_points(input, stub, mapping, with_shape_detection, boundaries, boundary_clutter);
+
+	ASSERT_THAT(number_of_boundaries, Eq(-1));
+	ASSERT_THAT(static_cast<int>(boundary_clutter.size()), Eq(1));
+	ASSERT_THAT(static_cast<int>(boundary_clutter.at(0).size()), Eq(8));
 }

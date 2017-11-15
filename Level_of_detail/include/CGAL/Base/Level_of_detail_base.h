@@ -163,7 +163,8 @@ namespace CGAL {
 			m_region_growing_normal_threshold(-FT(1)),
 			m_region_growing_min_points(0),
 			m_with_region_growing(true),
-			m_use_grid_simplifier_first(false)
+			m_use_grid_simplifier_first(false),
+			m_alpha_shape_size(-FT(1))
 			{ } // Do I need to create an instance of these traits here?
 
 
@@ -272,6 +273,8 @@ namespace CGAL {
 				
 				bool with_shape_detection = false;
 				if (m_pipeline_version == Pipeline_version::WITH_SHAPE_DETECTION) with_shape_detection = true;
+
+				m_preprocessor.set_alpha(m_alpha_shape_size);
 
 				const auto number_of_boundaries = 
 				m_preprocessor.get_boundary_points(input, building_boundary_idxs, building_interior_idxs, with_shape_detection, building_boundaries, boundary_clutter);
@@ -741,7 +744,7 @@ namespace CGAL {
 				// (07) ----------------------------------
 				Projected_points building_boundaries_projected, boundary_clutter_projected;
 				projecting(building_boundaries_projected, boundary_clutter_projected, log, base_ground_plane, building_boundaries, boundary_clutter, input, ++exec_step);
-			 	
+
 
 				// (08) ----------------------------------
 				if (m_pipeline_version == Pipeline_version::WITHOUT_SHAPE_DETECTION && m_with_region_growing) {
@@ -941,6 +944,8 @@ namespace CGAL {
 			bool m_with_region_growing;
 			bool m_use_grid_simplifier_first;
 
+			FT m_alpha_shape_size;
+
 
 			// Assert default values of all global parameters.
 			void assert_global_parameters() {
@@ -983,6 +988,8 @@ namespace CGAL {
 					assert(m_region_growing_normal_threshold != -FT(1));
 					assert(m_region_growing_min_points 		 !=     0);
 				}
+
+				assert(m_alpha_shape_size > FT(0));
 			}
 
 
@@ -1025,7 +1032,7 @@ namespace CGAL {
 
 
 				// The most important!
-				const Main_test_data_type test_data_type = Main_test_data_type::PARIS_ETH;
+				const Main_test_data_type test_data_type = Main_test_data_type::PARIS_FULL_ETH;
 				switch (test_data_type) {
 
 					case Main_test_data_type::BASIC:
@@ -1050,6 +1057,10 @@ namespace CGAL {
 
 					case Main_test_data_type::PARIS_ETH:
 						set_paris_eth_parameters();
+						break;
+
+					case Main_test_data_type::PARIS_FULL_ETH:
+						set_paris_full_eth_parameters();
 						break;
 
 					default:
@@ -1092,6 +1103,8 @@ namespace CGAL {
 				m_region_growing_cluster_epsilon  = 0.0;   // distance between neighbouring points
 				m_region_growing_normal_threshold = 0.0;   // difference between the line normal and the point normal
 				m_region_growing_min_points 	  = 0;     // min number of points per shape
+
+				m_alpha_shape_size = -1.0; // size of the ball used in alpha shapes to extract boundaries
 			}
 
 
@@ -1127,7 +1140,9 @@ namespace CGAL {
 				m_region_growing_epsilon 		  = 0.0;  
 				m_region_growing_cluster_epsilon  = 0.0;  
 				m_region_growing_normal_threshold = 0.0;  
-				m_region_growing_min_points 	  = 0;    
+				m_region_growing_min_points 	  = 0;  
+
+				m_alpha_shape_size = -1.0;   
 			}
 
 
@@ -1160,7 +1175,9 @@ namespace CGAL {
 				m_region_growing_epsilon 		  = 0.0;  
 				m_region_growing_cluster_epsilon  = 0.0;  
 				m_region_growing_normal_threshold = 0.0;  
-				m_region_growing_min_points 	  = 0;    
+				m_region_growing_min_points 	  = 0; 
+
+				m_alpha_shape_size = -1.0;    
 			}
 
 
@@ -1195,7 +1212,9 @@ namespace CGAL {
 				m_region_growing_epsilon 		  = 0.0;  
 				m_region_growing_cluster_epsilon  = 0.0;  
 				m_region_growing_normal_threshold = 0.0;  
-				m_region_growing_min_points 	  = 0;    
+				m_region_growing_min_points 	  = 0;   
+
+				m_alpha_shape_size = -1.0; 
 			}
 
 
@@ -1228,7 +1247,9 @@ namespace CGAL {
 				m_region_growing_epsilon 		  = 0.0;  
 				m_region_growing_cluster_epsilon  = 0.0;  
 				m_region_growing_normal_threshold = 0.0;  
-				m_region_growing_min_points 	  = 0;    
+				m_region_growing_min_points 	  = 0;   
+
+				m_alpha_shape_size = -1.0; 
 			}
 
 
@@ -1247,7 +1268,7 @@ namespace CGAL {
 				m_thinning_type 	  			 = Thinning_type::NAIVE;
 
 				m_thinning_fuzzy_radius  = 5.0;
-				m_visibility_angle_eps   = 0.1; 
+				m_visibility_angle_eps   = 0.18; 
 				m_max_reg_angle          = 10.0;
 				m_structuring_epsilon 	 = 2.3;
 				m_add_cdt_clutter     	 = false;
@@ -1264,6 +1285,45 @@ namespace CGAL {
 				m_region_growing_cluster_epsilon  = 4.5;  
 				m_region_growing_normal_threshold = 0.9;  
 				m_region_growing_min_points 	  = 8;
+
+				m_alpha_shape_size = 5.0;
+			}
+
+
+			void set_paris_full_eth_parameters() {
+
+				// All main parameters are set below.
+				m_default_path     = "/Users/danisimo/Documents/pipeline/data/paris_full_test/data_region_growing_eth";
+				m_pipeline_version = Pipeline_version::WITHOUT_SHAPE_DETECTION;
+
+				m_visibility_approach 	 		 = Visibility_approach::FACE_BASED;
+				m_visibility_method   	 		 = Visibility_method::FACE_BASED_NATURAL_NEIGHBOURS; // point based for with_shape_detection
+				m_visibility_sampler 	 		 = Visibility_sampler::UNIFORM_SUBDIVISION;
+				m_thinning_neighbour_search_type = Neighbour_search_type::CIRCLE;
+				m_building_boundary_type 		 = Building_boundary_type::UNORIENTED;
+				m_clutter_new_point_type 		 = Clutter_new_point_type::CLOSEST;
+				m_thinning_type 	  			 = Thinning_type::NAIVE;
+
+				m_thinning_fuzzy_radius  = 5.0;
+				m_visibility_angle_eps   = 0.18; 
+				m_max_reg_angle          = 10.0;
+				m_structuring_epsilon 	 = 2.3;
+				m_add_cdt_clutter     	 = false;
+				m_visibility_num_samples = 1;
+				m_graph_cut_beta 		 = 100000.0; // 35.0 with_clutter // 15.0 for with_shape_detection
+				m_clutter_knn 			 = 12;
+				m_clutter_cell_length    = 1.3;
+				m_use_boundaries 		 = true;
+
+				m_use_grid_simplifier_first = true;
+				m_with_region_growing 	 	= true;
+
+				m_region_growing_epsilon 		  = 2.5;
+				m_region_growing_cluster_epsilon  = 4.5;  
+				m_region_growing_normal_threshold = 0.9;  
+				m_region_growing_min_points 	  = 10;
+
+				m_alpha_shape_size = 5.0;
 			}
 
 
