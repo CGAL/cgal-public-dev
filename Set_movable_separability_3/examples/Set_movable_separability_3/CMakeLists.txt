@@ -1,27 +1,27 @@
 # Created by the script cgal_create_cmake_script
 # This is the CMake script for compiling a CGAL application.
 
-project( Casting_2_example )
+project( Set_movable_separability_3_Examples )
 
-cmake_minimum_required(VERSION 2.8.10)
+cmake_minimum_required(VERSION 3.1)
 
-find_package(CGAL QUIET COMPONENTS Core )
+list(FIND CMAKE_CXX_COMPILE_FEATURES cxx_generalized_initializers has_cpp11)
+if (has_cpp11 LESS 0)
+  message(STATUS "NOTICE: These examples requires a C++11 compiler and will not be compiled.")
+  return()
+endif()
+
+# Use C++11 for this directory and its sub-directories.
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
+
+find_package(CGAL QUIET COMPONENTS )
 
 if ( CGAL_FOUND )
-
   include( ${CGAL_USE_FILE} )
-
   include( CGAL_CreateSingleSourceCGALProgram )
-
   include_directories (BEFORE "../../include")
-
-  create_single_source_cgal_program( "single_mold_translational_casting.cpp" )
-  if (CMAKE_COMPILER_IS_GNUCXX)
-    add_definitions(-std=c++11)
-  endif()
-
+  create_single_source_cgal_program( "top_facets_single_mold_translational_casting.cpp" )
 else()
-
-    message(STATUS "This program requires the CGAL library, and will not be compiled.")
-
+  message(STATUS "This program requires the CGAL library, and will not be compiled.")
 endif()
