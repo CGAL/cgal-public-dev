@@ -13,7 +13,7 @@
 // WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // Author(s): Shahar    <shasha94@gmail.com>
-//            Efi Fogel <efif@gmail.com>
+//            Efi Fogel <efifogel@gmail.com>
 
 #ifndef CGAL_SMS_3_SINGLE_MOLD_TRANSLATIONAL_CASTING_TOP_FACETS_H
 #define CGAL_SMS_3_SINGLE_MOLD_TRANSLATIONAL_CASTING_TOP_Facets_H
