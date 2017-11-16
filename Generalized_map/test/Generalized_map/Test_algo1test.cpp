@@ -5,7 +5,7 @@
  *      Author: riedingc
  */
 //#include "Generalized_map_algorithmtest2.h"
-#include "GM_algorithms.h"
+#include <CGAL/GM_algorithms.h>
 //#include "Generate_weights_filetest.cpp"
 #include <CGAL/Generalized_map.h>
 #include <CGAL/Cell_attribute.h>

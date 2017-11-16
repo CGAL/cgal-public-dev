@@ -53,6 +53,8 @@ add_executable(Generalized_map_test
 target_link_libraries(Generalized_map_test ${CGAL_LIBRARIES}
                                              ${CGAL_3RD_PARTY_LIBRARIES} )
 
+create_single_source_cgal_program( "Algo1_only_GMAP.cpp" )
+                                           
 if (BUILD_TESTS)
   ADD_TEST(Generalized_map_test "./Generalized_map_test")
 endif (BUILD_TESTS)
