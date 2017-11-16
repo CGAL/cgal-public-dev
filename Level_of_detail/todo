@@ -125,3 +125,5 @@ Ideas:
 4. As alternative, you can use free_form_quality function for all edges: free form, incoherent, and structure coherent.
 5. How to use property maps with alpha shapes / triangulations? Accelerate my boundary extractor that is based on alpha shapes.
 6. Randomness in region growing. Sometimes it gives 67 lines, sometimes 69. Is it ok?
+7. Free form clutter is added everywhere and it makes cdt looking worse. In general, I try to avoid adding it.
+
