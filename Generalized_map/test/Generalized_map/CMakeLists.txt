@@ -35,6 +35,7 @@ if ( NOT CGAL_FOUND )
 endif ( NOT CGAL_FOUND )
 
 include( ${CGAL_USE_FILE} )
+include( CGAL_CreateSingleSourceCGALProgram )
 
 # Try to use gcov but does not work... TODO
 #set(CMAKE_CXX_FLAGS "-g -frounding-math")
