@@ -275,8 +275,8 @@ namespace CGAL {
 				bool with_shape_detection = false;
 				if (m_pipeline_version == Pipeline_version::WITH_SHAPE_DETECTION) with_shape_detection = true;
 
-				m_preprocessor.set_alpha(m_alpha_shape_size);
 				m_preprocessor.use_alpha_shapes(m_use_alpha_shapes);
+				m_preprocessor.set_alpha(m_alpha_shape_size);
 
 				const auto number_of_boundaries = 
 				m_preprocessor.get_boundary_points(input, building_boundary_idxs, building_interior_idxs, with_shape_detection, building_boundaries, boundary_clutter);
@@ -1037,7 +1037,7 @@ namespace CGAL {
 
 
 				// The most important!
-				const Main_test_data_type test_data_type = Main_test_data_type::PARIS_ETH;
+				const Main_test_data_type test_data_type = Main_test_data_type::RESIDENT_TILE_2;
 				switch (test_data_type) {
 
 					case Main_test_data_type::BASIC:
@@ -1122,7 +1122,7 @@ namespace CGAL {
 				m_region_growing_normal_threshold = 0.0;   // difference between the line normal and the point normal
 				m_region_growing_min_points 	  = 0;     // min number of points per shape
 
-				m_use_boundaries   = false; // if true, we use alpha shapes to extract boundary points from building roofs
+				m_use_alpha_shapes = false; // if true, we use alpha shapes to extract boundary points from building roofs
 				m_alpha_shape_size = -1.0;  // size of the ball used in alpha shapes to extract boundaries
 			}
 
@@ -1162,7 +1162,7 @@ namespace CGAL {
 				m_region_growing_normal_threshold = 0.0;  
 				m_region_growing_min_points 	  = 0;  
 
-				m_use_boundaries   = false;
+				m_use_alpha_shapes = false;
 				m_alpha_shape_size = -1.0;   
 			}
 
@@ -1201,7 +1201,7 @@ namespace CGAL {
 				m_region_growing_normal_threshold = 0.0;  
 				m_region_growing_min_points 	  = 0;   
 
-				m_use_boundaries   = false;
+				m_use_alpha_shapes = false;
 				m_alpha_shape_size = -1.0; 
 			}
 
@@ -1238,7 +1238,7 @@ namespace CGAL {
 				m_region_growing_normal_threshold = 0.0;  
 				m_region_growing_min_points 	  = 0; 
 
-				m_use_boundaries   = false;
+				m_use_alpha_shapes = false;
 				m_alpha_shape_size = -1.0;    
 			}
 
@@ -1275,7 +1275,7 @@ namespace CGAL {
 				m_region_growing_normal_threshold = 0.0;  
 				m_region_growing_min_points 	  = 0;   
 
-				m_use_boundaries   = false;
+				m_use_alpha_shapes = false;
 				m_alpha_shape_size = -1.0; 
 			}
 
@@ -1314,7 +1314,7 @@ namespace CGAL {
 				m_region_growing_normal_threshold = 0.9;  
 				m_region_growing_min_points 	  = 8;
 
-				m_use_boundaries   = true;
+				m_use_alpha_shapes = true;
 				m_alpha_shape_size = 5.0;
 			}
 
@@ -1353,11 +1353,12 @@ namespace CGAL {
 				m_region_growing_normal_threshold = 0.9;  
 				m_region_growing_min_points 	  =  10; // 2 more than in the paris_eth data set
 
-				m_use_boundaries   = true;
+				m_use_alpha_shapes = true;
 				m_alpha_shape_size = 5.0;
 			}
 
 
+			// untested
 			void set_resident_tile_1_parameters() {
 
 				// All main parameters are set below.
@@ -1389,9 +1390,9 @@ namespace CGAL {
 				m_region_growing_epsilon 		  = 2.5;
 				m_region_growing_cluster_epsilon  = 4.5;  
 				m_region_growing_normal_threshold = 0.9;  
-				m_region_growing_min_points 	  = 8;
+				m_region_growing_min_points 	  = 15;
 
-				m_use_boundaries   = true;
+				m_use_alpha_shapes = true;
 				m_alpha_shape_size = 5.0;
 			}
 
@@ -1413,7 +1414,7 @@ namespace CGAL {
 				m_thinning_fuzzy_radius  = 5.0;
 				m_visibility_angle_eps   = 0.18; 
 				m_max_reg_angle          = 10.0;
-				m_structuring_epsilon 	 = 2.3;
+				m_structuring_epsilon 	 = 0.5;
 				m_add_cdt_clutter     	 = false;
 				m_visibility_num_samples = 1;
 				m_graph_cut_beta 		 = 100000.0;
@@ -1421,19 +1422,20 @@ namespace CGAL {
 				m_clutter_cell_length    = 1.3;
 				m_use_boundaries 		 = true;
 
-				m_use_grid_simplifier_first = true;
+				m_use_grid_simplifier_first = false;
 				m_with_region_growing 	 	= true;
 
-				m_region_growing_epsilon 		  = 2.5;
-				m_region_growing_cluster_epsilon  = 4.5;  
+				m_region_growing_epsilon 		  = 0.5;
+				m_region_growing_cluster_epsilon  = 1.0;  
 				m_region_growing_normal_threshold = 0.9;  
-				m_region_growing_min_points 	  = 8;
+				m_region_growing_min_points 	  = 200;
 
-				m_use_boundaries   = true;
+				m_use_alpha_shapes = true;
 				m_alpha_shape_size = 5.0;
 			}
 
 
+			// untested
 			void set_resident_tile_3_parameters() {
 
 				// All main parameters are set below.
@@ -1465,9 +1467,9 @@ namespace CGAL {
 				m_region_growing_epsilon 		  = 2.5;
 				m_region_growing_cluster_epsilon  = 4.5;  
 				m_region_growing_normal_threshold = 0.9;  
-				m_region_growing_min_points 	  = 8;
+				m_region_growing_min_points 	  = 15;
 
-				m_use_boundaries   = true;
+				m_use_alpha_shapes = true;
 				m_alpha_shape_size = 5.0;
 			}
 
