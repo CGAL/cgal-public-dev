@@ -164,7 +164,8 @@ namespace CGAL {
 			m_region_growing_min_points(0),
 			m_with_region_growing(true),
 			m_use_grid_simplifier_first(false),
-			m_alpha_shape_size(-FT(1))
+			m_alpha_shape_size(-FT(1)),
+			m_use_alpha_shapes(false)
 			{ } // Do I need to create an instance of these traits here?
 
 
@@ -275,6 +276,7 @@ namespace CGAL {
 				if (m_pipeline_version == Pipeline_version::WITH_SHAPE_DETECTION) with_shape_detection = true;
 
 				m_preprocessor.set_alpha(m_alpha_shape_size);
+				m_preprocessor.use_alpha_shapes(m_use_alpha_shapes);
 
 				const auto number_of_boundaries = 
 				m_preprocessor.get_boundary_points(input, building_boundary_idxs, building_interior_idxs, with_shape_detection, building_boundaries, boundary_clutter);
@@ -945,6 +947,7 @@ namespace CGAL {
 			bool m_use_grid_simplifier_first;
 
 			FT m_alpha_shape_size;
+			bool m_use_alpha_shapes;
 
 
 			// Assert default values of all global parameters.
@@ -989,7 +992,9 @@ namespace CGAL {
 					assert(m_region_growing_min_points 		 !=     0);
 				}
 
-				assert(m_alpha_shape_size > FT(0));
+				if (m_use_alpha_shapes) {
+					assert(m_alpha_shape_size > FT(0));
+				}
 			}
 
 
@@ -1032,7 +1037,7 @@ namespace CGAL {
 
 
 				// The most important!
-				const Main_test_data_type test_data_type = Main_test_data_type::PARIS_FULL_ETH;
+				const Main_test_data_type test_data_type = Main_test_data_type::PARIS_ETH;
 				switch (test_data_type) {
 
 					case Main_test_data_type::BASIC:
@@ -1043,12 +1048,12 @@ namespace CGAL {
 						set_complex_parameters();
 						break;
 
-					case Main_test_data_type::PARIS:
-						set_paris_parameters();
-						break;
-
 					case Main_test_data_type::P10:
 						set_p10_parameters();
+						break;
+
+					case Main_test_data_type::PARIS:
+						set_paris_parameters();
 						break;
 
 					case Main_test_data_type::PARIS_FULL:
@@ -1063,6 +1068,18 @@ namespace CGAL {
 						set_paris_full_eth_parameters();
 						break;
 
+					case Main_test_data_type::RESIDENT_TILE_1:
+						set_resident_tile_1_parameters();
+						break;
+
+					case Main_test_data_type::RESIDENT_TILE_2:
+						set_resident_tile_2_parameters();
+						break;
+
+					case Main_test_data_type::RESIDENT_TILE_3:
+						set_resident_tile_3_parameters();
+						break;
+
 					default:
 						assert(!"Wrong test data!");
 						break;
@@ -1070,6 +1087,7 @@ namespace CGAL {
 			}
 
 
+			// no shape detection
 			void set_basic_parameters() {
 
 				// To load basic parameters from stub, add stub to the loader class in LOD_traits!
@@ -1104,10 +1122,12 @@ namespace CGAL {
 				m_region_growing_normal_threshold = 0.0;   // difference between the line normal and the point normal
 				m_region_growing_min_points 	  = 0;     // min number of points per shape
 
-				m_alpha_shape_size = -1.0; // size of the ball used in alpha shapes to extract boundaries
+				m_use_boundaries   = false; // if true, we use alpha shapes to extract boundary points from building roofs
+				m_alpha_shape_size = -1.0;  // size of the ball used in alpha shapes to extract boundaries
 			}
 
 
+			// open cv random forest
 			void set_complex_parameters() {
 
 				// SWITCH TO RAY SHOOTING HERE!
@@ -1142,45 +1162,12 @@ namespace CGAL {
 				m_region_growing_normal_threshold = 0.0;  
 				m_region_growing_min_points 	  = 0;  
 
+				m_use_boundaries   = false;
 				m_alpha_shape_size = -1.0;   
 			}
 
 
-			void set_paris_parameters() {
-
-				// All main parameters are set below.
-				m_default_path     = "/Users/danisimo/Documents/pipeline/data/paris_test/data_region_growing_weighted_sum";
-				m_pipeline_version = Pipeline_version::WITHOUT_SHAPE_DETECTION;
-
-				m_visibility_approach 	 		 = Visibility_approach::FACE_BASED;
-				m_visibility_method   	 		 = Visibility_method::FACE_BASED_NATURAL_NEIGHBOURS; // point based for with_shape_detection
-				m_visibility_sampler 	 		 = Visibility_sampler::UNIFORM_SUBDIVISION;
-				m_thinning_neighbour_search_type = Neighbour_search_type::CIRCLE;
-				m_building_boundary_type 		 = Building_boundary_type::ORIENTED;
-				m_clutter_new_point_type 		 = Clutter_new_point_type::BARYCENTRE;
-				m_thinning_type 	  			 = Thinning_type::NAIVE;
-
-				m_thinning_fuzzy_radius  = 5.0;
-				m_visibility_angle_eps   = 0.001; 
-				m_max_reg_angle          = 10.0;
-				m_structuring_epsilon 	 = 1.5;
-				m_add_cdt_clutter     	 = true;
-				m_visibility_num_samples = 1;
-				m_graph_cut_beta 		 = 35.0; // 15.0 for with_shape_detection
-				m_clutter_knn 			 = 12;
-				m_clutter_cell_length    = 10.0;
-				m_use_boundaries 		 = true;
-				
-				m_with_region_growing 	 		  = false;
-				m_region_growing_epsilon 		  = 0.0;  
-				m_region_growing_cluster_epsilon  = 0.0;  
-				m_region_growing_normal_threshold = 0.0;  
-				m_region_growing_min_points 	  = 0; 
-
-				m_alpha_shape_size = -1.0;    
-			}
-
-
+			// weighted sum
 			void set_p10_parameters() {
 
 				// YOU CAN USE HERE RAY SHOOTING FOR WITH_SHAPE_DETECTION!
@@ -1214,10 +1201,49 @@ namespace CGAL {
 				m_region_growing_normal_threshold = 0.0;  
 				m_region_growing_min_points 	  = 0;   
 
+				m_use_boundaries   = false;
 				m_alpha_shape_size = -1.0; 
 			}
 
 
+			// weighted sum
+			void set_paris_parameters() {
+
+				// All main parameters are set below.
+				m_default_path     = "/Users/danisimo/Documents/pipeline/data/paris_test/data_region_growing_weighted_sum";
+				m_pipeline_version = Pipeline_version::WITHOUT_SHAPE_DETECTION;
+
+				m_visibility_approach 	 		 = Visibility_approach::FACE_BASED;
+				m_visibility_method   	 		 = Visibility_method::FACE_BASED_NATURAL_NEIGHBOURS; // point based for with_shape_detection
+				m_visibility_sampler 	 		 = Visibility_sampler::UNIFORM_SUBDIVISION;
+				m_thinning_neighbour_search_type = Neighbour_search_type::CIRCLE;
+				m_building_boundary_type 		 = Building_boundary_type::ORIENTED;
+				m_clutter_new_point_type 		 = Clutter_new_point_type::BARYCENTRE;
+				m_thinning_type 	  			 = Thinning_type::NAIVE;
+
+				m_thinning_fuzzy_radius  = 5.0;
+				m_visibility_angle_eps   = 0.001; 
+				m_max_reg_angle          = 10.0;
+				m_structuring_epsilon 	 = 1.5;
+				m_add_cdt_clutter     	 = true;
+				m_visibility_num_samples = 1;
+				m_graph_cut_beta 		 = 35.0; // 15.0 for with_shape_detection
+				m_clutter_knn 			 = 12;
+				m_clutter_cell_length    = 10.0;
+				m_use_boundaries 		 = true;
+				
+				m_with_region_growing 	 		  = false;
+				m_region_growing_epsilon 		  = 0.0;  
+				m_region_growing_cluster_epsilon  = 0.0;  
+				m_region_growing_normal_threshold = 0.0;  
+				m_region_growing_min_points 	  = 0; 
+
+				m_use_boundaries   = false;
+				m_alpha_shape_size = -1.0;    
+			}
+
+
+			// weighted sum
 			void set_paris_full_parameters() {
 
 				// All main parameters are set below.
@@ -1249,10 +1275,12 @@ namespace CGAL {
 				m_region_growing_normal_threshold = 0.0;  
 				m_region_growing_min_points 	  = 0;   
 
+				m_use_boundaries   = false;
 				m_alpha_shape_size = -1.0; 
 			}
 
 
+			// eth random forest
 			void set_paris_eth_parameters() {
 
 				// All main parameters are set below.
@@ -1286,10 +1314,12 @@ namespace CGAL {
 				m_region_growing_normal_threshold = 0.9;  
 				m_region_growing_min_points 	  = 8;
 
+				m_use_boundaries   = true;
 				m_alpha_shape_size = 5.0;
 			}
 
 
+			// eth random forest
 			void set_paris_full_eth_parameters() {
 
 				// All main parameters are set below.
@@ -1297,7 +1327,7 @@ namespace CGAL {
 				m_pipeline_version = Pipeline_version::WITHOUT_SHAPE_DETECTION;
 
 				m_visibility_approach 	 		 = Visibility_approach::FACE_BASED;
-				m_visibility_method   	 		 = Visibility_method::FACE_BASED_NATURAL_NEIGHBOURS; // point based for with_shape_detection
+				m_visibility_method   	 		 = Visibility_method::FACE_BASED_NATURAL_NEIGHBOURS;
 				m_visibility_sampler 	 		 = Visibility_sampler::UNIFORM_SUBDIVISION;
 				m_thinning_neighbour_search_type = Neighbour_search_type::CIRCLE;
 				m_building_boundary_type 		 = Building_boundary_type::UNORIENTED;
@@ -1310,7 +1340,7 @@ namespace CGAL {
 				m_structuring_epsilon 	 = 2.3;
 				m_add_cdt_clutter     	 = false;
 				m_visibility_num_samples = 1;
-				m_graph_cut_beta 		 = 100000.0; // 35.0 with_clutter // 15.0 for with_shape_detection
+				m_graph_cut_beta 		 = 100000.0;
 				m_clutter_knn 			 = 12;
 				m_clutter_cell_length    = 1.3;
 				m_use_boundaries 		 = true;
@@ -1321,8 +1351,123 @@ namespace CGAL {
 				m_region_growing_epsilon 		  = 2.5;
 				m_region_growing_cluster_epsilon  = 4.5;  
 				m_region_growing_normal_threshold = 0.9;  
-				m_region_growing_min_points 	  = 10;
+				m_region_growing_min_points 	  =  10; // 2 more than in the paris_eth data set
 
+				m_use_boundaries   = true;
+				m_alpha_shape_size = 5.0;
+			}
+
+
+			void set_resident_tile_1_parameters() {
+
+				// All main parameters are set below.
+				m_default_path     = "/Users/danisimo/Documents/pipeline/data/residential_test/tile_1/data_region_growing_eth";
+				m_pipeline_version = Pipeline_version::WITHOUT_SHAPE_DETECTION;
+
+				m_visibility_approach 	 		 = Visibility_approach::FACE_BASED;
+				m_visibility_method   	 		 = Visibility_method::FACE_BASED_NATURAL_NEIGHBOURS;
+				m_visibility_sampler 	 		 = Visibility_sampler::UNIFORM_SUBDIVISION;
+				m_thinning_neighbour_search_type = Neighbour_search_type::CIRCLE;
+				m_building_boundary_type 		 = Building_boundary_type::UNORIENTED;
+				m_clutter_new_point_type 		 = Clutter_new_point_type::CLOSEST;
+				m_thinning_type 	  			 = Thinning_type::NAIVE;
+
+				m_thinning_fuzzy_radius  = 5.0;
+				m_visibility_angle_eps   = 0.18; 
+				m_max_reg_angle          = 10.0;
+				m_structuring_epsilon 	 = 2.3;
+				m_add_cdt_clutter     	 = false;
+				m_visibility_num_samples = 1;
+				m_graph_cut_beta 		 = 100000.0;
+				m_clutter_knn 			 = 12;
+				m_clutter_cell_length    = 1.3;
+				m_use_boundaries 		 = true;
+
+				m_use_grid_simplifier_first = true;
+				m_with_region_growing 	 	= true;
+
+				m_region_growing_epsilon 		  = 2.5;
+				m_region_growing_cluster_epsilon  = 4.5;  
+				m_region_growing_normal_threshold = 0.9;  
+				m_region_growing_min_points 	  = 8;
+
+				m_use_boundaries   = true;
+				m_alpha_shape_size = 5.0;
+			}
+
+
+			void set_resident_tile_2_parameters() {
+
+				// All main parameters are set below.
+				m_default_path     = "/Users/danisimo/Documents/pipeline/data/residential_test/tile_2/data_region_growing_eth";
+				m_pipeline_version = Pipeline_version::WITHOUT_SHAPE_DETECTION;
+
+				m_visibility_approach 	 		 = Visibility_approach::FACE_BASED;
+				m_visibility_method   	 		 = Visibility_method::FACE_BASED_NATURAL_NEIGHBOURS;
+				m_visibility_sampler 	 		 = Visibility_sampler::UNIFORM_SUBDIVISION;
+				m_thinning_neighbour_search_type = Neighbour_search_type::CIRCLE;
+				m_building_boundary_type 		 = Building_boundary_type::UNORIENTED;
+				m_clutter_new_point_type 		 = Clutter_new_point_type::CLOSEST;
+				m_thinning_type 	  			 = Thinning_type::NAIVE;
+
+				m_thinning_fuzzy_radius  = 5.0;
+				m_visibility_angle_eps   = 0.18; 
+				m_max_reg_angle          = 10.0;
+				m_structuring_epsilon 	 = 2.3;
+				m_add_cdt_clutter     	 = false;
+				m_visibility_num_samples = 1;
+				m_graph_cut_beta 		 = 100000.0;
+				m_clutter_knn 			 = 12;
+				m_clutter_cell_length    = 1.3;
+				m_use_boundaries 		 = true;
+
+				m_use_grid_simplifier_first = true;
+				m_with_region_growing 	 	= true;
+
+				m_region_growing_epsilon 		  = 2.5;
+				m_region_growing_cluster_epsilon  = 4.5;  
+				m_region_growing_normal_threshold = 0.9;  
+				m_region_growing_min_points 	  = 8;
+
+				m_use_boundaries   = true;
+				m_alpha_shape_size = 5.0;
+			}
+
+
+			void set_resident_tile_3_parameters() {
+
+				// All main parameters are set below.
+				m_default_path     = "/Users/danisimo/Documents/pipeline/data/residential_test/tile_3/data_region_growing_eth";
+				m_pipeline_version = Pipeline_version::WITHOUT_SHAPE_DETECTION;
+
+				m_visibility_approach 	 		 = Visibility_approach::FACE_BASED;
+				m_visibility_method   	 		 = Visibility_method::FACE_BASED_NATURAL_NEIGHBOURS;
+				m_visibility_sampler 	 		 = Visibility_sampler::UNIFORM_SUBDIVISION;
+				m_thinning_neighbour_search_type = Neighbour_search_type::CIRCLE;
+				m_building_boundary_type 		 = Building_boundary_type::UNORIENTED;
+				m_clutter_new_point_type 		 = Clutter_new_point_type::CLOSEST;
+				m_thinning_type 	  			 = Thinning_type::NAIVE;
+
+				m_thinning_fuzzy_radius  = 5.0;
+				m_visibility_angle_eps   = 0.18; 
+				m_max_reg_angle          = 10.0;
+				m_structuring_epsilon 	 = 2.3;
+				m_add_cdt_clutter     	 = false;
+				m_visibility_num_samples = 1;
+				m_graph_cut_beta 		 = 100000.0;
+				m_clutter_knn 			 = 12;
+				m_clutter_cell_length    = 1.3;
+				m_use_boundaries 		 = true;
+
+				m_use_grid_simplifier_first = true;
+				m_with_region_growing 	 	= true;
+
+				m_region_growing_epsilon 		  = 2.5;
+				m_region_growing_cluster_epsilon  = 4.5;  
+				m_region_growing_normal_threshold = 0.9;  
+				m_region_growing_min_points 	  = 8;
+
+				m_use_boundaries   = true;
 				m_alpha_shape_size = 5.0;
 			}
 

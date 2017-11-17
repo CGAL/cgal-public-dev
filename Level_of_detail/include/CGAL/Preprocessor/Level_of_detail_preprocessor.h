@@ -226,7 +226,7 @@ namespace CGAL {
 			using Index_map      = typename Container:: template Property_map<Index>;
 			using Log 			 = CGAL::LOD::Mylog;
 
-			Level_of_detail_preprocessor() : m_scale(FT(1)), m_alpha(-FT(1)) { }
+			Level_of_detail_preprocessor() : m_scale(FT(1)), m_alpha(-FT(1)), m_use_alpha_shapes(false) { }
 
 			void set_scale(const FT new_value) {
 				
@@ -236,8 +236,14 @@ namespace CGAL {
 
 			void set_alpha(const FT new_value) {
 
+				if (!m_use_alpha_shapes) return;
+
 				assert(new_value > FT(0));
 				m_alpha = new_value;
+			}
+
+			void use_alpha_shapes(const bool new_state) {
+				m_use_alpha_shapes = new_state;
 			}
 
 			template<class Planes>
@@ -266,7 +272,7 @@ namespace CGAL {
 				boundary_clutter.clear();
 				create_indices(input);
 
-				add_interior_boundary_to_clutter(input, interior_mapping, boundary_clutter);
+				if (m_use_alpha_shapes) add_interior_boundary_to_clutter(input, interior_mapping, boundary_clutter);
 				return add_boundary_points(boundary_mapping, with_shape_detection, building_boundaries, boundary_clutter);
 			}
 
@@ -329,6 +335,8 @@ namespace CGAL {
 
 			FT m_scale;
 			FT m_alpha;
+
+			bool m_use_alpha_shapes;
 
 			void create_indices(const Container &input) {
 				boost::tie(m_indices, boost::tuples::ignore) = input. template property_map<Index>("index");

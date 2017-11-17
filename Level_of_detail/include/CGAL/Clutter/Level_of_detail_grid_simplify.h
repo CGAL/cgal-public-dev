@@ -167,7 +167,7 @@ namespace CGAL {
 
 			void simplify_clutter_using_grid(Projected_points &cleaned_points, const Grid_map &grid_map, const Projected_points &boundary_clutter_projected) const {
 
-				std::cout << "\nWarning: grid simplify, take care when using these simplified points to access any original input data!\n";
+				// std::cout << "\nWarning: grid simplify, take care when using these simplified points to access any original input data!\n";
 
 				assert(cleaned_points.empty());
 				assert(!grid_map.empty() && !boundary_clutter_projected.empty());
