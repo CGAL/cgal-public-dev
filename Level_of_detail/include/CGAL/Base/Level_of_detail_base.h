@@ -165,7 +165,10 @@ namespace CGAL {
 			m_with_region_growing(true),
 			m_use_grid_simplifier_first(false),
 			m_alpha_shape_size(-FT(1)),
-			m_use_alpha_shapes(false)
+			m_use_alpha_shapes(false),
+			m_structuring_corner_algorithm(Structuring_corner_algorithm::GRAPH_BASED),
+			m_structuring_adjacency_method(Structuring_adjacency_threshold_method::LOCAL),
+			m_structuring_adjacency_value(-FT(1))
 			{ } // Do I need to create an instance of these traits here?
 
 
@@ -461,6 +464,9 @@ namespace CGAL {
 				m_structuring->set_epsilon(m_structuring_epsilon);
 				m_structuring->save_log(m_structuring_log);
 				m_structuring->resample(m_structuring_resample);
+				m_structuring->set_corner_algorithm(m_structuring_corner_algorithm);
+				m_structuring->set_adjacency_threshold_method(m_structuring_adjacency_method);
+				m_structuring->set_adjacency_threshold(m_structuring_adjacency_value);
 
 				const auto number_of_structured_segments = m_structuring->structure_point_set();
 
@@ -949,6 +955,10 @@ namespace CGAL {
 			FT m_alpha_shape_size;
 			bool m_use_alpha_shapes;
 
+			Structuring_corner_algorithm 		   m_structuring_corner_algorithm;
+			Structuring_adjacency_threshold_method m_structuring_adjacency_method;
+			FT 									   m_structuring_adjacency_value;
+
 
 			// Assert default values of all global parameters.
 			void assert_global_parameters() {
@@ -984,6 +994,7 @@ namespace CGAL {
 				assert(m_visibility_angle_eps != -FT(1));
 
 				assert(m_thinning_fuzzy_radius != -FT(1));
+				assert(m_structuring_adjacency_value > FT(0));
 
 				if (m_with_region_growing) {
 					assert(m_region_growing_epsilon 		 != -FT(1));
@@ -1022,7 +1033,10 @@ namespace CGAL {
 				m_structuring_get_all_points = false;
 				m_clean_projected_points 	 = true;
 				
-				m_roof_fitter_type = Roof_fitter_type::AVG;
+				m_roof_fitter_type 			   = Roof_fitter_type::AVG;
+				m_structuring_corner_algorithm = Structuring_corner_algorithm::GRAPH_BASED;
+				m_structuring_adjacency_method = Structuring_adjacency_threshold_method::LOCAL;
+				m_structuring_adjacency_value  = 0.00001;
 
 				m_preprocessor_scale  		= 2.0;
 				m_clutter_fitter_type 		= Clutter_fitter_type::LINE;	
@@ -1037,7 +1051,7 @@ namespace CGAL {
 
 
 				// The most important!
-				const Main_test_data_type test_data_type = Main_test_data_type::RESIDENT_TILE_2;
+				const Main_test_data_type test_data_type = Main_test_data_type::PARIS_ETH;
 				switch (test_data_type) {
 
 					case Main_test_data_type::BASIC:
@@ -1294,6 +1308,7 @@ namespace CGAL {
 				m_building_boundary_type 		 = Building_boundary_type::UNORIENTED;
 				m_clutter_new_point_type 		 = Clutter_new_point_type::CLOSEST;
 				m_thinning_type 	  			 = Thinning_type::NAIVE;
+				m_structuring_adjacency_method 	 = Structuring_adjacency_threshold_method::GLOBAL;
 
 				m_thinning_fuzzy_radius  = 5.0;
 				m_visibility_angle_eps   = 0.18; 
@@ -1316,6 +1331,9 @@ namespace CGAL {
 
 				m_use_alpha_shapes = true;
 				m_alpha_shape_size = 5.0;
+
+				m_structuring_get_all_points  = false;
+				m_structuring_adjacency_value = 10.0;
 			}
 
 

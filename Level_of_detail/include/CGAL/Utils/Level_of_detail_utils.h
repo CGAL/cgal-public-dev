@@ -331,9 +331,10 @@ namespace CGAL {
 			typedef typename Kernel::Line_2    Line_2;
 			typedef typename Kernel::Segment_2 Segment_2;
 
-			typedef typename CDT::Vertex_handle 		Vertex_handle;
-			typedef typename CDT::Face_handle 			Face_handle;
-			typedef typename CDT::Finite_edges_iterator Edge_iterator;
+			typedef typename CDT::Vertex_handle 		   Vertex_handle;
+			typedef typename CDT::Face_handle 			   Face_handle;
+			typedef typename CDT::Finite_edges_iterator    Edge_iterator;
+			typedef typename CDT::Finite_vertices_iterator Vertex_iterator;
 
 			typedef Level_of_detail_utils_simple<Kernel> Simple_utils;
 
@@ -391,6 +392,12 @@ namespace CGAL {
 						cdt.insert_constraint(vhs[i][j], vhs[i][j + 1]);
 
 
+				// Verify labels.
+				for (Vertex_iterator vit = cdt.finite_vertices_begin(); vit != cdt.finite_vertices_end(); ++vit)
+					if(vit->info().label == Structured_label::CLUTTER)
+						vit->info().label = Structured_label::LINEAR;
+
+
 				// Add clutter.
 				if (add_clutter) {
 					using Point_iterator = typename Projected_points::const_iterator;
@@ -401,10 +408,15 @@ namespace CGAL {
 						Vertex_handle vh = cdt.insert(point);
 						vh->info().label = Structured_label::CLUTTER;
 					}
+
+				} else {
+					for (Vertex_iterator vit = cdt.finite_vertices_begin(); vit != cdt.finite_vertices_end(); ++vit)
+						assert(vit->info().label != Structured_label::CLUTTER);
 				}
 
 
 				// Add bounding box.
+				assert(!add_bbox);
 				if (add_bbox) {
 					
 					std::vector<Point_2> bbox;

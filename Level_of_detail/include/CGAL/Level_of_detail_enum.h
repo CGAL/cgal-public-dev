@@ -145,6 +145,19 @@ namespace CGAL {
 			PROGRESSIVE		// scale changes progressively
 		};
 
+		// Structuring corner algorithm.
+		enum class Structuring_corner_algorithm {
+			NO_CORNERS,        // we do not insert any corners
+			GRAPH_BASED,	   // in this algorithm, we build an adjacency graph and insert corners based on this graph
+			INTERSECTION_BASED // in this algorithm, we intersect all segments and insert the best intersections
+		};
+
+		// Structuring adjacency threshold method.
+		enum class Structuring_adjacency_threshold_method {
+			LOCAL, // internal local epsilon is chosen
+			GLOBAL // user-defined value is chosen
+		};
+
 	} // LOD
 
 } // CGAL

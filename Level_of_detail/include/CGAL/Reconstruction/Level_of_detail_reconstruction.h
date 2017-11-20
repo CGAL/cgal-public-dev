@@ -21,6 +21,7 @@
 // New CGAL includes.
 #include <CGAL/Mylog/Mylog.h>
 #include <CGAL/Level_of_detail_enum.h>
+#include <CGAL/Utils/Level_of_detail_utils.h>
 
 namespace CGAL {
 
@@ -52,6 +53,9 @@ namespace CGAL {
     		using Building_iterator = typename Buildings::const_iterator;
     		using Ground = std::vector<Point>;
 
+    		typedef Level_of_detail_utils_simple<Kernel> Simple_utils;
+			typename Kernel::Compute_squared_distance_2 squared_distance;
+
     		enum class Builder_type { LOD0, LOD1 };
 
     		Build_mesh(const CDT &cdt, const Buildings &buildings, Facet_colors &facet_colors) : 
@@ -62,7 +66,9 @@ namespace CGAL {
     		m_index_counter(0), 
     		m_ground_set(false), 
     		m_builder_type(Builder_type::LOD1),
-    		m_use_boundaries(true) { }
+    		m_use_boundaries(true),
+    		m_height_threshold(FT(1) / FT(1000000)),
+    		m_area_threshold(FT(1) / FT(1000)) { }
 
 			void operator()(HDS &hds) {
 
@@ -110,6 +116,10 @@ namespace CGAL {
 			bool m_ground_set;
 			Builder_type m_builder_type;
 			bool m_use_boundaries;
+
+			const FT 	 m_height_threshold;
+			const FT 	 m_area_threshold;
+			Simple_utils m_simple_utils;
 			
 			void build_lod0(Builder &builder) {
 				assert(m_build_type == Build_type::CDT_AND_BUILDINGS);
@@ -127,6 +137,8 @@ namespace CGAL {
 				for (Building_iterator bit = m_buildings.begin(); bit != m_buildings.end(); ++bit) {
 				
 					const auto &building = (*bit).second;
+					if (!is_valid_building(building)) continue;
+
 					if (building.is_oriented) add_new_building_lod0(building, builder); // default is oriented
 					else add_new_building_lod0_unoriented(building, builder);
 				}
@@ -256,6 +268,7 @@ namespace CGAL {
 				for (Building_iterator bit = m_buildings.begin(); bit != m_buildings.end(); ++bit) {
 				
 					const auto &building = (*bit).second;
+					if (!is_valid_building(building)) continue;
 
 					if (building.is_oriented) add_new_building_lod1(building, builder); // default is oriented
 					else add_new_building_lod1_unoriented(building, builder);
@@ -289,6 +302,52 @@ namespace CGAL {
 			// Improve this function.
 			size_t estimate_number_of_faces_lod1() {
 				return m_buildings.size() * 6 + 1;
+			}
+
+			template<class BuildingTmp>
+			bool is_valid_building(const BuildingTmp &building) {
+
+				const auto &faces = building.faces;
+				if (faces.size() < 2) return false;
+
+				const FT height = building.height;
+				if (height < m_height_threshold) return false;
+
+				/*
+				const FT ground_area = compute_ground_area();
+				const FT building_area = compute_building_area(building);
+						
+				assert(ground_area >= building_area);
+				if (building_area < m_area_threshold * ground_area) return false; */
+
+				return true;
+			}
+
+			FT compute_ground_area() {
+
+				const Point &a = m_ground[0];
+				const Point &b = m_ground[1];
+				const Point &c = m_ground[2];
+
+				const FT width  = CGAL::sqrt(squared_distance(a, b));
+				const FT height = CGAL::sqrt(squared_distance(b, c));
+
+				return width * height;
+			}
+
+			template<class BuildingTmp>
+			FT compute_building_area(const BuildingTmp &building) {
+
+				const auto &faces = building.faces;
+
+				FT building_area = FT(0);
+				for (size_t i = 0; i < faces.size(); ++i) {
+				
+					const auto &triangle = m_cdt.triangle(faces[i]);
+					building_area += triangle.area();
+				}
+
+				return building_area;
 			}
 
 			template<class BuildingTmp>

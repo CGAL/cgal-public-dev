@@ -90,12 +90,15 @@ namespace CGAL {
 			
 			typedef typename Traits::Intersect_2 Intersect;
 
+
 			Level_of_detail_structuring_2(const Points &points, const Connected_components &components, const Lines &lines) :
 			m_points(points), m_cc(components), m_lines(lines), m_tol(FT(1) / FT(10000)), m_big_value(FT(1000000)), 
-			m_eps_set(false), m_save_log(true), m_resample(true), m_empty(true) { 
+			m_eps_set(false), m_save_log(true), m_resample(true), m_empty(true), m_corner_algorithm(Structuring_corner_algorithm::GRAPH_BASED),
+			m_adjacency_threshold_method(Structuring_adjacency_threshold_method::LOCAL), m_adjacency_threshold(-FT(1)) { 
 
 				assert(components.size() == lines.size());
 			}
+
 
 			void save_log(const bool new_state) {
 				m_save_log = new_state;
@@ -108,6 +111,21 @@ namespace CGAL {
 			bool is_empty() const {
 				return m_empty;
 			}
+
+			void set_corner_algorithm(const Structuring_corner_algorithm new_algorithm) {
+				m_corner_algorithm = new_algorithm;
+			}
+
+			void set_adjacency_threshold_method(const Structuring_adjacency_threshold_method new_method) {
+				m_adjacency_threshold_method = new_method;
+			}
+
+			void set_adjacency_threshold(const FT new_value) {
+
+				assert(new_value > FT(0));
+				m_adjacency_threshold = new_value;
+			}
+
 
 			// This is a 2D version of the algorithm in the paper:
 			// Surface Reconstruction Through Point Set Structuring, F. Lafarge, P. Alliez.
@@ -170,37 +188,25 @@ namespace CGAL {
 				if (m_save_log) log.out << "(7) Linear points are created for each segment. The results are saved in tmp/linear_points" << std::endl;
 
 
-				// (8) Create adjacency graph between segments.
-				// Here I use structured segments, maybe better to use raw/unstructured point set?
-				create_adjacency_graph(Adjacency_method::STRUCTURED);
+				// (8) Insert corners between intersecting segments.
+				if (m_save_log) log.out << "(8) Adding corners." << std::endl;
 
-				if (m_save_log) log.out << "(8) Adjacency graph between segments is created. The results are saved in tmp/adjacency" << std::endl;
-
-
-				// (9) Create an undirected graph by removing all repeating adjacencies.
-				create_undirected_graph();
-
-				if (m_save_log) log.out << "(9) An undirected graph is created. The results are saved in tmp/undirected_graph" << std::endl;
+				add_corners(log);
 
 
-				// (10) Create corners using the undirected graph above.
-				create_corners();
-
-				if (m_save_log) log.out << "(10) Unique corner points between all adjacent segments are inserted. The final results are saved in tmp/structured_points" << std::endl;
-
-
-				// (11) Extra: Create segment end points and labels.
+				// (9) Extra: Create segment end points and labels.
 				create_segment_end_points_and_labels();
 
-				if (m_save_log) log.out << "(11) Segment end points and labels are found." << std::endl;
+				if (m_save_log) log.out << "(9) Segment end points and labels are found." << std::endl;
 
 
-				// (12) Resample all points.
+				// (10) Resample all points.
 				if (m_resample) {
 
 					resample_points();
-					if (m_save_log) log.out << "(12) All segments are resampled." << std::endl;
+					if (m_save_log) log.out << "(10) All segments are resampled." << std::endl;
 				}
+
 
 				// -------------------------------
 
@@ -286,6 +292,10 @@ namespace CGAL {
 			Structured_labels m_segment_end_labels;
 
 			bool m_empty;
+			Structuring_corner_algorithm 		   m_corner_algorithm;
+			Structuring_adjacency_threshold_method m_adjacency_threshold_method;
+			FT 									   m_adjacency_threshold;
+
 
 			void project() {
 
@@ -706,6 +716,83 @@ namespace CGAL {
 				return Point((p1.x() + p2.x()) / FT(2), (p1.y() + p2.y()) / FT(2));
 			}
 
+			void add_corners(Log &log) {
+
+				switch (m_corner_algorithm) {
+
+					case Structuring_corner_algorithm::NO_CORNERS:
+						if (m_save_log) log.out << "(a) NO CORNERS option is chosen!" << std::endl;
+						return;
+
+					case Structuring_corner_algorithm::GRAPH_BASED:
+						add_graph_based_corners(log);
+						break;
+
+					case Structuring_corner_algorithm::INTERSECTION_BASED:
+						assert(!"This method is not implemented!");
+						add_intersection_based_corners(log);
+						break;
+
+					default:
+						assert(!"Wrong structuring corner algorithm!");
+						break;
+				}
+			}
+
+			void add_graph_based_corners(Log &log) {
+
+				// (a) Create adjacency graph between segments.
+				// Here I use structured segments, maybe better to use raw/unstructured point set?
+				create_adjacency_graph(Adjacency_method::STRUCTURED);
+
+				if (m_save_log) log.out << "(a) Adjacency graph between segments is created. The results are saved in tmp/adjacency" << std::endl;
+
+
+				// (b) Create an undirected graph by removing all repeating adjacencies.
+				create_undirected_graph();
+
+				if (m_save_log) log.out << "(b) An undirected graph is created. The results are saved in tmp/undirected_graph" << std::endl;
+
+
+				// (c) Create corners using the undirected graph above.
+				create_graph_based_corners();
+
+				if (m_save_log) log.out << "(c) Unique GRAPH_BASED corner points between all adjacent segments are inserted. The final results are saved in tmp/structured_points" << std::endl;
+			}
+
+			void add_intersection_based_corners(Log &log) {
+
+				assert(!m_lines.empty());
+				const int num_lines = static_cast<int>(m_lines.size());
+
+				for (int i = 0; i < num_lines; ++i)
+					for (int j = 0; j < num_lines; ++j)
+						if (i != j) try_adding_intersection_based_corner(i, j);
+
+				if (m_save_log) log.out << "(a) All possible INTERSECTION_BASED corners are inserted. The final results are saved in tmp/structured_points" << std::endl;
+			}
+
+			void try_adding_intersection_based_corner(const int ind_i, const int ind_j) {
+
+				assert(ind_i != ind_j);
+				Point corner = intersect_lines(ind_i, ind_j);
+
+				assert(m_str_points.size() == m_str_labels.size() && m_str_labels.size() == m_str_anchors.size());
+				assert(ind_i >= 0 && ind_i <= static_cast<int>(m_str_points.size()));
+
+				if (is_valid_intersection()) {
+
+					FT dist_thresh = -FT(1);
+					if (m_adjacency_threshold_method == Structuring_adjacency_threshold_method::GLOBAL) dist_thresh = m_adjacency_threshold;
+
+					add_corner(ind_i, ind_j, dist_thresh, corner);
+				}
+			}
+
+			bool is_valid_intersection() {
+				return true;
+			}
+
 			void create_adjacency_graph(const Adjacency_method method) {
 
 				clear_adjacency();
@@ -749,7 +836,9 @@ namespace CGAL {
 						if (i != j) {
 
 							// Instead we can use approximate range [eps_i, eps_j] in the fuzzy sphere below.
-							const FT eps = CGAL::max(m_eps[i], m_eps[j]); 
+							const FT eps = get_adjacency_threshold(i, j); 
+							assert(eps > FT(0));
+
 							Tree tree(m_str_points[j].begin(), m_str_points[j].end());
 
 							const Point &source = m_segments[i].source();
@@ -768,6 +857,28 @@ namespace CGAL {
 				}
 			}
 
+			FT get_adjacency_threshold(const size_t ind_i, const size_t ind_j) {
+
+				// Base method.
+				assert(ind_i >= 0 && ind_i < m_eps.size() && ind_j >= 0 && ind_j < m_eps.size());
+				return CGAL::max(m_eps[ind_i], m_eps[ind_j]);
+
+				// Alternative methods.
+				switch (m_adjacency_threshold_method) {
+
+					case Structuring_adjacency_threshold_method::LOCAL:
+						assert(ind_i >= 0 && ind_i < m_eps.size() && ind_j >= 0 && ind_j < m_eps.size());
+						return CGAL::max(m_eps[ind_i], m_eps[ind_j]);
+
+					case Structuring_adjacency_threshold_method::GLOBAL:
+						return m_adjacency_threshold;
+
+					default:
+						assert(!"Wrong adjacency threshold method!");
+						break;
+				}
+			}
+
 			void clear_adjacency() {
 
 				m_adjacency.clear();
@@ -777,14 +888,12 @@ namespace CGAL {
 			bool check_for_adjacency(const Point &centre, const FT radius, const Tree &tree) {
 
 				bool adjacent = false;
-
 				std::vector<Point> result;
 
 				Fuzzy_circle circle(centre, radius);
 				tree.search(std::back_inserter(result), circle);
 
 				if (!result.empty()) adjacent = true;
-
 				return adjacent;
 			}
 
@@ -818,11 +927,10 @@ namespace CGAL {
 			}
 
 			void clear_undirected_graph() {
-
 				m_undirected_graph.clear();
 			}
 
-			void create_corners() {
+			void create_graph_based_corners() {
 
 				assert(!m_str_points.empty());
 				assert(!m_str_labels.empty());
@@ -831,14 +939,23 @@ namespace CGAL {
 				assert(m_str_points.size() == m_cc.size());
 				assert(m_str_points.size() == m_str_labels.size() && m_str_labels.size() == m_str_anchors.size());
 
+				Segments edges;
 				for (const Int_pair el : m_undirected_graph) {
 
 					const int i = el.first;
 					const int j = el.second;
 
 					Point corner = intersect_lines(i, j);
-					add_corner(i, j, corner);
+
+					FT dist_thresh = -FT(1);
+					if (m_adjacency_threshold_method == Structuring_adjacency_threshold_method::GLOBAL) dist_thresh = m_adjacency_threshold;
+
+					edges.push_back(Segment(edge_barycentre(i), edge_barycentre(j)));
+					add_corner(i, j, dist_thresh, corner);
 				}
+
+				Log logex;
+				logex.export_segments_as_obj("tmp/adjacency_graph", edges, "stub");
 
 				// Log function. Can be removed.
 				// Log log;
@@ -852,37 +969,75 @@ namespace CGAL {
 				// }
 			}
 
+			Point edge_barycentre(const int segment_index) {
+
+				FT x = FT(0), y = FT(0);
+				for (size_t i = 0; i < m_str_points[segment_index].size(); ++i) {
+
+					x += m_str_points[segment_index][i].x();
+					y += m_str_points[segment_index][i].y();
+				}
+
+				return Point(x / FT(m_str_points[segment_index].size()), y / FT(m_str_points[segment_index].size()));
+			}
+
 			Point intersect_lines(const int i, const int j) {
 
 				const Line &line1 = m_lines[i];
 				const Line &line2 = m_lines[j];
 
 				typename CGAL::cpp11::result_of<Intersect(Line, Line)>::type result = intersection(line1, line2);
-
 				return boost::get<Point>(*result);
 			}
 
-			void add_corner(const int i, const int j, Point &corner) {
+			void add_corner(const int i, const int j, const FT dist_thresh, Point &corner) {
 
 				std::vector<int> cycle(2);
+				const bool closest_i = is_closest_i(i, j, corner);
 
-				if (is_unique(corner, i)) {	
+				if (/* is_unique(corner, i) */  closest_i) {
+
 					cycle[0] = i;
 					cycle[1] = j;
 
-					add_unique_corner(i, cycle, corner);
+					if (dist_thresh < FT(0)) add_unique_corner(i, cycle, m_lp[i], corner);
+					else add_unique_corner(i, cycle, dist_thresh, corner);
 				}
 
-				if (is_unique(corner, j)) {
+				if ( /* is_unique(corner, j) */ !closest_i) {
+
 					cycle[0] = j;
 					cycle[1] = i;
 
-					add_unique_corner(j, cycle, corner);
+					if (dist_thresh < FT(0)) add_unique_corner(j, cycle, m_lp[j], corner);
+					else add_unique_corner(j, cycle, dist_thresh, corner);
 				}
 			}
 
-			void add_unique_corner(const int segment_index, const std::vector<int> &cycle, Point &corner) {
+			bool is_closest_i(const int i, const int j, const Point &corner) {
 
+				const Point &source_i = m_str_points[i][0];
+				const Point &target_i = m_str_points[i][m_str_points[i].size() - 1];
+
+				const FT dist_s_i = squared_distance(corner, source_i);
+				const FT dist_t_i = squared_distance(corner, target_i);
+
+				const Point &source_j = m_str_points[j][0];
+				const Point &target_j = m_str_points[j][m_str_points[j].size() - 1];
+
+				const FT dist_s_j = squared_distance(corner, source_j);
+				const FT dist_t_j = squared_distance(corner, target_j);
+
+				const FT dist_i = CGAL::min(dist_s_i, dist_t_i);
+				const FT dist_j = CGAL::min(dist_s_j, dist_t_j);
+
+				if (dist_i < dist_j) return true;
+				return false;
+			}
+
+			void add_unique_corner(const int segment_index, const std::vector<int> &cycle, const FT dist_thresh, Point &corner) {
+
+				assert(dist_thresh > FT(0));
 				assert(m_str_points[segment_index].size() > 1);
 
 				const Point &source = m_str_points[segment_index][0];
@@ -894,24 +1049,28 @@ namespace CGAL {
 				assert(dist_s != dist_t);
 
 				// Choose the closest position for the corner within the given segment.
-				if (dist_s < dist_t) add_begin_corner(segment_index, cycle, source, corner);
-				else add_end_corner(segment_index, cycle, target, corner);
+				if (dist_s < dist_t) add_begin_corner(segment_index, cycle, source, dist_thresh, corner);
+				else add_end_corner(segment_index, cycle, target, dist_thresh, corner);
 
 				++m_num_corners[segment_index];
 			}
 
-			void add_begin_corner(const int segment_index, const std::vector<int> &cycle, const Point &source, Point &corner) {
+			void add_begin_corner(const int segment_index, const std::vector<int> &cycle, const Point &source, const FT dist_thresh, Point &corner) {
 
-				correct_corner(segment_index, source, corner);
+				correct_corner(segment_index, source, dist_thresh, corner);
+
+				// if (!is_unique(corner, segment_index)) return;
 
 				 m_str_points[segment_index].insert( m_str_points[segment_index].begin(), corner);
 				 m_str_labels[segment_index].insert( m_str_labels[segment_index].begin(), Structured_label::CORNER);
 				m_str_anchors[segment_index].insert(m_str_anchors[segment_index].begin(), cycle);
 			}
 
-			void add_end_corner(const int segment_index, const std::vector<int> &cycle, const Point &target, Point &corner) {
+			void add_end_corner(const int segment_index, const std::vector<int> &cycle, const Point &target, const FT dist_thresh, Point &corner) {
 
-				correct_corner(segment_index, target, corner);
+				correct_corner(segment_index, target, dist_thresh, corner);
+
+				// if (!is_unique(corner, segment_index)) return;
 
 				 m_str_points[segment_index].push_back(corner);
 				 m_str_labels[segment_index].push_back(Structured_label::CORNER);
@@ -919,12 +1078,12 @@ namespace CGAL {
 			}
 
 			// If the given corner is far away from the intersected segments, make it closer.
-			void correct_corner(const int segment_index, const Point &closest_point, Point &corner) {
+			void correct_corner(const int segment_index, const Point &closest_point, const FT dist_thresh, Point &corner) {
 
 				assert(segment_index >= 0 && segment_index < static_cast<int>(m_lp.size()));
 				const FT dist = squared_distance(corner, closest_point);
 
-				if (dist > m_lp[segment_index]) {
+				if (dist > dist_thresh) {
 
 					const FT b1 = m_lp[segment_index] / dist;
 					const FT b2 = FT(1) - b1;
@@ -1021,44 +1180,44 @@ namespace CGAL {
 
 			void resample_segment(const size_t segment_index, const FT times, Log &log) {
 					
-					const Point p = m_str_points[segment_index][0];
-					const Point q = m_str_points[segment_index][m_str_points[segment_index].size() - 1];
+				const Point p = m_str_points[segment_index][0];
+				const Point q = m_str_points[segment_index][m_str_points[segment_index].size() - 1];
 
-					const Structured_label lp = m_str_labels[segment_index][0];
-					const Structured_label lq = m_str_labels[segment_index][m_str_labels[segment_index].size() - 1];
+				const Structured_label lp = m_str_labels[segment_index][0];
+				const Structured_label lq = m_str_labels[segment_index][m_str_labels[segment_index].size() - 1];
 
-					const std::vector<int> ap = m_str_anchors[segment_index][0];
-					const std::vector<int> aq = m_str_anchors[segment_index][m_str_anchors[segment_index].size() - 1];
+				const std::vector<int> ap = m_str_anchors[segment_index][0];
+				const std::vector<int> aq = m_str_anchors[segment_index][m_str_anchors[segment_index].size() - 1];
 
-					 m_str_points[segment_index].clear();
-					 m_str_labels[segment_index].clear();
-					m_str_anchors[segment_index].clear();
+				 m_str_points[segment_index].clear();
+				 m_str_labels[segment_index].clear();
+				m_str_anchors[segment_index].clear();
 
-					  m_str_points[segment_index].push_back(p);
-					 m_str_labels[segment_index].push_back(lp);
-					m_str_anchors[segment_index].push_back(ap);
+				  m_str_points[segment_index].push_back(p);
+				 m_str_labels[segment_index].push_back(lp);
+				m_str_anchors[segment_index].push_back(ap);
 
-					/* if (m_save_log) */ log.out << p << " " << 0 << std::endl;
+				/* if (m_save_log) */ log.out << p << " " << 0 << std::endl;
 
-					for (size_t i = 1; i < static_cast<size_t>(times); ++i) {
+				for (size_t i = 1; i < static_cast<size_t>(times); ++i) {
 
-						const FT b_2 = FT(i) / times;
-						const FT b_1 = FT(1) - b_2;
-						
-						const Point newp = Point(b_1 * p.x() + b_2 * q.x(), b_1 * p.y() + b_2 * q.y());
+					const FT b_2 = FT(i) / times;
+					const FT b_1 = FT(1) - b_2;
+					
+					const Point newp = Point(b_1 * p.x() + b_2 * q.x(), b_1 * p.y() + b_2 * q.y());
 
-						  m_str_points[segment_index].push_back(newp);
-						 m_str_labels[segment_index].push_back(Structured_label::LINEAR);
-						m_str_anchors[segment_index].push_back(std::vector<int>(1, segment_index));
+					  m_str_points[segment_index].push_back(newp);
+					 m_str_labels[segment_index].push_back(Structured_label::LINEAR);
+					m_str_anchors[segment_index].push_back(std::vector<int>(1, segment_index));
 
-						/* if (m_save_log) */ log.out << newp << " " << 0 << std::endl;
-					}
+					/* if (m_save_log) */ log.out << newp << " " << 0 << std::endl;
+				}
 
-					  m_str_points[segment_index].push_back(q);
-					 m_str_labels[segment_index].push_back(lq);
-					m_str_anchors[segment_index].push_back(aq);
+				  m_str_points[segment_index].push_back(q);
+				 m_str_labels[segment_index].push_back(lq);
+				m_str_anchors[segment_index].push_back(aq);
 
-					/* if (m_save_log) */ log.out << q << " " << 0 << std::endl;
+				/* if (m_save_log) */ log.out << q << " " << 0 << std::endl;
 			}
 		};
 	}
