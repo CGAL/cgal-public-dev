@@ -508,15 +508,16 @@ namespace CGAL {
 				auto number_of_faces = -1;
 				if (m_structuring != nullptr && !m_structuring->is_empty()) {
 					
-					const Structured_points &structured_points = m_structuring_get_all_points ? m_structuring->get_structured_points() : m_structuring->get_segment_end_points();
-					const Structured_labels &structured_labels = m_structuring_get_all_points ? m_structuring->get_structured_labels() : m_structuring->get_segment_end_labels();
+					const Structured_points   &structured_points = m_structuring_get_all_points ?  m_structuring->get_structured_points() :  m_structuring->get_segment_end_points();
+					const Structured_labels   &structured_labels = m_structuring_get_all_points ?  m_structuring->get_structured_labels() :  m_structuring->get_segment_end_labels();
+					const Structured_anchors &structured_anchors = m_structuring_get_all_points ? m_structuring->get_structured_anchors() : m_structuring->get_segment_end_anchors();
 
-					number_of_faces = m_utils.compute_cdt(structured_points, structured_labels, cdt, 
+					number_of_faces = m_utils.compute_cdt(structured_points, structured_labels, structured_anchors, m_structuring_adjacency_value, cdt, 
 													 m_add_cdt_clutter, boundary_clutter, boundary_clutter_projected, 
 													 m_add_cdt_bbox, input);
 				} else {
 
-					number_of_faces = m_utils.compute_cdt(Structured_points(), Structured_labels(), cdt, 
+					number_of_faces = m_utils.compute_cdt(Structured_points(), Structured_labels(), Structured_anchors(), m_structuring_adjacency_value, cdt, 
 													 m_add_cdt_clutter, boundary_clutter, boundary_clutter_projected, 
 													 m_add_cdt_bbox, input);
 				}
@@ -545,7 +546,7 @@ namespace CGAL {
 				Log &log, 
 				const Container_2D &input_2d, const size_t exec_step) {
 
-				if (m_visibility.name() == "ray shooting" && m_pipeline_version == Pipeline_version::WITHOUT_SHAPE_DETECTION)
+				if (m_visibility.name() == "ray shooting" && m_pipeline_version == Pipeline_version::WITHOUT_SHAPE_DETECTION && !m_with_region_growing)
 					assert(!"Ray shooting requires constrained edges!");
 
 				if (m_visibility.name() == "blend") assert(!"Blend visibility is not worth trying!");
@@ -1313,7 +1314,7 @@ namespace CGAL {
 				m_thinning_fuzzy_radius  = 5.0;
 				m_visibility_angle_eps   = 0.18; 
 				m_max_reg_angle          = 10.0;
-				m_structuring_epsilon 	 = 2.3;
+				m_structuring_epsilon 	 = 3.0;
 				m_add_cdt_clutter     	 = false;
 				m_visibility_num_samples = 1;
 				m_graph_cut_beta 		 = 100000.0; // 35.0 with_clutter // 15.0 for with_shape_detection
@@ -1324,15 +1325,15 @@ namespace CGAL {
 				m_use_grid_simplifier_first = true;
 				m_with_region_growing 	 	= true;
 
-				m_region_growing_epsilon 		  = 2.5;
-				m_region_growing_cluster_epsilon  = 4.5;  
-				m_region_growing_normal_threshold = 0.9;  
-				m_region_growing_min_points 	  = 8;
+				m_region_growing_epsilon 		  = 3.2;
+				m_region_growing_cluster_epsilon  = 2.9;
+				m_region_growing_normal_threshold = 0.7;  
+				m_region_growing_min_points 	  = 10;
 
 				m_use_alpha_shapes = true;
 				m_alpha_shape_size = 5.0;
 
-				m_structuring_get_all_points  = false;
+				m_structuring_get_all_points  = true;
 				m_structuring_adjacency_value = 10.0;
 			}
 

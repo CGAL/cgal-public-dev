@@ -68,9 +68,9 @@ namespace CGAL {
 	 	    typedef CGAL::Triangulation_face_base_with_info_2<My_face_info, Kernel>     FB_with_info;
 			typedef CGAL::Constrained_triangulation_face_base_2<Kernel, FB_with_info>   FB;
 
-			typedef CGAL::Exact_predicates_tag                                	 EPT;
+			typedef CGAL::Exact_predicates_tag                                   TAG;
 			typedef CGAL::Triangulation_data_structure_2<VB, FB> 			  	 TDS;
-			typedef CGAL::Constrained_Delaunay_triangulation_2<Kernel, TDS, EPT> CDT;
+			typedef CGAL::Constrained_Delaunay_triangulation_2<Kernel, TDS, TAG> CDT;
 
 			typedef CGAL::LOD::Level_of_detail_utils<Kernel, Container_3D, CDT> 				   				 Utils;
 			typedef CGAL::LOD::Level_of_detail_clutter_processor<Kernel, Planes, Projected_points, Container_3D> Clutter_processor;

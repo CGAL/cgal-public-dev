@@ -108,8 +108,11 @@ TEST_F(LOD_StructuringTest, VerifiesStructuredPoints) {
 
 	const Structured_points &str_points = lodStructuring->get_structured_points();
 
+	const double eps = 0.000001;
 	ASSERT_THAT(str_points[0][0], Eq(Point(0.0, 0.0)));
-	ASSERT_THAT(str_points[2][str_points[2].size() - 1], Eq(Point(-0.8, 0.8)));
+
+	ASSERT_THAT(str_points[2][str_points[2].size() - 1].x() + 0.8, Lt(eps));
+	ASSERT_THAT(str_points[2][str_points[2].size() - 1].y() - 0.8, Lt(eps));
 }
 
 TEST_F(LOD_StructuringTest, VerifiesStructuredLabels) {
@@ -130,5 +133,5 @@ TEST_F(LOD_StructuringTest, VerifiesStructuredAnchors) {
 	ASSERT_THAT(str_anchors[2][str_anchors[2].size() - 1].size(), Eq(static_cast<size_t>(2)));
 
 	ASSERT_THAT(str_anchors[2][str_anchors[2].size() - 1][0], Eq(2));
-	ASSERT_THAT(str_anchors[2][str_anchors[2].size() - 1][1], Eq(3));
+	ASSERT_THAT(str_anchors[2][str_anchors[2].size() - 1][1], Eq(1));
 }

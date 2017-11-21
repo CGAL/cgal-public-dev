@@ -7,6 +7,7 @@
 #include <cassert>
 #include <cmath>
 #include <unordered_set>
+#include <algorithm>
 
 // CGAL includes.
 #include <CGAL/Kd_tree.h>
@@ -148,7 +149,7 @@ namespace CGAL {
 
 				// (4) Sort all points by the quality of the locally fitted line.
 				Sorted_indices sorted_indices;
-				sort_projected_points(sorted_indices, log, boundary_clutter_projected, tree);
+				sort_projected_points(sorted_indices, log, boundary_clutter_projected, tree, input.number_of_points());
 
 
 				// (5) Enter main loop with all sorted points and start growing local regions.
@@ -182,22 +183,28 @@ namespace CGAL {
       		Projected_points 		m_neighbours;
       		std::vector<Point_2> 	m_local_points;
 
+
 			class Sort_by_linearity {
 
 			public:
-				Sort_by_linearity(const Projected_points &points, const Fuzzy_tree &tree, const FT cluster_epsilon) : 
+				Sort_by_linearity(const Projected_points &points, const Fuzzy_tree &tree, const FT cluster_epsilon, const size_t num_input_points) : 
 				m_points(points),
 				m_tree(tree),
 				m_cluster_epsilon(cluster_epsilon), 
 				m_default_score(-FT(1)),
-				m_scores(m_points.size(), m_default_score) { }
+				m_num_input_points(num_input_points),
+				m_scores(new std::vector<FT>(m_num_input_points, m_default_score)) { 
 
-				bool operator() (const int i, const int j) {
-			        
-					if (m_scores[i] == m_default_score) compute_score(i);
-					if (m_scores[j] == m_default_score) compute_score(j);
+					assert(m_tree.size() == m_points.size());
+				}
 
-			        return m_scores[i] > m_scores[j];
+				bool operator() (const int i, const int j) const {
+
+					if ((*m_scores)[i] == m_default_score) compute_score(i);
+					if ((*m_scores)[j] == m_default_score) compute_score(j);
+
+					assert((*m_scores)[i] >= FT(0) && (*m_scores)[j] >= FT(0)); 
+			        return (*m_scores)[i] > (*m_scores)[j];
 			    }
 
 			private:
@@ -206,57 +213,54 @@ namespace CGAL {
 
 				const FT m_cluster_epsilon;
 				const FT m_default_score;
-				
-				std::vector<FT> 	 m_scores;
-				Projected_points     m_neighbours;
-				std::vector<Point_2> m_local_points;
 
-				void compute_score(const int point_index) {
-					compute_nearest_neighbours(point_index);
+				const size_t m_num_input_points;
+				mutable boost::shared_ptr< std::vector<FT> > m_scores;
 
-					const size_t num_neighbours = m_neighbours.size();
-					if (num_neighbours < 2) {
+				void compute_score(const int point_index) const {
+					
+					static Projected_points neighbours;
+					compute_nearest_neighbours(point_index, neighbours);
 
-						m_scores[point_index] = FT(1000000);
-						return;
-					}
+					static std::vector<Point_2> local_points;
+					map_neighbours_to_local_points(neighbours, local_points);
 
-					map_neighbours_to_local_points();
-					m_scores[point_index] = estimate_score();
+					estimate_score(local_points, point_index);
 			    }
 
-			    void compute_nearest_neighbours(const int point_index) {
+			    void compute_nearest_neighbours(const int point_index, Projected_points &neighbours) const {
 
 			    	const Point_2 &centre = m_points.at(point_index);
 					const FT radius 	  = m_cluster_epsilon * FT(2);
 
 					Fuzzy_circle circle(centre, radius, FT(0), m_tree.traits());
 
-					m_neighbours.clear();
-					m_tree.search(std::inserter(m_neighbours, m_neighbours.end()), circle);
+					neighbours.clear();
+					m_tree.search(std::inserter(neighbours, neighbours.end()), circle);
 			    }
 
-			    void map_neighbours_to_local_points() {
+			    void map_neighbours_to_local_points(const Projected_points &neighbours, std::vector<Point_2> &local_points) const {
 
-			    	const size_t num_neighbours = m_neighbours.size();
+			    	const size_t num_neighbours = neighbours.size();
 			    	assert(num_neighbours != 0);
 
-			    	m_local_points.clear();
-			    	m_local_points.resize(num_neighbours);
+			    	local_points.clear();
+			    	local_points.resize(num_neighbours);
 
 					size_t count = 0;
-			    	for (Point_iterator nit = m_neighbours.begin(); nit != m_neighbours.end(); ++nit, ++count)
-						m_local_points[count] = (*nit).second;
+			    	for (Point_iterator nit = neighbours.begin(); nit != neighbours.end(); ++nit, ++count)
+						local_points[count] = (*nit).second;
 
 					assert(count == num_neighbours);
 			    }
 
-			    FT estimate_score() {
+			    void estimate_score(const std::vector<Point_2> &local_points, const int point_index) const {
+					
+					Line_2 stub;
+					assert(point_index >= 0 && point_index < static_cast<int>(m_num_input_points));
 
-			    	Line_2 stub;
-			    	assert(m_local_points.size() >= 2);
-
-			        return CGAL::linear_least_squares_fitting_2(m_local_points.begin(), m_local_points.end(), stub, CGAL::Dimension_tag<0>());			    	
+			        (*m_scores)[point_index] = CGAL::linear_least_squares_fitting_2(local_points.begin(), local_points.end(), stub, CGAL::Dimension_tag<0>());
+			        assert((*m_scores)[point_index] >= FT(0));
 			    }
 			};
 
@@ -322,19 +326,21 @@ namespace CGAL {
 				log.export_projected_points_with_normals_as_xyz("tmp/estimated_normals", boundary_clutter_projected, normals, "unused path");
 			}
 
-			void sort_projected_points(Sorted_indices &sorted_indices, Log &log, const Projected_points &boundary_clutter_projected, const Fuzzy_tree &tree) {
+			void sort_projected_points(Sorted_indices &sorted_indices, Log &log, const Projected_points &boundary_clutter_projected, const Fuzzy_tree &tree, const size_t num_input_points) {
 
 				assert(!boundary_clutter_projected.empty());
 				assert(tree.size() != 0);
 				assert(m_cluster_epsilon > FT(0));
 
 				fill_unsorted_indices(sorted_indices, log, boundary_clutter_projected);
-				std::sort(sorted_indices.begin(), sorted_indices.end(), Sort_by_linearity(boundary_clutter_projected, tree, m_cluster_epsilon));
+
+				assert(sorted_indices.size() == boundary_clutter_projected.size());
+				std::stable_sort(sorted_indices.begin(), sorted_indices.end(), Sort_by_linearity(boundary_clutter_projected, tree, m_cluster_epsilon, num_input_points));
 
 				// Save log.
 				if (m_save_info) {
 
-					log.out << "Sorted indices: ";
+					log.out << "\nSorted indices (" << sorted_indices.size() << ") : ";
 					for (size_t i = 0; i < sorted_indices.size(); ++i) log.out << sorted_indices[i] << " ";
 					log.out << std::endl;
 				}
@@ -356,7 +362,7 @@ namespace CGAL {
 				// Save log.
 				if (m_save_info) {
 
-					log.out << "Unsorted indices: ";
+					log.out << "\nUnsorted indices (" << sorted_indices.size() << ") : ";
 					for (size_t i = 0; i < sorted_indices.size(); ++i) log.out << sorted_indices[i] << " ";
 					log.out << std::endl;
 				}
@@ -446,7 +452,7 @@ namespace CGAL {
 				// Save found shape indices.
 				if (m_save_info) {
 
-					log.out << "Shape indices: ";
+					log.out << "\nShape indices (" << shape_index.size() << ") :";
 					for (size_t i = 0; i < shape_index.size(); ++i) log.out << shape_index[i] << " ";
 					log.out << std::endl;
 				}

@@ -345,6 +345,7 @@ namespace CGAL {
 			using Point_index = typename Input::Index;
 
 			using Log = CGAL::LOD::Mylog;
+			typename Kernel::Compute_squared_distance_2 squared_distance;
 
 
 		private:
@@ -356,8 +357,8 @@ namespace CGAL {
 			// Triangulation functions!
 
 			// BE CAREFUL: THIS THING CAN INSERT NEW POINTS!
-			template<class Structured_points, class Structured_labels, class Boundary_data, class Projected_points>
-			int compute_cdt(const Structured_points &points, const Structured_labels &labels, CDT &cdt, 
+			template<class Structured_points, class Structured_labels, class Structured_anchors, class Boundary_data, class Projected_points>
+			int compute_cdt(const Structured_points &points, const Structured_labels &labels, const Structured_anchors &anchors, const FT adjacency_value, CDT &cdt, 
 							const bool add_clutter, const Boundary_data &, const Projected_points &boundary_clutter_projected,
 							const bool add_bbox, const Input &input) const {
 
@@ -372,27 +373,82 @@ namespace CGAL {
 				// Add all structured segments/points with the corresponding labels.
 				std::vector<std::vector<Vertex_handle> > vhs(points.size());
 
-				// Insert points with labels.
-				for (size_t i = 0; i < points.size(); ++i) {
-					assert(points[i].size() == labels[i].size());
 
+				// Insert points with labels.
+				Point_2 tmp(FT(1000000000), FT(1000000000));
+				for (size_t i = 0; i < points.size(); ++i) {
+					
+					assert(points[i].size() == labels[i].size());
 					vhs[i].resize(points[i].size());
+
 					for (size_t j = 0; j < points[i].size(); ++j) {
+						if (tmp == points[i][j]) continue;
 
 						vhs[i][j] = cdt.insert(points[i][j]);
 						vhs[i][j]->info().label = labels[i][j];
 
 						assert(labels[i][j] != Structured_label::CLUTTER);
+						tmp = points[i][j];
 					}
 				}
 
+
 				// Insert constraints.
-				for (size_t i = 0; i < points.size(); ++i)
-					for (size_t j = 0; j < points[i].size() - 1; ++j)
-						cdt.insert_constraint(vhs[i][j], vhs[i][j + 1]);
+				std::vector<Segment_2> constraints;
+				for (size_t i = 0; i < points.size(); ++i) {
+
+					for (size_t j = 0; j < points[i].size() - 1; ++j) {	
+						constraints.push_back(Segment_2(points[i][j], points[i][j + 1]));
+
+						if (vhs[i][j] != Vertex_handle() && vhs[i][j + 1] != Vertex_handle())
+							cdt.insert_constraint(vhs[i][j], vhs[i][j + 1]);
+					}
+				}
+
+				for (size_t i = 0; i < points.size(); ++i) {
+					for (size_t j = 0; j < points[i].size(); ++j) {
+
+						if (vhs[i][j] != Vertex_handle() && vhs[i][j]->info().label == Structured_label::CORNER) {
+							assert(anchors[i][j].size() == 2);
+
+							const int ind_a = anchors[i][j][0];
+							const int ind_b = anchors[i][j][1];
+
+							assert(ind_a >= 0 && ind_b >= 0);
+
+							const int a_k = find_closest_point(points[i][j], points, ind_a);
+							const int b_k = find_closest_point(points[i][j], points, ind_b);
+
+							const FT eps = FT(1) / FT(100000);
+							assert(a_k >= 0 && b_k >= 0);
+
+							const FT dist_a = CGAL::sqrt(squared_distance(points[i][j], points[ind_a][a_k]));
+							const FT scale  = FT(1);
+
+							if (dist_a > eps && dist_a < scale * adjacency_value) {
+								constraints.push_back(Segment_2(points[i][j], points[ind_a][a_k]));
+
+								assert(static_cast<int>(i) != ind_a);
+								cdt.insert_constraint(vhs[i][j], vhs[ind_a][a_k]);
+							}
+
+							const FT dist_b = CGAL::sqrt(squared_distance(points[i][j], points[ind_b][b_k]));
+
+							if (dist_b > eps && dist_b < scale * adjacency_value) {
+								constraints.push_back(Segment_2(points[i][j], points[ind_b][b_k]));
+
+								assert(static_cast<int>(i) != ind_b);
+								cdt.insert_constraint(vhs[i][j], vhs[ind_b][b_k]);
+							}
+						}
+					}
+				}
+
+				Log logex;
+				logex.export_segments_as_obj("tmp/cdt_constraints", constraints, "stub");
 
 
-				// Verify labels.
+				// Correct all wrong labels.
 				for (Vertex_iterator vit = cdt.finite_vertices_begin(); vit != cdt.finite_vertices_end(); ++vit)
 					if(vit->info().label == Structured_label::CLUTTER)
 						vit->info().label = Structured_label::LINEAR;
@@ -441,6 +497,29 @@ namespace CGAL {
 				// Save CDT.
 				log.save_cdt_obj(cdt, "tmp/cdt");
 				return number_of_faces;
+			}
+
+			template<class Structured_points>
+			int find_closest_point(const Point_2 &corner, const Structured_points &points, const int segment_index) const {
+
+				std::vector<FT> dist(points[segment_index].size());
+				for (size_t i = 0; i < points[segment_index].size(); ++i) {
+
+					dist[i] = CGAL::sqrt(squared_distance(corner, points[segment_index][i]));
+				}
+
+				int closest_index = -1; FT min_dist = FT(1000000000);
+				for (size_t i = 0; i < dist.size(); ++i) {
+
+					if (dist[i] < min_dist) {
+
+						closest_index = static_cast<int>(i);
+						min_dist = dist[i];
+					}
+				}
+
+				assert(closest_index != -1);
+				return closest_index;
 			}
 
 			template<class ContainerT, class Key>

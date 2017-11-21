@@ -496,7 +496,13 @@ namespace CGAL {
 				const Point_2 &p = ray.source();
 				const Point_2 &q = ray.target();
 
-				Line_face_circulator lfc = cdt.line_walk(p, q, fh);
+				Line_face_circulator lfc;
+				if (cdt.oriented_side(fh, p) == CGAL::ON_NEGATIVE_SIDE) {
+				
+					if (cdt.oriented_side(fh, q) == CGAL::ON_NEGATIVE_SIDE) return FT(1) / FT(2);
+					lfc = cdt.line_walk(q, p, fh);
+
+				} else lfc = cdt.line_walk(p, q, fh);
 
 				const FT max_small_edge = compute_max_small_edge(lfc, cdt);
 				const FT ray_visibility = traverse_ray_faces(log, lfc, cdt, fh, max_small_edge);

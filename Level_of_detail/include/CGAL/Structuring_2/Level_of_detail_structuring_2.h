@@ -195,7 +195,7 @@ namespace CGAL {
 
 
 				// (9) Extra: Create segment end points and labels.
-				create_segment_end_points_and_labels();
+				create_segment_end_points_labels_anchors();
 
 				if (m_save_log) log.out << "(9) Segment end points and labels are found." << std::endl;
 
@@ -250,6 +250,12 @@ namespace CGAL {
 				return m_segment_end_labels;
 			}
 
+			const Structured_anchors& get_segment_end_anchors() const {
+				
+				assert(!is_empty());
+				return m_segment_end_anchors;
+			}
+
 			void set_epsilon(const FT value) {
 
 				assert(value > FT(0));
@@ -288,8 +294,9 @@ namespace CGAL {
 			std::vector<std::unordered_set<int> > m_adjacency;
 			std::unordered_set<Int_pair, My_pair_hasher, My_pair_equal> m_undirected_graph;
 
-			Structured_points m_segment_end_points;
-			Structured_labels m_segment_end_labels;
+			Structured_points  m_segment_end_points;
+			Structured_labels  m_segment_end_labels;
+			Structured_anchors m_segment_end_anchors;
 
 			bool m_empty;
 			Structuring_corner_algorithm 		   m_corner_algorithm;
@@ -1128,33 +1135,41 @@ namespace CGAL {
 				return false;
 			}
 
-			void create_segment_end_points_and_labels() {
+			void create_segment_end_points_labels_anchors() {
 
-				m_segment_end_points.clear();
-				m_segment_end_points.resize(m_cc.size());
+				 m_segment_end_points.clear();
+				 m_segment_end_points.resize(m_cc.size());
 
-				m_segment_end_labels.clear();
-				m_segment_end_labels.resize(m_cc.size());
+				 m_segment_end_labels.clear();
+				 m_segment_end_labels.resize(m_cc.size());
 
-				assert(m_str_points.size() == m_segment_end_points.size());
-				assert(m_str_labels.size() == m_segment_end_labels.size());
+				m_segment_end_anchors.clear();
+				m_segment_end_anchors.resize(m_cc.size());
+
+				assert( m_str_points.size() ==  m_segment_end_points.size());
+				assert( m_str_labels.size() ==  m_segment_end_labels.size());
+				assert(m_str_anchors.size() == m_segment_end_anchors.size());
 
 				Log log;
 				for (size_t i = 0; i < m_segment_end_points.size(); ++i) {
 					
-					m_segment_end_points[i].resize(2);
-					m_segment_end_labels[i].resize(2);
+					 m_segment_end_points[i].resize(2);
+					 m_segment_end_labels[i].resize(2);
+					m_segment_end_anchors[i].resize(2);
 
-					m_segment_end_points[i][0] = m_str_points[i][0];
-					m_segment_end_points[i][1] = m_str_points[i][m_str_points[i].size() - 1];
+					 m_segment_end_points[i][0] = m_str_points[i][0];
+					 m_segment_end_points[i][1] = m_str_points[i][m_str_points[i].size() - 1];
 					
-					m_segment_end_labels[i][0] = m_str_labels[i][0];
-					m_segment_end_labels[i][1] = m_str_labels[i][m_str_labels[i].size() - 1];
+					 m_segment_end_labels[i][0] = m_str_labels[i][0];
+					 m_segment_end_labels[i][1] = m_str_labels[i][m_str_labels[i].size() - 1];
 
-					if (m_save_log) log.out << m_segment_end_points[i][0] << " " << 0 << std::endl;
-					if (m_save_log) log.out << m_segment_end_points[i][1] << " " << 0 << std::endl;
+					m_segment_end_anchors[i][0] = m_str_anchors[i][0];
+					m_segment_end_anchors[i][1] = m_str_anchors[i][m_str_anchors[i].size() - 1];
+
+					/* if (m_save_log) */ log.out << m_segment_end_points[i][0] << " " << 0 << std::endl;
+					/* if (m_save_log) */ log.out << m_segment_end_points[i][1] << " " << 0 << std::endl;
 				}
-				if (m_save_log) log.save("tmp/segment_end_points");
+				/* if (m_save_log) */ log.save("tmp/segment_end_points");
 			}
 
 			// It works only with Occupancy_method::ALL!
