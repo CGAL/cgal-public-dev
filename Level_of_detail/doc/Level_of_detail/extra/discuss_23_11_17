@@ -1,0 +1,30 @@
+Technical:
+1. When using many constraints and sparse triangles in CDT, it inserts new points that leads to some precondition violations sometimes. - When using use_all_structured_points option, this does not happen.
+2. Zona fh CDT precondition violation! What is it? - It works if we do not insert corners.
+
+
+General:
+1. Region growing with locally estimated parameters. - Globally estimated parameters are easier to control. In addition, they filter out wrong points.
+2. Refine CDT for better visibility. - For skinny triangles it is not going to help anyways.
+3. Fix large angle issues inside triangles. Maybe bisecting or something similar. Should be a step before CDT. - Not sure if it is needed.
+4. Should we improve normals in 2D?
+5. Can we improve graphcut?
+6. What other steps?
+
+
+Points:
+1. Many small improvements in region growing, structuring, CDT, and reconstruction.
+2. New residential data sets. They are also tested.
+
+
+Todo:
+1. Create and classify tiles with different building blocks.
+2. Fix graph cut by putting a higher penalty on the unconstrained edges.
+3. Maybe try to identify buildings on an early stage and work per buulding.
+4. Identify sets of parameters for different types of urban areas. Try on different sets, see which steps break the results.
+5. Create a Polyhedron demo plugin where I can adjust each step of the pipeline, perform a set of steps or the whole pipeline.
+6. Use a motorcycle graph to prolongate all segments and create multiple intersection points.
+7. Global regularization of segments, make all segments parallel and orthogonal.
+8. Add proper parts of the clutter to fill holes and missing walls. Not all clutter. We have to decide which clusters of the clutter are meaningful.
+9. Terminal tool to play around with parameters. Refactor how I add and save parameters.
+10. Load visibility results from a file.

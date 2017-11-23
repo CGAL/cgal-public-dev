@@ -147,9 +147,10 @@ namespace CGAL {
 
 		// Structuring corner algorithm.
 		enum class Structuring_corner_algorithm {
-			NO_CORNERS,        // we do not insert any corners
-			GRAPH_BASED,	   // in this algorithm, we build an adjacency graph and insert corners based on this graph
-			INTERSECTION_BASED // in this algorithm, we intersect all segments and insert the best intersections
+			NO_CORNERS,         // we do not insert any corners
+			GRAPH_BASED,	    // in this algorithm, we build an adjacency graph and insert corners based on this graph
+			INTERSECTION_BASED, // in this algorithm, we intersect all segments and insert the best intersections
+			NO_T_CORNERS		// we do not insert T-like corners
 		};
 
 		// Structuring adjacency threshold method.

@@ -1,0 +1,25 @@
+Technical:
+1. Classification package saves some points with label -1. So it is not guaranteed that all points are classified? Why? Is it random forest. - It should not happen. If it repeats, check if it is coming from weighted sum or random forest. If it is coming from random forest, it is ok.
+2. In demo classification, radius label changed its position. Actually sometimes radius label is not saved at all. Sometimes, it is added at the end like in the paris data set, and sometimes after nz as in the p10 data set. - The radius is coming from the splats mode, do not use this mode and everything is going to be ok.
+3. When cliking anywhere away from the classification pop-in window, the focus disappears and we have to start all over again. - It is being fixed now.
+4. p10 data set has the same point twice after running region growing. - It is being fixed now.
+5. Segmentation fault when loading the p10 class_trial.ply and changing points+normals to the next mode in the master/Polyhedron_demo. - Again, it is the splats mode bug.
+
+General:
+1. Short pipeline is easier to set up, requires fewer parameters, much slower to run and its robustness depends directly on the classification result. It is also senstive to the boundaries (wether to compute them or not in the outliner). - For the moment use the short pipeline, do not for get that the pipeline should be the same, but it must work as with as without the shape detection.
+2. The main problem with real data comes from creating corners. In this case, I have to intersect segments or their supporting lines, which creates many points at infinity. For example, I need to intersect two almost parallel lines. - Take care of this by putting an epsilon radius where the corner can be inserted, if it is inserted outside this region, create the corner on the boundary of this region. Basically, do not let corners being far away from the data points.
+3. Second main problem is that the outliner algorithm is very sensitive to noise and incorrect input data!
+4. Might be a bug in the graph cut since after applying it in the short pipeline I have many tiny triangles, which are in, and next to them other tiny triangles, which are out?I should tweak the parameters and maybe weights - for example use squared lengths of the edges instead of lengths or divide these lengths by something or any other improvements.
+5. So what strategy should I adopt now: ray shooting with A-B labels and then graph cut? - Yes.
+
+Points:
+1. Cleaned up a few small things.
+2. Added region growing based complex data set. Tested.
+3. Added two real data sets. Tested.
+4. Added a new short version of the pipeline. Tested.
+5. Started implementation of the new ray shooting approach for visibility.
+
+Todo:
+1. Find multiple boundaries by using the pivoting flooding as described by Pierre (see his paper and email). Start from a triangle, propagate keeping the set of the building boundaries, wait every time when two floods meet, split the vector of lists every time when waiting is not possible anymore. The final building edges will not be ordered, but that is ok.
+2. Instead of thinning and grid simplify, alternatively, you can search for lines in the 2D set and do sort of structuring based on these lines.
+3. In visibility we need to find epsilon bands if there are no constrained edges - to do so, you need to compute for each point its k nearest neighbours, fit a distance function to these points, use it to compute a radius of the disc around the point, then you will get a set of isolines with different epsilon values, use a special algorithm from Pierre to choose the correct epsilon and count as crossing the crossing of the ray with this band. The size of the disc must be chosen so that the ray does not pass between two neighbouring discs in a band without touching them. Ask for a paper reference from Pierre and read the noise adaptive reconstruction paper by Simon. We can also solve a global optimization then.

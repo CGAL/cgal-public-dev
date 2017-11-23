@@ -94,7 +94,8 @@ namespace CGAL {
 			Level_of_detail_structuring_2(const Points &points, const Connected_components &components, const Lines &lines) :
 			m_points(points), m_cc(components), m_lines(lines), m_tol(FT(1) / FT(10000)), m_big_value(FT(1000000)), 
 			m_eps_set(false), m_save_log(true), m_resample(true), m_empty(true), m_corner_algorithm(Structuring_corner_algorithm::GRAPH_BASED),
-			m_adjacency_threshold_method(Structuring_adjacency_threshold_method::LOCAL), m_adjacency_threshold(-FT(1)) { 
+			m_adjacency_threshold_method(Structuring_adjacency_threshold_method::LOCAL), m_adjacency_threshold(-FT(1)),
+			m_min_seg_points(2), m_max_neigh_segments(4), m_use_global_everywhere(true) {
 
 				assert(components.size() == lines.size());
 			}
@@ -263,6 +264,10 @@ namespace CGAL {
 				m_eps_set = true;
 			}
 
+			void set_global_everywhere(const bool new_state) {
+				m_use_global_everywhere = new_state;
+			}
+
 		private:
 			const Points 			   &m_points;
 			const Connected_components &m_cc;
@@ -302,6 +307,10 @@ namespace CGAL {
 			Structuring_corner_algorithm 		   m_corner_algorithm;
 			Structuring_adjacency_threshold_method m_adjacency_threshold_method;
 			FT 									   m_adjacency_threshold;
+
+			size_t m_min_seg_points;
+			size_t m_max_neigh_segments;
+			bool m_use_global_everywhere;
 
 
 			void project() {
@@ -532,6 +541,14 @@ namespace CGAL {
 
 					const auto extra = rest / times;
 
+					if (initial + extra >= upper_bound) {
+					
+						m_lp[i]    = -FT(1);
+						m_times[i] = -1;
+
+						continue;
+					}
+
 					m_lp[i]    = initial + extra;
 					m_times[i] = static_cast<int>(times);
 
@@ -577,6 +594,8 @@ namespace CGAL {
 				Log log;
 				if (m_save_log) {
 					for (size_t i = 0; i < m_times.size(); ++i) {
+						if (m_times[i] < 0) continue;
+
 						for (size_t j = 0; j < static_cast<size_t>(m_times[i]); ++j) {
 							log.out << m_occupancy[i][j] << " ";	
 						}
@@ -591,15 +610,21 @@ namespace CGAL {
 				m_occupancy.clear();
 				m_occupancy.resize(m_times.size());
 
-				for (size_t i = 0; i < m_occupancy.size(); ++i)
+				for (size_t i = 0; i < m_occupancy.size(); ++i) {
+					
+					if (m_times[i] < 0) continue;
 					m_occupancy[i].resize(m_times[i], false);
+				}
 			}
 
 			void fill_all() {
 
-				for (size_t i = 0; i < m_times.size(); ++i)
+				for (size_t i = 0; i < m_times.size(); ++i) {
+					if (m_times[i] < 0) continue;
+
 					for (size_t j = 0; j < static_cast<size_t>(m_times[i]); ++j)
 						m_occupancy[i][j] = true;
+				}
 			}
 
 			void fill_only_projected() {
@@ -610,7 +635,9 @@ namespace CGAL {
 
 				size_t segment_index = 0;
 				for (CC_iterator it = m_cc.begin(); it != m_cc.end(); ++it, ++segment_index) {
+					
 					const auto num_points = (*it).second.size();
+					if (m_times[segment_index] < 0) continue;
 
 					for (size_t i = 0; i < num_points; ++i) {
 						const auto index = (*it).second[i];
@@ -631,6 +658,7 @@ namespace CGAL {
 				assert(m_lp.size() == m_cc.size());
 				assert(segment_index >= 0 && segment_index < m_cc.size());
 				assert(m_lp[segment_index] > FT(0));
+				assert(m_times[segment_index] >= 0);
 
 				int occupancy_index = -1;
 
@@ -701,6 +729,7 @@ namespace CGAL {
 
 			Point create_linear_point(const int segment_index, const int occupancy_index) {
 
+				assert(m_times[segment_index] >= 0);
 				assert(segment_index >= 0 && segment_index < static_cast<int>(m_times.size()));
 				assert(occupancy_index >= 0 && occupancy_index < static_cast<int>(m_times[segment_index]));
 				
@@ -738,6 +767,10 @@ namespace CGAL {
 					case Structuring_corner_algorithm::INTERSECTION_BASED:
 						assert(!"This method is not implemented!");
 						add_intersection_based_corners(log);
+						break;
+
+					case Structuring_corner_algorithm::NO_T_CORNERS:
+						add_graph_based_corners(log);
 						break;
 
 					default:
@@ -838,7 +871,10 @@ namespace CGAL {
 				assert(!m_eps.empty());
 
 				for (size_t i = 0; i < m_cc.size(); ++i) {
+					if (m_times[i] < 0 || m_str_points[i].size() < m_min_seg_points) continue;
+
 					for (size_t j = 0; j < m_cc.size(); ++j) {
+						if (m_times[j] < 0 || m_str_points[j].size() < m_min_seg_points) continue;
 
 						if (i != j) {
 
@@ -867,8 +903,11 @@ namespace CGAL {
 			FT get_adjacency_threshold(const size_t ind_i, const size_t ind_j) {
 
 				// Base method.
-				assert(ind_i >= 0 && ind_i < m_eps.size() && ind_j >= 0 && ind_j < m_eps.size());
-				return CGAL::max(m_eps[ind_i], m_eps[ind_j]);
+				if (m_use_global_everywhere) {
+					
+					assert(ind_i >= 0 && ind_i < m_eps.size() && ind_j >= 0 && ind_j < m_eps.size());
+					return CGAL::max(m_eps[ind_i], m_eps[ind_j]);
+				}
 
 				// Alternative methods.
 				switch (m_adjacency_threshold_method) {
@@ -918,9 +957,12 @@ namespace CGAL {
 				assert(!m_adjacency.empty());
 				const int number_of_components = static_cast<int>(m_adjacency.size());
 
-				for (int i = 0; i < number_of_components; ++i)
+				for (int i = 0; i < number_of_components; ++i) {
+					if (m_adjacency[i].size() > m_max_neigh_segments) continue;
+
 					for (const int j : m_adjacency[i])
 						m_undirected_graph.insert(std::make_pair(i, j));
+				}
 
 				// Log function. Can be removed.
 				Log log;
@@ -999,10 +1041,18 @@ namespace CGAL {
 
 			void add_corner(const int i, const int j, const FT dist_thresh, Point &corner) {
 
+				if (m_corner_algorithm == Structuring_corner_algorithm::NO_T_CORNERS) {
+					
+					if (!is_valid_segment(i, corner, (dist_thresh < FT(0) ? m_lp[i] : dist_thresh))) return;
+					if (!is_valid_segment(j, corner, (dist_thresh < FT(0) ? m_lp[j] : dist_thresh))) return;
+				}
+
 				std::vector<int> cycle(2);
 				const bool closest_i = is_closest_i(i, j, corner);
 
 				if (/* is_unique(corner, i) */  closest_i) {
+
+					assert(m_lp[i] > FT(0));
 
 					cycle[0] = i;
 					cycle[1] = j;
@@ -1013,12 +1063,28 @@ namespace CGAL {
 
 				if ( /* is_unique(corner, j) */ !closest_i) {
 
+					assert(m_lp[j] > FT(0));
+
 					cycle[0] = j;
 					cycle[1] = i;
 
 					if (dist_thresh < FT(0)) add_unique_corner(j, cycle, m_lp[j], corner);
 					else add_unique_corner(j, cycle, dist_thresh, corner);
 				}
+			}
+
+			bool is_valid_segment(const int ind, const Point &corner, const FT dist_thresh) {
+
+				assert(m_str_points[ind].size() >= m_min_seg_points);
+
+				const Point &source = m_str_points[ind][0];
+				const Point &target = m_str_points[ind][m_str_points[ind].size() - 1];
+
+				const FT dist_s = CGAL::sqrt(squared_distance(source, corner));
+				const FT dist_t = CGAL::sqrt(squared_distance(target, corner));
+
+				if (dist_s > dist_thresh && dist_t > dist_thresh) return false;
+				return true;
 			}
 
 			bool is_closest_i(const int i, const int j, const Point &corner) {
@@ -1092,6 +1158,8 @@ namespace CGAL {
 
 				if (dist > dist_thresh) {
 
+					assert(m_lp[segment_index] > FT(0));
+
 					const FT b1 = m_lp[segment_index] / dist;
 					const FT b2 = FT(1) - b1;
 
@@ -1152,6 +1220,7 @@ namespace CGAL {
 
 				Log log;
 				for (size_t i = 0; i < m_segment_end_points.size(); ++i) {
+					if (m_str_points[i].size() < m_min_seg_points) continue;
 					
 					 m_segment_end_points[i].resize(2);
 					 m_segment_end_labels[i].resize(2);
@@ -1169,7 +1238,7 @@ namespace CGAL {
 					/* if (m_save_log) */ log.out << m_segment_end_points[i][0] << " " << 0 << std::endl;
 					/* if (m_save_log) */ log.out << m_segment_end_points[i][1] << " " << 0 << std::endl;
 				}
-				/* if (m_save_log) */ log.save("tmp/segment_end_points");
+				/* if (m_save_log) */ log.save("tmp/segment_end_points", ".xyz");
 			}
 
 			// It works only with Occupancy_method::ALL!
@@ -1179,6 +1248,7 @@ namespace CGAL {
 				assert(m_str_points.size() == m_segments.size());
 
 				for (size_t i = 0; i < m_str_points.size(); ++i) {
+					if (m_str_points[i].size() < m_min_seg_points) continue;
 
 					const Point &p = m_str_points[i][0];
 					const Point &q = m_str_points[i][m_str_points[i].size() - 1];

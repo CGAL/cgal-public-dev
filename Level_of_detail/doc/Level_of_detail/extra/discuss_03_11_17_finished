@@ -1,0 +1,25 @@
+Technical:
+1. After classifying and saving data set, if loading this saved data set without removing the previous one, its colours are changed to the default. - It is ok. It should work like that.
+2. Empty xyz files are not opening. - Will be fixed during the cgal dev meeting.
+3. Fuzzy iso box does not work. - Report a github issue or ask in the cgal dev list.
+
+
+General:
+1. How to add constrained edges after the graph cut and split different neighbouring buildings in the pipeline version without shape detection? - Use structured labels after thinning and alpha shapes over the roofs to detect boundaries.
+
+
+Points:
+1. Thinning algorithm.
+2. ETH classification on Paris data set + residential testing.
+
+
+Todo:
+1. If number of detected knn in the circle is less than 3, use knn to find at least 6. In general, we will need to detect at about 30 points to work correctly.
+2. Use Voronoi diagram on the simplified point set to add new corners to the respective cell, then choose the best cell, find a neighbourhood, detect again two clusters and intersect them to find a proper coner.
+3. When fitting a line, use a centre of mass of this cluster + an average normal to create a line.
+4. It may happen that dimension detection will not work very well for real data and it will too much depend on the chosen scale, then use an error from the clustering to detect if we are in 2 dimensions or in 1. If the error does not decrease by introducing more clusters, we are in dimension 2.
+5. Use gnuplot to visualize errors.
+6. Add better dependency between number of clusters and kmeans inertia - instead of elbow method, you can use siluathette e.g.
+7. Sparsity test does not really work.
+8. Average spacing can be used to detect dimension 0 and 2.
+9. Implement region growing in 2D and test it.

@@ -168,7 +168,8 @@ namespace CGAL {
 			m_use_alpha_shapes(false),
 			m_structuring_corner_algorithm(Structuring_corner_algorithm::GRAPH_BASED),
 			m_structuring_adjacency_method(Structuring_adjacency_threshold_method::LOCAL),
-			m_structuring_adjacency_value(-FT(1))
+			m_structuring_adjacency_value(-FT(1)),
+			m_structuring_global_everywhere(true)
 			{ } // Do I need to create an instance of these traits here?
 
 
@@ -467,6 +468,7 @@ namespace CGAL {
 				m_structuring->set_corner_algorithm(m_structuring_corner_algorithm);
 				m_structuring->set_adjacency_threshold_method(m_structuring_adjacency_method);
 				m_structuring->set_adjacency_threshold(m_structuring_adjacency_value);
+				m_structuring->set_global_everywhere(m_structuring_global_everywhere);
 
 				const auto number_of_structured_segments = m_structuring->structure_point_set();
 
@@ -959,7 +961,7 @@ namespace CGAL {
 			Structuring_corner_algorithm 		   m_structuring_corner_algorithm;
 			Structuring_adjacency_threshold_method m_structuring_adjacency_method;
 			FT 									   m_structuring_adjacency_value;
-
+			bool m_structuring_global_everywhere;
 
 			// Assert default values of all global parameters.
 			void assert_global_parameters() {
@@ -1046,6 +1048,7 @@ namespace CGAL {
 				m_visibility_num_neighbours 	  = 6;
 				m_visibility_rays_per_side  	  = 10;
 				m_visibility_small_edge_threshold = -1000000.0; // not used
+				m_structuring_global_everywhere   = true;
 
 				m_graph_cut_alpha = 1.0;    // should not change anything but should be bigger or equal to 1
 				m_graph_cut_gamma = 1000.0; // is not used in the pipeline without shape detection (or without structuring), otherwise should be some big value
@@ -1314,7 +1317,7 @@ namespace CGAL {
 				m_thinning_fuzzy_radius  = 5.0;
 				m_visibility_angle_eps   = 0.18; 
 				m_max_reg_angle          = 10.0;
-				m_structuring_epsilon 	 = 3.0;
+				m_structuring_epsilon 	 = 5.0;
 				m_add_cdt_clutter     	 = false;
 				m_visibility_num_samples = 1;
 				m_graph_cut_beta 		 = 100000.0; // 35.0 with_clutter // 15.0 for with_shape_detection
@@ -1332,9 +1335,10 @@ namespace CGAL {
 
 				m_use_alpha_shapes = true;
 				m_alpha_shape_size = 5.0;
+				m_graph_cut_gamma  = 10000.0;
 
 				m_structuring_get_all_points  = true;
-				m_structuring_adjacency_value = 10.0;
+				m_structuring_adjacency_value = 12.0;
 			}
 
 
@@ -1352,11 +1356,13 @@ namespace CGAL {
 				m_building_boundary_type 		 = Building_boundary_type::UNORIENTED;
 				m_clutter_new_point_type 		 = Clutter_new_point_type::CLOSEST;
 				m_thinning_type 	  			 = Thinning_type::NAIVE;
+				m_structuring_adjacency_method 	 = Structuring_adjacency_threshold_method::GLOBAL;
+				m_structuring_corner_algorithm   = Structuring_corner_algorithm::NO_T_CORNERS;
 
 				m_thinning_fuzzy_radius  = 5.0;
 				m_visibility_angle_eps   = 0.18; 
 				m_max_reg_angle          = 10.0;
-				m_structuring_epsilon 	 = 2.3;
+				m_structuring_epsilon 	 = 5.0;
 				m_add_cdt_clutter     	 = false;
 				m_visibility_num_samples = 1;
 				m_graph_cut_beta 		 = 100000.0;
@@ -1367,35 +1373,40 @@ namespace CGAL {
 				m_use_grid_simplifier_first = true;
 				m_with_region_growing 	 	= true;
 
-				m_region_growing_epsilon 		  = 2.5;
-				m_region_growing_cluster_epsilon  = 4.5;  
-				m_region_growing_normal_threshold = 0.9;  
-				m_region_growing_min_points 	  =  10; // 2 more than in the paris_eth data set
+				m_region_growing_epsilon 		  = 3.2;
+				m_region_growing_cluster_epsilon  = 2.9;
+				m_region_growing_normal_threshold = 0.7;  
+				m_region_growing_min_points 	  = 10;
 
 				m_use_alpha_shapes = true;
 				m_alpha_shape_size = 5.0;
+
+				m_structuring_get_all_points  = true;
+				m_structuring_adjacency_value = 12.0;
 			}
 
 
-			// untested
+			// most likely it is not going to look good for the moment
 			void set_resident_tile_1_parameters() {
 
 				// All main parameters are set below.
 				m_default_path     = "/Users/danisimo/Documents/pipeline/data/residential_test/tile_1/data_region_growing_eth";
 				m_pipeline_version = Pipeline_version::WITHOUT_SHAPE_DETECTION;
 
-				m_visibility_approach 	 		 = Visibility_approach::FACE_BASED;
-				m_visibility_method   	 		 = Visibility_method::FACE_BASED_NATURAL_NEIGHBOURS;
+				m_visibility_approach 	 		 = Visibility_approach::POINT_BASED;
+				m_visibility_method   	 		 = Visibility_method::POINT_BASED_CLASSIFICATION;
 				m_visibility_sampler 	 		 = Visibility_sampler::UNIFORM_SUBDIVISION;
 				m_thinning_neighbour_search_type = Neighbour_search_type::CIRCLE;
 				m_building_boundary_type 		 = Building_boundary_type::UNORIENTED;
 				m_clutter_new_point_type 		 = Clutter_new_point_type::CLOSEST;
 				m_thinning_type 	  			 = Thinning_type::NAIVE;
+				m_structuring_adjacency_method 	 = Structuring_adjacency_threshold_method::GLOBAL;
+				m_structuring_corner_algorithm   = Structuring_corner_algorithm::NO_T_CORNERS;
 
 				m_thinning_fuzzy_radius  = 5.0;
-				m_visibility_angle_eps   = 0.18; 
+				m_visibility_angle_eps   = 0.18;
 				m_max_reg_angle          = 10.0;
-				m_structuring_epsilon 	 = 2.3;
+				m_structuring_epsilon 	 = 2.0;
 				m_add_cdt_clutter     	 = false;
 				m_visibility_num_samples = 1;
 				m_graph_cut_beta 		 = 100000.0;
@@ -1406,16 +1417,20 @@ namespace CGAL {
 				m_use_grid_simplifier_first = true;
 				m_with_region_growing 	 	= true;
 
-				m_region_growing_epsilon 		  = 2.5;
-				m_region_growing_cluster_epsilon  = 4.5;  
-				m_region_growing_normal_threshold = 0.9;  
-				m_region_growing_min_points 	  = 15;
+				m_region_growing_epsilon 		  = 3.2;
+				m_region_growing_cluster_epsilon  = 2.9;
+				m_region_growing_normal_threshold = 0.7;  
+				m_region_growing_min_points 	  = 10;
 
 				m_use_alpha_shapes = true;
 				m_alpha_shape_size = 5.0;
+
+				m_structuring_get_all_points    = true;
+				m_structuring_adjacency_value   = 4.0;
+				m_structuring_global_everywhere = false;
 			}
 
-
+			// does not look good for the moment
 			void set_resident_tile_2_parameters() {
 
 				// All main parameters are set below.
@@ -1429,11 +1444,13 @@ namespace CGAL {
 				m_building_boundary_type 		 = Building_boundary_type::UNORIENTED;
 				m_clutter_new_point_type 		 = Clutter_new_point_type::CLOSEST;
 				m_thinning_type 	  			 = Thinning_type::NAIVE;
+				m_structuring_adjacency_method 	 = Structuring_adjacency_threshold_method::GLOBAL;
+				m_structuring_corner_algorithm   = Structuring_corner_algorithm::NO_T_CORNERS;
 
 				m_thinning_fuzzy_radius  = 5.0;
-				m_visibility_angle_eps   = 0.18; 
+				m_visibility_angle_eps   = 0.18;
 				m_max_reg_angle          = 10.0;
-				m_structuring_epsilon 	 = 0.5;
+				m_structuring_epsilon 	 = 2.0;
 				m_add_cdt_clutter     	 = false;
 				m_visibility_num_samples = 1;
 				m_graph_cut_beta 		 = 100000.0;
@@ -1441,20 +1458,24 @@ namespace CGAL {
 				m_clutter_cell_length    = 1.3;
 				m_use_boundaries 		 = true;
 
-				m_use_grid_simplifier_first = false;
+				m_use_grid_simplifier_first = true;
 				m_with_region_growing 	 	= true;
 
-				m_region_growing_epsilon 		  = 0.5;
-				m_region_growing_cluster_epsilon  = 1.0;  
-				m_region_growing_normal_threshold = 0.9;  
-				m_region_growing_min_points 	  = 200;
+				m_region_growing_epsilon 		  = 3.2;
+				m_region_growing_cluster_epsilon  = 2.9;
+				m_region_growing_normal_threshold = 0.7;  
+				m_region_growing_min_points 	  = 10;
 
 				m_use_alpha_shapes = true;
 				m_alpha_shape_size = 5.0;
+
+				m_structuring_get_all_points    = true;
+				m_structuring_adjacency_value   = 4.0;
+				m_structuring_global_everywhere = false;
 			}
 
 
-			// untested
+			// residential area - many small buildings and two large buildings, one tile, eth random forest
 			void set_resident_tile_3_parameters() {
 
 				// All main parameters are set below.
@@ -1468,11 +1489,12 @@ namespace CGAL {
 				m_building_boundary_type 		 = Building_boundary_type::UNORIENTED;
 				m_clutter_new_point_type 		 = Clutter_new_point_type::CLOSEST;
 				m_thinning_type 	  			 = Thinning_type::NAIVE;
+				m_structuring_adjacency_method 	 = Structuring_adjacency_threshold_method::GLOBAL;
 
 				m_thinning_fuzzy_radius  = 5.0;
-				m_visibility_angle_eps   = 0.18; 
+				m_visibility_angle_eps   = 0.18;
 				m_max_reg_angle          = 10.0;
-				m_structuring_epsilon 	 = 2.3;
+				m_structuring_epsilon 	 = 2.0;
 				m_add_cdt_clutter     	 = false;
 				m_visibility_num_samples = 1;
 				m_graph_cut_beta 		 = 100000.0;
@@ -1483,13 +1505,17 @@ namespace CGAL {
 				m_use_grid_simplifier_first = true;
 				m_with_region_growing 	 	= true;
 
-				m_region_growing_epsilon 		  = 2.5;
-				m_region_growing_cluster_epsilon  = 4.5;  
-				m_region_growing_normal_threshold = 0.9;  
-				m_region_growing_min_points 	  = 15;
+				m_region_growing_epsilon 		  = 3.2;
+				m_region_growing_cluster_epsilon  = 2.9;
+				m_region_growing_normal_threshold = 0.7;  
+				m_region_growing_min_points 	  = 3;
 
 				m_use_alpha_shapes = true;
 				m_alpha_shape_size = 5.0;
+
+				m_structuring_get_all_points    = true;
+				m_structuring_adjacency_value   = 4.0;
+				m_structuring_global_everywhere = false;
 			}
 
 

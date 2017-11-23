@@ -377,7 +377,8 @@ namespace CGAL {
 				// Insert points with labels.
 				Point_2 tmp(FT(1000000000), FT(1000000000));
 				for (size_t i = 0; i < points.size(); ++i) {
-					
+					if (points[i].size() < 2) continue;
+
 					assert(points[i].size() == labels[i].size());
 					vhs[i].resize(points[i].size());
 
@@ -396,6 +397,7 @@ namespace CGAL {
 				// Insert constraints.
 				std::vector<Segment_2> constraints;
 				for (size_t i = 0; i < points.size(); ++i) {
+					if (points[i].size() < 2) continue;
 
 					for (size_t j = 0; j < points[i].size() - 1; ++j) {	
 						constraints.push_back(Segment_2(points[i][j], points[i][j + 1]));
@@ -406,6 +408,8 @@ namespace CGAL {
 				}
 
 				for (size_t i = 0; i < points.size(); ++i) {
+					if (points[i].size() < 2) continue;
+					
 					for (size_t j = 0; j < points[i].size(); ++j) {
 
 						if (vhs[i][j] != Vertex_handle() && vhs[i][j]->info().label == Structured_label::CORNER) {
@@ -492,6 +496,14 @@ namespace CGAL {
 				// Create CDT.
 				CGAL::make_conforming_Delaunay_2(cdt);
 				number_of_faces = cdt.number_of_faces();
+
+
+				// Verify labels.
+				if (!add_clutter) {
+					for (Vertex_iterator vit = cdt.finite_vertices_begin(); vit != cdt.finite_vertices_end(); ++vit)
+						if(vit->info().label == Structured_label::CLUTTER)
+							vit->info().label = Structured_label::LINEAR;
+				}
 
 
 				// Save CDT.

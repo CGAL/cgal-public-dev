@@ -1,0 +1,39 @@
+Technical:
+1. Why the first query point in knn search works so long? Sometimes I have segmentation fault on create_internal_node() - Simon does not know, create an issue on github.
+
+
+General: 
+1. Should we do the final clean up of LOD0 and LOD1? Add after graph cut constrained edges between all in and out. All other constrained edges should be removed. In this case we will get a good LOD0 and LOD1. For LOD2 we save info with previously removed constrained edges and build different types of buildings, which are multilevel. Then we can take each building and work per building, split it into multi levels, add roofs, and so on. - Improve as much as possible all steps of LOD0 and LOD1, but do not do the final cleanup yet.
+2. Should we really change simple version of my unordered outliner to the pivoting one? - Not yet discussed.
+3. Should we really change my simple version of the banding in the ray shooting to the complex one? - small edge criteria makes the results worse! Though the complex algorithm seems to be too much. - Not yet.
+4. Should we really implement the watertight 2-manifold version of the LOD0 and LOD1? - Not yet.
+5. Should I assume that building that shares one vertical segment in 3D (or vertex in 2D) with the other building is its neighbour? - Not yet discussed.
+6. How should we avoid triangles in CDT that have nearly zero area? - Not yet discussed.
+
+
+Points:
+1. Ray shooting and blended visibility approaches + testing. Barycentric method with affine coordinates and voting.
+2. Improved outliner, added unoriented boundary, fixed LOD0 and LOD1 reconstruction.
+3. Added sphere search in thinning, fixed bug in structuring, added neighbour computation for buildings.
+4. All data sets are tested, added new full Paris data set.
+5. ETH classification is tested.
+
+
+Pierre:
+1. Using ETH classification. Try to use it on current data sets and compare + compare results on three residential tiles from Cedric, but do not waste too much time for that.
+2. Thinning - feature preserving (corners), dimension detection - discuss on Monday with Pierre.
+3. Grid simplify - feature preserving (corners, termination). Use the closest point to the barycentre to preserve original positions of the points. Use adaptive grid size, where the size is chosen automatically.
+4. Graph cut - nothing to do for the moment.
+5. Polyline simplification - maybe run at least once.
+6. Try to reuse different parameters in different parts of the code.
+7. Use Paris tile as main testing data set - try to get the best results there keeping the best results for basic and complex data sets.
+
+
+Simon:
+1. Synthetic perfect data and improve them as much as possible for LOD0 and LOD1. Use as ground truth to compute the error.
+2. Region growing in 2D for detecting lines.
+
+
+Todo:
+1. Follow the following steps from the Pierre's pipeline above: improve thinning, improve boundary detection by using alpha shapes (sample the resulting segments) on the roof points, add verticality criteria to the selection procedure - basically take all boundary points of the roof and all vertical facade points.
+2. Try new thinning together with eth on three tiles from Cedric.

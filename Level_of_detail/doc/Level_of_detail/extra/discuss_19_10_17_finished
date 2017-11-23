@@ -1,0 +1,31 @@
+Technical:
+1. Is there a better way to get the intersected side of the face in the line walk without traversing all face edges? - Simply take previous and next face and an edge between them.
+
+
+General: 
+1. Maybe better to use sphere neighbour search instead of knn in thinning? - Yes, it can help.
+
+2. Natural neighbours approach is very inefficient because we need to build Delaunay triangulation for input data set with thousands of points. - Try affine coordinates instead of natural neighbour coordinates in the visibility module. Or try some sort of voting.
+3. Natural neighbour visibility is not very robust because it depends on random sampling of each triangle. Can we use non-random sampling instead? It is also slow if many samples are taken. - Just use the longest edge split to be deterministic.
+4. Natural neighbour search function sometimes bugs. - Yes, it does.
+
+5. I think the main problem with graph cut for the pipeline without shape detection comes from the fact that all edges are free-form coherent and are favoured more or less the same.
+6. Parameters for the graph cut:
+
+	a. m_alpha should always be greater or equal 1, though bigger than 1 does not make any difference - so just use 1.
+	b. m_beta should be a big value >= 1, increasing it makes less inside triangles.
+	c. m_gamma is not used in the clutter-based pipeline (without shape detection); for the structuring-based pipeline (with shape detection), just use some big value. Making it bigger or smaller does not change the result.
+
+7. Ray shooting also suffers from the randomness as natural neighbour visibility. - See for solutions above.
+8. Where I can find a paper about bands for ray shooting? - See the paper Signing the unsigned by Pierre.
+
+9. New updated code works much faster. - Yes.
+
+
+Points:
+1. Versions with and without shape detection are now unified in a clear way.
+2. Thinning is implemented and tested.
+3. Grid simplify is implemented and tested.
+4. Graph cut is improved and all parameters are tweaked.
+5. Natural neighbour visibility is improved and tested.
+6. Ray shooting visibility is almost implemented for the case with constrained edges.

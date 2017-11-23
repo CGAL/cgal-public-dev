@@ -1,0 +1,27 @@
+Techical:
+1. How to use property maps with alpha shapes / triangulations? Accelerate my boundary extractor that is based on alpha shapes. - Use vertex base with info.
+2. Randomness in region growing. Sometimes it gives 67 lines, sometimes 69. Is it ok? - Fixed.
+
+
+General:
+1. Free form clutter is added everywhere and it makes cdt looking worse. - In general, I try to avoid adding it.
+2. What other steps?
+
+
+Points:
+1. Added and tested 2D region growing.
+2. Added and tested alpha shapes.
+3. Pipeline modified - grid simplify is improved and added before region growing.
+
+
+Todo:
+1. Fix large angle issues inside triangles. Maybe bisecting or something similar. Should be a step before CDT. - Not sure if it is needed.
+2. Try to improve normals in 2D.
+3. Can we improve graphcut?
+4. Zona h CDT precondition violation! What is it? It works if we do not insert corners.
+
+
+Notes:
+1. When using many constraints and sparse triangles in CDT, it inserts new points that leads to some precondition violations sometimes. - When using use_all_structured_points option, this does not happen.
+2. Region growing with locally estimated parameters. - Globally estimated parameters are easier to control. In addition, they filter out wrong points.
+3. Refine CDT for better visibility. - For skinny triangles it is not going to help anyways.
