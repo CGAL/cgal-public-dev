@@ -110,7 +110,9 @@ namespace CGAL {
 			PARIS_FULL_ETH,  // full paris data set classified with ETH random forest
 			RESIDENT_TILE_1, // three different residential tiles
 			RESIDENT_TILE_2,
-			RESIDENT_TILE_3
+			RESIDENT_TILE_3,
+			PARIS_TILE_1, // two different Paris tiles
+			PARIS_TILE_2
 		};
 
 		// Nearest neighbour search.

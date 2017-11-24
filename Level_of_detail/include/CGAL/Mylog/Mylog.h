@@ -27,8 +27,11 @@ namespace CGAL {
 
 		private:
 			CGAL::Random m_rand;
+			const std::string m_prefix_path;
 
 		public:
+			Mylog() : m_prefix_path("/Users/danisimo/Documents/pipeline/") { }
+
 			std::string state() const {
 				return "ok";
 			}
@@ -55,9 +58,11 @@ namespace CGAL {
 				out << "Index: " << index << std::endl;
 			}
 
-			bool save(const std::string &fileName, const std::string &extension = ".log", const std::string path = "/Users/danisimo/Documents/pipeline/logs/") const {
+			bool save(const std::string &fileName, const std::string &extension = ".log", const std::string path = "logs/") const {
 
-				const std::string finalPath = path + fileName + extension;
+				const std::string default_path = m_prefix_path + path;
+
+				const std::string finalPath = default_path + fileName + extension;
 				std::ofstream file(finalPath.c_str(), std::ios_base::out);
 
 				if (!file) {

@@ -1,4 +1,3 @@
-
 Technical:
 1. Can I make an existing edge constrained? - Just use insert constraint.
 2. How to get an edge if I know face handle and its neighbouring face handle? - It will be Face_handle f1, f2; Edge = std::make_pair(f1, f1->index(f2)).
@@ -7,12 +6,14 @@ Technical:
 5. Is it possible to add colors to faces in the Polyhedron_incremental_builder class? - No but you can do it in Surface_mesh. In general, it is better to use Surface_mesh.
 6. Bug when trying to read ply file with LOD0 in Polyhedron demo. - Will be fixed by Simon.
 
+
 General:
 1. What if I have one building inside another one. How can I detect/correct after the graph cut that interior building's walls should be constrained? - In this case we need to implement a new graph cut strategy, which uses a new visibility approach. In this visibility approach, we shoot rays and count parity for each constrained edge, thus having in-out-in-out predictions for each triangle. Then we use this to apply a graph cut and get a set of A and B sets of triangles. Then we first remove all sets that adjacent to the boundary, then all others are buildings with interior parts. For each of this set we choose what is building and what is not based on the classification labels.
 2. An algorithm that will work with multiple boundaries - for example one exterior boundary and one interior boundary. - See above.
 3. How to create 2-manifold or watertight mesh from the polygonal soup without self intersections, which is LOD1 now? - Project all floors and roofs as triangulated domains. Then first use the simplest version, add all walls as rectangles with beginning z coordinates of the floor and ending z coordinates of the roof. In this case in many situations it will be the correct mesh. In other situations, if I have a pinch or adjacent walls, edges, we need to triangulate them and insert correct vertices at the intersection points. Also use the mesh class to verify if the obtained polyhedron is correct or not.
 4. Some buildings turn out to be just a triangle that is why some walls of the buildings have different colours. - See above. The simplest version, remove all internal constrained edges and add constrained adges that are between in and out of the graph cut.
 5. How to create a robust boundary detector where some edges may be constrained and some not? - See above.
+
 
 Points:
 0.  Overall clenup.

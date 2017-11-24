@@ -235,6 +235,7 @@ TEST_F(LOD_PreprocessorTest, AppliesAlphaShapesWithTwoBoundaries) {
 	Boundary_data boundaries, boundary_clutter;
 
 	const FT alpha = 0.05;
+	lodPreprocessor.use_alpha_shapes(true);
 	lodPreprocessor.set_alpha(alpha);
 
 	const bool with_shape_detection = false;
@@ -256,6 +257,7 @@ TEST_F(LOD_PreprocessorTest, AppliesAlphaShapesWithOneBoundary) {
 	Boundary_data boundaries, boundary_clutter;
 
 	const FT alpha = 1.5;
+	lodPreprocessor.use_alpha_shapes(true);
 	lodPreprocessor.set_alpha(alpha);
 
 	const bool with_shape_detection = false;

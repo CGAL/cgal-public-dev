@@ -1,0 +1,46 @@
+To use the code:
+
+A --------
+
+In my case, I have a directory with folders:
+
+1. "cgal-public-dev" folder - here the LOD branch is stored
+2. "build" folder - here CGAL is build
+
+B --------
+
+In this directory, I create three folders:
+
+1. "data" - I copy here my data folders from Google drive
+2. "logs" - inside this folder I create a folder "tmp", where all intermediate steps of the pipeline are stored
+3. "tdd-build" - here I compile the test code to run the pipeline
+
+I also copy to this directory the file "compile-tdd.sh" that can be found in the current folder
+
+C --------
+
+a. First, I go to the folder: cgal-public-dev/Level_of_detail/test/Level_of_detail/tdd/Pierre (current folder)
+b. I open main.cpp
+c. I edit "data_path" at the beginning of the "main()" function. E.g. data_path = "/Users/danisimo/Documents/pipeline/data/"
+
+a. Second, I go to the folder cgal-public-dev/Level_of_detail/include/CGAL/Mylog/
+b. I open Mylog.h
+c. I edit the path "m_prefix_path" at the very top of the file
+
+D --------
+
+Now I go to the directory from A.
+
+To compile the test, I do in my terminal (not sure how it should be on Windows):
+
+cd tdd-build
+sh ../compile-tdd.sh Pierre
+make
+./lod 
+
+or
+
+./lod -param_name param_value (can be found in the main.cpp)
+
+
+So, it should be enough to make it work. But, in any case I will help you.

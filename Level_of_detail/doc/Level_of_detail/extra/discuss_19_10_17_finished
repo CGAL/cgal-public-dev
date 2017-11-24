@@ -4,11 +4,9 @@ Technical:
 
 General: 
 1. Maybe better to use sphere neighbour search instead of knn in thinning? - Yes, it can help.
-
 2. Natural neighbours approach is very inefficient because we need to build Delaunay triangulation for input data set with thousands of points. - Try affine coordinates instead of natural neighbour coordinates in the visibility module. Or try some sort of voting.
 3. Natural neighbour visibility is not very robust because it depends on random sampling of each triangle. Can we use non-random sampling instead? It is also slow if many samples are taken. - Just use the longest edge split to be deterministic.
 4. Natural neighbour search function sometimes bugs. - Yes, it does.
-
 5. I think the main problem with graph cut for the pipeline without shape detection comes from the fact that all edges are free-form coherent and are favoured more or less the same.
 6. Parameters for the graph cut:
 
@@ -18,7 +16,6 @@ General:
 
 7. Ray shooting also suffers from the randomness as natural neighbour visibility. - See for solutions above.
 8. Where I can find a paper about bands for ray shooting? - See the paper Signing the unsigned by Pierre.
-
 9. New updated code works much faster. - Yes.
 
 

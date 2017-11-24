@@ -1235,10 +1235,10 @@ namespace CGAL {
 					m_segment_end_anchors[i][0] = m_str_anchors[i][0];
 					m_segment_end_anchors[i][1] = m_str_anchors[i][m_str_anchors[i].size() - 1];
 
-					/* if (m_save_log) */ log.out << m_segment_end_points[i][0] << " " << 0 << std::endl;
-					/* if (m_save_log) */ log.out << m_segment_end_points[i][1] << " " << 0 << std::endl;
+					if (m_save_log) log.out << m_segment_end_points[i][0] << " " << 0 << std::endl;
+					if (m_save_log) log.out << m_segment_end_points[i][1] << " " << 0 << std::endl;
 				}
-				/* if (m_save_log) */ log.save("tmp/segment_end_points", ".xyz");
+				if (m_save_log) log.save("tmp/segment_end_points", ".xyz");
 			}
 
 			// It works only with Occupancy_method::ALL!

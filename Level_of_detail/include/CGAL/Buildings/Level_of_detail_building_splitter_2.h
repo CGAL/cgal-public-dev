@@ -73,11 +73,12 @@ namespace CGAL {
 
 
 				// Remove later.
+				/*
 				Log log;
 				log.save_cdt_ply(cdt, "tmp/buildings", "bu");
 
 				log.clear();
-				log.save_buildings_info(cdt, buildings, "tmp/buildings_info");
+				log.save_buildings_info(cdt, buildings, "tmp/buildings_info"); */
 
 				return number_of_buildings;
 			}

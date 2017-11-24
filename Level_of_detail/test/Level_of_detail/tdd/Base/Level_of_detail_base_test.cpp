@@ -37,5 +37,7 @@ TEST_F(LOD_BaseTest, Compiles) {
 }
 
 TEST_F(LOD_BaseTest, RunsCreateLodsFirstVersionFunction) {
+	
+	lodBase.set_default_parameters();
 	lodBase.create_lods();
 }

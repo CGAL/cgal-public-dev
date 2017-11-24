@@ -117,6 +117,7 @@ namespace CGAL {
 			//////////////
 			// Main class!
 			Level_of_detail_base() :
+			m_prefix_path("/Users/danisimo/Documents/pipeline/data/"),
 			m_default_path("default"),
 			m_preprocessor_scale(-FT(1)) ,
 			m_structuring_epsilon(-FT(1)),
@@ -174,7 +175,94 @@ namespace CGAL {
 
 
 			//////////////////
+			// Parameter functions!
+			void set_prefix_path(const std::string &path) {
+
+				assert(path != "path_to_the_data_folder");
+				m_prefix_path = path;
+			}
+
+
+			// Clutter.
+			void add_clutter(const bool new_state) {
+				m_add_cdt_clutter = new_state;
+			}
+
+			void set_clutter_cell_side_length(const FT new_value) {
+
+				assert(new_value > FT(0));
+				m_clutter_cell_length = new_value;
+			}
+
+
+			// Region growing.
+			void set_region_growing_epsilon(const FT new_value) {
+
+				assert(new_value > FT(0));
+				m_region_growing_epsilon = new_value;
+			}
+
+			void set_region_growing_cluster_epsilon(const FT new_value) {
+
+				assert(new_value > FT(0));
+				m_region_growing_cluster_epsilon = new_value;
+			}
+
+			void set_region_growing_normal_threshold(const FT new_value) {
+
+				assert(new_value > FT(0) && new_value < FT(1));
+				m_region_growing_normal_threshold = new_value;
+			}
+
+			void set_region_growing_min_points(const size_t new_value) {
+
+				assert(new_value > 1);
+				m_region_growing_min_points = new_value;
+			}
+
+
+			// Structuring.
+			void set_structuring_epsilon(const FT new_value) {
+
+				assert(new_value > FT(0));
+				m_structuring_epsilon = new_value;
+			}
+
+			void set_structuring_adjacency_value(const FT new_value) {
+
+				assert(new_value > FT(0));
+				m_structuring_adjacency_value = new_value;
+			}
+
+			void get_all_structuring_points(const bool new_state) {
+				m_structuring_get_all_points = new_state;
+			}
+
+
+			// Graph cut.
+			void set_graph_cut_beta(const FT new_value) {
+
+				assert(new_value >= FT(0));
+				m_graph_cut_beta = new_value;
+			}
+
+			void set_graph_cut_gamma(const FT new_value) {
+
+				assert(new_value >= FT(0));
+				m_graph_cut_gamma = new_value;
+			}
+
+
+			//////////////////
 			// Main functions!
+
+			// Set default parameters.
+			void set_default_parameters() {
+				
+				set_global_parameters();
+				assert_global_parameters();
+			}
+
 
 			// All versions.
 			void create_lods() {
@@ -198,9 +286,6 @@ namespace CGAL {
 				// Create log and set default parameters.
 				std::cout << "\nstarting ..." << std::endl;
 				log.out << "START EXECUTION\n\n\n";
-
-				set_global_parameters();
-				assert_global_parameters();
 			}
 
 			void loading_data(
@@ -626,8 +711,8 @@ namespace CGAL {
 				m_building_outliner.find_boundaries(cdt, buildings);
 
 				log.out << "(" << exec_step << ") All boundaries are found." << std::endl << std::endl; 
-				Log log_bounds; log_bounds.save_buildings_info(cdt, buildings, "tmp/buildings_info_with_boundaries");
-					
+
+				// Log log_bounds; log_bounds.save_buildings_info(cdt, buildings, "tmp/buildings_info_with_boundaries");					
 				// log_bounds.clear(); log_bounds.save_cdt_ply(cdt, "tmp/chosen_vertices"); // debugging info
 			}
 
@@ -655,9 +740,9 @@ namespace CGAL {
 						assert(!"Wrong roof fitter type!");
 						break;
 				}
-				
 				log.out << "(" << exec_step << ") All roofs are fitted." << std::endl << std::endl;
-				Log log_roofs; log_roofs.save_buildings_info(cdt, buildings, "tmp/buildings_info_final");
+				
+				// Log log_roofs; log_roofs.save_buildings_info(cdt, buildings, "tmp/buildings_info_final");
 			}
 
 			void creating_lod0(
@@ -890,6 +975,7 @@ namespace CGAL {
 
 
 			// Global parameters.
+			std::string m_prefix_path;
 			std::string m_default_path;
 			
 			FT m_preprocessor_scale;
@@ -963,6 +1049,7 @@ namespace CGAL {
 			FT 									   m_structuring_adjacency_value;
 			bool m_structuring_global_everywhere;
 
+
 			// Assert default values of all global parameters.
 			void assert_global_parameters() {
 			
@@ -993,7 +1080,7 @@ namespace CGAL {
 				assert(m_clutter_cell_length != -FT(1));
 
 				assert(m_visibility_num_neighbours > 1);
-				assert(m_visibility_rays_per_side > 0);
+				assert(m_visibility_rays_per_side  > 0);
 				assert(m_visibility_angle_eps != -FT(1));
 
 				assert(m_thinning_fuzzy_radius != -FT(1));
@@ -1009,6 +1096,8 @@ namespace CGAL {
 				if (m_use_alpha_shapes) {
 					assert(m_alpha_shape_size > FT(0));
 				}
+
+				assert(m_prefix_path != "path_to_the_data_folder");
 			}
 
 
@@ -1098,6 +1187,14 @@ namespace CGAL {
 						set_resident_tile_3_parameters();
 						break;
 
+					case Main_test_data_type::PARIS_TILE_1:
+						set_paris_tile_1_parameters();
+						break;
+
+					case Main_test_data_type::PARIS_TILE_2:
+						set_paris_tile_2_parameters();
+						break;
+
 					default:
 						assert(!"Wrong test data!");
 						break;
@@ -1112,7 +1209,7 @@ namespace CGAL {
 				// Stub works with these basic parameters. Actually it is the same data set.
 
 				// All main parameters are set below.
-				m_default_path     = "/Users/danisimo/Documents/pipeline/data/basic_test/data";
+				m_default_path     = m_prefix_path + "basic_test/data";
 				m_pipeline_version = Pipeline_version::WITH_SHAPE_DETECTION;
 
 				m_visibility_approach 	 		 = Visibility_approach::POINT_BASED;
@@ -1152,7 +1249,7 @@ namespace CGAL {
 
 				// All main parameters are set below.
 				// If using ray shooting here, we need to use with_shape_detection.
-				m_default_path     = "/Users/danisimo/Documents/pipeline/data/complex_test/data_region_growing";
+				m_default_path     = m_prefix_path + "complex_test/data_region_growing";
 				m_pipeline_version = Pipeline_version::WITH_SHAPE_DETECTION;
 
 				m_visibility_approach 	 		 = Visibility_approach::POINT_BASED;
@@ -1191,7 +1288,7 @@ namespace CGAL {
 				// YOU CAN USE HERE RAY SHOOTING FOR WITH_SHAPE_DETECTION!
 
 				// All main parameters are set below.
-				m_default_path     = "/Users/danisimo/Documents/pipeline/data/p10_test/data_region_growing_weighted_sum";
+				m_default_path     = m_prefix_path + "p10_test/data_region_growing_weighted_sum";
 				m_pipeline_version = Pipeline_version::WITH_SHAPE_DETECTION;
 
 				m_visibility_approach 	 		 = Visibility_approach::FACE_BASED;
@@ -1228,7 +1325,7 @@ namespace CGAL {
 			void set_paris_parameters() {
 
 				// All main parameters are set below.
-				m_default_path     = "/Users/danisimo/Documents/pipeline/data/paris_test/data_region_growing_weighted_sum";
+				m_default_path     = m_prefix_path + "paris_test/data_region_growing_weighted_sum";
 				m_pipeline_version = Pipeline_version::WITHOUT_SHAPE_DETECTION;
 
 				m_visibility_approach 	 		 = Visibility_approach::FACE_BASED;
@@ -1265,7 +1362,7 @@ namespace CGAL {
 			void set_paris_full_parameters() {
 
 				// All main parameters are set below.
-				m_default_path     = "/Users/danisimo/Documents/pipeline/data/paris_full_test/data_region_growing_weighted_sum";
+				m_default_path     = m_prefix_path + "paris_full_test/data_region_growing_weighted_sum";
 				m_pipeline_version = Pipeline_version::WITHOUT_SHAPE_DETECTION;
 
 				m_visibility_approach 	 		 = Visibility_approach::FACE_BASED;
@@ -1302,7 +1399,7 @@ namespace CGAL {
 			void set_paris_eth_parameters() {
 
 				// All main parameters are set below.
-				m_default_path     = "/Users/danisimo/Documents/pipeline/data/paris_test/data_region_growing_eth";
+				m_default_path     = m_prefix_path + "paris_test/data_region_growing_eth";
 				m_pipeline_version = Pipeline_version::WITHOUT_SHAPE_DETECTION;
 
 				m_visibility_approach 	 		 = Visibility_approach::FACE_BASED;
@@ -1346,7 +1443,7 @@ namespace CGAL {
 			void set_paris_full_eth_parameters() {
 
 				// All main parameters are set below.
-				m_default_path     = "/Users/danisimo/Documents/pipeline/data/paris_full_test/data_region_growing_eth";
+				m_default_path     = m_prefix_path + "paris_full_test/data_region_growing_eth";
 				m_pipeline_version = Pipeline_version::WITHOUT_SHAPE_DETECTION;
 
 				m_visibility_approach 	 		 = Visibility_approach::FACE_BASED;
@@ -1390,7 +1487,7 @@ namespace CGAL {
 			void set_resident_tile_1_parameters() {
 
 				// All main parameters are set below.
-				m_default_path     = "/Users/danisimo/Documents/pipeline/data/residential_test/tile_1/data_region_growing_eth";
+				m_default_path     = m_prefix_path + "residential_test/tile_1/data_region_growing_eth";
 				m_pipeline_version = Pipeline_version::WITHOUT_SHAPE_DETECTION;
 
 				m_visibility_approach 	 		 = Visibility_approach::POINT_BASED;
@@ -1434,7 +1531,7 @@ namespace CGAL {
 			void set_resident_tile_2_parameters() {
 
 				// All main parameters are set below.
-				m_default_path     = "/Users/danisimo/Documents/pipeline/data/residential_test/tile_2/data_region_growing_eth";
+				m_default_path     = m_prefix_path + "residential_test/tile_2/data_region_growing_eth";
 				m_pipeline_version = Pipeline_version::WITHOUT_SHAPE_DETECTION;
 
 				m_visibility_approach 	 		 = Visibility_approach::FACE_BASED;
@@ -1479,7 +1576,7 @@ namespace CGAL {
 			void set_resident_tile_3_parameters() {
 
 				// All main parameters are set below.
-				m_default_path     = "/Users/danisimo/Documents/pipeline/data/residential_test/tile_3/data_region_growing_eth";
+				m_default_path     = m_prefix_path + "residential_test/tile_3/data_region_growing_eth";
 				m_pipeline_version = Pipeline_version::WITHOUT_SHAPE_DETECTION;
 
 				m_visibility_approach 	 		 = Visibility_approach::FACE_BASED;
@@ -1516,6 +1613,94 @@ namespace CGAL {
 				m_structuring_get_all_points    = true;
 				m_structuring_adjacency_value   = 4.0;
 				m_structuring_global_everywhere = false;
+			}
+
+
+			// eth random forest
+			void set_paris_tile_1_parameters() {
+
+				// All main parameters are set below.
+				m_default_path     = m_prefix_path + "paris_tiles_test/tile_1/data_region_growing_eth";
+				m_pipeline_version = Pipeline_version::WITHOUT_SHAPE_DETECTION;
+
+				m_visibility_approach 	 		 = Visibility_approach::FACE_BASED;
+				m_visibility_method   	 		 = Visibility_method::FACE_BASED_NATURAL_NEIGHBOURS;
+				m_visibility_sampler 	 		 = Visibility_sampler::UNIFORM_SUBDIVISION;
+				m_thinning_neighbour_search_type = Neighbour_search_type::CIRCLE;
+				m_building_boundary_type 		 = Building_boundary_type::UNORIENTED;
+				m_clutter_new_point_type 		 = Clutter_new_point_type::CLOSEST;
+				m_thinning_type 	  			 = Thinning_type::NAIVE;
+				m_structuring_adjacency_method 	 = Structuring_adjacency_threshold_method::GLOBAL;
+				m_structuring_corner_algorithm   = Structuring_corner_algorithm::NO_T_CORNERS;
+
+				m_thinning_fuzzy_radius  = 5.0;
+				m_visibility_angle_eps   = 0.18; 
+				m_max_reg_angle          = 10.0;
+				m_structuring_epsilon 	 = 5.0;
+				m_add_cdt_clutter     	 = false;
+				m_visibility_num_samples = 1;
+				m_graph_cut_beta 		 = 100000.0;
+				m_clutter_knn 			 = 12;
+				m_clutter_cell_length    = 1.3;
+				m_use_boundaries 		 = true;
+
+				m_use_grid_simplifier_first = true;
+				m_with_region_growing 	 	= true;
+
+				m_region_growing_epsilon 		  = 3.2;
+				m_region_growing_cluster_epsilon  = 2.9;
+				m_region_growing_normal_threshold = 0.7;  
+				m_region_growing_min_points 	  = 10;
+
+				m_use_alpha_shapes = true;
+				m_alpha_shape_size = 5.0;
+
+				m_structuring_get_all_points  = true;
+				m_structuring_adjacency_value = 12.0;
+			}
+
+
+			// eth random forest
+			void set_paris_tile_2_parameters() {
+
+				// All main parameters are set below.
+				m_default_path     = m_prefix_path + "paris_tiles_test/tile_2/data_region_growing_eth";
+				m_pipeline_version = Pipeline_version::WITHOUT_SHAPE_DETECTION;
+
+				m_visibility_approach 	 		 = Visibility_approach::FACE_BASED;
+				m_visibility_method   	 		 = Visibility_method::FACE_BASED_NATURAL_NEIGHBOURS;
+				m_visibility_sampler 	 		 = Visibility_sampler::UNIFORM_SUBDIVISION;
+				m_thinning_neighbour_search_type = Neighbour_search_type::CIRCLE;
+				m_building_boundary_type 		 = Building_boundary_type::UNORIENTED;
+				m_clutter_new_point_type 		 = Clutter_new_point_type::CLOSEST;
+				m_thinning_type 	  			 = Thinning_type::NAIVE;
+				m_structuring_adjacency_method 	 = Structuring_adjacency_threshold_method::GLOBAL;
+				m_structuring_corner_algorithm   = Structuring_corner_algorithm::NO_T_CORNERS;
+
+				m_thinning_fuzzy_radius  = 5.0;
+				m_visibility_angle_eps   = 0.18; 
+				m_max_reg_angle          = 10.0;
+				m_structuring_epsilon 	 = 5.0;
+				m_add_cdt_clutter     	 = false;
+				m_visibility_num_samples = 1;
+				m_graph_cut_beta 		 = 100000.0;
+				m_clutter_knn 			 = 12;
+				m_clutter_cell_length    = 1.3;
+				m_use_boundaries 		 = true;
+
+				m_use_grid_simplifier_first = true;
+				m_with_region_growing 	 	= true;
+
+				m_region_growing_epsilon 		  = 3.2;
+				m_region_growing_cluster_epsilon  = 2.9;
+				m_region_growing_normal_threshold = 0.7;  
+				m_region_growing_min_points 	  = 10;
+
+				m_use_alpha_shapes = true;
+				m_alpha_shape_size = 5.0;
+
+				m_structuring_get_all_points  = true;
+				m_structuring_adjacency_value = 12.0;
 			}
 
 
