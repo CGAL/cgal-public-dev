@@ -1,6 +1,12 @@
 #ifndef CGAL_LEVEL_OF_DETAIL_BASE_H
 #define CGAL_LEVEL_OF_DETAIL_BASE_H
 
+#if defined(WIN32) || defined(_WIN32) 
+#define PS "\\" 
+#else 
+#define PS "/" 
+#endif 
+
 // STL includes.
 #include <map>
 #include <memory>
@@ -117,7 +123,7 @@ namespace CGAL {
 			//////////////
 			// Main class!
 			Level_of_detail_base() :
-			m_prefix_path("/Users/danisimo/Documents/pipeline/data/"),
+			m_prefix_path("default"),
 			m_default_path("default"),
 			m_preprocessor_scale(-FT(1)) ,
 			m_structuring_epsilon(-FT(1)),
@@ -178,7 +184,7 @@ namespace CGAL {
 			// Parameter functions!
 			void set_prefix_path(const std::string &path) {
 
-				assert(path != "path_to_the_data_folder");
+				assert(path != "path_to_the_data_folder" && path != "default");
 				m_prefix_path = path;
 			}
 
@@ -296,6 +302,8 @@ namespace CGAL {
 				// Read data.
 				std::cout << "(" << exec_step << ") loading" << std::endl;
 
+				assert(m_default_path != "default");
+
 				m_loader.get_data(m_default_path + ".ply", input);
 
 				log.out << "(" << exec_step << ") Data are loaded. Number of points: " << input.number_of_points() << std::endl << std::endl;
@@ -411,7 +419,7 @@ namespace CGAL {
 				std::cout << "boundaries projected: " << number_of_projected_points << "; ";
 
 				Log points_exporter; 
-				if (!building_boundaries_projected.empty()) points_exporter.export_projected_points_as_xyz("tmp/projected_boundaries", building_boundaries_projected, m_default_path);
+				if (!building_boundaries_projected.empty()) points_exporter.export_projected_points_as_xyz("tmp" + std::string(PS) + "projected_boundaries", building_boundaries_projected, m_default_path);
 
 
 				// Clutter.
@@ -424,7 +432,7 @@ namespace CGAL {
 					std::cout << "clutter projected: " << number_of_projected_points << "; ";
 
 					points_exporter.clear(); 
-					if (!boundary_clutter_projected.empty()) points_exporter.export_projected_points_as_xyz("tmp/projected_clutter", boundary_clutter_projected, m_default_path);
+					if (!boundary_clutter_projected.empty()) points_exporter.export_projected_points_as_xyz("tmp" + std::string(PS) + "projected_clutter", boundary_clutter_projected, m_default_path);
 				}
 
 				log.out << std::endl;
@@ -535,7 +543,7 @@ namespace CGAL {
 				const auto number_of_segments = m_utils.create_segments_from_lines(building_boundaries_projected, building_boundaries, lines, segments);
 
 				log.out << "(" << exec_step << ") Segments are created. Number of created segments: " << number_of_segments << std::endl << std::endl;
-				Log segments_exporter; segments_exporter.export_segments_as_obj("tmp/segments", segments, m_default_path);
+				Log segments_exporter; segments_exporter.export_segments_as_obj("tmp" + std::string(PS) + "segments", segments, m_default_path);
 			}
 
 			void applying_2d_structuring(
@@ -659,7 +667,7 @@ namespace CGAL {
 				// Log eps_saver_wp; eps_saver_wp.save_visibility_eps(cdt, input, structured_points); // works only with basic test
 				
 				Log eps_saver; eps_saver.save_visibility_eps(cdt);
-				Log ply_vis_saver; ply_vis_saver.save_cdt_ply(cdt, "tmp/visibility", "in");
+				Log ply_vis_saver; ply_vis_saver.save_cdt_ply(cdt, "tmp" + std::string(PS) + "visibility", "in");
 			}
 
 			void applying_graph_cut(
@@ -678,7 +686,7 @@ namespace CGAL {
 				m_graph_cut.max_flow(cdt);
 
 				log.out << "(" << exec_step << ") Graph cut is applied." << std::endl << std::endl;
-				Log ply_cdt_in; ply_cdt_in.save_cdt_ply(cdt, "tmp/after_cut", "in");
+				Log ply_cdt_in; ply_cdt_in.save_cdt_ply(cdt, "tmp" + std::string(PS) + "after_cut", "in");
 			}
 
 			void splitting_buildings(
@@ -712,8 +720,8 @@ namespace CGAL {
 
 				log.out << "(" << exec_step << ") All boundaries are found." << std::endl << std::endl; 
 
-				// Log log_bounds; log_bounds.save_buildings_info(cdt, buildings, "tmp/buildings_info_with_boundaries");					
-				// log_bounds.clear(); log_bounds.save_cdt_ply(cdt, "tmp/chosen_vertices"); // debugging info
+				// Log log_bounds; log_bounds.save_buildings_info(cdt, buildings, "tmp" + std::string(PS) + "buildings_info_with_boundaries");					
+				// log_bounds.clear(); log_bounds.save_cdt_ply(cdt, "tmp" + std::string(PS) + "chosen_vertices"); // debugging info
 			}
 
 			void fitting_roofs(
@@ -742,7 +750,7 @@ namespace CGAL {
 				}
 				log.out << "(" << exec_step << ") All roofs are fitted." << std::endl << std::endl;
 				
-				// Log log_roofs; log_roofs.save_buildings_info(cdt, buildings, "tmp/buildings_info_final");
+				// Log log_roofs; log_roofs.save_buildings_info(cdt, buildings, "tmp" + std::string(PS) + "buildings_info_final");
 			}
 
 			void creating_lod0(
@@ -1097,7 +1105,7 @@ namespace CGAL {
 					assert(m_alpha_shape_size > FT(0));
 				}
 
-				assert(m_prefix_path != "path_to_the_data_folder");
+				assert(m_prefix_path != "path_to_the_data_folder" && m_prefix_path != "default");
 			}
 
 
@@ -1209,7 +1217,7 @@ namespace CGAL {
 				// Stub works with these basic parameters. Actually it is the same data set.
 
 				// All main parameters are set below.
-				m_default_path     = m_prefix_path + "basic_test/data";
+				m_default_path     = m_prefix_path + "basic_test" + std::string(PS) + "data";
 				m_pipeline_version = Pipeline_version::WITH_SHAPE_DETECTION;
 
 				m_visibility_approach 	 		 = Visibility_approach::POINT_BASED;
@@ -1249,7 +1257,7 @@ namespace CGAL {
 
 				// All main parameters are set below.
 				// If using ray shooting here, we need to use with_shape_detection.
-				m_default_path     = m_prefix_path + "complex_test/data_region_growing";
+				m_default_path     = m_prefix_path + "complex_test" + std::string(PS) + "data_region_growing";
 				m_pipeline_version = Pipeline_version::WITH_SHAPE_DETECTION;
 
 				m_visibility_approach 	 		 = Visibility_approach::POINT_BASED;
@@ -1288,7 +1296,7 @@ namespace CGAL {
 				// YOU CAN USE HERE RAY SHOOTING FOR WITH_SHAPE_DETECTION!
 
 				// All main parameters are set below.
-				m_default_path     = m_prefix_path + "p10_test/data_region_growing_weighted_sum";
+				m_default_path     = m_prefix_path + "p10_test" + std::string(PS) + "data_region_growing_weighted_sum";
 				m_pipeline_version = Pipeline_version::WITH_SHAPE_DETECTION;
 
 				m_visibility_approach 	 		 = Visibility_approach::FACE_BASED;
@@ -1325,7 +1333,7 @@ namespace CGAL {
 			void set_paris_parameters() {
 
 				// All main parameters are set below.
-				m_default_path     = m_prefix_path + "paris_test/data_region_growing_weighted_sum";
+				m_default_path     = m_prefix_path + "paris_test" + std::string(PS) + "data_region_growing_weighted_sum";
 				m_pipeline_version = Pipeline_version::WITHOUT_SHAPE_DETECTION;
 
 				m_visibility_approach 	 		 = Visibility_approach::FACE_BASED;
@@ -1362,7 +1370,7 @@ namespace CGAL {
 			void set_paris_full_parameters() {
 
 				// All main parameters are set below.
-				m_default_path     = m_prefix_path + "paris_full_test/data_region_growing_weighted_sum";
+				m_default_path     = m_prefix_path + "paris_full_test" + std::string(PS) + "data_region_growing_weighted_sum";
 				m_pipeline_version = Pipeline_version::WITHOUT_SHAPE_DETECTION;
 
 				m_visibility_approach 	 		 = Visibility_approach::FACE_BASED;
@@ -1399,7 +1407,7 @@ namespace CGAL {
 			void set_paris_eth_parameters() {
 
 				// All main parameters are set below.
-				m_default_path     = m_prefix_path + "paris_test/data_region_growing_eth";
+				m_default_path     = m_prefix_path + "paris_test" + std::string(PS) + "data_region_growing_eth";
 				m_pipeline_version = Pipeline_version::WITHOUT_SHAPE_DETECTION;
 
 				m_visibility_approach 	 		 = Visibility_approach::FACE_BASED;
@@ -1443,7 +1451,7 @@ namespace CGAL {
 			void set_paris_full_eth_parameters() {
 
 				// All main parameters are set below.
-				m_default_path     = m_prefix_path + "paris_full_test/data_region_growing_eth";
+				m_default_path     = m_prefix_path + "paris_full_test" + std::string(PS) + "data_region_growing_eth";
 				m_pipeline_version = Pipeline_version::WITHOUT_SHAPE_DETECTION;
 
 				m_visibility_approach 	 		 = Visibility_approach::FACE_BASED;
@@ -1487,7 +1495,7 @@ namespace CGAL {
 			void set_resident_tile_1_parameters() {
 
 				// All main parameters are set below.
-				m_default_path     = m_prefix_path + "residential_test/tile_1/data_region_growing_eth";
+				m_default_path     = m_prefix_path + "residential_test" + std::string(PS) + "tile_1" + std::string(PS) + "data_region_growing_eth";
 				m_pipeline_version = Pipeline_version::WITHOUT_SHAPE_DETECTION;
 
 				m_visibility_approach 	 		 = Visibility_approach::POINT_BASED;
@@ -1531,7 +1539,7 @@ namespace CGAL {
 			void set_resident_tile_2_parameters() {
 
 				// All main parameters are set below.
-				m_default_path     = m_prefix_path + "residential_test/tile_2/data_region_growing_eth";
+				m_default_path     = m_prefix_path + "residential_test" + std::string(PS) + "tile_2" + std::string(PS) + "data_region_growing_eth";
 				m_pipeline_version = Pipeline_version::WITHOUT_SHAPE_DETECTION;
 
 				m_visibility_approach 	 		 = Visibility_approach::FACE_BASED;
@@ -1576,7 +1584,7 @@ namespace CGAL {
 			void set_resident_tile_3_parameters() {
 
 				// All main parameters are set below.
-				m_default_path     = m_prefix_path + "residential_test/tile_3/data_region_growing_eth";
+				m_default_path     = m_prefix_path + "residential_test" + std::string(PS) + "tile_3" + std::string(PS) + "data_region_growing_eth";
 				m_pipeline_version = Pipeline_version::WITHOUT_SHAPE_DETECTION;
 
 				m_visibility_approach 	 		 = Visibility_approach::FACE_BASED;
@@ -1620,7 +1628,7 @@ namespace CGAL {
 			void set_paris_tile_1_parameters() {
 
 				// All main parameters are set below.
-				m_default_path     = m_prefix_path + "paris_tiles_test/tile_1/data_region_growing_eth";
+				m_default_path     = m_prefix_path + "paris_tiles_test" + std::string(PS) + "tile_1" + std::string(PS) + "data_region_growing_eth";
 				m_pipeline_version = Pipeline_version::WITHOUT_SHAPE_DETECTION;
 
 				m_visibility_approach 	 		 = Visibility_approach::FACE_BASED;
@@ -1664,7 +1672,7 @@ namespace CGAL {
 			void set_paris_tile_2_parameters() {
 
 				// All main parameters are set below.
-				m_default_path     = m_prefix_path + "paris_tiles_test/tile_2/data_region_growing_eth";
+				m_default_path     = m_prefix_path + "paris_tiles_test" + std::string(PS) + "tile_2" + std::string(PS) + "data_region_growing_eth";
 				m_pipeline_version = Pipeline_version::WITHOUT_SHAPE_DETECTION;
 
 				m_visibility_approach 	 		 = Visibility_approach::FACE_BASED;
@@ -1717,7 +1725,7 @@ namespace CGAL {
 
 				const auto number_of_projected_points = m_ground_projector.project_with_indices(input, building_boundary_idxs, base_ground_plane, building_boundaries_projected);
 				
-				Log proj_saver; proj_saver.export_projected_points_as_xyz("tmp/projected_boundaries", building_boundaries_projected, m_default_path);
+				Log proj_saver; proj_saver.export_projected_points_as_xyz("tmp" + std::string(PS) + "projected_boundaries", building_boundaries_projected, m_default_path);
 				log.out << "(" << exec_step << ") Building's boundary points are projected. Number of projected points: " << number_of_projected_points << std::endl << std::endl;
 			}
 

@@ -1,3 +1,9 @@
+#if defined(WIN32) || defined(_WIN32) 
+#define PS "\\" 
+#else 
+#define PS "/" 
+#endif 
+
 // Google test includes.
 #include "gmock/gmock.h"
 
@@ -185,8 +191,8 @@ public:
 		fh->info().in = 1.0; fh->info().bu =  2; fh->info().bu_color = r; buildings[2].faces.push_back(static_cast<Face_handle>(fh)); buildings[2].color = r; ++fh;
 
 		// Log log; 
-		// log.save_cdt_ply(cdt, "tmp/cdt_outliner", "bu");
-		// log.save_buildings_info(cdt, buildings, "tmp/buildings_outliner_before");
+		// log.save_cdt_ply(cdt, "tmp" + std::string(PS) + "cdt_outliner", "bu");
+		// log.save_buildings_info(cdt, buildings, "tmp" + std::string(PS) + "buildings_outliner_before");
 	}
 };
 
@@ -202,7 +208,7 @@ TEST_F(LOD_BuildingOutlinerTest, VerifiesOrientedMethod) {
 
 	// Extra.	
 	Log log;
-	log.save_buildings_info(cdt, buildings, "tmp/buildings_oriented_outliner_after");
+	log.save_buildings_info(cdt, buildings, "tmp" + std::string(PS) + "buildings_oriented_outliner_after");
 
 	ASSERT_THAT(static_cast<int>(buildings.size()), Eq(3));
 	Boundaries &b = buildings[0].boundaries;
@@ -226,7 +232,7 @@ TEST_F(LOD_BuildingOutlinerTest, VerifiesUnorientedMethod) {
 	
 	// Extra.
 	Log log;
-	log.save_buildings_info(cdt, buildings, "tmp/buildings_unoriented_outliner_after");
+	log.save_buildings_info(cdt, buildings, "tmp" + std::string(PS) + "buildings_unoriented_outliner_after");
 
 	ASSERT_THAT(static_cast<int>(buildings.size()), Eq(3));
 	Boundaries &b = buildings[0].boundaries;

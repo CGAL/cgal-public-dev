@@ -1,3 +1,9 @@
+#if defined(WIN32) || defined(_WIN32) 
+#define PS "\\" 
+#else 
+#define PS "/" 
+#endif 
+
 // Google test includes.
 #include "gmock/gmock.h"
 
@@ -134,7 +140,7 @@ public:
 		// for (typename CDT::Finite_edges_iterator eit = cdt.finite_edges_begin(); eit != cdt.finite_edges_end(); ++eit)
 		//	if (cdt.is_constrained(*eit)) std::cout << "constrained edge" << std::endl;
 
-		// Log log; log.save_cdt_ply(cdt, "tmp/cdt_splitter");
+		// Log log; log.save_cdt_ply(cdt, "tmp" + std::string(PS) + "cdt_splitter");
 	}
 };
 

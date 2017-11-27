@@ -1,6 +1,12 @@
 #ifndef CGAL_LEVEL_OF_DETAIL_REGION_GROWING_2_H
 #define CGAL_LEVEL_OF_DETAIL_REGION_GROWING_2_H
 
+#if defined(WIN32) || defined(_WIN32) 
+#define PS "\\" 
+#else 
+#define PS "/" 
+#endif 
+
 // STL includes.
 #include <map>
 #include <vector>
@@ -158,10 +164,10 @@ namespace CGAL {
 
 
 				// Save log.
-				if (m_save_info) log.save("tmp/region_growing_log");
+				if (m_save_info) log.save("tmp" + std::string(PS) + "region_growing_log");
 
 				log.clear();
-				log.save_2d_region_growing("tmp/region_growing", building_boundaries, building_boundaries_projected, boundary_clutter_projected);
+				log.save_2d_region_growing("tmp" + std::string(PS) + "region_growing", building_boundaries, building_boundaries_projected, boundary_clutter_projected);
 
 
 				// Return number of detected lines.
@@ -193,18 +199,18 @@ namespace CGAL {
 				m_cluster_epsilon(cluster_epsilon), 
 				m_default_score(-FT(1)),
 				m_num_input_points(num_input_points),
-				m_scores(new std::vector<FT>(m_num_input_points, m_default_score)) { 
+				m_scores(std::vector<FT>(m_num_input_points, m_default_score)) { 
 
 					assert(m_tree.size() == m_points.size());
 				}
 
-				bool operator() (const int i, const int j) const {
+				bool operator() (const int i, const int j) {
 
-					if ((*m_scores)[i] == m_default_score) compute_score(i);
-					if ((*m_scores)[j] == m_default_score) compute_score(j);
+					if (m_scores[i] == m_default_score) compute_score(i);
+					if (m_scores[j] == m_default_score) compute_score(j);
 
-					assert((*m_scores)[i] >= FT(0) && (*m_scores)[j] >= FT(0)); 
-			        return (*m_scores)[i] > (*m_scores)[j];
+					assert(m_scores[i] >= FT(0) && m_scores[j] >= FT(0)); 
+			        return m_scores[i] > m_scores[j];
 			    }
 
 			private:
@@ -215,9 +221,9 @@ namespace CGAL {
 				const FT m_default_score;
 
 				const size_t m_num_input_points;
-				mutable boost::shared_ptr< std::vector<FT> > m_scores;
+				std::vector<FT> m_scores;
 
-				void compute_score(const int point_index) const {
+				void compute_score(const int point_index) {
 					
 					static Projected_points neighbours;
 					compute_nearest_neighbours(point_index, neighbours);
@@ -228,7 +234,7 @@ namespace CGAL {
 					estimate_score(local_points, point_index);
 			    }
 
-			    void compute_nearest_neighbours(const int point_index, Projected_points &neighbours) const {
+			    void compute_nearest_neighbours(const int point_index, Projected_points &neighbours) {
 
 			    	const Point_2 &centre = m_points.at(point_index);
 					const FT radius 	  = m_cluster_epsilon * FT(2);
@@ -239,7 +245,7 @@ namespace CGAL {
 					m_tree.search(std::inserter(neighbours, neighbours.end()), circle);
 			    }
 
-			    void map_neighbours_to_local_points(const Projected_points &neighbours, std::vector<Point_2> &local_points) const {
+			    void map_neighbours_to_local_points(const Projected_points &neighbours, std::vector<Point_2> &local_points) {
 
 			    	const size_t num_neighbours = neighbours.size();
 			    	assert(num_neighbours != 0);
@@ -254,13 +260,13 @@ namespace CGAL {
 					assert(count == num_neighbours);
 			    }
 
-			    void estimate_score(const std::vector<Point_2> &local_points, const int point_index) const {
+			    void estimate_score(const std::vector<Point_2> &local_points, const int point_index) {
 					
 					Line_2 stub;
 					assert(point_index >= 0 && point_index < static_cast<int>(m_num_input_points));
 
-			        (*m_scores)[point_index] = CGAL::linear_least_squares_fitting_2(local_points.begin(), local_points.end(), stub, CGAL::Dimension_tag<0>());
-			        assert((*m_scores)[point_index] >= FT(0));
+			        m_scores[point_index] = CGAL::linear_least_squares_fitting_2(local_points.begin(), local_points.end(), stub, CGAL::Dimension_tag<0>());
+			        assert(m_scores[point_index] >= FT(0));
 			    }
 			};
 
@@ -323,7 +329,7 @@ namespace CGAL {
 				assert(normals.size() == boundary_clutter_projected.size());
 
 				Log log; 
-				log.export_projected_points_with_normals_as_xyz("tmp/estimated_normals", boundary_clutter_projected, normals, "unused path");
+				log.export_projected_points_with_normals_as_xyz("tmp" + std::string(PS) + "estimated_normals", boundary_clutter_projected, normals, "unused path");
 			}
 
 			void sort_projected_points(Sorted_indices &sorted_indices, Log &log, const Projected_points &boundary_clutter_projected, const Fuzzy_tree &tree, const size_t num_input_points) {
@@ -446,7 +452,7 @@ namespace CGAL {
 
 
       			// Save internal log.
-				// if (m_save_info) internal.save("tmp/internal_rg");
+				// if (m_save_info) internal.save("tmp" + std::string(PS) + "internal_rg");
 
 
 				// Save found shape indices.

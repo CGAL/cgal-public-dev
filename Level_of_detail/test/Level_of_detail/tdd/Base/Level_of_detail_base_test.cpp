@@ -38,6 +38,11 @@ TEST_F(LOD_BaseTest, Compiles) {
 
 TEST_F(LOD_BaseTest, RunsCreateLodsFirstVersionFunction) {
 	
+	// const std::string data_path = std::string(std::getenv("LOD_DATA_PATH"));
+   	   const std::string data_path = "/Users/danisimo/Documents/pipeline/data/";
+   	
+   	lodBase.set_prefix_path(data_path);
 	lodBase.set_default_parameters();
+
 	lodBase.create_lods();
 }

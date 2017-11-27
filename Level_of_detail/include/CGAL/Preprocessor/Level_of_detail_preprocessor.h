@@ -1,6 +1,12 @@
 #ifndef CGAL_LEVEL_OF_DETAIL_PREPROCESSOR_H
 #define CGAL_LEVEL_OF_DETAIL_PREPROCESSOR_H
 
+#if defined(WIN32) || defined(_WIN32) 
+#define PS "\\" 
+#else 
+#define PS "/" 
+#endif 
+
 // STL includes.
 #include <vector>
 
@@ -104,7 +110,7 @@ namespace CGAL {
 
 				// Save extracted points.
 				Log log;
-				log.export_points("tmp/extracted_boundary_points", extracted);
+				log.export_points("tmp" + std::string(PS) + "extracted_boundary_points", extracted);
 
 
 				// Return number of extracted points.
@@ -396,7 +402,7 @@ namespace CGAL {
 				projector.project(input, building_interior, base_ground_plane, building_interior_projected);
 
 				Log log;
-				log.export_projected_points_as_xyz("tmp/building_interior", building_interior_projected, "stub");
+				log.export_projected_points_as_xyz("tmp" + std::string(PS) + "building_interior", building_interior_projected, "stub");
 			}
 		};
 	}

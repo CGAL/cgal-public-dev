@@ -1,3 +1,9 @@
+#if defined(WIN32) || defined(_WIN32) 
+#define PS "\\" 
+#else 
+#define PS "/" 
+#endif 
+
 // Google test includes.
 #include "gmock/gmock.h"
 
@@ -107,7 +113,7 @@ public:
 		bd_thinning_naive[0] = idxs;
 
 		Log log; 
-		log.export_projected_points_as_xyz("tmp/thinning_naive_input", pp_thinning_naive, "unused path");
+		log.export_projected_points_as_xyz("tmp" + std::string(PS) + "thinning_naive_input", pp_thinning_naive, "unused path");
 	}
 
 	void set_grid_simplify_input() {
@@ -136,7 +142,7 @@ public:
 		bd_grid_simplify[0] = idxs;
 
 		Log log; 
-		log.export_projected_points_as_xyz("tmp/grid_simplify_input", pp_grid_simplify, "unused path");
+		log.export_projected_points_as_xyz("tmp" + std::string(PS) + "grid_simplify_input", pp_grid_simplify, "unused path");
 	}
 
 
@@ -176,7 +182,7 @@ public:
 		bd_complex_test[0] = idxs;
 
 		Log log; 
-		log.export_projected_points_as_xyz("tmp/complex_test", pp_complex_test, "unused path");
+		log.export_projected_points_as_xyz("tmp" + std::string(PS) + "complex_test", pp_complex_test, "unused path");
 	}
 
 	void create_complex_data() {
@@ -200,7 +206,7 @@ public:
 		// add_complex_data_6();
 
 		// Log log; 
-		// log.export_projected_points_as_xyz("tmp/complex", pp_complex, "unused path");
+		// log.export_projected_points_as_xyz("tmp" + std::string(PS) + "complex", pp_complex, "unused path");
 	}
 
 	// Dense with dim = 0. Tested!

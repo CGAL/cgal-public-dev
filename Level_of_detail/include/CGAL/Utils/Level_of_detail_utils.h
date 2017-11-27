@@ -1,6 +1,12 @@
 #ifndef CGAL_LEVEL_OF_DETAIL_UTILS_H
 #define CGAL_LEVEL_OF_DETAIL_UTILS_H
 
+#if defined(WIN32) || defined(_WIN32) 
+#define PS "\\" 
+#else 
+#define PS "/" 
+#endif 
+
 // STL includes.
 #include <map>
 #include <cassert>
@@ -449,7 +455,7 @@ namespace CGAL {
 				}
 
 				Log logex;
-				logex.export_segments_as_obj("tmp/cdt_constraints", constraints, "stub");
+				logex.export_segments_as_obj("tmp" + std::string(PS) + "cdt_constraints", constraints, "stub");
 
 
 				// Correct all wrong labels.
@@ -507,7 +513,7 @@ namespace CGAL {
 
 
 				// Save CDT.
-				log.save_cdt_obj(cdt, "tmp/cdt");
+				log.save_cdt_obj(cdt, "tmp" + std::string(PS) + "cdt");
 				return number_of_faces;
 			}
 
@@ -566,10 +572,10 @@ namespace CGAL {
 
 
 				// Save CDT.
-				log.save_cdt_obj(cdt, "tmp/cdt");
+				log.save_cdt_obj(cdt, "tmp" + std::string(PS) + "cdt");
 
-				// log.save_cdt_ply(cdt, "tmp/visibility_before", "in");
-				// log.save_cdt_ply(cdt, "tmp/buildings_before" , "bu");
+				// log.save_cdt_ply(cdt, "tmp" + std::string(PS) + "visibility_before", "in");
+				// log.save_cdt_ply(cdt, "tmp" + std::string(PS) + "buildings_before" , "bu");
 
 				return number_of_faces;
 			}
@@ -720,9 +726,9 @@ namespace CGAL {
 					}
 				}
 
-				log_all.save("tmp/input_2d_all", ".xyz");
+				log_all.save("tmp" + std::string(PS) + "input_2d_all", ".xyz");
 				
-				// log_in_cdt.save("tmp/input_2d_in_cdt", ".xyz");
+				// log_in_cdt.save("tmp" + std::string(PS) + "input_2d_in_cdt", ".xyz");
 				
 				return point_index;
 			}

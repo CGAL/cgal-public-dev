@@ -1,6 +1,12 @@
 #ifndef CGAL_LEVEL_OF_DETAIL_BUILDING_SPLITTER_2_H
 #define CGAL_LEVEL_OF_DETAIL_BUILDING_SPLITTER_2_H
 
+#if defined(WIN32) || defined(_WIN32) 
+#define PS "\\" 
+#else 
+#define PS "/" 
+#endif 
+
 // STL includes.
 #include <map>
 #include <vector>
@@ -75,10 +81,10 @@ namespace CGAL {
 				// Remove later.
 				/*
 				Log log;
-				log.save_cdt_ply(cdt, "tmp/buildings", "bu");
+				log.save_cdt_ply(cdt, "tmp" + std::string(PS) + "buildings", "bu");
 
 				log.clear();
-				log.save_buildings_info(cdt, buildings, "tmp/buildings_info"); */
+				log.save_buildings_info(cdt, buildings, "tmp" + std::string(PS) + "buildings_info"); */
 
 				return number_of_buildings;
 			}

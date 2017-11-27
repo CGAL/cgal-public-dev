@@ -47,7 +47,7 @@ namespace CGAL {
 
 			void get_data(const std::string &, Container &input) const override {
 
-				switch(m_mock_data_type) {
+				switch (m_mock_data_type) {
 					
 					case Mock_data_type::BASIC:
 						get_mock_basic(input);

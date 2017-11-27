@@ -1,6 +1,12 @@
 #ifndef CGAL_LEVEL_OF_DETAIL_VISIBILITY_FROM_CLASSIFICATION_2_H
 #define CGAL_LEVEL_OF_DETAIL_VISIBILITY_FROM_CLASSIFICATION_2_H
 
+#if defined(WIN32) || defined(_WIN32) 
+#define PS "\\" 
+#else 
+#define PS "/" 
+#endif 
+
 // STL includes.
 #include <utility>
 #include <cassert>
@@ -177,19 +183,19 @@ namespace CGAL {
 					fit->info().in_color = this->get_color(fit->info().in);
 				}
 
-				switch(m_approach) {
+				switch (m_approach) {
 
 					case Visibility_approach::POINT_BASED:
-					compute_point_based_visibility(input, cdt);
-					break;
+						compute_point_based_visibility(input, cdt);
+						break;
 
 					case Visibility_approach::FACE_BASED:
-					compute_face_based_approach(input, cdt);
-					break;
+						compute_face_based_approach(input, cdt);
+						break;
 
 					default:
-					assert(!"Wrong approach!");
-					break;
+						assert(!"Wrong approach!");
+						break;
 				}
 
 				// Remove later.
@@ -210,7 +216,7 @@ namespace CGAL {
 
 						log.out << "face index: " << count << " with label: " << labelName << " and visibility: " << result << std::endl;
 					}
-					log.save("tmp/visibility_classification");
+					log.save("tmp" + std::string(PS) + "visibility_classification");
 				}
 
 				this->global_postprocess(cdt);
@@ -260,7 +266,7 @@ namespace CGAL {
 						locate_type == CDT::OUTSIDE_AFFINE_HULL) continue;
 
 					assert(locate_type == CDT::FACE);
-					switch(m_method) {
+					switch (m_method) {
 
 						case Visibility_method::POINT_BASED_CLASSIFICATION: {
 
@@ -270,8 +276,8 @@ namespace CGAL {
 						}
 
 						default:
-						assert(!"Wrong visibility method!");
-						break;
+							assert(!"Wrong visibility method!");
+							break;
 					}
 				}
 				postprocess(visibility);
@@ -287,20 +293,20 @@ namespace CGAL {
 				switch (point_label) {
 
 					case ground:
-					set_outside(face_handle, visibility);
-					break;
+						set_outside(face_handle, visibility);
+						break;
 
 					case facade:
-					set_unknown(face_handle, visibility);
-					break;
+						set_unknown(face_handle, visibility);
+						break;
 
 					case roof:
-					set_inside(face_handle, visibility);
-					break;
+						set_inside(face_handle, visibility);
+						break;
 
 					case vegetation:
-					set_outside(face_handle, visibility);
-					break;
+						set_outside(face_handle, visibility);
+						break;
 
 					default: {
 						// std::cout << "WARNING! CLASSIFICATION LABEL IS MISSING!" << std::endl; 
@@ -314,7 +320,7 @@ namespace CGAL {
 
 			void compute_face_based_approach(const Container &input, CDT &cdt) {
 
-				switch(m_method) {
+				switch (m_method) {
 
 					case Visibility_method::FACE_BASED_BARYCENTRIC:
 						assert(!"Does not work!");
@@ -390,31 +396,31 @@ namespace CGAL {
 					Label label = input[i].second;
 
 					FT inside = half;
-					switch(label) {
+					switch (label) {
 
 						case ground:
-						inside = FT(0);
-						break;
+							inside = FT(0);
+							break;
 
 						case facade:
-						inside = half;
-						break;
+							inside = half;
+							break;
 
 						case roof:
-						inside = FT(1);
-						break;
+							inside = FT(1);
+							break;
 
 						case vegetation:
-						inside = FT(0);
-						break;
+							inside = FT(0);
+							break;
 
 						case fix:
-						inside = half;
-						break;
+							inside = half;
+							break;
 
 						default:
-						assert(!"Wrong label!");
-						break;
+							assert(!"Wrong label!");
+							break;
 					}
 
 					dt.insert(p);
@@ -503,7 +509,7 @@ namespace CGAL {
 
 					// THIS CODE MAY GIVE COUNTERINTUITIVE RESULTS IF LABELS ARE DIFFERENT!
 					const Label label = pwl[i].second;
-					switch(label) {						
+					switch (label) {						
 
 						case ground:
 							outside += FT(1);
@@ -555,7 +561,7 @@ namespace CGAL {
 			FT compute_circle_radius(const Point_2 &a, const Point_2 &b, const Point_2 &c) {
 
 				FT result = FT(0);
-				switch(m_radius_type) {
+				switch (m_radius_type) {
 
 					case Radius_type::MIN: {
 					
@@ -682,7 +688,7 @@ namespace CGAL {
 				const Label roof       = 2;
 				const Label vegetation = 3; 
 
-				switch(label) {						
+				switch (label) {						
 
 					case ground:
 						return FT(0);
@@ -804,7 +810,7 @@ namespace CGAL {
 
 			void generate_samples(const CDT &cdt, const Face_iterator fit, std::vector<Point_2> &samples) {
 				
-				switch(m_sampler) {
+				switch (m_sampler) {
 
 					case Visibility_sampler::BARYCENTRE:
 						generate_barycentre(cdt, fit, samples);
@@ -847,7 +853,7 @@ namespace CGAL {
 				m_sample_generator.create_random_uniform_samples_0(a, b, c, samples);
 
 				// Log log;
-				// log.save_triangle_with_points_eps(a, b, c, samples, "tmp/triangle_0");
+				// log.save_triangle_with_points_eps(a, b, c, samples, "tmp" + std::string(PS) + "triangle_0");
 			}
 
 			void generate_samples_random_uniform_1(const CDT &cdt, const Face_iterator &fh, Samples &samples) {
@@ -859,7 +865,7 @@ namespace CGAL {
 				m_sample_generator.create_random_uniform_samples_1(a, b, c, samples);
 
 				// Log log;
-				// log.save_triangle_with_points_eps(a, b, c, samples, "tmp/triangle_1");
+				// log.save_triangle_with_points_eps(a, b, c, samples, "tmp" + std::string(PS) + "triangle_1");
 			}
 
 			void generate_samples_uniform_subdivision(const CDT &cdt, const Face_iterator &fh, Samples &samples) {

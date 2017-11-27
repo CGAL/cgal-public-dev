@@ -1,3 +1,9 @@
+#if defined(WIN32) || defined(_WIN32) 
+#define PS "\\" 
+#else 
+#define PS "/" 
+#endif 
+
 // Google test includes.
 #include "gmock/gmock.h"
 
@@ -262,8 +268,8 @@ public:
 		lods.use_boundaries(true);
 
 		// Log log; 
-		// log.save_cdt_ply(cdt, "tmp/cdt_lod1", "bu");
-		// log.save_buildings_info(cdt, buildings, "tmp/buildings_lod1");
+		// log.save_cdt_ply(cdt, "tmp" + std::string(PS) + "cdt_lod1", "bu");
+		// log.save_buildings_info(cdt, buildings, "tmp" + std::string(PS) + "buildings_lod1");
 	}
 };
 

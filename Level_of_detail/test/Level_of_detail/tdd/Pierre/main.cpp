@@ -1,5 +1,7 @@
 // STL includes.
 #include <string>
+#include <iostream>
+#include <cstdlib>
 
 // CGAL includes.
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
@@ -109,10 +111,10 @@ void set_user_defined_parameters(const Parameters &parameters, LodBase &lodBase)
 int main(int argc, char** argv) {
    
    	LodBase lodBase;
-   	const std::string data_path = "C:\\Users\\palliez\\Desktop\\TITANIUM\\";
+   	const std::string data_path = std::string(std::getenv("LOD_DATA_PATH"));
 
-   	lodBase.set_default_parameters();
    	lodBase.set_prefix_path(data_path);
+   	lodBase.set_default_parameters();
 
 
     // Standard input.

@@ -1,6 +1,12 @@
 #ifndef CGAL_LEVEL_OF_DETAIL_GRAPHCUT_H
 #define CGAL_LEVEL_OF_DETAIL_GRAPHCUT_H
 
+#if defined(WIN32) || defined(_WIN32) 
+#define PS "\\" 
+#else 
+#define PS "/" 
+#endif 
+
 // STL includes.
 #include <vector>
 #include <iostream>
@@ -78,13 +84,12 @@ namespace CGAL {
 			}
 
 			// Source - inside, sink - outside
-			void max_flow(CDT &cdt)  {
+			void max_flow(CDT &cdt) const {
 
 				Nodes_map nodes_map;
-				// const int num_nodes = ;
+				const unsigned int num_nodes = cdt.number_of_faces();
 
-				unsigned int nb_faces = cdt.number_of_faces();
-				Node_id *pNodes = new Node_id[nb_faces];
+				Node_id *pNodes = new Node_id[num_nodes];
 				Graph *graph = new Graph();
 
 				set_graph_nodes(cdt, pNodes, nodes_map, graph);
@@ -96,10 +101,11 @@ namespace CGAL {
 
 				// Remove later.
 				Log log;
-				log.save_visibility_eps(cdt, "tmp/after_cut");
+				log.save_visibility_eps(cdt, "tmp" + std::string(PS) + "after_cut");
 
-				// cleanup
+				// Cleanup.
 				delete graph;
+				delete[] pNodes;
 			}
 
 		private:
@@ -140,7 +146,7 @@ namespace CGAL {
 				for (Face_iterator fit = cdt.finite_faces_begin(); fit != cdt.finite_faces_end(); ++fit, ++index) {
 					log.add_index(index);
 
-					pNodes[index]   = graph->add_node();
+					pNodes[index]  = graph->add_node();
 					nodes_map[fit] = index;
 
 					const FT in  = fit->info().in;
@@ -158,7 +164,7 @@ namespace CGAL {
 						log.skip_line();
 					}
 				}
-				if (m_save_info) log.save("tmp/graph_nodes");
+				if (m_save_info) log.save("tmp" + std::string(PS) + "graph_nodes");
 			}
 
 			FT get_graph_node_cost(const FT node_value) const {
@@ -171,15 +177,13 @@ namespace CGAL {
 
 					case Node_value_adapter::NO_ADAPTER:
 						return node_value;
-						break;
 
 					case Node_value_adapter::TANH:
 						return tanh_adapter(node_value);
-						break;
 
 					default:
 						assert(!"Wrong node value adapter!");
-						return FT(0.0);
+						return -FT(1);
 				}
 			}
 
@@ -192,7 +196,7 @@ namespace CGAL {
 			}
 
 			// Favour lower cost value!
-			void set_graph_edges(const CDT &cdt, const Node_id nodes[], const Nodes_map &nodes_map, Graph *graph) const {
+			void set_graph_edges(const CDT &cdt, const Node_id *pNodes, const Nodes_map &nodes_map, Graph *graph) const {
 
 				Log log;
 
@@ -218,7 +222,7 @@ namespace CGAL {
 					const Edge_coherence edge_coherence = find_edge_coherence(cdt, eit);
 
 					std::string str_coherence = "default"; 
-					switch(edge_coherence) {
+					switch (edge_coherence) {
 						case Edge_coherence::STRUCTURE_COHERENT:
 							str_coherence = "strucutre coherent";
 							break;
@@ -244,12 +248,12 @@ namespace CGAL {
 
 
 					// Set graph edge.
-					add_graph_edge(eit, nodes, nodes_map, edge_weight, edge_quality, graph, log);
+					add_graph_edge(eit, pNodes, nodes_map, edge_weight, edge_quality, graph, log);
 
 
 					if (m_save_info) log.skip_line();
  				}
- 				if (m_save_info) log.save("tmp/graph_edges");
+ 				if (m_save_info) log.save("tmp" + std::string(PS) + "graph_edges");
 
  				/* // Test data.
 				graph->add_edge(nodes[0] , nodes[7] , 0.0, 0.0); // for min cut we add big weights to the incorrect cells
@@ -273,7 +277,7 @@ namespace CGAL {
 
 			void add_graph_edge(
 				const Edge_iterator &edge_handle, 
-				const Node_id nodes[], 
+				const Node_id *pNodes, 
 				const Nodes_map &nodes_map, 
 				const FT edge_weight, 
 				const FT edge_quality, Graph *graph, Log &log) const {
@@ -288,7 +292,7 @@ namespace CGAL {
 				const int index_1 = nodes_map.at(face_1);
 				const int index_2 = nodes_map.at(face_2);
 
-				graph->add_edge(nodes[index_1], nodes[index_2], cost_value, cost_value);
+				graph->add_edge(pNodes[index_1], pNodes[index_2], cost_value, cost_value);
 
 				if (m_save_info) log.out << "Final edge: " << cost_value << " < === > " << cost_value << std::endl;
 			}
@@ -361,7 +365,7 @@ namespace CGAL {
 
 			FT compute_edge_quality(const Edge_coherence edge_coherence, const CDT &cdt, const Edge_iterator &edge_handle) const {
 
-				switch(edge_coherence) {
+				switch (edge_coherence) {
 
 					case Edge_coherence::STRUCTURE_COHERENT:
 						return FT(0);
@@ -374,7 +378,7 @@ namespace CGAL {
 
 					default:
 						assert(!"Wrong edge coherence!");
-						return FT(0.0);
+						return -FT(1);
 				}
 			}
 

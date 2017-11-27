@@ -1,6 +1,12 @@
 #ifndef CGAL_LEVEL_OF_DETAIL_STRUCTURING_2_H
 #define CGAL_LEVEL_OF_DETAIL_STRUCTURING_2_H
 
+#if defined(WIN32) || defined(_WIN32) 
+#define PS "\\" 
+#else 
+#define PS "/" 
+#endif 
+
 // STL includes.
 #include <map>
 #include <vector>
@@ -144,13 +150,13 @@ namespace CGAL {
 				// (1) Project all points onto the given lines.
 				project();
 
-				if (m_save_log) log.out << "(1) All points are projected onto the given lines. The results are saved in tmp/projected" << std::endl;
+				if (m_save_log) log.out << "(1) All points are projected onto the given lines. The results are saved in tmp->projected" << std::endl;
 
 
 				// (2) Compute min, average, and max distances from all points to the given lines.
 				compute_distances();
 
-				if (m_save_log) log.out << "(2) Min, avg, and max distances for each set of points are computed. The results are saved in tmp/distances" << std::endl;
+				if (m_save_log) log.out << "(2) Min, avg, and max distances for each set of points are computed. The results are saved in tmp->distances" << std::endl;
 
 
 				// (3) Find epsilon for each set of points.
@@ -158,7 +164,7 @@ namespace CGAL {
 				if (!m_eps_set) {
 					
 					compute_epsilon_values();
-					if (m_save_log) log.out << "(3) Epsilon values are computed for each component. The results are saved in tmp/epsilons" << std::endl;
+					if (m_save_log) log.out << "(3) Epsilon values are computed for each component. The results are saved in tmp->epsilons" << std::endl;
 
 				} else if (m_save_log) log.out << "(3) Epsilon values are set manually to one unique value." << std::endl;
 
@@ -168,25 +174,25 @@ namespace CGAL {
 
 				number_of_structured_segments = m_segments.size();
 
-				if (m_save_log) log.out << "(4) Segments are extracted for each set of points. The results are saved in tmp/segments" << std::endl;
+				if (m_save_log) log.out << "(4) Segments are extracted for each set of points. The results are saved in tmp->segments" << std::endl;
 
 
 				// (5) Find side length Lp used in the occupancy grid for each segment.
 				find_lp();
 
-				if (m_save_log) log.out << "(5) Side lengths are found for each occupancy grid. The results are saved in tmp/lp" << std::endl;
+				if (m_save_log) log.out << "(5) Side lengths are found for each occupancy grid. The results are saved in tmp->lp" << std::endl;
 
 
 				// (6) Fill in the occupancy grid for each segment.
 				fill_in_occupancy_grid(Occupancy_method::ALL);
 
-				if (m_save_log) log.out << "(6) The occupancy grid is projected and filled. The results are saved in tmp/occupancy" << std::endl;
+				if (m_save_log) log.out << "(6) The occupancy grid is projected and filled. The results are saved in tmp->occupancy" << std::endl;
 
 
 				// (7) Create structured linear points using the occupancy grid above.
 				create_linear_points();
 
-				if (m_save_log) log.out << "(7) Linear points are created for each segment. The results are saved in tmp/linear_points" << std::endl;
+				if (m_save_log) log.out << "(7) Linear points are created for each segment. The results are saved in tmp->linear_points" << std::endl;
 
 
 				// (8) Insert corners between intersecting segments.
@@ -342,7 +348,7 @@ namespace CGAL {
 					}
 					if (m_save_log) log.out << std::endl;
 				}
-				if (m_save_log) log.save("tmp/projected");
+				if (m_save_log) log.save("tmp" + std::string(PS) + "projected");
 			}
 
 			void clear_projected() {
@@ -410,7 +416,7 @@ namespace CGAL {
 					           				   "; avg: " << m_avg_dist[number_of_components] <<
 					           				   "; max: " << m_max_dist[number_of_components] << std::endl;
 				}
-				if (m_save_log) log.save("tmp/distances");
+				if (m_save_log) log.save("tmp" + std::string(PS) + "distances");
 			}
 
 			void clear_distances() {
@@ -441,7 +447,7 @@ namespace CGAL {
 					if (m_save_log) log.out << "eps: " << m_eps[i] << std::endl;
 				}
 
-				if (m_save_log) log.save("tmp/epsilons");
+				if (m_save_log) log.save("tmp" + std::string(PS) + "epsilons");
 				m_eps_set = true;
 			}
 
@@ -503,7 +509,7 @@ namespace CGAL {
 				}
 
 				assert(number_of_segments == m_lines.size());
-				if (m_save_log) log.save("tmp/segments");
+				if (m_save_log) log.save("tmp" + std::string(PS) + "segments");
 			}
 
 			void clear_segments(){
@@ -557,7 +563,7 @@ namespace CGAL {
 
 					if (m_save_log) log.out << "lp: " << m_lp[i] << "; times: " << m_times[i] << std::endl;
 				}
-				if (m_save_log) log.save("tmp/lp");
+				if (m_save_log) log.save("tmp" + std::string(PS) + "lp");
 			}
 
 			void clear_lp() {
@@ -576,7 +582,7 @@ namespace CGAL {
 				assert(!m_occupancy.empty());
 				assert(m_occupancy.size() == m_times.size() && m_occupancy.size() == m_lp.size());
 
-				switch(method) {
+				switch (method) {
 					case Occupancy_method::ALL:
 						fill_all();
 						break;
@@ -601,7 +607,7 @@ namespace CGAL {
 						}
 						log.out << std::endl;
 					}
-					log.save("tmp/occupancy");
+					log.save("tmp" + std::string(PS) + "occupancy");
 				}
 			}
 
@@ -707,7 +713,7 @@ namespace CGAL {
 						}
 					}
 				}
-				if (m_save_log) log.save("tmp/linear_points");
+				if (m_save_log) log.save("tmp" + std::string(PS) + "linear_points");
 			}
 
 			void clear_main_data() {
@@ -758,7 +764,7 @@ namespace CGAL {
 
 					case Structuring_corner_algorithm::NO_CORNERS:
 						if (m_save_log) log.out << "(a) NO CORNERS option is chosen!" << std::endl;
-						return;
+						break;
 
 					case Structuring_corner_algorithm::GRAPH_BASED:
 						add_graph_based_corners(log);
@@ -785,19 +791,19 @@ namespace CGAL {
 				// Here I use structured segments, maybe better to use raw/unstructured point set?
 				create_adjacency_graph(Adjacency_method::STRUCTURED);
 
-				if (m_save_log) log.out << "(a) Adjacency graph between segments is created. The results are saved in tmp/adjacency" << std::endl;
+				if (m_save_log) log.out << "(a) Adjacency graph between segments is created. The results are saved in tmp->adjacency" << std::endl;
 
 
 				// (b) Create an undirected graph by removing all repeating adjacencies.
 				create_undirected_graph();
 
-				if (m_save_log) log.out << "(b) An undirected graph is created. The results are saved in tmp/undirected_graph" << std::endl;
+				if (m_save_log) log.out << "(b) An undirected graph is created. The results are saved in tmp->undirected_graph" << std::endl;
 
 
 				// (c) Create corners using the undirected graph above.
 				create_graph_based_corners();
 
-				if (m_save_log) log.out << "(c) Unique GRAPH_BASED corner points between all adjacent segments are inserted. The final results are saved in tmp/structured_points" << std::endl;
+				if (m_save_log) log.out << "(c) Unique GRAPH_BASED corner points between all adjacent segments are inserted. The final results are saved in tmp->structured_points" << std::endl;
 			}
 
 			void add_intersection_based_corners(Log &log) {
@@ -809,7 +815,7 @@ namespace CGAL {
 					for (int j = 0; j < num_lines; ++j)
 						if (i != j) try_adding_intersection_based_corner(i, j);
 
-				if (m_save_log) log.out << "(a) All possible INTERSECTION_BASED corners are inserted. The final results are saved in tmp/structured_points" << std::endl;
+				if (m_save_log) log.out << "(a) All possible INTERSECTION_BASED corners are inserted. The final results are saved in tmp->structured_points" << std::endl;
 			}
 
 			void try_adding_intersection_based_corner(const int ind_i, const int ind_j) {
@@ -837,7 +843,7 @@ namespace CGAL {
 
 				clear_adjacency();
 
-				switch(method) {
+				switch (method) {
 					case Adjacency_method::STRUCTURED:
 						create_structured_adjacency();
 						break;
@@ -856,7 +862,7 @@ namespace CGAL {
 						log.out << std::endl;
 					}
 
-					log.save("tmp/adjacency");
+					log.save("tmp" + std::string(PS) + "adjacency");
 				}
 			}
 
@@ -921,7 +927,7 @@ namespace CGAL {
 
 					default:
 						assert(!"Wrong adjacency threshold method!");
-						return FT(0.0);
+						return -FT(1);
 				}
 			}
 
@@ -971,7 +977,7 @@ namespace CGAL {
 					for (PP_iterator it = m_undirected_graph.begin(); it != m_undirected_graph.end(); ++it)
 						log.out << (*it).first << " -- " << (*it).second << std::endl;
 
-					log.save("tmp/undirected_graph");
+					log.save("tmp" + std::string(PS) + "undirected_graph");
 				}
 			}
 
@@ -1004,7 +1010,7 @@ namespace CGAL {
 				}
 
 				Log logex;
-				logex.export_segments_as_obj("tmp/adjacency_graph", edges, "stub");
+				logex.export_segments_as_obj("tmp" + std::string(PS) + "adjacency_graph", edges, "stub");
 
 				// Log function. Can be removed.
 				// Log log;
@@ -1014,7 +1020,7 @@ namespace CGAL {
 				//		for (size_t j = 0; j < m_str_points[i].size(); ++j)
 				//			log.out << m_str_points[i][j] << " " << 0 << std::endl;
 				//	
-				//	log.save("tmp/structured_points", ".xyz");
+				//	log.save("tmp" + std::string(PS) + "structured_points", ".xyz");
 				// }
 			}
 
@@ -1238,7 +1244,7 @@ namespace CGAL {
 					if (m_save_log) log.out << m_segment_end_points[i][0] << " " << 0 << std::endl;
 					if (m_save_log) log.out << m_segment_end_points[i][1] << " " << 0 << std::endl;
 				}
-				if (m_save_log) log.save("tmp/segment_end_points", ".xyz");
+				if (m_save_log) log.save("tmp" + std::string(PS) + "segment_end_points", ".xyz");
 			}
 
 			// It works only with Occupancy_method::ALL!
@@ -1260,7 +1266,7 @@ namespace CGAL {
 					
 					resample_segment(i, times, log);
 				}
-				/* if (m_save_log) */ log.save("tmp/resampled_points", ".xyz");
+				/* if (m_save_log) */ log.save("tmp" + std::string(PS) + "resampled_points", ".xyz");
 			}
 
 			void resample_segment(const size_t segment_index, const FT times, Log &log) {

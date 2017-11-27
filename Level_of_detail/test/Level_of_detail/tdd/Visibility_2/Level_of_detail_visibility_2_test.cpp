@@ -1,3 +1,9 @@
+#if defined(WIN32) || defined(_WIN32) 
+#define PS "\\" 
+#else 
+#define PS "/" 
+#endif 
+
 // Google test includes.
 #include "gmock/gmock.h"
 
@@ -115,7 +121,7 @@ TEST_F(LOD_VisibilityTest, Compiles) {
 TEST_F(LOD_VisibilityTest, WithClassification) {
 
 	lodVisibilityCL.compute(input, cdt);
-	Log log; log.save_visibility_eps(cdt, "tmp/visibility_classification");
+	Log log; log.save_visibility_eps(cdt, "tmp" + std::string(PS) + "visibility_classification");
 
 	auto face = cdt.finite_faces_begin();
 
@@ -126,7 +132,7 @@ TEST_F(LOD_VisibilityTest, WithClassification) {
 TEST_F(LOD_VisibilityTest, WithRayShooting) {
 
 	lodVisibilityRS.compute(input, cdt);
-	Log log; log.save_visibility_eps(cdt, "tmp/visibility_ray_shooting");
+	Log log; log.save_visibility_eps(cdt, "tmp" + std::string(PS) + "visibility_ray_shooting");
 
 	auto face = cdt.finite_faces_begin();
 
@@ -137,7 +143,7 @@ TEST_F(LOD_VisibilityTest, WithRayShooting) {
 TEST_F(LOD_VisibilityTest, WithBlend) {
 
 	lodVisibilityBL.compute(input, cdt);
-	Log log; log.save_visibility_eps(cdt, "tmp/visibility_blend");
+	Log log; log.save_visibility_eps(cdt, "tmp" + std::string(PS) + "visibility_blend");
 
 	auto face = cdt.finite_faces_begin();
 

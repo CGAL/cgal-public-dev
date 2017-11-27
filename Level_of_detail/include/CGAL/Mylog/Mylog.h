@@ -1,6 +1,12 @@
 #ifndef CGAL_MYLOG_H
 #define CGAL_MYLOG_H
 
+#if defined(WIN32) || defined(_WIN32) 
+#define PS "\\" 
+#else 
+#define PS "/" 
+#endif 
+
 // STL includes.
 #include <string>
 #include <sstream>
@@ -9,6 +15,7 @@
 #include <cmath>
 #include <unordered_set>
 #include <vector>
+#include <cstdlib>
 
 // Boost includes.
 #include <boost/tuple/tuple.hpp>
@@ -30,7 +37,8 @@ namespace CGAL {
 			const std::string m_prefix_path;
 
 		public:
-                        Mylog() : m_prefix_path("C:\\Users\\palliez\\Desktop\\TITANIUM\\") { }
+
+            Mylog() : m_prefix_path(std::string(std::getenv("LOD_LOG_PATH"))) { }
 
 			std::string state() const {
 				return "ok";
@@ -58,9 +66,9 @@ namespace CGAL {
 				out << "Index: " << index << std::endl;
 			}
 
-			bool save(const std::string &fileName, const std::string &extension = ".log", const std::string path = "logs\\") const {
+			bool save(const std::string &fileName, const std::string &extension = ".log", const std::string ending = ("logs" + std::string(PS))) const {
 
-				const std::string default_path = m_prefix_path + path;
+				const std::string default_path = m_prefix_path + ending;
 
 				const std::string finalPath = default_path + fileName + extension;
 				std::ofstream file(finalPath.c_str(), std::ios_base::out);
@@ -372,7 +380,7 @@ namespace CGAL {
 			}
 
 			template<class CDT, class Container, class Segments>
-			void save_visibility_eps(CDT &cdt, const Container &input, const Segments &segments, const std::string &fileName = "tmp/visibility", const std::string &color_type = "in") {
+			void save_visibility_eps(CDT &cdt, const Container &input, const Segments &segments, const std::string &fileName = ("tmp" + std::string(PS) + "visibility"), const std::string &color_type = "in") {
 
 				clear();
 
@@ -407,7 +415,7 @@ namespace CGAL {
 			}
 
 			template<class Point>
-			void save_triangle_with_points_eps(const Point &a, const Point &b, const Point &c, const std::vector<Point> &samples, const std::string &fileName = "tmp/triangle") {
+			void save_triangle_with_points_eps(const Point &a, const Point &b, const Point &c, const std::vector<Point> &samples, const std::string &fileName = ("tmp" + std::string(PS) + "triangle")) {
 
 				clear();
 
@@ -436,7 +444,7 @@ namespace CGAL {
 			}
 
 			template<class CDT>
-			void save_visibility_eps(CDT &cdt, const std::string &fileName = "tmp/visibility", const std::string &color_type = "in") {
+			void save_visibility_eps(CDT &cdt, const std::string &fileName = ("tmp" + std::string(PS) + "visibility"), const std::string &color_type = "in") {
 
 				clear();
 

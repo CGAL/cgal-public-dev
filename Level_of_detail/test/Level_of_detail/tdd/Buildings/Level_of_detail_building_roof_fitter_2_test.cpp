@@ -1,3 +1,9 @@
+#if defined(WIN32) || defined(_WIN32) 
+#define PS "\\" 
+#else 
+#define PS "/" 
+#endif 
+
 // Google test includes.
 #include "gmock/gmock.h"
 
@@ -248,8 +254,8 @@ public:
 		/*
 		Log log; 
 
-		log.save_cdt_ply(cdt, "tmp/cdt_roof_fitter", "bu");
-		log.save_buildings_info(cdt, buildings, "tmp/buildings_roof_fitter");
+		log.save_cdt_ply(cdt, "tmp" + std::string(PS) + "cdt_roof_fitter", "bu");
+		log.save_buildings_info(cdt, buildings, "tmp" + std::string(PS) + "buildings_roof_fitter");
 		
 		std::cout << std::endl;
 		for (Point_iterator it = input.begin(); it != input.end(); ++it)

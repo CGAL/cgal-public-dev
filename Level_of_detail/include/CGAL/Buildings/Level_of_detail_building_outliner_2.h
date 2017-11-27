@@ -1,6 +1,12 @@
 #ifndef CGAL_LEVEL_OF_DETAIL_BUILDING_OUTLINER_2_H
 #define CGAL_LEVEL_OF_DETAIL_BUILDING_OUTLINER_2_H
 
+#if defined(WIN32) || defined(_WIN32) 
+#define PS "\\" 
+#else 
+#define PS "/" 
+#endif 
+
 // STL includes.
 #include <map>
 #include <vector>
@@ -68,7 +74,7 @@ namespace CGAL {
 
 					if (m_save_info) log.skip_line();
 				}
-				if (m_save_info) log.save("tmp/outliner_internal_info");
+				if (m_save_info) log.save("tmp" + std::string(PS) + "outliner_internal_info");
 			}
 
 		private:
@@ -293,15 +299,19 @@ namespace CGAL {
 
 					case CGAL::LOD::Structured_label::CORNER:
 						label_cost += corner_cost;
+						break;
 
 					case CGAL::LOD::Structured_label::LINEAR:
 						label_cost += linear_cost;
+						break;
 
 					case CGAL::LOD::Structured_label::CLUTTER:
 						label_cost += clutter_cost;
+						break;
 
 					default:
 						label_cost += default_cost;
+						break;
 				}
 
 				assert(label_cost != FT(0));
