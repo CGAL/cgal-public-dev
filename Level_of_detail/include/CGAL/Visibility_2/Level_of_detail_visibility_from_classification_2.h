@@ -698,7 +698,7 @@ namespace CGAL {
 
 					default:
 						assert(!"Wrong label!");
-						break;
+						return FT(0);
 				}
 			}
 

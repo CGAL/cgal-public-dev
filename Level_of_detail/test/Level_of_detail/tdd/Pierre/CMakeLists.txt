@@ -8,8 +8,8 @@ set(CMAKE_CXX_STANDARD 14)
 if (CGAL_FOUND)
 	include(${CGAL_USE_FILE})
 
-	include_directories(BEFORE "../../../../include")
-	set(CMAKE_CXX_FLAGS "${CMAXE_CXX_FLAGS} -pedantic -Wall -Wextra -Weffc++ -Wno-vla-extension -Wc++11-extensions -Werror")
+	include_directories(BEFORE "../../../../include" "C:/dev/")
+	set(CMAKE_CXX_FLAGS "${CMAXE_CXX_FLAGS} -pedantic")
 
 	set(sources main.cpp)
 	add_executable(lod ${sources})

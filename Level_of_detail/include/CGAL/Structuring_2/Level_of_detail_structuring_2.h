@@ -921,7 +921,7 @@ namespace CGAL {
 
 					default:
 						assert(!"Wrong adjacency threshold method!");
-						break;
+						return FT(0.0);
 				}
 			}
 

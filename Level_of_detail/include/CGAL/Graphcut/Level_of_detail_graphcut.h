@@ -78,24 +78,28 @@ namespace CGAL {
 			}
 
 			// Source - inside, sink - outside
-			void max_flow(CDT &cdt) const {
+			void max_flow(CDT &cdt)  {
 
 				Nodes_map nodes_map;
-				const auto num_nodes = cdt.number_of_faces();
+				// const int num_nodes = ;
 
-				Node_id nodes[num_nodes];
+				unsigned int nb_faces = cdt.number_of_faces();
+				Node_id *pNodes = new Node_id[nb_faces];
 				Graph *graph = new Graph();
 
-				set_graph_nodes(cdt, nodes, nodes_map, graph);
-				set_graph_edges(cdt, nodes, nodes_map, graph);
+				set_graph_nodes(cdt, pNodes, nodes_map, graph);
+				set_graph_edges(cdt, pNodes, nodes_map, graph);
 
 				graph->maxflow();
 
-				extract_solution(nodes, graph, cdt);
+				extract_solution(pNodes, graph, cdt);
 
 				// Remove later.
 				Log log;
 				log.save_visibility_eps(cdt, "tmp/after_cut");
+
+				// cleanup
+				delete graph;
 			}
 
 		private:
@@ -128,7 +132,7 @@ namespace CGAL {
 			}
 
 			// Favour bigger cost value!
-			void set_graph_nodes(const CDT &cdt, Node_id nodes[], Nodes_map &nodes_map, Graph *graph) const {
+			void set_graph_nodes(const CDT &cdt, Node_id *pNodes, Nodes_map &nodes_map, Graph *graph) const {
 
 				Log log;
 
@@ -136,7 +140,7 @@ namespace CGAL {
 				for (Face_iterator fit = cdt.finite_faces_begin(); fit != cdt.finite_faces_end(); ++fit, ++index) {
 					log.add_index(index);
 
-					nodes[index]   = graph->add_node();
+					pNodes[index]   = graph->add_node();
 					nodes_map[fit] = index;
 
 					const FT in  = fit->info().in;
@@ -147,7 +151,7 @@ namespace CGAL {
 					const FT cost_in  = get_graph_node_cost(in);  // here we add bigger value for the desirable outcome
 					const FT cost_out = get_graph_node_cost(out); // e.g. if we want in (or SOURCE) then the cost_in with bigger value is favourable
 
-					graph->add_tweights(nodes[index], cost_in, cost_out);
+					graph->add_tweights(pNodes[index], cost_in, cost_out);
 
 					if (m_save_info) {
 						log.out << "in: " << cost_in << "; out: " << cost_out << std::endl;
@@ -175,7 +179,7 @@ namespace CGAL {
 
 					default:
 						assert(!"Wrong node value adapter!");
-						break;
+						return FT(0.0);
 				}
 			}
 
@@ -370,7 +374,7 @@ namespace CGAL {
 
 					default:
 						assert(!"Wrong edge coherence!");
-						break;
+						return FT(0.0);
 				}
 			}
 
@@ -437,13 +441,13 @@ namespace CGAL {
 				return rotate ? (edge_normal * circle_tangent_normal) : (circle_tangent_normal * edge_normal);
 			}
 
-			void extract_solution(const Node_id nodes[], Graph *graph, CDT &cdt) const {
+			void extract_solution(const Node_id *pNodes, Graph *graph, CDT &cdt) const {
 
 				int index = 0;
 				for (Face_iterator fit = cdt.finite_faces_begin(); fit != cdt.finite_faces_end(); ++fit, ++index) {
 
-					if (graph->what_segment(nodes[index]) == Graph::SOURCE) fit->info().in = FT(1);
-					if (graph->what_segment(nodes[index]) == Graph::SINK)   fit->info().in = FT(0);
+					if (graph->what_segment(pNodes[index]) == Graph::SOURCE) fit->info().in = FT(1);
+					if (graph->what_segment(pNodes[index]) == Graph::SINK)   fit->info().in = FT(0);
 
 					fit->info().in_color = get_color(fit->info().in);
 				}

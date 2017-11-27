@@ -136,7 +136,9 @@ namespace CGAL {
 					case vegetation: return false;
 					case fix:		 return false;
 
-					default: assert(!"Wrong label!");
+					default: 
+						assert(!"Wrong label!");
+						return false;
 				}
 			}
 

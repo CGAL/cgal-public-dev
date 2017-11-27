@@ -171,7 +171,7 @@ namespace CGAL {
 
 					default:
 						assert(!"Wrong thinning scale type!");
-						break;
+						return 0;
 				}
 			}
 

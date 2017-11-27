@@ -30,7 +30,7 @@ namespace CGAL {
 			const std::string m_prefix_path;
 
 		public:
-			Mylog() : m_prefix_path("/Users/danisimo/Documents/pipeline/") { }
+                        Mylog() : m_prefix_path("C:\\Users\\palliez\\Desktop\\TITANIUM\\") { }
 
 			std::string state() const {
 				return "ok";
@@ -58,7 +58,7 @@ namespace CGAL {
 				out << "Index: " << index << std::endl;
 			}
 
-			bool save(const std::string &fileName, const std::string &extension = ".log", const std::string path = "logs/") const {
+			bool save(const std::string &fileName, const std::string &extension = ".log", const std::string path = "logs\\") const {
 
 				const std::string default_path = m_prefix_path + path;
 

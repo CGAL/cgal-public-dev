@@ -109,7 +109,7 @@ void set_user_defined_parameters(const Parameters &parameters, LodBase &lodBase)
 int main(int argc, char** argv) {
    
    	LodBase lodBase;
-   	const std::string data_path = "path_to_the_data_folder";
+   	const std::string data_path = "C:\\Users\\palliez\\Desktop\\TITANIUM\\";
 
    	lodBase.set_default_parameters();
    	lodBase.set_prefix_path(data_path);

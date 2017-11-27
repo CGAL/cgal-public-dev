@@ -138,10 +138,10 @@ namespace CGAL {
 				const auto length = CGAL::sqrt(squared_length(cross));
 				const auto dot    = dot_product(m, n);
 
-				rad_angle = std::atan2(length, dot) - (FT(M_PI) / FT(2));
+				rad_angle = std::atan2(length, dot) - (FT(CGAL_PI) / FT(2.0));
 				axis = cross / length;
 
-				const FT deg_angle = CGAL::abs(rad_angle * FT(180) / FT(M_PI));
+				const FT deg_angle = CGAL::abs(rad_angle * FT(180) / FT(CGAL_PI));
 
 				if (deg_angle < FT(1)) return Regularization_status::NOACTION;
 				else if (deg_angle < m_max_reg_angle) return Regularization_status::REGULARIZE;
