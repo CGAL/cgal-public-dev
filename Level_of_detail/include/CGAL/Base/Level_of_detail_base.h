@@ -1154,7 +1154,7 @@ namespace CGAL {
 
 
 				// The most important!
-				const Main_test_data_type test_data_type = Main_test_data_type::PARIS_ETH;
+				const Main_test_data_type test_data_type = Main_test_data_type::PARIS_FULL_ETH;
 				switch (test_data_type) {
 
 					case Main_test_data_type::BASIC:
@@ -1464,7 +1464,7 @@ namespace CGAL {
 				m_clutter_new_point_type 		 = Clutter_new_point_type::CLOSEST;
 				m_thinning_type 	  			 = Thinning_type::NAIVE;
 				m_structuring_adjacency_method 	 = Structuring_adjacency_threshold_method::GLOBAL;
-				m_structuring_corner_algorithm   = Structuring_corner_algorithm::NO_T_CORNERS;
+				m_structuring_corner_algorithm   = Structuring_corner_algorithm::NO_CORNERS;
 
 				m_thinning_fuzzy_radius  = 5.0;
 				m_visibility_angle_eps   = 0.18; 

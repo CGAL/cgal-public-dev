@@ -41,7 +41,10 @@ namespace CGAL {
 
 		public:
 
-            Mylog() : m_prefix_path(std::string(std::getenv("LOD_LOG_PATH"))) { }
+            Mylog() : m_prefix_path(std::string(std::getenv("LOD_LOG_PATH"))) 
+			
+			{ 
+			}
 
 			std::string state() const {
 				return "ok";
@@ -72,6 +75,8 @@ namespace CGAL {
 			bool save(const std::string &fileName, const std::string &extension = ".log", const std::string ending = ("logs" + std::string(PS))) const {
 
 				const std::string default_path = m_prefix_path + ending;
+
+				// std::cout << "PATH: " << default_path << std::endl;
 
 				const std::string finalPath = default_path + fileName + extension;
 				std::ofstream file(finalPath.c_str(), std::ios_base::out);
