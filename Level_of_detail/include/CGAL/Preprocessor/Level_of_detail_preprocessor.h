@@ -253,7 +253,7 @@ namespace CGAL {
 			}
 
 			template<class Planes>
-			auto get_planes(const Container &input, Planes &planes) {
+			int get_planes(const Container &input, Planes &planes) {
 
 				auto number_of_planes = -1;
 				create_indices(input);
@@ -271,7 +271,7 @@ namespace CGAL {
 			// Later I can adapt boundary_clutter to some other data structure where I also take
 			// into account the type of the clutter: undetected, cylinder, sphere and so on. The type is saved in property_map<Types>.
 			template<class Indices, class Boundary_data>
-			auto get_boundary_points(
+			int get_boundary_points(
 				const Container &input, const Indices &boundary_mapping, const Indices &interior_mapping, const bool with_shape_detection, 
 				Boundary_data &building_boundaries, Boundary_data &boundary_clutter) {
 
@@ -284,7 +284,7 @@ namespace CGAL {
 
 			// This is very slow algorithm. Should be improved later.
 			template<class Projected_points, class Point_sets>
-			auto clean_projected_points(Projected_points &projected_points, Point_sets &point_sets) {
+			int clean_projected_points(Projected_points &projected_points, Point_sets &point_sets) {
 
 				if (projected_points.size() == 0) return 0;
 				assert(!point_sets.empty());
@@ -349,7 +349,7 @@ namespace CGAL {
 			}
 
 			template<class Indices, class Boundary_data>
-			auto add_boundary_points(const Indices &mapping, const bool with_shape_detection, Boundary_data &building_boundaries, Boundary_data &boundary_clutter) {
+			int add_boundary_points(const Indices &mapping, const bool with_shape_detection, Boundary_data &building_boundaries, Boundary_data &boundary_clutter) {
 
 				auto number_of_boundaries = -1;
 				building_boundaries.clear();

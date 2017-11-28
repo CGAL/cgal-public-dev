@@ -403,10 +403,13 @@ namespace CGAL {
 				// Insert constraints.
 				std::vector<Segment_2> constraints;
 				for (size_t i = 0; i < points.size(); ++i) {
+					
 					if (points[i].size() < 2) continue;
-
 					for (size_t j = 0; j < points[i].size() - 1; ++j) {	
-						constraints.push_back(Segment_2(points[i][j], points[i][j + 1]));
+						
+						if (is_valid_segment(points[i][j], points[i][j + 1]))
+							constraints.push_back(Segment_2(points[i][j], points[i][j + 1]));
+						else continue;
 
 						if (vhs[i][j] != Vertex_handle() && vhs[i][j + 1] != Vertex_handle())
 							cdt.insert_constraint(vhs[i][j], vhs[i][j + 1]);
@@ -504,7 +507,7 @@ namespace CGAL {
 				number_of_faces = cdt.number_of_faces();
 
 
-				// Verify labels.
+				// Correct all wrong labels again.
 				if (!add_clutter) {
 					for (Vertex_iterator vit = cdt.finite_vertices_begin(); vit != cdt.finite_vertices_end(); ++vit)
 						if(vit->info().label == Structured_label::CLUTTER)
@@ -515,6 +518,14 @@ namespace CGAL {
 				// Save CDT.
 				log.save_cdt_obj(cdt, "tmp" + std::string(PS) + "cdt");
 				return number_of_faces;
+			}
+
+			bool is_valid_segment(const Point_2 &a, const Point_2 &b) const {
+
+				const FT eps = FT(1) / FT(100000);
+				if (CGAL::sqrt(squared_distance(a, b)) < eps) return false;
+
+				return true;
 			}
 
 			template<class Structured_points>

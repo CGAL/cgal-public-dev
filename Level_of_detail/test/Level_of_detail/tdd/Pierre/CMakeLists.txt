@@ -8,7 +8,12 @@ if (CGAL_FOUND)
 	include(${CGAL_USE_FILE})
 
 	include_directories(BEFORE "../../../../include" "C:/dev/") 
-	set(CMAKE_CXX_FLAGS "${CMAXE_CXX_FLAGS} /EHsc")
+	
+	# windows
+	# set(CMAKE_CXX_FLAGS "${CMAXE_CXX_FLAGS} /EHsc")
+	
+	# mac os
+	set(CMAKE_CXX_FLAGS "${CMAXE_CXX_FLAGS}")
 
 	set(sources main.cpp)
 	add_executable(lod ${sources})

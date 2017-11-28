@@ -3,6 +3,7 @@
 
 // STL includes.
 #include <iostream>
+#include <memory>
 
 // Boost includes.
 #include <boost/tuple/tuple.hpp>
@@ -18,7 +19,7 @@ namespace CGAL {
 			typedef KernelTraits   Traits;
 			typedef InputContainer Container;
 
-			virtual void set_input(const Container &input) { m_input = std::make_unique<Container>(input); }
+			virtual void set_input(const Container &input) { m_input = std::make_shared<Container>(input); }
 			virtual bool satisfies_condition(const int) const = 0;
 
 			virtual ~Level_of_detail_selection_strategy() { }
@@ -27,7 +28,7 @@ namespace CGAL {
 			using Label     = int;
 			using Label_map = typename Container:: template Property_map<Label>;
 
-			std::unique_ptr<Container> m_input;
+			std::shared_ptr<Container> m_input;
 		};
 
 

@@ -555,7 +555,7 @@ namespace CGAL {
 				// Apply 2D structuring algorithm.
 				std::cout << "(" << exec_step << ") 2d structuring" << std::endl;
 
-				m_structuring = std::make_unique<Structuring_2>(building_boundaries_projected, building_boundaries, lines);
+				m_structuring = std::make_shared<Structuring_2>(building_boundaries_projected, building_boundaries, lines);
 				
 				m_structuring->set_epsilon(m_structuring_epsilon);
 				m_structuring->save_log(m_structuring_log);
@@ -977,7 +977,7 @@ namespace CGAL {
 			Building_avg_roof_fitter m_building_avg_roof_fitter;
 			Building_max_roof_fitter m_building_max_roof_fitter;
 
-			std::unique_ptr<Structuring_2> m_structuring;
+			std::shared_ptr<Structuring_2> m_structuring;
 			Clutter_processor m_clutter_processor;
 			
 			Grid_simplifier m_grid_simplifier;
@@ -1154,7 +1154,7 @@ namespace CGAL {
 
 
 				// The most important!
-				const Main_test_data_type test_data_type = Main_test_data_type::PARIS_FULL_ETH;
+				const Main_test_data_type test_data_type = Main_test_data_type::PARIS_ETH;
 				switch (test_data_type) {
 
 					case Main_test_data_type::BASIC:
@@ -1457,14 +1457,14 @@ namespace CGAL {
 				m_pipeline_version = Pipeline_version::WITHOUT_SHAPE_DETECTION;
 
 				m_visibility_approach 	 		 = Visibility_approach::FACE_BASED;
-				m_visibility_method   	 		 = Visibility_method::FACE_BASED_NATURAL_NEIGHBOURS;
+				m_visibility_method   	 		 = Visibility_method::FACE_BASED_NATURAL_NEIGHBOURS; // point based for with_shape_detection
 				m_visibility_sampler 	 		 = Visibility_sampler::UNIFORM_SUBDIVISION;
 				m_thinning_neighbour_search_type = Neighbour_search_type::CIRCLE;
 				m_building_boundary_type 		 = Building_boundary_type::UNORIENTED;
 				m_clutter_new_point_type 		 = Clutter_new_point_type::CLOSEST;
 				m_thinning_type 	  			 = Thinning_type::NAIVE;
 				m_structuring_adjacency_method 	 = Structuring_adjacency_threshold_method::GLOBAL;
-				m_structuring_corner_algorithm   = Structuring_corner_algorithm::NO_CORNERS;
+				m_structuring_corner_algorithm   = Structuring_corner_algorithm::NO_T_CORNERS;
 
 				m_thinning_fuzzy_radius  = 5.0;
 				m_visibility_angle_eps   = 0.18; 
@@ -1472,7 +1472,7 @@ namespace CGAL {
 				m_structuring_epsilon 	 = 5.0;
 				m_add_cdt_clutter     	 = false;
 				m_visibility_num_samples = 1;
-				m_graph_cut_beta 		 = 100000.0;
+				m_graph_cut_beta 		 = 100000.0; // 35.0 with_clutter // 15.0 for with_shape_detection
 				m_clutter_knn 			 = 12;
 				m_clutter_cell_length    = 1.3;
 				m_use_boundaries 		 = true;
@@ -1487,6 +1487,7 @@ namespace CGAL {
 
 				m_use_alpha_shapes = true;
 				m_alpha_shape_size = 5.0;
+				m_graph_cut_gamma  = 10000.0;
 
 				m_structuring_get_all_points  = true;
 				m_structuring_adjacency_value = 12.0;
@@ -1634,7 +1635,7 @@ namespace CGAL {
 				m_pipeline_version = Pipeline_version::WITHOUT_SHAPE_DETECTION;
 
 				m_visibility_approach 	 		 = Visibility_approach::FACE_BASED;
-				m_visibility_method   	 		 = Visibility_method::FACE_BASED_NATURAL_NEIGHBOURS;
+				m_visibility_method   	 		 = Visibility_method::FACE_BASED_NATURAL_NEIGHBOURS; // point based for with_shape_detection
 				m_visibility_sampler 	 		 = Visibility_sampler::UNIFORM_SUBDIVISION;
 				m_thinning_neighbour_search_type = Neighbour_search_type::CIRCLE;
 				m_building_boundary_type 		 = Building_boundary_type::UNORIENTED;
@@ -1649,7 +1650,7 @@ namespace CGAL {
 				m_structuring_epsilon 	 = 5.0;
 				m_add_cdt_clutter     	 = false;
 				m_visibility_num_samples = 1;
-				m_graph_cut_beta 		 = 100000.0;
+				m_graph_cut_beta 		 = 100000.0; // 35.0 with_clutter // 15.0 for with_shape_detection
 				m_clutter_knn 			 = 12;
 				m_clutter_cell_length    = 1.3;
 				m_use_boundaries 		 = true;
@@ -1664,6 +1665,7 @@ namespace CGAL {
 
 				m_use_alpha_shapes = true;
 				m_alpha_shape_size = 5.0;
+				m_graph_cut_gamma  = 10000.0;
 
 				m_structuring_get_all_points  = true;
 				m_structuring_adjacency_value = 12.0;
@@ -1678,7 +1680,7 @@ namespace CGAL {
 				m_pipeline_version = Pipeline_version::WITHOUT_SHAPE_DETECTION;
 
 				m_visibility_approach 	 		 = Visibility_approach::FACE_BASED;
-				m_visibility_method   	 		 = Visibility_method::FACE_BASED_NATURAL_NEIGHBOURS;
+				m_visibility_method   	 		 = Visibility_method::FACE_BASED_NATURAL_NEIGHBOURS; // point based for with_shape_detection
 				m_visibility_sampler 	 		 = Visibility_sampler::UNIFORM_SUBDIVISION;
 				m_thinning_neighbour_search_type = Neighbour_search_type::CIRCLE;
 				m_building_boundary_type 		 = Building_boundary_type::UNORIENTED;
@@ -1693,7 +1695,7 @@ namespace CGAL {
 				m_structuring_epsilon 	 = 5.0;
 				m_add_cdt_clutter     	 = false;
 				m_visibility_num_samples = 1;
-				m_graph_cut_beta 		 = 100000.0;
+				m_graph_cut_beta 		 = 100000.0; // 35.0 with_clutter // 15.0 for with_shape_detection
 				m_clutter_knn 			 = 12;
 				m_clutter_cell_length    = 1.3;
 				m_use_boundaries 		 = true;
@@ -1708,6 +1710,7 @@ namespace CGAL {
 
 				m_use_alpha_shapes = true;
 				m_alpha_shape_size = 5.0;
+				m_graph_cut_gamma  = 10000.0;
 
 				m_structuring_get_all_points  = true;
 				m_structuring_adjacency_value = 12.0;

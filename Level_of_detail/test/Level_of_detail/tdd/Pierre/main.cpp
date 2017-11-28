@@ -6,13 +6,13 @@
 #define PN "\n"
 #endif
 
-
 // STL includes.
 #include <string>
 #include <iostream>
 #include <cstdlib>
 
 // CGAL includes.
+#include <CGAL/Exact_predicates_exact_constructions_kernel.h>
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/Simple_cartesian.h>
 #include <CGAL/Point_set_3.h>

@@ -41,10 +41,7 @@ namespace CGAL {
 
 		public:
 
-            Mylog() : m_prefix_path(std::string(std::getenv("LOD_LOG_PATH"))) 
-			
-			{ 
-			}
+            Mylog() : m_prefix_path(std::string(std::getenv("LOD_LOG_PATH"))) { }
 
 			std::string state() const {
 				return "ok";
