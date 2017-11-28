@@ -2,9 +2,11 @@
 #define CGAL_LEVEL_OF_DETAIL_STRUCTURING_2_H
 
 #if defined(WIN32) || defined(_WIN32) 
-#define PS "\\" 
+#define PS "\\"
+#define PN "\r\n"
 #else 
 #define PS "/" 
+#define PN "\n"
 #endif 
 
 // STL includes.
@@ -140,7 +142,7 @@ namespace CGAL {
 
 				// (START) Create log.
 				Log log;
-				if (m_save_log) log.out << "START EXECUTION\n\n\n";
+				if (m_save_log) log.out << "START EXECUTION" + std::string(PN) + "" + std::string(PN) + "" + std::string(PN) + "";
 				
 				// -----------------------------------------
 
@@ -219,7 +221,7 @@ namespace CGAL {
 
 				// (END) Save log.
 				if (m_save_log) {
-					log.out << "\n\nFINISH EXECUTION";
+					log.out << "" + std::string(PN) + "" + std::string(PN) + "FINISH EXECUTION";
 					log.save("structuring_2");
 				}
 
@@ -495,10 +497,10 @@ namespace CGAL {
 					auto v2 = m_segments[number_of_segments].to_vector();
 
 					// Rotate segments if needed.
-					if ((v1.y() < FT(0) && v2.y() >= FT(0) && std::fabs(v1.y() - v2.y()) > m_tol) ||
-						(v2.y() < FT(0) && v1.y() >= FT(0) && std::fabs(v1.y() - v2.y()) > m_tol) ||
-						(v1.x() < FT(0) && v2.x() >= FT(0) && std::fabs(v1.x() - v2.x()) > m_tol) ||
-						(v2.x() < FT(0) && v1.x() >= FT(0) && std::fabs(v1.x() - v2.x()) > m_tol)) {
+					if ((v1.y() < FT(0) && v2.y() >= FT(0) && CGAL::abs(v1.y() - v2.y()) > m_tol) ||
+						(v2.y() < FT(0) && v1.y() >= FT(0) && CGAL::abs(v1.y() - v2.y()) > m_tol) ||
+						(v1.x() < FT(0) && v2.x() >= FT(0) && CGAL::abs(v1.x() - v2.x()) > m_tol) ||
+						(v2.x() < FT(0) && v1.x() >= FT(0) && CGAL::abs(v1.x() - v2.x()) > m_tol)) {
 
 						m_segments[number_of_segments] = Segment(Point(minx, maxy), Point(maxx, miny));
 
@@ -559,7 +561,7 @@ namespace CGAL {
 					m_times[i] = static_cast<int>(times);
 
 					assert(m_lp[i] < upper_bound);
-					assert(std::fabs(seg_length - m_lp[i] * m_times[i]) < m_tol);
+					assert(CGAL::abs(seg_length - m_lp[i] * m_times[i]) < m_tol);
 
 					if (m_save_log) log.out << "lp: " << m_lp[i] << "; times: " << m_times[i] << std::endl;
 				}

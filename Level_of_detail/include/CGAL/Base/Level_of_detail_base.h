@@ -2,10 +2,12 @@
 #define CGAL_LEVEL_OF_DETAIL_BASE_H
 
 #if defined(WIN32) || defined(_WIN32) 
-#define PS "\\" 
+#define PS "\\"
+#define PN "\r\n"
 #else 
 #define PS "/" 
-#endif 
+#define PN "\n"
+#endif
 
 // STL includes.
 #include <map>
@@ -290,8 +292,8 @@ namespace CGAL {
 				Log &log) {
 
 				// Create log and set default parameters.
-				std::cout << "\nstarting ..." << std::endl;
-				log.out << "START EXECUTION\n\n\n";
+				std::cout << "" + std::string(PN) + "starting ..." << std::endl;
+				log.out << "START EXECUTION" + std::string(PN) + "" + std::string(PN) + "" + std::string(PN) + "";
 			}
 
 			void loading_data(
@@ -793,9 +795,9 @@ namespace CGAL {
 				const std::string &filename) {
 				
 				// Save log.
-				std::cout << "... finishing\n" << std::endl;
+				std::cout << "... finishing" + std::string(PN) + "" << std::endl;
 
-				log.out << "\n\nFINISH EXECUTION";
+				log.out << "" + std::string(PN) + "" + std::string(PN) + "FINISH EXECUTION";
 				log.save(filename);
 			}
 

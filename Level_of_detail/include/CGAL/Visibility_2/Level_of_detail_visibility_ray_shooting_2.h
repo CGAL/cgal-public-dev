@@ -2,10 +2,12 @@
 #define CGAL_LEVEL_OF_DETAIL_VISIBILITY_RAY_SHOOTING_2_H
 
 #if defined(WIN32) || defined(_WIN32) 
-#define PS "\\" 
+#define PS "\\"
+#define PN "\r\n"
 #else 
 #define PS "/" 
-#endif 
+#define PN "\n"
+#endif
 
 // STL includes.
 #include <utility>
@@ -167,7 +169,7 @@ namespace CGAL {
 
 				if (m_save_info) {
 					
-					log.out << "\n(2) Visibility is computed!" << std::endl;
+					log.out << "" + std::string(PN) + "(2) Visibility is computed!" << std::endl;
 					log.save("tmp" + std::string(PS) + "visibility_ray_shooting");
 				}
 
@@ -260,7 +262,7 @@ namespace CGAL {
 							std::cout << (progress * 100) / cdt.number_of_faces() << "% " << std::endl; 
 					}
 
-					if (m_save_info) log.out << "\nFace: " << face_index << std::endl;
+					if (m_save_info) log.out << "" + std::string(PN) + "Face: " << face_index << std::endl;
 
 					const Face_handle fh = static_cast<Face_handle>(fit);
 
@@ -292,7 +294,7 @@ namespace CGAL {
 
 				// (b) Handle all samples.
 				const FT face_visibility = estimate_face_visibility_from_samples(log, cdt, fh, bbox, samples);
-				if (m_save_info) log.out << "\n(b) Face visibility is estimated from the given samples: " << face_visibility << std::endl << std::endl;
+				if (m_save_info) log.out << "" + std::string(PN) + "(b) Face visibility is estimated from the given samples: " << face_visibility << std::endl << std::endl;
 
 
 				return face_visibility;
@@ -303,7 +305,7 @@ namespace CGAL {
 				FT face_visibility = FT(0);
 				for (Sample_iterator sit = samples.begin(); sit != samples.end(); ++sit) {
 
-					if (m_save_info) log.out << "\nNew sample: " << std::endl;
+					if (m_save_info) log.out << "" + std::string(PN) + "New sample: " << std::endl;
 
 					const Point_2 &sample = *sit;
 					face_visibility += estimate_visibility_from_sample(log, sample, cdt, fh, bbox);
@@ -320,22 +322,22 @@ namespace CGAL {
 
 
 				// Handle bottom side of the bounding box.
-				if (m_save_info) log.out << "\nBottom side: " << std::endl;
+				if (m_save_info) log.out << "" + std::string(PN) + "Bottom side: " << std::endl;
 				sample_visibility += get_side_visibility(log, sample, cdt, fh, bbox[0], bbox[1]);
 
 
 				// Handle right side of the bounding box.
-				if (m_save_info) log.out << "\nRight side: "  << std::endl;
+				if (m_save_info) log.out << "" + std::string(PN) + "Right side: "  << std::endl;
 				sample_visibility += get_side_visibility(log, sample, cdt, fh, bbox[1], bbox[2]);
 
 
 				// Handle top side of the bounding box.
-				if (m_save_info) log.out << "\nTop side: "    << std::endl;
+				if (m_save_info) log.out << "" + std::string(PN) + "Top side: "    << std::endl;
 				sample_visibility += get_side_visibility(log, sample, cdt, fh, bbox[2], bbox[3]);
 
 
 				// Handle left side of the bounding box.
-				if (m_save_info) log.out << "\nLeft side: "   << std::endl;
+				if (m_save_info) log.out << "" + std::string(PN) + "Left side: "   << std::endl;
 				sample_visibility += get_side_visibility(log, sample, cdt, fh, bbox[3], bbox[0]);
 
 

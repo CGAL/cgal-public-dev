@@ -2,10 +2,12 @@
 #define CGAL_MYLOG_H
 
 #if defined(WIN32) || defined(_WIN32) 
-#define PS "\\" 
+#define PS "\\"
+#define PN "\r\n"
 #else 
 #define PS "/" 
-#endif 
+#define PN "\n"
+#endif
 
 // STL includes.
 #include <string>
@@ -25,6 +27,7 @@
 #include <CGAL/Unique_hash_map.h>
 #include <CGAL/IO/Color.h>
 #include <CGAL/Random.h>
+#include <CGAL/number_utils.h>
 
 namespace CGAL {
 
@@ -74,7 +77,7 @@ namespace CGAL {
 				std::ofstream file(finalPath.c_str(), std::ios_base::out);
 
 				if (!file) {
-					std::cerr << "\nERROR: Error saving log file with the name " << fileName << "\n" << std::endl;
+					std::cerr << "" + std::string(PN) + "ERROR: Error saving log file with the name " << fileName << "" + std::string(PN) + "" << std::endl;
 					return false;
 				}
 
@@ -103,18 +106,18 @@ namespace CGAL {
 				const size_t num_facets   = mesh.size_of_facets();
 
 				out << 
-				"ply\n"               					   << 
-				"format ascii 1.0\n"     				   << 
-				"element vertex "        				   << num_vertices << "\n" << 
-				"property double x\n"    				   << 
-				"property double y\n"    				   << 
-				"property double z\n" 					   <<
-				"element face " 						   << num_facets << "\n" << 
-				"property list uchar int vertex_indices\n" <<
-				"property uchar red\n" 					   <<
-				"property uchar green\n" 				   <<
-				"property uchar blue\n" 				   <<
-				"end_header\n";
+				"ply" + std::string(PN) + ""               					   << 
+				"format ascii 1.0" + std::string(PN) + ""     				   << 
+				"element vertex "        				   << num_vertices << "" + std::string(PN) + "" << 
+				"property double x" + std::string(PN) + ""    				   << 
+				"property double y" + std::string(PN) + ""    				   << 
+				"property double z" + std::string(PN) + "" 					   <<
+				"element face " 						   << num_facets << "" + std::string(PN) + "" << 
+				"property list uchar int vertex_indices" + std::string(PN) + "" <<
+				"property uchar red" + std::string(PN) + "" 					   <<
+				"property uchar green" + std::string(PN) + "" 				   <<
+				"property uchar blue" + std::string(PN) + "" 				   <<
+				"end_header" + std::string(PN) + "";
 
 
 				// Add mesh vertices.
@@ -261,28 +264,28 @@ namespace CGAL {
 				// Plane_map planes;
 
 				out << 
-				"ply\n"                  << 
-				"format ascii 1.0\n"     << 
-				"element vertex "        << input.number_of_points() << "\n" << 
-				"property double x\n"    << 
-				"property double y\n"    << 
-				"property double z\n"    <<
-				"property double nx\n"   <<
-				"property double ny\n"   <<
-				"property double nz\n"   <<
-				"property uchar red\n"   << 
-				"property uchar green\n" <<
-				"property uchar blue\n";
+				"ply" + std::string(PN) + ""                  << 
+				"format ascii 1.0" + std::string(PN) + ""     << 
+				"element vertex "        << input.number_of_points() << "" + std::string(PN) + "" << 
+				"property double x" + std::string(PN) + ""    << 
+				"property double y" + std::string(PN) + ""    << 
+				"property double z" + std::string(PN) + ""    <<
+				"property double nx" + std::string(PN) + ""   <<
+				"property double ny" + std::string(PN) + ""   <<
+				"property double nz" + std::string(PN) + ""   <<
+				"property uchar red" + std::string(PN) + ""   << 
+				"property uchar green" + std::string(PN) + "" <<
+				"property uchar blue" + std::string(PN) + "";
 
 				boost::tie(colors,  boost::tuples::ignore) = input. template property_map<Color>("color");
 
 				if (withExtraProperties) {
 
 					out << 
-					"property int label\n" <<
-					"property int type\n"  <<
-					"property int index\n" <<
-					"end_header\n";
+					"property int label" + std::string(PN) + "" <<
+					"property int type" + std::string(PN) + ""  <<
+					"property int index" + std::string(PN) + "" <<
+					"end_header" + std::string(PN) + "";
 					
 					boost::tie(labels,  boost::tuples::ignore) = input. template property_map<Label>("label");
 					boost::tie(types ,  boost::tuples::ignore) = input. template property_map<Types>("types");
@@ -290,11 +293,11 @@ namespace CGAL {
 
 					// boost::tie(planes,  boost::tuples::ignore) = input. template property_map<Plane>("plane");
 				
-				} else out << "end_header\n";
+				} else out << "end_header" + std::string(PN) + "";
 
 				for (Iter it = input.begin(); it != input.end(); ++it) {
 
-					// if (static_cast<int>(*it) % 3 == 0) out << "\n"; // remove if not needed
+					// if (static_cast<int>(*it) % 3 == 0) out << "" + std::string(PN) + ""; // remove if not needed
 
 					out.precision(10);
 
@@ -307,7 +310,7 @@ namespace CGAL {
 
 					if (withExtraProperties) out << " " <<  labels[*it] << " " << types[*it] << " " << indices[*it];
 					
-					out << "\n";
+					out << "" + std::string(PN) + "";
 				}
 				save(fileName, ".log");
 			}
@@ -321,21 +324,21 @@ namespace CGAL {
 				const auto number_of_faces    = cdt.number_of_faces();
 
 				out << 
-				"ply\n"               					   << 
-				"format ascii 1.0\n"     				   << 
-				"element vertex "        				   << number_of_vertices << "\n" << 
-				"property double x\n"    				   << 
-				"property double y\n"    				   << 
-				"property double z\n" 					   <<
-				// "property uchar red\n" 				   <<
-				// "property uchar green\n" 			   <<
-				// "property uchar blue\n" 				   <<
-				"element face " 						   << number_of_faces << "\n" << 
-				"property list uchar int vertex_indices\n" <<
-				"property uchar red\n" 					   <<
-				"property uchar green\n" 				   <<
-				"property uchar blue\n" 				   <<
-				"end_header\n";
+				"ply" + std::string(PN) + ""               					   << 
+				"format ascii 1.0" + std::string(PN) + ""     				   << 
+				"element vertex "        				   << number_of_vertices << "" + std::string(PN) + "" << 
+				"property double x" + std::string(PN) + ""    				   << 
+				"property double y" + std::string(PN) + ""    				   << 
+				"property double z" + std::string(PN) + "" 					   <<
+				// "property uchar red" + std::string(PN) + "" 				   <<
+				// "property uchar green" + std::string(PN) + "" 			   <<
+				// "property uchar blue" + std::string(PN) + "" 				   <<
+				"element face " 						   << number_of_faces << "" + std::string(PN) + "" << 
+				"property list uchar int vertex_indices" + std::string(PN) + "" <<
+				"property uchar red" + std::string(PN) + "" 					   <<
+				"property uchar green" + std::string(PN) + "" 				   <<
+				"property uchar blue" + std::string(PN) + "" 				   <<
+				"end_header" + std::string(PN) + "";
 
 				typedef typename CDT::Vertex_handle Vertex_handle;
 				CGAL::Unique_hash_map<Vertex_handle, int> V;
@@ -390,13 +393,13 @@ namespace CGAL {
 
 		        // Compute scale.
 		        double scale = 1.0;
-		        if (std::sqrt((maxbX - minbX) * (maxbX - minbX) + (maxbY - minbY) * (maxbY - minbY)) < 10.0 && scale == 1.0) scale *= 1000.0;
+		        if (CGAL::sqrt((maxbX - minbX) * (maxbX - minbX) + (maxbY - minbY) * (maxbY - minbY)) < 10.0 && scale == 1.0) scale *= 1000.0;
 
 		        // Set header.
 		        set_header(minbX * scale, minbY * scale, maxbX * scale, maxbY * scale);
 
 		        // Start private namespace.
-		        out << "0 dict begin gsave\n\n";
+		        out << "0 dict begin gsave" + std::string(PN) + "" + std::string(PN) + "";
 
 		        // Save mesh.
 		        draw_mesh(cdt, scale, color_type);
@@ -408,8 +411,8 @@ namespace CGAL {
 		        draw_segments(segments, scale);
 
 		        // Finish private namespace.
-		        out << "grestore end\n\n";
-		        out << "%%EOF\n";
+		        out << "grestore end" + std::string(PN) + "" + std::string(PN) + "";
+		        out << "%%EOF" + std::string(PN) + "";
 
 		        save(fileName, ".eps");
 			}
@@ -425,20 +428,20 @@ namespace CGAL {
 
 		        // Compute scale.
 		        double scale = 1.0;
-		        if (std::sqrt((maxbX - minbX) * (maxbX - minbX) + (maxbY - minbY) * (maxbY - minbY)) < 10.0 && scale == 1.0) scale *= 1000.0;
+		        if (CGAL::sqrt((maxbX - minbX) * (maxbX - minbX) + (maxbY - minbY) * (maxbY - minbY)) < 10.0 && scale == 1.0) scale *= 1000.0;
 
 		        // Set header.
 		        set_header(minbX * scale, minbY * scale, maxbX * scale, maxbY * scale);
 
 		        // Start private namespace.
-		        out << "0 dict begin gsave\n\n";
+		        out << "0 dict begin gsave" + std::string(PN) + "" + std::string(PN) + "";
 
 		        // Save mesh.
 		        draw_triangle_with_points(a, b, c, samples, scale);
 
 		        // Finish private namespace.
-		        out << "grestore end\n\n";
-		        out << "%%EOF\n";
+		        out << "grestore end" + std::string(PN) + "" + std::string(PN) + "";
+		        out << "%%EOF" + std::string(PN) + "";
 
 		        save(fileName, ".eps");
 			}
@@ -454,20 +457,20 @@ namespace CGAL {
 
 		        // Compute scale.
 		        double scale = 1.0;
-		        if (std::sqrt((maxbX - minbX) * (maxbX - minbX) + (maxbY - minbY) * (maxbY - minbY)) < 10.0 && scale == 1.0) scale *= 1000.0;
+		        if (CGAL::sqrt((maxbX - minbX) * (maxbX - minbX) + (maxbY - minbY) * (maxbY - minbY)) < 10.0 && scale == 1.0) scale *= 1000.0;
 
 		        // Set header.
 		        set_header(minbX * scale, minbY * scale, maxbX * scale, maxbY * scale);
 
 		        // Start private namespace.
-		        out << "0 dict begin gsave\n\n";
+		        out << "0 dict begin gsave" + std::string(PN) + "" + std::string(PN) + "";
 
 		        // Save mesh.
 		        draw_mesh(cdt, scale, color_type);
 
 		        // Finish private namespace.
-		        out << "grestore end\n\n";
-		        out << "%%EOF\n";
+		        out << "grestore end" + std::string(PN) + "" + std::string(PN) + "";
+		        out << "%%EOF" + std::string(PN) + "";
 
 		        save(fileName, ".eps");
 			}
@@ -495,16 +498,16 @@ namespace CGAL {
 				
 				clear(); 
 				out << 
-				"ply\n"               	 << 
-				"format ascii 1.0\n"     << 
-				"element vertex "        << projected.size() << "\n" << 
-				"property double x\n"    << 
-				"property double y\n"    << 
-				"property double z\n" 	 <<
-				"property uchar red\n" 	 <<
-				"property uchar green\n" <<
-				"property uchar blue\n"  <<
-				"end_header\n";
+				"ply" + std::string(PN) + ""               	 << 
+				"format ascii 1.0" + std::string(PN) + ""     << 
+				"element vertex "        << projected.size() << "" + std::string(PN) + "" << 
+				"property double x" + std::string(PN) + ""    << 
+				"property double y" + std::string(PN) + ""    << 
+				"property double z" + std::string(PN) + "" 	 <<
+				"property uchar red" + std::string(PN) + "" 	 <<
+				"property uchar green" + std::string(PN) + "" <<
+				"property uchar blue" + std::string(PN) + ""  <<
+				"end_header" + std::string(PN) + "";
 
 				assert(projected.size() == dimensions.size()); 
 				size_t count = 0;
@@ -535,16 +538,16 @@ namespace CGAL {
 				
 				clear(); 
 				out << 
-				"ply\n"               	 << 
-				"format ascii 1.0\n"     << 
-				"element vertex "        << projected.size() << "\n" << 
-				"property double x\n"    << 
-				"property double y\n"    << 
-				"property double z\n" 	 <<
-				"property uchar red\n" 	 <<
-				"property uchar green\n" <<
-				"property uchar blue\n"  <<
-				"end_header\n";
+				"ply" + std::string(PN) + ""               	 << 
+				"format ascii 1.0" + std::string(PN) + ""     << 
+				"element vertex "        << projected.size() << "" + std::string(PN) + "" << 
+				"property double x" + std::string(PN) + ""    << 
+				"property double y" + std::string(PN) + ""    << 
+				"property double z" + std::string(PN) + "" 	 <<
+				"property uchar red" + std::string(PN) + "" 	 <<
+				"property uchar green" + std::string(PN) + "" <<
+				"property uchar blue" + std::string(PN) + ""  <<
+				"end_header" + std::string(PN) + "";
 
 				assert(projected.size() == num_clusters.size());
 				size_t count = 0;
@@ -584,16 +587,16 @@ namespace CGAL {
 
 				clear();
 				out << 
-				"ply\n"               	 << 
-				"format ascii 1.0\n"     << 
-				"element vertex "        << total_size << "\n" << 
-				"property double x\n"    << 
-				"property double y\n"    << 
-				"property double z\n" 	 <<
-				"property uchar red\n" 	 <<
-				"property uchar green\n" <<
-				"property uchar blue\n"  <<
-				"end_header\n";
+				"ply" + std::string(PN) + ""               	 << 
+				"format ascii 1.0" + std::string(PN) + ""     << 
+				"element vertex "        << total_size << "" + std::string(PN) + "" << 
+				"property double x" + std::string(PN) + ""    << 
+				"property double y" + std::string(PN) + ""    << 
+				"property double z" + std::string(PN) + "" 	 <<
+				"property uchar red" + std::string(PN) + "" 	 <<
+				"property uchar green" + std::string(PN) + "" <<
+				"property uchar blue" + std::string(PN) + ""  <<
+				"end_header" + std::string(PN) + "";
 
 				for (size_t i = 0; i < clusters.size(); ++i) {
 					for (typename Projected_points::const_iterator pit = clusters[i].begin(); pit != clusters[i].end(); ++pit)
@@ -614,20 +617,20 @@ namespace CGAL {
 
 		        // Compute scale.
 		        double scale = 1.0;
-		        if (std::sqrt((maxbX - minbX) * (maxbX - minbX) + (maxbY - minbY) * (maxbY - minbY)) < 10.0 && scale == 1.0) scale *= 1000.0;
+		        if (CGAL::sqrt((maxbX - minbX) * (maxbX - minbX) + (maxbY - minbY) * (maxbY - minbY)) < 10.0 && scale == 1.0) scale *= 1000.0;
 
 		        // Set header.
 		        set_header(minbX * scale, minbY * scale, maxbX * scale, maxbY * scale);
 
 		        // Start private namespace.
-		        out << "0 dict begin gsave\n\n";
+		        out << "0 dict begin gsave" + std::string(PN) + "" + std::string(PN) + "";
 
 		        // Save plot.
 		        draw_plot<FT, Point>(data, scale);
 
 		        // Finish private namespace.
-		        out << "grestore end\n\n";
-		        out << "%%EOF\n";
+		        out << "grestore end" + std::string(PN) + "" + std::string(PN) + "";
+		        out << "%%EOF" + std::string(PN) + "";
 
 		        save(name, ".eps");
 			}
@@ -649,16 +652,16 @@ namespace CGAL {
 				const size_t total_size = boundaries_projected.size();
 				
 				out << 
-				"ply\n"               	 << 
-				"format ascii 1.0\n"     << 
-				"element vertex "        << total_size << "\n" << 
-				"property double x\n"    << 
-				"property double y\n"    << 
-				"property double z\n" 	 <<
-				"property uchar red\n" 	 <<
-				"property uchar green\n" <<
-				"property uchar blue\n"  <<
-				"end_header\n";
+				"ply" + std::string(PN) + ""               	 << 
+				"format ascii 1.0" + std::string(PN) + ""     << 
+				"element vertex "        << total_size << "" + std::string(PN) + "" << 
+				"property double x" + std::string(PN) + ""    << 
+				"property double y" + std::string(PN) + ""    << 
+				"property double z" + std::string(PN) + "" 	 <<
+				"property uchar red" + std::string(PN) + "" 	 <<
+				"property uchar green" + std::string(PN) + "" <<
+				"property uchar blue" + std::string(PN) + ""  <<
+				"end_header" + std::string(PN) + "";
 
 				using Boundary_iterator = typename Boundary_data::const_iterator;
 
@@ -750,14 +753,14 @@ namespace CGAL {
 		        	const double x = static_cast<double>(i);
 		        	const double y = static_cast<double>(data[i]);
 
-		        	minbX = std::min(minbX, x);
-		        	minbY = std::min(minbY, y);
+		        	minbX = CGAL::min(minbX, x);
+		        	minbY = CGAL::min(minbY, y);
 
-		        	maxbX = std::max(maxbX, x);
-		        	maxbY = std::max(maxbY, y);
+		        	maxbX = CGAL::max(maxbX, x);
+		        	maxbY = CGAL::max(maxbY, y);
 		        }
 
-		        const double add = std::sqrt((maxbY - minbY) * (maxbY - minbY) + (maxbX - minbX) * (maxbX - minbX)) / 10.0;
+		        const double add = CGAL::sqrt((maxbY - minbY) * (maxbY - minbY) + (maxbX - minbX) * (maxbX - minbX)) / 10.0;
 		        
 		        minbX -= add; minbY -= add;
 		        maxbX += add; maxbY += add;
@@ -776,11 +779,11 @@ namespace CGAL {
 		        	const double x = static_cast<double>((*it).point().x());
 		        	const double y = static_cast<double>((*it).point().y());
 
-		        	minbX = std::min(minbX, x);
-		        	minbY = std::min(minbY, y);
+		        	minbX = CGAL::min(minbX, x);
+		        	minbY = CGAL::min(minbY, y);
 
-		        	maxbX = std::max(maxbX, x);
-		        	maxbY = std::max(maxbY, y);
+		        	maxbX = CGAL::max(maxbX, x);
+		        	maxbY = CGAL::max(maxbY, y);
 		        }
 			}
 
@@ -792,25 +795,25 @@ namespace CGAL {
 		        minbX =  big_value, minbY =  big_value;
 		        maxbX = -big_value, maxbY = -big_value;
 
-		        minbX = std::min(minbX, a.x()); minbY = std::min(minbY, a.y());
-		        maxbX = std::max(maxbX, a.x()); maxbY = std::max(maxbY, a.y());
+		        minbX = CGAL::min(minbX, a.x()); minbY = CGAL::min(minbY, a.y());
+		        maxbX = CGAL::max(maxbX, a.x()); maxbY = CGAL::max(maxbY, a.y());
 
-		        minbX = std::min(minbX, b.x()); minbY = std::min(minbY, b.y());
-		        maxbX = std::max(maxbX, b.x()); maxbY = std::max(maxbY, b.y());
+		        minbX = CGAL::min(minbX, b.x()); minbY = CGAL::min(minbY, b.y());
+		        maxbX = CGAL::max(maxbX, b.x()); maxbY = CGAL::max(maxbY, b.y());
 
-		        minbX = std::min(minbX, c.x()); minbY = std::min(minbY, c.y());
-		        maxbX = std::max(maxbX, c.x()); maxbY = std::max(maxbY, c.y());
+		        minbX = CGAL::min(minbX, c.x()); minbY = CGAL::min(minbY, c.y());
+		        maxbX = CGAL::max(maxbX, c.x()); maxbY = CGAL::max(maxbY, c.y());
 			}
 
 			void set_header(const double llx, const double lly, const double urx, const double ury) {
 		        
-		        out << "%!PS-Adobe-3.0 EPSF-3.0\n";
-		        out << "%%BoundingBox: " << llx << " " << lly << " " << urx << " " << ury << "\n";
-		        out << "%%Pages: 1\n";
-		        out << "%%Creator: Dmitry Anisimov, danston@ymail.com\n";
-		        out << "%%EndComments\n";
-		        out << "%%EndProlog\n\n";
-		        out << "%%Page: 1 1\n\n";
+		        out << "%!PS-Adobe-3.0 EPSF-3.0" + std::string(PN) + "";
+		        out << "%%BoundingBox: " << llx << " " << lly << " " << urx << " " << ury << "" + std::string(PN) + "";
+		        out << "%%Pages: 1" + std::string(PN) + "";
+		        out << "%%Creator: Dmitry Anisimov, danston@ymail.com" + std::string(PN) + "";
+		        out << "%%EndComments" + std::string(PN) + "";
+		        out << "%%EndProlog" + std::string(PN) + "" + std::string(PN) + "";
+		        out << "%%Page: 1 1" + std::string(PN) + "" + std::string(PN) + "";
 			}
 
 			template<class CDT>
@@ -818,21 +821,21 @@ namespace CGAL {
 
 				for (typename CDT::Finite_faces_iterator fit = cdt.finite_faces_begin(); fit != cdt.finite_faces_end(); ++fit) {
 
-					out << (*(*fit).vertex(0)).point().x() * scale << " " << (*(*fit).vertex(0)).point().y() * scale << " moveto\n";
-					out << (*(*fit).vertex(1)).point().x() * scale << " " << (*(*fit).vertex(1)).point().y() * scale << " lineto\n";
-					out << (*(*fit).vertex(2)).point().x() * scale << " " << (*(*fit).vertex(2)).point().y() * scale << " lineto\n";
-					out << (*(*fit).vertex(0)).point().x() * scale << " " << (*(*fit).vertex(0)).point().y() * scale << " lineto\n";
+					out << (*(*fit).vertex(0)).point().x() * scale << " " << (*(*fit).vertex(0)).point().y() * scale << " moveto" + std::string(PN) + "";
+					out << (*(*fit).vertex(1)).point().x() * scale << " " << (*(*fit).vertex(1)).point().y() * scale << " lineto" + std::string(PN) + "";
+					out << (*(*fit).vertex(2)).point().x() * scale << " " << (*(*fit).vertex(2)).point().y() * scale << " lineto" + std::string(PN) + "";
+					out << (*(*fit).vertex(0)).point().x() * scale << " " << (*(*fit).vertex(0)).point().y() * scale << " lineto" + std::string(PN) + "";
 
-					out << "closepath\n\n";
-					out << "gsave\n";
+					out << "closepath" + std::string(PN) + "" + std::string(PN) + "";
+					out << "gsave" + std::string(PN) + "";
 
 					/*
 					const double visibility = static_cast<double>(fit->info().in);
 					const double half = 0.5;
 
-					if (visibility > half) out << "0.2 1 0.2 setrgbcolor\n";	  // INSIDE
-					else if (visibility < half) out << "1 0.2 0.2 setrgbcolor\n"; // OUTSIDE
-					else out << "1 0.8 0 setrgbcolor\n";						  // UNKNOWN */
+					if (visibility > half) out << "0.2 1 0.2 setrgbcolor" + std::string(PN) + "";	  // INSIDE
+					else if (visibility < half) out << "1 0.2 0.2 setrgbcolor" + std::string(PN) + ""; // OUTSIDE
+					else out << "1 0.8 0 setrgbcolor" + std::string(PN) + "";						  // UNKNOWN */
 
 					CGAL::Color fc;
 
@@ -843,28 +846,28 @@ namespace CGAL {
 					const double g = static_cast<double>(fc.green()) / 255.0;
 					const double b = static_cast<double>(fc.blue())  / 255.0;
 
-					out << r << " " << g << " " << b << " setrgbcolor\n";
+					out << r << " " << g << " " << b << " setrgbcolor" + std::string(PN) + "";
 
-					out << "fill\n";
-					out << "grestore\n";
-					out << "0 0 0 setrgbcolor\n";
-					out << "0.5 setlinewidth\n";
-		        	out << "stroke\n\n";
+					out << "fill" + std::string(PN) + "";
+					out << "grestore" + std::string(PN) + "";
+					out << "0 0 0 setrgbcolor" + std::string(PN) + "";
+					out << "0.5 setlinewidth" + std::string(PN) + "";
+		        	out << "stroke" + std::string(PN) + "" + std::string(PN) + "";
 				}
     		}
 
     		template<class Point>
     		void draw_triangle_with_points(const Point &a, const Point &b, const Point &c, const std::vector<Point> &samples, const double scale) {
 
-    			out << a.x() * scale << " " << a.y() * scale << " moveto\n";
-    			out << b.x() * scale << " " << b.y() * scale << " lineto\n";
-    			out << c.x() * scale << " " << c.y() * scale << " lineto\n";
-    			out << a.x() * scale << " " << a.y() * scale << " lineto\n";
+    			out << a.x() * scale << " " << a.y() * scale << " moveto" + std::string(PN) + "";
+    			out << b.x() * scale << " " << b.y() * scale << " lineto" + std::string(PN) + "";
+    			out << c.x() * scale << " " << c.y() * scale << " lineto" + std::string(PN) + "";
+    			out << a.x() * scale << " " << a.y() * scale << " lineto" + std::string(PN) + "";
 
-				out << "closepath\n\n";
-				out << "0 0 0 setrgbcolor\n";
-				out << "2 setlinewidth\n";
-		        out << "stroke\n\n";
+				out << "closepath" + std::string(PN) + "" + std::string(PN) + "";
+				out << "0 0 0 setrgbcolor" + std::string(PN) + "";
+				out << "2 setlinewidth" + std::string(PN) + "";
+		        out << "stroke" + std::string(PN) + "" + std::string(PN) + "";
 
 				for (size_t i = 0; i < samples.size(); ++i) draw_disc(samples[i], scale);
     		}
@@ -877,13 +880,13 @@ namespace CGAL {
     		template<class Point>
     		void draw_disc(const Point &p, const double scale) {
 
-		        out << "0 setgray\n";
-		        out << "0 setlinewidth\n\n";
-		        out << p.x() * scale << " " << p.y() * scale << " " << 10 << " 0 360 arc closepath\n\n";
-		        out << "gsave\n";
-		        out << "0 setgray fill\n";
-		        out << "grestore\n";
-		        out << "stroke\n\n";
+		        out << "0 setgray" + std::string(PN) + "";
+		        out << "0 setlinewidth" + std::string(PN) + "" + std::string(PN) + "";
+		        out << p.x() * scale << " " << p.y() * scale << " " << 10 << " 0 360 arc closepath" + std::string(PN) + "" + std::string(PN) + "";
+		        out << "gsave" + std::string(PN) + "";
+		        out << "0 setgray fill" + std::string(PN) + "";
+		        out << "grestore" + std::string(PN) + "";
+		        out << "stroke" + std::string(PN) + "" + std::string(PN) + "";
     		}
 
     		template<class Segments>
@@ -893,14 +896,14 @@ namespace CGAL {
     			for (size_t i = 0; i < segments.size(); ++i) {
 
     				for (size_t j = 0; j < segments[i].size() - 1; ++j) {
-    					out << segments[i][j].x() * scale     << " " << segments[i][j].y() * scale     << " moveto\n";
-    					out << segments[i][j + 1].x() * scale << " " << segments[i][j + 1].y() * scale << " lineto\n";
+    					out << segments[i][j].x() * scale     << " " << segments[i][j].y() * scale     << " moveto" + std::string(PN) + "";
+    					out << segments[i][j + 1].x() * scale << " " << segments[i][j + 1].y() * scale << " lineto" + std::string(PN) + "";
     				}
     			}
 
-    			out << "0 0 0 setgray\n";
-    			out << "2 setlinewidth\n";
-    			out << "stroke\n\n";
+    			out << "0 0 0 setgray" + std::string(PN) + "";
+    			out << "2 setlinewidth" + std::string(PN) + "";
+    			out << "stroke" + std::string(PN) + "" + std::string(PN) + "";
     		}
 
     		template<class FT, class Point>
@@ -915,42 +918,42 @@ namespace CGAL {
     				x2 = static_cast<double>(i + 1); 
     				y2 = static_cast<double>(data[i + 1]);
 
-    				out << x1 * scale << " " << y1 * scale << " moveto\n";
-    				out << x2 * scale << " " << y2 * scale << " lineto\n";
+    				out << x1 * scale << " " << y1 * scale << " moveto" + std::string(PN) + "";
+    				out << x2 * scale << " " << y2 * scale << " lineto" + std::string(PN) + "";
 
-    				miny = std::min(miny, y1);
-    				miny = std::min(miny, y2);
+    				miny = CGAL::min(miny, y1);
+    				miny = CGAL::min(miny, y2);
     			}
 
-    			out << "1 0 0 setrgbcolor\n";
-    			out << "10 setlinewidth\n";
-    			out << "stroke\n\n";
+    			out << "1 0 0 setrgbcolor" + std::string(PN) + "";
+    			out << "10 setlinewidth" + std::string(PN) + "";
+    			out << "stroke" + std::string(PN) + "" + std::string(PN) + "";
 
     			for (size_t i = 0; i < data.size() - 1; ++i) {
 
     				x1 = static_cast<double>(i); 
     				x2 = static_cast<double>(i + 1); 
 
-					out << x1 * scale << " " << miny * scale << " moveto\n";
-    				out << x2 * scale << " " << miny * scale << " lineto\n";  				
+					out << x1 * scale << " " << miny * scale << " moveto" + std::string(PN) + "";
+    				out << x2 * scale << " " << miny * scale << " lineto" + std::string(PN) + "";  				
     			}
 
-    			out << "0 0 0 setgray\n";
-    			out << "10 setlinewidth\n";
-    			out << "stroke\n\n";
+    			out << "0 0 0 setgray" + std::string(PN) + "";
+    			out << "10 setlinewidth" + std::string(PN) + "";
+    			out << "stroke" + std::string(PN) + "" + std::string(PN) + "";
 
     			for (size_t i = 0; i < data.size() - 1; ++i) {
 
     				y1 = static_cast<double>(data[i]); 
     				y2 = static_cast<double>(data[i + 1]); 
 
-					out << 0.0 * scale << " " << y1 * scale << " moveto\n";
-    				out << 0.0 * scale << " " << y2 * scale << " lineto\n";  				
+					out << 0.0 * scale << " " << y1 * scale << " moveto" + std::string(PN) + "";
+    				out << 0.0 * scale << " " << y2 * scale << " lineto" + std::string(PN) + "";  				
     			}
 
-    			out << "0 0 0 setgray\n";
-    			out << "10 setlinewidth\n";
-    			out << "stroke\n\n";
+    			out << "0 0 0 setgray" + std::string(PN) + "";
+    			out << "10 setlinewidth" + std::string(PN) + "";
+    			out << "stroke" + std::string(PN) + "" + std::string(PN) + "";
 
     			FT x, y; Point p;
     			for (size_t i = 0; i < data.size(); ++i) {

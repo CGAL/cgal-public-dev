@@ -1,6 +1,14 @@
 #ifndef CGAL_LEVEL_OF_DETAIL_LOADER_H
 #define CGAL_LEVEL_OF_DETAIL_LOADER_H
 
+#if defined(WIN32) || defined(_WIN32) 
+#define PS "\\"
+#define PN "\r\n"
+#else 
+#define PS "/" 
+#define PN "\n"
+#endif
+
 // STL includes.
 #include <string>
 #include <iostream>
@@ -54,7 +62,7 @@ namespace CGAL {
             	std::ifstream loader(filePath.c_str(), std::ios_base::in);
 
             	if (!loader) {
-                	std::cerr << "\n\nERROR: Error loading file with LOD data!\n\n";
+                	std::cerr << "" + std::string(PN) + "" + std::string(PN) + "ERROR: Error loading file with LOD data!" + std::string(PN) + "" + std::string(PN) + "";
                 	exit(EXIT_FAILURE);
             	}
 

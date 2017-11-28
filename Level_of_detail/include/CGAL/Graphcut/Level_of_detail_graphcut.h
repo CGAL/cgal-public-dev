@@ -188,7 +188,7 @@ namespace CGAL {
 			}
 
 			FT tanh_adapter(const FT value) const {
-				return FT(1) / FT(2) + tanh(value * FT(8) - FT(4)) / FT(2);
+				return FT(1) / FT(2) + FT(std::tanh(double(value * FT(8) - FT(4)))) / FT(2);
 			}
 
 			FT get_graph_node_weight() const {

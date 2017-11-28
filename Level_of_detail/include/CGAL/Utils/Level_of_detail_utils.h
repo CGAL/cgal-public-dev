@@ -805,10 +805,10 @@ namespace CGAL {
 
 					// Rotate segments if needed.
 					const auto eps = FT(1) / FT(1000000);
-					if ((v1.y() < FT(0) && v2.y() >= FT(0) && std::fabs(v1.y() - v2.y()) > eps) ||
-						(v2.y() < FT(0) && v1.y() >= FT(0) && std::fabs(v1.y() - v2.y()) > eps) ||
-						(v1.x() < FT(0) && v2.x() >= FT(0) && std::fabs(v1.x() - v2.x()) > eps) ||
-						(v2.x() < FT(0) && v1.x() >= FT(0) && std::fabs(v1.x() - v2.x()) > eps)) {
+					if ((v1.y() < FT(0) && v2.y() >= FT(0) && CGAL::abs(v1.y() - v2.y()) > eps) ||
+						(v2.y() < FT(0) && v1.y() >= FT(0) && CGAL::abs(v1.y() - v2.y()) > eps) ||
+						(v1.x() < FT(0) && v2.x() >= FT(0) && CGAL::abs(v1.x() - v2.x()) > eps) ||
+						(v2.x() < FT(0) && v1.x() >= FT(0) && CGAL::abs(v1.x() - v2.x()) > eps)) {
 
 						segments[number_of_segments] = Segment_2(Point_2(minx, maxy), Point_2(maxx, miny));
 					}

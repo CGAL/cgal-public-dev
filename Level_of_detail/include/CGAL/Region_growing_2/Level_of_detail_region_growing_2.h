@@ -2,9 +2,11 @@
 #define CGAL_LEVEL_OF_DETAIL_REGION_GROWING_2_H
 
 #if defined(WIN32) || defined(_WIN32) 
-#define PS "\\" 
+#define PS "\\"
+#define PN "\r\n"
 #else 
 #define PS "/" 
+#define PN "\n"
 #endif 
 
 // STL includes.
@@ -346,7 +348,7 @@ namespace CGAL {
 				// Save log.
 				if (m_save_info) {
 
-					log.out << "\nSorted indices (" << sorted_indices.size() << ") : ";
+					log.out << "" + std::string(PN) + "Sorted indices (" << sorted_indices.size() << ") : ";
 					for (size_t i = 0; i < sorted_indices.size(); ++i) log.out << sorted_indices[i] << " ";
 					log.out << std::endl;
 				}
@@ -368,7 +370,7 @@ namespace CGAL {
 				// Save log.
 				if (m_save_info) {
 
-					log.out << "\nUnsorted indices (" << sorted_indices.size() << ") : ";
+					log.out << "" + std::string(PN) + "Unsorted indices (" << sorted_indices.size() << ") : ";
 					for (size_t i = 0; i < sorted_indices.size(); ++i) log.out << sorted_indices[i] << " ";
 					log.out << std::endl;
 				}
@@ -395,13 +397,13 @@ namespace CGAL {
 				std::vector<int> index_container;
 
 				Log internal;
-				if (m_save_info) internal.out << "\nMain loop\n" <<std::endl;
+				if (m_save_info) internal.out << "" + std::string(PN) + "Main loop" + std::string(PN) + "" <<std::endl;
 
 
 				// Main loop.
 				int class_index = -1;
       			for (size_t i = 0; i < sorted_indices.size(); ++i) {
-      				if (m_save_info) internal.out<< "\nSorted index: " << i << std::endl << std::endl;
+      				if (m_save_info) internal.out<< "" + std::string(PN) + "Sorted index: " << i << std::endl << std::endl;
       				
       				const int point_index = sorted_indices[i];
       				if (shape_index[point_index] >= 0) continue;
@@ -458,7 +460,7 @@ namespace CGAL {
 				// Save found shape indices.
 				if (m_save_info) {
 
-					log.out << "\nShape indices (" << shape_index.size() << ") :";
+					log.out << "" + std::string(PN) + "Shape indices (" << shape_index.size() << ") :";
 					for (size_t i = 0; i < shape_index.size(); ++i) log.out << shape_index[i] << " ";
 					log.out << std::endl;
 				}
@@ -483,7 +485,7 @@ namespace CGAL {
 
         		// Main loop.
         		if (m_save_info) {
-        			log.out << "Propagation:\n" << std::endl;
+        			log.out << "Propagation:" + std::string(PN) + "" << std::endl;
 					log.out << "line: " << optimal_line.point(0) << " -- " << optimal_line.point(1) 
 							<< "; norm: " << line_normal << " with neighbours: " << std::endl;
 				}
@@ -549,7 +551,7 @@ namespace CGAL {
 					const FT squared_distance = compute_squared_distance_to_the_line(neighbour_pos, optimal_line);
 					const FT cos_angle 		  = CGAL::abs(neighbour_norm * line_normal);
 
-					if (m_save_info) log.out << "\npos: "     << neighbour_pos 
+					if (m_save_info) log.out << "" + std::string(PN) + "pos: "     << neighbour_pos 
 											 << ", norm: "    << neighbour_norm 
 											 << ", sq dist: " << squared_distance 
 											 << ", cos: "     << cos_angle;

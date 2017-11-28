@@ -1,3 +1,11 @@
+#if defined(WIN32) || defined(_WIN32) 
+#define PS "\\"
+#define PN "\r\n"
+#else 
+#define PS "/" 
+#define PN "\n"
+#endif
+
 // STL includes.
 #include <string>
 #include <iostream>
@@ -143,12 +151,12 @@ int main(int argc, char** argv) {
 	parameters["-gc_gamma"] = "default";
 
 	if (argc % 2 != 0) {
-		std::cout << "\nUser defined parameter values: " << std::endl;
+		std::cout << "" + std::string(PN) + "User defined parameter values: " << std::endl;
 
 		for (int i = 1; i < argc; i += 2)
 			parameters[argv[i]] = argv[i + 1];
 
-	} else std::cout << "\nMissing parameter values. Check your input!" << std::endl;
+	} else std::cout << "" + std::string(PN) + "Missing parameter values. Check your input!" << std::endl;
 
 
 	// Set user defined parameters.

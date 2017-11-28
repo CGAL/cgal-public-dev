@@ -1,3 +1,11 @@
+#if defined(WIN32) || defined(_WIN32) 
+#define PS "\\"
+#define PN "\r\n"
+#else 
+#define PS "/" 
+#define PN "\n"
+#endif
+
 // Google test includes.
 #include "gmock/gmock.h"
 
@@ -40,7 +48,7 @@ TEST_F(MyLogTest, SavesMultipleLinesToTheFile) {
 	auto doubleValue = 34.5;
 	auto stringValue = ": double";
 
-	log.out << intValue    << "\n"
+	log.out << intValue    << "" + std::string(PN) + ""
 			<< doubleValue << " "
 			<< stringValue << std::endl;
 
@@ -52,7 +60,7 @@ TEST_F(MyLogTest, SavesMultipleLinesToTheFile) {
 TEST_F(MyLogTest, ClearsData) {
 	
 	log.out << "some data" << std::endl;
-	log.append("some other data\n");
+	log.append("some other data" + std::string(PN) + "");
 
 	log.clear();
 

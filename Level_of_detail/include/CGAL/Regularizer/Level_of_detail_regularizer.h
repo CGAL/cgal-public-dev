@@ -138,7 +138,7 @@ namespace CGAL {
 				const auto length = CGAL::sqrt(squared_length(cross));
 				const auto dot    = dot_product(m, n);
 
-				rad_angle = std::atan2(length, dot) - (FT(CGAL_PI) / FT(2.0));
+				rad_angle = FT(std::atan2(double(length), double(dot))) - (FT(CGAL_PI) / FT(2));
 				axis = cross / length;
 
 				const FT deg_angle = CGAL::abs(rad_angle * FT(180) / FT(CGAL_PI));
