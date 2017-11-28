@@ -2,13 +2,13 @@ project(lod)
 cmake_minimum_required(VERSION 2.6)
 
 find_package(CGAL REQUIRED)
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 11)
 
 if (CGAL_FOUND)
 	include(${CGAL_USE_FILE})
 
 	include_directories(BEFORE "../../../../include" "C:/dev/") 
-	set(CMAKE_CXX_FLAGS "${CMAXE_CXX_FLAGS}")
+	set(CMAKE_CXX_FLAGS "${CMAXE_CXX_FLAGS} /EHsc")
 
 	set(sources main.cpp)
 	add_executable(lod ${sources})
