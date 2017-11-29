@@ -17,6 +17,7 @@
 #include <CGAL/IO/Color.h>
 #include <CGAL/Random.h>
 #include <CGAL/Unique_hash_map.h>
+#include <CGAL/number_utils.h>
 
 // New CGAL includes.
 #include <CGAL/Mylog/Mylog.h>
@@ -54,7 +55,11 @@ namespace CGAL {
 				Color color = Color(192, 192, 192);
 			};
 
-			Level_of_detail_building_splitter_2() { }
+			Level_of_detail_building_splitter_2() : m_silent(false) { }
+
+			void make_silent(const bool new_state) {
+				m_silent = new_state;
+			}
 
 			int split(CDT &cdt, Buildings &buildings) { 
 				
@@ -77,12 +82,13 @@ namespace CGAL {
 				const int number_of_buildings = static_cast<int>(buildings.size());
 				assert(number_of_buildings >= 0);
 
+				if (!m_silent) {
+					Log log;
+					log.save_cdt_ply(cdt, "tmp" + std::string(PS) + "buildings", "bu");
+				}
 
 				// Remove later.
 				/*
-				Log log;
-				log.save_cdt_ply(cdt, "tmp" + std::string(PS) + "buildings", "bu");
-
 				log.clear();
 				log.save_buildings_info(cdt, buildings, "tmp" + std::string(PS) + "buildings_info"); */
 
@@ -91,6 +97,7 @@ namespace CGAL {
 
 		private:
 			CGAL::Random m_rand;
+			bool m_silent;
 
 			void generate_new_building(Building_data &bd) {
 
@@ -104,7 +111,7 @@ namespace CGAL {
 				const FT g = m_rand.get_int(0, 256);
 				const FT b = m_rand.get_int(0, 256);
 
-				return Color(r, g, b);
+				return Color(CGAL::to_double(r), CGAL::to_double(g), CGAL::to_double(b));
 			}
 
 			void flood(const CDT &cdt, const Building_data &bd, Face_handle &fh, Buildings &buildings) const {

@@ -778,8 +778,8 @@ namespace CGAL {
 
 		        for (typename CDT::Finite_vertices_iterator it = cdt.finite_vertices_begin(); it != cdt.finite_vertices_end(); ++it) {
 
-		        	const double x = static_cast<double>((*it).point().x());
-		        	const double y = static_cast<double>((*it).point().y());
+		        	const double x = CGAL::to_double((*it).point().x());
+		        	const double y = CGAL::to_double((*it).point().y());
 
 		        	minbX = CGAL::min(minbX, x);
 		        	minbY = CGAL::min(minbY, y);

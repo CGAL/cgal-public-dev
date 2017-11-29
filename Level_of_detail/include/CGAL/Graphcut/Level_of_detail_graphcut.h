@@ -62,9 +62,14 @@ namespace CGAL {
 			m_beta(FT(100000)), 
 			m_gamma(FT(1000)), 
 			m_save_info(true),
-			m_node_value_adapter(Node_value_adapter::NO_ADAPTER) { 
+			m_node_value_adapter(Node_value_adapter::NO_ADAPTER),
+			m_silent(false) { 
 
 				set_coherence_dictionary();
+			}
+
+			void make_silent(const bool new_state) {
+				m_silent = new_state;
 			}
 
 			void set_alpha_parameter(const FT alpha) {
@@ -100,8 +105,10 @@ namespace CGAL {
 				extract_solution(pNodes, graph, cdt);
 
 				// Remove later.
-				Log log;
-				log.save_visibility_eps(cdt, "tmp" + std::string(PS) + "after_cut");
+				if (!m_silent) {
+					Log log;
+					log.save_visibility_eps(cdt, "tmp" + std::string(PS) + "after_cut");
+				}
 
 				// Cleanup.
 				delete graph;
@@ -119,6 +126,7 @@ namespace CGAL {
 			bool m_save_info;
 
 			const Node_value_adapter m_node_value_adapter;
+			bool m_silent;
 
 			void set_coherence_dictionary() {
 
@@ -157,7 +165,7 @@ namespace CGAL {
 					const FT cost_in  = get_graph_node_cost(in);  // here we add bigger value for the desirable outcome
 					const FT cost_out = get_graph_node_cost(out); // e.g. if we want in (or SOURCE) then the cost_in with bigger value is favourable
 
-					graph->add_tweights(pNodes[index], cost_in, cost_out);
+					graph->add_tweights(pNodes[index], CGAL::to_double(cost_in), CGAL::to_double(cost_out));
 
 					if (m_save_info) {
 						log.out << "in: " << cost_in << "; out: " << cost_out << std::endl;
@@ -188,7 +196,7 @@ namespace CGAL {
 			}
 
 			FT tanh_adapter(const FT value) const {
-				return FT(1) / FT(2) + FT(std::tanh(double(value * FT(8) - FT(4)))) / FT(2);
+				return FT(1) / FT(2) + static_cast<FT>(std::tanh(CGAL::to_double(value * FT(8) - FT(4)))) / FT(2);
 			}
 
 			FT get_graph_node_weight() const {
@@ -292,7 +300,7 @@ namespace CGAL {
 				const int index_1 = nodes_map.at(face_1);
 				const int index_2 = nodes_map.at(face_2);
 
-				graph->add_edge(pNodes[index_1], pNodes[index_2], cost_value, cost_value);
+				graph->add_edge(pNodes[index_1], pNodes[index_2], CGAL::to_double(cost_value), CGAL::to_double(cost_value));
 
 				if (m_save_info) log.out << "Final edge: " << cost_value << " < === > " << cost_value << std::endl;
 			}
@@ -313,7 +321,7 @@ namespace CGAL {
 			}
 
 			FT compute_edge_weight(const Edge &edge) const {
-				return CGAL::sqrt(edge.squared_length());
+				return static_cast<FT>(CGAL::sqrt(CGAL::to_double(edge.squared_length())));
 			}
 
 			Edge_coherence find_edge_coherence(const CDT &cdt, const Edge_iterator &edge_handle) const {
@@ -436,11 +444,11 @@ namespace CGAL {
 
 				const Vector_2 edge_vector  = Vector_2(edge.source(), edge.target());
 				Vector_2 edge_normal        = edge_vector.perpendicular(rotate ? CGAL::CLOCKWISE : CGAL::COUNTERCLOCKWISE);
-				edge_normal 		       /= CGAL::sqrt(edge_normal * edge_normal);
+				edge_normal 		       /= static_cast<FT>(CGAL::sqrt(CGAL::to_double(edge_normal * edge_normal)));
 
 				const Point_2 circumcentre      = CGAL::circumcenter(a, b, c);
 				Vector_2 circle_tangent_normal  = Vector_2(a, circumcentre);
-				circle_tangent_normal          /= CGAL::sqrt(circle_tangent_normal * circle_tangent_normal);
+				circle_tangent_normal          /= static_cast<FT>(CGAL::sqrt(CGAL::to_double(circle_tangent_normal * circle_tangent_normal)));
 
 				return rotate ? (edge_normal * circle_tangent_normal) : (circle_tangent_normal * edge_normal);
 			}

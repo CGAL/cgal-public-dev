@@ -21,6 +21,9 @@
 #include <CGAL/Level_of_detail_traits.h>
 #include <CGAL/Base/Level_of_detail_base.h>
 
+// using Kernel     = CGAL::Simple_cartesian<double>;
+// using Kernel     = CGAL::Exact_predicates_inexact_constructions_kernel;
+
 using Kernel     = CGAL::Exact_predicates_inexact_constructions_kernel;
 using FT 		 = Kernel::FT;
 using Point      = Kernel::Point_3;
@@ -31,6 +34,15 @@ using Parameters = std::map<std::string, std::string>;
 
 
 void set_user_defined_parameters(const Parameters &parameters, LodBase &lodBase) {
+
+	// Output.
+	if (parameters.at("-silent") != "default") {
+
+		const bool silent = static_cast<bool>( std::stoi(parameters.at("-silent").c_str()) );
+		std::cout << "use silent mode (0 - false, 1 - true): " << silent << std::endl;
+		lodBase.make_silent(silent);
+	}
+
 
 	// Clutter.
 	if (parameters.at("-clutter") != "default") {
@@ -96,7 +108,7 @@ void set_user_defined_parameters(const Parameters &parameters, LodBase &lodBase)
 	if (parameters.at("-str_all") != "default") {
 
 		const bool str_all = static_cast<bool>( std::stoi(parameters.at("-str_all").c_str()) );
-		std::cout << "structuring get all points: " << str_all << std::endl;
+		std::cout << "structuring get all points (0 - false, 1 - true): " << str_all << std::endl;
 		lodBase.get_all_structuring_points(str_all);
 	}
 
@@ -136,6 +148,8 @@ int main(int argc, char** argv) {
 
     // Input with parameters.
     Parameters parameters;
+    parameters["-silent"] = "default";
+
     parameters["-clutter"] = "default";
     parameters["-cell"]    = "default";
 

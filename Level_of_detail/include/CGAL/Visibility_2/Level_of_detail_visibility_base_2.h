@@ -99,8 +99,8 @@ namespace CGAL {
 				if (scale_in  < scale_thres) scale_in  = scale_thres;
 				if (scale_out < scale_thres) scale_out = scale_thres;
 
-				if (visibility > half)      return VColor(51 * scale_in, 255 * scale_in, 51 * scale_in);  	 // INSIDE
-				else if (visibility < half) return VColor(255 * scale_out, 51 * scale_out, 51 * scale_out); // OUTSIDE
+				if (visibility > half)      return VColor(51 * CGAL::to_double(scale_in), 255 * CGAL::to_double(scale_in), 51 * CGAL::to_double(scale_in));    // INSIDE
+				else if (visibility < half) return VColor(255 * CGAL::to_double(scale_out), 51 * CGAL::to_double(scale_out), 51 * CGAL::to_double(scale_out)); // OUTSIDE
 									  
 				return VColor(255, 204, 0); // UNKNOWN
 			}
@@ -137,8 +137,8 @@ namespace CGAL {
 					Vector_2 ba = Vector_2(b, a);
 					Vector_2 bc = Vector_2(b, c);
 
-					ba /= CGAL::sqrt(ba.squared_length());
-					bc /= CGAL::sqrt(bc.squared_length());
+					ba /= static_cast<FT>(CGAL::sqrt(CGAL::to_double(ba.squared_length())));
+					bc /= static_cast<FT>(CGAL::sqrt(CGAL::to_double(bc.squared_length())));
 
 					const FT prod = dot_product(bc, ba);
 

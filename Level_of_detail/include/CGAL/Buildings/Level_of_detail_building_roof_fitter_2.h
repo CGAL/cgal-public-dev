@@ -105,7 +105,7 @@ namespace CGAL {
 
 						// const FT height = p.z(); // works only with the max height fitter
 
-						const FT height = CGAL::sqrt(CGAL::squared_distance(p, q));
+						const FT height = static_cast<FT>(CGAL::sqrt(CGAL::to_double(CGAL::squared_distance(p, q))));
 
 						if (is_valid_value(height)) m_fitter.add_height(height);
 					}
@@ -113,7 +113,7 @@ namespace CGAL {
 			}
 
 			bool is_valid_value(const FT value) {
-				return std::isfinite(value);
+				return std::isfinite(CGAL::to_double(value));
 			}
 
 			bool is_valid_face(const Face_points_map &fp_map, const Face_handle &fh) {

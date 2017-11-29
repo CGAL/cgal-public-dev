@@ -134,14 +134,14 @@ namespace CGAL {
 
 			Regularization_status check_status(const Normal &m, const Normal &n, FT &rad_angle, Vector &axis) {
 
-				const auto cross  = cross_product(m, n);
-				const auto length = CGAL::sqrt(squared_length(cross));
-				const auto dot    = dot_product(m, n);
+				const auto cross = cross_product(m, n);
+				const FT length  = static_cast<FT>(CGAL::sqrt(CGAL::to_double(squared_length(cross))));
+				const FT dot     = dot_product(m, n);
 
-				rad_angle = FT(std::atan2(double(length), double(dot))) - (FT(CGAL_PI) / FT(2));
+				rad_angle = static_cast<FT>(std::atan2(CGAL::to_double(length), CGAL::to_double(dot))) - (static_cast<FT>(CGAL_PI) / FT(2));
 				axis = cross / length;
 
-				const FT deg_angle = CGAL::abs(rad_angle * FT(180) / FT(CGAL_PI));
+				const FT deg_angle = CGAL::abs(rad_angle * FT(180) / static_cast<FT>(CGAL_PI));
 
 				if (deg_angle < FT(1)) return Regularization_status::NOACTION;
 				else if (deg_angle < m_max_reg_angle) return Regularization_status::REGULARIZE;
@@ -151,12 +151,12 @@ namespace CGAL {
 
 			void rotate_plane(const Const_iterator &it, const FT &rad_angle, const Vector &axis, Container &input) {
 
-				const double angle = static_cast<double>(rad_angle);
+				const double angle = CGAL::to_double(rad_angle);
 
-				const auto c = static_cast<FT>(std::cos(angle));
-				const auto s = static_cast<FT>(std::sin(angle));
+				const FT c = static_cast<FT>(std::cos(angle));
+				const FT s = static_cast<FT>(std::sin(angle));
 
-				const auto C = FT(1) - c;
+				const FT C = FT(1) - c;
 
 				// Plane_map planes;
 				// boost::tie(planes, boost::tuples::ignore) = input. template property_map<Plane>("plane");

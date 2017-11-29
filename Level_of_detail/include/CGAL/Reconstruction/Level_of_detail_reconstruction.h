@@ -250,7 +250,7 @@ namespace CGAL {
 				const FT g = m_rand.get_int(0, 256);
 				const FT b = m_rand.get_int(0, 256);
 
-				return Color(r, g, b);
+				return Color(CGAL::to_double(r), CGAL::to_double(g), CGAL::to_double(b));
 			}
 
 			void build_from_cdt_and_buildings_lod1(Builder &builder) {

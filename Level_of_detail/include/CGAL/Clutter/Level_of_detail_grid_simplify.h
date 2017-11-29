@@ -81,10 +81,15 @@ namespace CGAL {
 			Level_of_detail_grid_simplify() : 
 			m_grid_cell_length(FT(1) / FT(100)),
 			m_new_point_type(Grid_new_point_type::BARYCENTRE),
-			m_save_result(true) { }
+			m_save_result(true),
+			m_silent(false) { }
 
 
-			// Input functions.		
+			// Input functions.	
+			void make_silent(const bool new_state) {
+				m_silent = new_state;
+			}
+
 			void set_grid_cell_length(const FT new_cell_length) {
 
 				assert(new_cell_length > FT(0));
@@ -120,7 +125,7 @@ namespace CGAL {
 				boundary_clutter_projected = cleaned_points;
 
 				assert(number_of_removed_points >= 0);
-				if (m_save_result) {
+				if (m_save_result && !m_silent) {
 					
 					Log log; 
 					log.export_projected_points_as_xyz("tmp" + std::string(PS) + "grid_simplify_result", boundary_clutter_projected, "unused path");	
@@ -135,6 +140,7 @@ namespace CGAL {
 			FT 			   		m_grid_cell_length;
 			Grid_new_point_type m_new_point_type;
 			bool 			    m_save_result;
+			bool 				m_silent;
 
 
 		// Grid simplify.
@@ -167,7 +173,7 @@ namespace CGAL {
 			int get_id_value(const FT value) const {
 
 				assert(m_grid_cell_length > FT(0));
-				const int id = static_cast<int>(value / m_grid_cell_length);
+				const int id = static_cast<int>(CGAL::to_double(value / m_grid_cell_length));
 
 				if (value >= 0) return id;
 				return id - 1;
@@ -273,7 +279,7 @@ namespace CGAL {
 				for (size_t i = 0; i < num_point_idxs; ++i) {
 					
 					const Point_2 &old_point = boundary_clutter_projected.at(point_idxs[i]);
-					const FT dist = CGAL::sqrt(squared_distance(old_point, barycentre));
+					const FT dist = static_cast<FT>(CGAL::sqrt(CGAL::to_double(squared_distance(old_point, barycentre))));
 
 					if (dist < min_dist) {
 						

@@ -21,6 +21,8 @@ C --------
 a. LOD_DATA_PATH - path to the "data" folder above
 b. LOD_LOG_PATH - path to the "logs" folder above
 
+2. I need to open "CMakeLists.txt" in the Pierre folder and possibly outcomment the Windows options
+
 D --------
 
 Now, I go to the folder "tdd-build"

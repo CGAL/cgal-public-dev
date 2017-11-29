@@ -103,11 +103,15 @@ namespace CGAL {
 			m_points(points), m_cc(components), m_lines(lines), m_tol(FT(1) / FT(10000)), m_big_value(FT(1000000)), 
 			m_eps_set(false), m_save_log(true), m_resample(true), m_empty(true), m_corner_algorithm(Structuring_corner_algorithm::GRAPH_BASED),
 			m_adjacency_threshold_method(Structuring_adjacency_threshold_method::LOCAL), m_adjacency_threshold(-FT(1)),
-			m_min_seg_points(2), m_max_neigh_segments(4), m_use_global_everywhere(true) {
+			m_min_seg_points(2), m_max_neigh_segments(4), m_use_global_everywhere(true), m_silent(false) {
 
 				assert(components.size() == lines.size());
 			}
 
+
+			void make_silent(const bool new_state) {
+				m_silent = new_state;
+			}
 
 			void save_log(const bool new_state) {
 				m_save_log = new_state;
@@ -320,6 +324,8 @@ namespace CGAL {
 			size_t m_max_neigh_segments;
 			bool m_use_global_everywhere;
 
+			bool m_silent;
+
 
 			void project() {
 
@@ -343,8 +349,8 @@ namespace CGAL {
 						const Point &p = m_points.at(index);
 						m_projected[index] = project_onto_a_line(p, m_lines[number_of_lines]);
 
-						assert(!std::isnan(m_projected.at(index).x()) && !std::isnan(m_projected.at(index).y()));
-						assert(!std::isinf(m_projected.at(index).x()) && !std::isinf(m_projected.at(index).y()));
+						assert(!std::isnan(CGAL::to_double(m_projected.at(index).x())) && !std::isnan(CGAL::to_double(m_projected.at(index).y())));
+						assert(!std::isinf(CGAL::to_double(m_projected.at(index).x())) && !std::isinf(CGAL::to_double(m_projected.at(index).y())));
 
 						if (m_save_log) log.out << "index: " << index << ", " << m_projected.at(index) << std::endl;
 					}
@@ -366,7 +372,7 @@ namespace CGAL {
 
 				const auto projected = a + dot_product(p - a, b - a) / dot_product(b - a, b - a) * (b - a);
 				
-				if (std::isnan(projected.x()) || std::isnan(projected.y())) return line.projection(p);
+				if (std::isnan(CGAL::to_double(projected.x())) || std::isnan(CGAL::to_double(projected.y()))) return line.projection(p);
 				else return projected;
 			}
 
@@ -403,7 +409,7 @@ namespace CGAL {
 						const Point &p = m_points.at(index);
 						const Point &q = m_projected.at(index);
 
-						const auto dist = CGAL::sqrt(squared_distance(p, q));
+						const FT dist = static_cast<FT>(CGAL::sqrt(CGAL::to_double(squared_distance(p, q))));
 
 						m_min_dist[number_of_components] = CGAL::min(m_min_dist[number_of_components], dist);
 						m_avg_dist[number_of_components] += dist;
@@ -537,13 +543,13 @@ namespace CGAL {
 				const auto number_of_segments = m_segments.size();
 				for (size_t i = 0; i < number_of_segments; ++i) {
 
-					const auto seg_length = CGAL::sqrt(m_segments[i].squared_length());
+					const FT seg_length = static_cast<FT>(CGAL::sqrt(CGAL::to_double(m_segments[i].squared_length())));
 					
-					const auto upper_bound = CGAL::sqrt(FT(2)) * m_eps[i];
+					const FT upper_bound = static_cast<FT>(CGAL::sqrt(2.0)) * m_eps[i];
 
 					const auto initial = upper_bound / FT(2);
 
-					const auto times = std::floor(seg_length / initial);
+					const int times = static_cast<int>(std::floor(CGAL::to_double(seg_length / initial)));
 
 					const auto rest = seg_length - times * initial;
 
@@ -677,9 +683,9 @@ namespace CGAL {
 				if (CGAL::abs(target.x() - p.x()) < m_tol && CGAL::abs(target.y() - p.y()) < m_tol) 
 					return static_cast<int>(m_times[segment_index] - 1);
 
-				const auto length = CGAL::sqrt(squared_distance(source, p));
+				const FT length = static_cast<FT>(CGAL::sqrt(CGAL::to_double(squared_distance(source, p))));
 
-				occupancy_index = static_cast<int>(std::floor(length / m_lp[segment_index]));
+				occupancy_index = static_cast<int>(std::floor(CGAL::to_double(length / m_lp[segment_index])));
 
 				return occupancy_index;
 			}
@@ -711,11 +717,11 @@ namespace CGAL {
 							std::vector<int> anchor(1, i);
 							m_str_anchors[i].push_back(anchor);
 
-							if (m_save_log) log.out << new_point << " " << 0 << std::endl;
+							if (!m_silent) log.out << new_point << " " << 0 << std::endl;
 						}
 					}
 				}
-				if (m_save_log) log.save("tmp" + std::string(PS) + "linear_points");
+				if (!m_silent) log.save("tmp" + std::string(PS) + "linear_points", ".xyz");
 			}
 
 			void clear_main_data() {
@@ -1007,22 +1013,26 @@ namespace CGAL {
 					FT dist_thresh = -FT(1);
 					if (m_adjacency_threshold_method == Structuring_adjacency_threshold_method::GLOBAL) dist_thresh = m_adjacency_threshold;
 
-					edges.push_back(Segment(edge_barycentre(i), edge_barycentre(j)));
+					if (!m_silent) edges.push_back(Segment(edge_barycentre(i), edge_barycentre(j)));
 					add_corner(i, j, dist_thresh, corner);
 				}
 
-				Log logex;
-				logex.export_segments_as_obj("tmp" + std::string(PS) + "adjacency_graph", edges, "stub");
+				if (!m_silent) {
+					Log logex;
+					logex.export_segments_as_obj("tmp" + std::string(PS) + "adjacency_graph", edges, "stub");
+				}
 
 				// Log function. Can be removed.
-				// Log log;
+				Log log;
 
 				// if (m_save_log) {
-				//	for (size_t i = 0; i < m_cc.size(); ++i) 
-				//		for (size_t j = 0; j < m_str_points[i].size(); ++j)
-				//			log.out << m_str_points[i][j] << " " << 0 << std::endl;
-				//	
-				//	log.save("tmp" + std::string(PS) + "structured_points", ".xyz");
+				if (!m_silent) {
+					for (size_t i = 0; i < m_cc.size(); ++i) 
+						for (size_t j = 0; j < m_str_points[i].size(); ++j)
+							log.out << m_str_points[i][j] << " " << 0 << std::endl;
+					
+					log.save("tmp" + std::string(PS) + "structured_points", ".xyz");
+				}
 				// }
 			}
 
@@ -1088,8 +1098,8 @@ namespace CGAL {
 				const Point &source = m_str_points[ind][0];
 				const Point &target = m_str_points[ind][m_str_points[ind].size() - 1];
 
-				const FT dist_s = CGAL::sqrt(squared_distance(source, corner));
-				const FT dist_t = CGAL::sqrt(squared_distance(target, corner));
+				const FT dist_s = static_cast<FT>(CGAL::sqrt(CGAL::to_double(squared_distance(source, corner))));
+				const FT dist_t = static_cast<FT>(CGAL::sqrt(CGAL::to_double(squared_distance(target, corner))));
 
 				if (dist_s > dist_thresh && dist_t > dist_thresh) return false;
 				return true;
@@ -1261,14 +1271,16 @@ namespace CGAL {
 					const Point &p = m_str_points[i][0];
 					const Point &q = m_str_points[i][m_str_points[i].size() - 1];
 
-					const FT seg_length  = CGAL::sqrt(squared_distance(p, q));
-					const FT upper_bound = CGAL::sqrt(FT(2)) * m_eps[i];
+					const FT seg_length  = static_cast<FT>(CGAL::sqrt(CGAL::to_double(squared_distance(p, q))));
+					const FT upper_bound = static_cast<FT>(CGAL::sqrt(2.0)) * m_eps[i];
 					const FT initial     = upper_bound / FT(2);
-					const FT times 		 = std::floor(seg_length / initial);
+					const FT times 		 = static_cast<FT>(std::floor(CGAL::to_double(seg_length / initial)));
 					
 					resample_segment(i, times, log);
 				}
-				/* if (m_save_log) */ log.save("tmp" + std::string(PS) + "resampled_points", ".xyz");
+				
+				/* if (m_save_log) */ 
+				if (!m_silent) log.save("tmp" + std::string(PS) + "resampled_points", ".xyz");
 			}
 
 			void resample_segment(const size_t segment_index, const FT times, Log &log) {
@@ -1292,7 +1304,7 @@ namespace CGAL {
 
 				/* if (m_save_log) */ log.out << p << " " << 0 << std::endl;
 
-				for (size_t i = 1; i < static_cast<size_t>(times); ++i) {
+				for (size_t i = 1; i < static_cast<size_t>(CGAL::to_double(times)); ++i) {
 
 					const FT b_2 = FT(i) / times;
 					const FT b_1 = FT(1) - b_2;

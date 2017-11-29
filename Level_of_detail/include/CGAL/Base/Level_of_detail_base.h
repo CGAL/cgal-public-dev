@@ -178,8 +178,9 @@ namespace CGAL {
 			m_structuring_corner_algorithm(Structuring_corner_algorithm::GRAPH_BASED),
 			m_structuring_adjacency_method(Structuring_adjacency_threshold_method::LOCAL),
 			m_structuring_adjacency_value(-FT(1)),
-			m_structuring_global_everywhere(true)
-			{ } // Do I need to create an instance of these traits here?
+			m_structuring_global_everywhere(true),
+			m_silent(false)
+			{ }
 
 
 			//////////////////
@@ -188,6 +189,12 @@ namespace CGAL {
 
 				assert(path != "path_to_the_data_folder" && path != "default");
 				m_prefix_path = path;
+			}
+
+
+			// Output.
+			void make_silent(const bool new_state) {
+				m_silent = new_state;
 			}
 
 
@@ -376,6 +383,7 @@ namespace CGAL {
 
 				m_preprocessor.use_alpha_shapes(m_use_alpha_shapes);
 				m_preprocessor.set_alpha(m_alpha_shape_size);
+				m_preprocessor.make_silent(m_silent);
 
 				const auto number_of_boundaries = 
 				m_preprocessor.get_boundary_points(input, building_boundary_idxs, building_interior_idxs, with_shape_detection, building_boundaries, boundary_clutter);
@@ -420,8 +428,9 @@ namespace CGAL {
 
 				std::cout << "boundaries projected: " << number_of_projected_points << "; ";
 
-				Log points_exporter; 
-				if (!building_boundaries_projected.empty()) points_exporter.export_projected_points_as_xyz("tmp" + std::string(PS) + "projected_boundaries", building_boundaries_projected, m_default_path);
+				Log points_exporter;
+				if (!m_silent && !building_boundaries_projected.empty())
+					points_exporter.export_projected_points_as_xyz("tmp" + std::string(PS) + "projected_boundaries", building_boundaries_projected, m_default_path);
 
 
 				// Clutter.
@@ -434,7 +443,7 @@ namespace CGAL {
 					std::cout << "clutter projected: " << number_of_projected_points << "; ";
 
 					points_exporter.clear(); 
-					if (!boundary_clutter_projected.empty()) points_exporter.export_projected_points_as_xyz("tmp" + std::string(PS) + "projected_clutter", boundary_clutter_projected, m_default_path);
+					if (!m_silent && !boundary_clutter_projected.empty()) points_exporter.export_projected_points_as_xyz("tmp" + std::string(PS) + "projected_clutter", boundary_clutter_projected, m_default_path);
 				}
 
 				log.out << std::endl;
@@ -473,6 +482,7 @@ namespace CGAL {
 
 				m_grid_simplifier.set_grid_cell_length(m_clutter_cell_length);
 				m_grid_simplifier.set_new_point_type(m_clutter_new_point_type);
+				m_grid_simplifier.make_silent(m_silent);
 
 				Boundary_data stub;
 				const auto number_of_removed_points = m_grid_simplifier.process(stub, boundary_clutter_projected);
@@ -495,6 +505,7 @@ namespace CGAL {
 				m_region_growing.set_cluster_epsilon(m_region_growing_cluster_epsilon);
 				m_region_growing.set_normal_threshold(m_region_growing_normal_threshold);
 				m_region_growing.set_minimum_shape_points(m_region_growing_min_points);
+				m_region_growing.make_silent(m_silent);
 
 				const auto number_of_detected_lines = m_region_growing.detect(
 					boundary_clutter   , boundary_clutter_projected,
@@ -545,7 +556,11 @@ namespace CGAL {
 				const auto number_of_segments = m_utils.create_segments_from_lines(building_boundaries_projected, building_boundaries, lines, segments);
 
 				log.out << "(" << exec_step << ") Segments are created. Number of created segments: " << number_of_segments << std::endl << std::endl;
-				Log segments_exporter; segments_exporter.export_segments_as_obj("tmp" + std::string(PS) + "segments", segments, m_default_path);
+				
+				if (!m_silent) {
+					Log segments_exporter; 
+					segments_exporter.export_segments_as_obj("tmp" + std::string(PS) + "segments", segments, m_default_path);
+				}
 			}
 
 			void applying_2d_structuring(
@@ -564,6 +579,7 @@ namespace CGAL {
 				m_structuring->set_adjacency_threshold_method(m_structuring_adjacency_method);
 				m_structuring->set_adjacency_threshold(m_structuring_adjacency_value);
 				m_structuring->set_global_everywhere(m_structuring_global_everywhere);
+				m_structuring->make_silent(m_silent);
 
 				const auto number_of_structured_segments = m_structuring->structure_point_set();
 
@@ -611,12 +627,12 @@ namespace CGAL {
 
 					number_of_faces = m_utils.compute_cdt(structured_points, structured_labels, structured_anchors, m_structuring_adjacency_value, cdt, 
 													 m_add_cdt_clutter, boundary_clutter, boundary_clutter_projected, 
-													 m_add_cdt_bbox, input);
+													 m_add_cdt_bbox, input, m_silent);
 				} else {
 
 					number_of_faces = m_utils.compute_cdt(Structured_points(), Structured_labels(), Structured_anchors(), m_structuring_adjacency_value, cdt, 
 													 m_add_cdt_clutter, boundary_clutter, boundary_clutter_projected, 
-													 m_add_cdt_bbox, input);
+													 m_add_cdt_bbox, input, m_silent);
 				}
 
 				assert(number_of_faces != -1);
@@ -633,7 +649,7 @@ namespace CGAL {
 				// Convert 3D input to 2D input.			
 				std::cout << "(" << exec_step << ") converting 3d input into 2d input and setting face to points map" << std::endl;
 
-				const auto number_of_converted_points = m_utils.get_2d_input_and_face_points_map(cdt, input, input_2d, fp_map);
+				const auto number_of_converted_points = m_utils.get_2d_input_and_face_points_map(cdt, input, input_2d, fp_map, m_silent);
 
 				log.out << "(" << exec_step << ") 3D input is converted into 2D input and face to points map is set. Number of converted points: " << number_of_converted_points << std::endl << std::endl;
 			}
@@ -668,8 +684,10 @@ namespace CGAL {
 
 				// Log eps_saver_wp; eps_saver_wp.save_visibility_eps(cdt, input, structured_points); // works only with basic test
 				
-				Log eps_saver; eps_saver.save_visibility_eps(cdt);
-				Log ply_vis_saver; ply_vis_saver.save_cdt_ply(cdt, "tmp" + std::string(PS) + "visibility", "in");
+				if (!m_silent) {
+					Log eps_saver; eps_saver.save_visibility_eps(cdt);
+					Log ply_vis_saver; ply_vis_saver.save_cdt_ply(cdt, "tmp" + std::string(PS) + "visibility", "in");
+				}
 			}
 
 			void applying_graph_cut(
@@ -684,11 +702,16 @@ namespace CGAL {
 				m_graph_cut.set_alpha_parameter(m_graph_cut_alpha);
 				m_graph_cut.set_beta_parameter(m_graph_cut_beta);
 				m_graph_cut.set_gamma_parameter(m_graph_cut_gamma);
+				m_graph_cut.make_silent(m_silent);
 
 				m_graph_cut.max_flow(cdt);
 
 				log.out << "(" << exec_step << ") Graph cut is applied." << std::endl << std::endl;
-				Log ply_cdt_in; ply_cdt_in.save_cdt_ply(cdt, "tmp" + std::string(PS) + "after_cut", "in");
+
+				if (!m_silent) {
+					Log ply_cdt_in; 
+					ply_cdt_in.save_cdt_ply(cdt, "tmp" + std::string(PS) + "after_cut", "in");
+				}
 			}
 
 			void splitting_buildings(
@@ -700,6 +723,7 @@ namespace CGAL {
 				// Split all buildings.
 				std::cout << "(" << exec_step << ") splitting buildings" << std::endl;
 
+				m_building_splitter.make_silent(m_silent);
 				const auto number_of_buildings = m_building_splitter.split(cdt, buildings);
 
 				log.out << "(" << exec_step << ") All buildings are found. Number of buildings: " << number_of_buildings << std::endl << std::endl;
@@ -772,7 +796,9 @@ namespace CGAL {
 				m_lods.reconstruct_lod0(cdt, buildings, ground_bbox, mesh_0, mesh_facet_colors_0);
 
 				log.out << "(" << exec_step << ") Final LOD0 is reconstructed." << std::endl << std::endl;
-				Log lod_0_saver; lod_0_saver.save_mesh_as_ply(mesh_0, mesh_facet_colors_0, "LOD0");
+
+				Log lod_0_saver; 
+				lod_0_saver.save_mesh_as_ply(mesh_0, mesh_facet_colors_0, "LOD0");
 			}
 
 			void creating_lod1(
@@ -787,7 +813,9 @@ namespace CGAL {
 				m_lods.reconstruct_lod1(cdt, buildings, ground_bbox, mesh_1, mesh_facet_colors_1);
 
 				log.out << "(" << exec_step << ") Final LOD1 is reconstructed." << std::endl;
-				Log lod_1_saver; lod_1_saver.save_mesh_as_ply(mesh_1, mesh_facet_colors_1, "LOD1");
+
+				Log lod_1_saver; 
+				lod_1_saver.save_mesh_as_ply(mesh_1, mesh_facet_colors_1, "LOD1");
 			}
 
 			void finish_execution(
@@ -798,7 +826,7 @@ namespace CGAL {
 				std::cout << "... finishing" + std::string(PN) + "" << std::endl;
 
 				log.out << "" + std::string(PN) + "" + std::string(PN) + "FINISH EXECUTION";
-				log.save(filename);
+				if (!m_silent) log.save(filename);
 			}
 
 		public:
@@ -1057,7 +1085,9 @@ namespace CGAL {
 			Structuring_corner_algorithm 		   m_structuring_corner_algorithm;
 			Structuring_adjacency_threshold_method m_structuring_adjacency_method;
 			FT 									   m_structuring_adjacency_value;
+			
 			bool m_structuring_global_everywhere;
+			bool m_silent;
 
 
 			// Assert default values of all global parameters.
@@ -1288,7 +1318,9 @@ namespace CGAL {
 				m_region_growing_min_points 	  = 0;  
 
 				m_use_alpha_shapes = false;
-				m_alpha_shape_size = -1.0;   
+				m_alpha_shape_size = -1.0;
+
+				m_structuring_adjacency_value = 0.001;   
 			}
 
 
@@ -1376,10 +1408,10 @@ namespace CGAL {
 				m_pipeline_version = Pipeline_version::WITHOUT_SHAPE_DETECTION;
 
 				m_visibility_approach 	 		 = Visibility_approach::FACE_BASED;
-				m_visibility_method   	 		 = Visibility_method::FACE_BASED_NATURAL_NEIGHBOURS; // point based for with_shape_detection
+				m_visibility_method   	 		 = Visibility_method::FACE_BASED_NATURAL_NEIGHBOURS;
 				m_visibility_sampler 	 		 = Visibility_sampler::UNIFORM_SUBDIVISION;
 				m_thinning_neighbour_search_type = Neighbour_search_type::CIRCLE;
-				m_building_boundary_type 		 = Building_boundary_type::UNORIENTED;
+				m_building_boundary_type 		 = Building_boundary_type::ORIENTED;
 				m_clutter_new_point_type 		 = Clutter_new_point_type::BARYCENTRE;
 				m_thinning_type 	  			 = Thinning_type::NAIVE;
 
@@ -1389,7 +1421,7 @@ namespace CGAL {
 				m_structuring_epsilon 	 = 1.5;
 				m_add_cdt_clutter     	 = true;
 				m_visibility_num_samples = 1;
-				m_graph_cut_beta 		 = 35.0; // 15.0 for with_shape_detection
+				m_graph_cut_beta 		 = 35.0;
 				m_clutter_knn 			 = 12;
 				m_clutter_cell_length    = 10.0;
 				m_use_boundaries 		 = true;
@@ -1398,10 +1430,10 @@ namespace CGAL {
 				m_region_growing_epsilon 		  = 0.0;  
 				m_region_growing_cluster_epsilon  = 0.0;  
 				m_region_growing_normal_threshold = 0.0;  
-				m_region_growing_min_points 	  = 0;   
+				m_region_growing_min_points 	  = 0; 
 
 				m_use_alpha_shapes = false;
-				m_alpha_shape_size = -1.0; 
+				m_alpha_shape_size = -1.0;   
 			}
 
 
@@ -1422,7 +1454,7 @@ namespace CGAL {
 				m_structuring_adjacency_method 	 = Structuring_adjacency_threshold_method::GLOBAL;
 
 				m_thinning_fuzzy_radius  = 5.0;
-				m_visibility_angle_eps   = 0.18; 
+				m_visibility_angle_eps   = 0.18;
 				m_max_reg_angle          = 10.0;
 				m_structuring_epsilon 	 = 5.0;
 				m_add_cdt_clutter     	 = false;
@@ -1444,8 +1476,9 @@ namespace CGAL {
 				m_alpha_shape_size = 5.0;
 				m_graph_cut_gamma  = 10000.0;
 
-				m_structuring_get_all_points  = true;
-				m_structuring_adjacency_value = 12.0;
+				m_structuring_get_all_points    = true;
+				m_structuring_adjacency_value   = 12.0;
+				m_structuring_global_everywhere = false;
 			}
 
 
@@ -1457,14 +1490,13 @@ namespace CGAL {
 				m_pipeline_version = Pipeline_version::WITHOUT_SHAPE_DETECTION;
 
 				m_visibility_approach 	 		 = Visibility_approach::FACE_BASED;
-				m_visibility_method   	 		 = Visibility_method::FACE_BASED_NATURAL_NEIGHBOURS; // point based for with_shape_detection
+				m_visibility_method   	 		 = Visibility_method::FACE_BASED_NATURAL_NEIGHBOURS;
 				m_visibility_sampler 	 		 = Visibility_sampler::UNIFORM_SUBDIVISION;
 				m_thinning_neighbour_search_type = Neighbour_search_type::CIRCLE;
 				m_building_boundary_type 		 = Building_boundary_type::UNORIENTED;
 				m_clutter_new_point_type 		 = Clutter_new_point_type::CLOSEST;
 				m_thinning_type 	  			 = Thinning_type::NAIVE;
 				m_structuring_adjacency_method 	 = Structuring_adjacency_threshold_method::GLOBAL;
-				m_structuring_corner_algorithm   = Structuring_corner_algorithm::NO_T_CORNERS;
 
 				m_thinning_fuzzy_radius  = 5.0;
 				m_visibility_angle_eps   = 0.18; 
@@ -1472,7 +1504,7 @@ namespace CGAL {
 				m_structuring_epsilon 	 = 5.0;
 				m_add_cdt_clutter     	 = false;
 				m_visibility_num_samples = 1;
-				m_graph_cut_beta 		 = 100000.0; // 35.0 with_clutter // 15.0 for with_shape_detection
+				m_graph_cut_beta 		 = 100000.0;
 				m_clutter_knn 			 = 12;
 				m_clutter_cell_length    = 1.3;
 				m_use_boundaries 		 = true;
@@ -1489,8 +1521,9 @@ namespace CGAL {
 				m_alpha_shape_size = 5.0;
 				m_graph_cut_gamma  = 10000.0;
 
-				m_structuring_get_all_points  = true;
-				m_structuring_adjacency_value = 12.0;
+				m_structuring_get_all_points    = true;
+				m_structuring_adjacency_value   = 12.0;
+				m_structuring_global_everywhere = false;
 			}
 
 
@@ -1501,15 +1534,14 @@ namespace CGAL {
 				m_default_path     = m_prefix_path + "residential_test" + std::string(PS) + "tile_1" + std::string(PS) + "data_region_growing_eth";
 				m_pipeline_version = Pipeline_version::WITHOUT_SHAPE_DETECTION;
 
-				m_visibility_approach 	 		 = Visibility_approach::POINT_BASED;
-				m_visibility_method   	 		 = Visibility_method::POINT_BASED_CLASSIFICATION;
+				m_visibility_approach 	 		 = Visibility_approach::FACE_BASED;
+				m_visibility_method   	 		 = Visibility_method::FACE_BASED_NATURAL_NEIGHBOURS;
 				m_visibility_sampler 	 		 = Visibility_sampler::UNIFORM_SUBDIVISION;
 				m_thinning_neighbour_search_type = Neighbour_search_type::CIRCLE;
 				m_building_boundary_type 		 = Building_boundary_type::UNORIENTED;
 				m_clutter_new_point_type 		 = Clutter_new_point_type::CLOSEST;
 				m_thinning_type 	  			 = Thinning_type::NAIVE;
 				m_structuring_adjacency_method 	 = Structuring_adjacency_threshold_method::GLOBAL;
-				m_structuring_corner_algorithm   = Structuring_corner_algorithm::NO_T_CORNERS;
 
 				m_thinning_fuzzy_radius  = 5.0;
 				m_visibility_angle_eps   = 0.18;
@@ -1528,7 +1560,7 @@ namespace CGAL {
 				m_region_growing_epsilon 		  = 3.2;
 				m_region_growing_cluster_epsilon  = 2.9;
 				m_region_growing_normal_threshold = 0.7;  
-				m_region_growing_min_points 	  = 10;
+				m_region_growing_min_points 	  = 3;
 
 				m_use_alpha_shapes = true;
 				m_alpha_shape_size = 5.0;
@@ -1553,7 +1585,6 @@ namespace CGAL {
 				m_clutter_new_point_type 		 = Clutter_new_point_type::CLOSEST;
 				m_thinning_type 	  			 = Thinning_type::NAIVE;
 				m_structuring_adjacency_method 	 = Structuring_adjacency_threshold_method::GLOBAL;
-				m_structuring_corner_algorithm   = Structuring_corner_algorithm::NO_T_CORNERS;
 
 				m_thinning_fuzzy_radius  = 5.0;
 				m_visibility_angle_eps   = 0.18;
@@ -1572,7 +1603,7 @@ namespace CGAL {
 				m_region_growing_epsilon 		  = 3.2;
 				m_region_growing_cluster_epsilon  = 2.9;
 				m_region_growing_normal_threshold = 0.7;  
-				m_region_growing_min_points 	  = 10;
+				m_region_growing_min_points 	  = 3;
 
 				m_use_alpha_shapes = true;
 				m_alpha_shape_size = 5.0;
@@ -1635,14 +1666,13 @@ namespace CGAL {
 				m_pipeline_version = Pipeline_version::WITHOUT_SHAPE_DETECTION;
 
 				m_visibility_approach 	 		 = Visibility_approach::FACE_BASED;
-				m_visibility_method   	 		 = Visibility_method::FACE_BASED_NATURAL_NEIGHBOURS; // point based for with_shape_detection
+				m_visibility_method   	 		 = Visibility_method::FACE_BASED_NATURAL_NEIGHBOURS;
 				m_visibility_sampler 	 		 = Visibility_sampler::UNIFORM_SUBDIVISION;
 				m_thinning_neighbour_search_type = Neighbour_search_type::CIRCLE;
 				m_building_boundary_type 		 = Building_boundary_type::UNORIENTED;
 				m_clutter_new_point_type 		 = Clutter_new_point_type::CLOSEST;
 				m_thinning_type 	  			 = Thinning_type::NAIVE;
 				m_structuring_adjacency_method 	 = Structuring_adjacency_threshold_method::GLOBAL;
-				m_structuring_corner_algorithm   = Structuring_corner_algorithm::NO_T_CORNERS;
 
 				m_thinning_fuzzy_radius  = 5.0;
 				m_visibility_angle_eps   = 0.18; 
@@ -1650,7 +1680,7 @@ namespace CGAL {
 				m_structuring_epsilon 	 = 5.0;
 				m_add_cdt_clutter     	 = false;
 				m_visibility_num_samples = 1;
-				m_graph_cut_beta 		 = 100000.0; // 35.0 with_clutter // 15.0 for with_shape_detection
+				m_graph_cut_beta 		 = 100000.0;
 				m_clutter_knn 			 = 12;
 				m_clutter_cell_length    = 1.3;
 				m_use_boundaries 		 = true;
@@ -1667,8 +1697,9 @@ namespace CGAL {
 				m_alpha_shape_size = 5.0;
 				m_graph_cut_gamma  = 10000.0;
 
-				m_structuring_get_all_points  = true;
-				m_structuring_adjacency_value = 12.0;
+				m_structuring_get_all_points    = true;
+				m_structuring_adjacency_value   = 12.0;
+				m_structuring_global_everywhere = false;
 			}
 
 
@@ -1680,14 +1711,13 @@ namespace CGAL {
 				m_pipeline_version = Pipeline_version::WITHOUT_SHAPE_DETECTION;
 
 				m_visibility_approach 	 		 = Visibility_approach::FACE_BASED;
-				m_visibility_method   	 		 = Visibility_method::FACE_BASED_NATURAL_NEIGHBOURS; // point based for with_shape_detection
+				m_visibility_method   	 		 = Visibility_method::FACE_BASED_NATURAL_NEIGHBOURS;
 				m_visibility_sampler 	 		 = Visibility_sampler::UNIFORM_SUBDIVISION;
 				m_thinning_neighbour_search_type = Neighbour_search_type::CIRCLE;
 				m_building_boundary_type 		 = Building_boundary_type::UNORIENTED;
 				m_clutter_new_point_type 		 = Clutter_new_point_type::CLOSEST;
 				m_thinning_type 	  			 = Thinning_type::NAIVE;
 				m_structuring_adjacency_method 	 = Structuring_adjacency_threshold_method::GLOBAL;
-				m_structuring_corner_algorithm   = Structuring_corner_algorithm::NO_T_CORNERS;
 
 				m_thinning_fuzzy_radius  = 5.0;
 				m_visibility_angle_eps   = 0.18; 
@@ -1695,7 +1725,7 @@ namespace CGAL {
 				m_structuring_epsilon 	 = 5.0;
 				m_add_cdt_clutter     	 = false;
 				m_visibility_num_samples = 1;
-				m_graph_cut_beta 		 = 100000.0; // 35.0 with_clutter // 15.0 for with_shape_detection
+				m_graph_cut_beta 		 = 100000.0;
 				m_clutter_knn 			 = 12;
 				m_clutter_cell_length    = 1.3;
 				m_use_boundaries 		 = true;
@@ -1712,8 +1742,9 @@ namespace CGAL {
 				m_alpha_shape_size = 5.0;
 				m_graph_cut_gamma  = 10000.0;
 
-				m_structuring_get_all_points  = true;
-				m_structuring_adjacency_value = 12.0;
+				m_structuring_get_all_points    = true;
+				m_structuring_adjacency_value   = 12.0;
+				m_structuring_global_everywhere = false;
 			}
 
 

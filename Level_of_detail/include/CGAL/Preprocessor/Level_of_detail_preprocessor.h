@@ -23,6 +23,8 @@
 #include <CGAL/Orthogonal_k_neighbor_search.h>
 #include <CGAL/Delaunay_triangulation_2.h>
 #include <CGAL/Alpha_shape_2.h>
+#include <CGAL/number_utils.h>
+#include <CGAL/Simple_cartesian.h>
 
 // New CGAL includes.
 #include <CGAL/Mylog/Mylog.h>
@@ -69,7 +71,11 @@ namespace CGAL {
 			using Point_iterator   = typename Projected_points::const_iterator;
 
 
-			Level_of_detail_interior_boundary_extractor() : m_alpha(-FT(1)) { }
+			Level_of_detail_interior_boundary_extractor() : m_alpha(-FT(1)), m_silent(false) { }
+
+			void make_silent(const bool new_state) {
+				m_silent = new_state;
+			}
 
 			void set_alpha(const FT new_value) {
 
@@ -109,8 +115,10 @@ namespace CGAL {
 
 
 				// Save extracted points.
-				Log log;
-				log.export_points("tmp" + std::string(PS) + "extracted_boundary_points", extracted);
+				if (!m_silent) {
+					Log log;
+					log.export_points("tmp" + std::string(PS) + "extracted_boundary_points", extracted);
+				}
 
 
 				// Return number of extracted points.
@@ -121,6 +129,7 @@ namespace CGAL {
 		private:
 			FT m_alpha;
 			Simple_utils m_simple_utils;
+			bool m_silent;
 
 			void set_default_parameters(const Projected_points &projected_points) {
 
@@ -232,7 +241,11 @@ namespace CGAL {
 			using Index_map      = typename Container:: template Property_map<Index>;
 			using Log 			 = CGAL::LOD::Mylog;
 
-			Level_of_detail_preprocessor() : m_scale(FT(1)), m_alpha(-FT(1)), m_use_alpha_shapes(false) { }
+			Level_of_detail_preprocessor() : m_scale(FT(1)), m_alpha(-FT(1)), m_use_alpha_shapes(false), m_silent(false) { }
+
+			void make_silent(const bool new_state) {
+				m_silent = new_state;
+			}
 
 			void set_scale(const FT new_value) {
 				
@@ -286,6 +299,10 @@ namespace CGAL {
 			template<class Projected_points, class Point_sets>
 			int clean_projected_points(Projected_points &projected_points, Point_sets &point_sets) {
 
+				using Traits1   = CGAL::Simple_cartesian<double>;
+				using Point_3ft = Traits1::Point_3;
+				using Plane_3ft = Traits1::Plane_3;
+
 				if (projected_points.size() == 0) return 0;
 				assert(!point_sets.empty());
 
@@ -294,28 +311,35 @@ namespace CGAL {
 
 				const auto num_neighbours = 2;
 
-				CGAL::Identity_property_map<Point_3> pmap;
+				CGAL::Identity_property_map<Point_3ft> pmap1;
 				for (typename Point_sets::const_iterator it = point_sets.begin(); it != point_sets.end(); ++it) {
 					const auto set_index = (*it).first;
 
 					const size_t num_points = (*it).second.size();
-					std::vector<Point_3> points(num_points);
+					std::vector<Point_3ft> points1(num_points);
+					std::vector<Point_3> points2(num_points);
 
 					for (size_t i = 0; i < num_points; ++i) {
 						const auto point_index = (*it).second[i];
 
 						const Point_2 &p = projected_points.at(point_index);
-						points[i] = Point_3(p.x(), p.y(), FT(0));
+
+						const double x = CGAL::to_double(p.x());
+						const double y = CGAL::to_double(p.y());
+						const double z = 0.0;
+
+						points1[i] = Point_3ft(x, y, z);
+						points2[i] = Point_3(p.x(), p.y(), FT(0));
 					}
 						
-					const FT average_spacing = CGAL::compute_average_spacing<CGAL::Sequential_tag>(points.begin(), points.end(), pmap, num_neighbours, Traits());
-					Tree tree(points.begin(), points.end());
+					const FT average_spacing = static_cast<FT>(CGAL::compute_average_spacing<CGAL::Sequential_tag>(points1.begin(), points1.end(), pmap1, num_neighbours, Traits1()));
+					Tree tree(points2.begin(), points2.end());
 
 					std::vector<Point_3> qs;
 					for (size_t i = 0; i < num_points; ++i) {
 						const auto point_index = (*it).second[i];
 						
-						const Point_3 &p = points[i];
+						const Point_3 &p = points2[i];
 						const Fuzzy_sphere sphere(p, m_scale * average_spacing);
 
 						qs.clear();	
@@ -343,6 +367,7 @@ namespace CGAL {
 			FT m_alpha;
 
 			bool m_use_alpha_shapes;
+			bool m_silent;
 
 			void create_indices(const Container &input) {
 				boost::tie(m_indices, boost::tuples::ignore) = input. template property_map<Index>("index");
@@ -380,6 +405,7 @@ namespace CGAL {
 
 				Indices result;
 				extractor.set_alpha(m_alpha);
+				extractor.make_silent(m_silent);
 				extractor.extract(input, interior_mapping, building_interior_projected, result);
 
 
@@ -401,8 +427,10 @@ namespace CGAL {
 				Ground_projector projector; 
 				projector.project(input, building_interior, base_ground_plane, building_interior_projected);
 
-				Log log;
-				log.export_projected_points_as_xyz("tmp" + std::string(PS) + "building_interior", building_interior_projected, "stub");
+				if (!m_silent) {
+					Log log;
+					log.export_projected_points_as_xyz("tmp" + std::string(PS) + "building_interior", building_interior_projected, "stub");
+				}
 			}
 		};
 	}

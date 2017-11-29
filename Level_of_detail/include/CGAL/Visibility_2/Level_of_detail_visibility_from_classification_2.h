@@ -35,6 +35,7 @@
 #include <CGAL/constructions_d.h>
 #include <CGAL/utils.h>
 #include <CGAL/IO/Color.h>
+#include <CGAL/Simple_cartesian.h>
 
 // New CGAL includes.
 #include <CGAL/Mylog/Mylog.h>
@@ -84,11 +85,14 @@ namespace CGAL {
 			typedef CGAL::Fuzzy_sphere<Search_traits>                    					  Fuzzy_circle;
 			typedef CGAL::Kd_tree<Search_traits>					                          Fuzzy_tree;
 
-			typedef CGAL::Delaunay_triangulation_2<Kernel> Delaunay_triangulation;
-			typedef CGAL::Interpolation_traits_2<Kernel>   Interpolation_traits;
+			typedef CGAL::Simple_cartesian<double> Local_Kernel;
+			typedef typename Local_Kernel::Point_2 Point_2ft;
+
+			typedef CGAL::Delaunay_triangulation_2<Local_Kernel> Delaunay_triangulation;
+			typedef CGAL::Interpolation_traits_2<Local_Kernel>   Interpolation_traits;
 			
-			typedef std::map<Point_2, FT, typename Kernel::Less_xy_2> Function_type;
-			typedef CGAL::Data_access<Function_type> 		 		  Value_access;
+			typedef std::map<Point_2ft, double, typename Local_Kernel::Less_xy_2> Function_type;
+			typedef CGAL::Data_access<Function_type> 		 		  			  Value_access;
 
 
 			// Extra.
@@ -423,8 +427,16 @@ namespace CGAL {
 							break;
 					}
 
-					dt.insert(p);
-					function_values.insert(std::make_pair(p, inside));
+					// dt.insert(p);
+					// function_values.insert(std::make_pair(p, inside));
+
+					const double x = CGAL::to_double(p.x());
+					const double y = CGAL::to_double(p.y());
+
+					Point_2ft local_p = Point_2ft(x, y);
+
+					dt.insert(local_p);
+					function_values.insert(std::make_pair(local_p, CGAL::to_double(inside)));
 				}
 			}
 
@@ -440,37 +452,44 @@ namespace CGAL {
 				size_t full_size = 0;
 
 				for (size_t i = 0; i < samples.size(); ++i) {
-
 					const Point_2 &query = samples[i];
-					std::vector<std::pair<Point_2, FT> > coords;
+
+					std::vector<std::pair<Point_2ft, double> > coords;
+					
+					// std::vector<std::pair<Point_2, FT> > coords;
 
 					// May bug for some samples, gives division by zero assertion, for basic data set, probably because not enough natural neighbours can be found!
-					const auto triple = CGAL::natural_neighbor_coordinates_2(dt, query, std::back_inserter(coords));
+					Point_2ft local_query = Point_2ft(CGAL::to_double(query.x()), CGAL::to_double(query.y()));
+					const auto triple = CGAL::natural_neighbor_coordinates_2(dt, local_query, std::back_inserter(coords));
+
+					// const auto triple = CGAL::natural_neighbor_coordinates_2(dt, query, std::back_inserter(coords));
 
 					const bool success = triple.third;
-					const FT norm 	   = triple.second;
+					const FT norm      = static_cast<FT>(triple.second);
 
 					// If a sample point gives an invalid result, skip it.
 					if (!success) 			   continue;
-					if (is_invalid_norm(norm)) continue; 
+					if (is_invalid_norm(norm)) continue;
 
 					assert(norm > FT(0));
-					const FT intp = CGAL::linear_interpolation(coords.begin(), coords.end(), norm, Value_access(function_values));
+					const double intp = CGAL::linear_interpolation(coords.begin(), coords.end(), CGAL::to_double(norm), Value_access(function_values));
+
+					// const FT intp = CGAL::linear_interpolation(coords.begin(), coords.end(), norm, Value_access(function_values));
 
 					full_size += coords.size();
-					result += intp;
+					result    += static_cast<FT>(intp);
 				}
 				assert(samples.size() != 0);
 
 				result /= FT(samples.size());
-				if (full_size == 0) result = half;				
+				if (full_size == 0) result = half;
 
 				if (result > FT(1) && result < FT(1) + FT(1) / FT(1000000)) result = FT(1);
 				return result;
 			}
 
 			bool is_invalid_norm(const FT norm) {
-				return (!std::isfinite(norm) || norm <= FT(0) || norm > m_norm_threshold);
+				return (!std::isfinite(CGAL::to_double(norm)) || norm <= FT(0) || norm > m_norm_threshold);
 			}
 
 			void compute_face_based_approach_count(const Container &input, CDT &cdt) {		
@@ -571,7 +590,7 @@ namespace CGAL {
 						min_length = CGAL::min(min_length, CGAL::squared_distance(c, a));
 
 						const FT threshold = min_length / FT(3);
-						result = CGAL::sqrt(min_length) - threshold;
+						result = static_cast<FT>(CGAL::sqrt(CGAL::to_double(min_length))) - threshold;
 
 						break;
 					}
@@ -584,7 +603,7 @@ namespace CGAL {
 						max_length = CGAL::max(max_length, CGAL::squared_distance(c, a));
 
 						const FT threshold = max_length / FT(5);
-						result = CGAL::sqrt(max_length) + threshold;
+						result = static_cast<FT>(CGAL::sqrt(CGAL::to_double(max_length))) + threshold;
 
 						break;
 					}
@@ -728,8 +747,8 @@ namespace CGAL {
                 	const FT x = points[i].x() - c.x();
                 	const FT y = points[i].y() - c.y();
 
-                	V(0, i) = x;
-                	V(1, i) = y;
+                	V(0, i) = CGAL::to_double(x);
+                	V(1, i) = CGAL::to_double(y);
             	}
 
             	const MatrixXd Vs  = V.adjoint();
@@ -749,7 +768,7 @@ namespace CGAL {
                 	vert(1) = V(1, i);
 
                 	VectorXd res = inv * vert;
-    	            bc[i] = x * res(0) + y * res(1) + FT(1) / num_points;
+    	            bc[i] = x * static_cast<FT>(res(0)) + y * static_cast<FT>(res(1)) + FT(1) / num_points;
 	            }
 			}
 

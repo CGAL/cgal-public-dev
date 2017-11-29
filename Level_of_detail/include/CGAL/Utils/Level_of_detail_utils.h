@@ -22,6 +22,7 @@
 #include <CGAL/Random.h>
 #include <CGAL/number_utils.h>
 #include <CGAL/constructions_d.h>
+#include <CGAL/Simple_cartesian.h>
 
 // New CGAL includes.
 #include <CGAL/Mylog/Mylog.h>
@@ -111,9 +112,9 @@ namespace CGAL {
 					FT s = static_cast<FT>(m_rand.uniform_real(0.0, 1.0));
 					FT t = static_cast<FT>(m_rand.uniform_real(0.0, 1.0));
 
-					FT u =  FT(1)      - CGAL::sqrt(t);
-					FT v = (FT(1) - s) * CGAL::sqrt(t);
-					FT w =  		s  * CGAL::sqrt(t);
+					FT u =  FT(1)      - static_cast<FT>(CGAL::sqrt(CGAL::to_double(t)));
+					FT v = (FT(1) - s) * static_cast<FT>(CGAL::sqrt(CGAL::to_double(t)));
+					FT w =  		s  * static_cast<FT>(CGAL::sqrt(CGAL::to_double(t)));
 
 					samples[i] = Point_2(u * a.x() + v * b.x() + w * c.x(), u * a.y() + v * b.y() + w * c.y());
 				}
@@ -261,10 +262,10 @@ namespace CGAL {
 
 			FT compute_2d_bounding_box_diagonal(const Point_2 &bbmin, const Point_2 &bbmax) const {
 
-				return static_cast<FT>(CGAL::sqrt(
+				return static_cast<FT>(CGAL::sqrt(CGAL::to_double(
           			(bbmax.x() - bbmin.x()) * (bbmax.x() - bbmin.x()) +
           			(bbmax.y() - bbmin.y()) * (bbmax.y() - bbmin.y())
-          		));
+          		)));
 			}
 
 
@@ -305,7 +306,7 @@ namespace CGAL {
 				assert(projected_normal.z() == FT(0));
 
 				normals[point_index]  = Vector_2(projected_normal.x(), projected_normal.y());
-				normals[point_index] /= CGAL::sqrt(normals[point_index] * normals[point_index]);
+				normals[point_index] /= static_cast<FT>(CGAL::sqrt(CGAL::to_double(normals[point_index] * normals[point_index])));
 			}
 
 			// My custom function to handle precision problems when projecting points.
@@ -316,7 +317,7 @@ namespace CGAL {
 
 				const auto projected = a + CGAL::scalar_product(p - a, b - a) / CGAL::scalar_product(b - a, b - a) * (b - a);
 				
-				if (std::isnan(projected.x()) || std::isnan(projected.y())) return line.projection(p);
+				if (std::isnan(CGAL::to_double(projected.x())) || std::isnan(CGAL::to_double(projected.y()))) return line.projection(p);
 				else return projected;
 			}
 		};
@@ -366,7 +367,7 @@ namespace CGAL {
 			template<class Structured_points, class Structured_labels, class Structured_anchors, class Boundary_data, class Projected_points>
 			int compute_cdt(const Structured_points &points, const Structured_labels &labels, const Structured_anchors &anchors, const FT adjacency_value, CDT &cdt, 
 							const bool add_clutter, const Boundary_data &, const Projected_points &boundary_clutter_projected,
-							const bool add_bbox, const Input &input) const {
+							const bool add_bbox, const Input &input, const bool silent) const {
 
 				Log log;
 				auto number_of_faces = -1;
@@ -403,16 +404,14 @@ namespace CGAL {
 				// Insert constraints.
 				std::vector<Segment_2> constraints;
 				for (size_t i = 0; i < points.size(); ++i) {
-					
 					if (points[i].size() < 2) continue;
-					for (size_t j = 0; j < points[i].size() - 1; ++j) {	
-						
-						if (is_valid_segment(points[i][j], points[i][j + 1]))
-							constraints.push_back(Segment_2(points[i][j], points[i][j + 1]));
-						else continue;
 
-						if (vhs[i][j] != Vertex_handle() && vhs[i][j + 1] != Vertex_handle())
+					for (size_t j = 0; j < points[i].size() - 1; ++j) {	
+						if (vhs[i][j] != Vertex_handle() && vhs[i][j + 1] != Vertex_handle() && is_valid_segment(points[i][j], points[i][j + 1])) {
+							
+							if (!silent) constraints.push_back(Segment_2(points[i][j], points[i][j + 1]));
 							cdt.insert_constraint(vhs[i][j], vhs[i][j + 1]);
+						}
 					}
 				}
 
@@ -435,20 +434,20 @@ namespace CGAL {
 							const FT eps = FT(1) / FT(100000);
 							assert(a_k >= 0 && b_k >= 0);
 
-							const FT dist_a = CGAL::sqrt(squared_distance(points[i][j], points[ind_a][a_k]));
+							const FT dist_a = static_cast<FT>(CGAL::sqrt(CGAL::to_double(squared_distance(points[i][j], points[ind_a][a_k]))));
 							const FT scale  = FT(1);
 
 							if (dist_a > eps && dist_a < scale * adjacency_value) {
-								constraints.push_back(Segment_2(points[i][j], points[ind_a][a_k]));
+								if (!silent) constraints.push_back(Segment_2(points[i][j], points[ind_a][a_k]));
 
 								assert(static_cast<int>(i) != ind_a);
 								cdt.insert_constraint(vhs[i][j], vhs[ind_a][a_k]);
 							}
 
-							const FT dist_b = CGAL::sqrt(squared_distance(points[i][j], points[ind_b][b_k]));
+							const FT dist_b = static_cast<FT>(CGAL::sqrt(CGAL::to_double(squared_distance(points[i][j], points[ind_b][b_k]))));
 
 							if (dist_b > eps && dist_b < scale * adjacency_value) {
-								constraints.push_back(Segment_2(points[i][j], points[ind_b][b_k]));
+								if (!silent) constraints.push_back(Segment_2(points[i][j], points[ind_b][b_k]));
 
 								assert(static_cast<int>(i) != ind_b);
 								cdt.insert_constraint(vhs[i][j], vhs[ind_b][b_k]);
@@ -457,8 +456,10 @@ namespace CGAL {
 					}
 				}
 
-				Log logex;
-				logex.export_segments_as_obj("tmp" + std::string(PS) + "cdt_constraints", constraints, "stub");
+				if (!silent) {
+					Log logex;
+					logex.export_segments_as_obj("tmp" + std::string(PS) + "cdt_constraints", constraints, "stub");
+				}
 
 
 				// Correct all wrong labels.
@@ -503,7 +504,7 @@ namespace CGAL {
 
 
 				// Create CDT.
-				CGAL::make_conforming_Delaunay_2(cdt);
+				// CGAL::make_conforming_Delaunay_2(cdt);
 				number_of_faces = cdt.number_of_faces();
 
 
@@ -516,14 +517,14 @@ namespace CGAL {
 
 
 				// Save CDT.
-				log.save_cdt_obj(cdt, "tmp" + std::string(PS) + "cdt");
+				if (!silent) log.save_cdt_obj(cdt, "tmp" + std::string(PS) + "cdt");
 				return number_of_faces;
 			}
 
 			bool is_valid_segment(const Point_2 &a, const Point_2 &b) const {
 
 				const FT eps = FT(1) / FT(100000);
-				if (CGAL::sqrt(squared_distance(a, b)) < eps) return false;
+				if (static_cast<FT>(CGAL::sqrt(CGAL::to_double(squared_distance(a, b)))) < eps) return false;
 
 				return true;
 			}
@@ -534,7 +535,7 @@ namespace CGAL {
 				std::vector<FT> dist(points[segment_index].size());
 				for (size_t i = 0; i < points[segment_index].size(); ++i) {
 
-					dist[i] = CGAL::sqrt(squared_distance(corner, points[segment_index][i]));
+					dist[i] = static_cast<FT>(CGAL::sqrt(CGAL::to_double(squared_distance(corner, points[segment_index][i]))));
 				}
 
 				int closest_index = -1; FT min_dist = FT(1000000000);
@@ -692,10 +693,25 @@ namespace CGAL {
 			template<class Indices>
 			void fit_ground_plane(const Input &input, const Indices &ground_idxs, Plane_3 &ground_plane) const {
 
-				std::vector<Point_3> tmp_ground(ground_idxs.size());
-				for (size_t i = 0; i < ground_idxs.size(); ++i) tmp_ground[i] = input.point(ground_idxs[i]);
+				using Local_Kernel = CGAL::Simple_cartesian<double>;
+				using Point_3ft    = Local_Kernel::Point_3;
+				using Plane_3ft    = Local_Kernel::Plane_3;
 
-				CGAL::linear_least_squares_fitting_3(tmp_ground.begin(), tmp_ground.end(), ground_plane, CGAL::Dimension_tag<0>()); 
+				std::vector<Point_3ft> tmp_ground(ground_idxs.size());
+				for (size_t i = 0; i < ground_idxs.size(); ++i) {
+				
+					const Point_3 &p = input.point(ground_idxs[i]);
+
+					const double x = CGAL::to_double(p.x());
+					const double y = CGAL::to_double(p.y());
+					const double z = CGAL::to_double(p.z());
+
+					tmp_ground[i] = Point_3ft(x, y, z);
+				}
+
+				Plane_3ft tmp_plane;
+				CGAL::linear_least_squares_fitting_3(tmp_ground.begin(), tmp_ground.end(), tmp_plane, CGAL::Dimension_tag<0>());
+				ground_plane = Plane_3(static_cast<FT>(tmp_plane.a()), static_cast<FT>(tmp_plane.b()), static_cast<FT>(tmp_plane.c()), static_cast<FT>(tmp_plane.d()));
 			}
 
 
@@ -703,7 +719,7 @@ namespace CGAL {
 			// Mapping functions!
 
 			template<class Container_2D, class Face_points_map>
-			int get_2d_input_and_face_points_map(const CDT &cdt, const Input &input_3d, Container_2D &input_2d, Face_points_map &fp_map) const {
+			int get_2d_input_and_face_points_map(const CDT &cdt, const Input &input_3d, Container_2D &input_2d, Face_points_map &fp_map, const bool silent) const {
 
 				Log log_all, log_in_cdt;
 
@@ -737,7 +753,7 @@ namespace CGAL {
 					}
 				}
 
-				log_all.save("tmp" + std::string(PS) + "input_2d_all", ".xyz");
+				if (!silent) log_all.save("tmp" + std::string(PS) + "input_2d_all", ".xyz");
 				
 				// log_in_cdt.save("tmp" + std::string(PS) + "input_2d_in_cdt", ".xyz");
 				
@@ -754,8 +770,12 @@ namespace CGAL {
 
 				using Plane_iterator = typename Planes::const_iterator;
 
+      			using Local_Kernel = CGAL::Simple_cartesian<double>;
+				using Point_2ft    = Local_Kernel::Point_2;
+				using Line_2ft     = Local_Kernel::Line_2;
+
 				auto number_of_fitted_lines = 0;
-				std::vector<Point_2> tmp_points;
+				std::vector<Point_2ft> tmp_points;
 
 				lines.clear();
 				lines.resize(planes.size());
@@ -767,11 +787,19 @@ namespace CGAL {
 					tmp_points.resize(num_points);
 
 					for (size_t i = 0; i < num_points; ++i) {
+						
 						const auto index = (*it).second[i];
-						tmp_points[i] = points.at(index);
+						const Point_2 &p = points.at(index);
+
+						const double x = CGAL::to_double(p.x());
+						const double y = CGAL::to_double(p.y());
+
+						tmp_points[i] = Point_2ft(x, y);
 					}
 
-					CGAL::linear_least_squares_fitting_2(tmp_points.begin(), tmp_points.end(), lines[number_of_fitted_lines], CGAL::Dimension_tag<0>());
+					Line_2ft tmp_line;
+					CGAL::linear_least_squares_fitting_2(tmp_points.begin(), tmp_points.end(), tmp_line, CGAL::Dimension_tag<0>());
+					lines[number_of_fitted_lines] = Line_2(static_cast<FT>(tmp_line.a()), static_cast<FT>(tmp_line.b()), static_cast<FT>(tmp_line.c()));
 				}
 				return number_of_fitted_lines;
 			}

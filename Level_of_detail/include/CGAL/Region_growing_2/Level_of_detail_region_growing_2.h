@@ -26,6 +26,7 @@
 #include <CGAL/Fuzzy_sphere.h>
 #include <CGAL/number_utils.h>
 #include <CGAL/squared_distance_2.h>
+#include <CGAL/Simple_cartesian.h>
 
 // New CGAL includes.
 #include <CGAL/Mylog/Mylog.h>
@@ -85,10 +86,15 @@ namespace CGAL {
 			m_cluster_epsilon(-FT(1)),
 			m_normal_threshold(-FT(1)),
 			m_min_points(0),
-			m_save_info(false) { }
+			m_save_info(false),
+			m_silent(false) { }
 
 
 			// Public functions.
+			void make_silent(const bool new_state) {
+				m_silent = new_state;
+			}
+
 			void set_epsilon(const FT new_value) {
 
 				assert(new_value > FT(0));
@@ -168,8 +174,10 @@ namespace CGAL {
 				// Save log.
 				if (m_save_info) log.save("tmp" + std::string(PS) + "region_growing_log");
 
-				log.clear();
-				log.save_2d_region_growing("tmp" + std::string(PS) + "region_growing", building_boundaries, building_boundaries_projected, boundary_clutter_projected);
+				if (!m_silent) {
+					log.clear();
+					log.save_2d_region_growing("tmp" + std::string(PS) + "region_growing", building_boundaries, building_boundaries_projected, boundary_clutter_projected);
+				}
 
 
 				// Return number of detected lines.
@@ -178,6 +186,10 @@ namespace CGAL {
 			}
 
 		private:
+      		using Local_Kernel = CGAL::Simple_cartesian<double>;
+			using Point_2ft    = Local_Kernel::Point_2;
+			using Line_2ft     = Local_Kernel::Line_2;
+
 			FT 	   m_epsilon;
 			FT 	   m_cluster_epsilon;
 			FT 	   m_normal_threshold;
@@ -189,7 +201,9 @@ namespace CGAL {
 			std::vector<int> 		m_index_container_former_ring;
       		std::unordered_set<int> m_index_container_current_ring;
       		Projected_points 		m_neighbours;
-      		std::vector<Point_2> 	m_local_points;
+      		std::vector<Point_2ft> 	m_local_points;
+
+      		bool m_silent;
 
 
 			class Sort_by_linearity {
@@ -230,7 +244,7 @@ namespace CGAL {
 					static Projected_points neighbours;
 					compute_nearest_neighbours(point_index, neighbours);
 
-					static std::vector<Point_2> local_points;
+					static std::vector<Point_2ft> local_points;
 					map_neighbours_to_local_points(neighbours, local_points);
 
 					estimate_score(local_points, point_index);
@@ -247,7 +261,7 @@ namespace CGAL {
 					m_tree.search(std::inserter(neighbours, neighbours.end()), circle);
 			    }
 
-			    void map_neighbours_to_local_points(const Projected_points &neighbours, std::vector<Point_2> &local_points) {
+			    void map_neighbours_to_local_points(const Projected_points &neighbours, std::vector<Point_2ft> &local_points) {
 
 			    	const size_t num_neighbours = neighbours.size();
 			    	assert(num_neighbours != 0);
@@ -256,18 +270,25 @@ namespace CGAL {
 			    	local_points.resize(num_neighbours);
 
 					size_t count = 0;
-			    	for (Point_iterator nit = neighbours.begin(); nit != neighbours.end(); ++nit, ++count)
-						local_points[count] = (*nit).second;
+			    	for (Point_iterator nit = neighbours.begin(); nit != neighbours.end(); ++nit, ++count) {
+						
+			    		const Point_2 &p = (*nit).second;
+
+			    		const double x = CGAL::to_double(p.x());
+			    		const double y = CGAL::to_double(p.y());
+
+						local_points[count] = Point_2ft(x, y);
+			    	}
 
 					assert(count == num_neighbours);
 			    }
 
-			    void estimate_score(const std::vector<Point_2> &local_points, const int point_index) {
-					
-					Line_2 stub;
+			    void estimate_score(const std::vector<Point_2ft> &local_points, const int point_index) {
+
+					Line_2ft stub;
 					assert(point_index >= 0 && point_index < static_cast<int>(m_num_input_points));
 
-			        m_scores[point_index] = CGAL::linear_least_squares_fitting_2(local_points.begin(), local_points.end(), stub, CGAL::Dimension_tag<0>());
+			        m_scores[point_index] = static_cast<FT>(CGAL::linear_least_squares_fitting_2(local_points.begin(), local_points.end(), stub, CGAL::Dimension_tag<0>()));
 			        assert(m_scores[point_index] >= FT(0));
 			    }
 			};
@@ -330,8 +351,10 @@ namespace CGAL {
 				m_simple_utils.estimate_2d_normals_from_3d(normals, boundary_clutter_projected, input);
 				assert(normals.size() == boundary_clutter_projected.size());
 
-				Log log; 
-				log.export_projected_points_with_normals_as_xyz("tmp" + std::string(PS) + "estimated_normals", boundary_clutter_projected, normals, "unused path");
+				if (!m_silent) {
+					Log log; 
+					log.export_projected_points_with_normals_as_xyz("tmp" + std::string(PS) + "estimated_normals", boundary_clutter_projected, normals, "unused path");
+				}
 			}
 
 			void sort_projected_points(Sorted_indices &sorted_indices, Log &log, const Projected_points &boundary_clutter_projected, const Fuzzy_tree &tree, const size_t num_input_points) {
@@ -594,11 +617,11 @@ namespace CGAL {
 
 				map_indices_to_local_points(index_container, points);
 
-				Line_2 adjusted_line;
+				Line_2ft adjusted_line;
 			    assert(m_local_points.size() >= 2);
 			    CGAL::linear_least_squares_fitting_2(m_local_points.begin(), m_local_points.end(), adjusted_line, CGAL::Dimension_tag<0>());
 
-			    optimal_line = adjusted_line;
+			    optimal_line = Line_2(static_cast<FT>(adjusted_line.a()), static_cast<FT>(adjusted_line.b()), static_cast<FT>(adjusted_line.c()));
 			    get_line_normal(line_normal, optimal_line);
 			}
 
@@ -611,8 +634,15 @@ namespace CGAL {
 			    m_local_points.resize(num_points);
 
 				size_t count = 0;
-			    for (Index_iterator it = index_container.begin(); it != index_container.end(); ++it, ++count)
-					m_local_points[count] = points.at(*it);
+			    for (Index_iterator it = index_container.begin(); it != index_container.end(); ++it, ++count) {
+
+			    	const Point_2 &p = points.at(*it);
+
+			    	const double x = CGAL::to_double(p.x());
+			    	const double y = CGAL::to_double(p.y());
+
+					m_local_points[count] = Point_2ft(x, y);
+			    }
 
 				assert(count == num_points);
 			}
@@ -620,7 +650,7 @@ namespace CGAL {
 			void get_line_with_normal(const Point_2 &p, const Normal &n, Line_2 &line, Normal &line_normal) {
 				
 				line = (Line_2(p, n)).perpendicular(p);
-				line_normal = n / CGAL::sqrt(n * n);
+				line_normal = n / static_cast<FT>(CGAL::sqrt(CGAL::to_double(n * n)));
 			}
 
 			FT compute_squared_distance_to_the_line(const Point_2 &p, const Line_2 &line) {
@@ -630,7 +660,7 @@ namespace CGAL {
 			void get_line_normal(Normal &n, const Line_2 &line) {
 				
 				n = (line.perpendicular(line.point(0))).to_vector();
-				n /= CGAL::sqrt(n * n);
+				n /= static_cast<FT>(CGAL::sqrt(CGAL::to_double(n * n)));
 			}
 
 			void find_nearest_neighbours(const Fuzzy_tree &tree, const Fuzzy_circle &circle) {

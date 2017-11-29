@@ -28,6 +28,7 @@
 #include <CGAL/number_utils.h>
 #include <CGAL/Fuzzy_iso_box.h>
 #include <CGAL/property_map.h>
+#include <CGAL/Simple_cartesian.h>
 
 // New CGAL includes.
 #include <CGAL/Mylog/Mylog.h>
@@ -89,10 +90,10 @@ namespace CGAL {
 			using Normals 			 = std::map<int, Normal>;
 			using Corner 			 = std::pair<Point_2, Normal>;
 			using Corners			 = std::vector<Corner>;
-			using Array_point 		 = std::array<FT, 2>;
+			using Array_point 		 = std::array<double, 2>;
 			using Kmeans_data 		 = std::vector<Array_point>;
 			using Kmeans_map 		 = std::vector<int>;
-			using Kmeans_result 	 = std::tuple< std::vector< std::array<FT, 2> >, std::vector< uint32_t > >;
+			using Kmeans_result 	 = std::tuple< std::vector< std::array<double, 2> >, std::vector< uint32_t > >;
 
 
 			// Constructor.
@@ -401,14 +402,29 @@ namespace CGAL {
 
 				// You can add here a method to fit line based on the centre of mass of the given points + an average normal.
 
+      			using Local_Kernel = CGAL::Simple_cartesian<double>;
+				using Point_2ft    = Local_Kernel::Point_2;
+				using Line_2ft     = Local_Kernel::Line_2;
+
 				const size_t num_points = neighbours.size();
-				std::vector<Point_2> points(num_points);
+				std::vector<Point_2ft> tmp_points(num_points);
 
 				size_t count = 0;
-				for (Point_iterator pit = neighbours.begin(); pit != neighbours.end(); ++pit, ++count) points[count] = (*pit).second;
+				for (Point_iterator pit = neighbours.begin(); pit != neighbours.end(); ++pit, ++count) {
+				
+					const Point_2 &p = (*pit).second;
+
+					const double x = CGAL::to_double(p.x());
+					const double y = CGAL::to_double(p.y());
+
+					tmp_points[count] = Point_2ft(x, y);
+				}
+
 				assert(num_points == count);
 
-				CGAL::linear_least_squares_fitting_2(points.begin(), points.end(), line, CGAL::Dimension_tag<0>());
+				Line_2ft tmp_line;
+				CGAL::linear_least_squares_fitting_2(tmp_points.begin(), tmp_points.end(), tmp_line, CGAL::Dimension_tag<0>());
+				line = Line_2(static_cast<FT>(tmp_line.a()), static_cast<FT>(tmp_line.b()), static_cast<FT>(tmp_line.c()));
 			}
 
 			void create_thin_point_with_line(Projected_points &thinned_points, const Projected_point &query, const Line_2 &line) const {
@@ -760,7 +776,7 @@ namespace CGAL {
 			// http://www.sthda.com/english/articles/29-cluster-validation-essentials/96-determining-the-optimal-number-of-clusters-3-must-know-methods/
 			FT compute_kmeans_error_elbow(const Kmeans_data &kmeans_data, const Kmeans_result &means, const size_t num_clusters_expected) const {
 
-				const FT inertia = dkm::means_inertia(kmeans_data, means, num_clusters_expected);
+				const FT inertia = static_cast<FT>(dkm::means_inertia(kmeans_data, means, num_clusters_expected));
 
 				const FT tmp = static_cast<FT>(num_clusters_expected);
 				const FT error = inertia * tmp;
@@ -780,7 +796,7 @@ namespace CGAL {
 				for (Point_iterator pit = points.begin(); pit != points.end(); ++pit, ++count) {
 					const Point_2 &p = (*pit).second;
 
-					kmeans_data[count] = {{p.x(), p.y()}};
+					kmeans_data[count] = {{CGAL::to_double(p.x()), CGAL::to_double(p.y())}};
 					kmeans_map[count]  = (*pit).first;
 				}
 				assert(count == num_points);
@@ -854,7 +870,7 @@ namespace CGAL {
 
 				for (Point_iterator pit = points.begin(); pit != points.end(); ++pit) {
 					
-					const FT dist = CGAL::sqrt(squared_distance(query.second, (*pit).second));
+					const FT dist = static_cast<FT>(CGAL::sqrt(CGAL::to_double(squared_distance(query.second, (*pit).second))));
 					if (dist != FT(0)) {
 
 						average_spacing += dist;

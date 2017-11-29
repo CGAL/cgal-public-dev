@@ -12,6 +12,9 @@
 #include <vector>
 #include <cassert>
 
+// CGAL includes.
+#include <CGAL/number_utils.h>
+
 // New CGAL includes.
 #include <CGAL/Mylog/Mylog.h>
 #include <CGAL/Level_of_detail_enum.h>
@@ -150,8 +153,8 @@ namespace CGAL {
 
 				if (bu_n >= 0 && bu_n != bu) return true;
 
-				const FT half  = FT(1) / FT(2);
-				const int in_n = fhn->info().in;
+				const FT half = FT(1) / FT(2);
+				const FT in_n = static_cast<FT>(CGAL::to_double(fhn->info().in));
 				
 				assert(in_n != half);
 				if (in_n < half) return true;
