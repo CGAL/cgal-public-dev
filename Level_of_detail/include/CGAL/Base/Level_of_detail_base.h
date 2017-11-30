@@ -179,12 +179,15 @@ namespace CGAL {
 			m_structuring_adjacency_method(Structuring_adjacency_threshold_method::LOCAL),
 			m_structuring_adjacency_value(-FT(1)),
 			m_structuring_global_everywhere(true),
-			m_silent(false)
+			m_silent(false),
+			m_test_data_type(Main_test_data_type::PARIS_ETH)
 			{ }
 
 
 			//////////////////
 			// Parameter functions!
+
+			// Main path.
 			void set_prefix_path(const std::string &path) {
 
 				assert(path != "path_to_the_data_folder" && path != "default");
@@ -192,7 +195,14 @@ namespace CGAL {
 			}
 
 
-			// Output.
+			// Input data.
+			void set_data_type(const size_t new_type) {
+				m_test_data_type = static_cast<Main_test_data_type>(new_type);
+				set_default_parameters();
+			}
+
+
+			// Cout.
 			void make_silent(const bool new_state) {
 				m_silent = new_state;
 			}
@@ -1089,6 +1099,8 @@ namespace CGAL {
 			bool m_structuring_global_everywhere;
 			bool m_silent;
 
+			Main_test_data_type m_test_data_type;
+
 
 			// Assert default values of all global parameters.
 			void assert_global_parameters() {
@@ -1184,8 +1196,7 @@ namespace CGAL {
 
 
 				// The most important!
-				const Main_test_data_type test_data_type = Main_test_data_type::PARIS_ETH;
-				switch (test_data_type) {
+				switch (m_test_data_type) {
 
 					case Main_test_data_type::BASIC:
 						set_basic_parameters();
@@ -1235,8 +1246,12 @@ namespace CGAL {
 						set_paris_tile_2_parameters();
 						break;
 
+					case Main_test_data_type::PARIS_BIG:
+						set_paris_big_parameters();
+						break;
+
 					default:
-						assert(!"Wrong test data!");
+						assert(!"This test data does not exist!");
 						break;
 				}
 			}
@@ -1478,7 +1493,7 @@ namespace CGAL {
 
 				m_structuring_get_all_points    = true;
 				m_structuring_adjacency_value   = 12.0;
-				m_structuring_global_everywhere = false;
+				m_structuring_global_everywhere = true;
 			}
 
 
@@ -1499,7 +1514,7 @@ namespace CGAL {
 				m_structuring_adjacency_method 	 = Structuring_adjacency_threshold_method::GLOBAL;
 
 				m_thinning_fuzzy_radius  = 5.0;
-				m_visibility_angle_eps   = 0.18; 
+				m_visibility_angle_eps   = 0.18;
 				m_max_reg_angle          = 10.0;
 				m_structuring_epsilon 	 = 5.0;
 				m_add_cdt_clutter     	 = false;
@@ -1523,7 +1538,7 @@ namespace CGAL {
 
 				m_structuring_get_all_points    = true;
 				m_structuring_adjacency_value   = 12.0;
-				m_structuring_global_everywhere = false;
+				m_structuring_global_everywhere = true;
 			}
 
 
@@ -1675,7 +1690,7 @@ namespace CGAL {
 				m_structuring_adjacency_method 	 = Structuring_adjacency_threshold_method::GLOBAL;
 
 				m_thinning_fuzzy_radius  = 5.0;
-				m_visibility_angle_eps   = 0.18; 
+				m_visibility_angle_eps   = 0.18;
 				m_max_reg_angle          = 10.0;
 				m_structuring_epsilon 	 = 5.0;
 				m_add_cdt_clutter     	 = false;
@@ -1699,7 +1714,7 @@ namespace CGAL {
 
 				m_structuring_get_all_points    = true;
 				m_structuring_adjacency_value   = 12.0;
-				m_structuring_global_everywhere = false;
+				m_structuring_global_everywhere = true;
 			}
 
 
@@ -1720,7 +1735,7 @@ namespace CGAL {
 				m_structuring_adjacency_method 	 = Structuring_adjacency_threshold_method::GLOBAL;
 
 				m_thinning_fuzzy_radius  = 5.0;
-				m_visibility_angle_eps   = 0.18; 
+				m_visibility_angle_eps   = 0.18;
 				m_max_reg_angle          = 10.0;
 				m_structuring_epsilon 	 = 5.0;
 				m_add_cdt_clutter     	 = false;
@@ -1744,7 +1759,52 @@ namespace CGAL {
 
 				m_structuring_get_all_points    = true;
 				m_structuring_adjacency_value   = 12.0;
-				m_structuring_global_everywhere = false;
+				m_structuring_global_everywhere = true;
+			}
+
+
+			// eth random forest
+			void set_paris_big_parameters() {
+
+				// All main parameters are set below.
+				m_default_path     = m_prefix_path + "paris_big_test" + std::string(PS) + "data_region_growing_eth";
+				m_pipeline_version = Pipeline_version::WITHOUT_SHAPE_DETECTION;
+
+				m_visibility_approach 	 		 = Visibility_approach::FACE_BASED;
+				m_visibility_method   	 		 = Visibility_method::FACE_BASED_NATURAL_NEIGHBOURS;
+				m_visibility_sampler 	 		 = Visibility_sampler::UNIFORM_SUBDIVISION;
+				m_thinning_neighbour_search_type = Neighbour_search_type::CIRCLE;
+				m_building_boundary_type 		 = Building_boundary_type::UNORIENTED;
+				m_clutter_new_point_type 		 = Clutter_new_point_type::CLOSEST;
+				m_thinning_type 	  			 = Thinning_type::NAIVE;
+				m_structuring_adjacency_method 	 = Structuring_adjacency_threshold_method::GLOBAL;
+
+				m_thinning_fuzzy_radius  = 5.0;
+				m_visibility_angle_eps   = 0.18;
+				m_max_reg_angle          = 10.0;
+				m_structuring_epsilon 	 = 5.0;
+				m_add_cdt_clutter     	 = false;
+				m_visibility_num_samples = 1;
+				m_graph_cut_beta 		 = 100000.0;
+				m_clutter_knn 			 = 12;
+				m_clutter_cell_length    = 1.3;
+				m_use_boundaries 		 = true;
+
+				m_use_grid_simplifier_first = true;
+				m_with_region_growing 	 	= true;
+
+				m_region_growing_epsilon 		  = 3.2;
+				m_region_growing_cluster_epsilon  = 2.9;
+				m_region_growing_normal_threshold = 0.7;  
+				m_region_growing_min_points 	  = 10;
+
+				m_use_alpha_shapes = true;
+				m_alpha_shape_size = 5.0;
+				m_graph_cut_gamma  = 10000.0;
+
+				m_structuring_get_all_points    = true;
+				m_structuring_adjacency_value   = 12.0;
+				m_structuring_global_everywhere = true;
 			}
 
 

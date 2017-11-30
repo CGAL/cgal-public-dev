@@ -85,6 +85,7 @@ namespace CGAL {
 			typedef CGAL::Fuzzy_sphere<Search_traits>                    					  Fuzzy_circle;
 			typedef CGAL::Kd_tree<Search_traits>					                          Fuzzy_tree;
 
+			/*
 			typedef CGAL::Simple_cartesian<double> Local_Kernel;
 			typedef typename Local_Kernel::Point_2 Point_2ft;
 
@@ -92,7 +93,13 @@ namespace CGAL {
 			typedef CGAL::Interpolation_traits_2<Local_Kernel>   Interpolation_traits;
 			
 			typedef std::map<Point_2ft, double, typename Local_Kernel::Less_xy_2> Function_type;
-			typedef CGAL::Data_access<Function_type> 		 		  			  Value_access;
+			typedef CGAL::Data_access<Function_type> 		 		  			  Value_access; */
+
+			typedef CGAL::Delaunay_triangulation_2<Kernel> Delaunay_triangulation;
+			typedef CGAL::Interpolation_traits_2<Kernel>   Interpolation_traits;
+			
+			typedef std::map<Point_2, FT, typename Kernel::Less_xy_2> Function_type;
+			typedef CGAL::Data_access<Function_type> 		 		  Value_access;
 
 
 			// Extra.
@@ -427,16 +434,17 @@ namespace CGAL {
 							break;
 					}
 
-					// dt.insert(p);
-					// function_values.insert(std::make_pair(p, inside));
+					dt.insert(p);
+					function_values.insert(std::make_pair(p, inside));
 
+					/*
 					const double x = CGAL::to_double(p.x());
 					const double y = CGAL::to_double(p.y());
 
 					Point_2ft local_p = Point_2ft(x, y);
 
 					dt.insert(local_p);
-					function_values.insert(std::make_pair(local_p, CGAL::to_double(inside)));
+					function_values.insert(std::make_pair(local_p, CGAL::to_double(inside))); */
 				}
 			}
 
@@ -454,15 +462,15 @@ namespace CGAL {
 				for (size_t i = 0; i < samples.size(); ++i) {
 					const Point_2 &query = samples[i];
 
-					std::vector<std::pair<Point_2ft, double> > coords;
+					// std::vector<std::pair<Point_2ft, double> > coords;
 					
-					// std::vector<std::pair<Point_2, FT> > coords;
+					std::vector<std::pair<Point_2, FT> > coords;
 
 					// May bug for some samples, gives division by zero assertion, for basic data set, probably because not enough natural neighbours can be found!
-					Point_2ft local_query = Point_2ft(CGAL::to_double(query.x()), CGAL::to_double(query.y()));
-					const auto triple = CGAL::natural_neighbor_coordinates_2(dt, local_query, std::back_inserter(coords));
+					// Point_2ft local_query = Point_2ft(CGAL::to_double(query.x()), CGAL::to_double(query.y()));
+					// const auto triple = CGAL::natural_neighbor_coordinates_2(dt, local_query, std::back_inserter(coords));
 
-					// const auto triple = CGAL::natural_neighbor_coordinates_2(dt, query, std::back_inserter(coords));
+					const auto triple = CGAL::natural_neighbor_coordinates_2(dt, query, std::back_inserter(coords));
 
 					const bool success = triple.third;
 					const FT norm      = static_cast<FT>(triple.second);
@@ -472,9 +480,9 @@ namespace CGAL {
 					if (is_invalid_norm(norm)) continue;
 
 					assert(norm > FT(0));
-					const double intp = CGAL::linear_interpolation(coords.begin(), coords.end(), CGAL::to_double(norm), Value_access(function_values));
+					// const double intp = CGAL::linear_interpolation(coords.begin(), coords.end(), CGAL::to_double(norm), Value_access(function_values));
 
-					// const FT intp = CGAL::linear_interpolation(coords.begin(), coords.end(), norm, Value_access(function_values));
+					const FT intp = CGAL::linear_interpolation(coords.begin(), coords.end(), norm, Value_access(function_values));
 
 					full_size += coords.size();
 					result    += static_cast<FT>(intp);
@@ -855,21 +863,23 @@ namespace CGAL {
 
 			void generate_barycentre(const CDT &cdt, const Face_iterator &fh, Samples &samples) {
 
+				/*
 				const Point_2 &a = cdt.triangle(fh).vertex(0);
 				const Point_2 &b = cdt.triangle(fh).vertex(1);
-				const Point_2 &c = cdt.triangle(fh).vertex(2);
+				const Point_2 &c = cdt.triangle(fh).vertex(2); */
 
 				m_sample_generator.set_number_of_samples(0);
-				m_sample_generator.create_uniform_subdivision_samples(a, b, c, samples);
+				m_sample_generator.create_uniform_subdivision_samples(cdt.triangle(fh).vertex(0), cdt.triangle(fh).vertex(1), cdt.triangle(fh).vertex(2), samples);
 			}
 
 			void generate_samples_random_uniform_0(const CDT &cdt, const Face_iterator &fh, Samples &samples) {
 
+				/*
 				const Point_2 &a = cdt.triangle(fh).vertex(0);
 				const Point_2 &b = cdt.triangle(fh).vertex(1);
-				const Point_2 &c = cdt.triangle(fh).vertex(2);
+				const Point_2 &c = cdt.triangle(fh).vertex(2); */
 
-				m_sample_generator.create_random_uniform_samples_0(a, b, c, samples);
+				m_sample_generator.create_random_uniform_samples_0(cdt.triangle(fh).vertex(0), cdt.triangle(fh).vertex(1), cdt.triangle(fh).vertex(2), samples);
 
 				// Log log;
 				// log.save_triangle_with_points_eps(a, b, c, samples, "tmp" + std::string(PS) + "triangle_0");
@@ -877,11 +887,12 @@ namespace CGAL {
 
 			void generate_samples_random_uniform_1(const CDT &cdt, const Face_iterator &fh, Samples &samples) {
 
+				/*
 				const Point_2 &a = cdt.triangle(fh).vertex(0);
 				const Point_2 &b = cdt.triangle(fh).vertex(1);
-				const Point_2 &c = cdt.triangle(fh).vertex(2);
+				const Point_2 &c = cdt.triangle(fh).vertex(2); */
 
-				m_sample_generator.create_random_uniform_samples_1(a, b, c, samples);
+				m_sample_generator.create_random_uniform_samples_1(cdt.triangle(fh).vertex(0), cdt.triangle(fh).vertex(1), cdt.triangle(fh).vertex(2), samples);
 
 				// Log log;
 				// log.save_triangle_with_points_eps(a, b, c, samples, "tmp" + std::string(PS) + "triangle_1");
@@ -889,11 +900,12 @@ namespace CGAL {
 
 			void generate_samples_uniform_subdivision(const CDT &cdt, const Face_iterator &fh, Samples &samples) {
 
+				/*
 				const Point_2 &a = cdt.triangle(fh).vertex(0);
 				const Point_2 &b = cdt.triangle(fh).vertex(1);
-				const Point_2 &c = cdt.triangle(fh).vertex(2);
+				const Point_2 &c = cdt.triangle(fh).vertex(2); */
 
-				m_sample_generator.create_uniform_subdivision_samples(a, b, c, samples);
+				m_sample_generator.create_uniform_subdivision_samples(cdt.triangle(fh).vertex(0), cdt.triangle(fh).vertex(1), cdt.triangle(fh).vertex(2), samples);
 			}
 
 			void set_inside(const Face_handle face_handle, Visibility &visibility) {

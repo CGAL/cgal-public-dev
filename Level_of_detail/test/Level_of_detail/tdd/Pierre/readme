@@ -21,7 +21,7 @@ C --------
 a. LOD_DATA_PATH - path to the "data" folder above
 b. LOD_LOG_PATH - path to the "logs" folder above
 
-2. I need to open "CMakeLists.txt" in the Pierre folder and possibly outcomment the Windows options
+2. I need to open "CMakeLists.txt" in the Pierre folder and possibly outcomment the Windows options if compiling under Windows
 
 D --------
 
@@ -36,3 +36,5 @@ make
 or
 
 ./lod -param_name param_value (can be found in the main.cpp)
+
+or use "-help" for all available options

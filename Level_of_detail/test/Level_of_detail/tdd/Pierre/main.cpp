@@ -12,9 +12,9 @@
 #include <cstdlib>
 
 // CGAL includes.
-#include <CGAL/Exact_predicates_exact_constructions_kernel.h>
+// #include <CGAL/Simple_cartesian.h>
+// #include <CGAL/Exact_predicates_exact_constructions_kernel.h>
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
-#include <CGAL/Simple_cartesian.h>
 #include <CGAL/Point_set_3.h>
 
 // CGAL new includes.
@@ -22,7 +22,7 @@
 #include <CGAL/Base/Level_of_detail_base.h>
 
 // using Kernel     = CGAL::Simple_cartesian<double>;
-// using Kernel     = CGAL::Exact_predicates_inexact_constructions_kernel;
+// using Kernel     = CGAL::Exact_predicates_exact_constructions_kernel;
 
 using Kernel     = CGAL::Exact_predicates_inexact_constructions_kernel;
 using FT 		 = Kernel::FT;
@@ -35,7 +35,16 @@ using Parameters = std::map<std::string, std::string>;
 
 void set_user_defined_parameters(const Parameters &parameters, LodBase &lodBase) {
 
-	// Output.
+	// Input data. This parameter must be assigned first! It sets default values for all other parameters!
+	if (parameters.at("-data") != "default") {
+
+		const size_t data_type = static_cast<size_t>( std::stoi(parameters.at("-data").c_str()) );
+		std::cout << "data type: (5 - PARIS_HALF_TILE, 6 - PARIS_FULL_TILE, 10 - PARIS_TILE_SPARCE, 11 - PARIS_TILE_DENSE, 12 - PARIS_9_TILES)" << data_type << std::endl;
+		lodBase.set_data_type(data_type);
+	}
+
+
+	// Cout.
 	if (parameters.at("-silent") != "default") {
 
 		const bool silent = static_cast<bool>( std::stoi(parameters.at("-silent").c_str()) );
@@ -117,16 +126,107 @@ void set_user_defined_parameters(const Parameters &parameters, LodBase &lodBase)
 	if (parameters.at("-gc_beta") != "default") {
 
 		const FT gc_beta = static_cast<FT>( std::stod(parameters.at("-gc_beta").c_str()) );
-		std::cout << "graph cut beta: " << gc_beta << std::endl;
+		std::cout << "graph cut main parameter (beta): " << gc_beta << std::endl;
 		lodBase.set_graph_cut_beta(gc_beta);
 	}
 
 	if (parameters.at("-gc_gamma") != "default") {
 
 		const FT gc_gamma = static_cast<FT>( std::stod(parameters.at("-gc_gamma").c_str()) );
-		std::cout << "graph cut gamma: " << gc_gamma << std::endl;
+		std::cout << "graph cut penalty (gamma): " << gc_gamma << std::endl;
 		lodBase.set_graph_cut_gamma(gc_gamma);
 	}
+}
+
+void print_help() {
+
+	std::cout << std::endl << "HELP:" << std::endl;
+
+	
+	std::cout << std::endl << "EXAMPLE:" << std::endl;
+	std::cout << "your terminal name $ ./lod -data 5 -str_eps 2.0 -silent 1" << std::endl << std::endl;
+
+
+	std::cout << std::endl << "BASIC:" << std::endl;
+
+	std::cout << 
+	"param name: -data" 																										<< std::endl <<
+	"param values: 5 - PARIS_HALF_TILE, 6 - PARIS_FULL_TILE, 10 - PARIS_TILE_SPARCE, 11 - PARIS_TILE_DENSE, 12 - PARIS_9_TILES" << std::endl <<
+	"description: set data type" 																								<< std::endl << std::endl;
+
+	std::cout << 
+	"param name: -silent" 						   << std::endl <<
+	"param values: 0, 1" 						   << std::endl <<
+	"description: save temporary steps 1 or not 0" << std::endl << std::endl;
+
+
+	std::cout << std::endl << "CLUTTER:" << std::endl;
+
+	std::cout << 
+	"param name: -clutter" 						 << std::endl <<
+	"param values: 0, 1" 						 << std::endl <<
+	"description: add clutter points 1 or not 0" << std::endl << std::endl;
+
+	std::cout << 
+	"param name: -cell" 						 		  << std::endl <<
+	"param values: > 0.0" 						 		  << std::endl <<
+	"description: cell side length used in grid simplify" << std::endl << std::endl;
+
+
+	std::cout << std::endl << "REGION GROWING:" << std::endl;
+
+	std::cout << 
+	"param name: -rg_eps" 						  			   << std::endl <<
+	"param values: > 0.0" 						  			   << std::endl <<
+	"description: distance from the point to the optimal line" << std::endl << std::endl;
+
+	std::cout << 
+	"param name: -rg_clust_eps" 				      << std::endl <<
+	"param values: > 0.0" 						      << std::endl <<
+	"description: distance among neighbouring points" << std::endl << std::endl;
+
+	std::cout << 
+	"param name: -rg_norm_thresh" 				  								  << std::endl <<
+	"param values: > 0.0 && < 1.0" 				  								  << std::endl <<
+	"description: cosine between the point normal and normal of the optimal line" << std::endl << std::endl;
+
+	std::cout << 
+	"param name: -rg_min_points" 						  					<< std::endl <<
+	"param values: > 0" 						  							<< std::endl <<
+	"description: minimum number of points that can contribute to the line" << std::endl << std::endl;
+
+
+	std::cout << std::endl << "STRUCTURING:" << std::endl;
+
+	std::cout << 
+	"param name: -str_eps" 						  						  << std::endl <<
+	"param values: > 0.0" 						  						  << std::endl <<
+	"description: distance between adjacent points in the resampled line" << std::endl << std::endl;
+
+	std::cout << 
+	"param name: -str_adj" 						  						<< std::endl <<
+	"param values: > 0.0" 						  						<< std::endl <<
+	"description: max distance between end points of adjacent segments" << std::endl << std::endl;
+
+	std::cout << 
+	"param name: -str_all" 						  							  << std::endl <<
+	"param values: 0, 1" 						  							  << std::endl <<
+	"description: use all resampled points or only end points of the segment" << std::endl << std::endl;
+
+
+	std::cout << std::endl << "GRAPH CUT:" << std::endl;
+
+	std::cout << 
+	"param name: -gc_beta" 						   << std::endl <<
+	"param values: > 0.0" 						   << std::endl <<
+	"description: main parameter of the graph cut" << std::endl << std::endl;
+
+	std::cout << 
+	"param name: -gc_gamma" 		 << std::endl <<
+	"param values: > 0.0" 			 << std::endl <<
+	"description: graph cut penalty" << std::endl;
+
+	std::cout << std::endl;
 }
 
 int main(int argc, char** argv) {
@@ -146,8 +246,17 @@ int main(int argc, char** argv) {
     }
 
 
+    // Help.
+    if (argc == 2 && strcmp(argv[1], "-help") == 0) {
+    
+    	print_help();
+    	return 0;
+    }
+
+
     // Input with parameters.
     Parameters parameters;
+    parameters["-data"]   = "default";
     parameters["-silent"] = "default";
 
     parameters["-clutter"] = "default";
@@ -166,12 +275,16 @@ int main(int argc, char** argv) {
 	parameters["-gc_gamma"] = "default";
 
 	if (argc % 2 != 0) {
-		std::cout << "" + std::string(PN) + "User defined parameter values: " << std::endl;
+		std::cout << "" + std::string(PN) + "User defined parameter values (all other values are default): " << std::endl;
 
 		for (int i = 1; i < argc; i += 2)
 			parameters[argv[i]] = argv[i + 1];
 
-	} else std::cout << "" + std::string(PN) + "Missing parameter values. Check your input!" << std::endl;
+	} else {
+		
+		std::cout << "" + std::string(PN) + "Missing parameter values. Check your input!" << std::endl << std::endl;
+		return 1;
+	}
 
 
 	// Set user defined parameters.

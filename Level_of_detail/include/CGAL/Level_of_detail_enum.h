@@ -111,8 +111,9 @@ namespace CGAL {
 			RESIDENT_TILE_1, // three different residential tiles
 			RESIDENT_TILE_2,
 			RESIDENT_TILE_3,
-			PARIS_TILE_1, // two different Paris tiles
-			PARIS_TILE_2
+			PARIS_TILE_1, 	 // two different Paris tiles
+			PARIS_TILE_2,
+			PARIS_BIG        // 1 km - 9 tiles stitched together
 		};
 
 		// Nearest neighbour search.

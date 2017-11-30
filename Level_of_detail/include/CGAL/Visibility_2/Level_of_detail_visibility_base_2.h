@@ -33,7 +33,6 @@
 // New CGAL includes.
 #include <CGAL/Mylog/Mylog.h>
 #include <CGAL/Level_of_detail_enum.h>
-#include <CGAL/Utils/Level_of_detail_utils.h>
 
 // Eigen includes.
 #include <eigen3/Eigen/Core>

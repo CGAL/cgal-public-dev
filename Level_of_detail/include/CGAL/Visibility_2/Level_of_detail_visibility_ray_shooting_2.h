@@ -89,7 +89,7 @@ namespace CGAL {
 			using Sample_iterator = typename Samples::const_iterator;
 			using Ray_iterator    = typename Rays::const_iterator;
 
-			using Sample_generator = Uniform_sample_generator<Kernel>;
+			using Sample_generator = CGAL::LOD::Uniform_sample_generator<Kernel>;
 
 
 			// Constructor.
@@ -600,39 +600,43 @@ namespace CGAL {
 
 			void generate_barycentre(const CDT &cdt, const Face_handle &fh, Samples &samples) {
 
+				/*
 				const Point_2 &a = cdt.triangle(fh).vertex(0);
 				const Point_2 &b = cdt.triangle(fh).vertex(1);
-				const Point_2 &c = cdt.triangle(fh).vertex(2);
+				const Point_2 &c = cdt.triangle(fh).vertex(2); */
 
 				m_sample_generator.set_number_of_samples(0);
-				m_sample_generator.create_uniform_subdivision_samples(a, b, c, samples);
+				m_sample_generator.create_uniform_subdivision_samples(cdt.triangle(fh).vertex(0), cdt.triangle(fh).vertex(1), cdt.triangle(fh).vertex(2), samples);
 			}
 
 			void generate_samples_random_uniform_0(const CDT &cdt, const Face_handle &fh, Samples &samples) {
 
+				/*
 				const Point_2 &a = cdt.triangle(fh).vertex(0);
 				const Point_2 &b = cdt.triangle(fh).vertex(1);
-				const Point_2 &c = cdt.triangle(fh).vertex(2);
+				const Point_2 &c = cdt.triangle(fh).vertex(2); */
 
-				m_sample_generator.create_random_uniform_samples_0(a, b, c, samples);
+				m_sample_generator.create_random_uniform_samples_0(cdt.triangle(fh).vertex(0), cdt.triangle(fh).vertex(1), cdt.triangle(fh).vertex(2), samples);
 			}
 
 			void generate_samples_random_uniform_1(const CDT &cdt, const Face_handle &fh, Samples &samples) {
 
+				/*
 				const Point_2 &a = cdt.triangle(fh).vertex(0);
 				const Point_2 &b = cdt.triangle(fh).vertex(1);
-				const Point_2 &c = cdt.triangle(fh).vertex(2);
+				const Point_2 &c = cdt.triangle(fh).vertex(2); */
 
-				m_sample_generator.create_random_uniform_samples_1(a, b, c, samples);
+				m_sample_generator.create_random_uniform_samples_1(cdt.triangle(fh).vertex(0), cdt.triangle(fh).vertex(1), cdt.triangle(fh).vertex(2), samples);
 			}
 
 			void generate_samples_uniform_subdivision(const CDT &cdt, const Face_handle &fh, Samples &samples) {
 
+				/*
 				const Point_2 &a = cdt.triangle(fh).vertex(0);
 				const Point_2 &b = cdt.triangle(fh).vertex(1);
-				const Point_2 &c = cdt.triangle(fh).vertex(2);
+				const Point_2 &c = cdt.triangle(fh).vertex(2); */
 
-				m_sample_generator.create_uniform_subdivision_samples(a, b, c, samples);
+				m_sample_generator.create_uniform_subdivision_samples(cdt.triangle(fh).vertex(0), cdt.triangle(fh).vertex(1), cdt.triangle(fh).vertex(2), samples);
 			}
 		};
 	}

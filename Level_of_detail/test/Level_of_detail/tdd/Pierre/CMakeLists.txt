@@ -12,7 +12,7 @@ if (CGAL_FOUND)
 	# windows
 	# set(CMAKE_CXX_FLAGS "${CMAXE_CXX_FLAGS} /EHsc")
 	
-	# mac os
+	# mac os, linux
 	set(CMAKE_CXX_FLAGS "${CMAXE_CXX_FLAGS}")
 
 	set(sources main.cpp)

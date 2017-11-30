@@ -301,7 +301,6 @@ namespace CGAL {
 
 				using Traits1   = CGAL::Simple_cartesian<double>;
 				using Point_3ft = Traits1::Point_3;
-				using Plane_3ft = Traits1::Plane_3;
 
 				if (projected_points.size() == 0) return 0;
 				assert(!point_sets.empty());
