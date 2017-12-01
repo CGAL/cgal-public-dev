@@ -39,7 +39,7 @@ void set_user_defined_parameters(const Parameters &parameters, LodBase &lodBase)
 	if (parameters.at("-data") != "default") {
 
 		const size_t data_type = static_cast<size_t>( std::stoi(parameters.at("-data").c_str()) );
-		std::cout << "data type: (5 - PARIS_HALF_TILE, 6 - PARIS_FULL_TILE, 10 - PARIS_TILE_SPARCE, 11 - PARIS_TILE_DENSE, 12 - PARIS_9_TILES)" << data_type << std::endl;
+		std::cout << "data type (5 - PARIS_HALF_TILE, 6 - PARIS_FULL_TILE, 10 - PARIS_TILE_SPARCE, 11 - PARIS_TILE_DENSE, 12 - PARIS_9_TILES) : " << data_type << std::endl;
 		lodBase.set_data_type(data_type);
 	}
 
@@ -48,7 +48,7 @@ void set_user_defined_parameters(const Parameters &parameters, LodBase &lodBase)
 	if (parameters.at("-silent") != "default") {
 
 		const bool silent = static_cast<bool>( std::stoi(parameters.at("-silent").c_str()) );
-		std::cout << "use silent mode (0 - false, 1 - true): " << silent << std::endl;
+		std::cout << "use silent mode (0 - false, 1 - true) : " << silent << std::endl;
 		lodBase.make_silent(silent);
 	}
 
@@ -57,14 +57,14 @@ void set_user_defined_parameters(const Parameters &parameters, LodBase &lodBase)
 	if (parameters.at("-clutter") != "default") {
 
 		const bool clutter = static_cast<bool>( std::stoi(parameters.at("-clutter").c_str()) );
-		std::cout << "use clutter (0 - false, 1 - true): " << clutter << std::endl;
+		std::cout << "use clutter (0 - false, 1 - true) : " << clutter << std::endl;
 		lodBase.add_clutter(clutter);
 	}
 
 	if (parameters.at("-cell") != "default") {
 
 		const FT cell = static_cast<FT>( std::stod(parameters.at("-cell").c_str()) );
-		std::cout << "clutter cell side length: " << cell << std::endl;
+		std::cout << "clutter cell side length : " << cell << std::endl;
 		lodBase.set_clutter_cell_side_length(cell);
 	}
 
@@ -73,28 +73,28 @@ void set_user_defined_parameters(const Parameters &parameters, LodBase &lodBase)
 	if (parameters.at("-rg_eps") != "default") {
 
 		const FT rg_eps = static_cast<FT>( std::stod(parameters.at("-rg_eps").c_str()) );
-		std::cout << "region growing eps: " << rg_eps << std::endl;
+		std::cout << "region growing eps : " << rg_eps << std::endl;
 		lodBase.set_region_growing_epsilon(rg_eps);
 	}
 
 	if (parameters.at("-rg_clust_eps") != "default") {
 
 		const FT rg_clust_eps = static_cast<FT>( std::stod(parameters.at("-rg_clust_eps").c_str()) );
-		std::cout << "region growing cluster eps: " << rg_clust_eps << std::endl;
+		std::cout << "region growing cluster eps : " << rg_clust_eps << std::endl;
 		lodBase.set_region_growing_cluster_epsilon(rg_clust_eps);
 	}
 
 	if (parameters.at("-rg_norm_thresh") != "default") {
 
 		const FT rg_norm_thresh = static_cast<FT>( std::stod(parameters.at("-rg_norm_thresh").c_str()) );
-		std::cout << "region growing normal threshold: " << rg_norm_thresh << std::endl;
+		std::cout << "region growing normal threshold : " << rg_norm_thresh << std::endl;
 		lodBase.set_region_growing_normal_threshold(rg_norm_thresh);
 	}
 
 	if (parameters.at("-rg_min_points") != "default") {
 
 		const size_t rg_min_points = static_cast<size_t>( std::stoi(parameters.at("-rg_min_points").c_str()) );
-		std::cout << "region growing min points: " << rg_min_points << std::endl;
+		std::cout << "region growing min points : " << rg_min_points << std::endl;
 		lodBase.set_region_growing_min_points(rg_min_points);
 	}
 
@@ -103,21 +103,21 @@ void set_user_defined_parameters(const Parameters &parameters, LodBase &lodBase)
 	if (parameters.at("-str_eps") != "default") {
 
 		const FT str_eps = static_cast<FT>( std::stod(parameters.at("-str_eps").c_str()) );
-		std::cout << "structuring eps: " << str_eps << std::endl;
+		std::cout << "structuring eps : " << str_eps << std::endl;
 		lodBase.set_structuring_epsilon(str_eps);
 	}
 
 	if (parameters.at("-str_adj") != "default") {
 
 		const FT str_adj = static_cast<FT>( std::stod(parameters.at("-str_adj").c_str()) );
-		std::cout << "structuring adjacency threshold: " << str_adj << std::endl;
+		std::cout << "structuring adjacency threshold : " << str_adj << std::endl;
 		lodBase.set_structuring_adjacency_value(str_adj);
 	}
 
 	if (parameters.at("-str_all") != "default") {
 
 		const bool str_all = static_cast<bool>( std::stoi(parameters.at("-str_all").c_str()) );
-		std::cout << "structuring get all points (0 - false, 1 - true): " << str_all << std::endl;
+		std::cout << "structuring get all points (0 - false, 1 - true) : " << str_all << std::endl;
 		lodBase.get_all_structuring_points(str_all);
 	}
 
@@ -126,14 +126,14 @@ void set_user_defined_parameters(const Parameters &parameters, LodBase &lodBase)
 	if (parameters.at("-gc_beta") != "default") {
 
 		const FT gc_beta = static_cast<FT>( std::stod(parameters.at("-gc_beta").c_str()) );
-		std::cout << "graph cut main parameter (beta): " << gc_beta << std::endl;
+		std::cout << "graph cut main parameter (beta) : " << gc_beta << std::endl;
 		lodBase.set_graph_cut_beta(gc_beta);
 	}
 
 	if (parameters.at("-gc_gamma") != "default") {
 
 		const FT gc_gamma = static_cast<FT>( std::stod(parameters.at("-gc_gamma").c_str()) );
-		std::cout << "graph cut penalty (gamma): " << gc_gamma << std::endl;
+		std::cout << "graph cut penalty (gamma) : " << gc_gamma << std::endl;
 		lodBase.set_graph_cut_gamma(gc_gamma);
 	}
 }
