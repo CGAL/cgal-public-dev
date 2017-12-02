@@ -10,10 +10,10 @@ if (CGAL_FOUND)
 	include_directories(BEFORE "../../../../include" "C:/dev/") 
 	
 	# windows
-	# set(CMAKE_CXX_FLAGS "${CMAXE_CXX_FLAGS} /EHsc")
+	set(CMAKE_CXX_FLAGS "${CMAXE_CXX_FLAGS} /EHsc")
 	
 	# mac os, linux
-	set(CMAKE_CXX_FLAGS "${CMAXE_CXX_FLAGS}")
+	# set(CMAKE_CXX_FLAGS "${CMAXE_CXX_FLAGS}")
 
 	set(sources main.cpp)
 	add_executable(lod ${sources})
