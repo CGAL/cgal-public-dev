@@ -45,6 +45,8 @@
 
 namespace CGAL {
 
+namespace Polygon_mesh_processing {
+
 // workaround for area(face_range,tm) overload
 template<typename CGAL_PMP_NP_TEMPLATE_PARAMETERS, typename NP>
 class GetGeomTraits<CGAL_PMP_NP_CLASS, NP>
@@ -52,8 +54,6 @@ class GetGeomTraits<CGAL_PMP_NP_CLASS, NP>
 public:
   struct type{};
 };
-
-namespace Polygon_mesh_processing {
 
   /**
   * \ingroup measure_grp
