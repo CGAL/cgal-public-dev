@@ -1179,7 +1179,9 @@ public :
  		 		std::map<Dart_handle,Dart_handle> path;
  		 		int K0=0;
  		 		int size0=248;//map.template count_all_cells()[0]-1;
-
+ 		 		//supprime les aretes correspondant à l'arbre couvrant du dual
+ 		 		std::vector<Dart_handle> path1;
+ 		 		std::vector<Dart_handle> path2;
  		 		for (typename K::Dart_range::iterator it=
  		 				map.template darts().begin();
  		 				it!=map.template darts().end();it++){
@@ -1187,18 +1189,12 @@ public :
  		 			//	break;
  		 			//std::cout << "try contraction1\n";
  		 			if (map.template is_marked(it,mark0)) {
- 		 				//std::cout << "try contraction2\n";
+
  		 				if (map.template is_removable<1>(it)) {
- 		 					//std::cout << K0 <<" is_removable0\n";
-
- 		 					//if (path.find(it)!=path.end())
- 		 					//	get_appropriate_loop(it);
  		 					map.template remove_cell<1>(it,true);
- 		 					//int e1=map.template info<1>(it);
- 		 					//int e2=map.template info<1>(map.template alpha<0>(it));
-
- 		 					//newindex.insert(std::make_pair(it,1);
-
+ 		 					Dart_handle it0=it;
+ 		 					//path1.push_back(map.template info<0>(it0));
+ 		 					//path2.push_back(map.template info<0>(map.template alpha<0>(it0)));
  		 				}
  		 			}
 
@@ -1207,21 +1203,71 @@ public :
 
  		 		//Dart_handle d0=map.template darts().begin();
 
- 		 		std::cout << "1";
+ 		 		std::cout << "1 before add sommet\n";
  		 		std::vector<Dart_handle> seconddarts;
  		 		std::vector<Dart_handle> aseconddarts;
 
  		 		map.template display_characteristics(std::cout);
- 		 		Dart_handle d0=map.template darts().begin();
+
 
  		 		map.template insert_cell_0_in_cell_2(map.template darts().begin(),
- 		 		map.template create_vertex_attribute(Point(0,0,0)));
+ 		 		map.template create_vertex_attribute(Point(0,0,0)),true);
+ 		 		/*std::vector<std::vector<Dart_handle> > listpath;
+ 		 		for (int k=0;k<path1.size();k++) {
+ 		 			//for (tyepname K::Dart_of_orbit_range::iterator oi=map.template darts_of_orbit<1,2>())
+ 		 			Dart_handle debut=path1[k];
+ 		 			Dart_handle deuxieme=map.template alpha<1>(path1[k]);
+ 		 			Dart_handle troisieme=map.template alpha<0>(deuxieme);
+ 		 			Dart_handle debutp=path2[k];
+ 		 			Dart_handle deuxiemep=map.template alpha<1>(path2[k]);
+ 		 			Dart_handle troisiemep=map.template alpha<0>(deuxiemep);
+ 		 			Dart_handle dc=troisieme;
+ 		 			std::vector<Dart_handle> milieu;
+ 		 			while (true) {
+
+ 		 				dc=map.template alpha<1>(dc);
+ 		 				if (dc==troisiemep) {
+ 		 					break;
+ 		 				}
+ 		 				milieu.push_back(dc);
+ 		 				dc=map.template alpha<2>(dc);
+ 		 				if (dc==troisiemep) {
+ 		 				 	break;
+ 		 				}
+ 		 				milieu.push_back(dc);
+
+ 		 			}
+ 		 			std::vector<Dart_handle> pathg;
+ 		 			pathg.push_back(debut);
+ 		 			pathg.push_back(deuxieme);
+ 		 			pathg.push_back(troisieme);
+ 		 			for (int k2=0;k2<milieu.size();k2++) {
+ 		 				pathg.push_back(milieu[k]);
+ 		 			}
+ 		 			pathg.push_back(troisiemep);
+ 		 			pathg.push_back(deuxiemep);
+ 		 			pathg.push_back(debutp);
+
+ 		 			listpath.push_back(pathg);
+ 		 		}*/
+
+
 
  		 		map.template display_characteristics(std::cout);
 
+ 		 		Dart_handle d0=map.template darts().begin();
+ 		 		for (typename K::Dart_range::iterator it =map.template darts().begin();it!=map.darts().end();it++) {
+
+ 		 			if (map.template info<0>(it)==1&&map.template info<0>(map.template alpha<0>(it))==1) {
+ 		 				d0=it;
+ 		 				break;
+ 		 			}
+
+ 		 		}
+
  		 		Dart_handle d1=d0;
  		 		std::vector<Dart_handle> dsommets;
- 		 		dsommets.push_back(&*d0);
+ 		 		dsommets.push_back(d0);
  		 		int first = 1;
  		 		std::cout << (&d0) << "\n";
  		 		while (true) {
@@ -1232,8 +1278,8 @@ public :
  		 			 	break;
  		 			//d1=map.template alpha<1>(d1);
  		 			//d1=map.template alpha<0>(map.template alpha<1>(d1));
- 		 			dsommets.push_back(&*d1);
- 		 			std::cout << (&*d1) << "\n";
+ 		 			dsommets.push_back(d1);
+ 		 			//std::cout << (d1) << "\n";
  		 			first=0;
 
 
@@ -1262,39 +1308,40 @@ public :
 
  		 			Dart_handle d1=dsommets[k];
  		 			std::cout << k << "\n";
- 		 			for (int k2=k+1;k2<dsommetssize;k2++) {
- 		 			Dart_handle d2=dsommets[k2];
- 		 			//Dart_handle d2=map.template alpha<0>(*d1);
- 		 			//Dart_handle d22=map.template alpha<0>(*dsommets[(k+2)%8]);
+ 		 			//for (int k2=k+1;k2<dsommetssize;k2++) {
+ 		 			//Dart_handle d2=dsommets[k2];
+ 		 			Dart_handle d2=d1;
+ 		 			Dart_handle d22=map.template alpha<0>(d1);
  		 			//map.template sew<1>(d1,d2);
- 		 			std::cout << map.template darts_of_orbit<0,1>(d1).size() << "\n";
- 		 			if (map.template darts_of_orbit<0,1>(d1).size()==6&&
- 		 					map.template darts_of_orbit<0,1>(d2).size()==6){//&&
-							//map.template is_removable<1>(d1)&&
-							//map.template is_removable<1>(d2)) {
- 		 				//map.template unlink_alpha<1>(d1) ;
- 		 				//map.template unlink_alpha<1>(map.template alpha<0>(d1)) ;
- 		 				Dart_handle d11=map.template alpha<1>(d1);
- 		 				Dart_handle d101=map.template alpha<1>(map.template alpha<0>(d1));
-						Dart_handle d21=map.template alpha<1>(d2);
-		 		 		Dart_handle d201=map.template alpha<1>(map.template alpha<0>(d2));
-		 		 		//typename K::size_type mark1=map.template get_new_mark();
-		 		 		map.template mark(d1,mark0);
+ 		 			//std::cout << map.template darts_of_orbit<0,1>(d1).size() << "\n";
+ 		 			if (map.template darts_of_orbit<0,1>(d1).size()==6){//&&
+						Dart_handle d3 = map.template alpha<2>(d2) ;
+ 		 				Dart_handle d4 = map.template alpha<2>(d22) ;
+ 		 				Dart_handle d3n = map.template alpha<1>(d3) ;
+ 		 				Dart_handle d4n = map.template alpha<1>(d4) ;
+ 		 				Dart_handle d2n = map.template alpha<1>(d2) ;
+ 		 				Dart_handle d22n = map.template alpha<1>(d22) ;
+ 		 				map.template unlink_alpha<1>(d2) ;
+ 		 				map.template unlink_alpha<1>(d22);
+ 		 				map.template unlink_alpha<1>(d3) ;
+ 		 				map.template unlink_alpha<1>(d4);
+
 		 		 		map.template mark(d2,mark0);
-		 		 		map.template mark(map.template alpha<0>(d1),mark0);
-		 		 		map.template mark(map.template alpha<0>(d2),mark0);
-		 		 		int res=map.template erase_marked_darts(mark0);
-		 		 		std::cout << res << "\n";
+		 		 		map.template mark(d22,mark0);
+		 		 		map.template mark(d3,mark0);
+		 		 		map.template mark(d4,mark0);
  		 				//map.template remove_cell<1>(d1,true);
- 		 				//map.template remove_cell<1>(d2,true);
- 		 				map.template link_alpha<1>(d11,d201) ;
- 		 				map.template link_alpha<1>(map.template alpha<0>(d101),map.template alpha<0>(d11)) ;
- 		 				set_attributes();
- 		 			//if (map.template is_sewable<1>(d1,(dsommets[(k+2)%8])))
- 		 			//	map.template sew<1>(d1,(dsommets[(k+2)%8]));
- 		 			}
+
+ 		 				map.template link_alpha<1>(d3n,d2n) ;
+ 		 				map.template link_alpha<1>(d4n,d22n) ;
+ 		 				//map.template link_alpha<0>(d2,d22) ;
+ 		 				//map.template link_alpha<0>(d3,d4) ;
+ 		 				//set_attributes();
+
  		 			}
  		 		}
+ 		 		int res=map.template erase_marked_darts(mark0);
+ 		 		std::cout << res;
  		 		map.template display_characteristics(std::cout);
  		 		/*for (int k=0;k<dsommetssize;k=k+1) {
 

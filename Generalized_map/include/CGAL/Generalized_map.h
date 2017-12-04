@@ -1974,7 +1974,7 @@ namespace CGAL {
         if (is_marked(d, amark))
         {
           for ( i = 0; i <= dimension; ++i)
-          { if (!is_free(d, i)) unlink_beta(d, i); }
+          { if (!is_free(d, i)) unlink_alpha(d, i); }
           erase_dart(d); ++res;
         }
       }

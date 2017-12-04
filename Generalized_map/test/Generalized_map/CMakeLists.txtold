@@ -1,7 +1,7 @@
 # Created by the script cgal_create_CMakeLists
 # This is the CMake script for compiling a set of CGAL applications.
 
-project( Generalized_map )
+project( Generalized_map_Tests )
 
 
 cmake_minimum_required(VERSION 2.8.11)
@@ -12,7 +12,7 @@ find_package( CGAL QUIET COMPONENTS  )
 if ( NOT CGAL_FOUND )
 
   message(STATUS "This project requires the CGAL library, and will not be compiled.")
-  return()  
+  return()
 
 endif()
 
@@ -41,8 +41,6 @@ include_directories( BEFORE ../../include )
 # ##########################################################
 
 include( CGAL_CreateSingleSourceCGALProgram )
-
-create_single_source_cgal_program( "Algo1_only_GMAP.cpp" )
 
 create_single_source_cgal_program( "Generalized_map_test.cpp" )
 
