@@ -23,6 +23,12 @@
 #include <CGAL/number_utils.h>
 #include <CGAL/constructions_d.h>
 #include <CGAL/Simple_cartesian.h>
+#include <CGAL/Kd_tree.h>
+#include <CGAL/Search_traits_2.h>
+#include <CGAL/Search_traits_adapter.h>
+#include <CGAL/Orthogonal_k_neighbor_search.h>
+#include <CGAL/Fuzzy_sphere.h>
+#include <CGAL/property_map.h>
 
 // New CGAL includes.
 #include <CGAL/Mylog/Mylog.h>
@@ -231,6 +237,15 @@ namespace CGAL {
 			typedef typename Kernel::Vector_3 Vector_3;
 			typedef typename Kernel::Line_2   Line_2;
 
+			using Projected_point = std::pair<int, Point_2>;
+			using Point_map       = CGAL::Second_of_pair_property_map<Projected_point>;
+
+			typedef CGAL::Search_traits_2<Kernel>                       					 Search_traits_2;
+			typedef CGAL::Search_traits_adapter<Projected_point, Point_map, Search_traits_2> Search_traits;
+			typedef CGAL::Orthogonal_k_neighbor_search<Search_traits> 					     Neighbor_search;
+			typedef CGAL::Fuzzy_sphere<Search_traits>                    					 Fuzzy_circle;
+			typedef CGAL::Kd_tree<Search_traits>					                         Fuzzy_tree;
+
 			typename Kernel::Compute_squared_distance_2 squared_distance;
 			typename Kernel::Compute_scalar_product_3   dot_product;
 
@@ -275,12 +290,12 @@ namespace CGAL {
 			template<class Normals, class Projected_points, class Container>
 			void estimate_2d_normals_from_3d(Normals &normals, const Projected_points &points, const Container &input) const {
 
-				using Point_iterator  = typename Projected_points::const_iterator;
-				using Projected_point = std::pair<int, Point_2>;
+				using Point_iterator = typename Projected_points::const_iterator;
 
 				normals.clear();
 				assert(!points.empty() && input.number_of_points() != 0);
 
+				// Project normals.
 				for (Point_iterator pit = points.begin(); pit != points.end(); ++pit) {
 					
 					const Projected_point &projected = *pit;
@@ -290,6 +305,70 @@ namespace CGAL {
 				}
 			}
 
+			template<class Normals, class Projected_points>
+			void estimate_2d_normals_using_pca(Normals &normals, const Projected_points &points, const FT circle_radius) const {
+
+				using Point_iterator = typename Projected_points::const_iterator;
+
+				normals.clear();
+				assert(!points.empty());
+
+				// Create a tree.
+				Fuzzy_tree tree;
+				tree.insert(points.begin(), points.end());
+
+				// Estimate normals.
+				for (Point_iterator pit = points.begin(); pit != points.end(); ++pit) {
+					
+					const Projected_point &projected = *pit;
+					estimate_local_normal<Normals, Projected_points>(normals, projected, circle_radius, tree);
+				}
+			}
+
+			template<class Normals, class Projected_points>
+			void estimate_local_normal(Normals &normals, const Projected_point &query, const FT circle_radius, const Fuzzy_tree &tree) const {
+				
+				using Point_iterator = typename Projected_points::const_iterator;
+
+				// Find neighbours.
+				Projected_points neighbours;
+				Fuzzy_circle circle(query.second, circle_radius);
+
+				tree.search(std::inserter(neighbours, neighbours.end()), circle);
+				neighbours[query.first] = query.second;
+
+				// Estimate normal.
+				using Local_Kernel = CGAL::Simple_cartesian<double>;
+				using Point_2ft    = Local_Kernel::Point_2;
+				using Line_2ft     = Local_Kernel::Line_2;
+				using Vector_2ft   = Local_Kernel::Vector_2;
+
+				const size_t num_neighbours = neighbours.size();
+				std::vector<Point_2ft> tmp_points(num_neighbours);
+
+				size_t ind = 0;
+				for (Point_iterator nit = neighbours.begin(); nit != neighbours.end(); ++nit, ++ind) {
+					const Point_2 &p = (*nit).second;
+
+					const double x = CGAL::to_double(p.x());
+					const double y = CGAL::to_double(p.y());
+
+					tmp_points[ind] = Point_2ft(x, y);
+				}
+				
+				assert(num_neighbours   != 0);
+				assert(ind == num_neighbours);
+
+				Line_2ft tmp_line;
+				CGAL::linear_least_squares_fitting_2(tmp_points.begin(), tmp_points.end(), tmp_line, CGAL::Dimension_tag<0>());
+				
+				const Vector_2ft vector = Vector_2ft(tmp_line.point(0), tmp_line.point(1));
+				Vector_2ft normal       = vector.perpendicular(CGAL::COUNTERCLOCKWISE);
+				normal 		           /= CGAL::sqrt(normal * normal);
+
+				normals[query.first] = Vector_2(static_cast<FT>(normal.x()), static_cast<FT>(normal.y()));
+			}
+			
 
 			//////////////////////////////////
 			// Projection.
@@ -579,7 +658,7 @@ namespace CGAL {
 
 
 				// Create CDT.
-				CGAL::make_conforming_Delaunay_2(cdt);
+				// CGAL::make_conforming_Delaunay_2(cdt);
 				number_of_faces = cdt.number_of_faces();
 
 

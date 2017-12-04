@@ -23,9 +23,9 @@ D --------
 
 Now, I go to the folder "tdd-build"
 
-To compile the test on Mac OS, I do in my terminal (not sure how it should be on Windows):
+To compile the test on Mac OS, I do in my terminal (not sure how it should be on Linux):
 
-run cmake for the "CMakeLists.txt" in the "Pierre" folder
+run cmake for the "CMakeLists.txt" in the "Simon" folder
 make
 ./lod
 

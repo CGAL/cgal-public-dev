@@ -7,8 +7,8 @@
 // Main includes.
 #include <CGAL/Level_of_detail_enum.h>
 #include <CGAL/Level_of_detail_traits.h>
-
 #include <CGAL/Base/Level_of_detail_base.h>
+#include <CGAL/Wrapper/Level_of_detail_wrapper.h>
 #include <CGAL/Loader/Level_of_detail_loader.h>
 #include <CGAL/Preprocessor/Level_of_detail_preprocessor.h>
 #include <CGAL/Selector/Level_of_detail_selector.h>

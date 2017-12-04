@@ -162,6 +162,12 @@ namespace CGAL {
 			GLOBAL // user-defined value is chosen
 		};
 
+		// Method to estimate normals in 2D region growing.
+		enum class Region_growing_normal_estimation {
+			PROJECTED, // project exact normals if they exist
+			LOCAL      // estimate normals using PCA
+		};
+
 	} // LOD
 
 } // CGAL

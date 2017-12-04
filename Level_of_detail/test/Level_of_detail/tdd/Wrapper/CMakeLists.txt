@@ -2,18 +2,13 @@ project(lod)
 cmake_minimum_required(VERSION 2.6)
 
 find_package(CGAL REQUIRED)
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 14)
 
 if (CGAL_FOUND)
 	include(${CGAL_USE_FILE})
 
-	include_directories(BEFORE "../../../../include" "C:/dev/") 
-	
-	if (WIN32)
-		set(CMAKE_CXX_FLAGS "${CMAXE_CXX_FLAGS} /EHsc")
-	else()
-		set(CMAKE_CXX_FLAGS "${CMAXE_CXX_FLAGS}")
-	endif()
+	include_directories(BEFORE "../../../../include") 
+	set(CMAKE_CXX_FLAGS "${CMAXE_CXX_FLAGS} -pedantic -Wall -Wextra -Weffc++ -Wno-vla-extension -Wc++11-extensions -Werror")
 
 	set(sources main.cpp)
 	add_executable(lod ${sources})

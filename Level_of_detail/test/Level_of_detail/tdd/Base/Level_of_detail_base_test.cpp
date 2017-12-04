@@ -6,7 +6,6 @@
 
 // CGAL includes.
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
-#include <CGAL/Simple_cartesian.h>
 #include <CGAL/Point_set_3.h>
 
 // CGAL new includes.
@@ -19,8 +18,6 @@ class LOD_BaseTest: public Test {
 
 public:
 	using FT = double;
-
-	// using Kernel = CGAL::Simple_cartesian<FT>;
 	
 	using Kernel    = CGAL::Exact_predicates_inexact_constructions_kernel;
 	using Point     = Kernel::Point_3;
@@ -38,8 +35,7 @@ TEST_F(LOD_BaseTest, Compiles) {
 
 TEST_F(LOD_BaseTest, RunsCreateLodsFirstVersionFunction) {
 	
-	// const std::string data_path = std::string(std::getenv("LOD_DATA_PATH"));
-   	   const std::string data_path = "/Users/danisimo/Documents/pipeline/data/";
+   	const std::string data_path = "/Users/danisimo/Documents/pipeline/data/";
    	
    	lodBase.set_prefix_path(data_path);
 	lodBase.set_default_parameters();

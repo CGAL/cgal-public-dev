@@ -130,7 +130,8 @@ TEST_F(LOD_RegionGrowingTest, Compiles) {
 
 TEST_F(LOD_RegionGrowingTest, DetectesOneLine) {
 
-	lodRegionGrowing.set_cluster_epsilon(0.15);
+	lodRegionGrowing.set_cluster_epsilon(0.165);
+	lodRegionGrowing.set_normal_estimation_method(CGAL::LOD::Region_growing_normal_estimation::LOCAL);
 
 	const auto number_of_detected_lines = lodRegionGrowing.detect(
 		boundary_clutter, boundary_clutter_projected,
@@ -142,7 +143,8 @@ TEST_F(LOD_RegionGrowingTest, DetectesOneLine) {
 
 TEST_F(LOD_RegionGrowingTest, DetectesTwoLines) {
 
-	lodRegionGrowing.set_cluster_epsilon(0.2);
+	lodRegionGrowing.set_cluster_epsilon(0.22);
+	lodRegionGrowing.set_normal_estimation_method(CGAL::LOD::Region_growing_normal_estimation::PROJECTED);
 
 	const auto number_of_detected_lines = lodRegionGrowing.detect(
 		boundary_clutter, boundary_clutter_projected,

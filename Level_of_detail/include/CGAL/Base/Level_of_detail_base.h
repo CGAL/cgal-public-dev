@@ -180,7 +180,8 @@ namespace CGAL {
 			m_structuring_adjacency_value(-FT(1)),
 			m_structuring_global_everywhere(true),
 			m_silent(false),
-			m_test_data_type(Main_test_data_type::PARIS_ETH)
+			m_test_data_type(Main_test_data_type::PARIS_ETH),
+			m_region_growing_normal_estimation_method(Region_growing_normal_estimation::PROJECTED)
 			{ }
 
 
@@ -516,6 +517,7 @@ namespace CGAL {
 				m_region_growing.set_normal_threshold(m_region_growing_normal_threshold);
 				m_region_growing.set_minimum_shape_points(m_region_growing_min_points);
 				m_region_growing.make_silent(m_silent);
+				m_region_growing.set_normal_estimation_method(m_region_growing_normal_estimation_method);
 
 				const auto number_of_detected_lines = m_region_growing.detect(
 					boundary_clutter   , boundary_clutter_projected,
@@ -1100,6 +1102,7 @@ namespace CGAL {
 			bool m_silent;
 
 			Main_test_data_type m_test_data_type;
+			Region_growing_normal_estimation m_region_growing_normal_estimation_method;
 
 
 			// Assert default values of all global parameters.
@@ -1193,6 +1196,8 @@ namespace CGAL {
 
 				m_graph_cut_alpha = 1.0;    // should not change anything but should be bigger or equal to 1
 				m_graph_cut_gamma = 1000.0; // is not used in the pipeline without shape detection (or without structuring), otherwise should be some big value
+
+				m_region_growing_normal_estimation_method = Region_growing_normal_estimation::PROJECTED;
 
 
 				// The most important!

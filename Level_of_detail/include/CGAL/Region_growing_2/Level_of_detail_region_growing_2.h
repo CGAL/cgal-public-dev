@@ -87,7 +87,8 @@ namespace CGAL {
 			m_normal_threshold(-FT(1)),
 			m_min_points(0),
 			m_save_info(false),
-			m_silent(false) { }
+			m_silent(false),
+			m_normal_estimation_method(Region_growing_normal_estimation::PROJECTED) { }
 
 
 			// Public functions.
@@ -121,6 +122,10 @@ namespace CGAL {
 
 			void save_info(const bool new_state) {
 				m_save_info = new_state;
+			}
+
+			void set_normal_estimation_method(const Region_growing_normal_estimation new_method) {
+				m_normal_estimation_method = new_method;
 			}
 
 
@@ -204,6 +209,7 @@ namespace CGAL {
       		std::vector<Point_2ft> 	m_local_points;
 
       		bool m_silent;
+      		Region_growing_normal_estimation m_normal_estimation_method;
 
 
 			class Sort_by_linearity {
@@ -346,15 +352,37 @@ namespace CGAL {
 
 			void estimate_normals(Normals &normals, const Projected_points &boundary_clutter_projected, const Container &input) {
 
-				// Add here new methods to estimate normals later!
+				switch (m_normal_estimation_method) {
 
-				m_simple_utils.estimate_2d_normals_from_3d(normals, boundary_clutter_projected, input);
-				assert(normals.size() == boundary_clutter_projected.size());
+					case Region_growing_normal_estimation::PROJECTED:
+						estimate_normals_projected(normals, boundary_clutter_projected, input);
+						break;
+
+					case Region_growing_normal_estimation::LOCAL:
+						estimate_normals_local(normals, boundary_clutter_projected);
+						break;
+
+					default:
+						assert(!"Wrong normal estimation method!");
+						break;
+				}
 
 				if (!m_silent) {
 					Log log; 
 					log.export_projected_points_with_normals_as_xyz("tmp" + std::string(PS) + "estimated_normals", boundary_clutter_projected, normals, "unused path");
 				}
+			}
+
+			void estimate_normals_projected(Normals &normals, const Projected_points &boundary_clutter_projected, const Container &input) {
+
+				m_simple_utils.estimate_2d_normals_from_3d(normals, boundary_clutter_projected, input);
+				assert(normals.size() == boundary_clutter_projected.size());
+			}
+
+			void estimate_normals_local(Normals &normals, const Projected_points &boundary_clutter_projected) {
+
+				m_simple_utils.estimate_2d_normals_using_pca(normals, boundary_clutter_projected, m_cluster_epsilon);
+				assert(normals.size() == boundary_clutter_projected.size());
 			}
 
 			void sort_projected_points(Sorted_indices &sorted_indices, Log &log, const Projected_points &boundary_clutter_projected, const Fuzzy_tree &tree, const size_t num_input_points) {

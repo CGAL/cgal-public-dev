@@ -6,7 +6,7 @@ find_package(CGAL REQUIRED)
 
 set(CMAKE_CXX_STANDARD 14)
 
-if (CGAL_FOUND) 
+if (CGAL_FOUND)
 
 	include(${CGAL_USE_FILE})
 
