@@ -30,7 +30,6 @@ namespace CGAL {
 		class Level_of_detail_base {
 
 		public:
-
 			// Main typedefs.
 			typedef LodTraits 				      Traits;
 			typedef typename Traits::Kernel       Kernel;
@@ -48,7 +47,7 @@ namespace CGAL {
 			typedef typename Kernel::Line_2    Line_2;
 			typedef typename Kernel::Segment_2 Segment_2;
 
-			typedef typename Traits::Building_boundary_selector Building_boundary_selector;
+			typedef typename Traits::Building_boundary_selector Building_boundary_selector; // Maybe use a factory here? 
 			typedef typename Traits::Building_interior_selector Building_interior_selector;
 			typedef typename Traits::Clutter_selector 		    Clutter_selector;
 			typedef typename Traits::Ground_selector 		    Ground_selector;
@@ -80,7 +79,7 @@ namespace CGAL {
 			typedef typename CDT::Finite_faces_iterator Face_iterator;
 
 			typedef typename Traits::Graph_cut Graph_cut;
-			typedef typename Traits::Lods 	   Lods;
+			typedef typename Traits::Lods Lods;
 
 			typedef typename Traits::Mesh 			   Mesh;
 			typedef typename Traits::Mesh_facet_colors Mesh_facet_colors;
@@ -98,7 +97,7 @@ namespace CGAL {
 			typedef Grid_new_point_type 			   Clutter_new_point_type;
 
 
-			// Extra typedefs.
+			// Extra.
 			using Plane_iterator = typename Planes::const_iterator;
 
 			using Index   = int;
@@ -116,18 +115,17 @@ namespace CGAL {
 			using Label     = typename Traits::Label;
 			using Label_map = typename Container_3D:: template Property_map<Label>;
 
-			using Point_index 	  = typename Container_3D::Index;
+			using Point_index = typename Container_3D::Index;
 			using Face_points_map = std::map<Face_handle, std::vector<Point_index> >;
 
 			using Lod_parameters = CGAL::LOD::LOD_parameters<FT>;
-			using Parameters     = typename Lod_parameters::Input_parameters;
 
 			enum class Program_version  { VER0 };
 			enum class Pipeline_version { WITH_SHAPE_DETECTION, WITHOUT_SHAPE_DETECTION };
 
 
 			//////////////
-			// Main class with all default parameters.
+			// Main class!
 			Level_of_detail_base() :
 			m_prefix_path("default"),
 			m_default_path("default"),
@@ -192,175 +190,115 @@ namespace CGAL {
 			//////////////////
 			// Parameter functions!
 
-			void set_prefix_path(const std::string &new_path) {
-				m_prefix_path = new_path;
+			// Main path.
+			void set_prefix_path(const std::string &path) {
+
+				assert(path != "path_to_the_data_folder" && path != "default");
+				m_prefix_path = path;
 			}
 
-			void set_data_type(const size_t) {
-				assert(!"Should not be used here!");
+
+			// Input data.
+			void set_data_type(const size_t new_type) {
+				m_test_data_type = static_cast<Main_test_data_type>(new_type);
+				set_default_parameters();
 			}
 
-			void make_silent(const bool) {
-				assert(!"Should not be used here!");
+
+			// Cout.
+			void make_silent(const bool new_state) {
+				m_silent = new_state;
 			}
 
-			void add_clutter(const bool) {
-				assert(!"Should not be used here!");
+
+			// Clutter.
+			void add_clutter(const bool new_state) {
+				m_add_cdt_clutter = new_state;
 			}
 
-			void set_clutter_cell_side_length(const FT) {
-				assert(!"Should not be used here!");
+			void set_clutter_cell_side_length(const FT new_value) {
+
+				assert(new_value > FT(0));
+				m_clutter_cell_length = new_value;
 			}
 
-			void set_region_growing_epsilon(const FT) {
-				assert(!"Should not be used here!");
+
+			// Region growing.
+			void set_region_growing_epsilon(const FT new_value) {
+
+				assert(new_value > FT(0));
+				m_region_growing_epsilon = new_value;
 			}
 
-			void set_region_growing_cluster_epsilon(const FT) {
-				assert(!"Should not be used here!");
+			void set_region_growing_cluster_epsilon(const FT new_value) {
+
+				assert(new_value > FT(0));
+				m_region_growing_cluster_epsilon = new_value;
 			}
 
-			void set_region_growing_normal_threshold(const FT) {
-				assert(!"Should not be used here!");
+			void set_region_growing_normal_threshold(const FT new_value) {
+
+				assert(new_value > FT(0) && new_value < FT(1));
+				m_region_growing_normal_threshold = new_value;
 			}
 
-			void set_region_growing_min_points(const size_t) {
-				assert(!"Should not be used here!");
+			void set_region_growing_min_points(const size_t new_value) {
+
+				assert(new_value > 1);
+				m_region_growing_min_points = new_value;
 			}
 
-			void set_structuring_epsilon(const FT) {
-				assert(!"Should not be used here!");
+
+			// Structuring.
+			void set_structuring_epsilon(const FT new_value) {
+
+				assert(new_value > FT(0));
+				m_structuring_epsilon = new_value;
 			}
 
-			void set_structuring_adjacency_value(const FT) {
-				assert(!"Should not be used here!");
+			void set_structuring_adjacency_value(const FT new_value) {
+
+				assert(new_value > FT(0));
+				m_structuring_adjacency_value = new_value;
 			}
 
-			void get_all_structuring_points(const bool) {
-				assert(!"Should not be used here!");
+			void get_all_structuring_points(const bool new_state) {
+				m_structuring_get_all_points = new_state;
 			}
 
-			void set_graph_cut_beta(const FT) {
-				assert(!"Should not be used here!");
+
+			// Graph cut.
+			void set_graph_cut_beta(const FT new_value) {
+
+				assert(new_value >= FT(0));
+				m_graph_cut_beta = new_value;
 			}
 
-			void set_graph_cut_gamma(const FT) {
-				assert(!"Should not be used here!");
-			}
+			void set_graph_cut_gamma(const FT new_value) {
 
-			void set_default_parameters() {
-				
-				set_optimal_configuration();
-				m_default_path = "/Users/danisimo/Documents/pipeline/data/paris_test/data_region_growing_eth.ply";
+				assert(new_value >= FT(0));
+				m_graph_cut_gamma = new_value;
 			}
 
 
 			//////////////////
 			// Main functions!
 
+			// Set optimal configuration.
 			void set_optimal_configuration() {
 
-				set_not_important_options();
-				set_more_important_options();
-				set_the_most_important_options();
 			}
 
-			void set_not_important_options() {
-				
-				m_prefix_path  = "stub";
-				m_add_cdt_bbox = false;
-				
-				m_structuring_log 	   	 				 = false;
-				m_visibility_save_info 					 = false;
-				m_graph_cut_save_info 					 = false;
-				m_building_boundaries_save_internal_info = false;
+			void set_user_defined_parameters(Lod_parameters & /* lod_parameters */ ) {
 
-				m_building_boundaries_max_inner_iters = 1000;
-				m_building_boundaries_max_outer_iters = 1000000;
 
-				m_visibility_show_progress  = true;
-				m_visibility_norm_threshold = 1000.0;
 			}
 
-			void set_more_important_options() {
-
-				m_regularizer_reject_planes = true;
-				m_structuring_resample 	 	= true;
-				m_clean_projected_points 	= true;
-				
-				m_roof_fitter_type 			   = Roof_fitter_type::AVG;
-				m_structuring_corner_algorithm = Structuring_corner_algorithm::GRAPH_BASED;
-
-				m_graph_cut_alpha 	  = 1.0;
-				m_preprocessor_scale  = 2.0;
-				m_clutter_fitter_type = Clutter_fitter_type::LINE;	
-				
-				m_visibility_num_neighbours 	  = 6;
-				m_visibility_rays_per_side  	  = 10;
-				m_visibility_small_edge_threshold = -1000000.0;
-
-				m_region_growing_normal_estimation_method = Region_growing_normal_estimation::PROJECTED;
+			// Set default parameters.
+			void set_default_parameters() {
+				set_global_parameters();
 			}
 
-			void set_the_most_important_options() {
-
-				m_pipeline_version = Pipeline_version::WITHOUT_SHAPE_DETECTION;
-
-				m_visibility_approach 	 		 = Visibility_approach::FACE_BASED;
-				m_visibility_method   	 		 = Visibility_method::FACE_BASED_NATURAL_NEIGHBOURS;
-				m_visibility_sampler 	 		 = Visibility_sampler::UNIFORM_SUBDIVISION;
-				m_thinning_neighbour_search_type = Neighbour_search_type::CIRCLE;
-				m_building_boundary_type 		 = Building_boundary_type::UNORIENTED;
-				m_clutter_new_point_type 		 = Clutter_new_point_type::CLOSEST;
-				m_thinning_type 	  			 = Thinning_type::NAIVE;
-				m_structuring_adjacency_method 	 = Structuring_adjacency_threshold_method::GLOBAL;
-
-				m_thinning_fuzzy_radius  = 5.0;
-				m_visibility_angle_eps   = 0.18;
-				m_max_reg_angle          = 10.0;
-				m_structuring_epsilon 	 = 5.0;
-				m_add_cdt_clutter     	 = false;
-				m_visibility_num_samples = 1;
-				m_graph_cut_beta 		 = 100000.0;
-				m_clutter_knn 			 = 12;
-				m_clutter_cell_length    = 1.3;
-				m_use_boundaries 		 = true;
-
-				m_use_grid_simplifier_first = true;
-				m_with_region_growing 	 	= true;
-
-				m_region_growing_epsilon 		  = 3.2;
-				m_region_growing_cluster_epsilon  = 2.9;
-				m_region_growing_normal_threshold = 0.7;  
-				m_region_growing_min_points 	  = 10;
-
-				m_use_alpha_shapes = true;
-				m_alpha_shape_size = 5.0;
-				m_graph_cut_gamma  = 10000.0;
-
-				m_structuring_get_all_points    = true;
-				m_structuring_adjacency_value   = 12.0;
-				m_structuring_global_everywhere = true;
-			}
-
-			void set_required_parameters(const Parameters &parameters) {
-				
-				add_str_parameter("-data", m_default_path, parameters);
-			}
-
-			void set_optional_parameters(const Parameters &parameters) {
-				
-				add_bool_parameter("-silent", m_silent, parameters);
-			}
-
-			void set_user_defined_parameters(const Lod_parameters &lod_parameters) {
-
-				const Parameters &parameters = lod_parameters.get();
-				std::cout << "Parameters: " << std::endl;
-				
-				set_required_parameters(parameters);
-				set_optional_parameters(parameters);
-			}
 
 			// All versions.
 			void create_lods() {
@@ -379,49 +317,8 @@ namespace CGAL {
 			}
 
 		private:
-
-			template<typename Val>
-			void add_val_parameter(const std::string &parameter_name, Val &variable_value, const Parameters &parameters) {
-				
-				if (!does_parameter_exist(parameter_name, parameters)) return;
-				const std::string parameter_value = parameters.at(parameter_name);
-
-				if (parameter_value != "default")
-					variable_value = static_cast<Val>(std::stod(parameter_value.c_str()));
-
-				std::cout << parameter_name << " : " << variable_value << std::endl;
-			}
-
-			void add_str_parameter(const std::string &parameter_name, std::string &variable_value, const Parameters &parameters) {
-				
-				if (!does_parameter_exist(parameter_name, parameters)) return;
-				const std::string parameter_value = parameters.at(parameter_name);
-
-				if (parameter_value != "default") 
-					variable_value = parameter_value;
-
-				std::cout << parameter_name << " : " << variable_value << std::endl;
-			}
-
-			void add_bool_parameter(const std::string &parameter_name, bool &variable_value, const Parameters &parameters) {
-				
-				if (!does_parameter_exist(parameter_name, parameters)) return;
-
-				variable_value = true;
-				std::cout << parameter_name << " : " << (variable_value ? "true" : "false") << std::endl;
-			}
-
-			bool does_parameter_exist(const std::string &parameter_name, const Parameters &parameters) {
-				
-				for (typename Parameters::const_iterator param = parameters.begin(); param != parameters.end(); ++param)
-					if ((*param).first == parameter_name) return true;
-
-				return false;
-			}
-
 			void start_execution(
 				Log &log) {
-
 
 				// Create log and set default parameters.
 				std::cout << "" + std::string(PN) + "starting ..." << std::endl;
@@ -433,22 +330,22 @@ namespace CGAL {
 				Log &log, 
 				const size_t exec_step) {
 
-
 				// Read data.
 				std::cout << "(" << exec_step << ") loading" << std::endl;
 
 				assert(m_default_path != "default");
 
-				m_loader.get_data(m_default_path, input);
+				m_loader.get_data(m_default_path + ".ply", input);
 
 				log.out << "(" << exec_step << ") Data are loaded. Number of points: " << input.number_of_points() << std::endl << std::endl;
+
+				// Log mock_saver; mock_saver.save_ply<Traits, Container_3D>(input, "basic_mock", true);
 			}
 
 			void getting_all_planes(
 				Planes &all_planes, 
 				Log &log, 
 				const Container_3D &input, const size_t exec_step) {
-
 
 				// Find a set of planes related to the points. Basically here we emulate RANSAC.
 				// For each plane we store indices of all points contained in this plane.
@@ -467,7 +364,6 @@ namespace CGAL {
 				Log &log, 
 				const Container_3D &input, const size_t exec_step) {
 
-
 				// Split data with respect to 2 different semantic labels.
 				std::cout << "(" << exec_step << ") selection" << std::endl;
 
@@ -485,11 +381,10 @@ namespace CGAL {
 				Log &log, 
 				const Indices &ground_idxs, const Container_3D &input, const size_t exec_step) {
 
-
 				// Create plane from the ground points.
 				std::cout << "(" << exec_step << ") ground plane fitting" << std::endl;
 
-				base_ground_plane = Plane_3(FT(0), FT(0), FT(1), FT(0));
+				base_ground_plane = Plane_3(FT(0), FT(0), FT(1), FT(0)); // use XY plane instead
 				m_utils.fit_ground_plane(input, ground_idxs, fitted_ground_plane);
 				
 				log.out << "(" << exec_step << " a) Base ground plane is: "        << base_ground_plane   << std::endl;
@@ -501,7 +396,6 @@ namespace CGAL {
 				Boundary_data &boundary_clutter, 
 				Log &log, 
 				const Indices &building_boundary_idxs, const Indices &building_interior_idxs, const Container_3D &input, const size_t exec_step) {
-
 
 				// Map indices from all detected planes to the ones that are a part of the given facades.
 				std::cout << "(" << exec_step << ") getting boundaries" << std::endl;
@@ -526,7 +420,6 @@ namespace CGAL {
 				Log &log, 
 				const Plane_3 &base_ground_plane, const size_t exec_step) {
 
-
 				// Make all nearly vertical planes in the building's boundary exactly vertical.
 				std::cout << "(" << exec_step << ") regularizing" << std::endl;
 
@@ -538,6 +431,8 @@ namespace CGAL {
 
 				log.out << "(" << exec_step << ") Building's nearly vertical planes are regularized. Number of regularized planes: " << number_of_regularized_planes <<
 				", number of rejected planes: " << number_of_boundaries - building_boundaries.size() << std::endl << std::endl;
+
+				// Log ply_saver; ply_saver.save_ply<Kernel, Container_3D>(input, "regularized", true);
 			}
 
 			void projecting(
@@ -583,7 +478,6 @@ namespace CGAL {
 				const Container_3D &input,
 				const size_t exec_step) {
 
-
 				// Regularize/thin points in the clutter.
 				std::cout << "(" << exec_step << ") applying thinning; ";
 
@@ -605,7 +499,6 @@ namespace CGAL {
 				Log &log,  
 				const size_t exec_step) {
 
-
 				// Remove unnecessary points from the clutter.
 				std::cout << "(" << exec_step << ") applying grid simplification; ";
 
@@ -626,7 +519,6 @@ namespace CGAL {
 				Log &log, 
 				const Container_3D &input,
 				const size_t exec_step) {
-
 
 				// Detect lines in 2D using region growing.
 				std::cout << "(" << exec_step << ") detecting 2d lines; ";
@@ -653,10 +545,9 @@ namespace CGAL {
 				Log &log, 
 				const size_t exec_step) {
 
-				
-				// Clean projected points by removing all points that lie far away from the center cluster of points.
 				assert(m_clean_projected_points);
 
+				// Clean projected points by removing all points that lie far away from the center cluster of points.
 				std::cout << "(" << exec_step << ") cleaning" << std::endl;
 				m_preprocessor.set_scale(m_preprocessor_scale);
 					
@@ -668,7 +559,6 @@ namespace CGAL {
 				Lines &lines, 
 				Log &log, 
 				const Boundary_data &building_boundaries, const Projected_points &building_boundaries_projected, const size_t exec_step) {
-
 
 				// Fit lines to the projected points in 2D.
 				std::cout << "(" << exec_step << ") line fitting" << std::endl;
@@ -682,7 +572,6 @@ namespace CGAL {
 				Segments &segments, 
 				Log &log, 
 				const Lines &lines, const Boundary_data &building_boundaries, const Projected_points &building_boundaries_projected, const size_t exec_step) {
-
 
 				// Find segments from the given lines.
 				std::cout << "(" << exec_step << ") creating segments" << std::endl;
@@ -700,7 +589,6 @@ namespace CGAL {
 			void applying_2d_structuring(
 				Log &log, 
 				const Lines &lines, const Boundary_data &building_boundaries, const Projected_points &building_boundaries_projected, const size_t exec_step) {
-
 
 				// Apply 2D structuring algorithm.
 				std::cout << "(" << exec_step << ") 2d structuring" << std::endl;
@@ -728,7 +616,6 @@ namespace CGAL {
 				const Container_3D &input,
 				const size_t exec_step) {
 
-
 				// Regularize and remove unnecessary points from the clutter.
 				std::cout << "(" << exec_step << ") processing clutter; ";
 
@@ -750,7 +637,6 @@ namespace CGAL {
 				CDT &cdt, 
 				Log &log, 
 				const Boundary_data &boundary_clutter, const Projected_points &boundary_clutter_projected, const Container_3D &input, const size_t exec_step) {
-
 
 				// Compute constrained Delaunay triangulation of the structured points.
 				std::cout << "(" << exec_step << ") creating cdt" << std::endl;
@@ -774,7 +660,7 @@ namespace CGAL {
 
 				assert(number_of_faces != -1);
 				log.out << "(" << exec_step << ") Constrained Delaunay triangulation of the structured points is built. Number of faces: " << number_of_faces << std::endl << std::endl;
-				assert(!m_add_cdt_bbox);
+				assert(!m_add_cdt_bbox); // visibility and graph cut do not work if bbox vertices are added to CDT!
 			}
 
 			void converting_3d_to_2d(
@@ -782,7 +668,6 @@ namespace CGAL {
 				Face_points_map &fp_map,
 				Log &log, 
 				const CDT &cdt, const Container_3D &input, const size_t exec_step) {
-
 
 				// Convert 3D input to 2D input.			
 				std::cout << "(" << exec_step << ") converting 3d input into 2d input and setting face to points map" << std::endl;
@@ -797,13 +682,12 @@ namespace CGAL {
 				Log &log, 
 				const Container_2D &input_2d, const size_t exec_step) {
 
-
-				// Compute visibility (0 - outside or 1 - inside) for each triangle in CDT above.
 				if (m_visibility.name() == "ray shooting" && m_pipeline_version == Pipeline_version::WITHOUT_SHAPE_DETECTION && !m_with_region_growing)
 					assert(!"Ray shooting requires constrained edges!");
 
 				if (m_visibility.name() == "blend") assert(!"Blend visibility is not worth trying!");
 
+				// Compute visibility (0 - outside or 1 - inside) for each triangle in CDT above.
 				std::cout << "(" << exec_step << ") visibility computation" << std::endl;
 
 				m_visibility.save_info(m_visibility_save_info);
@@ -820,6 +704,8 @@ namespace CGAL {
 
 				const auto number_of_traversed_faces = m_visibility.compute(input_2d, cdt);
 				log.out << "(" << exec_step << ") Visibility is computed. Number of traversed faces: " << number_of_traversed_faces << std::endl << std::endl;
+
+				// Log eps_saver_wp; eps_saver_wp.save_visibility_eps(cdt, input, structured_points); // works only with basic test
 				
 				if (!m_silent) {
 					Log eps_saver; eps_saver.save_visibility_eps(cdt);
@@ -831,7 +717,6 @@ namespace CGAL {
 				CDT &cdt,
 				Log &log, 
 				const size_t exec_step) {
-
 
 				// Apply graph cut.
 				std::cout << "(" << exec_step << ") applying graph cut" << std::endl;
@@ -858,7 +743,6 @@ namespace CGAL {
 				Log &log, 
 				const size_t exec_step) {
 
-
 				// Split all buildings.
 				std::cout << "(" << exec_step << ") splitting buildings" << std::endl;
 
@@ -873,7 +757,6 @@ namespace CGAL {
 				Log &log, 
 				const CDT &cdt, const size_t exec_step) {
 
-
 				// Find building's walls.
 				std::cout << "(" << exec_step << ") finding boundaries" << std::endl;
 
@@ -885,6 +768,9 @@ namespace CGAL {
 				m_building_outliner.find_boundaries(cdt, buildings);
 
 				log.out << "(" << exec_step << ") All boundaries are found." << std::endl << std::endl; 
+
+				// Log log_bounds; log_bounds.save_buildings_info(cdt, buildings, "tmp" + std::string(PS) + "buildings_info_with_boundaries");					
+				// log_bounds.clear(); log_bounds.save_cdt_ply(cdt, "tmp" + std::string(PS) + "chosen_vertices"); // debugging info
 			}
 
 			void fitting_roofs(
@@ -892,8 +778,6 @@ namespace CGAL {
 				Log &log, 
 				const Plane_3 &fitted_ground_plane, const Face_points_map &fp_map, const Container_3D &input, const CDT &cdt, const size_t exec_step) {
 
-
-				// Fit roofs for all buildings.
 				std::cout << "(" << exec_step << ") fitting roofs" << std::endl;
 				switch (m_roof_fitter_type) {
 					
@@ -914,6 +798,8 @@ namespace CGAL {
 						break;
 				}
 				log.out << "(" << exec_step << ") All roofs are fitted." << std::endl << std::endl;
+				
+				// Log log_roofs; log_roofs.save_buildings_info(cdt, buildings, "tmp" + std::string(PS) + "buildings_info_final");
 			}
 
 			void creating_lod0(
@@ -921,8 +807,8 @@ namespace CGAL {
 				Log &log, 
 				const CDT &cdt, const Buildings &buildings, const Container_3D &input, const size_t exec_step) {
 
-
 				// LOD0 reconstruction.
+
 				m_lods.use_boundaries(m_use_boundaries);
 				m_utils. template compute_ground_bbox<Ground, Ground_point>(input, ground_bbox);
 
@@ -942,8 +828,8 @@ namespace CGAL {
 				Log &log, 
 				const CDT &cdt, const Buildings &buildings, const Ground &ground_bbox, const size_t exec_step) {
 
-
 				// LOD1 reconstruction.
+				
 				std::cout << "(" << exec_step << ") reconstructing lod1" << std::endl;
 
 				Mesh mesh_1; Mesh_facet_colors mesh_facet_colors_1;
@@ -959,7 +845,6 @@ namespace CGAL {
 				Log &log, 
 				const std::string &filename) {
 				
-
 				// Save log.
 				std::cout << "... finishing" + std::string(PN) + "" << std::endl;
 
@@ -968,7 +853,6 @@ namespace CGAL {
 			}
 
 		public:
-
 			// Version 0.
 			void create_lods_ver0() {
 
@@ -1119,7 +1003,6 @@ namespace CGAL {
 			}
 
 		private:
-
 			// Main components.
 			Loader       m_loader;
 			Preprocessor m_preprocessor;
@@ -1281,6 +1164,694 @@ namespace CGAL {
 				}
 
 				assert(m_prefix_path != "path_to_the_data_folder" && m_prefix_path != "default");
+			}
+
+
+			// Set all global parameters.
+			void set_global_parameters() {
+
+				// General parameters. Not important!
+				m_add_cdt_bbox = false;
+				
+				m_structuring_log 	   	 				 = false;
+				m_visibility_save_info 					 = false;
+				m_graph_cut_save_info 					 = false;
+				m_building_boundaries_save_internal_info = false;
+
+				m_building_boundaries_max_inner_iters = 1000;
+				m_building_boundaries_max_outer_iters = 1000000;
+
+				m_visibility_show_progress  = true;
+				m_visibility_norm_threshold = 1000.0;
+
+
+				// More important.
+				m_regularizer_reject_planes  = true;
+				m_structuring_resample 	 	 = true;
+				m_structuring_get_all_points = false;
+				m_clean_projected_points 	 = true;
+				
+				m_roof_fitter_type 			   = Roof_fitter_type::AVG;
+				m_structuring_corner_algorithm = Structuring_corner_algorithm::GRAPH_BASED;
+				m_structuring_adjacency_method = Structuring_adjacency_threshold_method::LOCAL;
+				m_structuring_adjacency_value  = 0.00001;
+
+				m_preprocessor_scale  		= 2.0;
+				m_clutter_fitter_type 		= Clutter_fitter_type::LINE;	
+				m_use_grid_simplifier_first = false;
+				
+				m_visibility_num_neighbours 	  = 6;
+				m_visibility_rays_per_side  	  = 10;
+				m_visibility_small_edge_threshold = -1000000.0; // not used
+				m_structuring_global_everywhere   = true;
+
+				m_graph_cut_alpha = 1.0;    // should not change anything but should be bigger or equal to 1
+				m_graph_cut_gamma = 1000.0; // is not used in the pipeline without shape detection (or without structuring), otherwise should be some big value
+
+				m_region_growing_normal_estimation_method = Region_growing_normal_estimation::PROJECTED;
+
+
+				// The most important!
+				switch (m_test_data_type) {
+
+					case Main_test_data_type::BASIC:
+						set_basic_parameters();
+						break;
+
+					case Main_test_data_type::COMPLEX:
+						set_complex_parameters();
+						break;
+
+					case Main_test_data_type::P10:
+						set_p10_parameters();
+						break;
+
+					case Main_test_data_type::PARIS:
+						set_paris_parameters();
+						break;
+
+					case Main_test_data_type::PARIS_FULL:
+						set_paris_full_parameters();
+						break;
+
+					case Main_test_data_type::PARIS_ETH:
+						set_paris_eth_parameters();
+						break;
+
+					case Main_test_data_type::PARIS_FULL_ETH:
+						set_paris_full_eth_parameters();
+						break;
+
+					case Main_test_data_type::RESIDENT_TILE_1:
+						set_resident_tile_1_parameters();
+						break;
+
+					case Main_test_data_type::RESIDENT_TILE_2:
+						set_resident_tile_2_parameters();
+						break;
+
+					case Main_test_data_type::RESIDENT_TILE_3:
+						set_resident_tile_3_parameters();
+						break;
+
+					case Main_test_data_type::PARIS_TILE_1:
+						set_paris_tile_1_parameters();
+						break;
+
+					case Main_test_data_type::PARIS_TILE_2:
+						set_paris_tile_2_parameters();
+						break;
+
+					case Main_test_data_type::PARIS_BIG:
+						set_paris_big_parameters();
+						break;
+
+					default:
+						assert(!"This test data does not exist!");
+						break;
+				}
+			}
+
+
+			// no shape detection
+			void set_basic_parameters() {
+
+				// To load basic parameters from stub, add stub to the loader class in LOD_traits!
+				// Stub works with these basic parameters. Actually it is the same data set.
+
+				// All main parameters are set below.
+				m_default_path     = m_prefix_path + "basic_test" + std::string(PS) + "data";
+				m_pipeline_version = Pipeline_version::WITH_SHAPE_DETECTION;
+
+				m_visibility_approach 	 		 = Visibility_approach::POINT_BASED;
+				m_visibility_method   	 		 = Visibility_method::POINT_BASED_CLASSIFICATION; // use natural neighbours for without_shape_detection
+				m_visibility_sampler 	 		 = Visibility_sampler::BARYCENTRE;
+				m_thinning_neighbour_search_type = Neighbour_search_type::KNN;
+				m_building_boundary_type 		 = Building_boundary_type::ORIENTED;
+				m_clutter_new_point_type 		 = Clutter_new_point_type::BARYCENTRE; // BARYCENTRE - keeps average position of the removed points, CENTROID - inserts new point in the centre of the grid cell, CLOSEST - to the barycentre	
+				m_thinning_type 	  			 = Thinning_type::NAIVE;
+
+				m_thinning_fuzzy_radius  = 0.000001; // if zero, is not used; the bigger radius, the longer it works
+				m_visibility_angle_eps   = 0.0; 	 // used for removing thin triangles; if zero, is not used
+				m_max_reg_angle          = 10.0;	 // in average should be 10-20 degrees.
+				m_structuring_epsilon 	 = 0.025; 	 // the most important parameter!!! Depends on the dataset.
+				m_add_cdt_clutter     	 = true;	 // is always true if shape detection is not used
+				m_visibility_num_samples = 1;		 // the more samples, the slower but better quality in visibility
+				m_graph_cut_beta 		 = 100000.0; // smaller value for less inside triangles
+				m_clutter_knn 			 = 2;		 // the smaller value, the less thinning is performed
+				m_clutter_cell_length    = 0.025;	 // the bigger value, the more points are removed in the grid simplify
+				m_use_boundaries 		 = true;     // use or not outliner to build walls
+				
+				m_with_region_growing 	 		  = false; // use 2D region growing for structuring clutter
+				m_region_growing_epsilon 		  = 0.0;   // distance to the line
+				m_region_growing_cluster_epsilon  = 0.0;   // distance between neighbouring points
+				m_region_growing_normal_threshold = 0.0;   // difference between the line normal and the point normal
+				m_region_growing_min_points 	  = 0;     // min number of points per shape
+
+				m_use_alpha_shapes = false; // if true, we use alpha shapes to extract boundary points from building roofs
+				m_alpha_shape_size = -1.0;  // size of the ball used in alpha shapes to extract boundaries
+			}
+
+
+			// open cv random forest
+			void set_complex_parameters() {
+
+				// SWITCH TO RAY SHOOTING HERE!
+
+				// All main parameters are set below.
+				// If using ray shooting here, we need to use with_shape_detection.
+				m_default_path     = m_prefix_path + "complex_test" + std::string(PS) + "data_region_growing";
+				m_pipeline_version = Pipeline_version::WITH_SHAPE_DETECTION;
+
+				m_visibility_approach 	 		 = Visibility_approach::POINT_BASED;
+				m_visibility_method   	 		 = Visibility_method::POINT_BASED_CLASSIFICATION;
+				m_visibility_sampler 	 		 = Visibility_sampler::UNIFORM_SUBDIVISION;
+				m_thinning_neighbour_search_type = Neighbour_search_type::KNN;
+				m_building_boundary_type 		 = Building_boundary_type::ORIENTED;
+				m_clutter_new_point_type 		 = Clutter_new_point_type::BARYCENTRE;
+				m_thinning_type 	  			 = Thinning_type::NAIVE;
+
+				m_thinning_fuzzy_radius  = 0.001;
+				m_visibility_angle_eps   = 0.0; 	 
+				m_max_reg_angle          = 10.0;
+				m_structuring_epsilon 	 = 0.0005;
+				m_add_cdt_clutter     	 = false;
+				m_visibility_num_samples = 3;
+				m_graph_cut_beta 		 = 100000.0; // use 1.0 for without_shape_detection
+				m_clutter_knn 			 = 12;
+				m_clutter_cell_length    = 0.015;
+				m_use_boundaries 		 = true;
+				
+				m_with_region_growing 	 		  = false;
+				m_region_growing_epsilon 		  = 0.0;  
+				m_region_growing_cluster_epsilon  = 0.0;  
+				m_region_growing_normal_threshold = 0.0;  
+				m_region_growing_min_points 	  = 0;  
+
+				m_use_alpha_shapes = false;
+				m_alpha_shape_size = -1.0;
+
+				m_structuring_adjacency_value = 0.001;   
+			}
+
+
+			// weighted sum
+			void set_p10_parameters() {
+
+				// YOU CAN USE HERE RAY SHOOTING FOR WITH_SHAPE_DETECTION!
+
+				// All main parameters are set below.
+				m_default_path     = m_prefix_path + "p10_test" + std::string(PS) + "data_region_growing_weighted_sum";
+				m_pipeline_version = Pipeline_version::WITH_SHAPE_DETECTION;
+
+				m_visibility_approach 	 		 = Visibility_approach::FACE_BASED;
+				m_visibility_method   	 		 = Visibility_method::FACE_BASED_NATURAL_NEIGHBOURS;
+				m_visibility_sampler 	 		 = Visibility_sampler::UNIFORM_SUBDIVISION;
+				m_thinning_neighbour_search_type = Neighbour_search_type::CIRCLE;
+				m_building_boundary_type 		 = Building_boundary_type::ORIENTED;
+				m_clutter_new_point_type 		 = Clutter_new_point_type::BARYCENTRE;
+				m_thinning_type 	  			 = Thinning_type::NAIVE;
+
+				m_thinning_fuzzy_radius  = 5.0;
+				m_visibility_angle_eps   = 0.0; 
+				m_max_reg_angle          = 15.0;
+				m_structuring_epsilon 	 = 0.2;
+				m_add_cdt_clutter     	 = false;
+				m_visibility_num_samples = 2;
+				m_graph_cut_beta 		 = 100000.0; // 10.0 for without_shape_detection
+				m_clutter_knn 			 = 12;
+				m_clutter_cell_length    = 4.0;
+				m_use_boundaries 		 = true;
+				
+				m_with_region_growing 	 		  = false;
+				m_region_growing_epsilon 		  = 0.0;  
+				m_region_growing_cluster_epsilon  = 0.0;  
+				m_region_growing_normal_threshold = 0.0;  
+				m_region_growing_min_points 	  = 0;   
+
+				m_use_alpha_shapes = false;
+				m_alpha_shape_size = -1.0; 
+			}
+
+
+			// weighted sum
+			void set_paris_parameters() {
+
+				// All main parameters are set below.
+				m_default_path     = m_prefix_path + "paris_test" + std::string(PS) + "data_region_growing_weighted_sum";
+				m_pipeline_version = Pipeline_version::WITHOUT_SHAPE_DETECTION;
+
+				m_visibility_approach 	 		 = Visibility_approach::FACE_BASED;
+				m_visibility_method   	 		 = Visibility_method::FACE_BASED_NATURAL_NEIGHBOURS; // point based for with_shape_detection
+				m_visibility_sampler 	 		 = Visibility_sampler::UNIFORM_SUBDIVISION;
+				m_thinning_neighbour_search_type = Neighbour_search_type::CIRCLE;
+				m_building_boundary_type 		 = Building_boundary_type::ORIENTED;
+				m_clutter_new_point_type 		 = Clutter_new_point_type::BARYCENTRE;
+				m_thinning_type 	  			 = Thinning_type::NAIVE;
+
+				m_thinning_fuzzy_radius  = 5.0;
+				m_visibility_angle_eps   = 0.001; 
+				m_max_reg_angle          = 10.0;
+				m_structuring_epsilon 	 = 1.5;
+				m_add_cdt_clutter     	 = true;
+				m_visibility_num_samples = 1;
+				m_graph_cut_beta 		 = 35.0; // 15.0 for with_shape_detection
+				m_clutter_knn 			 = 12;
+				m_clutter_cell_length    = 10.0;
+				m_use_boundaries 		 = true;
+				
+				m_with_region_growing 	 		  = false;
+				m_region_growing_epsilon 		  = 0.0;  
+				m_region_growing_cluster_epsilon  = 0.0;  
+				m_region_growing_normal_threshold = 0.0;  
+				m_region_growing_min_points 	  = 0; 
+
+				m_use_alpha_shapes = false;
+				m_alpha_shape_size = -1.0;    
+			}
+
+
+			// weighted sum
+			void set_paris_full_parameters() {
+
+				// All main parameters are set below.
+				m_default_path     = m_prefix_path + "paris_full_test" + std::string(PS) + "data_region_growing_weighted_sum";
+				m_pipeline_version = Pipeline_version::WITHOUT_SHAPE_DETECTION;
+
+				m_visibility_approach 	 		 = Visibility_approach::FACE_BASED;
+				m_visibility_method   	 		 = Visibility_method::FACE_BASED_NATURAL_NEIGHBOURS;
+				m_visibility_sampler 	 		 = Visibility_sampler::UNIFORM_SUBDIVISION;
+				m_thinning_neighbour_search_type = Neighbour_search_type::CIRCLE;
+				m_building_boundary_type 		 = Building_boundary_type::ORIENTED;
+				m_clutter_new_point_type 		 = Clutter_new_point_type::BARYCENTRE;
+				m_thinning_type 	  			 = Thinning_type::NAIVE;
+
+				m_thinning_fuzzy_radius  = 5.0;
+				m_visibility_angle_eps   = 0.001; 
+				m_max_reg_angle          = 10.0;
+				m_structuring_epsilon 	 = 1.5;
+				m_add_cdt_clutter     	 = true;
+				m_visibility_num_samples = 1;
+				m_graph_cut_beta 		 = 35.0;
+				m_clutter_knn 			 = 12;
+				m_clutter_cell_length    = 10.0;
+				m_use_boundaries 		 = true;
+				
+				m_with_region_growing 	 		  = false;
+				m_region_growing_epsilon 		  = 0.0;  
+				m_region_growing_cluster_epsilon  = 0.0;  
+				m_region_growing_normal_threshold = 0.0;  
+				m_region_growing_min_points 	  = 0; 
+
+				m_use_alpha_shapes = false;
+				m_alpha_shape_size = -1.0;   
+			}
+
+
+			// eth random forest
+			void set_paris_eth_parameters() {
+
+				// All main parameters are set below.
+				m_default_path     = m_prefix_path + "paris_test" + std::string(PS) + "data_region_growing_eth";
+				m_pipeline_version = Pipeline_version::WITHOUT_SHAPE_DETECTION;
+
+				m_visibility_approach 	 		 = Visibility_approach::FACE_BASED;
+				m_visibility_method   	 		 = Visibility_method::FACE_BASED_NATURAL_NEIGHBOURS; // point based for with_shape_detection
+				m_visibility_sampler 	 		 = Visibility_sampler::UNIFORM_SUBDIVISION;
+				m_thinning_neighbour_search_type = Neighbour_search_type::CIRCLE;
+				m_building_boundary_type 		 = Building_boundary_type::UNORIENTED;
+				m_clutter_new_point_type 		 = Clutter_new_point_type::CLOSEST;
+				m_thinning_type 	  			 = Thinning_type::NAIVE;
+				m_structuring_adjacency_method 	 = Structuring_adjacency_threshold_method::GLOBAL;
+
+				m_thinning_fuzzy_radius  = 5.0;
+				m_visibility_angle_eps   = 0.18;
+				m_max_reg_angle          = 10.0;
+				m_structuring_epsilon 	 = 5.0;
+				m_add_cdt_clutter     	 = false;
+				m_visibility_num_samples = 1;
+				m_graph_cut_beta 		 = 100000.0; // 35.0 with_clutter // 15.0 for with_shape_detection
+				m_clutter_knn 			 = 12;
+				m_clutter_cell_length    = 1.3;
+				m_use_boundaries 		 = true;
+
+				m_use_grid_simplifier_first = true;
+				m_with_region_growing 	 	= true;
+
+				m_region_growing_epsilon 		  = 3.2;
+				m_region_growing_cluster_epsilon  = 2.9;
+				m_region_growing_normal_threshold = 0.7;  
+				m_region_growing_min_points 	  = 10;
+
+				m_use_alpha_shapes = true;
+				m_alpha_shape_size = 5.0;
+				m_graph_cut_gamma  = 10000.0;
+
+				m_structuring_get_all_points    = true;
+				m_structuring_adjacency_value   = 12.0;
+				m_structuring_global_everywhere = true;
+			}
+
+
+			// eth random forest
+			void set_paris_full_eth_parameters() {
+
+				// All main parameters are set below.
+				m_default_path     = m_prefix_path + "paris_full_test" + std::string(PS) + "data_region_growing_eth";
+				m_pipeline_version = Pipeline_version::WITHOUT_SHAPE_DETECTION;
+
+				m_visibility_approach 	 		 = Visibility_approach::FACE_BASED;
+				m_visibility_method   	 		 = Visibility_method::FACE_BASED_NATURAL_NEIGHBOURS;
+				m_visibility_sampler 	 		 = Visibility_sampler::UNIFORM_SUBDIVISION;
+				m_thinning_neighbour_search_type = Neighbour_search_type::CIRCLE;
+				m_building_boundary_type 		 = Building_boundary_type::UNORIENTED;
+				m_clutter_new_point_type 		 = Clutter_new_point_type::CLOSEST;
+				m_thinning_type 	  			 = Thinning_type::NAIVE;
+				m_structuring_adjacency_method 	 = Structuring_adjacency_threshold_method::GLOBAL;
+
+				m_thinning_fuzzy_radius  = 5.0;
+				m_visibility_angle_eps   = 0.18;
+				m_max_reg_angle          = 10.0;
+				m_structuring_epsilon 	 = 5.0;
+				m_add_cdt_clutter     	 = false;
+				m_visibility_num_samples = 1;
+				m_graph_cut_beta 		 = 100000.0;
+				m_clutter_knn 			 = 12;
+				m_clutter_cell_length    = 1.3;
+				m_use_boundaries 		 = true;
+
+				m_use_grid_simplifier_first = true;
+				m_with_region_growing 	 	= true;
+
+				m_region_growing_epsilon 		  = 3.2;
+				m_region_growing_cluster_epsilon  = 2.9;
+				m_region_growing_normal_threshold = 0.7;  
+				m_region_growing_min_points 	  = 10;
+
+				m_use_alpha_shapes = true;
+				m_alpha_shape_size = 5.0;
+				m_graph_cut_gamma  = 10000.0;
+
+				m_structuring_get_all_points    = true;
+				m_structuring_adjacency_value   = 12.0;
+				m_structuring_global_everywhere = true;
+			}
+
+
+			// most likely it is not going to look good for the moment
+			void set_resident_tile_1_parameters() {
+
+				// All main parameters are set below.
+				m_default_path     = m_prefix_path + "residential_test" + std::string(PS) + "tile_1" + std::string(PS) + "data_region_growing_eth";
+				m_pipeline_version = Pipeline_version::WITHOUT_SHAPE_DETECTION;
+
+				m_visibility_approach 	 		 = Visibility_approach::FACE_BASED;
+				m_visibility_method   	 		 = Visibility_method::FACE_BASED_NATURAL_NEIGHBOURS;
+				m_visibility_sampler 	 		 = Visibility_sampler::UNIFORM_SUBDIVISION;
+				m_thinning_neighbour_search_type = Neighbour_search_type::CIRCLE;
+				m_building_boundary_type 		 = Building_boundary_type::UNORIENTED;
+				m_clutter_new_point_type 		 = Clutter_new_point_type::CLOSEST;
+				m_thinning_type 	  			 = Thinning_type::NAIVE;
+				m_structuring_adjacency_method 	 = Structuring_adjacency_threshold_method::GLOBAL;
+
+				m_thinning_fuzzy_radius  = 5.0;
+				m_visibility_angle_eps   = 0.18;
+				m_max_reg_angle          = 10.0;
+				m_structuring_epsilon 	 = 2.0;
+				m_add_cdt_clutter     	 = false;
+				m_visibility_num_samples = 1;
+				m_graph_cut_beta 		 = 100000.0;
+				m_clutter_knn 			 = 12;
+				m_clutter_cell_length    = 1.3;
+				m_use_boundaries 		 = true;
+
+				m_use_grid_simplifier_first = true;
+				m_with_region_growing 	 	= true;
+
+				m_region_growing_epsilon 		  = 3.2;
+				m_region_growing_cluster_epsilon  = 2.9;
+				m_region_growing_normal_threshold = 0.7;  
+				m_region_growing_min_points 	  = 3;
+
+				m_use_alpha_shapes = true;
+				m_alpha_shape_size = 5.0;
+
+				m_structuring_get_all_points    = true;
+				m_structuring_adjacency_value   = 4.0;
+				m_structuring_global_everywhere = false;
+			}
+
+			// does not look good for the moment
+			void set_resident_tile_2_parameters() {
+
+				// All main parameters are set below.
+				m_default_path     = m_prefix_path + "residential_test" + std::string(PS) + "tile_2" + std::string(PS) + "data_region_growing_eth";
+				m_pipeline_version = Pipeline_version::WITHOUT_SHAPE_DETECTION;
+
+				m_visibility_approach 	 		 = Visibility_approach::FACE_BASED;
+				m_visibility_method   	 		 = Visibility_method::FACE_BASED_NATURAL_NEIGHBOURS;
+				m_visibility_sampler 	 		 = Visibility_sampler::UNIFORM_SUBDIVISION;
+				m_thinning_neighbour_search_type = Neighbour_search_type::CIRCLE;
+				m_building_boundary_type 		 = Building_boundary_type::UNORIENTED;
+				m_clutter_new_point_type 		 = Clutter_new_point_type::CLOSEST;
+				m_thinning_type 	  			 = Thinning_type::NAIVE;
+				m_structuring_adjacency_method 	 = Structuring_adjacency_threshold_method::GLOBAL;
+
+				m_thinning_fuzzy_radius  = 5.0;
+				m_visibility_angle_eps   = 0.18;
+				m_max_reg_angle          = 10.0;
+				m_structuring_epsilon 	 = 2.0;
+				m_add_cdt_clutter     	 = false;
+				m_visibility_num_samples = 1;
+				m_graph_cut_beta 		 = 100000.0;
+				m_clutter_knn 			 = 12;
+				m_clutter_cell_length    = 1.3;
+				m_use_boundaries 		 = true;
+
+				m_use_grid_simplifier_first = true;
+				m_with_region_growing 	 	= true;
+
+				m_region_growing_epsilon 		  = 3.2;
+				m_region_growing_cluster_epsilon  = 2.9;
+				m_region_growing_normal_threshold = 0.7;  
+				m_region_growing_min_points 	  = 3;
+
+				m_use_alpha_shapes = true;
+				m_alpha_shape_size = 5.0;
+
+				m_structuring_get_all_points    = true;
+				m_structuring_adjacency_value   = 4.0;
+				m_structuring_global_everywhere = false;
+			}
+
+
+			// residential area - many small buildings and two large buildings, one tile, eth random forest
+			void set_resident_tile_3_parameters() {
+
+				// All main parameters are set below.
+				m_default_path     = m_prefix_path + "residential_test" + std::string(PS) + "tile_3" + std::string(PS) + "data_region_growing_eth";
+				m_pipeline_version = Pipeline_version::WITHOUT_SHAPE_DETECTION;
+
+				m_visibility_approach 	 		 = Visibility_approach::FACE_BASED;
+				m_visibility_method   	 		 = Visibility_method::FACE_BASED_NATURAL_NEIGHBOURS;
+				m_visibility_sampler 	 		 = Visibility_sampler::UNIFORM_SUBDIVISION;
+				m_thinning_neighbour_search_type = Neighbour_search_type::CIRCLE;
+				m_building_boundary_type 		 = Building_boundary_type::UNORIENTED;
+				m_clutter_new_point_type 		 = Clutter_new_point_type::CLOSEST;
+				m_thinning_type 	  			 = Thinning_type::NAIVE;
+				m_structuring_adjacency_method 	 = Structuring_adjacency_threshold_method::GLOBAL;
+
+				m_thinning_fuzzy_radius  = 5.0;
+				m_visibility_angle_eps   = 0.18;
+				m_max_reg_angle          = 10.0;
+				m_structuring_epsilon 	 = 2.0;
+				m_add_cdt_clutter     	 = false;
+				m_visibility_num_samples = 1;
+				m_graph_cut_beta 		 = 100000.0;
+				m_clutter_knn 			 = 12;
+				m_clutter_cell_length    = 1.3;
+				m_use_boundaries 		 = true;
+
+				m_use_grid_simplifier_first = true;
+				m_with_region_growing 	 	= true;
+
+				m_region_growing_epsilon 		  = 3.2;
+				m_region_growing_cluster_epsilon  = 2.9;
+				m_region_growing_normal_threshold = 0.7;  
+				m_region_growing_min_points 	  = 3;
+
+				m_use_alpha_shapes = true;
+				m_alpha_shape_size = 5.0;
+
+				m_structuring_get_all_points    = true;
+				m_structuring_adjacency_value   = 4.0;
+				m_structuring_global_everywhere = false;
+			}
+
+
+			// eth random forest
+			void set_paris_tile_1_parameters() {
+
+				// All main parameters are set below.
+				m_default_path     = m_prefix_path + "paris_tiles_test" + std::string(PS) + "tile_1" + std::string(PS) + "data_region_growing_eth";
+				m_pipeline_version = Pipeline_version::WITHOUT_SHAPE_DETECTION;
+
+				m_visibility_approach 	 		 = Visibility_approach::FACE_BASED;
+				m_visibility_method   	 		 = Visibility_method::FACE_BASED_NATURAL_NEIGHBOURS;
+				m_visibility_sampler 	 		 = Visibility_sampler::UNIFORM_SUBDIVISION;
+				m_thinning_neighbour_search_type = Neighbour_search_type::CIRCLE;
+				m_building_boundary_type 		 = Building_boundary_type::UNORIENTED;
+				m_clutter_new_point_type 		 = Clutter_new_point_type::CLOSEST;
+				m_thinning_type 	  			 = Thinning_type::NAIVE;
+				m_structuring_adjacency_method 	 = Structuring_adjacency_threshold_method::GLOBAL;
+
+				m_thinning_fuzzy_radius  = 5.0;
+				m_visibility_angle_eps   = 0.18;
+				m_max_reg_angle          = 10.0;
+				m_structuring_epsilon 	 = 5.0;
+				m_add_cdt_clutter     	 = false;
+				m_visibility_num_samples = 1;
+				m_graph_cut_beta 		 = 100000.0;
+				m_clutter_knn 			 = 12;
+				m_clutter_cell_length    = 1.3;
+				m_use_boundaries 		 = true;
+
+				m_use_grid_simplifier_first = true;
+				m_with_region_growing 	 	= true;
+
+				m_region_growing_epsilon 		  = 3.2;
+				m_region_growing_cluster_epsilon  = 2.9;
+				m_region_growing_normal_threshold = 0.7;  
+				m_region_growing_min_points 	  = 10;
+
+				m_use_alpha_shapes = true;
+				m_alpha_shape_size = 5.0;
+				m_graph_cut_gamma  = 10000.0;
+
+				m_structuring_get_all_points    = true;
+				m_structuring_adjacency_value   = 12.0;
+				m_structuring_global_everywhere = true;
+			}
+
+
+			// eth random forest
+			void set_paris_tile_2_parameters() {
+
+				// All main parameters are set below.
+				m_default_path     = m_prefix_path + "paris_tiles_test" + std::string(PS) + "tile_2" + std::string(PS) + "data_region_growing_eth";
+				m_pipeline_version = Pipeline_version::WITHOUT_SHAPE_DETECTION;
+
+				m_visibility_approach 	 		 = Visibility_approach::FACE_BASED;
+				m_visibility_method   	 		 = Visibility_method::FACE_BASED_NATURAL_NEIGHBOURS;
+				m_visibility_sampler 	 		 = Visibility_sampler::UNIFORM_SUBDIVISION;
+				m_thinning_neighbour_search_type = Neighbour_search_type::CIRCLE;
+				m_building_boundary_type 		 = Building_boundary_type::UNORIENTED;
+				m_clutter_new_point_type 		 = Clutter_new_point_type::CLOSEST;
+				m_thinning_type 	  			 = Thinning_type::NAIVE;
+				m_structuring_adjacency_method 	 = Structuring_adjacency_threshold_method::GLOBAL;
+
+				m_thinning_fuzzy_radius  = 5.0;
+				m_visibility_angle_eps   = 0.18;
+				m_max_reg_angle          = 10.0;
+				m_structuring_epsilon 	 = 5.0;
+				m_add_cdt_clutter     	 = false;
+				m_visibility_num_samples = 1;
+				m_graph_cut_beta 		 = 100000.0;
+				m_clutter_knn 			 = 12;
+				m_clutter_cell_length    = 1.3;
+				m_use_boundaries 		 = true;
+
+				m_use_grid_simplifier_first = true;
+				m_with_region_growing 	 	= true;
+
+				m_region_growing_epsilon 		  = 3.2;
+				m_region_growing_cluster_epsilon  = 2.9;
+				m_region_growing_normal_threshold = 0.7;  
+				m_region_growing_min_points 	  = 10;
+
+				m_use_alpha_shapes = true;
+				m_alpha_shape_size = 5.0;
+				m_graph_cut_gamma  = 10000.0;
+
+				m_structuring_get_all_points    = true;
+				m_structuring_adjacency_value   = 12.0;
+				m_structuring_global_everywhere = true;
+			}
+
+
+			// eth random forest
+			void set_paris_big_parameters() {
+
+				// All main parameters are set below.
+				m_default_path     = m_prefix_path + "paris_big_test" + std::string(PS) + "data_region_growing_eth";
+				m_pipeline_version = Pipeline_version::WITHOUT_SHAPE_DETECTION;
+
+				m_visibility_approach 	 		 = Visibility_approach::FACE_BASED;
+				m_visibility_method   	 		 = Visibility_method::FACE_BASED_NATURAL_NEIGHBOURS;
+				m_visibility_sampler 	 		 = Visibility_sampler::UNIFORM_SUBDIVISION;
+				m_thinning_neighbour_search_type = Neighbour_search_type::CIRCLE;
+				m_building_boundary_type 		 = Building_boundary_type::UNORIENTED;
+				m_clutter_new_point_type 		 = Clutter_new_point_type::CLOSEST;
+				m_thinning_type 	  			 = Thinning_type::NAIVE;
+				m_structuring_adjacency_method 	 = Structuring_adjacency_threshold_method::GLOBAL;
+
+				m_thinning_fuzzy_radius  = 5.0;
+				m_visibility_angle_eps   = 0.18;
+				m_max_reg_angle          = 10.0;
+				m_structuring_epsilon 	 = 5.0;
+				m_add_cdt_clutter     	 = false;
+				m_visibility_num_samples = 1;
+				m_graph_cut_beta 		 = 100000.0;
+				m_clutter_knn 			 = 12;
+				m_clutter_cell_length    = 1.3;
+				m_use_boundaries 		 = true;
+
+				m_use_grid_simplifier_first = true;
+				m_with_region_growing 	 	= true;
+
+				m_region_growing_epsilon 		  = 3.2;
+				m_region_growing_cluster_epsilon  = 2.9;
+				m_region_growing_normal_threshold = 0.7;  
+				m_region_growing_min_points 	  = 10;
+
+				m_use_alpha_shapes = true;
+				m_alpha_shape_size = 5.0;
+				m_graph_cut_gamma  = 10000.0;
+
+				m_structuring_get_all_points    = true;
+				m_structuring_adjacency_value   = 12.0;
+				m_structuring_global_everywhere = true;
+			}
+
+
+			//////////////////////
+			// Not used functions!
+
+			void projecting_without_shape_detection(
+				Projected_points &building_boundaries_projected, 
+				Log &log, 
+				const Plane_3 &base_ground_plane, const Indices &building_boundary_idxs, const Container_3D &input, const size_t exec_step) {
+				
+				// Project all boundary points onto the ground plane.
+				std::cout << "(" << exec_step << ") projecting" << std::endl;
+
+				const auto number_of_projected_points = m_ground_projector.project_with_indices(input, building_boundary_idxs, base_ground_plane, building_boundaries_projected);
+				
+				Log proj_saver; proj_saver.export_projected_points_as_xyz("tmp" + std::string(PS) + "projected_boundaries", building_boundaries_projected, m_default_path);
+				log.out << "(" << exec_step << ") Building's boundary points are projected. Number of projected points: " << number_of_projected_points << std::endl << std::endl;
+			}
+
+			void creating_cdt_without_shape_detection(
+				CDT &cdt, 
+				Log &log, 
+				const Projected_points &building_boundaries_projected, const size_t exec_step) {
+
+				// Compute constrained Delaunay triangulation of the input boundary points.
+				std::cout << "(" << exec_step << ") creating cdt" << std::endl;
+ 
+				const auto number_of_faces = m_utils.compute_delaunay(building_boundaries_projected, cdt);
+
+				log.out << "(" << exec_step << ") Delaunay triangulation of the input boundary points is built. Number of faces: " << number_of_faces << std::endl << std::endl;
 			}
 		};
 	}

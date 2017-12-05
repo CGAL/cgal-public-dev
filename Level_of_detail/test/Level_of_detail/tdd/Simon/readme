@@ -5,19 +5,19 @@ A --------
 In my case, I have the directory with the folders:
 
 1. "cgal-public-dev" folder - here the LOD branch is stored
-2. "cgal-build" folder - here CGAL is build
+2. "cgal-build" folder 	    - here CGAL is build
 
 B --------
 
 In this directory, I create three folders:
 
-1. "data" - I copy here my data from Google drive
-2. "logs" - inside this folder I create a folder "tmp", where all intermediate steps of the pipeline are stored
+1. "data" 	   - I copy here my data from Google drive
+2. "logs" 	   - inside this folder I create a folder "tmp", where all intermediate steps of the pipeline are stored
 3. "tdd-build" - here I compile the test code to run the pipeline
 
 C --------
 
-I need to define one environment variable "LOD_LOG_PATH" - path to the "logs" folder above
+I need to define one environment variable "LOD_LOG_PATH" - path to the "logs" folder above as "path_to/logs/", should have "/" at the end and the "tmp" folder inside
 
 D --------
 
@@ -25,12 +25,6 @@ Now, I go to the folder "tdd-build"
 
 To compile the test on Mac OS, I do in my terminal (not sure how it should be on Linux):
 
-run cmake for the "CMakeLists.txt" in the "Simon" folder
+cmake for the "CMakeLists.txt" in the "Simon" folder
 make
-./lod
-
-or
-
-./lod -param_name param_value (can be found in the main.cpp)
-
-or use "-help" for all available options
+./lod -help
