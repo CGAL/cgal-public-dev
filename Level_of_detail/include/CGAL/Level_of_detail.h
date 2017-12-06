@@ -3,6 +3,8 @@
 
 // To be removed later.
 #include <CGAL/Mylog/Mylog.h>
+#include <CGAL/Loader/Level_of_detail_loader_stub.h>
+#include <CGAL/Loader/Level_of_detail_loader_eth.h>
 
 // Main includes.
 #include <CGAL/Level_of_detail_enum.h>

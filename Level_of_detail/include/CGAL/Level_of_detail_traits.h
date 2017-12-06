@@ -15,7 +15,9 @@
 #include <CGAL/Constrained_triangulation_plus_2.h>
 
 // New CGAL includes.
+#include <CGAL/Loader/Level_of_detail_loader.h>
 #include <CGAL/Loader/Level_of_detail_loader_stub.h>
+#include <CGAL/Loader/Level_of_detail_loader_eth.h>
 #include <CGAL/Preprocessor/Level_of_detail_preprocessor.h>
 #include <CGAL/Selector/Level_of_detail_selector.h>
 #include <CGAL/Selector/Level_of_detail_selection_strategy.h>
@@ -43,7 +45,7 @@ namespace CGAL {
 			typedef KernelTraits 	Kernel;
 			typedef OutputContainer Container_3D;
 
-			typedef CGAL::LOD::Level_of_detail_loader<Kernel, Container_3D>  	  Loader;
+			typedef CGAL::LOD::Level_of_detail_loader_eth<Kernel, Container_3D>   Loader;
 			typedef CGAL::LOD::Level_of_detail_preprocessor<Kernel, Container_3D> Preprocessor;
 
 			typedef CGAL::LOD::Level_of_detail_clutter<Kernel, Container_3D> 		   Clutter_strategy;
