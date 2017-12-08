@@ -447,6 +447,11 @@ namespace CGAL {
 
 				assert(lfc != NULL);
 				assert(lfc == fh);
+				
+				if (lfc != fh) {
+					std::cerr << "Error: lfc != fh, traverse_ray_faces function ray shooting!" << std::endl;
+					exit(EXIT_FAILURE);
+				}
 
 				size_t tmp_sign_changes, sign_changes = 0;
 				do {

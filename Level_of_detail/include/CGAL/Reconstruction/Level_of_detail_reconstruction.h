@@ -384,6 +384,12 @@ namespace CGAL {
 				const size_t num_boundaries = boundaries.size();
 
 				assert(num_boundaries > 0);
+
+				if (num_boundaries <= 0) {
+					std::cerr << "Error: num_boundaries <= 0, add_new_building_lod0_unoriented function reconstruction!" << std::endl;
+					exit(EXIT_FAILURE);
+				}
+
 				add_unoriented_building_structure_lod0(building, builder);
 			}
 
@@ -421,6 +427,12 @@ namespace CGAL {
 				const size_t num_boundaries = boundaries.size();
 
 				assert(num_boundaries > 0);
+
+				if (num_boundaries <= 0) {
+					std::cerr << "Error: num_boundaries <= 0, add_new_building_lod1_unoriented function reconstruction!" << std::endl;
+					exit(EXIT_FAILURE);
+				}
+
 				add_unoriented_building_structure_lod1(building, builder);
 			}
 
@@ -653,6 +665,11 @@ namespace CGAL {
 
 				const size_t num_vertices = m_ground.size();
 				assert(num_vertices == 4);
+
+				if (num_vertices != 4) {
+					std::cerr << "Error: num_vertices != 4, add_ground function reconstruction!" << std::endl;
+					exit(EXIT_FAILURE);
+				}
 
 				const Point &a = m_ground[3];
 				const Point &b = m_ground[2];

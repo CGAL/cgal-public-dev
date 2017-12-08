@@ -185,7 +185,9 @@ namespace CGAL {
 			m_structuring_global_everywhere(true),
 			m_silent(false),
 			m_test_data_type(Main_test_data_type::PARIS_ETH),
-			m_region_growing_normal_estimation_method(Region_growing_normal_estimation::PROJECTED)
+			m_region_growing_normal_estimation_method(Region_growing_normal_estimation::PROJECTED),
+			m_imp_eps(-FT(1)),
+			m_imp_scale(-FT(1))
 			{ }
 
 
@@ -267,80 +269,96 @@ namespace CGAL {
 
 			void set_not_important_options() {
 				
-				m_prefix_path  = "stub";
-				m_add_cdt_bbox = false;
+				m_pipeline_version = Pipeline_version::WITHOUT_SHAPE_DETECTION; // for the moment the 3D shape based version gives worse results, so do not use it
+
+				m_prefix_path = "stub"; // never used
+				m_add_cdt_bbox = false; // never used
 				
-				m_structuring_log 	   	 				 = false;
-				m_visibility_save_info 					 = false;
-				m_graph_cut_save_info 					 = false;
-				m_building_boundaries_save_internal_info = false;
+				m_clean_projected_points = false; // not a good algorithm, can be turned off
+				m_preprocessor_scale 	 = 2.0;   // used in cleaning above, useless				
+				
+				m_clutter_new_point_type = Clutter_new_point_type::CLOSEST; // this is the only method that keeps original points untouched
+				m_clutter_fitter_type 	 = Clutter_fitter_type::LINE; 		// only LINE, other types are not implemented
+				m_clutter_knn 			 = 12; // never used, since we use CIRCLE neighbour search below
 
-				m_building_boundaries_max_inner_iters = 1000;
-				m_building_boundaries_max_outer_iters = 1000000;
+				m_thinning_type 	  			 = Thinning_type::NAIVE; 		  // this is the only one that is currently fully implemented
+				m_thinning_neighbour_search_type = Neighbour_search_type::CIRCLE; // in practice, this is the best one, no need to choose any other one
+				m_thinning_fuzzy_radius 		 = 5.0; // do not use thinning, because it makes corners round
 
-				m_visibility_show_progress  = true;
-				m_visibility_norm_threshold = 1000.0;
+				m_regularizer_reject_planes = true; // in general, rejecting gives more plausible result, used only in the version with 3D shape detection
+				m_max_reg_angle          	= 10.0; // in general, 10 is enough, used only in the version with 3D shape detection
+
+				m_use_alpha_shapes 	  = true; // this is the only way to get missing walls, so it is necessary
+				m_with_region_growing = true; // this is the only way to apply structuring afterwards and get correct buildings, so it is necessary
+
+				m_structuring_resample 		   = true;  // always resample, visually it is better
+				m_structuring_log 	   		   = false; // debug info
+				m_structuring_get_all_points   = true;  // in general, better to use all resampled points, since it gives more freedom for the graph cut in CDT
+				m_structuring_corner_algorithm = Structuring_corner_algorithm::GRAPH_BASED; // this is the only one that should be used
+
+				m_visibility_small_edge_threshold = -1000000.0; // never used, since we do not use this argument anymore (see rayshooting)
+				m_visibility_num_neighbours       = 6;  		// never used, since it is used in barycentric visibility
+				m_visibility_rays_per_side        = 10; 		// used in ray shooting visibility, 10 is enough for all cases
+				m_visibility_norm_threshold       = 1000.0;     // used in the face based visibility to verify normal of the natural neighbours, 1000 is always enough
+				m_visibility_show_progress        = true;       // shows the percentage
+				m_visibility_save_info 			  = false; 		// debug info
+				m_visibility_sampler  			  = Visibility_sampler::UNIFORM_SUBDIVISION; // this is the only one to use, other samplers create randomness
+
+				m_graph_cut_alpha 	  = 1.0;   // soft parameter
+				m_graph_cut_save_info = false; // debug info
+
+				m_building_boundaries_max_inner_iters    = 1000;  	// simple stopping criteria if smth goes wrong
+				m_building_boundaries_max_outer_iters    = 1000000; // simple stopping criteria if smth goes wrong
+				m_building_boundaries_save_internal_info = false;   // debug info
+				m_use_boundaries 		 				 = false; 	// when using UNORIENTED below, this value does not make any difference, but false is preferable
+				m_building_boundary_type 				 = Building_boundary_type::UNORIENTED; // this is the most robust method, works with any corrupted data
+
+				m_roof_fitter_type = Roof_fitter_type::AVG; // gives the best visual result, the most robust to the corrupted data
 			}
 
 			void set_more_important_options() {
 
-				m_regularizer_reject_planes = true;
-				m_structuring_resample 	 	= true;
-				m_clean_projected_points 	= true;
-				
-				m_roof_fitter_type 			   = Roof_fitter_type::AVG;
-				m_structuring_corner_algorithm = Structuring_corner_algorithm::GRAPH_BASED;
+				m_structuring_adjacency_method  = Structuring_adjacency_threshold_method::LOCAL; // global is, in general, better, if using local, we have one parameter less: m_str_adj_value
+				m_structuring_global_everywhere = false; // better to have false, since in this case, I use global adjacency graph and global corner insertion consistently
+				m_structuring_adjacency_value   = 5.0;  // closest distance between two segments for adjacency graph, probably can be removed
 
-				m_graph_cut_alpha 	  = 1.0;
-				m_preprocessor_scale  = 2.0;
-				m_clutter_fitter_type = Clutter_fitter_type::LINE;	
-				
-				m_visibility_num_neighbours 	  = 6;
-				m_visibility_rays_per_side  	  = 10;
-				m_visibility_small_edge_threshold = -1000000.0;
+				m_use_grid_simplifier_first 			  = true; // better to use it, to make the code faster, but if removing it we have one parameter less: m_clutter_cell_length
+				m_region_growing_normal_estimation_method = Region_growing_normal_estimation::LOCAL; // in general, both work well
 
-				m_region_growing_normal_estimation_method = Region_growing_normal_estimation::PROJECTED;
+				m_visibility_num_samples = 2;     // number of subdivision steps when sampling triangles, 1 or 2 is enough
+				m_add_cdt_clutter 		 = false; // better to avoid clutter since it will pollute the final CDT
+
+				m_visibility_approach  = Visibility_approach::FACE_BASED; 				   // face based is, in general, a better but slower option
+				m_visibility_method    = Visibility_method::FACE_BASED_NATURAL_NEIGHBOURS; // face based is, in general, a better but slower option
+				m_visibility_angle_eps = 0.18; // do not use this ad-hoc, but when using the value about 0.15 - 0.20 is enough
 			}
 
 			void set_the_most_important_options() {
 
-				m_pipeline_version = Pipeline_version::WITHOUT_SHAPE_DETECTION;
+				// Important.
+				m_imp_eps   = 3.2; // global distance to the optimal line, (meters)
+				m_imp_scale = 5.0; // global distance between adjacent points, (meters)
 
-				m_visibility_approach 	 		 = Visibility_approach::FACE_BASED;
-				m_visibility_method   	 		 = Visibility_method::FACE_BASED_NATURAL_NEIGHBOURS;
-				m_visibility_sampler 	 		 = Visibility_sampler::UNIFORM_SUBDIVISION;
-				m_thinning_neighbour_search_type = Neighbour_search_type::CIRCLE;
-				m_building_boundary_type 		 = Building_boundary_type::UNORIENTED;
-				m_clutter_new_point_type 		 = Clutter_new_point_type::CLOSEST;
-				m_thinning_type 	  			 = Thinning_type::NAIVE;
-				m_structuring_adjacency_method 	 = Structuring_adjacency_threshold_method::GLOBAL;
+				m_graph_cut_beta  = 100000.0; // controls how many red and green triangle we will get, (magic)
+				m_graph_cut_gamma = 10000.0;  // controls if we should keep constraints satisfied or not, it is the penalty, (magic)
 
-				m_thinning_fuzzy_radius  = 5.0;
-				m_visibility_angle_eps   = 0.18;
-				m_max_reg_angle          = 10.0;
-				m_structuring_epsilon 	 = 5.0;
-				m_add_cdt_clutter     	 = false;
-				m_visibility_num_samples = 1;
-				m_graph_cut_beta 		 = 100000.0;
-				m_clutter_knn 			 = 12;
-				m_clutter_cell_length    = 1.3;
-				m_use_boundaries 		 = true;
 
-				m_use_grid_simplifier_first = true;
-				m_with_region_growing 	 	= true;
+				// Less important.
+				m_region_growing_normal_threshold = 0.7; // normal deviation between the point normal and the normal of the optimal line, necessary, (cosine)
+				m_region_growing_min_points 	  = 10;  // minimum number of points in the line, probably can be removed, but it will create some noise, (points)
 
-				m_region_growing_epsilon 		  = 3.2;
-				m_region_growing_cluster_epsilon  = 2.9;
-				m_region_growing_normal_threshold = 0.7;  
-				m_region_growing_min_points 	  = 10;
 
-				m_use_alpha_shapes = true;
-				m_alpha_shape_size = 5.0;
-				m_graph_cut_gamma  = 10000.0;
+				// Automatically defined.
+				set_automatically_defined_options();
+			}
 
-				m_structuring_get_all_points    = true;
-				m_structuring_adjacency_value   = 12.0;
-				m_structuring_global_everywhere = true;
+			void set_automatically_defined_options() {
+
+				m_alpha_shape_size 	  			 = m_imp_scale; 	   // does not change often, size in meters to get the boundary of the set of points, necessary, (meters)
+				m_structuring_epsilon 			 = m_imp_scale; 	   // distance between adjacent points in the resampled line, (meters)
+				m_region_growing_epsilon 		 = m_imp_eps; 		   // distance to the optimal line, necessary, (meters)
+				m_region_growing_cluster_epsilon = 0.58 * m_imp_scale; // distance between adjacent points, necessary, (meters)
+				m_clutter_cell_length 			 = 0.26 * m_imp_scale; // used in the grid simplify, probably can be removed, (meters)
 			}
 
 			void set_required_parameters(const Parameters &parameters) {
@@ -350,7 +368,31 @@ namespace CGAL {
 
 			void set_optional_parameters(const Parameters &parameters) {
 				
+				// Flags.
 				add_bool_parameter("-silent", m_silent, parameters);
+
+
+				// Important.
+				add_val_parameter("-eps"  , m_imp_eps  , parameters);
+				add_val_parameter("-scale", m_imp_scale, parameters);
+
+				set_automatically_defined_options();
+
+				add_val_parameter("-gc_beta" , m_graph_cut_beta , parameters);
+				add_val_parameter("-gc_gamma", m_graph_cut_gamma, parameters);
+
+
+				// Less important.
+				add_val_parameter("-rg_nt" , m_region_growing_normal_threshold, parameters);
+				add_val_parameter("-rg_min", m_region_growing_min_points      , parameters);
+
+
+				// Automatically defined.
+				add_val_parameter("-alpha"  , m_alpha_shape_size               , parameters);
+				add_val_parameter("-str_eps", m_structuring_epsilon            , parameters);
+				add_val_parameter("-rg_eps" , m_region_growing_epsilon 		   , parameters);
+				add_val_parameter("-rg_ce"  , m_region_growing_cluster_epsilon , parameters);
+				add_val_parameter("-cell"   , m_clutter_cell_length            , parameters);
 			}
 
 			void set_user_defined_parameters(const Lod_parameters &lod_parameters) {
@@ -380,14 +422,14 @@ namespace CGAL {
 
 		private:
 
-			template<typename Val>
-			void add_val_parameter(const std::string &parameter_name, Val &variable_value, const Parameters &parameters) {
+			template<typename Scalar>
+			void add_val_parameter(const std::string &parameter_name, Scalar &variable_value, const Parameters &parameters) {
 				
 				if (!does_parameter_exist(parameter_name, parameters)) return;
 				const std::string parameter_value = parameters.at(parameter_name);
 
 				if (parameter_value != "default")
-					variable_value = static_cast<Val>(std::stod(parameter_value.c_str()));
+					variable_value = static_cast<Scalar>(std::stod(parameter_value.c_str()));
 
 				std::cout << parameter_name << " : " << variable_value << std::endl;
 			}
@@ -762,6 +804,7 @@ namespace CGAL {
 					const Structured_labels   &structured_labels = m_structuring_get_all_points ?  m_structuring->get_structured_labels() :  m_structuring->get_segment_end_labels();
 					const Structured_anchors &structured_anchors = m_structuring_get_all_points ? m_structuring->get_structured_anchors() : m_structuring->get_segment_end_anchors();
 
+					if (!m_structuring_global_everywhere) m_structuring_adjacency_value = m_structuring->get_local_adjacency_value();
 					number_of_faces = m_utils.compute_cdt(structured_points, structured_labels, structured_anchors, m_structuring_adjacency_value, cdt, 
 													 m_add_cdt_clutter, boundary_clutter, boundary_clutter_projected, 
 													 m_add_cdt_bbox, input, m_silent);
@@ -982,135 +1025,91 @@ namespace CGAL {
 				loading_data(input, log, ++exec_step);
 
 
-				if (m_pipeline_version == Pipeline_version::WITH_SHAPE_DETECTION) {
-					
-					// (02) ---------------------------------- not used
-					Planes all_planes;
-					getting_all_planes(all_planes, log, input, ++exec_step);
-				}
+				// (02) ----------------------------------
+				Indices ground_idxs, building_boundary_idxs, building_interior_idxs;
+				applying_selection(ground_idxs, building_boundary_idxs, building_interior_idxs, log, input, ++exec_step);
 
 
 				// (03) ----------------------------------
-				Indices ground_idxs, building_boundary_idxs, building_interior_idxs;
-				applying_selection(ground_idxs, building_boundary_idxs, building_interior_idxs,
-				log, input, ++exec_step);
-
-
-				// (04) ----------------------------------
 				Plane_3 base_ground_plane, fitted_ground_plane;
 				ground_fitting(base_ground_plane, fitted_ground_plane, log, ground_idxs, input, ++exec_step);
 
 
-				// (05) ----------------------------------					
+				// (04) ----------------------------------					
 				Boundary_data building_boundaries, boundary_clutter;					
-				getting_boundary_points(building_boundaries, boundary_clutter, log, 
-					building_boundary_idxs, building_interior_idxs, input, ++exec_step);
+				getting_boundary_points(building_boundaries, boundary_clutter, log, building_boundary_idxs, building_interior_idxs, input, ++exec_step);
 
 
-				if (m_pipeline_version == Pipeline_version::WITH_SHAPE_DETECTION) {
-
-					// (06) ----------------------------------
-					regularizing(building_boundaries, input, log, base_ground_plane, ++exec_step);
-				}
-
-
-				// (07) ----------------------------------
+				// (05) ----------------------------------
 				Projected_points building_boundaries_projected, boundary_clutter_projected;
 				projecting(building_boundaries_projected, boundary_clutter_projected, log, base_ground_plane, building_boundaries, boundary_clutter, input, ++exec_step);
 
 
-				// (08) ----------------------------------
-				if (m_pipeline_version == Pipeline_version::WITHOUT_SHAPE_DETECTION && m_with_region_growing) {
-
-					if (m_use_grid_simplifier_first) {
+				// (06) ----------------------------------
+				if (m_use_grid_simplifier_first) {
 						
-						assert(m_clutter_new_point_type == Grid_new_point_type::CLOSEST);
-						applying_grid_simplification(boundary_clutter_projected, log, ++exec_step);
-					}
-
-					detecting_2d_lines(boundary_clutter, boundary_clutter_projected, building_boundaries, building_boundaries_projected, log, input, ++exec_step);
-
-					Lines lines; Segments segments;
-
-					line_fitting(lines, log, building_boundaries, building_boundaries_projected, ++exec_step);
-					creating_segments(segments, log, lines, building_boundaries, building_boundaries_projected, ++exec_step);
-					applying_2d_structuring(log, lines, building_boundaries, building_boundaries_projected, ++exec_step);
+					assert(m_clutter_new_point_type == Grid_new_point_type::CLOSEST);
+					applying_grid_simplification(boundary_clutter_projected, log, ++exec_step);
 				}
 
 
-				if (m_pipeline_version == Pipeline_version::WITH_SHAPE_DETECTION) {
-
-					// (09) ---------------------------------- not necessary in many cases
-					if (m_clean_projected_points) 
-						cleaning_projected_points(building_boundaries_projected, building_boundaries, log, ++exec_step);
+				// (07) ----------------------------------
+				detecting_2d_lines(boundary_clutter, boundary_clutter_projected, building_boundaries, building_boundaries_projected, log, input, ++exec_step);
 
 
-					// (10) ----------------------------------
-					Lines lines; 
-					line_fitting(lines, log, building_boundaries, building_boundaries_projected, ++exec_step);
+				// (08) ----------------------------------
+				Lines lines;
+				line_fitting(lines, log, building_boundaries, building_boundaries_projected, ++exec_step);
 
 
-					// (11) ---------------------------------- not used
-					Segments segments;
-					creating_segments(segments, log, lines, building_boundaries, building_boundaries_projected, ++exec_step);
+				// (09) ----------------------------------
+				Segments segments;
+				creating_segments(segments, log, lines, building_boundaries, building_boundaries_projected, ++exec_step);
 
 
-					// (12) ----------------------------------
-					applying_2d_structuring(log, lines, building_boundaries, building_boundaries_projected, ++exec_step);
-				}
+				// (09) ----------------------------------
+				applying_2d_structuring(log, lines, building_boundaries, building_boundaries_projected, ++exec_step);
 
 
-				// (13) ----------------------------------
-				if (m_pipeline_version == Pipeline_version::WITHOUT_SHAPE_DETECTION || 
-				   (m_pipeline_version == Pipeline_version::WITH_SHAPE_DETECTION && m_add_cdt_clutter)) {
-
-					if (!m_use_grid_simplifier_first)
-						processing_clutter(boundary_clutter, boundary_clutter_projected, log, input, ++exec_step);
-				}
-
-
-				// (14) ----------------------------------
+				// (10) ----------------------------------
 				CDT cdt;
-				if (m_pipeline_version == Pipeline_version::WITHOUT_SHAPE_DETECTION && !m_with_region_growing) 
-					m_add_cdt_clutter = true;
 				creating_cdt(cdt, log, boundary_clutter, boundary_clutter_projected, input, ++exec_step);
 
 
-				// (15) ----------------------------------
+				// (11) ----------------------------------
 				Container_2D input_2d; Face_points_map fp_map;
 				converting_3d_to_2d(input_2d, fp_map, log, cdt, input, ++exec_step);
 
 
-				// (16) ----------------------------------
+				// (12) ----------------------------------
 				computing_visibility(cdt, log, input_2d, ++exec_step);
 
 
-				// (17) ----------------------------------
+				// (13) ----------------------------------
 				applying_graph_cut(cdt, log, ++exec_step);
 
 				
 				// From now on we handle each building separately.
 
-				// (18) ----------------------------------				
+				// (14) ----------------------------------				
 				Buildings buildings;
 				splitting_buildings(buildings, cdt, log, ++exec_step);
 
 
-				// (19) ----------------------------------				
-				if (m_use_boundaries || m_building_boundary_type == Building_boundary_type::UNORIENTED) 
-					finding_buildings_boundaries(buildings, log, cdt, ++exec_step);
+				// (15) ----------------------------------				
+				finding_buildings_boundaries(buildings, log, cdt, ++exec_step);
 
 
-				// (20) ----------------------------------
+				// (16) ----------------------------------
 				fitting_roofs(buildings, log, fitted_ground_plane, fp_map, input, cdt, ++exec_step);
 
 
-				// (21) ----------------------------------
+				// (17) ----------------------------------
 				Ground ground_bbox;
 				creating_lod0(ground_bbox, log, cdt, buildings, input, ++exec_step);
 
 
-				// (22) ----------------------------------	
+				// (18) ----------------------------------	
 				creating_lod1(log, cdt, buildings, ground_bbox, ++exec_step);
 
 
@@ -1232,6 +1231,9 @@ namespace CGAL {
 			Main_test_data_type m_test_data_type;
 			Region_growing_normal_estimation m_region_growing_normal_estimation_method;
 
+			FT m_imp_eps;
+			FT m_imp_scale;
+
 
 			// Assert default values of all global parameters.
 			void assert_global_parameters() {
@@ -1281,6 +1283,9 @@ namespace CGAL {
 				}
 
 				assert(m_prefix_path != "path_to_the_data_folder" && m_prefix_path != "default");
+
+				assert(m_imp_eps   > FT(0));
+				assert(m_imp_scale > FT(0));
 			}
 		};
 	}

@@ -599,6 +599,13 @@ namespace CGAL {
 					assert(CGAL::abs(neighbour_norm.squared_length() - FT(1)) < eps && 
 						   CGAL::abs(line_normal.squared_length() - FT(1)) < eps);
 
+					if (CGAL::abs(neighbour_norm.squared_length() - FT(1)) >= eps ||
+						CGAL::abs(line_normal.squared_length() - FT(1)) >= eps) {
+
+						std::cerr << "Error: assert function handle_neighbours region growing!" << std::endl;
+						exit(EXIT_FAILURE);
+					}
+
 					const FT squared_distance = compute_squared_distance_to_the_line(neighbour_pos, optimal_line);
 					const FT cos_angle 		  = CGAL::abs(neighbour_norm * line_normal);
 

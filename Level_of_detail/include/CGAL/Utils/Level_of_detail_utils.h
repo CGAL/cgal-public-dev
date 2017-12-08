@@ -494,6 +494,7 @@ namespace CGAL {
 					}
 				}
 
+				assert(adjacency_value > FT(0));
 				for (size_t i = 0; i < points.size(); ++i) {
 					if (points[i].size() < 2) continue;
 					

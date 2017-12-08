@@ -432,6 +432,18 @@ namespace CGAL {
 				assert(CGAL::abs(cos_in)  >= FT(0) && (FT(1) - CGAL::abs(cos_in))  > -eps);
 				assert(CGAL::abs(cos_out) >= FT(0) && (FT(1) - CGAL::abs(cos_out)) > -eps);
 
+				if (CGAL::abs(cos_in) < FT(0) || (FT(1) - CGAL::abs(cos_in)) <= -eps) {
+
+						std::cerr << "Error: assert function compute_free_form_quality graph cut!" << std::endl;
+						exit(EXIT_FAILURE);
+				}
+
+				if (CGAL::abs(cos_out) < FT(0) || (FT(1) - CGAL::abs(cos_out)) <= -eps) {
+
+						std::cerr << "Error: assert function compute_free_form_quality graph cut!" << std::endl;
+						exit(EXIT_FAILURE);
+				}
+
 				const FT min_cos = CGAL::min(cos_in, cos_out);
 				const FT result = m_alpha - min_cos;
 

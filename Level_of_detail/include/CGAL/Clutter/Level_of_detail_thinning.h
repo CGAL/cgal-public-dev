@@ -345,6 +345,12 @@ namespace CGAL {
 
 				for (Neighbour_iterator nit = search.begin(); nit != search.end(); ++nit, ++count) neighbours[nit->first.first] = nit->first.second;
 				assert(count == num_points);
+
+				if (count != num_points) {
+					std::cerr << "Error: count != num_points, find_nearest_neighbours_with_knn function thinning!" << std::endl;
+					exit(EXIT_FAILURE);
+				}
+
 				neighbours[query.first] = query.second;
 			}
 
@@ -599,6 +605,11 @@ namespace CGAL {
 				assert(!points.empty() && !normals.empty());
 				clusters.clear();
 
+				if (points.empty() || normals.empty()) {
+					std::cerr << "Error: points/normals are empty, is_dimension_1 function thinning!" << std::endl;
+					exit(EXIT_FAILURE);
+				}
+
 				// to be implemented!
 				// implement clustering based on normals here or use minshift instead!
 				// dimension_0 and dimension_2 checks can be turned off!
@@ -809,6 +820,11 @@ namespace CGAL {
 
 				const size_t num_points = kmeans_data.size();
 				assert(num_points >= num_clusters_expected);
+
+				if (num_points < num_clusters_expected) {
+					std::cerr << "Error: num_points < num_clusters_expected, run_kmeans function thinning!" << std::endl;
+					exit(EXIT_FAILURE);
+				}
 
 				means = dkm::kmeans_lloyd(kmeans_data, num_clusters_expected);
 			}

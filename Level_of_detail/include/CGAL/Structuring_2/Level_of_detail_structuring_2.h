@@ -103,7 +103,7 @@ namespace CGAL {
 			m_points(points), m_cc(components), m_lines(lines), m_tol(FT(1) / FT(10000)), m_big_value(FT(1000000)), 
 			m_eps_set(false), m_save_log(true), m_resample(true), m_empty(true), m_corner_algorithm(Structuring_corner_algorithm::GRAPH_BASED),
 			m_adjacency_threshold_method(Structuring_adjacency_threshold_method::LOCAL), m_adjacency_threshold(-FT(1)),
-			m_min_seg_points(2), m_max_neigh_segments(4), m_use_global_everywhere(true), m_silent(false) {
+			m_min_seg_points(2), m_max_neigh_segments(4), m_use_global_everywhere(true), m_silent(false), m_local_adjacency_value(-FT(1)) {
 
 				assert(components.size() == lines.size());
 			}
@@ -139,6 +139,11 @@ namespace CGAL {
 				m_adjacency_threshold = new_value;
 			}
 
+			FT get_local_adjacency_value() {
+
+				assert(m_local_adjacency_value > FT(0));
+				return m_local_adjacency_value;
+			}
 
 			// This is a 2D version of the algorithm in the paper:
 			// Surface Reconstruction Through Point Set Structuring, F. Lafarge, P. Alliez.
@@ -325,6 +330,7 @@ namespace CGAL {
 			bool m_use_global_everywhere;
 
 			bool m_silent;
+			FT m_local_adjacency_value;
 
 
 			void project() {
@@ -920,18 +926,28 @@ namespace CGAL {
 				if (m_use_global_everywhere) {
 					
 					assert(ind_i >= 0 && ind_i < m_eps.size() && ind_j >= 0 && ind_j < m_eps.size());
-					return CGAL::max(m_eps[ind_i], m_eps[ind_j]);
+					const FT res = CGAL::max(m_eps[ind_i], m_eps[ind_j]);
+
+					m_local_adjacency_value = CGAL::max(m_local_adjacency_value, res);
+					return res;
 				}
 
 				// Alternative methods.
 				switch (m_adjacency_threshold_method) {
 
-					case Structuring_adjacency_threshold_method::LOCAL:
+					case Structuring_adjacency_threshold_method::LOCAL: {
 						assert(ind_i >= 0 && ind_i < m_eps.size() && ind_j >= 0 && ind_j < m_eps.size());
-						return CGAL::max(m_eps[ind_i], m_eps[ind_j]);
+						const FT res = CGAL::max(m_eps[ind_i], m_eps[ind_j]);
 
-					case Structuring_adjacency_threshold_method::GLOBAL:
+						m_local_adjacency_value = CGAL::max(m_local_adjacency_value, res);
+						return res;
+					}
+
+					case Structuring_adjacency_threshold_method::GLOBAL: {
+
+						m_local_adjacency_value = CGAL::max(m_local_adjacency_value, m_adjacency_threshold);
 						return m_adjacency_threshold;
+					}
 
 					default:
 						assert(!"Wrong adjacency threshold method!");
@@ -1174,7 +1190,7 @@ namespace CGAL {
 				assert(segment_index >= 0 && segment_index < static_cast<int>(m_lp.size()));
 				const FT dist = squared_distance(corner, closest_point);
 
-				if (dist > dist_thresh) {
+				if (dist > FT(5) * dist_thresh) {
 
 					assert(m_lp[segment_index] > FT(0));
 
