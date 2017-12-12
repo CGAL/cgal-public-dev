@@ -430,35 +430,46 @@ public:
 // Public section
 // ----------------------------------------------------------------------------
 
-/// \ingroup PkgPointSetProcessingAlgorithms
+/**  
+   \ingroup PkgPointSetProcessingAlgorithms
 
-/// Estimates the local scale in a K nearest neighbors sense on a set
-/// of user-defined query points. The computed scales correspond to
-/// the smallest scales such that the K subsets of points have the
-/// appearance of a surface in 3D or the appearance of a curve in 2D
-/// (see \ref Point_set_processing_3Scale).
-///
-///
-/// @tparam SamplesInputIterator iterator over input sample points.
-/// @tparam SamplesPointMap is a model of `ReadablePropertyMap` with
-///        value type `Point_3<Kernel>` or `Point_2<Kernel>`.  It can
-///        be omitted if the value type of `SamplesInputIterator` is
-///        convertible to `Point_3<Kernel>` or to `Point_2<Kernel>`.
-/// @tparam QueriesInputIterator iterator over points where scale
-///        should be computed.
-/// @tparam QueriesInputIterator is a model of `ReadablePropertyMap`
-///        with value type `Point_3<Kernel>` or `Point_2<Kernel>`.  It
-///        can be omitted if the value type of `QueriesInputIterator` is
-///        convertible to `Point_3<Kernel>` or to `Point_2<Kernel>`.
-/// @tparam OutputIterator is used to store the computed scales. It accepts
-///        values of type `std::size_t`.
-/// @tparam Kernel Geometric traits class.  It can be omitted and
-///        deduced automatically from the value type of `SamplesPointMap`.
-///
-/// @note This function accepts both 2D and 3D points, but sample
-///      points and query must have the same dimension.
+   Estimates the local scale in a K nearest neighbors sense on a set
+   of user-defined query points. The computed scales correspond to
+   the smallest scales such that the K subsets of points have the
+   appearance of a surface in 3D or the appearance of a curve in 2D
+   (see \ref Point_set_processing_3Scale).
 
-// This variant requires all parameters.
+   \tparam PointRange is a model of `ConstRange`. The value type of
+   its iterator is the key type of the named parameter `point_map`.
+   \tparam QueryPointRange is a model of `ConstRange`. The value type of
+   its iterator is the key type of the named parameter `query_point_map`.
+   \tparam OutputIterator is used to store the computed scales. It accepts
+   values of type `std::size_t`.
+
+   \param points input point range.
+   \param queries range of locations where scale must be estimated
+   \param output iterator to store the computed scales
+   \param np optional sequence of \ref psp_namedparameters "Named Parameters" among the ones listed below.
+
+   \cgalNamedParamsBegin
+     \cgalParamBegin{point_map} a model of `ReadablePropertyMap` with
+     value type `geom_traits::Point_3` (or `geom_traits::Point_2`).
+     If this parameter is omitted,
+     `CGAL::Identity_property_map<geom_traits::Point_3>` (or
+     `CGAL::Identity_property_map<geom_traits::Point_2>`) is
+     used.\cgalParamEnd
+     \cgalParamBegin{query_point_map} a model of `ReadablePropertyMap` with
+     value type `geom_traits::Point_3` (or `geom_traits::Point_2`).
+     If this parameter is omitted,
+     `CGAL::Identity_property_map<geom_traits::Point_3>` (or
+     `CGAL::Identity_property_map<geom_traits::Point_2>`) is
+     used.\cgalParamEnd
+     \cgalParamBegin{geom_traits} an instance of a geometric traits class, model of `Kernel`\cgalParamEnd
+   \cgalNamedParamsEnd
+
+   \note This function accepts both 2D and 3D points, but sample
+   points and query must have the same dimension.
+*/
 template <typename PointRange,
           typename QueryPointRange,
           typename OutputIterator,
@@ -468,7 +479,7 @@ OutputIterator
 estimate_local_k_neighbor_scales(
   const PointRange& points,
   const QueryPointRange& queries,
-  OutputIterator output, ///< output iterator to store the computed scales
+  OutputIterator output,
   const NamedParameters& np)
 {
   using boost::choose_param;
@@ -494,6 +505,8 @@ estimate_local_k_neighbor_scales(
   return output;
 }
 
+/// \cond SKIP_IN_MANUAL
+// variant with default NP
 template <typename PointRange,
           typename QueryPointRange,
           typename OutputIterator
@@ -502,32 +515,41 @@ OutputIterator
 estimate_local_k_neighbor_scales(
   const PointRange& points,
   const QueryPointRange& queries,
-  OutputIterator output) ///< output iterator to store the computed scales
+  OutputIterator output)
 {
   return estimate_local_k_neighbor_scales
     (points, queries, output, CGAL::Point_set_processing_3::parameters::all_default(points));
 }
-  
-/// \ingroup PkgPointSetProcessingAlgorithms
+/// \endcond
 
-/// Estimates the global scale in a K nearest neighbors sense. The
-/// computed scale corresponds to the smallest scale such that the K
-/// subsets of points have the appearance of a surface in 3D or the
-/// appearance of a curve in 2D (see \ref Point_set_processing_3Scale).
-///
-///
-/// @tparam InputIterator iterator over input points.
-/// @tparam PointMap is a model of `ReadablePropertyMap` with
-///        value type `Point_3<Kernel>` or `Point_2<Kernel>`.  It can
-///        be omitted if the value type of `InputIterator` is
-///        convertible to `Point_3<Kernel>` or to `Point_2<Kernel>`.
-/// @tparam Kernel Geometric traits class.  It can be omitted and
-///        deduced automatically from the value type of `PointMap`.
-///
-/// @note This function accepts both 2D and 3D points.
-///
-/// @return The estimated scale in the K nearest neighbors sense.
-// This variant requires all parameters.
+/**  
+   \ingroup PkgPointSetProcessingAlgorithms
+
+   Estimates the global scale in a K nearest neighbors sense. The
+   computed scale corresponds to the smallest scale such that the K
+   subsets of points have the appearance of a surface in 3D or the
+   appearance of a curve in 2D (see \ref Point_set_processing_3Scale).
+
+   \tparam PointRange is a model of `ConstRange`. The value type of
+   its iterator is the key type of the named parameter `point_map`.
+
+   \param points input point range.
+   \param np optional sequence of \ref psp_namedparameters "Named Parameters" among the ones listed below.
+
+   \cgalNamedParamsBegin
+     \cgalParamBegin{point_map} a model of `ReadablePropertyMap` with
+     value type `geom_traits::Point_3` (or `geom_traits::Point_2`).
+     If this parameter is omitted,
+     `CGAL::Identity_property_map<geom_traits::Point_3>` (or
+     `CGAL::Identity_property_map<geom_traits::Point_2>`) is
+     used.\cgalParamEnd
+     \cgalParamBegin{geom_traits} an instance of a geometric traits class, model of `Kernel`\cgalParamEnd
+   \cgalNamedParamsEnd
+
+   \note This function accepts both 2D and 3D points.
+
+   \return The estimated scale in the K nearest neighbors sense.
+*/
 template <typename PointRange,
           typename NamedParameters
 >
@@ -542,6 +564,8 @@ estimate_global_k_neighbor_scale(
   return scales[scales.size() / 2];
 }
 
+/// \cond SKIP_IN_MANUAL
+// variant with default NP
 template <typename PointRange>
 std::size_t
 estimate_global_k_neighbor_scale(const PointRange& points)
@@ -549,36 +573,49 @@ estimate_global_k_neighbor_scale(const PointRange& points)
   return estimate_global_k_neighbor_scale
     (points, CGAL::Point_set_processing_3::parameters::all_default(points));
 }
-  
-/// \ingroup PkgPointSetProcessingAlgorithms
+/// \endcond  
 
-/// Estimates the local scale in a range sense on a set of
-/// user-defined query points. The computed scales correspond to the
-/// smallest scales such that the subsets of points included in the
-/// sphere range have the appearance of a surface in 3D or the
-/// appearance of a curve in 2D (see \ref Point_set_processing_3Scale).
-///
-///
-/// @tparam SamplesInputIterator iterator over input sample points.
-/// @tparam SamplesPointMap is a model of `ReadablePropertyMap` with
-///        value type `Point_3<Kernel>` or `Point_2<Kernel>`.  It can
-///        be omitted if the value type of `SamplesInputIterator` is
-///        convertible to `Point_3<Kernel>` or to `Point_2<Kernel>`.
-/// @tparam QueriesInputIterator iterator over points where scale
-///        should be computed.
-/// @tparam QueriesInputIterator is a model of `ReadablePropertyMap`
-///        with value type `Point_3<Kernel>` or `Point_2<Kernel>`.  It
-///        can be omitted if the value type of `QueriesInputIterator` is
-///        convertible to `Point_3<Kernel>` or to `Point_2<Kernel>`.
-/// @tparam OutputIterator is used to store the computed scales. It accepts
-///        values of type `Kernel::FT`.
-/// @tparam Kernel Geometric traits class.  It can be omitted and
-///        deduced automatically from the value type of `SamplesPointMap`.
-///
-/// @note This function accepts both 2D and 3D points, but sample
-///      points and query must have the same dimension.
+/**  
+   \ingroup PkgPointSetProcessingAlgorithms
 
-// This variant requires all parameters.
+   Estimates the local scale in a range sense on a set of
+   user-defined query points. The computed scales correspond to the
+   smallest scales such that the subsets of points included in the
+   sphere range have the appearance of a surface in 3D or the
+   appearance of a curve in 2D (see \ref Point_set_processing_3Scale).
+
+
+   \tparam PointRange is a model of `ConstRange`. The value type of
+   its iterator is the key type of the named parameter `point_map`.
+   \tparam QueryPointRange is a model of `ConstRange`. The value type of
+   its iterator is the key type of the named parameter `query_point_map`.
+   \tparam OutputIterator is used to store the computed scales. It accepts
+   values of type `geom_traits::FT`.
+
+   \param points input point range.
+   \param queries range of locations where scale must be estimated
+   \param output iterator to store the computed scales
+   \param np optional sequence of \ref psp_namedparameters "Named Parameters" among the ones listed below.
+
+   \cgalNamedParamsBegin
+     \cgalParamBegin{point_map} a model of `ReadablePropertyMap` with
+     value type `geom_traits::Point_3` (or `geom_traits::Point_2`).
+     If this parameter is omitted,
+     `CGAL::Identity_property_map<geom_traits::Point_3>` (or
+     `CGAL::Identity_property_map<geom_traits::Point_2>`) is
+     used.\cgalParamEnd
+     \cgalParamBegin{query_point_map} a model of `ReadablePropertyMap` with
+     value type `geom_traits::Point_3` (or `geom_traits::Point_2`).
+     If this parameter is omitted,
+     `CGAL::Identity_property_map<geom_traits::Point_3>` (or
+     `CGAL::Identity_property_map<geom_traits::Point_2>`) is
+     used.\cgalParamEnd
+     \cgalParamBegin{geom_traits} an instance of a geometric traits class, model of `Kernel`\cgalParamEnd
+   \cgalNamedParamsEnd
+
+   \note This function accepts both 2D and 3D points, but sample
+   points and query must have the same dimension.
+*/
 template <typename PointRange,
           typename QueryPointRange,
           typename OutputIterator,
@@ -588,7 +625,7 @@ OutputIterator
 estimate_local_range_scales(
   const PointRange& points,
   const QueryPointRange& queries,
-  OutputIterator output, ///< output iterator to store the computed scales
+  OutputIterator output,
   const NamedParameters& np)
 {
   using boost::choose_param;
@@ -613,6 +650,8 @@ estimate_local_range_scales(
   return output;
 }
 
+/// \cond SKIP_IN_MANUAL
+// variant with default NP  
 template <typename PointRange,
           typename QueryPointRange,
           typename OutputIterator
@@ -621,32 +660,42 @@ OutputIterator
 estimate_local_range_scales(
   const PointRange& points,
   const QueryPointRange& queries,
-  OutputIterator output) ///< output iterator to store the computed scales
+  OutputIterator output)
 {
   return estimate_local_range_scales
     (points, queries, output, CGAL::Point_set_processing_3::parameters::all_default(points));
 }
-  
-/// \ingroup PkgPointSetProcessingAlgorithms
+/// \endcond
 
-/// Estimates the global scale in a range sense. The computed scale
-/// corresponds to the smallest scale such that the subsets of points
-/// inside the sphere range have the appearance of a surface in 3D or
-/// the appearance of a curve in 2D (see \ref Point_set_processing_3Scale).
-///
-///
-/// @tparam InputIterator iterator over input points.
-/// @tparam PointMap is a model of `ReadablePropertyMap` with
-///        value type `Point_3<Kernel>` or `Point_2<Kernel>`.  It can
-///        be omitted if the value type of `InputIterator` is
-///        convertible to `Point_3<Kernel>` or to `Point_2<Kernel>`.
-/// @tparam Kernel Geometric traits class.  It can be omitted and
-///        deduced automatically from the value type of `PointMap`.
-///
-/// @note This function accepts both 2D and 3D points.
-///
-/// @return The estimated scale in the range sense.
-// This variant requires all parameters.
+/**  
+   \ingroup PkgPointSetProcessingAlgorithms
+
+   Estimates the global scale in a range sense. The computed scale
+   corresponds to the smallest scale such that the subsets of points
+   inside the sphere range have the appearance of a surface in 3D or
+   the appearance of a curve in 2D (see \ref Point_set_processing_3Scale).
+
+
+   \tparam PointRange is a model of `ConstRange`. The value type of
+   its iterator is the key type of the named parameter `point_map`.
+
+   \param points input point range.
+   \param np optional sequence of \ref psp_namedparameters "Named Parameters" among the ones listed below.
+
+   \cgalNamedParamsBegin
+     \cgalParamBegin{point_map} a model of `ReadablePropertyMap` with
+     value type `geom_traits::Point_3` (or `geom_traits::Point_2`).
+     If this parameter is omitted,
+     `CGAL::Identity_property_map<geom_traits::Point_3>` (or
+     `CGAL::Identity_property_map<geom_traits::Point_2>`) is
+     used.\cgalParamEnd
+     \cgalParamBegin{geom_traits} an instance of a geometric traits class, model of `Kernel`\cgalParamEnd
+   \cgalNamedParamsEnd
+
+   \note This function accepts both 2D and 3D points.
+
+   \return The estimated scale in the range sense.
+*/
 template <typename PointRange,
           typename NamedParameters
 >
@@ -661,6 +710,8 @@ estimate_global_range_scale(
   return std::sqrt (scales[scales.size() / 2]);
 }
 
+/// \cond SKIP_IN_MANUAL
+// variant with default NP
 template <typename PointRange>
 double
 estimate_global_range_scale(const PointRange& points)
@@ -669,38 +720,7 @@ estimate_global_range_scale(const PointRange& points)
     (points, CGAL::Point_set_processing_3::parameters::all_default(points));
 }
 
-// ----------------------------------------------------------------------------
-// Useful overloads
-// ----------------------------------------------------------------------------
-/// \cond SKIP_IN_MANUAL
-
-/// Estimates the local scale in a K nearest neighbors sense on a set
-/// of user-defined query points. The computed scales correspond to
-/// the smallest scales such that the K subsets of points have the
-/// appearance of a surface in 3D or the appearance of a curve in 2D
-/// (see \ref Point_set_processing_3Scale).
-///
-///
-/// @tparam SamplesInputIterator iterator over input sample points.
-/// @tparam SamplesPointMap is a model of `ReadablePropertyMap` with
-///        value type `Point_3<Kernel>` or `Point_2<Kernel>`.  It can
-///        be omitted if the value type of `SamplesInputIterator` is
-///        convertible to `Point_3<Kernel>` or to `Point_2<Kernel>`.
-/// @tparam QueriesInputIterator iterator over points where scale
-///        should be computed.
-/// @tparam QueriesInputIterator is a model of `ReadablePropertyMap`
-///        with value type `Point_3<Kernel>` or `Point_2<Kernel>`.  It
-///        can be omitted if the value type of `QueriesInputIterator` is
-///        convertible to `Point_3<Kernel>` or to `Point_2<Kernel>`.
-/// @tparam OutputIterator is used to store the computed scales. It accepts
-///        values of type `std::size_t`.
-/// @tparam Kernel Geometric traits class.  It can be omitted and
-///        deduced automatically from the value type of `SamplesPointMap`.
-///
-/// @note This function accepts both 2D and 3D points, but sample
-///      points and query must have the same dimension.
-
-// This variant requires all parameters.
+// deprecated API  
 template <typename SamplesInputIterator,
           typename SamplesPointMap,
           typename QueriesInputIterator,
@@ -729,7 +749,7 @@ estimate_local_k_neighbor_scales(
      geom_traits (Kernel()));
 }
 
-  
+// deprecated API  
 template <typename SamplesInputIterator,
           typename SamplesPointMap,
           typename QueriesInputIterator,
@@ -755,6 +775,7 @@ estimate_local_k_neighbor_scales(
      query_point_map (queries_map));
 }
 
+// deprecated API
 template <typename SamplesInputIterator,
           typename QueriesInputIterator,
           typename OutputIterator
@@ -772,27 +793,9 @@ estimate_local_k_neighbor_scales(
     (CGAL::make_range (first, beyond),
      CGAL::make_range (first_query, beyond_query),
      output);
- }
+}
 
-
-/// Estimates the global scale in a K nearest neighbors sense. The
-/// computed scale corresponds to the smallest scale such that the K
-/// subsets of points have the appearance of a surface in 3D or the
-/// appearance of a curve in 2D (see \ref Point_set_processing_3Scale).
-///
-///
-/// @tparam InputIterator iterator over input points.
-/// @tparam PointMap is a model of `ReadablePropertyMap` with
-///        value type `Point_3<Kernel>` or `Point_2<Kernel>`.  It can
-///        be omitted if the value type of `InputIterator` is
-///        convertible to `Point_3<Kernel>` or to `Point_2<Kernel>`.
-/// @tparam Kernel Geometric traits class.  It can be omitted and
-///        deduced automatically from the value type of `PointMap`.
-///
-/// @note This function accepts both 2D and 3D points.
-///
-/// @return The estimated scale in the K nearest neighbors sense.
-// This variant requires all parameters.
+// deprecated API
 template <typename InputIterator,
           typename PointMap,
           typename Kernel
@@ -810,7 +813,8 @@ estimate_global_k_neighbor_scale(
      CGAL::parameters::point_map (point_map).
      geom_traits (kernel));
 }
-  
+
+// deprecated API
 template <typename InputIterator,
           typename PointMap
 >
@@ -826,6 +830,7 @@ estimate_global_k_neighbor_scale(
      CGAL::parameters::point_map (point_map));
 }
 
+// deprecated API  
 template <typename InputIterator
 >
 std::size_t
@@ -838,34 +843,7 @@ estimate_global_k_neighbor_scale(
     (CGAL::make_range (first, beyond));
 }
 
-
-/// Estimates the local scale in a range sense on a set of
-/// user-defined query points. The computed scales correspond to the
-/// smallest scales such that the subsets of points included in the
-/// sphere range have the appearance of a surface in 3D or the
-/// appearance of a curve in 2D (see \ref Point_set_processing_3Scale).
-///
-///
-/// @tparam SamplesInputIterator iterator over input sample points.
-/// @tparam SamplesPointMap is a model of `ReadablePropertyMap` with
-///        value type `Point_3<Kernel>` or `Point_2<Kernel>`.  It can
-///        be omitted if the value type of `SamplesInputIterator` is
-///        convertible to `Point_3<Kernel>` or to `Point_2<Kernel>`.
-/// @tparam QueriesInputIterator iterator over points where scale
-///        should be computed.
-/// @tparam QueriesInputIterator is a model of `ReadablePropertyMap`
-///        with value type `Point_3<Kernel>` or `Point_2<Kernel>`.  It
-///        can be omitted if the value type of `QueriesInputIterator` is
-///        convertible to `Point_3<Kernel>` or to `Point_2<Kernel>`.
-/// @tparam OutputIterator is used to store the computed scales. It accepts
-///        values of type `Kernel::FT`.
-/// @tparam Kernel Geometric traits class.  It can be omitted and
-///        deduced automatically from the value type of `SamplesPointMap`.
-///
-/// @note This function accepts both 2D and 3D points, but sample
-///      points and query must have the same dimension.
-
-// This variant requires all parameters.
+// deprecated API
 template <typename SamplesInputIterator,
           typename SamplesPointMap,
           typename QueriesInputIterator,
@@ -893,7 +871,8 @@ estimate_local_range_scales(
      query_point_map (queries_map).
      geom_traits (Kernel()));
 }
-  
+
+// deprecated API
 template <typename SamplesInputIterator,
           typename SamplesPointMap,
           typename QueriesInputIterator,
@@ -919,7 +898,7 @@ estimate_local_range_scales(
      query_point_map (queries_map));
 }
 
-
+// deprecated API
 template <typename SamplesInputIterator,
           typename QueriesInputIterator,
           typename OutputIterator
@@ -940,24 +919,7 @@ estimate_local_range_scales(
 }
 
 
-/// Estimates the global scale in a range sense. The computed scale
-/// corresponds to the smallest scale such that the subsets of points
-/// inside the sphere range have the appearance of a surface in 3D or
-/// the appearance of a curve in 2D (see \ref Point_set_processing_3Scale).
-///
-///
-/// @tparam InputIterator iterator over input points.
-/// @tparam PointMap is a model of `ReadablePropertyMap` with
-///        value type `Point_3<Kernel>` or `Point_2<Kernel>`.  It can
-///        be omitted if the value type of `InputIterator` is
-///        convertible to `Point_3<Kernel>` or to `Point_2<Kernel>`.
-/// @tparam Kernel Geometric traits class.  It can be omitted and
-///        deduced automatically from the value type of `PointMap`.
-///
-/// @note This function accepts both 2D and 3D points.
-///
-/// @return The estimated scale in the range sense.
-// This variant requires all parameters.
+// deprecated API
 template <typename InputIterator,
           typename PointMap,
           typename Kernel
@@ -975,7 +937,8 @@ estimate_global_range_scale(
      CGAL::parameters::point_map (point_map).
      geom_traits (kernel));
 }
-  
+
+// deprecated API
 template <typename InputIterator,
           typename PointMap
 >
@@ -992,7 +955,7 @@ estimate_global_range_scale(
 }
 
 
-
+// deprecated API
 template <typename InputIterator>
 double
 estimate_global_range_scale(
