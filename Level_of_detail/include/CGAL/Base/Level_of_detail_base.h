@@ -16,8 +16,12 @@
 #include <iostream>
 #include <vector>
 
+// CGAL includes.
+#include <CGAL/Timer.h>
+
 // New CGAL includes.
 #include <CGAL/Level_of_detail_enum.h>
+#include <CGAL/Tools/Level_of_detail_tools.h>
 #include <CGAL/Mylog/Mylog.h>
 
 namespace CGAL {
@@ -320,7 +324,7 @@ namespace CGAL {
 
 				m_structuring_adjacency_method  = Structuring_adjacency_threshold_method::LOCAL; // global is, in general, better, if using local, we have one parameter less: m_str_adj_value
 				m_structuring_global_everywhere = false; // better to have false, since in this case, I use global adjacency graph and global corner insertion consistently
-				m_structuring_adjacency_value   = 5.0;  // closest distance between two segments for adjacency graph, probably can be removed
+				m_structuring_adjacency_value   = 5.0;   // closest distance between two segments for adjacency graph, probably can be removed
 
 				m_use_grid_simplifier_first 			  = true; // better to use it, to make the code faster, but if removing it we have one parameter less: m_clutter_cell_length
 				m_region_growing_normal_estimation_method = Region_growing_normal_estimation::LOCAL; // in general, both work well
@@ -354,11 +358,14 @@ namespace CGAL {
 
 			void set_automatically_defined_options() {
 
-				m_alpha_shape_size 	  			 = m_imp_scale; 	   // does not change often, size in meters to get the boundary of the set of points, necessary, (meters)
-				m_structuring_epsilon 			 = m_imp_scale; 	   // distance between adjacent points in the resampled line, (meters)
-				m_region_growing_epsilon 		 = m_imp_eps; 		   // distance to the optimal line, necessary, (meters)
-				m_region_growing_cluster_epsilon = 0.58 * m_imp_scale; // distance between adjacent points, necessary, (meters)
-				m_clutter_cell_length 			 = 0.26 * m_imp_scale; // used in the grid simplify, probably can be removed, (meters)
+				const double clust_scale = 0.58;
+				const double clutt_scale = 0.26;
+
+				m_alpha_shape_size 	  			 = m_imp_scale; 	   		  // does not change often, size in meters to get the boundary of the set of points, necessary, (meters)
+				m_structuring_epsilon 			 = m_imp_scale; 	   		  // distance between adjacent points in the resampled line, (meters)
+				m_region_growing_epsilon 		 = m_imp_eps; 		   		  // distance to the optimal line, necessary, (meters)
+				m_region_growing_cluster_epsilon = clust_scale * m_imp_scale; // distance between adjacent points, necessary, (meters)
+				m_clutter_cell_length 			 = clutt_scale * m_imp_scale; // used in the grid simplify, probably can be removed, (meters)
 			}
 
 			void set_required_parameters(const Parameters &parameters) {
@@ -1014,6 +1021,17 @@ namespace CGAL {
 
 			// Version 0.
 			void create_lods_ver0() {
+
+				CGAL::Timer timer;
+				
+				timer.start();
+				run_pipeline_ver0();
+				timer.stop();
+
+				std::cout << std::endl << "Running time: " << timer.time() << " seconds." << std::endl << std::endl;
+			}
+
+			void run_pipeline_ver0() {
 
 				// (--) ----------------------------------
 				Log log; size_t exec_step = 0;

@@ -1025,6 +1025,7 @@ namespace CGAL {
 					const int j = el.second;
 
 					Point corner = intersect_lines(i, j);
+					adjust_corner(corner);
 
 					FT dist_thresh = -FT(1);
 					if (m_adjacency_threshold_method == Structuring_adjacency_threshold_method::GLOBAL) dist_thresh = m_adjacency_threshold;
@@ -1052,6 +1053,20 @@ namespace CGAL {
 				// }
 			}
 
+			void adjust_corner(Point & /* corner */) {
+				
+				return;
+
+				/*
+				const FT big_value = FT(1000000000);
+
+				FT x, y;
+				if (corner.x() > big_value) x = big_value;
+				if (corner.y() > big_value) y = big_value;
+
+				corner = Point(x, y); */
+			}
+
 			Point edge_barycentre(const int segment_index) {
 
 				FT x = FT(0), y = FT(0);
@@ -1070,6 +1085,8 @@ namespace CGAL {
 				const Line &line2 = m_lines[j];
 
 				typename CGAL::cpp11::result_of<Intersect(Line, Line)>::type result = intersection(line1, line2);
+
+				if (CGAL::parallel(line1, line2)) return line1.point(0);
 				return boost::get<Point>(*result);
 			}
 
@@ -1153,7 +1170,7 @@ namespace CGAL {
 				const FT dist_s = squared_distance(corner, source);
 				const FT dist_t = squared_distance(corner, target);
 
-				assert(dist_s != dist_t);
+				assert(source != target);
 
 				// Choose the closest position for the corner within the given segment.
 				if (dist_s < dist_t) add_begin_corner(segment_index, cycle, source, dist_thresh, corner);

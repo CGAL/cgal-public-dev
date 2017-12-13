@@ -50,6 +50,8 @@ namespace CGAL {
 			void get_data(const std::string &filePath, Container &input) const override {
 
             	std::ifstream loader(filePath.c_str(), std::ios_base::in);
+            	
+            	// std::ofstream saver((filePath + ".new").c_str(), std::ios_base::out); saver.precision(20);
 
             	if (!loader) {
                 	std::cerr << std::endl << std::endl << "ERROR: Error loading file with LOD data!" << std::endl << std::endl;
@@ -59,7 +61,7 @@ namespace CGAL {
 				Color_map colors; Label_map labels; Types_map types; Index_map indices;
 				set_default_properties(input, colors, labels, types, indices);
 
-            	std::string tmp;
+            	std::string tmp; // , tmpimp;
             	std::getline(loader, tmp);
             	std::getline(loader, tmp);
             	std::getline(loader, tmp);
@@ -80,6 +82,10 @@ namespace CGAL {
             	for (size_t i = 0; i < num_points; ++i) {
 
             		loader >> x >> y >> z >> nx >> ny >> nz >> r >> g >> b >> tmp >> la;
+
+					// loader >> x >> y >> z >> nx >> ny >> nz >> r >> g >> b >> tmpimp >> la >> tmp;
+            		// saver << x << " " << y << " " << z << " " << nx << " " << ny << " " << nz << " " << r << " " << g << " " << b << " " << tmpimp << " " << la << std::endl;
+
 					Iterator it = input.insert(Point(x, y, z), Normal(nx, ny, nz));
 
 					 colors[*it] = {{static_cast<Type>(r), static_cast<Type>(g), static_cast<Type>(b)}};
@@ -88,6 +94,9 @@ namespace CGAL {
 					indices[*it] = -1;
             	}
             	loader.close();
+            	
+            	// saver.close();
+            	// exit(0);
 			}
 
 		private:

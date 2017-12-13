@@ -362,10 +362,14 @@ namespace CGAL {
 				Line_2ft tmp_line;
 				CGAL::linear_least_squares_fitting_2(tmp_points.begin(), tmp_points.end(), tmp_line, CGAL::Dimension_tag<0>());
 				
-				const Vector_2ft vector = Vector_2ft(tmp_line.point(0), tmp_line.point(1));
+				const Vector_2ft vector = tmp_line.to_vector(); 						// Vector_2ft(tmp_line.point(0), tmp_line.point(1)); - this version works worse!
 				Vector_2ft normal       = vector.perpendicular(CGAL::COUNTERCLOCKWISE);
-				normal 		           /= CGAL::sqrt(normal * normal);
+				const auto length       = CGAL::sqrt(normal * normal);
 
+				assert(length != 0.0);
+				normal /= length;
+
+				assert(std::isfinite(normal.x()) && std::isfinite(normal.y()));
 				normals[query.first] = Vector_2(static_cast<FT>(normal.x()), static_cast<FT>(normal.y()));
 			}
 			
