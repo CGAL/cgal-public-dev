@@ -437,7 +437,7 @@ namespace CGAL {
 			FT compute_edge_length(const Edge &edge, const CDT &cdt) {
 
 				const Segment_2 &segment = cdt.segment(edge);
-				return CGAL::sqrt(segment.squared_length());
+				return static_cast<FT>(CGAL::sqrt(CGAL::to_double(segment.squared_length())));
 			}
 
 			FT traverse_ray_faces(Log &log, Line_face_circulator &lfc, const CDT &cdt, const Face_handle &fh, const FT max_small_edge) {
@@ -562,7 +562,7 @@ namespace CGAL {
 			bool is_valid_edge_for_sign_change(const Edge &edge, const CDT &cdt, const FT max_small_edge) {
 				
 				const Segment_2 &segment = cdt.segment(edge);
-				const FT edge_length = CGAL::sqrt(segment.squared_length());
+				const FT edge_length = static_cast<FT>(CGAL::sqrt(CGAL::to_double(segment.squared_length())));
 
 				return edge_length < max_small_edge;
 			}

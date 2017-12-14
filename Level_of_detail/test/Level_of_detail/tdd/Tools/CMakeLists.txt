@@ -1,4 +1,4 @@
-project(utilstest)
+project(toolstest)
 
 cmake_minimum_required(VERSION 2.6)
 
@@ -6,7 +6,7 @@ find_package(CGAL REQUIRED)
 
 set(CMAKE_CXX_STANDARD 14)
 
-if (CGAL_FOUND) 
+if (CGAL_FOUND)
 
 	include(${CGAL_USE_FILE})
 
@@ -18,13 +18,13 @@ if (CGAL_FOUND)
 
 	set(CMAKE_CXX_FLAGS "${CMAXE_CXX_FLAGS} -pedantic -Wall -Wextra -Weffc++ -Wc++11-extensions -Werror")
 
-	set(sources main.cpp Level_of_detail_utils_test.cpp)
+	set(sources main.cpp Level_of_detail_tools_test.cpp)
 
-	add_executable(utilstest ${sources})
+	add_executable(toolstest ${sources})
 
-	target_link_libraries(utilstest pthread)
-	target_link_libraries(utilstest gmock)
-	target_link_libraries(utilstest gtest)
+	target_link_libraries(toolstest pthread)
+	target_link_libraries(toolstest gmock)
+	target_link_libraries(toolstest gtest)
 
 else()
 

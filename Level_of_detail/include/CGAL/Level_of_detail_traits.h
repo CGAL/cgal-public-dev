@@ -33,6 +33,7 @@
 #include <CGAL/Clutter/Level_of_detail_thinning.h>
 #include <CGAL/Clutter/Level_of_detail_clutter_processor.h>
 #include <CGAL/Region_growing_2/Level_of_detail_region_growing_2.h>
+#include <CGAL/Tools/Level_of_detail_tools.h>
 #include <CGAL/Level_of_detail_enum.h>
 
 namespace CGAL {
@@ -112,6 +113,14 @@ namespace CGAL {
 			typedef CGAL::LOD::Level_of_detail_building_roof_fitter_2<Kernel, CDT, Container_3D, Min_height_fitter> Building_min_roof_fitter;
 			typedef CGAL::LOD::Level_of_detail_building_roof_fitter_2<Kernel, CDT, Container_3D, Avg_height_fitter> Building_avg_roof_fitter;
 			typedef CGAL::LOD::Level_of_detail_building_roof_fitter_2<Kernel, CDT, Container_3D, Max_height_fitter> Building_max_roof_fitter;
+
+			typedef CGAL::LOD::Level_of_detail_parameters<typename Kernel::FT> Level_of_detail_parameters;
+			typedef typename Level_of_detail_parameters::Input_parameters 	   Parameters;
+
+			typedef CGAL::LOD::Level_of_detail_parameters_estimator<Kernel, Container_3D, Parameters> Parameters_estimator;
+
+			typedef CGAL::LOD::Level_of_detail_complexity<Kernel, Container_3D, Lods> Lod_complexity;
+			typedef CGAL::LOD::Level_of_detail_distortion<Kernel, Container_3D, Lods> Lod_distortion;
 		};
 	}
 }

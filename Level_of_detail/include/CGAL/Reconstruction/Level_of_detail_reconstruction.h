@@ -68,7 +68,9 @@ namespace CGAL {
     		m_builder_type(Builder_type::LOD1),
     		m_use_boundaries(true),
     		m_height_threshold(FT(1) / FT(1000000)),
-    		m_area_threshold(FT(1) / FT(1000)) { }
+    		m_area_threshold(FT(1) / FT(1000)),
+    		m_num_roofs(-1),
+    		m_num_walls(-1) { }
 
 			void operator()(HDS &hds) {
 
@@ -102,6 +104,18 @@ namespace CGAL {
 				m_use_boundaries = new_state;
 			}
 
+			int get_number_of_roofs() const {
+
+				assert(m_num_roofs >= 0);
+				return m_num_roofs;
+			}
+
+			int get_number_of_walls() const {
+
+				assert(m_num_walls >= 0);
+				return m_num_walls;
+			}
+
 		private:
 			const Build_type m_build_type;
 			const CDT 		 &m_cdt;
@@ -120,6 +134,9 @@ namespace CGAL {
 			const FT 	 m_height_threshold;
 			const FT 	 m_area_threshold;
 			Simple_utils m_simple_utils;
+
+			int m_num_roofs;
+			int m_num_walls;
 			
 			void build_lod0(Builder &builder) {
 				assert(m_build_type == Build_type::CDT_AND_BUILDINGS);
@@ -265,12 +282,20 @@ namespace CGAL {
 
 
 				// Add all buildings.
+				m_num_roofs = 0;
+				m_num_walls = 0;
+
 				for (Building_iterator bit = m_buildings.begin(); bit != m_buildings.end(); ++bit) {
 				
 					const auto &building = (*bit).second;
 					if (!is_valid_building(building)) continue;
 
-					if (building.is_oriented) add_new_building_lod1(building, builder); // default is oriented
+					++m_num_roofs;
+
+					if (building.is_oriented) {
+						add_new_building_lod1(building, builder); // default is oriented
+						std::cerr << std::endl << "WARNING: number of walls will be wrong! See complexity." << std::endl << std::endl;
+					}
 					else add_new_building_lod1_unoriented(building, builder);
 				}
 
@@ -329,8 +354,8 @@ namespace CGAL {
 				const Point &b = m_ground[1];
 				const Point &c = m_ground[2];
 
-				const FT width  = CGAL::sqrt(squared_distance(a, b));
-				const FT height = CGAL::sqrt(squared_distance(b, c));
+				const FT width  = static_cast<FT>(CGAL::sqrt(CGAL::to_double(squared_distance(a, b))));
+				const FT height = static_cast<FT>(CGAL::sqrt(CGAL::to_double(squared_distance(b, c))));
 
 				return width * height;
 			}
@@ -384,8 +409,8 @@ namespace CGAL {
 				const size_t num_boundaries = boundaries.size();
 
 				assert(num_boundaries > 0);
-
 				if (num_boundaries <= 0) {
+
 					std::cerr << "Error: num_boundaries <= 0, add_new_building_lod0_unoriented function reconstruction!" << std::endl;
 					exit(EXIT_FAILURE);
 				}
@@ -427,8 +452,8 @@ namespace CGAL {
 				const size_t num_boundaries = boundaries.size();
 
 				assert(num_boundaries > 0);
-
 				if (num_boundaries <= 0) {
+
 					std::cerr << "Error: num_boundaries <= 0, add_new_building_lod1_unoriented function reconstruction!" << std::endl;
 					exit(EXIT_FAILURE);
 				}
@@ -601,6 +626,7 @@ namespace CGAL {
 					const size_t ip = i + 1;
 					assert(ip < num_vertices);
 
+					++m_num_walls;
 					add_quadrilateral_wall(boundary[i], boundary[ip], color, height_floor, height_roof, builder);
 				}
 			}
@@ -702,13 +728,28 @@ namespace CGAL {
 			using Point  = typename Mesh_builder::Point;
 			using Ground = typename Mesh_builder::Ground;
 
-			Level_of_detail_reconstruction() : m_use_boundaries(true) { }
+			Level_of_detail_reconstruction() : 
+			m_use_boundaries(true),
+			m_num_roofs(-1),
+			m_num_walls(-1) { }
 
 			void use_boundaries(const bool new_state) {
 				m_use_boundaries = new_state;
 			}
 
-			void reconstruct_lod0(const CDT &cdt, const Buildings &buildings, const Ground &ground, Mesh &mesh, Mesh_facet_colors &mesh_facet_colors) const {
+			int get_number_of_roofs() const {
+				
+				assert(m_num_roofs >= 0);
+				return m_num_roofs;
+			}
+
+			int get_number_of_walls() const {
+				
+				assert(m_num_walls >= 0);
+				return m_num_walls;
+			}
+
+			void reconstruct_lod0(const CDT &cdt, const Buildings &buildings, const Ground &ground, Mesh &mesh, Mesh_facet_colors &mesh_facet_colors) {
 
 				Mesh_builder mesh_builder(cdt, buildings, mesh_facet_colors);
 				
@@ -719,8 +760,8 @@ namespace CGAL {
 				mesh.delegate(mesh_builder);
 			}
 
-			void reconstruct_lod1(const CDT &cdt, const Buildings &buildings, const Ground &ground, Mesh &mesh, Mesh_facet_colors &mesh_facet_colors) const {
-			
+			void reconstruct_lod1(const CDT &cdt, const Buildings &buildings, const Ground &ground, Mesh &mesh, Mesh_facet_colors &mesh_facet_colors) {
+
 				Mesh_builder mesh_builder(cdt, buildings, mesh_facet_colors);
 
 				mesh_builder.set_ground(ground);
@@ -728,10 +769,21 @@ namespace CGAL {
 
 				mesh_builder.set_builder_type(Mesh_builder::Builder_type::LOD1);
 				mesh.delegate(mesh_builder);
+
+				set_lod1_metrics(mesh_builder);
 			}
 
 		private:
 			bool m_use_boundaries;
+
+			int m_num_roofs;
+			int m_num_walls;
+
+			void set_lod1_metrics(const Mesh_builder &mesh_builder) {
+
+				m_num_roofs = mesh_builder.get_number_of_roofs();
+				m_num_walls = mesh_builder.get_number_of_walls();
+			}
 		};
 	}
 }

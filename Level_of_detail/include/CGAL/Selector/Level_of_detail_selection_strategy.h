@@ -150,6 +150,38 @@ namespace CGAL {
 		private:
 			Label_map m_labels;
 		};
+
+
+
+
+		template<class KernelTraits, class InputContainer>
+		class Level_of_detail_building_boundary_and_interior : public Level_of_detail_selection_strategy<KernelTraits, InputContainer> {
+
+		public:
+			typedef Level_of_detail_selection_strategy<KernelTraits, InputContainer> Base;
+			
+			typedef typename Base::Container Container;
+			typedef typename Base::Label     Label;
+			typedef typename Base::Label_map Label_map;
+
+			void set_input(const Container &input) override {
+
+				Base::set_input(input);
+				boost::tie(m_labels, boost::tuples::ignore) = input.template property_map<Label>("label");
+			}
+
+			bool satisfies_condition(const int labelIndex) const override {
+
+				const Label facade = 1;
+				const Label roof   = 2;
+
+				if (m_labels[labelIndex] == facade || m_labels[labelIndex] == roof) return true;
+				return false;
+			}
+
+		private:
+			Label_map m_labels;
+		};
 	}
 }
 

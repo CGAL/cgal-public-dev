@@ -21,7 +21,6 @@
 
 // New CGAL includes.
 #include <CGAL/Level_of_detail_enum.h>
-#include <CGAL/Tools/Level_of_detail_tools.h>
 #include <CGAL/Mylog/Mylog.h>
 
 namespace CGAL {
@@ -101,6 +100,13 @@ namespace CGAL {
 			typedef Thinning_fitter_type    		   Clutter_fitter_type;
 			typedef Grid_new_point_type 			   Clutter_new_point_type;
 
+			typedef typename Traits::Level_of_detail_parameters Parameters_wrapper;
+			typedef typename Traits::Parameters 		  		Parameters;
+			typedef typename Traits::Parameters_estimator 		Parameters_estimator;
+
+			typedef typename Traits::Lod_complexity Lod_complexity;
+			typedef typename Traits::Lod_distortion Lod_distortion;
+
 
 			// Extra typedefs.
 			using Plane_iterator = typename Planes::const_iterator;
@@ -122,9 +128,6 @@ namespace CGAL {
 
 			using Point_index 	  = typename Container_3D::Index;
 			using Face_points_map = std::map<Face_handle, std::vector<Point_index> >;
-
-			using Lod_parameters = CGAL::LOD::LOD_parameters<FT>;
-			using Parameters     = typename Lod_parameters::Input_parameters;
 
 			enum class Program_version  { VER0 };
 			enum class Pipeline_version { WITH_SHAPE_DETECTION, WITHOUT_SHAPE_DETECTION };
@@ -191,7 +194,9 @@ namespace CGAL {
 			m_test_data_type(Main_test_data_type::PARIS_ETH),
 			m_region_growing_normal_estimation_method(Region_growing_normal_estimation::PROJECTED),
 			m_imp_eps(-FT(1)),
-			m_imp_scale(-FT(1))
+			m_imp_scale(-FT(1)),
+			m_estimate_parameters(false),
+			m_estimate_quality(false)
 			{ }
 
 
@@ -368,47 +373,49 @@ namespace CGAL {
 				m_clutter_cell_length 			 = clutt_scale * m_imp_scale; // used in the grid simplify, probably can be removed, (meters)
 			}
 
-			void set_required_parameters(const Parameters &parameters) {
+			void set_required_parameters() {
 				
-				add_str_parameter("-data", m_default_path, parameters);
+				add_str_parameter("-data", m_default_path, m_parameters);
 			}
 
-			void set_optional_parameters(const Parameters &parameters) {
-				
+			void set_optional_parameters() {
+
 				// Flags.
-				add_bool_parameter("-silent", m_silent, parameters);
+				add_bool_parameter("-silent"     , m_silent 			, m_parameters);
+				add_bool_parameter("-auto_params", m_estimate_parameters, m_parameters);
+				add_bool_parameter("-quality"	 , m_estimate_quality   , m_parameters);
 
 
 				// Important.
-				add_val_parameter("-eps"  , m_imp_eps  , parameters);
-				add_val_parameter("-scale", m_imp_scale, parameters);
+				add_val_parameter("-eps"  , m_imp_eps  , m_parameters);
+				add_val_parameter("-scale", m_imp_scale, m_parameters);
 
 				set_automatically_defined_options();
 
-				add_val_parameter("-gc_beta" , m_graph_cut_beta , parameters);
-				add_val_parameter("-gc_gamma", m_graph_cut_gamma, parameters);
+				add_val_parameter("-gc_beta" , m_graph_cut_beta , m_parameters);
+				add_val_parameter("-gc_gamma", m_graph_cut_gamma, m_parameters);
 
 
 				// Less important.
-				add_val_parameter("-rg_nt" , m_region_growing_normal_threshold, parameters);
-				add_val_parameter("-rg_min", m_region_growing_min_points      , parameters);
+				add_val_parameter("-rg_nt" , m_region_growing_normal_threshold, m_parameters);
+				add_val_parameter("-rg_min", m_region_growing_min_points      , m_parameters);
 
 
 				// Automatically defined.
-				add_val_parameter("-alpha"  , m_alpha_shape_size               , parameters);
-				add_val_parameter("-str_eps", m_structuring_epsilon            , parameters);
-				add_val_parameter("-rg_eps" , m_region_growing_epsilon 		   , parameters);
-				add_val_parameter("-rg_ce"  , m_region_growing_cluster_epsilon , parameters);
-				add_val_parameter("-cell"   , m_clutter_cell_length            , parameters);
+				add_val_parameter("-alpha"  , m_alpha_shape_size               , m_parameters);
+				add_val_parameter("-str_eps", m_structuring_epsilon            , m_parameters);
+				add_val_parameter("-rg_eps" , m_region_growing_epsilon 		   , m_parameters);
+				add_val_parameter("-rg_ce"  , m_region_growing_cluster_epsilon , m_parameters);
+				add_val_parameter("-cell"   , m_clutter_cell_length            , m_parameters);
 			}
 
-			void set_user_defined_parameters(const Lod_parameters &lod_parameters) {
+			void set_user_defined_parameters(const Parameters_wrapper &parameters_wrapper) {
 
-				const Parameters &parameters = lod_parameters.get();
+				m_parameters = parameters_wrapper.get();
 				std::cout << "Parameters: " << std::endl;
-				
-				set_required_parameters(parameters);
-				set_optional_parameters(parameters);
+
+				set_required_parameters();
+				set_optional_parameters();
 			}
 
 			// All versions.
@@ -493,20 +500,24 @@ namespace CGAL {
 				log.out << "(" << exec_step << ") Data are loaded. Number of points: " << input.number_of_points() << std::endl << std::endl;
 			}
 
-			void getting_all_planes(
-				Planes &all_planes, 
+			void estimating_initial_parameters(
 				Log &log, 
-				const Container_3D &input, const size_t exec_step) {
+				const Container_3D &input,
+				const size_t exec_step) {
 
 
-				// Find a set of planes related to the points. Basically here we emulate RANSAC.
-				// For each plane we store indices of all points contained in this plane.
-				std::cout << "(" << exec_step << ") planes" << std::endl;
+				// Estimating some of the required parameters.
+				assert(!m_parameters.empty());
+				std::cout << "(" << exec_step << ") estimating initial parameters" << std::endl;
 
-				const auto number_of_planes = m_preprocessor.get_planes(input, all_planes);
-				assert(number_of_planes >= 0);
+				Parameters_estimator parameters_estimator = Parameters_estimator(input, m_parameters);
+				parameters_estimator.estimate();
 
-				log.out << "(" << exec_step << ") Planes are found. Number of planes: " << number_of_planes << std::endl << std::endl;
+				std::cout << std::endl << "Updated parameters: " << std::endl;
+				set_optional_parameters();
+				std::cout << std::endl;
+
+				log.out << "(" << exec_step << ") Parameters are estimated and set." << std::endl << std::endl;
 			}
 
 			void applying_selection(
@@ -518,13 +529,15 @@ namespace CGAL {
 
 
 				// Split data with respect to 2 different semantic labels.
-				std::cout << "(" << exec_step << ") selection" << std::endl;
+				std::cout << "(" << exec_step << ") selection: ";
 
 				m_ground_selector.select_elements(input, std::back_inserter(ground_idxs));
 				m_building_boundary_selector.select_elements(input, std::back_inserter(building_boundary_idxs));
 				m_building_interior_selector.select_elements(input, std::back_inserter(building_interior_idxs));
 
-				log.out << "(" << exec_step << " a) Ground is found. Number of elements: " 			   << ground_idxs.size() << std::endl;
+				std::cout << "boundary: " << building_boundary_idxs.size() << "; interior: " << building_interior_idxs.size() << "; " << std::endl;
+
+				log.out << "(" << exec_step << " a) Ground is found. Number of elements: " 			     << ground_idxs.size() << std::endl;
 				log.out << "(" << exec_step << " b) Building boundaries are found. Number of elements: " << building_boundary_idxs.size() << std::endl << std::endl;
 			}
 
@@ -569,26 +582,6 @@ namespace CGAL {
 				log.out << "(" << exec_step << " b) Boundary clutter is found. Number of points: " 				  << boundary_clutter.at(0).size() << std::endl << std::endl;
 			}
 
-			void regularizing(
-				Boundary_data &building_boundaries, 
-				Container_3D &input,
-				Log &log, 
-				const Plane_3 &base_ground_plane, const size_t exec_step) {
-
-
-				// Make all nearly vertical planes in the building's boundary exactly vertical.
-				std::cout << "(" << exec_step << ") regularizing" << std::endl;
-
-				m_vertical_regularizer.set_max_regularization_angle(m_max_reg_angle);
-				m_vertical_regularizer.reject_planes(m_regularizer_reject_planes);
-
-				const auto number_of_boundaries = building_boundaries.size();
-				const auto number_of_regularized_planes = m_vertical_regularizer.regularize(building_boundaries, input, base_ground_plane);
-
-				log.out << "(" << exec_step << ") Building's nearly vertical planes are regularized. Number of regularized planes: " << number_of_regularized_planes <<
-				", number of rejected planes: " << number_of_boundaries - building_boundaries.size() << std::endl << std::endl;
-			}
-
 			void projecting(
 				Projected_points &building_boundaries_projected, 
 				Projected_points &boundary_clutter_projected,
@@ -626,29 +619,6 @@ namespace CGAL {
 				std::cout << std::endl;
 			}
 
-			void applying_thinning(
-				Projected_points &boundary_clutter_projected, 
-				Log &log, 
-				const Container_3D &input,
-				const size_t exec_step) {
-
-
-				// Regularize/thin points in the clutter.
-				std::cout << "(" << exec_step << ") applying thinning; ";
-
-				m_thinnning.set_number_of_neighbours(m_clutter_knn);
-				m_thinnning.set_fitter_type(m_clutter_fitter_type);
-				m_thinnning.set_neighbour_search_type(m_thinning_neighbour_search_type);
-				m_thinnning.set_fuzzy_radius(m_thinning_fuzzy_radius);
-				m_thinnning.set_thinning_type(m_thinning_type);
-
-				Boundary_data stub;
-				const auto number_of_thinned_points = m_thinnning.process(stub, boundary_clutter_projected, input);
-
-				std::cout << "thinned points: " << number_of_thinned_points << std::endl;
-				log.out << "(" << exec_step << ") Projected points are thinned. Number of thinned points: " << number_of_thinned_points << std::endl << std::endl;
-			}
-
 			void applying_grid_simplification(
 				Projected_points &boundary_clutter_projected,
 				Log &log,  
@@ -666,7 +636,7 @@ namespace CGAL {
 				const auto number_of_removed_points = m_grid_simplifier.process(stub, boundary_clutter_projected);
 
 				std::cout << "removed points: " << number_of_removed_points << std::endl;
-				log.out << "(" << exec_step << ") Projected points are simplified. Number of removed points: " << number_of_removed_points << std::endl << std::endl;
+				log.out << "(" << exec_step << ") Projected points are simplified. Number of removed points: " << number_of_removed_points << "; " << std::endl << std::endl;
 			}
 
 			void detecting_2d_lines(
@@ -693,24 +663,7 @@ namespace CGAL {
 					input);
 
 				std::cout << "detected lines: " << number_of_detected_lines << std::endl;
-				log.out << "(" << exec_step << ") 2D lines are detected. Number of detected lines: " << number_of_detected_lines << std::endl << std::endl;
-			}
-
-			void cleaning_projected_points(
-				Projected_points &building_boundaries_projected, 
-				Boundary_data &building_boundaries, 
-				Log &log, 
-				const size_t exec_step) {
-
-				
-				// Clean projected points by removing all points that lie far away from the center cluster of points.
-				assert(m_clean_projected_points);
-
-				std::cout << "(" << exec_step << ") cleaning" << std::endl;
-				m_preprocessor.set_scale(m_preprocessor_scale);
-					
-				const auto number_of_removed_points = m_preprocessor.clean_projected_points(building_boundaries_projected, building_boundaries);
-				log.out << "(" << exec_step << ") Building's boundaries are cleaned. Number of removed points: " << number_of_removed_points << std::endl << std::endl;
+				log.out << "(" << exec_step << ") 2D lines are detected. Number of detected lines: " << number_of_detected_lines << "; " << std::endl << std::endl;
 			}
 
 			void line_fitting(
@@ -768,31 +721,6 @@ namespace CGAL {
 				const auto number_of_structured_segments = m_structuring->structure_point_set();
 
 				log.out << "(" << exec_step << ") 2D Structuring is applied. Number of structured segments: " << number_of_structured_segments << std::endl << std::endl;
-			}
-
-			void processing_clutter(
-				Boundary_data &boundary_clutter, 
-				Projected_points &boundary_clutter_projected, 
-				Log &log, 
-				const Container_3D &input,
-				const size_t exec_step) {
-
-
-				// Regularize and remove unnecessary points from the clutter.
-				std::cout << "(" << exec_step << ") processing clutter; ";
-
-				m_clutter_processor.set_number_of_neighbours(m_clutter_knn);
-				m_clutter_processor.set_grid_cell_length(m_clutter_cell_length);
-				m_clutter_processor.set_fitter_type(m_clutter_fitter_type);
-				m_clutter_processor.set_new_point_type(m_clutter_new_point_type);
-				m_clutter_processor.set_neighbour_search_type(m_thinning_neighbour_search_type);
-				m_clutter_processor.set_fuzzy_radius(m_thinning_fuzzy_radius);
-				m_clutter_processor.set_thinning_type(m_thinning_type);
-
-				const auto number_of_removed_points = m_clutter_processor.process(boundary_clutter, boundary_clutter_projected, input);
-
-				std::cout << "removed points: " << number_of_removed_points << std::endl;
-				log.out << "(" << exec_step << ") Clutter is processed. Number of removed points: " << number_of_removed_points << std::endl << std::endl;
 			}
 
 			void creating_cdt(
@@ -1005,6 +933,30 @@ namespace CGAL {
 				lod_1_saver.save_mesh_as_ply(mesh_1, mesh_facet_colors_1, "LOD1");
 			}
 
+			void estimating_lod1_quality(
+				Log &log,
+				const Container_3D &input, const size_t exec_step) {
+
+
+				// LOD1 quality estimation.
+				std::cout << "(" << exec_step << ") estimating quality of lod1" << std::endl;
+
+				Lod_complexity lod_complexity = Lod_complexity(input, m_lods);
+				lod_complexity.estimate();
+				const FT complexity = lod_complexity.get();
+
+				Lod_distortion lod_distortion = Lod_distortion(input, m_lods);
+				lod_distortion.estimate();
+				const FT distortion = lod_distortion.get();
+
+				std::cout << std::endl << "quality: " << std::endl;
+				std::cout << "complexity = " << complexity << std::endl;
+				std::cout << "distortion = " << distortion << std::endl;
+				std::cout << std::endl;
+
+				log.out << "(" << exec_step << ") LOD1 quality is estimated." << std::endl;
+			}
+
 			void finish_execution(
 				Log &log, 
 				const std::string &filename) {
@@ -1044,26 +996,30 @@ namespace CGAL {
 
 
 				// (02) ----------------------------------
+				if (m_estimate_parameters) estimating_initial_parameters(log, input, ++exec_step);
+
+
+				// (03) ----------------------------------
 				Indices ground_idxs, building_boundary_idxs, building_interior_idxs;
 				applying_selection(ground_idxs, building_boundary_idxs, building_interior_idxs, log, input, ++exec_step);
 
 
-				// (03) ----------------------------------
+				// (04) ----------------------------------
 				Plane_3 base_ground_plane, fitted_ground_plane;
 				ground_fitting(base_ground_plane, fitted_ground_plane, log, ground_idxs, input, ++exec_step);
 
 
-				// (04) ----------------------------------					
+				// (05) ----------------------------------					
 				Boundary_data building_boundaries, boundary_clutter;					
 				getting_boundary_points(building_boundaries, boundary_clutter, log, building_boundary_idxs, building_interior_idxs, input, ++exec_step);
 
 
-				// (05) ----------------------------------
+				// (06) ----------------------------------
 				Projected_points building_boundaries_projected, boundary_clutter_projected;
 				projecting(building_boundaries_projected, boundary_clutter_projected, log, base_ground_plane, building_boundaries, boundary_clutter, input, ++exec_step);
 
 
-				// (06) ----------------------------------
+				// (07) ----------------------------------
 				if (m_use_grid_simplifier_first) {
 						
 					assert(m_clutter_new_point_type == Grid_new_point_type::CLOSEST);
@@ -1071,64 +1027,68 @@ namespace CGAL {
 				}
 
 
-				// (07) ----------------------------------
+				// (08) ----------------------------------
 				detecting_2d_lines(boundary_clutter, boundary_clutter_projected, building_boundaries, building_boundaries_projected, log, input, ++exec_step);
 
 
-				// (08) ----------------------------------
+				// (09) ----------------------------------
 				Lines lines;
 				line_fitting(lines, log, building_boundaries, building_boundaries_projected, ++exec_step);
 
 
-				// (09) ----------------------------------
+				// (10) ----------------------------------
 				Segments segments;
 				creating_segments(segments, log, lines, building_boundaries, building_boundaries_projected, ++exec_step);
 
 
-				// (09) ----------------------------------
+				// (11) ----------------------------------
 				applying_2d_structuring(log, lines, building_boundaries, building_boundaries_projected, ++exec_step);
 
 
-				// (10) ----------------------------------
+				// (12) ----------------------------------
 				CDT cdt;
 				creating_cdt(cdt, log, boundary_clutter, boundary_clutter_projected, input, ++exec_step);
 
 
-				// (11) ----------------------------------
+				// (13) ----------------------------------
 				Container_2D input_2d; Face_points_map fp_map;
 				converting_3d_to_2d(input_2d, fp_map, log, cdt, input, ++exec_step);
 
 
-				// (12) ----------------------------------
+				// (14) ----------------------------------
 				computing_visibility(cdt, log, input_2d, ++exec_step);
 
 
-				// (13) ----------------------------------
+				// (15) ----------------------------------
 				applying_graph_cut(cdt, log, ++exec_step);
 
 				
 				// From now on we handle each building separately.
 
-				// (14) ----------------------------------				
+				// (16) ----------------------------------				
 				Buildings buildings;
 				splitting_buildings(buildings, cdt, log, ++exec_step);
 
 
-				// (15) ----------------------------------				
+				// (17) ----------------------------------				
 				finding_buildings_boundaries(buildings, log, cdt, ++exec_step);
 
 
-				// (16) ----------------------------------
+				// (18) ----------------------------------
 				fitting_roofs(buildings, log, fitted_ground_plane, fp_map, input, cdt, ++exec_step);
 
 
-				// (17) ----------------------------------
+				// (19) ----------------------------------
 				Ground ground_bbox;
 				creating_lod0(ground_bbox, log, cdt, buildings, input, ++exec_step);
 
 
-				// (18) ----------------------------------	
+				// (20) ----------------------------------	
 				creating_lod1(log, cdt, buildings, ground_bbox, ++exec_step);
+
+
+				// (20) ----------------------------------
+				if (m_estimate_quality) estimating_lod1_quality(log, input, ++exec_step);
 
 
 				// (--) ----------------------------------
@@ -1251,6 +1211,11 @@ namespace CGAL {
 
 			FT m_imp_eps;
 			FT m_imp_scale;
+
+			bool m_estimate_parameters;
+			bool m_estimate_quality;
+
+			Parameters m_parameters;
 
 
 			// Assert default values of all global parameters.

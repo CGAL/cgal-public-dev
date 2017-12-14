@@ -27,7 +27,7 @@ namespace CGAL {
 
 		// LOD parameters.
 		template<class FT>
-		class LOD_parameters {
+		class Level_of_detail_parameters {
 
 		private:
 			using Params = char**;
@@ -35,7 +35,7 @@ namespace CGAL {
 		public:
 			using Input_parameters = std::map<std::string, std::string>;
 
-			LOD_parameters(const int num_params, const Params params) { 
+			Level_of_detail_parameters(const int num_params, const Params params) { 
 
 				// Help.
 				show_help(num_params, params);
@@ -56,8 +56,9 @@ namespace CGAL {
 
 
 				// Set here all parameters that should not be saved.
-				std::vector<std::string> exceptions(1);
-				exceptions[0] = "-load_params";
+				std::vector<std::string> exceptions(2);
+				exceptions[0] = "-data";
+				exceptions[1] = "-load_params";
 
 
 				// Save parameters.
@@ -143,16 +144,16 @@ namespace CGAL {
 			}
 
 			void set_lod_parameters(Input_parameters &input_parameters, const std::vector<std::string> &required) {
-				
-				if (parameters_should_be_loaded(input_parameters))
-					load_parameters_from_file(input_parameters);
 
-				if (are_required_parameters_set(input_parameters, required)) m_lod_parameters = input_parameters;
-				else {
-
+				if (!are_required_parameters_set(input_parameters, required)) {
 					std::cerr << std::endl << "ERROR: Not all required parameters are provided!" << std::endl << std::endl;
 					exit(EXIT_FAILURE);
 				}
+
+				if (parameters_should_be_loaded(input_parameters))
+					load_parameters_from_file(input_parameters);
+
+				m_lod_parameters = input_parameters;
 			}
 
 			bool are_required_parameters_set(const Input_parameters &input_parameters, const std::vector<std::string> &required) {
@@ -227,11 +228,12 @@ namespace CGAL {
             			std::cerr << "ERROR: Empty parameter values!" << std::endl << std::endl;
             			exit(EXIT_FAILURE);
             		}
-
             		tmp_params[param_name] = param_value;
             	}
 
-            	input_parameters = tmp_params;
+            	for (Input_parameters::const_iterator pit = tmp_params.begin(); pit != tmp_params.end(); ++pit)
+            		input_parameters[(*pit).first] = (*pit).second;
+
             	file.close();
 			}
 

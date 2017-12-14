@@ -11,6 +11,7 @@
 // CGAL new includes.
 #include <CGAL/Level_of_detail_enum.h>
 #include <CGAL/Level_of_detail_traits.h>
+#include <CGAL/Tools/Level_of_detail_tools.h>
 #include <CGAL/Base/Level_of_detail_base.h>
 
 namespace CGAL {
@@ -26,7 +27,7 @@ namespace CGAL {
 
 			using Lod_base         = CGAL::LOD::Level_of_detail_base<LodTraits>;
 			using Input_parameters = std::map<std::string, std::string>;
-			using Lod_parameters   = CGAL::LOD::LOD_parameters<FT>;
+			using Lod_parameters   = CGAL::LOD::Level_of_detail_parameters<FT>;
 			using Params           = char**;
 
 			enum class Wrapper_mode { TEST, NATIVE };
