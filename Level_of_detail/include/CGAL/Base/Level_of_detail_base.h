@@ -106,6 +106,7 @@ namespace CGAL {
 
 			typedef typename Traits::Lod_complexity Lod_complexity;
 			typedef typename Traits::Lod_distortion Lod_distortion;
+			typedef typename Traits::Lod_quality 	Lod_quality;
 
 
 			// Extra typedefs.
@@ -949,10 +950,12 @@ namespace CGAL {
 				lod_distortion.estimate();
 				const FT distortion = lod_distortion.get();
 
+				Lod_quality lod_quality(complexity, distortion);
+
 				std::cout << std::endl << "quality: " << std::endl;
-				std::cout << "complexity = " << complexity << std::endl;
-				std::cout << "distortion = " << distortion << std::endl;
-				std::cout << std::endl;
+				std::cout << "complexity = " << lod_quality.get_complexity() << std::endl;
+				std::cout << "distortion = " << lod_quality.get_distortion() << std::endl;
+				std::cout << "total quality = complexity * distortion = " << lod_quality.get_total_quality() << std::endl << std::endl;
 
 				log.out << "(" << exec_step << ") LOD1 quality is estimated." << std::endl;
 			}

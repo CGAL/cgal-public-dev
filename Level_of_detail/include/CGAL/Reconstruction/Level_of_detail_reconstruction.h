@@ -56,7 +56,7 @@ namespace CGAL {
     		typedef Level_of_detail_utils_simple<Kernel> Simple_utils;
 			typename Kernel::Compute_squared_distance_2 squared_distance;
 
-    		enum class Builder_type { LOD0, LOD1 };
+    		enum class Builder_type { LOD0, LOD1, ROOFS, WALLS };
 
     		Build_mesh(const CDT &cdt, const Buildings &buildings, Facet_colors &facet_colors) : 
     		m_build_type(Build_type::CDT_AND_BUILDINGS), 
@@ -83,6 +83,14 @@ namespace CGAL {
 
 					case Builder_type::LOD1:
 						build_lod1(builder);
+						break;
+
+					case Builder_type::ROOFS:
+						build_lod1_roofs(builder);
+						break;
+
+					case Builder_type::WALLS:
+						build_lod1_walls(builder);
 						break;
 
 					default:
@@ -217,6 +225,64 @@ namespace CGAL {
 
 		        // End surface building.
 		        builder.end_surface();
+			}
+
+			void build_lod1_roofs(Builder &builder) {
+
+				const size_t expected_num_vertices = 10;
+				const size_t expected_num_faces    = 10;
+
+				m_index_counter = 0;
+				builder.begin_surface(expected_num_vertices, expected_num_faces);
+
+				for (Building_iterator bit = m_buildings.begin(); bit != m_buildings.end(); ++bit) {
+				
+					const auto &building = (*bit).second;
+					if (!is_valid_building(building)) continue;
+
+					if (building.is_oriented) {
+
+						std::cerr << std::endl << "ERROR: Oriented method is not working! Turn off quality option!" << std::endl << std::endl;
+						exit(EXIT_FAILURE);
+					}
+					
+					const FT height   = building.height;
+					const Color color = building.color;
+	
+					const auto &faces = building.faces;
+					add_horizontal_triangulation(faces, color, height, builder);
+				}
+				builder.end_surface();
+			}
+
+			void build_lod1_walls(Builder &builder) {
+
+				const size_t expected_num_vertices = 10;
+				const size_t expected_num_faces    = 10;
+
+				m_index_counter = 0;
+				builder.begin_surface(expected_num_vertices, expected_num_faces);
+
+				for (Building_iterator bit = m_buildings.begin(); bit != m_buildings.end(); ++bit) {
+				
+					const auto &building = (*bit).second;
+					if (!is_valid_building(building)) continue;
+
+					if (building.is_oriented) {
+
+						std::cerr << std::endl << "ERROR: Oriented method is not working! Turn off quality option!" << std::endl << std::endl;
+						exit(EXIT_FAILURE);
+					}
+					
+					const FT height   = building.height;
+					const Color color = building.color;
+	
+					assert(building.boundaries.size() > 0);
+
+					const auto &boundary = building.boundaries[0];
+					add_walls_from_unoriented_boundary(boundary, color, FT(0), height, builder);
+				}
+				builder.end_surface();
 			}
 
 			void add_triangle(const Point &a, const Point &b, const Point &c, const Color &color, Builder &builder) {
@@ -749,6 +815,14 @@ namespace CGAL {
 				return m_num_walls;
 			}
 
+			void get_roofs(Mesh &roofs) const {
+				roofs = m_roofs;
+			}
+
+			void get_walls(Mesh &walls) const {
+				walls = m_walls;
+			}
+
 			void reconstruct_lod0(const CDT &cdt, const Buildings &buildings, const Ground &ground, Mesh &mesh, Mesh_facet_colors &mesh_facet_colors) {
 
 				Mesh_builder mesh_builder(cdt, buildings, mesh_facet_colors);
@@ -771,6 +845,7 @@ namespace CGAL {
 				mesh.delegate(mesh_builder);
 
 				set_lod1_metrics(mesh_builder);
+				set_lod1_roofs_and_walls(cdt, buildings);
 			}
 
 		private:
@@ -779,10 +854,40 @@ namespace CGAL {
 			int m_num_roofs;
 			int m_num_walls;
 
+			Mesh m_roofs;
+			Mesh m_walls;
+
 			void set_lod1_metrics(const Mesh_builder &mesh_builder) {
 
 				m_num_roofs = mesh_builder.get_number_of_roofs();
 				m_num_walls = mesh_builder.get_number_of_walls();
+			}
+
+			void set_lod1_roofs_and_walls(const CDT &cdt, const Buildings &buildings) {
+				set_lod1_roofs(cdt, buildings);
+				set_lod1_walls(cdt, buildings);
+			}
+
+			void set_lod1_roofs(const CDT &cdt, const Buildings &buildings) {
+
+				Mesh_facet_colors stub;
+				Mesh_builder roofs_builder(cdt, buildings, stub);
+
+				roofs_builder.set_builder_type(Mesh_builder::Builder_type::ROOFS);
+
+				m_roofs.clear();
+				m_roofs.delegate(roofs_builder);
+			}
+
+			void set_lod1_walls(const CDT &cdt, const Buildings &buildings) {
+
+				Mesh_facet_colors stub;
+				Mesh_builder walls_builder(cdt, buildings, stub);
+
+				walls_builder.set_builder_type(Mesh_builder::Builder_type::WALLS);
+
+				m_walls.clear();
+				m_walls.delegate(walls_builder);
 			}
 		};
 	}

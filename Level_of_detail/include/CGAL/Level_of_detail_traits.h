@@ -121,6 +121,7 @@ namespace CGAL {
 
 			typedef CGAL::LOD::Level_of_detail_complexity<Kernel, Container_3D, Lods> Lod_complexity;
 			typedef CGAL::LOD::Level_of_detail_distortion<Kernel, Container_3D, Lods> Lod_distortion;
+			typedef CGAL::LOD::Level_of_detail_quality<Kernel> Lod_quality;
 		};
 	}
 }

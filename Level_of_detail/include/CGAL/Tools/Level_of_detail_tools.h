@@ -5,5 +5,6 @@
 #include <CGAL/Tools/Level_of_detail_parameters_estimator.h>
 #include <CGAL/Tools/Level_of_detail_complexity.h>
 #include <CGAL/Tools/Level_of_detail_distortion.h>
+#include <CGAL/Tools/Level_of_detail_quality.h>
 
 #endif // CGAL_LEVEL_OF_DETAIL_TOOLS_H

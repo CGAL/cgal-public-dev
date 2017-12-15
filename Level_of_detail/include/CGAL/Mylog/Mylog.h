@@ -91,7 +91,7 @@ namespace CGAL {
 
 			// Save mesh in a ply format.
 			template<class Mesh, class Facet_colors>
-			void save_mesh_as_ply(const Mesh &mesh, const Facet_colors &mesh_facet_colors, const std::string &filename) {
+			void save_mesh_as_ply(const Mesh &mesh, const Facet_colors &mesh_facet_colors, const std::string &filename, const bool use_colors = true) {
 
 				clear();
 
@@ -144,7 +144,9 @@ namespace CGAL {
 						++hit;
 
 					} while (hit != end);
-					out << mesh_facet_colors.at(static_cast<Mesh_facet_handle>(fit)) << std::endl;
+					
+					if (use_colors) out << mesh_facet_colors.at(static_cast<Mesh_facet_handle>(fit)) << std::endl;
+					else out << generate_random_color() << std::endl;
 				}
 
 
@@ -737,6 +739,22 @@ namespace CGAL {
 
 					export_projected_points(name + "_" + std::to_string(plane_index), tmp_points);
 				}
+			}
+
+			template<class Container, class Indices>
+			void export_points_using_indices(const Container &input, const Indices &indices, const std::string &filename) {
+
+				clear();
+				for (size_t i = 0; i < indices.size(); ++i) out << input.point(indices[i]) << std::endl;
+				save(filename, ".xyz");	
+			}
+
+			template<class Point_3>
+			void export_points(const std::vector<Point_3> &points, const std::string &filename) {
+
+				clear();
+				for (size_t i = 0; i < points.size(); ++i) out << points[i] << std::endl;
+				save(filename, ".xyz");	
 			}
 
 			std::stringstream out;
