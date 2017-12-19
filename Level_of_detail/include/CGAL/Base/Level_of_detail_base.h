@@ -184,7 +184,7 @@ namespace CGAL {
 			m_region_growing_normal_threshold(-FT(1)),
 			m_region_growing_min_points(0),
 			m_with_region_growing(true),
-			m_use_grid_simplifier_first(false),
+			m_use_grid_simplifier_first(true),
 			m_alpha_shape_size(-FT(1)),
 			m_use_alpha_shapes(false),
 			m_structuring_corner_algorithm(Structuring_corner_algorithm::GRAPH_BASED),
@@ -197,7 +197,10 @@ namespace CGAL {
 			m_imp_eps(-FT(1)),
 			m_imp_scale(-FT(1)),
 			m_estimate_parameters(false),
-			m_estimate_quality(false)
+			m_estimate_quality(false),
+			m_plot_quality(false),
+			m_complexity(-FT(1)),
+			m_distortion(-FT(1))
 			{ }
 
 
@@ -267,6 +270,31 @@ namespace CGAL {
 			}
 
 
+			FT get_complexity() const {
+
+				assert(m_complexity >= FT(0));
+				return m_complexity;
+			}
+
+			FT get_distortion() const {
+
+				assert(m_distortion >= FT(0));
+				return m_distortion;
+			}
+
+			std::shared_ptr<Lod_complexity> get_lod_complexity_ptr() const {
+
+				assert(m_lod_complexity != nullptr);
+				return m_lod_complexity;
+			}
+
+			std::shared_ptr<Lod_distortion> get_lod_distortion_ptr() const {
+
+				assert(m_lod_distortion != nullptr);
+				return m_lod_distortion;
+			}
+
+
 			//////////////////
 			// Main functions!
 
@@ -323,7 +351,10 @@ namespace CGAL {
 				m_use_boundaries 		 				 = false; 	// when using UNORIENTED below, this value does not make any difference, but false is preferable
 				m_building_boundary_type 				 = Building_boundary_type::UNORIENTED; // this is the most robust method, works with any corrupted data
 
-				m_roof_fitter_type = Roof_fitter_type::AVG; // gives the best visual result, the most robust to the corrupted data
+				m_roof_fitter_type 						  = Roof_fitter_type::AVG; 					 // gives the best visual result, the most robust to the corrupted data
+				m_region_growing_normal_estimation_method = Region_growing_normal_estimation::LOCAL; // in general, both work well
+				
+				m_use_grid_simplifier_first = true; // better to use it, to make the code faster, but if removing it we have one parameter less: m_clutter_cell_length
 			}
 
 			void set_more_important_options() {
@@ -331,9 +362,6 @@ namespace CGAL {
 				m_structuring_adjacency_method  = Structuring_adjacency_threshold_method::LOCAL; // global is, in general, better, if using local, we have one parameter less: m_str_adj_value
 				m_structuring_global_everywhere = false; // better to have false, since in this case, I use global adjacency graph and global corner insertion consistently
 				m_structuring_adjacency_value   = 5.0;   // closest distance between two segments for adjacency graph, probably can be removed
-
-				m_use_grid_simplifier_first 			  = true; // better to use it, to make the code faster, but if removing it we have one parameter less: m_clutter_cell_length
-				m_region_growing_normal_estimation_method = Region_growing_normal_estimation::LOCAL; // in general, both work well
 
 				m_visibility_num_samples = 2;     // number of subdivision steps when sampling triangles, 1 or 2 is enough
 				m_add_cdt_clutter 		 = false; // better to avoid clutter since it will pollute the final CDT
@@ -382,9 +410,10 @@ namespace CGAL {
 			void set_optional_parameters() {
 
 				// Flags.
-				add_bool_parameter("-silent"     , m_silent 			, m_parameters);
-				add_bool_parameter("-auto_params", m_estimate_parameters, m_parameters);
-				add_bool_parameter("-quality"	 , m_estimate_quality   , m_parameters);
+				add_bool_parameter("-silent"      , m_silent 			 , m_parameters);
+				add_bool_parameter("-auto_params" , m_estimate_parameters, m_parameters);
+				add_bool_parameter("-quality"	  , m_estimate_quality   , m_parameters);
+				add_bool_parameter("-plot_quality", m_plot_quality   	 , m_parameters);
 
 
 				// Important.
@@ -627,6 +656,7 @@ namespace CGAL {
 
 
 				// Remove unnecessary points from the clutter.
+				assert(m_clutter_new_point_type == Grid_new_point_type::CLOSEST);
 				std::cout << "(" << exec_step << ") applying grid simplification; ";
 
 				m_grid_simplifier.set_grid_cell_length(m_clutter_cell_length);
@@ -928,7 +958,7 @@ namespace CGAL {
 				Mesh mesh_1; Mesh_facet_colors mesh_facet_colors_1;
 				m_lods.reconstruct_lod1(cdt, buildings, ground_bbox, mesh_1, mesh_facet_colors_1);
 
-				log.out << "(" << exec_step << ") Final LOD1 is reconstructed." << std::endl;
+				log.out << "(" << exec_step << ") Final LOD1 is reconstructed." << std::endl << std::endl;
 
 				Log lod_1_saver; 
 				lod_1_saver.save_mesh_as_ply(mesh_1, mesh_facet_colors_1, "LOD1");
@@ -942,22 +972,19 @@ namespace CGAL {
 				// LOD1 quality estimation.
 				std::cout << "(" << exec_step << ") estimating quality of lod1" << std::endl;
 
-				Lod_complexity lod_complexity = Lod_complexity(input, m_lods);
-				lod_complexity.estimate();
-				const FT complexity = lod_complexity.get();
+				m_lod_complexity = std::make_shared<Lod_complexity>(input, m_lods);
+				m_lod_complexity->estimate();
+				m_complexity = m_lod_complexity->get();
 
-				Lod_distortion lod_distortion = Lod_distortion(input, m_lods);
-				lod_distortion.estimate();
-				const FT distortion = lod_distortion.get();
-
-				Lod_quality lod_quality(complexity, distortion);
+				m_lod_distortion = std::make_shared<Lod_distortion>(input, m_lods);
+				m_lod_distortion->estimate();
+				m_distortion = m_lod_distortion->get();
 
 				std::cout << std::endl << "quality: " << std::endl;
-				std::cout << "complexity = " << lod_quality.get_complexity() << std::endl;
-				std::cout << "distortion = " << lod_quality.get_distortion() << std::endl;
-				std::cout << "total quality = complexity * distortion = " << lod_quality.get_total_quality() << std::endl << std::endl;
+				std::cout << "complexity = " << m_complexity << " elements." << std::endl;
+				std::cout << "distortion = " << m_distortion << " meters." << std::endl << std::endl;
 
-				log.out << "(" << exec_step << ") LOD1 quality is estimated." << std::endl;
+				log.out << "(" << exec_step << ") LOD1 quality is estimated." << std::endl << std::endl;
 			}
 
 			void finish_execution(
@@ -972,6 +999,14 @@ namespace CGAL {
 				if (!m_silent) log.save(filename);
 			}
 
+			void plotting_lod1_quality() {
+				std::cout << "EXTRA: plotting quality of lod1..." << std::endl << std::endl;
+
+				// to be implemented!
+
+				std::cout << "...FINISHED!" << std::endl << std::endl;
+			}
+
 		public:
 
 			// Version 0.
@@ -983,7 +1018,11 @@ namespace CGAL {
 				run_pipeline_ver0();
 				timer.stop();
 
-				std::cout << std::endl << "Running time: " << timer.time() << " seconds." << std::endl << std::endl;
+				std::cout << "Running time: " << timer.time() << " seconds." << std::endl << std::endl << std::endl;
+
+
+				// Extra options!
+				if (m_plot_quality) plotting_lod1_quality();
 			}
 
 			void run_pipeline_ver0() {
@@ -998,99 +1037,95 @@ namespace CGAL {
 				loading_data(input, log, ++exec_step);
 
 
-				// (02) ----------------------------------
+				// (extra) ----------------------------------
 				if (m_estimate_parameters) estimating_initial_parameters(log, input, ++exec_step);
 
 
-				// (03) ----------------------------------
+				// (02) ----------------------------------
 				Indices ground_idxs, building_boundary_idxs, building_interior_idxs;
 				applying_selection(ground_idxs, building_boundary_idxs, building_interior_idxs, log, input, ++exec_step);
 
 
-				// (04) ----------------------------------
+				// (03) ----------------------------------
 				Plane_3 base_ground_plane, fitted_ground_plane;
 				ground_fitting(base_ground_plane, fitted_ground_plane, log, ground_idxs, input, ++exec_step);
 
 
-				// (05) ----------------------------------					
+				// (04) ----------------------------------					
 				Boundary_data building_boundaries, boundary_clutter;					
 				getting_boundary_points(building_boundaries, boundary_clutter, log, building_boundary_idxs, building_interior_idxs, input, ++exec_step);
 
 
-				// (06) ----------------------------------
+				// (05) ----------------------------------
 				Projected_points building_boundaries_projected, boundary_clutter_projected;
 				projecting(building_boundaries_projected, boundary_clutter_projected, log, base_ground_plane, building_boundaries, boundary_clutter, input, ++exec_step);
 
 
+				// (06) ----------------------------------
+				applying_grid_simplification(boundary_clutter_projected, log, ++exec_step);
+
+
 				// (07) ----------------------------------
-				if (m_use_grid_simplifier_first) {
-						
-					assert(m_clutter_new_point_type == Grid_new_point_type::CLOSEST);
-					applying_grid_simplification(boundary_clutter_projected, log, ++exec_step);
-				}
-
-
-				// (08) ----------------------------------
 				detecting_2d_lines(boundary_clutter, boundary_clutter_projected, building_boundaries, building_boundaries_projected, log, input, ++exec_step);
 
 
-				// (09) ----------------------------------
+				// (08) ----------------------------------
 				Lines lines;
 				line_fitting(lines, log, building_boundaries, building_boundaries_projected, ++exec_step);
 
 
-				// (10) ----------------------------------
+				// (09) ----------------------------------
 				Segments segments;
 				creating_segments(segments, log, lines, building_boundaries, building_boundaries_projected, ++exec_step);
 
 
-				// (11) ----------------------------------
+				// (10) ----------------------------------
 				applying_2d_structuring(log, lines, building_boundaries, building_boundaries_projected, ++exec_step);
 
 
-				// (12) ----------------------------------
+				// (11) ----------------------------------
 				CDT cdt;
 				creating_cdt(cdt, log, boundary_clutter, boundary_clutter_projected, input, ++exec_step);
 
 
-				// (13) ----------------------------------
+				// (12) ----------------------------------
 				Container_2D input_2d; Face_points_map fp_map;
 				converting_3d_to_2d(input_2d, fp_map, log, cdt, input, ++exec_step);
 
 
-				// (14) ----------------------------------
+				// (13) ----------------------------------
 				computing_visibility(cdt, log, input_2d, ++exec_step);
 
 
-				// (15) ----------------------------------
+				// (14) ----------------------------------
 				applying_graph_cut(cdt, log, ++exec_step);
 
 				
 				// From now on we handle each building separately.
 
-				// (16) ----------------------------------				
+				// (15) ----------------------------------				
 				Buildings buildings;
 				splitting_buildings(buildings, cdt, log, ++exec_step);
 
 
-				// (17) ----------------------------------				
+				// (16) ----------------------------------				
 				finding_buildings_boundaries(buildings, log, cdt, ++exec_step);
 
 
-				// (18) ----------------------------------
+				// (17) ----------------------------------
 				fitting_roofs(buildings, log, fitted_ground_plane, fp_map, input, cdt, ++exec_step);
 
 
-				// (19) ----------------------------------
+				// (18) ----------------------------------
 				Ground ground_bbox;
 				creating_lod0(ground_bbox, log, cdt, buildings, input, ++exec_step);
 
 
-				// (20) ----------------------------------	
+				// (19) ----------------------------------	
 				creating_lod1(log, cdt, buildings, ground_bbox, ++exec_step);
 
 
-				// (20) ----------------------------------
+				// (extra) ----------------------------------
 				if (m_estimate_quality) estimating_lod1_quality(log, input, ++exec_step);
 
 
@@ -1217,8 +1252,15 @@ namespace CGAL {
 
 			bool m_estimate_parameters;
 			bool m_estimate_quality;
+			bool m_plot_quality;
 
 			Parameters m_parameters;
+
+			FT m_complexity;
+			FT m_distortion;
+
+			std::shared_ptr<Lod_complexity> m_lod_complexity;
+			std::shared_ptr<Lod_distortion> m_lod_distortion;
 
 
 			// Assert default values of all global parameters.

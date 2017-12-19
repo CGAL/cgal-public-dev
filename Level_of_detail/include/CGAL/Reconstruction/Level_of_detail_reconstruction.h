@@ -28,7 +28,7 @@ namespace CGAL {
 	namespace LOD {
 
 		// Mesh builder for the reconstruction below.
-		template<class KernelTraits, class HDSInput, class CDTInput, class BuildingsInput, class ColorFacetHandle>
+		template<class KernelTraits, class HDSInput, class CDTInput, class BuildingsInput, class FacetHandle>
 		class Build_mesh : public Modifier_base<HDSInput> {
 		
 		public:
@@ -36,7 +36,8 @@ namespace CGAL {
     		typedef HDSInput 		 HDS;
     		typedef CDTInput 		 CDT;
     		typedef BuildingsInput 	 Buildings;
-    		typedef ColorFacetHandle Color_facet_handle;
+    		typedef FacetHandle 	 Color_facet_handle;
+    		typedef FacetHandle 	 Facet_handle;
 
     		typedef typename HDS::Vertex   Vertex;
     		typedef typename Vertex::Point Point;
@@ -57,6 +58,7 @@ namespace CGAL {
 			typename Kernel::Compute_squared_distance_2 squared_distance;
 
     		enum class Builder_type { LOD0, LOD1, ROOFS, WALLS };
+
 
     		Build_mesh(const CDT &cdt, const Buildings &buildings, Facet_colors &facet_colors) : 
     		m_build_type(Build_type::CDT_AND_BUILDINGS), 
@@ -112,6 +114,7 @@ namespace CGAL {
 				m_use_boundaries = new_state;
 			}
 
+
 			int get_number_of_roofs() const {
 
 				assert(m_num_roofs >= 0);
@@ -124,7 +127,16 @@ namespace CGAL {
 				return m_num_walls;
 			}
 
+			void get_roofs_faces(std::vector< std::vector<Facet_handle> > &roofs_faces) const {
+				roofs_faces = m_roofs_faces;
+			}
+
+			void get_walls_faces(std::vector< std::vector<Facet_handle> > &walls_faces) const {
+				walls_faces = m_walls_faces;
+			}
+
 		private:
+
 			const Build_type m_build_type;
 			const CDT 		 &m_cdt;
 			const Buildings  &m_buildings;
@@ -145,18 +157,203 @@ namespace CGAL {
 
 			int m_num_roofs;
 			int m_num_walls;
-			
+
+			std::vector< std::vector<Facet_handle> > m_roofs_faces, m_walls_faces;
+
+
+			// EXTRA CODE!
+
+			void build_lod1_roofs(Builder &builder) {
+
+				const size_t expected_num_vertices = 10;
+				const size_t expected_num_faces    = 10;
+
+				size_t num_roofs 	 = 0;
+				size_t index_counter = 0;
+
+				const size_t num_buildings = m_buildings.size();
+
+				m_roofs_faces.clear();
+				m_roofs_faces.resize(num_buildings);
+
+				size_t building_index = 0;
+				builder.begin_surface(expected_num_vertices, expected_num_faces);
+				for (Building_iterator bit = m_buildings.begin(); bit != m_buildings.end(); ++bit, ++building_index) {
+				
+					const auto &building = (*bit).second;
+					if (!is_valid_building(building)) continue;
+
+					if (building.is_oriented) {
+
+						std::cerr << std::endl << "ERROR: Oriented method is not working! Please turn off the quality option!" << std::endl << std::endl;
+						exit(EXIT_FAILURE);
+					}
+					const FT height = building.height;
+					++num_roofs;
+	
+					const auto &faces = building.faces;
+					add_horizontal_triangulation_custom(faces, height, builder, index_counter, m_roofs_faces[building_index]);
+				}
+				
+				builder.end_surface();
+				assert(m_num_roofs == static_cast<int>(num_roofs));
+			}
+
+			template<class FaceHandlesTmp>
+			void add_horizontal_triangulation_custom(
+				const FaceHandlesTmp &fhs, const FT height, 
+				Builder &builder, size_t &index_counter, std::vector<Facet_handle> &faces) {
+
+				const size_t num_face_handles = fhs.size();
+				for (size_t i = 0; i < num_face_handles; ++i) {
+
+					const auto &fh = fhs[i];
+					const auto &triangle = m_cdt.triangle(fh);
+
+					add_triangle_face_custom(triangle, height, builder, index_counter, faces);
+				}
+			}
+
+			template<class TriangleFaceTmp>
+			void add_triangle_face_custom(
+				const TriangleFaceTmp &triangle, const FT height, 
+				Builder &builder, size_t &index_counter, std::vector<Facet_handle> &faces) {
+
+				const auto &va = triangle.vertex(0);
+				const auto &vb = triangle.vertex(1);
+				const auto &vc = triangle.vertex(2);
+
+				const Point a = Point(va.x(), va.y(), height);
+				const Point b = Point(vb.x(), vb.y(), height);
+				const Point c = Point(vc.x(), vc.y(), height);
+
+				add_triangle_custom(a, b, c, builder, index_counter, faces);
+			}
+
+			void add_triangle_custom(
+				const Point &a, const Point &b, const Point &c, 
+				Builder &builder, size_t &index_counter, std::vector<Facet_handle> &faces) {
+
+		        builder.add_vertex(a);
+		        builder.add_vertex(b);
+		        builder.add_vertex(c);
+
+		        const Facet_handle fh = builder.begin_facet();
+
+		        builder.add_vertex_to_facet(index_counter++);
+		        builder.add_vertex_to_facet(index_counter++);
+		        builder.add_vertex_to_facet(index_counter++);
+		        
+		        builder.end_facet();
+		      	faces.push_back(fh);
+			}
+
+			void build_lod1_walls(Builder &builder) {
+
+				const size_t expected_num_vertices = 10;
+				const size_t expected_num_faces    = 10;
+
+				size_t num_walls 	 = 0;
+				size_t index_counter = 0;
+
+				const size_t num_buildings = m_buildings.size();
+				
+				m_walls_faces.clear();
+				m_walls_faces.resize(num_buildings);
+
+				size_t building_index = 0;
+				builder.begin_surface(expected_num_vertices, expected_num_faces);
+				for (Building_iterator bit = m_buildings.begin(); bit != m_buildings.end(); ++bit, ++building_index) {
+				
+					const auto &building = (*bit).second;
+					if (!is_valid_building(building)) continue;
+
+					if (building.is_oriented) {
+
+						std::cerr << std::endl << "ERROR: Oriented method is not working! Please turn off the quality option!" << std::endl << std::endl;
+						exit(EXIT_FAILURE);
+					}
+					
+					const FT height = building.height;
+					assert(building.boundaries.size() > 0);
+
+					const auto &boundary = building.boundaries[0];
+					add_walls_from_unoriented_boundary_custom(boundary, FT(0), height, builder, num_walls, index_counter, m_walls_faces[building_index]);
+				}
+
+				builder.end_surface();
+				assert(m_num_walls == static_cast<int>(num_walls));
+			}
+
+			template<class BoundaryTmp>
+			void add_walls_from_unoriented_boundary_custom(
+				const BoundaryTmp &boundary, const FT height_floor, const FT height_roof, 
+				Builder &builder, size_t &num_walls, size_t &index_counter, std::vector<Facet_handle> &faces) {
+				
+				const size_t num_vertices = boundary.size();
+				for (size_t i = 0; i < num_vertices; i += 2) {
+					
+					const size_t ip = i + 1;
+					assert(ip < num_vertices);
+
+					++num_walls;
+					add_quadrilateral_wall_custom(boundary[i], boundary[ip], height_floor, height_roof, builder, index_counter, faces);
+				}
+			}
+
+			template<class VertexHandleTmp>
+			void add_quadrilateral_wall_custom(
+				const VertexHandleTmp &vi, const VertexHandleTmp &vj, const FT height_floor, const FT height_roof, 
+				Builder &builder, size_t &index_counter, std::vector<Facet_handle> &faces) {
+
+				const auto &va = vi->point();
+				const auto &vb = vj->point();
+
+				const Point a = Point(va.x(), va.y(), height_floor);
+				const Point b = Point(vb.x(), vb.y(), height_floor);
+
+				const Point c = Point(vb.x(), vb.y(), height_roof);
+				const Point d = Point(va.x(), va.y(), height_roof);
+
+				add_quad_custom(a, b, c, d, builder, index_counter, faces);
+			}
+
+			void add_quad_custom(
+				const Point &a, const Point &b, const Point &c, const Point &d,
+				Builder &builder, size_t &index_counter, std::vector<Facet_handle> &faces) {
+
+		        builder.add_vertex(a);
+		        builder.add_vertex(b);
+		        builder.add_vertex(c);
+		        builder.add_vertex(d);
+
+		        const Facet_handle fh = builder.begin_facet();
+
+		        builder.add_vertex_to_facet(index_counter++);
+		        builder.add_vertex_to_facet(index_counter++);
+		        builder.add_vertex_to_facet(index_counter++);
+		        builder.add_vertex_to_facet(index_counter++);
+
+		        builder.end_facet();
+		        faces.push_back(fh);
+			}
+
+
+
+
+
+
+			// MAIN CODE!
+
 			void build_lod0(Builder &builder) {
 				assert(m_build_type == Build_type::CDT_AND_BUILDINGS);
 
 				const size_t expected_num_vertices = estimate_number_of_vertices_lod0();
 				const size_t expected_num_faces    = estimate_number_of_faces_lod0();
 
-
 				// Start surface building.
 				m_index_counter = 0;
 				builder.begin_surface(expected_num_vertices, expected_num_faces);
-
 
 				// Add all buildings.
 				for (Building_iterator bit = m_buildings.begin(); bit != m_buildings.end(); ++bit) {
@@ -168,11 +365,9 @@ namespace CGAL {
 					else add_new_building_lod0_unoriented(building, builder);
 				}
 
-
 				// Add ground.
 				assert(m_ground_set);
 				add_ground(builder);
-
 
 				// End surface building.
 				builder.end_surface();
@@ -201,11 +396,9 @@ namespace CGAL {
 				const size_t expected_num_vertices = 16;
 				const size_t expected_num_faces    = 5;
 
-
 				// Start surface building.
 				m_index_counter = 0;
 				builder.begin_surface(expected_num_vertices, expected_num_faces);
-
 
 				// Add triangle.
 				add_triangle(Point( 0.0, 0.0, 0.0), Point( 1.0, 0.0, 0.0), Point( 0.0,  1.0, 0.0), generate_random_color(), builder);
@@ -222,67 +415,8 @@ namespace CGAL {
 		        // Add quad.
 		        add_quad(Point(1.0, 0.0, 0.0), Point(2.0, 0.0, 0.0), Point(2.0, 1.0, 0.0), Point(1.0, 1.0, 0.0), generate_random_color(), builder);
 
-
 		        // End surface building.
 		        builder.end_surface();
-			}
-
-			void build_lod1_roofs(Builder &builder) {
-
-				const size_t expected_num_vertices = 10;
-				const size_t expected_num_faces    = 10;
-
-				m_index_counter = 0;
-				builder.begin_surface(expected_num_vertices, expected_num_faces);
-
-				for (Building_iterator bit = m_buildings.begin(); bit != m_buildings.end(); ++bit) {
-				
-					const auto &building = (*bit).second;
-					if (!is_valid_building(building)) continue;
-
-					if (building.is_oriented) {
-
-						std::cerr << std::endl << "ERROR: Oriented method is not working! Turn off quality option!" << std::endl << std::endl;
-						exit(EXIT_FAILURE);
-					}
-					
-					const FT height   = building.height;
-					const Color color = building.color;
-	
-					const auto &faces = building.faces;
-					add_horizontal_triangulation(faces, color, height, builder);
-				}
-				builder.end_surface();
-			}
-
-			void build_lod1_walls(Builder &builder) {
-
-				const size_t expected_num_vertices = 10;
-				const size_t expected_num_faces    = 10;
-
-				m_index_counter = 0;
-				builder.begin_surface(expected_num_vertices, expected_num_faces);
-
-				for (Building_iterator bit = m_buildings.begin(); bit != m_buildings.end(); ++bit) {
-				
-					const auto &building = (*bit).second;
-					if (!is_valid_building(building)) continue;
-
-					if (building.is_oriented) {
-
-						std::cerr << std::endl << "ERROR: Oriented method is not working! Turn off quality option!" << std::endl << std::endl;
-						exit(EXIT_FAILURE);
-					}
-					
-					const FT height   = building.height;
-					const Color color = building.color;
-	
-					assert(building.boundaries.size() > 0);
-
-					const auto &boundary = building.boundaries[0];
-					add_walls_from_unoriented_boundary(boundary, color, FT(0), height, builder);
-				}
-				builder.end_surface();
 			}
 
 			void add_triangle(const Point &a, const Point &b, const Point &c, const Color &color, Builder &builder) {
@@ -341,11 +475,9 @@ namespace CGAL {
 				const size_t expected_num_vertices = estimate_number_of_vertices_lod1();
 				const size_t expected_num_faces    = estimate_number_of_faces_lod1();
 
-
 				// Start surface building.
 				m_index_counter = 0;
 				builder.begin_surface(expected_num_vertices, expected_num_faces);
-
 
 				// Add all buildings.
 				m_num_roofs = 0;
@@ -365,11 +497,9 @@ namespace CGAL {
 					else add_new_building_lod1_unoriented(building, builder);
 				}
 
-
 				// Add ground.
 				if (!m_ground_set) estimate_ground();
 				add_ground(builder);
-
 
 				// End surface building.
 				builder.end_surface();
@@ -403,13 +533,6 @@ namespace CGAL {
 
 				const FT height = building.height;
 				if (height < m_height_threshold) return false;
-
-				/*
-				const FT ground_area = compute_ground_area();
-				const FT building_area = compute_building_area(building);
-						
-				assert(ground_area >= building_area);
-				if (building_area < m_area_threshold * ground_area) return false; */
 
 				return true;
 			}
@@ -815,14 +938,6 @@ namespace CGAL {
 				return m_num_walls;
 			}
 
-			void get_roofs(Mesh &roofs) const {
-				roofs = m_roofs;
-			}
-
-			void get_walls(Mesh &walls) const {
-				walls = m_walls;
-			}
-
 			void reconstruct_lod0(const CDT &cdt, const Buildings &buildings, const Ground &ground, Mesh &mesh, Mesh_facet_colors &mesh_facet_colors) {
 
 				Mesh_builder mesh_builder(cdt, buildings, mesh_facet_colors);
@@ -845,10 +960,29 @@ namespace CGAL {
 				mesh.delegate(mesh_builder);
 
 				set_lod1_metrics(mesh_builder);
-				set_lod1_roofs_and_walls(cdt, buildings);
+
+				reconstruct_lod1_roofs(cdt, buildings);
+				reconstruct_lod1_walls(cdt, buildings);
+			}
+
+			void get_roofs(Mesh &roofs) const {
+				roofs = m_roofs;
+			}
+
+			void get_walls(Mesh &walls) const {
+				walls = m_walls;
+			}
+
+			void get_roofs_faces(std::vector< std::vector<Mesh_facet_handle> > &roofs_faces) const {
+				roofs_faces = m_roofs_faces;
+			}
+
+			void get_walls_faces(std::vector< std::vector<Mesh_facet_handle> > &walls_faces) const {
+				walls_faces = m_walls_faces;
 			}
 
 		private:
+
 			bool m_use_boundaries;
 
 			int m_num_roofs;
@@ -857,15 +991,21 @@ namespace CGAL {
 			Mesh m_roofs;
 			Mesh m_walls;
 
+			std::vector< std::vector<Mesh_facet_handle> > m_roofs_faces, m_walls_faces;
+
+
+			void reconstruct_lod1_roofs(const CDT &cdt, const Buildings &buildings) {
+				set_lod1_roofs(cdt, buildings);
+			}
+
+			void reconstruct_lod1_walls(const CDT &cdt, const Buildings &buildings) {
+				set_lod1_walls(cdt, buildings);
+			}
+
 			void set_lod1_metrics(const Mesh_builder &mesh_builder) {
 
 				m_num_roofs = mesh_builder.get_number_of_roofs();
 				m_num_walls = mesh_builder.get_number_of_walls();
-			}
-
-			void set_lod1_roofs_and_walls(const CDT &cdt, const Buildings &buildings) {
-				set_lod1_roofs(cdt, buildings);
-				set_lod1_walls(cdt, buildings);
 			}
 
 			void set_lod1_roofs(const CDT &cdt, const Buildings &buildings) {
@@ -877,6 +1017,8 @@ namespace CGAL {
 
 				m_roofs.clear();
 				m_roofs.delegate(roofs_builder);
+
+				roofs_builder.get_roofs_faces(m_roofs_faces);
 			}
 
 			void set_lod1_walls(const CDT &cdt, const Buildings &buildings) {
@@ -888,6 +1030,8 @@ namespace CGAL {
 
 				m_walls.clear();
 				m_walls.delegate(walls_builder);
+
+				walls_builder.get_walls_faces(m_walls_faces);
 			}
 		};
 	}

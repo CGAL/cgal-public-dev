@@ -1,5 +1,5 @@
-#ifndef CGAL_LEVEL_OF_DETAIL_DISTORTION_H
-#define CGAL_LEVEL_OF_DETAIL_DISTORTION_H
+#ifndef CGAL_LEVEL_OF_DETAIL_DISTORTION_NAIVE_H
+#define CGAL_LEVEL_OF_DETAIL_DISTORTION_NAIVE_H
 
 #if defined(WIN32) || defined(_WIN32) 
 #define PS "\\"
@@ -29,7 +29,7 @@ namespace CGAL {
 	namespace LOD {
 
 		template<class KernelTraits, class InputContainer, class LodReconstruction>
-		class Level_of_detail_distortion {
+		class Level_of_detail_distortion_naive {
 
 		public:
 			typedef KernelTraits   	  Kernel;
@@ -60,9 +60,9 @@ namespace CGAL {
 			using Log = CGAL::LOD::Mylog;
 
 
-			Level_of_detail_distortion(const Container &input, const LODS &lods) : 
+			Level_of_detail_distortion_naive(const Container &input, const LODS &lods) : 
 			m_input(input), m_lods(lods), 
-			m_distortion(-FT(1)), m_debug(false) { }
+			m_distortion(-FT(1)), m_save_info(false) { }
 
 
 			void estimate() {
@@ -96,13 +96,13 @@ namespace CGAL {
 			const LODS 		&m_lods;
 
 			FT m_distortion;
-			bool m_debug;
+			bool m_save_info;
 
 
 			void get_roofs(Mesh &roofs) {
 				m_lods.get_roofs(roofs);
 
-				if (m_debug) {
+				if (m_save_info) {
 					Log roofs_saver; Mesh_facet_colors stub;
 					roofs_saver.save_mesh_as_ply(roofs, stub, "tmp" + std::string(PS) + "roofs_for_complexity", false);
 				}
@@ -111,7 +111,7 @@ namespace CGAL {
 			void get_walls(Mesh &walls) {
 				m_lods.get_walls(walls);
 
-				if (m_debug) {
+				if (m_save_info) {
 					Log walls_saver; Mesh_facet_colors stub;
 					walls_saver.save_mesh_as_ply(walls, stub, "tmp" + std::string(PS) + "walls_for_complexity", false);
 				}
@@ -123,7 +123,7 @@ namespace CGAL {
 				Interior_points_selector selector;
 				selector.select_elements(m_input, std::back_inserter(roofs_points));
 	
-				if (m_debug) {
+				if (m_save_info) {
 					Log roofs_points_saver;
 					roofs_points_saver.export_points_using_indices(m_input, roofs_points, "tmp" + std::string(PS) + "roofs_points_for_complexity");
 				}
@@ -135,7 +135,7 @@ namespace CGAL {
 				Boundary_points_selector selector;
 				selector.select_elements(m_input, std::back_inserter(walls_points));
 	
-				if (m_debug) {
+				if (m_save_info) {
 					Log walls_points_saver;
 					walls_points_saver.export_points_using_indices(m_input, walls_points, "tmp" + std::string(PS) + "walls_points_for_complexity");
 				}
@@ -205,7 +205,7 @@ namespace CGAL {
 					translated_points[i] = Point_3(p.x(), p.y(), z);
 				}
 
-				if (m_debug) {
+				if (m_save_info) {
 					Log saver;
 					saver.export_points(translated_points, "tmp" + std::string(PS) + name);
 				}
@@ -237,4 +237,4 @@ namespace CGAL {
 	}
 }
 
-#endif // CGAL_LEVEL_OF_DETAIL_DISTORTION_H
+#endif // CGAL_LEVEL_OF_DETAIL_DISTORTION_NAIVE_H
