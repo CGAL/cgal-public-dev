@@ -32,7 +32,7 @@
 #include <CGAL/Clutter/Level_of_detail_grid_simplify.h>
 #include <CGAL/Clutter/Level_of_detail_thinning.h>
 #include <CGAL/Clutter/Level_of_detail_clutter_processor.h>
-#include <CGAL/Region_growing_2/Level_of_detail_region_growing_2.h>
+#include <CGAL/Region_growing/Level_of_detail_region_growing.h>
 #include <CGAL/Tools/Level_of_detail_tools.h>
 #include <CGAL/Level_of_detail_enum.h>
 
@@ -82,7 +82,7 @@ namespace CGAL {
 
 			typedef CGAL::LOD::Level_of_detail_utils<Kernel, Container_3D, CDT> 				   				 Utils;
 			typedef CGAL::LOD::Level_of_detail_clutter_processor<Kernel, Planes, Projected_points, Container_3D> Clutter_processor;
-			typedef CGAL::LOD::Level_of_detail_region_growing_2<Kernel, Planes, Projected_points, Container_3D>  Region_growing_2;
+			typedef CGAL::LOD::Level_of_detail_region_growing<Kernel, Planes, Projected_points, Container_3D>    Region_growing;
 
 			typedef CGAL::LOD::Level_of_detail_grid_simplify<Kernel, Planes, Projected_points> 			Grid_simplifier;
 			typedef CGAL::LOD::Level_of_detail_thinning<Kernel, Planes, Projected_points, Container_3D> Thinning;

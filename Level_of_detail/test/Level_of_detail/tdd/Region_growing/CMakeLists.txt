@@ -18,7 +18,7 @@ if (CGAL_FOUND)
 
 	set(CMAKE_CXX_FLAGS "${CMAXE_CXX_FLAGS} -pedantic -Wall -Wextra -Weffc++ -Wc++11-extensions -Werror")
 
-	set(sources main.cpp Level_of_detail_region_growing_2_test.cpp)
+	set(sources main.cpp Level_of_detail_region_growing_test.cpp)
 
 	add_executable(regiongrowingtest ${sources})
 

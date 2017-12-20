@@ -7,7 +7,8 @@
 #define PS "/"
 #endif
 
-// STL includes
+// STL includes.
+#include <map>
 #include <string>
 #include <vector>
 #include <cassert>
@@ -23,11 +24,13 @@
 #include <CGAL/Mylog/Mylog.h>
 #include <CGAL/Selector/Level_of_detail_selector.h>
 #include <CGAL/Selector/Level_of_detail_selection_strategy.h>
+#include <CGAL/Utils/Level_of_detail_utils_simple.h>
 
 namespace CGAL {
 
 	namespace LOD {
 
+		// This class works only with LOD1 data!
 		template<class KernelTraits, class InputContainer, class LodReconstruction>
 		class Level_of_detail_distortion {
 
@@ -36,21 +39,28 @@ namespace CGAL {
 			typedef InputContainer 	  Container;
 			typedef LodReconstruction LODS;
 
-			typedef typename LodReconstruction::Mesh Mesh;
+			typedef typename LodReconstruction::Mesh 			  Mesh;
 			typedef typename LodReconstruction::Mesh_facet_colors Mesh_facet_colors;
+
+			using Halfedge_handle = typename Mesh::Halfedge_const_handle;
+			using Facet_handle    = typename Mesh::Facet_const_handle;
+			using Faces 	      = std::vector< std::vector<Facet_handle> >;
 			
-			typedef typename Kernel::FT 	  FT;
-			typedef typename Kernel::Point_3  Point_3;
-			typedef typename Kernel::Vector_3 Vector_3;
+			typedef typename Kernel::FT 	    FT;
+			typedef typename Kernel::Point_3    Point_3;
+			typedef typename Kernel::Vector_3   Vector_3;
+			typedef typename Kernel::Plane_3    Plane_3;
+			typedef typename Kernel::Point_2    Point_2;
+			typedef typename Kernel::Triangle_2 Triangle_2;
 
 			using Index   = int;
 			using Indices = std::vector<Index>;
 
-			typedef CGAL::LOD::Level_of_detail_building_boundary<Kernel, Container> Boundary_points_strategy;
-			typedef CGAL::LOD::Level_of_detail_building_interior<Kernel, Container> Interior_points_strategy;
-
-			typedef CGAL::LOD::Level_of_detail_selector<Kernel, Boundary_points_strategy> Boundary_points_selector;
-			typedef CGAL::LOD::Level_of_detail_selector<Kernel, Interior_points_strategy> Interior_points_selector;
+			typedef CGAL::LOD::Level_of_detail_building_interior<Kernel, Container> Roofs_points_selection_strategy;
+			typedef CGAL::LOD::Level_of_detail_building_boundary<Kernel, Container> Walls_points_selection_strategy;
+			
+			typedef CGAL::LOD::Level_of_detail_selector<Kernel, Roofs_points_selection_strategy> Roofs_points_selector;
+			typedef CGAL::LOD::Level_of_detail_selector<Kernel, Walls_points_selection_strategy> Walls_points_selector;
 
 			typedef CGAL::AABB_face_graph_triangle_primitive<Mesh> AB_primitive;
 			typedef CGAL::AABB_traits<Kernel, AB_primitive> 	   AB_traits;
@@ -59,14 +69,18 @@ namespace CGAL {
 			typename Kernel::Compute_squared_distance_3 squared_distance;
 			using Log = CGAL::LOD::Mylog;
 
+			typedef CGAL::LOD::Level_of_detail_utils_simple<Kernel> Simple_utils;
+			
+			enum class Fitting_type { MIN, AVG, MAX };
+			struct Bounding_box { Point_3 bbmin, bbmax; };
+
+			using Bounding_boxes = std::vector<Bounding_box>;
 
 			Level_of_detail_distortion(const Container &input, const LODS &lods) : 
-			m_input(input), m_lods(lods), 
-			m_distortion(-FT(1)), m_debug(false) { }
-
+			m_input(input), m_lods(lods), m_distortion(-FT(1)), m_debug(false) { }
 
 			void estimate() {
-				
+
 				Mesh roofs_mesh, walls_mesh;
 				get_roofs(roofs_mesh);
 				get_walls(walls_mesh);
@@ -81,14 +95,27 @@ namespace CGAL {
 				std::vector<Point_3> walls_translated_points;
 				get_translated_points(walls_mesh, walls_point_indices, walls_translated_points, "walls_translated_points");
 
-				const FT average_distance_to_roofs = compute_mesh_points_average_distance(roofs_mesh, roofs_translated_points);
-				const FT average_distance_to_walls = compute_mesh_points_average_distance(walls_mesh, walls_translated_points);
-
-				m_distortion = (average_distance_to_roofs + average_distance_to_walls) / FT(2);
+				compute_metrics(roofs_mesh, roofs_translated_points, walls_mesh, walls_translated_points);
 			}
 
-			FT get() const {
+			FT get(const Fitting_type type = Fitting_type::AVG) {
+
+				m_distortion = fit_data(type);
+
+				assert(m_distortion >= FT(0));
 				return m_distortion;
+			}
+
+			const std::vector<FT> &get_roofs_metrics() const {
+
+				assert(!m_roofs_metrics.empty());
+				return m_roofs_metrics;
+			}
+
+			const std::vector<FT> &get_walls_metrics() const {
+				
+				assert(!m_walls_metrics.empty());
+				return m_walls_metrics;
 			}
 
 		private:
@@ -98,6 +125,10 @@ namespace CGAL {
 			FT m_distortion;
 			bool m_debug;
 
+			std::vector<FT> m_walls_metrics;
+			std::vector<FT> m_roofs_metrics;
+
+			Simple_utils m_simple_utils;
 
 			void get_roofs(Mesh &roofs) {
 				m_lods.get_roofs(roofs);
@@ -117,27 +148,27 @@ namespace CGAL {
 				}
 			}
 
-			void get_roofs_points(Indices &roofs_points) {
-				roofs_points.clear();
+			void get_roofs_points(Indices &roofs_point_indices) {
+				roofs_point_indices.clear();
 				
-				Interior_points_selector selector;
-				selector.select_elements(m_input, std::back_inserter(roofs_points));
+				Roofs_points_selector selector;
+				selector.select_elements(m_input, std::back_inserter(roofs_point_indices));
 	
 				if (m_debug) {
 					Log roofs_points_saver;
-					roofs_points_saver.export_points_using_indices(m_input, roofs_points, "tmp" + std::string(PS) + "roofs_points_for_complexity");
+					roofs_points_saver.export_points_using_indices(m_input, roofs_point_indices, "tmp" + std::string(PS) + "roofs_points_for_complexity");
 				}
 			}
 
-			void get_walls_points(Indices &walls_points) {
-				walls_points.clear();
+			void get_walls_points(Indices &walls_point_indices) {
+				walls_point_indices.clear();
 				
-				Boundary_points_selector selector;
-				selector.select_elements(m_input, std::back_inserter(walls_points));
+				Walls_points_selector selector;
+				selector.select_elements(m_input, std::back_inserter(walls_point_indices));
 	
 				if (m_debug) {
 					Log walls_points_saver;
-					walls_points_saver.export_points_using_indices(m_input, walls_points, "tmp" + std::string(PS) + "walls_points_for_complexity");
+					walls_points_saver.export_points_using_indices(m_input, walls_point_indices, "tmp" + std::string(PS) + "walls_points_for_complexity");
 				}
 			}
 
@@ -211,15 +242,179 @@ namespace CGAL {
 				}
 			}
 
-			FT compute_mesh_points_average_distance(const Mesh &mesh, const std::vector<Point_3> &points) {
+			void compute_metrics(
+				const Mesh &roofs_mesh, const std::vector<Point_3> &roofs_translated_points,
+				const Mesh &walls_mesh, const std::vector<Point_3> &walls_translated_points) {
+
+				compute_l2_distances(roofs_mesh, roofs_translated_points, walls_mesh, walls_translated_points);
+			}
+
+			void compute_l2_distances(
+				const Mesh &roofs_mesh, const std::vector<Point_3> &roofs_translated_points,
+				const Mesh &walls_mesh, const std::vector<Point_3> &walls_translated_points) {
+
+				compute_mesh_points_l2_distances_to_roofs(roofs_mesh, roofs_translated_points);
+				compute_mesh_points_l2_distances_to_walls(walls_mesh, walls_translated_points);
+			}
+
+			void compute_mesh_points_l2_distances_to_roofs(const Mesh &mesh, const std::vector<Point_3> &points) {
+
+				Faces roofs_faces;
+				m_lods.get_roofs_faces(roofs_faces);
+
+				Bounding_boxes boxes;
+				compute_bounding_boxes(roofs_faces, boxes);
+
+				std::vector<Point_3> updated_points;
+				for (size_t i = 0; i < points.size(); ++i) {
+					
+					const Point_3 &query = points[i];
+					const int box_index = find_bounding_box(query, boxes);
+					
+					if (box_index < 0) {
+						updated_points.push_back(query);
+						continue;
+					}
+
+					const Plane_3 plane = get_plane_from_bounding_box(boxes[box_index].bbmin, boxes[box_index].bbmax);
+					const Point_3 projected = plane.projection(query);
+
+					const int face_index = find_face(projected, roofs_faces[box_index]);
+
+					if (face_index < 0) {
+						updated_points.push_back(query);
+						continue;
+					}
+				}
+
+				if (m_debug)
+					std::cout << std::endl << "number of original - updated points: " << points.size() << " - " << updated_points.size() << std::endl << std::endl;
+
+				compute_updated_mesh_points_l2_distances_to_roofs(mesh, updated_points);
+			}
+
+			Plane_3 get_plane_from_bounding_box(const Point_3 &minp, const Point_3 &maxp) {
+				assert(minp.z() == maxp.z());
+
+				const Point_3 a = minp;
+				const Point_3 b = Point_3(maxp.x(), minp.y(), minp.z());
+				const Point_3 c = maxp;
+
+				return Plane_3(a, b, c);
+			}
+
+			int find_face(const Point_3 &query, const std::vector<Facet_handle> &faces) {
+				assert(!faces.empty());
+
+				for (size_t i = 0; i < faces.size(); ++i)
+					if (belongs_to_face(query, faces[i]))
+						return static_cast<int>(i);
+
+				return -1;
+			}
+
+			bool belongs_to_face(const Point_3 &query, const Facet_handle &fh) {
+
+				std::vector<Point_3> points;
+				get_points_from_face_handle(fh, points);
+
+				assert(points.size() == 3);
+				assert(points[0].z() == points[1].z() && points[1].z() == points[2].z());
+
+				const Triangle_2 triangle = Triangle_2(
+					Point_2(points[0].x(), points[0].y()),
+					Point_2(points[1].x(), points[1].y()),
+					Point_2(points[2].x(), points[2].y())
+					);
+
+				const Point_2 new_query = Point_2(query.x(), query.y());
+
+				if (triangle.has_on_bounded_side(new_query) || triangle.has_on_boundary(new_query)) return true;
+				return false;
+			}
+
+			void get_points_from_face_handle(const Facet_handle &fh, std::vector<Point_3> &points) {
+				
+				points.clear();
+				Halfedge_handle he = fh->halfedge();
+
+				const Point_3 p1 = he->vertex()->point();
+
+				he = he->next();
+				const Point_3 p2 = he->vertex()->point();
+
+				he = he->next();
+				const Point_3 p3 = he->vertex()->point();
+
+				points.push_back(p1);
+				points.push_back(p2);
+				points.push_back(p3);
+			}
+
+			int find_bounding_box(const Point_3 &query, const Bounding_boxes &boxes) {
+				assert(!boxes.empty());
+
+				for (size_t i = 0; i < boxes.size(); ++i)
+					if (is_inside_box(query, boxes[i].bbmin, boxes[i].bbmax)) 
+						return static_cast<int>(i);
+
+				return -1;
+			}
+
+			bool is_inside_box(const Point_3 &query, const Point_3 &minp, const Point_3 &maxp) {
+
+				if (query.x() > minp.x() && query.x() < maxp.x() && 
+					query.y() > minp.y() && query.y() < maxp.y()) return true;
+
+				return false;
+			}
+
+			void compute_bounding_boxes(const Faces &faces, Bounding_boxes &boxes) {
+
+				assert(!faces.empty());
+				boxes.resize(faces.size());
+
+				std::vector<Point_3> points;
+				for (size_t i = 0; i < faces.size(); ++i) {
+					
+					get_points(faces[i], points);
+					m_simple_utils.compute_bounding_box_in_3d(boxes[i].bbmin, boxes[i].bbmax, points);
+
+					assert(boxes[i].bbmin.z() == boxes[i].bbmax.z());
+				}
+
+				if (m_debug) {
+					Log log;
+					log.save_bounding_boxes_as_ply<Bounding_boxes, Point_3>(boxes, "tmp" + std::string(PS) + "boxes");
+				}
+			}
+
+			void get_points(const std::vector<Facet_handle> &faces, std::vector<Point_3> &points) {
+				assert(!faces.empty());
+
+				points.clear();
+				for (size_t i = 0; i < faces.size(); ++i) {
+					
+					Halfedge_handle he = faces[i]->halfedge();
+					points.push_back(he->vertex()->point());
+
+					he = he->next();
+					points.push_back(he->vertex()->point());
+
+					he = he->next();
+					points.push_back(he->vertex()->point());
+				}
+			}
+
+			void compute_updated_mesh_points_l2_distances_to_roofs(const Mesh &mesh, const std::vector<Point_3> &points) {
+
+				m_roofs_metrics.clear();
+				m_roofs_metrics.resize(points.size());
 
 				AB_tree aabb_tree(faces(mesh).first, faces(mesh).second, mesh);
+
 				Point_3 closest_point;
-
-				FT average_distance = FT(0);
-				FT num_points = FT(0);
-
-				for (size_t i = 0; i < points.size(); ++i, num_points += FT(1)) {
+				for (size_t i = 0; i < points.size(); ++i) {
 					
 					const Point_3 &query = points[i];
 					closest_point = aabb_tree.closest_point(query);
@@ -227,11 +422,101 @@ namespace CGAL {
 					const FT squared_dist = squared_distance(query, closest_point);
 					const FT distance = static_cast<FT>(CGAL::sqrt(CGAL::to_double(squared_dist)));
 
-					average_distance += distance;
+					m_roofs_metrics[i] = distance;
 				}
+			}
 
-				average_distance /= num_points;
-				return average_distance;
+			void compute_mesh_points_l2_distances_to_walls(const Mesh &mesh, const std::vector<Point_3> &points) {
+
+				m_walls_metrics.clear();
+				m_walls_metrics.resize(points.size());
+
+				AB_tree aabb_tree(faces(mesh).first, faces(mesh).second, mesh);
+
+				Point_3 closest_point;
+				for (size_t i = 0; i < points.size(); ++i) {
+					
+					const Point_3 &query = points[i];
+					closest_point = aabb_tree.closest_point(query);
+
+					const FT squared_dist = squared_distance(query, closest_point);
+					const FT distance = static_cast<FT>(CGAL::sqrt(CGAL::to_double(squared_dist)));
+
+					m_walls_metrics[i] = distance;
+				}
+			}
+
+			FT fit_data(const Fitting_type type) const {
+
+				switch (type) {
+					case Fitting_type::MIN:
+						return get_min_from_data();
+
+					case Fitting_type::AVG:
+						return get_avg_from_data();
+
+					case Fitting_type::MAX:
+						return get_max_from_data();
+
+					default:
+						assert(!"Wrong fitting type!");
+						return -FT(1);
+				}
+			}
+
+			FT get_min_from_data() const {
+
+				const FT roofs_mind = get_min(m_roofs_metrics);
+				const FT walls_mind = get_min(m_walls_metrics);
+
+				const FT mind = CGAL::min(roofs_mind, walls_mind);
+				return mind;
+			}
+
+			FT get_avg_from_data() const {
+
+				const FT roofs_avg = get_average(m_roofs_metrics);
+				const FT walls_avg = get_average(m_walls_metrics);
+
+				const FT avg = (roofs_avg + walls_avg) / FT(2);
+				return avg;
+			}
+
+			FT get_max_from_data() const {
+
+				const FT roofs_maxd = get_max(m_roofs_metrics);
+				const FT walls_maxd = get_max(m_walls_metrics);
+
+				const FT maxd = CGAL::max(roofs_maxd, walls_maxd);
+				return maxd;
+			}
+
+			FT get_min(const std::vector<FT> &data) const {
+				assert(!data.empty());
+
+				FT mind = FT(1000000000000);
+				for (size_t i = 0; i < data.size(); ++i) mind = CGAL::min(mind, data[i]);
+
+				return mind;
+			}
+
+			FT get_average(const std::vector<FT> &data) const {
+				assert(!data.empty());
+
+				FT avg = FT(0);
+				for (size_t i = 0; i < data.size(); ++i) avg += data[i];
+				avg /= static_cast<FT>(data.size());
+
+				return avg;
+			}
+
+			FT get_max(const std::vector<FT> &data) const {
+				assert(!data.empty());
+
+				FT maxd = -FT(1000000000000);
+				for (size_t i = 0; i < data.size(); ++i) maxd = CGAL::max(maxd, data[i]);
+
+				return maxd;
 			}
 		};
 	}

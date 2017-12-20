@@ -1,5 +1,5 @@
-#ifndef CGAL_LEVEL_OF_DETAIL_REGION_GROWING_2_H
-#define CGAL_LEVEL_OF_DETAIL_REGION_GROWING_2_H
+#ifndef CGAL_LEVEL_OF_DETAIL_REGION_GROWING_H
+#define CGAL_LEVEL_OF_DETAIL_REGION_GROWING_H
 
 #if defined(WIN32) || defined(_WIN32) 
 #define PS "\\"
@@ -38,7 +38,7 @@ namespace CGAL {
 	namespace LOD {
 
 		template<class KernelTraits, class BoundaryData, class ProjectedPoints, class InputContainer>
-		class Level_of_detail_region_growing_2 {
+		class Level_of_detail_region_growing {
 
 		public:
 
@@ -81,7 +81,7 @@ namespace CGAL {
 
 
 			// Constructor.
-			Level_of_detail_region_growing_2() : 
+			Level_of_detail_region_growing() : 
 			m_epsilon(-FT(1)),
 			m_cluster_epsilon(-FT(1)),
 			m_normal_threshold(-FT(1)),
@@ -735,4 +735,4 @@ namespace CGAL {
 	}
 }
 
-#endif // CGAL_LEVEL_OF_DETAIL_REGION_GROWING_2_H
+#endif // CGAL_LEVEL_OF_DETAIL_REGION_GROWING_H

@@ -89,7 +89,147 @@ namespace CGAL {
 				return true;
 			}
 
+			template<class Bounding_boxes, class Point_3>
+			void save_bounding_boxes_as_ply(const Bounding_boxes &boxes, const std::string &filename) {
+
+				clear();
+
+				// Add ply header.
+				out << 
+				"ply" + std::string(PN) + ""               					    << 
+				"format ascii 1.0" + std::string(PN) + ""     				    << 
+				"element vertex "        				   << boxes.size() * 4  << "" + std::string(PN) + "" << 
+				"property double x" + std::string(PN) + ""    				    << 
+				"property double y" + std::string(PN) + ""    				    << 
+				"property double z" + std::string(PN) + "" 					    <<
+				"element face " 						   << boxes.size()      << "" + std::string(PN) + "" << 
+				"property list uchar int vertex_indices" + std::string(PN) + "" <<
+				"property uchar red"   + std::string(PN) + "" 				    <<
+				"property uchar green" + std::string(PN) + "" 				    <<
+				"property uchar blue"  + std::string(PN) + "" 				    <<
+				"end_header" + std::string(PN) + "";
+
+				// Add mesh vertices.
+				for (size_t i = 0; i < boxes.size(); ++i) {
+
+					const Point_3 &bbmin = boxes[i].bbmin;
+					const Point_3 &bbmax = boxes[i].bbmax;
+
+					assert(bbmin.z() == bbmax.z());
+
+					const Point_3 a = Point_3(bbmin.x(), bbmin.y(), bbmin.z());
+					const Point_3 b = Point_3(bbmax.x(), bbmin.y(), bbmin.z());
+					const Point_3 c = Point_3(bbmax.x(), bbmax.y(), bbmin.z());
+					const Point_3 d = Point_3(bbmin.x(), bbmax.y(), bbmin.z());
+
+					out << a << std::endl;
+					out << b << std::endl;
+					out << c << std::endl;
+					out << d << std::endl;
+				}
+
+				// Add mesh facets.
+				size_t count = 0;
+				for (size_t i = 0; i < boxes.size(); ++i) {
+
+					out << 4 << " " << count << " "; ++count;
+					out << count << " "; ++count;
+					out << count << " "; ++count;
+					out << count << " "; ++count;
+
+					out << generate_random_color() << std::endl;
+				}
+
+				// Save file.
+				save(filename, ".ply");
+			}
+
 			// Save mesh in a ply format.
+			template<class Mesh, class Regions>
+			void save_mesh_as_ply(const Regions &regions, const std::string &filename) {
+
+				clear();
+
+				using Mesh_facet_handle   = typename Mesh::Facet_const_handle;
+				using Facet_vertex_handle = typename Mesh::Facet::Vertex_const_handle;
+
+				size_t num_facets = 0;
+				for (size_t i = 0; i < regions.size(); ++i) {
+					for (size_t j = 0; j < regions[i].size(); ++j) {
+						num_facets += regions[i][j].size();
+					}
+				}
+				const size_t num_vertices = num_facets * 3;
+
+				// Add ply header.
+				out << 
+				"ply" + std::string(PN) + ""               					    << 
+				"format ascii 1.0" + std::string(PN) + ""     				    << 
+				"element vertex "        				   << num_vertices << "" + std::string(PN) + "" << 
+				"property double x" + std::string(PN) + ""    				    << 
+				"property double y" + std::string(PN) + ""    				    << 
+				"property double z" + std::string(PN) + "" 					    <<
+				"element face " 						   << num_facets   << "" + std::string(PN) + "" << 
+				"property list uchar int vertex_indices" + std::string(PN) + "" <<
+				"property uchar red"   + std::string(PN) + "" 				    <<
+				"property uchar green" + std::string(PN) + "" 				    <<
+				"property uchar blue"  + std::string(PN) + "" 				    <<
+				"end_header" + std::string(PN) + "";
+
+				// Add mesh vertices.
+				int count = 0;
+				CGAL::Unique_hash_map<Facet_vertex_handle, int> V;
+
+				for (size_t i = 0; i < regions.size(); ++i) {
+					for (size_t j = 0; j < regions[i].size(); ++j) {
+						for (size_t k = 0; k < regions[i][j].size(); ++k) {
+
+							const Mesh_facet_handle fit = regions[i][j][k];
+
+							Facet_vertex_handle vh = fit->halfedge()->vertex();
+							V[vh] = count++;
+							out << vh->point() << std::endl;
+
+							vh = fit->halfedge()->next()->vertex();
+							V[vh] = count++;
+							out << vh->point() << std::endl;
+
+							vh = fit->halfedge()->next()->next()->vertex();
+							V[vh] = count++;
+							out << vh->point() << std::endl;
+						}
+					}
+				}
+
+				// Add mesh facets.
+				for (size_t i = 0; i < regions.size(); ++i) {
+					for (size_t j = 0; j < regions[i].size(); ++j) {
+
+						CGAL::Color color = generate_random_color();
+						for (size_t k = 0; k < regions[i][j].size(); ++k) {
+
+							const Mesh_facet_handle fit = regions[i][j][k];
+							out << 3 << " ";
+
+							Facet_vertex_handle vh = fit->halfedge()->vertex();
+							out << V[vh] << " ";
+
+							vh = fit->halfedge()->next()->vertex();
+							out << V[vh] << " ";
+
+							vh = fit->halfedge()->next()->next()->vertex();
+							out << V[vh] << " ";
+
+							out << color << std::endl;
+						}
+					}
+				}
+
+				// Save file.
+				save(filename, ".ply");
+			}
+
+
 			template<class Mesh, class Facet_colors>
 			void save_mesh_as_ply(const Mesh &mesh, const Facet_colors &mesh_facet_colors, const std::string &filename, const bool use_colors = true) {
 

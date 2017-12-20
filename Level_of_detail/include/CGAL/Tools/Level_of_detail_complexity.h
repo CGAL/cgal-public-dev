@@ -8,15 +8,20 @@
 #endif
 
 // STL includes.
+#include <map>
 #include <string>
 #include <vector>
 #include <cassert>
-#include <map>
+#include <iostream>
+
+// CGAL includes.
+#include <CGAL/number_utils.h>
 
 // New CGAL includes.
 #include <CGAL/Mylog/Mylog.h>
 #include <CGAL/Selector/Level_of_detail_selector.h>
 #include <CGAL/Selector/Level_of_detail_selection_strategy.h>
+#include <CGAL/Region_growing/Level_of_detail_planar_region_growing.h>
 
 namespace CGAL {
 
@@ -40,11 +45,17 @@ namespace CGAL {
 			using Log 	  = CGAL::LOD::Mylog;
 			using Faces   = std::vector< std::vector<Facet_handle> >;
 
+			using Building_region  = std::vector<Facet_handle>;
+			using Building_regions = std::vector<Building_region>;
+			using Regions 		   = std::vector<Building_regions>;
+
 			typedef CGAL::LOD::Level_of_detail_building_interior<Kernel, Container> Roofs_points_selection_strategy;
 			typedef CGAL::LOD::Level_of_detail_building_boundary<Kernel, Container> Walls_points_selection_strategy;
 			
 			typedef CGAL::LOD::Level_of_detail_selector<Kernel, Roofs_points_selection_strategy> Roofs_points_selector;
 			typedef CGAL::LOD::Level_of_detail_selector<Kernel, Walls_points_selection_strategy> Walls_points_selector;
+
+			typedef CGAL::LOD::Level_of_detail_planar_region_growing<Kernel, Mesh, Faces> Planar_region_growing;
 
 			Level_of_detail_complexity(const Container &input, const LODS &lods) 
 			: m_input(input), m_lods(lods), m_complexity(-FT(1)), m_debug(false) { }
@@ -54,8 +65,10 @@ namespace CGAL {
 				const FT num_roofs = get_number_of_roofs();
 				const FT num_walls = get_number_of_walls();
 
-				get_roofs_normalization_factor();
-				get_walls_normalization_factor();
+				if (m_debug) {
+					get_roofs_normalization_factor();
+					get_walls_normalization_factor();
+				}
 
 				m_complexity = num_roofs + num_walls;
 			}
@@ -76,6 +89,8 @@ namespace CGAL {
 			FT get_number_of_roofs() const {
 
 				const int num_roofs = m_lods.get_number_of_roofs();
+				assert(num_roofs >= 0);
+
 				return static_cast<FT>(num_roofs);
 			}
 
@@ -84,8 +99,18 @@ namespace CGAL {
 				Faces walls_faces;
 				m_lods.get_walls_faces(walls_faces);
 
-				size_t num_walls = 0;
-				for (size_t i = 0; i < walls_faces.size(); ++i) num_walls += walls_faces[i].size();
+				Planar_region_growing planar_region_growing(walls_faces);
+
+				Regions regions;
+				planar_region_growing.find_regions(regions);
+
+				const int num_walls = planar_region_growing.get_number_of_regions();
+				assert(num_walls >= 0);
+
+				if (m_debug) {
+					Log log;
+					log.save_mesh_as_ply<Mesh, Regions>(regions, "tmp" + std::string(PS) + "detected_walls");
+				}
 
 				return static_cast<FT>(num_walls);
 			}

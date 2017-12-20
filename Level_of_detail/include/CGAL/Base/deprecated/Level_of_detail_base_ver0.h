@@ -68,7 +68,7 @@ namespace CGAL {
 
 			typedef typename Traits::Structuring_2 	  Structuring_2;
 			typedef typename Traits::Visibility_2  	  Visibility_2;
-			typedef typename Traits::Region_growing_2 Region_growing_2;
+			typedef typename Traits::Region_growing   Region_growing;
 			
 			typedef typename Traits::Utils Utils;
 			
@@ -1016,7 +1016,7 @@ namespace CGAL {
 			Ground_projector 	 m_ground_projector;
 			Visibility_2 		 m_visibility;
 			Utils 		 		 m_utils;
-			Region_growing_2 	 m_region_growing;
+			Region_growing  	 m_region_growing;
 			
 			Graph_cut m_graph_cut;
 			Lods m_lods;

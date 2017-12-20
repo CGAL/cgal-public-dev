@@ -13,7 +13,7 @@
 // CGAL new includes.
 #include <CGAL/Mylog/Mylog.h>
 #include <CGAL/Level_of_detail_enum.h>
-#include <CGAL/Region_growing_2/Level_of_detail_region_growing_2.h>
+#include <CGAL/Region_growing/Level_of_detail_region_growing.h>
 
 using namespace testing;
 
@@ -31,7 +31,7 @@ public:
 	using Projected_points = std::map<int, Point_2>;
 	using Container 	   = CGAL::Point_set_3<Point_3>;
 
-	using LodRegionGrowing = CGAL::LOD::Level_of_detail_region_growing_2<Kernel, Boundary_data, Projected_points, Container>;
+	using LodRegionGrowing = CGAL::LOD::Level_of_detail_region_growing<Kernel, Boundary_data, Projected_points, Container>;
 	using Log 			   = CGAL::LOD::Mylog;
 	
 

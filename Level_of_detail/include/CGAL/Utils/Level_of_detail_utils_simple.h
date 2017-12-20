@@ -72,7 +72,7 @@ namespace CGAL {
 			void compute_bounding_box_in_2d(Point_2 &bbmin, Point_2 &bbmax, const Projected_points &points) const {
 
 				using Point_iterator = typename Projected_points::const_iterator;
-				const FT big_value   = FT(1000000000);
+				const FT big_value   = FT(1000000000000);
 
 				FT minx =  big_value, miny =  big_value;
 				FT maxx = -big_value, maxy = -big_value;
@@ -97,6 +97,32 @@ namespace CGAL {
           			(bbmax.x() - bbmin.x()) * (bbmax.x() - bbmin.x()) +
           			(bbmax.y() - bbmin.y()) * (bbmax.y() - bbmin.y())
           		)));
+			}
+
+
+			//////////////////////////////////
+			// Bounding box in 3D.
+			void compute_bounding_box_in_3d(Point_3 &bbmin, Point_3 &bbmax, const std::vector<Point_3> &points) const {
+
+				const FT big_value = FT(1000000000000);
+
+				FT minx =  big_value, miny =  big_value, minz =  big_value;
+				FT maxx = -big_value, maxy = -big_value, maxz = -big_value;
+
+				for (size_t i = 0; i < points.size(); ++i) {
+					const Point_3 &point = points[i];
+
+					minx = CGAL::min(minx, point.x());
+					miny = CGAL::min(miny, point.y());
+					minz = CGAL::min(minz, point.z());
+
+					maxx = CGAL::max(maxx, point.x());
+					maxy = CGAL::max(maxy, point.y());
+					maxz = CGAL::max(maxz, point.z());
+				}
+
+				bbmin = Point_3(minx, miny, minz);
+				bbmax = Point_3(maxx, maxy, maxz);
 			}
 
 

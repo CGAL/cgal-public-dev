@@ -161,6 +161,9 @@ namespace CGAL {
 			std::vector< std::vector<Facet_handle> > m_roofs_faces, m_walls_faces;
 
 
+
+
+
 			// EXTRA CODE!
 
 			void build_lod1_roofs(Builder &builder) {
@@ -171,14 +174,10 @@ namespace CGAL {
 				size_t num_roofs 	 = 0;
 				size_t index_counter = 0;
 
-				const size_t num_buildings = m_buildings.size();
-
 				m_roofs_faces.clear();
-				m_roofs_faces.resize(num_buildings);
-
-				size_t building_index = 0;
 				builder.begin_surface(expected_num_vertices, expected_num_faces);
-				for (Building_iterator bit = m_buildings.begin(); bit != m_buildings.end(); ++bit, ++building_index) {
+
+				for (Building_iterator bit = m_buildings.begin(); bit != m_buildings.end(); ++bit) {
 				
 					const auto &building = (*bit).second;
 					if (!is_valid_building(building)) continue;
@@ -192,11 +191,14 @@ namespace CGAL {
 					++num_roofs;
 	
 					const auto &faces = building.faces;
-					add_horizontal_triangulation_custom(faces, height, builder, index_counter, m_roofs_faces[building_index]);
+
+					std::vector<Facet_handle> found_faces;
+					add_horizontal_triangulation_custom(faces, height, builder, index_counter, found_faces);
+					m_roofs_faces.push_back(found_faces);
 				}
 				
 				builder.end_surface();
-				assert(m_num_roofs == static_cast<int>(num_roofs));
+				m_num_roofs = static_cast<int>(num_roofs);
 			}
 
 			template<class FaceHandlesTmp>
@@ -255,15 +257,11 @@ namespace CGAL {
 
 				size_t num_walls 	 = 0;
 				size_t index_counter = 0;
-
-				const size_t num_buildings = m_buildings.size();
 				
 				m_walls_faces.clear();
-				m_walls_faces.resize(num_buildings);
-
-				size_t building_index = 0;
 				builder.begin_surface(expected_num_vertices, expected_num_faces);
-				for (Building_iterator bit = m_buildings.begin(); bit != m_buildings.end(); ++bit, ++building_index) {
+
+				for (Building_iterator bit = m_buildings.begin(); bit != m_buildings.end(); ++bit) {
 				
 					const auto &building = (*bit).second;
 					if (!is_valid_building(building)) continue;
@@ -278,11 +276,14 @@ namespace CGAL {
 					assert(building.boundaries.size() > 0);
 
 					const auto &boundary = building.boundaries[0];
-					add_walls_from_unoriented_boundary_custom(boundary, FT(0), height, builder, num_walls, index_counter, m_walls_faces[building_index]);
+					
+					std::vector<Facet_handle> found_faces;
+					add_walls_from_unoriented_boundary_custom(boundary, FT(0), height, builder, num_walls, index_counter, found_faces);
+					m_walls_faces.push_back(found_faces);
 				}
 
 				builder.end_surface();
-				assert(m_num_walls == static_cast<int>(num_walls));
+				m_num_walls = static_cast<int>(num_walls);
 			}
 
 			template<class BoundaryTmp>
@@ -315,7 +316,8 @@ namespace CGAL {
 				const Point c = Point(vb.x(), vb.y(), height_roof);
 				const Point d = Point(va.x(), va.y(), height_roof);
 
-				add_quad_custom(a, b, c, d, builder, index_counter, faces);
+				add_triangle_custom(a, b, c, builder, index_counter, faces);
+				add_triangle_custom(c, d, a, builder, index_counter, faces);
 			}
 
 			void add_quad_custom(
@@ -337,7 +339,6 @@ namespace CGAL {
 		        builder.end_facet();
 		        faces.push_back(fh);
 			}
-
 
 
 

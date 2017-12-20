@@ -70,9 +70,9 @@ namespace CGAL {
 
 			typedef Planes Boundary_data;
 
-			typedef typename Traits::Structuring_2 	  Structuring_2;
-			typedef typename Traits::Visibility_2  	  Visibility_2;
-			typedef typename Traits::Region_growing_2 Region_growing_2;
+			typedef typename Traits::Structuring_2 	Structuring_2;
+			typedef typename Traits::Visibility_2  	Visibility_2;
+			typedef typename Traits::Region_growing Region_growing;
 			
 			typedef typename Traits::Utils Utils;
 			
@@ -363,7 +363,7 @@ namespace CGAL {
 				m_structuring_global_everywhere = false; // better to have false, since in this case, I use global adjacency graph and global corner insertion consistently
 				m_structuring_adjacency_value   = 5.0;   // closest distance between two segments for adjacency graph, probably can be removed
 
-				m_visibility_num_samples = 2;     // number of subdivision steps when sampling triangles, 1 or 2 is enough
+				m_visibility_num_samples = 1;     // number of subdivision steps when sampling triangles, 1 or 2 is enough
 				m_add_cdt_clutter 		 = false; // better to avoid clutter since it will pollute the final CDT
 
 				m_visibility_approach  = Visibility_approach::FACE_BASED; 				   // face based is, in general, a better but slower option
@@ -972,16 +972,18 @@ namespace CGAL {
 				// LOD1 quality estimation.
 				std::cout << "(" << exec_step << ") estimating quality of lod1" << std::endl;
 
+				std::cout << std::endl << "quality: " << std::endl;
+
 				m_lod_complexity = std::make_shared<Lod_complexity>(input, m_lods);
 				m_lod_complexity->estimate();
 				m_complexity = m_lod_complexity->get();
+
+				std::cout << "complexity = " << m_complexity << " elements." << std::endl;
 
 				m_lod_distortion = std::make_shared<Lod_distortion>(input, m_lods);
 				m_lod_distortion->estimate();
 				m_distortion = m_lod_distortion->get();
 
-				std::cout << std::endl << "quality: " << std::endl;
-				std::cout << "complexity = " << m_complexity << " elements." << std::endl;
 				std::cout << "distortion = " << m_distortion << " meters." << std::endl << std::endl;
 
 				log.out << "(" << exec_step << ") LOD1 quality is estimated." << std::endl << std::endl;
@@ -1148,7 +1150,7 @@ namespace CGAL {
 			Ground_projector 	 m_ground_projector;
 			Visibility_2 		 m_visibility;
 			Utils 		 		 m_utils;
-			Region_growing_2 	 m_region_growing;
+			Region_growing   	 m_region_growing;
 			
 			Graph_cut m_graph_cut;
 			Lods m_lods;
