@@ -727,7 +727,7 @@ namespace CGAL {
 
 				// Plot errors.
 				// const std::string name = "tmp" + std::string(PS) + "plots" + std::string(PS) + "errors_" + std::to_string(return_global_index());
-				// Log log; log.plot_2d<FT, Point_2>(name, errors);
+				// Log log; log.plot_2d(name, errors);
 
 				// Add other methods here!
 

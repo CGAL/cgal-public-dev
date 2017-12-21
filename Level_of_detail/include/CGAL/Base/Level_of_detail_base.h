@@ -292,6 +292,21 @@ namespace CGAL {
 				return m_lod_distortion;
 			}
 
+			FT get_scale() const {
+				return m_imp_scale;
+			}
+
+			void set_scale(const FT new_scale) {
+				assert(new_scale > FT(0));
+
+				m_imp_scale = new_scale;
+				set_automatically_defined_options();
+			}
+
+			void estimate_parameters(const bool new_state) {
+				m_estimate_parameters = new_state;
+			}
+
 
 			//////////////////
 			// Main functions!
@@ -361,7 +376,7 @@ namespace CGAL {
 				m_structuring_global_everywhere = false; // better to have false, since in this case, I use global adjacency graph and global corner insertion consistently
 				m_structuring_adjacency_value   = 5.0;   // closest distance between two segments for adjacency graph, probably can be removed
 
-				m_visibility_num_samples = 1;     // number of subdivision steps when sampling triangles, 1 or 2 is enough
+				m_visibility_num_samples = 2;     // number of subdivision steps when sampling triangles, 1 or 2 is enough
 				m_add_cdt_clutter 		 = false; // better to avoid clutter since it will pollute the final CDT
 
 				m_visibility_approach  = Visibility_approach::FACE_BASED; 				   // face based is, in general, a better but slower option

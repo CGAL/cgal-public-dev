@@ -27,6 +27,7 @@
 #include <CGAL/Selector/Level_of_detail_selector.h>
 #include <CGAL/Selector/Level_of_detail_selection_strategy.h>
 #include <CGAL/Utils/Level_of_detail_utils_simple.h>
+#include <CGAL/Level_of_detail_enum.h>
 
 namespace CGAL {
 
@@ -72,8 +73,6 @@ namespace CGAL {
 			using Log = CGAL::LOD::Mylog;
 
 			typedef CGAL::LOD::Level_of_detail_utils_simple<Kernel> Simple_utils;
-			
-			enum class Fitting_type { MIN, AVG, MAX };
 			struct Bounding_box { Point_3 bbmin, bbmax; };
 
 			using Bounding_boxes = std::vector<Bounding_box>;
@@ -100,7 +99,7 @@ namespace CGAL {
 				compute_metrics(roofs_mesh, roofs_translated_points, walls_mesh, walls_translated_points);
 			}
 
-			FT get(const Fitting_type type = Fitting_type::AVG) {
+			FT get(const Distortion_fitting_type type = Distortion_fitting_type::AVG) {
 
 				m_distortion = fit_data(type);
 
@@ -448,16 +447,16 @@ namespace CGAL {
 				}
 			}
 
-			FT fit_data(const Fitting_type type) const {
+			FT fit_data(const Distortion_fitting_type type) const {
 
 				switch (type) {
-					case Fitting_type::MIN:
+					case Distortion_fitting_type::MIN:
 						return get_min_from_data();
 
-					case Fitting_type::AVG:
+					case Distortion_fitting_type::AVG:
 						return get_avg_from_data();
 
-					case Fitting_type::MAX:
+					case Distortion_fitting_type::MAX:
 						return get_max_from_data();
 
 					default:

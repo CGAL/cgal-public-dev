@@ -36,7 +36,7 @@ namespace CGAL {
 		class Mylog {
 
 		private:
-			CGAL::Random m_rand;
+			Random m_rand;
 			const std::string m_prefix_path;
 
 		public:
@@ -662,18 +662,18 @@ namespace CGAL {
 				save(name, ".ply");
 			}
 
-			CGAL::Color get_dimension_color(const size_t dimension) {
+			Color get_dimension_color(const size_t dimension) {
 				switch (dimension) {
 
 					case 0:
-						return CGAL::Color(255, 0, 0);
+						return Color(255, 0, 0);
 					case 1:
-						return CGAL::Color(0, 255, 0);
+						return Color(0, 255, 0);
 					case 2:
-						return CGAL::Color(0, 0, 255);
+						return Color(0, 0, 255);
 
 					default:
-						return CGAL::Color(105, 105, 105);
+						return Color(105, 105, 105);
 				}
 			}
 
@@ -702,24 +702,24 @@ namespace CGAL {
 				save(name, ".ply");
 			}
 
-			CGAL::Color get_cluster_color(const size_t num_clusters) {
+			Color get_cluster_color(const size_t num_clusters) {
 				switch (num_clusters) {
 
 					case 0:
-						return CGAL::Color(  0, 255,   0); // green
+						return Color(  0, 255,   0); // green
 					case 1:
-						return CGAL::Color( 30, 144, 255); // light blue
+						return Color( 30, 144, 255); // light blue
 					case 2:
-						return CGAL::Color(220,  20,  60); // light red
+						return Color(220,  20,  60); // light red
 					case 3:
-						return CGAL::Color(128,   0,   0); // dark red
+						return Color(128,   0,   0); // dark red
 					case 4:
-						return CGAL::Color(128,   0, 128); // purple
+						return Color(128,   0, 128); // purple
 					case 5:
-						return CGAL::Color(  0,   0,   0); // black
+						return Color(  0,   0,   0); // black
 
 					default:
-						return CGAL::Color(105, 105, 105);
+						return Color(105, 105, 105);
 				}
 			}
 
@@ -750,14 +750,41 @@ namespace CGAL {
 				save(name, ".ply");
 			}
 
-			template<class FT, class Point>
-			void plot_2d(const std::string &name, const std::vector<FT> &data) {
+			template<class FT>
+			void save_quality_data(const std::string &name, const std::vector<FT> &x, const std::vector< std::vector<FT> > &y) {
+				
+				assert(!y.empty() && !y[0].empty() && colors.size() == y.size());
+				clear();
 
+				for (size_t i = 0; i < x.size(); ++i) {
+					out << x[i] << " ";
+					
+					for (size_t j = 0; j < y.size(); ++j) out << y[j][i] << " ";
+					out << std::endl;
+				}
+
+				save(name, ".dt");
+			}
+
+			template<class FT>
+			void plot_2d(const std::string &name, const std::vector<FT> &x, const std::vector< std::vector<FT> > &y, const std::vector<Color> &colors) {
+				
+				assert(!y.empty() && !y[0].empty() && colors.size() == y.size());
 				clear();
 
 		        // Compute bounding box.
-		        double minbX, minbY, maxbX, maxbY;
-		        bounding_box(data, minbX, minbY, maxbX, maxbY);
+		        double minbX = x[0], minbY = y[0][0], maxbX = x[x.size() - 1], maxbY = y[0][y[0].size() - 1];
+				for (size_t i = 1; i < y.size(); ++i) {
+					
+					minbY = CGAL::min(minbY, y[i][0]);
+					maxbY = CGAL::max(maxbY, y[i][y[i].size() - 1]);
+				}
+
+				const double extraX = (maxbX - minbX) / 10.0;
+				const double extraY = (maxbY - minbY) / 10.0;
+
+				minbX -= extraX; minbY -= extraY;
+				maxbX += extraX; maxbY += extraY;
 
 		        // Compute scale.
 		        double scale = 1.0;
@@ -770,7 +797,42 @@ namespace CGAL {
 		        out << "0 dict begin gsave" + std::string(PN) + "" + std::string(PN) + "";
 
 		        // Save plot.
-		        draw_plot<FT, Point>(data, scale);
+				for (size_t i = 0; i < y.size(); ++i)
+		        	draw_plot(x, y[i], scale, colors[i]);
+
+		        // Finish private namespace.
+		        out << "grestore end" + std::string(PN) + "" + std::string(PN) + "";
+		        out << "%%EOF" + std::string(PN) + "";
+
+		        save(name, ".eps");
+			}
+
+			template<class FT>
+			void plot_2d(const std::string &name, const std::vector<FT> &y) {
+
+				clear();
+
+				// Set x coordinates.
+				std::vector<FT> x(y.size());
+				for (size_t i = 0; i < y.size(); ++i)
+    				x[i] = static_cast<double>(i);
+
+		        // Compute bounding box.
+		        double minbX, minbY, maxbX, maxbY;
+		        bounding_box(y, minbX, minbY, maxbX, maxbY);
+
+		        // Compute scale.
+		        double scale = 1.0;
+		        if (CGAL::sqrt((maxbX - minbX) * (maxbX - minbX) + (maxbY - minbY) * (maxbY - minbY)) < 10.0 && scale == 1.0) scale *= 1000.0;
+
+		        // Set header.
+		        set_header(minbX * scale, minbY * scale, maxbX * scale, maxbY * scale);
+
+		        // Start private namespace.
+		        out << "0 dict begin gsave" + std::string(PN) + "" + std::string(PN) + "";
+
+		        // Save plot.
+		        draw_plot(x, y, scale);
 
 		        // Finish private namespace.
 		        out << "grestore end" + std::string(PN) + "" + std::string(PN) + "";
@@ -825,7 +887,7 @@ namespace CGAL {
 				save(name, ".ply");
 			}
 
-			CGAL::Color generate_random_color() {
+			Color generate_random_color() {
 
 				const int r = m_rand.get_int(0, 256);
 				const int g = m_rand.get_int(0, 256);
@@ -1066,17 +1128,18 @@ namespace CGAL {
     			out << "stroke" + std::string(PN) + "" + std::string(PN) + "";
     		}
 
-    		template<class FT, class Point>
-    		void draw_plot(const std::vector<FT> &data, const double scale) {
+    		template<class FT>
+    		void draw_plot(const std::vector<FT> &x, const std::vector<FT> &y, const double scale, const Color &color = Color(1, 0, 0)) {
+				assert(x.size() == y.size());
 
     			double x1, y1, x2, y2, miny = 100000000.0;
-    			for (size_t i = 0; i < data.size() - 1; ++i) {
+    			for (size_t i = 0; i < x.size() - 1; ++i) {
 
-    				x1 = static_cast<double>(i); 
-    				y1 = static_cast<double>(data[i]);
+    				x1 = static_cast<double>(x[i]); 
+    				y1 = static_cast<double>(y[i]);
 
-    				x2 = static_cast<double>(i + 1); 
-    				y2 = static_cast<double>(data[i + 1]);
+    				x2 = static_cast<double>(x[i + 1]); 
+    				y2 = static_cast<double>(y[i + 1]);
 
     				out << x1 * scale << " " << y1 * scale << " moveto" + std::string(PN) + "";
     				out << x2 * scale << " " << y2 * scale << " lineto" + std::string(PN) + "";
@@ -1085,14 +1148,14 @@ namespace CGAL {
     				miny = CGAL::min(miny, y2);
     			}
 
-    			out << "1 0 0 setrgbcolor" + std::string(PN) + "";
+    			out << color.r() / 255.0 << " " << color.g() / 255.0 << " " << color.b() / 255.0 << " setrgbcolor" + std::string(PN) + "";
     			out << "10 setlinewidth" + std::string(PN) + "";
     			out << "stroke" + std::string(PN) + "" + std::string(PN) + "";
 
-    			for (size_t i = 0; i < data.size() - 1; ++i) {
+    			for (size_t i = 0; i < x.size() - 1; ++i) {
 
-    				x1 = static_cast<double>(i); 
-    				x2 = static_cast<double>(i + 1); 
+    				x1 = static_cast<double>(x[i]); 
+    				x2 = static_cast<double>(x[i + 1]); 
 
 					out << x1 * scale << " " << miny * scale << " moveto" + std::string(PN) + "";
     				out << x2 * scale << " " << miny * scale << " lineto" + std::string(PN) + "";  				
@@ -1102,10 +1165,10 @@ namespace CGAL {
     			out << "10 setlinewidth" + std::string(PN) + "";
     			out << "stroke" + std::string(PN) + "" + std::string(PN) + "";
 
-    			for (size_t i = 0; i < data.size() - 1; ++i) {
+    			for (size_t i = 0; i < y.size() - 1; ++i) {
 
-    				y1 = static_cast<double>(data[i]); 
-    				y2 = static_cast<double>(data[i + 1]); 
+    				y1 = static_cast<double>(y[i]); 
+    				y2 = static_cast<double>(y[i + 1]); 
 
 					out << 0.0 * scale << " " << y1 * scale << " moveto" + std::string(PN) + "";
     				out << 0.0 * scale << " " << y2 * scale << " lineto" + std::string(PN) + "";  				
@@ -1115,15 +1178,16 @@ namespace CGAL {
     			out << "10 setlinewidth" + std::string(PN) + "";
     			out << "stroke" + std::string(PN) + "" + std::string(PN) + "";
 
+				/*
     			FT x, y; Point p;
-    			for (size_t i = 0; i < data.size(); ++i) {
+    			for (size_t i = 0; i < y.size(); ++i) {
     				
-    				x = static_cast<FT>(i);
-    				y = static_cast<FT>(data[i]);
+    				x = static_cast<FT>(x[i]);
+    				y = static_cast<FT>(y[i]);
 
     				p = Point(x, y);
     				draw_disc(p, scale);
-    			}
+    			} */
     		}
 		};
 	}
