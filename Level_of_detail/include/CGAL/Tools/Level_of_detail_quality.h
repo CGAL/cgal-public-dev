@@ -70,6 +70,10 @@ namespace CGAL {
 						assert(!m_max_y_data.empty());
 						return m_max_y_data;
 
+					case Distortion_fitting_type::CMP:
+						assert(!m_cmp_y_data.empty());
+						return m_cmp_y_data;
+
 					default:
 						assert(!"Wrong fitting type!");
 						return m_avg_y_data;
@@ -81,7 +85,7 @@ namespace CGAL {
 			Lod_base m_lod_base;
 
 			Data m_x_data;
-			Data m_min_y_data, m_avg_y_data, m_max_y_data;
+			Data m_min_y_data, m_avg_y_data, m_max_y_data, m_cmp_y_data;
 
 			const bool m_debug;
 			
@@ -124,6 +128,7 @@ namespace CGAL {
 					m_min_y_data[i] = m_x_data[i] / FT(8);
 					m_avg_y_data[i] = m_x_data[i] * m_x_data[i];
 					m_max_y_data[i] = m_x_data[i] * FT(8) / FT(7);
+					m_cmp_y_data[i] = m_x_data[i] * FT(0);
 				}
 			}
 
@@ -141,8 +146,8 @@ namespace CGAL {
 				m_x_data.clear();
 				m_x_data.resize(size);
 
-				m_min_y_data.clear(); m_avg_y_data.clear(); m_max_y_data.clear();
-				m_min_y_data.resize(m_x_data.size()); m_avg_y_data.resize(m_x_data.size()); m_max_y_data.resize(m_x_data.size());
+				m_min_y_data.clear(); m_avg_y_data.clear(); m_max_y_data.clear(); m_cmp_y_data.clear();
+				m_min_y_data.resize(m_x_data.size()); m_avg_y_data.resize(m_x_data.size()); m_max_y_data.resize(m_x_data.size()); m_cmp_y_data.resize(m_x_data.size());
 			}
 
 			void compute_initial_x_data(const FT init_x) {
@@ -158,16 +163,15 @@ namespace CGAL {
 
 				count = FT(1);
 				for (size_t i = m_num_runs + 1; i < m_num_runs * 2 + 1; ++i, count += FT(1)) m_x_data[i] = init_x + h * count;
-
 				if (m_debug) for (size_t i = 0; i < m_x_data.size(); ++i) std::cout << m_x_data[i] << std::endl;
 			}
 
 			void compute_final_data() {
 
-				Data tmp_data(m_x_data.size());
+				// Data tmp_data(m_x_data.size());
 				for (size_t i = 0; i < m_x_data.size(); ++i)
-					tmp_data[i] = compute_complexity_and_distortion(i, m_x_data[i]);
-				m_x_data = tmp_data;
+					/* tmp_data[i] = */ compute_complexity_and_distortion(i, m_x_data[i]);
+				// m_x_data = tmp_data;
 			}
 
 			FT compute_complexity_and_distortion(const size_t index, const FT scale) {
@@ -187,8 +191,9 @@ namespace CGAL {
 				m_min_y_data[index] = min_distortion;
 				m_avg_y_data[index] = avg_distortion;
 				m_max_y_data[index] = max_distortion;
+				m_cmp_y_data[index] = complexity;
 
-				return complexity;
+				return scale;
 			}
 		};
 	}

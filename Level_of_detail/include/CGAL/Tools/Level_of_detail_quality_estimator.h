@@ -49,16 +49,19 @@ namespace CGAL {
 				const Data &min_y = m_lod_quality.retreive_y_data(Distortion_fitting_type::MIN);
 				const Data &avg_y = m_lod_quality.retreive_y_data(Distortion_fitting_type::AVG);
 				const Data &max_y = m_lod_quality.retreive_y_data(Distortion_fitting_type::MAX);
+				const Data &cmp_y = m_lod_quality.retreive_y_data(Distortion_fitting_type::CMP);
 
-				std::vector<Data> data(3);
+				std::vector<Data> data(4);
 				data[0] = min_y;
 				data[1] = avg_y;
 				data[2] = max_y;
+				data[3] = cmp_y;
 
-				std::vector<Color> colors(3);
+				std::vector<Color> colors(4);
 				colors[0] = Color(255, 153, 153);
 				colors[1] = Color(255, 80, 80);
 				colors[2] = Color(128, 0, 0);
+				colors[3] = Color(0, 0, 0);
 
 				if (m_debug) {
 					Log plotter;

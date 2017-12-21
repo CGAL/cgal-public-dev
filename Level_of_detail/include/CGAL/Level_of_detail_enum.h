@@ -184,7 +184,8 @@ namespace CGAL {
 		enum class Distortion_fitting_type { 	
 			MIN, 
 			AVG, 
-			MAX 
+			MAX,
+			CMP
 		};
 
 	} // LOD
