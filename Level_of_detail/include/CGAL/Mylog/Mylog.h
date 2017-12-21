@@ -753,7 +753,7 @@ namespace CGAL {
 			template<class FT>
 			void save_quality_data(const std::string &name, const std::vector<FT> &x, const std::vector< std::vector<FT> > &y) {
 				
-				assert(!y.empty() && !y[0].empty() && colors.size() == y.size());
+				assert(!y.empty() && !y[0].empty());
 				clear();
 
 				for (size_t i = 0; i < x.size(); ++i) {
