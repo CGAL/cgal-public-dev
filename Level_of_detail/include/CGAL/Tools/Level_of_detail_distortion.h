@@ -14,6 +14,8 @@
 #include <cassert>
 #include <iostream>
 
+#define BOOST_VERSION 104500
+
 // CGAL includes.
 #include <CGAL/number_utils.h>
 #include <CGAL/AABB_face_graph_triangle_primitive.h>

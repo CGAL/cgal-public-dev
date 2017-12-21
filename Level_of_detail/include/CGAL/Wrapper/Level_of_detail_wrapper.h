@@ -10,8 +10,7 @@
 
 // CGAL new includes.
 #include <CGAL/Level_of_detail_enum.h>
-#include <CGAL/Level_of_detail_traits.h>
-#include <CGAL/Tools/Level_of_detail_tools.h>
+#include <CGAL/Tools/Level_of_detail_parameters.h>
 #include <CGAL/Base/Level_of_detail_base.h>
 
 namespace CGAL {

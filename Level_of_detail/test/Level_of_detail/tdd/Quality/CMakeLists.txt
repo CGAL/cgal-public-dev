@@ -1,4 +1,4 @@
-project(lod)
+project(quality)
 cmake_minimum_required(VERSION 2.6)
 
 find_package(CGAL REQUIRED)
@@ -11,7 +11,7 @@ if (CGAL_FOUND)
 	set(CMAKE_CXX_FLAGS "${CMAXE_CXX_FLAGS} -pedantic -Wall -Wextra -Weffc++ -Wno-vla-extension -Wc++11-extensions -Werror -Wno-macro-redefined")
 
 	set(sources main.cpp)
-	add_executable(lod ${sources})
+	add_executable(quality ${sources})
 
 else()
 	message(STATUS "This program requires the CGAL library and will not be compiled!")

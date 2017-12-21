@@ -106,7 +106,6 @@ namespace CGAL {
 
 			typedef typename Traits::Lod_complexity Lod_complexity;
 			typedef typename Traits::Lod_distortion Lod_distortion;
-			typedef typename Traits::Lod_quality 	Lod_quality;
 
 
 			// Extra typedefs.
@@ -198,7 +197,6 @@ namespace CGAL {
 			m_imp_scale(-FT(1)),
 			m_estimate_parameters(false),
 			m_estimate_quality(false),
-			m_plot_quality(false),
 			m_complexity(-FT(1)),
 			m_distortion(-FT(1))
 			{ }
@@ -266,7 +264,7 @@ namespace CGAL {
 			void set_default_parameters() {
 				
 				set_optimal_configuration();
-				m_default_path = "/Users/danisimo/Documents/pipeline/data/paris_test/data_region_growing_eth.ply";
+				m_default_path = "/Users/danisimo/Documents/pipeline/data/clean/paris_different/paris_half_tile.ply";
 			}
 
 
@@ -413,7 +411,6 @@ namespace CGAL {
 				add_bool_parameter("-silent"      , m_silent 			 , m_parameters);
 				add_bool_parameter("-auto_params" , m_estimate_parameters, m_parameters);
 				add_bool_parameter("-quality"	  , m_estimate_quality   , m_parameters);
-				add_bool_parameter("-plot_quality", m_plot_quality   	 , m_parameters);
 
 
 				// Important.
@@ -1001,14 +998,6 @@ namespace CGAL {
 				if (!m_silent) log.save(filename);
 			}
 
-			void plotting_lod1_quality() {
-				std::cout << "EXTRA: plotting quality of lod1..." << std::endl << std::endl;
-
-				// to be implemented!
-
-				std::cout << "...FINISHED!" << std::endl << std::endl;
-			}
-
 		public:
 
 			// Version 0.
@@ -1021,10 +1010,6 @@ namespace CGAL {
 				timer.stop();
 
 				std::cout << "Running time: " << timer.time() << " seconds." << std::endl << std::endl << std::endl;
-
-
-				// Extra options!
-				if (m_plot_quality) plotting_lod1_quality();
 			}
 
 			void run_pipeline_ver0() {
@@ -1127,7 +1112,7 @@ namespace CGAL {
 				creating_lod1(log, cdt, buildings, ground_bbox, ++exec_step);
 
 
-				// (extra) ----------------------------------
+				// (20) ----------------------------------
 				if (m_estimate_quality) estimating_lod1_quality(log, input, ++exec_step);
 
 
@@ -1254,7 +1239,6 @@ namespace CGAL {
 
 			bool m_estimate_parameters;
 			bool m_estimate_quality;
-			bool m_plot_quality;
 
 			Parameters m_parameters;
 
@@ -1321,4 +1305,4 @@ namespace CGAL {
 	}
 }
 
-#endif // CGAL_LEVEL_OF_DETAIL_BASE_H	
+#endif // CGAL_LEVEL_OF_DETAIL_BASE_H
