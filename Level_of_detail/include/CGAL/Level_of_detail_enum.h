@@ -180,12 +180,17 @@ namespace CGAL {
 			LOCAL      // estimate normals using PCA
 		};
 
-		// Distortion fitting data type.
-		enum class Distortion_fitting_type { 	
-			MIN, 
-			AVG, 
-			MAX,
-			CMP
+		// Quality data type.
+		enum class Quality_data_type { 	
+			DST_MIN, // distortion types
+			DST_AVG, 
+			DST_MAX,
+			DST_ROOFS,
+			DST_WALLS,
+			CMP_ROOFS, // complexity metric
+			CMP_WALLS,
+			CMP,
+			COV // coverage metric
 		};
 
 	} // LOD

@@ -34,7 +34,10 @@ namespace CGAL {
 
 			typedef typename Lod_parameters::Input_parameters Parameters;
 			
-			Level_of_detail_quality(const int num_params, const Params params) : m_num_runs(0), m_debug(false) { 
+			Level_of_detail_quality(const int num_params, const Params params) : 
+			m_left_iters(10), m_right_iters(10),
+			m_left_bound(FT(1)), m_right_bound(FT(10)),
+			m_debug(true) {
 
 				Lod_parameters lod_parameters(num_params, params);
 
@@ -42,12 +45,16 @@ namespace CGAL {
 				m_lod_base.set_user_defined_parameters(lod_parameters);
 
 				m_lod_base.create_lods();
-				update_number_of_runs(lod_parameters);
+				set_quality_parameters(lod_parameters);
 			}
 
-			void compute_xy_data(const bool test = false) {
-				if (test) compute_test_data();
-				else compute_data();
+			void compute_data() {
+				
+				clear();
+				const FT initial_x = m_lod_base.get_scale();
+				
+				compute_x_data(initial_x);
+				compute_y_data();
 			}
 
 			const Data &retreive_x_data() const {
@@ -55,50 +62,58 @@ namespace CGAL {
 				return m_x_data;
 			}
 
-			const Data &retreive_y_data(const Distortion_fitting_type type) const {
+			const Data &retreive_y_data(const Quality_data_type quality_data_type) const {
 				
-				switch (type) {
-					case Distortion_fitting_type::MIN:
-						assert(!m_min_y_data.empty());
-						return m_min_y_data;
+				switch (quality_data_type) {
 
-					case Distortion_fitting_type::AVG:
-						assert(!m_avg_y_data.empty());
-						return m_avg_y_data;
+					case Quality_data_type::CMP_ROOFS:
+						assert(!m_cmp_roofs_y_data.empty());
+						return m_cmp_roofs_y_data;
 
-					case Distortion_fitting_type::MAX:
-						assert(!m_max_y_data.empty());
-						return m_max_y_data;
+					case Quality_data_type::CMP_WALLS:
+						assert(!m_cmp_walls_y_data.empty());
+						return m_cmp_walls_y_data;
 
-					case Distortion_fitting_type::CMP:
-						assert(!m_cmp_y_data.empty());
-						return m_cmp_y_data;
+					case Quality_data_type::DST_ROOFS:
+						assert(!m_dst_roofs_y_data.empty());
+						return m_dst_roofs_y_data;
+
+					case Quality_data_type::DST_WALLS:
+						assert(!m_dst_walls_y_data.empty());
+						return m_dst_walls_y_data;
 
 					default:
-						assert(!"Wrong fitting type!");
-						return m_avg_y_data;
+						assert(!"Wrong quality data type!"); exit(EXIT_FAILURE);
+						return m_cmp_roofs_y_data;
 				}
 			}
 
 		private:
-			size_t m_num_runs;
+			size_t m_left_iters, m_right_iters;
+			FT m_left_bound, m_right_bound;
+
+			const bool m_debug;
 			Lod_base m_lod_base;
 
 			Data m_x_data;
-			Data m_min_y_data, m_avg_y_data, m_max_y_data, m_cmp_y_data;
-
-			const bool m_debug;
+			Data m_cmp_roofs_y_data, m_cmp_walls_y_data;
+			Data m_dst_roofs_y_data, m_dst_walls_y_data;
 			
 			std::shared_ptr<Lod_complexity> m_lod_complexity;
 			std::shared_ptr<Lod_distortion> m_lod_distortion;
 
-			void update_number_of_runs(const Lod_parameters &lod_parameters) {
+			void set_quality_parameters(const Lod_parameters &lod_parameters) {
 				const Parameters &parameters = lod_parameters.get();
-				add_val_parameter("-num_runs", m_num_runs, parameters);
+
+				add_scalar_parameter("-left_iters" , m_left_iters , parameters);
+				add_scalar_parameter("-right_iters", m_right_iters, parameters);
+
+				add_scalar_parameter("-left_bound" , m_left_bound , parameters);
+				add_scalar_parameter("-right_bound", m_right_bound, parameters);
 			}
 
 			template<typename Scalar>
-			void add_val_parameter(const std::string &parameter_name, Scalar &variable_value, const Parameters &parameters) {
+			void add_scalar_parameter(const std::string &parameter_name, Scalar &variable_value, const Parameters &parameters) {
 				
 				if (!does_parameter_exist(parameter_name, parameters)) return;
 				const std::string parameter_value = parameters.at(parameter_name);
@@ -117,83 +132,103 @@ namespace CGAL {
 				return false;
 			}
 
-			void compute_test_data() {
-
-				const size_t size = 1000;
-				clear_and_resize(size);
-
-				for (size_t i = 0; i < m_x_data.size(); ++i) {
-					
-					m_x_data[i] = static_cast<FT>(i) / static_cast<FT>(m_x_data.size());
-					m_min_y_data[i] = m_x_data[i] / FT(8);
-					m_avg_y_data[i] = m_x_data[i] * m_x_data[i];
-					m_max_y_data[i] = m_x_data[i] * FT(8) / FT(7);
-					m_cmp_y_data[i] = m_x_data[i] * FT(0);
-				}
-			}
-
-			void compute_data() {
+			void clear() {
 				
-				const size_t size = m_num_runs * 2 + 1;
-				clear_and_resize(size);
-
-				const FT init_x = m_lod_base.get_scale();
-				compute_initial_x_data(init_x);
-				compute_final_data();
-			}
-
-			void clear_and_resize(const size_t size) {
 				m_x_data.clear();
-				m_x_data.resize(size);
+				
+				m_cmp_roofs_y_data.clear();
+				m_cmp_walls_y_data.clear();
 
-				m_min_y_data.clear(); m_avg_y_data.clear(); m_max_y_data.clear(); m_cmp_y_data.clear();
-				m_min_y_data.resize(m_x_data.size()); m_avg_y_data.resize(m_x_data.size()); m_max_y_data.resize(m_x_data.size()); m_cmp_y_data.resize(m_x_data.size());
+				m_dst_roofs_y_data.clear();
+				m_dst_walls_y_data.clear();
 			}
 
-			void compute_initial_x_data(const FT init_x) {
+			void compute_x_data(const FT initial_x) {
 				
-				assert(init_x > FT(0));
-				assert(!m_x_data.empty());
+				assert(initial_x > FT(0));
+				assert(m_x_data.empty());
 
-				const FT h = init_x / (static_cast<FT>(m_num_runs) * FT(2));
+				compute_left_x_data(initial_x);
+				compute_right_x_data(initial_x);
 
-				FT count = static_cast<FT>(m_num_runs);
-				for (size_t i = 0; i < m_num_runs; ++i, count -= FT(1)) m_x_data[i] = init_x - h * count;
-				m_x_data[m_num_runs] = init_x;
-
-				count = FT(1);
-				for (size_t i = m_num_runs + 1; i < m_num_runs * 2 + 1; ++i, count += FT(1)) m_x_data[i] = init_x + h * count;
 				if (m_debug) for (size_t i = 0; i < m_x_data.size(); ++i) std::cout << m_x_data[i] << std::endl;
 			}
 
-			void compute_final_data() {
+			void compute_left_x_data(const FT initial_x) {
+				
+				assert(initial_x > m_left_bound);
+				assert(m_left_iters > 0);
 
-				// Data tmp_data(m_x_data.size());
-				for (size_t i = 0; i < m_x_data.size(); ++i)
-					/* tmp_data[i] = */ compute_complexity_and_distortion(i, m_x_data[i]);
-				// m_x_data = tmp_data;
+				const FT left_length = initial_x - m_left_bound;
+				const FT h = left_length / static_cast<FT>(m_left_iters);
+
+				FT count = static_cast<FT>(m_left_iters);
+				for (size_t i = 0; i < m_left_iters; ++i, count -= FT(1)) m_x_data.push_back(initial_x - h * count);
+				m_x_data.push_back(initial_x);
 			}
 
-			FT compute_complexity_and_distortion(const size_t index, const FT scale) {
+			void compute_right_x_data(const FT initial_x) {
 
+				assert(m_right_bound > initial_x);
+				assert(m_right_iters > 0);
+
+				const FT right_length = m_right_bound - initial_x;
+				const FT h = right_length / static_cast<FT>(m_right_iters);
+
+				FT count = FT(1);
+				for (size_t i = 0; i < m_right_iters; ++i, count += FT(1)) m_x_data.push_back(initial_x + h * count);
+			}
+
+			void compute_y_data() {
+
+				assert(!m_x_data.empty());
+				for (size_t i = 0; i < m_x_data.size(); ++i) {
+					compute_lod_data(m_x_data[i]);				
+					
+					set_cpm_y_data();
+					set_dst_y_data();
+				}
+			}
+
+			void compute_lod_data(const FT scale) {
+				
 				m_lod_base.estimate_parameters(false);
 				m_lod_base.set_scale(scale);
 				m_lod_base.create_lods();
+			}
 
+			// Complexity metric!
+			void set_cpm_y_data() {
 				m_lod_complexity = m_lod_base.get_lod_complexity_ptr();
+				
+				set_cpm_roofs_y_data();
+				set_cpm_walls_y_data();
+			}
+
+			void set_cpm_roofs_y_data() {
+				const FT roofs_complexity = m_lod_complexity->get_for_roofs();
+				m_cmp_roofs_y_data.push_back(roofs_complexity);
+			}
+
+			void set_cpm_walls_y_data() {
+				const FT walls_complexity = m_lod_complexity->get_for_walls();
+				m_cmp_walls_y_data.push_back(walls_complexity);
+			}
+
+			// Distortion metric!
+			void set_dst_y_data() {
 				m_lod_distortion = m_lod_base.get_lod_distortion_ptr();
+				
+				set_dst_roofs_y_data();
+				set_dst_walls_y_data();
+			}
 
-				const FT complexity = m_lod_complexity->get();
-				const FT min_distortion = m_lod_distortion->get(Distortion_fitting_type::MIN);
-				const FT avg_distortion = m_lod_distortion->get(Distortion_fitting_type::AVG);
-				const FT max_distortion = m_lod_distortion->get(Distortion_fitting_type::MAX);
+			void set_dst_roofs_y_data() {
+				m_dst_roofs_y_data = m_lod_distortion->get_roofs_metrics();
+			}
 
-				m_min_y_data[index] = min_distortion;
-				m_avg_y_data[index] = avg_distortion;
-				m_max_y_data[index] = max_distortion;
-				m_cmp_y_data[index] = complexity;
-
-				return scale;
+			void set_dst_walls_y_data() {
+				m_dst_walls_y_data = m_lod_distortion->get_walls_metrics();
 			}
 		};
 	}

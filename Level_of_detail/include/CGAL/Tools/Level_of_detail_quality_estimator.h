@@ -26,7 +26,7 @@ namespace CGAL {
 	namespace LOD {
 
 		template<class LodQuality>
-		class Level_of_detail_quality_estimator{
+		class Level_of_detail_quality_estimator {
 
 		public:
 			typedef LodQuality Lod_quality;
@@ -43,38 +43,63 @@ namespace CGAL {
 			: m_lod_quality(num_params, params), m_debug(false) { }
 
 			void run_quality_test() {
-				m_lod_quality.compute_xy_data(false);
+				m_lod_quality.compute_data();
 
-				const Data &x = m_lod_quality.retreive_x_data();
-				const Data &min_y = m_lod_quality.retreive_y_data(Distortion_fitting_type::MIN);
-				const Data &avg_y = m_lod_quality.retreive_y_data(Distortion_fitting_type::AVG);
-				const Data &max_y = m_lod_quality.retreive_y_data(Distortion_fitting_type::MAX);
-				const Data &cmp_y = m_lod_quality.retreive_y_data(Distortion_fitting_type::CMP);
+				// X data.
+				const Data &x_data = m_lod_quality.retreive_x_data();
+				
+				// Y data: complexity.
+				save_complexity_y_data(x_data);
 
-				std::vector<Data> data(4);
-				data[0] = min_y;
-				data[1] = avg_y;
-				data[2] = max_y;
-				data[3] = cmp_y;
+				// Y data: distortion.
+				save_distortion_y_data(x_data);
 
-				std::vector<Color> colors(4);
-				colors[0] = Color(255, 153, 153);
-				colors[1] = Color(255, 80, 80);
-				colors[2] = Color(128, 0, 0);
-				colors[3] = Color(0, 0, 0);
-
-				if (m_debug) {
-					Log plotter;
-					plotter.plot_2d("quality", x, data, colors);
-				}
-
-				Log saver;
-				saver.save_quality_data("data", x, data);
+				// Y data: coverage.
+				save_coverage_y_data(x_data);
 			}
 
 		private:
 			Lod_quality m_lod_quality;
 			const bool m_debug;
+
+			void save_complexity_y_data(const Data &x_data) {
+				
+				const Data &cmp_roofs_y = m_lod_quality.retreive_y_data(Quality_data_type::CMP_ROOFS);
+				const Data &cmp_walls_y = m_lod_quality.retreive_y_data(Quality_data_type::CMP_WALLS);
+
+				std::vector<Data> y_data(2);
+				y_data[0] = cmp_roofs_y;
+				y_data[1] = cmp_walls_y;
+
+				Log saver;
+				saver.save_quality_data_final("cmp_data", x_data, y_data);
+			}
+
+			void save_distortion_y_data(const Data &x_data) {
+
+				save_distortion_roofs_y_data(x_data);
+				save_distortion_walls_y_data(x_data);
+			}
+
+			void save_distortion_roofs_y_data(const Data &x_data) {
+				
+				const Data &y_data = m_lod_quality.retreive_y_data(Quality_data_type::DST_ROOFS);
+
+				Log saver;
+				saver.save_quality_data_intermediate("dst_roofs_data", x_data, y_data);
+			}
+
+			void save_distortion_walls_y_data(const Data &x_data) {
+				
+				const Data &y_data = m_lod_quality.retreive_y_data(Quality_data_type::DST_WALLS);
+
+				Log saver;
+				saver.save_quality_data_intermediate("dst_walls_data", x_data, y_data);
+			}
+
+			void save_coverage_y_data(const Data & /* x_data */) {
+
+			}
 		};
 	}
 }

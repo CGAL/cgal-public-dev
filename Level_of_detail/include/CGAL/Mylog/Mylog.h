@@ -751,7 +751,7 @@ namespace CGAL {
 			}
 
 			template<class FT>
-			void save_quality_data(const std::string &name, const std::vector<FT> &x, const std::vector< std::vector<FT> > &y) {
+			void save_quality_data_final(const std::string &name, const std::vector<FT> &x, const std::vector< std::vector<FT> > &y) {
 				
 				assert(!y.empty() && !y[0].empty());
 				clear();
@@ -760,6 +760,22 @@ namespace CGAL {
 					out << x[i] << " ";
 					
 					for (size_t j = 0; j < y.size(); ++j) out << y[j][i] << " ";
+					out << std::endl;
+				}
+
+				save(name, ".dt");
+			}
+
+			template<class FT>
+			void save_quality_data_intermediate(const std::string &name, const std::vector<FT> &x, const std::vector<FT> &y) {
+				
+				assert(!y.empty());
+				clear();
+
+				for (size_t i = 0; i < x.size(); ++i) {
+					out << x[i] << " ";
+					
+					for (size_t j = 0; j < y.size(); ++j) out << y[j] << " ";
 					out << std::endl;
 				}
 

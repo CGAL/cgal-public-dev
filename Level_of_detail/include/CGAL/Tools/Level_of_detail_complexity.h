@@ -57,20 +57,36 @@ namespace CGAL {
 
 			typedef CGAL::LOD::Level_of_detail_planar_region_growing<Kernel, Mesh, Faces> Planar_region_growing;
 
-			Level_of_detail_complexity(const Container &input, const LODS &lods) 
-			: m_input(input), m_lods(lods), m_complexity(-FT(1)), m_debug(false) { }
+			Level_of_detail_complexity(const Container &input, const LODS &lods) : 
+			m_input(input), m_lods(lods), 
+			m_roofs_complexity(-FT(1)), m_walls_complexity(-FT(1)), m_complexity(-FT(1)),
+			m_debug(false) { }
 
 			void estimate() {
 
 				const FT num_roofs = get_number_of_roofs();
 				const FT num_walls = get_number_of_walls();
 
+				m_roofs_complexity = num_roofs;
+				m_walls_complexity = num_walls;
+				m_complexity 	   = m_roofs_complexity + m_walls_complexity;
+
 				if (m_debug) {
 					get_roofs_normalization_factor();
 					get_walls_normalization_factor();
 				}
+			}
 
-				m_complexity = num_roofs + num_walls;
+			FT get_for_roofs() const {
+				
+				assert(m_roofs_complexity >= FT(0));
+				return m_roofs_complexity;
+			}
+
+			FT get_for_walls() const {
+				
+				assert(m_walls_complexity >= FT(0));
+				return m_walls_complexity;
 			}
 
 			FT get() const {
@@ -83,7 +99,7 @@ namespace CGAL {
 			const Container &m_input;
 			const LODS 		&m_lods;
 			
-			FT 	 m_complexity;
+			FT 	 m_roofs_complexity, m_walls_complexity, m_complexity;
 			bool m_debug;
 
 			FT get_number_of_roofs() const {
