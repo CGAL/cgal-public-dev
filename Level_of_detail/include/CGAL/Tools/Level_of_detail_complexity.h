@@ -78,19 +78,16 @@ namespace CGAL {
 			}
 
 			FT get_for_roofs() const {
-				
 				assert(m_roofs_complexity >= FT(0));
 				return m_roofs_complexity;
 			}
 
 			FT get_for_walls() const {
-				
 				assert(m_walls_complexity >= FT(0));
 				return m_walls_complexity;
 			}
 
 			FT get() const {
-
 				assert(m_complexity >= FT(0));
 				return m_complexity;
 			}

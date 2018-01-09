@@ -106,6 +106,7 @@ namespace CGAL {
 
 			typedef typename Traits::Lod_complexity Lod_complexity;
 			typedef typename Traits::Lod_distortion Lod_distortion;
+			typedef typename Traits::Lod_coverage   Lod_coverage;
 
 
 			// Extra typedefs.
@@ -198,7 +199,8 @@ namespace CGAL {
 			m_estimate_parameters(false),
 			m_estimate_quality(false),
 			m_complexity(-FT(1)),
-			m_distortion(-FT(1))
+			m_distortion(-FT(1)),
+			m_coverage(-FT(1))
 			{ }
 
 
@@ -268,6 +270,9 @@ namespace CGAL {
 			}
 
 
+			//////////////////
+			// Important public functions!
+
 			FT get_complexity() const {
 
 				assert(m_complexity >= FT(0));
@@ -280,6 +285,12 @@ namespace CGAL {
 				return m_distortion;
 			}
 
+			FT get_coverage() const {
+
+				assert(m_coverage >= FT(0));
+				return m_coverage;
+			}
+
 			std::shared_ptr<Lod_complexity> get_lod_complexity_ptr() const {
 
 				assert(m_lod_complexity != nullptr);
@@ -290,6 +301,12 @@ namespace CGAL {
 
 				assert(m_lod_distortion != nullptr);
 				return m_lod_distortion;
+			}
+
+			std::shared_ptr<Lod_coverage> get_lod_coverage_ptr() const {
+
+				assert(m_lod_coverage != nullptr);
+				return m_lod_coverage;
 			}
 
 			FT get_scale() const {
@@ -984,19 +1001,11 @@ namespace CGAL {
 				// LOD1 quality estimation.
 				std::cout << "(" << exec_step << ") estimating quality of lod1" << std::endl;
 
-				std::cout << std::endl << "quality: " << std::endl;
+				std::cout << std::endl << "quality statistics: " << std::endl;
 
-				m_lod_complexity = std::make_shared<Lod_complexity>(input, m_lods);
-				m_lod_complexity->estimate();
-				m_complexity = m_lod_complexity->get();
-
-				std::cout << "complexity = " << m_complexity << " elements." << std::endl;
-
-				m_lod_distortion = std::make_shared<Lod_distortion>(input, m_lods);
-				m_lod_distortion->estimate();
-				m_distortion = m_lod_distortion->get();
-
-				std::cout << "distortion = " << m_distortion << " meters." << std::endl << std::endl;
+				estimate_lod1_complexity(input);
+				estimate_lod1_distortion(input);
+				estimate_lod1_coverage(input);
 
 				log.out << "(" << exec_step << ") LOD1 quality is estimated." << std::endl << std::endl;
 			}
@@ -1014,6 +1023,35 @@ namespace CGAL {
 			}
 
 		public:
+
+			// Quality metrics.
+			void estimate_lod1_complexity(const Container_3D &input) {
+				
+				m_lod_complexity = std::make_shared<Lod_complexity>(input, m_lods);
+				m_lod_complexity->estimate();
+				m_complexity = m_lod_complexity->get();
+
+				std::cout << "complexity = " << m_complexity << " elements." << std::endl;
+			}
+
+			void estimate_lod1_distortion(const Container_3D &input) {
+				
+				m_lod_distortion = std::make_shared<Lod_distortion>(input, m_lods);
+				m_lod_distortion->estimate();
+				m_distortion = m_lod_distortion->get();
+
+				std::cout << "distortion = " << m_distortion << " meters." << std::endl;
+			}
+
+			void estimate_lod1_coverage(const Container_3D &input) {
+				
+				m_lod_coverage = std::make_shared<Lod_coverage>(input, m_lods);
+				m_lod_coverage->estimate(m_imp_eps);
+				m_coverage = m_lod_coverage->get();
+
+				std::cout << "coverage = " << m_coverage << " percents." << std::endl << std::endl;
+			}
+
 
 			// Version 0.
 			void create_lods_ver0() {
@@ -1259,9 +1297,11 @@ namespace CGAL {
 
 			FT m_complexity;
 			FT m_distortion;
+			FT m_coverage;
 
 			std::shared_ptr<Lod_complexity> m_lod_complexity;
 			std::shared_ptr<Lod_distortion> m_lod_distortion;
+			std::shared_ptr<Lod_coverage>   m_lod_coverage;
 
 
 			// Assert default values of all global parameters.

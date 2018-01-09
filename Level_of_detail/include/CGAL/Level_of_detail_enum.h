@@ -182,7 +182,7 @@ namespace CGAL {
 
 		// Quality data type.
 		enum class Quality_data_type { 	
-			DST_MIN, // distortion types
+			DST_MIN,   // distortion types
 			DST_AVG, 
 			DST_MAX,
 			DST_ROOFS,
@@ -190,7 +190,9 @@ namespace CGAL {
 			CMP_ROOFS, // complexity metric
 			CMP_WALLS,
 			CMP,
-			COV // coverage metric
+			COV_ROOFS, // coverage metric
+			COV_WALLS,
+			COV,       
 		};
 
 	} // LOD

@@ -35,6 +35,7 @@
 #include <CGAL/Region_growing/Level_of_detail_region_growing.h>
 #include <CGAL/Tools/Level_of_detail_complexity.h>
 #include <CGAL/Tools/Level_of_detail_distortion.h>
+#include <CGAL/Tools/Level_of_detail_coverage.h>
 #include <CGAL/Tools/Level_of_detail_parameters.h>
 #include <CGAL/Tools/Level_of_detail_parameters_estimator.h>
 #include <CGAL/Level_of_detail_enum.h>
@@ -124,6 +125,7 @@ namespace CGAL {
 
 			typedef CGAL::LOD::Level_of_detail_complexity<Kernel, Container_3D, Lods> Lod_complexity;
 			typedef CGAL::LOD::Level_of_detail_distortion<Kernel, Container_3D, Lods> Lod_distortion;
+			typedef CGAL::LOD::Level_of_detail_coverage<Kernel, Container_3D, Lods>   Lod_coverage;
 		};
 	}
 }

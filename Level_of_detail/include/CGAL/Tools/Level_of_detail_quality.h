@@ -31,6 +31,7 @@ namespace CGAL {
 			using Data = std::vector<FT>;
 			using Lod_complexity = typename Lod_base::Lod_complexity;
 			using Lod_distortion = typename Lod_base::Lod_distortion;
+			using Lod_coverage   = typename Lod_base::Lod_coverage;
 
 			typedef typename Lod_parameters::Input_parameters Parameters;
 			
@@ -74,6 +75,10 @@ namespace CGAL {
 						assert(!m_cmp_walls_y_data.empty());
 						return m_cmp_walls_y_data;
 
+					case Quality_data_type::CMP:
+						assert(!m_cmp_total_y_data.empty());
+						return m_cmp_total_y_data;
+
 					case Quality_data_type::DST_ROOFS:
 						assert(!m_dst_roofs_y_data.empty());
 						return m_dst_roofs_y_data;
@@ -81,6 +86,18 @@ namespace CGAL {
 					case Quality_data_type::DST_WALLS:
 						assert(!m_dst_walls_y_data.empty());
 						return m_dst_walls_y_data;
+
+					case Quality_data_type::COV_ROOFS:
+						assert(!m_cov_roofs_y_data.empty());
+						return m_cov_roofs_y_data;
+
+					case Quality_data_type::COV_WALLS:
+						assert(!m_cov_walls_y_data.empty());
+						return m_cov_walls_y_data;
+
+					case Quality_data_type::COV:
+						assert(!m_cov_total_y_data.empty());
+						return m_cov_total_y_data;
 
 					default:
 						assert(!"Wrong quality data type!"); exit(EXIT_FAILURE);
@@ -96,11 +113,13 @@ namespace CGAL {
 			Lod_base m_lod_base;
 
 			Data m_x_data;
-			Data m_cmp_roofs_y_data, m_cmp_walls_y_data;
+			Data m_cmp_roofs_y_data, m_cmp_walls_y_data, m_cmp_total_y_data;
 			Data m_dst_roofs_y_data, m_dst_walls_y_data;
+			Data m_cov_roofs_y_data, m_cov_walls_y_data, m_cov_total_y_data;
 			
 			std::shared_ptr<Lod_complexity> m_lod_complexity;
 			std::shared_ptr<Lod_distortion> m_lod_distortion;
+			std::shared_ptr<Lod_coverage>   m_lod_coverage;
 
 			void set_quality_parameters(const Lod_parameters &lod_parameters) {
 				const Parameters &parameters = lod_parameters.get();
@@ -138,9 +157,14 @@ namespace CGAL {
 				
 				m_cmp_roofs_y_data.clear();
 				m_cmp_walls_y_data.clear();
+				m_cmp_total_y_data.clear();
 
 				m_dst_roofs_y_data.clear();
 				m_dst_walls_y_data.clear();
+
+				m_cov_roofs_y_data.clear();
+				m_cov_walls_y_data.clear();
+				m_cov_total_y_data.clear();
 			}
 
 			void compute_x_data(const FT initial_x) {
@@ -187,6 +211,7 @@ namespace CGAL {
 					
 					set_cpm_y_data();
 					set_dst_y_data();
+					set_cov_y_data();
 				}
 			}
 
@@ -203,6 +228,7 @@ namespace CGAL {
 				
 				set_cpm_roofs_y_data();
 				set_cpm_walls_y_data();
+				set_cpm_total_y_data();
 			}
 
 			void set_cpm_roofs_y_data() {
@@ -213,6 +239,11 @@ namespace CGAL {
 			void set_cpm_walls_y_data() {
 				const FT walls_complexity = m_lod_complexity->get_for_walls();
 				m_cmp_walls_y_data.push_back(walls_complexity);
+			}
+
+			void set_cpm_total_y_data() {
+				const FT total_complexity = m_lod_complexity->get();
+				m_cmp_total_y_data.push_back(total_complexity);
 			}
 
 			// Distortion metric!
@@ -229,6 +260,30 @@ namespace CGAL {
 
 			void set_dst_walls_y_data() {
 				m_dst_walls_y_data = m_lod_distortion->get_walls_metrics();
+			}
+
+			// Coverage metric.
+			void set_cov_y_data() {
+				m_lod_coverage = m_lod_base.get_lod_coverage_ptr();
+
+				set_cov_roofs_y_data();
+				set_cov_walls_y_data();
+				set_cov_total_y_data();
+			}
+
+			void set_cov_roofs_y_data() {
+				const FT roofs_coverage = m_lod_coverage->get_for_roofs();
+				m_cov_roofs_y_data.push_back(roofs_coverage);
+			}
+
+			void set_cov_walls_y_data() {
+				const FT walls_coverage = m_lod_coverage->get_for_walls();
+				m_cov_walls_y_data.push_back(walls_coverage);
+			}
+
+			void set_cov_total_y_data() {
+				const FT total_coverage = m_lod_coverage->get();
+				m_cov_total_y_data.push_back(total_coverage);
 			}
 		};
 	}
