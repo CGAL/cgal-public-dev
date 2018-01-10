@@ -63,7 +63,7 @@ namespace CGAL {
 				return m_x_data;
 			}
 
-			const Data &retreive_y_data(const Quality_data_type quality_data_type) const {
+			const Data &retreive_cmp_y_data(const Quality_data_type quality_data_type) const {
 				
 				switch (quality_data_type) {
 
@@ -79,6 +79,16 @@ namespace CGAL {
 						assert(!m_cmp_total_y_data.empty());
 						return m_cmp_total_y_data;
 
+					default:
+						assert(!"Wrong quality data type!"); exit(EXIT_FAILURE);
+						return m_cmp_total_y_data;
+				}
+			}
+
+			const std::vector<Data> &retreive_dst_y_data(const Quality_data_type quality_data_type) const {
+				
+				switch (quality_data_type) {
+
 					case Quality_data_type::DST_ROOFS:
 						assert(!m_dst_roofs_y_data.empty());
 						return m_dst_roofs_y_data;
@@ -86,6 +96,16 @@ namespace CGAL {
 					case Quality_data_type::DST_WALLS:
 						assert(!m_dst_walls_y_data.empty());
 						return m_dst_walls_y_data;
+
+					default:
+						assert(!"Wrong quality data type!"); exit(EXIT_FAILURE);
+						return m_dst_roofs_y_data;
+				}
+			}
+
+			const Data &retreive_cov_y_data(const Quality_data_type quality_data_type) const {
+				
+				switch (quality_data_type) {
 
 					case Quality_data_type::COV_ROOFS:
 						assert(!m_cov_roofs_y_data.empty());
@@ -101,7 +121,7 @@ namespace CGAL {
 
 					default:
 						assert(!"Wrong quality data type!"); exit(EXIT_FAILURE);
-						return m_cmp_roofs_y_data;
+						return m_cov_total_y_data;
 				}
 			}
 
@@ -114,7 +134,7 @@ namespace CGAL {
 
 			Data m_x_data;
 			Data m_cmp_roofs_y_data, m_cmp_walls_y_data, m_cmp_total_y_data;
-			Data m_dst_roofs_y_data, m_dst_walls_y_data;
+			std::vector<Data> m_dst_roofs_y_data, m_dst_walls_y_data;
 			Data m_cov_roofs_y_data, m_cov_walls_y_data, m_cov_total_y_data;
 			
 			std::shared_ptr<Lod_complexity> m_lod_complexity;
@@ -255,11 +275,13 @@ namespace CGAL {
 			}
 
 			void set_dst_roofs_y_data() {
-				m_dst_roofs_y_data = m_lod_distortion->get_roofs_metrics();
+				const Data &roofs_data = m_lod_distortion->get_roofs_metrics();
+				m_dst_roofs_y_data.push_back(roofs_data);
 			}
 
 			void set_dst_walls_y_data() {
-				m_dst_walls_y_data = m_lod_distortion->get_walls_metrics();
+				const Data &walls_data = m_lod_distortion->get_walls_metrics();
+				m_dst_walls_y_data.push_back(walls_data);
 			}
 
 			// Coverage metric.

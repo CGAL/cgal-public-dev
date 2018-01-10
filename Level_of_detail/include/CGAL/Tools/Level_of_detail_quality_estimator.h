@@ -64,9 +64,9 @@ namespace CGAL {
 
 			void save_complexity_y_data(const Data &x_data) {
 				
-				const Data &cmp_roofs_y = m_lod_quality.retreive_y_data(Quality_data_type::CMP_ROOFS);
-				const Data &cmp_walls_y = m_lod_quality.retreive_y_data(Quality_data_type::CMP_WALLS);
-				const Data &cmp_total_y = m_lod_quality.retreive_y_data(Quality_data_type::CMP);
+				const Data &cmp_roofs_y = m_lod_quality.retreive_cmp_y_data(Quality_data_type::CMP_ROOFS);
+				const Data &cmp_walls_y = m_lod_quality.retreive_cmp_y_data(Quality_data_type::CMP_WALLS);
+				const Data &cmp_total_y = m_lod_quality.retreive_cmp_y_data(Quality_data_type::CMP);
 
 				std::vector<Data> y_data(3);
 				y_data[0] = cmp_roofs_y;
@@ -85,7 +85,7 @@ namespace CGAL {
 
 			void save_distortion_roofs_y_data(const Data &x_data) {
 				
-				const Data &y_data = m_lod_quality.retreive_y_data(Quality_data_type::DST_ROOFS);
+				const std::vector<Data> &y_data = m_lod_quality.retreive_dst_y_data(Quality_data_type::DST_ROOFS);
 
 				Log saver;
 				saver.save_quality_data_intermediate("dst_roofs_data", x_data, y_data);
@@ -93,7 +93,7 @@ namespace CGAL {
 
 			void save_distortion_walls_y_data(const Data &x_data) {
 				
-				const Data &y_data = m_lod_quality.retreive_y_data(Quality_data_type::DST_WALLS);
+				const std::vector<Data> &y_data = m_lod_quality.retreive_dst_y_data(Quality_data_type::DST_WALLS);
 
 				Log saver;
 				saver.save_quality_data_intermediate("dst_walls_data", x_data, y_data);
@@ -101,9 +101,9 @@ namespace CGAL {
 
 			void save_coverage_y_data(const Data &x_data) {
 				
-				const Data &cov_roofs_y = m_lod_quality.retreive_y_data(Quality_data_type::COV_ROOFS);
-				const Data &cov_walls_y = m_lod_quality.retreive_y_data(Quality_data_type::COV_WALLS);
-				const Data &cov_total_y = m_lod_quality.retreive_y_data(Quality_data_type::COV);
+				const Data &cov_roofs_y = m_lod_quality.retreive_cov_y_data(Quality_data_type::COV_ROOFS);
+				const Data &cov_walls_y = m_lod_quality.retreive_cov_y_data(Quality_data_type::COV_WALLS);
+				const Data &cov_total_y = m_lod_quality.retreive_cov_y_data(Quality_data_type::COV);
 
 				std::vector<Data> y_data(3);
 				y_data[0] = cov_roofs_y;
