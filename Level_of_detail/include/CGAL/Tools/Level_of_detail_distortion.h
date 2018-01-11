@@ -475,16 +475,20 @@ namespace CGAL {
 				for (size_t i = 0; i < m_walls_metrics.size(); ++i) m_walls_metrics[i] = FT(0);
 				assert(m_walls_metrics.size() == points.size());
 
-				AB_tree aabb_tree(faces(mesh).first, faces(mesh).second, mesh);
+				Mesh tmp_mesh = mesh;
+				for (Vertex_handle vh = tmp_mesh.vertices_begin(); vh != tmp_mesh.vertices_end(); ++vh) {
+
+					Point_3 &p = vh->point();
+					p = Point_3(p.x(), p.y(), FT(0));
+				}
+
+				AB_tree aabb_tree(faces(tmp_mesh).first, faces(tmp_mesh).second, tmp_mesh);
+
+				Point_3 closest_point;
 				for (size_t i = 0; i < points.size(); ++i) {
 					
-					const Point_3 &query = points[i];
-					AB_point_and_primitive_id pp = aabb_tree.closest_point_and_primitive(query);
-
-					const Facet_handle closest_face = pp.second;
-					const Plane_3 closest_plane = get_plane_from_face_handle(closest_face);
-
-					const Point_3 closest_point = closest_plane.projection(query);
+					const Point_3 query = Point_3(points[i].x(), points[i].y(), FT(0));
+					closest_point = aabb_tree.closest_point(query);
 
 					const FT squared_dist = squared_distance(query, closest_point);
 					const FT distance = static_cast<FT>(CGAL::sqrt(CGAL::to_double(squared_dist)));
@@ -536,6 +540,8 @@ namespace CGAL {
 
 				const FT roofs_avg = get_sum(m_roofs_metrics) / FT(m_num_roofs_points);
 				const FT walls_avg = get_sum(m_walls_metrics) / FT(m_num_walls_points);
+
+				if (m_debug) std::cout << "roofs avg " << roofs_avg << ", walls avg " << walls_avg << std::endl << std::endl;
 
 				const FT avg = (roofs_avg + walls_avg) / FT(2);
 				return avg;

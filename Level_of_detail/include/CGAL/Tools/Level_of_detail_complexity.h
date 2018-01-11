@@ -140,7 +140,7 @@ namespace CGAL {
 				}
 
 				const int roofs_num_points = roofs_point_indices.size();
-				if (m_debug) std::cout << roofs_num_points << std::endl;
+				if (m_debug) std::cout << std::endl << "num roofs points " << roofs_num_points;
 
 				return static_cast<FT>(roofs_num_points);
 			}
@@ -157,7 +157,7 @@ namespace CGAL {
 				}
 
 				const int walls_num_points = walls_point_indices.size();
-				if (m_debug) std::cout << walls_num_points << std::endl;
+				if (m_debug) std::cout << ", num walls points " << walls_num_points << std::endl << std::endl;
 
 				return static_cast<FT>(walls_num_points);
 			}

@@ -455,19 +455,23 @@ namespace CGAL {
 
             size_t compute_number_of_walls_outliers(const Mesh &mesh, const std::vector<Point_3> &points) {
 
+				Mesh tmp_mesh = mesh;
+				for (Vertex_handle vh = tmp_mesh.vertices_begin(); vh != tmp_mesh.vertices_end(); ++vh) {
+
+					Point_3 &p = vh->point();
+					p = Point_3(p.x(), p.y(), FT(0));
+				}
+
                 assert(m_distance_threshold > FT(0));
-				AB_tree aabb_tree(faces(mesh).first, faces(mesh).second, mesh);
+				AB_tree aabb_tree(faces(tmp_mesh).first, faces(tmp_mesh).second, tmp_mesh);
 
 				size_t num_walls_outliers = 0;
+				Point_3 closest_point;
+
 				for (size_t i = 0; i < points.size(); ++i) {
 					
-					const Point_3 &query = points[i];
-					AB_point_and_primitive_id pp = aabb_tree.closest_point_and_primitive(query);
-
-					const Facet_handle closest_face = pp.second;
-					const Plane_3 closest_plane = get_plane_from_face_handle(closest_face);
-
-					const Point_3 closest_point = closest_plane.projection(query);
+					const Point_3 query = Point_3(points[i].x(), points[i].y(), FT(0));
+					closest_point = aabb_tree.closest_point(query);
 
 					const FT squared_dist = squared_distance(query, closest_point);
 					const FT distance = static_cast<FT>(CGAL::sqrt(CGAL::to_double(squared_dist)));
