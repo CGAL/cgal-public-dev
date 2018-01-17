@@ -95,6 +95,24 @@ void read_polyline_with_extra_points(
   }
 }
 
+void read_polyline_boundary_and_holes(const char* file_name,
+                                      std::vector<Point_3>& points_b,
+                                      std::vector<Point_3>& points_h)
+{
+  std::ifstream stream(file_name);
+  if(!stream) {assert(false);}
+
+  for(int i =0; i < 2; ++i) {
+    int count;
+    if(!(stream >> count)) { assert(false); }
+    while(count-- > 0) {
+      Point_3 p;
+      if(!(stream >> p)) { assert(false); }
+      i == 0 ? points_b.push_back(p) : points_h.push_back(p);
+    }
+  }
+}
+
 void check_triangles(std::vector<Point_3>& points, std::vector<boost::tuple<int, int, int> >& tris) {
   if(points.size() - 3 != tris.size()) {
     std::cerr << "  Error: there should be n-2 triangles in generated patch." << std::endl;
@@ -179,6 +197,24 @@ void test_2(const char* file_name, bool use_DT, bool save_output) {
   std::cerr << "  Done!" << std::endl;
 }
 
+void test_3(const char* file_name, bool use_DT, bool save_output) {
+  std::cerr << "test_3 + useDT: " << use_DT << std::endl;
+  std::cerr << "  File: "<< file_name  << std::endl;
+  std::vector<Point_3> points_b; // this will contain n and +1 repeated point
+  std::vector<Point_3> points_h; // points on the holes
+  read_polyline_boundary_and_holes(file_name, points_b, points_h);
+
+  std::vector<boost::tuple<int, int, int> > tris;
+
+  CGAL::Polygon_mesh_processing::triangulate_function();
+
+
+  check_triangles(points_b, tris);
+  check_constructed_polyhedron(file_name, &tris, &points_b, save_output);
+
+  std::cerr << "  Done!" << std::endl;
+}
+
 void test_should_be_no_output(const char* file_name, bool use_DT) {
   std::cerr << "test_should_be_no_output + useDT: " <<use_DT<< std::endl;
   std::cerr << "  File: "<< file_name  << std::endl;
@@ -205,12 +241,12 @@ void test_should_be_no_output(const char* file_name, bool use_DT) {
   input_files_1.push_back("data/U.polylines.txt");
   input_files_1.push_back("data/planar.polylines.txt");
   */
-  input_files_1.push_back("data/bighole.polylines.txt");
+  input_files_1.push_back("data/bighole-island.polylines.txt");
 
   for(std::vector<std::string>::iterator it = input_files_1.begin(); it != input_files_1.end(); ++it) {
     //test_1(it->c_str(), true, false);
     //test_1(it->c_str(), false, false);
-    test_1(it->c_str(), false, true);
+    test_3(it->c_str(), false, true);
   }
 
 

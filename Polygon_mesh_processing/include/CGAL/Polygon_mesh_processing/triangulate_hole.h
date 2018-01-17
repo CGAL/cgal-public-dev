@@ -407,6 +407,61 @@ namespace Polygon_mesh_processing {
       CGAL::Polygon_mesh_processing::parameters::all_default());
   }
 
+  /*
+  // islands
+  template <typename PointRange1,
+            typename PointRange2,
+            typename OutputIterator,
+            typename NamedParameters>
+  OutputIterator
+  triangulate_hole_polyline_with_islands(const PointRange1& points_b,
+                                         const PointRange2& points_h,
+                                         OutputIterator out,
+                                         const NamedParameters& np)
+  {
+    using boost::choose_param;
+    using boost::get_param;
+
+    bool use_dt3 =
+#ifdef CGAL_HOLE_FILLING_DO_NOT_USE_DT3
+      false;
+#else
+      choose_param(get_param(np, internal_np::use_delaunay_triangulation), true);
+#endif
+
+    typedef CGAL::internal::Weight_min_max_dihedral_and_area      Weight;
+    typedef CGAL::internal::Weight_calculator<Weight,
+                  CGAL::internal::Is_not_degenerate_triangle>  WC;
+    typedef std::vector<std::pair<int, int> > Holes;
+    typedef std::back_insert_iterator<Holes>  Holes_out;
+
+    Holes holes;//just to check there is no holes left
+
+    typedef typename value_type_traits<OutputIterator>::type OutputIteratorValueType;
+    CGAL::internal::Tracer_polyline_incomplete<OutputIteratorValueType, OutputIterator, Holes_out>
+      tracer(out, Holes_out(holes));
+
+    typedef typename PointRange1::iterator InIterator;
+    typedef typename std::iterator_traits<InIterator>::value_type Point;
+
+    triangulate_hole_polyline(points, third_points, tracer, WC(),
+      use_dt3,
+      choose_param(get_param(np, internal_np::geom_traits),
+        typename CGAL::Kernel_traits<Point>::Kernel()));
+
+    CGAL_assertion(holes.empty());
+    return tracer.out;
+  }
+  */
+
+
+  void triangulate_function()
+  {
+    what_the_fuck();
+  }
+
+
+
 } //end namespace Polygon_mesh_processing
 
 } //end namespace CGAL
