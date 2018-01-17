@@ -199,16 +199,22 @@ void test_should_be_no_output(const char* file_name, bool use_DT) {
 
  Main() {
   std::vector<std::string> input_files_1;
+  /*
   input_files_1.push_back("data/triangle.polylines.txt");
   input_files_1.push_back("data/quad.polylines.txt");
   input_files_1.push_back("data/U.polylines.txt");
   input_files_1.push_back("data/planar.polylines.txt");
+  */
+  input_files_1.push_back("data/bighole.polylines.txt");
 
   for(std::vector<std::string>::iterator it = input_files_1.begin(); it != input_files_1.end(); ++it) {
-    test_1(it->c_str(), true, false);
-    test_1(it->c_str(), false, false);
+    //test_1(it->c_str(), true, false);
+    //test_1(it->c_str(), false, false);
+    test_1(it->c_str(), false, true);
   }
 
+
+/*
   std::vector<std::string> input_files_2;
   input_files_2.push_back("data/hole1.txt");
   input_files_2.push_back("data/hole2.txt");
@@ -224,13 +230,15 @@ void test_should_be_no_output(const char* file_name, bool use_DT) {
   test_should_be_no_output("data/collinear.polylines.txt", true);
   test_should_be_no_output("data/collinear.polylines.txt", false);
   std::cerr << "All Done!" << std::endl;
+  */
  }
+ 
 
 };
 
 int main()
 {
   Main<Epic> m;
-  Main<Epec> m2;
+  //Main<Epec> m2;
   return 0;
 }
