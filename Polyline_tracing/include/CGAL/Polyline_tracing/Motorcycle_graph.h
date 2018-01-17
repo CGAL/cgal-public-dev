@@ -360,6 +360,7 @@ public:
                        DEC_it collision_point, const FT time_at_collision_point,
                        Motorcycle& fmc,
                        DEC_it foreign_collision_point, const FT time_at_foreign_collision_point);
+  //@todo move the body out of the class
   void treat_foreign_collision(Motorcycle& mc, const Collision_information& collision)
   {
     // Insert the collision point in the dictionary, if needed.
@@ -634,6 +635,7 @@ compute_destination(Motorcycle& mc,
     }
     else // A 'Face_location' was provided in input
     {
+      //@todo move from which() to pointer casts
       CGAL_assertion(input_destination->which() == 1);
       destination_location = boost::get<Face_location>(*input_destination);
 
