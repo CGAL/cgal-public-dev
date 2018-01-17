@@ -86,8 +86,7 @@ namespace CGAL {
 			// BE CAREFUL: THIS THING CAN INSERT NEW POINTS!
 			template<class Structured_points, class Structured_labels, class Structured_anchors, class Boundary_data, class Projected_points>
 			int compute_cdt(const Structured_points &points, const Structured_labels &labels, const Structured_anchors &anchors, const FT adjacency_value, CDT &cdt, 
-							const bool add_clutter, const Boundary_data &, const Projected_points &boundary_clutter_projected,
-							const bool add_bbox, const Input &input, const bool silent) const {
+							const bool add_clutter, const Boundary_data &, const Projected_points &boundary_clutter_projected, const bool silent) const {
 
 				Log log;
 				auto number_of_faces = -1;
@@ -203,24 +202,6 @@ namespace CGAL {
 				} else {
 					for (Vertex_iterator vit = cdt.finite_vertices_begin(); vit != cdt.finite_vertices_end(); ++vit)
 						assert(vit->info().label != Structured_label::CLUTTER);
-				}
-
-
-				// Add bounding box.
-				assert(!add_bbox);
-				if (add_bbox) {
-					
-					std::vector<Point_2> bbox;
-					compute_bounding_box(input, bbox);
-
-					std::vector<Vertex_handle> bhs(bbox.size());
-
-					for (size_t i = 0; i < bbox.size(); ++i) bhs[i] = cdt.insert(bbox[i]);
-					for (size_t i = 0; i < bbox.size(); ++i) {
-
-						const size_t ip = (i + 1) % bbox.size();
-						cdt.insert_constraint(bhs[i], bhs[ip]);
-					}
 				}
 
 

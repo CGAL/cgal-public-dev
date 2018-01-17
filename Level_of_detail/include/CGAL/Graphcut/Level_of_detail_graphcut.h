@@ -33,6 +33,7 @@ namespace CGAL {
 
 	namespace LOD {
 
+		// Precondition: Be sure that there are no duplicated points.
 		template<class KernelTraits, class CDTInput>
 		class Level_of_detail_graphcut {
 
@@ -444,6 +445,13 @@ namespace CGAL {
 						exit(EXIT_FAILURE);
 				}
 
+				if (std::isnan(cos_in) || std::isnan(cos_out)) {
+					std::cerr << std::endl;
+					std::cerr << "NAN error! cos_in " << cos_in << ", cos_out " << cos_out << std::endl << std::endl;
+
+					exit(EXIT_FAILURE);
+				}
+
 				const FT min_cos = CGAL::min(cos_in, cos_out);
 				const FT result = m_alpha - min_cos;
 
@@ -452,7 +460,16 @@ namespace CGAL {
 				return result;
 			}
 
-			FT compute_cos_value(const Point_2 &a, const Point_2 &b, const Point_2 &c, const Edge &edge, const bool rotate) const {
+			FT compute_cos_value(const Point_2 &at, const Point_2 &bt, const Point_2 &ct, const Edge &edge, const bool rotate) const {
+
+				Point_2 a = at;
+				Point_2 b = bt;
+				Point_2 c = ct;
+
+				const FT adj = FT(1) / FT(1000000);
+				if (a == b) b = Point_2(b.x() + adj, b.y() + adj);
+				if (b == c) c = Point_2(c.x() + adj, c.y() + adj);
+				if (c == a) a = Point_2(a.x() + adj, a.y() + adj);
 
 				const Vector_2 edge_vector  = Vector_2(edge.source(), edge.target());
 				Vector_2 edge_normal        = edge_vector.perpendicular(rotate ? CGAL::CLOCKWISE : CGAL::COUNTERCLOCKWISE);
