@@ -31,6 +31,7 @@
 #include <CGAL/Buildings/Level_of_detail_buildings.h>
 #include <CGAL/Clutter/Level_of_detail_grid_simplify.h>
 #include <CGAL/Clutter/Level_of_detail_thinning.h>
+#include <CGAL/Clutter/Level_of_detail_clutter_filtering.h>
 #include <CGAL/Clutter/Level_of_detail_clutter_processor.h>
 #include <CGAL/Region_growing/Level_of_detail_region_growing.h>
 #include <CGAL/Tools/Level_of_detail_complexity.h>
@@ -90,6 +91,7 @@ namespace CGAL {
 
 			typedef CGAL::LOD::Level_of_detail_grid_simplify<Kernel, Planes, Projected_points> 			Grid_simplifier;
 			typedef CGAL::LOD::Level_of_detail_thinning<Kernel, Planes, Projected_points, Container_3D> Thinning;
+			typedef CGAL::LOD::Level_of_detail_clutter_filtering<Kernel, Planes, Projected_points> 		Clutter_filtering;
 
 			typedef int Label; 
 			typedef std::vector< std::pair<typename Kernel::Point_2, Label> > Container_2D;

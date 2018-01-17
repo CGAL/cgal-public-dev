@@ -4,3 +4,4 @@ Todo:
 3. Fix the projection issue.
 4. Make the final LOD result (polyhedron) a valid manifild mesh.
 5. Refactor all steps of the pipeline.
+6. Check in each class that I do not have duplicated input points or handle these duplications.

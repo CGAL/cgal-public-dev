@@ -93,8 +93,9 @@ namespace CGAL {
 			typedef typename Lods::Point  Ground_point;
 			typedef typename Lods::Ground Ground;
 
-			typedef typename Traits::Grid_simplifier Grid_simplifier;
-			typedef typename Traits::Thinning 		 Thinning;
+			typedef typename Traits::Grid_simplifier   Grid_simplifier;
+			typedef typename Traits::Thinning 		   Thinning;
+			typedef typename Traits::Clutter_filtering Clutter_filtering;
 
 			typedef typename Traits::Clutter_processor Clutter_processor;
 			typedef Thinning_fitter_type    		   Clutter_fitter_type;
@@ -200,7 +201,9 @@ namespace CGAL {
 			m_estimate_quality(false),
 			m_complexity(-FT(1)),
 			m_distortion(-FT(1)),
-			m_coverage(-FT(1))
+			m_coverage(-FT(1)),
+			m_clutter_filtering_scale(-FT(1)),
+			m_clutter_filtering_mean(-FT(1))
 			{ }
 
 
@@ -422,14 +425,14 @@ namespace CGAL {
 
 			void set_automatically_defined_options() {
 
-				const double clust_scale = 0.58;
-				const double clutt_scale = 0.26;
+				m_alpha_shape_size 	  			 = m_imp_scale; 	   // does not change often, size in meters to get the boundary of the set of points, necessary, (meters)
+				m_structuring_epsilon 			 = m_imp_scale; 	   // distance between adjacent points in the resampled line, (meters)
+				m_region_growing_epsilon 		 = m_imp_eps; 		   // distance to the optimal line, necessary, (meters)
+				m_region_growing_cluster_epsilon = 0.58 * m_imp_scale; // distance between adjacent points, necessary, (meters)
+				m_clutter_cell_length 			 = 0.26 * m_imp_scale; // used in the grid simplify, probably can be removed, (meters)
 
-				m_alpha_shape_size 	  			 = m_imp_scale; 	   		  // does not change often, size in meters to get the boundary of the set of points, necessary, (meters)
-				m_structuring_epsilon 			 = m_imp_scale; 	   		  // distance between adjacent points in the resampled line, (meters)
-				m_region_growing_epsilon 		 = m_imp_eps; 		   		  // distance to the optimal line, necessary, (meters)
-				m_region_growing_cluster_epsilon = clust_scale * m_imp_scale; // distance between adjacent points, necessary, (meters)
-				m_clutter_cell_length 			 = clutt_scale * m_imp_scale; // used in the grid simplify, probably can be removed, (meters)
+				m_clutter_filtering_scale = m_imp_scale;
+				m_clutter_filtering_mean  = m_imp_eps / 10.0;
 			}
 
 			void set_required_parameters() {
@@ -461,11 +464,13 @@ namespace CGAL {
 
 
 				// Automatically defined.
-				add_val_parameter("-alpha"  , m_alpha_shape_size               , m_parameters);
-				add_val_parameter("-str_eps", m_structuring_epsilon            , m_parameters);
-				add_val_parameter("-rg_eps" , m_region_growing_epsilon 		   , m_parameters);
-				add_val_parameter("-rg_ce"  , m_region_growing_cluster_epsilon , m_parameters);
-				add_val_parameter("-cell"   , m_clutter_cell_length            , m_parameters);
+				add_val_parameter("-alpha"   , m_alpha_shape_size               , m_parameters);
+				add_val_parameter("-str_eps" , m_structuring_epsilon            , m_parameters);
+				add_val_parameter("-rg_eps"  , m_region_growing_epsilon 		, m_parameters);
+				add_val_parameter("-rg_ce"   , m_region_growing_cluster_epsilon , m_parameters);
+				add_val_parameter("-cell"    , m_clutter_cell_length            , m_parameters);
+				add_val_parameter("-cf_scale", m_clutter_filtering_scale        , m_parameters);
+				add_val_parameter("-cf_mean" , m_clutter_filtering_mean         , m_parameters);
 			}
 
 			void set_user_defined_parameters(const Parameters_wrapper &parameters_wrapper) {
@@ -704,6 +709,20 @@ namespace CGAL {
 
 				const auto number_of_structured_segments = m_structuring->structure_point_set();
 				std::cout << "number of structured segments: " << number_of_structured_segments << ";" << std::endl;
+			}
+
+			void filtering_clutter(Boundary_data &boundary_clutter, Projected_points &boundary_clutter_projected, const size_t exec_step) {
+
+				// Filter clutter.
+				std::cout << "(" << exec_step << ") clutter filtering; ";
+
+				m_clutter_filtering.set_scale(m_clutter_filtering_scale);
+				m_clutter_filtering.set_mean(m_clutter_filtering_mean);
+				m_clutter_filtering.make_silent(m_silent);
+
+				std::cout << "number of input points: " << boundary_clutter_projected.size();
+				const auto number_of_clutter_points = m_clutter_filtering.filter(boundary_clutter, boundary_clutter_projected);
+				std::cout << "; number of output points: " << number_of_clutter_points << std::endl;
 			}
 
 			void creating_cdt(CDT &cdt, const Boundary_data &boundary_clutter, const Projected_points &boundary_clutter_projected, const size_t exec_step) {
@@ -977,48 +996,52 @@ namespace CGAL {
 				// (10) ----------------------------------
 				applying_2d_structuring(lines, building_boundaries, building_boundaries_projected, ++exec_step);
 
-
+				
 				// (11) ----------------------------------
+				filtering_clutter(boundary_clutter, boundary_clutter_projected, ++exec_step);
+
+
+				// (12) ----------------------------------
 				CDT cdt;
 				creating_cdt(cdt, boundary_clutter, boundary_clutter_projected, ++exec_step);
 
-				exit(0); // temporary exit!
-				
+				// exit(0); // temporary exit!
 
-				// (12) ----------------------------------
+
+				// (13) ----------------------------------
 				Container_2D input_2d; Face_points_map fp_map;
 				converting_3d_to_2d(input_2d, fp_map, cdt, input, ++exec_step);
 
 
-				// (13) ----------------------------------
+				// (14) ----------------------------------
 				computing_visibility(cdt, input_2d, ++exec_step);
 
 
-				// (14) ----------------------------------
+				// (15) ----------------------------------
 				applying_graph_cut(cdt, ++exec_step);
 
-				
+
 				// From now on we handle each building separately.
 
-				// (15) ----------------------------------				
+				// (16) ----------------------------------				
 				Buildings buildings;
 				splitting_buildings(buildings, cdt, ++exec_step);
 
 
-				// (16) ----------------------------------				
+				// (17) ----------------------------------				
 				finding_buildings_boundaries(buildings, cdt, ++exec_step);
 
 
-				// (17) ----------------------------------
+				// (18) ----------------------------------
 				fitting_roofs(buildings, fitted_ground_plane, fp_map, input, cdt, ++exec_step);
 
 
-				// (18) ----------------------------------
+				// (19) ----------------------------------
 				Ground ground_bbox;
 				creating_lod0(ground_bbox, cdt, buildings, input, ++exec_step);
 
 
-				// (19) ----------------------------------	
+				// (20) ----------------------------------	
 				creating_lod1(cdt, buildings, ground_bbox, ++exec_step);
 
 
@@ -1060,8 +1083,9 @@ namespace CGAL {
 			std::shared_ptr<Structuring_2> m_structuring;
 			Clutter_processor m_clutter_processor;
 			
-			Grid_simplifier m_grid_simplifier;
-			Thinning 		m_thinnning;
+			Grid_simplifier   m_grid_simplifier;
+			Thinning 		  m_thinnning;
+			Clutter_filtering m_clutter_filtering;
 
 
 			// Global parameters.
@@ -1160,6 +1184,9 @@ namespace CGAL {
 			std::shared_ptr<Lod_distortion> m_lod_distortion;
 			std::shared_ptr<Lod_coverage>   m_lod_coverage;
 
+			FT m_clutter_filtering_scale;
+			FT m_clutter_filtering_mean;
+
 
 			// Assert default values of all global parameters.
 			void assert_global_parameters() {
@@ -1212,6 +1239,9 @@ namespace CGAL {
 
 				assert(m_imp_eps   > FT(0));
 				assert(m_imp_scale > FT(0));
+
+				assert(m_clutter_filtering_scale > FT(0));
+				assert(m_clutter_filtering_mean  > FT(0));
 			}
 		};
 	}
