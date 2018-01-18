@@ -35,8 +35,8 @@ namespace CGAL {
 		public:
 
 			// Main typedefs.
-			typedef LodTraits 				      Traits;
-			typedef typename Traits::Kernel       Kernel;
+			typedef LodTraits 				Traits;
+			typedef typename Traits::Kernel Kernel;
 
 			typedef typename Traits::Container_2D Container_2D;
 			typedef typename Traits::Container_3D Container_3D;
@@ -61,8 +61,10 @@ namespace CGAL {
 			typedef typename Traits::Projected_points     Projected_points;
 			typedef typename Traits::Planes        		  Planes;
 
-			typedef typename Traits::Building_splitter 	  Building_splitter;
-			typedef typename Traits::Building_outliner 	  Building_outliner;
+			typedef typename Traits::Line_regularizer Line_regularizer;
+
+			typedef typename Traits::Building_splitter Building_splitter;
+			typedef typename Traits::Building_outliner Building_outliner;
 
 			typedef typename Traits::Building_min_roof_fitter Building_min_roof_fitter;
 			typedef typename Traits::Building_avg_roof_fitter Building_avg_roof_fitter;
@@ -203,7 +205,8 @@ namespace CGAL {
 			m_distortion(-FT(1)),
 			m_coverage(-FT(1)),
 			m_clutter_filtering_scale(-FT(1)),
-			m_clutter_filtering_mean(-FT(1))
+			m_clutter_filtering_mean(-FT(1)),
+			m_regularize_lines(false)
 			{ }
 
 
@@ -398,6 +401,8 @@ namespace CGAL {
 				m_visibility_num_samples = 2;     // number of subdivision steps when sampling triangles, 1 or 2 is enough
 				m_add_cdt_clutter 		 = false; // better to avoid clutter since it will pollute the final CDT
 
+				m_regularize_lines = false; // regularize lines after region growing
+
 				m_visibility_approach  = Visibility_approach::FACE_BASED; 				   // face based is, in general, a better but slower option
 				m_visibility_method    = Visibility_method::FACE_BASED_NATURAL_NEIGHBOURS; // face based is, in general, a better but slower option
 				m_visibility_angle_eps = 0.18; // do not use this ad-hoc, but when using the value about 0.15 - 0.20 is enough
@@ -447,6 +452,7 @@ namespace CGAL {
 				add_bool_parameter("-auto_params" , m_estimate_parameters, m_parameters);
 				add_bool_parameter("-quality"	  , m_estimate_quality   , m_parameters);
 				add_bool_parameter("-clutter"	  , m_add_cdt_clutter    , m_parameters);
+				add_bool_parameter("-regularize"  , m_regularize_lines   , m_parameters);
 
 
 				// Important.
@@ -692,6 +698,15 @@ namespace CGAL {
 				if (!m_silent) {
 					Log segments_exporter; segments_exporter.export_segments_as_obj("tmp" + std::string(PS) + "segments", segments, m_default_path);
 				}
+			}
+
+			void regularizing_lines(const Boundary_data &building_boundaries, const Projected_points &building_boundaries_projected, const Segments &segments, Lines &lines, const size_t exec_step) {
+
+				// Regularize lines.
+				std::cout << "(" << exec_step << ") regularizing lines; " << std::endl;
+
+				m_line_regularizer.make_silent(m_silent);
+				m_line_regularizer.process(building_boundaries, building_boundaries_projected, segments, lines);
 			}
 
 			void applying_2d_structuring(const Lines &lines, const Boundary_data &building_boundaries, const Projected_points &building_boundaries_projected, const size_t exec_step) {
@@ -1011,59 +1026,66 @@ namespace CGAL {
 
 
 				// (10) ----------------------------------
+				if (m_regularize_lines) regularizing_lines(building_boundaries, building_boundaries_projected, segments, lines, ++exec_step);
+
+
+				exit(EXIT_SUCCESS); // temporary exit
+
+
+				// (11) ----------------------------------
 				applying_2d_structuring(lines, building_boundaries, building_boundaries_projected, ++exec_step);
 
 
 				if (m_add_cdt_clutter) {
 					
-					// (11) ----------------------------------
+					// (12) ----------------------------------
 					applying_clutter_thinning(boundary_clutter, boundary_clutter_projected, input, ++exec_step);
 
 				
-					// (12) ----------------------------------
+					// (13) ----------------------------------
 					filtering_clutter(boundary_clutter, boundary_clutter_projected, ++exec_step);
 				}
 
 
-				// (13) ----------------------------------
+				// (14) ----------------------------------
 				CDT cdt;
 				creating_cdt(cdt, boundary_clutter, boundary_clutter_projected, ++exec_step);
 
 
-				// (14) ----------------------------------
+				// (15) ----------------------------------
 				Container_2D input_2d; Face_points_map fp_map;
 				converting_3d_to_2d(input_2d, fp_map, cdt, input, ++exec_step);
 
 
-				// (15) ----------------------------------
+				// (16) ----------------------------------
 				computing_visibility(cdt, input_2d, ++exec_step);
 
 
-				// (16) ----------------------------------
+				// (17) ----------------------------------
 				applying_graph_cut(cdt, ++exec_step);
 
 
 				// From now on we handle each building separately.
 
-				// (17) ----------------------------------				
+				// (18) ----------------------------------				
 				Buildings buildings;
 				splitting_buildings(buildings, cdt, ++exec_step);
 
 
-				// (18) ----------------------------------				
+				// (19) ----------------------------------				
 				finding_buildings_boundaries(buildings, cdt, ++exec_step);
 
 
-				// (19) ----------------------------------
+				// (20) ----------------------------------
 				fitting_roofs(buildings, fitted_ground_plane, fp_map, input, cdt, ++exec_step);
 
 
-				// (20) ----------------------------------
+				// (21) ----------------------------------
 				Ground ground_bbox;
 				creating_lod0(ground_bbox, cdt, buildings, input, ++exec_step);
 
 
-				// (21) ----------------------------------	
+				// (22) ----------------------------------	
 				creating_lod1(cdt, buildings, ground_bbox, ++exec_step);
 
 
@@ -1108,6 +1130,8 @@ namespace CGAL {
 			Grid_simplifier   m_grid_simplifier;
 			Thinning 		  m_thinning;
 			Clutter_filtering m_clutter_filtering;
+
+			Line_regularizer m_line_regularizer;
 
 
 			// Global parameters.
@@ -1208,6 +1232,8 @@ namespace CGAL {
 
 			FT m_clutter_filtering_scale;
 			FT m_clutter_filtering_mean;
+
+			bool m_regularize_lines;
 
 
 			// Assert default values of all global parameters.

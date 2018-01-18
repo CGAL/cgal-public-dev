@@ -15,7 +15,9 @@
 #include <CGAL/Preprocessor/Level_of_detail_preprocessor.h>
 #include <CGAL/Selector/Level_of_detail_selector.h>
 #include <CGAL/Selector/Level_of_detail_selection_strategy.h>
-#include <CGAL/Regularizer/Level_of_detail_regularizer.h>
+#include <CGAL/Regularizer/Level_of_detail_vertical_regularizer.h>
+#include <CGAL/Regularizer/Level_of_detail_line_regularizer.h>
+#include <CGAL/Regularizer/Level_of_detail_regularize_planes.h>
 #include <CGAL/Projector/Level_of_detail_projector.h>
 #include <CGAL/Utils/Level_of_detail_utils.h>
 #include <CGAL/Structuring_2/Level_of_detail_structuring_2.h>
@@ -25,6 +27,7 @@
 #include <CGAL/Buildings/Level_of_detail_buildings.h>
 #include <CGAL/Clutter/Level_of_detail_grid_simplify.h>
 #include <CGAL/Clutter/Level_of_detail_thinning.h>
+#include <CGAL/Clutter/Level_of_detail_clutter_filtering.h>
 #include <CGAL/Clutter/Level_of_detail_clutter_processor.h>
 #include <CGAL/Region_growing/Level_of_detail_region_growing.h>
 #include <CGAL/Region_growing/Level_of_detail_planar_region_growing.h>

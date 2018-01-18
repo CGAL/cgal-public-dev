@@ -1,5 +1,5 @@
-#ifndef CGAL_LEVEL_OF_DETAIL_REGULARIZER_H
-#define CGAL_LEVEL_OF_DETAIL_REGULARIZER_H
+#ifndef CGAL_LEVEL_OF_DETAIL_VERTICAL_REGULARIZER_H
+#define CGAL_LEVEL_OF_DETAIL_VERTICAL_REGULARIZER_H
 
 // STL includes.
 #include <iostream>
@@ -19,16 +19,8 @@ namespace CGAL {
 
 	namespace LOD {
 
-		template<class KernelTraits, class InputContainer, class Planes>
-		class Level_of_detail_regularizer {
-
-		public:
-			virtual int regularize(Planes&, InputContainer &, const typename KernelTraits::Plane_3 &) = 0;
-			virtual ~Level_of_detail_regularizer() { }
-		};
-
 		template<class KernelTraits, class InputContainer, class PlanesContainer>
-		class Level_of_detail_vertical_regularizer : public Level_of_detail_regularizer<KernelTraits, InputContainer, PlanesContainer> {
+		class Level_of_detail_vertical_regularizer {
 
 		private:
 			enum class Regularization_status { REJECT, REGULARIZE, NOACTION };
@@ -56,7 +48,7 @@ namespace CGAL {
 
 			// Here as a plane normal I take an average normal among all normals of the points
 			// that belong to the plane.
-			int regularize(Planes &planes, Container &input, const Plane &ground_plane) override { 
+			int regularize(Planes &planes, Container &input, const Plane &ground_plane) { 
 
 				auto number_of_regularized_planes = 0;
 
@@ -201,4 +193,4 @@ namespace CGAL {
 	}
 }
 
-#endif // CGAL_LEVEL_OF_DETAIL_REGULARIZER_H
+#endif // CGAL_LEVEL_OF_DETAIL_VERTICAL_REGULARIZER_H

@@ -21,7 +21,8 @@
 #include <CGAL/Preprocessor/Level_of_detail_preprocessor.h>
 #include <CGAL/Selector/Level_of_detail_selector.h>
 #include <CGAL/Selector/Level_of_detail_selection_strategy.h>
-#include <CGAL/Regularizer/Level_of_detail_regularizer.h>
+#include <CGAL/Regularizer/Level_of_detail_vertical_regularizer.h>
+#include <CGAL/Regularizer/Level_of_detail_line_regularizer.h>
 #include <CGAL/Projector/Level_of_detail_projector.h>
 #include <CGAL/Utils/Level_of_detail_utils.h>
 #include <CGAL/Structuring_2/Level_of_detail_structuring_2.h>
@@ -64,11 +65,12 @@ namespace CGAL {
 			typedef CGAL::LOD::Level_of_detail_selector<Kernel, Building_boundary_strategy> Building_boundary_selector;
 			typedef CGAL::LOD::Level_of_detail_selector<Kernel, Building_interior_strategy> Building_interior_selector;
 
-			typedef std::map<int, std::vector<int> >          				   		   			  Planes;
-			typedef CGAL::LOD::Level_of_detail_vertical_regularizer<Kernel, Container_3D, Planes> Vertical_regularizer;
-			
+			typedef std::map<int, std::vector<int> >          				   		   			  		Planes;
 			typedef std::map<int, typename Kernel::Point_2>           	    				  		 	Projected_points;
 			typedef CGAL::LOD::Level_of_detail_simple_projector<Kernel, Container_3D, Projected_points> Ground_projector;
+			
+			typedef CGAL::LOD::Level_of_detail_vertical_regularizer<Kernel, Container_3D, Planes> Vertical_regularizer;
+			typedef CGAL::LOD::Level_of_detail_line_regularizer<Kernel, Planes, Projected_points> Line_regularizer;
 
 			typedef CGAL::LOD::My_vertex_info<Structured_label>  My_vertex_info; 
 	    	typedef CGAL::LOD::My_face_info<typename Kernel::FT> My_face_info;

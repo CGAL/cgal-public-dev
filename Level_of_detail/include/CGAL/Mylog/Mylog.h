@@ -144,6 +144,56 @@ namespace CGAL {
 				save(filename, ".ply");
 			}
 
+			template<class Quads, class Point_3>
+			void save_quads_as_ply(const Quads &quads, const std::string &filename) {
+
+				clear();
+
+				// Add ply header.
+				out << 
+				"ply" + std::string(PN) + ""               					    << 
+				"format ascii 1.0" + std::string(PN) + ""     				    << 
+				"element vertex "        				   << quads.size() * 4  << "" + std::string(PN) + "" << 
+				"property double x" + std::string(PN) + ""    				    << 
+				"property double y" + std::string(PN) + ""    				    << 
+				"property double z" + std::string(PN) + "" 					    <<
+				"element face " 						   << quads.size()      << "" + std::string(PN) + "" << 
+				"property list uchar int vertex_indices" + std::string(PN) + "" <<
+				"property uchar red"   + std::string(PN) + "" 				    <<
+				"property uchar green" + std::string(PN) + "" 				    <<
+				"property uchar blue"  + std::string(PN) + "" 				    <<
+				"end_header" + std::string(PN) + "";
+
+				// Add mesh vertices.
+				for (size_t i = 0; i < quads.size(); ++i) {
+
+					const Point_3 a = quads[i][0];
+					const Point_3 b = quads[i][1];
+					const Point_3 c = quads[i][2];
+					const Point_3 d = quads[i][3];
+
+					out << a << std::endl;
+					out << b << std::endl;
+					out << c << std::endl;
+					out << d << std::endl;
+				}
+
+				// Add mesh facets.
+				size_t count = 0;
+				for (size_t i = 0; i < quads.size(); ++i) {
+
+					out << 4 << " " << count << " "; ++count;
+					out << count << " "; ++count;
+					out << count << " "; ++count;
+					out << count << " "; ++count;
+
+					out << generate_random_color() << std::endl;
+				}
+
+				// Save file.
+				save(filename, ".ply");
+			}
+
 			// Save mesh in a ply format.
 			template<class Mesh, class Regions>
 			void save_mesh_as_ply(const Regions &regions, const std::string &filename) {
