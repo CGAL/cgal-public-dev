@@ -780,13 +780,13 @@ compute_motorcycle_next_path(Motorcycle& mc)
 
   if(next_source != mc.current_position())
   {
-    // if 'next source' is different from the current position, it should only
+    // If 'next source' is different from the current position, it should only
     // be a location change, not a position change
     CGAL_assertion(CGAL::sqrt(CGAL::squared_distance(next_source->point(),
                                                      mc.current_position()->point()))
                      < std::numeric_limits<FT>::epsilon());
 
-    // block the previous destination
+    // Can now block the previous destination
     mc.current_position()->block();
 
     // Transfer the visiting motorcycles information to the next source
@@ -886,6 +886,7 @@ crash_motorcycles_with_same_source_and_direction()
       Point_2 bcs_fmc_s(fmc.source()->location().second[0], fmc.source()->location().second[1]);
 
 #ifdef CGAL_MOTORCYCLE_GRAPH_ROBUSTNESS_CODE
+      // Add some tolerance to the definition of "collinearity"
       Vector_2 bcs_mc_v(bcs_mc_s, bcs_mc_d);
       Vector_2 bcs_fmc_v(bcs_fmc_s, bcs_fmc_d);
 
@@ -1261,7 +1262,7 @@ find_collision_with_track_on_foreign_face(const Motorcycle& mc,
       return;
 
     // We are now in the configuration of 'mc' having a single point on a border,
-    // a subset of which is the foreign track
+    // and the foreign track is on the opposite border
 
     const Point_2 s = gt.construct_point_2_object()(fmc_track_source->location().second[0],
                                                     fmc_track_source->location().second[1]);
@@ -1285,11 +1286,11 @@ find_collision_with_track_on_foreign_face(const Motorcycle& mc,
 
     // From here on, 'ct2' is strictly in between 's' and 't'
 
-    // No choice but to compute the time
+    // No choice but to compute the foreign time
     const FT time_at_fmc_track_source = fmc_track.template get<2>();
     const FT foreign_time_at_collision = time_at_fmc_track_source +
       CGAL::sqrt(CGAL::squared_distance(fmc_track_source->point(),
-                                        mc.closest_target()->point())) / fmc.speed();
+                                         mc.closest_target()->point())) / fmc.speed();
 
     if(tc.is_collision_earlier_than_current_best(time_at_collision, foreign_time_at_collision))
     {
@@ -1591,7 +1592,7 @@ find_collision_with_foreign_track_extremity(const Motorcycle& mc,
     // From here on, e is on ]s;t[
     std::cout << "    e is on ]s;t[" << std::endl;
 
-    //@todo try to first find the point through the location in 'points'
+    //@todo try to find the point through the location in 'points' first ?
 
     Point collision_point = foreign_extremity->point();
     const FT time_at_collision = mc.current_time() +
@@ -1861,16 +1862,17 @@ find_collision_between_collinear_tracks(const Motorcycle& mc,
                                            fmc_track_source->point())) -
         fmc.speed() * (mc.current_time() - time_at_fmc_track_source)) / (mc.speed() + fmc.speed());
 
+#ifdef CGAL_MOTORCYCLE_GRAPH_VERBOSE
       std::cout << "sqd: " << CGAL::squared_distance(mc.current_position()->point(), fmc_track_source->point()) << std::endl;
       std::cout << "speeds: " << mc.speed() << " " << fmc.speed() << std::endl;
       std::cout << "current times: " << mc.current_time() << " " << time_at_fmc_track_source << std::endl;
       std::cout << "final time: " << time_at_collision << std::endl;
-
-      // @fixme everything below is difficult to read and maintain...
-#ifdef CGAL_MOTORCYCLE_GRAPH_VERBOSE
       std::cout << "  mc and fmc would meet at time: " << time_at_collision << std::endl;
 #endif
 
+      // @fixme everything below is difficult to read and maintain...
+
+      // @todo generalize this check in other places
 #ifdef CGAL_MOTORCYCLE_GRAPH_ROBUSTNESS_CODE
       // Check if motorcycles almost meet at a known track point, and if so, snap
       if(CGAL::abs(time_at_collision - mc.current_time()) < std::numeric_limits<FT>::epsilon())
