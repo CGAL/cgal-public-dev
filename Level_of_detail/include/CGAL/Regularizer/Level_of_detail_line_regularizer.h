@@ -18,11 +18,12 @@
 // CGAL includes.
 #include <CGAL/Iterator_range.h>
 #include <CGAL/property_map.h>
-#include <CGAL/Shape_detection_3/property_maps.h>
+#include <CGAL/enum.h>
 
 // New CGAL includes.
 #include <CGAL/Mylog/Mylog.h>
 #include <CGAL/Regularizer/Level_of_detail_regularize_planes.h>
+#include <CGAL/Regularizer/Level_of_detail_regularize_property_maps.h>
 
 namespace CGAL {
 
@@ -39,8 +40,11 @@ namespace CGAL {
 			typedef typename Kernel::Point_2   Point_2;
             typedef typename Kernel::Point_3   Point_3;
 			typedef typename Kernel::Line_2    Line_2;
+            typedef typename Kernel::Line_3    Line_3;
             typedef typename Kernel::Segment_2 Segment_2;
             typedef typename Kernel::Plane_3   Plane_3;
+            typedef typename Kernel::Vector_2  Vector_2;
+            typedef typename Kernel::Vector_3  Vector_3;
 			typedef typename Kernel::FT 	   FT;
 
             typedef std::pair<Point_3, int>                Point_with_plane;
@@ -62,12 +66,12 @@ namespace CGAL {
 
             Level_of_detail_line_regularizer() : 
             m_silent(false), 
-            m_debug(true),
-            m_parallelism(true),
-            m_orthogonality(true),
-            m_coplanarity(true),
-            m_z_symmetry(true),
-            m_angle(FT(10))
+            m_debug(false),
+            m_parallelism(false),
+            m_orthogonality(false),
+            m_coplanarity(false),
+            m_z_symmetry(false),
+            m_angle(FT(25))
             { }
 
 			void make_silent(const bool silent) {
@@ -115,6 +119,10 @@ namespace CGAL {
                         points.push_back(pwp);
                     }
                 }
+
+                if (m_debug) {
+                    Log saver; saver.export_points_with_planes_as_xyz("tmp" + std::string(PS) + "regularization_points", points);
+                }
             }
 
             void create_planes(const Segments &segments, Planes &planes) const {
@@ -131,8 +139,7 @@ namespace CGAL {
                 }
 
                 if (m_debug) {
-                    Log exporter;
-                    exporter.save_quads_as_ply<Debug_quads, Point_3>(debug_quads, "tmp" + std::string(PS) + "regularization_planes");
+                    Log saver; saver.save_quads_as_ply<Debug_quads, Point_3>(debug_quads, "tmp" + std::string(PS) + "regularization_planes");
                 }
             }
 
@@ -143,16 +150,16 @@ namespace CGAL {
 
                 const Point_3 a = Point_3(p1.x(), p1.y(), FT(0));
                 const Point_3 b = Point_3(p2.x(), p2.y(), FT(0));
-                const Point_3 c = Point_3(p1.x(), p1.y(), FT(10));
+                const Point_3 c = Point_3(p2.x(), p2.y(), FT(10));
 
                 if (m_debug) {
-                    const Point_3 d = Point_3(p2.x(), p2.y(), FT(10));
+                    const Point_3 d = Point_3(p1.x(), p1.y(), FT(10));    
                     debug_quad.resize(4);
 
                     debug_quad[0] = a;
                     debug_quad[1] = b;
-                    debug_quad[2] = d;
-                    debug_quad[3] = c;
+                    debug_quad[2] = c;
+                    debug_quad[3] = d;
                 }
 
                 return Plane_3(a, b, c);
@@ -160,12 +167,27 @@ namespace CGAL {
 
             void regularize(const Points &points, Planes &planes) const {
                 
-                CGAL::LOD::regularize_planes(points, Point_map(), planes, Plane_map(), Index_map(), 
-                m_parallelism, m_orthogonality, m_coplanarity, m_z_symmetry, m_angle);
+                CGAL::LOD::regularize_planes(points, Point_map(), planes, Plane_map(), CGAL::LOD::Point_to_shape_index_map<Kernel>(points),
+                m_parallelism, m_orthogonality, m_coplanarity, m_z_symmetry);
             }
 
-            void get_lines(const Planes & /* planes */, Lines & /* lines */) const {
+            void get_lines(const Planes &planes, Lines &lines) const {
 
+                lines.clear();
+                lines.resize(planes.size());
+
+                for (size_t i = 0; i < planes.size(); ++i) {
+
+                    const  Point_3 point_3      = planes[i].point();
+                    const   Line_3 pnd_line_3   = planes[i].perpendicular_line(point_3);
+                    const Vector_3 pnd_vector_3 = pnd_line_3.to_vector();
+                    const Vector_2 pnd_vector_2 = Vector_2(pnd_vector_3.x(), pnd_vector_3.y());
+                    const Vector_2 vector_2     = pnd_vector_2.perpendicular(CGAL::COUNTERCLOCKWISE);
+                    const  Point_2 point_2      = Point_2(point_3.x(), point_3.y());
+                    const   Line_2 line_2       = Line_2(point_2, vector_2);
+
+                    lines[i] = line_2;
+                }
             }
         };
     }

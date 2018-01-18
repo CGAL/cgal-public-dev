@@ -687,6 +687,24 @@ namespace CGAL {
 				save(name, ".obj");
 			}
 
+			template<class Lines>
+			void export_lines_as_obj(const std::string &name, const Lines &lines, const std::string & /* default_path */) {
+
+				clear();
+				for (size_t i = 0; i < lines.size(); ++i) {
+
+					out << "v " << lines[i].point(0) << " " << 0 << std::endl;
+					out << "v " << lines[i].point(10) << " " << 0 << std::endl;
+					out << "v " << lines[i].point(0) << " " << 0 << std::endl;
+				}
+
+				for (size_t i = 0; i < lines.size() * 3; i += 3)
+					out << "f " << i + 1 << " " << i + 2 << " " << i + 3 << std::endl;
+
+				// save("segments", ".obj", default_path);
+				save(name, ".obj");
+			}
+
 			template<class Projected_points>
 			void save_dimensions_as_ply(const std::string &name, const Projected_points &projected, const std::vector<size_t> &dimensions, const std::string & /* default_path */) {
 				
@@ -972,6 +990,16 @@ namespace CGAL {
 					out << (*it).second << " " << 0 << std::endl;
 
 				// save(name, ".xyz", default_path);
+				save(name, ".xyz");
+			}
+
+			template<class Points_with_planes>
+			void export_points_with_planes_as_xyz(const std::string &name, const Points_with_planes &points) {
+				
+				clear();
+				for (typename Points_with_planes::const_iterator it = points.begin(); it != points.end(); ++it)
+					out << (*it).first << std::endl;
+
 				save(name, ".xyz");
 			}
 

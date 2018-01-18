@@ -1026,10 +1026,19 @@ namespace CGAL {
 
 
 				// (10) ----------------------------------
-				if (m_regularize_lines) regularizing_lines(building_boundaries, building_boundaries_projected, segments, lines, ++exec_step);
+				if (m_regularize_lines) {
+				
+					regularizing_lines(building_boundaries, building_boundaries_projected, segments, lines, ++exec_step);
+					
+					if (!m_silent) {
+						Log lines_exporter; lines_exporter.export_lines_as_obj("tmp" + std::string(PS) + "lines", lines, m_default_path);
+					}
+
+					// creating_segments(segments, lines, building_boundaries, building_boundaries_projected, ++exec_step);
+				}
 
 
-				exit(EXIT_SUCCESS); // temporary exit
+				// exit(EXIT_SUCCESS); // temporary exit
 
 
 				// (11) ----------------------------------

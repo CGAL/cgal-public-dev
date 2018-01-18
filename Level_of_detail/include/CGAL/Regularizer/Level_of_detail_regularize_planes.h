@@ -15,11 +15,9 @@ namespace CGAL
 namespace LOD
 {
 
-// ----------------------------------------------------------------------------
-// Private section
-// ----------------------------------------------------------------------------
 namespace internal
 {
+
 namespace PlaneRegularization
 {
 
@@ -481,11 +479,7 @@ void subgraph_mutually_orthogonal_clusters(std::vector<Plane_cluster<Traits>> &c
 } // namespace PlaneRegularization
 } // namespace internal
 
-// ----------------------------------------------------------------------------
-// Public section
-// ----------------------------------------------------------------------------
-
-// This variant requires all parameters
+// this variant requires all parameters
 template <typename PointRange,
 		  typename PointMap,
 		  typename PlaneRange,
@@ -514,9 +508,7 @@ void regularize_planes(const PointRange &points,
 	typedef typename internal::PlaneRegularization::Plane_cluster<Kernel>
 		Plane_cluster;
 
-	/*
-     * Compute centroids and areas
-    */
+    // compute centroids and areas
 	std::vector<Point> centroids;
 	std::vector<FT> areas;
 	internal::PlaneRegularization::compute_centroids_and_areas<Kernel>(points, point_map, planes.size(), index_map, centroids, areas);
@@ -624,6 +616,7 @@ void regularize_planes(const PointRange &points,
 					cop_index++;
 				}
 			}
+
 			// regularize primitive position by computing barycenter of cplanar planes
 			std::vector<Point> pt_bary(cop_index, Point((FT)0., (FT)0., (FT)0.));
 			std::vector<FT> area(cop_index, 0.);
@@ -654,7 +647,7 @@ void regularize_planes(const PointRange &points,
 	}
 }
 
-// This variant deduces the kernel from the point property map.
+// this variant deduces the kernel from the point property map
 template <typename PointRange,
 		  typename PointMap,
 		  typename PlaneRange,
