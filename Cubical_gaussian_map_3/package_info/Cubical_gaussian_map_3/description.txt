@@ -1,0 +1,1 @@
+A dual represenation of convex polytopes using six faces of the unit cube.
