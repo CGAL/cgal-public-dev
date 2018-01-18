@@ -13,7 +13,7 @@
 //
 // $URL: $
 // $Id: $
-// 
+//
 //
 // Author(s)     : Asaf Porat          <asafpor1@post.tau.ac.il>
 
@@ -58,15 +58,15 @@ private:
   typedef typename Alg_kernel::Line_3                    Alg_line_3;
   typedef typename Alg_kernel::Segment_3                 Alg_segment_3;
   typedef typename Alg_kernel::Plane_3                   Alg_plane_3;
-    
+
   typedef typename Rational_kernel::Point_3              Rational_point_3;
   typedef typename Rational_kernel::Line_3               Rational_line_3;
   typedef typename Rational_kernel::Segment_3            Rational_segment_3;
   typedef typename Rational_kernel::Plane_3              Rational_plane_3;
   typedef typename Rational_kernel::Point_2              Rational_point_2;
-      
+
   typedef typename Traits_arr_on_plane_2::Curve_2         Rational_arc_2;
-  typedef CGAL::Polyhedron_3<Rational_kernel>             Rational_polyhedron_3;     
+  typedef CGAL::Polyhedron_3<Rational_kernel>             Rational_polyhedron_3;
 
   typedef typename Traits_arr_on_plane_2::Point_2 Point_2_on_arr;
   typedef Lines_through_segments_point_adapt_2<
@@ -84,11 +84,11 @@ private:
   typedef Lines_through_segments_mapped_2<
     Traits_3> Mapped_2;
 
-      
+
   typedef Lines_through_segments_rbound_unbound_union<Rational>  LTS_rbound;
 
   const Alg_kernel* m_alg_kernel;
-      
+
   template <typename Point,typename Ext_obj>
   class Point_and_two_objs
   {
@@ -96,25 +96,25 @@ private:
     Point point;
     const Ext_obj* obj1;
     const Ext_obj* obj2;
-         
+
     Point_and_two_objs(){ };
-         
+
     Point_and_two_objs(Point _point,
                        const Ext_obj* _obj1,
                        const Ext_obj* _obj2)
       : point(_point), obj1(_obj1), obj2(_obj2)
     { }
-         
+
     Point_and_two_objs(const Point_and_two_objs& p2)
     {
-      point = p2.point; 
+      point = p2.point;
       obj1 = p2.obj1;
       obj2 = p2.obj2;
     }
   };
-      
+
 public:
-      
+
   Lines_through_segments_arr_gen_func(const Alg_kernel* alg_kernel)
   {
     m_alg_kernel = alg_kernel;
@@ -152,7 +152,7 @@ public:
             curr++;
             if (!traits_2_adapt.has_y_value_at_x(curr->curve(), x))
                return false;
-            
+
             y = traits_2_adapt.get_y_val_ratioal(curr->curve(), x);
             output_p = Rational_point_2(x,y);
             return true;
@@ -163,7 +163,7 @@ public:
       } while (curr != first);
       return false;
    }
-    
+
 
   /*************************************************************
    * The following function Iterates over all of the vertics of a face.
@@ -183,7 +183,7 @@ public:
                         const Ext_obj& s4)
   {
     Ccb_halfedge_circulator curr = circ;
-    typedef typename Traits_arr_on_plane_2::X_monotone_curve_2 
+    typedef typename Traits_arr_on_plane_2::X_monotone_curve_2
        X_monotone_curve_2;
 
     std::list<X_monotone_curve_2> arcs;
@@ -191,10 +191,10 @@ public:
       arcs.push_back(curr->curve());
       curr->source()->set_added_to_output(true);
       curr->target()->set_added_to_output(true);
-            
+
       curr->set_added_to_output(true);
       curr->twin()->set_added_to_output(true);
-            
+
     } while (++curr != circ);
 
     Mapped_2 OAP(arcs.begin(),arcs.end(),s1,s2);
@@ -211,8 +211,8 @@ public:
    * for each vertex of degree > 1, it finds the line that passes through the
    * creator lines and the lines which represents the edges of the hyperbola.
    **************************************************************/
-  template <typename Arr_on_plane, 
-            typename OutputIterator, 
+  template <typename Arr_on_plane,
+            typename OutputIterator,
             typename Isolated_points_on_plane,
             typename Vertex_valid_functor>
   void find_all_lines_plane(boost::shared_ptr<Arr_on_plane> arr_on_plane,
@@ -233,10 +233,10 @@ public:
      *    passes through 4 segments.
      *    All the lines together represnt half plane.
      * 2. Run over all of the holls at the face, each holl also represent
-     *    a plane that crosses 4 segments. 
+     *    a plane that crosses 4 segments.
      */
     typename Arr_on_plane::Face_iterator   fit;
-    for (fit = arr_on_plane->faces_begin(); fit != 
+    for (fit = arr_on_plane->faces_begin(); fit !=
            arr_on_plane->faces_end();
          ++fit)
     {
@@ -253,7 +253,7 @@ public:
     }
 
     typename Arr_on_plane::Edge_iterator   eit;
-    for (eit = arr_on_plane->edges_begin(); 
+    for (eit = arr_on_plane->edges_begin();
          eit != arr_on_plane->edges_end();
          ++eit)
     {
@@ -261,34 +261,34 @@ public:
       if (!eit->get_added_to_output() &&
           ((eit->twin()->face()->num_of_overlap_plane_faces() == 1 &&
             eit->face()->num_of_overlap_plane_faces() == 1 &&
-            *(eit->face()->segs_begin()) != 
+            *(eit->face()->segs_begin()) !=
             *(eit->twin()->face()->segs_begin())) ||
            /* An edge added inside a face with num_of_overlap_plane_faces = 1. */
            (eit->twin()->face()->num_of_overlap_plane_faces() == 1 &&
             eit->face()->num_of_overlap_plane_faces() == 1 &&
-            *(eit->face()->segs_begin()) != 
+            *(eit->face()->segs_begin()) !=
             *eit->segs_begin()) ||
            eit->num_of_segments() >= 2))
       {
 
-               
+
 #if ARR_ON_SUR_DEBUG
         std::cout << change_color(CGAL_RED,"ADD PLANE") << std::endl;
         std::cout << eit->curve() << std::endl;
         if (eit->twin()->face()->num_of_overlap_plane_faces() == 1 &&
             eit->face()->num_of_overlap_plane_faces() == 1 &&
-            *(eit->face()->segs_begin()) != 
+            *(eit->face()->segs_begin()) !=
             *eit->segs_begin())
         {
-          std::cout << "*eit->face()->segs_begin() = " 
+          std::cout << "*eit->face()->segs_begin() = "
                     << *eit->face()->segs_begin() << std::endl;
           std::cout << "*eit->segs_begin()" << *eit->segs_begin() << std::endl;
-        }          
+        }
 #endif
         const typename Arr_on_plane::Dcel::Ext_obj *S4;
         if (eit->num_of_segments() >= 2)
         {
-          typename Arr_on_plane::Dcel::const_iterator next_it = 
+          typename Arr_on_plane::Dcel::const_iterator next_it =
              eit->segs_begin();
           next_it++;
           S4 = *next_it;
@@ -297,21 +297,21 @@ public:
         {
           S4 = *(eit->face()->segs_begin());
         }
-                              
+
         Mapped_2 output_curve(eit->curve(), s1, s2);
         LTS::insert_transversal(out,
                                 output_curve,
-                                &s1, &s2, 
+                                &s1, &s2,
                                 *eit->segs_begin(),
                                 S4, With_segments());
-               
+
         eit->source()->set_added_to_output(true);
         eit->target()->set_added_to_output(true);
         eit->set_added_to_output(true);
         eit->twin()->set_added_to_output(true);
       }
     }
-        
+
     typedef typename Arr_on_plane::Vertex_iterator Vertex_it;
     Vertex_it   vit;
     for (vit = arr_on_plane->vertices_begin();
@@ -321,12 +321,12 @@ public:
       std::cout<<"On Plane vit->degree() = "<<vit->degree()<<std::endl;
 #endif
       /* Check only vertices that are intersection of 2 hyperbolas. */
-      if (vit->degree() >= 2 && 
+      if (vit->degree() >= 2 &&
           !vit->get_added_to_output()) /* Was handled earlier. */
       {
-        /* Check that the vertex was created from two edges of two 
+        /* Check that the vertex was created from two edges of two
            unique hyperbolas.
-           This is important in the case of degenerate hyperbola 
+           This is important in the case of degenerate hyperbola
            that has been created from
            2 line segements.
 
@@ -341,20 +341,20 @@ public:
                                                               common_line))
           {
 #if ARR_ON_SUR_DEBUG
-                     
+
             std::cout << "S1 = " << s1 << std::endl;
             std::cout << "S2 = " << s2 << std::endl;
-                     
-            std::cout 
-              <<   common_line.point(-10) 
-              << ", " 
-              <<   common_line.point(10000) 
-              << "," 
+
+            std::cout
+              <<   common_line.point(-10)
+              << ", "
+              <<   common_line.point(10000)
+              << ","
               << std::endl;
 #endif
            Rational_point_2 rp;
 
-            bool is_rational = (rational_output && 
+            bool is_rational = (rational_output &&
                                 is_degenerate_hyp(vit->incident_halfedges(),
                                                   rp));
             if (is_rational)
@@ -375,24 +375,24 @@ public:
                                       &s1, &s2, S3, S4, With_segments());
             }
           }
-                  
+
 #if CGAL_DEBUG_OUTPUT
           debug_output<Arr_on_plane,Algebraic>(s1, s2, common_line, vit);
 #endif
-                  
+
           vit->set_added_to_output(true);
         }
       }
     }
-         
+
     if (isolated_points_on_plane.size() > 0)
     {
       typedef CGAL::Arr_naive_point_location<Arr_on_plane> Naive_pl;
       Naive_pl     naive_pl;
-            
+
       add_isolated_points(isolated_points_on_plane, arr_on_plane,
                           naive_pl, validate_vertex,
-                          out, s1, s2, 
+                          out, s1, s2,
                           intersection_point_S1S2);
     }
   }
@@ -403,7 +403,7 @@ public:
    * through the 4 segments.
    *
    * Input:
-   *      H1 - Hyperbola that will be added to the arrangement. 
+   *      H1 - Hyperbola that will be added to the arrangement.
    *
    * Output:
    *      arr - The arrangemnet.
@@ -425,22 +425,22 @@ public:
                            const Rational_segment_3& S2,
                            const Rational_point_3& intersection_point_S1S2)
   {
-         
+
     typename Isolated_points::iterator it;
-    typedef typename 
+    typedef typename
       Isolated_points::IP_point_and_line_pair::PL_Point Point;
     typedef typename Arrangement_2::Dcel::Ext_obj Ext_obj;
-         
+
     /* Each duplicated point represents a line in 3D, that intersect
        4 lines. */
     typedef Point_and_two_objs<Point,Ext_obj> List_element;
-         
-    std::list<List_element> duplicated_points; 
+
+    std::list<List_element> duplicated_points;
     typename std::list<List_element>::iterator dup_it;
-         
+
     isolated_points.sort_points();
     isolated_points.remove_duplicated_points(duplicated_points);
-            
+
     /* for each duplicated point add a line */
     for (dup_it = duplicated_points.begin();
          dup_it != duplicated_points.end();
@@ -449,18 +449,18 @@ public:
        get_3D_point_from_point_on_arr(
           arr,
           dup_it->point,
-          out, 
+          out,
           intersection_point_S1S2, S1, S2 ,
           *dup_it->obj1 ,
           *dup_it->obj2);
     }
-            
-    /* Perform point location query on each point, if the point is on 
+
+    /* Perform point location query on each point, if the point is on
      * an edge than it represents a valid line that goes through 4 segments.
      */
-            
+
     pl.attach(*arr);
-            
+
     for (it = isolated_points.begin(); it != isolated_points.end(); ++it)
     {
       add_isolated_point_to_arr(
@@ -470,8 +470,8 @@ public:
     }
   }
 
-  template <typename OutputIterator, 
-            typename Arrangement_2, 
+  template <typename OutputIterator,
+            typename Arrangement_2,
             typename Ext_obj>
   void get_3D_point_from_point_on_arr(boost::shared_ptr<Arrangement_2> arr,
                                       const Point_on_sphere_2& pt,
@@ -482,13 +482,13 @@ public:
                                       const Ext_obj& S3,
                                       const Ext_obj& S4)
   {
-#if CGAL_DEBUG_OUTPUT         
+#if CGAL_DEBUG_OUTPUT
     Rational x = pt.dx();
     Rational y = pt.dy();
     Rational z = pt.dz();
 
     Rational_line_3 common_line;
-    m_g_func.get_line_from_intersection_point(intersection_point_S1S2, 
+    m_g_func.get_line_from_intersection_point(intersection_point_S1S2,
                                               x,y,z, common_line);
 #endif
 
@@ -498,14 +498,14 @@ public:
        Rational_point_3(intersection_point_S1S2.x() + pt.dx(),
                         intersection_point_S1S2.y() + pt.dy(),
                         intersection_point_S1S2.z() + pt.dz()));
-    
+
     LTS::insert_transversal(out,
                             output_line,
                             &S1,&S2,&S3,&S4,With_segments());
   }
-      
-  template <typename OutputIterator, 
-            typename Arrangement_2, 
+
+  template <typename OutputIterator,
+            typename Arrangement_2,
             typename Ext_obj>
   void get_3D_point_from_point_on_arr(
      boost::shared_ptr<Arrangement_2> arr,
@@ -518,29 +518,29 @@ public:
      const Ext_obj& S4)
   {
     typedef typename Arrangement_2::Point_2 Point_L;
-         
+
     Point_L ptl;
     pt.get_original_point(ptl);
-         
+
     Mapped_2 output_point(ptl, S1, S2);
     LTS::insert_transversal(out,
                             output_point,
                             &S1, &S2, &S3, &S4, With_segments());
-         
+
 #if CGAL_DEBUG_OUTPUT
     Alg_line_3 common_line;
     Algebraic S1_t;
     Algebraic S2_t;
     Lines_through_segments_get_algebraic_number_adapt<
       Traits_3>   get_algebraic_number_adapt;
-         
+
     S1_t = get_algebraic_number_adapt(pt.x());
     S2_t = get_algebraic_number_adapt(pt.y());
-         
-    int status = 
+
+    int status =
       m_g_func.get_line_from_intersection_point(S1_t, S2_t, S1, S2,
                                                 common_line);
- 
+
     if (!m_g_func.do_intersect_line_segment(common_line, S1,m_alg_kernel))
     {
       CGAL_error_msg("Debug Error The line does not intersect with S1!");
@@ -549,7 +549,7 @@ public:
     {
       CGAL_error_msg("Debug Error The line does not intersect with S2!");
     }
-            
+
     if (!m_g_func.do_intersect_line_segment(common_line, S3,m_alg_kernel))
     {
       CGAL_error_msg("Debug Error The line does not intersect with S3!");
@@ -560,9 +560,9 @@ public:
       CGAL_error_msg("Debug Error The line does not intersect with S4!");
     }
 #endif
-    
+
   }
-      
+
   template <typename Point,
             typename Ext_obj,
             typename Arrangement_2,
@@ -585,21 +585,21 @@ public:
     std::cout << change_color(CGAL_BLUE,"add_isolated_point_to_arr  = ",
                               pt, "   ",S3) << std::endl;
 #endif
-         
+
     Vertex    v;
     typename Arrangement_2::Halfedge_const_handle  e;
     typename Arrangement_2::Face_const_handle      f;
-         
-         
+
+
     L_point_2 ptl;
     pt.get_original_point(ptl);
 
     CGAL::Object obj = pl.locate(ptl);
     const Ext_obj* S4 = NULL;
-         
+
     typename Arrangement_2::Halfedge_around_vertex_const_circulator hec;
     if (CGAL::assign(v,obj))
-    { 
+    {
       hec = v->incident_halfedges();
       if (!v->get_added_to_output())
       {
@@ -608,16 +608,16 @@ public:
         {
 #if ARR_ON_SUR_DEBUG
           std::cout << change_color(CGAL_GREEN,
-                                    "add_isolated_point_to_arr  = ", 
+                                    "add_isolated_point_to_arr  = ",
                                     pt , "   ", S3)
                     << std::endl;
 #endif
 
-          typedef typename Arrangement_2::Dcel::Ext_obj Ext_obj;
+          // typedef typename Arrangement_2::Dcel::Ext_obj Ext_obj;
           get_3D_point_from_point_on_arr(
              arr,
-             pt, 
-             out,intersection_point_S1S2, 
+             pt,
+             out,intersection_point_S1S2,
              S1, S2, S3, *S4);
         }
       }
@@ -635,10 +635,10 @@ public:
       {
         if (&S3 != *it)
         {
-          typedef typename Arrangement_2::Dcel::Ext_obj Ext_obj;
-          get_3D_point_from_point_on_arr(arr, pt, 
-                                         out, 
-                                         intersection_point_S1S2, 
+          // typedef typename Arrangement_2::Dcel::Ext_obj Ext_obj;
+          get_3D_point_from_point_on_arr(arr, pt,
+                                         out,
+                                         intersection_point_S1S2,
                                          S1, S2, S3, **it);
           return;
         }
@@ -657,10 +657,10 @@ public:
       {
         if (&S3 != *it)
         {
-          typedef typename Arrangement_2::Dcel::Ext_obj Ext_obj;
-          get_3D_point_from_point_on_arr(arr, pt, 
+          // typedef typename Arrangement_2::Dcel::Ext_obj Ext_obj;
+          get_3D_point_from_point_on_arr(arr, pt,
                                          out,
-                                         intersection_point_S1S2, 
+                                         intersection_point_S1S2,
                                          S1, S2, S3, **it);
         }
       }
@@ -673,31 +673,31 @@ public:
                     const Alg_line_3& common_line,
                     const typename Arrangement_2::Vertex_handle& vit)
   {
-    if (!m_g_func.do_intersect_line_segment(common_line,s1, 
+    if (!m_g_func.do_intersect_line_segment(common_line,s1,
                                             m_alg_kernel))
     {
       CGAL_error_msg( "Debug Error The line does not intersect with S1!");
     }
-    if (!m_g_func.do_intersect_line_segment(common_line, s2, 
+    if (!m_g_func.do_intersect_line_segment(common_line, s2,
                                             m_alg_kernel))
     {
       CGAL_error_msg( "Debug Error The line does not intersect with S2!");
     }
-  
+
     typename Arrangement_2::Halfedge_around_vertex_circulator first,
       curr, next;
-   
+
     first = curr = vit->incident_halfedges();
 
     int num_of_segs = 3;
-         
+
     do {
       CGAL_assertion(curr->num_of_segments() == 1);
       const typename Arrangement_2::Dcel::Ext_obj* obj = *curr->segs_begin();
 #if ARR_ON_SUR_DEBUG
       std::cout << "debug output S3 = " << *obj << std::endl;
 #endif
-            
+
       if (!m_g_func.do_intersect_line_segment(common_line, *obj,m_alg_kernel))
       {
 #if CGAL_DEBUG_OUTPUT
@@ -711,7 +711,7 @@ public:
         num_of_segs++;
       curr++;
     } while (curr != first);
-         
+
     if ( num_of_segs < 4)
     {
       CGAL_error_msg("Debug Error The line does not intersect with 4 segs!");
@@ -719,7 +719,7 @@ public:
   }
   /*************************************************************
    * The following function gets 2 segments and a point on the plane and returns
-   * the bounds at the lines of all the line that passes through the point and 
+   * the bounds at the lines of all the line that passes through the point and
    * the 2 lines.
    * The return value is represented as vector of Bounded segments on S1.
    *
@@ -730,26 +730,26 @@ public:
      const Rational_segment_3& S2,
      bool bound_s1,
      const Rational_point_3& qpoint,
-     Lines_through_segments_bounded_segs_vector<Rational>& 
+     Lines_through_segments_bounded_segs_vector<Rational>&
      ret_bounded_segments)
   {
     typedef Lines_through_segments_bounded_seg<Rational> Bounded_seg;
     Rational_point_3 ipoint_temp;
 
-    /* Get the intersection points of the 4 lines that passes through the 
+    /* Get the intersection points of the 4 lines that passes through the
        segments end points with qpoint. */
-    std::list<Rational> end_points_sorted_list; 
-  
+    std::list<Rational> end_points_sorted_list;
+
     Rational_line_3 temp_line;
     CGAL::Object result;
-    
+
     if (bound_s1)
     {
       /* S1(0) */
       temp_line = Rational_line_3(qpoint,S1.source());
-      result = 
+      result =
         rat_kernel->intersect_3_object()(temp_line,S2.supporting_line());
-       
+
       if (CGAL::assign(ipoint_temp, result))
       {
         if (S2.has_on(ipoint_temp))
@@ -766,7 +766,7 @@ public:
         if (S2.has_on(ipoint_temp))
         {
           end_points_sorted_list.push_back(Rational(1));
-             
+
         }
       }
     }
@@ -788,8 +788,8 @@ public:
       }
       return;
     }
-    
-    
+
+
     /* S2(0) */
     temp_line = Rational_line_3(qpoint,S2.source());
     result = rat_kernel->intersect_3_object()(temp_line,
@@ -804,7 +804,7 @@ public:
         end_points_sorted_list.push_back(S1_t);
       }
     }
-    
+
     /* S2(1) */
     temp_line = Rational_line_3(qpoint,S2.target());
     result = rat_kernel->intersect_3_object()(temp_line,S1.supporting_line());
@@ -816,15 +816,15 @@ public:
         m_g_func.get_scalar_from_point_on_line(ipoint_temp,S1.supporting_line(),
                                                S1_t);
         end_points_sorted_list.push_back(S1_t);
-             
+
       }
     }
-    
+
     /* Sort the points. */
     end_points_sorted_list.sort();
-    
+
     /*  Remove duplicated points. */
-    typename std::list<Rational>::iterator it = 
+    typename std::list<Rational>::iterator it =
       end_points_sorted_list.begin();
     typename std::list<Rational>::iterator next_it;
 
@@ -843,26 +843,26 @@ public:
       }
     }
 
-    
+
     for (it = end_points_sorted_list.begin();
          it != end_points_sorted_list.end();++it)
     {
       next_it = it;
       next_it++;
       if (next_it != end_points_sorted_list.end())
-      {       
-        Rational_point_3 temp_point(S1.source().x() + 
-                                    (*it + (*next_it - *it)/2) * 
+      {
+        Rational_point_3 temp_point(S1.source().x() +
+                                    (*it + (*next_it - *it)/2) *
                                     (S1.target().x() - S1.source().x()),
-                                    S1.source().y() + 
-                                    (*it + (*next_it - *it)/2) * 
+                                    S1.source().y() +
+                                    (*it + (*next_it - *it)/2) *
                                     (S1.target().y() - S1.source().y()),
-                                    S1.source().z() + 
-                                    (*it + (*next_it - *it)/2) * 
+                                    S1.source().z() +
+                                    (*it + (*next_it - *it)/2) *
                                     (S1.target().z() - S1.source().z()));
-            
+
         Rational_line_3 temp_line(qpoint,temp_point);
-            
+
         /* Segment */
         if (m_g_func.do_intersect_line_segment(temp_line,S2,rat_kernel))
         {
@@ -885,7 +885,7 @@ public:
                Bounded_seg(
                   LTS_rbound::LTS_BS_UNBOUNDED_PLUS_INFINITY,
                   *next_it,false,true));
-            
+
             ret_bounded_segments.add_bounded_seg(
                Bounded_seg(*it,LTS_rbound::LTS_BS_UNBOUNDED_MINUS_INFINITY,
                            true,false));
@@ -901,20 +901,20 @@ public:
         }
         else
         {
-          /* If S1 is not bounded the bounded segments is either 
+          /* If S1 is not bounded the bounded segments is either
              a point, or a half segment. */
-          Rational_point_3 temp_point_plus(S1.source().x() + 
-                                           (*it + (Rational(1)/Rational(2))) * 
+          Rational_point_3 temp_point_plus(S1.source().x() +
+                                           (*it + (Rational(1)/Rational(2))) *
                                            (S1.target().x() - S1.source().x()),
-                                           S1.source().y() + 
-                                           (*it + (Rational(1)/Rational(2))) * 
+                                           S1.source().y() +
+                                           (*it + (Rational(1)/Rational(2))) *
                                            (S1.target().y() - S1.source().y()),
-                                           S1.source().z() + 
-                                           (*it + (Rational(1)/Rational(2))) * 
+                                           S1.source().z() +
+                                           (*it + (Rational(1)/Rational(2))) *
                                            (S1.target().z() - S1.source().z()));
-              
+
           Rational_line_3 temp_line_plus(qpoint,temp_point_plus);
-            
+
           if (m_g_func.do_intersect_line_segment(temp_line_plus,S2,
                                                  rat_kernel))
           {
@@ -925,16 +925,16 @@ public:
           else
           {
             Rational_point_3 temp_point_minus(
-               S1.source().x() + 
-               (*it - (Rational(1)/Rational(2))) * 
+               S1.source().x() +
+               (*it - (Rational(1)/Rational(2))) *
                (S1.target().x() - S1.source().x()),
-               S1.source().y() + 
-               (*it - (Rational(1)/Rational(2))) * 
+               S1.source().y() +
+               (*it - (Rational(1)/Rational(2))) *
                (S1.target().y() - S1.source().y()),
-               S1.source().z() + 
-               (*it - (Rational(1)/Rational(2))) * 
+               S1.source().z() +
+               (*it - (Rational(1)/Rational(2))) *
                (S1.target().z() - S1.source().z()));
-            
+
             Rational_line_3 temp_line_minus(qpoint,temp_point_minus);
             if (m_g_func.do_intersect_line_segment(temp_line_minus,
                                                    S2,rat_kernel))
@@ -972,11 +972,11 @@ public:
   {
     Lines_through_segments_traits_on_plane_adapt<
       Traits_3> traits_2_adapt;
-         
+
     typedef typename Isolated_points_on_plane::IP_point_and_line_pair
       Point_on_plane_and_line_pair;
 
-    Lines_through_segments_bounded_segs_vector<Rational> 
+    Lines_through_segments_bounded_segs_vector<Rational>
       ret_bounded_segments;
 
     this->get_bounded_segments_of_point_and_2_lines(rat_kernel,
@@ -985,15 +985,15 @@ public:
                                                     bound_s1,
                                                     P2,
                                                     ret_bounded_segments);
-         
+
     typename Lines_through_segments_bounded_segs_vector<Rational>::iterator
       seg_it;
-         
+
 #if LINES_DEBUG
-    std::cout <<"ret bounded segments = " 
+    std::cout <<"ret bounded segments = "
               << ret_bounded_segments << std::endl;
-#endif   
-         
+#endif
+
     for (seg_it = ret_bounded_segments.begin();
          seg_it != ret_bounded_segments.end();
          ++seg_it)
@@ -1008,23 +1008,23 @@ public:
            Point_on_plane_and_line_pair(
               Point_2(
                  temp_p,
-                 ((*seg_it).get_min().bound()),S2_t), 
-              &ext_point_obj));    
+                 ((*seg_it).get_min().bound()),S2_t),
+              &ext_point_obj));
       }
       else
       {
         Rational_arc_2 t_arc;
-               
-        if (((*seg_it).get_min() == 
+
+        if (((*seg_it).get_min() ==
              LTS_rbound::LTS_BS_UNBOUNDED_MINUS_INFINITY) &&
-            ((*seg_it).get_max() == 
+            ((*seg_it).get_max() ==
              LTS_rbound::LTS_BS_UNBOUNDED_PLUS_INFINITY))
         {
           traits_2_adapt.create_horizontal_curve_on_plane_arr(t_arc,
                                                               S2_t,
                                                               &S3);
         }
-        else if ((*seg_it).get_min() == 
+        else if ((*seg_it).get_min() ==
                  LTS_rbound::LTS_BS_UNBOUNDED_MINUS_INFINITY)
         {
           traits_2_adapt.create_horizontal_curve_on_plane_arr(
@@ -1033,7 +1033,7 @@ public:
              ((*seg_it).get_max().bound()),
              false, &S3);
         }
-        else if ((*seg_it).get_max() == 
+        else if ((*seg_it).get_max() ==
                  LTS_rbound::LTS_BS_UNBOUNDED_PLUS_INFINITY)
         {
           traits_2_adapt.create_horizontal_curve_on_plane_arr(
@@ -1050,7 +1050,7 @@ public:
              Rational_point_2(((*seg_it).get_max().bound()),S2_t),
              &S3);
         }
-        
+
 #if LINES_DEBUG
         std::cout << t_arc << std::endl;
 #endif
@@ -1077,24 +1077,24 @@ public:
   {
     Lines_through_segments_traits_on_plane_adapt<
       Traits_3> traits_2_adapt;
-         
+
     typedef typename Isolated_points_on_plane::IP_point_and_line_pair
       Point_on_plane_and_line_pair;
 
-    Lines_through_segments_bounded_segs_vector<Rational> 
+    Lines_through_segments_bounded_segs_vector<Rational>
       ret_bounded_segments;
-         
-    this->get_bounded_segments_of_point_and_2_lines(rat_kernel,S2, S3, bound_s2, 
+
+    this->get_bounded_segments_of_point_and_2_lines(rat_kernel,S2, S3, bound_s2,
                                                     P1, ret_bounded_segments);
-         
+
     typename Lines_through_segments_bounded_segs_vector<Rational>::iterator
       seg_it;
-         
+
 #if LINES_DEBUG
-    std::cout <<"ret bounded segments = " 
+    std::cout <<"ret bounded segments = "
               << ret_bounded_segments << std::endl;
-#endif   
-         
+#endif
+
     for (seg_it = ret_bounded_segments.begin();
          seg_it != ret_bounded_segments.end();
          ++seg_it)
@@ -1122,16 +1122,16 @@ public:
              arc,
              Rational_point_2(S1_t,Rational(0)));
         }
-        else if ((*seg_it).get_min() == 
+        else if ((*seg_it).get_min() ==
                  LTS_rbound::LTS_BS_UNBOUNDED_MINUS_INFINITY)
         {
           traits_2_adapt.create_vertical_segment_on_plane_arr(
              arc,
              Rational_point_2(S1_t, ((*seg_it).get_max().bound())),
              false /* Directed down */);
-          
+
         }
-        else if ((*seg_it).get_max() == 
+        else if ((*seg_it).get_max() ==
                  LTS_rbound::LTS_BS_UNBOUNDED_PLUS_INFINITY)
         {
           traits_2_adapt.create_vertical_segment_on_plane_arr(
@@ -1147,23 +1147,23 @@ public:
              Rational_point_2(S1_t, ((*seg_it).get_max().bound())),
              &S3);
         }
-               
+
 #if LINES_DEBUG
         std::cout << arc << std::endl;
-        std::cout << "(" << (*seg_it).get_min() 
+        std::cout << "(" << (*seg_it).get_min()
                   << (*seg_it).get_max() << ")" << std::endl;
 #endif
         arcs.push_back(arc);
       }
       insert (*arr_on_plane, arcs.begin(), arcs.end());
     }
-  }      
+  }
   /*************************************************************
-   * The following function gets 2 segments and a point on the plane and 
+   * The following function gets 2 segments and a point on the plane and
    * returns all the lines that passes through the point and the 2 lines.
    * The return value is represented as vector of segement on S1 and S2.
    *
-   * The segment is represented by a line where the segement is from the first 
+   * The segment is represented by a line where the segement is from the first
    * point on the line and the second point on the line
    *************************************************************/
   template <typename Isolated_points_on_plane,
@@ -1182,44 +1182,44 @@ public:
      bool ret_end_points,
      std::list<Arc_end_points >* ret_end_points_list,
      bool S1_S2_intersect)
-     
+
   {
     typedef typename Isolated_points_on_plane::IP_point_and_line_pair
       Point_on_plane_and_line_pair;
-    
-    Lines_through_segments_bounded_segs_vector<Rational> 
+
+    Lines_through_segments_bounded_segs_vector<Rational>
       ret_bounded_segments;
 
     Lines_through_segments_traits_on_plane_adapt<
       Traits_3> traits_2_adapt;
-         
+
     Rational_arc_2 te_arc;
-         
+
 #if LINES_DEBUG
     std::cout <<"qpoint = " << qpoint << std::endl;
-#endif         
+#endif
     /* The lines are concurrent, handled at the sphere arrangement */
     if (S1.has_on(qpoint) && S2.has_on(qpoint))
       return;
-         
+
     if (S2.supporting_line().has_on(qpoint))
     {
       if (S2.has_on(qpoint))
       {
         Rational S2_t;
         m_g_func.get_scalar_from_point_on_line(qpoint,
-                                               S2.supporting_line(), 
+                                               S2.supporting_line(),
                                                S2_t);
-               
+
         traits_2_adapt.create_segment_on_plane_arr(
            te_arc,
            Rational_point_2(Rational(0),S2_t),
            Rational_point_2(Rational(1),S2_t),
              &S3);
-        
+
 #if LINES_DEBUG
         std::cout << " push horizontal line " << te_arc << std::endl;
-#endif         
+#endif
         *ret_arcs++ = te_arc;
 
         if (ret_end_points)
@@ -1229,12 +1229,12 @@ public:
                             Rational_point_2(Rational(1), S2_t)));
         }
       }
-      /* Add isolated point on S2_t = 1 and S1_t = interesection point 
+      /* Add isolated point on S2_t = 1 and S1_t = interesection point
        * on S1 and S2.
-       * This point represents the line that contains S2 and 
+       * This point represents the line that contains S2 and
        * passes through S1.
        */
-            
+
       CGAL::Object result =
         rat_kernel.intersect_3_object()(S1.supporting_line(),
                                         S2.supporting_line());
@@ -1250,10 +1250,10 @@ public:
            Rational_point_2(S1_t,Rational(0)),
            Rational_point_2(S1_t,Rational(1)),
              &S3);
-        
+
 #if LINES_DEBUG
         std::cout << " push vertical line " << te_arc << std::endl;
-#endif         
+#endif
         *ret_arcs++ = te_arc;
 
         if (ret_end_points)
@@ -1263,10 +1263,10 @@ public:
                             Rational_point_2(S1_t,Rational(1))));
         }
       }
-            
+
       return;
     }
-         
+
     if (S1.supporting_line().has_on(qpoint))
     {
       if (S1.has_on(qpoint))
@@ -1274,7 +1274,7 @@ public:
         Rational S1_t;
         m_g_func.get_scalar_from_point_on_line(qpoint,
                                                S1.supporting_line(),S1_t);
-            
+
         traits_2_adapt.create_segment_on_plane_arr(
            te_arc,
            Rational_point_2(S1_t,Rational(0)),
@@ -1282,9 +1282,9 @@ public:
              &S3);
 #if LINES_DEBUG
         std::cout <<" push vertical line " << te_arc << std::endl;
-#endif         
+#endif
         *ret_arcs++ = te_arc;
-               
+
         if (ret_end_points)
         {
           ret_end_points_list->push_back(Arc_end_points
@@ -1292,10 +1292,10 @@ public:
                                           Rational_point_2(S1_t,Rational(1))));
         }
       }
-            
-      /* Add isolated point on S1_t = 1 and S2_t = interesection point on 
+
+      /* Add isolated point on S1_t = 1 and S2_t = interesection point on
        * S1 and S2.
-       * This isolated point represents the line that contains S1 and 
+       * This isolated point represents the line that contains S1 and
        * passes through S2.
        */
       CGAL::Object result =
@@ -1315,10 +1315,10 @@ public:
            Rational_point_2(Rational(0),S2_t),
            Rational_point_2(Rational(1),S2_t),
              &S3);
-        
+
 #if LINES_DEBUG
         std::cout << " push horizontal line " << te_arc << std::endl;
-#endif         
+#endif
         *ret_arcs++ = te_arc;
 
         if (ret_end_points)
@@ -1329,8 +1329,8 @@ public:
         }
       }
       return;
-    } 
-    
+    }
+
 
     this->get_bounded_segments_of_point_and_2_lines(&rat_kernel,
                                                     S1,
@@ -1345,8 +1345,8 @@ public:
 #if LINES_DEBUG
     std::cout <<"ret bounded segments = " << ret_bounded_segments
               << std::endl;
-#endif   
-   
+#endif
+
     for (seg_it = ret_bounded_segments.begin();
          seg_it != ret_bounded_segments.end();
          ++seg_it)
@@ -1362,11 +1362,11 @@ public:
            (S1.target().y() - S1.source().y()),
            S1.source().z() + ((*seg_it).get_max().bound()) *
            (S1.target().z() - S1.source().z()));
-         
-        /* The intersection point of S1 and S2 is handled at the 
+
+        /* The intersection point of S1 and S2 is handled at the
          *  arrangement on sphere case.
          */
-        if (!S1_S2_intersect || 
+        if (!S1_S2_intersect ||
             point_on_s1 != intersection_point_S1S2)
         {
           Rational_line_3 line_qpoint_to_s1(point_on_s1,qpoint);
@@ -1377,7 +1377,7 @@ public:
           Rational_point_3 ipoint_temp;
           if (CGAL::assign(ipoint_temp, result))
           {
-            typedef typename 
+            typedef typename
               Point_on_plane_and_line_pair::PL_Point Point_2;
             m_g_func.get_scalar_from_point_on_line(ipoint_temp,
                                                    S2.supporting_line(),
@@ -1410,7 +1410,7 @@ public:
           (x_coord[4]-x_coord[0])*0.5 + ((*seg_it).get_min().bound());
         x_coord[3] =
           (x_coord[4]-x_coord[0])*0.75 + ((*seg_it).get_min().bound());
-         
+
         for (int ii = 0; ii < 5; ++ii)
         {
           Rational_point_3 temp_p(S1.source().x() +  x_coord[ii] *
@@ -1421,14 +1421,14 @@ public:
                                   (S1.target().z() - S1.source().z()));
 
           Rational_line_3 temp_line(temp_p,qpoint);
-         
+
           CGAL::Object result =
             rat_kernel.intersect_3_object()(S2.supporting_line(),temp_line);
-         
+
           Rational_point_3 ipoint_temp;
           if (CGAL::assign(ipoint_temp, result))
           {
-            m_g_func.get_scalar_from_point_on_line(ipoint_temp, 
+            m_g_func.get_scalar_from_point_on_line(ipoint_temp,
                                                    S2.supporting_line(),
                                                    y_coord[ii]);
           }
@@ -1437,19 +1437,19 @@ public:
             CGAL_error_msg("Unexpected error");
           }
         }
-         
+
         /* Add horizontal line to the arrangement. */
         if (y_coord[0] == y_coord[2] &&
             y_coord[0] == y_coord[4])
         {
-               
+
           traits_2_adapt.create_segment_on_plane_arr
             (te_arc,
              Rational_point_2(x_coord[0],y_coord[0]),
              Rational_point_2(x_coord[4],y_coord[4]),
              &S3);
           *ret_arcs++ = te_arc;
-                  
+
           if (ret_end_points)
           {
             ret_end_points_list->push_back(Arc_end_points
@@ -1458,27 +1458,27 @@ public:
                                             Rational_point_2(x_coord[4],
                                                              y_coord[4])));
           }
-                        
 
-                  
+
+
 #if LINES_DEBUG
           std::cout <<" push Segment " << te_arc << std::endl;
-#endif         
-                  
+#endif
+
         }
         /* Add line segment to the arrangement. */
         else if (((x_coord[4]-x_coord[2])/(x_coord[2]-x_coord[0])) ==
                  ((y_coord[4]-y_coord[2])/(y_coord[2]-y_coord[0])))
         {
-               
-               
+
+
           traits_2_adapt.create_segment_on_plane_arr
             (te_arc,
              Rational_point_2(x_coord[0], y_coord[0]),
              Rational_point_2(x_coord[4], y_coord[4]),
              &S3);
           *ret_arcs++ = te_arc;
-            
+
           if (ret_end_points)
           {
             ret_end_points_list->push_back(Arc_end_points
@@ -1488,16 +1488,16 @@ public:
                                                              y_coord[4])));
           }
 
-            
+
 #if LINES_DEBUG
           std::cout <<" push Segment " << te_arc << std::endl;
-#endif         
+#endif
         }
         /* Add hyperbola to the arrangement. */
         else
         {
           Rational_arc_2 arc;
-               
+
           traits_2_adapt.
             create_curve_on_plane_arr(arc,
                                       Rational_point_2(x_coord[0],y_coord[0]),
@@ -1507,7 +1507,7 @@ public:
                                       Rational_point_2(x_coord[4],y_coord[4]),
                                       &S3);
           *ret_arcs++ = arc;
-                  
+
           if (ret_end_points)
           {
             ret_end_points_list->push_back(Arc_end_points
@@ -1524,13 +1524,13 @@ public:
       }
     }
   }
-      
+
   /*************************************************************
    * Function description:
-   * -------------------- 
-   * The following functions gets 2 parallel lines S1 S3 and computes all 
+   * --------------------
+   * The following functions gets 2 parallel lines S1 S3 and computes all
    * lines through S2 and these lines.
-   * The function returns the scalar on S2 which represent the intersection 
+   * The function returns the scalar on S2 which represent the intersection
    * point of S2 and the plane of S1 and S3.
    *************************************************************/
   bool calc_parallel_segments(const Rational_segment_3& _S1,
@@ -1555,7 +1555,7 @@ public:
         return true;
       }
     }
-         
+
     return false;
   }
 };
