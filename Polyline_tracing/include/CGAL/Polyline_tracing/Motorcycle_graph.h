@@ -3512,7 +3512,7 @@ output_all_dictionary_points() const
   std::stringstream oss;
   oss << "results_" << gt.dimension << "/dictionary_points.xyz" << std::ends;
   std::ofstream os(oss.str().c_str());
-  oss.precision(17);
+  os.precision(20);
 
   for(; dit!=end; ++dit)
   {
