@@ -204,8 +204,9 @@ public:
         << "going from source: (" << mc.source()->point() << ")"
         << " to destination: (" << mc.destination()->point() << ")" << std::endl
         << "  currently at position: (" << mc.current_position()->point() << ")"
-        << "  at time: " << mc.current_time() << std::endl
-        << "  with targets: " << std::endl;
+        << " [L: " << mc.current_position()->location().first << "]"
+        << " at time: " << mc.current_time() << std::endl
+        << "  with targets:" << std::endl;
     typename Target_point_container::const_iterator tpc_it = mc.targets().begin();
     typename Target_point_container::const_iterator end = mc.targets().end();
     for(; tpc_it!=end; ++tpc_it)
@@ -216,7 +217,7 @@ public:
           << " L: " << tpc_it->first->location().first
           << " bc: [" << tpc_it->first->location().second[0] << " "
                      << tpc_it->first->location().second[1] << " "
-                     << tpc_it->first->location().second[2] << "] " << std::endl;
+                     << tpc_it->first->location().second[2] << "]" << std::endl;
     }
 
     return out;

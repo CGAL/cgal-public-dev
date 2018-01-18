@@ -159,7 +159,7 @@ public:
     out << "  Location: " << dec.location().first << " barycentric coordinates: { "
         << dec.location().second[0] << "; " << dec.location().second[1]
         << "; " << dec.location().second[2] << "}" << std::endl;
-    out << "  Visiting motorcycles: " << std::endl;
+    out << "  Visiting motorcycles:" << std::endl;
     VMC_left_cit vmc_it = dec.visiting_motorcycles().left.begin();
     VMC_left_cit end = dec.visiting_motorcycles().left.end();
     for(; vmc_it!=end; ++vmc_it)
