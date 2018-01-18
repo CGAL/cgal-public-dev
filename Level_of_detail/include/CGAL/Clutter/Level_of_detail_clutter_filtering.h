@@ -241,8 +241,8 @@ namespace CGAL {
             bool should_query_be_preserved(const int num_good_points, const FT query_dist, const FT local_mean) const {
                 bool preserve_query = true;
 
-                if (!is_within_tolerance(local_mean)) preserve_query = preserved_state_off();
-                if (num_good_points < 2)              preserve_query = preserved_state_on();
+                if (!is_within_tolerance(local_mean)) preserve_query = preserved_state_on();
+                if (num_good_points < 3)              preserve_query = preserved_state_on();
                 if (!is_within_tolerance(query_dist)) preserve_query = preserved_state_on();
 
                 return preserve_query;

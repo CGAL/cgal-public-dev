@@ -108,7 +108,8 @@ namespace CGAL {
 			m_dim_0_max(FT(5) / FT(100)),
 			m_dim_2_sparsity_num_cells(FT(5)),
 			m_dim_2_sparsity_max(FT(8) / FT(10)),
-			m_max_num_clusters(5) { }
+			m_max_num_clusters(5),
+			m_silent(false) { }
 
 
 			// Input functions.
@@ -160,6 +161,10 @@ namespace CGAL {
 				m_max_num_clusters = new_value;
 			}
 
+			void make_silent(const bool silent) {
+				m_silent = silent;
+			}
+
 
 			// Main.
 			int process(Boundary_data &boundary_clutter, Projected_points &boundary_clutter_projected, const Container &input) const {
@@ -200,6 +205,7 @@ namespace CGAL {
 			size_t m_max_num_clusters; 		   // max number of clusters
 
 			Simple_utils m_simple_utils;
+			bool m_silent;
 
 			void choose_scale_adaptively() const {
 
@@ -263,8 +269,9 @@ namespace CGAL {
 				number_of_processed_points = static_cast<int>(thinned_points.size());
 				assert(number_of_processed_points >= 0);
 
-				Log log; 
-				log.export_projected_points_as_xyz("tmp" + std::string(PS) + "thinning_naive_result", boundary_clutter_projected, "unused path");
+				if (!m_silent) {
+					Log log; log.export_projected_points_as_xyz("tmp" + std::string(PS) + "thinned_clutter", boundary_clutter_projected, "unused path");
+				}
 
 				error = compute_scale_error();
 				return number_of_processed_points;

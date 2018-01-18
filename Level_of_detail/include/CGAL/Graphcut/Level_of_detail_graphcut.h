@@ -428,27 +428,11 @@ namespace CGAL {
 
 				std::cout << cos_in << " " << cos_out << std::endl; */
 
-				const FT eps = FT(1) / FT(1000000000);
-
-				assert(CGAL::abs(cos_in)  >= FT(0) && (FT(1) - CGAL::abs(cos_in))  > -eps);
-				assert(CGAL::abs(cos_out) >= FT(0) && (FT(1) - CGAL::abs(cos_out)) > -eps);
-
-				if (CGAL::abs(cos_in) < FT(0) || (FT(1) - CGAL::abs(cos_in)) <= -eps) {
-
-						std::cerr << "Error: assert function compute_free_form_quality graph cut!" << std::endl;
-						exit(EXIT_FAILURE);
-				}
-
-				if (CGAL::abs(cos_out) < FT(0) || (FT(1) - CGAL::abs(cos_out)) <= -eps) {
-
-						std::cerr << "Error: assert function compute_free_form_quality graph cut!" << std::endl;
-						exit(EXIT_FAILURE);
-				}
+				assert((FT(1) - CGAL::abs(cos_in))  > -FT(1) / FT(1000000000));
+				assert((FT(1) - CGAL::abs(cos_out)) > -FT(1) / FT(1000000000));
 
 				if (std::isnan(cos_in) || std::isnan(cos_out)) {
-					std::cerr << std::endl;
-					std::cerr << "NAN error! cos_in " << cos_in << ", cos_out " << cos_out << std::endl << std::endl;
-
+					std::cerr << std::endl << "NAN error! cos_in " << cos_in << ", cos_out " << cos_out << std::endl << std::endl;
 					exit(EXIT_FAILURE);
 				}
 
@@ -456,6 +440,7 @@ namespace CGAL {
 				const FT result = m_alpha - min_cos;
 
 				assert(result >= FT(0));
+				if (result < 0) std::cerr << std::endl << "Warning: Graph cut negative value!" << std::endl << std::endl;
 
 				return result;
 			}

@@ -354,7 +354,6 @@ namespace CGAL {
 
 				m_thinning_type 	  			 = Thinning_type::NAIVE; 		  // this is the only one that is currently fully implemented
 				m_thinning_neighbour_search_type = Neighbour_search_type::CIRCLE; // in practice, this is the best one, no need to choose any other one
-				m_thinning_fuzzy_radius 		 = 5.0; // do not use thinning, because it makes corners round
 
 				m_regularizer_reject_planes = true; // in general, rejecting gives more plausible result, used only in the version with 3D shape detection
 				m_max_reg_angle          	= 10.0; // in general, 10 is enough, used only in the version with 3D shape detection
@@ -396,8 +395,8 @@ namespace CGAL {
 				m_structuring_global_everywhere = false; // better to have false, since in this case, I use global adjacency graph and global corner insertion consistently
 				m_structuring_adjacency_value   = 5.0;   // closest distance between two segments for adjacency graph, probably can be removed
 
-				m_visibility_num_samples = 2;    // number of subdivision steps when sampling triangles, 1 or 2 is enough
-				m_add_cdt_clutter 		 = true; // better to avoid clutter since it will pollute the final CDT
+				m_visibility_num_samples = 2;     // number of subdivision steps when sampling triangles, 1 or 2 is enough
+				m_add_cdt_clutter 		 = false; // better to avoid clutter since it will pollute the final CDT
 
 				m_visibility_approach  = Visibility_approach::FACE_BASED; 				   // face based is, in general, a better but slower option
 				m_visibility_method    = Visibility_method::FACE_BASED_NATURAL_NEIGHBOURS; // face based is, in general, a better but slower option
@@ -431,8 +430,9 @@ namespace CGAL {
 				m_region_growing_cluster_epsilon = 0.58 * m_imp_scale; // distance between adjacent points, necessary, (meters)
 				m_clutter_cell_length 			 = 0.26 * m_imp_scale; // used in the grid simplify, probably can be removed, (meters)
 
-				m_clutter_filtering_scale = m_imp_scale;
-				m_clutter_filtering_mean  = m_imp_eps / 10.0;
+				m_thinning_fuzzy_radius   = m_imp_scale; 	 // radius of the region of points that should be thinned
+				m_clutter_filtering_scale = m_imp_scale; 	 // radius of the region of points that should be considered for filtering
+				m_clutter_filtering_mean  = m_imp_eps / 5.0; // value of the required mean that should be satisfied by the chosen points in the filtering
 			}
 
 			void set_required_parameters() {
@@ -446,6 +446,7 @@ namespace CGAL {
 				add_bool_parameter("-silent"      , m_silent 			 , m_parameters);
 				add_bool_parameter("-auto_params" , m_estimate_parameters, m_parameters);
 				add_bool_parameter("-quality"	  , m_estimate_quality   , m_parameters);
+				add_bool_parameter("-clutter"	  , m_add_cdt_clutter    , m_parameters);
 
 
 				// Important.
@@ -469,6 +470,8 @@ namespace CGAL {
 				add_val_parameter("-rg_eps"  , m_region_growing_epsilon 		, m_parameters);
 				add_val_parameter("-rg_ce"   , m_region_growing_cluster_epsilon , m_parameters);
 				add_val_parameter("-cell"    , m_clutter_cell_length            , m_parameters);
+
+				add_val_parameter("-th_scale", m_thinning_fuzzy_radius          , m_parameters);
 				add_val_parameter("-cf_scale", m_clutter_filtering_scale        , m_parameters);
 				add_val_parameter("-cf_mean" , m_clutter_filtering_mean         , m_parameters);
 			}
@@ -709,6 +712,20 @@ namespace CGAL {
 
 				const auto number_of_structured_segments = m_structuring->structure_point_set();
 				std::cout << "number of structured segments: " << number_of_structured_segments << ";" << std::endl;
+			}
+
+			void applying_clutter_thinning(Boundary_data &boundary_clutter, Projected_points &boundary_clutter_projected, const Container_3D &input, const size_t exec_step) {
+
+				// Apply thinning.
+				std::cout << "(" << exec_step << ") applying thinning to clutter; ";
+
+				m_thinning.set_thinning_type(m_thinning_type);
+				m_thinning.set_neighbour_search_type(m_thinning_neighbour_search_type);
+				m_thinning.set_fuzzy_radius(m_thinning_fuzzy_radius);
+				m_thinning.make_silent(m_silent);
+
+				const auto number_of_thinned_points = m_thinning.process(boundary_clutter, boundary_clutter_projected, input);
+				std::cout << "thinned points: " << number_of_thinned_points << ";" << std::endl;
 			}
 
 			void filtering_clutter(Boundary_data &boundary_clutter, Projected_points &boundary_clutter_projected, const size_t exec_step) {
@@ -996,52 +1013,57 @@ namespace CGAL {
 				// (10) ----------------------------------
 				applying_2d_structuring(lines, building_boundaries, building_boundaries_projected, ++exec_step);
 
+
+				if (m_add_cdt_clutter) {
+					
+					// (11) ----------------------------------
+					applying_clutter_thinning(boundary_clutter, boundary_clutter_projected, input, ++exec_step);
+
 				
-				// (11) ----------------------------------
-				filtering_clutter(boundary_clutter, boundary_clutter_projected, ++exec_step);
-
-
-				// (12) ----------------------------------
-				CDT cdt;
-				creating_cdt(cdt, boundary_clutter, boundary_clutter_projected, ++exec_step);
-
-				// exit(0); // temporary exit!
+					// (12) ----------------------------------
+					filtering_clutter(boundary_clutter, boundary_clutter_projected, ++exec_step);
+				}
 
 
 				// (13) ----------------------------------
+				CDT cdt;
+				creating_cdt(cdt, boundary_clutter, boundary_clutter_projected, ++exec_step);
+
+
+				// (14) ----------------------------------
 				Container_2D input_2d; Face_points_map fp_map;
 				converting_3d_to_2d(input_2d, fp_map, cdt, input, ++exec_step);
 
 
-				// (14) ----------------------------------
+				// (15) ----------------------------------
 				computing_visibility(cdt, input_2d, ++exec_step);
 
 
-				// (15) ----------------------------------
+				// (16) ----------------------------------
 				applying_graph_cut(cdt, ++exec_step);
 
 
 				// From now on we handle each building separately.
 
-				// (16) ----------------------------------				
+				// (17) ----------------------------------				
 				Buildings buildings;
 				splitting_buildings(buildings, cdt, ++exec_step);
 
 
-				// (17) ----------------------------------				
+				// (18) ----------------------------------				
 				finding_buildings_boundaries(buildings, cdt, ++exec_step);
 
 
-				// (18) ----------------------------------
+				// (19) ----------------------------------
 				fitting_roofs(buildings, fitted_ground_plane, fp_map, input, cdt, ++exec_step);
 
 
-				// (19) ----------------------------------
+				// (20) ----------------------------------
 				Ground ground_bbox;
 				creating_lod0(ground_bbox, cdt, buildings, input, ++exec_step);
 
 
-				// (20) ----------------------------------	
+				// (21) ----------------------------------	
 				creating_lod1(cdt, buildings, ground_bbox, ++exec_step);
 
 
@@ -1084,7 +1106,7 @@ namespace CGAL {
 			Clutter_processor m_clutter_processor;
 			
 			Grid_simplifier   m_grid_simplifier;
-			Thinning 		  m_thinnning;
+			Thinning 		  m_thinning;
 			Clutter_filtering m_clutter_filtering;
 
 
