@@ -1592,8 +1592,7 @@ find_collision_with_foreign_track_extremity(const Motorcycle& mc,
 
     //@todo try to first find the point through the location in 'points'
 
-    Point collision_point = CGAL::Polygon_mesh_processing::location_to_point(
-                              foreign_extremity->location(), mesh_);
+    Point collision_point = foreign_extremity->point();
     const FT time_at_collision = mc.current_time() +
       CGAL::sqrt(CGAL::squared_distance(mc.current_position()->point(),
                                         collision_point)) / mc.speed();
