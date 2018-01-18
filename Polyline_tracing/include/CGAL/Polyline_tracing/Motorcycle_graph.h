@@ -72,6 +72,24 @@ struct Collision_information
             closest_collision_location.first != boost::graph_traits<Triangle_mesh>::null_face());
   }
 
+  // check if the times provided passed in arguments correspond to a collision
+  // earlier than the current best
+  bool is_collision_earlier_than_current_best(const FT time_at_collision,
+                                              const FT foreign_time_at_collision) const
+  {
+    const bool is_earlier = time_at_collision < time_at_closest_collision ||
+                            (time_at_collision == time_at_closest_collision &&
+                             foreign_time_at_collision < time_at_foreign_closest_collision);
+
+    if(is_earlier)
+    {
+      std::cout << "New earliest collision times: " << time_at_collision << " "
+                                                    << foreign_time_at_collision << std::endl;
+    }
+
+    return is_ealier;
+  }
+
   Collision_information()
     :
       // information related to the current face
@@ -1171,10 +1189,7 @@ find_collision_with_track_on_foreign_face(const Motorcycle& mc,
     const FT time_at_fmc_track_source = fmc_track.template get<2>();
     const FT foreign_time_at_collision = time_at_fmc_track_source;
 
-    // Compare to keep the closest intersection
-    if(time_at_collision < tc.time_at_closest_collision ||
-       (time_at_collision == tc.time_at_closest_collision &&
-        foreign_time_at_collision < tc.time_at_foreign_closest_collision))
+    if(tc.is_collision_earlier_than_current_best(time_at_collision, foreign_time_at_collision))
     {
       tc.is_closest_collision_location_already_in_dictionary = true;
       tc.closest_collision = mc.closest_target();
@@ -1193,10 +1208,7 @@ find_collision_with_track_on_foreign_face(const Motorcycle& mc,
     const FT time_at_fmc_track_destination = fmc_track.template get<4>();
     const FT foreign_time_at_collision = time_at_fmc_track_destination;
 
-    // Compare to keep the closest intersection
-    if(time_at_collision < tc.time_at_closest_collision ||
-       (time_at_collision == tc.time_at_closest_collision &&
-        foreign_time_at_collision < tc.time_at_foreign_closest_collision))
+    if(tc.is_collision_earlier_than_current_best(time_at_collision, foreign_time_at_collision))
     {
       tc.is_closest_collision_location_already_in_dictionary = true;
       tc.closest_collision = mc.closest_target();
@@ -1278,10 +1290,7 @@ find_collision_with_track_on_foreign_face(const Motorcycle& mc,
       CGAL::sqrt(CGAL::squared_distance(fmc_track_source->point(),
                                         mc.closest_target()->point())) / fmc.speed();
 
-    // Compare to keep the closest intersection
-    if(time_at_collision < tc.time_at_closest_collision ||
-       (time_at_collision == tc.time_at_closest_collision &&
-        foreign_time_at_collision < tc.time_at_foreign_closest_collision))
+    if(tc.is_collision_earlier_than_current_best(time_at_collision, foreign_time_at_collision))
     {
       tc.is_closest_collision_location_already_in_dictionary = true;
       tc.closest_collision = mc.closest_target();
@@ -1553,9 +1562,7 @@ find_collision_with_foreign_track_extremity(const Motorcycle& mc,
     const FT time_at_collision = mc.time_at_closest_target();
 
     // Compare to current tentative collision to keep the closest intersection
-    if(time_at_collision < tc.time_at_closest_collision ||
-       (time_at_collision == tc.time_at_closest_collision &&
-        foreign_time_at_collision < tc.time_at_foreign_closest_collision))
+    if(tc.is_collision_earlier_than_current_best(time_at_collision, foreign_time_at_collision))
     {
       tc.fmc_id = fmc.id();
       tc.time_at_closest_collision = time_at_collision;
@@ -1591,10 +1598,7 @@ find_collision_with_foreign_track_extremity(const Motorcycle& mc,
       CGAL::sqrt(CGAL::squared_distance(mc.current_position()->point(),
                                         collision_point)) / mc.speed();
 
-    // Compare with the tentative intersection to keep the earliest intersection
-    if(time_at_collision < tc.time_at_closest_collision ||
-       (time_at_collision == tc.time_at_closest_collision &&
-        foreign_time_at_collision < tc.time_at_foreign_closest_collision))
+    if(tc.is_collision_earlier_than_current_best(time_at_collision, foreign_time_at_collision))
     {
       tc.fmc_id = fmc.id();
       tc.time_at_closest_collision = time_at_collision;
@@ -1627,10 +1631,7 @@ find_collision_at_tentative_track_destination(const Motorcycle& mc,
             << " at its end. Time: " << time_at_collision << std::endl;
 #endif
 
-  // Compare with the current tentative collision to keep the closest
-  if((time_at_collision < tc.time_at_closest_collision) ||
-     (time_at_collision == tc.time_at_closest_collision &&
-      fmc_visiting_time < tc.time_at_foreign_closest_collision))
+  if(tc.is_collision_earlier_than_current_best(time_at_collision, fmc_visiting_time))
   {
     tc.is_closest_collision_location_already_in_dictionary = true;
 
@@ -1656,10 +1657,7 @@ find_collision_at_tentative_track_source(const Motorcycle& mc,
             << " Times: " << time_at_collision << " " << fmc_visiting_time << std::endl;
 #endif
 
-  // Compare with the current tentative collision to keep the closest
-  if((time_at_collision < tc.time_at_closest_collision) ||
-     (time_at_collision == tc.time_at_closest_collision &&
-      fmc_visiting_time < tc.time_at_foreign_closest_collision))
+  if(tc.is_collision_earlier_than_current_best(time_at_collision, fmc_visiting_time))
   {
     tc.is_closest_collision_location_already_in_dictionary = true;
 
@@ -1788,10 +1786,7 @@ find_collision_between_collinear_tracks(const Motorcycle& mc,
               << fmc.id() << " at time: " << time_at_collision << std::endl;
 #endif
 
-    // Compare with the current tentative collision to keep the closest
-    if(time_at_collision < tc.time_at_closest_collision ||
-       (time_at_collision == tc.time_at_closest_collision &&
-        time_at_fmc_track_source < tc.time_at_foreign_closest_collision))
+    if(tc.is_collision_earlier_than_current_best(time_at_collision, time_at_fmc_track_source))
     {
       tc.fmc_id = fmc.id();
       tc.time_at_closest_collision = time_at_collision;
@@ -1891,10 +1886,7 @@ find_collision_between_collinear_tracks(const Motorcycle& mc,
       CGAL_postcondition(time_at_collision >= mc.current_time());
       CGAL_postcondition(time_at_collision >= time_at_fmc_track_source);
 
-      // Compare with the current tentative collision to keep the closest
-      if(time_at_collision < tc.time_at_closest_collision ||
-         (time_at_collision == tc.time_at_closest_collision &&
-          time_at_collision < tc.time_at_foreign_closest_collision))
+      if(tc.is_collision_earlier_than_current_best(time_at_collision, time_at_collision))
       {
         tc.fmc_id = fmc.id();
         tc.time_at_closest_collision = time_at_collision;
@@ -2110,10 +2102,7 @@ find_collision_between_collinear_tracks(const Motorcycle& mc,
       std::cout << "  mc crashes into fmc's final position at: " << time_at_collision << std::endl;
 #endif
 
-      // Compare with the current tentative collision to keep the closest
-      if(time_at_collision < tc.time_at_closest_collision ||
-         (time_at_collision == tc.time_at_closest_collision &&
-          time_at_fmc_track_destination < tc.time_at_foreign_closest_collision))
+      if(tc.is_collision_earlier_than_current_best(time_at_collision, time_at_fmc_track_destination))
       {
         tc.fmc_id = fmc.id();
         tc.time_at_closest_collision = time_at_collision;
@@ -2276,10 +2265,7 @@ find_collision_between_tracks(const Motorcycle& mc, // @todo just reshape it to 
         CGAL::sqrt(CGAL::squared_distance(fmc_track_source->point(),
                                           mc.closest_target()->point())) / fmc.speed();
 
-      // Compare to keep the closest intersection
-      if(time_at_collision < tc.time_at_closest_collision ||
-         (time_at_collision == tc.time_at_closest_collision &&
-          foreign_time_at_collision < tc.time_at_foreign_closest_collision))
+      if(tc.is_collision_earlier_than_current_best(time_at_collision, foreign_time_at_collision))
       {
         tc.is_closest_collision_location_already_in_dictionary = true;
         tc.closest_collision = mc.closest_target();
@@ -2315,10 +2301,7 @@ find_collision_between_tracks(const Motorcycle& mc, // @todo just reshape it to 
       std::cout << "  foreign target in ] track [, "
                 << "time at collision: " << time_at_collision << std::endl;
 
-      // Compare to keep the closest intersection
-      if(time_at_collision < tc.time_at_closest_collision ||
-         (time_at_collision == tc.time_at_closest_collision &&
-          foreign_time_at_collision < tc.time_at_foreign_closest_collision))
+      if(tc.is_collision_earlier_than_current_best(time_at_collision, foreign_time_at_collision))
       {
         tc.is_closest_collision_location_already_in_dictionary = true;
         tc.closest_collision = fmc_track_destination;
@@ -2351,10 +2334,10 @@ find_collision_between_tracks(const Motorcycle& mc, // @todo just reshape it to 
                                           fmc_track_source->point())) / mc.speed();
       const FT foreign_time_at_collision = time_at_fmc_track_source;
 
-      // Compare to keep the closest intersection
-      if(time_at_collision < tc.time_at_closest_collision ||
-         (time_at_collision == tc.time_at_closest_collision &&
-          foreign_time_at_collision < tc.time_at_foreign_closest_collision))
+      std::cout << "  foreign source in ] track [, "
+                << "time at collision: " << time_at_collision << std::endl;
+
+      if(tc.is_collision_earlier_than_current_best(time_at_collision, foreign_time_at_collision))
       {
         tc.is_closest_collision_location_already_in_dictionary = true;
         tc.closest_collision = fmc_track_source;
@@ -2504,9 +2487,7 @@ find_collision_between_tracks(const Motorcycle& mc, // @todo just reshape it to 
 #endif
       }
 
-      if(time_at_collision < tc.time_at_closest_collision ||
-         // Note that in the test below, we have 'time_at_collision == tc.time_at_closest_collision'
-         fmc_visiting_time < tc.time_at_foreign_closest_collision)
+      if(tc.is_collision_earlier_than_current_best(time_at_collision, fmc_visiting_time))
       {
         tc.is_closest_collision_location_already_in_dictionary = true;
         tc.closest_collision = collision_point;
@@ -2578,9 +2559,7 @@ find_collision_between_tracks(const Motorcycle& mc, // @todo just reshape it to 
         CGAL::sqrt(CGAL::squared_distance(fmc_track_source->point(),
                                           collision_point)) / fmc.speed();
 
-      if(time_at_collision < tc.time_at_closest_collision ||
-         // Note that in the test below, we have 'time_at_collision == tc.time_at_closest_collision'
-         foreign_time_at_collision < tc.time_at_foreign_closest_collision)
+      if(tc.is_collision_earlier_than_current_best(time_at_collision, foreign_time_at_collision))
       {
         tc.is_closest_collision_location_already_in_dictionary = false;
         tc.closest_collision_location = collision_location;
