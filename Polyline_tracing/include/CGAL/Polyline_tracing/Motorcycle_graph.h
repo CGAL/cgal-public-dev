@@ -565,6 +565,7 @@ compute_destination(Motorcycle& mc,
                     const boost::optional<Point_or_location>& input_destination)
 {
   // At the start of this function, mc.source() is already initialized
+  CGAL_precondition(mc.source() != DEC_it());
 
   DEC_it destination;
   FT time_at_source = mc.current_time(), time_at_destination;
@@ -792,15 +793,15 @@ compute_motorcycle_next_path(Motorcycle& mc)
     next_source->add_motorcycles(mc.current_position()->visiting_motorcycles());
   }
 
-  // Add the next source as target, even if it is equal to the current position
-  mc.add_target(next_source, mc.current_time());
-
   if(next_source != next_destination)
   {
     // No need to add the same information twice
     mc.add_target(next_destination, time_at_next_destination);
     next_destination->add_motorcycle(mc.id(), time_at_next_destination);
   }
+
+  // Add the next source as target, even if it is equal to the current position
+  mc.add_target(next_source, mc.current_time());
 
   mc.source() = next_source;
   mc.time_at_source() = mc.current_time();
@@ -3192,20 +3193,27 @@ treat_collision(Motorcycle& mc, DEC_it collision_point, const FT time_at_collisi
     std::cout << " - foreign collision_point: " << &*foreign_collision_point << std::endl << *(foreign_collision_point) << std::endl;
 #endif
 
+  // Some sanity checks
+  CGAL_precondition(mc.id() != std::size_t(-1));
   CGAL_precondition(fmc.id() != std::size_t(-1));
-  CGAL_precondition(time_at_collision_point >= mc.current_time());
+
+  CGAL_precondition(collision_point != DEC_it());
+  CGAL_precondition(foreign_collision_point != DEC_it());
   CGAL_precondition(CGAL::squared_distance(collision_point->point(),
                                            foreign_collision_point->point())
                      < std::numeric_limits<FT>::epsilon());
 
+  CGAL_precondition(time_at_collision_point >= mc.current_time());
+  CGAL_precondition(time_at_collision_point <= mc.time_at_destination());
+
   // @fixme due to symmetry, we can arrive here with a single collision
   // (see check #2, I guess) and the precondtions below are false
-  /*
+/*
   CGAL_precondition_code(if(collision_point == foreign_collision_point))
   CGAL_precondition(fmc.current_location().first == mc.current_location().first);
   CGAL_precondition_code(else)
   CGAL_precondition(fmc.current_location().first != mc.current_location().first);
-  */
+*/
 
   if(// the impact is closer than the next target
      time_at_collision_point <= mc.time_at_closest_target() &&

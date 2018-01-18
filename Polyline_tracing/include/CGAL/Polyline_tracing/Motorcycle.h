@@ -196,6 +196,7 @@ public:
   bool has_reached_simultaneous_collision_point() const;
   void remove_closest_target_from_targets();
   FT time_at_closest_target() const;
+  FT time_at_destination() const;
 
   // Output
   friend std::ostream& operator<<(std::ostream& out, const Self& mc)
@@ -288,10 +289,22 @@ add_target(const DEC_it target_point, const FT time_at_target)
   std::cout << " > Adding target: " << &*target_point
             << " at time: " << time_at_target
             << " to motorcycle #" << i << std::endl;
+
   // Don't want to insert the same point twice...
   CGAL_expensive_precondition(!has_target(target_point).second);
-  // ... or accidentally ignore adding a point
+  // ... or accidentally ignore adding a point due to same time
   CGAL_expensive_precondition(!has_target_at_time(time_at_target).second);
+
+  // No target should be inserted after the destination
+  CGAL_precondition_code(if(!target_points.empty() && time_at_destination() != current_time()))
+  CGAL_precondition(time_at_target < time_at_destination());
+
+  // No target should be inserted before the current point
+  // Note: equality is important because we insert targets with the current time
+  //       to bump their priority to the top of the queue (e.g. after computing
+  //       a new destination)
+  CGAL_precondition(time_at_target >= current_time());
+
   target_points.insert(std::make_pair(target_point, time_at_target));
 }
 
@@ -370,6 +383,22 @@ time_at_closest_target() const
 {
   CGAL_precondition(!target_points.empty());
   return target_points.begin()->second;
+}
+
+template<typename MotorcycleGraphTraits>
+typename Motorcycle_impl_base<MotorcycleGraphTraits>::FT
+Motorcycle_impl_base<MotorcycleGraphTraits>::
+time_at_destination() const
+{
+  if(is_crashed())
+  {
+    return current_time();
+  }
+  else
+  {
+    CGAL_precondition(!target_points.empty());
+    return (--target_points.end())->second;
+  }
 }
 
 template<typename MotorcycleGraphTraits>
