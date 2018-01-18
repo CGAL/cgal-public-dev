@@ -1,0 +1,1 @@
+gprof -b ./lines_through_4_segments > gprof.output

@@ -80,8 +80,6 @@ template <typename GeometryTraits_2, typename TopologyTraits,
           typename PointLocation, typename ZoneVisitor>
 void insert(Arrangement_on_surface_2<GeometryTraits_2, TopologyTraits>& arr,
             const typename GeometryTraits_2::Curve_2& c,
-            const PointLocation& pl, ZoneVisitor &visitor,
-            boost::is_same<int, double>::type)
 {
   typedef GeometryTraits_2                              Gt2;
   typedef TopologyTraits                                Tt;
