@@ -494,13 +494,36 @@ struct Tracer_polyline_incomplete {
       }
 
       CGAL_assertion(la >= 0 && la < n);
-      CGAL_assertion(r.first < la && r.second > la);
+      //CGAL_assertion(r.first < la && r.second > la); // TEMP for ISLANDS
       *out++ = OutputIteratorValueType(r.first, la, r.second);
 
       ranges.push(std::make_pair(r.first, la));
       ranges.push(std::make_pair(la, r.second));
     }
   }
+
+  template<typename LookupTable, typename Polyline_3>
+  void merge(const LookupTable& lambda, Polyline_3& B)
+  {
+    // n_b : number of vertices on the boundary , ex: 6
+    const int n_b = B.size() - 1;
+
+    for(int i=0; i < n_b; ++i)
+    {
+      std::pair<int, int> r(i, i+1);
+
+      int la = lambda.get(r.first, r.second);
+
+      CGAL_assertion(la >= 0);
+
+      *out++ = OutputIteratorValueType(r.first, la, r.second);
+    }
+
+
+  }
+
+
+
 
   OutputIteratorPatch out;
   OutputIteratorHole  out_hole;
@@ -1281,7 +1304,6 @@ public:
 
 
     // concatenate
-    // no need
     std::vector<Point_3> P;
     P.reserve(B.size() + H.size() - 1); // -2 trailing points -which are the first points- from each vector, +1 trailing point for their sum
     P.insert(P.end(), B.begin(), B.end() - 1);
@@ -1295,12 +1317,15 @@ public:
     LookupTable<Weight> W(n, Weight::DEFAULT()); // do not forget that these default values are not changed for [i, i+1]
     LookupTable<int>    lambda(n, -1);
 
+    /*
     int n_b_points = static_cast<int>(B.size()) - 1; // without the last(=first) one , 6
     int n_h_points = static_cast<int>(H.size()) - 1; //                                3
     std::pair<int, int> b_range(0, n_b_points - 1); // 0 , 5
     std::pair<int, int> h_range(n_b_points, n_b_points + (n_h_points - 1)); // 6, 8
+    */
 
-    triangulate_all_islands(P, Q, WC, b_range, h_range, W, lambda);
+
+    triangulate_all_islands(P, Q, WC, range, W, lambda);
 
     if(W.get(0,n-1) == Weight::NOT_VALID()) {
       #ifndef CGAL_TEST_SUITE
@@ -1311,19 +1336,20 @@ public:
       return Weight::NOT_VALID();
     }
 
-    tracer(lambda, 0, n-1);
-    return W.get(0,n-1);
+    bool merge_with_islands = true; // temp
+    tracer.merge(lambda, B);
+    return W.get(0,n_b_points-1); // ?
   }
 
   void triangulate_all_islands(const Polyline_3& P,
                                const Polyline_3& Q,
                                const WeightCalculator& WC,
-                               std::pair<int, int> b_range,
-                               std::pair<int, int> h_range,
+                               std::pair<int, int> range,
                                LookupTable<Weight>& W,
                                LookupTable<int>& lambda) const
   {
 
+    /*
     std::cout<<"eD on range= "<<b_range.first<< "-" << b_range.second << std::endl;
 
     for(int j = 2; j<= b_range.second; ++j) {              // determines range (2 - 3 - 4 )
@@ -1391,6 +1417,45 @@ public:
         std::cout<<"\n";
       }
     }
+    */
+
+
+    for(int j = 2; j<= range.second; ++j) {              // determines range (2 - 3 - 4 )
+      for(int i=range.first; i<= range.second-j; ++i) {  // iterates over ranges and find min triangulation in those ranges
+        int k = i+j;                                     // like [0-2, 1-3, 2-4, ...], [0-3, 1-4, 2-5, ...]
+
+        int m_min = -1;
+        Weight w_min = Weight::NOT_VALID();
+        // i is the range start (e.g. 1) k is the range end (e.g. 5) -> [1-5]. Now subdivide the region [1-5] with m -> 2,3,4
+        for(int m = i+1; m<k; ++m) {
+          // now the regions i-m and m-k might be valid(constructed) patches,
+          if( W.get(i,m) == Weight::NOT_VALID() || W.get(m,k) == Weight::NOT_VALID() )
+          { continue; }
+
+          std::cout<<"Evaluating t= ("<<i<<","<<m<<","<<k<<")"<<std::endl;
+
+          const Weight& w_imk = WC(P,Q,i,m,k, lambda);
+          if(w_imk == Weight::NOT_VALID())
+          { continue; }
+
+          const Weight& w = W.get(i,m) + W.get(m,k) + w_imk;
+          if(m_min == -1 || w < w_min) {
+            w_min = w;
+            m_min = m;
+          }
+        }
+
+        // can be m_min = -1 and w_min = NOT_VALID which means no possible triangulation between i-k
+        W.put(i,k,w_min);
+
+        W.print("data/Weights.dat");
+        lambda.put(i,k, m_min);
+      }
+    }
+
+
+
+
   }
 
   /*
