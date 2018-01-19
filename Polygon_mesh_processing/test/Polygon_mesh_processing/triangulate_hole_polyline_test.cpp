@@ -148,10 +148,12 @@ void check_constructed_polyhedron(const char* file_name,
   Polyhedron_builder<typename Polyhedron::HalfedgeDS,K> patch_builder(triangles, polyline);
   poly.delegate(patch_builder);
 
+
   if(!poly.is_valid()) {
     std::cerr << "  Error: constructed patch does not constitute a valid polyhedron." << std::endl;
     assert(false);
   }
+
 
   if (!save_poly)
     return;
@@ -202,14 +204,18 @@ void test_3(const char* file_name, bool use_DT, bool save_output) {
   std::cerr << "  File: "<< file_name  << std::endl;
   std::vector<Point_3> points_b; // this will contain n and +1 repeated point
   std::vector<Point_3> points_h; // points on the holes
+
   read_polyline_boundary_and_holes(file_name, points_b, points_h);
 
+  //read_polyline_one_line(file_name, points_b);
   std::vector<boost::tuple<int, int, int> > tris;
 
-  CGAL::Polygon_mesh_processing::triangulate_function();
+
+  CGAL::Polygon_mesh_processing::triangulate_hole_polyline_with_islands(points_b, points_h,
+                                                                        std::back_inserter(tris));
 
 
-  check_triangles(points_b, tris);
+  //check_triangles(points_b, tris);
   check_constructed_polyhedron(file_name, &tris, &points_b, save_output);
 
   std::cerr << "  Done!" << std::endl;

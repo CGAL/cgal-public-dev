@@ -40,6 +40,9 @@
 #include <boost/iterator/transform_iterator.hpp>
 #include <boost/unordered_set.hpp>
 
+// for island handling
+#include <CGAL/intersections.h>
+
 namespace CGAL {
 namespace internal {
 
@@ -60,12 +63,23 @@ public:
     return table[i*n + j];
   }
 
+  void print(const char* filename)
+  {
+    std::ofstream out(filename);
+    for(int i=0; i<table.size(); ++i)
+    {
+      out<<table[i]<<"\n";
+    }
+    out<<std::flush;
+    out.close();
+  }
+
   int n;
 private:
   bool bound_check(int i, int j) const {
     CGAL_assertion(i >= 0 && i < n);
     CGAL_assertion(j >= 0 && j < n);
-    CGAL_assertion(i < j); 
+    //CGAL_assertion(i < j); // TEMP  - FOR ISLANDS
     CGAL_USE(i);
     CGAL_USE(j);
     // previous implementation was based on directly vector and i supposed to be always smaller than j.
@@ -233,7 +247,7 @@ private:
                                    const LookupTable& lambda)
   {
     CGAL_assertion(i < j);
-    CGAL_assertion(j < k);
+    //CGAL_assertion(j < k); // TEMP FOR ISLANDS
     int n = static_cast<int>(P.size()) -1; // because the first and last point are equal
     
     // The CGAL::dihedral angle is measured between the oriented triangles, that is it goes from [-pi, pi]
@@ -1174,6 +1188,8 @@ public:
           if( W.get(i,m) == Weight::NOT_VALID() || W.get(m,k) == Weight::NOT_VALID() ) 
           { continue; }
 
+          std::cout<<"Evaluating t= ("<<i<<","<<m<<","<<k<<")"<<std::endl;
+
           const Weight& w_imk = WC(P,Q,i,m,k, lambda);
           if(w_imk == Weight::NOT_VALID()) 
           { continue; }
@@ -1187,6 +1203,8 @@ public:
 
         // can be m_min = -1 and w_min = NOT_VALID which means no possible triangulation between i-k
         W.put(i,k,w_min);
+
+        W.print("data/Weights.dat");
         lambda.put(i,k, m_min);
       }
     }
@@ -1234,6 +1252,224 @@ triangulate_hole_polyline(const PointRange1& points,
   #endif
   return w;
 }
+
+
+
+/** triangulate hole-with-islands class **/
+template<
+  class Kernel,
+  class Tracer,
+  class WeightCalculator,
+  template <class> class LookupTable = Lookup_table
+>
+class Triangulate_hole_polyline_islands {
+public:
+  typedef typename WeightCalculator::Weight  Weight;
+  typedef typename Kernel::Point_3           Point_3;
+  typedef std::vector<Point_3>               Polyline_3;
+
+  Weight operator()(const Polyline_3& B,
+                    const Polyline_3& H,
+                    const Polyline_3& Q,
+                    Tracer& tracer,
+                    const WeightCalculator& WC) const
+  {
+    CGAL_assertion(B.front() == B.back());
+    CGAL_assertion(H.front() == H.back());
+    CGAL_assertion(Q.empty() || (Q.front() == Q.back()));
+    CGAL_assertion(Q.empty() || (B.size() == Q.size()));
+
+
+    // concatenate
+    // no need
+    std::vector<Point_3> P;
+    P.reserve(B.size() + H.size() - 1); // -2 trailing points -which are the first points- from each vector, +1 trailing point for their sum
+    P.insert(P.end(), B.begin(), B.end() - 1);
+    P.insert(P.end(), H.begin(), H.end() - 1);
+    P.insert(P.end(), B.front());
+
+
+    int n = static_cast<int>(P.size()) - 1;      // because the first and last point are equal
+
+    // create look up tables for cost and lambda index for all vertices, incl. islands
+    LookupTable<Weight> W(n, Weight::DEFAULT()); // do not forget that these default values are not changed for [i, i+1]
+    LookupTable<int>    lambda(n, -1);
+
+    int n_b_points = static_cast<int>(B.size()) - 1; // without the last(=first) one , 6
+    int n_h_points = static_cast<int>(H.size()) - 1; //                                3
+    std::pair<int, int> b_range(0, n_b_points - 1); // 0 , 5
+    std::pair<int, int> h_range(n_b_points, n_b_points + (n_h_points - 1)); // 6, 8
+
+    triangulate_all_islands(P, Q, WC, b_range, h_range, W, lambda);
+
+    if(W.get(0,n-1) == Weight::NOT_VALID()) {
+      #ifndef CGAL_TEST_SUITE
+      CGAL_warning(!"Returning no output. No possible triangulation is found!");
+      #else
+      std::cerr << "W: Returning no output. No possible triangulation is found!\n";
+      #endif
+      return Weight::NOT_VALID();
+    }
+
+    tracer(lambda, 0, n-1);
+    return W.get(0,n-1);
+  }
+
+  void triangulate_all_islands(const Polyline_3& P,
+                               const Polyline_3& Q,
+                               const WeightCalculator& WC,
+                               std::pair<int, int> b_range,
+                               std::pair<int, int> h_range,
+                               LookupTable<Weight>& W,
+                               LookupTable<int>& lambda) const
+  {
+
+    std::cout<<"eD on range= "<<b_range.first<< "-" << b_range.second << std::endl;
+
+    for(int j = 2; j<= b_range.second; ++j) {              // determines range (2 - 3 - 4 )
+      for(int i=b_range.first; i<= b_range.second-j; ++i) {  // iterates over ranges and find min triangulation in those ranges
+        int k = i+j;                                     // like [0-2, 1-3, 2-4, ...], [0-3, 1-4, 2-5, ...]
+
+        int m_min = -1;
+        Weight w_min = Weight::NOT_VALID();
+        // i is the range start (e.g. 1) k is the range end (e.g. 5) -> [1-5]. Now subdivide the region [1-5] with m -> 2,3,4
+
+        // third vertex on the boundary - CASE II
+        for(int m = i+1; m<k; ++m) {
+          // now the regions i-m and m-k might be valid(constructed) patches,
+          if( W.get(i,m) == Weight::NOT_VALID() || W.get(m,k) == Weight::NOT_VALID() )
+          { continue; }
+
+          std::cout<<"Evaluating CASE II t= ("<<i<<","<<m<<","<<k<<")"<<std::endl;
+
+          const Weight& w_imk = WC(P,Q,i,m,k, lambda);
+
+          if(w_imk == Weight::NOT_VALID())
+          {
+              continue;
+          }
+
+          const Weight& w = W.get(i,m) + W.get(m,k) + w_imk;
+          if(m_min == -1 || w < w_min) {
+            w_min = w;
+            m_min = m;
+          }
+        } // m
+
+        // third vertex on an island  - CASE I
+        for(int m = h_range.first; m <= h_range.second; ++m) {
+          // now the regions i-m and m-k might be valid(constructed) patches,
+          if( W.get(i,m) == Weight::NOT_VALID() || W.get(m,k) == Weight::NOT_VALID() )
+          { continue; }
+
+          std::cout<<"Evaluating CASE I t= ("<<i<<","<<m<<","<<k<<")"<<std::endl;
+
+          const Weight& w_imk = WC(P,Q,i,m,k, lambda);
+
+          if(w_imk == Weight::NOT_VALID())
+          {
+              continue;
+          }
+
+          const Weight& w = W.get(i,m) + W.get(m,k) + w_imk;
+          if(m_min == -1 || w < w_min) {
+            w_min = w;
+            m_min = m;
+          }
+        } // m
+
+        if(m_min == -1)
+        {
+          std::cerr<<"NOT FOUND"<<std::endl;
+        }
+
+        // can be m_min = -1 and w_min = NOT_VALID which means no possible triangulation between i-k
+        W.put(i,k,w_min);
+        W.print("data/Weights.dat");
+        lambda.put(i,k, m_min);
+        lambda.print("data/Lambda.dat");
+        std::cout<<"\n";
+      }
+    }
+  }
+
+  /*
+  bool does_instersect_with_island(int i, int m, int k, const Polyline_3& P, const Polyline_3& hole_points) const
+  {
+    // assuming the island is only one polygon - only one island for now
+
+    // evaluated triangle
+    typedef typename Kernel::Triangle_3 Triangle_3;
+    Triangle_3 t(P[i], P[m], P[k]);
+
+    // each edge on the single polygon island
+    typedef typename Kernel::Segment_3 Segment_3;
+    for(int p=0; p < hole_points.size() - 1; ++p) // last point is the start
+    {
+      Segment_3 island_edge(hole_points[p], hole_points[p+1]);
+
+      if(CGAL::do_intersect(t, island_edge))
+        return true;
+    }
+    return false;
+  }
+  */
+
+
+};
+
+
+/* internal island*/
+template <
+  typename PointRange1,
+  typename PointRange2,
+  typename Tracer,
+  typename WeightCalculator,
+  typename Kernel
+>
+typename WeightCalculator::Weight
+triangulate_hole_polyline_islands(const PointRange1& points_b,
+                                  const PointRange2& points_h,
+                                  Tracer& tracer,
+                                  const WeightCalculator& WC,
+                                  bool use_delaunay_triangulation,
+                                  const Kernel&)
+{
+  typedef Kernel        K;
+  typedef typename K::Point_3    Point_3;
+
+  //typedef CGAL::internal::Triangulate_hole_polyline_DT<K, Tracer, WeightCalculator> Fill_DT;
+  //typedef CGAL::internal::Triangulate_hole_polyline<K, Tracer, WeightCalculator>    Fill;
+
+  std::vector<Point_3> B(boost::begin(points_b), boost::end(points_b)); // points on the b.
+  std::vector<Point_3> H(boost::begin(points_h), boost::end(points_h)); // points on islands
+
+  //give empty third points - for now
+  std::vector<Point_3> Q;
+
+  typedef CGAL::internal::Triangulate_hole_polyline_islands<K, Tracer, WeightCalculator>    Fill_island;
+
+  // original
+  //typedef CGAL::internal::Triangulate_hole_polyline<K, Tracer, WeightCalculator>    Fill_island;
+
+  // P constined all points, incl islands
+  // H is points on islands only
+  typename WeightCalculator::Weight w = Fill_island().operator()(B,H,Q,tracer,WC);
+
+  // test without islands
+  //typename WeightCalculator::Weight w = Fill_island().operator()(B,Q,tracer,WC);
+
+  #define CGAL_PMP_HOLE_FILLING_DEBUG
+
+  #ifdef CGAL_PMP_HOLE_FILLING_DEBUG
+  std::cerr << "w= " << w << std::endl;
+  #endif
+
+  return w;
+}
+
+
+
 
 } // namespace internal
 
