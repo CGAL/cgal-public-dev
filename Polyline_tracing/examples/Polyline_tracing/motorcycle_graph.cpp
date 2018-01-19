@@ -268,6 +268,14 @@ void motorcycle_club_5(Motorcycle_container& motorcycles)
                                                          CP::destination = destination_loc)));
 }
 
+void motorcycle_club_6(Motorcycle_container& motorcycles)
+{
+  motorcycles.push_back(Motorcycle_ptr(new Motorcycle_U(CP::source = Point_2(0.2, 0.18),
+                                                        CP::destination = Point_2(0.3, 0.18))));
+  motorcycles.push_back(Motorcycle_ptr(new Motorcycle_U(CP::source = Point_2(0.6, 0.18),
+                                                        CP::destination = Point_2(0.2, 0.18))));
+}
+
 void random_motorcycles_in_triangle(Motorcycle_container& motorcycles,
                                     const Triangle_2& triangle,
                                     CGAL::Random& rnd)
@@ -347,7 +355,7 @@ int main()
   std::cerr.precision(18);
 
 #if 1//def CGAL_MOTORCYCLE_GRAPH_USE_FIXED_SEEDS
-  CGAL::Random rnd(1508158096);
+  CGAL::Random rnd(1516813504);
 #else
   CGAL::Random rnd(CGAL::get_default_random());
 #endif
@@ -373,6 +381,7 @@ int main()
     motorcycle_club_3(motorcycles);
 //    motorcycle_club_4(motorcycles);
     motorcycle_club_5(motorcycles);
+    motorcycle_club_6(motorcycles);
 
     random_motorcycles_on_face(motorcycles, pm, *(faces(pm).begin()), rnd);
     random_motorcycles_on_face(motorcycles, pm, *(++(++(++(++(++faces(pm).begin()))))), rnd);
@@ -392,7 +401,7 @@ int main()
 
     CGAL_postcondition(motorcycle_graph.is_valid());
 
-    rnd = CGAL::get_default_random();
+    rnd = CGAL::Random();
   }
 
   return 0;

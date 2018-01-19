@@ -132,6 +132,7 @@ incident_faces(const typename internal::Locate_types<TriangleMesh>::Face_locatio
   if(dv.which() == 0)
   {
     vertex_descriptor vd = boost::get<vertex_descriptor>(dv);
+    //@todo replace by CGAL_FOREACH when it's available
     BOOST_FOREACH(face_descriptor fd, CGAL::faces_around_target(halfedge(vd, tm), tm))
     {
       c.insert(fd);

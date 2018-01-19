@@ -1,4 +1,4 @@
-﻿// Copyright (c) 2017 GeometryFactory (France).
+﻿// Copyright (c) 2017, 2018 GeometryFactory (France).
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
@@ -54,7 +54,6 @@ public:
   typedef typename Geom_traits::Ray_d                         Ray;
 
   typedef Dictionary<Geom_traits>                             Dictionary;
-  typedef Dictionary_entry<Geom_traits>                       Dictionary_entry;
   typedef typename Dictionary::DEC_it                         DEC_it;
 
   typedef typename Geom_traits::Face_location                 Face_location;
@@ -152,7 +151,8 @@ operator()(halfedge_descriptor hd, const Motorcycle& mc,
 
   // Insert the source seen from the opposite face in the dictionary
   std::pair<DEC_it, bool> source_in_next_face = points.insert(opp_loc,
-                                                              mc.current_position()->point());
+                                                              mc.current_position()->point(),
+                                                              mesh);
 
   // Now deal with the destination
   const Face_location& loc = destinations[pos];

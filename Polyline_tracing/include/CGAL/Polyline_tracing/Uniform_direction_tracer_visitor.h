@@ -1,4 +1,4 @@
-﻿// Copyright (c) 2017 GeometryFactory (France).
+﻿// Copyright (c) 2017, 2018 GeometryFactory (France).
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
@@ -54,7 +54,6 @@ public:
   typedef typename Geom_traits::Ray_d                         Ray;
 
   typedef Dictionary<Geom_traits>                             Dictionary;
-  typedef Dictionary_entry<Geom_traits>                       Dictionary_entry;
   typedef typename Dictionary::DEC_it                         DEC_it;
 
   typedef typename Geom_traits::Face_location                 Face_location;
@@ -174,12 +173,13 @@ compute_next_destination(const DEC_it start_point, const face_descriptor fd, con
   // A uniform tracer will trace until it reaches a boundary. It is important
   // that the location of this new destination reflects that it is on the boundary
   // (that is, one of its barycentric coordinates should be 0).
+  //
   // @todo a proper snap to closer halfedge / vertex. detect when we are walking an
   // edge, which should yield a target on a vertex (pass the bool in parameter).
   CGAL::Polygon_mesh_processing::internal::snap_location_to_border<Triangle_mesh>(loc);
   CGAL_postcondition(CGAL::Polygon_mesh_processing::is_on_face_border(loc, mesh));
 
-  std::pair<DEC_it, bool> destination = points.insert(loc, farthest_destination);
+  std::pair<DEC_it, bool> destination = points.insert(loc, farthest_destination, mesh);
 
 #ifdef CGAL_MOTORCYCLE_GRAPH_VERBOSE
   std::cout << "new source at      : " << &*start_point
@@ -250,12 +250,11 @@ operator()(vertex_descriptor vd, const Motorcycle& mc,
     }
     else
     {
-      Face_location loc_in_fd = CGAL::Polygon_mesh_processing::locate(
-                                  mc.current_position()->location(), fd, mesh);
+      Face_location loc_in_fd = mc.current_position()->sibling(fd);
 
       // Insert into the dictionary, but keep an iterator to it so that it can
       // be removed quickly if this point is useless
-      source_in_fd = points.insert(loc_in_fd, mc.current_position()->point());
+      source_in_fd = points.insert(loc_in_fd, mc.current_position()->point(), mesh);
     }
 
     result_type res = compute_next_destination(source_in_fd.first, fd, mc, points, mesh);
@@ -326,11 +325,12 @@ operator()(halfedge_descriptor hd, const Motorcycle& mc,
     face_descriptor fd = face(hd, mesh);
     result_type res = compute_next_destination(mc.current_position(), fd, mc, points, mesh);
 
-    // Since direction == NULL_VECTOR has been filtered in Tracer.h, the destination
+    // Since (direction == NULL_VECTOR) has been filtered in Tracer.h, the destination
     // should not be equal to the source
     // @todo This check would fail if one is manipulating a mesh with a completely
     // degenerate face
-    if(res.template get<0>() && res.template get<2>() != mc.current_position())
+    if(res.template get<0>() &&
+       res.template get<2>() != mc.current_position())
       return res;
   }
 
@@ -347,12 +347,10 @@ operator()(halfedge_descriptor hd, const Motorcycle& mc,
   // Compute the position of the motorcycle in the opposite face
   face_descriptor opp_fd = face(opp_hd, mesh);
   CGAL_assertion(opp_fd != boost::graph_traits<Triangle_mesh>::null_face());
-  Face_location opp_loc = CGAL::Polygon_mesh_processing::locate(mc.current_position()->location(),
-                                                                opp_fd, mesh);
+  Face_location opp_loc = mc.current_position()->sibling(opp_fd);
 
   // Insert the source seen from the opposite face in the dictionary
-  std::pair<DEC_it, bool> source_in_next_face = points.insert(opp_loc,
-                                                              mc.current_position()->point());
+  std::pair<DEC_it, bool> source_in_next_face = points.insert(opp_loc, mc.current_position()->point(), mesh);
 
   result_type opp_res = compute_next_destination(source_in_next_face.first, opp_fd, mc, points, mesh);
 

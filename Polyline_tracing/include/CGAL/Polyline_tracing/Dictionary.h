@@ -1,4 +1,4 @@
-// Copyright (c) 2017 GeometryFactory (France).
+// Copyright (c) 2017, 2018 GeometryFactory (France).
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
@@ -25,26 +25,51 @@
 #include <boost/bimap/multiset_of.hpp>
 #include <boost/bimap/set_of.hpp>
 #include <boost/functional/hash.hpp>
+#include <boost/next_prior.hpp>
 #include <boost/unordered_set.hpp>
 
+#include <iostream>
+#include <list>
+#include <map>
+#include <ostream>
 #include <utility>
+#include <vector>
 
 namespace CGAL {
 
 namespace Polyline_tracing {
 
-// This class represents a point that is involved in the motorcycle graph algorithm
-// It is useful for robustness to regroup them in a single dictionary-like structure.
-template<typename MotorcycleGraphTraits>
-class Dictionary_entry
+namespace internal {
+
+template<typename Face_location>
+struct Face_location_comparer
 {
-  typedef Dictionary_entry<MotorcycleGraphTraits>                        Self;
+  bool operator()(const Face_location& fl1, const Face_location& fl2) const
+  {
+    return fl1.first < fl2.first;
+  }
+};
+
+} // namespace internal
+
+// -----------------------------------------------------------------------------
+//                        Dictionary_entry_base class
+// The base contains all the information except the (face, barycentric) location.
+// -----------------------------------------------------------------------------
+
+template<typename MotorcycleGraphTraits_>
+class Dictionary_entry_base
+{
+  typedef Dictionary_entry_base<MotorcycleGraphTraits_>                  Self;
 
 public:
-  typedef MotorcycleGraphTraits                                          Geom_traits;
+  typedef MotorcycleGraphTraits_                                         Geom_traits;
 
   typedef typename Geom_traits::FT                                       FT;
   typedef typename Geom_traits::Point_d                                  Point;
+
+  typedef typename Geom_traits::face_descriptor                          face_descriptor;
+  typedef typename Geom_traits::Face_location                            Face_location;
 
   // A container of motorcycles that visit this point. We need to efficiently know:
   // - if a motorcycle visits this point,
@@ -58,7 +83,7 @@ public:
             boost::bimaps::multiset_of<std::size_t>, // set of motorcycles
             boost::bimaps::multiset_of<FT> > // multi-set of visiting times
                                                                          Visiting_motorcycles_container;
-  typedef typename Visiting_motorcycles_container::iterator              iterator;
+  typedef typename Visiting_motorcycles_container::iterator              VMC_it;
   typedef typename Visiting_motorcycles_container::value_type            value_type;
   typedef typename Visiting_motorcycles_container::size_type             size_type;
 
@@ -68,24 +93,24 @@ public:
 
   typedef typename Visiting_motorcycles_container::right_const_iterator  VMC_right_cit;
 
-  typedef typename Geom_traits::face_descriptor                          face_descriptor;
-
-  typedef typename Geom_traits::Face_location                            Face_location;
-
-  // Access
-  const Point& point() const { return p; }
-  const Face_location& location() const { return loc; }
-  bool is_blocked() const { return blocked; }
-  void block() const { blocked = true; }
-  Visiting_motorcycles_container& visiting_motorcycles() { return visiting_mcs; }
-  const Visiting_motorcycles_container& visiting_motorcycles() const { return visiting_mcs; }
+  typedef internal::Face_location_comparer<Face_location>                FL_comparer;
+  typedef std::set<Face_location, FL_comparer>                           Siblings_container;
 
   // Constructor
-  Dictionary_entry(const Face_location& loc, const Point& p);
+  Dictionary_entry_base(const Point& p)
+    : position_(p), blocked_(false), visiting_mcs_(), siblings_(FL_comparer())
+  { }
 
-  // The following functions are not actually 'const' but the members they modify
-  // are mutable.
-  std::pair<iterator, bool> add_motorcycle(const std::size_t id, const FT time) const;
+  // Access
+  const Point& point() const { return position_; }
+  bool is_blocked() const { return blocked_; }
+  void block() const { blocked_ = true; }
+  Visiting_motorcycles_container& visiting_motorcycles() { return visiting_mcs_; }
+  const Visiting_motorcycles_container& visiting_motorcycles() const { return visiting_mcs_; }
+  Siblings_container& siblings() { return siblings_; }
+  const Siblings_container& siblings() const { return siblings_; }
+
+  std::pair<VMC_it, bool> add_motorcycle(const std::size_t id, const FT time) const;
   void add_motorcycles(const Visiting_motorcycles_container& foreign_visiting_mcs) const;
 
   // Returns an iterator to the motorcycle that first visits the point.
@@ -108,21 +133,384 @@ public:
                                                const FT max_visiting_time, const bool strictly_at_min = false,
                                                const bool strictly_at_max = false) const;
 
-  // Basically wrappers around "find_motorcycle()"
+  // Check if a motorcycle visits the point (possibly within a given time interval)
+  bool has_motorcycle(const std::size_t id) const;
   bool has_motorcycle(const std::size_t id, const FT visiting_time) const;
-  bool has_motorcycle(const std::size_t id, const FT min_visiting_time,
-                      const FT max_visiting_time, FT& visiting_time,
-                      const bool strictly_at_min = false,
-                      const bool strictly_at_max = false) const;
-  bool has_motorcycle(const std::size_t id, const FT min_visiting_time,
-                      const FT max_visiting_time, const bool strictly_at_min = false,
-                      const bool strictly_at_max = false) const;
+  bool has_motorcycle(const std::size_t id,
+                      const FT min_visiting_time, const FT max_visiting_time,
+                      FT& visiting_time /*time at which it is visited*/,
+                      const bool strictly_at_min = false, const bool strictly_at_max = false) const;
+  bool has_motorcycle(const std::size_t id,
+                      const FT min_visiting_time, const FT max_visiting_time,
+                      const bool strictly_at_min = false, const bool strictly_at_max = false) const;
 
   // check if the two earliest motorcycles meet at the same time
   bool has_simultaneous_collision() const;
   size_type remove_motorcycle(const std::size_t id) const;
 
-  // To build a set<Dictionary_entry> (unused since an unordered_set is now used
+
+  // Output
+  friend std::ostream& operator<<(std::ostream& out, const Self& dec)
+  {
+    out << "Point: (" << dec.point() << ") blocked: " << dec.is_blocked() << std::endl;
+    out << "  Visiting motorcycles:" << std::endl;
+    VMC_left_cit vmc_it = dec.visiting_motorcycles().left.begin();
+    VMC_left_cit end = dec.visiting_motorcycles().left.end();
+    for(; vmc_it!=end; ++vmc_it)
+      out << "\t motorcycle #" << vmc_it->first << " time: " << vmc_it->second << std::endl;
+
+    out << "  Siblings: " << std::endl;
+    typename Siblings_container::const_iterator smcit = dec.siblings().begin();
+    for(; smcit!=dec.siblings().end(); ++smcit)
+    {
+      std::cout << "\t location is fd: " << smcit->first << " / bc: ["
+                                         << smcit->second[0] << " "
+                                         << smcit->second[1] << " "
+                                         << smcit->second[2] << "]" << std::endl;;
+    }
+
+    return out;
+  }
+
+private:
+  // This class is meant to be an element of a set entry, which is const. However,
+  // its members must still be modifiable so they are made mutable.
+  // It is safe because the set is only ordered with the location, which is never modified.
+
+  // The position of the point (only for information)
+  const Point position_;
+  // Whether the position is blocked or not
+  mutable bool blocked_;
+  // The motorcycles visiting this point
+  mutable Visiting_motorcycles_container visiting_mcs_;
+
+  // When a point is on the border of a face, multiple 'Face_location' represent
+  // the same point. These locations are referred to as 'siblings'.
+  // @todo make it optional
+  mutable Siblings_container siblings_;
+};
+
+template<typename MotorcycleGraphTraits_>
+std::pair<typename Dictionary_entry_base<MotorcycleGraphTraits_>::VMC_it, bool>
+Dictionary_entry_base<MotorcycleGraphTraits_>::
+add_motorcycle(const std::size_t id, const FT time) const
+{
+  std::cout << " > Point " << this << " is visited by motorcycle #" << id << " at time: " << time << std::endl;
+  CGAL_expensive_precondition(!has_motorcycle(id, time));
+  return visiting_mcs_.insert(value_type(id, time));
+}
+
+template<typename MotorcycleGraphTraits_>
+void
+Dictionary_entry_base<MotorcycleGraphTraits_>::
+add_motorcycles(const Visiting_motorcycles_container& foreign_visiting_mcs) const
+{
+  VMC_left_cit vmc_it = foreign_visiting_mcs.left.begin();
+  VMC_left_cit end = foreign_visiting_mcs.left.end();
+  for(; vmc_it!=end; ++vmc_it)
+  {
+    // Although it's a multiset, we don't want to insert redundant information
+    // in the visiting motorcycle container
+    std::pair<VMC_left_it, bool> is_already_in = find_motorcycle(vmc_it->first, vmc_it->second);
+    CGAL_expensive_precondition(!is_already_in.second);
+
+    visiting_mcs_.left.insert(is_already_in.first,
+                              VMC_left_value_type(vmc_it->first, vmc_it->second));
+  }
+}
+
+template<typename MotorcycleGraphTraits_>
+typename Dictionary_entry_base<MotorcycleGraphTraits_>::VMC_right_cit
+Dictionary_entry_base<MotorcycleGraphTraits_>::
+earliest_motorcycle() const
+{
+  CGAL_precondition(!visiting_mcs_.empty());
+  return visiting_motorcycles().right.begin();
+}
+
+template<typename MotorcycleGraphTraits_>
+std::pair<typename Dictionary_entry_base<MotorcycleGraphTraits_>::VMC_left_it, bool>
+Dictionary_entry_base<MotorcycleGraphTraits_>::
+find_motorcycle(const std::size_t id) const
+{
+  // Since 'lower_bound' is used, it returns the first motorcycle fitting this
+  VMC_left_it it = visiting_mcs_.left.lower_bound(id);
+  bool found_motorcycle = (it != visiting_mcs_.left.end() && it->first == id);
+
+  return std::make_pair(it, found_motorcycle);
+}
+
+template<typename MotorcycleGraphTraits_>
+std::pair<typename Dictionary_entry_base<MotorcycleGraphTraits_>::VMC_left_it, bool>
+Dictionary_entry_base<MotorcycleGraphTraits_>::
+find_motorcycle(const std::size_t id, const FT visiting_time) const
+{
+  std::pair<VMC_left_it, bool> mres = find_motorcycle(id);
+  VMC_left_it mit = mres.first;
+  bool is_valid_iterator = mres.second;
+
+  while(is_valid_iterator)
+  {
+    if(mit->second == visiting_time)
+      return std::make_pair(mit, true);
+
+    ++mit;
+    is_valid_iterator = (mit != visiting_mcs_.left.end() && mit->first == id);
+  }
+
+  return std::make_pair(visiting_mcs_.left.end(), false);
+}
+
+template<typename MotorcycleGraphTraits_>
+std::pair<typename Dictionary_entry_base<MotorcycleGraphTraits_>::VMC_left_it, bool>
+Dictionary_entry_base<MotorcycleGraphTraits_>::
+find_motorcycle(const std::size_t id, const FT min_visiting_time,
+                const FT max_visiting_time, FT& visiting_time,
+                const bool strictly_at_min, const bool strictly_at_max) const
+{
+  CGAL_precondition(min_visiting_time <= max_visiting_time);
+
+  std::pair<VMC_left_it, bool> mres = find_motorcycle(id);
+  VMC_left_it mit = mres.first;
+  bool is_valid_iterator = mres.second; // = false if we couldn't find the motorcycle
+
+  while(is_valid_iterator) // while still considering the motorcycle 'id'
+  {
+    CGAL_assertion(mit->first == id);
+    visiting_time = mit->second;
+
+    if((visiting_time > min_visiting_time ||
+        (!strictly_at_min && visiting_time == min_visiting_time)) &&
+       (visiting_time < max_visiting_time ||
+        (!strictly_at_max && visiting_time == max_visiting_time)))
+      return std::make_pair(mit, true);
+
+    ++mit;
+    is_valid_iterator = (mit != visiting_mcs_.left.end() && mit->first == id);
+  }
+
+  return std::make_pair(visiting_mcs_.left.end(), false);
+}
+
+template<typename MotorcycleGraphTraits_>
+std::pair<typename Dictionary_entry_base<MotorcycleGraphTraits_>::VMC_left_it, bool>
+Dictionary_entry_base<MotorcycleGraphTraits_>::
+find_motorcycle(const std::size_t id, const FT min_visiting_time,
+               const FT max_visiting_time, const bool strictly_at_min,
+               const bool strictly_at_max) const
+{
+  FT useless;
+  return find_motorcycle(id, min_visiting_time, max_visiting_time, useless,
+                         strictly_at_min, strictly_at_max);
+}
+
+template<typename MotorcycleGraphTraits_>
+bool
+Dictionary_entry_base<MotorcycleGraphTraits_>::
+has_motorcycle(const std::size_t id) const
+{
+  return find_motorcycle(id).second;
+}
+
+template<typename MotorcycleGraphTraits_>
+bool
+Dictionary_entry_base<MotorcycleGraphTraits_>::
+has_motorcycle(const std::size_t id, const FT visiting_time) const
+{
+  return find_motorcycle(id, visiting_time).second;
+}
+
+template<typename MotorcycleGraphTraits_>
+bool
+Dictionary_entry_base<MotorcycleGraphTraits_>::
+has_motorcycle(const std::size_t id,
+               const FT min_visiting_time, const FT max_visiting_time,
+               FT& visiting_time,
+               const bool strictly_at_min, const bool strictly_at_max) const
+{
+  CGAL_precondition(min_visiting_time <= max_visiting_time);
+
+  return find_motorcycle(id, min_visiting_time, max_visiting_time, visiting_time,
+                         strictly_at_min, strictly_at_max).second;
+}
+
+template<typename MotorcycleGraphTraits_>
+bool
+Dictionary_entry_base<MotorcycleGraphTraits_>::
+has_motorcycle(const std::size_t id,
+               const FT min_visiting_time, const FT max_visiting_time,
+               const bool strictly_at_min, const bool strictly_at_max) const
+{
+  CGAL_precondition(min_visiting_time <= max_visiting_time);
+
+  FT useless;
+  return find_motorcycle(id, min_visiting_time, max_visiting_time, useless,
+                         strictly_at_min, strictly_at_max).second;
+}
+
+template<typename MotorcycleGraphTraits_>
+bool
+Dictionary_entry_base<MotorcycleGraphTraits_>::
+has_simultaneous_collision() const
+{
+  CGAL_precondition(!visiting_motorcycles().empty());
+  if(visiting_motorcycles().size() == 1)
+    return false;
+
+  // accessing 'right' of the bimap gives ordered time values
+  // the first and second entries are thus the times for the two closest
+  // points. If the times are equal (or almost), there is a simultaneous collision.
+  VMC_right_cit first_mc_it = visiting_motorcycles().right.begin();
+  VMC_right_cit second_mc_it = ++(visiting_motorcycles().right.begin());
+  const FT first_time = first_mc_it->first;
+  const FT second_time = second_mc_it->first;
+  CGAL_assertion(first_time <= second_time);
+
+#ifdef CGAL_MOTORCYCLE_GRAPH_VERBOSE
+  std::cout << "closest motorcycles at times: " << first_time << " and " << second_time << std::endl;
+#endif
+
+#ifdef CGAL_MOTORCYCLE_GRAPH_ROBUSTNESS_CODE
+  // Add a little bit of tolerance
+  return (CGAL::abs(second_time - first_time) < (std::numeric_limits<FT>::epsilon() *
+                                                 CGAL::abs(first_time + second_time)));
+#else
+  return (second_time == first_time);
+#endif
+}
+
+template<typename MotorcycleGraphTraits_>
+typename Dictionary_entry_base<MotorcycleGraphTraits_>::size_type
+Dictionary_entry_base<MotorcycleGraphTraits_>::
+remove_motorcycle(const std::size_t id) const
+{
+  // Note that this will remove all instances of motorcycle 'id' in the multiset
+  return visiting_mcs_.left.erase(id);
+}
+
+// -----------------------------------------------------------------------------
+//                           Dictionary entry class
+// This class represents a point that is involved in the motorcycle graph algorithm
+//
+// It is useful for robustness to regroup them in a single dictionary-like structure,
+// sorted by location because intersections are computed on locations (instead
+// of points)
+// -----------------------------------------------------------------------------
+
+template<typename MotorcycleGraphTraits_, typename DictionaryEntryBaseContainer_>
+class Dictionary_entry
+{
+  typedef Dictionary_entry<MotorcycleGraphTraits_, DictionaryEntryBaseContainer_>  Self;
+  typedef Dictionary_entry_base<MotorcycleGraphTraits_>                            Base;
+  typedef typename DictionaryEntryBaseContainer_::iterator                         DEBC_it;
+
+public:
+  typedef MotorcycleGraphTraits_                                         Geom_traits;
+
+  typedef typename Geom_traits::FT                                       FT;
+  typedef typename Geom_traits::Point_d                                  Point;
+
+  typedef typename Geom_traits::face_descriptor                          face_descriptor;
+  typedef typename Geom_traits::Face_location                            Face_location;
+  typedef typename Geom_traits::Barycentric_coordinates                  Barycentric_coordinates;
+
+  typedef typename Base::size_type                                       size_type;
+  typedef typename Base::Visiting_motorcycles_container                  Visiting_motorcycles_container;
+  typedef typename Base::VMC_it                                          VMC_it;
+  typedef typename Base::VMC_left_it                                     VMC_left_it;
+  typedef typename Base::VMC_right_cit                                   VMC_right_cit;
+  typedef typename Base::Siblings_container                              Siblings_container;
+
+  // Access
+  const Face_location& location() const { return location_; }
+
+    // the "base" is a pointer to an object of type 'Base' that is stored in a container
+    // (because the base is common to multiple locations)
+  DEBC_it& base() const { CGAL_precondition(base_ != DEBC_it()); return base_; }
+  void set_base(DEBC_it new_base) const { base_ = new_base; }
+
+    // return the point's location in another face
+    // \pre the location is on the border of 'fd'
+  const Face_location& location(face_descriptor fd) const;
+
+  // Constructor
+  Dictionary_entry(const Face_location& location) : location_(location), base_() { }
+
+  // ---------------------------------------------------------------------------
+  // Simple wrappers to artifically create a base
+  const Point& point() const { return base()->point(); }
+  bool is_blocked() const { return base()->is_blocked(); }
+  void block() const { base()->block(); }
+  Visiting_motorcycles_container& visiting_motorcycles() { return base()->visiting_motorcycles(); }
+  const Visiting_motorcycles_container& visiting_motorcycles() const { return base()->visiting_motorcycles(); }
+  Siblings_container& siblings() const { return base()->siblings(); }
+
+  std::pair<VMC_it, bool> add_motorcycle(const std::size_t id, const FT time) const {
+    return base()->add_motorcycle(id, time);
+  }
+  void add_motorcycles(const Visiting_motorcycles_container& foreign_visiting_mcs) const {
+    return base()->add_motorcycles(foreign_visiting_mcs);
+  }
+
+  VMC_right_cit earliest_motorcycle() const { return base()->earliest_motorcycle(); }
+  std::pair<VMC_left_it, bool> find_motorcycle(const std::size_t id) const { return base()->find_motorcycle(id); }
+
+  // Check if the motorcycle 'id' visits at time 'visiting_time'.
+  std::pair<VMC_left_it, bool> find_motorcycle(const std::size_t id, const FT visiting_time) const {
+    return base()->find_motorcycle(id, visiting_time);
+  }
+
+  std::pair<VMC_left_it, bool> find_motorcycle(const std::size_t id, const FT min_visiting_time,
+                                               const FT max_visiting_time, FT& visiting_time,
+                                               const bool strictly_at_min = false,
+                                               const bool strictly_at_max = false) const {
+    return base()->find_motorcycle(id, min_visiting_time, max_visiting_time, visiting_time, strictly_at_min, strictly_at_max);
+  }
+  std::pair<VMC_left_it, bool> find_motorcycle(const std::size_t id, const FT min_visiting_time,
+                                               const FT max_visiting_time, const bool strictly_at_min = false,
+                                               const bool strictly_at_max = false) const {
+    return base()->find_motorcycle(id, min_visiting_time, max_visiting_time, strictly_at_min, strictly_at_max);
+  }
+
+  bool has_motorcycle(const std::size_t id) const { return base()->has_motorcycle(id); }
+  bool has_motorcycle(const std::size_t id, const FT visiting_time) const { return base()->has_motorcycle(id, visiting_time); }
+  bool has_motorcycle(const std::size_t id,
+                      const FT min_visiting_time, const FT max_visiting_time,
+                      FT& visiting_time /*time at which it is visited*/,
+                      const bool strictly_at_min = false, const bool strictly_at_max = false) const {
+    return base()->has_motorcycle(id, min_visiting_time, max_visiting_time, visiting_time, strictly_at_min, strictly_at_max);
+  }
+  bool has_motorcycle(const std::size_t id,
+                      const FT min_visiting_time, const FT max_visiting_time,
+                      const bool strictly_at_min = false, const bool strictly_at_max = false) const {
+    return base()->has_motorcycle(id, min_visiting_time, max_visiting_time, strictly_at_min, strictly_at_max);
+  }
+
+  // check if the two earliest motorcycles meet at the same time
+  bool has_simultaneous_collision() const { return base()->has_simultaneous_collision(); }
+  size_type remove_motorcycle(const std::size_t id) const { return base()->remove_motorcycle(id); }
+  // ---------------------------------------------------------------------------
+
+  // Functions
+  Face_location sibling(face_descriptor fd) const
+  {
+    CGAL_precondition(!siblings().empty());
+    if(location().first == fd)
+      return location();
+
+    Face_location dummy(std::make_pair(fd, Barycentric_coordinates()));
+    typename Siblings_container::iterator it = siblings().find(dummy);
+    CGAL_postcondition(it != siblings().end()); // couldn't find the sibling, is 'fd' correct ?
+    return *it;
+  }
+
+  bool is_sibling(const Face_location& location) const
+  {
+    CGAL_precondition(!siblings().empty());
+    return (siblings().find(location) != siblings().end());
+  }
+
+  // To build a set<Dictionary_entry> (now obsolete since an unordered_set is now used,
   // but leaving it available).
   friend bool operator<(const Self& lhs, const Self& rhs)
   {
@@ -155,268 +543,77 @@ public:
   // Output
   friend std::ostream& operator<<(std::ostream& out, const Self& dec)
   {
-    out << "Point: (" << dec.point() << ") blocked: " << dec.is_blocked() << std::endl;
     out << "  Location: " << dec.location().first << " barycentric coordinates: { "
         << dec.location().second[0] << "; " << dec.location().second[1]
         << "; " << dec.location().second[2] << "}" << std::endl;
-    out << "  Visiting motorcycles:" << std::endl;
-    VMC_left_cit vmc_it = dec.visiting_motorcycles().left.begin();
-    VMC_left_cit end = dec.visiting_motorcycles().left.end();
-    for(; vmc_it!=end; ++vmc_it)
-      out << "\t motorcycle #" << vmc_it->first << " time: " << vmc_it->second << std::endl;
-
+    out << *(dec.base());
     return out;
   }
 
 private:
-  // Its location in the mesh
-  const Face_location loc;
-
-  // The position of the point (only for information)
-  const Point p;
-
-  // This class is meant to be an element of a set entry, which is const. However,
-  // the members below must still be modifiable so they are made mutable.
-  // It is safe because the set is only ordered with the location, which is never modified.
-  mutable bool blocked;
-  mutable Visiting_motorcycles_container visiting_mcs;
+  const Face_location location_; // location in the mesh
+  mutable DEBC_it base_; // everything else (mutable because this class is the value type of a set)
 };
-
-template<typename MotorcycleGraphTraits>
-Dictionary_entry<MotorcycleGraphTraits>::
-Dictionary_entry(const Face_location& loc, const Point& p)
-  : loc(loc), p(p), blocked(false), visiting_mcs()
-{ }
-
-template<typename MotorcycleGraphTraits>
-std::pair<typename Dictionary_entry<MotorcycleGraphTraits>::iterator, bool>
-Dictionary_entry<MotorcycleGraphTraits>::
-add_motorcycle(const std::size_t id, const FT time) const
-{
-  std::cout << " > Point " << this << " is visited by motorcycle #" << id << " at time: " << time << std::endl;
-  CGAL_expensive_precondition(!has_motorcycle(id, time));
-  return visiting_mcs.insert(value_type(id, time));
-}
-
-template<typename MotorcycleGraphTraits>
-void
-Dictionary_entry<MotorcycleGraphTraits>::
-add_motorcycles(const Visiting_motorcycles_container& foreign_visiting_mcs) const
-{
-  VMC_left_cit vmc_it = foreign_visiting_mcs.left.begin();
-  VMC_left_cit end = foreign_visiting_mcs.left.end();
-  for(; vmc_it!=end; ++vmc_it)
-  {
-    // Although it's a multiset, we don't want to insert redundant information
-    // in the visiting motorcycle container
-    std::pair<VMC_left_it, bool> is_already_in =
-      find_motorcycle(vmc_it->first, vmc_it->second);
-
-    if(!is_already_in.second)
-    {
-      visiting_mcs.left.insert(is_already_in.first,
-                               VMC_left_value_type(vmc_it->first, vmc_it->second));
-    }
-  }
-}
-
-template<typename MotorcycleGraphTraits>
-typename Dictionary_entry<MotorcycleGraphTraits>::VMC_right_cit
-Dictionary_entry<MotorcycleGraphTraits>::
-earliest_motorcycle() const
-{
-  if(visiting_mcs.empty())
-    std::cerr << "Warning: 'earliest_motorcycle' is returning end()" << std::endl;
-
-  return visiting_mcs.right.begin();
-}
-
-template<typename MotorcycleGraphTraits>
-std::pair<typename Dictionary_entry<MotorcycleGraphTraits>::VMC_left_it, bool>
-Dictionary_entry<MotorcycleGraphTraits>::
-find_motorcycle(const std::size_t id) const
-{
-  // Since 'lower_bound' is used, it returns the first motorcycle fitting this
-  VMC_left_it it = visiting_mcs.left.lower_bound(id);
-  bool found_motorcycle = (it != visiting_mcs.left.end() && it->first == id);
-
-  return std::make_pair(it, found_motorcycle);
-}
-
-template<typename MotorcycleGraphTraits>
-std::pair<typename Dictionary_entry<MotorcycleGraphTraits>::VMC_left_it, bool>
-Dictionary_entry<MotorcycleGraphTraits>::
-find_motorcycle(const std::size_t id, const FT visiting_time) const
-{
-  std::pair<VMC_left_it, bool> mres = find_motorcycle(id);
-  VMC_left_it mit = mres.first;
-  bool is_valid_iterator = mres.second;
-
-  while(is_valid_iterator)
-  {
-    if(mit->second == visiting_time)
-      return std::make_pair(mit, true);
-
-    ++mit;
-    is_valid_iterator = (mit != visiting_mcs.left.end() && mit->first == id);
-  }
-
-  return std::make_pair(visiting_mcs.left.end(), false);
-}
-
-template<typename MotorcycleGraphTraits>
-std::pair<typename Dictionary_entry<MotorcycleGraphTraits>::VMC_left_it, bool>
-Dictionary_entry<MotorcycleGraphTraits>::
-find_motorcycle(const std::size_t id, const FT min_visiting_time,
-                const FT max_visiting_time, FT& visiting_time,
-                const bool strictly_at_min, const bool strictly_at_max) const
-{
-  std::pair<VMC_left_it, bool> mres = find_motorcycle(id);
-  VMC_left_it mit = mres.first;
-  bool is_valid_iterator = mres.second; // = false if we couldn't find the motorcycle
-
-  while(is_valid_iterator) // while still considering the motorcycle 'id'
-  {
-    CGAL_assertion(mit->first == id);
-    visiting_time = mit->second;
-
-    if((visiting_time > min_visiting_time ||
-        (!strictly_at_min && visiting_time == min_visiting_time)) &&
-       (visiting_time < max_visiting_time ||
-        (!strictly_at_max && visiting_time == max_visiting_time)))
-      return std::make_pair(mit, true);
-
-    ++mit;
-    is_valid_iterator = (mit != visiting_mcs.left.end() && mit->first == id);
-  }
-
-  return std::make_pair(visiting_mcs.left.end(), false);
-}
-
-template<typename MotorcycleGraphTraits>
-std::pair<typename Dictionary_entry<MotorcycleGraphTraits>::VMC_left_it, bool>
-Dictionary_entry<MotorcycleGraphTraits>::
-find_motorcycle(const std::size_t id, const FT min_visiting_time,
-               const FT max_visiting_time, const bool strictly_at_min,
-               const bool strictly_at_max) const
-{
-  FT useless;
-  return find_motorcycle(id, min_visiting_time, max_visiting_time, useless,
-                         strictly_at_min, strictly_at_max);
-}
-
-template<typename MotorcycleGraphTraits>
-bool
-Dictionary_entry<MotorcycleGraphTraits>::
-has_motorcycle(const std::size_t id, const FT visiting_time) const
-{
-  return find_motorcycle(id, visiting_time).second;
-}
-
-template<typename MotorcycleGraphTraits>
-bool
-Dictionary_entry<MotorcycleGraphTraits>::
-has_motorcycle(const std::size_t id, const FT min_visiting_time,
-               const FT max_visiting_time, FT& visiting_time,
-               const bool strictly_at_min, const bool strictly_at_max) const
-{
-  return find_motorcycle(id, min_visiting_time, max_visiting_time, visiting_time,
-                         strictly_at_min, strictly_at_max).second;
-}
-
-template<typename MotorcycleGraphTraits>
-bool
-Dictionary_entry<MotorcycleGraphTraits>::
-has_motorcycle(const std::size_t id, const FT min_visiting_time,
-               const FT max_visiting_time, const bool strictly_at_min,
-               const bool strictly_at_max) const
-{
-  FT useless;
-  return find_motorcycle(id, min_visiting_time, max_visiting_time, useless,
-                         strictly_at_min, strictly_at_max).second;
-}
-
-template<typename MotorcycleGraphTraits>
-bool
-Dictionary_entry<MotorcycleGraphTraits>::
-has_simultaneous_collision() const
-{
-  CGAL_precondition(!visiting_mcs.empty());
-  if(visiting_mcs.size() == 1)
-    return false;
-
-  // accessing 'right' of the bimap gives ordered time values
-  // the first and second entries are thus the times for the two closest
-  // points. If the times are equal (or almost), there is a simultaneous collision.
-  VMC_right_cit first_mc_it = visiting_mcs.right.begin();
-  VMC_right_cit second_mc_it = ++(visiting_mcs.right.begin());
-  const FT first_time = first_mc_it->first;
-  const FT second_time = second_mc_it->first;
-  CGAL_assertion(first_time <= second_time);
-
-#ifdef CGAL_MOTORCYCLE_GRAPH_VERBOSE
-  std::cout << "closest motorcycles at times: " << first_time << " and " << second_time << std::endl;
-#endif
-
-#ifdef CGAL_MOTORCYCLE_GRAPH_ROBUSTNESS_CODE
-  // Add a little bit of tolerance
-  return (CGAL::abs(second_time - first_time) < (std::numeric_limits<FT>::epsilon() *
-                                                 CGAL::abs(first_time + second_time)));
-#else
-  return (second_time == first_time);
-#endif
-
-}
-
-template<typename MotorcycleGraphTraits>
-typename Dictionary_entry<MotorcycleGraphTraits>::size_type
-Dictionary_entry<MotorcycleGraphTraits>::
-remove_motorcycle(const std::size_t id) const
-{
-  // Note that this will remove all instances of motorcycle 'id' in the multiset
-  return visiting_mcs.left.erase(id);
-}
 
 // -----------------------------------------------------------------------------
 //                           Dictionary class
-
-template<typename MotorcycleGraphTraits>
+// The points involved in the motorcycle graph.
+// -----------------------------------------------------------------------------
+template<typename MotorcycleGraphTraits_>
 class Dictionary
 {
-  typedef Dictionary<MotorcycleGraphTraits>               Self;
+  typedef Dictionary<MotorcycleGraphTraits_>                        Self;
 
 public:
-  typedef MotorcycleGraphTraits                           Geom_traits;
-  typedef typename Geom_traits::Triangle_mesh             Triangle_mesh;
+  typedef MotorcycleGraphTraits_                                    Geom_traits;
+  typedef typename Geom_traits::Triangle_mesh                       Triangle_mesh;
 
-  typedef typename Geom_traits::FT                        FT;
-  typedef typename Geom_traits::Point_d                   Point;
+  typedef typename Geom_traits::FT                                  FT;
+  typedef typename Geom_traits::Point_d                             Point;
 
-  typedef Dictionary_entry<MotorcycleGraphTraits>         Dictionary_entry;
-  typedef typename Dictionary_entry::Face_location        Face_location;
+  typedef typename Geom_traits::vertex_descriptor                   vertex_descriptor;
+  typedef typename Geom_traits::halfedge_descriptor                 halfedge_descriptor;
+  typedef typename Geom_traits::face_descriptor                     face_descriptor;
+  typedef typename Geom_traits::face_iterator                       face_iterator;
+  typedef boost::variant<vertex_descriptor,
+                         halfedge_descriptor,
+                         face_descriptor>                           descriptor_variant;
 
-  typedef boost::unordered_set<Dictionary_entry>          Dictionary_entry_container;
-  typedef typename Dictionary_entry_container::iterator   DEC_it;
+  typedef Dictionary_entry_base<MotorcycleGraphTraits_>             Dictionary_entry_base;
+  typedef std::list<Dictionary_entry_base>                          DEB_container;
+  typedef typename DEB_container::iterator                          DEBC_it;
+  typedef typename DEB_container::const_iterator                    DEBC_cit;
+  typedef Dictionary_entry<MotorcycleGraphTraits_, DEB_container>   Dictionary_entry;
+
+  typedef typename Dictionary_entry::Face_location                  Face_location;
+
+  typedef boost::unordered_set<Dictionary_entry>                    Dictionary_entry_container;
+  typedef typename Dictionary_entry_container::iterator             DEC_it;
 
   // Access
-  const Dictionary_entry_container& all_entries() const { return entries; }
+  Dictionary_entry_container& entries() { return entries_; }
+  const Dictionary_entry_container& entries() const { return entries_; }
 
   // Constructor
-  Dictionary() : entries() { }
+  Dictionary() : entries_(), entries_bases_() { }
 
   // Functions
+  void erase(DEC_it pos, const bool erase_siblings = true);
+
   std::pair<DEC_it, bool> find(const Dictionary_entry& e) const;
   std::pair<DEC_it, bool> find(const Face_location& loc) const;
-  DEC_it erase(DEC_it pos);
-  std::pair<DEC_it, bool> insert(const Face_location& loc, const Point& p);
-  std::pair<DEC_it, bool> insert(const Face_location& loc, const Point& p, const std::size_t i, const FT time);
+
+  std::pair<DEC_it, bool> get_sibling(const DEC_it e, const face_descriptor fd) const;
+
+  std::pair<DEC_it, bool> insert(const Face_location& loc, const Point& p, const Triangle_mesh& mesh);
+  std::pair<DEC_it, bool> insert(const Face_location& loc, const Point& p, const std::size_t i, const FT time, const Triangle_mesh& mesh);
   std::pair<DEC_it, bool> insert(const Face_location& loc, const std::size_t i, const FT time, const Triangle_mesh& mesh);
   std::pair<DEC_it, bool> insert(const Face_location& loc, const Triangle_mesh& mesh);
 
   // Ouput
   friend std::ostream& operator<<(std::ostream& out, const Self& d)
   {
-    DEC_it it = d.all_entries().begin(), end = d.all_entries().end();
+    DEC_it it = d.entries().begin(), end = d.entries().end();
     for(; it!=end; ++it)
       out << &*it << " " << *it << std::endl;
 
@@ -424,42 +621,88 @@ public:
   }
 
 private:
-  Dictionary_entry_container entries;
+  Dictionary_entry_container entries_;
+  DEB_container entries_bases_; // replace that using shared pointers @todo
 };
 
-template<typename MotorcycleGraphTraits>
-std::pair<typename Dictionary<MotorcycleGraphTraits>::DEC_it, bool>
-Dictionary<MotorcycleGraphTraits>::
-find(const Dictionary_entry& e) const
+template<typename MotorcycleGraphTraits_>
+void
+Dictionary<MotorcycleGraphTraits_>::
+erase(DEC_it pos, const bool erase_siblings)
 {
-  DEC_it res = entries.find(e);
-  return std::make_pair(res, (res != entries.end()));
+  // WARNING: this function also erase (by default) the potential entry's siblings !!
+
+  face_descriptor fd = pos->location().first;
+
+  // remove the base
+  DEBC_it common_base = pos->base();
+  CGAL_assertion(common_base != DEBC_it());
+  entries_bases_.erase(common_base);
+
+  // erase the main one
+  std::cout << "erase: " << fd << std::endl;
+  entries_.erase(pos);
+
+  if(!erase_siblings)
+    return;
+
+  // remove the other siblings, if any
+  typename Dictionary_entry_base::Siblings_container::iterator smit = common_base->siblings().begin();
+  for(; smit!=common_base->siblings().end(); ++smit)
+  {
+    // Location for that face
+    face_descriptor adj_fd = smit->first;
+    if(adj_fd == fd)
+      continue; // fd will be deleted afterwards
+
+    // Find it in the entries (failure is not an option), and erase it
+    std::pair<DEC_it, bool> entry = find(*smit);
+    CGAL_assertion(entry.second);
+    entries_.erase(entry.first);
+  }
 }
 
-template<typename MotorcycleGraphTraits>
-std::pair<typename Dictionary<MotorcycleGraphTraits>::DEC_it, bool>
-Dictionary<MotorcycleGraphTraits>::
+template<typename MotorcycleGraphTraits_>
+std::pair<typename Dictionary<MotorcycleGraphTraits_>::DEC_it, bool>
+Dictionary<MotorcycleGraphTraits_>::
+find(const Dictionary_entry& e) const
+{
+  DEC_it res = entries().find(e);
+  return std::make_pair(res, (res != entries().end()));
+}
+
+template<typename MotorcycleGraphTraits_>
+std::pair<typename Dictionary<MotorcycleGraphTraits_>::DEC_it, bool>
+Dictionary<MotorcycleGraphTraits_>::
 find(const Face_location& loc) const
 {
-  Dictionary_entry dummy(loc, Point());
+  Dictionary_entry dummy(loc);
   return find(dummy);
 }
 
-template<typename MotorcycleGraphTraits>
-typename Dictionary<MotorcycleGraphTraits>::DEC_it
-Dictionary<MotorcycleGraphTraits>::
-erase(DEC_it pos)
+template<typename MotorcycleGraphTraits_>
+std::pair<typename Dictionary<MotorcycleGraphTraits_>::DEC_it, bool>
+Dictionary<MotorcycleGraphTraits_>::
+get_sibling(const DEC_it e, const face_descriptor fd) const
 {
-  return entries.erase(pos);
+  if(e->location().first == fd)
+    return std::make_pair(e, true);
+
+  // @todo: would be better if the siblings gave a 'DEC_it' immediately
+  // instead of having to call a 'find' here.
+  Face_location location = e->sibling(fd);
+  return find(location);
 }
 
-template<typename MotorcycleGraphTraits>
-std::pair<typename Dictionary<MotorcycleGraphTraits>::DEC_it, bool>
-Dictionary<MotorcycleGraphTraits>::
-insert(const Face_location& loc, const Point& p)
+template<typename MotorcycleGraphTraits_>
+std::pair<typename Dictionary<MotorcycleGraphTraits_>::DEC_it, bool>
+Dictionary<MotorcycleGraphTraits_>::
+insert(const Face_location& location, const Point& p, const Triangle_mesh& mesh)
 {
-  Dictionary_entry e(loc, p);
-  std::pair<DEC_it, bool> is_insert_successful = entries.insert(e);
+  namespace PMP = CGAL::Polygon_mesh_processing;
+
+  Dictionary_entry entry(location); // only the location is set up so far
+  std::pair<DEC_it, bool> is_insert_successful = entries().insert(entry);
 
   if(!is_insert_successful.second)
   {
@@ -467,8 +710,75 @@ insert(const Face_location& loc, const Point& p)
               << &*(is_insert_successful.first) << std::endl
               << *(is_insert_successful.first) << std::endl;
   }
-  else
+  else // Insertion is successful
   {
+    // Initialize the base with all motorcycle information
+    Dictionary_entry_base deb(p);
+    entries_bases_.push_back(deb);
+    DEBC_it common_base = boost::prior(entries_bases_.end());
+    is_insert_successful.first->set_base(common_base);
+
+    // If the point is on border: initialize and insert its siblings
+    descriptor_variant dv = PMP::get_descriptor_from_location(location, mesh);
+    face_descriptor initial_fd = location.first;
+
+    CGAL_precondition(common_base->siblings().empty());
+
+    if(dv.which() != 2) // point is not strictly on a face -> it's on the border
+    {
+      // fill for the initial face
+      common_base->siblings().insert(location);
+
+      if(dv.which() == 0) // on a vertex
+      {
+        vertex_descriptor vd = boost::get<vertex_descriptor>(dv);
+        halfedge_descriptor hd = halfedge(vd, mesh);
+
+        CGAL::Face_around_target_iterator<Triangle_mesh> fit, fend;
+        boost::tie(fit, fend) = CGAL::faces_around_target(hd, mesh);
+        std::size_t number_of_incident_faces = std::distance(fit, fend);
+        for(; fit!=fend; ++fit)
+        {
+          face_descriptor fd = *fit;
+          if(fd == initial_fd || fd == boost::graph_traits<Triangle_mesh>::null_face())
+            continue;
+
+          const Face_location location_in_fd = PMP::locate(location, fd, mesh);
+
+          // Set up the sibling information
+          common_base->siblings().insert(location_in_fd);
+
+          std::pair<DEC_it, bool> is_insert_successful_in_fd = entries().insert(location_in_fd);
+
+          // Insertion must be successful: we insert all the possible location
+          // when we insert a location on a border, so we can't have had successful
+          // insertion for the main entry but not for equivalent locations.
+          CGAL_assertion(is_insert_successful_in_fd.second);
+
+          // Set the base
+          is_insert_successful_in_fd.first->set_base(common_base);
+        }
+        CGAL_postcondition_code(if(PMP::is_on_mesh_border(location, mesh)))
+        CGAL_postcondition(common_base->siblings().size() == number_of_incident_faces - 1 /*the null face*/);
+        CGAL_postcondition_code(else)
+        CGAL_postcondition(common_base->siblings().size() == number_of_incident_faces);
+      }
+      else if(dv.which() == 1) // on a halfedge
+      {
+        halfedge_descriptor hd = boost::get<halfedge_descriptor>(dv);
+        if(!is_border(edge(hd, mesh), mesh))
+        {
+          face_descriptor fd = face(opposite(hd, mesh), mesh);
+          const Face_location location_in_fd = PMP::locate(location, fd, mesh);
+          std::pair<DEC_it, bool> is_insert_successful_in_fd = entries().insert(location_in_fd);
+          CGAL_assertion(is_insert_successful_in_fd.second);
+          is_insert_successful_in_fd.first->set_base(common_base);
+          common_base->siblings().insert(location_in_fd);
+          CGAL_postcondition(common_base->siblings().size() == 2);
+        }
+      }
+    }
+
     std::cout << "New point in the dictionary: "
               << &*(is_insert_successful.first) << std::endl
               << *(is_insert_successful.first) << std::endl;
@@ -477,15 +787,15 @@ insert(const Face_location& loc, const Point& p)
   return is_insert_successful;
 }
 
-template<typename MotorcycleGraphTraits>
-std::pair<typename Dictionary<MotorcycleGraphTraits>::DEC_it, bool>
-Dictionary<MotorcycleGraphTraits>::
-insert(const Face_location& loc, const Point& p, const std::size_t i, const FT time)
+template<typename MotorcycleGraphTraits_>
+std::pair<typename Dictionary<MotorcycleGraphTraits_>::DEC_it, bool>
+Dictionary<MotorcycleGraphTraits_>::
+insert(const Face_location& loc, const Point& p, const std::size_t i, const FT time, const Triangle_mesh& mesh)
 {
-  std::pair<DEC_it, bool> entry = insert(loc, p);
+  std::pair<DEC_it, bool> entry = insert(loc, p, mesh);
   entry.first->add_motorcycle(i, time);
 
-  return entry;
+return entry;
 }
 
 template<typename MotorcycleGraphTraits>
@@ -494,7 +804,7 @@ Dictionary<MotorcycleGraphTraits>::
 insert(const Face_location& loc, const std::size_t i, const FT time, const Triangle_mesh& mesh)
 {
   Point p = CGAL::Polygon_mesh_processing::location_to_point(loc, mesh);
-  return insert(loc, p, i, time);
+  return insert(loc, p, i, time, mesh);
 }
 
 template<typename MotorcycleGraphTraits>
@@ -502,11 +812,10 @@ std::pair<typename Dictionary<MotorcycleGraphTraits>::DEC_it, bool>
 Dictionary<MotorcycleGraphTraits>::
 insert(const Face_location& loc, const Triangle_mesh& mesh)
 {
-  // @fixme, send 'mesh' to the point constructor and only build the point
-  // if the insertion is successful
   Point p = CGAL::Polygon_mesh_processing::location_to_point(loc, mesh);
-  return insert(loc, p);
+  return insert(loc, p, mesh);
 }
+
 
 } // namespace Polyline_tracing
 } // namespace CGAL
