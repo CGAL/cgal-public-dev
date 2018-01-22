@@ -16,7 +16,8 @@
 #include <CGAL/Selector/Level_of_detail_selector.h>
 #include <CGAL/Selector/Level_of_detail_selection_strategy.h>
 #include <CGAL/Regularizer/Level_of_detail_vertical_regularizer.h>
-#include <CGAL/Regularizer/Level_of_detail_line_regularizer.h>
+#include <CGAL/Regularizer/Level_of_detail_line_regularizer_cgal.h>
+#include <CGAL/Regularizer/Level_of_detail_line_regularizer_jean_philippe.h>
 #include <CGAL/Regularizer/Level_of_detail_regularize_planes.h>
 #include <CGAL/Regularizer/Level_of_detail_regularize_property_maps.h>
 #include <CGAL/Projector/Level_of_detail_projector.h>

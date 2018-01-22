@@ -1,5 +1,5 @@
-#ifndef CGAL_LEVEL_OF_DETAIL_LINE_REGULARIZER_H
-#define CGAL_LEVEL_OF_DETAIL_LINE_REGULARIZER_H
+#ifndef CGAL_LEVEL_OF_DETAIL_LINE_REGULARIZER_CGAL_H
+#define CGAL_LEVEL_OF_DETAIL_LINE_REGULARIZER_CGAL_H
 
 #if defined(WIN32) || defined(_WIN32) 
 #define PS "\\"
@@ -30,7 +30,7 @@ namespace CGAL {
 	namespace LOD {
 
         template<class KernelTraits, class BoundaryData, class ProjectedPoints>
-        class Level_of_detail_line_regularizer { 
+        class Level_of_detail_line_regularizer_cgal { 
 
         public:
             typedef KernelTraits    Kernel;
@@ -64,7 +64,7 @@ namespace CGAL {
 
             using Log = CGAL::LOD::Mylog;
 
-            Level_of_detail_line_regularizer() : 
+            Level_of_detail_line_regularizer_cgal() : 
             m_silent(false), 
             m_debug(false),
             m_parallelism(false),
@@ -79,6 +79,8 @@ namespace CGAL {
 			}
 
             void process(const Boundary_data &building_boundaries, const Projected_points &building_boundaries_projected, const Segments &segments, Lines &lines) const {
+                
+                assert(!"This method is not working! Do not use it!");
                 assert(building_boundaries.size() == segments.size());
 
                 Points points;
@@ -193,4 +195,4 @@ namespace CGAL {
     }
 }
 
-#endif // CGAL_LEVEL_OF_DETAIL_LINE_REGULARIZER_H
+#endif // CGAL_LEVEL_OF_DETAIL_LINE_REGULARIZER_CGAL_H

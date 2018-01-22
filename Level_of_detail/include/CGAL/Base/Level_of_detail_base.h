@@ -688,7 +688,7 @@ namespace CGAL {
 
 			void creating_segments(
 				Segments &segments,
-				const Lines &lines, const Boundary_data &building_boundaries, const Projected_points &building_boundaries_projected, const size_t exec_step) {
+				const Lines &lines, const Boundary_data &building_boundaries, const Projected_points &building_boundaries_projected, const std::string &name, const size_t exec_step) {
 
 				// Find segments from the given lines.
 				std::cout << "(" << exec_step << ") creating segments; ";
@@ -696,7 +696,7 @@ namespace CGAL {
 				std::cout << "number of segments: " << number_of_segments << ";" << std::endl;
 				
 				if (!m_silent) {
-					Log segments_exporter; segments_exporter.export_segments_as_obj("tmp" + std::string(PS) + "segments", segments, m_default_path);
+					Log segments_exporter; segments_exporter.export_segments_as_obj("tmp" + std::string(PS) + name, segments, m_default_path);
 				}
 			}
 
@@ -1022,7 +1022,7 @@ namespace CGAL {
 
 				// (09) ----------------------------------
 				Segments segments;
-				creating_segments(segments, lines, building_boundaries, building_boundaries_projected, ++exec_step);
+				creating_segments(segments, lines, building_boundaries, building_boundaries_projected, "original_segments", ++exec_step);
 
 
 				// (10) ----------------------------------
@@ -1031,14 +1031,14 @@ namespace CGAL {
 					regularizing_lines(building_boundaries, building_boundaries_projected, segments, lines, ++exec_step);
 					
 					if (!m_silent) {
-						Log lines_exporter; lines_exporter.export_lines_as_obj("tmp" + std::string(PS) + "lines", lines, m_default_path);
+						Log lines_exporter; lines_exporter.export_lines_as_obj("tmp" + std::string(PS) + "regularized_lines", lines, m_default_path);
 					}
 
-					// creating_segments(segments, lines, building_boundaries, building_boundaries_projected, ++exec_step);
+					creating_segments(segments, lines, building_boundaries, building_boundaries_projected, "regularized_segments", ++exec_step);
 				}
 
 
-				// exit(EXIT_SUCCESS); // temporary exit
+				exit(EXIT_SUCCESS); // temporary exit
 
 
 				// (11) ----------------------------------
