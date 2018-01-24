@@ -206,7 +206,8 @@ namespace CGAL {
 			m_coverage(-FT(1)),
 			m_clutter_filtering_scale(-FT(1)),
 			m_clutter_filtering_mean(-FT(1)),
-			m_regularize_lines(false)
+			m_regularize_lines(false),
+			m_line_regularizer_add_ordinates(false)
 			{ }
 
 
@@ -401,7 +402,8 @@ namespace CGAL {
 				m_visibility_num_samples = 2;     // number of subdivision steps when sampling triangles, 1 or 2 is enough
 				m_add_cdt_clutter 		 = false; // better to avoid clutter since it will pollute the final CDT
 
-				m_regularize_lines = false; // regularize lines after region growing
+				m_regularize_lines 				 = false; // regularize lines after region growing
+				m_line_regularizer_add_ordinates = false; // add coplanarity regularization between detected lines
 
 				m_visibility_approach  = Visibility_approach::FACE_BASED; 				   // face based is, in general, a better but slower option
 				m_visibility_method    = Visibility_method::FACE_BASED_NATURAL_NEIGHBOURS; // face based is, in general, a better but slower option
@@ -448,11 +450,12 @@ namespace CGAL {
 			void set_optional_parameters() {
 
 				// Flags.
-				add_bool_parameter("-silent"      , m_silent 			 , m_parameters);
-				add_bool_parameter("-auto_params" , m_estimate_parameters, m_parameters);
-				add_bool_parameter("-quality"	  , m_estimate_quality   , m_parameters);
-				add_bool_parameter("-clutter"	  , m_add_cdt_clutter    , m_parameters);
-				add_bool_parameter("-regularize"  , m_regularize_lines   , m_parameters);
+				add_bool_parameter("-silent"     	 , m_silent 			 		   , m_parameters);
+				add_bool_parameter("-auto_params"	 , m_estimate_parameters		   , m_parameters);
+				add_bool_parameter("-quality"	 	 , m_estimate_quality   		   , m_parameters);
+				add_bool_parameter("-clutter"	  	 , m_add_cdt_clutter    		   , m_parameters);
+				add_bool_parameter("-regularize"  	 , m_regularize_lines   		   , m_parameters);
+				add_bool_parameter("-add_coplanarity", m_line_regularizer_add_ordinates, m_parameters);
 
 
 				// Important.
@@ -706,6 +709,8 @@ namespace CGAL {
 				std::cout << "(" << exec_step << ") regularizing lines; " << std::endl;
 
 				m_line_regularizer.make_silent(m_silent);
+				m_line_regularizer.add_ordinates(m_line_regularizer_add_ordinates);
+
 				m_line_regularizer.process(building_boundaries, building_boundaries_projected, segments, lines);
 			}
 
@@ -1026,19 +1031,7 @@ namespace CGAL {
 
 
 				// (10) ----------------------------------
-				if (m_regularize_lines) {
-				
-					regularizing_lines(building_boundaries, building_boundaries_projected, segments, lines, ++exec_step);
-					
-					if (!m_silent) {
-						Log lines_exporter; lines_exporter.export_lines_as_obj("tmp" + std::string(PS) + "regularized_lines", lines, m_default_path);
-					}
-
-					creating_segments(segments, lines, building_boundaries, building_boundaries_projected, "regularized_segments", ++exec_step);
-				}
-
-
-				exit(EXIT_SUCCESS); // temporary exit
+				if (m_regularize_lines) regularizing_lines(building_boundaries, building_boundaries_projected, segments, lines, ++exec_step);
 
 
 				// (11) ----------------------------------
@@ -1243,6 +1236,7 @@ namespace CGAL {
 			FT m_clutter_filtering_mean;
 
 			bool m_regularize_lines;
+			bool m_line_regularizer_add_ordinates;
 
 
 			// Assert default values of all global parameters.

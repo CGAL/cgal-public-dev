@@ -22,6 +22,13 @@
 // New CGAL includes.
 #include <CGAL/Mylog/Mylog.h>
 
+// Jean Philippe includes.
+#include <CGAL/Regularizer/jean_philippe/kinetic_model.h>
+#include <CGAL/Regularizer/jean_philippe/regularization_angles.h>
+#include <CGAL/Regularizer/jean_philippe/regularization_angles_quadratic.h>
+#include <CGAL/Regularizer/jean_philippe/regularization_ordinates.h>
+#include <CGAL/Regularizer/jean_philippe/regularization_ordinates_quadratic.h>
+
 namespace CGAL {
 
 	namespace LOD {
@@ -35,60 +42,150 @@ namespace CGAL {
 			typedef ProjectedPoints Projected_points;
 
 			typedef typename Kernel::Point_2   Point_2;
-            typedef typename Kernel::Point_3   Point_3;
-            typedef typename Kernel::Vector_2  Vector_2;
-            typedef typename Kernel::Vector_3  Vector_3;
 			typedef typename Kernel::Line_2    Line_2;
-            typedef typename Kernel::Line_3    Line_3;
             typedef typename Kernel::Segment_2 Segment_2;
-            typedef typename Kernel::Plane_3   Plane_3;
 			typedef typename Kernel::FT 	   FT;
 
-            typedef std::pair<Point_3, int>                Point_with_plane;
-            typedef typename Boundary_data::const_iterator Boundary_iterator;
-
-            typedef typename CGAL::First_of_pair_property_map<Point_with_plane>  Point_map;
-            typedef typename CGAL::Second_of_pair_property_map<Point_with_plane> Index_map;
-            typedef typename CGAL::Identity_property_map<Plane_3>                Plane_map;
-
-            typedef std::vector<Point_with_plane> Points;
-            typedef std::vector<Plane_3>          Planes;
             typedef std::vector<Line_2>           Lines;
             typedef std::vector<Segment_2>        Segments;
-
-            typedef std::vector<Point_3>    Debug_quad;
-            typedef std::vector<Debug_quad> Debug_quads;
 
             using Log = CGAL::LOD::Mylog;
 
             Level_of_detail_line_regularizer_jean_philippe() : 
             m_silent(false), 
             m_debug(false),
-            m_parallelism(false),
-            m_orthogonality(false),
-            m_coplanarity(false),
-            m_z_symmetry(false),
-            m_angle(FT(25))
+            m_add_ordinates(false)
             { }
 
-			void make_silent(const bool silent) {
-				m_silent = silent;
+			void make_silent(const bool state) {
+				m_silent = state;
 			}
 
-            void process(const Boundary_data & /* building_boundaries */, const Projected_points & /* building_boundaries_projected */, const Segments & /* segments */, Lines & /* lines */) const {
+            void add_ordinates(const bool state) {
+                m_add_ordinates = state;
+            }
 
+            void process(const Boundary_data &, const Projected_points &, const Segments &segments, Lines &lines) const {
+
+                if (m_debug) {
+                    const std::string stub = "";
+                    Log segments_exporter; segments_exporter.export_segments_as_obj("tmp" + std::string(PS) + "input_segments", segments, stub);
+                }
+
+                Kinetic_Model* model = new Kinetic_Model();
+                
+                initialize_kinetic_model(model);
+                set_segments(segments, model);
+
+                regularize_segments(model);
+                get_back_lines(model, lines);
+
+                delete model;
             }
 
         private:
             bool m_silent;
             bool m_debug;
+            bool m_add_ordinates;
 
-            const bool m_parallelism;
-            const bool m_orthogonality;
-            const bool m_coplanarity;
-            const bool m_z_symmetry;
+            void initialize_kinetic_model(Kinetic_Model *model) const {
+                model->reinit();
+            }
 
-            const FT m_angle;
+            void set_segments(const Segments &segments, Kinetic_Model *model) const {
+                std::vector<Segment *> &model_segments = model->segments;
+                
+                model_segments.reserve(segments.size());
+                for (size_t i = 0; i < segments.size(); ++i) {
+
+                    const Point_2 &source = segments[i].source();
+                    const Point_2 &target = segments[i].target();
+
+                    const double x1 = CGAL::to_double(source.x());
+                    const double y1 = CGAL::to_double(source.y());
+
+                    const double x2 = CGAL::to_double(target.x());
+                    const double y2 = CGAL::to_double(target.y());
+
+                    const double width = CGAL::sqrt(CGAL::to_double(segments[i].squared_length()));
+                    model_segments.push_back(new Segment(i, x1, y1, x2, y2, width, 0.0, 0.0, 0.0, false));
+                }
+            }
+
+            void regularize_segments(Kinetic_Model *model) const {
+
+                regularize_angles(model);
+                if (m_add_ordinates) regularize_ordinates(model);
+            }
+
+            void regularize_angles(Kinetic_Model *model) const {
+                
+                Regularization_Angles* m_rega = nullptr;
+                m_rega = new Regularization_Angles_Quadratic();
+                m_rega->regularize(model);
+                delete m_rega;
+            }
+
+            void regularize_ordinates(Kinetic_Model *model) const {
+                
+                Regularization_Ordinates* m_regp = nullptr;
+                m_regp = new Regularization_Ordinates_Quadratic();
+                m_regp->regularize(model);
+		        delete m_regp;
+            }
+
+            void get_back_lines(Kinetic_Model *model, Lines &lines) const {
+
+                Segments regularized_segments;
+                get_segments(model, regularized_segments);
+
+                if (!m_silent) {
+                    const std::string stub = "";
+                    Log segments_exporter; segments_exporter.export_segments_as_obj("tmp" + std::string(PS) + "regularized_segments", regularized_segments, stub);
+                }
+
+                get_lines(regularized_segments, lines);
+            }
+
+            void get_segments(Kinetic_Model *model, Segments &segments) const {
+                
+                std::vector<Segment *> &model_segments = model->segments;
+                segments.clear();
+
+                segments.reserve(model_segments.size());
+                for (size_t i = 0; i < model_segments.size(); ++i) {
+
+                    const Point2d source = model_segments[i]->finalEnd1;
+                    const Point2d target = model_segments[i]->finalEnd2;
+
+                    const FT x1 = static_cast<FT>(source.x);
+                    const FT y1 = static_cast<FT>(source.y);
+
+                    const FT x2 = static_cast<FT>(target.x);
+                    const FT y2 = static_cast<FT>(target.y);
+
+                    segments.push_back(Segment_2(Point_2(x1, y1), Point_2(x2, y2)));
+                }
+            }
+
+            void get_lines(const Segments &segments, Lines &lines) const {
+
+                lines.clear();
+                lines.resize(segments.size());
+
+                for (size_t i = 0; i < segments.size(); ++i) {
+
+                    const Point_2 &source = segments[i].source();
+                    const Point_2 &target = segments[i].target();
+
+                    lines[i] = Line_2(source, target);
+                }
+
+                if (m_debug) {
+                    const std::string stub = "";
+                    Log lines_exporter; lines_exporter.export_lines_as_obj("tmp" + std::string(PS) + "regularized_lines", lines, stub);
+                }
+            }
         };
     }
 }
