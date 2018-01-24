@@ -8,6 +8,15 @@ namespace CGAL {
 namespace internal {
 
 
+struct Domain
+{
+
+
+  //data
+  //1) boundary
+  //2) holes
+
+};
 
 struct Phi
 {
@@ -82,6 +91,7 @@ void add_subsets(std::vector<int>& D1, std::vector<int>& D2, std::vector<int>& s
   sumD.insert(sumD.end(), D2.begin(), D2.end());
 }
 
+// to think about this range
 void split_domain(const std::pair<int, int>& range, std::vector<int>& left, std::vector<int>& right,
                   const int& i, const int& v, const int& k)
 {
@@ -117,6 +127,40 @@ void split_domain(const std::pair<int, int>& range, std::vector<int>& left, std:
 }
 
 
+template <typename PointRange>
+void reorder_indices(const PointRange& list, PointRange& new_list)
+{
+
+}
+
+
+
+
+template <typename PointRange>
+void join_domain(const PointRange& boundary,
+                 const int& i, const int& v, const int& k,
+                 const PointRange& hole,
+                 PointRange& new_domain)
+{
+  new_domain.resize(boundary.size() + hole.size() + 1); // +1 for the last=first
+
+  PointRange::const_iterator i_point = boundary.begin() + i;
+  PointRange::const_iterator k_point = boundary.begin() + k;
+
+  // v runs on the hole indices
+  // create a new pointrange starting with v
+  PointRange oriented_hole(hole.size());
+
+
+  new_domain.insert(new_domain.end(), boundary.begin(), i_point);
+  new_domain.insert(new_domain.end(), v_point, )
+
+
+
+
+}
+
+
 
 
 template <typename PointRange>
@@ -126,15 +170,12 @@ void create_subsets(const PointRange& boundary, PointRange& hole)
   // e_D (i, k)
   const int i = 1;
   const int k = 2;
-
   // trird vertex
   const int v = 4;
-
   std::pair<int, int> range(0, boundary.size() - 1 - 1); // last = first
 
   std::vector<int> left;
   std::vector<int> right;
-
 
   split_domain(range, left, right, i, v, k);
 
@@ -143,9 +184,19 @@ void create_subsets(const PointRange& boundary, PointRange& hole)
   std::cout << "right: \n";
   print(right);
 
+}
+
+
+
+
+void test_space(t)
+{
 
 
 }
+
+
+
 
 
 

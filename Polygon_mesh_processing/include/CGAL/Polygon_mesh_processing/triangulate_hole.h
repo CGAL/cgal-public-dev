@@ -420,7 +420,7 @@ namespace Polygon_mesh_processing {
 
     // assume just one hole.
 
-    CGAL::internal::create_subsets(boundary);
+    CGAL::internal::create_subsets(boundary, hole);
 
   }
 
