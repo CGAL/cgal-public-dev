@@ -38,6 +38,9 @@
 
 #include <vector>
 
+#include <CGAL/Polygon_mesh_processing/internal/Hole_filling/island_triangulate_hole_polyline.h>
+
+
 namespace CGAL {
 
 namespace Polygon_mesh_processing {

@@ -216,7 +216,7 @@ void test_3(const char* file_name, bool use_DT, bool save_output) {
 
 
   //check_triangles(points_b, tris);
-  check_constructed_polyhedron(file_name, &tris, &points_b, save_output);
+  //check_constructed_polyhedron(file_name, &tris, &points_b, save_output);
 
   std::cerr << "  Done!" << std::endl;
 }
