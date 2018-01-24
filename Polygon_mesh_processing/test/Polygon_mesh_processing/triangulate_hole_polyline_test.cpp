@@ -211,8 +211,7 @@ void test_3(const char* file_name, bool use_DT, bool save_output) {
   std::vector<boost::tuple<int, int, int> > tris;
 
 
-  CGAL::Polygon_mesh_processing::triangulate_hole_polyline_with_islands(points_b, points_h,
-                                                                        std::back_inserter(tris));
+  CGAL::Polygon_mesh_processing::triangulate_hole_polyline_with_islands(points_b, points_h);
 
 
   //check_triangles(points_b, tris);
