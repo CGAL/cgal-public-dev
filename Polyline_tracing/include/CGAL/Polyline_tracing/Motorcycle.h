@@ -190,6 +190,7 @@ public:
   virtual boost::tuple<bool, DEC_it, DEC_it, FT, bool>
   compute_next_destination(Dictionary& points, const Triangle_mesh& mesh) = 0;
   std::pair<TPC_iterator, bool> has_target(const DEC_it e) const;
+  std::pair<TPC_iterator, bool> has_target(const Face_location loc) const;
   std::pair<TPC_iterator, bool> has_target_at_time(const FT visiting_time) const;
   std::pair<TPC_iterator, bool> has_target_at_time(const FT min_visiting_time, const FT max_visiting_time) const;
   bool has_target_at_time(const DEC_it e, const FT visiting_time) const;
@@ -205,7 +206,7 @@ public:
     out << "Motorcycle #" << mc.id() << " (crashed? " << mc.is_crashed() << ") "
         << "going from source: (" << mc.source()->point() << ")"
         << " to destination: (" << mc.destination()->point() << ")" << std::endl
-        << "  currently at position: (" << mc.current_position()->point() << ")"
+        << "  currently at position: " << &*(mc.current_position()) << "(" << mc.current_position()->point() << ")"
         << " [L: " << mc.current_position()->location().first << "]"
         << " at time: " << mc.current_time() << std::endl
         << "  with targets:" << std::endl;
@@ -356,6 +357,21 @@ has_target(const DEC_it e) const
   TPC_iterator tpit = target_points.begin(), end = target_points.end();
   for(; tpit!=end; ++tpit)
     if(tpit->first == e)
+      return std::make_pair(tpit, true);
+
+  return std::make_pair(end, false);
+}
+
+template<typename MotorcycleGraphTraits>
+std::pair<typename Motorcycle_impl_base<MotorcycleGraphTraits>::TPC_iterator, bool>
+Motorcycle_impl_base<MotorcycleGraphTraits>::
+has_target(const Face_location loc) const
+{
+  // Target points are sorted _only_ by distance, so we can look up a target by its location.
+
+  TPC_iterator tpit = target_points.begin(), end = target_points.end();
+  for(; tpit!=end; ++tpit)
+    if(tpit->first->location() == loc)
       return std::make_pair(tpit, true);
 
   return std::make_pair(end, false);
