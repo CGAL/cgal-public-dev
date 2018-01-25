@@ -2211,16 +2211,19 @@ find_collision_between_collinear_tracks(const Motorcycle& mc,
                 snapped.first->has_motorcycle(fmc.id(), min_visiting_time, max_visiting_time, visiting_time);
               }
 
-              if(tc.is_collision_earlier_than_current_best(visiting_time, visiting_time))
-              {
-                tc.add_intersection_without_moving_motorcycles = true;
+              // We have snapped so we're igoring what we had set up as best, but
+              // we need to make sure it is still better then the previous one.
+              CGAL_assertion(visiting_time <= time_at_closest_collision_memory);
+              CGAL_assertion(visiting_time < time_at_closest_collision_memory ||
+                             visiting_time < foreign_time_at_closest_collision_memory);
 
-                tc.is_closest_collision_already_in_dictionary = true;
-                tc.closest_collision = snapped.first;
-                tc.time_at_closest_collision = visiting_time;
-                tc.foreign_time_at_closest_collision = visiting_time;
-                return;
-              }
+              tc.add_intersection_without_moving_motorcycles = true;
+
+              tc.is_closest_collision_already_in_dictionary = true;
+              tc.closest_collision = snapped.first;
+              tc.time_at_closest_collision = visiting_time;
+              tc.foreign_time_at_closest_collision = visiting_time;
+              return;
             }
 #endif
 
