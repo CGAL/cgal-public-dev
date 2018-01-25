@@ -28,8 +28,8 @@ struct Domain
   // to optimize
   std::pair<int, int> get_access_edge()
   {
-    int i = boundary.size() - 2;
-    int k = boundary.size() - 1;
+    int i = boundary.size() - 3;  // avoid repetition of first(=last)
+    int k = boundary.size() - 2;
 
     return std::make_pair(i, k);
   }
@@ -113,50 +113,53 @@ void do_permutations(const int s, std::vector<int>& hs, Phi& subsets)
 
 template <typename PointRange>
 void split_domain(Domain<PointRange>& init_domain, Domain<PointRange>& left_dom, Domain<PointRange>& right_dom,
-                  const int& i, const int& v, const int& k)
+                  const int& source, const int& v, const int& target)
 {
-  PointRange boundary = init_domain.boundary;
+  PointRange b_points = init_domain.boundary;
   PointRange left = left_dom.boundary;
   PointRange right = right_dom.boundary;
 
+  // i, k indices of access edge
+  // v index of third vertex forming triangle t.
+
   // take out last(=first)
-  boundary.pop_back();
+  b_points.pop_back();
 
   int next_v = v;
 
   // left subset
-  left.push_back(boundary[next_v]);
-  while (next_v != i) {
+  left.push_back(b_points[next_v]);
+  while (next_v != source) {
 
-    if(next_v == boundary.size() - 1) // if we reached the last element
+    if(next_v == b_points.size() - 1) // if we reached the last element
       next_v = 0;
     else
       next_v++;
 
-    left.push_back(boundary[next_v]);
+    left.push_back(b_points[next_v]);
   }
   // add the new last(=first)
-  left.push_back(boundary[v]);
+  left.push_back(b_points[v]);
 
   // right subset
-  next_v = k;
-  right.push_back(boundary[next_v]);
+  next_v = target;
+  right.push_back(b_points[next_v]);
   while (next_v != v) {
 
-    if(next_v == boundary.size() - 1)
+    if(next_v == b_points.size() - 1)
       next_v = 0;
     else
       next_v++;
 
-    right.push_back(boundary[next_v]);
+    right.push_back(b_points[next_v]);
   }
   // add the new last(=first)
-  right.push_back(boundary[k]);
+  right.push_back(b_points[target]);
 
-  assert(left.front() == boundary[v]);
-  assert(left.back() == boundary[v]);
-  assert(right.front() == boundary[k]);
-  assert(right.back() == boundary[k]);
+  assert(left.front() == b_points[v]);
+  assert(left.back() == b_points[v]);
+  assert(right.front() == b_points[target]);
+  assert(right.back() == b_points[target]);
 
   left_dom.boundary = left;
   right_dom.boundary = right;
@@ -286,8 +289,11 @@ void processDomain(Domain<PointRange>& domain, const int& i, const int& k)
   int v = 0; // temp: index to boundary vertices
   for(auto point_3 : domain.boundary)
   {
-    if(v == i || v == k)
-      continue;
+    if(point_3 == domain.boundary[i] || point_3 == domain.boundary[k])
+      {
+        ++v;
+        continue;
+      }
 
     PointRange b_vertices;
     Domain<PointRange> D1(b_vertices);
